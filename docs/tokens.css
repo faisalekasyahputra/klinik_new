@@ -1,0 +1,122 @@
+/* ============================================================
+   KLINIK PKP — Design Tokens (CSS Custom Properties)
+   Generated from design-tokens.json
+   ============================================================
+   Anchor Colors:
+     #ecffb6  — Lime Cream (light)
+     #d6fb00  — Electric Lime (brand primary)
+     #00545f  — Deep Teal (secondary)
+   ============================================================ */
+
+:root {
+    /* ---- Brand: Electric Lime ---- */
+    --brand-50:  #f5ffd9;
+    --brand-100: #ecffb6;
+    --brand-200: #e2ff8a;
+    --brand-300: #d6fb00;   /* ← PRIMARY */
+    --brand-400: #c2e600;
+    --brand-500: #a8c700;
+    --brand-600: #8ba500;
+    --brand-700: #6d8200;
+    --brand-800: #4f5f00;
+    --brand-900: #313b00;
+
+    /* ---- Teal ---- */
+    --teal-50:  #e0f7fa;
+    --teal-100: #b2ebf2;
+    --teal-200: #80deea;
+    --teal-300: #4dd0e1;
+    --teal-400: #26c6da;
+    --teal-500: #00a3b5;
+    --teal-600: #007a8a;
+    --teal-700: #00545f;    /* ← ANCHOR */
+    --teal-800: #003d45;
+    --teal-900: #00262b;
+
+    /* ---- Backgrounds ---- */
+    --bg-body:     #0a1a1f;
+    --bg-primary:  #0d2228;
+    --bg-card:     #0f2a30;
+    --bg-elevated: #1a3d45;
+    --bg-glass:    rgba(15, 42, 48, 0.75);
+    --bg-surface:  #f5ffd9;
+
+    /* ---- Text ---- */
+    --text-primary:   #ecffb6;
+    --text-secondary: #8aacb0;
+    --text-muted:     #5a7a80;
+    --text-faint:     #3d5960;
+    --text-inverse:   #0a1a1f;
+    --text-on-brand:  #0a1a1f;
+
+    /* ---- Borders ---- */
+    --border-subtle:  rgba(214, 251, 0, 0.06);
+    --border-default: rgba(214, 251, 0, 0.12);
+    --border-hover:   rgba(214, 251, 0, 0.25);
+    --border-strong:  rgba(214, 251, 0, 0.40);
+
+    /* ---- Semantic ---- */
+    --success:      #6bcb77;
+    --success-soft: rgba(107, 203, 119, 0.12);
+    --warning:      #ffd93d;
+    --warning-soft: rgba(255, 217, 61, 0.12);
+    --error:        #ff6b6b;
+    --error-soft:   rgba(255, 107, 107, 0.12);
+    --info:         #4d96ff;
+    --info-soft:    rgba(77, 150, 255, 0.12);
+
+    /* ---- Typography ---- */
+    --font-sans:    'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-display: 'Cal Sans', 'Plus Jakarta Sans', sans-serif;
+    --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+
+    --text-xs:   0.6875rem;
+    --text-sm:   0.75rem;
+    --text-base: 0.875rem;
+    --text-md:   1rem;
+    --text-lg:   1.125rem;
+    --text-xl:   1.25rem;
+    --text-2xl:  1.5rem;
+    --text-3xl:  2rem;
+    --text-4xl:  2.5rem;
+    --text-5xl:  3.5rem;
+
+    /* ---- Spacing ---- */
+    --space-1:  4px;
+    --space-2:  8px;
+    --space-3:  12px;
+    --space-4:  16px;
+    --space-5:  20px;
+    --space-6:  24px;
+    --space-8:  32px;
+    --space-10: 40px;
+    --space-12: 48px;
+    --space-16: 64px;
+    --space-20: 80px;
+
+    /* ---- Border Radius ---- */
+    --radius-sm:   6px;
+    --radius-md:   10px;
+    --radius-lg:   16px;
+    --radius-xl:   20px;
+    --radius-2xl:  28px;
+    --radius-pill: 999px;
+
+    /* ---- Shadows ---- */
+    --shadow-sm:    0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+    --shadow-md:    0 4px 12px rgba(0, 0, 0, 0.25);
+    --shadow-lg:    0 8px 32px rgba(0, 0, 0, 0.35);
+    --shadow-xl:    0 16px 48px rgba(0, 0, 0, 0.4);
+    --shadow-glow:  0 0 24px rgba(214, 251, 0, 0.15);
+    --shadow-brand: 0 8px 32px rgba(214, 251, 0, 0.20);
+
+    /* ---- Transitions ---- */
+    --ease-fast:   150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-base:   250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-smooth: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* ---- Layout ---- */
+    --nav-height: 80px;
+    --container:  1280px;
+}

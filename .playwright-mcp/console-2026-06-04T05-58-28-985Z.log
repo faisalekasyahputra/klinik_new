@@ -1,0 +1,5 @@
+[  314646ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5555/@vite/client:559
+[  314657ms] [ERROR] Failed to load resource: net::ERR_NETWORK_IO_SUSPENDED @ http://localhost:5555/:0
+[ 1515103ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5555/src/style.css?t=1780554224058:0
+[ 1515132ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5555/@vite/client:559
+[ 1515208ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ chrome-error://chromewebdata/:0
