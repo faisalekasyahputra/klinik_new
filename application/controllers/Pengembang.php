@@ -22,32 +22,32 @@ class Pengembang extends MY_Controller {
 	{
 		
 		$datacontent['judul'] ='';
-		$data['content'] = $this->load->view('sertifikasi', $datacontent, true);
-		$this->load->view('index',$data);
+		$data['content'] = $this->load->view('pages/pengembang/sertifikasi', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 	}
 	public function formulir()
 	{
 		
 		$datacontent['judul'] ='';
-		$data['content'] = $this->load->view('formulir_sertifikasi', $datacontent, true);
-		$this->load->view('index',$data);
+		$data['content'] = $this->load->view('pages/pengembang/formulir_sertifikasi', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 	}
 	public function syarat()
 	{
 		
-		$this->load->view('syarat');
+		$this->load->view('pages/pengembang/syarat');
 	}
 	public function publikasi()
 	{
 		
 		$datacontent['perumahan']= $this->Buka_peta->frd('sosmed_perumahan',null,null,null,null);
-        $data['content'] = $this->load->view('publikasi', $datacontent, true);
-		$this->load->view('index',$data);
+        $data['content'] = $this->load->view('pages/pengembang/publikasi', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 	}
 	public function tambah_publikasi()
 	{
 		
-		$this->load->view('tambah_publikasi');
+		$this->load->view('pages/pengembang/tambah_publikasi');
 	}
 	public function simpan() {
 		
@@ -205,7 +205,7 @@ class Pengembang extends MY_Controller {
             show_404();
         }
 
-        $data['content'] = $this->load->view('v_sertifikasi', $datacontent, true);
-		$this->load->view('index',$data);
+        $data['content'] = $this->load->view('pages/pengembang/v_sertifikasi', $datacontent, true);
+		$this->load->view('layouts/main',$data);
     }
 }

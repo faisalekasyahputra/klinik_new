@@ -17,17 +17,17 @@ class Kemitraan extends MY_Controller {
 	public function kkn()
 	{
 		
-		$this->load->view('kkn');
+		$this->load->view('pages/kemitraan/kkn');
 	}
 	public function magang()
 	{
 		
-		$this->load->view('magang');
+		$this->load->view('pages/kemitraan/magang');
 	}
 	public function ketentuan()
 	{
 		
-		$this->load->view('ketentuan');
+		$this->load->view('pages/kemitraan/ketentuan');
 	}
 	
 	

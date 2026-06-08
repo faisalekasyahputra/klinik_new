@@ -59,8 +59,8 @@ class Index extends MY_Controller {
 			"3376" => "Kota Tegal"
 		];
 
-		$data['content'] = $this->load->view('awal', $datacontent, true);
-		$this->load->view('index',$data);
+		$data['content'] = $this->load->view('pages/home/awal', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 	}
 
 	/**
@@ -70,7 +70,7 @@ class Index extends MY_Controller {
 	{
 		$this->load->library('ternak_api');
 		$articles = $this->ternak_api->get_public_articles();
-		$this->load->view('partials/articles_cards', ['articles' => $articles]);
+		$this->load->view('components/partials/articles_cards', ['articles' => $articles]);
 	}
 
 	/**
@@ -80,7 +80,7 @@ class Index extends MY_Controller {
 	{
 		$this->load->library('ternak_api');
 		$house_designs = $this->ternak_api->get_public_house_designs();
-		$this->load->view('partials/design_cards', ['house_designs' => $house_designs]);
+		$this->load->view('components/partials/design_cards', ['house_designs' => $house_designs]);
 	}
 
 	/**
@@ -116,7 +116,7 @@ class Index extends MY_Controller {
 		$decoded = json_decode($response, true);
 
 		$datacontent['results'] = isset($decoded['data']) ? $decoded['data'] : [];
-		$this->load->view('temp_rumah', $datacontent);
+		$this->load->view('components/cards/rumah', $datacontent);
 	}
 	public function detail_artikel ($idYangDicari) {
 		$dataArray  = $this->ternak_api->get_public_articles();
@@ -129,16 +129,16 @@ class Index extends MY_Controller {
 			$datacontent['item'] = array_values($hasilCari)[0];
 			$datacontent['articles'] = $dataArray;
 			// Tampilkan data
-			$data['content'] = $this->load->view('detail_artikel', $datacontent, true);
+			$data['content'] = $this->load->view('pages/artikel/detail_artikel', $datacontent, true);
 
-			$this->load->view('index',$data);
+			$this->load->view('layouts/main',$data);
 		} else {
 			echo "Data tidak ditemukan.";
 		}
 	}
 	public function detail_perum($idLokasi = NULL) {
 		if ($idLokasi === NULL) {
-            redirect('Index');
+            redirect('layouts/main');
         }
 		$full_url = "https://sikumbang.tapera.go.id/lokasi-perumahan/" . $idLokasi . "/json";
 		$ch = curl_init();
@@ -163,10 +163,10 @@ class Index extends MY_Controller {
 		}
 
     // 6. Masukkan hasil decode langsung ke index 'row' dalam $datacontent
-   		$datacontent['row'] = $decoded_data['detail'];
+   		$datacontent['row'] = $decoded_data['pages/perumahan/detail'];
 		$datacontent['judul'] ='';
-		$data['content'] = $this->load->view('detail_perumahan', $datacontent, true);
-		$this->load->view('index',$data);
+		$data['content'] = $this->load->view('pages/perumahan/detail_perumahan', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 
 	}
 	public function cari_wil() {
@@ -223,7 +223,7 @@ class Index extends MY_Controller {
 		}
 
 		$datacontent['results'] = $list_final;
-		$this->load->view('temp_rumah', $datacontent);
+		$this->load->view('components/cards/rumah', $datacontent);
 	}
 	public function load_more() {
     // Ambil parameter dari AJAX
@@ -285,7 +285,7 @@ class Index extends MY_Controller {
 		if (!empty($list_final)) {
 			// Kirim data langsung ke sub-view card item saja
 			$datacontent['results'] = $list_final;
-			$this->load->view('temp_rumah', $datacontent);
+			$this->load->view('components/cards/rumah', $datacontent);
 		} else {
 			// Jika kosong, jangan kirim HTML apapun agar trigger 'Semua Data Telah Dimuat' aktif di JS
 			echo "";
@@ -346,28 +346,28 @@ class Index extends MY_Controller {
 	{
 		
 		$datacontent['judul']='';
-		$data['content'] = $this->load->view('umum', $datacontent, true);
-		$this->load->view('index',$data);
+		$data['content'] = $this->load->view('pages/umum/umum', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 	}
 	public function pengembang()
 	{
 		
 		$datacontent['judul']='';
-		$data['content'] = $this->load->view('pengembang', $datacontent, true);
-		$this->load->view('index',$data);
+		$data['content'] = $this->load->view('pages/pengembang/pengembang', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 	}
 	public function kemitraan()
 	{
 		
 		$datacontent['judul']='';
-		$data['content'] = $this->load->view('kemitraan', $datacontent, true);
-		$this->load->view('index',$data);
+		$data['content'] = $this->load->view('pages/kemitraan/kemitraan', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 	}
 	public function listkabupaten()
 	{
 		
 		$datacontent['judul']='';
-		$data['content'] = $this->load->view('listkabupaten', $datacontent, true);
-		$this->load->view('index',$data);
+		$data['content'] = $this->load->view('pages/data_spasial/listkabupaten', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 	}
 }

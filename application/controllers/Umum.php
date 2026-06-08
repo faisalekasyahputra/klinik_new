@@ -18,13 +18,13 @@ class Umum extends MY_Controller {
 	public function housing()
 	{
 		$datacontent['judul'] ='';
-		$data['content'] = $this->load->view('housing_carrier1', $datacontent, true);
-		$this->load->view('index',$data);
+		$data['content'] = $this->load->view('pages/perumahan/housing_carrier1', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 	}
 	public function info_rumah()
 	{
 		
-		$this->load->view('info_rumah');
+		$this->load->view('pages/umum/info_rumah');
 	}
 	public function sebaran($kodeWilayah = '33')
 	{
@@ -68,30 +68,30 @@ class Umum extends MY_Controller {
 			
 		  
         }
-		$data['content'] = $this->load->view('sebaran', $datacontent, true);
-		$this->load->view('index',$data);
+		$data['content'] = $this->load->view('pages/data_spasial/sebaran', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 	}
 	public function aduan()
 	{
 		
 		$datacontent['judul'] ='';
-		$data['content'] = $this->load->view('aduan', $datacontent, true);
-		$this->load->view('index',$data);
+		$data['content'] = $this->load->view('pages/umum/aduan', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 	}
     public function form_aduan()
 	{
 		
 		$datacontent['judul'] ='';
-		$data['content'] = $this->load->view('form_aduan', $datacontent, true);
-		$this->load->view('index',$data);
+		$data['content'] = $this->load->view('pages/umum/form_aduan', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 	}
 	public function forum()
 	{
 		
 		$datacontent['judul']='Forum Diskusi';
 		$datacontent['diskusi'] = $this->Forum_model->get_all_diskusi();
-		$data['content'] = $this->load->view('forum', $datacontent, true);
-		$this->load->view('index',$data);
+		$data['content'] = $this->load->view('pages/umum/forum', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 	}
 	public function tambah_aksi() {
         $data = [
@@ -109,8 +109,8 @@ class Umum extends MY_Controller {
         if(empty($datacontent['topik'])) { show_404(); }
         
         $datacontent['komentar'] = $this->Forum_model->get_komentar_by_diskusi($id);
-        $data['content'] = $this->load->view('detail', $datacontent, true);
-		$this->load->view('index',$data);
+        $data['content'] = $this->load->view('pages/perumahan/detail', $datacontent, true);
+		$this->load->view('layouts/main',$data);
     }
 	public function pengembang() {
     // URL yang Anda temukan
@@ -145,16 +145,16 @@ class Umum extends MY_Controller {
     $developers = array_map(function($item) {
         return [
             'nama_perumahan' => $item['namaPerumahan'] ?? '-',
-            'pengembang'     => $item['pengembang']['nama'] ?? '-',
-            'asosiasi'       => $item['pengembang']['asosiasi'] ?? '-',
+            'pages/pengembang/pengembang'     => $item['pages/pengembang/pengembang']['nama'] ?? '-',
+            'asosiasi'       => $item['pages/pengembang/pengembang']['asosiasi'] ?? '-',
             'kabupaten'      => $item['wilayah']['kabupaten'] ?? '-',
             'telepon'        => $item['kantorPemasaran'][0]['noTelp'] ?? '-',
             'email'          => $item['kantorPemasaran'][0]['email'] ?? '-'
         ];
     }, $items);
 		$datacontent['developers'] = $developers;
-    	$data['content'] = $this->load->view('list_pengembang', $datacontent, true);
-		$this->load->view('index',$data);
+    	$data['content'] = $this->load->view('pages/pengembang/list_pengembang', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 }
 
     /**

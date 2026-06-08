@@ -46,7 +46,7 @@ class Auth extends MY_Controller {
         }
 
         $data = ['recaptcha_site_key' => $this->recaptcha_site_key];
-        $this->load->view('auth/login', $data);
+        $this->load->view('pages/auth/login', $data);
     }
 
     /**
@@ -135,7 +135,7 @@ class Auth extends MY_Controller {
         }
 
         $data = ['recaptcha_site_key' => $this->recaptcha_site_key];
-        $this->load->view('auth/register', $data);
+        $this->load->view('pages/auth/register', $data);
     }
 
     /**
@@ -239,7 +239,7 @@ class Auth extends MY_Controller {
         $data = [
             'user_email' => $this->session->userdata('email'),
         ];
-        $this->load->view('auth/onboarding', $data);
+        $this->load->view('pages/auth/onboarding', $data);
     }
 
     /**
@@ -255,7 +255,7 @@ class Auth extends MY_Controller {
         $role    = html_escape($this->input->post('role'));
 
         // Validate role
-        $valid_roles = ['warga', 'pengembang', 'vendor', 'mahasiswa'];
+        $valid_roles = ['warga', 'pages/pengembang/pengembang', 'vendor', 'mahasiswa'];
         if (!in_array($role, $valid_roles)) {
             $this->session->set_flashdata('error', 'Pilih peran yang valid.');
             redirect('Auth/onboarding');
@@ -297,7 +297,7 @@ class Auth extends MY_Controller {
         ];
 
         // Role-specific fields
-        if ($role === 'pengembang') {
+        if ($role === 'pages/pengembang/pengembang') {
             $profile_data['nama_perusahaan'] = html_escape($this->input->post('nama_perusahaan'));
             $profile_data['alamat_kantor']   = html_escape($this->input->post('alamat_kantor'));
             $profile_data['telp_kantor']     = html_escape($this->input->post('telp_kantor'));
@@ -325,7 +325,7 @@ class Auth extends MY_Controller {
     // =========================================================
 
     public function forgot_password() {
-        $this->load->view('auth/forgot_password');
+        $this->load->view('pages/auth/forgot_password');
     }
 
     // =========================================================
@@ -379,7 +379,7 @@ class Auth extends MY_Controller {
         if (empty($state_from_google) || empty($state_from_session) ||
             !hash_equals($state_from_session, $state_from_google)) {
             echo "<script>
-                window.opener.location.href = '" . base_url('Auth/login') . "';
+                window.opener.location.href = '" . base_url('pages/auth/login') . "';
                 window.close();
             </script>";
             exit;
@@ -431,7 +431,7 @@ class Auth extends MY_Controller {
                         // Check if profile is complete — redirect to new onboarding if not
                         $user_record = $this->auth_model->find_by_id($logged_in_user[0]['id']);
                         if ($user_record && $user_record->profile_completed == 0) {
-                            $redirect_to = 'Auth/onboarding';
+                            $redirect_to = 'pages/auth/onboarding';
                         }
 
                         echo "
@@ -469,7 +469,7 @@ class Auth extends MY_Controller {
         $curr = $this->input->get('curr', TRUE);
         $safe_redirect = $this->sanitize_redirect($curr);
         $this->session->sess_destroy();
-        redirect(!empty($safe_redirect) ? $safe_redirect : 'Auth/login');
+        redirect(!empty($safe_redirect) ? $safe_redirect : 'pages/auth/login');
     }
 
     // =========================================================
@@ -557,7 +557,7 @@ class Auth extends MY_Controller {
 
         // Define upload fields per role
         $upload_fields = [];
-        if ($role === 'pengembang') {
+        if ($role === 'pages/pengembang/pengembang') {
             $upload_fields = ['file_ktp' => 'ktp', 'file_siup' => 'siup_nib'];
         } elseif ($role === 'vendor') {
             $upload_fields = ['file_ktp_vendor' => 'ktp', 'file_siu_vendor' => 'surat_ijin_usaha'];

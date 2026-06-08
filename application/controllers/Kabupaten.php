@@ -17,6 +17,6 @@ class Kabupaten extends MY_Controller {
 	public function tambah_intervensi()
 	{
 		
-		$this->load->view('tambah_intervensi');
+		$this->load->view('pages/data_spasial/tambah_intervensi');
 	}
 }

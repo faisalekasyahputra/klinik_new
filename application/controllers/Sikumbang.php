@@ -49,12 +49,12 @@ class Sikumbang extends MY_Controller {
             // Sesuaikan indeks data berdasarkan response asli API Sikumbang
             $data['results'] = isset($decoded_data['data']) ? $decoded_data['data'] : [];
         }
-		$this->load->view('sikumbang', $data);
+		$this->load->view('pages/data_spasial/sikumbang', $data);
 	}
 
 	public function tambah_intervensi()
 	{
 		
-		$this->load->view('tambah_intervensi');
+		$this->load->view('pages/data_spasial/tambah_intervensi');
 	}
 }
