@@ -1,2 +1,0 @@
-[   65569ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5557/assets/videos/tired-2026-05-28-05-14-06-hd_dd70c1.mp4:0
-[   65571ms] [WARNING] Autoplay failed on playlist switch: NotSupportedError: Failed to load because no supported source was found. @ http://localhost:5557/:366
