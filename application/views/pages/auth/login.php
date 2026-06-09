@@ -7,6 +7,7 @@
     <meta name="csrf-token-hash" content="<?= $this->security->get_csrf_hash(); ?>">
     <title>Masuk — Klinik PKP</title>
     <meta name="description" content="Masuk ke portal layanan perumahan dan kawasan permukiman terpadu Provinsi Jawa Tengah.">
+    <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
     <!-- Styles -->
     <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . time()) ?>">

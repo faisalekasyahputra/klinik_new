@@ -7,6 +7,7 @@
     <meta name="csrf-token-hash" content="<?= $this->security->get_csrf_hash(); ?>">
     <title>Daftar Akun — Klinik PKP</title>
     <meta name="description" content="Buat akun baru untuk mengakses portal layanan perumahan dan kawasan permukiman terpadu.">
+    <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
     <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . time()) ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
