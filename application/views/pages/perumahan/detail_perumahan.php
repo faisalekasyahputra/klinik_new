@@ -42,7 +42,7 @@
                     }
                 ?>
 
-                <div class="col-span-8 relative bg-[#0f2a30] border border-[#d6fb00]/20 rounded-2xl overflow-hidden shadow-xl group h-[400px] md:h-[550px] lg:h-[600px]">
+                <div class="col-span-8 relative bg-[#0f2a30] border border-[#d6fb00]/20 rounded-2xl overflow-hidden shadow-xl group h-[400px] md:h-[550px] lg:h-[600px] animate-pulse">
                     <?php if (!empty($foto1)): 
                          $url_asli = $row['foto'][0]; 
                         
@@ -53,7 +53,7 @@
                         // 3. Bersihkan tanda backslash (\) agar menjadi public/upload/...
                         $path_bersih = stripslashes($path_potong);?>
                         
-                        <img src="<?php echo base_url('Index/buka_foto'); ?>?path=<?= urlencode($path_bersih) ?>" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-105" alt="Foto Utama Perumahan">
+                        <img src="<?php echo base_url('Index/buka_foto'); ?>?path=<?= urlencode($path_bersih) ?>" class="absolute inset-0 w-full h-full object-cover transition-all duration-700 hover:scale-105 opacity-0" alt="Foto Utama Perumahan" loading="lazy" onload="this.parentElement.classList.remove('animate-pulse'); this.classList.remove('opacity-0');">
                     <?php else: ?>
                         <div class="absolute inset-0 w-full h-full flex flex-col items-center justify-center text-zinc-600 bg-[#0f2a30]">
                             <i class="fa-regular fa-image text-4xl mb-2"></i>
@@ -70,7 +70,7 @@
 
                 <div class="col-span-4 grid grid-rows-2 gap-3 h-[400px] md:h-[550px] lg:h-[600px]">
                     
-                    <div class="relative bg-[#0f2a30] border border-[#d6fb00]/20 rounded-2xl overflow-hidden shadow-xl h-full w-full">
+                    <div class="relative bg-[#0f2a30] border border-[#d6fb00]/20 rounded-2xl overflow-hidden shadow-xl h-full w-full animate-pulse">
                         <?php if (!empty($foto2)): 
                             $url_asli = $row['foto'][1]; 
                             
@@ -80,7 +80,7 @@
                             
                             // 3. Bersihkan tanda backslash (\) agar menjadi public/upload/...
                             $path_bersih = stripslashes($path_potong);?>
-                            <img src="<?php echo base_url('Index/buka_foto'); ?>?path=<?= urlencode($path_bersih) ?>" class="absolute inset-0 w-full h-full object-cover" alt="Foto Unit Dalam">
+                            <img src="<?php echo base_url('Index/buka_foto'); ?>?path=<?= urlencode($path_bersih) ?>" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 opacity-0" alt="Foto Unit Dalam" loading="lazy" onload="this.parentElement.classList.remove('animate-pulse'); this.classList.remove('opacity-0');">
                         <?php else: ?>
                             <div class="absolute inset-0 w-full h-full flex flex-col items-center justify-center text-zinc-600 bg-[#0f2a30]">
                                 <i class="fa-regular fa-image text-2xl mb-1"></i>
@@ -89,7 +89,7 @@
                         <?php endif; ?>
                     </div>
 
-                    <div class="relative bg-[#0f2a30] border border-[#d6fb00]/20 rounded-2xl overflow-hidden shadow-xl h-full w-full">
+                    <div class="relative bg-[#0f2a30] border border-[#d6fb00]/20 rounded-2xl overflow-hidden shadow-xl h-full w-full animate-pulse">
                         <?php if (!empty($foto3)): 
                             $url_asli = $row['foto'][2]; 
                             
@@ -100,7 +100,7 @@
                             // 3. Bersihkan tanda backslash (\) agar menjadi public/upload/...
                             $path_bersih = stripslashes($path_potong);
                             ?>
-                            <img src="<?php echo base_url('Index/buka_foto'); ?>?path=<?= urlencode($path_bersih) ?>" class="absolute inset-0 w-full h-full object-cover" alt="Foto Fasilitas">
+                            <img src="<?php echo base_url('Index/buka_foto'); ?>?path=<?= urlencode($path_bersih) ?>" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 opacity-0" alt="Foto Fasilitas" loading="lazy" onload="this.parentElement.classList.remove('animate-pulse'); this.classList.remove('opacity-0');">
                         <?php else: ?>
                             <div class="absolute inset-0 w-full h-full flex flex-col items-center justify-center text-zinc-600 bg-[#0f2a30]">
                                 <i class="fa-regular fa-image text-2xl mb-1"></i>
@@ -124,7 +124,7 @@
 
             <div class="lg:col-span-5 flex flex-col justify-center space-y-4">
                 <span class="text-[#d6fb00] text-xs font-bold uppercase tracking-widest flex items-center gap-1.5">
-                    Unit Terverifikasi <i class="fa-solid fa-circle-check text-sm"></i>
+                    Unit Terverifikasi <img src="<?= base_url('assets/img/icon-verified.svg') ?>" alt="Verified" class="inline-block w-4 h-4" style="filter: brightness(0) saturate(100%) invert(89%) sepia(55%) saturate(1000%) hue-rotate(20deg) brightness(105%) contrast(104%);">
                 </span>
                 <h1 class="text-3xl md:text-4xl font-black text-white tracking-tighter font-jakarta">
                     <?= isset($row['namaPerumahan']) ? htmlspecialchars($row['namaPerumahan']) : 'Nama Perumahan Tidak Tersedia' ?>
@@ -311,7 +311,7 @@
                     <i class="fa-solid fa-image text-[#d6fb00]"></i> Siteplan Perumahan
                 </h3>
                 
-                <div class="w-full min-h-[350px] md:h-[500px] bg-[#0a1a1f] border border-[#d6fb00]/20 rounded-xl overflow-hidden flex items-center justify-center relative group">
+                <div class="w-full min-h-[350px] md:h-[500px] bg-[#0a1a1f] border border-[#d6fb00]/20 rounded-xl overflow-hidden flex items-center justify-center relative group animate-pulse">
                     <?php  $url_asli = $row['siteplan']; 
                             
                             // 2. Cari posisi kata "public" dan potong stringnya
@@ -321,8 +321,8 @@
                             // 3. Bersihkan tanda backslash (\) agar menjadi public/upload/...
                             $path_bersih = stripslashes($path_potong);?>
                     <img src="<?php echo base_url('Index/buka_foto'); ?>?path=<?= urlencode($path_bersih) ?>" 
-                        class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-[1.01]" 
-                        alt="Foto Unit Perumahan">
+                        class="w-full h-full object-contain transition-all duration-500 group-hover:scale-[1.01] opacity-0" 
+                        alt="Foto Unit Perumahan" loading="lazy" onload="this.parentElement.classList.remove('animate-pulse'); this.classList.remove('opacity-0');">
                         
                     <div class="absolute bottom-4 left-4 bg-black/70 backdrop-blur-md border border-[#d6fb00]/20 px-3 py-1.5 rounded-lg text-[10px] text-zinc-400 pointer-events-none">
                         <i class="fa-solid fa-camera mr-1 text-[#d6fb00]"></i> Tampilan Unit Terkait
@@ -378,8 +378,8 @@
         L.marker([lat, lng], { icon: amberIcon }).addTo(map)
             .bindPopup(`<div class="text-[#0a1a1f] font-sans p-1 min-w-[180px]">
                             <b class="text-xs font-black block text-zinc-900 leading-tight mb-0.5">${namaPerumahan}</b>
-                            <span class="text-[10px] text-emerald-600 font-bold block mb-3">
-                                <i class="fa-solid fa-circle-check text-[9px]"></i> Unit Lokasi Terverifikasi
+                            <span class="text-[10px] text-emerald-600 font-bold block mb-3 flex items-center gap-1">
+                                <img src="<?= base_url('assets/img/icon-verified.svg') ?>" alt="Verified" class="inline-block w-3 h-3" style="filter: brightness(0) saturate(100%) invert(56%) sepia(79%) saturate(400%) hue-rotate(110deg) brightness(95%) contrast(92%);"> Unit Lokasi Terverifikasi
                             </span>
                             
                             <a href="${googleMapsUrl}" target="_blank" class="block text-center bg-[#d6fb00] hover:bg-[#c2e600] text-[#0a1a1f] font-black text-[10px] uppercase tracking-wider py-2 px-3 rounded-md shadow transition-colors no-underline decoration-none">

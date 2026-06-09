@@ -140,24 +140,39 @@ class Index extends MY_Controller {
 		if ($idLokasi === NULL) {
             redirect('layouts/main');
         }
-		$full_url = "https://sikumbang.tapera.go.id/lokasi-perumahan/" . $idLokasi . "/json";
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $full_url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-		curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0'); 
-		$response = curl_exec($ch);
-		$err = curl_error($ch);
-		curl_close($ch);
+		$cache_file = APPPATH . 'cache/sikumbang_detail_' . $idLokasi . '.json';
+		$cache_time = 86400; // 24 jam cache
+		$response = null;
+		$err = false;
 
-		// 4. Jika cURL error atau API tidak merespon, tampilkan halaman 404
-		if ($err || !$response) {
+		// 1. Cek apakah ada cache yang valid
+		if (file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
+			$response = file_get_contents($cache_file);
+		} else {
+			// 2. Jika tidak ada cache, fetch dari API
+			$full_url = "https://sikumbang.tapera.go.id/lokasi-perumahan/" . $idLokasi . "/json";
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, $full_url);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0'); 
+			$response = curl_exec($ch);
+			$err = curl_error($ch);
+			curl_close($ch);
+
+			// 3. Simpan cache jika berhasil
+			if (!$err && $response) {
+				@file_put_contents($cache_file, $response);
+			}
+		}
+
+		// 4. Jika error / kosong
+		if ($err || empty($response)) {
 			show_404();
 		}
-		$decoded_data = json_decode($response, true);
 
-    // Periksa apakah response data detail berhasil didecode dengan benar
+		$decoded_data = json_decode($response, true);
 		if (empty($decoded_data)) {
 			show_404();
 		}

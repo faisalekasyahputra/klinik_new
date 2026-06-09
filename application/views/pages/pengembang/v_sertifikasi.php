@@ -27,7 +27,7 @@
                 </span>
             <?php elseif($pendaftar->status_verifikasi == 'Diterima'): ?>
                 <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-                    <i class="fa-solid fa-circle-check text-xs"></i> Verified / Lolos
+                    <img src="<?= base_url('assets/img/icon-verified.svg') ?>" alt="Verified" class="w-3.5 h-3.5" style="filter: brightness(0) saturate(100%) invert(65%) sepia(60%) saturate(500%) hue-rotate(110deg) brightness(95%) contrast(90%);"> Verified / Lolos
                 </span>
             <?php else: ?>
                 <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-xs uppercase tracking-wider">
