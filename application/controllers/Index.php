@@ -163,7 +163,8 @@ class Index extends MY_Controller {
 		}
 
     // 6. Masukkan hasil decode langsung ke index 'row' dalam $datacontent
-   		$datacontent['row'] = $decoded_data['pages/perumahan/detail'];
+   		$datacontent['row'] = $decoded_data['detail'];
+		$datacontent['bangunan'] = isset($decoded_data['bangunan']) ? $decoded_data['bangunan'] : [];
 		$datacontent['judul'] ='';
 		$data['content'] = $this->load->view('pages/perumahan/detail_perumahan', $datacontent, true);
 		$this->load->view('layouts/main',$data);
