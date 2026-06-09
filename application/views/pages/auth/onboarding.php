@@ -58,9 +58,9 @@
             </div>
 
             <!-- Welcome -->
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.25rem;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:0.25rem;">
                 <h2 class="auth-heading" style="margin:0;">Lengkapi Profil</h2>
-                <span style="font-size:1.5rem;">📋</span>
+                <span style="font-size:1.5rem; color:var(--auth-primary);"><i class="fa-solid fa-address-card"></i></span>
             </div>
             <p class="auth-subheading">
                 Halo, <strong><?= isset($user_email) ? htmlspecialchars($user_email) : '' ?></strong>!
@@ -85,28 +85,28 @@
                     <!-- Warga -->
                     <div class="auth-role-card" :class="{ 'selected': role === 'warga' }" @click="selectRole('warga')">
                         <input type="radio" name="role" value="warga" x-model="role" required>
-                        <div class="auth-role-card__icon">🏠</div>
+                        <div class="auth-role-card__icon" style="color:#10b981;"><i class="fa-solid fa-house-user"></i></div>
                         <div class="auth-role-card__title">Warga</div>
                         <div class="auth-role-card__desc">Pencari Rumah</div>
                     </div>
                     <!-- Pengembang -->
                     <div class="auth-role-card" :class="{ 'selected': role === 'pengembang' }" @click="selectRole('pengembang')">
                         <input type="radio" name="role" value="pengembang" x-model="role">
-                        <div class="auth-role-card__icon">🏗️</div>
+                        <div class="auth-role-card__icon" style="color:#f59e0b;"><i class="fa-solid fa-helmet-safety"></i></div>
                         <div class="auth-role-card__title">Pengembang</div>
                         <div class="auth-role-card__desc">Developer Perumahan</div>
                     </div>
                     <!-- Vendor -->
                     <div class="auth-role-card" :class="{ 'selected': role === 'vendor' }" @click="selectRole('vendor')">
                         <input type="radio" name="role" value="vendor" x-model="role">
-                        <div class="auth-role-card__icon">🏪</div>
+                        <div class="auth-role-card__icon" style="color:#3b82f6;"><i class="fa-solid fa-store"></i></div>
                         <div class="auth-role-card__title">Vendor</div>
                         <div class="auth-role-card__desc">Supplier / Jasa</div>
                     </div>
                     <!-- Mahasiswa -->
                     <div class="auth-role-card" :class="{ 'selected': role === 'mahasiswa' }" @click="selectRole('mahasiswa')">
                         <input type="radio" name="role" value="mahasiswa" x-model="role">
-                        <div class="auth-role-card__icon">🎓</div>
+                        <div class="auth-role-card__icon" style="color:#8b5cf6;"><i class="fa-solid fa-user-graduate"></i></div>
                         <div class="auth-role-card__title">Mahasiswa</div>
                         <div class="auth-role-card__desc">Magang / Penelitian</div>
                     </div>
@@ -118,8 +118,17 @@
                         <i class="fa-solid fa-user"></i> Data Pribadi
                     </div>
 
+                    <!-- Username (Tampil di Forum) -->
+                    <label class="auth-label" for="username">Username (Tampil di Forum) <span style="color:var(--auth-red)">*</span></label>
+                    <div class="auth-input-group">
+                        <input type="text" id="username" name="username" class="auth-input"
+                               placeholder="Nama singkat tanpa spasi, cth: budi_santoso" :required="role !== ''"
+                               maxlength="30" pattern="^\S+$" oninput="this.value = this.value.replace(/\s/g, '').toLowerCase()">
+                        <i class="fa-solid fa-at auth-input-icon"></i>
+                    </div>
+
                     <!-- Nama Lengkap -->
-                    <label class="auth-label" for="nama_lengkap">Nama Lengkap <span style="color:var(--auth-red)">*</span></label>
+                    <label class="auth-label" for="nama_lengkap">Nama Lengkap Sesuai Identitas <span style="color:var(--auth-red)">*</span></label>
                     <div class="auth-input-group">
                         <input type="text" id="nama_lengkap" name="nama_lengkap" class="auth-input"
                                placeholder="Masukkan nama sesuai KTP" :required="role !== ''">
@@ -153,6 +162,55 @@
                         <i class="fa-solid fa-phone auth-input-icon"></i>
                     </div>
                 </div>
+
+                <!-- ===== PASSWORD FIELDS (Google users only) ===== -->
+                <?php if (!empty($needs_password)): ?>
+                <div class="auth-dynamic-form" :class="{ 'visible': role !== '' }">
+                    <div class="auth-section-title" style="color:#f59e0b;">
+                        <i class="fa-solid fa-key"></i> Buat Password
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--auth-gray-400); margin: -0.5rem 0 1rem; line-height: 1.5;">
+                        Karena Anda mendaftar melalui Google, buat password agar Anda juga bisa login dengan email dan password.
+                    </p>
+
+                    <label class="auth-label" for="ob_password">Password <span style="color:var(--auth-red)">*</span></label>
+                    <div class="auth-input-group">
+                        <input type="password" id="ob_password" name="password" class="auth-input"
+                               placeholder="Buat password yang kuat" required autocomplete="new-password"
+                               oninput="checkPwStrength(this.value)">
+                        <i class="fa-solid fa-lock auth-input-icon"></i>
+                        <button type="button" class="auth-password-toggle" onclick="togglePw('ob_password', this)" aria-label="Tampilkan password">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+
+                    <!-- Password Strength -->
+                    <div class="auth-strength" id="obStrengthBars" data-level="0">
+                        <div class="auth-strength__bar"></div>
+                        <div class="auth-strength__bar"></div>
+                        <div class="auth-strength__bar"></div>
+                        <div class="auth-strength__bar"></div>
+                    </div>
+                    <div class="auth-strength-label" id="obStrengthLabel" style="color:var(--auth-gray-400);">—</div>
+
+                    <ul class="auth-rules" id="obPasswordRules">
+                        <li id="ob-rule-length"><i class="fa-solid fa-circle"></i> Min. 8 karakter</li>
+                        <li id="ob-rule-upper"><i class="fa-solid fa-circle"></i> 1 huruf besar</li>
+                        <li id="ob-rule-number"><i class="fa-solid fa-circle"></i> 1 angka</li>
+                        <li id="ob-rule-symbol"><i class="fa-solid fa-circle"></i> 1 simbol</li>
+                    </ul>
+
+                    <label class="auth-label" for="ob_password_confirm">Konfirmasi Password <span style="color:var(--auth-red)">*</span></label>
+                    <div class="auth-input-group">
+                        <input type="password" id="ob_password_confirm" name="password_confirm" class="auth-input"
+                               placeholder="Ulangi password" required autocomplete="new-password">
+                        <i class="fa-solid fa-lock auth-input-icon"></i>
+                        <button type="button" class="auth-password-toggle" onclick="togglePw('ob_password_confirm', this)" aria-label="Tampilkan password">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- ===== PENGEMBANG FIELDS ===== -->
                 <div class="auth-dynamic-form" :class="{ 'visible': role === 'pengembang' }">
@@ -291,6 +349,52 @@ function onboardingForm() {
             this.role = r;
         }
     };
+}
+
+function togglePw(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
+
+function checkPwStrength(pw) {
+    const rules = {
+        length: pw.length >= 8,
+        upper:  /[A-Z]/.test(pw),
+        number: /[0-9]/.test(pw),
+        symbol: /[^A-Za-z0-9]/.test(pw)
+    };
+
+    Object.keys(rules).forEach(key => {
+        const el = document.getElementById('ob-rule-' + key);
+        if (!el) return;
+        const icon = el.querySelector('i');
+        if (rules[key]) {
+            el.classList.add('valid');
+            icon.className = 'fa-solid fa-circle-check';
+        } else {
+            el.classList.remove('valid');
+            icon.className = 'fa-solid fa-circle';
+        }
+    });
+
+    const level = Object.values(rules).filter(Boolean).length;
+    const bars = document.getElementById('obStrengthBars');
+    const label = document.getElementById('obStrengthLabel');
+    if (bars) bars.setAttribute('data-level', pw.length === 0 ? '0' : level);
+
+    const labels = ['', 'Lemah', 'Sedang', 'Kuat', 'Sangat Kuat'];
+    const colors = ['', 'var(--auth-red)', '#f97316', 'var(--auth-amber)', 'var(--auth-green)'];
+    if (label) {
+        label.textContent = pw.length === 0 ? '—' : labels[level];
+        label.style.color = pw.length === 0 ? 'var(--auth-gray-400)' : colors[level];
+    }
 }
 </script>
 

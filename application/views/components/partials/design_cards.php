@@ -8,14 +8,14 @@
         background: linear-gradient(to top, rgba(10, 26, 31, 1) 0%, rgba(10, 26, 31, 0.95) 45%, rgba(10, 26, 31, 0.5) 80%, transparent 100%);
     }
     .card-content-wrapper {
-        transform: translateY(144px);
+        transform: translateY(168px);
         transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .group:hover .card-content-wrapper {
         transform: translateY(0);
     }
     .card-details {
-        height: 144px;
+        height: 168px;
         opacity: 0;
         transition: opacity 0.5s ease 0.1s;
     }
@@ -52,7 +52,7 @@
                 </h4>
 
                 <!-- Reveal on hover (Facilities & Buttons) -->
-                <div class="card-details flex flex-col justify-start w-full" style="padding-bottom: 24px;">
+                <div class="card-details flex flex-col justify-start w-full" style="padding-bottom: 48px;">
                     
                     <p class="text-zinc-400 text-[10px] uppercase tracking-widest font-semibold mb-3 border-t border-white/10 pt-3 w-full">
                         FASILITAS

@@ -64,6 +64,10 @@
     --error-soft:   rgba(255, 107, 107, 0.12);
     --info:         #4d96ff;
     --info-soft:    rgba(77, 150, 255, 0.12);
+    --color-semantic-info: #4d96ff;
+    --color-semantic-info-soft: rgba(77, 150, 255, 0.12);
+    --color-semantic-accent: #c084fc;
+    --color-semantic-accent-soft: rgba(192, 132, 252, 0.12);
 
     /* ---- Typography ---- */
     --font-sans:    'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;

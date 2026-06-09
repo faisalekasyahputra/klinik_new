@@ -1,37 +1,63 @@
-# Environment files (contain secrets — NEVER commit)
+# ============================================
+# .gitignore — Klinik PKP (klinik_new)
+# ============================================
+
+# ── Environment & Secrets ──────────────────
 .env
 .env.*
 !.env.example
 
-.DS_Store
+# ── Dependencies ───────────────────────────
+/vendor/
+/node_modules/
+composer.lock
+package-lock.json
 
+# ── CI3 Cache & Logs ──────────────────────
 application/cache/*
 !application/cache/index.html
-
 application/logs/*
 !application/logs/index.html
-
 !application/*/.htaccess
 
-composer.lock
+# ── Uploads & User-Generated Content ──────
+/uploads/
+/assets/cache_foto/
+
+# ── Unused / Archived Assets ──────────────
+/assets/img/_unused/
+
+# ── Migration Scripts (one-time use) ──────
+migrate_*.php
+test_api.php
+clean_bg.py
+
+# ── Build Output ──────────────────────────
+/assets/css/output.css.map
+
+# ── OS Files ──────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ── IDE & Editor ──────────────────────────
+.idea/
+.vscode/
+/nbproject/
+*.sublime-workspace
+*.sublime-project
+*.tmlanguage.cache
+*.tmPreferences.cache
+*.stTheme.cache
+
+# ── Playwright / Testing ──────────────────
+.playwright-mcp/
+/tests/tests/
+/tests/results/
 tests/mocks/database/ci_test.sqlite
 
+# ── CI3 User Guide (not needed) ──────────
 user_guide_src/build/*
 user_guide_src/cilexer/build/*
 user_guide_src/cilexer/dist/*
 user_guide_src/cilexer/pycilexer.egg-info/*
-/vendor/
-
-# IDE Files
-#-------------------------
-/nbproject/
-.idea/*
-
-## Sublime Text cache files
-*.tmlanguage.cache
-*.tmPreferences.cache
-*.stTheme.cache
-*.sublime-workspace
-*.sublime-project
-/tests/tests/
-/tests/results/

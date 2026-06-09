@@ -112,7 +112,7 @@
                 </span>
                 <?php endif; ?>
             </div>
-            <a href="<?= base_url('Index/detail_perum/' . $row['idLokasi']) ?>" class="bg-[#1a3d45] hover:bg-[#d6fb00] text-[#00a3b5] hover:text-[#0a1a1f] w-9 h-9 rounded-lg flex items-center justify-center transition-all flex-shrink-0 group/btn z-10 relative">
+            <a href="<?= base_url('detail_perum/' . $row['idLokasi']) ?>" class="bg-[#1a3d45] hover:bg-[#d6fb00] text-[#00a3b5] hover:text-[#0a1a1f] w-9 h-9 rounded-lg flex items-center justify-center transition-all flex-shrink-0 group/btn z-10 relative">
                 <i class="fa-solid fa-arrow-right text-xs group-hover/btn:-rotate-45 transition-transform duration-300"></i>
             </a>
         </div>

@@ -365,9 +365,111 @@ class Index extends MY_Controller {
 	}
 	public function listkabupaten()
 	{
-		
 		$datacontent['judul']='';
 		$data['content'] = $this->load->view('pages/data_spasial/listkabupaten', $datacontent, true);
+		$this->load->view('layouts/main',$data);
+	}
+
+	public function simulasi_kpr() {
+		$datacontent['judul'] = 'Simulasi KPR';
+		$data['content'] = $this->load->view('pages/kpr/simulasi', $datacontent, true);
+		$this->load->view('layouts/main', $data);
+	}
+
+	public function profil() {
+		$datacontent['judul']='';
+		$data['content'] = $this->load->view('pages/profil/sejarah_visi', $datacontent, true);
+		$this->load->view('layouts/main',$data);
+	}
+
+	public function tugas_pokok() {
+		$datacontent['judul']='';
+		$data['content'] = $this->load->view('pages/profil/tugas_pokok', $datacontent, true);
+		$this->load->view('layouts/main',$data);
+	}
+
+	public function struktur() {
+		$datacontent['judul']='';
+		$data['content'] = $this->load->view('pages/profil/struktur_organisasi', $datacontent, true);
+		$this->load->view('layouts/main',$data);
+	}
+
+	public function materia() {
+		$datacontent['judul']='';
+		$data['content'] = $this->load->view('pages/bank_desain/materia', $datacontent, true);
+		$this->load->view('layouts/main',$data);
+	}
+
+	public function sebaran_rusun() {
+		$datacontent['judul']='';
+		$data['content'] = $this->load->view('pages/spasial/sebaran_rusun', $datacontent, true);
+		$this->load->view('layouts/main',$data);
+	}
+
+	public function profil_kumuh() {
+		$datacontent['judul']='';
+		$data['content'] = $this->load->view('pages/spasial/profil_kumuh', $datacontent, true);
+		$this->load->view('layouts/main',$data);
+	}
+
+	public function sebaran_sdgs() {
+		$datacontent['judul']='';
+		$data['content'] = $this->load->view('pages/spasial/sebaran_sdgs', $datacontent, true);
+		$this->load->view('layouts/main',$data);
+	}
+
+	public function sebaran($kodeWilayah = '33') {
+		$datacontent['judul']='';
+		
+		$keyword = $this->input->get('keyword') ? $this->input->get('keyword') : '';
+        $sort    = $this->input->get('sort') ? $this->input->get('sort') : 'terbaru';
+        $limit   = $this->input->get('limit') ? $this->input->get('limit') :10000;
+
+        $api_url = "https://sikumbang.tapera.go.id/ajax/lokasi/search";
+        
+        $params = [
+            'kodeWilayah' => $kodeWilayah,
+            'keyword'     => $keyword,
+            'searchBy'    => 'nama-perumahan',
+            'sort'        => $sort,
+            'limit'       => $limit,
+        ];
+
+        $full_url = $api_url . '?' . http_build_query($params);
+
+        $cache_file = APPPATH . 'cache/sikumbang_sebaran_jateng.json';
+        $cache_time = 86400; // 24 jam
+        $is_searching = ($keyword != '' || $sort != 'terbaru');
+        $response = null;
+        $err = false;
+
+        if (!$is_searching && file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
+            $response = file_get_contents($cache_file);
+        } else {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $full_url);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0'); 
+
+            $response = curl_exec($ch);
+            $err = curl_error($ch);
+            curl_close($ch);
+
+            if (!$err && !$is_searching && $response) {
+                @file_put_contents($cache_file, $response);
+            }
+        }
+
+        if (!$err && $response) {
+            $decoded_data = json_decode($response, true);
+            $datacontent['results'] = isset($decoded_data['data']) ? $decoded_data['data'] : [];
+        } else {
+			$datacontent['results'] = [];
+		}
+
+		$data['content'] = $this->load->view('pages/data_spasial/sebaran', $datacontent, true);
 		$this->load->view('layouts/main',$data);
 	}
 }

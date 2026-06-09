@@ -1,83 +1,99 @@
-<section class="w-full max-w-6xl mx-auto bg-[#0b0c10]/75 border border-zinc-800/50 rounded-[2.5rem] p-6 sm:p-10 md:p-12 backdrop-blur-xl shadow-2xl z-10 relative">
-    
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-3 relative">
-        <div class="hidden sm:block w-36"></div> 
+<section class="w-full  pt-24 pb-16 px-4 sm:px-6 lg:px-8 relative min-h-screen font-outfit">
+    <!-- Background Ornaments -->
+    <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         
-        <div class="text-center">
-            <h2 class="text-2xl sm:text-3xl font-extrabold text-[#d6fb00] tracking-wide uppercase">
-                Daftar Intervensi
-            </h2>
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#d6fb00]/5 blur-[120px] rounded-full"></div>
+    </div>
+
+    <div class="max-w-7xl mx-auto relative z-10">
+        
+        <!-- Breadcrumb -->
+        <div class="mb-10">
+            <nav class="flex text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-widest" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-2">
+                    <li class="inline-flex items-center">
+                        <a href="<?= base_url() ?>" class="hover:text-[#d6fb00] transition-colors"><i class="fa-solid fa-house mr-2"></i>Beranda</a>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <i class="fa-solid fa-chevron-right text-[8px] mx-2"></i>
+                            <span class="text-[#d6fb00]">Kabupaten / Kota</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
         </div>
-        
-        <a href="#" class="bg-[#d6fb00] hover:bg-[#c2e600] text-[#0a1a1f] px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all duration-300 shadow-md hover:shadow-[#d6fb00]/20 active:scale-95">
-            <i class="fa-solid fa-circle-plus text-sm"></i>
-            Tambah Data
-        </a>
-    </div>
 
-    <p class="text-zinc-300 text-xs sm:text-sm font-medium tracking-wide text-center mb-10">
-        Rekapitulasi Program Perumahan Kabupaten/Kota
-    </p>
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">
+            <div class="text-left space-y-4 max-w-2xl">
+                <h2 class="text-3xl sm:text-4xl font-black text-white tracking-tighter font-jakarta">
+                    Daftar <span class="text-[#d6fb00]">Intervensi</span>
+                </h2>
+                <p class="text-zinc-400 text-sm sm:text-base leading-relaxed">
+                    Rekapitulasi Program Perumahan Kabupaten/Kota dan monitoring spasial secara mendetail.
+                </p>
+            </div>
+            <div class="flex-shrink-0">
+                <a href="#" class="btn-primary text-xs px-5 py-3 rounded-xl flex items-center gap-2 shadow-[0_0_15px_rgba(214,251,0,0.3)] hover:shadow-[0_0_25px_rgba(214,251,0,0.5)]">
+                    <i class="fa-solid fa-circle-plus text-sm"></i>
+                    Tambah Data
+                </a>
+            </div>
+        </div>
 
-    <div class="w-full overflow-x-auto rounded-2xl shadow-xl border border-zinc-800/50">
-        <table class="w-full min-w-[700px] border-collapse bg-white text-zinc-900 text-left text-xs sm:text-sm font-semibold">
-            
-            <thead>
-                <tr class="bg-[#24211a] border-b border-zinc-800 text-[#d6fb00] text-[11px] font-bold uppercase tracking-wider">
-                    <th scope="col" class="px-6 py-4">Wilayah</th>
-                    <th scope="col" class="px-6 py-4">Program</th>
-                    <th scope="col" class="px-6 py-4">Unit</th>
-                    <th scope="col" class="px-6 py-4">Anggaran</th>
-                    <th scope="col" class="px-6 py-4">Tahun</th>
-                    <th scope="col" class="px-6 py-4 text-center">Aksi</th>
-                </tr>
-            </thead>
-            
-            <tbody class="divide-y divide-zinc-100">
-                
-                <tr class="hover:bg-zinc-50/80 transition-colors">
-                    <td class="px-6 py-5 font-bold text-zinc-800">Kota Semarang</td>
-                    <td class="px-6 py-5">
-                        <span class="inline-block bg-[#d6fb00]/10 text-[#c2e600] border border-[#d6fb00]/15 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide">
-                            RTLH
-                        </span>
-                    </td>
-                    <td class="px-6 py-5 text-zinc-600 font-medium">25 Unit</td>
-                    <td class="px-6 py-5 text-zinc-600 font-medium">Rp 500.000.000</td>
-                    <td class="px-6 py-5 text-zinc-600 font-medium">2026</td>
-                    <td class="px-6 py-5 text-center">
-                        <div class="flex items-center justify-center gap-2">
-                            <button class="text-zinc-400 hover:text-[#d6fb00] transition-colors"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button class="text-zinc-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash-can"></i></button>
-                        </div>
-                    </td>
-                </tr>
+        <!-- Table Container -->
+        <div class="w-full overflow-hidden rounded-[24px] bg-[#0f2a30] border border-[#d6fb00]/20 shadow-2xl shadow-black/40">
+            <div class="w-full overflow-x-auto">
+                <table class="w-full min-w-[700px] border-collapse text-left text-xs sm:text-sm">
+                    <thead>
+                        <tr class="bg-[#d6fb00]/10 border-b border-[#d6fb00]/20 text-[#ecffb6] text-[11px] font-bold uppercase tracking-widest">
+                            <th scope="col" class="px-6 py-5 whitespace-nowrap">Wilayah</th>
+                            <th scope="col" class="px-6 py-5 whitespace-nowrap">Program</th>
+                            <th scope="col" class="px-6 py-5 whitespace-nowrap">Unit</th>
+                            <th scope="col" class="px-6 py-5 whitespace-nowrap">Anggaran</th>
+                            <th scope="col" class="px-6 py-5 whitespace-nowrap">Tahun</th>
+                            <th scope="col" class="px-6 py-5 whitespace-nowrap text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#d6fb00]/10">
+                        <tr class="hover:bg-[#d6fb00]/5 transition-colors group">
+                            <td class="px-6 py-5 font-bold text-white whitespace-nowrap">Kota Semarang</td>
+                            <td class="px-6 py-5 whitespace-nowrap">
+                                <span class="inline-flex items-center gap-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> RTLH
+                                </span>
+                            </td>
+                            <td class="px-6 py-5 text-zinc-400 font-medium whitespace-nowrap group-hover:text-zinc-300 transition-colors">25 Unit</td>
+                            <td class="px-6 py-5 text-zinc-400 font-medium whitespace-nowrap group-hover:text-zinc-300 transition-colors">Rp 500.000.000</td>
+                            <td class="px-6 py-5 text-zinc-400 font-medium whitespace-nowrap group-hover:text-zinc-300 transition-colors">2026</td>
+                            <td class="px-6 py-5 text-center whitespace-nowrap">
+                                <div class="flex items-center justify-center gap-3">
+                                    <button class="w-8 h-8 rounded-lg bg-[#d6fb00]/10 text-[#d6fb00] hover:bg-[#d6fb00] hover:text-[#0a1a1f] flex items-center justify-center transition-all duration-300"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                                    <button class="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all duration-300"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-[#d6fb00]/5 transition-colors group">
+                            <td class="px-6 py-5 font-bold text-white whitespace-nowrap">Kab. Magelang</td>
+                            <td class="px-6 py-5 whitespace-nowrap">
+                                <span class="inline-flex items-center gap-1.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse"></span> PSU PERUMAHAN
+                                </span>
+                            </td>
+                            <td class="px-6 py-5 text-zinc-400 font-medium whitespace-nowrap group-hover:text-zinc-300 transition-colors">1 Kompleks</td>
+                            <td class="px-6 py-5 text-zinc-400 font-medium whitespace-nowrap group-hover:text-zinc-300 transition-colors">Rp 750.000.000</td>
+                            <td class="px-6 py-5 text-zinc-400 font-medium whitespace-nowrap group-hover:text-zinc-300 transition-colors">2026</td>
+                            <td class="px-6 py-5 text-center whitespace-nowrap">
+                                <div class="flex items-center justify-center gap-3">
+                                    <button class="w-8 h-8 rounded-lg bg-[#d6fb00]/10 text-[#d6fb00] hover:bg-[#d6fb00] hover:text-[#0a1a1f] flex items-center justify-center transition-all duration-300"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                                    <button class="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all duration-300"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-                <tr class="hover:bg-zinc-50/80 transition-colors">
-                    <td class="px-6 py-5 font-bold text-zinc-800">Kab. Magelang</td>
-                    <td class="px-6 py-5">
-                        <span class="inline-block bg-[#d6fb00]/10 text-[#c2e600] border border-[#d6fb00]/15 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide">
-                            PSU PERUMAHAN
-                        </span>
-                    </td>
-                    <td class="px-6 py-5 text-zinc-600 font-medium">1 Kompleks</td>
-                    <td class="px-6 py-5 text-zinc-600 font-medium">Rp 750.000.000</td>
-                    <td class="px-6 py-5 text-zinc-600 font-medium">2026</td>
-                    <td class="px-6 py-5 text-center">
-                        <div class="flex items-center justify-center gap-2">
-                            <button class="text-zinc-400 hover:text-[#d6fb00] transition-colors"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button class="text-zinc-400 hover:text-red-500 transition-colors"><i class="fa-solid fa-trash-can"></i></button>
-                        </div>
-                    </td>
-                </tr>
-
-            </tbody>
-        </table>
-    </div>
-    <div class="flex justify-center mt-12">
-        <a href="<?= base_url() ?>" class="group flex items-center gap-2.5 bg-[#d6fb00]/5 hover:bg-[#d6fb00]/8 border border-[#d6fb00]/20 hover:border-[#d6fb00]/20 px-6 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white transition-all duration-300 shadow-xl backdrop-blur-md">
-            <i class="fa-solid fa-arrow-left transition-transform group-hover:-translate-x-1"></i>
-            <span>Kembali ke Beranda Utama</span>
-        </a>
     </div>
 </section>

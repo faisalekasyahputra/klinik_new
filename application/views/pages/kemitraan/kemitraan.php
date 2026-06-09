@@ -1,66 +1,93 @@
-<section class="w-full max-w-6xl mx-auto bg-[#0b0c10]/75 border border-zinc-800/50 rounded-[2.5rem] p-6 sm:p-10 md:py-14 text-center backdrop-blur-xl shadow-2xl z-10 relative">
-    
-    <h2 class="text-2xl sm:text-3xl font-extrabold text-[#d6fb00] tracking-wide uppercase mb-10 md:mb-12">
-        KKN & Magang
-    </h2>
+<section class="w-full pt-24 pb-16 px-4 sm:px-6 lg:px-8 relative min-h-screen font-outfit">
+    <!-- Background Ornaments -->
+    <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#d6fb00]/5 blur-[120px] rounded-full"></div>
+    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-left">
+    <div class="max-w-7xl mx-auto relative z-10">
         
-        <a href="#" class="group relative bg-[#0f2a30]/80 border border-zinc-800/80 hover:border-[#d6fb00]/20 rounded-2xl p-5 flex items-center justify-between transition-all duration-300 hover:bg-[#0f2a30] hover:shadow-xl min-h-[95px]">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center text-lg flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
-                    <i class="fa-solid fa-graduation-cap"></i>
-                </div>
-                <div>
-                    <h3 class="text-white font-bold text-xs sm:text-sm tracking-wide uppercase leading-snug transition-colors group-hover:text-cyan-400">
-                        KKN Tematik
-                    </h3>
-                </div>
-            </div>
-            <div class="text-zinc-600 group-hover:text-cyan-400 transition-colors pl-2 flex-shrink-0">
-                <i class="fa-solid fa-arrow-right text-xs transition-transform duration-300 group-hover:translate-x-1"></i>
-            </div>
-        </a>
+        <!-- Breadcrumb -->
+        <div class="mb-10">
+            <nav class="flex text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-widest" aria-label="Breadcrumb">
+                <ol class="inline-flex items-center space-x-1 md:space-x-2">
+                    <li class="inline-flex items-center">
+                        <a href="<?= base_url() ?>" class="hover:text-[#d6fb00] transition-colors"><i class="fa-solid fa-house mr-2"></i>Beranda</a>
+                    </li>
+                    <li>
+                        <div class="flex items-center">
+                            <i class="fa-solid fa-chevron-right text-[8px] mx-2"></i>
+                            <span class="text-[#d6fb00]">KKN & Magang</span>
+                        </div>
+                    </li>
+                </ol>
+            </nav>
+        </div>
 
-        <a href="#" class="group relative bg-[#0f2a30]/80 border border-zinc-800/80 hover:border-[#d6fb00]/20 rounded-2xl p-5 flex items-center justify-between transition-all duration-300 hover:bg-[#0f2a30] hover:shadow-xl min-h-[95px]">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center text-lg flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
-                    <i class="fa-solid fa-briefcase"></i>
-                </div>
-                <div>
-                    <h3 class="text-white font-bold text-xs sm:text-sm tracking-wide uppercase leading-snug transition-colors group-hover:text-purple-400">
-                        Magang
-                    </h3>
-                </div>
-            </div>
-            <div class="text-zinc-600 group-hover:text-purple-400 transition-colors pl-2 flex-shrink-0">
-                <i class="fa-solid fa-arrow-right text-xs transition-transform duration-300 group-hover:translate-x-1"></i>
-            </div>
-        </a>
+        <div class="text-left mb-12 space-y-4 max-w-2xl">
+            <h2 class="text-3xl sm:text-4xl font-black text-white tracking-tighter font-jakarta">
+                KKN & <span class="text-[#d6fb00]">Magang</span>
+            </h2>
+            <p class="text-zinc-400 text-sm sm:text-base leading-relaxed">
+                Informasi kemitraan, program tematik perguruan tinggi, dan penerimaan magang.
+            </p>
+        </div>
 
-        <a href="#" target="_blank" class="group relative bg-[#0f2a30]/80 border border-zinc-800/80 hover:border-[#d6fb00]/20 rounded-2xl p-5 flex items-center justify-between transition-all duration-300 hover:bg-[#0f2a30] hover:shadow-xl min-h-[95px]">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-xl bg-[#d6fb00]/10 border border-[#d6fb00]/15 text-[#d6fb00] flex items-center justify-center text-lg flex-shrink-0 transition-transform duration-300 group-hover:scale-105">
-                    <i class="fa-solid fa-circle-info"></i>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <!-- Card 1: KKN Tematik -->
+            <a href="#" class="flex flex-col h-full group">
+                <div class="bg-[#0f2a30] border border-[#d6fb00]/20 group-hover:border-cyan-500/60 flex-1 p-6 rounded-[24px] flex flex-col justify-between group-hover:-translate-y-1 transition-all duration-300 shadow-lg group-hover:shadow-[0_8px_30px_rgba(0,163,181,0.1)]">
+                    <div class="flex items-start gap-4">
+                        <div class="text-cyan-400 shrink-0 pt-0.5 group-hover:scale-110 group-hover:rotate-[-5deg] transition-transform duration-300">
+                            <i class="fa-solid fa-graduation-cap text-[28px]"></i>
+                        </div>
+                        <div class="space-y-1.5 pt-1">
+                            <h4 class="text-white font-bold text-base tracking-tight group-hover:text-cyan-400 transition-colors">KKN Tematik</h4>
+                            <p class="text-zinc-400 text-xs leading-relaxed">Kolaborasi program Kuliah Kerja Nyata tematik dari berbagai perguruan tinggi.</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-end pt-4 mt-auto">
+                        <i class="fa-solid fa-arrow-right text-xs text-zinc-600 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all duration-300"></i>
+                    </div>
                 </div>
-                <div>
-                    <h3 class="text-white font-bold text-xs sm:text-sm tracking-wide uppercase leading-snug transition-colors group-hover:text-[#d6fb00]">
-                        Informasi dan Ketentuan<br>Penerimaan
-                    </h3>
-                </div>
-            </div>
-            <div class="text-zinc-600 group-hover:text-[#d6fb00] transition-colors pl-2 flex-shrink-0">
-                <i class="fa-solid fa-arrow-right text-xs transition-transform duration-300 group-hover:translate-x-1"></i>
-            </div>
-        </a>
+            </a>
 
+            <!-- Card 2: Magang -->
+            <a href="#" class="flex flex-col h-full group">
+                <div class="bg-[#0f2a30] border border-[#d6fb00]/20 group-hover:border-purple-500/60 flex-1 p-6 rounded-[24px] flex flex-col justify-between group-hover:-translate-y-1 transition-all duration-300 shadow-lg group-hover:shadow-[0_8px_30px_rgba(168,85,247,0.1)]">
+                    <div class="flex items-start gap-4">
+                        <div class="text-purple-400 shrink-0 pt-0.5 group-hover:scale-110 group-hover:rotate-[-5deg] transition-transform duration-300">
+                            <i class="fa-solid fa-briefcase text-[28px]"></i>
+                        </div>
+                        <div class="space-y-1.5 pt-1">
+                            <h4 class="text-white font-bold text-base tracking-tight group-hover:text-purple-400 transition-colors">Magang</h4>
+                            <p class="text-zinc-400 text-xs leading-relaxed">Pendaftaran dan informasi kesempatan magang kerja bagi mahasiswa.</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-end pt-4 mt-auto">
+                        <i class="fa-solid fa-arrow-right text-xs text-zinc-600 group-hover:text-purple-400 group-hover:translate-x-1 transition-all duration-300"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Card 3: Informasi dan Ketentuan Penerimaan -->
+            <a href="#" target="_blank" class="flex flex-col h-full group">
+                <div class="bg-[#0f2a30] border border-[#d6fb00]/20 group-hover:border-[#d6fb00]/60 flex-1 p-6 rounded-[24px] flex flex-col justify-between group-hover:-translate-y-1 transition-all duration-300 shadow-lg group-hover:shadow-[0_8px_30px_rgba(214,251,0,0.1)]">
+                    <div class="flex items-start gap-4">
+                        <div class="text-[#d6fb00] shrink-0 pt-0.5 group-hover:scale-110 group-hover:rotate-[-5deg] transition-transform duration-300">
+                            <i class="fa-solid fa-circle-info text-[28px]"></i>
+                        </div>
+                        <div class="space-y-1.5 pt-1">
+                            <h4 class="text-white font-bold text-base tracking-tight group-hover:text-[#d6fb00] transition-colors">Informasi &amp; Ketentuan Penerimaan</h4>
+                            <p class="text-zinc-400 text-xs leading-relaxed">Syarat, ketentuan, dan panduan lengkap proses pendaftaran kemitraan.</p>
+                        </div>
+                    </div>
+                    <div class="flex justify-end pt-4 mt-auto">
+                        <i class="fa-solid fa-arrow-right text-xs text-zinc-600 group-hover:text-[#d6fb00] group-hover:translate-x-1 transition-all duration-300"></i>
+                    </div>
+                </div>
+            </a>
+
+        </div>
     </div>
-
-    <div class="flex justify-center mt-12">
-        <a href="<?= base_url() ?>" class="group flex items-center gap-2.5 bg-[#d6fb00]/5 hover:bg-[#d6fb00]/8 border border-[#d6fb00]/20 hover:border-[#d6fb00]/20 px-6 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white transition-all duration-300 shadow-xl backdrop-blur-md">
-            <i class="fa-solid fa-arrow-left transition-transform group-hover:-translate-x-1"></i>
-            <span>Kembali ke Beranda Utama</span>
-        </a>
-    </div>
-
 </section>

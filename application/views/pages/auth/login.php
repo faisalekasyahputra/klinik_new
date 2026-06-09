@@ -27,14 +27,45 @@
         <div class="auth-left__orb auth-left__orb--1"></div>
         <div class="auth-left__orb auth-left__orb--2"></div>
         <div class="auth-left__orb auth-left__orb--3"></div>
-        <div class="auth-left__pattern"></div>
+        <!-- Batik Kawung Background Pattern -->
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 0; pointer-events: none; opacity: 0.05; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 50%, black 100%), linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%); -webkit-mask-composite: source-in; mask-image: linear-gradient(to bottom, transparent 0%, black 50%, black 100%), linear-gradient(to right, transparent 0%, black 20%, black 80%, transparent 100%); mask-composite: intersect;">
+            <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="batik-kawung-auth" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                  <circle cx="0" cy="0" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+                  <circle cx="100" cy="0" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+                  <circle cx="0" cy="100" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+                  <circle cx="100" cy="100" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+                  <line x1="-15" y1="0" x2="15" y2="0" stroke="#00545f" stroke-width="2"/>
+                  <line x1="0" y1="-15" x2="0" y2="15" stroke="#00545f" stroke-width="2"/>
+                  <circle cx="0" cy="0" r="4.5" fill="#d6fb00"/>
+                  <line x1="85" y1="0" x2="115" y2="0" stroke="#00545f" stroke-width="2"/>
+                  <line x1="100" y1="-15" x2="100" y2="15" stroke="#00545f" stroke-width="2"/>
+                  <circle cx="100" cy="0" r="4.5" fill="#d6fb00"/>
+                  <line x1="-15" y1="100" x2="15" y2="100" stroke="#00545f" stroke-width="2"/>
+                  <line x1="0" y1="85" x2="0" y2="115" stroke="#00545f" stroke-width="2"/>
+                  <circle cx="0" cy="100" r="4.5" fill="#d6fb00"/>
+                  <line x1="85" y1="100" x2="115" y2="100" stroke="#00545f" stroke-width="2"/>
+                  <line x1="100" y1="85" x2="100" y2="115" stroke="#00545f" stroke-width="2"/>
+                  <circle cx="100" cy="100" r="4.5" fill="#d6fb00"/>
+                  <polygon points="50,40 60,50 50,60 40,50" fill="none" stroke="#00a3b5" stroke-width="2"/>
+                  <circle cx="50" cy="50" r="2.5" fill="#ecffb6"/>
+                  <circle cx="50" cy="22" r="2" fill="#00a3b5"/>
+                  <circle cx="50" cy="78" r="2" fill="#00a3b5"/>
+                  <circle cx="22" cy="50" r="2" fill="#00a3b5"/>
+                  <circle cx="78" cy="50" r="2" fill="#00a3b5"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#batik-kawung-auth)" />
+            </svg>
+        </div>
 
         <div class="auth-left__content">
-            <a href="<?= base_url() ?>" class="auth-left__logo" style="text-decoration:none;">
-                <div class="auth-left__logo-icon">
-                    <i class="fa-solid fa-house-chimney"></i>
-                </div>
-                <span class="auth-left__logo-text">Klinik PKP</span>
+            <a href="<?= base_url() ?>" class="auth-left__logo" style="text-decoration:none; display: flex; align-items: center; gap: 0.75rem;">
+                <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" style="height: 2.25rem; width: auto; object-fit: contain;">
+                <span class="auth-left__logo-text" style="font-size: 1.5rem; font-weight: 900; color: #fff;">
+                    Klinik<span style="color: #d6fb00;">PKP</span>
+                </span>
             </a>
             <h1 class="auth-left__tagline">
                 Portal Layanan<br><span>Perumahan</span> Terpadu
@@ -63,11 +94,9 @@
             </a>
 
             <!-- Mobile Logo (hidden on desktop) -->
-            <div class="auth-mobile-logo" style="display:none;">
-                <div class="auth-left__logo-icon" style="width:40px;height:40px;font-size:1rem;">
-                    <i class="fa-solid fa-house-chimney"></i>
-                </div>
-                <span style="font-weight:700;font-size:1.125rem;color:var(--auth-gray-900);">Klinik PKP</span>
+            <div class="auth-mobile-logo" style="display:none; align-items: center; gap: 0.5rem; margin-bottom: 2rem;">
+                <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" style="height: 2rem; width: auto; object-fit: contain;">
+                <span style="font-weight:900; font-size:1.25rem; color:var(--auth-gray-900);">Klinik<span style="color: #0d2228;">PKP</span></span>
             </div>
 
             <h2 class="auth-heading">Selamat Datang 👋</h2>
@@ -97,13 +126,13 @@
             <form action="<?= base_url('Auth/do_login') ?>" method="POST" id="loginForm">
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
-                <!-- Email -->
-                <label class="auth-label" for="login_email">Alamat Email</label>
+                <!-- Email / Username -->
+                <label class="auth-label" for="login_email">Username atau Email</label>
                 <div class="auth-input-group">
-                    <input type="email" id="login_email" name="email" class="auth-input"
-                           placeholder="nama@email.com" required autocomplete="email"
+                    <input type="text" id="login_email" name="email" class="auth-input"
+                           placeholder="Masukkan username atau email" required autocomplete="username"
                            value="<?= set_value('email') ?>">
-                    <i class="fa-solid fa-envelope auth-input-icon"></i>
+                    <i class="fa-solid fa-user auth-input-icon"></i>
                 </div>
 
                 <!-- Password -->

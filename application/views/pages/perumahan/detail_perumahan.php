@@ -1,5 +1,12 @@
-<section class="w-full bg-[#0a1a1f] py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#d6fb00]/5 blur-[120px] rounded-full pointer-events-none"></div>
+<section class="w-full  pt-24 pb-16 px-4 sm:px-6 lg:px-8 relative min-h-screen font-outfit overflow-hidden">
+    <!-- Background Ornaments -->
+    <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <!-- Batik Pattern Overlay -->
+        
+        
+        <!-- Glow -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#d6fb00]/5 blur-[120px] rounded-full pointer-events-none"></div>
+    </div>
 
     <div class="max-w-7xl mx-auto relative z-10">
         
@@ -143,13 +150,68 @@
                         </h3>
                     </div>
                 </div>
+
+                <div class="bg-[#0f2a30] border border-[#d6fb00]/20 p-5 rounded-2xl shadow-xl mt-4 w-full">
+                    <h3 class="text-sm font-bold text-white mb-4 uppercase tracking-widest flex items-center gap-2 border-b border-[#d6fb00]/20 pb-3">
+                        <i class="fa-solid fa-store text-[#d6fb00]"></i> Kantor Pemasaran
+                    </h3>
+
+                    <div class="space-y-4">
+                        <div>
+                            <span class="block text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1"><i class="fa-solid fa-map-location-dot text-zinc-600 mr-1"></i> Lokasi Pemasaran</span>
+                            <p class="text-zinc-400 text-xs leading-relaxed">
+                                <?= !empty($row['kantorPemasaran'][0]['alamat']) ? htmlspecialchars($row['kantorPemasaran'][0]['alamat']) : 'Informasi alamat kantor belum terdata' ?>
+                            </p>
+                        </div>
+
+                        <div>
+                            <span class="block text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1"><i class="fa-solid fa-phone text-zinc-600 mr-1"></i> Kontak Telepon</span>
+                            <p class="text-white text-xs font-bold tracking-wide">
+                                <?= !empty($row['kantorPemasaran'][0]['noTelp']) ? htmlspecialchars($row['kantorPemasaran'][0]['noTelp']) : '-' ?>
+                            </p>
+                        </div>
+
+                        <div>
+                            <span class="block text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1"><i class="fa-solid fa-envelope text-zinc-600 mr-1"></i> Korespondensi Email</span>
+                            <p class="text-zinc-400 text-xs break-all">
+                                <?= !empty($row['kantorPemasaran'][0]['email']) ? htmlspecialchars($row['kantorPemasaran'][0]['email']) : '-' ?>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CTA Buttons -->
+                <div class="mt-4 flex flex-col sm:flex-row items-center gap-3 w-full">
+                    <?php
+                        // Format nomor telepon menjadi nomor WhatsApp (62xxx)
+                        $wa_number = !empty($row['kantorPemasaran'][0]['noTelp']) ? preg_replace('/[^0-9]/', '', $row['kantorPemasaran'][0]['noTelp']) : '';
+                        if (strpos($wa_number, '0') === 0) {
+                            $wa_number = '62' . substr($wa_number, 1);
+                        }
+                    ?>
+                    <?php if(!empty($wa_number)): ?>
+                    <a href="https://wa.me/<?= $wa_number ?>" target="_blank" class="w-full sm:flex-1 bg-[#d6fb00] hover:bg-[#c2e600] text-[#0a1a1f] font-black text-xs uppercase tracking-widest py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(214,251,0,0.3)] transition-all">
+                        <i class="fa-brands fa-whatsapp text-lg"></i> Hubungi via WhatsApp
+                    </a>
+                    <?php else: ?>
+                    <button disabled class="w-full sm:flex-1 bg-zinc-800 text-zinc-500 cursor-not-allowed font-black text-xs uppercase tracking-widest py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 transition-all">
+                        <i class="fa-brands fa-whatsapp text-lg"></i> WhatsApp Tidak Tersedia
+                    </button>
+                    <?php endif; ?>
+                    
+                    <?php if(!empty($row['kantorPemasaran'][0]['email']) && $row['kantorPemasaran'][0]['email'] !== '-'): ?>
+                    <a href="mailto:<?= htmlspecialchars($row['kantorPemasaran'][0]['email']) ?>" class="w-full sm:w-auto flex-none bg-[#0a1a1f] hover:bg-[#1a3a40] text-white border border-[#d6fb00]/30 hover:border-[#d6fb00] font-bold text-lg py-3.5 px-5 rounded-xl flex items-center justify-center transition-all" title="Kirim Email">
+                        <i class="fa-regular fa-envelope"></i>
+                    </a>
+                    <?php endif; ?>
+                </div>
                 
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-8 w-full">
     
-            <div class="lg:col-span-8">
+            <div class="lg:col-span-12">
                 <div class="bg-[#0f2a30] border border-[#d6fb00]/20 p-6 rounded-2xl shadow-xl">
                     <h3 class="text-sm font-bold text-white mb-6 uppercase tracking-widest flex items-center gap-2 border-b border-[#d6fb00]/20 pb-3">
                         <i class="fa-solid fa-circle-info text-[#d6fb00]"></i> Informasi Umum Unit
@@ -182,37 +244,6 @@
                             <i class="fa-solid fa-shower text-zinc-600 mb-1.5 text-base"></i>
                             <span class="block text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Kamar Mandi</span>
                             <span class="text-white font-black text-sm"><?= htmlspecialchars($row['tipeRumah'][0]['kamarMandi'] ?? '0') ?> Ruang</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="lg:col-span-4">
-                <div class="bg-[#0f2a30] border border-[#d6fb00]/20 p-6 rounded-2xl shadow-xl h-full">
-                    <h3 class="text-sm font-bold text-white mb-6 uppercase tracking-widest flex items-center gap-2 border-b border-[#d6fb00]/20 pb-3">
-                        <i class="fa-solid fa-store text-[#d6fb00]"></i> Kantor Pemasaran
-                    </h3>
-
-                    <div class="space-y-5">
-                        <div>
-                            <span class="block text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1"><i class="fa-solid fa-map-location-dot text-zinc-600 mr-1"></i> Lokasi Pemasaran</span>
-                            <p class="text-zinc-400 text-xs leading-relaxed">
-                                <?= !empty($row['kantorPemasaran'][0]['alamat']) ? htmlspecialchars($row['kantorPemasaran'][0]['alamat']) : 'Informasi alamat kantor belum terdata' ?>
-                            </p>
-                        </div>
-
-                        <div>
-                            <span class="block text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1"><i class="fa-solid fa-phone text-zinc-600 mr-1"></i> Kontak Telepon</span>
-                            <p class="text-white text-xs font-bold tracking-wide">
-                                <?= !empty($row['kantorPemasaran'][0]['noTelp']) ? htmlspecialchars($row['kantorPemasaran'][0]['noTelp']) : '-' ?>
-                            </p>
-                        </div>
-
-                        <div>
-                            <span class="block text-[9px] text-zinc-500 font-bold uppercase tracking-widest mb-1"><i class="fa-solid fa-envelope text-zinc-600 mr-1"></i> Korespondensi Email</span>
-                            <p class="text-zinc-400 text-xs break-all">
-                                <?= !empty($row['kantorPemasaran'][0]['email']) ? htmlspecialchars($row['kantorPemasaran'][0]['email']) : '-' ?>
-                            </p>
                         </div>
                     </div>
                 </div>

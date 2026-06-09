@@ -3,7 +3,7 @@
      ============================================================ -->
 <div x-show="mobileMenu" x-cloak x-transition.opacity class="lg:hidden fixed inset-0 bg-[#0a1a1f]/85 backdrop-blur-sm z-40" @click="mobileMenu = false"></div>
 <div x-show="mobileMenu" x-cloak x-transition:enter="transition transform ease-out duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition transform ease-in duration-200" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full"
-     class="lg:hidden fixed top-0 right-0 h-full w-[300px] bg-[#0d2228] border-l border-[#d6fb00]/20 z-50 overflow-y-auto" x-data="{ openLayanan: false, openKpr: false, openDesain: false, openBahan: false, openSpasial: false }">
+     class="lg:hidden fixed top-0 right-0 h-full w-[300px] bg-[#0d2228] border-l border-[#d6fb00]/20 z-50 overflow-y-auto" x-data="{ openLayanan: false, openBankData: false, openKpr: false, openDesain: false, openBahan: false, openSpasial: false }">
     <div class="p-6 space-y-1">
         <div class="flex items-center justify-between mb-8">
             <span class="text-xs font-bold text-zinc-500 uppercase tracking-widest">Menu</span>
@@ -14,14 +14,27 @@
         
         <div class="border-b border-[#d6fb00]/20">
             <button @click="openLayanan = !openLayanan" class="w-full flex justify-between items-center text-zinc-400 py-3 text-sm">
-                <span>Layanan Klinik</span>
+                <span>Layanan</span>
                 <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="openLayanan && 'rotate-180 text-[#d6fb00]'"></i>
             </button>
             <div x-show="openLayanan" x-cloak x-transition class="pl-4 pb-3 space-y-2">
-                <a href="#" class="block text-zinc-500 hover:text-white text-xs py-1">Sikaper</a>
-                <a href="#" class="block text-zinc-500 hover:text-white text-xs py-1">Sikunang</a>
-                <a href="#" class="block text-zinc-500 hover:text-white text-xs py-1">Siperum</a>
-                <a href="#" class="block text-zinc-500 hover:text-white text-xs py-1">Sikumbang</a>
+                <a href="<?= base_url('umum') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">Masyarakat Umum</a>
+                <a href="<?= base_url('pengembang') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">Pengembang</a>
+                <a href="<?= base_url('kemitraan') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">KKN & Magang</a>
+                <a href="<?= base_url('listkabupaten') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">Kabupaten / Kota</a>
+            </div>
+        </div>
+
+        <div class="border-b border-[#d6fb00]/20">
+            <button @click="openBankData = !openBankData" class="w-full flex justify-between items-center text-zinc-400 py-3 text-sm">
+                <span>Bank Data</span>
+                <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="openBankData && 'rotate-180 text-[#d6fb00]'"></i>
+            </button>
+            <div x-show="openBankData" x-cloak x-transition class="pl-4 pb-3 space-y-2">
+                <a href="<?= base_url('Sikaper') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">Sikaper</a>
+                <a href="<?= base_url('Sikunang') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">Sikunang</a>
+                <a href="<?= base_url('Siperum') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">Siperum</a>
+                <a href="<?= base_url('Sikumbang') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">Sikumbang</a>
             </div>
         </div>
 
@@ -63,10 +76,17 @@
 
         <div class="pt-6">
             <?php if ($this->session->userdata('is_logged')): ?>
+                <?php 
+                    $avatar_src = $this->session->userdata('avatar');
+                    if (empty($avatar_src)) {
+                        $fallback_name = urlencode($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
+                        $avatar_src = "https://ui-avatars.com/api/?name={$fallback_name}&background=d6fb00&color=0a1a1f&bold=true";
+                    }
+                ?>
                 <div class="flex items-center gap-3 p-3 bg-[#d6fb00]/5 border border-[#d6fb00]/20 rounded-xl mb-3">
-                    <img src="<?= $this->session->userdata('avatar') ?>" class="w-9 h-9 rounded-lg object-cover ring-1 ring-[#d6fb00]/20">
+                    <img src="<?= $avatar_src ?>" class="w-9 h-9 rounded-lg object-cover ring-1 ring-[#d6fb00]/20">
                     <div>
-                        <p class="text-[#ecffb6] text-xs font-semibold"><?= $this->session->userdata('name') ?></p>
+                        <p class="text-[#ecffb6] text-xs font-semibold"><?= $this->session->userdata('username') ?: $this->session->userdata('name') ?></p>
                         <p class="text-[#5a7a80] text-[10px]"><?= $this->session->userdata('email') ?></p>
                     </div>
                 </div>
@@ -99,7 +119,7 @@
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     Dinas Perumahan Rakyat & Kawasan Permukiman Prov. Jawa Tengah
                 </div>
-                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-5">
+                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-5 leading-[1.1] md:leading-[1.1] tracking-tight">
                     Portal Perumahan<br><span class="text-[#d6fb00]">Terpadu</span> Jawa Tengah
                 </h2>
                 <p class="text-slate-400 text-sm sm:text-base leading-relaxed max-w-lg mb-8">
@@ -109,7 +129,7 @@
                     <a href="#cari-perumahan" class="btn-primary text-xs px-6 py-3.5 rounded-xl flex items-center gap-2">
                         <i class="fa-solid fa-magnifying-glass"></i> Cari Rumah Subsidi
                     </a>
-                    <a href="#layanan-kami" class="btn-secondary text-xs px-6 py-3.5 rounded-xl flex items-center gap-2">
+                    <a href="javascript:void(0)" onclick="document.getElementById('layanan-kami').scrollIntoView({behavior: 'smooth'})" class="btn-secondary text-xs px-6 py-3.5 rounded-xl flex items-center gap-2">
                         <i class="fa-solid fa-layer-group"></i> Lihat Layanan
                     </a>
                 </div>
@@ -197,7 +217,7 @@
                     <span class="text-zinc-500 text-xs">Lokasi</span>
                 </div>
                 <div class="stat-capsule">
-                    <div class="stat-icon bg-purple-500/10 text-purple-400"><i class="fa-solid fa-map"></i></div>
+                    <div class="stat-icon bg-[#c084fc]/10 text-[#c084fc]"><i class="fa-solid fa-map"></i></div>
                     <span class="text-white font-bold">35</span>
                     <span class="text-zinc-500 text-xs">Kab/Kota</span>
                 </div>
@@ -221,7 +241,7 @@
                     Klinik Perumahan &<br>Kawasan <span class="text-[#d6fb00]">Permukiman</span>
                 </h3>
                 <p class="text-slate-400 text-sm leading-relaxed mb-6">
-                    Klinik PKP Balai P3KP Jawa III — Disperakim Provinsi Jawa Tengah hadir sebagai pusat layanan informasi dan konsultasi terpadu untuk pembangunan rumah layak huni. Kami menghubungkan masyarakat, pengembang, dan pemerintah daerah dalam satu platform yang transparan dan akuntabel.
+                    Klinik PKP Disperakim Provinsi Jawa Tengah hadir sebagai pusat layanan informasi dan konsultasi terpadu untuk pembangunan rumah layak huni. Kami menghubungkan masyarakat, pengembang, dan pemerintah daerah dalam satu platform yang transparan dan akuntabel.
                 </p>
                 <p class="text-slate-500 text-sm leading-relaxed mb-8">
                     Melalui integrasi data spasial, sistem informasi perumahan, dan layanan aduan digital, kami berkomitmen memastikan setiap warga Jawa Tengah memiliki akses terhadap hunian yang aman, layak, dan terjangkau.
@@ -415,7 +435,7 @@
         <div class="tl-bento-wrapper">
             <!-- Kiri: Masyarakat Umum (Bento Terbesar) -->
             <div class="tl-bento-half">
-                <a href="<?= base_url('Index/umum') ?>" class="w-full group rounded-3xl p-8 sm:p-12 flex flex-col transition-all duration-500 relative overflow-hidden tl-bento-card-grow" style="background-color: var(--bg-card); min-height: 450px; border: 1px solid rgba(214, 251, 0, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                <a href="<?= base_url('umum') ?>" class="w-full group rounded-3xl p-8 sm:p-12 flex flex-col transition-all duration-500 relative overflow-hidden tl-bento-card-grow" style="background-color: var(--bg-card); min-height: 450px; border: 1px solid rgba(214, 251, 0, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
                     <!-- Large Watermark Icon -->
                     <i class="fa-solid fa-people-group absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 240px; right: -2rem; bottom: -2rem; color: #d6fb00; opacity: 0.05;"></i>
 
@@ -439,7 +459,7 @@
                 <!-- Baris Atas Kanan -->
                 <div class="tl-bento-inner-row">
                     <!-- Pengembang -->
-                    <a href="<?= base_url('Index/pengembang') ?>" class="group rounded-3xl p-8 transition-all duration-500 relative overflow-hidden tl-bento-card-grow" style="background-color: var(--bg-card); border: 1px solid rgba(168, 85, 247, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                    <a href="<?= base_url('pengembang') ?>" class="group rounded-3xl p-8 transition-all duration-500 relative overflow-hidden tl-bento-card-grow" style="background-color: var(--bg-card); border: 1px solid rgba(168, 85, 247, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
                         <!-- Watermark Icon -->
                         <i class="fa-solid fa-city absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 160px; right: -1.5rem; bottom: -1.5rem; color: #c084fc; opacity: 0.05;"></i>
                         
@@ -457,7 +477,7 @@
                     </a>
 
                     <!-- KKN & Magang -->
-                    <a href="<?= base_url('Index/kemitraan') ?>" class="group rounded-3xl p-8 transition-all duration-500 relative overflow-hidden tl-bento-card-grow" style="background-color: var(--bg-card); border: 1px solid rgba(0, 163, 181, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                    <a href="<?= base_url('kemitraan') ?>" class="group rounded-3xl p-8 transition-all duration-500 relative overflow-hidden tl-bento-card-grow" style="background-color: var(--bg-card); border: 1px solid rgba(0, 163, 181, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
                         <!-- Watermark Icon -->
                         <i class="fa-solid fa-user-graduate absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 160px; right: -1.5rem; bottom: -1.5rem; color: #00a3b5; opacity: 0.05;"></i>
 
@@ -476,7 +496,7 @@
                 </div>
 
                 <!-- Baris Bawah Kanan: Kabupaten / Kota -->
-                <a href="<?= base_url('Index/listkabupaten') ?>" class="group rounded-3xl p-8 flex flex-col transition-all duration-500 relative overflow-hidden tl-bento-card-grow" style="background-color: var(--bg-card); border: 1px solid rgba(107, 203, 119, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                <a href="<?= base_url('listkabupaten') ?>" class="group rounded-3xl p-8 flex flex-col transition-all duration-500 relative overflow-hidden tl-bento-card-grow" style="background-color: var(--bg-card); border: 1px solid rgba(107, 203, 119, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
                     <!-- Watermark Icon -->
                     <i class="fa-solid fa-map absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 200px; right: -1.5rem; bottom: -2.5rem; color: #6bcb77; opacity: 0.05;"></i>
 
@@ -819,13 +839,13 @@
         <div class="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-10 gap-4">
             <div>
                 <h3 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-                    Berita & <span class="text-[#00a3b5]">Artikel</span>
+                    Berita & <span class="text-[#d6fb00] drop-shadow-md">Artikel</span>
                 </h3>
-                <p class="text-zinc-500 text-sm mt-2">Informasi terkini seputar perumahan dan permukiman</p>
+                <p class="text-[#8aacb0] text-sm mt-2">Informasi terkini seputar perumahan dan permukiman</p>
             </div>
-            <a href="#" class="group border border-[#d6fb00]/20 hover:border-[#00a3b5]/30 bg-[#d6fb00]/5 px-4 py-2 rounded-full text-xs font-semibold text-[#8aacb0] hover:text-white flex items-center gap-2 transition-all">
+            <a href="<?= base_url('berita') ?>" class="group border border-[#d6fb00]/20 hover:border-[#d6fb00]/50 bg-[#d6fb00]/5 hover:bg-[#d6fb00]/10 px-5 py-2.5 rounded-full text-xs font-bold text-[#ecffb6] flex items-center gap-2.5 transition-all shadow-lg shadow-black/20">
                 Semua Artikel
-                <span class="w-5 h-5 rounded-full bg-[#00a3b5]/20 text-[#00a3b5] group-hover:bg-[#00a3b5] group-hover:text-[#0a1a1f] flex items-center justify-center text-[10px] transition-colors"><i class="fa-solid fa-arrow-right"></i></span>
+                <span class="w-6 h-6 rounded-full bg-[#d6fb00]/20 text-[#d6fb00] group-hover:bg-[#d6fb00] group-hover:text-[#0a1a1f] flex items-center justify-center text-[10px] transition-colors"><i class="fa-solid fa-arrow-right"></i></span>
             </a>
         </div>
 
@@ -928,11 +948,11 @@ const observer = new IntersectionObserver((entries) => {
         if (!entry.isIntersecting) return;
         const id = entry.target.id;
         if (id === 'articles-container' && !lazyState.articles)
-            lazyLoad('articles-container', '<?= base_url("Index/ajax_articles") ?>', 'articles');
+            lazyLoad('articles-container', '<?= base_url("ajax_articles") ?>', 'articles');
         if (id === 'designs-container' && !lazyState.designs)
-            lazyLoad('designs-container', '<?= base_url("Index/ajax_house_designs") ?>', 'designs');
+            lazyLoad('designs-container', '<?= base_url("ajax_house_designs") ?>', 'designs');
         if (id === 'temp_rumah' && !lazyState.perumahan)
-            lazyLoad('temp_rumah', '<?= base_url("Index/ajax_perumahan") ?>', 'perumahan');
+            lazyLoad('temp_rumah', '<?= base_url("ajax_perumahan") ?>', 'perumahan');
     });
 }, { rootMargin: '300px' });
 
@@ -953,7 +973,7 @@ function cari_wil() {
     let isChecked = document.getElementById('status_subsidi').checked;
     let statusRumah = isChecked ? 'subsidi' : 'semua';
     $.ajax({
-        url: '<?= base_url('Index/cari_wil') ?>?kodeWilayah='+kodeWilayah+'&keyword='+keyword+'&sort='+sort+'&status_rumah='+statusRumah,
+        url: '<?= base_url('cari_wil') ?>?kodeWilayah='+kodeWilayah+'&keyword='+keyword+'&sort='+sort+'&status_rumah='+statusRumah,
         success: function(response) { jQuery('#temp_rumah').html(response); }
     });
 }
@@ -969,7 +989,7 @@ function load_more_data() {
     let statusRumah = isChecked ? 'subsidi' : 'semua';
     jQuery('#text-load').text('Sedang Memuat...');
     jQuery.ajax({
-        url: '<?= base_url('Index/load_more') ?>?kodeWilayah='+kodeWilayah+'&keyword='+keyword+'&sort='+sort+'&status_rumah='+statusRumah+'&page='+nextPage,
+        url: '<?= base_url('load_more') ?>?kodeWilayah='+kodeWilayah+'&keyword='+keyword+'&sort='+sort+'&status_rumah='+statusRumah+'&page='+nextPage,
         success: function(response) {
             if (jQuery.trim(response) !== '') {
                 jQuery('#temp_rumah').append(response);

@@ -43,6 +43,18 @@ class Auth_model extends CI_Model {
     }
 
     /**
+     * Find user by email or username.
+     * Returns user row as object or NULL.
+     */
+    public function find_by_login($login_id) {
+        $this->db->group_start();
+        $this->db->where('email', $login_id);
+        $this->db->or_where('username', $login_id);
+        $this->db->group_end();
+        return $this->db->get('users')->row();
+    }
+
+    /**
      * Find user by ID.
      */
     public function find_by_id($id) {

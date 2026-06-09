@@ -25,11 +25,9 @@
         <div class="auth-left__pattern"></div>
 
         <div class="auth-left__content">
-            <a href="<?= base_url() ?>" class="auth-left__logo" style="text-decoration:none;">
-                <div class="auth-left__logo-icon">
-                    <i class="fa-solid fa-house-chimney"></i>
-                </div>
-                <span class="auth-left__logo-text">Klinik PKP</span>
+            <a href="<?= base_url() ?>" class="auth-left__logo" style="text-decoration:none; display:flex; align-items:center; gap:12px;">
+                <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" style="height: 32px; width: auto; object-fit: contain;">
+                <span class="auth-left__logo-text" style="color: #fff; font-weight: 900;">Klinik<span style="color: #d6fb00;">PKP</span></span>
             </a>
             <h1 class="auth-left__tagline">
                 Bergabung &<br>Mulai <span>Akses</span> Layanan
@@ -56,11 +54,9 @@
             </a>
 
             <!-- Mobile Logo -->
-            <div class="auth-mobile-logo" style="display:none;">
-                <div class="auth-left__logo-icon" style="width:40px;height:40px;font-size:1rem;">
-                    <i class="fa-solid fa-house-chimney"></i>
-                </div>
-                <span style="font-weight:700;font-size:1.125rem;color:var(--auth-gray-900);">Klinik PKP</span>
+            <div class="auth-mobile-logo" style="display:flex; align-items:center; gap:10px; margin-bottom: 24px;">
+                <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" style="height: 36px; width: auto; object-fit: contain;">
+                <span style="font-weight:900; font-size:1.25rem; color:#0f2a30;">Klinik<span style="color: #6d8000;">PKP</span></span>
             </div>
 
             <h2 class="auth-heading">Buat Akun Baru</h2>

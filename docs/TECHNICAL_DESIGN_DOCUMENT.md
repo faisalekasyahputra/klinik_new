@@ -1,5 +1,6 @@
 # TECHNICAL DESIGN DOCUMENT (TDD)
 ## Klinik PKP — Arsitektur Backend & Pengembangan Kode (CodeIgniter 3)
+**Terakhir Diperbarui:** 9 Juni 2026
 
 ---
 
@@ -124,15 +125,18 @@ Berikut adalah pemetaan folder final yang bersih untuk proyek `klinik_new`:
 ```
 klinik_new/
 ├── .htaccess                           # Blokir direktori dan filter SQLi/XSS dasar
+├── .env                                # Environment variables (DB, OAuth, Encryption keys)
 ├── index.php                           # Front controller
 ├── composer.json                       # Dependensi package (Dotenv, dll)
+├── tailwind.config.js                  # Konfigurasi Tailwind CSS
 ├── assets/                             # Aset statis frontend
-│   ├── cache_foto/                     # Folder penyimpanan cache gambar Tapera
+│   ├── cache_foto/                     # Cache gambar Tapera (proxy)
 │   ├── css/
 │   ├── js/
 │   └── img/
-├── docs/                               # Dokumen Analisis & Rencana Resmi (NEW)
+├── docs/                               # Dokumen teknis & roadmap
 │   ├── AKUN_LOGIN.md
+│   ├── ANALISIS_DAN_RENCANA_PERBAIKAN.md
 │   ├── DATABASE_DESIGN_DOCUMENT.md
 │   ├── IMPLEMENTATION_ROADMAP.md
 │   ├── PRODUCT REQUIREMENTS DOCUMENT.md
@@ -140,28 +144,53 @@ klinik_new/
 │   └── TECHNICAL_DESIGN_DOCUMENT.md
 ├── application/                        # Kode aplikasi backend
 │   ├── config/
-│   │   ├── config.php                  # Pengaturan CSRF & Sesi
+│   │   ├── config.php                  # CSRF, Sesi, Encryption
 │   │   ├── database.php                # Koneksi DB
-│   │   ├── google.php                  # Kredensial OAuth (Secure Mode)
+│   │   ├── google.php                  # Kredensial OAuth
+│   │   ├── profanity.php               # Daftar kata kasar (filter forum)
 │   │   └── ternak_api.php              # Kredensial API Ternak
 │   ├── core/
-│   │   └── MY_Controller.php           # Base Controller Hierarchy (NEW)
+│   │   └── MY_Controller.php           # Base Controller Hierarchy
 │   ├── controllers/
-│   │   ├── Auth.php                    # Otentikasi Google
+│   │   ├── Auth.php                    # Login, Register, OAuth, Onboarding, Hapus Akun
 │   │   ├── Index.php                   # Portal Utama & AJAX Load More
-│   │   └── Umum.php                    # Forum & Layanan Spasial
+│   │   └── Umum.php                    # Forum, Layanan, Spasial
+│   ├── helpers/
+│   │   └── forum_helper.php            # Helper fungsi forum
 │   ├── libraries/
-│   │   └── Ternak_api.php              # Integrasi API Ternak Web
+│   │   ├── Ternak_api.php              # Integrasi API Ternak Web
+│   │   └── Encryption_lib.php          # AES-256-GCM untuk NIK & Alamat
 │   ├── models/
-│   │   ├── Forum_model.php             # Database forum
-│   │   ├── User_model.php              # Database user Google
+│   │   ├── Forum_model.php             # Database forum (diskusi, komentar, likes)
+│   │   ├── User_model.php              # CRUD user, sinkronisasi, hapus akun
+│   │   ├── Chat_model.php              # Chat rooms & messages
 │   │   └── Buka_peta.php               # Database GIS & Saluran
-│   └── views/                          # Halaman antarmuka
-│       ├── awal.php                    # Beranda utama
-│       ├── detail.php                  # Detail utas forum
-│       ├── registrasi.php              # Form profil registrasi
-│       └── layout/
-│           ├── head.php                # Security headers & assets
-│           ├── nav.php                 # Dynamic navigation
-│           └── footer.php              # Footer layout
+│   └── views/
+│       ├── index.php                   # Master layout
+│       ├── layouts/
+│       │   ├── head.php                # Meta, CSS, Security headers
+│       │   ├── nav.php                 # Navbar (desktop + mobile, avatar fallback)
+│       │   └── footer.php              # Footer layout
+│       └── pages/
+│           ├── home/
+│           │   └── awal.php            # Homepage (hero, layanan, bank desain, dll)
+│           ├── auth/
+│           │   ├── login.php           # Login (email/username + Google)
+│           │   ├── register.php        # Pendaftaran tradisional
+│           │   ├── onboarding.php      # Onboarding (username, password, role, NIK)
+│           │   └── verify_pending.php  # Dummy verifikasi email
+│           ├── pengaturan/
+│           │   └── index.php           # Pengaturan profil + hapus akun
+│           ├── umum/
+│           │   ├── umum.php            # Halaman layanan masyarakat umum
+│           │   └── forum.php           # Forum diskusi komunitas
+│           ├── perumahan/
+│           │   └── detail.php          # Detail perumahan
+│           ├── artikel/
+│           │   └── detail_artikel.php  # Detail berita/artikel
+│           └── data_spasial/
+│               └── sebaran.php         # Peta sebaran GIS
 ```
+
+---
+*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant — 9 Juni 2026.*

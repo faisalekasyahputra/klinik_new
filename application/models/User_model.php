@@ -31,4 +31,56 @@ class User_model extends CI_Model {
             return [$new_user->row_array(),'0'];
         }
     }
+
+    public function update_user($user_id, $data) {
+        $this->db->trans_start();
+        
+        $this->db->where('id', $user_id);
+        $this->db->update('users', $data);
+
+        // Fetch updated user to get the correct display name (username fallback to name)
+        $user = $this->db->get_where('users', ['id' => $user_id])->row_array();
+        $display_name = !empty($user['username']) ? $user['username'] : $user['name'];
+
+        // Sync with forum tables
+        $this->db->where('user_id', $user_id);
+        $this->db->update('tb_diskusi', ['nama_user' => $display_name]);
+
+        $this->db->where('user_id', $user_id);
+        $this->db->update('tb_komentar', ['nama_komentator' => $display_name]);
+
+        $this->db->trans_complete();
+        return $this->db->trans_status();
+    }
+
+    public function delete_user_account($user_id) {
+        $this->db->trans_start();
+
+        // Anonymize forum comments
+        $this->db->where('user_id', $user_id);
+        $this->db->update('tb_komentar', [
+            'user_id' => NULL,
+            'nama_komentator' => 'Akun Dihapus',
+            'role' => 'Warga'
+        ]);
+
+        // Anonymize forum discussions
+        $this->db->where('user_id', $user_id);
+        $this->db->update('tb_diskusi', [
+            'user_id' => NULL,
+            'nama_user' => 'Akun Dihapus'
+        ]);
+
+        // Delete user's likes
+        $this->db->where('user_id', $user_id);
+        $this->db->delete('tb_forum_likes');
+
+        // Finally, delete the user account
+        $this->db->where('id', $user_id);
+        $this->db->delete('users');
+
+        $this->db->trans_complete();
+
+        return $this->db->trans_status();
+    }
 }

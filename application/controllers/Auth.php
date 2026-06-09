@@ -53,12 +53,12 @@ class Auth extends MY_Controller {
      * Process login form (POST)
      */
     public function do_login() {
-        $email    = trim($this->input->post('email', TRUE));
+        $login_id = trim($this->input->post('email', TRUE));
         $password = $this->input->post('password');
 
         // Basic validation
-        if (empty($email) || empty($password)) {
-            $this->session->set_flashdata('error', 'Email dan password wajib diisi.');
+        if (empty($login_id) || empty($password)) {
+            $this->session->set_flashdata('error', 'Email/Username dan password wajib diisi.');
             redirect('Auth/login');
             return;
         }
@@ -74,11 +74,11 @@ class Auth extends MY_Controller {
         }
 
         // Find user
-        $user = $this->auth_model->find_by_email($email);
+        $user = $this->auth_model->find_by_login($login_id);
 
         if (!$user || empty($user->password)) {
             // User not found or no password (Google-only user)
-            $this->session->set_flashdata('error', 'Email atau password salah.');
+            $this->session->set_flashdata('error', 'Akun tidak ditemukan atau password salah.');
             redirect('Auth/login');
             return;
         }
@@ -110,6 +110,7 @@ class Auth extends MY_Controller {
         $session_data = [
             'user_id'   => $user->id,
             'name'      => $user->name,
+            'username'  => $user->username ?? '',
             'email'     => $user->email,
             'avatar'    => $user->avatar,
             'is_logged' => TRUE,
@@ -205,6 +206,7 @@ class Auth extends MY_Controller {
         $session_data = [
             'user_id'   => $user_id,
             'name'      => NULL,
+            'username'  => NULL,
             'email'     => $email,
             'avatar'    => NULL,
             'is_logged' => TRUE,
@@ -212,9 +214,8 @@ class Auth extends MY_Controller {
         $this->session->set_userdata($session_data);
         $this->session->sess_regenerate(TRUE);
 
-        // Redirect to onboarding (mandatory)
-        $this->session->set_flashdata('success', 'Akun berhasil dibuat! Silakan lengkapi profil Anda.');
-        redirect('Auth/onboarding');
+        // Redirect to dummy email verification page
+        redirect('Auth/verify_pending');
     }
 
     // =========================================================
@@ -236,8 +237,13 @@ class Auth extends MY_Controller {
             return;
         }
 
+        // Check if user needs to set a password (Google users have no password)
+        $user = $this->auth_model->find_by_id($this->get_user_id());
+        $needs_password = empty($user->password);
+
         $data = [
-            'user_email' => $this->session->userdata('email'),
+            'user_email'     => $this->session->userdata('email'),
+            'needs_password' => $needs_password,
         ];
         $this->load->view('pages/auth/onboarding', $data);
     }
@@ -263,13 +269,53 @@ class Auth extends MY_Controller {
         }
 
         // Common fields
+        $username  = html_escape($this->input->post('username'));
+        $username  = preg_replace('/\s+/', '', strtolower($username)); // Ensure no spaces
         $nama      = html_escape($this->input->post('nama_lengkap'));
         $nik_raw   = html_escape($this->input->post('nik_identitas'));
         $alamat_raw = html_escape($this->input->post('alamat_domisili'));
         $phone     = html_escape($this->input->post('phone'));
 
-        if (empty($nama) || empty($nik_raw) || empty($alamat_raw) || empty($phone)) {
+        if (empty($username) || empty($nama) || empty($nik_raw) || empty($alamat_raw) || empty($phone)) {
             $this->session->set_flashdata('error', 'Semua field wajib harus diisi.');
+            redirect('Auth/onboarding');
+            return;
+        }
+
+        // Handle password for Google users (no existing password)
+        $user_record = $this->auth_model->find_by_id($user_id);
+        if (empty($user_record->password)) {
+            $password         = $this->input->post('password');
+            $password_confirm  = $this->input->post('password_confirm');
+
+            if (empty($password) || empty($password_confirm)) {
+                $this->session->set_flashdata('error', 'Password wajib diisi untuk mengamankan akun Anda.');
+                redirect('Auth/onboarding');
+                return;
+            }
+
+            if ($password !== $password_confirm) {
+                $this->session->set_flashdata('error', 'Password dan konfirmasi tidak cocok.');
+                redirect('Auth/onboarding');
+                return;
+            }
+
+            if (strlen($password) < 8 || !preg_match('/[A-Z]/', $password) ||
+                !preg_match('/[0-9]/', $password) || !preg_match('/[^A-Za-z0-9]/', $password)) {
+                $this->session->set_flashdata('error', 'Password harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.');
+                redirect('Auth/onboarding');
+                return;
+            }
+
+            // Will be added to profile_data below
+            $password_hash = password_hash($password, PASSWORD_BCRYPT);
+        }
+
+        // Check if username is unique
+        $this->db->where('username', $username);
+        $this->db->where('id !=', $user_id);
+        if ($this->db->count_all_results('users') > 0) {
+            $this->session->set_flashdata('error', 'Username sudah digunakan, silakan pilih yang lain.');
             redirect('Auth/onboarding');
             return;
         }
@@ -287,6 +333,7 @@ class Auth extends MY_Controller {
         $nik_hash         = $this->encryption_lib->deterministic_hash($nik_raw);
 
         $profile_data = [
+            'username'        => $username,
             'name'            => $nama,
             'role'            => $role,
             'nik'             => $nik_encrypted,
@@ -308,6 +355,9 @@ class Auth extends MY_Controller {
         }
 
         // Save profile
+        if (isset($password_hash)) {
+            $profile_data['password'] = $password_hash;
+        }
         $this->auth_model->save_profile($user_id, $profile_data);
 
         // Handle file uploads
@@ -315,6 +365,7 @@ class Auth extends MY_Controller {
 
         // Update session name
         $this->session->set_userdata('name', $nama);
+        $this->session->set_userdata('username', $username);
 
         $this->session->set_flashdata('success', 'Profil berhasil disimpan! Selamat datang di Klinik PKP.');
         redirect('');
@@ -329,7 +380,44 @@ class Auth extends MY_Controller {
     }
 
     // =========================================================
-    // EMAIL VERIFICATION (Placeholder — future implementation)
+    // DUMMY EMAIL VERIFICATION
+    // =========================================================
+
+    /**
+     * Show pending verification page (dummy — auto-verifies after countdown)
+     */
+    public function verify_pending() {
+        if (!$this->is_logged_in()) {
+            redirect('Auth/login');
+            return;
+        }
+
+        $data = [
+            'user_email' => $this->session->userdata('email'),
+        ];
+        $this->load->view('pages/auth/verify_pending', $data);
+    }
+
+    /**
+     * AJAX endpoint — simulate email verification
+     */
+    public function do_verify_email() {
+        if (!$this->is_logged_in()) {
+            echo json_encode(['status' => 'error']);
+            return;
+        }
+
+        $user_id = $this->get_user_id();
+        $this->db->where('id', $user_id);
+        $this->db->update('users', [
+            'email_verified_at' => date('Y-m-d H:i:s'),
+        ]);
+
+        echo json_encode(['status' => 'ok']);
+    }
+
+    // =========================================================
+    // EMAIL VERIFICATION (Token-based — future implementation)
     // =========================================================
 
     public function verify_email($token = '') {
@@ -379,7 +467,7 @@ class Auth extends MY_Controller {
         if (empty($state_from_google) || empty($state_from_session) ||
             !hash_equals($state_from_session, $state_from_google)) {
             echo "<script>
-                window.opener.location.href = '" . base_url('pages/auth/login') . "';
+                window.opener.location.href = '" . base_url('login') . "';
                 window.close();
             </script>";
             exit;
@@ -421,6 +509,7 @@ class Auth extends MY_Controller {
                         $session_data = [
                             'user_id'   => $logged_in_user[0]['id'],
                             'name'      => $logged_in_user[0]['name'],
+                            'username'  => $logged_in_user[0]['username'] ?? '',
                             'email'     => $logged_in_user[0]['email'],
                             'avatar'    => $logged_in_user[0]['avatar'],
                             'is_logged' => TRUE,
@@ -431,7 +520,7 @@ class Auth extends MY_Controller {
                         // Check if profile is complete — redirect to new onboarding if not
                         $user_record = $this->auth_model->find_by_id($logged_in_user[0]['id']);
                         if ($user_record && $user_record->profile_completed == 0) {
-                            $redirect_to = 'pages/auth/onboarding';
+                            $redirect_to = 'onboarding';
                         }
 
                         echo "
@@ -469,7 +558,7 @@ class Auth extends MY_Controller {
         $curr = $this->input->get('curr', TRUE);
         $safe_redirect = $this->sanitize_redirect($curr);
         $this->session->sess_destroy();
-        redirect(!empty($safe_redirect) ? $safe_redirect : 'pages/auth/login');
+        redirect(!empty($safe_redirect) ? $safe_redirect : 'login');
     }
 
     // =========================================================

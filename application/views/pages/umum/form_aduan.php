@@ -109,7 +109,7 @@
 
     </form>
     <div class="flex justify-center mt-12">
-        <a href="<?= base_url('Index/umum') ?>" class="group flex items-center gap-2.5 bg-[#d6fb00]/5 hover:bg-[#d6fb00]/8 border border-[#d6fb00]/20 hover:border-[#d6fb00]/20 px-6 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white transition-all duration-300 shadow-xl backdrop-blur-md">
+        <a href="<?= base_url('umum') ?>" class="group flex items-center gap-2.5 bg-[#d6fb00]/5 hover:bg-[#d6fb00]/8 border border-[#d6fb00]/20 hover:border-[#d6fb00]/20 px-6 py-3 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white transition-all duration-300 shadow-xl backdrop-blur-md">
             <i class="fa-solid fa-arrow-left transition-transform group-hover:-translate-x-1"></i>
             <span>Kembali ke Halmaan Umum</span>
         </a>

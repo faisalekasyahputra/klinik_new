@@ -1,98 +1,112 @@
 # 🔐 Panduan Autentikasi & Akun — Klinik PKP
 ## Target: `c:\xampp\htdocs\klinik_new`
+**Terakhir Diperbarui:** 9 Juni 2026
 
-> **⚠️ INFORMASI PENTING:**  
-> Berbeda dengan sistem pembanding yang menggunakan login email/password lokal, versi `klinik_new` saat ini menggunakan **Google OAuth 2.0** sebagai metode masuk utama (Single Sign-On). Hal ini menyederhanakan akses bagi masyarakat umum dan staf.
-
----
-
-## 🌐 1. Alur Masuk Utama (Google Login Popup Flow)
-
-Otentikasi dilakukan menggunakan jendela popup Google Sign-In yang terintegrasi dengan library Google API di backend.
-
-*   **URL Portal Utama:** `http://localhost/klinik_new/`
-*   **Tombol Login:** Terletak pada bagian kanan navbar (ikon Google).
-*   **Fungsi JavaScript Popup (`loginGooglePopup()`):**
-    ```javascript
-    function loginGooglePopup() {
-        const width = 500;
-        const height = 600;
-        const left = (screen.width / 2) - (width / 2);
-        const top = (screen.height / 2) - (height / 2);
-        const currentPath = window.location.pathname.split('/').slice(2).join('/'); 
-        const url = "<?php echo base_url('Auth/google?from='); ?>" + encodeURIComponent(currentPath);
-        
-        const popup = window.open(
-            url, 
-            "GoogleLoginPopup", 
-            `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes`
-        );
-        if (window.focus) popup.focus();
-    }
-    ```
+> **ℹ️ INFORMASI:**  
+> Sistem `klinik_new` mendukung **autentikasi hibrida** — pengguna dapat mendaftar/masuk menggunakan **email & password tradisional** atau **Google OAuth 2.0 (SSO)**. Kedua metode melewati alur onboarding yang sama.
 
 ---
 
-## 🛠️ 2. Tata Cara Pengujian Akun (Testing & QA)
+## 🌐 1. Alur Pendaftaran & Masuk
 
-Untuk mensimulasikan login di localhost:
+### 1.1 Pendaftaran Tradisional (Email/Password)
+1.  Pengguna mengklik **"Daftar"** di navbar → diarahkan ke `Auth/register`.
+2.  Mengisi: **Nama Lengkap**, **Email**, dan **Password** (dengan indikator kekuatan password).
+3.  Setelah submit, diarahkan ke halaman **Dummy Email Verification** (`verify_pending.php`).
+4.  Klik tombol verifikasi → diarahkan ke **Onboarding** (`Auth/onboarding`).
 
-1.  **Konfigurasi Redirect URI:**
-    Pastikan sub-domain localhost yang kamu gunakan sudah didaftarkan di **Google Cloud Console Credentials** di bawah *Authorized Redirect URIs*:
-    *   `http://localhost/klinik_new/Auth/google_callback`
-2.  **Autentikasi Pertama Kali:**
-    *   Klik tombol **Login dengan Google**.
-    *   Gunakan akun Gmail biasa/uji coba.
-    *   Sistem akan secara otomatis mendeteksi jika email belum terdaftar di tabel `users`.
-3.  **Proses Registrasi Otomatis (Self-Register):**
-    *   Jika email baru pertama kali digunakan, callback di `Auth::google_callback` akan mengalihkan popup ke halaman pengisian profil:
-        *   `Auth/reg_user/<user_id>`
-    *   Pengguna melengkapi data: **Nama Lengkap**, **Kategori Pendaftaran** (Masyarakat Umum, Pengembang, Mahasiswa Magang), **NIK (16 Digit)**, dan **Alamat Domisili**.
-    *   Setelah disimpan, data akan masuk ke database dan status login langsung aktif.
-4.  **Verifikasi Session:**
-    Data session yang disimpan setelah berhasil masuk:
-    *   `user_id` — ID baris pengguna di DB.
-    *   `name` — Nama lengkap dari Google profile / input profil.
-    *   `email` — Alamat Gmail.
-    *   `avatar` — URL foto profil Google.
-    *   `is_logged` — `TRUE`.
+### 1.2 Login Tradisional (Email atau Username)
+1.  Pengguna mengklik **"Masuk"** → diarahkan ke `Auth/login`.
+2.  Mengisi **Email atau Username** + **Password**.
+3.  Jika onboarding belum selesai → diarahkan ke `Auth/onboarding`.
+4.  Jika sudah selesai → redirect ke halaman terakhir.
 
----
+### 1.3 Login Google (SSO Popup)
+1.  Klik ikon/tombol **"Masuk dengan Google"** di halaman login.
+2.  Popup Google Sign-In muncul.
+3.  Setelah otorisasi, callback `Auth/google_callback` memproses data.
+4.  Jika email baru → akun dibuat otomatis (tanpa password), diarahkan ke **Onboarding** dengan flag `needs_password = true`.
+5.  Jika email sudah ada → login langsung, redirect ke halaman asal.
 
-## 👥 3. Struktur Tabel Database Akun (`users`)
+### 1.4 Alur Onboarding (`Auth/onboarding`)
+Semua pengguna baru wajib melengkapi data berikut sebelum akses penuh:
 
-Saat registrasi pertama, sistem menyimpan data ke tabel `users` dengan struktur sebagai berikut:
-
-| Nama Kolom | Tipe Data | Keterangan |
-|---|---|---|
-| `id` | INT (Auto Increment) | Primary Key |
-| `google_id` | VARCHAR(255) | ID Unik Pengguna dari Google |
-| `name` | VARCHAR(255) | Nama Lengkap Pengguna |
-| `email` | VARCHAR(255) | Email Gmail Pengguna (Unique) |
-| `avatar` | VARCHAR(255) | URL Foto Profil dari Akun Google |
-| `nik` | VARCHAR(16) | NIK 16 Digit (Plaintext di database saat ini) |
-| `kategori` | VARCHAR(50) | Kategori akun (Masyarakat Umum, Pengembang, dll.) |
-| `alamat` | TEXT | Alamat domisili lengkap |
-| `updated_at` | DATETIME | Timestamp pembaruan data profil terakhir |
+| Field | Keterangan | Kewajiban |
+|-------|-----------|-----------|
+| **Username** | Ditampilkan di forum. Tanpa spasi, lowercase, max 30 karakter. | Wajib |
+| **Password** | Khusus user Google yang belum set password (`needs_password`). Min 8 karakter. | Kondisional |
+| **Kategori/Role** | Masyarakat Umum, Pengembang, atau Mahasiswa Magang | Wajib |
+| **NIK** | 16 digit, dienkripsi AES-256-GCM, di-hash SHA-256 untuk lookup | Wajib |
+| **Alamat** | Dienkripsi AES-256-GCM | Wajib |
+| **No. WhatsApp** | Opsional | Opsional |
 
 ---
 
-## 🚪 4. Alur Keluar (Logout Flow)
+## 🛠️ 2. Manajemen Profil (Halaman Pengaturan)
 
-Proses logout memotong sesi saat ini dan mengembalikan pengguna ke halaman terakhir yang sedang mereka buka secara mulus.
+*   **URL:** `http://localhost/klinik_new/akun`
+*   **Fitur yang tersedia:**
+    *   Edit **Username** (disinkronkan ke `tb_diskusi.nama_user` dan `tb_komentar.nama_komentator`)
+    *   Edit **Nama Lengkap**
+    *   Edit **No. WhatsApp**
+    *   **Email** bersifat read-only
+    *   **Tombol Logout**
 
-*   **Fungsi JavaScript Logout (`logout()`):**
-    ```javascript
-    function logout() {
-        const currentPath = window.location.pathname.split('/').slice(2).join('/'); 
-        window.location.href = "<?= base_url('Auth/logout') ?>?curr=" + encodeURIComponent(currentPath);
-    }
-    ```
-*   **Method Backend (`Auth::logout()`):**
-    ```php
-    public function logout() {
-        $curr = $_GET['curr'];
-        $this->session->sess_destroy();
-        redirect($curr);
-    }
-    ```
+---
+
+## 🗑️ 3. Penghapusan Akun (2-Langkah)
+
+1.  Klik tombol **"Hapus Akun Secara Permanen"** di zona berbahaya halaman pengaturan.
+2.  Modal konfirmasi muncul — pengguna harus **mengetik username/nama akun** secara manual.
+3.  Setelah pengetikan cocok, tombol konfirmasi aktif.
+4.  Proses backend (`User_model::delete_user_account`):
+    *   Komentar dianonimkan → `nama_komentator = 'Akun Dihapus'`, `user_id = NULL`
+    *   Diskusi dianonimkan → `nama_user = 'Akun Dihapus'`, `user_id = NULL`
+    *   Likes dihapus dari `tb_forum_likes`
+    *   Record user dihapus dari tabel `users`
+    *   Session di-destroy
+
+---
+
+## 👤 4. Struktur Session
+
+Data session yang disimpan setelah login berhasil:
+
+| Key | Tipe | Keterangan |
+|-----|------|-----------|
+| `user_id` | INT | ID baris user di database |
+| `username` | VARCHAR | Username (diprioritaskan untuk display) |
+| `name` | VARCHAR | Nama lengkap |
+| `email` | VARCHAR | Email pengguna |
+| `avatar` | VARCHAR | URL foto profil Google (kosong jika tradisional) |
+| `is_logged` | BOOL | Status login aktif |
+
+> **Catatan:** Jika `avatar` kosong, UI menampilkan placeholder dari `ui-avatars.com` (inisial nama dengan warna tema).
+
+---
+
+## 🚪 5. Alur Keluar (Logout)
+
+*   Tombol logout tersedia di:
+    *   Navbar desktop (halaman pengaturan) → `Auth/logout`
+    *   Mobile menu → `Auth/logout`
+*   Proses: Session di-destroy → redirect ke beranda.
+
+---
+
+## 📁 6. File-File Terkait
+
+| File | Peran |
+|------|-------|
+| `controllers/Auth.php` | Login, register, Google OAuth, onboarding, verifikasi, logout, hapus akun |
+| `models/User_model.php` | CRUD user, sinkronisasi forum, delete account |
+| `views/pages/auth/login.php` | Halaman login (email/username + password + Google) |
+| `views/pages/auth/register.php` | Halaman pendaftaran tradisional |
+| `views/pages/auth/onboarding.php` | Halaman onboarding (username, password, role, NIK, alamat) |
+| `views/pages/auth/verify_pending.php` | Halaman dummy verifikasi email |
+| `views/pages/pengaturan/index.php` | Pengaturan profil + hapus akun |
+| `views/layouts/nav.php` | Navbar dengan avatar fallback |
+| `libraries/Encryption_lib.php` | Enkripsi NIK & Alamat |
+
+---
+*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant — 9 Juni 2026.*

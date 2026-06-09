@@ -1,5 +1,6 @@
 # SECURITY DESIGN DOCUMENT (SDD)
 ## Klinik PKP — Super App Disperakim Provinsi Jawa Tengah
+**Terakhir Diperbarui:** 9 Juni 2026
 
 ---
 
@@ -112,3 +113,27 @@ Keamanan data pribadi kependudukan (L4 - Restricted Data) diatur secara ketat me
         }
     }
     ```
+
+---
+
+## 6. KEAMANAN AUTENTIKASI HIBRIDA
+
+Sejak Juni 2026, sistem mendukung **dua jalur autentikasi**:
+
+### 6.1 Registrasi Tradisional (Email/Password)
+*   Password di-hash menggunakan `password_hash()` (bcrypt, cost default 10+).
+*   Validasi kekuatan password dilakukan di sisi klien (JS) dan server.
+*   Login mendukung input **email atau username**.
+
+### 6.2 Google OAuth SSO
+*   User Google yang baru pertama kali masuk tidak memiliki password.
+*   Flag `needs_password` pada onboarding memaksa mereka set password sebelum akses penuh.
+*   Setelah onboarding, user Google memiliki password dan bisa login tradisional juga.
+
+### 6.3 Penghapusan Akun
+*   Konfirmasi 2-langkah: user wajib mengetik nama akun secara manual.
+*   Data forum dianonimkan (bukan dihapus) agar konteks diskusi tetap utuh.
+*   Session di-destroy setelah penghapusan.
+
+---
+*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant — 9 Juni 2026.*

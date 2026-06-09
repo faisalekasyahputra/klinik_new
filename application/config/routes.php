@@ -59,3 +59,39 @@ $route['register']                 = 'Auth/register';
 $route['forgot-password']          = 'Auth/forgot_password';
 $route['verify/(:any)']            = 'Auth/verify_email/$1';
 $route['onboarding']               = 'Auth/onboarding';
+
+// --- Pengaturan User ---
+$route['akun']                     = 'Pengaturan/index';
+$route['akun/update']              = 'Pengaturan/update_profile';
+$route['akun/delete']              = 'Pengaturan/delete_account';
+
+// --- Clean URLs for Index controller ---
+$route['umum']                     = 'Index/umum';
+$route['detail_perum/(:any)']      = 'Index/detail_perum/$1';
+$route['profil']                   = 'Index/profil';
+$route['tugas_pokok']              = 'Index/tugas_pokok';
+$route['struktur']                 = 'Index/struktur';
+$route['pengembang']               = 'Index/pengembang';
+$route['kemitraan']                = 'Index/kemitraan';
+$route['listkabupaten']            = 'Index/listkabupaten';
+$route['simulasi_kpr']             = 'Index/simulasi_kpr';
+
+// --- Bank Desain & Data Spasial ---
+$route['materia']                  = 'Index/materia';
+$route['sebaran']                  = 'Index/sebaran';
+$route['sebaran_rusun']            = 'Index/sebaran_rusun';
+$route['profil_kumuh']             = 'Index/profil_kumuh';
+$route['sebaran_sdgs']             = 'Index/sebaran_sdgs';
+
+// --- User Profile ---
+$route['pengaturan']               = 'Index/pengaturan';
+
+// --- AJAX Endpoints ---
+$route['ajax_articles']            = 'Index/ajax_articles';
+$route['ajax_house_designs']       = 'Index/ajax_house_designs';
+$route['ajax_perumahan']           = 'Index/ajax_perumahan';
+$route['cari_wil']                 = 'Index/cari_wil';
+$route['load_more']                = 'Index/load_more';
+
+// --- API Integrations ---
+$route['sikaper']                  = 'Sikaper/index';

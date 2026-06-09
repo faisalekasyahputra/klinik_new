@@ -1,19 +1,51 @@
  <!-- ============================================================
      FOOTER
      ============================================================ -->
- <footer class="w-full bg-[#0a1a1f] text-zinc-400 pt-16 pb-6 mt-auto relative z-10">
-    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+ <footer class="w-full bg-[#0a1a1f] text-zinc-400 pt-16 pb-6 mt-auto relative z-10 overflow-hidden">
+    
+    <!-- Batik Kawung Background Pattern with Top Fade Mask -->
+    <div class="absolute inset-0 z-0 pointer-events-none" style="opacity: 0.05; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 60%, black 100%); mask-image: linear-gradient(to bottom, transparent 0%, black 60%, black 100%);">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="batik-kawung-pkp" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+              <circle cx="0" cy="0" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+              <circle cx="100" cy="0" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+              <circle cx="0" cy="100" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+              <circle cx="100" cy="100" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+              <line x1="-15" y1="0" x2="15" y2="0" stroke="#00545f" stroke-width="2"/>
+              <line x1="0" y1="-15" x2="0" y2="15" stroke="#00545f" stroke-width="2"/>
+              <circle cx="0" cy="0" r="4.5" fill="#d6fb00"/>
+              <line x1="85" y1="0" x2="115" y2="0" stroke="#00545f" stroke-width="2"/>
+              <line x1="100" y1="-15" x2="100" y2="15" stroke="#00545f" stroke-width="2"/>
+              <circle cx="100" cy="0" r="4.5" fill="#d6fb00"/>
+              <line x1="-15" y1="100" x2="15" y2="100" stroke="#00545f" stroke-width="2"/>
+              <line x1="0" y1="85" x2="0" y2="115" stroke="#00545f" stroke-width="2"/>
+              <circle cx="0" cy="100" r="4.5" fill="#d6fb00"/>
+              <line x1="85" y1="100" x2="115" y2="100" stroke="#00545f" stroke-width="2"/>
+              <line x1="100" y1="85" x2="100" y2="115" stroke="#00545f" stroke-width="2"/>
+              <circle cx="100" cy="100" r="4.5" fill="#d6fb00"/>
+              <polygon points="50,40 60,50 50,60 40,50" fill="none" stroke="#00a3b5" stroke-width="2"/>
+              <circle cx="50" cy="50" r="2.5" fill="#ecffb6"/>
+              <circle cx="50" cy="22" r="2" fill="#00a3b5"/>
+              <circle cx="50" cy="78" r="2" fill="#00a3b5"/>
+              <circle cx="22" cy="50" r="2" fill="#00a3b5"/>
+              <circle cx="78" cy="50" r="2" fill="#00a3b5"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#batik-kawung-pkp)" />
+        </svg>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-12 pb-12">
             
             <!-- Brand -->
             <div class="md:col-span-5 space-y-5">
                 <div class="flex items-center gap-3">
-                    <div class="bg-[#d6fb00] px-3 py-1.5 rounded-lg text-[#0a1a1f] font-bold text-sm tracking-wide logo-shine">
-                        Klinik<span class="text-[#0a1a1f]/60 font-extrabold">PKP</span>
-                    </div>
+                    <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" class="h-10 w-auto object-contain">
                     <div>
-                        <h5 class="text-xs font-bold tracking-widest text-white uppercase leading-none">DISPERAKIM</h5>
-                        <p class="text-[10px] text-[#d6fb00] font-medium tracking-wider mt-0.5">PROV. JAWA TENGAH</p>
+                        <h5 class="text-sm font-black tracking-tight text-white leading-none">Klinik<span class="text-[#d6fb00]">PKP</span></h5>
+                        <p class="text-[9px] text-[#8aacb0] font-bold tracking-widest uppercase mt-1">Disperakim Prov. Jateng</p>
                     </div>
                 </div>
                 <p class="text-xs text-zinc-500 leading-relaxed max-w-sm">
@@ -40,7 +72,7 @@
                 <div class="space-y-3 text-xs text-zinc-500">
                     <div class="flex items-start gap-3">
                         <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-zinc-600 mt-0.5 shrink-0"><i class="fa-solid fa-location-dot text-[10px]"></i></div>
-                        <p>KLINIK PKP BALAI P3KP JAWA III<br><span class="text-zinc-600">Jl. Madukoro Blok BB, Semarang</span></p>
+                        <p>KLINIK PKP DISPERAKIM<br><span class="text-zinc-600">Jl. Madukoro Blok BB, Semarang</span></p>
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-zinc-600 shrink-0"><i class="fa-solid fa-phone text-[10px]"></i></div>
@@ -61,7 +93,7 @@
 
         <!-- Copyright -->
         <div class="pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-zinc-600 font-medium">
-            <div>&copy; 2026 <span class="text-zinc-500 font-semibold">KLINIK PKP JAWA 3</span>. All Rights Reserved.</div>
+            <div>&copy; 2026 <span class="text-zinc-500 font-semibold">KLINIK PKP JATENG</span>. All Rights Reserved.</div>
             <div class="flex items-center gap-3 text-zinc-500/80">
                 <a href="#" class="hover:text-[#d6fb00] transition-colors">Support</a>
                 <span>•</span>
