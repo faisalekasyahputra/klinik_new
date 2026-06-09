@@ -104,15 +104,28 @@ class Index extends MY_Controller {
 		];
 
 		$full_url = $api_url . '?' . http_build_query($params);
+		
+		$cache_file = APPPATH . 'cache/ajax_perumahan_' . md5($full_url) . '.json';
+		$cache_time = 3600; // 1 jam cache
+		$response = null;
+		
+		if (file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
+			$response = file_get_contents($cache_file);
+		} else {
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, $full_url);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+			$response = curl_exec($ch);
+			curl_close($ch);
+			
+			if ($response) {
+				@file_put_contents($cache_file, $response);
+			}
+		}
 
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $full_url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-		curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-		$response = curl_exec($ch);
-		curl_close($ch);
 		$decoded = json_decode($response, true);
 
 		$datacontent['results'] = isset($decoded['data']) ? $decoded['data'] : [];
@@ -204,15 +217,28 @@ class Index extends MY_Controller {
 		];
 
 		$full_url = $api_url . '?' . http_build_query($params);
+		
+		$cache_file = APPPATH . 'cache/ajax_perumahan_' . md5($full_url) . '.json';
+		$cache_time = 3600; // 1 jam cache
+		$response = null;
 
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $full_url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-		curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-		$response = curl_exec($ch);
-		curl_close($ch);
+		if (file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
+			$response = file_get_contents($cache_file);
+		} else {
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, $full_url);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+			$response = curl_exec($ch);
+			curl_close($ch);
+
+			if ($response) {
+				@file_put_contents($cache_file, $response);
+			}
+		}
+
 		$decoded = json_decode($response, true);
 		$raw_list = isset($decoded['data']) ? $decoded['data'] : [];
 
@@ -261,15 +287,28 @@ class Index extends MY_Controller {
 
 		$full_url = $api_url . '?' . http_build_query($params);
 
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $full_url);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-		curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0'); 
-		$response = curl_exec($ch);
-		$err = curl_error($ch);
-		curl_close($ch);
+		$cache_file = APPPATH . 'cache/ajax_perumahan_' . md5($full_url) . '.json';
+		$cache_time = 3600; // 1 jam cache
+		$response = null;
+		$err = false;
+
+		if (file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
+			$response = file_get_contents($cache_file);
+		} else {
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, $full_url);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0'); 
+			$response = curl_exec($ch);
+			$err = curl_error($ch);
+			curl_close($ch);
+
+			if (!$err && $response) {
+				@file_put_contents($cache_file, $response);
+			}
+		}
 
 		$list_final = [];
 
