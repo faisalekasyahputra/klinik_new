@@ -4,6 +4,24 @@
     <meta name="csrf-token-hash" content="<?= $this->security->get_csrf_hash(); ?>">
     <meta name="description" content="Portal layanan informasi perumahan dan kawasan permukiman terpadu untuk masyarakat Jawa Tengah — Disperakim Provinsi Jawa Tengah">
     <title>Klinik PKP — Disperakim Provinsi Jawa Tengah</title>
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Klinik PKP — Portal Perumahan Terpadu Jawa Tengah">
+    <meta property="og:description" content="Akses informasi rumah subsidi, data spasial permukiman, dan layanan konsultasi dalam satu platform terintegrasi — Disperakim Provinsi Jawa Tengah.">
+    <meta property="og:image" content="<?= base_url('assets/img/og-cover.jpg') ?>">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:url" content="<?= current_url() ?>">
+    <meta property="og:site_name" content="Klinik PKP">
+    <meta property="og:locale" content="id_ID">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Klinik PKP — Portal Perumahan Terpadu Jawa Tengah">
+    <meta name="twitter:description" content="Akses informasi rumah subsidi, data spasial permukiman, dan layanan konsultasi terpadu.">
+    <meta name="twitter:image" content="<?= base_url('assets/img/og-cover.jpg') ?>">
+
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
     <link rel="shortcut icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
