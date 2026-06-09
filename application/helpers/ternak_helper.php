@@ -8,7 +8,7 @@ if ( ! function_exists('api_image_url')) {
     function api_image_url($path) {
         if (empty($path)) {
             // Bisa return placeholder gambar default jika kosong
-            return 'assets/img/default-placeholder.jpg';
+            return 'assets/img/default-placeholder.svg';
         }
         
         // Cek jika path sudah berupa URL HTTP utuh
