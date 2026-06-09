@@ -25,6 +25,17 @@ class Ternak_api {
             return $this->_site_data_cache;
         }
 
+        $cache_file = APPPATH . 'cache/ternak_site_data_' . $this->site_slug . '.json';
+        $cache_time = 600; // 10 menit
+
+        if (file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
+            $data = json_decode(file_get_contents($cache_file), true);
+            if ($data) {
+                $this->_site_data_cache = $data;
+                return $data;
+            }
+        }
+
         $url = $this->api_url . '/public/sites/' . $this->site_slug;
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -36,7 +47,12 @@ class Ternak_api {
         curl_close($ch);
 
         $data = json_decode($response, true);
-        $this->_site_data_cache = $data;
+        
+        if ($data) {
+            @file_put_contents($cache_file, $response);
+            $this->_site_data_cache = $data;
+        }
+        
         return $data;
     }
 
