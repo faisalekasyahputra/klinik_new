@@ -310,4 +310,80 @@ Token CSRF diinjeksikan ke seluruh form POST.
 
 ---
 
-*Changelog ini dibuat otomatis oleh Antigravity AI Coding Assistant — 9 Juni 2026, 12:39 WIB*
+## 🚀 DEPLOYMENT KE PRODUCTION (Hostinger)
+
+**Tanggal:** 9 Juni 2026 — 13:40 WIB  
+**URL Live:** https://palegreen-mink-703421.hostingersite.com/
+
+### Infrastruktur
+| Item | Detail |
+|------|--------|
+| **Hosting** | Hostinger Shared Hosting |
+| **Domain** | `palegreen-mink-703421.hostingersite.com` (temp domain) |
+| **Server** | `us-phx-web563` (Phoenix, US) |
+| **Username** | `u504551489` |
+| **Database** | `u504551489_klinikpkp` (MySQL) |
+| **DB User** | `u504551489_klinikadm` |
+| **PHP** | 8.x |
+| **Deploy Method** | Git Auto-Deploy (GitHub Webhook) |
+
+### Perubahan Config untuk Production
+
+#### `config.php` — base_url dinamis
+```diff
+- $config['base_url'] = 'http://localhost/klinik_new/';
++ $config['base_url'] = getenv('SITE_URL') ?: 'http://localhost/klinik_new/';
+```
+
+#### `database.php` — credentials dari .env
+```diff
+- 'hostname' => 'localhost',
+- 'username' => 'root',
+- 'password' => '',
+- 'database' => 'klinikpkp',
++ 'hostname' => getenv('DB_HOST') ?: 'localhost',
++ 'username' => getenv('DB_USER') ?: 'root',
++ 'password' => getenv('DB_PASS') ?: '',
++ 'database' => getenv('DB_NAME') ?: 'klinikpkp',
+```
+
+#### `schema_klinikpkp.sql` — encoding fix
+```diff
+- Encoding: UTF-16 LE (BOM) — menyebabkan error MySQL import
++ Encoding: UTF-8 tanpa BOM — kompatibel dengan MySQL CLI
+```
+
+### Auto-Deploy Flow
+```
+git push origin main
+        ↓
+GitHub Webhook POST → webhooks.hostinger.com/deploy/0f52d4c...
+        ↓
+Hostinger auto-pull → Site updated!
+```
+
+### File Production Baru
+| File | Fungsi |
+|------|--------|
+| `.env.production` | Template environment production (referensi) |
+| `deploy_build.ps1` | Script PowerShell build ZIP deployment (backup method) |
+
+### Langkah Deploy yang Dilakukan
+1. ✅ Koneksi API Hostinger via Bearer token
+2. ✅ User buat temp domain `palegreen-mink-703421.hostingersite.com` di hPanel
+3. ✅ Database `u504551489_klinikpkp` dibuat via Hostinger API
+4. ✅ Git auto-deploy disetup (GitHub → Hostinger webhook)
+5. ✅ File `.env` dibuat manual di server via SSH
+6. ✅ `composer install --no-dev --optimize-autoloader` (29 dev packages removed)
+7. ✅ Schema SQL diimport (15 tabel) via `mysql` CLI
+8. ✅ Site live — HTTP 200, homepage tampil lengkap
+
+### ⚠️ Post-Deploy TODO
+- [ ] Update Google OAuth redirect URI di Google Cloud Console
+- [ ] Daftarkan domain di Google reCAPTCHA admin
+- [ ] Set environment `CI_ENV=production` di server
+
+---
+
+*Changelog ini dibuat & diperbarui oleh Antigravity AI Coding Assistant — 9 Juni 2026, terakhir update 13:43 WIB*
+
