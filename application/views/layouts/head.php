@@ -8,7 +8,7 @@
     <!-- Open Graph -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="Klinik PKP — Portal Perumahan Terpadu Jawa Tengah">
-    <meta property="og:description" content="Akses informasi rumah subsidi, data spasial permukiman, dan layanan konsultasi dalam satu platform terintegrasi — Disperakim Provinsi Jawa Tengah.">
+    <meta property="og:description" content="Portal informasi rumah subsidi, data spasial, dan konsultasi permukiman terpadu Jawa Tengah.">
     <meta property="og:image" content="<?= base_url('assets/img/og-cover.jpg') ?>">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -19,7 +19,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Klinik PKP — Portal Perumahan Terpadu Jawa Tengah">
-    <meta name="twitter:description" content="Akses informasi rumah subsidi, data spasial permukiman, dan layanan konsultasi terpadu.">
+    <meta name="twitter:description" content="Portal informasi rumah subsidi, data spasial, dan konsultasi permukiman terpadu Jawa Tengah.">
     <meta name="twitter:image" content="<?= base_url('assets/img/og-cover.jpg') ?>">
 
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
