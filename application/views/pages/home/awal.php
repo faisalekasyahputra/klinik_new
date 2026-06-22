@@ -3,76 +3,62 @@
      ============================================================ -->
 <div x-show="mobileMenu" x-cloak x-transition.opacity class="lg:hidden fixed inset-0 bg-[#0a1a1f]/85 backdrop-blur-sm z-40" @click="mobileMenu = false"></div>
 <div x-show="mobileMenu" x-cloak x-transition:enter="transition transform ease-out duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition transform ease-in duration-200" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full"
-     class="lg:hidden fixed top-0 right-0 h-full w-[300px] bg-[#0d2228] border-l border-[#d6fb00]/20 z-50 overflow-y-auto" x-data="{ openLayanan: false, openBankData: false, openKpr: false, openDesain: false, openBahan: false, openSpasial: false }">
+     class="lg:hidden fixed top-0 right-0 h-full w-[300px] bg-[#0d2228] border-l border-[#d6fb00]/20 z-50 overflow-y-auto" x-data="{ openPerumahan: false, openKawasan: false }">
     <div class="p-6 space-y-1">
         <div class="flex items-center justify-between mb-8">
             <span class="text-xs font-bold text-zinc-500 uppercase tracking-widest">Menu</span>
-            <button @click="mobileMenu = false" class="w-8 h-8 flex items-center justify-center rounded-lg bg-[#d6fb00]/8 border border-[#d6fb00]/20 text-zinc-400"><i class="fa-solid fa-xmark text-sm"></i></button>
+            <button @click="mobileMenu = false" class="w-8 h-8 flex items-center justify-center rounded-lg bg-[#d6fb00]/8 border border-[#d6fb00]/20 text-zinc-400 hover:text-[#d6fb00] hover:bg-[#d6fb00]/10 transition-colors"><i class="fa-solid fa-xmark text-sm"></i></button>
         </div>
-        <a href="#" class="block text-white py-3 font-semibold text-sm border-b border-[#d6fb00]/20">Beranda</a>
-        <a href="#" class="block text-zinc-400 py-3 text-sm border-b border-[#d6fb00]/20">Profil</a>
         
+        <a href="<?= base_url() ?>" class="block text-white py-3 font-semibold text-sm border-b border-[#d6fb00]/20" @click="mobileMenu = false">Beranda</a>
+        
+        <a href="#" class="hidden text-zinc-400 py-3 text-sm border-b border-[#d6fb00]/20">Profil</a>
+        
+        <a href="<?= base_url('pengembang') ?>" class="flex items-center gap-2 text-zinc-400 hover:text-white py-3 text-sm border-b border-[#d6fb00]/20" @click="mobileMenu = false">
+            Pengembang <span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-[#d6fb00]/10 text-[#d6fb00] border border-[#d6fb00]/30">SRP2</span>
+        </a>
+
+        <!-- Perumahan -->
         <div class="border-b border-[#d6fb00]/20">
-            <button @click="openLayanan = !openLayanan" class="w-full flex justify-between items-center text-zinc-400 py-3 text-sm">
-                <span>Layanan</span>
-                <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="openLayanan && 'rotate-180 text-[#d6fb00]'"></i>
+            <button @click="openPerumahan = !openPerumahan" class="w-full flex justify-between items-center text-zinc-400 py-3 text-sm hover:text-[#d6fb00] transition-colors">
+                <span>Perumahan</span>
+                <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="openPerumahan && 'rotate-180 text-[#d6fb00]'"></i>
             </button>
-            <div x-show="openLayanan" x-cloak x-transition class="pl-4 pb-3 space-y-2">
-                <a href="<?= base_url('umum') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">Masyarakat Umum</a>
-                <a href="<?= base_url('pengembang') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">Pengembang</a>
-                <a href="<?= base_url('kemitraan') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">KKN & Magang</a>
-                <a href="<?= base_url('listkabupaten') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">Kabupaten / Kota</a>
+            <div x-show="openPerumahan" x-cloak x-transition class="pl-4 pb-3 space-y-2 mt-1">
+                <!-- Etalase Program (Highlighted CTA) -->
+                <a href="#etalase-program" class="flex items-center gap-2 text-[#d6fb00] text-xs py-2 font-bold bg-[#d6fb00]/10 hover:bg-[#d6fb00]/20 px-3 rounded-lg border border-[#d6fb00]/20 transition-colors" @click="mobileMenu = false">
+                    <i class="fa-solid fa-house-chimney-window w-4 text-center"></i> Etalase Program
+                </a>
+                <a href="<?= base_url('simulasi_kpr') ?>" class="flex items-center gap-2 text-zinc-400 hover:text-white text-xs py-1 mt-2" @click="mobileMenu = false">
+                    <i class="fa-solid fa-calculator w-4 text-center opacity-70"></i> Info KPR & Subsidi
+                </a>
+                <a href="#bank-desain" class="flex items-center gap-2 text-zinc-400 hover:text-white text-xs py-1" @click="mobileMenu = false">
+                    <i class="fa-solid fa-pen-ruler w-4 text-center opacity-70"></i> Bank Desain
+                </a>
+                <a href="<?= base_url('Sikumbang') ?>" class="flex items-center gap-2 text-zinc-400 hover:text-white text-xs py-1" @click="mobileMenu = false">
+                    <i class="fa-solid fa-chart-pie w-4 text-center opacity-70"></i> Bank Data Perumahan
+                </a>
             </div>
         </div>
 
+        <!-- Kawasan -->
         <div class="border-b border-[#d6fb00]/20">
-            <button @click="openBankData = !openBankData" class="w-full flex justify-between items-center text-zinc-400 py-3 text-sm">
-                <span>Bank Data</span>
-                <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="openBankData && 'rotate-180 text-[#d6fb00]'"></i>
+            <button @click="openKawasan = !openKawasan" class="w-full flex justify-between items-center text-zinc-400 py-3 text-sm hover:text-[#d6fb00] transition-colors">
+                <span>Kawasan</span>
+                <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="openKawasan && 'rotate-180 text-[#d6fb00]'"></i>
             </button>
-            <div x-show="openBankData" x-cloak x-transition class="pl-4 pb-3 space-y-2">
-                <a href="<?= base_url('Sikaper') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">Sikaper</a>
-                <a href="<?= base_url('Sikunang') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">Sikunang</a>
-                <a href="<?= base_url('Siperum') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">Siperum</a>
-                <a href="<?= base_url('Sikumbang') ?>" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">Sikumbang</a>
+            <div x-show="openKawasan" x-cloak x-transition class="pl-4 pb-3 space-y-2 mt-1">
+                <a href="<?= base_url('sebaran') ?>" class="block text-zinc-400 hover:text-white text-xs py-1" @click="mobileMenu = false">Sebaran RTLH</a>
+                <a href="<?= base_url('sebaran_rusun') ?>" class="block text-zinc-400 hover:text-white text-xs py-1" @click="mobileMenu = false">Sebaran Rusun</a>
+                <a href="<?= base_url('profil_kumuh') ?>" class="block text-zinc-400 hover:text-white text-xs py-1" @click="mobileMenu = false">Profil Kawasan Kumuh</a>
+                <a href="<?= base_url('sebaran_sdgs') ?>" class="block text-zinc-400 hover:text-white text-xs py-1" @click="mobileMenu = false">Sebaran Bantuan SDGS</a>
             </div>
         </div>
 
-        <div class="border-b border-[#d6fb00]/20">
-            <button @click="openKpr = !openKpr" class="w-full flex justify-between items-center text-zinc-400 py-3 text-sm">
-                <span>Info KPR</span>
-                <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="openKpr && 'rotate-180 text-[#d6fb00]'"></i>
-            </button>
-            <div x-show="openKpr" x-cloak x-transition class="pl-4 pb-3 space-y-2">
-                <a href="#" class="block text-zinc-500 hover:text-white text-xs py-1">Simulasi KPR</a>
-                <a href="https://my.pkp.go.id/cekbantuan" target="_blank" class="block text-zinc-500 hover:text-white text-xs py-1">Cek Bantuan <i class="fa-solid fa-arrow-up-right-from-square text-[8px] ml-1"></i></a>
-            </div>
-        </div>
-
-        <div class="border-b border-[#d6fb00]/20">
-            <button @click="openDesain = !openDesain" class="w-full flex justify-between items-center text-zinc-400 py-3 text-sm">
-                <span>Bank Desain</span>
-                <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="openDesain && 'rotate-180 text-[#d6fb00]'"></i>
-            </button>
-            <div x-show="openDesain" x-cloak x-transition class="pl-4 pb-3 space-y-2">
-                <a href="#bank-desain" class="block text-zinc-500 hover:text-white text-xs py-1" @click="mobileMenu = false">Prototype Rumah</a>
-                <a href="#" class="block text-zinc-500 hover:text-white text-xs py-1">Materia</a>
-                <a href="https://maspetruk.puskimjar.com/" target="_blank" class="block text-zinc-500 hover:text-white text-xs py-1">Mas Petruk <i class="fa-solid fa-arrow-up-right-from-square text-[8px] ml-1"></i></a>
-            </div>
-        </div>
-
-        <div class="border-b border-[#d6fb00]/20">
-            <button @click="openSpasial = !openSpasial" class="w-full flex justify-between items-center text-zinc-400 py-3 text-sm">
-                <span>Data & Spasial</span>
-                <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="openSpasial && 'rotate-180 text-[#d6fb00]'"></i>
-            </button>
-            <div x-show="openSpasial" x-cloak x-transition class="pl-4 pb-3 space-y-2">
-                <a href="#" class="block text-zinc-500 hover:text-white text-xs py-1">Sebaran RTLH</a>
-                <a href="#" class="block text-zinc-500 hover:text-white text-xs py-1">Sebaran Rusun</a>
-                <a href="#" class="block text-zinc-500 hover:text-white text-xs py-1">Profil Kawasan Kumuh</a>
-                <a href="#" class="block text-zinc-500 hover:text-white text-xs py-1">Sebaran Bantuan SDGS</a>
-            </div>
-        </div>
+        <!-- Pertanahan (Disabled) -->
+        <a href="#" class="flex items-center gap-2 text-zinc-600 cursor-not-allowed py-3 text-sm border-b border-[#d6fb00]/20" title="Akan Hadir">
+            Pertanahan <i class="fa-solid fa-lock text-[9px]"></i>
+        </a>
 
         <div class="pt-6">
             <?php if ($this->session->userdata('is_logged')): ?>

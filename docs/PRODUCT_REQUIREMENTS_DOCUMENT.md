@@ -43,7 +43,7 @@ Sebagai pusat layanan terpadu, Klinik PKP memberikan:
 Navigasi utama dirampingkan untuk menonjolkan 3 pilar tupoksi utama dinas, dengan total 6 komponen Navbar:
 
 1. **Menu Utilitas Kiri**: (Beranda / Logo Klinik PKP).
-2. **Menu Pengembang**: Halaman *view-only* yang menampilkan daftar/tabel SP2 (Sertifikat Pengembang).
+2. **Menu Pengembang (SRP2)**: Halaman informasi statis yang berisi panduan pengajuan Sertifikasi Pengembang (SRP2). Halaman ini menampilkan: Info pengajuan, unduhan *template* dokumen/PDF, *Contact Person*, serta daftar Pengembang yang sudah mendapat SP2 dan yang sedang dalam proses pengajuan (belum berupa sistem interaktif).
 3. **Layanan Utama 1: PERUMAHAN** *(Fokus Prioritas)*
    - **Bank Data**: Tarikan data statistik (Sikumbang/API eksternal).
    - **Info KPR**: Informasi pembiayaan kredit.
@@ -61,10 +61,12 @@ Navigasi utama dirampingkan untuk menonjolkan 3 pilar tupoksi utama dinas, denga
 ### 🚀 4.1 Modul Beranda & Etalase Program (Hero Section)
 *   **FR-1.1:** Menampilkan *Slider Hero* yang berotasi pada 3 pilar: Perumahan, Kawasan, Pertanahan.
 *   **FR-1.2:** Menampilkan blok *Ice Breaker* "Apa Itu Klinik PKP?" yang berisi 3 Core Identity (Informasi, Bantuan Teknis, Pendampingan).
-*   **FR-1.3:** Menampilkan *Cards* Iklan Program Pemerintah di sektor Perumahan yang terbagi menjadi 3 Klaster:
-    1. **Pembangunan Baru (PB)**: HPBD, Rumah Relokasi, Rumah Bencana.
-    2. **Peningkatan Kualitas**: RTLH, PKN.
-    3. **Pembiayaan Perumahan**: KPR-KTP, KUR-KPP, Omah Sekeng, Omah Lestari.
+*   **FR-1.3:** Menampilkan 5 *Cards* Etalase Utama Program Pemerintah (Sektor Perumahan):
+    1. **KPR-FLPP Rumah Subsidi**
+    2. **Oemah Lestari** (Kredit BPR-BKK)
+    3. **Peningkatan Kualitas RTLH**
+    4. **Bantuan Stimulan PB** (Backlog, Relokasi, Bencana)
+    5. **Program Rumah Apung**
 *   **FR-1.4:** Setiap *card* jika diklik akan memuat *Definisi Operasional, Syarat & Kriteria, dan Foto Before-After*.
 
 ### 📝 4.2 Modul Onboarding & Smart Filter

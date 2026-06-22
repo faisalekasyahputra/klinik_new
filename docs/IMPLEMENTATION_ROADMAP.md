@@ -28,7 +28,7 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
                          │
                          ▼
 ┌──────────────────────────────────────────────────────────┐
-│ FASE 7: RESTRUKTURISASI NAVBAR & SITEMAP        🚀 NEXT  │
+│ FASE 7: RESTRUKTURISASI NAVBAR & SITEMAP        ✅ DONE  │
 │  • Hapus menu Profil statis                              │
 │  • Bentuk 6 Entitas Navbar (2 Utilitas, 1 Pengembang)    │
 │  • Dropdown 3 Pilar (Perumahan, Kawasan, Pertanahan)     │
@@ -36,10 +36,11 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
                          │
                          ▼
 ┌──────────────────────────────────────────────────────────┐
-│ FASE 8: HERO SECTION & ETALASE PROGRAM          🛠️ TODO  │
+│ FASE 8: HERO SECTION & ETALASE PROGRAM          🚀 NEXT  │
 │  • Hero Slider 3 Pilar                                   │
 │  • Section "Ice Breaker" (3 Fungsi Utama PKP)            │
-│  • Cards "Iklan" Program Perumahan (PB, PK, KPR)         │
+│  • 5 Cards "Etalase" Program (KPR-FLPP, Oemah Lestari,   │
+│    RTLH, Stimulan PB, Rumah Apung)                       │
 └────────────────────────┬─────────────────────────────────┘
                          │
                          ▼
@@ -84,7 +85,7 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
 *   **Action Items:**
     *   [ ] Implementasi Slider (Perumahan, Kawasan, Pertanahan).
     *   [ ] Membuat blok 3 Fungsi Utama PKP (Informasi, Bantuan Teknis, Pendampingan).
-    *   [ ] Membuat komponen Card untuk 3 Klaster Perumahan (Pembangunan Baru, Peningkatan Kualitas, Pembiayaan).
+    *   [ ] Membuat komponen 5 Card Etalase Utama (KPR-FLPP, Oemah Lestari, RTLH, Bantuan PB, Rumah Apung).
 
 ---
 
