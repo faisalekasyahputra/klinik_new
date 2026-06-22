@@ -1,0 +1,35 @@
+graph TD
+    A(["Masyarakat Kunjungi Web"]) --> B["Lihat Hero Slider & Fungsi Utama PKP"]
+    B --> C{"Pilih Layanan Utama?"}
+    
+    C -->|"Perumahan"| D["Tampil Etalase Program Perumahan"]
+    C -->|"Kawasan"| E["Tampil Data Spasial"]
+    C -->|"Pertanahan"| F["Halaman Pertanahan"]
+    
+    D --> G["Lihat Syarat & Kriteria Program (RTLH / PB / KPR)"]
+    G --> H{"Tertarik Mengajukan?"}
+    
+    H -->|"Ya"| I["Klik Daftar / Cek Kelayakan"]
+    H -->|"Tidak"| D
+    
+    I --> J["Form Input NIK"]
+    J --> K[["Proses API SIMPERUM"]]
+    
+    K --> L{"NIK Ditemukan & Valid?"}
+    L -->|"Ya, Ambil Data SIMPERUM"| M["Form Data Diri Terisi Otomatis Sebagian"]
+    L -->|"Tidak, Data Baru"| N["Form Data Diri Kosong"]
+    
+    M --> O["Pengguna Melengkapi Data Kurang"]
+    N --> O
+    
+    O --> P["Sistem Melakukan Smart Filter Kelayakan Dasar"]
+    P --> Q{"Lolos Syarat Dasar?"}
+    
+    Q -->|"Ya"| R["Simpan sebagai Status Housing Queue"]
+    Q -->|"Tidak"| S["Sistem Menawarkan Program Lain yang Relevan"]
+    
+    R --> T[["Validasi Manual oleh ASN/Admin (Audit)"]]
+    T --> U{"Disetujui?"}
+    
+    U -->|"Ya"| V(["Masuk Antrean Realisasi SIMPERUM"])
+    U -->|"Tolak / Kuota Penuh"| W(["Tertahan di Housing Queue Tahun Depan"])
