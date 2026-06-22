@@ -31,14 +31,16 @@
             <!-- Logo -->
             <div class="flex items-center gap-3 group cursor-pointer">
                 <a href="<?= base_url() ?>" class="flex items-center gap-2.5 group-hover:scale-[1.02] transition-transform duration-300">
-                    <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" class="h-7 w-auto object-contain drop-shadow-md">
-                    <span class="text-base font-black tracking-tight text-white">
-                        Klinik<span class="text-[#d6fb00]">PKP</span>
-                    </span>
+                    <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" class="h-8 w-auto object-contain drop-shadow-md">
+                    <div class="flex flex-col">
+                        <span class="text-lg font-black tracking-tight text-white leading-none mb-0.5">
+                            Klinik<span class="text-[#d6fb00]">PKP</span>
+                        </span>
+                        <span class="text-[9px] font-bold text-[#8aacb0] tracking-wider uppercase">Provinsi Jawa Tengah</span>
+                    </div>
                 </a>
-                <div class="leading-none hidden sm:block">
+                <div class="leading-none hidden sm:block border-l border-white/10 pl-3">
                     <h1 class="text-[10px] font-extrabold text-[#8aacb0] uppercase tracking-wider">Disperakim</h1>
-                    <p class="text-[8px] font-bold text-[#5a7a80] uppercase tracking-widest mt-0.5">Prov. Jawa Tengah</p>
                 </div>
             </div>
 
