@@ -322,6 +322,221 @@
 </section>
 
 <!-- ============================================================
+     SECTION 2.5: ETALASE PROGRAM
+     ============================================================ -->
+<section id="etalase-program" class="w-full py-20 sm:py-28 relative overflow-hidden bg-[#050f12]">
+    <!-- Ambient glow -->
+    <div class="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-[#d6fb00]/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+            
+            <!-- Left Copy -->
+            <div class="lg:col-span-5 flex flex-col justify-center">
+                <div class="inline-flex items-center gap-2 bg-[#d6fb00]/10 border border-[#d6fb00]/15 px-3 py-1 rounded-full text-[11px] text-[#d6fb00] font-semibold mb-6 w-max">
+                    <i class="fa-solid fa-house-chimney-window"></i> Etalase Program
+                </div>
+                <h3 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-[1.1] mb-5">
+                    Pilih Program<br>Sesuai <span class="text-[#d6fb00]">Kebutuhan</span>
+                </h3>
+                <p class="text-slate-400 text-sm leading-relaxed mb-8">
+                    Temukan berbagai skema bantuan perumahan dan kawasan permukiman dari Pemerintah Provinsi Jawa Tengah. Geser kartu untuk menjelajahi pilihan program.
+                </p>
+                
+                <!-- Instruction Animation -->
+                <div class="flex items-center gap-4 text-zinc-500 text-sm font-medium">
+                    <div class="relative w-12 h-12 bg-white/5 rounded-full flex items-center justify-center overflow-hidden border border-white/10">
+                        <i class="fa-solid fa-hand-pointer text-white animate-pulse relative z-10"></i>
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[#d6fb00]/20 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                    </div>
+                    Geser kartu untuk melihat
+                </div>
+            </div>
+
+            <!-- Right Swiper -->
+            <div class="lg:col-span-7 flex justify-center lg:justify-end relative h-[450px] lg:h-[500px]">
+                
+                <style>
+                    .swiper-etalase {
+                        width: 100%;
+                        max-width: 380px;
+                        height: 100%;
+                        padding: 10px;
+                    }
+                    .swiper-etalase .swiper-slide {
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: space-between;
+                        border-radius: 24px;
+                        padding: 32px 24px;
+                        color: white;
+                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        overflow: hidden;
+                        position: relative;
+                        user-select: none;
+                    }
+                    /* Card Themes */
+                    .card-flpp { background: linear-gradient(135deg, #0f4c5c 0%, #062b35 100%); }
+                    .card-oemah { background: linear-gradient(135deg, #1b4332 0%, #0d2818 100%); }
+                    .card-rtlh { background: linear-gradient(135deg, #4a154b 0%, #290a2a 100%); }
+                    .card-pb { background: linear-gradient(135deg, #4d5c00 0%, #262e00 100%); }
+                    .card-apung { background: linear-gradient(135deg, #003049 0%, #00121c 100%); }
+                    
+                    /* Ambient Light in Cards */
+                    .card-ambient {
+                        position: absolute;
+                        top: 0; left: 0; right: 0; height: 150px;
+                        background: radial-gradient(circle at top right, rgba(255,255,255,0.15) 0%, transparent 70%);
+                        pointer-events: none;
+                    }
+                    .swiper-slide-shadow {
+                        border-radius: 24px !important;
+                    }
+                </style>
+
+                <div class="swiper swiper-etalase">
+                    <div class="swiper-wrapper">
+                        <!-- Card 1: KPR-FLPP -->
+                        <div class="swiper-slide card-flpp group cursor-grab active:cursor-grabbing">
+                            <div class="card-ambient"></div>
+                            <div>
+                                <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-[#00a3b5] text-xl mb-6 border border-white/10 backdrop-blur-md">
+                                    <i class="fa-solid fa-building-columns"></i>
+                                </div>
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/10 rounded border border-white/10 text-[9px] font-bold tracking-widest uppercase mb-3">
+                                    <span class="w-1.5 h-1.5 bg-[#00a3b5] rounded-full"></span> MBR Fixed Income
+                                </div>
+                                <h4 class="text-2xl font-bold text-white leading-tight mb-2">KPR-FLPP<br>Rumah Subsidi</h4>
+                                <p class="text-white/70 text-xs leading-relaxed">
+                                    Pembiayaan perumahan subsidi dengan bunga flat 5% dan cicilan ringan hingga 20 tahun.
+                                </p>
+                            </div>
+                            <div class="mt-8 border-t border-white/10 pt-5 flex items-center justify-between">
+                                <span class="text-[10px] text-white/50 font-medium">Geser untuk melihat program lain</span>
+                                <a href="javascript:void(0)" class="w-8 h-8 rounded-full bg-white text-[#0f4c5c] flex items-center justify-center hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Oemah Lestari -->
+                        <div class="swiper-slide card-oemah group cursor-grab active:cursor-grabbing">
+                            <div class="card-ambient"></div>
+                            <div>
+                                <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-[#6bcb77] text-xl mb-6 border border-white/10 backdrop-blur-md">
+                                    <i class="fa-solid fa-leaf"></i>
+                                </div>
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/10 rounded border border-white/10 text-[9px] font-bold tracking-widest uppercase mb-3">
+                                    <span class="w-1.5 h-1.5 bg-[#6bcb77] rounded-full"></span> MBR & Umum
+                                </div>
+                                <h4 class="text-2xl font-bold text-white leading-tight mb-2">Oemah<br>Lestari</h4>
+                                <p class="text-white/70 text-xs leading-relaxed">
+                                    Rumah murah berbasis SDG (Bangunan Hijau) kolaborasi pembiayaan BPR-BKK dengan bunga flat 8%.
+                                </p>
+                            </div>
+                            <div class="mt-8 border-t border-white/10 pt-5 flex items-center justify-between">
+                                <span class="text-[10px] text-white/50 font-medium">Bekerjasama dengan BPR-BKK</span>
+                                <a href="javascript:void(0)" class="w-8 h-8 rounded-full bg-white text-[#1b4332] flex items-center justify-center hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Peningkatan Kualitas RTLH -->
+                        <div class="swiper-slide card-rtlh group cursor-grab active:cursor-grabbing">
+                            <div class="card-ambient"></div>
+                            <div>
+                                <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-[#c084fc] text-xl mb-6 border border-white/10 backdrop-blur-md">
+                                    <i class="fa-solid fa-hammer"></i>
+                                </div>
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/10 rounded border border-white/10 text-[9px] font-bold tracking-widest uppercase mb-3">
+                                    <span class="w-1.5 h-1.5 bg-[#c084fc] rounded-full"></span> Miskin & Ekstrem
+                                </div>
+                                <h4 class="text-2xl font-bold text-white leading-tight mb-2">Peningkatan<br>Kualitas RTLH</h4>
+                                <p class="text-white/70 text-xs leading-relaxed">
+                                    Bantuan perbaikan rumah tidak layak huni via Bankeupemdes sebesar Rp 20 Juta per penerima (Padat Karya).
+                                </p>
+                            </div>
+                            <div class="mt-8 border-t border-white/10 pt-5 flex items-center justify-between">
+                                <span class="text-[10px] text-white/50 font-medium">Berbasis Data DTKS</span>
+                                <a href="javascript:void(0)" class="w-8 h-8 rounded-full bg-white text-[#4a154b] flex items-center justify-center hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Card 4: Bantuan Stimulan PB -->
+                        <div class="swiper-slide card-pb group cursor-grab active:cursor-grabbing">
+                            <div class="card-ambient"></div>
+                            <div>
+                                <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-[#d6fb00] text-xl mb-6 border border-white/10 backdrop-blur-md">
+                                    <i class="fa-solid fa-trowel-bricks"></i>
+                                </div>
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/10 rounded border border-white/10 text-[9px] font-bold tracking-widest uppercase mb-3">
+                                    <span class="w-1.5 h-1.5 bg-[#d6fb00] rounded-full"></span> Bencana & Relokasi
+                                </div>
+                                <h4 class="text-2xl font-bold text-white leading-tight mb-2">Stimulan<br>Pembangunan Baru</h4>
+                                <p class="text-white/70 text-xs leading-relaxed">
+                                    Bantuan material Rp 40 Juta untuk PB Bencana, PB Relokasi (RUSPIN), dan warga menumpang (PB Backlog).
+                                </p>
+                            </div>
+                            <div class="mt-8 border-t border-white/10 pt-5 flex items-center justify-between">
+                                <span class="text-[10px] text-white/50 font-medium">Bantuan Material Langsung</span>
+                                <a href="javascript:void(0)" class="w-8 h-8 rounded-full bg-white text-[#4d5c00] flex items-center justify-center hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Card 5: Program Rumah Apung -->
+                        <div class="swiper-slide card-apung group cursor-grab active:cursor-grabbing">
+                            <div class="card-ambient"></div>
+                            <div>
+                                <div class="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-blue-400 text-xl mb-6 border border-white/10 backdrop-blur-md">
+                                    <i class="fa-solid fa-water"></i>
+                                </div>
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/10 rounded border border-white/10 text-[9px] font-bold tracking-widest uppercase mb-3">
+                                    <span class="w-1.5 h-1.5 bg-blue-400 rounded-full"></span> Kawasan Pesisir
+                                </div>
+                                <h4 class="text-2xl font-bold text-white leading-tight mb-2">Program<br>Rumah Apung</h4>
+                                <p class="text-white/70 text-xs leading-relaxed">
+                                    Inovasi desain rumah tahan banjir rob untuk kawasan pesisir dengan genangan ekstrem (Timbulsloko).
+                                </p>
+                            </div>
+                            <div class="mt-8 border-t border-white/10 pt-5 flex items-center justify-between">
+                                <span class="text-[10px] text-white/50 font-medium">Solusi No One Left Behind</span>
+                                <a href="javascript:void(0)" class="w-8 h-8 rounded-full bg-white text-[#003049] flex items-center justify-center hover:scale-110 transition-transform">
+                                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Swiper Init -->
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        if(typeof Swiper !== 'undefined') {
+                            new Swiper('.swiper-etalase', {
+                                effect: 'cards',
+                                grabCursor: true,
+                                cardsEffect: {
+                                    perSlideOffset: 8,
+                                    perSlideRotate: 4,
+                                    slideShadows: true,
+                                },
+                            });
+                        }
+                    });
+                </script>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
      SECTION 3: LAYANAN — Bento Grid
      ============================================================ -->
 <section id="layanan-kami" class="w-full py-20 sm:py-28 scroll-mt-20 relative overflow-hidden">
