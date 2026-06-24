@@ -3,8 +3,14 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Force body to allow sticky positioning in case of hidden overflows */
-        body, html { overflow-x: clip !important; }
-        #page-content-wrapper { overflow: visible !important; }
+        html, body { 
+            overflow-x: clip !important; 
+            overflow-y: visible !important;
+            height: auto !important;
+        }
+        main, #page-content-wrapper { 
+            overflow: visible !important; 
+        }
     </style>
 
     <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -46,12 +52,11 @@
             <?php endif; ?>
         </div>
 
-        <div class="flex flex-col lg:flex-row gap-8 items-stretch relative">
+        <div class="flex flex-col lg:flex-row gap-8 items-start relative">
             
-            <!-- Sidebar Wrapper (Stretches to full height) -->
-            <div class="w-full lg:w-64 flex-shrink-0 hidden lg:block relative">
-                <!-- Actual Sticky Panel -->
-                <aside class="sticky top-32 z-40 bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
+            <!-- Sidebar Navigation -->
+            <div class="w-full lg:w-64 flex-shrink-0 hidden lg:block sticky top-32 self-start h-max z-40 transition-all duration-300" style="position: -webkit-sticky; position: sticky;">
+                <aside class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
                 <h3 class="text-white font-bold text-sm uppercase tracking-wider mb-4 px-2 border-b border-white/10 pb-2">Kategori Data</h3>
                 <nav class="space-y-1" id="stat-nav">
                     <a href="#perumahan" class="flex items-center gap-3 px-3 py-2 text-sm text-[#8aacb0] hover:text-[#d6fb00] hover:bg-white/5 rounded-xl transition-colors">
