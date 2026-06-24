@@ -113,6 +113,7 @@ class Auth extends MY_Controller {
             'username'  => $user->username ?? '',
             'email'     => $user->email,
             'avatar'    => $user->avatar,
+            'role'      => $user->role, // Added role to session
             'is_logged' => TRUE,
         ];
         $this->session->set_userdata($session_data);
@@ -512,6 +513,7 @@ class Auth extends MY_Controller {
                             'username'  => $logged_in_user[0]['username'] ?? '',
                             'email'     => $logged_in_user[0]['email'],
                             'avatar'    => $logged_in_user[0]['avatar'],
+                            'role'      => $logged_in_user[0]['role'] ?? null, // Added role to session
                             'is_logged' => TRUE,
                         ];
                         $this->session->set_userdata($session_data);

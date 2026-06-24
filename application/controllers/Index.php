@@ -14,6 +14,10 @@ class Index extends MY_Controller {
 	{
 		$datacontent['judul']='';
 		
+        // Load settings for landing page
+        $this->load->model('Setting_model');
+        $datacontent['settings'] = $this->Setting_model->get_all();
+
 		// ============================================================
 		// PROGRESSIVE LOADING STRATEGY
 		// Hanya load data yang TERLIHAT di layar pertama (above the fold)
@@ -526,5 +530,34 @@ class Index extends MY_Controller {
 
 		$data['content'] = $this->load->view('pages/data_spasial/sebaran', $datacontent, true);
 		$this->load->view('layouts/main',$data);
+	}
+
+	// --- PERTANAHAN (DUMMY) ---
+	public function info_tanah() {
+		$datacontent['title'] = 'Informasi Status Tanah';
+		$datacontent['desc'] = 'Halaman ini merupakan pratinjau (dummy) untuk fitur pengecekan kesesuaian tata ruang dan status tanah kawasan permukiman.';
+		$data['content'] = $this->load->view('pages/pertanahan/dummy_page', $datacontent, true);
+		$this->load->view('layouts/main', $data);
+	}
+
+	public function sertifikasi() {
+		$datacontent['title'] = 'Sertifikasi Lahan Perumahan';
+		$datacontent['desc'] = 'Halaman ini merupakan pratinjau (dummy) untuk fasilitasi sertifikasi tanah / konsolidasi lahan untuk perumahan masyarakat.';
+		$data['content'] = $this->load->view('pages/pertanahan/dummy_page', $datacontent, true);
+		$this->load->view('layouts/main', $data);
+	}
+
+	public function sengketa() {
+		$datacontent['title'] = 'Penyelesaian Sengketa Tanah';
+		$datacontent['desc'] = 'Halaman ini merupakan pratinjau (dummy) untuk layanan penyelesaian sengketa lahan atau fasilitasi serah terima PSU perumahan.';
+		$data['content'] = $this->load->view('pages/pertanahan/dummy_page', $datacontent, true);
+		$this->load->view('layouts/main', $data);
+	}
+
+	public function bank_tanah() {
+		$datacontent['title'] = 'Bank Tanah (Land Bank)';
+		$datacontent['desc'] = 'Halaman ini merupakan pratinjau (dummy) untuk sistem informasi ketersediaan lahan pemerintah (Bank Tanah) untuk pembangunan hunian.';
+		$data['content'] = $this->load->view('pages/pertanahan/dummy_page', $datacontent, true);
+		$this->load->view('layouts/main', $data);
 	}
 }

@@ -135,6 +135,47 @@ Tabel-tabel ini mendukung visualisasi peta sebaran dan data spasial infrastruktu
 
 ---
 
+### 📋 1.9 Tabel `program_kategori` & `programs` (Master Program Perumahan)
+Tabel untuk mengatur program perumahan dan kriteria kelayakannya.
+
+**`program_kategori`**
+| Nama Field | Tipe Data | Kunci | Keterangan |
+|---|---|---|---|
+| `id` | INT | PK, AI | ID unik kategori |
+| `nama_kategori` | VARCHAR(100) | — | Nama kategori (KPR, RTLH, dll) |
+| `created_at` | DATETIME | — | Tanggal pembuatan |
+
+**`programs`**
+| Nama Field | Tipe Data | Kunci | Keterangan |
+|---|---|---|---|
+| `id` | INT | PK, AI | ID unik program |
+| `id_kategori` | INT | FK → program_kategori | Relasi ke kategori |
+| `kode_program` | VARCHAR(50) | Unique | Kode identifier (flpp, oemah_lestari) |
+| `nama_program` | VARCHAR(255) | — | Nama lengkap program |
+| `deskripsi_singkat` | TEXT | — | Deskripsi |
+| `batas_penghasilan_max` | DECIMAL(15,2) | — | Maksimal penghasilan untuk *Smart Filter* |
+| `is_active` | TINYINT(1) | — | Status aktif program |
+
+---
+
+### 📋 1.10 Tabel `housing_queue` (Antrean & Onboarding Journey)
+Tabel utama Fase 9 untuk menyimpan pendaftaran warga hasil *filtering* SIMPERUM.
+
+| Nama Field | Tipe Data | Kunci | Keterangan |
+|---|---|---|---|
+| `id` | INT | PK, AI | ID unik antrean |
+| `user_id` | INT | FK → users.id | (Opsional) ID user jika login |
+| `program_id` | INT | FK → programs.id | Program yang dipilih/direkomendasikan |
+| `nik_pengaju` | VARCHAR(255) | — | NIK yang digunakan untuk daftar |
+| `nama_lengkap` | VARCHAR(255) | — | Nama lengkap pengaju |
+| `data_simperum_json` | TEXT | — | Hasil tarikan JSON riil dari API SIMPERUM |
+| `data_survey_json` | TEXT | — | Hasil *Kalkulator Kelayakan* (pekerjaan, gaji, dll) |
+| `status_antrean` | ENUM | — | `pending`, `approved`, `rejected` |
+| `catatan_admin` | TEXT | — | Alasan penolakan / persetujuan dari admin |
+| `created_at` | DATETIME | — | Tanggal pengajuan |
+
+---
+
 ## 🔒 2. SKEMA ENKRIPSI DATA PII (UU PDP Compliance)
 
 Untuk memenuhi **UU No. 27 Tahun 2022 tentang Perlindungan Data Pribadi**, kolom sensitif dienkripsi:
@@ -185,6 +226,22 @@ Untuk memenuhi **UU No. 27 Tahun 2022 tentang Perlindungan Data Pribadi**, kolom
                    │   │ sender           │   │
                    │   │ message          │   │
                    │   └──────────────────┘   │
+                   │                           │
+                   │   ┌──────────────────┐    │
+                   │   │ program_kategori │    │
+                   │   │ id (PK)          │◄──┐│
+                   │   └──────────────────┘   ││
+                   │   ┌──────────────────┐   ││
+                   │   │    programs      │   ││
+                   │   │ id (PK)          │◄─┐├┘
+                   │   │ id_kategori (FK) ├──┘│
+                   │   └──────────────────┘   │
+                   │   ┌──────────────────┐   │
+                   │   │  housing_queue   │   │
+                   ├──►│ user_id (FK)     │   │
+                   │   │ program_id (FK)  ├───┘
+                   │   │ status_antrean   │   
+                   │   └──────────────────┘   
                    └───────────────────────────┘
 ```
 

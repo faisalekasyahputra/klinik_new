@@ -89,12 +89,13 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
 
 ---
 
-### 🛠️ FASE 9 — Integrasi SIMPERUM & Housing Queue (BELUM MULAI)
-*   **Target:** Logika *backend* paling krusial untuk Onboarding Journey.
+### 🛠️ FASE 9 — Integrasi SIMPERUM & Smart Filter (BELUM MULAI)
+*   **Target:** Logika *backend* krusial dan UI interaktif untuk *Onboarding Journey* (Diagnosa Pasien).
 *   **Action Items:**
+    *   [ ] Membuat UI *Wizard* "Kalkulator Kelayakan/Klinik Diagnosa" interaktif (3-4 step pertanyaan).
+    *   [ ] Membuat *Smart Filter Engine* (Backend) untuk menghitung Desil dan mencocokkan program.
     *   [ ] Update struktur Database (ERD baru: `PROGRAMS`, `HOUSING_QUEUE`).
-    *   [ ] Membuat fungsi `curl`/guzzle untuk memanggil API SIMPERUM berbasis NIK.
-    *   [ ] Membuat *Smart Filter Engine* untuk mencocokkan kelayakan syarat pendaftar.
+    *   [ ] Membuat fungsi `curl`/guzzle untuk memanggil API SIMPERUM berbasis NIK (Auto-fill data).
     *   [ ] Menyimpan hasil pengajuan masyarakat ke tabel `HOUSING_QUEUE`.
 
 ---

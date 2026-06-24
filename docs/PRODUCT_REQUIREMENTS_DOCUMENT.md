@@ -63,7 +63,7 @@ Navigasi utama dirampingkan untuk menonjolkan 3 pilar tupoksi utama dinas, denga
 *   **FR-1.2:** Menampilkan blok *Ice Breaker* "Apa Itu Klinik PKP?" yang berisi 3 Core Identity (Informasi, Bantuan Teknis, Pendampingan).
 *   **FR-1.3:** Menampilkan 5 *Cards* Etalase Utama Program Pemerintah (Sektor Perumahan):
     1. **KPR-FLPP Rumah Subsidi**
-    2. **Oemah Lestari** (Kredit BPR-BKK)
+    2. **Oemah Lestari** (Kredit BPR-BRK)
     3. **Peningkatan Kualitas RTLH**
     4. **Bantuan Stimulan PB** (Backlog, Relokasi, Bencana)
     5. **Program Rumah Apung**

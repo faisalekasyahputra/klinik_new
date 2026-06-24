@@ -9,6 +9,7 @@
   $is_info_kpr = in_array($method, ['simulasi_kpr']);
   $is_bank_desain = in_array($method, ['materia']);
   $is_data_spasial = in_array($method, ['sebaran', 'sebaran_rusun', 'profil_kumuh', 'sebaran_sdgs']);
+  $is_pertanahan = in_array($method, ['info_tanah', 'sertifikasi', 'sengketa', 'bank_tanah']);
 ?>
 <nav class="w-full fixed top-0 left-0 right-0 z-50 transition-all duration-300 <?= $is_home ? 'py-2' : '' ?>"
      <?php if ($is_home): ?>
@@ -39,13 +40,10 @@
                         <span class="text-[9px] font-bold text-[#8aacb0] tracking-wider uppercase">Provinsi Jawa Tengah</span>
                     </div>
                 </a>
-                <div class="leading-none hidden sm:block border-l border-white/10 pl-3">
-                    <h1 class="text-[10px] font-extrabold text-[#8aacb0] uppercase tracking-wider">Disperakim</h1>
-                </div>
             </div>
 
-            <!-- Desktop Navigation (Perfectly Centered) -->
-            <div class="hidden lg:flex items-center gap-0.5 text-[12px] font-semibold absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <!-- Desktop Navigation -->
+            <div class="hidden lg:flex flex-1 justify-center items-center gap-0.5 text-[12px] font-semibold px-4">
                 <a href="<?= base_url() ?>" class="<?= $is_home ? 'text-[#d6fb00]' : 'text-[#8aacb0] hover:text-[#ecffb6]' ?> px-2.5 py-2 transition-colors">Beranda</a>
                 
                 <!-- Profil Dropdown (Hidden per UI/UX rules, moved to footer later) -->
@@ -60,12 +58,6 @@
                         <a href="<?= base_url('struktur') ?>" class="block px-4 py-2.5 <?= $method == 'struktur' ? 'bg-[#d6fb00]/10 text-[#ecffb6]' : 'text-[#8aacb0] hover:bg-[#d6fb00]/8 hover:text-[#ecffb6]' ?> rounded-xl transition-all duration-200">Struktur Organisasi</a>
                     </div>
                 </div>
-
-                <!-- Pengembang (SRP2) -->
-                <a href="<?= base_url('pengembang') ?>" class="<?= $method == 'pengembang' ? 'text-[#d6fb00]' : 'text-[#8aacb0] hover:text-[#ecffb6]' ?> px-2.5 py-2 transition-colors relative flex items-center gap-1.5">
-                    Pengembang
-                    <span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-[#d6fb00]/10 text-[#d6fb00] border border-[#d6fb00]/30">SRP2</span>
-                </a>
 
                 <!-- Perumahan Dropdown -->
                 <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
@@ -100,23 +92,7 @@
                             <span>Bank Desain (Prototipe)</span>
                         </a>
                         
-                        <!-- Bank Data -->
-                        <div class="relative group/sub">
-                            <button class="w-full flex justify-between items-center px-4 py-2 <?= $is_layanan ? 'bg-white/5 text-[#ecffb6]' : 'text-[#8aacb0] hover:bg-white/5 hover:text-[#ecffb6]' ?> rounded-xl transition-all duration-200">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-4 text-center opacity-70"><i class="fa-solid fa-chart-pie"></i></div>
-                                    <span>Bank Data Perumahan</span>
-                                </div>
-                                <i class="fa-solid fa-chevron-right text-[8px] opacity-50 group-hover/sub:opacity-100 transition-opacity"></i>
-                            </button>
-                            <!-- Sub-dropdown Bank Data -->
-                            <div class="absolute top-0 left-[100%] ml-2 hidden group-hover/sub:block bg-[#0a1a1f] border border-white/10 rounded-2xl shadow-2xl p-2 min-w-[150px]">
-                                <a href="<?= base_url('Sikumbang') ?>" class="block px-4 py-2 text-[#8aacb0] hover:bg-white/5 hover:text-[#ecffb6] rounded-xl transition-all">Sikumbang</a>
-                                <a href="<?= base_url('Sikaper') ?>" class="block px-4 py-2 text-[#8aacb0] hover:bg-white/5 hover:text-[#ecffb6] rounded-xl transition-all">Sikaper</a>
-                                <a href="<?= base_url('Sikunang') ?>" class="block px-4 py-2 text-[#8aacb0] hover:bg-white/5 hover:text-[#ecffb6] rounded-xl transition-all">Sikunang</a>
-                                <a href="<?= base_url('Siperum') ?>" class="block px-4 py-2 text-[#8aacb0] hover:bg-white/5 hover:text-[#ecffb6] rounded-xl transition-all">Siperum</a>
-                            </div>
-                        </div>
+                        <!-- Menu Bank Data dipindahkan ke luar -->
                     </div>
                 </div>
 
@@ -134,18 +110,47 @@
                     </div>
                 </div>
 
-                <!-- Pertanahan (Disabled) -->
-                <a href="javascript:void(0)" class="text-[#8aacb0] opacity-40 cursor-not-allowed px-2.5 py-2 flex items-center gap-1 transition-colors" title="Akan Hadir">
-                    Pertanahan <i class="fa-solid fa-lock text-[9px]"></i>
+                <!-- Pertanahan Dropdown -->
+                <div class="relative" x-data="{ open: false }" @mouseenter="open = true" @mouseleave="open = false">
+                    <button class="<?= $is_pertanahan ? 'text-[#d6fb00]' : 'text-[#8aacb0] hover:text-[#ecffb6]' ?> px-2.5 py-2 flex items-center gap-1 transition-colors duration-200">
+                        Pertanahan <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="open ? 'rotate-180 text-[#d6fb00]' : ''"></i>
+                    </button>
+                    <div x-show="open" x-cloak x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                         class="absolute left-0 mt-0 bg-[#0a1a1f] border border-white/10 rounded-2xl shadow-2xl shadow-black/30 p-2 backdrop-blur-xl" style="min-width: 230px; white-space: nowrap;">
+                        <a href="<?= base_url('info_tanah') ?>" class="block px-4 py-2.5 <?= $method == 'info_tanah' ? 'bg-[#d6fb00]/10 text-[#ecffb6]' : 'text-[#8aacb0] hover:bg-[#d6fb00]/8 hover:text-[#ecffb6]' ?> rounded-xl transition-all duration-200">Informasi Status Tanah</a>
+                        <a href="<?= base_url('sertifikasi') ?>" class="block px-4 py-2.5 <?= $method == 'sertifikasi' ? 'bg-[#d6fb00]/10 text-[#ecffb6]' : 'text-[#8aacb0] hover:bg-[#d6fb00]/8 hover:text-[#ecffb6]' ?> rounded-xl transition-all duration-200">Sertifikasi Lahan Perumahan</a>
+                        <a href="<?= base_url('sengketa') ?>" class="block px-4 py-2.5 <?= $method == 'sengketa' ? 'bg-[#d6fb00]/10 text-[#ecffb6]' : 'text-[#8aacb0] hover:bg-[#d6fb00]/8 hover:text-[#ecffb6]' ?> rounded-xl transition-all duration-200">Penyelesaian Sengketa</a>
+                        <a href="<?= base_url('bank_tanah') ?>" class="block px-4 py-2.5 <?= $method == 'bank_tanah' ? 'bg-[#d6fb00]/10 text-[#ecffb6]' : 'text-[#8aacb0] hover:bg-[#d6fb00]/8 hover:text-[#ecffb6]' ?> rounded-xl transition-all duration-200">Bank Tanah (Land Bank)</a>
+                    </div>
+                </div>
+                <!-- Pengembang (SRP2) -->
+                <a href="<?= base_url('pengembang') ?>" class="<?= $method == 'pengembang' ? 'text-[#d6fb00]' : 'text-[#8aacb0] hover:text-[#ecffb6]' ?> px-2.5 py-2 transition-colors relative flex items-center gap-1.5">
+                    Pengembang
+                    <span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-[#d6fb00]/10 text-[#d6fb00] border border-[#d6fb00]/30">SRP2</span>
+                </a>
+                
+                <!-- Bank Data (Statistika) -->
+                <a href="<?= base_url('Statistika') ?>" class="<?= $class == 'statistika' ? 'text-[#d6fb00]' : 'text-[#8aacb0] hover:text-[#ecffb6]' ?> px-2.5 py-2 transition-colors relative flex items-center gap-1.5">
+                    Bank Data
                 </a>
             </div>
 
             <!-- Right: Login/User + Mobile Toggle -->
             <div class="flex items-center gap-3">
                 <?php if ($this->session->userdata('is_logged')): ?>
-                    <!-- Logged-in User -->
-                    <div class="hidden lg:flex items-center gap-3">
-                        <a href="<?= base_url('akun') ?>" class="flex items-center gap-2.5 px-3 py-1.5 bg-[#d6fb00]/5 border border-[#d6fb00]/20 rounded-xl hover:bg-[#d6fb00]/10 hover:border-[#d6fb00]/30 transition-all duration-200">
+                    <!-- Logged-in User (Grouped) -->
+                    <div class="hidden lg:flex items-center p-1 bg-[#d6fb00]/5 border border-[#d6fb00]/15 rounded-xl backdrop-blur-sm">
+                        <?php if ($this->session->userdata('role') === 'admin'): ?>
+                            <a href="<?= base_url('Admin_Dashboard') ?>" class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-[#d6fb00]/15 text-[#d6fb00] transition-colors">
+                                <i class="fa-solid fa-gauge-high text-[11px]"></i>
+                                <span class="text-xs font-semibold">Dashboard</span>
+                            </a>
+                            
+                            <!-- Separator -->
+                            <div class="w-px h-5 bg-[#d6fb00]/20 mx-1"></div>
+                        <?php endif; ?>
+                        
+                        <a href="<?= base_url('akun') ?>" class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-[#d6fb00]/15 transition-colors group">
                             <?php 
                                 $avatar_src = $this->session->userdata('avatar');
                                 if (empty($avatar_src)) {
@@ -153,7 +158,7 @@
                                     $avatar_src = "https://ui-avatars.com/api/?name={$fallback_name}&background=d6fb00&color=0a1a1f&bold=true";
                                 }
                             ?>
-                            <img src="<?= $avatar_src ?>" class="w-7 h-7 rounded-lg object-cover ring-1 ring-[#d6fb00]/20">
+                            <img src="<?= $avatar_src ?>" class="w-6 h-6 rounded-md object-cover border border-[#d6fb00]/20 group-hover:border-[#d6fb00]/40 transition-colors">
                             <span class="text-xs font-semibold text-[#ecffb6]"><?= $this->session->userdata('username') ?: $this->session->userdata('name') ?></span>
                         </a>
                     </div>

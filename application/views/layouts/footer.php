@@ -1,6 +1,11 @@
  <!-- ============================================================
      FOOTER
      ============================================================ -->
+ <?php 
+    $CI =& get_instance();
+    $CI->load->model('Setting_model');
+    $settings = $CI->Setting_model->get_all();
+ ?>
  <footer class="w-full bg-[#0a1a1f] text-zinc-400 pt-16 pb-6 mt-auto relative z-10 overflow-hidden">
     
     <!-- Batik Kawung Background Pattern with Top Fade Mask -->
@@ -40,7 +45,7 @@
         <div class="grid grid-cols-1 md:grid-cols-12 gap-12 pb-12">
             
             <!-- Brand -->
-            <div class="md:col-span-5 space-y-5">
+            <div class="md:col-span-5 space-y-5" data-aos="fade-right">
                 <div class="flex items-center gap-3">
                     <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" class="h-10 w-auto object-contain">
                     <div>
@@ -55,7 +60,7 @@
             </div>
 
             <!-- Quick Links -->
-            <div class="md:col-span-3">
+            <div class="md:col-span-3" data-aos="fade-up" data-aos-delay="100">
                 <h5 class="text-white font-bold text-xs tracking-wider uppercase mb-5">Layanan</h5>
                 <ul class="space-y-2.5 text-xs text-zinc-500">
                     <li><a href="#" class="hover:text-[#d6fb00] transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[7px] text-zinc-700"></i> Konsultasi</a></li>
@@ -67,20 +72,20 @@
             </div>
 
             <!-- Contact -->
-            <div class="md:col-span-4 space-y-4">
+            <div class="md:col-span-4 space-y-4" data-aos="fade-up" data-aos-delay="200">
                 <h5 class="text-white font-bold text-xs tracking-wider uppercase mb-5">Kontak</h5>
                 <div class="space-y-3 text-xs text-zinc-500">
                     <div class="flex items-start gap-3">
                         <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-zinc-600 mt-0.5 shrink-0"><i class="fa-solid fa-location-dot text-[10px]"></i></div>
-                        <p>KLINIK PKP DISPERAKIM<br><span class="text-zinc-600">Jl. Madukoro Blok BB, Semarang</span></p>
+                        <p>KLINIK PKP DISPERAKIM<br><span class="text-zinc-600"><?= htmlspecialchars($settings['footer_address'] ?? 'Jl. Madukoro Blok BB, Semarang') ?></span></p>
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-zinc-600 shrink-0"><i class="fa-solid fa-phone text-[10px]"></i></div>
-                        <p>+6282137191145</p>
+                        <p><?= htmlspecialchars($settings['footer_phone'] ?? '+6282137191145') ?></p>
                     </div>
                     <div class="flex items-center gap-3">
                         <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-zinc-600 shrink-0"><i class="fa-solid fa-envelope text-[10px]"></i></div>
-                        <p class="lowercase">klinikpkpjawa3@gmail.com</p>
+                        <p class="lowercase"><?= htmlspecialchars($settings['footer_email'] ?? 'klinikpkpjawa3@gmail.com') ?></p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2 pt-2">
@@ -92,8 +97,8 @@
         </div>
 
         <!-- Copyright -->
-        <div class="pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-zinc-600 font-medium">
-            <div>&copy; 2026 <span class="text-zinc-500 font-semibold">KLINIK PKP JATENG</span>. All Rights Reserved.</div>
+        <div class="pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-zinc-600 font-medium" data-aos="fade-in" data-aos-delay="300">
+            <div>&copy; <?= date('Y') ?> <span class="text-zinc-500 font-semibold"><?= htmlspecialchars($settings['footer_copyright'] ?? 'KLINIK PKP JATENG') ?></span>. All Rights Reserved.</div>
             <div class="flex items-center gap-3 text-zinc-500/80">
                 <a href="#" class="hover:text-[#d6fb00] transition-colors">Support</a>
                 <span>•</span>
@@ -208,6 +213,36 @@
      SWIPER JS
      ============================================================ -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+<script>
+    // Initialize AOS
+    AOS.init({
+        duration: 800,
+        once: true,
+        offset: 50,
+    });
+
+    // Initialize Lenis
+    const lenis = new Lenis({
+        duration: 1.2,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        direction: 'vertical',
+        gestureDirection: 'vertical',
+        smooth: true,
+        mouseMultiplier: 1,
+        smoothTouch: false,
+        touchMultiplier: 2,
+        infinite: false,
+    });
+
+    function raf(time) {
+        lenis.raf(time);
+        requestAnimationFrame(raf);
+    }
+
+    requestAnimationFrame(raf);
+</script>
 
 <!-- ============================================================
      CHAT SCRIPTS

@@ -83,6 +83,12 @@ $route['sebaran_rusun']            = 'Index/sebaran_rusun';
 $route['profil_kumuh']             = 'Index/profil_kumuh';
 $route['sebaran_sdgs']             = 'Index/sebaran_sdgs';
 
+// --- Pertanahan ---
+$route['info_tanah']               = 'Index/info_tanah';
+$route['sertifikasi']              = 'Index/sertifikasi';
+$route['sengketa']                 = 'Index/sengketa';
+$route['bank_tanah']               = 'Index/bank_tanah';
+
 // --- User Profile ---
 $route['pengaturan']               = 'Index/pengaturan';
 

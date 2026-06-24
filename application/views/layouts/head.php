@@ -36,13 +36,19 @@
     <link rel="stylesheet" href="<?= base_url('assets/css/tailwind.min.css') ?>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     
     <!-- Scripts -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-    <!-- Custom Scrollbar -->
+    <!-- Custom Scrollbar & Global Fixes -->
     <style>
+        html, body {
+            overflow-x: hidden;
+            overflow-y: overlay;
+        }
+
         @keyframes shimmer {
             100% {
                 transform: translateX(100%);

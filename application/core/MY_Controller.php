@@ -101,3 +101,20 @@ class Public_Controller extends MY_Controller {
         parent::__construct();
     }
 }
+
+class Admin_Controller extends MY_Controller {
+    public function __construct() {
+        parent::__construct();
+        // Redirect jika belum login atau bukan admin
+        if (!$this->session->userdata('is_logged') || $this->session->userdata('role') !== 'admin') {
+            $this->session->set_flashdata('error', 'Akses ditolak. Anda bukan Administrator.');
+            redirect('Auth/login');
+        }
+    }
+
+    // Custom render untuk layout khusus admin
+    protected function render_admin($view, $data = []) {
+        $data['content'] = $this->load->view($view, $data, TRUE);
+        $this->load->view('admin/index', $data);
+    }
+}
