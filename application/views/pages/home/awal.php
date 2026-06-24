@@ -118,15 +118,15 @@
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                     Dinas Perumahan Rakyat & Kawasan Permukiman Prov. Jawa Tengah
                 </div>
-                <h2 class="text-4xl sm:text-5xl lg:text-[4rem] font-extrabold text-white mb-5 leading-[1.1] md:leading-[1.1] tracking-tight">
+                <h2 class="text-3xl sm:text-4xl lg:text-[2.8rem] font-extrabold text-white mb-5 leading-[1.1] md:leading-[1.1] tracking-tight">
                     <?= !empty($settings['hero_title']) ? $settings['hero_title'] : 'Ngopeni Omah<br><span class="text-[#d6fb00]">Nglakoni Sesarengan</span>' ?>
                 </h2>
                 <p class="text-slate-400 text-sm sm:text-base lg:text-lg leading-relaxed max-w-xl mb-8">
                     <?= !empty($settings['hero_subtitle']) ? nl2br(htmlspecialchars($settings['hero_subtitle'])) : 'Akses informasi rumah subsidi, data spasial permukiman, dan layanan konsultasi dalam satu platform terintegrasi.' ?>
                 </p>
                 <div class="flex flex-wrap items-center gap-3">
-                    <a href="#cari-perumahan" class="btn-primary text-xs px-6 py-3.5 rounded-xl flex items-center gap-2">
-                        <i class="fa-solid fa-magnifying-glass"></i> Cari Rumah Subsidi
+                    <a href="#etalase-program" class="btn-primary text-xs px-6 py-3.5 rounded-xl flex items-center gap-2">
+                        <i class="fa-solid fa-ticket"></i> Program
                     </a>
                     <a href="javascript:void(0)" onclick="document.getElementById('layanan-kami').scrollIntoView({behavior: 'smooth'})" class="btn-secondary text-xs px-6 py-3.5 rounded-xl flex items-center gap-2">
                         <i class="fa-solid fa-layer-group"></i> Lihat Layanan
@@ -135,7 +135,7 @@
             </div>
 
             <!-- Right Side Grid (Ticket Style) -->
-            <div class="hidden lg:grid grid-cols-2 gap-4 w-full lg:w-[55%] xl:pl-4">
+            <div class="hidden lg:grid grid-cols-2 gap-2 w-full lg:w-[55%] xl:pl-4 lg:scale-90 lg:origin-right">
                 <style>
                 .ticket-mask {
                     -webkit-mask-image: 
@@ -283,7 +283,7 @@
         <div class="absolute inset-0 z-20 max-w-7xl mx-auto px-6 lg:px-8 flex flex-col justify-center">
             <div class="max-w-2xl w-full" data-aos="fade-right" data-aos-duration="1000">
                 <div class="inline-flex items-center gap-2 bg-[#00a3b5]/8 border border-[#00a3b5]/20 backdrop-blur-sm px-4 py-1.5 rounded-full text-[11px] text-[#8aacb0] font-medium mb-6">
-                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#d6fb00] animate-pulse"></span>
                     Sistem Pemetaan RTLH & GIS Sektoral
                 </div>
                 <h2 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-5">
@@ -353,7 +353,7 @@
                     <span class="text-zinc-500 text-xs">Lokasi</span>
                 </div>
                 <div class="stat-capsule" data-aos="zoom-in" data-aos-delay="900">
-                    <div class="stat-icon bg-[#c084fc]/10 text-[#c084fc]"><i class="fa-solid fa-map"></i></div>
+                    <div class="stat-icon bg-[#f59e0b]/10 text-[#f59e0b]"><i class="fa-solid fa-map"></i></div>
                     <span class="text-white font-bold">35</span>
                     <span class="text-zinc-500 text-xs">Kab/Kota</span>
                 </div>
@@ -519,10 +519,10 @@
                         <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'rtlh' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
                             <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
                             <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
-                                <i class="fa-solid fa-hammer text-3xl text-[#c084fc] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(192,132,252,0.5)]"></i>
+                                <i class="fa-solid fa-hammer text-3xl text-[#f59e0b] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]"></i>
                             </div>
                             <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
-                                <div class="text-[9px] font-bold tracking-widest text-[#c084fc] uppercase mb-1">Miskin & Ekstrem</div>
+                                <div class="text-[9px] font-bold tracking-widest text-[#f59e0b] uppercase mb-1">Miskin & Ekstrem</div>
                                 <h4 class="text-white font-bold text-base mb-1.5 leading-tight">Peningkatan RTLH</h4>
                                 <p class="text-white/80 text-xs leading-relaxed line-clamp-2">Bantuan perbaikan rumah via Bankeupemdes Rp 20 Juta.</p>
                             </div>
@@ -551,10 +551,10 @@
                         <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'rumah_apung' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
                             <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
                             <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
-                                <i class="fa-solid fa-water text-3xl text-blue-400 group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(96,165,250,0.5)]"></i>
+                                <i class="fa-solid fa-water text-3xl text-[#00a3b5] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(0,163,181,0.5)]"></i>
                             </div>
                             <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
-                                <div class="text-[9px] font-bold tracking-widest text-blue-400 uppercase mb-1">Kawasan Pesisir</div>
+                                <div class="text-[9px] font-bold tracking-widest text-[#00a3b5] uppercase mb-1">Kawasan Pesisir</div>
                                 <h4 class="text-white font-bold text-base mb-1.5 leading-tight">Program Rumah Apung</h4>
                                 <p class="text-white/80 text-xs leading-relaxed line-clamp-2">Inovasi desain rumah tahan banjir rob untuk pesisir (Timbulsloko).</p>
                             </div>
@@ -786,7 +786,7 @@
                     'rtlh': {
                         title: 'Peningkatan<br>Kualitas RTLH',
                         badge: 'Miskin & Ekstrem',
-                        dotColor: '#c084fc',
+                        dotColor: '#f59e0b',
                         colorFrom: '#4a154b',
                         colorTo: '#290a2a',
                         definition: 'Program perbaikan atau renovasi rumah bagi masyarakat miskin yang rumahnya masuk kategori tidak layak.',
@@ -909,13 +909,13 @@
                 font-weight: 600;
                 transition: all 0.3s ease;
             }
-            .tl-btn-purple {
-                background-color: rgba(168, 85, 247, 0.1);
-                color: #c084fc;
-                border: 1px solid rgba(168, 85, 247, 0.2);
+            .tl-btn-emerald {
+                background-color: rgba(16, 185, 129, 0.1);
+                color: #34d399;
+                border: 1px solid rgba(16, 185, 129, 0.2);
             }
-            .group:hover .tl-btn-purple {
-                background-color: #a855f7;
+            .group:hover .tl-btn-emerald {
+                background-color: #10b981;
                 color: #ffffff;
             }
             .tl-btn-cyan {
@@ -965,17 +965,17 @@
                 <!-- Baris Atas Kanan -->
                 <div class="tl-bento-inner-row">
                     <!-- Pengembang -->
-                    <a href="<?= base_url('pengembang') ?>" class="group rounded-3xl p-8 transition-all duration-500 relative overflow-hidden tl-bento-card-grow" style="background-color: var(--bg-card); border: 1px solid rgba(168, 85, 247, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);" data-aos="fade-up" data-aos-delay="200">
+                    <a href="<?= base_url('pengembang') ?>" class="group rounded-3xl p-8 transition-all duration-500 relative overflow-hidden tl-bento-card-grow" style="background-color: var(--bg-card); border: 1px solid rgba(16, 185, 129, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);" data-aos="fade-up" data-aos-delay="200">
                         <!-- Watermark Icon -->
-                        <i class="fa-solid fa-city absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 160px; right: -1.5rem; bottom: -1.5rem; color: #c084fc; opacity: 0.05;"></i>
+                        <i class="fa-solid fa-city absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 160px; right: -1.5rem; bottom: -1.5rem; color: #34d399; opacity: 0.05;"></i>
                         
                         <div class="relative z-10">
-                            <i class="fa-solid fa-building mb-5 transition-transform duration-500 group-hover:scale-110" style="font-size: 40px; color: #c084fc; filter: drop-shadow(0 0 12px rgba(192, 132, 252, 0.4));"></i>
-                            <h4 class="text-white font-bold text-xl mb-2 group-hover:text-purple-400 transition-colors">Pengembang</h4>
+                            <i class="fa-solid fa-building mb-5 transition-transform duration-500 group-hover:scale-110" style="font-size: 40px; color: #34d399; filter: drop-shadow(0 0 12px rgba(52, 211, 153, 0.4));"></i>
+                            <h4 class="text-white font-bold text-xl mb-2 group-hover:text-emerald-400 transition-colors">Pengembang</h4>
                             <p class="text-zinc-500 text-sm leading-relaxed">Registrasi mandiri, publikasi proyek perumahan, dan dokumen petunjuk teknis.</p>
                         </div>
                         <div class="relative z-10" style="margin-top: auto; padding-top: 2rem;">
-                            <div class="tl-btn-base tl-btn-purple">
+                            <div class="tl-btn-base tl-btn-emerald">
                                 <span>Selengkapnya</span>
                                 <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                             </div>

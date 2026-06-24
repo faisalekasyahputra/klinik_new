@@ -306,8 +306,8 @@
             <!-- 6. Statistika Publikasi & Keterbukaan Informasi -->
             <section id="publikasi" class="animate-fade-in-up scroll-mt-28" style="animation-delay: 0.6s;">
                 <div class="flex items-center gap-4 mb-6 border-b border-white/5 pb-4">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center text-white shadow-[0_0_20px_rgba(168,85,247,0.3)]">
-                        <i class="fa-solid fa-bullhorn text-2xl"></i>
+                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-[0_0_20px_rgba(6,182,212,0.3)]">
+                        <i class="fa-solid fa-bullhorn text-xl"></i>
                     </div>
                     <div>
                         <h2 class="text-2xl font-bold text-white">Statistika Publikasi</h2>
@@ -316,9 +316,9 @@
                 </div>
                 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-purple-500/30 p-5 rounded-2xl relative overflow-hidden shadow-[0_0_15px_rgba(168,85,247,0.1)]">
-                        <div class="text-purple-400 text-xs font-semibold mb-1">Berita & Artikel</div>
-                        <div class="text-3xl font-black text-purple-400 mb-2"><?= number_format($publikasi['artikel'], 0, ',', '.') ?></div>
+                    <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-cyan-500/30 p-5 rounded-2xl relative overflow-hidden shadow-[0_0_15px_rgba(6,182,212,0.1)]">
+                        <div class="text-cyan-400 text-xs font-semibold mb-1">Berita & Artikel</div>
+                        <div class="text-3xl font-black text-cyan-400 mb-2"><?= number_format($publikasi['artikel'], 0, ',', '.') ?></div>
                     </div>
                     <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl relative overflow-hidden">
                         <div class="text-[#8aacb0] text-xs font-semibold mb-1">Galeri Video</div>
@@ -524,7 +524,7 @@
                         <?= $publikasi['regulasi'] ?>, 
                         <?= $publikasi['desain_rumah'] ?>
                     ],
-                    backgroundColor: ['#a855f7', '#3b82f6', '#10b981', '#f59e0b'],
+                    backgroundColor: ['#00a3b5', '#3b82f6', '#10b981', '#f59e0b'],
                     borderRadius: 8,
                     barThickness: 40
                 }]
