@@ -126,7 +126,7 @@ class Umum extends MY_Controller {
 		$user_id = $this->get_user_id();
 
 		// RATE LIMIT: Maks 5 topik per jam per user
-		if (!check_forum_rate_limit('tb_diskusi', $user_id, 5)) {
+		if (!check_forum_rate_limit('diskusi', $user_id, 5)) {
 			$this->session->set_flashdata('error', 'Anda terlalu sering membuat topik. Silakan coba lagi nanti.');
 			redirect('Umum/forum');
 			return;
@@ -245,7 +245,7 @@ class Umum extends MY_Controller {
 		}
 
 		// RATE LIMIT: Maks 10 komentar per jam per user
-		if (!check_forum_rate_limit('tb_komentar', $user_id, 10)) {
+		if (!check_forum_rate_limit('komentar', $user_id, 10)) {
 			$this->session->set_flashdata('error', 'Anda terlalu sering membalas. Silakan coba lagi nanti.');
 			redirect('Umum/detail/' . $id_diskusi);
 			return;

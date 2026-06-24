@@ -231,20 +231,7 @@ class Buka_peta extends CI_Model
         }
         return $utama;
     }
-     public function frd_kondisi($id_jem, $tri)
-    {
-        $this->db->where(['Id_Saluran' => $id_jem]);
-        $this->db->where(['tahun' => $tri]);
-		$this->db->order_by('HM','ASC');
-        $query = $this->db->get('kondisi');
 
-
-        if ($query->num_rows() > 0) {
-            return $query->result();
-        } else {
-            return NULL;
-        }
-    }
     public function statistik($args, $args1,$kondisi,$table)
     {
 
@@ -364,51 +351,5 @@ class Buka_peta extends CI_Model
             return 0;
         }
     }
-    public function statistik_panjang($args, $args1)
-    {
 
-        if ($args != null) {
-            $this->db->where(['UPTD' => $args]);
-        }
-        $this->db->where(['KONDISI' => $args1]);
-        $query = $this->db->get('irigasi');
-        $has = $query->result();
-        $tot_p = 0;
-        foreach ($has as $h) {
-            $pan = $h->PANJANG;
-            $tot_p = $tot_p + $pan;
-        }
-        return $tot_p;
-    }
-    public function statistik_panjangp($args, $args1)
-    {
-
-        if ($args != null) {
-            $this->db->where(['UPTD' => $args]);
-        }
-        $this->db->where(['KONDISI' => $args1]);
-        $query = $this->db->get('saluran_pembuang');
-        $has = $query->result();
-        $tot_p = 0;
-        foreach ($has as $h) {
-            $pan = $h->PANJANG;
-            $tot_p = $tot_p + $pan;
-        }
-        return $tot_p;
-    }
-    public function statistik_bendung($args, $args1)
-    {
-
-        if ($args != null) {
-            $this->db->where(['UPTD' => $args]);
-        }
-        $this->db->where(['KONDISI' => $args1]);
-        $query = $this->db->get('bendung');
-
-        if ($query->num_rows() > 0) {
-            return $query->num_rows();
-        } else {
-            return 0;
-        }
-    }
 }

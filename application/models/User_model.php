@@ -44,10 +44,10 @@ class User_model extends CI_Model {
 
         // Sync with forum tables
         $this->db->where('user_id', $user_id);
-        $this->db->update('tb_diskusi', ['nama_user' => $display_name]);
+        $this->db->update('diskusi', ['nama_user' => $display_name]);
 
         $this->db->where('user_id', $user_id);
-        $this->db->update('tb_komentar', ['nama_komentator' => $display_name]);
+        $this->db->update('komentar', ['nama_komentator' => $display_name]);
 
         $this->db->trans_complete();
         return $this->db->trans_status();
@@ -58,7 +58,7 @@ class User_model extends CI_Model {
 
         // Anonymize forum comments
         $this->db->where('user_id', $user_id);
-        $this->db->update('tb_komentar', [
+        $this->db->update('komentar', [
             'user_id' => NULL,
             'nama_komentator' => 'Akun Dihapus',
             'role' => 'Warga'
@@ -66,14 +66,14 @@ class User_model extends CI_Model {
 
         // Anonymize forum discussions
         $this->db->where('user_id', $user_id);
-        $this->db->update('tb_diskusi', [
+        $this->db->update('diskusi', [
             'user_id' => NULL,
             'nama_user' => 'Akun Dihapus'
         ]);
 
         // Delete user's likes
         $this->db->where('user_id', $user_id);
-        $this->db->delete('tb_forum_likes');
+        $this->db->delete('forum_likes');
 
         // Finally, delete the user account
         $this->db->where('id', $user_id);

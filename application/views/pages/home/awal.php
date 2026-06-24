@@ -157,10 +157,11 @@
                     backdrop-filter: blur(16px);
                     -webkit-backdrop-filter: blur(16px);
                     border-radius: 1rem;
-                    transform: translateZ(0); /* Hardware acceleration hint */
+                    -webkit-backface-visibility: hidden;
+                    backface-visibility: hidden;
                 }
                 .ticket-wrapper:hover .ticket-base {
-                    background: linear-gradient(135deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.1) 100%);
+                    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%);
                 }
 
                 .ticket-border {
@@ -187,16 +188,12 @@
                 }
                 .ticket-border::before { top: -9px; }
                 .ticket-border::after { bottom: -9px; }
-                .ticket-wrapper:hover .ticket-border::before,
-                .ticket-wrapper:hover .ticket-border::after {
-                    border-color: rgba(255,255,255,0.5);
-                }
                 </style>
 
                 <!-- Ticket 1: KPR-FLPP -->
-                <div class="ticket-wrapper relative group transition-all duration-300 hover:-translate-y-0.5" data-aos="fade-up" data-aos-delay="100">
+                <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="100">
                     <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                    <a href="#etalase-program" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10 transition-colors duration-300">
+                    <a href="#etalase-program" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
                         <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
                         <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
                             <i class="fa-solid fa-building-columns text-3xl text-[#00e1fa] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(0,225,250,0.5)]"></i>
@@ -204,15 +201,15 @@
                         <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
                             <div class="text-[9px] font-bold tracking-widest text-[#00e1fa] uppercase mb-1">MBR Fixed Income</div>
                             <h4 class="text-white font-bold text-base mb-1.5 leading-tight">KPR-FLPP</h4>
-                            <p class="text-white/80 text-xs leading-relaxed line-clamp-2">Bunga flat 5% & cicilan ringan hingga 20 tahun.</p>
+                            <p class="text-white/80 text-[11px] leading-relaxed line-clamp-2">Bunga flat 5% & cicilan ringan hingga 20 tahun.</p>
                         </div>
                     </a>
                 </div>
 
                 <!-- Ticket 2: Oemah Lestari -->
-                <div class="ticket-wrapper relative group transition-all duration-300 hover:-translate-y-0.5" data-aos="fade-up" data-aos-delay="200">
+                <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="200">
                     <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                    <a href="#etalase-program" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10 transition-colors duration-300">
+                    <a href="#etalase-program" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
                         <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
                         <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
                             <i class="fa-solid fa-leaf text-3xl text-[#85ea92] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(133,234,146,0.5)]"></i>
@@ -220,15 +217,15 @@
                         <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
                             <div class="text-[9px] font-bold tracking-widest text-[#85ea92] uppercase mb-1">MBR & Umum</div>
                             <h4 class="text-white font-bold text-base mb-1.5 leading-tight">Oemah Lestari</h4>
-                            <p class="text-white/80 text-xs leading-relaxed line-clamp-2">Fasilitas pembiayaan rumah murah bagi MBR dengan skema kredit bunga ringan (8% flat).</p>
+                            <p class="text-white/80 text-[11px] leading-relaxed line-clamp-2">Fasilitas pembiayaan rumah murah bagi MBR dengan skema kredit bunga ringan (8% flat).</p>
                         </div>
                     </a>
                 </div>
 
                 <!-- Ticket 3: Peningkatan RTLH -->
-                <div class="ticket-wrapper relative group transition-all duration-300 hover:-translate-y-0.5" data-aos="fade-up" data-aos-delay="300">
+                <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="300">
                     <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                    <a href="#etalase-program" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10 transition-colors duration-300">
+                    <a href="#etalase-program" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
                         <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
                         <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
                             <i class="fa-solid fa-hammer text-3xl text-[#d4a1ff] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(212,161,255,0.5)]"></i>
@@ -236,15 +233,15 @@
                         <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
                             <div class="text-[9px] font-bold tracking-widest text-[#d4a1ff] uppercase mb-1">Miskin & Ekstrem</div>
                             <h4 class="text-white font-bold text-base mb-1.5 leading-tight">Peningkatan RTLH</h4>
-                            <p class="text-white/80 text-xs leading-relaxed line-clamp-2">Bantuan perbaikan rumah via Bankeupemdes.</p>
+                            <p class="text-white/80 text-[11px] leading-relaxed line-clamp-2">Bantuan perbaikan rumah via Bankeupemdes.</p>
                         </div>
                     </a>
                 </div>
 
                 <!-- Ticket 4: Stimulan PB -->
-                <div class="ticket-wrapper relative group transition-all duration-300 hover:-translate-y-0.5" data-aos="fade-up" data-aos-delay="400">
+                <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="400">
                     <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                    <a href="#etalase-program" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10 transition-colors duration-300">
+                    <a href="#etalase-program" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
                         <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
                         <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
                             <i class="fa-solid fa-trowel-bricks text-3xl text-[#e5ff4d] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(229,255,77,0.5)]"></i>
@@ -252,15 +249,15 @@
                         <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
                             <div class="text-[9px] font-bold tracking-widest text-[#e5ff4d] uppercase mb-1">Bencana & Relokasi</div>
                             <h4 class="text-white font-bold text-base mb-1.5 leading-tight">Stimulan PB</h4>
-                            <p class="text-white/80 text-xs leading-relaxed line-clamp-2">Bantuan material pembangunan untuk PB Bencana.</p>
+                            <p class="text-white/80 text-[11px] leading-relaxed line-clamp-2">Bantuan material pembangunan untuk PB Bencana.</p>
                         </div>
                     </a>
                 </div>
 
                 <!-- Ticket 5: Program Rumah Apung -->
-                <div class="ticket-wrapper relative group transition-all duration-300 hover:-translate-y-0.5 col-span-2 w-full max-w-[calc(50%-0.5rem)] mx-auto" data-aos="fade-up" data-aos-delay="500">
+                <div class="ticket-wrapper relative group transition-shadow duration-300 col-span-2 w-full max-w-[calc(50%-0.5rem)] mx-auto" data-aos="slide-up" data-aos-delay="500">
                     <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                    <a href="#etalase-program" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10 transition-colors duration-300">
+                    <a href="#etalase-program" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
                         <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
                         <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
                             <i class="fa-solid fa-water text-3xl text-[#7db5ff] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(125,181,255,0.5)]"></i>
@@ -268,7 +265,7 @@
                         <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
                             <div class="text-[9px] font-bold tracking-widest text-[#7db5ff] uppercase mb-1">Kawasan Pesisir</div>
                             <h4 class="text-white font-bold text-base mb-1.5 leading-tight">Program Rumah Apung</h4>
-                            <p class="text-white/80 text-xs leading-relaxed line-clamp-2">Inovasi desain rumah tahan banjir rob.</p>
+                            <p class="text-white/80 text-[11px] leading-relaxed line-clamp-2">Inovasi desain rumah tahan banjir rob.</p>
                         </div>
                     </a>
                 </div>
@@ -485,9 +482,9 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                     
                     <!-- Ticket 1: KPR-FLPP -->
-                    <div class="ticket-wrapper relative group transition-all duration-300 hover:-translate-y-0.5" data-aos="fade-up" data-aos-delay="100">
+                    <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="100">
                         <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                        <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'flpp' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10 transition-colors duration-300">
+                        <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'flpp' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
                             <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
                             <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
                                 <i class="fa-solid fa-building-columns text-3xl text-[#00a3b5] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(0,163,181,0.5)]"></i>
@@ -501,9 +498,9 @@
                     </div>
 
                     <!-- Ticket 2: Oemah Lestari -->
-                    <div class="ticket-wrapper relative group transition-all duration-300 hover:-translate-y-0.5" data-aos="fade-up" data-aos-delay="200">
+                    <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="200">
                         <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                        <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'oemah_lestari' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10 transition-colors duration-300">
+                        <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'oemah_lestari' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
                             <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
                             <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
                                 <i class="fa-solid fa-leaf text-3xl text-[#6bcb77] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(107,203,119,0.5)]"></i>
@@ -511,15 +508,15 @@
                             <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
                                 <div class="text-[9px] font-bold tracking-widest text-[#6bcb77] uppercase mb-1">MBR & Umum</div>
                                 <h4 class="text-white font-bold text-base mb-1.5 leading-tight">Oemah Lestari</h4>
-                                <p class="text-white/80 text-xs leading-relaxed line-clamp-2">Fasilitas pembiayaan rumah murah bagi MBR dengan skema kredit bunga ringan (8% flat).</p>
+                                <p class="text-white/80 text-xs leading-relaxed line-clamp-2">Fasilitas pembiayaan rumah murah skema kredit bunga ringan.</p>
                             </div>
                         </div>
                     </div>
 
                     <!-- Ticket 3: Peningkatan RTLH -->
-                    <div class="ticket-wrapper relative group transition-all duration-300 hover:-translate-y-0.5" data-aos="fade-up" data-aos-delay="300">
+                    <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="300">
                         <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                        <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'rtlh' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10 transition-colors duration-300">
+                        <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'rtlh' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
                             <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
                             <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
                                 <i class="fa-solid fa-hammer text-3xl text-[#c084fc] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(192,132,252,0.5)]"></i>
@@ -533,9 +530,9 @@
                     </div>
 
                     <!-- Ticket 4: Stimulan PB -->
-                    <div class="ticket-wrapper relative group transition-all duration-300 hover:-translate-y-0.5" data-aos="fade-up" data-aos-delay="400">
+                    <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="400">
                         <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                        <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'pb' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10 transition-colors duration-300">
+                        <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'pb' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
                             <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
                             <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
                                 <i class="fa-solid fa-trowel-bricks text-3xl text-[#d6fb00] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(214,251,0,0.5)]"></i>
@@ -549,9 +546,9 @@
                     </div>
 
                     <!-- Ticket 5: Program Rumah Apung -->
-                    <div class="ticket-wrapper relative group transition-all duration-300 hover:-translate-y-0.5 sm:col-span-2 md:col-span-1 xl:col-span-2" data-aos="fade-up" data-aos-delay="500">
+                    <div class="ticket-wrapper relative group transition-shadow duration-300 sm:col-span-2 md:col-span-1 xl:col-span-2" data-aos="slide-up" data-aos-delay="500">
                         <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                        <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'rumah_apung' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10 transition-colors duration-300">
+                        <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'rumah_apung' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
                             <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
                             <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
                                 <i class="fa-solid fa-water text-3xl text-blue-400 group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(96,165,250,0.5)]"></i>
@@ -645,7 +642,7 @@
                          x-transition:leave="ease-in duration-200"
                          x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                          x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                         class="relative transform overflow-hidden rounded-3xl bg-[#0f2a30] text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-5xl border border-white/10"
+                         class="relative transform overflow-hidden rounded-3xl bg-[#0f2a30] text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-6xl xl:max-w-7xl border border-white/10"
                          @click.stop>
                         
                         <!-- Close Button -->
@@ -653,16 +650,24 @@
                             <i class="fa-solid fa-xmark"></i>
                         </button>
 
+                        <style>
+                            .modal-image-mask {
+                                -webkit-mask-image: linear-gradient(to top, transparent 0%, black 50%);
+                                mask-image: linear-gradient(to top, transparent 0%, black 50%);
+                            }
+                            @media (min-width: 768px) {
+                                .modal-image-mask {
+                                    -webkit-mask-image: linear-gradient(to left, transparent 0%, black 40%);
+                                    mask-image: linear-gradient(to left, transparent 0%, black 40%);
+                                }
+                            }
+                        </style>
                         <template x-if="activeId && programs[activeId]">
                             <div class="flex flex-col md:flex-row w-full h-full">
                                 <!-- Modal Left Image Banner -->
-                                <div class="relative aspect-square w-full md:w-1/2 shrink-0 bg-slate-800 overflow-hidden">
-                                    <!-- Gradient Overlay for Mobile (Bottom) -->
-                                    <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#0f2a30] to-transparent z-10 md:hidden"></div>
-                                    <!-- Gradient Overlay for Desktop (Right) -->
-                                    <div class="absolute inset-y-0 right-0 w-1/4 md:bg-gradient-to-r md:from-transparent md:to-[#0f2a30] z-10 hidden md:block"></div>
+                                <div class="relative aspect-square w-full md:w-5/12 shrink-0 overflow-hidden">
                                     
-                                    <img :src="programs[activeId].image" alt="Program Image" class="absolute inset-0 w-full h-full object-cover">
+                                    <img :src="programs[activeId].image" alt="Program Image" class="absolute inset-0 w-full h-full object-cover modal-image-mask">
                                     
                                     <!-- Title on mobile only (overlay on image) -->
                                     <div class="absolute bottom-6 left-6 z-20 md:hidden">
@@ -696,14 +701,19 @@
                                         <p class="text-zinc-300 text-sm leading-relaxed" x-text="programs[activeId].terms"></p>
                                         
                                         <template x-if="programs[activeId].options">
-                                            <ul class="mt-3 space-y-2">
+                                            <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                                                 <template x-for="(opt, idx) in programs[activeId].options" :key="idx">
-                                                    <li class="text-sm text-zinc-300 bg-white/5 rounded-lg p-3 border border-white/5">
-                                                        <strong class="text-white block mb-1" x-text="opt.name"></strong>
-                                                        <span class="text-xs" x-text="opt.desc"></span>
-                                                    </li>
+                                                    <div class="bg-[#0a1a1f]/50 rounded-xl p-4 border border-white/10 hover:border-[#d6fb00]/30 hover:bg-[#d6fb00]/5 transition-all group flex flex-col h-full">
+                                                        <div class="flex items-center gap-3 mb-3">
+                                                            <div class="w-8 h-8 shrink-0 rounded-lg bg-[#d6fb00]/10 text-[#d6fb00] group-hover:bg-[#d6fb00] group-hover:text-[#0a1a1f] flex items-center justify-center text-sm transition-colors">
+                                                                <i class="fa-solid" :class="opt.icon || 'fa-house-chimney'"></i>
+                                                            </div>
+                                                            <h5 class="text-white font-bold text-sm leading-tight" x-text="opt.name"></h5>
+                                                        </div>
+                                                        <p class="text-zinc-400 text-xs leading-relaxed flex-1" x-text="opt.desc"></p>
+                                                    </div>
                                                 </template>
-                                            </ul>
+                                            </div>
                                         </template>
                                     </div>
 
@@ -720,7 +730,7 @@
                                     <div class="flex justify-end gap-3 pt-5 border-t border-white/10">
                                         <button @click="closeModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white transition-colors">Tutup</button>
                                         <a :href="'<?= base_url('Program/diagnosa/') ?>' + activeId" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-white text-[#0a1a1f] hover:bg-zinc-200 transition-colors inline-flex items-center gap-2">
-                                            Ajukan Sekarang <i class="fa-solid fa-arrow-right"></i>
+                                            Cek Kelayakan NIK <i class="fa-solid fa-arrow-right"></i>
                                         </a>
                                     </div>
                                 </div>
@@ -793,9 +803,9 @@
                         definition: 'Bantuan stimulan material bangunan senilai Rp 40 Juta untuk pembangunan rumah baru.',
                         terms: 'Terbagi dalam 3 skema penanganan strategis:',
                         options: [
-                            { name: 'PB Backlog', desc: 'Untuk warga menumpang (>1 KK) atau sewa di lahan milik sendiri.' },
-                            { name: 'PB Relokasi', desc: 'Bantuan struktur pracetak RUSPIN untuk warga kawasan kumuh/rawan bencana yang bersedia direlokasi.' },
-                            { name: 'PB Bencana', desc: 'Pembangunan kembali rumah rusak berat akibat bencana alam.' }
+                            { name: 'PB Backlog', icon: 'fa-users-line', desc: 'Khusus bagi warga MBR yang masih menumpang (>1 KK dalam satu rumah) atau menyewa, namun sudah memiliki lahan/tanah hak milik pribadi yang sah dan siap bangun.' },
+                            { name: 'PB Relokasi', icon: 'fa-truck-fast', desc: 'Bantuan struktur pracetak RUSPIN (Rumah Unggul Sistem Panel Instan). Dikhususkan bagi warga yang tinggal di kawasan kumuh berat atau rawan bencana alam yang direlokasi ke lahan baru yang aman.' },
+                            { name: 'PB Bencana', icon: 'fa-house-crack', desc: 'Bantuan material pembangunan rumah baru bagi warga yang rumah asalnya mengalami kerusakan kategori berat atau roboh total diakibatkan oleh kejadian bencana alam tak terduga.' }
                         ],
                         budget: 'Bansos Pemprov Jawa Tengah',
                         image: '<?= base_url('assets/img/program/04_Bantuan.avif') ?>'

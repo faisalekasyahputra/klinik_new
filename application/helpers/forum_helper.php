@@ -61,7 +61,7 @@ if (!function_exists('sanitize_forum_input')) {
 if (!function_exists('check_forum_rate_limit')) {
     /**
      * Cek apakah user sudah melebihi batas posting.
-     * @param string $table 'tb_diskusi' atau 'tb_komentar'
+     * @param string $table 'diskusi' atau 'komentar'
      * @param int $user_id ID user dari session
      * @param int $max_per_hour Maksimal posting per jam
      * @return bool TRUE jika masih boleh posting

@@ -1,8 +1,13 @@
 <main class="min-h-screen pt-24 pb-16 relative font-outfit z-10">
     <!-- Load Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Force body to allow sticky positioning in case of hidden overflows */
+        body, html { overflow-x: clip !important; }
+        #page-content-wrapper { overflow: visible !important; }
+    </style>
 
-    <div class="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         
         <!-- Header -->
         <div class="text-center mb-10 animate-fade-in-up">
@@ -41,10 +46,12 @@
             <?php endif; ?>
         </div>
 
-        <div class="flex flex-col lg:flex-row gap-8 items-start">
+        <div class="flex flex-col lg:flex-row gap-8 items-stretch relative">
             
-            <!-- Sidebar Navigation -->
-            <aside class="w-full lg:w-64 flex-shrink-0 sticky top-28 z-40 bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 hidden lg:block animate-fade-in-up">
+            <!-- Sidebar Wrapper (Stretches to full height) -->
+            <div class="w-full lg:w-64 flex-shrink-0 hidden lg:block relative">
+                <!-- Actual Sticky Panel -->
+                <aside class="sticky top-32 z-40 bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
                 <h3 class="text-white font-bold text-sm uppercase tracking-wider mb-4 px-2 border-b border-white/10 pb-2">Kategori Data</h3>
                 <nav class="space-y-1" id="stat-nav">
                     <a href="#perumahan" class="flex items-center gap-3 px-3 py-2 text-sm text-[#8aacb0] hover:text-[#d6fb00] hover:bg-white/5 rounded-xl transition-colors">
@@ -66,7 +73,8 @@
                         <i class="fa-solid fa-bullhorn w-4 text-center"></i> Publikasi
                     </a>
                 </nav>
-            </aside>
+                </aside>
+            </div>
 
             <!-- Main Content Area -->
             <div class="flex-1 min-w-0 space-y-16">
@@ -328,6 +336,7 @@
             </section>
 
         </div>
+    </div>
     </div>
     
     <script>

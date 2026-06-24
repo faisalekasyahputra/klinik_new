@@ -16,46 +16,6 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `bendung`
---
-
-DROP TABLE IF EXISTS `bendung`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `bendung` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `NO_permen` varchar(255) DEFAULT NULL,
-  `NAMA_DI` varchar(255) DEFAULT NULL,
-  `id_di` int(11) NOT NULL,
-  `STATUS_IRI` varchar(255) DEFAULT NULL,
-  `KABUPATEN` varchar(255) DEFAULT NULL,
-  `KECAMATAN` varchar(255) DEFAULT NULL,
-  `DESA` varchar(255) DEFAULT NULL,
-  `id_desa` int(11) DEFAULT NULL,
-  `X` varchar(255) DEFAULT NULL,
-  `Y` varchar(255) DEFAULT NULL,
-  `TAHUN_SELE` varchar(255) DEFAULT NULL,
-  `LUAS_AREAL` varchar(255) DEFAULT NULL,
-  `BAKU` varchar(255) DEFAULT NULL,
-  `POTENSIAL` varchar(255) DEFAULT NULL,
-  `FUNGSIONAL` varchar(255) DEFAULT NULL,
-  `F_Alasan_p` varchar(255) DEFAULT NULL,
-  `UPTD` varchar(255) DEFAULT NULL,
-  `NAMA_BENDU` varchar(255) DEFAULT NULL,
-  `KEMANTREN` varchar(255) DEFAULT NULL,
-  `geojson` varchar(255) DEFAULT NULL,
-  `Photo1` varchar(255) DEFAULT NULL,
-  `KONDISI` varchar(255) DEFAULT NULL,
-  `Photo2` varchar(255) DEFAULT NULL,
-  `Photo3` varchar(255) DEFAULT NULL,
-  `nomenklatur` varchar(255) DEFAULT NULL,
-  `id_kemantren` int(11) DEFAULT NULL,
-  `keterangan` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=632 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `chat_messages`
 --
 
@@ -86,75 +46,6 @@ CREATE TABLE `chat_rooms` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `session_token` (`session_token`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `irigasi`
---
-
-DROP TABLE IF EXISTS `irigasi`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `irigasi` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `K_SALURAN` varchar(255) DEFAULT NULL,
-  `NOMENKLATU` varchar(255) DEFAULT NULL,
-  `NAMA` varchar(255) DEFAULT NULL,
-  `DI` varchar(255) DEFAULT NULL,
-  `KelasSalur` varchar(255) DEFAULT NULL,
-  `id_di` varchar(255) DEFAULT NULL,
-  `PANJANG` varchar(255) DEFAULT NULL,
-  `Kode_DI` varchar(255) DEFAULT NULL,
-  `Desa` varchar(255) DEFAULT NULL,
-  `id_desa` varchar(255) DEFAULT NULL,
-  `Kecamatan` varchar(255) DEFAULT NULL,
-  `NO_DI` varchar(255) DEFAULT NULL,
-  `UPTD` varchar(255) DEFAULT NULL,
-  `KONDISI` varchar(255) DEFAULT NULL,
-  `KEMANTREN` varchar(255) DEFAULT NULL,
-  `Photo_Awal` varchar(255) DEFAULT NULL,
-  `Photo_Ujun` varchar(255) DEFAULT NULL,
-  `geojson` longtext DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=1304 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `kondisi`
---
-
-DROP TABLE IF EXISTS `kondisi`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `kondisi` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `K_SALURAN` varchar(255) DEFAULT NULL,
-  `NOMENKLATU` varchar(255) DEFAULT NULL,
-  `NAMA` varchar(255) DEFAULT NULL,
-  `DI` varchar(255) DEFAULT NULL,
-  `KelasSalur` varchar(255) DEFAULT NULL,
-  `Desa` varchar(255) DEFAULT NULL,
-  `Kecamatan` varchar(255) DEFAULT NULL,
-  `NO_DI` varchar(255) DEFAULT NULL,
-  `UPTD` varchar(255) DEFAULT NULL,
-  `KONDISI` varchar(255) DEFAULT NULL,
-  `KEMANTREN` varchar(255) DEFAULT NULL,
-  `HM` varchar(255) DEFAULT NULL,
-  `Id_Saluran` varchar(255) DEFAULT NULL,
-  `geojson` longtext DEFAULT NULL,
-  `tinggikiri` float DEFAULT NULL,
-  `tebalkiri` float DEFAULT NULL,
-  `tinggikanan` float DEFAULT NULL,
-  `tebalkanan` float DEFAULT NULL,
-  `konstruksikiri` varchar(255) DEFAULT NULL,
-  `konstruksikanan` varchar(225) DEFAULT NULL,
-  `lebaratas` float DEFAULT NULL,
-  `lebarbawah` float DEFAULT NULL,
-  `tahun` varchar(255) DEFAULT NULL,
-  `foto` varchar(255) DEFAULT NULL,
-  `folder` varchar(255) DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=11384 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -190,43 +81,6 @@ CREATE TABLE `multi` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `saluran_pembuang`
---
-
-DROP TABLE IF EXISTS `saluran_pembuang`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `saluran_pembuang` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `nama_saluran` varchar(255) DEFAULT NULL,
-  `Kecamatan` varchar(255) DEFAULT NULL,
-  `Desa` varchar(255) DEFAULT NULL,
-  `Kemantren` varchar(255) DEFAULT NULL,
-  `UPTD` varchar(255) DEFAULT NULL,
-  `id_uptd` varchar(255) DEFAULT NULL,
-  `Kondisi` varchar(255) DEFAULT NULL,
-  `foto_awal` varchar(255) DEFAULT NULL,
-  `foto_ujung` varchar(255) DEFAULT NULL,
-  `nomenklatur` varchar(255) DEFAULT NULL,
-  `no_sk` int(11) DEFAULT NULL,
-  `PANJANG` float DEFAULT NULL,
-  `LEBAR_A` float DEFAULT NULL,
-  `LEBAR_B` float DEFAULT NULL,
-  `TINGGI_KI` float DEFAULT NULL,
-  `TEBAL_KI` float DEFAULT NULL,
-  `MATRIAL_KI` varchar(255) DEFAULT NULL,
-  `TINGGI_KA` float DEFAULT NULL,
-  `TEBAL_KA` float DEFAULT NULL,
-  `MATRIAL_KA` varchar(255) DEFAULT NULL,
-  `TAHUN_DATA` varchar(255) DEFAULT NULL,
-  `Keterangan` varchar(255) DEFAULT NULL,
-  `MANTRI` varchar(255) DEFAULT NULL,
-  `geojson` longtext DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=1019 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
 -- Table structure for table `sosmed_perumahan`
 --
 
@@ -248,13 +102,13 @@ CREATE TABLE `sosmed_perumahan` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `tb_diskusi`
+-- Table structure for table `diskusi`
 --
 
-DROP TABLE IF EXISTS `tb_diskusi`;
+DROP TABLE IF EXISTS `diskusi`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `tb_diskusi` (
+CREATE TABLE `diskusi` (
   `id_diskusi` int(11) NOT NULL AUTO_INCREMENT,
   `nama_user` varchar(255) NOT NULL,
   `email_user` varchar(255) NOT NULL,
@@ -278,13 +132,13 @@ CREATE TABLE `tb_diskusi` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `tb_forum_likes`
+-- Table structure for table `forum_likes`
 --
 
-DROP TABLE IF EXISTS `tb_forum_likes`;
+DROP TABLE IF EXISTS `forum_likes`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `tb_forum_likes` (
+CREATE TABLE `forum_likes` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `target_type` enum('diskusi','komentar') NOT NULL,
@@ -297,13 +151,13 @@ CREATE TABLE `tb_forum_likes` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `tb_komentar`
+-- Table structure for table `komentar`
 --
 
-DROP TABLE IF EXISTS `tb_komentar`;
+DROP TABLE IF EXISTS `komentar`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `tb_komentar` (
+CREATE TABLE `komentar` (
   `id_komentar` int(11) NOT NULL AUTO_INCREMENT,
   `id_diskusi` int(11) NOT NULL,
   `reply_to` int(11) DEFAULT NULL,
@@ -321,25 +175,6 @@ CREATE TABLE `tb_komentar` (
   KEY `idx_user_id_k` (`user_id`),
   KEY `idx_reply_to` (`reply_to`)
 ) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Table structure for table `user`
---
-
-DROP TABLE IF EXISTS `user`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `user` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `nama` varchar(255) DEFAULT NULL,
-  `pass` varchar(255) DEFAULT NULL,
-  `email` varchar(255) DEFAULT NULL,
-  `file_foto` varchar(255) DEFAULT NULL,
-  `bidang` varchar(255) DEFAULT NULL,
-  `kategori` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -397,6 +232,100 @@ CREATE TABLE `users` (
   UNIQUE KEY `email` (`email`),
   UNIQUE KEY `idx_users_email` (`email`)
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `program_kategori`
+--
+
+DROP TABLE IF EXISTS `program_kategori`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `program_kategori` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `nama_kategori` VARCHAR(100) NOT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `program_kategori`
+--
+INSERT INTO `program_kategori` (`nama_kategori`) VALUES 
+('Perumahan Subsidi / KPR'),
+('Peningkatan Kualitas (RTLH)'),
+('Bantuan Pembangunan Baru'),
+('Kawasan Pesisir & Khusus');
+
+--
+-- Table structure for table `programs`
+--
+
+DROP TABLE IF EXISTS `programs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `programs` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `id_kategori` INT NOT NULL,
+  `kode_program` VARCHAR(50) UNIQUE NOT NULL,
+  `nama_program` VARCHAR(255) NOT NULL,
+  `deskripsi_singkat` TEXT NOT NULL,
+  `batas_penghasilan_max` DECIMAL(15,2) DEFAULT NULL,
+  `is_active` TINYINT(1) DEFAULT 1,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`id_kategori`) REFERENCES `program_kategori`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `programs`
+--
+INSERT INTO `programs` (`id_kategori`, `kode_program`, `nama_program`, `deskripsi_singkat`, `batas_penghasilan_max`) VALUES 
+(1, 'flpp', 'KPR-FLPP Rumah Subsidi', 'Skema pembiayaan perumahan subsidi bagi MBR.', 8000000),
+(1, 'oemah_lestari', 'Oemah Lestari', 'Kredit kolaborasi BPR-BRK dengan bunga ringan.', 10000000),
+(2, 'rtlh', 'Peningkatan Kualitas RTLH', 'Bantuan perbaikan rumah bagi masyarakat miskin.', 3000000),
+(3, 'pb', 'Stimulan Pembangunan Baru', 'Bantuan material untuk pembangunan rumah baru.', 4000000),
+(4, 'rumah_apung', 'Program Rumah Apung', 'Rumah adaptif untuk kawasan pesisir (rob).', 4000000);
+
+--
+-- Table structure for table `housing_queue`
+--
+
+DROP TABLE IF EXISTS `housing_queue`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `housing_queue` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_id` INT DEFAULT NULL,
+  `program_id` INT NOT NULL,
+  `nik_pengaju` VARCHAR(255) NOT NULL,
+  `nama_lengkap` VARCHAR(255) NOT NULL,
+  `data_simperum_json` TEXT NULL,
+  `data_survey_json` TEXT NULL,
+  `status_antrean` ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+  `catatan_admin` TEXT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`program_id`) REFERENCES `programs`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `settings`
+--
+
+DROP TABLE IF EXISTS `settings`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE IF NOT EXISTS `settings` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `key_name` varchar(100) NOT NULL,
+  `key_value` text,
+  `type` varchar(50) DEFAULT 'text',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `key_name` (`key_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
