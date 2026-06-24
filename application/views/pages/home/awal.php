@@ -768,7 +768,7 @@
                         colorFrom: '#0f4c5c',
                         colorTo: '#062b35',
                         definition: 'Skema pembiayaan perumahan subsidi bagi Masyarakat Berpenghasilan Rendah (MBR).',
-                        terms: 'Bunga flat tetap sebesar 5% sepanjang tenor, Uang Muka (DP) sangat ringan mulai 1%, dengan pilihan tenor (jangka waktu angsuran) panjang hingga 20 tahun.',
+                        terms: 'Bunga flat tetap sebesar 5% sepanjang tenor, Uang Muka (DP) sangat ringan mulai 1%, dengan pilihan tenor (jangka waktu angsuran) panjang hingga 20 tahun. Batas penghasilan maksimal Rp 8 Juta / bulan.',
                         budget: 'APBN (Kuota Nasional)',
                         image: '<?= base_url('assets/img/program/01_subsidif_lpp.avif') ?>'
                     },

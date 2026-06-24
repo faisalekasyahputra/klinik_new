@@ -1,0 +1,200 @@
+{
+  "main": {
+    "id": "3bbc75e2e8414469",
+    "type": "split",
+    "children": [
+      {
+        "id": "227d4af59c8b30d5",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "924056e7856bd6e7",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "AKUN_LOGIN.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "AKUN_LOGIN"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "2a4600866fd1be06",
+    "type": "split",
+    "children": [
+      {
+        "id": "5635bcf5b1767789",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f7a213ef00986796",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "2fff5ecb63e18349",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "5f4fe23d6f1de071",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "b5a0cbfd96c72216",
+    "type": "split",
+    "children": [
+      {
+        "id": "63a0dc559a258c0d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "3c2cb874c73634fb",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "AKUN_LOGIN.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for AKUN_LOGIN"
+            }
+          },
+          {
+            "id": "08d08fbd7acab548",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "AKUN_LOGIN.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from AKUN_LOGIN"
+            }
+          },
+          {
+            "id": "f0b64facbe2ff8d4",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "a8e742dbfdf4567c",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "554c50d1e620b741",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "AKUN_LOGIN.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of AKUN_LOGIN"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "924056e7856bd6e7",
+  "lastOpenFiles": [
+    "ANALISIS_DAN_RENCANA_PERBAIKAN.md",
+    "AKUN_LOGIN.md",
+    "TECHNICAL_DESIGN_DOCUMENT.md",
+    "SECURITY_DESIGN_DOCUMENT.md",
+    "README.md",
+    "PRODUCT_REQUIREMENTS_DOCUMENT.md",
+    "IMPLEMENTATION_ROADMAP.md",
+    "changelog_090626_12.39WIB_.md",
+    "Untitled.canvas",
+    "create a link.md",
+    "Welcome.md"
+  ]
+}
