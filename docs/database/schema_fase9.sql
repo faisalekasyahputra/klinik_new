@@ -52,3 +52,13 @@ CREATE TABLE IF NOT EXISTS `housing_queue` (
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
   FOREIGN KEY (`program_id`) REFERENCES `programs`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 4. Tabel Settings (Pengaturan Web Dinamis)
+CREATE TABLE IF NOT EXISTS `settings` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `key_name` varchar(100) NOT NULL,
+  `key_value` text,
+  `type` varchar(50) DEFAULT 'text',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `key_name` (`key_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
