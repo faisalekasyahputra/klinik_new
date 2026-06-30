@@ -67,9 +67,16 @@ class Program extends Public_Controller {
             return implode(' ', $maskedWords);
         };
 
+        $this->load->library('smart_filter');
+
         // Mock Logic: Simulasi NIK
         if ($nik === '3329000000000001' && $tgl_lahir === '1980-01-01') {
-            // Skenario 1: Data Lengkap (Data Diri + Kalkulator sudah ada)
+            // Skenario 1: Desil 4 (Omah Sekeng & Bansos PB)
+            $desil = 4;
+            $status_kepemilikan = 'Sewa/Kontrak';
+            
+            $eligible_programs = $this->smart_filter->get_eligible_programs($desil, $status_kepemilikan);
+
             $response = [
                 'status' => 'success',
                 'message' => 'Verifikasi berhasil. Data ditemukan.',
@@ -77,13 +84,15 @@ class Program extends Public_Controller {
                     'nik' => $nik,
                     'nama_lengkap' => $maskString('Budi Santoso'),
                     'alamat' => $maskString('Jl Pahlawan No 9 Kota Semarang Jawa Tengah'),
-                    'penghasilan' => '4500000',
+                    'penghasilan' => '3000000',
                     'pekerjaan' => 'Karyawan Swasta',
-                    'status_kepemilikan' => 'Sewa/Kontrak'
-                ]
+                    'status_kepemilikan' => $status_kepemilikan,
+                    'desil' => $desil
+                ],
+                'eligible_programs' => $eligible_programs
             ];
         } elseif ($nik === '3329000000000002' && $tgl_lahir === '1990-12-31') {
-            // Skenario 2: Hanya Data Diri (Data Kalkulator kosong)
+            // Skenario 2: Hanya Data Diri (Data survei kosong, harus mengisi manual untuk tes Smart Filter)
             $response = [
                 'status' => 'success',
                 'message' => 'Verifikasi berhasil. Data diri ditemukan.',
@@ -93,8 +102,10 @@ class Program extends Public_Controller {
                     'alamat' => $maskString('Jl Pemuda No 15 Kabupaten Demak Jawa Tengah'),
                     'penghasilan' => '',
                     'pekerjaan' => '',
-                    'status_kepemilikan' => ''
-                ]
+                    'status_kepemilikan' => '',
+                    'desil' => null
+                ],
+                'eligible_programs' => []
             ];
         } else {
             $response = [
@@ -103,6 +114,45 @@ class Program extends Public_Controller {
                 'data' => null
             ];
         }
+
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode($response));
+    }
+
+    /**
+     * Endpoint untuk memproses ulang data survei dan menghitung Desil + Program
+     */
+    public function api_kalkulasi_program() {
+        if (!$this->input->is_ajax_request()) {
+            exit('No direct script access allowed');
+        }
+
+        $penghasilan = (int) $this->input->post('penghasilan', TRUE);
+        $status_kepemilikan = $this->input->post('status_kepemilikan', TRUE);
+        $pekerjaan = $this->input->post('pekerjaan', TRUE);
+        
+        $this->load->library('smart_filter');
+
+        // Kalkulasi dinamis desil berdasarkan penghasilan (Rule of thumb sederhana)
+        $desil = 10; // Default
+        if ($penghasilan <= 1500000) {
+            $desil = 2; // Miskin Terbawah
+        } elseif ($penghasilan <= 2500000) {
+            $desil = 4; // Rentan Miskin
+        } elseif ($penghasilan <= 5000000) {
+            $desil = 6; // MBR Fixed Income
+        } elseif ($penghasilan <= 8000000) {
+            $desil = 8; // MBR Upper
+        }
+
+        $eligible_programs = $this->smart_filter->get_eligible_programs($desil, $status_kepemilikan);
+
+        $response = [
+            'status' => 'success',
+            'desil' => $desil,
+            'eligible_programs' => $eligible_programs
+        ];
 
         $this->output
             ->set_content_type('application/json')

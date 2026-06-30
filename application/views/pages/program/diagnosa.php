@@ -13,17 +13,17 @@
         <div class="mb-12">
             <div class="flex items-center justify-between relative">
                 <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-white/10 rounded-full z-0"></div>
-                <div class="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-emerald-500 rounded-full z-0 transition-all duration-500" :style="'width: ' + ((step - 1) / 2 * 100) + '%'"></div>
+                <div class="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-emerald-500 rounded-full z-0 transition-all duration-500" :style="'width: ' + ((step - 1) / 3 * 100) + '%'"></div>
                 
-                <!-- Steps Indicators -->
-                <template x-for="i in 3" :key="i">
+                <!-- Steps Indicators (4 Steps now) -->
+                <template x-for="i in 4" :key="i">
                     <div class="relative z-10 flex flex-col items-center w-10 h-10">
                         <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold border-2 transition-colors duration-300 shrink-0"
                              :class="step >= i ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-[#0f2933] border-white/20 text-zinc-500'">
                             <span x-text="i"></span>
                         </div>
                         <span class="absolute top-12 text-xs font-medium whitespace-nowrap" :class="step >= i ? 'text-emerald-400' : 'text-zinc-500'" 
-                              x-text="i === 1 ? 'Data Diri' : (i === 2 ? 'Kalkulator' : 'Konfirmasi')"></span>
+                              x-text="i === 1 ? 'Identitas' : (i === 2 ? 'Data Survei' : (i === 3 ? 'Pilih Program' : 'Konfirmasi'))"></span>
                     </div>
                 </template>
             </div>
@@ -33,7 +33,8 @@
         <div class="bg-[#0f2933] border border-white/10 rounded-2xl p-5 sm:p-7 shadow-2xl relative overflow-hidden">
             
             <form id="diagnosaForm" action="<?= base_url('Program/submit_antrean') ?>" method="POST">
-                <input type="hidden" name="program_id" value="<?= $program['id'] ?>">
+                <!-- Program ID diisi otomatis saat user memilih di Etalase -->
+                <input type="hidden" name="program_id" :value="chosenProgram ? chosenProgram.id : ''">
                 <!-- CSRF Token -->
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                 
@@ -59,11 +60,11 @@
                                 <ul class="text-xs text-blue-300 space-y-2 ml-4 list-disc">
                                     <li>
                                         <button type="button" @click="nik = '3329000000000001'; tgl_lahir = '1980-01-01'; simperumData = null; errorMsg = '';" class="hover:text-white underline decoration-blue-500/50 text-left">NIK: 3329000000000001<br>Tgl Lahir: 01-01-1980</button><br>
-                                        <span class="text-zinc-400">(Punya data diri & data survei)</span>
+                                        <span class="text-zinc-400">(Desil 4: Omah Sekeng & Bansos PB)</span>
                                     </li>
                                     <li>
                                         <button type="button" @click="nik = '3329000000000002'; tgl_lahir = '1990-12-31'; simperumData = null; errorMsg = '';" class="hover:text-white underline decoration-blue-500/50 text-left">NIK: 3329000000000002<br>Tgl Lahir: 31-12-1990</button><br>
-                                        <span class="text-zinc-400">(Hanya punya data diri dasar)</span>
+                                        <span class="text-zinc-400">(Data Survei Kosong - Tes Smart Filter)</span>
                                     </li>
                                 </ul>
                             </div>
@@ -74,7 +75,7 @@
                             <div class="flex items-start gap-3">
                                 <i class="fa-solid fa-circle-check text-emerald-400 mt-0.5"></i>
                                 <div>
-                                    <h3 class="font-medium text-emerald-400 text-sm">Data Ditemukan</h3>
+                                    <h3 class="font-medium text-emerald-400 text-sm">Data Ditemukan (Desil <span x-text="simperumData?.desil"></span>)</h3>
                                     <p class="text-sm text-zinc-300 mt-1">Nama: <span class="font-semibold text-white" x-text="simperumData?.nama_lengkap"></span></p>
                                     <p class="text-sm text-zinc-300">Alamat: <span x-text="simperumData?.alamat"></span></p>
                                 </div>
@@ -102,14 +103,14 @@
                         </button>
 
                         <button type="button" x-show="simperumData" @click="step = 2" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-colors flex items-center gap-2">
-                            Lanjut ke Kalkulator <i class="fa-solid fa-arrow-right"></i>
+                            Lanjut ke Data Survei <i class="fa-solid fa-arrow-right"></i>
                         </button>
                     </div>
                 </div>
 
                 <!-- Step 2: Kalkulator Kelayakan -->
                 <div x-show="step === 2" style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-8" x-transition:enter-end="opacity-100 translate-x-0">
-                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i class="fa-solid fa-calculator text-blue-400"></i> Smart Filter & Kalkulator</h2>
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i class="fa-solid fa-clipboard-list text-blue-400"></i> Data Survei Tambahan</h2>
                     
                     <div class="space-y-4">
                         <div>
@@ -165,24 +166,73 @@
 
                     <div class="mt-6 flex justify-between">
                         <button type="button" @click="step = 1" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-white/5 text-white hover:bg-white/10 transition-colors">Kembali</button>
-                        <button type="button" @click="validateSurvey()" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-colors flex items-center gap-2" :disabled="!isSurveyComplete()" :class="{'opacity-50 cursor-not-allowed': !isSurveyComplete()}">
-                            Analisa Data <i class="fa-solid fa-microchip"></i>
+                        <button type="button" @click="validateSurvey()" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-colors flex items-center gap-2" :disabled="!isSurveyComplete() || isLoading" :class="{'opacity-50 cursor-not-allowed': !isSurveyComplete() || isLoading}">
+                            <span x-text="isLoading ? 'Menghitung...' : 'Analisa Program'"></span>
+                            <i class="fa-solid fa-spinner fa-spin" x-show="isLoading"></i>
+                            <i class="fa-solid fa-microchip" x-show="!isLoading"></i>
                         </button>
                     </div>
                 </div>
 
-                <!-- Step 3: Konfirmasi & Submit -->
+                <!-- Step 3: Etalase Pilihan Program -->
                 <div x-show="step === 3" style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-8" x-transition:enter-end="opacity-100 translate-x-0">
+                    <h2 class="text-lg font-semibold mb-2 flex items-center gap-2"><i class="fa-solid fa-store text-emerald-400"></i> Etalase Program Anda</h2>
+                    <p class="text-xs text-zinc-400 mb-6">Berdasarkan hasil analisa (Desil <span x-text="simperumData?.desil"></span>), Anda berhak mengikuti salah satu program prioritas berikut. Silakan pilih satu yang paling sesuai dengan kondisi Anda.</p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                        <template x-for="prog in eligiblePrograms" :key="prog.id">
+                            <div class="relative group cursor-pointer transition-all duration-300 hover:-translate-y-1" @click="selectProgram(prog)">
+                                <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_5px_15px_0_rgba(0,0,0,0.3)] group-hover:shadow-[0_10px_25px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
+                                <div class="relative bg-black/20 border-2 rounded-2xl p-4 flex flex-col h-full z-10 transition-colors"
+                                     :class="chosenProgram?.id === prog.id ? 'border-emerald-500 bg-emerald-500/10' : 'border-white/10 group-hover:border-white/30'">
+                                    
+                                    <!-- Selected Checkmark -->
+                                    <div x-show="chosenProgram?.id === prog.id" class="absolute top-3 right-3 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white text-xs shadow-lg">
+                                        <i class="fa-solid fa-check"></i>
+                                    </div>
+
+                                    <div class="flex items-center gap-3 mb-3">
+                                        <div class="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0" :style="'background-color: ' + prog.color + '20; color: ' + prog.color">
+                                            <i class="fa-solid" :class="prog.icon"></i>
+                                        </div>
+                                        <div>
+                                            <div class="text-[10px] font-bold tracking-widest uppercase" :style="'color: ' + prog.color" x-text="prog.badge"></div>
+                                            <h4 class="text-white font-bold text-sm leading-tight mt-0.5" x-text="prog.title"></h4>
+                                        </div>
+                                    </div>
+                                    
+                                    <p class="text-zinc-400 text-xs leading-relaxed flex-grow" x-text="prog.desc"></p>
+                                    
+                                    <div class="mt-4 pt-3 border-t border-white/10 w-full text-center">
+                                        <span class="text-xs font-semibold transition-colors" :class="chosenProgram?.id === prog.id ? 'text-emerald-400' : 'text-blue-400'">
+                                            <span x-text="chosenProgram?.id === prog.id ? 'Terpilih' : 'Pilih Program Ini'"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div class="flex justify-between">
+                        <button type="button" @click="step = 2" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-white/5 text-white hover:bg-white/10 transition-colors">Kembali</button>
+                        <button type="button" @click="step = 4" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-colors flex items-center gap-2" :disabled="!chosenProgram" :class="{'opacity-50 cursor-not-allowed': !chosenProgram}">
+                            Lanjut Konfirmasi <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Konfirmasi & Submit -->
+                <div x-show="step === 4" style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-8" x-transition:enter-end="opacity-100 translate-x-0">
                     <div class="text-center mb-6">
                         <div class="w-16 h-16 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-3 border border-emerald-500/30">
                             <i class="fa-solid fa-clipboard-check text-2xl text-emerald-400"></i>
                         </div>
-                        <h2 class="text-xl font-bold text-white mb-2">Diagnosa Selesai!</h2>
-                        <p class="text-xs text-zinc-400 leading-relaxed max-w-md mx-auto mb-6">Berdasarkan hasil pemadanan NIK dan kalkulator kelayakan, Anda <strong>memenuhi kriteria utama</strong>. Anda berstatus Masyarakat Berpenghasilan Rendah (MBR) dan kondisi kepemilikan hunian Anda masuk dalam prioritas penanganan Dinas Perumahan.</p>
+                        <h2 class="text-xl font-bold text-white mb-2">Konfirmasi Pengajuan</h2>
+                        <p class="text-xs text-zinc-400 leading-relaxed max-w-md mx-auto mb-6">Mohon periksa kembali pilihan Anda sebelum mengirimkan pengajuan ke dalam sistem Antrean Dinas Perumahan.</p>
                         
                         <!-- Ticket Card Component -->
                         <div class="relative w-full max-w-sm mx-auto mb-2 text-left" 
-                             x-show="recommendedProgram && programs[recommendedProgram]">
+                             x-show="chosenProgram">
                             
                             <style>
                             .ticket-mask {
@@ -236,41 +286,40 @@
                                 <div class="ticket-base ticket-mask relative flex min-h-[110px] z-10">
                                     <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
                                     <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
-                                        <i class="fa-solid text-3xl group-hover:scale-110 group-hover:-rotate-3 transition-transform" :class="programs[recommendedProgram].icon" :style="'color: ' + programs[recommendedProgram].color + '; filter: drop-shadow(0 0 10px ' + programs[recommendedProgram].color + '80)'"></i>
+                                        <i class="fa-solid text-3xl group-hover:scale-110 group-hover:-rotate-3 transition-transform" :class="chosenProgram?.icon" :style="'color: ' + chosenProgram?.color + '; filter: drop-shadow(0 0 10px ' + chosenProgram?.color + '80)'"></i>
                                     </div>
                                     <div class="relative z-20 p-4 flex-1 flex flex-col justify-center text-left">
-                                        <div class="text-[9px] font-bold tracking-widest uppercase mb-1" :style="'color: ' + programs[recommendedProgram].color" x-text="programs[recommendedProgram].badge"></div>
-                                        <h4 class="text-white font-bold text-base mb-1.5 leading-tight" x-text="programs[recommendedProgram].title"></h4>
-                                        <p class="text-white/80 text-[11px] leading-relaxed line-clamp-2" x-text="programs[recommendedProgram].desc"></p>
+                                        <div class="text-[9px] font-bold tracking-widest uppercase mb-1" :style="'color: ' + chosenProgram?.color" x-text="chosenProgram?.badge"></div>
+                                        <h4 class="text-white font-bold text-base mb-1.5 leading-tight" x-text="chosenProgram?.title"></h4>
+                                        <p class="text-white/80 text-[11px] leading-relaxed line-clamp-2" x-text="chosenProgram?.desc"></p>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div class="mt-4 text-center text-[10px] font-bold tracking-widest text-emerald-400 uppercase"><i class="fa-solid fa-ticket-simple mr-1"></i> Tiket Rekomendasi Program</div>
+                            <div class="mt-4 text-center text-[10px] font-bold tracking-widest text-emerald-400 uppercase"><i class="fa-solid fa-ticket-simple mr-1"></i> Tiket Pengajuan Program</div>
                         </div>
                     </div>
 
                     <div class="bg-black/30 rounded-xl p-4 border border-white/5 mb-5 text-sm">
-                        <h4 class="font-semibold text-zinc-300 border-b border-white/10 pb-2 mb-3 text-xs">Ringkasan Hasil Verifikasi</h4>
+                        <h4 class="font-semibold text-zinc-300 border-b border-white/10 pb-2 mb-3 text-xs">Ringkasan Pemohon</h4>
                         <div class="space-y-2 text-xs">
-                            <div class="flex justify-between"><span class="text-zinc-500">Rekomendasi Program</span><span class="font-bold text-emerald-400 text-right" x-text="programs[recommendedProgram]?.title || '<?= htmlspecialchars($program['nama_program']) ?>'"></span></div>
                             <div class="flex justify-between"><span class="text-zinc-500">Nama Lengkap</span><span class="font-medium text-white" x-text="simperumData?.nama_lengkap"></span></div>
                             <div class="flex justify-between"><span class="text-zinc-500">NIK</span><span class="font-medium text-white" x-text="nik"></span></div>
-                            <div class="flex justify-between"><span class="text-zinc-500">Penghasilan</span><span class="font-medium text-white" x-text="'Rp ' + parseInt(survey.penghasilan).toLocaleString('id-ID')"></span></div>
+                            <div class="flex justify-between"><span class="text-zinc-500">Kategori Penghasilan</span><span class="font-medium text-white" x-text="'Desil ' + simperumData?.desil"></span></div>
                         </div>
                     </div>
 
                     <div class="bg-[#0a1a1f] border border-blue-500/30 rounded-xl p-3 flex gap-3 items-start mb-6">
                         <i class="fa-solid fa-info-circle text-blue-400 mt-0.5 text-xs"></i>
                         <p class="text-[11px] text-zinc-300 leading-relaxed">
-                            Dengan menekan tombol Konfirmasi, Anda menyatakan bahwa data di atas adalah benar. NIK Anda akan direkam dalam <strong class="text-white">Daftar Antrean (Housing Queue)</strong> Klinik PKP Jawa Tengah untuk divalidasi lebih lanjut oleh petugas dinas.
+                            Dengan menekan tombol Ajukan, Anda menyatakan bahwa data di atas adalah benar dan menyetujui program yang dipilih. Pengajuan ini akan diteruskan ke <strong class="text-white">Dinas Perumahan Rakyat (Disperakim) Jawa Tengah</strong>.
                         </p>
                     </div>
 
                     <div class="flex justify-between">
-                        <button type="button" @click="step = 2" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-white/5 text-white hover:bg-white/10 transition-colors">Revisi Data</button>
+                        <button type="button" @click="step = 3" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-white/5 text-white hover:bg-white/10 transition-colors">Ganti Program</button>
                         <button type="submit" class="px-6 py-2.5 text-sm rounded-xl font-semibold bg-gradient-to-r from-emerald-500 to-blue-500 text-white hover:from-emerald-400 hover:to-blue-400 transition-all shadow-lg shadow-emerald-500/20 transform hover:-translate-y-0.5">
-                            Konfirmasi & Lanjutkan <i class="fa-solid fa-check ml-2"></i>
+                            Kirim Pengajuan <i class="fa-solid fa-paper-plane ml-2"></i>
                         </button>
                     </div>
                 </div>
@@ -289,16 +338,10 @@ function wizardData() {
         isLoading: false,
         errorMsg: '',
         simperumData: null,
-        programCode: '<?= $program['kode_program'] ?>',
-        recommendedProgram: '',
-        programs: {
-            'flpp': { title: 'KPR-FLPP', badge: 'MBR Fixed Income', desc: 'Bunga flat 5% & cicilan ringan hingga 20 tahun.', icon: 'fa-building-columns', color: '#00a3b5' },
-            'oemah_lestari': { title: 'Oemah Lestari', badge: 'MBR & Umum', desc: 'Fasilitas pembiayaan rumah murah bagi MBR dengan skema kredit bunga ringan.', icon: 'fa-leaf', color: '#6bcb77' },
-            'rtlh': { title: 'Peningkatan RTLH', badge: 'Miskin & Ekstrem', desc: 'Bantuan perbaikan rumah via Bankeupemdes Rp 20 Juta.', icon: 'fa-hammer', color: '#c084fc' },
-            'pb': { title: 'Stimulan PB', badge: 'Bencana & Relokasi', desc: 'Bantuan material Rp 40 Juta untuk relokasi dan korban bencana.', icon: 'fa-trowel-bricks', color: '#d6fb00' },
-            'rumah_apung': { title: 'Program Rumah Apung', badge: 'Kawasan Pesisir', desc: 'Inovasi desain rumah tahan banjir rob untuk pesisir (Timbulsloko).', icon: 'fa-water', color: '#60a5fa' },
-            'umum': { title: 'Program Terpadu', badge: 'Semua Kategori', desc: 'Program bantuan perumahan Dinas Perkim Jawa Tengah.', icon: 'fa-star', color: '#ffffff' }
-        },
+        
+        eligiblePrograms: [],
+        chosenProgram: null,
+
         survey: {
             penghasilan: '',
             pekerjaan: '',
@@ -306,8 +349,7 @@ function wizardData() {
         },
         
         init() {
-            // Karena sekarang membutuhkan validasi NIK + Tanggal Lahir,
-            // auto-fetch ditiadakan. Pengguna harus memasukkan Tanggal Lahir secara manual.
+            // Auto-fetch dinonaktifkan
         },
         
         async fetchSimperum() {
@@ -320,7 +362,6 @@ function wizardData() {
                 const formData = new FormData();
                 formData.append('nik', this.nik);
                 formData.append('tgl_lahir', this.tgl_lahir);
-                // Tambahkan CSRF Token CodeIgniter
                 formData.append('<?= $this->security->get_csrf_token_name(); ?>', '<?= $this->security->get_csrf_hash(); ?>');
                 
                 const response = await fetch('<?= base_url('Program/api_cek_simperum') ?>', {
@@ -335,14 +376,13 @@ function wizardData() {
                 
                 if(result.status === 'success') {
                     this.simperumData = result.data;
+                    this.eligiblePrograms = result.eligible_programs || [];
+                    this.chosenProgram = null; // Reset choice if re-fetched
                     
-                    // Auto-fill survey data if it exists in SIMPERUM
                     if(result.data.penghasilan) this.survey.penghasilan = result.data.penghasilan;
                     if(result.data.pekerjaan) this.survey.pekerjaan = result.data.pekerjaan;
                     if(result.data.status_kepemilikan) this.survey.status_kepemilikan = result.data.status_kepemilikan;
 
-                    // Diubah: Jangan langsung pindah ke step 2, biarkan user mengecek data diri dulu
-                    // this.step = 2;
                 } else {
                     this.errorMsg = result.message;
                     this.simperumData = null;
@@ -360,27 +400,52 @@ function wizardData() {
                    this.survey.status_kepemilikan !== '';
         },
 
-        validateSurvey() {
+        async validateSurvey() {
             if(this.isSurveyComplete()) {
-                // Tentukan Rekomendasi Program berdasarkan jawaban
-                if (this.programCode === 'umum') {
-                    const status = this.survey.status_kepemilikan;
-                    if (status === 'Sewa/Kontrak' || status === 'Punya Lahan Belum Bangun') {
-                        this.recommendedProgram = 'pb';
-                    } else if (status === 'Punya Rumah Tidak Layak') {
-                        this.recommendedProgram = 'rtlh';
-                    } else if (status === 'Numpang/Keluarga') {
-                        this.recommendedProgram = 'flpp';
-                    } else {
-                        this.recommendedProgram = 'oemah_lestari';
-                    }
-                } else {
-                    this.recommendedProgram = this.programCode;
-                }
                 
-                // Pindah ke step 3
-                this.step = 3;
+                // Set loading status so user knows it's calculating
+                this.isLoading = true;
+                
+                try {
+                    const formData = new FormData();
+                    formData.append('penghasilan', this.survey.penghasilan);
+                    formData.append('pekerjaan', this.survey.pekerjaan);
+                    formData.append('status_kepemilikan', this.survey.status_kepemilikan);
+                    formData.append('<?= $this->security->get_csrf_token_name(); ?>', '<?= $this->security->get_csrf_hash(); ?>');
+                    
+                    const response = await fetch('<?= base_url('Program/api_kalkulasi_program') ?>', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if(result.status === 'success') {
+                        // Update the decile and available programs
+                        if(this.simperumData) {
+                            this.simperumData.desil = result.desil;
+                        }
+                        this.eligiblePrograms = result.eligible_programs || [];
+                        this.chosenProgram = null; // Reset user choice
+                        
+                        // Go to Step 3
+                        this.step = 3;
+                    } else {
+                        alert("Terjadi kesalahan saat menghitung program.");
+                    }
+                } catch(e) {
+                    alert("Gagal terhubung ke server untuk kalkulasi.");
+                } finally {
+                    this.isLoading = false;
+                }
             }
+        },
+
+        selectProgram(prog) {
+            this.chosenProgram = prog;
         }
     }
 }
