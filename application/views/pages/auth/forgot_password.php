@@ -64,15 +64,21 @@
 
             <!-- Flash -->
             <?php if ($this->session->flashdata('error')): ?>
-                <div class="auth-alert auth-alert--error">
-                    <i class="fa-solid fa-circle-exclamation"></i>
-                    <?= $this->session->flashdata('error') ?>
+                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--error relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <i class="fa-solid fa-circle-exclamation mr-2"></i>
+                        <?= $this->session->flashdata('error') ?>
+                    </div>
+                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             <?php endif; ?>
             <?php if ($this->session->flashdata('success')): ?>
-                <div class="auth-alert auth-alert--success">
-                    <i class="fa-solid fa-circle-check"></i>
-                    <?= $this->session->flashdata('success') ?>
+                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--success relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <i class="fa-solid fa-circle-check mr-2"></i>
+                        <?= $this->session->flashdata('success') ?>
+                    </div>
+                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             <?php endif; ?>
 

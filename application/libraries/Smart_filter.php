@@ -20,6 +20,7 @@ class Smart_filter {
         $master_programs = [
             'rtlh' => [
                 'id' => 3, // Sesuai ID di database
+                'kode' => 'rtlh',
                 'title' => 'Peningkatan Kualitas RTLH',
                 'badge' => 'Miskin Terbawah',
                 'desc' => 'Bantuan perbaikan rumah via Bankeupemdes Rp 20 Juta.',
@@ -28,6 +29,7 @@ class Smart_filter {
             ],
             'pb' => [
                 'id' => 4,
+                'kode' => 'pb',
                 'title' => 'Bansos PB (Pembangunan Baru)',
                 'badge' => 'MBR Non-Fixed Income',
                 'desc' => 'Bantuan material Rp 40 Juta untuk lahan sendiri/relokasi.',
@@ -36,6 +38,7 @@ class Smart_filter {
             ],
             'omah_sekeng' => [
                 'id' => 6, // Harus ditambahkan ke tabel programs!
+                'kode' => 'omah_sekeng',
                 'title' => 'Omah Sekeng',
                 'badge' => 'Desil 4 Khusus',
                 'desc' => 'Bantuan kolaboratif CSR & Pemprov sebesar Rp 45 Juta.',
@@ -44,6 +47,7 @@ class Smart_filter {
             ],
             'flpp' => [
                 'id' => 1,
+                'kode' => 'flpp',
                 'title' => 'KPR-FLPP Subsidi',
                 'badge' => 'MBR Fixed Income',
                 'desc' => 'Bunga flat 5% & cicilan ringan hingga 20 tahun.',
@@ -52,6 +56,7 @@ class Smart_filter {
             ],
             'oemah_lestari_subsidi' => [
                 'id' => 2,
+                'kode' => 'oemah_lestari',
                 'title' => 'Oemah Lestari Subsidi',
                 'badge' => 'MBR Fixed Income',
                 'desc' => 'Pembiayaan rumah bunga ringan 8% flat (Kolaborasi BPR).',
@@ -60,6 +65,7 @@ class Smart_filter {
             ],
             'oemah_lestari_non' => [
                 'id' => 2, // Menggunakan ID yang sama (Oemah Lestari)
+                'kode' => 'oemah_lestari',
                 'title' => 'Oemah Lestari Non-Subsidi',
                 'badge' => 'MBM & MBA',
                 'desc' => 'Pembiayaan rumah komersial ramah lingkungan.',
@@ -68,6 +74,7 @@ class Smart_filter {
             ],
             'rumah_apung' => [
                 'id' => 5,
+                'kode' => 'rumah_apung',
                 'title' => 'Rumah Apung',
                 'badge' => 'Kawasan Pesisir',
                 'desc' => 'Inovasi desain rumah adaptif genangan air & rob.',

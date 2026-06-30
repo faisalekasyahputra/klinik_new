@@ -1,106 +1,94 @@
-# Desain Sistem: Flowchart & ERD Klinik PKP v2
+# Desain Sistem: Flowchart & ERD Klinik PKP v3.0
 
-Dokumen ini merumuskan secara visual bagaimana sistem baru (Onboarding & Housing Queue) akan bekerja dan bagaimana struktur databasenya akan saling terhubung.
+Dokumen ini merumuskan secara visual bagaimana sistem baru (Smart Filter & Housing Queue) bekerja secara integratif dengan antarmuka Wizard 4 Langkah (Alpine.js) dan arsitektur database modular.
 
 ## 1. Flowchart: Alur Pengguna (Onboarding Journey)
 
-Berikut adalah _flowchart_ yang menggambarkan perjalanan masyarakat dari melihat "iklan" di beranda hingga data mereka masuk ke dalam antrean (Housing Queue).
+Berikut adalah _flowchart_ perjalanan masyarakat dari mendaftar hingga dievaluasi menggunakan matriks kelayakan (UN HABITAT) dan masuk ke dalam antrean (Housing Queue).
 
 ```mermaid
 graph TD
-    A(["Masyarakat Kunjungi Web"]) --> B["Lihat Hero Slider & Fungsi Utama PKP"]
-    B --> C{"Pilih Layanan Utama?"}
-
-    C -->|"Perumahan"| D["Tampil Etalase Program Perumahan"]
-    C -->|"Kawasan"| E["Tampil Data Spasial"]
-    C -->|"Pertanahan"| F["Halaman Pertanahan"]
-
-    D --> G["Lihat Syarat & Kriteria Program (RTLH / PB / KPR)"]
-    G --> H{"Tertarik Mengajukan?"}
-
-    H -->|"Ya"| I["Klik Daftar / Cek Kelayakan"]
-    H -->|"Tidak"| D
-
-    I --> J["Form Input NIK"]
-    J --> K[["Proses API SIMPERUM"]]
-
-    K --> L{"NIK Ditemukan & Valid?"}
-    L -->|"Ya, Ambil Data SIMPERUM"| M["Form Data Diri Terisi Otomatis Sebagian"]
-    L -->|"Tidak, Data Baru"| N["Form Data Diri Kosong"]
-
-    M --> O["Pengguna Melengkapi Data Kurang"]
-    N --> O
-
-    O --> P["Sistem Melakukan Smart Filter Kelayakan Dasar"]
-    P --> Q{"Lolos Syarat Dasar?"}
-
-    Q -->|"Ya"| R["Simpan sebagai Status Housing Queue"]
-    Q -->|"Tidak"| S["Sistem Menawarkan Program Lain yang Relevan"]
-
-    R --> T[["Validasi Manual oleh ASN/Admin (Audit)"]]
-    T --> U{"Disetujui?"}
-
-    U -->|"Ya"| V(["Masuk Antrean Realisasi SIMPERUM"])
-    U -->|"Tolak / Kuota Penuh"| W(["Tertahan di Housing Queue Tahun Depan"])
+    A(["Masyarakat Kunjungi Web"]) --> B["Pilih Layanan Perumahan"]
+    B --> C["Lihat Etalase Program (RTLH/PB/KPR)"]
+    C --> D{"Tertarik Mengajukan?"}
+    
+    D -->|"Ya"| E["Klik Daftar / Cek Kelayakan"]
+    D -->|"Tidak"| C
+    
+    E --> F["Mulai Wizard Onboarding 4 Langkah (Alpine.js)"]
+    F --> G["Langkah 1: Input NIK & Cek API SIMPERUM"]
+    
+    G --> H{"NIK Terdaftar di SIMPERUM?"}
+    H -->|"Ya"| I["Autofill Data Diri (Langkah 2)"]
+    H -->|"Tidak"| J["Isi Manual Data Diri (Langkah 2)"]
+    
+    I --> K["Langkah 3: Input Kondisi Rumah & Sosial Ekonomi"]
+    J --> K
+    
+    K --> L["Langkah 4: Review Data & Submit"]
+    L --> M["Backend: Kalkulasi Matriks Kelayakan UN HABITAT"]
+    
+    M --> N{"Lolos Syarat Matriks (Smart Filter)?"}
+    N -->|"Ya"| O["Simpan ke sf_housing_queue (Status: Pending)"]
+    N -->|"Tidak"| P["Tolak Otomatis / Tawarkan Program Lain"]
+    
+    O --> Q[["Validasi Manual oleh ASN/Admin (Dashboard)"]]
+    Q --> R{"Disetujui Admin?"}
+    
+    R -->|"Ya"| S(["Masuk Antrean Realisasi SIMPERUM / SP2"])
+    R -->|"Tolak"| T(["Pengajuan Dibatalkan / Masuk Arsip"])
 ```
 
 ---
 
-## 2. ERD (Entity Relationship Diagram) Database Baru
+## 2. ERD (Entity Relationship Diagram) Database Modular (v3.0)
 
-Karena ada konsep _Housing Queue_ dan _Smart Filter_, kita perlu memperbarui desain database. Berikut adalah relasi antar tabel (ERD) utamanya:
+Karena adanya pergeseran fokus dari "Forum" menjadi "Layanan Smart Filter", database telah direstrukturisasi menggunakan *prefix* (`usr_`, `sf_`, `forum_`, `sys_`). Berikut adalah relasi terbarunya:
 
 ```mermaid
 erDiagram
-    USERS ||--o{ HOUSING_QUEUE : "mengajukan"
-    PROGRAMS ||--o{ HOUSING_QUEUE : "diajukan_ke"
-    PROGRAM_KATEGORI ||--|{ PROGRAMS : "membawahi"
+    usr_users ||--o{ sf_housing_queue : "mengajukan"
+    sf_programs ||--o{ sf_housing_queue : "diajukan_ke"
+    sf_program_kategori ||--|{ sf_programs : "membawahi"
 
-    USERS {
+    usr_users {
         int id PK
-        string nik UK
-        string nama_lengkap
-        string alamat
-        string no_hp
-        string role
+        string nik "UK (Encrypted AES-GCM)"
+        string name
+        string alamat "Encrypted"
+        string phone
+        string kategori
         datetime created_at
     }
 
-    PROGRAM_KATEGORI {
+    sf_program_kategori {
         int id PK
         string nama_kategori
-        string deskripsi
     }
 
-    PROGRAMS {
+    sf_programs {
         int id PK
-        int kategori_id FK
+        int id_kategori FK
+        string kode_program
         string nama_program
-        text syarat_kriteria
-        string foto_before_after
+        decimal batas_penghasilan_max "Parameter Smart Filter"
         boolean is_active
     }
 
-    HOUSING_QUEUE {
+    sf_housing_queue {
         int id PK
         int user_id FK
         int program_id FK
-        string status_antrean
-        string catatan_admin
-        int tahun_pengajuan
+        string status_antrean "pending, approved, rejected"
+        text catatan_admin
+        text data_simperum_json "Data dari API"
+        text data_survey_json "Data dari Wizard"
         datetime created_at
-    }
-
-    SP2_PENGEMBANG {
-        int id PK
-        string nama_pt
-        string no_sertifikat
-        string status_sp2
     }
 ```
 
 ### Penjelasan Tabel Utama:
 
-1. **`USERS`**: Menggunakan `nik` (Unique Key / UK) sebagai entitas paling krusial untuk sinkronisasi dengan API SIMPERUM.
-2. **`PROGRAM_KATEGORI` & `PROGRAMS`**: Memisahkan antara "Kategori" (Pembangunan Baru) dengan "Program Spesifik" (Rumah Relokasi, RTLH). Hal ini membuat _dashboard/etalase iklan_ menjadi sangat dinamis. Admin bisa menambah program baru tanpa perlu _hard-code_.
-3. **`HOUSING_QUEUE`**: Ini adalah "keranjang" antrean. Berisi riwayat pengajuan masyarakat. Kolom `status_antrean` mengakomodasi kebutuhan **Validasi Manual ASN** (bisa _pending_, _disetujui_, atau _ditolak_).
+1. **`usr_users`**: Menggunakan enkripsi `AES-256-GCM` untuk melindungi privasi NIK dan Alamat (Kepatuhan UU PDP).
+2. **`sf_program_kategori` & `sf_programs`**: Memisahkan antara kategori (Pembangunan Baru) dengan program spesifik. Nilai kolom `batas_penghasilan_max` pada `sf_programs` digunakan secara dinamis oleh backend saat memproses matriks kelayakan pelamar.
+3. **`sf_housing_queue`**: Menampung hasil pendaftaran yang lolos seleksi mesin. Kolom `data_survey_json` menyimpan input riil matriks kelayakan dari *Wizard*, dan `status_antrean` mengakomodasi kebutuhan Validasi Manual ASN (Fase 10).

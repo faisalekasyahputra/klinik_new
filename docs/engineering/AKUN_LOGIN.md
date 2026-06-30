@@ -1,6 +1,6 @@
 # 🔐 Panduan Autentikasi & Akun — Klinik PKP
 ## Target: `c:\xampp\htdocs\klinik_new`
-**Terakhir Diperbarui:** 9 Juni 2026
+**Terakhir Diperbarui:** 1 Juli 2026 (v3.0 Refactor)
 
 > **ℹ️ INFORMASI:**  
 > Sistem `klinik_new` mendukung **autentikasi hibrida** — pengguna dapat mendaftar/masuk menggunakan **email & password tradisional** atau **Google OAuth 2.0 (SSO)**. Kedua metode melewati alur onboarding yang sama.
@@ -46,7 +46,7 @@ Semua pengguna baru wajib melengkapi data berikut sebelum akses penuh:
 
 *   **URL:** `http://localhost/klinik_new/akun`
 *   **Fitur yang tersedia:**
-    *   Edit **Username** (disinkronkan ke `tb_diskusi.nama_user` dan `tb_komentar.nama_komentator`)
+    *   Edit **Username** (disinkronkan ke `forum_diskusi.nama_user` dan `forum_komentar.nama_komentator`)
     *   Edit **Nama Lengkap**
     *   Edit **No. WhatsApp**
     *   **Email** bersifat read-only
@@ -62,8 +62,8 @@ Semua pengguna baru wajib melengkapi data berikut sebelum akses penuh:
 4.  Proses backend (`User_model::delete_user_account`):
     *   Komentar dianonimkan → `nama_komentator = 'Akun Dihapus'`, `user_id = NULL`
     *   Diskusi dianonimkan → `nama_user = 'Akun Dihapus'`, `user_id = NULL`
-    *   Likes dihapus dari `tb_forum_likes`
-    *   Record user dihapus dari tabel `users`
+    *   Likes dihapus dari `forum_likes`
+    *   Record user dihapus dari tabel `usr_users`
     *   Session di-destroy
 
 ---
@@ -109,4 +109,18 @@ Data session yang disimpan setelah login berhasil:
 | `libraries/Encryption_lib.php` | Enkripsi NIK & Alamat |
 
 ---
-*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant — 9 Juni 2026.*
+
+## 👥 7. Akun Demo (Untuk Pengujian)
+
+Bagi pengembang atau pihak eksternal yang ingin mencoba fitur sistem (seperti Admin Dashboard atau Pengajuan Program), dapat menggunakan kredensial demo berikut:
+
+| Peran (Role) | Username | Email | Password | Keterangan |
+|-------------|----------|-------|----------|------------|
+| **Admin** | `admin` | `admin@klinikpkp.jatengprov.go.id` | `password` | Mengakses Admin Dashboard & Validasi Antrean. |
+| **Warga** | `warga_demo` | `warga@example.com` | `password` | Menguji pengajuan program perumahan. |
+| **Pengembang** | `developer1` | `dev1@example.com` | `password` | Menguji fitur mitra pengembang. |
+
+*(Harap tidak mengubah password akun demo di database utama)*
+
+---
+*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant — 1 Juli 2026 (v3.0 Refactor).*

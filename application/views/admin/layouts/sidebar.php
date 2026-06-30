@@ -30,15 +30,17 @@
                 <i class="ph ph-list-checks text-lg shrink-0 <?= $this->uri->segment(1) == 'Admin' ? 'opacity-100' : 'opacity-70' ?>" :class="sidebarOpen ? 'mr-3' : 'mr-0'"></i> 
                 <span x-show="sidebarOpen" class="whitespace-nowrap overflow-hidden flex-1">Validasi Antrean</span>
                 
+                <?php if(isset($pending_count) && $pending_count > 0): ?>
                 <!-- Badge saat expanded (di dalam baris) -->
                 <span x-show="sidebarOpen" class="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400 text-[10px] font-bold shrink-0">
-                    3
+                    <?= $pending_count ?>
                 </span>
                 
                 <!-- Badge saat collapsed (mengambang di pojok kanan atas box) -->
                 <span x-show="!sidebarOpen" class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold border-[1.5px] border-white dark:border-brand-card shadow-sm z-10">
-                    3
+                    <?= $pending_count ?>
                 </span>
+                <?php endif; ?>
             </a>
         </nav>
 

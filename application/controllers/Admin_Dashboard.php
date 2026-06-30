@@ -10,10 +10,10 @@ class Admin_Dashboard extends Admin_Controller {
     public function index() {
         $data['title'] = 'Overview Dashboard';
         
-        // Dummy data for now. Can be replaced with actual model counts
+        // Use updated table names
         $data['stats'] = [
             'total_users' => $this->db->count_all('usr_users'),
-            'total_antrean' => 0, // Will map to housing_queue later
+            'total_antrean' => $this->db->where('status_antrean', 'pending')->count_all_results('sf_housing_queue'),
             'total_diskusi' => $this->db->table_exists('forum_diskusi') ? $this->db->count_all('forum_diskusi') : 0
         ];
 

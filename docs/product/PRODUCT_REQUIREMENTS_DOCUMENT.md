@@ -5,7 +5,7 @@
 |---|---|
 | **Nama Aplikasi** | Klinik PKP (Klinik Perumahan dan Kawasan Permukiman) |
 | **Versi Dokumen** | v3.0 |
-| **Tanggal Terbit** | 22 Juni 2026 |
+| **Tanggal Terbit** | 1 Juli 2026 |
 | **Instansi Penyelenggara** | Dinas Perumahan Rakyat & Kawasan Permukiman Prov. Jawa Tengah |
 | **Status Dokumen** | Updated — Fase Pivot: Integrasi SIMPERUM & Onboarding Journey |
 
@@ -98,9 +98,9 @@ Navigasi utama dirampingkan untuk menonjolkan 3 pilar tupoksi utama dinas, denga
 *   **NFR-1.3:** Proteksi rute admin ketat untuk proses persetujuan (approval) manual *Housing Queue*.
 
 ### ⚡ 5.2 Desain Database & Relasi (Berdasarkan ERD)
-*   **NFR-2.1:** Tabel `USERS` harus memiliki `nik` berstatus *Unique Key* (UK) untuk integrasi tanpa duplikasi.
-*   **NFR-2.2:** Harus ada tabel `PROGRAM_KATEGORI` dan `PROGRAMS` terpisah agar *card* iklan bersifat dinamis dan *scalable*.
-*   **NFR-2.3:** Harus ada tabel `HOUSING_QUEUE` untuk menyimpan riwayat (*housing career*) beserta kolom `status_antrean`.
+*   **NFR-2.1:** Tabel `usr_users` harus memiliki `nik` berstatus *Unique Key* (UK) untuk integrasi tanpa duplikasi.
+*   **NFR-2.2:** Harus ada tabel `sf_program_kategori` dan `sf_programs` terpisah agar *card* iklan bersifat dinamis dan *scalable*.
+*   **NFR-2.3:** Harus ada tabel `sf_housing_queue` untuk menyimpan riwayat (*housing career*) beserta kolom `status_antrean`.
 
 ---
-*Dokumen ini diperbarui secara komprehensif mengikuti arahan rapat dan transkripsi 22 Juni 2026.*
+*Dokumen ini diperbarui secara komprehensif mengikuti arahan rapat dan transkripsi 1 Juli 2026.*

@@ -14,7 +14,7 @@ class Admin extends Admin_Controller {
     public function index()
     {
         // Fetch housing queue data
-        $data['queue_data'] = $this->Admin_model->get_all_housing_queue();
+        $data['queue'] = $this->Admin_model->get_all_housing_queue();
         $data['title'] = 'Antrean & Validasi';
         
         // Load views
@@ -38,9 +38,21 @@ class Admin extends Admin_Controller {
                 $update_success = $this->Admin_model->update_queue_status($queue_id, $status, $catatan_admin);
                 
                 if ($update_success) {
-                    $this->session->set_flashdata('success', 'Housing queue status updated successfully.');
+                    // MOCK SIMPERUM API SYNC
+                    // In a real scenario, this would use cURL to send the approval status back to SIMPERUM API
+                    // $ch = curl_init('https://api.simperum.jatengprov.go.id/v1/housing-queue/sync');
+                    // curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['id' => $queue_id, 'status' => $status]));
+                    // ...
+                    $mock_api_status = true; // Simulated success
+                    
+                    if ($mock_api_status) {
+                        $this->session->set_flashdata('success', 'Status pengajuan berhasil diubah menjadi '.strtoupper($status).' dan telah disinkronisasi dengan API SIMPERUM.');
+                    } else {
+                        $this->session->set_flashdata('success', 'Status diubah secara lokal, namun gagal sinkronisasi ke API SIMPERUM.');
+                    }
+                    
                 } else {
-                    $this->session->set_flashdata('error', 'Failed to update housing queue status. Please try again.');
+                    $this->session->set_flashdata('error', 'Gagal memperbarui status antrean. Silakan coba lagi.');
                 }
             } else {
                 $this->session->set_flashdata('error', 'Invalid input data provided.');

@@ -114,6 +114,10 @@ class Admin_Controller extends MY_Controller {
 
     // Custom render untuk layout khusus admin
     protected function render_admin($view, $data = []) {
+        // Inject global pending count for sidebar notification
+        $this->load->model('Admin_model');
+        $data['pending_count'] = $this->Admin_model->count_pending_queue();
+        
         $data['content'] = $this->load->view($view, $data, TRUE);
         $this->load->view('admin/index', $data);
     }

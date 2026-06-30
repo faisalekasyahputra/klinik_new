@@ -162,6 +162,16 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Alasan Pengajuan Bantuan</label>
+                            <div class="relative group">
+                                <div class="absolute top-3 left-0 flex items-center pl-4 pointer-events-none text-zinc-500 group-focus-within:text-blue-400 transition-colors">
+                                    <i class="fa-solid fa-comment-dots text-sm"></i>
+                                </div>
+                                <textarea name="alasan_pengajuan" x-model="survey.alasan_pengajuan" required rows="3" class="w-full bg-black/20 border border-white/10 rounded-xl pl-12 pr-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:bg-black/40 transition-colors text-sm resize-none" placeholder="Ceritakan secara singkat alasan Anda membutuhkan bantuan ini..."></textarea>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="mt-6 flex justify-between">
@@ -177,7 +187,30 @@
                 <!-- Step 3: Etalase Pilihan Program -->
                 <div x-show="step === 3" style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-8" x-transition:enter-end="opacity-100 translate-x-0">
                     <h2 class="text-lg font-semibold mb-2 flex items-center gap-2"><i class="fa-solid fa-store text-emerald-400"></i> Etalase Program Anda</h2>
-                    <p class="text-xs text-zinc-400 mb-6">Berdasarkan hasil analisa (Desil <span x-text="simperumData?.desil"></span>), Anda berhak mengikuti salah satu program prioritas berikut. Silakan pilih satu yang paling sesuai dengan kondisi Anda.</p>
+                    
+                    <!-- Alert jika Ditolak dari Program Target -->
+                    <div x-show="!isEligibleForTarget" class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4" style="display: none;">
+                        <div class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-xmark text-red-400 mt-0.5"></i>
+                            <div>
+                                <h3 class="font-medium text-red-400 text-sm">Mohon Maaf, Anda Tidak Memenuhi Syarat</h3>
+                                <p class="text-xs text-zinc-300 mt-1">Berdasarkan hasil analisa (Desil <span x-text="simperumData?.desil"></span>), Anda tidak memenuhi kriteria untuk program <strong class="text-white"><?= htmlspecialchars($program['nama_program']) ?></strong>. Namun, sistem kami merekomendasikan program alternatif berikut:</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alert jika Lolos Program Target -->
+                    <div x-show="isEligibleForTarget && '<?= $program['kode_program'] ?>' !== 'umum'" class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 mb-4" style="display: none;">
+                        <div class="flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-400 mt-0.5"></i>
+                            <div>
+                                <h3 class="font-medium text-emerald-400 text-sm">Selamat, Anda Memenuhi Kriteria!</h3>
+                                <p class="text-xs text-zinc-300 mt-1">Sistem merekomendasikan Anda untuk melanjutkan pendaftaran program <strong class="text-white"><?= htmlspecialchars($program['nama_program']) ?></strong>.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-zinc-400 mb-6" x-show="'<?= $program['kode_program'] ?>' === 'umum'">Berdasarkan hasil analisa (Desil <span x-text="simperumData?.desil"></span>), Anda berhak mengikuti salah satu program prioritas berikut. Silakan pilih satu yang paling sesuai dengan kondisi Anda.</p>
                     
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                         <template x-for="prog in eligiblePrograms" :key="prog.id">
@@ -341,11 +374,13 @@ function wizardData() {
         
         eligiblePrograms: [],
         chosenProgram: null,
+        isEligibleForTarget: true,
 
         survey: {
             penghasilan: '',
             pekerjaan: '',
-            status_kepemilikan: ''
+            status_kepemilikan: '',
+            alasan_pengajuan: ''
         },
         
         init() {
@@ -397,7 +432,8 @@ function wizardData() {
         isSurveyComplete() {
             return this.survey.penghasilan !== '' && 
                    this.survey.pekerjaan !== '' && 
-                   this.survey.status_kepemilikan !== '';
+                   this.survey.status_kepemilikan !== '' &&
+                   this.survey.alasan_pengajuan.trim() !== '';
         },
 
         async validateSurvey() {
@@ -411,6 +447,8 @@ function wizardData() {
                     formData.append('penghasilan', this.survey.penghasilan);
                     formData.append('pekerjaan', this.survey.pekerjaan);
                     formData.append('status_kepemilikan', this.survey.status_kepemilikan);
+                    formData.append('alasan_pengajuan', this.survey.alasan_pengajuan);
+                    formData.append('kode_program_target', '<?= $program['kode_program'] ?>');
                     formData.append('<?= $this->security->get_csrf_token_name(); ?>', '<?= $this->security->get_csrf_hash(); ?>');
                     
                     const response = await fetch('<?= base_url('Program/api_kalkulasi_program') ?>', {
@@ -429,7 +467,17 @@ function wizardData() {
                             this.simperumData.desil = result.desil;
                         }
                         this.eligiblePrograms = result.eligible_programs || [];
-                        this.chosenProgram = null; // Reset user choice
+                        this.isEligibleForTarget = result.is_eligible_for_target;
+                        
+                        this.chosenProgram = null; 
+                        
+                        // Jika eligible untuk target spesifik, otomatis pilihkan
+                        if (this.isEligibleForTarget && result.kode_program_target !== 'umum') {
+                            const found = this.eligiblePrograms.find(p => p.kode === result.kode_program_target);
+                            if (found) {
+                                this.chosenProgram = found;
+                            }
+                        }
                         
                         // Go to Step 3
                         this.step = 3;

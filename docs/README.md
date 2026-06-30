@@ -1,35 +1,40 @@
 # 📚 Dokumentasi Klinik PKP
-**Terakhir Diperbarui:** 9 Juni 2026
+**Terakhir Diperbarui:** 1 Juli 2026 (v3.0 Refactor)
 
-Folder ini berisi seluruh dokumentasi teknis proyek Klinik PKP.
+Folder ini berisi seluruh dokumentasi teknis proyek Klinik PKP yang telah distruktur ulang.
 
 ---
 
-## 📋 Dokumen Utama
-
+## 🎯 Product (`product/`)
 | Dokumen | Deskripsi |
 |---------|-----------|
-| [IMPLEMENTATION_ROADMAP.md](./IMPLEMENTATION_ROADMAP.md) | Peta jalan pengembangan 9 fase (Fase 1–6 selesai) |
-| [PRODUCT_REQUIREMENTS_DOCUMENT.md](./PRODUCT_REQUIREMENTS_DOCUMENT.md) | Spesifikasi kebutuhan fungsional & non-fungsional |
-| [TECHNICAL_DESIGN_DOCUMENT.md](./TECHNICAL_DESIGN_DOCUMENT.md) | Arsitektur backend, base controller, API, struktur direktori |
-| [SECURITY_DESIGN_DOCUMENT.md](./SECURITY_DESIGN_DOCUMENT.md) | Model ancaman STRIDE, enkripsi, OAuth hardening |
-| [ANALISIS_DAN_RENCANA_PERBAIKAN.md](./ANALISIS_DAN_RENCANA_PERBAIKAN.md) | Audit keamanan awal & status remediasi |
-| [AKUN_LOGIN.md](./AKUN_LOGIN.md) | Panduan alur autentikasi, onboarding, profil, hapus akun |
+| [PRODUCT_REQUIREMENTS_DOCUMENT.md](./product/PRODUCT_REQUIREMENTS_DOCUMENT.md) | Spesifikasi kebutuhan fungsional & non-fungsional (PRD) |
+| [IMPLEMENTATION_ROADMAP.md](./product/IMPLEMENTATION_ROADMAP.md) | Peta jalan pengembangan (Fase 1–10) |
+| [ANALISIS_DAN_RENCANA_PERBAIKAN.md](./product/ANALISIS_DAN_RENCANA_PERBAIKAN.md) | Audit keamanan awal & status remediasi |
 
 ---
 
-## 🗄️ Database (`database/`)
+## 🏛️ Architecture (`architecture/`)
+| Dokumen | Deskripsi |
+|---------|-----------|
+| [TECHNICAL_DESIGN_DOCUMENT.md](./architecture/TECHNICAL_DESIGN_DOCUMENT.md) | Arsitektur backend, base controller, API, struktur direktori |
+| [DATABASE_DESIGN_DOCUMENT.md](./architecture/DATABASE_DESIGN_DOCUMENT.md) | Kamus data, ERD, dan skema enkripsi |
+| [SECURITY_DESIGN_DOCUMENT.md](./architecture/SECURITY_DESIGN_DOCUMENT.md) | Model ancaman STRIDE, enkripsi, OAuth hardening |
+| [SYSTEM_DESIGN_DIAGRAMS.md](./architecture/SYSTEM_DESIGN_DIAGRAMS.md) | ERD dan Flowchart sistem |
+| [flowchart.mmd](./architecture/flowchart.mmd) | Kode sumber diagram Mermaid (Flowchart) |
 
-| File | Deskripsi |
-|------|-----------|
-| [schema_klinikpkp.sql](./database/schema_klinikpkp.sql) | Schema SQL lengkap untuk migrasi (tanpa data) |
-| [DATABASE_DESIGN_DOCUMENT.md](./database/DATABASE_DESIGN_DOCUMENT.md) | Kamus data, ERD, dan skema enkripsi |
-| [SETUP_DATABASE.md](./database/SETUP_DATABASE.md) | Panduan setup database untuk developer baru |
+---
+
+## ⚙️ Engineering (`engineering/`)
+| Dokumen | Deskripsi |
+|---------|-----------|
+| [AKUN_LOGIN.md](./engineering/AKUN_LOGIN.md) | Panduan alur autentikasi, onboarding, profil, hapus akun |
+| [SETUP_DATABASE.md](./engineering/SETUP_DATABASE.md) | Panduan setup database untuk developer baru |
+| [schema_klinikpkp.sql](./engineering/schema_klinikpkp.sql) | Schema SQL lengkap untuk migrasi (tanpa data dummy) |
 
 ---
 
 ## 🎨 Design System (`design/`)
-
 | File | Deskripsi |
 |------|-----------|
 | [design-tokens.json](./design/design-tokens.json) | Token desain (warna, tipografi, spacing) |
@@ -38,14 +43,11 @@ Folder ini berisi seluruh dokumentasi teknis proyek Klinik PKP.
 
 ---
 
-## 📝 Changelog
-
-| File | Deskripsi |
-|------|-----------|
-| [changelog_090626_12.39WIB_.md](./changelog_090626_12.39WIB_.md) | Perbandingan lengkap `klinik_new_2` → `klinik_new` |
+## 🤝 Meetings (`meetings/`)
+Folder ini memuat log *meeting* dan catatan *progress update*, seperti:
+- `22_juni_2026/` (Transkrip rapat dan transisi ke Fase Pivot)
 
 ---
 
 ## 📦 Arsip (`archive/`)
-
-File lama dari fase riset awal yang diarsipkan untuk referensi.
+File lama dari fase riset awal (seperti *changelogs* dan dokumen `superpowers`) diarsipkan di sini untuk referensi historis.

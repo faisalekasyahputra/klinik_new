@@ -131,6 +131,7 @@ class Program extends Public_Controller {
         $penghasilan = (int) $this->input->post('penghasilan', TRUE);
         $status_kepemilikan = $this->input->post('status_kepemilikan', TRUE);
         $pekerjaan = $this->input->post('pekerjaan', TRUE);
+        $kode_program_target = $this->input->post('kode_program_target', TRUE); // e.g. 'rtlh', 'umum'
         
         $this->load->library('smart_filter');
 
@@ -148,9 +149,25 @@ class Program extends Public_Controller {
 
         $eligible_programs = $this->smart_filter->get_eligible_programs($desil, $status_kepemilikan);
 
+        // Jika user datang dari halaman spesifik (bukan 'umum'), kita cek apakah dia lolos syarat program tersebut
+        $is_eligible_for_target = false;
+        if ($kode_program_target && $kode_program_target !== 'umum') {
+            foreach ($eligible_programs as $prog) {
+                if (isset($prog['kode']) && $prog['kode'] === $kode_program_target) {
+                    $is_eligible_for_target = true;
+                    break;
+                }
+            }
+        } else {
+            // Jika umum, maka selalu dianggap true asalkan ada program (yang mana selalu ada fallback)
+            $is_eligible_for_target = true;
+        }
+
         $response = [
             'status' => 'success',
             'desil' => $desil,
+            'kode_program_target' => $kode_program_target,
+            'is_eligible_for_target' => $is_eligible_for_target,
             'eligible_programs' => $eligible_programs
         ];
 
@@ -175,7 +192,8 @@ class Program extends Public_Controller {
         $data_survey = [
             'penghasilan' => $this->input->post('penghasilan', TRUE),
             'status_kepemilikan' => $this->input->post('status_kepemilikan', TRUE),
-            'pekerjaan' => $this->input->post('pekerjaan', TRUE)
+            'pekerjaan' => $this->input->post('pekerjaan', TRUE),
+            'alasan_pengajuan' => $this->input->post('alasan_pengajuan', TRUE)
         ];
 
         // Data SIMPERUM (raw JSON yang diterima dari frontend)
@@ -195,9 +213,8 @@ class Program extends Public_Controller {
             'updated_at' => date('Y-m-d H:i:s')
         ];
 
-        // DUMMY: Bypass DB insertion for demonstration
-        // $inserted = $this->Program_model->insert_housing_queue($insert_data);
-        $inserted = true;
+        // Memasukkan pengajuan ke database antrean
+        $inserted = $this->Program_model->insert_housing_queue($insert_data);
 
         if ($inserted) {
             $this->session->set_flashdata('success', 'Pengajuan berhasil direkam ke dalam Antrean. Petugas akan memvalidasi data Anda.');

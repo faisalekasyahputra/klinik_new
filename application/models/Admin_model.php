@@ -13,6 +13,7 @@ class Admin_model extends CI_Model {
         $this->db->from('sf_housing_queue');
         $this->db->join('sf_programs', 'sf_housing_queue.program_id = sf_programs.id', 'left');
         $this->db->order_by('sf_housing_queue.created_at', 'DESC');
+        $this->db->limit(1000); // Batasi 1000 baris terbaru untuk performa
         $query = $this->db->get();
         return $query->result();
     }
@@ -24,5 +25,10 @@ class Admin_model extends CI_Model {
         );
         $this->db->where('id', $id);
         return $this->db->update('sf_housing_queue', $data);
+    }
+
+    public function count_pending_queue() {
+        $this->db->where('status_antrean', 'pending');
+        return $this->db->count_all_results('sf_housing_queue');
     }
 }

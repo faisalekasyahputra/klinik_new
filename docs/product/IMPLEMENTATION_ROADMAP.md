@@ -1,7 +1,7 @@
 # 📅 IMPLEMENTATION ROADMAP (Peta Jalan Eksekusi)
 ## Pivot & Re-Arsitektur Klinik PKP (v3.0)
 **Target Workspace:** `c:\xampp\htdocs\klinik_new`  
-**Terakhir Diperbarui:** 22 Juni 2026
+**Terakhir Diperbarui:** 1 Juli 2026 (v3.0)
 
 ---
 
@@ -46,7 +46,7 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
                          ▼
 ┌──────────────────────────────────────────────────────────┐
 │ FASE 9: API SIMPERUM & HOUSING QUEUE            ✅ DONE  │
-│  • Migrasi Database (Tabel PROGRAMS, HOUSING_QUEUE)      │
+│  • Migrasi Database (Tabel sf_programs, sf_housing_queue)│
 │  • Form Input NIK saat klik "Daftar" di Card Program     │
 │  • Hit API SIMPERUM, auto-fill data diri                 │
 │  • Smart Filter Kelayakan -> Insert ke Housing Queue     │
@@ -112,5 +112,5 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
 
 1. ⬜ **UI/UX Relevan:** Navigasi 3 pilar dan Etalase Program dapat diakses dan responsif di *mobile*.
 2. ⬜ **API Hit Sukses:** Sistem bisa mengirim NIK, dan menerima JSON *response* dari server SIMPERUM.
-3. ⬜ **Antrean Terekam:** Data warga berhasil masuk ke tabel `HOUSING_QUEUE` dengan status default `pending`.
+3. ⬜ **Antrean Terekam:** Data warga berhasil masuk ke tabel `sf_housing_queue` dengan status default `pending`.
 4. ⬜ **Validasi Terjaga:** Hanya *role* Admin yang bisa mengeksekusi perubahan status persetujuan.

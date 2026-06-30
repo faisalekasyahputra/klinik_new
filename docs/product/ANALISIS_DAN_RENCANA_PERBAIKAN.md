@@ -7,7 +7,7 @@
 | **Target Workspace** | `c:\xampp\htdocs\klinik_new` |
 | **Versi Dokumen** | v2.0 |
 | **Tanggal Analisis** | 2 Juni 2026 |
-| **Terakhir Diperbarui** | 9 Juni 2026 |
+| **Terakhir Diperbarui** | 1 Juli 2026 (v3.0 Refactor) |
 | **Status Perbaikan** | ✅ Fase 1-5 (Security) Selesai · ✅ Fase 6 (UI/UX & Auth) Selesai |
 | **Klasifikasi** | INTERNAL — Disperakim Jateng & Pengembang |
 
@@ -84,7 +84,7 @@ Berikut adalah daftar kerentanan keamanan yang ditemukan pada kode sumber aktif 
 1.  **Fungsi Balasan Forum Lumpuh (404 Error):**
     Formulir tanggapan di view `detail.php` mengarah ke `Umum/balas_aksi`, namun method `balas_aksi` tersebut **tidak ada** di controller `Umum.php`. Hal ini menyebabkan fitur komentar tidak berfungsi dan memicu halaman error 404 ketika digunakan.
 2.  **Plaintext PII (Personally Identifiable Information) di Database:**
-    Data NIK dan Alamat domisili masyarakat disimpan secara plaintext (tanpa enkripsi) di database `users`. Hal ini tidak memenuhi kepatuhan regulasi **UU PDP No. 27 Tahun 2022** yang mewajibkan pengamanan enkripsi kriptografis pada data identitas kependudukan.
+    Data NIK dan Alamat domisili masyarakat disimpan secara plaintext (tanpa enkripsi) di database `usr_users`. Hal ini tidak memenuhi kepatuhan regulasi **UU PDP No. 27 Tahun 2022** yang mewajibkan pengamanan enkripsi kriptografis pada data identitas kependudukan.
 3.  **Redundansi Validasi Sesi:**
     Karena tidak menerapkan base controller dinamis (seperti `MY_Controller` -> `Auth_Controller`), penulisan kode validasi hak akses menjadi berulang-ulang di berbagai controller, yang meningkatkan risiko kelalaian developer dalam mengamankan modul baru di masa mendatang.
 
@@ -179,7 +179,7 @@ Untuk menambal seluruh celah di atas tanpa merusak database dan UI yang sudah ad
 
 #### 🛠️ FASE 5: Enkripsi Data Pribadi (Kepatuhan UU PDP)
 1.  Tarik paket `vlucas/phpdotenv` menggunakan Composer untuk memindahkan database credential dan client secret Google ke file `.env`.
-2.  Gunakan library `Encryption_lib.php` untuk mengenkripsi data kolom `nik` dan `alamat` di database `users`.
+2.  Gunakan library `Encryption_lib.php` untuk mengenkripsi data kolom `nik` dan `alamat` di database `usr_users`.
 3.  Gunakan *Deterministic Hashing* untuk kolom `nik_lookup_hash` agar fitur deteksi keunikan akun saat registrasi tetap bekerja cepat tanpa menurunkan performa database.
 
 ---
@@ -205,4 +205,4 @@ Seluruh celah keamanan kritis yang ditemukan pada audit awal telah berhasil dita
 Semua perbaikan berjalan di belakang layar (backend) tanpa mengubah desain UI dark-mode premium. Selanjutnya, pengembangan dilanjutkan ke fitur forum lanjutan, dashboard admin, dan persiapan rilis production (lihat `IMPLEMENTATION_ROADMAP.md`).
 
 ---
-*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant — 9 Juni 2026.*
+*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant — 1 Juli 2026 (v3.0 Refactor).*

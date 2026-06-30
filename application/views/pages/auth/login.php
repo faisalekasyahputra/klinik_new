@@ -105,23 +105,48 @@
 
             <!-- Flash Messages -->
             <?php if ($this->session->flashdata('error')): ?>
-                <div class="auth-alert auth-alert--error">
-                    <i class="fa-solid fa-circle-exclamation"></i>
-                    <?= $this->session->flashdata('error') ?>
+                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--error relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <i class="fa-solid fa-circle-exclamation mr-2"></i>
+                        <?= $this->session->flashdata('error') ?>
+                    </div>
+                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             <?php endif; ?>
             <?php if ($this->session->flashdata('success')): ?>
-                <div class="auth-alert auth-alert--success">
-                    <i class="fa-solid fa-circle-check"></i>
-                    <?= $this->session->flashdata('success') ?>
+                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--success relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <i class="fa-solid fa-circle-check mr-2"></i>
+                        <?= $this->session->flashdata('success') ?>
+                    </div>
+                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             <?php endif; ?>
             <?php if ($this->session->flashdata('warning')): ?>
-                <div class="auth-alert auth-alert--warning">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <?= $this->session->flashdata('warning') ?>
+                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--warning relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <i class="fa-solid fa-triangle-exclamation mr-2"></i>
+                        <?= $this->session->flashdata('warning') ?>
+                    </div>
+                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             <?php endif; ?>
+
+            <!-- Demo Accounts Info Box -->
+            <div style="background: rgba(214, 251, 0, 0.1); border: 1px solid rgba(214, 251, 0, 0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 0.8rem; font-weight: 700; color: #8aacb0; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"><i class="fa-solid fa-flask" style="margin-right: 4px;"></i> Kredensial Demo</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; font-size: 0.8rem;">
+                    <button type="button" onclick="document.getElementById('login_email').value='admin@klinikpkp.jatengprov.go.id'; document.getElementById('login_password').value='password';" style="background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 8px; border: 1px solid transparent; cursor: pointer; text-align: left; transition: all 0.2s;" onmouseover="this.style.borderColor='rgba(214,251,0,0.5)';" onmouseout="this.style.borderColor='transparent';">
+                        <div style="color: #8aacb0; font-size: 0.7rem; margin-bottom: 4px;">Admin Dashboard</div>
+                        <div style="color: #fff; font-weight: 600; line-height: 1.4; word-break: break-all;">E: admin@klinikpkp.jatengprov.go.id<br>U: admin<br>P: password</div>
+                    </button>
+                    <button type="button" onclick="document.getElementById('login_email').value='warga@example.com'; document.getElementById('login_password').value='password';" style="background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 8px; border: 1px solid transparent; cursor: pointer; text-align: left; transition: all 0.2s;" onmouseover="this.style.borderColor='rgba(214,251,0,0.5)';" onmouseout="this.style.borderColor='transparent';">
+                        <div style="color: #8aacb0; font-size: 0.7rem; margin-bottom: 4px;">Warga (Pengaju)</div>
+                        <div style="color: #fff; font-weight: 600; line-height: 1.4; word-break: break-all;">E: warga@example.com<br>U: warga_demo<br>P: password</div>
+                    </button>
+                </div>
+                <div style="margin-top: 0.5rem; font-size: 0.7rem; color: #8aacb0; text-align: center;">Klik salah satu kotak di atas untuk mengisi form secara otomatis (menggunakan Email).</div>
+            </div>
 
             <!-- Login Form -->
             <form action="<?= base_url('Auth/do_login') ?>" method="POST" id="loginForm">

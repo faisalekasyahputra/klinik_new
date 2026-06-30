@@ -51,25 +51,35 @@
         <?php $this->load->view('admin/layouts/topbar'); ?>
         
         <!-- Main Content Area -->
-        <main id="main-content" class="flex-1 overflow-x-hidden overflow-y-auto p-8 relative z-10 custom-scrollbar">
+        <main id="main-content" class="flex-1 min-h-0 overflow-x-hidden overflow-y-auto p-8 relative z-10 custom-scrollbar">
             
             <?php if($this->session->flashdata('success')): ?>
-                <div class="mb-6 p-4 rounded-2xl bg-green-50 text-green-700 border border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20 flex items-start gap-3 shadow-sm">
-                    <i class="ph ph-check-circle text-xl mt-0.5"></i>
-                    <div>
-                        <h4 class="font-bold text-sm">Berhasil!</h4>
-                        <p class="text-sm mt-0.5 opacity-90"><?= $this->session->flashdata('success') ?></p>
+                <div x-data="{ show: true }" x-show="show" class="mb-6 p-4 rounded-2xl bg-green-50 text-green-700 border border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20 flex items-start justify-between gap-3 shadow-sm relative">
+                    <div class="flex items-start gap-3">
+                        <i class="ph ph-check-circle text-xl mt-0.5"></i>
+                        <div>
+                            <h4 class="font-bold text-sm">Berhasil!</h4>
+                            <p class="text-sm mt-0.5 opacity-90"><?= $this->session->flashdata('success') ?></p>
+                        </div>
                     </div>
+                    <button @click="show = false" class="text-green-700/50 hover:text-green-700 dark:text-green-400/50 dark:hover:text-green-400 transition-colors">
+                        <i class="ph ph-x"></i>
+                    </button>
                 </div>
             <?php endif; ?>
             
             <?php if($this->session->flashdata('error')): ?>
-                <div class="mb-6 p-4 rounded-2xl bg-red-50 text-red-700 border border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20 flex items-start gap-3 shadow-sm">
-                    <i class="ph ph-warning-circle text-xl mt-0.5"></i>
-                    <div>
-                        <h4 class="font-bold text-sm">Terjadi Kesalahan!</h4>
-                        <p class="text-sm mt-0.5 opacity-90"><?= $this->session->flashdata('error') ?></p>
+                <div x-data="{ show: true }" x-show="show" class="mb-6 p-4 rounded-2xl bg-red-50 text-red-700 border border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20 flex items-start justify-between gap-3 shadow-sm relative">
+                    <div class="flex items-start gap-3">
+                        <i class="ph ph-warning-circle text-xl mt-0.5"></i>
+                        <div>
+                            <h4 class="font-bold text-sm">Terjadi Kesalahan!</h4>
+                            <p class="text-sm mt-0.5 opacity-90"><?= $this->session->flashdata('error') ?></p>
+                        </div>
                     </div>
+                    <button @click="show = false" class="text-red-700/50 hover:text-red-700 dark:text-red-400/50 dark:hover:text-red-400 transition-colors">
+                        <i class="ph ph-x"></i>
+                    </button>
                 </div>
             <?php endif; ?>
             

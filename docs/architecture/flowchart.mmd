@@ -1,35 +1,30 @@
 graph TD
-    A(["Masyarakat Kunjungi Web"]) --> B["Lihat Hero Slider & Fungsi Utama PKP"]
-    B --> C{"Pilih Layanan Utama?"}
+    A(["Masyarakat Kunjungi Web"]) --> B["Pilih Layanan Perumahan"]
+    B --> C["Lihat Etalase Program (RTLH/PB/KPR)"]
+    C --> D{"Tertarik Mengajukan?"}
     
-    C -->|"Perumahan"| D["Tampil Etalase Program Perumahan"]
-    C -->|"Kawasan"| E["Tampil Data Spasial"]
-    C -->|"Pertanahan"| F["Halaman Pertanahan"]
+    D -->|"Ya"| E["Klik Daftar / Cek Kelayakan"]
+    D -->|"Tidak"| C
     
-    D --> G["Lihat Syarat & Kriteria Program (RTLH / PB / KPR)"]
-    G --> H{"Tertarik Mengajukan?"}
+    E --> F["Mulai Wizard Onboarding 4 Langkah (Alpine.js)"]
+    F --> G["Langkah 1: Input NIK & Cek API SIMPERUM"]
     
-    H -->|"Ya"| I["Klik Daftar / Cek Kelayakan"]
-    H -->|"Tidak"| D
+    G --> H{"NIK Terdaftar di SIMPERUM?"}
+    H -->|"Ya"| I["Autofill Data Diri (Langkah 2)"]
+    H -->|"Tidak"| J["Isi Manual Data Diri (Langkah 2)"]
     
-    I --> J["Form Input NIK"]
-    J --> K[["Proses API SIMPERUM"]]
+    I --> K["Langkah 3: Input Kondisi Rumah & Sosial Ekonomi"]
+    J --> K
     
-    K --> L{"NIK Ditemukan & Valid?"}
-    L -->|"Ya, Ambil Data SIMPERUM"| M["Form Data Diri Terisi Otomatis Sebagian"]
-    L -->|"Tidak, Data Baru"| N["Form Data Diri Kosong"]
+    K --> L["Langkah 4: Review Data & Submit"]
+    L --> M["Backend: Kalkulasi Matriks Kelayakan UN HABITAT"]
     
-    M --> O["Pengguna Melengkapi Data Kurang"]
-    N --> O
+    M --> N{"Lolos Syarat Matriks (Smart Filter)?"}
+    N -->|"Ya"| O["Simpan ke sf_housing_queue (Status: Pending)"]
+    N -->|"Tidak"| P["Tolak Otomatis / Tawarkan Program Lain"]
     
-    O --> P["Sistem Melakukan Smart Filter Kelayakan Dasar"]
-    P --> Q{"Lolos Syarat Dasar?"}
+    O --> Q[["Validasi Manual oleh ASN/Admin (Dashboard)"]]
+    Q --> R{"Disetujui Admin?"}
     
-    Q -->|"Ya"| R["Simpan sebagai Status Housing Queue"]
-    Q -->|"Tidak"| S["Sistem Menawarkan Program Lain yang Relevan"]
-    
-    R --> T[["Validasi Manual oleh ASN/Admin (Audit)"]]
-    T --> U{"Disetujui?"}
-    
-    U -->|"Ya"| V(["Masuk Antrean Realisasi SIMPERUM"])
-    U -->|"Tolak / Kuota Penuh"| W(["Tertahan di Housing Queue Tahun Depan"])
+    R -->|"Ya"| S(["Masuk Antrean Realisasi SIMPERUM / SP2"])
+    R -->|"Tolak"| T(["Pengajuan Dibatalkan / Masuk Arsip"])
