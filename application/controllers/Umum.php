@@ -402,7 +402,10 @@ class Umum extends MY_Controller {
 			$items = $decoded['data'] ?? [];
 		}
 
-		$local_sp2 = $this->db->get('srp2_registrations')->result_array();
+		$local_sp2 = [];
+		if ($this->db->table_exists('srp2_registrations')) {
+			$local_sp2 = $this->db->get('srp2_registrations')->result_array();
+		}
 
 		$developers = array_map(function($item) use ($local_sp2) {
 			$pengembang_nama = $item['pengembang']['nama'] ?? '-';
@@ -431,5 +434,29 @@ class Umum extends MY_Controller {
 		$datacontent['developers'] = $developers;
 		$data['content'] = $this->load->view('pages/pengembang/list_pengembang', $datacontent, true);
 		$this->load->view('layouts/main', $data);
+	}
+
+	public function detail_pengembang($nama = '') {
+		$nama = urldecode($nama);
+		$local_data = [];
+		if ($this->db->table_exists('srp2_registrations')) {
+			$local_data = $this->db->get_where('srp2_registrations', ['nama_perusahaan' => $nama])->row_array();
+		}
+		$datacontent['nama_pengembang'] = $nama;
+		$datacontent['local_data'] = $local_data;
+		
+		$data['content'] = $this->load->view('pages/pengembang/detail_pengembang', $datacontent, true);
+		$this->load->view('layouts/main', $data);
+	}
+
+	public function download_sertifikat($nama = '') {
+		if (!$this->is_logged_in()) {
+			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu untuk mengunduh sertifikat.');
+			redirect('Auth/login');
+			return;
+		}
+
+		$this->session->set_flashdata('success', 'Sertifikat berhasil diunduh. (Simulasi)');
+		redirect('Umum/detail_pengembang/' . $nama);
 	}
 }

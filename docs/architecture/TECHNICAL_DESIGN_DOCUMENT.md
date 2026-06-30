@@ -1,6 +1,6 @@
 # TECHNICAL DESIGN DOCUMENT (TDD)
 ## Klinik PKP — Arsitektur Backend & Pengembangan Kode (CodeIgniter 3)
-**Terakhir Diperbarui:** 9 Juni 2026
+**Terakhir Diperbarui:** 30 Juni 2026 (v3.0 Refactor)
 
 ---
 
@@ -118,7 +118,7 @@ Untuk menanggulangi masalah pemblokiran gambar (Mixed Content) dan proteksi *hot
 
 ---
 
-## 📂 5. STRUKTUR DIREKTORI (Target Clean)
+## 📂 5. STRUKTUR DIREKTORI (v3.0 Modular Docs)
 
 Berikut adalah pemetaan folder final yang bersih untuk proyek `klinik_new`:
 
@@ -134,14 +134,20 @@ klinik_new/
 │   ├── css/
 │   ├── js/
 │   └── img/
-├── docs/                               # Dokumen teknis & roadmap
-│   ├── AKUN_LOGIN.md
-│   ├── ANALISIS_DAN_RENCANA_PERBAIKAN.md
-│   ├── DATABASE_DESIGN_DOCUMENT.md
-│   ├── IMPLEMENTATION_ROADMAP.md
-│   ├── PRODUCT REQUIREMENTS DOCUMENT.md
-│   ├── SECURITY_DESIGN_DOCUMENT.md
-│   └── TECHNICAL_DESIGN_DOCUMENT.md
+├── docs/                               # Dokumen teknis & roadmap (Modular)
+│   ├── architecture/
+│   │   ├── TECHNICAL_DESIGN_DOCUMENT.md
+│   │   ├── SECURITY_DESIGN_DOCUMENT.md
+│   │   └── DATABASE_DESIGN_DOCUMENT.md
+│   ├── product/
+│   │   ├── PRODUCT_REQUIREMENTS_DOCUMENT.md
+│   │   └── IMPLEMENTATION_ROADMAP.md
+│   ├── engineering/
+│   │   ├── SETUP_DATABASE.md
+│   │   └── schema_klinikpkp.sql
+│   ├── meetings/
+│   ├── design/
+│   └── archive/
 ├── application/                        # Kode aplikasi backend
 │   ├── config/
 │   │   ├── config.php                  # CSRF, Sesi, Encryption
@@ -193,4 +199,4 @@ klinik_new/
 ```
 
 ---
-*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant — 9 Juni 2026.*
+*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant — 30 Juni 2026.*

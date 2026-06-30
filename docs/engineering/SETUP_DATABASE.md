@@ -1,8 +1,10 @@
-# 🚀 Panduan Setup Database — Klinik PKP
+# 🚀 Panduan Setup Database — Klinik PKP (v3.0)
+
+Dokumen ini berisi panduan setup dan daftar skema database yang telah direstrukturisasi dengan sistem *Prefix* Modular untuk mempermudah manajemen data.
 
 ## Prasyarat
 - MySQL 5.7+ atau MariaDB 10.3+
-- XAMPP / Laragon / server MySQL lainnya
+- XAMPP / Laragon (Lingkungan Lokal)
 
 ## Langkah Import
 
@@ -12,21 +14,18 @@ CREATE DATABASE klinikpkp CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 ```
 
 ### 2. Import Schema
+Skema terbaru kini berada di folder `engineering`:
 ```bash
 # Via command line
-mysql -u root -p klinikpkp < docs/schema_klinikpkp.sql
-
-# Atau via phpMyAdmin:
-# 1. Buka http://localhost/phpmyadmin
-# 2. Pilih database "klinikpkp"
-# 3. Tab "Import" → pilih file schema_klinikpkp.sql → Go
+mysql -u root -p klinikpkp < docs/engineering/schema_klinikpkp.sql
 ```
+*Atau import secara manual via phpMyAdmin ke database `klinikpkp`.*
 
-### 3. Konfigurasi Environment
-Buat file `.env` di root proyek (`c:\xampp\htdocs\klinik_new\.env`):
+### 3. Konfigurasi Environment (`.env`)
+Salin atau buat file `.env` di root proyek (`C:\xampp\htdocs\klinik_new\.env`):
 
 ```env
-# Database
+# Koneksi Database Lokal
 DB_HOST=localhost
 DB_NAME=klinikpkp
 DB_USER=root
@@ -36,37 +35,50 @@ DB_PASS=
 GOOGLE_CLIENT_ID=your_client_id_here
 GOOGLE_CLIENT_SECRET=your_client_secret_here
 
-# Enkripsi (WAJIB — generate random 32-byte key)
+# Enkripsi NIK & PDP (WAJIB 32-byte)
 KPKP_DATA_KEY=your_random_32_byte_key_here
 KPKP_DATA_PEPPER=your_random_pepper_string_here
 ```
 
-> ⚠️ **PENTING:** Jangan commit file `.env` ke git. Sudah ada di `.gitignore`.
+## Daftar Tabel Modular (Refactored)
 
-### 4. Verifikasi
-Buka `http://localhost/klinik_new/` — homepage harus tampil tanpa error database.
+Sistem database Klinik PKP kini menggunakan standar *prefix* berdasarkan fungsi modul:
 
-## Daftar Tabel
-
+### 1. Modul Smart Filter & Program (`sf_`)
 | Tabel | Fungsi |
 |-------|--------|
-| `users` | Akun publik (hybrid: Google + tradisional) |
-| `user` | Akun admin/staf legacy |
-| `user_documents` | Dokumen upload pengguna (KTP, SIUP, dll) |
-| `tb_diskusi` | Topik forum diskusi |
-| `tb_komentar` | Komentar/balasan forum (nested via `reply_to`) |
-| `tb_forum_likes` | Like/upvote pada diskusi & komentar |
-| `chat_rooms` | Sesi live chat / chatbot |
-| `chat_messages` | Riwayat pesan chat |
-| `kondisi` | Data spasial kondisi saluran |
-| `irigasi` | Data irigasi GIS |
-| `saluran_pembuang` | Data saluran pembuang GIS |
-| `bendung` | Data bendungan GIS |
-| `sosmed_perumahan` | Sosial media pengembang perumahan |
-| `menu` | Konfigurasi navigasi sidebar |
-| `multi` | Relasi menu per-user |
+| `sf_programs` | Master data program perumahan (RTLH, PB, dll) |
+| `sf_program_kategori` | Kategori program |
+| `sf_housing_queue` | Antrean pengajuan (*Onboarding Journey*) masyarakat |
 
-## Catatan
-- Kolom `nik` dan `alamat` di tabel `users` menyimpan data **terenkripsi AES-256-GCM**, bukan plaintext.
-- `nik_lookup_hash` berisi SHA-256 hash untuk pencarian cepat tanpa dekripsi.
-- Password di-hash menggunakan `password_hash()` (bcrypt).
+### 2. Modul Autentikasi & Pengguna (`usr_`)
+| Tabel | Fungsi |
+|-------|--------|
+| `usr_users` | Akun publik (SSO Google & Tradisional) |
+| `usr_documents` | Dokumen persyaratan (KTP, KK, dll) pengguna |
+| `user` | *(Legacy)* Akun ASN/Staf internal |
+
+### 3. Modul Forum & Komunitas (`forum_`)
+| Tabel | Fungsi |
+|-------|--------|
+| `forum_diskusi` | Topik diskusi / *thread* komunitas |
+| `forum_komentar` | Balasan diskusi (*nested*) |
+| `forum_likes` | *Upvote* / *Likes* komunitas |
+
+### 4. Modul Sistem Utama (`sys_`)
+| Tabel | Fungsi |
+|-------|--------|
+| `sys_menu` | Master konfigurasi navigasi dan *role* akses |
+| `sys_multi` | Pemetaan *role* menu pengguna |
+| `sys_settings` | Pengaturan *global* website |
+
+### 5. Modul Data Pendukung (`data_` & lainnya)
+| Tabel | Fungsi |
+|-------|--------|
+| `data_sosmed_perumahan` | Link media sosial SP2 |
+| `kondisi`, `irigasi`, `saluran_pembuang` | Data spasial dan pemetaan kawasan GIS |
+
+## Catatan Keamanan
+- **UU PDP Compliant:** Kolom `nik` dan `alamat` di `usr_users` disimpan secara terenkripsi (`AES-256-GCM`). 
+- **Pencarian Cepat:** Pencarian NIK dilakukan melalui kolom `nik_lookup_hash` yang berisi *hash* SHA-256 (tanpa perlu deskripsi manual).
+- **Password:** Di-*hash* menggunakan `password_hash()` standar PHP (BCRYPT).
