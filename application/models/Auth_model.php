@@ -1,8 +1,8 @@
-<?php
+﻿<?php
 defined('BASEPATH') || exit('No direct script access allowed');
 
 /**
- * Auth_model — Handles email/password authentication, registration,
+ * Auth_model â€” Handles email/password authentication, registration,
  * profile onboarding, rate limiting, and user document uploads.
  */
 class Auth_model extends CI_Model {
@@ -30,7 +30,7 @@ class Auth_model extends CI_Model {
             'status'     => 'restricted',
             'created_at' => date('Y-m-d H:i:s'),
         ];
-        $this->db->insert('users', $data);
+        $this->db->insert('usr_users', $data);
         return $this->db->insert_id() ?: FALSE;
     }
 
@@ -39,7 +39,7 @@ class Auth_model extends CI_Model {
      * Returns user row as object or NULL.
      */
     public function find_by_email($email) {
-        return $this->db->get_where('users', ['email' => $email])->row();
+        return $this->db->get_where('usr_users', ['email' => $email])->row();
     }
 
     /**
@@ -51,18 +51,18 @@ class Auth_model extends CI_Model {
         $this->db->where('email', $login_id);
         $this->db->or_where('username', $login_id);
         $this->db->group_end();
-        return $this->db->get('users')->row();
+        return $this->db->get('usr_users')->row();
     }
 
     /**
      * Find user by ID.
      */
     public function find_by_id($id) {
-        return $this->db->get_where('users', ['id' => (int)$id])->row();
+        return $this->db->get_where('usr_users', ['id' => (int)$id])->row();
     }
 
     // =========================================================
-    // Email Verification (placeholder — tokens generated but email not sent yet)
+    // Email Verification (placeholder â€” tokens generated but email not sent yet)
     // =========================================================
 
     /**
@@ -74,7 +74,7 @@ class Auth_model extends CI_Model {
         $expiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
 
         $this->db->where('id', $user_id);
-        $this->db->update('users', [
+        $this->db->update('usr_users', [
             'email_token'        => $token,
             'email_token_expiry' => $expiry,
         ]);
@@ -85,7 +85,7 @@ class Auth_model extends CI_Model {
      * Verify an email token. Returns the user object or NULL.
      */
     public function verify_email_token($token) {
-        $user = $this->db->get_where('users', [
+        $user = $this->db->get_where('usr_users', [
             'email_token' => $token,
         ])->row();
 
@@ -98,7 +98,7 @@ class Auth_model extends CI_Model {
 
         // Mark email as verified
         $this->db->where('id', $user->id);
-        $this->db->update('users', [
+        $this->db->update('usr_users', [
             'email_verified_at'  => date('Y-m-d H:i:s'),
             'email_token'        => NULL,
             'email_token_expiry' => NULL,
@@ -138,14 +138,14 @@ class Auth_model extends CI_Model {
     public function increment_login_attempts($user_id) {
         $this->db->set('login_attempts', 'login_attempts + 1', FALSE);
         $this->db->where('id', $user_id);
-        $this->db->update('users');
+        $this->db->update('usr_users');
 
         // Check if we need to lock
         $user = $this->find_by_id($user_id);
         if ($user && $user->login_attempts >= self::MAX_LOGIN_ATTEMPTS) {
             $lock_until = date('Y-m-d H:i:s', strtotime('+' . self::LOCKOUT_MINUTES . ' minutes'));
             $this->db->where('id', $user_id);
-            $this->db->update('users', ['locked_until' => $lock_until]);
+            $this->db->update('usr_users', ['locked_until' => $lock_until]);
         }
     }
 
@@ -154,7 +154,7 @@ class Auth_model extends CI_Model {
      */
     public function reset_login_attempts($user_id) {
         $this->db->where('id', $user_id);
-        $this->db->update('users', [
+        $this->db->update('usr_users', [
             'login_attempts' => 0,
             'locked_until'   => NULL,
         ]);
@@ -174,7 +174,7 @@ class Auth_model extends CI_Model {
         $data['updated_at']        = date('Y-m-d H:i:s');
 
         $this->db->where('id', $user_id);
-        return $this->db->update('users', $data);
+        return $this->db->update('usr_users', $data);
     }
 
     /**
@@ -193,7 +193,7 @@ class Auth_model extends CI_Model {
      * Save a document record linked to a user.
      */
     public function save_document($user_id, $doc_type, $file_name, $file_path, $file_size) {
-        return $this->db->insert('user_documents', [
+        return $this->db->insert('usr_documents', [
             'user_id'     => $user_id,
             'doc_type'    => $doc_type,
             'file_name'   => $file_name,
@@ -207,7 +207,7 @@ class Auth_model extends CI_Model {
      * Get all documents for a user.
      */
     public function get_user_documents($user_id) {
-        return $this->db->get_where('user_documents', ['user_id' => $user_id])->result();
+        return $this->db->get_where('usr_documents', ['user_id' => $user_id])->result();
     }
 
     // =========================================================
@@ -225,7 +225,7 @@ class Auth_model extends CI_Model {
      * Reset password using token.
      */
     public function reset_password($token, $new_password_hash) {
-        $user = $this->db->get_where('users', ['email_token' => $token])->row();
+        $user = $this->db->get_where('usr_users', ['email_token' => $token])->row();
         if (!$user) return FALSE;
 
         if (strtotime($user->email_token_expiry) < time()) {
@@ -233,10 +233,11 @@ class Auth_model extends CI_Model {
         }
 
         $this->db->where('id', $user->id);
-        return $this->db->update('users', [
+        return $this->db->update('usr_users', [
             'password'           => $new_password_hash,
             'email_token'        => NULL,
             'email_token_expiry' => NULL,
         ]);
     }
 }
+

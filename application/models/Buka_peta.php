@@ -1,4 +1,4 @@
-
+﻿
 <?php
 class Buka_peta extends CI_Model
 {
@@ -21,7 +21,7 @@ class Buka_peta extends CI_Model
     {
 
         $nilai = $n;
-        $menu = $this->frd('menu', $nilai, 'id', null, null);
+        $menu = $this->frd('sys_menu', $nilai, 'id', null, null);
         if ($menu[0]->link != '#') {
             $res = array($menu[0]->default => array('class="active"', 'class="current-page"', ''));
         } else {
@@ -29,7 +29,7 @@ class Buka_peta extends CI_Model
         }
 
         $this->db->where('id !=', $nilai);
-        $query = $this->db->get('menu');
+        $query = $this->db->get('sys_menu');
         $tidak_ada = $query->result();
         foreach ($tidak_ada as $td) {
             $res1 = array($td->default => array('', '', ''));
@@ -40,9 +40,9 @@ class Buka_peta extends CI_Model
     public function menu($args)
     {
         $this->db->select("menu.*");
-        $this->db->from('multi');
+        $this->db->from('sys_multi');
         $this->db->join("`user`", "multi.id_user = `user`.id");
-        $this->db->join('menu', "multi.id_menu = menu.id");
+        $this->db->join('sys_menu', "sys_multi.id_menu = sys_menu.id");
         $this->db->where("multi.id_user", $args);
         $query = $this->db->get();
         if ($query->num_rows() > 0) {
@@ -353,3 +353,4 @@ class Buka_peta extends CI_Model
     }
 
 }
+

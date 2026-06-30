@@ -3,7 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Setting_model extends CI_Model {
 
-    protected $table = 'settings';
+    protected $table = 'sys_settings';
 
     public function __construct()
     {

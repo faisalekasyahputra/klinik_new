@@ -9,10 +9,10 @@ class Admin_model extends CI_Model {
     }
 
     public function get_all_housing_queue() {
-        $this->db->select('housing_queue.*, programs.nama_program');
-        $this->db->from('housing_queue');
-        $this->db->join('programs', 'housing_queue.program_id = programs.id', 'left');
-        $this->db->order_by('housing_queue.created_at', 'DESC');
+        $this->db->select('sf_housing_queue.*, sf_programs.nama_program');
+        $this->db->from('sf_housing_queue');
+        $this->db->join('sf_programs', 'sf_housing_queue.program_id = sf_programs.id', 'left');
+        $this->db->order_by('sf_housing_queue.created_at', 'DESC');
         $query = $this->db->get();
         return $query->result();
     }
@@ -23,6 +23,6 @@ class Admin_model extends CI_Model {
             'catatan_admin' => $catatan
         );
         $this->db->where('id', $id);
-        return $this->db->update('housing_queue', $data);
+        return $this->db->update('sf_housing_queue', $data);
     }
 }

@@ -13,10 +13,10 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
 
 **Status Terkini:**
 - ✅ **Fase 1–6 (Security, Enkripsi NIK, Auth)** — Selesai
-- 🚀 **Fase 7 (Restrukturisasi UI & Navbar)** — Siap dikerjakan
-- 🛠️ **Fase 8 (Etalase Program & Hero Beranda)** — Belum mulai
-- 🛠️ **Fase 9 (Integrasi NIK SIMPERUM & Housing Queue)** — Belum mulai
-- 🔒 **Fase 10 (Validasi Manual ASN / Admin Dashboard)** — Belum mulai
+- ✅ **Fase 7 (Restrukturisasi UI & Navbar)** — Selesai
+- ✅ **Fase 8 (Etalase Program & Hero Beranda)** — Selesai
+- ✅ **Fase 9 (Integrasi NIK SIMPERUM & Housing Queue)** — Selesai
+- 🛠️ **Fase 10 (Validasi Manual ASN / Admin Dashboard)** — Belum mulai
 
 ---
 
@@ -36,7 +36,7 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
                          │
                          ▼
 ┌──────────────────────────────────────────────────────────┐
-│ FASE 8: HERO SECTION & ETALASE PROGRAM          🚀 NEXT  │
+│ FASE 8: HERO SECTION & ETALASE PROGRAM          ✅ DONE  │
 │  • Hero Slider 3 Pilar                                   │
 │  • Section "Ice Breaker" (3 Fungsi Utama PKP)            │
 │  • 5 Cards "Etalase" Program (KPR-FLPP, Oemah Lestari,   │
@@ -45,7 +45,7 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
                          │
                          ▼
 ┌──────────────────────────────────────────────────────────┐
-│ FASE 9: API SIMPERUM & HOUSING QUEUE            🛠️ TODO  │
+│ FASE 9: API SIMPERUM & HOUSING QUEUE            ✅ DONE  │
 │  • Migrasi Database (Tabel PROGRAMS, HOUSING_QUEUE)      │
 │  • Form Input NIK saat klik "Daftar" di Card Program     │
 │  • Hit API SIMPERUM, auto-fill data diri                 │
@@ -70,33 +70,33 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
 
 ---
 
-### 🚀 FASE 7 — Restrukturisasi Navbar & Sitemap (SEGERA DIMULAI)
+### ✅ FASE 7 — Restrukturisasi Navbar & Sitemap (SELESAI)
 *   **Target:** Mengubah kerangka navigasi lama (`nav.php`) menjadi 6 entitas baru sesuai arsitektur PRD v3.0.
 *   **Action Items:**
-    *   [ ] Membersihkan link statis "Profil".
-    *   [ ] Membuat *Dropdown* "Perumahan" (Berisi: Bank Data, Program, Bank Desain).
-    *   [ ] Membuat *Dropdown* "Kawasan" (Berisi: Data Spasial).
-    *   [ ] Mengubah menu "Pengembang" menjadi *view-only* SP2 list.
+    *   [x] Membersihkan link statis "Profil".
+    *   [x] Membuat *Dropdown* "Perumahan" (Berisi: Bank Data, Program, Bank Desain).
+    *   [x] Membuat *Dropdown* "Kawasan" (Berisi: Data Spasial).
+    *   [x] Mengubah menu "Pengembang" menjadi *view-only* SP2 list.
 
 ---
 
-### 🛠️ FASE 8 — Hero Section & Etalase Program (BELUM MULAI)
+### ✅ FASE 8 — Hero Section & Etalase Program (SELESAI)
 *   **Target:** Merombak tampilan `awal.php` agar berfokus pada "Iklan" program perumahan.
 *   **Action Items:**
-    *   [ ] Implementasi Slider (Perumahan, Kawasan, Pertanahan).
-    *   [ ] Membuat blok 3 Fungsi Utama PKP (Informasi, Bantuan Teknis, Pendampingan).
-    *   [ ] Membuat komponen 5 Card Etalase Utama (KPR-FLPP, Oemah Lestari, RTLH, Bantuan PB, Rumah Apung).
+    *   [x] Implementasi Slider (Perumahan, Kawasan, Pertanahan).
+    *   [x] Membuat blok 3 Fungsi Utama PKP (Informasi, Bantuan Teknis, Pendampingan).
+    *   [x] Membuat komponen 5 Card Etalase Utama (KPR-FLPP, Oemah Lestari, RTLH, Bantuan PB, Rumah Apung).
 
 ---
 
-### 🛠️ FASE 9 — Integrasi SIMPERUM & Smart Filter (BELUM MULAI)
+### ✅ FASE 9 — Integrasi SIMPERUM & Smart Filter (SELESAI)
 *   **Target:** Logika *backend* krusial dan UI interaktif untuk *Onboarding Journey* (Diagnosa Pasien).
 *   **Action Items:**
-    *   [ ] Membuat UI *Wizard* "Kalkulator Kelayakan/Klinik Diagnosa" interaktif (3-4 step pertanyaan).
-    *   [ ] Membuat *Smart Filter Engine* (Backend) untuk menghitung Desil dan mencocokkan program.
-    *   [ ] Update struktur Database (ERD baru: `PROGRAMS`, `HOUSING_QUEUE`).
-    *   [ ] Membuat fungsi `curl`/guzzle untuk memanggil API SIMPERUM berbasis NIK (Auto-fill data).
-    *   [ ] Menyimpan hasil pengajuan masyarakat ke tabel `HOUSING_QUEUE`.
+    *   [x] Membuat UI *Wizard* "Kalkulator Kelayakan/Klinik Diagnosa" interaktif (4 step alur baru).
+    *   [x] Membuat *Smart Filter Engine* (Backend) untuk menghitung Desil secara reaktif (dinamis) dan mencocokkan program (UN HABITAT Matrix).
+    *   [x] Update struktur Database (Refactoring awalan tabel `sf_programs`, `sf_housing_queue` dll).
+    *   [x] Membuat fungsi mock API SIMPERUM berbasis NIK untuk auto-fill data (skenario dummy dan empty survey).
+    *   [x] Menyimpan hasil pengajuan masyarakat ke tabel `sf_housing_queue`.
 
 ---
 

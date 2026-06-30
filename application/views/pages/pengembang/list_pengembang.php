@@ -59,6 +59,7 @@
                                 <th onclick="sortTable(0)" class="cursor-pointer hover:bg-[#d6fb00]/10 transition-colors px-8 py-5 text-left text-[11px] font-black tracking-widest text-[#d6fb00] uppercase select-none"><div class="flex items-center gap-2"><i class="fa-solid fa-building text-[#d6fb00]/50"></i> <span>Nama Pengembang</span> <i class="fa-solid fa-sort text-zinc-600 ml-auto sort-icon" id="sortIcon0"></i></div></th>
                                 <th onclick="sortTable(1)" class="cursor-pointer hover:bg-[#d6fb00]/10 transition-colors px-8 py-5 text-left text-[11px] font-black tracking-widest text-[#d6fb00] uppercase select-none"><div class="flex items-center gap-2"><span>Asosiasi</span> <i class="fa-solid fa-sort text-zinc-600 ml-auto sort-icon" id="sortIcon1"></i></div></th>
                                 <th onclick="sortTable(2)" class="cursor-pointer hover:bg-[#d6fb00]/10 transition-colors px-8 py-5 text-left text-[11px] font-black tracking-widest text-[#d6fb00] uppercase select-none"><div class="flex items-center gap-2"><i class="fa-solid fa-map-location-dot text-[#d6fb00]/50"></i> <span>Kabupaten</span> <i class="fa-solid fa-sort text-zinc-600 ml-auto sort-icon" id="sortIcon2"></i></div></th>
+                                <th onclick="sortTable(3)" class="cursor-pointer hover:bg-[#d6fb00]/10 transition-colors px-8 py-5 text-left text-[11px] font-black tracking-widest text-[#d6fb00] uppercase select-none"><div class="flex items-center gap-2"><i class="fa-solid fa-file-contract text-[#d6fb00]/50"></i> <span>Status SP2</span> <i class="fa-solid fa-sort text-zinc-600 ml-auto sort-icon" id="sortIcon3"></i></div></th>
                                 <th class="px-8 py-5 text-center text-[11px] font-black tracking-widest text-[#d6fb00] uppercase">Aksi</th>
                             </tr>
                         </thead>
@@ -84,10 +85,26 @@
                                 <td class="px-8 py-5 text-sm">
                                     <span class="text-zinc-400 font-semibold group-hover:text-zinc-300 transition-colors"><?= $dev['kabupaten'] ?></span>
                                 </td>
+                                <td class="px-8 py-5 text-sm">
+                                    <?php if ($dev['sp2_status'] === 'Belum Terdata'): ?>
+                                        <span class="inline-flex items-center px-3 py-1 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg font-bold text-[10px] uppercase tracking-wider shadow-sm group-hover:border-red-500/40 transition-colors">
+                                            <i class="fa-solid fa-circle-xmark mr-1.5"></i> Belum Terdata
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="inline-flex items-center px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-lg font-bold text-[10px] uppercase tracking-wider shadow-sm group-hover:border-emerald-500/40 transition-colors">
+                                            <i class="fa-solid fa-circle-check mr-1.5"></i> Terdata (NIB: <?= $dev['sp2_status'] ?>)
+                                        </span>
+                                    <?php endif; ?>
+                                </td>
                                 <td class="px-8 py-5 text-center">
-                                    <a href="https://wa.me/<?= preg_replace('/[^0-9]/', '', $dev['telepon']) ?>" target="_blank" class="inline-flex items-center justify-center gap-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white px-4 py-2 rounded-xl font-bold transition-all duration-300 border border-emerald-500/20 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 hover:-translate-y-0.5">
-                                        <i class="fa-brands fa-whatsapp text-lg"></i> <span>Hubungi</span>
-                                    </a>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <a href="https://wa.me/<?= preg_replace('/[^0-9]/', '', $dev['telepon']) ?>" target="_blank" class="inline-flex items-center justify-center gap-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white px-4 py-2 rounded-xl font-bold transition-all duration-300 border border-emerald-500/20 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 hover:-translate-y-0.5">
+                                            <i class="fa-brands fa-whatsapp text-lg"></i> <span>Hubungi</span>
+                                        </a>
+                                        <a href="<?= base_url('Umum/detail_pengembang/' . urlencode($dev['pengembang'])) ?>" class="inline-flex items-center justify-center gap-2 bg-[#d6fb00]/10 hover:bg-[#d6fb00] text-[#d6fb00] hover:text-black px-4 py-2 rounded-xl font-bold transition-all duration-300 border border-[#d6fb00]/20 hover:border-[#d6fb00] hover:shadow-lg hover:shadow-[#d6fb00]/20 hover:-translate-y-0.5">
+                                            <i class="fa-solid fa-circle-info text-lg"></i> <span>Detail</span>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>

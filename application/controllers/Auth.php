@@ -315,7 +315,7 @@ class Auth extends MY_Controller {
         // Check if username is unique
         $this->db->where('username', $username);
         $this->db->where('id !=', $user_id);
-        if ($this->db->count_all_results('users') > 0) {
+        if ($this->db->count_all_results('usr_users') > 0) {
             $this->session->set_flashdata('error', 'Username sudah digunakan, silakan pilih yang lain.');
             redirect('Auth/onboarding');
             return;
@@ -410,7 +410,7 @@ class Auth extends MY_Controller {
 
         $user_id = $this->get_user_id();
         $this->db->where('id', $user_id);
-        $this->db->update('users', [
+        $this->db->update('usr_users', [
             'email_verified_at' => date('Y-m-d H:i:s'),
         ]);
 
@@ -503,7 +503,7 @@ class Auth extends MY_Controller {
                     if ($logged_in_user) {
                         // Mark Google users as email-verified
                         $this->db->where('id', $logged_in_user[0]['id']);
-                        $this->db->update('users', [
+                        $this->db->update('usr_users', [
                             'email_verified_at' => date('Y-m-d H:i:s'),
                         ]);
 

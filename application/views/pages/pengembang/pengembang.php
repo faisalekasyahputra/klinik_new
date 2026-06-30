@@ -38,16 +38,16 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             
-            <!-- Card 1: Sertifikasi Registrasi Pengembang -->
-            <a href="<?=base_url('Pengembang/sertifikasi')?>" class="flex flex-col h-full group">
+            <!-- Card 1: Direktori Pengembang -->
+            <a href="<?=base_url('Umum/pengembang')?>" class="flex flex-col h-full group">
                 <div class="bg-[#0a1a1f] border border-white/10 group-hover:border-[#d6fb00]/60 flex-1 p-6 rounded-[24px] flex flex-col justify-between group-hover:-translate-y-1 transition-all duration-300 shadow-lg group-hover:shadow-[0_8px_30px_rgba(214,251,0,0.1)] backdrop-blur-md">
                     <div class="flex items-start gap-4">
                         <div class="text-[#d6fb00] shrink-0 pt-0.5 group-hover:scale-110 group-hover:rotate-[-5deg] transition-transform duration-300">
-                            <i class="fa-solid fa-square-check text-[28px]"></i>
+                            <i class="fa-solid fa-address-book text-[28px]"></i>
                         </div>
                         <div class="space-y-1.5 pt-1">
-                            <h4 class="text-white font-bold text-base tracking-tight group-hover:text-[#d6fb00] transition-colors">Sertifikasi Registrasi Pengembang</h4>
-                            <p class="text-zinc-400 text-xs leading-relaxed">Layanan registrasi dan sertifikasi bagi pengembang perumahan yang terdaftar.</p>
+                            <h4 class="text-white font-bold text-base tracking-tight group-hover:text-[#d6fb00] transition-colors">Direktori Pengembang</h4>
+                            <p class="text-zinc-400 text-xs leading-relaxed">Daftar direktori pengembang perumahan resmi.</p>
                         </div>
                     </div>
                     <div class="flex justify-end pt-4 mt-auto">
@@ -74,23 +74,7 @@
                 </div>
             </a>
 
-            <!-- Card 3: Download Sertifikat -->
-            <a href="#" class="flex flex-col h-full group">
-                <div class="bg-[#0a1a1f] border border-white/10 group-hover:border-cyan-500/60 flex-1 p-6 rounded-[24px] flex flex-col justify-between group-hover:-translate-y-1 transition-all duration-300 shadow-lg group-hover:shadow-[0_8px_30px_rgba(0,163,181,0.1)] backdrop-blur-md">
-                    <div class="flex items-start gap-4">
-                        <div class="text-cyan-400 shrink-0 pt-0.5 group-hover:scale-110 group-hover:rotate-[-5deg] transition-transform duration-300">
-                            <i class="fa-solid fa-file-arrow-down text-[28px]"></i>
-                        </div>
-                        <div class="space-y-1.5 pt-1">
-                            <h4 class="text-white font-bold text-base tracking-tight group-hover:text-cyan-400 transition-colors">Download Sertifikat</h4>
-                            <p class="text-zinc-400 text-xs leading-relaxed">Unduh salinan digital sertifikat registrasi pengembang Anda di sini.</p>
-                        </div>
-                    </div>
-                    <div class="flex justify-end pt-4 mt-auto">
-                        <i class="fa-solid fa-arrow-right text-xs text-zinc-600 group-hover:text-cyan-400 group-hover:translate-x-1 transition-all duration-300"></i>
-                    </div>
-                </div>
-            </a>
+
 
         </div>
     </div>

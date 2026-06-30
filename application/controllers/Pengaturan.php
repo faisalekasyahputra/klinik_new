@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 defined('BASEPATH') || exit('No direct script access allowed');
 
 class Pengaturan extends MY_Controller {
@@ -40,7 +40,7 @@ class Pengaturan extends MY_Controller {
         if (!empty($username)) {
             $this->db->where('username', $username);
             $this->db->where('id !=', $user_id);
-            if ($this->db->count_all_results('users') > 0) {
+            if ($this->db->count_all_results('usr_users') > 0) {
                 $this->session->set_flashdata('error', 'Username sudah digunakan, silakan pilih yang lain.');
                 redirect('akun');
                 return;
@@ -89,3 +89,4 @@ class Pengaturan extends MY_Controller {
         }
     }
 }
+

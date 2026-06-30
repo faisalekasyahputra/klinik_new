@@ -39,8 +39,13 @@ class Pengembang extends MY_Controller {
 	}
 	public function publikasi()
 	{
-		
-		$datacontent['perumahan']= $this->Buka_peta->frd('sosmed_perumahan',null,null,null,null);
+		if (!$this->is_logged_in()) {
+			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu untuk mengakses layanan publikasi.');
+			redirect('Auth/login');
+			return;
+		}
+
+		$datacontent['perumahan']= $this->Buka_peta->frd('data_sosmed_perumahan',null,null,null,null);
         $data['content'] = $this->load->view('pages/pengembang/publikasi', $datacontent, true);
 		$this->load->view('layouts/main',$data);
 	}
@@ -209,3 +214,4 @@ class Pengembang extends MY_Controller {
 		$this->load->view('layouts/main',$data);
     }
 }
+

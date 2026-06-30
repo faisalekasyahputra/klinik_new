@@ -1,4 +1,4 @@
--- MariaDB dump 10.19  Distrib 10.4.32-MariaDB, for Win64 (AMD64)
+﻿-- MariaDB dump 10.19  Distrib 10.4.32-MariaDB, for Win64 (AMD64)
 --
 -- Host: localhost    Database: klinikpkp
 -- ------------------------------------------------------
@@ -49,15 +49,15 @@ CREATE TABLE `chat_rooms` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `menu`
+-- Table structure for table `sys_menu`
 --
 
-DROP TABLE IF EXISTS `menu`;
+DROP TABLE IF EXISTS `sys_menu`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `menu` (
+CREATE TABLE `sys_menu` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `menu` varchar(255) DEFAULT NULL,
+  `sys_menu` varchar(255) DEFAULT NULL,
   `icon` varchar(255) DEFAULT NULL,
   `link` varchar(255) DEFAULT NULL,
   `default` varchar(255) DEFAULT NULL,
@@ -66,13 +66,13 @@ CREATE TABLE `menu` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `multi`
+-- Table structure for table `sys_multi`
 --
 
-DROP TABLE IF EXISTS `multi`;
+DROP TABLE IF EXISTS `sys_multi`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `multi` (
+CREATE TABLE `sys_multi` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `id_user` int(11) DEFAULT NULL,
   `id_menu` int(11) DEFAULT NULL,
@@ -81,13 +81,13 @@ CREATE TABLE `multi` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `sosmed_perumahan`
+-- Table structure for table `data_sosmed_perumahan`
 --
 
-DROP TABLE IF EXISTS `sosmed_perumahan`;
+DROP TABLE IF EXISTS `data_sosmed_perumahan`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `sosmed_perumahan` (
+CREATE TABLE `data_sosmed_perumahan` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `nama_perumahan` varchar(255) DEFAULT NULL,
   `pengembang` varchar(255) DEFAULT NULL,
@@ -102,13 +102,13 @@ CREATE TABLE `sosmed_perumahan` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `diskusi`
+-- Table structure for table `forum_diskusi`
 --
 
-DROP TABLE IF EXISTS `diskusi`;
+DROP TABLE IF EXISTS `forum_diskusi`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `diskusi` (
+CREATE TABLE `forum_diskusi` (
   `id_diskusi` int(11) NOT NULL AUTO_INCREMENT,
   `nama_user` varchar(255) NOT NULL,
   `email_user` varchar(255) NOT NULL,
@@ -151,13 +151,13 @@ CREATE TABLE `forum_likes` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `komentar`
+-- Table structure for table `forum_komentar`
 --
 
-DROP TABLE IF EXISTS `komentar`;
+DROP TABLE IF EXISTS `forum_komentar`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `komentar` (
+CREATE TABLE `forum_komentar` (
   `id_komentar` int(11) NOT NULL AUTO_INCREMENT,
   `id_diskusi` int(11) NOT NULL,
   `reply_to` int(11) DEFAULT NULL,
@@ -178,13 +178,13 @@ CREATE TABLE `komentar` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `user_documents`
+-- Table structure for table `usr_documents`
 --
 
-DROP TABLE IF EXISTS `user_documents`;
+DROP TABLE IF EXISTS `usr_documents`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `user_documents` (
+CREATE TABLE `usr_documents` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,
   `doc_type` varchar(50) NOT NULL COMMENT 'ktp, siup_nib, ktm, surat_magang, surat_ijin_usaha',
@@ -194,18 +194,18 @@ CREATE TABLE `user_documents` (
   `uploaded_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `idx_user_documents_user_id` (`user_id`),
-  CONSTRAINT `fk_user_documents_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_user_documents_user` FOREIGN KEY (`user_id`) REFERENCES `usr_users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `users`
+-- Table structure for table `usr_users`
 --
 
-DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS `usr_users`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `users` (
+CREATE TABLE `usr_users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `google_id` varchar(255) DEFAULT NULL,
   `name` varchar(255) DEFAULT NULL,
@@ -235,13 +235,13 @@ CREATE TABLE `users` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `program_kategori`
+-- Table structure for table `sf_program_kategori`
 --
 
-DROP TABLE IF EXISTS `program_kategori`;
+DROP TABLE IF EXISTS `sf_program_kategori`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE IF NOT EXISTS `program_kategori` (
+CREATE TABLE IF NOT EXISTS `sf_program_kategori` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `nama_kategori` VARCHAR(100) NOT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -249,22 +249,22 @@ CREATE TABLE IF NOT EXISTS `program_kategori` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `program_kategori`
+-- Dumping data for table `sf_program_kategori`
 --
-INSERT INTO `program_kategori` (`nama_kategori`) VALUES 
+INSERT INTO `sf_program_kategori` (`nama_kategori`) VALUES 
 ('Perumahan Subsidi / KPR'),
 ('Peningkatan Kualitas (RTLH)'),
 ('Bantuan Pembangunan Baru'),
 ('Kawasan Pesisir & Khusus');
 
 --
--- Table structure for table `programs`
+-- Table structure for table `sf_programs`
 --
 
-DROP TABLE IF EXISTS `programs`;
+DROP TABLE IF EXISTS `sf_programs`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE IF NOT EXISTS `programs` (
+CREATE TABLE IF NOT EXISTS `sf_programs` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `id_kategori` INT NOT NULL,
   `kode_program` VARCHAR(50) UNIQUE NOT NULL,
@@ -273,14 +273,14 @@ CREATE TABLE IF NOT EXISTS `programs` (
   `batas_penghasilan_max` DECIMAL(15,2) DEFAULT NULL,
   `is_active` TINYINT(1) DEFAULT 1,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (`id_kategori`) REFERENCES `program_kategori`(`id`) ON DELETE CASCADE
+  FOREIGN KEY (`id_kategori`) REFERENCES `sf_program_kategori`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `programs`
+-- Dumping data for table `sf_programs`
 --
-INSERT INTO `programs` (`id_kategori`, `kode_program`, `nama_program`, `deskripsi_singkat`, `batas_penghasilan_max`) VALUES 
+INSERT INTO `sf_programs` (`id_kategori`, `kode_program`, `nama_program`, `deskripsi_singkat`, `batas_penghasilan_max`) VALUES 
 (1, 'flpp', 'KPR-FLPP Rumah Subsidi', 'Skema pembiayaan perumahan subsidi bagi MBR.', 8000000),
 (1, 'oemah_lestari', 'Oemah Lestari', 'Kredit kolaborasi BPR-BRK dengan bunga ringan.', 10000000),
 (2, 'rtlh', 'Peningkatan Kualitas RTLH', 'Bantuan perbaikan rumah bagi masyarakat miskin.', 3000000),
@@ -288,13 +288,13 @@ INSERT INTO `programs` (`id_kategori`, `kode_program`, `nama_program`, `deskrips
 (4, 'rumah_apung', 'Program Rumah Apung', 'Rumah adaptif untuk kawasan pesisir (rob).', 4000000);
 
 --
--- Table structure for table `housing_queue`
+-- Table structure for table `sf_housing_queue`
 --
 
-DROP TABLE IF EXISTS `housing_queue`;
+DROP TABLE IF EXISTS `sf_housing_queue`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE IF NOT EXISTS `housing_queue` (
+CREATE TABLE IF NOT EXISTS `sf_housing_queue` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `user_id` INT DEFAULT NULL,
   `program_id` INT NOT NULL,
@@ -306,19 +306,19 @@ CREATE TABLE IF NOT EXISTS `housing_queue` (
   `catatan_admin` TEXT NULL,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE SET NULL,
-  FOREIGN KEY (`program_id`) REFERENCES `programs`(`id`) ON DELETE CASCADE
+  FOREIGN KEY (`user_id`) REFERENCES `usr_users`(`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`program_id`) REFERENCES `sf_programs`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Table structure for table `settings`
+-- Table structure for table `sys_settings`
 --
 
-DROP TABLE IF EXISTS `settings`;
+DROP TABLE IF EXISTS `sys_settings`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!40101 SET character_set_client = utf8 */;
-CREATE TABLE IF NOT EXISTS `settings` (
+CREATE TABLE IF NOT EXISTS `sys_settings` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `key_name` varchar(100) NOT NULL,
   `key_value` text,
@@ -342,3 +342,4 @@ CREATE TABLE IF NOT EXISTS `settings` (
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2026-06-09 12:59:08
+

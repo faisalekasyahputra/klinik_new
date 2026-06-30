@@ -395,20 +395,36 @@ class Umum extends MY_Controller {
 		}
 
 		if ($response === false) {
-			die("Error cURL: " . $error);
+			$this->session->set_flashdata('error', 'Gagal terhubung ke API Tapera: ' . $error);
+			$items = [];
+		} else {
+			$decoded = json_decode($response, true);
+			$items = $decoded['data'] ?? [];
 		}
 
-		$decoded = json_decode($response, true);
-		$items = $decoded['data'] ?? [];
+		$local_sp2 = $this->db->get('srp2_registrations')->result_array();
 
-		$developers = array_map(function($item) {
+		$developers = array_map(function($item) use ($local_sp2) {
+			$pengembang_nama = $item['pengembang']['nama'] ?? '-';
+			$sp2_status = "Belum Terdata";
+			
+			if ($pengembang_nama !== '-') {
+				foreach ($local_sp2 as $local) {
+					if (strtolower($pengembang_nama) === strtolower($local['nama_perusahaan'])) {
+						$sp2_status = $local['nib'];
+						break;
+					}
+				}
+			}
+
 			return [
 				'nama_perumahan' => $item['namaPerumahan'] ?? '-',
-				'pengembang'     => $item['pengembang']['nama'] ?? '-',
+				'pengembang'     => $pengembang_nama,
 				'asosiasi'       => $item['pengembang']['asosiasi'] ?? '-',
 				'kabupaten'      => $item['wilayah']['kabupaten'] ?? '-',
 				'telepon'        => $item['kantorPemasaran'][0]['noTelp'] ?? '-',
-				'email'          => $item['kantorPemasaran'][0]['email'] ?? '-'
+				'email'          => $item['kantorPemasaran'][0]['email'] ?? '-',
+				'sp2_status'     => $sp2_status
 			];
 		}, $items);
 

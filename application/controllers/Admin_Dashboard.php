@@ -12,9 +12,9 @@ class Admin_Dashboard extends Admin_Controller {
         
         // Dummy data for now. Can be replaced with actual model counts
         $data['stats'] = [
-            'total_users' => $this->db->count_all('users'),
+            'total_users' => $this->db->count_all('usr_users'),
             'total_antrean' => 0, // Will map to housing_queue later
-            'total_diskusi' => $this->db->table_exists('diskusi') ? $this->db->count_all('diskusi') : 0
+            'total_diskusi' => $this->db->table_exists('forum_diskusi') ? $this->db->count_all('forum_diskusi') : 0
         ];
 
         $this->render_admin('admin/dashboard', $data);

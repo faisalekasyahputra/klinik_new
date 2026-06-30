@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 defined('BASEPATH') || exit('No direct script access allowed');
 
 class User_model extends CI_Model {
@@ -11,23 +11,23 @@ class User_model extends CI_Model {
     public function check_google_user($data) {
         // Cek apakah user dengan email tersebut sudah ada
         $this->db->where('email', $data['email']);
-        $query = $this->db->get('users');
+        $query = $this->db->get('usr_users');
 
         if ($query->num_rows() > 0) {
             // Jika user ada, update google_id dan avatar (jika sebelumnya login manual)
             $this->db->where('email', $data['email']);
-            $this->db->update('users', array(
+            $this->db->update('usr_users', array(
                 'google_id' => $data['google_id'],
                 'avatar'    => $data['avatar']
             ));
             return [$query->row_array(),'1'];
         } else {
             // Jika user belum terdaftar, buat akun baru otomatis
-            $this->db->insert('users', $data);
+            $this->db->insert('usr_users', $data);
             $insert_id = $this->db->insert_id();
             
             $this->db->where('id', $insert_id);
-            $new_user = $this->db->get('users');
+            $new_user = $this->db->get('usr_users');
             return [$new_user->row_array(),'0'];
         }
     }
@@ -36,18 +36,18 @@ class User_model extends CI_Model {
         $this->db->trans_start();
         
         $this->db->where('id', $user_id);
-        $this->db->update('users', $data);
+        $this->db->update('usr_users', $data);
 
         // Fetch updated user to get the correct display name (username fallback to name)
-        $user = $this->db->get_where('users', ['id' => $user_id])->row_array();
+        $user = $this->db->get_where('usr_users', ['id' => $user_id])->row_array();
         $display_name = !empty($user['username']) ? $user['username'] : $user['name'];
 
         // Sync with forum tables
         $this->db->where('user_id', $user_id);
-        $this->db->update('diskusi', ['nama_user' => $display_name]);
+        $this->db->update('forum_diskusi', ['nama_user' => $display_name]);
 
         $this->db->where('user_id', $user_id);
-        $this->db->update('komentar', ['nama_komentator' => $display_name]);
+        $this->db->update('forum_komentar', ['nama_komentator' => $display_name]);
 
         $this->db->trans_complete();
         return $this->db->trans_status();
@@ -58,7 +58,7 @@ class User_model extends CI_Model {
 
         // Anonymize forum comments
         $this->db->where('user_id', $user_id);
-        $this->db->update('komentar', [
+        $this->db->update('forum_komentar', [
             'user_id' => NULL,
             'nama_komentator' => 'Akun Dihapus',
             'role' => 'Warga'
@@ -66,7 +66,7 @@ class User_model extends CI_Model {
 
         // Anonymize forum discussions
         $this->db->where('user_id', $user_id);
-        $this->db->update('diskusi', [
+        $this->db->update('forum_diskusi', [
             'user_id' => NULL,
             'nama_user' => 'Akun Dihapus'
         ]);
@@ -77,7 +77,7 @@ class User_model extends CI_Model {
 
         // Finally, delete the user account
         $this->db->where('id', $user_id);
-        $this->db->delete('users');
+        $this->db->delete('usr_users');
 
         $this->db->trans_complete();
 
