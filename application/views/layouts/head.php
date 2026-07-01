@@ -46,7 +46,7 @@
     <style>
         html, body {
             overflow-x: hidden;
-            overflow-y: overlay;
+            overflow-y: auto;
         }
 
         @keyframes shimmer {

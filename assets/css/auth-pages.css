@@ -35,6 +35,10 @@
 }
 
 /* --- Reset & Base --- */
+html, body {
+    margin: 0;
+    padding: 0;
+}
 *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
@@ -43,7 +47,8 @@
 
 body.auth-page {
     font-family: var(--auth-font);
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
     background: var(--auth-white);
     color: var(--auth-gray-900);
     -webkit-font-smoothing: antialiased;
@@ -55,7 +60,8 @@ body.auth-page {
    ============================================================= */
 .auth-split {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
 }
 
 /* --- Left Panel: Animated Gradient --- */
@@ -695,8 +701,15 @@ body.auth-page {
 }
 
 @media (max-width: 768px) {
+    body.auth-page {
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+    }
     .auth-split {
         flex-direction: column;
+        height: auto;
+        overflow: visible;
     }
     .auth-left {
         display: none;

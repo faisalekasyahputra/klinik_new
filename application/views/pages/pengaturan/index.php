@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-[#0a191c] py-12 px-4 sm:px-6 lg:px-8">
+<div class="w-full py-12 px-4 sm:px-6 lg:px-8">
     <?php $current_username = htmlspecialchars($user->username ?? $user->name); ?>
     <div class="max-w-2xl mx-auto space-y-8">
         
