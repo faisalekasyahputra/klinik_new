@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Forum_model extends CI_Model {
@@ -7,9 +7,9 @@ class Forum_model extends CI_Model {
      * Ambil semua diskusi (filter soft-delete, search, kategori).
      */
     public function get_all_diskusi($search = '', $kategori = '') {
-        $this->db->select('diskusi.*, COUNT(komentar.id_komentar) as total_balasan');
+        $this->db->select('forum_diskusi.*, COUNT(forum_komentar.id_komentar) as total_balasan');
         $this->db->from('forum_diskusi');
-        $this->db->join('forum_komentar', 'forum_forum_diskusi.id_diskusi = forum_komentar.id_diskusi AND forum_komentar.is_deleted = 0', 'left');
+        $this->db->join('forum_komentar', 'forum_diskusi.id_diskusi = forum_komentar.id_diskusi AND forum_komentar.is_deleted = 0', 'left');
         $this->db->where('forum_diskusi.is_deleted', 0);
         
         if (!empty($search)) {
@@ -125,7 +125,7 @@ class Forum_model extends CI_Model {
             'target_id'   => $target_id
         ])->row();
 
-        $table = ($target_type === 'diskusi') ? 'diskusi' : 'komentar';
+        $table = ($target_type === 'diskusi') ? 'forum_diskusi' : 'forum_komentar';
         $id_col = ($target_type === 'diskusi') ? 'id_diskusi' : 'id_komentar';
 
         if ($existing) {

@@ -6,9 +6,15 @@ class Umum extends MY_Controller {
 	public function __construct()
 	{
 		parent::__construct();
-		$this->load->helper(array('url', 'download', 'forum'));
-		$this->load->model('Forum_model');
+		$this->load->helper(array('url', 'download'));
 		date_default_timezone_set('Asia/Jakarta');
+	}
+
+	/** Load forum dependencies (lazy, hanya untuk method forum) */
+	private function _load_forum()
+	{
+		$this->load->helper('forum');
+		$this->load->model('Forum_model');
 	}
 
 	public function index()
@@ -99,6 +105,7 @@ class Umum extends MY_Controller {
 
 	public function forum()
 	{
+		$this->_load_forum();
 		$search   = $this->input->get('q');
 		$kategori = $this->input->get('kategori');
 		
@@ -116,6 +123,7 @@ class Umum extends MY_Controller {
 	// =========================================================
 
 	public function tambah_aksi() {
+		$this->_load_forum();
 		// AUTH GATE: Wajib login
 		if (!$this->is_logged_in()) {
 			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu untuk membuat diskusi.');
@@ -196,6 +204,7 @@ class Umum extends MY_Controller {
 	// =========================================================
 
 	public function detail($id) {
+		$this->_load_forum();
 		$datacontent['topik'] = $this->Forum_model->get_diskusi_by_id($id);
 		if (empty($datacontent['topik'])) { show_404(); }
 		
@@ -211,7 +220,7 @@ class Umum extends MY_Controller {
 			$datacontent['user_likes'] = $this->Forum_model->get_user_likes($this->get_user_id(), $id);
 		}
 		
-		$data['content'] = $this->load->view('pages/perumahan/detail', $datacontent, true);
+		$data['content'] = $this->load->view('pages/umum/forum_detail', $datacontent, true);
 		$this->load->view('layouts/main', $data);
 	}
 
@@ -220,6 +229,7 @@ class Umum extends MY_Controller {
 	// =========================================================
 
 	public function balas_aksi() {
+		$this->_load_forum();
 		// AUTH GATE
 		if (!$this->is_logged_in()) {
 			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu.');
@@ -288,6 +298,7 @@ class Umum extends MY_Controller {
 	// =========================================================
 
 	public function report_komentar() {
+		$this->_load_forum();
 		$id = $this->input->post('id');
 		if (empty($id)) {
 			echo json_encode(['status' => 'error']);
@@ -303,6 +314,7 @@ class Umum extends MY_Controller {
 	// =========================================================
 
 	public function toggle_like() {
+		$this->_load_forum();
 		if (!$this->is_logged_in()) {
 			echo json_encode(['status' => 'error', 'message' => 'Login required']);
 			return;
@@ -338,6 +350,7 @@ class Umum extends MY_Controller {
 	}
 
 	public function update_status_diskusi() {
+		$this->_load_forum();
 		if (!$this->_check_admin()) return;
 		$id     = $this->input->post('id_diskusi');
 		$status = $this->input->post('status');
@@ -346,6 +359,7 @@ class Umum extends MY_Controller {
 	}
 
 	public function delete_diskusi() {
+		$this->_load_forum();
 		if (!$this->_check_admin()) return;
 		$id = $this->input->post('id_diskusi');
 		$this->Forum_model->soft_delete_diskusi($id);
@@ -354,6 +368,7 @@ class Umum extends MY_Controller {
 	}
 
 	public function delete_komentar() {
+		$this->_load_forum();
 		if (!$this->_check_admin()) return;
 		$id_komentar = $this->input->post('id_komentar');
 		$id_diskusi  = $this->input->post('id_diskusi');
@@ -366,41 +381,7 @@ class Umum extends MY_Controller {
 	// =========================================================
 
 	public function pengembang() {
-		$apiUrl = "https://sikumbang.tapera.go.id/ajax/lokasi/search?selectedSearch=wilayah&skalaPerumahan=semua&kodeWilayah=33&sort=terbaru&searchBy=nama-perumahan&page=1&limit=18";
-
-		$cache_file = APPPATH . 'cache/sikumbang_pengembang.json';
-		$cache_time = 86400;
-		$response = null;
-		$error = false;
-
-		if (file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
-			$response = file_get_contents($cache_file);
-		} else {
-			$ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL, $apiUrl);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($ch, CURLOPT_HTTPHEADER, [
-				'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-				'Referer: https://sikumbang.tapera.go.id/'
-			]);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-			
-			$response = curl_exec($ch);
-			$error = curl_error($ch);
-			curl_close($ch);
-			
-			if (!$error && $response) {
-				@file_put_contents($cache_file, $response);
-			}
-		}
-
-		if ($response === false) {
-			$this->session->set_flashdata('error', 'Gagal terhubung ke API Tapera: ' . $error);
-			$items = [];
-		} else {
-			$decoded = json_decode($response, true);
-			$items = $decoded['data'] ?? [];
-		}
+		$items = $this->_get_tapera_data();
 
 		$local_sp2 = [];
 		if ($this->db->table_exists('srp2_registrations')) {
@@ -436,20 +417,96 @@ class Umum extends MY_Controller {
 		$this->load->view('layouts/main', $data);
 	}
 
+	/**
+	 * Helper: ambil data dari API Tapera (dengan file cache).
+	 * Return array of raw items dari API.
+	 */
+	private function _get_tapera_data() {
+		$apiUrl     = "https://sikumbang.tapera.go.id/ajax/lokasi/search?selectedSearch=wilayah&skalaPerumahan=semua&kodeWilayah=33&sort=terbaru&searchBy=nama-perumahan&page=1&limit=500";
+		$cache_file = APPPATH . 'cache/sikumbang_pengembang_full.json';
+		$cache_time = 86400; // 24 jam
+		$response   = null;
+
+		if (file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
+			$response = file_get_contents($cache_file);
+		} else {
+			$ch = curl_init();
+			curl_setopt($ch, CURLOPT_URL, $apiUrl);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_HTTPHEADER, [
+				'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+				'Referer: https://sikumbang.tapera.go.id/'
+			]);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+			$response = curl_exec($ch);
+			$err      = curl_error($ch);
+			curl_close($ch);
+
+			if (!$err && $response) {
+				@file_put_contents($cache_file, $response);
+			}
+		}
+
+		if (!$response) return [];
+		$decoded = json_decode($response, true);
+		return $decoded['data'] ?? [];
+	}
+
 	public function detail_pengembang($nama = '') {
-		$nama = urldecode($nama);
+		// Ambil nama dari query string (?nama=...) agar aman dari disallowed chars
+		$nama = $this->input->get('nama') ? urldecode($this->input->get('nama')) : urldecode($nama);
+		$nama = trim($nama);
+
+		if (empty($nama)) {
+			redirect('Umum/pengembang');
+			return;
+		}
+
+		// Cari semua perumahan dari cache Tapera milik pengembang ini
+		$items       = $this->_get_tapera_data();
+		$tapera_data = [];
+		foreach ($items as $item) {
+			$dev_nama = $item['pengembang']['nama'] ?? '';
+			if (strtolower(trim($dev_nama)) === strtolower($nama)) {
+				$tapera_data[] = $item;
+			}
+		}
+
+		// Ambil info pengembang dari item pertama yang cocok
+		$info_pengembang = [];
+		if (!empty($tapera_data)) {
+			$first = $tapera_data[0];
+			$info_pengembang = [
+				'nama'     => $first['pengembang']['nama']      ?? $nama,
+				'asosiasi' => $first['pengembang']['asosiasi']  ?? '-',
+				'telepon'  => $first['kantorPemasaran'][0]['noTelp']  ?? '-',
+				'email'    => $first['kantorPemasaran'][0]['email']   ?? '-',
+				'alamat'   => $first['kantorPemasaran'][0]['alamat']  ?? '-',
+				'website'  => $first['pengembang']['website']   ?? '-',
+			];
+		}
+
+		// Cek juga di srp2_registrations (jika ada)
 		$local_data = [];
 		if ($this->db->table_exists('srp2_registrations')) {
 			$local_data = $this->db->get_where('srp2_registrations', ['nama_perusahaan' => $nama])->row_array();
 		}
+
 		$datacontent['nama_pengembang'] = $nama;
-		$datacontent['local_data'] = $local_data;
-		
+		$datacontent['tapera_data']     = $tapera_data;       // semua perumahan dari pengembang ini
+		$datacontent['info_pengembang'] = $info_pengembang;   // info kontak pengembang
+		$datacontent['local_data']      = $local_data;        // data srp2 jika ada
+
 		$data['content'] = $this->load->view('pages/pengembang/detail_pengembang', $datacontent, true);
 		$this->load->view('layouts/main', $data);
 	}
 
+
 	public function download_sertifikat($nama = '') {
+		$nama = $this->input->get('nama') ? urldecode($this->input->get('nama')) : urldecode($nama);
+		$nama = trim($nama);
+
 		if (!$this->is_logged_in()) {
 			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu untuk mengunduh sertifikat.');
 			redirect('Auth/login');
@@ -457,6 +514,6 @@ class Umum extends MY_Controller {
 		}
 
 		$this->session->set_flashdata('success', 'Sertifikat berhasil diunduh. (Simulasi)');
-		redirect('Umum/detail_pengembang/' . $nama);
+		redirect('Umum/detail_pengembang?nama=' . urlencode($nama));
 	}
 }
