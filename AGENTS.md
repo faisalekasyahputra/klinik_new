@@ -44,8 +44,7 @@ assets/             # css/js/img
 uploads/            # file upload user
 ```
 
-**File scratch/debug di root (bukan bagian dari aplikasi runtime, jangan bingung dengan controller):**
-`add_indexes.php`, `check_index.php`, `check_q.php`, `find_tables.php`, `query.php`, `remote_seed.php`, `finish_refactor.ps1`, `test.txt` — skrip one-off dari sesi debugging/migrasi sebelumnya, dijalankan manual via CLI/browser saat butuh, bukan dipanggil dari aplikasi.
+**`dev-scripts/` dan `local-assets/` (gitignored, tidak ter-track git):** script debug/migrasi one-off (`finish_refactor.ps1`, dst) dan aset besar non-web (rekaman rapat, gambar referensi) hidup di sini secara lokal, bukan di repo — sebelumnya sempat ke-commit di root dan ikut ter-deploy ke production (salah satunya sempat jadi celah keamanan aktif), sudah dibersihkan. **Jangan pernah commit script/aset satu-kali-pakai ke root repo** — taruh di salah satu folder ini, keduanya sudah di `.gitignore`.
 
 ## 4. Controllers (`application/controllers/`)
 
@@ -131,7 +130,11 @@ Untuk konteks bisnis (arahan rapat, program perumahan, matrix Smart Filter), bac
 
 ## 12. Cara Verifikasi Sebelum Percaya Dokumen Lama
 
-Repo ini punya banyak dokumen historis (`docs/archive/`, checkpoint eksternal, `AI_ROADMAP.md`). Sebelum mengandalkan klaim struktur kode dari dokumen manapun (termasuk file ini kalau sudah lama tidak di-update), verifikasi cepat:
+Repo ini punya banyak dokumen historis (`docs/archive/`, termasuk `docs/archive/AI_ROADMAP.md`). Sebelum mengandalkan klaim struktur kode dari dokumen manapun (termasuk file ini kalau sudah lama tidak di-update), verifikasi cepat:
 - Controller/model list: `ls application/controllers application/models`
 - Base controller hierarchy: baca langsung `application/core/MY_Controller.php`
 - Tabel DB: `grep "CREATE TABLE" docs/engineering/schema_klinikpkp.sql`
+
+## 13. Frontend & Design System
+
+Warna/tipografi/spacing didokumentasikan di [`docs/design/DESIGN_SYSTEM.md`](docs/design/DESIGN_SYSTEM.md) — **baca itu sebelum menyentuh CSS/warna apa pun**. Ringkasan penting: ada 3 sumber warna yang tidak sinkron (`docs/design/tokens.css` tidak ke-load sama sekali di aplikasi; `assets/css/design-system.css` yang beneran dipakai situs publik; inline `tailwind.config` di `application/views/admin/layouts/head.php` buat panel admin), plus ~1.300 hex literal tertulis manual di 70+ file view karena situs publik tidak punya `tailwind.config`. `docs/design/DESIGN_SYSTEM.md` punya tabel palet kanonis (sudah diverifikasi ke pemakaian nyata di kode) dan daftar warna drift yang masih butuh keputusan — jangan asumsikan `tokens.css` sudah merepresentasikan apa yang tampil di browser.
