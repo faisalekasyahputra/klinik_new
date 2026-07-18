@@ -44,7 +44,7 @@ composer install
 ### 4. Buat Database
 Buka **phpMyAdmin** (`http://localhost/phpmyadmin`):
 1. Buat database baru: `klinikpkp` (collation: `utf8_general_ci`)
-2. Import file: `docs/database/schema_klinikpkp.sql`
+2. Import file: `docs/engineering/schema_klinikpkp.sql`
 
 ### 5. Jalankan
 Buka browser: **http://localhost/klinik_new/**
@@ -57,7 +57,7 @@ Buka browser: **http://localhost/klinik_new/**
 klinik_new/
 ├── application/           ← Source code utama (MVC)
 │   ├── config/            ← Konfigurasi (database, routes, dll)
-│   ├── controllers/       ← Logic bisnis (14 controller)
+│   ├── controllers/       ← Logic bisnis (22 controller)
 │   ├── core/              ← MY_Controller (base controller)
 │   ├── helpers/            ← Helper functions
 │   ├── libraries/         ← Library kustom (Encryption, API)
@@ -70,8 +70,12 @@ klinik_new/
 │   ├── js/
 │   └── img/
 ├── docs/                  ← 📖 Dokumentasi lengkap (BACA INI!)
-│   ├── database/          ← Schema SQL
-│   └── design/            ← Design tokens & color scheme
+│   ├── architecture/      ← Desain teknis, ERD, security threat model
+│   ├── engineering/       ← Schema SQL, setup guide, alur auth
+│   ├── product/           ← PRD, roadmap, audit keamanan
+│   ├── design/            ← Design tokens & color scheme
+│   ├── meetings/          ← Notulensi rapat
+│   └── archive/           ← Dokumen historis
 ├── system/                ← CodeIgniter 3 core (JANGAN EDIT)
 ├── vendor/                ← Composer dependencies
 ├── .env                   ← Environment (TIDAK DI-SHARE)
@@ -88,14 +92,15 @@ Baca file-file di folder `docs/` untuk pemahaman mendalam:
 
 | File | Isi |
 |------|-----|
+| [`AGENTS.md`](AGENTS.md) | Panduan untuk AI coding agent |
 | [`README.md`](docs/README.md) | Index dokumentasi |
-| [`TECHNICAL_DESIGN_DOCUMENT.md`](docs/TECHNICAL_DESIGN_DOCUMENT.md) | Arsitektur & struktur kode |
-| [`DATABASE_DESIGN_DOCUMENT.md`](docs/database/) | Kamus data & relasi tabel |
-| [`SECURITY_DESIGN_DOCUMENT.md`](docs/SECURITY_DESIGN_DOCUMENT.md) | Keamanan (enkripsi, CSRF, OAuth) |
-| [`PRODUCT_REQUIREMENTS_DOCUMENT.md`](docs/PRODUCT_REQUIREMENTS_DOCUMENT.md) | Spesifikasi fitur & PRD |
-| [`IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md) | Roadmap pengembangan |
-| [`AKUN_LOGIN.md`](docs/AKUN_LOGIN.md) | Cara kerja autentikasi |
-| [`changelog_090626_12.39WIB_.md`](docs/changelog_090626_12.39WIB_.md) | Riwayat perubahan |
+| [`TECHNICAL_DESIGN_DOCUMENT.md`](docs/architecture/TECHNICAL_DESIGN_DOCUMENT.md) | Arsitektur & struktur kode |
+| [`DATABASE_DESIGN_DOCUMENT.md`](docs/architecture/DATABASE_DESIGN_DOCUMENT.md) | Kamus data & relasi tabel |
+| [`SECURITY_DESIGN_DOCUMENT.md`](docs/architecture/SECURITY_DESIGN_DOCUMENT.md) | Keamanan (enkripsi, CSRF, OAuth) |
+| [`PRODUCT_REQUIREMENTS_DOCUMENT.md`](docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md) | Spesifikasi fitur & PRD |
+| [`IMPLEMENTATION_ROADMAP.md`](docs/product/IMPLEMENTATION_ROADMAP.md) | Roadmap pengembangan |
+| [`AKUN_LOGIN.md`](docs/engineering/AKUN_LOGIN.md) | Cara kerja autentikasi |
+| [`changelog_090626_12.39WIB_.md`](docs/archive/changelog_090626_12.39WIB_.md) | Riwayat perubahan |
 
 ---
 
@@ -112,24 +117,26 @@ Baca file-file di folder `docs/` untuk pemahaman mendalam:
 
 ---
 
-## 🗄️ Tabel Database (15 tabel)
+## 🗄️ Tabel Database (14 tabel + legacy)
 
 | Tabel | Fungsi |
 |-------|--------|
-| `users` | Data pengguna (auth, profil) |
-| `tb_diskusi` | Thread forum |
-| `tb_komentar` | Komentar forum (nested) |
-| `tb_forum_likes` | Like pada thread |
-| `user_documents` | Dokumen user |
+| `usr_users` | Data pengguna (auth, profil) |
+| `usr_documents` | Dokumen user |
+| `sf_programs` | Program perumahan |
+| `sf_program_kategori` | Kategori program |
+| `sf_housing_queue` | Antrean kelayakan (pending/approved/rejected) |
+| `forum_diskusi` | Thread forum |
+| `forum_komentar` | Komentar forum (nested) |
+| `forum_likes` | Like pada thread |
+| `sys_menu` | Menu navigasi |
+| `sys_multi` | Data perumahan |
+| `sys_settings` | Konfigurasi sistem |
 | `chat_rooms` | Ruang chat konsultasi |
 | `chat_messages` | Pesan chat |
-| `multi` | Data perumahan |
-| `kondisi` | Kondisi rumah |
-| `sosmed_perumahan` | Sosmed pengembang |
-| `bendung` | Data bendung |
-| `irigasi` | Data irigasi |
-| `saluran_pembuang` | Data saluran pembuang |
-| `menu` | Menu navigasi |
+| `data_sosmed_perumahan` | Sosmed pengembang |
+
+> Ada juga tabel legacy tanpa prefix (`kondisi`, `bendung`, `irigasi`, `saluran_pembuang`) yang dipakai dinamis oleh `Buka_peta.php` tapi tidak ada di `schema_klinikpkp.sql`.
 
 ---
 
@@ -145,4 +152,4 @@ Baca file-file di folder `docs/` untuk pemahaman mendalam:
 
 ---
 
-*Klinik PKP v1.0 — 9 Juni 2026*
+*Klinik PKP — diperbarui 18 Juli 2026*
