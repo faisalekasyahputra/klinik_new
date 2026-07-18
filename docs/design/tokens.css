@@ -6,6 +6,17 @@
      #ecffb6  — Lime Cream (light)
      #d6fb00  — Electric Lime (brand primary)
      #00545f  — Deep Teal (secondary)
+   ============================================================
+   STATUS (audited 18 Jul 2026 — see docs/design/DESIGN_SYSTEM.md):
+   This file is NOT loaded by the running app. The public site loads
+   assets/css/design-system.css (its own, slightly different :root
+   block) and the admin panel defines colors again inline in
+   application/views/admin/layouts/head.php. Values below were
+   verified against actual hex usage across application/views — they
+   match the dominant/most-used value for each role, but a lot of
+   near-duplicate stray colors still exist in the codebase (drift).
+   Read DESIGN_SYSTEM.md before treating this file as authoritative
+   for what's currently on screen.
    ============================================================ */
 
 :root {
@@ -20,6 +31,7 @@
     --brand-700: #6d8200;
     --brand-800: #4f5f00;
     --brand-900: #313b00;
+    --brand-hover: #b5d400;  /* admin-panel-only variant, not part of the 50-900 scale */
 
     /* ---- Teal ---- */
     --teal-50:  #e0f7fa;
