@@ -1,0 +1,361 @@
+<meta charset="UTF-8">
+<title>Token &amp; Komponen — Klinik PKP</title>
+<style>
+  :root {
+    --bg:        #0a1a1f;
+    --surface:   #0f2a30;
+    --surface-2: #0f2933; /* drift value, used deliberately below */
+    --elevated:  #1a3d45;
+    --brand:     #d6fb00;
+    --brand-100: #ecffb6;
+    --brand-400: #c2e600;
+    --brand-hover: #b5d400;
+    --teal:      #00545f;
+    --teal-drift:#005e6a;
+    --teal-500:  #00a3b5;
+    --text:      #ecffb6;
+    --text-2:    #8aacb0;
+    --text-3:    #5a7a80;
+    --success:   #10b981; /* decided 18 Jul 2026, was #6bcb77 — see DESIGN_SYSTEM.md §3 */
+    --warning:   #ffd93d;
+    --error:     #ff6b6b;
+    --info:      #4d96ff;
+    --accent:    #c084fc;
+    --border:    rgba(214,251,0,0.12);
+    --border-hi: rgba(214,251,0,0.30);
+    --font-sans: -apple-system, "Segoe UI", system-ui, ui-sans-serif, sans-serif;
+    --font-mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* faint ambient glow, matches the app's own --shadow-glow token — not decoration for its own sake */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(700px 420px at 12% -8%, rgba(214,251,0,0.07), transparent 60%),
+      radial-gradient(600px 380px at 100% 10%, rgba(0,163,181,0.08), transparent 55%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  main { position: relative; z-index: 1; max-width: 1040px; margin: 0 auto; padding: 56px 28px 96px; }
+
+  h1 { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 6px; text-wrap: balance; }
+  h1 em { font-style: normal; color: var(--brand); }
+  .lede { color: var(--text-2); font-size: 0.95rem; max-width: 62ch; margin: 0 0 8px; }
+  .meta { color: var(--text-3); font-size: 0.78rem; font-family: var(--font-mono); margin-bottom: 40px; }
+
+  nav.jump {
+    position: sticky; top: 0; z-index: 5;
+    display: flex; gap: 4px; flex-wrap: wrap;
+    background: rgba(10,26,31,0.88); backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    margin: 0 -28px 48px; padding: 14px 28px;
+  }
+  nav.jump a {
+    color: var(--text-2); text-decoration: none; font-size: 0.8rem; font-weight: 600;
+    padding: 6px 12px; border-radius: 999px; border: 1px solid transparent;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  nav.jump a:hover, nav.jump a:focus-visible { color: var(--brand); border-color: var(--border-hi); outline: none; }
+
+  section { margin-bottom: 64px; scroll-margin-top: 76px; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 6px; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+  .section-head h2 { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; margin: 0; }
+  .section-head .count { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-3); font-variant-numeric: tabular-nums; }
+  .section-note { color: var(--text-2); font-size: 0.85rem; max-width: 68ch; margin: 12px 0 24px; }
+
+  /* ---- Palette swatches ---- */
+  .scale-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-3); margin: 28px 0 10px; }
+  .scale-label:first-of-type { margin-top: 0; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
+  .swatch { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--surface); }
+  .swatch .fill { height: 52px; }
+  .swatch .info { padding: 8px 10px 10px; }
+  .swatch .hex { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text); display: block; }
+  .swatch .name { font-size: 0.68rem; color: var(--text-3); display: block; margin-top: 2px; }
+  .swatch .n { font-family: var(--font-mono); font-size: 0.65rem; color: var(--brand-400); font-variant-numeric: tabular-nums; display: block; margin-top: 4px; }
+
+  /* ---- Drift comparison ---- */
+  .drift-row { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px dashed var(--border); }
+  .drift-row:last-child { border-bottom: none; }
+  .drift-chip { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); }
+  .drift-chip .dot { width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; }
+  .drift-chip .hex { font-family: var(--font-mono); font-size: 0.78rem; display: block; }
+  .drift-chip .tag { font-size: 0.66rem; color: var(--text-3); margin-top: 2px; display: block; }
+  .drift-chip .use { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-2); margin-top: 3px; font-variant-numeric: tabular-nums; display: block; }
+  .vs { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-3); text-align: center; }
+  .verdict { font-size: 0.66rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; display: inline-block; margin-top: 6px; }
+  .verdict.close    { background: rgba(255,217,61,0.14); color: var(--warning); }
+  .verdict.minor    { background: rgba(16,185,129,0.14); color: var(--success); }
+  .verdict.resolved { background: rgba(0,163,181,0.16); color: var(--teal-500); }
+  .verdict.flip     { background: rgba(192,132,252,0.16); color: var(--accent); }
+
+  /* ---- Component showcase ---- */
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 16px; }
+  .panel .cap { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-3); margin-bottom: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+  .btn { font-family: inherit; font-size: 0.85rem; font-weight: 700; padding: 10px 20px; border-radius: 10px; border: 1px solid transparent; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+  .btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+  .btn-primary { background: var(--brand); color: var(--bg); box-shadow: 0 8px 24px rgba(214,251,0,0.18); }
+  .btn-primary:hover { background: var(--brand-hover); transform: translateY(-1px); }
+  .btn-outline { background: transparent; color: var(--brand); border-color: var(--border-hi); }
+  .btn-outline:hover { background: rgba(214,251,0,0.06); }
+  .btn-ghost { background: transparent; color: var(--text-2); }
+  .btn-ghost:hover { color: var(--text); }
+
+  .badge { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; }
+  .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .badge-success { background: rgba(16,185,129,0.12); color: var(--success); }
+  .badge-warning { background: rgba(255,217,61,0.12); color: var(--warning); }
+  .badge-error   { background: rgba(255,107,107,0.12); color: var(--error); }
+  .badge-info    { background: rgba(77,150,255,0.12); color: var(--info); }
+  .badge-accent  { background: rgba(192,132,252,0.12); color: var(--accent); }
+
+  .alert { display: flex; gap: 12px; padding: 14px 16px; border-radius: 10px; font-size: 0.85rem; border: 1px solid; margin-bottom: 10px; }
+  .alert:last-child { margin-bottom: 0; }
+  .alert-success { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.25); color: var(--success); }
+  .alert-warning { background: rgba(255,217,61,0.08); border-color: rgba(255,217,61,0.25); color: var(--warning); }
+  .alert-error   { background: rgba(255,107,107,0.08); border-color: rgba(255,107,107,0.25); color: var(--error); }
+
+  .field label { display: block; font-size: 0.75rem; font-weight: 600; color: var(--text-2); margin-bottom: 6px; }
+  .field input { width: 100%; max-width: 320px; background: var(--elevated); border: 1px solid var(--border); color: var(--text); font-family: inherit; font-size: 0.85rem; padding: 10px 12px; border-radius: 10px; }
+  .field input:focus { outline: none; border-color: var(--border-hi); box-shadow: 0 0 0 3px rgba(214,251,0,0.1); }
+  .field input::placeholder { color: var(--text-3); }
+
+  .demo-card { width: 220px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; transition: border-color .3s ease; }
+  .demo-card:hover { border-color: var(--brand); }
+  .demo-card .thumb { height: 120px; background: linear-gradient(135deg, var(--elevated), var(--surface)); position: relative; }
+  .demo-card .thumb .badge { position: absolute; top: 10px; left: 10px; }
+  .demo-card .body { padding: 14px; }
+  .demo-card .title { font-weight: 700; font-size: 0.88rem; margin: 0 0 4px; }
+  .demo-card .sub { font-size: 0.75rem; color: var(--text-2); margin: 0; }
+
+  .tabs { display: flex; gap: 4px; background: var(--elevated); padding: 4px; border-radius: 999px; width: fit-content; }
+  .tab { font-family: inherit; font-size: 0.78rem; font-weight: 600; padding: 7px 16px; border-radius: 999px; border: none; background: transparent; color: var(--text-2); cursor: pointer; }
+  .tab.active { background: var(--brand); color: var(--bg); }
+
+  /* ---- Inventory ---- */
+  .inv-group { margin-bottom: 28px; }
+  .inv-group h3 { font-size: 0.8rem; font-weight: 700; color: var(--brand-400); margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .inv-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+  .inv-table th { text-align: left; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); font-weight: 700; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .inv-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .inv-table tr:last-child td { border-bottom: none; }
+  .inv-table code { font-family: var(--font-mono); font-size: 0.78rem; color: var(--brand-100); white-space: nowrap; }
+  .inv-table .desc { color: var(--text-2); }
+
+  footer.page { border-top: 1px solid var(--border); margin-top: 48px; padding-top: 20px; color: var(--text-3); font-size: 0.75rem; }
+  footer.page a { color: var(--text-2); }
+
+  @media (max-width: 600px) {
+    .drift-row { grid-template-columns: 1fr; }
+    .vs { display: none; }
+  }
+</style>
+
+<main>
+
+  <h1>Token warna, diterapkan ke <em>komponen</em></h1>
+  <p class="lede">Preview visual dari <code>docs/design/DESIGN_SYSTEM.md</code> — palet kanonis dipakai beneran di komponen di bawah, plus daftar file komponen modular yang ada di kode saat ini.</p>
+  <p class="meta">Klinik PKP · diaudit 18 Jul 2026 dari application/views + assets/css</p>
+
+  <nav class="jump">
+    <a href="#palet">Palet</a>
+    <a href="#drift">Drift</a>
+    <a href="#komponen">Komponen</a>
+    <a href="#inventaris">Inventaris</a>
+  </nav>
+
+  <section id="palet">
+    <div class="section-head"><h2>1. Palet kanonis</h2><span class="count">16 token</span></div>
+    <p class="section-note">Nilai di bawah ini yang paling banyak dipakai di kode untuk tiap peran warna — bukan aspirasi, ini yang sudah menang secara pemakaian nyata.</p>
+
+    <div class="scale-label">Brand — Electric Lime</div>
+    <div class="swatches">
+      <div class="swatch"><div class="fill" style="background:#f5ffd9"></div><div class="info"><span class="hex">#f5ffd9</span><span class="name">brand.50</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#ecffb6"></div><div class="info"><span class="hex">#ecffb6</span><span class="name">brand.100 / text.primary</span><span class="n">81×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#e2ff8a"></div><div class="info"><span class="hex">#e2ff8a</span><span class="name">brand.200</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#d6fb00"></div><div class="info"><span class="hex">#d6fb00</span><span class="name">brand.300 — primary</span><span class="n">1.423×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#c2e600"></div><div class="info"><span class="hex">#c2e600</span><span class="name">brand.400</span><span class="n">18×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#b5d400"></div><div class="info"><span class="hex">#b5d400</span><span class="name">brand.hover (admin)</span><span class="n">4×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#a8c700"></div><div class="info"><span class="hex">#a8c700</span><span class="name">brand.500</span><span class="n">5×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#8ba500"></div><div class="info"><span class="hex">#8ba500</span><span class="name">brand.600</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#4f5f00"></div><div class="info"><span class="hex">#4f5f00</span><span class="name">brand.800</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#313b00"></div><div class="info"><span class="hex">#313b00</span><span class="name">brand.900</span></div></div>
+    </div>
+
+    <div class="scale-label">Teal</div>
+    <div class="swatches">
+      <div class="swatch"><div class="fill" style="background:#e0f7fa"></div><div class="info"><span class="hex">#e0f7fa</span><span class="name">teal.50</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#4dd0e1"></div><div class="info"><span class="hex">#4dd0e1</span><span class="name">teal.300</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#00a3b5"></div><div class="info"><span class="hex">#00a3b5</span><span class="name">teal.500</span><span class="n">127×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#00545f"></div><div class="info"><span class="hex">#00545f</span><span class="name">teal.700 — anchor</span><span class="n">53×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#003d45"></div><div class="info"><span class="hex">#003d45</span><span class="name">teal.800</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#00262b"></div><div class="info"><span class="hex">#00262b</span><span class="name">teal.900</span></div></div>
+    </div>
+
+    <div class="scale-label">Background &amp; teks</div>
+    <div class="swatches">
+      <div class="swatch"><div class="fill" style="background:#0a1a1f"></div><div class="info"><span class="hex">#0a1a1f</span><span class="name">bg.body</span><span class="n">237×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#0d2228"></div><div class="info"><span class="hex">#0d2228</span><span class="name">bg.primary</span><span class="n">6×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#0f2a30"></div><div class="info"><span class="hex">#0f2a30</span><span class="name">bg.card</span><span class="n">110×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#1a3d45"></div><div class="info"><span class="hex">#1a3d45</span><span class="name">bg.elevated</span><span class="n">13×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#8aacb0"></div><div class="info"><span class="hex">#8aacb0</span><span class="name">text.secondary</span><span class="n">183×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#5a7a80"></div><div class="info"><span class="hex">#5a7a80</span><span class="name">text.muted</span><span class="n">32×</span></div></div>
+    </div>
+
+    <div class="scale-label">Semantic</div>
+    <div class="swatches">
+      <div class="swatch"><div class="fill" style="background:#10b981"></div><div class="info"><span class="hex">#10b981</span><span class="name">success</span><span class="n">9× → jadi standar</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#ffd93d"></div><div class="info"><span class="hex">#ffd93d</span><span class="name">warning</span><span class="n">41×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#ff6b6b"></div><div class="info"><span class="hex">#ff6b6b</span><span class="name">error</span><span class="n">35×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#4d96ff"></div><div class="info"><span class="hex">#4d96ff</span><span class="name">info</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#c084fc"></div><div class="info"><span class="hex">#c084fc</span><span class="name">accent</span><span class="n">26×</span></div></div>
+    </div>
+  </section>
+
+  <section id="drift">
+    <div class="section-head"><h2>2. Drift — sudah diputuskan</h2><span class="count">4 pasang, 18 Jul 2026</span></div>
+    <p class="section-note">Warna yang sama secara maksud, beda nilai hex. Kiri = yang menang, kanan = yang perlu diganti nanti saat cleanup. Keputusan diambil langsung bareng user, bukan ditebak sepihak.</p>
+
+    <div class="drift-row">
+      <div class="drift-chip"><div class="dot" style="background:#00545f"></div><div><span class="hex">#00545f</span><span class="tag">teal.700 — menang</span><span class="use">53× / 6 file</span></div></div>
+      <div class="vs">vs</div>
+      <div class="drift-chip"><div class="dot" style="background:#005e6a"></div><div><span class="hex">#005e6a</span><span class="tag">perlu diganti</span><span class="use">52× / 4 file<br><span class="verdict resolved">diputuskan — hampir 50/50</span></span></div></div>
+    </div>
+    <div class="drift-row">
+      <div class="drift-chip"><div class="dot" style="background:#0f2a30"></div><div><span class="hex">#0f2a30</span><span class="tag">bg.card — menang</span><span class="use">110× / 26 file</span></div></div>
+      <div class="vs">vs</div>
+      <div class="drift-chip"><div class="dot" style="background:#0f2933"></div><div><span class="hex">#0f2933</span><span class="tag">perlu diganti (admin)</span><span class="use">21× / 5 file<br><span class="verdict resolved">diputuskan</span></span></div></div>
+    </div>
+    <div class="drift-row">
+      <div class="drift-chip"><div class="dot" style="background:#ffd93d"></div><div><span class="hex">#ffd93d</span><span class="tag">warning — menang</span><span class="use">41× / 6 file</span></div></div>
+      <div class="vs">vs</div>
+      <div class="drift-chip"><div class="dot" style="background:#ffc107"></div><div><span class="hex">#ffc107</span><span class="tag">perlu diganti</span><span class="use">38× / 4 file<br><span class="verdict resolved">diputuskan</span></span></div></div>
+    </div>
+    <div class="drift-row">
+      <div class="drift-chip"><div class="dot" style="background:#10b981"></div><div><span class="hex">#10b981</span><span class="tag">success — MENANG (standar baru)</span><span class="use">9× / 4 file</span></div></div>
+      <div class="vs">vs</div>
+      <div class="drift-chip"><div class="dot" style="background:#6bcb77"></div><div><span class="hex">#6bcb77</span><span class="tag">token lama, perlu diganti</span><span class="use">59× / 8 file — mayoritas kode<br><span class="verdict flip">diputuskan — kebalikan mayoritas!</span></span></div></div>
+    </div>
+  </section>
+
+  <section id="komponen">
+    <div class="section-head"><h2>3. Komponen, pakai token kanonis</h2><span class="count">7 pola</span></div>
+    <p class="section-note">Kalau tokenisasi diberesin dan semua view konsisten pakai token di atas (bukan hex hardcode), begini kira-kira hasilnya.</p>
+
+    <div class="panel">
+      <div class="cap">Tombol</div>
+      <div class="row">
+        <button class="btn btn-primary">Ajukan Kelayakan</button>
+        <button class="btn btn-outline">Lihat Detail</button>
+        <button class="btn btn-ghost">Batalkan</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="cap">Status / badge</div>
+      <div class="row">
+        <span class="badge badge-success">Disetujui</span>
+        <span class="badge badge-warning">Menunggu Verifikasi</span>
+        <span class="badge badge-error">Ditolak</span>
+        <span class="badge badge-info">Dalam Proses</span>
+        <span class="badge badge-accent">Program Baru</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="cap">Alert</div>
+      <div class="alert alert-success">Pengajuan berhasil dikirim ke antrean.</div>
+      <div class="alert alert-warning">Lengkapi data NIK sebelum lanjut ke tahap berikutnya.</div>
+      <div class="alert alert-error">Data SIMPERUM tidak ditemukan, coba lagi.</div>
+    </div>
+
+    <div class="panel">
+      <div class="cap">Kartu (pola dari components/cards/rumah.php)</div>
+      <div class="row">
+        <div class="demo-card">
+          <div class="thumb"><span class="badge badge-success">Tersedia</span></div>
+          <div class="body"><p class="title">Perumahan Griya Asri</p><p class="sub">Kab. Semarang · KPR-FLPP</p></div>
+        </div>
+        <div class="demo-card">
+          <div class="thumb"><span class="badge badge-warning">Terbatas</span></div>
+          <div class="body"><p class="title">Oemah Lestari Residence</p><p class="sub">Kota Salatiga · Non-Subsidi</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="cap">Input</div>
+      <div class="field">
+        <label for="nik-demo">NIK</label>
+        <input id="nik-demo" type="text" placeholder="16 digit NIK">
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="cap">Tab</div>
+      <div class="tabs">
+        <button class="tab active">Perumahan</button>
+        <button class="tab">Kawasan</button>
+        <button class="tab">Pertanahan</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="inventaris">
+    <div class="section-head"><h2>4. Inventaris komponen modular</h2><span class="count">11 file</span></div>
+    <p class="section-note">Semua file layout/komponen yang benar-benar ada di <code>application/views/</code> saat ini — bukan daftar ideal, ini yang riil.</p>
+
+    <div class="inv-group">
+      <h3>Layout publik</h3>
+      <table class="inv-table">
+        <tr><th>File</th><th>Isi</th></tr>
+        <tr><td><code>layouts/head.php</code></td><td class="desc">Meta, font, Tailwind CDN + build, custom scrollbar &amp; transisi halaman</td></tr>
+        <tr><td><code>layouts/nav.php</code></td><td class="desc">Navbar responsif publik</td></tr>
+        <tr><td><code>layouts/main.php</code></td><td class="desc">Pembungkus <code>&lt;html&gt;</code>, memanggil head/nav/footer</td></tr>
+        <tr><td><code>layouts/footer.php</code></td><td class="desc">Footer multi-kolom</td></tr>
+      </table>
+    </div>
+
+    <div class="inv-group">
+      <h3>Layout admin</h3>
+      <table class="inv-table">
+        <tr><th>File</th><th>Isi</th></tr>
+        <tr><td><code>admin/layouts/head.php</code></td><td class="desc">Toggle dark/light (Alpine.js), <code>tailwind.config</code> inline sendiri, Phosphor Icons, Chart.js</td></tr>
+        <tr><td><code>admin/layouts/sidebar.php</code></td><td class="desc">Sidebar navigasi, collapsible</td></tr>
+        <tr><td><code>admin/layouts/topbar.php</code></td><td class="desc">Topbar sticky dengan toggle sidebar</td></tr>
+        <tr><td><code>admin/layouts/footer.php</code></td><td class="desc">Footer admin, satu baris</td></tr>
+      </table>
+    </div>
+
+    <div class="inv-group">
+      <h3>Komponen reusable</h3>
+      <table class="inv-table">
+        <tr><th>File</th><th>Isi</th></tr>
+        <tr><td><code>components/cards/rumah.php</code></td><td class="desc">Kartu listing perumahan, hover-scale, dipakai di halaman sebaran</td></tr>
+        <tr><td><code>components/partials/articles_cards.php</code></td><td class="desc">Kartu artikel/berita</td></tr>
+        <tr><td><code>components/partials/design_cards.php</code></td><td class="desc">Kartu katalog bank desain</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <footer class="page">
+    Dibuat dari audit warna 18 Jul 2026 — lihat <a href="DESIGN_SYSTEM.md">DESIGN_SYSTEM.md</a> untuk penjelasan lengkap dan rekomendasi lanjutan.
+  </footer>
+
+</main>

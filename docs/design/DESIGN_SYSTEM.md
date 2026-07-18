@@ -20,7 +20,7 @@ Selain itu, mayoritas warna di view (**82% dari 85 file**) tidak lewat variable/
 
 ## 2. Palet kanonis (diverifikasi dari pemakaian nyata)
 
-Nilai di `design-tokens.json`/`tokens.css` di bawah ini **sudah dicek satu-satu** terhadap kode — kolom "Pemakaian" adalah jumlah kemunculan hex itu apa adanya di `application/views/` + `assets/css/`. Semua nilai berikut adalah nilai yang **paling banyak dipakai** untuk peran warna itu, jadi ini realistis dijadikan acuan, bukan aspirasi.
+Nilai di `design-tokens.json`/`tokens.css` di bawah ini **sudah dicek satu-satu** terhadap kode — kolom "Pemakaian" adalah jumlah kemunculan hex itu apa adanya di `application/views/` + `assets/css/`. Kecuali `semantic.success` (lihat catatan ⚠️ di tabel dan §3), semua nilai berikut adalah nilai yang **paling banyak dipakai** untuk peran warna itu, jadi ini realistis dijadikan acuan, bukan aspirasi.
 
 | Token | Hex | Peran | Pemakaian |
 |---|---|---|---|
@@ -30,7 +30,7 @@ Nilai di `design-tokens.json`/`tokens.css` di bawah ini **sudah dicek satu-satu*
 | `teal.500` | `#00a3b5` | Teal terang (aksen) | 127× / 21 file |
 | `bg.card` | `#0f2a30` | Background kartu/panel | 110× / 26 file |
 | `brand.100` / `text.primary` | `#ecffb6` | Lime cream (teks utama di dark bg) | 81× / 20 file |
-| `semantic.success` | `#6bcb77` | Hijau sukses | 59× / 8 file |
+| `semantic.success` | `#10b981` ⚠️ *(diputuskan 18 Jul — lihat §3, bukan nilai mayoritas)* | Hijau sukses | 9× / 4 file saat ini, akan jadi mayoritas setelah cleanup |
 | `teal.700` | `#00545f` | Teal gelap (anchor sekunder) | 53× / 6 file |
 | `semantic.warning` | `#ffd93d` | Kuning peringatan | 41× / 6 file |
 | `semantic.error` | `#ff6b6b` | Merah error | 35× / 7 file |
@@ -44,21 +44,21 @@ Nilai di `design-tokens.json`/`tokens.css` di bawah ini **sudah dicek satu-satu*
 
 ---
 
-## 3. Drift — warna kembar yang butuh keputusan (bukan saya putuskan sepihak)
+## 3. Drift — keputusan (diputuskan 18 Juli 2026)
 
-Ini warna-warna yang **jelas dimaksudkan** sebagai warna yang sama dengan salah satu token di atas, tapi nilai hex-nya beda tipis. Saya tidak mengganti kode viewnya (di luar scope perbaikan dokumentasi ini) — ini daftar yang perlu keputusan desain sebelum ada yang bersihkan:
+4 pasang drift utama sudah diputuskan langsung dengan user. Kode belum diubah (di luar scope perbaikan dokumentasi ini) — ini catatan keputusan supaya siapa pun yang nanti bersihkan 1.300+ hex literal tahu arah yang benar, tanpa perlu nebak atau nanya ulang.
 
-| Token kanonis | Varian nyasar | Pemakaian varian | Lokasi utama |
-|---|---|---|---|
-| `bg.card` (`#0f2a30`) | `#0f2933` | 21× / 5 file | `admin/dashboard.php`, `admin/layouts/head.php` — jelas berasal dari `tailwind.config` inline admin yang beda sumber |
-| `teal.700` (`#00545f`) | `#005e6a` | **52× / 4 file — hampir seimbang, bukan sekadar typo minoritas** | `pengembang/archive/v_sertifikasi.php`, `perumahan/housing_carrier.php`, `umum/form_aduan.php` |
-| `semantic.warning` (`#ffd93d`) | `#ffc107` (Bootstrap amber) | 38× / 4 file | `data_spasial/sikumbang_view.php`, `pengembang/archive/syarat.php`, dll |
-| `semantic.warning` (`#ffd93d`) | `#f59e0b` (Tailwind amber-500) | 13× / 4 file | `auth/onboarding.php`, `data_spasial/statistika.php` |
-| `semantic.success` (`#6bcb77`) | `#10b981` (Tailwind emerald-500) | 9× / 4 file | `auth/onboarding.php`, `auth/verify_pending.php` |
-| `semantic.success` (`#6bcb77`) | `#34d399` (Tailwind emerald-400) | 9× / 3 file | `data_spasial/statistika.php`, `home/awal.php` |
-| `brand.hover` (`#b5d400`) | `#b5d500` (kemungkinan salah ketik 1 digit) | 2× / 2 file | — |
+| Token kanonis | Varian nyasar | Pemakaian varian | Keputusan | Lokasi utama varian |
+|---|---|---|---|---|
+| `teal.700` = `#00545f` | `#005e6a` | 52× / 4 file (hampir seimbang, 53 vs 52) | ✅ **`#00545f` menang** — `#005e6a` di kode adalah yang salah, perlu diganti | `pengembang/archive/v_sertifikasi.php`, `perumahan/housing_carrier.php`, `umum/form_aduan.php` |
+| `bg.card` = `#0f2a30` | `#0f2933` | 21× / 5 file | ✅ **`#0f2a30` menang**, satukan admin panel ke warna ini | `admin/dashboard.php`, `admin/layouts/head.php` |
+| `semantic.warning` = `#ffd93d` | `#ffc107` (Bootstrap amber) | 38× / 4 file | ✅ **`#ffd93d` menang** | `data_spasial/sikumbang_view.php`, `pengembang/archive/syarat.php`, dll |
+| `semantic.success` = `#10b981` ⚠️ | `#6bcb77` (token lama) | **59× / 8 file — ini yang MAYORITAS di kode saat ini** | ✅ **`#10b981` menang** — kebalikan dari mayoritas pemakaian. `design-tokens.json`/`tokens.css` sudah diupdate ke nilai baru ini. Yang perlu diganti nanti justru `#6bcb77` (59 kemunculan), bukan `#10b981` (9 kemunculan) | `#6bcb77` tersebar di 8 file; `#10b981` sudah ada di `auth/onboarding.php`, `auth/verify_pending.php` |
 
-**Yang paling mendesak diputuskan:** `teal.700` vs `#005e6a` — pemakaiannya nyaris 50/50 (53 vs 52), jadi bukan kasus "yang satu jelas benar, yang satu typo minoritas". Perlu ditentukan warna mana yang jadi standar resmi.
+**Masih belum diputuskan** (varian sekunder, belum ditanyakan eksplisit):
+- `semantic.warning` vs `#f59e0b` (Tailwind amber-500, 13× / 4 file) — asumsikan sementara ikut aturan warning di atas (`#ffd93d` menang) sampai ada keputusan terpisah
+- `semantic.success` vs `#34d399` (Tailwind emerald-400, 9× / 3 file) — belum jelas apakah ini dianggap "dekat cukup" dengan `#10b981` yang baru menang, atau tetap drift terpisah
+- `brand.hover` (`#b5d400`) vs `#b5d500` (2× / 2 file, kemungkinan salah ketik 1 digit) — dampaknya kecil, belum prioritas
 
 ---
 
@@ -75,5 +75,5 @@ Update ini scope-nya dokumentasi: memperbaiki `tokens.css`/`design-tokens.json` 
 1. **Satukan 3 sumber jadi 1.** Idealnya `assets/css/design-system.css` dan inline config admin dihapus, diganti load `tokens.css` langsung (atau sebaliknya) — supaya cuma ada 1 sumber kebenaran.
 2. **Bikin `tailwind.config.js` yang benar** dengan `theme.extend.colors` dari token ini, supaya view bisa pakai `bg-brand-300` alih-alih `bg-[#d6fb00]` literal. Situs publik saat ini bahkan tidak punya config Tailwind sama sekali — itu sebabnya 1.423 kemunculan hex brand tertulis manual.
 3. **Ganti 1.300+ hex literal di 70 file view** dengan token/class — ini kerjaan besar, sebaiknya dipecah per modul, bukan sekali jalan.
-4. **Putuskan drift di §3** dulu sebelum langkah 3, supaya nggak salah pilih nilai kanonis.
+4. ~~Putuskan drift di §3~~ — **selesai 18 Jul 2026**, lihat tabel keputusan di §3. Termasuk perhatikan `semantic.success` yang butuh diganti ke arah yang tidak intuitif (ganti 59 kemunculan `#6bcb77`, bukan 9 kemunculan `#10b981`).
 5. Situs publik saat ini load **Tailwind CDN JIT (`cdn.tailwindcss.com`) *dan* file `tailwind.min.css` hasil build** secara bersamaan — tidak disarankan Tailwind sendiri untuk production, di luar scope warna tapi terkait erat kalau nanti bikin `tailwind.config.js` beneran.
