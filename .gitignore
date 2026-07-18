@@ -35,6 +35,9 @@ clean_bg.py
 # ── Dev/debug scripts (never deploy — DB access, no auth) ──
 /dev-scripts/
 
+# ── Large local-only artifacts (recordings, reference images — not web assets) ──
+/local-assets/
+
 # ── Build Output ──────────────────────────
 /assets/css/output.css.map
 
