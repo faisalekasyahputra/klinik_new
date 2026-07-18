@@ -16,7 +16,7 @@
     --text:      #ecffb6;
     --text-2:    #8aacb0;
     --text-3:    #5a7a80;
-    --success:   #6bcb77;
+    --success:   #10b981; /* decided 18 Jul 2026, was #6bcb77 — see DESIGN_SYSTEM.md §3 */
     --warning:   #ffd93d;
     --error:     #ff6b6b;
     --info:      #4d96ff;
@@ -98,8 +98,10 @@
   .drift-chip .use { font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-2); margin-top: 3px; font-variant-numeric: tabular-nums; display: block; }
   .vs { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-3); text-align: center; }
   .verdict { font-size: 0.66rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; display: inline-block; margin-top: 6px; }
-  .verdict.close   { background: rgba(255,217,61,0.14); color: var(--warning); }
-  .verdict.minor    { background: rgba(107,203,119,0.14); color: var(--success); }
+  .verdict.close    { background: rgba(255,217,61,0.14); color: var(--warning); }
+  .verdict.minor    { background: rgba(16,185,129,0.14); color: var(--success); }
+  .verdict.resolved { background: rgba(0,163,181,0.16); color: var(--teal-500); }
+  .verdict.flip     { background: rgba(192,132,252,0.16); color: var(--accent); }
 
   /* ---- Component showcase ---- */
   .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 16px; }
@@ -117,7 +119,7 @@
 
   .badge { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 600; padding: 4px 10px; border-radius: 999px; display: inline-flex; align-items: center; gap: 6px; }
   .badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  .badge-success { background: rgba(107,203,119,0.12); color: var(--success); }
+  .badge-success { background: rgba(16,185,129,0.12); color: var(--success); }
   .badge-warning { background: rgba(255,217,61,0.12); color: var(--warning); }
   .badge-error   { background: rgba(255,107,107,0.12); color: var(--error); }
   .badge-info    { background: rgba(77,150,255,0.12); color: var(--info); }
@@ -125,7 +127,7 @@
 
   .alert { display: flex; gap: 12px; padding: 14px 16px; border-radius: 10px; font-size: 0.85rem; border: 1px solid; margin-bottom: 10px; }
   .alert:last-child { margin-bottom: 0; }
-  .alert-success { background: rgba(107,203,119,0.08); border-color: rgba(107,203,119,0.25); color: var(--success); }
+  .alert-success { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.25); color: var(--success); }
   .alert-warning { background: rgba(255,217,61,0.08); border-color: rgba(255,217,61,0.25); color: var(--warning); }
   .alert-error   { background: rgba(255,107,107,0.08); border-color: rgba(255,107,107,0.25); color: var(--error); }
 
@@ -218,7 +220,7 @@
 
     <div class="scale-label">Semantic</div>
     <div class="swatches">
-      <div class="swatch"><div class="fill" style="background:#6bcb77"></div><div class="info"><span class="hex">#6bcb77</span><span class="name">success</span><span class="n">59×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#10b981"></div><div class="info"><span class="hex">#10b981</span><span class="name">success</span><span class="n">9× → jadi standar</span></div></div>
       <div class="swatch"><div class="fill" style="background:#ffd93d"></div><div class="info"><span class="hex">#ffd93d</span><span class="name">warning</span><span class="n">41×</span></div></div>
       <div class="swatch"><div class="fill" style="background:#ff6b6b"></div><div class="info"><span class="hex">#ff6b6b</span><span class="name">error</span><span class="n">35×</span></div></div>
       <div class="swatch"><div class="fill" style="background:#4d96ff"></div><div class="info"><span class="hex">#4d96ff</span><span class="name">info</span></div></div>
@@ -227,28 +229,28 @@
   </section>
 
   <section id="drift">
-    <div class="section-head"><h2>2. Drift — kembar yang belum diputuskan</h2><span class="count">4 pasang</span></div>
-    <p class="section-note">Warna yang sama secara maksud, beda nilai hex. Ditaruh berdampingan supaya kelihatan langsung seberapa jauh selisihnya — bukan saya yang putuskan mana yang menang.</p>
+    <div class="section-head"><h2>2. Drift — sudah diputuskan</h2><span class="count">4 pasang, 18 Jul 2026</span></div>
+    <p class="section-note">Warna yang sama secara maksud, beda nilai hex. Kiri = yang menang, kanan = yang perlu diganti nanti saat cleanup. Keputusan diambil langsung bareng user, bukan ditebak sepihak.</p>
 
     <div class="drift-row">
-      <div class="drift-chip"><div class="dot" style="background:#00545f"></div><div><span class="hex">#00545f</span><span class="tag">teal.700 — dianggap kanonis</span><span class="use">53× / 6 file</span></div></div>
+      <div class="drift-chip"><div class="dot" style="background:#00545f"></div><div><span class="hex">#00545f</span><span class="tag">teal.700 — menang</span><span class="use">53× / 6 file</span></div></div>
       <div class="vs">vs</div>
-      <div class="drift-chip"><div class="dot" style="background:#005e6a"></div><div><span class="hex">#005e6a</span><span class="tag">tersebar independen</span><span class="use">52× / 4 file<br><span class="verdict close">hampir 50/50 — perlu keputusan</span></span></div></div>
+      <div class="drift-chip"><div class="dot" style="background:#005e6a"></div><div><span class="hex">#005e6a</span><span class="tag">perlu diganti</span><span class="use">52× / 4 file<br><span class="verdict resolved">diputuskan — hampir 50/50</span></span></div></div>
     </div>
     <div class="drift-row">
-      <div class="drift-chip"><div class="dot" style="background:#0f2a30"></div><div><span class="hex">#0f2a30</span><span class="tag">bg.card — kanonis</span><span class="use">110× / 26 file</span></div></div>
+      <div class="drift-chip"><div class="dot" style="background:#0f2a30"></div><div><span class="hex">#0f2a30</span><span class="tag">bg.card — menang</span><span class="use">110× / 26 file</span></div></div>
       <div class="vs">vs</div>
-      <div class="drift-chip"><div class="dot" style="background:#0f2933"></div><div><span class="hex">#0f2933</span><span class="tag">dari config admin</span><span class="use">21× / 5 file<br><span class="verdict minor">minoritas jelas</span></span></div></div>
+      <div class="drift-chip"><div class="dot" style="background:#0f2933"></div><div><span class="hex">#0f2933</span><span class="tag">perlu diganti (admin)</span><span class="use">21× / 5 file<br><span class="verdict resolved">diputuskan</span></span></div></div>
     </div>
     <div class="drift-row">
-      <div class="drift-chip"><div class="dot" style="background:#ffd93d"></div><div><span class="hex">#ffd93d</span><span class="tag">warning — kanonis</span><span class="use">41× / 6 file</span></div></div>
+      <div class="drift-chip"><div class="dot" style="background:#ffd93d"></div><div><span class="hex">#ffd93d</span><span class="tag">warning — menang</span><span class="use">41× / 6 file</span></div></div>
       <div class="vs">vs</div>
-      <div class="drift-chip"><div class="dot" style="background:#ffc107"></div><div><span class="hex">#ffc107</span><span class="tag">amber Bootstrap</span><span class="use">38× / 4 file<br><span class="verdict close">dekat — perlu keputusan</span></span></div></div>
+      <div class="drift-chip"><div class="dot" style="background:#ffc107"></div><div><span class="hex">#ffc107</span><span class="tag">perlu diganti</span><span class="use">38× / 4 file<br><span class="verdict resolved">diputuskan</span></span></div></div>
     </div>
     <div class="drift-row">
-      <div class="drift-chip"><div class="dot" style="background:#6bcb77"></div><div><span class="hex">#6bcb77</span><span class="tag">success — kanonis</span><span class="use">59× / 8 file</span></div></div>
+      <div class="drift-chip"><div class="dot" style="background:#10b981"></div><div><span class="hex">#10b981</span><span class="tag">success — MENANG (standar baru)</span><span class="use">9× / 4 file</span></div></div>
       <div class="vs">vs</div>
-      <div class="drift-chip"><div class="dot" style="background:#10b981"></div><div><span class="hex">#10b981</span><span class="tag">emerald Tailwind</span><span class="use">9× / 4 file<br><span class="verdict minor">minoritas jelas</span></span></div></div>
+      <div class="drift-chip"><div class="dot" style="background:#6bcb77"></div><div><span class="hex">#6bcb77</span><span class="tag">token lama, perlu diganti</span><span class="use">59× / 8 file — mayoritas kode<br><span class="verdict flip">diputuskan — kebalikan mayoritas!</span></span></div></div>
     </div>
   </section>
 
