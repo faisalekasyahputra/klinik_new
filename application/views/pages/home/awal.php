@@ -96,270 +96,510 @@
 <!-- ============================================================
      SECTION 1: HERO — Full Viewport Slideshow
      ============================================================ -->
-<section class="w-full relative overflow-hidden" style="height: 100vh" x-data="heroSlider()">
-    
-    <!-- Slide 1 -->
-    <div class="hero-slide" :class="current === 0 && 'active'">
-        <div class="absolute inset-0 gradient-hero z-10"></div>
-        <?php if(!empty($settings['hero_background'])): ?>
-        <picture>
-            <img src="<?= base_url($settings['hero_background']) ?>" alt="Hero Background" class="object-cover w-full h-full" loading="eager">
-        </picture>
-        <?php else: ?>
-        <picture>
-            <source srcset="<?= base_url('assets/img/hero/hero-perumahan-subsidi.webp') ?>" type="image/webp">
-            <img src="<?= base_url('assets/img/hero/hero-perumahan-subsidi-opt.jpeg') ?>" alt="Pembangunan perumahan subsidi di Jawa Tengah — pekerja dan keluarga penerima manfaat" loading="eager">
-        </picture>
-        <?php endif; ?>
-        <div class="absolute inset-0 z-20 max-w-[1440px] mx-auto px-6 lg:px-10 flex flex-col lg:flex-row items-center justify-between pb-20 lg:pb-0 pt-16 lg:pt-0 gap-8">
-            <!-- Left Side Copy -->
-            <div class="max-w-2xl w-full lg:w-[45%]" data-aos="fade-right" data-aos-duration="1000">
-                <div class="inline-flex items-center gap-2 bg-[#d6fb00]/5 border border-[#d6fb00]/15 backdrop-blur-sm px-4 py-1.5 rounded-full text-[11px] text-[#8aacb0] font-medium mb-6 mt-8 lg:mt-0">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Dinas Perumahan Rakyat & Kawasan Permukiman Prov. Jawa Tengah
+<section class="w-full relative overflow-hidden" style="height: 110vh;" x-data="heroBgSlider()">
+    <!-- Background Slider — image only, no per-slide text (cards/title below are static) -->
+    <div class="absolute inset-0 z-0" style="mask-image: linear-gradient(to bottom, black 0, black calc(100% - 10vh), transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 0, black calc(100% - 10vh), transparent 100%);">
+        <div class="hero-slide" :class="current === 0 && 'active'">
+            <div class="absolute inset-0 gradient-hero z-10"></div>
+            <picture>
+                <source srcset="<?= base_url('assets/img/hero/hero-perumahan-subsidi.webp') ?>" type="image/webp">
+                <img src="<?= base_url('assets/img/hero/hero-perumahan-subsidi-opt.jpeg') ?>" alt="Pembangunan perumahan subsidi di Jawa Tengah" loading="eager">
+            </picture>
+        </div>
+        <div class="hero-slide" :class="current === 1 && 'active'">
+            <div class="absolute inset-0 gradient-hero z-10"></div>
+            <picture>
+                <source srcset="<?= base_url('assets/img/hero/hero-kawasan-permukiman.webp') ?>" type="image/webp">
+                <img src="<?= base_url('assets/img/hero/hero-kawasan-permukiman-opt.jpeg') ?>" alt="Panorama udara kawasan permukiman modern Jawa Tengah" loading="lazy">
+            </picture>
+        </div>
+        <div class="hero-slide" :class="current === 2 && 'active'">
+            <div class="absolute inset-0 gradient-hero z-10"></div>
+            <picture>
+                <source srcset="<?= base_url('assets/img/hero/hero-sertifikasi-lahan.webp') ?>" type="image/webp">
+                <img src="<?= base_url('assets/img/hero/hero-sertifikasi-lahan-opt.jpeg') ?>" alt="Hamparan lahan dan permukiman di Jawa Tengah" loading="lazy">
+            </picture>
+        </div>
+    </div>
+    <div class="absolute inset-0 gradient-radial pointer-events-none z-[1]"></div>
+
+    <div class="relative z-10 flex flex-col justify-center" style="min-height: 100vh; padding-top: 6rem; padding-bottom: 6rem;">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 w-full">
+        <div class="text-center mb-14" data-aos="fade-down">
+            <div class="inline-flex items-center gap-2 bg-[#d6fb00]/5 border border-[#d6fb00]/15 backdrop-blur-sm px-4 py-1.5 rounded-full text-[11px] text-[#8aacb0] font-medium mb-6">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                Dinas Perumahan Rakyat & Kawasan Permukiman Prov. Jawa Tengah
+            </div>
+            <h2 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-white mb-5 leading-[1.1] tracking-tight">
+                <?= !empty($settings['hero_title']) ? $settings['hero_title'] : 'Ngopeni Omah<br><span class="text-[#d6fb00]">Nglakoni Sesarengan</span>' ?>
+            </h2>
+            <p class="text-slate-400 text-sm sm:text-base lg:text-lg leading-relaxed max-w-2xl mx-auto">
+                <?= !empty($settings['hero_subtitle']) ? nl2br(htmlspecialchars($settings['hero_subtitle'])) : 'Akses informasi rumah subsidi, data spasial permukiman, dan layanan konsultasi dalam satu platform terintegrasi.' ?>
+            </p>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <!-- Card 1: Nggolek Omah -->
+            <a href="<?= base_url('Program/diagnosa/umum') ?>" class="group rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(214, 251, 0, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2); min-height: 220px;" data-aos="fade-up" data-aos-delay="100">
+                <i class="fa-solid fa-house-chimney-window absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 120px; right: -1rem; bottom: -1rem; color: #d6fb00; opacity: 0.06;"></i>
+                <div class="relative z-10">
+                    <i class="fa-solid fa-house-chimney-window mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 32px; color: #d6fb00; filter: drop-shadow(0 0 12px rgba(214, 251, 0, 0.4));"></i>
+                    <h4 class="text-white font-bold text-lg mb-1.5 group-hover:text-[#d6fb00] transition-colors">Nggolek Omah</h4>
+                    <p class="text-zinc-500 text-xs leading-relaxed">Cari rumah sesuai kelayakan Anda</p>
                 </div>
-                <h2 class="text-3xl sm:text-4xl lg:text-[2.8rem] font-extrabold text-white mb-5 leading-[1.1] md:leading-[1.1] tracking-tight">
-                    <?= !empty($settings['hero_title']) ? $settings['hero_title'] : 'Ngopeni Omah<br><span class="text-[#d6fb00]">Nglakoni Sesarengan</span>' ?>
-                </h2>
-                <p class="text-slate-400 text-sm sm:text-base lg:text-lg leading-relaxed max-w-xl mb-8">
-                    <?= !empty($settings['hero_subtitle']) ? nl2br(htmlspecialchars($settings['hero_subtitle'])) : 'Akses informasi rumah subsidi, data spasial permukiman, dan layanan konsultasi dalam satu platform terintegrasi.' ?>
-                </p>
-                <div class="flex flex-wrap items-center gap-3">
-                    <a href="#etalase-program" class="btn-primary text-xs px-6 py-3.5 rounded-xl flex items-center gap-2">
-                        <i class="fa-solid fa-ticket"></i> Program
-                    </a>
-                    <a href="javascript:void(0)" onclick="document.getElementById('layanan-kami').scrollIntoView({behavior: 'smooth'})" class="btn-secondary text-xs px-6 py-3.5 rounded-xl flex items-center gap-2">
-                        <i class="fa-solid fa-layer-group"></i> Lihat Layanan
-                    </a>
+                <div class="relative z-10 mt-auto pt-4">
+                    <div class="tl-btn-base" style="background-color: rgba(214,251,0,0.1); color: #d6fb00; border: 1px solid rgba(214,251,0,0.2);">
+                        <span>Cek Sekarang</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Card 2: Sertifikasi Pengembang (SRPP) -->
+            <a href="<?= base_url('Pengembang/sertifikasi') ?>" class="group rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(16, 185, 129, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2); min-height: 220px;" data-aos="fade-up" data-aos-delay="200">
+                <i class="fa-solid fa-certificate absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 120px; right: -1rem; bottom: -1rem; color: #10b981; opacity: 0.06;"></i>
+                <div class="relative z-10">
+                    <i class="fa-solid fa-certificate mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 32px; color: #10b981; filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.4));"></i>
+                    <h4 class="text-white font-bold text-lg mb-1.5 group-hover:text-emerald-400 transition-colors">Sertifikasi Pengembang</h4>
+                    <p class="text-zinc-500 text-xs leading-relaxed">SRPP untuk pengembang perumahan</p>
+                </div>
+                <div class="relative z-10 mt-auto pt-4">
+                    <div class="tl-btn-base tl-btn-emerald">
+                        <span>Daftar</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Card 3: PSU dan Kawasan Kumuh — placeholder, halaman belum dibuat -->
+            <div class="rounded-3xl p-6 sm:p-8 flex flex-col relative overflow-hidden opacity-50 cursor-not-allowed" style="background-color: var(--bg-card); border: 1px solid rgba(255,255,255,0.08); min-height: 220px;" data-aos="fade-up" data-aos-delay="300" title="Segera Hadir">
+                <i class="fa-solid fa-city absolute pointer-events-none" style="font-size: 120px; right: -1rem; bottom: -1rem; color: #8aacb0; opacity: 0.05;"></i>
+                <div class="relative z-10">
+                    <i class="fa-solid fa-city mb-4" style="font-size: 32px; color: #8aacb0;"></i>
+                    <h4 class="text-zinc-300 font-bold text-lg mb-1.5">PSU dan Kawasan Kumuh</h4>
+                    <p class="text-zinc-500 text-xs leading-relaxed">Data prasarana & kawasan kumuh</p>
+                </div>
+                <div class="relative z-10 mt-auto pt-4">
+                    <div class="tl-btn-base" style="background-color: rgba(255,255,255,0.05); color: #5a7a80; border: 1px solid rgba(255,255,255,0.08);">
+                        <span>Segera Hadir</span>
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
                 </div>
             </div>
 
-            <!-- Right Side Grid (Ticket Style) -->
-            <div class="hidden lg:grid grid-cols-2 gap-2 w-full lg:w-[55%] xl:pl-4 lg:scale-90 lg:origin-right">
-                <style>
-                .ticket-mask {
-                    -webkit-mask-image: 
-                        radial-gradient(circle at 5rem 0px, transparent 7.5px, black 8.5px),
-                        radial-gradient(circle at 5rem 100%, transparent 7.5px, black 8.5px);
-                    -webkit-mask-position: top left, bottom left;
-                    -webkit-mask-size: 100% 51%;
-                    -webkit-mask-repeat: no-repeat;
-                    mask-image: 
-                        radial-gradient(circle at 5rem 0px, transparent 7.5px, black 8.5px),
-                        radial-gradient(circle at 5rem 100%, transparent 7.5px, black 8.5px);
-                    mask-position: top left, bottom left;
-                    mask-size: 100% 51%;
-                    mask-repeat: no-repeat;
-                }
-
-                .ticket-base {
-                    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.05) 100%);
-                    backdrop-filter: blur(16px);
-                    -webkit-backdrop-filter: blur(16px);
-                    border-radius: 1rem;
-                    -webkit-backface-visibility: hidden;
-                    backface-visibility: hidden;
-                }
-                .ticket-wrapper:hover .ticket-base {
-                    background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.08) 100%);
-                }
-
-                .ticket-border {
-                    border: 1px solid rgba(255,255,255,0.3);
-                    border-radius: 1rem;
-                }
-                .ticket-wrapper:hover .ticket-border {
-                    border-color: rgba(255,255,255,0.5);
-                }
-
-                /* Cutout Borders */
-                .ticket-border::before,
-                .ticket-border::after {
-                    content: '';
-                    position: absolute;
-                    left: calc(5rem - 9px);
-                    width: 18px;
-                    height: 18px;
-                    border-radius: 50%;
-                    border: 1px solid rgba(255,255,255,0.3);
-                    pointer-events: none;
-                    transition: border-color 0.3s ease;
-                    box-sizing: border-box;
-                }
-                .ticket-border::before { top: -9px; }
-                .ticket-border::after { bottom: -9px; }
-                </style>
-
-                <!-- Ticket 1: KPR-FLPP -->
-                <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="100">
-                    <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                    <a href="#etalase-program" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
-                        <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
-                        <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
-                            <i class="fa-solid fa-building-columns text-3xl text-[#00e1fa] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(0,225,250,0.5)]"></i>
-                        </div>
-                        <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
-                            <div class="text-[9px] font-bold tracking-widest text-[#00e1fa] uppercase mb-1">MBR Fixed Income</div>
-                            <h4 class="text-white font-bold text-base mb-1.5 leading-tight">KPR-FLPP</h4>
-                            <p class="text-white/80 text-[11px] leading-relaxed line-clamp-2">Bunga flat 5% & cicilan ringan hingga 20 tahun.</p>
-                        </div>
-                    </a>
+            <!-- Card 4: Monitoring Capaian Kinerja — placeholder, fitur belum dibangun -->
+            <div class="rounded-3xl p-6 sm:p-8 flex flex-col relative overflow-hidden opacity-50 cursor-not-allowed" style="background-color: var(--bg-card); border: 1px solid rgba(255,255,255,0.08); min-height: 220px;" data-aos="fade-up" data-aos-delay="400" title="Segera Hadir">
+                <i class="fa-solid fa-chart-line absolute pointer-events-none" style="font-size: 120px; right: -1rem; bottom: -1rem; color: #8aacb0; opacity: 0.05;"></i>
+                <div class="relative z-10">
+                    <i class="fa-solid fa-chart-line mb-4" style="font-size: 32px; color: #8aacb0;"></i>
+                    <h4 class="text-zinc-300 font-bold text-lg mb-1.5">Monitoring Capaian Kinerja</h4>
+                    <p class="text-zinc-500 text-xs leading-relaxed">Pemantauan capaian program</p>
                 </div>
-
-                <!-- Ticket 2: Oemah Lestari -->
-                <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="200">
-                    <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                    <a href="#etalase-program" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
-                        <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
-                        <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
-                            <i class="fa-solid fa-leaf text-3xl text-[#85ea92] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(133,234,146,0.5)]"></i>
-                        </div>
-                        <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
-                            <div class="text-[9px] font-bold tracking-widest text-[#85ea92] uppercase mb-1">MBR & Umum</div>
-                            <h4 class="text-white font-bold text-base mb-1.5 leading-tight">Oemah Lestari</h4>
-                            <p class="text-white/80 text-[11px] leading-relaxed line-clamp-2">Fasilitas pembiayaan rumah murah bagi MBR dengan skema kredit bunga ringan (8% flat).</p>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Ticket 3: Peningkatan RTLH -->
-                <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="300">
-                    <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                    <a href="#etalase-program" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
-                        <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
-                        <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
-                            <i class="fa-solid fa-hammer text-3xl text-[#d4a1ff] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(212,161,255,0.5)]"></i>
-                        </div>
-                        <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
-                            <div class="text-[9px] font-bold tracking-widest text-[#d4a1ff] uppercase mb-1">Miskin & Ekstrem</div>
-                            <h4 class="text-white font-bold text-base mb-1.5 leading-tight">Peningkatan RTLH</h4>
-                            <p class="text-white/80 text-[11px] leading-relaxed line-clamp-2">Bantuan perbaikan rumah via Bankeupemdes.</p>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Ticket 4: Stimulan PB -->
-                <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="400">
-                    <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                    <a href="#etalase-program" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
-                        <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
-                        <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
-                            <i class="fa-solid fa-trowel-bricks text-3xl text-[#e5ff4d] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(229,255,77,0.5)]"></i>
-                        </div>
-                        <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
-                            <div class="text-[9px] font-bold tracking-widest text-[#e5ff4d] uppercase mb-1">Bencana & Relokasi</div>
-                            <h4 class="text-white font-bold text-base mb-1.5 leading-tight">Stimulan PB</h4>
-                            <p class="text-white/80 text-[11px] leading-relaxed line-clamp-2">Bantuan material pembangunan untuk PB Bencana.</p>
-                        </div>
-                    </a>
-                </div>
-
-                <!-- Ticket 5: Program Rumah Apung -->
-                <div class="ticket-wrapper relative group transition-shadow duration-300 col-span-2 w-full max-w-[calc(50%-0.5rem)] mx-auto" data-aos="slide-up" data-aos-delay="500">
-                    <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                    <a href="#etalase-program" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
-                        <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
-                        <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
-                            <i class="fa-solid fa-water text-3xl text-[#7db5ff] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(125,181,255,0.5)]"></i>
-                        </div>
-                        <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
-                            <div class="text-[9px] font-bold tracking-widest text-[#7db5ff] uppercase mb-1">Kawasan Pesisir</div>
-                            <h4 class="text-white font-bold text-base mb-1.5 leading-tight">Program Rumah Apung</h4>
-                            <p class="text-white/80 text-[11px] leading-relaxed line-clamp-2">Inovasi desain rumah tahan banjir rob.</p>
-                        </div>
-                    </a>
+                <div class="relative z-10 mt-auto pt-4">
+                    <div class="tl-btn-base" style="background-color: rgba(255,255,255,0.05); color: #5a7a80; border: 1px solid rgba(255,255,255,0.08);">
+                        <span>Segera Hadir</span>
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    </div>
+</section>
 
-    <!-- Slide 2 -->
-    <div class="hero-slide" :class="current === 1 && 'active'">
-        <div class="absolute inset-0 gradient-hero z-10"></div>
-        <picture>
-            <source srcset="<?= base_url('assets/img/hero/hero-kawasan-permukiman.webp') ?>" type="image/webp">
-            <img src="<?= base_url('assets/img/hero/hero-kawasan-permukiman-opt.jpeg') ?>" alt="Panorama udara kawasan permukiman modern Jawa Tengah dengan latar pegunungan" loading="lazy">
-        </picture>
-        <div class="absolute inset-0 z-20 max-w-7xl mx-auto px-6 lg:px-8 flex flex-col justify-center">
-            <div class="max-w-2xl w-full" data-aos="fade-right" data-aos-duration="1000">
-                <div class="inline-flex items-center gap-2 bg-[#00a3b5]/8 border border-[#00a3b5]/20 backdrop-blur-sm px-4 py-1.5 rounded-full text-[11px] text-[#8aacb0] font-medium mb-6">
-                    <span class="w-1.5 h-1.5 rounded-full bg-[#d6fb00] animate-pulse"></span>
-                    Sistem Pemetaan RTLH & GIS Sektoral
-                </div>
-                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-5">
-                    Akurasi Data<br><span class="text-[#00a3b5]">Spasial</span> Permukiman
-                </h2>
-                <p class="text-slate-400 text-sm sm:text-base leading-relaxed max-w-lg mb-8">
-                    Perencanaan pembangunan tepat sasaran melalui integrasi data GIS terpadu di 35 Kabupaten/Kota se-Jawa Tengah.
-                </p>
-                <a href="#" class="inline-flex btn-cyan text-xs px-6 py-3.5 rounded-xl items-center gap-2">
-                    <i class="fa-solid fa-map-location-dot"></i> Buka Peta Sebaran
-                </a>
+<!-- ============================================================
+     SECTION 1.5: QUICK LINKS
+     ============================================================ -->
+<section class="w-full relative py-4 sm:py-8 overflow-hidden">
+    <!-- Batik Kawung background texture, subtle, faded at top/bottom edges -->
+    <div class="absolute inset-0 pointer-events-none z-0" style="opacity: 0.07; mask-image: linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 25%, black 75%, transparent 100%);">
+        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <pattern id="batik-quicklinks" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                    <circle cx="0" cy="0" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+                    <circle cx="100" cy="0" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+                    <circle cx="0" cy="100" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+                    <circle cx="100" cy="100" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+                    <line x1="-15" y1="0" x2="15" y2="0" stroke="#00545f" stroke-width="2"/>
+                    <line x1="0" y1="-15" x2="0" y2="15" stroke="#00545f" stroke-width="2"/>
+                    <circle cx="0" cy="0" r="4.5" fill="#d6fb00"/>
+                    <line x1="85" y1="0" x2="115" y2="0" stroke="#00545f" stroke-width="2"/>
+                    <line x1="100" y1="-15" x2="100" y2="15" stroke="#00545f" stroke-width="2"/>
+                    <circle cx="100" cy="0" r="4.5" fill="#d6fb00"/>
+                    <line x1="-15" y1="100" x2="15" y2="100" stroke="#00545f" stroke-width="2"/>
+                    <line x1="0" y1="85" x2="0" y2="115" stroke="#00545f" stroke-width="2"/>
+                    <circle cx="0" cy="100" r="4.5" fill="#d6fb00"/>
+                    <line x1="85" y1="100" x2="115" y2="100" stroke="#00545f" stroke-width="2"/>
+                    <line x1="100" y1="85" x2="100" y2="115" stroke="#00545f" stroke-width="2"/>
+                    <circle cx="100" cy="100" r="4.5" fill="#d6fb00"/>
+                    <polygon points="50,40 60,50 50,60 40,50" fill="none" stroke="#00a3b5" stroke-width="2"/>
+                    <circle cx="50" cy="50" r="2.5" fill="#ecffb6"/>
+                    <circle cx="50" cy="22" r="2" fill="#00a3b5"/>
+                    <circle cx="50" cy="78" r="2" fill="#00a3b5"/>
+                    <circle cx="22" cy="50" r="2" fill="#00a3b5"/>
+                    <circle cx="78" cy="50" r="2" fill="#00a3b5"/>
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#batik-quicklinks)" />
+        </svg>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+        <div class="text-center mb-10" data-aos="fade-down">
+            <div class="inline-flex items-center gap-2 bg-[#d6fb00]/8 border border-[#d6fb00]/20 px-3 py-1 rounded-full text-[11px] text-[#8aacb0] font-medium mb-4">
+                <i class="fa-solid fa-people-group text-[#d6fb00]"></i> Akses Cepat
             </div>
+            <h3 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Terhubung & <span class="text-[#d6fb00]">Berpartisipasi</span></h3>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+            <!-- Forum Diskusi -->
+            <a href="<?= base_url('umum/forum') ?>" class="group rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(0, 163, 181, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);" data-aos="fade-up" data-aos-delay="100">
+                <i class="fa-solid fa-comments absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 130px; right: -1rem; bottom: -1.5rem; color: #00a3b5; opacity: 0.06;"></i>
+                <div class="relative z-10">
+                    <i class="fa-solid fa-comments mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 34px; color: #00a3b5; filter: drop-shadow(0 0 12px rgba(0, 163, 181, 0.4));"></i>
+                    <h4 class="text-white font-bold text-xl mb-2 group-hover:text-[#00a3b5] transition-colors">Forum Diskusi</h4>
+                    <p class="text-zinc-500 text-sm leading-relaxed">Diskusi seputar perumahan bersama komunitas dan pemerintah.</p>
+                </div>
+                <div class="relative z-10 mt-auto pt-6">
+                    <div class="tl-btn-base tl-btn-cyan">
+                        <span>Buka Forum</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Aduan -->
+            <a href="<?= base_url('umum/aduan') ?>" class="group rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(255, 217, 61, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);" data-aos="fade-up" data-aos-delay="200">
+                <i class="fa-solid fa-circle-question absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 130px; right: -1rem; bottom: -1.5rem; color: #ffd93d; opacity: 0.06;"></i>
+                <div class="relative z-10">
+                    <i class="fa-solid fa-circle-question mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 34px; color: #ffd93d; filter: drop-shadow(0 0 12px rgba(255, 217, 61, 0.4));"></i>
+                    <h4 class="text-white font-bold text-xl mb-2 transition-colors">Aduan</h4>
+                    <p class="text-zinc-500 text-sm leading-relaxed">Sampaikan pertanyaan atau laporan seputar layanan perumahan.</p>
+                </div>
+                <div class="relative z-10 mt-auto pt-6">
+                    <div class="tl-btn-base" style="background-color: rgba(255,217,61,0.1); color: #ffd93d; border: 1px solid rgba(255,217,61,0.2);">
+                        <span>Kirim Aduan</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+
+            <!-- KKN dan Magang -->
+            <a href="<?= base_url('kemitraan') ?>" class="group rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(107, 203, 119, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);" data-aos="fade-up" data-aos-delay="300">
+                <i class="fa-solid fa-user-graduate absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 130px; right: -1rem; bottom: -1.5rem; color: #6bcb77; opacity: 0.06;"></i>
+                <div class="relative z-10">
+                    <i class="fa-solid fa-user-graduate mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 34px; color: #6bcb77; filter: drop-shadow(0 0 12px rgba(107, 203, 119, 0.4));"></i>
+                    <h4 class="text-white font-bold text-xl mb-2 group-hover:text-[#6bcb77] transition-colors">KKN dan Magang</h4>
+                    <p class="text-zinc-500 text-sm leading-relaxed">Program tematik untuk universitas dan mahasiswa.</p>
+                </div>
+                <div class="relative z-10 mt-auto pt-6">
+                    <div class="tl-btn-base tl-btn-green">
+                        <span>Info Selengkapnya</span>
+                        <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
+     SECTION 2.5: ETALASE PROGRAM
+     ============================================================ -->
+<section id="etalase-program" class="w-full py-20 sm:py-28 relative overflow-hidden" x-data="programEtalase()">
+    <!-- Dynamic Blurred Background — morphs (crossfade) to follow the active slide, subtle & seamless into adjacent sections -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none z-0" style="mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent); -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);">
+        <div class="absolute inset-0 transition-opacity duration-[1200ms] ease-in-out"
+             :style="'background-image: url(' + bgImages[0] + '); background-size: cover; background-position: center; filter: blur(8px); transform: scale(1.1); opacity: ' + (bgActiveLayer === 0 ? 0.18 : 0) + ';'"></div>
+        <div class="absolute inset-0 transition-opacity duration-[1200ms] ease-in-out"
+             :style="'background-image: url(' + bgImages[1] + '); background-size: cover; background-position: center; filter: blur(8px); transform: scale(1.1); opacity: ' + (bgActiveLayer === 1 ? 0.18 : 0) + ';'"></div>
+    </div>
+
+    <!-- Ambient glow -->
+    <div class="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-[#d6fb00]/5 rounded-full blur-[100px] pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
+        <div class="text-center max-w-2xl mx-auto mb-10" data-aos="fade-down">
+            <div class="inline-flex items-center gap-2 bg-[#d6fb00]/10 border border-[#d6fb00]/15 px-3 py-1 rounded-full text-[11px] text-[#d6fb00] font-semibold mb-6">
+                <i class="fa-solid fa-house-chimney-window"></i> Etalase Program
+            </div>
+            <h3 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-[1.1] mb-5">
+                Pilih Program Sesuai <span class="text-[#d6fb00]">Kebutuhan</span>
+            </h3>
+            <p class="text-slate-400 text-sm leading-relaxed">
+                Temukan berbagai skema bantuan perumahan dan kawasan permukiman dari Pemerintah Provinsi Jawa Tengah. Geser untuk menjelajah detail dan prasyarat tiap program.
+            </p>
+        </div>
+
+        <!-- Program Carousel (Banner Slideshow, infinite loop, draggable, parallax) -->
+        <div class="relative">
+            <!-- Prev/Next — sit on the card edges, 50% overlap -->
+            <button @click="stopAutoplay(); prev()" class="absolute top-1/2 -translate-y-1/2 -left-5 md:-left-6 z-20 w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[#0f2a30] border border-[#d6fb00]/30 hover:border-[#d6fb00]/60 text-[#8aacb0] hover:text-white flex items-center justify-center transition-all shadow-lg shadow-black/30"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+            <button @click="stopAutoplay(); next()" class="absolute top-1/2 -translate-y-1/2 -right-5 md:-right-6 z-20 w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[#0f2a30] border border-[#d6fb00]/30 hover:border-[#d6fb00]/60 text-[#8aacb0] hover:text-white flex items-center justify-center transition-all shadow-lg shadow-black/30"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+
+            <div class="overflow-hidden rounded-3xl">
+                <div id="etalase-container"
+                     class="flex select-none cursor-grab active:cursor-grabbing"
+                     :class="(isDragging || noTransition) ? '' : 'transition-transform duration-500 ease-out'"
+                     :style="'transform: translateX(calc(-' + (current * 100) + '% + ' + dragDeltaX + 'px));'"
+                     @mousedown="onDragStart($event)"
+                     @mousemove="onDragMove($event)"
+                     @mouseup="onDragEnd()"
+                     @mouseleave="onDragEnd()"
+                     @touchstart="onDragStart($event)"
+                     @touchmove="onDragMove($event)"
+                     @touchend="onDragEnd()"
+                     @transitionend="onTrackTransitionEnd($event)">
+                    <template x-for="(id, idx) in slides" :key="idx + '-' + id">
+                    <div class="w-full shrink-0 px-2">
+                        <div class="relative rounded-3xl overflow-hidden flex flex-col md:flex-row border border-white/10 h-full"
+                             :style="'background-color: var(--bg-card); transition: transform 0.5s ease-out, opacity 0.5s ease-out; transform: scale(' + (idx === current ? 1 : 0.85) + ') translateY(' + (idx === current ? 0 : 16) + 'px); opacity: ' + (idx === current ? 1 : 0.45) + '; z-index: ' + (idx === current ? 10 : 1) + ';'">
+                            <!-- Batik halftone texture, fading right to left, subtle -->
+                            <svg class="absolute inset-0 w-full h-full pointer-events-none" style="opacity: 0.07; mask-image: linear-gradient(to left, black, transparent); -webkit-mask-image: linear-gradient(to left, black, transparent);" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <pattern :id="'batik-etalase-' + idx" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+                                        <circle cx="0" cy="0" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+                                        <circle cx="100" cy="0" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+                                        <circle cx="0" cy="100" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+                                        <circle cx="100" cy="100" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
+                                        <line x1="-15" y1="0" x2="15" y2="0" stroke="#00545f" stroke-width="2"/>
+                                        <line x1="0" y1="-15" x2="0" y2="15" stroke="#00545f" stroke-width="2"/>
+                                        <circle cx="0" cy="0" r="4.5" fill="#d6fb00"/>
+                                        <line x1="85" y1="0" x2="115" y2="0" stroke="#00545f" stroke-width="2"/>
+                                        <line x1="100" y1="-15" x2="100" y2="15" stroke="#00545f" stroke-width="2"/>
+                                        <circle cx="100" cy="0" r="4.5" fill="#d6fb00"/>
+                                        <line x1="-15" y1="100" x2="15" y2="100" stroke="#00545f" stroke-width="2"/>
+                                        <line x1="0" y1="85" x2="0" y2="115" stroke="#00545f" stroke-width="2"/>
+                                        <circle cx="0" cy="100" r="4.5" fill="#d6fb00"/>
+                                        <line x1="85" y1="100" x2="115" y2="100" stroke="#00545f" stroke-width="2"/>
+                                        <line x1="100" y1="85" x2="100" y2="115" stroke="#00545f" stroke-width="2"/>
+                                        <circle cx="100" cy="100" r="4.5" fill="#d6fb00"/>
+                                        <polygon points="50,40 60,50 50,60 40,50" fill="none" stroke="#00a3b5" stroke-width="2"/>
+                                        <circle cx="50" cy="50" r="2.5" fill="#ecffb6"/>
+                                        <circle cx="50" cy="22" r="2" fill="#00a3b5"/>
+                                        <circle cx="50" cy="78" r="2" fill="#00a3b5"/>
+                                        <circle cx="22" cy="50" r="2" fill="#00a3b5"/>
+                                        <circle cx="78" cy="50" r="2" fill="#00a3b5"/>
+                                    </pattern>
+                                </defs>
+                                <rect width="100%" height="100%" :fill="'url(#batik-etalase-' + idx + ')'" />
+                            </svg>
+                            <!-- Image -->
+                            <div class="relative w-full md:w-5/12 h-48 md:h-auto shrink-0 overflow-hidden">
+                                <img :src="programs[id].image" :alt="programs[id].title" class="absolute inset-0 w-full h-full object-cover" :style="'transform: translateX(' + (dragDeltaX * 0.15) + 'px) scale(1.1);'" draggable="false">
+                                <div class="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-l from-[#0f2a30] via-transparent to-transparent"></div>
+                            </div>
+                            <!-- Content -->
+                            <div class="relative p-6 sm:p-8 flex-1 flex flex-col justify-center">
+                                <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10 text-[10px] font-bold tracking-widest uppercase mb-3 text-white w-max">
+                                    <span class="w-2 h-2 rounded-full" :style="'background-color: ' + programs[id].dotColor"></span>
+                                    <span x-text="programs[id].badge"></span>
+                                </div>
+                                <h3 class="text-2xl sm:text-3xl font-bold text-white leading-tight mb-4" x-html="programs[id].title"></h3>
+
+                                <div class="mb-4">
+                                    <h4 class="text-xs font-bold text-[#8aacb0] uppercase tracking-widest mb-1.5"><i class="fa-solid fa-book-open mr-1"></i> Definisi Operasional</h4>
+                                    <p class="text-zinc-300 text-sm leading-relaxed" x-text="programs[id].definition"></p>
+                                </div>
+
+                                <div class="mb-4">
+                                    <h4 class="text-xs font-bold text-[#8aacb0] uppercase tracking-widest mb-1.5"><i class="fa-solid fa-list-check mr-1"></i> Syarat & Ketentuan</h4>
+                                    <p class="text-zinc-300 text-sm leading-relaxed" x-text="programs[id].terms"></p>
+
+                                    <template x-if="programs[id].options">
+                                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                            <template x-for="(opt, idx) in programs[id].options" :key="idx">
+                                                <div class="bg-[#0a1a1f]/50 rounded-xl p-3 border border-white/10">
+                                                    <div class="flex items-center gap-2 mb-1.5">
+                                                        <i class="fa-solid text-[#d6fb00] text-xs" :class="opt.icon || 'fa-house-chimney'"></i>
+                                                        <h5 class="text-white font-bold text-xs leading-tight" x-text="opt.name"></h5>
+                                                    </div>
+                                                    <p class="text-zinc-400 text-[11px] leading-relaxed" x-text="opt.desc"></p>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+
+                                <div class="mb-6">
+                                    <div class="inline-flex bg-[#163a42] border border-[#1d4d58] rounded-xl px-4 py-2.5 text-sm text-emerald-400 font-semibold items-center gap-2">
+                                        <i class="fa-solid fa-wallet text-emerald-500"></i>
+                                        <span x-text="programs[id].budget"></span>
+                                    </div>
+                                </div>
+
+                                <a :href="'<?= base_url('Program/diagnosa/') ?>' + id" class="inline-flex px-5 py-2.5 rounded-xl text-sm font-semibold bg-white text-[#0a1a1f] hover:bg-zinc-200 transition-colors items-center gap-2 w-max">
+                                    Cek Kelayakan NIK <i class="fa-solid fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dot Indicators -->
+        <div class="flex items-center justify-center gap-1.5 mt-6" data-aos="zoom-in" data-aos-delay="300">
+            <template x-for="i in total" :key="i">
+                <button @click="stopAutoplay(); goTo(i-1)" class="w-1.5 h-1.5 rounded-full transition-all duration-300" :class="activeDot === i-1 ? 'w-5 bg-[#d6fb00]' : 'bg-[#d6fb00]/12 hover:bg-[#d6fb00]/25'"></button>
+            </template>
+        </div>
+
+        <!-- Instruction Indicator -->
+        <div class="mt-4 w-full flex items-center justify-center gap-3 text-zinc-400 text-xs font-medium">
+            <i class="fa-solid fa-hand-pointer text-[#d6fb00]"></i>
+            Geser untuk menjelajah program lainnya
         </div>
     </div>
 
-    <!-- Slide 3 -->
-    <div class="hero-slide" :class="current === 2 && 'active'">
-        <div class="absolute inset-0 gradient-hero z-10"></div>
-        <picture>
-            <source srcset="<?= base_url('assets/img/hero/hero-sertifikasi-lahan.webp') ?>" type="image/webp">
-            <img src="<?= base_url('assets/img/hero/hero-sertifikasi-lahan-opt.jpeg') ?>" alt="Hamparan lahan dan permukiman di Jawa Tengah" loading="lazy">
-        </picture>
-        <div class="absolute inset-0 z-20 max-w-7xl mx-auto px-6 lg:px-8 flex flex-col justify-center">
-            <div class="max-w-2xl w-full" data-aos="fade-right" data-aos-duration="1000">
-                <div class="inline-flex items-center gap-2 bg-[#f59e0b]/8 border border-[#f59e0b]/20 backdrop-blur-sm px-4 py-1.5 rounded-full text-[11px] text-[#8aacb0] font-medium mb-6">
-                    <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                    Sertifikasi & Legalitas Lahan (Akan Hadir)
-                </div>
-                <h2 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white mb-5">
-                    Kepastian <span class="text-amber-400">Legalitas</span><br>Tanah Anda
-                </h2>
-                <p class="text-slate-400 text-sm sm:text-base leading-relaxed max-w-lg mb-8">
-                    Fasilitasi penyelesaian sengketa, informasi sertifikasi lahan, dan pemetaan aset tanah untuk hunian yang aman di Jawa Tengah.
-                </p>
-                <a href="#" class="inline-flex bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 text-amber-400 transition-colors text-xs px-6 py-3.5 rounded-xl items-center gap-2 cursor-not-allowed">
-                    <i class="fa-solid fa-lock"></i> Info Pertanahan
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Stats Capsule Bar -->
-    <div class="absolute bottom-0 left-0 right-0 z-30">
-        <div class="max-w-7xl mx-auto px-6 lg:px-8 pb-6">
-            <!-- Slide Indicators -->
-            <div class="flex items-center gap-2 mb-5">
-                <template x-for="i in 3" :key="i">
-                    <button @click="goTo(i-1)" class="h-1 rounded-full transition-all duration-500" :class="current === i-1 ? 'w-8 bg-brand' : 'w-2 bg-brand-muted'"></button>
-                </template>
-                <span class="text-[10px] text-zinc-500 ml-2 font-mono" x-text="'0' + (current+1) + ' / 03'"></span>
-            </div>
-            <!-- Stat Capsules -->
-            <div class="hidden sm:flex flex-wrap items-center gap-3">
-                <div class="stat-capsule" data-aos="zoom-in" data-aos-delay="600">
-                    <div class="stat-icon bg-[#d6fb00]/10 text-[#d6fb00]"><i class="fa-solid fa-house"></i></div>
-                    <span class="text-white font-bold">209K+</span>
-                    <span class="text-zinc-500 text-xs">Unit</span>
-                </div>
-                <div class="stat-capsule" data-aos="zoom-in" data-aos-delay="700">
-                    <div class="stat-icon bg-[#6bcb77]/10 text-[#6bcb77]"><i class="fa-solid fa-certificate"></i></div>
-                    <span class="text-white font-bold">58.6K+</span>
-                    <span class="text-zinc-500 text-xs">Subsidi</span>
-                </div>
-                <div class="stat-capsule" data-aos="zoom-in" data-aos-delay="800">
-                    <div class="stat-icon bg-[#00a3b5]/10 text-[#00a3b5]"><i class="fa-solid fa-location-crosshairs"></i></div>
-                    <span class="text-white font-bold">2.7K+</span>
-                    <span class="text-zinc-500 text-xs">Lokasi</span>
-                </div>
-                <div class="stat-capsule" data-aos="zoom-in" data-aos-delay="900">
-                    <div class="stat-icon bg-[#f59e0b]/10 text-[#f59e0b]"><i class="fa-solid fa-map"></i></div>
-                    <span class="text-white font-bold">35</span>
-                    <span class="text-zinc-500 text-xs">Kab/Kota</span>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Alpine.js Logic -->
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('programEtalase', () => ({
+                programOrder: ['flpp', 'oemah_lestari', 'rtlh', 'pb', 'rumah_apung'],
+                current: 1,
+                total: 5,
+                isDragging: false,
+                noTransition: false,
+                dragStartX: 0,
+                dragDeltaX: 0,
+                autoplayTimer: null,
+                get slides() {
+                    return [this.programOrder[this.total - 1], ...this.programOrder, this.programOrder[0]];
+                },
+                get activeDot() {
+                    if (this.current === 0) return this.total - 1;
+                    if (this.current === this.slides.length - 1) return 0;
+                    return this.current - 1;
+                },
+                get currentProgramId() {
+                    if (this.current === 0) return this.programOrder[this.total - 1];
+                    if (this.current === this.slides.length - 1) return this.programOrder[0];
+                    return this.programOrder[this.current - 1];
+                },
+                loopTimer: null,
+                bgImages: ['', ''],
+                bgActiveLayer: 0,
+                init() {
+                    this.autoplayTimer = setInterval(() => this.next(), 7000);
+                    this.bgImages[0] = this.programs[this.currentProgramId].image;
+                    this.$watch('currentProgramId', (id) => {
+                        const nextLayer = this.bgActiveLayer === 0 ? 1 : 0;
+                        this.bgImages[nextLayer] = this.programs[id].image;
+                        this.bgActiveLayer = nextLayer;
+                    });
+                },
+                next() { this.current++; this.scheduleLoopCheck(); },
+                prev() { this.current--; this.scheduleLoopCheck(); },
+                checkLoopBoundary() {
+                    clearTimeout(this.loopTimer);
+                    if (this.current >= this.slides.length - 1) {
+                        this.noTransition = true;
+                        this.current = 1;
+                        this.$nextTick(() => { this.noTransition = false; });
+                    } else if (this.current <= 0) {
+                        this.noTransition = true;
+                        this.current = this.total;
+                        this.$nextTick(() => { this.noTransition = false; });
+                    }
+                },
+                scheduleLoopCheck() {
+                    clearTimeout(this.loopTimer);
+                    this.loopTimer = setTimeout(() => this.checkLoopBoundary(), 600);
+                },
+                onTrackTransitionEnd(e) {
+                    if (e.target !== e.currentTarget) return;
+                    this.checkLoopBoundary();
+                },
+                goTo(i) { this.current = i + 1; },
+                stopAutoplay() { clearInterval(this.autoplayTimer); },
+                onDragStart(e) {
+                    this.isDragging = true;
+                    this.dragStartX = (e.touches ? e.touches[0].clientX : e.clientX);
+                    this.dragDeltaX = 0;
+                    this.stopAutoplay();
+                },
+                onDragMove(e) {
+                    if (!this.isDragging) return;
+                    const x = (e.touches ? e.touches[0].clientX : e.clientX);
+                    this.dragDeltaX = x - this.dragStartX;
+                },
+                onDragEnd() {
+                    if (!this.isDragging) return;
+                    this.isDragging = false;
+                    const track = document.getElementById('etalase-container');
+                    const width = track ? track.offsetWidth : 300;
+                    const threshold = width * 0.12;
+                    if (this.dragDeltaX < -threshold) this.next();
+                    else if (this.dragDeltaX > threshold) this.prev();
+                    this.dragDeltaX = 0;
+                },
+                programs: {
+                    'flpp': {
+                        title: 'KPR-FLPP<br>Rumah Subsidi',
+                        badge: 'MBR Fixed Income',
+                        dotColor: '#00a3b5',
+                        colorFrom: '#0f4c5c',
+                        colorTo: '#062b35',
+                        definition: 'Skema pembiayaan perumahan subsidi bagi Masyarakat Berpenghasilan Rendah (MBR).',
+                        terms: 'Bunga flat tetap sebesar 5% sepanjang tenor, Uang Muka (DP) sangat ringan mulai 1%, dengan pilihan tenor (jangka waktu angsuran) panjang hingga 20 tahun. Batas penghasilan maksimal Rp 8 Juta / bulan.',
+                        budget: 'APBN (Kuota Nasional)',
+                        image: '<?= base_url('assets/img/program/01_subsidif_lpp.avif') ?>'
+                    },
+                    'oemah_lestari': {
+                        title: 'Oemah<br>Lestari',
+                        badge: 'MBR & Umum',
+                        dotColor: '#6bcb77',
+                        colorFrom: '#1b4332',
+                        colorTo: '#0d2818',
+                        definition: 'Program fasilitas pembiayaan rumah murah bagi MBR (Masyarakat Berpenghasilan Rendah) dengan skema kredit bunga ringan (8% flat) dengan tenor panjang hingga 15 tahun serta memenuhi kaidah "Bangunan Hijau" sebagai amanat SDG serta berkolaborasi dengan "BPR-BRK".',
+                        terms: 'Skema kredit kolaborasi pembiayaan BPR-BRK dengan bunga ringan (8% flat), tenor penyicilan maksimal hingga 15 tahun.',
+                        budget: 'Kolaborasi BPR-BRK',
+                        image: '<?= base_url('assets/img/program/02_oemahletari.avif') ?>'
+                    },
+                    'rtlh': {
+                        title: 'Peningkatan<br>Kualitas RTLH',
+                        badge: 'Miskin & Ekstrem',
+                        dotColor: '#f59e0b',
+                        colorFrom: '#4a154b',
+                        colorTo: '#290a2a',
+                        definition: 'Program perbaikan atau renovasi rumah bagi masyarakat miskin yang rumahnya masuk kategori tidak layak.',
+                        terms: 'Penerima harus terdaftar dalam DTKS. Dinyatakan rusak jika memenuhi 2 dari 3 unsur (Atap, Lantai, Dinding). Dieksekusi secara swadaya padat karya oleh warga lokal.',
+                        budget: 'Bankeupemdes (Rp 20 Juta / Penerima)',
+                        image: '<?= base_url('assets/img/program/03_rtlh.avif') ?>'
+                    },
+                    'pb': {
+                        title: 'Stimulan<br>Pembangunan Baru',
+                        badge: 'Bencana & Relokasi',
+                        dotColor: '#d6fb00',
+                        colorFrom: '#4d5c00',
+                        colorTo: '#262e00',
+                        definition: 'Bantuan stimulan material bangunan senilai Rp 40 Juta untuk pembangunan rumah baru.',
+                        terms: 'Terbagi dalam 3 skema penanganan strategis:',
+                        options: [
+                            { name: 'PB Backlog', icon: 'fa-users-line', desc: 'Khusus bagi warga MBR yang masih menumpang (>1 KK dalam satu rumah) atau menyewa, namun sudah memiliki lahan/tanah hak milik pribadi yang sah dan siap bangun.' },
+                            { name: 'PB Relokasi', icon: 'fa-truck-fast', desc: 'Bantuan struktur pracetak RUSPIN (Rumah Unggul Sistem Panel Instan). Dikhususkan bagi warga yang tinggal di kawasan kumuh berat atau rawan bencana alam yang direlokasi ke lahan baru yang aman.' },
+                            { name: 'PB Bencana', icon: 'fa-house-crack', desc: 'Bantuan material pembangunan rumah baru bagi warga yang rumah asalnya mengalami kerusakan kategori berat atau roboh total diakibatkan oleh kejadian bencana alam tak terduga.' }
+                        ],
+                        budget: 'Bansos Pemprov Jawa Tengah',
+                        image: '<?= base_url('assets/img/program/04_Bantuan.avif') ?>'
+                    },
+                    'rumah_apung': {
+                        title: 'Program<br>Rumah Apung',
+                        badge: 'Kawasan Pesisir',
+                        dotColor: '#60a5fa',
+                        colorFrom: '#003049',
+                        colorTo: '#00121c',
+                        definition: 'Program inovasi desain pembangunan rumah adaptif untuk bertahan dari genangan air.',
+                        terms: 'Merupakan solusi NO ONE LEFT BEHIND bagi masyarakat pesisir terdampak rob permanen dan penurunan muka tanah ekstrem (180-300cm). Target utama: Demak.',
+                        budget: 'Bantuan Khusus (Pilot Project)',
+                        image: '<?= base_url('assets/img/program/05_areakumuh.avif') ?>'
+                    }
+                }
+            }));
+        });
+    </script>
 </section>
 
 <!-- ============================================================
@@ -401,7 +641,7 @@
             </div>
             <!-- Right: Visual Cards -->
 
-            
+
             <div class="space-y-4">
                 <!-- Card 1: Informasi -->
                 <div class="group relative bg-[#d6fb00]/5 border border-[#d6fb00]/20 rounded-2xl p-5 hover:bg-[#d6fb00]/10 transition-all duration-300 flex items-start gap-4" data-aos="fade-up" data-aos-delay="100">
@@ -465,380 +705,6 @@
         <!-- CSS Gradient Mask to smoothly fade the top and bottom edges into the body background -->
         <div class="absolute inset-0 bg-gradient-to-b from-[#0a1a1f] via-transparent via-50% to-[#0a1a1f] pointer-events-none z-10"></div>
     </div>
-</section>
-
-<!-- ============================================================
-     SECTION 2.5: ETALASE PROGRAM
-     ============================================================ -->
-<section id="etalase-program" class="w-full py-20 sm:py-28 relative overflow-hidden" x-data="programEtalase()" @open-modal.window="openModal($event.detail)">
-    <!-- Ambient glow -->
-    <div class="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-[#d6fb00]/5 rounded-full blur-[100px] pointer-events-none"></div>
-
-    <div class="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-            
-            <!-- Left Side Grid (Ticket Style) -->
-            <div class="lg:col-span-7 order-2 lg:order-1 relative">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                    
-                    <!-- Ticket 1: KPR-FLPP -->
-                    <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="100">
-                        <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                        <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'flpp' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
-                            <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
-                            <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
-                                <i class="fa-solid fa-building-columns text-3xl text-[#00a3b5] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(0,163,181,0.5)]"></i>
-                            </div>
-                            <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
-                                <div class="text-[9px] font-bold tracking-widest text-[#00a3b5] uppercase mb-1">MBR Fixed Income</div>
-                                <h4 class="text-white font-bold text-base mb-1.5 leading-tight">KPR-FLPP</h4>
-                                <p class="text-white/80 text-xs leading-relaxed line-clamp-2">Bunga flat 5% & cicilan ringan hingga 20 tahun.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Ticket 2: Oemah Lestari -->
-                    <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="200">
-                        <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                        <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'oemah_lestari' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
-                            <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
-                            <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
-                                <i class="fa-solid fa-leaf text-3xl text-[#6bcb77] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(107,203,119,0.5)]"></i>
-                            </div>
-                            <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
-                                <div class="text-[9px] font-bold tracking-widest text-[#6bcb77] uppercase mb-1">MBR & Umum</div>
-                                <h4 class="text-white font-bold text-base mb-1.5 leading-tight">Oemah Lestari</h4>
-                                <p class="text-white/80 text-xs leading-relaxed line-clamp-2">Fasilitas pembiayaan rumah murah skema kredit bunga ringan.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Ticket 3: Peningkatan RTLH -->
-                    <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="300">
-                        <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                        <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'rtlh' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
-                            <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
-                            <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
-                                <i class="fa-solid fa-hammer text-3xl text-[#f59e0b] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]"></i>
-                            </div>
-                            <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
-                                <div class="text-[9px] font-bold tracking-widest text-[#f59e0b] uppercase mb-1">Miskin & Ekstrem</div>
-                                <h4 class="text-white font-bold text-base mb-1.5 leading-tight">Peningkatan RTLH</h4>
-                                <p class="text-white/80 text-xs leading-relaxed line-clamp-2">Bantuan perbaikan rumah via Bankeupemdes Rp 20 Juta.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Ticket 4: Stimulan PB -->
-                    <div class="ticket-wrapper relative group transition-shadow duration-300" data-aos="slide-up" data-aos-delay="400">
-                        <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                        <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'pb' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
-                            <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
-                            <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
-                                <i class="fa-solid fa-trowel-bricks text-3xl text-[#d6fb00] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(214,251,0,0.5)]"></i>
-                            </div>
-                            <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
-                                <div class="text-[9px] font-bold tracking-widest text-[#d6fb00] uppercase mb-1">Bencana & Relokasi</div>
-                                <h4 class="text-white font-bold text-base mb-1.5 leading-tight">Stimulan PB</h4>
-                                <p class="text-white/80 text-xs leading-relaxed line-clamp-2">Bantuan material Rp 40 Juta untuk relokasi dan korban bencana.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Ticket 5: Program Rumah Apung -->
-                    <div class="ticket-wrapper relative group transition-shadow duration-300 sm:col-span-2 md:col-span-1 xl:col-span-2" data-aos="slide-up" data-aos-delay="500">
-                        <div class="absolute inset-0 bg-transparent rounded-2xl shadow-[0_10px_30px_0_rgba(0,0,0,0.4)] group-hover:shadow-[0_15px_35px_0_rgba(0,0,0,0.5)] transition-shadow duration-300 pointer-events-none z-0"></div>
-                        <div onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'rumah_apung' }))" class="ticket-base ticket-mask relative flex cursor-pointer min-h-[110px] z-10">
-                            <div class="absolute inset-0 ticket-border pointer-events-none transition-colors duration-300 z-10"></div>
-                            <div class="relative z-20 w-20 shrink-0 flex items-center justify-center border-r border-dashed border-white/40">
-                                <i class="fa-solid fa-water text-3xl text-[#00a3b5] group-hover:scale-110 group-hover:-rotate-3 transition-transform drop-shadow-[0_0_10px_rgba(0,163,181,0.5)]"></i>
-                            </div>
-                            <div class="relative z-20 p-4 flex-1 flex flex-col justify-center">
-                                <div class="text-[9px] font-bold tracking-widest text-[#00a3b5] uppercase mb-1">Kawasan Pesisir</div>
-                                <h4 class="text-white font-bold text-base mb-1.5 leading-tight">Program Rumah Apung</h4>
-                                <p class="text-white/80 text-xs leading-relaxed line-clamp-2">Inovasi desain rumah tahan banjir rob untuk pesisir (Timbulsloko).</p>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-                
-                <!-- Instruction Indicator -->
-                <div class="mt-6 w-full flex items-center justify-center gap-4 text-zinc-300 text-sm font-medium" data-aos="fade-up" data-aos-delay="600">
-                    <div class="relative w-12 h-12 shrink-0 bg-white/5 rounded-full flex items-center justify-center overflow-hidden border border-white/10">
-                        <i class="fa-solid fa-ticket text-white animate-pulse relative z-10"></i>
-                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[#d6fb00]/20 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
-                    </div>
-                    Pilih tiket untuk membaca detail dan prasyarat program selengkapnya
-                </div>
-            </div>
-
-            <!-- Right Copy -->
-            <div class="lg:col-span-5 flex flex-col justify-center order-1 lg:order-2 xl:pl-12" data-aos="fade-left">
-                <div class="inline-flex items-center gap-2 bg-[#d6fb00]/10 border border-[#d6fb00]/15 px-3 py-1 rounded-full text-[11px] text-[#d6fb00] font-semibold mb-6 w-max">
-                    <i class="fa-solid fa-house-chimney-window"></i> Etalase Program
-                </div>
-                <h3 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-[1.1] mb-5">
-                    Pilih Program<br>Sesuai <span class="text-[#d6fb00]">Kebutuhan</span>
-                </h3>
-                <p class="text-slate-400 text-sm leading-relaxed mb-8">
-                    Temukan berbagai skema bantuan perumahan dan kawasan permukiman dari Pemerintah Provinsi Jawa Tengah. Klik pada tiket program untuk melihat detail dan prasyaratnya.
-                </p>
-
-                <!-- Cek NIK Form -->
-                <div class="w-full" data-aos="fade-up" data-aos-delay="400">
-                    <label class="block text-xs font-bold text-[#8aacb0] uppercase tracking-widest mb-3">Cek Kelayakan Penerima Program</label>
-                    <form action="<?= base_url('Program/diagnosa/umum') ?>" method="GET" class="relative flex items-center w-full">
-                        <div class="absolute left-4 text-[#8aacb0]">
-                            <i class="fa-solid fa-id-card"></i>
-                        </div>
-                        <input type="text" name="nik" placeholder="Masukkan NIK KTP (16 Digit)..." class="w-full bg-[#d6fb00]/5 border border-[#d6fb00]/20 rounded-xl py-3.5 pl-11 pr-[110px] text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-[#d6fb00]/50 focus:bg-[#d6fb00]/10 transition-colors" required minlength="16" maxlength="16" pattern="[0-9]{16}" title="Masukkan 16 digit NIK yang valid" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                        <button type="submit" class="absolute right-1.5 top-1.5 bottom-1.5 px-4 bg-[#d6fb00] hover:bg-white text-[#0a1a1f] font-bold text-xs rounded-lg transition-colors flex items-center gap-2 shadow-[0_0_15px_rgba(214,251,0,0.2)] hover:shadow-[0_0_20px_rgba(255,255,255,0.4)]">
-                            Cek NIK <i class="fa-solid fa-arrow-right"></i>
-                        </button>
-                    </form>
-
-                    <!-- Skenario NIK -->
-                    <div class="mt-4 bg-[#d6fb00]/5 border border-[#d6fb00]/20 rounded-xl p-3 relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 p-2 opacity-10"><i class="fa-solid fa-vial text-3xl"></i></div>
-                        <p class="text-[11px] text-[#8aacb0] mb-2"><i class="fa-solid fa-flask"></i> <strong>Skenario Simulasi:</strong> Klik angka untuk menyalin</p>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-white/80">
-                            <div class="bg-black/20 rounded-lg p-2 border border-white/5 hover:border-[#d6fb00]/30 transition-colors">
-                                <button type="button" onclick="document.querySelector('input[name=\'nik\']').value='3329000000000001'" class="font-mono text-[#d6fb00] hover:text-white font-bold mb-0.5 transition-colors">3329000000000001</button>
-                                <p class="text-[10px] text-zinc-400 leading-tight">Data Lengkap (Kalkulator terisi)</p>
-                            </div>
-                            <div class="bg-black/20 rounded-lg p-2 border border-white/5 hover:border-[#d6fb00]/30 transition-colors">
-                                <button type="button" onclick="document.querySelector('input[name=\'nik\']').value='3329000000000002'" class="font-mono text-[#d6fb00] hover:text-white font-bold mb-0.5 transition-colors">3329000000000002</button>
-                                <p class="text-[10px] text-zinc-400 leading-tight">Hanya Data Diri (Isi manual)</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Alpine.js -->
-    <template x-teleport="body">
-        <div x-show="isModalOpen" class="relative z-[100]" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <!-- Backdrop -->
-            <div x-show="isModalOpen"
-                 x-transition:enter="ease-out duration-300"
-                 x-transition:enter-start="opacity-0"
-                 x-transition:enter-end="opacity-100"
-                 x-transition:leave="ease-in duration-200"
-                 x-transition:leave-start="opacity-100"
-                 x-transition:leave-end="opacity-0"
-                 class="fixed inset-0 bg-[#0a1a1f]/90 backdrop-blur-sm transition-opacity"
-                 @click="closeModal()"></div>
-
-            <!-- Modal Panel Container -->
-            <div class="fixed inset-0 z-10 w-screen overflow-y-auto" data-lenis-prevent>
-                <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-                    <div x-show="isModalOpen"
-                         x-transition:enter="ease-out duration-300"
-                         x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                         x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-                         x-transition:leave="ease-in duration-200"
-                         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-                         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                         class="relative transform overflow-hidden rounded-3xl bg-[#0f2a30] text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-6xl xl:max-w-7xl border border-white/10"
-                         @click.stop>
-                        
-                        <!-- Close Button -->
-                        <button @click="closeModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 text-white hover:bg-white hover:text-black transition-colors z-30">
-                            <i class="fa-solid fa-xmark"></i>
-                        </button>
-
-                        <style>
-                            .modal-image-mask {
-                                -webkit-mask-image: linear-gradient(to top, transparent 0%, black 50%);
-                                mask-image: linear-gradient(to top, transparent 0%, black 50%);
-                            }
-                            @media (min-width: 768px) {
-                                .modal-image-mask {
-                                    -webkit-mask-image: linear-gradient(to left, transparent 0%, black 40%);
-                                    mask-image: linear-gradient(to left, transparent 0%, black 40%);
-                                }
-                            }
-                        </style>
-                        <template x-if="activeId && programs[activeId]">
-                            <div class="flex flex-col md:flex-row w-full h-full">
-                                <!-- Modal Left Image Banner -->
-                                <div class="relative aspect-square w-full md:w-5/12 shrink-0 overflow-hidden">
-                                    
-                                    <img :src="programs[activeId].image" alt="Program Image" class="absolute inset-0 w-full h-full object-cover modal-image-mask">
-                                    
-                                    <!-- Title on mobile only (overlay on image) -->
-                                    <div class="absolute bottom-6 left-6 z-20 md:hidden">
-                                        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/10 rounded-lg border border-white/10 backdrop-blur-md text-[10px] font-bold tracking-widest uppercase mb-3 text-white">
-                                            <span class="w-2 h-2 rounded-full" :style="'background-color: ' + programs[activeId].dotColor"></span>
-                                            <span x-text="programs[activeId].badge"></span>
-                                        </div>
-                                        <h3 class="text-3xl font-bold text-white leading-tight" x-html="programs[activeId].title"></h3>
-                                    </div>
-                                </div>
-
-                                <!-- Modal Right Content -->
-                                <div class="p-6 sm:p-8 flex-1 flex flex-col justify-center">
-                                    <!-- Header text for desktop -->
-                                    <div class="hidden md:block mb-6">
-                                        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10 text-[10px] font-bold tracking-widest uppercase mb-3 text-white">
-                                            <span class="w-2 h-2 rounded-full" :style="'background-color: ' + programs[activeId].dotColor"></span>
-                                            <span x-text="programs[activeId].badge"></span>
-                                        </div>
-                                        <h3 class="text-3xl font-bold text-white leading-tight" x-html="programs[activeId].title"></h3>
-                                    </div>
-                                    <!-- Definition -->
-                                    <div class="mb-6">
-                                        <h4 class="text-xs font-bold text-[#8aacb0] uppercase tracking-widest mb-2"><i class="fa-solid fa-book-open mr-1"></i> Definisi Operasional</h4>
-                                        <p class="text-zinc-300 text-sm leading-relaxed" x-text="programs[activeId].definition"></p>
-                                    </div>
-
-                                    <!-- Terms -->
-                                    <div class="mb-6">
-                                        <h4 class="text-xs font-bold text-[#8aacb0] uppercase tracking-widest mb-2"><i class="fa-solid fa-list-check mr-1"></i> Syarat & Ketentuan</h4>
-                                        <p class="text-zinc-300 text-sm leading-relaxed" x-text="programs[activeId].terms"></p>
-                                        
-                                        <template x-if="programs[activeId].options">
-                                            <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                                <template x-for="(opt, idx) in programs[activeId].options" :key="idx">
-                                                    <div class="bg-[#0a1a1f]/50 rounded-xl p-4 border border-white/10 hover:border-[#d6fb00]/30 hover:bg-[#d6fb00]/5 transition-all group flex flex-col h-full">
-                                                        <div class="flex items-center gap-3 mb-3">
-                                                            <div class="w-8 h-8 shrink-0 rounded-lg bg-[#d6fb00]/10 text-[#d6fb00] group-hover:bg-[#d6fb00] group-hover:text-[#0a1a1f] flex items-center justify-center text-sm transition-colors">
-                                                                <i class="fa-solid" :class="opt.icon || 'fa-house-chimney'"></i>
-                                                            </div>
-                                                            <h5 class="text-white font-bold text-sm leading-tight" x-text="opt.name"></h5>
-                                                        </div>
-                                                        <p class="text-zinc-400 text-xs leading-relaxed flex-1" x-text="opt.desc"></p>
-                                                    </div>
-                                                </template>
-                                            </div>
-                                        </template>
-                                    </div>
-
-                                    <!-- Budget/Source -->
-                                    <div class="mb-8">
-                                        <h4 class="text-xs font-bold text-[#8aacb0] uppercase tracking-widest mb-2"><i class="fa-solid fa-coins mr-1"></i> Sumber Anggaran / Pembiayaan</h4>
-                                        <div class="inline-flex bg-[#163a42] border border-[#1d4d58] rounded-xl px-4 py-3 text-sm text-emerald-400 font-semibold items-center gap-3">
-                                            <i class="fa-solid fa-wallet text-emerald-500 text-lg"></i>
-                                            <span x-text="programs[activeId].budget"></span>
-                                        </div>
-                                    </div>
-
-                                    <!-- Action Button -->
-                                    <div class="flex justify-end gap-3 pt-5 border-t border-white/10">
-                                        <button @click="closeModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-zinc-400 hover:text-white transition-colors">Tutup</button>
-                                        <a :href="'<?= base_url('Program/diagnosa/') ?>' + activeId" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-white text-[#0a1a1f] hover:bg-zinc-200 transition-colors inline-flex items-center gap-2">
-                                            Cek Kelayakan NIK <i class="fa-solid fa-arrow-right"></i>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </template>
-
-    <!-- Alpine.js Logic -->
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('programEtalase', () => ({
-                isModalOpen: false,
-                activeId: '',
-                activeData: {
-                    title: '',
-                    badge: '',
-                    dotColor: '',
-                    colorFrom: '',
-                    colorTo: '',
-                    definition: '',
-                    terms: '',
-                    budget: '',
-                    options: false,
-                    image: ''
-                },
-                programs: {
-                    'flpp': {
-                        title: 'KPR-FLPP<br>Rumah Subsidi',
-                        badge: 'MBR Fixed Income',
-                        dotColor: '#00a3b5',
-                        colorFrom: '#0f4c5c',
-                        colorTo: '#062b35',
-                        definition: 'Skema pembiayaan perumahan subsidi bagi Masyarakat Berpenghasilan Rendah (MBR).',
-                        terms: 'Bunga flat tetap sebesar 5% sepanjang tenor, Uang Muka (DP) sangat ringan mulai 1%, dengan pilihan tenor (jangka waktu angsuran) panjang hingga 20 tahun. Batas penghasilan maksimal Rp 8 Juta / bulan.',
-                        budget: 'APBN (Kuota Nasional)',
-                        image: '<?= base_url('assets/img/program/01_subsidif_lpp.avif') ?>'
-                    },
-                    'oemah_lestari': {
-                        title: 'Oemah<br>Lestari',
-                        badge: 'MBR & Umum',
-                        dotColor: '#6bcb77',
-                        colorFrom: '#1b4332',
-                        colorTo: '#0d2818',
-                        definition: 'Program fasilitas pembiayaan rumah murah bagi MBR (Masyarakat Berpenghasilan Rendah) dengan skema kredit bunga ringan (8% flat) dengan tenor panjang hingga 15 tahun serta memenuhi kaidah "Bangunan Hijau" sebagai amanat SDG serta berkolaborasi dengan "BPR-BRK".',
-                        terms: 'Skema kredit kolaborasi pembiayaan BPR-BRK dengan bunga ringan (8% flat), tenor penyicilan maksimal hingga 15 tahun.',
-                        budget: 'Kolaborasi BPR-BRK',
-                        image: '<?= base_url('assets/img/program/02_oemahletari.avif') ?>'
-                    },
-                    'rtlh': {
-                        title: 'Peningkatan<br>Kualitas RTLH',
-                        badge: 'Miskin & Ekstrem',
-                        dotColor: '#f59e0b',
-                        colorFrom: '#4a154b',
-                        colorTo: '#290a2a',
-                        definition: 'Program perbaikan atau renovasi rumah bagi masyarakat miskin yang rumahnya masuk kategori tidak layak.',
-                        terms: 'Penerima harus terdaftar dalam DTKS. Dinyatakan rusak jika memenuhi 2 dari 3 unsur (Atap, Lantai, Dinding). Dieksekusi secara swadaya padat karya oleh warga lokal.',
-                        budget: 'Bankeupemdes (Rp 20 Juta / Penerima)',
-                        image: '<?= base_url('assets/img/program/03_rtlh.avif') ?>'
-                    },
-                    'pb': {
-                        title: 'Stimulan<br>Pembangunan Baru',
-                        badge: 'Bencana & Relokasi',
-                        dotColor: '#d6fb00',
-                        colorFrom: '#4d5c00',
-                        colorTo: '#262e00',
-                        definition: 'Bantuan stimulan material bangunan senilai Rp 40 Juta untuk pembangunan rumah baru.',
-                        terms: 'Terbagi dalam 3 skema penanganan strategis:',
-                        options: [
-                            { name: 'PB Backlog', icon: 'fa-users-line', desc: 'Khusus bagi warga MBR yang masih menumpang (>1 KK dalam satu rumah) atau menyewa, namun sudah memiliki lahan/tanah hak milik pribadi yang sah dan siap bangun.' },
-                            { name: 'PB Relokasi', icon: 'fa-truck-fast', desc: 'Bantuan struktur pracetak RUSPIN (Rumah Unggul Sistem Panel Instan). Dikhususkan bagi warga yang tinggal di kawasan kumuh berat atau rawan bencana alam yang direlokasi ke lahan baru yang aman.' },
-                            { name: 'PB Bencana', icon: 'fa-house-crack', desc: 'Bantuan material pembangunan rumah baru bagi warga yang rumah asalnya mengalami kerusakan kategori berat atau roboh total diakibatkan oleh kejadian bencana alam tak terduga.' }
-                        ],
-                        budget: 'Bansos Pemprov Jawa Tengah',
-                        image: '<?= base_url('assets/img/program/04_Bantuan.avif') ?>'
-                    },
-                    'rumah_apung': {
-                        title: 'Program<br>Rumah Apung',
-                        badge: 'Kawasan Pesisir',
-                        dotColor: '#60a5fa',
-                        colorFrom: '#003049',
-                        colorTo: '#00121c',
-                        definition: 'Program inovasi desain pembangunan rumah adaptif untuk bertahan dari genangan air.',
-                        terms: 'Merupakan solusi NO ONE LEFT BEHIND bagi masyarakat pesisir terdampak rob permanen dan penurunan muka tanah ekstrem (180-300cm). Target utama: Demak.',
-                        budget: 'Bantuan Khusus (Pilot Project)',
-                        image: '<?= base_url('assets/img/program/05_areakumuh.avif') ?>'
-                    }
-                },
-                openModal(id) {
-                    if (this.programs[id]) {
-                        this.activeData = this.programs[id];
-                        this.activeId = id;
-                        this.isModalOpen = true;
-                        document.body.style.overflow = 'hidden';
-                    }
-                },
-                closeModal() {
-                    this.isModalOpen = false;
-                    setTimeout(() => {
-                        document.body.style.overflow = '';
-                    }, 300);
-                }
-            }));
-        });
-    </script>
 </section>
 
 <!-- ============================================================
@@ -1363,16 +1229,15 @@
      ============================================================ -->
 <script>
 // ============================================================
-// HERO SLIDESHOW
+// HERO BACKGROUND SLIDER (image-only crossfade)
 // ============================================================
-function heroSlider() {
+function heroBgSlider() {
     return {
         current: 0,
         total: 3,
         init() {
             setInterval(() => { this.current = (this.current + 1) % this.total; }, 6000);
-        },
-        goTo(i) { this.current = i; }
+        }
     }
 }
 
