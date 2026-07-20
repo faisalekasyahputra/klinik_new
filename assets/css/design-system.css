@@ -695,9 +695,9 @@ body {
     background: var(--bg-card);
     color: var(--brand);
     font-weight: 700;
-    border-color: rgba(255, 255, 255, 0.08);
-    border-bottom: 1px solid var(--bg-card);
-    margin-bottom: -1px;
+    border: none;
+    margin-bottom: -2px;
+    padding-bottom: calc(0.625rem + 2px);
     position: relative;
     z-index: 2;
     border-radius: 0.875rem 0.875rem 0 0;
@@ -730,6 +730,7 @@ body {
 .portal-panel {
     background: var(--bg-card);
     border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: none;
     border-radius: 0.625rem;
     padding: 1rem;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
