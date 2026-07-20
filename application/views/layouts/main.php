@@ -59,7 +59,7 @@
                </svg>
            </div>
 
-           <div class="w-full relative z-10 flex-1 flex flex-col overflow-hidden px-3 sm:px-4 lg:px-6 pt-4 pb-2">
+           <div class="w-full relative z-10 flex-1 flex flex-col overflow-hidden px-3 sm:px-4 lg:px-6 pt-4 pb-2 theme-light">
                <!-- Identitas ringkas -->
                <div class="flex items-center gap-3 mb-4 px-2 shrink-0">
                    <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" class="w-9 h-9 object-contain shrink-0">
@@ -125,7 +125,7 @@
                </div>
 
                <!-- Main Panel (scrollable content) -->
-               <div class="portal-panel theme-light flex-1 flex flex-col overflow-y-auto overflow-x-hidden no-scrollbar">
+               <div class="portal-panel flex-1 flex flex-col overflow-y-auto overflow-x-hidden no-scrollbar">
                    <div id="page-content-wrapper" class="relative z-10 flex-1 w-full">
                        <?=$content?>
                    </div>
