@@ -719,12 +719,12 @@ body {
     text-decoration: none;
     position: relative;
     /* Default / Inactive state */
-    color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.03);
+    color: var(--brand);
+    background: rgba(214, 251, 0, 0.08);
 }
 .portal-tab-btn:hover {
-    color: white;
-    background: rgba(255, 255, 255, 0.06);
+    color: var(--brand);
+    background: rgba(214, 251, 0, 0.15);
 }
 
 /* Active tab — warna cerah menyatu dengan panel */

@@ -59,7 +59,7 @@
                </svg>
            </div>
 
-           <div class="w-full relative z-10 flex-1 flex flex-col overflow-hidden px-3 sm:px-4 lg:px-6 pt-4 pb-2 theme-light">
+           <div class="w-full relative z-10 flex-1 flex flex-col overflow-hidden px-3 sm:px-4 lg:px-6 pt-4 pb-0 theme-light">
                <!-- Identitas ringkas -->
                <div class="flex items-center gap-3 mb-4 px-2 shrink-0">
                    <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" class="w-9 h-9 object-contain shrink-0">
@@ -137,7 +137,7 @@
                    $CI->load->model('Setting_model');
                    $ftSettings = $CI->Setting_model->get_all();
                ?>
-               <div class="shrink-0 flex items-center justify-center px-2 py-1.5">
+               <div class="shrink-0 flex items-center justify-center px-2 pt-1.5 pb-0">
                    <span class="text-[10px] text-[#8aacb0]">&copy; <?= date('Y') ?> <?= htmlspecialchars($ftSettings['footer_copyright'] ?? 'KLINIK PKP JATENG') ?></span>
                </div>
            </div>
