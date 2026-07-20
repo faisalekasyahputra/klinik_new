@@ -137,8 +137,8 @@
                    $CI->load->model('Setting_model');
                    $ftSettings = $CI->Setting_model->get_all();
                ?>
-               <div class="shrink-0 flex items-center justify-end px-2 py-1.5">
-                   <span class="text-[10px] text-zinc-600">&copy; <?= date('Y') ?> <?= htmlspecialchars($ftSettings['footer_copyright'] ?? 'KLINIK PKP JATENG') ?></span>
+               <div class="shrink-0 flex items-center justify-center px-2 py-1.5">
+                   <span class="text-[10px] text-[#8aacb0]">&copy; <?= date('Y') ?> <?= htmlspecialchars($ftSettings['footer_copyright'] ?? 'KLINIK PKP JATENG') ?></span>
                </div>
            </div>
        </section>
