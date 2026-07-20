@@ -6,10 +6,7 @@
         
         <!-- Header -->
         <div class="text-center mb-4 animate-fade-in-up">
-            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[color:var(--portal-brand)]/10 border border-[color:var(--portal-border)] text-[color:var(--portal-brand)]text-xs font-semibold uppercase tracking-widest mb-4">
-                <i class="fa-solid fa-chart-line"></i>
-                Statistika Integrasi
-            </div>
+            
             <h1 class="text-2xl sm:text-2xl font-black font-jakarta tracking-tighter text-[color:var(--portal-text)] mb-4">
                 Bank Data <span class="text-[color:var(--portal-brand)]">Statistika</span>
             </h1>
@@ -54,7 +51,7 @@
             <section id="perumahan" class="animate-fade-in-up scroll-mt-4" style="animation-delay: 0.1s;">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 border-b border-white/5 pb-4">
                     <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-xl bg-[color:var(--portal-btn-bg)] flex items-center justify-center text-[color:var(--portal-bg-card)] ">
+                        <div class="w-10 h-10 rounded-xl bg-[color:var(--portal-btn-bg)] flex items-center justify-center text-[color:var(--portal-icon)] ">
                             <i class="fa-solid fa-house text-2xl"></i>
                         </div>
                         <div>
@@ -83,49 +80,49 @@
                 </div>
                 
                 <?php if($kabupaten_terpilih !== 'all'): ?>
-                <div class="text-center mb-4 text-sm text-[color:var(--portal-text-muted)] bg-[color:var(--portal-brand)]/10 border border-[color:var(--portal-border)] py-2 rounded-xl ">
+                <div class="text-center mb-4 text-sm text-[color:var(--portal-text-muted)] bg-[color:var(--portal-bg)] border border-[color:var(--portal-border)] py-2 rounded-xl ">
                     Menampilkan data estimasi untuk <span class="font-bold text-[color:var(--portal-brand)]"><?= htmlspecialchars($kabupaten_terpilih) ?></span>
                 </div>
                 <?php endif; ?>
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:p-5 mb-4">
-                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative group overflow-hidden">
+                    <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative group overflow-hidden">
                         <div class="relative z-10">
                             <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-2">Tuku Lemah Oleh Omah</div>
                             <div class="text-xl font-bold text-[color:var(--portal-text)] mb-2"><?= number_format($stats['perumahan']['tloo']['value'], 0, ',', '.') ?></div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['tloo']['sumber'] ?></div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['tloo']['sumber'] ?></div>
                         </div>
                     </div>
-                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative group overflow-hidden ">
+                    <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative group overflow-hidden ">
                         <div class="relative z-10">
                             <div class="text-[color:var(--portal-brand)]text-sm font-semibold mb-2">Bantuan RTLH (APBD)</div>
                             <div class="text-2xl sm:text-2xl font-black font-jakarta text-[color:var(--portal-brand)] mb-3"><?= number_format($stats['perumahan']['rtlh_apbd']['value'], 0, ',', '.') ?></div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-brand)]bg-[color:var(--portal-brand)]/10 inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['rtlh_apbd']['sumber'] ?></div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['rtlh_apbd']['sumber'] ?></div>
                         </div>
                     </div>
-                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative group overflow-hidden">
+                    <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative group overflow-hidden">
                         <div class="relative z-10">
                             <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-2">BSPS (APBN)</div>
                             <div class="text-xl font-bold text-[color:var(--portal-text)] mb-2"><?= number_format($stats['perumahan']['bsps']['value'], 0, ',', '.') ?></div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['bsps']['sumber'] ?></div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['bsps']['sumber'] ?></div>
                         </div>
                     </div>
-                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative group overflow-hidden">
+                    <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative group overflow-hidden">
                         <div class="relative z-10">
                             <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-2">Program Omah Lestari</div>
                             <div class="text-xl font-bold text-[color:var(--portal-text)] mb-2"><?= number_format($stats['perumahan']['omah_lestari']['value'], 0, ',', '.') ?></div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['omah_lestari']['sumber'] ?></div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['omah_lestari']['sumber'] ?></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Graphs for Perumahan -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:p-5">
-                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center">
+                    <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center">
                         <h3 class="text-[color:var(--portal-text)] font-semibold mb-4 text-center">Komposisi Penanganan Berdasarkan Program</h3>
                         <div class="relative w-full h-[250px] flex justify-center"><canvas id="chartRTLH"></canvas></div>
                     </div>
-                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center">
+                    <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center">
                         <h3 class="text-[color:var(--portal-text)] font-semibold mb-4 text-center">Unit Rumah Subsidi vs Komersil</h3>
                         <div class="relative w-full h-[250px]"><canvas id="chartUnit"></canvas></div>
                     </div>
@@ -144,10 +141,10 @@
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:p-5 mb-4">
-                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl lg:col-span-2">
+                    <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl lg:col-span-2">
                         <div class="flex justify-between items-start mb-4">
                             <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold"><i class="fa-solid fa-chart-bar mr-2"></i>Progres Penanganan (Hektar)</div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-[#00a3b5]/70 bg-[#00a3b5]/10 inline-block px-2 py-1 rounded">Sumber: <?= $stats['kawasan']['tertangani']['sumber'] ?></div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['kawasan']['tertangani']['sumber'] ?></div>
                         </div>
                         <div class="flex justify-between items-end mb-2">
                             <div class="text-2xl sm:text-2xl font-black font-jakarta text-[color:var(--portal-text)]"><?= number_format($stats['kawasan']['tertangani']['value'], 1, ',', '.') ?> <span class="text-lg text-zinc-500 font-normal">/ <?= number_format($stats['kawasan']['luas_kumuh']['value'], 1, ',', '.') ?> Ha</span></div>
@@ -159,15 +156,15 @@
                             </div>
                         </div>
                     </div>
-                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col justify-center">
+                    <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col justify-center">
                         <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-2">Sisa Kawasan Kumuh</div>
                         <div class="text-4xl font-black text-[#ff6b6b]  mb-3"><?= number_format($stats['kawasan']['sisa_kumuh']['value'], 1, ',', '.') ?> <span class="text-xl font-medium text-zinc-500">Ha</span></div>
-                        <div><span class="text-[10px] font-bold uppercase tracking-wider text-[#ff6b6b]/40 bg-[#ff6b6b]/10 inline-block px-2 py-1 rounded">Sumber: <?= $stats['kawasan']['sisa_kumuh']['sumber'] ?></span></div>
+                        <div><span class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['kawasan']['sisa_kumuh']['sumber'] ?></span></div>
                     </div>
                 </div>
 
                 <!-- Graphs for Kawasan -->
-                <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center">
+                <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center">
                     <h3 class="text-[color:var(--portal-text)] font-semibold mb-2 text-center">Persentase Penanganan Kawasan Kumuh</h3>
                     <div class="relative w-full h-[250px] flex justify-center"><canvas id="chartKawasan"></canvas></div>
                 </div>
@@ -186,24 +183,24 @@
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:p-5">
                     <div class="space-y-6">
-                        <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative overflow-hidden">
+                        <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative overflow-hidden">
                             <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-2">Total Aset Lahan (Ha)</div>
                             <div class="text-xl font-bold text-[color:var(--portal-text)] mb-2"><?= number_format($stats['pertanahan']['aset_lahan']['value'], 1, ',', '.') ?></div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['pertanahan']['aset_lahan']['sumber'] ?></div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['pertanahan']['aset_lahan']['sumber'] ?></div>
                         </div>
-                        <div class="bg-[color:var(--portal-btn-bg)] border border-amber-500/20 p-3 sm:p-5 rounded-2xl relative overflow-hidden ">
+                        <div class="bg-[color:var(--portal-bg-card)] border border-amber-500/20 p-3 sm:p-5 rounded-2xl relative overflow-hidden ">
                             <div class="text-amber-500 text-sm font-semibold mb-2">Lahan Siap Bangun (Ha)</div>
                             <div class="text-2xl sm:text-2xl font-black font-jakarta text-amber-500  mb-3"><?= number_format($stats['pertanahan']['lahan_siap_bangun']['value'], 1, ',', '.') ?></div>
                             <div class="text-[10px] font-bold uppercase tracking-wider text-amber-500/50 bg-amber-500/10 inline-block px-2 py-1 rounded">Sumber: <?= $stats['pertanahan']['lahan_siap_bangun']['sumber'] ?></div>
                         </div>
-                        <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative overflow-hidden">
+                        <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative overflow-hidden">
                             <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-2">Lahan Termanfaatkan (Ha)</div>
                             <div class="text-xl font-bold text-[color:var(--portal-text)] mb-2"><?= number_format($stats['pertanahan']['lahan_termanfaatkan']['value'], 1, ',', '.') ?></div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['pertanahan']['lahan_termanfaatkan']['sumber'] ?></div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['pertanahan']['lahan_termanfaatkan']['sumber'] ?></div>
                         </div>
                     </div>
                     <!-- Graphs for Pertanahan -->
-                    <div class="lg:col-span-2 bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center justify-center">
+                    <div class="lg:col-span-2 bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center justify-center">
                         <h3 class="text-[color:var(--portal-text)] font-semibold mb-4 text-center">Proporsi Pemanfaatan Lahan</h3>
                         <div class="relative w-full h-[350px] flex justify-center"><canvas id="chartPertanahan"></canvas></div>
                     </div>
@@ -223,23 +220,23 @@
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:p-5">
                     <!-- Graph -->
-                    <div class="lg:col-span-2 bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col">
+                    <div class="lg:col-span-2 bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col">
                         <h3 class="text-[color:var(--portal-text)] font-semibold mb-4 text-center">Aktivitas Pengembang</h3>
                         <div class="relative w-full h-[250px]"><canvas id="chartPengembang"></canvas></div>
                     </div>
                     <!-- Numbers -->
                     <div class="space-y-6 flex flex-col justify-center">
-                        <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 rounded-2xl relative overflow-hidden">
+                        <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 rounded-2xl relative overflow-hidden">
                             <div class="text-[color:var(--portal-text-muted)] text-xs font-semibold mb-1">Total Pengembang Terdaftar</div>
                             <div class="text-2xl font-black text-[color:var(--portal-text)] mb-2"><?= number_format($stats['pengembang']['total_terdaftar']['value'], 0, ',', '.') ?></div>
-                            <div class="text-[9px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['pengembang']['total_terdaftar']['sumber'] ?></div>
+                            <div class="text-[9px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['pengembang']['total_terdaftar']['sumber'] ?></div>
                         </div>
-                        <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 rounded-2xl relative overflow-hidden">
+                        <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 rounded-2xl relative overflow-hidden">
                             <div class="text-[color:var(--portal-text-muted)] text-xs font-semibold mb-1">Pengembang Aktif</div>
                             <div class="text-2xl font-black text-[color:var(--portal-text)] mb-2"><?= number_format($stats['pengembang']['aktif']['value'], 0, ',', '.') ?></div>
-                            <div class="text-[9px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['pengembang']['aktif']['sumber'] ?></div>
+                            <div class="text-[9px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['pengembang']['aktif']['sumber'] ?></div>
                         </div>
-                        <div class="bg-[color:var(--portal-btn-bg)] border border-blue-500/20 p-3 rounded-2xl relative overflow-hidden ">
+                        <div class="bg-[color:var(--portal-bg-card)] border border-blue-500/20 p-3 rounded-2xl relative overflow-hidden ">
                             <div class="text-blue-400 text-xs font-semibold mb-1">Proyek Berjalan</div>
                             <div class="text-2xl font-black text-blue-400  mb-2"><?= number_format($stats['pengembang']['proyek_berjalan']['value'], 0, ',', '.') ?></div>
                             <div class="text-[9px] font-bold uppercase tracking-wider text-blue-400/50 bg-blue-500/10 inline-block px-2 py-1 rounded">Sumber: <?= $stats['pengembang']['proyek_berjalan']['sumber'] ?></div>
@@ -261,7 +258,7 @@
                 </div>
                 
                 <!-- Main KPI Card -->
-                <div class="bg-[color:var(--portal-btn-bg)] border border-emerald-500/30 p-8 rounded-2xl relative overflow-hidden  mb-4 text-center">
+                <div class="bg-[color:var(--portal-bg-card)] border border-emerald-500/30 p-8 rounded-2xl relative overflow-hidden  mb-4 text-center">
                     <div class="absolute -right-4 -bottom-4 opacity-5 text-emerald-500"><i class="fa-solid fa-hand-holding-heart text-[200px]"></i></div>
                     <div class="relative z-10">
                         <div class="text-emerald-400 text-lg font-semibold mb-2 uppercase tracking-widest">Total Penerima Manfaat</div>
@@ -272,23 +269,23 @@
 
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:p-5">
                     <div class="flex flex-col gap-3 sm:p-5 justify-center">
-                        <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative overflow-hidden flex items-center justify-between">
+                        <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative overflow-hidden flex items-center justify-between">
                             <div>
                                 <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-1">Penerima Bantuan RTLH</div>
-                                <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded mb-2">Sumber: <?= $stats['penerima_manfaat']['bantuan_rtlh']['sumber'] ?></div>
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-bg)] inline-block px-2 py-1 rounded mb-2">Sumber: <?= $stats['penerima_manfaat']['bantuan_rtlh']['sumber'] ?></div>
                             </div>
                             <div class="text-2xl sm:text-2xl font-black font-jakarta text-[color:var(--portal-text)]"><?= number_format($stats['penerima_manfaat']['bantuan_rtlh']['value'], 0, ',', '.') ?></div>
                         </div>
-                        <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative overflow-hidden flex items-center justify-between">
+                        <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative overflow-hidden flex items-center justify-between">
                             <div>
                                 <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-1">Pembeli Rumah Subsidi</div>
-                                <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded mb-2">Sumber: <?= $stats['penerima_manfaat']['pembeli_subsidi']['sumber'] ?></div>
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-bg)] inline-block px-2 py-1 rounded mb-2">Sumber: <?= $stats['penerima_manfaat']['pembeli_subsidi']['sumber'] ?></div>
                             </div>
                             <div class="text-2xl sm:text-2xl font-black font-jakarta text-[color:var(--portal-text)]"><?= number_format($stats['penerima_manfaat']['pembeli_subsidi']['value'], 0, ',', '.') ?></div>
                         </div>
                     </div>
                     <!-- Graph -->
-                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center">
+                    <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center">
                         <h3 class="text-[color:var(--portal-text)] font-semibold mb-4 text-center">Komposisi Penerima Manfaat</h3>
                         <div class="relative w-full h-[250px] flex justify-center"><canvas id="chartPenerima"></canvas></div>
                     </div>
@@ -308,25 +305,25 @@
                 </div>
                 
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                    <div class="bg-[color:var(--portal-btn-bg)] border border-cyan-500/30 p-5 rounded-2xl relative overflow-hidden ">
+                    <div class="bg-[color:var(--portal-bg-card)] border border-cyan-500/30 p-5 rounded-2xl relative overflow-hidden ">
                         <div class="text-cyan-400 text-xs font-semibold mb-1">Berita & Artikel</div>
                         <div class="text-2xl sm:text-2xl font-black font-jakarta text-cyan-400 mb-2"><?= number_format($publikasi['artikel'], 0, ',', '.') ?></div>
                     </div>
-                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-5 rounded-2xl relative overflow-hidden">
+                    <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-5 rounded-2xl relative overflow-hidden">
                         <div class="text-[color:var(--portal-text-muted)] text-xs font-semibold mb-1">Galeri Video</div>
                         <div class="text-2xl sm:text-2xl font-black font-jakarta text-[color:var(--portal-text)] mb-2"><?= number_format($publikasi['video'], 0, ',', '.') ?></div>
                     </div>
-                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-5 rounded-2xl relative overflow-hidden">
+                    <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-5 rounded-2xl relative overflow-hidden">
                         <div class="text-[color:var(--portal-text-muted)] text-xs font-semibold mb-1">Produk Hukum (Regulasi)</div>
                         <div class="text-2xl sm:text-2xl font-black font-jakarta text-[color:var(--portal-text)] mb-2"><?= number_format($publikasi['regulasi'], 0, ',', '.') ?></div>
                     </div>
-                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-5 rounded-2xl relative overflow-hidden">
+                    <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-5 rounded-2xl relative overflow-hidden">
                         <div class="text-[color:var(--portal-text-muted)] text-xs font-semibold mb-1">Desain Rumah/Prototipe</div>
                         <div class="text-2xl sm:text-2xl font-black font-jakarta text-[color:var(--portal-text)] mb-2"><?= number_format($publikasi['desain_rumah'], 0, ',', '.') ?></div>
                     </div>
                 </div>
 
-                <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center">
+                <div class="bg-[color:var(--portal-bg-card)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center">
                     <h3 class="text-[color:var(--portal-text)] font-semibold mb-4 text-center">Komposisi Konten Publikasi</h3>
                     <div class="relative w-full h-[250px] flex justify-center"><canvas id="chartPublikasi"></canvas></div>
                 </div>
