@@ -692,10 +692,10 @@ body {
     background: rgba(255, 255, 255, 0.06);
 }
 
-/* Active tab — hanya warna berubah, dimensi tetap sama */
+/* Active tab — warna cerah menyatu dengan panel */
 .portal-tab-btn.active {
-    background: var(--bg-card);
-    color: var(--brand);
+    background: #f0f6f7;
+    color: #0a1a1f;
     font-weight: 700;
     border-color: transparent;
     z-index: 2;
@@ -711,7 +711,7 @@ body {
     height: 10px;
     background: transparent;
     border-bottom-right-radius: 10px;
-    box-shadow: 5px 0 0 0 var(--bg-card);
+    box-shadow: 5px 0 0 0 #f0f6f7;
 }
 /* Scoop kanan */
 .portal-tab-btn.active::after {
@@ -723,19 +723,21 @@ body {
     height: 10px;
     background: transparent;
     border-bottom-left-radius: 10px;
-    box-shadow: -5px 0 0 0 var(--bg-card);
+    box-shadow: -5px 0 0 0 #f0f6f7;
 }
 
 .portal-panel {
-    background: var(--bg-card);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    --bg-card: #ffffff;
+    --text-secondary: #5a8a92;
+    background: #f0f6f7;
+    border: 1px solid rgba(0, 80, 95, 0.08);
     border-top: none;
     border-radius: 0.625rem;
     padding: 1rem;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 12px 40px rgba(0, 50, 60, 0.1);
     position: relative;
     z-index: 1;
-    min-height: 0; /* Required for flex child to shrink & enable scroll */
+    min-height: 0;
     overflow-y: auto;
     scroll-behavior: smooth;
 }
