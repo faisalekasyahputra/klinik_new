@@ -673,6 +673,8 @@ body {
     align-items: center;
     gap: 0.5rem;
     padding: 0.625rem 1.25rem;
+    padding-bottom: calc(0.625rem + 2px);
+    margin-bottom: -2px;
     border-radius: 0.75rem 0.75rem 0 0;
     font-size: 0.8125rem;
     font-weight: 600;
@@ -681,7 +683,7 @@ body {
     color: var(--text-secondary);
     border: 1px solid transparent;
     border-bottom: none;
-    transition: all 0.25s ease;
+    transition: background 0.25s ease, color 0.25s ease;
     text-decoration: none;
     position: relative;
 }
@@ -690,15 +692,12 @@ body {
     background: rgba(255, 255, 255, 0.06);
 }
 
-/* Active tab — rounded top + scoop cutouts menempel ke panel */
+/* Active tab — hanya warna berubah, dimensi tetap sama */
 .portal-tab-btn.active {
     background: var(--bg-card);
     color: var(--brand);
     font-weight: 700;
-    border: none;
-    margin-bottom: -2px;
-    padding-bottom: calc(0.625rem + 2px);
-    position: relative;
+    border-color: transparent;
     z-index: 2;
     border-radius: 0.875rem 0.875rem 0 0;
 }
