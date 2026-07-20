@@ -3,7 +3,7 @@
   <head>
    	<?php $this->load->view('layouts/head'); ?>
   </head>
-  <body class="bg-[#0a1a1f] text-[#ecffb6] min-h-screen flex flex-col" x-data="globalSystem()">
+  <body class="bg-[#0a1a1f] text-[#ecffb6] h-screen overflow-hidden flex flex-col" x-data="globalSystem()">
        <?php $this->load->view('layouts/nav'); ?>
        <?php
          // ---- Determine active tab from current controller/method ----
@@ -25,7 +25,7 @@
        ?>
 
        <!-- Portal Section: Tab Bar + Main Panel -->
-       <section class="w-full relative flex-1 flex flex-col pt-20 pb-10 px-3 sm:px-6 lg:px-8">
+       <section class="w-full relative flex-1 flex flex-col pt-16 overflow-hidden">
            <!-- Batik Kawung Background -->
            <div class="fixed inset-0 pointer-events-none" style="opacity: 0.08; z-index: 0; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 60%, black 100%); mask-image: linear-gradient(to bottom, transparent 0%, black 60%, black 100%);">
                <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -59,9 +59,9 @@
                </svg>
            </div>
 
-           <div class="max-w-7xl mx-auto w-full relative z-10 flex-1 flex flex-col">
+           <div class="max-w-7xl mx-auto w-full relative z-10 flex-1 flex flex-col overflow-hidden px-3 sm:px-6 lg:px-8 pt-4 pb-2">
                <!-- Identitas ringkas -->
-               <div class="flex items-center gap-3 mb-4 px-2">
+               <div class="flex items-center gap-3 mb-4 px-2 shrink-0">
                    <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" class="w-9 h-9 object-contain shrink-0">
                    <div>
                        <h1 class="text-base sm:text-lg font-extrabold text-white tracking-tight leading-tight">Klinik Perumahan & Kawasan Permukiman</h1>
@@ -70,7 +70,7 @@
                </div>
 
                <!-- Tab Bar -->
-               <div class="portal-tab-bar no-scrollbar">
+               <div class="portal-tab-bar no-scrollbar shrink-0">
                    <a href="<?= base_url() ?>" data-tab-link data-tab-key="beranda" class="portal-tab-btn <?= $active_tab === 'beranda' ? 'active' : '' ?>">
                        <i class="fa-solid fa-grip"></i> Beranda
                    </a>
@@ -91,15 +91,14 @@
                    </a>
                </div>
 
-               <!-- Main Panel -->
-               <div class="portal-panel flex-1 flex flex-col">
-                   <div id="page-content-wrapper" class="relative z-10 flex-1 flex flex-col w-full">
+               <!-- Main Panel (scrollable content) -->
+               <div class="portal-panel flex-1 flex flex-col overflow-y-auto overflow-x-hidden no-scrollbar">
+                   <div id="page-content-wrapper" class="relative z-10 flex-1 w-full">
                        <?=$content?>
                    </div>
+                   <?php $this->load->view('layouts/footer'); ?>
                </div>
            </div>
        </section>
-
-       <?php $this->load->view('layouts/footer'); ?>
 </body>
 </html>

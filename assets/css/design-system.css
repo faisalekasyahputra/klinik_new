@@ -708,7 +708,9 @@ body {
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
     position: relative;
     z-index: 1;
-    min-height: 60vh;
+    min-height: 0; /* Required for flex child to shrink & enable scroll */
+    overflow-y: auto;
+    scroll-behavior: smooth;
 }
 @media (min-width: 640px) {
     .portal-panel {
