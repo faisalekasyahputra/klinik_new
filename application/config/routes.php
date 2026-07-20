@@ -97,6 +97,13 @@ $route['bank_tanah']               = 'Index/bank_tanah';
 // --- User Profile ---
 $route['pengaturan']               = 'Index/pengaturan';
 
+// --- Portal Tab Content ---
+$route['tab/perumahan']            = 'Index/tab_perumahan';
+$route['tab/kawasan']              = 'Index/tab_kawasan';
+$route['tab/pertanahan']           = 'Index/tab_pertanahan';
+$route['tab/pengembang']           = 'Index/tab_pengembang';
+$route['tab/bankdata']             = 'Index/tab_bankdata';
+
 // --- AJAX Endpoints ---
 $route['ajax_articles']            = 'Index/ajax_articles';
 $route['ajax_house_designs']       = 'Index/ajax_house_designs';

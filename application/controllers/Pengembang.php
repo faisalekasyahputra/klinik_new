@@ -38,15 +38,13 @@ class Pengembang extends MY_Controller {
 		}
 
 		$datacontent['judul'] ='';
-		$data['content'] = $this->load->view('pages/pengembang/formulir_sertifikasi', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		$this->render('pages/pengembang/formulir_sertifikasi', $datacontent);
 	}
 	public function syarat()
 	{
 
 		$datacontent['judul'] ='';
-		$data['content'] = $this->load->view('pages/pengembang/syarat', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		$this->render('pages/pengembang/syarat', $datacontent);
 	}
 	public function publikasi()
 	{
@@ -57,8 +55,7 @@ class Pengembang extends MY_Controller {
 		}
 
 		$datacontent['perumahan']= $this->Buka_peta->frd('data_sosmed_perumahan',null,null,null,null);
-        $data['content'] = $this->load->view('pages/pengembang/publikasi', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		$this->render('pages/pengembang/publikasi', $datacontent);
 	}
 	public function tambah_publikasi()
 	{
@@ -239,8 +236,7 @@ class Pengembang extends MY_Controller {
             show_404();
         }
 
-        $data['content'] = $this->load->view('pages/pengembang/v_sertifikasi', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		$this->render('pages/pengembang/v_sertifikasi', $datacontent);
     }
 
     public function profil($id = NULL) {
@@ -251,8 +247,7 @@ class Pengembang extends MY_Controller {
         if (!$datacontent['pengembang']) {
             show_404();
         }
-        $data['content'] = $this->load->view('pages/pengembang/profil', $datacontent, true);
-        $this->load->view('layouts/main', $data);
+        $this->render('pages/pengembang/profil', $datacontent);
     }
 }
 

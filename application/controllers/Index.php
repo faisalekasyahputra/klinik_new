@@ -604,4 +604,44 @@ class Index extends MY_Controller {
 		$datacontent['desc'] = 'Halaman ini merupakan pratinjau (dummy) untuk sistem informasi ketersediaan lahan pemerintah (Bank Tanah) untuk pembangunan hunian.';
 		$this->render('pages/pertanahan/dummy_page', $datacontent);
 	}
+
+	// ============================================================
+	// PORTAL TAB CONTENT
+	// Menu cards untuk setiap tab di panel navigasi homepage
+	// ============================================================
+
+	/**
+	 * Tab content: Perumahan — menu cards untuk submenu perumahan
+	 */
+	public function tab_perumahan() {
+		$this->render('pages/home/tab_perumahan');
+	}
+
+	/**
+	 * Tab content: Kawasan — menu cards untuk submenu kawasan
+	 */
+	public function tab_kawasan() {
+		$this->render('pages/home/tab_kawasan');
+	}
+
+	/**
+	 * Tab content: Pertanahan — menu cards untuk submenu pertanahan
+	 */
+	public function tab_pertanahan() {
+		$this->render('pages/home/tab_pertanahan');
+	}
+
+	/**
+	 * Tab content: Pengembang — menu cards untuk submenu pengembang
+	 */
+	public function tab_pengembang() {
+		$this->render('pages/home/tab_pengembang');
+	}
+
+	/**
+	 * Tab content: Bank Data — menu cards untuk submenu bank data
+	 */
+	public function tab_bankdata() {
+		$this->render('pages/home/tab_bankdata');
+	}
 }

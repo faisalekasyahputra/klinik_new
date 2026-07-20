@@ -272,40 +272,40 @@ function globalSystem() {
 // ulang untuk konten baru, dan URL di-update lewat history API supaya
 // tombol back/forward & reload/bookmark tetap berfungsi wajar.
 (function () {
-    var CHIP_ACTIVE = ['bg-[#d6fb00]/12', 'text-[#d6fb00]', 'border-[#d6fb00]/25'];
-    var CHIP_INACTIVE = ['text-[#8aacb0]', 'border-transparent'];
-    var ROW_ACTIVE = ['bg-[#d6fb00]/10', 'text-[#ecffb6]'];
-    var ROW_INACTIVE = ['text-[#8aacb0]'];
+    // Maps sub-page tab keys to their parent tab, so the correct
+    // main tab stays highlighted when a sub-page is loaded via AJAX.
+    var TAB_GROUPS = {
+        simulasi_kpr: 'perumahan',
+        panduan_desain: 'perumahan',
+        golek_omah: 'perumahan',
+        cari_rumah: 'perumahan',
+        etalase: 'perumahan',
+        sebaran: 'kawasan',
+        sebaran_rusun: 'kawasan',
+        profil_kumuh: 'kawasan',
+        sebaran_sdgs: 'kawasan',
+        info_tanah: 'pertanahan',
+        sertifikasi_tanah: 'pertanahan',
+        sengketa: 'pertanahan',
+        bank_tanah: 'pertanahan',
+        pengembang_list: 'pengembang',
+        pengembang_syarat: 'pengembang',
+        pengembang_formulir: 'pengembang',
+        statistika: 'bankdata'
+    };
 
     function setActiveTabKey(key) {
-        document.querySelectorAll('[data-tab-key][data-tab-style="chip"], [data-tab-group-trigger]').forEach(function (el) {
-            el.classList.remove.apply(el.classList, CHIP_ACTIVE);
-            el.classList.add.apply(el.classList, CHIP_INACTIVE);
-        });
-        document.querySelectorAll('[data-tab-key][data-tab-style="row"]').forEach(function (el) {
-            el.classList.remove.apply(el.classList, ROW_ACTIVE);
-            el.classList.add.apply(el.classList, ROW_INACTIVE);
+        // Remove active from all portal tabs
+        document.querySelectorAll('.portal-tab-btn').forEach(function (el) {
+            el.classList.remove('active');
         });
 
-        var activeEl = document.querySelector('[data-tab-key="' + key + '"][data-tab-style]');
-        if (!activeEl) return;
+        // Resolve sub-page key to parent tab key
+        var tabKey = TAB_GROUPS[key] || key;
 
-        if (activeEl.getAttribute('data-tab-style') === 'chip') {
-            activeEl.classList.remove.apply(activeEl.classList, CHIP_INACTIVE);
-            activeEl.classList.add.apply(activeEl.classList, CHIP_ACTIVE);
-        } else {
-            activeEl.classList.remove.apply(activeEl.classList, ROW_INACTIVE);
-            activeEl.classList.add.apply(activeEl.classList, ROW_ACTIVE);
-        }
-
-        var group = activeEl.getAttribute('data-tab-group');
-        if (group) {
-            var trigger = document.querySelector('[data-tab-group-trigger="' + group + '"]');
-            if (trigger) {
-                trigger.classList.remove.apply(trigger.classList, CHIP_INACTIVE);
-                trigger.classList.add.apply(trigger.classList, CHIP_ACTIVE);
-            }
-        }
+        // Activate the matching main tab
+        var activeTab = document.querySelector('.portal-tab-btn[data-tab-key="' + tabKey + '"]');
+        if (activeTab) activeTab.classList.add('active');
     }
 
     // Jalankan ulang <script> yang ikut masuk lewat innerHTML (browser
