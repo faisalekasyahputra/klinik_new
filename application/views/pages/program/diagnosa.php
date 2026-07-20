@@ -1,13 +1,10 @@
 <!-- application/views/pages/program/diagnosa.php -->
-<div class="flex flex-col justify-start w-full min-h-[calc(100vh-80px)] pt-16 pb-12 text-white relative" x-data="wizardData()">
-
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        
-        <!-- Header -->
-        <div class="text-center mb-10">
-            <h1 class="text-3xl font-bold text-white mb-3">Klinik Diagnosa Kelayakan</h1>
-            <p class="text-zinc-400">Program: <span class="text-emerald-400 font-semibold"><?= htmlspecialchars($program['nama_program']) ?></span></p>
-        </div>
+<div class="py-4 sm:py-6 px-1 sm:px-2 relative font-outfit" x-data="wizardData()">
+    <!-- Header -->
+    <div class="text-center mb-10">
+        <h1 class="text-3xl font-bold text-[color:var(--portal-text)] mb-3">Klinik Diagnosa Kelayakan</h1>
+        <p class="text-[color:var(--portal-text-muted)]">Program: <span class="text-[color:var(--brand)] font-semibold"><?= htmlspecialchars($program['nama_program']) ?></span></p>
+    </div>
 
         <?php if ($program['kode_program'] === 'umum'): ?>
         <!-- Intro: Program Strategis (konteks sebelum wizard) -->
@@ -374,7 +371,6 @@
 
             </form>
         </div>
-    </div>
 </div>
 
 <script>

@@ -13,8 +13,7 @@ class Index extends MY_Controller {
 	public function golek_omah()
 	{
 		$datacontent['judul']='';
-		$data['content'] = $this->load->view('pages/golek_omah/index', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		$this->render('pages/golek_omah/index', $datacontent);
 	}
 	public function index()
 	{
@@ -472,8 +471,7 @@ class Index extends MY_Controller {
 			"3375" => "Kota Pekalongan",
 			"3376" => "Kota Tegal"
 		];
-		$data['content'] = $this->load->view('pages/perumahan/cari_rumah', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		$this->render('pages/perumahan/cari_rumah', $datacontent);
 	}
 	public function listkabupaten()
 	{

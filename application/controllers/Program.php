@@ -36,8 +36,7 @@ class Program extends Public_Controller {
         ];
 
         // Load view using main layout
-        $data['content'] = $this->load->view('pages/program/diagnosa', $data, TRUE);
-        $this->load->view('layouts/main', $data);
+        $this->render('pages/program/diagnosa', $data);
     }
 
     /**

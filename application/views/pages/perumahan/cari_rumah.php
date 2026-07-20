@@ -1,37 +1,9 @@
-<section class="w-full pt-24 pb-20 px-4 sm:px-6 lg:px-8 relative min-h-screen font-outfit">
-    <!-- Background Ornaments -->
-    <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div class="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-[#d6fb00]/5 blur-[120px]"></div>
-        <div class="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#00a3b5]/5 blur-[100px]"></div>
+<div class="py-4 sm:py-6 px-1 sm:px-2 relative font-outfit">
+    <!-- Header -->
+    <div class="text-center mb-10" data-aos="fade-down">
+        <h3 class="text-3xl sm:text-4xl font-extrabold text-[color:var(--portal-text)] tracking-tight mb-2">Cari <span class="text-[color:var(--brand)]">Perumahan</span></h3>
+        <p class="text-[color:var(--portal-text-muted)] text-xs">Data real-time dari Sikumbang — Tapera</p>
     </div>
-
-    <div class="max-w-7xl mx-auto relative z-10">
-
-        <!-- Breadcrumb -->
-        <div class="mb-10">
-            <nav class="flex text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-widest" aria-label="Breadcrumb">
-                <ol class="inline-flex items-center space-x-1 md:space-x-2">
-                    <li class="inline-flex items-center">
-                        <a href="<?= base_url() ?>" class="hover:text-[#d6fb00] transition-colors"><i class="fa-solid fa-house mr-2"></i>Beranda</a>
-                    </li>
-                    <li class="inline-flex items-center">
-                        <i class="fa-solid fa-chevron-right text-[8px] mx-2"></i>
-                        <a href="<?= base_url('golek_omah') ?>" class="hover:text-[#d6fb00] transition-colors">Nggolek Omah</a>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <i class="fa-solid fa-chevron-right text-[8px] mx-2"></i>
-                            <span class="text-[#d6fb00]">Cari Rumah</span>
-                        </div>
-                    </li>
-                </ol>
-            </nav>
-        </div>
-
-        <div class="text-center mb-10" data-aos="fade-down">
-            <h3 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-2">Cari <span class="text-[#d6fb00]">Perumahan</span></h3>
-            <p class="text-zinc-500 text-xs">Data real-time dari Sikumbang — Tapera</p>
-        </div>
 
         <style>
             .tl-search-input {
@@ -157,8 +129,7 @@
             </a>
         </div>
 
-    </div>
-</section>
+</div>
 
 <script>
 function cari_wil() {

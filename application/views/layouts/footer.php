@@ -247,6 +247,7 @@ function globalSystem() {
         panduan_desain: 'perumahan',
         golek_omah: 'perumahan',
         cari_rumah: 'perumahan',
+        solusi_pembiayaan: 'perumahan',
         etalase: 'perumahan',
         sebaran: 'kawasan',
         sebaran_rusun: 'kawasan',

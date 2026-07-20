@@ -13,7 +13,7 @@
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-10">
 
-        <a href="<?= base_url('golek_omah') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 168px;">
+        <a href="<?= base_url('golek_omah') ?>" data-tab-link data-tab-key="golek_omah" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 168px;">
             <i class="fa-solid fa-house-chimney-window absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.06;"></i>
             <div class="relative z-10">
                 <i class="fa-solid fa-house-chimney-window mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 24px; color: var(--portal-icon); "></i>
