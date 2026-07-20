@@ -1,20 +1,7 @@
- <!-- ============================================================
-     FOOTER
+<!-- ============================================================
+     FOOTER SCRIPTS & WIDGETS
+     Visual footer bar sekarang inline di main.php
      ============================================================ -->
- <?php 
-    $CI =& get_instance();
-    $CI->load->model('Setting_model');
-    $settings = $CI->Setting_model->get_all();
- ?>
- <footer class="w-full bg-[#0a1a1f] text-zinc-500 py-6 mt-auto relative z-10 border-t border-white/5">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-3 text-center sm:text-left">
-        <div class="flex items-center gap-2.5">
-            <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" class="h-6 w-auto object-contain">
-            <span class="text-xs font-bold text-white">Klinik<span class="text-[#d6fb00]">PKP</span></span>
-        </div>
-        <div class="text-[11px] text-zinc-600">&copy; <?= date('Y') ?> <?= htmlspecialchars($settings['footer_copyright'] ?? 'KLINIK PKP JATENG') ?>. All Rights Reserved.</div>
-    </div>
-</footer>
 
 <!-- ============================================================
      HELP WIDGET — Combined WA + Aduan (Bottom Right)

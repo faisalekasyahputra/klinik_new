@@ -1,45 +1,11 @@
 <?php 
-  $class = strtolower($this->router->fetch_class());
-  $method = strtolower($this->router->fetch_method());
+  // Auth button desktop sudah inline di tab bar (main.php)
+  // nav.php sekarang hanya mobile menu overlay + hamburger
 ?>
-<!-- Floating Auth Button — fixed top-right, overlaps content -->
-<div class="fixed top-3 right-3 sm:top-4 sm:right-5 z-50 flex items-center gap-2">
-    <?php if ($this->session->userdata('is_logged')): ?>
-        <!-- Logged-in User -->
-        <div class="flex items-center gap-1.5 p-1 bg-[#0d2228]/90 backdrop-blur-md border border-[#d6fb00]/15 rounded-xl shadow-lg shadow-black/30">
-            <?php if ($this->session->userdata('role') === 'admin'): ?>
-                <a href="<?= base_url('Admin_Dashboard') ?>" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-[#d6fb00]/15 text-[#d6fb00] transition-colors" title="Dashboard Admin">
-                    <i class="fa-solid fa-gauge-high text-[10px]"></i>
-                    <span class="text-[11px] font-semibold hidden sm:inline">Dashboard</span>
-                </a>
-                <div class="w-px h-4 bg-[#d6fb00]/20"></div>
-            <?php endif; ?>
-            
-            <?php 
-                $avatar_src = $this->session->userdata('avatar');
-                if (empty($avatar_src)) {
-                    $fallback_name = urlencode($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
-                    $avatar_src = "https://ui-avatars.com/api/?name={$fallback_name}&background=d6fb00&color=0a1a1f&bold=true";
-                }
-            ?>
-            <a href="<?= base_url('akun') ?>" class="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-[#d6fb00]/15 transition-colors group">
-                <img src="<?= $avatar_src ?>" class="w-6 h-6 rounded-md object-cover border border-[#d6fb00]/20 group-hover:border-[#d6fb00]/40 transition-colors">
-                <span class="text-[11px] font-semibold text-[#ecffb6] hidden sm:inline"><?= $this->session->userdata('username') ?: $this->session->userdata('name') ?></span>
-            </a>
-        </div>
-    <?php else: ?>
-        <!-- Login Button: Floating Pill -->
-        <a href="<?= base_url('Auth/login') ?>" class="hidden lg:flex items-center gap-1.5 btn-primary text-xs px-4 py-2 rounded-xl shadow-lg shadow-[#d6fb00]/10">
-            <i class="fa-solid fa-right-to-bracket text-[11px]"></i>
-            Masuk
-        </a>
-    <?php endif; ?>
-
-    <!-- Mobile Hamburger -->
-    <button @click="mobileMenu = !mobileMenu" class="lg:hidden w-9 h-9 rounded-xl bg-[#0d2228]/90 backdrop-blur-md border border-[#d6fb00]/20 hover:border-[#d6fb00] flex items-center justify-center text-[#8aacb0] hover:text-[#d6fb00] transition-all duration-200 shadow-lg shadow-black/30">
-        <i class="fa-solid fa-bars text-sm"></i>
-    </button>
-</div>
+<!-- Mobile Hamburger (floating) -->
+<button @click="mobileMenu = !mobileMenu" class="lg:hidden fixed top-3 right-3 z-50 w-9 h-9 rounded-xl bg-[#0d2228]/90 backdrop-blur-md border border-[#d6fb00]/20 hover:border-[#d6fb00] flex items-center justify-center text-[#8aacb0] hover:text-[#d6fb00] transition-all duration-200 shadow-lg shadow-black/30">
+    <i class="fa-solid fa-bars text-sm"></i>
+</button>
 
 <!-- ============================================================
      MOBILE MENU (Alpine.js)
