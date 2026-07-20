@@ -1,80 +1,69 @@
-<main class="min-h-screen pt-24 pb-16 relative font-outfit z-10">
+<div class="py-4 sm:py-6 px-1 sm:px-2 relative font-outfit z-10">
     <!-- Load Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        /* Force body to allow sticky positioning in case of hidden overflows */
-        html, body { 
-            overflow-x: clip !important; 
-            overflow-y: visible !important;
-            height: auto !important;
-        }
-        main, #page-content-wrapper { 
-            overflow: visible !important; 
-        }
-    </style>
 
-    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-[1600px] mx-auto">
         
         <!-- Header -->
-        <div class="text-center mb-10 animate-fade-in-up">
-            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#d6fb00]/10 border border-[#d6fb00]/20 text-[#ecffb6] text-xs font-semibold uppercase tracking-widest mb-4">
+        <div class="text-center mb-4 animate-fade-in-up">
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[color:var(--portal-brand)]/10 border border-[color:var(--portal-border)] text-[color:var(--portal-brand)]text-xs font-semibold uppercase tracking-widest mb-4">
                 <i class="fa-solid fa-chart-line"></i>
                 Statistika Integrasi
             </div>
-            <h1 class="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-4">
-                Bank Data <span class="text-[#d6fb00] drop-shadow-[0_0_15px_rgba(214,251,0,0.3)]">Statistika</span>
+            <h1 class="text-2xl sm:text-2xl font-black font-jakarta tracking-tighter text-[color:var(--portal-text)] mb-4">
+                Bank Data <span class="text-[color:var(--portal-brand)]">Statistika</span>
             </h1>
-            <p class="text-lg text-zinc-400 max-w-2xl mx-auto">
+            <p class="text-lg text-[color:var(--portal-text-muted)] max-w-2xl mx-auto">
                 Rangkuman data komprehensif terintegrasi dari berbagai sistem informasi beserta infografis visual.
             </p>
         </div>
 
         <!-- Filter Kabupaten -->
-        <div class="max-w-md mx-auto mb-16 animate-fade-in-up" style="animation-delay: 0.05s;">
+        <div class="max-w-md mx-auto mb-4 animate-fade-in-up" style="animation-delay: 0.05s;">
             <form action="<?= base_url('Statistika') ?>" method="GET" class="relative group">
-                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-[#d6fb00]">
+                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-[color:var(--portal-brand)]">
                     <i class="fa-solid fa-location-dot"></i>
                 </div>
-                <select name="kabupaten" onchange="this.form.submit()" class="block w-full p-4 pl-12 text-sm text-white bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/20 rounded-2xl focus:ring-[#d6fb00] focus:border-[#d6fb00] appearance-none cursor-pointer shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-all group-hover:border-[#d6fb00]/50 outline-none">
+                <select name="kabupaten" onchange="this.form.submit()" class="block w-full p-3 pl-12 text-sm text-[color:var(--portal-text)] bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] rounded-2xl focus:ring-[color:var(--portal-brand)] focus:border-[color:var(--portal-brand)] appearance-none cursor-pointer  transition-all group-hover:border-[color:var(--portal-border)] outline-none">
                     <option value="all" <?= $kabupaten_terpilih == 'all' ? 'selected' : '' ?>>Semua Kabupaten/Kota (Provinsi)</option>
                     <?php foreach($daftar_kabupaten as $kab): ?>
                         <option value="<?= $kab ?>" <?= $kabupaten_terpilih == $kab ? 'selected' : '' ?>><?= $kab ?></option>
                     <?php endforeach; ?>
                 </select>
-                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-white/50 group-hover:text-[#d6fb00] transition-colors">
+                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-[color:var(--portal-text-muted)] group-hover:text-[color:var(--portal-brand)]transition-colors">
                     <i class="fa-solid fa-chevron-down"></i>
                 </div>
             </form>
             <?php if($kabupaten_terpilih !== 'all'): ?>
-            <div class="text-center mt-3 text-sm text-[#8aacb0] bg-[#d6fb00]/5 border border-[#d6fb00]/10 py-2 rounded-xl backdrop-blur-sm">
-                Menampilkan data estimasi untuk <span class="font-bold text-[#d6fb00]"><?= htmlspecialchars($kabupaten_terpilih) ?></span>
+            <div class="text-center mt-3 text-sm text-[color:var(--portal-text-muted)] bg-[color:var(--portal-brand)]/10 border border-[color:var(--portal-border)] py-2 rounded-xl ">
+                Menampilkan data estimasi untuk <span class="font-bold text-[color:var(--portal-brand)]"><?= htmlspecialchars($kabupaten_terpilih) ?></span>
             </div>
             <?php endif; ?>
         </div>
 
-        <div class="flex flex-col lg:flex-row gap-8 items-start relative">
+        <div class="flex flex-col lg:flex-row gap-3 items-start relative">
             
             <!-- Sidebar Navigation -->
             <div class="w-full lg:w-64 flex-shrink-0 hidden lg:block sticky top-32 self-start h-max z-40 transition-all duration-300" style="position: -webkit-sticky; position: sticky;">
-                <aside class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
-                <h3 class="text-white font-bold text-sm uppercase tracking-wider mb-4 px-2 border-b border-white/10 pb-2">Kategori Data</h3>
+                <aside class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] rounded-2xl p-3">
+                <h3 class="text-[color:var(--portal-text)] font-bold text-sm uppercase tracking-wider mb-4 px-2 border-b border-[color:var(--portal-border)] pb-2">Kategori Data</h3>
                 <nav class="space-y-1" id="stat-nav">
-                    <a href="#perumahan" class="flex items-center gap-3 px-3 py-2 text-sm text-[#8aacb0] hover:text-[#d6fb00] hover:bg-white/5 rounded-xl transition-colors">
+                    <a href="#perumahan" class="flex items-center gap-3 px-3 py-2 text-sm text-[color:var(--portal-text-muted)] hover:text-[color:var(--portal-brand)]hover:bg-[color:var(--portal-btn-bg)] rounded-xl transition-colors">
                         <i class="fa-solid fa-house w-4 text-center"></i> Perumahan
                     </a>
-                    <a href="#kawasan" class="flex items-center gap-3 px-3 py-2 text-sm text-[#8aacb0] hover:text-[#d6fb00] hover:bg-white/5 rounded-xl transition-colors">
+                    <a href="#kawasan" class="flex items-center gap-3 px-3 py-2 text-sm text-[color:var(--portal-text-muted)] hover:text-[color:var(--portal-brand)]hover:bg-[color:var(--portal-btn-bg)] rounded-xl transition-colors">
                         <i class="fa-solid fa-map-location-dot w-4 text-center"></i> Kawasan
                     </a>
-                    <a href="#pertanahan" class="flex items-center gap-3 px-3 py-2 text-sm text-[#8aacb0] hover:text-[#d6fb00] hover:bg-white/5 rounded-xl transition-colors">
+                    <a href="#pertanahan" class="flex items-center gap-3 px-3 py-2 text-sm text-[color:var(--portal-text-muted)] hover:text-[color:var(--portal-brand)]hover:bg-[color:var(--portal-btn-bg)] rounded-xl transition-colors">
                         <i class="fa-solid fa-map w-4 text-center"></i> Pertanahan
                     </a>
-                    <a href="#pengembang" class="flex items-center gap-3 px-3 py-2 text-sm text-[#8aacb0] hover:text-[#d6fb00] hover:bg-white/5 rounded-xl transition-colors">
+                    <a href="#pengembang" class="flex items-center gap-3 px-3 py-2 text-sm text-[color:var(--portal-text-muted)] hover:text-[color:var(--portal-brand)]hover:bg-[color:var(--portal-btn-bg)] rounded-xl transition-colors">
                         <i class="fa-solid fa-hard-hat w-4 text-center"></i> Pengembang
                     </a>
-                    <a href="#penerima-manfaat" class="flex items-center gap-3 px-3 py-2 text-sm text-[#8aacb0] hover:text-[#d6fb00] hover:bg-white/5 rounded-xl transition-colors">
+                    <a href="#penerima-manfaat" class="flex items-center gap-3 px-3 py-2 text-sm text-[color:var(--portal-text-muted)] hover:text-[color:var(--portal-brand)]hover:bg-[color:var(--portal-btn-bg)] rounded-xl transition-colors">
                         <i class="fa-solid fa-users w-4 text-center"></i> Penerima Manfaat
                     </a>
-                    <a href="#publikasi" class="flex items-center gap-3 px-3 py-2 text-sm text-[#8aacb0] hover:text-[#d6fb00] hover:bg-white/5 rounded-xl transition-colors">
+                    <a href="#publikasi" class="flex items-center gap-3 px-3 py-2 text-sm text-[color:var(--portal-text-muted)] hover:text-[color:var(--portal-brand)]hover:bg-[color:var(--portal-btn-bg)] rounded-xl transition-colors">
                         <i class="fa-solid fa-bullhorn w-4 text-center"></i> Publikasi
                     </a>
                 </nav>
@@ -82,84 +71,84 @@
             </div>
 
             <!-- Main Content Area -->
-            <div class="flex-1 min-w-0 space-y-16">
+            <div class="flex-1 min-w-0 space-y-6">
             
             <!-- 1. Perumahan -->
-            <section id="perumahan" class="animate-fade-in-up scroll-mt-28" style="animation-delay: 0.1s;">
-                <div class="flex items-center gap-4 mb-6 border-b border-white/5 pb-4">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#d6fb00] to-[#b5d400] flex items-center justify-center text-[#0a1a1f] shadow-[0_0_20px_rgba(214,251,0,0.3)]">
+            <section id="perumahan" class="animate-fade-in-up scroll-mt-4" style="animation-delay: 0.1s;">
+                <div class="flex items-center gap-3 mb-4 border-b border-white/5 pb-4">
+                    <div class="w-10 h-10 rounded-xl bg-[color:var(--portal-btn-bg)] flex items-center justify-center text-[color:var(--portal-bg-card)] ">
                         <i class="fa-solid fa-house text-2xl"></i>
                     </div>
                     <div>
-                        <h2 class="text-2xl font-bold text-white">Perumahan</h2>
-                        <p class="text-sm text-zinc-400">Statistika unit rumah dan penanganan RTLH</p>
+                        <h2 class="text-xl font-bold text-[color:var(--portal-text)]">Perumahan</h2>
+                        <p class="text-sm text-[color:var(--portal-text-muted)]">Statistika unit rumah dan penanganan RTLH</p>
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                    <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl relative group overflow-hidden">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:p-5 mb-4">
+                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative group overflow-hidden">
                         <div class="relative z-10">
-                            <div class="text-[#8aacb0] text-sm font-semibold mb-2">Tuku Lemah Oleh Omah</div>
-                            <div class="text-3xl font-black text-white mb-3"><?= number_format($stats['perumahan']['tloo']['value'], 0, ',', '.') ?></div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-white/40 bg-white/5 inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['tloo']['sumber'] ?></div>
+                            <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-2">Tuku Lemah Oleh Omah</div>
+                            <div class="text-xl font-bold text-[color:var(--portal-text)] mb-2"><?= number_format($stats['perumahan']['tloo']['value'], 0, ',', '.') ?></div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['tloo']['sumber'] ?></div>
                         </div>
                     </div>
-                    <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-[#d6fb00]/20 p-6 rounded-2xl relative group overflow-hidden shadow-[0_0_15px_rgba(214,251,0,0.05)]">
+                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative group overflow-hidden ">
                         <div class="relative z-10">
-                            <div class="text-[#d6fb00] text-sm font-semibold mb-2">Bantuan RTLH (APBD)</div>
-                            <div class="text-3xl font-black text-[#d6fb00] drop-shadow-[0_0_10px_rgba(214,251,0,0.3)] mb-3"><?= number_format($stats['perumahan']['rtlh_apbd']['value'], 0, ',', '.') ?></div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-[#d6fb00]/50 bg-[#d6fb00]/10 inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['rtlh_apbd']['sumber'] ?></div>
+                            <div class="text-[color:var(--portal-brand)]text-sm font-semibold mb-2">Bantuan RTLH (APBD)</div>
+                            <div class="text-2xl sm:text-2xl font-black font-jakarta text-[color:var(--portal-brand)] mb-3"><?= number_format($stats['perumahan']['rtlh_apbd']['value'], 0, ',', '.') ?></div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-brand)]bg-[color:var(--portal-brand)]/10 inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['rtlh_apbd']['sumber'] ?></div>
                         </div>
                     </div>
-                    <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl relative group overflow-hidden">
+                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative group overflow-hidden">
                         <div class="relative z-10">
-                            <div class="text-[#8aacb0] text-sm font-semibold mb-2">BSPS (APBN)</div>
-                            <div class="text-3xl font-black text-white mb-3"><?= number_format($stats['perumahan']['bsps']['value'], 0, ',', '.') ?></div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-white/40 bg-white/5 inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['bsps']['sumber'] ?></div>
+                            <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-2">BSPS (APBN)</div>
+                            <div class="text-xl font-bold text-[color:var(--portal-text)] mb-2"><?= number_format($stats['perumahan']['bsps']['value'], 0, ',', '.') ?></div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['bsps']['sumber'] ?></div>
                         </div>
                     </div>
-                    <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl relative group overflow-hidden">
+                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative group overflow-hidden">
                         <div class="relative z-10">
-                            <div class="text-[#8aacb0] text-sm font-semibold mb-2">Program Omah Lestari</div>
-                            <div class="text-3xl font-black text-white mb-3"><?= number_format($stats['perumahan']['omah_lestari']['value'], 0, ',', '.') ?></div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-white/40 bg-white/5 inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['omah_lestari']['sumber'] ?></div>
+                            <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-2">Program Omah Lestari</div>
+                            <div class="text-xl font-bold text-[color:var(--portal-text)] mb-2"><?= number_format($stats['perumahan']['omah_lestari']['value'], 0, ',', '.') ?></div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['perumahan']['omah_lestari']['sumber'] ?></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Graphs for Perumahan -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl flex flex-col items-center">
-                        <h3 class="text-white font-semibold mb-4 text-center">Komposisi Penanganan Berdasarkan Program</h3>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:p-5">
+                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center">
+                        <h3 class="text-[color:var(--portal-text)] font-semibold mb-4 text-center">Komposisi Penanganan Berdasarkan Program</h3>
                         <div class="relative w-full h-[250px] flex justify-center"><canvas id="chartRTLH"></canvas></div>
                     </div>
-                    <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl flex flex-col items-center">
-                        <h3 class="text-white font-semibold mb-4 text-center">Unit Rumah Subsidi vs Komersil</h3>
+                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center">
+                        <h3 class="text-[color:var(--portal-text)] font-semibold mb-4 text-center">Unit Rumah Subsidi vs Komersil</h3>
                         <div class="relative w-full h-[250px]"><canvas id="chartUnit"></canvas></div>
                     </div>
                 </div>
             </section>
 
             <!-- 2. Kawasan -->
-            <section id="kawasan" class="animate-fade-in-up scroll-mt-28" style="animation-delay: 0.2s;">
-                <div class="flex items-center gap-4 mb-6 border-b border-white/5 pb-4">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00a3b5] to-[#00545f] flex items-center justify-center text-white shadow-[0_0_20px_rgba(0,163,181,0.3)]">
+            <section id="kawasan" class="animate-fade-in-up scroll-mt-4" style="animation-delay: 0.2s;">
+                <div class="flex items-center gap-3 mb-4 border-b border-white/5 pb-4">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00a3b5] to-[#00545f] flex items-center justify-center text-[color:var(--portal-text)] ">
                         <i class="fa-solid fa-map-location-dot text-2xl"></i>
                     </div>
                     <div>
-                        <h2 class="text-2xl font-bold text-white">Kawasan</h2>
-                        <p class="text-sm text-zinc-400">Statistika penanganan kawasan kumuh</p>
+                        <h2 class="text-xl font-bold text-[color:var(--portal-text)]">Kawasan</h2>
+                        <p class="text-sm text-[color:var(--portal-text-muted)]">Statistika penanganan kawasan kumuh</p>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                    <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl lg:col-span-2">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:p-5 mb-4">
+                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl lg:col-span-2">
                         <div class="flex justify-between items-start mb-4">
-                            <div class="text-[#8aacb0] text-sm font-semibold"><i class="fa-solid fa-chart-bar mr-2"></i>Progres Penanganan (Hektar)</div>
+                            <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold"><i class="fa-solid fa-chart-bar mr-2"></i>Progres Penanganan (Hektar)</div>
                             <div class="text-[10px] font-bold uppercase tracking-wider text-[#00a3b5]/70 bg-[#00a3b5]/10 inline-block px-2 py-1 rounded">Sumber: <?= $stats['kawasan']['tertangani']['sumber'] ?></div>
                         </div>
                         <div class="flex justify-between items-end mb-2">
-                            <div class="text-3xl font-black text-white"><?= number_format($stats['kawasan']['tertangani']['value'], 1, ',', '.') ?> <span class="text-lg text-zinc-500 font-normal">/ <?= number_format($stats['kawasan']['luas_kumuh']['value'], 1, ',', '.') ?> Ha</span></div>
-                            <div class="text-2xl font-bold text-[#00a3b5]"><?= $stats['kawasan']['persentase']['value'] ?>%</div>
+                            <div class="text-2xl sm:text-2xl font-black font-jakarta text-[color:var(--portal-text)]"><?= number_format($stats['kawasan']['tertangani']['value'], 1, ',', '.') ?> <span class="text-lg text-zinc-500 font-normal">/ <?= number_format($stats['kawasan']['luas_kumuh']['value'], 1, ',', '.') ?> Ha</span></div>
+                            <div class="text-xl font-bold text-[#00a3b5]"><?= $stats['kawasan']['persentase']['value'] ?>%</div>
                         </div>
                         <div class="w-full bg-[#0d2228] border border-white/5 rounded-full h-4 mb-3 overflow-hidden shadow-inner">
                             <div class="bg-gradient-to-r from-[#00545f] to-[#00a3b5] h-full rounded-full relative overflow-hidden" style="width: <?= $stats['kawasan']['persentase']['value'] ?>%">
@@ -167,89 +156,89 @@
                             </div>
                         </div>
                     </div>
-                    <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl flex flex-col justify-center">
-                        <div class="text-[#8aacb0] text-sm font-semibold mb-2">Sisa Kawasan Kumuh</div>
-                        <div class="text-4xl font-black text-[#ff6b6b] drop-shadow-[0_0_10px_rgba(255,107,107,0.3)] mb-3"><?= number_format($stats['kawasan']['sisa_kumuh']['value'], 1, ',', '.') ?> <span class="text-xl font-medium text-zinc-500">Ha</span></div>
+                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col justify-center">
+                        <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-2">Sisa Kawasan Kumuh</div>
+                        <div class="text-4xl font-black text-[#ff6b6b]  mb-3"><?= number_format($stats['kawasan']['sisa_kumuh']['value'], 1, ',', '.') ?> <span class="text-xl font-medium text-zinc-500">Ha</span></div>
                         <div><span class="text-[10px] font-bold uppercase tracking-wider text-[#ff6b6b]/40 bg-[#ff6b6b]/10 inline-block px-2 py-1 rounded">Sumber: <?= $stats['kawasan']['sisa_kumuh']['sumber'] ?></span></div>
                     </div>
                 </div>
 
                 <!-- Graphs for Kawasan -->
-                <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl flex flex-col items-center">
-                    <h3 class="text-white font-semibold mb-2 text-center">Persentase Penanganan Kawasan Kumuh</h3>
+                <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center">
+                    <h3 class="text-[color:var(--portal-text)] font-semibold mb-2 text-center">Persentase Penanganan Kawasan Kumuh</h3>
                     <div class="relative w-full h-[250px] flex justify-center"><canvas id="chartKawasan"></canvas></div>
                 </div>
             </section>
 
             <!-- 3. Pertanahan -->
-            <section id="pertanahan" class="animate-fade-in-up scroll-mt-28" style="animation-delay: 0.3s;">
-                <div class="flex items-center gap-4 mb-6 border-b border-white/5 pb-4">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-[0_0_20px_rgba(245,158,11,0.3)]">
+            <section id="pertanahan" class="animate-fade-in-up scroll-mt-4" style="animation-delay: 0.3s;">
+                <div class="flex items-center gap-3 mb-4 border-b border-white/5 pb-4">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-[color:var(--portal-text)] ">
                         <i class="fa-solid fa-map text-2xl"></i>
                     </div>
                     <div>
-                        <h2 class="text-2xl font-bold text-white">Pertanahan</h2>
-                        <p class="text-sm text-zinc-400">Statistika aset lahan dan bank tanah</p>
+                        <h2 class="text-xl font-bold text-[color:var(--portal-text)]">Pertanahan</h2>
+                        <p class="text-sm text-[color:var(--portal-text-muted)]">Statistika aset lahan dan bank tanah</p>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:p-5">
                     <div class="space-y-6">
-                        <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl relative overflow-hidden">
-                            <div class="text-[#8aacb0] text-sm font-semibold mb-2">Total Aset Lahan (Ha)</div>
-                            <div class="text-3xl font-black text-white mb-3"><?= number_format($stats['pertanahan']['aset_lahan']['value'], 1, ',', '.') ?></div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-white/40 bg-white/5 inline-block px-2 py-1 rounded">Sumber: <?= $stats['pertanahan']['aset_lahan']['sumber'] ?></div>
+                        <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative overflow-hidden">
+                            <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-2">Total Aset Lahan (Ha)</div>
+                            <div class="text-xl font-bold text-[color:var(--portal-text)] mb-2"><?= number_format($stats['pertanahan']['aset_lahan']['value'], 1, ',', '.') ?></div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['pertanahan']['aset_lahan']['sumber'] ?></div>
                         </div>
-                        <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-amber-500/20 p-6 rounded-2xl relative overflow-hidden shadow-[0_0_15px_rgba(245,158,11,0.05)]">
+                        <div class="bg-[color:var(--portal-btn-bg)] border border-amber-500/20 p-3 sm:p-5 rounded-2xl relative overflow-hidden ">
                             <div class="text-amber-500 text-sm font-semibold mb-2">Lahan Siap Bangun (Ha)</div>
-                            <div class="text-3xl font-black text-amber-500 drop-shadow-[0_0_10px_rgba(245,158,11,0.3)] mb-3"><?= number_format($stats['pertanahan']['lahan_siap_bangun']['value'], 1, ',', '.') ?></div>
+                            <div class="text-2xl sm:text-2xl font-black font-jakarta text-amber-500  mb-3"><?= number_format($stats['pertanahan']['lahan_siap_bangun']['value'], 1, ',', '.') ?></div>
                             <div class="text-[10px] font-bold uppercase tracking-wider text-amber-500/50 bg-amber-500/10 inline-block px-2 py-1 rounded">Sumber: <?= $stats['pertanahan']['lahan_siap_bangun']['sumber'] ?></div>
                         </div>
-                        <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl relative overflow-hidden">
-                            <div class="text-[#8aacb0] text-sm font-semibold mb-2">Lahan Termanfaatkan (Ha)</div>
-                            <div class="text-3xl font-black text-white mb-3"><?= number_format($stats['pertanahan']['lahan_termanfaatkan']['value'], 1, ',', '.') ?></div>
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-white/40 bg-white/5 inline-block px-2 py-1 rounded">Sumber: <?= $stats['pertanahan']['lahan_termanfaatkan']['sumber'] ?></div>
+                        <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative overflow-hidden">
+                            <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-2">Lahan Termanfaatkan (Ha)</div>
+                            <div class="text-xl font-bold text-[color:var(--portal-text)] mb-2"><?= number_format($stats['pertanahan']['lahan_termanfaatkan']['value'], 1, ',', '.') ?></div>
+                            <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['pertanahan']['lahan_termanfaatkan']['sumber'] ?></div>
                         </div>
                     </div>
                     <!-- Graphs for Pertanahan -->
-                    <div class="lg:col-span-2 bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl flex flex-col items-center justify-center">
-                        <h3 class="text-white font-semibold mb-4 text-center">Proporsi Pemanfaatan Lahan</h3>
+                    <div class="lg:col-span-2 bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center justify-center">
+                        <h3 class="text-[color:var(--portal-text)] font-semibold mb-4 text-center">Proporsi Pemanfaatan Lahan</h3>
                         <div class="relative w-full h-[350px] flex justify-center"><canvas id="chartPertanahan"></canvas></div>
                     </div>
                 </div>
             </section>
 
             <!-- 4. Statistika Pengembang -->
-            <section id="pengembang" class="animate-fade-in-up scroll-mt-28" style="animation-delay: 0.4s;">
-                <div class="flex items-center gap-4 mb-6 border-b border-white/5 pb-4">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+            <section id="pengembang" class="animate-fade-in-up scroll-mt-4" style="animation-delay: 0.4s;">
+                <div class="flex items-center gap-3 mb-4 border-b border-white/5 pb-4">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-[color:var(--portal-text)] ">
                         <i class="fa-solid fa-hard-hat text-2xl"></i>
                     </div>
                     <div>
-                        <h2 class="text-2xl font-bold text-white">Statistika Pengembang</h2>
-                        <p class="text-sm text-zinc-400">Data kapasitas pengembang dan proyek perumahan</p>
+                        <h2 class="text-xl font-bold text-[color:var(--portal-text)]">Statistika Pengembang</h2>
+                        <p class="text-sm text-[color:var(--portal-text-muted)]">Data kapasitas pengembang dan proyek perumahan</p>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:p-5">
                     <!-- Graph -->
-                    <div class="lg:col-span-2 bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl flex flex-col">
-                        <h3 class="text-white font-semibold mb-4 text-center">Aktivitas Pengembang</h3>
+                    <div class="lg:col-span-2 bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col">
+                        <h3 class="text-[color:var(--portal-text)] font-semibold mb-4 text-center">Aktivitas Pengembang</h3>
                         <div class="relative w-full h-[250px]"><canvas id="chartPengembang"></canvas></div>
                     </div>
                     <!-- Numbers -->
                     <div class="space-y-6 flex flex-col justify-center">
-                        <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-4 rounded-2xl relative overflow-hidden">
-                            <div class="text-[#8aacb0] text-xs font-semibold mb-1">Total Pengembang Terdaftar</div>
-                            <div class="text-2xl font-black text-white mb-2"><?= number_format($stats['pengembang']['total_terdaftar']['value'], 0, ',', '.') ?></div>
-                            <div class="text-[9px] font-bold uppercase tracking-wider text-white/40 bg-white/5 inline-block px-2 py-1 rounded">Sumber: <?= $stats['pengembang']['total_terdaftar']['sumber'] ?></div>
+                        <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 rounded-2xl relative overflow-hidden">
+                            <div class="text-[color:var(--portal-text-muted)] text-xs font-semibold mb-1">Total Pengembang Terdaftar</div>
+                            <div class="text-2xl font-black text-[color:var(--portal-text)] mb-2"><?= number_format($stats['pengembang']['total_terdaftar']['value'], 0, ',', '.') ?></div>
+                            <div class="text-[9px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['pengembang']['total_terdaftar']['sumber'] ?></div>
                         </div>
-                        <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-4 rounded-2xl relative overflow-hidden">
-                            <div class="text-[#8aacb0] text-xs font-semibold mb-1">Pengembang Aktif</div>
-                            <div class="text-2xl font-black text-white mb-2"><?= number_format($stats['pengembang']['aktif']['value'], 0, ',', '.') ?></div>
-                            <div class="text-[9px] font-bold uppercase tracking-wider text-white/40 bg-white/5 inline-block px-2 py-1 rounded">Sumber: <?= $stats['pengembang']['aktif']['sumber'] ?></div>
+                        <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 rounded-2xl relative overflow-hidden">
+                            <div class="text-[color:var(--portal-text-muted)] text-xs font-semibold mb-1">Pengembang Aktif</div>
+                            <div class="text-2xl font-black text-[color:var(--portal-text)] mb-2"><?= number_format($stats['pengembang']['aktif']['value'], 0, ',', '.') ?></div>
+                            <div class="text-[9px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded">Sumber: <?= $stats['pengembang']['aktif']['sumber'] ?></div>
                         </div>
-                        <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-blue-500/20 p-4 rounded-2xl relative overflow-hidden shadow-[0_0_15px_rgba(59,130,246,0.05)]">
+                        <div class="bg-[color:var(--portal-btn-bg)] border border-blue-500/20 p-3 rounded-2xl relative overflow-hidden ">
                             <div class="text-blue-400 text-xs font-semibold mb-1">Proyek Berjalan</div>
-                            <div class="text-2xl font-black text-blue-400 drop-shadow-[0_0_10px_rgba(59,130,246,0.3)] mb-2"><?= number_format($stats['pengembang']['proyek_berjalan']['value'], 0, ',', '.') ?></div>
+                            <div class="text-2xl font-black text-blue-400  mb-2"><?= number_format($stats['pengembang']['proyek_berjalan']['value'], 0, ',', '.') ?></div>
                             <div class="text-[9px] font-bold uppercase tracking-wider text-blue-400/50 bg-blue-500/10 inline-block px-2 py-1 rounded">Sumber: <?= $stats['pengembang']['proyek_berjalan']['sumber'] ?></div>
                         </div>
                     </div>
@@ -257,85 +246,85 @@
             </section>
 
             <!-- 5. Statistika Penerima Manfaat -->
-            <section id="penerima-manfaat" class="animate-fade-in-up scroll-mt-28" style="animation-delay: 0.5s;">
-                <div class="flex items-center gap-4 mb-6 border-b border-white/5 pb-4">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+            <section id="penerima-manfaat" class="animate-fade-in-up scroll-mt-4" style="animation-delay: 0.5s;">
+                <div class="flex items-center gap-3 mb-4 border-b border-white/5 pb-4">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-[color:var(--portal-text)] ">
                         <i class="fa-solid fa-users text-2xl"></i>
                     </div>
                     <div>
-                        <h2 class="text-2xl font-bold text-white">Statistika Penerima Manfaat</h2>
-                        <p class="text-sm text-zinc-400">Data masyarakat yang menerima manfaat langsung</p>
+                        <h2 class="text-xl font-bold text-[color:var(--portal-text)]">Statistika Penerima Manfaat</h2>
+                        <p class="text-sm text-[color:var(--portal-text-muted)]">Data masyarakat yang menerima manfaat langsung</p>
                     </div>
                 </div>
                 
                 <!-- Main KPI Card -->
-                <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-emerald-500/30 p-8 rounded-2xl relative overflow-hidden shadow-[0_0_20px_rgba(16,185,129,0.1)] mb-6 text-center">
+                <div class="bg-[color:var(--portal-btn-bg)] border border-emerald-500/30 p-8 rounded-2xl relative overflow-hidden  mb-4 text-center">
                     <div class="absolute -right-4 -bottom-4 opacity-5 text-emerald-500"><i class="fa-solid fa-hand-holding-heart text-[200px]"></i></div>
                     <div class="relative z-10">
                         <div class="text-emerald-400 text-lg font-semibold mb-2 uppercase tracking-widest">Total Penerima Manfaat</div>
-                        <div class="text-6xl font-black text-emerald-400 drop-shadow-[0_0_15px_rgba(16,185,129,0.4)] mb-4"><?= number_format($stats['penerima_manfaat']['total_penerima']['value'], 0, ',', '.') ?> Jiwa</div>
+                        <div class="text-6xl font-black text-emerald-400  mb-4"><?= number_format($stats['penerima_manfaat']['total_penerima']['value'], 0, ',', '.') ?> Jiwa</div>
                         <div class="text-xs font-bold uppercase tracking-wider text-emerald-400/60 bg-emerald-500/10 inline-block px-3 py-1.5 rounded-full">Dihitung otomatis berdasarkan bantuan RTLH & KPR Subsidi</div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="flex flex-col gap-6 justify-center">
-                        <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl relative overflow-hidden flex items-center justify-between">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:p-5">
+                    <div class="flex flex-col gap-3 sm:p-5 justify-center">
+                        <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative overflow-hidden flex items-center justify-between">
                             <div>
-                                <div class="text-[#8aacb0] text-sm font-semibold mb-1">Penerima Bantuan RTLH</div>
-                                <div class="text-[10px] font-bold uppercase tracking-wider text-white/40 bg-white/5 inline-block px-2 py-1 rounded mb-2">Sumber: <?= $stats['penerima_manfaat']['bantuan_rtlh']['sumber'] ?></div>
+                                <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-1">Penerima Bantuan RTLH</div>
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded mb-2">Sumber: <?= $stats['penerima_manfaat']['bantuan_rtlh']['sumber'] ?></div>
                             </div>
-                            <div class="text-3xl font-black text-white"><?= number_format($stats['penerima_manfaat']['bantuan_rtlh']['value'], 0, ',', '.') ?></div>
+                            <div class="text-2xl sm:text-2xl font-black font-jakarta text-[color:var(--portal-text)]"><?= number_format($stats['penerima_manfaat']['bantuan_rtlh']['value'], 0, ',', '.') ?></div>
                         </div>
-                        <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl relative overflow-hidden flex items-center justify-between">
+                        <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative overflow-hidden flex items-center justify-between">
                             <div>
-                                <div class="text-[#8aacb0] text-sm font-semibold mb-1">Pembeli Rumah Subsidi</div>
-                                <div class="text-[10px] font-bold uppercase tracking-wider text-white/40 bg-white/5 inline-block px-2 py-1 rounded mb-2">Sumber: <?= $stats['penerima_manfaat']['pembeli_subsidi']['sumber'] ?></div>
+                                <div class="text-[color:var(--portal-text-muted)] text-sm font-semibold mb-1">Pembeli Rumah Subsidi</div>
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)] bg-[color:var(--portal-btn-bg)] inline-block px-2 py-1 rounded mb-2">Sumber: <?= $stats['penerima_manfaat']['pembeli_subsidi']['sumber'] ?></div>
                             </div>
-                            <div class="text-3xl font-black text-white"><?= number_format($stats['penerima_manfaat']['pembeli_subsidi']['value'], 0, ',', '.') ?></div>
+                            <div class="text-2xl sm:text-2xl font-black font-jakarta text-[color:var(--portal-text)]"><?= number_format($stats['penerima_manfaat']['pembeli_subsidi']['value'], 0, ',', '.') ?></div>
                         </div>
                     </div>
                     <!-- Graph -->
-                    <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl flex flex-col items-center">
-                        <h3 class="text-white font-semibold mb-4 text-center">Komposisi Penerima Manfaat</h3>
+                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center">
+                        <h3 class="text-[color:var(--portal-text)] font-semibold mb-4 text-center">Komposisi Penerima Manfaat</h3>
                         <div class="relative w-full h-[250px] flex justify-center"><canvas id="chartPenerima"></canvas></div>
                     </div>
                 </div>
             </section>
 
             <!-- 6. Statistika Publikasi & Keterbukaan Informasi -->
-            <section id="publikasi" class="animate-fade-in-up scroll-mt-28" style="animation-delay: 0.6s;">
-                <div class="flex items-center gap-4 mb-6 border-b border-white/5 pb-4">
-                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-[0_0_20px_rgba(6,182,212,0.3)]">
+            <section id="publikasi" class="animate-fade-in-up scroll-mt-4" style="animation-delay: 0.6s;">
+                <div class="flex items-center gap-3 mb-4 border-b border-white/5 pb-4">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-[color:var(--portal-text)] ">
                         <i class="fa-solid fa-bullhorn text-xl"></i>
                     </div>
                     <div>
-                        <h2 class="text-2xl font-bold text-white">Statistika Publikasi</h2>
-                        <p class="text-sm text-zinc-400">Data keterbukaan informasi publik (Terkoneksi API KRSjawa3)</p>
+                        <h2 class="text-xl font-bold text-[color:var(--portal-text)]">Statistika Publikasi</h2>
+                        <p class="text-sm text-[color:var(--portal-text-muted)]">Data keterbukaan informasi publik (Terkoneksi API KRSjawa3)</p>
                     </div>
                 </div>
                 
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-cyan-500/30 p-5 rounded-2xl relative overflow-hidden shadow-[0_0_15px_rgba(6,182,212,0.1)]">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <div class="bg-[color:var(--portal-btn-bg)] border border-cyan-500/30 p-5 rounded-2xl relative overflow-hidden ">
                         <div class="text-cyan-400 text-xs font-semibold mb-1">Berita & Artikel</div>
-                        <div class="text-3xl font-black text-cyan-400 mb-2"><?= number_format($publikasi['artikel'], 0, ',', '.') ?></div>
+                        <div class="text-2xl sm:text-2xl font-black font-jakarta text-cyan-400 mb-2"><?= number_format($publikasi['artikel'], 0, ',', '.') ?></div>
                     </div>
-                    <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl relative overflow-hidden">
-                        <div class="text-[#8aacb0] text-xs font-semibold mb-1">Galeri Video</div>
-                        <div class="text-3xl font-black text-white mb-2"><?= number_format($publikasi['video'], 0, ',', '.') ?></div>
+                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-5 rounded-2xl relative overflow-hidden">
+                        <div class="text-[color:var(--portal-text-muted)] text-xs font-semibold mb-1">Galeri Video</div>
+                        <div class="text-2xl sm:text-2xl font-black font-jakarta text-[color:var(--portal-text)] mb-2"><?= number_format($publikasi['video'], 0, ',', '.') ?></div>
                     </div>
-                    <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl relative overflow-hidden">
-                        <div class="text-[#8aacb0] text-xs font-semibold mb-1">Produk Hukum (Regulasi)</div>
-                        <div class="text-3xl font-black text-white mb-2"><?= number_format($publikasi['regulasi'], 0, ',', '.') ?></div>
+                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-5 rounded-2xl relative overflow-hidden">
+                        <div class="text-[color:var(--portal-text-muted)] text-xs font-semibold mb-1">Produk Hukum (Regulasi)</div>
+                        <div class="text-2xl sm:text-2xl font-black font-jakarta text-[color:var(--portal-text)] mb-2"><?= number_format($publikasi['regulasi'], 0, ',', '.') ?></div>
                     </div>
-                    <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-5 rounded-2xl relative overflow-hidden">
-                        <div class="text-[#8aacb0] text-xs font-semibold mb-1">Desain Rumah/Prototipe</div>
-                        <div class="text-3xl font-black text-white mb-2"><?= number_format($publikasi['desain_rumah'], 0, ',', '.') ?></div>
+                    <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-5 rounded-2xl relative overflow-hidden">
+                        <div class="text-[color:var(--portal-text-muted)] text-xs font-semibold mb-1">Desain Rumah/Prototipe</div>
+                        <div class="text-2xl sm:text-2xl font-black font-jakarta text-[color:var(--portal-text)] mb-2"><?= number_format($publikasi['desain_rumah'], 0, ',', '.') ?></div>
                     </div>
                 </div>
 
-                <div class="bg-[#0a1a1f]/80 backdrop-blur-xl border border-white/10 p-6 rounded-2xl flex flex-col items-center">
-                    <h3 class="text-white font-semibold mb-4 text-center">Komposisi Konten Publikasi</h3>
+                <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl flex flex-col items-center">
+                    <h3 class="text-[color:var(--portal-text)] font-semibold mb-4 text-center">Komposisi Konten Publikasi</h3>
                     <div class="relative w-full h-[250px] flex justify-center"><canvas id="chartPublikasi"></canvas></div>
                 </div>
             </section>
@@ -541,4 +530,4 @@
         });
     });
     </script>
-</main>
+</div>
