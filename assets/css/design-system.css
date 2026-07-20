@@ -725,11 +725,11 @@ body {
 }
     /* Default / Inactive state */
     color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-primary);
 }
 .portal-tab-btn:hover {
     color: white;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--bg-card);
 }
 
 /* Active tab — warna cerah menyatu dengan panel */
@@ -740,13 +740,9 @@ body {
     border-color: transparent;
     z-index: 2;
     border-radius: 0.875rem 0.875rem 0 0;
-    transition: none; /* Hilangkan delay saat jadi aktif agar terasa lebih responsif (snappy) */
 }
-.portal-tab-btn.active i,
-.portal-tab-btn.active svg {
-    transition: none;
-}
-/* Scoop (lengkungan) - definisikan di state dasar agar bisa dianimasikan */
+
+/* Scoop (lengkungan) - animasi dengan ukuran bayangan */
 .portal-tab-btn::before,
 .portal-tab-btn::after {
     content: '';
@@ -756,29 +752,30 @@ body {
     height: 10px;
     background: transparent;
     pointer-events: none;
-    opacity: 0;
-    transition: all 0.25s ease;
+    opacity: 1; /* Selalu 1, bentuknya yang membesar/mengecil */
+    transition: box-shadow 0.25s ease;
 }
 
 /* Scoop kiri */
 .portal-tab-btn::before {
     left: -10px;
     border-bottom-right-radius: 0.5rem;
-    box-shadow: 5px 5px 0 5px var(--portal-bg);
+    box-shadow: 0 0 0 0 var(--portal-bg);
 }
 
 /* Scoop kanan */
 .portal-tab-btn::after {
     right: -10px;
     border-bottom-left-radius: 0.5rem;
-    box-shadow: -5px 5px 0 5px var(--portal-bg);
+    box-shadow: 0 0 0 0 var(--portal-bg);
 }
 
-/* Tampilkan scoop saat tab aktif */
-.portal-tab-btn.active::before,
+/* Tampilkan scoop saat tab aktif dengan membesarkan bayangannya */
+.portal-tab-btn.active::before {
+    box-shadow: 5px 5px 0 5px var(--portal-bg);
+}
 .portal-tab-btn.active::after {
-    opacity: 1;
-    transition: none;
+    box-shadow: -5px 5px 0 5px var(--portal-bg);
 }
 
 .portal-panel {
