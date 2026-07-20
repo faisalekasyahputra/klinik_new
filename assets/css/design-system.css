@@ -725,11 +725,11 @@ body {
 }
     /* Default / Inactive state */
     color: var(--text-secondary);
-    background: var(--bg-primary);
+    background: rgba(255, 255, 255, 0.03);
 }
 .portal-tab-btn:hover {
     color: white;
-    background: var(--bg-card);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 /* Active tab — warna cerah menyatu dengan panel */
