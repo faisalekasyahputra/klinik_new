@@ -87,7 +87,7 @@
                         </a>
 
                         <!-- Bank Desain -->
-                        <a href="<?= $is_home ? 'javascript:void(0)' : base_url() . '#bank-desain' ?>" <?= $is_home ? '@click.prevent="document.getElementById(\'bank-desain\').scrollIntoView({behavior: \'smooth\'}); open = false"' : '' ?> class="flex items-center gap-3 px-4 py-2 <?= $is_bank_desain ? 'bg-white/5 text-[#ecffb6]' : 'text-[#8aacb0] hover:bg-white/5 hover:text-[#ecffb6]' ?> rounded-xl transition-all duration-200">
+                        <a href="<?= base_url('panduan_desain') ?>" class="flex items-center gap-3 px-4 py-2 <?= $is_bank_desain ? 'bg-white/5 text-[#ecffb6]' : 'text-[#8aacb0] hover:bg-white/5 hover:text-[#ecffb6]' ?> rounded-xl transition-all duration-200">
                             <div class="w-4 text-center opacity-70"><i class="fa-solid fa-pen-ruler"></i></div>
                             <span>Bank Desain (Prototipe)</span>
                         </a>
@@ -215,7 +215,7 @@
                 <a href="<?= base_url('simulasi_kpr') ?>" class="flex items-center gap-2 text-zinc-400 hover:text-white text-xs py-1 mt-2" @click="mobileMenu = false">
                     <i class="fa-solid fa-calculator w-4 text-center opacity-70"></i> Info KPR & Subsidi
                 </a>
-                <a href="<?= $is_home ? 'javascript:void(0)' : base_url() . '#bank-desain' ?>" <?= $is_home ? '@click.prevent="document.getElementById(\'bank-desain\').scrollIntoView({behavior: \'smooth\'}); mobileMenu = false"' : '@click="mobileMenu = false"' ?> class="flex items-center gap-2 text-zinc-400 hover:text-white text-xs py-1">
+                <a href="<?= base_url('panduan_desain') ?>" @click="mobileMenu = false" class="flex items-center gap-2 text-zinc-400 hover:text-white text-xs py-1">
                     <i class="fa-solid fa-pen-ruler w-4 text-center opacity-70"></i> Bank Desain
                 </a>
                 <!-- Menu Bank Data dipindah ke luar -->
