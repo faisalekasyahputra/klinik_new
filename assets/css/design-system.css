@@ -713,17 +713,18 @@ body {
     font-size: 0.8125rem;
     font-weight: 600;
     white-space: nowrap;
-    background: rgba(255, 255, 255, 0.03);
-    color: var(--text-secondary);
     border: 1px solid transparent;
     border-bottom: none;
     transition: background 0.25s ease, color 0.25s ease;
     text-decoration: none;
     position: relative;
+    /* Default / Inactive state */
+    color: var(--portal-text-muted);
+    background: rgba(240, 246, 247, 0.4); /* Light color with some transparency */
 }
 .portal-tab-btn:hover {
-    color: white;
-    background: rgba(255, 255, 255, 0.06);
+    color: var(--portal-text);
+    background: rgba(240, 246, 247, 0.7);
 }
 
 /* Active tab — warna cerah menyatu dengan panel */
