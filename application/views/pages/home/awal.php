@@ -11,7 +11,7 @@
     <div id="menu-utama" class="mb-3">
         <h2 class="text-sm font-bold uppercase tracking-widest text-[#8aacb0]">Menu Utama</h2>
     </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 mb-10">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-10">
 
         <a href="<?= base_url('golek_omah') ?>" class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(0, 80, 95, 0.08); box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); min-height: 168px;">
             <i class="fa-solid fa-house-chimney-window absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1rem; color: #0f2a30; opacity: 0.06;"></i>
