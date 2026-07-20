@@ -77,6 +77,112 @@
             </form>
         </div>
 
+        <?php if (isset($pengajuan_sp2)): ?>
+        <!-- SP2 Status & Data Pengembang -->
+        <div class="bg-[#0f2a30] rounded-2xl border border-[#d6fb00]/20 p-6 md:p-8 shadow-xl">
+            <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+                <h2 class="text-lg font-semibold text-[#ecffb6] flex items-center gap-2">
+                    <i class="fa-solid fa-certificate"></i> Sertifikasi Pengembang (SRP2)
+                </h2>
+                <?php if($pengajuan_sp2->status_verifikasi == 'Pending'): ?>
+                    <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#d6fb00]/10 border border-[#d6fb00]/20 text-[#d6fb00] font-bold text-xs uppercase tracking-wider">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#d6fb00] animate-pulse"></span> Dalam Peninjauan
+                    </span>
+                <?php elseif($pengajuan_sp2->status_verifikasi == 'Diterima'): ?>
+                    <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                        <i class="fa-solid fa-circle-check text-xs"></i> Diterima
+                    </span>
+                <?php else: ?>
+                    <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 font-bold text-xs uppercase tracking-wider">
+                        <i class="fa-solid fa-circle-xmark text-xs"></i> Ditolak
+                    </span>
+                <?php endif; ?>
+            </div>
+
+            <?php if($pengajuan_sp2->status_verifikasi == 'Ditolak' && !empty($pengajuan_sp2->catatan_admin)): ?>
+            <div class="bg-red-500/5 border border-red-500/20 rounded-2xl p-4 mb-6 text-xs sm:text-sm text-zinc-400">
+                <strong class="text-red-400 block mb-1"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Catatan Koreksi Admin:</strong>
+                <?= htmlspecialchars($pengajuan_sp2->catatan_admin) ?>
+            </div>
+            <?php endif; ?>
+
+            <div class="mb-6 pb-6 border-b border-zinc-800/80">
+                <?php if($pengajuan_sp2->status_verifikasi == 'Diterima'): ?>
+                    <a href="<?= base_url('Pengembang/profil/' . $pengajuan_sp2->id) ?>" target="_blank" class="inline-flex items-center gap-2 px-4 py-2.5 bg-[#d6fb00]/10 hover:bg-[#d6fb00]/20 text-[#d6fb00] border border-[#d6fb00]/30 rounded-xl transition-all font-semibold text-sm mb-3">
+                        <i class="fa-solid fa-eye"></i> Lihat Profil Publik
+                    </a>
+                    <div>
+                        <button type="button" disabled title="Sertifikat digital belum tersedia untuk diunduh" class="inline-flex items-center gap-2 px-4 py-2.5 bg-zinc-800 text-zinc-500 border border-zinc-700 rounded-xl font-semibold text-sm cursor-not-allowed">
+                            <i class="fa-solid fa-download"></i> Download Sertifikat
+                        </button>
+                        <p class="text-xs text-zinc-500 mt-2">Sertifikat digital belum tersedia untuk diunduh — proses penerbitan sedang disiapkan Admin Disperakim Jateng.</p>
+                    </div>
+                <?php else: ?>
+                    <p class="text-xs text-zinc-500">Download sertifikat akan tersedia setelah pengajuan Anda dinyatakan <strong class="text-emerald-400">Diterima</strong>.</p>
+                <?php endif; ?>
+            </div>
+
+            <h3 class="text-sm font-semibold text-zinc-300 mb-4">Edit Data Perusahaan</h3>
+            <form action="<?= base_url('akun/update_pengembang') ?>" method="POST" class="space-y-5">
+                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+
+                <div>
+                    <label class="block text-sm font-medium text-[#ecffb6] mb-1">Nama Perusahaan</label>
+                    <input type="text" name="nama_perusahaan" value="<?= htmlspecialchars($pengajuan_sp2->nama_perusahaan) ?>" required
+                           class="w-full bg-[#0a191c] border border-[#d6fb00]/30 rounded-xl px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-[#d6fb00] focus:ring-1 focus:ring-[#d6fb00] transition-all uppercase">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-[#ecffb6] mb-1">Alamat Kantor</label>
+                    <textarea name="alamat_kantor" rows="2" required
+                              class="w-full bg-[#0a191c] border border-[#d6fb00]/30 rounded-xl px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-[#d6fb00] focus:ring-1 focus:ring-[#d6fb00] transition-all resize-none"><?= htmlspecialchars($pengajuan_sp2->alamat_kantor) ?></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-medium text-[#ecffb6] mb-1">Asosiasi</label>
+                        <select name="asosiasi" required class="w-full bg-[#0a191c] border border-[#d6fb00]/30 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[#d6fb00] focus:ring-1 focus:ring-[#d6fb00] transition-all">
+                            <?php $asosiasi_labels = ['rei' => 'REI', 'himperra' => 'HIMPERRA', 'apersi' => 'APERSI', 'pi' => 'PI', 'lainnya' => 'Lainnya']; ?>
+                            <?php foreach ($asosiasi_labels as $val => $label): ?>
+                                <option value="<?= $val ?>" <?= $pengajuan_sp2->asosiasi === $val ? 'selected' : '' ?>><?= $label ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-[#ecffb6] mb-1">No. Keanggotaan</label>
+                        <input type="text" name="no_keanggotaan" value="<?= htmlspecialchars($pengajuan_sp2->no_keanggotaan) ?>" required
+                               class="w-full bg-[#0a191c] border border-[#d6fb00]/30 rounded-xl px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-[#d6fb00] focus:ring-1 focus:ring-[#d6fb00] transition-all">
+                    </div>
+                </div>
+
+                <p class="text-xs text-zinc-500 pt-1">Kontak publik — ditampilkan di halaman profil pengembang.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-300 mb-1">Instagram</label>
+                        <input type="text" name="instagram" value="<?= htmlspecialchars($pengajuan_sp2->instagram ?? '') ?>" placeholder="https://instagram.com/..."
+                               class="w-full bg-[#0a191c] border border-zinc-700/50 rounded-xl px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-[#d6fb00] focus:ring-1 focus:ring-[#d6fb00] transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-300 mb-1">Website</label>
+                        <input type="text" name="website" value="<?= htmlspecialchars($pengajuan_sp2->website ?? '') ?>" placeholder="https://..."
+                               class="w-full bg-[#0a191c] border border-zinc-700/50 rounded-xl px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-[#d6fb00] focus:ring-1 focus:ring-[#d6fb00] transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-zinc-300 mb-1">Sosmed Lainnya</label>
+                        <input type="text" name="sosmed_lainnya" value="<?= htmlspecialchars($pengajuan_sp2->sosmed_lainnya ?? '') ?>" placeholder="Facebook, WhatsApp Business, dst."
+                               class="w-full bg-[#0a191c] border border-zinc-700/50 rounded-xl px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-[#d6fb00] focus:ring-1 focus:ring-[#d6fb00] transition-all">
+                    </div>
+                </div>
+
+                <div class="pt-2">
+                    <button type="submit" class="bg-[#d6fb00] hover:bg-[#b5d500] text-[#0f2a30] font-bold py-2.5 px-6 rounded-xl transition-colors duration-200 flex items-center gap-2">
+                        <i class="fa-solid fa-floppy-disk"></i> Simpan Data Pengembang
+                    </button>
+                </div>
+            </form>
+        </div>
+        <?php endif; ?>
+
         <!-- Danger Zone -->
         <div class="mt-12 bg-red-500/5 rounded-2xl border border-red-500/20 p-6 shadow-xl">
             <h2 class="text-lg font-semibold text-red-400 mb-2 flex items-center gap-2">

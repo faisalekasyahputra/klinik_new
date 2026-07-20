@@ -178,3 +178,100 @@
         </div>
     </div>
 </nav>
+
+<!-- ============================================================
+     MOBILE MENU (Alpine.js) — sibling of <nav>, not nested inside
+     #page-content-wrapper, so its z-50 isn't trapped under a lower
+     stacking context on non-home pages.
+     ============================================================ -->
+<div x-show="mobileMenu" x-cloak x-transition.opacity class="lg:hidden fixed inset-0 bg-[#0a1a1f]/85 backdrop-blur-sm z-40" @click="mobileMenu = false"></div>
+<div x-show="mobileMenu" x-cloak x-transition:enter="transition transform ease-out duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition transform ease-in duration-200" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full"
+     class="lg:hidden fixed top-0 right-0 h-full w-[300px] bg-[#0d2228] border-l border-[#d6fb00]/20 z-50 overflow-y-auto" x-data="{ openPerumahan: false, openKawasan: false }">
+    <div class="p-6 space-y-1">
+        <div class="flex items-center justify-between mb-8">
+            <span class="text-xs font-bold text-zinc-500 uppercase tracking-widest">Menu</span>
+            <button @click="mobileMenu = false" class="w-8 h-8 flex items-center justify-center rounded-lg bg-[#d6fb00]/8 border border-[#d6fb00]/20 text-zinc-400 hover:text-[#d6fb00] hover:bg-[#d6fb00]/10 transition-colors"><i class="fa-solid fa-xmark text-sm"></i></button>
+        </div>
+
+        <a href="<?= base_url() ?>" class="block text-white py-3 font-semibold text-sm border-b border-[#d6fb00]/20" @click="mobileMenu = false">Beranda</a>
+
+        <a href="#" class="hidden text-zinc-400 py-3 text-sm border-b border-[#d6fb00]/20">Profil</a>
+
+        <a href="<?= base_url('pengembang') ?>" class="flex items-center gap-2 text-zinc-400 hover:text-white py-3 text-sm border-b border-[#d6fb00]/20" @click="mobileMenu = false">
+            Pengembang <span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-[#d6fb00]/10 text-[#d6fb00] border border-[#d6fb00]/30">SRP2</span>
+        </a>
+
+        <!-- Perumahan -->
+        <div class="border-b border-[#d6fb00]/20">
+            <button @click="openPerumahan = !openPerumahan" class="w-full flex justify-between items-center text-zinc-400 py-3 text-sm hover:text-[#d6fb00] transition-colors">
+                <span>Perumahan</span>
+                <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="openPerumahan && 'rotate-180 text-[#d6fb00]'"></i>
+            </button>
+            <div x-show="openPerumahan" x-cloak x-transition class="pl-4 pb-3 space-y-2 mt-1">
+                <!-- Etalase Program (Highlighted CTA) -->
+                <a href="<?= $is_home ? 'javascript:void(0)' : base_url() . '#etalase-program' ?>" <?= $is_home ? '@click.prevent="document.getElementById(\'etalase-program\').scrollIntoView({behavior: \'smooth\'}); mobileMenu = false"' : '@click="mobileMenu = false"' ?> class="flex items-center gap-2 text-[#d6fb00] text-xs py-2 font-bold bg-[#d6fb00]/10 hover:bg-[#d6fb00]/20 px-3 rounded-lg border border-[#d6fb00]/20 transition-colors">
+                    <i class="fa-solid fa-house-chimney-window w-4 text-center"></i> Etalase Program
+                </a>
+                <a href="<?= base_url('simulasi_kpr') ?>" class="flex items-center gap-2 text-zinc-400 hover:text-white text-xs py-1 mt-2" @click="mobileMenu = false">
+                    <i class="fa-solid fa-calculator w-4 text-center opacity-70"></i> Info KPR & Subsidi
+                </a>
+                <a href="<?= $is_home ? 'javascript:void(0)' : base_url() . '#bank-desain' ?>" <?= $is_home ? '@click.prevent="document.getElementById(\'bank-desain\').scrollIntoView({behavior: \'smooth\'}); mobileMenu = false"' : '@click="mobileMenu = false"' ?> class="flex items-center gap-2 text-zinc-400 hover:text-white text-xs py-1">
+                    <i class="fa-solid fa-pen-ruler w-4 text-center opacity-70"></i> Bank Desain
+                </a>
+                <!-- Menu Bank Data dipindah ke luar -->
+            </div>
+        </div>
+
+        <!-- Kawasan -->
+        <div class="border-b border-[#d6fb00]/20">
+            <button @click="openKawasan = !openKawasan" class="w-full flex justify-between items-center text-zinc-400 py-3 text-sm hover:text-[#d6fb00] transition-colors">
+                <span>Kawasan</span>
+                <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="openKawasan && 'rotate-180 text-[#d6fb00]'"></i>
+            </button>
+            <div x-show="openKawasan" x-cloak x-transition class="pl-4 pb-3 space-y-2 mt-1">
+                <a href="<?= base_url('sebaran') ?>" class="block text-zinc-400 hover:text-white text-xs py-1" @click="mobileMenu = false">Sebaran RTLH</a>
+                <a href="<?= base_url('sebaran_rusun') ?>" class="block text-zinc-400 hover:text-white text-xs py-1" @click="mobileMenu = false">Sebaran Rusun</a>
+                <a href="<?= base_url('profil_kumuh') ?>" class="block text-zinc-400 hover:text-white text-xs py-1" @click="mobileMenu = false">Profil Kawasan Kumuh</a>
+                <a href="<?= base_url('sebaran_sdgs') ?>" class="block text-zinc-400 hover:text-white text-xs py-1" @click="mobileMenu = false">Sebaran Bantuan SDGS</a>
+            </div>
+        </div>
+
+        <!-- Bank Data (Statistika) -->
+        <a href="<?= base_url('Statistika') ?>" class="flex items-center justify-between text-zinc-400 hover:text-white py-3 text-sm border-b border-[#d6fb00]/20 transition-colors" @click="mobileMenu = false">
+            <div class="flex items-center gap-2">
+                <span>Bank Data</span>
+            </div>
+            <i class="fa-solid fa-chart-pie text-[#d6fb00] text-[10px]"></i>
+        </a>
+
+        <!-- Pertanahan (Disabled) -->
+        <a href="#" class="flex items-center gap-2 text-zinc-600 cursor-not-allowed py-3 text-sm border-b border-[#d6fb00]/20" title="Akan Hadir">
+            Pertanahan <i class="fa-solid fa-lock text-[9px]"></i>
+        </a>
+
+        <div class="pt-6">
+            <?php if ($this->session->userdata('is_logged')): ?>
+                <?php
+                    $avatar_src = $this->session->userdata('avatar');
+                    if (empty($avatar_src)) {
+                        $fallback_name = urlencode($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
+                        $avatar_src = "https://ui-avatars.com/api/?name={$fallback_name}&background=d6fb00&color=0a1a1f&bold=true";
+                    }
+                ?>
+                <div class="flex items-center gap-3 p-3 bg-[#d6fb00]/5 border border-[#d6fb00]/20 rounded-xl mb-3">
+                    <img src="<?= $avatar_src ?>" class="w-9 h-9 rounded-lg object-cover ring-1 ring-[#d6fb00]/20">
+                    <div>
+                        <p class="text-[#ecffb6] text-xs font-semibold"><?= $this->session->userdata('username') ?: $this->session->userdata('name') ?></p>
+                        <p class="text-[#5a7a80] text-[10px]"><?= $this->session->userdata('email') ?></p>
+                    </div>
+                </div>
+                <a href="#" onClick="logout()" class="block w-full text-center text-[#ff6b6b] text-xs font-semibold py-2.5 border border-[#ff6b6b]/20 rounded-xl hover:bg-[#ff6b6b]/10 transition-all duration-200">Keluar</a>
+            <?php else: ?>
+                <a href="<?= base_url('Auth/login') ?>" class="flex items-center justify-center gap-2 w-full btn-primary text-xs py-3 rounded-xl">
+                    <i class="fa-solid fa-right-to-bracket text-sm"></i>
+                    Masuk
+                </a>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>

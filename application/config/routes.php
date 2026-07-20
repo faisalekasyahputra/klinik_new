@@ -64,8 +64,11 @@ $route['onboarding']               = 'Auth/onboarding';
 $route['akun']                     = 'Pengaturan/index';
 $route['akun/update']              = 'Pengaturan/update_profile';
 $route['akun/delete']              = 'Pengaturan/delete_account';
+$route['akun/update_pengembang']   = 'Pengaturan/update_pengembang_profile';
 
 // --- Clean URLs for Index controller ---
+$route['golek_omah']               = 'Index/golek_omah';
+$route['solusi_pembiayaan']        = 'Program/diagnosa/umum';
 $route['umum']                     = 'Index/umum';
 $route['detail_perum/(:any)']      = 'Index/detail_perum/$1';
 $route['profil']                   = 'Index/profil';
@@ -73,6 +76,8 @@ $route['tugas_pokok']              = 'Index/tugas_pokok';
 $route['struktur']                 = 'Index/struktur';
 $route['pengembang']               = 'Index/pengembang';
 $route['kemitraan']                = 'Index/kemitraan';
+$route['panduan_desain']           = 'Index/panduan_desain';
+$route['cari_rumah']               = 'Index/cari_rumah';
 $route['listkabupaten']            = 'Index/listkabupaten';
 $route['simulasi_kpr']             = 'Index/simulasi_kpr';
 

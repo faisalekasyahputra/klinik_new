@@ -10,6 +10,12 @@ class Index extends MY_Controller {
 		$this->load->library('ternak_api');
         $this->load->helper(['ternak', 'url', 'form','download']);
 	}
+	public function golek_omah()
+	{
+		$datacontent['judul']='';
+		$data['content'] = $this->load->view('pages/golek_omah/index', $datacontent, true);
+		$this->load->view('layouts/main',$data);
+	}
 	public function index()
 	{
 		$datacontent['judul']='';
@@ -417,9 +423,59 @@ class Index extends MY_Controller {
 	}
 	public function kemitraan()
 	{
-		
+
 		$datacontent['judul']='';
 		$data['content'] = $this->load->view('pages/kemitraan/kemitraan', $datacontent, true);
+		$this->load->view('layouts/main',$data);
+	}
+	public function panduan_desain()
+	{
+
+		$datacontent['judul']='';
+		$data['content'] = $this->load->view('pages/bank_desain/panduan_desain', $datacontent, true);
+		$this->load->view('layouts/main',$data);
+	}
+	public function cari_rumah()
+	{
+		$datacontent['judul']='';
+		$datacontent['kabupaten_kota_jateng'] = [
+			"3301" => "Kabupaten Cilacap",
+			"3302" => "Kabupaten Banyumas",
+			"3303" => "Kabupaten Purbalingga",
+			"3304" => "Kabupaten Banjarnegara",
+			"3305" => "Kabupaten Kebumen",
+			"3306" => "Kabupaten Purworejo",
+			"3307" => "Kabupaten Wonosobo",
+			"3308" => "Kabupaten Magelang",
+			"3309" => "Kabupaten Boyolali",
+			"3310" => "Kabupaten Klaten",
+			"3311" => "Kabupaten Sukoharjo",
+			"3312" => "Kabupaten Wonogiri",
+			"3313" => "Kabupaten Karanganyar",
+			"3314" => "Kabupaten Sragen",
+			"3315" => "Kabupaten Grobogan",
+			"3316" => "Kabupaten Blora",
+			"3317" => "Kabupaten Rembang",
+			"3318" => "Kabupaten Pati",
+			"3319" => "Kabupaten Kudus",
+			"3320" => "Kabupaten Jepara",
+			"3321" => "Kabupaten Demak",
+			"3322" => "Kabupaten Semarang",
+			"3323" => "Kabupaten Temanggung",
+			"3324" => "Kabupaten Kendal",
+			"3325" => "Kabupaten Batang",
+			"3326" => "Kabupaten Pekalongan",
+			"3327" => "Kabupaten Pemalang",
+			"3328" => "Kabupaten Tegal",
+			"3329" => "Kabupaten Brebes",
+			"3371" => "Kota Magelang",
+			"3372" => "Kota Surakarta (Solo)",
+			"3373" => "Kota Salatiga",
+			"3374" => "Kota Semarang",
+			"3375" => "Kota Pekalongan",
+			"3376" => "Kota Tegal"
+		];
+		$data['content'] = $this->load->view('pages/perumahan/cari_rumah', $datacontent, true);
 		$this->load->view('layouts/main',$data);
 	}
 	public function listkabupaten()

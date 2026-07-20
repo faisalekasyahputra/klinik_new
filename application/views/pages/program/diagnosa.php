@@ -9,6 +9,21 @@
             <p class="text-zinc-400">Program: <span class="text-emerald-400 font-semibold"><?= htmlspecialchars($program['nama_program']) ?></span></p>
         </div>
 
+        <?php if ($program['kode_program'] === 'umum'): ?>
+        <!-- Intro: Program Strategis (konteks sebelum wizard) -->
+        <div class="mb-10">
+            <p class="text-center text-xs font-bold text-[#8aacb0] uppercase tracking-widest mb-4">Program Strategis Perumahan Jawa Tengah</p>
+            <div class="flex flex-wrap items-center justify-center gap-2">
+                <span class="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-white/80"><i class="fa-solid fa-building-columns text-[#00a3b5]"></i> KPR-FLPP</span>
+                <span class="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-white/80"><i class="fa-solid fa-hammer text-amber-400"></i> Peningkatan RTLH</span>
+                <span class="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-white/80"><i class="fa-solid fa-trowel-bricks text-[#d6fb00]"></i> Stimulan PB</span>
+                <span class="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-white/80"><i class="fa-solid fa-leaf text-[#6bcb77]"></i> Oemah Lestari</span>
+                <span class="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10 text-xs text-white/80"><i class="fa-solid fa-water text-[#60a5fa]"></i> Rumah Apung</span>
+            </div>
+            <p class="text-center text-zinc-500 text-xs mt-4">Isi data di bawah untuk mengetahui program mana yang sesuai untuk Anda.</p>
+        </div>
+        <?php endif; ?>
+
         <!-- Progress Bar -->
         <div class="mb-12">
             <div class="flex items-center justify-between relative">
@@ -177,7 +192,7 @@
                     <div class="mt-6 flex justify-between">
                         <button type="button" @click="step = 1" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-white/5 text-white hover:bg-white/10 transition-colors">Kembali</button>
                         <button type="button" @click="validateSurvey()" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-colors flex items-center gap-2" :disabled="!isSurveyComplete() || isLoading" :class="{'opacity-50 cursor-not-allowed': !isSurveyComplete() || isLoading}">
-                            <span x-text="isLoading ? 'Menghitung...' : 'Analisa Program'"></span>
+                            <span x-text="isLoading ? 'Menghitung...' : 'Temukan Program'"></span>
                             <i class="fa-solid fa-spinner fa-spin" x-show="isLoading"></i>
                             <i class="fa-solid fa-microchip" x-show="!isLoading"></i>
                         </button>

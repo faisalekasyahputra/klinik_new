@@ -20,22 +20,34 @@ class Pengembang extends MY_Controller {
 
 	public function sertifikasi()
 	{
-		
+
 		$datacontent['judul'] ='';
+		$datacontent['daftar_pengembang'] = $this->db->select('id, nama_perusahaan')
+			->where('status_verifikasi', 'Diterima')
+			->order_by('nama_perusahaan', 'ASC')
+			->get('srp2_registrations')->result();
 		$data['content'] = $this->load->view('pages/pengembang/sertifikasi', $datacontent, true);
 		$this->load->view('layouts/main',$data);
 	}
 	public function formulir()
 	{
-		
+		if (!$this->is_logged_in()) {
+			$this->session->set_userdata('intended_url', current_url());
+			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu untuk mendaftar sertifikasi.');
+			redirect('Auth/login');
+			return;
+		}
+
 		$datacontent['judul'] ='';
 		$data['content'] = $this->load->view('pages/pengembang/formulir_sertifikasi', $datacontent, true);
 		$this->load->view('layouts/main',$data);
 	}
 	public function syarat()
 	{
-		
-		$this->load->view('pages/pengembang/syarat');
+
+		$datacontent['judul'] ='';
+		$data['content'] = $this->load->view('pages/pengembang/syarat', $datacontent, true);
+		$this->load->view('layouts/main',$data);
 	}
 	public function publikasi()
 	{
@@ -55,7 +67,13 @@ class Pengembang extends MY_Controller {
 		$this->load->view('pages/pengembang/tambah_publikasi');
 	}
 	public function simpan() {
-		
+		if (!$this->is_logged_in()) {
+			$this->session->set_userdata('intended_url', 'Pengembang/formulir');
+			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu untuk mendaftar sertifikasi.');
+			redirect('Auth/login');
+			return;
+		}
+
 		$this->form_validation->set_rules('nama_peserta', 'Nama Peserta', 'required|trim');
       
 		$this->form_validation->set_rules('nik_ktp', 'NIK KTP', 'required|numeric|exact_length[16]|is_unique[srp2_registrations.nik_ktp]', [
@@ -161,6 +179,7 @@ class Pengembang extends MY_Controller {
 
         // 3. STRUKTUR DATA SIAP INPUT (Kapitalisasi Otomatis Sesuai Petunjuk)
         $payload = [
+            'user_id'           => $this->get_user_id(),
             'nama_peserta'      => strtoupper($this->input->post('nama_peserta', TRUE)), // Otomatis Huruf Kapital
             'nik_ktp'           => $this->input->post('nik_ktp', TRUE),
             'jabatan'           => $jabatan,
@@ -198,20 +217,43 @@ class Pengembang extends MY_Controller {
         }
 	}
 	public function result($id = NULL) {
+        if (!$this->is_logged_in()) {
+            $this->session->set_flashdata('error', 'Silakan login terlebih dahulu untuk melihat resi pendaftaran.');
+            redirect('Auth/login');
+            return;
+        }
+
         if (empty($id) || !is_numeric($id)) {
             show_404();
         }
 
-        // Ambil data pendaftar dari database berdasarkan ID
-        $datacontent['pendaftar'] = $this->db->get_where('srp2_registrations', ['id' => $id])->row();
+        // Ambil data pendaftar dari database berdasarkan ID, dibatasi milik user yang login
+        // (anti-IDOR: id auto_increment berurutan, tanpa filter ini siapapun bisa menebak
+        // id lain dan membaca NIK, link scan KTP/NIB, no. WhatsApp & email pendaftar lain).
+        $datacontent['pendaftar'] = $this->db->get_where('srp2_registrations', [
+            'id' => $id,
+            'user_id' => $this->get_user_id(),
+        ])->row();
 
-        // Proteksi jika ID tidak ditemukan di tabel
+        // Proteksi jika ID tidak ditemukan / bukan milik user ini
         if (!$datacontent['pendaftar']) {
             show_404();
         }
 
         $data['content'] = $this->load->view('pages/pengembang/v_sertifikasi', $datacontent, true);
 		$this->load->view('layouts/main',$data);
+    }
+
+    public function profil($id = NULL) {
+        if (empty($id) || !is_numeric($id)) {
+            show_404();
+        }
+        $datacontent['pengembang'] = $this->db->get_where('srp2_registrations', ['id' => $id, 'status_verifikasi' => 'Diterima'])->row();
+        if (!$datacontent['pengembang']) {
+            show_404();
+        }
+        $data['content'] = $this->load->view('pages/pengembang/profil', $datacontent, true);
+        $this->load->view('layouts/main', $data);
     }
 }
 

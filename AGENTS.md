@@ -51,14 +51,14 @@ uploads/            # file upload user
 | Controller | Fungsi Utama |
 |---|---|
 | `Auth.php` | Login, register, Google OAuth, onboarding multi-step, hapus akun |
-| `Index.php` | Portal utama, AJAX load more, proxy foto Tapera, banyak clean-URL routes (lihat `routes.php`) |
+| `Index.php` | Portal utama, AJAX load more, proxy foto Tapera, banyak clean-URL routes (lihat `routes.php`). Termasuk `golek_omah()`, `cari_rumah()`, `panduan_desain()` — halaman mandiri yang duplikat dari section di homepage `awal.php` (lihat §10) |
 | `Umum.php` | Forum diskusi (thread, nested reply, likes), layanan masyarakat |
-| `Pengembang.php` | Profil pengembang, SP2 |
+| `Pengembang.php` | Profil pengembang, pendaftaran & verifikasi SRP2 (Sertifikasi Registrasi Pengembang Perumahan) — lihat §14 |
 | `Program.php` | Smart Filter — wizard diagnosa kelayakan perumahan (NIK → SIMPERUM mock) |
 | `Chat.php` | Chat konsultasi |
 | `Statistika.php` | Data statistik & chart |
 | `Sikumbang.php`, `Sikaper.php`, `Sikunang.php`, `Siperum.php` | Integrasi API eksternal pemerintah |
-| `Pengaturan.php` | Profil user & hapus akun |
+| `Pengaturan.php` | Profil user & hapus akun, plus update data SRP2 milik sendiri untuk role `pengembang` — lihat §14 |
 | `Admin.php`, `Admin_Content.php`, `Admin_Dashboard.php`, `Admin_Settings.php`, `Admin_Users.php` | Panel admin (extends `Admin_Controller`) |
 | `Bank_desain.php`, `Berita.php`, `Kemitraan.php`, `Kabupaten.php`, `User_Profile.php` | Fitur pendukung, ukuran kecil |
 
@@ -122,6 +122,14 @@ Fondasi ini sudah solid (OWASP + UU PDP compliant), perlakukan sebagai kontrak, 
 
 Default controller: `Index`. Banyak clean-URL alias ke `Index/*` (`umum`, `profil`, `pengembang`, `simulasi_kpr`, dll), plus alias auth (`login`, `register`, `onboarding`) dan AJAX endpoints (`ajax_articles`, `load_more`, `cari_wil`). Cek file ini sebelum menambah route baru — banyak alias sudah dipakai di frontend, jangan duplikasi path.
 
+**Hub "Nggolek Omah"** (ditambahkan setelah §11 fase UI/UX) — hero card di homepage sekarang link ke `golek_omah`, hub kecil dengan 3 menu card:
+- `golek_omah` → `Index::golek_omah()` → `pages/golek_omah/index.php` — halaman hub.
+- `cari_rumah` → `Index::cari_rumah()` → `pages/perumahan/cari_rumah.php`. **DUPLIKAT** dari section `#cari-perumahan` di `awal.php` — section itu masih ada dan masih jalan di homepage, ini bukan pengganti. Reuse AJAX `cari_wil`/`load_more`/`ajax_perumahan` yang sama.
+- `panduan_desain` → `Index::panduan_desain()` → `pages/bank_desain/panduan_desain.php`. **DUPLIKAT** dari section `#bank-desain` di `awal.php`, section aslinya juga masih ada. Reuse AJAX `ajax_house_designs`. Jangan disamakan dengan route `materia` (`Index::materia()`) — itu placeholder kosong tidak terkait.
+- `solusi_pembiayaan` → alias langsung ke `Program/diagnosa/umum` (controller/view lama, tidak ada yang baru selain alias route-nya).
+
+Jadi kalau menemukan section pencarian rumah atau bank desain di dua tempat (homepage dan halaman mandiri), itu memang disengaja — bukan duplikasi yang perlu dibersihkan.
+
 ## 11. Status & Roadmap
 
 9 dari 10 fase besar selesai (keamanan, OAuth, MY_Controller, forum, enkripsi, UI/UX, navbar, hero/etalase, Smart Filter). Fase 10 (Admin Dashboard untuk validasi manual antrean `sf_housing_queue`) belum dimulai. Detail lengkap: [`docs/product/IMPLEMENTATION_ROADMAP.md`](docs/product/IMPLEMENTATION_ROADMAP.md) dan [`docs/product/ANALISIS_DAN_RENCANA_PERBAIKAN.md`](docs/product/ANALISIS_DAN_RENCANA_PERBAIKAN.md).
@@ -138,3 +146,31 @@ Repo ini punya banyak dokumen historis (`docs/archive/`, termasuk `docs/archive/
 ## 13. Frontend & Design System
 
 Warna/tipografi/spacing didokumentasikan di [`docs/design/DESIGN_SYSTEM.md`](docs/design/DESIGN_SYSTEM.md) — **baca itu sebelum menyentuh CSS/warna apa pun**. Ringkasan penting: ada 3 sumber warna yang tidak sinkron (`docs/design/tokens.css` tidak ke-load sama sekali di aplikasi; `assets/css/design-system.css` yang beneran dipakai situs publik; inline `tailwind.config` di `application/views/admin/layouts/head.php` buat panel admin), plus ~1.300 hex literal tertulis manual di 70+ file view karena situs publik tidak punya `tailwind.config`. `docs/design/DESIGN_SYSTEM.md` punya tabel palet kanonis (sudah diverifikasi ke pemakaian nyata di kode) dan daftar warna drift yang masih butuh keputusan — jangan asumsikan `tokens.css` sudah merepresentasikan apa yang tampil di browser.
+
+## 14. Sertifikasi Pengembang (SRP2)
+
+Fitur pendaftaran & verifikasi SRP2 (Sertifikasi Registrasi Pengembang Perumahan) dibangun ulang jadi interaktif penuh sesi ini (sebelumnya rencananya cuma halaman statis "view-only" — lihat catatan usang di bawah).
+
+**Controller `Pengembang.php`:**
+- `sertifikasi()` — landing page publik, daftar pengembang berstatus `Diterima` dari `srp2_registrations`, plus CTA ke `syarat()`.
+- `syarat()` — halaman info syarat & dokumen, sekarang render lewat `layouts/main` (sebelumnya bare view tanpa layout).
+- `formulir()` — form pendaftaran, BARU login-gated: redirect ke `Auth/login` + set `intended_url` kalau belum login.
+- `simpan()` — proses submit form + upload 4 dokumen (KTP, KTA Asosiasi, NIB, Surat Tugas), sekarang login-gated, `user_id` otomatis diisi dari sesi (bukan dari input).
+- `result($id)` — halaman resi pendaftaran, sekarang login-gated DAN dibatasi hanya bisa lihat resi milik sendiri (`WHERE id = ? AND user_id = <session>`). **Perbaikan keamanan**: sebelumnya rawan IDOR — `id` auto_increment sekuensial gampang ditebak, siapapun bisa baca NIK/no. WA/email/dokumen pendaftar lain.
+- `profil($id)` — BARU, halaman publik read-only detail pengembang, hanya untuk `status_verifikasi = 'Diterima'` (data Pending/Ditolak tidak bisa diakses lewat sini meski id ditebak).
+
+**Controller `Pengaturan.php`** (dashboard akun, route `akun`):
+- `update_pengembang_profile()` (route `akun/update_pengembang`, BARU) — hanya jalan kalau `session->userdata('role') === 'pengembang'`, update data SRP2 milik sendiri (`WHERE user_id` selalu dari sesi, bukan dari input — anti-IDOR).
+- `index()` sekarang juga fetch `srp2_registrations` by `user_id` kalau role user `pengembang`, dikirim ke view sebagai `$pengajuan_sp2`.
+- View `pages/pengaturan/index.php` punya section kondisional (`isset($pengajuan_sp2)`): badge status pengajuan (Pending/Diterima/Ditolak), form edit data pengembang sendiri, dan tombol "Download Sertifikat" yang jujur menampilkan "belum tersedia" (bukan simulasi sukses palsu) karena generator sertifikat PDF asli belum dibangun — lihat follow-up di bawah.
+
+**Tabel `srp2_registrations`** — skema lengkap di [`docs/engineering/migration_srp2_registrations.sql`](docs/engineering/migration_srp2_registrations.sql) (tidak masuk `schema_klinikpkp.sql` utama, cek file migrasi ini terpisah). Kolom `user_id`, `instagram`, `website`, `sosmed_lainnya` **baru** (bukan dari skema lama) — untuk fitur cek status pengajuan di dashboard akun dan halaman profil publik. Migrasi **sudah dijalankan ke staging** (`u504551489_klinikstg`) tapi **belum ke production** — jalankan manual ke production dulu sebelum fitur ini dianggap live di sana.
+
+**Route baru** di `application/config/routes.php`: `$route['akun/update_pengembang'] = 'Pengaturan/update_pengembang_profile';`. Method `Pengembang.php` lainnya tetap pakai default CI routing (`Pengembang/method`), tidak ada clean-URL alias.
+
+**Perbaikan bug terkait:** role pengembang saat registrasi akun dulu salah tersimpan sebagai string `'pages/pengembang/pengembang'` (bug copy-paste path view) — sudah diperbaiki jadi `'pengembang'` di `application/controllers/Auth.php`. Kalau menemukan dokumen/kode lama yang masih menyebut role ini dengan nilai salah tersebut, itu usang.
+
+**Follow-up yang sengaja di luar scope sesi ini** (jangan dikerjakan tanpa arahan baru, cukup dicatat):
+- Generator sertifikat PDF asli belum ada — tombol "Download Sertifikat" di dashboard akun sengaja nonaktif dengan pesan jujur, bukan simulasi.
+- `Auth::save_onboarding()` mencoba menulis kolom `nama_perusahaan`/`alamat_kantor`/`telp_kantor` untuk role pengembang/vendor saat registrasi akun, tapi kolom-kolom itu TIDAK ADA di skema `usr_users` — berpotensi error di step onboarding untuk role tsb. Bug pre-existing, di luar scope SRP2, belum diperbaiki.
+- [`docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md`](docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md) dan [`docs/product/IMPLEMENTATION_ROADMAP.md`](docs/product/IMPLEMENTATION_ROADMAP.md) masih menyebut menu Pengembang/SP2 sebagai halaman statis/"belum berupa sistem interaktif" ("view-only") — **usang (superseded)**, sudah dikonfirmasi user untuk dibuat interaktif penuh sesi ini.

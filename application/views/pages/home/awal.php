@@ -1,99 +1,4 @@
 <!-- ============================================================
-     MOBILE MENU (Alpine.js)
-     ============================================================ -->
-<div x-show="mobileMenu" x-cloak x-transition.opacity class="lg:hidden fixed inset-0 bg-[#0a1a1f]/85 backdrop-blur-sm z-40" @click="mobileMenu = false"></div>
-<div x-show="mobileMenu" x-cloak x-transition:enter="transition transform ease-out duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition transform ease-in duration-200" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full"
-     class="lg:hidden fixed top-0 right-0 h-full w-[300px] bg-[#0d2228] border-l border-[#d6fb00]/20 z-50 overflow-y-auto" x-data="{ openPerumahan: false, openKawasan: false }">
-    <div class="p-6 space-y-1">
-        <div class="flex items-center justify-between mb-8">
-            <span class="text-xs font-bold text-zinc-500 uppercase tracking-widest">Menu</span>
-            <button @click="mobileMenu = false" class="w-8 h-8 flex items-center justify-center rounded-lg bg-[#d6fb00]/8 border border-[#d6fb00]/20 text-zinc-400 hover:text-[#d6fb00] hover:bg-[#d6fb00]/10 transition-colors"><i class="fa-solid fa-xmark text-sm"></i></button>
-        </div>
-        
-        <a href="<?= base_url() ?>" class="block text-white py-3 font-semibold text-sm border-b border-[#d6fb00]/20" @click="mobileMenu = false">Beranda</a>
-        
-        <a href="#" class="hidden text-zinc-400 py-3 text-sm border-b border-[#d6fb00]/20">Profil</a>
-        
-        <a href="<?= base_url('pengembang') ?>" class="flex items-center gap-2 text-zinc-400 hover:text-white py-3 text-sm border-b border-[#d6fb00]/20" @click="mobileMenu = false">
-            Pengembang <span class="px-1.5 py-0.5 rounded text-[8px] font-bold bg-[#d6fb00]/10 text-[#d6fb00] border border-[#d6fb00]/30">SRP2</span>
-        </a>
-
-        <!-- Perumahan -->
-        <div class="border-b border-[#d6fb00]/20">
-            <button @click="openPerumahan = !openPerumahan" class="w-full flex justify-between items-center text-zinc-400 py-3 text-sm hover:text-[#d6fb00] transition-colors">
-                <span>Perumahan</span>
-                <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="openPerumahan && 'rotate-180 text-[#d6fb00]'"></i>
-            </button>
-            <div x-show="openPerumahan" x-cloak x-transition class="pl-4 pb-3 space-y-2 mt-1">
-                <!-- Etalase Program (Highlighted CTA) -->
-                <a href="#etalase-program" class="flex items-center gap-2 text-[#d6fb00] text-xs py-2 font-bold bg-[#d6fb00]/10 hover:bg-[#d6fb00]/20 px-3 rounded-lg border border-[#d6fb00]/20 transition-colors" @click="mobileMenu = false">
-                    <i class="fa-solid fa-house-chimney-window w-4 text-center"></i> Etalase Program
-                </a>
-                <a href="<?= base_url('simulasi_kpr') ?>" class="flex items-center gap-2 text-zinc-400 hover:text-white text-xs py-1 mt-2" @click="mobileMenu = false">
-                    <i class="fa-solid fa-calculator w-4 text-center opacity-70"></i> Info KPR & Subsidi
-                </a>
-                <a href="#bank-desain" class="flex items-center gap-2 text-zinc-400 hover:text-white text-xs py-1" @click="mobileMenu = false">
-                    <i class="fa-solid fa-pen-ruler w-4 text-center opacity-70"></i> Bank Desain
-                </a>
-                <!-- Menu Bank Data dipindah ke luar -->
-            </div>
-        </div>
-
-        <!-- Kawasan -->
-        <div class="border-b border-[#d6fb00]/20">
-            <button @click="openKawasan = !openKawasan" class="w-full flex justify-between items-center text-zinc-400 py-3 text-sm hover:text-[#d6fb00] transition-colors">
-                <span>Kawasan</span>
-                <i class="fa-solid fa-chevron-down text-[10px] transition-transform duration-200" :class="openKawasan && 'rotate-180 text-[#d6fb00]'"></i>
-            </button>
-            <div x-show="openKawasan" x-cloak x-transition class="pl-4 pb-3 space-y-2 mt-1">
-                <a href="<?= base_url('sebaran') ?>" class="block text-zinc-400 hover:text-white text-xs py-1" @click="mobileMenu = false">Sebaran RTLH</a>
-                <a href="<?= base_url('sebaran_rusun') ?>" class="block text-zinc-400 hover:text-white text-xs py-1" @click="mobileMenu = false">Sebaran Rusun</a>
-                <a href="<?= base_url('profil_kumuh') ?>" class="block text-zinc-400 hover:text-white text-xs py-1" @click="mobileMenu = false">Profil Kawasan Kumuh</a>
-                <a href="<?= base_url('sebaran_sdgs') ?>" class="block text-zinc-400 hover:text-white text-xs py-1" @click="mobileMenu = false">Sebaran Bantuan SDGS</a>
-            </div>
-        </div>
-
-        <!-- Bank Data (Statistika) -->
-        <a href="<?= base_url('Statistika') ?>" class="flex items-center justify-between text-zinc-400 hover:text-white py-3 text-sm border-b border-[#d6fb00]/20 transition-colors" @click="mobileMenu = false">
-            <div class="flex items-center gap-2">
-                <span>Bank Data</span>
-            </div>
-            <i class="fa-solid fa-chart-pie text-[#d6fb00] text-[10px]"></i>
-        </a>
-
-        <!-- Pertanahan (Disabled) -->
-        <a href="#" class="flex items-center gap-2 text-zinc-600 cursor-not-allowed py-3 text-sm border-b border-[#d6fb00]/20" title="Akan Hadir">
-            Pertanahan <i class="fa-solid fa-lock text-[9px]"></i>
-        </a>
-
-        <div class="pt-6">
-            <?php if ($this->session->userdata('is_logged')): ?>
-                <?php 
-                    $avatar_src = $this->session->userdata('avatar');
-                    if (empty($avatar_src)) {
-                        $fallback_name = urlencode($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
-                        $avatar_src = "https://ui-avatars.com/api/?name={$fallback_name}&background=d6fb00&color=0a1a1f&bold=true";
-                    }
-                ?>
-                <div class="flex items-center gap-3 p-3 bg-[#d6fb00]/5 border border-[#d6fb00]/20 rounded-xl mb-3">
-                    <img src="<?= $avatar_src ?>" class="w-9 h-9 rounded-lg object-cover ring-1 ring-[#d6fb00]/20">
-                    <div>
-                        <p class="text-[#ecffb6] text-xs font-semibold"><?= $this->session->userdata('username') ?: $this->session->userdata('name') ?></p>
-                        <p class="text-[#5a7a80] text-[10px]"><?= $this->session->userdata('email') ?></p>
-                    </div>
-                </div>
-                <a href="#" onClick="logout()" class="block w-full text-center text-[#ff6b6b] text-xs font-semibold py-2.5 border border-[#ff6b6b]/20 rounded-xl hover:bg-[#ff6b6b]/10 transition-all duration-200">Keluar</a>
-            <?php else: ?>
-                <a href="<?= base_url('Auth/login') ?>" class="flex items-center justify-center gap-2 w-full btn-primary text-xs py-3 rounded-xl">
-                    <i class="fa-solid fa-right-to-bracket text-sm"></i>
-                    Masuk
-                </a>
-            <?php endif; ?>
-        </div>
-    </div>
-</div>
-
-<!-- ============================================================
      SECTION 1: HERO — Full Viewport Slideshow
      ============================================================ -->
 <section class="w-full relative overflow-hidden" style="height: 110vh;" x-data="heroBgSlider()">
@@ -126,8 +31,8 @@
     <div class="relative z-10 flex flex-col justify-center" style="min-height: 100vh; padding-top: 6rem; padding-bottom: 6rem;">
     <div class="max-w-7xl mx-auto px-6 lg:px-8 w-full">
         <div class="text-center mb-14" data-aos="fade-down">
-            <div class="inline-flex items-center gap-2 bg-[#d6fb00]/5 border border-[#d6fb00]/15 backdrop-blur-sm px-4 py-1.5 rounded-full text-[11px] text-[#8aacb0] font-medium mb-6">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <div class="inline-flex items-center gap-2.5 text-[11px] text-[#8aacb0] font-medium mb-6">
+                <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" class="w-5 h-5 object-contain shrink-0">
                 Dinas Perumahan Rakyat & Kawasan Permukiman Prov. Jawa Tengah
             </div>
             <h2 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-white mb-5 leading-[1.1] tracking-tight">
@@ -140,7 +45,7 @@
 
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             <!-- Card 1: Nggolek Omah -->
-            <a href="<?= base_url('Program/diagnosa/umum') ?>" class="group rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(214, 251, 0, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2); min-height: 220px;" data-aos="fade-up" data-aos-delay="100">
+            <a href="<?= base_url('golek_omah') ?>" class="group rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(214, 251, 0, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2); min-height: 220px;" data-aos="fade-up" data-aos-delay="100">
                 <i class="fa-solid fa-house-chimney-window absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 120px; right: -1rem; bottom: -1rem; color: #d6fb00; opacity: 0.06;"></i>
                 <div class="relative z-10">
                     <i class="fa-solid fa-house-chimney-window mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 32px; color: #d6fb00; filter: drop-shadow(0 0 12px rgba(214, 251, 0, 0.4));"></i>
@@ -156,15 +61,15 @@
             </a>
 
             <!-- Card 2: Sertifikasi Pengembang (SRPP) -->
-            <a href="<?= base_url('Pengembang/sertifikasi') ?>" class="group rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(16, 185, 129, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2); min-height: 220px;" data-aos="fade-up" data-aos-delay="200">
-                <i class="fa-solid fa-certificate absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 120px; right: -1rem; bottom: -1rem; color: #10b981; opacity: 0.06;"></i>
+            <a href="<?= base_url('Pengembang/sertifikasi') ?>" class="group rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(214, 251, 0, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2); min-height: 220px;" data-aos="fade-up" data-aos-delay="200">
+                <i class="fa-solid fa-certificate absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 120px; right: -1rem; bottom: -1rem; color: #d6fb00; opacity: 0.06;"></i>
                 <div class="relative z-10">
-                    <i class="fa-solid fa-certificate mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 32px; color: #10b981; filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.4));"></i>
-                    <h4 class="text-white font-bold text-lg mb-1.5 group-hover:text-emerald-400 transition-colors">Sertifikasi Pengembang</h4>
+                    <i class="fa-solid fa-certificate mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 32px; color: #d6fb00; filter: drop-shadow(0 0 12px rgba(214, 251, 0, 0.4));"></i>
+                    <h4 class="text-white font-bold text-lg mb-1.5 group-hover:text-[#d6fb00] transition-colors">Sertifikasi Pengembang</h4>
                     <p class="text-zinc-500 text-xs leading-relaxed">SRPP untuk pengembang perumahan</p>
                 </div>
                 <div class="relative z-10 mt-auto pt-4">
-                    <div class="tl-btn-base tl-btn-emerald">
+                    <div class="tl-btn-base" style="background-color: rgba(214,251,0,0.1); color: #d6fb00; border: 1px solid rgba(214,251,0,0.2);">
                         <span>Daftar</span>
                         <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                     </div>
@@ -253,15 +158,15 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
             <!-- Forum Diskusi -->
-            <a href="<?= base_url('umum/forum') ?>" class="group rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(0, 163, 181, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);" data-aos="fade-up" data-aos-delay="100">
-                <i class="fa-solid fa-comments absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 130px; right: -1rem; bottom: -1.5rem; color: #00a3b5; opacity: 0.06;"></i>
+            <a href="<?= base_url('umum/forum') ?>" class="group rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(214, 251, 0, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);" data-aos="fade-up" data-aos-delay="100">
+                <i class="fa-solid fa-comments absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 130px; right: -1rem; bottom: -1.5rem; color: #d6fb00; opacity: 0.06;"></i>
                 <div class="relative z-10">
-                    <i class="fa-solid fa-comments mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 34px; color: #00a3b5; filter: drop-shadow(0 0 12px rgba(0, 163, 181, 0.4));"></i>
-                    <h4 class="text-white font-bold text-xl mb-2 group-hover:text-[#00a3b5] transition-colors">Forum Diskusi</h4>
+                    <i class="fa-solid fa-comments mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 34px; color: #d6fb00; filter: drop-shadow(0 0 12px rgba(214, 251, 0, 0.4));"></i>
+                    <h4 class="text-white font-bold text-xl mb-2 group-hover:text-[#d6fb00] transition-colors">Forum Diskusi</h4>
                     <p class="text-zinc-500 text-sm leading-relaxed">Diskusi seputar perumahan bersama komunitas dan pemerintah.</p>
                 </div>
                 <div class="relative z-10 mt-auto pt-6">
-                    <div class="tl-btn-base tl-btn-cyan">
+                    <div class="tl-btn-base" style="background-color: rgba(214,251,0,0.1); color: #d6fb00; border: 1px solid rgba(214,251,0,0.2);">
                         <span>Buka Forum</span>
                         <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                     </div>
@@ -269,15 +174,15 @@
             </a>
 
             <!-- Aduan -->
-            <a href="<?= base_url('umum/aduan') ?>" class="group rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(255, 217, 61, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);" data-aos="fade-up" data-aos-delay="200">
-                <i class="fa-solid fa-circle-question absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 130px; right: -1rem; bottom: -1.5rem; color: #ffd93d; opacity: 0.06;"></i>
+            <a href="<?= base_url('umum/aduan') ?>" class="group rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(214, 251, 0, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);" data-aos="fade-up" data-aos-delay="200">
+                <i class="fa-solid fa-circle-question absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 130px; right: -1rem; bottom: -1.5rem; color: #d6fb00; opacity: 0.06;"></i>
                 <div class="relative z-10">
-                    <i class="fa-solid fa-circle-question mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 34px; color: #ffd93d; filter: drop-shadow(0 0 12px rgba(255, 217, 61, 0.4));"></i>
-                    <h4 class="text-white font-bold text-xl mb-2 transition-colors">Aduan</h4>
+                    <i class="fa-solid fa-circle-question mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 34px; color: #d6fb00; filter: drop-shadow(0 0 12px rgba(214, 251, 0, 0.4));"></i>
+                    <h4 class="text-white font-bold text-xl mb-2 group-hover:text-[#d6fb00] transition-colors">Aduan</h4>
                     <p class="text-zinc-500 text-sm leading-relaxed">Sampaikan pertanyaan atau laporan seputar layanan perumahan.</p>
                 </div>
                 <div class="relative z-10 mt-auto pt-6">
-                    <div class="tl-btn-base" style="background-color: rgba(255,217,61,0.1); color: #ffd93d; border: 1px solid rgba(255,217,61,0.2);">
+                    <div class="tl-btn-base" style="background-color: rgba(214,251,0,0.1); color: #d6fb00; border: 1px solid rgba(214,251,0,0.2);">
                         <span>Kirim Aduan</span>
                         <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                     </div>
@@ -285,15 +190,15 @@
             </a>
 
             <!-- KKN dan Magang -->
-            <a href="<?= base_url('kemitraan') ?>" class="group rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(107, 203, 119, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);" data-aos="fade-up" data-aos-delay="300">
-                <i class="fa-solid fa-user-graduate absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 130px; right: -1rem; bottom: -1.5rem; color: #6bcb77; opacity: 0.06;"></i>
+            <a href="<?= base_url('kemitraan') ?>" class="group rounded-3xl p-6 sm:p-8 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--bg-card); border: 1px solid rgba(214, 251, 0, 0.15); box-shadow: 0 4px 20px rgba(0,0,0,0.2);" data-aos="fade-up" data-aos-delay="300">
+                <i class="fa-solid fa-user-graduate absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 130px; right: -1rem; bottom: -1.5rem; color: #d6fb00; opacity: 0.06;"></i>
                 <div class="relative z-10">
-                    <i class="fa-solid fa-user-graduate mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 34px; color: #6bcb77; filter: drop-shadow(0 0 12px rgba(107, 203, 119, 0.4));"></i>
-                    <h4 class="text-white font-bold text-xl mb-2 group-hover:text-[#6bcb77] transition-colors">KKN dan Magang</h4>
+                    <i class="fa-solid fa-user-graduate mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 34px; color: #d6fb00; filter: drop-shadow(0 0 12px rgba(214, 251, 0, 0.4));"></i>
+                    <h4 class="text-white font-bold text-xl mb-2 group-hover:text-[#d6fb00] transition-colors">KKN dan Magang</h4>
                     <p class="text-zinc-500 text-sm leading-relaxed">Program tematik untuk universitas dan mahasiswa.</p>
                 </div>
                 <div class="relative z-10 mt-auto pt-6">
-                    <div class="tl-btn-base tl-btn-green">
+                    <div class="tl-btn-base" style="background-color: rgba(214,251,0,0.1); color: #d6fb00; border: 1px solid rgba(214,251,0,0.2);">
                         <span>Info Selengkapnya</span>
                         <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                     </div>
@@ -391,8 +296,8 @@
                             </div>
                             <!-- Content -->
                             <div class="relative p-6 sm:p-8 flex-1 flex flex-col justify-center">
-                                <div class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10 text-[10px] font-bold tracking-widest uppercase mb-3 text-white w-max">
-                                    <span class="w-2 h-2 rounded-full" :style="'background-color: ' + programs[id].dotColor"></span>
+                                <div class="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-widest uppercase mb-3" :style="'color: ' + programs[id].dotColor">
+                                    <span class="w-1.5 h-1.5 rounded-full" :style="'background-color: ' + programs[id].dotColor"></span>
                                     <span x-text="programs[id].badge"></span>
                                 </div>
                                 <h3 class="text-2xl sm:text-3xl font-bold text-white leading-tight mb-4" x-html="programs[id].title"></h3>
@@ -421,11 +326,9 @@
                                     </template>
                                 </div>
 
-                                <div class="mb-6">
-                                    <div class="inline-flex bg-[#163a42] border border-[#1d4d58] rounded-xl px-4 py-2.5 text-sm text-emerald-400 font-semibold items-center gap-2">
-                                        <i class="fa-solid fa-wallet text-emerald-500"></i>
-                                        <span x-text="programs[id].budget"></span>
-                                    </div>
+                                <div class="mb-6 flex items-center gap-2 text-xs text-zinc-400">
+                                    <i class="fa-solid fa-wallet text-zinc-500"></i>
+                                    <span x-text="programs[id].budget"></span>
                                 </div>
 
                                 <a :href="'<?= base_url('Program/diagnosa/') ?>' + id" class="inline-flex px-5 py-2.5 rounded-xl text-sm font-semibold bg-white text-[#0a1a1f] hover:bg-zinc-200 transition-colors items-center gap-2 w-max">

@@ -16,10 +16,63 @@ class Pengaturan extends MY_Controller {
         // Get full user details
         $user_id = $this->get_user_id();
         $user = $this->Auth_model->find_by_id($user_id);
-        
+
         $datacontent['user'] = $user;
+
+        if ($this->session->userdata('role') === 'pengembang') {
+            $datacontent['pengajuan_sp2'] = $this->db->get_where('srp2_registrations', ['user_id' => $user_id])
+                ->order_by('id', 'DESC')->row();
+        }
+
         $data['content'] = $this->load->view('pages/pengaturan/index', $datacontent, true);
         $this->load->view('layouts/main', $data);
+    }
+
+    public function update_pengembang_profile() {
+        $user_id = $this->get_user_id();
+
+        if ($this->session->userdata('role') !== 'pengembang') {
+            show_404();
+            return;
+        }
+
+        $pengajuan = $this->db->get_where('srp2_registrations', ['user_id' => $user_id])->row();
+        if (!$pengajuan) {
+            $this->session->set_flashdata('error', 'Data pengajuan sertifikasi tidak ditemukan.');
+            redirect('akun');
+            return;
+        }
+
+        // Simpan teks apa adanya (escape dilakukan sekali saat render lewat htmlspecialchars()
+        // di profil.php/pengaturan/index.php, bukan di sini — supaya tidak double-encode).
+        $data = [
+            'nama_perusahaan' => strtoupper(trim($this->input->post('nama_perusahaan'))),
+            'alamat_kantor'   => trim($this->input->post('alamat_kantor')),
+            'asosiasi'        => $this->input->post('asosiasi'),
+            'no_keanggotaan'  => trim($this->input->post('no_keanggotaan')),
+            'instagram'       => trim($this->input->post('instagram')),
+            'website'         => trim($this->input->post('website')),
+            'sosmed_lainnya'  => trim($this->input->post('sosmed_lainnya')),
+        ];
+
+        if (empty($data['nama_perusahaan']) || empty($data['alamat_kantor'])) {
+            $this->session->set_flashdata('error', 'Nama Perusahaan dan Alamat Kantor tidak boleh kosong.');
+            redirect('akun');
+            return;
+        }
+
+        if (!in_array($data['asosiasi'], ['rei', 'himperra', 'apersi', 'pi', 'lainnya'], TRUE)) {
+            $this->session->set_flashdata('error', 'Asosiasi tidak valid.');
+            redirect('akun');
+            return;
+        }
+
+        // user_id selalu dari sesi, bukan dari input, supaya tidak bisa mengedit data pengembang lain (anti-IDOR)
+        $this->db->where('user_id', $user_id);
+        $this->db->update('srp2_registrations', $data);
+
+        $this->session->set_flashdata('success', 'Data pengembang berhasil diperbarui!');
+        redirect('akun');
     }
 
     public function update_profile() {

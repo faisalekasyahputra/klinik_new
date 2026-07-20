@@ -262,7 +262,7 @@ class Auth extends MY_Controller {
         $role    = html_escape($this->input->post('role'));
 
         // Validate role
-        $valid_roles = ['warga', 'pages/pengembang/pengembang', 'vendor', 'mahasiswa'];
+        $valid_roles = ['warga', 'pengembang', 'vendor', 'mahasiswa'];
         if (!in_array($role, $valid_roles)) {
             $this->session->set_flashdata('error', 'Pilih peran yang valid.');
             redirect('Auth/onboarding');
@@ -345,7 +345,7 @@ class Auth extends MY_Controller {
         ];
 
         // Role-specific fields
-        if ($role === 'pages/pengembang/pengembang') {
+        if ($role === 'pengembang') {
             $profile_data['nama_perusahaan'] = html_escape($this->input->post('nama_perusahaan'));
             $profile_data['alamat_kantor']   = html_escape($this->input->post('alamat_kantor'));
             $profile_data['telp_kantor']     = html_escape($this->input->post('telp_kantor'));
@@ -648,7 +648,7 @@ class Auth extends MY_Controller {
 
         // Define upload fields per role
         $upload_fields = [];
-        if ($role === 'pages/pengembang/pengembang') {
+        if ($role === 'pengembang') {
             $upload_fields = ['file_ktp' => 'ktp', 'file_siup' => 'siup_nib'];
         } elseif ($role === 'vendor') {
             $upload_fields = ['file_ktp_vendor' => 'ktp', 'file_siu_vendor' => 'surat_ijin_usaha'];
