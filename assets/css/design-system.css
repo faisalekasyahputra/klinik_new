@@ -695,6 +695,7 @@ body {
     gap: 0.375rem;
     padding: 0 0.5rem 0 1.25rem; /* padding-left diperbesar */
     overflow-x: auto;
+    margin-bottom: -2px;
 }
 @media (min-width: 640px) {
     .portal-tab-bar {
@@ -708,7 +709,6 @@ body {
     gap: 0.5rem;
     padding: 0.625rem 1.25rem;
     padding-bottom: calc(0.625rem + 2px);
-    margin-bottom: -2px;
     border-radius: 0.75rem 0.75rem 0 0;
     font-size: 0.8125rem;
     font-weight: 600;
