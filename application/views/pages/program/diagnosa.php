@@ -22,19 +22,19 @@
         <?php endif; ?>
 
         <!-- Progress Bar -->
-        <div class="mb-12">
+        <div class="mb-12 max-w-[80%] mx-auto">
             <div class="flex items-center justify-between relative">
-                <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-white/10 rounded-full z-0"></div>
+                <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-zinc-200 rounded-full z-0"></div>
                 <div class="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-emerald-500 rounded-full z-0 transition-all duration-500" :style="'width: ' + ((step - 1) / 3 * 100) + '%'"></div>
                 
                 <!-- Steps Indicators (4 Steps now) -->
                 <template x-for="i in 4" :key="i">
                     <div class="relative z-10 flex flex-col items-center w-10 h-10">
                         <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold border-2 transition-colors duration-300 shrink-0"
-                             :class="step >= i ? 'bg-emerald-500 border-emerald-500 text-white' : 'bg-[#0f2933] border-white/20 text-zinc-500'">
+                             :class="step >= i ? 'bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20' : 'bg-white border-zinc-300 text-zinc-400'">
                             <span x-text="i"></span>
                         </div>
-                        <span class="absolute top-12 text-xs font-medium whitespace-nowrap" :class="step >= i ? 'text-emerald-400' : 'text-zinc-500'" 
+                        <span class="absolute top-12 text-xs font-medium whitespace-nowrap transition-colors duration-300" :class="step >= i ? 'text-emerald-600 font-bold' : 'text-zinc-500'" 
                               x-text="i === 1 ? 'Identitas' : (i === 2 ? 'Data Survei' : (i === 3 ? 'Pilih Program' : 'Konfirmasi'))"></span>
                     </div>
                 </template>

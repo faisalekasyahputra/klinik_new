@@ -218,7 +218,7 @@ class Index extends MY_Controller {
 		$params = [
 			'kodeWilayah' =>$kode_wilayah, 
 			'keyword'     => $keyword,
-			'searchBy'    => 'nama-perumahan',
+			'searchBy'    => $this->input->get('searchBy') ? $this->input->get('searchBy') : 'nama-perumahan',
 			'sort'        => $sort,
 			'limit'       => $limit,
 			'page'        => $page
@@ -287,7 +287,7 @@ class Index extends MY_Controller {
 		$params = [
 			'kodeWilayah' => $kode_wilayah,
 			'keyword'     => $keyword,
-			'searchBy'    => 'nama-perumahan',
+			'searchBy'    => $this->input->get('searchBy') ? $this->input->get('searchBy') : 'nama-perumahan',
 			'sort'        => $sort,
 			'limit'       => $limit,
 			'page'        => $page

@@ -18,29 +18,6 @@
             </p>
         </div>
 
-        <!-- Filter Kabupaten -->
-        <div class="max-w-md mx-auto mb-4 animate-fade-in-up" style="animation-delay: 0.05s;">
-            <form action="<?= base_url('Statistika') ?>" method="GET" class="relative group">
-                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-[color:var(--portal-brand)]">
-                    <i class="fa-solid fa-location-dot"></i>
-                </div>
-                <select name="kabupaten" onchange="this.form.submit()" class="block w-full p-3 pl-12 text-sm text-[color:var(--portal-text)] bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] rounded-2xl focus:ring-[color:var(--portal-brand)] focus:border-[color:var(--portal-brand)] appearance-none cursor-pointer  transition-all group-hover:border-[color:var(--portal-border)] outline-none">
-                    <option value="all" <?= $kabupaten_terpilih == 'all' ? 'selected' : '' ?>>Semua Kabupaten/Kota (Provinsi)</option>
-                    <?php foreach($daftar_kabupaten as $kab): ?>
-                        <option value="<?= $kab ?>" <?= $kabupaten_terpilih == $kab ? 'selected' : '' ?>><?= $kab ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-[color:var(--portal-text-muted)] group-hover:text-[color:var(--portal-brand)]transition-colors">
-                    <i class="fa-solid fa-chevron-down"></i>
-                </div>
-            </form>
-            <?php if($kabupaten_terpilih !== 'all'): ?>
-            <div class="text-center mt-3 text-sm text-[color:var(--portal-text-muted)] bg-[color:var(--portal-brand)]/10 border border-[color:var(--portal-border)] py-2 rounded-xl ">
-                Menampilkan data estimasi untuk <span class="font-bold text-[color:var(--portal-brand)]"><?= htmlspecialchars($kabupaten_terpilih) ?></span>
-            </div>
-            <?php endif; ?>
-        </div>
-
         <div class="flex flex-col lg:flex-row gap-3 items-start relative">
             
             <!-- Sidebar Navigation -->
@@ -75,15 +52,41 @@
             
             <!-- 1. Perumahan -->
             <section id="perumahan" class="animate-fade-in-up scroll-mt-4" style="animation-delay: 0.1s;">
-                <div class="flex items-center gap-3 mb-4 border-b border-white/5 pb-4">
-                    <div class="w-10 h-10 rounded-xl bg-[color:var(--portal-btn-bg)] flex items-center justify-center text-[color:var(--portal-bg-card)] ">
-                        <i class="fa-solid fa-house text-2xl"></i>
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 border-b border-white/5 pb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-[color:var(--portal-btn-bg)] flex items-center justify-center text-[color:var(--portal-bg-card)] ">
+                            <i class="fa-solid fa-house text-2xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-[color:var(--portal-text)]">Perumahan</h2>
+                            <p class="text-sm text-[color:var(--portal-text-muted)]">Statistika unit rumah dan penanganan RTLH</p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 class="text-xl font-bold text-[color:var(--portal-text)]">Perumahan</h2>
-                        <p class="text-sm text-[color:var(--portal-text-muted)]">Statistika unit rumah dan penanganan RTLH</p>
+                    
+                    <!-- Filter Kabupaten -->
+                    <div class="w-full md:w-[280px]">
+                        <form action="<?= base_url('Statistika') ?>" method="GET" class="relative group">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-[color:var(--portal-brand)]">
+                                <i class="fa-solid fa-location-dot"></i>
+                            </div>
+                            <select name="kabupaten" onchange="this.form.submit()" class="block w-full p-2.5 pl-10 text-sm text-[color:var(--portal-text)] bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] rounded-xl focus:ring-[color:var(--portal-brand)] focus:border-[color:var(--portal-brand)] appearance-none cursor-pointer transition-all group-hover:border-[color:var(--portal-border)] outline-none">
+                                <option value="all" <?= $kabupaten_terpilih == 'all' ? 'selected' : '' ?>>Semua Kabupaten/Kota (Provinsi)</option>
+                                <?php foreach($daftar_kabupaten as $kab): ?>
+                                    <option value="<?= $kab ?>" <?= $kabupaten_terpilih == $kab ? 'selected' : '' ?>><?= $kab ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-[color:var(--portal-text-muted)] group-hover:text-[color:var(--portal-brand)] transition-colors">
+                                <i class="fa-solid fa-chevron-down text-xs"></i>
+                            </div>
+                        </form>
                     </div>
                 </div>
+                
+                <?php if($kabupaten_terpilih !== 'all'): ?>
+                <div class="text-center mb-4 text-sm text-[color:var(--portal-text-muted)] bg-[color:var(--portal-brand)]/10 border border-[color:var(--portal-border)] py-2 rounded-xl ">
+                    Menampilkan data estimasi untuk <span class="font-bold text-[color:var(--portal-brand)]"><?= htmlspecialchars($kabupaten_terpilih) ?></span>
+                </div>
+                <?php endif; ?>
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:p-5 mb-4">
                     <div class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] p-3 sm:p-5 rounded-2xl relative group overflow-hidden">

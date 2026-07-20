@@ -5,104 +5,62 @@
         <p class="text-[color:var(--portal-text-muted)] text-xs">Data real-time dari Sikumbang — Tapera</p>
     </div>
 
-        <style>
-            .tl-search-input {
-                background-color: rgba(214, 251, 0, 0.03);
-                border: 1px solid rgba(214, 251, 0, 0.15);
-                color: #ecffb6;
-            }
-            .tl-search-input:focus {
-                border-color: rgba(214, 251, 0, 0.4);
-                box-shadow: 0 0 0 3px rgba(214,251,0,0.1);
-            }
-            .tl-search-input option {
-                background-color: #0a1a1f;
-                color: #ecffb6;
-            }
-            .tl-btn-search {
-                background-color: #d6fb00;
-                color: #0a1a1f;
-                width: 36px;
-                height: 36px;
-                border-radius: 8px;
-            }
-            .tl-btn-search:hover { background-color: #ecffb6; }
-
-            /* Custom CSS Toggle */
-            .tl-toggle-bg {
-                position: relative;
-                width: 44px;
-                height: 24px;
-                background-color: rgba(255, 255, 255, 0.1);
-                border-radius: 9999px;
-                transition: all 0.3s;
-                cursor: pointer;
-            }
-            .tl-toggle-circle {
-                position: absolute;
-                top: 3px;
-                left: 3px;
-                width: 18px;
-                height: 18px;
-                background-color: #8aacb0;
-                border-radius: 50%;
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            }
-            input:checked + .tl-toggle-bg {
-                background-color: #d6fb00;
-            }
-            input:checked + .tl-toggle-bg .tl-toggle-circle {
-                transform: translateX(20px);
-                background-color: #0a1a1f;
-            }
-        </style>
-
-        <div class="border p-6 sm:p-8 rounded-3xl mb-10 backdrop-blur-md" style="background-color: rgba(15, 42, 48, 0.7); border-color: rgba(214, 251, 0, 0.15);" data-aos="fade-up" data-aos-delay="100">
+        <div class="border p-6 sm:p-8 rounded-3xl mb-10 shadow-sm bg-[color:var(--portal-bg-card)] border-[color:var(--portal-border)]" data-aos="fade-up" data-aos-delay="100">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-end">
-                <div class="lg:col-span-4">
-                    <label class="block text-[10px] font-bold text-[#8aacb0] uppercase tracking-widest mb-2"><i class="fa-solid fa-location-dot mr-1.5 text-[#d6fb00]"></i> Wilayah</label>
-                    <select id="kodeWilayah" onchange="cari_wil()" class="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all tl-search-input">
+                <div class="lg:col-span-3">
+                    <label class="block text-[10px] font-bold text-[color:var(--portal-text-muted)] uppercase tracking-widest mb-2"><i class="fa-solid fa-location-dot mr-1.5 text-[color:var(--portal-brand)]"></i> Wilayah</label>
+                    <select id="kodeWilayah" onchange="cari_wil()" class="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] text-[color:var(--portal-text)] focus:border-[color:var(--portal-brand)]">
                         <option value="33">Seluruh Jawa Tengah</option>
                         <?php foreach ($kabupaten_kota_jateng as $kode => $nama): ?>
                         <option value="<?= $kode ?>"><?= $nama ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="lg:col-span-8">
-                    <label class="block text-[10px] font-bold text-[#8aacb0] uppercase tracking-widest mb-2"><i class="fa-solid fa-magnifying-glass mr-1.5 text-[#d6fb00]"></i> Nama Perumahan</label>
+                <div class="lg:col-span-3">
+                    <label class="block text-[10px] font-bold text-[color:var(--portal-text-muted)] uppercase tracking-widest mb-2"><i class="fa-solid fa-list mr-1.5 text-[color:var(--portal-brand)]"></i> Kategori</label>
+                    <select id="searchBy" onchange="cari_wil()" class="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] text-[color:var(--portal-text)] focus:border-[color:var(--portal-brand)]">
+                        <option value="nama-perumahan">Nama Perumahan</option>
+                        <option value="nama-pengembang">Nama Pengembang</option>
+                        <option value="asosiasi">Asosiasi</option>
+                    </select>
+                </div>
+                <div class="lg:col-span-6">
+                    <label class="block text-[10px] font-bold text-[color:var(--portal-text-muted)] uppercase tracking-widest mb-2"><i class="fa-solid fa-magnifying-glass mr-1.5 text-[color:var(--portal-brand)]"></i> Kata Kunci</label>
                     <div class="relative flex items-center">
-                        <input id="keyword" onkeyup="cari_wil()" type="text" placeholder="Cari nama perumahan..." class="w-full rounded-xl px-4 py-3 pr-12 text-sm outline-none transition-all tl-search-input placeholder-[#5a7a80]">
-                        <button onclick="cari_wil()" class="absolute right-1.5 flex items-center justify-center transition-all tl-btn-search">
+                        <input id="keyword" onkeyup="cari_wil()" type="text" placeholder="Masukkan kata kunci..." class="w-full rounded-xl px-4 py-3 pr-12 text-sm outline-none transition-all bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] text-[color:var(--portal-text)] focus:border-[color:var(--portal-brand)] placeholder-[color:var(--portal-text-muted)]">
+                        <button onclick="cari_wil()" class="absolute right-1.5 flex items-center justify-center transition-all w-9 h-9 rounded-lg bg-[color:var(--portal-brand)] text-[color:var(--portal-bg)] hover:opacity-80">
                             <i class="fa-solid fa-magnifying-glass text-sm"></i>
                         </button>
                     </div>
                 </div>
             </div>
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center mt-6 pt-6" style="border-top: 1px solid rgba(214, 251, 0, 0.1);">
-                <div class="lg:col-span-4">
-                    <label class="block text-[10px] font-bold text-[#8aacb0] uppercase tracking-widest mb-2"><i class="fa-solid fa-sort mr-1.5 text-[#d6fb00]"></i> Urutkan</label>
-                    <select id="sort" onchange="cari_wil()" class="w-full rounded-xl px-4 py-2.5 text-sm outline-none transition-all tl-search-input">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center mt-6 pt-6" style="border-top: 1px solid var(--portal-border);">
+                <div class="lg:col-span-3">
+                    <label class="block text-[10px] font-bold text-[color:var(--portal-text-muted)] uppercase tracking-widest mb-2"><i class="fa-solid fa-sort mr-1.5 text-[color:var(--portal-brand)]"></i> Urutkan</label>
+                    <select id="sort" onchange="cari_wil()" class="w-full rounded-xl px-4 py-2.5 text-sm outline-none transition-all bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] text-[color:var(--portal-text)] focus:border-[color:var(--portal-brand)]">
                         <option value="terbaru">Terbaru</option>
                         <option value="subsidi-termurah">Harga Terendah</option>
                         <option value="subsidi-tertinggi">Harga Tertinggi</option>
                     </select>
                 </div>
-                <div class="lg:col-span-8 flex lg:justify-end items-center mt-2 lg:mt-0">
+                <div class="lg:col-span-9 flex lg:justify-end items-center mt-2 lg:mt-0">
                     <label class="inline-flex items-center cursor-pointer group">
                         <input id="status_subsidi" value="subsidi" onchange="cari_wil()" type="checkbox" class="sr-only" checked>
-                        <div class="tl-toggle-bg">
-                            <div class="tl-toggle-circle"></div>
+                        <div class="relative w-11 h-6 rounded-full transition-all duration-300 bg-[color:var(--portal-brand)] border border-[color:var(--portal-border)]" id="toggle-bg">
+                            <div class="absolute top-[2px] left-[2px] w-[18px] h-[18px] rounded-full transition-all duration-300 bg-[color:var(--portal-bg)]" id="toggle-circle" style="transform: translateX(20px);"></div>
                         </div>
-                        <span class="ml-3 text-sm font-semibold text-zinc-400 group-hover:text-white transition-colors">Hanya Rumah Subsidi</span>
+                        <span class="ml-3 text-sm font-semibold text-[color:var(--portal-text-muted)] group-hover:text-[color:var(--portal-text)] transition-colors">Hanya Rumah Subsidi</span>
                     </label>
                 </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="temp_rumah" data-aos="fade-up" data-aos-delay="200">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5" id="temp_rumah" data-aos="fade-up" data-aos-delay="200">
             <div class="skeleton h-72"></div>
             <div class="skeleton h-72"></div>
             <div class="skeleton h-72"></div>
+            <div class="skeleton h-72"></div>
+            <div class="skeleton h-72 hidden xl:block"></div>
         </div>
 
         <div class="w-full flex justify-center mt-12" data-aos="zoom-in" data-aos-delay="300">
@@ -136,10 +94,33 @@ function cari_wil() {
     var keyword = document.getElementById('keyword').value;
     var kodeWilayah = document.getElementById('kodeWilayah').value;
     var sort = document.getElementById('sort').value;
+    var searchBy = document.getElementById('searchBy').value;
     let isChecked = document.getElementById('status_subsidi').checked;
-    let statusRumah = isChecked ? 'subsidi' : 'semua';
+    let statusRumah = isChecked ? 'subsidi' : 'komersil';
+    
+    let toggleBg = document.getElementById('toggle-bg');
+    let toggleCircle = document.getElementById('toggle-circle');
+    
+    if (isChecked) {
+        toggleBg.style.backgroundColor = 'var(--portal-brand)';
+        toggleCircle.style.transform = 'translateX(20px)';
+        toggleCircle.style.backgroundColor = 'var(--portal-bg)';
+    } else {
+        toggleBg.style.backgroundColor = 'var(--portal-btn-bg)';
+        toggleCircle.style.transform = 'translateX(0)';
+        toggleCircle.style.backgroundColor = 'var(--portal-text-muted)';
+    }
+
+    jQuery('#temp_rumah').html(`
+        <div class="skeleton h-72"></div>
+        <div class="skeleton h-72"></div>
+        <div class="skeleton h-72"></div>
+        <div class="skeleton h-72"></div>
+        <div class="skeleton h-72 hidden xl:block"></div>
+    `);
+
     $.ajax({
-        url: '<?= base_url('cari_wil') ?>?kodeWilayah='+kodeWilayah+'&keyword='+keyword+'&sort='+sort+'&status_rumah='+statusRumah,
+        url: '<?= base_url('cari_wil') ?>?kodeWilayah='+kodeWilayah+'&keyword='+keyword+'&searchBy='+searchBy+'&sort='+sort+'&status_rumah='+statusRumah,
         success: function(response) { jQuery('#temp_rumah').html(response); }
     });
 }
@@ -148,14 +129,16 @@ function load_more_data() {
     let btn = jQuery('#btn-load-more');
     let currentPage = parseInt(btn.attr('data-page'));
     let nextPage = currentPage + 1;
-    var keyword = document.getElementById('keyword').value;
     var kodeWilayah = document.getElementById('kodeWilayah').value;
+    var keyword = document.getElementById('keyword').value;
     var sort = document.getElementById('sort').value;
+    var searchBy = document.getElementById('searchBy').value;
     let isChecked = document.getElementById('status_subsidi').checked;
-    let statusRumah = isChecked ? 'subsidi' : 'semua';
+    let statusRumah = isChecked ? 'subsidi' : 'komersil';
+    
     jQuery('#text-load').text('Sedang Memuat...');
     jQuery.ajax({
-        url: '<?= base_url('load_more') ?>?kodeWilayah='+kodeWilayah+'&keyword='+keyword+'&sort='+sort+'&status_rumah='+statusRumah+'&page='+nextPage,
+        url: '<?= base_url('load_more') ?>?kodeWilayah='+kodeWilayah+'&keyword='+keyword+'&searchBy='+searchBy+'&sort='+sort+'&status_rumah='+statusRumah+'&page='+nextPage,
         success: function(response) {
             if (jQuery.trim(response) !== '') {
                 jQuery('#temp_rumah').append(response);
