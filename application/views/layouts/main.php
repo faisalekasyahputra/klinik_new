@@ -94,7 +94,7 @@
                    </div>
 
                    <!-- Auth Button (sejajar tabs, bukan tab) -->
-                   <div class="shrink-0 flex items-end ml-auto pl-2 mb-1">
+                   <div class="shrink-0 flex items-end ml-auto pl-2 pr-[1.25rem] sm:pr-[1.5rem] mb-[2px]">
                        <?php if ($this->session->userdata('is_logged')): ?>
                            <?php
                                $avatar_src = $this->session->userdata('avatar');
@@ -103,21 +103,21 @@
                                    $avatar_src = "https://ui-avatars.com/api/?name={$fallback_name}&background=d6fb00&color=0a1a1f&bold=true";
                                }
                            ?>
-                           <div class="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#0d2228] border border-[#d6fb00]/15 rounded-lg">
+                           <div class="flex items-center gap-2 px-4 py-2.5 bg-[#0d2228] border border-[#d6fb00]/15 rounded-lg h-[42px]">
                                <?php if ($this->session->userdata('role') === 'admin'): ?>
-                                   <a href="<?= base_url('Admin_Dashboard') ?>" class="text-[#d6fb00] hover:text-white transition-colors" title="Dashboard">
-                                       <i class="fa-solid fa-gauge-high text-[11px]"></i>
+                                   <a href="<?= base_url('Admin_Dashboard') ?>" class="text-[#d6fb00] hover:text-white transition-colors flex items-center h-full" title="Dashboard">
+                                       <i class="fa-solid fa-gauge-high text-xs"></i>
                                    </a>
-                                   <div class="w-px h-3.5 bg-[#d6fb00]/20"></div>
+                                   <div class="w-px h-4 bg-[#d6fb00]/20 mx-1"></div>
                                <?php endif; ?>
-                               <a href="<?= base_url('akun') ?>" class="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-                                   <img src="<?= $avatar_src ?>" class="w-5 h-5 rounded object-cover border border-[#d6fb00]/20">
-                                   <span class="text-[11px] font-semibold text-[#ecffb6] hidden sm:inline"><?= $this->session->userdata('username') ?: $this->session->userdata('name') ?></span>
+                               <a href="<?= base_url('akun') ?>" class="flex items-center gap-2 hover:opacity-80 transition-opacity h-full">
+                                   <img src="<?= $avatar_src ?>" class="w-6 h-6 rounded object-cover border border-[#d6fb00]/20">
+                                   <span class="text-[13px] font-semibold text-[#ecffb6] hidden sm:inline"><?= $this->session->userdata('username') ?: $this->session->userdata('name') ?></span>
                                </a>
                            </div>
                        <?php else: ?>
-                           <a href="<?= base_url('Auth/login') ?>" class="flex items-center gap-1.5 btn-primary text-xs px-3.5 py-1.5 rounded-lg">
-                               <i class="fa-solid fa-right-to-bracket text-[11px]"></i>
+                           <a href="<?= base_url('Auth/login') ?>" class="flex items-center gap-2 btn-primary text-[13px] font-semibold px-5 py-2.5 rounded-lg h-[42px]">
+                               <i class="fa-solid fa-right-to-bracket text-xs"></i>
                                Masuk
                            </a>
                        <?php endif; ?>
