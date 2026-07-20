@@ -2,7 +2,7 @@
     <!-- Section Header -->
     <div class="flex flex-col sm:flex-row items-start sm:items-end justify-between mb-10 gap-4">
         <div>
-            <h2 class="text-3xl sm:text-4xl font-black text-[color:var(--portal-text)] tracking-tighter font-jakarta"><span style="color: var(--brand);">Bank</span> Desain</h2>
+            <h2 class="text-3xl sm:text-4xl font-black text-[color:var(--portal-text)] tracking-tighter font-jakarta"><span style="color: var(--portal-brand);">Bank</span> Desain</h2>
             <p class="text-[color:var(--portal-text-muted)] text-sm mt-2">Temukan desain rumah yang sesuai kebutuhan Anda</p>
         </div>
             <div class="flex items-center gap-2">

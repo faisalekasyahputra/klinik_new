@@ -13,6 +13,9 @@
     --portal-border: rgba(0, 80, 95, 0.08);
     --portal-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     
+    /* Brand Accent */
+    --portal-brand: #00a3b5; /* Teal for light theme visibility */
+    
     /* Card Buttons */
     --portal-btn-bg: rgba(15, 42, 48, 0.05);
     --portal-btn-border: rgba(15, 42, 48, 0.1);
@@ -29,6 +32,9 @@
     --portal-text-muted: #8aacb0;
     --portal-border: rgba(214, 251, 0, 0.15);
     --portal-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    
+    /* Brand Accent */
+    --portal-brand: #d6fb00; /* Original bright green */
     
     /* Card Buttons */
     --portal-btn-bg: rgba(214, 251, 0, 0.1);

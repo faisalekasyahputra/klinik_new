@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="text-center mb-10">
         <h1 class="text-3xl font-bold text-[color:var(--portal-text)] mb-3">Klinik Diagnosa Kelayakan</h1>
-        <p class="text-[color:var(--portal-text-muted)]">Program: <span class="text-[color:var(--brand)] font-semibold"><?= htmlspecialchars($program['nama_program']) ?></span></p>
+        <p class="text-[color:var(--portal-text-muted)]">Program: <span class="text-[color:var(--portal-brand)] font-semibold"><?= htmlspecialchars($program['nama_program']) ?></span></p>
     </div>
 
         <?php if ($program['kode_program'] === 'umum'): ?>

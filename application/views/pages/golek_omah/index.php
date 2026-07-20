@@ -2,7 +2,7 @@
     <!-- Header -->
     <div class="mb-6 max-w-2xl">
         <h2 class="text-2xl sm:text-3xl font-black text-[color:var(--portal-text)] tracking-tighter font-jakarta mb-2">
-            Nggolek <span class="text-[color:var(--brand)]">Omah</span>
+            Nggolek <span class="text-[color:var(--portal-brand)]">Omah</span>
         </h2>
         <p class="text-[color:var(--portal-text-muted)] text-xs sm:text-sm leading-relaxed">
             Pilih langkah yang sesuai kebutuhanmu — cari rumah yang sudah tersedia, cari panduan desain untuk bangun sendiri, atau temukan solusi pembiayaan yang cocok.
