@@ -13,7 +13,7 @@
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-10">
 
-        <a href="<?= base_url('golek_omah') ?>" class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 168px;">
+        <a href="<?= base_url('golek_omah') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 168px;">
             <i class="fa-solid fa-house-chimney-window absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.06;"></i>
             <div class="relative z-10">
                 <i class="fa-solid fa-house-chimney-window mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 24px; color: var(--portal-icon); "></i>
@@ -28,7 +28,7 @@
             </div>
         </a>
 
-        <a href="<?= base_url('Pengembang/sertifikasi') ?>" class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 168px;">
+        <a href="<?= base_url('Pengembang/sertifikasi') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 168px;">
             <i class="fa-solid fa-certificate absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.06;"></i>
             <div class="relative z-10">
                 <i class="fa-solid fa-certificate mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 24px; color: var(--portal-icon); "></i>
@@ -43,7 +43,7 @@
             </div>
         </a>
 
-        <div class="rounded-2xl p-3.5 sm:p-4 flex flex-col relative overflow-hidden opacity-50 cursor-not-allowed" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); min-height: 168px;" title="Segera Hadir">
+        <div class="rounded-3xl p-3.5 sm:p-4 flex flex-col relative overflow-hidden opacity-50 cursor-not-allowed" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); min-height: 168px;" title="Segera Hadir">
             <i class="fa-solid fa-city absolute pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.05;"></i>
             <div class="relative z-10">
                 <i class="fa-solid fa-city mb-4" style="font-size: 24px; color: var(--portal-icon);"></i>
@@ -58,7 +58,7 @@
             </div>
         </div>
 
-        <div class="rounded-2xl p-3.5 sm:p-4 flex flex-col relative overflow-hidden opacity-50 cursor-not-allowed" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); min-height: 168px;" title="Segera Hadir">
+        <div class="rounded-3xl p-3.5 sm:p-4 flex flex-col relative overflow-hidden opacity-50 cursor-not-allowed" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); min-height: 168px;" title="Segera Hadir">
             <i class="fa-solid fa-chart-line absolute pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.05;"></i>
             <div class="relative z-10">
                 <i class="fa-solid fa-chart-line mb-4" style="font-size: 24px; color: var(--portal-icon);"></i>
@@ -81,7 +81,7 @@
     </div>
     <div class="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 mb-10">
 
-        <a href="<?= base_url('Program/diagnosa/flpp') ?>" class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 156px;">
+        <a href="<?= base_url('Program/diagnosa/flpp') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 156px;">
             <i class="fa-solid fa-house-chimney-window absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 70px; right: -0.75rem; bottom: -0.75rem; color: var(--portal-icon); opacity: 0.07;"></i>
             <div class="relative z-10">
                 <i class="fa-solid fa-house-chimney-window mb-3 transition-transform duration-500 group-hover:scale-110" style="font-size: 28px; color: var(--portal-icon); "></i>
@@ -96,7 +96,7 @@
             </div>
         </a>
 
-        <a href="<?= base_url('Program/diagnosa/oemah_lestari') ?>" class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 156px;">
+        <a href="<?= base_url('Program/diagnosa/oemah_lestari') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 156px;">
             <i class="fa-solid fa-leaf absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 70px; right: -0.75rem; bottom: -0.75rem; color: var(--portal-icon); opacity: 0.07;"></i>
             <div class="relative z-10">
                 <i class="fa-solid fa-leaf mb-3 transition-transform duration-500 group-hover:scale-110" style="font-size: 28px; color: var(--portal-icon); "></i>
@@ -111,7 +111,7 @@
             </div>
         </a>
 
-        <a href="<?= base_url('Program/diagnosa/rtlh') ?>" class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 156px;">
+        <a href="<?= base_url('Program/diagnosa/rtlh') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 156px;">
             <i class="fa-solid fa-house-crack absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 70px; right: -0.75rem; bottom: -0.75rem; color: var(--portal-icon); opacity: 0.07;"></i>
             <div class="relative z-10">
                 <i class="fa-solid fa-house-crack mb-3 transition-transform duration-500 group-hover:scale-110" style="font-size: 28px; color: var(--portal-icon); "></i>
@@ -126,7 +126,7 @@
             </div>
         </a>
 
-        <a href="<?= base_url('Program/diagnosa/pb') ?>" class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 156px;">
+        <a href="<?= base_url('Program/diagnosa/pb') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 156px;">
             <i class="fa-solid fa-trowel-bricks absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 70px; right: -0.75rem; bottom: -0.75rem; color: var(--portal-icon); opacity: 0.07;"></i>
             <div class="relative z-10">
                 <i class="fa-solid fa-trowel-bricks mb-3 transition-transform duration-500 group-hover:scale-110" style="font-size: 28px; color: var(--portal-icon); "></i>
@@ -141,7 +141,7 @@
             </div>
         </a>
 
-        <a href="<?= base_url('Program/diagnosa/rumah_apung') ?>" class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 156px;">
+        <a href="<?= base_url('Program/diagnosa/rumah_apung') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 156px;">
             <i class="fa-solid fa-water absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 70px; right: -0.75rem; bottom: -0.75rem; color: var(--portal-icon); opacity: 0.07;"></i>
             <div class="relative z-10">
                 <i class="fa-solid fa-water mb-3 transition-transform duration-500 group-hover:scale-110" style="font-size: 28px; color: var(--portal-icon); "></i>
@@ -164,7 +164,7 @@
     </div>
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
 
-        <a href="<?= base_url('umum/forum') ?>" class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow);">
+        <a href="<?= base_url('umum/forum') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow);">
             <i class="fa-solid fa-comments absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1.5rem; color: var(--portal-icon); opacity: 0.06;"></i>
             <div class="relative z-10">
                 <i class="fa-solid fa-comments mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 34px; color: var(--portal-icon); "></i>
@@ -179,7 +179,7 @@
             </div>
         </a>
 
-        <a href="<?= base_url('umum/aduan') ?>" class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow);">
+        <a href="<?= base_url('umum/aduan') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow);">
             <i class="fa-solid fa-circle-question absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1.5rem; color: var(--portal-icon); opacity: 0.06;"></i>
             <div class="relative z-10">
                 <i class="fa-solid fa-circle-question mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 34px; color: var(--portal-icon); "></i>
@@ -194,7 +194,7 @@
             </div>
         </a>
 
-        <a href="<?= base_url('kemitraan') ?>" class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow);">
+        <a href="<?= base_url('kemitraan') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow);">
             <i class="fa-solid fa-user-graduate absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1.5rem; color: var(--portal-icon); opacity: 0.06;"></i>
             <div class="relative z-10">
                 <i class="fa-solid fa-user-graduate mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 34px; color: var(--portal-icon); "></i>
