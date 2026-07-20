@@ -740,6 +740,11 @@ body {
     border-color: transparent;
     z-index: 2;
     border-radius: 0.875rem 0.875rem 0 0;
+    transition: none; /* Hilangkan delay saat jadi aktif agar terasa lebih responsif (snappy) */
+}
+.portal-tab-btn.active i,
+.portal-tab-btn.active svg {
+    transition: none;
 }
 /* Scoop (lengkungan) - definisikan di state dasar agar bisa dianimasikan */
 .portal-tab-btn::before,
@@ -773,6 +778,7 @@ body {
 .portal-tab-btn.active::before,
 .portal-tab-btn.active::after {
     opacity: 1;
+    transition: none;
 }
 
 .portal-panel {
