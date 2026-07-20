@@ -322,46 +322,67 @@ function globalSystem() {
         });
     }
 
+    var SKELETON_HTML = '<div class="animate-pulse p-2 sm:p-4 space-y-6">'
+        + '<div class="flex items-center gap-2 mb-5"><div class="w-5 h-5 rounded bg-white/5"></div><div class="h-3 w-40 rounded bg-white/5"></div></div>'
+        + '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">'
+        + '<div class="rounded-3xl p-5 sm:p-6 space-y-4" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);min-height:168px"><div class="w-8 h-8 rounded-lg bg-white/5"></div><div class="h-4 w-3/4 rounded bg-white/5"></div><div class="space-y-1.5"><div class="h-2.5 w-full rounded bg-white/5"></div><div class="h-2.5 w-2/3 rounded bg-white/5"></div></div><div class="mt-auto pt-4"><div class="h-6 w-24 rounded-full bg-white/5"></div></div></div>'
+        + '<div class="rounded-3xl p-5 sm:p-6 space-y-4" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);min-height:168px"><div class="w-8 h-8 rounded-lg bg-white/5"></div><div class="h-4 w-2/3 rounded bg-white/5"></div><div class="space-y-1.5"><div class="h-2.5 w-full rounded bg-white/5"></div><div class="h-2.5 w-1/2 rounded bg-white/5"></div></div><div class="mt-auto pt-4"><div class="h-6 w-24 rounded-full bg-white/5"></div></div></div>'
+        + '<div class="rounded-3xl p-5 sm:p-6 space-y-4 hidden sm:block" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);min-height:168px"><div class="w-8 h-8 rounded-lg bg-white/5"></div><div class="h-4 w-1/2 rounded bg-white/5"></div><div class="space-y-1.5"><div class="h-2.5 w-full rounded bg-white/5"></div><div class="h-2.5 w-3/4 rounded bg-white/5"></div></div><div class="mt-auto pt-4"><div class="h-6 w-24 rounded-full bg-white/5"></div></div></div>'
+        + '</div></div>';
+
     var loadToken = 0;
     function loadTab(url, key, push) {
         var wrapper = document.getElementById('page-content-wrapper');
         if (!wrapper) { window.location.href = url; return; }
-
+        var panel = wrapper.closest('.portal-panel');
         var myToken = ++loadToken;
-        wrapper.style.opacity = '0.35';
-        wrapper.style.pointerEvents = 'none';
 
+        // 1) Langsung aktifkan tab (progresif — tidak menunggu fetch)
+        setActiveTabKey(key);
+
+        // 2) Fade out konten lama → skeleton
+        wrapper.style.transition = 'opacity 0.12s ease-out';
+        wrapper.style.opacity = '0';
+        setTimeout(function () {
+            if (myToken !== loadToken) return;
+            wrapper.innerHTML = SKELETON_HTML;
+            wrapper.style.opacity = '1';
+            if (panel) panel.scrollTop = 0;
+        }, 120);
+
+        // 3) Fetch konten baru
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
             .then(function (res) {
-                if (myToken !== loadToken) return null; // klik tab lain sudah menyusul, batalkan
+                if (myToken !== loadToken) return null;
                 if (!res.ok) { window.location.href = url; return null; }
                 return res.text();
             })
             .then(function (html) {
-                if (html === null || html === undefined) return;
-                wrapper.innerHTML = html;
-                return reinitContent(wrapper).then(function () {
-                    setActiveTabKey(key);
-                    if (push) history.pushState({ tabUrl: url, tabKey: key }, '', url);
-                    var panel = wrapper.closest('.portal-panel');\r
-                    if (panel) panel.scrollTop = 0;
-                });
+                if (html === null || html === undefined || myToken !== loadToken) return;
+                // 4) Fade out skeleton → inject konten baru
+                wrapper.style.transition = 'opacity 0.1s ease-out';
+                wrapper.style.opacity = '0';
+                setTimeout(function () {
+                    if (myToken !== loadToken) return;
+                    wrapper.innerHTML = html;
+                    reinitContent(wrapper).then(function () {
+                        if (push) history.pushState({ tabUrl: url, tabKey: key }, '', url);
+                        if (panel) panel.scrollTop = 0;
+                        // 5) Fade in konten baru — halus
+                        wrapper.style.transition = 'opacity 0.25s ease-in';
+                        wrapper.style.opacity = '1';
+                    });
+                }, 100);
             })
             .catch(function () {
-                window.location.href = url; // AJAX gagal total → jatuhkan ke navigasi normal
-            })
-            .finally(function () {
-                if (myToken === loadToken) {
-                    wrapper.style.opacity = '1';
-                    wrapper.style.pointerEvents = '';
-                }
+                if (myToken === loadToken) window.location.href = url;
             });
     }
 
     document.addEventListener('click', function (e) {
         var link = e.target.closest('[data-tab-link]');
         if (!link) return;
-        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // biarkan buka-tab-baru dll jalan normal
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         e.preventDefault();
         loadTab(link.getAttribute('href'), link.getAttribute('data-tab-key'), true);
     });
