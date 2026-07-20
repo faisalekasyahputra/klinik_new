@@ -125,7 +125,7 @@
                </div>
 
                <!-- Main Panel (scrollable content) -->
-               <div class="portal-panel flex-1 flex flex-col overflow-y-auto overflow-x-hidden no-scrollbar">
+               <div class="portal-panel flex-1 flex flex-col overflow-y-auto overflow-x-hidden no-scrollbar py-4 sm:py-6" style="-webkit-mask-image: linear-gradient(to bottom, transparent, black 20px, black calc(100% - 20px), transparent); mask-image: linear-gradient(to bottom, transparent, black 20px, black calc(100% - 20px), transparent);">
                    <div id="page-content-wrapper" class="relative z-10 flex-1 w-full">
                        <?=$content?>
                    </div>
@@ -137,7 +137,7 @@
                    $CI->load->model('Setting_model');
                    $ftSettings = $CI->Setting_model->get_all();
                ?>
-               <div class="shrink-0 flex items-center justify-center px-2 pt-1.5 pb-2">
+               <div class="shrink-0 flex items-center justify-center px-2 pt-1.5 pb-2 mb-2">
                    <span class="text-[10px] text-[#8aacb0]">&copy; <?= date('Y') ?> <?= htmlspecialchars($ftSettings['footer_copyright'] ?? 'KLINIK PKP JATENG') ?></span>
                </div>
            </div>
