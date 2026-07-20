@@ -8,7 +8,7 @@
 | **Versi Dokumen** | v2.0 |
 | **Tanggal Analisis** | 2 Juni 2026 |
 | **Terakhir Diperbarui** | 1 Juli 2026 (v3.0 Refactor) |
-| **Status Perbaikan** | ✅ Fase 1-5 (Security) Selesai · ✅ Fase 6 (UI/UX & Auth) Selesai |
+| **Status Perbaikan** | ✅ Fase 1-5 (Security) Selesai · ✅ Fase 6 (UI/UX & Auth) Selesai · 🔄 Fase 11 (Tokenisasi CSS) Sedang berjalan |
 | **Klasifikasi** | INTERNAL — Disperakim Jateng & Pengembang |
 
 ---
@@ -202,7 +202,7 @@ Untuk menambal seluruh celah di atas tanpa merusak database dan UI yang sudah ad
 
 Seluruh celah keamanan kritis yang ditemukan pada audit awal telah berhasil ditambal. Aplikasi **Klinik PKP Jawa Tengah** telah bertransformasi dari sistem yang rentan menjadi **sistem yang tangguh dengan standar keamanan OWASP compliant dan patuh hukum UU PDP No. 27/2022.**
 
-Semua perbaikan berjalan di belakang layar (backend) tanpa mengubah desain UI dark-mode premium. Selanjutnya, pengembangan dilanjutkan ke fitur forum lanjutan, dashboard admin, dan persiapan rilis production (lihat `IMPLEMENTATION_ROADMAP.md`).
+Semua perbaikan berjalan di belakang layar (backend) tanpa mengubah desain UI dark-mode premium. Selanjutnya, pengembangan dilanjutkan ke fitur forum lanjutan, dashboard admin, dan persiapan rilis production (lihat `IMPLEMENTATION_ROADMAP.md`). Saat ini sedang dilakukan proses tokenisasi CSS untuk beralih dari Dark Theme *hardcoded* ke Light Theme berbasis CSS variables (yang mendukung Dark Mode).
 
 ---
 *Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant — 1 Juli 2026 (v3.0 Refactor).*

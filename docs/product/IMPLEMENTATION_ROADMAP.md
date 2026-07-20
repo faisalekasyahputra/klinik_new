@@ -17,6 +17,7 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
 - ✅ **Fase 8 (Etalase Program & Hero Beranda)** — Selesai
 - ✅ **Fase 9 (Integrasi NIK SIMPERUM & Housing Queue)** — Selesai
 - 🛠️ **Fase 10 (Validasi Manual ASN / Admin Dashboard)** — Belum mulai
+- 🔄 **Fase 11 (Tokenisasi CSS & Theming)** — Sedang berjalan (Transisi dari Dark Theme hardcoded ke CSS Variables untuk Light/Dark Mode)
 
 ---
 
@@ -58,6 +59,14 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
 │  • Tabel Antrean (Housing Queue) di sisi Admin           │
 │  • Tombol Approve / Reject / Tunda                       │
 │  • Endpoint Sinkronisasi balik ke server SIMPERUM        │
+└────────────────────────┬─────────────────────────────────┘
+                         │
+                         ▼
+┌──────────────────────────────────────────────────────────┐
+│ FASE 11: TOKENISASI CSS & THEMING               🔄 TODO  │
+│  • Tokenisasi CSS dari hardcoded Dark Theme              │
+│  • Peralihan ke Light Theme berbasis CSS variables       │
+│  • Dukungan untuk Dark Mode                              │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -105,6 +114,15 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
 *   **Action Items:**
     *   [ ] Halaman *backend* admin untuk melihat antrean masuk.
     *   [ ] Fungsi persetujuan manual (Ubah status *pending* menjadi *approved* atau *rejected*).
+
+---
+
+### 🔄 FASE 11 — Tokenisasi CSS & Theming (SEDANG BERJALAN)
+*   **Target:** Beralih dari desain Dark Theme yang di-*hardcode* menuju sistem *theming* berbasis CSS variables (Light Theme dengan dukungan Dark Mode).
+*   **Action Items:**
+    *   [ ] Mengidentifikasi dan mengekstrak warna *hardcoded* ke dalam CSS variables.
+    *   [ ] Menyusun *default* tema menjadi Light Theme.
+    *   [ ] Memastikan *fallback* dan integrasi Dark Mode berfungsi dengan baik pada seluruh komponen UI.
 
 ---
 

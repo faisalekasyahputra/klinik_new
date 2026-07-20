@@ -22,7 +22,7 @@
             <p class="text-zinc-500 text-[11px] mb-4">Pilih cara yang paling nyaman untuk Anda</p>
             
             <a href="https://wa.me/6282137191145" target="_blank" class="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all mb-2.5 group">
-                <div class="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white text-lg shrink-0"><i class="fa-brands fa-whatsapp"></i></div>
+                <div class="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-[#0a1a1f] text-lg shrink-0"><i class="fa-brands fa-whatsapp"></i></div>
                 <div>
                     <span class="text-white text-xs font-bold block">WhatsApp Langsung</span>
                     <span class="text-zinc-500 text-[10px]">Chat cepat via WhatsApp</span>
@@ -323,11 +323,11 @@ function globalSystem() {
     }
 
     var SKELETON_HTML = '<div class="animate-pulse py-4 sm:py-6 px-1 sm:px-2 space-y-4">'
-        + '<div class="flex items-center gap-2 mb-3"><div class="w-4 h-4 rounded bg-[#0a1a1f]/8"></div><div class="h-3 w-36 rounded bg-[#0a1a1f]/8"></div></div>'
+        + '<div class="flex items-center gap-2 mb-3"><div class="w-4 h-4 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-3 w-36 rounded bg-[color:var(--portal-skeleton)]"></div></div>'
         + '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">'
-        + '<div class="rounded-2xl p-3.5 sm:p-4 space-y-3" style="background:#fff;border:1px solid rgba(0,80,95,0.08);min-height:120px"><div class="w-6 h-6 rounded-lg bg-[#0a1a1f]/6"></div><div class="h-3.5 w-3/4 rounded bg-[#0a1a1f]/6"></div><div class="space-y-1.5"><div class="h-2 w-full rounded bg-[#0a1a1f]/5"></div><div class="h-2 w-2/3 rounded bg-[#0a1a1f]/5"></div></div><div class="mt-auto pt-2.5"><div class="h-5 w-20 rounded-full bg-[#0a1a1f]/6"></div></div></div>'
-        + '<div class="rounded-2xl p-3.5 sm:p-4 space-y-3" style="background:#fff;border:1px solid rgba(0,80,95,0.08);min-height:120px"><div class="w-6 h-6 rounded-lg bg-[#0a1a1f]/6"></div><div class="h-3.5 w-2/3 rounded bg-[#0a1a1f]/6"></div><div class="space-y-1.5"><div class="h-2 w-full rounded bg-[#0a1a1f]/5"></div><div class="h-2 w-1/2 rounded bg-[#0a1a1f]/5"></div></div><div class="mt-auto pt-2.5"><div class="h-5 w-20 rounded-full bg-[#0a1a1f]/6"></div></div></div>'
-        + '<div class="rounded-2xl p-3.5 sm:p-4 space-y-3 hidden sm:block" style="background:#fff;border:1px solid rgba(0,80,95,0.08);min-height:120px"><div class="w-6 h-6 rounded-lg bg-[#0a1a1f]/6"></div><div class="h-3.5 w-1/2 rounded bg-[#0a1a1f]/6"></div><div class="space-y-1.5"><div class="h-2 w-full rounded bg-[#0a1a1f]/5"></div><div class="h-2 w-3/4 rounded bg-[#0a1a1f]/5"></div></div><div class="mt-auto pt-2.5"><div class="h-5 w-20 rounded-full bg-[#0a1a1f]/6"></div></div></div>'
+        + '<div class="rounded-2xl p-3.5 sm:p-4 space-y-3" style="background:#fff;border: 1px solid var(--portal-border);min-height:120px"><div class="w-6 h-6 rounded-lg bg-[#0a1a1f]/6"></div><div class="h-3.5 w-3/4 rounded bg-[#0a1a1f]/6"></div><div class="space-y-1.5"><div class="h-2 w-full rounded bg-[#0a1a1f]/5"></div><div class="h-2 w-2/3 rounded bg-[#0a1a1f]/5"></div></div><div class="mt-auto pt-2.5"><div class="h-5 w-20 rounded-full bg-[#0a1a1f]/6"></div></div></div>'
+        + '<div class="rounded-2xl p-3.5 sm:p-4 space-y-3" style="background:#fff;border: 1px solid var(--portal-border);min-height:120px"><div class="w-6 h-6 rounded-lg bg-[#0a1a1f]/6"></div><div class="h-3.5 w-2/3 rounded bg-[#0a1a1f]/6"></div><div class="space-y-1.5"><div class="h-2 w-full rounded bg-[#0a1a1f]/5"></div><div class="h-2 w-1/2 rounded bg-[#0a1a1f]/5"></div></div><div class="mt-auto pt-2.5"><div class="h-5 w-20 rounded-full bg-[#0a1a1f]/6"></div></div></div>'
+        + '<div class="rounded-2xl p-3.5 sm:p-4 space-y-3 hidden sm:block" style="background:#fff;border: 1px solid var(--portal-border);min-height:120px"><div class="w-6 h-6 rounded-lg bg-[#0a1a1f]/6"></div><div class="h-3.5 w-1/2 rounded bg-[#0a1a1f]/6"></div><div class="space-y-1.5"><div class="h-2 w-full rounded bg-[#0a1a1f]/5"></div><div class="h-2 w-3/4 rounded bg-[#0a1a1f]/5"></div></div><div class="mt-auto pt-2.5"><div class="h-5 w-20 rounded-full bg-[#0a1a1f]/6"></div></div></div>'
         + '</div></div>';
 
     var loadToken = 0;

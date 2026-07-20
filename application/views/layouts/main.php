@@ -125,7 +125,7 @@
                </div>
 
                <!-- Main Panel (scrollable content) -->
-               <div class="portal-panel flex-1 flex flex-col overflow-y-auto overflow-x-hidden no-scrollbar">
+               <div class="portal-panel theme-light flex-1 flex flex-col overflow-y-auto overflow-x-hidden no-scrollbar">
                    <div id="page-content-wrapper" class="relative z-10 flex-1 w-full">
                        <?=$content?>
                    </div>

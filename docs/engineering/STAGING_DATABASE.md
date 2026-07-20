@@ -32,5 +32,6 @@ Ini akan menimpa seluruh isi database staging dengan kondisi production terbaru 
 
 ## Pemakaian
 
-- **Server staging** (`darkseagreen-hamster-214338.hostingersite.com`): `.env` di server itu connect ke database ini.
-- **Lokal**: `.env` lokal masih connect ke database production seperti biasa (lihat [`SETUP_DATABASE.md`](SETUP_DATABASE.md)); blok koneksi ke database staging ini ada di `.env` tapi di-comment — uncomment kalau mau develop langsung terhadap data staging.
+- **Server staging #1** (`darkseagreen-hamster-214338.hostingersite.com`, branch `feature/ui-ux-revamp`): `.env` di server itu connect ke database ini.
+- **Server staging #2** (`floralwhite-lion-710022.hostingersite.com`, branch `feature/homepage-portal-v2`, dibuat 2026-07-20): connect ke database yang SAMA — belum ada perubahan skema di branch ini, jadi masih aman dipakai bareng. Kalau salah satu branch nanti butuh migrasi DB sendiri, pisahkan database-nya (lihat § Cara Sync Ulang untuk bikin salinan baru).
+- **Lokal**: `.env` lokal saat ini JUGA connect ke database staging ini (blok production di-comment di bawahnya) — lihat [`SETUP_DATABASE.md`](SETUP_DATABASE.md) untuk detail switch balik ke production.

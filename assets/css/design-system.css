@@ -4,7 +4,41 @@
    Color Scheme: Electric Lime × Deep Teal
    ============================================================ */
 
-/* --- CSS Custom Properties (Design Tokens) --- */
+/* --- Theme Tokens (Portal) --- */
+.theme-light {
+    --portal-bg: #f0f6f7;
+    --portal-bg-card: #ffffff;
+    --portal-text: #0f2a30;
+    --portal-text-muted: #5a8a92;
+    --portal-border: rgba(0, 80, 95, 0.08);
+    --portal-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    
+    /* Card Buttons */
+    --portal-btn-bg: rgba(15, 42, 48, 0.05);
+    --portal-btn-border: rgba(15, 42, 48, 0.1);
+    
+    /* Icons */
+    --portal-icon: #0f2a30;
+    --portal-skeleton: rgba(10, 26, 31, 0.08);
+}
+
+.theme-dark {
+    --portal-bg: #0a1a1f;
+    --portal-bg-card: #0f2a30;
+    --portal-text: #ffffff;
+    --portal-text-muted: #8aacb0;
+    --portal-border: rgba(214, 251, 0, 0.15);
+    --portal-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    
+    /* Card Buttons */
+    --portal-btn-bg: rgba(214, 251, 0, 0.1);
+    --portal-btn-border: rgba(214, 251, 0, 0.2);
+    
+    /* Icons */
+    --portal-icon: #d6fb00;
+    --portal-skeleton: rgba(214, 251, 0, 0.06);
+}
+
 :root {
     /* ---- Backgrounds (Teal-tinted darks) ---- */
     --bg-body:        #0a1a1f;
@@ -727,14 +761,12 @@ body {
 }
 
 .portal-panel {
-    --bg-card: #ffffff;
-    --text-secondary: #5a8a92;
-    background: #f0f6f7;
-    border: 1px solid rgba(0, 80, 95, 0.08);
+    background: var(--portal-bg);
+    border: 1px solid var(--portal-border);
     border-top: none;
     border-radius: 0.625rem;
     padding: 1rem;
-    box-shadow: 0 12px 40px rgba(0, 50, 60, 0.1);
+    box-shadow: var(--portal-shadow);
     position: relative;
     z-index: 1;
     min-height: 0;
