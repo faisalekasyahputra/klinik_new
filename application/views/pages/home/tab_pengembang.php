@@ -10,7 +10,7 @@
         <!-- Card: Daftar Pengembang Tersertifikasi -->
         <a href="<?= base_url('Pengembang/sertifikasi') ?>" data-tab-link data-tab-key="pengembang_list" data-tab-group="pengembang"
            class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"
-           style="background-color: var(--bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
+           style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
             <i class="fa-solid fa-users absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none"
                style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.08;"></i>
             <div class="relative z-10">
@@ -20,7 +20,7 @@
                 <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Daftar pengembang perumahan yang telah tersertifikasi SRP2</p>
             </div>
             <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: rgba(15,42,48,0.05); color: var(--portal-icon); border: 1px solid rgba(15,42,48,0.1);">
+                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
                     <span>Lihat Daftar</span>
                     <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                 </div>
@@ -30,7 +30,7 @@
         <!-- Card: Syarat & Ketentuan SRP2 -->
         <a href="<?= base_url('Pengembang/syarat') ?>" data-tab-link data-tab-key="pengembang_syarat" data-tab-group="pengembang"
            class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"
-           style="background-color: var(--bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
+           style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
             <i class="fa-solid fa-clipboard-list absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none"
                style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.08;"></i>
             <div class="relative z-10">
@@ -40,7 +40,7 @@
                 <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Informasi persyaratan dan dokumen pendaftaran SRP2</p>
             </div>
             <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: rgba(15,42,48,0.05); color: var(--portal-icon); border: 1px solid rgba(15,42,48,0.1);">
+                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
                     <span>Lihat Syarat</span>
                     <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                 </div>
@@ -50,7 +50,7 @@
         <!-- Card: Formulir Pendaftaran SRP2 -->
         <a href="<?= base_url('Pengembang/formulir') ?>" data-tab-link data-tab-key="pengembang_formulir" data-tab-group="pengembang"
            class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"
-           style="background-color: var(--bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
+           style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
             <i class="fa-solid fa-file-signature absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none"
                style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.08;"></i>
             <div class="relative z-10">
@@ -60,7 +60,7 @@
                 <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Formulir pendaftaran sertifikasi pengembang perumahan</p>
             </div>
             <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: rgba(15,42,48,0.05); color: var(--portal-icon); border: 1px solid rgba(15,42,48,0.1);">
+                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
                     <span>Daftar Sekarang</span>
                     <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                 </div>

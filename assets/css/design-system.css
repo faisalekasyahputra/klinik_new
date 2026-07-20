@@ -728,8 +728,8 @@ body {
 
 /* Active tab — warna cerah menyatu dengan panel */
 .portal-tab-btn.active {
-    background: #f0f6f7;
-    color: #0a1a1f;
+    background: var(--portal-bg);
+    color: var(--portal-text);
     font-weight: 700;
     border-color: transparent;
     z-index: 2;
@@ -744,8 +744,9 @@ body {
     width: 10px;
     height: 10px;
     background: transparent;
-    border-bottom-right-radius: 10px;
-    box-shadow: 5px 0 0 0 #f0f6f7;
+    border-bottom-right-radius: 0.5rem;
+    box-shadow: 5px 5px 0 5px var(--portal-bg);
+    pointer-events: none;
 }
 /* Scoop kanan */
 .portal-tab-btn.active::after {
@@ -756,8 +757,9 @@ body {
     width: 10px;
     height: 10px;
     background: transparent;
-    border-bottom-left-radius: 10px;
-    box-shadow: -5px 0 0 0 #f0f6f7;
+    border-bottom-left-radius: 0.5rem;
+    box-shadow: -5px 5px 0 5px var(--portal-bg);
+    pointer-events: none;
 }
 
 .portal-panel {

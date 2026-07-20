@@ -10,7 +10,7 @@
         <!-- Card: Statistik & Grafik -->
         <a href="<?= base_url('Statistika') ?>" data-tab-link data-tab-key="statistika" data-tab-group="bankdata"
            class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"
-           style="background-color: var(--bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
+           style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
             <i class="fa-solid fa-chart-pie absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none"
                style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.08;"></i>
             <div class="relative z-10">
@@ -20,7 +20,7 @@
                 <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Data statistik dan visualisasi perumahan Jawa Tengah</p>
             </div>
             <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: rgba(15,42,48,0.05); color: var(--portal-icon); border: 1px solid rgba(15,42,48,0.1);">
+                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
                     <span>Lihat Statistik</span>
                     <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
                 </div>
@@ -30,7 +30,7 @@
         <!-- Card: Data Lainnya (DISABLED) -->
         <div title="Segera Hadir"
              class="rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden opacity-50 cursor-not-allowed"
-             style="background-color: var(--bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
+             style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
             <i class="fa-solid fa-database absolute pointer-events-none"
                style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.08;"></i>
             <div class="relative z-10">
@@ -40,7 +40,7 @@
                 <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Lebih banyak data akan tersedia</p>
             </div>
             <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: rgba(15,42,48,0.05); color: var(--portal-icon); border: 1px solid rgba(15,42,48,0.1);">
+                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
                     <span>Segera Hadir</span>
                     <i class="fa-solid fa-lock"></i>
                 </div>
