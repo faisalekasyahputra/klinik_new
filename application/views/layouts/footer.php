@@ -120,7 +120,6 @@
      ============================================================ -->
 <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-<script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
 <script>
     // Initialize AOS
     AOS.init({
@@ -129,25 +128,7 @@
         offset: 50,
     });
 
-    // Initialize Lenis
-    const lenis = new Lenis({
-        duration: 1.2,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        direction: 'vertical',
-        gestureDirection: 'vertical',
-        smooth: true,
-        mouseMultiplier: 1,
-        smoothTouch: false,
-        touchMultiplier: 2,
-        infinite: false,
-    });
-
-    function raf(time) {
-        lenis.raf(time);
-        requestAnimationFrame(raf);
-    }
-
-    requestAnimationFrame(raf);
+    // Lenis smooth scroll disabled — panel now uses native overflow-y scroll
 </script>
 
 <!-- ============================================================
@@ -375,7 +356,8 @@ function globalSystem() {
                 return reinitContent(wrapper).then(function () {
                     setActiveTabKey(key);
                     if (push) history.pushState({ tabUrl: url, tabKey: key }, '', url);
-                    window.scrollTo(0, 0);
+                    var panel = wrapper.closest('.portal-panel');\r
+                    if (panel) panel.scrollTop = 0;
                 });
             })
             .catch(function () {

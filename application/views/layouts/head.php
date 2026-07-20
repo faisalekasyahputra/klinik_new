@@ -46,7 +46,6 @@
     <style>
         html, body {
             overflow-x: hidden;
-            overflow-y: auto;
         }
 
         @keyframes shimmer {
@@ -71,61 +70,38 @@
             background: rgba(214, 251, 0, 0.6);
         }
 
-        /* Page Transition Blur Fade (Content Only) */
+        /* Page Transition (content reveal on load) */
         #page-content-wrapper {
-            opacity: 0;
-            filter: blur(10px);
-            transition: opacity 0.3s ease-out, filter 0.3s ease-out;
-        }
-        #page-content-wrapper.page-loaded {
             opacity: 1;
-            filter: blur(0);
         }
         #page-content-wrapper.page-exiting {
             opacity: 0;
-            filter: blur(10px);
-            transition: opacity 0.2s ease-in, filter 0.2s ease-in;
+            transition: opacity 0.15s ease-in;
         }
     </style>
 
-    <!-- Page Transition Script -->
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            requestAnimationFrame(() => {
-                const wrapper = document.getElementById('page-content-wrapper');
-                if (wrapper) wrapper.classList.add('page-loaded');
-            });
-        });
-
+        // Page transition: hanya untuk navigasi full-page (bukan AJAX tab)
         document.addEventListener('click', (e) => {
             const link = e.target.closest('a');
-            
-            if (link && link.href && link.target !== '_blank' && !link.href.startsWith('#') && !link.href.startsWith('javascript:') && link.hostname === window.location.hostname) {
-                // Cegah transisi jika link hanya anchor link (misal href="http://domain.com/page#section")
-                const currentUrl = window.location.href.split('#')[0];
-                const linkUrl = link.href.split('#')[0];
-                if (currentUrl === linkUrl) return;
+            // Skip jika bukan link, tab baru, anchor, atau AJAX tab link
+            if (!link || !link.href || link.target === '_blank' || link.href.startsWith('#') || link.href.startsWith('javascript:') || link.hostname !== window.location.hostname || link.hasAttribute('data-tab-link')) return;
 
-                e.preventDefault();
-                const wrapper = document.getElementById('page-content-wrapper');
-                if (wrapper) {
-                    wrapper.classList.remove('page-loaded');
-                    wrapper.classList.add('page-exiting');
-                }
-                setTimeout(() => {
-                    window.location.href = link.href;
-                }, 200); // Sesuai durasi CSS transition (.page-exiting)
-            }
+            const currentUrl = window.location.href.split('#')[0];
+            const linkUrl = link.href.split('#')[0];
+            if (currentUrl === linkUrl) return;
+
+            e.preventDefault();
+            const wrapper = document.getElementById('page-content-wrapper');
+            if (wrapper) wrapper.classList.add('page-exiting');
+            setTimeout(() => { window.location.href = link.href; }, 150);
         });
 
-        // BFCache (Back/Forward Cache) handler agar halaman tidak stuck blur saat tombol Back ditekan
+        // BFCache handler
         window.addEventListener('pageshow', (e) => {
             if (e.persisted) {
                 const wrapper = document.getElementById('page-content-wrapper');
-                if (wrapper) {
-                    wrapper.classList.remove('page-exiting');
-                    wrapper.classList.add('page-loaded');
-                }
+                if (wrapper) wrapper.classList.remove('page-exiting');
             }
         });
     </script>
