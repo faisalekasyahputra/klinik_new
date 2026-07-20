@@ -69,55 +69,59 @@
                    </div>
                </div>
 
-               <!-- Floating Auth Button — pojok kanan atas, mengapung -->
-               <?php if ($this->session->userdata('is_logged')): ?>
-                   <?php
-                       $avatar_src = $this->session->userdata('avatar');
-                       if (empty($avatar_src)) {
-                           $fallback_name = urlencode($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
-                           $avatar_src = "https://ui-avatars.com/api/?name={$fallback_name}&background=d6fb00&color=0a1a1f&bold=true";
-                       }
-                   ?>
-                   <div class="absolute top-2 right-2 sm:top-3 sm:right-3 z-20 flex items-center gap-1 p-1 bg-[#0d2228]/90 backdrop-blur-md border border-[#d6fb00]/15 rounded-xl shadow-lg shadow-black/30">
-                       <?php if ($this->session->userdata('role') === 'admin'): ?>
-                           <a href="<?= base_url('Admin_Dashboard') ?>" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-[#d6fb00]/15 text-[#d6fb00] transition-colors" title="Dashboard">
-                               <i class="fa-solid fa-gauge-high text-[10px]"></i>
-                               <span class="text-[11px] font-semibold hidden sm:inline">Admin</span>
-                           </a>
-                           <div class="w-px h-4 bg-[#d6fb00]/20"></div>
-                       <?php endif; ?>
-                       <a href="<?= base_url('akun') ?>" class="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-[#d6fb00]/15 transition-colors group">
-                           <img src="<?= $avatar_src ?>" class="w-5 h-5 rounded object-cover border border-[#d6fb00]/20">
-                           <span class="text-[11px] font-semibold text-[#ecffb6] hidden sm:inline"><?= $this->session->userdata('username') ?: $this->session->userdata('name') ?></span>
+               <!-- Tab Bar + Auth (sejajar satu baris) -->
+               <div class="flex items-end shrink-0">
+                   <!-- Tabs (scrollable) -->
+                   <div class="portal-tab-bar no-scrollbar flex-1 min-w-0">
+                       <a href="<?= base_url() ?>" data-tab-link data-tab-key="beranda" class="portal-tab-btn <?= $active_tab === 'beranda' ? 'active' : '' ?>">
+                           <i class="fa-solid fa-grip"></i> Beranda
+                       </a>
+                       <a href="<?= base_url('tab/perumahan') ?>" data-tab-link data-tab-key="perumahan" class="portal-tab-btn <?= $active_tab === 'perumahan' ? 'active' : '' ?>">
+                           <i class="fa-solid fa-house-chimney"></i> Perumahan
+                       </a>
+                       <a href="<?= base_url('tab/kawasan') ?>" data-tab-link data-tab-key="kawasan" class="portal-tab-btn <?= $active_tab === 'kawasan' ? 'active' : '' ?>">
+                           <i class="fa-solid fa-city"></i> Kawasan
+                       </a>
+                       <a href="<?= base_url('tab/pertanahan') ?>" data-tab-link data-tab-key="pertanahan" class="portal-tab-btn <?= $active_tab === 'pertanahan' ? 'active' : '' ?>">
+                           <i class="fa-solid fa-mountain-sun"></i> Pertanahan
+                       </a>
+                       <a href="<?= base_url('tab/pengembang') ?>" data-tab-link data-tab-key="pengembang" class="portal-tab-btn <?= $active_tab === 'pengembang' ? 'active' : '' ?>">
+                           <i class="fa-solid fa-helmet-safety"></i> Pengembang
+                       </a>
+                       <a href="<?= base_url('tab/bankdata') ?>" data-tab-link data-tab-key="bankdata" class="portal-tab-btn <?= $active_tab === 'bankdata' ? 'active' : '' ?>">
+                           <i class="fa-solid fa-chart-pie"></i> Bank Data
                        </a>
                    </div>
-               <?php else: ?>
-                   <a href="<?= base_url('Auth/login') ?>" class="absolute top-2 right-2 sm:top-3 sm:right-3 z-20 flex items-center gap-1.5 btn-primary text-xs px-4 py-2 rounded-xl shadow-lg shadow-[#d6fb00]/10">
-                       <i class="fa-solid fa-right-to-bracket text-[11px]"></i>
-                       Masuk
-                   </a>
-               <?php endif; ?>
 
-               <!-- Tab Bar -->
-               <div class="portal-tab-bar no-scrollbar shrink-0">
-                   <a href="<?= base_url() ?>" data-tab-link data-tab-key="beranda" class="portal-tab-btn <?= $active_tab === 'beranda' ? 'active' : '' ?>">
-                       <i class="fa-solid fa-grip"></i> Beranda
-                   </a>
-                   <a href="<?= base_url('tab/perumahan') ?>" data-tab-link data-tab-key="perumahan" class="portal-tab-btn <?= $active_tab === 'perumahan' ? 'active' : '' ?>">
-                       <i class="fa-solid fa-house-chimney"></i> Perumahan
-                   </a>
-                   <a href="<?= base_url('tab/kawasan') ?>" data-tab-link data-tab-key="kawasan" class="portal-tab-btn <?= $active_tab === 'kawasan' ? 'active' : '' ?>">
-                       <i class="fa-solid fa-city"></i> Kawasan
-                   </a>
-                   <a href="<?= base_url('tab/pertanahan') ?>" data-tab-link data-tab-key="pertanahan" class="portal-tab-btn <?= $active_tab === 'pertanahan' ? 'active' : '' ?>">
-                       <i class="fa-solid fa-mountain-sun"></i> Pertanahan
-                   </a>
-                   <a href="<?= base_url('tab/pengembang') ?>" data-tab-link data-tab-key="pengembang" class="portal-tab-btn <?= $active_tab === 'pengembang' ? 'active' : '' ?>">
-                       <i class="fa-solid fa-helmet-safety"></i> Pengembang
-                   </a>
-                   <a href="<?= base_url('tab/bankdata') ?>" data-tab-link data-tab-key="bankdata" class="portal-tab-btn <?= $active_tab === 'bankdata' ? 'active' : '' ?>">
-                       <i class="fa-solid fa-chart-pie"></i> Bank Data
-                   </a>
+                   <!-- Auth Button (sejajar tabs, bukan tab) -->
+                   <div class="shrink-0 flex items-end ml-auto pl-2 mb-[-2px]">
+                       <?php if ($this->session->userdata('is_logged')): ?>
+                           <?php
+                               $avatar_src = $this->session->userdata('avatar');
+                               if (empty($avatar_src)) {
+                                   $fallback_name = urlencode($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
+                                   $avatar_src = "https://ui-avatars.com/api/?name={$fallback_name}&background=d6fb00&color=0a1a1f&bold=true";
+                               }
+                           ?>
+                           <div class="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#0d2228] border border-[#d6fb00]/15 rounded-lg">
+                               <?php if ($this->session->userdata('role') === 'admin'): ?>
+                                   <a href="<?= base_url('Admin_Dashboard') ?>" class="text-[#d6fb00] hover:text-white transition-colors" title="Dashboard">
+                                       <i class="fa-solid fa-gauge-high text-[11px]"></i>
+                                   </a>
+                                   <div class="w-px h-3.5 bg-[#d6fb00]/20"></div>
+                               <?php endif; ?>
+                               <a href="<?= base_url('akun') ?>" class="flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+                                   <img src="<?= $avatar_src ?>" class="w-5 h-5 rounded object-cover border border-[#d6fb00]/20">
+                                   <span class="text-[11px] font-semibold text-[#ecffb6] hidden sm:inline"><?= $this->session->userdata('username') ?: $this->session->userdata('name') ?></span>
+                               </a>
+                           </div>
+                       <?php else: ?>
+                           <a href="<?= base_url('Auth/login') ?>" class="flex items-center gap-1.5 btn-primary text-xs px-3.5 py-1.5 rounded-lg">
+                               <i class="fa-solid fa-right-to-bracket text-[11px]"></i>
+                               Masuk
+                           </a>
+                       <?php endif; ?>
+                   </div>
                </div>
 
                <!-- Main Panel (scrollable content) -->
