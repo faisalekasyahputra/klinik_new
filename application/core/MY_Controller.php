@@ -63,8 +63,26 @@ class MY_Controller extends CI_Controller {
     }
 
     /**
+     * Render a page view — full layout on a normal request, or just the
+     * inner content fragment when called via AJAX (used by the navbar's
+     * tab-loader in footer.php, which fetches this fragment and swaps it
+     * into #page-content-wrapper instead of doing a full page navigation).
+     *
+     * @param string $view View path, e.g. 'pages/home/awal'
+     * @param array  $data Data passed to the view
+     */
+    protected function render($view, $data = []) {
+        if ($this->input->is_ajax_request()) {
+            $this->load->view($view, $data);
+        } else {
+            $data['content'] = $this->load->view($view, $data, true);
+            $this->load->view('layouts/main', $data);
+        }
+    }
+
+    /**
      * Validate that a redirect path is internal (not an open redirect to external domain)
-     * 
+     *
      * @param string $path The path or URL to validate
      * @return string Safe redirect path (internal only)
      */

@@ -69,8 +69,7 @@ class Index extends MY_Controller {
 			"3376" => "Kota Tegal"
 		];
 
-		$data['content'] = $this->load->view('pages/home/awal', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		$this->render('pages/home/awal', $datacontent);
 	}
 
 	/**
@@ -416,10 +415,9 @@ class Index extends MY_Controller {
 	}
 	public function pengembang()
 	{
-		
+
 		$datacontent['judul']='';
-		$data['content'] = $this->load->view('pages/pengembang/pengembang', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		$this->render('pages/pengembang/pengembang', $datacontent);
 	}
 	public function kemitraan()
 	{
@@ -432,8 +430,7 @@ class Index extends MY_Controller {
 	{
 
 		$datacontent['judul']='';
-		$data['content'] = $this->load->view('pages/bank_desain/panduan_desain', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		$this->render('pages/bank_desain/panduan_desain', $datacontent);
 	}
 	public function cari_rumah()
 	{
@@ -487,8 +484,7 @@ class Index extends MY_Controller {
 
 	public function simulasi_kpr() {
 		$datacontent['judul'] = 'Simulasi KPR';
-		$data['content'] = $this->load->view('pages/kpr/simulasi', $datacontent, true);
-		$this->load->view('layouts/main', $data);
+		$this->render('pages/kpr/simulasi', $datacontent);
 	}
 
 	public function profil() {
@@ -517,20 +513,17 @@ class Index extends MY_Controller {
 
 	public function sebaran_rusun() {
 		$datacontent['judul']='';
-		$data['content'] = $this->load->view('pages/spasial/sebaran_rusun', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		$this->render('pages/spasial/sebaran_rusun', $datacontent);
 	}
 
 	public function profil_kumuh() {
 		$datacontent['judul']='';
-		$data['content'] = $this->load->view('pages/spasial/profil_kumuh', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		$this->render('pages/spasial/profil_kumuh', $datacontent);
 	}
 
 	public function sebaran_sdgs() {
 		$datacontent['judul']='';
-		$data['content'] = $this->load->view('pages/spasial/sebaran_sdgs', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		$this->render('pages/spasial/sebaran_sdgs', $datacontent);
 	}
 
 	public function sebaran($kodeWilayah = '33') {
@@ -584,36 +577,31 @@ class Index extends MY_Controller {
 			$datacontent['results'] = [];
 		}
 
-		$data['content'] = $this->load->view('pages/data_spasial/sebaran', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		$this->render('pages/data_spasial/sebaran', $datacontent);
 	}
 
 	// --- PERTANAHAN (DUMMY) ---
 	public function info_tanah() {
 		$datacontent['title'] = 'Informasi Status Tanah';
 		$datacontent['desc'] = 'Halaman ini merupakan pratinjau (dummy) untuk fitur pengecekan kesesuaian tata ruang dan status tanah kawasan permukiman.';
-		$data['content'] = $this->load->view('pages/pertanahan/dummy_page', $datacontent, true);
-		$this->load->view('layouts/main', $data);
+		$this->render('pages/pertanahan/dummy_page', $datacontent);
 	}
 
 	public function sertifikasi() {
 		$datacontent['title'] = 'Sertifikasi Lahan Perumahan';
 		$datacontent['desc'] = 'Halaman ini merupakan pratinjau (dummy) untuk fasilitasi sertifikasi tanah / konsolidasi lahan untuk perumahan masyarakat.';
-		$data['content'] = $this->load->view('pages/pertanahan/dummy_page', $datacontent, true);
-		$this->load->view('layouts/main', $data);
+		$this->render('pages/pertanahan/dummy_page', $datacontent);
 	}
 
 	public function sengketa() {
 		$datacontent['title'] = 'Penyelesaian Sengketa Tanah';
 		$datacontent['desc'] = 'Halaman ini merupakan pratinjau (dummy) untuk layanan penyelesaian sengketa lahan atau fasilitasi serah terima PSU perumahan.';
-		$data['content'] = $this->load->view('pages/pertanahan/dummy_page', $datacontent, true);
-		$this->load->view('layouts/main', $data);
+		$this->render('pages/pertanahan/dummy_page', $datacontent);
 	}
 
 	public function bank_tanah() {
 		$datacontent['title'] = 'Bank Tanah (Land Bank)';
 		$datacontent['desc'] = 'Halaman ini merupakan pratinjau (dummy) untuk sistem informasi ketersediaan lahan pemerintah (Bank Tanah) untuk pembangunan hunian.';
-		$data['content'] = $this->load->view('pages/pertanahan/dummy_page', $datacontent, true);
-		$this->load->view('layouts/main', $data);
+		$this->render('pages/pertanahan/dummy_page', $datacontent);
 	}
 }

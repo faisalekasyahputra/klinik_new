@@ -26,8 +26,7 @@ class Pengembang extends MY_Controller {
 			->where('status_verifikasi', 'Diterima')
 			->order_by('nama_perusahaan', 'ASC')
 			->get('srp2_registrations')->result();
-		$data['content'] = $this->load->view('pages/pengembang/sertifikasi', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		$this->render('pages/pengembang/sertifikasi', $datacontent);
 	}
 	public function formulir()
 	{

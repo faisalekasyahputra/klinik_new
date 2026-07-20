@@ -6,107 +6,13 @@
     $CI->load->model('Setting_model');
     $settings = $CI->Setting_model->get_all();
  ?>
- <footer class="w-full bg-[#0a1a1f] text-zinc-400 pt-16 pb-6 mt-auto relative z-10 overflow-hidden">
-    
-    <!-- Batik Kawung Background Pattern with Top Fade Mask -->
-    <div class="absolute inset-0 z-0 pointer-events-none" style="opacity: 0.05; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 60%, black 100%); mask-image: linear-gradient(to bottom, transparent 0%, black 60%, black 100%);">
-        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="batik-kawung-pkp" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-              <circle cx="0" cy="0" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
-              <circle cx="100" cy="0" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
-              <circle cx="0" cy="100" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
-              <circle cx="100" cy="100" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
-              <line x1="-15" y1="0" x2="15" y2="0" stroke="#00545f" stroke-width="2"/>
-              <line x1="0" y1="-15" x2="0" y2="15" stroke="#00545f" stroke-width="2"/>
-              <circle cx="0" cy="0" r="4.5" fill="#d6fb00"/>
-              <line x1="85" y1="0" x2="115" y2="0" stroke="#00545f" stroke-width="2"/>
-              <line x1="100" y1="-15" x2="100" y2="15" stroke="#00545f" stroke-width="2"/>
-              <circle cx="100" cy="0" r="4.5" fill="#d6fb00"/>
-              <line x1="-15" y1="100" x2="15" y2="100" stroke="#00545f" stroke-width="2"/>
-              <line x1="0" y1="85" x2="0" y2="115" stroke="#00545f" stroke-width="2"/>
-              <circle cx="0" cy="100" r="4.5" fill="#d6fb00"/>
-              <line x1="85" y1="100" x2="115" y2="100" stroke="#00545f" stroke-width="2"/>
-              <line x1="100" y1="85" x2="100" y2="115" stroke="#00545f" stroke-width="2"/>
-              <circle cx="100" cy="100" r="4.5" fill="#d6fb00"/>
-              <polygon points="50,40 60,50 50,60 40,50" fill="none" stroke="#00a3b5" stroke-width="2"/>
-              <circle cx="50" cy="50" r="2.5" fill="#ecffb6"/>
-              <circle cx="50" cy="22" r="2" fill="#00a3b5"/>
-              <circle cx="50" cy="78" r="2" fill="#00a3b5"/>
-              <circle cx="22" cy="50" r="2" fill="#00a3b5"/>
-              <circle cx="78" cy="50" r="2" fill="#00a3b5"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#batik-kawung-pkp)" />
-        </svg>
-    </div>
-
-    <div class="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-12 pb-12">
-            
-            <!-- Brand -->
-            <div class="md:col-span-5 space-y-5" data-aos="fade-right">
-                <div class="flex items-center gap-3">
-                    <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" class="h-10 w-auto object-contain">
-                    <div>
-                        <h5 class="text-sm font-black tracking-tight text-white leading-none">Klinik<span class="text-[#d6fb00]">PKP</span></h5>
-                        <p class="text-[9px] text-[#8aacb0] font-bold tracking-widest uppercase mt-1">Disperakim Prov. Jateng</p>
-                    </div>
-                </div>
-                <p class="text-xs text-zinc-500 leading-relaxed max-w-sm">
-                    Klinik Perumahan dan Kawasan Permukiman hadir sebagai pusat layanan informasi dan konsultasi terpadu di wilayah Jawa Tengah.
-                </p>
-
-            </div>
-
-            <!-- Quick Links -->
-            <div class="md:col-span-3" data-aos="fade-up" data-aos-delay="100">
-                <h5 class="text-white font-bold text-xs tracking-wider uppercase mb-5">Layanan</h5>
-                <ul class="space-y-2.5 text-xs text-zinc-500">
-                    <li><a href="#" class="hover:text-[#d6fb00] transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[7px] text-zinc-700"></i> Konsultasi</a></li>
-                    <li><a href="#" class="hover:text-[#d6fb00] transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[7px] text-zinc-700"></i> Masukan & Saran</a></li>
-                    <li><a href="#" class="hover:text-[#d6fb00] transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[7px] text-zinc-700"></i> FAQ</a></li>
-                    <li><a href="#" class="hover:text-[#d6fb00] transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[7px] text-zinc-700"></i> Pejabat Struktural</a></li>
-                    <li><a href="#" class="hover:text-[#d6fb00] transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[7px] text-zinc-700"></i> Tim Magang</a></li>
-                </ul>
-            </div>
-
-            <!-- Contact -->
-            <div class="md:col-span-4 space-y-4" data-aos="fade-up" data-aos-delay="200">
-                <h5 class="text-white font-bold text-xs tracking-wider uppercase mb-5">Kontak</h5>
-                <div class="space-y-3 text-xs text-zinc-500">
-                    <div class="flex items-start gap-3">
-                        <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-zinc-600 mt-0.5 shrink-0"><i class="fa-solid fa-location-dot text-[10px]"></i></div>
-                        <p>KLINIK PKP DISPERAKIM<br><span class="text-zinc-600"><?= htmlspecialchars($settings['footer_address'] ?? 'Jl. Madukoro Blok BB, Semarang') ?></span></p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-zinc-600 shrink-0"><i class="fa-solid fa-phone text-[10px]"></i></div>
-                        <p><?= htmlspecialchars($settings['footer_phone'] ?? '+6282137191145') ?></p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-zinc-600 shrink-0"><i class="fa-solid fa-envelope text-[10px]"></i></div>
-                        <p class="lowercase"><?= htmlspecialchars($settings['footer_email'] ?? 'klinikpkpjawa3@gmail.com') ?></p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 pt-2">
-                    <a href="#" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-[#d6fb00] hover:text-[#0a1a1f] flex items-center justify-center text-zinc-500 transition-all text-xs"><i class="fa-brands fa-facebook-f"></i></a>
-                    <a href="#" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-[#d6fb00] hover:text-[#0a1a1f] flex items-center justify-center text-zinc-500 transition-all text-xs"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="#" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-[#d6fb00] hover:text-[#0a1a1f] flex items-center justify-center text-zinc-500 transition-all text-xs"><i class="fa-brands fa-youtube"></i></a>
-                </div>
-            </div>
+ <footer class="w-full bg-[#0a1a1f] text-zinc-500 py-6 mt-auto relative z-10 border-t border-white/5">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-3 text-center sm:text-left">
+        <div class="flex items-center gap-2.5">
+            <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" class="h-6 w-auto object-contain">
+            <span class="text-xs font-bold text-white">Klinik<span class="text-[#d6fb00]">PKP</span></span>
         </div>
-
-        <!-- Copyright -->
-        <div class="pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-zinc-600 font-medium" data-aos="fade-in" data-aos-delay="300">
-            <div>&copy; <?= date('Y') ?> <span class="text-zinc-500 font-semibold"><?= htmlspecialchars($settings['footer_copyright'] ?? 'KLINIK PKP JATENG') ?></span>. All Rights Reserved.</div>
-            <div class="flex items-center gap-3 text-zinc-500/80">
-                <a href="#" class="hover:text-[#d6fb00] transition-colors">Support</a>
-                <span>•</span>
-                <a href="#" class="hover:text-[#d6fb00] transition-colors">Ketentuan</a>
-                <span>•</span>
-                <a href="#" class="hover:text-[#d6fb00] transition-colors">Privasi</a>
-            </div>
-        </div>
+        <div class="text-[11px] text-zinc-600">&copy; <?= date('Y') ?> <?= htmlspecialchars($settings['footer_copyright'] ?? 'KLINIK PKP JATENG') ?>. All Rights Reserved.</div>
     </div>
 </footer>
 
@@ -354,4 +260,147 @@ function globalSystem() {
         }
     }
 }
+
+// ============================================================
+// TAB NAVIGATION LOADER
+// ============================================================
+// Link navbar bertanda [data-tab-link] tidak pindah halaman penuh —
+// isi #page-content-wrapper ditukar via fetch AJAX, lalu
+// script di dalamnya dijalankan ulang (urut, menunggu script eksternal
+// seperti Leaflet/Chart.js selesai load sebelum script berikutnya jalan
+// — sama seperti urutan pemuatan halaman normal), Alpine & AOS di-init
+// ulang untuk konten baru, dan URL di-update lewat history API supaya
+// tombol back/forward & reload/bookmark tetap berfungsi wajar.
+(function () {
+    var CHIP_ACTIVE = ['bg-[#d6fb00]/12', 'text-[#d6fb00]', 'border-[#d6fb00]/25'];
+    var CHIP_INACTIVE = ['text-[#8aacb0]', 'border-transparent'];
+    var ROW_ACTIVE = ['bg-[#d6fb00]/10', 'text-[#ecffb6]'];
+    var ROW_INACTIVE = ['text-[#8aacb0]'];
+
+    function setActiveTabKey(key) {
+        document.querySelectorAll('[data-tab-key][data-tab-style="chip"], [data-tab-group-trigger]').forEach(function (el) {
+            el.classList.remove.apply(el.classList, CHIP_ACTIVE);
+            el.classList.add.apply(el.classList, CHIP_INACTIVE);
+        });
+        document.querySelectorAll('[data-tab-key][data-tab-style="row"]').forEach(function (el) {
+            el.classList.remove.apply(el.classList, ROW_ACTIVE);
+            el.classList.add.apply(el.classList, ROW_INACTIVE);
+        });
+
+        var activeEl = document.querySelector('[data-tab-key="' + key + '"][data-tab-style]');
+        if (!activeEl) return;
+
+        if (activeEl.getAttribute('data-tab-style') === 'chip') {
+            activeEl.classList.remove.apply(activeEl.classList, CHIP_INACTIVE);
+            activeEl.classList.add.apply(activeEl.classList, CHIP_ACTIVE);
+        } else {
+            activeEl.classList.remove.apply(activeEl.classList, ROW_INACTIVE);
+            activeEl.classList.add.apply(activeEl.classList, ROW_ACTIVE);
+        }
+
+        var group = activeEl.getAttribute('data-tab-group');
+        if (group) {
+            var trigger = document.querySelector('[data-tab-group-trigger="' + group + '"]');
+            if (trigger) {
+                trigger.classList.remove.apply(trigger.classList, CHIP_INACTIVE);
+                trigger.classList.add.apply(trigger.classList, CHIP_ACTIVE);
+            }
+        }
+    }
+
+    // Jalankan ulang <script> yang ikut masuk lewat innerHTML (browser
+    // tidak otomatis mengeksekusinya), URUT satu-satu — script eksternal
+    // (src=...) ditunggu sampai 'load' dulu sebelum lanjut ke script
+    // berikutnya, supaya library seperti Leaflet/Chart.js sudah siap
+    // saat script inline yang memakainya dijalankan.
+    function reExecuteScripts(wrapper) {
+        var scripts = Array.prototype.slice.call(wrapper.querySelectorAll('script'));
+        return scripts.reduce(function (chain, oldScript) {
+            return chain.then(function () {
+                return new Promise(function (resolve) {
+                    var newScript = document.createElement('script');
+                    for (var i = 0; i < oldScript.attributes.length; i++) {
+                        var attr = oldScript.attributes[i];
+                        newScript.setAttribute(attr.name, attr.value);
+                    }
+                    newScript.textContent = oldScript.textContent;
+                    if (newScript.src) {
+                        newScript.onload = resolve;
+                        newScript.onerror = resolve; // jangan macet kalau CDN gagal
+                        oldScript.replaceWith(newScript);
+                    } else {
+                        oldScript.replaceWith(newScript); // inline: jalan sinkron saat disisipkan
+                        resolve();
+                    }
+                });
+            });
+        }, Promise.resolve());
+    }
+
+    function reinitContent(wrapper) {
+        // Halaman ini sudah lama "DOMContentLoaded" sejak load pertama —
+        // script per-halaman yang menunggu event itu (pola umum di proyek
+        // ini) tidak akan pernah jalan lagi kalau tidak di-shim begini.
+        var originalAdd = document.addEventListener.bind(document);
+        document.addEventListener = function (type, listener, options) {
+            if (type === 'DOMContentLoaded') { listener(); return; }
+            return originalAdd(type, listener, options);
+        };
+
+        return reExecuteScripts(wrapper).finally(function () {
+            document.addEventListener = originalAdd;
+            if (window.Alpine) Alpine.initTree(wrapper);
+            if (window.AOS) AOS.refreshHard();
+        });
+    }
+
+    var loadToken = 0;
+    function loadTab(url, key, push) {
+        var wrapper = document.getElementById('page-content-wrapper');
+        if (!wrapper) { window.location.href = url; return; }
+
+        var myToken = ++loadToken;
+        wrapper.style.opacity = '0.35';
+        wrapper.style.pointerEvents = 'none';
+
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+            .then(function (res) {
+                if (myToken !== loadToken) return null; // klik tab lain sudah menyusul, batalkan
+                if (!res.ok) { window.location.href = url; return null; }
+                return res.text();
+            })
+            .then(function (html) {
+                if (html === null || html === undefined) return;
+                wrapper.innerHTML = html;
+                return reinitContent(wrapper).then(function () {
+                    setActiveTabKey(key);
+                    if (push) history.pushState({ tabUrl: url, tabKey: key }, '', url);
+                    window.scrollTo(0, 0);
+                });
+            })
+            .catch(function () {
+                window.location.href = url; // AJAX gagal total → jatuhkan ke navigasi normal
+            })
+            .finally(function () {
+                if (myToken === loadToken) {
+                    wrapper.style.opacity = '1';
+                    wrapper.style.pointerEvents = '';
+                }
+            });
+    }
+
+    document.addEventListener('click', function (e) {
+        var link = e.target.closest('[data-tab-link]');
+        if (!link) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; // biarkan buka-tab-baru dll jalan normal
+        e.preventDefault();
+        loadTab(link.getAttribute('href'), link.getAttribute('data-tab-key'), true);
+    });
+
+    window.addEventListener('popstate', function (e) {
+        if (e.state && e.state.tabUrl) {
+            loadTab(e.state.tabUrl, e.state.tabKey, false);
+        }
+    });
+})();
 </script>

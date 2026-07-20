@@ -75,7 +75,6 @@ class Statistika extends MY_Controller {
             'desain_rumah' => count($this->ternak_api->get_public_house_designs() ?: [])
         ];
 
-		$data['content'] = $this->load->view('pages/data_spasial/statistika', $data, true);
-        $this->load->view('layouts/main', $data);
+		$this->render('pages/data_spasial/statistika', $data);
 	}
 }
