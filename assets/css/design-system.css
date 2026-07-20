@@ -730,7 +730,7 @@ body {
 .portal-panel {
     background: var(--bg-card);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 0 1.25rem 1.25rem 1.25rem;
+    border-radius: 0.625rem;
     padding: 1rem;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
     position: relative;
@@ -741,13 +741,13 @@ body {
 }
 @media (min-width: 640px) {
     .portal-panel {
-        border-radius: 0 1.5rem 1.5rem 1.5rem;
+        border-radius: 0.75rem;
         padding: 1.5rem;
     }
 }
 @media (min-width: 1024px) {
     .portal-panel {
-        border-radius: 0 2rem 2rem 2rem;
+        border-radius: 1rem;
         padding: 1.75rem;
     }
 }
