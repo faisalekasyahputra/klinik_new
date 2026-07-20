@@ -718,6 +718,11 @@ body {
     transition: background 0.25s ease, color 0.25s ease;
     text-decoration: none;
     position: relative;
+}
+.portal-tab-btn i,
+.portal-tab-btn svg {
+    transition: color 0.25s ease, fill 0.25s ease;
+}
     /* Default / Inactive state */
     color: var(--text-secondary);
     background: var(--bg-primary);
