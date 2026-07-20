@@ -718,15 +718,17 @@ body {
     transition: all 0.25s ease;
     text-decoration: none;
     position: relative;
-}
-.portal-tab-btn i,
-.portal-tab-btn svg {
-    transition: color 0.25s ease, fill 0.25s ease;
-}
+
     /* Default / Inactive state */
     color: var(--text-secondary);
     background: rgba(255, 255, 255, 0.03);
 }
+
+.portal-tab-btn i,
+.portal-tab-btn svg {
+    transition: color 0.25s ease, fill 0.25s ease;
+}
+
 .portal-tab-btn:hover {
     color: white;
     background: rgba(255, 255, 255, 0.06);
