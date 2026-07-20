@@ -103,7 +103,7 @@
                                    $avatar_src = "https://ui-avatars.com/api/?name={$fallback_name}&background=d6fb00&color=0a1a1f&bold=true";
                                }
                            ?>
-                           <div class="flex items-center gap-2 px-4 py-2.5 bg-[#0d2228] border border-[#d6fb00]/15 rounded-lg h-[42px]">
+                           <div class="flex items-center gap-2 px-4 py-2 bg-[#0d2228] border border-[#d6fb00]/15 rounded-[14px] h-[38px]">
                                <?php if ($this->session->userdata('role') === 'admin'): ?>
                                    <a href="<?= base_url('Admin_Dashboard') ?>" class="text-[#d6fb00] hover:text-white transition-colors flex items-center h-full" title="Dashboard">
                                        <i class="fa-solid fa-gauge-high text-xs"></i>
@@ -116,7 +116,7 @@
                                </a>
                            </div>
                        <?php else: ?>
-                           <a href="<?= base_url('Auth/login') ?>" class="flex items-center gap-2 btn-primary text-[13px] font-semibold px-5 py-2.5 rounded-lg h-[42px]">
+                           <a href="<?= base_url('Auth/login') ?>" class="flex items-center gap-2 btn-primary text-[13px] font-semibold px-5 py-2 rounded-[14px] h-[38px]">
                                <i class="fa-solid fa-right-to-bracket text-xs"></i>
                                Masuk
                            </a>
