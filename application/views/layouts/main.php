@@ -124,10 +124,16 @@
                    </div>
                </div>
 
-               <!-- Main Panel (scrollable content) -->
-               <div class="portal-panel flex-1 flex flex-col overflow-y-auto overflow-x-hidden no-scrollbar py-4 sm:py-6" style="-webkit-mask-image: linear-gradient(to bottom, transparent, black 20px, black calc(100% - 20px), transparent); mask-image: linear-gradient(to bottom, transparent, black 20px, black calc(100% - 20px), transparent);">
-                   <div id="page-content-wrapper" class="relative z-10 flex-1 w-full">
-                       <?=$content?>
+               <!-- Main Panel -->
+               <div class="portal-panel flex-1 flex flex-col overflow-hidden">
+                   <!-- Masking Wrapper (Fixes the fade effect in place) -->
+                   <div class="flex-1 flex flex-col w-full relative" style="-webkit-mask-image: linear-gradient(to bottom, transparent, black 24px, black calc(100% - 24px), transparent); mask-image: linear-gradient(to bottom, transparent, black 24px, black calc(100% - 24px), transparent);">
+                       <!-- Scrolling Container -->
+                       <div class="absolute inset-0 overflow-y-auto overflow-x-hidden no-scrollbar">
+                           <div id="page-content-wrapper" class="relative z-10 w-full min-h-full py-4 sm:py-6">
+                               <?=$content?>
+                           </div>
+                       </div>
                    </div>
                </div>
 
