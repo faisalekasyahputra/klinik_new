@@ -725,11 +725,11 @@ body {
 }
     /* Default / Inactive state */
     color: var(--text-secondary);
-    background: var(--bg-primary);
+    background: rgba(255, 255, 255, 0.03);
 }
 .portal-tab-btn:hover {
     color: white;
-    background: var(--bg-card);
+    background: rgba(255, 255, 255, 0.06);
 }
 
 /* Active tab — warna cerah menyatu dengan panel */
@@ -740,9 +740,10 @@ body {
     border-color: transparent;
     z-index: 2;
     border-radius: 0.875rem 0.875rem 0 0;
+    transition: none;
 }
 
-/* Scoop (lengkungan) - animasi dengan ukuran bayangan */
+/* Scoop (lengkungan) - instan tanpa animasi */
 .portal-tab-btn::before,
 .portal-tab-btn::after {
     content: '';
@@ -752,8 +753,8 @@ body {
     height: 10px;
     background: transparent;
     pointer-events: none;
-    opacity: 1; /* Selalu 1, bentuknya yang membesar/mengecil */
-    transition: box-shadow 0.25s ease;
+    opacity: 1; 
+    transition: none; /* Langsung hilang saat tidak aktif */
 }
 
 /* Scoop kiri */
