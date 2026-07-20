@@ -25,7 +25,7 @@
        ?>
 
        <!-- Portal Section: Tab Bar + Main Panel -->
-       <section class="w-full relative flex-1 flex flex-col pt-16 overflow-hidden">
+       <section class="w-full relative flex-1 flex flex-col pt-3 overflow-hidden">
            <!-- Batik Kawung Background -->
            <div class="fixed inset-0 pointer-events-none" style="opacity: 0.08; z-index: 0; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 60%, black 100%); mask-image: linear-gradient(to bottom, transparent 0%, black 60%, black 100%);">
                <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">

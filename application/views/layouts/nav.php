@@ -1,88 +1,48 @@
 <?php 
   $class = strtolower($this->router->fetch_class());
   $method = strtolower($this->router->fetch_method());
-  
-  $is_home = ($class == 'index' && $method == 'index');
 ?>
-<nav class="w-full fixed top-0 left-0 right-0 z-50 transition-all duration-300 <?= $is_home ? 'py-2' : '' ?>"
-     <?php if ($is_home): ?>
-     :class="scrolled ? 'py-0' : 'py-2'"
-     <?php endif; ?>>
-     
-    <!-- Background Layer with Extended Mask Fade Out (Pure Blur + Batik) -->
-    <div class="absolute inset-x-0 top-0 -bottom-12 pointer-events-none transition-all duration-300 <?= $is_home ? '' : 'backdrop-blur-xl' ?>"
-         style="-webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%); mask-image: linear-gradient(to bottom, black 60%, transparent 100%);"
-         <?php if ($is_home): ?>
-         :class="scrolled ? 'backdrop-blur-xl' : ''"
-         <?php endif; ?>>
-         
-        <!-- No Batik Overlay Here -->
-    </div>
-
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div class="flex items-center justify-between h-16">
-            
-            <!-- Logo -->
-            <div class="flex items-center gap-3 group cursor-pointer">
-                <a href="<?= base_url() ?>" class="flex items-center gap-2.5 group-hover:scale-[1.02] transition-transform duration-300">
-                    <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" class="h-8 w-auto object-contain drop-shadow-md">
-                    <div class="flex flex-col">
-                        <span class="text-lg font-black tracking-tight text-white leading-none mb-0.5">
-                            Klinik<span class="text-[#d6fb00]">PKP</span>
-                        </span>
-                        <span class="text-[9px] font-bold text-[#8aacb0] tracking-wider uppercase">Provinsi Jawa Tengah</span>
-                    </div>
+<!-- Floating Auth Button — fixed top-right, overlaps content -->
+<div class="fixed top-3 right-3 sm:top-4 sm:right-5 z-50 flex items-center gap-2">
+    <?php if ($this->session->userdata('is_logged')): ?>
+        <!-- Logged-in User -->
+        <div class="flex items-center gap-1.5 p-1 bg-[#0d2228]/90 backdrop-blur-md border border-[#d6fb00]/15 rounded-xl shadow-lg shadow-black/30">
+            <?php if ($this->session->userdata('role') === 'admin'): ?>
+                <a href="<?= base_url('Admin_Dashboard') ?>" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-[#d6fb00]/15 text-[#d6fb00] transition-colors" title="Dashboard Admin">
+                    <i class="fa-solid fa-gauge-high text-[10px]"></i>
+                    <span class="text-[11px] font-semibold hidden sm:inline">Dashboard</span>
                 </a>
-            </div>
-
-            <!-- Right: Login/User + Mobile Toggle -->
-            <div class="flex items-center gap-3">
-                <?php if ($this->session->userdata('is_logged')): ?>
-                    <!-- Logged-in User (Grouped) -->
-                    <div class="hidden lg:flex items-center p-1 bg-[#d6fb00]/5 border border-[#d6fb00]/15 rounded-xl backdrop-blur-sm">
-                        <?php if ($this->session->userdata('role') === 'admin'): ?>
-                            <a href="<?= base_url('Admin_Dashboard') ?>" class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-[#d6fb00]/15 text-[#d6fb00] transition-colors">
-                                <i class="fa-solid fa-gauge-high text-[11px]"></i>
-                                <span class="text-xs font-semibold">Dashboard</span>
-                            </a>
-                            
-                            <!-- Separator -->
-                            <div class="w-px h-5 bg-[#d6fb00]/20 mx-1"></div>
-                        <?php endif; ?>
-                        
-                        <a href="<?= base_url('akun') ?>" class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-[#d6fb00]/15 transition-colors group">
-                            <?php 
-                                $avatar_src = $this->session->userdata('avatar');
-                                if (empty($avatar_src)) {
-                                    $fallback_name = urlencode($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
-                                    $avatar_src = "https://ui-avatars.com/api/?name={$fallback_name}&background=d6fb00&color=0a1a1f&bold=true";
-                                }
-                            ?>
-                            <img src="<?= $avatar_src ?>" class="w-6 h-6 rounded-md object-cover border border-[#d6fb00]/20 group-hover:border-[#d6fb00]/40 transition-colors">
-                            <span class="text-xs font-semibold text-[#ecffb6]"><?= $this->session->userdata('username') ?: $this->session->userdata('name') ?></span>
-                        </a>
-                    </div>
-                <?php else: ?>
-                    <!-- Login Button: Primary Lime (dari color scheme) -->
-                    <a href="<?= base_url('Auth/login') ?>" class="hidden lg:flex flex-shrink-0 items-center gap-2 btn-primary text-xs px-5 py-2.5 rounded-xl">
-                        <i class="fa-solid fa-right-to-bracket text-sm"></i>
-                        Masuk
-                    </a>
-                <?php endif; ?>
-
-                <!-- Mobile Hamburger: Outline style -->
-                <button @click="mobileMenu = !mobileMenu" class="lg:hidden w-10 h-10 rounded-xl bg-transparent border-[1.5px] border-[#d6fb00]/30 hover:bg-[#d6fb00]/8 hover:border-[#d6fb00] flex items-center justify-center text-[#8aacb0] hover:text-[#d6fb00] transition-all duration-200">
-                    <i class="fa-solid fa-bars text-sm"></i>
-                </button>
-            </div>
+                <div class="w-px h-4 bg-[#d6fb00]/20"></div>
+            <?php endif; ?>
+            
+            <?php 
+                $avatar_src = $this->session->userdata('avatar');
+                if (empty($avatar_src)) {
+                    $fallback_name = urlencode($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
+                    $avatar_src = "https://ui-avatars.com/api/?name={$fallback_name}&background=d6fb00&color=0a1a1f&bold=true";
+                }
+            ?>
+            <a href="<?= base_url('akun') ?>" class="flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-[#d6fb00]/15 transition-colors group">
+                <img src="<?= $avatar_src ?>" class="w-6 h-6 rounded-md object-cover border border-[#d6fb00]/20 group-hover:border-[#d6fb00]/40 transition-colors">
+                <span class="text-[11px] font-semibold text-[#ecffb6] hidden sm:inline"><?= $this->session->userdata('username') ?: $this->session->userdata('name') ?></span>
+            </a>
         </div>
-    </div>
-</nav>
+    <?php else: ?>
+        <!-- Login Button: Floating Pill -->
+        <a href="<?= base_url('Auth/login') ?>" class="hidden lg:flex items-center gap-1.5 btn-primary text-xs px-4 py-2 rounded-xl shadow-lg shadow-[#d6fb00]/10">
+            <i class="fa-solid fa-right-to-bracket text-[11px]"></i>
+            Masuk
+        </a>
+    <?php endif; ?>
+
+    <!-- Mobile Hamburger -->
+    <button @click="mobileMenu = !mobileMenu" class="lg:hidden w-9 h-9 rounded-xl bg-[#0d2228]/90 backdrop-blur-md border border-[#d6fb00]/20 hover:border-[#d6fb00] flex items-center justify-center text-[#8aacb0] hover:text-[#d6fb00] transition-all duration-200 shadow-lg shadow-black/30">
+        <i class="fa-solid fa-bars text-sm"></i>
+    </button>
+</div>
 
 <!-- ============================================================
-     MOBILE MENU (Alpine.js) — sibling of <nav>, not nested inside
-     #page-content-wrapper, so its z-50 isn't trapped under a lower
-     stacking context on non-home pages.
+     MOBILE MENU (Alpine.js)
      ============================================================ -->
 <div x-show="mobileMenu" x-cloak x-transition.opacity class="lg:hidden fixed inset-0 bg-[#0a1a1f]/85 backdrop-blur-sm z-40" @click="mobileMenu = false"></div>
 <div x-show="mobileMenu" x-cloak x-transition:enter="transition transform ease-out duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition transform ease-in duration-200" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full"
@@ -103,14 +63,14 @@
         <div class="pt-6">
             <?php if ($this->session->userdata('is_logged')): ?>
                 <?php
-                    $avatar_src = $this->session->userdata('avatar');
-                    if (empty($avatar_src)) {
-                        $fallback_name = urlencode($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
-                        $avatar_src = "https://ui-avatars.com/api/?name={$fallback_name}&background=d6fb00&color=0a1a1f&bold=true";
+                    $avatar_src_m = $this->session->userdata('avatar');
+                    if (empty($avatar_src_m)) {
+                        $fallback_name_m = urlencode($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
+                        $avatar_src_m = "https://ui-avatars.com/api/?name={$fallback_name_m}&background=d6fb00&color=0a1a1f&bold=true";
                     }
                 ?>
                 <div class="flex items-center gap-3 p-3 bg-[#d6fb00]/5 border border-[#d6fb00]/20 rounded-xl mb-3">
-                    <img src="<?= $avatar_src ?>" class="w-9 h-9 rounded-lg object-cover ring-1 ring-[#d6fb00]/20">
+                    <img src="<?= $avatar_src_m ?>" class="w-9 h-9 rounded-lg object-cover ring-1 ring-[#d6fb00]/20">
                     <div>
                         <p class="text-[#ecffb6] text-xs font-semibold"><?= $this->session->userdata('username') ?: $this->session->userdata('name') ?></p>
                         <p class="text-[#5a7a80] text-[10px]"><?= $this->session->userdata('email') ?></p>
