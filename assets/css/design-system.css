@@ -721,7 +721,7 @@ body {
 
     /* Default / Inactive state */
     color: var(--text-secondary);
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-primary);
 }
 
 .portal-tab-btn i,
@@ -731,7 +731,7 @@ body {
 
 .portal-tab-btn:hover {
     color: white;
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--bg-card);
 }
 
 /* Active tab — warna cerah menyatu dengan panel */
