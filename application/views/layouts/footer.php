@@ -322,12 +322,12 @@ function globalSystem() {
         });
     }
 
-    var SKELETON_HTML = '<div class="animate-pulse p-2 sm:p-4 space-y-6">'
-        + '<div class="flex items-center gap-2 mb-5"><div class="w-5 h-5 rounded bg-white/5"></div><div class="h-3 w-40 rounded bg-white/5"></div></div>'
-        + '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">'
-        + '<div class="rounded-3xl p-5 sm:p-6 space-y-4" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);min-height:168px"><div class="w-8 h-8 rounded-lg bg-white/5"></div><div class="h-4 w-3/4 rounded bg-white/5"></div><div class="space-y-1.5"><div class="h-2.5 w-full rounded bg-white/5"></div><div class="h-2.5 w-2/3 rounded bg-white/5"></div></div><div class="mt-auto pt-4"><div class="h-6 w-24 rounded-full bg-white/5"></div></div></div>'
-        + '<div class="rounded-3xl p-5 sm:p-6 space-y-4" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);min-height:168px"><div class="w-8 h-8 rounded-lg bg-white/5"></div><div class="h-4 w-2/3 rounded bg-white/5"></div><div class="space-y-1.5"><div class="h-2.5 w-full rounded bg-white/5"></div><div class="h-2.5 w-1/2 rounded bg-white/5"></div></div><div class="mt-auto pt-4"><div class="h-6 w-24 rounded-full bg-white/5"></div></div></div>'
-        + '<div class="rounded-3xl p-5 sm:p-6 space-y-4 hidden sm:block" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);min-height:168px"><div class="w-8 h-8 rounded-lg bg-white/5"></div><div class="h-4 w-1/2 rounded bg-white/5"></div><div class="space-y-1.5"><div class="h-2.5 w-full rounded bg-white/5"></div><div class="h-2.5 w-3/4 rounded bg-white/5"></div></div><div class="mt-auto pt-4"><div class="h-6 w-24 rounded-full bg-white/5"></div></div></div>'
+    var SKELETON_HTML = '<div class="animate-pulse py-4 sm:py-6 px-1 sm:px-2 space-y-4">'
+        + '<div class="flex items-center gap-2 mb-3"><div class="w-4 h-4 rounded bg-white/5"></div><div class="h-3 w-36 rounded bg-white/5"></div></div>'
+        + '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">'
+        + '<div class="rounded-2xl p-3.5 sm:p-4 space-y-3" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);min-height:120px"><div class="w-6 h-6 rounded-lg bg-white/5"></div><div class="h-3.5 w-3/4 rounded bg-white/5"></div><div class="space-y-1.5"><div class="h-2 w-full rounded bg-white/5"></div><div class="h-2 w-2/3 rounded bg-white/5"></div></div><div class="mt-auto pt-2.5"><div class="h-5 w-20 rounded-full bg-white/5"></div></div></div>'
+        + '<div class="rounded-2xl p-3.5 sm:p-4 space-y-3" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);min-height:120px"><div class="w-6 h-6 rounded-lg bg-white/5"></div><div class="h-3.5 w-2/3 rounded bg-white/5"></div><div class="space-y-1.5"><div class="h-2 w-full rounded bg-white/5"></div><div class="h-2 w-1/2 rounded bg-white/5"></div></div><div class="mt-auto pt-2.5"><div class="h-5 w-20 rounded-full bg-white/5"></div></div></div>'
+        + '<div class="rounded-2xl p-3.5 sm:p-4 space-y-3 hidden sm:block" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);min-height:120px"><div class="w-6 h-6 rounded-lg bg-white/5"></div><div class="h-3.5 w-1/2 rounded bg-white/5"></div><div class="space-y-1.5"><div class="h-2 w-full rounded bg-white/5"></div><div class="h-2 w-3/4 rounded bg-white/5"></div></div><div class="mt-auto pt-2.5"><div class="h-5 w-20 rounded-full bg-white/5"></div></div></div>'
         + '</div></div>';
 
     var loadToken = 0;
