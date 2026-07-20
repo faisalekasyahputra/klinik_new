@@ -94,7 +94,7 @@
                    </div>
 
                    <!-- Auth Button (sejajar tabs, bukan tab) -->
-                   <div class="shrink-0 flex items-end ml-auto pl-2 pr-[1.25rem] sm:pr-[1.5rem] mb-[2px]">
+                   <div class="shrink-0 flex items-end ml-auto pl-2 pr-[1.25rem] sm:pr-[1.5rem] mb-1.5">
                        <?php if ($this->session->userdata('is_logged')): ?>
                            <?php
                                $avatar_src = $this->session->userdata('avatar');
