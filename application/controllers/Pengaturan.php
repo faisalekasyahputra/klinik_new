@@ -18,6 +18,12 @@ class Pengaturan extends MY_Controller {
         $user = $this->Auth_model->find_by_id($user_id);
 
         $datacontent['user'] = $user;
+        $datacontent['riwayat_pengajuan'] = $this->db
+            ->select('ticket_code, status_antrean, created_at')
+            ->where('user_id', (int) $user_id)
+            ->order_by('created_at', 'DESC')
+            ->get('sf_housing_queue')
+            ->result();
 
         if ($this->session->userdata('role') === 'pengembang') {
             $datacontent['pengajuan_sp2'] = $this->db->get_where('srp2_registrations', ['user_id' => $user_id])
@@ -142,4 +148,3 @@ class Pengaturan extends MY_Controller {
         }
     }
 }
-

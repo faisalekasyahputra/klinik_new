@@ -10,6 +10,7 @@ Folder ini berisi seluruh dokumentasi teknis proyek Klinik PKP yang telah distru
 |---------|-----------|
 | [PRODUCT_REQUIREMENTS_DOCUMENT.md](./product/PRODUCT_REQUIREMENTS_DOCUMENT.md) | Spesifikasi kebutuhan fungsional & non-fungsional (PRD) |
 | [IMPLEMENTATION_ROADMAP.md](./product/IMPLEMENTATION_ROADMAP.md) | Peta jalan pengembangan (Fase 1–10) |
+| [DESAIN_STATUS_TIKET_PENGAJUAN.md](./product/DESAIN_STATUS_TIKET_PENGAJUAN.md) | Konsep akses status pengajuan dengan tiket tanpa login atau akun |
 | [ANALISIS_DAN_RENCANA_PERBAIKAN.md](./product/ANALISIS_DAN_RENCANA_PERBAIKAN.md) | Audit keamanan awal & status remediasi |
 
 ---

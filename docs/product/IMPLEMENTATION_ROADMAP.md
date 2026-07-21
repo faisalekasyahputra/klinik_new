@@ -16,6 +16,7 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
 - ✅ **Fase 7 (Restrukturisasi UI & Navbar)** — Selesai
 - ✅ **Fase 8 (Etalase Program & Hero Beranda)** — Selesai
 - ✅ **Fase 9 (Integrasi NIK SIMPERUM & Housing Queue)** — Selesai
+- 🔄 **Fase 9.5 (Status Tiket Pengajuan Hybrid)** — Tahap 1 selesai
 - 🛠️ **Fase 10 (Validasi Manual ASN / Admin Dashboard)** — Belum mulai
 - 🔄 **Fase 11 (Tokenisasi CSS & Theming)** — Sedang berjalan (Transisi dari Dark Theme hardcoded ke CSS Variables untuk Light/Dark Mode)
 
@@ -51,6 +52,15 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
 │  • Form Input NIK saat klik "Daftar" di Card Program     │
 │  • Hit API SIMPERUM, auto-fill data diri                 │
 │  • Smart Filter Kelayakan -> Insert ke Housing Queue     │
+└────────────────────────┬─────────────────────────────────┘
+                         │
+                         ▼
+┌──────────────────────────────────────────────────────────┐
+│ FASE 9.5: STATUS TIKET PENGAJUAN          🔄 PARTIAL DONE │
+│  • Nomor tiket unik setelah pengajuan                    │
+│  • Cek status tanpa login + verifikasi tambahan           │
+│  • Login opsional untuk riwayat dan dashboard warga       │
+│  • Halaman sukses mengikuti tema cerah                    │
 └────────────────────────┬─────────────────────────────────┘
                          │
                          ▼
@@ -114,6 +124,17 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
 *   **Action Items:**
     *   [ ] Halaman *backend* admin untuk melihat antrean masuk.
     *   [ ] Fungsi persetujuan manual (Ubah status *pending* menjadi *approved* atau *rejected*).
+
+### 🔄 FASE 9.5 — Status Tiket Pengajuan Hybrid (TAHAP 1 SELESAI)
+*   **Target:** Warga dapat memantau satu pengajuan tanpa wajib membuat akun, sementara user login mendapat riwayat lengkap.
+*   **Dokumen acuan:** [`DESAIN_STATUS_TIKET_PENGAJUAN.md`](./DESAIN_STATUS_TIKET_PENGAJUAN.md).
+*   **Action Items:**
+    *   [x] Tambah `ticket_code` unik pada `sf_housing_queue`.
+    *   [x] Tampilkan tiket pada halaman sukses setelah insert berhasil.
+    *   [x] Buat lookup tiket dengan verifikasi tambahan.
+    *   [x] Sediakan dashboard riwayat untuk user login.
+    *   [ ] Tambahkan rate limit dan hardening enkripsi NIK.
+    *   [ ] Uji anti-IDOR, enumeration, dan kebocoran PII.
 
 ---
 

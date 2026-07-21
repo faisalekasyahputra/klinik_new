@@ -296,6 +296,7 @@ DROP TABLE IF EXISTS `sf_housing_queue`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE IF NOT EXISTS `sf_housing_queue` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `ticket_code` VARCHAR(10) NULL UNIQUE,
   `user_id` INT DEFAULT NULL,
   `program_id` INT NOT NULL,
   `nik_pengaju` VARCHAR(255) NOT NULL,

@@ -68,7 +68,10 @@ $route['akun/update_pengembang']   = 'Pengaturan/update_pengembang_profile';
 
 // --- Clean URLs for Index controller ---
 $route['golek_omah']               = 'Index/golek_omah';
-$route['solusi_pembiayaan']        = 'Program/diagnosa/umum';
+$route['solusi_pembiayaan']        = 'Program/solusi_pembiayaan';
+$route['solusi_pembiayaan/hasil']  = 'Program/hasil_diagnosa';
+$route['solusi_pembiayaan/ajukan'] = 'Program/ajukan_solusi';
+$route['solusi_pembiayaan/cek-tiket'] = 'Program/cek_tiket';
 $route['umum']                     = 'Index/umum';
 $route['detail_perum/(:any)']      = 'Index/detail_perum/$1';
 $route['profil']                   = 'Index/profil';

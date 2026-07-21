@@ -77,6 +77,37 @@
             </form>
         </div>
 
+        <!-- Riwayat Pengajuan -->
+        <?php if (!empty($riwayat_pengajuan)): ?>
+        <?php
+            $status_pengajuan = [
+                'pending' => ['Menunggu verifikasi', 'text-[#d6fb00]'],
+                'approved' => ['Disetujui', 'text-emerald-400'],
+                'rejected' => ['Ditolak', 'text-red-400']
+            ];
+        ?>
+        <div class="bg-[#0f2a30] rounded-2xl border border-[#d6fb00]/20 p-6 md:p-8 shadow-xl">
+            <h2 class="text-lg font-semibold text-[#ecffb6] mb-5 flex items-center gap-2">
+                <i class="fa-solid fa-ticket"></i> Riwayat Pengajuan
+            </h2>
+            <div class="space-y-3">
+                <?php foreach ($riwayat_pengajuan as $pengajuan): ?>
+                    <?php
+                        $status = $status_pengajuan[$pengajuan->status_antrean] ?? ['Sedang diverifikasi', 'text-zinc-300'];
+                        $ticket_code = !empty($pengajuan->ticket_code) ? $pengajuan->ticket_code : 'Belum tersedia';
+                    ?>
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-zinc-700/60 bg-[#0a191c] px-4 py-3">
+                        <div>
+                            <p class="text-sm font-bold text-white tracking-wide"><?= htmlspecialchars($ticket_code) ?></p>
+                            <p class="text-xs text-zinc-500 mt-1"><?= htmlspecialchars(date('d M Y, H:i', strtotime($pengajuan->created_at))) ?></p>
+                        </div>
+                        <span class="text-xs font-bold <?= $status[1] ?>"><?= htmlspecialchars($status[0]) ?></span>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <?php if (isset($pengajuan_sp2)): ?>
         <!-- SP2 Status & Data Pengembang -->
         <div class="bg-[#0f2a30] rounded-2xl border border-[#d6fb00]/20 p-6 md:p-8 shadow-xl">

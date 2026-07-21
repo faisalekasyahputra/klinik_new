@@ -316,10 +316,15 @@ function globalSystem() {
             return originalAdd(type, listener, options);
         };
 
-        return reExecuteScripts(wrapper).finally(function () {
+        return reExecuteScripts(wrapper).then(function () {
             document.addEventListener = originalAdd;
-            if (window.Alpine) Alpine.initTree(wrapper);
+            if (window.Alpine) {
+                Alpine.initTree(wrapper);
+            }
             if (window.AOS) AOS.refreshHard();
+        }).catch(function (error) {
+            document.addEventListener = originalAdd;
+            throw error;
         });
     }
 
@@ -371,6 +376,9 @@ function globalSystem() {
                         if (panel) panel.scrollTop = 0;
                         // 5) Fade in konten baru — halus
                         wrapper.style.transition = 'opacity 0.25s ease-in';
+                        wrapper.style.opacity = '1';
+                    }).catch(function () {
+                        // Jangan biarkan error script mengunci panel dalam keadaan opacity 0.
                         wrapper.style.opacity = '1';
                     });
                 }, 100);

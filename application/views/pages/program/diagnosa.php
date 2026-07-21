@@ -1,12 +1,49 @@
 <!-- application/views/pages/program/diagnosa.php -->
 <div class="py-4 sm:py-6 px-1 sm:px-2 relative font-outfit" x-data="wizardData()">
+    <?php $is_solusi_pembiayaan = !empty($is_solusi_pembiayaan); ?>
+
+    <?php if ($is_solusi_pembiayaan): ?>
+    <section class="mb-10" x-data="solutionProgramShowcase()">
+        <div class="text-center mb-5">
+            <h1 class="text-2xl sm:text-3xl font-black font-jakarta tracking-tight text-[color:var(--portal-text)]">Pilih Program Sesuai <span class="text-[color:var(--portal-brand)]">Kebutuhan</span></h1>
+            <p class="mt-2 text-sm text-[color:var(--portal-text-muted)]">Kenali skema bantuan lebih dahulu, lalu isi diagnosa untuk menemukan yang paling sesuai.</p>
+        </div>
+
+        <div class="relative w-full md:w-[60%] mx-auto">
+            <button type="button" @click="previous()" aria-label="Program sebelumnya" class="absolute left-0 sm:-left-4 top-1/2 z-10 -translate-y-1/2 h-10 w-10 rounded-full border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] text-[color:var(--portal-text)] shadow-sm transition hover:border-[color:var(--portal-brand)]"><i class="fa-solid fa-chevron-left"></i></button>
+            <button type="button" @click="next()" aria-label="Program berikutnya" class="absolute right-0 sm:-right-4 top-1/2 z-10 -translate-y-1/2 h-10 w-10 rounded-full border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] text-[color:var(--portal-text)] shadow-sm transition hover:border-[color:var(--portal-brand)]"><i class="fa-solid fa-chevron-right"></i></button>
+
+            <div class="overflow-hidden rounded-3xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] shadow-sm">
+                <template x-for="(slide, index) in slides" :key="slide.id">
+                    <article x-show="active === index" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-x-5" x-transition:enter-end="opacity-100 translate-x-0" class="relative grid min-h-[360px] md:grid-cols-5" style="display: none;">
+                        <div class="absolute inset-0 opacity-[0.045] pointer-events-none" style="background-image: radial-gradient(circle at 1px 1px, #00545f 1px, transparent 0); background-size: 22px 22px;"></div>
+                        <div class="relative min-h-[190px] md:col-span-2">
+                            <img :src="slide.image" :alt="slide.title" class="absolute inset-0 h-full w-full object-cover" style="mask-image: linear-gradient(to right, #000 58%, transparent 100%); -webkit-mask-image: linear-gradient(to right, #000 58%, transparent 100%);">
+                        </div>
+                        <div class="relative p-6 md:col-span-3 md:p-8 flex flex-col justify-center">
+                            <span class="mb-3 inline-flex w-max items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[color:var(--portal-brand)]"><span class="h-2 w-2 rounded-full bg-[color:var(--portal-brand)]"></span><span x-text="slide.badge"></span></span>
+                            <h2 class="text-2xl font-black text-[color:var(--portal-text)]" x-text="slide.title"></h2>
+                            <p class="mt-3 text-sm leading-relaxed text-[color:var(--portal-text-muted)]" x-text="slide.description"></p>
+                            <div class="mt-4 border-t border-[color:var(--portal-border)] pt-4 text-xs leading-relaxed text-[color:var(--portal-text-muted)]"><span class="font-bold text-[color:var(--portal-text)]">Syarat utama: </span><span x-text="slide.terms"></span></div>
+                            <button type="button" @click="document.getElementById('form-diagnosa').scrollIntoView({ behavior: 'smooth', block: 'start' })" class="mt-5 inline-flex w-max items-center gap-2 rounded-full bg-[color:var(--portal-brand)] px-5 py-2.5 text-sm font-bold text-[#0a1a1f] transition hover:-translate-y-0.5 hover:shadow-sm">Cek Kelayakan <i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </article>
+                </template>
+            </div>
+            <div class="mt-3 flex justify-center gap-2">
+                <template x-for="(slide, index) in slides" :key="slide.id + '-dot'"><button type="button" @click="active = index" class="h-2 rounded-full transition-all" :class="active === index ? 'w-6 bg-[color:var(--portal-brand)]' : 'w-2 bg-[color:var(--portal-border)]'" :aria-label="'Lihat ' + slide.title"></button></template>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
+
     <!-- Header -->
     <div class="text-center mb-10">
-        <h1 class="text-3xl font-bold text-[color:var(--portal-text)] mb-3">Klinik Diagnosa Kelayakan</h1>
-        <p class="text-[color:var(--portal-text-muted)]">Program: <span class="text-[color:var(--portal-brand)] font-semibold"><?= htmlspecialchars($program['nama_program']) ?></span></p>
+        <h1 class="text-3xl font-bold text-[color:var(--portal-text)] mb-3"><?= $is_solusi_pembiayaan ? 'Temukan Program yang Tepat' : 'Klinik Diagnosa Kelayakan' ?></h1>
+        <p class="text-[color:var(--portal-text-muted)]"><?= $is_solusi_pembiayaan ? 'Lengkapi data singkat berikut untuk melihat rekomendasi pembiayaan Anda.' : 'Program: <span class="text-[color:var(--portal-brand)] font-semibold">' . htmlspecialchars($program['nama_program']) . '</span>' ?></p>
     </div>
 
-        <?php if ($program['kode_program'] === 'umum'): ?>
+        <?php if ($program['kode_program'] === 'umum' && !$is_solusi_pembiayaan): ?>
         <!-- Intro: Program Strategis (konteks sebelum wizard) -->
         <div class="mb-10">
             <p class="text-center text-xs font-bold text-[#8aacb0] uppercase tracking-widest mb-4">Program Strategis Perumahan Jawa Tengah</p>
@@ -24,17 +61,17 @@
         <!-- Progress Bar -->
         <div class="mb-12 max-w-[80%] mx-auto">
             <div class="flex items-center justify-between relative">
-                <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-zinc-200 rounded-full z-0"></div>
-                <div class="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-emerald-500 rounded-full z-0 transition-all duration-500" :style="'width: ' + ((step - 1) / 3 * 100) + '%'"></div>
+                <div class="absolute left-0 top-1/2 -translate-y-1/2 w-full border-t border-dashed border-[color:var(--portal-border)] z-0"></div>
+                <div class="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-[color:var(--portal-brand)] rounded-full z-0 transition-all duration-500" :style="'width: ' + ((step - 1) / 3 * 100) + '%'"></div>
                 
                 <!-- Steps Indicators (4 Steps now) -->
                 <template x-for="i in 4" :key="i">
                     <div class="relative z-10 flex flex-col items-center w-10 h-10">
                         <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold border-2 transition-colors duration-300 shrink-0"
-                             :class="step >= i ? 'bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/20' : 'bg-white border-zinc-300 text-zinc-400'">
+                             :class="step >= i ? 'bg-[color:var(--portal-brand)] border-[color:var(--portal-brand)] text-[#0a1a1f] shadow-sm' : 'bg-[color:var(--portal-bg-card)] border-[color:var(--portal-border)] text-[color:var(--portal-text-muted)]'">
                             <span x-text="i"></span>
                         </div>
-                        <span class="absolute top-12 text-xs font-medium whitespace-nowrap transition-colors duration-300" :class="step >= i ? 'text-emerald-600 font-bold' : 'text-zinc-500'" 
+                        <span class="absolute top-12 text-xs font-medium whitespace-nowrap transition-colors duration-300" :class="step >= i ? 'text-[color:var(--portal-brand)] font-bold' : 'text-[color:var(--portal-text-muted)]'"
                               x-text="i === 1 ? 'Identitas' : (i === 2 ? 'Data Survei' : (i === 3 ? 'Pilih Program' : 'Konfirmasi'))"></span>
                     </div>
                 </template>
@@ -42,7 +79,17 @@
         </div>
 
         <!-- Form Container -->
-        <div class="bg-[#0f2933] border border-white/10 rounded-2xl p-5 sm:p-7 shadow-2xl relative overflow-hidden">
+        <style>
+            #form-diagnosa { background: var(--portal-bg-card); border-color: var(--portal-border); color: var(--portal-text); box-shadow: 0 4px 12px rgba(0, 84, 95, .08); }
+            #form-diagnosa :is(h2, h3, h4, .text-white) { color: var(--portal-text); }
+            #form-diagnosa :is(label, .text-zinc-300, .text-zinc-400, .text-zinc-500) { color: var(--portal-text-muted); }
+            #form-diagnosa :is(input, select, textarea) { background: var(--portal-btn-bg) !important; border-color: var(--portal-border) !important; color: var(--portal-text) !important; color-scheme: light !important; }
+            #form-diagnosa :is(input, select, textarea)::placeholder { color: var(--portal-text-muted); }
+            #form-diagnosa option { background: var(--portal-bg-card); color: var(--portal-text); }
+            #form-diagnosa .bg-black\\/20, #form-diagnosa .bg-black\\/30, #form-diagnosa .bg-\\[\\#0a1a1f\\] { background-color: var(--portal-btn-bg) !important; }
+            #form-diagnosa .border-white\\/10, #form-diagnosa .border-white\\/5 { border-color: var(--portal-border) !important; }
+        </style>
+        <div id="form-diagnosa" class="w-full md:w-[80%] mx-auto border rounded-2xl p-5 sm:p-7 relative overflow-hidden scroll-mt-5">
             
             <form id="diagnosaForm" action="<?= base_url('Program/submit_antrean') ?>" method="POST">
                 <!-- Program ID diisi otomatis saat user memilih di Etalase -->
@@ -52,17 +99,17 @@
                 
                 <!-- Step 1: NIK & SIMPERUM Fetch -->
                 <div x-show="step === 1" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-8" x-transition:enter-end="opacity-100 translate-x-0">
-                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i class="fa-solid fa-id-card text-emerald-400"></i> Verifikasi Identitas</h2>
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i class="fa-solid fa-id-card text-[color:var(--portal-brand)]"></i> Verifikasi Identitas</h2>
                     
                     <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-medium text-zinc-300 mb-1.5">Nomor Induk Kependudukan (NIK)</label>
-                            <input type="text" x-model="nik" @input="simperumData = null; errorMsg = '';" name="nik" maxlength="16" required class="w-full bg-[#0a1a1f] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors" placeholder="Masukkan 16 digit NIK">
+                            <input type="text" x-model="nik" @input="simperumData = null; errorMsg = '';" name="nik" maxlength="16" required class="w-full bg-[#0a1a1f] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-[color:var(--portal-brand)] focus:ring-1 focus:ring-[color:var(--portal-brand)] transition-colors" placeholder="Masukkan 16 digit NIK">
                         </div>
 
                         <div>
                             <label class="block text-xs font-medium text-zinc-300 mb-1.5">Tanggal Lahir</label>
-                            <input type="date" x-model="tgl_lahir" @input="simperumData = null; errorMsg = '';" name="tgl_lahir" required class="w-full bg-[#0a1a1f] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-colors" style="color-scheme: dark;">
+                            <input type="date" x-model="tgl_lahir" @input="simperumData = null; errorMsg = '';" name="tgl_lahir" required class="w-full bg-[#0a1a1f] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-[color:var(--portal-brand)] focus:ring-1 focus:ring-[color:var(--portal-brand)] transition-colors" style="color-scheme: light;">
                             <p class="text-[11px] text-zinc-500 mt-1.5">Data NIK dan Tanggal Lahir Anda akan divalidasi secara aman dengan database Dinas Perumahan.</p>
                         </div>
 
@@ -108,13 +155,13 @@
                     </div>
 
                     <div class="mt-6 flex justify-end gap-3">
-                        <button type="button" x-show="!simperumData" @click="fetchSimperum()" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors flex items-center gap-2" :disabled="isLoading || nik.length !== 16 || !tgl_lahir" :class="{'opacity-50 cursor-not-allowed': nik.length !== 16 || !tgl_lahir || isLoading}">
+                        <button type="button" x-show="!simperumData" @click="fetchSimperum()" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-[color:var(--portal-brand)] text-[#0a1a1f] hover:brightness-95 transition-colors flex items-center gap-2" :disabled="isLoading || nik.length !== 16 || !tgl_lahir" :class="{'opacity-50 cursor-not-allowed': nik.length !== 16 || !tgl_lahir || isLoading}">
                             <span x-text="isLoading ? 'Memvalidasi...' : 'Cek & Validasi Data'"></span>
                             <i class="fa-solid fa-spinner fa-spin" x-show="isLoading"></i>
                             <i class="fa-solid fa-magnifying-glass" x-show="!isLoading"></i>
                         </button>
 
-                        <button type="button" x-show="simperumData" @click="step = 2" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-colors flex items-center gap-2">
+                        <button type="button" x-show="simperumData" @click="step = 2" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-[color:var(--portal-brand)] text-[#0a1a1f] hover:brightness-95 transition-colors flex items-center gap-2">
                             Lanjut ke Data Survei <i class="fa-solid fa-arrow-right"></i>
                         </button>
                     </div>
@@ -122,13 +169,13 @@
 
                 <!-- Step 2: Kalkulator Kelayakan -->
                 <div x-show="step === 2" style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-8" x-transition:enter-end="opacity-100 translate-x-0">
-                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i class="fa-solid fa-clipboard-list text-blue-400"></i> Data Survei Tambahan</h2>
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-2"><i class="fa-solid fa-clipboard-list text-[color:var(--portal-brand)]"></i> Data Survei Tambahan</h2>
                     
                     <div class="space-y-4">
                         <div>
                             <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Total Penghasilan Per Bulan (Keluarga)</label>
                             <div class="relative group">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-zinc-500 group-focus-within:text-blue-400 transition-colors">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-zinc-500 group-focus-within:text-[color:var(--portal-brand)] transition-colors">
                                     <span class="font-bold text-sm">Rp</span>
                                 </div>
                                 <input type="number" name="penghasilan" x-model="survey.penghasilan" required class="w-full bg-black/20 border border-white/10 rounded-xl pl-12 pr-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:bg-black/40 transition-colors text-sm" placeholder="Contoh: 4000000">
@@ -138,7 +185,7 @@
                         <div>
                             <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Status Pekerjaan</label>
                             <div class="relative group">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-zinc-500 group-focus-within:text-blue-400 transition-colors">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-zinc-500 group-focus-within:text-[color:var(--portal-brand)] transition-colors">
                                     <i class="fa-solid fa-briefcase text-sm"></i>
                                 </div>
                                 <select name="pekerjaan" x-model="survey.pekerjaan" required class="w-full bg-black/20 border border-white/10 rounded-xl pl-10 pr-10 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:bg-black/40 transition-colors appearance-none text-sm">
@@ -158,7 +205,7 @@
                         <div>
                             <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Status Kepemilikan Lahan/Rumah Saat Ini</label>
                             <div class="relative group">
-                                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-zinc-500 group-focus-within:text-blue-400 transition-colors">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-zinc-500 group-focus-within:text-[color:var(--portal-brand)] transition-colors">
                                     <i class="fa-solid fa-house-user text-sm"></i>
                                 </div>
                                 <select name="status_kepemilikan" x-model="survey.status_kepemilikan" required class="w-full bg-black/20 border border-white/10 rounded-xl pl-10 pr-10 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:bg-black/40 transition-colors appearance-none text-sm">
@@ -178,7 +225,7 @@
                         <div>
                             <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Alasan Pengajuan Bantuan</label>
                             <div class="relative group">
-                                <div class="absolute top-3 left-0 flex items-center pl-4 pointer-events-none text-zinc-500 group-focus-within:text-blue-400 transition-colors">
+                                <div class="absolute top-3 left-0 flex items-center pl-4 pointer-events-none text-zinc-500 group-focus-within:text-[color:var(--portal-brand)] transition-colors">
                                     <i class="fa-solid fa-comment-dots text-sm"></i>
                                 </div>
                                 <textarea name="alasan_pengajuan" x-model="survey.alasan_pengajuan" required rows="3" class="w-full bg-black/20 border border-white/10 rounded-xl pl-12 pr-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-blue-500 focus:bg-black/40 transition-colors text-sm resize-none" placeholder="Ceritakan secara singkat alasan Anda membutuhkan bantuan ini..."></textarea>
@@ -188,7 +235,7 @@
 
                     <div class="mt-6 flex justify-between">
                         <button type="button" @click="step = 1" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-white/5 text-white hover:bg-white/10 transition-colors">Kembali</button>
-                        <button type="button" @click="validateSurvey()" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-colors flex items-center gap-2" :disabled="!isSurveyComplete() || isLoading" :class="{'opacity-50 cursor-not-allowed': !isSurveyComplete() || isLoading}">
+                        <button type="button" @click="validateSurvey()" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-[color:var(--portal-brand)] text-[#0a1a1f] hover:brightness-95 transition-colors flex items-center gap-2" :disabled="!isSurveyComplete() || isLoading" :class="{'opacity-50 cursor-not-allowed': !isSurveyComplete() || isLoading}">
                             <span x-text="isLoading ? 'Menghitung...' : 'Temukan Program'"></span>
                             <i class="fa-solid fa-spinner fa-spin" x-show="isLoading"></i>
                             <i class="fa-solid fa-microchip" x-show="!isLoading"></i>
@@ -198,7 +245,7 @@
 
                 <!-- Step 3: Etalase Pilihan Program -->
                 <div x-show="step === 3" style="display: none;" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-8" x-transition:enter-end="opacity-100 translate-x-0">
-                    <h2 class="text-lg font-semibold mb-2 flex items-center gap-2"><i class="fa-solid fa-store text-emerald-400"></i> Etalase Program Anda</h2>
+                    <h2 class="text-lg font-semibold mb-2 flex items-center gap-2"><i class="fa-solid fa-store text-[color:var(--portal-brand)]"></i> Etalase Program Anda</h2>
                     
                     <!-- Alert jika Ditolak dari Program Target -->
                     <div x-show="!isEligibleForTarget" class="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-4" style="display: none;">
@@ -260,7 +307,7 @@
 
                     <div class="flex justify-between">
                         <button type="button" @click="step = 2" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-white/5 text-white hover:bg-white/10 transition-colors">Kembali</button>
-                        <button type="button" @click="step = 4" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-colors flex items-center gap-2" :disabled="!chosenProgram" :class="{'opacity-50 cursor-not-allowed': !chosenProgram}">
+                        <button type="button" @click="step = 4" class="px-5 py-2.5 text-sm rounded-xl font-semibold bg-[color:var(--portal-brand)] text-[#0a1a1f] hover:brightness-95 transition-colors flex items-center gap-2" :disabled="!chosenProgram" :class="{'opacity-50 cursor-not-allowed': !chosenProgram}">
                             Lanjut Konfirmasi <i class="fa-solid fa-arrow-right"></i>
                         </button>
                     </div>
@@ -408,6 +455,7 @@ function wizardData() {
                 const formData = new FormData();
                 formData.append('nik', this.nik);
                 formData.append('tgl_lahir', this.tgl_lahir);
+                formData.append('simpan_identitas', '<?= $is_solusi_pembiayaan ? '1' : '0' ?>');
                 formData.append('<?= $this->security->get_csrf_token_name(); ?>', '<?= $this->security->get_csrf_hash(); ?>');
                 
                 const response = await fetch('<?= base_url('Program/api_cek_simperum') ?>', {
@@ -460,6 +508,7 @@ function wizardData() {
                     formData.append('status_kepemilikan', this.survey.status_kepemilikan);
                     formData.append('alasan_pengajuan', this.survey.alasan_pengajuan);
                     formData.append('kode_program_target', '<?= $program['kode_program'] ?>');
+                    formData.append('simpan_hasil', '<?= $is_solusi_pembiayaan ? '1' : '0' ?>');
                     formData.append('<?= $this->security->get_csrf_token_name(); ?>', '<?= $this->security->get_csrf_hash(); ?>');
                     
                     const response = await fetch('<?= base_url('Program/api_kalkulasi_program') ?>', {
@@ -473,6 +522,11 @@ function wizardData() {
                     const result = await response.json();
                     
                     if(result.status === 'success') {
+                        if (result.redirect_url) {
+                            window.location.assign(result.redirect_url);
+                            return;
+                        }
+
                         // Update the decile and available programs
                         if(this.simperumData) {
                             this.simperumData.desil = result.desil;
@@ -508,4 +562,27 @@ function wizardData() {
         }
     }
 }
+
+    function solutionProgramShowcase() {
+        return {
+            active: 0,
+            timer: null,
+            slides: [
+                { id: 'flpp', title: 'KPR-FLPP Rumah Subsidi', badge: 'MBR Fixed Income', color: '#007f8f', buttonText: '#ffffff', image: '<?= base_url('assets/img/program/01_subsidif_lpp.avif') ?>', description: 'Skema pembiayaan rumah subsidi dengan bunga tetap dan tenor panjang.', terms: 'Penghasilan maksimal Rp8 juta per bulan dan memenuhi ketentuan MBR.' },
+                { id: 'oemah-lestari', title: 'Oemah Lestari', badge: 'MBR & Umum', color: '#07865a', buttonText: '#ffffff', image: '<?= base_url('assets/img/program/02_oemahletari.avif') ?>', description: 'Pembiayaan rumah terjangkau yang berpihak pada hunian ramah lingkungan.', terms: 'Skema bunga ringan melalui kolaborasi BPR-BRK.' },
+                { id: 'rtlh', title: 'Peningkatan Kualitas RTLH', badge: 'Miskin & Ekstrem', color: '#b45309', buttonText: '#ffffff', image: '<?= base_url('assets/img/program/03_rtlh.avif') ?>', description: 'Bantuan perbaikan rumah bagi masyarakat dengan hunian tidak layak.', terms: 'Terdaftar DTKS dan rumah memenuhi kriteria kerusakan.' },
+                { id: 'pb', title: 'Stimulan Pembangunan Baru', badge: 'Bencana & Relokasi', color: '#647a00', buttonText: '#ffffff', image: '<?= base_url('assets/img/program/04_Bantuan.avif') ?>', description: 'Bantuan stimulan material untuk pembangunan rumah baru yang layak.', terms: 'Tersedia untuk skema backlog, relokasi, atau pascabencana.' },
+                { id: 'rumah-apung', title: 'Program Rumah Apung', badge: 'Kawasan Pesisir', color: '#2563eb', buttonText: '#ffffff', image: '<?= base_url('assets/img/program/05_areakumuh.avif') ?>', description: 'Solusi hunian adaptif untuk masyarakat pesisir terdampak rob.', terms: 'Prioritas kawasan pesisir yang mengalami genangan permanen.' }
+            ],
+            init() {
+                this.timer = setInterval(() => this.next(), 6500);
+            },
+            next() {
+                this.active = (this.active + 1) % this.slides.length;
+            },
+            previous() {
+                this.active = (this.active - 1 + this.slides.length) % this.slides.length;
+            }
+        };
+    }
 </script>
