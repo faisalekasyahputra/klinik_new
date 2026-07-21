@@ -3,10 +3,22 @@
     <?php $is_solusi_pembiayaan = !empty($is_solusi_pembiayaan); ?>
 
     <?php if ($is_solusi_pembiayaan): ?>
-    <section class="mb-10" x-data="solutionProgramShowcase()">
+    <section class="mb-10" x-data="solutionProgramShowcase()" x-init="$nextTick(() => document.getElementById('solution-program-fallback')?.remove())">
         <div class="text-center mb-5">
             <h1 class="text-2xl sm:text-3xl font-black font-jakarta tracking-tight text-[color:var(--portal-text)]">Pilih Program Sesuai <span class="text-[color:var(--portal-brand)]">Kebutuhan</span></h1>
             <p class="mt-2 text-sm text-[color:var(--portal-text-muted)]">Kenali skema bantuan lebih dahulu, lalu isi diagnosa untuk menemukan yang paling sesuai.</p>
+        </div>
+
+        <div id="solution-program-fallback" class="relative mx-auto mb-4 grid min-h-[360px] w-full max-w-5xl overflow-hidden rounded-3xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] shadow-sm md:w-[60%] md:grid-cols-5">
+            <div class="relative min-h-[190px] md:col-span-2">
+                <img src="<?= base_url('assets/img/program/01_subsidif_lpp.avif') ?>" alt="KPR-FLPP Rumah Subsidi" class="absolute inset-0 h-full w-full object-cover" style="mask-image: linear-gradient(to right, #000 58%, transparent 100%); -webkit-mask-image: linear-gradient(to right, #000 58%, transparent 100%);">
+            </div>
+            <div class="flex flex-col justify-center p-6 md:col-span-3 md:p-8">
+                <span class="mb-3 text-[11px] font-bold uppercase tracking-widest text-[color:var(--portal-brand)]">MBR Fixed Income</span>
+                <h2 class="text-2xl font-black text-[color:var(--portal-text)]">KPR-FLPP Rumah Subsidi</h2>
+                <p class="mt-3 text-sm leading-relaxed text-[color:var(--portal-text-muted)]">Skema pembiayaan rumah subsidi dengan bunga tetap dan tenor panjang.</p>
+                <p class="mt-4 border-t border-[color:var(--portal-border)] pt-4 text-xs text-[color:var(--portal-text-muted)]"><strong class="text-[color:var(--portal-text)]">Syarat utama:</strong> Penghasilan maksimal Rp8 juta per bulan dan memenuhi ketentuan MBR.</p>
+            </div>
         </div>
 
         <div class="relative w-full md:w-[60%] mx-auto">

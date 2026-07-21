@@ -306,7 +306,7 @@ function globalSystem() {
         }, Promise.resolve());
     }
 
-    function reinitContent(wrapper) {
+    function reinitContent(wrapper, mutationsDeferred) {
         // Halaman ini sudah lama "DOMContentLoaded" sejak load pertama —
         // script per-halaman yang menunggu event itu (pola umum di proyek
         // ini) tidak akan pernah jalan lagi kalau tidak di-shim begini.
@@ -318,12 +318,18 @@ function globalSystem() {
 
         return reExecuteScripts(wrapper).then(function () {
             document.addEventListener = originalAdd;
+            if (mutationsDeferred && window.Alpine && Alpine.flushAndStopDeferringMutations) {
+                Alpine.flushAndStopDeferringMutations();
+            }
             if (window.Alpine) {
                 Alpine.initTree(wrapper);
             }
             if (window.AOS) AOS.refreshHard();
         }).catch(function (error) {
             document.addEventListener = originalAdd;
+            if (mutationsDeferred && window.Alpine && Alpine.flushAndStopDeferringMutations) {
+                Alpine.flushAndStopDeferringMutations();
+            }
             throw error;
         });
     }
@@ -370,8 +376,10 @@ function globalSystem() {
                 wrapper.style.opacity = '0';
                 setTimeout(function () {
                     if (myToken !== loadToken) return;
+                    var mutationsDeferred = !!(window.Alpine && Alpine.deferMutations);
+                    if (mutationsDeferred) Alpine.deferMutations();
                     wrapper.innerHTML = html;
-                    reinitContent(wrapper).then(function () {
+                    reinitContent(wrapper, mutationsDeferred).then(function () {
                         if (push) history.pushState({ tabUrl: url, tabKey: key }, '', url);
                         if (panel) panel.scrollTop = 0;
                         // 5) Fade in konten baru — halus
