@@ -41,8 +41,8 @@
         <div>
             <label for="aduan-bidang" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Bidang Tujuan</label>
             <div class="relative">
-                <select id="aduan-bidang" name="bidang" class="w-full appearance-none rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-4 py-3 text-sm text-[color:var(--portal-text)] outline-none focus:border-[color:var(--portal-brand)]">
-                    <option value="">Deteksi Otomatis dari Pesan</option>
+                <select id="aduan-bidang" name="bidang" required class="w-full appearance-none rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-4 py-3 text-sm text-[color:var(--portal-text)] outline-none focus:border-[color:var(--portal-brand)]">
+                    <option value="" disabled selected hidden>Pilih Bidang Tujuan</option>
                     <option value="perumahan">Bidang Perumahan</option>
                     <option value="kawasan">Bidang Kawasan Permukiman</option>
                     <option value="pertanahan">Bidang Pertanahan</option>
@@ -53,7 +53,6 @@
                     <i class="fa-solid fa-chevron-down text-xs"></i>
                 </div>
             </div>
-            <p class="mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]"><i class="fa-solid fa-circle-info mr-1"></i>Biarkan "Deteksi Otomatis" kalau tidak yakin — sistem akan membaca kata kunci pada pesan. Atau pilih langsung bidangnya kalau sudah tahu.</p>
         </div>
 
         <div>
