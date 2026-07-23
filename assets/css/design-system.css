@@ -799,6 +799,23 @@ body {
     overflow-y: auto;
     scroll-behavior: smooth;
 }
+
+.page-loading-skeleton {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    padding: 1rem;
+    background: var(--portal-bg);
+    opacity: 1;
+    visibility: visible;
+    transition: opacity .18s ease, visibility 0s linear 0s;
+}
+.page-loading-skeleton.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity .18s ease, visibility 0s linear .18s;
+}
 @media (min-width: 640px) {
     .portal-panel {
         border-radius: 0.75rem;

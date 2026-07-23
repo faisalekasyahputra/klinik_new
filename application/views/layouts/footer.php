@@ -115,6 +115,11 @@
         offset: 50,
     });
 
+    document.addEventListener('DOMContentLoaded', function () {
+        var initialSkeleton = document.getElementById('page-loading-skeleton');
+        if (initialSkeleton) requestAnimationFrame(function () { initialSkeleton.classList.add('is-hidden'); });
+    });
+
     // Lenis smooth scroll disabled — panel now uses native overflow-y scroll
 </script>
 
@@ -334,7 +339,7 @@ function globalSystem() {
         });
     }
 
-    var SKELETON_HTML = '<div class="animate-pulse py-4 sm:py-6 px-1 sm:px-2 space-y-4">'
+    var SKELETON_HTML = '<div class="page-skeleton animate-pulse flex min-h-full flex-col py-4 sm:py-6 px-1 sm:px-2 space-y-4">'
         + '<div class="flex items-center gap-2 mb-3"><div class="w-4 h-4 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-3 w-36 rounded bg-[color:var(--portal-skeleton)]"></div></div>'
         + '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">'
         + '<div class="rounded-2xl p-3.5 sm:p-4 space-y-3" style="background:#fff;border: 1px solid var(--portal-border);min-height:120px"><div class="w-6 h-6 rounded-lg bg-[#0a1a1f]/6"></div><div class="h-3.5 w-3/4 rounded bg-[#0a1a1f]/6"></div><div class="space-y-1.5"><div class="h-2 w-full rounded bg-[#0a1a1f]/5"></div><div class="h-2 w-2/3 rounded bg-[#0a1a1f]/5"></div></div><div class="mt-auto pt-2.5"><div class="h-5 w-20 rounded-full bg-[#0a1a1f]/6"></div></div></div>'
@@ -352,15 +357,30 @@ function globalSystem() {
         // 1) Langsung aktifkan tab (progresif — tidak menunggu fetch)
         setActiveTabKey(key);
 
-        // 2) Fade out konten lama → skeleton
+        // 2) Pertahankan tinggi panel dan tampilkan skeleton segera.
         wrapper.style.transition = 'opacity 0.12s ease-out';
-        wrapper.style.opacity = '0';
-        setTimeout(function () {
-            if (myToken !== loadToken) return;
-            wrapper.innerHTML = SKELETON_HTML;
-            wrapper.style.opacity = '1';
-            if (panel) panel.scrollTop = 0;
-        }, 120);
+        wrapper.style.opacity = '1';
+        var pageSkeleton = SKELETON_HTML;
+        if (/pengembang\/(sertifikasi|syarat|formulir|profil|dokumen)/i.test(url)) {
+            pageSkeleton = '<div class="page-skeleton animate-pulse min-h-full py-4 sm:py-6 px-1 sm:px-2">'
+                + '<div class="h-3 w-16 rounded bg-[color:var(--portal-skeleton)] mb-2"></div>'
+                + '<div class="h-7 w-64 rounded bg-[color:var(--portal-skeleton)] mb-4"></div>'
+                + '<div class="rounded-2xl overflow-hidden" style="background:var(--portal-bg-card);border:1px solid var(--portal-border)">'
+                + '<div class="flex items-center justify-between p-4 border-b" style="border-color:var(--portal-border)"><div class="h-4 w-44 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-7 w-24 rounded bg-[color:var(--portal-skeleton)]"></div></div>'
+                + '<div class="p-3 space-y-2"><div class="h-8 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-8 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-8 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-8 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-8 rounded bg-[color:var(--portal-skeleton)]"></div></div></div></div>';
+        }
+        if (key === 'panduan_desain') {
+            var designSkeletonCard = '<div class="rounded-2xl overflow-hidden" style="background:#fff;border:1px solid var(--portal-border);min-height:260px">'
+                + '<div class="h-48 bg-[color:var(--portal-skeleton)]"></div>'
+                + '<div class="space-y-2 p-4"><div class="h-2.5 w-24 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-4 w-4/5 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-9 rounded-xl bg-[color:var(--portal-skeleton)]"></div></div></div>';
+            pageSkeleton = '<div class="page-skeleton animate-pulse flex min-h-full flex-col py-4 sm:py-6 px-1 sm:px-2 space-y-4">'
+                + '<div class="flex items-center gap-2 mb-3"><div class="w-4 h-4 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-3 w-36 rounded bg-[color:var(--portal-skeleton)]"></div></div>'
+                + '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">'
+                + designSkeletonCard.repeat(5)
+                + '</div></div>';
+        }
+        wrapper.innerHTML = pageSkeleton;
+        if (panel) panel.scrollTop = 0;
 
         // 3) Fetch konten baru
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
@@ -371,6 +391,7 @@ function globalSystem() {
             })
             .then(function (html) {
                 if (html === null || html === undefined || myToken !== loadToken) return;
+                if (!html.trim()) html = '<div class="page-skeleton animate-pulse min-h-full"></div>';
                 // 4) Fade out skeleton → inject konten baru
                 wrapper.style.transition = 'opacity 0.1s ease-out';
                 wrapper.style.opacity = '0';

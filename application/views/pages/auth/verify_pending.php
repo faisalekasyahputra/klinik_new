@@ -235,7 +235,7 @@
             </div>
 
             <!-- Continue Button (hidden until complete) -->
-            <button class="verify-btn-continue" id="btnContinue" onclick="window.location.href='<?= base_url('Auth/onboarding') ?>'">
+            <button class="verify-btn-continue" id="btnContinue" onclick="window.location.href='<?= base_url('Auth/lanjutkan') ?>'">
                 <span>Lanjutkan Lengkapi Profil</span>
                 <i class="fa-solid fa-arrow-right"></i>
             </button>
@@ -281,6 +281,7 @@ function runStep() {
 
             // Show continue button
             document.getElementById('btnContinue').classList.add('show');
+            setTimeout(() => { window.location.href = '<?= base_url('Auth/lanjutkan') ?>'; }, 800);
         });
         return;
     }

@@ -1,97 +1,20 @@
 <?php
-// Hanya izinkan skema http/https sebagai link — cegah stored XSS via "javascript:" URI
-// pada field yang diisi bebas oleh user (instagram/website/sosmed_lainnya).
 $safe_url = function ($url) {
-    if (empty($url)) return null;
-    return preg_match('#^https?://#i', $url) ? $url : null;
+    return ($url && preg_match('#^https?://#i', $url)) ? $url : null;
 };
 $sosmed = [
     ['fa-brands fa-instagram', 'Instagram', $pengembang->instagram ?? null],
     ['fa-solid fa-globe', 'Website', $pengembang->website ?? null],
-    ['fa-solid fa-share-nodes', 'Sosmed Lainnya', $pengembang->sosmed_lainnya ?? null],
+    ['fa-solid fa-share-nodes', 'Sosial media lain', $pengembang->sosmed_lainnya ?? null],
 ];
+$value = function ($field, $fallback = 'Belum diisi') use ($pengembang) {
+    $text = trim((string) ($pengembang->$field ?? ''));
+    return $text !== '' ? $text : $fallback;
+};
 ?>
-<section class="w-full pt-24 pb-16 px-4 sm:px-6 lg:px-8 relative min-h-screen font-outfit">
-    <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div class="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] rounded-full bg-[#d6fb00]/5 blur-[120px]"></div>
-        <div class="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] rounded-full bg-[#00a3b5]/5 blur-[100px]"></div>
-    </div>
-
-    <div class="max-w-3xl mx-auto relative z-10">
-
-        <!-- Breadcrumb -->
-        <div class="mb-10">
-            <nav class="flex text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-widest" aria-label="Breadcrumb">
-                <ol class="inline-flex items-center space-x-1 md:space-x-2">
-                    <li class="inline-flex items-center">
-                        <a href="<?= base_url() ?>" class="hover:text-[#d6fb00] transition-colors"><i class="fa-solid fa-house mr-2"></i>Beranda</a>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <i class="fa-solid fa-chevron-right text-[8px] mx-2"></i>
-                            <a href="<?= base_url('Pengembang/sertifikasi') ?>" class="hover:text-[#d6fb00] transition-colors">Sertifikasi Pengembang</a>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <i class="fa-solid fa-chevron-right text-[8px] mx-2"></i>
-                            <span class="text-[#d6fb00] truncate max-w-[180px] inline-block align-bottom"><?= htmlspecialchars($pengembang->nama_perusahaan) ?></span>
-                        </div>
-                    </li>
-                </ol>
-            </nav>
-        </div>
-
-        <!-- Profil Card -->
-        <div class="rounded-[2rem] p-6 sm:p-8 mb-6" style="background-color: var(--bg-card); border: 1px solid rgba(255,255,255,0.08);">
-            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-zinc-800/80 pb-6 mb-6">
-                <div>
-                    <span class="text-[#d6fb00] font-extrabold text-[10px] uppercase tracking-widest block mb-1">Profil Pengembang</span>
-                    <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight"><?= htmlspecialchars($pengembang->nama_perusahaan) ?></h2>
-                </div>
-                <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-xs uppercase tracking-wider shrink-0">
-                    <i class="fa-solid fa-circle-check text-xs"></i> Bersertifikat
-                </span>
-            </div>
-
-            <table class="w-full text-xs sm:text-sm text-zinc-300 border-separate border-spacing-y-2.5">
-                <tbody>
-                    <tr>
-                        <td class="w-1/3 text-zinc-500 font-medium">Asosiasi</td>
-                        <td class="uppercase">: <?= htmlspecialchars($pengembang->asosiasi) ?></td>
-                    </tr>
-                    <tr>
-                        <td class="text-zinc-500 font-medium">No. Keanggotaan</td>
-                        <td>: <?= htmlspecialchars($pengembang->no_keanggotaan) ?></td>
-                    </tr>
-                    <tr>
-                        <td class="text-zinc-500 font-medium align-top">Alamat Kantor</td>
-                        <td class="leading-relaxed">: <?= nl2br(htmlspecialchars($pengembang->alamat_kantor)) ?></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Kontak & Sosial Media -->
-        <div class="rounded-[2rem] p-6 sm:p-8" style="background-color: var(--bg-card); border: 1px solid rgba(255,255,255,0.08);">
-            <h3 class="text-[#d6fb00] font-bold uppercase tracking-wider text-[11px] border-b border-zinc-800 pb-1.5 mb-4">
-                Kontak & Sosial Media
-            </h3>
-            <div class="space-y-3">
-                <?php foreach ($sosmed as $s): [$icon, $label, $value] = $s; $link = $safe_url($value); ?>
-                <div class="flex items-center justify-between gap-4 p-4 rounded-xl bg-black/20 border border-zinc-800">
-                    <span class="text-zinc-400 font-medium text-sm"><i class="<?= $icon ?> text-[#d6fb00] mr-2"></i><?= $label ?></span>
-                    <?php if ($link): ?>
-                        <a href="<?= htmlspecialchars($link) ?>" target="_blank" rel="noopener" class="text-[#d6fb00] font-bold text-sm hover:underline truncate max-w-[50%]"><?= htmlspecialchars($value) ?></a>
-                    <?php elseif (!empty($value)): ?>
-                        <span class="text-zinc-400 text-sm truncate max-w-[50%]"><?= htmlspecialchars($value) ?></span>
-                    <?php else: ?>
-                        <span class="text-zinc-500 italic text-sm">Belum diisi</span>
-                    <?php endif; ?>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-
-    </div>
-</section>
+<section class="w-full min-h-screen px-4 sm:px-6 lg:px-8 py-8 font-outfit" style="color:var(--portal-text)"><div class="max-w-4xl mx-auto">
+<nav class="mb-5 text-[10px] font-bold uppercase tracking-wider" style="color:var(--portal-text-muted)"><a href="<?= base_url('Pengembang/sertifikasi') ?>" data-tab-link data-tab-key="pengembang_list" class="hover:underline" style="color:var(--teal)">Sertifikasi Pengembang</a><span class="mx-2">/</span><span><?= htmlspecialchars($pengembang->nama_perusahaan, ENT_QUOTES, 'UTF-8') ?></span></nav>
+<div class="rounded-2xl p-5 sm:p-6" style="background:var(--portal-bg-card);border:1px solid var(--portal-border);box-shadow:0 8px 24px rgba(0,80,95,.06)"><div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 border-b pb-4" style="border-color:var(--portal-border)"><div><span class="text-[10px] font-extrabold uppercase tracking-[.2em]" style="color:var(--teal-bright)">Profil Pengembang</span><h1 class="mt-1 text-xl sm:text-2xl font-black" style="color:var(--portal-text)"><?= htmlspecialchars($pengembang->nama_perusahaan, ENT_QUOTES, 'UTF-8') ?></h1></div><span class="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold" style="background:rgba(16,185,129,.1);color:#059669"><i class="fa-solid fa-circle-check"></i> Bersertifikat</span></div>
+<div class="grid sm:grid-cols-2 gap-x-8 gap-y-4 pt-5 text-xs"><div><p class="mb-1 text-[10px] font-bold uppercase tracking-wider" style="color:var(--portal-text-muted)">Asosiasi</p><p class="font-semibold" style="color:var(--portal-text)"><?= htmlspecialchars($value('asosiasi'), ENT_QUOTES, 'UTF-8') ?></p></div><div><p class="mb-1 text-[10px] font-bold uppercase tracking-wider" style="color:var(--portal-text-muted)">Nomor keanggotaan</p><p class="font-semibold" style="color:var(--portal-text)"><?= htmlspecialchars($value('no_keanggotaan'), ENT_QUOTES, 'UTF-8') ?></p></div><div class="sm:col-span-2"><p class="mb-1 text-[10px] font-bold uppercase tracking-wider" style="color:var(--portal-text-muted)">Alamat kantor</p><p class="font-semibold leading-relaxed" style="color:var(--portal-text)"><?= nl2br(htmlspecialchars($value('alamat_kantor'), ENT_QUOTES, 'UTF-8')) ?></p></div></div></div>
+<div class="mt-4 rounded-2xl p-5 sm:p-6" style="background:var(--portal-bg-card);border:1px solid var(--portal-border);box-shadow:0 8px 24px rgba(0,80,95,.06)"><div class="flex items-center justify-between border-b pb-3" style="border-color:var(--portal-border)"><h2 class="text-sm font-extrabold" style="color:var(--portal-text)">Kontak & Sosial Media</h2><i class="fa-solid fa-link text-xs" style="color:var(--teal-bright)"></i></div><div class="grid sm:grid-cols-3 gap-2.5 pt-4"><?php foreach ($sosmed as [$icon, $label, $raw]): $link = $safe_url($raw); ?><div class="rounded-xl p-3" style="background:var(--portal-bg);border:1px solid var(--portal-border)"><div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider" style="color:var(--portal-text-muted)"><i class="<?= $icon ?>" style="color:var(--teal-bright)"></i><?= $label ?></div><?php if ($link): ?><a href="<?= htmlspecialchars($link, ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="mt-2 block truncate text-xs font-bold hover:underline" style="color:var(--teal)"><?= htmlspecialchars($raw, ENT_QUOTES, 'UTF-8') ?></a><?php else: ?><span class="mt-2 block text-xs italic" style="color:var(--portal-text-muted)">Belum diisi</span><?php endif; ?></div><?php endforeach; ?></div></div>
+</div></section>

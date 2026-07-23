@@ -10,18 +10,23 @@
     z-index: 10;
   }
   .hover-scale-img-box:hover {
-    transform: scale(1.35) translateY(-5px);
+    transform: scale(1.12) translateY(-4px);
     z-index: 50;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.9);
-    border-color: #d6fb00 !important;
+    box-shadow: 0 12px 24px rgba(15, 42, 48, 0.14);
+    border-color: var(--portal-brand) !important;
   }
   .hover-scale-overlay {
     opacity: 0;
     transition: opacity 0.4s ease;
-    background-color: #0a1a1f;
+    background-color: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(3px);
   }
   .hover-scale-img-box:hover .hover-scale-overlay {
     opacity: 1;
+  }
+  .hover-scale-overlay img {
+    object-fit: contain;
+    padding: 0.5rem;
   }
   .hover-scale-badge {
     transition: opacity 0.3s ease;

@@ -157,9 +157,9 @@ class Index extends MY_Controller {
 			echo "Data tidak ditemukan.";
 		}
 	}
-	public function detail_perum($idLokasi = NULL) {
-		if ($idLokasi === NULL) {
-            redirect('layouts/main');
+       public function detail_perum($idLokasi = NULL) {
+               if ($idLokasi === NULL) {
+            redirect('cari_rumah');
         }
 		$cache_file = APPPATH . 'cache/sikumbang_detail_' . $idLokasi . '.json';
 		$cache_time = 86400; // 24 jam cache
@@ -429,7 +429,32 @@ class Index extends MY_Controller {
 	{
 
 		$datacontent['judul']='';
+		$datacontent['is_ajax_load'] = $this->input->is_ajax_request();
 		$this->render('pages/bank_desain/panduan_desain', $datacontent);
+	}
+	public function detail_desain($id = NULL)
+	{
+		if ($id === NULL || !ctype_digit((string) $id)) {
+			show_404();
+		}
+
+		$house_designs = $this->ternak_api->get_public_house_designs();
+		$design = NULL;
+		foreach ($house_designs as $item) {
+			if (isset($item['id']) && (string) $item['id'] === (string) $id) {
+				$design = $item;
+				break;
+			}
+		}
+
+		if ($design === NULL) {
+			show_404();
+		}
+
+		$this->render('pages/bank_desain/detail_desain', [
+			'judul' => $design['title'],
+			'design' => $design,
+		]);
 	}
 	public function cari_rumah()
 	{

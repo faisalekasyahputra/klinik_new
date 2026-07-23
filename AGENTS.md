@@ -126,13 +126,17 @@ Default controller: `Index`. Banyak clean-URL alias ke `Index/*` (`umum`, `profi
 - `golek_omah` → `Index::golek_omah()` → `pages/golek_omah/index.php` — halaman hub.
 - `cari_rumah` → `Index::cari_rumah()` → `pages/perumahan/cari_rumah.php`. **DUPLIKAT** dari section `#cari-perumahan` di `awal.php` — section itu masih ada dan masih jalan di homepage, ini bukan pengganti. Reuse AJAX `cari_wil`/`load_more`/`ajax_perumahan` yang sama.
 - `panduan_desain` → `Index::panduan_desain()` → `pages/bank_desain/panduan_desain.php`. **DUPLIKAT** dari section `#bank-desain` di `awal.php`, section aslinya juga masih ada. Reuse AJAX `ajax_house_designs`. Jangan disamakan dengan route `materia` (`Index::materia()`) — itu placeholder kosong tidak terkait.
-- `solusi_pembiayaan` → alias langsung ke `Program/diagnosa/umum` (controller/view lama, tidak ada yang baru selain alias route-nya).
+- `solusi_pembiayaan` → `Program/solusi_pembiayaan` — wizard diagnosa pembiayaan dengan hasil rekomendasi.
+- `solusi_pembiayaan/hasil` → `Program/hasil_diagnosa` — hasil program yang bisa dipilih warga untuk diajukan.
+- `solusi_pembiayaan/ajukan` → `Program/ajukan_solusi` — POST-only, memvalidasi program dari session sebelum masuk `sf_housing_queue`.
+- `solusi_pembiayaan/cek-tiket` → `Program/cek_tiket` — POST-only lookup publik memakai `ticket_code` + empat digit terakhir NIK; jangan tampilkan PII.
+- `cek_status_pengajuan` → `Program/cek_status_pengajuan` — tab navbar dan halaman publik untuk cek status tanpa login.
 
 Jadi kalau menemukan section pencarian rumah atau bank desain di dua tempat (homepage dan halaman mandiri), itu memang disengaja — bukan duplikasi yang perlu dibersihkan.
 
 ## 11. Status & Roadmap
 
-9 dari 10 fase besar selesai (keamanan, OAuth, MY_Controller, forum, enkripsi, UI/UX, navbar, hero/etalase, Smart Filter). Fase 10 (Admin Dashboard untuk validasi manual antrean `sf_housing_queue`) belum dimulai. Detail lengkap: [`docs/product/IMPLEMENTATION_ROADMAP.md`](docs/product/IMPLEMENTATION_ROADMAP.md) dan [`docs/product/ANALISIS_DAN_RENCANA_PERBAIKAN.md`](docs/product/ANALISIS_DAN_RENCANA_PERBAIKAN.md).
+Fase 9.5 status tiket sudah tahap 1; Fase 10 (Admin Dashboard untuk validasi manual antrean `sf_housing_queue`) belum dimulai. Detail lengkap: [`docs/product/IMPLEMENTATION_ROADMAP.md`](docs/product/IMPLEMENTATION_ROADMAP.md) dan [`docs/product/ANALISIS_DAN_RENCANA_PERBAIKAN.md`](docs/product/ANALISIS_DAN_RENCANA_PERBAIKAN.md).
 
 Untuk konteks bisnis (arahan rapat, program perumahan, matrix Smart Filter), baca `docs/meetings/` dan `docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md` — jangan diduplikasi di sini, cek langsung sumbernya karena detail bisnis berubah lebih cepat dari kode.
 
@@ -148,6 +152,29 @@ Repo ini punya banyak dokumen historis (`docs/archive/`, termasuk `docs/archive/
 Warna/tipografi/spacing didokumentasikan di [`docs/design/DESIGN_SYSTEM.md`](docs/design/DESIGN_SYSTEM.md) — **baca itu sebelum menyentuh CSS/warna apa pun**. Ringkasan penting: ada 3 sumber warna yang tidak sinkron (`docs/design/tokens.css` tidak ke-load sama sekali di aplikasi; `assets/css/design-system.css` yang beneran dipakai situs publik; inline `tailwind.config` di `application/views/admin/layouts/head.php` buat panel admin), plus ~1.300 hex literal tertulis manual di 70+ file view karena situs publik tidak punya `tailwind.config`. `docs/design/DESIGN_SYSTEM.md` punya tabel palet kanonis (sudah diverifikasi ke pemakaian nyata di kode) dan daftar warna drift yang masih butuh keputusan — jangan asumsikan `tokens.css` sudah merepresentasikan apa yang tampil di browser.
 
 ## 14. Sertifikasi Pengembang (SRP2)
+
+### Konvensi Tabel Portal
+
+Jika membuat tabel baru di halaman portal, gunakan komponen reusable `application/views/components/portal_data_table.php` sebagai dasar. Tabel wajib mendukung:
+
+- pencarian melalui atribut `data-table-search`;
+- sorting kolom melalui `data-table-sort` dan isi sel melalui `data-table-column`;
+- pagination melalui `data-table-pagination`;
+- ringkasan hasil melalui `data-table-summary`;
+- jumlah awal 10 baris dengan `data-table-per-page="10"`.
+
+Setiap baris memakai `data-table-row`, nomor urut memakai `data-table-index`, dan state kosong memakai `data-table-empty`. Pertahankan token warna portal (`--portal-*`, `--teal`, `--brand-primary`) serta pastikan tombol dan kontrol memiliki label yang dapat diakses.
+
+### Konvensi Skeleton Loading
+
+Setiap halaman portal yang memuat data wajib menyediakan skeleton dengan bentuk yang mengikuti layout konten sebenarnya, bukan hanya spinner. Gunakan pola berikut:
+
+- initial load: letakkan skeleton di `#page-loading-skeleton`; layout utama akan menyembunyikannya setelah `window.load`;
+- navigasi AJAX: gunakan `page-skeleton animate-pulse`, pertahankan tinggi panel, lalu ganti skeleton setelah fetch selesai;
+- gunakan `var(--portal-skeleton)` untuk warna placeholder dan samakan jumlah/ukuran blok dengan judul, toolbar, kartu, atau baris tabel yang akan tampil;
+- jangan menampilkan skeleton permanen jika request gagal; kembalikan opacity konten dan tampilkan keadaan error/kosong yang jelas.
+
+Untuk halaman tabel, skeleton minimal berisi blok judul, toolbar, dan 5–10 baris tabel. Reuse pola di `application/views/layouts/main.php` dan `application/views/layouts/footer.php` sebelum menambah markup baru.
 
 Fitur pendaftaran & verifikasi SRP2 (Sertifikasi Registrasi Pengembang Perumahan) dibangun ulang jadi interaktif penuh sesi ini (sebelumnya rencananya cuma halaman statis "view-only" — lihat catatan usang di bawah).
 
@@ -174,3 +201,13 @@ Fitur pendaftaran & verifikasi SRP2 (Sertifikasi Registrasi Pengembang Perumahan
 - Generator sertifikat PDF asli belum ada — tombol "Download Sertifikat" di dashboard akun sengaja nonaktif dengan pesan jujur, bukan simulasi.
 - `Auth::save_onboarding()` mencoba menulis kolom `nama_perusahaan`/`alamat_kantor`/`telp_kantor` untuk role pengembang/vendor saat registrasi akun, tapi kolom-kolom itu TIDAK ADA di skema `usr_users` — berpotensi error di step onboarding untuk role tsb. Bug pre-existing, di luar scope SRP2, belum diperbaiki.
 - [`docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md`](docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md) dan [`docs/product/IMPLEMENTATION_ROADMAP.md`](docs/product/IMPLEMENTATION_ROADMAP.md) masih menyebut menu Pengembang/SP2 sebagai halaman statis/"belum berupa sistem interaktif" ("view-only") — **usang (superseded)**, sudah dikonfirmasi user untuk dibuat interaktif penuh sesi ini.
+
+## 15. Status Tiket Pengajuan
+
+- Tabel `sf_housing_queue` memiliki `ticket_code` unik; migration existing database ada di [`docs/engineering/migration_housing_queue_ticket.sql`](docs/engineering/migration_housing_queue_ticket.sql), sedangkan schema fresh setup sudah memuat kolomnya.
+- Pengajuan dari `Program::ajukan_solusi()` membuat tiket server-side berformat `PKP-XXXXXX`; jangan menerima `ticket_code` atau `program_id` dari user sebagai sumber kebenaran tanpa validasi session.
+- `Program::cek_tiket()` adalah endpoint POST publik. Lookup wajib memakai tiket dan empat digit terakhir NIK, lalu hanya boleh mengembalikan status serta timestamp—bukan NIK, alamat, nama, atau dokumen.
+- `cek_status_pengajuan` adalah tab navbar dan view standalone yang memakai endpoint lookup yang sama; jangan membuat endpoint status kedua.
+- Dashboard `akun` hanya mengambil riwayat antrean berdasarkan `user_id` session. Guest tetap boleh memiliki `user_id = NULL`.
+- Halaman sukses memakai tema cerah portal dan menampilkan tiket melalui flashdata satu kali. Rate limit lookup dan enkripsi NIK penuh masih menjadi hardening lanjutan.
+- Acuan produk: [`docs/product/DESAIN_STATUS_TIKET_PENGAJUAN.md`](docs/product/DESAIN_STATUS_TIKET_PENGAJUAN.md).

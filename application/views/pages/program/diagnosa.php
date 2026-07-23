@@ -3,49 +3,13 @@
     <?php $is_solusi_pembiayaan = !empty($is_solusi_pembiayaan); ?>
 
     <?php if ($is_solusi_pembiayaan): ?>
-    <section class="mb-10" x-data="solutionProgramShowcase()" x-init="$nextTick(() => document.getElementById('solution-program-fallback')?.remove())">
+    <section class="mb-10">
         <div class="text-center mb-5">
             <h1 class="text-2xl sm:text-3xl font-black font-jakarta tracking-tight text-[color:var(--portal-text)]">Pilih Program Sesuai <span class="text-[color:var(--portal-brand)]">Kebutuhan</span></h1>
             <p class="mt-2 text-sm text-[color:var(--portal-text-muted)]">Kenali skema bantuan lebih dahulu, lalu isi diagnosa untuk menemukan yang paling sesuai.</p>
         </div>
 
-        <div id="solution-program-fallback" class="relative mx-auto mb-4 grid min-h-[360px] w-full max-w-5xl overflow-hidden rounded-3xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] shadow-sm md:w-[60%] md:grid-cols-5">
-            <div class="relative min-h-[190px] md:col-span-2">
-                <img src="<?= base_url('assets/img/program/01_subsidif_lpp.avif') ?>" alt="KPR-FLPP Rumah Subsidi" class="absolute inset-0 h-full w-full object-cover" style="mask-image: linear-gradient(to right, #000 58%, transparent 100%); -webkit-mask-image: linear-gradient(to right, #000 58%, transparent 100%);">
-            </div>
-            <div class="flex flex-col justify-center p-6 md:col-span-3 md:p-8">
-                <span class="mb-3 text-[11px] font-bold uppercase tracking-widest text-[color:var(--portal-brand)]">MBR Fixed Income</span>
-                <h2 class="text-2xl font-black text-[color:var(--portal-text)]">KPR-FLPP Rumah Subsidi</h2>
-                <p class="mt-3 text-sm leading-relaxed text-[color:var(--portal-text-muted)]">Skema pembiayaan rumah subsidi dengan bunga tetap dan tenor panjang.</p>
-                <p class="mt-4 border-t border-[color:var(--portal-border)] pt-4 text-xs text-[color:var(--portal-text-muted)]"><strong class="text-[color:var(--portal-text)]">Syarat utama:</strong> Penghasilan maksimal Rp8 juta per bulan dan memenuhi ketentuan MBR.</p>
-            </div>
-        </div>
-
-        <div class="relative w-full md:w-[60%] mx-auto">
-            <button type="button" @click="previous()" aria-label="Program sebelumnya" class="absolute left-0 sm:-left-4 top-1/2 z-10 -translate-y-1/2 h-10 w-10 rounded-full border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] text-[color:var(--portal-text)] shadow-sm transition hover:border-[color:var(--portal-brand)]"><i class="fa-solid fa-chevron-left"></i></button>
-            <button type="button" @click="next()" aria-label="Program berikutnya" class="absolute right-0 sm:-right-4 top-1/2 z-10 -translate-y-1/2 h-10 w-10 rounded-full border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] text-[color:var(--portal-text)] shadow-sm transition hover:border-[color:var(--portal-brand)]"><i class="fa-solid fa-chevron-right"></i></button>
-
-            <div class="overflow-hidden rounded-3xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] shadow-sm">
-                <template x-for="(slide, index) in slides" :key="slide.id">
-                    <article x-show="active === index" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 translate-x-5" x-transition:enter-end="opacity-100 translate-x-0" class="relative grid min-h-[360px] md:grid-cols-5" style="display: none;">
-                        <div class="absolute inset-0 opacity-[0.045] pointer-events-none" style="background-image: radial-gradient(circle at 1px 1px, #00545f 1px, transparent 0); background-size: 22px 22px;"></div>
-                        <div class="relative min-h-[190px] md:col-span-2">
-                            <img :src="slide.image" :alt="slide.title" class="absolute inset-0 h-full w-full object-cover" style="mask-image: linear-gradient(to right, #000 58%, transparent 100%); -webkit-mask-image: linear-gradient(to right, #000 58%, transparent 100%);">
-                        </div>
-                        <div class="relative p-6 md:col-span-3 md:p-8 flex flex-col justify-center">
-                            <span class="mb-3 inline-flex w-max items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[color:var(--portal-brand)]"><span class="h-2 w-2 rounded-full bg-[color:var(--portal-brand)]"></span><span x-text="slide.badge"></span></span>
-                            <h2 class="text-2xl font-black text-[color:var(--portal-text)]" x-text="slide.title"></h2>
-                            <p class="mt-3 text-sm leading-relaxed text-[color:var(--portal-text-muted)]" x-text="slide.description"></p>
-                            <div class="mt-4 border-t border-[color:var(--portal-border)] pt-4 text-xs leading-relaxed text-[color:var(--portal-text-muted)]"><span class="font-bold text-[color:var(--portal-text)]">Syarat utama: </span><span x-text="slide.terms"></span></div>
-                            <button type="button" @click="document.getElementById('form-diagnosa').scrollIntoView({ behavior: 'smooth', block: 'start' })" class="mt-5 inline-flex w-max items-center gap-2 rounded-full bg-[color:var(--portal-brand)] px-5 py-2.5 text-sm font-bold text-[#0a1a1f] transition hover:-translate-y-0.5 hover:shadow-sm">Cek Kelayakan <i class="fa-solid fa-arrow-right"></i></button>
-                        </div>
-                    </article>
-                </template>
-            </div>
-            <div class="mt-3 flex justify-center gap-2">
-                <template x-for="(slide, index) in slides" :key="slide.id + '-dot'"><button type="button" @click="active = index" class="h-2 rounded-full transition-all" :class="active === index ? 'w-6 bg-[color:var(--portal-brand)]' : 'w-2 bg-[color:var(--portal-border)]'" :aria-label="'Lihat ' + slide.title"></button></template>
-            </div>
-        </div>
+        <?php $carousel_context = 'diagnosa'; $this->load->view('components/program_showcase_carousel'); ?>
     </section>
     <?php endif; ?>
 
@@ -575,26 +539,4 @@ function wizardData() {
     }
 }
 
-    function solutionProgramShowcase() {
-        return {
-            active: 0,
-            timer: null,
-            slides: [
-                { id: 'flpp', title: 'KPR-FLPP Rumah Subsidi', badge: 'MBR Fixed Income', color: '#007f8f', buttonText: '#ffffff', image: '<?= base_url('assets/img/program/01_subsidif_lpp.avif') ?>', description: 'Skema pembiayaan rumah subsidi dengan bunga tetap dan tenor panjang.', terms: 'Penghasilan maksimal Rp8 juta per bulan dan memenuhi ketentuan MBR.' },
-                { id: 'oemah-lestari', title: 'Oemah Lestari', badge: 'MBR & Umum', color: '#07865a', buttonText: '#ffffff', image: '<?= base_url('assets/img/program/02_oemahletari.avif') ?>', description: 'Pembiayaan rumah terjangkau yang berpihak pada hunian ramah lingkungan.', terms: 'Skema bunga ringan melalui kolaborasi BPR-BRK.' },
-                { id: 'rtlh', title: 'Peningkatan Kualitas RTLH', badge: 'Miskin & Ekstrem', color: '#b45309', buttonText: '#ffffff', image: '<?= base_url('assets/img/program/03_rtlh.avif') ?>', description: 'Bantuan perbaikan rumah bagi masyarakat dengan hunian tidak layak.', terms: 'Terdaftar DTKS dan rumah memenuhi kriteria kerusakan.' },
-                { id: 'pb', title: 'Stimulan Pembangunan Baru', badge: 'Bencana & Relokasi', color: '#647a00', buttonText: '#ffffff', image: '<?= base_url('assets/img/program/04_Bantuan.avif') ?>', description: 'Bantuan stimulan material untuk pembangunan rumah baru yang layak.', terms: 'Tersedia untuk skema backlog, relokasi, atau pascabencana.' },
-                { id: 'rumah-apung', title: 'Program Rumah Apung', badge: 'Kawasan Pesisir', color: '#2563eb', buttonText: '#ffffff', image: '<?= base_url('assets/img/program/05_areakumuh.avif') ?>', description: 'Solusi hunian adaptif untuk masyarakat pesisir terdampak rob.', terms: 'Prioritas kawasan pesisir yang mengalami genangan permanen.' }
-            ],
-            init() {
-                this.timer = setInterval(() => this.next(), 6500);
-            },
-            next() {
-                this.active = (this.active + 1) % this.slides.length;
-            },
-            previous() {
-                this.active = (this.active - 1 + this.slides.length) % this.slides.length;
-            }
-        };
-    }
 </script>

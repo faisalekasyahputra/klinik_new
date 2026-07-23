@@ -147,23 +147,26 @@ class Auth extends MY_Controller {
         $email            = trim($this->input->post('email', TRUE));
         $password         = $this->input->post('password');
         $password_confirm = $this->input->post('password_confirm');
+        $is_srp2          = $this->input->post('srp2_pengembang') === '1';
+        $nama_perusahaan  = trim($this->input->post('nama_perusahaan', TRUE));
+        $redirect_target  = $is_srp2 ? 'Pengembang/daftar' : 'Auth/register';
 
         // Validation
         if (empty($email) || empty($password) || empty($password_confirm)) {
             $this->session->set_flashdata('error', 'Semua field wajib diisi.');
-            redirect('Auth/register');
+            redirect($redirect_target);
             return;
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $this->session->set_flashdata('error', 'Format email tidak valid.');
-            redirect('Auth/register');
+            redirect($redirect_target);
             return;
         }
 
         if ($password !== $password_confirm) {
             $this->session->set_flashdata('error', 'Password dan konfirmasi tidak cocok.');
-            redirect('Auth/register');
+            redirect($redirect_target);
             return;
         }
 
@@ -171,7 +174,7 @@ class Auth extends MY_Controller {
         if (strlen($password) < 8 || !preg_match('/[A-Z]/', $password) ||
             !preg_match('/[0-9]/', $password) || !preg_match('/[^A-Za-z0-9]/', $password)) {
             $this->session->set_flashdata('error', 'Password harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.');
-            redirect('Auth/register');
+            redirect($redirect_target);
             return;
         }
 
@@ -180,7 +183,7 @@ class Auth extends MY_Controller {
             $recaptcha_response = $this->input->post('g-recaptcha-response');
             if (!$this->_verify_recaptcha($recaptcha_response)) {
                 $this->session->set_flashdata('error', 'Verifikasi Captcha gagal. Silakan coba lagi.');
-                redirect('Auth/register');
+                redirect($redirect_target);
                 return;
             }
         }
@@ -189,18 +192,32 @@ class Auth extends MY_Controller {
         $existing = $this->auth_model->find_by_email($email);
         if ($existing) {
             $this->session->set_flashdata('error', 'Email sudah terdaftar. Silakan login atau gunakan email lain.');
-            redirect('Auth/register');
+            redirect($redirect_target);
             return;
         }
 
         // Create user
+        if ($is_srp2 && $nama_perusahaan === '') {
+            $this->session->set_flashdata('error', 'Nama perusahaan wajib diisi untuk akun pengembang.');
+            redirect('Pengembang/syarat');
+            return;
+        }
         $password_hash = password_hash($password, PASSWORD_BCRYPT);
         $user_id = $this->auth_model->create_user($email, $password_hash);
 
         if (!$user_id) {
             $this->session->set_flashdata('error', 'Terjadi kesalahan sistem. Silakan coba lagi.');
-            redirect('Auth/register');
+            redirect($redirect_target);
             return;
+        }
+
+        if ($is_srp2) {
+            $this->db->where('id', $user_id)->update('usr_users', [
+                'role' => 'pengembang', 'nama_perusahaan' => strtoupper($nama_perusahaan),
+                'profile_completed' => 1, 'status' => 'active', 'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            $this->session->set_userdata('intended_url', 'akun');
+            $this->session->set_userdata('srp2_quick_registration', TRUE);
         }
 
         // Auto-login the new user
@@ -210,10 +227,17 @@ class Auth extends MY_Controller {
             'username'  => NULL,
             'email'     => $email,
             'avatar'    => NULL,
+            'role'      => $is_srp2 ? 'pengembang' : NULL,
             'is_logged' => TRUE,
         ];
         $this->session->set_userdata($session_data);
         $this->session->sess_regenerate(TRUE);
+
+        if ($is_srp2) {
+            $this->session->set_userdata('srp2_verify_pending', TRUE);
+            redirect('Pengembang/daftar');
+            return;
+        }
 
         // Redirect to dummy email verification page
         redirect('Auth/verify_pending');
@@ -367,9 +391,10 @@ class Auth extends MY_Controller {
         // Update session name
         $this->session->set_userdata('name', $nama);
         $this->session->set_userdata('username', $username);
+        $this->session->set_userdata('role', $role);
 
         $this->session->set_flashdata('success', 'Profil berhasil disimpan! Selamat datang di Klinik PKP.');
-        redirect('');
+        $this->_redirect_after_login();
     }
 
     // =========================================================
@@ -415,6 +440,28 @@ class Auth extends MY_Controller {
         ]);
 
         echo json_encode(['status' => 'ok']);
+    }
+
+    public function lanjutkan() {
+        if (!$this->is_logged_in()) { redirect('Auth/login'); return; }
+        if ($this->session->userdata('srp2_quick_registration') === TRUE) {
+            $user_id = $this->get_user_id();
+            $draft = $this->db->order_by('id', 'DESC')->get_where('srp2_registrations', ['user_id' => $user_id, 'status_verifikasi' => 'Draft'])->row();
+            if (!$draft) {
+                $user = $this->auth_model->find_by_id($user_id);
+                $this->db->insert('srp2_registrations', [
+                    'user_id' => $user_id, 'email' => $user->email,
+                    'nama_perusahaan' => $user->nama_perusahaan, 'status_verifikasi' => 'Draft'
+                ]);
+                $draft = (object) ['id' => $this->db->insert_id()];
+            }
+            $this->session->unset_userdata('srp2_quick_registration');
+            $this->session->unset_userdata('srp2_verify_pending');
+            $this->session->unset_userdata('intended_url');
+            redirect('Pengembang/dokumen/' . $draft->id);
+            return;
+        }
+        $this->_redirect_after_login();
     }
 
     // =========================================================

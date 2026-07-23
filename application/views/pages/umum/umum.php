@@ -150,8 +150,8 @@
                 </div>
             </a>
 
-            <!-- Card 6: Forum Diskusi -->
-            <a href="<?= base_url('umum/forum') ?>" class="flex flex-col h-full group animate-fade-in-up delay-500">
+            <!-- Card 6: Konsultasi Terjadwal -->
+            <a href="<?= base_url('umum/forum') ?>" data-no-page-transition class="flex flex-col h-full group animate-fade-in-up delay-500">
                 <div class="flex-1 p-6 rounded-[24px] flex flex-col justify-between transition-all duration-300 group-hover:-translate-y-1 shadow-lg"
                      style="background: var(--bg-card); border: 1px solid rgba(214,251,0,0.15);"
                      onmouseenter="this.style.borderColor='rgba(0,163,181,0.50)'; this.style.boxShadow='0 8px 30px rgba(0,163,181,0.10)';"
@@ -161,8 +161,8 @@
                             <i class="fa-solid fa-comments text-[28px]"></i>
                         </div>
                         <div class="space-y-1.5 pt-1">
-                            <h4 class="font-bold text-base tracking-tight transition-colors" style="color: var(--text-primary);">Forum Diskusi</h4>
-                            <p class="text-xs leading-relaxed" style="color: var(--text-muted);">Ruang interaksi komunitas warga untuk saling berbagi info seputar pemeliharaan lingkungan perumahan.</p>
+                            <h4 class="font-bold text-base tracking-tight transition-colors" style="color: var(--text-primary);">Konsultasi Terjadwal</h4>
+                            <p class="text-xs leading-relaxed" style="color: var(--text-muted);">Sampaikan kebutuhan Anda untuk ditinjau admin dan diarahkan ke agenda konsultasi yang sesuai.</p>
                         </div>
                     </div>
                     <div class="flex justify-end pt-4 mt-auto">

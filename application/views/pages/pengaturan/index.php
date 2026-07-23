@@ -119,6 +119,10 @@
                     <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#d6fb00]/10 border border-[#d6fb00]/20 text-[#d6fb00] font-bold text-xs uppercase tracking-wider">
                         <span class="w-1.5 h-1.5 rounded-full bg-[#d6fb00] animate-pulse"></span> Dalam Peninjauan
                     </span>
+                <?php elseif($pengajuan_sp2->status_verifikasi == 'Draft'): ?>
+                    <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#00a3b5]/10 border border-[#00a3b5]/20 text-[#00a3b5] font-bold text-xs uppercase tracking-wider">
+                        <i class="fa-solid fa-pen-to-square text-xs"></i> Lengkapi Dokumen
+                    </span>
                 <?php elseif($pengajuan_sp2->status_verifikasi == 'Diterima'): ?>
                     <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-xs uppercase tracking-wider">
                         <i class="fa-solid fa-circle-check text-xs"></i> Diterima
@@ -211,6 +215,14 @@
                     </button>
                 </div>
             </form>
+        </div>
+        <?php endif; ?>
+
+        <?php if (($user->role ?? '') === 'pengembang' && !isset($pengajuan_sp2)): ?>
+        <div class="bg-[#0f2a30] rounded-2xl border border-[#d6fb00]/20 p-6 md:p-8 shadow-xl">
+            <h2 class="text-lg font-semibold text-[#ecffb6]">Lengkapi Pengajuan SRP2</h2>
+            <p class="mt-2 text-sm text-zinc-400">Akun pengembang sudah aktif. Lengkapi profil pengajuan sebelum mengunggah dokumen persyaratan.</p>
+            <a href="<?= base_url('Pengembang/formulir') ?>" class="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#d6fb00] px-5 py-2.5 text-sm font-bold text-[#0a1a1f]"><i class="fa-solid fa-arrow-right"></i> Lengkapi Profil SRP2</a>
         </div>
         <?php endif; ?>
 

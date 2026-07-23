@@ -137,7 +137,7 @@ class Program extends Public_Controller {
         $ticket_code = strtoupper(trim((string) $this->input->post('ticket_code', TRUE)));
         $nik_suffix = trim((string) $this->input->post('nik_suffix', TRUE));
 
-        if (!preg_match('/^PKP-[A-Z0-9]{6}$/', $ticket_code) || !preg_match('/^\d{4}$/', $nik_suffix)) {
+        if ((!preg_match('/^PKP-[A-Z0-9]{6}$/', $ticket_code) && !preg_match('/^SRP2-REG-\d{5}$/', $ticket_code)) || !preg_match('/^\d{4}$/', $nik_suffix)) {
             $this->output
                 ->set_status_header(422)
                 ->set_content_type('application/json')
@@ -145,7 +145,19 @@ class Program extends Public_Controller {
             return;
         }
 
-        $pengajuan = $this->Program_model->get_housing_queue_by_ticket($ticket_code, $nik_suffix);
+        if (strpos($ticket_code, 'SRP2-REG-') === 0) {
+            $registration_id = (int) substr($ticket_code, 9);
+            $pengajuan = $this->db->table_exists('srp2_registrations')
+                ? $this->db->where('id', $registration_id)
+                    ->where('RIGHT(nik_ktp, 4) = ' . $this->db->escape($nik_suffix), NULL, FALSE)
+                    ->get('srp2_registrations')->row_array()
+                : NULL;
+            if ($pengajuan) {
+                $pengajuan['status_antrean'] = strtolower($pengajuan['status_verifikasi']);
+            }
+        } else {
+            $pengajuan = $this->Program_model->get_housing_queue_by_ticket($ticket_code, $nik_suffix);
+        }
         if (!$pengajuan) {
             $this->output
                 ->set_status_header(404)
@@ -157,7 +169,9 @@ class Program extends Public_Controller {
         $status_labels = [
             'pending' => 'Menunggu verifikasi',
             'approved' => 'Disetujui',
-            'rejected' => 'Ditolak'
+            'rejected' => 'Ditolak',
+            'diterima' => 'Disetujui',
+            'ditolak' => 'Ditolak'
         ];
 
         $this->output
@@ -171,6 +185,12 @@ class Program extends Public_Controller {
                 'created_at' => $pengajuan['created_at'],
                 'updated_at' => $pengajuan['updated_at']
             ]));
+    }
+
+    public function cek_status_pengajuan() {
+        $this->render('pages/program/cek_status_pengajuan', [
+            'title' => 'Cek Status Pengajuan - Klinik PKP'
+        ]);
     }
 
     /**

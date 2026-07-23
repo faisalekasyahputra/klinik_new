@@ -1,97 +1,32 @@
 <?php if(!empty($house_designs)): ?>
 <style>
-    .hover-gradient-mask {
-        background: linear-gradient(to top, rgba(10, 26, 31, 0.95) 0%, rgba(10, 26, 31, 0.3) 35%, transparent 100%);
-        transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .group:hover .hover-gradient-mask {
-        background: linear-gradient(to top, rgba(10, 26, 31, 1) 0%, rgba(10, 26, 31, 0.95) 45%, rgba(10, 26, 31, 0.5) 80%, transparent 100%);
-    }
-    .card-content-wrapper {
-        transform: translateY(168px);
-        transition: transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .group:hover .card-content-wrapper {
-        transform: translateY(0);
-    }
-    .card-details {
-        height: 168px;
-        opacity: 0;
-        transition: opacity 0.5s ease 0.1s;
-    }
-    .group:hover .card-details {
-        opacity: 1;
-    }
+    .design-card-image { aspect-ratio: 1 / 1; object-fit: contain; }
 </style>
 <?php foreach($house_designs as $index => $item): ?>
-<div class="px-3 pb-8">
-    <!-- Full-bleed Card Container -->
-    <div class="group relative w-full bg-[#0a1a1f] border border-[#d6fb00]/20 hover:border-[#d6fb00]/80 transition-all duration-500 shadow-lg hover:shadow-[0_10px_30px_rgba(214,251,0,0.15)] overflow-hidden flex flex-col" style="border-radius: 24px;">
-        
-        <!-- Dynamic Height Image (No cropping, full width) -->
-        <img src="https://apiternak.krsjawa3.com/<?= $item['path_image'] ?>" class="relative w-full h-auto block transition-transform duration-1000 group-hover:scale-110" alt="<?= htmlspecialchars($item['title']) ?>" loading="lazy">
-        
-        <!-- Gradient Overlay Mask -->
-        <div class="absolute inset-0 hover-gradient-mask z-10 pointer-events-none"></div>
-
-        <!-- Eye Icon Overlay -->
-        <div class="absolute top-4 right-4 bg-[#d6fb00] text-[#0a1a1f] text-[10px] font-black px-2.5 py-1.5 rounded-lg z-20 shadow-lg flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100 pointer-events-none">
-            <i class="fa-solid fa-eye"></i> LIHAT
-        </div>
-
-        <!-- Content Container (Sliding Wrapper) -->
-        <div class="absolute inset-x-0 bottom-0 z-20 flex flex-col justify-end pointer-events-none">
-            <div class="card-content-wrapper flex flex-col px-6 pointer-events-auto w-full">
-                
-                <!-- Always visible Title -->
-                <h4 class="text-white font-bold text-lg sm:text-xl tracking-wide group-hover:text-[#d6fb00] transition-colors line-clamp-2 drop-shadow-xl w-full" style="padding-bottom: 20px;">
-                    <?php
-                        // Highlight "Tipe" followed by numbers in Electric Lime
-                        echo preg_replace('/(Tipe\s+\d+)/i', '<span style="color: #d6fb00;">$1</span>', htmlspecialchars($item['title']));
-                    ?>
-                </h4>
-
-                <!-- Reveal on hover (Facilities & Buttons) -->
-                <div class="card-details flex flex-col justify-start w-full" style="padding-bottom: 48px;">
-                    
-                    <p class="text-zinc-400 text-[10px] uppercase tracking-widest font-semibold mb-3 border-t border-white/10 pt-3 w-full">
-                        FASILITAS
-                    </p>
-
-                    <!-- Facilities Icons -->
-                    <div class="flex items-start justify-between gap-2 mb-4 w-full">
-                        <div class="flex flex-col items-center text-center gap-1.5 flex-1">
-                            <i class="fa-solid fa-bed text-base" style="color: #d6fb00; filter: drop-shadow(0 0 5px rgba(214,251,0,0.3));"></i>
-                            <span class="text-zinc-300 text-[10px] leading-tight font-medium">2 Kamar</span>
-                        </div>
-                        <div class="flex flex-col items-center text-center gap-1.5 flex-1">
-                            <i class="fa-solid fa-bath text-base" style="color: #d6fb00; filter: drop-shadow(0 0 5px rgba(214,251,0,0.3));"></i>
-                            <span class="text-zinc-300 text-[10px] leading-tight font-medium">1 K. Mandi</span>
-                        </div>
-                        <div class="flex flex-col items-center text-center gap-1.5 flex-1">
-                            <i class="fa-solid fa-tree text-base" style="color: #d6fb00; filter: drop-shadow(0 0 5px rgba(214,251,0,0.3));"></i>
-                            <span class="text-zinc-300 text-[10px] leading-tight font-medium">Taman</span>
-                        </div>
-                    </div>
-
-                    <!-- Buttons at bottom -->
-                    <div class="flex items-center gap-3 w-full mt-auto">
-                        <a href="https://apiternak.krsjawa3.com/<?= $item['path_file'] ?>" target="_blank" class="flex-grow bg-[#d6fb00] hover:bg-[#ecffb6] text-[#0a1a1f] font-bold text-sm py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(214,251,0,0.3)]">
-                            <i class="fa-solid fa-download"></i> Unduh Desain
-                        </a>
-                        <?php if (!empty($item['video']['link_video'])): ?>
-                        <a href="<?= $item['video']['link_video'] ?>" target="_blank" class="w-[42px] h-[42px] bg-[#ff0000] hover:bg-[#cc0000] text-white rounded-xl flex items-center justify-center transition-all flex-shrink-0 shadow-[0_4px_15px_rgba(255,0,0,0.4)]">
-                            <i class="fa-brands fa-youtube text-xl"></i>
-                        </a>
-                        <?php endif; ?>
-                    </div>
-
-                </div>
+<div class="min-w-0">
+    <article class="group flex h-full flex-col overflow-hidden rounded-[26px] border border-[#d6e9eb] bg-white shadow-[0_8px_24px_rgba(15,42,48,0.08)] transition-all duration-300 hover:-translate-y-1 hover:border-[color:var(--portal-brand)] hover:shadow-[0_14px_30px_rgba(0,163,181,0.16)]">
+        <a href="<?= base_url('panduan_desain/' . (int) $item['id']) ?>" class="relative block overflow-hidden border-b border-[#e5f0f1] bg-[#f7fbfb] p-1.5" aria-label="Lihat detail <?= htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8') ?>">
+            <img src="https://apiternak.krsjawa3.com/<?= htmlspecialchars($item['path_image'], ENT_QUOTES, 'UTF-8') ?>" class="design-card-image block w-full rounded-[20px] transition-transform duration-500 group-hover:scale-[1.03]" alt="<?= htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8') ?>" loading="lazy">
+        </a>
+        <div class="p-4">
+            <p class="mb-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-[#6d969b]">Desain Rumah</p>
+            <h4 class="line-clamp-2 text-base font-extrabold leading-6 text-[#123b42]">
+                <?= htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8') ?>
+            </h4>
+            <div class="mt-3 flex items-center gap-2">
+                <a href="<?= base_url('panduan_desain/' . (int) $item['id']) ?>" class="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-[#f1f5f5] px-3 py-3 text-sm font-extrabold text-[color:var(--portal-brand)] transition-all hover:bg-[color:var(--portal-brand)] hover:text-white">
+                    <i class="fa-solid fa-eye text-sm"></i> Detail
+                </a>
+                <?php if (!empty($item['video']['link_video'])): ?>
+                <a href="<?= htmlspecialchars($item['video']['link_video'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#ff0000] text-white shadow-[0_5px_12px_rgba(255,0,0,0.2)] transition-all hover:bg-[#cc0000] hover:shadow-none" aria-label="Lihat video <?= htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8') ?>">
+                    <i class="fa-brands fa-youtube text-xl"></i>
+                </a>
+                <?php endif; ?>
             </div>
         </div>
-    </div>
+    </article>
 </div>
 <?php endforeach; ?>
 <?php else: ?>
-    <div class="px-3 col-span-3 text-center text-zinc-600 py-10">Tidak ada data desain.</div>
+    <div class="col-span-full py-10 text-center text-[color:var(--portal-text-muted)]">Tidak ada data desain.</div>
 <?php endif; ?>

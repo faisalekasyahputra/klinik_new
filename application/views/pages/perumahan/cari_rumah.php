@@ -119,15 +119,20 @@ function cari_wil() {
         <div class="skeleton h-72 hidden xl:block"></div>
     `);
 
+    // Setiap pencarian/filter selalu memulai pagination dari halaman pertama.
+    jQuery('#btn-load-more').attr('data-page', '1').prop('disabled', false).show();
+    jQuery('#text-load').text('Muat Lebih Banyak');
+
     $.ajax({
-        url: '<?= base_url('cari_wil') ?>?kodeWilayah='+kodeWilayah+'&keyword='+keyword+'&searchBy='+searchBy+'&sort='+sort+'&status_rumah='+statusRumah,
-        success: function(response) { jQuery('#temp_rumah').html(response); }
+        url: '<?= base_url('cari_wil') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah+'&page=1&limit=9',
+        success: function(response) { jQuery('#temp_rumah').html(response); },
+        error: function() { jQuery('#temp_rumah').html('<p class="col-span-full py-10 text-center text-sm text-[color:var(--portal-text-muted)]">Data rumah gagal dimuat. Silakan coba lagi.</p>'); }
     });
 }
 
 function load_more_data() {
     let btn = jQuery('#btn-load-more');
-    let currentPage = parseInt(btn.attr('data-page'));
+    let currentPage = parseInt(btn.attr('data-page'), 10) || 1;
     let nextPage = currentPage + 1;
     var kodeWilayah = document.getElementById('kodeWilayah').value;
     var keyword = document.getElementById('keyword').value;
@@ -138,7 +143,7 @@ function load_more_data() {
     
     jQuery('#text-load').text('Sedang Memuat...');
     jQuery.ajax({
-        url: '<?= base_url('load_more') ?>?kodeWilayah='+kodeWilayah+'&keyword='+keyword+'&searchBy='+searchBy+'&sort='+sort+'&status_rumah='+statusRumah+'&page='+nextPage,
+        url: '<?= base_url('load_more') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah+'&page='+nextPage+'&limit=9',
         success: function(response) {
             if (jQuery.trim(response) !== '') {
                 jQuery('#temp_rumah').append(response);
@@ -148,6 +153,10 @@ function load_more_data() {
                 jQuery('#text-load').text('Semua Data Telah Dimuat');
                 btn.prop('disabled', true).fadeOut(2000);
             }
+        },
+        error: function() {
+            btn.prop('disabled', false).show();
+            jQuery('#text-load').text('Coba Lagi');
         }
     });
 }

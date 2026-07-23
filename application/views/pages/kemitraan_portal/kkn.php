@@ -1,0 +1,9 @@
+<div class="mx-auto max-w-4xl p-2 sm:p-6">
+    <div class="mb-6 flex items-start justify-between gap-4"><div><span class="text-xs font-bold uppercase tracking-[.18em] text-[color:var(--portal-text-muted)]">Kemitraan</span><h1 class="mt-2 text-2xl font-black text-[color:var(--portal-text)] sm:text-4xl">KKN Tematik</h1></div><a href="<?= base_url('KemitraanPortal') ?>" data-tab-link data-tab-key="kemitraan" class="rounded-xl border border-[color:var(--portal-border)] px-3 py-2 text-xs font-bold text-[color:var(--portal-text)]">Kembali</a></div>
+    <section class="rounded-3xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] p-5 shadow-sm sm:p-8">
+        <h2 class="text-xl font-black text-[color:var(--portal-text)]">Persyaratan KKN Tematik</h2>
+        <p class="mt-2 text-sm leading-relaxed text-[color:var(--portal-text-muted)]">Informasi persyaratan dan juknis pelaksanaan KKN Tematik bersama Klinik PKP Jawa Tengah.</p>
+        <ol class="mt-5 space-y-3 text-sm text-[color:var(--portal-text)]"><li>1. Surat pengantar resmi dari perguruan tinggi.</li><li>2. Proposal kegiatan KKN Tematik.</li><li>3. Daftar nama peserta dan dosen pembimbing.</li><li>4. Rencana jadwal serta lokasi kegiatan.</li></ol>
+        <div class="mt-7 flex flex-wrap gap-3"><a href="<?= base_url('output/pdf/juknis-kkn-kemitraan-disperakim-jateng.pdf') ?>" download="juknis-kkn-kemitraan-disperakim-jateng.pdf" class="inline-flex items-center gap-2 rounded-xl bg-[color:var(--portal-brand)] px-5 py-3 text-sm font-bold text-[#0a1a1f]">Download Juknis <i class="fa-solid fa-download"></i></a><a href="<?= base_url('KemitraanPortal') ?>" data-tab-link data-tab-key="kemitraan" class="inline-flex items-center gap-2 rounded-xl border border-[color:var(--portal-border)] px-5 py-3 text-sm font-bold text-[color:var(--portal-text)]">Kembali ke Pilihan</a></div>
+    </section>
+</div>

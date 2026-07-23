@@ -1,7 +1,6 @@
 <section class="w-full max-w-4xl mx-auto rounded-[2.5rem] p-6 sm:p-10 md:p-12 shadow-2xl z-10 relative mt-8 text-left" style="background-color: var(--bg-card); border: 1px solid rgba(255,255,255,0.08);">
 
     <div class="border-b border-zinc-800/80 pb-6 mb-8">
-        <span class="text-[#d6fb00] font-extrabold text-[11px] uppercase tracking-widest block mb-2">Disperakim Provinsi Jawa Tengah</span>
         <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight mb-3">
             FORMULIR PENDAFTARAN ONLINE
         </h2>
@@ -25,7 +24,7 @@
     </div>
     <?php endif; ?>
 
-    <form action="<?php echo base_url('Pengembang/simpan'); ?>" method="POST" enctype="multipart/form-data" id="form-pendaftaran-srp2" class="space-y-10">
+    <form action="<?php echo base_url('Pengembang/simpan'); ?>" method="POST" id="form-pendaftaran-srp2" class="space-y-10">
         <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
         <div class="space-y-5">
@@ -122,7 +121,7 @@
             </div>
         </div>
 
-        <div class="space-y-5">
+        <div class="space-y-5" hidden>
             <div class="border-b border-zinc-800 pb-2 mb-4">
                 <h4 class="text-sm font-black text-[#d6fb00] uppercase tracking-wider">
                     BAGIAN 3: UNGGAH DOKUMEN PENDUKUNG (UPLOAD FILE)
@@ -133,15 +132,15 @@
             <div class="space-y-3">
                 <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl bg-black/20 border border-zinc-700">
                     <label for="file_ktp" class="w-full sm:w-56 shrink-0 text-zinc-300 font-bold text-xs">Scan KTP Peserta</label>
-                    <input type="file" id="file_ktp" name="file_ktp" accept=".pdf, .jpg, .jpeg, .png" required class="w-full text-xs text-zinc-400 file:bg-[#d6fb00]/10 file:text-[#d6fb00] file:border file:border-[#d6fb00]/20 file:rounded-lg file:px-4 file:py-2 file:mr-4 file:font-bold hover:file:bg-[#d6fb00]/20 file:transition-colors cursor-pointer">
+                    <input type="file" id="file_ktp" name="file_ktp" accept=".pdf, .jpg, .jpeg, .png" disabled class="w-full text-xs text-zinc-400 file:bg-[#d6fb00]/10 file:text-[#d6fb00] file:border file:border-[#d6fb00]/20 file:rounded-lg file:px-4 file:py-2 file:mr-4 file:font-bold hover:file:bg-[#d6fb00]/20 file:transition-colors cursor-pointer">
                 </div>
                 <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl bg-black/20 border border-zinc-700">
                     <label for="file_kta" class="w-full sm:w-56 shrink-0 text-zinc-300 font-bold text-xs">Scan Bukti KTA Asosiasi Aktif</label>
-                    <input type="file" id="file_kta" name="file_kta" accept=".pdf, .jpg, .jpeg, .png" required class="w-full text-xs text-zinc-400 file:bg-[#d6fb00]/10 file:text-[#d6fb00] file:border file:border-[#d6fb00]/20 file:rounded-lg file:px-4 file:py-2 file:mr-4 file:font-bold hover:file:bg-[#d6fb00]/20 file:transition-colors cursor-pointer">
+                    <input type="file" id="file_kta" name="file_kta" accept=".pdf, .jpg, .jpeg, .png" disabled class="w-full text-xs text-zinc-400 file:bg-[#d6fb00]/10 file:text-[#d6fb00] file:border file:border-[#d6fb00]/20 file:rounded-lg file:px-4 file:py-2 file:mr-4 file:font-bold hover:file:bg-[#d6fb00]/20 file:transition-colors cursor-pointer">
                 </div>
                 <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl bg-black/20 border border-zinc-700">
                     <label for="file_nib" class="w-full sm:w-56 shrink-0 text-zinc-300 font-bold text-xs">Scan NIB (Nomor Induk Berusaha)</label>
-                    <input type="file" id="file_nib" name="file_nib" accept=".pdf" required class="w-full text-xs text-zinc-400 file:bg-[#d6fb00]/10 file:text-[#d6fb00] file:border file:border-[#d6fb00]/20 file:rounded-lg file:px-4 file:py-2 file:mr-4 file:font-bold hover:file:bg-[#d6fb00]/20 file:transition-colors cursor-pointer">
+                    <input type="file" id="file_nib" name="file_nib" accept=".pdf" disabled class="w-full text-xs text-zinc-400 file:bg-[#d6fb00]/10 file:text-[#d6fb00] file:border file:border-[#d6fb00]/20 file:rounded-lg file:px-4 file:py-2 file:mr-4 file:font-bold hover:file:bg-[#d6fb00]/20 file:transition-colors cursor-pointer">
                 </div>
                 <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-xl bg-black/20 border border-zinc-700">
                     <div class="w-full sm:w-56 shrink-0">
@@ -170,7 +169,7 @@
 
         <div class="pt-4 flex flex-col sm:flex-row gap-3">
             <button type="submit" id="btn-submit" class="w-full sm:w-auto bg-[#d6fb00] hover:bg-[#c2e600] text-[#0a1a1f] font-extrabold text-xs sm:text-sm uppercase tracking-wider px-10 py-4 rounded-xl transition-all duration-300 shadow-lg shadow-[#d6fb00]/10 hover:shadow-[#d6fb00]/20 active:scale-[0.98]">
-                Kirim Formulir Pendaftaran
+                Lanjutkan Unggah Dokumen
             </button>
             <button type="reset" id="btn-reset" class="w-full sm:w-auto bg-transparent hover:bg-white/5 border border-zinc-700 text-zinc-400 hover:text-zinc-200 font-bold text-xs sm:text-sm uppercase tracking-wider px-6 py-4 rounded-xl transition-colors">
                 Kosongkan Form

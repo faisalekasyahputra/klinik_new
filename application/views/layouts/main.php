@@ -3,7 +3,7 @@
   <head>
    	<?php $this->load->view('layouts/head'); ?>
   </head>
-  <body class="bg-[#0a1a1f] text-[#ecffb6] h-screen overflow-hidden flex flex-col" x-data="globalSystem()">
+  <body class="bg-[#0a1a1f] text-[#ecffb6] h-screen overflow-hidden flex flex-col" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;" x-data="globalSystem()">
        <?php $this->load->view('layouts/nav'); ?>
        <?php
          // ---- Determine active tab from current controller/method ----
@@ -11,21 +11,23 @@
          $rt_method = strtolower($this->router->fetch_method());
          $active_tab = 'beranda'; // default
 
-         if ($rt_method === 'tab_perumahan' || in_array($rt_method, ['simulasi_kpr', 'panduan_desain', 'golek_omah', 'cari_rumah'])) {
+         if ($rt_class === 'pengembang' || $rt_method === 'tab_pengembang') {
+             $active_tab = 'pengembang';
+         } elseif ($rt_method === 'tab_perumahan' || in_array($rt_method, ['simulasi_kpr', 'panduan_desain', 'golek_omah', 'cari_rumah'])) {
              $active_tab = 'perumahan';
          } elseif ($rt_method === 'tab_kawasan' || in_array($rt_method, ['sebaran', 'sebaran_rusun', 'profil_kumuh', 'sebaran_sdgs'])) {
              $active_tab = 'kawasan';
          } elseif ($rt_method === 'tab_pertanahan' || in_array($rt_method, ['info_tanah', 'sertifikasi', 'sengketa', 'bank_tanah'])) {
              $active_tab = 'pertanahan';
-         } elseif ($rt_method === 'tab_pengembang' || $rt_class === 'pengembang') {
-             $active_tab = 'pengembang';
          } elseif ($rt_method === 'tab_bankdata' || $rt_class === 'statistika') {
              $active_tab = 'bankdata';
+         } elseif ($rt_method === 'cek_status_pengajuan') {
+             $active_tab = 'status_pengajuan';
          }
        ?>
 
        <!-- Portal Section: Tab Bar + Main Panel -->
-       <section class="w-full relative flex-1 flex flex-col pt-3 overflow-hidden">
+       <section class="w-full relative flex-1 flex flex-col pt-1 overflow-hidden" style="flex:1 1 0%;min-height:0;display:flex;flex-direction:column;overflow:hidden;">
            <!-- Batik Kawung Background -->
            <div class="fixed inset-0 pointer-events-none" style="opacity: 0.08; z-index: 0;">
                <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
@@ -59,9 +61,9 @@
                </svg>
            </div>
 
-           <div class="w-full relative z-10 flex-1 flex flex-col overflow-hidden px-3 sm:px-4 lg:px-6 pt-4 pb-0 theme-light">
+           <div class="w-full relative z-10 flex-1 flex flex-col overflow-hidden px-2 sm:px-3 lg:px-4 pt-2 pb-0 theme-light" style="flex:1 1 0%;min-height:0;display:flex;flex-direction:column;overflow:hidden;">
                <!-- Identitas ringkas -->
-               <div class="flex items-center gap-3 mb-4 px-2 shrink-0">
+               <div class="flex items-center gap-3 mb-2 px-1 shrink-0">
                    <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" class="w-9 h-9 object-contain shrink-0">
                    <div>
                        <h1 class="text-base sm:text-lg font-extrabold text-white tracking-tight leading-tight">Klinik Perumahan & Kawasan Permukiman</h1>
@@ -91,10 +93,13 @@
                        <a href="<?= base_url('tab/bankdata') ?>" data-tab-link data-tab-key="bankdata" class="portal-tab-btn <?= $active_tab === 'bankdata' ? 'active' : '' ?>">
                            <i class="fa-solid fa-chart-pie"></i> Bank Data
                        </a>
+                       <a href="<?= base_url('cek_status_pengajuan') ?>" data-tab-link data-tab-key="status_pengajuan" class="portal-tab-btn <?= $active_tab === 'status_pengajuan' ? 'active' : '' ?>">
+                           <i class="fa-solid fa-ticket"></i> Cek Status Pengajuan
+                       </a>
                    </div>
 
                    <!-- Auth Button (sejajar tabs, bukan tab) -->
-                   <div class="shrink-0 flex items-end ml-auto pl-2 pr-[1.25rem] sm:pr-[1.5rem] mb-1.5">
+                   <div class="shrink-0 flex items-end ml-auto pl-1 pr-2 sm:pr-3 mb-1">
                        <?php if ($this->session->userdata('is_logged')): ?>
                            <?php
                                $avatar_src = $this->session->userdata('avatar');
@@ -125,12 +130,54 @@
                </div>
 
                <!-- Main Panel -->
-               <div class="portal-panel flex-1 flex flex-col overflow-hidden">
+               <div class="portal-panel flex-1 flex flex-col overflow-hidden" style="flex:1 1 0%;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:clamp(.5rem,1.5vw,1rem);">
                    <!-- Masking Wrapper (Fixes the fade effect in place) -->
                    <div class="flex-1 flex flex-col w-full relative" style="-webkit-mask-image: linear-gradient(to bottom, transparent, black 24px, black calc(100% - 24px), transparent); mask-image: linear-gradient(to bottom, transparent, black 24px, black calc(100% - 24px), transparent);">
                        <!-- Scrolling Container -->
                        <div class="absolute inset-0 overflow-y-auto overflow-x-hidden no-scrollbar">
-                           <div id="page-content-wrapper" class="relative z-10 w-full min-h-full py-4 sm:py-6">
+                              <div id="page-content-wrapper" class="relative z-10 mx-auto w-full max-w-6xl min-h-full py-4 sm:py-6">
+                               <div id="page-loading-skeleton" class="page-loading-skeleton" aria-hidden="true">
+                                   <?php if ($rt_class === 'umum' && in_array($rt_method, ['forum', 'detail'], true)): ?>
+                                   <?php if ($rt_method === 'detail'): ?>
+                                   <div class="h-4 w-32 mb-3 rounded skeleton"></div>
+                                   <div class="rounded-2xl p-5 sm:p-8 mb-5 h-64 skeleton"></div>
+                                   <div class="h-4 w-44 mb-3 rounded skeleton"></div>
+                                   <div class="space-y-3"><div class="h-20 rounded-2xl skeleton"></div><div class="h-20 rounded-2xl skeleton"></div><div class="h-20 rounded-2xl skeleton"></div></div>
+                                   <?php else: ?>
+                                   <div class="h-3 w-40 mb-3 rounded skeleton"></div>
+                                   <div class="h-8 w-72 mb-2 rounded skeleton"></div>
+                                   <div class="h-4 w-full max-w-xl mb-5 rounded skeleton"></div>
+                                   <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                                       <div class="rounded-2xl p-4 h-28 skeleton"></div><div class="rounded-2xl p-4 h-28 skeleton"></div><div class="rounded-2xl p-4 h-28 skeleton"></div>
+                                   </div>
+                                   <div class="h-11 w-full mb-4 rounded-xl skeleton"></div>
+                                   <div class="space-y-3"><div class="h-28 rounded-2xl skeleton"></div><div class="h-28 rounded-2xl skeleton"></div></div>
+                                   <?php endif; ?>
+                                   <?php elseif ($rt_class === 'pengembang'): ?>
+                                   <div class="skeleton h-3 w-16 mb-2"></div>
+                                   <div class="skeleton h-7 w-64 mb-4"></div>
+                                   <div class="rounded-2xl border border-[color:var(--portal-border)] p-3 sm:p-4">
+                                       <div class="flex items-center justify-between border-b border-[color:var(--portal-border)] pb-3 mb-2">
+                                           <div class="skeleton h-4 w-44"></div><div class="skeleton h-7 w-24"></div>
+                                       </div>
+                                       <div class="space-y-2">
+                                           <div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div><div class="skeleton h-8 w-full"></div>
+                                       </div>
+                                   </div>
+                                   <?php else: ?>
+                                   <div class="skeleton h-4 w-32 mb-2"></div>
+                                   <div class="skeleton h-8 w-72 mb-5"></div>
+                                   <div class="rounded-2xl border border-white/10 p-4">
+                                       <div class="skeleton h-8 w-full mb-2"></div>
+                                       <div class="space-y-2">
+                                           <div class="skeleton h-7 w-full"></div>
+                                           <div class="skeleton h-7 w-full"></div>
+                                           <div class="skeleton h-7 w-full"></div>
+                                           <div class="skeleton h-7 w-full"></div>
+                                       </div>
+                                   </div>
+                                   <?php endif; ?>
+                               </div>
                                <?=$content?>
                            </div>
                        </div>
@@ -143,7 +190,7 @@
                    $CI->load->model('Setting_model');
                    $ftSettings = $CI->Setting_model->get_all();
                ?>
-               <div class="shrink-0 flex items-center justify-center px-2 pt-1.5 pb-2 mb-2">
+               <div class="shrink-0 flex items-center justify-center px-1 pt-1 pb-1 mb-1">
                    <span class="text-[10px] text-[#8aacb0]">&copy; <?= date('Y') ?> <?= htmlspecialchars($ftSettings['footer_copyright'] ?? 'KLINIK PKP JATENG') ?></span>
                </div>
            </div>

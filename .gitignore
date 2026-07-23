@@ -49,12 +49,20 @@ Desktop.ini
 # ── IDE & Editor ──────────────────────────
 .idea/
 .vscode/
+.claude/
+.codex/
 /nbproject/
 *.sublime-workspace
 *.sublime-project
 *.tmlanguage.cache
 *.tmPreferences.cache
 *.stTheme.cache
+
+# ── Local design references & generated artifacts ──
+/new_flow/
+/outputs/
+/output/
+/tmp/
 
 # ── Playwright / Testing ──────────────────
 .playwright-mcp/

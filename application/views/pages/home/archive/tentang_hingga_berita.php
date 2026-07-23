@@ -744,6 +744,11 @@ function cari_wil() {
     var sort = document.getElementById('sort').value;
     let isChecked = document.getElementById('status_subsidi').checked;
     let statusRumah = isChecked ? 'subsidi' : 'semua';
+    jQuery('#temp_rumah').html(`
+        <div class="skeleton h-72"></div>
+        <div class="skeleton h-72"></div>
+        <div class="skeleton h-72"></div>
+    `);
     $.ajax({
         url: '<?= base_url('cari_wil') ?>?kodeWilayah='+kodeWilayah+'&keyword='+keyword+'&sort='+sort+'&status_rumah='+statusRumah,
         success: function(response) { jQuery('#temp_rumah').html(response); }

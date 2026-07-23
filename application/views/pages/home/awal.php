@@ -1,214 +1,133 @@
-<!-- ============================================================
-     HOMEPAGE — Menu Portal Sederhana (gaya dashboard lama)
-     ============================================================
-     Hero besar (judul + slideshow bg) dan carousel Etalase Program
-     sudah diarsipkan, LIHAT: archive/hero_dan_etalase_lama.php
-     ============================================================ -->
-<!-- Homepage Content: Menu Portal -->
-<div class="p-2 sm:p-4">
-
-    <!-- SECTION 1: MENU UTAMA -->
-    <div id="menu-utama" class="mb-3">
-        <h2 class="text-sm font-bold uppercase tracking-widest text-[#8aacb0]">Menu Utama</h2>
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-10">
-
-        <a href="<?= base_url('golek_omah') ?>" data-tab-link data-tab-key="golek_omah" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 168px;">
-            <i class="fa-solid fa-house-chimney-window absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.06;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-house-chimney-window mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 24px; color: var(--portal-icon); "></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 group-hover:text-[color:var(--portal-text)] transition-colors">Nggolek Omah</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Cari rumah sesuai kelayakan Anda</p>
-            </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Cek Sekarang</span>
-                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                </div>
+<!-- Homepage portal: susunan mengikuti layout referensi -->
+<div class="mx-auto max-w-6xl p-2 sm:p-4 lg:p-6">
+    <div class="space-y-3 sm:space-y-4">
+        <!-- Nggolek Omah -->
+        <a href="<?= base_url('golek_omah') ?>" data-tab-link data-tab-key="golek_omah"
+           class="portal-home-card portal-home-card-primary group min-h-[150px] sm:min-h-[175px]">
+            <i class="fa-solid fa-house-chimney-window portal-home-watermark"></i>
+            <div class="relative z-10 text-center">
+                <i class="fa-solid fa-house-chimney-window portal-home-icon"></i>
+                <h2 class="portal-home-title">NGGOLEK OMAH</h2>
+                <p class="portal-home-subtitle">(Cari Rumah)</p>
             </div>
         </a>
 
-        <a href="<?= base_url('Pengembang/sertifikasi') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 168px;">
-            <i class="fa-solid fa-certificate absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.06;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-certificate mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 24px; color: var(--portal-icon); "></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 group-hover:text-[color:var(--portal-text)] transition-colors">Sertifikasi Pengembang</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">SRP2 untuk pengembang perumahan</p>
-            </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Daftar</span>
-                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                </div>
+        <!-- Sertifikasi Pengembang -->
+        <a href="<?= base_url('Pengembang/sertifikasi') ?>" data-tab-link data-tab-key="pengembang_list"
+           class="portal-home-card group min-h-[120px] sm:min-h-[145px]">
+            <i class="fa-solid fa-certificate portal-home-watermark"></i>
+            <div class="relative z-10 text-center">
+                <i class="fa-solid fa-certificate portal-home-icon"></i>
+                <h2 class="portal-home-title text-xl sm:text-3xl">SERTIFIKASI PENGEMBANG</h2>
+                <p class="portal-home-subtitle">(SRP2)</p>
             </div>
         </a>
 
-        <div class="rounded-3xl p-3.5 sm:p-4 flex flex-col relative overflow-hidden opacity-50 cursor-not-allowed" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); min-height: 168px;" title="Segera Hadir">
-            <i class="fa-solid fa-city absolute pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.05;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-city mb-4" style="font-size: 24px; color: var(--portal-icon);"></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1">PSU dan Kawasan Kumuh</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Data prasarana & kawasan kumuh</p>
+        <!-- Menu layanan utama -->
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+            <!-- Placeholder sampai subhalaman PSU tersedia -->
+            <div class="portal-home-card portal-home-card-placeholder min-h-[170px] sm:min-h-[245px]" aria-label="PSU, segera hadir">
+                <i class="fa-solid fa-road portal-home-watermark"></i>
+                <div class="relative z-10 text-center">
+                    <i class="fa-solid fa-road portal-home-icon"></i>
+                    <h2 class="portal-home-title text-2xl sm:text-4xl">PSU</h2>
+                    <span class="portal-home-badge">Segera Hadir</span>
+                </div>
             </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Segera Hadir</span>
-                    <i class="fa-solid fa-lock"></i>
+
+            <!-- Placeholder sampai subhalaman kawasan kumuh tersedia -->
+            <div class="portal-home-card portal-home-card-placeholder min-h-[170px] sm:min-h-[245px]" aria-label="Kawasan kumuh, segera hadir">
+                <i class="fa-solid fa-city portal-home-watermark"></i>
+                <div class="relative z-10 text-center">
+                    <i class="fa-solid fa-city portal-home-icon"></i>
+                    <h2 class="portal-home-title text-2xl sm:text-4xl">KAWASAN<br>KUMUH</h2>
+                    <span class="portal-home-badge">Segera Hadir</span>
                 </div>
             </div>
         </div>
 
-        <div class="rounded-3xl p-3.5 sm:p-4 flex flex-col relative overflow-hidden opacity-50 cursor-not-allowed" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); min-height: 168px;" title="Segera Hadir">
-            <i class="fa-solid fa-chart-line absolute pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.05;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-chart-line mb-4" style="font-size: 24px; color: var(--portal-icon);"></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1">Monitoring Capaian Kinerja</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Pemantauan capaian program</p>
+        <!-- Rekam Data -->
+        <a href="<?= base_url('tab/bankdata') ?>" class="portal-home-card group min-h-[105px] sm:min-h-[125px]">
+            <i class="fa-solid fa-chart-line portal-home-watermark"></i>
+                <div class="relative z-10 text-center">
+                    <i class="fa-solid fa-chart-line portal-home-icon"></i>
+                    <h2 class="portal-home-title text-xl sm:text-3xl">REKAM DATA</h2>
             </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Segera Hadir</span>
-                    <i class="fa-solid fa-lock"></i>
+        </a>
+
+        <!-- Akses cepat -->
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-2 lg:gap-3">
+            <a href="<?= base_url('umum/forum') ?>" data-no-page-transition class="portal-home-card portal-home-card-compact group min-h-[130px] sm:min-h-[180px]">
+                <i class="fa-solid fa-comments portal-home-watermark"></i>
+                <div class="relative z-10 text-center">
+                    <i class="fa-solid fa-comments portal-home-icon"></i>
+                    <h3 class="portal-home-title text-lg sm:text-xl">KONSULTASI</h3>
+                    <p class="portal-home-subtitle">(Terjadwal)</p>
                 </div>
-            </div>
+            </a>
+            <a href="<?= base_url('umum/aduan') ?>" class="portal-home-card portal-home-card-compact group min-h-[130px] sm:min-h-[180px]">
+                <i class="fa-solid fa-circle-question portal-home-watermark"></i>
+                <div class="relative z-10 text-center">
+                    <i class="fa-solid fa-circle-question portal-home-icon"></i>
+                    <h3 class="portal-home-title text-lg sm:text-xl">ADUAN</h3>
+                    <p class="portal-home-subtitle">(Pertanyaan)</p>
+                </div>
+            </a>
+            <a href="<?= base_url('KemitraanPortal') ?>" data-tab-link data-tab-key="kemitraan" class="portal-home-card portal-home-card-compact group min-h-[130px] sm:min-h-[180px]">
+                <i class="fa-solid fa-user-graduate portal-home-watermark"></i>
+                <div class="relative z-10 text-center">
+                    <i class="fa-solid fa-user-graduate portal-home-icon"></i>
+                    <h3 class="portal-home-title text-lg sm:text-xl">KKN DAN MAGANG</h3>
+                    <p class="portal-home-subtitle">(Universitas dan Mahasiswa)</p>
+                </div>
+            </a>
         </div>
 
+        <!-- Slideshow program strategis: komponen reusable yang sama dengan halaman diagnosa -->
+        <section class="w-full pt-2" aria-label="Program strategis">
+            <?php $carousel_context = 'home'; $this->load->view('components/program_showcase_carousel'); ?>
+        </section>
     </div>
-
-    <!-- SECTION 2: PROGRAM UNGGULAN -->
-    <div id="etalase-program" class="mb-3">
-        <h2 class="text-sm font-bold uppercase tracking-widest text-[#8aacb0]">Program Unggulan</h2>
-    </div>
-    <div class="grid grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3 mb-10">
-
-        <a href="<?= base_url('Program/diagnosa/flpp') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 156px;">
-            <i class="fa-solid fa-house-chimney-window absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 70px; right: -0.75rem; bottom: -0.75rem; color: var(--portal-icon); opacity: 0.07;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-house-chimney-window mb-3 transition-transform duration-500 group-hover:scale-110" style="font-size: 28px; color: var(--portal-icon); "></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1.5 group-hover:text-[color:var(--portal-text)] transition-colors">KPR-FLPP<br>Rumah Subsidi</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-[11px] leading-relaxed">Bunga flat 5%, DP mulai 1%</p>
-            </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Cek Kelayakan</span>
-                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                </div>
-            </div>
-        </a>
-
-        <a href="<?= base_url('Program/diagnosa/oemah_lestari') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 156px;">
-            <i class="fa-solid fa-leaf absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 70px; right: -0.75rem; bottom: -0.75rem; color: var(--portal-icon); opacity: 0.07;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-leaf mb-3 transition-transform duration-500 group-hover:scale-110" style="font-size: 28px; color: var(--portal-icon); "></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1.5 group-hover:text-[color:var(--portal-text)] transition-colors">Oemah<br>Lestari</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-[11px] leading-relaxed">Bunga ringan 8%, tenor 15 tahun</p>
-            </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Cek Kelayakan</span>
-                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                </div>
-            </div>
-        </a>
-
-        <a href="<?= base_url('Program/diagnosa/rtlh') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 156px;">
-            <i class="fa-solid fa-house-crack absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 70px; right: -0.75rem; bottom: -0.75rem; color: var(--portal-icon); opacity: 0.07;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-house-crack mb-3 transition-transform duration-500 group-hover:scale-110" style="font-size: 28px; color: var(--portal-icon); "></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1.5 group-hover:text-[color:var(--portal-text)] transition-colors">Peningkatan<br>Kualitas RTLH</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-[11px] leading-relaxed">Renovasi rumah tidak layak huni</p>
-            </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Cek Kelayakan</span>
-                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                </div>
-            </div>
-        </a>
-
-        <a href="<?= base_url('Program/diagnosa/pb') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 156px;">
-            <i class="fa-solid fa-trowel-bricks absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 70px; right: -0.75rem; bottom: -0.75rem; color: var(--portal-icon); opacity: 0.07;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-trowel-bricks mb-3 transition-transform duration-500 group-hover:scale-110" style="font-size: 28px; color: var(--portal-icon); "></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1.5 group-hover:text-[color:var(--portal-text)] transition-colors">Stimulan<br>Pembangunan Baru</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-[11px] leading-relaxed">Bantuan material Rp 40 Juta</p>
-            </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Cek Kelayakan</span>
-                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                </div>
-            </div>
-        </a>
-
-        <a href="<?= base_url('Program/diagnosa/rumah_apung') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 156px;">
-            <i class="fa-solid fa-water absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 70px; right: -0.75rem; bottom: -0.75rem; color: var(--portal-icon); opacity: 0.07;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-water mb-3 transition-transform duration-500 group-hover:scale-110" style="font-size: 28px; color: var(--portal-icon); "></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1.5 group-hover:text-[color:var(--portal-text)] transition-colors">Program<br>Rumah Apung</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-[11px] leading-relaxed">Hunian adaptif kawasan pesisir</p>
-            </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Cek Kelayakan</span>
-                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                </div>
-            </div>
-        </a>
-
-    </div>
-
-    <!-- SECTION 3: AKSES CEPAT — Forum, Aduan, KKN & Magang -->
-    <div id="akses-cepat" class="mb-3">
-        <h2 class="text-sm font-bold uppercase tracking-widest text-[#8aacb0]">Akses Cepat</h2>
-    </div>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-
-        <a href="<?= base_url('umum/forum') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow);">
-            <i class="fa-solid fa-comments absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1.5rem; color: var(--portal-icon); opacity: 0.06;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-comments mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 34px; color: var(--portal-icon); "></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 group-hover:text-[color:var(--portal-text)] transition-colors">Forum Diskusi</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Diskusi seputar perumahan bersama komunitas dan pemerintah.</p>
-            </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Buka Forum</span>
-                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                </div>
-            </div>
-        </a>
-
-        <a href="<?= base_url('umum/aduan') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow);">
-            <i class="fa-solid fa-circle-question absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1.5rem; color: var(--portal-icon); opacity: 0.06;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-circle-question mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 34px; color: var(--portal-icon); "></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 group-hover:text-[color:var(--portal-text)] transition-colors">Aduan</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Sampaikan pertanyaan atau laporan seputar layanan perumahan.</p>
-            </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Kirim Aduan</span>
-                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                </div>
-            </div>
-        </a>
-
-        <a href="<?= base_url('kemitraan') ?>" class="group rounded-3xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow);">
-            <i class="fa-solid fa-user-graduate absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none" style="font-size: 80px; right: -1rem; bottom: -1.5rem; color: var(--portal-icon); opacity: 0.06;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-user-graduate mb-4 transition-transform duration-500 group-hover:scale-110" style="font-size: 34px; color: var(--portal-icon); "></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 group-hover:text-[color:var(--portal-text)] transition-colors">KKN dan Magang</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Program tematik untuk universitas dan mahasiswa.</p>
-            </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Info Selengkapnya</span>
-                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                </div>
-            </div>
-        </a>
-
-    </div>
-
 </div>
+
+<style>
+    .portal-home-card {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border: 1px solid var(--portal-border);
+        border-radius: 1rem;
+        background: var(--portal-bg-card);
+        color: var(--portal-text);
+        box-shadow: var(--portal-shadow);
+        padding: 1.25rem;
+        transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    .portal-home-card:not(.portal-home-card-placeholder):hover,
+    .portal-home-card:not(.portal-home-card-placeholder):focus-visible {
+        transform: translateY(-2px);
+        border-color: rgba(0, 163, 181, .35);
+        box-shadow: 0 8px 22px rgba(0, 80, 95, .12);
+    }
+    .portal-home-card:focus-visible { outline: 3px solid rgba(0, 163, 181, .35); outline-offset: 2px; }
+    .portal-home-card-placeholder { opacity: .62; cursor: not-allowed; }
+    .portal-home-card-compact { padding: 1rem .75rem; }
+    .portal-home-card-compact .portal-home-icon { margin-bottom: .45rem; font-size: 1.35rem; }
+    .portal-home-card-compact .portal-home-title { font-size: clamp(1rem, 2vw, 1.45rem); }
+    .portal-home-card-compact .portal-home-subtitle { font-size: clamp(.75rem, 1.4vw, .95rem); }
+    .portal-home-watermark {
+        position: absolute;
+        right: -1rem;
+        bottom: -1.25rem;
+        color: var(--portal-icon);
+        font-size: 6rem;
+        opacity: .06;
+        pointer-events: none;
+    }
+    .portal-home-icon { display: block; margin-bottom: .6rem; color: var(--portal-icon); font-size: 1.7rem; }
+    .portal-home-title { margin: 0; color: var(--portal-text); font-size: clamp(1.35rem, 3vw, 2.35rem); font-weight: 700; line-height: 1.15; letter-spacing: .02em; }
+    .portal-home-subtitle { margin: .35rem 0 0; color: var(--portal-text-muted); font-size: clamp(.9rem, 1.7vw, 1.15rem); }
+    .portal-home-badge { display: inline-block; margin-top: .7rem; border: 1px solid var(--portal-border); border-radius: 999px; padding: .3rem .7rem; color: var(--portal-text-muted); font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+</style>
