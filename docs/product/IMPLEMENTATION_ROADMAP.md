@@ -1,7 +1,7 @@
 # 📅 IMPLEMENTATION ROADMAP (Peta Jalan Eksekusi)
 ## Pivot & Re-Arsitektur Klinik PKP (v3.0)
 **Target Workspace:** `c:\xampp\htdocs\klinik_new`  
-**Terakhir Diperbarui:** 1 Juli 2026 (v3.0)
+**Terakhir Diperbarui:** 23 Juli 2026 (v3.0)
 
 ---
 
@@ -16,7 +16,7 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
 - ✅ **Fase 7 (Restrukturisasi UI & Navbar)** — Selesai
 - ✅ **Fase 8 (Etalase Program & Hero Beranda)** — Selesai
 - ✅ **Fase 9 (Integrasi NIK SIMPERUM & Housing Queue)** — Selesai
-- 🔄 **Fase 9.5 (Status Tiket Pengajuan Hybrid)** — Tahap 1 selesai
+- 🔄 **Fase 9.5 (Status Tiket Pengajuan Hybrid)** — Tahap 1 terverifikasi terhadap database staging; hardening lanjutan belum selesai
 - 🛠️ **Fase 10 (Validasi Manual ASN / Admin Dashboard)** — Belum mulai
 - 🔄 **Fase 11 (Tokenisasi CSS & Theming)** — Sedang berjalan (Transisi dari Dark Theme hardcoded ke CSS Variables untuk Light/Dark Mode)
 
@@ -125,16 +125,19 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
     *   [ ] Halaman *backend* admin untuk melihat antrean masuk.
     *   [ ] Fungsi persetujuan manual (Ubah status *pending* menjadi *approved* atau *rejected*).
 
-### 🔄 FASE 9.5 — Status Tiket Pengajuan Hybrid (TAHAP 1 SELESAI)
+### 🔄 FASE 9.5 — Status Tiket Pengajuan Hybrid (TAHAP 1 TERVERIFIKASI DI STAGING)
 *   **Target:** Warga dapat memantau satu pengajuan tanpa wajib membuat akun, sementara user login mendapat riwayat lengkap.
 *   **Dokumen acuan:** [`DESAIN_STATUS_TIKET_PENGAJUAN.md`](./DESAIN_STATUS_TIKET_PENGAJUAN.md).
 *   **Action Items:**
-    *   [x] Tambah `ticket_code` unik pada `sf_housing_queue`.
-    *   [x] Tampilkan tiket pada halaman sukses setelah insert berhasil.
-    *   [x] Buat lookup tiket dengan verifikasi tambahan.
-    *   [x] Sediakan dashboard riwayat untuk user login.
-    *   [ ] Tambahkan rate limit dan hardening enkripsi NIK.
-    *   [ ] Uji anti-IDOR, enumeration, dan kebocoran PII.
+    *   [x] Tambah `ticket_code` unik pada `sf_housing_queue` di database staging.
+    *   [x] Tampilkan tiket pada halaman sukses dari jalur `solusi_pembiayaan` dan `Program/diagnosa/*`.
+    *   [x] Buat lookup publik khusus tiket `PKP-*` dengan verifikasi empat digit terakhir NIK.
+    *   [x] Sediakan dashboard riwayat yang mengambil data berdasarkan `user_id` sesi.
+    *   [x] Batasi lookup setelah lima percobaan gagal per hash IP dalam satu menit.
+    *   [ ] Terapkan hardening enkripsi NIK pada `sf_housing_queue`.
+    *   [ ] Lakukan pengujian keamanan lanjutan untuk anti-IDOR, enumeration, dan kebocoran PII.
+
+    Verifikasi 23 Juli 2026 dijalankan pada branch lokal dengan koneksi langsung ke database staging: kedua jalur pengajuan menampilkan tiket yang sama dengan row database, lookup valid memberi HTTP 200, percobaan keenam memberi HTTP 429, dan `/akun` terautentikasi memberi HTTP 200 serta menampilkan tiket milik user sesi. Deployment web staging/production belum diverifikasi.
 
 ---
 

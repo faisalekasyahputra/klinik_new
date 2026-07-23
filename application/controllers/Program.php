@@ -134,10 +134,22 @@ class Program extends Public_Controller {
             show_404();
         }
 
+        $ip_hash = hash('sha256', $this->input->ip_address());
+        $retry_after = $this->Program_model->get_ticket_lookup_retry_after($ip_hash);
+        if ($retry_after > 0) {
+            $this->output
+                ->set_status_header(429)
+                ->set_header('Retry-After: ' . $retry_after)
+                ->set_content_type('application/json')
+                ->set_output(json_encode(['status' => 'error', 'message' => 'Terlalu banyak percobaan. Silakan coba lagi sebentar.']));
+            return;
+        }
+
         $ticket_code = strtoupper(trim((string) $this->input->post('ticket_code', TRUE)));
         $nik_suffix = trim((string) $this->input->post('nik_suffix', TRUE));
 
-        if ((!preg_match('/^PKP-[A-Z0-9]{6}$/', $ticket_code) && !preg_match('/^SRP2-REG-\d{5}$/', $ticket_code)) || !preg_match('/^\d{4}$/', $nik_suffix)) {
+        if (!preg_match('/^PKP-[A-Z0-9]{6}$/', $ticket_code) || !preg_match('/^\d{4}$/', $nik_suffix)) {
+            $this->Program_model->record_ticket_lookup_failure($ip_hash);
             $this->output
                 ->set_status_header(422)
                 ->set_content_type('application/json')
@@ -145,20 +157,9 @@ class Program extends Public_Controller {
             return;
         }
 
-        if (strpos($ticket_code, 'SRP2-REG-') === 0) {
-            $registration_id = (int) substr($ticket_code, 9);
-            $pengajuan = $this->db->table_exists('srp2_registrations')
-                ? $this->db->where('id', $registration_id)
-                    ->where('RIGHT(nik_ktp, 4) = ' . $this->db->escape($nik_suffix), NULL, FALSE)
-                    ->get('srp2_registrations')->row_array()
-                : NULL;
-            if ($pengajuan) {
-                $pengajuan['status_antrean'] = strtolower($pengajuan['status_verifikasi']);
-            }
-        } else {
-            $pengajuan = $this->Program_model->get_housing_queue_by_ticket($ticket_code, $nik_suffix);
-        }
+        $pengajuan = $this->Program_model->get_housing_queue_by_ticket($ticket_code, $nik_suffix);
         if (!$pengajuan) {
+            $this->Program_model->record_ticket_lookup_failure($ip_hash);
             $this->output
                 ->set_status_header(404)
                 ->set_content_type('application/json')
@@ -169,9 +170,7 @@ class Program extends Public_Controller {
         $status_labels = [
             'pending' => 'Menunggu verifikasi',
             'approved' => 'Disetujui',
-            'rejected' => 'Ditolak',
-            'diterima' => 'Disetujui',
-            'ditolak' => 'Ditolak'
+            'rejected' => 'Ditolak'
         ];
 
         $this->output
@@ -388,7 +387,9 @@ class Program extends Public_Controller {
 
         $user_id = $this->is_logged_in() ? $this->get_user_id() : NULL;
 
+        $ticket_code = $this->Program_model->generate_ticket_code();
         $insert_data = [
+            'ticket_code' => $ticket_code,
             'user_id' => $user_id,
             'program_id' => $program_id,
             'nik_pengaju' => $nik, // Idealnya dienkripsi, disesuaikan dengan aturan NFR-1.1
@@ -404,7 +405,8 @@ class Program extends Public_Controller {
         $inserted = $this->Program_model->insert_housing_queue($insert_data);
 
         if ($inserted) {
-            $this->session->set_flashdata('success', 'Pengajuan berhasil direkam ke dalam Antrean. Petugas akan memvalidasi data Anda.');
+            $this->session->set_flashdata('ticket_code', $ticket_code);
+            $this->session->set_flashdata('success', 'Pengajuan berhasil direkam. Nomor tiket Anda: ' . $ticket_code);
         } else {
             $this->session->set_flashdata('error', 'Gagal memproses pengajuan. Silakan coba lagi.');
         }

@@ -209,5 +209,7 @@ Fitur pendaftaran & verifikasi SRP2 (Sertifikasi Registrasi Pengembang Perumahan
 - `Program::cek_tiket()` adalah endpoint POST publik. Lookup wajib memakai tiket dan empat digit terakhir NIK, lalu hanya boleh mengembalikan status serta timestamp—bukan NIK, alamat, nama, atau dokumen.
 - `cek_status_pengajuan` adalah tab navbar dan view standalone yang memakai endpoint lookup yang sama; jangan membuat endpoint status kedua.
 - Dashboard `akun` hanya mengambil riwayat antrean berdasarkan `user_id` session. Guest tetap boleh memiliki `user_id = NULL`.
-- Halaman sukses memakai tema cerah portal dan menampilkan tiket melalui flashdata satu kali. Rate limit lookup dan enkripsi NIK penuh masih menjadi hardening lanjutan.
+- Halaman sukses memakai tema cerah portal dan menampilkan tiket melalui flashdata satu kali.
+- Lookup dibatasi setelah lima percobaan gagal per hash IP dalam satu menit melalui `sys_ticket_lookup_limits`; migration existing database ada di [`docs/engineering/migration_ticket_lookup_rate_limit.sql`](docs/engineering/migration_ticket_lookup_rate_limit.sql).
+- Enkripsi NIK penuh masih menjadi hardening lanjutan.
 - Acuan produk: [`docs/product/DESAIN_STATUS_TIKET_PENGAJUAN.md`](docs/product/DESAIN_STATUS_TIKET_PENGAJUAN.md).

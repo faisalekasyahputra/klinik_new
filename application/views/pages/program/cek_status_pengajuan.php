@@ -6,14 +6,14 @@
             </div>
             <p class="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--portal-brand)]">Layanan Pengajuan</p>
             <h1 id="status-title" class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)]">Cek Status Pengajuan</h1>
-            <p class="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-[color:var(--portal-text-muted)]">Masukkan tiket PKP atau SRP2-REG dan empat digit terakhir NIK untuk melihat status terbaru tanpa login.</p>
+            <p class="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-[color:var(--portal-text-muted)]">Masukkan tiket PKP dan empat digit terakhir NIK untuk melihat status terbaru tanpa login.</p>
         </div>
 
         <form id="status-ticket-form" class="mt-8 space-y-4">
             <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
             <div>
                 <label for="status-ticket-code" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Nomor tiket</label>
-                <input id="status-ticket-code" name="ticket_code" required pattern="(PKP-[A-Z0-9]{6}|SRP2-REG-[0-9]{5})" maxlength="14" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-4 py-3 font-mono text-sm uppercase text-[color:var(--portal-text)] outline-none focus:border-[color:var(--portal-brand)]" placeholder="PKP-XXXXXX atau SRP2-REG-00001">
+                <input id="status-ticket-code" name="ticket_code" required pattern="PKP-[A-Z0-9]{6}" maxlength="10" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-4 py-3 font-mono text-sm uppercase text-[color:var(--portal-text)] outline-none focus:border-[color:var(--portal-brand)]" placeholder="PKP-XXXXXX">
             </div>
             <div>
                 <label for="status-nik-suffix" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Empat digit terakhir NIK</label>

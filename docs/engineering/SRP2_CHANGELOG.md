@@ -10,3 +10,4 @@
 - Menambahkan migrasi kolom profil perusahaan dan kompatibilitas draft.
 - Menambahkan formulir singkat akun pengembang pada halaman syarat SRP2.
 - Memisahkan simulasi verifikasi email SRP2 dari halaman verifikasi akun umum; setelah simulasi selesai pengguna langsung menuju unggah dokumen.
+- Menghapus lookup publik `SRP2-REG-*` dari endpoint tiket perumahan; resi SRP2 tetap login-gated dan dibatasi ke `user_id` sesi.

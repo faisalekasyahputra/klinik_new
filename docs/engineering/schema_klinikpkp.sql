@@ -316,6 +316,17 @@ CREATE TABLE IF NOT EXISTS `sf_housing_queue` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `sys_ticket_lookup_limits`
+--
+
+CREATE TABLE IF NOT EXISTS `sys_ticket_lookup_limits` (
+  `ip_hash` CHAR(64) NOT NULL,
+  `window_started_at` DATETIME NOT NULL,
+  `failed_attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`ip_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
 -- Table structure for table `sys_settings`
 --
 

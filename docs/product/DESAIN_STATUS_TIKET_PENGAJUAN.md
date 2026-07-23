@@ -1,8 +1,8 @@
 # Konsep Status Tiket Pengajuan
 
-**Status:** Tahap 1 implementasi selesai; hardening lanjutan direncanakan
-**Tanggal:** 21 Juli 2026
-**Ruang lingkup:** Pengajuan program perumahan dari alur `solusi_pembiayaan`
+**Status:** Tahap 1 terverifikasi terhadap database staging; hardening NIK dan pengujian keamanan lanjutan belum selesai
+**Tanggal:** 23 Juli 2026
+**Ruang lingkup:** Pengajuan program perumahan dari alur `solusi_pembiayaan` dan `Program/diagnosa/{kode_program}`
 
 ## Keputusan Produk
 
@@ -41,37 +41,39 @@ Halaman sukses mengikuti tema cerah dan komponen portal terbaru:
 - Tiket memakai kode acak yang tidak berasal langsung dari `sf_housing_queue.id`, contoh `PKP-7F4K9X`.
 - Lookup tiket meminta nomor tiket dan satu verifikasi tambahan, misalnya nomor WhatsApp atau empat digit terakhir NIK.
 - Jangan menampilkan NIK, alamat, atau dokumen pribadi pada URL maupun halaman publik.
-- Tambahkan rate limit pada endpoint lookup dan pesan error generik agar tiket tidak mudah dienumerasi.
-- Status publik minimum: `Menunggu verifikasi`, `Sedang diverifikasi`, `Disetujui`, `Ditolak`.
-- Detail catatan internal admin hanya tersedia untuk pemilik yang login dan admin.
+- Endpoint lookup membatasi lima percobaan gagal per hash IP dalam satu menit, lalu mengembalikan HTTP 429 dan pesan generik.
+- Status publik: `Menunggu verifikasi`, `Disetujui`, atau `Ditolak`.
+- Dukungan catatan internal admin direncanakan pada Fase 10 dan tidak ditampilkan oleh lookup publik.
 
 ## Status Login
 
 | Akses | Kemampuan |
 |---|---|
 | Tanpa login | Cek satu pengajuan menggunakan tiket + verifikasi tambahan |
-| Login warga | Lihat pengajuan milik sendiri, status, catatan publik, dan riwayat |
-| Admin | Melihat seluruh antrean dan mengubah status sesuai kewenangan |
+| Login warga | Lihat tiket, status, tanggal, dan riwayat pengajuan milik sendiri |
+| Admin | Target Fase 10: melihat seluruh antrean dan mengubah status sesuai kewenangan |
 
 Pengajuan guest tetap boleh memiliki `user_id = NULL`. Jika warga kemudian membuat akun, pengaitan pengajuan dilakukan melalui proses terverifikasi, bukan dari input `user_id` bebas.
 
 ## Rencana Implementasi
 
 1. Tambah penyimpanan `ticket_code` unik pada `sf_housing_queue`.
-2. Buat generator tiket server-side setelah insert berhasil.
+2. Buat generator tiket server-side dan simpan kodenya bersama row pengajuan.
 3. Simpan kanal verifikasi secara aman; jangan masukkan data sensitif ke URL.
 4. Buat route dan halaman cek status tiket tanpa login.
 5. Ubah halaman sukses ke tema cerah dan tampilkan tiket yang baru dibuat.
 6. Tambahkan daftar pengajuan milik user di dashboard akun.
-7. Tambahkan rate limit, audit log seperlunya, dan uji IDOR sebelum deploy.
+7. Tambahkan rate limit pada lookup publik.
+8. Lakukan audit log seperlunya dan pengujian keamanan lanjutan sebelum deploy produksi.
 
 ## Status Implementasi Tahap 1
 
-- Selesai: generator kode tiket, migration kolom unik, dan penyimpanan tiket saat pengajuan.
-- Selesai: lookup publik dengan tiket + empat digit terakhir NIK.
-- Selesai: halaman sukses tema cerah dengan salin tiket dan cek status.
-- Selesai: riwayat pengajuan milik user di dashboard akun.
-- Berikutnya: rate limit endpoint lookup, enkripsi NIK sesuai fondasi repo, dan notifikasi WhatsApp.
+- Terverifikasi di database staging: generator kode tiket, migration kolom unik, dan penyimpanan tiket dari kedua jalur pengajuan.
+- Terverifikasi di database staging: lookup publik khusus tiket `PKP-*` + empat digit terakhir NIK tanpa data pribadi pada respons.
+- Terverifikasi di database staging: halaman sukses menampilkan tiket yang sama dengan row pengajuan.
+- Terverifikasi di database staging: riwayat `/akun` mengambil dan menampilkan pengajuan milik user sesi.
+- Terverifikasi di database staging: lima kegagalan lookup diizinkan dan percobaan keenam diblokir dengan HTTP 429.
+- Belum selesai: enkripsi NIK antrean, pengujian keamanan lanjutan, notifikasi WhatsApp, dan verifikasi deployment web staging/production.
 
 ## Batasan Versi Pertama
 
