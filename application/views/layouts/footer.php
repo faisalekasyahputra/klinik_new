@@ -4,39 +4,62 @@
      ============================================================ -->
 
 <!-- ============================================================
-     HELP WIDGET — Combined WA + Aduan (Bottom Right)
+     HELP WIDGET — FAQ seputar web (Bottom Right)
      ============================================================ -->
-<div class="fixed bottom-6 right-6 z-50" x-data="{ helpOpen: false, chatOpen: false }">
-    
-    <!-- Help Menu Card -->
+<div class="theme-light fixed bottom-6 right-6 z-50" x-data="{
+        helpOpen: false,
+        chatOpen: false,
+        openFaq: null,
+        faqs: [
+            { q: 'Apa itu Klinik PKP?', a: 'Klinik PKP adalah portal layanan informasi dan konsultasi perumahan serta kawasan permukiman dari Disperakim Provinsi Jawa Tengah.' },
+            { q: 'Bagaimana cara cek kelayakan bantuan rumah?', a: 'Buka menu Perumahan lalu pilih Etalase Program untuk melihat daftar program, atau langsung isi diagnosa NIK untuk mengecek program yang sesuai untuk Anda.' },
+            { q: 'Bagaimana cara cek status pengajuan?', a: 'Buka tab \'Cek Status Pengajuan\' di menu utama, lalu masukkan nomor tiket dan empat digit terakhir NIK Anda.' },
+            { q: 'Bagaimana cara daftar Sertifikasi Pengembang (SRP2)?', a: 'Buka menu Pengembang dari menu utama dan ikuti alur pendaftaran. Anda perlu login terlebih dahulu.' },
+            { q: 'Bagaimana cara menyampaikan aduan?', a: 'Buka halaman Aduan dari beranda, isi formulir, dan pilih bidang tujuan yang sesuai dengan aduan Anda.' },
+        ]
+     }">
+
+    <!-- FAQ Panel -->
     <div x-show="helpOpen && !chatOpen" x-cloak
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0 translate-y-2 scale-95"
-         x-transition:enter-end="opacity-1 translate-y-0 scale-100"
+         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
          x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-1 scale-100"
+         x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95"
-         class="help-menu glass-card mb-3">
+         class="help-menu mb-3 max-h-[70vh] w-[320px] overflow-y-auto rounded-2xl shadow-2xl"
+         style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border);">
         <div class="p-5">
-            <h4 class="text-white font-bold text-sm mb-1">Butuh Bantuan?</h4>
-            <p class="text-zinc-500 text-[11px] mb-4">Pilih cara yang paling nyaman untuk Anda</p>
-            
-            <a href="https://wa.me/6282137191145" target="_blank" class="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all mb-2.5 group">
-                <div class="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-[#0a1a1f] text-lg shrink-0"><i class="fa-brands fa-whatsapp"></i></div>
-                <div>
-                    <span class="text-white text-xs font-bold block">WhatsApp Langsung</span>
-                    <span class="text-zinc-500 text-[10px]">Chat cepat via WhatsApp</span>
-                </div>
-                <i class="fa-solid fa-arrow-up-right-from-square text-zinc-600 text-[10px] ml-auto group-hover:text-emerald-400"></i>
-            </a>
+            <h4 class="text-sm font-bold" style="color: var(--portal-text);">Pertanyaan Umum</h4>
+            <p class="mb-4 text-[11px]" style="color: var(--portal-text-muted);">Jawaban cepat seputar layanan Klinik PKP</p>
 
-            <button @click="chatOpen = true; helpOpen = false" class="w-full flex items-center gap-3 p-3 rounded-xl bg-[#d6fb00]/10 border border-[#d6fb00]/15 hover:bg-[#d6fb00]/20 transition-all group text-left">
-                <div class="w-10 h-10 bg-[#d6fb00] rounded-xl flex items-center justify-center text-[#0a1a1f] text-lg shrink-0"><i class="fa-solid fa-comments"></i></div>
-                <div>
-                    <span class="text-white text-xs font-bold block">Aduan & Diskusi</span>
-                    <span class="text-zinc-500 text-[10px]">Sampaikan keluhan atau saran</span>
+            <div class="space-y-2">
+                <template x-for="(faq, i) in faqs" :key="i">
+                    <div class="overflow-hidden rounded-xl border" style="border-color: var(--portal-border);">
+                        <button type="button" @click="openFaq = (openFaq === i ? null : i)"
+                                class="flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left text-xs font-bold"
+                                style="color: var(--portal-text);">
+                            <span x-text="faq.q"></span>
+                            <i class="fa-solid fa-chevron-down shrink-0 text-[10px] transition-transform duration-200" :class="openFaq === i && 'rotate-180'" style="color: var(--portal-text-muted);"></i>
+                        </button>
+                        <div x-show="openFaq === i" x-cloak
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
+                             class="px-3.5 pb-3 text-[11px] leading-relaxed" style="color: var(--portal-text-muted);" x-text="faq.a"></div>
+                    </div>
+                </template>
+            </div>
+
+            <button @click="chatOpen = true; helpOpen = false" class="mt-4 flex w-full items-center gap-3 rounded-xl p-3 text-left transition-all" style="background-color: var(--portal-btn-bg); border: 1px solid var(--portal-btn-border);">
+                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style="background-color: var(--portal-brand); color: var(--portal-bg);">
+                    <i class="fa-solid fa-comments text-sm"></i>
                 </div>
-                <i class="fa-solid fa-chevron-right text-zinc-600 text-[10px] ml-auto group-hover:text-[#d6fb00]"></i>
+                <div>
+                    <span class="block text-xs font-bold" style="color: var(--portal-text);">Masih Butuh Bantuan?</span>
+                    <span class="text-[10px]" style="color: var(--portal-text-muted);">Chat langsung dengan kami</span>
+                </div>
+                <i class="fa-solid fa-chevron-right ml-auto text-[10px]" style="color: var(--portal-text-muted);"></i>
             </button>
         </div>
     </div>
@@ -46,51 +69,52 @@
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0 translate-y-2 scale-95"
          x-transition:enter-end="opacity-1 translate-y-0 scale-100"
-         class="fixed bottom-24 right-6 w-[380px] bg-[#0d1f25] border border-[#d6fb00]/20 rounded-2xl overflow-hidden shadow-2xl z-50">
-        
-        <div class="bg-[#d6fb00] px-5 py-4 flex items-center justify-between">
+         class="fixed bottom-24 right-6 z-50 w-[380px] overflow-hidden rounded-2xl shadow-2xl"
+         style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border);">
+
+        <div class="flex items-center justify-between px-5 py-4" style="background-color: var(--portal-brand);">
             <div class="flex items-center gap-2">
                 <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                <h3 class="text-[#0a1a1f] font-bold text-sm">Asisten Klinik PKP</h3>
+                <h3 class="font-bold text-sm" style="color: var(--portal-bg);">Asisten Klinik PKP</h3>
             </div>
-            <button @click="chatOpen = false" class="text-black/60 hover:text-black transition-colors"><i class="fa-solid fa-xmark text-sm"></i></button>
+            <button @click="chatOpen = false" class="transition-colors" style="color: var(--portal-bg);"><i class="fa-solid fa-xmark text-sm"></i></button>
         </div>
 
         <div id="pre-chat-section" class="p-6 space-y-4">
-            <p class="text-zinc-400 text-xs text-center">Silakan lengkapi data diri Anda.</p>
+            <p class="text-xs text-center" style="color: var(--portal-text-muted);">Silakan lengkapi data diri Anda.</p>
             <form id="pre-chat-form" class="space-y-3 text-xs">
                 <div>
-                    <label class="block text-zinc-500 mb-1 font-medium">Nama Lengkap</label>
-                    <input type="text" id="reg-nama" required class="w-full bg-[#d6fb00]/5 border border-[#d6fb00]/20 focus:border-[#d6fb00]/40 rounded-xl px-3.5 py-2.5 text-white outline-none transition-all placeholder-[#5a7a80]" placeholder="Budi Santoso">
+                    <label class="block mb-1 font-medium" style="color: var(--portal-text-muted);">Nama Lengkap</label>
+                    <input type="text" id="reg-nama" required class="w-full rounded-xl px-3.5 py-2.5 outline-none transition-all" style="background-color: var(--portal-bg); border: 1px solid var(--portal-border); color: var(--portal-text);" placeholder="Budi Santoso">
                 </div>
                 <div>
-                    <label class="block text-zinc-500 mb-1 font-medium">Email</label>
-                    <input type="email" id="reg-email" required class="w-full bg-[#d6fb00]/5 border border-[#d6fb00]/20 focus:border-[#d6fb00]/40 rounded-xl px-3.5 py-2.5 text-white outline-none transition-all placeholder-[#5a7a80]" placeholder="nama@email.com">
+                    <label class="block mb-1 font-medium" style="color: var(--portal-text-muted);">Email</label>
+                    <input type="email" id="reg-email" required class="w-full rounded-xl px-3.5 py-2.5 outline-none transition-all" style="background-color: var(--portal-bg); border: 1px solid var(--portal-border); color: var(--portal-text);" placeholder="nama@email.com">
                 </div>
                 <div>
-                    <label class="block text-zinc-500 mb-1 font-medium">No. WhatsApp</label>
-                    <input type="tel" id="reg-hp" required class="w-full bg-[#d6fb00]/5 border border-[#d6fb00]/20 focus:border-[#d6fb00]/40 rounded-xl px-3.5 py-2.5 text-white outline-none transition-all placeholder-[#5a7a80]" placeholder="08XXXXXXXXXX">
+                    <label class="block mb-1 font-medium" style="color: var(--portal-text-muted);">No. WhatsApp</label>
+                    <input type="tel" id="reg-hp" required class="w-full rounded-xl px-3.5 py-2.5 outline-none transition-all" style="background-color: var(--portal-bg); border: 1px solid var(--portal-border); color: var(--portal-text);" placeholder="08XXXXXXXXXX">
                 </div>
                 <div>
-                    <label class="block text-zinc-500 mb-1 font-medium">Pesan / Keluhan</label>
-                    <textarea id="reg-pesan" rows="2" required class="w-full bg-[#d6fb00]/5 border border-[#d6fb00]/20 focus:border-[#d6fb00]/40 rounded-xl px-3.5 py-2.5 text-white outline-none transition-all placeholder-[#5a7a80] leading-relaxed" placeholder="Tanya bantuan RTLH..."></textarea>
+                    <label class="block mb-1 font-medium" style="color: var(--portal-text-muted);">Pesan / Keluhan</label>
+                    <textarea id="reg-pesan" rows="2" required class="w-full rounded-xl px-3.5 py-2.5 outline-none transition-all leading-relaxed" style="background-color: var(--portal-bg); border: 1px solid var(--portal-border); color: var(--portal-text);" placeholder="Tanya bantuan RTLH..."></textarea>
                 </div>
-                <button type="submit" class="w-full bg-[#d6fb00] hover:bg-[#ecffb6] text-[#0a1a1f] font-bold py-3 rounded-xl transition-all text-[11px] mt-1 uppercase tracking-wider">Mulai Percakapan</button>
+                <button type="submit" class="w-full font-bold py-3 rounded-xl transition-all text-[11px] mt-1 uppercase tracking-wider" style="background-color: var(--portal-brand); color: var(--portal-bg);">Mulai Percakapan</button>
             </form>
         </div>
 
         <div id="live-chat-section" class="hidden flex flex-col h-[420px]">
-            <div id="chat-body" class="flex-1 p-4 overflow-y-auto space-y-3 bg-[#090b0f] custom-scroll">
+            <div id="chat-body" class="flex-1 p-4 overflow-y-auto space-y-3 custom-scroll" style="background-color: var(--portal-bg);">
                 <div class="flex justify-start">
-                    <div class="bg-[#d6fb00]/5 border border-[#d6fb00]/20 text-zinc-300 text-xs p-3 rounded-2xl rounded-tl-none max-w-[85%] leading-relaxed">
+                    <div class="text-xs p-3 rounded-2xl rounded-tl-none max-w-[85%] leading-relaxed" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); color: var(--portal-text-muted);">
                         Halo! Ada yang bisa saya bantu seputar perumahan Jawa Tengah?
                     </div>
                 </div>
             </div>
-            <div class="p-4 bg-[#0d1f25] border-t border-[#d6fb00]/20">
+            <div class="p-4" style="background-color: var(--portal-bg-card); border-top: 1px solid var(--portal-border);">
                 <form id="chat-form" class="flex items-center gap-2">
-                    <input type="text" id="chat-input" class="flex-1 bg-[#d6fb00]/5 border border-[#d6fb00]/20 focus:border-[#d6fb00]/40 rounded-xl px-4 py-3 text-white text-xs outline-none transition-all placeholder-[#5a7a80]" placeholder="Ketik pesan...">
-                    <button type="submit" class="bg-[#d6fb00] hover:bg-[#ecffb6] text-[#0a1a1f] w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0"><i class="fa-solid fa-paper-plane text-xs"></i></button>
+                    <input type="text" id="chat-input" class="flex-1 rounded-xl px-4 py-3 text-xs outline-none transition-all" style="background-color: var(--portal-bg); border: 1px solid var(--portal-border); color: var(--portal-text);" placeholder="Ketik pesan...">
+                    <button type="submit" class="w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0" style="background-color: var(--portal-brand); color: var(--portal-bg);"><i class="fa-solid fa-paper-plane text-xs"></i></button>
                 </form>
             </div>
         </div>
@@ -98,7 +122,7 @@
 
     <!-- FAB Button -->
     <button @click="chatOpen ? chatOpen = false : helpOpen = !helpOpen" class="help-fab animate-glow">
-        <i class="fa-solid transition-transform duration-300" :class="helpOpen || chatOpen ? 'fa-xmark' : 'fa-headset'"></i>
+        <i class="fa-solid transition-transform duration-300" :class="helpOpen || chatOpen ? 'fa-xmark' : 'fa-circle-question'"></i>
     </button>
 </div>
 
