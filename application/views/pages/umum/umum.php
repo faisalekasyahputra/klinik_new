@@ -130,7 +130,7 @@
             </a>
 
             <!-- Card 5: Layanan & Aduan -->
-            <a href="<?= base_url('umum/aduan') ?>" class="flex flex-col h-full group animate-fade-in-up delay-400">
+            <a href="<?= base_url('umum/aduan') ?>" data-tab-link data-tab-key="aduan" class="flex flex-col h-full group animate-fade-in-up delay-400">
                 <div class="flex-1 p-6 rounded-[24px] flex flex-col justify-between transition-all duration-300 group-hover:-translate-y-1 shadow-lg"
                      style="background: var(--bg-card); border: 1px solid rgba(214,251,0,0.15);"
                      onmouseenter="this.style.borderColor='rgba(255,107,107,0.50)'; this.style.boxShadow='0 8px 30px rgba(255,107,107,0.10)';"
@@ -151,7 +151,7 @@
             </a>
 
             <!-- Card 6: Konsultasi Terjadwal -->
-            <a href="<?= base_url('umum/forum') ?>" data-no-page-transition class="flex flex-col h-full group animate-fade-in-up delay-500">
+            <a href="<?= base_url('umum/forum') ?>" data-tab-link data-tab-key="forum" class="flex flex-col h-full group animate-fade-in-up delay-500">
                 <div class="flex-1 p-6 rounded-[24px] flex flex-col justify-between transition-all duration-300 group-hover:-translate-y-1 shadow-lg"
                      style="background: var(--bg-card); border: 1px solid rgba(214,251,0,0.15);"
                      onmouseenter="this.style.borderColor='rgba(0,163,181,0.50)'; this.style.boxShadow='0 8px 30px rgba(0,163,181,0.10)';"

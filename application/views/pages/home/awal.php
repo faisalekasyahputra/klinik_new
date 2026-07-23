@@ -57,7 +57,7 @@
 
         <!-- Akses cepat -->
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-2 lg:gap-3">
-            <a href="<?= base_url('umum/forum') ?>" data-no-page-transition class="portal-home-card portal-home-card-compact group min-h-[130px] sm:min-h-[180px]">
+            <a href="<?= base_url('umum/forum') ?>" data-tab-link data-tab-key="forum" class="portal-home-card portal-home-card-compact group min-h-[130px] sm:min-h-[180px]">
                 <i class="fa-solid fa-comments portal-home-watermark"></i>
                 <div class="relative z-10 text-center">
                     <i class="fa-solid fa-comments portal-home-icon"></i>
@@ -65,7 +65,7 @@
                     <p class="portal-home-subtitle">(Terjadwal)</p>
                 </div>
             </a>
-            <a href="<?= base_url('umum/aduan') ?>" class="portal-home-card portal-home-card-compact group min-h-[130px] sm:min-h-[180px]">
+            <a href="<?= base_url('umum/aduan') ?>" data-tab-link data-tab-key="aduan" class="portal-home-card portal-home-card-compact group min-h-[130px] sm:min-h-[180px]">
                 <i class="fa-solid fa-circle-question portal-home-watermark"></i>
                 <div class="relative z-10 text-center">
                     <i class="fa-solid fa-circle-question portal-home-icon"></i>

@@ -153,6 +153,24 @@
                                    <div class="h-11 w-full mb-4 rounded-xl skeleton"></div>
                                    <div class="space-y-3"><div class="h-28 rounded-2xl skeleton"></div><div class="h-28 rounded-2xl skeleton"></div></div>
                                    <?php endif; ?>
+                                   <?php elseif ($rt_class === 'umum' && $rt_method === 'aduan'): ?>
+                                   <div class="mx-auto max-w-2xl text-center">
+                                       <div class="skeleton mx-auto mb-4 h-16 w-16 rounded-2xl"></div>
+                                       <div class="skeleton mx-auto mb-2 h-3 w-32 rounded"></div>
+                                       <div class="skeleton mx-auto mb-3 h-8 w-64 rounded"></div>
+                                       <div class="skeleton mx-auto mb-8 h-3 w-80 rounded"></div>
+                                   </div>
+                                   <div class="mx-auto max-w-2xl space-y-4">
+                                       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                           <div class="skeleton h-12 rounded-xl"></div>
+                                           <div class="skeleton h-12 rounded-xl"></div>
+                                       </div>
+                                       <div class="skeleton h-12 rounded-xl"></div>
+                                       <div class="skeleton h-12 rounded-xl"></div>
+                                       <div class="skeleton h-32 rounded-xl"></div>
+                                       <div class="skeleton h-11 rounded-xl"></div>
+                                       <div class="skeleton h-11 w-full rounded-full"></div>
+                                   </div>
                                    <?php elseif ($rt_class === 'pengembang'): ?>
                                    <div class="skeleton h-3 w-16 mb-2"></div>
                                    <div class="skeleton h-7 w-64 mb-4"></div>

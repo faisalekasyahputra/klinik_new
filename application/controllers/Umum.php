@@ -191,9 +191,8 @@ class Umum extends MY_Controller {
 		$datacontent['diskusi']        = $this->Forum_model->get_all_diskusi($search, $kategori);
 		$datacontent['search']         = $search;
 		$datacontent['kategori_aktif'] = $kategori;
-		
-		$data['content'] = $this->load->view('pages/umum/forum', $datacontent, true);
-		$this->load->view('layouts/main', $data);
+
+		$this->render('pages/umum/forum', $datacontent);
 	}
 
 	// =========================================================

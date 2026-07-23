@@ -19,56 +19,64 @@
     </div>
     <?php endif; ?>
 
-    <form id="aduan-form" class="mx-auto mt-8 max-w-2xl space-y-4" action="<?= base_url('umum/simpan_aduan') ?>" method="POST" enctype="multipart/form-data">
+    <form id="aduan-form" class="mx-auto mt-8 max-w-2xl space-y-4" action="<?= base_url('umum/simpan_aduan') ?>" method="POST" enctype="multipart/form-data"
+          x-data="{
+              nama: <?= htmlspecialchars(json_encode($nama_default ?? ''), ENT_QUOTES) ?>,
+              email: <?= htmlspecialchars(json_encode($email_default ?? ''), ENT_QUOTES) ?>,
+              judul: '',
+              pesan: '',
+              bidang: '',
+              bidangLabel: 'Pilih Bidang Tujuan',
+              bidangOpen: false,
+              opsiBidang: [
+                  { value: 'perumahan',  label: 'Bidang Perumahan' },
+                  { value: 'kawasan',    label: 'Bidang Kawasan Permukiman' },
+                  { value: 'pertanahan', label: 'Bidang Pertanahan' },
+                  { value: 'pengembang', label: 'Bidang Pengembang' },
+                  { value: 'umum',       label: 'Umum / Lainnya' },
+              ],
+              get isValid() {
+                  return this.nama.trim() && this.email.trim() && this.judul.trim() && this.pesan.trim() && this.bidang;
+              }
+          }">
         <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
                 <label for="aduan-nama" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Nama Lengkap</label>
-                <input id="aduan-nama" name="nama" required maxlength="150" value="<?= htmlspecialchars($nama_default ?? '') ?>" placeholder="Nama Anda" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
+                <input id="aduan-nama" name="nama" x-model="nama" required maxlength="150" placeholder="Nama Anda" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
             </div>
             <div>
                 <label for="aduan-email" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Alamat Email</label>
-                <input id="aduan-email" name="email" type="email" required maxlength="100" value="<?= htmlspecialchars($email_default ?? '') ?>" placeholder="nama@email.com" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
+                <input id="aduan-email" name="email" x-model="email" type="email" required maxlength="100" placeholder="nama@email.com" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
             </div>
         </div>
 
         <div>
             <label for="aduan-judul" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Judul</label>
-            <input id="aduan-judul" name="judul" required maxlength="150" placeholder="Ringkasan singkat aduan Anda" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
+            <input id="aduan-judul" name="judul" x-model="judul" required maxlength="150" placeholder="Ringkasan singkat aduan Anda" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
         </div>
 
-        <div x-data="{
-                open: false,
-                value: '',
-                label: 'Pilih Bidang Tujuan',
-                opsi: [
-                    { value: 'perumahan',  label: 'Bidang Perumahan' },
-                    { value: 'kawasan',    label: 'Bidang Kawasan Permukiman' },
-                    { value: 'pertanahan', label: 'Bidang Pertanahan' },
-                    { value: 'pengembang', label: 'Bidang Pengembang' },
-                    { value: 'umum',       label: 'Umum / Lainnya' },
-                ]
-             }">
+        <div>
             <label class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Bidang Tujuan</label>
             <div class="relative">
-                <input type="hidden" name="bidang" :value="value" required>
-                <button type="button" @click="open = !open" @click.outside="open = false"
+                <input type="hidden" name="bidang" :value="bidang" required>
+                <button type="button" @click="bidangOpen = !bidangOpen" @click.outside="bidangOpen = false"
                         class="flex w-full items-center justify-between rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-left text-sm shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15"
-                        :style="!value && 'color: var(--portal-text-muted)' || 'color: var(--portal-text)'">
-                    <span x-text="label"></span>
-                    <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="open && 'rotate-180'" style="color: var(--portal-text-muted);"></i>
+                        :style="!bidang && 'color: var(--portal-text-muted)' || 'color: var(--portal-text)'">
+                    <span x-text="bidangLabel"></span>
+                    <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="bidangOpen && 'rotate-180'" style="color: var(--portal-text-muted);"></i>
                 </button>
-                <div x-show="open" x-cloak x-transition.origin.top
+                <div x-show="bidangOpen" x-cloak x-transition.origin.top
                      class="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border shadow-lg"
                      style="background-color: var(--portal-bg-card); border-color: var(--portal-border);">
-                    <template x-for="opt in opsi" :key="opt.value">
-                        <button type="button" @click="value = opt.value; label = opt.label; open = false"
+                    <template x-for="opt in opsiBidang" :key="opt.value">
+                        <button type="button" @click="bidang = opt.value; bidangLabel = opt.label; bidangOpen = false"
                                 class="block w-full px-4 py-2.5 text-left text-sm transition-colors"
-                                :class="value === opt.value ? 'font-bold' : 'font-medium'"
-                                :style="'color: var(--portal-text); background-color: ' + (value === opt.value ? 'var(--portal-btn-bg)' : 'transparent')"
+                                :class="bidang === opt.value ? 'font-bold' : 'font-medium'"
+                                :style="'color: var(--portal-text); background-color: ' + (bidang === opt.value ? 'var(--portal-btn-bg)' : 'transparent')"
                                 @mouseenter="$el.style.backgroundColor = 'var(--portal-btn-bg)'"
-                                @mouseleave="$el.style.backgroundColor = value === opt.value ? 'var(--portal-btn-bg)' : 'transparent'"
+                                @mouseleave="$el.style.backgroundColor = bidang === opt.value ? 'var(--portal-btn-bg)' : 'transparent'"
                                 x-text="opt.label"></button>
                     </template>
                 </div>
@@ -77,7 +85,7 @@
 
         <div>
             <label for="aduan-pesan" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Pesan</label>
-            <textarea id="aduan-pesan" name="pesan" required rows="6" maxlength="2000" placeholder="Tuliskan detail aduan atau pertanyaan Anda di sini." class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15 resize-y"></textarea>
+            <textarea id="aduan-pesan" name="pesan" x-model="pesan" required rows="6" maxlength="2000" placeholder="Tuliskan detail aduan atau pertanyaan Anda di sini." class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15 resize-y"></textarea>
         </div>
 
         <div>
@@ -86,7 +94,12 @@
             <p class="mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]">Format JPG, PNG, atau PDF. Maksimal 5 MB.</p>
         </div>
 
-        <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[color:var(--portal-btn-bg)] px-5 py-3 text-sm font-black text-[color:var(--portal-icon)] transition hover:-translate-y-0.5 hover:brightness-95">Kirim Aduan <i class="fa-solid fa-paper-plane"></i></button>
+        <button type="submit" :disabled="!isValid"
+                class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-black transition"
+                :style="isValid
+                    ? 'background-color: var(--portal-brand); color: var(--portal-bg); cursor: pointer;'
+                    : 'background-color: var(--portal-border); color: var(--portal-text-muted); cursor: not-allowed;'"
+                :class="isValid && 'hover:-translate-y-0.5 hover:brightness-95'">Kirim Aduan <i class="fa-solid fa-paper-plane"></i></button>
     </form>
 
     <div class="mx-auto mt-6 max-w-2xl rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] p-4 text-xs text-[color:var(--portal-text-muted)] shadow-sm">
