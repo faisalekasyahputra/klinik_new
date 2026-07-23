@@ -39,9 +39,26 @@
         </div>
 
         <div>
+            <label for="aduan-bidang" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Bidang Tujuan</label>
+            <div class="relative">
+                <select id="aduan-bidang" name="bidang" class="w-full appearance-none rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-4 py-3 text-sm text-[color:var(--portal-text)] outline-none focus:border-[color:var(--portal-brand)]">
+                    <option value="">Deteksi Otomatis dari Pesan</option>
+                    <option value="perumahan">Bidang Perumahan</option>
+                    <option value="kawasan">Bidang Kawasan Permukiman</option>
+                    <option value="pertanahan">Bidang Pertanahan</option>
+                    <option value="pengembang">Bidang Pengembang</option>
+                    <option value="umum">Umum / Lainnya</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[color:var(--portal-text-muted)]">
+                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                </div>
+            </div>
+            <p class="mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]"><i class="fa-solid fa-circle-info mr-1"></i>Biarkan "Deteksi Otomatis" kalau tidak yakin — sistem akan membaca kata kunci pada pesan. Atau pilih langsung bidangnya kalau sudah tahu.</p>
+        </div>
+
+        <div>
             <label for="aduan-pesan" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Pesan</label>
-            <textarea id="aduan-pesan" name="pesan" required rows="6" maxlength="2000" placeholder="Tuliskan detail aduan atau pertanyaan Anda di sini. Sebutkan bidang terkait (mis. rumah, kawasan kumuh, sertifikat tanah, pengembang) supaya lebih cepat diarahkan." class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-4 py-3 text-sm text-[color:var(--portal-text)] outline-none focus:border-[color:var(--portal-brand)] resize-y"></textarea>
-            <p class="mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]"><i class="fa-solid fa-circle-info mr-1"></i>Bidang tujuan dideteksi otomatis dari kata kunci pada pesan — tidak perlu memilih bidang secara manual.</p>
+            <textarea id="aduan-pesan" name="pesan" required rows="6" maxlength="2000" placeholder="Tuliskan detail aduan atau pertanyaan Anda di sini." class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-4 py-3 text-sm text-[color:var(--portal-text)] outline-none focus:border-[color:var(--portal-brand)] resize-y"></textarea>
         </div>
 
         <div>

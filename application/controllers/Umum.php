@@ -107,6 +107,9 @@ class Umum extends MY_Controller {
 		$this->form_validation->set_rules('email', 'Email', 'required|valid_email|max_length[100]');
 		$this->form_validation->set_rules('judul', 'Judul', 'required|trim|max_length[150]');
 		$this->form_validation->set_rules('pesan', 'Pesan', 'required|trim|max_length[2000]');
+		// Kosong = biarkan sistem deteksi otomatis. Kalau diisi, harus salah
+		// satu pilihan yang memang ada di dropdown (bukan nilai bebas).
+		$this->form_validation->set_rules('bidang', 'Bidang', 'in_list[,perumahan,kawasan,pertanahan,pengembang,umum]');
 
 		if ($this->form_validation->run() === FALSE) {
 			$this->session->set_flashdata('error', validation_errors('<li>', '</li>'));
@@ -123,7 +126,10 @@ class Umum extends MY_Controller {
 		// boleh kirim aduan dengan user_id NULL.
 		$user_id = $this->is_logged_in() ? $this->get_user_id() : NULL;
 
-		$bidang = $this->Aduan_model->detect_bidang($judul . ' ' . $pesan);
+		// Dinas bisa pilih bidang manual dari dropdown supaya tidak
+		// bergantung ke deteksi otomatis; kosongkan untuk deteksi otomatis.
+		$bidang_pilihan = $this->input->post('bidang', TRUE);
+		$bidang = !empty($bidang_pilihan) ? $bidang_pilihan : $this->Aduan_model->detect_bidang($judul . ' ' . $pesan);
 
 		$lampiran = NULL;
 		if (!empty($_FILES['lampiran']['name'])) {
