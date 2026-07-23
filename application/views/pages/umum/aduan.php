@@ -5,7 +5,7 @@
         </div>
         <p class="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--portal-brand)]">Layanan Pengaduan</p>
         <h1 id="aduan-title" class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)]">Sampaikan Aduan Anda</h1>
-        <p class="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-[color:var(--portal-text-muted)]">Tuliskan aduan atau pertanyaan Anda satu kali di sini. Sistem akan mengarahkan otomatis ke bidang yang paling sesuai berdasarkan isi pesan — kalau tidak cocok dengan bidang mana pun, aduan diteruskan ke admin umum.</p>
+        <p class="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--portal-text-muted)]">Isi formulir di bawah dan pilih bidang tujuan yang sesuai — aduan Anda akan langsung diteruskan ke bidang tersebut.</p>
     </div>
 
     <?php if ($this->session->flashdata('success')): ?>
@@ -89,7 +89,7 @@
         <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[color:var(--portal-btn-bg)] px-5 py-3 text-sm font-black text-[color:var(--portal-icon)] transition hover:-translate-y-0.5 hover:brightness-95">Kirim Aduan <i class="fa-solid fa-paper-plane"></i></button>
     </form>
 
-    <div class="mx-auto mt-6 max-w-2xl rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] p-4 text-sm text-[color:var(--portal-text-muted)] shadow-sm">
-        <i class="fa-solid fa-circle-info mr-2 text-[color:var(--portal-icon)]"></i> Butuh respons lebih cepat? Pakai tombol bantuan di pojok kanan bawah untuk WhatsApp langsung atau live chat.
+    <div class="mx-auto mt-6 max-w-2xl rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] p-4 text-xs text-[color:var(--portal-text-muted)] shadow-sm">
+        <i class="fa-solid fa-circle-info mr-2 text-[color:var(--portal-icon)]"></i> Punya pertanyaan umum seputar layanan? Cek dulu lewat tombol bantuan di pojok kanan bawah.
     </div>
 </div>
