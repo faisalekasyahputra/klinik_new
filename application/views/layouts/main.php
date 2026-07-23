@@ -171,6 +171,32 @@
                                        <div class="skeleton h-11 rounded-xl"></div>
                                        <div class="skeleton h-11 w-full rounded-full"></div>
                                    </div>
+                                   <?php elseif ($rt_class === 'statistika' || $rt_method === 'tab_bankdata'): ?>
+                                   <div class="mx-auto max-w-2xl text-center mb-4">
+                                       <div class="skeleton mx-auto mb-2 h-9 w-9 rounded-xl"></div>
+                                       <div class="skeleton mx-auto mb-2 h-6 w-56 rounded"></div>
+                                       <div class="skeleton mx-auto h-3 w-72 rounded"></div>
+                                   </div>
+                                   <div class="flex flex-col gap-2.5 lg:flex-row">
+                                       <div class="hidden w-48 shrink-0 rounded-2xl border border-[color:var(--portal-border)] p-2.5 lg:block">
+                                           <div class="skeleton mb-3 h-4 w-24 rounded"></div>
+                                           <div class="space-y-2">
+                                               <div class="skeleton h-7 w-full rounded-xl"></div>
+                                               <div class="skeleton h-7 w-full rounded-xl"></div>
+                                               <div class="skeleton h-7 w-full rounded-xl"></div>
+                                               <div class="skeleton h-7 w-full rounded-xl"></div>
+                                           </div>
+                                       </div>
+                                       <div class="flex-1 space-y-4">
+                                           <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                               <div class="skeleton h-20 rounded-2xl"></div>
+                                               <div class="skeleton h-20 rounded-2xl"></div>
+                                               <div class="skeleton h-20 rounded-2xl"></div>
+                                               <div class="skeleton h-20 rounded-2xl"></div>
+                                           </div>
+                                           <div class="skeleton h-56 w-full rounded-2xl"></div>
+                                       </div>
+                                   </div>
                                    <?php elseif ($rt_class === 'pengembang'): ?>
                                    <div class="skeleton h-3 w-16 mb-2"></div>
                                    <div class="skeleton h-7 w-64 mb-4"></div>
