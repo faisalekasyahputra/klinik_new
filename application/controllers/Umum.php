@@ -7,6 +7,7 @@ class Umum extends MY_Controller {
 	{
 		parent::__construct();
 		$this->load->helper(array('url', 'download'));
+		$this->load->library('form_validation');
 		date_default_timezone_set('Asia/Jakarta');
 	}
 
@@ -92,6 +93,78 @@ class Umum extends MY_Controller {
 		$datacontent['nama_default']  = $this->session->userdata('name') ?: '';
 		$datacontent['email_default'] = $this->session->userdata('email') ?: '';
 		$this->render('pages/umum/aduan', $datacontent);
+	}
+
+	public function simpan_aduan()
+	{
+		if ($this->input->method() !== 'post') {
+			show_404();
+		}
+
+		$this->load->model('Aduan_model');
+
+		$this->form_validation->set_rules('nama', 'Nama', 'required|trim|max_length[150]');
+		$this->form_validation->set_rules('email', 'Email', 'required|valid_email|max_length[100]');
+		$this->form_validation->set_rules('judul', 'Judul', 'required|trim|max_length[150]');
+		$this->form_validation->set_rules('pesan', 'Pesan', 'required|trim|max_length[2000]');
+
+		if ($this->form_validation->run() === FALSE) {
+			$this->session->set_flashdata('error', validation_errors('<li>', '</li>'));
+			redirect('umum/aduan');
+			return;
+		}
+
+		$nama  = $this->input->post('nama', TRUE);
+		$email = $this->input->post('email', TRUE);
+		$judul = $this->input->post('judul', TRUE);
+		$pesan = $this->input->post('pesan', TRUE);
+
+		// user_id selalu dari sesi (anti-IDOR), bukan dari input — tamu tetap
+		// boleh kirim aduan dengan user_id NULL.
+		$user_id = $this->is_logged_in() ? $this->get_user_id() : NULL;
+
+		$bidang = $this->Aduan_model->detect_bidang($judul . ' ' . $pesan);
+
+		$lampiran = NULL;
+		if (!empty($_FILES['lampiran']['name'])) {
+			$upload_path = '.assets/uploads/';
+			if (!is_dir($upload_path)) {
+				mkdir($upload_path, 0755, TRUE);
+			}
+
+			$config['upload_path']   = $upload_path;
+			$config['allowed_types'] = 'jpg|jpeg|png|pdf';
+			$config['max_size']      = 5120; // 5 MB
+			$config['encrypt_name']  = TRUE;
+
+			$this->load->library('upload', $config);
+
+			if (!$this->upload->do_upload('lampiran')) {
+				$this->session->set_flashdata('error', 'Gagal mengunggah lampiran: ' . $this->upload->display_errors('', ''));
+				redirect('umum/aduan');
+				return;
+			}
+
+			$lampiran = $this->upload->data('file_name');
+		}
+
+		$id = $this->Aduan_model->create([
+			'user_id'  => $user_id,
+			'nama'     => $nama,
+			'email'    => $email,
+			'judul'    => $judul,
+			'pesan'    => $pesan,
+			'bidang'   => $bidang,
+			'lampiran' => $lampiran,
+		]);
+
+		if ($id) {
+			$this->session->set_flashdata('success', 'Aduan Anda berhasil dikirim dan diarahkan ke ' . $this->Aduan_model->bidang_label($bidang) . '. Kami akan segera menindaklanjuti.');
+		} else {
+			$this->session->set_flashdata('error', 'Gagal menyimpan aduan. Silakan coba lagi.');
+		}
+
+		redirect('umum/aduan');
 	}
 
 	public function form_aduan()
