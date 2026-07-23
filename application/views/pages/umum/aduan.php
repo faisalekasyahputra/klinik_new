@@ -5,7 +5,7 @@
         </div>
         <p class="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--portal-brand)]">Layanan Pengaduan</p>
         <h1 id="aduan-title" class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)]">Sampaikan Aduan Anda</h1>
-        <p class="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--portal-text-muted)]">Isi formulir di bawah dan pilih bidang tujuan yang sesuai — aduan Anda akan langsung diteruskan ke bidang tersebut.</p>
+        <p class="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--portal-text-muted)]">Isi formulir di bawah dan pilih bidang tujuan yang sesuai, aduan Anda akan langsung diteruskan ke bidang tersebut.</p>
     </div>
 
     <?php if ($this->session->flashdata('success')): ?>
