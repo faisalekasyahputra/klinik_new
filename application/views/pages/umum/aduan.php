@@ -25,23 +25,23 @@
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
                 <label for="aduan-nama" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Nama Lengkap</label>
-                <input id="aduan-nama" name="nama" required maxlength="150" value="<?= htmlspecialchars($nama_default ?? '') ?>" placeholder="Nama Anda" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-4 py-3 text-sm text-[color:var(--portal-text)] outline-none focus:border-[color:var(--portal-brand)]">
+                <input id="aduan-nama" name="nama" required maxlength="150" value="<?= htmlspecialchars($nama_default ?? '') ?>" placeholder="Nama Anda" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
             </div>
             <div>
                 <label for="aduan-email" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Alamat Email</label>
-                <input id="aduan-email" name="email" type="email" required maxlength="100" value="<?= htmlspecialchars($email_default ?? '') ?>" placeholder="nama@email.com" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-4 py-3 text-sm text-[color:var(--portal-text)] outline-none focus:border-[color:var(--portal-brand)]">
+                <input id="aduan-email" name="email" type="email" required maxlength="100" value="<?= htmlspecialchars($email_default ?? '') ?>" placeholder="nama@email.com" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
             </div>
         </div>
 
         <div>
             <label for="aduan-judul" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Judul</label>
-            <input id="aduan-judul" name="judul" required maxlength="150" placeholder="Ringkasan singkat aduan Anda" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-4 py-3 text-sm text-[color:var(--portal-text)] outline-none focus:border-[color:var(--portal-brand)]">
+            <input id="aduan-judul" name="judul" required maxlength="150" placeholder="Ringkasan singkat aduan Anda" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
         </div>
 
         <div>
             <label for="aduan-bidang" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Bidang Tujuan</label>
             <div class="relative">
-                <select id="aduan-bidang" name="bidang" required class="w-full appearance-none rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-4 py-3 text-sm text-[color:var(--portal-text)] outline-none focus:border-[color:var(--portal-brand)]">
+                <select id="aduan-bidang" name="bidang" required class="w-full cursor-pointer appearance-none rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] py-3 pl-4 pr-10 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
                     <option value="" disabled selected hidden>Pilih Bidang Tujuan</option>
                     <option value="perumahan">Bidang Perumahan</option>
                     <option value="kawasan">Bidang Kawasan Permukiman</option>
@@ -57,19 +57,19 @@
 
         <div>
             <label for="aduan-pesan" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Pesan</label>
-            <textarea id="aduan-pesan" name="pesan" required rows="6" maxlength="2000" placeholder="Tuliskan detail aduan atau pertanyaan Anda di sini." class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-4 py-3 text-sm text-[color:var(--portal-text)] outline-none focus:border-[color:var(--portal-brand)] resize-y"></textarea>
+            <textarea id="aduan-pesan" name="pesan" required rows="6" maxlength="2000" placeholder="Tuliskan detail aduan atau pertanyaan Anda di sini." class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15 resize-y"></textarea>
         </div>
 
         <div>
             <label for="aduan-lampiran" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Lampiran <span class="font-normal text-[color:var(--portal-text-muted)]">(opsional)</span></label>
-            <input id="aduan-lampiran" name="lampiran" type="file" accept=".jpg,.jpeg,.png,.pdf" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-4 py-2.5 text-xs text-[color:var(--portal-text-muted)] file:mr-3 file:rounded-lg file:border-0 file:bg-[color:var(--portal-btn-bg)] file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-[color:var(--portal-icon)]">
+            <input id="aduan-lampiran" name="lampiran" type="file" accept=".jpg,.jpeg,.png,.pdf" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-2.5 text-xs text-[color:var(--portal-text-muted)] shadow-sm file:mr-3 file:rounded-lg file:border-0 file:bg-[color:var(--portal-btn-bg)] file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-[color:var(--portal-icon)]">
             <p class="mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]">Format JPG, PNG, atau PDF. Maksimal 5 MB.</p>
         </div>
 
         <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[color:var(--portal-btn-bg)] px-5 py-3 text-sm font-black text-[color:var(--portal-icon)] transition hover:-translate-y-0.5 hover:brightness-95">Kirim Aduan <i class="fa-solid fa-paper-plane"></i></button>
     </form>
 
-    <div class="mx-auto mt-6 max-w-2xl rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] p-4 text-sm text-[color:var(--portal-text-muted)]">
+    <div class="mx-auto mt-6 max-w-2xl rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] p-4 text-sm text-[color:var(--portal-text-muted)] shadow-sm">
         <i class="fa-solid fa-circle-info mr-2 text-[color:var(--portal-icon)]"></i> Butuh respons lebih cepat? Pakai tombol bantuan di pojok kanan bawah untuk WhatsApp langsung atau live chat.
     </div>
 </div>
