@@ -88,15 +88,18 @@ class Umum extends MY_Controller {
 	public function aduan()
 	{
 		$datacontent['judul'] ='';
-		$data['content'] = $this->load->view('pages/umum/aduan', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		// Prefill nama/email kalau user sedang login — kosong untuk tamu.
+		$datacontent['nama_default']  = $this->session->userdata('name') ?: '';
+		$datacontent['email_default'] = $this->session->userdata('email') ?: '';
+		$this->render('pages/umum/aduan', $datacontent);
 	}
 
-    public function form_aduan()
+	public function form_aduan()
 	{
-		$datacontent['judul'] ='';
-		$data['content'] = $this->load->view('pages/umum/form_aduan', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		// Konsep lama (pilih bidang -> form terpisah) sudah digabung jadi
+		// satu form langsung di aduan(). Redirect supaya bookmark/link lama
+		// tidak 404.
+		redirect('umum/aduan');
 	}
 
 	// =========================================================
