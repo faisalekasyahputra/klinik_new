@@ -62,6 +62,7 @@ $route['onboarding']               = 'Auth/onboarding';
 
 // --- Pengaturan User ---
 $route['akun']                     = 'Pengaturan/index';
+$route['akun/profil']              = 'Pengaturan/profil';
 $route['akun/update']              = 'Pengaturan/update_profile';
 $route['akun/delete']              = 'Pengaturan/delete_account';
 $route['akun/update_pengembang']   = 'Pengaturan/update_pengembang_profile';

@@ -1,4 +1,11 @@
-<?php $verification_pending = $this->session->userdata('srp2_verify_pending') === TRUE; ?>
+<?php
+/**
+ * DIARSIPKAN (2026-07) — halaman daftar cepat standalone ini digantikan wizard
+ * satu halaman di pages/pengembang/syarat.php (step "Akun", tab Daftar Cepat).
+ * Pengembang::daftar() sekarang cuma redirect ke Pengembang/syarat. Disimpan
+ * sebagai referensi, tidak lagi dirender controller manapun.
+ */
+$verification_pending = $this->session->userdata('srp2_verify_pending') === TRUE; ?>
 <section class="w-full px-4 py-8 font-outfit sm:px-6 lg:px-8" style="color:var(--portal-text)">
     <div class="mx-auto max-w-3xl">
         <nav class="mb-4 text-[10px] font-bold uppercase tracking-wider" style="color:var(--portal-text-muted)">
@@ -22,14 +29,14 @@
                 <p class="mt-3 text-[11px]" style="color:var(--portal-text-muted)"><span style="color:#dc2626">*</span> Wajib diisi</p>
 
                 <div class="mt-3 grid gap-3 sm:grid-cols-2">
-                    <label class="text-[11px] font-bold">Nama perusahaan <span style="color:#dc2626">*</span><input name="nama_perusahaan" required placeholder="Nama perusahaan" class="mt-1 block w-full rounded-lg px-3 py-2.5 text-xs font-normal outline-none" style="background:var(--portal-bg);border:1px solid var(--portal-border)"></label>
-                    <label class="text-[11px] font-bold">Email perusahaan <span style="color:#dc2626">*</span><input name="email" type="email" required placeholder="Email perusahaan" class="mt-1 block w-full rounded-lg px-3 py-2.5 text-xs font-normal outline-none" style="background:var(--portal-bg);border:1px solid var(--portal-border)"></label>
-                    <label class="text-[11px] font-bold">Kata sandi <span style="color:#dc2626">*</span><span class="relative mt-1 block"><input id="srp2-password" name="password" type="password" required minlength="8" aria-describedby="aturan-sandi" placeholder="Kata sandi" class="block w-full rounded-lg px-3 py-2.5 pr-10 text-xs font-normal outline-none" style="background:var(--portal-bg);border:1px solid var(--portal-border)"><button type="button" data-password-toggle="srp2-password" class="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Tampilkan kata sandi" style="color:var(--teal)"><i class="fa-solid fa-eye"></i></button></span></label>
-                    <label class="text-[11px] font-bold">Konfirmasi kata sandi <span style="color:#dc2626">*</span><span class="relative mt-1 block"><input id="srp2-password-confirm" name="password_confirm" type="password" required minlength="8" placeholder="Konfirmasi kata sandi" class="block w-full rounded-lg px-3 py-2.5 pr-10 text-xs font-normal outline-none" style="background:var(--portal-bg);border:1px solid var(--portal-border)"><button type="button" data-password-toggle="srp2-password-confirm" class="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Tampilkan konfirmasi kata sandi" style="color:var(--teal)"><i class="fa-solid fa-eye"></i></button></span></label>
+                    <label class="text-[11px] font-bold">Nama perusahaan <span style="color:#dc2626">*</span><input name="nama_perusahaan" autocomplete="organization" required placeholder="Nama perusahaan" class="mt-1 block w-full rounded-lg px-3 py-2.5 text-xs font-normal outline-none" style="background:var(--portal-bg);border:1px solid var(--portal-border)"></label>
+                    <label class="text-[11px] font-bold">Email perusahaan <span style="color:#dc2626">*</span><input name="email" type="email" autocomplete="email" required placeholder="Email perusahaan" class="mt-1 block w-full rounded-lg px-3 py-2.5 text-xs font-normal outline-none" style="background:var(--portal-bg);border:1px solid var(--portal-border)"></label>
+                    <label class="text-[11px] font-bold">Kata sandi <span style="color:#dc2626">*</span><span class="relative mt-1 block"><input id="srp2-password" name="password" type="password" autocomplete="new-password" required minlength="8" aria-describedby="aturan-sandi" placeholder="Kata sandi" class="block w-full rounded-lg px-3 py-2.5 pr-10 text-xs font-normal outline-none" style="background:var(--portal-bg);border:1px solid var(--portal-border)"><button type="button" data-password-toggle="srp2-password" class="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Tampilkan kata sandi" style="color:var(--teal)"><i class="fa-solid fa-eye"></i></button></span></label>
+                    <label class="text-[11px] font-bold">Konfirmasi kata sandi <span style="color:#dc2626">*</span><span class="relative mt-1 block"><input id="srp2-password-confirm" name="password_confirm" type="password" autocomplete="new-password" required minlength="8" placeholder="Konfirmasi kata sandi" class="block w-full rounded-lg px-3 py-2.5 pr-10 text-xs font-normal outline-none" style="background:var(--portal-bg);border:1px solid var(--portal-border)"><button type="button" data-password-toggle="srp2-password-confirm" class="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Tampilkan konfirmasi kata sandi" style="color:var(--teal)"><i class="fa-solid fa-eye"></i></button></span></label>
                 </div>
                 <p id="aturan-sandi" class="mt-2 text-[11px]" style="color:var(--portal-text-muted)"><i class="fa-solid fa-circle-info mr-1" style="color:var(--teal)"></i>Minimal 8 karakter, huruf besar, angka, dan simbol. Contoh: <strong style="color:var(--portal-text)">KlinikPKP#2026</strong></p>
                 <?php if (!empty($recaptcha_site_key)): ?><div class="mt-4 g-recaptcha" data-sitekey="<?= htmlspecialchars($recaptcha_site_key, ENT_QUOTES, 'UTF-8') ?>"></div><?php endif; ?>
-                <div class="mt-5 flex flex-wrap items-center justify-between gap-3"><a href="<?= base_url('Auth/login') ?>" class="text-xs font-bold" style="color:var(--teal)">Sudah punya akun? Masuk</a><button class="rounded-lg px-4 py-2.5 text-[11px] font-extrabold uppercase" style="background:#d6fb00;color:#0a1a1f">Daftar Akun Pengembang</button></div>
+                <div class="mt-5 flex flex-wrap items-center justify-between gap-3"><a href="<?= base_url('Auth/login?next=akun') ?>" class="text-xs font-bold" style="color:var(--teal)">Sudah punya akun? Masuk</a><button class="rounded-lg px-4 py-2.5 text-[11px] font-extrabold uppercase" style="background:#d6fb00;color:#0a1a1f">Daftar Akun Pengembang</button></div>
             </form>
         <?php endif; ?>
     </div>

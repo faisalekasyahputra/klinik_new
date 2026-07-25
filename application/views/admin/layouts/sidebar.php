@@ -18,8 +18,19 @@
     </div>
     
     <div class="px-3 py-4 overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar">
+        <?php if (isset($scoped_menu)): // Sidebar ringkas untuk admin_kabkota/admin_bidang — bukan superadmin ?>
+        <div class="text-[10px] font-bold text-gray-400 dark:text-brand-muted/70 uppercase tracking-wider mb-2 ml-2 transition-all duration-200 whitespace-nowrap overflow-hidden" x-show="sidebarOpen">Menu</div>
+        <nav class="space-y-1 relative">
+            <?php foreach ($scoped_menu as $item): ?>
+            <a href="<?= base_url($item['url']) ?>" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 <?= $this->uri->uri_string() === $item['segment'] ? 'bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary shadow-sm dark:shadow-none' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-gray-900 dark:hover:text-brand-light' ?>" :class="!sidebarOpen ? 'justify-center' : ''" title="<?= $item['label'] ?>">
+                <i class="ph <?= $item['icon'] ?> text-lg shrink-0" :class="sidebarOpen ? 'mr-3' : 'mr-0'"></i>
+                <span x-show="sidebarOpen" class="whitespace-nowrap overflow-hidden"><?= $item['label'] ?></span>
+            </a>
+            <?php endforeach; ?>
+        </nav>
+        <?php else: ?>
         <div class="text-[10px] font-bold text-gray-400 dark:text-brand-muted/70 uppercase tracking-wider mb-2 ml-2 transition-all duration-200 whitespace-nowrap overflow-hidden" x-show="sidebarOpen">Main Menu</div>
-        
+
         <nav class="space-y-1 relative">
             <a href="<?= base_url('Admin_Dashboard') ?>" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 <?= $this->uri->segment(1) == 'Admin_Dashboard' ? 'bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary shadow-sm dark:shadow-none' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-gray-900 dark:hover:text-brand-light' ?>" :class="!sidebarOpen ? 'justify-center' : ''" title="Dashboard">
                 <i class="ph ph-squares-four text-lg shrink-0 <?= $this->uri->segment(1) == 'Admin_Dashboard' ? 'opacity-100' : 'opacity-70' ?>" :class="sidebarOpen ? 'mr-3' : 'mr-0'"></i> 
@@ -56,11 +67,13 @@
                 <span x-show="sidebarOpen" class="whitespace-nowrap overflow-hidden">Pengguna</span>
             </a>
             <a href="<?= base_url('Admin_Srp2') ?>" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 <?= $this->uri->segment(1) == 'Admin_Srp2' ? 'bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary shadow-sm dark:shadow-none' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-gray-900 dark:hover:text-brand-light' ?>" :class="!sidebarOpen ? 'justify-center' : ''" title="Pengembang SRP2"><i class="ph ph-buildings text-lg shrink-0" :class="sidebarOpen ? 'mr-3' : 'mr-0'"></i><span x-show="sidebarOpen" class="whitespace-nowrap overflow-hidden">Pengembang SRP2</span></a>
+            <a href="<?= base_url('Admin_Kemitraan') ?>" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 <?= $this->uri->segment(1) == 'Admin_Kemitraan' ? 'bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary shadow-sm dark:shadow-none' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-gray-900 dark:hover:text-brand-light' ?>" :class="!sidebarOpen ? 'justify-center' : ''" title="KKN/Magang"><i class="ph ph-graduation-cap text-lg shrink-0" :class="sidebarOpen ? 'mr-3' : 'mr-0'"></i><span x-show="sidebarOpen" class="whitespace-nowrap overflow-hidden">KKN/Magang</span></a>
             <a href="<?= base_url('Admin_Settings') ?>" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 <?= $this->uri->segment(1) == 'Admin_Settings' ? 'bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary shadow-sm dark:shadow-none' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-gray-900 dark:hover:text-brand-light' ?>" :class="!sidebarOpen ? 'justify-center' : ''" title="Pengaturan">
                 <i class="ph ph-sliders-horizontal text-lg shrink-0 <?= $this->uri->segment(1) == 'Admin_Settings' ? 'opacity-100' : 'opacity-70' ?>" :class="sidebarOpen ? 'mr-3' : 'mr-0'"></i> 
                 <span x-show="sidebarOpen" class="whitespace-nowrap overflow-hidden">Pengaturan</span>
             </a>
         </nav>
+        <?php endif; ?>
     </div>
 
     <!-- Link to Main Website (OG Preview Style) -->

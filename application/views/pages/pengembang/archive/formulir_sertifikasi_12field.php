@@ -1,3 +1,13 @@
+<?php
+/**
+ * DIARSIPKAN (2026-07) — form manual 12 field ini digantikan wizard satu halaman
+ * di Pengembang::syarat() / pages/pengembang/syarat.php (syarat -> masuk/daftar
+ * cepat -> unggah dokumen -> kirim, tanpa pindah halaman). Jalur resmi pendaftaran
+ * SRP2 sekarang: daftar cepat (nama perusahaan + email + password) lewat
+ * Auth::do_register(), lengkapi sisanya via dashboard. File ini disimpan sebagai
+ * referensi, bukan dihapus — tidak lagi dirender controller manapun.
+ */
+?>
 <section class="w-full max-w-4xl mx-auto rounded-[2.5rem] p-6 sm:p-10 md:p-12 shadow-2xl z-10 relative mt-8 text-left" style="background-color: var(--bg-card); border: 1px solid rgba(255,255,255,0.08);">
 
     <div class="border-b border-zinc-800/80 pb-6 mb-8">
@@ -17,6 +27,12 @@
             </div>
         </div>
     </div>
+
+    <?php if($this->session->flashdata('success')): ?>
+    <div class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl p-4 mb-8 text-xs sm:text-sm leading-relaxed">
+        <i class="fa-solid fa-circle-check mr-1.5"></i><?php echo $this->session->flashdata('success'); ?>
+    </div>
+    <?php endif; ?>
 
     <?php if($this->session->flashdata('error')): ?>
     <div class="bg-red-500/10 border border-red-500/20 text-red-400 rounded-2xl p-4 mb-8 text-xs sm:text-sm leading-relaxed">

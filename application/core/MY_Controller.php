@@ -55,11 +55,31 @@ class MY_Controller extends CI_Controller {
 
     /**
      * Get the currently logged in user's ID from session
-     * 
+     *
      * @return int|null
      */
     protected function get_user_id() {
         return $this->session->userdata('user_id');
+    }
+
+    /**
+     * Get the currently logged in user's role from session
+     *
+     * @return string|null
+     */
+    protected function current_role() {
+        return $this->session->userdata('role');
+    }
+
+    /**
+     * Check if the logged in user has a given role (or one of several)
+     *
+     * @param string|array $role
+     * @return bool
+     */
+    protected function has_role($role) {
+        $roles = is_array($role) ? $role : [$role];
+        return in_array($this->current_role(), $roles, TRUE);
     }
 
     /**
@@ -78,6 +98,21 @@ class MY_Controller extends CI_Controller {
             $data['content'] = $this->load->view($view, $data, true);
             $this->load->view('layouts/main', $data);
         }
+    }
+
+    /**
+     * Render a personal dashboard page (role warga/pengembang/mahasiswa/dst) memakai
+     * shell admin yang sama (sidebar+topbar admin/index.php) supaya semua dashboard
+     * login punya tema konsisten — bukan lagi halaman portal terpisah.
+     *
+     * @param string $view        View path, mis. 'pages/pengaturan/index'
+     * @param array  $data        Data untuk view
+     * @param array  $scoped_menu Item sidebar, tiap item: ['label','icon','url','segment']
+     */
+    protected function render_user_dashboard($view, $data = [], $scoped_menu = []) {
+        $data['scoped_menu'] = $scoped_menu;
+        $data['content'] = $this->load->view($view, $data, TRUE);
+        $this->load->view('admin/index', $data);
     }
 
     /**
@@ -135,7 +170,77 @@ class Admin_Controller extends MY_Controller {
         // Inject global pending count for sidebar notification
         $this->load->model('Admin_model');
         $data['pending_count'] = $this->Admin_model->count_pending_queue();
-        
+
+        $data['content'] = $this->load->view($view, $data, TRUE);
+        $this->load->view('admin/index', $data);
+    }
+}
+
+/**
+ * Admin_Kabkota_Controller Class
+ *
+ * Base controller untuk admin yang di-scope ke 1 kabupaten/kota
+ * (kelola antrean perumahan wilayahnya saja — lihat sf_housing_queue.kabupaten_id).
+ * Scope-nya (kabupaten_id) ditaruh di session saat login, bukan dipercaya dari request.
+ */
+class Admin_Kabkota_Controller extends MY_Controller {
+
+    protected $my_kabupaten_id;
+
+    public function __construct() {
+        parent::__construct();
+
+        if ( ! $this->session->userdata('is_logged') || $this->session->userdata('role') !== 'admin_kabkota') {
+            $this->session->set_flashdata('error', 'Akses ditolak. Anda bukan Admin Kabupaten/Kota.');
+            redirect('Auth/login');
+        }
+
+        $this->my_kabupaten_id = $this->session->userdata('kabupaten_id');
+        if (empty($this->my_kabupaten_id)) {
+            $this->session->set_flashdata('error', 'Akun ini belum ditetapkan ke kabupaten/kota manapun. Hubungi superadmin.');
+            redirect('Auth/login');
+        }
+    }
+
+    protected function render_scoped_admin($view, $data = []) {
+        $data['scoped_menu'] = [
+            ['label' => 'Dashboard', 'icon' => 'ph-squares-four', 'url' => 'Admin_Kabkota', 'segment' => 'Admin_Kabkota'],
+        ];
+        $data['content'] = $this->load->view($view, $data, TRUE);
+        $this->load->view('admin/index', $data);
+    }
+}
+
+/**
+ * Admin_Bidang_Controller Class
+ *
+ * Base controller untuk admin yang di-scope ke 1 bidang
+ * (kelola aduan yang masuk ke bidangnya saja — lihat aduan.bidang).
+ * Scope-nya (bidang_kode) ditaruh di session saat login, bukan dipercaya dari request.
+ */
+class Admin_Bidang_Controller extends MY_Controller {
+
+    protected $my_bidang_kode;
+
+    public function __construct() {
+        parent::__construct();
+
+        if ( ! $this->session->userdata('is_logged') || $this->session->userdata('role') !== 'admin_bidang') {
+            $this->session->set_flashdata('error', 'Akses ditolak. Anda bukan Admin Bidang.');
+            redirect('Auth/login');
+        }
+
+        $this->my_bidang_kode = $this->session->userdata('bidang_kode');
+        if (empty($this->my_bidang_kode)) {
+            $this->session->set_flashdata('error', 'Akun ini belum ditetapkan ke bidang manapun. Hubungi superadmin.');
+            redirect('Auth/login');
+        }
+    }
+
+    protected function render_scoped_admin($view, $data = []) {
+        $data['scoped_menu'] = [
+            ['label' => 'Dashboard', 'icon' => 'ph-squares-four', 'url' => 'Admin_Bidang', 'segment' => 'Admin_Bidang'],
+        ];
         $data['content'] = $this->load->view($view, $data, TRUE);
         $this->load->view('admin/index', $data);
     }

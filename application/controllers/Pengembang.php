@@ -6,7 +6,8 @@ class Pengembang extends MY_Controller {
         parent::__construct();
         $this->load->helper(['url', 'download']);
         $this->load->model('Buka_peta');
-        $this->load->library(['form_validation', 'session']);
+        $this->load->model('auth_model');
+        $this->load->library('session');
         date_default_timezone_set('Asia/Jakarta');
     }
 
@@ -18,40 +19,66 @@ class Pengembang extends MY_Controller {
         $this->render('pages/pengembang/sertifikasi', $data);
     }
 
-    public function syarat() { $this->render('pages/pengembang/syarat', ['judul' => '', 'recaptcha_site_key' => getenv('RECAPTCHA_SITE_KEY') ?: '']); }
+    /**
+     * Wizard SRP2 satu halaman: syarat -> masuk/daftar -> unggah dokumen -> kirim.
+     * Semua langkah tetap di URL ini (state di Alpine), tidak pindah halaman.
+     */
+    public function syarat() {
+        $is_logged = $this->is_logged_in();
+        $role = $this->session->userdata('role');
+        $is_pengembang = $is_logged && $role === 'pengembang';
 
-    public function daftar() { $this->render('pages/pengembang/daftar', ['judul' => '', 'recaptcha_site_key' => getenv('RECAPTCHA_SITE_KEY') ?: '']); }
+        $registration_id = null;
+        $uploaded_keys = [];
+        if ($is_pengembang) {
+            $user_id = $this->get_user_id();
+            $registration = $this->db->order_by('id', 'DESC')->get_where('srp2_registrations', ['user_id' => $user_id])->row();
+            if (!$registration) {
+                // Akun sudah role pengembang tapi belum pernah punya draft SRP2 (mis. role
+                // di-set manual oleh admin) — buat draft-nya di sini, pola sama seperti
+                // Auth::lanjutkan() untuk akun hasil daftar cepat.
+                $user = $this->auth_model->find_by_id($user_id);
+                $this->db->insert('srp2_registrations', [
+                    'user_id' => $user_id, 'email' => $user->email,
+                    'nama_perusahaan' => $user->nama_perusahaan, 'status_verifikasi' => 'Draft',
+                ]);
+                $registration_id = $this->db->insert_id();
+            } else {
+                $registration_id = $registration->id;
+                $uploaded_keys = $this->db->select('document_key')->where('registration_id', $registration_id)
+                    ->get('srp2_documents')->result_array();
+                $uploaded_keys = array_column($uploaded_keys, 'document_key');
+            }
+        }
 
-    public function formulir() {
-        if (!$this->akses_pengembang('Pengembang/formulir')) return;
-        $this->render('pages/pengembang/formulir_sertifikasi', ['judul' => '']);
+        $this->render('pages/pengembang/syarat', [
+            'judul'            => '',
+            'recaptcha_site_key' => getenv('RECAPTCHA_SITE_KEY') ?: '',
+            'is_logged'        => $is_logged,
+            'is_pengembang'    => $is_pengembang,
+            'wrong_role'       => $is_logged && !$is_pengembang,
+            'nama_user'        => $this->session->userdata('name') ?: $this->session->userdata('email'),
+            'registration_id'  => $registration_id,
+            'dokumen'          => $this->dokumen_persyaratan(),
+            'uploaded_keys'    => $uploaded_keys,
+        ]);
     }
 
-    public function simpan() {
-        if (!$this->akses_pengembang('Pengembang/formulir') || $this->input->method(TRUE) !== 'POST') show_404();
-        $this->form_validation->set_rules('nama_peserta', 'Nama Peserta', 'required|trim');
-        $this->form_validation->set_rules('nik_ktp', 'NIK KTP', 'required|numeric|exact_length[16]|is_unique[srp2_registrations.nik_ktp]');
-        $this->form_validation->set_rules('jabatan', 'Jabatan', 'required|in_list[direktur_utama,manajer_proyek,penanggung_jawab,staf_legal]');
-        $this->form_validation->set_rules('no_whatsapp', 'Nomor WhatsApp', 'required|numeric|min_length[10]|max_length[15]');
-        $this->form_validation->set_rules('email', 'Email', 'required|valid_email|max_length[100]');
-        $this->form_validation->set_rules('nama_perusahaan', 'Nama Perusahaan', 'required|trim');
-        $this->form_validation->set_rules('nib', 'NIB Perusahaan', 'required|numeric|exact_length[13]|is_unique[srp2_registrations.nib]');
-        $this->form_validation->set_rules('asosiasi', 'Asosiasi', 'required|in_list[rei,himperra,apersi,pi,lainnya]');
-        $this->form_validation->set_rules('no_keanggotaan', 'Nomor Keanggotaan', 'required|trim|max_length[50]');
-        $this->form_validation->set_rules('alamat_kantor', 'Alamat Kantor', 'required|trim');
-        $this->form_validation->set_rules('pernyataan', 'Pernyataan Keaslian', 'required');
-        if (!$this->form_validation->run()) { $this->session->set_flashdata('error', validation_errors('<li>', '</li>')); redirect('Pengembang/formulir'); return; }
-        $payload = [
-            'user_id' => $this->get_user_id(), 'nama_peserta' => strtoupper($this->input->post('nama_peserta', TRUE)),
-            'nik_ktp' => $this->input->post('nik_ktp', TRUE), 'jabatan' => $this->input->post('jabatan', TRUE),
-            'no_whatsapp' => $this->input->post('no_whatsapp', TRUE), 'email' => strtolower($this->input->post('email', TRUE)),
-            'nama_perusahaan' => strtoupper($this->input->post('nama_perusahaan', TRUE)), 'nib' => $this->input->post('nib', TRUE),
-            'asosiasi' => $this->input->post('asosiasi', TRUE), 'no_keanggotaan' => $this->input->post('no_keanggotaan', TRUE),
-            'alamat_kantor' => $this->input->post('alamat_kantor', TRUE), 'status_verifikasi' => 'Draft'
-        ];
-        if (!$this->db->insert('srp2_registrations', $payload)) { $this->session->set_flashdata('error', 'Gagal menyimpan data pengajuan. Silakan coba lagi.'); redirect('Pengembang/formulir'); return; }
-        redirect('Pengembang/dokumen/' . $this->db->insert_id());
-    }
+    /**
+     * Diarsipkan — perannya sekarang diambil alih wizard di Pengembang/syarat
+     * (satu halaman: syarat -> masuk/daftar -> unggah dokumen -> kirim).
+     * Redirect dipertahankan supaya bookmark/tautan lama tidak jadi dead-end.
+     */
+    public function daftar() { redirect('Pengembang/syarat'); }
+
+    /**
+     * Diarsipkan — form manual 12 field digantikan wizard daftar cepat di
+     * Pengembang/syarat. Redirect dipertahankan supaya bookmark/tautan lama
+     * tidak jadi dead-end. Lihat archive/formulir_sertifikasi_12field.php.
+     */
+    public function formulir() { redirect('Pengembang/syarat'); }
+
+    public function simpan() { redirect('Pengembang/syarat'); }
 
     public function result($id = NULL) {
         if (!$this->akses_pengembang('Pengembang/result/' . (int) $id) || !is_numeric($id)) show_404();
@@ -78,7 +105,7 @@ class Pengembang extends MY_Controller {
         $target = 'Pengembang/mulai_unggah' . ($document_key ? '/' . $document_key : '');
         if (!$this->akses_pengembang($target)) return;
         $registration = $this->db->order_by('id', 'DESC')->get_where('srp2_registrations', ['user_id' => $this->get_user_id()])->row();
-        if (!$registration) { $this->session->set_flashdata('error', 'Lengkapi profil pengajuan SRP2 terlebih dahulu.'); redirect('Pengembang/formulir'); return; }
+        if (!$registration) { $this->session->set_flashdata('error', 'Lengkapi pendaftaran SRP2 terlebih dahulu.'); redirect('Pengembang/syarat'); return; }
         redirect('Pengembang/dokumen/' . $registration->id . ($document_key ? '#dokumen_' . $document_key : ''));
     }
 
@@ -92,38 +119,102 @@ class Pengembang extends MY_Controller {
     }
 
     public function simpan_dokumen($id = NULL) {
-        if (!is_numeric($id) || !$this->akses_pengembang('Pengembang/dokumen/' . (int) $id) || $this->input->method(TRUE) !== 'POST') show_404();
+        $is_ajax = $this->input->is_ajax_request();
+        if (!is_numeric($id) || !$this->akses_pengembang('Pengembang/dokumen/' . (int) $id) || $this->input->method(TRUE) !== 'POST') { if (!$is_ajax) show_404(); return; }
+        // Anti-IDOR: WHERE user_id selalu dari sesi — pengembang lain tidak bisa menulis ke registrasi ini.
         $registration = $this->db->get_where('srp2_registrations', ['id' => (int) $id, 'user_id' => $this->get_user_id()])->row();
-        if (!$registration || !$this->db->table_exists('srp2_documents')) show_404();
+        if (!$registration || !$this->db->table_exists('srp2_documents')) {
+            if ($is_ajax) { $this->output->set_status_header(404)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => 'Pengajuan tidak ditemukan.'])); return; }
+            show_404();
+        }
         $path = dirname(FCPATH) . DIRECTORY_SEPARATOR . 'private_uploads' . DIRECTORY_SEPARATOR . 'srp2' . DIRECTORY_SEPARATOR . $id . DIRECTORY_SEPARATOR;
         if (!is_dir($path)) mkdir($path, 0700, TRUE);
         $allowed = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png']; $stored = [];
         foreach ($this->dokumen_persyaratan() as $key => $label) {
             if (empty($_FILES[$key]['name'])) continue;
             $file = $_FILES[$key]; $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)); $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
-            if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] > 1048576 || !isset($allowed[$ext]) || $mime !== $allowed[$ext]) { $this->session->set_flashdata('error', 'Berkas ' . $label . ' tidak valid. Gunakan PDF/JPG/PNG maksimal 1 MB.'); redirect('Pengembang/dokumen/' . $id); return; }
+            if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] > 1048576 || !isset($allowed[$ext]) || $mime !== $allowed[$ext]) {
+                $message = 'Berkas ' . $label . ' tidak valid. Gunakan PDF/JPG/PNG maksimal 1 MB.';
+                if ($is_ajax) { $this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'document_key' => $key, 'message' => $message])); return; }
+                $this->session->set_flashdata('error', $message); redirect('Pengembang/dokumen/' . $id); return;
+            }
             $name = bin2hex(random_bytes(16)) . '.' . $ext;
-            if (!move_uploaded_file($file['tmp_name'], $path . $name)) { $this->session->set_flashdata('error', 'Berkas gagal disimpan.'); redirect('Pengembang/dokumen/' . $id); return; }
+            if (!move_uploaded_file($file['tmp_name'], $path . $name)) {
+                if ($is_ajax) { $this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'document_key' => $key, 'message' => 'Berkas gagal disimpan.'])); return; }
+                $this->session->set_flashdata('error', 'Berkas gagal disimpan.'); redirect('Pengembang/dokumen/' . $id); return;
+            }
             $stored[] = ['registration_id' => (int) $id, 'document_key' => $key, 'original_name' => substr(basename($file['name']), 0, 255), 'stored_name' => $name, 'mime_type' => $mime, 'file_size' => (int) $file['size']];
         }
         foreach ($stored as $row) $this->db->replace('srp2_documents', $row);
+
+        if ($is_ajax) {
+            if (empty($stored)) { $this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => 'Tidak ada berkas yang dipilih.'])); return; }
+            $uploaded_count = $this->db->where('registration_id', (int) $id)->count_all_results('srp2_documents');
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status' => 'success', 'document_key' => $stored[0]['document_key'], 'uploaded_count' => $uploaded_count,
+            ]));
+            return;
+        }
         $this->session->set_flashdata('success', $stored ? 'Dokumen berhasil diunggah.' : 'Pilih setidaknya satu dokumen untuk diunggah.'); redirect('Pengembang/dokumen/' . $id);
     }
 
     public function kirim_pengajuan($id = NULL) {
-        if (!is_numeric($id) || !$this->akses_pengembang('Pengembang/dokumen/' . (int) $id) || $this->input->method(TRUE) !== 'POST') show_404();
+        $is_ajax = $this->input->is_ajax_request();
+        if (!is_numeric($id) || !$this->akses_pengembang('Pengembang/dokumen/' . (int) $id) || $this->input->method(TRUE) !== 'POST') { if (!$is_ajax) show_404(); return; }
         $registration = $this->db->get_where('srp2_registrations', ['id' => (int) $id, 'user_id' => $this->get_user_id()])->row();
-        if (!$registration) show_404();
+        if (!$registration) {
+            if ($is_ajax) { $this->output->set_status_header(404)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => 'Pengajuan tidak ditemukan.'])); return; }
+            show_404();
+        }
         $required = count($this->dokumen_persyaratan()); $uploaded = $this->db->where('registration_id', (int) $id)->count_all_results('srp2_documents');
-        if ($uploaded < $required) { $this->session->set_flashdata('error', 'Lengkapi seluruh ' . $required . ' dokumen sebelum mengirim pengajuan.'); redirect('Pengembang/dokumen/' . $id); return; }
+        if ($uploaded < $required) {
+            $message = 'Lengkapi seluruh ' . $required . ' dokumen sebelum mengirim pengajuan.';
+            if ($is_ajax) { $this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => $message, 'uploaded_count' => $uploaded, 'required' => $required])); return; }
+            $this->session->set_flashdata('error', $message); redirect('Pengembang/dokumen/' . $id); return;
+        }
+        // Anti-IDOR: WHERE user_id selalu dari sesi.
         $this->db->where('id', (int) $id)->where('user_id', $this->get_user_id())->update('srp2_registrations', ['status_verifikasi' => 'Pending']);
+
+        if ($is_ajax) { $this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'success', 'message' => 'Pengajuan SRP2 berhasil dikirim dan sedang menunggu verifikasi.'])); return; }
         $this->session->set_flashdata('success', 'Pengajuan SRP2 berhasil dikirim dan sedang menunggu verifikasi.'); redirect('akun');
     }
 
     private function akses_pengembang($target) {
-        if (!$this->is_logged_in()) { $this->session->set_userdata('intended_url', $target); $this->session->set_flashdata('error', 'Silakan masuk atau daftar akun pengembang terlebih dahulu.'); redirect('Auth/login'); return FALSE; }
+        // Request AJAX (dipanggil wizard SRP2 lewat fetch) TIDAK BOLEH di-redirect() —
+        // fetch akan diam-diam mengikuti redirect dan menerima HTML halaman lain sebagai
+        // "berhasil". Balas status HTTP + JSON supaya wizard tahu harus tampilkan apa.
+        if ($this->input->is_ajax_request()) {
+            if (!$this->is_logged_in()) {
+                $this->output->set_status_header(401)->set_content_type('application/json')
+                    ->set_output(json_encode(['status' => 'error', 'code' => 'not_logged_in', 'message' => 'Silakan masuk atau daftar terlebih dahulu.']));
+                return FALSE;
+            }
+            if ($this->session->userdata('role') !== 'pengembang') {
+                $this->output->set_status_header(403)->set_content_type('application/json')
+                    ->set_output(json_encode(['status' => 'error', 'code' => 'wrong_role', 'message' => 'Layanan SRP2 hanya tersedia untuk akun dengan peran pengembang.']));
+                return FALSE;
+            }
+            return TRUE;
+        }
+
+        if (!$this->is_logged_in()) { $this->session->set_userdata('intended_url', $target); redirect('Pengembang/masuk'); return FALSE; }
         if ($this->session->userdata('role') !== 'pengembang') { $this->session->set_flashdata('error', 'Layanan SRP2 hanya tersedia untuk akun dengan peran pengembang.'); redirect('akun'); return FALSE; }
         return TRUE;
+    }
+
+    /**
+     * Gerbang masuk/daftar khusus alur SRP2 — supaya user pengembang tetap di dalam
+     * alur ini (bukan dilempar ke Auth/login umum) saat belum login. Auth/login dan
+     * Auth/register utama TIDAK diubah, tetap berfungsi seperti biasa untuk role lain.
+     */
+    public function masuk() {
+        if ($this->is_logged_in()) {
+            $intended = $this->session->userdata('intended_url') ?: 'Pengembang/syarat';
+            $this->session->unset_userdata('intended_url');
+            redirect($intended);
+            return;
+        }
+        $this->render('pages/pengembang/masuk', ['judul' => '', 'recaptcha_site_key' => getenv('RECAPTCHA_SITE_KEY') ?: '']);
     }
 
     private function dokumen_persyaratan() {

@@ -199,6 +199,24 @@
                         </div>
 
                         <div>
+                            <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Kabupaten/Kota Domisili <span class="normal-case font-normal text-zinc-500">(opsional)</span></label>
+                            <div class="relative group">
+                                <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-zinc-500 group-focus-within:text-[color:var(--portal-brand)] transition-colors">
+                                    <i class="fa-solid fa-map-pin text-sm"></i>
+                                </div>
+                                <select name="kabupaten_id" x-model="survey.kabupaten_id" class="w-full bg-black/20 border border-white/10 rounded-xl pl-10 pr-10 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:bg-black/40 transition-colors appearance-none text-sm">
+                                    <option value="" class="bg-[#0f2933]">Pilih kabupaten/kota</option>
+                                    <?php foreach ($kabupaten_list as $k): ?>
+                                    <option value="<?= $k->id ?>" class="bg-[#0f2933]"><?= html_escape($k->nama) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-zinc-500">
+                                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
                             <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Alasan Pengajuan Bantuan</label>
                             <div class="relative group">
                                 <div class="absolute top-3 left-0 flex items-center pl-4 pointer-events-none text-zinc-500 group-focus-within:text-[color:var(--portal-brand)] transition-colors">
@@ -414,7 +432,8 @@ function wizardData() {
             penghasilan: '',
             pekerjaan: '',
             status_kepemilikan: '',
-            alasan_pengajuan: ''
+            alasan_pengajuan: '',
+            kabupaten_id: ''
         },
         
         init() {

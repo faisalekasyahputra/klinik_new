@@ -144,6 +144,22 @@
                         <div style="color: #8aacb0; font-size: 0.7rem; margin-bottom: 4px;">Warga (Pengaju)</div>
                         <div style="color: #fff; font-weight: 600; line-height: 1.4; word-break: break-all;">E: warga@example.com<br>U: warga_demo<br>P: password</div>
                     </button>
+                    <button type="button" onclick="document.getElementById('login_email').value='pengembang@example.com'; document.getElementById('login_password').value='password';" style="background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 8px; border: 1px solid transparent; cursor: pointer; text-align: left; transition: all 0.2s;" onmouseover="this.style.borderColor='rgba(214,251,0,0.5)';" onmouseout="this.style.borderColor='transparent';">
+                        <div style="color: #8aacb0; font-size: 0.7rem; margin-bottom: 4px;">Pengembang (SRP2)</div>
+                        <div style="color: #fff; font-weight: 600; line-height: 1.4; word-break: break-all;">E: pengembang@example.com<br>U: pengembang_demo<br>P: password</div>
+                    </button>
+                    <button type="button" onclick="document.getElementById('login_email').value='mahasiswa@example.com'; document.getElementById('login_password').value='password';" style="background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 8px; border: 1px solid transparent; cursor: pointer; text-align: left; transition: all 0.2s;" onmouseover="this.style.borderColor='rgba(214,251,0,0.5)';" onmouseout="this.style.borderColor='transparent';">
+                        <div style="color: #8aacb0; font-size: 0.7rem; margin-bottom: 4px;">Mahasiswa (KKN/Magang)</div>
+                        <div style="color: #fff; font-weight: 600; line-height: 1.4; word-break: break-all;">E: mahasiswa@example.com<br>U: mahasiswa_demo<br>P: password</div>
+                    </button>
+                    <button type="button" onclick="document.getElementById('login_email').value='adminkabkota@example.com'; document.getElementById('login_password').value='password';" style="background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 8px; border: 1px solid transparent; cursor: pointer; text-align: left; transition: all 0.2s;" onmouseover="this.style.borderColor='rgba(214,251,0,0.5)';" onmouseout="this.style.borderColor='transparent';">
+                        <div style="color: #8aacb0; font-size: 0.7rem; margin-bottom: 4px;">Admin Kab/Kota (Semarang)</div>
+                        <div style="color: #fff; font-weight: 600; line-height: 1.4; word-break: break-all;">E: adminkabkota@example.com<br>U: adminkabkota_demo<br>P: password</div>
+                    </button>
+                    <button type="button" onclick="document.getElementById('login_email').value='adminbidang@example.com'; document.getElementById('login_password').value='password';" style="background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 8px; border: 1px solid transparent; cursor: pointer; text-align: left; transition: all 0.2s;" onmouseover="this.style.borderColor='rgba(214,251,0,0.5)';" onmouseout="this.style.borderColor='transparent';">
+                        <div style="color: #8aacb0; font-size: 0.7rem; margin-bottom: 4px;">Admin Bidang (Perumahan)</div>
+                        <div style="color: #fff; font-weight: 600; line-height: 1.4; word-break: break-all;">E: adminbidang@example.com<br>U: adminbidang_demo<br>P: password</div>
+                    </button>
                 </div>
                 <div style="margin-top: 0.5rem; font-size: 0.7rem; color: #8aacb0; text-align: center;">Klik salah satu kotak di atas untuk mengisi form secara otomatis (menggunakan Email).</div>
             </div>

@@ -39,6 +39,18 @@ class Auth extends MY_Controller {
      * Display login page
      */
     public function login() {
+        // Simpan tujuan lanjutan setelah login (mis. link "Sudah punya akun?"
+        // dari alur pendaftaran SRP2) — dibaca lewat ?next=, divalidasi anti-open-redirect.
+        // WAJIB dibaca duluan SEBELUM cek is_logged_in(), supaya kalau user ternyata
+        // sudah login, redirect di bawah tetap tahu harus lanjut ke mana (bukan jatuh ke beranda).
+        $next = $this->input->get('next', TRUE);
+        if (!empty($next)) {
+            $safe_next = $this->sanitize_redirect($next);
+            if (!empty($safe_next)) {
+                $this->session->set_userdata('intended_url', $safe_next);
+            }
+        }
+
         // If already logged in, redirect
         if ($this->is_logged_in()) {
             $this->_redirect_after_login();
@@ -55,11 +67,16 @@ class Auth extends MY_Controller {
     public function do_login() {
         $login_id = trim($this->input->post('email', TRUE));
         $password = $this->input->post('password');
+        $is_ajax  = $this->input->is_ajax_request();
+
+        // Kalau form login ini ditanam di halaman lain (mis. wizard SRP2 Pengembang/syarat),
+        // form itu kirim hidden field 'redirect_to' supaya kalau gagal (jalur non-AJAX), user
+        // tetap di halaman asalnya — bukan terlempar ke Auth/login umum. Divalidasi anti-open-redirect.
+        $error_target = $this->sanitize_redirect($this->input->post('redirect_to', TRUE)) ?: 'Auth/login';
 
         // Basic validation
         if (empty($login_id) || empty($password)) {
-            $this->session->set_flashdata('error', 'Email/Username dan password wajib diisi.');
-            redirect('Auth/login');
+            $this->_login_fail($is_ajax, 'Email/Username dan password wajib diisi.', $error_target);
             return;
         }
 
@@ -67,8 +84,7 @@ class Auth extends MY_Controller {
         if (!empty($this->recaptcha_secret_key)) {
             $recaptcha_response = $this->input->post('g-recaptcha-response');
             if (!$this->_verify_recaptcha($recaptcha_response)) {
-                $this->session->set_flashdata('error', 'Verifikasi Captcha gagal. Silakan coba lagi.');
-                redirect('Auth/login');
+                $this->_login_fail($is_ajax, 'Verifikasi Captcha gagal. Silakan coba lagi.', $error_target);
                 return;
             }
         }
@@ -78,16 +94,14 @@ class Auth extends MY_Controller {
 
         if (!$user || empty($user->password)) {
             // User not found or no password (Google-only user)
-            $this->session->set_flashdata('error', 'Akun tidak ditemukan atau password salah.');
-            redirect('Auth/login');
+            $this->_login_fail($is_ajax, 'Akun tidak ditemukan atau password salah.', $error_target);
             return;
         }
 
         // Check lockout
         if ($this->auth_model->is_locked($user)) {
             $remaining = ceil($this->auth_model->lockout_remaining($user) / 60);
-            $this->session->set_flashdata('error', "Akun terkunci sementara. Coba lagi dalam {$remaining} menit.");
-            redirect('Auth/login');
+            $this->_login_fail($is_ajax, "Akun terkunci sementara. Coba lagi dalam {$remaining} menit.", $error_target);
             return;
         }
 
@@ -95,12 +109,10 @@ class Auth extends MY_Controller {
         if (!password_verify($password, $user->password)) {
             $this->auth_model->increment_login_attempts($user->id);
             $attempts_left = Auth_model::MAX_LOGIN_ATTEMPTS - ($user->login_attempts + 1);
-            if ($attempts_left > 0) {
-                $this->session->set_flashdata('error', "Email atau password salah. Sisa {$attempts_left} percobaan.");
-            } else {
-                $this->session->set_flashdata('error', 'Akun terkunci selama 15 menit karena terlalu banyak percobaan gagal.');
-            }
-            redirect('Auth/login');
+            $message = $attempts_left > 0
+                ? "Email atau password salah. Sisa {$attempts_left} percobaan."
+                : 'Akun terkunci selama 15 menit karena terlalu banyak percobaan gagal.';
+            $this->_login_fail($is_ajax, $message, $error_target);
             return;
         }
 
@@ -108,19 +120,70 @@ class Auth extends MY_Controller {
         $this->auth_model->reset_login_attempts($user->id);
 
         $session_data = [
-            'user_id'   => $user->id,
-            'name'      => $user->name,
-            'username'  => $user->username ?? '',
-            'email'     => $user->email,
-            'avatar'    => $user->avatar,
-            'role'      => $user->role, // Added role to session
-            'is_logged' => TRUE,
+            'user_id'      => $user->id,
+            'name'         => $user->name,
+            'username'     => $user->username ?? '',
+            'email'        => $user->email,
+            'avatar'       => $user->avatar,
+            'role'         => $user->role, // Added role to session
+            'kabupaten_id' => $user->kabupaten_id ?? null, // scope untuk role admin_kabkota
+            'bidang_kode'  => $user->bidang_kode ?? null, // scope untuk role admin_bidang
+            'is_logged'    => TRUE,
         ];
         $this->session->set_userdata($session_data);
         $this->session->sess_regenerate(TRUE);
 
+        // Wizard (mis. SRP2 di Pengembang/syarat) cuma butuh konfirmasi + role, bukan redirect —
+        // wizard yang urus lanjutannya sendiri di sisi klien, tanpa pindah halaman.
+        if ($is_ajax) {
+            $registration_id = null;
+            if ($user->role === 'pengembang') {
+                // Sertakan draft SRP2 miliknya (buat kalau belum ada) supaya wizard bisa
+                // langsung lanjut ke langkah unggah dokumen tanpa request tambahan.
+                $registration = $this->db->order_by('id', 'DESC')->get_where('srp2_registrations', ['user_id' => $user->id])->row();
+                if (!$registration) {
+                    $this->db->insert('srp2_registrations', [
+                        'user_id' => $user->id, 'email' => $user->email,
+                        'nama_perusahaan' => $user->nama_perusahaan, 'status_verifikasi' => 'Draft',
+                    ]);
+                    $registration_id = $this->db->insert_id();
+                } else {
+                    $registration_id = $registration->id;
+                }
+            }
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status'          => 'success',
+                'role'            => $user->role,
+                'name'            => $user->name,
+                'registration_id' => $registration_id,
+            ]));
+            return;
+        }
+
+        // Kalau sebelumnya diarahkan ke sini di tengah alur lain (mis. pendaftaran SRP2
+        // lewat link "Sudah punya akun?"), kasih tahu login berhasil dan alurnya lanjut.
+        if (!empty($this->session->userdata('intended_url'))) {
+            $this->session->set_flashdata('success', 'Anda berhasil masuk. Mari lanjutkan.');
+        }
+
         // Redirect based on profile completion
         $this->_redirect_after_login();
+    }
+
+    /**
+     * Balas gagal login — JSON kalau request AJAX (dipakai wizard SRP2), flashdata+redirect
+     * kalau request halaman biasa (perilaku asli, tidak berubah).
+     */
+    private function _login_fail($is_ajax, $message, $error_target) {
+        if ($is_ajax) {
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status'  => 'error',
+                'message' => $message,
+            ]));
+            return;
+        }
+        $this->session->set_flashdata('error', $message);
+        redirect($error_target);
     }
 
     // =========================================================
@@ -149,32 +212,31 @@ class Auth extends MY_Controller {
         $password_confirm = $this->input->post('password_confirm');
         $is_srp2          = $this->input->post('srp2_pengembang') === '1';
         $nama_perusahaan  = trim($this->input->post('nama_perusahaan', TRUE));
-        $redirect_target  = $is_srp2 ? 'Pengembang/daftar' : 'Auth/register';
+        $is_ajax          = $this->input->is_ajax_request();
+        // Wizard SRP2 sekarang tinggal di Pengembang/syarat — bukan lagi halaman
+        // Pengembang/daftar terpisah (diarsipkan, cuma jadi redirect ke sini).
+        $redirect_target  = $is_srp2 ? 'Pengembang/syarat' : 'Auth/register';
 
         // Validation
         if (empty($email) || empty($password) || empty($password_confirm)) {
-            $this->session->set_flashdata('error', 'Semua field wajib diisi.');
-            redirect($redirect_target);
+            $this->_register_fail($is_ajax, 'Semua field wajib diisi.', $redirect_target);
             return;
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $this->session->set_flashdata('error', 'Format email tidak valid.');
-            redirect($redirect_target);
+            $this->_register_fail($is_ajax, 'Format email tidak valid.', $redirect_target);
             return;
         }
 
         if ($password !== $password_confirm) {
-            $this->session->set_flashdata('error', 'Password dan konfirmasi tidak cocok.');
-            redirect($redirect_target);
+            $this->_register_fail($is_ajax, 'Password dan konfirmasi tidak cocok.', $redirect_target);
             return;
         }
 
         // Password strength
         if (strlen($password) < 8 || !preg_match('/[A-Z]/', $password) ||
             !preg_match('/[0-9]/', $password) || !preg_match('/[^A-Za-z0-9]/', $password)) {
-            $this->session->set_flashdata('error', 'Password harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.');
-            redirect($redirect_target);
+            $this->_register_fail($is_ajax, 'Password harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.', $redirect_target);
             return;
         }
 
@@ -182,8 +244,7 @@ class Auth extends MY_Controller {
         if (!empty($this->recaptcha_secret_key)) {
             $recaptcha_response = $this->input->post('g-recaptcha-response');
             if (!$this->_verify_recaptcha($recaptcha_response)) {
-                $this->session->set_flashdata('error', 'Verifikasi Captcha gagal. Silakan coba lagi.');
-                redirect($redirect_target);
+                $this->_register_fail($is_ajax, 'Verifikasi Captcha gagal. Silakan coba lagi.', $redirect_target);
                 return;
             }
         }
@@ -191,31 +252,36 @@ class Auth extends MY_Controller {
         // Check if email already exists
         $existing = $this->auth_model->find_by_email($email);
         if ($existing) {
-            $this->session->set_flashdata('error', 'Email sudah terdaftar. Silakan login atau gunakan email lain.');
-            redirect($redirect_target);
+            $this->_register_fail($is_ajax, 'Email sudah terdaftar. Silakan login atau gunakan email lain.', $redirect_target);
             return;
         }
 
         // Create user
         if ($is_srp2 && $nama_perusahaan === '') {
-            $this->session->set_flashdata('error', 'Nama perusahaan wajib diisi untuk akun pengembang.');
-            redirect('Pengembang/syarat');
+            $this->_register_fail($is_ajax, 'Nama perusahaan wajib diisi untuk akun pengembang.', 'Pengembang/syarat');
             return;
         }
         $password_hash = password_hash($password, PASSWORD_BCRYPT);
         $user_id = $this->auth_model->create_user($email, $password_hash);
 
         if (!$user_id) {
-            $this->session->set_flashdata('error', 'Terjadi kesalahan sistem. Silakan coba lagi.');
-            redirect($redirect_target);
+            $this->_register_fail($is_ajax, 'Terjadi kesalahan sistem. Silakan coba lagi.', $redirect_target);
             return;
         }
 
+        $registration_id = null;
         if ($is_srp2) {
             $this->db->where('id', $user_id)->update('usr_users', [
                 'role' => 'pengembang', 'nama_perusahaan' => strtoupper($nama_perusahaan),
                 'profile_completed' => 1, 'status' => 'active', 'updated_at' => date('Y-m-d H:i:s'),
             ]);
+            // Draft dibuat langsung di sini (bukan lewat detour verifikasi-email simulasi)
+            // supaya wizard bisa lanjut ke langkah unggah dokumen tanpa pindah halaman.
+            $this->db->insert('srp2_registrations', [
+                'user_id' => $user_id, 'email' => $email,
+                'nama_perusahaan' => strtoupper($nama_perusahaan), 'status_verifikasi' => 'Draft',
+            ]);
+            $registration_id = $this->db->insert_id();
             $this->session->set_userdata('intended_url', 'akun');
             $this->session->set_userdata('srp2_quick_registration', TRUE);
         }
@@ -233,14 +299,38 @@ class Auth extends MY_Controller {
         $this->session->set_userdata($session_data);
         $this->session->sess_regenerate(TRUE);
 
+        if ($is_ajax) {
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status'          => 'success',
+                'role'            => $session_data['role'],
+                'registration_id' => $registration_id,
+            ]));
+            return;
+        }
+
         if ($is_srp2) {
-            $this->session->set_userdata('srp2_verify_pending', TRUE);
-            redirect('Pengembang/daftar');
+            redirect('Pengembang/syarat');
             return;
         }
 
         // Redirect to dummy email verification page
         redirect('Auth/verify_pending');
+    }
+
+    /**
+     * Balas gagal registrasi — JSON kalau request AJAX (dipakai wizard SRP2), flashdata+redirect
+     * kalau request halaman biasa (perilaku asli, tidak berubah).
+     */
+    private function _register_fail($is_ajax, $message, $redirect_target) {
+        if ($is_ajax) {
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status'  => 'error',
+                'message' => $message,
+            ]));
+            return;
+        }
+        $this->session->set_flashdata('error', $message);
+        redirect($redirect_target);
     }
 
     // =========================================================
@@ -256,9 +346,9 @@ class Auth extends MY_Controller {
             return;
         }
 
-        // If profile already complete, go to dashboard
+        // If profile already complete, go to dashboard (atau lanjutkan alur yang tertunda)
         if ($this->auth_model->is_profile_complete($this->get_user_id())) {
-            redirect('');
+            $this->_redirect_after_login();
             return;
         }
 
@@ -555,13 +645,15 @@ class Auth extends MY_Controller {
                         ]);
 
                         $session_data = [
-                            'user_id'   => $logged_in_user[0]['id'],
-                            'name'      => $logged_in_user[0]['name'],
-                            'username'  => $logged_in_user[0]['username'] ?? '',
-                            'email'     => $logged_in_user[0]['email'],
-                            'avatar'    => $logged_in_user[0]['avatar'],
-                            'role'      => $logged_in_user[0]['role'] ?? null, // Added role to session
-                            'is_logged' => TRUE,
+                            'user_id'      => $logged_in_user[0]['id'],
+                            'name'         => $logged_in_user[0]['name'],
+                            'username'     => $logged_in_user[0]['username'] ?? '',
+                            'email'        => $logged_in_user[0]['email'],
+                            'avatar'       => $logged_in_user[0]['avatar'],
+                            'role'         => $logged_in_user[0]['role'] ?? null, // Added role to session
+                            'kabupaten_id' => $logged_in_user[0]['kabupaten_id'] ?? null,
+                            'bidang_kode'  => $logged_in_user[0]['bidang_kode'] ?? null,
+                            'is_logged'    => TRUE,
                         ];
                         $this->session->set_userdata($session_data);
                         $this->session->sess_regenerate(TRUE);

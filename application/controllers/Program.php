@@ -32,7 +32,8 @@ class Program extends Public_Controller {
 
         $data = [
             'title' => 'Klinik Diagnosa - ' . $program['nama_program'],
-            'program' => $program
+            'program' => $program,
+            'kabupaten_list' => $this->db->order_by('nama', 'ASC')->get('kabupaten')->result(),
         ];
 
         // Load view using main layout
@@ -50,7 +51,8 @@ class Program extends Public_Controller {
                 'nama_program' => 'Solusi Pembiayaan Perumahan',
                 'kode_program' => 'umum'
             ],
-            'is_solusi_pembiayaan' => TRUE
+            'is_solusi_pembiayaan' => TRUE,
+            'kabupaten_list' => $this->db->order_by('nama', 'ASC')->get('kabupaten')->result(),
         ];
 
         $this->render('pages/program/diagnosa', $data);
@@ -386,11 +388,13 @@ class Program extends Public_Controller {
         $data_simperum = $this->input->post('data_simperum', TRUE);
 
         $user_id = $this->is_logged_in() ? $this->get_user_id() : NULL;
+        $kabupaten_id = (int) $this->input->post('kabupaten_id', TRUE);
 
         $ticket_code = $this->Program_model->generate_ticket_code();
         $insert_data = [
             'ticket_code' => $ticket_code,
             'user_id' => $user_id,
+            'kabupaten_id' => $kabupaten_id ?: NULL,
             'program_id' => $program_id,
             'nik_pengaju' => $nik, // Idealnya dienkripsi, disesuaikan dengan aturan NFR-1.1
             'nama_lengkap' => $nama_lengkap,

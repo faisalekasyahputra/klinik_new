@@ -58,8 +58,10 @@ uploads/            # file upload user
 | `Chat.php` | Chat konsultasi |
 | `Statistika.php` | Data statistik & chart |
 | `Sikumbang.php`, `Sikaper.php`, `Sikunang.php`, `Siperum.php` | Integrasi API eksternal pemerintah |
-| `Pengaturan.php` | Profil user & hapus akun, plus update data SRP2 milik sendiri untuk role `pengembang` — lihat §14 |
-| `Admin.php`, `Admin_Content.php`, `Admin_Dashboard.php`, `Admin_Settings.php`, `Admin_Users.php` | Panel admin (extends `Admin_Controller`) |
+| `Pengaturan.php` | Dashboard `/akun` — profil user & hapus akun, plus section per role (`pengembang`: data SRP2 §14; `mahasiswa`: status KKN/Magang; semua role: riwayat antrean + aduan) — lihat §16 |
+| `Admin.php`, `Admin_Content.php`, `Admin_Dashboard.php`, `Admin_Settings.php`, `Admin_Users.php`, `Admin_Srp2.php`, `Admin_Kemitraan.php` | Panel superadmin (extends `Admin_Controller`) — lihat §16 |
+| `Admin_Kabkota.php`, `Admin_Bidang.php` | Panel admin ter-scope (extends `Admin_Kabkota_Controller`/`Admin_Bidang_Controller`) — lihat §16 |
+| `KemitraanPortal.php` | Info + pendaftaran KKN/Magang (`daftar($jenis)`/`simpan()`, login-gated role `mahasiswa`) |
 | `Bank_desain.php`, `Berita.php`, `Kemitraan.php`, `Kabupaten.php`, `User_Profile.php` | Fitur pendukung, ukuran kecil |
 
 Controller besar (`Auth.php` ~26KB, `Index.php` ~20KB, `Umum.php` ~17KB) — kandidat untuk dipecah kalau melakukan refactor besar.
@@ -68,12 +70,14 @@ Controller besar (`Auth.php` ~26KB, `Index.php` ~20KB, `Umum.php` ~17KB) — kan
 
 ```
 CI_Controller
-└── MY_Controller          # security headers (CSP-lite: X-Frame-Options, HSTS, Permissions-Policy dll) di SETIAP request
-    ├── Public_Controller   # untuk route publik, tidak ada guard tambahan
-    └── Admin_Controller    # redirect ke Auth/login jika !is_logged || role !== 'admin'; punya render_admin()
+└── MY_Controller               # security headers (CSP-lite: X-Frame-Options, HSTS, Permissions-Policy dll) di SETIAP request
+    ├── Public_Controller        # untuk route publik, tidak ada guard tambahan
+    ├── Admin_Controller         # redirect ke Auth/login jika !is_logged || role !== 'admin'; punya render_admin()
+    ├── Admin_Kabkota_Controller # role !== 'admin_kabkota' → redirect; expose $this->my_kabupaten_id dari session; punya render_scoped_admin()
+    └── Admin_Bidang_Controller  # role !== 'admin_bidang' → redirect; expose $this->my_bidang_kode dari session; punya render_scoped_admin()
 ```
 
-Helper session di `MY_Controller`: `is_logged_in()`, `get_user_id()`, `sanitize_redirect()` (cegah open-redirect — cek ini sebelum pakai `redirect($_GET['next'])` gaya apa pun).
+Helper session di `MY_Controller`: `is_logged_in()`, `get_user_id()`, `current_role()`, `has_role($role)`, `sanitize_redirect()` (cegah open-redirect — cek ini sebelum pakai `redirect($_GET['next'])` gaya apa pun).
 
 > Catatan: TIDAK ada kelas `Auth_Controller`. Kalau menemukan referensi itu di dokumen lama/checkpoint, itu keliru — controller auth cukup pakai `Public_Controller` biasa + cek session manual.
 
@@ -92,15 +96,17 @@ Helper session di `MY_Controller`: `is_logged_in()`, `get_user_id()`, `sanitize_
 
 ## 8. Database
 
-Schema migrasi resmi: [`docs/engineering/schema_klinikpkp.sql`](docs/engineering/schema_klinikpkp.sql) (tanpa data dummy).
+Schema baseline (snapshot lama, TIDAK real-time): [`docs/engineering/schema_klinikpkp.sql`](docs/engineering/schema_klinikpkp.sql). Perubahan skema SEJAK migration library diaktifkan (lihat §16) ada di `application/migrations/*.php` — itu sumber kebenaran untuk tabel/kolom terbaru, bukan file `.sql` di `docs/engineering/`. Jalankan `php index.php migrate` untuk menyamakan skema DB manapun yang sedang ditunjuk `.env` ke migrasi terbaru.
 
 **Konvensi prefix modular** (tabel baru ikuti pola ini):
 - `usr_` — akun & data user (`usr_users`, `usr_documents`)
 - `sf_` — Smart Filter (`sf_programs`, `sf_program_kategori`, `sf_housing_queue`)
 - `forum_` — forum diskusi (`forum_diskusi`, `forum_komentar`, `forum_likes`)
-- `sys_` — sistem (`sys_menu`, `sys_multi`, `sys_settings`)
+- `sys_` — sistem (`sys_menu`, `sys_multi`, `sys_settings`, `sys_ticket_lookup_limits`)
 - `chat_` — konsultasi (`chat_rooms`, `chat_messages`)
 - `data_sosmed_perumahan` — sosmed pengembang
+- `srp2_` — Sertifikasi Pengembang (`srp2_registrations`, `srp2_certified_developers`, `srp2_documents`) — lihat §14
+- Tabel tanpa prefix modular tapi tetap resmi (dibuat lewat `application/migrations/`, bukan lagi `.sql` lepas): `aduan`, `kabupaten`, `bidang`, `kkn_magang_pendaftaran` — lihat §16
 
 **Tabel legacy tanpa prefix** (dipakai lewat parameter dinamis di `Buka_peta.php`, tidak ada di `schema_klinikpkp.sql` — asumsikan sudah ada di DB dari baseline sebelum migrasi ini): `kondisi`, `bendung`, `irigasi`, `saluran_pembuang`.
 
@@ -176,15 +182,60 @@ Setiap halaman portal yang memuat data wajib menyediakan skeleton dengan bentuk 
 
 Untuk halaman tabel, skeleton minimal berisi blok judul, toolbar, dan 5–10 baris tabel. Reuse pola di `application/views/layouts/main.php` dan `application/views/layouts/footer.php` sebelum menambah markup baru.
 
+## 16. Sistem Role Multi-Peran
+
+Daftar resmi role: [`application/config/roles.php`](application/config/roles.php) (`$config['available_roles']`) — **satu-satunya sumber kebenaran**, jangan hardcode string role baru di controller/view.
+
+| Role | Scope tambahan | Dashboard |
+|---|---|---|
+| `admin` | — (superadmin, lihat semua) | `Admin_Dashboard`, `Admin`, `Admin_Content`, `Admin_Users`, `Admin_Srp2`, `Admin_Kemitraan`, `Admin_Settings` |
+| `warga` | — | `/akun` — riwayat antrean perumahan + riwayat aduan |
+| `pengembang` | — | `/akun` (§14) + alur SRP2 penuh |
+| `mahasiswa` | — | `/akun` (status KKN/Magang) + `KemitraanPortal/daftar/{kkn,magang}` |
+| `admin_kabkota` | `usr_users.kabupaten_id` (FK → `kabupaten.id`) | `Admin_Kabkota` — HANYA `sf_housing_queue` di kabupatennya |
+| `admin_bidang` | `usr_users.bidang_kode` (FK → `bidang.kode`) | `Admin_Bidang` — HANYA `aduan` di bidangnya |
+
+`vendor` masih ada di kode (onboarding + upload KTP/SIU di `Auth.php`) tapi **sengaja tidak masuk** `available_roles`/rencana ini — dormant, belum ada fitur/dashboard, jangan dianggap bagian dari sistem role baru ini.
+
+**Provisioning role scoped (`admin_kabkota`/`admin_bidang`):** TIDAK bisa didaftar publik — `Auth::onboarding()` `$valid_roles` sengaja tidak memasukkan keduanya. Satu-satunya jalan: superadmin lewat `Admin_Users::create_staff()` (akun baru) atau `Admin_Users::update_role()` (ubah role user existing) — keduanya wajib isi `kabupaten_id`/`bidang_kode` sesuai role yang dipilih, divalidasi terhadap tabel `kabupaten`/`bidang`.
+
+**Session carries scope:** `Auth::login()` dan callback Google OAuth menyimpan `kabupaten_id`/`bidang_kode` ke session saat login (dari kolom `usr_users`, `SELECT *` via `Auth_model::find_by_login()`). `Admin_Kabkota_Controller`/`Admin_Bidang_Controller` baca scope dari session (`$this->my_kabupaten_id`/`$this->my_bidang_kode`), BUKAN dari request — kalau scope kosong di session, controller redirect balik ke login (akun belum di-assign, minta superadmin).
+
+**Anti-IDOR wajib untuk role scoped:** setiap `update_status()` di `Admin_Kabkota`/`Admin_Bidang` WHERE clause-nya harus dobel — `WHERE id = ? AND kabupaten_id = ?` / `WHERE id = ? AND bidang = ?` — supaya admin kabupaten/bidang lain tidak bisa mengubah data di luar scope-nya walau tahu ID barisnya. Cek `$this->db->affected_rows()` untuk membedakan "berhasil" vs "row ada tapi bukan milik scope ini".
+
+**`/akun` sekarang 2 halaman, bukan 1:** `Pengaturan::index()` (route `akun`) = "Status Pengajuan" — satu list gabungan SEMUA jenis pengajuan user (antrean, aduan, SRP2, KKN/Magang) diurut tanggal, item utama sidebar. `Pengaturan::profil()` (route `akun/profil`, baru) = form edit profil + data perusahaan SRP2 + hapus akun (dulu semua nyampur jadi satu di `index()`). Redirect dari `update_profile()`/`update_pengembang_profile()`/`delete_account()` (gagal) sekarang ke `akun/profil`, bukan `akun`.
+
+**Semua dashboard login (bukan cuma admin) satu tema:** `MY_Controller::render_user_dashboard($view, $data, $scoped_menu)` — dipakai `Pengaturan::index()` (dashboard `/akun` untuk role `warga`/`pengembang`/`mahasiswa`) supaya reuse shell admin yang sama (`admin/index.php`: sidebar+topbar) seperti `Admin_Kabkota`/`Admin_Bidang`, bukan lagi halaman portal terpisah bertema gelap sendiri. Bedanya dengan `render_admin()` (khusus `Admin_Controller`, inject `pending_count`): `render_user_dashboard()` bisa dipanggil controller manapun yang extend `MY_Controller` langsung, tanpa gate role tambahan (gate login tetap tanggung jawab controller pemanggil). View yang dipakai lewat method ini WAJIB pakai token `bg-white dark:bg-brand-card`/dst (lihat `application/views/admin/layouts/head.php` untuk daftar token `brand-*`) dan ikon Phosphor (`ph-*`) — bukan `fa-solid`, karena Font Awesome TIDAK di-load di shell admin (cuma dimuat di halaman publik `layouts/main.php`).
+
+**Tabel baru** (migrasi `application/migrations/2026070100000{8,9,10}_*.php`):
+- `kabupaten` (id = kode wilayah Kemendagri 4 digit, nama) — 35 kabupaten/kota Jawa Tengah, sama persis dengan array lama di `Index.php` (`kabupaten_kota_jateng`, sekarang jadi tabel nyata).
+- `bidang` (kode, nama) — formalisasi 5 nilai yang sudah dipakai `aduan.bidang` (perumahan/kawasan/pertanahan/pengembang/umum). Kolom `aduan.bidang` **tetap varchar**, bukan FK — sengaja tidak diubah supaya tidak menyentuh `Umum::simpan_aduan()`.
+- `kkn_magang_pendaftaran` — pendaftaran nyata untuk `KemitraanPortal` (sebelumnya halaman statis tanpa form/tabel sama sekali).
+- `sf_housing_queue.kabupaten_id`, `usr_users.kabupaten_id`, `usr_users.bidang_kode`, `aduan.catatan_admin` — kolom baru.
+
+**Sidebar admin ter-scope:** `application/views/admin/layouts/sidebar.php` reuse layout admin superadmin yang sama — kalau view dipanggil dengan variabel `$scoped_menu` (array `[label, icon, url, segment]`), sidebar render menu ringkas itu alih-alih menu superadmin penuh. Dipakai lewat `render_scoped_admin()` di `Admin_Kabkota_Controller`/`Admin_Bidang_Controller`.
+
+**Diketahui belum lengkap (di luar scope sesi ini):**
+- `Program::ajukan_solusi()` (alur "Solusi Pembiayaan", identitas dari SIMPERUM lookup) belum mengisi `kabupaten_id` — hanya `Program::submit_antrean()` (dipakai `diagnosa()`/`solusi_pembiayaan()` view) yang sudah kirim field ini. Data lama & jalur `ajukan_solusi()` akan punya `kabupaten_id = NULL`, tidak muncul di dashboard `Admin_Kabkota` manapun.
+- Belum ada admin/dashboard untuk role `warga` di luar `/akun` — sesuai permintaan awal (warga tidak butuh panel admin, cuma dashboard aktivitas sendiri).
+
 Fitur pendaftaran & verifikasi SRP2 (Sertifikasi Registrasi Pengembang Perumahan) dibangun ulang jadi interaktif penuh sesi ini (sebelumnya rencananya cuma halaman statis "view-only" — lihat catatan usang di bawah).
 
-**Controller `Pengembang.php`:**
-- `sertifikasi()` — landing page publik, daftar pengembang berstatus `Diterima` dari `srp2_registrations`, plus CTA ke `syarat()`.
-- `syarat()` — halaman info syarat & dokumen, sekarang render lewat `layouts/main` (sebelumnya bare view tanpa layout).
-- `formulir()` — form pendaftaran, BARU login-gated: redirect ke `Auth/login` + set `intended_url` kalau belum login.
-- `simpan()` — proses submit form + upload 4 dokumen (KTP, KTA Asosiasi, NIB, Surat Tugas), sekarang login-gated, `user_id` otomatis diisi dari sesi (bukan dari input).
-- `result($id)` — halaman resi pendaftaran, sekarang login-gated DAN dibatasi hanya bisa lihat resi milik sendiri (`WHERE id = ? AND user_id = <session>`). **Perbaikan keamanan**: sebelumnya rawan IDOR — `id` auto_increment sekuensial gampang ditebak, siapapun bisa baca NIK/no. WA/email/dokumen pendaftar lain.
-- `profil($id)` — BARU, halaman publik read-only detail pengembang, hanya untuk `status_verifikasi = 'Diterima'` (data Pending/Ditolak tidak bisa diakses lewat sini meski id ditebak).
+**Alur pendaftaran SRP2 sekarang satu wizard di satu halaman** (`Pengembang::syarat()`, route `Pengembang/syarat`) — bukan lagi rangkaian halaman terpisah (syarat → daftar → login → formulir → dokumen). View `pages/pengembang/syarat.php` pakai Alpine `x-data="srp2Wizard(...)"` + `x-show="step === N"`, pola yang sama dengan wizard `Program/solusi_pembiayaan` (`diagnosa.php`):
+1. **Syarat** — info dokumen (konten lama, tidak berubah).
+2. **Akun** — kalau sudah login sebagai pengembang: langsung tampil "Anda sudah terdaftar" + tombol lanjut. Kalau belum login: tab Masuk/Daftar Cepat, submit lewat `fetch()` ke `Auth/do_login`/`Auth/do_register` (lihat AJAX di bawah) — TIDAK pindah halaman.
+3. **Unggah** — 14 dokumen (`dokumen_persyaratan()`), file dipilih dulu semua lalu dikirim **satu per satu** lewat `fetch()` berurutan ke `Pengembang/simpan_dokumen/{id}`, tiap baris punya status sendiri (siap/mengunggah/tersimpan/gagal+tombol ulangi) + toast progres. Boleh ditinggal belum lengkap — sisanya dilengkapi lewat dashboard (`/akun`).
+4. **Selesai** — setelah `Pengembang/kirim_pengajuan/{id}` sukses, tombol "Cek Status Pengajuan" → `akun` (satu-satunya navigasi keluar wizard yang disengaja).
+
+**Cabang AJAX (JSON) di controller yang sudah ada — perilaku non-AJAX/halaman biasa TIDAK berubah sama sekali:**
+- `Auth::do_login()` / `Auth::do_register()` — kalau `is_ajax_request()`, balas JSON (`status`, `message`/`role`/`registration_id`) alih-alih flashdata+redirect. Untuk `do_register` dengan `srp2_pengembang=1`, draft `srp2_registrations` langsung dibuat di sini (bukan lewat detour "verifikasi email" simulasi lama) supaya wizard bisa lanjut ke step Unggah tanpa request tambahan.
+- `Pengembang::akses_pengembang()` — kalau request AJAX dan belum login/salah role, balas **401/403 JSON**, BUKAN `redirect()`. Ini wajib: `fetch()` diam-diam mengikuti redirect dan akan menganggap HTML halaman lain sebagai "berhasil" kalau ini tidak ada.
+- `Pengembang::simpan_dokumen()` / `kirim_pengajuan()` — balas JSON per aksi. Validasi keamanan upload (whitelist ekstensi, cek MIME asli via `finfo`, cap 1 MB, nama file acak, folder di luar webroot) **tidak disentuh**, cuma cara membalas responsnya yang bercabang.
+
+**Form manual 12 field (nama_peserta/nik_ktp/dst) DIARSIPKAN** — `Pengembang::formulir()`/`simpan()` sekarang cuma redirect ke `Pengembang/syarat`, viewnya dipindah ke `archive/formulir_sertifikasi_12field.php`. Jalur resmi pendaftaran cuma satu: daftar cepat (nama perusahaan + email + password) di step 2 wizard. Halaman `Pengembang/daftar` (standalone lama) juga diarsipkan (`archive/daftar_standalone.php`), `daftar()` sekarang cuma redirect ke `syarat` supaya tautan/bookmark lama tidak jadi dead-end.
+
+- `result($id)` — halaman resi pendaftaran, login-gated DAN dibatasi hanya bisa lihat resi milik sendiri (`WHERE id = ? AND user_id = <session>`). **Perbaikan keamanan lama**: sebelumnya rawan IDOR — `id` auto_increment sekuensial gampang ditebak.
+- `profil($id)` — halaman publik read-only detail pengembang, hanya untuk `status_verifikasi = 'Diterima'`.
 
 **Controller `Pengaturan.php`** (dashboard akun, route `akun`):
 - `update_pengembang_profile()` (route `akun/update_pengembang`, BARU) — hanya jalan kalau `session->userdata('role') === 'pengembang'`, update data SRP2 milik sendiri (`WHERE user_id` selalu dari sesi, bukan dari input — anti-IDOR).
@@ -197,9 +248,13 @@ Fitur pendaftaran & verifikasi SRP2 (Sertifikasi Registrasi Pengembang Perumahan
 
 **Perbaikan bug terkait:** role pengembang saat registrasi akun dulu salah tersimpan sebagai string `'pages/pengembang/pengembang'` (bug copy-paste path view) — sudah diperbaiki jadi `'pengembang'` di `application/controllers/Auth.php`. Kalau menemukan dokumen/kode lama yang masih menyebut role ini dengan nilai salah tersebut, itu usang.
 
+**`Pengembang::masuk()` (route `Pengembang/masuk`) dipertahankan sebagai fallback**, bukan lagi jalur utama — cuma dipakai kalau ada yang deep-link langsung ke halaman gated non-wizard (mis. bookmark lama ke `Pengembang/dokumen/{id}`) sambil belum login: `akses_pengembang()` masih redirect ke sini untuk request NON-AJAX. Untuk request AJAX (dari wizard `syarat.php`), `akses_pengembang()` balas JSON 401/403 (lihat di atas), tidak pernah redirect ke halaman ini. `Auth/login`/`Auth/register` utama TIDAK diubah, tetap berfungsi biasa untuk role lain — mekanisme `?next=`/`redirect_to` (dibaca sebelum cek status login, divalidasi `sanitize_redirect()`) tetap ada di `Auth::login()`/`do_login()` untuk jalur fallback ini.
+
+**Detour "verifikasi email" simulasi (`Auth/verify_pending` → `Auth/do_verify_email` → `Auth/lanjutkan`) sudah dilewati untuk SRP2** — draft `srp2_registrations` dibuat langsung di `do_register()` saat itu juga. `Auth::lanjutkan()` sendiri TIDAK dihapus (masih dipakai alur verifikasi generik non-SRP2), cuma sudah idempotent kalau dipanggil untuk akun SRP2 (draft sudah ada, tidak dobel insert).
+
 **Follow-up yang sengaja di luar scope sesi ini** (jangan dikerjakan tanpa arahan baru, cukup dicatat):
 - Generator sertifikat PDF asli belum ada — tombol "Download Sertifikat" di dashboard akun sengaja nonaktif dengan pesan jujur, bukan simulasi.
-- `Auth::save_onboarding()` mencoba menulis kolom `nama_perusahaan`/`alamat_kantor`/`telp_kantor` untuk role pengembang/vendor saat registrasi akun, tapi kolom-kolom itu TIDAK ADA di skema `usr_users` — berpotensi error di step onboarding untuk role tsb. Bug pre-existing, di luar scope SRP2, belum diperbaiki.
+- ~~`Auth::save_onboarding()` menulis kolom `nama_perusahaan`/`alamat_kantor`/`telp_kantor` yang tidak ada di skema~~ — **sudah tidak berlaku**, ketiga kolom itu memang ada di `usr_users` (lihat §16). Catatan lama ini usang, jangan diikuti.
 - [`docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md`](docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md) dan [`docs/product/IMPLEMENTATION_ROADMAP.md`](docs/product/IMPLEMENTATION_ROADMAP.md) masih menyebut menu Pengembang/SP2 sebagai halaman statis/"belum berupa sistem interaktif" ("view-only") — **usang (superseded)**, sudah dikonfirmasi user untuk dibuat interaktif penuh sesi ini.
 
 ## 15. Status Tiket Pengajuan
