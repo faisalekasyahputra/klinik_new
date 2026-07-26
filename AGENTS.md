@@ -12,11 +12,21 @@
 
 ### 0a. Keadaan lingkungan saat ini
 
-| | Branch | Kode | Skema DB |
+> 🔄 **PETA LINGKUNGAN BERUBAH 27 Jul 2026 — keputusan user.** Situs staging kini **menjadi production**: "kita produksi menggunakan staging saat ini, nanti jika kita butuhkan `main` kita bisa menghidupkannya kembali." Tiga situs lain dimatikan (403) — berkas & DB utuh, tinggal hapus blok `SITUS DIMATIKAN` di `.htaccess` server untuk menghidupkan lagi.
+
+| | Situs | Branch | Status |
 |---|---|---|---|
-| **Lokal** | `feature/homepage-portal-v2` | terbaru | `20260701000015` |
-| **Staging** | ikut branch fitur (auto-deploy) | terbaru | `20260701000014` |
-| **Production** | `main` — **DIBEKUKAN** | tertinggal | ⚠️ **BELUM PERNAH DIMIGRASI SAMA SEKALI** |
+| **Lokal** | `localhost/klinik_new` | `feature/homepage-portal-v2` | skema `20260701000015` |
+| **PRODUCTION (aktif)** | `floralwhite-lion-710022` | `feature/homepage-portal-v2` — auto-deploy | DB `u504551489_klinikstg`, skema `...14` |
+| ~~production lama~~ | `palegreen-mink-703421` | `main` — beku sejak 19 Jul | 🔴 **DIMATIKAN** |
+| ~~staging lama~~ | `darkseagreen-hamster-214338` | `feature/ui-ux-revamp` | 🔴 **DIMATIKAN** |
+| ~~instalasi mati~~ | `darkgreen-cattle-889861` | tanpa git, Mei | 🔴 **DIMATIKAN** |
+
+> ⚠️ **Konsekuensi yang gampang terlewat:** push ke `feature/homepage-portal-v2` sekarang **langsung merilis ke PRODUCTION**, bukan lagi ke staging yang aman. Tidak ada lagi lingkungan uji terpisah — `darkseagreen` yang dulu berbagi DB dengan situs ini sudah dimatikan. Uji di lokal dulu.
+>
+> Nama DB-nya tetap `u504551489_klinikstg` (menyesatkan, tapi jangan diganti tanpa alasan kuat — mengganti nama DB produksi berjalan lebih berisiko daripada namanya yang keliru).
+>
+> `main` + `palegreen` kalau dihidupkan lagi nanti: DB-nya **belum pernah dimigrasi sama sekali** (tabel `migrations` tidak ada, cuma 14 tabel baseline), jadi butuh migrasi **01–15 seluruhnya**.
 
 > ⚠️ **Dikoreksi lewat SSH 27 Jul 2026 — dokumen ini dulu keliru.** Production BUKAN "tertinggal di `20260701000010`": **tabel `migrations` tidak ada sama sekali**, dan isinya cuma 14 tabel baseline dari `schema_klinikpkp.sql`. Tidak ada `srp2_*`, `aduan`, `kabupaten`, `bidang`, `kkn_magang_pendaftaran`, `sys_rate_limits`, tanpa kolom reviewer, tanpa FK.
 >
