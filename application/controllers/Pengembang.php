@@ -33,16 +33,17 @@ class Pengembang extends MY_Controller {
         $status_verifikasi = null;
         $catatan_admin = null;
         if ($is_pengembang) {
-            // Draft dibuat/ditemukan lewat satu pintu di Auth_model — akun yang
-            // rolenya di-set manual admin pun tetap dapat drafnya di sini.
-            $registration_id = $this->auth_model->ensure_srp2_draft($this->get_user_id());
-            $registration = $this->db->get_where('srp2_registrations', ['id' => $registration_id])->row();
-            if ($registration) {
-                $status_verifikasi = $registration->status_verifikasi;
-                $catatan_admin = $registration->catatan_admin;
-                $uploaded_keys = $this->db->select('document_key')->where('registration_id', $registration_id)
-                    ->get('srp2_documents')->result_array();
-                $uploaded_keys = array_column($uploaded_keys, 'document_key');
+            // Keadaan pengajuan lewat satu pintu di Auth_model — sumber yang SAMA
+            // dipakai cabang AJAX Auth::do_login(), supaya wizard yang dibuka
+            // langsung dan wizard yang baru saja login menampilkan hal identik.
+            // Draft ikut dibuat di sini kalau belum ada, termasuk untuk akun yang
+            // rolenya di-set manual admin.
+            $srp2 = $this->auth_model->srp2_state($this->get_user_id());
+            if ($srp2) {
+                $registration_id   = $srp2['registration_id'];
+                $status_verifikasi = $srp2['status'];
+                $catatan_admin     = $srp2['catatan_admin'];
+                $uploaded_keys     = $srp2['uploaded_keys'];
             }
         }
 

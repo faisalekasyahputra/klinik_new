@@ -75,8 +75,12 @@ class Admin_Srp2 extends Admin_Controller {
     public function proses($id = NULL) {
         if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
 
+        // 'Draft' = aksi "Minta Perbaikan": membuka kembali pengajuan supaya
+        // pemohon bisa memperbaiki dokumennya, TANPA mencap "Ditolak" di
+        // riwayatnya. Memakai status yang sudah ada (Draft = bisa diedit, belum
+        // dikirim) sehingga tidak perlu status/migrasi baru.
         $status = $this->input->post('status', TRUE);
-        if ( ! in_array($status, ['Diterima', 'Ditolak'], TRUE)) {
+        if ( ! in_array($status, ['Diterima', 'Ditolak', 'Draft'], TRUE)) {
             $this->session->set_flashdata('error', 'Status tidak valid.');
             redirect('Admin_Srp2/detail/' . (int) $id);
             return;
@@ -85,19 +89,30 @@ class Admin_Srp2 extends Admin_Controller {
         $reg = $this->db->get_where('srp2_registrations', ['id' => (int) $id])->row();
         if ( ! $reg) { show_404(); }
 
+        // Catatan wajib untuk kedua keputusan yang mengembalikan pekerjaan ke
+        // pemohon — tanpa alasan, dia tidak tahu apa yang harus diperbaiki.
         $catatan = trim((string) $this->input->post('catatan_admin', TRUE));
-        if ($status === 'Ditolak' && $catatan === '') {
-            $this->session->set_flashdata('error', 'Catatan wajib diisi saat menolak pengajuan.');
+        if (in_array($status, ['Ditolak', 'Draft'], TRUE) && $catatan === '') {
+            $pesan = $status === 'Ditolak'
+                ? 'Catatan wajib diisi saat menolak pengajuan.'
+                : 'Catatan wajib diisi — jelaskan apa yang harus diperbaiki pemohon.';
+            $this->session->set_flashdata('error', $pesan);
             redirect('Admin_Srp2/detail/' . (int) $id);
             return;
         }
 
         $update = [
             'status_verifikasi' => $status,
-            'catatan_admin'     => $status === 'Ditolak' ? $catatan : NULL,
+            'catatan_admin'     => $status === 'Diterima' ? NULL : $catatan,
             'reviewed_by'       => $this->get_user_id(),
             'reviewed_at'       => date('Y-m-d H:i:s'),
         ];
+
+        // Saat pengajuan yang sudah Diterima dibuka kembali, baris direktori
+        // publiknya SENGAJA tidak disentuh: pengembangnya tetap tersertifikasi,
+        // yang sedang diperbaiki cuma kelengkapan dokumen. Kalau memang perlu
+        // dicabut dari daftar publik, admin menonaktifkannya lewat halaman
+        // Direktori SRP2 (kolom "Aktif") — keputusan terpisah, jangan otomatis.
 
         if ($status === 'Diterima') {
             // Direktori publik srp2_certified_developers tetap tabel terpisah
@@ -122,9 +137,12 @@ class Admin_Srp2 extends Admin_Controller {
 
         $this->db->where('id', (int) $id)->update('srp2_registrations', $update);
 
-        $this->session->set_flashdata('success', $status === 'Diterima'
-            ? 'Pengajuan diterima — pengembang masuk direktori publik.'
-            : 'Pengajuan ditolak, catatan sudah dikirim ke pengembang.');
+        $pesan_sukses = [
+            'Diterima' => 'Pengajuan diterima — pengembang masuk direktori publik.',
+            'Ditolak'  => 'Pengajuan ditolak, catatan sudah dikirim ke pengembang.',
+            'Draft'    => 'Pengajuan dibuka kembali untuk diperbaiki. Pengembang melihat catatan Anda di dashboardnya.',
+        ];
+        $this->session->set_flashdata('success', $pesan_sukses[$status]);
         redirect('Admin_Srp2/pending');
     }
 

@@ -217,6 +217,38 @@ class Auth_model extends CI_Model {
     }
 
     /**
+     * Keadaan pengajuan SRP2 milik seorang pengembang — SATU sumber untuk
+     * semua yang butuh tahu "sudah sampai mana orang ini".
+     *
+     * Dibuat karena keadaan ini dulu cuma dihitung di Pengembang::syarat(),
+     * sementara Auth::do_login() (jalur AJAX wizard) hanya mengembalikan
+     * registration_id. Akibatnya pengembang lama yang masuk LEWAT wizard
+     * melihat keadaan tamu: 0/14 dokumen, tombol kirim terkunci, dan catatan
+     * admin tidak muncul — padahal di server semuanya sudah ada.
+     *
+     * @param  int $user_id
+     * @return array|null  registration_id, status, catatan_admin, uploaded_keys
+     */
+    public function srp2_state($user_id) {
+        $registration_id = $this->ensure_srp2_draft($user_id);
+        if ( ! $registration_id) { return NULL; }
+
+        $baris = $this->db->get_where('srp2_registrations', ['id' => $registration_id])->row();
+        if ( ! $baris) { return NULL; }
+
+        $keys = $this->db->select('document_key')
+            ->where('registration_id', $registration_id)
+            ->get('srp2_documents')->result_array();
+
+        return [
+            'registration_id' => $registration_id,
+            'status'          => $baris->status_verifikasi,
+            'catatan_admin'   => $baris->catatan_admin,
+            'uploaded_keys'   => array_column($keys, 'document_key'),
+        ];
+    }
+
+    /**
      * Check if user has completed onboarding.
      */
     public function is_profile_complete($user_id) {

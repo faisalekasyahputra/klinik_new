@@ -52,14 +52,32 @@ $status_kelas = ['Draft' => 'process', 'Pending' => 'pending', 'Diterima' => 'ok
         <?php if ($pendaftar->status_verifikasi === 'Pending'): ?>
         <div class="pt-4 border-t border-gray-100 dark:border-white/5">
             <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-brand-muted/70 mb-3">Keputusan</h4>
+            <?php // "Minta Perbaikan" (value Draft) membuka kembali pengajuan tanpa
+                  // mencap "Ditolak" di riwayat pemohon. Catatan wajib untuk Tolak
+                  // maupun Minta Perbaikan — divalidasi di server. ?>
             <?= $this->load->view('admin/components/review_form', [
                 'action_url' => 'Admin_Srp2/proses/' . $pendaftar->id,
                 'buttons' => [
                     ['value' => 'Diterima', 'label' => 'Terima', 'style' => 'accept'],
+                    ['value' => 'Draft', 'label' => 'Minta Perbaikan', 'style' => 'neutral'],
                     ['value' => 'Ditolak', 'label' => 'Tolak', 'style' => 'reject'],
                 ],
                 'catatan_name' => 'catatan_admin',
-                'catatan_placeholder' => 'Catatan (wajib diisi kalau menolak)',
+                'catatan_placeholder' => 'Catatan (wajib untuk Tolak & Minta Perbaikan)',
+            ], TRUE) ?>
+        </div>
+        <?php elseif ($pendaftar->status_verifikasi === 'Diterima'): ?>
+        <div class="pt-4 border-t border-gray-100 dark:border-white/5">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-brand-muted/70 mb-2">Buka Kembali</h4>
+            <p class="text-xs text-gray-500 dark:text-brand-muted mb-3">Pengajuan ini sudah disetujui dan dokumennya terkunci. Kalau ada data yang harus diperbaiki (mis. alamat kantor pindah atau pengurus berganti), buka kembali supaya pengembang bisa memperbarui dokumennya lalu mengirim ulang.</p>
+            <p class="text-[11px] text-gray-400 dark:text-brand-muted/70 mb-3">Pengembang tetap tercantum di direktori publik selama diperbaiki. Kalau perlu dicabut dari daftar, nonaktifkan lewat halaman <a href="<?= base_url('Admin_Srp2') ?>" class="underline">Direktori SRP2</a>.</p>
+            <?= $this->load->view('admin/components/review_form', [
+                'action_url' => 'Admin_Srp2/proses/' . $pendaftar->id,
+                'buttons' => [
+                    ['value' => 'Draft', 'label' => 'Buka untuk Diperbaiki', 'style' => 'neutral'],
+                ],
+                'catatan_name' => 'catatan_admin',
+                'catatan_placeholder' => 'Wajib: jelaskan apa yang harus diperbaiki',
             ], TRUE) ?>
         </div>
         <?php endif; ?>

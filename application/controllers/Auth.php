@@ -140,9 +140,10 @@ class Auth extends MY_Controller {
         // `if ($sp2)` membuat item SRP2-nya tidak muncul sama sekali di /akun.
         // Hasilnya: fitur yang sama terlihat ada atau tidak ada, tergantung
         // lewat pintu mana user masuk.
-        $registration_id = ($user->role === 'pengembang')
-            ? $this->auth_model->ensure_srp2_draft($user->id)
+        $srp2 = ($user->role === 'pengembang')
+            ? $this->auth_model->srp2_state($user->id)
             : NULL;
+        $registration_id = $srp2['registration_id'] ?? NULL;
 
         // Wizard (mis. SRP2 di Pengembang/syarat) cuma butuh konfirmasi + role, bukan redirect —
         // wizard yang urus lanjutannya sendiri di sisi klien, tanpa pindah halaman.
@@ -152,6 +153,10 @@ class Auth extends MY_Controller {
                 'role'            => $user->role,
                 'name'            => $user->name,
                 'registration_id' => $registration_id,
+                // Keadaan pengajuan ikut dikirim supaya wizard tidak menampilkan
+                // keadaan tamu (0/14 dokumen, catatan admin hilang) untuk
+                // pengembang lama yang baru saja masuk lewat wizard.
+                'srp2'            => $srp2,
                 // Dipakai wizard SRP2 saat akun yang login ternyata bukan
                 // pengembang: kartu salah-role butuh tujuan dashboard yang benar
                 // untuk role INI, bukan tautan hardcode ke `akun`.

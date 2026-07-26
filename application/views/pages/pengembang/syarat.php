@@ -76,12 +76,32 @@
             <button type="button" @click="back()" class="mb-3 inline-flex items-center gap-1.5 text-[11px] font-bold" style="color:var(--portal-text-muted)"><i class="fa-solid fa-arrow-left"></i> Kembali ke Syarat</button>
             <div class="rounded-2xl p-5 sm:p-6" style="background:var(--portal-bg-card);border:1px solid var(--portal-border);box-shadow:0 8px 24px rgba(0,80,95,.06)">
 
+                <!-- Draft. Kalau ada catatanAdmin, artinya pengajuan ini DIBUKA
+                     KEMBALI oleh admin lewat "Minta Perbaikan" — bukan draft baru.
+                     Catatannya wajib ditampilkan, kalau tidak pemohon tidak tahu
+                     apa yang harus diperbaiki. -->
                 <template x-if="isPengembang && (status === 'Draft' || !status)">
                     <div class="py-3 text-center">
-                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full text-xl" style="background:rgba(16,185,129,.1);color:#059669"><i class="fa-solid fa-circle-check"></i></div>
-                        <h2 class="mt-4 text-lg font-black">Anda sudah terdaftar</h2>
-                        <p class="mx-auto mt-1 max-w-xs text-xs leading-relaxed" style="color:var(--portal-text-muted)">Masuk sebagai <strong style="color:var(--portal-text)" x-text="namaUser"></strong>. Lanjut unggah dokumen persyaratan.</p>
-                        <button type="button" @click="step = 3" class="mt-5 inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wide" style="background:#d6fb00;color:#0a1a1f">Lanjut Unggah Dokumen <i class="fa-solid fa-arrow-right"></i></button>
+                        <template x-if="!catatanAdmin">
+                            <div>
+                                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full text-xl" style="background:rgba(16,185,129,.1);color:#059669"><i class="fa-solid fa-circle-check"></i></div>
+                                <h2 class="mt-4 text-lg font-black">Anda sudah terdaftar</h2>
+                                <p class="mx-auto mt-1 max-w-xs text-xs leading-relaxed" style="color:var(--portal-text-muted)">Masuk sebagai <strong style="color:var(--portal-text)" x-text="namaUser"></strong>. Lanjut unggah dokumen persyaratan.</p>
+                            </div>
+                        </template>
+
+                        <template x-if="catatanAdmin">
+                            <div>
+                                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full text-xl" style="background:rgba(234,179,8,.12);color:#a16207"><i class="fa-solid fa-pen-to-square"></i></div>
+                                <h2 class="mt-4 text-lg font-black">Perbaikan diminta admin</h2>
+                                <p class="mx-auto mt-1 max-w-sm text-xs leading-relaxed" style="color:var(--portal-text-muted)">Pengajuan Anda dibuka kembali supaya bisa diperbaiki. Silakan sesuaikan dokumen sesuai catatan berikut, lalu kirim ulang.</p>
+                                <div class="mx-auto mt-3 max-w-sm rounded-lg p-3 text-left text-xs leading-relaxed" style="background:rgba(234,179,8,.08);border:1px solid rgba(234,179,8,.25);color:var(--portal-text)">
+                                    <span class="font-bold">Catatan admin:</span> <span x-text="catatanAdmin"></span>
+                                </div>
+                            </div>
+                        </template>
+
+                        <button type="button" @click="step = 3" class="mt-5 inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wide" style="background:#d6fb00;color:#0a1a1f"><span x-text="catatanAdmin ? 'Perbaiki Dokumen' : 'Lanjut Unggah Dokumen'"></span> <i class="fa-solid fa-arrow-right"></i></button>
                     </div>
                 </template>
 
@@ -343,10 +363,28 @@ function srp2Wizard(config) {
         submitError: '',
 
         init() {
-            (config.uploadedKeys || []).forEach(k => { this.fileStatus[k] = 'done'; });
-            // Sudah pernah mulai pendaftaran (draft/terkirim/ditolak/diterima) -> langsung
-            // ke langkah unggah/status, bukan diulang dari halaman syarat tiap kali buka.
-            if (this.isPengembang && this.registrationId) { this.step = 3; }
+            this.tandaiBerkasTerunggah(config.uploadedKeys);
+            // Sudah pernah mulai pendaftaran -> langsung ke langkah unggah, bukan
+            // diulang dari halaman syarat tiap kali buka.
+            //
+            // KECUALI kalau ada yang harus DIBACA dulu di langkah 2. Lompatan ini
+            // dulu tanpa syarat, sehingga kartu "Perbaikan diminta admin" dan
+            // "Pengajuan Ditolak" — dua-duanya memuat catatan admin — tidak pernah
+            // terlihat: pemohon mendarat di panel unggah yang tidak menampilkan
+            // catatan sama sekali, jadi tidak tahu apa yang harus diperbaiki.
+            if (this.isPengembang && this.registrationId) {
+                this.step = this.perluPerbaikan ? 2 : 3;
+            }
+        },
+
+        /**
+         * Tandai dokumen yang SUDAH tersimpan di server sebagai selesai.
+         * Dipakai saat halaman dimuat maupun setelah login lewat wizard —
+         * keduanya harus menghasilkan tampilan yang sama.
+         */
+        tandaiBerkasTerunggah(keys) {
+            this.fileStatus = {};
+            (keys || []).forEach(k => { this.fileStatus[k] = 'done'; });
         },
 
         back() {
@@ -354,6 +392,21 @@ function srp2Wizard(config) {
         },
 
         get readOnly() { return this.status === 'Pending' || this.status === 'Diterima'; },
+
+        /**
+         * Ada keputusan admin yang menunggu dibaca pemohon sebelum dia lanjut
+         * mengunggah. Dua keadaan yang memenuhi:
+         *   - Ditolak            -> kartu penolakan (dengan atau tanpa catatan)
+         *   - Draft + catatan    -> dibuka kembali admin lewat "Minta Perbaikan"
+         *
+         * Draft TANPA catatan sengaja tidak termasuk: itu draft biasa yang belum
+         * pernah dikirim, tidak ada yang perlu dibaca. Pending/Diterima juga tidak,
+         * catatan lamanya cuma riwayat — pemohon sudah mengirim ulang.
+         */
+        get perluPerbaikan() {
+            if (this.status === 'Ditolak') { return true; }
+            return this.status === 'Draft' && !!this.catatanAdmin;
+        },
 
         /**
          * Kemajuan yang ditandai di indikator langkah — dibedakan dari `step`
@@ -415,6 +468,15 @@ function srp2Wizard(config) {
                     this.isPengembang = true;
                     this.namaUser = data.name || this.namaUser;
                     this.registrationId = data.registration_id;
+                    // Segarkan keadaan pengajuan dari server. Tanpa ini, nilai yang
+                    // dipakai masih milik TAMU (dari saat halaman dimuat): status
+                    // kosong sehingga panel unggah tampak bisa diedit walau server
+                    // menolak, 0/14 dokumen walau sudah lengkap, dan catatan admin
+                    // tidak muncul.
+                    const s = data.srp2 || {};
+                    this.status = s.status || null;
+                    this.catatanAdmin = s.catatan_admin || null;
+                    this.tandaiBerkasTerunggah(s.uploaded_keys);
                     this.showToast('Berhasil masuk!');
                 } else {
                     this.authError = data.message || 'Gagal masuk.';

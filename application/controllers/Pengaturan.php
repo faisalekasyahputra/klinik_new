@@ -66,6 +66,14 @@ class Pengaturan extends MY_Controller {
                     'Ditolak'  => ['Ditolak', 'reject', 'Perbaiki & Kirim Ulang'],
                 ];
                 $status = $peta[$sp2->status_verifikasi] ?? [$sp2->status_verifikasi, 'pending', 'Lihat'];
+
+                // Draft + ada catatan = pengajuan DIBUKA KEMBALI admin lewat
+                // "Minta Perbaikan", bukan draft yang belum pernah dikirim.
+                // Bedakan labelnya supaya pemohon paham ini permintaan, bukan
+                // sekadar pekerjaan yang belum dia selesaikan.
+                if ($sp2->status_verifikasi === 'Draft' && ! empty($sp2->catatan_admin)) {
+                    $status = ['Perlu Diperbaiki', 'process', 'Perbaiki Dokumen'];
+                }
                 $items[] = [
                     'jenis' => 'Sertifikasi Pengembang (SRP2)', 'icon' => 'ph-certificate',
                     'judul' => $sp2->nama_perusahaan,
@@ -84,6 +92,9 @@ class Pengaturan extends MY_Controller {
                     // Edit data perusahaan punya jalannya sendiri lewat menu Profil.
                     'aksi_url' => 'Pengembang/syarat',
                     'aksi_label' => $status[2],
+                    // Alasan penolakan / permintaan perbaikan ikut ditampilkan di
+                    // daftar, supaya pemohon tahu tanpa harus membuka wizard dulu.
+                    'catatan_admin' => $sp2->catatan_admin,
                 ];
             }
         }
