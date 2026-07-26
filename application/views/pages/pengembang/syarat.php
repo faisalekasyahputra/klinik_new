@@ -23,10 +23,15 @@
 
         <!-- Indikator langkah -->
         <div class="mb-5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide" style="color:var(--portal-text-muted)">
+            <!-- Penanda langkah memakai stepTampil, bukan `step` mentah. `step`
+                 adalah panel yang sedang DILIHAT; kemajuan sebenarnya ditentukan
+                 status pengajuan. Dulu keduanya disamakan, sehingga pengajuan yang
+                 sudah dikirim (bahkan sudah Diterima) tetap menampilkan langkah 4
+                 "Selesai" dalam keadaan mati — seolah pemohon belum tuntas. -->
             <template x-for="(label, i) in ['Syarat', 'Akun', 'Unggah', 'Selesai']" :key="i">
                 <span class="flex items-center gap-1.5">
-                    <span class="flex h-5 w-5 items-center justify-center rounded-full text-[10px]" :style="step >= (i + 1) ? 'background:var(--teal);color:#fff' : 'background:var(--portal-border);color:var(--portal-text-muted)'" x-text="i + 1"></span>
-                    <span :style="step >= (i + 1) ? 'color:var(--portal-text)' : ''" x-text="label"></span>
+                    <span class="flex h-5 w-5 items-center justify-center rounded-full text-[10px]" :style="stepTampil >= (i + 1) ? 'background:var(--teal);color:#fff' : 'background:var(--portal-border);color:var(--portal-text-muted)'" x-text="i + 1"></span>
+                    <span :style="stepTampil >= (i + 1) ? 'color:var(--portal-text)' : ''" x-text="label"></span>
                     <i x-show="i < 3" class="fa-solid fa-chevron-right text-[9px] mx-0.5" style="opacity:.4"></i>
                 </span>
             </template>
@@ -349,6 +354,20 @@ function srp2Wizard(config) {
         },
 
         get readOnly() { return this.status === 'Pending' || this.status === 'Diterima'; },
+
+        /**
+         * Kemajuan yang ditandai di indikator langkah — dibedakan dari `step`
+         * (panel yang sedang dilihat). Pemohon yang pengajuannya sudah dikirim
+         * memang sudah tuntas dari sisinya, walaupun dia sedang menengok kembali
+         * daftar dokumen di panel 3.
+         *
+         * Ditolak SENGAJA tidak dianggap tuntas: pekerjaannya belum selesai,
+         * dokumennya masih harus diperbaiki dan dikirim ulang.
+         */
+        get stepTampil() {
+            const terkirim = this.status === 'Pending' || this.status === 'Diterima';
+            return terkirim ? Math.max(this.step, 4) : this.step;
+        },
         get docKeys() { return Object.keys(this.dokumen); },
         get uploadedCount() { return this.docKeys.filter(k => this.fileStatus[k] === 'done').length; },
         get totalCount() { return this.docKeys.length; },
