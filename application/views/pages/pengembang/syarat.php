@@ -350,6 +350,10 @@ function srp2Wizard(config) {
 
         files: {},
         fileStatus: {},
+        // Dokumen yang benar-benar sudah tersimpan di server. Dipakai clearFile()
+        // untuk tahu harus kembali ke 'done' atau 'idle' saat pemohon membatalkan
+        // pilihan berkas. Dideklarasikan di sini supaya reaktif di Alpine.
+        tersimpanDiServer: {},
         fileMessage: {},
         uploading: false,
         toast: { show: false, message: '' },
@@ -378,7 +382,8 @@ function srp2Wizard(config) {
          */
         tandaiBerkasTerunggah(keys) {
             this.fileStatus = {};
-            (keys || []).forEach(k => { this.fileStatus[k] = 'done'; });
+            this.tersimpanDiServer = {};
+            (keys || []).forEach(k => { this.fileStatus[k] = 'done'; this.tersimpanDiServer[k] = true; });
         },
 
         back() {
@@ -430,7 +435,14 @@ function srp2Wizard(config) {
 
         clearFile(key) {
             delete this.files[key];
-            this.fileStatus[key] = 'idle';
+            // Kembali ke keadaan SEBELUM memilih berkas, bukan selalu 'idle'.
+            // Dokumen yang sudah tersimpan di server tetap 'done' — dulu Batal
+            // menurunkannya jadi 'idle', hitungan jatuh ke 13/14 dan tombol Kirim
+            // terkunci padahal server memegang 14/14. Yang paling sering menekan
+            // Ganti justru pemohon yang sedang memperbaiki dokumen, jadi bug ini
+            // menghalangi persis alur yang dibangun fitur Minta Perbaikan.
+            // Roadmap T1b butir 5.
+            this.fileStatus[key] = this.tersimpanDiServer[key] ? 'done' : 'idle';
         },
 
         showToast(message, sticky) {
@@ -519,6 +531,9 @@ function srp2Wizard(config) {
                 const data = await res.json();
                 if (data.status === 'success') {
                     this.fileStatus[key] = 'done';
+                    // Sejak titik ini berkasnya ADA di server, jadi Batal pada
+                    // pilihan berikutnya harus kembali ke 'done', bukan 'idle'.
+                    this.tersimpanDiServer[key] = true;
                 } else {
                     this.fileStatus[key] = 'error';
                     this.fileMessage[key] = data.message || 'Gagal diunggah.';

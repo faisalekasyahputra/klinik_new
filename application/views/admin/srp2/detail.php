@@ -38,6 +38,47 @@ $status_kelas = ['Draft' => 'process', 'Pending' => 'pending', 'Diterima' => 'ok
             <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-brand-muted/70 mb-1">Alamat Kantor</h4>
             <p class="text-sm text-gray-700 dark:text-gray-300"><?= html_escape($pendaftar->alamat_kantor ?: '-') ?></p>
         </div>
+
+        <?php
+        // Data pembanding untuk pengambil keputusan. Kolom-kolom ini SUDAH ADA di
+        // baris pengajuan tapi tidak pernah dirender, sehingga admin diminta
+        // memutuskan sertifikasi hanya berbekal nama perusahaan dan 14 berkas —
+        // tanpa satu pun nilai yang bisa dicocokkan dengan isi berkasnya.
+        // Roadmap T1b butir 2.
+        //
+        // Alur pendaftaran saat ini (daftar cepat) memang belum mengisi kolom
+        // identitas; yang kosong ditandai apa adanya, bukan disembunyikan —
+        // supaya terlihat bahwa datanya memang belum dikumpulkan.
+        $pembanding = [
+            'NIK Pemohon'    => $pendaftar->nik_ktp ?? '',
+            'Nama Pemohon'   => $pendaftar->nama_peserta ?? '',
+            'Jabatan'        => $pendaftar->jabatan ?? '',
+            'NIB'            => $pendaftar->nib ?? '',
+            'Asosiasi'       => $pendaftar->asosiasi ?? '',
+            'No. Keanggotaan'=> $pendaftar->no_keanggotaan ?? '',
+            'WhatsApp'       => $pendaftar->no_whatsapp ?? '',
+        ];
+        $terisi = count(array_filter($pembanding, function ($v) { return trim((string) $v) !== ''; }));
+        ?>
+        <div>
+            <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-brand-muted/70 mb-2">
+                Data Pemohon
+                <span class="ml-1 font-semibold normal-case tracking-normal text-gray-400 dark:text-brand-muted/60">(<?= $terisi ?>/<?= count($pembanding) ?> terisi)</span>
+            </h4>
+            <dl class="space-y-1.5">
+                <?php foreach ($pembanding as $label => $nilai): $kosong = trim((string) $nilai) === ''; ?>
+                <div class="flex items-baseline justify-between gap-3">
+                    <dt class="shrink-0 text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($label) ?></dt>
+                    <dd class="text-right text-sm <?= $kosong ? 'italic text-gray-400 dark:text-brand-muted/50' : 'font-semibold text-gray-800 dark:text-gray-200' ?>"><?= $kosong ? 'belum diisi' : html_escape($nilai) ?></dd>
+                </div>
+                <?php endforeach; ?>
+            </dl>
+            <?php if ($terisi === 0): ?>
+            <p class="mt-2 rounded-lg px-2.5 py-2 text-[11px] leading-relaxed text-amber-700 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400">
+                Tidak ada satu pun data identitas terisi — alur pendaftaran cepat belum mengumpulkannya. Verifikasi sepenuhnya bersandar pada isi 14 berkas.
+            </p>
+            <?php endif; ?>
+        </div>
         <div>
             <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-brand-muted/70 mb-1">Tautan</h4>
             <p class="text-xs text-gray-500 dark:text-brand-muted space-x-2">

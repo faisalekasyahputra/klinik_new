@@ -5,7 +5,22 @@
 
 <?php $this->load->helper('admin_table'); ?>
 <div class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
-    <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari perusahaan atau email...'], TRUE) ?>
+    <?php
+    $this->load->helper('admin_table');
+    // Filter status dibangun lewat admin_table_url() supaya pencarian/urutan yang
+    // sedang aktif ikut terbawa saat ganti filter (dan sebaliknya). Mengikuti pola
+    // filter bidang di admin/aduan/index.php — jangan bikin varian baru (§17.6).
+    $label_status = ['Pending' => 'Menunggu', 'Draft' => 'Diminta Perbaikan', 'Diterima' => 'Diterima', 'Ditolak' => 'Ditolak'];
+    $kelas_aktif  = 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary';
+    $kelas_pasif  = 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10';
+    ob_start(); ?>
+    <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted mr-1">Status:</span>
+    <?php foreach ($status_pilihan as $s): ?>
+    <a href="<?= admin_table_url($base_url, ['status' => $s]) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= $status_filter === $s ? $kelas_aktif : $kelas_pasif ?>"><?= html_escape($label_status[$s] ?? $s) ?></a>
+    <?php endforeach; ?>
+    <a href="<?= admin_table_url($base_url, ['status' => 'semua']) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= $status_filter === 'semua' ? $kelas_aktif : $kelas_pasif ?>">Semua</a>
+    <?php $filter_html = ob_get_clean(); ?>
+    <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari perusahaan atau email...', 'filter_html' => $filter_html], TRUE) ?>
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">

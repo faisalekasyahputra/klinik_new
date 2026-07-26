@@ -21,9 +21,31 @@ class Admin_Srp2 extends Admin_Controller {
         $table = $this->table_state(['updated_at', 'nama_perusahaan', 'email'], 'updated_at');
         $data['base_url'] = 'Admin_Srp2/pending';
 
+        // Status = FILTER dengan nilai default, BUKAN klausa WHERE mati. Dulu
+        // where('status_verifikasi','Pending') dipaku di sini, sehingga setiap
+        // pengajuan yang sudah diputuskan lenyap dari jangkauan admin: tidak ada
+        // cara memantau siapa yang diminta perbaikan tapi tak kunjung mengirim
+        // ulang, dan satu-satunya jalan membukanya lagi adalah menebak URL
+        // detail/<id>. Roadmap T1b butir 1.
+        //
+        // Nilai defaultnya dibaca dari registry (pending_where) supaya "apa arti
+        // belum diproses" tetap satu deklarasi — dipakai badge sidebar sekaligus
+        // query ini, tidak lagi ditulis ulang literalnya di dua tempat.
+        $modul = $this->config->item('dashboard_modules')['srp2_verifikasi'] ?? [];
+        $status_default = $modul['pending_where']['status_verifikasi'] ?? 'Pending';
+
+        $status_pilihan = ['Pending', 'Draft', 'Diterima', 'Ditolak'];
+        $status_filter  = (string) $this->input->get('status');
+        if ( ! in_array($status_filter, $status_pilihan, TRUE) && $status_filter !== 'semua') {
+            $status_filter = $status_default;
+        }
+        $data['status_filter']  = $status_filter;
+        $data['status_pilihan'] = $status_pilihan;
+
         // from() di depan, lalu count_all_results('', FALSE) — kalau tabelnya
         // disebut di kedua tempat, FROM tertulis dua kali dan query gagal.
-        $this->db->from('srp2_registrations')->where('status_verifikasi', 'Pending');
+        $this->db->from('srp2_registrations');
+        if ($status_filter !== 'semua') { $this->db->where('status_verifikasi', $status_filter); }
         if ($table['q'] !== '') {
             $this->db->group_start()
                 ->like('nama_perusahaan', $table['q'])->or_like('email', $table['q'])
@@ -121,10 +143,14 @@ class Admin_Srp2 extends Admin_Controller {
 
         $update = [
             'status_verifikasi' => $status,
-            'catatan_admin'     => $status === 'Diterima' ? NULL : $catatan,
             'reviewed_by'       => $this->get_user_id(),
             'reviewed_at'       => date('Y-m-d H:i:s'),
         ];
+        // catatan_admin hanya ditulis untuk keputusan yang MEMBAWA catatan.
+        // Saat Diterima, kolomnya sengaja TIDAK disentuh: dulu di-NULL-kan,
+        // sehingga alasan "dulu diminta perbaikan karena X" hilang permanen —
+        // dan tidak ada tabel log lain yang menyimpannya. Roadmap T1b butir 4.
+        if ($status !== 'Diterima') { $update['catatan_admin'] = $catatan; }
 
         // SATU TRANSAKSI untuk seluruh keputusan. Sebelumnya tiga penulisan
         // berjalan lepas tanpa satu pun nilai balik diperiksa, sementara flash
@@ -227,7 +253,21 @@ class Admin_Srp2 extends Admin_Controller {
             $urls[$field] = $value ?: null;
         }
         $payload = array_merge(['nama_perusahaan' => $name, 'status_aktif' => $this->input->post('status_aktif') ? 1 : 0, 'alamat_kantor' => trim((string) $this->input->post('alamat_kantor', TRUE))], $urls);
-        if ($id) { $this->db->where('id', $id)->update('srp2_certified_developers', $payload); } else { $this->db->insert('srp2_certified_developers', $payload); }
+
+        // Hasil query DIPERIKSA, bukan diasumsikan — pola sukses karangan yang
+        // sama seperti proses() sebelum T1a. Kolom nama ber-UNIQUE, jadi bentrok
+        // adalah kegagalan yang paling mungkin terjadi; di production db_debug
+        // mati sehingga insert/update gagal hanya mengembalikan FALSE dan alur
+        // berjalan terus sampai menyetel "Daftar pengembang diperbarui".
+        $ok = $id
+            ? $this->db->where('id', $id)->update('srp2_certified_developers', $payload)
+            : $this->db->insert('srp2_certified_developers', $payload);
+
+        if ($ok === FALSE) {
+            log_message('error', 'Admin_Srp2::save gagal — id=' . $id . ' nama=' . $name);
+            $this->session->set_flashdata('error', 'Gagal menyimpan: nama perusahaan "' . $name . '" kemungkinan sudah dipakai baris lain di direktori. Tidak ada perubahan yang tersimpan.');
+            redirect('Admin_Srp2'); return;
+        }
         $this->session->set_flashdata('success', 'Daftar pengembang diperbarui.'); redirect('Admin_Srp2');
     }
 
