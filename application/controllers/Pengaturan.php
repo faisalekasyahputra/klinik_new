@@ -55,8 +55,17 @@ class Pengaturan extends MY_Controller {
         if ($role === 'pengembang') {
             $sp2 = $this->db->where('user_id', $user_id)->order_by('id', 'DESC')->get('srp2_registrations')->row();
             if ($sp2) {
-                $status_map = ['Draft' => ['Lengkapi Dokumen', 'process'], 'Pending' => ['Dalam Peninjauan', 'pending'], 'Diterima' => ['Diterima', 'ok'], 'Ditolak' => ['Ditolak', 'reject']];
-                $status = $status_map[$sp2->status_verifikasi] ?? [$sp2->status_verifikasi, 'pending'];
+                // Label status + label tombol aksi. Tombolnya diberi nama sesuai
+                // apa yang BENAR-BENAR terjadi saat diklik, bukan "Kelola" untuk
+                // semua keadaan — "Kelola" pada pengajuan yang sudah final
+                // menjanjikan sesuatu yang tidak bisa dilakukan.
+                $peta = [
+                    'Draft'    => ['Lengkapi Dokumen', 'process', 'Lengkapi'],
+                    'Pending'  => ['Dalam Peninjauan', 'pending', 'Lihat Dokumen'],
+                    'Diterima' => ['Diterima', 'ok', 'Lihat Dokumen'],
+                    'Ditolak'  => ['Ditolak', 'reject', 'Perbaiki & Kirim Ulang'],
+                ];
+                $status = $peta[$sp2->status_verifikasi] ?? [$sp2->status_verifikasi, 'pending', 'Lihat'];
                 $items[] = [
                     'jenis' => 'Sertifikasi Pengembang (SRP2)', 'icon' => 'ph-certificate',
                     'judul' => $sp2->nama_perusahaan,
@@ -64,11 +73,17 @@ class Pengaturan extends MY_Controller {
                     // updated_at, bukan created_at — draft bisa dibuat jauh sebelum
                     // benar-benar diisi/dikirim, tanggal aktivitas terakhir lebih relevan.
                     'created_at' => $sp2->updated_at ?: $sp2->created_at,
-                    // Draft/Pending/Ditolak -> lihat atau kelola dokumen di wizard
-                    // (wizard sendiri yang atur mode edit vs read-only sesuai status).
-                    // Cuma Diterima yang ke profil — dokumen sudah final, yang bisa
-                    // dikelola tinggal data perusahaan.
-                    'aksi_url' => $sp2->status_verifikasi === 'Diterima' ? 'akun/profil' : 'Pengembang/syarat',
+                    // SEMUA status mengarah ke wizard — itu tempat dokumen pengajuan
+                    // ini berada, dan wizard sendiri yang menentukan mode: Draft/Ditolak
+                    // bisa diedit, Pending/Diterima tampil read-only.
+                    //
+                    // JANGAN arahkan ke akun/profil. Pernah dilakukan untuk status
+                    // Diterima dengan alasan "dokumen sudah final, yang bisa dikelola
+                    // tinggal data perusahaan" — dan itu keliru: tombol pada baris
+                    // PENGAJUAN harus membawa ke pengajuan itu, bukan ke halaman lain.
+                    // Edit data perusahaan punya jalannya sendiri lewat menu Profil.
+                    'aksi_url' => 'Pengembang/syarat',
+                    'aksi_label' => $status[2],
                 ];
             }
         }

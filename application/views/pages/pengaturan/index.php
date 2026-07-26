@@ -59,7 +59,10 @@
                     <div class="shrink-0 flex flex-col items-end gap-2">
                         <span class="inline-flex px-3 py-1 rounded-full text-xs font-bold border <?= $kelas_badge[$item['status_kelas']] ?? $kelas_badge['pending'] ?>"><?= htmlspecialchars($item['status_label']) ?></span>
                         <?php if (!empty($item['aksi_url'])): ?>
-                        <a href="<?= base_url($item['aksi_url']) ?>" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline">Kelola →</a>
+                        <?php // Label menyebut apa yang benar-benar terjadi saat diklik.
+                              // "Kelola" untuk semua keadaan menjanjikan kemampuan mengubah
+                              // padahal pengajuan yang sudah dikirim/diterima read-only. ?>
+                        <a href="<?= base_url($item['aksi_url']) ?>" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><?= htmlspecialchars($item['aksi_label'] ?? 'Kelola') ?> →</a>
                         <?php endif; ?>
                     </div>
                 </div>
