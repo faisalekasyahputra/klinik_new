@@ -53,12 +53,26 @@ penolak akses di akar `private_uploads/`, dipanggil dari setiap jalur yang
 membuat direktori. Ditulis oleh kode karena direktori itu di luar repo git.
 Terverifikasi: yang tadinya 200 kini 403, sementara endpoint ber-guard tetap 200.
 
+**Production sudah dicek (26 Jul 2026): kemungkinan besar AMAN.**
+`https://palegreen-mink-703421.hostingersite.com/private_uploads/` membalas
+**404 milik CodeIgniter** (halaman 404 CI, bukan 404/403 Apache) — artinya
+request diteruskan ke front controller dan router tidak menemukan controller
+bernama itu. Kalau direktorinya benar-benar ada di bawah webroot, yang muncul
+pasti daftar isi direktori atau 403, bukan diteruskan ke router. Ini konsisten
+dengan `FCPATH = .../public_html/` sehingga `dirname(FCPATH)` di luar jangkauan
+web. Bandingkan lokal: 200 dengan isi PDF utuh.
+
+Catatan kejujuran: ini **bukti kuat, bukan bukti mutlak** — yang konklusif
+adalah mencoba mengambil path satu berkas nyata. Dan 404 itu murni karena
+lokasinya di luar webroot, BUKAN karena `.htaccess` kita bekerja (kodenya belum
+di-push ke sana). Jadi `.htaccess` nanti berfungsi sebagai lapisan tambahan.
+
 **Yang masih terbuka soal ini:**
-- **Belum diverifikasi di production.** Di Hostinger `FCPATH` kemungkinan
-  `.../public_html/` sehingga `dirname()`-nya aman — tapi itu dugaan, bukan fakta.
 - `.htaccess` hanya dipatuhi Apache/LiteSpeed. Pindah ke nginx = proteksi hilang.
 - Perbaikan yang benar-benar kokoh: jadikan lokasi penyimpanan variabel `.env`
   yang menunjuk direktori pasti di luar DocumentRoot, bukan hasil `dirname(FCPATH)`.
+  Prioritasnya turun setelah production terbukti aman, tapi tetap layak dilakukan
+  supaya keamanannya tidak bergantung pada kebetulan tata letak deployment.
 
 ## Pola B — `delete_user_account()` tidak membersihkan semua tabel turunan role
 
