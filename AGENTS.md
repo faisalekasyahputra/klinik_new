@@ -69,7 +69,9 @@ Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya
 | Rewrite CI dikira melindungi berkas | `RewriteCond !-f` cuma menangani URL yang TIDAK ada wujudnya — setiap berkas nyata (`.env`, `docs/`) tersaji apa adanya (§0c) |
 | Memblokir semua dotfile di `.htaccess` | Ikut memblokir `.well-known` → perpanjangan sertifikat SSL gagal, situs mati saat kedaluwarsa. Pakai negative lookahead |
 | Nama tabel ditebak dari nama fitur | `check_forum_rate_limit('diskusi')` — tabelnya `forum_diskusi`; chat menulis ke `tb_chat` yang tidak ada di skema (§18) |
-| Program di `Smart_filter` dikira ada di DB | `omah_sekeng` dipetakan ke `sf_programs` id 6 yang tidak pernah di-seed → FK gagal (§18) |
+| Program di `Smart_filter` dikira ada di DB | `omah_sekeng` (`sf_programs` id 6) hanya ada karena INSERT manual di DB lokal — tidak ada migrasinya, jadi lingkungan lain bisa gagal FK (§18) |
+| DB lokal jalan dikira bukti kode benar | Baris `omah_sekeng` ditambal manual 30 Jun; lokal mulus, instalasi fresh gagal. Tanya selalu: ini lahir dari migrasi atau dari tangan orang? |
+| MySQL XAMPP tidak mau naik | `multi-master.info` di `mysql/data` bisa terisi potongan teks log error, lalu MariaDB mencoba menyalakan replikasi palsu dan gagal. Proyek ini tidak pakai replikasi — singkirkan berkas `multi-master.info` + `master-*.info` + `mysql-relay-bin-*`, jangan sentuh `.frm`/`.ibd`/`ibdata1`. Sudah 2x terjadi (23 & 26 Jul 2026) |
 
 ### 0f. Protokol pemeliharaan dokumen ini
 
@@ -424,7 +426,7 @@ Ringkasan yang paling berdampak dari 141 temuan. Detail lengkap per subsistem: [
 | Temuan | Lokasi |
 |---|---|
 | 🔥 `.env` + `docs/` tersaji publik (HTTP 200 di **production & staging**) — kredensial harus dirotasi, lihat §0c | `.htaccess` (sudah ditambal lokal) |
-| Kotak **"Kredensial Demo"** memajang email admin + password `password` di halaman login, tanpa gate lingkungan — ikut tampil di production. Ada juga di wizard SRP2. ⏳ Cek apakah akun-akun itu memang ada di DB production | `pages/auth/login.php:136`, `pages/pengembang/syarat.php:176` |
+| Kotak **"Kredensial Demo"** memajang email admin + password `password` di halaman login, tanpa gate lingkungan — ikut tampil di production. Ada juga di wizard SRP2. ✅ **Diverifikasi 26 Jul 2026: akun `admin@klinikpkp.jatengprov.go.id` dan `warga@example.com` MEMANG ADA di DB lokal, dan login dengan password `password` BERHASIL.** Kalau seed yang sama pernah dijalankan ke production, itu akun admin publik yang alamat & sandinya diiklankan halaman login sendiri. ⏳ Cek DB production | `pages/auth/login.php:136`, `pages/pengembang/syarat.php:176` |
 | Password API Sikaper **hardcode & sudah masuk riwayat git** (melanggar §9 poin 7) — rotasi kredensialnya, memindah ke `.env` saja tidak cukup | `config/sikaper.php:13` |
 | Chat: `session_id` dibuat browser pakai `Math.random()`, tidak terikat sesi server → siapa pun yang menebaknya membaca riwayat chat + nama/email/HP orang lain | `Chat.php:147`, `layouts/footer.php:161` |
 | Chat: `api_bot()` public-routable, tanpa login, tanpa CSRF (dikecualikan), tanpa rate limit → kuota Gemini bisa dikuras siapa saja | `Chat.php:80` |
@@ -437,13 +439,21 @@ Ringkasan yang paling berdampak dari 141 temuan. Detail lengkap per subsistem: [
 | `cookie_secure = FALSE` meski production HTTPS | `config/config.php:414` |
 | `ENVIRONMENT` default `development` kalau `CI_ENV` tidak diset → error mendetail tampil publik. ⏳ Cek apakah server menyetelnya | `index.php:56` |
 
-### Kemungkinan rusak total (⏳ semua perlu konfirmasi runtime)
+### Rusak total — ✅ DIUJI LIVE 26 Jul 2026 (bukan lagi dugaan)
 
-- **Forum tidak bisa posting/balas** — `check_forum_rate_limit()` menghitung ke tabel `'diskusi'`/`'komentar'`, tabel aslinya `forum_diskusi`/`forum_komentar`. Perbaikan: tambah prefix di dalam helper (satu tempat, semua pemanggil ikut). `helpers/forum_helper.php:75`
-- **Seluruh chat gagal** — menulis ke `tb_chat` yang tidak ada di skema maupun migrasi mana pun. `Chat.php:29`
-- **Pengajuan Desil 4 gagal** — `omah_sekeng` dipetakan ke `sf_programs` id 6 yang tidak pernah di-seed (hanya id 1–5), padahal `program_id` ber-FK NOT NULL. Ironisnya skenario NIK uji #1 justru menghasilkan Desil 4. `Smart_filter.php:40`
-- **Approve SRP2 bisa gagal sambil melapor sukses** — `INSERT` ke direktori bentrok `UNIQUE` nama (67 nama seed sudah ada); di production `db_debug` mati → gagal diam-diam tapi flashdata tetap "Pengajuan diterima". `Admin_Srp2.php:133`
-- **Onboarding role `vendor`** menulis kolom `nama_usaha`/`alamat_usaha`/`jenis_usaha` yang tidak ada di skema; kartu Vendor masih aktif di UI. `Auth.php:466`
+Diuji lewat HTTP nyata di lokal (login `warga@example.com`, POST betulan). Bukan hasil membaca kode:
+
+- ✅ **Forum TIDAK BISA posting maupun balas — TERBUKTI.** Keduanya mati dengan error 1146:
+  - `Umum/tambah_aksi` → `Table 'klinikpkp.diskusi' doesn't exist`
+  - `Umum/balas_aksi` → `Table 'klinikpkp.komentar' doesn't exist`
+
+  Sumbernya satu: `check_forum_rate_limit($table, ...)` di `helpers/forum_helper.php:75` menerima `'diskusi'`/`'komentar'` dari `Umum.php:209` dan `:330`, padahal tabel nyatanya `forum_diskusi`/`forum_komentar`. **Perbaikan paling kecil ada di helper, bukan di pemanggil** — satu tempat, kedua pemanggil ikut benar sekaligus.
+- ✅ **Seluruh chat gagal — TERBUKTI.** `POST Chat/register_session` → `Table 'klinikpkp.tb_chat' doesn't exist` (error 1146). Endpoint ini dikecualikan dari CSRF dan tanpa login, jadi siapa pun yang membuka widget chat di halaman mana pun langsung kena. `chat_rooms`/`chat_messages` justru ADA di DB tapi menganggur — hanya disentuh `Chat_model` yang tidak pernah dipanggil (§7).
+- ❌ **"Pengajuan Desil 4 gagal karena `omah_sekeng` id 6 tidak ada" — KLAIM INI SALAH, jangan diikuti.** Barisnya ADA di DB lokal (`id=6`, `kode_program='omah_sekeng'`, `created_at 2026-06-30`). **Tapi masalah nyatanya lebih halus dan lebih berbahaya:** baris itu dimasukkan MANUAL, **tidak ada migrasi mana pun yang membuatnya** dan tidak ada di `schema_klinikpkp.sql`. Artinya lokal jalan (jadi tidak ada yang sadar) sementara **instalasi fresh dan lingkungan mana pun yang tidak kebagian INSERT manual itu akan gagal** dengan pelanggaran FK saat pemohon Desil 4 memilih Omah Sekeng. ⏳ Belum diverifikasi apakah staging & production punya barisnya. Perbaikan benar: buat migrasi yang meng-seed baris ini, jangan andalkan DB lokal.
+- ⏳ **Approve SRP2 bisa gagal sambil melapor sukses** — `INSERT` ke direktori bentrok `UNIQUE` nama (67 nama seed sudah ada); di production `db_debug` mati → gagal diam-diam tapi flashdata tetap "Pengajuan diterima". `Admin_Srp2.php:133`
+- ⏳ **Onboarding role `vendor`** menulis kolom `nama_usaha`/`alamat_usaha`/`jenis_usaha` yang tidak ada di skema; kartu Vendor masih aktif di UI. `Auth.php:466`
+
+> 📌 **Pelajaran dari pengujian ini, berlaku umum:** dua dugaan terbukti benar, satu terbukti SALAH — dan yang salah itu justru menyembunyikan masalah yang lebih berbahaya (DB lokal sudah ditambal manual, lingkungan lain belum). **Kalau DB lokal jalan, itu bukan bukti kode benar.** Selalu tanya: apakah keadaan ini lahir dari migrasi, atau dari tangan seseorang yang lupa mencatat?
 
 ### Masih melanggar aturan "jangan tampilkan angka/status karangan" (§17)
 
