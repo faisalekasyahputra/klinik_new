@@ -104,39 +104,61 @@ class Pengembang extends MY_Controller {
         $this->render('pages/pengembang/profil', $data);
     }
 
-    public function mulai_unggah($document_key = NULL) {
-        $document_key = array_key_exists($document_key, $this->dokumen_persyaratan()) ? $document_key : NULL;
-        $target = 'Pengembang/mulai_unggah' . ($document_key ? '/' . $document_key : '');
-        if (!$this->akses_pengembang($target)) return;
-        $registration = $this->db->order_by('id', 'DESC')->get_where('srp2_registrations', ['user_id' => $this->get_user_id()])->row();
-        if (!$registration) { $this->session->set_flashdata('error', 'Lengkapi pendaftaran SRP2 terlebih dahulu.'); redirect('Pengembang/syarat'); return; }
-        redirect('Pengembang/dokumen/' . $registration->id . ($document_key ? '#dokumen_' . $document_key : ''));
-    }
+    /**
+     * Diarsipkan 27 Jul 2026 — unggah dokumen SEPENUHNYA di wizard
+     * (Pengembang/syarat), dari langkah 1 sampai kirim, tanpa pindah halaman.
+     *
+     * `mulai_unggah()` dan `dokumen()` adalah sisa era sebelum wizard: permukaan
+     * unggah KEDUA untuk pekerjaan yang sama, dan itulah akar tiga temuan
+     * sekaligus — penulisan DB setelah seluruh loop (berkas yatim), view yang
+     * tidak sadar status, dan daftar yang selalu tampil kosong. Menghapus satu
+     * jalur lebih sedikit kode daripada memperbaiki tiga hal di jalur yang
+     * memang tidak dipakai.
+     *
+     * Redirect dipertahankan supaya bookmark/tautan lama tidak jadi dead-end.
+     */
+    public function mulai_unggah($document_key = NULL) { redirect('Pengembang/syarat'); }
+    public function dokumen($id = NULL) { redirect('Pengembang/syarat'); }
 
-    public function dokumen($id = NULL) {
-        if (!is_numeric($id) || !$this->akses_pengembang('Pengembang/dokumen/' . (int) $id)) show_404();
-        $data['pendaftar'] = $this->db->get_where('srp2_registrations', ['id' => (int) $id, 'user_id' => $this->get_user_id()])->row();
-        if (!$data['pendaftar']) show_404();
-        $data['dokumen'] = $this->dokumen_persyaratan();
+    /**
+     * Sajikan satu dokumen SRP2 ke PEMILIKNYA. Selama ini serve_private_file()
+     * hanya dipakai sisi pengelola (Admin_Srp2::lihat_dokumen), sehingga pemohon
+     * tidak punya cara memeriksa apa yang dulu dia kirim — dan itu membuat
+     * "Minta Perbaikan" terasa buntu: admin menulis "Form 4 salah", pemohon
+     * cuma melihat badge "Tersimpan" tanpa bisa membuka berkasnya.
+     *
+     * Anti-IDOR memakai pola yang sama dengan simpan_dokumen(): WHERE registrasi
+     * DAN user_id dari sesi, sehingga pengembang lain tidak bisa membuka berkas
+     * yang bukan miliknya.
+     */
+    public function lihat_dokumen_saya($id = NULL, $document_key = NULL) {
+        if (!is_numeric($id) || empty($document_key) || !$this->akses_pengembang('Pengembang/syarat')) { show_404(); return; }
+        $id = (int) $id;
 
-        // Keadaan pengajuan lewat satu sumber bersama, sama dengan syarat() dan
-        // cabang AJAX Auth::do_login(). Dulu halaman ini cuma menerima
-        // uploaded_count, sehingga ke-14 barisnya SELALU tampil kosong walau
-        // badge berkata 13/14 — mendorong pemohon mengunggah ulang semuanya.
-        $srp2 = $this->auth_model->srp2_state($this->get_user_id());
-        $data['uploaded_keys']  = $srp2['uploaded_keys'] ?? [];
-        $data['uploaded_count'] = count($data['uploaded_keys']);
-        $data['status_verifikasi'] = $srp2['status'] ?? NULL;
-        $data['catatan_admin']     = $srp2['catatan_admin'] ?? NULL;
+        $milik = $this->db->get_where('srp2_registrations', ['id' => $id, 'user_id' => $this->get_user_id()])->row();
+        if (!$milik) { show_404(); return; }
 
-        $this->render('pages/pengembang/dokumen', $data);
+        $doc = $this->db->where(['registration_id' => $id, 'document_key' => $document_key])
+            ->get('srp2_documents')->row();
+        if (!$doc) { show_404(); return; }
+
+        $this->serve_private_file('srp2', $id, $doc->stored_name, $doc->mime_type);
     }
 
     public function simpan_dokumen($id = NULL) {
         $is_ajax = $this->input->is_ajax_request();
-        if (!is_numeric($id) || !$this->akses_pengembang('Pengembang/dokumen/' . (int) $id) || $this->input->method(TRUE) !== 'POST') { if (!$is_ajax) show_404(); return; }
+        if (!is_numeric($id) || !$this->akses_pengembang('Pengembang/syarat') || $this->input->method(TRUE) !== 'POST') { if (!$is_ajax) show_404(); return; }
+
+        // NORMALISASI SEKALI di pintu masuk, sebelum $id dipakai untuk APA PUN.
+        // Dulu guard memakai is_numeric(), query memakai (int), tapi path berkas
+        // memakai $id MENTAH — dan private_upload_dir() membuang karakter non
+        // alfanumerik, jadi "7.0" menjadi direktori "70". Hasilnya: baris DB
+        // benar (registration_id=7) tapi berkasnya mendarat di srp2/70/, admin
+        // melihat 404 untuk SETIAP dokumen, sementara hitungan 14/14 lolos.
+        $id = (int) $id;
+
         // Anti-IDOR: WHERE user_id selalu dari sesi — pengembang lain tidak bisa menulis ke registrasi ini.
-        $registration = $this->db->get_where('srp2_registrations', ['id' => (int) $id, 'user_id' => $this->get_user_id()])->row();
+        $registration = $this->db->get_where('srp2_registrations', ['id' => $id, 'user_id' => $this->get_user_id()])->row();
         if (!$registration || !$this->db->table_exists('srp2_documents')) {
             if ($is_ajax) { $this->output->set_status_header(404)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => 'Pengajuan tidak ditemukan.'])); return; }
             show_404();
@@ -146,7 +168,7 @@ class Pengembang extends MY_Controller {
         if (in_array($registration->status_verifikasi, ['Pending', 'Diterima'], TRUE)) {
             $message = 'Dokumen tidak bisa diubah saat status ' . $registration->status_verifikasi . '.';
             if ($is_ajax) { $this->output->set_status_header(409)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => $message])); return; }
-            $this->session->set_flashdata('error', $message); redirect('Pengembang/dokumen/' . $id); return;
+            $this->session->set_flashdata('error', $message); redirect('Pengembang/syarat'); return;
         }
         // Pastikan akar private_uploads/ tertutup dari akses HTTP langsung.
         // "Di luar webroot" ternyata tidak selalu benar — tergantung posisi
@@ -156,38 +178,81 @@ class Pengembang extends MY_Controller {
         // di .env) — jangan susun path sendiri di sini.
         $path = $this->private_upload_dir('srp2', $id);
         if (!is_dir($path)) mkdir($path, 0700, TRUE);
-        $allowed = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png']; $stored = [];
+        $allowed = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'];
+
+        $gagal = function ($message, $key = NULL) use ($is_ajax) {
+            if ($is_ajax) {
+                $this->output->set_content_type('application/json')->set_output(json_encode(
+                    array_filter(['status' => 'error', 'document_key' => $key, 'message' => $message])));
+                return;
+            }
+            $this->session->set_flashdata('error', $message); redirect('Pengembang/syarat');
+        };
+
+        // DUA TAHAP: validasi SEMUA dulu, baru pindahkan. Dulu validasi dan
+        // move_uploaded_file() berada di loop yang sama, sehingga satu berkas
+        // gagal validasi membuat berkas-berkas SEBELUMNYA sudah mendarat di disk
+        // tanpa baris DB — yatim permanen yang tidak terjangkau pembersihan
+        // apa pun. Dengan dua tahap, kegagalan validasi menyisakan NOL berkas.
+        $siap = [];
         foreach ($this->dokumen_persyaratan() as $key => $label) {
             if (empty($_FILES[$key]['name'])) continue;
-            $file = $_FILES[$key]; $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)); $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
+            $file = $_FILES[$key];
+            // name/tmp_name berbentuk array = input dikirim sebagai multi-file.
+            // Dulu ini menembus ke pathinfo() dan memicu TypeError 500 SEBELUM
+            // pemeriksaan error mana pun sempat jalan.
+            if (is_array($file['name']) || is_array($file['tmp_name'])) { return $gagal('Berkas ' . $label . ' tidak valid: kirim satu berkas per dokumen.', $key); }
+            $ext  = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+            $mime = is_uploaded_file($file['tmp_name']) ? (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']) : '';
             if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] > 2097152 || !isset($allowed[$ext]) || $mime !== $allowed[$ext]) {
-                $message = 'Berkas ' . $label . ' tidak valid. Gunakan PDF/JPG/PNG maksimal 2 MB.';
-                if ($is_ajax) { $this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'document_key' => $key, 'message' => $message])); return; }
-                $this->session->set_flashdata('error', $message); redirect('Pengembang/dokumen/' . $id); return;
+                return $gagal('Berkas ' . $label . ' tidak valid. Gunakan PDF/JPG/PNG maksimal 2 MB.', $key);
             }
-            $name = bin2hex(random_bytes(16)) . '.' . $ext;
-            if (!move_uploaded_file($file['tmp_name'], $path . $name)) {
-                if ($is_ajax) { $this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'document_key' => $key, 'message' => 'Berkas gagal disimpan.'])); return; }
-                $this->session->set_flashdata('error', 'Berkas gagal disimpan.'); redirect('Pengembang/dokumen/' . $id); return;
-            }
-            $stored[] = ['registration_id' => (int) $id, 'document_key' => $key, 'original_name' => substr(basename($file['name']), 0, 255), 'stored_name' => $name, 'mime_type' => $mime, 'file_size' => (int) $file['size']];
+            $siap[$key] = ['file' => $file, 'ext' => $ext, 'mime' => $mime];
         }
-        foreach ($stored as $row) $this->db->replace('srp2_documents', $row);
+
+        if (empty($siap)) { return $gagal('Tidak ada berkas yang dipilih.'); }
+
+        // Nama berkas LAMA diambil sebelum ditimpa. db->replace() menghapus baris
+        // lama beserta nama berkasnya, jadi kalau tidak dicatat dulu, berkas
+        // fisiknya jadi mustahil ditemukan — dan _cleanup_owned_files() yang
+        // menyapu berdasarkan nama di DB tidak akan pernah menemukannya lagi.
+        // Konsekuensi UU PDP: akta/NPWP/laporan keuangan selamat dari hapus akun.
+        $lama = [];
+        foreach ($this->db->where('registration_id', $id)->where_in('document_key', array_keys($siap))
+                     ->get('srp2_documents')->result() as $d) { $lama[$d->document_key] = $d->stored_name; }
+
+        $stored = []; $baru_di_disk = [];
+        foreach ($siap as $key => $s) {
+            $name = bin2hex(random_bytes(16)) . '.' . $s['ext'];
+            if (!move_uploaded_file($s['file']['tmp_name'], $path . $name)) {
+                // Bersihkan yang sudah sempat mendarat di request INI, supaya
+                // kegagalan di tengah tidak meninggalkan jejak.
+                foreach ($baru_di_disk as $f) { @unlink($path . $f); }
+                return $gagal('Berkas gagal disimpan.', $key);
+            }
+            $baru_di_disk[] = $name;
+            $row = ['registration_id' => $id, 'document_key' => $key, 'original_name' => substr(basename($s['file']['name']), 0, 255), 'stored_name' => $name, 'mime_type' => $s['mime'], 'file_size' => (int) $s['file']['size']];
+            // Baris DB ditulis DI DALAM loop, bukan sesudahnya — berkas yang
+            // sudah pindah selalu punya barisnya.
+            $this->db->replace('srp2_documents', $row);
+            // Berkas lama dibuang SETELAH penggantinya tercatat, bukan sebelum.
+            if (!empty($lama[$key]) && $lama[$key] !== $name) { @unlink($path . basename($lama[$key])); }
+            $stored[] = $row;
+        }
 
         if ($is_ajax) {
-            if (empty($stored)) { $this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => 'Tidak ada berkas yang dipilih.'])); return; }
-            $uploaded_count = $this->db->where('registration_id', (int) $id)->count_all_results('srp2_documents');
+            $uploaded_count = $this->db->where('registration_id', $id)->count_all_results('srp2_documents');
             $this->output->set_content_type('application/json')->set_output(json_encode([
                 'status' => 'success', 'document_key' => $stored[0]['document_key'], 'uploaded_count' => $uploaded_count,
             ]));
             return;
         }
-        $this->session->set_flashdata('success', $stored ? 'Dokumen berhasil diunggah.' : 'Pilih setidaknya satu dokumen untuk diunggah.'); redirect('Pengembang/dokumen/' . $id);
+        $this->session->set_flashdata('success', 'Dokumen berhasil diunggah.'); redirect('Pengembang/syarat');
     }
 
     public function kirim_pengajuan($id = NULL) {
         $is_ajax = $this->input->is_ajax_request();
-        if (!is_numeric($id) || !$this->akses_pengembang('Pengembang/dokumen/' . (int) $id) || $this->input->method(TRUE) !== 'POST') { if (!$is_ajax) show_404(); return; }
+        if (!is_numeric($id) || !$this->akses_pengembang('Pengembang/syarat') || $this->input->method(TRUE) !== 'POST') { if (!$is_ajax) show_404(); return; }
         $registration = $this->db->get_where('srp2_registrations', ['id' => (int) $id, 'user_id' => $this->get_user_id()])->row();
         if (!$registration) {
             if ($is_ajax) { $this->output->set_status_header(404)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => 'Pengajuan tidak ditemukan.'])); return; }
@@ -202,7 +267,7 @@ class Pengembang extends MY_Controller {
         if ($uploaded < $required) {
             $message = 'Lengkapi seluruh ' . $required . ' dokumen sebelum mengirim pengajuan.';
             if ($is_ajax) { $this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => $message, 'uploaded_count' => $uploaded, 'required' => $required])); return; }
-            $this->session->set_flashdata('error', $message); redirect('Pengembang/dokumen/' . $id); return;
+            $this->session->set_flashdata('error', $message); redirect('Pengembang/syarat'); return;
         }
         // GERBANG DI HULU. Dulu 14 dokumen adalah SATU-SATUNYA syarat kirim,
         // sehingga baris tanpa nama perusahaan — atau bernama sama persis dengan

@@ -72,12 +72,20 @@ class User_model extends CI_Model {
             $this->db->select('id')->get_where('srp2_registrations', ['user_id' => $user_id])->result_array(),
             'id'
         );
-        if (!empty($registration_ids)) {
-            $documents = $this->db->select('registration_id, stored_name')
-                ->where_in('registration_id', $registration_ids)->get('srp2_documents')->result();
-            foreach ($documents as $doc) {
-                $this->_unlink_private($doc->registration_id ? private_uploads_dir('srp2', $doc->registration_id) : '', $doc->stored_name);
+        // Disapu berdasarkan ISI DISK, bukan hanya nama yang tercatat DB.
+        // Menyapu dari DB saja meninggalkan berkas yatim: setiap kali dokumen
+        // DIGANTI, baris lamanya hilang beserta nama berkasnya, sehingga berkas
+        // fisiknya tidak lagi terjangkau pencarian apa pun. Akibatnya akta,
+        // NPWP, dan laporan keuangan bisa selamat dari penghapusan akun —
+        // kewajiban retensi UU PDP, bukan sekadar kerapian.
+        foreach ($registration_ids as $rid) {
+            $dir = private_uploads_dir('srp2', $rid);
+            if (!is_dir($dir)) { continue; }
+            foreach (scandir($dir) ?: [] as $berkas) {
+                if ($berkas === '.' || $berkas === '..') { continue; }
+                $this->_unlink_private($dir, $berkas);
             }
+            @rmdir($dir);
         }
 
         // --- Surat pengantar KKN/Magang (private_uploads/kemitraan/{id}/) ---

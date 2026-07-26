@@ -146,7 +146,7 @@
             * Undangan Bimtek & Koordinasi gelombang terbaru akan dikirim otomatis melalui WhatsApp dan Email terdaftar setelah verifikasi manual selesai oleh Admin Disperakim Jateng.
         </p>
         <div class="flex gap-3 w-full sm:w-auto shrink-0">
-            <a href="<?= base_url('Pengembang/dokumen/' . $pendaftar->id) ?>" class="w-full sm:w-auto bg-[#00a3b5] hover:bg-[#008c9b] text-white font-extrabold text-xs uppercase tracking-wider px-5 py-3 rounded-xl transition-all duration-300 text-center"><i class="fa-solid fa-upload mr-1"></i> Unggah Dokumen</a>
+            <a href="<?= base_url('Pengembang/syarat') ?>" class="w-full sm:w-auto bg-[#00a3b5] hover:bg-[#008c9b] text-white font-extrabold text-xs uppercase tracking-wider px-5 py-3 rounded-xl transition-all duration-300 text-center"><i class="fa-solid fa-upload mr-1"></i> Unggah Dokumen</a>
             <button onclick="window.print()" class="w-full sm:w-auto bg-zinc-800 hover:bg-zinc-700 text-white font-bold text-xs uppercase tracking-wider px-4 py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
                 <i class="fa-solid fa-print"></i> Cetak Resi
             </button>

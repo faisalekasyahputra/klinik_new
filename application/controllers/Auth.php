@@ -592,7 +592,10 @@ class Auth extends MY_Controller {
             $this->session->unset_userdata('srp2_quick_registration');
             $this->session->unset_userdata('srp2_verify_pending');
             $this->session->unset_userdata('intended_url');
-            redirect('Pengembang/dokumen/' . $draft_id);
+            // Ke WIZARD, bukan halaman unggah terpisah. Redirect lama adalah
+            // satu-satunya yang masih menyeret pemohon KELUAR dari wizard di
+            // tengah alur — sisa era sebelum wizard yang lupa diperbarui.
+            redirect('Pengembang/syarat');
             return;
         }
         $this->_redirect_after_login();

@@ -226,6 +226,18 @@
 
         <!-- ================= STEP 3: UNGGAH ================= -->
         <div x-show="step === 3" x-cloak>
+
+            <?php // Spanduk pemulihan sesi. Tanpa ini, sesi kedaluwarsa di tengah
+                  // unggah tampil sebagai kegagalan per-berkas yang tidak pernah
+                  // pulih walau tombol Ulangi ditekan berkali-kali. ?>
+            <div x-show="sesiKedaluwarsa" x-cloak class="mb-4 flex flex-wrap items-center gap-3 rounded-xl p-3.5" style="background:rgba(234,179,8,.1);border:1px solid rgba(234,179,8,.35)">
+                <div class="min-w-0 flex-1">
+                    <p class="text-[11px] font-extrabold" style="color:#a16207"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Sesi Anda kedaluwarsa</p>
+                    <p class="mt-0.5 text-[11px] leading-relaxed" style="color:var(--portal-text)">Muat ulang halaman untuk melanjutkan. Dokumen yang sudah tersimpan <strong>tidak hilang</strong> — Anda tinggal mengunggah sisanya.</p>
+                </div>
+                <button type="button" @click="window.location.reload()" class="shrink-0 rounded-lg px-4 py-2 text-[11px] font-extrabold uppercase tracking-wide" style="background:#d6fb00;color:#0a1a1f">Muat Ulang</button>
+            </div>
+
             <button type="button" @click="back()" class="mb-3 inline-flex items-center gap-1.5 text-[11px] font-bold" style="color:var(--portal-text-muted)"><i class="fa-solid fa-arrow-left"></i> Kembali ke Akun</button>
             <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div><h1 class="text-lg font-black sm:text-xl" style="color:var(--portal-text)" x-text="readOnly ? 'Dokumen yang Dikirim' : 'Unggah Persyaratan SRP2'"></h1><p class="mt-1 text-xs" style="color:var(--portal-text-muted)" x-show="!readOnly">Pilih semua berkas dulu, lalu satu tombol untuk mengunggah semuanya satu per satu.</p></div>
@@ -252,6 +264,13 @@
                             <template x-if="fileStatus[key] === 'done'">
                                 <span class="flex shrink-0 items-center gap-2">
                                     <span class="text-[10px] font-bold" style="color:#059669"><i class="fa-solid fa-circle-check"></i> Tersimpan</span>
+                                    <?php // Pemohon bisa membuka kembali berkas yang sudah dia kirim —
+                                          // tanpa ini "perbaiki Form 4" tidak bisa ditindaklanjuti karena
+                                          // dia tak punya cara memeriksa apa yang dulu diunggah. ?>
+                                    <a :href="baseUrl + 'Pengembang/lihat_dokumen_saya/' + registrationId + '/' + key" target="_blank" rel="noopener"
+                                       class="rounded-md px-2 py-1.5 text-[10px] font-bold" style="color:var(--teal);background:rgba(0,163,181,.08)" title="Buka berkas yang tersimpan">
+                                        <i class="fa-solid fa-eye"></i> Lihat
+                                    </a>
                                     <label x-show="!readOnly" class="cursor-pointer rounded-md px-2 py-1.5 text-[10px] font-bold" style="color:var(--portal-text-muted);background:var(--portal-bg-card);border:1px solid var(--portal-border)" title="Ganti dengan berkas lain">
                                         <input type="file" @change="pickFile(key, $event)" accept=".pdf,.jpg,.jpeg,.png" class="sr-only">
                                         <i class="fa-solid fa-rotate"></i> Ganti
@@ -365,6 +384,9 @@ function srp2Wizard(config) {
         tersimpanDiServer: {},
         fileMessage: {},
         uploading: false,
+        // Sesi kedaluwarsa di tengah unggah: satu-satunya pemulihan adalah muat
+        // ulang halaman, jadi keadaannya ditandai dan spanduknya ditampilkan.
+        sesiKedaluwarsa: false,
         toast: { show: false, message: '' },
         submitLoading: false,
         submitError: '',
@@ -537,6 +559,20 @@ function srp2Wizard(config) {
                 fd.append(key, this.files[key]);
                 fd.append(this.csrfName, this.csrfHash);
                 const res = await fetch(this.baseUrl + 'Pengembang/simpan_dokumen/' + this.registrationId, { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+
+                // Sesi/token kedaluwarsa dikenali SEBELUM mencoba membaca JSON.
+                // CodeIgniter membalas HTML untuk 403, sehingga res.json() melempar
+                // dan dulu jatuh ke catch dengan pesan "Koneksi terputus" — sebab
+                // yang salah, dan tombol Ulangi gagal terus karena tokennya tetap
+                // yang lama. Satu-satunya jalan keluar adalah muat ulang halaman,
+                // dan itu tidak pernah diberitahukan.
+                if (res.status === 403) {
+                    this.fileStatus[key] = 'error';
+                    this.fileMessage[key] = 'Sesi Anda kedaluwarsa. Muat ulang halaman ini, lalu unggah lagi — berkas yang sudah tersimpan tidak hilang.';
+                    this.sesiKedaluwarsa = true;
+                    return;
+                }
+
                 const data = await res.json();
                 if (data.status === 'success') {
                     this.fileStatus[key] = 'done';
@@ -549,7 +585,7 @@ function srp2Wizard(config) {
                 }
             } catch (e) {
                 this.fileStatus[key] = 'error';
-                this.fileMessage[key] = 'Koneksi terputus.';
+                this.fileMessage[key] = 'Koneksi terputus. Periksa jaringan Anda lalu coba lagi.';
             }
         },
 
