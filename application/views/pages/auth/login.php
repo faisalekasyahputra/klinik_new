@@ -134,6 +134,43 @@
 
             </div>
 
+            <?php
+            // ============================================================
+            // KREDENSIAL DEMO — dikembalikan atas permintaan user 27 Jul 2026
+            // ------------------------------------------------------------
+            // Alasannya: sistem sedang dalam tahap uji coba oleh dinas, dan
+            // tanpa kredensial di layar mereka tidak bisa menelusuri keenam
+            // peran. Ini keputusan sadar, bukan kelalaian.
+            //
+            // SYARAT yang membuatnya boleh ada (lihat AGENTS.md §17 poin 12):
+            // seluruh akun di sini WAJIB akun demo berisi data contoh. Begitu
+            // sistem memuat data warga sungguhan, atau begitu ada akun di sini
+            // yang memegang wewenang nyata, blok ini HARUS dicabut lagi.
+            // ============================================================
+            ?>
+            <!-- Demo Accounts Info Box -->
+            <div style="background: rgba(214, 251, 0, 0.1); border: 1px solid rgba(214, 251, 0, 0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem;">
+                <h3 style="font-size: 0.8rem; font-weight: 700; color: #8aacb0; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"><i class="fa-solid fa-flask" style="margin-right: 4px;"></i> Kredensial Demo</h3>
+                <p style="font-size: 0.7rem; color: #8aacb0; margin-bottom: 0.6rem; line-height: 1.5;">Akun uji coba berisi data contoh. Klik salah satu untuk mengisi form otomatis.</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; font-size: 0.8rem;">
+                    <?php
+                    $akun_demo = [
+                        ['Admin Dashboard',           'admin@klinikpkp.jatengprov.go.id', 'admin'],
+                        ['Warga (Pengaju)',           'warga@example.com',                'warga_demo'],
+                        ['Pengembang (SRP2)',         'pengembang@example.com',           'pengembang_demo'],
+                        ['Mahasiswa (KKN/Magang)',    'mahasiswa@example.com',            'mahasiswa_demo'],
+                        ['Admin Kab/Kota (Semarang)', 'adminkabkota@example.com',         'adminkabkota_demo'],
+                        ['Admin Bidang (Perumahan)',  'adminbidang@example.com',          'adminbidang_demo'],
+                    ];
+                    foreach ($akun_demo as [$label, $email, $username]): ?>
+                    <button type="button" onclick="document.getElementById('login_email').value='<?= html_escape($email) ?>'; document.getElementById('login_password').value='password';" style="background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 8px; border: 1px solid transparent; cursor: pointer; text-align: left; transition: all 0.2s;" onmouseover="this.style.borderColor='rgba(214,251,0,0.5)';" onmouseout="this.style.borderColor='transparent';">
+                        <div style="color: #8aacb0; font-size: 0.7rem; margin-bottom: 4px;"><?= html_escape($label) ?></div>
+                        <div style="color: #fff; font-weight: 600; line-height: 1.4; word-break: break-all;">E: <?= html_escape($email) ?><br>U: <?= html_escape($username) ?><br>P: password</div>
+                    </button>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+
             <!-- Login Form -->
             <form action="<?= base_url('Auth/do_login') ?>" method="POST" id="loginForm">
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
