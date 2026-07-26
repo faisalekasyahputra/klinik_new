@@ -327,6 +327,44 @@ class MY_Controller extends CI_Controller {
     }
 
     /**
+     * URL "dashboard saya" untuk sebuah role, diturunkan dari registry
+     * (modul pertama yang boleh dilihat role itu, urut group lalu order).
+     *
+     * Dipakai tombol/tautan yang mengarahkan user "kembali ke dashboardnya"
+     * dari halaman publik. Dulu tautan semacam itu hardcode ke `akun`, padahal
+     * `akun` bukan dashboard semua role — superadmin misalnya sengaja TIDAK
+     * punya menu "Status Pengajuan" (dia pengelola, bukan pemohon), jadi
+     * dikirim ke sana berarti mendarat di halaman yang tidak ada di menunya.
+     *
+     * Sengaja tidak memakai dashboard_menu() supaya tidak ikut menjalankan
+     * query badge yang tidak dibutuhkan di sini.
+     *
+     * @param string|null $role NULL = role sesi saat ini
+     * @return string path CI, fallback 'akun'
+     */
+    protected function dashboard_home($role = NULL) {
+        $role = $role ?: $this->current_role();
+        if (empty($role)) { return 'akun'; }
+
+        $this->config->load('dashboard_modules', FALSE, TRUE);
+        $modules     = $this->config->item('dashboard_modules') ?: [];
+        $group_order = $this->config->item('dashboard_module_groups') ?: [];
+
+        $kandidat = [];
+        foreach ($modules as $m) {
+            if (array_key_exists('enabled', $m) && $m['enabled'] === FALSE) { continue; }
+            if (empty($m['roles']) || ! in_array($role, $m['roles'], TRUE)) { continue; }
+            if ( ! empty($m['scope']) && empty($this->session->userdata($m['scope']))) { continue; }
+            $g = array_search($m['group'] ?? '', $group_order);
+            $kandidat[] = ['g' => $g === FALSE ? 999 : $g, 'o' => $m['order'] ?? 999, 'url' => $m['url']];
+        }
+        if (empty($kandidat)) { return 'akun'; }
+
+        usort($kandidat, fn($a, $b) => [$a['g'], $a['o']] <=> [$b['g'], $b['o']]);
+        return $kandidat[0]['url'];
+    }
+
+    /**
      * Hitung baris "belum diproses" untuk satu entri registry, berdasarkan
      * 'table' + 'pending_where' yang dideklarasikan di sana. Satu mekanisme
      * untuk badge sidebar DAN kartu ringkas overview superadmin — sebelumnya

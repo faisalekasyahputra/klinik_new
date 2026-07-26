@@ -152,6 +152,11 @@ class Auth extends MY_Controller {
                 'role'            => $user->role,
                 'name'            => $user->name,
                 'registration_id' => $registration_id,
+                // Dipakai wizard SRP2 saat akun yang login ternyata bukan
+                // pengembang: kartu salah-role butuh tujuan dashboard yang benar
+                // untuk role INI, bukan tautan hardcode ke `akun`.
+                'dashboard_url'   => $this->dashboard_home($user->role),
+                'is_pengelola'    => in_array($user->role, ['admin', 'admin_kabkota', 'admin_bidang'], TRUE),
             ]));
             return;
         }

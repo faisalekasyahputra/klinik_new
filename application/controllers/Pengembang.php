@@ -52,6 +52,12 @@ class Pengembang extends MY_Controller {
             'is_logged'        => $is_logged,
             'is_pengembang'    => $is_pengembang,
             'wrong_role'       => $is_logged && !$is_pengembang,
+            // Tujuan tombol "Ke Dashboard Saya" diturunkan dari registry per role,
+            // bukan hardcode ke `akun` — lihat MY_Controller::dashboard_home().
+            'dashboard_url'    => $is_logged ? $this->dashboard_home() : 'akun',
+            // Role pengelola tidak perlu disuruh "daftar akun pengembang":
+            // mereka justru sisi yang memverifikasi SRP2.
+            'is_pengelola'     => $is_logged && in_array($role, ['admin', 'admin_kabkota', 'admin_bidang'], TRUE),
             'nama_user'        => $this->session->userdata('name') ?: $this->session->userdata('email'),
             'registration_id'  => $registration_id,
             'dokumen'          => $this->dokumen_persyaratan(),

@@ -12,6 +12,8 @@
         "csrfName" => $this->security->get_csrf_token_name(),
         "csrfHash" => $this->security->get_csrf_hash(),
         "baseUrl" => base_url(),
+        "dashboardUrl" => $dashboard_url,
+        "isPengelola" => (bool) $is_pengelola,
     ]), ENT_QUOTES) ?>)" x-init="init()">
     <div class="mx-auto max-w-4xl">
 
@@ -106,12 +108,34 @@
                     </div>
                 </template>
 
+                <!-- Kartu salah-role. Pesan & tujuan tombol sadar-role: akun pengelola
+                     (admin/admin_kabkota/admin_bidang) tidak perlu disuruh "daftar akun
+                     pengembang" — mereka justru sisi yang memverifikasi SRP2. Tujuan
+                     tombol diturunkan dari registry, bukan hardcode ke `akun`; superadmin
+                     sengaja tidak punya menu "Status Pengajuan" sehingga dikirim ke sana
+                     berarti mendarat di halaman yang tidak ada di menunya sendiri. -->
                 <template x-if="wrongRole">
                     <div class="py-3 text-center">
                         <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full text-xl" style="background:rgba(220,38,38,.1);color:#dc2626"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                        <h2 class="mt-4 text-lg font-black">Akun ini bukan akun pengembang</h2>
-                        <p class="mx-auto mt-1 max-w-xs text-xs leading-relaxed" style="color:var(--portal-text-muted)">Layanan SRP2 hanya untuk akun dengan peran pengembang. Silakan keluar dan daftar akun pengembang baru.</p>
-                        <a href="<?= base_url('akun') ?>" class="mt-5 inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wide" style="background:var(--portal-border);color:var(--portal-text)">Ke Dashboard Saya</a>
+
+                        <template x-if="isPengelola">
+                            <div>
+                                <h2 class="mt-4 text-lg font-black">Akun pengelola, bukan pemohon</h2>
+                                <p class="mx-auto mt-1 max-w-sm text-xs leading-relaxed" style="color:var(--portal-text-muted)">Pendaftaran SRP2 diisi oleh akun pengembang. Akun Anda berperan sebagai pengelola — pengajuan SRP2 yang masuk ditinjau dari panel admin, bukan dari halaman ini.</p>
+                                <div class="mt-5 flex flex-wrap items-center justify-center gap-2">
+                                    <a :href="baseUrl + 'Admin_Srp2/pending'" class="inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wide" style="background:var(--teal);color:#fff">Tinjau Pengajuan SRP2</a>
+                                    <a :href="baseUrl + dashboardUrl" class="inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wide" style="background:var(--portal-border);color:var(--portal-text)">Ke Dashboard Saya</a>
+                                </div>
+                            </div>
+                        </template>
+
+                        <template x-if="!isPengelola">
+                            <div>
+                                <h2 class="mt-4 text-lg font-black">Akun ini bukan akun pengembang</h2>
+                                <p class="mx-auto mt-1 max-w-xs text-xs leading-relaxed" style="color:var(--portal-text-muted)">Layanan SRP2 hanya untuk akun dengan peran pengembang. Silakan keluar dan daftar akun pengembang baru.</p>
+                                <a :href="baseUrl + dashboardUrl" class="mt-5 inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wide" style="background:var(--portal-border);color:var(--portal-text)">Ke Dashboard Saya</a>
+                            </div>
+                        </template>
                     </div>
                 </template>
 
@@ -286,6 +310,11 @@ function srp2Wizard(config) {
         isLogged: config.isLogged,
         isPengembang: config.isPengembang,
         wrongRole: config.wrongRole,
+        // Diperbarui dari respons login AJAX juga — kalau user masuk lewat
+        // wizard dengan akun non-pengembang, nilai dari server saat halaman
+        // dimuat masih milik tamu, bukan role yang baru login.
+        dashboardUrl: config.dashboardUrl,
+        isPengelola: config.isPengelola,
         namaUser: config.namaUser,
         registrationId: config.registrationId,
         dokumen: config.dokumen,
@@ -355,7 +384,15 @@ function srp2Wizard(config) {
                 const data = await res.json();
                 if (data.status === 'success') {
                     this.isLogged = true;
-                    if (data.role !== 'pengembang') { this.wrongRole = true; return; }
+                    if (data.role !== 'pengembang') {
+                        // Ambil tujuan dashboard & jenis akun dari server, supaya
+                        // kartu salah-role menunjuk tempat yang benar untuk role
+                        // yang BARU login (bukan nilai bawaan tamu).
+                        this.dashboardUrl = data.dashboard_url || this.dashboardUrl;
+                        this.isPengelola = !!data.is_pengelola;
+                        this.wrongRole = true;
+                        return;
+                    }
                     this.isPengembang = true;
                     this.namaUser = data.name || this.namaUser;
                     this.registrationId = data.registration_id;
