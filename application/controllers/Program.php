@@ -108,9 +108,17 @@ class Program extends Public_Controller {
 
         $now = date('Y-m-d H:i:s');
         $ticket_code = $this->Program_model->generate_ticket_code();
+        $user_id = $this->is_logged_in() ? $this->get_user_id() : NULL;
+        // Dulu jalur ini sama sekali tidak mengisi kabupaten_id, jadi setiap
+        // pengajuan lewat "Solusi Pembiayaan" tidak pernah muncul di dashboard
+        // Admin_Kabkota manapun (AUDIT_ROLE_WARGA.md #4). Alur ini tidak punya
+        // input kabupaten sendiri, jadi bergantung pada domisili profil user;
+        // tamu tanpa profil tetap NULL dan ditandai "Belum Terpetakan Wilayah"
+        // di dashboard superadmin.
         $inserted = $this->Program_model->insert_housing_queue([
             'ticket_code' => $ticket_code,
-            'user_id' => $this->is_logged_in() ? $this->get_user_id() : NULL,
+            'user_id' => $user_id,
+            'kabupaten_id' => $this->Program_model->resolve_kabupaten_id($user_id),
             'program_id' => (int) $selected['id'],
             'nik_pengaju' => $identitas['nik'],
             'nama_lengkap' => $identitas['nama_lengkap'],
@@ -388,13 +396,15 @@ class Program extends Public_Controller {
         $data_simperum = $this->input->post('data_simperum', TRUE);
 
         $user_id = $this->is_logged_in() ? $this->get_user_id() : NULL;
-        $kabupaten_id = (int) $this->input->post('kabupaten_id', TRUE);
+        // Jangan percaya kabupaten_id mentah dari form — diturunkan dari sumber
+        // tepercaya / divalidasi ke tabel kabupaten. Lihat resolve_kabupaten_id().
+        $kabupaten_id = $this->Program_model->resolve_kabupaten_id($user_id, $this->input->post('kabupaten_id', TRUE));
 
         $ticket_code = $this->Program_model->generate_ticket_code();
         $insert_data = [
             'ticket_code' => $ticket_code,
             'user_id' => $user_id,
-            'kabupaten_id' => $kabupaten_id ?: NULL,
+            'kabupaten_id' => $kabupaten_id,
             'program_id' => $program_id,
             'nik_pengaju' => $nik, // Idealnya dienkripsi, disesuaikan dengan aturan NFR-1.1
             'nama_lengkap' => $nama_lengkap,

@@ -12,13 +12,6 @@ class Pengaturan extends MY_Controller {
         $this->load->model('Auth_model');
     }
 
-    private function scoped_menu() {
-        return [
-            ['label' => 'Status Pengajuan', 'icon' => 'ph-list-checks', 'url' => 'akun', 'segment' => 'akun'],
-            ['label' => 'Profil Saya', 'icon' => 'ph-user-circle', 'url' => 'akun/profil', 'segment' => 'akun/profil'],
-        ];
-    }
-
     /**
      * Item utama: satu list gabungan status SEMUA jenis pengajuan milik user
      * (antrean perumahan, aduan, SRP2, KKN/Magang) — bukan lagi kartu terpisah
@@ -43,7 +36,10 @@ class Pengaturan extends MY_Controller {
             ];
         }
 
-        foreach ($this->db->select('id, judul, bidang, status, created_at')
+        // catatan_admin ikut diambil supaya pelapor tahu ALASAN status berubah,
+        // bukan cuma statusnya — pola yang sudah dipakai SRP2 tapi dulu belum
+        // ada di aduan (AUDIT_ROLE_ADMIN_SCOPED.md #7).
+        foreach ($this->db->select('id, judul, bidang, status, catatan_admin, created_at')
             ->where('user_id', (int) $user_id)->order_by('created_at', 'DESC')
             ->get('aduan')->result() as $r) {
             $status_map = ['Baru' => 'pending', 'Diproses' => 'process', 'Selesai' => 'ok'];
@@ -52,6 +48,7 @@ class Pengaturan extends MY_Controller {
                 'judul' => $r->judul,
                 'status_label' => $r->status, 'status_kelas' => $status_map[$r->status] ?? 'pending',
                 'created_at' => $r->created_at, 'aksi_url' => null,
+                'catatan_admin' => $r->catatan_admin,
             ];
         }
 
@@ -64,7 +61,14 @@ class Pengaturan extends MY_Controller {
                     'jenis' => 'Sertifikasi Pengembang (SRP2)', 'icon' => 'ph-certificate',
                     'judul' => $sp2->nama_perusahaan,
                     'status_label' => $status[0], 'status_kelas' => $status[1],
-                    'created_at' => $sp2->created_at, 'aksi_url' => 'akun/profil',
+                    // updated_at, bukan created_at — draft bisa dibuat jauh sebelum
+                    // benar-benar diisi/dikirim, tanggal aktivitas terakhir lebih relevan.
+                    'created_at' => $sp2->updated_at ?: $sp2->created_at,
+                    // Draft/Pending/Ditolak -> lihat atau kelola dokumen di wizard
+                    // (wizard sendiri yang atur mode edit vs read-only sesuai status).
+                    // Cuma Diterima yang ke profil — dokumen sudah final, yang bisa
+                    // dikelola tinggal data perusahaan.
+                    'aksi_url' => $sp2->status_verifikasi === 'Diterima' ? 'akun/profil' : 'Pengembang/syarat',
                 ];
             }
         }
@@ -88,7 +92,7 @@ class Pengaturan extends MY_Controller {
             'title' => 'Status Pengajuan',
             'items' => $items,
         ];
-        $this->render_user_dashboard('pages/pengaturan/index', $datacontent, $this->scoped_menu());
+        $this->render_user_dashboard('pages/pengaturan/index', $datacontent);
     }
 
     /**
@@ -105,7 +109,7 @@ class Pengaturan extends MY_Controller {
                 ->order_by('id', 'DESC')->get('srp2_registrations')->row();
         }
 
-        $this->render_user_dashboard('pages/pengaturan/profil', $datacontent, $this->scoped_menu());
+        $this->render_user_dashboard('pages/pengaturan/profil', $datacontent);
     }
 
     public function update_pengembang_profile() {
@@ -187,6 +191,27 @@ class Pengaturan extends MY_Controller {
 
         if (!empty($username)) {
             $data['username'] = $username;
+        }
+
+        // Ganti password opsional — dipindahkan ke sini saat User_Profile
+        // (halaman profil khusus superadmin) dilebur ke halaman ini, supaya
+        // fiturnya tidak hilang. Aturan kekuatan password disamakan dengan
+        // Auth::do_register()/save_onboarding(), bukan versi longgar lama
+        // yang menerima password apa pun.
+        $password = $this->input->post('password');
+        if (!empty($password)) {
+            if (strlen($password) < 8 || !preg_match('/[A-Z]/', $password) ||
+                !preg_match('/[0-9]/', $password) || !preg_match('/[^A-Za-z0-9]/', $password)) {
+                $this->session->set_flashdata('error', 'Password baru harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.');
+                redirect('akun/profil');
+                return;
+            }
+            if ($password !== $this->input->post('password_confirm')) {
+                $this->session->set_flashdata('error', 'Password baru dan konfirmasinya tidak cocok.');
+                redirect('akun/profil');
+                return;
+            }
+            $data['password'] = password_hash($password, PASSWORD_BCRYPT);
         }
 
         $this->User_model->update_user($user_id, $data);

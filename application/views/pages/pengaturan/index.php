@@ -16,19 +16,10 @@
         </a>
     </div>
 
-    <!-- Flash Messages -->
-    <?php if ($this->session->flashdata('success')): ?>
-        <div class="mb-6 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 text-green-700 dark:text-green-400 px-4 py-3 rounded-2xl flex items-start gap-3">
-            <i class="ph ph-check-circle mt-0.5"></i>
-            <p class="text-sm font-medium"><?= $this->session->flashdata('success') ?></p>
-        </div>
-    <?php endif; ?>
-    <?php if ($this->session->flashdata('error')): ?>
-        <div class="mb-6 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-2xl flex items-start gap-3">
-            <i class="ph ph-warning-circle mt-0.5"></i>
-            <p class="text-sm font-medium"><?= $this->session->flashdata('error') ?></p>
-        </div>
-    <?php endif; ?>
+    <?php
+        // Flash success/error sudah dirender shell admin/index.php sebelum $content
+        // disuntikkan — blok di sini dulu merender ulang pesan yang sama (bug B5).
+    ?>
 
     <?php
         $kelas_badge = [
@@ -59,6 +50,11 @@
                         <p class="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-brand-muted/70"><?= htmlspecialchars($item['jenis']) ?></p>
                         <p class="text-sm font-bold text-gray-900 dark:text-white truncate"><?= htmlspecialchars($item['judul']) ?></p>
                         <p class="text-xs text-gray-500 dark:text-brand-muted mt-0.5"><?= htmlspecialchars(date('d M Y, H:i', strtotime($item['created_at']))) ?></p>
+                        <?php if (!empty($item['catatan_admin'])): ?>
+                        <p class="text-xs mt-1.5 px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted whitespace-normal">
+                            <span class="font-bold">Catatan admin:</span> <?= htmlspecialchars($item['catatan_admin']) ?>
+                        </p>
+                        <?php endif; ?>
                     </div>
                     <div class="shrink-0 flex flex-col items-end gap-2">
                         <span class="inline-flex px-3 py-1 rounded-full text-xs font-bold border <?= $kelas_badge[$item['status_kelas']] ?? $kelas_badge['pending'] ?>"><?= htmlspecialchars($item['status_label']) ?></span>

@@ -30,6 +30,8 @@ class Pengembang extends MY_Controller {
 
         $registration_id = null;
         $uploaded_keys = [];
+        $status_verifikasi = null;
+        $catatan_admin = null;
         if ($is_pengembang) {
             $user_id = $this->get_user_id();
             $registration = $this->db->order_by('id', 'DESC')->get_where('srp2_registrations', ['user_id' => $user_id])->row();
@@ -43,8 +45,11 @@ class Pengembang extends MY_Controller {
                     'nama_perusahaan' => $user->nama_perusahaan, 'status_verifikasi' => 'Draft',
                 ]);
                 $registration_id = $this->db->insert_id();
+                $status_verifikasi = 'Draft';
             } else {
                 $registration_id = $registration->id;
+                $status_verifikasi = $registration->status_verifikasi;
+                $catatan_admin = $registration->catatan_admin;
                 $uploaded_keys = $this->db->select('document_key')->where('registration_id', $registration_id)
                     ->get('srp2_documents')->result_array();
                 $uploaded_keys = array_column($uploaded_keys, 'document_key');
@@ -61,6 +66,8 @@ class Pengembang extends MY_Controller {
             'registration_id'  => $registration_id,
             'dokumen'          => $this->dokumen_persyaratan(),
             'uploaded_keys'    => $uploaded_keys,
+            'status_verifikasi' => $status_verifikasi,
+            'catatan_admin'    => $catatan_admin,
         ]);
     }
 
@@ -127,14 +134,21 @@ class Pengembang extends MY_Controller {
             if ($is_ajax) { $this->output->set_status_header(404)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => 'Pengajuan tidak ditemukan.'])); return; }
             show_404();
         }
+        // Dokumen dikunci setelah dikirim ke admin — mencegah file diganti diam-diam
+        // saat sedang/sudah ditinjau (Diterima pun tidak boleh diubah lagi).
+        if (in_array($registration->status_verifikasi, ['Pending', 'Diterima'], TRUE)) {
+            $message = 'Dokumen tidak bisa diubah saat status ' . $registration->status_verifikasi . '.';
+            if ($is_ajax) { $this->output->set_status_header(409)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => $message])); return; }
+            $this->session->set_flashdata('error', $message); redirect('Pengembang/dokumen/' . $id); return;
+        }
         $path = dirname(FCPATH) . DIRECTORY_SEPARATOR . 'private_uploads' . DIRECTORY_SEPARATOR . 'srp2' . DIRECTORY_SEPARATOR . $id . DIRECTORY_SEPARATOR;
         if (!is_dir($path)) mkdir($path, 0700, TRUE);
         $allowed = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png']; $stored = [];
         foreach ($this->dokumen_persyaratan() as $key => $label) {
             if (empty($_FILES[$key]['name'])) continue;
             $file = $_FILES[$key]; $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)); $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
-            if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] > 1048576 || !isset($allowed[$ext]) || $mime !== $allowed[$ext]) {
-                $message = 'Berkas ' . $label . ' tidak valid. Gunakan PDF/JPG/PNG maksimal 1 MB.';
+            if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] > 2097152 || !isset($allowed[$ext]) || $mime !== $allowed[$ext]) {
+                $message = 'Berkas ' . $label . ' tidak valid. Gunakan PDF/JPG/PNG maksimal 2 MB.';
                 if ($is_ajax) { $this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'document_key' => $key, 'message' => $message])); return; }
                 $this->session->set_flashdata('error', $message); redirect('Pengembang/dokumen/' . $id); return;
             }
@@ -165,6 +179,11 @@ class Pengembang extends MY_Controller {
         if (!$registration) {
             if ($is_ajax) { $this->output->set_status_header(404)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => 'Pengajuan tidak ditemukan.'])); return; }
             show_404();
+        }
+        if (in_array($registration->status_verifikasi, ['Pending', 'Diterima'], TRUE)) {
+            $message = 'Pengajuan sudah dikirim dan berstatus ' . $registration->status_verifikasi . '.';
+            if ($is_ajax) { $this->output->set_status_header(409)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => $message])); return; }
+            $this->session->set_flashdata('error', $message); redirect('akun'); return;
         }
         $required = count($this->dokumen_persyaratan()); $uploaded = $this->db->where('registration_id', (int) $id)->count_all_results('srp2_documents');
         if ($uploaded < $required) {
@@ -218,6 +237,9 @@ class Pengembang extends MY_Controller {
     }
 
     private function dokumen_persyaratan() {
-        return ['form_1' => 'Form 1 – Surat Permohonan SRP2', 'form_2a' => 'Form 2.A – Data Administrasi dan Identitas Pengembang', 'form_2b' => 'Form 2.B – Data Administrasi dan Data Pengurus', 'form_3' => 'Form 3 – Pernyataan Bukan ASN', 'form_4' => 'Form 4 – Laporan Keuangan dan Data Kepemilikan', 'form_5' => 'Form 5 – Ketersediaan SDM Penanggung Jawab Teknis', 'form_6' => 'Form 6 – Pengalaman Pekerjaan', 'form_6b' => 'Form 6B – Rekomendasi Perusahaan Baru', 'form_7' => 'Form 7 – Kesanggupan Penyampaian Laporan', 'form_8' => 'Form 8 – Kebenaran Data', 'form_9' => 'Form 9 – Pakta Integritas', 'form_10' => 'Form 10 – BA Verifikasi dan Validasi', 'form_11' => 'Form 11 – BA Klasifikasi dan Kualifikasi', 'form_13' => 'Form 13 – Laporan Pembangunan Perumahan'];
+        // Daftar sesungguhnya ada di application/helpers/srp2_helper.php — satu
+        // sumber kebenaran, juga dipakai Admin_Srp2::detail() untuk verifikasi.
+        $this->load->helper('srp2');
+        return srp2_dokumen_persyaratan();
     }
 }

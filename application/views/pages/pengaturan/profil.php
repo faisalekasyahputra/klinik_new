@@ -17,19 +17,11 @@
         </a>
     </div>
 
-    <!-- Flash Messages -->
-    <?php if ($this->session->flashdata('success')): ?>
-        <div class="mb-6 bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/20 text-green-700 dark:text-green-400 px-4 py-3 rounded-2xl flex items-start gap-3">
-            <i class="ph ph-check-circle mt-0.5"></i>
-            <p class="text-sm font-medium"><?= $this->session->flashdata('success') ?></p>
-        </div>
-    <?php endif; ?>
-    <?php if ($this->session->flashdata('error')): ?>
-        <div class="mb-6 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-2xl flex items-start gap-3">
-            <i class="ph ph-warning-circle mt-0.5"></i>
-            <p class="text-sm font-medium"><?= $this->session->flashdata('error') ?></p>
-        </div>
-    <?php endif; ?>
+    <?php
+        // Flash success/error sudah dirender shell admin/index.php sebelum $content
+        // disuntikkan — blok di sini dulu merender ulang pesan yang sama (bug B5,
+        // sama seperti pages/pengaturan/index.php).
+    ?>
 
     <div class="max-w-2xl space-y-6">
 
@@ -66,6 +58,17 @@
                     <label class="block text-sm font-medium text-gray-800 dark:text-white mb-1">No. WhatsApp</label>
                     <input type="tel" name="phone" value="<?= htmlspecialchars($user->phone ?? '') ?>"
                            class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-brand-muted/60 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all">
+                </div>
+
+                <div class="pt-4 border-t border-gray-100 dark:border-white/5">
+                    <p class="text-sm font-medium text-gray-800 dark:text-white mb-1">Ganti Password</p>
+                    <p class="text-xs text-gray-500 dark:text-brand-muted mb-3">Kosongkan kalau tidak ingin mengubah. Minimal 8 karakter, ada huruf besar, angka, dan simbol.</p>
+                    <div class="grid sm:grid-cols-2 gap-3">
+                        <input type="password" name="password" autocomplete="new-password" placeholder="Password baru"
+                               class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-brand-muted/60 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all">
+                        <input type="password" name="password_confirm" autocomplete="new-password" placeholder="Ulangi password baru"
+                               class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-brand-muted/60 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all">
+                    </div>
                 </div>
 
                 <div class="pt-2">

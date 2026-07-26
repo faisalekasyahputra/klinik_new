@@ -13,7 +13,26 @@ class Admin_Users extends Admin_Controller {
     public function index()
     {
         $data['title'] = 'Manajemen Pengguna';
-        $data['users'] = $this->db->order_by('created_at', 'DESC')->get('usr_users')->result();
+
+        // Cari + urut + paginasi semuanya server-side (B7/B8).
+        $table = $this->table_state(['created_at', 'name', 'email', 'role'], 'created_at');
+        $data['base_url'] = 'Admin_Users';
+
+        // from() di depan lalu count_all_results('', FALSE) — JANGAN
+        // count_all_results('usr_users', FALSE) diikuti get('usr_users'),
+        // keduanya menyetel FROM sehingga jadi "FROM usr_users, usr_users".
+        $this->db->from('usr_users');
+        if ($table['q'] !== '') {
+            $this->db->group_start()
+                ->like('name', $table['q'])->or_like('email', $table['q'])
+                ->or_like('username', $table['q'])->group_end();
+        }
+        $table += $this->paginate_state($this->db->count_all_results('', FALSE));
+
+        $data['users'] = $this->db->order_by($table['sort'], $table['dir'])
+            ->limit($table['per_page'], $table['offset'])
+            ->get()->result();
+        $data['table'] = $data['pager'] = $table;
         $data['available_roles'] = $this->config->item('available_roles');
         $data['kabupaten_list'] = $this->db->order_by('nama', 'ASC')->get('kabupaten')->result();
         $data['bidang_list'] = $this->db->order_by('nama', 'ASC')->get('bidang')->result();

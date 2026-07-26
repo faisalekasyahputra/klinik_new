@@ -6,16 +6,19 @@ class Admin_Kabkota extends Admin_Kabkota_Controller {
     public function index()
     {
         $data['title'] = 'Antrean Perumahan Wilayah Saya';
-        $data['kabupaten_nama'] = $this->db->where('id', $this->my_kabupaten_id)->get('kabupaten')->row('nama');
-        $data['queue'] = $this->db->select('sf_housing_queue.*, sf_programs.nama_program')
-            ->from('sf_housing_queue')
-            ->join('sf_programs', 'sf_housing_queue.program_id = sf_programs.id', 'left')
-            ->where('sf_housing_queue.kabupaten_id', $this->my_kabupaten_id)
-            ->order_by('sf_housing_queue.created_at', 'DESC')
-            ->limit(1000)
-            ->get()->result();
+        // View bersama admin/antrean/dashboard.php — dipakai juga Admin::index()
+        // (superadmin, tanpa scope). Kontrak POST update status sama persis.
+        $data['scope_label'] = $this->db->where('id', $this->my_kabupaten_id)->get('kabupaten')->row('nama') ?: 'Wilayah Saya';
+        $data['action_url']  = 'Admin_Kabkota/update_status';
+        $data['empty_text']  = 'Belum ada antrean di wilayah Anda.';
+        $data['base_url']    = 'Admin_Kabkota';
 
-        $this->render_scoped_admin('admin_kabkota/dashboard', $data);
+        // Scope wilayah diteruskan EKSPLISIT sebagai argumen (bukan lewat state
+        // query builder yang tersimpan) — pencarian tidak boleh jadi celah
+        // melihat antrean kabupaten lain.
+        $data += $this->antrean_table_data($this->my_kabupaten_id);
+
+        $this->render_scoped_admin('admin/antrean/dashboard', $data);
     }
 
     public function update_status()
@@ -33,20 +36,31 @@ class Admin_Kabkota extends Admin_Kabkota_Controller {
         }
 
         // Anti-IDOR: wajib WHERE kabupaten_id juga, bukan cuma id — supaya admin
-        // kabupaten lain tidak bisa mengubah antrean di luar wilayahnya.
+        // kabupaten lain tidak bisa mengubah antrean di luar wilayahnya. Cek dulu
+        // keberadaannya di scope: affected_rows() saja tidak cukup karena MySQL
+        // membalas 0 juga saat nilai barunya sama persis dengan yang tersimpan
+        // (resubmit tanpa perubahan) — dulu itu salah dilaporkan sebagai "bukan
+        // wilayah Anda". Lihat AUDIT_ROLE_ADMIN_SCOPED.md #6.
+        $milik_wilayah = $this->db->where('id', $queue_id)
+            ->where('kabupaten_id', $this->my_kabupaten_id)
+            ->count_all_results('sf_housing_queue');
+
+        if ($milik_wilayah === 0) {
+            $this->session->set_flashdata('error', 'Data tidak ditemukan di wilayah Anda.');
+            redirect('Admin_Kabkota');
+            return;
+        }
+
         $this->db->where('id', $queue_id)
             ->where('kabupaten_id', $this->my_kabupaten_id)
             ->update('sf_housing_queue', [
                 'status_antrean' => $status,
                 'catatan_admin'  => $catatan_admin,
+                'reviewed_by'    => $this->get_user_id(),
+                'reviewed_at'    => date('Y-m-d H:i:s'),
             ]);
 
-        if ($this->db->affected_rows() > 0) {
-            $this->session->set_flashdata('success', 'Status pengajuan berhasil diubah menjadi ' . strtoupper($status) . '.');
-        } else {
-            $this->session->set_flashdata('error', 'Data tidak ditemukan di wilayah Anda.');
-        }
-
+        $this->session->set_flashdata('success', 'Status pengajuan berhasil diubah menjadi ' . strtoupper($status) . '.');
         redirect('Admin_Kabkota');
     }
 }

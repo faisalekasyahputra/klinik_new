@@ -3,16 +3,18 @@
     <p class="text-sm text-gray-500 dark:text-brand-muted">Tinjau dan proses pendaftaran KKN/Magang dari mahasiswa.</p>
 </div>
 
+<?php $this->load->helper('admin_table'); ?>
 <div class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
+    <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari mahasiswa, instansi, divisi...'], TRUE) ?>
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
-                    <th class="px-6 py-4">Mahasiswa</th>
+                    <th class="px-6 py-4"><?= admin_sort_header('Mahasiswa', 'usr_users.name', $table, $base_url) ?></th>
                     <th class="px-6 py-4">Jenis</th>
-                    <th class="px-6 py-4">Instansi Asal</th>
+                    <th class="px-6 py-4"><?= admin_sort_header('Instansi Asal', 'kkn_magang_pendaftaran.instansi_asal', $table, $base_url) ?></th>
                     <th class="px-6 py-4">Divisi/Tema</th>
-                    <th class="px-6 py-4">Status</th>
+                    <th class="px-6 py-4"><?= admin_sort_header('Status', 'kkn_magang_pendaftaran.status', $table, $base_url) ?></th>
                     <th class="px-6 py-4 text-right">Aksi</th>
                 </tr>
             </thead>
@@ -32,22 +34,23 @@
                     <td class="px-6 py-4"><?= html_escape($r->divisi_atau_tema ?: '-') ?></td>
                     <td class="px-6 py-4">
                         <?php
-                            $badge = ['Diajukan' => 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400', 'Diterima' => 'bg-green-50 text-green-700 dark:bg-green-500/10 dark:text-green-400', 'Ditolak' => 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400'][$r->status] ?? 'bg-gray-100 text-gray-600';
+                            // Peta status domain KKN/Magang -> kelas komponen bersama.
+                            $badge_kelas = ['Diajukan' => 'pending', 'Diterima' => 'ok', 'Ditolak' => 'reject'];
                         ?>
-                        <span class="inline-flex px-2.5 py-1 rounded-lg text-xs font-bold <?= $badge ?>"><?= html_escape($r->status) ?></span>
+                        <?= $this->load->view('admin/components/status_badge', ['label' => $r->status, 'kelas' => $badge_kelas[$r->status] ?? 'pending'], TRUE) ?>
                     </td>
                     <td class="px-6 py-4 text-right relative">
                         <?php if ($r->status === 'Diajukan'): ?>
                         <button @click="procOpen = !procOpen" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">Proses</button>
                         <div x-show="procOpen" x-cloak @click.outside="procOpen = false" class="absolute right-6 top-full mt-1 z-20 w-72 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
-                            <form method="POST" action="<?= base_url('Admin_Kemitraan/proses/' . $r->id) ?>" class="space-y-2">
-                                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-                                <textarea name="catatan_admin" rows="2" placeholder="Catatan (opsional)" class="w-full rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-2 py-1.5 text-xs text-gray-800 dark:text-gray-200"></textarea>
-                                <div class="flex gap-2">
-                                    <button type="submit" name="status" value="Diterima" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-600 text-white hover:bg-green-700">Terima</button>
-                                    <button type="submit" name="status" value="Ditolak" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-red-600 text-white hover:bg-red-700">Tolak</button>
-                                </div>
-                            </form>
+                            <?= $this->load->view('admin/components/review_form', [
+                                'action_url' => 'Admin_Kemitraan/proses/' . $r->id,
+                                'buttons' => [
+                                    ['value' => 'Diterima', 'label' => 'Terima', 'style' => 'accept'],
+                                    ['value' => 'Ditolak', 'label' => 'Tolak', 'style' => 'reject'],
+                                ],
+                                'catatan_name' => 'catatan_admin',
+                            ], TRUE) ?>
                         </div>
                         <?php else: ?>
                         <span class="text-xs text-gray-400 dark:text-brand-muted/60">Selesai diproses</span>
@@ -58,4 +61,5 @@
             </tbody>
         </table>
     </div>
+    <?= $this->load->view('admin/components/pagination', ['pager' => $pager, 'base_url' => $base_url], TRUE) ?>
 </div>

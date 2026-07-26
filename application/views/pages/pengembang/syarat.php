@@ -7,6 +7,8 @@
         "registrationId" => $registration_id,
         "dokumen" => $dokumen,
         "uploadedKeys" => array_values($uploaded_keys),
+        "statusVerifikasi" => $status_verifikasi,
+        "catatanAdmin" => $catatan_admin,
         "csrfName" => $this->security->get_csrf_token_name(),
         "csrfHash" => $this->security->get_csrf_hash(),
         "baseUrl" => base_url(),
@@ -28,10 +30,14 @@
             </template>
         </div>
 
-        <!-- Toast progres -->
-        <div x-show="toast.show" x-transition x-cloak class="fixed bottom-5 right-5 z-50 rounded-xl px-4 py-3 text-xs font-semibold shadow-lg" style="background:#0a1a1f;color:#fff">
-            <i class="fa-solid fa-circle-notch fa-spin mr-1.5" x-show="uploading"></i><span x-text="toast.message"></span>
-        </div>
+        <!-- Toast progres — di-teleport ke <body> supaya posisinya beneran pojok layar,
+             bukan relatif ke panel wizard (ancestor dengan transform/animasi bikin
+             "fixed" biasa jadi ke-jebak di dalam panel, bukan viewport). -->
+        <template x-teleport="body">
+            <div x-show="toast.show" x-transition x-cloak class="fixed bottom-5 left-5 z-[9999] rounded-xl px-4 py-3 text-xs font-semibold shadow-lg" style="background:#0a1a1f;color:#fff">
+                <i class="fa-solid fa-circle-notch fa-spin mr-1.5" x-show="uploading"></i><span x-text="toast.message"></span>
+            </div>
+        </template>
 
         <!-- ================= STEP 1: SYARAT ================= -->
         <div x-show="step === 1">
@@ -60,14 +66,43 @@
 
         <!-- ================= STEP 2: AKUN ================= -->
         <div x-show="step === 2" x-cloak class="mx-auto max-w-md">
+            <button type="button" @click="back()" class="mb-3 inline-flex items-center gap-1.5 text-[11px] font-bold" style="color:var(--portal-text-muted)"><i class="fa-solid fa-arrow-left"></i> Kembali ke Syarat</button>
             <div class="rounded-2xl p-5 sm:p-6" style="background:var(--portal-bg-card);border:1px solid var(--portal-border);box-shadow:0 8px 24px rgba(0,80,95,.06)">
 
-                <template x-if="isPengembang">
+                <template x-if="isPengembang && (status === 'Draft' || !status)">
                     <div class="py-3 text-center">
                         <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full text-xl" style="background:rgba(16,185,129,.1);color:#059669"><i class="fa-solid fa-circle-check"></i></div>
                         <h2 class="mt-4 text-lg font-black">Anda sudah terdaftar</h2>
                         <p class="mx-auto mt-1 max-w-xs text-xs leading-relaxed" style="color:var(--portal-text-muted)">Masuk sebagai <strong style="color:var(--portal-text)" x-text="namaUser"></strong>. Lanjut unggah dokumen persyaratan.</p>
                         <button type="button" @click="step = 3" class="mt-5 inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wide" style="background:#d6fb00;color:#0a1a1f">Lanjut Unggah Dokumen <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </template>
+
+                <template x-if="isPengembang && status === 'Pending'">
+                    <div class="py-3 text-center">
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full text-xl" style="background:rgba(0,163,181,.1);color:var(--teal)"><i class="fa-solid fa-hourglass-half"></i></div>
+                        <h2 class="mt-4 text-lg font-black">Sedang Ditinjau Admin</h2>
+                        <p class="mx-auto mt-1 max-w-xs text-xs leading-relaxed" style="color:var(--portal-text-muted)">Pengajuan Anda sudah terkirim dan sedang diperiksa. Dokumen tidak bisa diubah sampai ada keputusan.</p>
+                        <button type="button" @click="step = 3" class="mt-5 inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wide" style="background:var(--portal-border);color:var(--portal-text)">Lihat Dokumen yang Dikirim <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </template>
+
+                <template x-if="isPengembang && status === 'Ditolak'">
+                    <div class="py-3 text-center">
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full text-xl" style="background:rgba(220,38,38,.1);color:#dc2626"><i class="fa-solid fa-circle-xmark"></i></div>
+                        <h2 class="mt-4 text-lg font-black">Pengajuan Ditolak</h2>
+                        <p class="mx-auto mt-1 max-w-xs text-xs leading-relaxed" style="color:var(--portal-text-muted)" x-show="!catatanAdmin">Silakan periksa kembali dan perbaiki dokumen Anda.</p>
+                        <p class="mx-auto mt-1 max-w-xs rounded-lg p-2.5 text-left text-xs leading-relaxed" style="background:rgba(220,38,38,.06);color:var(--portal-text)" x-show="catatanAdmin"><strong>Catatan admin:</strong> <span x-text="catatanAdmin"></span></p>
+                        <button type="button" @click="step = 3" class="mt-5 inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wide" style="background:#d6fb00;color:#0a1a1f">Perbaiki & Kirim Ulang <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </template>
+
+                <template x-if="isPengembang && status === 'Diterima'">
+                    <div class="py-3 text-center">
+                        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full text-xl" style="background:rgba(16,185,129,.1);color:#059669"><i class="fa-solid fa-award"></i></div>
+                        <h2 class="mt-4 text-lg font-black">Pengajuan Diterima</h2>
+                        <p class="mx-auto mt-1 max-w-xs text-xs leading-relaxed" style="color:var(--portal-text-muted)">Selamat, sertifikasi Anda sudah disetujui. Kelola data perusahaan lewat halaman profil.</p>
+                        <a href="<?= base_url('akun/profil') ?>" class="mt-5 inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wide" style="background:#d6fb00;color:#0a1a1f">Ke Profil Saya <i class="fa-solid fa-arrow-right"></i></a>
                     </div>
                 </template>
 
@@ -89,6 +124,12 @@
 
                         <!-- Panel Masuk -->
                         <form x-show="authTab === 'masuk'" x-cloak @submit.prevent="doLogin()" class="space-y-3">
+                            <button type="button" @click="$refs.loginEmail.value='pengembang@example.com'; $refs.loginPassword.value='password'"
+                                    class="w-full rounded-lg p-2.5 text-left transition-colors" style="background:rgba(0,163,181,.06);border:1px dashed rgba(0,163,181,.3)"
+                                    onmouseover="this.style.background='rgba(0,163,181,.12)'" onmouseout="this.style.background='rgba(0,163,181,.06)'">
+                                <span class="text-[9px] font-bold uppercase tracking-wider" style="color:var(--teal)"><i class="fa-solid fa-flask mr-1"></i>Kredensial Demo (klik untuk isi otomatis)</span>
+                                <span class="mt-0.5 block text-[10px] font-semibold" style="color:var(--portal-text)">E: pengembang@example.com &nbsp;·&nbsp; P: password</span>
+                            </button>
                             <div x-show="authError" x-cloak class="rounded-lg px-3 py-2 text-[11px] font-semibold" style="background:rgba(220,38,38,.08);color:#dc2626" x-text="authError"></div>
                             <label class="block text-[11px] font-bold">Email atau Username <span style="color:#dc2626">*</span>
                                 <input x-ref="loginEmail" autocomplete="username" required placeholder="Email atau username" class="mt-1 block w-full rounded-lg px-3 py-2.5 text-xs font-normal outline-none" style="background:var(--portal-bg);border:1px solid var(--portal-border)">
@@ -133,40 +174,75 @@
 
         <!-- ================= STEP 3: UNGGAH ================= -->
         <div x-show="step === 3" x-cloak>
+            <button type="button" @click="back()" class="mb-3 inline-flex items-center gap-1.5 text-[11px] font-bold" style="color:var(--portal-text-muted)"><i class="fa-solid fa-arrow-left"></i> Kembali ke Akun</button>
             <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div><h1 class="text-lg font-black sm:text-xl" style="color:var(--portal-text)">Unggah Persyaratan SRP2</h1><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Pilih semua berkas dulu, lalu satu tombol untuk mengunggah semuanya satu per satu.</p></div>
+                <div><h1 class="text-lg font-black sm:text-xl" style="color:var(--portal-text)" x-text="readOnly ? 'Dokumen yang Dikirim' : 'Unggah Persyaratan SRP2'"></h1><p class="mt-1 text-xs" style="color:var(--portal-text-muted)" x-show="!readOnly">Pilih semua berkas dulu, lalu satu tombol untuk mengunggah semuanya satu per satu.</p></div>
                 <span class="rounded-full px-3 py-1.5 text-[11px] font-bold self-start" style="background:rgba(0,163,181,.1);color:var(--teal)"><span x-text="uploadedCount"></span> / <span x-text="totalCount"></span> dokumen</span>
+            </div>
+
+            <div x-show="readOnly" class="mb-4 flex items-start gap-2 rounded-xl px-3.5 py-2.5 text-[11px] font-semibold" style="background:rgba(0,163,181,.08);border:1px solid rgba(0,163,181,.2);color:var(--portal-text)">
+                <i class="fa-solid fa-lock mt-0.5 shrink-0" style="color:var(--teal)"></i>
+                <span x-text="status === 'Diterima' ? 'Pengajuan sudah disetujui — dokumen terkunci, tidak bisa diubah lagi.' : 'Sedang ditinjau admin — dokumen terkunci sampai ada keputusan.'"></span>
+            </div>
+
+            <div x-show="!readOnly" class="mb-4 flex items-start gap-2 rounded-xl px-3.5 py-2.5 text-[11px] font-semibold" style="background:rgba(0,163,181,.08);border:1px solid rgba(0,163,181,.2);color:var(--portal-text)">
+                <i class="fa-solid fa-circle-info mt-0.5 shrink-0" style="color:var(--teal)"></i>
+                <span>Format PDF, JPG, atau PNG — maksimal <strong>2 MB</strong> per dokumen. Berkas yang lebih besar akan ditolak, kompres atau scan ulang dengan resolusi lebih rendah dulu.</span>
             </div>
 
             <div class="rounded-2xl p-3 sm:p-4" style="background:var(--portal-bg-card);border:1px solid var(--portal-border)">
                 <div class="grid gap-2 sm:grid-cols-2">
                     <template x-for="key in docKeys" :key="key">
-                        <div class="flex items-center gap-2 rounded-lg p-2.5" style="background:var(--portal-bg);border:1px solid var(--portal-border)">
+                        <div class="rounded-lg p-2.5" style="background:var(--portal-bg);border:1px solid var(--portal-border)" :style="fileStatus[key] === 'error' ? 'border-color:rgba(220,38,38,.35)' : ''">
+                        <div class="flex items-center gap-2">
                             <span class="min-w-0 flex-1 text-[11px] font-semibold truncate" style="color:var(--portal-text)" x-text="dokumen[key]"></span>
 
                             <template x-if="fileStatus[key] === 'done'">
-                                <span class="shrink-0 text-[10px] font-bold" style="color:#059669"><i class="fa-solid fa-circle-check"></i> Tersimpan</span>
+                                <span class="flex shrink-0 items-center gap-2">
+                                    <span class="text-[10px] font-bold" style="color:#059669"><i class="fa-solid fa-circle-check"></i> Tersimpan</span>
+                                    <label x-show="!readOnly" class="cursor-pointer rounded-md px-2 py-1.5 text-[10px] font-bold" style="color:var(--portal-text-muted);background:var(--portal-bg-card);border:1px solid var(--portal-border)" title="Ganti dengan berkas lain">
+                                        <input type="file" @change="pickFile(key, $event)" accept=".pdf,.jpg,.jpeg,.png" class="sr-only">
+                                        <i class="fa-solid fa-rotate"></i> Ganti
+                                    </label>
+                                </span>
                             </template>
                             <template x-if="fileStatus[key] === 'uploading'">
                                 <span class="shrink-0 text-[10px] font-bold" style="color:var(--teal)"><i class="fa-solid fa-circle-notch fa-spin"></i> Mengunggah</span>
                             </template>
                             <template x-if="fileStatus[key] === 'error'">
-                                <button type="button" @click="retryOne(key)" class="shrink-0 rounded-md px-2 py-1.5 text-[10px] font-bold" style="color:#dc2626;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.2)" :title="fileMessage[key]"><i class="fa-solid fa-rotate-right"></i> Ulangi</button>
+                                <span class="flex shrink-0 items-center gap-1.5">
+                                    <button type="button" @click="retryOne(key)" class="rounded-md px-2 py-1.5 text-[10px] font-bold" style="color:#dc2626;background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.2)" :title="fileMessage[key]"><i class="fa-solid fa-rotate-right"></i> Ulangi</button>
+                                    <label class="cursor-pointer rounded-md px-2 py-1.5 text-[10px] font-bold" style="color:var(--teal);background:rgba(0,163,181,.08);border:1px solid rgba(0,163,181,.18)" title="Pilih berkas lain">
+                                        <input type="file" @change="pickFile(key, $event)" accept=".pdf,.jpg,.jpeg,.png" class="sr-only">
+                                        <i class="fa-solid fa-file"></i>
+                                    </label>
+                                </span>
                             </template>
                             <template x-if="fileStatus[key] === 'selected'">
-                                <span class="shrink-0 text-[10px] font-bold" style="color:var(--portal-text-muted)"><i class="fa-solid fa-paperclip"></i> Siap unggah</span>
+                                <span class="flex shrink-0 items-center gap-1.5">
+                                    <label class="max-w-[110px] cursor-pointer truncate rounded-md px-2 py-1.5 text-[10px] font-bold" style="color:var(--portal-text-muted);background:var(--portal-bg-card);border:1px solid var(--portal-border)" :title="'Klik untuk ganti — ' + (files[key] ? files[key].name : '')">
+                                        <input type="file" @change="pickFile(key, $event)" accept=".pdf,.jpg,.jpeg,.png" class="sr-only">
+                                        <i class="fa-solid fa-paperclip"></i> <span x-text="files[key] ? files[key].name : 'Siap unggah'"></span>
+                                    </label>
+                                    <button type="button" @click="clearFile(key)" class="rounded-md px-2 py-1.5 text-[10px] font-bold" style="color:#dc2626;background:rgba(220,38,38,.06)" title="Batalkan pilihan"><i class="fa-solid fa-xmark"></i></button>
+                                </span>
                             </template>
-                            <template x-if="!fileStatus[key] || fileStatus[key] === 'idle'">
+                            <template x-if="(!fileStatus[key] || fileStatus[key] === 'idle') && !readOnly">
                                 <label class="shrink-0 cursor-pointer rounded-md px-2 py-1.5 text-[10px] font-bold" style="color:var(--teal);background:rgba(0,163,181,.08);border:1px solid rgba(0,163,181,.18)">
                                     <input type="file" @change="pickFile(key, $event)" accept=".pdf,.jpg,.jpeg,.png" class="sr-only">
                                     <i class="fa-solid fa-upload"></i> Pilih
                                 </label>
                             </template>
+                            <template x-if="(!fileStatus[key] || fileStatus[key] === 'idle') && readOnly">
+                                <span class="shrink-0 text-[10px] font-bold" style="color:var(--portal-text-muted)">Belum diunggah</span>
+                            </template>
+                        </div>
+                        <p x-show="fileStatus[key] === 'error'" x-cloak class="mt-1.5 text-[10px] font-semibold" style="color:#dc2626" x-text="fileMessage[key]"></p>
                         </div>
                     </template>
                 </div>
 
-                <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div x-show="!readOnly" class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p x-show="!allUploaded" class="text-[11px]" style="color:var(--portal-text-muted)"><i class="fa-solid fa-circle-info mr-1" style="color:var(--teal)"></i>Belum lengkap boleh ditinggal — sisanya bisa dilengkapi lewat dashboard <span x-text="uploadedCount"></span>/<span x-text="totalCount"></span>.</p>
                     <div class="flex gap-2 sm:ml-auto">
                         <button type="button" @click="uploadAll()" :disabled="uploading || selectedPendingCount === 0" class="rounded-lg px-4 py-2 text-[11px] font-extrabold uppercase disabled:opacity-50" style="background:var(--teal);color:#fff">
@@ -178,11 +254,14 @@
 
             <div x-show="submitError" x-cloak class="mt-4 rounded-xl px-4 py-3 text-xs font-semibold" style="background:rgba(220,38,38,.08);color:#dc2626" x-text="submitError"></div>
 
-            <div class="mt-4 flex justify-end">
+            <div x-show="!readOnly" class="mt-4 flex justify-end">
                 <button type="button" @click="submitPengajuan()" :disabled="!allUploaded || submitLoading" class="rounded-lg px-4 py-2.5 text-[11px] font-extrabold uppercase disabled:opacity-50" style="background:#00545f;color:#fff" :title="!allUploaded ? 'Lengkapi semua dokumen dulu (atau dari dashboard)' : ''">
                     <span x-show="!submitLoading"><i class="fa-solid fa-paper-plane mr-1"></i> Kirim Pengajuan</span>
                     <span x-show="submitLoading" x-cloak><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Mengirim...</span>
                 </button>
+            </div>
+            <div x-show="readOnly" class="mt-4 flex justify-end">
+                <a href="<?= base_url('akun') ?>" class="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-[11px] font-extrabold uppercase" style="background:var(--portal-border);color:var(--portal-text)"><i class="fa-solid fa-arrow-left mr-1"></i> Kembali ke Status Pengajuan</a>
             </div>
         </div>
 
@@ -210,6 +289,8 @@ function srp2Wizard(config) {
         namaUser: config.namaUser,
         registrationId: config.registrationId,
         dokumen: config.dokumen,
+        status: config.statusVerifikasi,
+        catatanAdmin: config.catatanAdmin,
         csrfName: config.csrfName,
         csrfHash: config.csrfHash,
         baseUrl: config.baseUrl,
@@ -229,8 +310,16 @@ function srp2Wizard(config) {
 
         init() {
             (config.uploadedKeys || []).forEach(k => { this.fileStatus[k] = 'done'; });
+            // Sudah pernah mulai pendaftaran (draft/terkirim/ditolak/diterima) -> langsung
+            // ke langkah unggah/status, bukan diulang dari halaman syarat tiap kali buka.
+            if (this.isPengembang && this.registrationId) { this.step = 3; }
         },
 
+        back() {
+            if (this.step > 1) { this.step -= 1; }
+        },
+
+        get readOnly() { return this.status === 'Pending' || this.status === 'Diterima'; },
         get docKeys() { return Object.keys(this.dokumen); },
         get uploadedCount() { return this.docKeys.filter(k => this.fileStatus[k] === 'done').length; },
         get totalCount() { return this.docKeys.length; },
@@ -242,6 +331,11 @@ function srp2Wizard(config) {
             if (!f) return;
             this.files[key] = f;
             this.fileStatus[key] = 'selected';
+        },
+
+        clearFile(key) {
+            delete this.files[key];
+            this.fileStatus[key] = 'idle';
         },
 
         showToast(message, sticky) {

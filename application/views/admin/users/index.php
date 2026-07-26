@@ -152,7 +152,5 @@
         </table>
     </div>
 
-    <div class="px-6 py-4 border-t border-gray-200 dark:border-white/5 flex items-center justify-between text-xs text-gray-500 dark:text-brand-muted">
-        <div>Menampilkan <?= count($users) ?> dari <?= count($users) ?> pengguna.</div>
-    </div>
+    <?= $this->load->view('admin/components/pagination', ['pager' => $pager, 'base_url' => $base_url], TRUE) ?>
 </div>

@@ -13,12 +13,19 @@ class Admin extends Admin_Controller {
 
     public function index()
     {
-        // Fetch housing queue data
-        $data['queue'] = $this->Admin_model->get_all_housing_queue();
         $data['title'] = 'Antrean & Validasi';
-        
-        // Load views
-        $this->render_admin('pages/admin/dashboard', $data);
+        // View bersama dengan Admin_Kabkota (yang ter-scope). Fork lama
+        // pages/admin/dashboard.php diarsipkan: ikonnya fa-solid padahal shell
+        // admin tidak me-load Font Awesome, jadi blank di produksi (B1).
+        $data['scope_label'] = 'Semua Wilayah';
+        $data['action_url']  = 'Admin/update_status';
+        $data['empty_text']  = 'Belum ada antrean yang masuk.';
+        $data['base_url']    = 'Admin';
+
+        // NULL = tanpa scope wilayah; superadmin memang berwenang lintas kabupaten.
+        $data += $this->antrean_table_data(NULL);
+
+        $this->render_admin('admin/antrean/dashboard', $data);
     }
 
     public function update_status()
@@ -35,22 +42,19 @@ class Admin extends Admin_Controller {
             if (!empty($queue_id) && in_array($status, ['approved', 'rejected'])) {
                 
                 // Update status via model
-                $update_success = $this->Admin_model->update_queue_status($queue_id, $status, $catatan_admin);
+                // reviewed_by dari sesi (bukan request) — akuntabilitas siapa
+                // yang memutuskan, kolom dari migrasi 20260701000011.
+                $update_success = $this->Admin_model->update_queue_status($queue_id, $status, $catatan_admin, $this->get_user_id());
                 
                 if ($update_success) {
-                    // MOCK SIMPERUM API SYNC
-                    // In a real scenario, this would use cURL to send the approval status back to SIMPERUM API
-                    // $ch = curl_init('https://api.simperum.jatengprov.go.id/v1/housing-queue/sync');
-                    // curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['id' => $queue_id, 'status' => $status]));
-                    // ...
-                    $mock_api_status = true; // Simulated success
-                    
-                    if ($mock_api_status) {
-                        $this->session->set_flashdata('success', 'Status pengajuan berhasil diubah menjadi '.strtoupper($status).' dan telah disinkronisasi dengan API SIMPERUM.');
-                    } else {
-                        $this->session->set_flashdata('success', 'Status diubah secara lokal, namun gagal sinkronisasi ke API SIMPERUM.');
-                    }
-                    
+                    // Sinkronisasi ke API SIMPERUM BELUM dibangun — dulu pesan di
+                    // sini mengklaim "telah disinkronisasi dengan API SIMPERUM"
+                    // berdasarkan $mock_api_status = true yang di-hardcode, jadi
+                    // admin diberi tahu data sudah konsisten di sistem eksternal
+                    // padahal tidak ada request apa pun yang dikirim. Pesan
+                    // dijujurkan; jangan kembalikan klaim sinkronisasi sampai
+                    // integrasinya benar-benar ada.
+                    $this->session->set_flashdata('success', 'Status pengajuan berhasil diubah menjadi '.strtoupper($status).'. Sinkronisasi ke SIMPERUM belum tersedia, perubahan baru tersimpan di sistem ini.');
                 } else {
                     $this->session->set_flashdata('error', 'Gagal memperbarui status antrean. Silakan coba lagi.');
                 }

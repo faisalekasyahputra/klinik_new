@@ -1,54 +1,21 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+/**
+ * Diarsipkan — halaman profil khusus superadmin ini dilebur ke
+ * Pengaturan::profil() (route `akun/profil`) yang sudah dipakai semua role
+ * lain. Dua halaman "Profil Saya" dengan logika update nyaris identik,
+ * dipisah hanya karena gate role (lihat ANCHOR_DASHBOARD_TERPADU.md B9).
+ * Fitur ganti password yang dulu hanya ada di sini ikut dipindahkan, dengan
+ * aturan kekuatan password yang sama seperti Auth (dulu di sini tanpa
+ * validasi apa pun). Viewnya: application/views/admin/profile/archive/.
+ *
+ * Redirect dipertahankan supaya bookmark/tautan lama tidak jadi dead-end,
+ * pola yang sama dengan Pengembang::daftar()/formulir().
+ */
 class User_Profile extends Admin_Controller {
 
-    public function __construct()
-    {
-        parent::__construct();
-        $this->load->model('Auth_model');
-        $this->load->model('User_model');
-    }
+    public function index() { redirect('akun/profil'); }
 
-    public function index()
-    {
-        $user_id = $this->get_user_id();
-        $user = $this->Auth_model->find_by_id($user_id);
-        
-        $data['title'] = 'Profil Saya';
-        $data['user'] = $user;
-        $this->render_admin('admin/profile/index', $data);
-    }
-    
-    public function update() {
-        $user_id = $this->get_user_id();
-
-        $name     = html_escape($this->input->post('name'));
-        $phone    = html_escape($this->input->post('phone'));
-
-        if (empty($name)) {
-            $this->session->set_flashdata('error', 'Nama Lengkap tidak boleh kosong.');
-            redirect('User_Profile');
-            return;
-        }
-
-        $data = [
-            'name'  => $name,
-            'phone' => $phone
-        ];
-
-        // Only update password if provided
-        $password = $this->input->post('password');
-        if (!empty($password)) {
-            $data['password'] = password_hash($password, PASSWORD_DEFAULT);
-        }
-
-        $this->User_model->update_user($user_id, $data);
-
-        // Update session
-        $this->session->set_userdata('name', $name);
-
-        $this->session->set_flashdata('success', 'Profil berhasil diperbarui!');
-        redirect('User_Profile');
-    }
+    public function update() { redirect('akun/profil'); }
 }

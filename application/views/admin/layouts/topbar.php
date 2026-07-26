@@ -46,8 +46,13 @@
             
             <!-- Dropdown -->
             <div x-show="userMenuOpen" x-transition.opacity.duration.200ms class="absolute right-0 top-full mt-3 w-48 bg-white dark:bg-brand-card border border-gray-100 dark:border-white/10 rounded-xl shadow-lg overflow-hidden z-50">
+                <?php
+                // Satu halaman profil untuk SEMUA role (akun/profil). Dulu link ini
+                // hardcode ke User_Profile yang digate superadmin, jadi role lain
+                // diusir ke login (B3); lalu User_Profile sendiri dilebur ke sini (B9).
+                ?>
                 <div class="p-2 space-y-1">
-                    <a href="<?= base_url('User_Profile') ?>" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
+                    <a href="<?= base_url('akun/profil') ?>" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors">
                         <i class="ph ph-user text-lg"></i> Profil Saya
                     </a>
                     <div class="h-px bg-gray-100 dark:bg-white/10 my-1 mx-2"></div>
