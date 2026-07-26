@@ -14,9 +14,24 @@
 
 | | Branch | Kode | Skema DB |
 |---|---|---|---|
-| **Lokal** | `feature/homepage-portal-v2` | terbaru | `20260701000014` |
+| **Lokal** | `feature/homepage-portal-v2` | terbaru | `20260701000015` |
 | **Staging** | ikut branch fitur (auto-deploy) | terbaru | `20260701000014` |
-| **Production** | `main` — **DIBEKUKAN** | tertinggal | tertinggal (`20260701000010`) |
+| **Production** | `main` — **DIBEKUKAN** | tertinggal | ⚠️ **BELUM PERNAH DIMIGRASI SAMA SEKALI** |
+
+> ⚠️ **Dikoreksi lewat SSH 27 Jul 2026 — dokumen ini dulu keliru.** Production BUKAN "tertinggal di `20260701000010`": **tabel `migrations` tidak ada sama sekali**, dan isinya cuma 14 tabel baseline dari `schema_klinikpkp.sql`. Tidak ada `srp2_*`, `aduan`, `kabupaten`, `bidang`, `kkn_magang_pendaftaran`, `sys_rate_limits`, tanpa kolom reviewer, tanpa FK.
+>
+> **Konsekuensi untuk rilis:** saat `main` akhirnya dibuka, production butuh migrasi **01–15 seluruhnya**, bukan cuma 11–15. Sebagian rute SRP2 di production hari ini memang 500 (`Unable to load the requested file: pages/pengembang/sertifikasi.php`) karena kode lama + skema baseline.
+
+**Ada EMPAT instalasi Klinik PKP di akun Hostinger `u504551489`, bukan dua** (ditemukan 27 Jul 2026):
+
+| Situs | DB | Status |
+|---|---|---|
+| `palegreen-mink-703421` | `u504551489_klinikpkp` | **production** |
+| `floralwhite-lion-710022` | `u504551489_klinikstg` | **staging** |
+| `darkseagreen-hamster-214338` | `u504551489_klinikstg` | staging LAMA — masih hidup, **berbagi DB dengan staging** |
+| `darkgreen-cattle-889861` | `u504551489_kliknikpkp` | instalasi keempat (perhatikan nama DB salah ketik) |
+
+Tiga yang pertama sempat menyajikan `.env` publik. Kalau menyentuh staging, ingat dua situs menunjuk DB yang sama — perubahan di satu terlihat di keduanya.
 
 > 🚫 **`main` tidak boleh disentuh tanpa perintah eksplisit user.** Detail & urutan rilis yang benar ada di §1. Staging bebas — push branch fitur otomatis merilis ke sana.
 >
@@ -34,9 +49,13 @@ Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya
 
 ### 0c. Yang masih terbuka
 
-> 🔥 **URGENSI #1 — kredensial production sudah bocor dan harus dirotasi.** Diverifikasi live 26 Jul 2026: `GET /.env` membalas **HTTP 200 di staging DAN production**. Yang terekspos: password DB tiga lingkungan, `KPKP_DATA_KEY`, `KPKP_DATA_PEPPER`, `GOOGLE_CLIENT_SECRET`, `GEMINI_API_KEY`. Penyebabnya sudah ditambal di [`.htaccess`](.htaccess) (blok penolak dotfile + `docs/`), **tapi tambalan itu baru berlaku di server setelah ter-deploy** — dan production deploy dari `main` yang beku, jadi production MASIH TERBUKA sampai user mengambil keputusan.
+> ✅ **Paparan `.env` SUDAH DITUTUP di ketiga situs (27 Jul 2026, lewat SSH).** Blok penolak dotfile + `docs/` dipasang langsung di `.htaccess` server (cadangan `.htaccess.bak-20260726-202512` ada di tiap situs). Diverifikasi dari luar: `.env`, `AGENTS.md`, `docs/` → **403**; halaman depan & aset → **200**; `.well-known` → 404 (lolos, jadi perpanjangan SSL aman). `CI_ENV=production` juga dipasang — **lewat `SetEnv` di `.htaccess`, BUKAN di `.env`**, lihat jebakan di §0e. Dibuktikan dengan berkas uji sesaat: `CI_ENV=[production] display_errors=[]`.
 >
-> Yang tersisa untuk user, bukan agent: (a) terapkan `.htaccess` di production (lewat File Manager/SSH Hostinger, atau saat `main` akhirnya dibuka), (b) **rotasi** password DB, Google client secret, dan Gemini API key. ⚠️ **`KPKP_DATA_KEY` JANGAN dirotasi begitu saja** — NIK & alamat yang sudah terenkripsi akan hilang permanen (§6). Rotasinya butuh proses dekripsi-ulang tersendiri; sampai itu dilakukan, anggap kunci PII sudah diketahui pihak luar.
+> 🔥 **YANG MASIH TERBUKA — akun admin production bisa diambil alih SEKARANG.** Diverifikasi 27 Jul 2026 dengan `password_verify()` langsung ke hash di DB production: sandi `password` **COCOK** untuk `admin@klinikpkp.jatengprov.go.id` (id 9, role admin), `warga@example.com` (id 10), dan `dev1@example.com` (id 11) — dan halaman login production **masih memajang kredensial itu** karena `main` beku sehingga penghapusan blok demo belum ter-deploy. Hanya 3 dari 7 akun yang diiklankan benar-benar ada di production.
+>
+> Tindakan yang tersisa untuk user, bukan agent: (a) **ganti sandi `admin@klinikpkp.jatengprov.go.id`** — lewat alur aplikasi sendiri, bukan SQL, supaya tidak salah kunci diri sendiri; (b) nonaktifkan/hapus `warga@example.com` dan `dev1@example.com`; (c) **rotasi** password DB, Google client secret, dan Gemini API key — semuanya sudah terlanjur terbaca publik selama `.env` terbuka. ⚠️ **`KPKP_DATA_KEY` JANGAN dirotasi begitu saja** — NIK & alamat terenkripsi akan hilang permanen (§6).
+>
+> Catatan: `dev1@example.com` di production masih menyimpan role rusak `pages/pengembang/pengembang` (bug copy-paste lama). Kodenya sudah diperbaiki, datanya belum.
 
 1. Pengujian manual staging oleh user (semua verifikasi sejauh ini lewat curl)
 2. Migrasi DB production — **setelah** merge, bukan sebelum
@@ -68,6 +87,7 @@ Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya
 | FK ke `usr_users.id` pakai `UNSIGNED` | `usr_users.id` itu `int(11)` **signed** → errno 150 (§16) |
 | Ikon `fa-*` di view admin | Font Awesome tidak di-load di shell admin → ikon blank (§17 poin 5) |
 | Form tanpa token CSRF | Fitur tampak normal tapi setiap submit 403 — audit baca-kode tidak menangkapnya |
+| `CI_ENV` ditaruh di `.env` | Tidak berpengaruh **sama sekali**: `index.php:56` mendefinisikan `ENVIRONMENT` dari `$_SERVER['CI_ENV']`, sedangkan `.env` baru diurai di baris 310 — terlambat 250 baris. Harus lewat `SetEnv CI_ENV production` di `.htaccess`. Percobaan pertama 27 Jul 2026 jatuh ke jebakan ini, ketahuan hanya karena dibuktikan dengan berkas uji |
 | Rewrite CI dikira melindungi berkas | `RewriteCond !-f` cuma menangani URL yang TIDAK ada wujudnya — setiap berkas nyata (`.env`, `docs/`) tersaji apa adanya (§0c) |
 | Memblokir semua dotfile di `.htaccess` | Ikut memblokir `.well-known` → perpanjangan sertifikat SSL gagal, situs mati saat kedaluwarsa. Pakai negative lookahead |
 | Nama tabel ditebak dari nama fitur | `check_forum_rate_limit('diskusi')` — tabelnya `forum_diskusi`; chat menulis ke `tb_chat` yang tidak ada di skema (§18) |
