@@ -1,9 +1,61 @@
-# AGENTS.md — Panduan untuk AI Coding Agent
+# AGENTS.md — Panduan & Pusat Sinkronisasi untuk AI Coding Agent
 
-> Dokumen ini adalah peta navigasi teknis untuk agent (Claude Code, Cursor, dll) yang bekerja di repo ini.
-> Ditulis berdasarkan pembacaan langsung kode per 18 Juli 2026 — bukan asumsi dari dokumen lama.
-> Untuk spesifikasi produk/bisnis lengkap, lihat [`docs/README.md`](docs/README.md) (index dokumentasi resmi).
-> ⚠️ [`README.md`](README.md) di root sudah usang (v1.0, 9 Juni 2026) — jangan jadikan acuan struktur kode, jadikan acuan ini.
+> Peta navigasi teknis DAN titik temu antar agent (Claude Code, Cursor, Copilot, dll) yang bekerja di repo ini.
+> Isi ditulis dari pembacaan kode langsung, bukan asumsi dokumen lama. Tiap klaim penting mencantumkan tanggal verifikasi.
+> Spesifikasi produk/bisnis: [`docs/README.md`](docs/README.md). ⚠️ [`README.md`](README.md) di root **usang** (v1.0, 9 Juni 2026) — jangan dijadikan acuan.
+
+---
+
+## 0. BACA INI DULU — Status Terkini & Protokol Antar-Agent
+
+**Terakhir disinkronkan: 26 Juli 2026.** Kalau kamu agent yang baru masuk, baca bagian ini sampai habis sebelum menyentuh apa pun.
+
+### 0a. Keadaan lingkungan saat ini
+
+| | Branch | Kode | Skema DB |
+|---|---|---|---|
+| **Lokal** | `feature/homepage-portal-v2` | terbaru | `20260701000014` |
+| **Staging** | ikut branch fitur (auto-deploy) | terbaru | `20260701000014` |
+| **Production** | `main` — **DIBEKUKAN** | tertinggal | tertinggal (`20260701000010`) |
+
+> 🚫 **`main` tidak boleh disentuh tanpa perintah eksplisit user.** Detail & urutan rilis yang benar ada di §1. Staging bebas — push branch fitur otomatis merilis ke sana.
+
+### 0b. Yang baru saja mendarat (jangan dikerjakan ulang)
+
+Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya:
+- **Audit 5 role** → `docs/engineering/AUDIT_*.md` + [`AUDIT_SISTEM_ROLE_RINGKASAN.md`](docs/engineering/AUDIT_SISTEM_ROLE_RINGKASAN.md) (baca ringkasannya dulu)
+- **Normalisasi skema** (FK + kolom reviewer) → migrasi `20260701000011`–`14`, lihat §16
+- **Dashboard terpadu** Fase 0–4 + B8 → [`ANCHOR_DASHBOARD_TERPADU.md`](docs/architecture/ANCHOR_DASHBOARD_TERPADU.md), lihat §17
+- **PRD verifikasi admin SRP2** Fase 0–4 → [`PRD_VERIFIKASI_ADMIN_SRP2.md`](docs/product/PRD_VERIFIKASI_ADMIN_SRP2.md)
+- **Semua unggahan pindah ke penyimpanan privat** → lihat peringatan di §17 checklist poin 4
+
+### 0c. Yang masih terbuka
+
+1. Pengujian manual staging oleh user (semua verifikasi sejauh ini lewat curl)
+2. Dokumen produk usang: `IMPLEMENTATION_ROADMAP.md`, `PRODUCT_REQUIREMENTS_DOCUMENT.md`, `DESAIN_STATUS_TIKET_PENGAJUAN.md`, `SRP2_ACCOUNT_FLOW.md` — masih memuat klaim yang sudah tidak benar
+3. Path `private_uploads` sebaiknya jadi variabel `.env`, bukan hasil `dirname(FCPATH)`
+4. Migrasi DB production — **setelah** merge, bukan sebelum
+5. Di luar kita: integrasi SIMPERUM (belum ada), generator sertifikat PDF
+
+### 0d. Protokol yang mengikat semua agent
+
+1. **Verifikasi mengalahkan dokumentasi — termasuk dokumen ini.** Kalau kode dan dokumen berbeda, kode yang benar; perbaiki dokumennya. Semua kerusakan terburuk di repo ini ditemukan dengan *mencoba*, bukan membaca.
+2. **Jangan pernah menampilkan angka, status, atau pesan sukses karangan.** Sudah dua kali terjadi (§17). Kalau belum bisa dihitung, hilangkan elemennya.
+3. **Selesai = terverifikasi.** Laporkan hasil apa adanya; kalau ada bagian yang dilewati, sebutkan.
+4. **Perbarui bagian §0 ini setiap kali pekerjaan besar mendarat.** Dokumen sinkronisasi yang basi lebih berbahaya daripada tidak ada.
+5. **Aksi tak-bisa-ditarik butuh izin:** merge/push `main`, migrasi production, hapus data. Bekerja di lokal & staging bebas.
+
+### 0e. Jebakan yang sudah pernah memakan korban
+
+| Jebakan | Akibatnya dulu |
+|---|---|
+| `private_uploads` dikira selalu di luar webroot | Dokumen SRP2 bisa diunduh tanpa login di lokal (§17 poin 4) |
+| Ada **tiga** blok `DB_PASS` di `.env` | Mengambil "baris terakhir" lewat script = dapat password **production** (§1) |
+| `count_all_results($tabel, FALSE)` lalu `get($tabel)` | `FROM x, x` → error 1066, 3 halaman admin mati (§17 poin 6) |
+| Nama kolom sort dari input langsung ke `ORDER BY` | Query builder tidak meng-escape nama kolom seperti nilai (§17 poin 6) |
+| FK ke `usr_users.id` pakai `UNSIGNED` | `usr_users.id` itu `int(11)` **signed** → errno 150 (§16) |
+| Ikon `fa-*` di view admin | Font Awesome tidak di-load di shell admin → ikon blank (§17 poin 5) |
+| Form tanpa token CSRF | Fitur tampak normal tapi setiap submit 403 — audit baca-kode tidak menangkapnya |
 
 ---
 
@@ -168,7 +220,11 @@ Repo ini punya banyak dokumen historis (`docs/archive/`, termasuk `docs/archive/
 
 Warna/tipografi/spacing didokumentasikan di [`docs/design/DESIGN_SYSTEM.md`](docs/design/DESIGN_SYSTEM.md) — **baca itu sebelum menyentuh CSS/warna apa pun**. Ringkasan penting: ada 3 sumber warna yang tidak sinkron (`docs/design/tokens.css` tidak ke-load sama sekali di aplikasi; `assets/css/design-system.css` yang beneran dipakai situs publik; inline `tailwind.config` di `application/views/admin/layouts/head.php` buat panel admin), plus ~1.300 hex literal tertulis manual di 70+ file view karena situs publik tidak punya `tailwind.config`. `docs/design/DESIGN_SYSTEM.md` punya tabel palet kanonis (sudah diverifikasi ke pemakaian nyata di kode) dan daftar warna drift yang masih butuh keputusan — jangan asumsikan `tokens.css` sudah merepresentasikan apa yang tampil di browser.
 
-## 14. Sertifikasi Pengembang (SRP2)
+## 14. Konvensi Frontend Portal + Sertifikasi Pengembang (SRP2)
+
+> Section ini memuat DUA topik yang tidak berhubungan — konvensi frontend portal publik (tabel & skeleton) lalu alur SRP2. Judulnya dulu cuma "Sertifikasi Pengembang (SRP2)" sehingga dua konvensi di bawah ini tersembunyi di tempat yang salah. Nomornya sengaja TIDAK diubah karena dirujuk 8 kali dari dokumen lain; yang diperbaiki judulnya.
+>
+> **Konvensi di bawah ini berlaku untuk portal PUBLIK.** Untuk tabel di dashboard admin, pakai pola di §17 (server-side + komponen bersama) — jangan campur keduanya.
 
 ### Konvensi Tabel Portal
 
@@ -193,6 +249,17 @@ Setiap halaman portal yang memuat data wajib menyediakan skeleton dengan bentuk 
 
 Untuk halaman tabel, skeleton minimal berisi blok judul, toolbar, dan 5–10 baris tabel. Reuse pola di `application/views/layouts/main.php` dan `application/views/layouts/footer.php` sebelum menambah markup baru.
 
+## 15. Status Tiket Pengajuan
+
+- Tabel `sf_housing_queue` memiliki `ticket_code` unik; migration existing database ada di [`docs/engineering/migration_housing_queue_ticket.sql`](docs/engineering/migration_housing_queue_ticket.sql), sedangkan schema fresh setup sudah memuat kolomnya.
+- Pengajuan dari `Program::ajukan_solusi()` membuat tiket server-side berformat `PKP-XXXXXX`; jangan menerima `ticket_code` atau `program_id` dari user sebagai sumber kebenaran tanpa validasi session.
+- `Program::cek_tiket()` adalah endpoint POST publik. Lookup wajib memakai tiket dan empat digit terakhir NIK, lalu hanya boleh mengembalikan status serta timestamp—bukan NIK, alamat, nama, atau dokumen.
+- `cek_status_pengajuan` adalah tab navbar dan view standalone yang memakai endpoint lookup yang sama; jangan membuat endpoint status kedua.
+- Dashboard `akun` hanya mengambil riwayat antrean berdasarkan `user_id` session. Guest tetap boleh memiliki `user_id = NULL`.
+- Halaman sukses memakai tema cerah portal dan menampilkan tiket melalui flashdata satu kali.
+- Lookup dibatasi setelah lima percobaan gagal per hash IP dalam satu menit melalui `sys_ticket_lookup_limits`; migration existing database ada di [`docs/engineering/migration_ticket_lookup_rate_limit.sql`](docs/engineering/migration_ticket_lookup_rate_limit.sql).
+- Enkripsi NIK penuh masih menjadi hardening lanjutan.
+- Acuan produk: [`docs/product/DESAIN_STATUS_TIKET_PENGAJUAN.md`](docs/product/DESAIN_STATUS_TIKET_PENGAJUAN.md).
 ## 16. Sistem Role Multi-Peran
 
 Daftar resmi role: [`application/config/roles.php`](application/config/roles.php) (`$config['available_roles']`) — **satu-satunya sumber kebenaran**, jangan hardcode string role baru di controller/view.
@@ -294,14 +361,3 @@ Semua role login memakai SATU shell dashboard (`application/views/admin/index.ph
 - ~~`Auth::save_onboarding()` menulis kolom `nama_perusahaan`/`alamat_kantor`/`telp_kantor` yang tidak ada di skema~~ — **sudah tidak berlaku**, ketiga kolom itu memang ada di `usr_users` (lihat §16). Catatan lama ini usang, jangan diikuti.
 - [`docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md`](docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md) dan [`docs/product/IMPLEMENTATION_ROADMAP.md`](docs/product/IMPLEMENTATION_ROADMAP.md) masih menyebut menu Pengembang/SP2 sebagai halaman statis/"belum berupa sistem interaktif" ("view-only") — **usang (superseded)**, sudah dikonfirmasi user untuk dibuat interaktif penuh sesi ini.
 
-## 15. Status Tiket Pengajuan
-
-- Tabel `sf_housing_queue` memiliki `ticket_code` unik; migration existing database ada di [`docs/engineering/migration_housing_queue_ticket.sql`](docs/engineering/migration_housing_queue_ticket.sql), sedangkan schema fresh setup sudah memuat kolomnya.
-- Pengajuan dari `Program::ajukan_solusi()` membuat tiket server-side berformat `PKP-XXXXXX`; jangan menerima `ticket_code` atau `program_id` dari user sebagai sumber kebenaran tanpa validasi session.
-- `Program::cek_tiket()` adalah endpoint POST publik. Lookup wajib memakai tiket dan empat digit terakhir NIK, lalu hanya boleh mengembalikan status serta timestamp—bukan NIK, alamat, nama, atau dokumen.
-- `cek_status_pengajuan` adalah tab navbar dan view standalone yang memakai endpoint lookup yang sama; jangan membuat endpoint status kedua.
-- Dashboard `akun` hanya mengambil riwayat antrean berdasarkan `user_id` session. Guest tetap boleh memiliki `user_id = NULL`.
-- Halaman sukses memakai tema cerah portal dan menampilkan tiket melalui flashdata satu kali.
-- Lookup dibatasi setelah lima percobaan gagal per hash IP dalam satu menit melalui `sys_ticket_lookup_limits`; migration existing database ada di [`docs/engineering/migration_ticket_lookup_rate_limit.sql`](docs/engineering/migration_ticket_lookup_rate_limit.sql).
-- Enkripsi NIK penuh masih menjadi hardening lanjutan.
-- Acuan produk: [`docs/product/DESAIN_STATUS_TIKET_PENGAJUAN.md`](docs/product/DESAIN_STATUS_TIKET_PENGAJUAN.md).
