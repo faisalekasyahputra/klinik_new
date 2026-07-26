@@ -32,11 +32,11 @@ Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya
 ### 0c. Yang masih terbuka
 
 1. Pengujian manual staging oleh user (semua verifikasi sejauh ini lewat curl)
-2. Path `private_uploads` sebaiknya jadi variabel `.env`, bukan hasil `dirname(FCPATH)`
-3. Migrasi DB production — **setelah** merge, bukan sebelum
+2. Migrasi DB production — **setelah** merge, bukan sebelum
+3. **Isi `PRIVATE_UPLOADS_PATH` di `.env` server** (staging & production) ke direktori di luar DocumentRoot. Kalau dibiarkan kosong, jatuh ke perilaku lama (`dirname(FCPATH)/private_uploads`) yang kebetulan aman di sana — tapi sebaiknya eksplisit.
 4. Di luar kita: integrasi SIMPERUM (belum ada), generator sertifikat PDF
 
-✅ Sudah dibereskan 26 Jul 2026: dokumen produk/engineering usang (`IMPLEMENTATION_ROADMAP`, `PRODUCT_REQUIREMENTS_DOCUMENT`, `DESAIN_STATUS_TIKET_PENGAJUAN`, `SRP2_ACCOUNT_FLOW`, `ROLE_DATA_RELATION_MAP`) — klaim yang sudah tidak benar dikoreksi, teks aslinya tetap dikutip sebagai jejak. Verifikasi `private_uploads` di production & staging: keduanya 404 CI, aman.
+✅ Sudah dibereskan 26 Jul 2026: lokasi berkas privat kini dari `PRIVATE_UPLOADS_PATH` di `.env` (helper `private_upload`, satu sumber untuk controller & model) — dan dokumen produk/engineering usang (`IMPLEMENTATION_ROADMAP`, `PRODUCT_REQUIREMENTS_DOCUMENT`, `DESAIN_STATUS_TIKET_PENGAJUAN`, `SRP2_ACCOUNT_FLOW`, `ROLE_DATA_RELATION_MAP`) — klaim yang sudah tidak benar dikoreksi, teks aslinya tetap dikutip sebagai jejak. Verifikasi `private_uploads` di production & staging: keduanya 404 CI, aman.
 
 ### 0d. Protokol yang mengikat semua agent
 

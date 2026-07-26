@@ -130,8 +130,8 @@ class Admin_Srp2 extends Admin_Controller {
 
     /**
      * Sajikan satu dokumen SRP2 ke admin. Endpoint ber-guard (Admin_Controller),
-     * baca file dari private_uploads/ (di luar webroot) — tidak pernah lewat
-     * path publik. Menutup PRD FR-11.
+     * berkas dibaca dari penyimpanan privat — tidak pernah lewat path publik.
+     * Menutup PRD FR-11.
      */
     public function lihat_dokumen($id = NULL, $document_key = NULL) {
         if ( ! is_numeric($id) || empty($document_key)) { show_404(); }
@@ -140,12 +140,9 @@ class Admin_Srp2 extends Admin_Controller {
             ->get('srp2_documents')->row();
         if ( ! $doc) { show_404(); }
 
-        $path = dirname(FCPATH) . DIRECTORY_SEPARATOR . 'private_uploads' . DIRECTORY_SEPARATOR
-            . 'srp2' . DIRECTORY_SEPARATOR . (int) $id . DIRECTORY_SEPARATOR . $doc->stored_name;
-        if ( ! is_file($path)) { show_404(); }
-
-        $this->output->set_content_type($doc->mime_type);
-        readfile($path);
+        // Lewat serve_private_file() supaya lokasi akar & pengamanan nama file
+        // (basename) ikut satu jalur dengan endpoint berkas lainnya.
+        $this->serve_private_file('srp2', (int) $id, $doc->stored_name, $doc->mime_type);
     }
 
     public function save() {

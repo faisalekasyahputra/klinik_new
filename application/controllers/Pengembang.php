@@ -135,7 +135,9 @@ class Pengembang extends MY_Controller {
         // "Di luar webroot" ternyata tidak selalu benar — tergantung posisi
         // aplikasi terhadap DocumentRoot; lihat catatan di method itu.
         $this->ensure_private_uploads_protected();
-        $path = dirname(FCPATH) . DIRECTORY_SEPARATOR . 'private_uploads' . DIRECTORY_SEPARATOR . 'srp2' . DIRECTORY_SEPARATOR . $id . DIRECTORY_SEPARATOR;
+        // Lokasi akar dari helper private_upload (bisa diatur PRIVATE_UPLOADS_PATH
+        // di .env) — jangan susun path sendiri di sini.
+        $path = $this->private_upload_dir('srp2', $id);
         if (!is_dir($path)) mkdir($path, 0700, TRUE);
         $allowed = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png']; $stored = [];
         foreach ($this->dokumen_persyaratan() as $key => $label) {

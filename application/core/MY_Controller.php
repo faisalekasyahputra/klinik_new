@@ -177,7 +177,8 @@ class MY_Controller extends CI_Controller {
      * server (atau pindahkan direktorinya benar-benar keluar dari DocumentRoot).
      */
     protected function ensure_private_uploads_protected() {
-        $akar = dirname(FCPATH) . DIRECTORY_SEPARATOR . 'private_uploads' . DIRECTORY_SEPARATOR;
+        $this->load->helper('private_upload');
+        $akar = private_uploads_root();
         if ( ! is_dir($akar) && ! @mkdir($akar, 0700, TRUE)) { return; }
 
         $htaccess = $akar . '.htaccess';
@@ -199,14 +200,12 @@ class MY_Controller extends CI_Controller {
     }
 
     /**
-     * Path direktori privat satu pemilik. Nama domain & owner di-sanitasi
-     * supaya tidak bisa dipakai keluar dari private_uploads/ lewat "..".
+     * Path direktori privat satu pemilik. Akar & sanitasinya ditangani helper
+     * private_upload supaya controller dan model memakai sumber yang sama.
      */
     protected function private_upload_dir($domain, $owner_id) {
-        $domain   = preg_replace('/[^a-z0-9_]/i', '', (string) $domain);
-        $owner_id = preg_replace('/[^a-z0-9_]/i', '', (string) $owner_id);
-        return dirname(FCPATH) . DIRECTORY_SEPARATOR . 'private_uploads' . DIRECTORY_SEPARATOR
-            . $domain . DIRECTORY_SEPARATOR . $owner_id . DIRECTORY_SEPARATOR;
+        $this->load->helper('private_upload');
+        return private_uploads_dir($domain, $owner_id);
     }
 
     /**

@@ -61,6 +61,13 @@ class User_model extends CI_Model {
      * Lihat application/migrations/20260701000012_add_submission_owner_fk.php.
      */
     private function _cleanup_owned_files($user_id) {
+        // Lokasi akar dari helper — ikut PRIVATE_UPLOADS_PATH di .env kalau diisi.
+        // Jangan susun path sendiri di sini; pernah terjadi path di sini tertinggal
+        // di lokasi publik lama setelah penyimpanan dipindah, sehingga berkasnya
+        // tidak pernah benar-benar terhapus.
+        $this->load->helper('private_upload');
+
+        // --- Dokumen SRP2 (private_uploads/srp2/{registration_id}/) ---
         $registration_ids = array_column(
             $this->db->select('id')->get_where('srp2_registrations', ['user_id' => $user_id])->result_array(),
             'id'
@@ -69,19 +76,37 @@ class User_model extends CI_Model {
             $documents = $this->db->select('registration_id, stored_name')
                 ->where_in('registration_id', $registration_ids)->get('srp2_documents')->result();
             foreach ($documents as $doc) {
-                $path = dirname(FCPATH) . DIRECTORY_SEPARATOR . 'private_uploads' . DIRECTORY_SEPARATOR
-                    . 'srp2' . DIRECTORY_SEPARATOR . $doc->registration_id . DIRECTORY_SEPARATOR . $doc->stored_name;
-                if (is_file($path)) { unlink($path); }
+                $this->_unlink_private($doc->registration_id ? private_uploads_dir('srp2', $doc->registration_id) : '', $doc->stored_name);
             }
         }
 
-        $kkn_files = $this->db->select('file_surat_pengantar')
+        // --- Surat pengantar KKN/Magang (private_uploads/kemitraan/{id}/) ---
+        $kkn = $this->db->select('id, file_surat_pengantar')
             ->where('user_id', $user_id)->where('file_surat_pengantar IS NOT NULL', NULL, FALSE)
             ->get('kkn_magang_pendaftaran')->result();
-        foreach ($kkn_files as $row) {
-            $path = FCPATH . '.assets' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $row->file_surat_pengantar;
-            if (is_file($path)) { unlink($path); }
+        foreach ($kkn as $row) {
+            $this->_unlink_private(private_uploads_dir('kemitraan', $row->id), $row->file_surat_pengantar);
         }
+
+        // --- Dokumen onboarding: KTP/SIUP/KTM (private_uploads/onboarding/{user_id}/) ---
+        // usr_documents ikut terhapus lewat FK CASCADE, tapi FK tidak bisa
+        // menghapus file di disk — jadi harus dibersihkan di sini.
+        $onboarding = $this->db->select('file_name')
+            ->get_where('usr_documents', ['user_id' => $user_id])->result();
+        foreach ($onboarding as $row) {
+            $this->_unlink_private(private_uploads_dir('onboarding', $user_id), $row->file_name);
+        }
+    }
+
+    /**
+     * Hapus satu berkas di dalam direktori privat. basename() dipakai supaya
+     * nilai dari DB yang memuat path tidak bisa menghapus file di luar direktori
+     * yang dimaksud.
+     */
+    private function _unlink_private($dir, $file_name) {
+        if ($dir === '' || empty($file_name)) { return; }
+        $path = $dir . basename((string) $file_name);
+        if (is_file($path)) { unlink($path); }
     }
 
     public function delete_user_account($user_id) {
