@@ -2,7 +2,7 @@
 
 > Peta navigasi teknis DAN titik temu antar agent (Claude Code, Cursor, Copilot, dll) yang bekerja di repo ini.
 > Isi ditulis dari pembacaan kode langsung, bukan asumsi dokumen lama. Tiap klaim penting mencantumkan tanggal verifikasi.
-> Spesifikasi produk/bisnis: [`docs/README.md`](docs/README.md). ⚠️ [`README.md`](README.md) di root **usang** (v1.0, 9 Juni 2026) — jangan dijadikan acuan.
+> Spesifikasi produk/bisnis: [`docs/README.md`](docs/README.md). [`README.md`](README.md) di root = panduan setup untuk manusia — ✅ disegarkan 27 Jul 2026 (dulu ditandai usang; langkah `php index.php migrate` yang hilang sudah ditambahkan, jumlah controller & tabel dikoreksi).
 
 ---
 

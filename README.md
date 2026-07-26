@@ -46,7 +46,16 @@ Buka **phpMyAdmin** (`http://localhost/phpmyadmin`):
 1. Buat database baru: `klinikpkp` (collation: `utf8_general_ci`)
 2. Import file: `docs/engineering/schema_klinikpkp.sql`
 
-### 5. Jalankan
+### 5. Jalankan Migrasi — WAJIB, jangan dilewati
+```bash
+php index.php migrate
+```
+
+> ⚠️ **Berkas `schema_klinikpkp.sql` itu snapshot lama, bukan skema terbaru.** Tanpa langkah ini kamu akan kehilangan tabel `aduan`, `kabupaten`, `bidang`, `kkn_magang_pendaftaran`, seluruh tabel `srp2_*`, kolom `reviewed_by`/`reviewed_at`, dan semua foreign key — aplikasi akan error di banyak halaman.
+>
+> Sumber kebenaran skema adalah `application/migrations/`, bukan berkas `.sql`. Perintah ini juga yang dipakai untuk menyamakan skema DB manapun yang sedang ditunjuk `.env`.
+
+### 6. Jalankan
 Buka browser: **http://localhost/klinik_new/**
 
 ---
@@ -57,10 +66,11 @@ Buka browser: **http://localhost/klinik_new/**
 klinik_new/
 ├── application/           ← Source code utama (MVC)
 │   ├── config/            ← Konfigurasi (database, routes, dll)
-│   ├── controllers/       ← Logic bisnis (22 controller)
-│   ├── core/              ← MY_Controller (base controller)
+│   ├── controllers/       ← Logic bisnis (29 controller)
+│   ├── core/              ← MY_Controller (hierarki base controller + guard role)
 │   ├── helpers/            ← Helper functions
 │   ├── libraries/         ← Library kustom (Encryption, API)
+│   ├── migrations/        ← ⭐ SUMBER KEBENARAN skema DB (01–14)
 │   ├── models/            ← Database models
 │   └── views/             ← Tampilan (modular per fitur)
 │       ├── layouts/       ← Template (nav, head, footer)
@@ -92,8 +102,10 @@ Baca file-file di folder `docs/` untuk pemahaman mendalam:
 
 | File | Isi |
 |------|-----|
-| [`AGENTS.md`](AGENTS.md) | Panduan untuk AI coding agent |
+| [`AGENTS.md`](AGENTS.md) | ⭐ **Baca duluan** — status terkini, aturan mengikat, daftar jebakan |
 | [`README.md`](docs/README.md) | Index dokumentasi |
+| [`PEMBACAAN_CODEBASE_26JUL2026.md`](docs/engineering/PEMBACAAN_CODEBASE_26JUL2026.md) | Peta 8 subsistem + 141 temuan |
+| [`AUDIT_SISTEM_ROLE_RINGKASAN.md`](docs/engineering/AUDIT_SISTEM_ROLE_RINGKASAN.md) | Ringkasan audit 5 peran |
 | [`TECHNICAL_DESIGN_DOCUMENT.md`](docs/architecture/TECHNICAL_DESIGN_DOCUMENT.md) | Arsitektur & struktur kode |
 | [`DATABASE_DESIGN_DOCUMENT.md`](docs/architecture/DATABASE_DESIGN_DOCUMENT.md) | Kamus data & relasi tabel |
 | [`SECURITY_DESIGN_DOCUMENT.md`](docs/architecture/SECURITY_DESIGN_DOCUMENT.md) | Keamanan (enkripsi, CSRF, OAuth) |
@@ -117,26 +129,38 @@ Baca file-file di folder `docs/` untuk pemahaman mendalam:
 
 ---
 
-## 🗄️ Tabel Database (14 tabel + legacy)
+## 🗄️ Tabel Database (23 tabel + legacy)
+
+Prefix menandai domainnya — tabel baru wajib mengikuti pola ini.
 
 | Tabel | Fungsi |
 |-------|--------|
-| `usr_users` | Data pengguna (auth, profil) |
+| `usr_users` | Data pengguna (auth, profil, scope wilayah/bidang) |
 | `usr_documents` | Dokumen user |
 | `sf_programs` | Program perumahan |
 | `sf_program_kategori` | Kategori program |
-| `sf_housing_queue` | Antrean kelayakan (pending/approved/rejected) |
+| `sf_housing_queue` | Antrean kelayakan + tiket `PKP-XXXXXX` |
 | `forum_diskusi` | Thread forum |
-| `forum_komentar` | Komentar forum (nested) |
-| `forum_likes` | Like pada thread |
+| `forum_komentar` | Komentar forum (nested lewat `reply_to`) |
+| `forum_likes` | Like pada thread & komentar |
+| `srp2_registrations` | Pendaftaran sertifikasi pengembang |
+| `srp2_documents` | 14 dokumen persyaratan SRP2 |
+| `srp2_certified_developers` | Direktori publik pengembang bersertifikat |
+| `aduan` | Pengaduan masyarakat (per bidang) |
+| `kkn_magang_pendaftaran` | Pendaftaran KKN & Magang |
+| `kabupaten` | 35 kabupaten/kota Jateng (kode Kemendagri) |
+| `bidang` | 5 bidang penanganan aduan |
 | `sys_menu` | Menu navigasi |
 | `sys_multi` | Data perumahan |
 | `sys_settings` | Konfigurasi sistem |
-| `chat_rooms` | Ruang chat konsultasi |
-| `chat_messages` | Pesan chat |
+| `sys_ticket_lookup_limits` | Rate limit lookup tiket publik |
+| `chat_rooms`, `chat_messages` | ⚠️ **ADA tapi menganggur** — lihat catatan di bawah |
 | `data_sosmed_perumahan` | Sosmed pengembang |
+| `migrations` | Versi migrasi yang sudah dijalankan |
 
-> Ada juga tabel legacy tanpa prefix (`kondisi`, `bendung`, `irigasi`, `saluran_pembuang`) yang dipakai dinamis oleh `Buka_peta.php` tapi tidak ada di `schema_klinikpkp.sql`.
+> ⚠️ **Jebakan:** `chat_rooms`/`chat_messages` ada di DB tapi tidak dipakai kode manapun. Fitur chat yang berjalan menulis ke `tb_chat` — tabel yang **tidak ada di skema maupun migrasi**, sehingga chat gagal di instalasi bersih. Lihat `AGENTS.md` §18.
+
+> Ada juga tabel legacy tanpa prefix (`kondisi`, `bendung`, `irigasi`, `saluran_pembuang`) yang dipakai dinamis oleh `Buka_peta.php` — model itu sendiri sudah tidak dipanggil dari manapun.
 
 ---
 
@@ -145,11 +169,21 @@ Baca file-file di folder `docs/` untuk pemahaman mendalam:
 | Masalah | Solusi |
 |---------|--------|
 | **Blank page / Error 500** | Cek `.env` sudah dibuat dan terisi benar |
-| **Database error** | Pastikan database `klinikpkp` ada dan schema sudah diimport |
+| **Database error** | Pastikan database `klinikpkp` ada, schema diimport, **dan `php index.php migrate` sudah dijalankan** |
+| **`Table '...' doesn't exist`** | Hampir selalu karena migrasi belum dijalankan — ulangi langkah 5 |
 | **CSS tidak muncul** | Pastikan `base_url` di `.env` sesuai path folder kamu |
 | **"Class not found"** | Jalankan `composer install` |
 | **Google Login gagal** | Normal jika belum setup Google OAuth credentials |
+| **MySQL XAMPP tidak mau start** | Cek `mysql/data/multi-master.info` — kalau isinya potongan teks log, singkirkan berkas itu beserta `master-*.info` dan `mysql-relay-bin-*`. Jangan sentuh `.frm`/`.ibd`/`ibdata1` |
 
 ---
 
-*Klinik PKP — diperbarui 18 Juli 2026*
+## ⚠️ Sebelum ikut mengembangkan
+
+1. **Baca [`AGENTS.md`](AGENTS.md) lebih dulu** — di sana ada status terkini, aturan yang mengikat, dan daftar jebakan yang sudah pernah memakan korban.
+2. **Jangan sentuh branch `main`** tanpa perintah eksplisit — push ke sana langsung merilis ke production tanpa konfirmasi.
+3. **Jangan commit script atau aset satu-kali-pakai ke akar repo** — semuanya ikut ter-deploy dan bisa diakses publik. Taruh di `dev-scripts/` atau `local-assets/` yang sudah di-`.gitignore`.
+
+---
+
+*Klinik PKP — diperbarui 27 Juli 2026*
