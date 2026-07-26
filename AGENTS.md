@@ -22,7 +22,9 @@
 
   Kredensial ketiga lingkungan ada di `.env` sebagai blok terpisah (lokal aktif, staging & production dikomentari). **Perhatikan saat mengambil nilai dari `.env` lewat script:** ada tiga blok `DB_PASS`, mengambil yang "terakhir" akan mendapat password PRODUCTION. Ambil per nomor baris atau per blok.
 
-  **Urutan naik ke production:** merge ke `main` → tunggu deploy → **baru** jalankan migrasi ke DB production. Jangan dibalik; kode baru dengan skema lama akan error, sedangkan skema baru dengan kode lama aman selama migrasinya bersifat menambah.
+  > 🚫 **JANGAN merge/push ke `main` tanpa perintah eksplisit user.** `main` = rilis ke production, otomatis, tanpa tahap konfirmasi. Aturan yang berlaku sejak 26 Jul 2026: `main` disentuh HANYA setelah seluruh pekerjaan yang sedang berjalan dinyatakan beres oleh user. Bekerja dan merilis ke staging (branch fitur) bebas; naik ke production tidak.
+
+  **Urutan naik ke production (saat sudah diizinkan):** merge ke `main` → tunggu deploy → **baru** jalankan migrasi ke DB production. Jangan dibalik; kode baru dengan skema lama akan error, sedangkan skema baru dengan kode lama aman selama migrasinya bersifat menambah.
 
 ## 2. Setup Lokal
 
