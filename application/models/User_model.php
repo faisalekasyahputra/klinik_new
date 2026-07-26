@@ -53,7 +53,42 @@ class User_model extends CI_Model {
         return $this->db->trans_status();
     }
 
+    /**
+     * Hapus file fisik yang jadi yatim akibat FK CASCADE saat baris DB dihapus
+     * di bawah (srp2_registrations->srp2_documents, kkn_magang_pendaftaran).
+     * WAJIB dipanggil SEBELUM baris DB dihapus — begitu CASCADE jalan, tidak
+     * ada lagi cara menemukan nama file yang harus dihapus dari disk.
+     * Lihat application/migrations/20260701000012_add_submission_owner_fk.php.
+     */
+    private function _cleanup_owned_files($user_id) {
+        $registration_ids = array_column(
+            $this->db->select('id')->get_where('srp2_registrations', ['user_id' => $user_id])->result_array(),
+            'id'
+        );
+        if (!empty($registration_ids)) {
+            $documents = $this->db->select('registration_id, stored_name')
+                ->where_in('registration_id', $registration_ids)->get('srp2_documents')->result();
+            foreach ($documents as $doc) {
+                $path = dirname(FCPATH) . DIRECTORY_SEPARATOR . 'private_uploads' . DIRECTORY_SEPARATOR
+                    . 'srp2' . DIRECTORY_SEPARATOR . $doc->registration_id . DIRECTORY_SEPARATOR . $doc->stored_name;
+                if (is_file($path)) { unlink($path); }
+            }
+        }
+
+        $kkn_files = $this->db->select('file_surat_pengantar')
+            ->where('user_id', $user_id)->where('file_surat_pengantar IS NOT NULL', NULL, FALSE)
+            ->get('kkn_magang_pendaftaran')->result();
+        foreach ($kkn_files as $row) {
+            $path = FCPATH . '.assets' . DIRECTORY_SEPARATOR . 'uploads' . DIRECTORY_SEPARATOR . $row->file_surat_pengantar;
+            if (is_file($path)) { unlink($path); }
+        }
+    }
+
     public function delete_user_account($user_id) {
+        // Di luar transaksi DB dengan sengaja — unlink() tidak bisa di-rollback,
+        // jadi lebih aman dijalankan sebelum trans_start() daripada di dalamnya.
+        $this->_cleanup_owned_files($user_id);
+
         $this->db->trans_start();
 
         // Anonymize forum comments
