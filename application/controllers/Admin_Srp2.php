@@ -89,6 +89,24 @@ class Admin_Srp2 extends Admin_Controller {
         $reg = $this->db->get_where('srp2_registrations', ['id' => (int) $id])->row();
         if ( ! $reg) { show_404(); }
 
+        // Transisi status ditegakkan di SERVER, bukan di view. Sebelumnya proses()
+        // membaca $reg lalu tidak pernah menguji status lamanya: satu POST rakitan
+        // bisa menerbitkan Draft berisi 0 dokumen ke direktori publik lengkap
+        // dengan reviewed_by. Satu-satunya penjaga adalah kondisi if di detail.php
+        // — itu UI, bukan otorisasi. Roadmap T1a butir 6.
+        $transisi_sah = [
+            'Pending'  => ['Diterima', 'Ditolak', 'Draft'],
+            'Diterima' => ['Draft', 'Ditolak'],
+            'Ditolak'  => ['Draft'],
+            'Draft'    => [],
+        ];
+        $asal = (string) $reg->status_verifikasi;
+        if ( ! in_array($status, $transisi_sah[$asal] ?? [], TRUE)) {
+            $this->session->set_flashdata('error', 'Pengajuan berstatus "' . $asal . '" tidak bisa diubah menjadi "' . $status . '".');
+            redirect('Admin_Srp2/detail/' . (int) $id);
+            return;
+        }
+
         // Catatan wajib untuk kedua keputusan yang mengembalikan pekerjaan ke
         // pemohon — tanpa alasan, dia tidak tahu apa yang harus diperbaiki.
         $catatan = trim((string) $this->input->post('catatan_admin', TRUE));
@@ -108,11 +126,14 @@ class Admin_Srp2 extends Admin_Controller {
             'reviewed_at'       => date('Y-m-d H:i:s'),
         ];
 
-        // Saat pengajuan yang sudah Diterima dibuka kembali, baris direktori
-        // publiknya SENGAJA tidak disentuh: pengembangnya tetap tersertifikasi,
-        // yang sedang diperbaiki cuma kelengkapan dokumen. Kalau memang perlu
-        // dicabut dari daftar publik, admin menonaktifkannya lewat halaman
-        // Direktori SRP2 (kolom "Aktif") — keputusan terpisah, jangan otomatis.
+        // SATU TRANSAKSI untuk seluruh keputusan. Sebelumnya tiga penulisan
+        // berjalan lepas tanpa satu pun nilai balik diperiksa, sementara flash
+        // sukses tetap disetel: nama bentrok UNIQUE di direktori membuat insert
+        // gagal, insert_id() jadi 0, UPDATE registrasi ditolak FK, status tetap
+        // Pending — dan admin membaca "Pengajuan diterima". Di production
+        // db_debug mati sehingga seluruh rantai itu senyap. Melanggar §0d.
+        // Pola trans_start/trans_complete/trans_status mengikuti User_model.php:36.
+        $this->db->trans_start();
 
         if ($status === 'Diterima') {
             // Direktori publik srp2_certified_developers tetap tabel terpisah
@@ -133,13 +154,44 @@ class Admin_Srp2 extends Admin_Controller {
                 $this->db->insert('srp2_certified_developers', $payload);
                 $update['certified_developer_id'] = $this->db->insert_id();
             }
+        } elseif ($status === 'Ditolak' && $reg->certified_developer_id) {
+            // Ditolak setelah pernah Diterima: cabut dari direktori publik.
+            // Dulu blok direktori hanya jalan untuk 'Diterima', sehingga
+            // pengecualian yang SENGAJA dibuat untuk "Minta Perbaikan" ikut
+            // menutupi cabang ini — perusahaan yang resmi ditolak tetap tampil
+            // "Bersertifikat" di halaman publik. Dipisah eksplisit di kode,
+            // bukan diandalkan pada komentar. Roadmap T1a butir 7.
+            $this->db->where('id', $reg->certified_developer_id)
+                ->update('srp2_certified_developers', ['status_aktif' => 0]);
         }
+        // 'Draft' (Minta Perbaikan) sengaja TIDAK menyentuh direktori: pengembangnya
+        // tetap tersertifikasi, yang diperbaiki cuma kelengkapan dokumen. Pencabutan
+        // dari daftar publik tetap keputusan terpisah lewat halaman Direktori SRP2.
 
-        $this->db->where('id', (int) $id)->update('srp2_registrations', $update);
+        // Status asal ikut di WHERE: dengan begitu affected_rows() === 0 TIDAK
+        // ambigu lagi (asal selalu != tujuan karena transisi sudah divalidasi),
+        // jadi 0 baris pasti berarti gagal atau kalah balapan dengan admin lain.
+        $this->db->where('id', (int) $id)
+            ->where('status_verifikasi', $asal)
+            ->update('srp2_registrations', $update);
+        $baris_terubah = $this->db->affected_rows();
+
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === FALSE || $baris_terubah === 0) {
+            log_message('error', 'Admin_Srp2::proses gagal — id=' . (int) $id . ' ' . $asal . '->' . $status . ' baris=' . $baris_terubah);
+            $this->session->set_flashdata('error', 'Keputusan GAGAL disimpan dan sudah dibatalkan seluruhnya — tidak ada perubahan yang tersimpan. '
+                . ($status === 'Diterima'
+                    ? 'Penyebab paling sering: nama perusahaan "' . $reg->nama_perusahaan . '" sudah dipakai baris lain di direktori bersertifikat.'
+                    : 'Coba lagi; bila terus gagal, laporkan beserta ID pengajuan ' . (int) $id . '.'));
+            redirect('Admin_Srp2/detail/' . (int) $id);
+            return;
+        }
 
         $pesan_sukses = [
             'Diterima' => 'Pengajuan diterima — pengembang masuk direktori publik.',
-            'Ditolak'  => 'Pengajuan ditolak, catatan sudah dikirim ke pengembang.',
+            'Ditolak'  => 'Pengajuan ditolak, catatan sudah dikirim ke pengembang.'
+                . ($reg->certified_developer_id ? ' Pengembang juga dicabut dari direktori publik.' : ''),
             'Draft'    => 'Pengajuan dibuka kembali untuk diperbaiki. Pengembang melihat catatan Anda di dashboardnya.',
         ];
         $this->session->set_flashdata('success', $pesan_sukses[$status]);

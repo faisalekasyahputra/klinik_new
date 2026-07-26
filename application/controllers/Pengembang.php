@@ -194,6 +194,31 @@ class Pengembang extends MY_Controller {
             if ($is_ajax) { $this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => $message, 'uploaded_count' => $uploaded, 'required' => $required])); return; }
             $this->session->set_flashdata('error', $message); redirect('Pengembang/dokumen/' . $id); return;
         }
+        // GERBANG DI HULU. Dulu 14 dokumen adalah SATU-SATUNYA syarat kirim,
+        // sehingga baris tanpa nama perusahaan — atau bernama sama persis dengan
+        // pengembang yang sudah tersertifikasi — tetap lahir dan mendarat di meja
+        // admin. Di sana ia mustahil disetujui: kolom nama di direktori publik
+        // NOT NULL dan UNIQUE, jadi approve-nya gagal. Menambal sisi admin saja
+        // hanya mengubah kegagalan senyap jadi kegagalan berisik; barisnya harus
+        // tidak pernah lahir. Roadmap T1a butir 2.
+        $nama = trim((string) $registration->nama_perusahaan);
+        if ($nama === '') {
+            $message = 'Nama perusahaan belum diisi. Lengkapi dulu di halaman Profil sebelum mengirim pengajuan.';
+            if ($is_ajax) { $this->output->set_status_header(422)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'code' => 'nama_perusahaan_kosong', 'message' => $message, 'redirect' => base_url('akun/profil')])); return; }
+            // Diarahkan ke tempat memperbaikinya, bukan ditolak buntu.
+            $this->session->set_flashdata('error', $message); redirect('akun/profil'); return;
+        }
+
+        // Bentrok dengan direktori publik milik ORANG LAIN. Baris direktori milik
+        // pemohon ini sendiri (kirim ulang setelah diperbaiki) sengaja dikecualikan.
+        $this->db->where('nama_perusahaan', $nama);
+        if ($registration->certified_developer_id) { $this->db->where('id !=', $registration->certified_developer_id); }
+        if ($this->db->count_all_results('srp2_certified_developers') > 0) {
+            $message = 'Nama perusahaan "' . $nama . '" sudah terdaftar di direktori pengembang bersertifikat. Periksa kembali penulisannya di halaman Profil, atau hubungi admin bila ini memang perusahaan Anda.';
+            if ($is_ajax) { $this->output->set_status_header(409)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'code' => 'nama_perusahaan_bentrok', 'message' => $message, 'redirect' => base_url('akun/profil')])); return; }
+            $this->session->set_flashdata('error', $message); redirect('akun/profil'); return;
+        }
+
         // Anti-IDOR: WHERE user_id selalu dari sesi.
         $this->db->where('id', (int) $id)->where('user_id', $this->get_user_id())->update('srp2_registrations', ['status_verifikasi' => 'Pending']);
 

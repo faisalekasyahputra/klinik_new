@@ -492,7 +492,18 @@ class Auth extends MY_Controller {
 
         // Role-specific fields
         if ($role === 'pengembang') {
-            $profile_data['nama_perusahaan'] = html_escape($this->input->post('nama_perusahaan'));
+            // Divalidasi di SERVER, bukan cuma atribut required di form. Ini hulu
+            // KEDUA yang melahirkan pengembang (selain daftar cepat di
+            // do_register), dan satu gerbang tidak cukup kalau ada dua hulu:
+            // nama kosong di sini akan menjadi pengajuan yang mustahil disetujui
+            // di meja admin. Roadmap T1a butir 3.
+            $nama_perusahaan_ob = trim((string) $this->input->post('nama_perusahaan'));
+            if ($nama_perusahaan_ob === '') {
+                $this->session->set_flashdata('error', 'Nama perusahaan wajib diisi untuk mendaftar sebagai pengembang.');
+                redirect('Auth/onboarding');
+                return;
+            }
+            $profile_data['nama_perusahaan'] = html_escape($nama_perusahaan_ob);
             $profile_data['alamat_kantor']   = html_escape($this->input->post('alamat_kantor'));
             $profile_data['telp_kantor']     = html_escape($this->input->post('telp_kantor'));
         } elseif ($role === 'vendor') {

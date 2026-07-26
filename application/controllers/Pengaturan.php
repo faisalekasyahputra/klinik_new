@@ -146,9 +146,27 @@ class Pengaturan extends MY_Controller {
             return;
         }
 
-        $pengajuan = $this->db->get_where('srp2_registrations', ['user_id' => $user_id])->row();
+        // order_by SAMA dengan yang dipakai profil() saat merender form. Tanpa ini
+        // baris yang DICEK dan baris yang DITULIS bisa berbeda begitu satu user
+        // punya lebih dari satu baris pengajuan.
+        $pengajuan = $this->db->where('user_id', $user_id)
+            ->order_by('id', 'DESC')->get('srp2_registrations')->row();
         if (!$pengajuan) {
             $this->session->set_flashdata('error', 'Data pengajuan sertifikasi tidak ditemukan.');
+            redirect('akun/profil');
+            return;
+        }
+
+        // Dokumen dikunci saat Pending/Diterima, tapi DATA-nya dulu tidak — nama
+        // dan alamat masih bisa bergeser di bawah tangan admin yang sedang
+        // menilai, dan nilai terbaru itulah yang tersalin ke direktori publik
+        // saat disetujui. Tanpa gerbang ini, gerbang di kirim_pengajuan() cuma
+        // dekoratif: kirim dengan nama sah, lalu ganti jadi duplikat selagi
+        // Pending. Roadmap T1a butir 4.
+        if (in_array($pengajuan->status_verifikasi, ['Pending', 'Diterima'], TRUE)) {
+            $this->session->set_flashdata('error', $pengajuan->status_verifikasi === 'Pending'
+                ? 'Pengajuan sedang ditinjau admin — data perusahaan tidak bisa diubah sampai ada keputusan.'
+                : 'Pengajuan sudah disetujui. Untuk mengubah data perusahaan, minta admin membuka kembali pengajuan Anda.');
             redirect('akun/profil');
             return;
         }
@@ -177,8 +195,11 @@ class Pengaturan extends MY_Controller {
             return;
         }
 
-        // user_id selalu dari sesi, bukan dari input, supaya tidak bisa mengedit data pengembang lain (anti-IDOR)
-        $this->db->where('user_id', $user_id);
+        // user_id selalu dari sesi, bukan dari input, supaya tidak bisa mengedit
+        // data pengembang lain (anti-IDOR). `id` ikut disertakan supaya UPDATE
+        // mengenai TEPAT baris yang tadi dibaca — sebelumnya hanya WHERE user_id,
+        // yang menimpa SEMUA baris milik user itu sekaligus.
+        $this->db->where('id', $pengajuan->id)->where('user_id', $user_id);
         $this->db->update('srp2_registrations', $data);
 
         $this->session->set_flashdata('success', 'Data pengembang berhasil diperbarui!');
