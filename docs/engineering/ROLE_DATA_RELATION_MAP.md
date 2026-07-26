@@ -149,7 +149,9 @@ usr_users.id
           └── doc_type = surat_magang
 ```
 
-Belum ada tabel proses magang/penelitian, status pengajuan, jadwal, atau pembimbing. Dashboard mahasiswa tidak boleh mengarang status dari `usr_documents` saja.
+⚠️ **Dikoreksi 26 Jul 2026:** tabel `kkn_magang_pendaftaran` **sudah ada** (migrasi `20260701000010`) berisi jenis, instansi asal, divisi/tema, periode, surat pengantar, status (`Diajukan`/`Diterima`/`Ditolak`), `catatan_admin`, plus `reviewed_by`/`reviewed_at`. Dashboard mahasiswa di `/akun` membaca tabel ini per `user_id` sesi, dan sisi admin ada di `Admin_Kemitraan` — jadi statusnya nyata, bukan dikarang.
+
+Yang memang **masih belum ada**: jadwal dan pembimbing. Prinsip aslinya tetap berlaku — jangan mengarang status dari `usr_documents` saja.
 
 ### Admin
 

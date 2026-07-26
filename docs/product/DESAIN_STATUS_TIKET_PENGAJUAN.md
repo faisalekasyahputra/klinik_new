@@ -43,7 +43,7 @@ Halaman sukses mengikuti tema cerah dan komponen portal terbaru:
 - Jangan menampilkan NIK, alamat, atau dokumen pribadi pada URL maupun halaman publik.
 - Endpoint lookup membatasi lima percobaan gagal per hash IP dalam satu menit, lalu mengembalikan HTTP 429 dan pesan generik.
 - Status publik: `Menunggu verifikasi`, `Disetujui`, atau `Ditolak`.
-- Dukungan catatan internal admin direncanakan pada Fase 10 dan tidak ditampilkan oleh lookup publik.
+- Catatan internal admin (`catatan_admin`) **sudah ada** sejak Fase 10 selesai (26 Jul 2026) dan tetap TIDAK ditampilkan oleh lookup publik — hanya terlihat oleh admin berwenang dan oleh pemiliknya sendiri di `/akun`.
 
 ## Status Login
 
@@ -51,7 +51,7 @@ Halaman sukses mengikuti tema cerah dan komponen portal terbaru:
 |---|---|
 | Tanpa login | Cek satu pengajuan menggunakan tiket + verifikasi tambahan |
 | Login warga | Lihat tiket, status, tanggal, dan riwayat pengajuan milik sendiri |
-| Admin | Target Fase 10: melihat seluruh antrean dan mengubah status sesuai kewenangan |
+| Admin | ✅ Sudah ada (Fase 10 selesai): superadmin melihat seluruh antrean lintas wilayah lewat `Admin`, admin kabupaten/kota hanya wilayahnya lewat `Admin_Kabkota` — pembatasan ditegakkan di query (`WHERE id AND kabupaten_id`), bukan hanya di UI |
 
 Pengajuan guest tetap boleh memiliki `user_id = NULL`. Jika warga kemudian membuat akun, pengaitan pengajuan dilakukan melalui proses terverifikasi, bukan dari input `user_id` bebas.
 

@@ -43,7 +43,8 @@ Sebagai pusat layanan terpadu, Klinik PKP memberikan:
 Navigasi utama dirampingkan untuk menonjolkan 3 pilar tupoksi utama dinas, dengan total 6 komponen Navbar:
 
 1. **Menu Utilitas Kiri**: (Beranda / Logo Klinik PKP).
-2. **Menu Pengembang (SRP2)**: Halaman informasi statis yang berisi panduan pengajuan Sertifikasi Pengembang (SRP2). Halaman ini menampilkan: Info pengajuan, unduhan *template* dokumen/PDF, *Contact Person*, serta daftar Pengembang yang sudah mendapat SP2 dan yang sedang dalam proses pengajuan (belum berupa sistem interaktif).
+2. **Menu Pengembang (SRP2)**: ⚠️ **Deskripsi di bawah SUDAH USANG** (dikoreksi 26 Jul 2026) — dipertahankan sebagai jejak kebutuhan awal. Menu ini kini **sistem interaktif penuh**, bukan halaman statis: wizard pendaftaran satu halaman (syarat → masuk/daftar → unggah 14 dokumen → kirim) di `Pengembang/syarat`, plus verifikasi admin (terima/tolak + catatan) di `Admin_Srp2`, dan pengembang yang diterima otomatis masuk direktori publik. Acuan: `AGENTS.md` §14 dan [`PRD_SRP2_AKUN_PENGEMBANG.md`](./PRD_SRP2_AKUN_PENGEMBANG.md) + [`PRD_VERIFIKASI_ADMIN_SRP2.md`](./PRD_VERIFIKASI_ADMIN_SRP2.md).
+   > *Teks asli:* "Halaman informasi statis yang berisi panduan pengajuan Sertifikasi Pengembang (SRP2). Halaman ini menampilkan: Info pengajuan, unduhan *template* dokumen/PDF, *Contact Person*, serta daftar Pengembang yang sudah mendapat SP2 dan yang sedang dalam proses pengajuan (belum berupa sistem interaktif)."
 3. **Layanan Utama 1: PERUMAHAN** *(Fokus Prioritas)*
    - **Bank Data**: Tarikan data statistik (Sikumbang/API eksternal).
    - **Info KPR**: Informasi pembiayaan kredit.
