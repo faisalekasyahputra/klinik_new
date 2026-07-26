@@ -8,7 +8,7 @@
 
 ## 0. BACA INI DULU — Status Terkini & Protokol Antar-Agent
 
-**Terakhir disinkronkan: 26 Juli 2026.** Kalau kamu agent yang baru masuk, baca bagian ini sampai habis sebelum menyentuh apa pun.
+**Terakhir disinkronkan: 26 Juli 2026** (pembacaan codebase menyeluruh — lihat §0f). Kalau kamu agent yang baru masuk, baca bagian ini sampai habis sebelum menyentuh apa pun.
 
 ### 0a. Keadaan lingkungan saat ini
 
@@ -19,6 +19,8 @@
 | **Production** | `main` — **DIBEKUKAN** | tertinggal | tertinggal (`20260701000010`) |
 
 > 🚫 **`main` tidak boleh disentuh tanpa perintah eksplisit user.** Detail & urutan rilis yang benar ada di §1. Staging bebas — push branch fitur otomatis merilis ke sana.
+>
+> **Ditegaskan user 26 Jul 2026:** belum ada rencana rilis sama sekali — proyek ini masih panjang. Jangan menawarkan merge ke `main`, jangan menyiapkan PR ke `main`, jangan menjalankan migrasi production. Anggap `main` beku sampai user sendiri yang membukanya.
 
 ### 0b. Yang baru saja mendarat (jangan dikerjakan ulang)
 
@@ -31,12 +33,19 @@ Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya
 
 ### 0c. Yang masih terbuka
 
+> 🔥 **URGENSI #1 — kredensial production sudah bocor dan harus dirotasi.** Diverifikasi live 26 Jul 2026: `GET /.env` membalas **HTTP 200 di staging DAN production**. Yang terekspos: password DB tiga lingkungan, `KPKP_DATA_KEY`, `KPKP_DATA_PEPPER`, `GOOGLE_CLIENT_SECRET`, `GEMINI_API_KEY`. Penyebabnya sudah ditambal di [`.htaccess`](.htaccess) (blok penolak dotfile + `docs/`), **tapi tambalan itu baru berlaku di server setelah ter-deploy** — dan production deploy dari `main` yang beku, jadi production MASIH TERBUKA sampai user mengambil keputusan.
+>
+> Yang tersisa untuk user, bukan agent: (a) terapkan `.htaccess` di production (lewat File Manager/SSH Hostinger, atau saat `main` akhirnya dibuka), (b) **rotasi** password DB, Google client secret, dan Gemini API key. ⚠️ **`KPKP_DATA_KEY` JANGAN dirotasi begitu saja** — NIK & alamat yang sudah terenkripsi akan hilang permanen (§6). Rotasinya butuh proses dekripsi-ulang tersendiri; sampai itu dilakukan, anggap kunci PII sudah diketahui pihak luar.
+
 1. Pengujian manual staging oleh user (semua verifikasi sejauh ini lewat curl)
 2. Migrasi DB production — **setelah** merge, bukan sebelum
 3. **Isi `PRIVATE_UPLOADS_PATH` di `.env` server** (staging & production) ke direktori di luar DocumentRoot. Kalau dibiarkan kosong, jatuh ke perilaku lama (`dirname(FCPATH)/private_uploads`) yang kebetulan aman di sana — tapi sebaiknya eksplisit.
 4. Di luar kita: integrasi SIMPERUM (belum ada), generator sertifikat PDF
+5. **Temuan pembacaan 26 Jul 2026 yang belum diperbaiki** — daftar lengkap 141 temuan di [`PEMBACAAN_CODEBASE_26JUL2026.md`](docs/engineering/PEMBACAAN_CODEBASE_26JUL2026.md), ringkasan yang paling berdampak di §18.
 
 ✅ Sudah dibereskan 26 Jul 2026: lokasi berkas privat kini dari `PRIVATE_UPLOADS_PATH` di `.env` (helper `private_upload`, satu sumber untuk controller & model) — dan dokumen produk/engineering usang (`IMPLEMENTATION_ROADMAP`, `PRODUCT_REQUIREMENTS_DOCUMENT`, `DESAIN_STATUS_TIKET_PENGAJUAN`, `SRP2_ACCOUNT_FLOW`, `ROLE_DATA_RELATION_MAP`) — klaim yang sudah tidak benar dikoreksi, teks aslinya tetap dikutip sebagai jejak. Verifikasi `private_uploads` di production & staging: keduanya 404 CI, aman.
+
+📖 **Pembacaan codebase menyeluruh (26 Jul 2026)** → [`PEMBACAAN_CODEBASE_26JUL2026.md`](docs/engineering/PEMBACAAN_CODEBASE_26JUL2026.md). Seluruh kode proyek dibaca per subsistem: **100% controller (29), model (9), library (4), helper (5), `core/MY_Controller`, dan 14 migrasi**. Hasilnya 141 temuan + peta tiap subsistem (isi, alur end-to-end, kondisi kesehatan). Dokumen itu adalah **peta paling akurat yang kita punya** — kalau kamu butuh memahami subsistem yang belum pernah kamu sentuh, baca bagiannya di sana sebelum menjelajah kode sendiri. Sebagian temuannya juga MENGOREKSI dokumen ini; koreksinya sudah diterapkan ke §3–§17, ringkasan dampaknya di §18.
 
 ### 0d. Protokol yang mengikat semua agent
 
@@ -57,6 +66,24 @@ Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya
 | FK ke `usr_users.id` pakai `UNSIGNED` | `usr_users.id` itu `int(11)` **signed** → errno 150 (§16) |
 | Ikon `fa-*` di view admin | Font Awesome tidak di-load di shell admin → ikon blank (§17 poin 5) |
 | Form tanpa token CSRF | Fitur tampak normal tapi setiap submit 403 — audit baca-kode tidak menangkapnya |
+| Rewrite CI dikira melindungi berkas | `RewriteCond !-f` cuma menangani URL yang TIDAK ada wujudnya — setiap berkas nyata (`.env`, `docs/`) tersaji apa adanya (§0c) |
+| Memblokir semua dotfile di `.htaccess` | Ikut memblokir `.well-known` → perpanjangan sertifikat SSL gagal, situs mati saat kedaluwarsa. Pakai negative lookahead |
+| Nama tabel ditebak dari nama fitur | `check_forum_rate_limit('diskusi')` — tabelnya `forum_diskusi`; chat menulis ke `tb_chat` yang tidak ada di skema (§18) |
+| Program di `Smart_filter` dikira ada di DB | `omah_sekeng` dipetakan ke `sf_programs` id 6 yang tidak pernah di-seed → FK gagal (§18) |
+
+### 0f. Protokol pemeliharaan dokumen ini
+
+**Permintaan user 26 Jul 2026: AGENTS.md diperbarui berkala supaya konteks tidak hilang antar sesi.** Ini bukan formalitas — konteks yang hilang berarti agent berikutnya mengulang pekerjaan yang sudah selesai, atau lebih buruk, mempercayai klaim yang sudah tidak benar.
+
+**Kapan wajib memperbarui:**
+1. Setiap pekerjaan besar mendarat → perbarui §0b dan §0c.
+2. Setiap kali menemukan klaim di dokumen ini yang ternyata salah → **perbaiki saat itu juga**, jangan ditunda. Ini yang paling sering terlewat: 12 klaim usang menumpuk sampai pembacaan 26 Jul 2026 (§18).
+3. Setiap kali sebuah jebakan memakan korban → satu baris di tabel §0e. Tabel itu satu-satunya hal yang mencegah kesalahan yang sama terulang.
+4. Setiap kali keputusan diambil user (mis. `main` dibekukan) → catat beserta tanggalnya, karena keputusan bisa berubah dan agent perlu tahu mana yang masih berlaku.
+
+**Cara menulis yang menahan waktu:** cantumkan tanggal verifikasi pada klaim yang bisa basi. Bedakan "dibaca di kode" dari "diuji live" — pembacaan 26 Jul 2026 menemukan beberapa hal yang hanya ketahuan saat benar-benar dicoba (paparan `.env` salah satunya). Kalau sebuah klaim belum diverifikasi, tulis apa adanya "belum diverifikasi" alih-alih menghilangkan keraguannya.
+
+**Yang TIDAK masuk sini:** detail temuan panjang (tempatnya `docs/engineering/`), spesifikasi produk (`docs/README.md`), dan apa pun yang bisa dibaca langsung dari kode dalam satu perintah. Dokumen ini peta dan titik temu, bukan salinan kode.
 
 ---
 
@@ -85,7 +112,12 @@ Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya
 composer install
 # copy .env.example -> .env, isi DB_*, KPKP_DATA_KEY/PEPPER, GOOGLE_*, RECAPTCHA_*, GEMINI_API_KEY
 # import docs/engineering/schema_klinikpkp.sql ke database bernama sesuai DB_NAME
+php index.php migrate   # WAJIB — schema .sql itu snapshot lama, migrasi 01..14 yang melengkapinya
 ```
+
+> ⚠️ **`.env.example` tidak lengkap (26 Jul 2026):** template itu TIDAK memuat `DB_HOST`/`DB_USER`/`DB_PASS`/`DB_NAME`, `SITE_URL`, maupun `CI_ENV` — padahal ketiganya benar-benar dibaca kode (`database.php`, `config.php`, `index.php`). Setup baru yang cuma menyalin template akan diam-diam jatuh ke default `root`/`klinikpkp`/`localhost` dan berjalan dalam mode `development` (pesan error mendetail tampil ke publik). Isi manual ketiga kelompok itu.
+>
+> **Parser `.env` di sini buatan sendiri, bukan dotenv standar:** first-wins (nilai pertama menang, makanya blok aktif harus di ATAS blok yang dikomentari — lihat peringatan 3 blok `DB_PASS` di §1), tanda kutip TIDAK di-strip (`KEY="x"` menyimpan kutipnya), dan komentar inline tidak didukung (semua setelah `=` jadi nilai).
 
 - Entry point: [`index.php`](index.php) (root, bukan `application/`)
 - `.env` dibaca via `getenv()` di `application/config/*.php` (lihat `config.php` untuk `base_url`)
@@ -96,12 +128,13 @@ composer install
 ```
 application/
 ├── config/        # database.php, routes.php, autoload.php (autoload: email, session, database; helper: url, file, ternak)
-├── controllers/    # 22 file, lihat tabel §4
+├── controllers/    # 29 file, lihat tabel §4
 ├── core/           # MY_Controller.php — base class hierarchy, lihat §5
-├── helpers/        # forum_helper.php, ternak_helper.php
-├── hooks/          # kosong
+├── helpers/        # 5 file: forum, ternak, srp2, admin_table, private_upload
+├── hooks/          # kosong (hooks dinonaktifkan di config.php)
 ├── libraries/      # Encryption_lib, Smart_filter, Sikaper_api, Ternak_api — lihat §6
-├── models/         # 8 file, lihat §7
+├── migrations/     # 20260701000001..14 — SUMBER KEBENARAN skema, lihat §8
+├── models/         # 9 file, lihat §7
 └── views/pages/    # 20 subfolder modular per fitur (admin, auth, umum, program, dll)
 docs/               # Dokumentasi resmi lengkap — BACA docs/README.md dulu sebelum menggali di sini
 assets/             # css/js/img
@@ -123,8 +156,10 @@ uploads/            # file upload user
 | `Statistika.php` | Data statistik & chart |
 | `Sikumbang.php`, `Sikaper.php`, `Sikunang.php`, `Siperum.php` | Integrasi API eksternal pemerintah |
 | `Pengaturan.php` | Dashboard `/akun` — profil user & hapus akun, plus section per role (`pengembang`: data SRP2 §14; `mahasiswa`: status KKN/Magang; semua role: riwayat antrean + aduan) — lihat §16 |
-| `Admin.php`, `Admin_Content.php`, `Admin_Dashboard.php`, `Admin_Settings.php`, `Admin_Users.php`, `Admin_Srp2.php`, `Admin_Kemitraan.php` | Panel superadmin (extends `Admin_Controller`) — lihat §16 |
+| `Admin.php`, `Admin_Content.php`, `Admin_Dashboard.php`, `Admin_Settings.php`, `Admin_Users.php`, `Admin_Srp2.php`, `Admin_Kemitraan.php` | Panel superadmin (extends `Admin_Controller`) — lihat §16. ⚠️ `Admin_Settings` masih **mockup penuh**, lihat §18 |
+| `Admin_Aduan.php` | Superadmin **read-only** lintas bidang untuk `aduan` (sengaja tanpa endpoint tulis; kelola tetap di `Admin_Bidang`). Menopang menu sidebar "Semua Aduan" (`aduan_semua` di registry) — sempat tidak tercatat di dokumen ini sampai 26 Jul 2026 |
 | `Admin_Kabkota.php`, `Admin_Bidang.php` | Panel admin ter-scope (extends `Admin_Kabkota_Controller`/`Admin_Bidang_Controller`) — lihat §16 |
+| `Migrate.php` | Runner migrasi (`php index.php migrate` → `latest()`), di-gate CLI/localhost saja |
 | `KemitraanPortal.php` | Info + pendaftaran KKN/Magang (`daftar($jenis)`/`simpan()`, login-gated role `mahasiswa`) |
 | `Bank_desain.php`, `Berita.php`, `Kemitraan.php`, `Kabupaten.php`, `User_Profile.php` | Fitur pendukung, ukuran kecil |
 
@@ -134,7 +169,7 @@ Controller besar (`Auth.php` ~26KB, `Index.php` ~20KB, `Umum.php` ~17KB) — kan
 
 ```
 CI_Controller
-└── MY_Controller               # security headers (CSP-lite: X-Frame-Options, HSTS, Permissions-Policy dll) di SETIAP request
+└── MY_Controller               # security headers di SETIAP request (lihat catatan di bawah)
     ├── Public_Controller        # untuk route publik, tidak ada guard tambahan
     ├── Admin_Controller         # redirect ke Auth/login jika !is_logged || role !== 'admin'; punya render_admin()
     ├── Admin_Kabkota_Controller # role !== 'admin_kabkota' → redirect; expose $this->my_kabupaten_id dari session; punya render_scoped_admin()
@@ -144,6 +179,10 @@ CI_Controller
 Helper session di `MY_Controller`: `is_logged_in()`, `get_user_id()`, `current_role()`, `has_role($role)`, `sanitize_redirect()` (cegah open-redirect — cek ini sebelum pakai `redirect($_GET['next'])` gaya apa pun).
 
 > Catatan: TIDAK ada kelas `Auth_Controller`. Kalau menemukan referensi itu di dokumen lama/checkpoint, itu keliru — controller auth cukup pakai `Public_Controller` biasa + cek session manual.
+
+> ⚠️ **Istilah "CSP-lite" di dokumen ini dulu menyesatkan (dikoreksi 26 Jul 2026): TIDAK ADA header Content-Security-Policy sama sekali.** Yang benar-benar dipasang `set_security_headers()`: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `X-XSS-Protection` (sudah deprecated di browser modern), `Referrer-Policy`, `Permissions-Policy`, `X-Permitted-Cross-Domain-Policies`, dan HSTS — **HSTS hanya kalau `$_SERVER['HTTPS'] === 'on'`, yang bisa terlewat di balik reverse proxy.** Jangan mengandalkan CSP sebagai lapisan penahan XSS saat menilai temuan; lapisan itu belum ada.
+
+> Satu pengecualian yang perlu diketahui: `Sikaper.php` extends `CI_Controller` langsung, bukan `MY_Controller` — satu-satunya controller publik yang lolos security headers (§18).
 
 ## 6. Libraries (`application/libraries/`)
 
@@ -156,7 +195,11 @@ Helper session di `MY_Controller`: `is_logged_in()`, `get_user_id()`, `current_r
 
 ## 7. Models (`application/models/`)
 
-`Auth_model`, `User_model`, `Forum_model`, `Program_model`, `Chat_model`, `Admin_model`, `Setting_model`, `Buka_peta` (GIS/spasial — pakai nama tabel dinamis via parameter, lihat §8 soal tabel legacy).
+`Auth_model`, `User_model`, `Forum_model`, `Program_model`, `Chat_model`, `Aduan_model`, `Admin_model`, `Setting_model`, `Buka_peta`.
+
+Dua di antaranya **kode mati** (diverifikasi 26 Jul 2026, jangan dikira aktif):
+- `Chat_model` — satu-satunya kode yang menyentuh `chat_rooms`/`chat_messages`, di-load di constructor `Chat.php` tapi **tidak pernah dipanggil sekali pun**. Chat yang nyata menulis ke `tb_chat` (§8).
+- `Buka_peta` — GIS/spasial dengan nama tabel dinamis via parameter; di-load di `Pengembang.php` tapi **nol pemanggil** di seluruh `application/`. Isinya legacy berbahaya kalau dihidupkan (auth `sha1()` ke tabel `user` yang bukan `usr_users`, SQL rusak). Jangan pernah sambungkan parameter nama tabelnya ke input user. Filenya juga diawali BOM UTF-8 sebelum tag `<?php`.
 
 ## 8. Database
 
@@ -167,7 +210,7 @@ Schema baseline (snapshot lama, TIDAK real-time): [`docs/engineering/schema_klin
 - `sf_` — Smart Filter (`sf_programs`, `sf_program_kategori`, `sf_housing_queue`)
 - `forum_` — forum diskusi (`forum_diskusi`, `forum_komentar`, `forum_likes`)
 - `sys_` — sistem (`sys_menu`, `sys_multi`, `sys_settings`, `sys_ticket_lookup_limits`)
-- `chat_` — konsultasi (`chat_rooms`, `chat_messages`)
+- ~~`chat_` — konsultasi (`chat_rooms`, `chat_messages`)~~ ⚠️ **Klaim ini SALAH, dikoreksi 26 Jul 2026.** `Chat.php` menulis & membaca `tb_chat` — tabel yang **tidak ada di `schema_klinikpkp.sql` maupun migrasi mana pun**, jadi instalasi fresh membuat seluruh chat gagal DB error. `chat_rooms`/`chat_messages` hanya disentuh `Chat_model` yang tidak pernah dipanggil. Lihat §18.
 - `data_sosmed_perumahan` — sosmed pengembang
 - `srp2_` — Sertifikasi Pengembang (`srp2_registrations`, `srp2_certified_developers`, `srp2_documents`) — lihat §14
 - Tabel tanpa prefix modular tapi tetap resmi (dibuat lewat `application/migrations/`, bukan lagi `.sql` lepas): `aduan`, `kabupaten`, `bidang`, `kkn_magang_pendaftaran` — lihat §16
@@ -178,15 +221,15 @@ Jangan hapus tabel existing saat menambah fitur baru — tambah tabel baru mengi
 
 ## 9. Keamanan — JANGAN DIRUSAK
 
-Fondasi ini sudah solid (OWASP + UU PDP compliant), perlakukan sebagai kontrak, bukan implementation detail yang bebas diubah:
+Fondasi ini perlakukan sebagai kontrak, bukan implementation detail yang bebas diubah. **Jangan longgarkan.** Tapi jangan pula dibaca sebagai jaminan bahwa sistem ini sudah aman menyeluruh — pembacaan 26 Jul 2026 (§18) menemukan lubang nyata di luar daftar ini, dan dua poin di bawah ternyata lebih sempit dari bunyinya:
 
-1. CSRF protection aktif global (CodeIgniter native)
+1. CSRF protection aktif global (CodeIgniter native) — dengan 9 URI dikecualikan di `config.php`, **termasuk 3 endpoint TULIS chat** (§18)
 2. Google OAuth dengan state token kriptografis + anti-redirect (`sanitize_redirect()`)
-3. Anti-IDOR — ID user selalu dari `session`/`get_user_id()`, **bukan** dari POST/GET body
+3. Anti-IDOR — ID user selalu dari `session`/`get_user_id()`, **bukan** dari POST/GET body. Pola ini konsisten dan terverifikasi di seluruh subsistem
 4. `Admin_Controller` guard berbasis session role, backend-enforced (bukan hanya sembunyikan UI)
-5. AES-256-GCM untuk NIK & Alamat (`Encryption_lib`), SHA-256 deterministic hash untuk lookup
-6. Security headers global di `MY_Controller::set_security_headers()`
-7. Kredensial hanya lewat `.env`, tidak pernah hardcode
+5. AES-256-GCM untuk NIK & Alamat (`Encryption_lib`), SHA-256 deterministic hash untuk lookup — ⚠️ **hanya berlaku di SATU jalur: onboarding `usr_users`.** NIK tersimpan **plaintext** di `sf_housing_queue.nik_pengaju` (lokasi PII NIK terbesar di sistem) dan `srp2_registrations.nik_ktp`. Lebih jauh: `decrypt()` dan `nik_lookup_hash` tidak pernah dibaca balik di mana pun, dan `Encryption_lib` **fail-open** (kunci invalid → simpan plaintext diam-diam, dan `log_threshold=0` mematikan semua log sehingga tidak akan ketahuan)
+6. Security headers global di `MY_Controller::set_security_headers()` — **tanpa CSP**, lihat catatan §5
+7. Kredensial hanya lewat `.env`, tidak pernah hardcode — ⚠️ **dilanggar di `application/config/sikaper.php`**: username + password API Sikaper hardcode dan sudah masuk riwayat git (§18)
 
 ## 10. Routes Penting (`application/config/routes.php`)
 
@@ -194,15 +237,15 @@ Default controller: `Index`. Banyak clean-URL alias ke `Index/*` (`umum`, `profi
 
 **Hub "Nggolek Omah"** (ditambahkan setelah §11 fase UI/UX) — hero card di homepage sekarang link ke `golek_omah`, hub kecil dengan 3 menu card:
 - `golek_omah` → `Index::golek_omah()` → `pages/golek_omah/index.php` — halaman hub.
-- `cari_rumah` → `Index::cari_rumah()` → `pages/perumahan/cari_rumah.php`. **DUPLIKAT** dari section `#cari-perumahan` di `awal.php` — section itu masih ada dan masih jalan di homepage, ini bukan pengganti. Reuse AJAX `cari_wil`/`load_more`/`ajax_perumahan` yang sama.
-- `panduan_desain` → `Index::panduan_desain()` → `pages/bank_desain/panduan_desain.php`. **DUPLIKAT** dari section `#bank-desain` di `awal.php`, section aslinya juga masih ada. Reuse AJAX `ajax_house_designs`. Jangan disamakan dengan route `materia` (`Index::materia()`) — itu placeholder kosong tidak terkait.
+- `cari_rumah` → `Index::cari_rumah()` → `pages/perumahan/cari_rumah.php`. Reuse AJAX `cari_wil`/`load_more` yang sama.
+- `panduan_desain` → `Index::panduan_desain()` → `pages/bank_desain/panduan_desain.php`. Reuse AJAX `ajax_house_designs`. Jangan disamakan dengan route `materia` (`Index::materia()`) — itu placeholder kosong tidak terkait.
 - `solusi_pembiayaan` → `Program/solusi_pembiayaan` — wizard diagnosa pembiayaan dengan hasil rekomendasi.
 - `solusi_pembiayaan/hasil` → `Program/hasil_diagnosa` — hasil program yang bisa dipilih warga untuk diajukan.
 - `solusi_pembiayaan/ajukan` → `Program/ajukan_solusi` — POST-only, memvalidasi program dari session sebelum masuk `sf_housing_queue`.
 - `solusi_pembiayaan/cek-tiket` → `Program/cek_tiket` — POST-only lookup publik memakai `ticket_code` + empat digit terakhir NIK; jangan tampilkan PII.
 - `cek_status_pengajuan` → `Program/cek_status_pengajuan` — tab navbar dan halaman publik untuk cek status tanpa login.
 
-Jadi kalau menemukan section pencarian rumah atau bank desain di dua tempat (homepage dan halaman mandiri), itu memang disengaja — bukan duplikasi yang perlu dibersihkan.
+> ⚠️ **Dikoreksi 26 Jul 2026.** Dokumen ini dulu menyebut `cari_rumah`/`panduan_desain` sebagai **duplikat** dari section `#cari-perumahan`/`#bank-desain` yang "masih ada dan masih jalan di homepage". Itu sudah tidak benar: `awal.php` sekarang murni grid kartu portal dan tidak memuat kedua section itu sama sekali — sisanya hanya ada di `pages/home/archive/tentang_hingga_berita.php` yang tidak dirender siapa pun. **Halaman mandiri kini satu-satunya, bukan duplikasi.** Konsekuensinya: `ajax_articles()` dan `ajax_perumahan()` jadi endpoint yatim (hanya dirujuk view archive), begitu juga route `kemitraan` dan `materia`.
 
 ## 11. Status & Roadmap
 
@@ -280,7 +323,9 @@ Daftar resmi role: [`application/config/roles.php`](application/config/roles.php
 
 **Session carries scope:** `Auth::login()` dan callback Google OAuth menyimpan `kabupaten_id`/`bidang_kode` ke session saat login (dari kolom `usr_users`, `SELECT *` via `Auth_model::find_by_login()`). `Admin_Kabkota_Controller`/`Admin_Bidang_Controller` baca scope dari session (`$this->my_kabupaten_id`/`$this->my_bidang_kode`), BUKAN dari request — kalau scope kosong di session, controller redirect balik ke login (akun belum di-assign, minta superadmin).
 
-**Anti-IDOR wajib untuk role scoped:** setiap `update_status()` di `Admin_Kabkota`/`Admin_Bidang` WHERE clause-nya harus dobel — `WHERE id = ? AND kabupaten_id = ?` / `WHERE id = ? AND bidang = ?` — supaya admin kabupaten/bidang lain tidak bisa mengubah data di luar scope-nya walau tahu ID barisnya. Cek `$this->db->affected_rows()` untuk membedakan "berhasil" vs "row ada tapi bukan milik scope ini".
+**Anti-IDOR wajib untuk role scoped:** setiap `update_status()` di `Admin_Kabkota`/`Admin_Bidang` WHERE clause-nya harus dobel — `WHERE id = ? AND kabupaten_id = ?` / `WHERE id = ? AND bidang = ?` — supaya admin kabupaten/bidang lain tidak bisa mengubah data di luar scope-nya walau tahu ID barisnya.
+
+> ⚠️ **Dikoreksi 26 Jul 2026.** Dokumen ini dulu menyuruh "cek `affected_rows()` untuk membedakan berhasil vs bukan milik scope ini". **Jangan ikuti instruksi lama itu** — kode nyata sudah sengaja meninggalkannya, karena `affected_rows() == 0` juga terjadi saat admin mengirim ulang nilai yang sama (lihat `AUDIT_ROLE_ADMIN_SCOPED.md` #6), sehingga aksi yang sah dilaporkan gagal. Pola yang benar dan sudah dipakai: **pre-check `count_all_results()` dalam scope** untuk memastikan baris itu memang milik scope ini, baru `UPDATE` dengan WHERE ganda.
 
 **`/akun` sekarang 2 halaman, bukan 1:** `Pengaturan::index()` (route `akun`) = "Status Pengajuan" — satu list gabungan SEMUA jenis pengajuan user (antrean, aduan, SRP2, KKN/Magang) diurut tanggal, item utama sidebar. `Pengaturan::profil()` (route `akun/profil`, baru) = form edit profil + data perusahaan SRP2 + hapus akun (dulu semua nyampur jadi satu di `index()`). Redirect dari `update_profile()`/`update_pengembang_profile()`/`delete_account()` (gagal) sekarang ke `akun/profil`, bukan `akun`.
 
@@ -295,7 +340,7 @@ Daftar resmi role: [`application/config/roles.php`](application/config/roles.php
 **Sidebar admin ter-scope:** `application/views/admin/layouts/sidebar.php` reuse layout admin superadmin yang sama — kalau view dipanggil dengan variabel `$scoped_menu` (array `[label, icon, url, segment]`), sidebar render menu ringkas itu alih-alih menu superadmin penuh. Dipakai lewat `render_scoped_admin()` di `Admin_Kabkota_Controller`/`Admin_Bidang_Controller`.
 
 **Diketahui belum lengkap (di luar scope sesi ini):**
-- `Program::ajukan_solusi()` (alur "Solusi Pembiayaan", identitas dari SIMPERUM lookup) belum mengisi `kabupaten_id` — hanya `Program::submit_antrean()` (dipakai `diagnosa()`/`solusi_pembiayaan()` view) yang sudah kirim field ini. Data lama & jalur `ajukan_solusi()` akan punya `kabupaten_id = NULL`, tidak muncul di dashboard `Admin_Kabkota` manapun.
+- ~~`Program::ajukan_solusi()` belum mengisi `kabupaten_id`~~ — **sudah tidak berlaku (diverifikasi 26 Jul 2026).** Kedua jalur kini mengisinya lewat satu pintu `Program_model::resolve_kabupaten_id()` (domisili profil user login menang > pilihan form yang divalidasi ke tabel `kabupaten` > NULL untuk tamu), dan `insert_housing_queue()` memaksa key `kabupaten_id` ada. **Temuan audit "`sf_housing_queue.kabupaten_id` dipercaya mentah dari request warga" — satu-satunya temuan tingkat Tinggi — juga SUDAH DIPERBAIKI**, jangan dikerjakan ulang. Data lama tetap bisa `NULL`.
 - Belum ada admin/dashboard untuk role `warga` di luar `/akun` — sesuai permintaan awal (warga tidak butuh panel admin, cuma dashboard aktivitas sendiri).
 
 Fitur pendaftaran & verifikasi SRP2 (Sertifikasi Registrasi Pengembang Perumahan) dibangun ulang jadi interaktif penuh sesi ini (sebelumnya rencananya cuma halaman statis "view-only" — lihat catatan usang di bawah).
@@ -309,7 +354,7 @@ Fitur pendaftaran & verifikasi SRP2 (Sertifikasi Registrasi Pengembang Perumahan
 **Cabang AJAX (JSON) di controller yang sudah ada — perilaku non-AJAX/halaman biasa TIDAK berubah sama sekali:**
 - `Auth::do_login()` / `Auth::do_register()` — kalau `is_ajax_request()`, balas JSON (`status`, `message`/`role`/`registration_id`) alih-alih flashdata+redirect. Untuk `do_register` dengan `srp2_pengembang=1`, draft `srp2_registrations` langsung dibuat di sini (bukan lewat detour "verifikasi email" simulasi lama) supaya wizard bisa lanjut ke step Unggah tanpa request tambahan.
 - `Pengembang::akses_pengembang()` — kalau request AJAX dan belum login/salah role, balas **401/403 JSON**, BUKAN `redirect()`. Ini wajib: `fetch()` diam-diam mengikuti redirect dan akan menganggap HTML halaman lain sebagai "berhasil" kalau ini tidak ada.
-- `Pengembang::simpan_dokumen()` / `kirim_pengajuan()` — balas JSON per aksi. Validasi keamanan upload (whitelist ekstensi, cek MIME asli via `finfo`, cap 1 MB, nama file acak, folder di luar webroot) **tidak disentuh**, cuma cara membalas responsnya yang bercabang.
+- `Pengembang::simpan_dokumen()` / `kirim_pengajuan()` — balas JSON per aksi. Validasi keamanan upload (whitelist ekstensi, cek MIME asli via `finfo`, **cap 2 MB** — dokumen ini dulu keliru menulis 1 MB, dikoreksi 26 Jul 2026 — nama file acak, folder di luar webroot) **tidak disentuh**, cuma cara membalas responsnya yang bercabang.
 
 **Form manual 12 field (nama_peserta/nik_ktp/dst) DIARSIPKAN** — `Pengembang::formulir()`/`simpan()` sekarang cuma redirect ke `Pengembang/syarat`, viewnya dipindah ke `archive/formulir_sertifikasi_12field.php`. Jalur resmi pendaftaran cuma satu: daftar cepat (nama perusahaan + email + password) di step 2 wizard. Halaman `Pengembang/daftar` (standalone lama) juga diarsipkan (`archive/daftar_standalone.php`), `daftar()` sekarang cuma redirect ke `syarat` supaya tautan/bookmark lama tidak jadi dead-end.
 
@@ -331,7 +376,7 @@ Fitur pendaftaran & verifikasi SRP2 (Sertifikasi Registrasi Pengembang Perumahan
 
 **Detour "verifikasi email" simulasi (`Auth/verify_pending` → `Auth/do_verify_email` → `Auth/lanjutkan`) sudah dilewati untuk SRP2** — draft `srp2_registrations` dibuat langsung di `do_register()` saat itu juga. `Auth::lanjutkan()` sendiri TIDAK dihapus (masih dipakai alur verifikasi generik non-SRP2), cuma sudah idempotent kalau dipanggil untuk akun SRP2 (draft sudah ada, tidak dobel insert).
 
-**Audit sistem/keamanan/konsistensi seluruh role (26 Jul 2026):** [`docs/engineering/AUDIT_SISTEM_ROLE_RINGKASAN.md`](docs/engineering/AUDIT_SISTEM_ROLE_RINGKASAN.md) — baca sebelum membangun role baru yang lebih kompleks. Audit per role: [`AUDIT_ROLE_PENGEMBANG.md`](docs/engineering/AUDIT_ROLE_PENGEMBANG.md), [`AUDIT_ROLE_WARGA.md`](docs/engineering/AUDIT_ROLE_WARGA.md), [`AUDIT_ROLE_MAHASISWA.md`](docs/engineering/AUDIT_ROLE_MAHASISWA.md), [`AUDIT_ROLE_ADMIN_SCOPED.md`](docs/engineering/AUDIT_ROLE_ADMIN_SCOPED.md) (`admin_kabkota`+`admin_bidang`). Semua temuan murni observasi, belum diperbaiki. Ringkasan pola lintas-role yang paling berdampak: (1) **tidak ada alur admin approve/reject `srp2_registrations`** — satu-satunya role yang belum punya sisi reviewer, role lain (`warga`→`Admin_Kabkota`/`Admin_Bidang`, `mahasiswa`→`Admin_Kemitraan`) sudah fungsional penuh; (2) **upload disimpan di direktori publik** berulang di 3 lokasi berbeda (`Auth::_handle_uploads()`, `Umum::simpan_aduan()`, `KemitraanPortal::simpan()`) — semua seharusnya pakai pola `private_uploads/` seperti SRP2; (3) **`User_model::delete_user_account()` tidak membersihkan tabel turunan role baru** (`aduan`, `kkn_magang_pendaftaran`, kemungkinan `srp2_registrations`) — cuma menangani tabel forum lama; (4) **`sf_housing_queue.kabupaten_id` dipercaya mentah dari request warga** — 🔴 satu-satunya temuan tingkat Tinggi, mempengaruhi integritas seluruh model scoping `admin_kabkota`. Roadmap perbaikan gap SRP2 ada di [`docs/product/PRD_VERIFIKASI_ADMIN_SRP2.md`](docs/product/PRD_VERIFIKASI_ADMIN_SRP2.md), termasuk checklist "Prinsip Umum untuk Role Baru" yang wajib diisi sebelum role kompleks berikutnya dibangun.
+**Audit sistem/keamanan/konsistensi seluruh role (26 Jul 2026):** [`docs/engineering/AUDIT_SISTEM_ROLE_RINGKASAN.md`](docs/engineering/AUDIT_SISTEM_ROLE_RINGKASAN.md) — baca sebelum membangun role baru yang lebih kompleks. Audit per role: [`AUDIT_ROLE_PENGEMBANG.md`](docs/engineering/AUDIT_ROLE_PENGEMBANG.md), [`AUDIT_ROLE_WARGA.md`](docs/engineering/AUDIT_ROLE_WARGA.md), [`AUDIT_ROLE_MAHASISWA.md`](docs/engineering/AUDIT_ROLE_MAHASISWA.md), [`AUDIT_ROLE_ADMIN_SCOPED.md`](docs/engineering/AUDIT_ROLE_ADMIN_SCOPED.md) (`admin_kabkota`+`admin_bidang`). Semua temuan murni observasi, belum diperbaiki. Ringkasan pola lintas-role yang paling berdampak — **keempatnya SUDAH DIPERBAIKI, diverifikasi ulang 26 Jul 2026; dikutip di sini sebagai jejak sejarah, JANGAN dikerjakan ulang:** (1) ~~tidak ada alur admin approve/reject `srp2_registrations`~~ → `Admin_Srp2` sudah fungsional penuh; (2) ~~upload di direktori publik di 3 lokasi~~ → `Auth::_handle_uploads()`, `Umum::simpan_aduan()`, dan `KemitraanPortal::simpan()` ketiganya kini lewat `store_private_upload()`; (3) ~~`delete_user_account()` tidak membersihkan tabel turunan~~ → kini meng-`unlink()` berkas fisik SRP2/kemitraan/onboarding lalu mengandalkan FK `ON DELETE` sadar-domain dari migrasi `20260701000012`; (4) ~~`sf_housing_queue.kabupaten_id` dipercaya mentah~~ → lewat `resolve_kabupaten_id()` (§16). Roadmap perbaikan gap SRP2 ada di [`docs/product/PRD_VERIFIKASI_ADMIN_SRP2.md`](docs/product/PRD_VERIFIKASI_ADMIN_SRP2.md), termasuk checklist "Prinsip Umum untuk Role Baru" yang wajib diisi sebelum role kompleks berikutnya dibangun.
 
 **Dashboard terpadu:** [`docs/architecture/ANCHOR_DASHBOARD_TERPADU.md`](docs/architecture/ANCHOR_DASHBOARD_TERPADU.md) — dokumen ANCHOR untuk seluruh pekerjaan dashboard, baca sebelum menyentuh sidebar/render helper/controller admin mana pun. **Fase 0–4 SELESAI SEMUA** (26 Jul 2026), lihat §17 di bawah + tabel status di anchor.
 
@@ -355,10 +400,54 @@ Semua role login memakai SATU shell dashboard (`application/views/admin/index.ph
 
 > ⚠️ **Jangan pernah menampilkan angka, status, atau pesan sukses karangan.** Dua kali ditemukan di repo ini: overview dengan "Publikasi Aktif = 24" hardcode + chart dummy + feed nama fiktif (B2), dan `Admin::update_status()` yang mengklaim "telah disinkronisasi dengan API SIMPERUM" padahal tidak ada request apa pun yang dikirim (B11). Kalau sebuah metrik belum bisa dihitung atau integrasi belum ada, hilangkan elemennya atau tulis apa adanya — **jangan disimulasikan**. Integrasi SIMPERUM memang belum ada dan akan menyusul.
 
-**Normalisasi skema (26 Jul 2026):** [`docs/architecture/DESAIN_NORMALISASI_SKEMA_ROLE.md`](docs/architecture/DESAIN_NORMALISASI_SKEMA_ROLE.md) — Opsi A (konvensi konsisten, tabel domain tetap terpisah) dipilih dan migrasi intinya **sudah dijalankan**: `srp2_registrations`, `aduan`, `kkn_magang_pendaftaran`, `sf_housing_queue` sekarang semua punya `reviewed_by`/`reviewed_at` + FK `user_id` ke `usr_users.id` dengan `ON DELETE` yang sadar per domain (migrasi `20260701000011`-`20260701000013`). **Catatan penting untuk kolom baru mana pun yang menunjuk `usr_users.id`:** gunakan `INT` biasa, BUKAN `UNSIGNED` — `usr_users.id` adalah `int(11)` signed (peninggalan skema lama), FK ke kolom unsigned akan gagal (errno 150). `User_model::delete_user_account()` sudah diperbarui untuk `unlink()` file fisik SRP2/KKN-Magang sebelum baris DB ter-CASCADE. Kolom `reviewed_by`/`reviewed_at` **sudah diisi** keempat jalur reviewer sejak Fase 2. **Yang masih terbuka:** lokasi upload publik (Pola A di [`AUDIT_SISTEM_ROLE_RINGKASAN.md`](docs/engineering/AUDIT_SISTEM_ROLE_RINGKASAN.md)) belum dipindah ke `private_uploads/` — 3 lokasi (`Auth::_handle_uploads()`, `Umum::simpan_aduan()`, `KemitraanPortal::simpan()`), sebaiknya lewat satu helper terpusat.
+**Normalisasi skema (26 Jul 2026):** [`docs/architecture/DESAIN_NORMALISASI_SKEMA_ROLE.md`](docs/architecture/DESAIN_NORMALISASI_SKEMA_ROLE.md) — Opsi A (konvensi konsisten, tabel domain tetap terpisah) dipilih dan migrasi intinya **sudah dijalankan**: `srp2_registrations`, `aduan`, `kkn_magang_pendaftaran`, `sf_housing_queue` sekarang semua punya `reviewed_by`/`reviewed_at` + FK `user_id` ke `usr_users.id` dengan `ON DELETE` yang sadar per domain (migrasi `20260701000011`-`20260701000013`). **Catatan penting untuk kolom baru mana pun yang menunjuk `usr_users.id`:** gunakan `INT` biasa, BUKAN `UNSIGNED` — `usr_users.id` adalah `int(11)` signed (peninggalan skema lama), FK ke kolom unsigned akan gagal (errno 150). `User_model::delete_user_account()` sudah diperbarui untuk `unlink()` file fisik SRP2/KKN-Magang sebelum baris DB ter-CASCADE. Kolom `reviewed_by`/`reviewed_at` **sudah diisi** keempat jalur reviewer sejak Fase 2. ~~**Yang masih terbuka:** lokasi upload publik belum dipindah ke `private_uploads/` — 3 lokasi.~~ **SUDAH SELESAI** (diverifikasi baris demi baris 26 Jul 2026): `Auth::_handle_uploads()`, `Umum::simpan_aduan()`, dan `KemitraanPortal::simpan()` ketiganya memakai `store_private_upload()`. Satu-satunya penulis direktori publik yang tersisa adalah `Admin_Content.php` untuk gambar hero — dan itu memang konten publik, bukan kelalaian.
 
 **Follow-up yang sengaja di luar scope sesi ini** (jangan dikerjakan tanpa arahan baru, cukup dicatat):
 - Generator sertifikat PDF asli belum ada — tombol "Download Sertifikat" di dashboard akun sengaja nonaktif dengan pesan jujur, bukan simulasi.
 - ~~`Auth::save_onboarding()` menulis kolom `nama_perusahaan`/`alamat_kantor`/`telp_kantor` yang tidak ada di skema~~ — **sudah tidak berlaku**, ketiga kolom itu memang ada di `usr_users` (lihat §16). Catatan lama ini usang, jangan diikuti.
 - [`docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md`](docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md) dan [`docs/product/IMPLEMENTATION_ROADMAP.md`](docs/product/IMPLEMENTATION_ROADMAP.md) masih menyebut menu Pengembang/SP2 sebagai halaman statis/"belum berupa sistem interaktif" ("view-only") — **usang (superseded)**, sudah dikonfirmasi user untuk dibuat interaktif penuh sesi ini.
+
+## 18. Temuan Pembacaan 26 Jul 2026 — Belum Diperbaiki
+
+Ringkasan yang paling berdampak dari 141 temuan. Detail lengkap per subsistem: [`PEMBACAAN_CODEBASE_26JUL2026.md`](docs/engineering/PEMBACAAN_CODEBASE_26JUL2026.md). **Belum ada satu pun yang diperbaiki** kecuali paparan `.env` (ditambal di `.htaccess`, tapi belum sampai ke production — §0c).
+
+> **Cara membaca:** yang bertanda ⏳ **belum diverifikasi runtime** — saat pembacaan dibuat, Apache & MySQL lokal mati. Konfirmasi dulu sebelum memperbaiki, jangan langsung percaya. Sisanya sudah diverifikasi live atau terbukti mutlak dari kode.
+
+### Keamanan
+
+| Temuan | Lokasi |
+|---|---|
+| 🔥 `.env` + `docs/` tersaji publik (HTTP 200 di **production & staging**) — kredensial harus dirotasi, lihat §0c | `.htaccess` (sudah ditambal lokal) |
+| Kotak **"Kredensial Demo"** memajang email admin + password `password` di halaman login, tanpa gate lingkungan — ikut tampil di production. Ada juga di wizard SRP2. ⏳ Cek apakah akun-akun itu memang ada di DB production | `pages/auth/login.php:136`, `pages/pengembang/syarat.php:176` |
+| Password API Sikaper **hardcode & sudah masuk riwayat git** (melanggar §9 poin 7) — rotasi kredensialnya, memindah ke `.env` saja tidak cukup | `config/sikaper.php:13` |
+| Chat: `session_id` dibuat browser pakai `Math.random()`, tidak terikat sesi server → siapa pun yang menebaknya membaca riwayat chat + nama/email/HP orang lain | `Chat.php:147`, `layouts/footer.php:161` |
+| Chat: `api_bot()` public-routable, tanpa login, tanpa CSRF (dikecualikan), tanpa rate limit → kuota Gemini bisa dikuras siapa saja | `Chat.php:80` |
+| `submit_antrean()` menerima `program_id`, NIK, dan seluruh data survei mentah dari POST tanpa validasi — bertentangan dengan §15 (jalur `ajukan_solusi` patuh, jalur ini tidak) | `Program.php:383` |
+| Verifikasi TLS **dimatikan di semua** klien HTTP keluar (Sikumbang, Sikaper, Ternak, Gemini) — dikomentari "sementara dev lokal" tapi berlaku unconditional di production | `Index.php:126` dkk, `Sikaper_api.php:36`, `Ternak_api.php:42` |
+| `report_komentar()` tanpa login & tanpa dedup → 5× POST menyembunyikan komentar siapa pun, tanpa jalur pemulihan | `Umum.php:372` |
+| Ganti password & hapus akun tanpa re-autentikasi (konfirmasi ketik-nama hanya di klien) | `Pengaturan.php:227` |
+| Reflected XSS potensial: `google_callback()` meng-echo hasil `sanitize_redirect()` ke dalam string JS — fungsi itu menolak URL eksternal tapi tidak membuang tanda kutip. ⏳ | `Auth.php:681` |
+| Stored XSS via skema URI: pemohon bisa menyimpan `javascript:` sebagai website; admin yang mengkliknya di halaman verifikasi mengeksekusinya | `admin/srp2/detail.php:46` |
+| `cookie_secure = FALSE` meski production HTTPS | `config/config.php:414` |
+| `ENVIRONMENT` default `development` kalau `CI_ENV` tidak diset → error mendetail tampil publik. ⏳ Cek apakah server menyetelnya | `index.php:56` |
+
+### Kemungkinan rusak total (⏳ semua perlu konfirmasi runtime)
+
+- **Forum tidak bisa posting/balas** — `check_forum_rate_limit()` menghitung ke tabel `'diskusi'`/`'komentar'`, tabel aslinya `forum_diskusi`/`forum_komentar`. Perbaikan: tambah prefix di dalam helper (satu tempat, semua pemanggil ikut). `helpers/forum_helper.php:75`
+- **Seluruh chat gagal** — menulis ke `tb_chat` yang tidak ada di skema maupun migrasi mana pun. `Chat.php:29`
+- **Pengajuan Desil 4 gagal** — `omah_sekeng` dipetakan ke `sf_programs` id 6 yang tidak pernah di-seed (hanya id 1–5), padahal `program_id` ber-FK NOT NULL. Ironisnya skenario NIK uji #1 justru menghasilkan Desil 4. `Smart_filter.php:40`
+- **Approve SRP2 bisa gagal sambil melapor sukses** — `INSERT` ke direktori bentrok `UNIQUE` nama (67 nama seed sudah ada); di production `db_debug` mati → gagal diam-diam tapi flashdata tetap "Pengajuan diterima". `Admin_Srp2.php:133`
+- **Onboarding role `vendor`** menulis kolom `nama_usaha`/`alamat_usaha`/`jenis_usaha` yang tidak ada di skema; kartu Vendor masih aktif di UI. `Auth.php:466`
+
+### Masih melanggar aturan "jangan tampilkan angka/status karangan" (§17)
+
+Empat lokasi lolos dari pembersihan B2/B11: halaman **Pengaturan Sistem admin** seluruhnya mockup (nilai palsu, tombol Simpan di luar form, toggle mati) `admin/settings/index.php`; **Statistika** menampilkan angka dummy berlabel "Sumber: Simperum/Sikumbang/Sikaper" dengan multiplier `crc32()` per kabupaten `Statistika.php:26`; **`listkabupaten`** punya tabel intervensi fiktif tanpa label simulasi; dan **`Umum::download_sertifikat()`** memunculkan "Sertifikat berhasil diunduh. (Simulasi)" tanpa mengunduh apa pun `Umum.php:588`.
+
+### Fitur "Minta Perbaikan" SRP2 (belum di-commit)
+
+Alurnya utuh dan benar, tapi **inti fiturnya tidak terlihat pemohon**: `init()` selalu melompat ke `step = 3` begitu pemohon punya pengajuan, sehingga kartu "Perbaikan diminta admin" beserta catatan admin di langkah 2 tidak pernah tampil saat wizard dibuka (`pages/pengembang/syarat.php:369`). Catatannya masih terlihat di `/akun`, jadi tidak hilang total. Bug kedua: setelah login lewat wizard, status & daftar dokumen tidak di-refresh — pengembang lama melihat 0/14 padahal server sudah lengkap (`syarat.php:424`).
+
+### Kandidat dibersihkan
+
+`Bank_desain.php` (error total, view tidak ada), `Kemitraan.php` & `Kabupaten.php` (halaman kosong/mockup, sudah digantikan `KemitraanPortal`), `Buka_peta.php` + baris load-nya di `Pengembang.php` (nol pemanggil), `Sikaper.php` (API explorer debug yang terbuka publik), route `pengaturan` (menunjuk method yang tidak ada → 404), dan berkas satu-kali-pakai yang masih ter-track di root: `apply_tokens.js`, `image.png`, `image copy.png` — melanggar aturan §3 kita sendiri.
 

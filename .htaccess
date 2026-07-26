@@ -1,5 +1,28 @@
 <IfModule mod_rewrite.c>
     RewriteEngine on
+
+    # ============================================================
+    # PROTEKSI BERKAS SENSITIF — JANGAN DIHAPUS
+    # ============================================================
+    # Aturan front-controller di bawah HANYA menangani URL yang tidak cocok
+    # dengan berkas nyata (RewriteCond !-f), jadi tanpa blok ini setiap berkas
+    # yang benar-benar ada di DocumentRoot tersaji apa adanya. Diverifikasi
+    # 26 Jul 2026 sebelum blok ini ditambahkan: GET /.env membalas HTTP 200 di
+    # staging DAN production — password DB tiga lingkungan, KPKP_DATA_KEY,
+    # KPKP_DATA_PEPPER, GOOGLE_CLIENT_SECRET, dan GEMINI_API_KEY bisa diunduh
+    # siapa saja. Lihat docs/engineering/PEMBACAAN_CODEBASE_26JUL2026.md.
+    #
+    # `.well-known` SENGAJA dikecualikan lewat negative lookahead: direktori itu
+    # dipakai proses perpanjangan sertifikat SSL (ACME). Memblokirnya membuat
+    # sertifikat gagal diperpanjang dan situs mati total saat kedaluwarsa.
+    RewriteRule (^|/)\.(?!well-known/)[^/]* - [F,L]
+
+    # Dokumentasi internal & script dev ikut ter-deploy tapi bukan untuk publik:
+    # memuat skema DB lengkap, dokumen audit keamanan, dan arsitektur internal.
+    RewriteRule ^(docs|dev-scripts)/ - [F,L]
+    RewriteRule ^[^/]+\.md$ - [F,L]
+    RewriteRule ^composer\.(json|lock)$ - [F,L]
+
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ index.php/$1 [L,QSA]
