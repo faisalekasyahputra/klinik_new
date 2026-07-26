@@ -13,7 +13,16 @@
 - **Instansi:** Dinas Perumahan Rakyat & Kawasan Permukiman Prov. Jawa Tengah
 - **Stack:** CodeIgniter 3.1.13 (PHP 8.x), MySQL/MariaDB, Tailwind CSS, Alpine.js, Leaflet.js
 - **Bahasa dokumentasi & komentar kode:** Bahasa Indonesia
-- **Production:** `https://palegreen-mink-703421.hostingersite.com/` — deploy via Git auto-deploy (GitHub → Hostinger webhook)
+- **Lingkungan (JANGAN tertukar — diverifikasi 26 Jul 2026):**
+
+  | Lingkungan | URL | Database | Deploy |
+  |---|---|---|---|
+  | **Production** | `https://palegreen-mink-703421.hostingersite.com/` | `u504551489_klinikpkp` | auto-deploy dari branch **`main`** |
+  | **Staging** | `https://floralwhite-lion-710022.hostingersite.com/` | `u504551489_klinikstg` | auto-deploy dari **branch fitur** — terbukti: push ke `feature/homepage-portal-v2` langsung membuat controller baru hidup di staging |
+
+  Kredensial ketiga lingkungan ada di `.env` sebagai blok terpisah (lokal aktif, staging & production dikomentari). **Perhatikan saat mengambil nilai dari `.env` lewat script:** ada tiga blok `DB_PASS`, mengambil yang "terakhir" akan mendapat password PRODUCTION. Ambil per nomor baris atau per blok.
+
+  **Urutan naik ke production:** merge ke `main` → tunggu deploy → **baru** jalankan migrasi ke DB production. Jangan dibalik; kode baru dengan skema lama akan error, sedangkan skema baru dengan kode lama aman selama migrasinya bersifat menambah.
 
 ## 2. Setup Lokal
 
