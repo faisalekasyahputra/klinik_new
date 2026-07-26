@@ -1,0 +1,108 @@
+# PRD — Verifikasi Admin untuk Pengajuan SRP2 (+ Prinsip Relasi Role↔Admin)
+
+**Status:** Draft, belum dikerjakan. Menindaklanjuti [`AUDIT_ROLE_PENGEMBANG.md`](../engineering/AUDIT_ROLE_PENGEMBANG.md) (26 Jul 2026), temuan #1–#5.
+**Konteks:** `PRD_SRP2_AKUN_PENGEMBANG.md` (dokumen lama) sudah menyebut "Admin menentukan Diterima atau Ditolak" sebagai bagian dari alur — tapi itu **belum pernah dibangun**. PRD ini menutup gap tersebut, sekaligus merapikan efek sampingnya (dua sumber data pengembang tersertifikasi, dua jalur pembuatan draft, upload di luar pola aman) supaya tidak diwarisi role-role baru yang lebih kompleks.
+
+---
+
+## Tujuan
+
+1. Memberi admin cara nyata untuk memverifikasi pengajuan SRP2 (`Pending` → `Diterima`/`Ditolak`) — tanpa ini, seluruh pipeline wizard SRP2 dead-end di database.
+2. Menyatukan `srp2_certified_developers` (direktori publik) dengan `srp2_registrations` (data pengajuan) jadi satu sumber kebenaran berbasis ID, bukan string-match nama.
+3. Menetapkan **prinsip baku**: setiap role baru yang menghasilkan data untuk ditinjau pihak lain wajib merancang sisi admin/reviewer-nya di fase yang sama — bukan susulan.
+
+## Pengguna
+
+- **Pengembang** (pemohon): mengirim pengajuan, menunggu keputusan, membaca `catatan_admin` kalau ditolak, memperbaiki dan mengirim ulang.
+- **Admin SRP2** (superadmin, lewat `Admin_Srp2.php` — tidak perlu role baru, `admin` sudah cukup lingkupnya untuk domain ini): meninjau dokumen, memutuskan, menulis catatan.
+
+## Alur Produk (target akhir)
+
+```
+Pengembang: Draft → [unggah 14 dokumen] → Kirim Pengajuan → Pending
+                                                                │
+                                        Admin buka daftar Pending, lihat dokumen
+                                                                │
+                                        ┌───────────────────────┴───────────────────────┐
+                                        ▼                                               ▼
+                                    Diterima                                        Ditolak
+                            (masuk direktori publik                        (catatan_admin wajib diisi,
+                             srp2_certified_developers                      pengembang bisa unggah ulang
+                             otomatis, bukan input manual)                  dokumen & kirim lagi)
+```
+
+## Fase Pengerjaan (urutan wajib, jangan dibalik)
+
+### Fase 0 — Keputusan data model (prasyarat, tidak ada kode)
+
+Sebelum Fase 1 dibangun, putuskan relasi `srp2_certified_developers` ↔ `srp2_registrations` (Temuan #4). Rekomendasi: **opsi (b)** dari audit — pertahankan `srp2_certified_developers` sebagai tabel direktori publik (sudah berisi 60+ nama historis yang tidak semuanya berasal dari `srp2_registrations`), tapi tambah kolom `srp2_registrations.certified_developer_id` (nullable, FK) yang diisi otomatis saat admin approve. Ini menghindari migrasi data besar (opsi a) sambil tetap membuat link berbasis ID untuk pengajuan baru ke depan. Data lama yang cuma ada di `srp2_certified_developers` (tanpa pengajuan) tetap valid apa adanya.
+
+**Keluaran Fase 0:** satu paragraf keputusan ditulis di sini (update PRD ini) sebelum Fase 1 mulai dikerjakan, supaya tidak ada agent yang mulai coding dengan asumsi berbeda.
+
+### Fase 1 — Antarmuka verifikasi admin (menutup Temuan #1, sekaligus #4)
+
+- `Admin_Srp2::pending()` (atau controller/method baru) — daftar `srp2_registrations WHERE status_verifikasi = 'Pending'`, urut `updated_at` (bukan `created_at`, konsisten dengan `Pengaturan.php`).
+- `Admin_Srp2::detail($id)` — tampilkan data pengajuan + 14 dokumen. Dokumen **tidak boleh** disajikan lewat path publik — endpoint baru (mis. `Admin_Srp2::lihat_dokumen($id, $document_key)`) yang: cek role admin (sudah dijamin `Admin_Controller`), ambil `stored_name` dari `srp2_documents WHERE registration_id = ?`, `readfile()` dari `private_uploads/srp2/{id}/`, set `Content-Type` dari `mime_type` tersimpan.
+- `Admin_Srp2::terima($id)` (POST) — set `status_verifikasi = 'Diterima'`, `catatan_admin = NULL`, **dan** upsert ke `srp2_certified_developers` (insert kalau `certified_developer_id` masih NULL, isi datanya dari `srp2_registrations`; update kalau sudah pernah ditolak lalu diterima ulang) + simpan `certified_developer_id` baliknya ke `srp2_registrations`.
+- `Admin_Srp2::tolak($id)` (POST) — wajib `catatan_admin` diisi (validasi server, jangan biarkan kosong — pengembang butuh tahu apa yang harus diperbaiki), set `status_verifikasi = 'Ditolak'`.
+- Setelah `Ditolak`, status lock di `Pengembang::simpan_dokumen()`/`kirim_pengajuan()` (yang sudah ada — lihat kode existing `in_array($status, ['Pending','Diterima'])`) otomatis membuka lagi karena `Ditolak` tidak ada di daftar itu — **tidak perlu kode tambahan di sisi pengembang**, sudah didesain begitu sejak sesi sebelumnya.
+
+**Kriteria penerimaan Fase 1:**
+1. Admin bisa melihat daftar Pending, membuka tiap dokumen tanpa URL publik yang bisa ditebak.
+2. Approve otomatis membuat/mengaitkan baris `srp2_certified_developers` — tidak ada input manual ganda.
+3. Reject tanpa catatan ditolak oleh server (bukan cuma validasi HTML `required`).
+4. Pengembang yang statusnya baru berubah bisa langsung unggah ulang dokumen kalau `Ditolak` (verifikasi manual: cek `readOnly` getter di `syarat.php` sudah menganggap `Ditolak` sebagai editable — ini sudah benar dari kode existing, tinggal dipastikan tidak regresi).
+
+### Fase 2 — Satukan pembuatan draft SRP2 (menutup Temuan #2)
+
+- Ekstrak logika "cari draft user, kalau tidak ada bikin baru" (saat ini terduplikasi di `Auth::do_login()` AJAX branch, `Auth::do_register()`, dan `Pengembang::syarat()`) jadi satu method, mis. `Auth_model::ensure_srp2_draft($user_id)`.
+- Panggil method itu juga di `Auth::save_onboarding()` setelah `role === 'pengembang'` berhasil disimpan — supaya jalur onboarding umum ikut membuat draft, konsisten dengan jalur wizard cepat.
+- **Kriteria penerimaan:** user yang jadi `pengembang` lewat `Auth/onboarding` langsung melihat item SRP2 di `/akun` tanpa harus mampir ke `Pengembang/syarat` dulu.
+
+### Fase 3 — Pindahkan upload KTP/SIUP onboarding ke direktori privat (menutup Temuan #3)
+
+- Ubah `Auth::_handle_uploads()`: `$upload_path` dari `FCPATH . 'uploads/documents/...'` menjadi `dirname(FCPATH) . '/private_uploads/onboarding/' . $user_id . '/'` — pola sama persis dengan `Pengembang::simpan_dokumen()`.
+- Tambah endpoint terautentikasi untuk menampilkan ulang dokumen ini kalau memang ada UI yang membutuhkannya (cek dulu apakah `usr_documents` pernah ditampilkan ke user mana pun saat ini — kalau tidak ada UI yang baca `get_user_documents()`, cukup pindah lokasi simpan saja tanpa bikin endpoint baru).
+- Berlaku untuk `pengembang`, `vendor`, `mahasiswa` sekaligus (satu method yang sama) — tidak perlu dipisah per role.
+
+### Fase 4 — Data integrity cleanup (menutup Temuan #5)
+
+- Migrasi baru: tambah `FOREIGN KEY (registration_id) REFERENCES srp2_registrations(id) ON DELETE CASCADE` di `srp2_documents`.
+- Audit `User_model::delete_user_account()` — pastikan menghapus `srp2_registrations` + file fisik `private_uploads/srp2/{id}/` milik user yang dihapus akunnya (kalau belum, tambahkan).
+
+---
+
+## Kebutuhan Fungsional (tambahan di luar yang sudah ada)
+
+- FR-08: hanya `role = 'admin'` yang bisa mengakses `Admin_Srp2::pending()/detail()/terima()/tolak()/lihat_dokumen()` (sudah otomatis lewat `Admin_Controller`, dicatat di sini supaya eksplisit sebagai kontrak).
+- FR-09: `tolak()` menolak request tanpa `catatan_admin` non-kosong (validasi server).
+- FR-10: `terima()`/`tolak()` idempotent terhadap status yang sudah final — kalau pengajuan sudah `Diterima`, `terima()` lagi tidak boleh dobel-insert ke `srp2_certified_developers` (cek `certified_developer_id` dulu).
+- FR-11: dokumen SRP2 hanya bisa dibuka lewat endpoint admin yang memverifikasi role, tidak pernah lewat path/URL yang bisa diakses tanpa autentikasi.
+
+## Keamanan dan Batasan
+
+- Semua aksi admin tetap POST-only untuk perubahan status (konsisten dengan pola `Admin_Srp2::save()/delete()` yang sudah ada).
+- Endpoint lihat dokumen **wajib** cek role admin di setiap request (bukan cuma di constructor kalau ada method lain yang bisa dipanggil tanpa lewat constructor — tapi karena `Admin_Controller::__construct()` sudah redirect kalau bukan admin, ini otomatis aman selama method baru ditaruh di class yang extend `Admin_Controller`).
+- Tidak mengubah validasi upload yang sudah ada (whitelist ekstensi, cek MIME asli, cap ukuran) — hanya menambah cara *membaca* file yang sudah tersimpan.
+- `catatan_admin` ditampilkan apa adanya ke pengembang (sudah begitu di `syarat.php` step 2 kartu "Ditolak") — pastikan input admin di-escape saat render (cek `htmlspecialchars` di view, bukan tanggung jawab controller).
+
+## Kriteria Penerimaan Keseluruhan
+
+1. Pengajuan `Pending` bisa diputuskan admin tanpa `UPDATE` manual ke database.
+2. Direktori publik pengembang tersertifikasi dan data pengajuan tidak lagi dua sumber kebenaran terpisah untuk pengajuan baru.
+3. Jalur onboarding umum dan wizard cepat sama-sama langsung punya draft SRP2.
+4. Tidak ada dokumen sensitif (KTP, SIUP, dokumen SRP2) yang tersimpan di direktori yang bisa diakses HTTP langsung.
+
+---
+
+## Prinsip Umum untuk Role Baru (dari diskusi audit, berlaku ke depan)
+
+Sebelum menambah role baru yang menghasilkan data (pengajuan, unggahan, permintaan apa pun), jawab dulu:
+
+1. **Apakah data ini perlu status/keputusan dari pihak lain?** Kalau ya, sisi admin/reviewer WAJIB dirancang di PRD yang sama — jangan dijadwalkan "nanti", karena riwayat proyek ini menunjukkan "nanti" itu tidak pernah datang sampai diaudit ulang (persis kasus SRP2 ini).
+2. **Siapa yang berwenang meninjau?** Superadmin (`admin`), atau role admin ter-scope (`admin_kabkota`/`admin_bidang`) kalau datanya perlu dibatasi wilayah/bidang — tentukan dari awal, karena base controller-nya beda (`Admin_Controller` vs `Admin_Kabkota_Controller`/`Admin_Bidang_Controller`).
+3. **Di mana file/dokumen disimpan?** Selalu `private_uploads/{fitur}/{id}/` di luar webroot, disajikan lewat endpoint terautentikasi — tidak ada pengecualian, termasuk untuk role yang "kelihatannya sepele".
+4. **Apakah ada dua jalur yang bisa menghasilkan role/data yang sama?** Kalau ya (mis. daftar cepat vs onboarding umum), pastikan logika pembuatan data pendukungnya (draft, baris relasi) satu fungsi yang dipanggil dari semua jalur — bukan disalin ulang tiap jalur baru ditambah.
+5. **Apakah tabel baru perlu FK ke tabel induk?** Kalau ada relasi "milik satu pengajuan/akun", tambahkan FK constraint (`ON DELETE CASCADE` kalau memang harus ikut terhapus) sejak migrasi pertama — jangan ditunda sampai audit menemukan orphan row.
+
+Checklist ini bisa disalin ke PRD role baru sebagai bagian "Relasi Admin" wajib diisi sebelum implementasi dimulai.
