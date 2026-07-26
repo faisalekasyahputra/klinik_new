@@ -30,6 +30,7 @@ Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya
 - **Dashboard terpadu** Fase 0–4 + B8 → [`ANCHOR_DASHBOARD_TERPADU.md`](docs/architecture/ANCHOR_DASHBOARD_TERPADU.md), lihat §17
 - **PRD verifikasi admin SRP2** Fase 0–4 → [`PRD_VERIFIKASI_ADMIN_SRP2.md`](docs/product/PRD_VERIFIKASI_ADMIN_SRP2.md)
 - **Semua unggahan pindah ke penyimpanan privat** → lihat peringatan di §17 checklist poin 4
+- **Fitur "Minta Perbaikan" SRP2** (27 Jul 2026, `5db1ba4`) — admin bisa mengembalikan pengajuan ke pemohon dengan catatan wajib, tanpa mencap "Ditolak". Diuji di browser sungguhan; detail & aturan turunannya di §18
 
 ### 0c. Yang masih terbuka
 
@@ -459,9 +460,15 @@ Diuji lewat HTTP nyata di lokal (login `warga@example.com`, POST betulan). Bukan
 
 Empat lokasi lolos dari pembersihan B2/B11: halaman **Pengaturan Sistem admin** seluruhnya mockup (nilai palsu, tombol Simpan di luar form, toggle mati) `admin/settings/index.php`; **Statistika** menampilkan angka dummy berlabel "Sumber: Simperum/Sikumbang/Sikaper" dengan multiplier `crc32()` per kabupaten `Statistika.php:26`; **`listkabupaten`** punya tabel intervensi fiktif tanpa label simulasi; dan **`Umum::download_sertifikat()`** memunculkan "Sertifikat berhasil diunduh. (Simulasi)" tanpa mengunduh apa pun `Umum.php:588`.
 
-### Fitur "Minta Perbaikan" SRP2 (belum di-commit)
+### ✅ Fitur "Minta Perbaikan" SRP2 — SELESAI & terverifikasi (27 Jul 2026, commit `5db1ba4`)
 
-Alurnya utuh dan benar, tapi **inti fiturnya tidak terlihat pemohon**: `init()` selalu melompat ke `step = 3` begitu pemohon punya pengajuan, sehingga kartu "Perbaikan diminta admin" beserta catatan admin di langkah 2 tidak pernah tampil saat wizard dibuka (`pages/pengembang/syarat.php:369`). Catatannya masih terlihat di `/akun`, jadi tidak hilang total. Bug kedua: setelah login lewat wizard, status & daftar dokumen tidak di-refresh — pengembang lama melihat 0/14 padahal server sudah lengkap (`syarat.php:424`).
+Admin punya keputusan ketiga selain Terima/Tolak: mengembalikan pengajuan ke `Draft` dengan catatan wajib, dari status Pending maupun Diterima. Baris direktori publik sengaja tidak disentuh saat dibuka kembali.
+
+Dua bug yang membuatnya tidak berfungsi sudah diperbaiki, keduanya berakar sama: **keadaan SRP2 pemohon dulu hanya dihitung di `Pengembang::syarat()`** sehingga jalur lain melihat keadaan tamu. Sekarang `Auth_model::srp2_state()` jadi **satu-satunya sumber**, dipakai `Pengembang::syarat()` maupun cabang AJAX `Auth::do_login()`.
+
+> 📌 **Kalau menambah jalur baru yang perlu tahu status pengajuan pemohon, panggil `srp2_state()` — jangan query sendiri.** Duplikasi query itulah yang dulu membuat wizard menampilkan 0/14 dokumen padahal server sudah lengkap.
+
+Diverifikasi di browser sungguhan, empat cabang: Draft+catatan mendarat di kartu perbaikan, login lewat wizard menampilkan 14/14, Draft biasa dan Diterima tidak berubah perilakunya.
 
 ### Kandidat dibersihkan
 
