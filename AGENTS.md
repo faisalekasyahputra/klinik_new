@@ -413,6 +413,12 @@ Ringkasan yang paling berdampak dari 141 temuan. Detail lengkap per subsistem: [
 
 > **Cara membaca:** yang bertanda ⏳ **belum diverifikasi runtime** — saat pembacaan dibuat, Apache & MySQL lokal mati. Konfirmasi dulu sebelum memperbaiki, jangan langsung percaya. Sisanya sudah diverifikasi live atau terbukti mutlak dari kode.
 
+> ⚠️ **Batas pembacaan ini — "141 temuan" BUKAN berarti "sudah tidak ada masalah lain".** Cakupannya 100% untuk controller/model/library/helper/migrasi, tapi **empat berkas yang HIDUP tidak terbaca sama sekali**, jadi masalah di sana tidak akan muncul di daftar mana pun:
+> - `pages/profil/sejarah_visi.php`, `tugas_pokok.php`, `struktur_organisasi.php` — dirender `Index.php` baris 515/521/527
+> - `pages/perumahan/housing_carrier1.php` (40KB) — dirender `Umum::housing()`, form dengan `action="#"` yang belum tersambung backend
+>
+> Belum ada yang memeriksa keempatnya. Kalau menyentuh area itu, baca dulu — jangan berasumsi sudah teraudit.
+
 ### Keamanan
 
 | Temuan | Lokasi |
