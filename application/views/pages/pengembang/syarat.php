@@ -173,12 +173,6 @@
 
                         <!-- Panel Masuk -->
                         <form x-show="authTab === 'masuk'" x-cloak @submit.prevent="doLogin()" class="space-y-3">
-                            <button type="button" @click="$refs.loginEmail.value='pengembang@example.com'; $refs.loginPassword.value='password'"
-                                    class="w-full rounded-lg p-2.5 text-left transition-colors" style="background:rgba(0,163,181,.06);border:1px dashed rgba(0,163,181,.3)"
-                                    onmouseover="this.style.background='rgba(0,163,181,.12)'" onmouseout="this.style.background='rgba(0,163,181,.06)'">
-                                <span class="text-[9px] font-bold uppercase tracking-wider" style="color:var(--teal)"><i class="fa-solid fa-flask mr-1"></i>Kredensial Demo (klik untuk isi otomatis)</span>
-                                <span class="mt-0.5 block text-[10px] font-semibold" style="color:var(--portal-text)">E: pengembang@example.com &nbsp;·&nbsp; P: password</span>
-                            </button>
                             <div x-show="authError" x-cloak class="rounded-lg px-3 py-2 text-[11px] font-semibold" style="background:rgba(220,38,38,.08);color:#dc2626" x-text="authError"></div>
                             <label class="block text-[11px] font-bold">Email atau Username <span style="color:#dc2626">*</span>
                                 <input x-ref="loginEmail" autocomplete="username" required placeholder="Email atau username" class="mt-1 block w-full rounded-lg px-3 py-2.5 text-xs font-normal outline-none" style="background:var(--portal-bg);border:1px solid var(--portal-border)">

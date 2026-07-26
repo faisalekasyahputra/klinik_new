@@ -3,6 +3,13 @@ defined('BASEPATH') || exit('No direct script access allowed');
 
 class Auth extends MY_Controller {
 
+    /**
+     * Batas pendaftaran per IP. Longgar untuk manusia (satu kantor/warnet ber-NAT
+     * tetap muat), ketat untuk skrip. Lihat rate_limit_sisa() di MY_Controller.
+     */
+    const MAX_REGISTER_PER_WINDOW = 5;
+    const REGISTER_WINDOW_SECONDS = 600;
+
     protected $google_client;
 
     // reCAPTCHA keys (set your own in .env or config)
@@ -223,6 +230,22 @@ class Auth extends MY_Controller {
         // Pengembang/daftar terpisah (diarsipkan, cuma jadi redirect ke sini).
         $redirect_target  = $is_srp2 ? 'Pengembang/syarat' : 'Auth/register';
 
+        // Batas laju pendaftaran per IP. Tanpa ini satu skrip bisa menciptakan
+        // akun pengembang aktif berulang-ulang, masing-masing berhak membuka
+        // pengajuan ke meja admin — meja verifikasi yang tercemar membatalkan
+        // nilai seluruh mesin verifikasi. reCAPTCHA TIDAK bisa diandalkan
+        // sebagai gantinya: verifikasinya dilewati seluruhnya kalau kuncinya
+        // kosong, dan di .env lokal memang kosong. Roadmap T0 butir 3.
+        //
+        // Dicatat pada SETIAP percobaan, bukan cuma yang gagal — di sini justru
+        // pendaftaran yang BERHASIL berulang kali yang jadi penyalahgunaannya.
+        $sisa = $this->rate_limit_sisa('register', self::MAX_REGISTER_PER_WINDOW, self::REGISTER_WINDOW_SECONDS);
+        if ($sisa > 0) {
+            $this->_register_fail($is_ajax, 'Terlalu banyak percobaan pendaftaran. Coba lagi dalam ' . $sisa . ' detik.', $redirect_target);
+            return;
+        }
+        $this->rate_limit_catat('register', self::REGISTER_WINDOW_SECONDS);
+
         // Validation
         if (empty($email) || empty($password) || empty($password_confirm)) {
             $this->_register_fail($is_ajax, 'Semua field wajib diisi.', $redirect_target);
@@ -258,7 +281,12 @@ class Auth extends MY_Controller {
         // Check if email already exists
         $existing = $this->auth_model->find_by_email($email);
         if ($existing) {
-            $this->_register_fail($is_ajax, 'Email sudah terdaftar. Silakan login atau gunakan email lain.', $redirect_target);
+            // Sengaja TIDAK menyatakan bahwa emailnya sudah terdaftar: pesan
+            // seperti itu menjadikan formulir pendaftaran alat pengecek
+            // keanggotaan — siapa pun bisa menguji daftar email untuk tahu
+            // siapa saja punya akun di sini. Pemilik akun yang sah tetap
+            // terbantu lewat tautan Masuk / Lupa Sandi.
+            $this->_register_fail($is_ajax, 'Pendaftaran tidak dapat diproses dengan email tersebut. Kalau Anda sudah punya akun, silakan masuk.', $redirect_target);
             return;
         }
 

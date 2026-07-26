@@ -86,13 +86,17 @@
                                     <span class="text-zinc-400 font-semibold group-hover:text-zinc-300 transition-colors"><?= $dev['kabupaten'] ?></span>
                                 </td>
                                 <td class="px-8 py-5 text-sm">
-                                    <?php if ($dev['sp2_status'] === 'Belum Terdata'): ?>
-                                        <span class="inline-flex items-center px-3 py-1 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg font-bold text-[10px] uppercase tracking-wider shadow-sm group-hover:border-red-500/40 transition-colors">
-                                            <i class="fa-solid fa-circle-xmark mr-1.5"></i> Belum Terdata
+                                    <?php // Penanda kini dari direktori resmi (status_aktif = 1), bukan
+                                          // dari keberadaan baris pengajuan berstatus apa pun. NIB tidak
+                                          // lagi ditampilkan — kolom itu milik baris pengajuan dan hampir
+                                          // selalu kosong; echo lamanya juga tanpa escape. ?>
+                                    <?php if (empty($dev['sp2_tersertifikasi'])): ?>
+                                        <span class="inline-flex items-center px-3 py-1 bg-zinc-500/10 text-zinc-400 border border-zinc-500/20 rounded-lg font-bold text-[10px] uppercase tracking-wider shadow-sm transition-colors">
+                                            <i class="fa-solid fa-circle-minus mr-1.5"></i> Belum Terdata
                                         </span>
                                     <?php else: ?>
                                         <span class="inline-flex items-center px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-lg font-bold text-[10px] uppercase tracking-wider shadow-sm group-hover:border-emerald-500/40 transition-colors">
-                                            <i class="fa-solid fa-circle-check mr-1.5"></i> Terdata (NIB: <?= $dev['sp2_status'] ?>)
+                                            <i class="fa-solid fa-circle-check mr-1.5"></i> Tersertifikasi SRP2
                                         </span>
                                     <?php endif; ?>
                                 </td>

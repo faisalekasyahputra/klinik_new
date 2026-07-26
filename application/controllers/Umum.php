@@ -455,23 +455,22 @@ class Umum extends MY_Controller {
 	public function pengembang() {
 		$items = $this->_get_tapera_data();
 
-		$local_sp2 = [];
-		if ($this->db->table_exists('srp2_registrations')) {
-			$local_sp2 = $this->db->get('srp2_registrations')->result_array();
+		// Hanya direktori resmi yang boleh jadi dasar "tersertifikasi" — sama
+		// dengan Pengembang::sertifikasi(). Dulu di sini SELURUH srp2_registrations
+		// dibaca tanpa filter status, lalu kolom `nib` dipakai sebagai penanda:
+		// draft yang belum pernah dikirim pun tampil "Terdata" di halaman publik.
+		// Roadmap T0 butir 2.
+		$nama_tersertifikasi = [];
+		if ($this->db->table_exists('srp2_certified_developers')) {
+			$rows = $this->db->select('nama_perusahaan')->where('status_aktif', 1)
+				->get('srp2_certified_developers')->result_array();
+			foreach ($rows as $r) { $nama_tersertifikasi[strtolower($r['nama_perusahaan'])] = TRUE; }
 		}
 
-		$developers = array_map(function($item) use ($local_sp2) {
+		$developers = array_map(function($item) use ($nama_tersertifikasi) {
 			$pengembang_nama = $item['pengembang']['nama'] ?? '-';
-			$sp2_status = "Belum Terdata";
-			
-			if ($pengembang_nama !== '-') {
-				foreach ($local_sp2 as $local) {
-					if (strtolower($pengembang_nama) === strtolower($local['nama_perusahaan'])) {
-						$sp2_status = $local['nib'];
-						break;
-					}
-				}
-			}
+			$sp2_tersertifikasi = $pengembang_nama !== '-'
+				&& isset($nama_tersertifikasi[strtolower($pengembang_nama)]);
 
 			return [
 				'nama_perumahan' => $item['namaPerumahan'] ?? '-',
@@ -480,7 +479,7 @@ class Umum extends MY_Controller {
 				'kabupaten'      => $item['wilayah']['kabupaten'] ?? '-',
 				'telepon'        => $item['kantorPemasaran'][0]['noTelp'] ?? '-',
 				'email'          => $item['kantorPemasaran'][0]['email'] ?? '-',
-				'sp2_status'     => $sp2_status
+				'sp2_tersertifikasi' => $sp2_tersertifikasi,
 			];
 		}, $items);
 
@@ -559,10 +558,19 @@ class Umum extends MY_Controller {
 			];
 		}
 
-		// Cek juga di srp2_registrations (jika ada)
+		// Cap "Terverifikasi SRP2" HANYA boleh dari direktori resmi pengembang
+		// bersertifikat — sumber yang SAMA dengan Pengembang::sertifikasi().
+		//
+		// Dulu di sini `get_where('srp2_registrations', ['nama_perusahaan' => $nama])`
+		// TANPA filter status: draft yang belum pernah dikirim pun ikut dicap
+		// terverifikasi di halaman publik, dan siapa pun bisa mendaftar memakai
+		// nama perusahaan orang lain lalu mendapat cap itu. Roadmap T0 butir 2.
 		$local_data = [];
-		if ($this->db->table_exists('srp2_registrations')) {
-			$local_data = $this->db->get_where('srp2_registrations', ['nama_perusahaan' => $nama])->row_array();
+		if ($this->db->table_exists('srp2_certified_developers')) {
+			$local_data = $this->db->get_where('srp2_certified_developers', [
+				'nama_perusahaan' => $nama,
+				'status_aktif'    => 1,
+			])->row_array();
 		}
 
 		$datacontent['nama_pengembang'] = $nama;
@@ -575,17 +583,4 @@ class Umum extends MY_Controller {
 	}
 
 
-	public function download_sertifikat($nama = '') {
-		$nama = $this->input->get('nama') ? urldecode($this->input->get('nama')) : urldecode($nama);
-		$nama = trim($nama);
-
-		if (!$this->is_logged_in()) {
-			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu untuk mengunduh sertifikat.');
-			redirect('Auth/login');
-			return;
-		}
-
-		$this->session->set_flashdata('success', 'Sertifikat berhasil diunduh. (Simulasi)');
-		redirect('Umum/detail_pengembang?nama=' . urlencode($nama));
-	}
 }

@@ -457,6 +457,47 @@ class MY_Controller extends CI_Controller {
      * @param string $path The path or URL to validate
      * @return string Safe redirect path (internal only)
      */
+    /**
+     * Pembatas laju per-IP untuk endpoint publik. Satu pola untuk seluruh repo —
+     * jangan bikin varian baru, tambahkan $scope saja.
+     *
+     * Dipakai lookup tiket publik (scope 'tiket') dan pendaftaran akun
+     * (scope 'register'). Endpoint publik apa pun yang bisa dipanggil berulang
+     * oleh anonim wajib lewat sini.
+     *
+     * @param  string $scope    nama endpoint, memisahkan penghitung antar fitur
+     * @param  int    $maks     percobaan yang diizinkan dalam satu jendela
+     * @param  int    $jendela  panjang jendela dalam detik
+     * @return int    detik sisa sampai boleh mencoba lagi; 0 = belum terblokir
+     */
+    protected function rate_limit_sisa($scope, $maks, $jendela = 60) {
+        $kunci = hash('sha256', $scope . ':' . $this->input->ip_address());
+        $row = $this->db
+            ->select('failed_attempts, GREATEST(1, ' . (int) $jendela . ' - TIMESTAMPDIFF(SECOND, window_started_at, NOW())) AS retry_after', FALSE)
+            ->where('limit_key', $kunci)
+            ->where('window_started_at > DATE_SUB(NOW(), INTERVAL ' . (int) $jendela . ' SECOND)', NULL, FALSE)
+            ->get('sys_rate_limits')
+            ->row_array();
+
+        return $row && (int) $row['failed_attempts'] >= $maks ? (int) $row['retry_after'] : 0;
+    }
+
+    /**
+     * Catat satu percobaan pada penghitung $scope. Jendela yang sudah lewat
+     * di-reset, bukan diperpanjang — supaya pemblokiran tidak berlipat sendiri.
+     */
+    protected function rate_limit_catat($scope, $jendela = 60) {
+        $kunci = hash('sha256', $scope . ':' . $this->input->ip_address());
+        return $this->db->query(
+            'INSERT INTO sys_rate_limits (limit_key, window_started_at, failed_attempts)
+             VALUES (?, NOW(), 1)
+             ON DUPLICATE KEY UPDATE
+                failed_attempts = IF(window_started_at <= DATE_SUB(NOW(), INTERVAL ' . (int) $jendela . ' SECOND), 1, failed_attempts + 1),
+                window_started_at = IF(window_started_at <= DATE_SUB(NOW(), INTERVAL ' . (int) $jendela . ' SECOND), NOW(), window_started_at)',
+            [$kunci]
+        );
+    }
+
     protected function sanitize_redirect($path) {
         if (empty($path)) {
             return '';
