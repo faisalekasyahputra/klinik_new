@@ -61,4 +61,22 @@ class Admin_Aduan extends Admin_Controller {
         $data['bidang_filter'] = $bidang_filter;
         $this->render_admin('admin/aduan/index', $data);
     }
+
+    /**
+     * Sajikan lampiran aduan ke superadmin (lintas bidang, sesuai kewenangan).
+     * Ber-guard lewat Admin_Controller; berkas dibaca dari private_uploads/,
+     * bukan URL publik. Bandingkan Admin_Bidang::lihat_lampiran() yang
+     * WHERE-nya ganda karena memang ter-scope.
+     */
+    public function lihat_lampiran($id = NULL)
+    {
+        if ( ! is_numeric($id)) { show_404(); }
+
+        $row = $this->db->select('lampiran')->get_where('aduan', ['id' => (int) $id])->row();
+        if ( ! $row || empty($row->lampiran)) { show_404(); }
+
+        $ext = strtolower(pathinfo($row->lampiran, PATHINFO_EXTENSION));
+        $mime = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'][$ext] ?? 'application/octet-stream';
+        $this->serve_private_file('aduan', (int) $id, $row->lampiran, $mime);
+    }
 }

@@ -35,6 +35,26 @@ class Admin_Bidang extends Admin_Bidang_Controller {
         $this->render_scoped_admin('admin_bidang/dashboard', $data);
     }
 
+    /**
+     * Sajikan lampiran satu aduan ke admin bidang. Anti-IDOR: WHERE ganda
+     * (id + bidang dari sesi) — admin bidang lain tidak bisa membuka lampiran
+     * di luar bidangnya walau tahu ID-nya. Berkas dibaca dari private_uploads/
+     * (luar webroot), bukan URL publik.
+     */
+    public function lihat_lampiran($id = NULL)
+    {
+        if ( ! is_numeric($id)) { show_404(); }
+
+        $row = $this->db->select('lampiran')
+            ->where('id', (int) $id)->where('bidang', $this->my_bidang_kode)
+            ->get('aduan')->row();
+        if ( ! $row || empty($row->lampiran)) { show_404(); }
+
+        $ext = strtolower(pathinfo($row->lampiran, PATHINFO_EXTENSION));
+        $mime = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'][$ext] ?? 'application/octet-stream';
+        $this->serve_private_file('aduan', (int) $id, $row->lampiran, $mime);
+    }
+
     public function update_status($id = NULL)
     {
         if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }

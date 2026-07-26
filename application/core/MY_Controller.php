@@ -101,6 +101,131 @@ class MY_Controller extends CI_Controller {
     }
 
     /**
+     * Simpan satu berkas unggahan ke DIREKTORI PRIVAT di luar webroot.
+     *
+     * Satu-satunya pintu unggah yang boleh dipakai fitur baru. Sebelum ini ada
+     * tiga jalur berbeda yang semuanya menyimpan di dalam webroot
+     * (Auth::_handle_uploads, Umum::simpan_aduan, KemitraanPortal::simpan) —
+     * KTP, KTM, dan lampiran aduan bisa diakses lewat HTTP kalau nama filenya
+     * bocor. Nama acak bukan kontrol akses. Lihat Pola A di
+     * docs/engineering/AUDIT_SISTEM_ROLE_RINGKASAN.md.
+     *
+     * Validasi berlapis, meniru pola yang sudah terbukti di
+     * Pengembang::simpan_dokumen(): whitelist ekstensi + cek MIME ASLI lewat
+     * finfo (bukan percaya Content-Type kiriman browser) + batas ukuran +
+     * nama file acak. File disimpan di private_uploads/{domain}/{pemilik}/.
+     *
+     * @param string $field     nama field di $_FILES
+     * @param string $domain    subfolder, mis. 'aduan' | 'kemitraan' | 'onboarding'
+     * @param mixed  $owner_id  ID pemilik (dipakai sebagai nama subfolder)
+     * @param string $error     diisi pesan kegagalan (by-reference)
+     * @param int    $max_bytes batas ukuran, default 5 MB
+     * @return string|false nama file tersimpan, atau FALSE kalau gagal/tidak ada
+     */
+    protected function store_private_upload($field, $domain, $owner_id, &$error = NULL, $max_bytes = 5242880) {
+        if (empty($_FILES[$field]['name'])) { return FALSE; }
+
+        $file = $_FILES[$field];
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $error = 'Berkas gagal diunggah.';
+            return FALSE;
+        }
+        if ($file['size'] > $max_bytes) {
+            $error = 'Ukuran berkas melebihi ' . round($max_bytes / 1048576, 1) . ' MB.';
+            return FALSE;
+        }
+
+        $allowed = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'];
+        $ext  = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
+        if ( ! isset($allowed[$ext]) || $mime !== $allowed[$ext]) {
+            $error = 'Jenis berkas tidak didukung. Gunakan PDF, JPG, atau PNG.';
+            return FALSE;
+        }
+
+        $this->ensure_private_uploads_protected();
+        $dir = $this->private_upload_dir($domain, $owner_id);
+        if ( ! is_dir($dir) && ! mkdir($dir, 0700, TRUE)) {
+            $error = 'Gagal menyiapkan penyimpanan berkas.';
+            return FALSE;
+        }
+
+        $nama_simpan = bin2hex(random_bytes(16)) . '.' . $ext;
+        if ( ! move_uploaded_file($file['tmp_name'], $dir . $nama_simpan)) {
+            $error = 'Berkas gagal disimpan.';
+            return FALSE;
+        }
+        return $nama_simpan;
+    }
+
+    /**
+     * Pastikan akar private_uploads/ punya .htaccess penolak akses.
+     *
+     * KENAPA PERLU, padahal namanya sudah "private": nama direktori tidak
+     * menjamin apa pun. Di layout XAMPP lokal, dirname(FCPATH) ternyata SAMA
+     * DENGAN DocumentRoot Apache (C:/xampp/htdocs), sehingga private_uploads/
+     * benar-benar tersaji lewat HTTP — diverifikasi langsung: dokumen SRP2
+     * bisa diunduh tanpa login sama sekali. Asumsi "di luar webroot" yang
+     * tertulis di AGENTS.md §9 tidak berlaku universal, tergantung di mana
+     * aplikasi dipasang relatif terhadap DocumentRoot.
+     *
+     * Ditulis oleh KODE (bukan disiapkan manual) karena private_uploads/ ada
+     * di luar repo git — file yang ditaruh manual tidak akan ikut ter-deploy.
+     *
+     * BATAS: .htaccess hanya dipatuhi Apache/LiteSpeed. Kalau suatu saat
+     * pindah ke nginx, proteksi ini TIDAK berlaku dan wajib diganti aturan
+     * server (atau pindahkan direktorinya benar-benar keluar dari DocumentRoot).
+     */
+    protected function ensure_private_uploads_protected() {
+        $akar = dirname(FCPATH) . DIRECTORY_SEPARATOR . 'private_uploads' . DIRECTORY_SEPARATOR;
+        if ( ! is_dir($akar) && ! @mkdir($akar, 0700, TRUE)) { return; }
+
+        $htaccess = $akar . '.htaccess';
+        if (is_file($htaccess)) { return; }
+
+        @file_put_contents($htaccess, implode("\n", [
+            '# Dibuat otomatis oleh MY_Controller::ensure_private_uploads_protected().',
+            '# Berkas di sini (KTP, KTM, lampiran aduan, dokumen SRP2) HANYA boleh',
+            '# disajikan lewat endpoint ber-guard, tidak pernah diakses langsung.',
+            '# JANGAN dihapus. Catatan: hanya berlaku di Apache/LiteSpeed.',
+            '<IfModule mod_authz_core.c>',
+            '    Require all denied',
+            '</IfModule>',
+            '<IfModule !mod_authz_core.c>',
+            '    Order allow,deny',
+            '    Deny from all',
+            '</IfModule>',
+        ]) . "\n");
+    }
+
+    /**
+     * Path direktori privat satu pemilik. Nama domain & owner di-sanitasi
+     * supaya tidak bisa dipakai keluar dari private_uploads/ lewat "..".
+     */
+    protected function private_upload_dir($domain, $owner_id) {
+        $domain   = preg_replace('/[^a-z0-9_]/i', '', (string) $domain);
+        $owner_id = preg_replace('/[^a-z0-9_]/i', '', (string) $owner_id);
+        return dirname(FCPATH) . DIRECTORY_SEPARATOR . 'private_uploads' . DIRECTORY_SEPARATOR
+            . $domain . DIRECTORY_SEPARATOR . $owner_id . DIRECTORY_SEPARATOR;
+    }
+
+    /**
+     * Sajikan berkas privat ke pemanggil. Controller pemanggil WAJIB sudah
+     * memastikan yang meminta memang berhak (guard role + scope) SEBELUM
+     * memanggil ini — method ini tidak tahu apa-apa soal otorisasi.
+     *
+     * basename() dipakai pada nama file supaya nilai dari DB yang (entah
+     * bagaimana) memuat path tidak bisa membaca file di luar direktorinya.
+     */
+    protected function serve_private_file($domain, $owner_id, $stored_name, $mime = 'application/octet-stream') {
+        $path = $this->private_upload_dir($domain, $owner_id) . basename((string) $stored_name);
+        if (empty($stored_name) || ! is_file($path)) { show_404(); return; }
+
+        $this->output->set_content_type($mime);
+        readfile($path);
+    }
+
+    /**
      * Data tabel antrean perumahan (cari + filter status + urut + paginasi,
      * semuanya server-side). Dipakai DUA controller yang merender view
      * `admin/antrean/dashboard.php` yang sama:

@@ -33,6 +33,25 @@ class Admin_Kemitraan extends Admin_Controller {
         $this->render_admin('admin/kemitraan/index', $data);
     }
 
+    /**
+     * Sajikan surat pengantar satu pendaftaran ke admin. Ber-guard lewat
+     * Admin_Controller, baca dari private_uploads/ (luar webroot).
+     * Menutup AUDIT_ROLE_MAHASISWA.md temuan #4: dulu admin memutuskan
+     * terima/tolak tanpa bisa membuka dokumen pendukung sama sekali.
+     */
+    public function lihat_dokumen($id = NULL)
+    {
+        if ( ! is_numeric($id)) { show_404(); }
+
+        $row = $this->db->select('file_surat_pengantar')
+            ->get_where('kkn_magang_pendaftaran', ['id' => (int) $id])->row();
+        if ( ! $row || empty($row->file_surat_pengantar)) { show_404(); }
+
+        $ext = strtolower(pathinfo($row->file_surat_pengantar, PATHINFO_EXTENSION));
+        $mime = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'][$ext] ?? 'application/octet-stream';
+        $this->serve_private_file('kemitraan', (int) $id, $row->file_surat_pengantar, $mime);
+    }
+
     public function proses($id = NULL)
     {
         if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }

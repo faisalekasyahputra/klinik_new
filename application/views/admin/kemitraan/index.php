@@ -31,7 +31,14 @@
                     </td>
                     <td class="px-6 py-4 uppercase text-xs font-bold"><?= html_escape($r->jenis) ?></td>
                     <td class="px-6 py-4"><?= html_escape($r->instansi_asal) ?></td>
-                    <td class="px-6 py-4"><?= html_escape($r->divisi_atau_tema ?: '-') ?></td>
+                    <td class="px-6 py-4">
+                        <?= html_escape($r->divisi_atau_tema ?: '-') ?>
+                        <?php if (!empty($r->file_surat_pengantar)): ?>
+                        <div class="mt-1"><a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . $r->id) ?>" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> Surat pengantar</a></div>
+                        <?php else: ?>
+                        <div class="mt-1 text-[10px] text-gray-400 dark:text-brand-muted/60">Tanpa surat pengantar</div>
+                        <?php endif; ?>
+                    </td>
                     <td class="px-6 py-4">
                         <?php
                             // Peta status domain KKN/Magang -> kelas komponen bersama.

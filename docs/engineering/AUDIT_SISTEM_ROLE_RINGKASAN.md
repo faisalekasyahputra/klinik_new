@@ -25,6 +25,41 @@ Ketiganya sama-sama di dalam webroot (bisa diakses HTTP langsung kalau nama file
 
 ---
 
+### Status Pola A: SUDAH DIPERBAIKI (26 Jul 2026) — plus temuan yang lebih besar di baliknya
+
+Ketiga jalur unggah kini lewat satu helper `MY_Controller::store_private_upload()`
+(validasi ekstensi + MIME asli via `finfo` + batas ukuran + nama acak) dan
+disajikan lewat endpoint ber-guard: `Admin_Kemitraan::lihat_dokumen()`,
+`Admin_Bidang::lihat_lampiran()` (anti-IDOR WHERE ganda), `Admin_Aduan::lihat_lampiran()`.
+Dokumen onboarding tidak dibuatkan endpoint karena memang tidak ada UI yang
+membacanya (`get_user_documents()` tidak pernah dipanggil). Tidak ada migrasi
+data: saat perbaikan, direktori publik kosong dan nol baris DB menunjuk ke sana.
+
+Efek samping yang ikut tertutup: admin KKN/Magang dan admin bidang kini bisa
+membuka berkas pendukung — sebelumnya memutuskan terima/tolak tanpa bisa
+melihat buktinya sama sekali (AUDIT_ROLE_MAHASISWA.md #4).
+
+**🔴 Temuan lebih besar yang muncul saat verifikasi:** asumsi "`private_uploads/`
+ada di luar webroot" — yang jadi dasar kontrak keamanan di `AGENTS.md` §9 dan
+`SRP2_ACCOUNT_FLOW.md` — **tidak benar di layout ini**. `dirname(FCPATH)` ternyata
+sama dengan DocumentRoot Apache (`C:/xampp/htdocs`), jadi seluruh isi
+`private_uploads/` tersaji lewat HTTP. Dibuktikan langsung: dokumen SRP2 milik
+pengembang (14 berkas persyaratan, ada sejak sebelum sesi ini) bisa diunduh
+tanpa login. Ini luput dari SEMUA audit sebelumnya karena audit membaca kode dan
+mempercayai nama direktorinya, bukan mencoba mengaksesnya lewat HTTP.
+
+Mitigasi terpasang: `ensure_private_uploads_protected()` menulis `.htaccess`
+penolak akses di akar `private_uploads/`, dipanggil dari setiap jalur yang
+membuat direktori. Ditulis oleh kode karena direktori itu di luar repo git.
+Terverifikasi: yang tadinya 200 kini 403, sementara endpoint ber-guard tetap 200.
+
+**Yang masih terbuka soal ini:**
+- **Belum diverifikasi di production.** Di Hostinger `FCPATH` kemungkinan
+  `.../public_html/` sehingga `dirname()`-nya aman — tapi itu dugaan, bukan fakta.
+- `.htaccess` hanya dipatuhi Apache/LiteSpeed. Pindah ke nginx = proteksi hilang.
+- Perbaikan yang benar-benar kokoh: jadikan lokasi penyimpanan variabel `.env`
+  yang menunjuk direktori pasti di luar DocumentRoot, bukan hasil `dirname(FCPATH)`.
+
 ## Pola B — `delete_user_account()` tidak membersihkan semua tabel turunan role
 
 `User_model::delete_user_account()` saat ini eksplisit menangani `forum_komentar`/`forum_diskusi`/`forum_likes`, tapi **tidak** menyentuh:

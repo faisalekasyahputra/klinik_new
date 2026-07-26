@@ -64,27 +64,9 @@ class KemitraanPortal extends Public_Controller
             return;
         }
 
-        $file_surat_pengantar = NULL;
-        if ( ! empty($_FILES['file_surat_pengantar']['name'])) {
-            $upload_path = '.assets/uploads/';
-            if ( ! is_dir($upload_path)) { mkdir($upload_path, 0755, TRUE); }
-
-            $this->load->library('upload', [
-                'upload_path'   => $upload_path,
-                'allowed_types' => 'pdf|jpg|jpeg|png',
-                'max_size'      => 5120,
-                'encrypt_name'  => TRUE,
-            ]);
-
-            if ( ! $this->upload->do_upload('file_surat_pengantar')) {
-                $this->session->set_flashdata('error', 'Gagal mengunggah surat pengantar: ' . $this->upload->display_errors('', ''));
-                redirect('KemitraanPortal/daftar/' . $jenis);
-                return;
-            }
-            $file_surat_pengantar = $this->upload->data('file_name');
-        }
-
-        // user_id selalu dari sesi (anti-IDOR), bukan dari input.
+        // user_id selalu dari sesi (anti-IDOR), bukan dari input. Baris dibuat
+        // dulu supaya surat pengantarnya punya folder pemilik sendiri
+        // (private_uploads/kemitraan/{id}/).
         $this->db->insert('kkn_magang_pendaftaran', [
             'user_id'              => $this->get_user_id(),
             'jenis'                => $jenis,
@@ -93,10 +75,25 @@ class KemitraanPortal extends Public_Controller
             'divisi_atau_tema'     => $this->input->post('divisi_atau_tema', TRUE),
             'periode_mulai'        => $this->input->post('periode_mulai', TRUE),
             'periode_selesai'      => $this->input->post('periode_selesai', TRUE),
-            'file_surat_pengantar' => $file_surat_pengantar,
+            'file_surat_pengantar' => NULL,
         ]);
+        $id = $this->db->insert_id();
 
-        $this->session->set_flashdata('success', 'Pendaftaran ' . strtoupper($jenis) . ' berhasil dikirim. Cek status pendaftaran di halaman akun Anda.');
+        $pesan = 'Pendaftaran ' . strtoupper($jenis) . ' berhasil dikirim. Cek status pendaftaran di halaman akun Anda.';
+
+        // Surat pengantar disimpan di luar webroot, hanya bisa dibuka admin
+        // lewat Admin_Kemitraan::lihat_dokumen() — dulu di .assets/uploads/
+        // yang bisa diakses HTTP langsung. Pendaftaran tetap tersimpan kalau
+        // berkasnya gagal; pendaftar diberi tahu apa adanya.
+        $galat = NULL;
+        $nama_berkas = $this->store_private_upload('file_surat_pengantar', 'kemitraan', $id, $galat);
+        if ($nama_berkas) {
+            $this->db->where('id', $id)->update('kkn_magang_pendaftaran', ['file_surat_pengantar' => $nama_berkas]);
+        } elseif ($galat) {
+            $pesan .= ' Namun surat pengantar gagal diunggah (' . $galat . ') — hubungi admin untuk menyusulkan.';
+        }
+
+        $this->session->set_flashdata('success', $pesan);
         redirect('akun');
     }
 

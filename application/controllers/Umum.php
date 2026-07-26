@@ -127,44 +127,39 @@ class Umum extends MY_Controller {
 
 		$bidang = $this->input->post('bidang', TRUE);
 
-		$lampiran = NULL;
-		if (!empty($_FILES['lampiran']['name'])) {
-			$upload_path = '.assets/uploads/';
-			if (!is_dir($upload_path)) {
-				mkdir($upload_path, 0755, TRUE);
-			}
-
-			$config['upload_path']   = $upload_path;
-			$config['allowed_types'] = 'jpg|jpeg|png|pdf';
-			$config['max_size']      = 5120; // 5 MB
-			$config['encrypt_name']  = TRUE;
-
-			$this->load->library('upload', $config);
-
-			if (!$this->upload->do_upload('lampiran')) {
-				$this->session->set_flashdata('error', 'Gagal mengunggah lampiran: ' . $this->upload->display_errors('', ''));
-				redirect('umum/aduan');
-				return;
-			}
-
-			$lampiran = $this->upload->data('file_name');
-		}
-
+		// Baris dibuat DULU supaya lampirannya punya folder pemilik sendiri
+		// (private_uploads/aduan/{id}/), pola yang sama dengan dokumen SRP2.
 		$id = $this->Aduan_model->create([
 			'user_id'  => $user_id,
 			'nama'     => $nama,
 			'email'    => $email,
 			'judul'    => $judul,
-			'pesan'    => $pesan,
 			'bidang'   => $bidang,
-			'lampiran' => $lampiran,
+			'pesan'    => $pesan,
+			'lampiran' => NULL,
 		]);
 
-		if ($id) {
-			$this->session->set_flashdata('success', 'Aduan Anda berhasil dikirim dan diarahkan ke ' . $this->Aduan_model->bidang_label($bidang) . '. Kami akan segera menindaklanjuti.');
-		} else {
+		if ( ! $id) {
 			$this->session->set_flashdata('error', 'Gagal menyimpan aduan. Silakan coba lagi.');
+			redirect('umum/aduan');
+			return;
 		}
+
+		$pesan_sukses = 'Aduan Anda berhasil dikirim dan diarahkan ke ' . $this->Aduan_model->bidang_label($bidang) . '. Kami akan segera menindaklanjuti.';
+
+		// Lampiran disimpan di luar webroot dan hanya bisa dibuka lewat endpoint
+		// ber-guard (Admin_Bidang/Admin_Aduan) — dulu ditaruh di .assets/uploads/
+		// yang bisa diakses HTTP langsung. Kalau lampirannya gagal, aduannya
+		// TETAP tersimpan; user diberi tahu apa adanya, bukan dibatalkan diam-diam.
+		$galat_lampiran = NULL;
+		$nama_lampiran = $this->store_private_upload('lampiran', 'aduan', $id, $galat_lampiran);
+		if ($nama_lampiran) {
+			$this->db->where('id', $id)->update('aduan', ['lampiran' => $nama_lampiran]);
+		} elseif ($galat_lampiran) {
+			$pesan_sukses .= ' Namun lampiran gagal diunggah (' . $galat_lampiran . ') — silakan kirim susulan bila perlu.';
+		}
+
+		$this->session->set_flashdata('success', $pesan_sukses);
 
 		redirect('umum/aduan');
 	}

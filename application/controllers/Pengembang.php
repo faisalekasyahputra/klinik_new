@@ -141,6 +141,10 @@ class Pengembang extends MY_Controller {
             if ($is_ajax) { $this->output->set_status_header(409)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => $message])); return; }
             $this->session->set_flashdata('error', $message); redirect('Pengembang/dokumen/' . $id); return;
         }
+        // Pastikan akar private_uploads/ tertutup dari akses HTTP langsung.
+        // "Di luar webroot" ternyata tidak selalu benar — tergantung posisi
+        // aplikasi terhadap DocumentRoot; lihat catatan di method itu.
+        $this->ensure_private_uploads_protected();
         $path = dirname(FCPATH) . DIRECTORY_SEPARATOR . 'private_uploads' . DIRECTORY_SEPARATOR . 'srp2' . DIRECTORY_SEPARATOR . $id . DIRECTORY_SEPARATOR;
         if (!is_dir($path)) mkdir($path, 0700, TRUE);
         $allowed = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png']; $stored = [];

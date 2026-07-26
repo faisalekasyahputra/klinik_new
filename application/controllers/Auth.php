@@ -769,23 +769,22 @@ class Auth extends MY_Controller {
     /**
      * Handle file uploads for onboarding
      */
+    /**
+     * Simpan dokumen identitas onboarding (KTP, SIUP, KTM, surat magang).
+     *
+     * Sebelumnya disimpan di FCPATH.'uploads/documents/' — DI DALAM webroot,
+     * jadi scan KTP bisa diakses lewat HTTP kalau nama filenya bocor. Nama acak
+     * bukan kontrol akses, apalagi untuk dokumen kependudukan yang masuk
+     * cakupan UU PDP. Sekarang lewat store_private_upload() ke
+     * private_uploads/onboarding/{user_id}/ di luar webroot.
+     *
+     * CATATAN: saat ini TIDAK ADA UI yang menampilkan kembali dokumen ini
+     * (Auth_model::get_user_documents() tidak pernah dipanggil di mana pun),
+     * jadi belum dibuatkan endpoint baca. Kalau nanti dibutuhkan, buat endpoint
+     * ber-guard yang memakai serve_private_file() — JANGAN kembalikan ke
+     * direktori publik.
+     */
     private function _handle_uploads($user_id, $role) {
-        // Create upload directory
-        $upload_path = FCPATH . 'uploads/documents/' . $user_id . '/';
-        if (!is_dir($upload_path)) {
-            mkdir($upload_path, 0755, TRUE);
-        }
-
-        $config = [
-            'upload_path'   => $upload_path,
-            'allowed_types' => 'pdf|jpg|jpeg|png',
-            'max_size'      => 5120, // 5MB
-            'encrypt_name'  => TRUE,
-        ];
-
-        $this->load->library('upload');
-
-        // Define upload fields per role
         $upload_fields = [];
         if ($role === 'pengembang') {
             $upload_fields = ['file_ktp' => 'ktp', 'file_siup' => 'siup_nib'];
@@ -796,18 +795,16 @@ class Auth extends MY_Controller {
         }
 
         foreach ($upload_fields as $field_name => $doc_type) {
-            if (!empty($_FILES[$field_name]['name'])) {
-                $this->upload->initialize($config);
-                if ($this->upload->do_upload($field_name)) {
-                    $file_data = $this->upload->data();
-                    $this->auth_model->save_document(
-                        $user_id,
-                        $doc_type,
-                        $file_data['file_name'],
-                        'uploads/documents/' . $user_id . '/' . $file_data['file_name'],
-                        $file_data['file_size'] * 1024
-                    );
-                }
+            $ukuran = isset($_FILES[$field_name]['size']) ? (int) $_FILES[$field_name]['size'] : 0;
+            $nama_simpan = $this->store_private_upload($field_name, 'onboarding', $user_id);
+            if ($nama_simpan) {
+                $this->auth_model->save_document(
+                    $user_id,
+                    $doc_type,
+                    $nama_simpan,
+                    'private_uploads/onboarding/' . $user_id . '/' . $nama_simpan,
+                    $ukuran
+                );
             }
         }
     }
