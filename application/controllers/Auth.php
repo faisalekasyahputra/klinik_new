@@ -133,15 +133,20 @@ class Auth extends MY_Controller {
         $this->session->set_userdata($session_data);
         $this->session->sess_regenerate(TRUE);
 
+        // Draft SRP2 dipastikan ada untuk SEMUA jalur login — bukan cuma cabang
+        // AJAX. Dulu pemanggilan ini ada DI DALAM `if ($is_ajax)`, sehingga
+        // pengembang yang masuk lewat halaman login utama (`Auth/login`) tidak
+        // punya baris draft, dan `Pengaturan::index()` yang menjaga dengan
+        // `if ($sp2)` membuat item SRP2-nya tidak muncul sama sekali di /akun.
+        // Hasilnya: fitur yang sama terlihat ada atau tidak ada, tergantung
+        // lewat pintu mana user masuk.
+        $registration_id = ($user->role === 'pengembang')
+            ? $this->auth_model->ensure_srp2_draft($user->id)
+            : NULL;
+
         // Wizard (mis. SRP2 di Pengembang/syarat) cuma butuh konfirmasi + role, bukan redirect —
         // wizard yang urus lanjutannya sendiri di sisi klien, tanpa pindah halaman.
         if ($is_ajax) {
-            $registration_id = null;
-            if ($user->role === 'pengembang') {
-                // Sertakan draft SRP2 miliknya (buat kalau belum ada) supaya wizard bisa
-                // langsung lanjut ke langkah unggah dokumen tanpa request tambahan.
-                $registration_id = $this->auth_model->ensure_srp2_draft($user->id);
-            }
             $this->output->set_content_type('application/json')->set_output(json_encode([
                 'status'          => 'success',
                 'role'            => $user->role,
@@ -652,6 +657,14 @@ class Auth extends MY_Controller {
                         $user_record = $this->auth_model->find_by_id($logged_in_user[0]['id']);
                         if ($user_record && $user_record->profile_completed == 0) {
                             $redirect_to = 'onboarding';
+                        }
+
+                        // Jalur login ketiga (Google OAuth) juga membuat sesi
+                        // pengembang, jadi drafnya harus dipastikan ada di sini
+                        // juga — kalau tidak, item SRP2 hilang dari /akun cuma
+                        // karena user memilih masuk lewat Google.
+                        if ($user_record && $user_record->role === 'pengembang') {
+                            $this->auth_model->ensure_srp2_draft($user_record->id);
                         }
 
                         echo "
