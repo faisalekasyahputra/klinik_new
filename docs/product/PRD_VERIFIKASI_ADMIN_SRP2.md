@@ -1,6 +1,15 @@
 # PRD — Verifikasi Admin untuk Pengajuan SRP2 (+ Prinsip Relasi Role↔Admin)
 
-**Status:** Draft, belum dikerjakan. Menindaklanjuti [`AUDIT_ROLE_PENGEMBANG.md`](../engineering/AUDIT_ROLE_PENGEMBANG.md) (26 Jul 2026), temuan #1–#5.
+**Status:** ✅ **SELESAI SEMUA (Fase 0–4), 26 Juli 2026.** Ringkas per fase:
+- **Fase 0** — kolom link `certified_developer_id` (migrasi `20260701000014`), opsi (b) dipakai sesuai rekomendasi.
+- **Fase 1** — `Admin_Srp2::pending()/detail()/proses()/lihat_dokumen()`. *Menyimpang dari rencana:* satu endpoint `proses($id)` berfield `status`, bukan `terima()`/`tolak()` terpisah — mengikuti pola `Admin_Kemitraan` yang sudah terbukti supaya komponen `review_form` benar-benar dipakai ulang. Semua aturan (approve idempotent + auto-link, tolak wajib catatan divalidasi server, dokumen lewat endpoint ber-guard) tetap dipenuhi.
+- **Fase 2** — `Auth_model::ensure_srp2_draft()` jadi satu-satunya tempat draft dibuat; lima pemanggil diarahkan ke sana, termasuk `Auth::save_onboarding()` yang dulu tidak membuatnya sama sekali. Terverifikasi: user yang jadi pengembang lewat onboarding langsung melihat item SRP2 di `/akun` tanpa mampir wizard; buka wizard 3x tetap 1 draft.
+- **Fase 3** — upload onboarding pindah ke penyimpanan privat, ikut terselesaikan bersama Pola A audit. Endpoint baca sengaja tidak dibuat karena tidak ada UI yang membaca `usr_documents`.
+- **Fase 4** — FK `srp2_documents` (migrasi `20260701000013`) + `delete_user_account()` kini `unlink` file fisik sebelum baris ter-CASCADE.
+
+> ⚠️ Terkait FR-11 (dokumen tidak lewat path publik): saat verifikasi Pola A ditemukan bahwa `private_uploads/` **tidak selalu di luar webroot** — lihat catatan di [`AUDIT_SISTEM_ROLE_RINGKASAN.md`](../engineering/AUDIT_SISTEM_ROLE_RINGKASAN.md). Sudah dimitigasi `.htaccess`, tapi belum diverifikasi di production.
+
+Dokumen di bawah dipertahankan sebagai rencana aslinya. Menindaklanjuti [`AUDIT_ROLE_PENGEMBANG.md`](../engineering/AUDIT_ROLE_PENGEMBANG.md) (26 Jul 2026), temuan #1–#5.
 **Konteks:** `PRD_SRP2_AKUN_PENGEMBANG.md` (dokumen lama) sudah menyebut "Admin menentukan Diterima atau Ditolak" sebagai bagian dari alur — tapi itu **belum pernah dibangun**. PRD ini menutup gap tersebut, sekaligus merapikan efek sampingnya (dua sumber data pengembang tersertifikasi, dua jalur pembuatan draft, upload di luar pola aman) supaya tidak diwarisi role-role baru yang lebih kompleks.
 
 ---

@@ -140,16 +140,7 @@ class Auth extends MY_Controller {
             if ($user->role === 'pengembang') {
                 // Sertakan draft SRP2 miliknya (buat kalau belum ada) supaya wizard bisa
                 // langsung lanjut ke langkah unggah dokumen tanpa request tambahan.
-                $registration = $this->db->order_by('id', 'DESC')->get_where('srp2_registrations', ['user_id' => $user->id])->row();
-                if (!$registration) {
-                    $this->db->insert('srp2_registrations', [
-                        'user_id' => $user->id, 'email' => $user->email,
-                        'nama_perusahaan' => $user->nama_perusahaan, 'status_verifikasi' => 'Draft',
-                    ]);
-                    $registration_id = $this->db->insert_id();
-                } else {
-                    $registration_id = $registration->id;
-                }
+                $registration_id = $this->auth_model->ensure_srp2_draft($user->id);
             }
             $this->output->set_content_type('application/json')->set_output(json_encode([
                 'status'          => 'success',
@@ -277,11 +268,9 @@ class Auth extends MY_Controller {
             ]);
             // Draft dibuat langsung di sini (bukan lewat detour verifikasi-email simulasi)
             // supaya wizard bisa lanjut ke langkah unggah dokumen tanpa pindah halaman.
-            $this->db->insert('srp2_registrations', [
-                'user_id' => $user_id, 'email' => $email,
-                'nama_perusahaan' => strtoupper($nama_perusahaan), 'status_verifikasi' => 'Draft',
-            ]);
-            $registration_id = $this->db->insert_id();
+            // Dipanggil SETELAH usr_users di-update supaya nama_perusahaan yang
+            // baru tersimpan ikut terbawa ke draft.
+            $registration_id = $this->auth_model->ensure_srp2_draft($user_id);
             $this->session->set_userdata('intended_url', 'akun');
             $this->session->set_userdata('srp2_quick_registration', TRUE);
         }
@@ -475,6 +464,14 @@ class Auth extends MY_Controller {
         }
         $this->auth_model->save_profile($user_id, $profile_data);
 
+        // Jalur onboarding umum dulu TIDAK membuat draft SRP2 sama sekali,
+        // sehingga user yang jadi pengembang lewat sini tidak melihat item SRP2
+        // apa pun di /akun sampai kebetulan membuka wizard. Sekarang konsisten
+        // dengan jalur daftar cepat. Lihat PRD_VERIFIKASI_ADMIN_SRP2.md Fase 2.
+        if ($role === 'pengembang') {
+            $this->auth_model->ensure_srp2_draft($user_id);
+        }
+
         // Handle file uploads
         $this->_handle_uploads($user_id, $role);
 
@@ -535,20 +532,13 @@ class Auth extends MY_Controller {
     public function lanjutkan() {
         if (!$this->is_logged_in()) { redirect('Auth/login'); return; }
         if ($this->session->userdata('srp2_quick_registration') === TRUE) {
-            $user_id = $this->get_user_id();
-            $draft = $this->db->order_by('id', 'DESC')->get_where('srp2_registrations', ['user_id' => $user_id, 'status_verifikasi' => 'Draft'])->row();
-            if (!$draft) {
-                $user = $this->auth_model->find_by_id($user_id);
-                $this->db->insert('srp2_registrations', [
-                    'user_id' => $user_id, 'email' => $user->email,
-                    'nama_perusahaan' => $user->nama_perusahaan, 'status_verifikasi' => 'Draft'
-                ]);
-                $draft = (object) ['id' => $this->db->insert_id()];
-            }
+            // Jalur ini memang cuma peduli draft yang BELUM dikirim — kalau
+            // pengajuannya sudah Pending/Diterima, buat draft baru itu keliru.
+            $draft_id = $this->auth_model->ensure_srp2_draft($this->get_user_id(), 'Draft');
             $this->session->unset_userdata('srp2_quick_registration');
             $this->session->unset_userdata('srp2_verify_pending');
             $this->session->unset_userdata('intended_url');
-            redirect('Pengembang/dokumen/' . $draft->id);
+            redirect('Pengembang/dokumen/' . $draft_id);
             return;
         }
         $this->_redirect_after_login();

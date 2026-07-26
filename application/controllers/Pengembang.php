@@ -33,21 +33,11 @@ class Pengembang extends MY_Controller {
         $status_verifikasi = null;
         $catatan_admin = null;
         if ($is_pengembang) {
-            $user_id = $this->get_user_id();
-            $registration = $this->db->order_by('id', 'DESC')->get_where('srp2_registrations', ['user_id' => $user_id])->row();
-            if (!$registration) {
-                // Akun sudah role pengembang tapi belum pernah punya draft SRP2 (mis. role
-                // di-set manual oleh admin) — buat draft-nya di sini, pola sama seperti
-                // Auth::lanjutkan() untuk akun hasil daftar cepat.
-                $user = $this->auth_model->find_by_id($user_id);
-                $this->db->insert('srp2_registrations', [
-                    'user_id' => $user_id, 'email' => $user->email,
-                    'nama_perusahaan' => $user->nama_perusahaan, 'status_verifikasi' => 'Draft',
-                ]);
-                $registration_id = $this->db->insert_id();
-                $status_verifikasi = 'Draft';
-            } else {
-                $registration_id = $registration->id;
+            // Draft dibuat/ditemukan lewat satu pintu di Auth_model — akun yang
+            // rolenya di-set manual admin pun tetap dapat drafnya di sini.
+            $registration_id = $this->auth_model->ensure_srp2_draft($this->get_user_id());
+            $registration = $this->db->get_where('srp2_registrations', ['id' => $registration_id])->row();
+            if ($registration) {
                 $status_verifikasi = $registration->status_verifikasi;
                 $catatan_admin = $registration->catatan_admin;
                 $uploaded_keys = $this->db->select('document_key')->where('registration_id', $registration_id)

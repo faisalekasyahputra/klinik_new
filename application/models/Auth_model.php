@@ -178,6 +178,45 @@ class Auth_model extends CI_Model {
     }
 
     /**
+     * Pastikan akun pengembang punya baris srp2_registrations, buat kalau belum.
+     * SATU-SATUNYA tempat draft SRP2 dibuat — sebelumnya logika ini disalin di
+     * empat tempat (Auth::do_login cabang AJAX, Auth::do_register,
+     * Auth::lanjutkan, Pengembang::syarat) dan satu jalur terlewat:
+     * Auth::save_onboarding() tidak membuatnya sama sekali, sehingga user yang
+     * jadi pengembang lewat onboarding umum tidak melihat item SRP2 apa pun di
+     * /akun sampai kebetulan membuka wizard. Lihat PRD_VERIFIKASI_ADMIN_SRP2.md
+     * Fase 2 dan AUDIT_ROLE_PENGEMBANG.md temuan #2.
+     *
+     * Idempotent: aman dipanggil berkali-kali, tidak pernah membuat draft dobel.
+     *
+     * @param int         $user_id
+     * @param string|null $status_filter batasi pencarian ke status tertentu
+     *                                   (dipakai Auth::lanjutkan yang memang
+     *                                   cuma peduli draft yang belum dikirim)
+     * @return int|null ID baris srp2_registrations, NULL kalau user tidak ada
+     */
+    public function ensure_srp2_draft($user_id, $status_filter = NULL) {
+        $user_id = (int) $user_id;
+        if ( ! $user_id) { return NULL; }
+
+        $this->db->order_by('id', 'DESC')->where('user_id', $user_id);
+        if ($status_filter !== NULL) { $this->db->where('status_verifikasi', $status_filter); }
+        $baris = $this->db->get('srp2_registrations')->row();
+        if ($baris) { return (int) $baris->id; }
+
+        $user = $this->find_by_id($user_id);
+        if ( ! $user) { return NULL; }
+
+        $this->db->insert('srp2_registrations', [
+            'user_id'           => $user_id,
+            'email'             => $user->email,
+            'nama_perusahaan'   => $user->nama_perusahaan,
+            'status_verifikasi' => 'Draft',
+        ]);
+        return (int) $this->db->insert_id();
+    }
+
+    /**
      * Check if user has completed onboarding.
      */
     public function is_profile_complete($user_id) {
