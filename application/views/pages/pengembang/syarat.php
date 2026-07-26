@@ -579,6 +579,13 @@ function srp2Wizard(config) {
                 const res = await fetch(this.baseUrl + 'Pengembang/kirim_pengajuan/' + this.registrationId, { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await res.json();
                 if (data.status === 'success') {
+                    // Keadaan lokal ikut disamakan dengan server. Tanpa ini,
+                    // kembali ke panel 3 memperlihatkan mode dapat-diedit untuk
+                    // pengajuan yang sudah terkunci di server — setiap unggahan
+                    // lalu ditolak 409 satu per satu dan terlihat seperti sistem
+                    // rusak. Catatan lama juga hilang, sama seperti di server.
+                    this.status = 'Pending';
+                    this.catatanAdmin = null;
                     this.step = 4;
                 } else {
                     this.submitError = data.message || 'Gagal mengirim pengajuan.';

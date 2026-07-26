@@ -53,7 +53,11 @@ class Pengaturan extends MY_Controller {
         }
 
         if ($role === 'pengembang') {
-            $sp2 = $this->db->where('user_id', $user_id)->order_by('id', 'DESC')->get('srp2_registrations')->row();
+            // Keadaan pengajuan lewat SATU sumber bersama (§17 poin 13). Dulu
+            // halaman ini query sendiri — salinan logika kedua, dan itu persis
+            // yang dulu melahirkan bug 0/14 dokumen di wizard.
+            $srp2 = $this->Auth_model->srp2_state($user_id);
+            $sp2  = $srp2 ? $this->db->get_where('srp2_registrations', ['id' => $srp2['registration_id']])->row() : NULL;
             if ($sp2) {
                 // Label status + label tombol aksi. Tombolnya diberi nama sesuai
                 // apa yang BENAR-BENAR terjadi saat diklik, bukan "Kelola" untuk
@@ -131,8 +135,11 @@ class Pengaturan extends MY_Controller {
         $datacontent = ['user' => $user, 'title' => 'Profil Saya'];
 
         if ($this->session->userdata('role') === 'pengembang') {
-            $datacontent['pengajuan_sp2'] = $this->db->where('user_id', $user_id)
-                ->order_by('id', 'DESC')->get('srp2_registrations')->row();
+            // Lewat satu sumber bersama, sama dengan index() dan wizard (§17 poin 13).
+            $srp2 = $this->Auth_model->srp2_state($user_id);
+            $datacontent['pengajuan_sp2'] = $srp2
+                ? $this->db->get_where('srp2_registrations', ['id' => $srp2['registration_id']])->row()
+                : NULL;
         }
 
         $this->render_user_dashboard('pages/pengaturan/profil', $datacontent);

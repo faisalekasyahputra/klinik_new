@@ -86,28 +86,51 @@
                 <h2 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <i class="ph ph-certificate text-brand-primary"></i> Sertifikasi Pengembang (SRP2)
                 </h2>
-                <?php if($pengajuan_sp2->status_verifikasi == 'Pending'): ?>
-                    <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-amber-50 dark:bg-brand-primary/10 border border-amber-200 dark:border-brand-primary/20 text-amber-700 dark:text-brand-primary font-bold text-xs uppercase tracking-wider">
-                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 dark:bg-brand-primary animate-pulse"></span> Dalam Peninjauan
-                    </span>
-                <?php elseif($pengajuan_sp2->status_verifikasi == 'Draft'): ?>
-                    <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/20 text-cyan-700 dark:text-cyan-400 font-bold text-xs uppercase tracking-wider">
-                        <i class="ph ph-pencil-simple text-xs"></i> Lengkapi Dokumen
-                    </span>
-                <?php elseif($pengajuan_sp2->status_verifikasi == 'Diterima'): ?>
-                    <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400 font-bold text-xs uppercase tracking-wider">
-                        <i class="ph ph-check-circle text-xs"></i> Diterima
-                    </span>
-                <?php else: ?>
-                    <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 font-bold text-xs uppercase tracking-wider">
-                        <i class="ph ph-x-circle text-xs"></i> Ditolak
-                    </span>
-                <?php endif; ?>
+                <?php
+                // Draft + ada catatan = pengajuan DIBUKA KEMBALI admin lewat
+                // "Minta Perbaikan", bukan draft yang belum pernah dikirim —
+                // pembedaan yang sama persis dengan /akun (Pengaturan::index()).
+                // Sebelumnya halaman ini menampilkan "Lengkapi Dokumen" polos
+                // untuk keduanya, dan NOL keterangan, padahal flash ke admin
+                // berbunyi "Pengembang melihat catatan Anda di dashboardnya".
+                $st = $pengajuan_sp2->status_verifikasi;
+                $ada_catatan = !empty($pengajuan_sp2->catatan_admin);
+                $perlu_perbaikan = ($st == 'Draft' && $ada_catatan);
+
+                // Status tak dikenal ditampilkan APA ADANYA. Cabang else dulu
+                // mencapnya "Ditolak" — mencap sesuatu sebagai penolakan yang
+                // bukan penolakan itu kebohongan di layar, sekategori dengan
+                // pesan sukses karangan (§0d).
+                $badge = [
+                    'Pending'  => ['Dalam Peninjauan',  'amber', 'ph-clock'],
+                    'Draft'    => ['Lengkapi Dokumen',  'cyan',  'ph-pencil-simple'],
+                    'Diterima' => ['Diterima',          'green', 'ph-check-circle'],
+                    'Ditolak'  => ['Ditolak',           'red',   'ph-x-circle'],
+                ][$st] ?? [$st, 'gray', 'ph-question'];
+                if ($perlu_perbaikan) { $badge = ['Perlu Diperbaiki', 'amber', 'ph-pencil-simple']; }
+
+                $warna = [
+                    'amber' => 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-400',
+                    'cyan'  => 'bg-cyan-50 dark:bg-cyan-500/10 border-cyan-200 dark:border-cyan-500/20 text-cyan-700 dark:text-cyan-400',
+                    'green' => 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-400',
+                    'red'   => 'bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400',
+                    'gray'  => 'bg-gray-100 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted',
+                ][$badge[1]];
+                ?>
+                <span class="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border font-bold text-xs uppercase tracking-wider <?= $warna ?>">
+                    <i class="ph <?= $badge[2] ?> text-xs"></i> <?= htmlspecialchars($badge[0]) ?>
+                </span>
             </div>
 
-            <?php if($pengajuan_sp2->status_verifikasi == 'Ditolak' && !empty($pengajuan_sp2->catatan_admin)): ?>
-            <div class="bg-red-50 dark:bg-red-500/5 border border-red-200 dark:border-red-500/20 rounded-2xl p-4 mb-6 text-xs sm:text-sm text-gray-600 dark:text-brand-muted">
-                <strong class="text-red-600 dark:text-red-400 block mb-1"><i class="ph ph-warning mr-1"></i> Catatan Koreksi Admin:</strong>
+            <?php // Catatan admin ditampilkan untuk KEDUA keputusan yang mengembalikan
+                  // pekerjaan ke pemohon — Ditolak maupun Minta Perbaikan. Dulu hanya
+                  // Ditolak, sehingga keputusan ketiga tidak punya keterangan sama sekali. ?>
+            <?php if($ada_catatan && in_array($st, ['Ditolak', 'Draft'], TRUE)): ?>
+            <?php $ck = $perlu_perbaikan
+                ? ['bg-amber-50 dark:bg-amber-500/5 border-amber-200 dark:border-amber-500/20', 'text-amber-700 dark:text-amber-400', 'Perbaikan Diminta Admin']
+                : ['bg-red-50 dark:bg-red-500/5 border-red-200 dark:border-red-500/20', 'text-red-600 dark:text-red-400', 'Catatan Koreksi Admin']; ?>
+            <div class="<?= $ck[0] ?> border rounded-2xl p-4 mb-6 text-xs sm:text-sm text-gray-600 dark:text-brand-muted">
+                <strong class="<?= $ck[1] ?> block mb-1"><i class="ph ph-warning mr-1"></i> <?= $ck[2] ?>:</strong>
                 <?= htmlspecialchars($pengajuan_sp2->catatan_admin) ?>
             </div>
             <?php endif; ?>

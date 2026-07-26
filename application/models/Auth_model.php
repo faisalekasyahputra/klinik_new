@@ -204,6 +204,21 @@ class Auth_model extends CI_Model {
         $baris = $this->db->get('srp2_registrations')->row();
         if ($baris) { return (int) $baris->id; }
 
+        // JANGAN pernah membuat baris kedua untuk user yang sudah punya pengajuan.
+        // $status_filter menyempitkan PENCARIAN, bukan izin membuat: pemanggil
+        // yang mencari khusus 'Draft' (Auth::lanjutkan) dulu jatuh ke INSERT saat
+        // pengajuannya sudah Pending — draft kosong baru itu lalu menang di semua
+        // ORDER BY id DESC, dan pengajuan yang sudah dikirim lenyap dari pandangan
+        // pemohon padahal admin masih melihatnya.
+        //
+        // Guard diletakkan di sini, bukan di pemanggilnya, supaya kelima jalur
+        // yang memakai fungsi ini ikut benar sekaligus.
+        if ($status_filter !== NULL) {
+            $terakhir = $this->db->order_by('id', 'DESC')->where('user_id', $user_id)
+                ->get('srp2_registrations')->row();
+            if ($terakhir) { return (int) $terakhir->id; }
+        }
+
         $user = $this->find_by_id($user_id);
         if ( ! $user) { return NULL; }
 

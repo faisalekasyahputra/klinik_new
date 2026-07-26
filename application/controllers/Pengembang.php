@@ -118,7 +118,17 @@ class Pengembang extends MY_Controller {
         $data['pendaftar'] = $this->db->get_where('srp2_registrations', ['id' => (int) $id, 'user_id' => $this->get_user_id()])->row();
         if (!$data['pendaftar']) show_404();
         $data['dokumen'] = $this->dokumen_persyaratan();
-        $data['uploaded_count'] = $this->db->where('registration_id', (int) $id)->count_all_results('srp2_documents');
+
+        // Keadaan pengajuan lewat satu sumber bersama, sama dengan syarat() dan
+        // cabang AJAX Auth::do_login(). Dulu halaman ini cuma menerima
+        // uploaded_count, sehingga ke-14 barisnya SELALU tampil kosong walau
+        // badge berkata 13/14 — mendorong pemohon mengunggah ulang semuanya.
+        $srp2 = $this->auth_model->srp2_state($this->get_user_id());
+        $data['uploaded_keys']  = $srp2['uploaded_keys'] ?? [];
+        $data['uploaded_count'] = count($data['uploaded_keys']);
+        $data['status_verifikasi'] = $srp2['status'] ?? NULL;
+        $data['catatan_admin']     = $srp2['catatan_admin'] ?? NULL;
+
         $this->render('pages/pengembang/dokumen', $data);
     }
 
@@ -220,7 +230,19 @@ class Pengembang extends MY_Controller {
         }
 
         // Anti-IDOR: WHERE user_id selalu dari sesi.
-        $this->db->where('id', (int) $id)->where('user_id', $this->get_user_id())->update('srp2_registrations', ['status_verifikasi' => 'Pending']);
+        //
+        // Jejak keputusan LAMA ikut dibersihkan saat kirim ulang. Dulu update ini
+        // hanya menulis status_verifikasi, sehingga catatan penolakan lama tetap
+        // menempel: /akun menampilkan badge "Dalam Peninjauan" DITAMBAH kotak
+        // catatan penolakan, tepat sesudah pemohon selesai memperbaiki. Dua
+        // permukaan yang sama-sama dia lihat menceritakan hal berbeda.
+        $this->db->where('id', (int) $id)->where('user_id', $this->get_user_id())
+            ->update('srp2_registrations', [
+                'status_verifikasi' => 'Pending',
+                'catatan_admin'     => NULL,
+                'reviewed_by'       => NULL,
+                'reviewed_at'       => NULL,
+            ]);
 
         if ($is_ajax) { $this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'success', 'message' => 'Pengajuan SRP2 berhasil dikirim dan sedang menunggu verifikasi.'])); return; }
         $this->session->set_flashdata('success', 'Pengajuan SRP2 berhasil dikirim dan sedang menunggu verifikasi.'); redirect('akun');
