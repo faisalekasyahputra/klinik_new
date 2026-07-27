@@ -8,7 +8,7 @@
 
 ## 0. BACA INI DULU — Status Terkini & Protokol Antar-Agent
 
-**Terakhir disinkronkan: 26 Juli 2026** (pembacaan codebase menyeluruh — lihat §0f). Kalau kamu agent yang baru masuk, baca bagian ini sampai habis sebelum menyentuh apa pun.
+**Terakhir disinkronkan: 27 Juli 2026** (setelah roadmap pengembang T0–T4 mendarat — lihat §0b). Kalau kamu agent yang baru masuk, baca bagian ini sampai habis sebelum menyentuh apa pun.
 
 ### 0a. Keadaan lingkungan saat ini
 
@@ -16,7 +16,7 @@
 
 | | Situs | Branch | Status |
 |---|---|---|---|
-| **Lokal** | `localhost/klinik_new` | `feature/homepage-portal-v2` | skema `20260701000015` |
+| **Lokal** | `localhost/klinik_new` | `feature/homepage-portal-v2` | skema `20260701000016` |
 | **PRODUCTION (aktif)** | `floralwhite-lion-710022` | `feature/homepage-portal-v2` — auto-deploy | DB `u504551489_klinikstg`, skema `...14` |
 | ~~production lama~~ | `palegreen-mink-703421` | `main` — beku sejak 19 Jul | 🔴 **DIMATIKAN** |
 | ~~staging lama~~ | `darkseagreen-hamster-214338` | `feature/ui-ux-revamp` | 🔴 **DIMATIKAN** |
@@ -26,11 +26,13 @@
 >
 > Nama DB-nya tetap `u504551489_klinikstg` (menyesatkan, tapi jangan diganti tanpa alasan kuat — mengganti nama DB produksi berjalan lebih berisiko daripada namanya yang keliru).
 >
-> `main` + `palegreen` kalau dihidupkan lagi nanti: DB-nya **belum pernah dimigrasi sama sekali** (tabel `migrations` tidak ada, cuma 14 tabel baseline), jadi butuh migrasi **01–15 seluruhnya**.
+> ⚠️ **T0–T4 roadmap pengembang BELUM ada di production** (27 Jul 2026): lokal `ahead 17` commit dari `origin/feature/homepage-portal-v2` dan belum di-push. Production masih menjalankan kode sebelum T0. Push-nya menunggu perintah user, karena push = rilis — dan DB-nya masih skema `...14`, jadi migrasi **15 & 16 wajib dijalankan di sana sesudah push**, kalau tidak halaman SRP2 akan error kolom.
+>
+> `main` + `palegreen` kalau dihidupkan lagi nanti: DB-nya **belum pernah dimigrasi sama sekali** (tabel `migrations` tidak ada, cuma 14 tabel baseline), jadi butuh migrasi **01–16 seluruhnya**.
 
 > ⚠️ **Dikoreksi lewat SSH 27 Jul 2026 — dokumen ini dulu keliru.** Production BUKAN "tertinggal di `20260701000010`": **tabel `migrations` tidak ada sama sekali**, dan isinya cuma 14 tabel baseline dari `schema_klinikpkp.sql`. Tidak ada `srp2_*`, `aduan`, `kabupaten`, `bidang`, `kkn_magang_pendaftaran`, `sys_rate_limits`, tanpa kolom reviewer, tanpa FK.
 >
-> **Konsekuensi untuk rilis:** saat `main` akhirnya dibuka, production butuh migrasi **01–15 seluruhnya**, bukan cuma 11–15. Sebagian rute SRP2 di production hari ini memang 500 (`Unable to load the requested file: pages/pengembang/sertifikasi.php`) karena kode lama + skema baseline.
+> **Konsekuensi untuk rilis:** saat `main` akhirnya dibuka, production butuh migrasi **01–16 seluruhnya**, bukan cuma 11–16. Sebagian rute SRP2 di production hari ini memang 500 (`Unable to load the requested file: pages/pengembang/sertifikasi.php`) karena kode lama + skema baseline.
 
 **Ada EMPAT instalasi Klinik PKP di akun Hostinger `u504551489`, bukan dua** (ditemukan 27 Jul 2026):
 
@@ -56,6 +58,13 @@ Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya
 - **PRD verifikasi admin SRP2** Fase 0–4 → [`PRD_VERIFIKASI_ADMIN_SRP2.md`](docs/product/PRD_VERIFIKASI_ADMIN_SRP2.md)
 - **Semua unggahan pindah ke penyimpanan privat** → lihat peringatan di §17 checklist poin 4
 - **Fitur "Minta Perbaikan" SRP2** (27 Jul 2026, `5db1ba4`) — admin bisa mengembalikan pengajuan ke pemohon dengan catatan wajib, tanpa mencap "Ditolak". Diuji di browser sungguhan; detail & aturan turunannya di §18
+- **Roadmap pengembang↔admin T0–T4 SELESAI** (27 Jul 2026, `9a0488c`..`bc0f6af`) — perjalanan SRP2 kini bisa ditempuh utuh dari daftar sampai tampil di direktori publik. Ringkas per tahap, detail di masing-masing commit message:
+  - **T0** `9a0488c` — cap "Terverifikasi SRP2" di halaman publik disaring status (dulu nama perusahaan mana pun lolos), flash "berhasil diunduh (Simulasi)" dicabut, `do_register` kena rate limit. Penghapusan blok kredensial demo di tahap ini **sengaja dibalik lagi** oleh `d9c28e8` atas permintaan user — lihat §17 poin 14.
+  - **T1a** `f74047f` — gerbang hulu (`kirim_pengajuan`, `save_onboarding`, `update_pengembang_profile`) + `Admin_Srp2::proses()` bertransaksi, transisi status ditegakkan server, `WHERE` menyertakan status asal.
+  - **T1b** `22e176a` — antrean admin bisa menampilkan status non-default, layar keputusan merender data pembanding, `save()` berhenti mengarang sukses, `catatan_admin` tidak lagi di-NULL-kan saat Diterima, Ganti→Batal di wizard tidak lagi mengunci tombol Kirim.
+  - **T2** `195ec64` — semua layar pemohon (`/pengembang/syarat`, `/akun`, `/akun/profil`, halaman dokumen) memakai `Auth_model::srp2_state()`; kirim ulang membersihkan catatan/reviewer; draft dobel ditutup di `ensure_srp2_draft()`.
+  - **T3** `de7e7f2` — dua jalur unggah dijadikan satu (view `pengembang/dokumen` diarsipkan, `mulai_unggah()`/`dokumen()` redirect ke wizard), ganti lampiran meng-`unlink()` berkas lama, `$id` dinormalisasi sekali di pintu masuk, `_cleanup_owned_files()` menyapu berdasarkan isi DISK, dan `lihat_dokumen_saya()` memberi pemohon cara melihat kembali berkasnya. Pembersih sekali-jalan sudah dijalankan di lokal: 6 yatim, 5,5 MB — **belum dijalankan di production**.
+  - **T4** `bc0f6af` — migrasi backfill `20260701000016`, tautan profil publik lewat FK bukan pencocokan nama, satu `upsert_direktori_publik()` dipanggil dari approve maupun update profil, direktori admin pakai pola server-side B8.
 
 ### 0c. Yang masih terbuka
 
@@ -73,7 +82,9 @@ Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya
    > **Kenapa eksplisit, padahal fallback-nya kebetulan benar:** fallback `dirname(FCPATH)/private_uploads` bergantung pada tata letak hosting. Asumsi yang sama pernah SALAH di XAMPP lokal — folder induk aplikasi ternyata sama dengan DocumentRoot, dan dokumen SRP2 bisa diunduh tanpa login. Aman-karena-kebetulan bukan aman.
 4. Di luar kita: integrasi SIMPERUM (belum ada), generator sertifikat PDF
 5. **Temuan pembacaan 26 Jul 2026 yang belum diperbaiki** — daftar lengkap 141 temuan di [`PEMBACAAN_CODEBASE_26JUL2026.md`](docs/engineering/PEMBACAAN_CODEBASE_26JUL2026.md), ringkasan yang paling berdampak di §18.
-6. **Penuntasan role `pengembang` ↔ admin** — 24 sisa pekerjaan ([`SISA_PEKERJAAN_ROLE_PENGEMBANG.md`](docs/engineering/SISA_PEKERJAAN_ROLE_PENGEMBANG.md)) disusun jadi 8 tahap berurutan di [`ROADMAP_PENGEMBANG_ADMIN.md`](docs/product/ROADMAP_PENGEMBANG_ADMIN.md). **Mulai dari T0.** Tahap terakhir (T6) sengaja memanen perjalanan ini jadi cetakan untuk empat role sisanya — lihat §19.
+6. **Penuntasan role `pengembang` ↔ admin** — 24 sisa pekerjaan ([`SISA_PEKERJAAN_ROLE_PENGEMBANG.md`](docs/engineering/SISA_PEKERJAAN_ROLE_PENGEMBANG.md)) disusun jadi 8 tahap berurutan di [`ROADMAP_PENGEMBANG_ADMIN.md`](docs/product/ROADMAP_PENGEMBANG_ADMIN.md). **T0–T4 SUDAH SELESAI (§0b) — lanjutkan dari T5**, jangan diulang. Sisanya:
+   - **T5** — akun punya jalan pulang: lupa kata sandi (`forgot_password.php` masih `action="#"`), ganti password tanpa verifikasi password lama, `delete_account()` yang konfirmasinya cuma di klien, reCAPTCHA yang dilewati kalau kuncinya kosong, XSS `google_callback()`. Ini GARIS "boleh mengundang pengguna nyata".
+   - **T6** — panen jadi cetakan untuk empat role sisanya (§19); item terpentingnya satu skrip uji perjalanan yang bisa dijalankan, bukan aturan ke-25. Termasuk memperbarui `SISA_PEKERJAAN_ROLE_PENGEMBANG.md` dengan status akhir PER temuan — belum dikerjakan sama sekali, dokumen itu masih menampilkan ke-24 temuan seolah semuanya terbuka.
 
 ✅ Sudah dibereskan 26 Jul 2026: lokasi berkas privat kini dari `PRIVATE_UPLOADS_PATH` di `.env` (helper `private_upload`, satu sumber untuk controller & model) — dan dokumen produk/engineering usang (`IMPLEMENTATION_ROADMAP`, `PRODUCT_REQUIREMENTS_DOCUMENT`, `DESAIN_STATUS_TIKET_PENGAJUAN`, `SRP2_ACCOUNT_FLOW`, `ROLE_DATA_RELATION_MAP`) — klaim yang sudah tidak benar dikoreksi, teks aslinya tetap dikutip sebagai jejak. Verifikasi `private_uploads` di production & staging: keduanya 404 CI, aman.
 
@@ -104,6 +115,7 @@ Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya
 | Nama tabel ditebak dari nama fitur | `check_forum_rate_limit('diskusi')` — tabelnya `forum_diskusi`; chat menulis ke `tb_chat` yang tidak ada di skema (§18) |
 | Program di `Smart_filter` dikira ada di DB | `omah_sekeng` (`sf_programs` id 6) hanya ada karena INSERT manual di DB lokal — tidak ada migrasinya, jadi lingkungan lain bisa gagal FK (§18) |
 | DB lokal jalan dikira bukti kode benar | Baris `omah_sekeng` ditambal manual 30 Jun; lokal mulus, instalasi fresh gagal. Tanya selalu: ini lahir dari migrasi atau dari tangan orang? |
+| `load->model('Auth_model')` lalu dipanggil `$this->auth_model` | CI mendaftarkan properti PERSIS seperti penulisan saat load — beda huruf besar/kecil = `Undefined property`, halaman 500. Kena 27 Jul 2026 di T2 (`/akun` mati), ketahuan cuma karena responsnya 1191 byte; `php -l` tidak menangkapnya |
 | MySQL XAMPP tidak mau naik | `multi-master.info` di `mysql/data` bisa terisi potongan teks log error, lalu MariaDB mencoba menyalakan replikasi palsu dan gagal. Proyek ini tidak pakai replikasi — singkirkan berkas `multi-master.info` + `master-*.info` + `mysql-relay-bin-*`, jangan sentuh `.frm`/`.ibd`/`ibdata1`. Sudah 2x terjadi (23 & 26 Jul 2026) |
 
 ### 0f. Protokol pemeliharaan dokumen ini
@@ -463,7 +475,7 @@ Semua role login memakai SATU shell dashboard (`application/views/admin/index.ph
 
 ## 18. Temuan Pembacaan 26 Jul 2026 — Belum Diperbaiki
 
-Ringkasan yang paling berdampak dari 141 temuan. Detail lengkap per subsistem: [`PEMBACAAN_CODEBASE_26JUL2026.md`](docs/engineering/PEMBACAAN_CODEBASE_26JUL2026.md). **Belum ada satu pun yang diperbaiki** kecuali paparan `.env` (ditambal di `.htaccess`, tapi belum sampai ke production — §0c).
+Ringkasan yang paling berdampak dari 141 temuan. Detail lengkap per subsistem: [`PEMBACAAN_CODEBASE_26JUL2026.md`](docs/engineering/PEMBACAAN_CODEBASE_26JUL2026.md). **Diperbarui 27 Jul 2026:** paparan `.env` sudah ditutup di ketiga situs, dan temuan yang bersinggungan dengan perjalanan SRP2 ikut selesai lewat T0–T4 (§0b) — yang selesai ditandai ✅ di tempatnya, jangan dikerjakan ulang. Sisanya masih terbuka.
 
 > **Cara membaca:** yang bertanda ⏳ **belum diverifikasi runtime** — saat pembacaan dibuat, Apache & MySQL lokal mati. Konfirmasi dulu sebelum memperbaiki, jangan langsung percaya. Sisanya sudah diverifikasi live atau terbukti mutlak dari kode.
 
@@ -477,19 +489,19 @@ Ringkasan yang paling berdampak dari 141 temuan. Detail lengkap per subsistem: [
 
 | Temuan | Lokasi |
 |---|---|
-| 🔥 `.env` + `docs/` tersaji publik (HTTP 200 di **production & staging**) — kredensial harus dirotasi, lihat §0c | `.htaccess` (sudah ditambal lokal) |
-| Kotak **"Kredensial Demo"** memajang email admin + password `password` di halaman login, tanpa gate lingkungan — ikut tampil di production. Ada juga di wizard SRP2. ✅ **Diverifikasi 26 Jul 2026: akun `admin@klinikpkp.jatengprov.go.id` dan `warga@example.com` MEMANG ADA di DB lokal, dan login dengan password `password` BERHASIL.** Kalau seed yang sama pernah dijalankan ke production, itu akun admin publik yang alamat & sandinya diiklankan halaman login sendiri. ⏳ Cek DB production | `pages/auth/login.php:136`, `pages/pengembang/syarat.php:176` |
+| ✅ `.env` + `docs/` tersaji publik (HTTP 200 di **production & staging**) — **paparannya SUDAH ditutup 27 Jul 2026 di ketiga situs** (§0c). Yang MASIH terbuka: kredensial yang terlanjur terbaca belum dirotasi | `.htaccess` (lokal + ketiga server) |
+| Kotak **"Kredensial Demo"** memajang email admin + password `password` di halaman login, tanpa gate lingkungan — ikut tampil di production. Ada juga di wizard SRP2. ✅ **Diverifikasi 26 Jul 2026: akun `admin@klinikpkp.jatengprov.go.id` dan `warga@example.com` MEMANG ADA di DB lokal, dan login dengan password `password` BERHASIL.** Terkonfirmasi ADA di production (3 dari 7 akun). ⚠️ **Bloknya sengaja DIPERTAHANKAN atas keputusan user 27 Jul 2026** — syarat & batasnya di §17 poin 14; yang harus dibereskan bukan bloknya melainkan sandi akun adminnya (§0c) | `pages/auth/login.php:136`, `pages/pengembang/syarat.php:176` |
 | Password API Sikaper **hardcode & sudah masuk riwayat git** (melanggar §9 poin 7) — rotasi kredensialnya, memindah ke `.env` saja tidak cukup | `config/sikaper.php:13` |
 | Chat: `session_id` dibuat browser pakai `Math.random()`, tidak terikat sesi server → siapa pun yang menebaknya membaca riwayat chat + nama/email/HP orang lain | `Chat.php:147`, `layouts/footer.php:161` |
 | Chat: `api_bot()` public-routable, tanpa login, tanpa CSRF (dikecualikan), tanpa rate limit → kuota Gemini bisa dikuras siapa saja | `Chat.php:80` |
 | `submit_antrean()` menerima `program_id`, NIK, dan seluruh data survei mentah dari POST tanpa validasi — bertentangan dengan §15 (jalur `ajukan_solusi` patuh, jalur ini tidak) | `Program.php:383` |
 | Verifikasi TLS **dimatikan di semua** klien HTTP keluar (Sikumbang, Sikaper, Ternak, Gemini) — dikomentari "sementara dev lokal" tapi berlaku unconditional di production | `Index.php:126` dkk, `Sikaper_api.php:36`, `Ternak_api.php:42` |
 | `report_komentar()` tanpa login & tanpa dedup → 5× POST menyembunyikan komentar siapa pun, tanpa jalur pemulihan | `Umum.php:372` |
-| Ganti password & hapus akun tanpa re-autentikasi (konfirmasi ketik-nama hanya di klien) | `Pengaturan.php:227` |
-| Reflected XSS potensial: `google_callback()` meng-echo hasil `sanitize_redirect()` ke dalam string JS — fungsi itu menolak URL eksternal tapi tidak membuang tanda kutip. ⏳ | `Auth.php:681` |
-| Stored XSS via skema URI: pemohon bisa menyimpan `javascript:` sebagai website; admin yang mengkliknya di halaman verifikasi mengeksekusinya | `admin/srp2/detail.php:46` |
+| Ganti password & hapus akun tanpa re-autentikasi (konfirmasi ketik-nama hanya di klien) — **dijadwalkan T5** | `Pengaturan.php:227` |
+| Reflected XSS potensial: `google_callback()` meng-echo hasil `sanitize_redirect()` ke dalam string JS — fungsi itu menolak URL eksternal tapi tidak membuang tanda kutip. ⏳ **dijadwalkan T5** | `Auth.php:681` |
+| Stored XSS via skema URI: pemohon bisa menyimpan `javascript:` sebagai website. ⚠️ **Klaim ini DIBANTAH lewat pengujian** (dicatat di roadmap T6) — jangan diperbaiki sebagai bug; yang tersisa cuma pengerasan: validasi skema URL sendiri alih-alih bergantung `global_xss_filtering` yang komentarnya sendiri menandai DEPRECATED | `admin/srp2/detail.php:46` |
 | `cookie_secure = FALSE` meski production HTTPS | `config/config.php:414` |
-| `ENVIRONMENT` default `development` kalau `CI_ENV` tidak diset → error mendetail tampil publik. ⏳ Cek apakah server menyetelnya | `index.php:56` |
+| `ENVIRONMENT` default `development` kalau `CI_ENV` tidak diset → error mendetail tampil publik. ✅ **Sudah dipasang di production 27 Jul 2026** lewat `SetEnv` di `.htaccess` (BUKAN `.env` — jebakan di §0e), dibuktikan dengan berkas uji. Sifat fail-open-nya tetap berlaku untuk instalasi baru | `index.php:56` |
 
 ### Rusak total — ✅ DIUJI LIVE 26 Jul 2026 (bukan lagi dugaan)
 
@@ -502,14 +514,14 @@ Diuji lewat HTTP nyata di lokal (login `warga@example.com`, POST betulan). Bukan
   Sumbernya satu: `check_forum_rate_limit($table, ...)` di `helpers/forum_helper.php:75` menerima `'diskusi'`/`'komentar'` dari `Umum.php:209` dan `:330`, padahal tabel nyatanya `forum_diskusi`/`forum_komentar`. **Perbaikan paling kecil ada di helper, bukan di pemanggil** — satu tempat, kedua pemanggil ikut benar sekaligus.
 - ✅ **Seluruh chat gagal — TERBUKTI.** `POST Chat/register_session` → `Table 'klinikpkp.tb_chat' doesn't exist` (error 1146). Endpoint ini dikecualikan dari CSRF dan tanpa login, jadi siapa pun yang membuka widget chat di halaman mana pun langsung kena. `chat_rooms`/`chat_messages` justru ADA di DB tapi menganggur — hanya disentuh `Chat_model` yang tidak pernah dipanggil (§7).
 - ❌ **"Pengajuan Desil 4 gagal karena `omah_sekeng` id 6 tidak ada" — KLAIM INI SALAH, jangan diikuti.** Barisnya ADA di DB lokal (`id=6`, `kode_program='omah_sekeng'`, `created_at 2026-06-30`). **Tapi masalah nyatanya lebih halus dan lebih berbahaya:** baris itu dimasukkan MANUAL, **tidak ada migrasi mana pun yang membuatnya** dan tidak ada di `schema_klinikpkp.sql`. Artinya lokal jalan (jadi tidak ada yang sadar) sementara **instalasi fresh dan lingkungan mana pun yang tidak kebagian INSERT manual itu akan gagal** dengan pelanggaran FK saat pemohon Desil 4 memilih Omah Sekeng. ⏳ Belum diverifikasi apakah staging & production punya barisnya. Perbaikan benar: buat migrasi yang meng-seed baris ini, jangan andalkan DB lokal.
-- ⏳ **Approve SRP2 bisa gagal sambil melapor sukses** — `INSERT` ke direktori bentrok `UNIQUE` nama (67 nama seed sudah ada); di production `db_debug` mati → gagal diam-diam tapi flashdata tetap "Pengajuan diterima". `Admin_Srp2.php:133`
+- ✅ **SELESAI di T1a (`f74047f`) — Approve SRP2 bisa gagal sambil melapor sukses.** Terbukti nyata, bukan dugaan: `INSERT` ke direktori bentrok `UNIQUE` nama sementara `db_debug` mati di production. Sekarang `proses()` bertransaksi dan flash-nya ditentukan dari hasil; diuji dengan menirukan kondisi production di lokal.
 - ⏳ **Onboarding role `vendor`** menulis kolom `nama_usaha`/`alamat_usaha`/`jenis_usaha` yang tidak ada di skema; kartu Vendor masih aktif di UI. `Auth.php:466`
 
 > 📌 **Pelajaran dari pengujian ini, berlaku umum:** dua dugaan terbukti benar, satu terbukti SALAH — dan yang salah itu justru menyembunyikan masalah yang lebih berbahaya (DB lokal sudah ditambal manual, lingkungan lain belum). **Kalau DB lokal jalan, itu bukan bukti kode benar.** Selalu tanya: apakah keadaan ini lahir dari migrasi, atau dari tangan seseorang yang lupa mencatat?
 
 ### Masih melanggar aturan "jangan tampilkan angka/status karangan" (§17)
 
-Empat lokasi lolos dari pembersihan B2/B11: halaman **Pengaturan Sistem admin** seluruhnya mockup (nilai palsu, tombol Simpan di luar form, toggle mati) `admin/settings/index.php`; **Statistika** menampilkan angka dummy berlabel "Sumber: Simperum/Sikumbang/Sikaper" dengan multiplier `crc32()` per kabupaten `Statistika.php:26`; **`listkabupaten`** punya tabel intervensi fiktif tanpa label simulasi; dan **`Umum::download_sertifikat()`** memunculkan "Sertifikat berhasil diunduh. (Simulasi)" tanpa mengunduh apa pun `Umum.php:588`.
+Empat lokasi lolos dari pembersihan B2/B11: halaman **Pengaturan Sistem admin** seluruhnya mockup (nilai palsu, tombol Simpan di luar form, toggle mati) `admin/settings/index.php`; **Statistika** menampilkan angka dummy berlabel "Sumber: Simperum/Sikumbang/Sikaper" dengan multiplier `crc32()` per kabupaten `Statistika.php:26`; **`listkabupaten`** punya tabel intervensi fiktif tanpa label simulasi; dan ~~**`Umum::download_sertifikat()`**~~ — ✅ yang keempat sudah dicabut di T0 (`9a0488c`), diganti keterangan jujur. Tiga sisanya masih berdiri.
 
 ### ✅ Fitur "Minta Perbaikan" SRP2 — SELESAI & terverifikasi (27 Jul 2026, commit `5db1ba4`)
 
