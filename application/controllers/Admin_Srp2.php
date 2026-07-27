@@ -2,9 +2,38 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Admin_Srp2 extends Admin_Controller {
+
+    public function __construct() {
+        parent::__construct();
+        // upsert_direktori_publik() dipakai proses() — satu fungsi yang sama
+        // dengan yang dipanggil saat pemohon mengubah data perusahaannya.
+        $this->load->model('auth_model');
+    }
+
     public function index() {
         $data['title'] = 'Daftar Pengembang SRP2';
-        $data['rows'] = $this->db->order_by('nama_perusahaan', 'ASC')->get('srp2_certified_developers')->result();
+
+        // Pola tabel server-side B8, sama dengan pending() di berkas ini —
+        // sebelumnya satu-satunya tabel admin SRP2 yang masih mengirim SELURUH
+        // baris ke browser sekaligus (67 dan terus bertambah tiap approve).
+        $table = $this->table_state(['nama_perusahaan', 'created_at', 'status_aktif'], 'nama_perusahaan');
+        $data['base_url'] = 'Admin_Srp2';
+
+        // from() di depan, lalu count_all_results('', FALSE) — kalau tabelnya
+        // disebut di kedua tempat, FROM tertulis dua kali dan query gagal.
+        $this->db->from('srp2_certified_developers');
+        if ($table['q'] !== '') {
+            $this->db->group_start()
+                ->like('nama_perusahaan', $table['q'])->or_like('alamat_kantor', $table['q'])
+                ->group_end();
+        }
+        $table += $this->paginate_state($this->db->count_all_results('', FALSE));
+
+        $data['rows'] = $this->db->order_by($table['sort'], $table['dir'])
+            ->limit($table['per_page'], $table['offset'])
+            ->get()->result();
+        $data['table'] = $data['pager'] = $table;
+
         $this->render_admin('admin/srp2/index', $data);
     }
 
@@ -165,21 +194,12 @@ class Admin_Srp2 extends Admin_Controller {
             // Direktori publik srp2_certified_developers tetap tabel terpisah
             // (opsi b, docs/architecture/DESAIN_NORMALISASI_SKEMA_ROLE.md) —
             // link berbasis ID, bukan pencocokan nama string seperti sebelumnya.
-            $payload = [
-                'nama_perusahaan' => $reg->nama_perusahaan,
-                'alamat_kantor'   => $reg->alamat_kantor,
-                'website'         => $reg->website,
-                'instagram'       => $reg->instagram,
-                'sosmed_lainnya'  => $reg->sosmed_lainnya,
-                'status_aktif'    => 1,
-            ];
-            if ($reg->certified_developer_id) {
-                $this->db->where('id', $reg->certified_developer_id)->update('srp2_certified_developers', $payload);
-                $update['certified_developer_id'] = $reg->certified_developer_id;
-            } else {
-                $this->db->insert('srp2_certified_developers', $payload);
-                $update['certified_developer_id'] = $this->db->insert_id();
-            }
+            //
+            // Lewat SATU fungsi upsert yang sama dengan yang dipakai saat pemohon
+            // mengubah data perusahaannya — bukan dua salinan payload yang harus
+            // diingat untuk diubah berbarengan.
+            $cid = $this->auth_model->upsert_direktori_publik($reg);
+            if ($cid) { $update['certified_developer_id'] = $cid; }
         } elseif ($status === 'Ditolak' && $reg->certified_developer_id) {
             // Ditolak setelah pernah Diterima: cabut dari direktori publik.
             // Dulu blok direktori hanya jalan untuk 'Diterima', sehingga

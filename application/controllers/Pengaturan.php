@@ -170,13 +170,24 @@ class Pengaturan extends MY_Controller {
         // saat disetujui. Tanpa gerbang ini, gerbang di kirim_pengajuan() cuma
         // dekoratif: kirim dengan nama sah, lalu ganti jadi duplikat selagi
         // Pending. Roadmap T1a butir 4.
-        if (in_array($pengajuan->status_verifikasi, ['Pending', 'Diterima'], TRUE)) {
-            $this->session->set_flashdata('error', $pengajuan->status_verifikasi === 'Pending'
-                ? 'Pengajuan sedang ditinjau admin — data perusahaan tidak bisa diubah sampai ada keputusan.'
-                : 'Pengajuan sudah disetujui. Untuk mengubah data perusahaan, minta admin membuka kembali pengajuan Anda.');
+        // PENDING: terkunci penuh. Data tidak boleh bergeser di bawah tangan
+        // admin yang sedang menilai — nilai yang dia lihat harus sama dengan
+        // nilai yang tersalin ke direktori saat disetujui.
+        if ($pengajuan->status_verifikasi === 'Pending') {
+            $this->session->set_flashdata('error', 'Pengajuan sedang ditinjau admin — data perusahaan tidak bisa diubah sampai ada keputusan.');
             redirect('akun/profil');
             return;
         }
+
+        // DITERIMA: identitas terkunci, KONTAK boleh berubah.
+        //
+        // Mengunci semuanya setelah disetujui terdengar aman, tapi artinya
+        // pengembang yang pindah kantor atau ganti website tidak akan pernah
+        // bisa memperbarui listing publiknya — padahal formnya sendiri berjanji
+        // "Kontak publik — ditampilkan di halaman profil pengembang". Yang
+        // benar-benar tidak boleh berubah adalah NAMA: itu identitas yang
+        // diverifikasi admin sekaligus kunci UNIQUE baris direktori.
+        $terkunci_identitas = ($pengajuan->status_verifikasi === 'Diterima');
 
         // Simpan teks apa adanya (escape dilakukan sekali saat render lewat htmlspecialchars()
         // di profil.php, bukan di sini — supaya tidak double-encode).
@@ -202,14 +213,50 @@ class Pengaturan extends MY_Controller {
             return;
         }
 
+        // Identitas dikunci di sini — SESUDAH $data dibentuk, bukan sebelumnya.
+        // Nama adalah yang diverifikasi admin sekaligus kunci UNIQUE baris
+        // direktori; kontak (alamat/website/sosmed) justru memang dimaksudkan
+        // untuk bisa diperbarui pemiliknya.
+        if ($terkunci_identitas) {
+            if ($data['nama_perusahaan'] !== strtoupper(trim((string) $pengajuan->nama_perusahaan))) {
+                $this->session->set_flashdata('error', 'Nama perusahaan tidak bisa diubah setelah pengajuan disetujui. Untuk mengubahnya, minta admin membuka kembali pengajuan Anda.');
+                redirect('akun/profil');
+                return;
+            }
+            unset($data['nama_perusahaan']);
+        }
+
         // user_id selalu dari sesi, bukan dari input, supaya tidak bisa mengedit
         // data pengembang lain (anti-IDOR). `id` ikut disertakan supaya UPDATE
         // mengenai TEPAT baris yang tadi dibaca — sebelumnya hanya WHERE user_id,
         // yang menimpa SEMUA baris milik user itu sekaligus.
+        $this->db->trans_start();
         $this->db->where('id', $pengajuan->id)->where('user_id', $user_id);
         $this->db->update('srp2_registrations', $data);
 
-        $this->session->set_flashdata('success', 'Data pengembang berhasil diperbarui!');
+        // Perubahan ikut menular ke direktori publik kalau pengajuan ini memang
+        // sudah terbit di sana. Dulu baris direktori hanya diisi SEKALI saat
+        // approve, sehingga ganti alamat/website/Instagram tidak pernah sampai
+        // ke publik — padahal formnya berlabel "Kontak publik — ditampilkan di
+        // halaman profil pengembang". Satu fungsi upsert yang sama dengan yang
+        // dipakai Admin_Srp2::proses(), bukan salinan kedua.
+        $tersinkron = FALSE;
+        if ( ! empty($pengajuan->certified_developer_id)) {
+            $segar = (object) array_merge((array) $pengajuan, $data);
+            $this->Auth_model->upsert_direktori_publik($segar);
+            $tersinkron = TRUE;
+        }
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === FALSE) {
+            $this->session->set_flashdata('error', 'Gagal menyimpan perubahan — tidak ada yang tersimpan. Kemungkinan nama perusahaan sudah dipakai pengembang lain di direktori.');
+            redirect('akun/profil');
+            return;
+        }
+
+        $this->session->set_flashdata('success', $tersinkron
+            ? 'Data pengembang berhasil diperbarui — perubahan juga tampil di profil publik Anda.'
+            : 'Data pengembang berhasil diperbarui!');
         redirect('akun/profil');
     }
 

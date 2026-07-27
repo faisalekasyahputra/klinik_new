@@ -264,6 +264,51 @@ class Auth_model extends CI_Model {
     }
 
     /**
+     * Terbitkan / segarkan baris direktori publik dari sebuah pengajuan.
+     * SATU fungsi, dipanggil dari DUA tempat: Admin_Srp2::proses() saat approve,
+     * dan Pengaturan::update_pengembang_profile() saat pemohon mengubah datanya.
+     *
+     * Dibuat karena dulu baris direktori hanya diisi SEKALI saat approve: ganti
+     * alamat/website/Instagram sesudah itu tidak pernah sampai ke publik, padahal
+     * form-nya berlabel "Kontak publik — ditampilkan di halaman profil
+     * pengembang". Label yang menjanjikan sesuatu yang tidak terjadi termasuk
+     * kebohongan di layar (§0d).
+     *
+     * Dipanggil dari dalam transaksi pemanggilnya — sengaja tidak membuka
+     * transaksi sendiri supaya tidak bersarang.
+     *
+     * @param  object $reg baris srp2_registrations
+     * @return int|null    id baris direktori, NULL kalau tidak bisa diterbitkan
+     */
+    public function upsert_direktori_publik($reg) {
+        $nama = trim((string) ($reg->nama_perusahaan ?? ''));
+        // Kolom nama di direktori NOT NULL + UNIQUE — tanpa nama tidak ada yang
+        // bisa diterbitkan. Gerbangnya sendiri ada di kirim_pengajuan() (T1a).
+        if ($nama === '') { return NULL; }
+
+        $payload = [
+            'nama_perusahaan' => $nama,
+            'alamat_kantor'   => $reg->alamat_kantor ?? NULL,
+            'website'         => $reg->website ?? NULL,
+            'instagram'       => $reg->instagram ?? NULL,
+            'sosmed_lainnya'  => $reg->sosmed_lainnya ?? NULL,
+        ];
+
+        if ( ! empty($reg->certified_developer_id)) {
+            // Sudah terbit: segarkan isinya, JANGAN sentuh status_aktif —
+            // pencabutan/pengaktifan adalah keputusan admin yang terpisah.
+            $this->db->where('id', (int) $reg->certified_developer_id)
+                ->update('srp2_certified_developers', $payload);
+            return (int) $reg->certified_developer_id;
+        }
+
+        $payload['status_aktif'] = 1;
+        $this->db->insert('srp2_certified_developers', $payload);
+        $id = (int) $this->db->insert_id();
+        return $id ?: NULL;
+    }
+
+    /**
      * Check if user has completed onboarding.
      */
     public function is_profile_complete($user_id) {

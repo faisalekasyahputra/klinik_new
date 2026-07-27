@@ -95,8 +95,22 @@ class Pengembang extends MY_Controller {
         if (!is_numeric($id)) show_404();
         if ($this->db->table_exists('srp2_certified_developers')) {
             $data['pengembang'] = $this->db->get_where('srp2_certified_developers', ['id' => (int) $id, 'status_aktif' => 1])->row();
+
+            // Field yang kosong dilengkapi dari baris pengajuan lewat RELASI ID
+            // (certified_developer_id), bukan pencocokan nama string.
+            //
+            // Pencocokan nama itu rapuh dua arah: putus begitu nama diedit di
+            // salah satu sisi, dan bisa MENARIK data perusahaan lain yang
+            // kebetulan bernama sama — nama tidak unique di srp2_registrations.
+            // Migrasi 20260701000014 dibuat justru untuk menggantikannya;
+            // menambah kolom tanpa mencabut jalur lama meninggalkan dua definisi
+            // "perusahaan yang sama". Kedua tabel juga beda collation
+            // (general_ci vs unicode_ci), jadi join namanya bahkan tidak sah.
             if ($data['pengembang'] && $this->db->table_exists('srp2_registrations')) {
-                $registration = $this->db->get_where('srp2_registrations', ['nama_perusahaan' => $data['pengembang']->nama_perusahaan, 'status_verifikasi' => 'Diterima'])->row();
+                $registration = $this->db->get_where('srp2_registrations', [
+                    'certified_developer_id' => (int) $id,
+                    'status_verifikasi'      => 'Diterima',
+                ])->row();
                 if ($registration) foreach (['asosiasi', 'no_keanggotaan', 'alamat_kantor', 'instagram', 'website', 'sosmed_lainnya'] as $field) if (empty($data['pengembang']->$field)) $data['pengembang']->$field = $registration->$field ?? NULL;
             }
         } else $data['pengembang'] = $this->db->get_where('srp2_registrations', ['id' => (int) $id, 'status_verifikasi' => 'Diterima'])->row();

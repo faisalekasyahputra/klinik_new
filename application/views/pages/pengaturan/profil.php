@@ -136,8 +136,18 @@
             <?php endif; ?>
 
             <div class="mb-6 pb-6 border-b border-gray-100 dark:border-white/10">
-                <?php if($pengajuan_sp2->status_verifikasi == 'Diterima'): ?>
-                    <a href="<?= base_url('Pengembang/profil/' . $pengajuan_sp2->id) ?>" target="_blank" class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-hover dark:text-brand-primary border border-brand-primary/30 rounded-xl transition-all font-semibold text-sm mb-3">
+                <?php
+                // Tautan profil publik memakai certified_developer_id (PK direktori),
+                // BUKAN id pengajuan. Dulu memakai $pengajuan_sp2->id — dua tabel,
+                // dua urutan ID: registrasi id=7 membuka profil perusahaan LAIN,
+                // lengkap dengan badge "Bersertifikat".
+                //
+                // Dan tombolnya TIDAK dirender kalau kolomnya NULL. Dulu dirender
+                // untuk semua status Diterima, jadi tidak ada jalan BENAR sama
+                // sekali dari dashboard ke profil publik.
+                ?>
+                <?php if($pengajuan_sp2->status_verifikasi == 'Diterima' && !empty($pengajuan_sp2->certified_developer_id)): ?>
+                    <a href="<?= base_url('Pengembang/profil/' . (int) $pengajuan_sp2->certified_developer_id) ?>" target="_blank" class="inline-flex items-center gap-2 px-4 py-2.5 bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-hover dark:text-brand-primary border border-brand-primary/30 rounded-xl transition-all font-semibold text-sm mb-3">
                         <i class="ph ph-eye"></i> Lihat Profil Publik
                     </a>
                     <div>
@@ -146,6 +156,13 @@
                         </button>
                         <p class="text-xs text-gray-500 dark:text-brand-muted mt-2">Sertifikat digital belum tersedia untuk diunduh — proses penerbitan sedang disiapkan Admin Disperakim Jateng.</p>
                     </div>
+                <?php elseif($pengajuan_sp2->status_verifikasi == 'Diterima'): ?>
+                    <?php // Diterima TAPI belum tertaut ke direktori publik. Sesudah
+                          // backfill (migrasi 20260701000016) ini seharusnya tidak
+                          // terjadi lagi — tapi kalau terjadi, katakan apa adanya,
+                          // jangan tampilkan pesan "menunggu Diterima" kepada orang
+                          // yang pengajuannya SUDAH diterima. ?>
+                    <p class="text-xs text-amber-700 dark:text-amber-400">Pengajuan Anda sudah diterima, tetapi belum terbit di direktori pengembang publik. Silakan hubungi Admin Disperakim Jateng untuk penerbitannya.</p>
                 <?php else: ?>
                     <p class="text-xs text-gray-500 dark:text-brand-muted">Download sertifikat akan tersedia setelah pengajuan Anda dinyatakan <strong class="text-green-600 dark:text-green-400">Diterima</strong>.</p>
                 <?php endif; ?>
