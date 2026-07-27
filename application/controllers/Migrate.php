@@ -34,13 +34,16 @@ class Migrate extends CI_Controller {
     }
 
     /**
-     * Diagnostik BACA SAJA sebelum menjalankan latest() di production — CI
+     * Diagnostik BACA SAJA — jalankan SEBELUM index() di lingkungan mana pun
+     * yang keadaan migrasinya belum pasti (production khususnya). CI
      * migration->version() menandai migrasi sebagai berhasil TANPA memeriksa
      * nilai balik query di dalamnya (lihat system/libraries/Migration.php
-     * baris ~302-309), jadi kalau tabel migrations tidak ada sama sekali,
-     * latest() akan mencoba ulang migrasi 1..14 dari nol dan bisa menandai
-     * sukses walau CREATE TABLE-nya gagal senyap karena db_debug mati di
-     * production. Method ini tidak mengubah apa pun.
+     * baris ~302-309), jadi kalau tabel migrations ternyata tidak ada sama
+     * sekali, latest() akan mencoba ulang migrasi 1..N dari nol dan bisa
+     * menandai sukses walau CREATE TABLE-nya gagal senyap karena db_debug
+     * mati di production. Method ini tidak mengubah apa pun — dipertahankan
+     * sebagai alat baku, bukan sekali pakai, karena T6 dan role berikutnya
+     * akan menghadapi masalah yang sama.
      */
     public function status()
     {

@@ -17,7 +17,7 @@
 | | Situs | Branch | Status |
 |---|---|---|---|
 | **Lokal** | `localhost/klinik_new` | `feature/homepage-portal-v2` | skema `20260701000016` |
-| **PRODUCTION (aktif)** | `floralwhite-lion-710022` | `feature/homepage-portal-v2` — auto-deploy | KODE ter-push 27 Jul 2026 (`26a3a1a`, T0–T5), DB masih skema `...14` — **migrasi belum jalan di sana** |
+| **PRODUCTION (aktif)** | `floralwhite-lion-710022` | `feature/homepage-portal-v2` — auto-deploy | KODE + DB skema `20260701000016` (T0–T5 lengkap), ter-push & termigrasi 27 Jul 2026 |
 | ~~production lama~~ | `palegreen-mink-703421` | `main` — beku sejak 19 Jul | 🔴 **DIMATIKAN** |
 | ~~staging lama~~ | `darkseagreen-hamster-214338` | `feature/ui-ux-revamp` | 🔴 **DIMATIKAN** |
 | ~~instalasi mati~~ | `darkgreen-cattle-889861` | tanpa git, Mei | 🔴 **DIMATIKAN** |
@@ -26,15 +26,13 @@
 >
 > Nama DB-nya tetap `u504551489_klinikstg` (menyesatkan, tapi jangan diganti tanpa alasan kuat — mengganti nama DB produksi berjalan lebih berisiko daripada namanya yang keliru).
 >
-> ✅ **T0–T5 roadmap pengembang SUDAH di-push ke production 27 Jul 2026** (`26a3a1a`, atas perintah eksplisit user). Auto-deploy akan menarik kode barunya.
->
-> 🔥 **YANG MASIH TERBUKA — migrasi 15 & 16 BELUM dijalankan di production.** DB production masih skema `...14` (tabel `migrations` tidak ada sama sekali, lihat catatan SSH di bawah). Kode baru mengasumsikan kolom-kolom dari migrasi 15 (`sys_rate_limits`) dan 16 (backfill `certified_developer_id`) — tanpa itu, rute SRP2 di production akan **500** begitu auto-deploy selesai menarik kode. Ini butuh SSH/terminal hosting untuk `php index.php migrate` (atau migrasi 01–16 seluruhnya kalau DB itu ternyata benar-benar baseline 14 tabel seperti temuan SSH sebelumnya) — **aksi migrasi production, wajib izin eksplisit user sebelum dijalankan**, lihat §0d poin 5.
+> ✅ **T0–T5 roadmap pengembang SUDAH di-push DAN termigrasi di production, 27 Jul 2026** (`26a3a1a`.. lewat SSH, atas perintah eksplisit user). Diverifikasi lewat `Migrate::status()` (diagnostik baca-saja, lihat `Migrate.php`) SEBELUM dan SESUDAH migrasi — production ternyata SUDAH punya tabel `migrations` di versi `...14` (paragraf "tabel migrations tidak ada sama sekali" di bawah adalah tentang production LAMA yang beku (`palegreen`/`main`), ditulis SEBELUM keputusan staging-jadi-production, BUKAN tentang `floralwhite-lion` — sumber salah baca yang sempat membuat dokumen ini kontradiksi diri sendiri). Migrasi 15 & 16 berjalan sukses (`Migrasi sukses, versi skema sekarang: 20260701000016`), dan tiga rute diuji langsung lewat HTTP (`Auth/login`, `Pengembang/sertifikasi`, `Auth/forgot_password`) — ketiganya 200.
 >
 > `main` + `palegreen` kalau dihidupkan lagi nanti: DB-nya **belum pernah dimigrasi sama sekali** (tabel `migrations` tidak ada, cuma 14 tabel baseline), jadi butuh migrasi **01–16 seluruhnya**.
 
-> ⚠️ **Dikoreksi lewat SSH 27 Jul 2026 — dokumen ini dulu keliru.** Production BUKAN "tertinggal di `20260701000010`": **tabel `migrations` tidak ada sama sekali**, dan isinya cuma 14 tabel baseline dari `schema_klinikpkp.sql`. Tidak ada `srp2_*`, `aduan`, `kabupaten`, `bidang`, `kkn_magang_pendaftaran`, `sys_rate_limits`, tanpa kolom reviewer, tanpa FK.
+> ⚠️ **Dikoreksi lewat SSH 27 Jul 2026 — dokumen ini dulu keliru.** Ini tentang `palegreen-mink`/`main` (production LAMA yang sekarang beku), BUKAN `floralwhite-lion` yang aktif sekarang — dua paragraf ini sempat tertulis seolah tentang production yang sama dan membuat dokumen ini kontradiksi diri sendiri sampai diverifikasi ulang lewat `Migrate::status()` di paragraf atas. `palegreen`/`main` BUKAN "tertinggal di `20260701000010`": **tabel `migrations` tidak ada sama sekali**, dan isinya cuma 14 tabel baseline dari `schema_klinikpkp.sql`. Tidak ada `srp2_*`, `aduan`, `kabupaten`, `bidang`, `kkn_magang_pendaftaran`, `sys_rate_limits`, tanpa kolom reviewer, tanpa FK.
 >
-> **Konsekuensi untuk rilis:** saat `main` akhirnya dibuka, production butuh migrasi **01–16 seluruhnya**, bukan cuma 11–16. Sebagian rute SRP2 di production hari ini memang 500 (`Unable to load the requested file: pages/pengembang/sertifikasi.php`) karena kode lama + skema baseline.
+> **Konsekuensi untuk rilis:** saat `main` akhirnya dibuka, `palegreen` butuh migrasi **01–16 seluruhnya**, bukan cuma 11–16. Sebagian rute SRP2 di `palegreen` hari ini memang 500 (`Unable to load the requested file: pages/pengembang/sertifikasi.php`) karena kode lama + skema baseline.
 
 **Ada EMPAT instalasi Klinik PKP di akun Hostinger `u504551489`, bukan dua** (ditemukan 27 Jul 2026):
 
