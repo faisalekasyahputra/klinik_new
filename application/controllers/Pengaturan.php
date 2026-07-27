@@ -301,6 +301,16 @@ class Pengaturan extends MY_Controller {
         // yang menerima password apa pun.
         $password = $this->input->post('password');
         if (!empty($password)) {
+            // Bukti kepemilikan sebelum ganti password — roadmap T5 S13. Tanpa
+            // ini, sesi yang sempat dipakai orang lain (mis. komputer publik)
+            // bisa mengunci pemilik asli keluar tanpa perlu tahu sandi lamanya.
+            $current_password = (string) $this->input->post('current_password');
+            $user = $this->Auth_model->find_by_id($user_id);
+            if (!password_verify($current_password, (string) $user->password)) {
+                $this->session->set_flashdata('error', 'Password saat ini salah.');
+                redirect('akun/profil');
+                return;
+            }
             if (strlen($password) < 8 || !preg_match('/[A-Z]/', $password) ||
                 !preg_match('/[0-9]/', $password) || !preg_match('/[^A-Za-z0-9]/', $password)) {
                 $this->session->set_flashdata('error', 'Password baru harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.');
@@ -333,6 +343,19 @@ class Pengaturan extends MY_Controller {
         // Ensure POST request
         if ($this->input->method() !== 'post') {
             show_404();
+            return;
+        }
+
+        // Konfirmasi ketik-nama di modal cuma JS — siapa pun yang sempat
+        // memakai sesi ini bisa POST langsung tanpa pernah mengetiknya.
+        // Password saat ini adalah bukti kepemilikan yang sebenarnya
+        // (roadmap T5 S13); tanpa ini FK CASCADE menghapus seluruh
+        // pengajuan SRP2 pemilik asli.
+        $current_password = (string) $this->input->post('current_password');
+        $user = $this->Auth_model->find_by_id($user_id);
+        if (!password_verify($current_password, (string) $user->password)) {
+            $this->session->set_flashdata('error', 'Password salah. Akun tidak dihapus.');
+            redirect('akun/profil');
             return;
         }
 

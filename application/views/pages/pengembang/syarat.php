@@ -157,7 +157,7 @@
                         <template x-if="!isPengelola">
                             <div>
                                 <h2 class="mt-4 text-lg font-black">Akun ini bukan akun pengembang</h2>
-                                <p class="mx-auto mt-1 max-w-xs text-xs leading-relaxed" style="color:var(--portal-text-muted)">Layanan SRP2 hanya untuk akun dengan peran pengembang. Silakan keluar dan daftar akun pengembang baru.</p>
+                                <p class="mx-auto mt-1 max-w-xs text-xs leading-relaxed" style="color:var(--portal-text-muted)">Layanan SRP2 hanya untuk akun dengan peran pengembang. Kalau peran akun Anda baru saja diubah admin, coba <strong>keluar lalu masuk lagi</strong> dulu — sesi yang sedang aktif belum tahu perannya berubah. Kalau akun ini memang bukan pengembang, silakan daftar akun pengembang baru.</p>
                                 <a :href="baseUrl + dashboardUrl" class="mt-5 inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wide" style="background:var(--portal-border);color:var(--portal-text)">Ke Dashboard Saya</a>
                             </div>
                         </template>

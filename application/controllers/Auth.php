@@ -304,9 +304,20 @@ class Auth extends MY_Controller {
         }
 
         $registration_id = null;
+        $default_name = NULL;
+        $default_username = NULL;
         if ($is_srp2) {
+            // Daftar cepat SRP2 langsung menyetel profile_completed=1 dan tidak
+            // pernah melalui onboarding, jadi name/username akan NULL selamanya
+            // kalau tidak diisi di sini — roadmap T5 S12-a. Diturunkan dari data
+            // yang MEMANG sudah diisi user (email, nama perusahaan), bukan
+            // dikarang; pemohon tetap bebas menggantinya di /akun/profil.
+            $default_username = $this->auth_model->generate_unique_username(strstr($email, '@', TRUE));
+            $default_name = 'Perwakilan ' . strtoupper($nama_perusahaan);
+
             $this->db->where('id', $user_id)->update('usr_users', [
                 'role' => 'pengembang', 'nama_perusahaan' => strtoupper($nama_perusahaan),
+                'username' => $default_username, 'name' => $default_name,
                 'profile_completed' => 1, 'status' => 'active', 'updated_at' => date('Y-m-d H:i:s'),
             ]);
             // Draft dibuat langsung di sini (bukan lewat detour verifikasi-email simulasi)
@@ -321,8 +332,8 @@ class Auth extends MY_Controller {
         // Auto-login the new user
         $session_data = [
             'user_id'   => $user_id,
-            'name'      => NULL,
-            'username'  => NULL,
+            'name'      => $default_name,
+            'username'  => $default_username,
             'email'     => $email,
             'avatar'    => NULL,
             'role'      => $is_srp2 ? 'pengembang' : NULL,
@@ -641,6 +652,25 @@ class Auth extends MY_Controller {
     }
 
     /**
+     * Tutup popup OAuth dan (opsional) arahkan window pembuka ke $redirect_url.
+     * $redirect_url di-json_encode, bukan di-echo mentah ke string JS berkutip
+     * tunggal — sebelumnya base_url($redirect_to) diselipkan langsung, dan
+     * sanitize_redirect() cuma menolak URL eksternal, tidak membuang kutip
+     * satu dari path relatif (roadmap T5, Auth.php ~:680). CSP + nonce dipasang
+     * sekalian sebagai lapis kedua: halaman ini cuma perlu satu <script> inline,
+     * jadi tidak ada alasan mengizinkan skrip lain dari sumber mana pun.
+     */
+    private function _oauth_close_popup($redirect_url = null) {
+        $nonce = base64_encode(random_bytes(16));
+        header("Content-Security-Policy: default-src 'none'; script-src 'nonce-{$nonce}'");
+        $script = $redirect_url === null
+            ? 'window.close();'
+            : 'window.opener.location.href = ' . json_encode($redirect_url) . '; window.close();';
+        echo '<script nonce="' . $nonce . '">' . $script . '</script>';
+        exit;
+    }
+
+    /**
      * Endpoint: base_url('auth/google_callback') -> Handle Google response
      */
     public function google_callback() {
@@ -651,11 +681,7 @@ class Auth extends MY_Controller {
 
         if (empty($state_from_google) || empty($state_from_session) ||
             !hash_equals($state_from_session, $state_from_google)) {
-            echo "<script>
-                window.opener.location.href = '" . base_url('login') . "';
-                window.close();
-            </script>";
-            exit;
+            $this->_oauth_close_popup(base_url('login'));
         }
 
         $redirect_to = $this->session->userdata('oauth_redirect');
@@ -719,31 +745,15 @@ class Auth extends MY_Controller {
                             $this->auth_model->ensure_srp2_draft($user_record->id);
                         }
 
-                        echo "
-                        <!DOCTYPE html>
-                        <html>
-                        <head><title>Mengarahkan...</title></head>
-                        <body>
-                            <script>
-                                window.opener.location.href = '" . base_url($redirect_to) . "';
-                                window.close();
-                            </script>
-                        </body>
-                        </html>";
-                        exit;
+                        $this->_oauth_close_popup(base_url($redirect_to));
                     }
                 }
             } catch (Exception $e) {
-                echo "<script>
-                    window.opener.location.href = '" . base_url('Auth/login?status=error') . "';
-                    window.close();
-                </script>";
-                exit;
+                $this->_oauth_close_popup(base_url('Auth/login?status=error'));
             }
         }
 
-        echo "<script>window.close();</script>";
-        exit;
+        $this->_oauth_close_popup();
     }
 
     // =========================================================

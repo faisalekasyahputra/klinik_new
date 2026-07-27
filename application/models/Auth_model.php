@@ -165,6 +165,26 @@ class Auth_model extends CI_Model {
     // =========================================================
 
     /**
+     * Turunkan username unik dari local-part email — dipakai HANYA saat
+     * daftar cepat SRP2 mengisi profile_completed=1 tanpa pernah melalui
+     * onboarding, sehingga name/username tidak pernah NULL (roadmap T5
+     * S12-a). Bukan pengganti onboarding: user tetap bisa menggantinya
+     * lewat /akun/profil kapan saja.
+     */
+    public function generate_unique_username($seed) {
+        $base = strtolower(preg_replace('/[^a-z0-9_]/', '', $seed));
+        if ($base === '') { $base = 'pengembang'; }
+        $base = substr($base, 0, 40);
+
+        $username = $base;
+        $suffix = 1;
+        while ($this->db->where('username', $username)->count_all_results('usr_users') > 0) {
+            $username = substr($base, 0, 40) . (++$suffix);
+        }
+        return $username;
+    }
+
+    /**
      * Save onboarding profile data.
      * $data should contain role-specific fields.
      */

@@ -59,51 +59,16 @@
 
             <h2 class="auth-heading">Lupa Password? 🔑</h2>
             <p class="auth-subheading">
-                Masukkan email yang terdaftar. Kami akan mengirimkan tautan reset password ke email Anda.
+                Reset password mandiri belum tersedia di sistem ini.
             </p>
 
-            <!-- Flash -->
-            <?php if ($this->session->flashdata('error')): ?>
-                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--error relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <i class="fa-solid fa-circle-exclamation mr-2"></i>
-                        <?= $this->session->flashdata('error') ?>
-                    </div>
-                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            <?php endif; ?>
-            <?php if ($this->session->flashdata('success')): ?>
-                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--success relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <i class="fa-solid fa-circle-check mr-2"></i>
-                        <?= $this->session->flashdata('success') ?>
-                    </div>
-                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            <?php endif; ?>
-
-            <!-- Placeholder Info -->
+            <!-- Keterangan jujur: reset mandiri belum ada (butuh infrastruktur
+                 email yang belum dipasang), bukan form yang berpura-pura jalan.
+                 Roadmap T5 S12-b. -->
             <div class="auth-alert auth-alert--warning">
                 <i class="fa-solid fa-triangle-exclamation"></i>
-                Fitur ini sedang dalam pengembangan. Silakan hubungi admin untuk reset password manual.
+                Reset password mandiri belum tersedia. Silakan hubungi Admin Disperakim Jateng untuk reset password manual.
             </div>
-
-            <!-- Form (placeholder — not functional yet) -->
-            <form action="#" method="POST" onsubmit="return false;">
-                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-
-                <label class="auth-label" for="reset_email">Alamat Email</label>
-                <div class="auth-input-group">
-                    <input type="email" id="reset_email" name="email" class="auth-input"
-                           placeholder="nama@email.com" required>
-                    <i class="fa-solid fa-envelope auth-input-icon"></i>
-                </div>
-
-                <button type="submit" class="auth-btn" disabled style="opacity:0.5;">
-                    <span>Kirim Tautan Reset</span>
-                    <i class="fa-solid fa-paper-plane"></i>
-                </button>
-            </form>
 
             <!-- Back link -->
             <div class="auth-footer-links" style="justify-content:center;">

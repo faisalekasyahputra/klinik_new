@@ -1,5 +1,10 @@
 <div class="relative z-10">
-    <?php $current_username = htmlspecialchars($user->username ?? $user->name); ?>
+    <?php // Rantai fallback sampai email — username DAN name bisa dua-duanya
+    // NULL untuk akun daftar cepat lama, dan email selalu ada. Sebelumnya
+    // fallback berhenti di $user->name, jadi kalau itu juga NULL, JS
+    // membandingkan input (selalu string) dengan literal null dan tombol
+    // Hapus mustahil aktif (roadmap T5 R2-sebagian).
+    $current_username = htmlspecialchars($user->username ?? $user->name ?? $user->email); ?>
 
     <!-- Header -->
     <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -63,12 +68,14 @@
                 <div class="pt-4 border-t border-gray-100 dark:border-white/5">
                     <p class="text-sm font-medium text-gray-800 dark:text-white mb-1">Ganti Password</p>
                     <p class="text-xs text-gray-500 dark:text-brand-muted mb-3">Kosongkan kalau tidak ingin mengubah. Minimal 8 karakter, ada huruf besar, angka, dan simbol.</p>
-                    <div class="grid sm:grid-cols-2 gap-3">
+                    <div class="grid sm:grid-cols-2 gap-3 mb-3">
                         <input type="password" name="password" autocomplete="new-password" placeholder="Password baru"
                                class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-brand-muted/60 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all">
                         <input type="password" name="password_confirm" autocomplete="new-password" placeholder="Ulangi password baru"
                                class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-brand-muted/60 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all">
                     </div>
+                    <input type="password" name="current_password" autocomplete="current-password" placeholder="Password Anda saat ini (wajib diisi untuk ganti password)"
+                           class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-brand-muted/60 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all">
                 </div>
 
                 <div class="pt-2">
@@ -271,9 +278,18 @@
         <form action="<?= base_url('akun/delete') ?>" method="POST" id="deleteForm">
             <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
-            <div class="mb-6">
+            <div class="mb-3">
                 <input type="text" id="confirmDeleteInput" autocomplete="off" onkeyup="checkDeleteConfirm()" placeholder="Ketik nama akun Anda"
                        class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-brand-muted/60 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all text-center">
+            </div>
+
+            <!-- Ketik-nama cuma friksi UI (dan bisa ditembus siapa pun yang
+                 sekadar memakai sesi ini) — bukti kepemilikan yang sebenarnya
+                 adalah password, diverifikasi SERVER di Pengaturan::delete_account()
+                 (roadmap T5 S13). -->
+            <div class="mb-6">
+                <input type="password" name="current_password" autocomplete="current-password" placeholder="Password Anda saat ini" required
+                       class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2.5 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-brand-muted/60 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all">
             </div>
 
             <button type="submit" id="btnConfirmDelete" disabled
@@ -285,7 +301,7 @@
 </div>
 
 <script>
-const targetUsername = <?= json_encode($user->username ?? $user->name) ?>;
+const targetUsername = <?= json_encode($user->username ?? $user->name ?? $user->email) ?>;
 
 function openDeleteModal() {
     document.getElementById('deleteModal').classList.remove('hidden');
