@@ -17,7 +17,7 @@
 | | Situs | Branch | Status |
 |---|---|---|---|
 | **Lokal** | `localhost/klinik_new` | `feature/homepage-portal-v2` | skema `20260701000016` |
-| **PRODUCTION (aktif)** | `floralwhite-lion-710022` | `feature/homepage-portal-v2` — auto-deploy | DB `u504551489_klinikstg`, skema `...14` |
+| **PRODUCTION (aktif)** | `floralwhite-lion-710022` | `feature/homepage-portal-v2` — auto-deploy | KODE ter-push 27 Jul 2026 (`26a3a1a`, T0–T5), DB masih skema `...14` — **migrasi belum jalan di sana** |
 | ~~production lama~~ | `palegreen-mink-703421` | `main` — beku sejak 19 Jul | 🔴 **DIMATIKAN** |
 | ~~staging lama~~ | `darkseagreen-hamster-214338` | `feature/ui-ux-revamp` | 🔴 **DIMATIKAN** |
 | ~~instalasi mati~~ | `darkgreen-cattle-889861` | tanpa git, Mei | 🔴 **DIMATIKAN** |
@@ -26,7 +26,9 @@
 >
 > Nama DB-nya tetap `u504551489_klinikstg` (menyesatkan, tapi jangan diganti tanpa alasan kuat — mengganti nama DB produksi berjalan lebih berisiko daripada namanya yang keliru).
 >
-> ⚠️ **T0–T4 roadmap pengembang BELUM ada di production** (27 Jul 2026): lokal `ahead 17` commit dari `origin/feature/homepage-portal-v2` dan belum di-push. Production masih menjalankan kode sebelum T0. Push-nya menunggu perintah user, karena push = rilis — dan DB-nya masih skema `...14`, jadi migrasi **15 & 16 wajib dijalankan di sana sesudah push**, kalau tidak halaman SRP2 akan error kolom.
+> ✅ **T0–T5 roadmap pengembang SUDAH di-push ke production 27 Jul 2026** (`26a3a1a`, atas perintah eksplisit user). Auto-deploy akan menarik kode barunya.
+>
+> 🔥 **YANG MASIH TERBUKA — migrasi 15 & 16 BELUM dijalankan di production.** DB production masih skema `...14` (tabel `migrations` tidak ada sama sekali, lihat catatan SSH di bawah). Kode baru mengasumsikan kolom-kolom dari migrasi 15 (`sys_rate_limits`) dan 16 (backfill `certified_developer_id`) — tanpa itu, rute SRP2 di production akan **500** begitu auto-deploy selesai menarik kode. Ini butuh SSH/terminal hosting untuk `php index.php migrate` (atau migrasi 01–16 seluruhnya kalau DB itu ternyata benar-benar baseline 14 tabel seperti temuan SSH sebelumnya) — **aksi migrasi production, wajib izin eksplisit user sebelum dijalankan**, lihat §0d poin 5.
 >
 > `main` + `palegreen` kalau dihidupkan lagi nanti: DB-nya **belum pernah dimigrasi sama sekali** (tabel `migrations` tidak ada, cuma 14 tabel baseline), jadi butuh migrasi **01–16 seluruhnya**.
 
