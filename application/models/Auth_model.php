@@ -136,6 +136,15 @@ class Auth_model extends CI_Model {
      * Increment failed login attempts. Lock account if threshold reached.
      */
     public function increment_login_attempts($user_id) {
+        // Jendela lockout sebelumnya sudah lewat, tapi login_attempts tidak
+        // pernah direset kecuali login BERHASIL -- tanpa ini, satu salah ketik
+        // sesudah menunggu penuh 15 menit langsung mengunci 15 menit lagi,
+        // selamanya, sampai kebetulan sandinya benar (roadmap T6 R2-sisa).
+        $user = $this->find_by_id($user_id);
+        if ($user && $user->locked_until && strtotime($user->locked_until) <= time()) {
+            $this->db->where('id', $user_id)->update('usr_users', ['login_attempts' => 0, 'locked_until' => NULL]);
+        }
+
         $this->db->set('login_attempts', 'login_attempts + 1', FALSE);
         $this->db->where('id', $user_id);
         $this->db->update('usr_users');

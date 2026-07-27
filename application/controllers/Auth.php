@@ -346,6 +346,10 @@ class Auth extends MY_Controller {
             $this->output->set_content_type('application/json')->set_output(json_encode([
                 'status'          => 'success',
                 'role'            => $session_data['role'],
+                // Wizard SRP2 menampilkan "Masuk sebagai <nama>" lewat field ini
+                // (syarat.php:506) -- tanpanya kartu "Anda sudah terdaftar" tampil
+                // dengan nama kosong tepat sesudah daftar cepat (roadmap T6 R2-sisa).
+                'name'            => $default_name,
                 'registration_id' => $registration_id,
             ]));
             return;

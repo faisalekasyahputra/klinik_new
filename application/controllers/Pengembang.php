@@ -84,13 +84,6 @@ class Pengembang extends MY_Controller {
 
     public function simpan() { redirect('Pengembang/syarat'); }
 
-    public function result($id = NULL) {
-        if (!$this->akses_pengembang('Pengembang/result/' . (int) $id) || !is_numeric($id)) show_404();
-        $data['pendaftar'] = $this->db->get_where('srp2_registrations', ['id' => (int) $id, 'user_id' => $this->get_user_id()])->row();
-        if (!$data['pendaftar']) show_404();
-        $this->render('pages/pengembang/v_sertifikasi', $data);
-    }
-
     public function profil($id = NULL) {
         if (!is_numeric($id)) show_404();
         if ($this->db->table_exists('srp2_certified_developers')) {

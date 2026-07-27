@@ -41,6 +41,15 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |                      diseragamkan di DB — di sinilah perbedaan itu
 |                      dideklarasikan SEKALI, dipakai badge sidebar sekaligus
 |                      kartu ringkas Admin_Dashboard.
+|   status_column, owner_column - opsional, dipakai bareng 'table'. Nama kolom
+|                      status & pemilik baris SUDAH beda-beda per domain
+|                      (status_verifikasi/status/status_antrean; owner selalu
+|                      user_id hari ini tapi jangan diasumsikan tetap begitu
+|                      untuk role berikutnya) — sebelumnya nama kolom status
+|                      cuma terkubur sebagai KEY di dalam pending_where, jadi
+|                      tidak ada cara membacanya tanpa tahu domainnya duluan.
+|                      Roadmap T6, cetakan untuk warga/mahasiswa/admin_kabkota/
+|                      admin_bidang.
 |   badge   - opsional TRUE: tampilkan counter merah di sidebar sejumlah baris
 |             yang cocok pending_where. Butuh 'table' + 'pending_where'.
 |   ringkas - opsional label pendek untuk kartu overview superadmin; kalau tidak
@@ -80,6 +89,7 @@ $config['dashboard_modules'] = [
         'scope' => 'kabupaten_id',
         'table' => 'sf_housing_queue', 'review_by' => 'admin_kabkota',
         'pending_where' => ['status_antrean' => 'pending'],
+        'status_column' => 'status_antrean', 'owner_column' => 'user_id',
     ],
     'aduan_bidang' => [
         'label' => 'Aduan Bidang Saya', 'icon' => 'ph-chat-centered-text',
@@ -88,6 +98,7 @@ $config['dashboard_modules'] = [
         'scope' => 'bidang_kode',
         'table' => 'aduan', 'review_by' => 'admin_bidang',
         'pending_where' => ['status' => 'Baru'],
+        'status_column' => 'status', 'owner_column' => 'user_id',
     ],
 
     // ===== Superadmin =====
@@ -102,6 +113,7 @@ $config['dashboard_modules'] = [
         'roles' => ['admin'], 'scope' => null,
         'table' => 'sf_housing_queue', 'review_by' => 'admin',
         'pending_where' => ['status_antrean' => 'pending'],
+        'status_column' => 'status_antrean', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'Antrean Perumahan',
     ],
     'srp2_verifikasi' => [
@@ -110,6 +122,7 @@ $config['dashboard_modules'] = [
         'roles' => ['admin'], 'scope' => null,
         'table' => 'srp2_registrations', 'review_by' => 'admin',
         'pending_where' => ['status_verifikasi' => 'Pending'],
+        'status_column' => 'status_verifikasi', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'Sertifikasi SRP2',
     ],
     'srp2_direktori' => [
@@ -125,6 +138,7 @@ $config['dashboard_modules'] = [
         'roles' => ['admin'], 'scope' => null,
         'table' => 'aduan', 'review_by' => 'admin_bidang',
         'pending_where' => ['status' => 'Baru'],
+        'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'Aduan Warga',
     ],
     'kemitraan' => [
@@ -133,6 +147,7 @@ $config['dashboard_modules'] = [
         'roles' => ['admin'], 'scope' => null,
         'table' => 'kkn_magang_pendaftaran', 'review_by' => 'admin',
         'pending_where' => ['status' => 'Diajukan'],
+        'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'KKN/Magang',
     ],
     'users' => [

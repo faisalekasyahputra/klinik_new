@@ -1,5 +1,13 @@
 <?php
 $status_kelas = ['Draft' => 'process', 'Pending' => 'pending', 'Diterima' => 'ok', 'Ditolak' => 'reject'][$pendaftar->status_verifikasi] ?? 'pending';
+// Validasi skema URL sendiri, jangan bergantung pada global_xss_filtering
+// (DEPRECATED). Pola sama dengan pages/pengembang/profil.php:2-4. Bukan
+// perbaikan bug -- klaim Stored XSS javascript: di sini sudah DIBANTAH lewat
+// pengujian (roadmap T6) -- ini pengerasan agar tidak lagi bergantung satu
+// setelan global untuk sesuatu yang bisa divalidasi lokal.
+$safe_url = function ($url) {
+    return ($url && preg_match('#^https?://#i', $url)) ? $url : null;
+};
 ?>
 <div class="mb-6 flex items-start justify-between gap-4">
     <div>
@@ -82,9 +90,9 @@ $status_kelas = ['Draft' => 'process', 'Pending' => 'pending', 'Diterima' => 'ok
         <div>
             <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-brand-muted/70 mb-1">Tautan</h4>
             <p class="text-xs text-gray-500 dark:text-brand-muted space-x-2">
-                <?php foreach (['website' => 'Website', 'instagram' => 'Instagram', 'sosmed_lainnya' => 'Lainnya'] as $field => $label): ?>
-                    <?php if (!empty($pendaftar->$field)): ?>
-                    <a href="<?= html_escape($pendaftar->$field) ?>" target="_blank" rel="noopener" class="text-blue-600 dark:text-brand-primary hover:underline"><?= $label ?></a>
+                <?php foreach (['website' => 'Website', 'instagram' => 'Instagram', 'sosmed_lainnya' => 'Lainnya'] as $field => $label): $link = $safe_url($pendaftar->$field ?? null); ?>
+                    <?php if ($link): ?>
+                    <a href="<?= html_escape($link) ?>" target="_blank" rel="noopener" class="text-blue-600 dark:text-brand-primary hover:underline"><?= $label ?></a>
                     <?php endif; ?>
                 <?php endforeach; ?>
             </p>

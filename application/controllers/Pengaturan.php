@@ -80,7 +80,12 @@ class Pengaturan extends MY_Controller {
                 }
                 $items[] = [
                     'jenis' => 'Sertifikasi Pengembang (SRP2)', 'icon' => 'ph-certificate',
-                    'judul' => $sp2->nama_perusahaan,
+                    // Bisa NULL: admin yang mempromosikan akun langsung ke role
+                    // pengembang (Admin_Users::update_role()) tidak pernah
+                    // menanyakan nama perusahaan, dan ensure_srp2_draft() ikut
+                    // membuat draft dengan kolom itu kosong. Ditandai apa adanya,
+                    // bukan disembunyikan (roadmap T6 R2-sisa).
+                    'judul' => $sp2->nama_perusahaan ?: '(Nama perusahaan belum diisi)',
                     'status_label' => $status[0], 'status_kelas' => $status[1],
                     // updated_at, bukan created_at — draft bisa dibuat jauh sebelum
                     // benar-benar diisi/dikirim, tanggal aktivitas terakhir lebih relevan.
