@@ -8,7 +8,7 @@
 
 ## 0. BACA INI DULU — Status Terkini & Protokol Antar-Agent
 
-**Terakhir disinkronkan: 27 Juli 2026** (setelah roadmap pengembang T0–T4 mendarat — lihat §0b). Kalau kamu agent yang baru masuk, baca bagian ini sampai habis sebelum menyentuh apa pun.
+**Terakhir disinkronkan: 27 Juli 2026** (roadmap pengembang T0–T6 SELESAI, ter-push & termigrasi ke production, ketujuh akun demo lengkap — lihat §0b/§0c). Kalau kamu agent yang baru masuk, baca bagian ini sampai habis sebelum menyentuh apa pun.
 
 ### 0a. Keadaan lingkungan saat ini
 
@@ -82,8 +82,8 @@ Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya
 >
 > Tindakan yang tersisa untuk user, bukan agent: (a) **ganti sandi `admin@klinikpkp.jatengprov.go.id`** — lewat alur aplikasi sendiri, bukan SQL, supaya tidak salah kunci diri sendiri, KAPAN pun dinas sudah selesai masa uji coba; (b) **rotasi** password DB, Google client secret, dan Gemini API key — semuanya sudah terlanjur terbaca publik selama `.env` sempat terbuka. ⚠️ **`KPKP_DATA_KEY` JANGAN dirotasi begitu saja** — NIK & alamat terenkripsi akan hilang permanen (§6).
 
-1. Pengujian manual staging oleh user (semua verifikasi sejauh ini lewat curl)
-2. Migrasi DB production — **setelah** merge, bukan sebelum
+1. ~~Pengujian manual staging oleh user (semua verifikasi sejauh ini lewat curl)~~ — **usang**: staging kini production aktif (§0a), dan T0–T6 sudah diverifikasi luas lewat curl + browser sungguhan + skrip uji perjalanan otomatis (§0b). Pengujian manual user tetap berharga tapi bukan lagi satu-satunya bukti.
+2. ~~Migrasi DB production — setelah merge, bukan sebelum~~ — **selesai & usang**: migrasi 15–16 sudah dijalankan langsung di production 27 Jul 2026 (§0a), tidak lewat alur "merge ke `main`" yang dibayangkan poin ini — `main` masih beku.
 3. ~~Isi `PRIVATE_UPLOADS_PATH` di `.env` server~~ — ✅ **SELESAI 27 Jul 2026 lewat SSH.** Diisi eksplisit di ketiga instalasi (production aktif + dua yang dimatikan, supaya tidak jadi jebakan kalau dihidupkan lagi), jalur absolut sejajar `public_html`, izin `700`, cadangan `.env.bak-*` tersimpan. Diverifikasi dengan memanggil `private_uploads_root()` yang ASLI lewat HTTP: root terbaca di luar DocumentRoot, `/private_uploads/` dan turunannya 404, aplikasi tetap sehat.
    > **Kenapa eksplisit, padahal fallback-nya kebetulan benar:** fallback `dirname(FCPATH)/private_uploads` bergantung pada tata letak hosting. Asumsi yang sama pernah SALAH di XAMPP lokal — folder induk aplikasi ternyata sama dengan DocumentRoot, dan dokumen SRP2 bisa diunduh tanpa login. Aman-karena-kebetulan bukan aman.
 4. Di luar kita: integrasi SIMPERUM (belum ada), generator sertifikat PDF
