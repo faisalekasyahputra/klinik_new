@@ -69,7 +69,8 @@ Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya
 
 1. Pengujian manual staging oleh user (semua verifikasi sejauh ini lewat curl)
 2. Migrasi DB production — **setelah** merge, bukan sebelum
-3. **Isi `PRIVATE_UPLOADS_PATH` di `.env` server** (staging & production) ke direktori di luar DocumentRoot. Kalau dibiarkan kosong, jatuh ke perilaku lama (`dirname(FCPATH)/private_uploads`) yang kebetulan aman di sana — tapi sebaiknya eksplisit.
+3. ~~Isi `PRIVATE_UPLOADS_PATH` di `.env` server~~ — ✅ **SELESAI 27 Jul 2026 lewat SSH.** Diisi eksplisit di ketiga instalasi (production aktif + dua yang dimatikan, supaya tidak jadi jebakan kalau dihidupkan lagi), jalur absolut sejajar `public_html`, izin `700`, cadangan `.env.bak-*` tersimpan. Diverifikasi dengan memanggil `private_uploads_root()` yang ASLI lewat HTTP: root terbaca di luar DocumentRoot, `/private_uploads/` dan turunannya 404, aplikasi tetap sehat.
+   > **Kenapa eksplisit, padahal fallback-nya kebetulan benar:** fallback `dirname(FCPATH)/private_uploads` bergantung pada tata letak hosting. Asumsi yang sama pernah SALAH di XAMPP lokal — folder induk aplikasi ternyata sama dengan DocumentRoot, dan dokumen SRP2 bisa diunduh tanpa login. Aman-karena-kebetulan bukan aman.
 4. Di luar kita: integrasi SIMPERUM (belum ada), generator sertifikat PDF
 5. **Temuan pembacaan 26 Jul 2026 yang belum diperbaiki** — daftar lengkap 141 temuan di [`PEMBACAAN_CODEBASE_26JUL2026.md`](docs/engineering/PEMBACAAN_CODEBASE_26JUL2026.md), ringkasan yang paling berdampak di §18.
 6. **Penuntasan role `pengembang` ↔ admin** — 24 sisa pekerjaan ([`SISA_PEKERJAAN_ROLE_PENGEMBANG.md`](docs/engineering/SISA_PEKERJAAN_ROLE_PENGEMBANG.md)) disusun jadi 8 tahap berurutan di [`ROADMAP_PENGEMBANG_ADMIN.md`](docs/product/ROADMAP_PENGEMBANG_ADMIN.md). **Mulai dari T0.** Tahap terakhir (T6) sengaja memanen perjalanan ini jadi cetakan untuk empat role sisanya — lihat §19.
