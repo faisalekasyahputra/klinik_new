@@ -37,7 +37,7 @@ class Smart_filter {
                 'color' => '#d6fb00'
             ],
             'omah_sekeng' => [
-                'id' => 6, // Harus ditambahkan ke tabel programs!
+                'id' => 6, // Fresh DB mendapat baris ini dari migrasi 000017.
                 'kode' => 'omah_sekeng',
                 'title' => 'Omah Sekeng',
                 'badge' => 'Desil 4 Khusus',
