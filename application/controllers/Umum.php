@@ -25,9 +25,11 @@ class Umum extends MY_Controller {
 
 	public function housing()
 	{
-		$datacontent['judul'] ='';
-		$data['content'] = $this->load->view('pages/perumahan/housing_carrier1', $datacontent, true);
-		$this->load->view('layouts/main',$data);
+		// Dulu merender mockup housing_carrier1 yang form-nya action="#" —
+		// submit-nya tidak ke mana-mana. Wizard pembiayaan yang sungguhan
+		// sudah ada di Program::solusi_pembiayaan(). Redirect supaya
+		// bookmark/link lama tidak 404, pola yang sama dengan form_aduan().
+		redirect('solusi_pembiayaan');
 	}
 
 	public function info_rumah()
