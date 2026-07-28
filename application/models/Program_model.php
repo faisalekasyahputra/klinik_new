@@ -3,7 +3,10 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Program_model extends CI_Model {
 
-    const TICKET_LOOKUP_MAX_FAILURES = 5;
+    public function __construct() {
+        parent::__construct();
+        $this->load->helper('housing_queue');
+    }
 
     public function get_program_by_code($kode_program) {
         $this->db->where('kode_program', $kode_program);
@@ -63,9 +66,122 @@ class Program_model extends CI_Model {
         }
         if ( ! array_key_exists('kabupaten_id', $data)) {
             log_message('error', 'insert_housing_queue dipanggil tanpa kabupaten_id — baris tidak akan terlihat admin kabupaten manapun. Pakai resolve_kabupaten_id() di pemanggil.');
-            $data['kabupaten_id'] = NULL;
+            return FALSE;
         }
         return $this->db->insert('sf_housing_queue', $data);
+    }
+
+    /**
+     * Satu gerbang untuk kedua jalur pengajuan warga.
+     * Identitas, hasil kelayakan, dan daftar program berasal dari sesi server.
+     */
+    public function create_housing_submission($identitas, $hasil, $kode_program, $user_id = NULL) {
+        $now = time();
+        if (empty($identitas['created_at']) || empty($hasil['created_at'])
+            || $now - (int) $identitas['created_at'] > 1800
+            || $now - (int) $hasil['created_at'] > 1800) {
+            return ['success' => FALSE, 'code' => 'state_expired', 'message' => 'Sesi diagnosa kedaluwarsa. Silakan ulangi diagnosa.'];
+        }
+
+        $nik = trim((string) ($identitas['nik'] ?? ''));
+        $nama = trim((string) ($identitas['nama_lengkap'] ?? ''));
+        $survey = $hasil['data_survey'] ?? [];
+        if ( ! preg_match('/^\d{16}$/', $nik) || $nama === '' || ! $this->valid_survey($survey)) {
+            return ['success' => FALSE, 'code' => 'invalid_data', 'message' => 'Data identitas atau survei tidak valid. Silakan ulangi diagnosa.'];
+        }
+
+        $eligible = FALSE;
+        foreach ((array) ($hasil['eligible_programs'] ?? []) as $program) {
+            if (($program['kode'] ?? '') === $kode_program) {
+                $eligible = TRUE;
+                break;
+            }
+        }
+        if ( ! $eligible) {
+            return ['success' => FALSE, 'code' => 'program_not_eligible', 'message' => 'Program yang dipilih tidak berasal dari hasil diagnosa Anda.'];
+        }
+
+        $program = $this->get_program_by_code($kode_program);
+        if ( ! $program) {
+            return ['success' => FALSE, 'code' => 'program_unavailable', 'message' => 'Program pilihan belum tersedia untuk pengajuan.'];
+        }
+
+        $kabupaten_id = $this->resolve_kabupaten_id($user_id, $hasil['kabupaten_id'] ?? NULL);
+        if ( ! $kabupaten_id) {
+            return ['success' => FALSE, 'code' => 'wilayah_required', 'message' => 'Kabupaten/kota domisili wajib dipilih agar pengajuan sampai ke admin wilayah.'];
+        }
+
+        $ticket_code = $this->generate_ticket_code();
+        $timestamp = date('Y-m-d H:i:s');
+        $inserted = $this->insert_housing_queue([
+            'ticket_code'        => $ticket_code,
+            'user_id'            => $user_id ?: NULL,
+            'kabupaten_id'       => $kabupaten_id,
+            'program_id'         => (int) $program['id'],
+            'nik_pengaju'        => $nik,
+            'nama_lengkap'       => $nama,
+            'data_simperum_json' => $identitas['data_simperum_json'] ?? NULL,
+            'data_survey_json'   => json_encode($survey),
+            'status_antrean'     => 'pending',
+            'created_at'         => $timestamp,
+            'updated_at'         => $timestamp,
+        ]);
+
+        return $inserted
+            ? ['success' => TRUE, 'ticket_code' => $ticket_code]
+            : ['success' => FALSE, 'code' => 'write_failed', 'message' => 'Pengajuan belum dapat disimpan. Silakan coba lagi.'];
+    }
+
+    public function transition_housing_queue($queue_id, $status, $reviewer_id, $kabupaten_id = NULL, $catatan = '') {
+        $queue_id = (int) $queue_id;
+        $catatan = trim((string) $catatan);
+
+        $this->db->where('id', $queue_id);
+        if ($kabupaten_id !== NULL) {
+            $this->db->where('kabupaten_id', (int) $kabupaten_id);
+        }
+        $row = $this->db->get('sf_housing_queue')->row();
+
+        if ( ! $row) {
+            return ['success' => FALSE, 'code' => 'not_found', 'message' => 'Data pengajuan tidak ditemukan dalam kewenangan Anda.'];
+        }
+        if ( ! housing_queue_can_transition($row->status_antrean, $status)) {
+            return ['success' => FALSE, 'code' => 'invalid_transition', 'message' => 'Perubahan status tersebut tidak diizinkan. Muat ulang halaman untuk melihat status terbaru.'];
+        }
+        if ($status === 'rejected' && $catatan === '') {
+            return ['success' => FALSE, 'code' => 'note_required', 'message' => 'Catatan alasan penolakan wajib diisi.'];
+        }
+
+        $this->db->where('id', $queue_id)
+            ->where('status_antrean', $row->status_antrean);
+        if ($kabupaten_id !== NULL) {
+            $this->db->where('kabupaten_id', (int) $kabupaten_id);
+        }
+        $updated = $this->db->update('sf_housing_queue', [
+            'status_antrean' => $status,
+            'catatan_admin'  => $status === 'rejected' ? $catatan : NULL,
+            'reviewed_by'    => (int) $reviewer_id,
+            'reviewed_at'    => date('Y-m-d H:i:s'),
+        ]);
+
+        if ( ! $updated || $this->db->affected_rows() !== 1) {
+            return ['success' => FALSE, 'code' => 'write_failed', 'message' => 'Keputusan tidak tersimpan. Data mungkin sudah berubah; silakan muat ulang halaman.'];
+        }
+
+        return ['success' => TRUE, 'from' => $row->status_antrean, 'to' => $status];
+    }
+
+    private function valid_survey($survey) {
+        $pekerjaan = ['PNS/TNI/POLRI', 'Karyawan Swasta', 'Wiraswasta', 'Pekerja Informal', 'Lainnya'];
+        $kepemilikan = ['Sewa/Kontrak', 'Numpang/Keluarga', 'Punya Lahan Belum Bangun', 'Punya Rumah Tidak Layak', 'Punya Rumah Layak'];
+        $penghasilan = $survey['penghasilan'] ?? NULL;
+
+        return is_numeric($penghasilan)
+            && (float) $penghasilan >= 0
+            && (float) $penghasilan <= 100000000
+            && in_array($survey['pekerjaan'] ?? '', $pekerjaan, TRUE)
+            && in_array($survey['status_kepemilikan'] ?? '', $kepemilikan, TRUE)
+            && trim((string) ($survey['alasan_pengajuan'] ?? '')) !== '';
     }
 
     public function generate_ticket_code() {
@@ -91,27 +207,4 @@ class Program_model extends CI_Model {
             ->row_array();
     }
 
-    public function get_ticket_lookup_retry_after($ip_hash) {
-        $row = $this->db
-            ->select('failed_attempts, GREATEST(1, 60 - TIMESTAMPDIFF(SECOND, window_started_at, NOW())) AS retry_after', FALSE)
-            ->where('limit_key', $ip_hash)
-            ->where('window_started_at > DATE_SUB(NOW(), INTERVAL 1 MINUTE)', NULL, FALSE)
-            ->get('sys_rate_limits')
-            ->row_array();
-
-        return $row && (int) $row['failed_attempts'] >= self::TICKET_LOOKUP_MAX_FAILURES
-            ? (int) $row['retry_after']
-            : 0;
-    }
-
-    public function record_ticket_lookup_failure($ip_hash) {
-        return $this->db->query(
-            'INSERT INTO sys_rate_limits (limit_key, window_started_at, failed_attempts)
-             VALUES (?, NOW(), 1)
-             ON DUPLICATE KEY UPDATE
-                failed_attempts = IF(window_started_at <= DATE_SUB(NOW(), INTERVAL 1 MINUTE), 1, failed_attempts + 1),
-                window_started_at = IF(window_started_at <= DATE_SUB(NOW(), INTERVAL 1 MINUTE), NOW(), window_started_at)',
-            [$ip_hash]
-        );
-    }
 }

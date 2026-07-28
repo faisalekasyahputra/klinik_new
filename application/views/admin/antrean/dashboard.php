@@ -1,5 +1,6 @@
 <?php
 $this->load->helper('admin_table');
+$this->load->helper('housing_queue');
 /**
  * View antrean perumahan bersama — dipakai DUA konteks:
  *   1. Admin_Kabkota::index()  — ter-scope 1 kabupaten
@@ -16,8 +17,16 @@ $this->load->helper('admin_table');
  * Badge di sini memakai komponen bersama admin/components/status_badge.php —
  * dulu tidak bisa karena barisnya dirender JS.
  */
-$badge_kelas = ['pending' => 'pending', 'approved' => 'ok', 'rejected' => 'reject'];
-$badge_label = ['pending' => 'Pending', 'approved' => 'Disetujui', 'rejected' => 'Ditolak'];
+$statuses = housing_queue_statuses();
+$badge_kelas = $badge_label = [];
+foreach ($statuses as $kode => $status) {
+    $badge_kelas[$kode] = $status['badge'];
+    $badge_label[$kode] = $status['label'];
+}
+if ( ! isset($badge_label['needs_revision'])) {
+    $badge_label['needs_revision'] = 'Perlu Perbaikan';
+    $badge_kelas['needs_revision'] = 'pending';
+}
 
 // Filter status dibangun lewat admin_table_url() supaya pencarian/urutan aktif
 // tidak hilang saat ganti filter, dan sebaliknya.
@@ -70,11 +79,23 @@ $filter_html = ob_get_clean();
                         if (is_numeric($penghasilan)) { $penghasilan = 'Rp ' . number_format((float) $penghasilan, 0, ',', '.'); }
                         $desil  = $simperum['desil'] ?? '-';
                         $alasan = $survey['alasan_pengajuan'] ?? '-';
+                        $has_assessment = ! empty($row->assessment_id);
+                        $nama_display = trim((string) $row->nama_lengkap) !== ''
+                            ? $row->nama_lengkap : ($has_assessment ? 'Identitas ada di detail pengajuan' : 'Nama belum tersedia');
+                        $nik_display = strlen((string) $row->nik_pengaju) >= 4
+                            ? str_repeat('•', 12) . substr($row->nik_pengaju, -4)
+                            : ($has_assessment ? 'NIK disimpan privat' : 'NIK belum tersedia');
                         $payload = [
-                            'id' => $row->id, 'nama' => $row->nama_lengkap,
-                            'program' => $row->nama_program ?? 'Program', 'desil' => $desil,
-                            'status' => $row->status_antrean === 'pending' ? '' : $row->status_antrean,
+                            'id' => $row->id, 'nama' => $nama_display,
+                            'program' => $row->nama_program ?? 'Program belum terpetakan', 'desil' => $desil,
+                            'status' => '', 'currentStatus' => $badge_label[$row->status_antrean] ?? $row->status_antrean, 'currentStatusCode' => $row->status_antrean,
                             'catatan' => $row->catatan_admin ?? '',
+                            'ticket' => $row->ticket_code,
+                            'nik' => $nik_display,
+                            'pekerjaan' => $survey['pekerjaan'] ?? '-',
+                            'penghasilan' => $penghasilan,
+                            'kepemilikan' => $survey['status_kepemilikan'] ?? '-',
+                            'alasan' => $alasan,
                         ];
                     ?>
                     <tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
@@ -83,8 +104,9 @@ $filter_html = ob_get_clean();
                             <div class="text-[10px]"><?= html_escape(date('H:i', strtotime($row->created_at))) ?></div>
                         </td>
                         <td class="px-4 py-3">
-                            <div class="text-gray-900 dark:text-white font-bold"><?= html_escape($row->nama_lengkap) ?></div>
-                            <div class="text-xs font-mono mt-0.5"><?= html_escape($row->nik_pengaju) ?></div>
+                            <div class="text-gray-900 dark:text-white font-bold"><?= html_escape($nama_display) ?></div>
+                            <div class="text-xs font-mono font-bold text-brand-primary"><?= html_escape($row->ticket_code) ?></div>
+                            <div class="text-xs font-mono mt-0.5"><?= html_escape($nik_display) ?></div>
                             <?php if (empty($row->kabupaten_id)): ?>
                             <div class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400 border border-orange-200 dark:border-orange-500/20" title="Tidak muncul di dashboard Admin Kabupaten/Kota manapun">
                                 <i class="ph ph-map-pin-slash text-[10px]"></i> Belum Terpetakan Wilayah
@@ -92,7 +114,8 @@ $filter_html = ob_get_clean();
                             <?php endif; ?>
                         </td>
                         <td class="px-4 py-3">
-                            <div class="inline-flex items-center px-2.5 py-1 rounded-lg bg-brand-primary/10 text-brand-primary border border-brand-primary/20 text-xs font-semibold mb-1"><?= html_escape($row->nama_program ?? 'Program') ?></div>
+                            <div class="inline-flex items-center px-2.5 py-1 rounded-lg bg-brand-primary/10 text-brand-primary border border-brand-primary/20 text-xs font-semibold mb-1"><?= html_escape($row->nama_program ?? 'Program belum terpetakan') ?></div>
+                            <?php if (($row->source_mode ?? '') === 'simulation'): ?><div class="mt-1 inline-flex rounded px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800">Mode Simulasi — API SIMPERUM belum terhubung</div><?php endif; ?>
                             <?php if ($desil !== '-'): ?>
                             <div class="text-[10px] text-blue-700 bg-blue-50 dark:text-white dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 px-2 py-0.5 rounded inline-block">Desil: <span class="font-bold"><?= html_escape($desil) ?></span></div>
                             <?php endif; ?>
@@ -106,9 +129,11 @@ $filter_html = ob_get_clean();
                         </td>
                         <td class="px-4 py-3"><?= $this->load->view('admin/components/status_badge', ['label' => $badge_label[$row->status_antrean] ?? $row->status_antrean, 'kelas' => $badge_kelas[$row->status_antrean] ?? 'pending'], TRUE) ?></td>
                         <td class="px-4 py-3 text-center">
-                            <button @click='openModal(<?= htmlspecialchars(json_encode($payload), ENT_QUOTES, "UTF-8") ?>)' class="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-brand-primary/20 dark:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-brand-primary border border-gray-200 dark:border-white/10 transition-all duration-200" title="Proses">
-                                <i class="ph ph-note-pencil"></i> <span class="text-xs font-bold uppercase tracking-wider">Tinjau</span>
-                            </button>
+                            <?php if ( ! empty($row->assessment_id)): ?>
+                            <a href="<?= base_url($base_url . '/detail/' . (int) $row->id) ?>" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-brand-primary/20 dark:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-brand-primary border border-gray-200 dark:border-white/10 transition-all duration-200"><i class="ph ph-eye"></i><span class="text-xs font-bold uppercase tracking-wider">Detail</span></a>
+                            <?php else: ?>
+                            <button @click='openModal(<?= htmlspecialchars(json_encode($payload), ENT_QUOTES, "UTF-8") ?>)' class="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-brand-primary/20 dark:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-brand-primary border border-gray-200 dark:border-white/10 transition-all duration-200" title="Proses"><i class="ph ph-note-pencil"></i><span class="text-xs font-bold uppercase tracking-wider">Tinjau</span></button>
+                            <?php endif; ?>
                         </td>
                     </tr>
                     <?php endforeach; endif; ?>
@@ -131,6 +156,7 @@ $filter_html = ob_get_clean();
                 <form action="<?= base_url($action_url) ?>" method="POST" id="formProsesAntrean">
                     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                     <input type="hidden" name="queue_id" :value="data.id">
+                    <input type="hidden" name="from_status" :value="data.currentStatusCode">
                     <div class="mb-5 bg-gray-50 dark:bg-white/5 rounded-2xl p-4 border border-gray-200 dark:border-white/5">
                         <div class="text-xs text-gray-500 dark:text-brand-muted mb-1">Pengaju</div>
                         <div class="text-gray-900 dark:text-white font-bold text-lg mb-3" x-text="data.nama"></div>
@@ -144,10 +170,19 @@ $filter_html = ob_get_clean();
                                 <div class="text-gray-900 dark:text-white font-bold text-lg" x-text="data.desil"></div>
                             </div>
                         </div>
+                        <div class="mt-4 grid grid-cols-2 gap-3 border-t border-gray-200 pt-3 text-xs dark:border-white/10">
+                            <div><span class="block text-gray-500 dark:text-brand-muted">Status saat ini</span><strong class="text-gray-900 dark:text-white" x-text="data.currentStatus"></strong></div>
+                            <div><span class="block text-gray-500 dark:text-brand-muted">Tiket</span><strong class="font-mono text-gray-900 dark:text-white" x-text="data.ticket"></strong></div>
+                            <div><span class="block text-gray-500 dark:text-brand-muted">NIK</span><strong class="font-mono text-gray-900 dark:text-white" x-text="data.nik"></strong></div>
+                            <div><span class="block text-gray-500 dark:text-brand-muted">Pekerjaan</span><strong class="text-gray-900 dark:text-white" x-text="data.pekerjaan"></strong></div>
+                            <div><span class="block text-gray-500 dark:text-brand-muted">Penghasilan</span><strong class="text-gray-900 dark:text-white" x-text="data.penghasilan"></strong></div>
+                            <div class="col-span-2"><span class="block text-gray-500 dark:text-brand-muted">Status hunian</span><strong class="text-gray-900 dark:text-white" x-text="data.kepemilikan"></strong></div>
+                            <div class="col-span-2"><span class="block text-gray-500 dark:text-brand-muted">Alasan pengajuan</span><strong class="whitespace-normal text-gray-900 dark:text-white" x-text="data.alasan"></strong></div>
+                        </div>
                     </div>
                     <div class="mb-5">
                         <label class="block text-xs font-bold text-gray-500 dark:text-brand-muted uppercase tracking-wider mb-2">Aksi Keputusan <span class="text-red-500">*</span></label>
-                        <div class="grid grid-cols-2 gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             <label class="relative cursor-pointer">
                                 <input type="radio" name="status" value="approved" class="peer sr-only" x-model="data.status" required>
                                 <div class="px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-brand-muted text-center font-semibold transition-all duration-200 peer-checked:bg-green-50 peer-checked:border-green-400 peer-checked:text-green-700 dark:peer-checked:bg-green-500/20 dark:peer-checked:border-green-500/50 dark:peer-checked:text-green-400"><i class="ph ph-check mr-2"></i> Setujui</div>
@@ -156,11 +191,15 @@ $filter_html = ob_get_clean();
                                 <input type="radio" name="status" value="rejected" class="peer sr-only" x-model="data.status" required>
                                 <div class="px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-brand-muted text-center font-semibold transition-all duration-200 peer-checked:bg-red-50 peer-checked:border-red-400 peer-checked:text-red-700 dark:peer-checked:bg-red-500/20 dark:peer-checked:border-red-500/50 dark:peer-checked:text-red-400"><i class="ph ph-x mr-2"></i> Tolak</div>
                             </label>
+                            <label class="relative cursor-pointer">
+                                <input type="radio" name="status" value="needs_revision" class="peer sr-only" x-model="data.status" required>
+                                <div class="px-4 py-3 rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-600 dark:text-brand-muted text-center font-semibold transition-all duration-200 peer-checked:bg-amber-50 peer-checked:border-amber-400 peer-checked:text-amber-700"><i class="ph ph-arrow-counter-clockwise mr-2"></i> Minta Perbaikan</div>
+                            </label>
                         </div>
                     </div>
                     <div class="mb-2">
-                        <label class="block text-xs font-bold text-gray-500 dark:text-brand-muted uppercase tracking-wider mb-2">Catatan Admin</label>
-                        <textarea name="catatan_admin" rows="3" class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-800 dark:text-white text-sm focus:outline-none focus:border-brand-primary/50 focus:ring-1 focus:ring-brand-primary/50" placeholder="Tambahkan alasan atau keterangan (opsional)..." x-model="data.catatan"></textarea>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-brand-muted uppercase tracking-wider mb-2">Catatan Admin <span x-show="data.status === 'rejected' || data.status === 'needs_revision'" class="text-red-500">*</span></label>
+                        <textarea name="catatan_admin" rows="3" class="w-full bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 text-gray-800 dark:text-white text-sm focus:outline-none focus:border-brand-primary/50 focus:ring-1 focus:ring-brand-primary/50" placeholder="Wajib untuk penolakan atau permintaan perbaikan" x-model="data.catatan" :required="data.status === 'rejected' || data.status === 'needs_revision'"></textarea>
                     </div>
                 </form>
             </div>
@@ -176,7 +215,7 @@ $filter_html = ob_get_clean();
 function antreanModal() {
     return {
         open: false,
-        data: { id: '', nama: '', program: '', status: '', catatan: '', desil: '' },
+        data: { id: '', nama: '', program: '', status: '', currentStatus: '', currentStatusCode: '', catatan: '', desil: '', ticket: '', nik: '', pekerjaan: '', penghasilan: '', kepemilikan: '', alasan: '' },
         openModal(row) { this.data = row; this.open = true; document.body.style.overflow = 'hidden'; },
         close() { this.open = false; document.body.style.overflow = ''; }
     }

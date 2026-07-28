@@ -90,6 +90,7 @@ $config['dashboard_modules'] = [
         'table' => 'sf_housing_queue', 'review_by' => 'admin_kabkota',
         'pending_where' => ['status_antrean' => 'pending'],
         'status_column' => 'status_antrean', 'owner_column' => 'user_id',
+        'public_where' => NULL, 'editable_where' => NULL,
     ],
     'aduan_bidang' => [
         'label' => 'Aduan Bidang Saya', 'icon' => 'ph-chat-centered-text',
@@ -114,6 +115,7 @@ $config['dashboard_modules'] = [
         'table' => 'sf_housing_queue', 'review_by' => 'admin',
         'pending_where' => ['status_antrean' => 'pending'],
         'status_column' => 'status_antrean', 'owner_column' => 'user_id',
+        'public_where' => NULL, 'editable_where' => NULL,
         'badge' => TRUE, 'ringkas' => 'Antrean Perumahan',
     ],
     'srp2_verifikasi' => [

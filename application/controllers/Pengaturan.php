@@ -10,6 +10,7 @@ class Pengaturan extends MY_Controller {
         }
         $this->load->model('User_model');
         $this->load->model('Auth_model');
+        $this->load->helper('housing_queue');
     }
 
     /**
@@ -23,16 +24,27 @@ class Pengaturan extends MY_Controller {
 
         $items = [];
 
-        foreach ($this->db->select('id, ticket_code, status_antrean, created_at')
-            ->where('user_id', (int) $user_id)->order_by('created_at', 'DESC')
-            ->get('sf_housing_queue')->result() as $r) {
-            $status_map = ['pending' => ['Menunggu Verifikasi', 'pending'], 'approved' => ['Disetujui', 'ok'], 'rejected' => ['Ditolak', 'reject']];
-            $status = $status_map[$r->status_antrean] ?? ['Sedang Diverifikasi', 'pending'];
+        foreach ($this->db
+            ->select('sf_housing_queue.id, ticket_code, status_antrean, catatan_admin, source_mode, sf_housing_queue.created_at, sf_programs.nama_program')
+            ->from('sf_housing_queue')
+            ->join('sf_programs', 'sf_programs.id=sf_housing_queue.program_id', 'left')
+            ->where('sf_housing_queue.user_id', (int) $user_id)
+            ->order_by('sf_housing_queue.created_at', 'DESC')->get()->result() as $r) {
+            $status = housing_queue_statuses()[$r->status_antrean] ?? ['label' => 'Sedang Diverifikasi', 'badge' => 'pending'];
             $items[] = [
-                'jenis' => 'Antrean Perumahan', 'icon' => 'ph-ticket',
+                'jenis' => 'Antrean Perumahan — ' . ($r->nama_program ?: 'Program'), 'icon' => 'ph-ticket',
                 'judul' => !empty($r->ticket_code) ? $r->ticket_code : 'Tiket belum tersedia',
-                'status_label' => $status[0], 'status_kelas' => $status[1],
-                'created_at' => $r->created_at, 'aksi_url' => null,
+                'status_label' => $status['label'], 'status_kelas' => $status['badge'],
+                'created_at' => $r->created_at,
+                'aksi_url' => null,
+                'aksi_post_url' => $r->status_antrean === 'needs_revision'
+                    ? 'warga/pendataan' : null,
+                'aksi_post_fields' => $r->status_antrean === 'needs_revision'
+                    ? ['action' => 'start_revision', 'queue_id' => $r->id] : [],
+                'aksi_label' => $r->status_antrean === 'needs_revision'
+                    ? 'Mulai Perbaikan' : null,
+                'catatan_admin' => $r->catatan_admin,
+                'is_simulation' => $r->source_mode === 'simulation',
             ];
         }
 

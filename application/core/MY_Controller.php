@@ -249,7 +249,7 @@ class MY_Controller extends CI_Controller {
         $table = $this->table_state($kolom_sort, 'sf_housing_queue.created_at');
 
         $status = $this->input->get('status', TRUE);
-        $status = in_array($status, ['pending', 'approved', 'rejected'], TRUE) ? $status : NULL;
+        $status = in_array($status, ['pending', 'needs_revision', 'approved', 'rejected'], TRUE) ? $status : NULL;
 
         $this->db->from('sf_housing_queue')
             ->join('sf_programs', 'sf_housing_queue.program_id = sf_programs.id', 'left');
@@ -273,6 +273,50 @@ class MY_Controller extends CI_Controller {
             ->get()->result();
 
         return ['queue' => $queue, 'table' => $table, 'pager' => $table, 'filter_status' => $status];
+    }
+
+    protected function assessment_detail_data($queue_id, $kabupaten_id = NULL) {
+        $this->load->model('Housing_assessment_model');
+        $this->load->library('encryption_lib');
+        $detail = $this->Housing_assessment_model->get_scoped_queue_detail($queue_id, $kabupaten_id);
+        if ( ! $detail) { return NULL; }
+
+        $assessment = $detail['assessment'];
+        $source_row = $this->db->select('payload_ciphertext')
+            ->get_where('sf_rekaman_simperum', ['id' => (int) ($assessment['simperum_snapshot_id'] ?? 0)])
+            ->row_array();
+        $source = $source_row
+            ? json_decode($this->encryption_lib->decrypt($source_row['payload_ciphertext']), TRUE) : [];
+        $selected_id = (int) ($detail['queue']['recommendation_id'] ?? 0);
+        $recommendations = $this->Housing_assessment_model->get_owned_recommendations(
+            (int) ($assessment['id'] ?? 0),
+            (int) ($detail['queue']['user_id'] ?? 0)
+        );
+        foreach ($recommendations as &$recommendation) {
+            $recommendation['is_selected'] = (int) $recommendation['recommendation_id'] === $selected_id;
+        }
+        unset($recommendation);
+        $provenance_value = $assessment['field_provenance_json']
+            ?? $detail['profile_snapshot']['field_provenance_json'] ?? [];
+        $provenance = is_array($provenance_value)
+            ? $provenance_value : (json_decode((string) $provenance_value, TRUE) ?: []);
+
+        return [
+            'queue' => $detail['queue'], 'assessment' => $assessment,
+            'profile' => $detail['profile_snapshot'] ?? [],
+            'source_snapshot' => is_array($source) ? $source : [],
+            'provenance' => $provenance,
+            'recommendations' => $recommendations,
+            'evidence' => $this->Housing_assessment_model->get_scoped_queue_files($queue_id, $kabupaten_id),
+        ];
+    }
+
+    protected function scoped_queue_file($queue_id, $file_kind, $kabupaten_id = NULL) {
+        $this->load->model('Housing_assessment_model');
+        foreach ($this->Housing_assessment_model->get_scoped_queue_files($queue_id, $kabupaten_id) as $file) {
+            if (hash_equals((string) $file['file_kind'], (string) $file_kind)) { return $file; }
+        }
+        return NULL;
     }
 
     /**
@@ -368,7 +412,7 @@ class MY_Controller extends CI_Controller {
      * Hitung baris "belum diproses" untuk satu entri registry, berdasarkan
      * 'table' + 'pending_where' yang dideklarasikan di sana. Satu mekanisme
      * untuk badge sidebar DAN kartu ringkas overview superadmin — sebelumnya
-     * tiap counter butuh method sendiri di Admin_model.
+     * tiap counter dulu butuh method model sendiri.
      *
      * @param array $modul entri dari config dashboard_modules
      * @return int 0 kalau entri tidak mendeklarasikan tabel/pending_where
@@ -458,44 +502,51 @@ class MY_Controller extends CI_Controller {
      * @return string Safe redirect path (internal only)
      */
     /**
-     * Pembatas laju per-IP untuk endpoint publik. Satu pola untuk seluruh repo —
-     * jangan bikin varian baru, tambahkan $scope saja.
-     *
-     * Dipakai lookup tiket publik (scope 'tiket') dan pendaftaran akun
-     * (scope 'register'). Endpoint publik apa pun yang bisa dipanggil berulang
-     * oleh anonim wajib lewat sini.
-     *
-     * @param  string $scope    nama endpoint, memisahkan penghitung antar fitur
-     * @param  int    $maks     percobaan yang diizinkan dalam satu jendela
-     * @param  int    $jendela  panjang jendela dalam detik
-     * @return int    detik sisa sampai boleh mencoba lagi; 0 = belum terblokir
+     * Gerbang ke registry pembatas laju bersama. Policy memisahkan scope,
+     * sedangkan context memasok dimensi akun, NIK, atau objek bila dibutuhkan.
      */
-    protected function rate_limit_sisa($scope, $maks, $jendela = 60) {
-        $kunci = hash('sha256', $scope . ':' . $this->input->ip_address());
-        $row = $this->db
-            ->select('failed_attempts, GREATEST(1, ' . (int) $jendela . ' - TIMESTAMPDIFF(SECOND, window_started_at, NOW())) AS retry_after', FALSE)
-            ->where('limit_key', $kunci)
-            ->where('window_started_at > DATE_SUB(NOW(), INTERVAL ' . (int) $jendela . ' SECOND)', NULL, FALSE)
-            ->get('sys_rate_limits')
-            ->row_array();
+    protected function rate_limit_consume($policy, array $context = [])
+    {
+        $this->load->library('Rate_limiter');
+        return $this->rate_limiter->consume($policy, $context);
+    }
 
-        return $row && (int) $row['failed_attempts'] >= $maks ? (int) $row['retry_after'] : 0;
+    protected function rate_limit_inspect($policy, array $context = [])
+    {
+        $this->load->library('Rate_limiter');
+        return $this->rate_limiter->inspect($policy, $context);
+    }
+
+    protected function rate_limit_hit($policy, array $context = [])
+    {
+        $this->load->library('Rate_limiter');
+        return $this->rate_limiter->hit($policy, $context);
     }
 
     /**
-     * Catat satu percobaan pada penghitung $scope. Jendela yang sudah lewat
-     * di-reset, bukan diperpanjang — supaya pemblokiran tidak berlipat sendiri.
+     * Respons seragam: batas normal menghasilkan 429 + Retry-After, sedangkan
+     * kegagalan konfigurasi/penyimpanan fail-closed sebagai 503.
      */
-    protected function rate_limit_catat($scope, $jendela = 60) {
-        $kunci = hash('sha256', $scope . ':' . $this->input->ip_address());
-        return $this->db->query(
-            'INSERT INTO sys_rate_limits (limit_key, window_started_at, failed_attempts)
-             VALUES (?, NOW(), 1)
-             ON DUPLICATE KEY UPDATE
-                failed_attempts = IF(window_started_at <= DATE_SUB(NOW(), INTERVAL ' . (int) $jendela . ' SECOND), 1, failed_attempts + 1),
-                window_started_at = IF(window_started_at <= DATE_SUB(NOW(), INTERVAL ' . (int) $jendela . ' SECOND), NOW(), window_started_at)',
-            [$kunci]
-        );
+    protected function rate_limit_reject(array $result, $message, $json = FALSE)
+    {
+        $configured = ! empty($result['success']);
+        $safe_message = $configured
+            ? $message
+            : 'Layanan sementara belum dapat memproses permintaan.';
+
+        $this->output->set_status_header($configured ? 429 : 503);
+        if ($configured) {
+            $this->output->set_header('Retry-After: ' . max(1, (int) ($result['retry_after'] ?? 1)));
+        }
+        if ($json) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode(['status' => 'error', 'message' => $safe_message]));
+            return;
+        }
+        $this->output
+            ->set_content_type('text/plain', 'utf-8')
+            ->set_output($safe_message);
     }
 
     protected function sanitize_redirect($path) {

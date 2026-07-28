@@ -16,8 +16,8 @@
                     <h2 class="text-3xl font-black text-white sm:text-4xl" x-text="slide.title"></h2>
                     <p class="mt-3 text-sm leading-relaxed text-white/85" x-text="slide.description"></p>
                     <div class="mt-4 border-t border-white/20 pt-4 text-xs leading-relaxed text-white/80"><span class="font-bold text-white">Syarat utama: </span><span x-text="slide.terms"></span></div>
-                    <?php if ($carousel_context === 'diagnosa'): ?>
-                    <button type="button" @click="document.getElementById('form-diagnosa').scrollIntoView({ behavior: 'smooth', block: 'start' })" class="program-showcase-action mt-5 inline-flex w-max items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:brightness-110" :style="'background:' + slide.color + ';border-color:' + slide.color">Cek Kelayakan <i class="fa-solid fa-arrow-right"></i></button>
+                    <?php if (in_array($carousel_context, ['diagnosa', 'warga'], TRUE)): ?>
+                    <button type="button" @click="document.getElementById('<?= $carousel_context === 'warga' ? 'form-pendataan-warga' : 'form-diagnosa' ?>').scrollIntoView({ behavior: 'smooth', block: 'start' })" class="program-showcase-action mt-5 inline-flex w-max items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:brightness-110" :style="'background:' + slide.color + ';border-color:' + slide.color">Cek Kelayakan <i class="fa-solid fa-arrow-right"></i></button>
                     <?php else: ?>
                     <a href="<?= base_url('solusi_pembiayaan') ?>" data-tab-link data-tab-key="solusi_pembiayaan" class="program-showcase-action mt-5 inline-flex w-max items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-white transition hover:-translate-y-0.5 hover:brightness-110" :style="'background:' + slide.color + ';border-color:' + slide.color">Cek Kelayakan <i class="fa-solid fa-arrow-right"></i></a>
                     <?php endif; ?>

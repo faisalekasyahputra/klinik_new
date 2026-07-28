@@ -60,6 +60,9 @@ $route['forgot-password']          = 'Auth/forgot_password';
 $route['verify/(:any)']            = 'Auth/verify_email/$1';
 $route['onboarding']               = 'Auth/onboarding';
 
+// --- Pendataan warga ---
+$route['warga/pendataan']          = 'Warga/pendataan';
+
 // --- Pengaturan User ---
 $route['akun']                     = 'Pengaturan/index';
 $route['akun/profil']              = 'Pengaturan/profil';
