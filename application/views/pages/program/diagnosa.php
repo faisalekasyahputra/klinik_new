@@ -9,7 +9,7 @@
             <p class="mt-2 text-sm text-[color:var(--portal-text-muted)]">Kenali skema bantuan lebih dahulu, lalu isi diagnosa untuk menemukan yang paling sesuai.</p>
         </div>
 
-        <?php $carousel_context = 'diagnosa'; $this->load->view('components/program_showcase_carousel'); ?>
+        <?php $this->load->view('components/program_showcase_carousel', ['carousel_context' => 'diagnosa']); ?>
     </section>
     <?php endif; ?>
 
@@ -68,8 +68,8 @@
         <div id="form-diagnosa" class="w-full md:w-[80%] mx-auto border rounded-2xl p-5 sm:p-7 relative overflow-hidden scroll-mt-5">
             
             <form id="diagnosaForm" action="<?= base_url('Program/submit_antrean') ?>" method="POST">
-                <!-- Program ID diisi otomatis saat user memilih di Etalase -->
-                <input type="hidden" name="program_id" :value="chosenProgram ? chosenProgram.id : ''">
+                <!-- Kode diverifikasi ulang terhadap hasil diagnosa di sesi server -->
+                <input type="hidden" name="program_kode" :value="chosenProgram ? chosenProgram.kode : ''">
                 <!-- CSRF Token -->
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                 
@@ -90,16 +90,15 @@
                         </div>
 
                         <div>
-                            <div class="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2.5">
-                                <p class="text-[11px] text-blue-400 mb-1"><i class="fa-solid fa-flask"></i> <strong>Skenario Pengujian (Klik untuk salin):</strong></p>
+                            <div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5">
+                                <p class="text-[11px] text-amber-300 mb-1"><i class="fa-solid fa-flask"></i> <strong>Mode Simulasi — API SIMPERUM belum terhubung</strong></p>
+                                <p class="text-[11px] text-blue-400 mb-1">Skenario pengujian (klik untuk salin):</p>
                                 <ul class="text-xs text-blue-300 space-y-2 ml-4 list-disc">
                                     <li>
-                                        <button type="button" @click="nik = '3329000000000001'; tgl_lahir = '1980-01-01'; simperumData = null; errorMsg = '';" class="hover:text-white underline decoration-blue-500/50 text-left">NIK: 3329000000000001<br>Tgl Lahir: 01-01-1980</button><br>
-                                        <span class="text-zinc-400">(Desil 4: Omah Sekeng & Bansos PB)</span>
+                                        <button type="button" @click="nik = '0000000000000001'; tgl_lahir = '1980-01-01'; simperumData = null; errorMsg = '';" class="hover:text-white underline decoration-blue-500/50 text-left">SIM-01 — RTLH lengkap</button>
                                     </li>
                                     <li>
-                                        <button type="button" @click="nik = '3329000000000002'; tgl_lahir = '1990-12-31'; simperumData = null; errorMsg = '';" class="hover:text-white underline decoration-blue-500/50 text-left">NIK: 3329000000000002<br>Tgl Lahir: 31-12-1990</button><br>
-                                        <span class="text-zinc-400">(Data Survei Kosong - Tes Smart Filter)</span>
+                                        <button type="button" @click="nik = '0000000000000002'; tgl_lahir = '1990-12-31'; simperumData = null; errorMsg = '';" class="hover:text-white underline decoration-blue-500/50 text-left">SIM-02 — data parsial</button>
                                     </li>
                                 </ul>
                             </div>
@@ -199,12 +198,12 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Kabupaten/Kota Domisili <span class="normal-case font-normal text-zinc-500">(opsional)</span></label>
+                            <label class="block text-xs font-semibold text-zinc-400 mb-1.5 uppercase tracking-wide">Kabupaten/Kota Domisili</label>
                             <div class="relative group">
                                 <div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-zinc-500 group-focus-within:text-[color:var(--portal-brand)] transition-colors">
                                     <i class="fa-solid fa-map-pin text-sm"></i>
                                 </div>
-                                <select name="kabupaten_id" x-model="survey.kabupaten_id" class="w-full bg-black/20 border border-white/10 rounded-xl pl-10 pr-10 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:bg-black/40 transition-colors appearance-none text-sm">
+                                <select name="kabupaten_id" x-model="survey.kabupaten_id" required class="w-full bg-black/20 border border-white/10 rounded-xl pl-10 pr-10 py-2.5 text-white focus:outline-none focus:border-blue-500 focus:bg-black/40 transition-colors appearance-none text-sm">
                                     <option value="" class="bg-[#0f2933]">Pilih kabupaten/kota</option>
                                     <?php foreach ($kabupaten_list as $k): ?>
                                     <option value="<?= $k->id ?>" class="bg-[#0f2933]"><?= html_escape($k->nama) ?></option>
@@ -487,6 +486,7 @@ function wizardData() {
             return this.survey.penghasilan !== '' && 
                    this.survey.pekerjaan !== '' && 
                    this.survey.status_kepemilikan !== '' &&
+                   this.survey.kabupaten_id !== '' &&
                    this.survey.alasan_pengajuan.trim() !== '';
         },
 
@@ -502,6 +502,7 @@ function wizardData() {
                     formData.append('pekerjaan', this.survey.pekerjaan);
                     formData.append('status_kepemilikan', this.survey.status_kepemilikan);
                     formData.append('alasan_pengajuan', this.survey.alasan_pengajuan);
+                    formData.append('kabupaten_id', this.survey.kabupaten_id);
                     formData.append('kode_program_target', '<?= $program['kode_program'] ?>');
                     formData.append('simpan_hasil', '<?= $is_solusi_pembiayaan ? '1' : '0' ?>');
                     formData.append('<?= $this->security->get_csrf_token_name(); ?>', '<?= $this->security->get_csrf_hash(); ?>');
@@ -542,10 +543,10 @@ function wizardData() {
                         // Go to Step 3
                         this.step = 3;
                     } else {
-                        alert("Terjadi kesalahan saat menghitung program.");
+                        KPKP.notify.error("Terjadi kesalahan saat menghitung program.");
                     }
                 } catch(e) {
-                    alert("Gagal terhubung ke server untuk kalkulasi.");
+                    KPKP.notify.error("Gagal terhubung ke server untuk kalkulasi.");
                 } finally {
                     this.isLoading = false;
                 }

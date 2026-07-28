@@ -80,63 +80,7 @@ class Program extends Public_Controller {
     }
 
     public function ajukan_solusi() {
-        if ($this->input->method() !== 'post') {
-            show_404();
-        }
-
-        $hasil = $this->session->userdata('solusi_pembiayaan_hasil');
-        $identitas = $this->session->userdata('solusi_pembiayaan_identitas');
-        $kode_program = $this->input->post('program_kode', TRUE);
-
-        if (!$hasil || !$identitas || !$kode_program) {
-            $this->session->set_flashdata('error', 'Sesi diagnosa tidak tersedia. Silakan ulangi diagnosa.');
-            redirect('solusi_pembiayaan');
-        }
-
-        $selected = NULL;
-        foreach ((array) $hasil['eligible_programs'] as $program) {
-            if (isset($program['kode']) && $program['kode'] === $kode_program) {
-                $selected = $program;
-                break;
-            }
-        }
-
-        if (!$selected) {
-            $this->session->set_flashdata('error', 'Program yang dipilih tidak berasal dari hasil diagnosa Anda.');
-            redirect('solusi_pembiayaan/hasil');
-        }
-
-        $now = date('Y-m-d H:i:s');
-        $ticket_code = $this->Program_model->generate_ticket_code();
-        $user_id = $this->is_logged_in() ? $this->get_user_id() : NULL;
-        // Dulu jalur ini sama sekali tidak mengisi kabupaten_id, jadi setiap
-        // pengajuan lewat "Solusi Pembiayaan" tidak pernah muncul di dashboard
-        // Admin_Kabkota manapun (AUDIT_ROLE_WARGA.md #4). Alur ini tidak punya
-        // input kabupaten sendiri, jadi bergantung pada domisili profil user;
-        // tamu tanpa profil tetap NULL dan ditandai "Belum Terpetakan Wilayah"
-        // di dashboard superadmin.
-        $inserted = $this->Program_model->insert_housing_queue([
-            'ticket_code' => $ticket_code,
-            'user_id' => $user_id,
-            'kabupaten_id' => $this->Program_model->resolve_kabupaten_id($user_id),
-            'program_id' => (int) $selected['id'],
-            'nik_pengaju' => $identitas['nik'],
-            'nama_lengkap' => $identitas['nama_lengkap'],
-            'data_simperum_json' => $identitas['data_simperum_json'],
-            'data_survey_json' => json_encode($hasil['data_survey']),
-            'status_antrean' => 'pending',
-            'created_at' => $now,
-            'updated_at' => $now
-        ]);
-
-        $this->session->unset_userdata(['solusi_pembiayaan_hasil', 'solusi_pembiayaan_identitas']);
-        if ($inserted) {
-            $this->session->set_flashdata('ticket_code', $ticket_code);
-        }
-        $this->session->set_flashdata($inserted ? 'success' : 'error', $inserted
-            ? 'Pengajuan berhasil dikirim. Nomor tiket Anda: ' . $ticket_code
-            : 'Pengajuan belum dapat disimpan. Silakan coba lagi.');
-        redirect('Program/success');
+        $this->simpan_pengajuan_warga('solusi_pembiayaan/hasil');
     }
 
     public function cek_tiket() {
@@ -144,14 +88,13 @@ class Program extends Public_Controller {
             show_404();
         }
 
-        $ip_hash = hash('sha256', $this->input->ip_address());
-        $retry_after = $this->Program_model->get_ticket_lookup_retry_after($ip_hash);
-        if ($retry_after > 0) {
-            $this->output
-                ->set_status_header(429)
-                ->set_header('Retry-After: ' . $retry_after)
-                ->set_content_type('application/json')
-                ->set_output(json_encode(['status' => 'error', 'message' => 'Terlalu banyak percobaan. Silakan coba lagi sebentar.']));
+        $rate = $this->rate_limit_inspect('ticket_lookup');
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject(
+                $rate,
+                'Terlalu banyak percobaan. Silakan coba lagi sebentar.',
+                TRUE
+            );
             return;
         }
 
@@ -159,7 +102,7 @@ class Program extends Public_Controller {
         $nik_suffix = trim((string) $this->input->post('nik_suffix', TRUE));
 
         if (!preg_match('/^PKP-[A-Z0-9]{6}$/', $ticket_code) || !preg_match('/^\d{4}$/', $nik_suffix)) {
-            $this->Program_model->record_ticket_lookup_failure($ip_hash);
+            $this->rate_limit_hit('ticket_lookup');
             $this->output
                 ->set_status_header(422)
                 ->set_content_type('application/json')
@@ -169,7 +112,7 @@ class Program extends Public_Controller {
 
         $pengajuan = $this->Program_model->get_housing_queue_by_ticket($ticket_code, $nik_suffix);
         if (!$pengajuan) {
-            $this->Program_model->record_ticket_lookup_failure($ip_hash);
+            $this->rate_limit_hit('ticket_lookup');
             $this->output
                 ->set_status_header(404)
                 ->set_content_type('application/json')
@@ -177,11 +120,7 @@ class Program extends Public_Controller {
             return;
         }
 
-        $status_labels = [
-            'pending' => 'Menunggu verifikasi',
-            'approved' => 'Disetujui',
-            'rejected' => 'Ditolak'
-        ];
+        $status_labels = housing_queue_statuses();
 
         $this->output
             ->set_content_type('application/json')
@@ -189,7 +128,7 @@ class Program extends Public_Controller {
                 'status' => 'success',
                 'ticket_code' => $ticket_code,
                 'status_pengajuan' => isset($status_labels[$pengajuan['status_antrean']])
-                    ? $status_labels[$pengajuan['status_antrean']]
+                    ? $status_labels[$pengajuan['status_antrean']]['label']
                     : 'Sedang diverifikasi',
                 'created_at' => $pengajuan['created_at'],
                 'updated_at' => $pengajuan['updated_at']
@@ -203,91 +142,70 @@ class Program extends Public_Controller {
     }
 
     /**
-     * Endpoint MOCK API SIMPERUM (Dipanggil via AJAX dari UI Wizard)
-     * Menerima NIK via POST dan mengembalikan data mock JSON.
+     * Lookup local-first. Controller tidak mengetahui fixture maupun API.
      */
     public function api_cek_simperum() {
-        // Hanya izinkan AJAX request
         if (!$this->input->is_ajax_request()) {
             exit('No direct script access allowed');
         }
 
-        $nik = $this->input->post('nik', TRUE);
-        $tgl_lahir = $this->input->post('tgl_lahir', TRUE);
-        
-        // Mock Response Delay (Simulasi network)
-        sleep(1);
-
-        // Fungsi bantuan untuk mensensor/masking teks
-        $maskString = function($str) {
-            $words = explode(' ', $str);
-            $maskedWords = array_map(function($word) {
-                $len = strlen($word);
-                if ($len <= 2) return $word;
-                return substr($word, 0, 1) . str_repeat('*', $len - 2) . substr($word, -1);
-            }, $words);
-            return implode(' ', $maskedWords);
-        };
-
-        $this->load->library('smart_filter');
-
-        // Mock Logic: Simulasi NIK
-        if ($nik === '3329000000000001' && $tgl_lahir === '1980-01-01') {
-            // Skenario 1: Desil 4 (Omah Sekeng & Bansos PB)
-            $desil = 4;
-            $status_kepemilikan = 'Sewa/Kontrak';
-            
-            $eligible_programs = $this->smart_filter->get_eligible_programs($desil, $status_kepemilikan);
-
-            $response = [
-                'status' => 'success',
-                'message' => 'Verifikasi berhasil. Data ditemukan.',
-                'data' => [
-                    'nik' => $nik,
-                    'nama_lengkap' => $maskString('Budi Santoso'),
-                    'alamat' => $maskString('Jl Pahlawan No 9 Kota Semarang Jawa Tengah'),
-                    'penghasilan' => '3000000',
-                    'pekerjaan' => 'Karyawan Swasta',
-                    'status_kepemilikan' => $status_kepemilikan,
-                    'desil' => $desil
-                ],
-                'eligible_programs' => $eligible_programs
-            ];
-        } elseif ($nik === '3329000000000002' && $tgl_lahir === '1990-12-31') {
-            // Skenario 2: Hanya Data Diri (Data survei kosong, harus mengisi manual untuk tes Smart Filter)
-            $response = [
-                'status' => 'success',
-                'message' => 'Verifikasi berhasil. Data diri ditemukan.',
-                'data' => [
-                    'nik' => $nik,
-                    'nama_lengkap' => $maskString('Siti Aminah'),
-                    'alamat' => $maskString('Jl Pemuda No 15 Kabupaten Demak Jawa Tengah'),
-                    'penghasilan' => '',
-                    'pekerjaan' => '',
-                    'status_kepemilikan' => '',
-                    'desil' => null
-                ],
-                'eligible_programs' => []
-            ];
-        } else {
-            $response = [
-                'status' => 'error',
-                'message' => 'Verifikasi gagal! NIK dan Tanggal Lahir tidak cocok atau tidak ditemukan.',
-                'data' => null
-            ];
+        $this->config->load('simperum', TRUE);
+        if ($this->config->item('simperum_mode', 'simperum') === 'api') {
+            $this->output
+                ->set_status_header(409)
+                ->set_content_type('application/json')
+                ->set_output(json_encode([
+                    'status' => 'error',
+                    'message' => 'Pencarian SIMPERUM nyata hanya tersedia melalui Wizard Baru Warga.',
+                    'code' => 'warga_wizard_required',
+                    'redirect_url' => base_url('warga/pendataan'),
+                ]));
+            return;
         }
 
-        if ($response['status'] === 'success' && $this->input->post('simpan_identitas', TRUE) === '1') {
+        $rate = $this->rate_limit_consume('simperum_lookup');
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject(
+                $rate,
+                'Terlalu banyak percobaan. Silakan coba lagi sebentar.',
+                TRUE
+            );
+            return;
+        }
+
+        $this->load->library('simperum_gateway');
+        $result = $this->simperum_gateway->lookup(
+            $this->input->post('nik', TRUE),
+            $this->input->post('tgl_lahir', TRUE),
+            $this->is_logged_in() ? $this->get_user_id() : NULL
+        );
+        if ($result['status'] === 'found') {
+            $profile = $this->simperum_gateway->internal_profile();
             $this->session->set_userdata('solusi_pembiayaan_identitas', [
-                'nik' => $nik,
-                'nama_lengkap' => $response['data']['nama_lengkap'],
-                'data_simperum_json' => json_encode($response['data'])
+                'nik' => $profile['nik'],
+                'nama_lengkap' => $profile['full_name'],
+                'data_simperum_json' => json_encode([
+                    'source_mode' => $result['source_mode'],
+                    'snapshot_id' => $result['data']['snapshot_id'],
+                ]),
+                'created_at' => time(),
             ]);
         }
 
         $this->output
             ->set_content_type('application/json')
-            ->set_output(json_encode($response));
+            ->set_output(json_encode([
+                'status' => $result['status'] === 'found' ? 'success' : 'error',
+                'message' => $result['message'],
+                'source_mode' => $result['source_mode'],
+                'simulation' => $result['simulation'],
+                'code' => $result['code'],
+                'data' => $result['data']['profile'] ?? NULL,
+                'snapshot_id' => $result['data']['snapshot_id'] ?? NULL,
+                'cache_hit' => $result['data']['cache_hit'] ?? FALSE,
+                'missing_fields' => $result['data']['missing_fields'] ?? [],
+                'eligible_programs' => [],
+            ]));
     }
 
     /**
@@ -302,11 +220,18 @@ class Program extends Public_Controller {
         $status_kepemilikan = $this->input->post('status_kepemilikan', TRUE);
         $pekerjaan = $this->input->post('pekerjaan', TRUE);
         $kode_program_target = $this->input->post('kode_program_target', TRUE); // e.g. 'rtlh', 'umum'
+        $alasan_pengajuan = trim((string) $this->input->post('alasan_pengajuan', TRUE));
+        $user_id = $this->is_logged_in() ? $this->get_user_id() : NULL;
+        $kabupaten_id = $this->Program_model->resolve_kabupaten_id(
+            $user_id,
+            $this->input->post('kabupaten_id', TRUE)
+        );
 
         $pekerjaan_valid = ['PNS/TNI/POLRI', 'Karyawan Swasta', 'Wiraswasta', 'Pekerja Informal', 'Lainnya'];
         $kepemilikan_valid = ['Sewa/Kontrak', 'Numpang/Keluarga', 'Punya Lahan Belum Bangun', 'Punya Rumah Tidak Layak', 'Punya Rumah Layak'];
 
-        if ($penghasilan < 0 || $penghasilan > 100000000 || !in_array($pekerjaan, $pekerjaan_valid, TRUE) || !in_array($status_kepemilikan, $kepemilikan_valid, TRUE)) {
+        if ($penghasilan < 0 || $penghasilan > 100000000 || $alasan_pengajuan === '' || ! $kabupaten_id
+            || !in_array($pekerjaan, $pekerjaan_valid, TRUE) || !in_array($status_kepemilikan, $kepemilikan_valid, TRUE)) {
             $this->output
                 ->set_status_header(422)
                 ->set_content_type('application/json')
@@ -352,18 +277,20 @@ class Program extends Public_Controller {
             'eligible_programs' => $eligible_programs
         ];
 
+        $this->session->set_userdata('solusi_pembiayaan_hasil', [
+            'desil' => $desil,
+            'eligible_programs' => $eligible_programs,
+            'kabupaten_id' => $kabupaten_id,
+            'data_survey' => [
+                'penghasilan' => $penghasilan,
+                'pekerjaan' => $pekerjaan,
+                'status_kepemilikan' => $status_kepemilikan,
+                'alasan_pengajuan' => $alasan_pengajuan
+            ],
+            'created_at' => time()
+        ]);
+
         if ($this->input->post('simpan_hasil', TRUE) === '1' && $kode_program_target === 'umum') {
-            $this->session->set_userdata('solusi_pembiayaan_hasil', [
-                'desil' => $desil,
-                'eligible_programs' => $eligible_programs,
-                'data_survey' => [
-                    'penghasilan' => $penghasilan,
-                    'pekerjaan' => $pekerjaan,
-                    'status_kepemilikan' => $status_kepemilikan,
-                    'alasan_pengajuan' => $this->input->post('alasan_pengajuan', TRUE)
-                ],
-                'created_at' => time()
-            ]);
             $response['redirect_url'] = base_url('solusi_pembiayaan/hasil');
         }
 
@@ -376,55 +303,47 @@ class Program extends Public_Controller {
      * Endpoint untuk memproses hasil kalkulator dan memasukkan ke Housing Queue
      */
     public function submit_antrean() {
+        $this->simpan_pengajuan_warga('solusi_pembiayaan');
+    }
+
+    private function simpan_pengajuan_warga($gagal_redirect) {
         if ($this->input->method() !== 'post') {
             show_404();
+            return;
         }
 
-        $program_id = $this->input->post('program_id', TRUE);
-        $nik = $this->input->post('nik', TRUE);
-        $nama_lengkap = $this->input->post('nama_lengkap', TRUE);
-        
-        // Data survey dari Kalkulator
-        $data_survey = [
-            'penghasilan' => $this->input->post('penghasilan', TRUE),
-            'status_kepemilikan' => $this->input->post('status_kepemilikan', TRUE),
-            'pekerjaan' => $this->input->post('pekerjaan', TRUE),
-            'alasan_pengajuan' => $this->input->post('alasan_pengajuan', TRUE)
-        ];
+        $rate = $this->rate_limit_consume('housing_submit');
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject(
+                $rate,
+                'Batas pengajuan tercapai. Silakan coba lagi nanti.',
+                $this->input->is_ajax_request()
+            );
+            return;
+        }
 
-        // Data SIMPERUM (raw JSON yang diterima dari frontend)
-        $data_simperum = $this->input->post('data_simperum', TRUE);
-
+        $identitas = $this->session->userdata('solusi_pembiayaan_identitas');
+        $hasil = $this->session->userdata('solusi_pembiayaan_hasil');
+        $kode_program = trim((string) $this->input->post('program_kode', TRUE));
         $user_id = $this->is_logged_in() ? $this->get_user_id() : NULL;
-        // Jangan percaya kabupaten_id mentah dari form — diturunkan dari sumber
-        // tepercaya / divalidasi ke tabel kabupaten. Lihat resolve_kabupaten_id().
-        $kabupaten_id = $this->Program_model->resolve_kabupaten_id($user_id, $this->input->post('kabupaten_id', TRUE));
 
-        $ticket_code = $this->Program_model->generate_ticket_code();
-        $insert_data = [
-            'ticket_code' => $ticket_code,
-            'user_id' => $user_id,
-            'kabupaten_id' => $kabupaten_id,
-            'program_id' => $program_id,
-            'nik_pengaju' => $nik, // Idealnya dienkripsi, disesuaikan dengan aturan NFR-1.1
-            'nama_lengkap' => $nama_lengkap,
-            'data_simperum_json' => $data_simperum,
-            'data_survey_json' => json_encode($data_survey),
-            'status_antrean' => 'pending',
-            'created_at' => date('Y-m-d H:i:s'),
-            'updated_at' => date('Y-m-d H:i:s')
-        ];
+        $result = $this->Program_model->create_housing_submission(
+            is_array($identitas) ? $identitas : [],
+            is_array($hasil) ? $hasil : [],
+            $kode_program,
+            $user_id
+        );
 
-        // Memasukkan pengajuan ke database antrean
-        $inserted = $this->Program_model->insert_housing_queue($insert_data);
-
-        if ($inserted) {
-            $this->session->set_flashdata('ticket_code', $ticket_code);
-            $this->session->set_flashdata('success', 'Pengajuan berhasil direkam. Nomor tiket Anda: ' . $ticket_code);
-        } else {
-            $this->session->set_flashdata('error', 'Gagal memproses pengajuan. Silakan coba lagi.');
+        if (empty($result['success'])) {
+            $this->session->set_flashdata('error', $result['message']);
+            redirect($gagal_redirect);
+            return;
         }
 
+        $ticket_code = $result['ticket_code'];
+        $this->session->unset_userdata(['solusi_pembiayaan_hasil', 'solusi_pembiayaan_identitas']);
+        $this->session->set_flashdata('ticket_code', $ticket_code);
+        $this->session->set_flashdata('success', 'Pengajuan berhasil direkam. Nomor tiket Anda: ' . $ticket_code);
         redirect('Program/success');
     }
 
