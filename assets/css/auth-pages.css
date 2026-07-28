@@ -802,3 +802,95 @@ textarea.auth-input {
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
+
+/* --- Kredensial Demo (login) --- */
+.auth-demo {
+    background: rgba(214, 251, 0, 0.06);
+    border: 1px solid rgba(214, 251, 0, 0.25);
+    border-radius: 12px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1.5rem;
+}
+.auth-demo summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #8aacb0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    user-select: none;
+}
+.auth-demo summary::-webkit-details-marker { display: none; }
+.auth-demo summary::after {
+    content: '\f078'; /* chevron-down */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 0.65rem;
+    margin-left: auto;
+    transition: transform 0.2s;
+}
+.auth-demo[open] summary::after { transform: rotate(180deg); }
+.auth-demo summary .auth-demo__hint {
+    font-weight: 500;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 0.7rem;
+    color: rgba(138, 172, 176, 0.75);
+}
+.auth-demo-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+.auth-demo-card {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.55rem 0.65rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.2s, background 0.2s;
+    display: block;
+    width: 100%;
+    min-width: 0;
+}
+.auth-demo-card:hover,
+.auth-demo-card:focus-visible {
+    border-color: rgba(214, 251, 0, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+    outline: none;
+}
+.auth-demo-card__role {
+    display: block;
+    color: #8aacb0;
+    font-size: 0.68rem;
+    margin-bottom: 2px;
+}
+.auth-demo-card__email {
+    display: block;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.74rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+.auth-demo-note {
+    margin-top: 0.65rem;
+    font-size: 0.7rem;
+    color: #8aacb0;
+}
+.auth-demo-note code {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 0.05rem 0.35rem;
+    color: #d6fb00;
+    font-weight: 700;
+}
+@media (max-width: 420px) {
+    .auth-demo-grid { grid-template-columns: 1fr; }
+}

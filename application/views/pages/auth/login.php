@@ -10,7 +10,7 @@
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . time()) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . filemtime('assets/css/auth-pages.css')) ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
@@ -105,8 +105,11 @@
 
             <h2 class="auth-heading">Selamat Datang 👋</h2>
             <p class="auth-subheading">Masuk ke akun Anda untuk mengakses seluruh layanan portal.</p>
-
-            </div>
+            <?php
+            // CATATAN STRUKTUR: dulu ada </div> yatim di sini yang menutup
+            // .auth-form-container terlalu dini — kotak demo + form jadi hidup
+            // di luar container ber-max-width dan tampilan melebar tak rapi.
+            ?>
 
             <?php
             // ============================================================
@@ -123,27 +126,30 @@
             // ============================================================
             ?>
             <!-- Demo Accounts Info Box -->
-            <div style="background: rgba(214, 251, 0, 0.1); border: 1px solid rgba(214, 251, 0, 0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem;">
-                <h3 style="font-size: 0.8rem; font-weight: 700; color: #8aacb0; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"><i class="fa-solid fa-flask" style="margin-right: 4px;"></i> Kredensial Demo</h3>
-                <p style="font-size: 0.7rem; color: #8aacb0; margin-bottom: 0.6rem; line-height: 1.5;">Akun uji coba berisi data contoh. Klik salah satu untuk mengisi form otomatis.</p>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; font-size: 0.8rem;">
+            <details class="auth-demo" open>
+                <summary>
+                    <i class="fa-solid fa-flask"></i> Kredensial Demo
+                    <span class="auth-demo__hint">klik akun untuk mengisi form</span>
+                </summary>
+                <div class="auth-demo-grid">
                     <?php
                     $akun_demo = [
-                        ['Admin Dashboard',           'admin@klinikpkp.jatengprov.go.id', 'admin'],
-                        ['Warga (Pengaju)',           'warga@example.com',                'warga_demo'],
-                        ['Pengembang (SRP2)',         'pengembang@example.com',           'pengembang_demo'],
-                        ['Mahasiswa (KKN/Magang)',    'mahasiswa@example.com',            'mahasiswa_demo'],
-                        ['Admin Kab/Kota (Semarang)', 'adminkabkota@example.com',         'adminkabkota_demo'],
-                        ['Admin Bidang (Perumahan)',  'adminbidang@example.com',          'adminbidang_demo'],
+                        ['Admin Dashboard',           'admin@klinikpkp.jatengprov.go.id'],
+                        ['Warga (Pengaju)',           'warga@example.com'],
+                        ['Pengembang (SRP2)',         'pengembang@example.com'],
+                        ['Mahasiswa (KKN/Magang)',    'mahasiswa@example.com'],
+                        ['Admin Kab/Kota (Semarang)', 'adminkabkota@example.com'],
+                        ['Admin Bidang (Perumahan)',  'adminbidang@example.com'],
                     ];
-                    foreach ($akun_demo as [$label, $email, $username]): ?>
-                    <button type="button" onclick="document.getElementById('login_email').value='<?= html_escape($email) ?>'; document.getElementById('login_password').value='password';" style="background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 8px; border: 1px solid transparent; cursor: pointer; text-align: left; transition: all 0.2s;" onmouseover="this.style.borderColor='rgba(214,251,0,0.5)';" onmouseout="this.style.borderColor='transparent';">
-                        <div style="color: #8aacb0; font-size: 0.7rem; margin-bottom: 4px;"><?= html_escape($label) ?></div>
-                        <div style="color: #fff; font-weight: 600; line-height: 1.4; word-break: break-all;">E: <?= html_escape($email) ?><br>U: <?= html_escape($username) ?><br>P: password</div>
+                    foreach ($akun_demo as [$label, $email]): ?>
+                    <button type="button" class="auth-demo-card" data-demo-email="<?= html_escape($email) ?>">
+                        <span class="auth-demo-card__role"><?= html_escape($label) ?></span>
+                        <span class="auth-demo-card__email"><?= html_escape($email) ?></span>
                     </button>
                     <?php endforeach; ?>
                 </div>
-            </div>
+                <p class="auth-demo-note">Akun uji berisi data contoh. Password semua akun: <code>password</code></p>
+            </details>
 
             <!-- Login Form -->
             <form action="<?= base_url('Auth/do_login') ?>" method="POST" id="loginForm">
@@ -244,6 +250,15 @@ document.getElementById('loginForm').addEventListener('submit', function() {
     const btn = document.getElementById('btnLogin');
     btn.classList.add('loading');
     btn.disabled = true;
+});
+
+// Kredensial demo: klik kartu -> isi form
+document.querySelectorAll('.auth-demo-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+        document.getElementById('login_email').value = card.dataset.demoEmail;
+        document.getElementById('login_password').value = 'password';
+        document.getElementById('login_email').focus();
+    });
 });
 </script>
 

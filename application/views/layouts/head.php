@@ -76,11 +76,22 @@
             z-index: 20;
             padding: 1rem;
             background: var(--portal-bg, #f0f6f7);
-            opacity: 1;
-            visibility: visible;
-            transition: opacity .18s ease, visibility 0s linear 0s;
+            /* Mulai TERSEMBUNYI dan baru muncul setelah 250ms (CSS murni).
+               Konten aslinya sudah dirender server di bawah overlay ini, jadi
+               pada load cepat skeleton dulu justru MENCIPTAKAN kedipan yang
+               seharusnya ia tutupi: skeleton -> fade -> konten, setiap refresh.
+               Kalau DOMContentLoaded menang melawan 250ms, .is-hidden membatalkan
+               animasinya dan skeleton tidak pernah terlihat sama sekali. */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity .18s ease;
+            animation: skeleton-appear 0s linear .25s forwards;
+        }
+        @keyframes skeleton-appear {
+            to { opacity: 1; visibility: visible; }
         }
         .page-loading-skeleton.is-hidden {
+            animation: none;
             opacity: 0;
             visibility: hidden;
             pointer-events: none;

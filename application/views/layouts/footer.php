@@ -140,8 +140,12 @@
     });
 
     document.addEventListener('DOMContentLoaded', function () {
+        // Langsung tanpa requestAnimationFrame: rAF tidak menembak di tab
+        // background, jadi skeleton bisa tertahan sampai tab difokuskan.
+        // Skeleton kini mulai tersembunyi (delay-appear 250ms di head.php),
+        // sehingga tidak ada transisi yang perlu ditunggu satu frame.
         var initialSkeleton = document.getElementById('page-loading-skeleton');
-        if (initialSkeleton) requestAnimationFrame(function () { initialSkeleton.classList.add('is-hidden'); });
+        if (initialSkeleton) initialSkeleton.classList.add('is-hidden');
     });
 
     // Lenis smooth scroll disabled — panel now uses native overflow-y scroll
