@@ -10,10 +10,13 @@
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
     <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . time()) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="auth-page">
+<?php $this->load->view('components/notification_center'); ?>
 
 <div class="auth-split">
 
@@ -62,17 +65,6 @@
 
             <h2 class="auth-heading">Buat Akun Baru</h2>
             <p class="auth-subheading">Isi data berikut untuk mendaftar. Cepat dan mudah.</p>
-
-            <!-- Flash Messages -->
-            <?php if ($this->session->flashdata('error')): ?>
-                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--error relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <i class="fa-solid fa-circle-exclamation mr-2"></i>
-                        <?= $this->session->flashdata('error') ?>
-                    </div>
-                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            <?php endif; ?>
 
             <!-- Registration Form -->
             <form action="<?= base_url('Auth/do_register') ?>" method="POST" id="registerForm">
@@ -215,13 +207,13 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
 
     if (pw !== pwConfirm) {
         e.preventDefault();
-        alert('Password dan Konfirmasi Password tidak cocok.');
+        KPKP.notify.error('Password dan Konfirmasi Password tidak cocok.');
         return;
     }
 
     if (pw.length < 8 || !/[A-Z]/.test(pw) || !/[0-9]/.test(pw) || !/[^A-Za-z0-9]/.test(pw)) {
         e.preventDefault();
-        alert('Password harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.');
+        KPKP.notify.error('Password harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.');
         return;
     }
 

@@ -203,70 +203,6 @@
 		document.body.classList.add("kpkp-has-nav");
 	}
 
-	// ─── Form Handling: Intercept all forms and show success toast ───
-	function setupFormHandling() {
-		const forms = document.querySelectorAll("form");
-		forms.forEach(function (form) {
-			form.addEventListener("submit", function (e) {
-				e.preventDefault();
-
-				// Basic validation
-				const requiredFields = form.querySelectorAll("[required]");
-				let valid = true;
-				requiredFields.forEach(function (field) {
-					if (!field.value.trim()) {
-						valid = false;
-						field.style.borderColor = "#dc3545";
-						field.style.boxShadow = "0 0 0 3px rgba(220,53,69,0.25)";
-					} else {
-						field.style.borderColor = "";
-						field.style.boxShadow = "";
-					}
-				});
-
-				if (!valid) {
-					showToast("Mohon lengkapi semua field yang wajib diisi.", "error");
-					return;
-				}
-
-				// Simulate success
-				showToast("Data berhasil dikirim!", "success");
-
-				// Reset form after delay
-				setTimeout(function () {
-					form.reset();
-				}, 1500);
-			});
-		});
-	}
-
-	// ─── Toast Notification ───
-	function showToast(message, type) {
-		// Remove existing toast
-		const existing = document.querySelector(".kpkp-toast");
-		if (existing) existing.remove();
-
-		const toast = document.createElement("div");
-		toast.className = "kpkp-toast kpkp-toast-" + (type || "success");
-		toast.textContent = message;
-		document.body.appendChild(toast);
-
-		// Trigger animation
-		requestAnimationFrame(function () {
-			requestAnimationFrame(function () {
-				toast.classList.add("kpkp-toast-show");
-			});
-		});
-
-		// Auto-hide
-		setTimeout(function () {
-			toast.classList.remove("kpkp-toast-show");
-			setTimeout(function () {
-				toast.remove();
-			}, 400);
-		}, 3000);
-	}
-
 	// ─── Fix: Remove [cite: XX] artifacts from page ───
 	function removeCiteArtifacts() {
 		const walker = document.createTreeWalker(
@@ -298,7 +234,6 @@
 	function init() {
 		removeCiteArtifacts();
 		injectTopBar();
-		setupFormHandling();
 	}
 
 	if (document.readyState === "loading") {

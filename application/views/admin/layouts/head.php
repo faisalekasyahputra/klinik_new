@@ -19,6 +19,7 @@
     <!-- Favicon -->
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
     <link rel="shortcut icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
+    <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -48,15 +49,37 @@
         }
     </script>
     <!-- Alpine.js -->
+    <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        [x-cloak] { display: none !important; }
         /* Main Content Entry Animation */
         #main-content {
             animation: fade-in-blur 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+        }
+        .admin-sidebar-backdrop { display: none; }
+        @media (max-width: 767px) {
+            .admin-sidebar {
+                position: fixed !important;
+                inset: 0 auto 0 0 !important;
+                z-index: 60 !important;
+                flex: 0 0 16rem !important;
+                width: 16rem !important;
+                transform: translateX(0) !important;
+            }
+            .admin-sidebar-backdrop {
+                display: block !important;
+                position: fixed !important;
+                inset: 0 !important;
+                z-index: 50 !important;
+                background: rgba(10, 26, 31, .55);
+            }
+            .admin-main { padding: 1rem; }
+            .admin-topbar { padding-left: 1rem; padding-right: 1rem; }
         }
 
         @keyframes fade-out-blur {

@@ -1,6 +1,6 @@
-<header class="h-20 bg-white dark:bg-[#0a1a1f] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-8 z-40 sticky top-0">
+<header class="admin-topbar h-20 bg-white dark:bg-[#0a1a1f] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-8 z-40 sticky top-0">
     <div class="flex items-center gap-6">
-        <button @click="sidebarOpen = !sidebarOpen" class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all">
+        <button @click="sidebarOpen = !sidebarOpen" :aria-expanded="sidebarOpen.toString()" aria-label="Buka atau tutup menu navigasi" class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all">
             <i class="ph ph-list text-2xl"></i>
         </button>
         
@@ -18,12 +18,6 @@
             <div class="absolute inset-0 bg-brand-primary/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300 rounded-xl"></div>
             <i class="ph ph-sun text-xl relative z-10" x-show="!darkMode"></i>
             <i class="ph ph-moon text-xl relative z-10" x-show="darkMode" style="display: none;"></i>
-        </button>
-        
-        <!-- Notifications -->
-        <button class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all relative">
-            <i class="ph ph-bell text-xl"></i>
-            <span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-red-500 border-2 border-white dark:border-[#0a1a1f]"></span>
         </button>
         
         <div class="w-px h-6 bg-gray-200 dark:bg-white/10 mx-2"></div>

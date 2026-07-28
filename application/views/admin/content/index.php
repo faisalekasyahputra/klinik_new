@@ -6,18 +6,6 @@
         </div>
     </div>
 
-    <?php if ($this->session->flashdata('success')): ?>
-        <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 relative z-10 rounded-r-xl" role="alert">
-            <p><?= $this->session->flashdata('success') ?></p>
-        </div>
-    <?php endif; ?>
-
-    <?php if ($this->session->flashdata('error')): ?>
-        <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 relative z-10 rounded-r-xl" role="alert">
-            <p><?= $this->session->flashdata('error') ?></p>
-        </div>
-    <?php endif; ?>
-
     <!-- Tabs Navigation -->
     <div class="flex flex-wrap gap-2 mb-6 border-b border-gray-200 dark:border-white/10 relative z-10">
         <button type="button" @click="activeTab = 'hero'" :class="activeTab === 'hero' ? 'border-blue-600 text-blue-600 dark:border-brand-primary dark:text-brand-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="px-4 py-3 font-bold border-b-2 transition-colors flex items-center gap-2">

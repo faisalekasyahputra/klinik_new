@@ -8,12 +8,6 @@
         <p class="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--portal-text-muted)]">Isi formulir di bawah, tim kami akan meninjau dan menghubungi Anda lewat akun terdaftar.</p>
     </div>
 
-    <?php if ($this->session->flashdata('error')): ?>
-    <div class="mx-auto mt-6 max-w-2xl rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-500" role="alert">
-        <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> <?= $this->session->flashdata('error') ?>
-    </div>
-    <?php endif; ?>
-
     <form id="kemitraan-daftar-form" class="mx-auto mt-8 max-w-2xl space-y-4" action="<?= base_url('KemitraanPortal/simpan') ?>" method="POST" enctype="multipart/form-data"
           x-data="{
               instansi_asal: '', no_hp: '', divisi_atau_tema: '', periode_mulai: '', periode_selesai: '',

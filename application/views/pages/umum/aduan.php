@@ -8,17 +8,6 @@
         <p class="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--portal-text-muted)]">Isi formulir di bawah dan pilih bidang tujuan yang sesuai, aduan Anda akan langsung diteruskan ke bidang tersebut.</p>
     </div>
 
-    <?php if ($this->session->flashdata('success')): ?>
-    <div class="mx-auto mt-6 max-w-2xl rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-600" role="status">
-        <i class="fa-solid fa-circle-check mr-1.5"></i> <?= $this->session->flashdata('success') ?>
-    </div>
-    <?php endif; ?>
-    <?php if ($this->session->flashdata('error')): ?>
-    <div class="mx-auto mt-6 max-w-2xl rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-500" role="alert">
-        <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> <?= $this->session->flashdata('error') ?>
-    </div>
-    <?php endif; ?>
-
     <form id="aduan-form" class="mx-auto mt-8 max-w-2xl space-y-4" action="<?= base_url('umum/simpan_aduan') ?>" method="POST" enctype="multipart/form-data"
           x-data="{
               nama: <?= htmlspecialchars(json_encode($nama_default ?? ''), ENT_QUOTES) ?>,

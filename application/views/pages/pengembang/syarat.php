@@ -37,15 +37,6 @@
             </template>
         </div>
 
-        <!-- Toast progres — di-teleport ke <body> supaya posisinya beneran pojok layar,
-             bukan relatif ke panel wizard (ancestor dengan transform/animasi bikin
-             "fixed" biasa jadi ke-jebak di dalam panel, bukan viewport). -->
-        <template x-teleport="body">
-            <div x-show="toast.show" x-transition x-cloak class="fixed bottom-5 left-5 z-[9999] rounded-xl px-4 py-3 text-xs font-semibold shadow-lg" style="background:#0a1a1f;color:#fff">
-                <i class="fa-solid fa-circle-notch fa-spin mr-1.5" x-show="uploading"></i><span x-text="toast.message"></span>
-            </div>
-        </template>
-
         <!-- ================= STEP 1: SYARAT ================= -->
         <div x-show="step === 1">
             <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -387,7 +378,6 @@ function srp2Wizard(config) {
         // Sesi kedaluwarsa di tengah unggah: satu-satunya pemulihan adalah muat
         // ulang halaman, jadi keadaannya ditandai dan spanduknya ditampilkan.
         sesiKedaluwarsa: false,
-        toast: { show: false, message: '' },
         submitLoading: false,
         submitError: '',
 
@@ -476,10 +466,11 @@ function srp2Wizard(config) {
             this.fileStatus[key] = this.tersimpanDiServer[key] ? 'done' : 'idle';
         },
 
-        showToast(message, sticky) {
-            this.toast = { show: true, message: message };
-            clearTimeout(this._toastTimer);
-            if (!sticky) { this._toastTimer = setTimeout(() => { this.toast.show = false; }, 3000); }
+        showToast(message, sticky, type) {
+            KPKP.notify.show(message, type || 'info', {
+                id: 'srp2-upload',
+                sticky: !!sticky
+            });
         },
 
         async doLogin() {
@@ -514,7 +505,7 @@ function srp2Wizard(config) {
                     this.status = s.status || null;
                     this.catatanAdmin = s.catatan_admin || null;
                     this.tandaiBerkasTerunggah(s.uploaded_keys);
-                    this.showToast('Berhasil masuk!');
+                    this.showToast('Berhasil masuk!', false, 'success');
                 } else {
                     this.authError = data.message || 'Gagal masuk.';
                 }
@@ -540,7 +531,7 @@ function srp2Wizard(config) {
                 if (data.status === 'success') {
                     this.isLogged = true; this.isPengembang = true;
                     this.registrationId = data.registration_id;
-                    this.showToast('Akun berhasil dibuat!');
+                    this.showToast('Akun berhasil dibuat!', false, 'success');
                 } else {
                     this.regError = data.message || 'Gagal mendaftar.';
                 }
@@ -592,7 +583,7 @@ function srp2Wizard(config) {
         async retryOne(key) {
             this.showToast('Mengunggah ulang...', true);
             await this.uploadOne(key);
-            this.toast.show = false;
+            KPKP.notify.dismiss('srp2-upload');
         },
 
         async uploadAll() {
@@ -604,7 +595,11 @@ function srp2Wizard(config) {
                 await this.uploadOne(keys[i]);
             }
             this.uploading = false;
-            this.showToast(this.allUploaded ? 'Semua dokumen berhasil diunggah!' : 'Sebagian dokumen gagal — silakan ulangi, atau lengkapi lewat dashboard.');
+            this.showToast(
+                this.allUploaded ? 'Semua dokumen berhasil diunggah!' : 'Sebagian dokumen gagal — silakan ulangi, atau lengkapi lewat dashboard.',
+                false,
+                this.allUploaded ? 'success' : 'warning'
+            );
         },
 
         async submitPengajuan() {

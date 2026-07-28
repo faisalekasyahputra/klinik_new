@@ -1,11 +1,20 @@
 <?php $this->load->view('admin/layouts/head'); ?>
+<?php $this->load->view('components/notification_center'); ?>
 
-<div x-data="{ sidebarOpen: true }" class="flex h-screen w-full bg-[#f8fafc] dark:bg-brand-dark">
+<div x-data="{ sidebarOpen: false, desktop: window.innerWidth >= 768 }"
+     x-init="sidebarOpen = desktop"
+     @resize.window="sidebarOpen = (desktop && window.innerWidth < 768) ? false : sidebarOpen; desktop = window.innerWidth >= 768"
+     @keydown.escape.window="if (!desktop) sidebarOpen = false"
+     class="admin-shell flex h-screen w-full bg-[#f8fafc] dark:bg-brand-dark">
     <!-- Sidebar -->
     <?php $this->load->view('admin/layouts/sidebar'); ?>
+    <button x-cloak x-show="!desktop && sidebarOpen" @click="sidebarOpen = false"
+            class="admin-sidebar-backdrop"
+            :style="!desktop && sidebarOpen ? 'display:block !important;position:fixed !important;inset:0 !important;z-index:50 !important;background:rgba(10,26,31,.55);' : ''"
+            aria-label="Tutup menu navigasi"></button>
     
     <!-- Main Content Wrapper -->
-    <div class="flex-1 flex flex-col h-screen overflow-hidden relative">
+    <div class="min-w-0 flex-1 flex flex-col h-screen overflow-hidden relative">
         
         <!-- Background Ambient & Batik Pattern -->
         <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden hidden dark:block">
@@ -51,38 +60,7 @@
         <?php $this->load->view('admin/layouts/topbar'); ?>
         
         <!-- Main Content Area -->
-        <main id="main-content" class="flex-1 min-h-0 overflow-x-hidden overflow-y-auto p-8 relative z-10 custom-scrollbar">
-            
-            <?php if($this->session->flashdata('success')): ?>
-                <div x-data="{ show: true }" x-show="show" class="mb-6 p-4 rounded-2xl bg-green-50 text-green-700 border border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20 flex items-start justify-between gap-3 shadow-sm relative">
-                    <div class="flex items-start gap-3">
-                        <i class="ph ph-check-circle text-xl mt-0.5"></i>
-                        <div>
-                            <h4 class="font-bold text-sm">Berhasil!</h4>
-                            <p class="text-sm mt-0.5 opacity-90"><?= $this->session->flashdata('success') ?></p>
-                        </div>
-                    </div>
-                    <button @click="show = false" class="text-green-700/50 hover:text-green-700 dark:text-green-400/50 dark:hover:text-green-400 transition-colors">
-                        <i class="ph ph-x"></i>
-                    </button>
-                </div>
-            <?php endif; ?>
-            
-            <?php if($this->session->flashdata('error')): ?>
-                <div x-data="{ show: true }" x-show="show" class="mb-6 p-4 rounded-2xl bg-red-50 text-red-700 border border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20 flex items-start justify-between gap-3 shadow-sm relative">
-                    <div class="flex items-start gap-3">
-                        <i class="ph ph-warning-circle text-xl mt-0.5"></i>
-                        <div>
-                            <h4 class="font-bold text-sm">Terjadi Kesalahan!</h4>
-                            <p class="text-sm mt-0.5 opacity-90"><?= $this->session->flashdata('error') ?></p>
-                        </div>
-                    </div>
-                    <button @click="show = false" class="text-red-700/50 hover:text-red-700 dark:text-red-400/50 dark:hover:text-red-400 transition-colors">
-                        <i class="ph ph-x"></i>
-                    </button>
-                </div>
-            <?php endif; ?>
-            
+        <main id="main-content" class="admin-main flex-1 min-h-0 overflow-x-hidden overflow-y-auto p-8 relative z-10 custom-scrollbar">
             <!-- Injected Content -->
             <div class="animate-[fadeIn_0.3s_ease-out]">
                 <?= isset($content) ? $content : '' ?>

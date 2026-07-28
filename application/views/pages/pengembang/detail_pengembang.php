@@ -141,13 +141,6 @@ foreach ($tapera_data as $p) {
             <span style="color:#d6fb00;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= htmlspecialchars($nama_pengembang) ?></span>
         </nav>
 
-        <!-- Flash -->
-        <?php if ($this->session->flashdata('success')): ?>
-        <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:#34d399;padding:14px 18px;border-radius:14px;font-size:13px;display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-            <i class="fa-solid fa-circle-check"></i><?= $this->session->flashdata('success') ?>
-        </div>
-        <?php endif; ?>
-
         <!-- Developer Header Row -->
         <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:28px;">
 

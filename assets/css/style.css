@@ -1012,67 +1012,7 @@ body.kpkp-has-nav {
 }
 
 /* =============================================
-   8. TOAST NOTIFICATION
-   ============================================= */
-.kpkp-toast {
-  position: fixed;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%) translateY(100px);
-  z-index: 10000;
-  padding: 14px 28px;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 0.9rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-  opacity: 0;
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  pointer-events: none;
-  max-width: 90%;
-  text-align: center;
-}
-
-.kpkp-toast-success {
-  background: rgba(25, 135, 84, 0.95);
-  backdrop-filter: blur(10px);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding-left: 48px;
-}
-.kpkp-toast-success::before {
-  content: '\F26B';
-  font-family: 'bootstrap-icons';
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1.1rem;
-}
-
-.kpkp-toast-error {
-  background: rgba(220, 53, 69, 0.95);
-  backdrop-filter: blur(10px);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  padding-left: 48px;
-}
-.kpkp-toast-error::before {
-  content: '\F336';
-  font-family: 'bootstrap-icons';
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1.1rem;
-}
-
-.kpkp-toast-show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* =============================================
-   9. RESPONSIVE
+   8. RESPONSIVE
    ============================================= */
 @media (max-width: 576px) {
   .kpkp-topbar {

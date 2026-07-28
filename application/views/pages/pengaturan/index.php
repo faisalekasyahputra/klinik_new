@@ -42,13 +42,14 @@
         <?php else: ?>
             <div class="divide-y divide-gray-100 dark:divide-white/5">
                 <?php foreach ($items as $item): ?>
-                <div class="flex items-center gap-4 px-6 py-4">
+                <div class="flex flex-col items-start gap-3 px-4 py-4 sm:flex-row sm:items-center sm:gap-4 sm:px-6">
                     <div class="w-10 h-10 shrink-0 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center text-gray-500 dark:text-brand-muted">
                         <i class="ph <?= $item['icon'] ?> text-lg"></i>
                     </div>
-                    <div class="min-w-0 flex-1">
+                    <div class="w-full min-w-0 flex-1">
                         <p class="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-brand-muted/70"><?= htmlspecialchars($item['jenis']) ?></p>
                         <p class="text-sm font-bold text-gray-900 dark:text-white truncate"><?= htmlspecialchars($item['judul']) ?></p>
+                        <?php if (!empty($item['is_simulation'])): ?><span class="mt-1 inline-flex max-w-full whitespace-normal rounded px-2 py-0.5 text-[10px] font-bold leading-tight bg-amber-100 text-amber-800">Mode Simulasi — API SIMPERUM belum terhubung</span><?php endif; ?>
                         <p class="text-xs text-gray-500 dark:text-brand-muted mt-0.5"><?= htmlspecialchars(date('d M Y, H:i', strtotime($item['created_at']))) ?></p>
                         <?php if (!empty($item['catatan_admin'])): ?>
                         <p class="text-xs mt-1.5 px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted whitespace-normal">
@@ -56,13 +57,21 @@
                         </p>
                         <?php endif; ?>
                     </div>
-                    <div class="shrink-0 flex flex-col items-end gap-2">
+                    <div class="flex w-full shrink-0 flex-row flex-wrap items-center justify-between gap-2 sm:w-auto sm:flex-col sm:flex-nowrap sm:items-end">
                         <span class="inline-flex px-3 py-1 rounded-full text-xs font-bold border <?= $kelas_badge[$item['status_kelas']] ?? $kelas_badge['pending'] ?>"><?= htmlspecialchars($item['status_label']) ?></span>
                         <?php if (!empty($item['aksi_url'])): ?>
                         <?php // Label menyebut apa yang benar-benar terjadi saat diklik.
                               // "Kelola" untuk semua keadaan menjanjikan kemampuan mengubah
                               // padahal pengajuan yang sudah dikirim/diterima read-only. ?>
                         <a href="<?= base_url($item['aksi_url']) ?>" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><?= htmlspecialchars($item['aksi_label'] ?? 'Kelola') ?> →</a>
+                        <?php elseif (!empty($item['aksi_post_url'])): ?>
+                        <form action="<?= base_url($item['aksi_post_url']) ?>" method="post">
+                            <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
+                            <?php foreach (($item['aksi_post_fields'] ?? []) as $name => $value): ?>
+                            <input type="hidden" name="<?= html_escape($name) ?>" value="<?= html_escape((string) $value) ?>">
+                            <?php endforeach; ?>
+                            <button type="submit" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><?= htmlspecialchars($item['aksi_label'] ?? 'Kelola') ?> →</button>
+                        </form>
                         <?php endif; ?>
                     </div>
                 </div>

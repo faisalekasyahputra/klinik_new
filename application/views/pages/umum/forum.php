@@ -17,13 +17,6 @@
             <?php endif; ?>
         </div>
 
-        <?php if ($this->session->flashdata('error')): ?>
-            <div class="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-xs text-red-500"><i class="fa-solid fa-circle-exclamation"></i><?= $this->session->flashdata('error') ?></div>
-        <?php endif; ?>
-        <?php if ($this->session->flashdata('success')): ?>
-            <div class="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-600"><i class="fa-solid fa-circle-check"></i><?= $this->session->flashdata('success') ?></div>
-        <?php endif; ?>
-
         <div class="grid gap-3 sm:grid-cols-3">
             <?php foreach ([
                 ['fa-file-pen','Jelaskan kebutuhan','Ceritakan masalah dan konteks yang ingin dibahas.'],

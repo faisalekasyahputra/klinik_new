@@ -11,12 +11,15 @@
 
     <!-- Styles -->
     <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . time()) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
 
     <!-- reCAPTCHA v2 -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="auth-page">
+<?php $this->load->view('components/notification_center'); ?>
 
 <div class="auth-split">
 
@@ -102,35 +105,6 @@
 
             <h2 class="auth-heading">Selamat Datang 👋</h2>
             <p class="auth-subheading">Masuk ke akun Anda untuk mengakses seluruh layanan portal.</p>
-
-            <!-- Flash Messages -->
-            <?php if ($this->session->flashdata('error')): ?>
-                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--error relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <i class="fa-solid fa-circle-exclamation mr-2"></i>
-                        <?= $this->session->flashdata('error') ?>
-                    </div>
-                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            <?php endif; ?>
-            <?php if ($this->session->flashdata('success')): ?>
-                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--success relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <i class="fa-solid fa-circle-check mr-2"></i>
-                        <?= $this->session->flashdata('success') ?>
-                    </div>
-                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            <?php endif; ?>
-            <?php if ($this->session->flashdata('warning')): ?>
-                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--warning relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <i class="fa-solid fa-triangle-exclamation mr-2"></i>
-                        <?= $this->session->flashdata('warning') ?>
-                    </div>
-                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            <?php endif; ?>
 
             </div>
 

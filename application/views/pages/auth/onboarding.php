@@ -9,10 +9,13 @@
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
     <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . time()) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="auth-page">
+<?php $this->load->view('components/notification_center'); ?>
 
 <div class="auth-split">
 
@@ -67,17 +70,6 @@
                 Halo, <strong><?= isset($user_email) ? htmlspecialchars($user_email) : '' ?></strong>!
                 Pilih peran dan lengkapi data Anda.
             </p>
-
-            <!-- Flash Messages -->
-            <?php if ($this->session->flashdata('error')): ?>
-                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--error relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <i class="fa-solid fa-circle-exclamation mr-2"></i>
-                        <?= $this->session->flashdata('error') ?>
-                    </div>
-                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            <?php endif; ?>
 
             <!-- Form -->
             <form action="<?= base_url('Auth/save_onboarding') ?>" method="POST" enctype="multipart/form-data" id="onboardingForm">

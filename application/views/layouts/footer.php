@@ -170,9 +170,12 @@ $(document).ready(function() {
                     $('#pre-chat-section').addClass('hidden');
                     $('#live-chat-section').removeClass('hidden');
                     muatChat();
-                } else { alert('Gagal memulai sesi.'); }
+                } else { KPKP.notify.error('Gagal memulai sesi.'); }
             },
-            error: function(xhr) { console.error(xhr.responseText); }
+            error: function(xhr) {
+                console.error(xhr.responseText);
+                KPKP.notify.error('Gagal terhubung ke layanan chat.');
+            }
         });
     });
 

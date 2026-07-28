@@ -3,13 +3,6 @@ defined('BASEPATH') || exit('No direct script access allowed');
 
 class Auth extends MY_Controller {
 
-    /**
-     * Batas pendaftaran per IP. Longgar untuk manusia (satu kantor/warnet ber-NAT
-     * tetap muat), ketat untuk skrip. Lihat rate_limit_sisa() di MY_Controller.
-     */
-    const MAX_REGISTER_PER_WINDOW = 5;
-    const REGISTER_WINDOW_SECONDS = 600;
-
     protected $google_client;
 
     // reCAPTCHA keys (set your own in .env or config)
@@ -239,12 +232,15 @@ class Auth extends MY_Controller {
         //
         // Dicatat pada SETIAP percobaan, bukan cuma yang gagal — di sini justru
         // pendaftaran yang BERHASIL berulang kali yang jadi penyalahgunaannya.
-        $sisa = $this->rate_limit_sisa('register', self::MAX_REGISTER_PER_WINDOW, self::REGISTER_WINDOW_SECONDS);
-        if ($sisa > 0) {
-            $this->_register_fail($is_ajax, 'Terlalu banyak percobaan pendaftaran. Coba lagi dalam ' . $sisa . ' detik.', $redirect_target);
+        $rate = $this->rate_limit_consume('register');
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject(
+                $rate,
+                'Terlalu banyak percobaan pendaftaran. Silakan coba lagi sebentar.',
+                $is_ajax
+            );
             return;
         }
-        $this->rate_limit_catat('register', self::REGISTER_WINDOW_SECONDS);
 
         // Validation
         if (empty($email) || empty($password) || empty($password_confirm)) {

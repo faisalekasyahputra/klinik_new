@@ -9,13 +9,6 @@
             <p class="mt-1 text-xs leading-relaxed" style="color:var(--portal-text-muted)">Masuk kalau sudah punya akun pengembang, atau daftar cepat kalau baru mulai — tanpa keluar dari alur ini.</p>
         </div>
 
-        <?php if ($this->session->flashdata('error')): ?>
-        <div class="mb-4 rounded-xl px-4 py-3 text-xs font-semibold" style="background:rgba(220,38,38,.08);border:1px solid rgba(220,38,38,.25);color:#dc2626"><i class="fa-solid fa-triangle-exclamation mr-1.5"></i> <?= $this->session->flashdata('error') ?></div>
-        <?php endif; ?>
-        <?php if ($this->session->flashdata('success')): ?>
-        <div class="mb-4 rounded-xl px-4 py-3 text-xs font-semibold" style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);color:#059669"><i class="fa-solid fa-circle-check mr-1.5"></i> <?= $this->session->flashdata('success') ?></div>
-        <?php endif; ?>
-
         <div x-data="{ tab: 'masuk' }" class="rounded-2xl p-5 sm:p-6" style="background:var(--portal-bg-card);border:1px solid var(--portal-border);box-shadow:0 8px 24px rgba(0,80,95,.06)">
 
             <!-- Tab switcher -->
