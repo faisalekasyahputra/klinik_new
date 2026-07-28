@@ -66,7 +66,11 @@
 switch (ENVIRONMENT)
 {
 	case 'development':
-		error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+		// ponytail: E_STRICT dilepas — no-op sejak PHP 8.0 dan konstantanya sendiri
+		// deprecated di PHP 8.4, sehingga menyebutnya mencetak "Deprecated:" ke STDOUT
+		// SEBELUM error_reporting sempat dipasang. Di web tidak kelihatan (display_errors
+		// mati di php.ini Apache), tapi setiap tooling CLI yang mem-parse stdout patah.
+		error_reporting(E_ALL & ~E_DEPRECATED);
 		ini_set('display_errors', 1);
 	break;
 
@@ -75,11 +79,11 @@ switch (ENVIRONMENT)
 		ini_set('display_errors', 0);
 		if (version_compare(PHP_VERSION, '5.3', '>='))
 		{
-			error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
+			error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
 		}
 		else
 		{
-			error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_USER_NOTICE);
+			error_reporting(E_ALL & ~E_NOTICE & ~E_USER_NOTICE);
 		}
 	break;
 
