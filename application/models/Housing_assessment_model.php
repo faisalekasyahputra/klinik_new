@@ -64,14 +64,14 @@ class Housing_assessment_model extends CI_Model {
             ->get_where('sf_profil_warga', ['nik_lookup_hash' => $nik_hash])
             ->row_array();
         if ($bound && (int) $bound['user_id'] !== $user_id) {
-            return $this->fail('nik_already_bound', 'NIK sudah terikat ke akun lain.');
+            return $this->fail('nik_already_bound', 'NIK ini sudah terdaftar pada akun lain. Jika Anda merasa ini keliru, hubungi Dinas Perakim.');
         }
 
         $existing = $this->db->select('id, nik_lookup_hash')
             ->get_where('sf_profil_warga', ['user_id' => $user_id])
             ->row_array();
         if ($existing && ! hash_equals($existing['nik_lookup_hash'], $nik_hash)) {
-            return $this->fail('account_already_bound', 'Akun sudah terikat ke NIK lain.');
+            return $this->fail('account_already_bound', 'Akun Anda sudah terhubung dengan NIK lain. Gunakan NIK yang sama dengan pendataan sebelumnya.');
         }
 
         $row = [

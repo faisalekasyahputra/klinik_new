@@ -479,7 +479,10 @@ class Simperum_gateway {
                 $provenance
             );
             if (empty($saved['success'])) {
-                return $this->response('error', 'Profil belum dapat disimpan dengan aman.', [], $saved['code'] ?? 'profile_failed');
+                // Teruskan pesan spesifik model ("Akun Anda sudah terhubung dengan
+                // NIK lain...", dst) — pesan generik terbukti membuat pengguna
+                // buntu total: penyebabnya hanya bisa ditelusuri lewat query DB.
+                return $this->response('error', $saved['message'] ?? 'Profil belum dapat disimpan dengan aman.', [], $saved['code'] ?? 'profile_failed');
             }
         }
 
