@@ -71,6 +71,14 @@ Navigasi utama dirampingkan untuk menonjolkan 3 pilar tupoksi utama dinas, denga
 *   **FR-1.4:** Setiap *card* jika diklik akan memuat *Definisi Operasional, Syarat & Kriteria, dan Foto Before-After*.
 
 ### 📝 4.2 Modul Onboarding & Smart Filter
+> **Spesifikasi rinci terbaru (27 Jul 2026):**
+> [`PRD_FORM_WARGA_SIMPERUM.md`](./PRD_FORM_WARGA_SIMPERUM.md). Form dan
+> Smart Filter yang berjalan saat ini adalah prototipe sederhana; jangan
+> menganggap klaim “selesai” di roadmap lama sebagai selesainya form warga
+> komprehensif, cache local-first, atau matriks program baru. Karena API nyata
+> belum diberikan, implementasi penuh dimulai dengan data sintetis sesuai
+> [`ROADMAP_FORM_WARGA_SIMULASI_SIMPERUM.md`](./ROADMAP_FORM_WARGA_SIMULASI_SIMPERUM.md).
+
 *   **FR-2.1:** Pengguna yang tertarik pada sebuah program dapat mengklik tombol "Cek Kelayakan / Daftar".
 *   **FR-2.2:** Sistem meminta input NIK dan melakukan *fetching* ke API SIMPERUM. Jika data ditemukan, formulir terisi otomatis sebagian.
 *   **FR-2.3:** Sistem memproses data melalui *Smart Filter*. Jika tidak lolos syarat dasar program, sistem akan merekomendasikan program lain.

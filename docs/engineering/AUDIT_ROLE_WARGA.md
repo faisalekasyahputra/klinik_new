@@ -3,6 +3,8 @@
 **Tanggal audit:** 26 Juli 2026
 **Metode:** pembacaan langsung kode atas seluruh permukaan yang menyentuh role `warga`: `Pengaturan.php` (`index()`, `profil()`), `Program.php` (`submit_antrean`, `ajukan_solusi`, `cek_tiket`, `cek_status_pengajuan`), `Umum.php` (`simpan_aduan`), `Admin_Kabkota.php`/`Admin_Bidang.php` + `MY_Controller.php`, migrasi `20260701000005..000009`, `User_model::delete_user_account()`, `config.php` (CSRF), dan view-view form terkait. Dokumen historis (`DESAIN_STATUS_TIKET_PENGAJUAN.md`, `ROLE_DATA_RELATION_MAP.md`, `AGENTS.md §11` lama) diverifikasi terhadap kode nyata, bukan dipercaya langsung — lihat Temuan #1.
 
+> **Status 27 Juli 2026:** empat temuan lama sudah ditangani. Upload aduan sudah privat, FK/cleanup user sudah dinormalisasi, dan kedua jalur antrean kini memakai satu gerbang yang mewajibkan wilayah. Pekerjaan terbaru beserta aturan transisi dan bukti HTTP ada di [`PRD_WARGA_ADMIN_KABKOTA.md`](../product/PRD_WARGA_ADMIN_KABKOTA.md) dan [`uji_perjalanan_warga.php`](uji_perjalanan_warga.php). Dokumen ini tetap dipertahankan sebagai catatan audit historis.
+
 Bagian dari rangkaian audit multi-role, lihat [`AUDIT_SISTEM_ROLE_RINGKASAN.md`](AUDIT_SISTEM_ROLE_RINGKASAN.md) untuk pola lintas-role dan [`AUDIT_ROLE_PENGEMBANG.md`](AUDIT_ROLE_PENGEMBANG.md) untuk audit role pertama yang jadi rujukan format.
 
 ---

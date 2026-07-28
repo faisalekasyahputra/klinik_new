@@ -110,6 +110,13 @@ Fondasi Keamanan & Auth dari eksekusi sebelumnya (Fase 1-6) tetap dipertahankan 
 ---
 
 ### ✅ FASE 9 — Integrasi SIMPERUM & Smart Filter (SELESAI)
+
+> **Koreksi status 27 Jul 2026:** yang selesai di fase ini adalah prototipe
+> diagnosa, mock SIMPERUM, dan housing queue sederhana. Pengganti komprehensif
+> dari 50 artefak form baru belum diimplementasikan; acuan barunya
+> [`PRD_FORM_WARGA_SIMPERUM.md`](./PRD_FORM_WARGA_SIMPERUM.md). Urutan kerja
+> aktif memakai data sintetis ada di
+> [`ROADMAP_FORM_WARGA_SIMULASI_SIMPERUM.md`](./ROADMAP_FORM_WARGA_SIMULASI_SIMPERUM.md).
 *   **Target:** Logika *backend* krusial dan UI interaktif untuk *Onboarding Journey* (Diagnosa Pasien).
 *   **Action Items:**
     *   [x] Membuat UI *Wizard* "Kalkulator Kelayakan/Klinik Diagnosa" interaktif (4 step alur baru).

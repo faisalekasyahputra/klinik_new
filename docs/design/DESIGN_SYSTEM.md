@@ -1,6 +1,6 @@
 # Design System — Klinik PKP
 
-**Status per 18 Juli 2026.** Diaudit langsung dari kode (grep menyeluruh ke `application/views/` dan `assets/css/`, 90 file, ribuan kemunculan warna dihitung) — bukan dari asumsi atau dokumen desain lama. Tujuan dokumen ini: jadi satu tempat yang bisa dipercaya soal warna apa yang **sebenarnya** dipakai di aplikasi, mana yang konsisten, dan mana yang belum.
+**Status palet per 18 Juli 2026; kontrak notifikasi ditambahkan 28 Juli 2026.** Diaudit langsung dari kode (grep menyeluruh ke `application/views/` dan `assets/css/`, 90 file, ribuan kemunculan warna dihitung) — bukan dari asumsi atau dokumen desain lama. Tujuan dokumen ini: jadi satu tempat yang bisa dipercaya soal warna dan umpan balik antarmuka yang **sebenarnya** dipakai di aplikasi, mana yang konsisten, dan mana yang belum.
 
 ---
 
@@ -77,3 +77,34 @@ Update ini scope-nya dokumentasi: memperbaiki `tokens.css`/`design-tokens.json` 
 3. **Ganti 1.300+ hex literal di 70 file view** dengan token/class — ini kerjaan besar, sebaiknya dipecah per modul, bukan sekali jalan.
 4. ~~Putuskan drift di §3~~ — **selesai 18 Jul 2026**, lihat tabel keputusan di §3. Termasuk perhatikan `semantic.success` yang butuh diganti ke arah yang tidak intuitif (ganti 59 kemunculan `#6bcb77`, bukan 9 kemunculan `#10b981`).
 5. Situs publik saat ini load **Tailwind CDN JIT (`cdn.tailwindcss.com`) *dan* file `tailwind.min.css` hasil build** secara bersamaan — tidak disarankan Tailwind sendiri untuk production, di luar scope warna tapi terkait erat kalau nanti bikin `tailwind.config.js` beneran.
+
+---
+
+## 6. Kontrak notifikasi non-modal
+
+Portal, halaman autentikasi, dan dashboard memakai satu pusat notifikasi:
+
+- renderer bersama: `application/views/components/notification_center.php`;
+- API browser: `KPKP.notify.success|error|warning|info(message, options)`;
+- transport setelah redirect: flashdata CodeIgniter bernama persis `success`, `error`, `warning`, atau `info`.
+
+Notifikasi bersifat **toast non-modal**: tidak memakai backdrop, tidak mengambil
+fokus, dan tidak menghalangi pengguna melanjutkan pekerjaan. Modal/`confirm`
+hanya dipakai ketika pengguna memang harus mengambil keputusan, terutama untuk
+tindakan destruktif.
+
+| Jenis | Warna | Perilaku awal | Aksesibilitas |
+|---|---|---|---|
+| `success` | `#10b981` | hilang setelah 5 detik | `role="status"` |
+| `info` | `#00a3b5` | hilang setelah 5 detik | `role="status"` |
+| `warning` | `#ffd93d` | tetap sampai ditutup | `role="alert"` |
+| `error` | `#ff6b6b` | tetap sampai ditutup | `role="alert"` |
+
+Semua pesan dirender sebagai teks biasa, memiliki tombol tutup, berhenti
+menghitung waktu saat disentuh/fokus, dan menghormati
+`prefers-reduced-motion`. Jangan mengiterasi seluruh flashdata: payload seperti
+`warga_old_input`, `warga_lookup`, dan `warga_errors` dapat memuat data warga.
+
+Toast hanya untuk umpan balik sementara. Riwayat pekerjaan atau pesan yang
+harus dibaca ulang kelak membutuhkan inbox/notifikasi persisten tersendiri;
+indikator lonceng tidak boleh mengarang jumlah pesan.
