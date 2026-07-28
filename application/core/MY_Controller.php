@@ -220,7 +220,11 @@ class MY_Controller extends CI_Controller {
         $path = $this->private_upload_dir($domain, $owner_id) . basename((string) $stored_name);
         if (empty($stored_name) || ! is_file($path)) { show_404(); return; }
 
-        $this->output->set_content_type($mime);
+        // header() langsung, BUKAN $this->output->set_content_type():
+        // readfile() menulis body duluan sehingga antrean header CI terlambat —
+        // PHP terlanjur mengirim text/html default, dan nosniff (dipasang di
+        // constructor) melarang browser menebak, jadi gambar tampil sebagai teks.
+        header('Content-Type: ' . $mime);
         readfile($path);
     }
 
