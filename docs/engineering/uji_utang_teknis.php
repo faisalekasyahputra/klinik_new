@@ -394,6 +394,19 @@ try {
         cek(http(NULL, $u)['code'] === 200, "U4 — {$nama} tetap hidup (200)");
     }
 
+    // A2 — /statistika DIPERTAHANKAN (keputusan user), tetapi tidak boleh lagi
+    // mengklaim provenance. Angkanya masih crc32(); yang berubah arah klaimnya.
+    foreach (['statistika?kabupaten=Kabupaten+Kudus', 'statistika?kabupaten=Kabupaten+Brebes'] as $u) {
+        $st = http(NULL, $u);
+        cek($st['code'] === 200, "A2 — /{$u} tetap hidup");
+        $klaim = preg_match('/Sumber:\s*(Simperum|Sikumbang|Sikunang|Bank Tanah)/', $st['body']);
+        cek($klaim === 0, 'A2 — nol klaim "Sumber: <sistem>" pada angka simulasi');
+        cek(strpos($st['body'], 'masih simulasi') !== FALSE,
+            'A2 — layar menyatakan angkanya masih simulasi');
+        cek(substr_count($st['body'], 'rencana sumber') >= 10,
+            'A2 — tiap kartu menyebut sistem yang DIRENCANAKAN, bukan asal angkanya');
+    }
+
     // Literal yang tidak boleh muncul lagi di permukaan publik mana pun.
     $literal = ['8.420', '4.250,8', '142.500', 'Rusunawa Kudu', 'Nama Pejabat',
         'Rp 500.000.000', 'Rp 750.000.000', 'Mode Pemeliharaan', 'Terdapat keluhan'];
