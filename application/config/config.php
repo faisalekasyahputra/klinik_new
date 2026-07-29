@@ -225,7 +225,9 @@ $config['allow_get_array'] = TRUE;
 | your log files will fill up very fast.
 |
 */
-$config['log_threshold'] = 0;
+// 1 = hanya ERROR. Dulu 0 (mati total) — setiap show_404/error jadi bisu dan
+// diagnosa selalu berakhir bedah DB manual. Level ERROR nyaris nol biaya I/O.
+$config['log_threshold'] = 1;
 
 /*
 |--------------------------------------------------------------------------

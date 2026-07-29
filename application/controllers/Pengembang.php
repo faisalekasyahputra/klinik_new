@@ -149,6 +149,24 @@ class Pengembang extends MY_Controller {
             ->get('srp2_documents')->row();
         if (!$doc) { show_404(); return; }
 
+        // Pemilik sah + ledger ada tapi FISIKNYA hilang → jangan 404 bisu.
+        // Kasus nyata 29 Jul 2026: berkas reg 7 tersapu pembersih harness
+        // ber-DB-sementara yang berbagi folder private_uploads (tabrakan id).
+        // 404 tetap untuk bukan-pemilik/key salah (anti-IDOR), tapi pemilik
+        // berhak tahu bedanya "tidak pernah ada" dan "tercatat namun hilang".
+        $path = $this->private_upload_dir('srp2', $id) . basename((string) $doc->stored_name);
+        if (!is_file($path)) {
+            log_message('error', sprintf(
+                'Berkas SRP2 tercatat di ledger tapi hilang dari disk: reg=%d key=%s stored=%s user=%d',
+                $id, $document_key, $doc->stored_name, $this->get_user_id()
+            ));
+            $this->session->set_flashdata('error',
+                'Berkas "' . $document_key . '" tercatat di sistem namun fisiknya tidak ditemukan di penyimpanan. '
+                . 'Hubungi admin untuk membuka kembali pengajuan agar berkas dapat diunggah ulang.');
+            redirect('Pengembang/syarat');
+            return;
+        }
+
         $this->serve_private_file('srp2', $id, $doc->stored_name, $doc->mime_type);
     }
 

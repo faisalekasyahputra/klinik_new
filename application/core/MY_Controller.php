@@ -218,7 +218,16 @@ class MY_Controller extends CI_Controller {
      */
     protected function serve_private_file($domain, $owner_id, $stored_name, $mime = 'application/octet-stream') {
         $path = $this->private_upload_dir($domain, $owner_id) . basename((string) $stored_name);
-        if (empty($stored_name) || ! is_file($path)) { show_404(); return; }
+        if (empty($stored_name) || ! is_file($path)) {
+            // 404 ke klien tetap opaque (anti-IDOR), tapi penyebabnya WAJIB
+            // tercatat — "mengapa 404" tidak boleh butuh bedah DB manual.
+            log_message('error', sprintf(
+                'serve_private_file 404: domain=%s owner=%s stored=%s (%s)',
+                $domain, $owner_id, (string) $stored_name,
+                empty($stored_name) ? 'stored_name kosong' : 'berkas tidak ada di disk'
+            ));
+            show_404(); return;
+        }
 
         // header() langsung, BUKAN $this->output->set_content_type():
         // readfile() menulis body duluan sehingga antrean header CI terlambat —
