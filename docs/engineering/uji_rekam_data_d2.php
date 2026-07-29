@@ -23,6 +23,9 @@ define('BULAN', 6);
 $GLOBALS['uji_total'] = 0;
 $GLOBALS['uji_gagal'] = 0;
 
+/** Penanda waktu mulai — dipakai menyapu draft yang lahir selama run ini. */
+$mulai = date('Y-m-d H:i:s', time() - 1);
+
 function cek($condition, $label) {
     $GLOBALS['uji_total']++;
     echo ($condition ? '  OK    ' : '  GAGAL ') . $label . "\n";
@@ -135,8 +138,16 @@ function login($nama, $email, $password) {
 }
 
 function bersihkan() {
-    global $db, $jars;
+    global $db, $jars, $mulai, $kab_lain;
     $db->query('DELETE FROM rd_laporan WHERE tahun = ' . (int) TAHUN);
+    // `pulang()` mengarahkan kembali ke layar index setelah tulisan ditolak,
+    // dan index SENGAJA membuat draft periode berjalan. Untuk admin wilayah
+    // lain periodenya jatuh ke tahun berjalan, di luar tahun sentinel — jadi
+    // draft itu harus disapu terpisah, dibatasi kabupatennya dan waktu run ini.
+    if ($kab_lain) {
+        $db->query(sprintf("DELETE FROM rd_laporan WHERE kabupaten_id = %d AND created_at >= '%s'",
+            (int) $kab_lain, $db->real_escape_string($mulai)));
+    }
     $db->query("DELETE FROM usr_users WHERE email LIKE 'uji_rd_d2_%'");
     foreach ($jars as $file) {
         @unlink($file);
@@ -253,7 +264,7 @@ try {
     }
 
     // ------------------------------------------------------------- scope
-    $t = csrf('lain', 'Rekam_Perumahan');
+    $t = csrf('lain', 'Rekam_Perumahan?tahun=' . TAHUN . '&bulan=6');
     http('lain', 'Rekam_Perumahan/simpan_gerbang', [
         'csrf_kpkp_token' => $t, 'laporan_id' => $LAP,
         'sumber_dana' => 'csr', 'ada' => '1',
@@ -261,7 +272,7 @@ try {
     cek(skalar('SELECT ada FROM rd_perumahan_bagian WHERE laporan_id = ? AND sumber_dana = ?',
         [$LAP, 'csr']) === NULL, 'Admin wilayah lain tidak bisa menulis laporan ini');
 
-    $t = csrf('lain', 'Rekam_Perumahan');
+    $t = csrf('lain', 'Rekam_Perumahan?tahun=' . TAHUN . '&bulan=6');
     http('lain', 'Rekam_Perumahan/simpan_angka', [
         'csrf_kpkp_token' => $t, 'laporan_id' => $LAP, 'sumber_dana' => 'apbd_kabkota',
     ] + $isi(999, 999));

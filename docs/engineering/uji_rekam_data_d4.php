@@ -23,6 +23,9 @@ define('TAHUN', 2099);
 $GLOBALS['uji_total'] = 0;
 $GLOBALS['uji_gagal'] = 0;
 
+/** Penanda waktu mulai — dipakai menyapu draft yang lahir selama run ini. */
+$mulai = date('Y-m-d H:i:s', time() - 1);
+
 function cek($condition, $label) {
     $GLOBALS['uji_total']++;
     echo ($condition ? '  OK    ' : '  GAGAL ') . $label . "\n";
@@ -151,8 +154,16 @@ function login($nama, $email, $password) {
 }
 
 function bersihkan() {
-    global $db, $jars;
+    global $db, $jars, $mulai, $kab_lain;
     $db->query('DELETE FROM rd_laporan WHERE tahun = ' . (int) TAHUN);
+    // `pulang()` mengarahkan kembali ke layar index setelah tulisan ditolak,
+    // dan index SENGAJA membuat draft periode berjalan. Untuk admin wilayah
+    // lain periodenya jatuh ke tahun berjalan, di luar tahun sentinel — jadi
+    // draft itu harus disapu terpisah, dibatasi kabupatennya dan waktu run ini.
+    if ($kab_lain) {
+        $db->query(sprintf("DELETE FROM rd_laporan WHERE kabupaten_id = %d AND created_at >= '%s'",
+            (int) $kab_lain, $db->real_escape_string($mulai)));
+    }
     $db->query("DELETE FROM usr_users WHERE email LIKE 'uji_rd_d4_%'");
     foreach ($jars as $f) {
         @unlink($f);
@@ -317,7 +328,7 @@ try {
         'Ubah tidak menambah baris baru');
 
     // ------------------------------------------------------- scope
-    $t = csrf('lain', 'Rekam_Kawasan');
+    $t = csrf('lain', 'Rekam_Kawasan?tahun=' . TAHUN . '&bulan=6');
     http('lain', 'Rekam_Kawasan/simpan_intervensi', ['csrf_kpkp_token' => $t,
         'laporan_id' => $LAP, 'indikator' => 'drainase', 'nama_kegiatan' => 'Sisipan wilayah lain',
         'lokasi_teks' => 'X', 'sumber_anggaran' => 'apbd_kabkota',
@@ -325,7 +336,7 @@ try {
     cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP]) === 24,
         'Admin wilayah lain tidak bisa menambah intervensi');
 
-    $t = csrf('lain', 'Rekam_Kawasan');
+    $t = csrf('lain', 'Rekam_Kawasan?tahun=' . TAHUN . '&bulan=6');
     http('lain', 'Rekam_Kawasan/hapus_intervensi', ['csrf_kpkp_token' => $t,
         'laporan_id' => $LAP, 'intervensi_id' => $pertama]);
     cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP]) === 24,

@@ -100,9 +100,16 @@ $nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
                     <?php endif; ?>
                   </td>
                 <?php endforeach; ?>
-                <td class="py-2 pl-2 text-right font-bold text-gray-900 dark:text-white">
-                  <?= number_format($sub_unit, 0, ',', '.') ?><br>
-                  <span class="text-xs font-normal text-gray-500 dark:text-brand-muted"><?= number_format($sub_rp, 0, ',', '.') ?></span>
+                <td class="py-2 pl-2 text-right font-bold <?= $baris_sumber ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-white/20' ?>">
+                  <?php if ($baris_sumber): ?>
+                    <?= number_format($sub_unit, 0, ',', '.') ?><br>
+                    <span class="text-xs font-normal text-gray-500 dark:text-brand-muted"><?= number_format($sub_rp, 0, ',', '.') ?></span>
+                  <?php else: ?>
+                    <!-- Sumber tanpa satu pun baris: subtotalnya "—", bukan 0.
+                         Selnya sudah "—"; menaruh 0 di subtotal membuat sumber
+                         yang belum dijawab terbaca sebagai "dilaporkan nol". -->
+                    —
+                  <?php endif; ?>
                 </td>
               </tr>
               <?php $total_unit += $sub_unit; $total_rp += $sub_rp; ?>
