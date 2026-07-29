@@ -79,7 +79,11 @@ class Admin_Users extends Admin_Controller {
             $payload['bidang_kode'] = $bidang_kode;
         }
 
-        $this->db->where('id', $id)->update('usr_users', $payload);
+        if ( ! $this->db->where('id', $id)->update('usr_users', $payload)) {
+            $this->session->set_flashdata('error', 'Role pengguna belum tersimpan. Coba lagi.');
+            redirect('Admin_Users');
+            return;
+        }
         $this->session->set_flashdata('success', 'Role pengguna diperbarui.');
         redirect('Admin_Users');
     }
@@ -136,7 +140,19 @@ class Admin_Users extends Admin_Controller {
             $payload['bidang_kode'] = $bidang_kode;
         }
 
-        $this->db->insert('usr_users', $payload);
+        // Titik paling berbahaya dari enam titik A5: `usr_users.email` ber-UNIQUE,
+        // jadi email duplikat membuat INSERT ditolak. Selama ini superadmin tetap
+        // diberi tahu akunnya jadi — dan setelah U0 mematikan db_debug, penolakan
+        // itu sepenuhnya senyap. Sebabnya disebut apa adanya supaya bisa ditindak.
+        if ( ! $this->db->insert('usr_users', $payload)) {
+            $galat = $this->db->error();
+            $duplikat = isset($galat['code']) && (int) $galat['code'] === 1062;
+            $this->session->set_flashdata('error', $duplikat
+                ? 'Akun staff belum dibuat: email tersebut sudah terdaftar.'
+                : 'Akun staff belum dibuat. Periksa isian lalu coba lagi.');
+            redirect('Admin_Users');
+            return;
+        }
         $this->session->set_flashdata('success', 'Akun staff baru berhasil dibuat.');
         redirect('Admin_Users');
     }

@@ -267,7 +267,15 @@ class Umum extends MY_Controller {
 			'status'      => 'open',
 			'created_at'  => date('Y-m-d H:i:s')
 		];
-		$this->Forum_model->insert_diskusi($data);
+		// Penanda sukses TIDAK boleh sederajat dengan query tulisnya (§19).
+		// Selama db_debug menyala kegagalan tulis masih berisik; setelah U0
+		// mematikannya, INSERT yang ditolak akan diam dan layar tetap
+		// mengatakan berhasil.
+		if ( ! $this->Forum_model->insert_diskusi($data)) {
+			$this->session->set_flashdata('error', 'Topik diskusi belum tersimpan. Coba lagi.');
+			redirect('Umum/forum');
+			return;
+		}
 
 		$this->session->set_flashdata('success', 'Topik diskusi berhasil dibuat!');
 		redirect('Umum/forum');
@@ -436,7 +444,14 @@ class Umum extends MY_Controller {
 		$this->_load_forum();
 		if (!$this->_check_admin()) return;
 		$id = $this->input->post('id_diskusi');
-		$this->Forum_model->soft_delete_diskusi($id);
+		// `affected_rows()` ikut diperiksa: UPDATE yang sah tetapi tidak cocok
+		// baris mana pun (id salah / sudah terhapus) mengembalikan TRUE, dan
+		// tanpa ini admin diberi tahu sesuatu terhapus padahal tidak ada.
+		if ( ! $this->Forum_model->soft_delete_diskusi($id) || $this->db->affected_rows() !== 1) {
+			$this->session->set_flashdata('error', 'Diskusi tidak ditemukan atau sudah terhapus.');
+			redirect('Umum/forum');
+			return;
+		}
 		$this->session->set_flashdata('success', 'Diskusi berhasil dihapus.');
 		redirect('Umum/forum');
 	}

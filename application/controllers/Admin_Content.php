@@ -41,8 +41,13 @@ class Admin_Content extends Admin_Controller {
 
         // Update settings in database
         if (!empty($post_data)) {
-            $this->Setting_model->update_batch_settings($post_data);
-            $this->session->set_flashdata('success', 'Konten website berhasil diperbarui.');
+            // update_batch_settings() kini melapor jujur (transaksi + trans_status);
+            // sebelumnya ia selalu mengembalikan TRUE sehingga pemeriksaan di sini
+            // tidak akan berarti apa-apa.
+            $tersimpan = $this->Setting_model->update_batch_settings($post_data);
+            $this->session->set_flashdata($tersimpan ? 'success' : 'error', $tersimpan
+                ? 'Konten website berhasil diperbarui.'
+                : 'Konten website belum tersimpan. Coba lagi.');
         }
 
         redirect('Admin_Content');

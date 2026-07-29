@@ -293,7 +293,13 @@ class Admin_Srp2 extends Admin_Controller {
 
     public function delete($id = NULL) {
         if ($this->input->method(TRUE) !== 'POST' || !is_numeric($id)) { show_404(); }
-        $this->db->where('id', (int) $id)->delete('srp2_certified_developers');
+        // DELETE yang tidak cocok baris mana pun tetap mengembalikan TRUE, jadi
+        // `affected_rows()` yang membedakan "terhapus" dari "id-nya memang tidak ada".
+        if ( ! $this->db->where('id', (int) $id)->delete('srp2_certified_developers')
+            || $this->db->affected_rows() !== 1) {
+            $this->session->set_flashdata('error', 'Pengembang tidak ditemukan atau sudah dihapus.');
+            redirect('Admin_Srp2'); return;
+        }
         $this->session->set_flashdata('success', 'Pengembang dihapus dari daftar.'); redirect('Admin_Srp2');
     }
 }

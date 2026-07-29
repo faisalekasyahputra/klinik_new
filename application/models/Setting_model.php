@@ -43,8 +43,19 @@ class Setting_model extends CI_Model {
     /**
      * Update multiple settings from associative array
      */
+    /**
+     * @return bool TRUE hanya bila seluruh tulisan benar-benar berhasil.
+     *
+     * Dulu method ini SELALU `return true`, apa pun yang terjadi pada query di
+     * dalamnya — sehingga pemanggilnya tidak punya cara membedakan berhasil dari
+     * gagal, dan layar admin selalu mengatakan "berhasil diperbarui". Transaksi
+     * dipakai supaya kegagalan di tengah tidak meninggalkan setelan separuh
+     * tersimpan; polanya menyalin User_model::update_profile().
+     */
     public function update_batch_settings($data)
     {
+        $this->db->trans_start();
+
         foreach ($data as $key => $value) {
             $this->db->where('key_name', $key);
             $this->db->update($this->table, ['key_value' => $value]);
@@ -63,6 +74,8 @@ class Setting_model extends CI_Model {
                 }
             }
         }
-        return true;
+
+        $this->db->trans_complete();
+        return $this->db->trans_status();
     }
 }
