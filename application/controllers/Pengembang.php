@@ -160,9 +160,13 @@ class Pengembang extends MY_Controller {
                 'Berkas SRP2 tercatat di ledger tapi hilang dari disk: reg=%d key=%s stored=%s user=%d',
                 $id, $document_key, $doc->stored_name, $this->get_user_id()
             ));
+            // Bahasa manusia, bukan bahasa sistem: label dokumen yang dikenal
+            // pemohon (bukan kunci mentah form_1), tanpa "tercatat"/"fisik"/
+            // "penyimpanan". Detail teknisnya sudah aman di log ERROR di atas.
+            $labels = $this->dokumen_persyaratan();
             $this->session->set_flashdata('error',
-                'Berkas "' . $document_key . '" tercatat di sistem namun fisiknya tidak ditemukan di penyimpanan. '
-                . 'Hubungi admin untuk membuka kembali pengajuan agar berkas dapat diunggah ulang.');
+                'Maaf, dokumen "' . ($labels[$document_key] ?? $document_key) . '" sudah tidak tersedia dan tidak bisa dibuka. '
+                . 'Silakan hubungi admin agar pengajuan Anda dibuka kembali, lalu unggah ulang dokumen tersebut.');
             redirect('Pengembang/syarat');
             return;
         }
