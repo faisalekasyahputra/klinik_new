@@ -51,7 +51,7 @@
              mengantar ke halaman lain. Kini menunjuk modulnya sendiri.
              Pengunjung tanpa sesi diarahkan ke login, dan itu memang benar:
              merekam capaian adalah wewenang admin kabupaten/kota. -->
-        <a href="<?= base_url('Rekam_Perumahan') ?>" class="portal-home-card group min-h-[105px] sm:min-h-[125px]">
+        <a href="<?= base_url('Rekam_Data') ?>" class="portal-home-card group min-h-[105px] sm:min-h-[125px]">
             <i class="fa-solid fa-chart-line portal-home-watermark"></i>
                 <div class="relative z-10 text-center">
                     <i class="fa-solid fa-chart-line portal-home-icon"></i>
