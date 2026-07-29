@@ -32,10 +32,15 @@ class Umum extends MY_Controller {
 		redirect('solusi_pembiayaan');
 	}
 
-	public function info_rumah()
-	{
-		$this->load->view('pages/umum/info_rumah');
-	}
+	// S9 — `info_rumah()` DICABUT 29 Jul 2026 bersama view-nya.
+	// Halaman itu me-`include "layout/head.php"` yang tidak pernah ada di
+	// `views/pages/umum/`, jadi ia membalas 200 sambil memuat "A PHP Error"
+	// dan path absolut server — diverifikasi runtime, bukan dibaca dari kode.
+	// Nol tautan masuk dari view mana pun maupun dari routes.php: halaman ini
+	// yatim. Menutup display_errors hanya menghilangkan bocorannya, tidak
+	// membuat halamannya berfungsi; karena itu dicabut, bukan ditambal.
+	// Kalau dinas ternyata masih membutuhkannya, bangun ulang lewat layout
+	// aktif berikut perjalanan fungsionalnya.
 
 	public function sebaran($kodeWilayah = '33')
 	{

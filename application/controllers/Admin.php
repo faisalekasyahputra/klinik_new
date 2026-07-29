@@ -28,6 +28,25 @@ class Admin extends Admin_Controller {
             return;
         }
 
+        // S6 — jalur superadmin dulu MELEWATI pembatas laju yang sudah dipasang
+        // di Admin_Kabkota::update_status(). Policy `admin_queue_decision` yang
+        // sama dipakai di sini, bukan mekanisme kedua (§17 poin 15): dimensi
+        // ip+account+object, jadi satu akun yang membanjiri satu antrean tetap
+        // tertahan sekalipun ia superadmin.
+        $queue_id = (int) $this->input->post('queue_id');
+        $rate = $this->rate_limit_consume('admin_queue_decision', [
+            'account_id' => (int) $this->get_user_id(),
+            'object_id'  => $queue_id,
+        ]);
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject(
+                $rate,
+                'Terlalu banyak keputusan dalam waktu singkat. Silakan coba lagi sebentar.',
+                $this->input->is_ajax_request()
+            );
+            return;
+        }
+
         $result = $this->Housing_assessment_model->transition_queue(
             $this->input->post('queue_id'),
             $this->input->post('from_status', TRUE),

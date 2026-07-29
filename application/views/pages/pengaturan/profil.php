@@ -249,10 +249,25 @@
             <h2 class="text-lg font-bold text-red-600 dark:text-red-400 mb-2 flex items-center gap-2">
                 <i class="ph ph-warning"></i> Zona Berbahaya
             </h2>
-            <p class="text-sm text-gray-500 dark:text-brand-muted mb-6">Sekali Anda menghapus akun, data profil Anda tidak bisa dikembalikan. Komentar dan forum yang pernah Anda kirimkan akan dianonimkan menjadi "Akun Dihapus" agar tidak merusak alur diskusi.</p>
+            <!--
+              S4 — teks ini DILURUSKAN 29 Jul 2026 agar cocok dengan yang
+              benar-benar terjadi. Sebelumnya tombolnya berbunyi "Hapus Akun
+              Secara Permanen" dan keterangannya hanya menyebut profil serta
+              forum, sehingga pengguna wajar menyimpulkan seluruh datanya
+              lenyap. Kenyataannya `User_model::delete_user_account()` hanya
+              menghapus akun, menganonimkan forum, dan menyapu dokumen SRP2;
+              data pendataan Warga (profil, penilaian, snapshot SIMPERUM, dan
+              foto bukti) TETAP ADA karena FK pemiliknya `SET NULL`.
+              Pembersihannya sendiri menunggu kebijakan retensi (keputusan #9);
+              sampai itu turun, yang bisa segera diperbaiki adalah janjinya —
+              bukan diam-diam membiarkannya salah.
+            -->
+            <p class="text-sm text-gray-500 dark:text-brand-muted mb-3">Menghapus akun akan menghapus <b>akun dan akses masuk Anda</b>, serta dokumen SRP2 yang pernah Anda unggah. Diskusi dan komentar tidak dihapus, melainkan dianonimkan menjadi "Akun Dihapus" agar alur diskusi tidak rusak. Tindakan ini tidak bisa dibatalkan.</p>
+
+            <p class="text-sm text-gray-500 dark:text-brand-muted mb-6">Data layanan yang pernah Anda kirimkan — data pendataan perumahan, hasil penilaian, dan foto bukti — <b>tidak ikut terhapus saat ini</b> dan mengikuti kebijakan retensi data yang berlaku. Untuk meminta penghapusannya, hubungi admin.</p>
 
             <button type="button" onclick="openDeleteModal()" class="bg-red-100 hover:bg-red-200 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 font-semibold py-2.5 px-6 rounded-xl transition-colors flex items-center gap-2">
-                <i class="ph ph-trash"></i> Hapus Akun Secara Permanen
+                <i class="ph ph-trash"></i> Hapus Akun Saya
             </button>
         </div>
 

@@ -79,12 +79,26 @@ if ($admin->connect_error) {
 
 $envSwitched = FALSE;
 $databaseCreated = FALSE;
+// Diisi belakangan, saat root unggahan sementara dibuat. Dipakai BY REFERENCE
+// oleh shutdown handler di bawah supaya kegagalan di tengah jalan tidak
+// meninggalkan folder yatim.
+$uploadsTemp = NULL;
+
 register_shutdown_function(function () use (
-    &$envSwitched, &$databaseCreated, $envPath, $originalEnv, $admin, $database, $lock
+    &$envSwitched, &$databaseCreated, &$uploadsTemp, $envPath, $originalEnv, $admin, $database, $lock
 ) {
     if ($envSwitched) file_put_contents($envPath, $originalEnv, LOCK_EX);
     if ($databaseCreated && preg_match('/^klinikpkp_uji_warga_r7_[a-zA-Z0-9_]+$/', $database)) {
         $admin->query("DROP DATABASE `$database`");
+    }
+    if ($uploadsTemp !== NULL && is_dir($uploadsTemp)
+        && strpos(basename($uploadsTemp), 'uji_warga_uploads_') === 0) {
+        foreach (new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($uploadsTemp, RecursiveDirectoryIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST) as $item) {
+            $item->isDir() ? @rmdir($item->getPathname()) : @unlink($item->getPathname());
+        }
+        @rmdir($uploadsTemp);
     }
     if (is_resource($lock)) {
         flock($lock, LOCK_UN);
@@ -117,6 +131,25 @@ if ($admin->errno) {
     exit(1);
 }
 
+/*
+ * S5 — mengalihkan DB_NAME SAJA tidak aman.
+ *
+ * Berkas privat disimpan dengan nama folder = id pemiliknya. Id di DB
+ * sementara mulai dari kecil dan TABRAKAN dengan id di DB dev, sehingga
+ * pembersih yang menyapu berdasarkan isi disk (`_cleanup_owned_files()`)
+ * ikut memakan berkas dev. Ini bukan kekhawatiran teoretis: 27 Jul 2026
+ * 14 berkas SRP2 milik registrasi dev lenyap persis lewat jalur ini —
+ * ledger utuh, disk kosong, dan pemiliknya mendapat 404 bisu (AGENTS.md §0e).
+ *
+ * Karena itu root unggahan ikut dialihkan, dan runner ABORT bila salah satu
+ * dari keduanya gagal tergantikan.
+ */
+$uploadsTemp = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'uji_warga_uploads_' . getmypid() . '_' . time();
+if ( ! is_dir($uploadsTemp) && ! mkdir($uploadsTemp, 0700, TRUE)) {
+    fwrite(STDERR, "Folder unggahan sementara gagal dibuat.\n");
+    exit(1);
+}
+
 $freshEnv = preg_replace(
     '/^(?!\s*#)\s*DB_NAME\s*=.*$/m',
     'DB_NAME=' . $database,
@@ -124,8 +157,17 @@ $freshEnv = preg_replace(
     1,
     $replacementCount
 );
-if ($replacementCount !== 1 || file_put_contents($envPath, $freshEnv, LOCK_EX) === FALSE) {
-    fwrite(STDERR, "DB_NAME aktif di .env tidak dapat dialihkan.\n");
+$freshEnv = preg_replace(
+    '/^(?!\s*#)\s*PRIVATE_UPLOADS_PATH\s*=.*$/m',
+    'PRIVATE_UPLOADS_PATH=' . $uploadsTemp,
+    $freshEnv,
+    1,
+    $uploadCount
+);
+if ($replacementCount !== 1 || $uploadCount !== 1
+    || file_put_contents($envPath, $freshEnv, LOCK_EX) === FALSE) {
+    fwrite(STDERR, "Gagal mengalihkan .env (DB_NAME={$replacementCount}, "
+        . "PRIVATE_UPLOADS_PATH={$uploadCount}). Keduanya WAJIB tergantikan.\n");
     exit(1);
 }
 $envSwitched = TRUE;
@@ -178,7 +220,23 @@ foreach ($checks as $check) {
 $envSwitched = file_put_contents($envPath, $originalEnv, LOCK_EX) === FALSE;
 $dropped = $admin->query("DROP DATABASE `$database`");
 $databaseCreated = ! $dropped;
+
+// Folder unggahan sementara ikut dihapus. Hanya folder ber-nama pola runner
+// ini yang disentuh — root unggahan dev tidak pernah menjadi sasaran.
+if (is_dir($uploadsTemp) && strpos(basename($uploadsTemp), 'uji_warga_uploads_') === 0) {
+    $isi = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($uploadsTemp, RecursiveDirectoryIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST);
+    foreach ($isi as $item) {
+        $item->isDir() ? @rmdir($item->getPathname()) : @unlink($item->getPathname());
+    }
+    @rmdir($uploadsTemp);
+}
+$uploadsBersih = ! is_dir($uploadsTemp);
+
 echo "\nCleanup .env: " . ($envSwitched ? 'GAGAL' : 'OK, byte asli dipulihkan') . "\n";
 echo "Cleanup DB: " . ($dropped ? 'OK, database sementara dihapus' : 'GAGAL') . "\n";
-echo "RINGKASAN R7: " . ($failed || $envSwitched || ! $dropped ? 'GAGAL' : 'HIJAU') . "\n";
-exit($failed || $envSwitched || ! $dropped ? 1 : 0);
+echo "Cleanup unggahan: " . ($uploadsBersih ? 'OK, folder sementara dihapus' : 'GAGAL') . "\n";
+$beres = ! $failed && ! $envSwitched && $dropped && $uploadsBersih;
+echo "RINGKASAN R7: " . ($beres ? 'HIJAU' : 'GAGAL') . "\n";
+exit($beres ? 0 : 1);
