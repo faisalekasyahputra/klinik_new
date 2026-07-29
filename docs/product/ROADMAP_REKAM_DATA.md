@@ -163,7 +163,14 @@ kemungkinan besar sudah tercatat sebagai ditunda beserta alasannya.
 - Laporan `terkirim` tidak bisa ditulis oleh `admin_kabkota`
 - Kabupaten lain tidak terbaca — dibuktikan dengan **melepas guard sementara** dan check jadi merah
 
-**Check:** `docs/engineering/uji_rekam_data_d1.php` (pola: `uji_perjalanan_warga.php`)
+**Check:** `php index.php migrate uji_rekam_data_d1`
+
+> Dikoreksi 29 Jul 2026 saat D1 dikerjakan: rencana semula `docs/engineering/uji_rekam_data_d1.php`
+> dengan pola `uji_perjalanan_warga.php`. Pola itu HTTP+curl dan butuh controller —
+> D1 belum punya satu pun. Pola yang memang sudah ada di repo untuk check
+> level-model adalah method CLI di `Migrate.php` (`uji_warga_r1`, `uji_warga_r2`),
+> jadi itu yang dipakai. Mulai D2 (sudah ada controller) barulah harness HTTP
+> berdiri sendiri sesuai rencana awal.
 
 ---
 
@@ -266,11 +273,11 @@ view kisi 10 sumber × 6 program.
 | Tahap | Status | Tanggal | Bukti |
 |---|---|---|---|
 | D0 Fondasi data | ✅ selesai | 29 Jul 2026 | `SKEMA_DATA_REKAM_DATA.md` §6 — 10 uji hijau + round-trip |
-| D1 Model & status | ⬜ belum | | |
-| D2 Perumahan input | ⬜ belum | | |
-| D3 Perumahan kirim | ⬜ belum | | |
-| D4 Kawasan | ⬜ belum | | |
-| D5 Rekap & Riwayat | ⬜ belum | | |
+| D1 Model & status | ✅ selesai | 29 Jul 2026 | `migrate uji_rekam_data_d1` **48/48** di DB lokal. Uji balik: guard scope `laporan()` dilepas → **2 gagal** tepat di `Laporan kabupaten lain tidak terbaca` + `Isi laporan kabupaten lain tidak terbaca`, lalu 48/48 lagi setelah dipulihkan; nol jejak mutasi tersisa. |
+| D2 Perumahan input | ✅ selesai | 29 Jul 2026 | `uji_rekam_data_d2.php` **26/26** lewat HTTP Apache nyata (login → gerbang → angka → batal centang → terkunci); stdout bersih. Uji balik: scope sesi dilepas di kedua jalur tulis controller → **tepat 2 gagal** setelah harness diperbaiki. Percobaan pertama memberi 3 gagal karena uji terkunci berbagi sumber dana `csr` dengan uji scope — kegagalan beruntun, bukan kunci bocor; uji terkunci kini memakai `baznas_ri`. |
+| D3 Perumahan kirim | ✅ selesai | 29 Jul 2026 | `uji_rekam_data_d3.php` **43/43** lewat HTTP Apache nyata; bukti dari DB **dan disk**. Uji balik: scope `unduh_bnba` dilepas → **tepat 2 gagal** (`Admin wilayah lain dapat 404`, `Nol byte PDF bocor`), 43/43 lagi setelah dipulihkan. Menemukan 1 bug nyata: `mime_type` dari `$_FILES['type']` (kiriman klien) dipakai sebagai header `Content-Type` — diperbaiki jadi `finfo` atas berkas yang sudah mendarat. |
+| D4 Kawasan | ✅ selesai | 29 Jul 2026 | `uji_rekam_data_d4.php` **39/39** lewat HTTP Apache nyata: 25 intervensi (batas 20 form dinas tidak dibawa), urutan rapat setelah hapus di tengah, total dihitung dari `SUM()` dan nol input total di layar, "tidak ada penanganan" bisa dikirim tanpa Total Luas, pewarisan 24 intervensi. Uji balik: scope `hapus_intervensi` dilepas → **tepat 1 gagal**, 39/39 lagi setelah dipulihkan. |
+| D5 Rekap & Riwayat | 🟡 hijau, uji balik tertunda | 29 Jul 2026 | `uji_rekam_data_d5.php` **35/35** lewat HTTP Apache nyata. Inti: Juni=25 & Juli=40 dibuktikan **tidak** dijumlahkan jadi 65 (di HTML maupun di DB), label "kumulatif s.d. `<bulan>`" eksplisit, draft tidak masuk rekap, dua domain tidak digabung berikut alasannya, keadaan kosong tidak merender tabel nol. Rekap Perumahan memakai bentuk matriks 10×6 sesuai spreadsheet dinas — bentuk yang tidak dipakai di layar input karena tidak punya tempat untuk gerbang Ada/Tidak Ada. Uji balik: scope wilayah `rekap()` dilepas → **tepat 2 gagal**, 35/35 lagi setelah dipulihkan. |
 | D6 Peninjauan & pembuktian | ⬜ belum | | |
 
 ## 10. Pertanyaan terbuka untuk dinas
