@@ -69,7 +69,14 @@ $config['migration_auto_latest'] = FALSE;
 | be upgraded / downgraded to.
 |
 */
-$config['migration_version'] = 20260701000010;
+/*
+| WAJIB sama dengan nomor migrasi TERTINGGI yang ada di application/migrations/.
+| Nilai yang tertinggal bukan sekadar tidak rapi: `current()` akan MENURUNKAN
+| skema ke nomor ini, dan `down()` migrasi di antaranya menghapus tabel. Nilai
+| ini pernah tertinggal 11 versi (10 vs 21) — dijaga sekarang oleh
+| docs/engineering/uji_migrasi_konsisten.php, yang merah kalau keduanya beda.
+*/
+$config['migration_version'] = 20260701000021;
 
 /*
 |--------------------------------------------------------------------------
