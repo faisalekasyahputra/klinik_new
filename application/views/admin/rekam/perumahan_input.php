@@ -50,6 +50,15 @@ $terjawab = count($sumber_label) - count($belum_dijawab);
       </span>
     </div>
 
+    <?php if ( ! empty($laporan['catatan_admin'])): ?>
+      <!-- Catatan peninjau WAJIB terlihat di layar tempat perbaikannya
+           dikerjakan. Menaruhnya hanya di riwayat berarti petugas harus
+           menebak apa yang salah sambil menyunting. -->
+      <p class="mt-4 rounded-r-xl border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-500/10 dark:text-red-200">
+        <b>Perlu perbaikan — catatan Admin Bidang:</b> <?= $e($laporan['catatan_admin']) ?>
+      </p>
+    <?php endif; ?>
+
     <?php if ($diwarisi > 0): ?>
       <p class="mt-4 rounded-r-xl border-l-4 border-blue-500 bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-500/10 dark:text-blue-200">
         <b><?= (int) $diwarisi ?> baris angka diwarisi</b> dari laporan terkirim sebelumnya.

@@ -569,11 +569,16 @@ class Rekam_data_model extends CI_Model {
     /**
      * Terima laporan. Skema tidak punya status `diterima` tersendiri; yang
      * menandainya adalah `reviewed_at` terisi pada laporan yang masih `terkirim`.
-     * Hanya peninjau provinsi ($scope NULL) yang boleh memanggilnya.
+     *
+     * $domain adalah gerbang bidang: Admin Bidang Perumahan tidak boleh
+     * menyentuh laporan kawasan, dan sebaliknya.
      */
-    public function terima($laporan_id, $reviewer_id)
+    public function terima($laporan_id, $reviewer_id, $domain = NULL)
     {
         $this->db->where(['id' => (int) $laporan_id, 'status' => 'terkirim', 'reviewed_at' => NULL]);
+        if ($domain !== NULL) {
+            $this->db->where('domain', $domain);
+        }
         $ok = $this->db->update('rd_laporan', [
             'reviewed_at' => date('Y-m-d H:i:s'), 'reviewed_by' => (int) $reviewer_id,
             'catatan_admin' => NULL,
@@ -581,6 +586,60 @@ class Rekam_data_model extends CI_Model {
         return ($ok && $this->db->affected_rows() === 1)
             ? ['success' => TRUE, 'laporan_id' => (int) $laporan_id]
             : $this->gagal('basi_atau_sudah_ditinjau', 'Laporan sudah ditinjau atau statusnya berubah.');
+    }
+
+    /**
+     * Kembalikan laporan ke kabupaten dengan catatan WAJIB. Catatan itu yang
+     * dibaca petugas kabupaten di layar riwayat dan input, jadi ia bagian dari
+     * kontrak, bukan hiasan.
+     */
+    public function minta_perbaikan($laporan_id, $reviewer_id, $catatan, $domain = NULL)
+    {
+        $laporan = $this->db->get_where('rd_laporan', ['id' => (int) $laporan_id])->row_array();
+        if ( ! $laporan || ($domain !== NULL && $laporan['domain'] !== $domain)) {
+            return $this->gagal('luar_bidang', 'Laporan tidak ditemukan di bidang Anda.');
+        }
+        // Transisi tetap lewat pintu yang sama: status asal ikut di WHERE, dan
+        // catatan kosong ditolak di sana.
+        return $this->transisi((int) $laporan['id'], $laporan['status'], 'perlu_perbaikan',
+            $reviewer_id, NULL, $catatan);
+    }
+
+    /**
+     * Daftar laporan yang menunggu/pernah ditinjau provinsi, satu domain saja.
+     * Draft tidak pernah muncul di sini — yang belum dikirim bukan urusan
+     * peninjau.
+     */
+    public function daftar_tinjauan($domain, $tahun, $bulan = NULL)
+    {
+        if ( ! in_array($domain, self::DOMAINS, TRUE)) {
+            return [];
+        }
+        $this->db
+            ->select('l.id, l.kabupaten_id, l.bulan, l.status, l.submitted_at, l.reviewed_at,'
+                . ' l.catatan_admin, k.nama AS kabupaten')
+            ->from('rd_laporan l')
+            ->join('kabupaten k', 'k.id = l.kabupaten_id', 'left')
+            ->where(['l.domain' => $domain, 'l.tahun' => (int) $tahun])
+            ->where_in('l.status', ['terkirim', 'perlu_perbaikan']);
+        if ($bulan !== NULL) {
+            $this->db->where('l.bulan', (int) $bulan);
+        }
+        return $this->db->order_by('l.bulan', 'DESC')->order_by('k.nama', 'ASC')
+            ->get()->result_array();
+    }
+
+    /** Detail satu laporan untuk peninjau bidang. NULL kalau beda domain. */
+    public function laporan_bidang($laporan_id, $domain)
+    {
+        $laporan = $this->db->get_where('rd_laporan',
+            ['id' => (int) $laporan_id, 'domain' => $domain])->row_array();
+        if ( ! $laporan) {
+            return NULL;
+        }
+        // Scope kabupaten sengaja NULL: peninjau provinsi memang lintas wilayah.
+        // Yang menggerbanginya adalah domain, bukan kabupaten.
+        return $this->isi_laporan((int) $laporan['id']);
     }
 
     // ------------------------------------------------------------------ baca

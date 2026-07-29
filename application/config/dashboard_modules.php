@@ -130,6 +130,17 @@ $config['dashboard_modules'] = [
         'url'   => 'Rekam_Kawasan/riwayat', 'group' => 'Layanan', 'order' => 32,
         'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
     ],
+    // Hanya bidang perumahan & kawasan yang punya Rekam Data; bidang lain
+    // diarahkan keluar oleh controller dengan pesan jelas, bukan layar kosong.
+    'rekam_tinjauan' => [
+        'label' => 'Peninjauan Rekam Data', 'icon' => 'ph-clipboard-text',
+        'url'   => 'Rekam_Tinjauan', 'group' => 'Layanan', 'order' => 20,
+        'roles' => ['admin_bidang'],
+        'scope' => 'bidang_kode',
+        'table' => 'rd_laporan', 'review_by' => 'admin_bidang',
+        'status_column' => 'status', 'owner_column' => 'kabupaten_id',
+        'public_where' => NULL, 'editable_where' => NULL,
+    ],
     'aduan_bidang' => [
         'label' => 'Aduan Bidang Saya', 'icon' => 'ph-chat-centered-text',
         'url'   => 'Admin_Bidang', 'group' => 'Layanan', 'order' => 10,
