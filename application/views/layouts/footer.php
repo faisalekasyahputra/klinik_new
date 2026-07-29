@@ -301,6 +301,8 @@ function globalSystem() {
     };
 
     function setActiveTabKey(key) {
+        // Link tanpa key (loader global) → pertahankan highlight tab sekarang.
+        if (!key) return;
         // Remove active from all portal tabs
         document.querySelectorAll('.portal-tab-btn').forEach(function (el) {
             el.classList.remove('active');
@@ -422,10 +424,17 @@ function globalSystem() {
                 // login) me-redirect ke /login — tanpa cek ini halaman login
                 // UTUH tersuntik ke dalam panel. Jatuhkan ke navigasi penuh.
                 if (!res.ok || res.redirected) { window.location.href = url; return null; }
+                // Bukan HTML (PDF/gambar/unduhan) → biarkan browser menanganinya.
+                if (((res.headers.get('content-type')) || '').indexOf('text/html') === -1) {
+                    window.location.href = url; return null;
+                }
                 return res.text();
             })
             .then(function (html) {
                 if (html === null || html === undefined || myToken !== loadToken) return;
+                // Dokumen utuh (<!doctype/<html) = halaman berdiri sendiri yang
+                // tidak punya cabang partial AJAX — jangan disuntik ke panel.
+                if (/^\s*(<!doctype|<html)/i.test(html)) { window.location.href = url; return; }
                 if (!html.trim()) html = '<div class="page-skeleton animate-pulse min-h-full"></div>';
                 // 4) Fade out skeleton → inject konten baru
                 wrapper.style.transition = 'opacity 0.1s ease-out';
@@ -452,12 +461,31 @@ function globalSystem() {
             });
     }
 
+    // SEMUA link internal lewat jalur progresif, bukan hanya yang ditandai
+    // data-tab-link. Kelayakannya diputuskan dari RESPONS (redirect / bukan
+    // text/html / dokumen utuh → jatuh ke navigasi penuh di loadTab), jadi
+    // halaman baru otomatis ikut tanpa perlu menandai link satu-satu.
     document.addEventListener('click', function (e) {
-        var link = e.target.closest('[data-tab-link]');
-        if (!link) return;
+        var link = e.target.closest('a');
+        if (!link || !link.href || e.defaultPrevented) return;
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        if (link.target === '_blank' || link.hasAttribute('download')) return;
+        var href = link.getAttribute('href') || '';
+        if (href === '' || href.charAt(0) === '#' || /^(javascript:|mailto:|tel:)/i.test(href)) return;
+        if (link.hostname !== window.location.hostname) return;
+        // Anchor di halaman yang sama → biarkan browser scroll sendiri.
+        if (link.pathname === window.location.pathname && link.hash) return;
+        // Area yang PASTI berdiri sendiri (shell auth/dashboard, aksi sesi):
+        // langsung navigasi penuh tanpa membuang satu fetch percobaan.
+        if (/(login|register|daftar|Auth\/|akun|admin|Admin|Pengaturan|User_Profile)/.test(link.pathname)) return;
         e.preventDefault();
-        loadTab(link.getAttribute('href'), link.getAttribute('data-tab-key'), true);
+        // Key dari atribut sendiri, atau pinjam dari link nav lain ber-href sama.
+        var key = link.getAttribute('data-tab-key');
+        if (!key) {
+            var kin = document.querySelector('[data-tab-link][data-tab-key][href="' + link.href + '"]');
+            if (kin) key = kin.getAttribute('data-tab-key');
+        }
+        loadTab(link.getAttribute('href'), key, true);
     });
 
     window.addEventListener('popstate', function (e) {

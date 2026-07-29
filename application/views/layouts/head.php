@@ -140,21 +140,10 @@
     </style>
 
     <script>
-        // Page transition: hanya untuk navigasi full-page (bukan AJAX tab)
-        document.addEventListener('click', (e) => {
-            const link = e.target.closest('a');
-            // Skip jika bukan link, tab baru, anchor, atau AJAX tab link
-            if (!link || !link.href || link.target === '_blank' || link.href.startsWith('#') || link.href.startsWith('javascript:') || link.hostname !== window.location.hostname || link.hasAttribute('data-tab-link') || link.hasAttribute('data-no-page-transition')) return;
-
-            const currentUrl = window.location.href.split('#')[0];
-            const linkUrl = link.href.split('#')[0];
-            if (currentUrl === linkUrl) return;
-
-            e.preventDefault();
-            const wrapper = document.getElementById('page-content-wrapper');
-            if (wrapper) wrapper.classList.add('page-exiting');
-            setTimeout(() => { window.location.href = link.href; }, 150);
-        });
+        // Interceptor fade lama (preventDefault + tunda 150ms + navigasi penuh)
+        // DIHAPUS: navigasi internal kini ditangani loader progresif global di
+        // footer.php — link portal di-fetch dan di-swap di panel, sisanya jatuh
+        // ke navigasi penuh biasa tanpa tunda buatan.
 
         // BFCache handler
         window.addEventListener('pageshow', (e) => {
