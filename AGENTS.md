@@ -14,9 +14,14 @@
 
 > 🔄 **PETA LINGKUNGAN BERUBAH 27 Jul 2026 — keputusan user.** Situs staging kini **menjadi production**: "kita produksi menggunakan staging saat ini, nanti jika kita butuhkan `main` kita bisa menghidupkannya kembali." Tiga situs lain dimatikan (403) — berkas & DB utuh, tinggal hapus blok `SITUS DIMATIKAN` di `.htaccess` server untuk menghidupkan lagi.
 
+> 🟡 **ADA BRANCH PENAMPUNG SEJAK 29 Jul 2026: `feature/warga-simperum-r9`.** 19 commit (seluruh roadmap Warga R0–R9, adapter SIMPERUM, pusat notifikasi, dan perbaikan UI/UX 29 Jul) sudah AMAN di GitHub di branch itu — **branch itu TIDAK auto-deploy**. Branch deploy `feature/homepage-portal-v2` sengaja dibiarkan tertinggal di `fbd72a8` karena production masih skema `...16` sedangkan kode itu butuh 6 tabel baru; `/akun` (dashboard SEMUA pengguna login) menyentuhnya 5 kali, jadi push duluan = 500 massal.
+>
+> **Urutan rilis yang benar, jangan dibalik:** (1) migrasi production `php index.php migrate` lewat SSH sampai `20260701000020`, (2) baru push/merge ke `feature/homepage-portal-v2`. Skema baru + kode lama aman; kode baru + skema lama mati.
+
 | | Situs | Branch | Status |
 |---|---|---|---|
 | **Lokal** | `localhost/klinik_new` | `feature/homepage-portal-v2` | skema `20260701000020` |
+| **Penampung (aman)** | — tidak di-deploy | `feature/warga-simperum-r9` | 19 commit menunggu migrasi production |
 | **PRODUCTION (aktif)** | `floralwhite-lion-710022` | `feature/homepage-portal-v2` — auto-deploy | KODE + DB skema `20260701000016` (T0–T5 lengkap), ter-push & termigrasi 27 Jul 2026 |
 | ~~production lama~~ | `palegreen-mink-703421` | `main` — beku sejak 19 Jul | 🔴 **DIMATIKAN** |
 | ~~staging lama~~ | `darkseagreen-hamster-214338` | `feature/ui-ux-revamp` | 🔴 **DIMATIKAN** |
