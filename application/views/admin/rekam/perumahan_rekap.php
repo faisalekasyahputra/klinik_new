@@ -105,9 +105,12 @@ $nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
                     <?= number_format($sub_unit, 0, ',', '.') ?><br>
                     <span class="text-xs font-normal text-gray-500 dark:text-brand-muted"><?= number_format($sub_rp, 0, ',', '.') ?></span>
                   <?php else: ?>
-                    <!-- Sumber tanpa satu pun baris: subtotalnya "—", bukan 0.
-                         Selnya sudah "—"; menaruh 0 di subtotal membuat sumber
-                         yang belum dijawab terbaca sebagai "dilaporkan nol". -->
+                    <?php /* Sumber tanpa satu pun baris: subtotalnya "—", bukan 0.
+                              Selnya sudah "—"; menaruh 0 di subtotal membuat sumber
+                              yang belum dijawab terbaca sebagai "dilaporkan nol".
+                              Komentar PHP, BUKAN HTML: blok ini ada di dalam
+                              foreach, jadi versi HTML-nya terkirim ke klien sekali
+                              per sumber dana — sepuluh kali per halaman. */ ?>
                     —
                   <?php endif; ?>
                 </td>
