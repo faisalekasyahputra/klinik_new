@@ -26,6 +26,9 @@ define('ENV_PATH', APP_ROOT . '/.env');
 $total = 0;
 $gagal = 0;
 
+/** Penanda waktu mulai — dipakai menyapu bucket rate limit run ini saja. */
+$mulai = date('Y-m-d H:i:s', time() - 1);
+
 function cek($kondisi, $label) {
     global $total, $gagal;
     $total++;
@@ -151,8 +154,16 @@ function db_debug($nyala) {
 }
 
 function bersihkan() {
-    global $db, $jars, $dbConfigPath, $dbConfigAsli;
+    global $db, $jars, $dbConfigPath, $dbConfigAsli, $mulai;
     file_put_contents($dbConfigPath, $dbConfigAsli, LOCK_EX);
+
+    // Bucket rate limit yang tersentuh selama run ini WAJIB disapu. Policy
+    // `forum_report` berdimensi ip+account: akun uji selalu baru, tapi IP-nya
+    // sama, sehingga laporan dari run sebelumnya menghabiskan jatah run
+    // berikutnya dan kegagalannya terlihat persis seperti bug kode.
+    // Jebakan yang sama sudah tercatat di AGENTS.md §0e untuk harness D6.
+    $db->query("DELETE FROM sys_rate_limits WHERE window_started_at >= '"
+        . $db->real_escape_string($mulai) . "'");
     $db->query("DELETE FROM forum_laporan_komentar WHERE user_id IN
         (SELECT id FROM usr_users WHERE email LIKE 'uji_utang_%')");
     $db->query("DELETE FROM forum_komentar WHERE isi_komentar = 'Komentar uji B3'");
