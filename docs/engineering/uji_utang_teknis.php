@@ -301,6 +301,38 @@ try {
     cek($adaCookie && stripos(implode("\n", $ck[0]), 'Secure') === FALSE,
         'B11 — cookie lokal TANPA atribut Secure (sesi HTTP localhost tidak putus)');
 
+    // ------------------------------------------------ U4: kejujuran permukaan
+    // Bentuk buktinya adalah KETIADAAN: ambil respons anonim, cari literal yang
+    // dicabut, hasilnya harus nol. Tanpa cookie sama sekali — halaman-halaman
+    // ini publik, dan itulah yang membuatnya bisa dikutip siapa saja.
+    foreach (['sebaran_rusun', 'profil_kumuh', 'sebaran_sdgs', 'struktur', 'Admin_Settings'] as $u) {
+        cek(http(NULL, $u)['code'] === 404, "U4 — /{$u} dicabut (404)");
+    }
+
+    // Halaman tetangga WAJIB tetap hidup. Mencabut route tanpa memperbaiki
+    // penautnya menghasilkan 404 di seluruh situs — itu risiko regresi yang
+    // disebut roadmap secara eksplisit.
+    foreach (['' => 'beranda', 'sebaran' => 'sebaran', 'listkabupaten' => 'listkabupaten',
+        'profil' => 'profil'] as $u => $nama) {
+        cek(http(NULL, $u)['code'] === 200, "U4 — {$nama} tetap hidup (200)");
+    }
+
+    // Literal yang tidak boleh muncul lagi di permukaan publik mana pun.
+    $literal = ['8.420', '4.250,8', '142.500', 'Rusunawa Kudu', 'Nama Pejabat',
+        'Rp 500.000.000', 'Rp 750.000.000', 'Mode Pemeliharaan', 'Terdapat keluhan'];
+    $halaman = ['' => 'beranda', 'listkabupaten' => 'listkabupaten', 'profil' => 'profil'];
+    $bocor = [];
+    foreach ($halaman as $u => $nama) {
+        $isi = http(NULL, $u)['body'];
+        foreach ($literal as $lit) {
+            if (strpos($isi, $lit) !== FALSE) {
+                $bocor[] = "{$nama}:{$lit}";
+            }
+        }
+    }
+    cek($bocor === [], 'U4 — nol literal karangan tersisa di permukaan publik'
+        . ($bocor ? ' — ditemukan: ' . implode(', ', $bocor) : ''));
+
 } finally {
     bersihkan();
 }

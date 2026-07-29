@@ -287,9 +287,7 @@ function globalSystem() {
         warga_pendataan: 'perumahan',
         etalase: 'perumahan',
         sebaran: 'kawasan',
-        sebaran_rusun: 'kawasan',
-        profil_kumuh: 'kawasan',
-        sebaran_sdgs: 'kawasan',
+        // sebaran_rusun / profil_kumuh / sebaran_sdgs dicabut 29 Jul 2026 (A1).
         info_tanah: 'pertanahan',
         sertifikasi_tanah: 'pertanahan',
         sengketa: 'pertanahan',

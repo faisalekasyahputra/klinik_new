@@ -522,11 +522,12 @@ class Index extends MY_Controller {
 		$this->load->view('layouts/main',$data);
 	}
 
-	public function struktur() {
-		$datacontent['judul']='';
-		$data['content'] = $this->load->view('pages/profil/struktur_organisasi', $datacontent, true);
-		$this->load->view('layouts/main',$data);
-	}
+	// A4 — struktur() DICABUT 29 Jul 2026 atas keputusan user, bersama
+	// view-nya. Halaman itu memajang NAMA INDIVIDU NYATA sebagai Kepala Dinas
+	// tanpa satu pun sumber data, ditambah empat placeholder "Nama Pejabat"
+	// yang tampil ke publik. Menyebut nama pejabat tanpa sumber lebih berisiko
+	// daripada tidak punya halamannya; mengisinya butuh dokumen resmi dinas
+	// beserta kesepakatan siapa yang memperbaruinya saat ada mutasi.
 
 	public function materia() {
 		$datacontent['judul']='';
@@ -534,20 +535,14 @@ class Index extends MY_Controller {
 		$this->load->view('layouts/main',$data);
 	}
 
-	public function sebaran_rusun() {
-		$datacontent['judul']='';
-		$this->render('pages/spasial/sebaran_rusun', $datacontent);
-	}
-
-	public function profil_kumuh() {
-		$datacontent['judul']='';
-		$this->render('pages/spasial/profil_kumuh', $datacontent);
-	}
-
-	public function sebaran_sdgs() {
-		$datacontent['judul']='';
-		$this->render('pages/spasial/sebaran_sdgs', $datacontent);
-	}
+	// A1 — sebaran_rusun(), profil_kumuh(), dan sebaran_sdgs() DICABUT
+	// 29 Jul 2026 atas keputusan user, bersama ketiga view-nya, route-nya, dan
+	// kartu penautnya di beranda. Ketiganya menyajikan angka literal tanpa
+	// sumber, dan sebaran_rusun menyebut rusunawa BERNAMA NYATA berikut
+	// koordinat aslinya dengan okupansi karangan serta tuduhan kerusakan aset.
+	// Mengganti angkanya butuh seseorang yang tahu angka benarnya — itu dinas,
+	// bukan agent; mencabut adalah satu-satunya tindakan yang boleh diambil
+	// tanpa mengarang pengganti (§17).
 
 	public function sebaran($kodeWilayah = '33') {
 		$datacontent['judul']='';

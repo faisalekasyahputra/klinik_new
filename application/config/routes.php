@@ -82,7 +82,8 @@ $route['umum']                     = 'Index/umum';
 $route['detail_perum/(:any)']      = 'Index/detail_perum/$1';
 $route['profil']                   = 'Index/profil';
 $route['tugas_pokok']              = 'Index/tugas_pokok';
-$route['struktur']                 = 'Index/struktur';
+// $route['struktur'] dicabut 29 Jul 2026 (A4) — halaman memajang nama pejabat
+// tanpa sumber data. Alasan lengkap di Index.php.
 $route['pengembang']               = 'Index/pengembang';
 $route['kemitraan']                = 'Index/kemitraan';
 $route['panduan_desain']           = 'Index/panduan_desain';
@@ -94,9 +95,9 @@ $route['simulasi_kpr']             = 'Index/simulasi_kpr';
 // --- Bank Desain & Data Spasial ---
 $route['materia']                  = 'Index/materia';
 $route['sebaran']                  = 'Index/sebaran';
-$route['sebaran_rusun']            = 'Index/sebaran_rusun';
-$route['profil_kumuh']             = 'Index/profil_kumuh';
-$route['sebaran_sdgs']             = 'Index/sebaran_sdgs';
+// sebaran_rusun / profil_kumuh / sebaran_sdgs dicabut 29 Jul 2026 (A1) —
+// angka literal tanpa sumber, plus rusunawa bernama nyata dengan atribut
+// karangan. Alasan lengkap di Index.php.
 
 // --- Pertanahan ---
 $route['info_tanah']               = 'Index/info_tanah';

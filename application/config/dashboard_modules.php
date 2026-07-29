@@ -211,9 +211,10 @@ $config['dashboard_modules'] = [
         'url'   => 'Admin_Content', 'group' => 'Manajemen', 'order' => 20,
         'roles' => ['admin'], 'scope' => null,
     ],
-    'settings' => [
-        'label' => 'Pengaturan', 'icon' => 'ph-sliders-horizontal',
-        'url'   => 'Admin_Settings', 'group' => 'Manajemen', 'order' => 30,
-        'roles' => ['admin'], 'scope' => null,
-    ],
+    // A6 — entri 'settings' DICABUT 29 Jul 2026 bersama controller Admin_Settings
+    // dan view-nya. Layar itu berisi <form> tanpa action/method/CSRF, tombol
+    // Simpan di LUAR form, empat tab href="#", dan toggle "Mode Pemeliharaan"
+    // yang tidak menyalakan apa pun — dinas bisa mengiranya menutup situs
+    // padahal terbuka penuh. Nol fungsi hilang: penyimpanan setting yang NYATA
+    // ada di Admin_Content::update() lewat Setting_model.
 ];

@@ -16,7 +16,8 @@
              $active_tab = 'pengembang';
          } elseif ($rt_method === 'tab_perumahan' || in_array($rt_method, ['simulasi_kpr', 'panduan_desain', 'golek_omah', 'cari_rumah'])) {
              $active_tab = 'perumahan';
-         } elseif ($rt_method === 'tab_kawasan' || in_array($rt_method, ['sebaran', 'sebaran_rusun', 'profil_kumuh', 'sebaran_sdgs'])) {
+         // sebaran_rusun / profil_kumuh / sebaran_sdgs dicabut 29 Jul 2026 (A1).
+         } elseif ($rt_method === 'tab_kawasan' || in_array($rt_method, ['sebaran'])) {
              $active_tab = 'kawasan';
          } elseif ($rt_method === 'tab_pertanahan' || in_array($rt_method, ['info_tanah', 'sertifikasi', 'sengketa', 'bank_tanah'])) {
              $active_tab = 'pertanahan';

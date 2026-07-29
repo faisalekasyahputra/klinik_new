@@ -27,65 +27,17 @@
             </div>
         </a>
 
-        <!-- Card: Sebaran Rusun -->
-        <a href="<?= base_url('sebaran_rusun') ?>" data-tab-link data-tab-key="sebaran_rusun" data-tab-group="kawasan"
-           class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"
-           style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
-            <i class="fa-solid fa-building absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none"
-               style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.08;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-building mb-2.5 transition-transform duration-500 group-hover:scale-110"
-                   style="font-size: 24px; color: var(--portal-icon); "></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 group-hover:text-[color:var(--portal-text)] transition-colors">Sebaran Rusun</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Peta sebaran rumah susun di Jawa Tengah</p>
-            </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Lihat Peta</span>
-                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                </div>
-            </div>
-        </a>
-
-        <!-- Card: Profil Kawasan Kumuh -->
-        <a href="<?= base_url('profil_kumuh') ?>" data-tab-link data-tab-key="profil_kumuh" data-tab-group="kawasan"
-           class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"
-           style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
-            <i class="fa-solid fa-city absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none"
-               style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.08;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-city mb-2.5 transition-transform duration-500 group-hover:scale-110"
-                   style="font-size: 24px; color: var(--portal-icon); "></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 group-hover:text-[color:var(--portal-text)] transition-colors">Profil Kawasan Kumuh</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Data profil dan deliniasi kawasan kumuh</p>
-            </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Lihat Data</span>
-                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                </div>
-            </div>
-        </a>
-
-        <!-- Card: Sebaran Bantuan SDGS -->
-        <a href="<?= base_url('sebaran_sdgs') ?>" data-tab-link data-tab-key="sebaran_sdgs" data-tab-group="kawasan"
-           class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"
-           style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
-            <i class="fa-solid fa-hand-holding-heart absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none"
-               style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.08;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-hand-holding-heart mb-2.5 transition-transform duration-500 group-hover:scale-110"
-                   style="font-size: 24px; color: var(--portal-icon); "></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 group-hover:text-[color:var(--portal-text)] transition-colors">Sebaran Bantuan SDGS</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Peta sebaran bantuan program SDGS</p>
-            </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Lihat Peta</span>
-                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                </div>
-            </div>
-        </a>
+        <!--
+          A1 — tiga kartu (Sebaran Rusun, Profil Kawasan Kumuh, Sebaran Bantuan
+          SDGS) DICABUT 29 Jul 2026 atas keputusan user, bersama halamannya.
+          Ketiganya menampilkan angka literal tanpa sumber apa pun — 8.420 unit,
+          4.250,8 Ha, Rp 1,2 Triliun tersalurkan — dan yang paling berat:
+          rusunawa BERNAMA NYATA lengkap dengan koordinat asli, diberi angka
+          okupansi karangan serta tuduhan "terdapat keluhan kerusakan aset".
+          Label "(Data Simulasi)" di subjudul tidak melisensikan itu.
+          Kartunya dihapus DULU sebelum route-nya, supaya beranda tidak pernah
+          menunjuk ke halaman yang sudah tiada.
+        -->
 
     </div>
 </div>
