@@ -260,6 +260,47 @@ try {
 
     db_debug(TRUE);
 
+    // ------------------------------------------------ U0: environment fail-closed
+    // Dibuktikan lewat AKIBAT NYATA-nya, bukan dengan membaca diff: method uji
+    // di Migrate menolak jalan saat ENVIRONMENT production. Jadi perintah yang
+    // sama harus GAGAL tanpa CI_ENV dan BERHASIL dengan CI_ENV=development.
+    $jalankan = function ($env) {
+        $desc = [1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+        $proc = proc_open([PHP_BINARY, 'index.php', 'migrate', 'uji_rekam_data_d1'],
+            $desc, $pipes, APP_ROOT, $env === NULL ? NULL : array_merge(getenv(), $env));
+        $out = stream_get_contents($pipes[1]) . stream_get_contents($pipes[2]);
+        fclose($pipes[1]); fclose($pipes[2]);
+        return ['kode' => proc_close($proc), 'out' => $out];
+    };
+
+    $tanpa = $jalankan([]);
+    cek(strpos($tanpa['out'], 'RINGKASAN') === FALSE,
+        'U0 — CLI tanpa CI_ENV jatuh ke production: method uji menolak jalan');
+
+    $dengan = $jalankan(['CI_ENV' => 'development']);
+    cek(strpos($dengan['out'], 'RINGKASAN') !== FALSE,
+        'U0 — CLI dengan CI_ENV=development berjalan normal');
+
+    // CI_ENV kosong harus diperlakukan sebagai TIDAK ADA, bukan environment
+    // bernama "" — kalau tidak, satu variabel kosong di server memulihkan
+    // perilaku fail-open yang baru saja ditutup.
+    $kosong = $jalankan(['CI_ENV' => '']);
+    cek(strpos($kosong['out'], 'RINGKASAN') === FALSE,
+        'U0 — CI_ENV kosong tetap dianggap production (fail-closed)');
+
+    // B11: cookie mengikuti environment. Lewat HTTP (vhost development) tidak
+    // boleh ber-Secure, karena browser akan menolaknya di http://localhost.
+    $ch = curl_init(BASE_URL . '/Auth/login');
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => TRUE, CURLOPT_HEADER => TRUE,
+        CURLOPT_NOBODY => FALSE, CURLOPT_TIMEOUT => 30]);
+    $header = substr((string) curl_exec($ch), 0, curl_getinfo($ch, CURLINFO_HEADER_SIZE));
+    curl_close($ch);
+    preg_match_all('/^Set-Cookie:.*$/mi', $header, $ck);
+    $adaCookie = ! empty($ck[0]);
+    cek($adaCookie, 'B11 — server mengirim cookie sesi');
+    cek($adaCookie && stripos(implode("\n", $ck[0]), 'Secure') === FALSE,
+        'B11 — cookie lokal TANPA atribut Secure (sesi HTTP localhost tidak putus)');
+
 } finally {
     bersihkan();
 }

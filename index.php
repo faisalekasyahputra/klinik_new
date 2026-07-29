@@ -53,7 +53,28 @@
  *
  * NOTE: If you change these, also change the error_reporting() code below
  */
-	define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
+/*
+ * FAIL-CLOSED. Default sengaja `production`, bukan `development`.
+ *
+ * Sebelumnya default-nya `development`, sehingga server yang KEHILANGAN
+ * konfigurasi environment-nya diam-diam menampilkan galat PHP lengkap dengan
+ * path absolut ke pengunjung anonim — dan itu benar-benar terjadi di
+ * production (butir B1). Deploy yang lupa/kehilangan setelan sekarang jatuh ke
+ * sisi yang aman, bukan sisi yang bocor.
+ *
+ * `getenv()` ikut dibaca, BUKAN hanya `$_SERVER`: `SetEnv` Apache hanya
+ * berlaku untuk request HTTP, sehingga proses CLI (migrasi, seluruh harness)
+ * tidak pernah melihat CI_ENV lewat `$_SERVER` dan akan jatuh ke production.
+ * Untuk menjalankan perintah CLI di lokal, setel environment-nya:
+ *
+ *     CI_ENV=development php index.php migrate
+ *
+ * Lingkungan lokal menyetel `SetEnv CI_ENV development` di konfigurasi Apache
+ * yang TIDAK ikut Git. Jangan menaruhnya di `.htaccess` repo — berkas yang
+ * sama dibaca lokal maupun production.
+ */
+	$ci_env = isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : getenv('CI_ENV');
+	define('ENVIRONMENT', is_string($ci_env) && $ci_env !== '' ? $ci_env : 'production');
 
 /*
  *---------------------------------------------------------------

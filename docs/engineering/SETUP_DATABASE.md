@@ -6,6 +6,46 @@ Dokumen ini berisi panduan setup dan daftar skema database yang telah direstrukt
 - MySQL 5.7+ atau MariaDB 10.3+
 - XAMPP / Laragon (Lingkungan Lokal)
 
+## ⚠️ WAJIB: setel `CI_ENV=development` di lingkungan lokal
+
+Sejak butir B1/U0, `index.php` **fail-closed**: bila `CI_ENV` tidak ada atau
+kosong, environment dianggap **`production`**. Tanpa langkah ini instalasi lokal
+ikut menjadi production — tampilan galat hilang, dan `cookie_secure` menyala
+sehingga browser menolak cookie sesi di `http://localhost` dan **login putus
+lintas-request**.
+
+**Untuk web (Apache).** Tambahkan ke konfigurasi Apache yang **tidak ikut Git**
+(mis. `conf/extra/httpd-vhosts.conf`), lalu restart Apache:
+
+```apache
+<Directory "C:/xampp/htdocs/klinik_new">
+    SetEnv CI_ENV development
+</Directory>
+```
+
+Jangan menaruhnya di `.htaccess` repo — berkas yang sama dibaca lokal maupun
+production, sehingga salah satu lingkungan pasti salah kaprah.
+
+**Untuk perintah CLI.** `SetEnv` Apache **hanya** berlaku untuk request HTTP;
+proses CLI tidak pernah melihatnya. Setiap perintah CLI lokal karena itu harus
+membawa environment-nya sendiri:
+
+```bash
+CI_ENV=development php index.php migrate
+CI_ENV=development php index.php migrate uji_rekam_data_d1
+```
+
+Di PowerShell:
+
+```powershell
+$env:CI_ENV="development"; php index.php migrate
+```
+
+Membuktikan setelannya benar-benar sampai: buat berkas sesaat berisi
+`<?php echo $_SERVER['CI_ENV'] ?? '(tidak ada)';`, buka lewat HTTP, lalu hapus.
+Percobaan pertama 27 Jul 2026 gagal justru karena `CI_ENV` ditaruh di `.env`,
+yang dibaca 250 baris terlambat (AGENTS.md §0e).
+
 ## Langkah Import
 
 ### 1. Buat Database

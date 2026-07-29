@@ -413,7 +413,13 @@ $config['sess_regenerate_destroy'] = FALSE;
 $config['cookie_prefix']	= '';
 $config['cookie_domain']	= '';
 $config['cookie_path']		= '/';
-$config['cookie_secure']	= FALSE;
+// Mengikuti environment, BUKAN nilai global. `TRUE` global akan membuat
+// browser menolak cookie sesi pada http://localhost sehingga login lokal
+// putus lintas-request; `FALSE` global adalah keadaan repo selama ini,
+// sementara production diam-diam menambahkan `secure` dari konfigurasi di
+// luar repo — yaitu drift yang membuat repo dan server berbeda tanpa ada
+// yang tahu (butir B11).
+$config['cookie_secure']	= (ENVIRONMENT === 'production');
 $config['cookie_httponly'] 	= TRUE;
 $config['cookie_samesite'] 	= 'Lax';
 
