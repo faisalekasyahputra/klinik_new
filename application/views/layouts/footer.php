@@ -51,21 +51,27 @@
                 </template>
             </div>
 
-            <button @click="chatOpen = true; helpOpen = false" class="mt-4 flex w-full items-center gap-3 rounded-xl p-3 text-left transition-all" style="background-color: var(--portal-btn-bg); border: 1px solid var(--portal-btn-border);">
-                <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" style="background-color: var(--portal-brand); color: var(--portal-bg);">
-                    <i class="fa-solid fa-comments text-sm"></i>
-                </div>
-                <div>
-                    <span class="block text-xs font-bold" style="color: var(--portal-text);">Masih Butuh Bantuan?</span>
-                    <span class="text-[10px]" style="color: var(--portal-text-muted);">Chat langsung dengan kami</span>
-                </div>
-                <i class="fa-solid fa-chevron-right ml-auto text-[10px]" style="color: var(--portal-text-muted);"></i>
-            </button>
+<?php
+/*
+ * B2 — tombol pembuka chat DISEMBUNYIKAN 29 Jul 2026, seiring endpoint-nya
+ * dikarantina. Fiturnya memang SUDAH rusak jauh sebelum ini: ketiga endpoint
+ * menulis/membaca `tb_chat` yang tidak pernah ada di skema mana pun, jadi
+ * yang dihilangkan adalah janji, bukan fungsi. Menampilkan "Chat langsung
+ * dengan kami" yang menuju 404 lebih buruk daripada tidak menampilkannya.
+ * Dibuka kembali hanya lewat keputusan #7 — dan bila "bangun", setelah
+ * migrasi tabel, session_id terikat sesi server, rate limit, dan layar
+ * operator ada.
+ */
+?>
         </div>
     </div>
 
-    <!-- Chat Widget Window -->
-    <div x-show="chatOpen" x-cloak
+    <!-- Chat Widget Window — dikarantina B2: `chatOpen` tidak pernah lagi
+         disetel TRUE karena tombol pembukanya sudah dihilangkan di atas.
+         Markupnya dibiarkan utuh supaya keputusan #7 tetap punya dua pilihan;
+         `x-show="false"` memastikan ia tidak muncul walau ada yang menyalakan
+         state-nya dari console. -->
+    <div x-show="false" x-cloak
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0 translate-y-2 scale-95"
          x-transition:enter-end="opacity-1 translate-y-0 scale-100"

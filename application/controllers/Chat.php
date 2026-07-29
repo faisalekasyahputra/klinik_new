@@ -1,15 +1,43 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+/**
+ * DIKARANTINA 29 Jul 2026 — butir B2.
+ *
+ * Seluruh endpoint eksternal controller ini membalas 404 sampai keputusan #7
+ * (chat dicabut atau dibangun) turun. Ini containment, BUKAN penghapusan:
+ * kode dan model dibiarkan utuh supaya kedua pilihan tetap terbuka.
+ *
+ * Kenapa perlu, padahal fiturnya memang sudah rusak: `api_bot()` berstatus
+ * public sehingga routable lewat GET /Chat/api_bot/<pesan>, dan setiap
+ * panggilan menembak Gemini memakai kunci API dinas — kuota bisa dikuras
+ * anonim tanpa alat khusus. Menjadikan `api_bot()` private saja TIDAK cukup:
+ * `kirim_pesan_lanjutan()` juga public dan memanggilnya, jadi jalur ke Gemini
+ * tetap terbuka. Karena itu ketiga endpoint eksternal ditutup sekaligus.
+ *
+ * CSRF bukan penutup di sini (B12): `csrf_regenerate` FALSE + double-submit
+ * berarti token bisa diambil anonim lewat satu GET.
+ */
 class Chat extends MY_Controller {
 
     public function __construct() {
         parent::__construct();
         $this->load->model('Chat_model');
-        
-   
+
+
     }
+
+    /** Satu pintu penolakan untuk seluruh endpoint yang dikarantina. */
+    private function dikarantina() {
+        show_404();
+    }
+
     public function register_session() {
+        $this->dikarantina();
+        return;
+    }
+
+    private function register_session_dikarantina() {
         $session_id = $this->input->post('session_id', true);
         $nama       = $this->input->post('nama', true);
         $email      = $this->input->post('email', true);
@@ -42,6 +70,11 @@ class Chat extends MY_Controller {
             ->set_output(json_encode($output));
     }
     public function kirim_pesan_lanjutan() {
+        $this->dikarantina();
+        return;
+    }
+
+    private function kirim_pesan_lanjutan_dikarantina() {
         $session_id = $this->input->post('session_id', true);
         $pesan_warga = $this->input->post('pesan', true);
 
@@ -77,7 +110,10 @@ class Chat extends MY_Controller {
     
    
 
-    public function api_bot($pesan_warga) {
+    // PRIVATE sejak 29 Jul 2026 (B2). Sebelumnya public, sehingga routable
+    // lewat GET /Chat/api_bot/<pesan> dan setiap hit anonim menembak Gemini
+    // memakai kunci API dinas.
+    private function api_bot($pesan_warga) {
     // Gunakan API Key murni dari Google AI Studio Anda
    //$pesan_warga = 'Apa Syarat menjadi pengembang';
     $api_key = getenv('GEMINI_API_KEY');
@@ -145,6 +181,18 @@ class Chat extends MY_Controller {
     }
 }
 public function ambil_pesan() {
+    $this->dikarantina();
+    return;
+}
+
+/**
+ * Dikarantina. Catatan untuk keputusan #7 kalau chat jadi dibangun:
+ * `result_array()` di bawah TANPA `select()` mengembalikan SELURUH kolom,
+ * termasuk nama/email/HP warga — dan kuncinya `session_id` buatan browser
+ * (`Math.random()` di footer), jadi siapa pun yang menebaknya bisa membaca
+ * riwayat orang lain (B7). Wajib diperbaiki sebelum route dibuka lagi.
+ */
+private function ambil_pesan_dikarantina() {
     // Tangkap token session_id dari request AJAX
     $session_id = $this->input->post('session_id', true);
 

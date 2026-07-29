@@ -93,10 +93,62 @@ class Forum_model extends CI_Model {
         return $this->db->update('forum_diskusi');
     }
 
-    public function report_komentar($id) {
+    /**
+     * B3 — laporan komentar dicatat per PELAPOR, bukan sekadar penghitung.
+     *
+     * Dulu method ini hanya menaikkan `report_count`, sehingga lima klik dari
+     * satu orang bernilai sama dengan lima orang berbeda. Kini setiap laporan
+     * masuk ledger `forum_laporan_komentar` ber-UNIQUE (id_komentar, user_id),
+     * lalu `report_count` DIHITUNG ULANG dari jumlah pelapor unik — bukan
+     * ditambah. Dengan begitu angka di kolom itu selalu berarti "berapa orang",
+     * dan laporan berulang dari orang yang sama tidak bergerak sama sekali.
+     *
+     * `is_deleted` SENGAJA tidak disentuh: U2 ledger-only. Auto-hide menunggu
+     * keputusan #10 dan, bila dipilih, roadmap moderasi tersendiri yang juga
+     * menyediakan antrean + restore. Lima akun tidak boleh menjadi sensor
+     * permanen tanpa jalan pulang.
+     *
+     * @return array ['success' => bool, 'baru' => bool, 'jumlah' => int]
+     */
+    public function report_komentar($id, $user_id) {
+        $id = (int) $id;
+        $user_id = (int) $user_id;
+
+        $this->db->trans_begin();
+
+        // Kunci baris komentar induknya lebih dulu: dua request paralel dari
+        // pelapor berbeda tidak boleh sama-sama membaca hitungan lama lalu
+        // menuliskan hasil yang sama.
+        $komentar = $this->db->query(
+            'SELECT id_komentar FROM forum_komentar WHERE id_komentar = ? FOR UPDATE', [$id]
+        )->row_array();
+        if ( ! $komentar) {
+            $this->db->trans_rollback();
+            return ['success' => FALSE, 'baru' => FALSE, 'jumlah' => 0];
+        }
+
+        // UNIQUE yang menegakkan "satu laporan per orang"; INSERT kedua dari
+        // orang yang sama ditolak DB, bukan dicegah dengan SELECT-lalu-INSERT
+        // yang bisa kalah balapan.
+        $baru = (bool) $this->db->query(
+            'INSERT IGNORE INTO forum_laporan_komentar (id_komentar, user_id) VALUES (?, ?)',
+            [$id, $user_id]
+        );
+        $baru = $baru && $this->db->affected_rows() === 1;
+
+        $jumlah = (int) $this->db->where('id_komentar', $id)
+            ->count_all_results('forum_laporan_komentar');
+
         $this->db->where('id_komentar', $id);
-        $this->db->set('report_count', 'report_count + 1', FALSE);
-        return $this->db->update('forum_komentar');
+        $this->db->update('forum_komentar', ['report_count' => $jumlah]);
+
+        if ( ! $this->db->trans_status()) {
+            $this->db->trans_rollback();
+            return ['success' => FALSE, 'baru' => FALSE, 'jumlah' => 0];
+        }
+        $this->db->trans_commit();
+
+        return ['success' => TRUE, 'baru' => $baru, 'jumlah' => $jumlah];
     }
 
     /** Auto-hide konten yang dilaporkan >= threshold kali */

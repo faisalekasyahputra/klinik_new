@@ -153,6 +153,9 @@ function db_debug($nyala) {
 function bersihkan() {
     global $db, $jars, $dbConfigPath, $dbConfigAsli;
     file_put_contents($dbConfigPath, $dbConfigAsli, LOCK_EX);
+    $db->query("DELETE FROM forum_laporan_komentar WHERE user_id IN
+        (SELECT id FROM usr_users WHERE email LIKE 'uji_utang_%')");
+    $db->query("DELETE FROM forum_komentar WHERE isi_komentar = 'Komentar uji B3'");
     $db->query("DELETE FROM forum_diskusi WHERE judul_topik LIKE 'Uji utang teknis%'");
     $db->query("DELETE FROM srp2_certified_developers WHERE nama_perusahaan LIKE 'Uji Utang%'");
     $db->query("DELETE FROM usr_users WHERE email LIKE 'uji_utang_%'");
@@ -300,6 +303,69 @@ try {
     cek($adaCookie, 'B11 — server mengirim cookie sesi');
     cek($adaCookie && stripos(implode("\n", $ck[0]), 'Secure') === FALSE,
         'B11 — cookie lokal TANPA atribut Secure (sesi HTTP localhost tidak putus)');
+
+    // ---------------------------------------------------- U2: pintu anonim
+    // B2 — seluruh endpoint Chat eksternal dikarantina, termasuk caller publik
+    // `kirim_pesan_lanjutan()`. Menjadikan api_bot() private saja tidak cukup.
+    foreach (['Chat/register_session', 'Chat/ambil_pesan', 'Chat/kirim_pesan_lanjutan',
+        'Chat/api_bot/halo'] as $u) {
+        cek(http(NULL, $u)['code'] === 404, "B2 — {$u} dikarantina (404)");
+    }
+    $beranda = http(NULL, '')['body'];
+    cek(strpos($beranda, 'Chat langsung dengan kami') === FALSE,
+        'B2 — widget chat tidak dirender ke pengunjung');
+
+    // B6 — alias route saja tidak cukup; CI3 tetap merutekan /Sikaper/index.
+    foreach (['sikaper', 'Sikaper', 'Sikaper/index'] as $u) {
+        cek(http(NULL, $u)['code'] === 404, "B6 — /{$u} ditutup (404)");
+    }
+
+    // B3 — guard login, dedup per pelapor, dan visibilitas TIDAK berubah.
+    $kid = skalar_int("SELECT id_komentar FROM forum_komentar ORDER BY id_komentar LIMIT 1");
+    if ($kid === 0) {
+        // Butuh satu komentar nyata sebagai objek laporan; dibuat lewat DB
+        // karena yang diuji di sini endpoint laporannya, bukan alur balas.
+        $did = skalar_int("SELECT id_diskusi FROM forum_diskusi ORDER BY id_diskusi LIMIT 1");
+        $db->query("INSERT INTO forum_komentar (id_diskusi, nama_komentator, isi_komentar,
+            role, created_at) VALUES ({$did}, 'Uji Utang', 'Komentar uji B3', 'Warga', NOW())");
+        $kid = (int) $db->insert_id;
+    }
+
+    // Token diambil ANONIM lebih dulu — dan itu memang bisa (B12:
+    // `csrf_regenerate` FALSE + double-submit). Kalau POST-nya dikirim tanpa
+    // token, yang menolak adalah CSRF dan uji ini tidak membuktikan apa pun
+    // tentang guard login. Dengan token yang sah, satu-satunya yang tersisa
+    // untuk menahan pengunjung anonim adalah guard login itu sendiri.
+    // Sesi 'anon' punya cookie jar sendiri — double-submit CSRF membandingkan
+    // token di POST dengan cookie, jadi tanpa jar tokennya tidak pernah sah.
+    // Halaman login dipakai karena ia publik DAN merender form; layar forum
+    // tidak menampilkan form apa pun kepada pengunjung yang belum masuk.
+    $tokenAnon = csrf('anon', 'Auth/login');
+    cek($tokenAnon !== '', 'B12 — token CSRF memang bisa diambil anonim (karena itu CSRF bukan gerbangnya)');
+
+    $anonim = http('anon', 'Umum/report_komentar', ['csrf_kpkp_token' => $tokenAnon, 'id' => $kid]);
+    cek(strpos($anonim['body'], 'Login required') !== FALSE,
+        'B3 — laporan anonim ditolak guard login, bukan oleh CSRF');
+    cek(skalar_int("SELECT report_count FROM forum_komentar WHERE id_komentar={$kid}") === 0
+        && skalar_int("SELECT is_deleted FROM forum_komentar WHERE id_komentar={$kid}") === 0,
+        'B3 — laporan anonim tidak mengubah report_count maupun is_deleted');
+
+    $r1 = http('warga', 'Umum/report_komentar',
+        ['csrf_kpkp_token' => csrf('warga', 'Umum/forum'), 'id' => $kid]);
+    cek(strpos($r1['body'], '"baru":true') !== FALSE, 'B3 — laporan pertama dicatat');
+    $r2 = http('warga', 'Umum/report_komentar',
+        ['csrf_kpkp_token' => csrf('warga', 'Umum/forum'), 'id' => $kid]);
+    cek(strpos($r2['body'], '"baru":false') !== FALSE, 'B3 — laporan kedua dikenali sebagai ulangan');
+    cek(skalar_int("SELECT report_count FROM forum_komentar WHERE id_komentar={$kid}") === 1,
+        'B3 — melapor dua kali dari satu akun tetap dihitung SATU');
+    cek(skalar_int("SELECT COUNT(*) c FROM forum_laporan_komentar WHERE id_komentar={$kid}") === 1,
+        'B3 — ledger memuat tepat satu baris pelapor');
+    cek(skalar_int("SELECT is_deleted FROM forum_komentar WHERE id_komentar={$kid}") === 0,
+        'B3 — visibilitas komentar TIDAK berubah (U2 ledger-only)');
+    cek(skalar_int("SELECT COUNT(*) c FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='forum_laporan_komentar'
+        AND INDEX_NAME='uq_forum_laporan_pelapor'") === 2,
+        'B3 — UNIQUE (id_komentar, user_id) terpasang di DB');
 
     // ------------------------------------------------ U4: kejujuran permukaan
     // Bentuk buktinya adalah KETIADAAN: ambil respons anonim, cari literal yang

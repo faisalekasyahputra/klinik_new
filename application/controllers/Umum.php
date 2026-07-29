@@ -374,8 +374,20 @@ class Umum extends MY_Controller {
 			'created_at'      => date('Y-m-d H:i:s')
 		];
 
-		$this->Forum_model->insert_komentar($data);
-		$this->Forum_model->auto_hide_reported(5);
+		if ( ! $this->Forum_model->insert_komentar($data)) {
+			$this->session->set_flashdata('error', 'Balasan belum tersimpan. Coba lagi.');
+			redirect('Umum/detail/' . $id_diskusi);
+			return;
+		}
+
+		// `auto_hide_reported(5)` DICABUT dari sini 29 Jul 2026 (B3/U2).
+		// Dua alasan. Pertama, penempatannya memang ganjil: menyapu auto-hide
+		// sebagai efek samping seseorang membalas komentar. Kedua dan yang
+		// menentukan: U2 ledger-only — laporan dicatat, visibilitas TIDAK
+		// berubah otomatis. Setelah B3 menghitung `report_count` dari pelapor
+		// unik, membiarkan panggilan ini justru membuat lima akun bisa
+		// menyembunyikan diskusi tanpa antrean moderasi dan tanpa jalan pulang.
+		// Auto-hide baru boleh hidup lewat keputusan #10 beserta roadmapnya.
 
 		redirect('Umum/detail/' . $id_diskusi);
 	}
@@ -384,16 +396,58 @@ class Umum extends MY_Controller {
 	// FORUM: Report System (AJAX)
 	// =========================================================
 
+	/**
+	 * B3 — dulu endpoint ini ANONIM: siapa pun bisa memanggilnya berulang kali
+	 * dan menyensor komentar orang lain sendirian. Guard-nya sudah ada beberapa
+	 * baris di bawah, di berkas yang sama (`toggle_like()`), tinggal disalin.
+	 *
+	 * CSRF bukan penutupnya (B12): `csrf_regenerate` FALSE + double-submit
+	 * berarti tokennya bisa diambil anonim lewat satu GET. Yang menutup adalah
+	 * guard login + rate limit + dedup di ledger.
+	 *
+	 * `auto_hide_reported()` SENGAJA tidak lagi dipanggil — U2 ledger-only,
+	 * visibilitas komentar tidak berubah sampai keputusan #10 beserta roadmap
+	 * moderasinya (antrean + restore) tersedia.
+	 */
 	public function report_komentar() {
 		$this->_load_forum();
-		$id = $this->input->post('id');
+
+		if (!$this->is_logged_in()) {
+			echo json_encode(['status' => 'error', 'message' => 'Login required']);
+			return;
+		}
+
+		$id = (int) $this->input->post('id');
 		if (empty($id)) {
 			echo json_encode(['status' => 'error']);
 			return;
 		}
-		$this->Forum_model->report_komentar($id);
-		$this->Forum_model->auto_hide_reported(5);
-		echo json_encode(['status' => 'ok']);
+
+		$rate = $this->rate_limit_consume('forum_report', [
+			'account_id' => (int) $this->get_user_id(),
+			'object_id'  => $id,
+		]);
+		if (empty($rate['success']) || empty($rate['allowed'])) {
+			$this->rate_limit_reject($rate,
+				'Terlalu banyak laporan dalam waktu singkat. Coba lagi sebentar.', TRUE);
+			return;
+		}
+
+		$hasil = $this->Forum_model->report_komentar($id, $this->get_user_id());
+		if (empty($hasil['success'])) {
+			echo json_encode(['status' => 'error', 'message' => 'Komentar tidak ditemukan.']);
+			return;
+		}
+
+		// Pesannya membedakan laporan baru dari laporan ulang, supaya pengguna
+		// tidak menekan berkali-kali mengira laporannya tidak masuk.
+		echo json_encode([
+			'status'  => 'ok',
+			'baru'    => $hasil['baru'],
+			'message' => $hasil['baru']
+				? 'Laporan Anda dicatat.'
+				: 'Anda sudah pernah melaporkan komentar ini.',
+		]);
 	}
 
 	// =========================================================

@@ -123,4 +123,7 @@ $route['cari_wil']                 = 'Index/cari_wil';
 $route['load_more']                = 'Index/load_more';
 
 // --- API Integrations ---
-$route['sikaper']                  = 'Sikaper/index';
+// $route['sikaper'] dicabut 29 Jul 2026 (B6). Menghapus alias SAJA tidak cukup —
+// CI3 tetap merutekan /Sikaper/index secara konvensional, jadi controller dan
+// view-nya ikut dihapus. Library Sikaper_api dan config-nya SENGAJA ditinggal:
+// nasibnya mengikuti keputusan #5 (apakah ada kanal rotasi kredensial).

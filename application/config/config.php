@@ -477,9 +477,9 @@ $config['csrf_exclude_uris'] = array(
     'Index/cari_wil',
     'Index/load_more',
     'Index/buka_foto',
-    'Chat/register_session',
-    'Chat/ambil_pesan',
-    'Chat/kirim_pesan_lanjutan'
+    // Tiga pengecualian Chat DICABUT 29 Jul 2026 (B2). Kalau endpoint-nya
+    // dibuka kembali lewat keputusan #7, pembukaannya tidak boleh otomatis
+    // fail-open tanpa CSRF.
 );
 
 /*

@@ -47,4 +47,14 @@ $config['rate_limit_policies'] = [
         'window' => 60,
         'dimensions' => ['ip', 'account', 'object'],
     ],
+    // B3 — laporan komentar forum. ENTRI policy, bukan mekanisme baru:
+    // §17 poin 15 melarang membuat pembatas laju kedua. Dedup di ledger sudah
+    // menahan laporan berulang untuk komentar YANG SAMA, jadi policy ini
+    // menahan pola lain: membanjiri BANYAK komentar sekaligus. Karena itu
+    // dimensinya ip+account tanpa object.
+    'forum_report' => [
+        'limit' => 10,
+        'window' => 300,
+        'dimensions' => ['ip', 'account'],
+    ],
 ];
