@@ -87,29 +87,37 @@ $terjawab = count($sumber_label) - count($belum_dijawab);
       $ket_label = $sumber_berketerangan[$kode] ?? NULL;
   ?>
     <details class="rounded-2xl border border-gray-200 bg-white dark:border-white/10 dark:bg-brand-card" <?= $ada === 1 ? 'open' : '' ?>>
+      <!-- Gerbang Ada/Tidak Ada ada DI BARIS JUDUL, bukan di dalam badan
+           akordeon. Menaruhnya di dalam memaksa petugas membuka sepuluh
+           akordeon dulu sebelum bisa menjawab apa pun — 20 klik untuk
+           pekerjaan 10 klik. Tombolnya ikut men-toggle <details>, dan itu tidak
+           masalah: form-nya submit lalu halaman dimuat ulang. -->
       <summary class="flex cursor-pointer flex-wrap items-center gap-3 p-4">
-        <span class="flex-1 font-bold text-gray-900 dark:text-white"><?= $e($label) ?></span>
-        <?php if ($ada === 1): ?>
-          <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300">Ada</span>
-        <?php elseif ($ada === 0): ?>
-          <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600 dark:bg-white/5 dark:text-brand-muted">Tidak Ada</span>
+        <span class="min-w-[180px] flex-1 font-bold text-gray-900 dark:text-white"><?= $e($label) ?></span>
+
+        <?php if ($terkunci): ?>
+          <?php if ($ada === 1): ?>
+            <span class="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300">Ada</span>
+          <?php elseif ($ada === 0): ?>
+            <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600 dark:bg-white/5 dark:text-brand-muted">Tidak Ada</span>
+          <?php else: ?>
+            <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">Belum dijawab</span>
+          <?php endif; ?>
         <?php else: ?>
-          <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">Belum dijawab</span>
+          <?php if ($ada === NULL): ?>
+            <span class="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-bold text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">Belum dijawab</span>
+          <?php endif; ?>
+          <form method="post" action="<?= base_url('Rekam_Perumahan/simpan_gerbang') ?>" class="flex items-center gap-1.5">
+            <input type="hidden" name="<?= $e($csrf_name) ?>" value="<?= $e($csrf_hash) ?>">
+            <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
+            <input type="hidden" name="sumber_dana" value="<?= $e($kode) ?>">
+            <button name="ada" value="1" class="rounded-lg px-3 py-1.5 text-xs font-bold <?= $ada === 1 ? 'bg-brand-primary text-brand-dark' : 'border border-gray-200 dark:border-white/10' ?>">Ada</button>
+            <button name="ada" value="0" class="rounded-lg px-3 py-1.5 text-xs font-bold <?= $ada === 0 ? 'bg-gray-500 text-white' : 'border border-gray-200 dark:border-white/10' ?>">Tidak Ada</button>
+          </form>
         <?php endif; ?>
       </summary>
 
       <div class="border-t border-gray-200 p-4 dark:border-white/10">
-
-        <?php if ( ! $terkunci): ?>
-          <form method="post" action="<?= base_url('Rekam_Perumahan/simpan_gerbang') ?>" class="flex flex-wrap items-center gap-2">
-            <input type="hidden" name="<?= $e($csrf_name) ?>" value="<?= $e($csrf_hash) ?>">
-            <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
-            <input type="hidden" name="sumber_dana" value="<?= $e($kode) ?>">
-            <span class="text-sm text-gray-500 dark:text-brand-muted">Sumber dana ini:</span>
-            <button name="ada" value="1" class="rounded-lg px-3 py-2 text-sm font-bold <?= $ada === 1 ? 'bg-brand-primary text-brand-dark' : 'border border-gray-200 dark:border-white/10' ?>">Ada</button>
-            <button name="ada" value="0" class="rounded-lg px-3 py-2 text-sm font-bold <?= $ada === 0 ? 'bg-gray-500 text-white' : 'border border-gray-200 dark:border-white/10' ?>">Tidak Ada</button>
-          </form>
-        <?php endif; ?>
 
         <?php if ($ada === 0): ?>
           <p class="mt-3 text-sm text-gray-500 dark:text-brand-muted">
@@ -238,7 +246,12 @@ $terjawab = count($sumber_label) - count($belum_dijawab);
   </section>
 
   <?php if ( ! $terkunci): ?>
-    <section class="sticky bottom-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-brand-card">
+    <!-- SENGAJA tidak sticky. Sebagai bar melayang ia menutupi blok BNBA di
+         desktop dan memakan seperempat layar ponsel (teksnya membungkus jadi
+         empat baris) — konten di bawahnya jadi tidak terjangkau. Halaman ini
+         punya penunjuk progres di kepala, jadi tombol Kirim tidak perlu
+         mengikuti gulir. -->
+    <section class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-brand-card">
       <form method="post" action="<?= base_url('Rekam_Perumahan/kirim') ?>"
             class="flex flex-wrap items-center gap-3"
             onsubmit="return confirm('Kirim laporan periode ini? Setelah terkirim, laporan terkunci dan hanya Admin Bidang yang bisa membukanya kembali.')">

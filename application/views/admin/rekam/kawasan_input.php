@@ -294,7 +294,9 @@ foreach ($intervensi as $row) {
   </section>
 
   <?php if ( ! $terkunci): ?>
-    <section class="sticky bottom-0 rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-brand-card">
+    <!-- Sama seperti layar Perumahan: tidak sticky, karena sebagai bar melayang
+         ia menutupi konten di bawahnya dan memakan seperempat layar ponsel. -->
+    <section class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-brand-card">
       <form method="post" action="<?= base_url('Rekam_Kawasan/kirim') ?>"
             class="flex flex-wrap items-center gap-3"
             onsubmit="return confirm('Kirim laporan periode ini? Setelah terkirim, laporan terkunci.')">
