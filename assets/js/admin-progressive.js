@@ -100,11 +100,27 @@
         // Hanya controller dashboard; logout/portal biar navigasi penuh.
         if (/Auth\//.test(link.pathname)) return;
         if (!PATH_DASHBOARD.test(link.pathname)) return;
+        // S2 — opt-out dihormati SEBELUM fetch. Tautan yang sengaja ditandai
+        // tidak boleh difetch dulu lalu baru jatuh ke navigasi penuh: itu dua
+        // GET untuk satu klik, dan endpoint yang menghitung kunjungan jadi
+        // naik dua kali.
+        if (link.hasAttribute('data-no-page-transition')
+            || link.closest('[data-no-page-transition]')) return;
         e.preventDefault();
         loadPage(link.href, true);
     });
 
+    // S1 — entry AWAL direkam sebelum pushState pertama, supaya Back dari
+    // halaman pertama tidak menghasilkan popstate ber-state null (URL berubah,
+    // isi layar tetap).
+    if (!history.state || !history.state.adminUrl) {
+        history.replaceState({ adminUrl: window.location.href }, '', window.location.href);
+    }
+
     window.addEventListener('popstate', function (e) {
-        if (e.state && e.state.adminUrl) { loadPage(e.state.adminUrl, false); }
+        if (e.state && e.state.adminUrl) { loadPage(e.state.adminUrl, false); return; }
+        // State kosong = entry yang tidak kita rekam. Muat URL aktif supaya isi
+        // layar selalu cocok dengan alamatnya.
+        loadPage(window.location.href, false);
     });
 })();

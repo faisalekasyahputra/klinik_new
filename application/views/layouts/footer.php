@@ -482,6 +482,12 @@ function globalSystem() {
         // Area yang PASTI berdiri sendiri (shell auth/dashboard, aksi sesi):
         // langsung navigasi penuh tanpa membuang satu fetch percobaan.
         if (/(login|register|daftar|Auth\/|akun|admin|Admin|Pengaturan|User_Profile)/.test(link.pathname)) return;
+        // S2 — opt-out dihormati SEBELUM fetch, bukan sesudah. Tanpa ini,
+        // tautan yang sengaja ditandai tetap difetch dulu lalu baru jatuh ke
+        // navigasi penuh: dua GET untuk satu klik, dan `Umum::detail()`
+        // menaikkan `view_count` dua kali per klik.
+        if (link.hasAttribute('data-no-page-transition')
+            || link.closest('[data-no-page-transition]')) return;
         e.preventDefault();
         // Key dari atribut sendiri, atau pinjam dari link nav lain ber-href sama.
         var key = link.getAttribute('data-tab-key');
@@ -492,10 +498,25 @@ function globalSystem() {
         loadTab(link.getAttribute('href'), key, true);
     });
 
+    // S1 — entry AWAL direkam sebagai state, sebelum pushState pertama.
+    // Tanpa ini, Back dari halaman pertama menghasilkan popstate ber-state
+    // null: URL kembali ke alamat lama sementara isinya tetap halaman kedua.
+    if (!history.state || !history.state.tabUrl) {
+        var kunciAwal = null;
+        var navAwal = document.querySelector('[data-tab-link][data-tab-key].active, [data-tab-link][data-tab-key][aria-current]');
+        if (navAwal) kunciAwal = navAwal.getAttribute('data-tab-key');
+        history.replaceState({ tabUrl: window.location.href, tabKey: kunciAwal }, '', window.location.href);
+    }
+
     window.addEventListener('popstate', function (e) {
         if (e.state && e.state.tabUrl) {
             loadTab(e.state.tabUrl, e.state.tabKey, false);
+            return;
         }
+        // State kosong = entry yang tidak pernah kita rekam (mis. hasil
+        // navigasi penuh). Muat URL yang sedang aktif supaya isi layar selalu
+        // cocok dengan alamatnya — jangan diam.
+        loadTab(window.location.href, null, false);
     });
 })();
 </script>
