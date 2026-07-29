@@ -494,6 +494,17 @@ class MY_Controller extends CI_Controller {
      * @param array  $data Data untuk view
      */
     protected function render_user_dashboard($view, $data = []) {
+        if ($this->input->is_ajax_request()) {
+            // Cabang partial untuk loader progresif dashboard — pola yang sama
+            // dengan render() portal. Judul dikirim lewat header supaya
+            // document.title ikut diperbarui tanpa membungkus HTML.
+            if (! empty($data['title'])) {
+                $this->output->set_header('X-Page-Title: ' . rawurlencode($data['title']));
+            }
+            $data['dashboard_menu'] = $this->dashboard_menu();
+            $this->load->view($view, $data);
+            return;
+        }
         $data['dashboard_menu'] = $this->dashboard_menu();
         $data['content'] = $this->load->view($view, $data, TRUE);
         $this->load->view('admin/index', $data);

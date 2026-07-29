@@ -128,8 +128,17 @@ $kelas_status = [
     </div>
 </div>
 
+<?php // Chart.js dimuat DI SINI, bukan di head admin — satu-satunya halaman
+      // yang memakainya; halaman admin lain tak perlu membayar ~200KB. ?>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-document.addEventListener('alpine:init', () => {
+(() => {
+    // alpine:init hanya menembak sekali di load penuh. Saat konten di-swap
+    // loader progresif, Alpine sudah ada — langsung init.
+    if (window.Alpine) { initOverviewChart(); }
+    else { document.addEventListener('alpine:init', () => initOverviewChart()); }
+
+    function initOverviewChart() {
     setTimeout(() => {
         const ctx = document.getElementById('overviewChart');
         if (!ctx) return;
@@ -159,5 +168,6 @@ document.addEventListener('alpine:init', () => {
             }
         });
     }, 100);
-});
+    }
+})();
 </script>

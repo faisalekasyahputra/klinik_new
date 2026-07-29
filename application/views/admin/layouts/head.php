@@ -25,7 +25,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <?php // Hasil panen kelas view admin — first paint bergaya penuh tanpa
+          // menunggu CDN. Regenerasi: php docs/engineering/panen_tailwind.php admin
+          // CDN di bawah DIUBAH ke defer (dulu blocking: layar putih sampai
+          // ~110KB JS termuat & seluruh CSS di-generate ulang di setiap load)
+          // dan kini hanya jaring pengaman untuk kelas yang belum terpanen. ?>
+    <link rel="stylesheet" href="<?= base_url('assets/css/tailwind-admin.css?v=' . filemtime('assets/css/tailwind-admin.css')) ?>">
+    <script defer src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -51,10 +57,18 @@
     <!-- Alpine.js -->
     <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- Phosphor Icons -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Loader progresif dashboard: klik sidebar/link internal = swap #main-content, bukan full reload -->
+    <script defer src="<?= base_url('assets/js/admin-progressive.js?v=' . filemtime('assets/js/admin-progressive.js')) ?>"></script>
+    <style>
+        /* Penanda aktif sidebar saat navigasi progresif (di-set aria-current oleh loader).
+           Meniru kelas aktif server-side di admin/layouts/sidebar.php. */
+        aside a[aria-current="page"] { background: #eff6ff; color: #1d4ed8; }
+        .dark aside a[aria-current="page"] { background: rgba(214, 251, 0, .1); color: #d6fb00; }
+    </style>
+    <!-- Phosphor Icons — defer: ikon menyusul sepersekian detik, halaman tidak menunggu -->
+    <script defer src="https://unpkg.com/@phosphor-icons/web"></script>
+    <?php // Chart.js DIPINDAH ke satu-satunya view pemakainya (admin/dashboard.php)
+          // — dulu ~200KB blocking dimuat di SEMUA halaman admin. ?>
     <style>
         [x-cloak] { display: none !important; }
         /* Main Content Entry Animation */

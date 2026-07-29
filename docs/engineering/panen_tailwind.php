@@ -27,11 +27,22 @@
  */
 
 $root = dirname(__DIR__, 2);
-$dirs = [
-    $root . '/application/views/pages',
-    $root . '/application/views/layouts',
-    $root . '/application/views/components',
-];
+// Mode: 'portal' (default) atau 'admin'. Shell admin punya config sendiri
+// (darkMode class + warna brand) sehingga dipanen terpisah.
+$mode = $argv[1] ?? 'portal';
+if ($mode === 'admin') {
+    $dirs = [$root . '/application/views/admin'];
+    $out_css = 'tailwind-admin.css';
+    $config_js = "tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['\"Plus Jakarta Sans\"', 'sans-serif'] }, colors: { brand: { primary: '#d6fb00', hover: '#b5d400', light: '#ecffb6', muted: '#8aacb0', dark: '#0a1a1f', card: '#0f2933' } } } } };";
+} else {
+    $dirs = [
+        $root . '/application/views/pages',
+        $root . '/application/views/layouts',
+        $root . '/application/views/components',
+    ];
+    $out_css = 'tailwind-generated.css';
+    $config_js = '';
+}
 
 $tokens = [];
 $files = [];
@@ -83,7 +94,7 @@ if (!in_array(\$_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], TRUE)) { htt
 if ((\$_SERVER['HTTP_X_HARVEST_TOKEN'] ?? '') !== '$token_auth') { http_response_code(403); exit; }
 \$css = file_get_contents('php://input');
 if (strlen(\$css) < 1000) { http_response_code(422); exit('css terlalu kecil'); }
-\$n = file_put_contents(__DIR__ . '/assets/css/tailwind-generated.css', "/* Hasil panen kelas view portal — regenerasi: docs/engineering/panen_tailwind.php */\\n" . \$css, LOCK_EX);
+\$n = file_put_contents(__DIR__ . '/assets/css/$out_css', "/* Hasil panen kelas view ($mode) — regenerasi: php docs/engineering/panen_tailwind.php $mode */\\n" . \$css, LOCK_EX);
 header('Content-Type: application/json');
 echo json_encode(['written' => \$n]);
 PHP
@@ -96,6 +107,7 @@ file_put_contents($root . '/uji_harvest_tailwind.html', <<<HTML
 <meta charset="utf-8">
 <title>Panen Tailwind</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script>$config_js</script>
 </head>
 <body>
 <p id="status">memanen…</p>
