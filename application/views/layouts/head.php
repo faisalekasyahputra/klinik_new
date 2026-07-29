@@ -35,6 +35,12 @@
     <link rel="stylesheet" href="<?= base_url('assets/css/design-system.css?v=' . filemtime('assets/css/design-system.css')) ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/tailwind.min.css') ?>">
+    <?php // Hasil panen kelas view portal (varian sm:* dst. yang TIDAK ada di
+          // tailwind.min.css beku Jun 2026) — tanpa ini first paint telanjang
+          // sampai CDN runtime selesai dan halaman "bergerak". Regenerasi:
+          // php docs/engineering/panen_tailwind.php. CDN di bawah tetap ada
+          // sebagai jaring pengaman untuk kelas yang belum terpanen. ?>
+    <link rel="stylesheet" href="<?= base_url('assets/css/tailwind-generated.css?v=' . filemtime('assets/css/tailwind-generated.css')) ?>">
     <script defer src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
