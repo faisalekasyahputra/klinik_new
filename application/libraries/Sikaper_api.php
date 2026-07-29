@@ -33,7 +33,14 @@ class Sikaper_api {
 
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Sementara dimatikan untuk dev lokal jika bermasalah dgn SSL
+        // B4 — SENGAJA belum diperbaiki, dan itu bukan kelalaian. Library ini
+        // NOL PEMANGGIL sejak controller publik Sikaper dicabut (B6), jadi
+        // baris ini tidak pernah dieksekusi. Nasibnya mengikuti keputusan #5:
+        // bila integrasinya dipertahankan, rotasi kredensial dulu lalu TLS
+        // dinyalakan sebelum diaktifkan kembali; bila dicabut, berkas ini
+        // hilang seluruhnya. Memolesnya sekarang berarti merapikan kode yatim
+        // yang mungkin dibuang besok.
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 

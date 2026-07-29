@@ -123,7 +123,8 @@ class Index extends MY_Controller {
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, $full_url);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
 			curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
 			$response = curl_exec($ch);
@@ -175,7 +176,8 @@ class Index extends MY_Controller {
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, $full_url);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
 			curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0'); 
 			$response = curl_exec($ch);
@@ -236,7 +238,8 @@ class Index extends MY_Controller {
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, $full_url);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
 			curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
 			$response = curl_exec($ch);
@@ -306,7 +309,8 @@ class Index extends MY_Controller {
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, $full_url);
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
+			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
 			curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0'); 
 			$response = curl_exec($ch);
@@ -383,7 +387,8 @@ class Index extends MY_Controller {
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url_asli);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 		curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
 		$gambar_mentah = curl_exec($ch);
@@ -575,7 +580,8 @@ class Index extends MY_Controller {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $full_url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
             curl_setopt($ch, CURLOPT_TIMEOUT, 30);
             curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0'); 
 

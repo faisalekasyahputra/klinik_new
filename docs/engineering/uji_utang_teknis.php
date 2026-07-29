@@ -315,6 +315,74 @@ try {
     cek($adaCookie && stripos(implode("\n", $ck[0]), 'Secure') === FALSE,
         'B11 — cookie lokal TANPA atribut Secure (sesi HTTP localhost tidak putus)');
 
+    // ------------------------------------------------------- U3: B4 TLS
+    // Pemeriksaan STATIS atas empat berkas yang kliennya masih aktif. Chat dan
+    // Sikaper_api dikecualikan dengan sengaja: keduanya nol pemanggil setelah
+    // U2, dan nasibnya mengikuti keputusan #7 / #5.
+    $berkasAktif = ['application/controllers/Index.php', 'application/controllers/Umum.php',
+        'application/controllers/Sikumbang.php', 'application/libraries/Ternak_api.php'];
+    $lolos = [];
+    foreach ($berkasAktif as $rel) {
+        foreach (file(APP_ROOT . '/' . $rel) as $no => $baris) {
+            if (strpos($baris, 'CURLOPT_SSL_VERIFYPEER') !== FALSE && stripos($baris, 'false') !== FALSE) {
+                $lolos[] = $rel . ':' . ($no + 1);
+            }
+        }
+    }
+    cek($lolos === [], 'B4 — nol CURLOPT_SSL_VERIFYPEER false di klien yang masih aktif'
+        . ($lolos ? ' — ' . implode(', ', $lolos) : ''));
+
+    $verifyhost = 0;
+    foreach ($berkasAktif as $rel) {
+        $verifyhost += substr_count(file_get_contents(APP_ROOT . '/' . $rel), 'CURLOPT_SSL_VERIFYHOST, 2');
+    }
+    cek($verifyhost === 10, "B4 — sepuluh titik memasang VERIFYHOST=2 (ditemukan {$verifyhost})");
+
+    // ------------------------------------------------------- U3: B9 fail-closed
+    // Dijalankan di PROSES ANAK dengan environment sendiri: kunci/pepper harus
+    // benar-benar hilang saat library dikonstruksi, dan itu mustahil dilakukan
+    // di dalam proses yang sudah memuatnya.
+    $probe = APP_ROOT . '/docs/engineering/_probe_b9.php';
+    file_put_contents($probe, '<?php define("BASEPATH","x");'
+        . 'require dirname(__DIR__,2)."/application/libraries/Encryption_lib.php";'
+        . 'function log_message($a,$b){}'
+        . '$e=new Encryption_lib();$h=[];'
+        . 'foreach ([["encrypt","12345"],["decrypt","dGVzdGluZ3Rlc3Rpbmd0ZXN0aW5ndGVzdGluZw=="],'
+        . '["deterministic_hash","12345"]] as [$m,$a]) {'
+        . ' try { $e->$m($a); $h[$m]="lolos"; } catch (RuntimeException $x) { $h[$m]="melempar"; } }'
+        . 'echo json_encode($h);');
+
+    $jalankanProbe = function (array $env) use ($probe) {
+        $p = proc_open([PHP_BINARY, $probe], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes, APP_ROOT, array_merge(getenv(), $env));
+        $out = stream_get_contents($pipes[1]);
+        fclose($pipes[1]); fclose($pipes[2]);
+        proc_close($p);
+        return json_decode($out, TRUE) ?: [];
+    };
+
+    $tanpaKunci = $jalankanProbe(['KPKP_DATA_KEY' => '', 'KPKP_DATA_PEPPER' => 'x']);
+    cek(($tanpaKunci['encrypt'] ?? '') === 'melempar',
+        'B9 — encrypt() melempar saat KPKP_DATA_KEY hilang (bukan menyimpan plaintext)');
+    cek(($tanpaKunci['decrypt'] ?? '') === 'melempar',
+        'B9 — decrypt() melempar saat kunci hilang (bukan menyajikan ciphertext sebagai plaintext)');
+
+    $tanpaPepper = $jalankanProbe(['KPKP_DATA_PEPPER' => '']);
+    cek(($tanpaPepper['deterministic_hash'] ?? '') === 'melempar',
+        'B9 — deterministic_hash() melempar saat KPKP_DATA_PEPPER hilang');
+
+    // Secret diambil dari .env dan dioper eksplisit: probe adalah skrip berdiri
+    // sendiri yang tidak mem-bootstrap CodeIgniter, jadi ia tidak pernah
+    // mengurai .env sendiri seperti yang dilakukan index.php.
+    $lengkap = $jalankanProbe([
+        'KPKP_DATA_KEY'    => $env['KPKP_DATA_KEY'] ?? '',
+        'KPKP_DATA_PEPPER' => $env['KPKP_DATA_PEPPER'] ?? '',
+    ]);
+    cek(($lengkap['encrypt'] ?? '') === 'lolos' && ($lengkap['decrypt'] ?? '') === 'lolos'
+        && ($lengkap['deterministic_hash'] ?? '') === 'lolos',
+        'B9 — dengan secret lengkap, ketiganya berjalan normal');
+    @unlink($probe);
+
     // ---------------------------------------------------- U2: pintu anonim
     // B2 — seluruh endpoint Chat eksternal dikarantina, termasuk caller publik
     // `kirim_pesan_lanjutan()`. Menjadikan api_bot() private saja tidak cukup.
