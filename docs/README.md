@@ -20,6 +20,7 @@ Folder ini berisi seluruh dokumentasi teknis proyek Klinik PKP yang telah distru
 | [PRD_WARGA_ADMIN_KABKOTA.md](./product/PRD_WARGA_ADMIN_KABKOTA.md) | Kartu Domain alur warga ↔ admin kab/kota (antrean perumahan): kepemilikan, scope wilayah, transisi status |
 | [PRD_PELUNASAN_UTANG_TEKNIS.md](./product/PRD_PELUNASAN_UTANG_TEKNIS.md) | PRD penutupan utang teknis dari inventaris terverifikasi 29 Jul 2026: tiga kelompok (kepercayaan publik/keamanan/fitur mati), prinsip urutan, definisi selesai, dan 8 keputusan user yang memblokir |
 | [ROADMAP_PELUNASAN_UTANG_TEKNIS.md](./product/ROADMAP_PELUNASAN_UTANG_TEKNIS.md) | Roadmap U0–U6 pelunasan utang teknis: butir yang ditutup per tahap, berkas yang disentuh, cara membuktikan (termasuk uji balik), dan risiko regresi |
+| [PRD_REKAM_DATA.md](./product/PRD_REKAM_DATA.md) | PRD Rekam Data (pelaporan capaian Kab/Kota) pengganti dua Google Form dinas: struktur kedua form apa adanya, 6 cacat form yang ditemukan, keputusan user 29 Jul 2026, skema 5 tabel |
 
 ---
 
@@ -34,6 +35,7 @@ Folder ini berisi seluruh dokumentasi teknis proyek Klinik PKP yang telah distru
 | [ANCHOR_DASHBOARD_TERPADU.md](./architecture/ANCHOR_DASHBOARD_TERPADU.md) | **ANCHOR** dashboard terpadu multi-role: keputusan arsitektur final + registry modul + rencana 5 fase — wajib dibaca sebelum menyentuh apa pun berbau dashboard |
 | [SKEMA_DATA_FORM_WARGA_SIMPERUM.md](./architecture/SKEMA_DATA_FORM_WARGA_SIMPERUM.md) | Kamus field dari 50 gambar, dependensi cabang, katalog dropdown, dan rancangan tabel pendataan warga/SIMPERUM |
 | [KONTRAK_INTEGRASI_SIMPERUM_API.md](./architecture/KONTRAK_INTEGRASI_SIMPERUM_API.md) | Kontrak GET SIMPERUM, auth MD5, mapping canonical, keamanan, blocker desil, dan checklist aktivasi |
+| [SKEMA_DATA_REKAM_DATA.md](./architecture/SKEMA_DATA_REKAM_DATA.md) | ERD Rekam Data, analisis normalisasi 1NF→BCNF, DDL 6 tabel terpasang, pemetaan field form→kolom, pola query rekap, dan 10 bukti uji constraint |
 | [flowchart.mmd](./architecture/flowchart.mmd) | Kode sumber diagram Mermaid (Flowchart) |
 
 ---
@@ -57,6 +59,7 @@ Folder ini berisi seluruh dokumentasi teknis proyek Klinik PKP yang telah distru
 | [BUKTI_BROWSER_WARGA_R7.md](./engineering/BUKTI_BROWSER_WARGA_R7.md) | Bukti uji browser nyata (desktop + mobile) untuk wizard, riwayat, dan antrean admin |
 | [UJI_FRESH_WARGA_R7.md](./engineering/UJI_FRESH_WARGA_R7.md) | Prosedur runner DB fresh: import baseline → migrasi 1→20 → seluruh check R1–R7 |
 | [PAKET_PRESENTASI_WARGA_R7.md](./engineering/PAKET_PRESENTASI_WARGA_R7.md) | Paket presentasi alur warga untuk dinas (skenario demo + tiket contoh) |
+| [STRUKTUR_FORM_SUMBER_REKAM_DATA.md](./engineering/STRUKTUR_FORM_SUMBER_REKAM_DATA.md) | **Bukti mentah** struktur dua Google Form dinas (Perumahan 170 item/21 hal, Kawasan 178 item/22 hal), metode ekstraksi, peta percabangan, daftar nilai verbatim, dan 8 cacat form berikut lokasinya — form Perumahan wajib login, jadi ini satu-satunya salinan yang bisa dibaca agent |
 
 ---
 
