@@ -73,6 +73,7 @@
 
         <!-- Card 4: Wizard Kelayakan Warga -->
         <a href="<?= base_url('warga/pendataan') ?>"
+           data-tab-link data-tab-key="warga_pendataan"
            class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"
            style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-brand); box-shadow: var(--portal-shadow); min-height: 140px;">
             <span class="absolute right-3 top-3 z-20 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wider"

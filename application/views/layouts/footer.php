@@ -284,6 +284,7 @@ function globalSystem() {
         golek_omah: 'perumahan',
         cari_rumah: 'perumahan',
         solusi_pembiayaan: 'perumahan',
+        warga_pendataan: 'perumahan',
         etalase: 'perumahan',
         sebaran: 'kawasan',
         sebaran_rusun: 'kawasan',
@@ -392,7 +393,7 @@ function globalSystem() {
         wrapper.style.transition = 'opacity 0.12s ease-out';
         wrapper.style.opacity = '1';
         var pageSkeleton = SKELETON_HTML;
-        if (/pengembang\/(sertifikasi|syarat|formulir|profil|dokumen)/i.test(url)) {
+        if (/pengembang\/(sertifikasi|syarat|formulir|profil|dokumen)|warga\/pendataan/i.test(url)) {
             pageSkeleton = '<div class="page-skeleton animate-pulse min-h-full py-4 sm:py-6 px-1 sm:px-2">'
                 + '<div class="h-3 w-16 rounded bg-[color:var(--portal-skeleton)] mb-2"></div>'
                 + '<div class="h-7 w-64 rounded bg-[color:var(--portal-skeleton)] mb-4"></div>'
@@ -417,7 +418,10 @@ function globalSystem() {
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
             .then(function (res) {
                 if (myToken !== loadToken) return null;
-                if (!res.ok) { window.location.href = url; return null; }
+                // res.redirected: halaman ber-guard (mis. warga/pendataan tanpa
+                // login) me-redirect ke /login — tanpa cek ini halaman login
+                // UTUH tersuntik ke dalam panel. Jatuhkan ke navigasi penuh.
+                if (!res.ok || res.redirected) { window.location.href = url; return null; }
                 return res.text();
             })
             .then(function (html) {
