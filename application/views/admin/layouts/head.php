@@ -32,7 +32,24 @@
           // dan kini hanya jaring pengaman untuk kelas yang belum terpanen. ?>
     <link rel="stylesheet" href="<?= base_url('assets/css/tailwind-admin.css?v=' . filemtime('assets/css/tailwind-admin.css')) ?>">
     <script defer src="https://cdn.tailwindcss.com"></script>
-    <script>
+    <?php // `type="module"` WAJIB, jangan dilepas. Skrip inline biasa dieksekusi
+          // saat parsing — sebelum CDN yang `defer` di atas jalan — sehingga
+          // `tailwind` masih undefined dan SELURUH config di bawah hilang tanpa
+          // suara. CDN lalu berjalan dengan default `darkMode: 'media'`, jadi
+          // setiap kelas `dark:*` yang belum terpanen mengikuti preferensi OS,
+          // BUKAN tombol tema. Akibat nyatanya: di mode terang pada perangkat
+          // ber-OS gelap, `text-gray-900 dark:text-white` tetap putih — teks
+          // putih di kartu putih. Logo sidebar, "Portal Klinik PKP", dan tiap
+          // judul kartu tidak terbaca. Warna `brand-*` tetap benar sepanjang
+          // itu waktu karena datang dari CSS hasil panen, bukan dari CDN, dan
+          // itulah yang menyamarkan bug ini sejak `defer` ditambahkan.
+          //
+          // Skrip `type="module"` ditunda seperti `defer` DAN dieksekusi
+          // menurut urutan dokumen, jadi ia jalan sesudah CDN. Diverifikasi:
+          // tailwind.config.darkMode terbaca 'class', dan judul kartu
+          // rgb(17,24,39) di terang / rgb(255,255,255) di gelap.
+          // `defer` pada skrip inline TIDAK berlaku — spesifikasi mengabaikannya. ?>
+    <script type="module">
         tailwind.config = {
             darkMode: 'class',
             theme: {
