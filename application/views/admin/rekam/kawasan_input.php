@@ -120,7 +120,7 @@ foreach ($intervensi as $row) {
         </div>
 
         <?php if ( ! $terkunci): ?>
-          <button class="rounded-xl bg-brand-primary px-4 py-2 text-sm font-bold text-brand-dark">Simpan ringkasan</button>
+          <button class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover">Simpan ringkasan</button>
         <?php endif; ?>
       </fieldset>
     </form>
@@ -251,7 +251,7 @@ foreach ($intervensi as $row) {
         </div>
 
         <div class="mt-3 flex flex-wrap gap-2">
-          <button class="rounded-xl bg-brand-primary px-4 py-2 text-sm font-bold text-brand-dark">
+          <button class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover">
             <?= $sedang_diubah ? 'Simpan perubahan' : 'Tambah intervensi' ?>
           </button>
           <?php if ($sedang_diubah): ?>
@@ -311,7 +311,7 @@ foreach ($intervensi as $row) {
             Laporan siap dikirim.
           <?php endif; ?>
         </span>
-        <button class="rounded-xl bg-brand-primary px-4 py-2 text-sm font-bold text-brand-dark">Kirim laporan</button>
+        <button class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover">Kirim laporan</button>
       </form>
     </section>
   <?php endif; ?>

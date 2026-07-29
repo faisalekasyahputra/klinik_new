@@ -193,7 +193,7 @@ $bisa_diputus   = $laporan['status'] === 'terkirim' && ! $sudah_ditinjau;
           <p class="text-sm text-gray-500 dark:text-brand-muted">
             Laporan tetap terkunci untuk kabupaten dan ditandai sudah ditinjau.
           </p>
-          <button class="mt-2 rounded-xl bg-brand-primary px-4 py-2 text-sm font-bold text-brand-dark">
+          <button class="mt-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover">
             Terima laporan
           </button>
         </form>

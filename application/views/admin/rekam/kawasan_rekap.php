@@ -50,7 +50,7 @@ $nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
         Bukan berarti capaiannya nol — laporannya memang belum dikirim.
       </p>
       <a href="<?= base_url('Rekam_Kawasan?tahun=' . (int) $tahun . '&bulan=' . (int) $bulan) ?>"
-         class="mt-4 inline-block rounded-xl bg-brand-primary px-4 py-2 text-sm font-bold text-brand-dark">
+         class="mt-4 inline-block rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover">
         Buka Input Capaian periode ini
       </a>
     </section>

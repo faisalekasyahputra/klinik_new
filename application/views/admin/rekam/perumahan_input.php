@@ -70,7 +70,7 @@ $terjawab = count($sumber_label) - count($belum_dijawab);
       <?= (int) $terjawab ?> dari <?= count($sumber_label) ?> sumber dana sudah dijawab
     </p>
     <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-black/30">
-      <div class="h-full bg-brand-primary" style="width: <?= (int) round($terjawab / max(1, count($sumber_label)) * 100) ?>%"></div>
+      <div class="h-full bg-blue-600 dark:bg-brand-primary" style="width: <?= (int) round($terjawab / max(1, count($sumber_label)) * 100) ?>%"></div>
     </div>
   </section>
 
@@ -111,7 +111,7 @@ $terjawab = count($sumber_label) - count($belum_dijawab);
             <input type="hidden" name="<?= $e($csrf_name) ?>" value="<?= $e($csrf_hash) ?>">
             <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
             <input type="hidden" name="sumber_dana" value="<?= $e($kode) ?>">
-            <button name="ada" value="1" class="rounded-lg px-3 py-1.5 text-xs font-bold <?= $ada === 1 ? 'bg-brand-primary text-brand-dark' : 'border border-gray-200 dark:border-white/10' ?>">Ada</button>
+            <button name="ada" value="1" class="rounded-lg px-3 py-1.5 text-xs font-bold <?= $ada === 1 ? 'bg-blue-600 text-white dark:bg-brand-primary dark:text-brand-dark' : 'border border-gray-200 dark:border-white/10' ?>">Ada</button>
             <button name="ada" value="0" class="rounded-lg px-3 py-1.5 text-xs font-bold <?= $ada === 0 ? 'bg-gray-500 text-white' : 'border border-gray-200 dark:border-white/10' ?>">Tidak Ada</button>
           </form>
         <?php endif; ?>
@@ -190,7 +190,7 @@ $terjawab = count($sumber_label) - count($belum_dijawab);
             </p>
 
             <?php if ( ! $terkunci): ?>
-              <button class="mt-3 rounded-xl bg-brand-primary px-4 py-2 text-sm font-bold text-brand-dark">
+              <button class="mt-3 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover">
                 Simpan <?= $e($label) ?>
               </button>
             <?php endif; ?>
@@ -267,7 +267,7 @@ $terjawab = count($sumber_label) - count($belum_dijawab);
         <button <?= $belum_dijawab ? 'disabled' : '' ?>
           class="rounded-xl px-4 py-2 text-sm font-bold <?= $belum_dijawab
             ? 'cursor-not-allowed bg-gray-200 text-gray-500 dark:bg-white/5 dark:text-brand-muted'
-            : 'bg-brand-primary text-brand-dark' ?>">
+            : 'bg-blue-600 text-white dark:bg-brand-primary dark:text-brand-dark' ?>">
           Kirim laporan
         </button>
       </form>
