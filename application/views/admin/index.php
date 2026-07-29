@@ -1,5 +1,5 @@
 <?php $this->load->view('admin/layouts/head'); ?>
-<?php $this->load->view('components/notification_center'); ?>
+<?php $this->load->view('components/notification_center'); $this->load->view('components/file_viewer_modal'); ?>
 
 <div x-data="{ sidebarOpen: false, desktop: window.innerWidth >= 768 }"
      x-init="sidebarOpen = desktop"

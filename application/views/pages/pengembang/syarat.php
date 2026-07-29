@@ -258,7 +258,7 @@
                                     <?php // Pemohon bisa membuka kembali berkas yang sudah dia kirim —
                                           // tanpa ini "perbaiki Form 4" tidak bisa ditindaklanjuti karena
                                           // dia tak punya cara memeriksa apa yang dulu diunggah. ?>
-                                    <a :href="baseUrl + 'Pengembang/lihat_dokumen_saya/' + registrationId + '/' + key" target="_blank" rel="noopener"
+                                    <a :href="baseUrl + 'Pengembang/lihat_dokumen_saya/' + registrationId + '/' + key" data-file-view :data-file-title="dokumen[key]" target="_blank" rel="noopener"
                                        class="rounded-md px-2 py-1.5 text-[10px] font-bold" style="color:var(--teal);background:rgba(0,163,181,.08)" title="Buka berkas yang tersimpan">
                                         <i class="fa-solid fa-eye"></i> Lihat
                                     </a>

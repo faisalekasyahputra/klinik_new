@@ -4,7 +4,7 @@
    	<?php $this->load->view('layouts/head'); ?>
   </head>
   <body class="bg-[#0a1a1f] text-[#ecffb6] h-screen overflow-hidden flex flex-col" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;" x-data="globalSystem()">
-       <?php $this->load->view('components/notification_center'); ?>
+       <?php $this->load->view('components/notification_center'); $this->load->view('components/file_viewer_modal'); ?>
        <?php $this->load->view('layouts/nav'); ?>
        <?php
          // ---- Determine active tab from current controller/method ----

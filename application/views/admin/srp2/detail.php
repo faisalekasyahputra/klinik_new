@@ -32,7 +32,7 @@ $safe_url = function ($url) {
             <div class="flex items-center justify-between py-3 gap-3">
                 <span class="text-sm text-gray-700 dark:text-gray-300"><?= html_escape($label) ?></span>
                 <?php if ($doc): ?>
-                <a href="<?= base_url('Admin_Srp2/lihat_dokumen/' . $pendaftar->id . '/' . $key) ?>" target="_blank" rel="noopener" class="shrink-0 text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline">Lihat berkas</a>
+                <a href="<?= base_url('Admin_Srp2/lihat_dokumen/' . $pendaftar->id . '/' . $key) ?>" data-file-view data-file-title="<?= html_escape($label) ?>" target="_blank" rel="noopener" class="shrink-0 text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline">Lihat berkas</a>
                 <?php else: ?>
                 <span class="shrink-0 text-xs text-gray-400 dark:text-brand-muted/60">Belum diunggah</span>
                 <?php endif; ?>
