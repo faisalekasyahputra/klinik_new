@@ -26,6 +26,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
             <button type="button" id="kpkp-file-close" aria-label="Tutup" style="border:0;background:rgba(10,26,31,.06);border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:1rem;line-height:1">✕</button>
         </div>
         <p id="kpkp-file-loading" style="margin:auto;font-size:.85rem;color:#5b7a80">Memuat berkas…</p>
+        <div id="kpkp-file-message" role="status" style="display:none;margin:auto;max-width:34rem;padding:1.5rem;text-align:center">
+            <div style="width:44px;height:44px;margin:0 auto .9rem;border-radius:999px;background:rgba(220,38,38,.1);color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:1.35rem;font-weight:900">!</div>
+            <p id="kpkp-file-message-text" style="margin:0;font-size:.9rem;line-height:1.6;color:#0a1a1f"></p>
+            <button type="button" id="kpkp-file-message-close" style="margin-top:1.1rem;border:0;border-radius:10px;padding:.5rem 1.1rem;font-size:.8rem;font-weight:700;cursor:pointer;background:#0a1a1f;color:#fff">Mengerti</button>
+        </div>
         <iframe id="kpkp-file-frame" title="Pratinjau berkas" style="flex:1;border:0;width:100%;display:none"></iframe>
     </div>
 </dialog>
@@ -37,6 +42,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
     var ttl = document.getElementById('kpkp-file-title');
     var newtab = document.getElementById('kpkp-file-newtab');
     var loading = document.getElementById('kpkp-file-loading');
+    var msgBox = document.getElementById('kpkp-file-message');
+    var msgText = document.getElementById('kpkp-file-message-text');
     var blobUrl = null;
     if (!dlg || !dlg.showModal) return; // browser purba: biarkan href asli bekerja
 
@@ -44,13 +51,42 @@ defined('BASEPATH') OR exit('No direct script access allowed');
         frame.src = 'about:blank';
         frame.style.display = 'none';
         loading.style.display = '';
+        msgBox.style.display = 'none';
+        newtab.style.display = '';
         if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; }
+    }
+
+    /**
+     * Tampilkan kondisi DI DALAM modal dan biarkan bertahan sampai pengguna
+     * menutupnya sendiri. Dulu jalur ini menutup modal lalu navigasi penuh —
+     * pengulangan masalah "halaman mati sedikit" dalam bentuk kecil.
+     */
+    function tampilkanPesan(teks) {
+        loading.style.display = 'none';
+        frame.style.display = 'none';
+        newtab.style.display = 'none'; // berkasnya tidak ada; tab baru tak menolong
+        msgText.textContent = teks;
+        msgBox.style.display = '';
+    }
+
+    /** Ambil pesan flash dari HTML balasan (blob JSON milik pusat notifikasi). */
+    function pesanDariHtml(html) {
+        try {
+            var doc = new DOMParser().parseFromString(html, 'text/html'); // tidak mengeksekusi script
+            var blob = doc.querySelector('script[data-kpkp-flash-notifications]');
+            var list = blob ? JSON.parse(blob.textContent || '[]') : [];
+            for (var i = 0; i < list.length; i++) {
+                if (list[i] && list[i].message) return String(list[i].message);
+            }
+        } catch (err) { /* jatuh ke pesan umum di bawah */ }
+        return '';
     }
     // tutup() dipanggil EKSPLISIT di tiap jalur penutupan, bukan hanya lewat
     // event 'close' — event antrean itu terbukti bisa tidak tiba di sebagian
     // lingkungan. tutup() idempoten, dobel panggil aman.
     dlg.addEventListener('close', tutup); // jalur ESC
     document.getElementById('kpkp-file-close').addEventListener('click', function () { dlg.close(); tutup(); });
+    document.getElementById('kpkp-file-message-close').addEventListener('click', function () { dlg.close(); tutup(); });
     dlg.addEventListener('click', function (e) { if (e.target === dlg) { dlg.close(); tutup(); } }); // klik backdrop
 
     document.addEventListener('click', function (e) {
@@ -64,10 +100,15 @@ defined('BASEPATH') OR exit('No direct script access allowed');
         fetch(a.href, { credentials: 'same-origin' })
             .then(function (r) {
                 var ct = (r.headers.get('content-type') || '');
-                // text/html = bukan berkas (mis. redirect "berkas hilang" +
-                // flash) -> tutup modal, navigasi penuh agar pesannya tampil.
+                // text/html = bukan berkas, melainkan halaman (mis. redirect
+                // "berkas hilang" + flash). Pesannya dipanen dari HTML itu dan
+                // ditampilkan DI DALAM modal — modal tidak menutup sendiri.
                 if (!r.ok || r.redirected || ct.indexOf('text/html') !== -1) {
-                    dlg.close(); window.location.href = a.href; return null;
+                    return r.text().then(function (html) {
+                        tampilkanPesan(pesanDariHtml(html)
+                            || 'Berkas ini belum dapat ditampilkan. Silakan coba lagi atau hubungi admin.');
+                        return null;
+                    });
                 }
                 return r.blob();
             })
@@ -79,7 +120,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                 loading.style.display = 'none';
                 frame.style.display = '';
             })
-            .catch(function () { dlg.close(); window.location.href = a.href; });
+            .catch(function () {
+                tampilkanPesan('Berkas gagal dimuat. Periksa koneksi Anda lalu coba lagi.');
+            });
     });
 })();
 </script>
