@@ -674,6 +674,24 @@ class Housing_assessment_model extends CI_Model {
             ->limit(1)->get('sf_housing_queue')->row_array();
     }
 
+    /**
+     * Riwayat perjalanan satu pengajuan, untuk PEMILIKNYA.
+     *
+     * Barisnya sudah lama ditulis submit/transition/revisi tapi tidak pernah
+     * ditampilkan ke pemohon — dia hanya melihat satu status terakhir dan
+     * menunggu dalam gelap. WHERE user_id di join menjaga kepemilikan.
+     */
+    public function get_owned_timeline($queue_id, $user_id)
+    {
+        return $this->db
+            ->select('h.from_status, h.to_status, h.note, h.created_at')
+            ->from('sf_riwayat_keputusan_antrean h')
+            ->join('sf_housing_queue q', 'q.id = h.queue_id')
+            ->where(['h.queue_id' => (int) $queue_id, 'q.user_id' => (int) $user_id])
+            ->order_by('h.id', 'ASC')
+            ->get()->result_array();
+    }
+
     public function get_scoped_queue_detail($queue_id, $kabupaten_id = NULL)
     {
         $this->db->select('q.*,p.kode_program,p.nama_program,r.eligibility_status,r.ruleset_version,r.reason_codes_json')

@@ -66,6 +66,31 @@ class Warga extends MY_Controller {
         ]);
     }
 
+    /**
+     * Pemohon membuka kembali bukti yang sudah dia unggah.
+     *
+     * Tanpa ini warga hanya melihat badge "Sudah tersimpan" tanpa cara
+     * memastikan yang terunggah memang berkas yang benar — dan saat petugas
+     * meminta perbaikan, dia tidak punya rujukan apa pun. Pola yang sama
+     * sudah terbukti di Pengembang::lihat_dokumen_saya() (T3).
+     *
+     * Kepemilikan disaring get_owned_files() (WHERE user_id di model), jadi
+     * assessment milik orang lain mengembalikan daftar kosong -> 404.
+     */
+    public function lihat_bukti($assessment_id = NULL, $file_kind = NULL)
+    {
+        if ( ! is_numeric($assessment_id) || empty($file_kind)) { show_404(); return; }
+        $files = $this->Housing_assessment_model->get_owned_files(
+            (int) $assessment_id, (int) $this->get_user_id()
+        );
+        $file = $files[$file_kind] ?? NULL;
+        if ( ! $file) { show_404(); return; }
+
+        $this->serve_private_file(
+            'warga_assessment', $file['storage_assessment_id'], $file['private_path'], $file['mime_type']
+        );
+    }
+
     private function handle_post()
     {
         $action = (string) $this->input->post('action', TRUE);

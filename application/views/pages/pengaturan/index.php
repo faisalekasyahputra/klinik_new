@@ -56,6 +56,32 @@
                             <span class="font-bold">Catatan admin:</span> <?= htmlspecialchars($item['catatan_admin']) ?>
                         </p>
                         <?php endif; ?>
+                        <?php
+                        // Perjalanan pengajuan — barisnya sudah lama dicatat server
+                        // (sf_riwayat_keputusan_antrean) tapi tak pernah ditampilkan,
+                        // jadi pemohon cuma melihat satu status dan menunggu dalam gelap.
+                        $riwayat = $item['riwayat'] ?? [];
+                        if (count($riwayat) > 1):
+                            $label_status = [
+                                'pending' => 'Dikirim, menunggu verifikasi',
+                                'needs_revision' => 'Diminta perbaikan',
+                                'approved' => 'Disetujui',
+                                'rejected' => 'Ditolak',
+                            ];
+                        ?>
+                        <details class="mt-2">
+                            <summary class="cursor-pointer text-xs font-bold text-gray-500 dark:text-brand-muted">Lihat perjalanan pengajuan (<?= count($riwayat) ?> langkah)</summary>
+                            <ol class="mt-2 space-y-1.5 border-l-2 border-gray-200 dark:border-white/10 pl-3">
+                                <?php foreach ($riwayat as $jejak): ?>
+                                <li class="text-xs text-gray-600 dark:text-brand-muted">
+                                    <span class="font-bold text-gray-900 dark:text-white"><?= htmlspecialchars($label_status[$jejak['to_status']] ?? $jejak['to_status']) ?></span>
+                                    <span class="ml-1 whitespace-nowrap text-[11px]"><?= htmlspecialchars(date('d M Y, H:i', strtotime($jejak['created_at']))) ?></span>
+                                    <?php if (!empty($jejak['note'])): ?><span class="block whitespace-normal italic"><?= htmlspecialchars($jejak['note']) ?></span><?php endif; ?>
+                                </li>
+                                <?php endforeach; ?>
+                            </ol>
+                        </details>
+                        <?php endif; ?>
                     </div>
                     <div class="flex w-full shrink-0 flex-row flex-wrap items-center justify-between gap-2 sm:w-auto sm:flex-col sm:flex-nowrap sm:items-end">
                         <span class="inline-flex px-3 py-1 rounded-full text-xs font-bold border <?= $kelas_badge[$item['status_kelas']] ?? $kelas_badge['pending'] ?>"><?= htmlspecialchars($item['status_label']) ?></span>

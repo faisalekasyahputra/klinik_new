@@ -10,6 +10,7 @@ class Pengaturan extends MY_Controller {
         }
         $this->load->model('User_model');
         $this->load->model('Auth_model');
+        $this->load->model('Housing_assessment_model');
         $this->load->helper('housing_queue');
     }
 
@@ -45,6 +46,9 @@ class Pengaturan extends MY_Controller {
                     ? 'Mulai Perbaikan' : null,
                 'catatan_admin' => $r->catatan_admin,
                 'is_simulation' => $r->source_mode === 'simulation',
+                // Perjalanan pengajuan, bukan cuma status terakhir — supaya
+                // pemohon tahu sudah sampai mana dan apa yang sudah terjadi.
+                'riwayat' => $this->Housing_assessment_model->get_owned_timeline($r->id, (int) $user_id),
             ];
         }
 
