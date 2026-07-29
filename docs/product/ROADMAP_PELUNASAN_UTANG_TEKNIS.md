@@ -1,97 +1,144 @@
 # Roadmap Pelunasan Utang Teknis
 
-> Disusun 29 Juli 2026 dari inventaris utang teknis terverifikasi 29 Juli (22 butir
-> aktif, kode A/B/C). Argumen urutannya ada di
+> Disusun 29 Juli 2026 dari 22 label inventaris prioritas A/B/C, lalu dikoreksi
+> dengan S1–S9. Argumen urutannya ada di
 > [`PRD_PELUNASAN_UTANG_TEKNIS.md`](./PRD_PELUNASAN_UTANG_TEKNIS.md) §4 — roadmap ini
 > menjalankannya, tidak mengulang alasannya.
+
+**Status:** **DRAFT TERKOREKSI — dilarang push/migrasi production sebelum gate
+rilis §Runbook terpenuhi.**
+
+> **Koreksi pasca-commit `ac42941`:** angka 22 adalah label inventaris awal, bukan
+> jumlah total utang. S1–S9 ditambahkan ke tahap S0. U0 dan U1 adalah satu unit
+> rilis atomik; menghapus alias `/sikaper` saja tidak menutup controller CI3; dan
+> seluruh harness wajib mengisolasi DB serta `PRIVATE_UPLOADS_PATH`.
+
+> **Pesan untuk agent pelaksana:** jangan push branch auto-deploy, jangan menjalankan
+> runner fresh lama, dan jangan menyentuh perubahan agent lain. Mulai di holding
+> branch, baca P0 serta Runbook sampai habis, kerjakan satu paket yang dapat
+> dibuktikan, lalu minta review independen sebelum meminta izin rilis.
 
 **Urutan tahap TIDAK mengikuti urutan kode temuan.** A1 tidak dikerjakan lebih dulu
 karena namanya A1. Susunannya: yang mengubah sifat kegagalan seluruh sistem → yang
 menjadi berbahaya justru karenanya → pintu anonim termurah → saluran keluar →
 kejujuran permukaan publik → keputusan besar yang tertunda.
 
-Berkas uji tunggal untuk seluruh roadmap: **`docs/engineering/uji_utang_teknis.php`**
-(PHP CLI + curl + `assert()`, exit code non-nol kalau gagal). Tiap tahap MENAMBAH blok
-assert ke berkas yang sama — jangan bikin berkas kedua.
+Satu pintu pengujian memanggil dua runner: **`docs/engineering/uji_utang_teknis.php`**
+untuk PHP/HTTP/DB dan runner browser untuk S1/S2. Curl tidak menjalankan JavaScript;
+History API dan hitungan request tidak boleh dinyatakan lulus dari runner PHP.
+
+Runner belum boleh dijalankan sebelum memakai worktree+vhost Apache uji terpisah,
+DB ber-prefix uji, `.env` uji dengan `PRIVATE_UPLOADS_PATH` unik, dan
+`SITE_URL` host uji unik, serta `SetEnv CI_ENV testing` pada vhost tersebut. Child
+CLI juga harus menerima `CI_ENV=testing`; environment child tidak diwarisi Apache.
+`.env` dibuat minimal dari nol, satu definisi per key, memakai key/pepper sintetis
+unik—jangan menyalin secret dev/production. Set `SIMPERUM_MODE=simulation`, arahkan
+Gemini ke stub lokal, karantina endpoint Chat, dan deny network egress selain stub.
+Tolak redirect/request keluar origin host uji. Larang production/upstream nyata tanpa
+flag izin, gunakan recovery marker,
+bersihkan kegagalan biasa di `finally`, dan bersihkan resource yatim hard-kill pada
+run berikutnya. Mutation proof tetap di salinan sekali pakai. Runner yang hanya
+mengganti `DB_NAME` tidak memenuhi kontrak ini.
+
+**Urutan eksekusi wajib (mengalahkan urutan nomor heading):**
+**P0 → logika U1 → konfigurasi U0 → uji+rilis U0/U1 atomik → S0 sisanya → U2–U6.**
+
+## P0 — Preflight keselamatan
+
+**Status saat dokumen ini diperbaiki: BELUM TERPENUHI.** Edit dokumentasi di
+worktree branch auto-deploy yang bercampur pekerjaan domain lain bukan holding
+worktree dan tidak memberi izin memulai implementasi.
+
+1. Buat holding branch yang tidak auto-deploy dan pastikan perubahan agent lain
+   tidak ikut.
+2. Kirim ledger sebelas keputusan §6 PRD kepada user pada hari pertama agar jawaban
+   A/B/C/S dapat berjalan paralel dengan U1. B10 sudah diputuskan dan tidak ditanya
+   ulang sebagai “belum diverifikasi”.
+3. Perbaiki S5/harness pada worktree+vhost uji terpisah. `.env` vhost uji memuat
+   `SITE_URL` unik, DB/upload sementara, mode SIMPERUM simulasi, key/pepper 64-hex
+   sintetis, dan `GEMINI_API_URL` stub lokal. Jangan salin `.env` utama; tepat satu
+   definisi tiap key. Endpoint Chat tetap dikarantina dan egress non-stub ditolak.
+   Redirect/form/action dan request aplikasi wajib same-origin; asset CDN yang sudah
+   ada di layout di-intercept ke fixture lokal atau diblokir eksplisit—tidak perlu
+   divendor dalam roadmap ini. Buat recovery marker
+   untuk hard-kill. Jangan menjalankan
+   runner lama untuk membuktikan fix ini; gunakan pemeriksaan statis + fixture kecil.
+4. Tutup S8 preflight: selaraskan status dokumen, set `migration_version` ke migrasi
+   tertinggi dari **seluruh `application/migrations/*.php` yang tracked di commit
+   rilis**, pastikan
+   tooling tidak memanggil `migration->current()`, dan buat check yang merah bila
+   versinya dimundurkan.
+5. Siapkan vhost lokal utama `CI_ENV=development` dan buktikan login HTTP lokal tetap
+   lintas-request.
+6. Baru implementasikan logika U1. Setelah seluruh uji U1 hijau dengan
+   `db_debug=FALSE`, implementasikan U0 dan jalankan paket penuh.
 
 ---
 
-## U0 — Hentikan drift repo ↔ production, dan kirim pertanyaannya hari ini
+## U0 — Siapkan environment fail-closed (JANGAN dirilis tanpa U1)
 
-**Tujuan.** Nol setelan keamanan yang hidup hanya di server dan mati setiap deploy —
-plus, di hari yang sama, user menerima tabel keputusan supaya jamnya mulai berjalan
-paralel dengan tahap berikutnya.
+**Tujuan.** Nol setelan keamanan yang hidup hanya di server, tanpa membuat
+`.htaccess` bersama memaksa localhost menjadi production.
 
-**Butir yang ditutup:** B1, B11.
+**Butir yang disiapkan:** B1, B11. Keduanya baru **ditutup** setelah paket U0+U1
+dirilis dan diverifikasi bersama.
 
 **Isi:**
 
-- **[B1] Taruh `SetEnv CI_ENV production` di `.htaccess` REPO, bukan di server.**
-  Ini akar yang benar, bukan gejalanya. Catatan F1 inventaris: `git log -S"SetEnv CI_ENV" -- .htaccess`
-  **kosong** — baris itu tidak pernah ada di repo; `.htaccess` server sudah identik
-  dengan repo SEBELUM rilis 29 Juli (hash sama di server, `fbd72a8`, dan `2f83243`),
-  jadi baris itu hilang sebelum rilis, bukan tertimpa olehnya. Memperbaikinya dengan
-  login ke panel hosting = menjadwalkan kejadian yang sama untuk rilis berikutnya.
-- **[B1, lapis kedua] Pertimbangkan default fail-closed di `index.php:56`.**
-  Hari ini: `define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development')`.
-  Default `development` adalah pola "pengaman yang mati diam-diam saat konfigurasinya
-  kosong" yang sudah punya baris sendiri di tabel pola kegagalan §19. Perubahannya
-  satu baris, tapi ia **mengubah perilaku instalasi lokal setiap developer** — jadi
-  keputusannya dicatat eksplisit di tahap ini, bukan diselipkan. Kalau diambil,
-  `.env`/vhost lokal wajib menyetel `CI_ENV=development` dan itu masuk
-  `docs/engineering/SETUP_DATABASE.md`.
-- **[B11] `cookie_secure = TRUE` di `config/config.php`.** TERBANTAH sebagai bug di
-  production (cookie ber-`secure` + HSTS aktif), tapi akarnya identik dengan B1:
-  setelan keamanan yang hidup hanya di luar repo. Instalasi baru dari repo akan lahir
-  tanpa `secure`. Satu baris, satu tema, satu tahap.
-- **[Deliverable ke USER, bukan catatan kaki] Kirim tabel §6 PRD** — delapan
-  keputusan, masing-masing dengan pilihan dan konsekuensinya. Ini yang membuka U4, U5,
-  U6 dan sebagian U3. Dikirim di U0 justru karena waktu berpikir user tidak boleh
-  antre di belakang pekerjaan kode.
-- **[Aksi user, tidak bisa dipercepat agent] Terapkan `.htaccess` yang sudah berisi
-  `SetEnv` ke production** lewat File Manager/SSH atau lewat rilis berikutnya.
-  Sampai itu terjadi, B1 **belum selesai di production** walau selesai di repo — tulis
-  apa adanya.
+- **[B1] Ubah default `index.php:56` menjadi `production` bila `CI_ENV` hilang.**
+  Ini fail-closed: deploy yang kehilangan konfigurasi tetap aman.
+- **[Lokal wajib eksplisit]** Sebelum perubahan kode, vhost/konfigurasi Apache XAMPP
+  yang tidak ikut Git menyetel `SetEnv CI_ENV development`. Dokumentasikan di
+  `SETUP_DATABASE.md`. Jangan membaca `CI_ENV` dari `.env` dengan urutan bootstrap
+  sekarang karena `.env` baru dimuat sesudah konstanta ditetapkan.
+- **[Larangan] Jangan taruh `SetEnv CI_ENV production` tanpa kondisi di `.htaccess`
+  repo.** Berkas yang sama dipakai localhost dan akan mengubah seluruh instalasi
+  menjadi production.
+- **[B11] Setel cookie berdasarkan environment:**
+  `cookie_secure = (ENVIRONMENT === 'production')`. Jangan `TRUE` global karena
+  browser akan menolak cookie sesi Secure pada localhost HTTP.
+- **[Containment darurat, opsional, izin user]** konfigurasi server production boleh
+  disetel manual ke `production` untuk menghentikan bocoran sebelum rilis atomik,
+  tetapi dicatat sebagai sementara dan tetap diikuti U1 secepatnya.
 
-**Berkas yang disentuh:** `.htaccess`, `application/config/config.php`,
-`index.php` (kalau lapis kedua diambil), `docs/engineering/SETUP_DATABASE.md`
-(kalau lapis kedua diambil).
+**Berkas yang disentuh:** `index.php`, `application/config/config.php`,
+`docs/engineering/SETUP_DATABASE.md`. `.htaccess` repo tidak diberi environment
+global.
 
 **Cara membuktikan:**
 
-1. Lokal: `curl -s http://localhost/klinik_new/Umum/info_rumah | grep -c "A PHP Error"` → **0**.
-2. Lokal: `curl -sI http://localhost/klinik_new/ | grep -i "set-cookie"` → memuat
-   `secure` (di lingkungan HTTPS; di HTTP lokal cukup buktikan nilainya di config
-   sudah TRUE dan catat batas ujinya).
-3. Production, setelah user menerapkan: `curl -s https://<host>/Umum/info_rumah` →
-   nol `A PHP Error was encountered`, nol `/home/u504551489`. **Ini yang membedakan
-   "selesai di repo" dari "selesai".**
-4. **Uji balik:** hapus baris `SetEnv` dari `.htaccess` lokal, ulangi (1) → path server
-   muncul lagi. Kalau tidak muncul, `.htaccess` lokalmu tidak dibaca dan uji (1) tidak
-   membuktikan apa pun.
+1. Lokal HTTP tetap dapat login lintas-request dan cookie sesi **tidak** memiliki
+   atribut `Secure`; diagnostic lokal memastikan environment `development`.
+2. Salinan aplikasi tanpa `CI_ENV` memakai environment `production` dan cookie
+   `Secure`.
+3. Canary sintetis pada vhost uji sengaja memicu notice dan galat DB: respons tidak
+   memuat warning, SQL, atau path absolut. Smoke production memeriksa beberapa route
+   aktif untuk pola yang sama; `/Umum/info_rumah` bukan canary permanen karena S9
+   boleh mencabutnya.
+4. **Uji balik:** di salinan/worktree sekali pakai, kembalikan default ke
+   `development` dan hilangkan env; canary membocorkan error lagi.
 
 **Risiko regresi.** Tinggi dan terarah — inilah tahap paling berbahaya di seluruh
 roadmap justru karena perbaikannya benar:
 
-- **Setelah tahap ini, kegagalan tulis di production menjadi SENYAP.** `db_debug`
+- **U0 dilarang dipush sendiri.** Setelah environment production aktif, kegagalan
+  tulis menjadi senyap. `db_debug`
   ikut mati (`database.php:85`: `'db_debug' => (ENVIRONMENT !== 'production')`).
   Enam titik flash "berhasil" tanpa cek (A5) mulai berbohong, dan rate limit forum
-  (C1b) mulai terlewati diam-diam. **U1 adalah mitigasinya dan tidak boleh berjarak
-  jauh dari U0.** Kalau U1 tidak bisa segera menyusul, tunda penerapan ke production
-  — bukan tunda perbaikan repo-nya.
-- Kalau lapis kedua (`index.php:56`) diambil, developer yang belum menyetel `CI_ENV`
-  lokal akan tiba-tiba kehilangan tampilan error. Itu tujuannya, tapi ia akan terbaca
-  sebagai "aplikasinya rusak".
+  (C1b) dapat terlewati. Selesaikan dan uji U1 di working tree yang sama, lalu buat
+  satu commit/rilis.
+- Developer tanpa konfigurasi vhost lokal akan kehilangan tampilan error. Preflight
+  lokal wajib selesai sebelum mengubah default.
 
 **Beban.** Menit di sisi repo. Bagian production menunggu user.
 
 ---
 
-## U1 — Yang menjadi berbahaya justru karena U0
+## U1 — Tutup jalur tulis senyap, lalu rilis U0+U1 secara atomik
 
-**Tujuan.** Tidak ada layar yang mengatakan "berhasil" tanpa memeriksa hasil tulis,
-dan forum benar-benar bisa diposting — dua kelas yang efeknya baru muncul setelah
-lampu sorot U0 dipadamkan.
+**Tujuan.** Tidak ada layar yang mengatakan “berhasil” tanpa memeriksa hasil tulis,
+forum benar-benar bisa diposting, dan perubahan environment U0 tidak pernah hidup
+sendirian di production.
 
 **Butir yang ditutup:** A5, C1, C1b (verifikasi).
 
@@ -118,11 +165,11 @@ lampu sorot U0 dipadamkan.
   benarnya sudah ada di `User_model.php:36-53`. Untuk aksi satu tabel cukup periksa
   nilai balik / `affected_rows()`; untuk yang menyentuh lebih dari satu tabel,
   `trans_start()`/`trans_complete()`/`trans_status()`.
-- **[C1b] Verifikasi ulang perilaku dengan `db_debug` FALSE.** Setel
-  `$db['default']['db_debug'] = FALSE` di `application/config/database.php:85` secara
-  eksplisit, kembalikan sesudahnya. **JANGAN lewat `CI_ENV=production`** — itu ikut
-  mematikan tampilan error untuk semua sebab lain, sehingga uji yang gagal karena hal
-  lain jadi tak terlihat (§19 langkah 12).
+- **[C1b] Verifikasi ulang perilaku dengan `db_debug` FALSE** di DB dan salinan
+  konfigurasi worktree/vhost uji. Jangan menyunting `database.php` utama dan jangan
+  memakai production sebagai instrumen tes.
+- **[Gate rilis]** setelah seluruh assert U0+U1 hijau, commit sebagai satu unit.
+  Tidak ada push per-tahap. Terapkan runbook production di bagian akhir dokumen.
 
 **Berkas yang disentuh:** `application/helpers/forum_helper.php`,
 `application/controllers/Umum.php`, `application/controllers/Admin_Users.php`,
@@ -139,7 +186,9 @@ lampu sorot U0 dipadamkan.
 3. **Dengan `db_debug` FALSE**, POST `Admin_Users` buat akun staff dengan email yang
    sudah ada → flash **BERBUNYI GAGAL** dan menyebut sebabnya; `SELECT COUNT(*) FROM usr_users`
    tidak bertambah.
-4. **Uji balik (ini definisi selesainya):** kembalikan `'diskusi'` mentah ke
+4. Enam titik A5 masing-masing dipaksa gagal di DB uji → tidak satu pun memberi
+   flash sukses dan tidak ada transaksi parsial.
+5. **Uji balik (ini definisi selesainya):** kembalikan `'diskusi'` mentah ke
    `forum_helper.php:75`, jalankan skrip → **MERAH**. Lalu buang satu pemeriksaan
    hasil tulis di `Admin_Users.php`, jalankan lagi → **MERAH**. Skrip yang tidak
    pernah gagal tidak membuktikan apa pun.
@@ -161,12 +210,104 @@ lampu sorot U0 dipadamkan.
 
 ---
 
+## S0 — Stabilkan alur terbaru dan alat pembuktiannya
+
+**Tujuan.** Klaim “alur Warga/UI selesai” kembali sesuai kode nyata, dan tidak ada
+harness yang dapat merusak data/file pengembangan.
+
+**Butir yang ditutup:** S1, S2, gate bukti simulasi S3, S5, S6, S8, S9, serta
+kejujuran UI S4. Cleanup/retensi S4 dan implementasi audit S7 menunggu keputusan #9;
+dua gate kondisional S3 menunggu keputusan #11.
+
+**Urutan internal:**
+
+1. **[S5 — prasyarat P0]** verifikasi runner memakai worktree+vhost Apache uji,
+   `.env` uji berisi DB/upload sementara, recovery marker hard-kill, dan tidak pernah
+   menyentuh root upload atau `.env` dev. Environment child saja tidak cukup.
+2. **[S1]** portal dan admin memanggil `history.replaceState()` untuk entry awal
+   sebelum `pushState()` pertama. `popstate` harus memuat URL entry walau state
+   kosong. Jangan membuat router baru; perbaiki dua loader yang sudah ada.
+3. **[S2]** hormati `data-no-page-transition` sebelum `fetch`; batasi loader ke
+   tautan partial yang dikenal atau kontrak response partial. Full-document,
+   download, file privat, dan aksi ber-side-effect langsung memakai navigasi native.
+4. **[S3]** pakai matriks simulasi `SIM-2026-01` yang sudah dikunci di PRD §3.5
+   sebagai satu sumber server+UI. Submit membaca ledger assessment versi aktif dan
+   memakai resolver storage yang sama dengan `files_with_storage_owner()`: revisi
+   dapat menunjuk file fisik assessment lama melalui `storage_assessment_id`.
+   `realpath` wajib tetap di root privat; file harus `is_file`+`is_readable`, ukuran
+   dan SHA-256 cocok dengan ledger. Validasi hanya `file_kind` wajib untuk track aktif:
+   kind yang tidak relevan diabaikan, sedangkan KTP/KK yang overlap boleh dipakai
+   ulang. Jangan menambah `track_at_upload` atau memaksa reupload tanpa kebijakan
+   freshness resmi. Dua bukti calon-lahan kondisional belum menjadi gate sampai
+   keputusan #11; jangan menebak trigger-nya.
+5. **[S6]** jalur `Admin::update_status()` memakai policy
+   `admin_queue_decision` yang sama dengan Admin Kab/Kota, dimensi akun+objek.
+6. **[S7 — BLOCKED keputusan #9]** setelah retensi audit ditetapkan, tambah migrasi
+   audit. Refresh SIMPERUM memakai `attempt_id` unik: `requested` commit sebelum
+   network call; `succeeded` atomik dengan snapshot/profile yang disimpan; `failed`
+   mencatat kelas galat tanpa payload PII. Canonical diff plaintext memakai domain-
+   separated HMAC `KPKP_AUDIT_PEPPER` (64 hex → binary key) dan golden vector, bukan
+   SHA/ciphertext AES-GCM. Cache hit yang me-reencrypt nilai sama tidak boleh tampak
+   sebagai perubahan. `sf_riwayat_keputusan_antrean` tetap sumber transisi; audit
+   generik hanya mereferensikan riwayat keputusan.
+7. **[S9]** karena `Umum/info_rumah` adalah halaman legacy rusak dan tidak punya
+   pemanggil internal, pilihan default paling kecil adalah mencabut method+view.
+   Kalau user menyatakan masih dibutuhkan, render lewat layout aktif dan buat
+   perjalanan fungsionalnya.
+8. **[S8 — prasyarat P0]** verifikasi status production/urutan rilis sudah selaras.
+   Setiap commit migrasi menyetel `migration_version` ke nomor tertinggi dari seluruh
+   berkas migrasi yang tracked di commit; tidak ada konsep “di luar scope” bagi
+   `latest()`. Check juga menolak worktree kotor/untracked dan memastikan tooling
+   tidak memanggil `migration->current()`.
+9. **[S4]** segera ganti janji UI “Hapus Akun Secara Permanen” dengan dampak yang
+   benar: akun/login dihapus, data layanan mengikuti kebijakan retensi. Cleanup DB,
+   audit, backup, snapshot, dan file fisik tetap **BLOCKED** sampai keputusan #9.
+
+**Berkas utama:** `application/views/layouts/footer.php`,
+`assets/js/admin-progressive.js`, `application/views/pages/umum/forum.php`,
+`application/models/Housing_assessment_model.php`, `application/controllers/Warga.php`,
+`application/views/pages/warga/pendataan.php`, `application/controllers/Admin.php`,
+`application/models/User_model.php`, `application/controllers/Pengaturan.php`,
+`application/views/pages/pengaturan/profil.php`, `application/controllers/Umum.php`,
+`application/libraries/Simperum_gateway.php`, `docs/engineering/uji_warga_fresh_r7.php`,
+konfigurasi migrasi, serta dokumentasi status yang bertentangan. Tabel audit baru
+hanya masuk setelah keputusan #9.
+
+**Cara membuktikan:**
+
+1. Runner browser portal dan admin: A→B→Back→Forward; URL, judul, konten, dan menu
+   aktif selalu cocok.
+2. Satu klik detail forum menghasilkan satu request dan `view_count` naik satu.
+3. Setiap cabang Warga: hilangkan satu bukti wajib simulasi atau biarkan ledger
+   menunjuk file hilang → submit ditolak; lengkapi matriks → berhasil tepat sekali.
+4. Runner fresh memakai fixture ID yang sama dengan dev; hash folder upload dev
+   sebelum/sesudah identik. Simulasi hard-kill meninggalkan hanya resource uji
+   terisolasi dan run berikutnya membersihkannya.
+5. Request keputusan ke-ambang+1 pada kedua role admin → `429` + `Retry-After`.
+6. Setelah keputusan #9, `requested` dan hasil refresh punya `attempt_id` sama;
+   sukses+snapshot/profile atomik, gagal hanya mencatat kelas galat. Perubahan
+   PII/submit lahir satu kali dalam transaksi sumber, keputusan mereferensikan satu
+   riwayat transisi, dan cache hit nilai sama menghasilkan nol diff PII. Payload tidak
+   memuat NIK/alamat/nama; mutation HMAC/correlation membuat harness merah.
+7. `/Umum/info_rumah` 404 jika dicabut atau 200 dengan layout lengkap jika
+   dipertahankan—tidak cukup hanya menyembunyikan warning.
+8. Check S8 membandingkan config dengan migrasi tracked tertinggi dan menemukan nol
+   `migration->current()`; menurunkan versi di salinan membuatnya merah.
+9. Uji balik S1, S3, S5, dan S6 masing-masing membuat harness merah.
+
+**Risiko regresi.** S3 dapat menahan pengajuan demo yang sebelumnya lolos tanpa
+bukti; sediakan fixture lengkap. S1/S2 menyentuh navigasi global—uji desktop dan
+mobile. S4 menyentuh hak data dan tidak boleh ditebak agent.
+
+---
+
 ## U2 — Tutup pintu anonim yang paling murah dieksploitasi
 
 **Tujuan.** Tidak ada endpoint yang bisa dipanggil anonim untuk menguras kuota,
 menahan worker PHP, atau menyensor komentar orang lain.
 
-**Butir yang ditutup:** B2, B3, B6 (dan konsekuensinya pada butir E).
+**Butir yang ditutup:** B2, gerbang+dedup B3, B6 (dan konsekuensinya pada butir E).
+U2 selalu ledger-only dan tidak mengubah visibilitas komentar.
 
 **Isi:**
 
@@ -175,17 +316,20 @@ menahan worker PHP, atau menyensor komentar orang lain.
   untuk mencegah perbaikan salah sasaran. Yang menutup: **guard login + rate limit**.
 - **JANGAN bikin mekanisme rate limit baru.** `application/config/rate_limits.php`
   sudah berisi 8 policy dengan dimensi `ip`/`account`/`nik`/`object`, dipakai lewat
-  `MY_Controller::rate_limit_sisa()` + `rate_limit_catat()` (tabel `sys_rate_limits`)
-  oleh `Program::cek_tiket()`, `Warga::lookup()`, `Admin_Kabkota::update_status()`.
-  Perbaikan di bawah menambah **entri policy**, bukan mekanisme (§17 poin 15,
-  catatan F4 inventaris).
-- **[B2] `Chat.php:80`: `public function api_bot` → non-public.** Satu kata.
-  `grep -rn "api_bot" application/` mengembalikan tepat dua hasil: deklarasi di `:80`
-  dan pemanggil internal di `:62` (`$this->api_bot($pesan_warga)` dari
-  `kirim_pesan_lanjutan()`). Mengubahnya jadi `private` mencabut routabilitas GET
-  tanpa menyentuh perilaku internal. **Dikerjakan sekarang, tidak menunggu keputusan
-  chat (§6 PRD nomor 7), karena perubahan satu kata ini tidak terbuang di bawah
-  keputusan yang mana pun** — sementara kuota Gemini terkuras setiap hari menunggu.
+  `rate_limit_consume()` atau pasangan `rate_limit_inspect()`+`rate_limit_hit()`,
+  lalu `rate_limit_reject()` (tabel `sys_rate_limits`). `Program::cek_tiket()` memakai
+  pola inspect/hit; Warga/admin memakai policy registry yang sama.
+  B3 menambah **entri policy**, bukan mekanisme (§17 poin 15). B2 tidak memerlukan
+  policy setelah tidak routable.
+- **[B2] Containment Chat sebelum keputusan #7.** Jadikan `api_bot()` non-public,
+  tetapi jangan berhenti di sana: `kirim_pesan_lanjutan()` tetap publik dan
+  memanggilnya sehingga kuota Gemini masih dapat dikuras. Sampai U5 diputuskan,
+  tiga endpoint eksternal Chat membalas 404 dan widget disembunyikan. Containment
+  ini reversibel; tidak menghapus controller/model dan tidak menentukan pilihan
+  “bangun” versus “cabut”. Cabut juga tiga pengecualian Chat dari `csrf_exclude_uris`
+  agar pembukaan kembali tidak otomatis fail-open. Untuk mutation proof saja,
+  pindahkan base URL Gemini hardcoded ke `GEMINI_API_URL` dengan default resmi;
+  `.env` uji menunjuk stub localhost dan egress eksternal tetap ditolak.
 - **[B3] `Umum::report_komentar()` (`Umum.php:374`): guard login + dedup.** Guard-nya
   sudah ada 16 baris di bawah, di berkas yang sama: `Umum::toggle_like()` (`:390-395`)
   memanggil `is_logged_in()` dan membalas `'Login required'`. Salin. Untuk dedup,
@@ -194,77 +338,87 @@ menahan worker PHP, atau menyensor komentar orang lain.
   "satu aksi per pengguna per objek" yang dibutuhkan — hari ini
   `Forum_model::report_komentar()` (`:96-100`) hanya menaikkan `report_count` tanpa
   mencatat siapa pelapornya, jadi 5 POST dari satu orang sama nilainya dengan 5 orang.
-  Tambah policy rate limit untuk kelas endpoint ini sekalian.
-- **[B6] Cabut route `$route['sikaper']` di `application/config/routes.php:125`.**
+  Buat `forum_laporan_komentar` dengan FK dan
+  `UNIQUE (id_komentar, user_id)`; transaksi mengunci baris komentar induk
+  (`SELECT ... FOR UPDATE`), insert ledger, menghitung ulang laporan unik, lalu
+  menjaga `is_deleted` tetap. Dua request paralel tidak boleh lolos. Jika keputusan
+  #10(b), auto-hide baru boleh diaktifkan melalui roadmap moderasi terpisah yang
+  sekaligus menyediakan antrean+restore. Tambah policy rate limit untuk endpoint ini.
+- **[B6] Hapus/nonaktifkan controller publik `Sikaper.php`, alias route, dan view.**
   `Sikaper.php:4` satu-satunya controller yang `extends CI_Controller` — di luar
   `MY_Controller`, jadi di luar security header — dan `index()` (`:21-25`) memicu
-  **5 panggilan upstream** memakai kredensial dinas per hit anonim. Setelah route
-  dicabut, `application/views/pages/sikaper/index.php` menjadi yatim (butir E): hapus
-  di tahap ini juga, jangan tinggalkan sebagai "nanti". Apakah `Sikaper.php` dan
-  `Sikaper_api.php` ikut dihapus tergantung keputusan #5 (§6 PRD) — route dulu.
+  **5 panggilan upstream** memakai kredensial dinas per hit anonim. Menghapus
+  `$route['sikaper']` saja tidak bekerja: CI3 masih merutekan `/Sikaper/index`
+  secara konvensional. Library `Sikaper_api.php` boleh menunggu keputusan #5, tetapi
+  controller dan view explorer publik harus hilang atau selalu `show_404()`.
 
 **Berkas yang disentuh:** `application/controllers/Chat.php`,
 `application/controllers/Umum.php`, `application/models/Forum_model.php`,
-`application/config/rate_limits.php`, `application/config/routes.php`,
+`application/config/rate_limits.php`, `application/config/config.php`,
+`application/config/routes.php`, `application/views/layouts/footer.php`,
+`application/controllers/Sikaper.php`,
 `application/views/pages/sikaper/index.php` (dihapus),
-`docs/engineering/uji_utang_teknis.php`. Kemungkinan satu migrasi untuk tabel pelapor.
+`.env.example`, `docs/engineering/uji_utang_teknis.php`, dan satu migrasi tabel pelapor.
 
 **Cara membuktikan:**
 
-1. `curl -s -o /dev/null -w "%{http_code}" http://localhost/klinik_new/Chat/api_bot/halo` → **404**
-   (hari ini: 200 dalam 1,8–6 detik). Uji balik: kembalikan `public` → 200 lagi.
+1. GET `/Chat/api_bot/halo` dan POST ke `register_session`,
+   `kirim_pesan_lanjutan`, serta `ambil_pesan` → **404**. Widget tidak muncul dan
+   upstream Gemini stub mencatat nol panggilan. Uji balik mengaktifkan caller publik
+   di salinan uji → hitungan upstream bertambah.
 2. 6× POST `Umum/report_komentar` anonim untuk satu `id_komentar` → semuanya ditolak,
    dan `SELECT report_count, is_deleted FROM forum_komentar WHERE id_komentar=?`
    **tidak berubah sama sekali**.
 3. 5 akun login berbeda melapor komentar yang sama → `report_count` = 5. Akun pertama
-   melapor lagi → tetap 5, dan responsnya menjelaskan sebabnya.
-4. `curl -s -o /dev/null -w "%{http_code}" http://localhost/klinik_new/sikaper` → **404**,
-   dan durasinya turun dari 5,45 detik ke tingkat 404 biasa. Uji pembeda antara
-   "route dicabut" dan "halaman kosong": responsnya tidak boleh memicu satu pun
-   panggilan upstream.
+   melapor lagi dan dua request paralel → tetap 5; `is_deleted` tetap 0.
+4. `/sikaper`, `/Sikaper`, dan `/Sikaper/index` semuanya **404**; upstream stub
+   mencatat nol panggilan. Durasi respons bukan bukti.
 5. `grep -rn "pages/sikaper" application/` → nol pemanggil SEBELUM berkasnya dihapus.
 
 **Risiko regresi.**
 
 - Widget chat di `layouts/footer.php` sudah rusak hari ini (C2: `tb_chat` tidak ada),
-  jadi B2 tidak memutus fitur yang berjalan. Tapi kalau keputusan #7 nanti jatuh ke
-  "bangun", `kirim_pesan_lanjutan()` tetap memanggil `api_bot()` secara internal —
-  pastikan `private`, bukan dihapus.
+  jadi containment B2 tidak memutus fitur yang sehat. Kalau keputusan #7 nanti
+  “bangun”, endpoint dibuka kembali hanya setelah migrasi, binding sesi server,
+  rate limit, dan layar operator lulus.
 - Guard login pada B3 **menghapus kemampuan tamu melaporkan komentar.** Itu memang
   tujuannya, tapi sebutkan ke user: kanal konsultasi warga kehilangan satu jalur
   moderasi anonim. Layar moderasi admin adalah fitur baru dan **tidak** dikerjakan
   di sini (§7 PRD).
-- Mencabut route `/sikaper` menghilangkan satu halaman yang mungkin dipakai seseorang
-  untuk melihat data Sikaper. Konfirmasi dengan user kalau ragu — tapi jangan
-  pertahankan sebagai API explorer publik.
+- Menutup controller explorer Sikaper menghilangkan halaman yang mungkin pernah
+  dipakai seseorang. Konfirmasi sebelum production, tetapi jangan menganggap
+  penghapusan alias route cukup atau mempertahankannya sebagai explorer anonim.
 
-**Beban.** B2 satu kata. B6 satu baris + satu penghapusan berkas. B3 yang terbesar
-(butuh tabel/kolom pelapor kalau dedup dibuat benar). Satu sesi.
+**Beban.** B2 containment kecil namun menyentuh controller+widget. B6 menghapus
+permukaan publik, bukan sekadar satu route. B3 yang terbesar karena perlu migrasi
+dedup atomik. Satu sesi.
 
 ---
 
 ## U3 — Saluran keluar diverifikasi, dan kunci berhenti gagal-terbuka
 
-**Tujuan.** Kredensial dinas berhenti dikirim di atas koneksi yang tidak diverifikasi,
-dan library enkripsi berhenti mengembalikan plaintext saat kuncinya hilang.
+**Tujuan.** Klien yang masih aktif memverifikasi TLS, dan enkripsi/HMAC berhenti
+gagal-terbuka saat key atau pepper hilang.
 
-**Butir yang ditutup:** B4, B9. B5 **sebagian** (dan itu batasnya, lihat di bawah).
+**Butir yang ditutup:** 10 titik B4 yang aktif dan B9. Titik B4 Chat/Sikaper tetap
+kondisional; B5 hanya dinyatakan statusnya.
 
 **Isi:**
 
-- **[B4] 12 titik `CURLOPT_SSL_VERIFYPEER => false` di 6 berkas, semuanya
-  unconditional.** Dihitung sendiri 29 Jul: `Index.php:126, :178, :239, :309, :386, :583`
-  (6), `Chat.php:121` (+`:122` VERIFYHOST), `Umum.php:70, :513` (2),
-  `Ternak_api.php:42` (+`:43`), `Sikumbang.php:82`, `Sikaper_api.php:36`.
+- **[B4] Kerjakan 10 titik aktif di 4 berkas.** Total inventaris tetap 12 titik/6
+  berkas: `Chat.php:121` dikarantina U2, dan `Sikaper_api.php:36` tidak punya caller
+  setelah controller U2 ditutup. Scope tanpa keputusan: `Index.php:126, :178, :239,
+  :309, :386, :583` (6), `Umum.php:70, :513` (2), `Ternak_api.php:42`, dan
+  `Sikumbang.php:82`.
   **Pembanding yang BENAR ada di repo yang sama:** `Simperum_gateway.php:155-156`
   (`CURLOPT_SSL_VERIFYPEER => TRUE`, `CURLOPT_SSL_VERIFYHOST => 2`). Salin polanya;
-  jangan bikin wrapper HTTP baru. Dua titik terparah: `Sikaper_api.php:36` mengirim
-  header `Authorization: Basic`, dan `Chat.php:121` mengirim API key Gemini di query
-  string (`Chat.php:86`).
-- **Urutan internal mengikat: B4 SEBELUM B5.** Rotasi kredensial Sikaper menunggu
-  pihak ketiga dan bisa lama. Selama menunggu, memperbaiki TLS **mengurangi laju
-  panen** kredensial yang belum bisa dirotasi. Urutan sebaliknya berarti menunggu
-  pihak ketiga sambil terus membocorkan.
+  jangan bikin wrapper HTTP baru. Bila keputusan #7 adalah “bangun”, titik Chat
+  diperbaiki dan diuji di U5 sebelum endpoint dibuka; bila “cabut”, titik itu hilang.
+- **Sikaper bercabang tegas:** selama keputusan #5 pending, controller tetap 404,
+  library/config tidak dipanggil, dan B4-Sikaper+B5 tetap terbuka. Jika
+  dipertahankan, rotasi+preseed secret baru lalu perbaiki TLS sebelum reaktivasi.
+  Jika dicabut, hapus `Sikaper_api.php` dan `config/sikaper.php`; jangan memoles atau
+  memindahkan secret kode yatim.
 - **[B4, konsekuensi yang harus diantisipasi] Sebagian upstream mungkin benar-benar
   bersertifikat bermasalah.** Kalau ada yang gagal setelah verifikasi dinyalakan,
   **jangan kembalikan ke `false`** — itu mengembalikan temuannya. Pilih: pasang CA
@@ -276,38 +430,49 @@ dan library enkripsi berhenti mengembalikan plaintext saat kuncinya hilang.
   tidak bisa membedakan "terenkripsi" dari "dikembalikan apa adanya karena kunci
   hilang", dan log lokal hari ini memuat kejadian nyata "KPKP_DATA_KEY tidak
   ditemukan". Pisahkan dua cabangnya: plaintext kosong boleh lewat; **kunci hilang
-  harus gagal keras**. Ini pola "pengaman yang mati diam-diam saat konfigurasinya
-  kosong" yang sudah punya baris sendiri di tabel §19.
-- **[B5, yang bisa kita kerjakan] Pindahkan kredensial Sikaper dari
-  `config/sikaper.php:13-14` ke `.env`** — **tapi catat apa adanya bahwa ini NOL
-  perbaikan keamanan** selama nilainya belum dirotasi: ia sudah masuk 2 commit riwayat
-  git (`git log -S`), dan riwayat git tidak bisa dilupakan dengan memindahkan
-  berkasnya. Nilainya hanya sebagai pencegah kebocoran BERIKUTNYA. **Rotasinya ada di
-  tangan pengelola API Sikaper, bukan kita** — lihat keputusan #5 (§6 PRD). Jangan
-  menuliskan tahap ini sebagai "B5 selesai".
+  harus melempar exception dan membatalkan transaksi tulis**. Kegagalan OpenSSL juga
+  melempar, bukan `FALSE` yang dapat tersimpan sebagai nilai kosong.
+  `decrypt()` dengan key hilang/data terenkripsi rusak juga tidak boleh mengembalikan
+  input seolah plaintext; kompatibilitas plaintext legacy ditangani eksplisit pada
+  migrasi/reader yang bersangkutan, bukan fallback global library. Telusuri semua
+  pemanggil sebelum mengubah kontrak. `deterministic_hash()` juga harus
+  melempar saat `KPKP_DATA_PEPPER` kosong; HMAC dengan secret kosong adalah
+  fail-open. Fitur yang memakai pepper khusus tiket/audit memvalidasi pepper-nya
+  sendiri sebelum query/tulis.
+- **[B5 — hanya setelah keputusan #5(a) dan rotasi nyata]** preseed kredensial
+  Sikaper baru pada seluruh environment, lalu pindahkan pembacaan dari literal
+  `config/sikaper.php` ke environment dan hapus nilai literal. **Jangan menyalin
+  secret lama yang masih sah ke `.env` lalu mengklaim mitigasi.** Jika tidak ada
+  kanal rotasi, integrasi tetap dikarantina atau dicabut sesuai keputusan user.
 
 **Berkas yang disentuh:** `application/controllers/Index.php`,
-`application/controllers/Chat.php`, `application/controllers/Umum.php`,
+`application/controllers/Umum.php`,
 `application/controllers/Sikumbang.php`, `application/libraries/Ternak_api.php`,
-`application/libraries/Sikaper_api.php`, `application/libraries/Encryption_lib.php`,
-`application/config/sikaper.php`, `.env.example`,
-`docs/engineering/uji_utang_teknis.php`.
+`application/libraries/Encryption_lib.php`, `docs/engineering/uji_utang_teknis.php`.
+`Sikaper_api.php`, `config/sikaper.php`, dan `.env.example` hanya disentuh sesuai
+cabang keputusan #5: perbaiki+env bila dipertahankan, hapus bila dicabut.
 
 **Cara membuktikan:**
 
-1. `grep -rn "SSL_VERIFYPEER" application/ | grep -c "false"` → **0**. Ini uji
-   termurah, tapi ia hanya membuktikan diff-nya benar, bukan TLS-nya bekerja.
-2. **Yang benar-benar membuktikan:** arahkan satu klien ke host bersertifikat tidak
-   sah (mis. `https://expired.badssl.com/` atau host uji lokal) → permintaan **gagal**
-   dengan galat sertifikat. Hari ini ia berhasil. **Uji balik:** kembalikan
+1. Check statis atas empat berkas aktif menemukan nol bentuk array maupun
+   `curl_setopt(...CURLOPT_SSL_VERIFYPEER..., false)`. Chat dikecualikan selama
+   containment. Sikaper dikecualikan saat pending, lalu wajib hilang atau lulus TLS
+   sesuai keputusan. U5 wajib menghapus Chat atau memperbaikinya sebelum route dibuka.
+2. **Yang benar-benar membuktikan:** arahkan klien di salinan uji ke server TLS
+   lokal bersertifikat tidak sah → permintaan **gagal** dengan galat sertifikat.
+   Jangan bergantung pada layanan publik. **Uji balik:** kembalikan
    `VERIFYPEER => false` pada klien itu → berhasil lagi.
-3. Setelah B4, panggil tiap integrasi yang masih dipakai (Sikumbang, Ternak, Gemini,
-   Simperum) sekali → semuanya masih 200. Yang gagal dicatat namanya beserta sebab
-   sertifikatnya; **jangan** dimatikan verifikasinya.
-4. **B9:** kosongkan `KPKP_DATA_KEY` di `.env` lokal, panggil `encrypt('12345')` →
-   **exception/FALSE**, bukan `'12345'`. Uji balik: kembalikan `return $plaintext` →
-   assert merah.
-5. `grep -rn "sikaper_api_password" application/config/` → nol nilai literal.
+3. Smoke test upstream aktif hanya jika `ALLOW_LIVE_UPSTREAM=1` dan izin/data uji
+   kontraknya tersedia. Bukti TLS lokal sudah cukup untuk keamanan; live test hanya
+   membuktikan kompatibilitas/availability.
+4. **B9:** kosongkan `KPKP_DATA_KEY`, lalu `KPKP_DATA_PEPPER` secara terpisah.
+   `encrypt('12345')`, `decrypt(<ciphertext>)`, dan
+   `deterministic_hash('12345')` melempar sesuai secret-nya; ciphertext rusak tidak
+   dikembalikan sebagai plaintext. Jalur tulis/lookup rollback dan DB tidak berubah.
+   Uji balik plaintext/HMAC-secret-kosong → merah.
+5. Sikaper: pending → tiga URL tetap 404 dan nol caller library; dipertahankan →
+   environment dipreseed, secret dirotasi, TLS invalid ditolak, nol literal config;
+   dicabut → nol controller/library/config/route/view.
 
 **Risiko regresi.**
 
@@ -315,16 +480,16 @@ dan library enkripsi berhenti mengembalikan plaintext saat kuncinya hilang.
   Menyalakan verifikasi TLS bisa mematikan integrasi yang selama ini hidup justru
   karena verifikasinya mati. Respons Sikumbang di-cache 24 jam, jadi kegagalannya
   bisa baru terlihat sehari kemudian — **jangan nyatakan selesai di hari yang sama.**
-- B9 mengubah `encrypt()` dari "selalu mengembalikan sesuatu" menjadi "bisa gagal".
+- B9 mengubah operasi kriptografi dari "selalu mengembalikan sesuatu" menjadi
+  exception.
   Telusuri pemanggilnya: jalur yang tidak menangani kegagalan akan berubah dari
   "menyimpan plaintext diam-diam" menjadi "error". Yang kedua benar, tapi ia akan
   muncul sebagai kerusakan baru di layar. Periksa pemanggilnya sebelum, bukan sesudah.
-- Memindahkan kredensial Sikaper ke `.env` akan mematikan integrasinya di setiap
-  lingkungan yang `.env`-nya belum diisi — termasuk staging dan production.
+- B5 dilarang bergerak sebelum environment dipreseed dan rotasi dikonfirmasi; kalau
+  tidak, integrasi tetap 404/karantina.
 
-**Beban.** Sedang. 12 titik mekanis + satu library + satu config, tapi verifikasinya
-menuntut memanggil upstream sungguhan dan menunggu cache. 1–2 sesi, dan satu di
-antaranya menunggu.
+**Beban.** Sedang. 10 titik aktif + kontrak fail-closed key/pepper; satu titik
+Sikaper hanya bila dipertahankan. Uji TLS lokal tidak menunggu upstream.
 
 ---
 
@@ -396,8 +561,9 @@ tanpa sumber.
    hasil**, atau halaman membalas 404 karena route-nya dicabut.
 2. `curl "/statistika?kabupaten=Kabupaten+Kudus"` dan `"?kabupaten=Kabupaten+Brebes"`
    → tidak ada lagi label "Sumber: <sistem>" di sebelah angka yang tidak berasal dari
-   sistem itu. Kalau halaman dipertahankan dengan data nyata, uji pembeda termurahnya:
-   **kedua respons tidak boleh menampilkan persentase yang identik**.
+   sistem itu. Kalau halaman dipertahankan, setiap metrik harus dapat ditautkan ke
+   adapter/dataset, waktu pengambilan, dan status nyata/simulasi. Dua kabupaten
+   menghasilkan angka berbeda bukan bukti provenance.
 3. `grep -rn 'href="#"' application/views/admin/settings/` → nol (kalau layar
    dipertahankan).
 4. `grep -rn "spasial/sebaran_rtlh\|pages/sikaper" application/` → nol pemanggil
@@ -434,9 +600,9 @@ B4 (`Chat.php:121`) serta membuat B2 permanen.
 
 > ⚠️ **TERBLOKIR PENUH oleh keputusan #7 (§6 PRD).** Selisih biaya kedua pilihan
 > adalah yang terbesar di seluruh dokumen ini: (a) cabut = menit–jam; (b) bangun =
-> minggu, dengan §17 checklist penuh + §19 dua belas langkah. **Jangan menyentuh
-> `Chat.php` sebelum jawabannya turun** — kecuali B2 di U2, yang satu kata dan tidak
-> terbuang di bawah pilihan mana pun.
+> minggu, dengan §17 checklist penuh + §19 dua belas langkah. **Jangan mengembangkan
+> `Chat.php` sebelum jawabannya turun** — containment B2 di U2 tetap dipertahankan
+> untuk menutup endpoint dan kuota selama menunggu.
 
 **Isi bila pilihan (a) — cabut:**
 
@@ -446,9 +612,9 @@ B4 (`Chat.php:121`) serta membuat B2 permanen.
 - Tabel `chat_rooms`/`chat_messages` ADA di DB tapi 0 baris, hanya disentuh
   `Chat_model` yang nol pemanggil, dan **tidak lahir dari migrasi** — instalasi baru
   tidak akan punya. Jangan tulis migrasi drop untuk tabel yang tidak pernah dibuat
-  migrasi; catat sebagai pembersihan DB manual di lingkungan yang punya (pelajaran
-  `omah_sekeng`, §0e: keadaan yang lahir dari tangan seseorang bukan keadaan yang
-  bisa diandalkan kode).
+  migrasi. Periksa dengan `table_exists()`; pembersihan DB manual di lingkungan yang
+  punya adalah aksi destruktif dan memerlukan izin eksplisit user. Ketiadaan tabel
+  pada DB fresh adalah hasil sah, bukan kegagalan (pelajaran `omah_sekeng`, §0e).
 - `tb_chat` tidak perlu di-drop — ia memang tidak pernah ada.
 
 **Isi bila pilihan (b) — bangun:**
@@ -476,8 +642,9 @@ B4 (`Chat.php:121`) serta membuat B2 permanen.
 
 - **Pilihan (a):** `grep -rn "tb_chat\|Chat_model\|api_bot" application/` → **nol**.
   Muat halaman mana pun sebagai anonim → nol skrip chat di HTML, nol permintaan
-  jaringan ke `/Chat/*`. `SELECT COUNT(*) FROM chat_rooms` = 0 dan tidak ada kode yang
-  membacanya.
+  jaringan ke `/Chat/*`. Jika `table_exists('chat_rooms')`, catat jumlah baris sebelum
+  tindakan apa pun; jika tidak ada, jangan menjalankan `SELECT`. Penghapusan tabel/
+  data manual tidak menjadi bagian bukti tanpa izin destruktif user.
 - **Pilihan (b):** perjalanan penuh warga → operator → balas, di DB **hasil migrasi
   yang bersih** (bukan DB lokal yang sudah ditambal tangan), plus tiga uji negatif
   §19 langkah 12. Ditambah: `session_id` milik satu warga tidak bisa dipakai warga
@@ -496,67 +663,234 @@ B4 (`Chat.php:121`) serta membuat B2 permanen.
 
 ---
 
-## U6 — NIK, dan penutupan status yang tidak di tangan kita
+## U6 — NIK antrean, lookup tiket, dan status di luar kendali agent
 
-**Tujuan.** Menutup butir terakhir yang tersisa, dan menuliskan apa adanya mana yang
-tidak bisa kita selesaikan sendiri.
+**Tujuan.** Kedua jalur pengajuan menghasilkan identitas antrean yang sama-sama dapat
+digunakan tanpa NIK plaintext; lookup publik dan admin tetap bekerja.
 
-**Butir yang ditutup:** B8 (setelah keputusan #8). B5 dan B10 **dinyatakan statusnya**,
-tidak diklaim selesai.
+**Butir yang ditutup:** B8 setelah keputusan #8 dan keselarasan retensi #9. B5/B10
+hanya dinyatakan statusnya, tidak diklaim selesai.
 
-**Isi:**
+**Fakta yang wajib ditangani bersama:**
 
-- **[B8, setelah keputusan #8] NIK plaintext di `sf_housing_queue.nik_pengaju`.**
-  Yang membuat butir ini bukan sekadar "enkripsi kolomnya", dibaca sendiri 29 Jul:
-  `Program_model.php:121` menulis `'nik_pengaju' => $nik` mentah, dan
-  `Program_model.php:205` mencari tiket dengan
-  `->where('RIGHT(nik_pengaju, 4) =', $nik_suffix, FALSE)`. **Pencarian sufiks itu
-  mustahil di atas ciphertext AES-GCM.** Jadi mengenkripsi kolom ini **memutus alur
-  cek tiket warga** yang sudah dipresentasikan ke dinas
-  ([`DESAIN_STATUS_TIKET_PENGAJUAN.md`](./DESAIN_STATUS_TIKET_PENGAJUAN.md)).
-  Pola yang benar sudah ada di repo: `usr_users` menyimpan ciphertext + kolom
-  `*_lookup_hash` terpisah (§19 langkah 5 melarang eksplisit menyalin pola
-  `srp2_registrations.nik_ktp` VARCHAR(16) plaintext ber-UNIQUE). Perbaikannya =
-  migrasi data + kolom hash sufiks + mengubah `Program_model.php:205`. Butuh migrasi
-  data tersendiri karena menyentuh data lama, persis batas yang sudah dicatat
-  [`PRD_WARGA_ADMIN_KABKOTA.md`](./PRD_WARGA_ADMIN_KABKOTA.md) §Batas Fase.
-- **[B5] Tulis statusnya apa adanya.** Kredensial sudah dipindah ke `.env` (U3), nilai
-  lamanya **masih sah dan masih ada di riwayat git**. Selesai hanya setelah pengelola
-  API Sikaper merotasinya. Kalau keputusan #5 jawabannya "tidak ada kanal", opsi yang
-  tersisa adalah mencabut integrasi Sikaper sepenuhnya — dan itu keputusan produk,
-  bukan pekerjaan tahap ini.
-- **[B10] Tulis statusnya apa adanya.** Sampai user menunjukkan hasil **percobaan
-  login yang GAGAL** ke `admin@klinikpkp.jatengprov.go.id` di production, statusnya
-  **MASIH TERBUKA** — bukan "sudah saya ganti". Agent tidak boleh mencoba login
-  production; auditor 29 Juli juga sengaja tidak. Selama ini terbuka, blok kredensial
-  demo yang sengaja dipertahankan (§17 poin 14) **melanggar syaratnya sendiri**:
-  syaratnya adalah setiap akun tercantum harus akun demo, dan akun admin penuh bukan
-  akun demo.
-- **[Penutup] Perbarui `AGENTS.md` §18** dengan status akhir PER BUTIR, termasuk yang
-  **TERBANTAH** (B11 di production, dan A5/C1b yang premis `db_debug`-nya salah —
-  lihat Catatan kejujuran nomor 2). Yang terbantah lebih penting dicatat daripada yang
-  diperbaiki: itulah yang mencegah agent berikutnya "memperbaiki" bug yang tidak ada.
+- `Program_model.php:121` menulis NIK plaintext, sedangkan wizard baru
+  `Housing_assessment_model.php:560-565` menulis `nik_pengaju = NULL`;
+- lookup publik `Program_model.php:201-207` memakai `RIGHT(nik_pengaju, 4)`, sehingga
+  tiket wizard baru tidak dapat diverifikasi dengan alur lama;
+- pencarian admin memakai `LIKE nik_pengaju` dari query string
+  (`MY_Controller.php:271-275`) dan dashboard memotong plaintext di view
+  (`admin/antrean/dashboard.php:85-86`).
 
-**Berkas yang disentuh:** `application/models/Program_model.php`, satu migrasi baru,
-`AGENTS.md`, `docs/engineering/uji_utang_teknis.php`.
+**Skema aditif bersama untuk kedua pilihan #8:**
+
+```sql
+nik_ciphertext TEXT NULL,
+nik_lookup_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+nik_suffix_lookup_hash CHAR(64) CHARACTER SET ascii COLLATE ascii_bin NULL,
+KEY idx_sf_queue_nik_lookup_hash (nik_lookup_hash)
+```
+
+`nik_lookup_hash` tidak `UNIQUE` karena satu NIK dapat mempunyai beberapa pengajuan.
+Indeks suffix tidak perlu karena `ticket_code` sudah unik. Secret khusus
+`KPKP_QUEUE_LOOKUP_PEPPER` wajib 64 hex/32 byte, tersedia di seluruh environment,
+tanpa fallback ke `KPKP_DATA_PEPPER`. Domain hash dipisah:
+
+```text
+HMAC("sf_housing_queue:nik:v1\0" + NIK)
+HMAC("sf_housing_queue:ticket-suffix:v1\0" + UPPER(ticket_code) + "|" + suffix)
+```
+
+Implementasi kanonik memvalidasi `/^[a-f0-9]{64}$/i`, menjalankan `hex2bin()`, lalu
+`hash_hmac('sha256', $domain_payload, $binary_key, false)`. Writer, lookup, dan
+backfill wajib lulus golden-vector ini; jangan memakai ASCII hex sebagai key:
+
+| Test key hex | Payload | Hasil hex |
+|---|---|---|
+| `000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f` | `sf_housing_queue:nik:v1\0` + `0000000000000001` | `449a8f7d930b9fa10e6a7c04715919d7d53dea5b8ff89e076ddd6ebc5324507d` |
+| key sama | `sf_housing_queue:ticket-suffix:v1\0` + `PKP-ABC123\|0001` | `92ffcfc2de365bcaada6047a48127e9c461f6d379eb08384548e102e6093bc7c` |
+
+Pada tabel di atas `\0` berarti satu byte NUL, bukan dua karakter backslash+angka.
+
+NIK dinormalisasi dan divalidasi tepat 16 digit. Key/pepper hilang atau tidak valid
+harus 503/rollback, bukan HMAC secret kosong. Jadikan
+`Program_model::insert_housing_queue()` gerbang tulis yang nyata dan gunakan dari
+`Housing_assessment_model`; jangan menambah abstraction baru. Gateway menghasilkan
+hash deterministik yang sama untuk input yang sama. Ciphertext AES-GCM **harus acak**
+karena IV baru tiap enkripsi; nilainya boleh berbeda tetapi wajib terdekripsi ke NIK
+yang sama.
+
+**Lookup publik dan admin:**
+
+1. Jika keputusan #8(a), migrasi aditif juga melebarkan `ticket_code` dari
+   `VARCHAR(10)` menjadi `VARCHAR(36)`. Format baru:
+   `PKP-` + 32 hex uppercase dari `random_bytes(16)` (128-bit), dan validator/UI
+   menerima format baru+legacy selama transisi. Lookup publik format baru tidak
+   meminta NIK. Tiket lama tidak boleh tiba-tiba putus: pertahankan
+   jalur suffix-HMAC sampai masa retensinya berakhir, atau reissue token melalui
+   kanal terautentikasi yang diputuskan user; jangan mengarang mekanisme pengiriman
+   bagi pemilik tiket anonim. Jika #8(b), lookup memakai
+   `ticket_code + nik_suffix_lookup_hash`; jangan hash 4 digit secara global.
+2. Tambah dimensi registry `ticket`, bukan `object` yang hari ini meng-cast integer.
+   Policy `ticket_lookup` berdimensi `ip`+`ticket`; format rusak memakai satu sentinel
+   tetap. Hanya format/lookup gagal yang menaikkan counter; lookup sukses tidak.
+   Kegagalan ke-6/60 detik → `429` + `Retry-After`, window kedaluwarsa memulihkan
+   akses; limiter/pepper gagal → 503.
+3. Tiket tidak dikenal dan suffix salah memberi status/pesan generik yang sama.
+   Respons tidak memuat NIK, suffix, ciphertext, atau hash.
+4. Keluarkan NIK dari pencarian GET umum admin. Jika pencarian NIK dipertahankan,
+   gunakan POST+CSRF, tepat 16 digit, equality `nik_lookup_hash`, dan tetap scope
+   `kabupaten_id`; NIK tidak masuk URL, flash, atau log.
+5. Controller hanya mendekripsi baris yang sudah lolos scope+pagination, mengirim
+   bentuk `••••••••••••1234`, lalu membuang ciphertext/hash/plaintext sebelum view.
+   Key salah/hilang atau ciphertext rusak → 503 dan tidak menampilkan suffix apa pun.
+   Selama dual-read, plaintext hanya fallback bila `nik_ciphertext IS NULL` dan
+   `nik_pengaju` legacy lolos validasi 16 digit—bukan saat dekripsi gagal.
+
+**Migrasi dan rollback wajib bertahap:**
+
+1. Prasyarat: U3 fail-closed hijau, pepper dipreseed, keputusan #8 dicatat, dampak
+   retensi #9 disepakati, dan backup teruji.
+2. Migrasi **N** menambah tiga kolom+indeks; untuk pilihan #8(a) juga melebarkan
+   `ticket_code` ke `VARCHAR(36)`. Kode lama tetap berjalan karena pelebaran kompatibel.
+3. Deploy compatibility-write/dual-read: kedua writer mengisi kolom baru. Hanya
+   writer legacy yang sudah menulis plaintext boleh meneruskannya sementara; wizard
+   baru tetap `nik_pengaju = NULL` dan **tidak boleh diperkenalkan ke plaintext**.
+   Pembaca baru mendahulukan kolom baru, plaintext hanya fallback legacy.
+4. Backfill terpisah **N+1** berjalan batch, atomik, idempoten, tanpa mencetak NIK.
+   Ambil NIK dari snapshot profil assessment saat submit; legacy tanpa assessment
+   memakai plaintext valid; profil terkini hanya fallback yang ditandai untuk review.
+   `ticket_code` kosong adalah blocker yang harus diselesaikan/dilaporkan. Pada
+   pilihan #8(a), tiket legacy yang belum direissue tetap wajib mendapat
+   `nik_suffix_lookup_hash` sampai jalur legacy berakhir.
+5. Selama jendela observasi eksplisit, reader baru aktif dan compatibility-write
+   plaintext legacy tetap hidup. Sebelum build ini menerima traffic, rollback pra-U6
+   masih boleh. Setelah
+   traffic masuk, target rollback minimum adalah build dual-reader/compatibility-writer:
+   build pra-U6 akan kembali membuat tiket wizard dengan NIK NULL.
+6. Setelah jendela berakhir, hentikan penulisan plaintext legacy. Mulai titik ini rollback
+   hanya ke build yang memahami ciphertext/hash, bukan build pra-U6.
+7. Migrasi destruktif **N+2**, pada rilis dan izin terpisah, menghapus semua referensi
+   runtime lalu drop `nik_pengaju`. Jangan memakai `down()` sebagai strategi rollback;
+   sesudah drop hanya backup teruji yang memulihkan data.
+
+**B5/B10 apa adanya:**
+
+- B5 dipindah ke environment hanya bila secret baru benar-benar sudah dirotasi dan
+  dipreseed. Tanpa kanal rotasi, integrasi Sikaper tetap dikarantina/dicabut; status
+  tetap terbuka.
+- B10 tetap **RISIKO AKTIF YANG DITERIMA SEMENTARA** selama uji dinas. Rotasi hanya
+  melalui alur aplikasi setelah instruksi user baru.
+
+**Berkas yang disentuh:** `Program_model.php`, `Housing_assessment_model.php`,
+`Program.php`, `MY_Controller.php`, `Admin.php`, `Admin_Kabkota.php`,
+`Encryption_lib.php`, `Rate_limiter.php`, `config/rate_limits.php`,
+`config/migration.php`, `.env.example`, dashboard antrean, view cek/sukses tiket,
+tiga migrasi terpisah, harness utang teknis, R6, dan perjalanan Warga. Baseline SQL
+lama tidak diubah untuk menghapus `nik_pengaju`.
 
 **Cara membuktikan:**
 
-1. `SELECT nik_pengaju FROM sf_housing_queue LIMIT 5` → tidak ada yang cocok
-   `^\d{16}$`.
-2. Cek tiket end-to-end lewat HTTP: tiket + 4 digit NIK yang benar → status muncul;
-   4 digit yang salah → ditolak. **Ini uji yang menentukan** — kalau alur cek tiket
-   putus, migrasinya belum selesai walau kolomnya sudah terenkripsi.
-3. Migrasi dijalankan **2× berturut-turut** → hasil DB identik (idempoten).
-4. `SELECT COUNT(*) FROM sf_housing_queue WHERE <kolom_hash> IS NULL` = 0 (backfill
-   baris lama; §19 pola "migrasi menambah kolom tautan, tidak mengisi baris lama").
+1. Tiket dari jalur legacy dan wizard baru sama-sama dapat dicek; tiket salah dan
+   suffix salah tidak dapat dibedakan dari respons.
+2. Seluruh row yang dapat dipulihkan memiliki ciphertext+full hash. Suffix hash wajib
+   untuk #8(b) **dan** tiket legacy #8(a) yang belum direissue; backfill kedua
+   menghasilkan nol perubahan/duplikasi.
+3. GET toolbar admin tidak memuat NIK; exact POST tetap terscope wilayah; payload
+   view tidak mengandung plaintext/ciphertext/hash dan hanya menampilkan mask.
+4. Satu IP dengan banyak tiket dan banyak IP pada satu tiket membuktikan kedua
+   dimensi; kegagalan ke-6 menghasilkan `429`+`Retry-After`. Lima lookup sukses tidak
+   menaikkan counter, dan sesudah 60 detik kegagalan lama tidak lagi memblokir.
+5. Key/pepper hilang membatalkan writer, lookup, dan tampilan admin tanpa row parsial;
+   key salah/ciphertext rusak menghasilkan 503, tidak pernah suffix ciphertext.
+6. Sebelum traffic fase 3, rollback pra-U6 diuji. Setelah traffic fase 3, rollback
+   hanya ke build dual-reader/compatibility-writer. Sebelum menjalankan fase 7,
+   restore backup sudah harus teruji.
 
-**Risiko regresi.** Tertinggi dari sisi data: menyentuh baris yang sudah ada di
-production. Uji di salinan dulu. Dan ingat batas yang sudah ditulis §9 AGENTS.md dan
-§0c: **`KPKP_DATA_KEY` tidak boleh dirotasi** — data terenkripsi yang ada akan hilang
-permanen.
+**Risiko regresi.** Tertinggi dari sisi data. Uji pada salinan production dan jangan
+rotasi `KPKP_DATA_KEY`; data terenkripsi lama akan hilang permanen.
 
-**Beban.** B8 hari–minggu tergantung jawaban #8. Sisanya menulis status.
+**Penutup dokumentasi:** perbarui `AGENTS.md` per butir, termasuk yang terbantah,
+blocked, dan risiko diterima. B8 selesai hanya setelah fase yang benar-benar dirilis,
+bukan karena migrasi aditif sudah ada.
+
+---
+
+## Runbook wajib sebelum rilis production
+
+Branch `feature/homepage-portal-v2` auto-deploy langsung ke production. Karena itu
+seluruh implementasi roadmap dikerjakan dahulu di holding branch yang **tidak**
+terhubung deployment. Push ke branch aktif hanya **sekali per paket/rilis yang
+disetujui** setelah gate hijau. U0+U1 adalah satu paket; fase U6 adalah beberapa
+rilis terpisah dan tidak boleh dipaksa menjadi satu push.
+
+### Gate pra-rilis
+
+1. Keputusan user yang relevan tercatat di ledger §6 PRD; butir BLOCKED tidak ikut.
+2. Worktree implementasi tidak mencampur perubahan agent lain.
+3. Harness memakai worktree+vhost+DB+upload uji terpisah, seluruh tes tahap hijau,
+   mutation proof merah saat guard dibalik, dan hard-kill recovery terbukti.
+4. Daftar perubahan skema, environment, file privat, serta route ditulis sebelum
+   menyentuh server.
+5. `git fetch` menunjukkan branch remote masih pada base yang diuji. Jika bergerak,
+   integrasikan perubahan lalu ulangi seluruh gate.
+6. Revision yang benar-benar sedang tersaji di production diverifikasi lewat
+   provider/SSH dan cocok dengan base migrasi yang diuji; remote branch saja tidak
+   membuktikan deploy aktif.
+7. Ada persetujuan eksplisit user untuk backup/migrasi/push **serta pemicu rollback**
+   production.
+
+### Urutan rilis
+
+1. Backup DB production dan konfigurasi server (`.env`, `.htaccess`/vhost) bertanggal.
+   Verifikasi backup dapat dibaca, jumlah tabel/ukuran masuk akal. Untuk rilis yang
+   menyentuh PII/evidence, gunakan write-freeze nyata atau snapshot+reconciliation;
+   jangan mengandalkan toggle “Mode Pemeliharaan” palsu.
+2. Untuk rilis yang dapat menghapus/memindah bukti, buat manifest relative path +
+   ukuran + checksum dan backup `private_uploads` bila kebijakan retensi mengizinkan.
+   DB dump dan archive file harus berasal dari window konsisten; restore DB ke nama
+   terisolasi, ekstrak archive ke root temp, lalu cocokkan ledger DB ↔ manifest ↔
+   checksum **sebelum** mutasi destruktif.
+   Jika purge legal harus irreversible, butuh izin eksplisit serta catatan mengapa
+   backup dilarang dan kapan salinan lama dimusnahkan.
+3. Siapkan environment prerequisite **sebelum kode**—misalnya
+   `KPKP_QUEUE_LOOKUP_PEPPER`, `KPKP_AUDIT_PEPPER`, atau kredensial Sikaper **yang
+   sudah dirotasi**. Jangan memindahkan secret sebelum semua environment mempunyai
+   nilai valid.
+4. Jalankan `php index.php migrate status` dan simpan output. Catat nama+hash seluruh
+   berkas migrasi di server; berkas liar adalah blocker. Untuk migrasi additive,
+   salin hanya berkas migrasi yang disetujui, verifikasi hash lagi, jalankan
+   `php index.php migrate`, lalu jalankan `status` ulang dan cek versi/tabel/kolom
+   yang diharapkan. Biarkan berkas migrasi tetap ada dan smoke test kode lama.
+   Jangan pernah menjalankan `current()`.
+5. Push satu commit/rangkaian commit yang sudah disetujui untuk paket ini ke branch
+   auto-deploy.
+   U0+U1 selalu ikut bersama.
+6. Auto-deploy asynchronous: tunggu selesai dan buktikan commit/aset yang benar-benar
+   tersaji sama dengan yang diuji sebelum smoke test.
+7. Smoke test minimum: home, login, wizard Warga, akun, antrean admin, forum, endpoint
+   yang ditutup, header/cookie, serta canary tanpa bocoran path/SQL.
+8. Catat commit, versi skema, hasil smoke test, dan status keputusan di `AGENTS.md`;
+   hapus klaim lama yang bertentangan, jangan hanya menambah paragraf baru.
+
+**Pengecualian migrasi destruktif (mis. U6 N+2):** urutan “migrasi sebelum kode”
+tidak berlaku. Deploy lebih dulu kode yang sudah nol referensi ke kolom lama saat
+kolomnya masih ada, tunggu deployment dan smoke test. Restore backup ke DB terisolasi
+dan buktikan dapat dipakai. Baru dengan izin rilis terpisah jalankan migrasi drop,
+verifikasi status/skema, dan ulangi smoke test.
+
+### Rollback
+
+- Perubahan kode dengan migrasi additive: revert kode ke commit sebelumnya; skema
+  baru boleh tetap ada bila benar-benar backward-compatible.
+- Migrasi NIK: sebelum build compatibility menerima traffic, rollback pra-U6 boleh.
+  Setelah menerima traffic, target minimum adalah build dual-reader/compatibility-
+  writer; setelah plaintext legacy dihentikan rollback hanya ke build new-reader;
+  setelah kolom di-drop pemulihan data hanya melalui backup teruji. Jangan
+  mengandalkan `down()`.
+- Perubahan environment: simpan nilai lama dan pulihkan bersama kode bila smoke test
+  gagal.
+- Setelah rollback, ulangi smoke test dan catat keadaan akhir; jangan meninggalkan
+  production pada status “mungkin pulih”.
 
 ---
 
@@ -577,9 +911,12 @@ permanen.
   double-submit). **ALASAN:** ia ada di inventaris bukan sebagai temuan melainkan
   sebagai **pembatas desain** — ia membuktikan CSRF tidak akan menutup B2 & B3. Yang
   "dikerjakan" dari B12 adalah tidak mengerjakannya: U2 tidak menargetkan CSRF.
-- **[ROADMAP LAIN] T0–T6 role pengembang** dan **R0–R9 alur warga**. **ALASAN:**
-  keduanya bekerja per-perjalanan; menyisipkan temuan lintas-domain membuat tiap
-  tahapnya berhenti menghasilkan perjalanan yang bisa ditempuh. Bagian
+- **[ROADMAP HISTORIS] T0–T6 role pengembang** dan **R0–R9 alur warga** tetap menjadi
+  catatan perjalanan, tetapi status “selesai” tidak mengecualikan regresi/kekurangan
+  S1–S9 yang ditemukan sesudahnya; S0 menutup bagian yang tidak BLOCKED dan mencatat
+  keputusan yang masih dibutuhkan untuk S3/S4/S7. Tahap historis
+  tidak disalin ulang karena
+  keduanya bekerja per-perjalanan. Bagian
   "Sengaja TIDAK masuk roadmap ini" milik [`ROADMAP_PENGEMBANG_ADMIN.md`](./ROADMAP_PENGEMBANG_ADMIN.md)
   bahkan menyarankan roadmap terpisah untuk butir-butir ini — ini roadmap terpisah itu.
   **Satu titik singgung yang harus dikoordinasikan:** `Admin_Srp2.php` disentuh U1
@@ -588,13 +925,17 @@ permanen.
   HSTS 1 tahun, Referrer-Policy, Permissions-Policy; CSP nihil. **ALASAN:** bukan
   butir inventaris, dan memasangnya di portal berisi Leaflet + inline script butuh
   sesi tersendiri dengan definisi selesai sendiri.
-- **[FITUR BARU] Layar moderasi forum untuk B3.** **ALASAN:** B3 selesai dengan guard
-  login + dedup + rate limit. Layar admin untuk meninjau laporan adalah produk baru
+- **[FITUR BARU] Layar moderasi forum untuk B3.** **ALASAN:** gerbang keamanan B3
+  selesai dengan login + dedup + rate limit dan U2 selalu ledger-only. Jika keputusan
+  #10(b), layar antrean+restore dan auto-hide dibuat sebagai roadmap domain baru
+  sebelum visibilitas otomatis diaktifkan. Layar admin adalah produk baru
   dan tunduk §17 checklist penuh. Kalau user memintanya, buat entri
   `dashboard_modules.php`-nya sebagai modul, bukan sebagai tambalan di U2.
 - **[USULAN YANG DIBUANG] Wrapper HTTP baru untuk memusatkan setelan TLS (B4).**
-  **ALASAN:** 12 titik di 6 berkas dengan pola yang sudah benar di
-  `Simperum_gateway.php:155-156`. Menyalin dua baris ke 6 tempat lebih kecil daripada
+  **ALASAN:** U3 menangani 10 titik aktif di 4 berkas dengan pola yang sudah benar di
+  `Simperum_gateway.php:155-156`; Sikaper bercabang di #5 dan Chat diselesaikan U5.
+  Menyalin dua baris
+  lebih kecil daripada
   membangun abstraksi berpemanggil satu-per-berkas, dan wrapper baru adalah tempat
   ketiga yang harus dibaca orang berikutnya. Kalau nanti klien HTTP ke-7 lahir,
   pertanyaannya boleh dibuka lagi.
@@ -605,8 +946,9 @@ permanen.
   membuktikan `CI_ENV` **memang bisa hilang dari server tanpa ada yang sadar**. Yang
   menutup B10 hanya rotasi sandi (keputusan #6). §17 poin 14 sudah melarang gate ini
   eksplisit.
-- **[AKSI USER, BUKAN AGENT] Rotasi sandi 7 akun seed di production, rotasi kredensial
-  Sikaper, penerapan `.htaccess` ke production, pengisian kunci reCAPTCHA.**
+- **[AKSI USER, BUKAN AGENT] Rotasi sandi akun admin penuh setelah masa uji berakhir,
+  rotasi kredensial Sikaper, containment environment server bila diperlukan, dan
+  pengisian kunci reCAPTCHA. Enam akun demo lain sengaja dipertahankan.**
   **ALASAN:** di luar kendali agent, sebagian di luar kendali user (Sikaper butuh
   pihak ketiga). Sudah dipisah sebagai keputusan #5 dan #6. **Jangan hitung sebagai
   tahap, dan jangan janjikan tanggalnya.**
@@ -642,8 +984,8 @@ mendefault `ENVIRONMENT` ke `development`; `database.php:85` menyetel
 error PHP tampil publik. **Jadi `db_debug` di production hari ini TRUE, bukan mati.**
 Konsekuensinya: A5 dan C1b belum berbahaya sekarang — keduanya menjadi berbahaya
 tepat setelah U0. Itulah kenapa U1 mengikat ke U0 dan bukan tahap yang bebas
-dipindah. **Saya tidak bisa memverifikasi ini di production sendiri; ia inferensi
-dari tiga berkas + satu bukti runtime milik auditor.**
+dipindah. Audit koreksi kemudian memverifikasi GET production secara read-only:
+respons masih memuat PHP warning dan path absolut.
 
 **3. Hitungan metrik A2: saya menghitung 21, inventaris menulis 22.** Dari
 `Statistika.php:26-58`: perumahan 6, kawasan 4, pertanahan 3, pengembang 4,
@@ -663,16 +1005,15 @@ pekerjaan enkripsi, melainkan **keputusan produk tentang cara warga mengecek sta
 Butir ini tidak ada di catatan inventaris; saya menemukannya saat membaca kode dan
 menaikkannya ke tabel keputusan (#8).
 
-**6. Nol akses production, nol akses staging.** Semua yang saya tulis tentang
-production berasal dari verifikasi runtime auditor 29 Juli, bukan dari saya. Saya
-tidak menjalankan satu pun request ke production dan tidak menjalankan satu pun query
-DB. Termasuk: apakah `.htaccess` sudah/akan diterapkan, apakah 7 akun seed masih ada
-di sana, apakah `chat_rooms` ada di DB production.
+**6. Akses production pada audit koreksi hanya GET anonim.** Diverifikasi 29 Jul:
+`/Umum/info_rumah` membocorkan warning+path; `.env`, `AGENTS.md`, dan `docs/` tetap
+403; login mengirim cookie `Secure` dan HSTS. Tidak ada login, POST, query DB, atau
+perubahan server yang dilakukan. Keadaan DB/chat production tetap belum dibuktikan
+ulang dalam audit ini.
 
-**7. B10 sengaja BELUM DIVERIFIKASI.** Auditor tidak mencoba login production, dan
-saya juga tidak. Statusnya ditulis MASIH TERBUKA — itu bukan kesimpulan bahwa sandinya
-masih `password`, melainkan pernyataan bahwa **tidak ada yang tahu**, dan tidak-tahu
-diperlakukan sebagai terbuka.
+**7. B10 mengikuti keputusan user dan AGENTS §0c.** Sandi admin dicatat masih aktif
+dan sengaja dipertahankan sementara selama uji dinas. Itu risiko diterima, bukan
+ketidaktahuan. Agent tetap dilarang mencoba login atau merotasi tanpa perintah.
 
 **8. C1b masih inferensi, bukan temuan terverifikasi.** Klaim "di production forum
 mungkin justru berhasil tanpa pembatas laju" berasal dari membaca kode, dan
@@ -686,18 +1027,17 @@ yang saya baca. Pakai untuk urutan relatif, jangan untuk janji jadwal. Tiga taha
 (U4, U5, U6) sengaja **tidak** saya beri angka karena bebannya ditentukan jawaban user,
 bukan oleh kodenya.
 
-**10. Tiga keputusan yang saya ambil sendiri dan bisa dibantah:**
-(a) **B1 lebih dulu** meski ia mematikan display_errors — alasannya di PRD §4 Aturan 1;
-kalau seseorang berpendapat production layak dipakai sebagai instrumen diagnosa
-sebentar lagi, urutannya berubah. (b) **B2 tidak menunggu keputusan chat** — karena
-perbaikannya satu kata dan tidak terbuang di bawah keputusan mana pun; kalau ternyata
-ada pemanggil `api_bot` di luar `application/` (saya hanya grep di sana), ini salah.
-(c) **Tidak membuat wrapper HTTP untuk B4** — 12 titik disalin manual dari pola
-`Simperum_gateway.php:155-156`; kalau klien ke-7 lahir, keputusan ini pantas dibuka
-lagi.
+**10. Tiga keputusan teknis yang masih bisa dibantah:**
+(a) **A5+C1 disiapkan sebelum B1 lalu dirilis atomik**—production tidak dipakai
+sebagai instrumen diagnosa. (b) **B2 containment tidak menunggu keputusan chat**:
+caller publik juga ditutup karena membuat method private saja masih menyisakan jalur
+ke Gemini setelah write berhasil. (c) **Tidak membuat wrapper HTTP untuk B4**—10
+titik aktif disalin dari pola `Simperum_gateway.php:155-156`; Sikaper dan Chat
+diselesaikan berdasarkan keputusan masing-masing. Kalau klien aktif baru lahir,
+keputusan ini pantas dibuka.
 
-**11. Skrip `uji_utang_teknis.php` belum ada, dan belum pernah dijalankan.** Semua
-"cara membuktikan" di roadmap ini adalah **spesifikasi**, bukan uji yang sudah lulus.
+**11. Runner PHP dan browser utang teknis belum ada dan belum pernah dijalankan.**
+Semua "cara membuktikan" di roadmap ini adalah **spesifikasi**, bukan uji yang lulus.
 Butir yang tidak boleh dipotong dari tahap mana pun adalah **uji balik**-nya: balikkan
 satu perbaikan, jalankan lagi, skripnya MERAH. Skrip yang tidak pernah gagal tidak
 membuktikan apa pun (§19 langkah 12).
