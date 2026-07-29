@@ -18,6 +18,8 @@ Folder ini berisi seluruh dokumentasi teknis proyek Klinik PKP yang telah distru
 | [PRD_FORM_WARGA_SIMPERUM.md](./product/PRD_FORM_WARGA_SIMPERUM.md) | PRD pengganti diagnosa sederhana: wizard warga adaptif, cache SIMPERUM local-first, provenance, rekomendasi versioned |
 | [ROADMAP_FORM_WARGA_SIMULASI_SIMPERUM.md](./product/ROADMAP_FORM_WARGA_SIMULASI_SIMPERUM.md) | Roadmap aktif R0–R9: implementasi penuh memakai data SIMPERUM sintetis, tracker fase, checks, dan protokol handoff antar-agent |
 | [PRD_WARGA_ADMIN_KABKOTA.md](./product/PRD_WARGA_ADMIN_KABKOTA.md) | Kartu Domain alur warga ↔ admin kab/kota (antrean perumahan): kepemilikan, scope wilayah, transisi status |
+| [PRD_PELUNASAN_UTANG_TEKNIS.md](./product/PRD_PELUNASAN_UTANG_TEKNIS.md) | PRD penutupan utang teknis dari inventaris terverifikasi 29 Jul 2026: tiga kelompok (kepercayaan publik/keamanan/fitur mati), prinsip urutan, definisi selesai, dan 8 keputusan user yang memblokir |
+| [ROADMAP_PELUNASAN_UTANG_TEKNIS.md](./product/ROADMAP_PELUNASAN_UTANG_TEKNIS.md) | Roadmap U0–U6 pelunasan utang teknis: butir yang ditutup per tahap, berkas yang disentuh, cara membuktikan (termasuk uji balik), dan risiko regresi |
 
 ---
 
