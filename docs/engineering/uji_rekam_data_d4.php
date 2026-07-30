@@ -191,9 +191,9 @@ $db->query(sprintf(
     $db->real_escape_string(password_hash('UjiRdD4!', PASSWORD_BCRYPT)),
     $kab_lain, $stamp));
 
-function laporan_kawasan($kab, $bulan) {
+function laporan_kawasan($kab, $triwulan) {
     return (int) skalar('SELECT id FROM rd_laporan WHERE domain = ? AND kabupaten_id = ?
-        AND tahun = ? AND bulan = ?', ['kawasan', $kab, TAHUN, $bulan]);
+        AND tahun = ? AND triwulan = ?', ['kawasan', $kab, TAHUN, $triwulan]);
 }
 
 try {
@@ -206,10 +206,10 @@ try {
     cek(skalar("SHOW COLUMNS FROM rd_kawasan_ringkasan LIKE 'total_anggaran'") === NULL,
         'Kolom `total_anggaran` tidak ada — dihitung, tidak disimpan');
 
-    // ------------------------------------------------------ periode 6
-    $url = 'Rekam_Kawasan?tahun=' . TAHUN . '&bulan=6';
+    // ---------------------------------------------------- periode TW II
+    $url = 'Rekam_Kawasan?tahun=' . TAHUN . '&triwulan=2';
     wajib(http('kab', $url)['code'] === 200, 'Layar Kawasan terbuka');
-    $LAP = laporan_kawasan($KAB, 6);
+    $LAP = laporan_kawasan($KAB, 2);
     wajib($LAP > 0, 'Draft kawasan dibuat otomatis');
 
     // ---------------------------------------------------- ringkasan
@@ -328,7 +328,7 @@ try {
         'Ubah tidak menambah baris baru');
 
     // ------------------------------------------------------- scope
-    $t = csrf('lain', 'Rekam_Kawasan?tahun=' . TAHUN . '&bulan=6');
+    $t = csrf('lain', 'Rekam_Kawasan?tahun=' . TAHUN . '&triwulan=2');
     http('lain', 'Rekam_Kawasan/simpan_intervensi', ['csrf_kpkp_token' => $t,
         'laporan_id' => $LAP, 'indikator' => 'drainase', 'nama_kegiatan' => 'Sisipan wilayah lain',
         'lokasi_teks' => 'X', 'sumber_anggaran' => 'apbd_kabkota',
@@ -336,7 +336,7 @@ try {
     cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP]) === 24,
         'Admin wilayah lain tidak bisa menambah intervensi');
 
-    $t = csrf('lain', 'Rekam_Kawasan?tahun=' . TAHUN . '&bulan=6');
+    $t = csrf('lain', 'Rekam_Kawasan?tahun=' . TAHUN . '&triwulan=2');
     http('lain', 'Rekam_Kawasan/hapus_intervensi', ['csrf_kpkp_token' => $t,
         'laporan_id' => $LAP, 'intervensi_id' => $pertama]);
     cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP]) === 24,
@@ -365,21 +365,36 @@ try {
     cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP]) === $sisa,
         'Laporan terkirim tidak bisa diubah kabupaten');
 
-    // --------------------------------------------------- pewarisan
-    http('kab', 'Rekam_Kawasan?tahun=' . TAHUN . '&bulan=7');
-    $LAP7 = laporan_kawasan($KAB, 7);
+    // ------------------------------------------ TIDAK ADA PEWARISAN (TW III)
+    // Blok ini dulu menjaga KEBALIKANNYA: "N intervensi diwarisi", "Ringkasan
+    // ikut diwarisi apa adanya", "Urutan warisan tetap rapat". Ketiganya sahih
+    // selama angka Kawasan kumulatif per bulan. Sejak W1 seluruh modul Rekam
+    // Data per triwulan (keputusan user K7, ditegaskan 30 Jul 2026), dan
+    // mewarisi TW II ke TW III lalu menambahinya membuat capaian TW II
+    // terhitung dua kali — dengan hasil yang tetap terlihat wajar.
+    //
+    // Jadi uji ini tidak dihapus, ia DIBALIK. Yang dulu dianggap benar sekarang
+    // justru yang harus dicegah, dan penjagaannya tetap dibutuhkan: pewarisan
+    // bisa kembali diam-diam lewat ambil_atau_buat_draft() yang dipakai kedua
+    // domain.
+    http('kab', 'Rekam_Kawasan?tahun=' . TAHUN . '&triwulan=3');
+    $LAP7 = laporan_kawasan($KAB, 3);
     cek($LAP7 > 0, 'Periode berikutnya dibuat');
-    cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP7]) === $sisa,
-        $sisa . ' intervensi diwarisi');
-    cek((string) skalar('SELECT total_luas_ha FROM rd_kawasan_ringkasan WHERE laporan_id = ?', [$LAP7]) === '12.75',
-        'Ringkasan ikut diwarisi apa adanya');
-    $urutan7 = kolom_int('SELECT urutan FROM rd_kawasan_intervensi WHERE laporan_id = ? ORDER BY urutan', [$LAP7]);
-    cek($urutan7 === range(1, $sisa), 'Urutan warisan tetap rapat');
+    cek($LAP7 !== $LAP, 'TW III laporan tersendiri, bukan TW II yang dipakai ulang');
+    cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP7]) === 0,
+        'TW III lahir KOSONG — nol intervensi terbawa dari TW II');
+    $luas7 = skalar('SELECT total_luas_ha FROM rd_kawasan_ringkasan WHERE laporan_id = ?', [$LAP7]);
+    cek($luas7 === NULL || (float) $luas7 === 0.0,
+        'Ringkasan TIDAK terbawa — kosong atau 0, bukan 12.75 milik TW II');
+    // Pembanding: tanpa baris ini, "TW III kosong" tetap hijau kalau TW II juga
+    // ternyata kosong karena sebab lain, dan ujinya jadi tidak membuktikan apa pun.
+    cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP]) === $sisa,
+        'TW II tetap berisi ' . $sisa . ' intervensi (pembanding sahih)');
 
     // ------------------- "tidak ada penanganan" boleh dikirim polos
-    $url8 = 'Rekam_Kawasan?tahun=' . TAHUN . '&bulan=8';
+    $url8 = 'Rekam_Kawasan?tahun=' . TAHUN . '&triwulan=4';
     http('kab', $url8);
-    $LAP8 = laporan_kawasan($KAB, 8);
+    $LAP8 = laporan_kawasan($KAB, 4);
     $t = csrf('kab', $url8);
     http('kab', 'Rekam_Kawasan/simpan_ringkasan', ['csrf_kpkp_token' => $t,
         'laporan_id' => $LAP8, 'ada_penanganan' => '0', 'ada_progres' => '0',
