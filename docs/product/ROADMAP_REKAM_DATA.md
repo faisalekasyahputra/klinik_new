@@ -271,6 +271,15 @@ view kisi 10 sumber × 6 program.
 ## 9. Tracker
 
 | Tahap | Status | Tanggal | Bukti |
+> 🔻 **Angka di tabel ini adalah catatan 29 Jul 2026 dan sudah tidak berlaku.**
+> Rebuild wizard + migrasi 024 mengubah bentuk datanya, dan keenam suite ditulis
+> ulang 30 Jul: **D1 18** (menyusut — separuh Perumahan-nya dibuang, digantikan
+> `uji_wizard_w2`), **D2 28, D3 46, D4 40, D5 38, D6 39**. Tabel keadaan
+> sekarang ada di [`RUNBOOK_RILIS_WIZARD_024.md`](../engineering/RUNBOOK_RILIS_WIZARD_024.md).
+> Baris di bawah dipertahankan sebagai jejak pembuktian saat itu — termasuk uji
+> baliknya, yang tetap sahih sebagai catatan cara kerja, bukan sebagai angka
+> yang harus cocok hari ini.
+
 |---|---|---|---|
 | D0 Fondasi data | ✅ selesai | 29 Jul 2026 | `SKEMA_DATA_REKAM_DATA.md` §6 — 10 uji hijau + round-trip |
 | D1 Model & status | ✅ selesai | 29 Jul 2026 | `migrate uji_rekam_data_d1` **48/48** di DB lokal. Uji balik: guard scope `laporan()` dilepas → **2 gagal** tepat di `Laporan kabupaten lain tidak terbaca` + `Isi laporan kabupaten lain tidak terbaca`, lalu 48/48 lagi setelah dipulihkan; nol jejak mutasi tersisa. |

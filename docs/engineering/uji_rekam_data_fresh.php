@@ -238,9 +238,25 @@ foreach ([[$php, 'index.php', 'migrate'], [$php, 'index.php', 'migrate', 'status
 }
 
 $versi = $gagal ? NULL : ($admin->query('SELECT version FROM migrations')->fetch_assoc()['version'] ?? NULL);
-echo "\nVersi skema setelah migrasi: " . var_export($versi, TRUE) . "\n";
-if ($versi !== '20260701000021') {
-    echo "GAGAL: versi skema bukan 20260701000021.\n";
+
+// Versi harapan DITURUNKAN dari berkas migrasi paling akhir, tidak diketik.
+// Sebelumnya di sini tertulis '20260701000021' — benar saat ditulis, dan sejak
+// migrasi 022..024 mendarat, runner ini MERAH pada sistem yang justru benar.
+// Angka yang harus cocok dengan sesuatu tidak boleh ditulis tangan: yang
+// menambah migrasi berikutnya tidak punya alasan mencari baris ini.
+$berkas_migrasi = glob(dirname(__DIR__, 2) . '/application/migrations/*.php');
+sort($berkas_migrasi);
+$harapan = $berkas_migrasi
+    ? substr(basename((string) end($berkas_migrasi)), 0, 14)
+    : NULL;
+
+echo "\nVersi skema setelah migrasi: " . var_export($versi, TRUE)
+    . " (harapan dari berkas: " . var_export($harapan, TRUE) . ")\n";
+if ($harapan === NULL) {
+    echo "GAGAL: tidak ada berkas migrasi yang terbaca.\n";
+    $gagal++;
+} elseif ($versi !== $harapan) {
+    echo "GAGAL: versi skema bukan {$harapan}.\n";
     $gagal++;
 }
 
@@ -278,8 +294,13 @@ if ( ! $gagal) {
 // ------------------------------------------------------------------ check
 
 if ( ! $gagal) {
+    // Dua suite wizard IKUT dijalankan di sini. Tanpa mereka runner DB-bersih
+    // ini melewatkan justru pintu tulis yang paling banyak berubah (W1/W2), dan
+    // "semua hijau di DB bersih" jadi klaim yang lebih besar dari buktinya.
     foreach ([
         [$php, 'index.php', 'migrate', 'uji_rekam_data_d1'],
+        [$php, 'index.php', 'migrate', 'uji_wizard_w2'],
+        [$php, 'docs/engineering/uji_wizard_rekam_perumahan.php'],
         [$php, 'docs/engineering/uji_rekam_data_d2.php'],
         [$php, 'docs/engineering/uji_rekam_data_d3.php'],
         [$php, 'docs/engineering/uji_rekam_data_d4.php'],
