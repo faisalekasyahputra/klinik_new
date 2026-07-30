@@ -61,7 +61,14 @@
         main.innerHTML = SKELETON;
         main.scrollTop = 0;
 
-        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+        // `X-Shell: admin` menandai SIAPA yang meminta, bukan sekadar "ini AJAX".
+        // Tanpa ini `render_user_dashboard()` melepas shell admin untuk permintaan
+        // AJAX apa pun — termasuk dari loader portal PUBLIK di layouts/footer.php,
+        // yang lalu menyuntikkan markup admin ke dalam panel publik. Hasilnya
+        // halaman admin tampil tanpa sidebar, tanpa tailwind-admin.css, dan tanpa
+        // ikon Phosphor (portal memakai FontAwesome): judul kartu tak terbaca dan
+        // ikon jadi kotak kosong. Terjadi nyata pada /Rekam_Data.
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-Shell': 'admin' }, credentials: 'same-origin' })
             .then(function (res) {
                 if (myToken !== loadToken) return null;
                 if (!res.ok || res.redirected) { window.location.href = url; return null; }

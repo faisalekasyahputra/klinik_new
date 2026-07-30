@@ -503,7 +503,28 @@ class MY_Controller extends CI_Controller {
      * @param array  $data Data untuk view
      */
     protected function render_user_dashboard($view, $data = []) {
-        if ($this->input->is_ajax_request()) {
+        // Cabang partial HANYA untuk loader dashboard (assets/js/admin-progressive.js),
+        // dikenali lewat `X-Shell: admin` — BUKAN untuk sembarang permintaan AJAX.
+        //
+        // Kenapa: loader portal PUBLIK (application/views/layouts/footer.php)
+        // menangkap semua tautan internal dan mem-fetch-nya dengan
+        // `X-Requested-With: XMLHttpRequest`. Kalau cabang ini hanya memeriksa
+        // "apakah AJAX", halaman admin dibalas TANPA shell admin lalu disuntikkan
+        // ke panel publik: tanpa sidebar, tanpa tailwind-admin.css, dan tanpa ikon
+        // Phosphor (portal memakai FontAwesome) — judul kartu putih di kartu putih,
+        // ikon jadi kotak kosong. Terjadi nyata saat kartu REKAM DATA di beranda
+        // publik diklik menuju /Rekam_Data.
+        //
+        // Dengan pemeriksaan ini, permintaan dari loader publik mendapat DOKUMEN
+        // UTUH, dan `loadTab()` sudah punya penjaganya: pola `^\s*(<!doctype|<html)`
+        // membuatnya menyerah ke navigasi penuh sehingga shell admin yang benar
+        // termuat. Perhatikan bahwa daftar jalur di footer.php
+        // (`login|admin|Admin|akun|...`) TIDAK bisa diandalkan sebagai penjaga —
+        // ia menyebut nama jalur satu per satu, dan `Rekam_*` tidak memuat kata
+        // "admin" sama sekali. Header ini menutup seluruh keluarga itu sekaligus,
+        // termasuk controller admin baru yang namanya belum ada hari ini.
+        if ($this->input->is_ajax_request()
+            && $this->input->get_request_header('X-Shell', TRUE) === 'admin') {
             // Cabang partial untuk loader progresif dashboard — pola yang sama
             // dengan render() portal. Judul dikirim lewat header supaya
             // document.title ikut diperbarui tanpa membungkus HTML.
