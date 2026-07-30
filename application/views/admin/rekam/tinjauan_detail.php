@@ -58,7 +58,10 @@ $bisa_diputus   = $laporan['status'] === 'terkirim' && ! $sudah_ditinjau;
     foreach ($isi['baris'] as $row) {
         $per_sumber[$row['sumber_dana']][$row['program']] = $row;
     }
-    $bagian = array_column($isi['bagian'], 'ada', 'sumber_dana');
+    // Gerbang kini per PROGRAM, bukan per sumber dana (W1). Peninjau perlu tahu
+    // program mana yang DIPILIH kabupaten untuk dilaporkan: program yang tidak
+    // dipilih memang tidak dilaporkan, dan itu berbeda dari dilaporkan nol.
+    $dipilih = $isi['program'] ?? [];
     ?>
     <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
       <h2 class="font-bold text-gray-900 dark:text-white">Capaian per sumber dana</h2>
@@ -67,37 +70,39 @@ $bisa_diputus   = $laporan['status'] === 'terkirim' && ! $sudah_ditinjau;
           <thead class="text-xs uppercase text-gray-500 dark:text-brand-muted">
             <tr>
               <th class="py-2 pr-3">Sumber Dana</th>
-              <?php foreach ($label['program'] as $plabel): ?>
-                <th class="py-2 px-2 text-right"><?= $e($plabel) ?></th>
+              <?php foreach ($label['program'] as $pkode => $plabel): ?>
+                <th class="py-2 px-2 text-right">
+                  <?= $e($plabel) ?>
+                  <?php if ( ! array_key_exists($pkode, $dipilih)): ?>
+                    <span class="block text-[10px] font-normal normal-case text-gray-400">tidak dilaporkan</span>
+                  <?php else: ?>
+                    <span class="block text-[10px] font-normal normal-case">rencana &rarr; realisasi</span>
+                  <?php endif; ?>
+                </th>
               <?php endforeach; ?>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-white/5">
-            <?php foreach ($label['sumber'] as $skode => $slabel):
-                $ada = array_key_exists($skode, $bagian) ? (int) $bagian[$skode] : NULL;
-            ?>
+            <?php foreach ($label['sumber'] as $skode => $slabel): ?>
               <tr>
-                <td class="py-2 pr-3 font-medium text-gray-900 dark:text-white">
-                  <?= $e($slabel) ?>
-                  <?php if ($ada === 0): ?>
-                    <span class="ml-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-white/5">Tidak Ada</span>
-                  <?php elseif ($ada === NULL): ?>
-                    <span class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">Belum dijawab</span>
-                  <?php endif; ?>
-                </td>
+                <td class="py-2 pr-3 font-medium text-gray-900 dark:text-white"><?= $e($slabel) ?></td>
                 <?php foreach ($label['program'] as $pkode => $plabel):
                     $sel = $per_sumber[$skode][$pkode] ?? NULL;
                 ?>
                   <td class="py-2 px-2 text-right <?= $sel ? '' : 'text-gray-300 dark:text-white/20' ?>">
                     <?php if ($sel): ?>
-                      <?= number_format((int) $sel['unit'], 0, ',', '.') ?>
                       <span class="block text-xs text-gray-500 dark:text-brand-muted">
-                        <?= number_format((int) $sel['anggaran'], 0, ',', '.') ?>
+                        <?= number_format((int) $sel['rencana_unit'], 0, ',', '.') ?> unit /
+                        <?= number_format((int) $sel['rencana_anggaran'], 0, ',', '.') ?>
+                      </span>
+                      <b><?= number_format((int) $sel['realisasi_unit'], 0, ',', '.') ?> unit</b>
+                      <span class="block text-xs text-gray-500 dark:text-brand-muted">
+                        <?= number_format((int) $sel['realisasi_anggaran'], 0, ',', '.') ?>
                       </span>
                       <?php if ( ! empty($sel['keterangan'])): ?>
                         <span class="block text-xs italic text-gray-400"><?= $e($sel['keterangan']) ?></span>
                       <?php endif; ?>
-                    <?php else: ?>—<?php endif; ?>
+                    <?php else: ?>&mdash;<?php endif; ?>
                   </td>
                 <?php endforeach; ?>
               </tr>
