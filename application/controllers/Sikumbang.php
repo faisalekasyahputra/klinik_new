@@ -104,10 +104,4 @@ class Sikumbang extends MY_Controller {
 		$data['content'] = $this->load->view('pages/data_spasial/sikumbang', $data, true);
         $this->load->view('layouts/main', $data);
 	}
-
-	public function tambah_intervensi()
-	{
-		
-		$this->load->view('pages/data_spasial/tambah_intervensi');
-	}
 }

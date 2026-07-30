@@ -638,12 +638,27 @@ ini.
 `Buka_peta.php` — dua-duanya 404 di production dan berkasnya tidak ada di repo.
 Route `pengaturan` juga sudah 404.
 
-**Belum — keputusan produk, bukan cacat:** `Kemitraan.php` dan `Kabupaten.php`
-masih **200** di production. Keduanya benar-benar yatim (diverifikasi: nol view
-menautkannya; delapan tautan publik semuanya ke `KemitraanPortal`, dan dua yang
-tampak seperti `Kemitraan/` ternyata `Admin_Kemitraan/` yang hidup). Tapi
-keduanya halaman yang MENYALA, bukan rusak — menghapusnya mengubah 200 jadi 404
-untuk siapa pun yang menyimpan tautannya. Tunggu keputusan user.
+**`Kabupaten.php` DIHAPUS 30 Jul 2026 — dan bukan karena "halaman kosong"
+seperti tertulis di daftar lama.** Ia BUKAN admin kab/kota (itu
+`Admin_Kabkota.php`; nama mirip, isi tidak berhubungan). Dua methodnya:
+- `index()` badannya benar-benar kosong → `/Kabupaten` 200 dengan **0 byte**.
+  Daftar kabupaten yang sungguhan sudah ada dan hidup: `Index::listkabupaten()`
+  di `/listkabupaten`, 59 KB.
+- `tambah_intervensi()` merender view yang RUSAK — `include "layout/head.php"`
+  (tunggal; proyek ini memakai `layouts/`), jadi nol CSS/JS. Dan `<form>`-nya
+  **tanpa `action` dan tanpa `method`**: menekan "Simpan Data Intervensi"
+  memuat ulang halaman dan membuang semua ketikan. Mockup statis, tidak pernah
+  tersambung backend. Di production galat disembunyikan, jadi yang tersaji
+  formulir polos yang TERLIHAT bekerja — lebih buruk daripada halaman galat.
+  `Sikumbang::tambah_intervensi()` byte-identik: satu mockup mati di dua alamat.
+  Kedua rute + view-nya dicabut; `Sikumbang::index()` (115 KB, hidup) utuh.
+
+**Belum — keputusan produk, bukan cacat:** `Kemitraan.php` masih **200** di
+production dan benar-benar yatim (nol view menautkannya; delapan tautan publik
+semuanya ke `KemitraanPortal`, dan dua yang tampak seperti `Kemitraan/` ternyata
+`Admin_Kemitraan/` yang hidup). Tapi ia halaman yang MENYALA dan berisi, bukan
+rusak — menghapusnya mengubah 200 jadi 404 untuk siapa pun yang menyimpan
+tautannya. Tunggu keputusan user.
 
 
 ## 19. Metode Baku Backend Role ↔ Admin
