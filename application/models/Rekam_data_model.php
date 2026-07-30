@@ -36,9 +36,28 @@ class Rekam_data_model extends CI_Model {
     /** Status yang masih boleh ditulis. `terkirim` sengaja tidak masuk. */
     private const STATUS_TERBUKA = ['draft', 'perlu_perbaikan'];
 
+    /**
+     * DUA BELAS sumber, bukan sepuluh. Google Form dinas (lihat
+     * docs/engineering/STRUKTUR_FORM_SUMBER_REKAM_DATA.md) memuat sepuluh dan
+     * TIDAK memuat `apbd_provinsi` maupun `baznas_provinsi`; sketsa Menu Utama
+     * user memuat keduanya tetapi tidak memuat `apbn_dak` dan `apbn_kemensos`.
+     * Keduanya digabung atas keputusan user 30 Jul 2026.
+     *
+     * Alasannya teknis, bukan kompromi: menambah nilai ENUM adalah ALTER yang
+     * tidak menyentuh baris yang sudah ada, sedangkan MEMBUANG `apbn_dak`/
+     * `apbn_kemensos` bersifat destruktif begitu ada laporan memakainya — dan
+     * kalau dinas masih memakai Google Form itu, dua sumber tersebut memang
+     * harus bisa dilaporkan. `apbd_provinsi` bukan nama lain dari `apbn_dak`
+     * (uang provinsi vs transfer pusat) dan `baznas_provinsi` bukan nama lain
+     * dari `apbn_kemensos` (lembaga zakat vs kementerian).
+     *
+     * Urutan di sini menentukan urutan tampil. Dua yang baru diselipkan pada
+     * kelompoknya masing-masing, bukan ditempel di ujung.
+     */
     public const SUMBER_PERUMAHAN = [
-        'apbd_kabkota', 'apbn_bsps', 'apbn_dak', 'apbn_kemensos', 'apbn_dana_desa',
-        'apbn_kl_lain', 'baznas_ri', 'baznas_kabkota', 'csr', 'dana_lainnya',
+        'apbd_provinsi', 'apbd_kabkota', 'apbn_bsps', 'apbn_dak', 'apbn_kemensos',
+        'apbn_dana_desa', 'apbn_kl_lain', 'baznas_ri', 'baznas_provinsi',
+        'baznas_kabkota', 'csr', 'dana_lainnya',
     ];
 
     /** Hanya tiga sumber ini yang punya field keterangan di form aslinya. */
