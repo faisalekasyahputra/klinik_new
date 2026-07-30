@@ -595,4 +595,186 @@ class Migrate extends CI_Controller {
             exit(1);
         }
     }
+
+    /**
+     * Check wizard W2 — pintu tulis model bentuk baru.
+     *
+     *   php index.php migrate uji_wizard_w2
+     *
+     * Tahun sentinel 2099 (harus di dalam rentang sah model 2020-2100), dan
+     * seluruh jejaknya dihapus di akhir.
+     */
+    public function uji_wizard_w2()
+    {
+        if (ENVIRONMENT === 'production') {
+            show_404();
+            return;
+        }
+
+        $this->load->model('Rekam_data_model', 'rd');
+
+        $total = 0; $failed = 0;
+        $check = function ($condition, $label) use (&$total, &$failed) {
+            $total++;
+            echo ($condition ? 'OK    ' : 'GAGAL ') . $label . "\n";
+            if ( ! $condition) { $failed++; }
+        };
+
+        $TAHUN = 2099;
+        $kabs = $this->db->select('id')->order_by('id', 'ASC')->limit(2)->get('kabupaten')->result_array();
+        $aktor = $this->db->select('id')->order_by('id', 'ASC')->limit(1)->get('usr_users')->row_array();
+        if (count($kabs) < 2 || ! $aktor) {
+            fwrite(STDERR, "Prasyarat gagal: butuh >=2 kabupaten dan >=1 pengguna.\n");
+            exit(1);
+        }
+        $KAB = (int) $kabs[0]['id']; $LAIN = (int) $kabs[1]['id']; $AKTOR = (int) $aktor['id'];
+
+        $bersihkan = function () use ($TAHUN) {
+            foreach ($this->db->select('id')->get_where('rd_laporan', ['tahun' => $TAHUN])->result_array() as $r) {
+                $this->db->delete('rd_laporan', ['id' => (int) $r['id']]);
+            }
+        };
+        $bersihkan();
+
+        try {
+            // ---------------------------------------------------------- periode
+            $check(empty($this->rd->ambil_atau_buat_draft('perumahan', $KAB, $TAHUN, 5)['success']),
+                'Triwulan 5 ditolak (rentang 1-4)');
+            $check(empty($this->rd->ambil_atau_buat_draft('perumahan', $KAB, $TAHUN, 0)['success']),
+                'Triwulan 0 ditolak');
+
+            $tw1 = $this->rd->ambil_atau_buat_draft('perumahan', $KAB, $TAHUN, 1);
+            $check( ! empty($tw1['success']), 'Draft TW1 dibuat');
+            $ID1 = (int) $tw1['laporan']['id'];
+
+            $check((int) $this->rd->ambil_atau_buat_draft('perumahan', $KAB, $TAHUN, 1)['laporan']['id'] === $ID1,
+                'Idempoten: periode sama tidak melahirkan laporan kedua');
+            $check((int) ($tw1['diwarisi'] ?? -1) === 0, 'Nol pewarisan (per triwulan, bukan kumulatif)');
+
+            $check($this->rd->laporan_periode('perumahan', $KAB, $TAHUN, 3) === NULL,
+                'laporan_periode() tidak membuat apa pun untuk periode kosong');
+
+            // --------------------------------------------------- gerbang program
+            $check(empty($this->rd->simpan_gerbang_program($ID1, ['program_ngawur'], $KAB)['success']),
+                'Program tidak dikenal ditolak');
+
+            $g = $this->rd->simpan_gerbang_program($ID1, ['pk_rtlh', 'pb_rtlh'], $KAB);
+            $check( ! empty($g['success']) && $g['dipilih'] === 2, 'Dua program dicentang');
+
+            // --------------------------------------------------------- isi angka
+            $check(empty($this->rd->simpan_sumber($ID1, 'pb_backlog', 'csr',
+                    ['realisasi_unit' => 1, 'realisasi_anggaran' => 1000], $KAB)['success']),
+                'Angka untuk program yang belum dicentang ditolak');
+
+            $check(empty($this->rd->simpan_sumber($ID1, 'pk_rtlh', 'apbd_kabkota',
+                    ['realisasi_unit' => 0, 'realisasi_anggaran' => 5000000], $KAB)['success']),
+                'REALISASI: anggaran tanpa unit ditolak');
+            $check(empty($this->rd->simpan_sumber($ID1, 'pk_rtlh', 'apbd_kabkota',
+                    ['rencana_unit' => 0, 'rencana_anggaran' => 5000000], $KAB)['success']),
+                'RENCANA: anggaran tanpa unit ditolak');
+            $check(empty($this->rd->simpan_sumber($ID1, 'pk_rtlh', 'apbd_kabkota',
+                    ['realisasi_unit' => -3, 'realisasi_anggaran' => 0], $KAB)['success']),
+                'Angka negatif ditolak');
+            $check(empty($this->rd->simpan_sumber($ID1, 'pk_rtlh', 'apbd_kabkota', [], $KAB)['success']),
+                'Seluruh angka nol ditolak');
+
+            $check( ! empty($this->rd->simpan_sumber($ID1, 'pk_rtlh', 'apbd_kabkota',
+                    ['rencana_unit' => 100, 'rencana_anggaran' => 2000000000,
+                     'realisasi_unit' => 90, 'realisasi_anggaran' => 1800000000], $KAB)['success']),
+                'Empat angka tersimpan');
+
+            $this->rd->simpan_sumber($ID1, 'pk_rtlh', 'apbd_kabkota',
+                ['rencana_unit' => 100, 'rencana_anggaran' => 2000000000,
+                 'realisasi_unit' => 95, 'realisasi_anggaran' => 1900000000], $KAB);
+            $check((int) $this->db->where(['laporan_id' => $ID1, 'program' => 'pk_rtlh',
+                    'sumber_dana' => 'apbd_kabkota'])->count_all_results('rd_perumahan_baris') === 1,
+                'Simpan ulang mengubah, tidak menggandakan');
+            $check((int) $this->db->select('realisasi_unit')->get_where('rd_perumahan_baris',
+                    ['laporan_id' => $ID1, 'program' => 'pk_rtlh', 'sumber_dana' => 'apbd_kabkota'])
+                    ->row('realisasi_unit') === 95,
+                'Nilai terbarui ke 95');
+
+            // Keterangan hanya untuk sumber tertentu
+            $this->rd->simpan_sumber($ID1, 'pk_rtlh', 'csr',
+                ['realisasi_unit' => 5, 'realisasi_anggaran' => 50000000, 'keterangan' => 'PT Uji'], $KAB);
+            $check($this->db->select('keterangan')->get_where('rd_perumahan_baris',
+                    ['laporan_id' => $ID1, 'program' => 'pk_rtlh', 'sumber_dana' => 'csr'])
+                    ->row('keterangan') === 'PT Uji', 'Keterangan tersimpan untuk CSR');
+            $this->rd->simpan_sumber($ID1, 'pk_rtlh', 'apbn_dak',
+                ['realisasi_unit' => 5, 'realisasi_anggaran' => 50000000, 'keterangan' => 'diabaikan'], $KAB);
+            $check($this->db->select('keterangan')->get_where('rd_perumahan_baris',
+                    ['laporan_id' => $ID1, 'program' => 'pk_rtlh', 'sumber_dana' => 'apbn_dak'])
+                    ->row('keterangan') === '', 'Keterangan diabaikan untuk sumber tanpa penyalur');
+
+            // ------------------------------------------------------------ scope
+            $check(empty($this->rd->simpan_sumber($ID1, 'pk_rtlh', 'apbn_bsps',
+                    ['realisasi_unit' => 1, 'realisasi_anggaran' => 0], $LAIN)['success']),
+                'Kabupaten lain ditolak (scope sebagai gerbang)');
+
+            // ----------------------------------------------------------- gerbang
+            $check(in_array('pb_rtlh', $this->rd->program_tanpa_angka($ID1), TRUE),
+                'Program dicentang tanpa angka terdeteksi');
+            $check(empty($this->rd->kirim($ID1, $AKTOR, $KAB)['success']),
+                'Kirim ditolak selama ada program kosong');
+
+            // Mencabut centang menyapu angkanya
+            $this->rd->simpan_gerbang_program($ID1, ['pk_rtlh'], $KAB);
+            $check((int) $this->db->where('laporan_id', $ID1)->count_all_results('rd_perumahan_program') === 1,
+                'Program dicabut hilang dari gerbang');
+            $check($this->rd->program_tanpa_angka($ID1) === [], 'Nol program kosong tersisa');
+            $check( ! empty($this->rd->kirim($ID1, $AKTOR, $KAB)['success']), 'Kirim diterima');
+
+            $check(empty($this->rd->simpan_sumber($ID1, 'pk_rtlh', 'apbn_bsps',
+                    ['realisasi_unit' => 1, 'realisasi_anggaran' => 0], $KAB)['success']),
+                'Laporan terkirim terkunci dari perubahan');
+
+            // -------------------------------------------------------- hapus baris
+            $this->rd->minta_perbaikan($ID1, $AKTOR, 'perbaiki', 'perumahan');
+            $check( ! empty($this->rd->hapus_sumber($ID1, 'pk_rtlh', 'apbn_dak', $KAB)['success']),
+                'Hapus satu sumber dana berhasil');
+            $check(empty($this->rd->hapus_sumber($ID1, 'pk_rtlh', 'apbn_dak', $KAB)['success']),
+                'Hapus yang sudah tidak ada ditolak');
+            $this->rd->kirim($ID1, $AKTOR, $KAB);
+
+            // -------------------------------------------------------- KUMULATIF
+            $tw2 = $this->rd->ambil_atau_buat_draft('perumahan', $KAB, $TAHUN, 2);
+            $ID2 = (int) $tw2['laporan']['id'];
+            $this->rd->simpan_gerbang_program($ID2, ['pk_rtlh'], $KAB);
+            $this->rd->simpan_sumber($ID2, 'pk_rtlh', 'apbd_kabkota',
+                ['rencana_unit' => 10, 'rencana_anggaran' => 100000000,
+                 'realisasi_unit' => 5, 'realisasi_anggaran' => 50000000], $KAB);
+            $this->rd->kirim($ID2, $AKTOR, $KAB);
+
+            $satu = 0; $dua = 0;
+            foreach ($this->rd->rekap('perumahan', $TAHUN, 1, $KAB) as $r) {
+                if ($r['sumber_dana'] === 'apbd_kabkota' && $r['program'] === 'pk_rtlh') { $satu = (int) $r['realisasi_unit']; }
+            }
+            foreach ($this->rd->rekap('perumahan', $TAHUN, 2, $KAB) as $r) {
+                if ($r['sumber_dana'] === 'apbd_kabkota' && $r['program'] === 'pk_rtlh') { $dua = (int) $r['realisasi_unit']; }
+            }
+            $kum = 0;
+            foreach ($this->rd->kumulatif($TAHUN, 2, $KAB) as $r) {
+                if ($r['sumber_dana'] === 'apbd_kabkota' && $r['program'] === 'pk_rtlh') { $kum = (int) $r['realisasi_unit']; }
+            }
+            $check($satu === 95 && $dua === 5, "rekap() memberi angka SATU triwulan (TW1={$satu}, TW2={$dua})");
+            $check($kum === 100, "kumulatif() menjumlahkan sekali saja: 95+5={$kum}");
+
+            $kum1 = 0;
+            foreach ($this->rd->kumulatif($TAHUN, 1, $KAB) as $r) {
+                if ($r['sumber_dana'] === 'apbd_kabkota' && $r['program'] === 'pk_rtlh') { $kum1 = (int) $r['realisasi_unit']; }
+            }
+            $check($kum1 === 95, 'kumulatif() s.d. TW1 tidak memuat TW2');
+
+        } finally {
+            $bersihkan();
+        }
+
+        $check($this->db->where('tahun', $TAHUN)->count_all_results('rd_laporan') === 0,
+            'Data uji dibersihkan');
+
+        echo "RINGKASAN: {$total} pemeriksaan, {$failed} gagal\n";
+        if ($failed > 0) {
+            exit(1);
+        }
+    }
 }

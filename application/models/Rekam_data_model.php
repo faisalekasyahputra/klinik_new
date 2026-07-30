@@ -100,27 +100,34 @@ class Rekam_data_model extends CI_Model {
 
     /**
      * Idempoten: periode yang sama tidak pernah menghasilkan dua laporan.
-     * Draft baru mewarisi laporan `terkirim` terakhir pada tahun yang sama —
-     * wajib, karena angkanya kumulatif dan mengetik ulang dari nol membuat
-     * capaian menyusut diam-diam (roadmap §5).
+     *
+     * TIDAK ADA PEWARISAN — dan itu perubahan yang disengaja, bukan yang
+     * terlupa. Selama angkanya kumulatif ("s.d. bulan ini"), draft baru WAJIB
+     * mewarisi periode sebelumnya; mengetik ulang dari nol membuat capaian
+     * menyusut. Sejak W1 angkanya **per triwulan**, dan aturan itu berbalik
+     * total: mewarisi TW I ke TW II lalu menambahinya berarti capaian TW I
+     * terhitung dua kali, dan hasilnya terlihat sangat wajar.
+     *
+     * `diwarisi` tetap dikembalikan bernilai 0 supaya pemanggil lama tidak
+     * pecah, bukan karena masih ada yang diwariskan.
      */
-    public function ambil_atau_buat_draft($domain, $kabupaten_id, $tahun, $bulan)
+    public function ambil_atau_buat_draft($domain, $kabupaten_id, $tahun, $triwulan)
     {
         $domain       = (string) $domain;
         $kabupaten_id = (int) $kabupaten_id;
         $tahun        = (int) $tahun;
-        $bulan        = (int) $bulan;
+        $triwulan     = (int) $triwulan;
 
         if ( ! in_array($domain, self::DOMAINS, TRUE)) {
             return $this->gagal('domain_invalid', 'Domain laporan tidak dikenal.');
         }
-        if ($kabupaten_id < 1 || $bulan < 1 || $bulan > 12 || $tahun < 2020 || $tahun > 2100) {
+        if ($kabupaten_id < 1 || $triwulan < 1 || $triwulan > 4 || $tahun < 2020 || $tahun > 2100) {
             return $this->gagal('periode_invalid', 'Kabupaten atau periode tidak valid.');
         }
 
         $kunci = [
             'domain' => $domain, 'kabupaten_id' => $kabupaten_id,
-            'tahun' => $tahun, 'bulan' => $bulan,
+            'tahun' => $tahun, 'triwulan' => $triwulan,
         ];
 
         $ada = $this->db->get_where('rd_laporan', $kunci)->row_array();
@@ -128,11 +135,9 @@ class Rekam_data_model extends CI_Model {
             return ['success' => TRUE, 'laporan' => $ada, 'baru' => FALSE, 'diwarisi' => 0];
         }
 
-        $this->db->trans_begin();
         $ok = $this->db->insert('rd_laporan', $kunci + ['status' => 'draft']);
         $id = $ok ? (int) $this->db->insert_id() : 0;
-        if ( ! $ok || ! $id || ! $this->db->trans_status()) {
-            $this->db->trans_rollback();
+        if ( ! $ok || ! $id) {
             // Kalah balapan dengan permintaan lain untuk periode yang sama:
             // barisnya sudah ada, itu hasil yang sah — bukan kegagalan.
             $ada = $this->db->get_where('rd_laporan', $kunci)->row_array();
@@ -141,61 +146,25 @@ class Rekam_data_model extends CI_Model {
                 : $this->gagal('write_failed', 'Draft laporan belum dapat dibuat.');
         }
 
-        $diwarisi = $this->warisi($domain, $id, $kabupaten_id, $tahun, $bulan);
-        if ( ! $this->db->trans_status()) {
-            $this->db->trans_rollback();
-            return $this->gagal('write_failed', 'Draft laporan belum dapat dibuat.');
-        }
-        $this->db->trans_commit();
-
         return [
-            'success' => TRUE, 'baru' => TRUE, 'diwarisi' => $diwarisi,
+            'success' => TRUE, 'baru' => TRUE, 'diwarisi' => 0,
             'laporan' => $this->db->get_where('rd_laporan', ['id' => $id])->row_array(),
         ];
     }
 
-    /** Sumber warisan: bulan TERBESAR yang lebih kecil, berstatus `terkirim`, tahun sama. */
-    private function warisi($domain, $laporan_baru, $kabupaten_id, $tahun, $bulan)
+    /**
+     * Pindahkan langkah wizard. Disimpan di baris supaya pengisian bisa
+     * dilanjutkan setelah keluar-masuk — idiom yang sama dipakai wizard Warga.
+     */
+    public function simpan_langkah($laporan_id, $domain, $langkah, $scope_kabupaten_id = NULL)
     {
-        $sumber = $this->db->select('id')
-            ->where([
-                'domain' => $domain, 'kabupaten_id' => $kabupaten_id,
-                'tahun' => $tahun, 'status' => 'terkirim',
-            ])
-            ->where('bulan <', $bulan)
-            ->order_by('bulan', 'DESC')->limit(1)
-            ->get('rd_laporan')->row_array();
-        if ( ! $sumber) {
-            return 0;
+        $gerbang = $this->laporan_untuk_tulis($laporan_id, $domain, $scope_kabupaten_id);
+        if (empty($gerbang['success'])) {
+            return $gerbang;
         }
-        $lama = (int) $sumber['id'];
-
-        if ($domain === 'perumahan') {
-            $this->db->query(
-                'INSERT INTO rd_perumahan_bagian (laporan_id, sumber_dana, ada)
-                 SELECT ?, sumber_dana, ada FROM rd_perumahan_bagian WHERE laporan_id = ?',
-                [$laporan_baru, $lama]);
-            $this->db->query(
-                'INSERT INTO rd_perumahan_baris (laporan_id, sumber_dana, program, unit, anggaran, keterangan)
-                 SELECT ?, sumber_dana, program, unit, anggaran, keterangan
-                 FROM rd_perumahan_baris WHERE laporan_id = ?',
-                [$laporan_baru, $lama]);
-            return (int) $this->db->affected_rows();
-        }
-
-        $this->db->query(
-            'INSERT INTO rd_kawasan_ringkasan (laporan_id, ada_penanganan, ada_progres, catatan_progres, total_luas_ha)
-             SELECT ?, ada_penanganan, ada_progres, catatan_progres, total_luas_ha
-             FROM rd_kawasan_ringkasan WHERE laporan_id = ?',
-            [$laporan_baru, $lama]);
-        $this->db->query(
-            'INSERT INTO rd_kawasan_intervensi (laporan_id, urutan, indikator, nama_kegiatan, lokasi_teks,
-                 sumber_anggaran, keterangan_sumber, volume, nilai_anggaran, nilai_padat_karya)
-             SELECT ?, urutan, indikator, nama_kegiatan, lokasi_teks,
-                 sumber_anggaran, keterangan_sumber, volume, nilai_anggaran, nilai_padat_karya
-             FROM rd_kawasan_intervensi WHERE laporan_id = ?',
-            [$laporan_baru, $lama]);
-        return (int) $this->db->affected_rows();
+        $this->db->where('id', (int) $gerbang['laporan']['id'])
+            ->update('rd_laporan', ['current_step' => mb_substr((string) $langkah, 0, 24)]);
+        return ['success' => TRUE];
     }
 
     /**
@@ -205,13 +174,13 @@ class Rekam_data_model extends CI_Model {
      * Layar Capaian kini membuka tabel lebih dulu (sesuai sketsa Menu Utama),
      * dan sekadar MELIHAT tidak boleh melahirkan baris di `rd_laporan`. Kalau
      * layar baca memakai `ambil_atau_buat_draft()`, setiap admin yang cuma
-     * menengok akan membuat draft untuk bulan itu, dan riwayat pelaporan penuh
-     * periode kosong yang tidak pernah diniatkan siapa pun. Draft lahir hanya
-     * saat tombol Input Capaian ditekan.
+     * menengok akan membuat draft untuk periode itu, dan riwayat pelaporan
+     * penuh periode kosong yang tidak pernah diniatkan siapa pun. Draft lahir
+     * hanya saat tombol Input Capaian ditekan.
      *
      * @return array|null Baris rd_laporan, atau NULL bila periode itu belum ada.
      */
-    public function laporan_periode($domain, $kabupaten_id, $tahun, $bulan)
+    public function laporan_periode($domain, $kabupaten_id, $tahun, $triwulan)
     {
         if ( ! in_array($domain, self::DOMAINS, TRUE)) {
             return NULL;
@@ -220,127 +189,183 @@ class Rekam_data_model extends CI_Model {
             'domain'       => $domain,
             'kabupaten_id' => (int) $kabupaten_id,
             'tahun'        => (int) $tahun,
-            'bulan'        => (int) $bulan,
+            'triwulan'     => (int) $triwulan,
         ])->row_array() ?: NULL;
     }
 
     // -------------------------------------------------------------- perumahan
 
     /**
-     * Jawaban gerbang "Ada / Tidak Ada". Mengubah jawaban menjadi berbeda dari
-     * sebelumnya menghapus baris bagian lalu menulisnya ulang — angkanya ikut
-     * tersapu lewat CASCADE, bukan lewat JavaScript. Jawaban yang sama = no-op,
-     * jadi menyimpan dua kali tidak menghilangkan angka yang sudah diisi.
-     */
-    public function simpan_bagian($laporan_id, $sumber_dana, $ada, $scope_kabupaten_id = NULL)
-    {
-        $gerbang = $this->laporan_untuk_tulis($laporan_id, 'perumahan', $scope_kabupaten_id);
-        if (empty($gerbang['success'])) {
-            return $gerbang;
-        }
-        if ( ! in_array($sumber_dana, self::SUMBER_PERUMAHAN, TRUE)) {
-            return $this->gagal('sumber_invalid', 'Sumber dana tidak dikenal.');
-        }
-        $laporan_id = (int) $gerbang['laporan']['id'];
-        $ada        = $ada ? 1 : 0;
-
-        $sekarang = $this->db->select('ada')
-            ->get_where('rd_perumahan_bagian', ['laporan_id' => $laporan_id, 'sumber_dana' => $sumber_dana])
-            ->row_array();
-        if ($sekarang !== NULL && (int) $sekarang['ada'] === $ada) {
-            return ['success' => TRUE, 'laporan_id' => $laporan_id, 'berubah' => FALSE];
-        }
-
-        $this->db->trans_begin();
-        $this->db->delete('rd_perumahan_bagian', ['laporan_id' => $laporan_id, 'sumber_dana' => $sumber_dana]);
-        $ok = $this->db->insert('rd_perumahan_bagian', [
-            'laporan_id' => $laporan_id, 'sumber_dana' => $sumber_dana, 'ada' => $ada,
-        ]);
-        if ( ! $ok || ! $this->db->trans_status()) {
-            $this->db->trans_rollback();
-            return $this->gagal('write_failed', 'Jawaban sumber dana belum tersimpan.');
-        }
-        $this->db->trans_commit();
-        return ['success' => TRUE, 'laporan_id' => $laporan_id, 'berubah' => TRUE];
-    }
-
-    /**
-     * Angka per program untuk satu sumber dana.
-     * $baris = ['pk_rtlh' => ['unit' => 12, 'anggaran' => 300000000, 'keterangan' => '...'], ...]
+     * Gerbang "program yang akan dilaporkan" (frame 004) — enam centang sekaligus,
+     * bukan satu per satu. Dikirim utuh supaya mencabut centang punya arti:
+     * program yang hilang dari daftar dihapus gerbangnya, dan angkanya ikut
+     * tersapu lewat CASCADE — bukan lewat JavaScript, bukan lewat pembersihan
+     * terjadwal.
      *
-     * Sumber dananya wajib sudah dinyatakan "Ada" — dijamin FK gabungan di DB,
-     * tapi diperiksa di sini juga supaya pesannya bisa dibaca manusia.
+     * Karena mencabut centang MENGHAPUS angka, pemanggil wajib memastikan
+     * penggunanya tahu. Model tidak bisa menanyakan itu; yang bisa ia jamin
+     * hanyalah tidak ada angka yatim yang tertinggal.
      */
-    public function simpan_baris($laporan_id, $sumber_dana, array $baris, $scope_kabupaten_id = NULL)
+    public function simpan_gerbang_program($laporan_id, array $program_dipilih, $scope_kabupaten_id = NULL)
     {
         $gerbang = $this->laporan_untuk_tulis($laporan_id, 'perumahan', $scope_kabupaten_id);
         if (empty($gerbang['success'])) {
             return $gerbang;
         }
-        if ( ! in_array($sumber_dana, self::SUMBER_PERUMAHAN, TRUE)) {
-            return $this->gagal('sumber_invalid', 'Sumber dana tidak dikenal.');
-        }
         $laporan_id = (int) $gerbang['laporan']['id'];
 
-        $bagian = $this->db->select('ada')
-            ->get_where('rd_perumahan_bagian', ['laporan_id' => $laporan_id, 'sumber_dana' => $sumber_dana])
-            ->row_array();
-        if ( ! $bagian || (int) $bagian['ada'] !== 1) {
-            return $this->gagal('bagian_belum_ada', 'Sumber dana ini belum dinyatakan "Ada".');
-        }
-
-        $bersih = [];
-        foreach ($baris as $program => $nilai) {
+        $dipilih = [];
+        foreach ($program_dipilih as $program) {
             if ( ! in_array($program, self::PROGRAM, TRUE)) {
                 return $this->gagal('program_invalid', 'Program tidak dikenal.');
             }
-            $unit     = $this->angka_bulat($nilai['unit'] ?? 0);
-            $anggaran = $this->angka_bulat($nilai['anggaran'] ?? 0);
-            if ($unit === NULL || $anggaran === NULL) {
-                return $this->gagal('angka_invalid', 'Unit dan anggaran harus bilangan bulat tidak negatif.');
-            }
-            // Anggaran tanpa unit = uang keluar tanpa rumah tertangani. Hampir selalu
-            // salah ketik, dan kalau dibiarkan ia mencemari rekap provinsi.
-            if ($anggaran > 0 && $unit === 0) {
-                return $this->gagal('unit_kosong', 'Anggaran terisi tetapi unitnya 0. Isi unitnya, atau nolkan anggarannya.');
-            }
-            // Keterangan hanya bermakna di tiga sumber; di sumber lain dikosongkan,
-            // bukan ditolak — supaya payload lama tidak membuat form gagal.
-            $keterangan = in_array($sumber_dana, self::SUMBER_BERKETERANGAN, TRUE)
-                ? mb_substr(trim((string) ($nilai['keterangan'] ?? '')), 0, 150)
-                : '';
-            $bersih[$program] = [$unit, $anggaran, $keterangan];
+            $dipilih[$program] = TRUE;
         }
-        if ( ! $bersih) {
-            return $this->gagal('kosong', 'Tidak ada angka untuk disimpan.');
-        }
+        $dipilih = array_keys($dipilih);
+
+        $sebelum = array_column(
+            $this->db->select('program')->get_where('rd_perumahan_program', ['laporan_id' => $laporan_id])->result_array(),
+            'program');
+        $dicabut = array_values(array_diff($sebelum, $dipilih));
 
         $this->db->trans_begin();
-        foreach ($bersih as $program => [$unit, $anggaran, $keterangan]) {
-            // Simpan berkali-kali tidak menggandakan baris: kuncinya
-            // uq_rd_perumahan_baris (laporan_id, sumber_dana, program).
+        if ($dicabut) {
+            $this->db->where('laporan_id', $laporan_id)->where_in('program', $dicabut)
+                ->delete('rd_perumahan_program');
+        }
+        foreach ($dipilih as $program) {
             $this->db->query(
-                'INSERT INTO rd_perumahan_baris (laporan_id, sumber_dana, program, unit, anggaran, keterangan)
-                 VALUES (?, ?, ?, ?, ?, ?)
-                 ON DUPLICATE KEY UPDATE unit = VALUES(unit), anggaran = VALUES(anggaran),
-                     keterangan = VALUES(keterangan)',
-                [$laporan_id, $sumber_dana, $program, $unit, $anggaran, $keterangan]);
+                'INSERT INTO rd_perumahan_program (laporan_id, program, dilaporkan) VALUES (?, ?, 1)
+                 ON DUPLICATE KEY UPDATE dilaporkan = 1',
+                [$laporan_id, $program]);
         }
         if ( ! $this->db->trans_status()) {
             $this->db->trans_rollback();
-            return $this->gagal('write_failed', 'Angka belum tersimpan.');
+            return $this->gagal('write_failed', 'Pilihan program belum tersimpan.');
         }
         $this->db->trans_commit();
-        return ['success' => TRUE, 'laporan_id' => $laporan_id, 'baris' => count($bersih)];
+
+        return ['success' => TRUE, 'laporan_id' => $laporan_id,
+            'dipilih' => count($dipilih), 'dicabut' => count($dicabut)];
     }
 
-    /** Sumber dana yang belum dijawab Ada/Tidak Ada — penentu boleh-tidaknya Kirim. */
-    public function sumber_belum_dijawab($laporan_id)
+    /**
+     * Satu baris sumber dana di dalam satu program — tambah atau ubah.
+     * `$angka` = [rencana_unit, rencana_anggaran, realisasi_unit, realisasi_anggaran, keterangan]
+     *
+     * Programnya wajib sudah dicentang. Dijamin FK gabungan di DB, tapi
+     * diperiksa di sini juga supaya pesannya bisa dibaca manusia — FK hanya
+     * bisa menolak, tidak bisa menjelaskan.
+     */
+    public function simpan_sumber($laporan_id, $program, $sumber_dana, array $angka, $scope_kabupaten_id = NULL)
     {
-        $terjawab = $this->db->select('sumber_dana')
-            ->get_where('rd_perumahan_bagian', ['laporan_id' => (int) $laporan_id])
-            ->result_array();
-        return array_values(array_diff(self::SUMBER_PERUMAHAN, array_column($terjawab, 'sumber_dana')));
+        $gerbang = $this->laporan_untuk_tulis($laporan_id, 'perumahan', $scope_kabupaten_id);
+        if (empty($gerbang['success'])) {
+            return $gerbang;
+        }
+        if ( ! in_array($program, self::PROGRAM, TRUE)) {
+            return $this->gagal('program_invalid', 'Program tidak dikenal.');
+        }
+        if ( ! in_array($sumber_dana, self::SUMBER_PERUMAHAN, TRUE)) {
+            return $this->gagal('sumber_invalid', 'Sumber dana tidak dikenal.');
+        }
+        $laporan_id = (int) $gerbang['laporan']['id'];
+
+        $tercentang = $this->db->get_where('rd_perumahan_program',
+            ['laporan_id' => $laporan_id, 'program' => $program])->row_array();
+        if ( ! $tercentang) {
+            return $this->gagal('program_belum_dipilih',
+                'Program ini belum dicentang untuk dilaporkan pada periode ini.');
+        }
+
+        $nilai = [];
+        foreach (['rencana_unit', 'rencana_anggaran', 'realisasi_unit', 'realisasi_anggaran'] as $kolom) {
+            $n = $this->angka_bulat($angka[$kolom] ?? 0);
+            if ($n === NULL) {
+                return $this->gagal('angka_invalid', 'Unit dan anggaran harus bilangan bulat tidak negatif.');
+            }
+            $nilai[$kolom] = $n;
+        }
+
+        // Anggaran tanpa unit = uang keluar tanpa rumah tertangani. Hampir selalu
+        // salah ketik, dan kalau dibiarkan ia mencemari rekap provinsi. Berlaku
+        // untuk RENCANA maupun REALISASI: rencana anggaran tanpa target unit
+        // sama tidak masuk akalnya.
+        foreach (['rencana', 'realisasi'] as $sisi) {
+            if ($nilai[$sisi . '_anggaran'] > 0 && $nilai[$sisi . '_unit'] === 0) {
+                return $this->gagal('unit_kosong',
+                    ucfirst($sisi) . ': anggaran terisi tetapi unitnya 0. Isi unitnya, atau nolkan anggarannya.');
+            }
+        }
+        if (array_sum($nilai) === 0) {
+            return $this->gagal('kosong', 'Tidak ada angka untuk disimpan.');
+        }
+
+        // Keterangan hanya bermakna di tiga sumber; di sumber lain dikosongkan,
+        // bukan ditolak — supaya payload lama tidak membuat form gagal.
+        $keterangan = in_array($sumber_dana, self::SUMBER_BERKETERANGAN, TRUE)
+            ? mb_substr(trim((string) ($angka['keterangan'] ?? '')), 0, 150)
+            : '';
+
+        // Simpan berkali-kali tidak menggandakan baris: kuncinya
+        // uq_rd_perumahan_baris (laporan_id, program, sumber_dana).
+        $this->db->query(
+            'INSERT INTO rd_perumahan_baris
+                (laporan_id, program, sumber_dana, rencana_unit, rencana_anggaran,
+                 realisasi_unit, realisasi_anggaran, keterangan)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+                 rencana_unit = VALUES(rencana_unit), rencana_anggaran = VALUES(rencana_anggaran),
+                 realisasi_unit = VALUES(realisasi_unit), realisasi_anggaran = VALUES(realisasi_anggaran),
+                 keterangan = VALUES(keterangan)',
+            [$laporan_id, $program, $sumber_dana,
+                $nilai['rencana_unit'], $nilai['rencana_anggaran'],
+                $nilai['realisasi_unit'], $nilai['realisasi_anggaran'], $keterangan]);
+
+        if ( ! $this->db->trans_status()) {
+            return $this->gagal('write_failed', 'Angka belum tersimpan.');
+        }
+        return ['success' => TRUE, 'laporan_id' => $laporan_id];
+    }
+
+    /** Buang satu sumber dana dari satu program. */
+    public function hapus_sumber($laporan_id, $program, $sumber_dana, $scope_kabupaten_id = NULL)
+    {
+        $gerbang = $this->laporan_untuk_tulis($laporan_id, 'perumahan', $scope_kabupaten_id);
+        if (empty($gerbang['success'])) {
+            return $gerbang;
+        }
+        $laporan_id = (int) $gerbang['laporan']['id'];
+
+        $this->db->delete('rd_perumahan_baris', [
+            'laporan_id' => $laporan_id, 'program' => $program, 'sumber_dana' => $sumber_dana,
+        ]);
+        if ($this->db->affected_rows() < 1) {
+            return $this->gagal('tidak_ditemukan', 'Baris sumber dana tidak ditemukan pada program ini.');
+        }
+        return ['success' => TRUE, 'laporan_id' => $laporan_id];
+    }
+
+    /**
+     * Program yang sudah dicentang tetapi belum punya satu pun sumber dana —
+     * penentu boleh-tidaknya Kirim.
+     *
+     * Bedanya dengan gerbang lama tajam: dulu yang ditagih adalah menjawab
+     * SELURUH sumber dana Ada/Tidak Ada. Kini yang ditagih hanya program yang
+     * DIPILIH SENDIRI oleh petugas. Program yang tidak dicentang memang tidak
+     * dilaporkan, dan itu bukan kekurangan.
+     */
+    public function program_tanpa_angka($laporan_id)
+    {
+        $laporan_id = (int) $laporan_id;
+        return array_column($this->db
+            ->select('p.program')
+            ->from('rd_perumahan_program p')
+            ->join('rd_perumahan_baris b', 'b.laporan_id = p.laporan_id AND b.program = p.program', 'left')
+            ->where('p.laporan_id', $laporan_id)
+            ->group_by('p.program')
+            ->having('COUNT(b.id) = 0')
+            ->get()->result_array(), 'program');
     }
 
     /**
@@ -401,10 +426,21 @@ class Rekam_data_model extends CI_Model {
         $id = (int) $laporan['id'];
 
         if ($laporan['domain'] === 'perumahan') {
-            $belum = $this->sumber_belum_dijawab($id);
-            if ($belum) {
+            // Yang ditagih hanya program yang DIPILIH SENDIRI, bukan seluruh
+            // daftar. Program yang tidak dicentang memang tidak dilaporkan, dan
+            // itu bukan kekurangan. Tetapi program yang dicentang lalu dibiarkan
+            // kosong adalah janji yang tidak ditepati: di rekap ia tidak bisa
+            // dibedakan dari "dilaporkan nol".
+            $dipilih = (int) $this->db->where('laporan_id', $id)
+                ->count_all_results('rd_perumahan_program');
+            if ($dipilih === 0) {
                 return $this->gagal('belum_lengkap',
-                    count($belum) . ' sumber dana belum dijawab Ada/Tidak Ada.');
+                    'Belum ada program yang dipilih untuk dilaporkan pada periode ini.');
+            }
+            $kosong = $this->program_tanpa_angka($id);
+            if ($kosong) {
+                return $this->gagal('belum_lengkap',
+                    count($kosong) . ' program dicentang tetapi belum punya satu pun sumber dana.');
             }
         } else {
             $ringkasan = $this->db->get_where('rd_kawasan_ringkasan', ['laporan_id' => $id])->row_array();
@@ -655,22 +691,22 @@ class Rekam_data_model extends CI_Model {
      * Draft tidak pernah muncul di sini — yang belum dikirim bukan urusan
      * peninjau.
      */
-    public function daftar_tinjauan($domain, $tahun, $bulan = NULL)
+    public function daftar_tinjauan($domain, $tahun, $triwulan = NULL)
     {
         if ( ! in_array($domain, self::DOMAINS, TRUE)) {
             return [];
         }
         $this->db
-            ->select('l.id, l.kabupaten_id, l.bulan, l.status, l.submitted_at, l.reviewed_at,'
+            ->select('l.id, l.kabupaten_id, l.triwulan, l.status, l.submitted_at, l.reviewed_at,'
                 . ' l.catatan_admin, k.nama AS kabupaten')
             ->from('rd_laporan l')
             ->join('kabupaten k', 'k.id = l.kabupaten_id', 'left')
             ->where(['l.domain' => $domain, 'l.tahun' => (int) $tahun])
             ->where_in('l.status', ['terkirim', 'perlu_perbaikan']);
-        if ($bulan !== NULL) {
-            $this->db->where('l.bulan', (int) $bulan);
+        if ($triwulan !== NULL) {
+            $this->db->where('l.triwulan', (int) $triwulan);
         }
-        return $this->db->order_by('l.bulan', 'DESC')->order_by('k.nama', 'ASC')
+        return $this->db->order_by('l.triwulan', 'DESC')->order_by('k.nama', 'ASC')
             ->get()->result_array();
     }
 
@@ -709,14 +745,20 @@ class Rekam_data_model extends CI_Model {
         $id = (int) $laporan['id'];
 
         if ($laporan['domain'] === 'perumahan') {
+            // `program` diurutkan mengikuti self::PROGRAM lewat FIELD(), bukan
+            // alfabetis: urutan program punya arti di form dinas dan di rekap,
+            // dan urutan yang berbeda antar layar membuat orang salah baca baris.
+            $urut = "FIELD(program,'" . implode("','", self::PROGRAM) . "')";
             return [
                 'laporan' => $laporan,
-                'bagian'  => $this->db->order_by('sumber_dana', 'ASC')
-                    ->get_where('rd_perumahan_bagian', ['laporan_id' => $id])->result_array(),
-                'baris'   => $this->db->order_by('sumber_dana', 'ASC')->order_by('program', 'ASC')
+                'program' => array_column($this->db->select('program, dilaporkan')
+                    ->order_by($urut, '', FALSE)
+                    ->get_where('rd_perumahan_program', ['laporan_id' => $id])->result_array(),
+                    'dilaporkan', 'program'),
+                'baris'   => $this->db->order_by($urut, '', FALSE)->order_by('sumber_dana', 'ASC')
                     ->get_where('rd_perumahan_baris', ['laporan_id' => $id])->result_array(),
                 'bnba'    => $this->db->get_where('rd_perumahan_bnba', ['laporan_id' => $id])->row_array() ?: NULL,
-                'belum_dijawab' => $this->sumber_belum_dijawab($id),
+                'program_kosong' => $this->program_tanpa_angka($id),
             ];
         }
         return [
@@ -742,19 +784,21 @@ class Rekam_data_model extends CI_Model {
     }
 
     /**
-     * Rekap satu periode. **Tidak ada SUM() antar bulan** — angkanya sudah
-     * kumulatif, menjumlahkannya melipatgandakan capaian (§skema 5, jebakan
-     * terbesar modul ini). Satu-satunya penjumlahan yang sah adalah antar
-     * kabupaten pada bulan yang sama, dan itu dilakukan pemanggil.
+     * Rekap SATU triwulan. Untuk angka kumulatif s.d. triwulan tertentu, pakai
+     * `kumulatif()` — jangan menjumlahkan hasil metode ini sendiri di pemanggil,
+     * karena hanya satu tempat yang boleh tahu cara menjumlahkannya.
+     *
+     * Satu-satunya penjumlahan yang sah di sini adalah antar kabupaten pada
+     * triwulan yang sama, dan itu dilakukan pemanggil.
      */
-    public function rekap($domain, $tahun, $bulan, $kabupaten_id = NULL)
+    public function rekap($domain, $tahun, $triwulan, $kabupaten_id = NULL)
     {
         if ( ! in_array($domain, self::DOMAINS, TRUE)) {
             return [];
         }
         $this->db->where([
             'l.domain' => $domain, 'l.tahun' => (int) $tahun,
-            'l.bulan' => (int) $bulan, 'l.status' => 'terkirim',
+            'l.triwulan' => (int) $triwulan, 'l.status' => 'terkirim',
         ]);
         if ($kabupaten_id !== NULL) {
             $this->db->where('l.kabupaten_id', (int) $kabupaten_id);
@@ -762,7 +806,8 @@ class Rekam_data_model extends CI_Model {
 
         if ($domain === 'perumahan') {
             return $this->db
-                ->select('l.kabupaten_id, b.sumber_dana, b.program, b.unit, b.anggaran, b.keterangan')
+                ->select('l.kabupaten_id, b.program, b.sumber_dana, b.keterangan,'
+                    . ' b.rencana_unit, b.rencana_anggaran, b.realisasi_unit, b.realisasi_anggaran')
                 ->from('rd_laporan l')
                 ->join('rd_perumahan_baris b', 'b.laporan_id = l.id')
                 ->order_by('l.kabupaten_id', 'ASC')->order_by('b.sumber_dana', 'ASC')
@@ -780,8 +825,36 @@ class Rekam_data_model extends CI_Model {
     }
 
     /**
+     * Angka KUMULATIF perumahan s.d. satu triwulan — dijumlahkan di sini, dan
+     * hanya di sini.
+     *
+     * Sejak W1 penyimpanannya per triwulan, jadi kumulatif adalah nilai
+     * TURUNAN. Meletakkannya di model, bukan di controller atau view, karena
+     * penjumlahan yang salah pada angka capaian tidak terlihat salah: 520 unit
+     * yang terhitung dua kali tetap tampak seperti angka yang wajar. Satu
+     * tempat yang tahu cara menjumlahkan berarti satu tempat yang perlu benar.
+     *
+     * Hanya laporan `terkirim` yang ikut — draft belum dilaporkan ke provinsi.
+     */
+    public function kumulatif($tahun, $triwulan, $kabupaten_id = NULL)
+    {
+        $this->db
+            ->select('b.program, b.sumber_dana,'
+                . ' SUM(b.rencana_unit) AS rencana_unit, SUM(b.rencana_anggaran) AS rencana_anggaran,'
+                . ' SUM(b.realisasi_unit) AS realisasi_unit, SUM(b.realisasi_anggaran) AS realisasi_anggaran', FALSE)
+            ->from('rd_laporan l')
+            ->join('rd_perumahan_baris b', 'b.laporan_id = l.id')
+            ->where(['l.domain' => 'perumahan', 'l.tahun' => (int) $tahun, 'l.status' => 'terkirim'])
+            ->where('l.triwulan <=', (int) $triwulan);
+        if ($kabupaten_id !== NULL) {
+            $this->db->where('l.kabupaten_id', (int) $kabupaten_id);
+        }
+        return $this->db->group_by('b.program, b.sumber_dana')->get()->result_array();
+    }
+
+    /**
      * Daftar periode satu tahun, baca-saja. Bukan rekap angka — hanya jejak
-     * status supaya petugas tahu bulan mana yang sudah dikirim dan mana yang
+     * status supaya petugas tahu triwulan mana yang sudah dikirim dan mana yang
      * dikembalikan untuk diperbaiki.
      */
     public function riwayat($domain, $kabupaten_id, $tahun, $scope_kabupaten_id = NULL)
@@ -794,9 +867,9 @@ class Rekam_data_model extends CI_Model {
             return [];
         }
         return $this->db
-            ->select('id, bulan, status, submitted_at, reviewed_at, catatan_admin, updated_at')
+            ->select('id, triwulan, status, current_step, submitted_at, reviewed_at, catatan_admin, updated_at')
             ->where(['domain' => $domain, 'kabupaten_id' => (int) $kabupaten_id, 'tahun' => (int) $tahun])
-            ->order_by('bulan', 'DESC')
+            ->order_by('triwulan', 'DESC')
             ->get('rd_laporan')->result_array();
     }
 
