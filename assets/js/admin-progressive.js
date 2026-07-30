@@ -110,8 +110,18 @@
                 // Menu dipisahkan SEBELUM konten disuntik: `<template>` di ekor
                 // balasan tidak boleh ikut mendarat di area konten.
                 var potong = html.indexOf('<template id="sidebar-nav-baru">');
-                var menuHtml = potong === -1 ? '' : html.slice(potong);
-                if (potong !== -1) { html = html.slice(0, potong); }
+
+                // Penanda menu = tanda tangan partial DASHBOARD. Halaman portal
+                // publik juga punya cabang AJAX dan juga membalas potongan
+                // text/html, jadi ia lolos ketiga penjaga di atas — tanpa syarat
+                // ini, tautan dari dashboard ke portal menyuntikkan markup portal
+                // ke dalam shell admin (kebalikan persis dari bug X-Shell di
+                // komentar fetch). Arah gagalnya aman: partial yang tidak
+                // menyertakan penanda dimuat sebagai halaman penuh.
+                if (potong === -1) { window.location.href = url; return; }
+
+                var menuHtml = html.slice(potong);
+                html = html.slice(0, potong);
 
                 main.innerHTML = '<div class="animate-[fadeIn_0.3s_ease-out]">' + html + '</div>';
                 reExecuteScripts(main).then(function () {
