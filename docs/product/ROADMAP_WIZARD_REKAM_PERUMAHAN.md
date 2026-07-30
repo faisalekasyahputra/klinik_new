@@ -44,39 +44,48 @@ Pemetaan frame → layar:
 | K4 | Kartu KAWASAN KUMUH tetap placeholder; Sikaper tidak dihidupkan | 30 Jul |
 | K5 | Layar Capaian menampilkan **tabel dulu**, tombol Input di bawahnya | 30 Jul, sudah ada |
 
-### Terbuka — memblokir W1
+| K6 | **BNBA dipertahankan utuh**, dipasang sebagai langkah **opsional** di wizard — tidak memblokir Kirim. Persis statusnya di Google Form: satu-satunya field opsional dari 150. Tabel `rd_perumahan_bnba` dan kedua endpointnya tidak disentuh migrasi | 30 Jul |
+| K7 | **Kawasan ikut triwulanan — satu jalur, satu bentuk.** Keputusan user: "kawasan juga samakan, itu 1 jalur". Menyederhanakan skema: `periode_jenis` **tidak jadi dibuat**, cukup satu kolom `triwulan` | 30 Jul |
 
-| # | Pertanyaan | Kenapa penting |
-|---|---|---|
-| **T1** | **BNBA ikut wizard baru, atau dibuang?** | Ada di Google Form dan sudah terbangun, tetapi **nol** dari 9 frame memuatnya. Kalau dibangun hanya dari frame, dinas kehilangan daftar penerima by-name-by-address |
-| T2 | Kawasan ikut jadi triwulan, atau tetap bulanan? | Rancangan hanya memuat Perumahan. Menentukan bentuk kolom periode |
+### Terbuka
+
+Nol yang memblokir W1.
 
 ---
 
 ## 2. Skema sasaran
 
-### 2a. Periode — kolom baru yang tidak berbohong
+### 2a. Periode — satu kolom, satu arti
 
-Masalahnya: dua domain dengan irama berbeda. Perumahan jadi triwulanan,
-Kawasan (sejauh ini) tetap bulanan. Tiga jalan, dan alasan memilih yang ketiga:
-
-- ❌ Simpan 1–4 di kolom bernama `bulan` → nama berbohong; jebakan diam untuk
-  agent dan query berikutnya.
-- ❌ Tambah `triwulan` NULL di samping `bulan` → kunci unik pecah. MySQL
-  menganggap NULL berbeda satu sama lain, jadi `(domain, kab, tahun, bulan,
-  triwulan)` **tidak lagi mencegah** dua laporan untuk periode yang sama.
-- ✅ **Satu kolom `periode` + `periode_jenis`.**
+Kedua domain triwulanan (K7), jadi tidak perlu kolom penanda jenis. `bulan`
+di-`RENAME` menjadi `triwulan`, nilainya 1–4.
 
 ```
 rd_laporan
-  periode        TINYINT UNSIGNED   1-12 bila jenis=bulan, 1-4 bila jenis=triwulan
-  periode_jenis  ENUM('bulan','triwulan') NOT NULL DEFAULT 'bulan'
-  UNIQUE (domain, kabupaten_id, tahun, periode_jenis, periode)
-  current_step   VARCHAR(24) NOT NULL DEFAULT 'periode'   -- wizard bisa dilanjutkan
+  triwulan     TINYINT UNSIGNED  1-4
+  UNIQUE (domain, kabupaten_id, tahun, triwulan)   -- menggantikan uq_rd_laporan_periode
+  current_step VARCHAR(24) NOT NULL DEFAULT 'periode'
 ```
 
-`bulan` di-`RENAME` menjadi `periode`; baris lama otomatis `periode_jenis='bulan'`
-sehingga Kawasan tidak berubah arti sama sekali.
+**Konversi baris lama** memakai `CEIL(bulan/3)`.
+
+⚠️ **Klaim "production nol baris" TIDAK BENAR — dikoreksi 30 Jul.** Production
+punya **2 baris** `rd_laporan`: `#1 perumahan` dan `#2 kawasan`, keduanya kab
+3374, 2026-7, **draft kosong tanpa satu pun baris angka dan tanpa pengirim**.
+
+Asalnya bukan pelaporan sungguhan: keduanya lahir 29 Jul 23:01 dan 23:04 UTC,
+di tengah sapuan bersesi yang saya jalankan dan saya sebut "read-only". Sapuan
+itu memang hanya GET, tetapi di kode yang tayang `Rekam_Perumahan::index()`
+memanggil `ambil_atau_buat_draft()` — **satu GET menulis baris**. Cacat itu
+sudah diperbaiki di lokal lewat `laporan_periode()` (commit `fb44f76`) tetapi
+belum dirilis.
+
+Konsekuensinya untuk migrasi: konversi `CEIL(bulan/3)` aman di sini karena
+kedua baris itu kosong, jadi tidak ada arti angka yang berubah. **Tetapi
+verifikasi ulang sebelum rilis** — kalau sudah ada laporan berisi, memetakan
+"kumulatif s.d. Juli" menjadi "TW III" mengubah arti angkanya, bukan labelnya.
+
+Dua baris artefak itu sebaiknya dihapus sebelum rilis, dengan izin user.
 
 `current_step` mengikuti idiom wizard Warga: langkah disimpan **di baris**, bukan
 di sesi atau URL, supaya bisa dilanjutkan setelah keluar-masuk.
