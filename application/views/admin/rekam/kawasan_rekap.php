@@ -34,8 +34,14 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
       </form>
     </div>
 
+    <?php /* Judul ini dulu berbunyi "Angka kumulatif s.d. TW X" — dibantah oleh
+             keterangannya sendiri dua baris di bawah ("triwulan sebelumnya tidak
+             dijumlahkan"), dan dibantah oleh kodenya: Rekam_Kawasan::rekap()
+             memanggil rekap() untuk SATU triwulan lalu membaca intervensi dari
+             satu laporan_id. Tidak ada kumulatif di jalur ini. Sisa dari masa
+             angkanya masih "s.d. bulan ini". */ ?>
     <p class="mt-4 text-sm font-bold text-gray-900 dark:text-white">
-      Angka kumulatif s.d. <?= $e($nama_tw[(int) $triwulan] ?? $triwulan) ?> <?= (int) $tahun ?>
+      Capaian <?= $e($nama_tw[(int) $triwulan] ?? $triwulan) ?> <?= (int) $tahun ?>
     </p>
     <p class="text-xs text-gray-500 dark:text-brand-muted">
       Dari laporan berstatus <b>terkirim</b> pada periode ini saja; triwulan sebelumnya

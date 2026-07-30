@@ -36,10 +36,25 @@ $bisa_diputus   = $laporan['status'] === 'terkirim' && ! $sudah_ditinjau;
               : ($sudah_ditinjau ? 'Diterima' : 'Menunggu ditinjau') ?>
       </span>
     </div>
+    <?php /* Kalimat ini dulu berbunyi "kumulatif sampai dengan TW X, bukan
+             capaian triwulan itu saja" — persis KEBALIKAN kenyataan sejak W1,
+             sementara layar kabupaten (perumahan_capaian.php) sudah menyatakan
+             yang benar. Halaman inilah tempat provinsi memutuskan terima atau
+             minta perbaikan: peninjau yang membaca 200 unit sebagai "total
+             sepanjang tahun" padahal itu capaian satu triwulan akan menilai
+             wilayahnya jauh di bawah kenyataan, dan angkanya tetap terlihat
+             wajar. Sumbernya laporan_bidang() -> isi_laporan(), yang membaca
+             baris SATU laporan; tidak ada penjumlahan antar triwulan di jalur
+             ini sama sekali. */ ?>
     <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted">
-      Angka bersifat <b>kumulatif sampai dengan <?= $e($nama_tw[(int) $laporan['triwulan']] ?? '') ?></b>,
-      bukan capaian triwulan itu saja.
+      Angkanya <b>capaian <?= $e($nama_tw[(int) $laporan['triwulan']] ?? '') ?> saja</b>,
+      bukan kumulatif sejak Januari. Untuk capaian setahun, jumlahkan laporan
+      triwulan lain wilayah ini.
     </p>
+    <?php /* Sengaja TIDAK menunjuk "buka Rekap Pelaporan": Rekam_Perumahan dan
+             Rekam_Kawasan meng-extend Admin_Kabkota_Controller, jadi peninjau
+             provinsi tidak bisa membukanya. Mengganti kalimat yang salah dengan
+             petunjuk buntu bukan perbaikan. */ ?>
     <?php if ( ! empty($laporan['catatan_admin'])): ?>
       <p class="mt-3 rounded-r-xl border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-500/10 dark:text-red-200">
         <b>Catatan perbaikan terakhir:</b> <?= $e($laporan['catatan_admin']) ?>

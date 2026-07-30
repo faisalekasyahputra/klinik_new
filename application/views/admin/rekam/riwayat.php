@@ -94,9 +94,14 @@ $warna = [
       </div>
 
       <p class="mt-4 text-xs text-gray-500 dark:text-brand-muted">
+        <?php /* "berikut kumulatifnya" sengaja hanya untuk perumahan. View ini
+                 dipakai KEDUA domain, tapi Rekam_Kawasan::rekap() mengambil satu
+                 triwulan lalu membaca intervensi dari satu laporan_id — tidak ada
+                 kumulatif di sana. Menjanjikannya di layar Kawasan sama saja
+                 dengan klaim "kumulatif" yang baru dicabut dari kawasan_rekap. */ ?>
         Daftar ini menampilkan status, bukan angka. <b>Lihat capaian</b> membuka angka
         triwulan itu apa adanya, termasuk yang masih draft. Untuk angka yang sudah
-        resmi — hanya laporan terkirim, berikut kumulatifnya — buka
+        resmi — hanya laporan terkirim<?= $domain === 'perumahan' ? ', berikut kumulatifnya' : '' ?> — buka
         <a class="text-blue-600 hover:underline dark:text-blue-400" href="<?= base_url($base_url . '/rekap') ?>">Rekap Pelaporan</a>.
       </p>
     </section>
