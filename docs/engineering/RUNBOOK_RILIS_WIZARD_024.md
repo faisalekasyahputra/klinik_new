@@ -151,13 +151,30 @@ dibayar, dan alasan Fase 1 tidak boleh dilewati.
 
 ---
 
-## Utang yang sengaja dibawa, jangan dilaporkan sebagai bug baru
+## Utang harness — LUNAS 30 Jul 2026
 
-**Enam harness pra-wizard akan MERAH setelah migrasi ini** — `uji_rekam_data_d2`
-sampai `d6` dan `Migrate::uji_rekam_data_d1()` masih menulis ke
-`rd_perumahan_bagian`/`bulan`, tabel dan kolom yang tidak ada lagi. Mereka
-diganti [`uji_wizard_rekam_perumahan.php`](uji_wizard_rekam_perumahan.php)
-(38 pemeriksaan) dan `Migrate::uji_wizard_w2()` (31). Semuanya alat diagnostik
-lokal, tidak ada di jalur pengguna. Belum dirapikan karena merapikannya berarti
-memutuskan mana yang benar-benar tergantikan dan mana yang menguji hal lain —
-keputusan tersendiri, bukan tempelan rilis.
+Rilis ini semula membawa utang: enam harness pra-wizard merah karena masih
+menulis ke `rd_perumahan_bagian`/`bulan`. Sudah dibereskan seluruhnya, dan
+menyelesaikannya menemukan tiga cacat yang tayang di production (kalimat
+"kumulatif" di layar peninjau, judul rekap Kawasan, dan "Perumahan 10" yang
+sudah salah sejak migrasi 023).
+
+Keadaan sekarang — semua hijau, semua sudah dibuktikan bisa MERAH lewat mutasi:
+
+| suite | jumlah | cakupan |
+|---|---|---|
+| `uji_rekam_data_d2` | 28 | CSRF, scope tulis lintas wilayah, rupiah penuh, cabut program menyapu angka |
+| `uji_rekam_data_d3` | 46 | kirim + **21 pemeriksaan keamanan berkas BNBA** |
+| `uji_rekam_data_d4` | 40 | Kawasan lewat HTTP |
+| `uji_rekam_data_d5` | 38 | rekap & riwayat, anti-dobel-hitung lewat layar |
+| `uji_rekam_data_d6` | 39 | peninjauan provinsi, isolasi bidang |
+| `uji_wizard_rekam_perumahan` | 38 | wizard lima langkah |
+| `Migrate::uji_wizard_w2` | 34 | pintu tulis model Perumahan |
+| `Migrate::uji_rekam_data_d1` | 18 | pintu tulis model **Kawasan** |
+| `uji_migrasi_konsisten` | 6 | konsistensi berkas migrasi |
+
+`uji_rekam_data_d1` sengaja MENYUSUT: separuh Perumahan-nya dibuang karena
+`uji_wizard_w2` sudah menggantikannya dengan bentuk yang benar-benar dipakai.
+Dua suite model yang menguji hal sama dengan kata berbeda hanya menghasilkan
+satu yang tertinggal lagi pada perubahan berikutnya. Yang tersisa di sana adalah
+Kawasan — tidak ada suite tingkat-model lain yang menyentuhnya.

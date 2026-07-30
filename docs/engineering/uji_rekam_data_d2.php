@@ -18,7 +18,8 @@ define('ENV_PATH', dirname(__DIR__, 2) . '/.env');
 define('ADMIN_EMAIL', getenv('UJI_ADMIN_EMAIL') ?: 'adminkabkota@example.com');
 define('ADMIN_PASSWORD', getenv('UJI_ADMIN_PASSWORD') ?: 'password');
 define('TAHUN', 2099);
-define('BULAN', 6);
+// Dulu BULAN=6. Sejak migrasi 024 periodenya triwulan.
+define('TRIWULAN', 2);
 
 $GLOBALS['uji_total'] = 0;
 $GLOBALS['uji_gagal'] = 0;
@@ -183,128 +184,149 @@ try {
     wajib(login('lain', $email_lain, 'UjiRdD2!'), 'Login admin wilayah lain berhasil');
 
     // ------------------------------------------------------------ layar
-    $url = 'Rekam_Perumahan?tahun=' . TAHUN . '&bulan=' . BULAN;
-    $res = http('kab', $url);
+    $res = http('kab', 'Rekam_Perumahan/input');
     cek($res['code'] === 200, 'Layar input terbuka (200)');
     cek(strpos($res['body'], 'Input Capaian Perumahan') !== FALSE, 'Judul layar benar');
 
-    $laporan = q('SELECT id, status FROM rd_laporan WHERE domain = ? AND kabupaten_id = ?
-        AND tahun = ? AND bulan = ?', ['perumahan', $KAB, TAHUN, BULAN]);
-    wajib($laporan && $laporan['status'] === 'draft', 'Draft periode dibuat otomatis saat layar dibuka');
-    $LAP = (int) $laporan['id'];
-
-    http('kab', $url);
+    // DIBALIK. Dulu: "Draft periode dibuat otomatis saat layar dibuka". Sejak
+    // wizard, input() memakai laporan_periode() yang TIDAK pernah menulis --
+    // kalau layar baca ikut melahirkan draft, setiap admin yang cuma menengok
+    // mengisi riwayat dengan triwulan kosong yang tidak pernah diniatkan.
+    // Draft lahir hanya di mulai().
     cek((int) skalar('SELECT COUNT(*) c FROM rd_laporan WHERE domain = ? AND kabupaten_id = ?
-        AND tahun = ? AND bulan = ?', ['perumahan', $KAB, TAHUN, BULAN]) === 1,
-        'Membuka layar dua kali tidak membuat laporan kedua');
+        AND tahun = ?', ['perumahan', $KAB, TAHUN]) === 0,
+        'Membuka layar TIDAK melahirkan draft');
 
     // Kabupaten dari sesi: tidak boleh ada pemilih wilayah di layar mana pun.
     cek(stripos($res['body'], 'name="kabupaten') === FALSE, 'Nol input wilayah di layar');
-    cek(preg_match_all('/name="sumber_dana" value="/', $res['body']) === 10,
-        'Sepuluh sumber dana dirender');
+
+    http('kab', 'Rekam_Perumahan/mulai', [
+        'csrf_kpkp_token' => csrf('kab', 'Rekam_Perumahan/input'),
+        'tahun' => TAHUN, 'triwulan' => TRIWULAN]);
+    $laporan = q('SELECT id, status FROM rd_laporan WHERE domain = ? AND kabupaten_id = ?
+        AND tahun = ? AND triwulan = ?', ['perumahan', $KAB, TAHUN, TRIWULAN]);
+    wajib($laporan && $laporan['status'] === 'draft', 'Draft lahir setelah periode dipilih');
+    $LAP = (int) $laporan['id'];
+    $url = 'Rekam_Perumahan/input?laporan=' . $LAP;
+
+    http('kab', 'Rekam_Perumahan/mulai', [
+        'csrf_kpkp_token' => csrf('kab', $url),
+        'tahun' => TAHUN, 'triwulan' => TRIWULAN]);
+    cek((int) skalar('SELECT COUNT(*) c FROM rd_laporan WHERE domain = ? AND kabupaten_id = ?
+        AND tahun = ? AND triwulan = ?', ['perumahan', $KAB, TAHUN, TRIWULAN]) === 1,
+        'Memilih periode yang sama dua kali tidak membuat laporan kedua');
 
     // ------------------------------------------------------------ CSRF
-    $tanpa_token = http('kab', 'Rekam_Perumahan/simpan_gerbang', [
-        'laporan_id' => $LAP, 'sumber_dana' => 'apbd_kabkota', 'ada' => '1',
+    // Gerbangnya kini per PROGRAM, jadi endpoint tanpa-token yang diuji ikut
+    // berganti -- tapi yang dijaga sama: 403 DAN tidak menulis apa pun.
+    $tanpa_token = http('kab', 'Rekam_Perumahan/simpan_program', [
+        'laporan_id' => $LAP, 'program' => ['pk_rtlh'],
     ]);
     cek($tanpa_token['code'] === 403, 'POST tanpa token CSRF ditolak 403');
-    cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_bagian WHERE laporan_id = ?', [$LAP]) === 0,
+    cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_program WHERE laporan_id = ?', [$LAP]) === 0,
         'POST tanpa CSRF tidak menulis apa pun');
 
     // ------------------------------------------------------------ gerbang
-    $t = csrf('kab', $url);
-    http('kab', 'Rekam_Perumahan/simpan_gerbang', [
-        'csrf_kpkp_token' => $t, 'laporan_id' => $LAP,
-        'sumber_dana' => 'apbd_kabkota', 'ada' => '1',
+    $PROGRAM = ['pk_rtlh', 'pb_rtlh', 'pb_backlog', 'pk_bencana', 'pb_bencana', 'pb_relokasi'];
+    http('kab', 'Rekam_Perumahan/simpan_program', [
+        'csrf_kpkp_token' => csrf('kab', $url), 'laporan_id' => $LAP,
+        'program' => $PROGRAM,
     ]);
-    cek((int) skalar('SELECT ada FROM rd_perumahan_bagian WHERE laporan_id = ? AND sumber_dana = ?',
-        [$LAP, 'apbd_kabkota']) === 1, 'Gerbang "Ada" tersimpan');
+    cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_program WHERE laporan_id = ?', [$LAP]) === 6,
+        'Enam program tercentang');
+
+    // DUA BELAS sumber dana, bukan sepuluh -- migrasi 023 menambah apbd_provinsi
+    // dan baznas_provinsi. Dihitung dari daftarnya, bukan angka ketikan, supaya
+    // uji ini tidak jadi kalimat berikutnya yang rot saat daftarnya berubah.
+    $isian_html = http('kab', $url . '&langkah=isian&program=pk_rtlh')['body'];
+    $SUMBER = ['apbd_provinsi', 'apbd_kabkota', 'apbn_bsps', 'apbn_dak', 'apbn_kemensos',
+        'apbn_dana_desa', 'apbn_kl_lain', 'baznas_ri', 'baznas_provinsi',
+        'baznas_kabkota', 'csr', 'dana_lainnya'];
+    $ada_opsi = 0;
+    foreach ($SUMBER as $kode) {
+        if (strpos($isian_html, '<option value="' . $kode . '"') !== FALSE) { $ada_opsi++; }
+    }
+    cek($ada_opsi === count($SUMBER),
+        count($SUMBER) . ' sumber dana dirender sebagai pilihan');
 
     // ------------------------------------------------------------ angka
-    $isi = function ($unit, $anggaran) {
-        $out = [];
-        foreach (['pk_rtlh', 'pb_rtlh', 'pb_backlog', 'pk_bencana', 'pb_bencana', 'pb_relokasi'] as $p) {
-            $out["program[$p][unit]"] = $unit;
-            $out["program[$p][anggaran]"] = $anggaran;
-        }
-        return $out;
+    $simpan = function ($program, $unit, $anggaran) use ($LAP, $url) {
+        return http('kab', 'Rekam_Perumahan/simpan_sumber', [
+            'csrf_kpkp_token' => csrf('kab', $url), 'laporan_id' => $LAP,
+            'program' => $program, 'sumber_dana' => 'apbd_kabkota',
+            'rencana_unit' => $unit, 'rencana_anggaran' => $anggaran,
+            'realisasi_unit' => $unit, 'realisasi_anggaran' => $anggaran]);
     };
 
-    $t = csrf('kab', $url);
-    http('kab', 'Rekam_Perumahan/simpan_angka', [
-        'csrf_kpkp_token' => $t, 'laporan_id' => $LAP, 'sumber_dana' => 'apbd_kabkota',
-    ] + $isi(12, 3000000000));
+    foreach ($PROGRAM as $prog) { $simpan($prog, 12, 3000000000); }
     cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_baris WHERE laporan_id = ?', [$LAP]) === 6,
-        'Enam program tersimpan');
-    cek((string) skalar('SELECT anggaran FROM rd_perumahan_baris WHERE laporan_id = ?
+        'Enam baris angka tersimpan, satu per program');
+    cek((string) skalar('SELECT realisasi_anggaran FROM rd_perumahan_baris WHERE laporan_id = ?
         AND sumber_dana = ? AND program = ?', [$LAP, 'apbd_kabkota', 'pk_rtlh']) === '3000000000',
         'Anggaran tersimpan rupiah penuh, tanpa pembulatan');
 
-    $t = csrf('kab', $url);
-    http('kab', 'Rekam_Perumahan/simpan_angka', [
-        'csrf_kpkp_token' => $t, 'laporan_id' => $LAP, 'sumber_dana' => 'apbd_kabkota',
-    ] + $isi(12, 3000000000));
+    foreach ($PROGRAM as $prog) { $simpan($prog, 12, 3000000000); }
     cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_baris WHERE laporan_id = ?', [$LAP]) === 6,
-        'Simpan dua kali tidak menggandakan baris');
+        'Simpan dua kali mengubah, tidak menggandakan baris');
 
     // ------------------------------------------------------ tolakan server
-    $tolak = [
-        'unit negatif'        => $isi(-5, 1000),
-        'unit bukan angka'    => $isi('dua', 1000),
-        'anggaran tanpa unit' => $isi(0, 500000000),
-    ];
-    foreach ($tolak as $label => $payload) {
-        $t = csrf('kab', $url);
-        http('kab', 'Rekam_Perumahan/simpan_angka', [
-            'csrf_kpkp_token' => $t, 'laporan_id' => $LAP, 'sumber_dana' => 'apbd_kabkota',
-        ] + $payload);
-        cek((string) skalar('SELECT unit FROM rd_perumahan_baris WHERE laporan_id = ?
-            AND sumber_dana = ? AND program = ?', [$LAP, 'apbd_kabkota', 'pk_rtlh']) === '12',
+    foreach ([
+        'unit negatif'        => [-5, 1000],
+        'unit bukan angka'    => ['dua', 1000],
+        'anggaran tanpa unit' => [0, 500000000],
+    ] as $label => $pasangan) {
+        $simpan('pk_rtlh', $pasangan[0], $pasangan[1]);
+        cek((int) skalar('SELECT realisasi_unit FROM rd_perumahan_baris WHERE laporan_id = ?
+            AND sumber_dana = ? AND program = ?', [$LAP, 'apbd_kabkota', 'pk_rtlh']) === 12,
             "Ditolak server, angka lama utuh: {$label}");
     }
 
     // ------------------------------------------------------------- scope
-    $t = csrf('lain', 'Rekam_Perumahan?tahun=' . TAHUN . '&bulan=6');
-    http('lain', 'Rekam_Perumahan/simpan_gerbang', [
-        'csrf_kpkp_token' => $t, 'laporan_id' => $LAP,
-        'sumber_dana' => 'csr', 'ada' => '1',
+    $lain_url = 'Rekam_Perumahan/input';
+    http('lain', 'Rekam_Perumahan/simpan_program', [
+        'csrf_kpkp_token' => csrf('lain', $lain_url), 'laporan_id' => $LAP,
+        'program' => ['pk_rtlh', 'pb_rtlh'],
     ]);
-    cek(skalar('SELECT ada FROM rd_perumahan_bagian WHERE laporan_id = ? AND sumber_dana = ?',
-        [$LAP, 'csr']) === NULL, 'Admin wilayah lain tidak bisa menulis laporan ini');
+    cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_program WHERE laporan_id = ?', [$LAP]) === 6,
+        'Admin wilayah lain tidak bisa mengubah gerbang laporan ini');
 
-    $t = csrf('lain', 'Rekam_Perumahan?tahun=' . TAHUN . '&bulan=6');
-    http('lain', 'Rekam_Perumahan/simpan_angka', [
-        'csrf_kpkp_token' => $t, 'laporan_id' => $LAP, 'sumber_dana' => 'apbd_kabkota',
-    ] + $isi(999, 999));
-    cek((string) skalar('SELECT unit FROM rd_perumahan_baris WHERE laporan_id = ?
-        AND sumber_dana = ? AND program = ?', [$LAP, 'apbd_kabkota', 'pk_rtlh']) === '12',
+    http('lain', 'Rekam_Perumahan/simpan_sumber', [
+        'csrf_kpkp_token' => csrf('lain', $lain_url), 'laporan_id' => $LAP,
+        'program' => 'pk_rtlh', 'sumber_dana' => 'apbd_kabkota',
+        'rencana_unit' => 999, 'rencana_anggaran' => 999,
+        'realisasi_unit' => 999, 'realisasi_anggaran' => 999,
+    ]);
+    cek((int) skalar('SELECT realisasi_unit FROM rd_perumahan_baris WHERE laporan_id = ?
+        AND sumber_dana = ? AND program = ?', [$LAP, 'apbd_kabkota', 'pk_rtlh']) === 12,
         'Angka tidak berubah oleh admin wilayah lain');
 
-    // -------------------------------------------------- batal centang
-    $t = csrf('kab', $url);
-    http('kab', 'Rekam_Perumahan/simpan_gerbang', [
-        'csrf_kpkp_token' => $t, 'laporan_id' => $LAP,
-        'sumber_dana' => 'apbd_kabkota', 'ada' => '0',
+    // ------------------------------------------------ batal centang program
+    // Dulu ini mencabut SUMBER DANA dan memeriksa kolom `ada` tetap tercatat 0
+    // ("Tidak Ada" adalah jawaban, bukan kekosongan). Bentuknya berubah: gerbang
+    // kini KEBERADAAN BARIS di rd_perumahan_program, jadi tidak ada lagi `ada`
+    // yang bisa bernilai 0 -- mencabut berarti barisnya hilang. Yang dijaga tetap
+    // sama dan justru lebih penting: angkanya tidak boleh tertinggal jadi yatim.
+    http('kab', 'Rekam_Perumahan/simpan_program', [
+        'csrf_kpkp_token' => csrf('kab', $url), 'laporan_id' => $LAP,
+        'program' => ['pb_rtlh'],
     ]);
-    cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_baris WHERE laporan_id = ?', [$LAP]) === 0,
-        'Batal centang sumber dana menyapu angkanya lewat UI');
-    cek((int) skalar('SELECT ada FROM rd_perumahan_bagian WHERE laporan_id = ? AND sumber_dana = ?',
-        [$LAP, 'apbd_kabkota']) === 0, 'Jawaban "Tidak Ada" tetap tercatat, bukan hilang');
+    cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_program WHERE laporan_id = ?', [$LAP]) === 1,
+        'Program yang dicabut hilang dari gerbang');
+    cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_baris WHERE laporan_id = ?
+        AND program = ?', [$LAP, 'pk_rtlh']) === 0,
+        'Mencabut program menyapu angkanya, nol baris yatim');
+    cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_baris WHERE laporan_id = ?
+        AND program = ?', [$LAP, 'pb_rtlh']) === 1,
+        'Program yang MASIH dicentang angkanya utuh (bukan disapu semua)');
 
     // ---------------------------------------------------------- terkunci
     $db->query("UPDATE rd_laporan SET status = 'terkirim' WHERE id = {$LAP}");
-    // Sengaja memakai sumber yang TIDAK disentuh uji lain. Versi sebelumnya
-    // memakai `csr` — sumber yang sama dengan uji scope — sehingga saat guard
-    // scope dilepas untuk uji balik, baris `csr` lahir dari sana dan uji ini
-    // ikut merah tanpa ada kunci yang benar-benar bocor. Kegagalan beruntun
-    // membuat diagnosis kabur; satu mutasi harus memerahkan titik yang tepat.
-    $t = csrf('kab', $url);
-    http('kab', 'Rekam_Perumahan/simpan_gerbang', [
-        'csrf_kpkp_token' => $t, 'laporan_id' => $LAP,
-        'sumber_dana' => 'baznas_ri', 'ada' => '1',
+    http('kab', 'Rekam_Perumahan/simpan_program', [
+        'csrf_kpkp_token' => csrf('kab', $url), 'laporan_id' => $LAP,
+        'program' => $PROGRAM,
     ]);
-    cek(skalar('SELECT ada FROM rd_perumahan_bagian WHERE laporan_id = ? AND sumber_dana = ?',
-        [$LAP, 'baznas_ri']) === NULL, 'Laporan terkirim tidak bisa ditulis kabupaten');
+    cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_program WHERE laporan_id = ?', [$LAP]) === 1,
+        'Laporan terkirim tidak bisa ditulis kabupaten');
     $res = http('kab', $url);
     cek(strpos($res['body'], 'terkunci') !== FALSE, 'Layar menjelaskan laporan terkunci');
 

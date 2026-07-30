@@ -419,120 +419,35 @@ class Migrate extends CI_Controller {
         $AKTOR = (int) $aktor['id'];
 
         try {
-            foreach (['rd_laporan', 'rd_perumahan_bagian', 'rd_perumahan_baris',
+            foreach (['rd_laporan', 'rd_perumahan_program', 'rd_perumahan_baris',
                 'rd_perumahan_bnba', 'rd_kawasan_ringkasan', 'rd_kawasan_intervensi'] as $t) {
                 $check($this->db->table_exists($t), "Tabel {$t} tersedia");
             }
 
-            // --- periode: idempoten + validasi -----------------------------
-            $a = $this->rd->ambil_atau_buat_draft('perumahan', $KAB, $TAHUN, 6);
-            $check( ! empty($a['success']) && ! empty($a['baru']), 'Draft perumahan Juni dibuat');
-            $lap6 = (int) $a['laporan']['id'];
+            // ================================================================
+            // SEPARUH PERUMAHAN BERKAS INI DIBUANG, bukan diperbaiki.
+            //
+            // Ia menguji bentuk PRA-wizard: gerbang per sumber dana
+            // (`rd_perumahan_bagian`), kolom `unit`/`anggaran` tunggal, periode
+            // `bulan`, dan pewarisan antar periode. Keempatnya tidak ada lagi
+            // setelah migrasi 024. Penggantinya `uji_wizard_w2()` di berkas yang
+            // sama: 34 pemeriksaan atas bentuk yang BENAR-BENAR dipakai, termasuk
+            // yang di sini tidak pernah ada (rencana vs realisasi, gerbang per
+            // program, kumulatif dihitung sekali).
+            //
+            // Memperbaikinya berarti punya dua suite model yang menguji hal yang
+            // sama dengan kata-kata berbeda — dan yang kedua akan tertinggal
+            // lagi pada perubahan berikutnya, persis seperti sekarang.
+            //
+            // Yang TIDAK dibuang: Kawasan. Modul itu tidak ditulis ulang, dan
+            // tidak ada suite tingkat-model lain yang menyentuhnya. `uji_wizard_w2`
+            // khusus Perumahan; D4 menguji Kawasan lewat HTTP, bukan lewat pintu
+            // tulis model — jadi penolakan seperti "indikator tak dikenal" dan
+            // "satuan diturunkan, tidak disimpan" hanya dijaga di sini.
+            // ================================================================
 
-            $b = $this->rd->ambil_atau_buat_draft('perumahan', $KAB, $TAHUN, 6);
-            $check( ! empty($b['success']) && empty($b['baru'])
-                && (int) $b['laporan']['id'] === $lap6, 'Periode sama tidak membuat laporan kedua');
-
-            $check(empty($this->rd->ambil_atau_buat_draft('rusun', $KAB, $TAHUN, 6)['success']),
-                'Domain tak dikenal ditolak');
-            $check(empty($this->rd->ambil_atau_buat_draft('perumahan', $KAB, $TAHUN, 13)['success']),
-                'Bulan 13 ditolak');
-
-            // --- gerbang + angka -------------------------------------------
-            $check(empty($this->rd->simpan_baris($lap6, 'apbd_kabkota',
-                ['pk_rtlh' => ['unit' => 1, 'anggaran' => 1]], $KAB)['success']),
-                'Angka tanpa gerbang "Ada" ditolak');
-
-            $check( ! empty($this->rd->simpan_bagian($lap6, 'apbd_kabkota', 1, $KAB)['success']),
-                'Sumber dana dinyatakan Ada');
-            $isi = [];
-            foreach (['pk_rtlh', 'pb_rtlh', 'pb_backlog', 'pk_bencana', 'pb_bencana', 'pb_relokasi'] as $p) {
-                $isi[$p] = ['unit' => 10, 'anggaran' => 250000000, 'keterangan' => 'diabaikan'];
-            }
-            $check( ! empty($this->rd->simpan_baris($lap6, 'apbd_kabkota', $isi, $KAB)['success']),
-                'Enam program tersimpan');
-            $this->rd->simpan_baris($lap6, 'apbd_kabkota', $isi, $KAB);
-            $check($this->db->where('laporan_id', $lap6)->count_all_results('rd_perumahan_baris') === 6,
-                'Simpan dua kali tidak menggandakan baris');
-            $ket = $this->db->select('keterangan')->get_where('rd_perumahan_baris',
-                ['laporan_id' => $lap6, 'sumber_dana' => 'apbd_kabkota', 'program' => 'pk_rtlh'])->row_array();
-            $check($ket['keterangan'] === '', 'Keterangan dikosongkan pada sumber yang tidak berketerangan');
-
-            $check(empty($this->rd->simpan_baris($lap6, 'apbd_kabkota',
-                ['pk_rtlh' => ['unit' => -1, 'anggaran' => 0]], $KAB)['success']),
-                'Unit negatif ditolak server');
-            $check(empty($this->rd->simpan_baris($lap6, 'apbd_kabkota',
-                ['pk_rtlh' => ['unit' => 'dua', 'anggaran' => 0]], $KAB)['success']),
-                'Unit bukan angka ditolak server');
-
-            $check(count($this->rd->sumber_belum_dijawab($lap6)) === 9,
-                'Sembilan sumber dana masih belum dijawab');
-
-            // --- scope wilayah ---------------------------------------------
-            $check($this->rd->laporan($lap6, $LAIN) === NULL, 'Laporan kabupaten lain tidak terbaca');
-            $check($this->rd->isi_laporan($lap6, $LAIN) === NULL, 'Isi laporan kabupaten lain tidak terbaca');
-            $luar = $this->rd->simpan_bagian($lap6, 'csr', 1, $LAIN);
-            $check(empty($luar['success']) && $luar['error'] === 'luar_scope',
-                'Tulis dari kabupaten lain ditolak');
-
-            // --- batal centang menyapu angka -------------------------------
-            $this->rd->simpan_bagian($lap6, 'apbd_kabkota', 0, $KAB);
-            $check($this->db->where('laporan_id', $lap6)->count_all_results('rd_perumahan_baris') === 0,
-                'Batal centang sumber dana menyapu angkanya');
-            $this->rd->simpan_bagian($lap6, 'apbd_kabkota', 1, $KAB);
-            $this->rd->simpan_baris($lap6, 'apbd_kabkota', $isi, $KAB);
-
-            // --- siklus status ---------------------------------------------
-            $check(empty($this->rd->transisi($lap6, 'draft', 'perlu_perbaikan', $AKTOR, NULL, 'x')['success']),
-                'Transisi draft -> perlu_perbaikan ditolak');
-            $check(empty($this->rd->transisi($lap6, 'terkirim', 'perlu_perbaikan', $AKTOR, NULL, 'x')['success']),
-                'Transisi dari status asal yang salah ditolak');
-            $check( ! empty($this->rd->transisi($lap6, 'draft', 'terkirim', $AKTOR, $KAB)['success']),
-                'Kirim laporan berhasil');
-
-            $kunci = $this->rd->simpan_bagian($lap6, 'csr', 1, $KAB);
-            $check(empty($kunci['success']) && $kunci['error'] === 'terkunci',
-                'Laporan terkirim tidak bisa ditulis kabupaten');
-
-            $check(empty($this->rd->transisi($lap6, 'terkirim', 'perlu_perbaikan', $AKTOR, NULL, '')['success']),
-                'Minta perbaikan tanpa catatan ditolak');
-            $check( ! empty($this->rd->transisi($lap6, 'terkirim', 'perlu_perbaikan', $AKTOR, NULL,
-                'Angka BSPS belum diisi')['success']), 'Minta perbaikan dengan catatan berhasil');
-            $lap = $this->rd->laporan($lap6);
-            $check($lap['catatan_admin'] === 'Angka BSPS belum diisi' && $lap['reviewed_by'] !== NULL,
-                'Catatan dan peninjau tercatat');
-            $check( ! empty($this->rd->simpan_bagian($lap6, 'csr', 1, $KAB)['success']),
-                'Status perlu_perbaikan bisa ditulis lagi');
-
-            $this->rd->transisi($lap6, 'perlu_perbaikan', 'terkirim', $AKTOR, $KAB);
-            $lap = $this->rd->laporan($lap6);
-            $check($lap['catatan_admin'] === NULL && $lap['reviewed_at'] === NULL,
-                'Kirim ulang membersihkan catatan dan jejak peninjauan');
-
-            $check( ! empty($this->rd->terima($lap6, $AKTOR)['success']), 'Terima laporan berhasil');
-            $check(empty($this->rd->terima($lap6, $AKTOR)['success']), 'Terima dua kali ditolak');
-
-            // --- pewarisan --------------------------------------------------
-            // Ekspektasi diikat ke ISI SUMBERNYA, bukan ke angka literal. Kalau
-            // sebuah guard dilepas untuk uji balik dan tulisan lintas wilayah
-            // jadi berhasil, jumlahnya bergeser — dengan angka literal satu
-            // mutasi memerahkan beberapa uji sekaligus dan titik sebenarnya
-            // jadi kabur (pelajaran D2, AGENTS.md §0e).
-            $baris_sumber  = $this->db->where('laporan_id', $lap6)->count_all_results('rd_perumahan_baris');
-            $bagian_sumber = $this->db->where('laporan_id', $lap6)->count_all_results('rd_perumahan_bagian');
-
-            $c = $this->rd->ambil_atau_buat_draft('perumahan', $KAB, $TAHUN, 7);
-            $lap7 = (int) $c['laporan']['id'];
-            $check((int) $c['diwarisi'] === $baris_sumber,
-                "Draft Juli mewarisi {$baris_sumber} baris dari Juni");
-            $check($this->db->where('laporan_id', $lap7)->count_all_results('rd_perumahan_bagian') === $bagian_sumber,
-                "Jawaban gerbang ikut diwarisi ({$bagian_sumber})");
-            $warisan = $this->db->select('unit')->get_where('rd_perumahan_baris',
-                ['laporan_id' => $lap7, 'sumber_dana' => 'apbd_kabkota', 'program' => 'pk_rtlh'])->row_array();
-            $check((int) $warisan['unit'] === 10, 'Angka warisan sama persis, tidak dinolkan');
-
-            // --- kawasan ----------------------------------------------------
-            $k = $this->rd->ambil_atau_buat_draft('kawasan', $KAB, $TAHUN, 6);
+            // --- kawasan: pintu tulis model ---------------------------------
+            $k = $this->rd->ambil_atau_buat_draft('kawasan', $KAB, $TAHUN, 2);
             $lapk = (int) $k['laporan']['id'];
             $check(empty($this->rd->simpan_ringkasan($lapk,
                 ['ada_penanganan' => 1, 'ada_progres' => 0], $KAB)['success']),
@@ -561,6 +476,11 @@ class Migrate extends CI_Controller {
                 'sumber_anggaran' => 'apbd_kabkota'], NULL, $KAB)['success']),
                 'Indikator tak dikenal ditolak');
 
+            $check(empty($this->rd->simpan_intervensi($lapk, [
+                'indikator' => 'drainase', 'nama_kegiatan' => 'Scope', 'lokasi_teks' => 'x',
+                'sumber_anggaran' => 'apbd_kabkota'], NULL, $LAIN)['success']),
+                'Tulis intervensi dari kabupaten lain ditolak');
+
             $total_k = $this->rd->total_kawasan($lapk);
             $check($total_k['total_anggaran'] === 1367500000 && $total_k['total_padat_karya'] === 150000000,
                 'Total anggaran & padat karya dihitung, bukan disimpan');
@@ -570,16 +490,14 @@ class Migrate extends CI_Controller {
                 ->get_where('rd_kawasan_intervensi', ['laporan_id' => $lapk])->result_array(), 'urutan');
             $check($urutan === ['1', '2'] || $urutan === [1, 2], 'Urutan dirapatkan setelah hapus');
 
-            // --- rekap ------------------------------------------------------
+            // --- rekap kawasan ----------------------------------------------
             $this->rd->transisi($lapk, 'draft', 'terkirim', $AKTOR, $KAB);
-            $rk = $this->rd->rekap('kawasan', $TAHUN, 6, $KAB);
+            $rk = $this->rd->rekap('kawasan', $TAHUN, 2, $KAB);
             $check(count($rk) === 1 && (int) $rk[0]['jumlah_intervensi'] === 2,
                 'Rekap kawasan satu periode');
-            $check(count($this->rd->rekap('perumahan', $TAHUN, 6, $KAB)) === 6,
-                'Rekap perumahan hanya periode yang diminta');
-            $check($this->rd->rekap('perumahan', $TAHUN, 7, $KAB) === [],
-                'Draft belum terkirim tidak masuk rekap');
-            $check($this->rd->rekap('perumahan', $TAHUN, 6, $LAIN) === [],
+            $check($this->rd->rekap('kawasan', $TAHUN, 3, $KAB) === [],
+                'Triwulan lain TIDAK ikut terbawa ke rekap');
+            $check($this->rd->rekap('kawasan', $TAHUN, 2, $LAIN) === [],
                 'Rekap ter-scope kabupaten');
         } finally {
             foreach ($this->db->select('id')->get_where('rd_laporan', ['tahun' => $TAHUN])->result_array() as $row) {
