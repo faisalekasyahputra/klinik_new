@@ -48,6 +48,11 @@
     // ditukar sendirian. Lihat `lingkupTabel()`.
     var SEL_TABEL = '[data-tabel-admin]';
 
+    // Panel yang menyatakan POST-nya boleh dijalankan progresif. Opt-in, karena
+    // POST tidak bisa dibatalkan lalu diulang sebagai navigasi penuh. Syaratnya:
+    // seluruh aksinya memakai PRG (POST lalu redirect ke halaman GET).
+    var SEL_PANEL = '[data-panel-progresif]';
+
     // URL yang isinya sedang tampil. Bukan `location.href`: pada popstate,
     // alamat sudah berubah SEBELUM handler jalan, jadi membandingkan tujuan
     // dengan `location` di sana selalu menghasilkan "sama" dan Back dari
@@ -106,10 +111,21 @@
         if (window.Alpine) { Alpine.initTree(nav); }
     }
 
-    function loadPage(url, push, tabelSaja) {
+    /**
+     * @param body FormData opsional. Kalau ada, permintaan dikirim sebagai POST
+     *             dan redirect JUSTRU yang ditunggu (pola PRG) — bukan tanda
+     *             sesi habis seperti pada GET.
+     */
+    function loadPage(url, push, tabelSaja, body) {
         var main = document.getElementById('main-content');
         if (!main) { window.location.href = url; return; }
         var myToken = ++loadToken;
+
+        // Alamat yang akan masuk history. Untuk POST ini BUKAN `url`: yang harus
+        // tercatat adalah tujuan redirect-nya (mis. .../input?langkah=isian),
+        // bukan endpoint aksinya (.../simpan_program) — kalau endpoint aksi yang
+        // masuk history, tombol Back mengarah ke URL yang hanya menerima POST.
+        var urlAkhir = url;
 
         // Ganti tab TIDAK memasang skeleton dan TIDAK menggulir ke atas: judul,
         // toolbar, dan posisi baca pengguna harus tetap di tempatnya. Kartunya
@@ -130,13 +146,20 @@
         // halaman admin tampil tanpa sidebar, tanpa tailwind-admin.css, dan tanpa
         // ikon Phosphor (portal memakai FontAwesome): judul kartu tak terbaca dan
         // ikon jadi kotak kosong. Terjadi nyata pada /Rekam_Data.
-        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-Shell': 'admin' }, credentials: 'same-origin' })
+        var opsi = { headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-Shell': 'admin' }, credentials: 'same-origin' };
+        if (body) { opsi.method = 'POST'; opsi.body = body; }
+
+        fetch(url, opsi)
             .then(function (res) {
                 if (myToken !== loadToken) return null;
-                if (!res.ok || res.redirected) { window.location.href = url; return null; }
+                // Redirect pada GET = sesi habis -> navigasi penuh. Pada POST,
+                // redirect adalah hasil yang BENAR: seluruh aksi wizard memakai
+                // PRG, jadi menolak redirect di sini berarti menolak semuanya.
+                if (!res.ok || (res.redirected && ! body)) { window.location.href = url; return null; }
                 if (((res.headers.get('content-type')) || '').indexOf('text/html') === -1) {
-                    window.location.href = url; return null;
+                    window.location.href = res.url || url; return null;
                 }
+                urlAkhir = res.url || url;
                 var title = res.headers.get('X-Page-Title');
                 if (title) {
                     try { document.title = decodeURIComponent(title) + ' | Klinik PKP'; } catch (e) {}
@@ -145,7 +168,7 @@
             })
             .then(function (html) {
                 if (html === null || html === undefined || myToken !== loadToken) return;
-                if (/^\s*(<!doctype|<html)/i.test(html)) { window.location.href = url; return; }
+                if (/^\s*(<!doctype|<html)/i.test(html)) { window.location.href = urlAkhir; return; }
 
                 // Menu dipisahkan SEBELUM konten disuntik: `<template>` di ekor
                 // balasan tidak boleh ikut mendarat di area konten.
@@ -158,7 +181,7 @@
                 // ke dalam shell admin (kebalikan persis dari bug X-Shell di
                 // komentar fetch). Arah gagalnya aman: partial yang tidak
                 // menyertakan penanda dimuat sebagai halaman penuh.
-                if (potong === -1) { window.location.href = url; return; }
+                if (potong === -1) { window.location.href = urlAkhir; return; }
 
                 var menuHtml = html.slice(potong);
                 html = html.slice(0, potong);
@@ -178,8 +201,8 @@
                         // Sidebar sengaja TIDAK ditukar: path tidak berubah, jadi
                         // sorotan dan cabang terbukanya sudah benar. Menukarnya
                         // hanya akan menutup sub-menu yang sedang dibuka pengguna.
-                        urlSekarang = url;
-                        if (push) { history.pushState({ adminUrl: url }, '', url); }
+                        urlSekarang = urlAkhir;
+                        if (push) { history.pushState({ adminUrl: urlAkhir }, '', urlAkhir); }
                         return;
                     }
                     // Balasan tanpa kartu bertanda — perlakukan sebagai pindah
@@ -189,13 +212,13 @@
                 main.innerHTML = '<div class="animate-[fadeIn_0.3s_ease-out]">' + html + '</div>';
                 reExecuteScripts(main).then(function () {
                     if (window.Alpine) { Alpine.initTree(main); }
-                    urlSekarang = url;
-                    if (push) { history.pushState({ adminUrl: url }, '', url); }
+                    urlSekarang = urlAkhir;
+                    if (push) { history.pushState({ adminUrl: urlAkhir }, '', urlAkhir); }
                     if (menuHtml) { tukarSidebar(menuHtml); }
                 }).catch(function () { /* konten sudah tampil; jangan kunci UI */ });
             })
             .catch(function () {
-                if (myToken === loadToken) window.location.href = url;
+                if (myToken === loadToken) window.location.href = urlAkhir;
             });
     }
 
@@ -240,13 +263,44 @@
     // tabel yang sama, persis seperti tab status di sebelahnya.
     document.addEventListener('submit', function (e) {
         var form = e.target;
-        if ( ! form || e.defaultPrevented || ! form.closest(SEL_TABEL)) return;
-        if ((form.getAttribute('method') || 'get').toLowerCase() !== 'get') return;
-        var url = (form.getAttribute('action') || window.location.pathname)
-            + '?' + new URLSearchParams(new FormData(form)).toString();
-        if ( ! lingkupTabel(url)) return;
+        if ( ! form || e.defaultPrevented) return;
+        var metode = (form.getAttribute('method') || 'get').toLowerCase();
+
+        if (metode === 'get' && form.closest(SEL_TABEL)) {
+            var url = (form.getAttribute('action') || window.location.pathname)
+                + '?' + new URLSearchParams(new FormData(form)).toString();
+            if ( ! lingkupTabel(url)) return;
+            e.preventDefault();
+            loadPage(url, true, true);
+            return;
+        }
+
+        // POST di dalam panel bertanda — wizard Rekam Data. Setiap langkahnya
+        // POST lalu redirect (PRG), jadi tanpa ini seluruh wizard memuat ulang
+        // halaman penuh di SETIAP tombol: kedip putih, shell dibangun ulang,
+        // gulir lompat — padahal yang berubah cuma isi panelnya.
+        //
+        // OPT-IN, bukan berlaku umum. Menangkap semua POST secara diam-diam
+        // berbahaya: endpoint yang membalas JSON atau tidak redirect (login,
+        // aksi Alpine) akan rusak, dan POST tidak bisa "dibatalkan lalu diulang
+        // sebagai navigasi penuh" — kirimannya sudah terjadi. Panel harus
+        // menyatakan diri siap.
+        if (metode !== 'post' || ! form.closest(SEL_PANEL)) return;
+
+        // Tombol submit bernama ikut menentukan hasil (mis. <button name="langkah"
+        // value="program"> vs value="bnba"). FormData saja TIDAK memuatnya, jadi
+        // nilainya harus diambil dari `e.submitter`. Kalau peramban tidak
+        // menyediakannya, JANGAN ditangkap: mengirim tanpa nilai itu bukan
+        // "sedikit kurang bagus", tapi memindahkan pengguna ke langkah yang
+        // salah. Biarkan submit biasa jalan — halaman memuat penuh, tapi benar.
+        if ( ! ('submitter' in e)) return;
+
+        var data = new FormData(form);
+        if (e.submitter && e.submitter.name) {
+            data.append(e.submitter.name, e.submitter.value);
+        }
         e.preventDefault();
-        loadPage(url, true, true);
+        loadPage(form.getAttribute('action') || window.location.href, true, false, data);
     });
 
     // S1 — entry AWAL direkam sebelum pushState pertama, supaya Back dari

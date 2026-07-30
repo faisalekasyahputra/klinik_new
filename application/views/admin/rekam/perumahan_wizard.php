@@ -96,7 +96,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
 };
 ?>
 
-<div class="space-y-4">
+<div data-panel-progresif class="space-y-4">
 
   <!-- ================= kepala + penunjuk langkah ================= -->
   <section class="<?= $kotak ?>">
