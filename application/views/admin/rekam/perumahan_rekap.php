@@ -13,6 +13,35 @@
 $e = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 $nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+/**
+ * Dua mode, satu markup tabel — sengaja tidak dipecah jadi dua view. Bentuk
+ * matriksnya identik; yang berbeda hanya SUMBER angkanya dan apa yang boleh
+ * dilakukan terhadapnya. Menyalin tabel 10×6 ke berkas kedua berarti setiap
+ * perbaikan kolom harus dikerjakan dua kali, dan yang terlupa akan berbeda diam-diam.
+ *
+ *   `capaian` — layar pertama Capaian Perumahan (sketsa: tabel dulu, tombol
+ *               input di bawahnya). Angka SENDIRI apa adanya, termasuk draft.
+ *   `rekap`   — rekap resmi: HANYA laporan berstatus `terkirim`, bisa lintas periode.
+ *
+ * Bedanya penting dan tidak boleh dikaburkan: angka draft belum dilaporkan ke
+ * provinsi. Karena itu mode `capaian` selalu memajang status laporannya.
+ */
+$mode    = $mode ?? 'rekap';
+$capaian = ($mode === 'capaian');
+$laporan = $laporan ?? NULL;
+
+$warna_status = [
+    'draft'           => 'bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300',
+    'terkirim'        => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300',
+    'perlu_perbaikan' => 'bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300',
+];
+$label_status = [
+    'draft' => 'Draft', 'terkirim' => 'Terkirim', 'perlu_perbaikan' => 'Perlu Perbaikan',
+];
+$tombol = 'inline-block rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white'
+    . ' transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark'
+    . ' dark:hover:bg-brand-hover';
 ?>
 
 <div class="space-y-4">
@@ -22,7 +51,12 @@ $nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
       <span class="rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-black/20">
         Kabupaten/Kota <b class="text-gray-900 dark:text-white"><?= $e($scope_label) ?></b>
       </span>
-      <form method="get" action="<?= base_url('Rekam_Perumahan/rekap') ?>" class="flex flex-wrap items-center gap-2">
+      <?php if ($capaian && $laporan): ?>
+        <span class="rounded-full px-3 py-1 text-xs font-bold <?= $warna_status[$laporan['status']] ?? '' ?>">
+          <?= $e($label_status[$laporan['status']] ?? $laporan['status']) ?>
+        </span>
+      <?php endif; ?>
+      <form method="get" action="<?= base_url($capaian ? 'Rekam_Perumahan' : 'Rekam_Perumahan/rekap') ?>" class="flex flex-wrap items-center gap-2">
         <label class="text-sm text-gray-500 dark:text-brand-muted" for="bulan">Periode</label>
         <select id="bulan" name="bulan" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
           <?php foreach ($nama_bulan as $n => $label): ?>
@@ -43,23 +77,40 @@ $nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     <p class="mt-4 text-sm font-bold text-gray-900 dark:text-white">
       Angka kumulatif s.d. <?= $e($nama_bulan[(int) $bulan] ?? $bulan) ?> <?= (int) $tahun ?>
     </p>
-    <p class="text-xs text-gray-500 dark:text-brand-muted">
-      Dari laporan berstatus <b>terkirim</b> pada periode ini saja. Angka bulan-bulan
-      sebelumnya <b>tidak dijumlahkan</b> — nilainya memang sudah kumulatif.
-    </p>
+    <?php if ($capaian): ?>
+      <p class="text-xs text-gray-500 dark:text-brand-muted">
+        Angka wilayahmu untuk periode ini <b>apa adanya</b>, termasuk yang masih draft —
+        jadi bukan berarti sudah dilaporkan ke provinsi; status di atas yang menentukan.
+        Angka bulan-bulan sebelumnya <b>tidak dijumlahkan</b>, nilainya memang sudah kumulatif.
+      </p>
+      <a href="<?= base_url('Rekam_Perumahan/input?tahun=' . (int) $tahun . '&bulan=' . (int) $bulan) ?>"
+         class="mt-4 <?= $tombol ?>">Input Capaian</a>
+    <?php else: ?>
+      <p class="text-xs text-gray-500 dark:text-brand-muted">
+        Dari laporan berstatus <b>terkirim</b> pada periode ini saja. Angka bulan-bulan
+        sebelumnya <b>tidak dijumlahkan</b> — nilainya memang sudah kumulatif.
+      </p>
+    <?php endif; ?>
   </section>
 
   <?php if ( ! $ada_data): ?>
     <!-- Keadaan kosong yang jujur: TIDAK merender tabel nol. Nol yang dikarang
          tidak bisa dibedakan dari nol yang benar-benar dilaporkan. -->
     <section class="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-white/10 dark:bg-brand-card">
-      <p class="font-bold text-gray-900 dark:text-white">Belum ada laporan terkirim untuk periode ini.</p>
-      <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
-        Bukan berarti capaiannya nol — laporannya memang belum dikirim.
-      </p>
-      <a href="<?= base_url('Rekam_Perumahan?tahun=' . (int) $tahun . '&bulan=' . (int) $bulan) ?>"
-         class="mt-4 inline-block rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover">
-        Buka Input Capaian periode ini
+      <?php if ($capaian): ?>
+        <p class="font-bold text-gray-900 dark:text-white">Belum ada angka tercatat untuk periode ini.</p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
+          Bukan berarti capaiannya nol — periodenya memang belum diisi.
+        </p>
+      <?php else: ?>
+        <p class="font-bold text-gray-900 dark:text-white">Belum ada laporan terkirim untuk periode ini.</p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
+          Bukan berarti capaiannya nol — laporannya memang belum dikirim.
+        </p>
+      <?php endif; ?>
+      <a href="<?= base_url('Rekam_Perumahan/input?tahun=' . (int) $tahun . '&bulan=' . (int) $bulan) ?>"
+         class="mt-4 <?= $tombol ?>">
+        <?= $capaian ? 'Input Capaian' : 'Buka Input Capaian periode ini' ?>
       </a>
     </section>
   <?php else: ?>

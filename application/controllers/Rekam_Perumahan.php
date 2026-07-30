@@ -22,10 +22,57 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
     }
 
     /**
+     * Layar pertama Capaian Perumahan: TABEL DULU, tombol Input di bawahnya.
+     * Urutan ini mengikuti sketsa Menu Utama — orang melihat capaian yang sudah
+     * tercatat sebelum mengubahnya, bukan langsung disuguhi sepuluh bagian isian.
+     *
+     * Baca-saja, dan itu penting: memakai `laporan_periode()` yang TIDAK membuat
+     * apa pun, bukan `ambil_atau_buat_draft()`. Kalau layar baca ikut membuat
+     * draft, setiap admin yang cuma menengok melahirkan periode baru di
+     * `rd_laporan` dan riwayat pelaporan penuh bulan kosong yang tidak pernah
+     * diniatkan. Draft lahir di `input()` saja.
+     *
+     * Berbeda dari `rekap()`: di sini angka SENDIRI apa adanya termasuk draft,
+     * di sana hanya laporan berstatus `terkirim` dan bisa lintas periode.
+     */
+    public function index()
+    {
+        $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
+        $bulan = (int) ($this->input->get('bulan') ?: date('n'));
+
+        $laporan = $this->rd->laporan_periode('perumahan', $this->my_kabupaten_id, $tahun, $bulan);
+        $matriks = [];
+        if ($laporan) {
+            $isi = $this->rd->isi_laporan((int) $laporan['id'], $this->my_kabupaten_id);
+            foreach ($isi['baris'] as $row) {
+                $matriks[$row['sumber_dana']][$row['program']] = $row;
+            }
+        }
+
+        $this->render_scoped_admin('admin/rekam/perumahan_rekap', [
+            'title'         => 'Capaian Perumahan',
+            'scope_label'   => $this->nama_wilayah(),
+            'tahun'         => $tahun,
+            'bulan'         => $bulan,
+            'matriks'       => $matriks,
+            'ada_data'      => ! empty($matriks),
+            'sumber_label'  => $this->label_sumber(),
+            'program_label' => $this->label_program(),
+            // Mode `capaian` membuat view menampilkan status laporan dan tombol
+            // Input Capaian, serta mengarahkan pemilih periode ke layar ini.
+            'mode'          => 'capaian',
+            'laporan'       => $laporan,
+        ]);
+    }
+
+    /**
+     * Form isian. Di sinilah draft periode LAHIR — satu-satunya layar yang
+     * membuatnya, dipicu tombol Input Capaian di `index()`.
+     *
      * Periode dipilih lewat query string biasa (GET), bukan segmen URL, supaya
      * tautan "ganti bulan" tetap satu halaman yang sama.
      */
-    public function index()
+    public function input()
     {
         $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
         $bulan = (int) ($this->input->get('bulan') ?: date('n'));
@@ -240,9 +287,15 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
 
     // ---------------------------------------------------------------- internal
 
+    /**
+     * Kembali ke layar ISIAN, bukan ke `index()` yang kini tabel baca-saja.
+     * Dipakai alur unggah BNBA, yang formulirnya memang ada di layar isian —
+     * melempar orang ke tabel sesudah gagal mengunggah menyembunyikan pesan
+     * galatnya dari tempat ia bisa mencoba lagi.
+     */
     private function kembali_ke_periode(array $laporan)
     {
-        redirect('Rekam_Perumahan?tahun=' . (int) $laporan['tahun']
+        redirect('Rekam_Perumahan/input?tahun=' . (int) $laporan['tahun']
             . '&bulan=' . (int) $laporan['bulan']);
     }
 
@@ -259,7 +312,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
             $this->session->set_flashdata('success', $pesan_sukses);
         }
         $laporan = $this->rd->laporan($laporan_id, $this->my_kabupaten_id);
-        redirect('Rekam_Perumahan?tahun=' . (int) ($laporan['tahun'] ?? date('Y'))
+        redirect('Rekam_Perumahan/input?tahun=' . (int) ($laporan['tahun'] ?? date('Y'))
             . '&bulan=' . (int) ($laporan['bulan'] ?? date('n')));
     }
 

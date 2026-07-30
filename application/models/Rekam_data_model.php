@@ -198,6 +198,32 @@ class Rekam_data_model extends CI_Model {
         return (int) $this->db->affected_rows();
     }
 
+    /**
+     * Cari laporan satu periode TANPA membuatnya. Pasangan baca-saja dari
+     * `ambil_atau_buat_draft()` — sengaja terpisah, bukan parameter tambahan.
+     *
+     * Layar Capaian kini membuka tabel lebih dulu (sesuai sketsa Menu Utama),
+     * dan sekadar MELIHAT tidak boleh melahirkan baris di `rd_laporan`. Kalau
+     * layar baca memakai `ambil_atau_buat_draft()`, setiap admin yang cuma
+     * menengok akan membuat draft untuk bulan itu, dan riwayat pelaporan penuh
+     * periode kosong yang tidak pernah diniatkan siapa pun. Draft lahir hanya
+     * saat tombol Input Capaian ditekan.
+     *
+     * @return array|null Baris rd_laporan, atau NULL bila periode itu belum ada.
+     */
+    public function laporan_periode($domain, $kabupaten_id, $tahun, $bulan)
+    {
+        if ( ! in_array($domain, self::DOMAINS, TRUE)) {
+            return NULL;
+        }
+        return $this->db->get_where('rd_laporan', [
+            'domain'       => $domain,
+            'kabupaten_id' => (int) $kabupaten_id,
+            'tahun'        => (int) $tahun,
+            'bulan'        => (int) $bulan,
+        ])->row_array() ?: NULL;
+    }
+
     // -------------------------------------------------------------- perumahan
 
     /**

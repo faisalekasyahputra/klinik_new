@@ -30,7 +30,7 @@ $terjawab = count($sumber_label) - count($belum_dijawab);
         Kabupaten/Kota <b class="text-gray-900 dark:text-white"><?= $e($scope_label) ?></b>
       </span>
 
-      <form method="get" action="<?= base_url('Rekam_Perumahan') ?>" class="flex flex-wrap items-center gap-2">
+      <form method="get" action="<?= base_url('Rekam_Perumahan/input') ?>" class="flex flex-wrap items-center gap-2">
         <label class="text-sm text-gray-500 dark:text-brand-muted" for="bulan">Kumulatif s.d.</label>
         <select id="bulan" name="bulan" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
           <?php foreach ($nama_bulan as $n => $label): ?>

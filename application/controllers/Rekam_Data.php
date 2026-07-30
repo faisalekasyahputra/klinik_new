@@ -22,6 +22,28 @@ class Rekam_Data extends MY_Controller {
 
     public function index()
     {
+        // Sudah masuk sebagai Admin Kab/Kota -> layar sambutan (frame 002).
+        // Nama wilayah dan tahun pelaporan disebut di muka SEBELUM menyentuh
+        // angka: modul ini ter-scope satu kabupaten dan satu periode, dan
+        // kekeliruan termahal di sini adalah mengisi ke wilayah atau tahun
+        // yang salah tanpa sadar.
+        if ($this->session->userdata('is_logged')
+            && $this->session->userdata('role') === 'admin_kabkota') {
+
+            $kabupaten_id = (int) $this->session->userdata('kabupaten_id');
+            $this->render_user_dashboard('admin/rekam/sambutan', [
+                'title'        => 'Rekam Data',
+                'nama_wilayah' => $this->db->where('id', $kabupaten_id)
+                    ->get('kabupaten')->row('nama') ?: 'Wilayah Saya',
+                'tahun'        => (int) date('Y'),
+            ]);
+            return;
+        }
+
+        // Peran lain dan pengunjung tanpa sesi tetap mendapat halaman portal.
+        // JANGAN mengembalikan gerbang Admin_Kabkota_Controller di sini: kartu
+        // REKAM DATA ada di beranda publik, dan menolaknya berarti menuduh
+        // orang yang cuma menekan satu kartu menu sebagai salah peran.
         $this->render('pages/rekam/pintu', [
             'title' => 'Rekam Data',
         ]);
