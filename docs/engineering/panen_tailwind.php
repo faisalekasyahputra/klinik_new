@@ -31,7 +31,24 @@ $root = dirname(__DIR__, 2);
 // (darkMode class + warna brand) sehingga dipanen terpisah.
 $mode = $argv[1] ?? 'portal';
 if ($mode === 'admin') {
-    $dirs = [$root . '/application/views/admin'];
+    // BUKAN cuma views/admin. Tiga view di luar direktori itu juga dirender
+    // lewat render_user_dashboard()/render_scoped_admin(), artinya mereka
+    // memakai shell admin dan memuat tailwind-admin.css — tapi kelasnya tidak
+    // pernah ikut terpanen ke sana. Akibatnya `sm:grid-cols-2` dan `md:p-8` di
+    // pages/pengaturan/profil.php tidak ada di CSS statis mana pun, dan
+    // halaman itu selalu cat-pertama telanjang sampai CDN menyusul.
+    //
+    // Panen portal juga menyapu views/pages, tapi keluarannya
+    // tailwind-generated.css — berkas yang TIDAK dimuat shell admin. Jadi
+    // "sudah terpanen di portal" bukan jawaban untuk halaman ini.
+    //
+    // Daftar ini diturunkan dari pemanggil sungguhan:
+    //   grep -rho "render_user_dashboard('[^']*'\|render_scoped_admin('[^']*'" application/controllers/
+    $dirs = [
+        $root . '/application/views/admin',
+        $root . '/application/views/admin_bidang',
+        $root . '/application/views/pages/pengaturan',
+    ];
     $out_css = 'tailwind-admin.css';
     $config_js = "tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['\"Plus Jakarta Sans\"', 'sans-serif'] }, colors: { brand: { primary: '#d6fb00', hover: '#b5d400', light: '#ecffb6', muted: '#8aacb0', dark: '#0a1a1f', card: '#0f2933' } } } } };";
 } else {
