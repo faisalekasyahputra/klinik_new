@@ -23,10 +23,22 @@ function cek($condition, $label) {
 function run_cli($root, $php, array $arguments) {
     $command = array_merge([$php, 'index.php', 'migrate'], $arguments);
     $pipes = [];
+
+    // CI_ENV WAJIB dioper. Sejak U0, index.php gagal-tertutup ke `production`
+    // kalau CI_ENV tidak diset — benar untuk keamanan, tapi CLI mewarisi
+    // lingkungan kosong, jadi seluruh method uji di Migrate.php kena penjaga
+    // `ENVIRONMENT === 'production' -> show_404()` dan menjawab "Not Found".
+    // Tanpa baris ini suite ini melaporkan 5/5 GAGAL pada sistem yang justru
+    // sehat: `uji_warga_r2` sendiri hijau 14/14 begitu env-nya benar.
+    // Kegagalan palsu lebih mahal daripada tidak ada uji — ia mengajari orang
+    // mengabaikan warna merah.
+    $env = getenv();
+    $env['CI_ENV'] = 'development';
+
     $process = proc_open($command, [
         1 => ['pipe', 'w'],
         2 => ['pipe', 'w'],
-    ], $pipes, $root);
+    ], $pipes, $root, $env);
     if ( ! is_resource($process)) {
         return ['process' => NULL, 'pipes' => [], 'output' => '', 'error' => 'gagal memulai proses'];
     }
