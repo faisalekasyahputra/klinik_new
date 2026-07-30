@@ -8,7 +8,7 @@
 
 ## 0. BACA INI DULU — Status Terkini & Protokol Antar-Agent
 
-**Terakhir disinkronkan: 30 Juli 2026** — 🟡 **RILIS SEDANG SETENGAH JALAN, BACA §0a SEBELUM MENYENTUH APA PUN.** Kode `3bec51e` sudah di-push (auto-deploy), migrasi `20260701000024` **BELUM dijalankan**. Selama itu Rekam Data Perumahan error di production.
+**Terakhir disinkronkan: 30 Juli 2026, sore** — wizard Rekam Data Perumahan TAYANG di production: kode `3bec51e`, skema **`20260701000024`**, bentuk skema diverifikasi langsung dari `information_schema` (bukan dari laporan "Migrasi sukses"). Uji klik sebagai admin kab/kota **belum dilakukan** — lihat §0a.
 
 <!-- Konteks lama, dipertahankan sebagai jejak: -->
 **Sebelumnya: 28 Juli 2026** (roadmap pengembang T0–T6 selesai di production; form warga R0–R7 dan adapter offline SIMPERUM R9 selesai lokal, belum di-push — lihat §0b/§0c). Kalau kamu agent yang baru masuk, baca bagian ini sampai habis sebelum menyentuh apa pun.
@@ -17,8 +17,12 @@
 
 > 🔄 **PETA LINGKUNGAN BERUBAH 27 Jul 2026 — keputusan user.** Situs staging kini **menjadi production**: "kita produksi menggunakan staging saat ini, nanti jika kita butuhkan `main` kita bisa menghidupkannya kembali." Tiga situs lain dimatikan (403) — berkas & DB utuh, tinggal hapus blok `SITUS DIMATIKAN` di `.htaccess` server untuk menghidupkan lagi.
 
-> 🟡 **RILIS WIZARD SETENGAH JALAN — 30 Jul 2026, sore.** Kode `3bec51e` sudah di-push ke branch auto-deploy; migrasi `20260701000024` **belum jalan**. Kode itu membaca `rd_perumahan_program` dan `triwulan`, skema production masih `rd_perumahan_bagian` dan `bulan` — jadi **Rekam Data Perumahan error sampai Fase 3 dijalankan**. Modul lain tidak menyentuh tabel ini. Langkah, gerbang, dan cara rollback-nya: [`RUNBOOK_RILIS_WIZARD_024.md`](docs/engineering/RUNBOOK_RILIS_WIZARD_024.md).
-> **`…024` TIDAK BISA di-`migrate down`** — `down()` menolak begitu ada data, dan production punya data. Rollback = restore backup. Jangan jalankan migrate sebelum backup Fase 1 ada dan sudah dibuka untuk diperiksa.
+> ✅ **RILIS WIZARD MENDARAT 30 Jul 2026, sore: production kini skema `20260701000024` + kode `3bec51e`.** Wizard Rekam Data Perumahan (triwulan, program sebagai induk, Rencana+Realisasi), riwayat yang bisa diklik, dan tabel admin yang menukar kartunya saja saat ganti tab. Jumlah tabel tetap **36** — `rd_perumahan_bagian` di-RENAME jadi `rd_perumahan_program`, bukan ditambah.
+> **Bentuknya diverifikasi dari `information_schema`, bukan dari "Migrasi sukses".** `rd_perumahan_program` ada, `rd_perumahan_bagian` hilang, `rd_laporan` punya `triwulan`+`current_step`, kolom `bulan` lenyap dari seluruh DB, `rd_perumahan_baris` punya `rencana_*`/`realisasi_*`. Ini wajib: `Migration::version()` menandai sukses TANPA memeriksa nilai balik query (lihat [`Migrate.php`](application/controllers/Migrate.php) §status), dan `db_debug` mati di production — `ALTER` gagal senyap tetap dilaporkan sukses.
+> **Belum diuji dengan klik** sebagai admin kab/kota. HTTP tanpa login: publik 200, rute terproteksi 307 (redirect login, bukan 500) — itu menyingkirkan galat fatal, bukan membuktikan halamannya merender.
+> Runbook + rollback: [`RUNBOOK_RILIS_WIZARD_024.md`](docs/engineering/RUNBOOK_RILIS_WIZARD_024.md). Backup pra-rilis `~/backup_klinik_pre_wizard_024.sql.gz` (12K, 36 `CREATE TABLE`, 12 `INSERT`, sudah dibuka & diperiksa).
+
+> 🔻 **Koreksi: tabel `rd_*` di production KOSONG, dan saya sempat mengklaim sebaliknya.** Saya menyatakan `…024` tidak bisa di-`migrate down` "karena production punya data" — dasarnya dua draft yang tercipta dari sapuan saya 30 Jul pagi. Backup pra-rilis membantahnya: 12 `INSERT` seluruhnya di tabel lain, **nol** di `rd_*`. Karena `down()` hanya menolak saat `rd_perumahan_baris` berisi, rollback lewat `migrate down` sebenarnya MASIH tersedia selama belum ada yang mengisi Rekam Data di production. Pelajarannya bukan soal migrasi: klaim "ada datanya" itu bisa diperiksa dalam satu perintah, dan saya menyampaikannya sebagai fakta tanpa memeriksa.
 
 > ⚠️ **Baris di bawah ini menulis `…022` + `2e49836` sampai 30 Jul sore — SALAH.** Production sebenarnya sudah di `8da6c4b` + skema `20260701000023` sejak rilis siang itu (migrasi dua-belas-sumber). Angka di tabel §0a sudah dikoreksi; paragraf aslinya dibiarkan sebagai jejak supaya polanya kelihatan: dokumen ini sudah tiga kali salah menyebut versi skema production, selalu karena disalin dari niat rilis, bukan dibaca dari `Migrate::status()`.
 
@@ -41,7 +45,7 @@
 | | Situs | Branch | Status |
 |---|---|---|---|
 | **Lokal** | `localhost/klinik_new` | `feature/homepage-portal-v2` | skema `20260701000022` — sama dengan production sejak 30 Jul |
-| **PRODUCTION (aktif)** | `floralwhite-lion-710022`<br>dir: `~/domains/floralwhite-lion-710022.hostingersite.com/public_html`<br>DB: **`31.97.208.59`** (bukan localhost), `u504551489_klinikstg` | `feature/homepage-portal-v2` — auto-deploy | 🟡 **TIDAK SEPASANG.** KODE `3bec51e` (push 30 Jul sore) + DB skema **`20260701000023`** — migrasi `…024` belum jalan, lihat kotak kuning di atas. *(Baris ini sempat menulis `…016` lalu `…022`; keduanya salah. Angka hanya boleh ditulis ulang setelah dibaca dari `Migrate::status()` di server, bukan dari niat rilis.)* |
+| **PRODUCTION (aktif)** | `floralwhite-lion-710022`<br>dir: `~/domains/floralwhite-lion-710022.hostingersite.com/public_html`<br>DB: **`31.97.208.59`** (bukan localhost), `u504551489_klinikstg` | `feature/homepage-portal-v2` — auto-deploy | KODE `3bec51e` + DB skema **`20260701000024`**, 36 tabel, ter-push & termigrasi 30 Jul 2026 sore. *(Baris ini sempat menulis `…016` lalu `…022`; keduanya salah. Angka hanya boleh ditulis ulang setelah dibaca dari server — `Migrate::status()` untuk versinya, `information_schema` untuk bentuknya — bukan dari niat rilis.)* |
 | ~~production lama~~ | `palegreen-mink-703421` | `main` — beku sejak 19 Jul | 🔴 **DIMATIKAN** |
 | ~~staging lama~~ | `darkseagreen-hamster-214338` | `feature/ui-ux-revamp` | 🔴 **DIMATIKAN** |
 | ~~instalasi mati~~ | `darkgreen-cattle-889861` | tanpa git, Mei | 🔴 **DIMATIKAN** |
