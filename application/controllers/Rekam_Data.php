@@ -4,24 +4,26 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * Rekam Data — pintu masuk modul ("BANK Data" di sketsa Menu Utama).
  *
- * Murni pengarah: dua tombol, Perumahan dan Kawasan. TIDAK menyentuh model
- * dan tidak membuat draft — membuka pintu tidak boleh melahirkan baris. Draft
- * baru lahir di `Rekam_Perumahan::index()`/`Rekam_Kawasan::index()`, dan itu
- * disengaja: satu tempat yang menulis, bukan dua.
+ * PUBLIK dan berada di shell portal, bukan di shell admin. Kartu REKAM DATA
+ * ada di beranda publik; sebelum ini kelas ini meng-extend
+ * `Admin_Kabkota_Controller`, sehingga satu klik dari beranda melempar
+ * pengunjung ke layar login dengan pesan "Akses ditolak. Anda bukan Admin
+ * Kabupaten/Kota." — menuduh orang yang cuma menekan kartu menu.
  *
- * Kartu REKAM DATA di beranda publik menunjuk ke sini. Pengunjung tanpa sesi
- * diarahkan ke login oleh Admin_Kabkota_Controller, bukan oleh kelas ini.
+ * Yang dijaga tetap dijaga: pengisiannya ada di `Rekam_Perumahan` dan
+ * `Rekam_Kawasan`, keduanya `Admin_Kabkota_Controller`. Halaman ini hanya
+ * pengarah, jadi tidak ada yang perlu dilindungi di sini.
  *
- * Acuan: sketsa Menu Utama -> BANK Data -> Capaian Perumahan.
+ * Nol sentuhan ke model. Membuka pintu tidak boleh melahirkan baris di
+ * `rd_laporan`; draft lahir di `Rekam_Perumahan::index()`/`Rekam_Kawasan::index()`
+ * saja — satu tempat yang menulis, bukan tiga.
  */
-class Rekam_Data extends Admin_Kabkota_Controller {
+class Rekam_Data extends MY_Controller {
 
     public function index()
     {
-        $this->render_scoped_admin('admin/rekam/pintu', [
-            'title'       => 'Rekam Data',
-            'scope_label' => $this->db->where('id', $this->my_kabupaten_id)
-                ->get('kabupaten')->row('nama') ?: 'Wilayah Saya',
+        $this->render('pages/rekam/pintu', [
+            'title' => 'Rekam Data',
         ]);
     }
 }
