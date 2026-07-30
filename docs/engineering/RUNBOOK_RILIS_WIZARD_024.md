@@ -69,14 +69,30 @@ cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && git log -1
 
 ## Fase 1 — backup, dan buktikan backup-nya utuh
 
+> **DB production TIDAK di localhost.** `DB_HOST=31.97.208.59` (baca dari `.env`
+> server, jangan hafalkan dari sini — kalau berbeda, `.env` yang benar). Tanpa
+> `-h`, `mysqldump` diam-diam mencoba `localhost` dan gagal dengan
+> `Access denied for user '...'@'localhost'` — pesan yang sangat mudah dibaca
+> sebagai "password salah" padahal password-nya tidak pernah jadi masalah.
+> Fakta ini tidak pernah tercatat di dokumen mana pun sebelum 30 Jul 2026.
+>
+> `DB_USER` dan `DB_NAME` kebetulan sama-sama `u504551489_klinikstg`; jangan
+> anggap itu aturan, baca dua-duanya dari `.env`.
+
 ```
-cd ~ && mysqldump -u u504551489_klinikstg -p u504551489_klinikstg | gzip > ~/backup_klinik_pre_wizard_024.sql.gz && ls -lh ~/backup_klinik_pre_wizard_024.sql.gz && zcat ~/backup_klinik_pre_wizard_024.sql.gz | grep -c "^CREATE TABLE"
+cd ~ && set -o pipefail && mysqldump -h 31.97.208.59 -u u504551489_klinikstg -p u504551489_klinikstg | gzip > ~/backup_klinik_pre_wizard_024.sql.gz && echo "--- DUMP OK ---" && ls -lh ~/backup_klinik_pre_wizard_024.sql.gz && echo "CREATE TABLE: $(zcat ~/backup_klinik_pre_wizard_024.sql.gz | grep -c '^CREATE TABLE')"
 ```
 
-**GERBANG.** Berkasnya harus tidak-nol DAN jumlah `CREATE TABLE` harus **36**
-(jumlah tabel production sejak rilis 30 Jul). Kalau `zcat` gagal atau angkanya
-lebih kecil, backup-nya terpotong — **BERHENTI**, ulangi. Backup yang tidak
-pernah dibuka bukan backup.
+**`set -o pipefail` bukan hiasan.** Status sebuah pipa diambil dari perintah
+TERAKHIR, dan `gzip` selalu sukses — juga saat ia cuma memampatkan galat
+kosong. Tanpa pipafail, `mysqldump` gagal pun rantai `&&` jalan terus dan
+menghasilkan berkas 20 byte bernama meyakinkan. Itu terjadi sungguhan 30 Jul.
+
+**GERBANG.** Harus muncul `DUMP OK`, ukuran berkas wajar, dan
+`CREATE TABLE: 36` (jumlah tabel production sejak rilis 30 Jul). Kalau angkanya
+lebih kecil, dump-nya terpotong — **BERHENTI**, ulangi. Backup yang tidak
+pernah dibuka bukan backup; berkas bernama `backup_*` yang isinya nol lebih
+berbahaya daripada tidak ada backup sama sekali, karena ia menenangkan.
 
 ## Fase 2 — push (dari lokal)
 

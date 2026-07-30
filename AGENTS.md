@@ -41,7 +41,7 @@
 | | Situs | Branch | Status |
 |---|---|---|---|
 | **Lokal** | `localhost/klinik_new` | `feature/homepage-portal-v2` | skema `20260701000022` — sama dengan production sejak 30 Jul |
-| **PRODUCTION (aktif)** | `floralwhite-lion-710022` | `feature/homepage-portal-v2` — auto-deploy | 🟡 **TIDAK SEPASANG.** KODE `3bec51e` (push 30 Jul sore) + DB skema **`20260701000023`** — migrasi `…024` belum jalan, lihat kotak kuning di atas. *(Baris ini sempat menulis `…016` lalu `…022`; keduanya salah. Angka hanya boleh ditulis ulang setelah dibaca dari `Migrate::status()` di server, bukan dari niat rilis.)* |
+| **PRODUCTION (aktif)** | `floralwhite-lion-710022`<br>dir: `~/domains/floralwhite-lion-710022.hostingersite.com/public_html`<br>DB: **`31.97.208.59`** (bukan localhost), `u504551489_klinikstg` | `feature/homepage-portal-v2` — auto-deploy | 🟡 **TIDAK SEPASANG.** KODE `3bec51e` (push 30 Jul sore) + DB skema **`20260701000023`** — migrasi `…024` belum jalan, lihat kotak kuning di atas. *(Baris ini sempat menulis `…016` lalu `…022`; keduanya salah. Angka hanya boleh ditulis ulang setelah dibaca dari `Migrate::status()` di server, bukan dari niat rilis.)* |
 | ~~production lama~~ | `palegreen-mink-703421` | `main` — beku sejak 19 Jul | 🔴 **DIMATIKAN** |
 | ~~staging lama~~ | `darkseagreen-hamster-214338` | `feature/ui-ux-revamp` | 🔴 **DIMATIKAN** |
 | ~~instalasi mati~~ | `darkgreen-cattle-889861` | tanpa git, Mei | 🔴 **DIMATIKAN** |
