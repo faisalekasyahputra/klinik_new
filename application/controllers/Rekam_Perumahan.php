@@ -124,15 +124,29 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
 
         // Belum memilih periode → langkah 1. Draft belum lahir di sini.
         if ($laporan_id < 1) {
+            $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
+
+            // Status tiap triwulan dibawa ke layar pemilihan supaya orang tahu
+            // SEBELUM memilih bahwa periode itu sudah dikirim dan terkunci.
+            // Tanpa ini ia memilih TW berjalan, masuk, lalu baru ditolak — dan
+            // penolakan yang datang setelah tiga klik terbaca seperti kerusakan.
+            $status = [];
+            foreach ($this->rd->riwayat('perumahan', $this->my_kabupaten_id, $tahun,
+                $this->my_kabupaten_id) as $row) {
+                $status[(int) $row['triwulan']] = $row['status'];
+            }
+
             $this->render_scoped_admin('admin/rekam/perumahan_wizard', [
                 'title'       => 'Input Capaian Perumahan',
                 'scope_label' => $this->nama_wilayah(),
                 'langkah'     => 'periode',
                 'label_langkah' => self::LABEL_LANGKAH,
                 'urutan'      => self::LANGKAH,
-                'tahun'       => (int) ($this->input->get('tahun') ?: date('Y')),
+                'tahun'       => $tahun,
                 'triwulan'    => $this->triwulan_dari_get(),
+                'status_triwulan' => $status,
                 'laporan'     => NULL,
+                'terkunci'    => FALSE,
             ]);
             return;
         }
@@ -196,6 +210,15 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
             return;
         }
         $id = (int) $hasil['laporan']['id'];
+
+        // Periode yang sudah dikirim tidak bisa diubah, jadi mengantar orang ke
+        // layar pemilihan program hanya menyodorkan pintu yang terkunci. Antar
+        // langsung ke isiannya — yang memang boleh dibaca.
+        if ($hasil['laporan']['status'] === 'terkirim') {
+            redirect('Rekam_Perumahan/input?laporan=' . $id . '&langkah=isian');
+            return;
+        }
+
         $this->rd->simpan_langkah($id, 'perumahan', 'program', $this->my_kabupaten_id);
         redirect('Rekam_Perumahan/input?laporan=' . $id . '&langkah=program');
     }

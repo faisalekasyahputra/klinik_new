@@ -117,6 +117,20 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
       </a>
     </div>
 
+    <?php if ($laporan && $terkunci): ?>
+      <?php /* Spanduk ini muncul di SETIAP langkah, bukan hanya di layar isian.
+                Sebelumnya L1 dan L2 tetap menyajikan formulir yang bisa ditekan
+                untuk laporan terkunci, dan tiap kiriman dijawab "Laporan sudah
+                terkirim dan terkunci" — menawarkan tindakan yang sudah pasti
+                ditolak, lalu menyalahkan penggunanya. */ ?>
+      <p class="mt-4 rounded-xl border-l-4 border-emerald-500 bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200">
+        <b>Periode ini sudah dikirim dan terkunci.</b> Isinya bisa dibaca, tidak bisa diubah.
+        Perubahan baru mungkin setelah Admin Bidang mengembalikannya lewat
+        <i>Minta Perbaikan</i>. Untuk mengisi periode lain,
+        <a class="font-bold underline" href="<?= base_url('Rekam_Perumahan/input') ?>">pilih triwulan lain</a>.
+      </p>
+    <?php endif; ?>
+
     <ol class="mt-4 flex flex-wrap gap-2">
       <?php foreach ($urutan as $i => $kode): ?>
         <?php $lewat = $aktif !== FALSE && $i < $aktif; ?>
@@ -156,11 +170,25 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
           <legend class="text-xs font-bold text-gray-700 dark:text-brand-muted">Triwulan</legend>
           <div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
             <?php foreach ($nama_tw as $n => $label): ?>
-              <label class="cursor-pointer rounded-xl border border-gray-200 px-3 py-2.5 text-center text-sm font-bold
-                            transition-colors hover:border-blue-300 dark:border-white/10 dark:hover:border-brand-primary/30">
-                <input type="radio" name="triwulan" value="<?= $n ?>" class="mr-1.5"
-                       <?= $n === (int) $triwulan ? 'checked' : '' ?>>
-                <?= $e($label) ?>
+              <?php $st = $status_triwulan[$n] ?? NULL; ?>
+              <label class="cursor-pointer rounded-xl border px-3 py-2.5 text-center transition-colors
+                            <?= $st === 'terkirim'
+                                  ? 'border-emerald-300 bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-500/5'
+                                  : 'border-gray-200 hover:border-blue-300 dark:border-white/10 dark:hover:border-brand-primary/30' ?>">
+                <span class="block text-sm font-bold">
+                  <input type="radio" name="triwulan" value="<?= $n ?>" class="mr-1.5"
+                         <?= $n === (int) $triwulan ? 'checked' : '' ?>>
+                  <?= $e($label) ?>
+                </span>
+                <?php /* Status disebut DI SINI, bukan setelah orang masuk. Periode
+                          terkirim tetap boleh dipilih — isinya boleh dibaca — tetapi
+                          ia tahu lebih dulu bahwa tidak ada yang bisa diubah. */ ?>
+                <span class="mt-0.5 block text-[11px] font-medium
+                             <?= $st ? 'text-gray-600 dark:text-brand-muted' : 'text-gray-400 dark:text-brand-muted/60' ?>">
+                  <?= $st === 'terkirim' ? 'terkunci — sudah dikirim'
+                        : ($st === 'perlu_perbaikan' ? 'perlu perbaikan'
+                        : ($st === 'draft' ? 'draft tersimpan' : 'belum diisi')) ?>
+                </span>
               </label>
             <?php endforeach; ?>
           </div>
@@ -184,6 +212,29 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
         Program yang tidak dicentang tidak dianggap kekurangan.
       </p>
 
+      <?php if ($terkunci): ?>
+        <div class="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <?php foreach ($program_label as $kode => $label): ?>
+            <?php $tercentang = in_array($kode, $program_dipilih, TRUE); ?>
+            <div class="flex items-center gap-3 rounded-xl border px-4 py-3
+                        <?= $tercentang
+                              ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-500/20 dark:bg-emerald-500/5'
+                              : 'border-gray-200 opacity-50 dark:border-white/10' ?>">
+              <i class="ph <?= $tercentang ? 'ph-check-circle text-emerald-600 dark:text-emerald-400' : 'ph-circle text-gray-400' ?>"></i>
+              <span class="text-sm font-bold text-gray-900 dark:text-white"><?= $e($label) ?></span>
+              <?php if ( ! $tercentang): ?>
+                <span class="ml-auto text-xs text-gray-500 dark:text-brand-muted">tidak dilaporkan</span>
+              <?php endif; ?>
+            </div>
+          <?php endforeach; ?>
+        </div>
+        <form method="post" action="<?= base_url('Rekam_Perumahan/langkah') ?>" class="mt-4">
+          <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
+          <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
+          <input type="hidden" name="langkah" value="isian">
+          <button class="<?= $tombol ?>">Lihat isian &rarr;</button>
+        </form>
+      <?php else: ?>
       <form method="post" action="<?= base_url('Rekam_Perumahan/simpan_program') ?>" class="mt-5 space-y-4">
         <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
         <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
@@ -207,6 +258,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
           <button class="<?= $tombol ?>">Lanjut &rarr;</button>
         </div>
       </form>
+      <?php endif; ?>
     </section>
 
   <?php // ========== L3 — ISIAN PER PROGRAM ("Setelah ada Data") ========== ?>
