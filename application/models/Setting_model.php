@@ -16,10 +16,25 @@ class Setting_model extends CI_Model {
     public function get_all()
     {
         $query = $this->db->get($this->table);
-        $result = $query->result_array();
-        
+
+        // `get()` mengembalikan FALSE saat koneksi/query gagal — dan di
+        // production `db_debug` mati, jadi tidak ada exception yang menahannya.
+        // Tanpa penjagaan ini `FALSE->result_array()` jadi fatal, dan karena
+        // pemanggilnya ada di `views/layouts/main.php` (layout portal yang
+        // dipakai hampir semua halaman), satu gangguan DB sesaat memutihkan
+        // SELURUH situs alih-alih membuatnya sekadar kehilangan pengaturan.
+        // Terjadi sungguhan 30 Jul 2026: batas 500 koneksi/jam terlampaui, dan
+        // log production penuh "Call to a member function result_array() on
+        // false" di baris ini.
+        //
+        // Mengembalikan array kosong aman: setiap pembaca sudah memakai
+        // `?? default` (mis. `$ftSettings['footer_copyright'] ?? '...'`).
+        if ( ! $query) {
+            return [];
+        }
+
         $settings = [];
-        foreach ($result as $row) {
+        foreach ($query->result_array() as $row) {
             $settings[$row['key_name']] = $row['key_value'];
         }
         return $settings;
