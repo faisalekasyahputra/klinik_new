@@ -49,7 +49,6 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
             'ringkasan'   => $isi['ringkasan'],
             'intervensi'  => $isi['intervensi'],
             'total'       => $isi['total'],
-            'diwarisi'    => (int) ($hasil['diwarisi'] ?? 0),
             'terkunci'    => $isi['laporan']['status'] === 'terkirim',
             'indikator_label'  => $this->label_indikator(),
             'sumber_label'     => $this->label_sumber(),

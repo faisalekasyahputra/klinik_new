@@ -62,12 +62,18 @@ foreach ($intervensi as $row) {
       </p>
     <?php endif; ?>
 
-    <?php if ($diwarisi > 0): ?>
-      <p class="mt-4 rounded-r-xl border-l-4 border-blue-500 bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-500/10 dark:text-blue-200">
-        <b><?= (int) $diwarisi ?> intervensi diwarisi</b> dari laporan terkirim sebelumnya.
-        Ubah yang berubah, tambah yang baru.
-      </p>
-    <?php endif; ?>
+    <?php /* Di sini dulu ada spanduk "N intervensi diwarisi dari laporan
+             terkirim sebelumnya. Ubah yang berubah, tambah yang baru." Sejak
+             pewarisan dicabut ia tidak mungkin muncul lagi — `diwarisi` selalu
+             0 — jadi yang tersisa cuma cabang mati yang menyiratkan perilaku
+             yang sudah tidak ada. Dibuang, bukan dibiarkan sebagai penanda
+             harapan.
+
+             Keputusan user 30 Jul 2026: Kawasan per-triwulan tanpa pewarisan,
+             konsisten dengan K7. Petugas mengisi capaian triwulan itu saja;
+             daftar triwulan lalu TIDAK terbawa. Kalau kelak diputuskan
+             sebaliknya, yang dikembalikan bukan spanduk ini melainkan pintu
+             tulisnya di Rekam_data_model. */ ?>
   </section>
 
   <?php if ($terkunci): ?>

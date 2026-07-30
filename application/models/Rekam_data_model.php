@@ -108,8 +108,15 @@ class Rekam_data_model extends CI_Model {
      * total: mewarisi TW I ke TW II lalu menambahinya berarti capaian TW I
      * terhitung dua kali, dan hasilnya terlihat sangat wajar.
      *
-     * `diwarisi` tetap dikembalikan bernilai 0 supaya pemanggil lama tidak
-     * pecah, bukan karena masih ada yang diwariskan.
+     * Berlaku untuk KEDUA domain. Kawasan ikut kehilangan pewarisan di sini,
+     * dan itu sekarang keputusan sadar (K7: "kawasan ikut triwulanan, 1 jalur"),
+     * bukan efek samping yang tidak disengaja seperti sebelumnya.
+     *
+     * Kunci `diwarisi` DIBUANG, bukan disetel 0. Medan yang selamanya bernilai
+     * sama bukan informasi, dan menyimpannya mengundang orang menyimpulkan
+     * pewarisan masih mungkin terjadi. Buktinya sekarang di `uji_wizard_w2()`:
+     * TW2 diperiksa dari ISI TABELNYA, bukan dari angka yang dilaporkan fungsi
+     * ini tentang dirinya sendiri.
      */
     public function ambil_atau_buat_draft($domain, $kabupaten_id, $tahun, $triwulan)
     {
@@ -132,7 +139,7 @@ class Rekam_data_model extends CI_Model {
 
         $ada = $this->db->get_where('rd_laporan', $kunci)->row_array();
         if ($ada) {
-            return ['success' => TRUE, 'laporan' => $ada, 'baru' => FALSE, 'diwarisi' => 0];
+            return ['success' => TRUE, 'laporan' => $ada, 'baru' => FALSE];
         }
 
         $ok = $this->db->insert('rd_laporan', $kunci + ['status' => 'draft']);
@@ -142,12 +149,12 @@ class Rekam_data_model extends CI_Model {
             // barisnya sudah ada, itu hasil yang sah — bukan kegagalan.
             $ada = $this->db->get_where('rd_laporan', $kunci)->row_array();
             return $ada
-                ? ['success' => TRUE, 'laporan' => $ada, 'baru' => FALSE, 'diwarisi' => 0]
+                ? ['success' => TRUE, 'laporan' => $ada, 'baru' => FALSE]
                 : $this->gagal('write_failed', 'Draft laporan belum dapat dibuat.');
         }
 
         return [
-            'success' => TRUE, 'baru' => TRUE, 'diwarisi' => 0,
+            'success' => TRUE, 'baru' => TRUE,
             'laporan' => $this->db->get_where('rd_laporan', ['id' => $id])->row_array(),
         ];
     }

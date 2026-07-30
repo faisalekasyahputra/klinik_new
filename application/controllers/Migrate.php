@@ -649,7 +649,6 @@ class Migrate extends CI_Controller {
 
             $check((int) $this->rd->ambil_atau_buat_draft('perumahan', $KAB, $TAHUN, 1)['laporan']['id'] === $ID1,
                 'Idempoten: periode sama tidak melahirkan laporan kedua');
-            $check((int) ($tw1['diwarisi'] ?? -1) === 0, 'Nol pewarisan (per triwulan, bukan kumulatif)');
 
             $check($this->rd->laporan_periode('perumahan', $KAB, $TAHUN, 3) === NULL,
                 'laporan_periode() tidak membuat apa pun untuk periode kosong');
@@ -693,6 +692,23 @@ class Migrate extends CI_Controller {
                     ['laporan_id' => $ID1, 'program' => 'pk_rtlh', 'sumber_dana' => 'apbd_kabkota'])
                     ->row('realisasi_unit') === 95,
                 'Nilai terbarui ke 95');
+
+            // ----------------------------------------- pewarisan benar-benar nol
+            // Dulu ini memeriksa `$tw1['diwarisi'] === 0` — angka yang dilaporkan
+            // fungsi TENTANG DIRINYA SENDIRI. Pemeriksaan begitu tetap hijau
+            // walaupun barisnya benar-benar tersalin, asal penghitungnya lupa
+            // dinaikkan. Sekarang TW1 sudah berisi baris dan gerbang program,
+            // jadi TW2 diperiksa dari isi tabelnya: kalau suatu hari pewarisan
+            // kembali diam-diam, uji ini yang merah, bukan yang lain.
+            $tw2 = $this->rd->ambil_atau_buat_draft('perumahan', $KAB, $TAHUN, 2);
+            $ID2 = (int) $tw2['laporan']['id'];
+            $check($ID2 !== $ID1, 'TW2 laporan tersendiri');
+            $check((int) $this->db->where('laporan_id', $ID2)->count_all_results('rd_perumahan_baris') === 0,
+                'TW2 lahir KOSONG — nol baris angka diwarisi dari TW1');
+            $check((int) $this->db->where('laporan_id', $ID2)->count_all_results('rd_perumahan_program') === 0,
+                'TW2 lahir KOSONG — nol gerbang program diwarisi dari TW1');
+            $check((int) $this->db->where('laporan_id', $ID1)->count_all_results('rd_perumahan_baris') > 0,
+                'TW1 tetap berisi (pembanding sahih, bukan dua-duanya kebetulan kosong)');
 
             // Keterangan hanya untuk sumber tertentu
             $this->rd->simpan_sumber($ID1, 'pk_rtlh', 'csr',

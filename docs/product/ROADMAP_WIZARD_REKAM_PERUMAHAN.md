@@ -212,6 +212,27 @@ Dikutip dari pengalaman modul ini dan sesi 30 Jul:
 ## 6. Yang tidak berubah
 
 `rd_laporan` (selain kolom periode & `current_step`), `rd_perumahan_bnba`,
-`rd_kawasan_*`, seluruh modul Kawasan, peninjauan bidang, dan seluruh aplikasi
-di luar Rekam Data Perumahan. Tab Perumahan di portal publik **nol sentuhan**
-ke tabel `rd_*`.
+`rd_kawasan_*`, dan seluruh aplikasi di luar Rekam Data. Tab Perumahan di
+portal publik **nol sentuhan** ke tabel `rd_*`.
+
+> 🔻 **Koreksi 30 Jul 2026 — baris ini semula menulis "seluruh modul Kawasan,
+> peninjauan bidang" ikut tidak berubah. Itu tidak benar, dan ketidakbenarannya
+> baru ketahuan saat mengaudit harness yang merah.** Dua hal berubah karena
+> keduanya memakai kode bersama, bukan karena diputuskan:
+>
+> 1. **Kawasan kehilangan pewarisan antar periode.** `warisi()` dibuang di W1
+>    demi Perumahan, dan Kawasan memakai `ambil_atau_buat_draft()` yang sama.
+>    Petugas Kawasan yang dulu melihat daftar intervensi terbawa kini mengisi
+>    dari kosong tiap triwulan. **Keputusan user 30 Jul 2026: ini DIPERTAHANKAN**
+>    — Kawasan per-triwulan tanpa pewarisan, konsisten dengan K7. Spanduk
+>    "N intervensi diwarisi" yang sudah mustahil muncul sudah dihapus, dan
+>    kunci `diwarisi` dibuang dari nilai balik model.
+> 2. **Layar peninjauan bidang menyatakan angkanya kumulatif** — kebalikan dari
+>    kenyataan sejak W1, di layar tempat provinsi memutuskan terima atau minta
+>    perbaikan. Sudah diperbaiki, bersama dua kalimat sejenis di
+>    `kawasan_rekap.php` dan `riwayat.php`.
+>
+> Pelajarannya bukan tentang Kawasan: **"modul X tidak berubah" tidak bisa
+> disimpulkan dari "saya tidak menyentuh berkas X"** selama X memakai fungsi
+> bersama. Yang menentukan bukan berkas yang diedit, tapi pemanggil yang ikut
+> terbawa.
