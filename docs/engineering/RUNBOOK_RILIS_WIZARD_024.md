@@ -4,7 +4,20 @@
 pola gerbangnya sama, isinya tidak. Baca §"Yang berbeda" dulu — rilis ini punya
 satu sifat yang rilis sebelumnya tidak punya.
 
-Ganti `<SITUS>` dengan `floralwhite-lion-710022`.
+**Direktori production di server** — dicatat 30 Jul 2026 karena rilis ini
+tersendat justru di sini:
+
+```
+~/domains/floralwhite-lion-710022.hostingersite.com/public_html
+```
+
+Perhatikan `.hostingersite.com`-nya. `floralwhite-lion-710022` adalah nama
+situs di panel Hostinger, **bukan** nama direktori — `cd` dengan nama panel
+saja menghasilkan `No such file or directory`. Runbook-runbook sebelumnya cuma
+menulis `<SITUS>` dan tidak pernah menyimpan nilai aslinya, jadi setiap rilis
+menemukan ulang hal yang sama. Ada **empat** instalasi Klinik PKP di akun
+`u504551489` (§0a); yang benar adalah yang `git log`-nya menunjukkan commit
+rilis, bukan yang namanya paling mirip.
 
 ---
 
@@ -31,10 +44,21 @@ Persempit dengan menjalankan Fase 3 segera setelah Fase 2 mendarat.
 
 ```
 ssh hostinger
-cd ~/domains/<SITUS>/public_html && git log -1 --oneline && git status --porcelain && php index.php migrate status
+cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && git log -1 --oneline && git status --porcelain && php index.php migrate status
 ```
 
-**GERBANG.** Harus terbaca commit `8da6c4b` dan versi skema `20260701000023`.
+**GERBANG.** Versi skema harus `20260701000023`.
+
+> ⚠️ **Yang BENAR-BENAR terjadi 30 Jul: Fase 2 dijalankan sebelum Fase 0 dan 1.**
+> Push `8da6c4b..3bec51e` mendarat lebih dulu karena Fase 0 dan 1 dua-duanya
+> butuh SSH, yang tidak bisa dijalankan agent. Jadi saat Fase 0 akhirnya
+> dijalankan, commit di server sudah `3bec51e`, bukan `8da6c4b`.
+>
+> Itu tidak merusak apa pun — push tidak menyentuh DB, dan backup baru berguna
+> untuk melindungi Fase 3 — tapi jendela kode-baru-skema-lama jadi terbuka
+> lebih awal dan lebih lama dari yang seharusnya. Kalau langkah SSH dikerjakan
+> orang lain, sepakati dulu siapa mengerjakan apa **sebelum** push, bukan
+> sesudahnya.
 
 - Versi bukan `…023` → **BERHENTI.** Peta lingkungan sudah bergeser dari yang
   diasumsikan runbook ini; jangan lanjut sampai selisihnya dimengerti.
@@ -63,7 +87,7 @@ git push origin feature/homepage-portal-v2
 Cabang ini auto-deploy. Setelah push, tunggu deploy lalu:
 
 ```
-cd ~/domains/<SITUS>/public_html && git log -1 --oneline && git status --porcelain
+cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && git log -1 --oneline && git status --porcelain
 ```
 
 **GERBANG.** Commit di server harus sama dengan HEAD lokal. Kalau masih
@@ -73,7 +97,7 @@ kosong, deploy tersendat; bereskan dulu.
 ## Fase 3 — migrasi
 
 ```
-cd ~/domains/<SITUS>/public_html && php index.php migrate && php index.php migrate status
+cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && php index.php migrate && php index.php migrate status
 ```
 
 **GERBANG.** Harus terbaca `Migrasi sukses, versi skema sekarang:
@@ -102,7 +126,7 @@ Buka sebagai admin kab/kota, lewat klik, bukan curl:
 `migrate down` **bukan** opsi (lihat §Yang berbeda). Satu-satunya jalan:
 
 ```
-cd ~ && zcat backup_klinik_pre_wizard_024.sql.gz | mysql -u u504551489_klinikstg -p u504551489_klinikstg && cd ~/domains/<SITUS>/public_html && php index.php migrate status
+cd ~ && zcat backup_klinik_pre_wizard_024.sql.gz | mysql -u u504551489_klinikstg -p u504551489_klinikstg && cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && php index.php migrate status
 ```
 
 Lalu kembalikan kode ke `8da6c4b` supaya kode dan skema kembali sepasang.
