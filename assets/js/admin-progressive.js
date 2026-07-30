@@ -44,6 +44,36 @@
 
     var loadToken = 0;
 
+    // Kartu tabel admin (toolbar + tabel + paginasi) yang menandai dirinya bisa
+    // ditukar sendirian. Lihat `lingkupTabel()`.
+    var SEL_TABEL = '[data-tabel-admin]';
+
+    // URL yang isinya sedang tampil. Bukan `location.href`: pada popstate,
+    // alamat sudah berubah SEBELUM handler jalan, jadi membandingkan tujuan
+    // dengan `location` di sana selalu menghasilkan "sama" dan Back dari
+    // halaman lain akan salah dianggap ganti tab.
+    var urlSekarang = window.location.href;
+
+    /**
+     * Apakah perpindahan ini cuma mengganti isi tabel, bukan pindah halaman?
+     *
+     * Tab status, kotak cari, tombol urut, dan paginasi semuanya dibangun
+     * `admin_table_url()`: path-nya tetap, yang berubah cuma query string. Jadi
+     * path yang sama = masih tabel yang sama, cukup tukar kartunya. Tautan
+     * "Detail"/"Tinjau" di dalam baris tabel path-nya berbeda, jadi ia tetap
+     * berpindah halaman seperti biasa.
+     *
+     * Keputusan ini masih bisa dibatalkan setelah balasan datang: kalau kartu
+     * bertanda tidak ada di balasan, loadPage() kembali menukar seluruh konten.
+     */
+    function lingkupTabel(url) {
+        if ( ! document.querySelector(SEL_TABEL)) return false;
+        try {
+            return new URL(url, location.href).pathname
+                === new URL(urlSekarang, location.href).pathname;
+        } catch (e) { return false; }
+    }
+
     /**
      * Tukar SELURUH menu sidebar dengan versi yang dikirim server.
      *
@@ -76,12 +106,22 @@
         if (window.Alpine) { Alpine.initTree(nav); }
     }
 
-    function loadPage(url, push) {
+    function loadPage(url, push, tabelSaja) {
         var main = document.getElementById('main-content');
         if (!main) { window.location.href = url; return; }
         var myToken = ++loadToken;
-        main.innerHTML = SKELETON;
-        main.scrollTop = 0;
+
+        // Ganti tab TIDAK memasang skeleton dan TIDAK menggulir ke atas: judul,
+        // toolbar, dan posisi baca pengguna harus tetap di tempatnya. Kartunya
+        // cuma diredupkan supaya terlihat sedang bekerja.
+        var wadah = tabelSaja ? document.querySelector(SEL_TABEL) : null;
+        if (wadah) {
+            wadah.setAttribute('aria-busy', 'true');
+            wadah.style.opacity = '0.55';
+        } else {
+            main.innerHTML = SKELETON;
+            main.scrollTop = 0;
+        }
 
         // `X-Shell: admin` menandai SIAPA yang meminta, bukan sekadar "ini AJAX".
         // Tanpa ini `render_user_dashboard()` melepas shell admin untuk permintaan
@@ -123,9 +163,33 @@
                 var menuHtml = html.slice(potong);
                 html = html.slice(0, potong);
 
+                if (wadah) {
+                    wadah.style.opacity = '';
+                    wadah.removeAttribute('aria-busy');
+                    var kotak = document.createElement('div');
+                    kotak.innerHTML = html;
+                    var kartuBaru = kotak.querySelector(SEL_TABEL);
+                    if (kartuBaru) {
+                        wadah.innerHTML = kartuBaru.innerHTML;
+                        // Wadahnya tetap, jadi komponen Alpine di LUAR kartu
+                        // (mis. modal proses antrean) tidak ikut dibuat ulang —
+                        // hanya isi barunya yang perlu dipasangi.
+                        if (window.Alpine) { Alpine.initTree(wadah); }
+                        // Sidebar sengaja TIDAK ditukar: path tidak berubah, jadi
+                        // sorotan dan cabang terbukanya sudah benar. Menukarnya
+                        // hanya akan menutup sub-menu yang sedang dibuka pengguna.
+                        urlSekarang = url;
+                        if (push) { history.pushState({ adminUrl: url }, '', url); }
+                        return;
+                    }
+                    // Balasan tanpa kartu bertanda — perlakukan sebagai pindah
+                    // halaman biasa, jangan tinggalkan layar setengah tertukar.
+                }
+
                 main.innerHTML = '<div class="animate-[fadeIn_0.3s_ease-out]">' + html + '</div>';
                 reExecuteScripts(main).then(function () {
                     if (window.Alpine) { Alpine.initTree(main); }
+                    urlSekarang = url;
                     if (push) { history.pushState({ adminUrl: url }, '', url); }
                     if (menuHtml) { tukarSidebar(menuHtml); }
                 }).catch(function () { /* konten sudah tampil; jangan kunci UI */ });
@@ -168,7 +232,21 @@
         if (link.hasAttribute('data-no-page-transition')
             || link.closest('[data-no-page-transition]')) return;
         e.preventDefault();
-        loadPage(link.href, true);
+        loadPage(link.href, true, !!link.closest(SEL_TABEL) && lingkupTabel(link.href));
+    });
+
+    // Kotak cari toolbar adalah <form method="get">, bukan tautan — tanpa ini ia
+    // tetap memuat ulang seluruh konten padahal hasilnya cuma mengganti isi
+    // tabel yang sama, persis seperti tab status di sebelahnya.
+    document.addEventListener('submit', function (e) {
+        var form = e.target;
+        if ( ! form || e.defaultPrevented || ! form.closest(SEL_TABEL)) return;
+        if ((form.getAttribute('method') || 'get').toLowerCase() !== 'get') return;
+        var url = (form.getAttribute('action') || window.location.pathname)
+            + '?' + new URLSearchParams(new FormData(form)).toString();
+        if ( ! lingkupTabel(url)) return;
+        e.preventDefault();
+        loadPage(url, true, true);
     });
 
     // S1 — entry AWAL direkam sebelum pushState pertama, supaya Back dari
@@ -179,9 +257,12 @@
     }
 
     window.addEventListener('popstate', function (e) {
-        if (e.state && e.state.adminUrl) { loadPage(e.state.adminUrl, false); return; }
+        if (e.state && e.state.adminUrl) {
+            loadPage(e.state.adminUrl, false, lingkupTabel(e.state.adminUrl));
+            return;
+        }
         // State kosong = entry yang tidak kita rekam. Muat URL aktif supaya isi
         // layar selalu cocok dengan alamatnya.
-        loadPage(window.location.href, false);
+        loadPage(window.location.href, false, lingkupTabel(window.location.href));
     });
 })();

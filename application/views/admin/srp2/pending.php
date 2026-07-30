@@ -4,7 +4,7 @@
 </div>
 
 <?php $this->load->helper('admin_table'); ?>
-<div class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
+<div data-tabel-admin class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
     <?php
     $this->load->helper('admin_table');
     // Filter status dibangun lewat admin_table_url() supaya pencarian/urutan yang
