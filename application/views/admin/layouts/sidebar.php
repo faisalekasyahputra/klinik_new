@@ -39,6 +39,25 @@
                 <span x-show="!sidebarOpen" class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold border-[1.5px] border-white dark:border-brand-card shadow-sm z-10"><?= (int) $item['badge'] ?></span>
                 <?php endif; ?>
             </a>
+
+            <?php // Sub-menu satu tingkat. `children` sudah dikosongkan oleh
+                  // dashboard_menu() saat cabangnya tertutup, jadi view tidak
+                  // perlu tahu aturan bukanya — satu tempat yang memutuskan.
+                  // Disembunyikan saat sidebar menyempit: ikon anak tanpa label
+                  // tidak bisa dibedakan dari ikon induk. ?>
+            <?php if ( ! empty($item['children'])): ?>
+            <div class="ml-3 space-y-1 border-l border-gray-200 pl-2 dark:border-white/10" x-show="sidebarOpen">
+                <?php foreach ($item['children'] as $anak): ?>
+                <a href="<?= base_url($anak['url']) ?>" class="flex items-center rounded-lg px-3 py-1.5 text-[13px] transition-all duration-200 <?= !empty($anak['active']) ? 'bg-blue-50 font-bold text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary' : 'font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-brand-muted dark:hover:bg-white/5 dark:hover:text-brand-light' ?>" title="<?= htmlspecialchars($anak['label']) ?>">
+                    <i class="ph <?= htmlspecialchars($anak['icon']) ?> mr-2 shrink-0 text-base"></i>
+                    <span class="flex-1 overflow-hidden whitespace-nowrap"><?= htmlspecialchars($anak['label']) ?></span>
+                    <?php if (!empty($anak['badge'])): ?>
+                    <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-red-100 text-[9px] font-bold text-red-600 dark:bg-red-500/20 dark:text-red-400"><?= (int) $anak['badge'] ?></span>
+                    <?php endif; ?>
+                </a>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
             <?php endforeach; ?>
         </nav>
         <?php endforeach; ?>

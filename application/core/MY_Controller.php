@@ -466,6 +466,7 @@ class MY_Controller extends CI_Controller {
             $items[] = [
                 'key' => $key, 'label' => $m['label'], 'icon' => $m['icon'], 'url' => $m['url'],
                 'group' => $m['group'] ?? '', 'order' => $m['order'] ?? 999, 'badge' => $badge,
+                'parent' => $m['parent'] ?? NULL,
             ];
         }
 
@@ -478,17 +479,44 @@ class MY_Controller extends CI_Controller {
         // Active-state ditentukan di sini, bukan di view: hanya URL dengan
         // kecocokan TERPANJANG yang aktif. Kalau tiap item menilai dirinya
         // sendiri, 'akun' ikut menyala saat membuka 'akun/profil'.
-        $uri = $this->uri->uri_string();
+        //
+        // Perbandingannya TIDAK peka huruf besar-kecil: `uri_string()` memberi
+        // segmen apa adanya seperti yang diketik, sedangkan registry menulis
+        // nama controller berkapital (`Rekam_Perumahan`). Di Linux URL memang
+        // peka huruf, tetapi itu urusan router — bukan alasan sidebar berhenti
+        // menyorot saat orang tiba lewat tautan yang kapitalisasinya berbeda.
+        $uri = strtolower($this->uri->uri_string());
         $best = -1; $best_i = NULL;
         foreach ($items as $i => $item) {
-            $url = $item['url'];
+            $url = strtolower($item['url']);
             $match = ($uri === $url) || strpos($uri, $url . '/') === 0;
             if ($match && strlen($url) > $best) { $best = strlen($url); $best_i = $i; }
         }
         foreach ($items as $i => $item) { $items[$i]['active'] = ($i === $best_i); }
 
+        // Susun bersarang satu tingkat. Anak hanya ikut dirender saat cabangnya
+        // TERBUKA — yaitu induknya aktif, atau salah satu anaknya aktif. Tanpa
+        // ini tujuh entri Rekam Data mendominasi sidebar di setiap halaman,
+        // termasuk halaman yang tidak ada hubungannya.
+        $anak = [];
+        foreach ($items as $i => $item) {
+            if ($item['parent'] !== NULL) { $anak[$item['parent']][] = $item; }
+        }
+        $terbuka = [];
+        foreach ($items as $item) {
+            if ( ! $item['active']) { continue; }
+            $terbuka[$item['parent'] ?? $item['key']] = TRUE;
+        }
+
         $grouped = [];
-        foreach ($items as $item) { $grouped[$item['group']][] = $item; }
+        foreach ($items as $item) {
+            if ($item['parent'] !== NULL) { continue; }
+            $item['children'] = ! empty($terbuka[$item['key']]) ? ($anak[$item['key']] ?? []) : [];
+            // Induk ikut menyala saat salah satu anaknya aktif — supaya orang
+            // tahu sedang berada di cabang mana, bukan cuma di layar mana.
+            $item['active'] = $item['active'] || ! empty($terbuka[$item['key']]);
+            $grouped[$item['group']][] = $item;
+        }
         return $grouped;
     }
 

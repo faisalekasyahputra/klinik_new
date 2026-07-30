@@ -92,9 +92,26 @@ $config['dashboard_modules'] = [
         'status_column' => 'status_antrean', 'owner_column' => 'user_id',
         'public_where' => NULL, 'editable_where' => NULL,
     ],
+    // Rekam Data disusun BERSARANG, bukan tujuh entri datar. Tujuh baris untuk
+    // dua modul × tiga layar membuat sidebar didominasi satu fitur, dan tidak
+    // ada yang memberi tahu bahwa Rekap Perumahan itu bagian dari Perumahan.
+    //
+    // `parent` menautkan anak ke induknya. Anak hanya dirender saat cabang itu
+    // sedang dibuka (lihat MY_Controller::dashboard_menu()), jadi di halaman
+    // lain tujuh entri ini menyusut jadi satu.
+    //
+    // Induknya `Rekam_Data` — layar sambutan. Sebelum ada entri ini, membuka
+    // /Rekam_Data dari kartu beranda publik membuat sidebar TIDAK menyorot apa
+    // pun: orang sampai di sana tanpa tahu sedang di cabang mana.
+    'rekam_data' => [
+        'label' => 'Rekam Data', 'icon' => 'ph-database',
+        'url'   => 'Rekam_Data', 'group' => 'Layanan', 'order' => 20,
+        'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
+    ],
     'rekam_perumahan' => [
-        'label' => 'Rekam Data — Perumahan', 'icon' => 'ph-table',
-        'url'   => 'Rekam_Perumahan', 'group' => 'Layanan', 'order' => 20,
+        'label' => 'Capaian Perumahan', 'icon' => 'ph-table',
+        'url'   => 'Rekam_Perumahan', 'group' => 'Layanan', 'order' => 21,
+        'parent' => 'rekam_data',
         'roles' => ['admin_kabkota'],
         'scope' => 'kabupaten_id',
         'table' => 'rd_laporan', 'review_by' => 'admin_bidang',
@@ -103,17 +120,20 @@ $config['dashboard_modules'] = [
     ],
     'rekam_perumahan_rekap' => [
         'label' => 'Rekap Perumahan', 'icon' => 'ph-chart-bar',
-        'url'   => 'Rekam_Perumahan/rekap', 'group' => 'Layanan', 'order' => 21,
+        'url'   => 'Rekam_Perumahan/rekap', 'group' => 'Layanan', 'order' => 22,
+        'parent' => 'rekam_data',
         'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
     ],
     'rekam_perumahan_riwayat' => [
         'label' => 'Riwayat Perumahan', 'icon' => 'ph-clock-counter-clockwise',
-        'url'   => 'Rekam_Perumahan/riwayat', 'group' => 'Layanan', 'order' => 22,
+        'url'   => 'Rekam_Perumahan/riwayat', 'group' => 'Layanan', 'order' => 23,
+        'parent' => 'rekam_data',
         'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
     ],
     'rekam_kawasan' => [
-        'label' => 'Rekam Data — Kawasan', 'icon' => 'ph-map-trifold',
-        'url'   => 'Rekam_Kawasan', 'group' => 'Layanan', 'order' => 30,
+        'label' => 'Capaian Kawasan', 'icon' => 'ph-map-trifold',
+        'url'   => 'Rekam_Kawasan', 'group' => 'Layanan', 'order' => 24,
+        'parent' => 'rekam_data',
         'roles' => ['admin_kabkota'],
         'scope' => 'kabupaten_id',
         'table' => 'rd_laporan', 'review_by' => 'admin_bidang',
@@ -122,12 +142,14 @@ $config['dashboard_modules'] = [
     ],
     'rekam_kawasan_rekap' => [
         'label' => 'Rekap Kawasan', 'icon' => 'ph-chart-bar',
-        'url'   => 'Rekam_Kawasan/rekap', 'group' => 'Layanan', 'order' => 31,
+        'url'   => 'Rekam_Kawasan/rekap', 'group' => 'Layanan', 'order' => 25,
+        'parent' => 'rekam_data',
         'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
     ],
     'rekam_kawasan_riwayat' => [
         'label' => 'Riwayat Kawasan', 'icon' => 'ph-clock-counter-clockwise',
-        'url'   => 'Rekam_Kawasan/riwayat', 'group' => 'Layanan', 'order' => 32,
+        'url'   => 'Rekam_Kawasan/riwayat', 'group' => 'Layanan', 'order' => 26,
+        'parent' => 'rekam_data',
         'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
     ],
     // Hanya bidang perumahan & kawasan yang punya Rekam Data; bidang lain
