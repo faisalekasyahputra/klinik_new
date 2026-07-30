@@ -47,14 +47,15 @@ $warna = [
   <?php else: ?>
     <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
       <div class="overflow-x-auto">
-        <table class="w-full min-w-[720px] text-left text-sm">
+        <table class="w-full min-w-[840px] text-left text-sm">
           <thead class="text-xs uppercase text-gray-500 dark:text-brand-muted">
             <tr>
               <th class="py-2 pr-3">Periode</th>
               <th class="py-2 pr-3">Status</th>
               <th class="py-2 pr-3">Dikirim</th>
               <th class="py-2 pr-3">Ditinjau</th>
-              <th class="py-2">Catatan peninjau</th>
+              <th class="py-2 pr-3">Catatan peninjau</th>
+              <th class="py-2"><span class="sr-only">Aksi</span></th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-white/5">
@@ -67,12 +68,10 @@ $warna = [
                     ? 'Terkirim · sudah ditinjau'
                     : ucfirst(str_replace('_', ' ', $status));
             ?>
+              <?php $url_detail = $e(base_url($base_url . '?tahun=' . (int) $tahun . '&triwulan=' . (int) $row['triwulan'])); ?>
               <tr>
                 <td class="py-2 pr-3 font-medium text-gray-900 dark:text-white">
-                  <a class="hover:underline"
-                     href="<?= base_url($base_url . '?tahun=' . (int) $tahun . '&triwulan=' . (int) $row['triwulan']) ?>">
-                    <?= $e($nama_tw[(int) $row['triwulan']] ?? $row['triwulan']) ?> <?= (int) $tahun ?>
-                  </a>
+                  <?= $e($nama_tw[(int) $row['triwulan']] ?? $row['triwulan']) ?> <?= (int) $tahun ?>
                 </td>
                 <td class="py-2 pr-3">
                   <span class="rounded-full px-3 py-1 text-xs font-bold <?= $warna[$status] ?? '' ?>">
@@ -81,7 +80,13 @@ $warna = [
                 </td>
                 <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e($row['submitted_at'] ?: '—') ?></td>
                 <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e($row['reviewed_at'] ?: '—') ?></td>
-                <td class="py-2 text-gray-600 dark:text-brand-muted"><?= $e($row['catatan_admin'] ?: '—') ?></td>
+                <td class="py-2 pr-3 text-gray-600 dark:text-brand-muted"><?= $e($row['catatan_admin'] ?: '—') ?></td>
+                <td class="py-2 text-right whitespace-nowrap">
+                  <a href="<?= $url_detail ?>"
+                     class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold dark:border-white/10">
+                    Lihat capaian
+                  </a>
+                </td>
               </tr>
             <?php endforeach; ?>
           </tbody>
@@ -89,9 +94,10 @@ $warna = [
       </div>
 
       <p class="mt-4 text-xs text-gray-500 dark:text-brand-muted">
-        Daftar ini menampilkan status, bukan angka. Untuk angkanya buka
-        <a class="text-blue-600 hover:underline dark:text-blue-400" href="<?= base_url($base_url . '/rekap') ?>">Rekap Pelaporan</a>,
-        yang selalu menyebut periodenya secara eksplisit.
+        Daftar ini menampilkan status, bukan angka. <b>Lihat capaian</b> membuka angka
+        triwulan itu apa adanya, termasuk yang masih draft. Untuk angka yang sudah
+        resmi — hanya laporan terkirim, berikut kumulatifnya — buka
+        <a class="text-blue-600 hover:underline dark:text-blue-400" href="<?= base_url($base_url . '/rekap') ?>">Rekap Pelaporan</a>.
       </p>
     </section>
   <?php endif; ?>
