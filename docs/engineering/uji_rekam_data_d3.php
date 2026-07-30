@@ -1,6 +1,6 @@
 <?php
 /**
- * Uji D3 — Rekam Data: kirim, BNBA, dan pewarisan antar bulan.
+ * Uji D3 — Rekam Data: kirim, BNBA, dan jaminan TIDAK ADA pewarisan antar triwulan.
  *
  * Lewat HTTP Apache sungguhan. Bukti diambil dari DB dan DISK, bukan dari flash
  * di layar: berkas yang diganti harus benar-benar hilang dari disk, dan berkas
@@ -18,7 +18,8 @@ define('ENV_PATH', APP_ROOT . '/.env');
 define('ADMIN_EMAIL', getenv('UJI_ADMIN_EMAIL') ?: 'adminkabkota@example.com');
 define('ADMIN_PASSWORD', getenv('UJI_ADMIN_PASSWORD') ?: 'password');
 define('TAHUN', 2099);
-define('BULAN', 6);
+// Dulu BULAN=6 (kumulatif s.d. Juni). Sejak migrasi 024 periodenya triwulan.
+define('TRIWULAN', 2);
 
 $GLOBALS['uji_total'] = 0;
 $GLOBALS['uji_gagal'] = 0;
@@ -220,11 +221,18 @@ try {
     wajib(login('kab', ADMIN_EMAIL, ADMIN_PASSWORD), 'Login admin_kabkota berhasil');
     wajib(login('lain', $email_lain, 'UjiRdD3!'), 'Login admin wilayah lain berhasil');
 
-    $url = 'Rekam_Perumahan?tahun=' . TAHUN . '&bulan=' . BULAN;
-    wajib(http('kab', $url)['code'] === 200, 'Layar input terbuka');
+    // Membuka layar TIDAK lagi melahirkan draft (index() memakai laporan_periode()
+    // yang tidak pernah menulis); draft lahir di mulai(). Dan form unggah BNBA
+    // hidup di WIZARD langkah `bnba`, bukan di layar Capaian — dua alamat berbeda
+    // sekarang, dan harness ini dulu menganggapnya satu.
+    wajib(http('kab', 'Rekam_Perumahan/input')['code'] === 200, 'Layar wizard terbuka');
+    http('kab', 'Rekam_Perumahan/mulai', [
+        'csrf_kpkp_token' => csrf('kab', 'Rekam_Perumahan/input'),
+        'tahun' => TAHUN, 'triwulan' => TRIWULAN]);
     $LAP = (int) skalar('SELECT id FROM rd_laporan WHERE domain = ? AND kabupaten_id = ?
-        AND tahun = ? AND bulan = ?', ['perumahan', $KAB, TAHUN, BULAN]);
+        AND tahun = ? AND triwulan = ?', ['perumahan', $KAB, TAHUN, TRIWULAN]);
     wajib($LAP > 0, 'Draft periode tersedia');
+    $url = 'Rekam_Perumahan/input?laporan=' . $LAP . '&langkah=bnba';
 
     // ------------------------------------------------- unggah tanpa berkas
     $t = csrf('kab', $url);
@@ -288,26 +296,27 @@ try {
     $t = csrf('kab', $url);
     http('kab', 'Rekam_Perumahan/kirim', ['csrf_kpkp_token' => $t, 'laporan_id' => $LAP]);
     cek(skalar('SELECT status FROM rd_laporan WHERE id = ?', [$LAP]) === 'draft',
-        'Kirim ditolak selama masih ada sumber dana belum dijawab');
+        'Kirim ditolak selama belum ada program berisi angka');
 
-    $sumber = ['apbd_kabkota', 'apbn_bsps', 'apbn_dak', 'apbn_kemensos', 'apbn_dana_desa',
-        'apbn_kl_lain', 'baznas_ri', 'baznas_kabkota', 'csr', 'dana_lainnya'];
-    foreach ($sumber as $i => $kode) {
-        $t = csrf('kab', $url);
-        http('kab', 'Rekam_Perumahan/simpan_gerbang', [
-            'csrf_kpkp_token' => $t, 'laporan_id' => $LAP,
-            'sumber_dana' => $kode, 'ada' => $i === 0 ? '1' : '0',
-        ]);
+    // GERBANGNYA TERBALIK sejak W1: yang dicentang PROGRAM, bukan sumber dana.
+    // Sepuluh panggilan simpan_gerbang per sumber dana diganti satu
+    // simpan_program, lalu angka diisi per (program, sumber dana).
+    http('kab', 'Rekam_Perumahan/simpan_program', [
+        'csrf_kpkp_token' => csrf('kab', $url), 'laporan_id' => $LAP,
+        'program' => ['pk_rtlh', 'pb_rtlh']]);
+    cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_program WHERE laporan_id = ?', [$LAP]) === 2,
+        'Dua program tercentang');
+
+    foreach ([['pk_rtlh', 25, 5000000000], ['pb_rtlh', 4, 800000000]] as [$prog, $unit, $rp]) {
+        http('kab', 'Rekam_Perumahan/simpan_sumber', [
+            'csrf_kpkp_token' => csrf('kab', $url), 'laporan_id' => $LAP,
+            'program' => $prog, 'sumber_dana' => 'apbd_kabkota',
+            'rencana_unit' => $unit, 'rencana_anggaran' => $rp,
+            'realisasi_unit' => $unit, 'realisasi_anggaran' => $rp]);
     }
-    cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_bagian WHERE laporan_id = ?', [$LAP]) === 10,
-        'Sepuluh sumber dana terjawab');
-
-    $t = csrf('kab', $url);
-    http('kab', 'Rekam_Perumahan/simpan_angka', [
-        'csrf_kpkp_token' => $t, 'laporan_id' => $LAP, 'sumber_dana' => 'apbd_kabkota',
-        'program[pk_rtlh][unit]' => 25, 'program[pk_rtlh][anggaran]' => 5000000000,
-        'program[pb_rtlh][unit]' => 4, 'program[pb_rtlh][anggaran]' => 800000000,
-    ]);
+    cek((int) skalar('SELECT realisasi_unit FROM rd_perumahan_baris WHERE laporan_id = ?
+        AND sumber_dana = ? AND program = ?', [$LAP, 'apbd_kabkota', 'pk_rtlh']) === 25,
+        'Angka tersimpan sebelum dikirim');
 
     $t = csrf('kab', $url);
     http('kab', 'Rekam_Perumahan/kirim', ['csrf_kpkp_token' => $t, 'laporan_id' => $LAP]);
@@ -334,21 +343,32 @@ try {
         === $bnba2['private_path'], 'Unggah setelah terkirim ditolak, berkas lama utuh');
     cek(count(isi_dir(dir_bnba($LAP))) === 1, 'Nol berkas yatim dari unggahan yang ditolak');
 
-    // --------------------------------------------------------- pewarisan
-    $url7 = 'Rekam_Perumahan?tahun=' . TAHUN . '&bulan=' . (BULAN + 1);
-    http('kab', $url7);
+    // ------------------------------------------ TIDAK ADA PEWARISAN (TW III)
+    // Blok ini dulu menjaga KEBALIKANNYA: "Sepuluh jawaban gerbang diwarisi",
+    // "Angka diwarisi apa adanya, tidak dinolkan". Sahih selama angkanya
+    // kumulatif s.d. bulan ini; sejak W1 angkanya per triwulan, dan mewarisi
+    // TW II ke TW III lalu menambahinya membuat capaian TW II terhitung dua
+    // kali. Dibalik, bukan dihapus — penjagaannya justru makin dibutuhkan.
+    http('kab', 'Rekam_Perumahan/mulai', [
+        'csrf_kpkp_token' => csrf('kab', 'Rekam_Perumahan/input'),
+        'tahun' => TAHUN, 'triwulan' => TRIWULAN + 1]);
     $LAP7 = (int) skalar('SELECT id FROM rd_laporan WHERE domain = ? AND kabupaten_id = ?
-        AND tahun = ? AND bulan = ?', ['perumahan', $KAB, TAHUN, BULAN + 1]);
+        AND tahun = ? AND triwulan = ?', ['perumahan', $KAB, TAHUN, TRIWULAN + 1]);
     cek($LAP7 > 0, 'Periode berikutnya dibuat');
-    cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_bagian WHERE laporan_id = ?', [$LAP7]) === 10,
-        'Sepuluh jawaban gerbang diwarisi');
-    cek((string) skalar('SELECT unit FROM rd_perumahan_baris WHERE laporan_id = ?
-        AND sumber_dana = ? AND program = ?', [$LAP7, 'apbd_kabkota', 'pk_rtlh']) === '25',
-        'Angka diwarisi apa adanya, tidak dinolkan');
+    cek($LAP7 !== $LAP, 'TW III laporan tersendiri');
+    cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_program WHERE laporan_id = ?', [$LAP7]) === 0,
+        'TW III lahir KOSONG — nol gerbang program terbawa dari TW II');
+    cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_baris WHERE laporan_id = ?', [$LAP7]) === 0,
+        'TW III lahir KOSONG — nol baris angka terbawa dari TW II');
+    // Pembanding: tanpa ini "TW III kosong" tetap hijau kalau TW II juga kosong.
+    cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_baris WHERE laporan_id = ?', [$LAP]) > 0,
+        'TW II tetap berisi (pembanding sahih)');
+    // Tetap berlaku, dan sekarang berlaku secara trivial — dipertahankan karena
+    // ia menjaga niat yang berbeda: bukti berkas tidak boleh berpindah periode.
     cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_bnba WHERE laporan_id = ?', [$LAP7]) === 0,
-        'BNBA TIDAK ikut diwarisi — berkas bulan lalu bukan bukti bulan ini');
+        'BNBA TIDAK ikut ke periode baru — berkas triwulan lalu bukan bukti triwulan ini');
     cek(skalar('SELECT status FROM rd_laporan WHERE id = ?', [$LAP7]) === 'draft',
-        'Periode warisan mulai sebagai draft, bukan terkirim');
+        'Periode baru mulai sebagai draft, bukan terkirim');
 
 } finally {
     bersihkan();
