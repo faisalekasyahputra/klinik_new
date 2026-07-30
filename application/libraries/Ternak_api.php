@@ -39,9 +39,14 @@ class Ternak_api {
         $url = $this->api_url . '/public/sites/' . $this->site_slug;
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        // Baris VERIFYHOST ada DUA KALI di sini: `2` lalu langsung ditimpa
+        // `false`. Yang berlaku yang terakhir, jadi verifikasi nama host MATI —
+        // rantai sertifikat diperiksa, tapi tidak ada yang memastikan sertifikat
+        // itu memang milik host yang kita tuju. Sertifikat sah dari domain mana
+        // pun akan diterima. Baris `2` di atasnya membuatnya terbaca aman
+        // sekilas; itu yang membuatnya bertahan lama. Yang menimpa dibuang.
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         curl_setopt($ch, CURLOPT_TIMEOUT, 15);
         
         $response = curl_exec($ch);
