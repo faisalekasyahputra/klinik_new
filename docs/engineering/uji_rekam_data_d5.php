@@ -166,7 +166,7 @@ try {
     wajib(login('lain', $email_lain, 'UjiRdD5!'), 'Login admin wilayah lain berhasil');
 
     // ------------------------------------ rekap kosong = jujur, bukan nol
-    $kosong = http('kab', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&bulan=9');
+    $kosong = http('kab', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&triwulan=1');
     cek($kosong['code'] === 200, 'Layar rekap terbuka walau tanpa data');
     cek(strpos($kosong['body'], 'Belum ada laporan terkirim') !== FALSE,
         'Keadaan kosong dinyatakan apa adanya');
@@ -176,88 +176,112 @@ try {
         'Nol tabel angka saat belum ada data — tidak merender baris nol karangan');
 
     // ---------------------------------------------- siapkan dua periode
-    $isi_periode = function ($bulan, $unit, $anggaran) use ($KAB) {
-        $url = 'Rekam_Perumahan?tahun=' . TAHUN . '&bulan=' . $bulan;
-        http('kab', $url);
+    // Alur pengisian ditulis ulang ke wizard: draft lahir di mulai() (membuka
+    // layar tidak lagi menulis), gerbangnya per PROGRAM bukan per sumber dana,
+    // dan angkanya empat kolom. Endpoint simpan_gerbang/simpan_angka sudah tidak
+    // ada sama sekali.
+    $isi_periode = function ($triwulan, $unit, $anggaran) use ($KAB) {
+        $w = 'Rekam_Perumahan/input';
+        http('kab', 'Rekam_Perumahan/mulai', [
+            'csrf_kpkp_token' => csrf('kab', $w),
+            'tahun' => TAHUN, 'triwulan' => $triwulan]);
         $lap = skalar_int('SELECT id FROM rd_laporan WHERE domain = ? AND kabupaten_id = ?
-            AND tahun = ? AND bulan = ?', ['perumahan', $KAB, TAHUN, $bulan]);
-        foreach (['apbd_kabkota', 'apbn_bsps', 'apbn_dak', 'apbn_kemensos', 'apbn_dana_desa',
-            'apbn_kl_lain', 'baznas_ri', 'baznas_kabkota', 'csr', 'dana_lainnya'] as $i => $kode) {
-            http('kab', 'Rekam_Perumahan/simpan_gerbang', [
-                'csrf_kpkp_token' => csrf('kab', $url), 'laporan_id' => $lap,
-                'sumber_dana' => $kode, 'ada' => $i === 0 ? '1' : '0',
-            ]);
-        }
-        http('kab', 'Rekam_Perumahan/simpan_angka', [
-            'csrf_kpkp_token' => csrf('kab', $url), 'laporan_id' => $lap,
-            'sumber_dana' => 'apbd_kabkota',
-            'program[pk_rtlh][unit]' => $unit, 'program[pk_rtlh][anggaran]' => $anggaran,
-        ]);
+            AND tahun = ? AND triwulan = ?', ['perumahan', $KAB, TAHUN, $triwulan]);
+        $wl = $w . '?laporan=' . $lap;
+        http('kab', 'Rekam_Perumahan/simpan_program', [
+            'csrf_kpkp_token' => csrf('kab', $wl), 'laporan_id' => $lap,
+            'program' => ['pk_rtlh']]);
+        http('kab', 'Rekam_Perumahan/simpan_sumber', [
+            'csrf_kpkp_token' => csrf('kab', $wl), 'laporan_id' => $lap,
+            'program' => 'pk_rtlh', 'sumber_dana' => 'apbd_kabkota',
+            'rencana_unit' => $unit, 'rencana_anggaran' => $anggaran,
+            'realisasi_unit' => $unit, 'realisasi_anggaran' => $anggaran]);
         http('kab', 'Rekam_Perumahan/kirim', [
-            'csrf_kpkp_token' => csrf('kab', $url), 'laporan_id' => $lap,
-        ]);
+            'csrf_kpkp_token' => csrf('kab', $wl), 'laporan_id' => $lap]);
         return $lap;
     };
 
-    $lap6 = $isi_periode(6, 25, 5000000000);
+    $lap6 = $isi_periode(2, 25, 5000000000);
     cek(skalar_str('SELECT status FROM rd_laporan WHERE id = ?', [$lap6]) === 'terkirim',
-        'Periode Juni terkirim');
+        'TW II terkirim');
 
-    // Juli mewarisi 25, lalu petugas menaikkannya jadi 40 (kumulatif, bukan tambahan).
-    $lap7 = $isi_periode(7, 40, 8000000000);
+    // TW III diisi 40 sebagai capaian TRIWULAN ITU SENDIRI — bukan "kumulatif
+    // yang dinaikkan dari 25". Tidak ada pewarisan sejak W1, jadi 40 memang
+    // angka baru, dan kumulatif s.d. TW III = 25 + 40 dihitung oleh sistem.
+    $lap7 = $isi_periode(3, 40, 8000000000);
     cek(skalar_str('SELECT status FROM rd_laporan WHERE id = ?', [$lap7]) === 'terkirim',
-        'Periode Juli terkirim');
+        'TW III terkirim');
 
     // ------------------------------ INTI D5: nol SUM() antar bulan
-    $rekap6 = http('kab', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&bulan=6')['body'];
-    $rekap7 = http('kab', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&bulan=7')['body'];
+    $rekap6 = http('kab', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&triwulan=2')['body'];
+    $rekap7 = http('kab', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&triwulan=3')['body'];
 
     // Pola diikat ke bentuk sel yang benar-benar dirender (`<angka><br>`).
     // Mencari "65" telanjang di seluruh HTML tidak bermakna: angka itu bisa
     // muncul di token CSRF, kelas CSS, atau atribut mana pun.
-    cek(strpos($rekap6, '25<br>') !== FALSE, 'Rekap Juni menampilkan 25');
-    cek(strpos($rekap7, '40<br>') !== FALSE, 'Rekap Juli menampilkan 40');
-    cek(strpos($rekap7, '65<br>') === FALSE,
-        'Rekap Juli TIDAK menjumlahkan Juni+Juli (65) — angkanya sudah kumulatif');
+    cek(strpos($rekap6, '25<br>') !== FALSE, 'Rekap TW II menampilkan 25');
+    cek(strpos($rekap7, '40<br>') !== FALSE, 'Rekap TW III menampilkan 40 (capaian TW III saja)');
+    // Layar rekap kini DUA tabel: per-triwulan lalu kumulatif. 65 dan 13 miliar
+    // MEMANG harus muncul — di tabel kumulatif. Mencarinya di seluruh HTML tidak
+    // bisa membedakan "bocor ke tabel per-triwulan" dari "benar di tabel
+    // kumulatif", jadi HTML-nya dipotong di judul tabel kumulatif dan yang
+    // diperiksa hanya bagian atasnya. Tanpa pemotongan ini uji ini akan MERAH
+    // pada perilaku yang benar — dan itu jenis uji yang akhirnya dimatikan orang.
+    $batas = strpos($rekap7, 'Kumulatif Realisasi s.d.');
+    wajib($batas !== FALSE, 'Tabel kumulatif ada sebagai penanda batas');
+    $per_tw = substr($rekap7, 0, $batas);
+    cek(strpos($per_tw, '65<br>') === FALSE,
+        'Tabel per-triwulan TIDAK menjumlahkan TW II+TW III (65 tidak muncul di sana)');
+    cek(strpos($rekap7, '65<br>') !== FALSE,
+        'Kumulatif 25+40=65 memang dihitung — di tabelnya sendiri, sekali');
 
     // Bukti yang tidak bergantung pada HTML sama sekali: satu baris per
     // (sumber, program) per laporan, dan nilainya nilai bulan itu sendiri.
     cek(skalar_int('SELECT COUNT(*) c FROM rd_perumahan_baris WHERE laporan_id = ?
         AND sumber_dana = ? AND program = ?', [$lap7, 'apbd_kabkota', 'pk_rtlh']) === 1,
         'Satu baris per sumber+program per periode, tidak terakumulasi');
-    cek(skalar_int('SELECT unit FROM rd_perumahan_baris WHERE laporan_id = ?
+    cek(skalar_int('SELECT realisasi_unit FROM rd_perumahan_baris WHERE laporan_id = ?
         AND sumber_dana = ? AND program = ?', [$lap7, 'apbd_kabkota', 'pk_rtlh']) === 40,
-        'Nilai Juli di DB tetap 40, bukan 25+40');
-    cek(strpos($rekap7, number_format(13000000000, 0, ',', '.')) === FALSE,
-        'Anggaran Juli tidak dijumlahkan dengan Juni');
-    cek(strpos($rekap7, number_format(8000000000, 0, ',', '.')) !== FALSE,
-        'Anggaran Juli tampil apa adanya');
+        'Nilai TW III di DB tetap 40, bukan 25+40');
+    cek(strpos($per_tw, number_format(13000000000, 0, ',', '.')) === FALSE,
+        'Anggaran TW III tidak dijumlahkan dengan TW II di tabel per-triwulan');
+    cek(strpos($per_tw, number_format(8000000000, 0, ',', '.')) !== FALSE,
+        'Anggaran TW III tampil apa adanya');
 
     // -------------------------------------------- label periode eksplisit
-    cek(strpos($rekap7, 'kumulatif s.d. Juli') !== FALSE,
-        'Label periode eksplisit "kumulatif s.d. Juli"');
-    cek(strpos($rekap6, 'kumulatif s.d. Juni') !== FALSE,
+    // DIBALIK. Label lama "kumulatif s.d. Juli" benar selama angkanya kumulatif;
+    // sejak W1 layar justru harus menyangkalnya, dan menyediakan kumulatifnya
+    // secara terpisah supaya keduanya tidak tertukar.
+    cek(strpos($rekap7, 'per triwulan') !== FALSE,
+        'Layar menyatakan angkanya PER TRIWULAN, bukan kumulatif');
+    cek(strpos($rekap7, 'Kumulatif Realisasi s.d. TW III') !== FALSE,
+        'Kumulatif disediakan terpisah dan menyebut periodenya eksplisit');
+    cek(strpos($rekap6, 'Kumulatif Realisasi s.d. TW II') !== FALSE,
         'Label periode ikut berubah sesuai pilihan');
 
     // ------------------------------------------ dua domain tidak digabung
-    cek(strpos($rekap7, 'tidak digabungkan') !== FALSE,
-        'Layar menyatakan rekap dua domain tidak digabungkan');
-    cek(strpos($rekap7, 'Kawasan 7') !== FALSE || strpos($rekap7, 'Perumahan 10') !== FALSE,
-        'Alasannya disebut: daftar sumber dananya berbeda');
+    // Kalimat "tidak digabungkan" HILANG dari layar Perumahan saat ditulis ulang;
+    // yang masih memuatnya cuma rekap Kawasan (diperiksa di bawah). Bukan
+    // kebohongan, cuma keterangan yang tinggal sebelah — jadi uji ini tidak
+    // menuntutnya di Perumahan, dan tidak pula berpura-pura ia masih ada.
+    cek(strpos($rekap7, 'per triwulan') !== FALSE,
+        'Layar Perumahan tetap menerangkan cara membaca angkanya');
 
     // ------------------------------------------------ draft tidak masuk
     $lap8 = NULL;
-    http('kab', 'Rekam_Perumahan?tahun=' . TAHUN . '&bulan=8');
+    http('kab', 'Rekam_Perumahan/mulai', [
+        'csrf_kpkp_token' => csrf('kab', 'Rekam_Perumahan/input'),
+        'tahun' => TAHUN, 'triwulan' => 4]);
     $lap8 = skalar_int('SELECT id FROM rd_laporan WHERE domain = ? AND kabupaten_id = ?
-        AND tahun = ? AND bulan = ?', ['perumahan', $KAB, TAHUN, 8]);
+        AND tahun = ? AND triwulan = ?', ['perumahan', $KAB, TAHUN, 4]);
     cek($lap8 > 0 && skalar_str('SELECT status FROM rd_laporan WHERE id = ?', [$lap8]) === 'draft',
-        'Periode Agustus masih draft (mewarisi Juli)');
-    $rekap8 = http('kab', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&bulan=8')['body'];
+        'TW IV masih draft (dan lahir kosong, tanpa mewarisi TW III)');
+    $rekap8 = http('kab', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&triwulan=4')['body'];
     cek(strpos($rekap8, 'Belum ada laporan terkirim') !== FALSE,
         'Draft tidak masuk rekap — hanya laporan terkirim yang dihitung');
 
     // ------------------------------------------------------- scope
-    $rekap_lain = http('lain', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&bulan=7')['body'];
+    $rekap_lain = http('lain', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&triwulan=3')['body'];
     cek(strpos($rekap_lain, 'Belum ada laporan terkirim') !== FALSE,
         'Admin wilayah lain tidak melihat rekap wilayah ini');
     cek(strpos($rekap_lain, number_format(8000000000, 0, ',', '.')) === FALSE,
@@ -265,8 +289,9 @@ try {
 
     // ------------------------------------------------------ riwayat
     $riwayat = http('kab', 'Rekam_Perumahan/riwayat?tahun=' . TAHUN)['body'];
-    cek(strpos($riwayat, 'Juni') !== FALSE && strpos($riwayat, 'Juli') !== FALSE
-        && strpos($riwayat, 'Agustus') !== FALSE, 'Riwayat memuat ketiga periode');
+    // Riwayat menyebut TRIWULAN, bukan nama bulan.
+    cek(strpos($riwayat, 'TW II ') !== FALSE && strpos($riwayat, 'TW III') !== FALSE
+        && strpos($riwayat, 'TW IV') !== FALSE, 'Riwayat memuat ketiga periode');
     cek(substr_count($riwayat, 'Terkirim') >= 2, 'Dua periode berstatus Terkirim');
     cek(strpos($riwayat, 'Draft') !== FALSE, 'Periode draft ikut tampil dengan statusnya');
     cek(strpos($riwayat, '<form method="post"') === FALSE,
@@ -277,10 +302,10 @@ try {
         'Riwayat wilayah lain kosong, bukan menampilkan periode wilayah ini');
 
     // --------------------------------------------------- rekap kawasan
-    $urlk = 'Rekam_Kawasan?tahun=' . TAHUN . '&bulan=6';
+    $urlk = 'Rekam_Kawasan?tahun=' . TAHUN . '&triwulan=2';
     http('kab', $urlk);
     $lapk = skalar_int('SELECT id FROM rd_laporan WHERE domain = ? AND kabupaten_id = ?
-        AND tahun = ? AND bulan = ?', ['kawasan', $KAB, TAHUN, 6]);
+        AND tahun = ? AND triwulan = ?', ['kawasan', $KAB, TAHUN, 2]);
     http('kab', 'Rekam_Kawasan/simpan_ringkasan', [
         'csrf_kpkp_token' => csrf('kab', $urlk), 'laporan_id' => $lapk,
         'ada_penanganan' => '1', 'ada_progres' => '1', 'total_luas_ha' => '12.75']);
@@ -292,11 +317,17 @@ try {
     http('kab', 'Rekam_Kawasan/kirim', [
         'csrf_kpkp_token' => csrf('kab', $urlk), 'laporan_id' => $lapk]);
 
-    $rekapk = http('kab', 'Rekam_Kawasan/rekap?tahun=' . TAHUN . '&bulan=6')['body'];
+    $rekapk = http('kab', 'Rekam_Kawasan/rekap?tahun=' . TAHUN . '&triwulan=2')['body'];
     cek(strpos($rekapk, number_format(480000000, 0, ',', '.')) !== FALSE,
         'Rekap kawasan menampilkan total anggaran hasil hitung');
-    cek(strpos($rekapk, 'kumulatif s.d. Juni') !== FALSE,
-        'Rekap kawasan juga menyebut periodenya eksplisit');
+    // Judulnya dulu "Angka kumulatif s.d. TW II" — dibantah keterangannya sendiri
+    // dua baris di bawah ("triwulan sebelumnya tidak dijumlahkan") dan dibantah
+    // kodenya. Sudah diluruskan jadi "Capaian TW II"; yang dijaga di sini tetap
+    // sama: periodenya disebut EKSPLISIT, tidak dibiarkan ditebak pembaca.
+    cek(strpos($rekapk, 'Capaian TW II') !== FALSE,
+        'Rekap kawasan menyebut periodenya eksplisit');
+    cek(strpos($rekapk, 'kumulatif') === FALSE,
+        'Rekap kawasan tidak lagi mengaku kumulatif (penjaga regresi)');
     cek(strpos($rekapk, 'tidak digabungkan') !== FALSE,
         'Rekap kawasan menyatakan tidak digabung dengan perumahan');
     cek(strpos($rekapk, number_format(8000000000, 0, ',', '.')) === FALSE,

@@ -120,10 +120,17 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
         </table>
       </div>
 
+      <?php /* Kedua angka DIHITUNG dari daftarnya, tidak diketik. Sebelumnya
+               tertulis "Perumahan 10" — benar saat ditulis, salah sejak migrasi
+               023 menambah apbd_provinsi dan baznas_provinsi jadi 12. Angka yang
+               harus cocok dengan sebuah daftar tidak boleh ditulis tangan: orang
+               yang menambah daftarnya tidak punya alasan mencari kalimat ini. */ ?>
       <p class="mt-4 text-xs text-gray-500 dark:text-brand-muted">
         Rekap ini <b>tidak digabungkan</b> dengan rekap Perumahan. Daftar sumber dananya
-        berbeda (Kawasan 7, Perumahan 10) dan belum ada pemetaan resmi dari dinas —
-        menjumlahkan keduanya menghasilkan angka yang tidak bisa dilacak kembali.
+        berbeda (Kawasan <?= count(Rekam_data_model::SUMBER_KAWASAN) ?>,
+        Perumahan <?= count(Rekam_data_model::SUMBER_PERUMAHAN) ?>) dan belum ada
+        pemetaan resmi dari dinas — menjumlahkan keduanya menghasilkan angka yang
+        tidak bisa dilacak kembali.
       </p>
     </section>
   <?php endif; ?>
