@@ -494,27 +494,59 @@ class MY_Controller extends CI_Controller {
         }
         foreach ($items as $i => $item) { $items[$i]['active'] = ($i === $best_i); }
 
-        // Susun bersarang satu tingkat. Anak hanya ikut dirender saat cabangnya
-        // TERBUKA — yaitu induknya aktif, atau salah satu anaknya aktif. Tanpa
-        // ini tujuh entri Rekam Data mendominasi sidebar di setiap halaman,
-        // termasuk halaman yang tidak ada hubungannya.
+        // Susun jadi POHON, kedalaman bebas — `parent` boleh menunjuk item yang
+        // sendirinya punya induk. Rekam Data memakai dua tingkat: Rekam Data →
+        // Perumahan/Kawasan → Capaian/Rekap/Riwayat.
+        //
+        // Anak SELALU dirender (tidak dibuang saat cabangnya tertutup) supaya
+        // pengguna bisa membukanya sendiri lewat tombol lipat. Yang diputuskan
+        // di sini cuma keadaan AWALnya: cabang yang memuat halaman sekarang
+        // terbuka, sisanya terlipat.
         $anak = [];
-        foreach ($items as $i => $item) {
+        foreach ($items as $item) {
             if ($item['parent'] !== NULL) { $anak[$item['parent']][] = $item; }
         }
+        $per_key = [];
+        foreach ($items as $item) { $per_key[$item['key']] = $item; }
+
+        // Tandai seluruh leluhur item aktif sebagai "terbuka" — bukan hanya
+        // induk langsungnya. Tanpa menaiki rantainya, membuka Rekap Perumahan
+        // akan membuka "Perumahan" tetapi meninggalkan "Rekam Data" terlipat,
+        // dan layar yang sedang dibuka jadi tidak terlihat sama sekali.
         $terbuka = [];
         foreach ($items as $item) {
             if ( ! $item['active']) { continue; }
-            $terbuka[$item['parent'] ?? $item['key']] = TRUE;
+            // Item aktif membuka DIRINYA SENDIRI juga, bukan hanya leluhurnya.
+            // Tanpa ini, mendarat di "Rekam Data" menyorot induknya tetapi
+            // membiarkan enam anaknya terlipat — orang sampai di halaman yang
+            // gunanya justru mengantar, lalu tidak melihat satu pun tujuan.
+            $terbuka[$item['key']] = TRUE;
+            $naik = $item['parent'];
+            while ($naik !== NULL && isset($per_key[$naik])) {
+                $terbuka[$naik] = TRUE;
+                $naik = $per_key[$naik]['parent'];
+            }
         }
+
+        $bangun = function ($key) use (&$bangun, $anak, $terbuka) {
+            $out = [];
+            foreach ($anak[$key] ?? [] as $item) {
+                $item['children'] = $bangun($item['key']);
+                $item['open']     = ! empty($terbuka[$item['key']]);
+                // Induk ikut menyala saat cabangnya terbuka — supaya orang tahu
+                // sedang berada di cabang mana, bukan cuma di layar mana.
+                $item['active']   = $item['active'] || $item['open'];
+                $out[] = $item;
+            }
+            return $out;
+        };
 
         $grouped = [];
         foreach ($items as $item) {
             if ($item['parent'] !== NULL) { continue; }
-            $item['children'] = ! empty($terbuka[$item['key']]) ? ($anak[$item['key']] ?? []) : [];
-            // Induk ikut menyala saat salah satu anaknya aktif — supaya orang
-            // tahu sedang berada di cabang mana, bukan cuma di layar mana.
-            $item['active'] = $item['active'] || ! empty($terbuka[$item['key']]);
+            $item['children'] = $bangun($item['key']);
+            $item['open']     = ! empty($terbuka[$item['key']]);
+            $item['active']   = $item['active'] || $item['open'];
             $grouped[$item['group']][] = $item;
         }
         return $grouped;
@@ -561,6 +593,21 @@ class MY_Controller extends CI_Controller {
             }
             $data['dashboard_menu'] = $this->dashboard_menu();
             $this->load->view($view, $data);
+
+            // Menu ikut dikirim tiap pindah halaman, dibungkus <template> supaya
+            // tidak ikut tampil di dalam konten. Loader menukarnya ke #sidebar-nav.
+            //
+            // Alasannya bukan kerapian: sorotan aktif dan sub-menu diputuskan
+            // dashboard_menu() (kecocokan URL terpanjang + cabang terbuka).
+            // Sebelum ini loader menyalin sebagian aturan itu di JS — mencocokkan
+            // path PERSIS dan menempel aria-current — sehingga /Rekam_Perumahan/input
+            // tidak menyorot apa pun, sorotan lama dari render server tidak pernah
+            // dilepas (dua item menyala bersamaan), dan sub-menu cabang lama tetap
+            // terbuka di halaman yang tidak ada hubungannya. Mengirim menu jadi
+            // yang termurah: satu aturan, satu tempat.
+            echo '<template id="sidebar-nav-baru">'
+                . $this->load->view('admin/layouts/sidebar_nav', $data, TRUE)
+                . '</template>';
             return;
         }
         $data['dashboard_menu'] = $this->dashboard_menu();

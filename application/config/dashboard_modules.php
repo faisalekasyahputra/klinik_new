@@ -109,7 +109,7 @@ $config['dashboard_modules'] = [
         'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
     ],
     'rekam_perumahan' => [
-        'label' => 'Capaian Perumahan', 'icon' => 'ph-table',
+        'label' => 'Perumahan', 'icon' => 'ph-house-line',
         'url'   => 'Rekam_Perumahan', 'group' => 'Layanan', 'order' => 21,
         'parent' => 'rekam_data',
         'roles' => ['admin_kabkota'],
@@ -119,19 +119,19 @@ $config['dashboard_modules'] = [
         'public_where' => NULL, 'editable_where' => NULL,
     ],
     'rekam_perumahan_rekap' => [
-        'label' => 'Rekap Perumahan', 'icon' => 'ph-chart-bar',
+        'label' => 'Rekap', 'icon' => 'ph-chart-bar',
         'url'   => 'Rekam_Perumahan/rekap', 'group' => 'Layanan', 'order' => 22,
-        'parent' => 'rekam_data',
+        'parent' => 'rekam_perumahan',
         'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
     ],
     'rekam_perumahan_riwayat' => [
-        'label' => 'Riwayat Perumahan', 'icon' => 'ph-clock-counter-clockwise',
+        'label' => 'Riwayat', 'icon' => 'ph-clock-counter-clockwise',
         'url'   => 'Rekam_Perumahan/riwayat', 'group' => 'Layanan', 'order' => 23,
-        'parent' => 'rekam_data',
+        'parent' => 'rekam_perumahan',
         'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
     ],
     'rekam_kawasan' => [
-        'label' => 'Capaian Kawasan', 'icon' => 'ph-map-trifold',
+        'label' => 'Kawasan', 'icon' => 'ph-map-trifold',
         'url'   => 'Rekam_Kawasan', 'group' => 'Layanan', 'order' => 24,
         'parent' => 'rekam_data',
         'roles' => ['admin_kabkota'],
@@ -141,15 +141,15 @@ $config['dashboard_modules'] = [
         'public_where' => NULL, 'editable_where' => NULL,
     ],
     'rekam_kawasan_rekap' => [
-        'label' => 'Rekap Kawasan', 'icon' => 'ph-chart-bar',
+        'label' => 'Rekap', 'icon' => 'ph-chart-bar',
         'url'   => 'Rekam_Kawasan/rekap', 'group' => 'Layanan', 'order' => 25,
-        'parent' => 'rekam_data',
+        'parent' => 'rekam_kawasan',
         'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
     ],
     'rekam_kawasan_riwayat' => [
-        'label' => 'Riwayat Kawasan', 'icon' => 'ph-clock-counter-clockwise',
+        'label' => 'Riwayat', 'icon' => 'ph-clock-counter-clockwise',
         'url'   => 'Rekam_Kawasan/riwayat', 'group' => 'Layanan', 'order' => 26,
-        'parent' => 'rekam_data',
+        'parent' => 'rekam_kawasan',
         'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
     ],
     // Hanya bidang perumahan & kawasan yang punya Rekam Data; bidang lain

@@ -77,10 +77,24 @@
     <!-- Loader progresif dashboard: klik sidebar/link internal = swap #main-content, bukan full reload -->
     <script defer src="<?= base_url('assets/js/admin-progressive.js?v=' . filemtime('assets/js/admin-progressive.js')) ?>"></script>
     <style>
-        /* Penanda aktif sidebar saat navigasi progresif (di-set aria-current oleh loader).
-           Meniru kelas aktif server-side di admin/layouts/sidebar.php. */
+        /* Penanda aktif sidebar. Sejak menu ikut dikirim server tiap pindah
+           halaman, kelas Tailwind-nya sudah benar sendiri — aturan ini tinggal
+           jaring pengaman untuk `aria-current` yang dirender server. */
         aside a[aria-current="page"] { background: #eff6ff; color: #1d4ed8; }
         .dark aside a[aria-current="page"] { background: rgba(214, 251, 0, .1); color: #d6fb00; }
+
+        /* Daftar pilihan <select> DI DALAM shell admin.
+           Kelas Tailwind `bg-transparent` cuma mengatur kotak yang terlihat;
+           daftar yang terbuka digambar sistem operasi dan mewarisi warnanya
+           sendiri. Di mode gelap hasilnya latar putih dengan teks abu terang —
+           pilihan yang tidak sedang disorot praktis tidak terbaca.
+           Warna DIPAKSA di sini, pada elemennya maupun pada <option>, karena
+           tidak semua peramban mewariskan warna select ke daftarnya. */
+        .dark select { background-color: #0f2933; color: #fff; }
+        .dark select option { background-color: #0f2933; color: #fff; }
+        select option { background-color: #fff; color: #111827; }
+        .dark select option:checked,
+        .dark select option:hover { background-color: rgba(214, 251, 0, .15); color: #d6fb00; }
     </style>
     <!-- Phosphor Icons — defer: ikon menyusul sepersekian detik, halaman tidak menunggu -->
     <script defer src="https://unpkg.com/@phosphor-icons/web"></script>

@@ -46,12 +46,36 @@
 
     var loadToken = 0;
 
-    function setSidebarActive(url) {
-        var path = new URL(url, window.location.href).pathname;
-        document.querySelectorAll('aside a').forEach(function (a) {
-            if (a.pathname === path) { a.setAttribute('aria-current', 'page'); }
-            else { a.removeAttribute('aria-current'); }
-        });
+    /**
+     * Tukar SELURUH menu sidebar dengan versi yang dikirim server.
+     *
+     * Dulu fungsi ini menempelkan `aria-current` pada tautan yang path-nya
+     * COCOK PERSIS. Tiga akibatnya, dan ketiganya terlihat oleh pengguna:
+     *
+     *   1. Sorotan lama tidak pernah dilepas. Sorotan itu kelas Tailwind dari
+     *      render server, bukan aria-current, jadi dua item menyala bersamaan.
+     *   2. /Rekam_Perumahan/input tidak cocok persis dengan tautan
+     *      /Rekam_Perumahan, jadi selama di wizard tidak ada yang menyala.
+     *   3. Sub-menu dirender server; JS tidak pernah menyentuhnya, jadi cabang
+     *      lama tetap terbuka di halaman yang tidak ada hubungannya.
+     *
+     * Akarnya satu: aturan aktif dan cabang terbuka diputuskan
+     * MY_Controller::dashboard_menu(), lalu SEBAGIAN disalin ulang di sini.
+     * Dua implementasi untuk satu aturan pasti berbeda suatu saat. Sekarang
+     * server mengirim menunya utuh dan JS hanya menukar — satu aturan, satu
+     * tempat.
+     */
+    function tukarSidebar(html) {
+        var nav = document.getElementById('sidebar-nav');
+        if (!nav) return;
+        var tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        var baru = tmp.querySelector('#sidebar-nav-baru');
+        if (!baru) return;
+        nav.innerHTML = baru.innerHTML;
+        // Menu memakai Alpine (x-show, tombol lipat) — tanpa initTree, sub-menu
+        // yang baru disuntik tidak akan pernah menanggapi klik.
+        if (window.Alpine) { Alpine.initTree(nav); }
     }
 
     function loadPage(url, push) {
@@ -84,11 +108,18 @@
             .then(function (html) {
                 if (html === null || html === undefined || myToken !== loadToken) return;
                 if (/^\s*(<!doctype|<html)/i.test(html)) { window.location.href = url; return; }
+
+                // Menu dipisahkan SEBELUM konten disuntik: `<template>` di ekor
+                // balasan tidak boleh ikut mendarat di area konten.
+                var potong = html.indexOf('<template id="sidebar-nav-baru">');
+                var menuHtml = potong === -1 ? '' : html.slice(potong);
+                if (potong !== -1) { html = html.slice(0, potong); }
+
                 main.innerHTML = '<div class="animate-[fadeIn_0.3s_ease-out]">' + html + '</div>';
                 reExecuteScripts(main).then(function () {
                     if (window.Alpine) { Alpine.initTree(main); }
                     if (push) { history.pushState({ adminUrl: url }, '', url); }
-                    setSidebarActive(url);
+                    if (menuHtml) { tukarSidebar(menuHtml); }
                 }).catch(function () { /* konten sudah tampil; jangan kunci UI */ });
             })
             .catch(function () {

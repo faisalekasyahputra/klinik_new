@@ -19,48 +19,14 @@
         </a>
     </div>
     
-    <div class="px-3 py-4 overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar">
-        <?php
-        // Menu dibangun dari application/config/dashboard_modules.php (lihat
-        // MY_Controller::dashboard_menu()) — SATU sumber kebenaran untuk semua
-        // role, bukan lagi hardcode per varian dashboard. Registry cuma
-        // mengatur tampilan; otorisasi tetap di constructor controller tujuan.
-        // Active-state sudah dihitung di dashboard_menu() (match terpanjang).
-        ?>
-        <?php foreach (($dashboard_menu ?? []) as $group_label => $menu_items): ?>
-        <div class="text-[10px] font-bold text-gray-400 dark:text-brand-muted/70 uppercase tracking-wider mb-2 ml-2 mt-6 first:mt-0 transition-all duration-200 whitespace-nowrap overflow-hidden" x-show="sidebarOpen"><?= htmlspecialchars($group_label) ?></div>
-        <nav class="space-y-1 relative">
-            <?php foreach ($menu_items as $item): ?>
-            <a href="<?= base_url($item['url']) ?>" class="relative flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 <?= !empty($item['active']) ? 'bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary shadow-sm dark:shadow-none' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-gray-900 dark:hover:text-brand-light' ?>" :class="!sidebarOpen ? 'justify-center' : ''" title="<?= htmlspecialchars($item['label']) ?>">
-                <i class="ph <?= htmlspecialchars($item['icon']) ?> text-lg shrink-0" :class="sidebarOpen ? 'mr-3' : 'mr-0'"></i>
-                <span x-show="sidebarOpen" class="whitespace-nowrap overflow-hidden flex-1"><?= htmlspecialchars($item['label']) ?></span>
-                <?php if (!empty($item['badge'])): ?>
-                <span x-show="sidebarOpen" class="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400 text-[10px] font-bold shrink-0"><?= (int) $item['badge'] ?></span>
-                <span x-show="!sidebarOpen" class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold border-[1.5px] border-white dark:border-brand-card shadow-sm z-10"><?= (int) $item['badge'] ?></span>
-                <?php endif; ?>
-            </a>
-
-            <?php // Sub-menu satu tingkat. `children` sudah dikosongkan oleh
-                  // dashboard_menu() saat cabangnya tertutup, jadi view tidak
-                  // perlu tahu aturan bukanya — satu tempat yang memutuskan.
-                  // Disembunyikan saat sidebar menyempit: ikon anak tanpa label
-                  // tidak bisa dibedakan dari ikon induk. ?>
-            <?php if ( ! empty($item['children'])): ?>
-            <div class="ml-3 space-y-1 border-l border-gray-200 pl-2 dark:border-white/10" x-show="sidebarOpen">
-                <?php foreach ($item['children'] as $anak): ?>
-                <a href="<?= base_url($anak['url']) ?>" class="flex items-center rounded-lg px-3 py-1.5 text-[13px] transition-all duration-200 <?= !empty($anak['active']) ? 'bg-blue-50 font-bold text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary' : 'font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 dark:text-brand-muted dark:hover:bg-white/5 dark:hover:text-brand-light' ?>" title="<?= htmlspecialchars($anak['label']) ?>">
-                    <i class="ph <?= htmlspecialchars($anak['icon']) ?> mr-2 shrink-0 text-base"></i>
-                    <span class="flex-1 overflow-hidden whitespace-nowrap"><?= htmlspecialchars($anak['label']) ?></span>
-                    <?php if (!empty($anak['badge'])): ?>
-                    <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-red-100 text-[9px] font-bold text-red-600 dark:bg-red-500/20 dark:text-red-400"><?= (int) $anak['badge'] ?></span>
-                    <?php endif; ?>
-                </a>
-                <?php endforeach; ?>
-            </div>
-            <?php endif; ?>
-            <?php endforeach; ?>
-        </nav>
-        <?php endforeach; ?>
+    <?php // `id` dipakai loader progresif untuk MENGGANTI seluruh isi menu tiap
+          // pindah halaman. Sebelumnya loader cuma menempel aria-current lewat
+          // JS, sementara sorotan dan sub-menu dirender PHP — dua implementasi
+          // untuk satu aturan, dan hasilnya dua item menyala bersamaan sambil
+          // sub-menu cabang lama tetap terbuka. Sekarang aturannya tetap satu:
+          // dashboard_menu() memutuskan, server mengirim, JS hanya menukar. ?>
+    <div id="sidebar-nav" class="px-3 py-4 overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar">
+        <?php $this->load->view("admin/layouts/sidebar_nav", $data ?? []); ?>
     </div>
 
     <!-- Link to Main Website (OG Preview Style) -->
