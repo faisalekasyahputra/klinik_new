@@ -26,13 +26,13 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
     public function index()
     {
         $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
-        $bulan = (int) ($this->input->get('bulan') ?: date('n'));
+        $triwulan = (int) ($this->input->get('triwulan') ?: (int) ceil((int) date('n') / 3));
 
-        $hasil = $this->rd->ambil_atau_buat_draft('kawasan', $this->my_kabupaten_id, $tahun, $bulan);
+        $hasil = $this->rd->ambil_atau_buat_draft('kawasan', $this->my_kabupaten_id, $tahun, $triwulan);
         if (empty($hasil['success'])) {
             $this->session->set_flashdata('error', $hasil['message']);
             $hasil = $this->rd->ambil_atau_buat_draft(
-                'kawasan', $this->my_kabupaten_id, (int) date('Y'), (int) date('n'));
+                'kawasan', $this->my_kabupaten_id, (int) date('Y'), (int) (int) ceil((int) date('n') / 3));
             if (empty($hasil['success'])) {
                 show_error('Draft laporan tidak dapat dibuka.', 500);
                 return;
@@ -59,13 +59,13 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
         $this->render_scoped_admin('admin/rekam/kawasan_input', $data);
     }
 
-    /** Rekap satu periode. Tidak ada `SUM()` antar bulan — lihat catatan di model. */
+    /** Rekap satu periode. Tidak ada `SUM()` antar triwulan — lihat catatan di model. */
     public function rekap()
     {
         $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
-        $bulan = (int) ($this->input->get('bulan') ?: date('n'));
+        $triwulan = (int) ($this->input->get('triwulan') ?: (int) ceil((int) date('n') / 3));
 
-        $baris = $this->rd->rekap('kawasan', $tahun, $bulan, $this->my_kabupaten_id);
+        $baris = $this->rd->rekap('kawasan', $tahun, $triwulan, $this->my_kabupaten_id);
         $ringkasan = $baris[0] ?? NULL;
 
         $intervensi = [];
@@ -80,7 +80,7 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
             'scope_label'     => $this->db->where('id', $this->my_kabupaten_id)
                 ->get('kabupaten')->row('nama') ?: 'Wilayah Saya',
             'tahun'           => $tahun,
-            'bulan'           => $bulan,
+            'triwulan'           => $triwulan,
             'ringkasan'       => $ringkasan,
             'intervensi'      => $intervensi,
             'indikator_label' => $this->label_indikator(),
@@ -181,7 +181,7 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
         }
         $laporan = $this->rd->laporan($laporan_id, $this->my_kabupaten_id);
         redirect('Rekam_Kawasan?tahun=' . (int) ($laporan['tahun'] ?? date('Y'))
-            . '&bulan=' . (int) ($laporan['bulan'] ?? date('n')));
+            . '&triwulan=' . (int) ($laporan['triwulan'] ?? (int) ceil((int) date('n') / 3)));
     }
 
     /**

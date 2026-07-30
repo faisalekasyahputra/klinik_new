@@ -37,15 +37,15 @@ class Rekam_Tinjauan extends Admin_Bidang_Controller {
     public function index()
     {
         $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
-        $bulan = $this->input->get('bulan') !== NULL && $this->input->get('bulan') !== ''
-            ? (int) $this->input->get('bulan') : NULL;
+        $triwulan = $this->input->get('triwulan') !== NULL && $this->input->get('triwulan') !== ''
+            ? (int) $this->input->get('triwulan') : NULL;
 
         $this->render_scoped_admin('admin/rekam/tinjauan_daftar', [
             'title'   => 'Peninjauan ' . ucfirst($this->domain),
             'domain'  => $this->domain,
             'tahun'   => $tahun,
-            'bulan'   => $bulan,
-            'laporan' => $this->rd->daftar_tinjauan($this->domain, $tahun, $bulan),
+            'triwulan'   => $triwulan,
+            'laporan' => $this->rd->daftar_tinjauan($this->domain, $tahun, $triwulan),
         ]);
     }
 

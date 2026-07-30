@@ -3,12 +3,12 @@
  * Rekam Data — Riwayat Pelaporan (D5). Dipakai kedua domain.
  *
  * Baca-saja: daftar periode + statusnya. Bukan rekap angka — gunanya supaya
- * petugas tahu bulan mana yang sudah dikirim, mana yang dikembalikan untuk
+ * petugas tahu triwulan mana yang sudah dikirim, mana yang dikembalikan untuk
  * diperbaiki, dan apa catatan peninjaunya.
  */
 $e = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
-$nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+$nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV'];
+
 
 $warna = [
     'draft'           => 'bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300',
@@ -70,8 +70,8 @@ $warna = [
               <tr>
                 <td class="py-2 pr-3 font-medium text-gray-900 dark:text-white">
                   <a class="hover:underline"
-                     href="<?= base_url($base_url . '?tahun=' . (int) $tahun . '&bulan=' . (int) $row['bulan']) ?>">
-                    <?= $e($nama_bulan[(int) $row['bulan']] ?? $row['bulan']) ?> <?= (int) $tahun ?>
+                     href="<?= base_url($base_url . '?tahun=' . (int) $tahun . '&triwulan=' . (int) $row['triwulan']) ?>">
+                    <?= $e($nama_tw[(int) $row['triwulan']] ?? $row['triwulan']) ?> <?= (int) $tahun ?>
                   </a>
                 </td>
                 <td class="py-2 pr-3">

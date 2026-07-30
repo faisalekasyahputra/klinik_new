@@ -2,13 +2,13 @@
 /**
  * Rekam Data — Rekap Pelaporan Kawasan (D5).
  *
- * Satu periode saja, tanpa `SUM()` antar bulan. Total anggaran & padat karya
+ * Satu periode saja, tanpa `SUM()` antar triwulan. Total anggaran & padat karya
  * di sini adalah nilai TURUNAN dari daftar intervensi, sama seperti di layar
  * input — tidak ada kolomnya di DB.
  */
 $e = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
-$nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+$nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
+
 ?>
 
 <div class="space-y-4">
@@ -19,10 +19,10 @@ $nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
         Kabupaten/Kota <b class="text-gray-900 dark:text-white"><?= $e($scope_label) ?></b>
       </span>
       <form method="get" action="<?= base_url('Rekam_Kawasan/rekap') ?>" class="flex flex-wrap items-center gap-2">
-        <label class="text-sm text-gray-500 dark:text-brand-muted" for="bulan">Periode</label>
-        <select id="bulan" name="bulan" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
-          <?php foreach ($nama_bulan as $n => $label): ?>
-            <option value="<?= $n ?>" <?= $n === (int) $bulan ? 'selected' : '' ?>><?= $e($label) ?></option>
+        <label class="text-sm text-gray-500 dark:text-brand-muted" for="triwulan">Periode</label>
+        <select id="triwulan" name="triwulan" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
+          <?php foreach ($nama_tw as $n => $label): ?>
+            <option value="<?= $n ?>" <?= $n === (int) $triwulan ? 'selected' : '' ?>><?= $e($label) ?></option>
           <?php endforeach; ?>
         </select>
         <select name="tahun" aria-label="Tahun" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
@@ -35,10 +35,10 @@ $nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     </div>
 
     <p class="mt-4 text-sm font-bold text-gray-900 dark:text-white">
-      Angka kumulatif s.d. <?= $e($nama_bulan[(int) $bulan] ?? $bulan) ?> <?= (int) $tahun ?>
+      Angka kumulatif s.d. <?= $e($nama_tw[(int) $triwulan] ?? $triwulan) ?> <?= (int) $tahun ?>
     </p>
     <p class="text-xs text-gray-500 dark:text-brand-muted">
-      Dari laporan berstatus <b>terkirim</b> pada periode ini saja; bulan sebelumnya
+      Dari laporan berstatus <b>terkirim</b> pada periode ini saja; triwulan sebelumnya
       <b>tidak dijumlahkan</b>.
     </p>
   </section>
@@ -49,7 +49,7 @@ $nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
       <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
         Bukan berarti capaiannya nol — laporannya memang belum dikirim.
       </p>
-      <a href="<?= base_url('Rekam_Kawasan?tahun=' . (int) $tahun . '&bulan=' . (int) $bulan) ?>"
+      <a href="<?= base_url('Rekam_Kawasan?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>"
          class="mt-4 inline-block rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover">
         Buka Input Capaian periode ini
       </a>

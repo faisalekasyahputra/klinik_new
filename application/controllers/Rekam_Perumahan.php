@@ -2,18 +2,33 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Rekam Data — Input Capaian Perumahan (tahap D2).
+ * Rekam Data — Capaian Perumahan (wizard W3).
  *
  * Kabupaten SELALU dari sesi (`$this->my_kabupaten_id`), tidak pernah dari
  * request: tidak ada dropdown wilayah di layar mana pun, dan tiap panggilan
  * model membawa scope itu sebagai gerbang, bukan sebagai penyaring tampilan.
  *
- * Tahap ini hanya isi + draft. Kirim, BNBA, dan pewarisan tampil di layar
- * adalah D3; peninjauan provinsi D6.
+ * Wizard mengikuti idiom `/warga/pendataan`: satu endpoint merender seluruh
+ * langkah, POST menyimpan lalu memindahkan langkah, dan langkahnya disimpan DI
+ * BARIS (`rd_laporan.current_step`) — bukan di sesi atau URL — supaya pengisian
+ * bisa dilanjutkan setelah keluar-masuk.
  *
- * Acuan: docs/product/ROADMAP_REKAM_DATA.md (D2)
+ * Acuan: docs/product/ROADMAP_WIZARD_REKAM_PERUMAHAN.md §3,
+ *        rancangan new_flow/rekamdata/ (frame 003, 004, "Tambah Sumber Dana",
+ *        "Input Setelah ada Data").
  */
 class Rekam_Perumahan extends Admin_Kabkota_Controller {
+
+    /** Urutan langkah wizard. `bnba` opsional — boleh dilewati. */
+    private const LANGKAH = ['periode', 'program', 'isian', 'bnba', 'review'];
+
+    private const LABEL_LANGKAH = [
+        'periode' => 'Periode',
+        'program' => 'Program',
+        'isian'   => 'Isian Capaian',
+        'bnba'    => 'BNBA',
+        'review'  => 'Review & Kirim',
+    ];
 
     public function __construct()
     {
@@ -21,165 +36,62 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         $this->load->model('Rekam_data_model', 'rd');
     }
 
+    // ------------------------------------------------------------------ baca
+
     /**
-     * Layar pertama Capaian Perumahan: TABEL DULU, tombol Input di bawahnya.
-     * Urutan ini mengikuti sketsa Menu Utama — orang melihat capaian yang sudah
-     * tercatat sebelum mengubahnya, bukan langsung disuguhi sepuluh bagian isian.
+     * Layar Capaian: TABEL DULU, tombol Input Capaian di bawahnya (frame 001).
      *
      * Baca-saja, dan itu penting: memakai `laporan_periode()` yang TIDAK membuat
-     * apa pun, bukan `ambil_atau_buat_draft()`. Kalau layar baca ikut membuat
-     * draft, setiap admin yang cuma menengok melahirkan periode baru di
-     * `rd_laporan` dan riwayat pelaporan penuh bulan kosong yang tidak pernah
-     * diniatkan. Draft lahir di `input()` saja.
-     *
-     * Berbeda dari `rekap()`: di sini angka SENDIRI apa adanya termasuk draft,
-     * di sana hanya laporan berstatus `terkirim` dan bisa lintas periode.
+     * apa pun. Kalau layar baca ikut membuat draft, setiap admin yang cuma
+     * menengok melahirkan periode baru di `rd_laporan`, dan riwayat pelaporan
+     * penuh triwulan kosong yang tidak pernah diniatkan. Draft lahir di
+     * `mulai()` saja.
      */
     public function index()
     {
-        $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
-        $bulan = (int) ($this->input->get('bulan') ?: date('n'));
+        $tahun    = (int) ($this->input->get('tahun') ?: date('Y'));
+        $triwulan = $this->triwulan_dari_get();
 
-        $laporan = $this->rd->laporan_periode('perumahan', $this->my_kabupaten_id, $tahun, $bulan);
-        $matriks = [];
-        if ($laporan) {
-            $isi = $this->rd->isi_laporan((int) $laporan['id'], $this->my_kabupaten_id);
-            foreach ($isi['baris'] as $row) {
-                $matriks[$row['sumber_dana']][$row['program']] = $row;
-            }
-        }
+        $laporan = $this->rd->laporan_periode('perumahan', $this->my_kabupaten_id, $tahun, $triwulan);
+        $matriks = $laporan
+            ? $this->matriks($this->rd->isi_laporan((int) $laporan['id'], $this->my_kabupaten_id)['baris'])
+            : [];
 
-        $this->render_scoped_admin('admin/rekam/perumahan_rekap', [
+        $this->render_scoped_admin('admin/rekam/perumahan_capaian', [
             'title'         => 'Capaian Perumahan',
             'scope_label'   => $this->nama_wilayah(),
             'tahun'         => $tahun,
-            'bulan'         => $bulan,
+            'triwulan'      => $triwulan,
+            'laporan'       => $laporan,
             'matriks'       => $matriks,
-            'ada_data'      => ! empty($matriks),
+            'kumulatif'     => $this->matriks($this->rd->kumulatif($tahun, $triwulan, $this->my_kabupaten_id)),
             'sumber_label'  => $this->label_sumber(),
             'program_label' => $this->label_program(),
-            // Mode `capaian` membuat view menampilkan status laporan dan tombol
-            // Input Capaian, serta mengarahkan pemilih periode ke layar ini.
-            'mode'          => 'capaian',
-            'laporan'       => $laporan,
         ]);
     }
 
     /**
-     * Form isian. Di sinilah draft periode LAHIR — satu-satunya layar yang
-     * membuatnya, dipicu tombol Input Capaian di `index()`.
+     * Rekap resmi: hanya laporan `terkirim`, satu triwulan, dan angka kumulatif
+     * s.d. triwulan itu berdampingan.
      *
-     * Periode dipilih lewat query string biasa (GET), bukan segmen URL, supaya
-     * tautan "ganti bulan" tetap satu halaman yang sama.
-     */
-    public function input()
-    {
-        $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
-        $bulan = (int) ($this->input->get('bulan') ?: date('n'));
-
-        $hasil = $this->rd->ambil_atau_buat_draft('perumahan', $this->my_kabupaten_id, $tahun, $bulan);
-        if (empty($hasil['success'])) {
-            $this->session->set_flashdata('error', $hasil['message']);
-            // Jatuh ke periode berjalan supaya layar tidak kosong tanpa sebab.
-            $hasil = $this->rd->ambil_atau_buat_draft(
-                'perumahan', $this->my_kabupaten_id, (int) date('Y'), (int) date('n'));
-            if (empty($hasil['success'])) {
-                show_error('Draft laporan tidak dapat dibuka.', 500);
-                return;
-            }
-        }
-
-        $laporan_id = (int) $hasil['laporan']['id'];
-        $isi        = $this->rd->isi_laporan($laporan_id, $this->my_kabupaten_id);
-
-        $data = [
-            'title'        => 'Input Capaian Perumahan',
-            'scope_label'  => $this->nama_wilayah(),
-            'laporan'      => $isi['laporan'],
-            'bagian'       => array_column($isi['bagian'], 'ada', 'sumber_dana'),
-            'baris'        => $this->baris_per_sumber($isi['baris']),
-            'belum_dijawab' => $isi['belum_dijawab'],
-            'bnba'         => $isi['bnba'],
-            'diwarisi'     => (int) ($hasil['diwarisi'] ?? 0),
-            'sumber_label' => $this->label_sumber(),
-            'program_label' => $this->label_program(),
-            'sumber_berketerangan' => ['apbn_kl_lain' => 'Kementerian sumber',
-                'csr' => 'Perusahaan penyalur', 'dana_lainnya' => 'Sumber penyalur'],
-            'terkunci'     => $isi['laporan']['status'] === 'terkirim',
-        ];
-
-        $this->render_scoped_admin('admin/rekam/perumahan_input', $data);
-    }
-
-    /** Jawaban gerbang "Ada / Tidak Ada" untuk satu sumber dana. */
-    public function simpan_gerbang()
-    {
-        if ($this->input->method(TRUE) !== 'POST') {
-            show_404();
-            return;
-        }
-        $laporan_id = (int) $this->input->post('laporan_id');
-        $hasil = $this->rd->simpan_bagian(
-            $laporan_id,
-            $this->input->post('sumber_dana', TRUE),
-            $this->input->post('ada') === '1',
-            $this->my_kabupaten_id
-        );
-        $this->pulang($hasil, $laporan_id, $hasil['success'] ?? FALSE
-            ? 'Jawaban sumber dana tersimpan.' : NULL);
-    }
-
-    /** Enam program sekaligus untuk satu sumber dana. */
-    public function simpan_angka()
-    {
-        if ($this->input->method(TRUE) !== 'POST') {
-            show_404();
-            return;
-        }
-        $laporan_id = (int) $this->input->post('laporan_id');
-        $sumber     = $this->input->post('sumber_dana', TRUE);
-
-        // Bentuk payload: program[<kode>][unit|anggaran|keterangan].
-        // Nilai mentah sengaja TIDAK dibersihkan di sini — model yang menolak
-        // negatif, bukan-angka, dan anggaran tanpa unit, supaya aturannya satu
-        // tempat dan jalur lain ikut terlindungi.
-        $baris = [];
-        foreach ((array) $this->input->post('program') as $program => $nilai) {
-            $baris[$program] = [
-                'unit'       => $nilai['unit'] ?? 0,
-                'anggaran'   => $nilai['anggaran'] ?? 0,
-                'keterangan' => $nilai['keterangan'] ?? '',
-            ];
-        }
-
-        $hasil = $this->rd->simpan_baris($laporan_id, $sumber, $baris, $this->my_kabupaten_id);
-        $this->pulang($hasil, $laporan_id, $hasil['success'] ?? FALSE
-            ? 'Angka ' . ($this->label_sumber()[$sumber] ?? $sumber) . ' tersimpan.' : NULL);
-    }
-
-    /**
-     * Rekap satu periode. **Tidak menjumlahkan antar bulan** — angkanya sudah
-     * kumulatif, `SUM()` lintas bulan akan melipatgandakan capaian. Itu jebakan
-     * terbesar modul ini, jadi periodenya selalu disebut eksplisit di layar.
+     * Kumulatifnya dihitung `Rekam_data_model::kumulatif()`, bukan di sini —
+     * penjumlahan antar triwulan hanya boleh terjadi di satu tempat.
      */
     public function rekap()
     {
-        $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
-        $bulan = (int) ($this->input->get('bulan') ?: date('n'));
+        $tahun    = (int) ($this->input->get('tahun') ?: date('Y'));
+        $triwulan = $this->triwulan_dari_get();
+        $baris    = $this->rd->rekap('perumahan', $tahun, $triwulan, $this->my_kabupaten_id);
 
-        $baris = $this->rd->rekap('perumahan', $tahun, $bulan, $this->my_kabupaten_id);
-        $matriks = [];
-        foreach ($baris as $row) {
-            $matriks[$row['sumber_dana']][$row['program']] = $row;
-        }
-
-        $this->render_scoped_admin('admin/rekam/perumahan_rekap', [
+        $this->render_scoped_admin('admin/rekam/perumahan_capaian', [
             'title'         => 'Rekap Pelaporan Perumahan',
             'scope_label'   => $this->nama_wilayah(),
             'tahun'         => $tahun,
-            'bulan'         => $bulan,
-            'matriks'       => $matriks,
-            'ada_data'      => ! empty($baris),
+            'triwulan'      => $triwulan,
+            'laporan'       => NULL,
+            'mode_rekap'    => TRUE,
+            'matriks'       => $this->matriks($baris),
+            'kumulatif'     => $this->matriks($this->rd->kumulatif($tahun, $triwulan, $this->my_kabupaten_id)),
             'sumber_label'  => $this->label_sumber(),
             'program_label' => $this->label_program(),
         ]);
@@ -195,10 +107,188 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
             'domain'      => 'perumahan',
             'base_url'    => 'Rekam_Perumahan',
             'tahun'       => $tahun,
-            'periode'     => $this->rd->riwayat('perumahan', $this->my_kabupaten_id,
-                $tahun, $this->my_kabupaten_id),
+            'periode'     => $this->rd->riwayat('perumahan', $this->my_kabupaten_id, $tahun, $this->my_kabupaten_id),
         ]);
     }
+
+    // ---------------------------------------------------------------- wizard
+
+    /**
+     * Satu pintu render untuk seluruh langkah. Langkah diambil dari baris
+     * laporan, bukan dari URL — URL hanya boleh MEMILIH langkah yang sudah
+     * boleh dibuka, tidak melompatinya.
+     */
+    public function input()
+    {
+        $laporan_id = (int) $this->input->get('laporan');
+
+        // Belum memilih periode → langkah 1. Draft belum lahir di sini.
+        if ($laporan_id < 1) {
+            $this->render_scoped_admin('admin/rekam/perumahan_wizard', [
+                'title'       => 'Input Capaian Perumahan',
+                'scope_label' => $this->nama_wilayah(),
+                'langkah'     => 'periode',
+                'label_langkah' => self::LABEL_LANGKAH,
+                'urutan'      => self::LANGKAH,
+                'tahun'       => (int) ($this->input->get('tahun') ?: date('Y')),
+                'triwulan'    => $this->triwulan_dari_get(),
+                'laporan'     => NULL,
+            ]);
+            return;
+        }
+
+        $isi = $this->rd->isi_laporan($laporan_id, $this->my_kabupaten_id);
+        if ( ! $isi || $isi['laporan']['domain'] !== 'perumahan') {
+            show_404();
+            return;
+        }
+
+        $langkah = (string) ($this->input->get('langkah') ?: $isi['laporan']['current_step']);
+        if ( ! in_array($langkah, self::LANGKAH, TRUE) || $langkah === 'periode') {
+            $langkah = 'program';
+        }
+
+        // Program yang sedang diisi pada langkah `isian`. Default: yang pertama
+        // dicentang, supaya membuka langkah itu tidak pernah menampilkan layar
+        // kosong tanpa sebab.
+        $dipilih = array_keys(array_filter($isi['program']));
+        $program = (string) $this->input->get('program');
+        if ($langkah === 'isian' && ! in_array($program, $dipilih, TRUE)) {
+            $program = $dipilih[0] ?? '';
+        }
+
+        $this->render_scoped_admin('admin/rekam/perumahan_wizard', [
+            'title'         => 'Input Capaian Perumahan',
+            'scope_label'   => $this->nama_wilayah(),
+            'langkah'       => $langkah,
+            'label_langkah' => self::LABEL_LANGKAH,
+            'urutan'        => self::LANGKAH,
+            'laporan'       => $isi['laporan'],
+            'tahun'         => (int) $isi['laporan']['tahun'],
+            'triwulan'      => (int) $isi['laporan']['triwulan'],
+            'program_dipilih' => $dipilih,
+            'program_aktif' => $program,
+            'baris'         => $this->baris_per_program($isi['baris']),
+            'program_kosong' => $isi['program_kosong'],
+            'bnba'          => $isi['bnba'],
+            'terkunci'      => $isi['laporan']['status'] === 'terkirim',
+            'sumber_label'  => $this->label_sumber(),
+            'program_label' => $this->label_program(),
+            'sumber_berketerangan' => ['apbn_kl_lain' => 'Kementerian sumber',
+                'csr' => 'Nama perusahaan', 'dana_lainnya' => 'Sumber penyalur'],
+        ]);
+    }
+
+    /** L1 → buat/temukan draft periode, lalu lanjut ke pemilihan program. */
+    public function mulai()
+    {
+        if ($this->input->method(TRUE) !== 'POST') {
+            show_404();
+            return;
+        }
+        $tahun    = (int) $this->input->post('tahun');
+        $triwulan = (int) $this->input->post('triwulan');
+
+        $hasil = $this->rd->ambil_atau_buat_draft('perumahan', $this->my_kabupaten_id, $tahun, $triwulan);
+        if (empty($hasil['success'])) {
+            $this->session->set_flashdata('error', $hasil['message']);
+            redirect('Rekam_Perumahan/input');
+            return;
+        }
+        $id = (int) $hasil['laporan']['id'];
+        $this->rd->simpan_langkah($id, 'perumahan', 'program', $this->my_kabupaten_id);
+        redirect('Rekam_Perumahan/input?laporan=' . $id . '&langkah=program');
+    }
+
+    /** L2 → simpan enam centang program sekaligus. */
+    public function simpan_program()
+    {
+        if ($this->input->method(TRUE) !== 'POST') {
+            show_404();
+            return;
+        }
+        $laporan_id = (int) $this->input->post('laporan_id');
+        $dipilih    = (array) ($this->input->post('program') ?: []);
+
+        $hasil = $this->rd->simpan_gerbang_program($laporan_id, $dipilih, $this->my_kabupaten_id);
+        if (empty($hasil['success'])) {
+            $this->session->set_flashdata('error', $hasil['message']);
+            redirect('Rekam_Perumahan/input?laporan=' . $laporan_id . '&langkah=program');
+            return;
+        }
+        if ( ! $dipilih) {
+            $this->session->set_flashdata('error', 'Pilih minimal satu program yang akan dilaporkan.');
+            redirect('Rekam_Perumahan/input?laporan=' . $laporan_id . '&langkah=program');
+            return;
+        }
+
+        $pesan = 'Pilihan program tersimpan.';
+        if ( ! empty($hasil['dicabut'])) {
+            $pesan .= ' ' . (int) $hasil['dicabut'] . ' program dicabut beserta angkanya.';
+        }
+        $this->session->set_flashdata('success', $pesan);
+        $this->rd->simpan_langkah($laporan_id, 'perumahan', 'isian', $this->my_kabupaten_id);
+        redirect('Rekam_Perumahan/input?laporan=' . $laporan_id . '&langkah=isian');
+    }
+
+    /** L3 → tambah atau ubah satu sumber dana di dalam satu program. */
+    public function simpan_sumber()
+    {
+        if ($this->input->method(TRUE) !== 'POST') {
+            show_404();
+            return;
+        }
+        $laporan_id = (int) $this->input->post('laporan_id');
+        $program    = (string) $this->input->post('program', TRUE);
+
+        // Nilai mentah SENGAJA tidak dibersihkan di sini — model yang menolak
+        // negatif, bukan-angka, dan anggaran tanpa unit, supaya aturannya satu
+        // tempat dan jalur lain ikut terlindungi.
+        $hasil = $this->rd->simpan_sumber($laporan_id, $program,
+            (string) $this->input->post('sumber_dana', TRUE), [
+                'rencana_unit'       => $this->input->post('rencana_unit'),
+                'rencana_anggaran'   => $this->input->post('rencana_anggaran'),
+                'realisasi_unit'     => $this->input->post('realisasi_unit'),
+                'realisasi_anggaran' => $this->input->post('realisasi_anggaran'),
+                'keterangan'         => $this->input->post('keterangan', TRUE),
+            ], $this->my_kabupaten_id);
+
+        $this->pulang_isian($hasil, $laporan_id, $program, 'Sumber dana tersimpan.');
+    }
+
+    public function hapus_sumber()
+    {
+        if ($this->input->method(TRUE) !== 'POST') {
+            show_404();
+            return;
+        }
+        $laporan_id = (int) $this->input->post('laporan_id');
+        $program    = (string) $this->input->post('program', TRUE);
+
+        $hasil = $this->rd->hapus_sumber($laporan_id, $program,
+            (string) $this->input->post('sumber_dana', TRUE), $this->my_kabupaten_id);
+
+        $this->pulang_isian($hasil, $laporan_id, $program, 'Sumber dana dihapus.');
+    }
+
+    /** Pindah langkah tanpa menyimpan apa pun — tombol Lanjut/Kembali. */
+    public function langkah()
+    {
+        if ($this->input->method(TRUE) !== 'POST') {
+            show_404();
+            return;
+        }
+        $laporan_id = (int) $this->input->post('laporan_id');
+        $tujuan     = (string) $this->input->post('langkah', TRUE);
+        if ( ! in_array($tujuan, self::LANGKAH, TRUE)) {
+            show_404();
+            return;
+        }
+        $this->rd->simpan_langkah($laporan_id, 'perumahan', $tujuan, $this->my_kabupaten_id);
+        redirect('Rekam_Perumahan/input?laporan=' . $laporan_id . '&langkah=' . $tujuan);
+    }
+
+    // ------------------------------------------------------------------ BNBA
 
     /**
      * Unggah BNBA. Menekan tombol tanpa memilih berkas BUKAN error dan BUKAN
@@ -220,7 +310,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
 
         if (empty($_FILES['bnba']['name'])) {
             $this->session->set_flashdata('error', 'Pilih berkas PDF/JPG/PNG terlebih dahulu.');
-            $this->kembali_ke_periode($laporan);
+            $this->kembali_ke_bnba($laporan_id);
             return;
         }
 
@@ -228,7 +318,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         $tersimpan = $this->store_private_upload('bnba', 'rekam_bnba', $laporan_id, $galat);
         if ($tersimpan === FALSE) {
             $this->session->set_flashdata('error', $galat ?: 'Berkas gagal diunggah.');
-            $this->kembali_ke_periode($laporan);
+            $this->kembali_ke_bnba($laporan_id);
             return;
         }
 
@@ -258,7 +348,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
             }
             $this->session->set_flashdata('success', 'Berkas BNBA tersimpan.');
         }
-        $this->kembali_ke_periode($laporan);
+        $this->kembali_ke_bnba($laporan_id);
     }
 
     /** Unduh BNBA milik wilayah sendiri. Scope diperiksa SEBELUM menyentuh disk. */
@@ -281,39 +371,40 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         }
         $laporan_id = (int) $this->input->post('laporan_id');
         $hasil = $this->rd->kirim($laporan_id, $this->get_user_id(), $this->my_kabupaten_id);
-        $this->pulang($hasil, $laporan_id, $hasil['success'] ?? FALSE
-            ? 'Laporan terkirim dan terkunci.' : NULL);
+
+        if (empty($hasil['success'])) {
+            $this->session->set_flashdata('error', $hasil['message']);
+            redirect('Rekam_Perumahan/input?laporan=' . $laporan_id . '&langkah=review');
+            return;
+        }
+        $laporan = $this->rd->laporan($laporan_id, $this->my_kabupaten_id);
+        $this->session->set_flashdata('success', 'Laporan terkirim dan terkunci.');
+        redirect('Rekam_Perumahan?tahun=' . (int) $laporan['tahun'] . '&triwulan=' . (int) $laporan['triwulan']);
     }
 
     // ---------------------------------------------------------------- internal
 
-    /**
-     * Kembali ke layar ISIAN, bukan ke `index()` yang kini tabel baca-saja.
-     * Dipakai alur unggah BNBA, yang formulirnya memang ada di layar isian —
-     * melempar orang ke tabel sesudah gagal mengunggah menyembunyikan pesan
-     * galatnya dari tempat ia bisa mencoba lagi.
-     */
-    private function kembali_ke_periode(array $laporan)
+    private function kembali_ke_bnba($laporan_id)
     {
-        redirect('Rekam_Perumahan/input?tahun=' . (int) $laporan['tahun']
-            . '&bulan=' . (int) $laporan['bulan']);
+        redirect('Rekam_Perumahan/input?laporan=' . (int) $laporan_id . '&langkah=bnba');
     }
 
-    /**
-     * Satu pintu keluar untuk kedua aksi tulis: pesan sukses HANYA dipasang
-     * kalau modelnya benar-benar melaporkan sukses (§19 — tidak boleh ada
-     * penanda sukses sederajat dengan query tulis).
-     */
-    private function pulang($hasil, $laporan_id, $pesan_sukses)
+    private function pulang_isian($hasil, $laporan_id, $program, $pesan_sukses)
     {
         if (empty($hasil['success'])) {
             $this->session->set_flashdata('error', $hasil['message'] ?? 'Perubahan tidak tersimpan.');
         } else {
             $this->session->set_flashdata('success', $pesan_sukses);
         }
-        $laporan = $this->rd->laporan($laporan_id, $this->my_kabupaten_id);
-        redirect('Rekam_Perumahan/input?tahun=' . (int) ($laporan['tahun'] ?? date('Y'))
-            . '&bulan=' . (int) ($laporan['bulan'] ?? date('n')));
+        redirect('Rekam_Perumahan/input?laporan=' . (int) $laporan_id
+            . '&langkah=isian&program=' . rawurlencode((string) $program));
+    }
+
+    /** 1-4, jatuh ke triwulan berjalan bila tidak diberikan atau di luar rentang. */
+    private function triwulan_dari_get()
+    {
+        $tw = (int) $this->input->get('triwulan');
+        return ($tw >= 1 && $tw <= 4) ? $tw : (int) ceil((int) date('n') / 3);
     }
 
     private function nama_wilayah()
@@ -322,8 +413,18 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
             ->get('kabupaten')->row('nama') ?: 'Wilayah Saya';
     }
 
-    /** ['apbd_kabkota' => ['pk_rtlh' => [...]], ...] */
-    private function baris_per_sumber(array $baris)
+    /** [program][sumber_dana] => baris. Dipakai layar isian. */
+    private function baris_per_program(array $baris)
+    {
+        $out = [];
+        foreach ($baris as $row) {
+            $out[$row['program']][$row['sumber_dana']] = $row;
+        }
+        return $out;
+    }
+
+    /** [sumber_dana][program] => baris. Bentuk matriks tabel Capaian. */
+    private function matriks(array $baris)
     {
         $out = [];
         foreach ($baris as $row) {
@@ -332,11 +433,10 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         return $out;
     }
 
-    /** Label verbatim dari form dinas — jangan diperhalus, dinas mengenalinya. */
     private function label_sumber()
     {
         // Urutannya SENGAJA mengikuti Rekam_data_model::SUMBER_PERUMAHAN supaya
-        // urutan di layar input dan di rekap tidak pernah berbeda.
+        // urutan di layar isian dan di rekap tidak pernah berbeda.
         return [
             'apbd_provinsi'   => 'APBD Provinsi',
             'apbd_kabkota'    => 'APBD Kabupaten/Kota',
@@ -358,10 +458,10 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         return [
             'pk_rtlh'     => 'PK RTLH',
             'pb_rtlh'     => 'PB RTLH',
-            'pb_backlog'  => 'PB BACKLOG',
-            'pk_bencana'  => 'PK BENCANA',
-            'pb_bencana'  => 'PB BENCANA',
-            'pb_relokasi' => 'PB RELOKASI',
+            'pb_backlog'  => 'PB Backlog',
+            'pk_bencana'  => 'PK Bencana',
+            'pb_bencana'  => 'PB Bencana',
+            'pb_relokasi' => 'PB Relokasi',
         ];
     }
 }

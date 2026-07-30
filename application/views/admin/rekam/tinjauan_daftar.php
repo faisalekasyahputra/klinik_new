@@ -6,8 +6,8 @@
  * di sini: yang belum dikirim bukan urusan peninjau.
  */
 $e = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
-$nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+$nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
+
 ?>
 
 <div class="space-y-4">
@@ -19,10 +19,10 @@ $nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
         · seluruh kabupaten/kota
       </span>
       <form method="get" action="<?= base_url('Rekam_Tinjauan') ?>" class="flex flex-wrap items-center gap-2">
-        <select name="bulan" aria-label="Bulan" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
-          <option value="">Semua bulan</option>
-          <?php foreach ($nama_bulan as $n => $label): ?>
-            <option value="<?= $n ?>" <?= $bulan === $n ? 'selected' : '' ?>><?= $e($label) ?></option>
+        <select name="triwulan" aria-label="Triwulan" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
+          <option value="">Semua triwulan</option>
+          <?php foreach ($nama_tw as $n => $label): ?>
+            <option value="<?= $n ?>" <?= $triwulan === $n ? 'selected' : '' ?>><?= $e($label) ?></option>
           <?php endforeach; ?>
         </select>
         <select name="tahun" aria-label="Tahun" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
@@ -65,7 +65,7 @@ $nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
             ?>
               <tr>
                 <td class="py-2 pr-3 font-medium text-gray-900 dark:text-white"><?= $e($row['kabupaten'] ?: '—') ?></td>
-                <td class="py-2 pr-3"><?= $e($nama_bulan[(int) $row['bulan']] ?? $row['bulan']) ?> <?= (int) $tahun ?></td>
+                <td class="py-2 pr-3"><?= $e($nama_tw[(int) $row['triwulan']] ?? $row['triwulan']) ?> <?= (int) $tahun ?></td>
                 <td class="py-2 pr-3">
                   <?php if ($row['status'] === 'perlu_perbaikan'): ?>
                     <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-800 dark:bg-red-500/10 dark:text-red-300">Perlu perbaikan</span>

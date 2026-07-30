@@ -12,9 +12,9 @@ $csrf_hash = $this->security->get_csrf_hash();
 
 $laporan_id = (int) $laporan['id'];
 $tahun      = (int) $laporan['tahun'];
-$bulan      = (int) $laporan['bulan'];
-$nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+$triwulan      = (int) $laporan['triwulan'];
+$nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
+
 
 $ada_penanganan = $ringkasan ? (int) $ringkasan['ada_penanganan'] : NULL;
 $ada_progres    = $ringkasan ? (int) $ringkasan['ada_progres'] : NULL;
@@ -36,10 +36,10 @@ foreach ($intervensi as $row) {
         Kabupaten/Kota <b class="text-gray-900 dark:text-white"><?= $e($scope_label) ?></b>
       </span>
       <form method="get" action="<?= base_url('Rekam_Kawasan') ?>" class="flex flex-wrap items-center gap-2">
-        <label class="text-sm text-gray-500 dark:text-brand-muted" for="bulan">Kumulatif s.d.</label>
-        <select id="bulan" name="bulan" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
-          <?php foreach ($nama_bulan as $n => $label): ?>
-            <option value="<?= $n ?>" <?= $n === $bulan ? 'selected' : '' ?>><?= $e($label) ?></option>
+        <label class="text-sm text-gray-500 dark:text-brand-muted" for="triwulan">Triwulan</label>
+        <select id="triwulan" name="triwulan" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
+          <?php foreach ($nama_tw as $n => $label): ?>
+            <option value="<?= $n ?>" <?= $n === $triwulan ? 'selected' : '' ?>><?= $e($label) ?></option>
           <?php endforeach; ?>
         </select>
         <select name="tahun" aria-label="Tahun" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
@@ -159,7 +159,7 @@ foreach ($intervensi as $row) {
               <p class="text-sm text-gray-500 dark:text-brand-muted"><?= $e($row['lokasi_teks']) ?></p>
             </div>
             <?php if ( ! $terkunci): ?>
-              <a href="<?= base_url('Rekam_Kawasan?tahun=' . $tahun . '&bulan=' . $bulan . '&ubah=' . (int) $row['id']) ?>"
+              <a href="<?= base_url('Rekam_Kawasan?tahun=' . $tahun . '&triwulan=' . $triwulan . '&ubah=' . (int) $row['id']) ?>"
                  class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold dark:border-white/10">Ubah</a>
               <form method="post" action="<?= base_url('Rekam_Kawasan/hapus_intervensi') ?>"
                     onsubmit="return confirm('Hapus intervensi ini?')">
@@ -255,7 +255,7 @@ foreach ($intervensi as $row) {
             <?= $sedang_diubah ? 'Simpan perubahan' : 'Tambah intervensi' ?>
           </button>
           <?php if ($sedang_diubah): ?>
-            <a href="<?= base_url('Rekam_Kawasan?tahun=' . $tahun . '&bulan=' . $bulan) ?>"
+            <a href="<?= base_url('Rekam_Kawasan?tahun=' . $tahun . '&triwulan=' . $triwulan) ?>"
                class="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold dark:border-white/10">Batal</a>
           <?php endif; ?>
         </div>

@@ -11,8 +11,8 @@ $csrf_name = $this->security->get_csrf_token_name();
 $csrf_hash = $this->security->get_csrf_hash();
 
 $laporan_id = (int) $laporan['id'];
-$nama_bulan = [1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+$nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
+
 $sudah_ditinjau = $laporan['status'] === 'terkirim' && ! empty($laporan['reviewed_at']);
 $bisa_diputus   = $laporan['status'] === 'terkirim' && ! $sudah_ditinjau;
 ?>
@@ -24,7 +24,7 @@ $bisa_diputus   = $laporan['status'] === 'terkirim' && ! $sudah_ditinjau;
       <a href="<?= base_url('Rekam_Tinjauan') ?>" class="text-sm text-blue-600 hover:underline dark:text-blue-400">&larr; Daftar</a>
       <span class="rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-black/20">
         <b class="text-gray-900 dark:text-white"><?= $e($kabupaten) ?></b>
-        · <?= $e($nama_bulan[(int) $laporan['bulan']] ?? $laporan['bulan']) ?> <?= (int) $laporan['tahun'] ?>
+        · <?= $e($nama_tw[(int) $laporan['triwulan']] ?? $laporan['triwulan']) ?> <?= (int) $laporan['tahun'] ?>
       </span>
       <span class="ml-auto rounded-full px-3 py-1 text-xs font-bold
         <?= $laporan['status'] === 'perlu_perbaikan'
@@ -37,8 +37,8 @@ $bisa_diputus   = $laporan['status'] === 'terkirim' && ! $sudah_ditinjau;
       </span>
     </div>
     <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted">
-      Angka bersifat <b>kumulatif sampai dengan <?= $e($nama_bulan[(int) $laporan['bulan']] ?? '') ?></b>,
-      bukan capaian bulan itu saja.
+      Angka bersifat <b>kumulatif sampai dengan <?= $e($nama_tw[(int) $laporan['triwulan']] ?? '') ?></b>,
+      bukan capaian triwulan itu saja.
     </p>
     <?php if ( ! empty($laporan['catatan_admin'])): ?>
       <p class="mt-3 rounded-r-xl border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-500/10 dark:text-red-200">
