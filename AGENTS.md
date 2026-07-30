@@ -626,7 +626,24 @@ Diverifikasi di browser sungguhan, empat cabang: Draft+catatan mendarat di kartu
 
 ### Kandidat dibersihkan
 
-`Bank_desain.php` (error total, view tidak ada), `Kemitraan.php` & `Kabupaten.php` (halaman kosong/mockup, sudah digantikan `KemitraanPortal`), `Buka_peta.php` + baris load-nya di `Pengembang.php` (nol pemanggil), `Sikaper.php` (API explorer debug yang terbuka publik), route `pengaturan` (menunjuk method yang tidak ada → 404), dan berkas satu-kali-pakai yang masih ter-track di root: `apply_tokens.js`, `image.png`, `image copy.png` — melanggar aturan §3 kita sendiri.
+**Diperiksa ulang & sebagian dieksekusi 30 Jul 2026.** Daftar aslinya sudah
+sebagian usang — bukti diambil dari production dan dari repo, bukan dari daftar
+ini.
+
+**Sudah dibereskan:**
+- `Bank_desain.php` — **500 di production** (view `admin/bank_desain/index.php` tidak pernah ada di git sama sekali), nol rujukan dari view/config. Dihapus.
+- `apply_tokens.js`, `image.png`, `image copy.png` — nol rujukan dari kode. Dihapus. *(Catatan: `grep "image.png"` memberi 15 rujukan palsu — titiknya wildcard regex dan ia mencocokkan `image/png` MIME. Escape titiknya.)*
+
+**Ternyata sudah tidak ada, daftar ini yang ketinggalan:** `Sikaper.php` dan
+`Buka_peta.php` — dua-duanya 404 di production dan berkasnya tidak ada di repo.
+Route `pengaturan` juga sudah 404.
+
+**Belum — keputusan produk, bukan cacat:** `Kemitraan.php` dan `Kabupaten.php`
+masih **200** di production. Keduanya benar-benar yatim (diverifikasi: nol view
+menautkannya; delapan tautan publik semuanya ke `KemitraanPortal`, dan dua yang
+tampak seperti `Kemitraan/` ternyata `Admin_Kemitraan/` yang hidup). Tapi
+keduanya halaman yang MENYALA, bukan rusak — menghapusnya mengubah 200 jadi 404
+untuk siapa pun yang menyimpan tautannya. Tunggu keputusan user.
 
 
 ## 19. Metode Baku Backend Role ↔ Admin
