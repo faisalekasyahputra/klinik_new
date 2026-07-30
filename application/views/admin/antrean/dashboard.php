@@ -144,8 +144,18 @@ $filter_html = ob_get_clean();
         <?= $this->load->view('admin/components/pagination', ['pager' => $pager, 'base_url' => $base_url], TRUE) ?>
     </div>
 
-    <!-- Modal keputusan — satu-satunya bagian yang masih Alpine -->
-    <div x-show="open" class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6" x-cloak>
+    <?php /* Modal keputusan — satu-satunya bagian yang masih Alpine.
+              `style="display:none"` WAJIB, dan bukan pengganti x-cloak melainkan
+              pasangannya. x-cloak hanya berlaku selama atributnya masih ada;
+              begitu Alpine melepasnya lalu `x-data` gagal dievaluasi, `x-show`
+              tidak pernah mengambil alih dan modal tertinggal TERLIHAT —
+              menutupi seluruh halaman dengan formulir kosong yang tidak bisa
+              ditutup. Terjadi nyata di layar ini.
+              Dengan display:none inline, kegagalan Alpine berarti modal tetap
+              tersembunyi (gagal-tertutup); saat Alpine sehat, `x-show` menimpa
+              gaya inline itu seperti biasa. */ ?>
+    <div x-show="open" x-cloak style="display:none"
+         class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
         <div x-show="open" x-transition.opacity class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="close()"></div>
         <div x-show="open" x-transition class="relative w-full max-w-lg bg-white dark:bg-brand-card border border-gray-200 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="px-4 py-3 border-b border-gray-200 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5">

@@ -147,6 +147,20 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
                 'status_triwulan' => $status,
                 'laporan'     => NULL,
                 'terkunci'    => FALSE,
+                // Langkah 1 tidak memakai keduanya, tetapi view MEMBUATNYA jadi
+                // closure `use (...)` di awal berkas — dan `use` dievaluasi saat
+                // closure dibuat, bukan saat dipanggil. Tanpa ini PHP melempar
+                // dua Warning "Undefined variable" di setiap pembukaan wizard,
+                // padahal tidak ada yang salah dengan alurnya.
+                'sumber_label' => $this->label_sumber(),
+                'program_label' => $this->label_program(),
+                'sumber_berketerangan' => ['apbn_kl_lain' => 'Kementerian sumber',
+                    'csr' => 'Nama perusahaan', 'dana_lainnya' => 'Sumber penyalur'],
+                'program_dipilih' => [],
+                'program_aktif' => '',
+                'baris' => [],
+                'program_kosong' => [],
+                'bnba' => NULL,
             ]);
             return;
         }

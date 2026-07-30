@@ -107,50 +107,66 @@ $tabel = function ($judul, $sisi, array $data) use ($e, $rp, $sumber_label, $pro
 
 <div class="space-y-4">
 
+  <?php /* Tata letak kepala: JUDUL kiri, KENDALI kanan, keterangan di bawah.
+            Versi sebelumnya menumpuk identitas wilayah, badge status, label
+            periode, dua dropdown, dan tombol Tampilkan dalam SATU baris — enam
+            benda dengan enam peran berbeda, dan mata tidak punya titik masuk.
+            Tombol Input Capaian pun terdampar di bawah paragraf panjang, jauh
+            dari kendali lain, padahal ia tindakan utama halaman ini. */ ?>
   <section class="<?= $kotak ?>">
-    <div class="flex flex-wrap items-center gap-3">
-      <span class="rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-black/20">
-        Kabupaten/Kota <b class="text-gray-900 dark:text-white"><?= $e($scope_label) ?></b>
-      </span>
-      <?php if ($laporan): ?>
-        <span class="rounded-full px-3 py-1 text-xs font-bold <?= $warna_status[$laporan['status']] ?? '' ?>">
-          <?= $e($label_status[$laporan['status']] ?? $laporan['status']) ?>
-        </span>
-      <?php endif; ?>
-      <form method="get" action="<?= base_url($mode_rekap ? 'Rekam_Perumahan/rekap' : 'Rekam_Perumahan') ?>"
-            class="flex flex-wrap items-center gap-2">
-        <label class="text-sm text-gray-500 dark:text-brand-muted" for="triwulan">Periode</label>
-        <select id="triwulan" name="triwulan" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
-          <?php foreach ($nama_tw as $n => $label): ?>
-            <option value="<?= $n ?>" <?= $n === (int) $triwulan ? 'selected' : '' ?>><?= $e($label) ?></option>
-          <?php endforeach; ?>
-        </select>
-        <select name="tahun" aria-label="Tahun" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
-          <?php for ($t = (int) date('Y') + 1; $t >= (int) date('Y') - 2; $t--): ?>
-            <option value="<?= $t ?>" <?= $t === (int) $tahun ? 'selected' : '' ?>><?= $t ?></option>
-          <?php endfor; ?>
-        </select>
-        <button class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">Tampilkan</button>
-      </form>
+    <div class="flex flex-wrap items-start justify-between gap-4">
+
+      <div class="min-w-0">
+        <h2 class="text-lg font-black text-gray-900 dark:text-white">
+          Capaian <?= $e($nama_tw[(int) $triwulan] ?? $triwulan) ?> <?= (int) $tahun ?>
+        </h2>
+        <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-brand-muted">
+          <span><?= $e($scope_label) ?></span>
+          <?php if ($laporan): ?>
+            <span class="rounded-full px-2.5 py-0.5 text-xs font-bold <?= $warna_status[$laporan['status']] ?? '' ?>">
+              <?= $e($label_status[$laporan['status']] ?? $laporan['status']) ?>
+            </span>
+          <?php endif; ?>
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-2">
+        <form method="get" action="<?= base_url($mode_rekap ? 'Rekam_Perumahan/rekap' : 'Rekam_Perumahan') ?>"
+              class="flex items-center gap-2">
+          <label class="sr-only" for="triwulan">Triwulan</label>
+          <select id="triwulan" name="triwulan" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
+            <?php foreach ($nama_tw as $n => $label): ?>
+              <option value="<?= $n ?>" <?= $n === (int) $triwulan ? 'selected' : '' ?>><?= $e($label) ?></option>
+            <?php endforeach; ?>
+          </select>
+          <select name="tahun" aria-label="Tahun" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
+            <?php for ($t = (int) date('Y') + 1; $t >= (int) date('Y') - 2; $t--): ?>
+              <option value="<?= $t ?>" <?= $t === (int) $tahun ? 'selected' : '' ?>><?= $t ?></option>
+            <?php endfor; ?>
+          </select>
+          <button class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10 dark:text-brand-muted dark:hover:bg-white/5">Tampilkan</button>
+        </form>
+
+        <?php if ( ! $mode_rekap): ?>
+          <a href="<?= base_url('Rekam_Perumahan/input' . ($laporan ? '?laporan=' . (int) $laporan['id'] : '')) ?>"
+             class="<?= $tombol ?>">Input Capaian</a>
+        <?php endif; ?>
+      </div>
     </div>
 
-    <p class="mt-4 text-sm font-bold text-gray-900 dark:text-white">
-      Capaian <?= $e($nama_tw[(int) $triwulan] ?? $triwulan) ?> <?= (int) $tahun ?>
-    </p>
-    <p class="text-xs text-gray-500 dark:text-brand-muted">
+    <?php /* Keterangan dipecah jadi dua kalimat pendek. Yang paling gampang
+              salah dibaca — "per triwulan, bukan kumulatif" — berdiri sendiri
+              supaya tidak tenggelam di tengah paragraf. */ ?>
+    <p class="mt-3 border-t border-gray-100 pt-3 text-xs leading-relaxed text-gray-500 dark:border-white/5 dark:text-brand-muted">
+      Angkanya <b>per triwulan</b>, bukan kumulatif sejak Januari — kumulatif s.d.
+      triwulan ini ada di tabel paling bawah.
       <?php if ($mode_rekap): ?>
-        Dari laporan berstatus <b>terkirim</b> pada triwulan ini saja.
+        Hanya laporan berstatus <b>terkirim</b> yang dihitung.
       <?php else: ?>
-        Angka wilayahmu untuk triwulan ini <b>apa adanya</b>, termasuk yang masih draft —
-        jadi belum tentu sudah dilaporkan ke provinsi; status di atas yang menentukan.
+        Yang ditampilkan angka wilayahmu <b>apa adanya</b>, termasuk draft; status di
+        atas yang menentukan apakah sudah dilaporkan ke provinsi.
       <?php endif; ?>
-      Angkanya <b>per triwulan</b>, bukan kumulatif. Kumulatif s.d. triwulan ini ada di bawah.
     </p>
-
-    <?php if ( ! $mode_rekap): ?>
-      <a href="<?= base_url('Rekam_Perumahan/input' . ($laporan ? '?laporan=' . (int) $laporan['id'] : '')) ?>"
-         class="mt-4 <?= $tombol ?>">Input Capaian</a>
-    <?php endif; ?>
   </section>
 
   <?php if ( ! $matriks): ?>

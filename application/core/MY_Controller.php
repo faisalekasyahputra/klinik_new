@@ -597,6 +597,13 @@ class MY_Controller extends CI_Controller {
             // Menu ikut dikirim tiap pindah halaman, dibungkus <template> supaya
             // tidak ikut tampil di dalam konten. Loader menukarnya ke #sidebar-nav.
             //
+            // WAJIB `append_output()`, BUKAN `echo`. `load->view()` menumpuk ke
+            // buffer internal CI yang baru dikeluarkan di akhir, sedangkan `echo`
+            // menulis langsung ke buffer PHP — hasilnya template mendarat di
+            // posisi 0, SEBELUM kontennya. Loader memotong balasan di penanda
+            // template, jadi konten yang tersisa nol byte dan seluruh halaman
+            // admin tampil kosong saat dibuka lewat navigasi progresif.
+            //
             // Alasannya bukan kerapian: sorotan aktif dan sub-menu diputuskan
             // dashboard_menu() (kecocokan URL terpanjang + cabang terbuka).
             // Sebelum ini loader menyalin sebagian aturan itu di JS — mencocokkan
@@ -605,9 +612,9 @@ class MY_Controller extends CI_Controller {
             // dilepas (dua item menyala bersamaan), dan sub-menu cabang lama tetap
             // terbuka di halaman yang tidak ada hubungannya. Mengirim menu jadi
             // yang termurah: satu aturan, satu tempat.
-            echo '<template id="sidebar-nav-baru">'
+            $this->output->append_output('<template id="sidebar-nav-baru">'
                 . $this->load->view('admin/layouts/sidebar_nav', $data, TRUE)
-                . '</template>';
+                . '</template>');
             return;
         }
         $data['dashboard_menu'] = $this->dashboard_menu();
