@@ -11,8 +11,6 @@
 (function () {
     'use strict';
 
-    var PATH_DASHBOARD = /(Admin|akun|Pengaturan|User_Profile)/;
-
     function reExecuteScripts(wrapper) {
         var scripts = Array.prototype.slice.call(wrapper.querySelectorAll('script'));
         return scripts.reduce(function (chain, oldScript) {
@@ -135,9 +133,24 @@
         var href = link.getAttribute('href') || '';
         if (href === '' || href.charAt(0) === '#' || /^(javascript:|mailto:|tel:)/i.test(href)) return;
         if (link.hostname !== window.location.hostname) return;
-        // Hanya controller dashboard; logout/portal biar navigasi penuh.
+        // Logout dan alur auth SELALU navigasi penuh: keduanya mengganti sesi,
+        // dan menukar konten sambil sesi berpindah meninggalkan shell milik
+        // peran lama.
         if (/Auth\//.test(link.pathname)) return;
-        if (!PATH_DASHBOARD.test(link.pathname)) return;
+
+        // SEMUA tautan internal lain lewat jalur progresif. Kelayakannya
+        // diputuskan dari RESPONS, bukan dari nama jalurnya — loadPage() sudah
+        // menjatuhkan diri ke navigasi penuh pada redirect, pada balasan bukan
+        // text/html, dan pada dokumen utuh.
+        //
+        // Sebelumnya di sini ada allowlist /(Admin|akun|Pengaturan|User_Profile)/.
+        // Seluruh modul Rekam Data tidak memuat satu pun kata itu, jadi
+        // Rekam_Data, Rekam_Perumahan, Rekam_Kawasan, dan Rekam_Tinjauan
+        // diam-diam memuat ulang seluruh halaman. Ini kelas kesalahan yang sama
+        // dengan daftar jalur di layouts/footer.php yang diperbaiki lebih dulu
+        // hari ini — daftar yang menyebut nama satu per satu memang selalu bocor
+        // pada nama yang belum ada saat ia ditulis. Halaman baru kini otomatis
+        // ikut, tanpa perlu diingat siapa pun.
         // S2 — opt-out dihormati SEBELUM fetch. Tautan yang sengaja ditandai
         // tidak boleh difetch dulu lalu baru jatuh ke navigasi penuh: itu dua
         // GET untuk satu klik, dan endpoint yang menghitung kunjungan jadi
