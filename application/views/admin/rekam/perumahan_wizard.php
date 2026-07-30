@@ -131,6 +131,22 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
       </p>
     <?php endif; ?>
 
+    <?php if ($laporan && $laporan['status'] === 'perlu_perbaikan' && ! empty($laporan['catatan_admin'])): ?>
+      <?php /* Catatan peninjau dulu HANYA dirender di L5 (Review & Kirim).
+                Alasan orang ini membuka wizard justru karena laporannya
+                dikembalikan — dan ia mendarat di langkah yang tersimpan di
+                `current_step`, yang belum tentu L5. Jadi ia melihat formulir
+                terbuka tanpa satu pun keterangan kenapa, dan baru menemukan
+                alasannya kalau kebetulan mengklik sampai langkah terakhir.
+                Alasan yang sama persis dengan spanduk terkunci di atas: kalau
+                sesuatu mengubah apa yang boleh/harus dilakukan di SETIAP
+                langkah, ia harus terlihat di setiap langkah. */ ?>
+      <p class="mt-4 rounded-xl border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-500/10 dark:text-red-200">
+        <b>Dikembalikan untuk diperbaiki.</b> Catatan peninjau:
+        <?= $e($laporan['catatan_admin']) ?>
+      </p>
+    <?php endif; ?>
+
     <ol class="mt-4 flex flex-wrap gap-2">
       <?php foreach ($urutan as $i => $kode): ?>
         <?php $lewat = $aktif !== FALSE && $i < $aktif; ?>
@@ -411,11 +427,10 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
     <section class="<?= $kotak ?>">
       <h2 class="text-lg font-black text-gray-900 dark:text-white">Review &amp; Kirim</h2>
 
-      <?php if ($laporan && $laporan['status'] === 'perlu_perbaikan' && ! empty($laporan['catatan_admin'])): ?>
-        <p class="mt-3 rounded-xl border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-500/10 dark:text-red-200">
-          <b>Catatan peninjau:</b> <?= $e($laporan['catatan_admin']) ?>
-        </p>
-      <?php endif; ?>
+      <?php // Catatan peninjau DIPINDAH ke tingkat halaman (spanduk di atas
+            // stepper) supaya terbaca di setiap langkah. Sengaja tidak
+            // digandakan di sini: dua salinan pesan yang sama pada satu layar
+            // membuat pembacanya mengira ada dua catatan berbeda. ?>
 
       <ul class="mt-4 divide-y divide-gray-100 dark:divide-white/5">
         <?php foreach ($program_dipilih as $kode): ?>
