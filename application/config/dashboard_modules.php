@@ -62,14 +62,28 @@ $config['dashboard_module_groups'] = ['Utama', 'Layanan', 'Manajemen', 'Akun'];
 $config['dashboard_modules'] = [
 
     // ===== Milik semua role login (Pengaturan.php) =====
-    // admin sengaja TIDAK diikutkan: superadmin bukan pemohon, punya 'overview'
-    // sendiri. admin_kabkota/admin_bidang tetap ikut — mereka juga user biasa
-    // yang bisa punya pengajuan pribadi, dan sidebar lama mereka memang cuma
-    // 1 item scoped, jadi menu Akun ini murni tambahan yang benar.
+    // Halaman ini mendaftar pengajuan PRIBADI: SRP2, antrean perumahan, aduan,
+    // KKN/magang — hal-hal yang dikirim seseorang untuk dirinya sendiri.
+    //
+    // `admin` (superadmin) sejak awal tidak diikutkan: ia bukan pemohon.
+    // `admin_kabkota` dan `admin_bidang` DICABUT 30 Jul 2026 dengan alasan yang
+    // sama, setelah user bertanya "admin kota pengajuan apa?" sambil melihat
+    // layar yang berbunyi "Belum ada pengajuan yang tercatat."
+    //
+    // Alasan lama — "mereka juga user biasa yang bisa punya pengajuan pribadi" —
+    // benar di atas kertas tetapi tidak pernah terjadi: akun dinas tidak mengirim
+    // pengajuan RTLH untuk dirinya sendiri. Hasilnya menu yang SELALU kosong.
+    // Menu yang selalu kosong bukan netral: ia membuat orang bertanya-tanya apa
+    // yang belum mereka isi.
+    //
+    // Ini hanya menyembunyikan MENU. /akun tetap dapat dibuka langsung dan tetap
+    // berfungsi — registry mengatur tampilan, bukan otorisasi (lihat peringatan
+    // di kepala berkas). Kalau kelak ada akun dinas yang memang mengirim
+    // pengajuan pribadi, kembalikan role-nya ke sini, jangan longgarkan controller.
     'status_pengajuan' => [
         'label' => 'Status Pengajuan', 'icon' => 'ph-list-checks',
         'url'   => 'akun', 'group' => 'Akun', 'order' => 10,
-        'roles' => ['warga', 'pengembang', 'mahasiswa', 'admin_kabkota', 'admin_bidang'],
+        'roles' => ['warga', 'pengembang', 'mahasiswa'],
         'scope' => null,
     ],
     // admin ikut di sini (beda dari status_pengajuan) sejak User_Profile
