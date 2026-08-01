@@ -48,6 +48,13 @@ class Migrate extends CI_Controller {
     public function status()
     {
         $tables = $this->db->list_tables();
+        // DATABASE MANA yang sedang dibaca — disebut lebih dulu, sebelum angka
+        // apa pun. Tanpa baris ini keluaran lokal dan production tidak bisa
+        // dibedakan sama sekali, dan dua kali sudah keluaran lokal dikira
+        // pembacaan server. AGENTS.md §0a bahkan mensyaratkan angka skema hanya
+        // boleh ditulis ulang setelah DIBACA DARI SERVER — syarat yang mustahil
+        // dipenuhi kalau keluarannya sendiri tidak menyebut ia dari mana.
+        echo 'DB: '.$this->db->hostname.' / '.$this->db->database."\n";
         echo 'Total tabel: '.count($tables)."\n";
         echo 'migrations: '.(in_array('migrations', $tables) ? 'ADA' : 'TIDAK ADA')."\n";
 
