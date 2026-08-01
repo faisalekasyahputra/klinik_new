@@ -65,6 +65,14 @@ class Migrate extends CI_Controller {
             'sf_penilaian_perumahan',
             'sf_berkas_penilaian',
             'sf_rekomendasi_penilaian',
+            // Migrasi 026-031. Ditambahkan karena "Versi migrasi tercatat"
+            // TIDAK membuktikan skemanya mendarat: CI menandai migrasi berhasil
+            // tanpa memeriksa nilai balik query-nya, jadi dengan db_debug mati
+            // di production sebuah CREATE TABLE yang gagal tetap tercatat
+            // sukses. Daftar ini yang menjawabnya, bukan nomor versinya.
+            'kkn_magang_bidang',
+            'kkn_magang_slot',
+            'kkn_magang_pendaftaran',
         ] as $t) {
             echo $t.': '.(in_array($t, $tables) ? 'ADA' : 'TIDAK ADA')."\n";
         }
@@ -73,6 +81,24 @@ class Migrate extends CI_Controller {
             echo 'srp2_registrations.certified_developer_id: '.
                 ($this->db->field_exists('certified_developer_id', 'srp2_registrations') ? 'ADA' : 'TIDAK ADA')."\n";
         }
+
+        // Kolom, bukan cuma tabel: migrasi 029 dan 031 menambah kolom pada
+        // tabel yang SUDAH ada, jadi keberadaan tabelnya tidak membuktikan
+        // apa-apa soal keduanya.
+        if (in_array('kkn_magang_pendaftaran', $tables)) {
+            foreach (['bidang_kode', 'reviewed_by_bidang', 'catatan_bidang', 'file_surat_balasan'] as $k) {
+                echo 'kkn_magang_pendaftaran.'.$k.': '.
+                    ($this->db->field_exists($k, 'kkn_magang_pendaftaran') ? 'ADA' : 'TIDAK ADA')."\n";
+            }
+        }
+        if (in_array('kkn_magang_slot', $tables)) {
+            echo 'kkn_magang_slot.bidang_kode: '.
+                ($this->db->field_exists('bidang_kode', 'kkn_magang_slot') ? 'ADA' : 'TIDAK ADA')."\n";
+        }
+        // Divisi HARUS sudah lenyap — migrasi 031 membuangnya. Kalau masih ada,
+        // migrasi itu tidak benar-benar tuntas meski versinya sudah 031.
+        echo 'kkn_magang_divisi (harus TIDAK ADA): '.
+            (in_array('kkn_magang_divisi', $tables) ? 'MASIH ADA — migrasi 031 belum tuntas' : 'sudah lenyap')."\n";
     }
 
     /**
