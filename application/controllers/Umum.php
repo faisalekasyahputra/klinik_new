@@ -100,6 +100,11 @@ class Umum extends MY_Controller {
 		// Prefill nama/email kalau user sedang login — kosong untuk tamu.
 		$datacontent['nama_default']  = $this->session->userdata('name') ?: '';
 		$datacontent['email_default'] = $this->session->userdata('email') ?: '';
+		// Pilihan bidang datang dari tabel, bukan dari array yang ditulis ulang
+		// di dalam view — daftar yang sama pernah hidup di empat tempat dan
+		// ketiganya sudah menyimpang dari struktur dinas.
+		$this->load->model('Aduan_model');
+		$datacontent['daftar_bidang'] = $this->Aduan_model->daftar_bidang();
 		$this->render('pages/umum/aduan', $datacontent);
 	}
 
@@ -115,8 +120,14 @@ class Umum extends MY_Controller {
 		$this->form_validation->set_rules('email', 'Email', 'required|valid_email|max_length[100]');
 		$this->form_validation->set_rules('judul', 'Judul', 'required|trim|max_length[150]');
 		$this->form_validation->set_rules('pesan', 'Pesan', 'required|trim|max_length[2000]');
-		// Wajib salah satu pilihan yang memang ada di dropdown (bukan nilai bebas).
-		$this->form_validation->set_rules('bidang', 'Bidang Tujuan', 'required|in_list[perumahan,kawasan,pertanahan,pengembang,umum]');
+		// Daftar bidang DIBACA DARI TABEL, bukan dipatok di sini. Versi lama
+		// menuliskannya sebagai literal in_list[...] — salinan ketiga dari daftar
+		// yang sama (tabel `bidang`, dropdown formulir, peta label di model) — dan
+		// ketiganya sudah menyimpang dari struktur dinas yang sebenarnya: menyebut
+		// "pengembang" dan "umum" sebagai bidang, padahal keduanya bukan.
+		// Daftar yang ditulis empat kali adalah daftar yang pasti berselisih.
+		$kode_bidang = implode(',', array_column($this->Aduan_model->daftar_bidang(), 'kode'));
+		$this->form_validation->set_rules('bidang', 'Bidang Tujuan', 'required|in_list[' . $kode_bidang . ']');
 
 		if ($this->form_validation->run() === FALSE) {
 			$this->session->set_flashdata('error', validation_errors('<li>', '</li>'));

@@ -28,6 +28,9 @@ define('MHS_PASSWORD', getenv('UJI_MHS_PASSWORD') ?: 'password');
 define('ADM_EMAIL', getenv('UJI_ADM_EMAIL') ?: 'admin@klinikpkp.jatengprov.go.id');
 define('ADM_PASSWORD', getenv('UJI_ADM_PASSWORD') ?: 'password');
 define('SENTINEL', 'UJI-KEMITRAAN-' . date('His'));
+// Formulir magang mengirim KODE bidang sejak migrasi 031, bukan nama divisi.
+define('BIDANG_A', getenv('UJI_BIDANG_A') ?: 'perumahan');
+define('BIDANG_B', getenv('UJI_BIDANG_B') ?: 'kawasan');
 
 $GLOBALS['t'] = 0; $GLOBALS['g'] = 0;
 
@@ -190,23 +193,22 @@ cek(strpos($form_magang['body'], 'name="file_proposal"') !== FALSE, 'Magang mena
 cek(strpos($form_kkn['body'], 'name="file_proposal"') === FALSE, 'KKN TIDAK menawarkan unggahan proposal');
 cek(strpos($form_magang['body'], 'name="file_surat_pengantar"') !== FALSE, 'Surat pengantar tetap ada');
 
-// Sejak migrasi 20260701000026, pendaftaran MAGANG tunduk pada slot: divisi
-// harus terdaftar & aktif, dan setiap bulan dalam periodenya harus terbuka.
-// Skrip ini memakai periode 2099 yang tidak punya slot sama sekali, jadi
-// slotnya dibuka di sini dan ditutup lagi di bersihkan(). Dibuka untuk KEDUA
-// divisi supaya uji "tanpa NIM" tetap menguji NIM — bukan lulus karena kebetulan
-// tertahan penjagaan slot lebih dulu. KKN tidak terpengaruh: di sana field yang
-// sama berarti tema kegiatan, bukan unit kerja.
-foreach (['Sekretariat', 'Infrastruktur dan Teknologi Digital'] as $nama_divisi) {
-    $d = baris("SELECT id FROM kkn_magang_divisi WHERE nama = ?", [$nama_divisi]);
-    if ( ! $d) { continue; }
-    // tgl_mulai/tgl_selesai WAJIB sejak migrasi 20260701000028 — sebulan penuh
-    // dinyatakan eksplisit, bukan lewat NULL. LAST_DAY() mengurus panjang bulan
-    // supaya skrip ini tidak perlu tahu Februari 2099 berapa hari.
+// Sejak migrasi 20260701000031, pendaftaran MAGANG tunduk pada slot per BIDANG:
+// bidangnya harus menerima, dan setiap bulan dalam periodenya harus terbuka.
+// Skrip ini memakai periode 2099 yang tidak punya slot sama sekali, jadi slotnya
+// dibuka di sini dan ditutup lagi di bersihkan(). Dibuka untuk KEDUA bidang yang
+// dipakai di bawah supaya uji "tanpa NIM" tetap menguji NIM — bukan lulus karena
+// kebetulan tertahan penjagaan slot lebih dulu. KKN tidak terpengaruh: di sana
+// field yang sama berarti tema kegiatan, bukan unit kerja.
+//
+// LAST_DAY() mengurus panjang bulan supaya skrip ini tidak perlu tahu Februari
+// 2099 berapa hari.
+foreach ([BIDANG_A, BIDANG_B] as $kode) {
     foreach ([1, 2] as $bulan) {
-        $awal = sprintf('2099-%02d-01', $bulan);
-        $db->query("INSERT IGNORE INTO kkn_magang_slot (divisi_id, tahun, bulan, tgl_mulai, tgl_selesai) VALUES ("
-            . (int) $d['id'] . ", 2099, " . (int) $bulan . ", '" . $awal . "', LAST_DAY('" . $awal . "'))");
+        $awal_bulan = sprintf('2099-%02d-01', $bulan);
+        $db->query("INSERT IGNORE INTO kkn_magang_slot (bidang_kode, tahun, bulan, tgl_mulai, tgl_selesai) VALUES ('"
+            . $db->real_escape_string($kode) . "', 2099, " . (int) $bulan . ", '" . $awal_bulan
+            . "', LAST_DAY('" . $awal_bulan . "'))");
     }
 }
 
@@ -216,7 +218,7 @@ $tanpa_nim = http('KemitraanPortal/simpan', [
     'nim' => '', 'tempat_lahir' => 'Semarang', 'tanggal_lahir' => '2003-01-01',
     'semester' => '6', 'jurusan' => 'Teknik Sipil',
     'instansi_asal' => SENTINEL . '-TOLAK', 'no_hp' => '081234567890',
-    'divisi_atau_tema' => 'Sekretariat', 'periode_mulai' => '2099-01-01', 'periode_selesai' => '2099-02-01',
+    'divisi_atau_tema' => BIDANG_A, 'periode_mulai' => '2099-01-01', 'periode_selesai' => '2099-02-01',
 ]);
 cek($tanpa_nim['code'] === 200,
     'POST tanpa NIM tidak meledak');
@@ -231,7 +233,7 @@ http('KemitraanPortal/simpan', [
     'nim' => 'H1A020099', 'tempat_lahir' => 'Purwokerto', 'tanggal_lahir' => '2003-05-17',
     'semester' => '6', 'jurusan' => 'Perencanaan Wilayah',
     'instansi_asal' => SENTINEL . '-MAGANG', 'no_hp' => '081234567890',
-    'divisi_atau_tema' => 'Infrastruktur dan Teknologi Digital',
+    'divisi_atau_tema' => BIDANG_B,
     'periode_mulai' => '2099-01-01', 'periode_selesai' => '2099-02-01',
     'file_surat_pengantar' => new CURLFile($p1, 'application/pdf', 'surat.pdf'),
     'file_proposal'        => new CURLFile($p2, 'application/pdf', 'proposal.pdf'),

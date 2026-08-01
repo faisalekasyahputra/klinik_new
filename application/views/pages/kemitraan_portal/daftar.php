@@ -95,7 +95,7 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
         </div>
 
         <div>
-            <label for="kd-divisi" class="<?= $label ?>"><?= $jenis === 'kkn' ? 'Tema Kegiatan' : 'Divisi yang Dituju' ?></label>
+            <label for="kd-divisi" class="<?= $label ?>"><?= $jenis === 'kkn' ? 'Tema Kegiatan' : 'Bidang yang Dituju' ?></label>
             <?php if ($jenis === 'magang'): ?>
                 <!-- Divisi dipilih dari daftar, bukan diketik. Sebelumnya ini
                      teks bebas, jadi pendaftar bisa menulis divisi yang di
@@ -103,9 +103,9 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
                      Penjagaan yang sebenarnya tetap di KemitraanPortal::simpan();
                      select ini hanya supaya orang tidak menebak-nebak. -->
                 <select id="kd-divisi" name="divisi_atau_tema" x-model="divisi_atau_tema" required class="<?= $isian ?>">
-                    <option value="">— Pilih divisi —</option>
+                    <option value="">— Pilih bidang —</option>
                     <?php foreach ($divisi as $d): ?>
-                        <option value="<?= html_escape($d->nama) ?>"><?= html_escape($d->nama) ?></option>
+                        <option value="<?= html_escape($d->kode) ?>"><?= html_escape($d->nama) ?></option>
                     <?php endforeach; ?>
                 </select>
                 <p class="<?= $petunjuk ?>">

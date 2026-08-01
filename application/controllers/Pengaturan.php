@@ -126,13 +126,32 @@ class Pengaturan extends MY_Controller {
 
         if ($role === 'mahasiswa') {
             foreach ($this->db->where('user_id', $user_id)->order_by('id', 'DESC')->get('kkn_magang_pendaftaran')->result() as $p) {
-                $status_map = ['Diajukan' => ['Diajukan', 'pending'], 'Diterima' => ['Diterima', 'ok'], 'Ditolak' => ['Ditolak', 'reject']];
+                $status_map = [
+                    'Diajukan' => ['Menunggu Sekretariat', 'pending'],
+                    'Ditinjau Bidang' => ['Ditinjau Bidang', 'process'],
+                    'Diterima' => ['Diterima', 'ok'],
+                    'Ditolak' => ['Ditolak', 'reject'], 'Dibatalkan' => ['Dibatalkan', 'reject'],
+                ];
                 $status = $status_map[$p->status] ?? [$p->status, 'pending'];
                 $items[] = [
                     'jenis' => strtoupper($p->jenis) . ' — ' . $p->instansi_asal, 'icon' => 'ph-graduation-cap',
                     'judul' => $p->divisi_atau_tema,
                     'status_label' => $status[0], 'status_kelas' => $status[1],
-                    'created_at' => $p->created_at, 'aksi_url' => null,
+                    'created_at' => $p->created_at,
+                    // Dulu null, jadi barisnya buntu: mahasiswa melihat statusnya
+                    // berubah tanpa pernah bisa membuka apa yang ia kirim, apalagi
+                    // memperbaikinya. View-nya sudah siap merender tombol ini.
+                    'aksi_url'   => 'KemitraanPortal/pendaftaran/' . (int) $p->id,
+                    'aksi_label' => $p->status === 'Diajukan' ? 'Lihat / Ubah' : 'Lihat',
+                    // Cabang mahasiswa satu-satunya yang dulu TIDAK mengirim ini,
+                    // padahal antrean, aduan, dan SRP2 semuanya mengirimnya — dan
+                    // komentar di berkas ini sendiri (§ aduan) sudah menyebut
+                    // alasannya: pelapor harus tahu ALASAN statusnya berubah,
+                    // bukan cuma statusnya. Akibatnya admin menolak pendaftaran
+                    // KKN, mengetik alasannya, dan mahasiswanya cuma melihat
+                    // "Ditolak" — catatannya tersimpan di DB lalu tidak
+                    // ditampilkan ke siapa pun. View-nya sudah siap merender.
+                    'catatan_admin' => $p->catatan_admin,
                 ];
             }
         }

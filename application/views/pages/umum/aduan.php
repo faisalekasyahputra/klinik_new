@@ -17,13 +17,23 @@
               bidang: '',
               bidangLabel: 'Pilih Bidang Tujuan',
               bidangOpen: false,
-              opsiBidang: [
-                  { value: 'perumahan',  label: 'Bidang Perumahan' },
-                  { value: 'kawasan',    label: 'Bidang Kawasan Permukiman' },
-                  { value: 'pertanahan', label: 'Bidang Pertanahan' },
-                  { value: 'pengembang', label: 'Bidang Pengembang' },
-                  { value: 'umum',       label: 'Umum / Lainnya' },
-              ],
+              <?php
+              /**
+               * Pilihan bidang datang dari TABEL, bukan ditulis ulang di sini.
+               * Versi lama memuat lima entri hardcode yang menyebut "pengembang"
+               * dan "umum" sebagai bidang — keduanya bukan, menurut dinas
+               * sendiri (konfirmasi 1 Agt 2026). Selama daftar ini punya salinan,
+               * salinannya akan menyimpang, dan yang salah justru yang dilihat
+               * pelapor.
+               *
+               * JSON_HEX_* mengurus tanda kutip dan kurung sudut supaya nama
+               * bidang tidak bisa memutus blok <script> ini.
+               */
+              ?>
+              opsiBidang: <?= json_encode(
+                  array_map(static function ($b) { return ['value' => $b->kode, 'label' => $b->nama]; }, $daftar_bidang),
+                  JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+              ) ?>,
               get isValid() {
                   return this.nama.trim() && this.email.trim() && this.judul.trim() && this.pesan.trim() && this.bidang;
               }

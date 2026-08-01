@@ -31,8 +31,13 @@ define('MHS_EMAIL', getenv('UJI_MHS_EMAIL') ?: 'mahasiswa@example.com');
 define('MHS_PASSWORD', getenv('UJI_MHS_PASSWORD') ?: 'password');
 define('ADM_EMAIL', getenv('UJI_ADM_EMAIL') ?: 'admin@klinikpkp.jatengprov.go.id');
 define('ADM_PASSWORD', getenv('UJI_ADM_PASSWORD') ?: 'password');
+define('BID_EMAIL', getenv('UJI_BID_EMAIL') ?: 'adminbidang@example.com');
+define('BID_PASSWORD', getenv('UJI_BID_PASSWORD') ?: 'password');
 
-define('DIVISI', 'UJI SLOT ' . date('His'));
+// Bidang TIDAK bisa dibuat skrip ini — daftarnya struktur organisasi dinas.
+// Dipakai bidang milik akun admin_bidang yang ada supaya alur tahap dua bisa
+// diuji utuh; keadaannya (slot tahun uji, kuota, aktif) dipulihkan di akhir.
+define('BIDANG_UJI', getenv('UJI_BIDANG') ?: 'perumahan');
 define('SENTINEL', 'UJI-SLOT-' . date('His'));
 // Tahun uji sengaja BUKAN tahun berjalan: penyimpanan slot menulis ulang seluruh
 // tahun, jadi memakai tahun berjalan berarti menghapus slot sungguhan kalau
@@ -69,9 +74,10 @@ $db = new mysqli($env['DB_HOST'] ?? 'localhost', $env['DB_USER'] ?? 'root',
     $env['DB_PASS'] ?? '', $env['DB_NAME'] ?? 'klinikpkp');
 if ($db->connect_error) { fwrite(STDERR, "Koneksi DB gagal: {$db->connect_error}\n"); exit(1); }
 
-// Dua sesi terpisah: superadmin yang mengelola, mahasiswa yang mendaftar. Satu
-// jar untuk keduanya membuat uji guard di bawah tidak menguji apa pun.
-$jars = ['adm' => tempnam(sys_get_temp_dir(), 'ujisl_a'), 'mhs' => tempnam(sys_get_temp_dir(), 'ujisl_m')];
+// TIGA sesi: sekretariat (superadmin), bidang (meja kedua), mahasiswa. Satu jar
+// untuk beberapa peran membuat uji guard di bawah tidak menguji apa pun.
+$jars = ['adm' => tempnam(sys_get_temp_dir(), 'ujisl_a'), 'mhs' => tempnam(sys_get_temp_dir(), 'ujisl_m'),
+         'bid' => tempnam(sys_get_temp_dir(), 'ujisl_b')];
 $jar_aktif = 'adm';
 
 function pakai_sesi($nama) { $GLOBALS['jar_aktif'] = $nama; }
@@ -134,8 +140,11 @@ function baris($sql, $params = []) {
 function bersihkan() {
     global $db, $jars;
     $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
-    // Slot divisi uji ikut terhapus lewat ON DELETE CASCADE.
-    $db->query("DELETE FROM kkn_magang_divisi WHERE nama = '" . $db->real_escape_string(DIVISI) . "'");
+    // Bidang tidak dihapus — ia struktur organisasi. Yang dipulihkan keadaan
+    // magangnya: slot tahun uji dibuang, kuota dan status kembali ke bawaan.
+    $db->query("DELETE FROM kkn_magang_slot WHERE tahun = " . TAHUN_UJI);
+    $db->query("UPDATE kkn_magang_bidang SET kuota = 2, aktif = 1 WHERE bidang_kode = '"
+        . $db->real_escape_string(BIDANG_UJI) . "'");
     foreach ($jars as $f) { @unlink($f); }
 }
 
@@ -150,10 +159,10 @@ function bersihkan() {
  * @param array $rentang [bulan => ['Y-m-d mulai', 'Y-m-d selesai']] — tanpa ini
  *                       bulan dibuka penuh
  */
-function atur_slot($divisi_id, $tahun, array $bulan, $kuota, array $rentang = []) {
+function atur_slot($kode, $tahun, array $bulan, $kuota, array $rentang = []) {
     pakai_sesi('adm');
     $data = [
-        'csrf_kpkp_token' => token('Admin_Kemitraan/slot_divisi/' . (int) $divisi_id . '/' . (int) $tahun),
+        'csrf_kpkp_token' => token('Admin_Kemitraan/slot_bidang/' . rawurlencode($kode) . '/' . (int) $tahun),
         'tahun'           => (int) $tahun,
         'kuota'           => (int) $kuota,
         'bulan'           => [],
@@ -165,11 +174,11 @@ function atur_slot($divisi_id, $tahun, array $bulan, $kuota, array $rentang = []
             $data['bulan'][(int) $b]['selesai'] = $rentang[$b][1];
         }
     }
-    return http('Admin_Kemitraan/simpan_slot_divisi/' . (int) $divisi_id, http_build_query($data));
+    return http('Admin_Kemitraan/simpan_slot_bidang/' . rawurlencode($kode), http_build_query($data));
 }
 
 /** Kirim pendaftaran magang sebagai mahasiswa; kembalikan body balasannya. */
-function daftar_magang($divisi, $mulai, $selesai) {
+function daftar_magang($kode, $mulai, $selesai) {
     pakai_sesi('mhs');
     return http('KemitraanPortal/simpan', [
         'csrf_kpkp_token'  => token('KemitraanPortal/daftar/magang'),
@@ -181,10 +190,28 @@ function daftar_magang($divisi, $mulai, $selesai) {
         'jurusan'          => 'Teknik Sipil',
         'instansi_asal'    => SENTINEL . ' Universitas Uji',
         'no_hp'            => '081234567890',
-        'divisi_atau_tema' => $divisi,
+        'divisi_atau_tema' => $kode,
         'periode_mulai'    => $mulai,
         'periode_selesai'  => $selesai,
     ])['body'];
+}
+
+/**
+ * Tandai pendaftaran uji yang menggantung sebagai Diterima.
+ *
+ * Aturan "satu pendaftaran menggantung per mahasiswa per jenis" diuji
+ * tersendiri di bagian CRUD. Di bagian-bagian slot, yang sedang diuji adalah
+ * aturan SLOT — dan skenarionya menggambarkan beberapa mahasiswa BERBEDA yang
+ * mengisi bulan yang sama, sementara harness ini hanya punya satu akun.
+ *
+ * Menerima yang sudah masuk menyingkirkan aturan yang tidak sedang diuji tanpa
+ * mengubah hitungan yang sedang diuji: Diajukan dan Diterima sama-sama memakan
+ * tempat di peta_harian().
+ */
+function terima_semua() {
+    global $db;
+    $db->query("UPDATE kkn_magang_pendaftaran SET status = 'Diterima'
+        WHERE instansi_asal LIKE '" . SENTINEL . "%' AND status = 'Diajukan'");
 }
 
 function jumlah_pendaftaran() {
@@ -202,6 +229,8 @@ pakai_sesi('adm');
 wajib(login(ADM_EMAIL, ADM_PASSWORD), 'Login superadmin');
 pakai_sesi('mhs');
 wajib(login(MHS_EMAIL, MHS_PASSWORD), 'Login mahasiswa');
+pakai_sesi('bid');
+cek(login(BID_EMAIL, BID_PASSWORD), 'Login admin bidang');
 
 // Tahun uji harus kosong sebelum dipakai — penyimpanan slot menulis ulang satu
 // tahun penuh, dan skrip ini tidak boleh menghapus slot orang lain.
@@ -211,25 +240,15 @@ wajib($sudah_ada === 0, 'Tahun uji ' . TAHUN_UJI . ' masih kosong (aman ditulis 
 echo "\n== Pengelolaan oleh superadmin ==\n";
 
 pakai_sesi('adm');
-$r = http('Admin_Kemitraan/tambah_divisi', [
-    'csrf_kpkp_token' => token('Admin_Kemitraan/slot'),
-    'nama'            => DIVISI,
-    'tahun'           => TAHUN_UJI,
-]);
-$divisi = baris("SELECT * FROM kkn_magang_divisi WHERE nama = ?", [DIVISI]);
-wajib($divisi !== NULL, 'Superadmin menambah divisi');
-cek((int) $divisi['aktif'] === 1, 'Divisi baru langsung aktif');
-cek((int) $db->query("SELECT COUNT(*) n FROM kkn_magang_slot WHERE divisi_id = " . (int) $divisi['id'])->fetch_assoc()['n'] === 0,
-    'Divisi baru belum membuka slot apa pun');
+$bidang = baris("SELECT * FROM kkn_magang_bidang WHERE bidang_kode = ?", [BIDANG_UJI]);
+wajib($bidang !== NULL, 'Bidang uji punya setelan magang');
 
 // Juni dan Agustus dibuka, JULI SENGAJA TIDAK — lubang di tengah inilah yang
 // membedakan "periksa bulan mulai" dari "periksa semua bulan".
-// http_build_query, bukan array mentah: CURLOPT_POSTFIELDS berbentuk array
-// dikirim sebagai multipart dan TIDAK bisa membawa `slot[id][]` yang bersarang.
-// Sebagai string ia terkirim urlencoded, dan PHP menyusunnya kembali jadi array.
-atur_slot((int) $divisi['id'], TAHUN_UJI, [6, 8], 2);
+atur_slot(BIDANG_UJI, TAHUN_UJI, [6, 8], 2);
 $terbuka = [];
-foreach ($db->query("SELECT bulan FROM kkn_magang_slot WHERE divisi_id = " . (int) $divisi['id'] . " AND tahun = " . TAHUN_UJI) as $b) {
+foreach ($db->query("SELECT bulan FROM kkn_magang_slot WHERE bidang_kode = '" . $db->real_escape_string(BIDANG_UJI)
+    . "' AND tahun = " . TAHUN_UJI) as $b) {
     $terbuka[] = (int) $b['bulan'];
 }
 sort($terbuka);
@@ -237,85 +256,89 @@ cek($terbuka === [6, 8], 'Slot tersimpan persis seperti yang dicentang (Juni & A
 
 echo "\n== Papan slot publik dibaca dari DB ==\n";
 
+$nama_bidang = baris("SELECT nama FROM bidang WHERE kode = ?", [BIDANG_UJI])['nama'];
 $papan = http('KemitraanPortal/magang')['body'];
-cek(strpos($papan, DIVISI) !== FALSE, 'Divisi baru muncul di papan slot publik');
+cek(strpos($papan, $nama_bidang) !== FALSE, 'Bidang muncul di papan slot publik');
 
-$r = http('Admin_Kemitraan/ubah_status_divisi/' . (int) $divisi['id'], [
+// Bidang yang berhenti menerima hilang dari papan — daftarnya struktur
+// organisasi, jadi yang bisa dimatikan cuma penerimaan magangnya.
+http('Admin_Kemitraan/ubah_status_bidang/' . rawurlencode(BIDANG_UJI), [
     'csrf_kpkp_token' => token('Admin_Kemitraan/slot/' . TAHUN_UJI),
     'tahun'           => TAHUN_UJI,
 ]);
 $papan = http('KemitraanPortal/magang')['body'];
-cek(strpos($papan, DIVISI) === FALSE, 'Divisi nonaktif hilang dari papan publik');
+cek(strpos($papan, $nama_bidang) === FALSE, 'Bidang yang berhenti menerima hilang dari papan publik');
 
-// Dinyalakan lagi untuk uji pendaftaran di bawah.
-http('Admin_Kemitraan/ubah_status_divisi/' . (int) $divisi['id'], [
+http('Admin_Kemitraan/ubah_status_bidang/' . rawurlencode(BIDANG_UJI), [
     'csrf_kpkp_token' => token('Admin_Kemitraan/slot/' . TAHUN_UJI),
     'tahun'           => TAHUN_UJI,
 ]);
-$divisi = baris("SELECT * FROM kkn_magang_divisi WHERE nama = ?", [DIVISI]);
-wajib((int) $divisi['aktif'] === 1, 'Divisi dinyalakan kembali');
+$bidang = baris("SELECT * FROM kkn_magang_bidang WHERE bidang_kode = ?", [BIDANG_UJI]);
+wajib((int) $bidang['aktif'] === 1, 'Bidang menerima lagi');
 
 echo "\n== Penegakan saat mendaftar ==\n";
 
 // INTI SKRIP INI. Juni terbuka, jadi pemeriksaan "bulan mulai saja" akan
 // meloloskannya. Juli tertutup, jadi pemeriksaan yang benar menolaknya.
-$body = daftar_magang(DIVISI, TAHUN_UJI . '-06-01', TAHUN_UJI . '-08-31');
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-06-01', TAHUN_UJI . '-08-31');
 cek(strpos($body, 'tidak membuka slot pada') !== FALSE, 'Periode Juni-Agustus ditolak karena Juli tertutup');
 cek(jumlah_pendaftaran() === 0, 'Pendaftaran yang ditolak tidak menyisakan baris');
 
-$body = daftar_magang(DIVISI, TAHUN_UJI . '-07-01', TAHUN_UJI . '-07-31');
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-07-01', TAHUN_UJI . '-07-31');
 cek(strpos($body, 'tidak membuka slot pada') !== FALSE, 'Periode Juli penuh ditolak');
 
-$body = daftar_magang('Divisi Yang Tidak Pernah Ada', TAHUN_UJI . '-06-01', TAHUN_UJI . '-06-30');
-cek(strpos($body, 'tidak tersedia') !== FALSE, 'Divisi karangan ditolak walau select tidak merendernya');
+$body = daftar_magang('bidang_karangan', TAHUN_UJI . '-06-01', TAHUN_UJI . '-06-30');
+cek(strpos($body, 'tidak tersedia') !== FALSE, 'Kode bidang karangan ditolak walau select tidak merendernya');
 
-$body = daftar_magang(DIVISI, TAHUN_UJI . '-08-31', TAHUN_UJI . '-06-01');
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-08-31', TAHUN_UJI . '-06-01');
 cek(strpos($body, 'Periode selesai tidak boleh mendahului') !== FALSE, 'Periode terbalik ditolak');
 cek(jumlah_pendaftaran() === 0, 'Tiga penolakan, nol baris tersimpan');
 
-// Divisi nonaktif: dimatikan sebentar, ditembakkan, lalu dinyalakan lagi.
+// Bidang yang berhenti menerima: dimatikan sebentar, ditembakkan, dinyalakan lagi.
 pakai_sesi('adm');
-http('Admin_Kemitraan/ubah_status_divisi/' . (int) $divisi['id'], [
+http('Admin_Kemitraan/ubah_status_bidang/' . rawurlencode(BIDANG_UJI), [
     'csrf_kpkp_token' => token('Admin_Kemitraan/slot/' . TAHUN_UJI), 'tahun' => TAHUN_UJI,
 ]);
-$body = daftar_magang(DIVISI, TAHUN_UJI . '-06-01', TAHUN_UJI . '-06-30');
-cek(strpos($body, 'tidak tersedia') !== FALSE, 'Divisi nonaktif ditolak walau slotnya masih terbuka');
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-06-01', TAHUN_UJI . '-06-30');
+cek(strpos($body, 'tidak tersedia') !== FALSE, 'Bidang nonaktif ditolak walau slotnya masih terbuka');
 pakai_sesi('adm');
-http('Admin_Kemitraan/ubah_status_divisi/' . (int) $divisi['id'], [
+http('Admin_Kemitraan/ubah_status_bidang/' . rawurlencode(BIDANG_UJI), [
     'csrf_kpkp_token' => token('Admin_Kemitraan/slot/' . TAHUN_UJI), 'tahun' => TAHUN_UJI,
 ]);
 
 // Kunci SAH harus lolos lebih dulu. Tanpa ini "semua ditolak" ikut lulus —
 // termasuk kalau penjagaannya rusak total dan menolak segalanya.
-$body = daftar_magang(DIVISI, TAHUN_UJI . '-06-05', TAHUN_UJI . '-06-30');
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-06-05', TAHUN_UJI . '-06-30');
 cek(jumlah_pendaftaran() === 1, 'Periode yang seluruhnya terbuka DITERIMA');
 
-$tersimpan = baris("SELECT divisi_atau_tema FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE ?", [SENTINEL . '%']);
-cek(($tersimpan['divisi_atau_tema'] ?? '') === DIVISI, 'Nama divisi tersimpan kanonik dari tabel');
+$tersimpan = baris("SELECT divisi_atau_tema, bidang_kode FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE ?", [SENTINEL . '%']);
+cek(($tersimpan['bidang_kode'] ?? '') === BIDANG_UJI, 'Kode bidang tersimpan di kolomnya sendiri');
+cek(($tersimpan['divisi_atau_tema'] ?? '') === $nama_bidang, 'Nama bidang tersimpan kanonik dari tabel');
 
 echo "\n== Kuota menutup slot sendiri ==\n";
 
 // Kuota diturunkan ke 1 lewat formulir admin — satu tombol dengan matriksnya,
 // jadi centang bulan harus ikut dikirim atau slotnya terhapus.
 pakai_sesi('adm');
-atur_slot((int) $divisi['id'], TAHUN_UJI, [6, 8], 1);
-$divisi = baris("SELECT * FROM kkn_magang_divisi WHERE nama = ?", [DIVISI]);
-wajib((int) $divisi['kuota'] === 1, 'Kuota tersimpan lewat formulir admin');
+atur_slot(BIDANG_UJI, TAHUN_UJI, [6, 8], 1);
+$bidang = baris("SELECT * FROM kkn_magang_bidang WHERE bidang_kode = ?", [BIDANG_UJI]);
+wajib((int) $bidang['kuota'] === 1, 'Kuota tersimpan lewat formulir admin');
 
+terima_semua();
 // Satu pendaftaran Juni sudah ada dari uji sebelumnya, jadi Juni kini penuh.
-$body = daftar_magang(DIVISI, TAHUN_UJI . '-06-10', TAHUN_UJI . '-06-20');
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-06-10', TAHUN_UJI . '-06-20');
 cek(strpos($body, 'penuh, 1 dari 1') !== FALSE, 'Bulan yang kuotanya habis menolak pendaftaran baru');
 cek(jumlah_pendaftaran() === 1, 'Pendaftaran kedua di bulan penuh tidak tersimpan');
 
 // Agustus masih kosong dan terbuka — membuktikan yang menolak tadi memang
 // kuotanya, bukan penjagaan yang rusak dan menolak segalanya.
-$body = daftar_magang(DIVISI, TAHUN_UJI . '-08-01', TAHUN_UJI . '-08-20');
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-08-01', TAHUN_UJI . '-08-20');
 cek(jumlah_pendaftaran() === 2, 'Bulan lain yang masih kosong tetap menerima');
 
 // Angka terisi harus bisa ditelusuri ke ORANGNYA, bukan muncul begitu saja —
 // hitungan yang tidak bisa ditelusuri akan dihitung ulang manual di sebelahnya.
 pakai_sesi('adm');
-$layar = http('Admin_Kemitraan/slot_divisi/' . (int) $divisi['id'] . '/' . TAHUN_UJI)['body'];
+$layar = http('Admin_Kemitraan/slot_bidang/' . rawurlencode(BIDANG_UJI) . '/' . TAHUN_UJI)['body'];
 cek(strpos($layar, 'Paling ramai 1 dari 1') !== FALSE, 'Layar detail menampilkan hitungan terisi');
 cek(strpos($layar, 'Mahasiswa') !== FALSE, 'Layar detail menyebut nama pengisinya, bukan cuma angka');
 
@@ -329,7 +352,8 @@ http('Admin_Kemitraan/proses/' . (int) $juni['id'], [
     'status'          => 'Ditolak',
     'catatan_admin'   => 'Uji pelepasan kuota',
 ]);
-$body = daftar_magang(DIVISI, TAHUN_UJI . '-06-10', TAHUN_UJI . '-06-20');
+terima_semua();
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-06-10', TAHUN_UJI . '-06-20');
 cek(jumlah_pendaftaran() === 3, 'Pendaftaran yang DITOLAK melepaskan kuotanya kembali');
 
 echo "\n== Kuota diukur dari kehadiran BERSAMAAN, bukan bulan tersentuh ==\n";
@@ -339,36 +363,39 @@ echo "\n== Kuota diukur dari kehadiran BERSAMAAN, bukan bulan tersentuh ==\n";
 // pun. Dengan hitungan "berapa pendaftaran menyentuh bulan Juli", B DITOLAK.
 // Dengan hitungan kehadiran bersamaan, B diterima.
 pakai_sesi('adm');
-atur_slot((int) $divisi['id'], TAHUN_UJI, [7, 8, 9], 1);
+atur_slot(BIDANG_UJI, TAHUN_UJI, [7, 8, 9], 1);
 $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
 
-daftar_magang(DIVISI, TAHUN_UJI . '-07-01', TAHUN_UJI . '-07-15');
+daftar_magang(BIDANG_UJI, TAHUN_UJI . '-07-01', TAHUN_UJI . '-07-15');
 wajib(jumlah_pendaftaran() === 1, 'A (1-15 Juli) diterima');
 
-$body = daftar_magang(DIVISI, TAHUN_UJI . '-07-16', TAHUN_UJI . '-08-31');
+terima_semua();
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-07-16', TAHUN_UJI . '-08-31');
 cek(jumlah_pendaftaran() === 2, 'B (16 Juli-31 Agu) diterima — tidak pernah bertemu A');
 
 // Pembuktian terbalik: yang BENAR-BENAR bertumpang tindih tetap ditolak. Tanpa
 // ini, "semuanya diterima" ikut lulus — termasuk kalau kuotanya tidak dicek
 // sama sekali.
-$body = daftar_magang(DIVISI, TAHUN_UJI . '-07-10', TAHUN_UJI . '-07-20');
+terima_semua();
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-07-10', TAHUN_UJI . '-07-20');
 cek(strpos($body, 'penuh, 1 dari 1') !== FALSE, 'C yang bertumpang tindih dengan A dan B DITOLAK');
 cek(jumlah_pendaftaran() === 2, 'Tumpang tindih tidak menyisakan baris');
 
 // Puncak bulan tidak boleh dipakai sebagai penjagaan: September hanya terisi
 // pada tanggal-tanggal awal lewat B? Tidak — B berakhir 31 Agustus. Pemohon
 // September penuh harus lolos meski Agustus di sebelahnya sedang ramai.
-$body = daftar_magang(DIVISI, TAHUN_UJI . '-09-01', TAHUN_UJI . '-09-30');
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-09-01', TAHUN_UJI . '-09-30');
 cek(jumlah_pendaftaran() === 3, 'Bulan yang bersih diterima walau bulan sebelahnya penuh');
 
-$body = daftar_magang(DIVISI, TAHUN_UJI . '-07-01', TAHUN_UJI . '-12-31');
+terima_semua();
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-07-01', TAHUN_UJI . '-12-31');
 cek(strpos($body, 'Periode terlalu panjang') === FALSE, 'Periode setengah tahun masih dianggap wajar');
-$body = daftar_magang(DIVISI, TAHUN_UJI . '-07-01', (TAHUN_UJI + 3) . '-07-01');
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-07-01', (TAHUN_UJI + 3) . '-07-01');
 cek(strpos($body, 'Periode terlalu panjang') !== FALSE, 'Periode tiga tahun ditolak sebelum sempat dihitung harian');
 
 // Dikembalikan ke keadaan yang diharapkan bagian berikutnya: satu baris saja.
 $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
-daftar_magang(DIVISI, TAHUN_UJI . '-08-01', TAHUN_UJI . '-08-20');
+daftar_magang(BIDANG_UJI, TAHUN_UJI . '-08-01', TAHUN_UJI . '-08-20');
 wajib(jumlah_pendaftaran() === 1, 'Satu pendaftaran disiapkan untuk uji penyuntingan');
 
 echo "\n== Superadmin menyunting pendaftaran ==\n";
@@ -384,7 +411,7 @@ $r = http('Admin_Kemitraan/simpan_ubah/' . (int) $sunting['id'], [
     'jurusan'          => 'Arsitektur',
     'instansi_asal'    => SENTINEL . ' Universitas Diubah',
     'no_hp'            => '081200000000',
-    'divisi_atau_tema' => DIVISI,
+    'divisi_atau_tema' => BIDANG_UJI,
     'periode_mulai'    => TAHUN_UJI . '-08-01',
     'periode_selesai'  => TAHUN_UJI . '-08-31',
 ]);
@@ -400,11 +427,11 @@ $r = http('Admin_Kemitraan/simpan_ubah/' . (int) $sunting['id'], [
     'nim'              => 'H1A020777', 'tempat_lahir' => 'Kudus', 'tanggal_lahir' => '2002-02-02',
     'semester'         => '8', 'jurusan' => 'Arsitektur',
     'instansi_asal'    => SENTINEL . ' Universitas Diubah', 'no_hp' => '081200000000',
-    'divisi_atau_tema' => 'Divisi Karangan Admin',
+    'divisi_atau_tema' => 'bidang_karangan_admin',
     'periode_mulai'    => TAHUN_UJI . '-08-01', 'periode_selesai' => TAHUN_UJI . '-08-31',
 ]);
 $sesudah = baris("SELECT divisi_atau_tema FROM kkn_magang_pendaftaran WHERE id = ?", [(int) $sunting['id']]);
-cek($sesudah['divisi_atau_tema'] === DIVISI, 'Admin tetap tidak bisa menyimpan divisi yang tidak ada');
+cek($sesudah['divisi_atau_tema'] === $nama_bidang, 'Admin tetap tidak bisa menyimpan bidang yang tidak ada');
 
 // Semester 99 ditembakkan: aturan yang sama dengan formulir mahasiswa harus
 // berlaku di layar admin — itu gunanya satu grup aturan di config, bukan dua.
@@ -413,7 +440,7 @@ http('Admin_Kemitraan/simpan_ubah/' . (int) $sunting['id'], [
     'nim'              => 'H1A020777', 'tempat_lahir' => 'Kudus', 'tanggal_lahir' => '2002-02-02',
     'semester'         => '99', 'jurusan' => 'Arsitektur',
     'instansi_asal'    => SENTINEL . ' Universitas Diubah', 'no_hp' => '081200000000',
-    'divisi_atau_tema' => DIVISI,
+    'divisi_atau_tema' => BIDANG_UJI,
     'periode_mulai'    => TAHUN_UJI . '-08-01', 'periode_selesai' => TAHUN_UJI . '-08-31',
 ]);
 $sesudah = baris("SELECT semester FROM kkn_magang_pendaftaran WHERE id = ?", [(int) $sunting['id']]);
@@ -425,82 +452,111 @@ echo "\n== Rentang tanggal di dalam bulan ==\n";
 // Juni terbuka penuh atau tertutup penuh, dan sisanya disaring manual di meja
 // peninjauan — persis pekerjaan yang seharusnya dihapus oleh slot.
 $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
-atur_slot((int) $divisi['id'], TAHUN_UJI, [6], 2, [6 => [TAHUN_UJI . '-06-01', TAHUN_UJI . '-06-15']]);
+atur_slot(BIDANG_UJI, TAHUN_UJI, [6], 2, [6 => [TAHUN_UJI . '-06-01', TAHUN_UJI . '-06-15']]);
 
-$slot_juni = baris("SELECT tgl_mulai, tgl_selesai FROM kkn_magang_slot WHERE divisi_id = ? AND tahun = ? AND bulan = 6",
-    [(int) $divisi['id'], TAHUN_UJI]);
+$slot_juni = baris("SELECT tgl_mulai, tgl_selesai FROM kkn_magang_slot WHERE bidang_kode = ? AND tahun = ? AND bulan = 6",
+    [BIDANG_UJI, TAHUN_UJI]);
 wajib($slot_juni !== NULL, 'Slot Juni tersimpan');
 cek($slot_juni['tgl_mulai'] === TAHUN_UJI . '-06-01' && $slot_juni['tgl_selesai'] === TAHUN_UJI . '-06-15',
     'Rentang tanggal tersimpan apa adanya');
 
-$body = daftar_magang(DIVISI, TAHUN_UJI . '-06-05', TAHUN_UJI . '-06-12');
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-06-05', TAHUN_UJI . '-06-12');
 cek(jumlah_pendaftaran() === 1, 'Periode di DALAM rentang diterima');
 
-$body = daftar_magang(DIVISI, TAHUN_UJI . '-06-10', TAHUN_UJI . '-06-25');
+terima_semua();
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-06-10', TAHUN_UJI . '-06-25');
 cek(strpos($body, 'hanya dibuka tanggal 1–15') !== FALSE, 'Periode yang melewati rentang ditolak dengan tanggalnya');
 cek(jumlah_pendaftaran() === 1, 'Yang melewati rentang tidak tersimpan');
 
 // Dijepit ke batas bulan, bukan ditolak: maksud admin sudah terbaca, dan bulan
 // sebelah punya barisnya sendiri.
-atur_slot((int) $divisi['id'], TAHUN_UJI, [6], 2, [6 => [TAHUN_UJI . '-05-20', TAHUN_UJI . '-07-10']]);
-$slot_juni = baris("SELECT tgl_mulai, tgl_selesai FROM kkn_magang_slot WHERE divisi_id = ? AND tahun = ? AND bulan = 6",
-    [(int) $divisi['id'], TAHUN_UJI]);
+atur_slot(BIDANG_UJI, TAHUN_UJI, [6], 2, [6 => [TAHUN_UJI . '-05-20', TAHUN_UJI . '-07-10']]);
+$slot_juni = baris("SELECT tgl_mulai, tgl_selesai FROM kkn_magang_slot WHERE bidang_kode = ? AND tahun = ? AND bulan = 6",
+    [BIDANG_UJI, TAHUN_UJI]);
 cek($slot_juni['tgl_mulai'] === TAHUN_UJI . '-06-01' && $slot_juni['tgl_selesai'] === TAHUN_UJI . '-06-30',
     'Tanggal di luar bulannya dijepit ke batas bulan');
 
-echo "\n== CRUD divisi ==\n";
-
-pakai_sesi('adm');
-$nama_baru = DIVISI . ' EDIT';
-http('Admin_Kemitraan/ganti_nama_divisi/' . (int) $divisi['id'], [
-    'csrf_kpkp_token' => token('Admin_Kemitraan/slot_divisi/' . (int) $divisi['id'] . '/' . TAHUN_UJI),
-    'nama'            => $nama_baru,
-    'tahun'           => TAHUN_UJI,
-]);
-$sesudah = baris("SELECT nama FROM kkn_magang_divisi WHERE id = ?", [(int) $divisi['id']]);
-cek(($sesudah['nama'] ?? '') === $nama_baru, 'Nama divisi bisa diganti');
-
-// INTI bagian ini: pendaftaran menyimpan NAMA, bukan id. Kalau ia tidak ikut
-// berubah, baris itu putus dari divisinya — hitungan kehadiran berhenti
-// mengenalinya dan papan slot berhenti menampilkan beban yang sebenarnya.
-$ikut = baris("SELECT divisi_atau_tema FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE ?", [SENTINEL . '%']);
-cek(($ikut['divisi_atau_tema'] ?? '') === $nama_baru, 'Pendaftaran ikut berpindah nama, tidak jadi yatim');
-
-http('Admin_Kemitraan/hapus_divisi/' . (int) $divisi['id'], [
-    'csrf_kpkp_token' => token('Admin_Kemitraan/slot_divisi/' . (int) $divisi['id'] . '/' . TAHUN_UJI),
-    'tahun'           => TAHUN_UJI,
-]);
-cek(baris("SELECT id FROM kkn_magang_divisi WHERE id = ?", [(int) $divisi['id']]) !== NULL,
-    'Divisi yang sudah dipakai pendaftaran TIDAK bisa dihapus');
-
 echo "\n== Hapus pendaftaran ==\n";
 
+// Daftar bidang TIDAK bisa ditambah, diganti nama, atau dihapus lewat modul ini
+// — ia struktur organisasi dinas, dipakai bersama modul aduan. Yang tersisa
+// untuk diuji: menghapus pendaftaran.
 $hapus_id = baris("SELECT id FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE ? LIMIT 1", [SENTINEL . '%']);
+wajib($hapus_id !== NULL, 'Ada pendaftaran untuk dihapus');
+pakai_sesi('adm');
 http('Admin_Kemitraan/hapus/' . (int) $hapus_id['id'], [
     'csrf_kpkp_token' => token('Admin_Kemitraan/ubah/' . (int) $hapus_id['id']),
 ]);
-cek(jumlah_pendaftaran() === 0, 'Superadmin bisa menghapus pendaftaran');
+cek(baris("SELECT id FROM kkn_magang_pendaftaran WHERE id = ?", [(int) $hapus_id['id']]) === NULL,
+    'Superadmin bisa menghapus pendaftaran');
 
-// Divisi kini bersih dari pendaftaran, jadi penghapusannya boleh — pembuktian
-// bahwa penolakan tadi memang karena dipakai, bukan karena hapus selalu gagal.
-http('Admin_Kemitraan/hapus_divisi/' . (int) $divisi['id'], [
-    'csrf_kpkp_token' => token('Admin_Kemitraan/slot_divisi/' . (int) $divisi['id'] . '/' . TAHUN_UJI),
-    'tahun'           => TAHUN_UJI,
-]);
-cek(baris("SELECT id FROM kkn_magang_divisi WHERE id = ?", [(int) $divisi['id']]) === NULL,
-    'Divisi yang belum dipakai bisa dihapus');
-cek((int) $db->query("SELECT COUNT(*) n FROM kkn_magang_slot WHERE divisi_id = " . (int) $divisi['id'])->fetch_assoc()['n'] === 0,
-    'Slotnya ikut terhapus lewat CASCADE');
+echo "\n== Alur surat dua tahap ==\n";
 
-// Dibuat ulang supaya bagian guard di bawah punya divisi untuk diuji.
-http('Admin_Kemitraan/tambah_divisi', [
-    'csrf_kpkp_token' => token('Admin_Kemitraan/slot'),
-    'nama'            => DIVISI,
-    'tahun'           => TAHUN_UJI,
-]);
-$divisi = baris("SELECT * FROM kkn_magang_divisi WHERE nama = ?", [DIVISI]);
-wajib($divisi !== NULL, 'Divisi dibuat ulang untuk uji guard');
-atur_slot((int) $divisi['id'], TAHUN_UJI, [7, 8], 1);
+// Divisi uji ditetapkan ke bidang yang SAMA dengan akun admin bidang yang ada,
+// supaya tahap dua punya meja yang benar-benar bisa dibuka.
+$bidang_adm = baris("SELECT bidang_kode FROM usr_users WHERE role = 'admin_bidang' AND bidang_kode IS NOT NULL LIMIT 1");
+if ( ! $bidang_adm) {
+    echo "  LEWAT  Tidak ada akun admin_bidang — alur tahap dua tidak bisa diuji\n";
+} else {
+    $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
+    atur_slot(BIDANG_UJI, TAHUN_UJI, [7, 8], 3);
+
+    // Tidak ada lagi pemetaan yang harus diisi: slotnya sudah menyebut bidangnya.
+    cek($bidang_adm['bidang_kode'] === BIDANG_UJI,
+        'Bidang uji sama dengan bidang akun peninjau — alur tahap dua bisa diuji utuh');
+
+    daftar_magang(BIDANG_UJI, TAHUN_UJI . '-07-01', TAHUN_UJI . '-07-20');
+    $surat = baris("SELECT id, status FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE ? ORDER BY id DESC LIMIT 1", [SENTINEL . '%']);
+    wajib($surat !== NULL, 'Surat masuk (tahap 1)');
+    cek(($surat['status'] ?? '') === 'Diajukan', 'Status awal menunggu sekretariat');
+
+    // Bidang TIDAK boleh memutuskan surat yang belum diteruskan. Kalau boleh,
+    // tahap satu berhenti berarti apa pun dan diagram alurnya jadi hiasan.
+    pakai_sesi('bid');
+    http('Kemitraan_Bidang/proses/' . (int) $surat['id'], [
+        'csrf_kpkp_token' => token('Kemitraan_Bidang'), 'status' => 'Diterima', 'catatan_admin' => 'curi start',
+    ]);
+    $cek = baris("SELECT status FROM kkn_magang_pendaftaran WHERE id = ?", [(int) $surat['id']]);
+    cek(($cek['status'] ?? '') === 'Diajukan', 'Bidang tidak bisa memutuskan sebelum sekretariat meneruskan');
+
+    pakai_sesi('adm');
+    http('Admin_Kemitraan/proses/' . (int) $surat['id'], [
+        'csrf_kpkp_token' => token('Admin_Kemitraan'), 'status' => 'Ditinjau Bidang', 'catatan_admin' => 'Diteruskan',
+    ]);
+    $cek = baris("SELECT status FROM kkn_magang_pendaftaran WHERE id = ?", [(int) $surat['id']]);
+    cek(($cek['status'] ?? '') === 'Ditinjau Bidang', 'Sekretariat meneruskan ke bidang (tahap 2)');
+
+    pakai_sesi('bid');
+    $layar = http('Kemitraan_Bidang')['body'];
+    cek(strpos($layar, SENTINEL) !== FALSE, 'Surat muncul di meja bidang yang benar');
+
+    http('Kemitraan_Bidang/proses/' . (int) $surat['id'], [
+        'csrf_kpkp_token' => token('Kemitraan_Bidang'), 'status' => 'Diterima', 'catatan_admin' => 'Disetujui bidang',
+    ]);
+    $cek = baris("SELECT status, catatan_admin, catatan_bidang, reviewed_by, reviewed_by_bidang FROM kkn_magang_pendaftaran WHERE id = ?", [(int) $surat['id']]);
+    cek(($cek['status'] ?? '') === 'Diterima', 'Bidang memutuskan diterima (tahap 3)');
+
+    // Jejak DUA meja harus utuh. Kalau tahap dua menimpa reviewed_by, pertanyaan
+    // "siapa yang meloloskan ini ke bidang" jadi tidak terjawab selamanya.
+    cek( ! empty($cek['reviewed_by']) && ! empty($cek['reviewed_by_bidang'])
+        && $cek['reviewed_by'] !== $cek['reviewed_by_bidang'], 'Jejak kedua peninjau tersimpan terpisah');
+    cek($cek['catatan_admin'] === 'Diteruskan' && $cek['catatan_bidang'] === 'Disetujui bidang',
+        'Catatan kedua meja tidak saling menimpa');
+
+    // Mahasiswa melihat perjalanannya, bukan cuma satu kata status.
+    pakai_sesi('mhs');
+    $detail = http('KemitraanPortal/pendaftaran/' . (int) $surat['id'])['body'];
+    foreach (['Surat Masuk', 'Ditinjau Admin Disperakim', 'Ditinjau Admin Bidang', 'Surat Balasan'] as $tahap) {
+        cek(strpos($detail, $tahap) !== FALSE, "Garis waktu menampilkan tahap \"$tahap\"");
+    }
+    cek(strpos($detail, 'Disetujui bidang') !== FALSE, 'Catatan bidang sampai ke mahasiswa');
+    cek(strpos($detail, 'Unduh Surat Balasan') === FALSE, 'Tombol unduh belum muncul selama suratnya belum ada');
+
+    // Berkasnya belum ada, jadi endpoint unduhnya harus 404 — bukan halaman
+    // kosong yang menyaru berhasil.
+    $r = http('KemitraanPortal/unduh_balasan/' . (int) $surat['id']);
+    cek($r['code'] === 404, "Unduh surat yang belum terbit dijawab 404 (kode {$r['code']})");
+}
 
 echo "\n== Guard layar pengelolaan ==\n";
 
@@ -510,14 +566,14 @@ echo "\n== Guard layar pengelolaan ==\n";
 pakai_sesi('adm');
 $r = http('Admin_Kemitraan/slot/' . TAHUN_UJI);
 cek(strpos($r['body'], 'Bulan Terbuka') !== FALSE, 'Superadmin melihat daftar slot');
-cek(strpos($r['body'], DIVISI) !== FALSE, 'Divisi uji tampil di daftar admin');
+cek(strpos($r['body'], $nama_bidang) !== FALSE, 'Bidang uji tampil di daftar admin');
 
 // Satu wadah: pendaftaran dan slot adalah dua tab pada halaman yang sama,
 // bukan dua entri sidebar. Kalau kepalanya hilang dari salah satunya, admin
 // kehilangan jalan menyeberang.
 foreach (['Admin_Kemitraan', 'Admin_Kemitraan/slot'] as $jalur) {
     $b = http($jalur)['body'];
-    cek(strpos($b, 'Slot &amp; Divisi') !== FALSE && strpos($b, 'KKN &amp; Magang') !== FALSE,
+    cek(strpos($b, 'Slot &amp; Bidang') !== FALSE && strpos($b, 'KKN &amp; Magang') !== FALSE,
         "Tab pengelolaan tampil di /$jalur");
 }
 
@@ -526,7 +582,7 @@ $r = http('Admin_Kemitraan/slot');
 cek(strpos($r['body'], 'Bulan Terbuka') === FALSE, 'Mahasiswa tidak melihat layar pengelolaan slot');
 
 $sebelum = (int) $db->query("SELECT COUNT(*) n FROM kkn_magang_slot WHERE tahun = " . TAHUN_UJI)->fetch_assoc()['n'];
-http('Admin_Kemitraan/simpan_slot_divisi/' . (int) $divisi['id'], http_build_query([
+http('Admin_Kemitraan/simpan_slot_bidang/' . rawurlencode(BIDANG_UJI), http_build_query([
     'csrf_kpkp_token' => token('KemitraanPortal/daftar/magang'),
     'tahun'           => TAHUN_UJI,
     'kuota'           => 99,

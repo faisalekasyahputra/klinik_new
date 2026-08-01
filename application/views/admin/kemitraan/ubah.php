@@ -64,12 +64,14 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
             <input id="u-hp" name="no_hp" type="tel" value="<?= html_escape($row->no_hp) ?>" required maxlength="15" class="<?= $isian ?>">
         </div>
         <div>
-            <label for="u-divisi" class="<?= $label ?>"><?= $row->jenis === 'kkn' ? 'Tema Kegiatan' : 'Divisi yang Dituju' ?></label>
+            <label for="u-divisi" class="<?= $label ?>"><?= $row->jenis === 'kkn' ? 'Tema Kegiatan' : 'Bidang yang Dituju' ?></label>
             <?php if ($row->jenis === 'magang'): ?>
+                <!-- Mengirim KODE bidang, bukan namanya: nama bisa berubah, kode
+                     adalah kunci yang tersimpan dan dipakai routing tinjauan. -->
                 <select id="u-divisi" name="divisi_atau_tema" required class="<?= $isian ?>">
-                    <?php foreach ($divisi as $d): ?>
-                        <option value="<?= html_escape($d->nama) ?>" <?= $d->nama === $row->divisi_atau_tema ? 'selected' : '' ?>>
-                            <?= html_escape($d->nama) ?><?= (int) $d->aktif ? '' : ' (nonaktif)' ?>
+                    <?php foreach ($bidang as $b): ?>
+                        <option value="<?= html_escape($b->kode) ?>" <?= $b->kode === $row->bidang_kode ? 'selected' : '' ?>>
+                            <?= html_escape($b->nama) ?><?= (int) $b->aktif ? '' : ' (tidak menerima)' ?>
                         </option>
                     <?php endforeach; ?>
                 </select>
@@ -107,6 +109,44 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
         <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white">Simpan Perubahan</button>
     </div>
 </form>
+
+<?php if ($row->status === 'Diterima'): ?>
+    <!-- Surat balasan: DIUNGGAH, bukan dibuat sistem. Dokumen resmi yang dikarang
+         perangkat lunak — lengkap dengan kop dan tanda tangan yang tidak pernah
+         dibubuhkan siapa pun — adalah dokumen palsu, apa pun niatnya. -->
+    <form method="POST" action="<?= base_url('Admin_Kemitraan/unggah_balasan/' . (int) $row->id) ?>"
+          enctype="multipart/form-data"
+          class="mt-6 rounded-3xl border border-gray-200 dark:border-white/5 bg-white dark:bg-brand-card p-6">
+        <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+        <h3 class="mb-1 text-sm font-black text-gray-900 dark:text-white">Surat Balasan</h3>
+        <p class="mb-4 text-xs text-gray-500 dark:text-brand-muted">
+            Unggah PDF surat balasan yang <strong>sudah ditandatangani</strong>. Mahasiswa mengunduhnya
+            dari halaman pendaftarannya. Sistem tidak membuat surat ini.
+        </p>
+
+        <?php if ( ! empty($row->file_surat_balasan)): ?>
+            <p class="mb-3 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                <i class="ph ph-check-circle"></i>
+                Sudah ada —
+                <a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . (int) $row->id . '/balasan') ?>" target="_blank" rel="noopener" class="underline">lihat berkasnya</a>.
+                Mengunggah lagi akan menggantikannya.
+            </p>
+        <?php endif; ?>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <input type="file" name="file_surat_balasan" accept=".pdf" required
+                   class="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-4 py-2.5 text-xs text-gray-600 dark:text-brand-muted">
+            <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white">
+                <?= empty($row->file_surat_balasan) ? 'Unggah' : 'Ganti Surat' ?>
+            </button>
+        </div>
+    </form>
+<?php elseif ($row->jenis === 'magang'): ?>
+    <p class="mt-6 text-xs text-gray-500 dark:text-brand-muted">
+        Surat balasan bisa diunggah setelah pendaftaran ini berstatus <strong>Diterima</strong>.
+        Status sekarang: <?= html_escape($row->status) ?>.
+    </p>
+<?php endif; ?>
 
 <form id="hapus-pendaftaran" method="POST" action="<?= base_url('Admin_Kemitraan/hapus/' . (int) $row->id) ?>" class="hidden"
       onsubmit="return confirm('Hapus pendaftaran ini beserta berkasnya? Tindakan ini tidak bisa dibatalkan.')">

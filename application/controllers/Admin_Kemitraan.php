@@ -10,14 +10,16 @@ class Admin_Kemitraan extends Admin_Controller {
     }
 
     // =========================================================
-    // SLOT MAGANG
+    // SLOT MAGANG PER BIDANG
     //
     // Otorisasinya datang dari Admin_Controller, yang menuntut role === 'admin'
     // PERSIS — bukan dari entri `roles` di dashboard_modules.php, yang cuma
-    // menentukan menunya dirender atau tidak. Superadmin memegang daftar divisi
-    // sekaligus buka-tutup slot; tujuh divisi ini unit kerja internal yang tidak
-    // beririsan dengan lima `bidang` di DB, jadi admin_bidang tidak bisa dipakai
-    // apa adanya. Keputusan user 1 Agt 2026.
+    // menentukan menunya dirender atau tidak.
+    //
+    // Daftar bidangnya TIDAK dikelola di sini: itu struktur organisasi dinas
+    // (lima bidang, dikonfirmasi ke dinas 1 Agt 2026), bukan sesuatu yang
+    // ditambah atau dihapus lewat modul magang. Yang bisa diatur cuma kuota,
+    // aktif/nonaktif, dan bulan mana yang dibuka.
     // =========================================================
 
     /** Batas tahun yang boleh dibuka dari URL, supaya tidak lahir halaman tak berujung. */
@@ -27,37 +29,29 @@ class Admin_Kemitraan extends Admin_Controller {
         return ($tahun < 2020 || $tahun > (int) date('Y') + 5) ? NULL : $tahun;
     }
 
-    /**
-     * DAFTAR divisi — satu baris per divisi, bukan matriks 7x12.
-     *
-     * Bentuk lama menaruh 84 kotak centang di satu layar dan menuntut admin
-     * memahami seluruh tahun sekaligus. Pengaturannya sekarang pindah ke layar
-     * detail per divisi; layar ini hanya menjawab "divisi apa saja, statusnya
-     * bagaimana, bulan mana yang terbuka".
-     */
     public function slot($tahun = NULL)
     {
         $tahun = $this->tahun_sah($tahun);
         if ($tahun === NULL) { show_404(); }
 
-        // FALSE: layar ini justru perlu melihat divisi nonaktif, kalau tidak
+        // FALSE: layar ini justru perlu melihat bidang nonaktif, kalau tidak
         // tidak ada cara menyalakannya kembali.
-        $divisi = $this->slot->divisi(FALSE);
+        $bidang = $this->slot->bidang(FALSE);
         $peta   = $this->slot->peta_slot($tahun);
         $terisi = $this->slot->peta_terisi();
 
         $ringkas = [];
-        foreach ($divisi as $d) {
-            $bulan = $peta[(int) $d->id] ?? [];
+        foreach ($bidang as $b) {
+            $bulan = $peta[$b->kode] ?? [];
             ksort($bulan);
 
             $puncak = 0;
             foreach (array_keys($bulan) as $nomor) {
-                $isi = (int) ($terisi[$d->nama][$tahun . '-' . $nomor] ?? 0);
+                $isi = (int) ($terisi[$b->kode][$tahun . '-' . $nomor] ?? 0);
                 if ($isi > $puncak) { $puncak = $isi; }
             }
 
-            $ringkas[(int) $d->id] = [
+            $ringkas[$b->kode] = [
                 'label'  => array_map(function ($s) { return $this->slot->label_rentang($s, TRUE); }, $bulan),
                 'puncak' => $puncak,
             ];
@@ -67,45 +61,44 @@ class Admin_Kemitraan extends Admin_Controller {
             'title'          => 'Slot Magang',
             'tahun'          => $tahun,
             'tahun_tersedia' => $this->slot->tahun_tersedia(),
-            'divisi'         => $divisi,
+            'bidang'         => $bidang,
             'ringkas'        => $ringkas,
         ]);
     }
 
     /**
-     * DETAIL satu divisi — dua belas bulan, masing-masing dengan rentang
+     * DETAIL satu bidang — dua belas bulan, masing-masing dengan rentang
      * tanggalnya dan daftar mahasiswa yang mengisinya.
      *
-     * Daftar mahasiswa itu bukan hiasan: sebelum ada layar ini, angka "2 dari 2"
+     * Daftar mahasiswa itu bukan hiasan: tanpa layar ini, angka "2 dari 2"
      * muncul tanpa bisa ditelusuri ke siapa pun, dan hitungan yang tidak bisa
-     * ditelusuri adalah hitungan yang akan dihitung ulang manual di sebelahnya.
+     * ditelusuri akan dihitung ulang manual di sebelahnya.
      */
-    public function slot_divisi($id = NULL, $tahun = NULL)
+    public function slot_bidang($kode = NULL, $tahun = NULL)
     {
-        if ( ! is_numeric($id)) { show_404(); }
         $tahun = $this->tahun_sah($tahun);
         if ($tahun === NULL) { show_404(); }
 
-        $divisi = $this->slot->divisi_by_id($id);
-        if ( ! $divisi) { show_404(); }
+        $bidang = $this->slot->bidang_by_kode($kode);
+        if ( ! $bidang) { show_404(); }
 
-        $this->render_admin('admin/kemitraan/slot_divisi', [
-            'title'      => 'Slot ' . $divisi->nama,
-            'divisi'     => $divisi,
+        $this->render_admin('admin/kemitraan/slot_bidang', [
+            'title'      => 'Slot ' . $bidang->nama,
+            'bidang'     => $bidang,
             'tahun'      => $tahun,
-            'slot'       => $this->slot->slot_divisi($divisi->id, $tahun),
-            'pendaftar'  => $this->slot->pendaftar_divisi($divisi->nama, $tahun),
-            'terisi'     => $this->slot->peta_terisi()[$divisi->nama] ?? [],
+            'slot'       => $this->slot->slot_bidang($bidang->kode, $tahun),
+            'pendaftar'  => $this->slot->pendaftar_bidang($bidang->kode, $tahun),
+            'terisi'     => $this->slot->peta_terisi()[$bidang->kode] ?? [],
             'nama_bulan' => Kemitraan_slot_model::nama_bulan(),
         ]);
     }
 
-    public function simpan_slot_divisi($id = NULL)
+    public function simpan_slot_bidang($kode = NULL)
     {
-        if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
 
-        $divisi = $this->slot->divisi_by_id($id);
-        if ( ! $divisi) { show_404(); }
+        $bidang = $this->slot->bidang_by_kode($kode);
+        if ( ! $bidang) { show_404(); }
 
         $tahun = $this->tahun_sah($this->input->post('tahun'));
         if ($tahun === NULL) {
@@ -118,80 +111,81 @@ class Admin_Kemitraan extends Admin_Controller {
         // layar berarti admin bisa mengubah angka lalu kehilangan rentangnya,
         // dan tidak ada cara menebak mana yang ia maksud.
         $kuota = $this->input->post('kuota');
-        if (is_numeric($kuota)) { $this->slot->set_kuota($divisi->id, $kuota); }
+        if (is_numeric($kuota)) { $this->slot->set_kuota($bidang->kode, $kuota); }
 
         // Formulir mengirim keadaan LENGKAP dua belas bulan; bulan yang kotak
         // bukanya tidak tercentang tidak terkirim, dan itu memang berarti tutup.
-        $berhasil = $this->slot->tulis_ulang_divisi($divisi->id, $tahun, (array) $this->input->post('bulan'));
+        $berhasil = $this->slot->tulis_ulang_bidang($bidang->kode, $tahun, (array) $this->input->post('bulan'));
 
         $this->session->set_flashdata(
             $berhasil ? 'success' : 'error',
-            $berhasil ? 'Slot ' . $divisi->nama . ' tahun ' . $tahun . ' diperbarui.' : 'Slot gagal disimpan.'
+            $berhasil ? 'Slot ' . $bidang->nama . ' tahun ' . $tahun . ' diperbarui.' : 'Slot gagal disimpan.'
         );
-        redirect('Admin_Kemitraan/slot_divisi/' . (int) $divisi->id . '/' . $tahun);
+        redirect('Admin_Kemitraan/slot_bidang/' . rawurlencode($bidang->kode) . '/' . $tahun);
     }
 
-    public function tambah_divisi()
+    public function ubah_status_bidang($kode = NULL)
     {
         if ($this->input->method(TRUE) !== 'POST') { show_404(); }
 
-        $nama  = (string) $this->input->post('nama', TRUE);
-        $tahun = (int) $this->input->post('tahun') ?: (int) date('Y');
+        $bidang = $this->slot->bidang_by_kode($kode);
+        if ( ! $bidang) { show_404(); }
 
-        if ($this->slot->tambah_divisi($nama)) {
-            $this->session->set_flashdata('success', 'Divisi ditambahkan. Slotnya masih tertutup semua.');
-        } else {
-            $this->session->set_flashdata('error', 'Nama divisi kosong atau sudah ada.');
-        }
+        $tahun = $this->tahun_sah($this->input->post('tahun')) ?: (int) date('Y');
+        $this->slot->set_aktif($bidang->kode, ! (int) $bidang->aktif);
+
+        $this->session->set_flashdata('success', html_escape($bidang->nama) . ' kini '
+            . ((int) $bidang->aktif ? 'tidak menerima' : 'menerima') . ' pendaftaran magang.');
         redirect('Admin_Kemitraan/slot/' . $tahun);
     }
 
-    public function ganti_nama_divisi($id = NULL)
+    /**
+     * Unggah surat balasan bertanda tangan.
+     *
+     * Sistem TIDAK membuat suratnya. Dokumen resmi yang dikarang perangkat lunak
+     * — lengkap dengan kop dan tanda tangan yang tidak pernah dibubuhkan siapa
+     * pun — adalah dokumen palsu, apa pun niatnya. Yang diunggah di sini adalah
+     * PDF yang sudah ditandatangani pejabat, dan mahasiswa mengunduh berkas itu
+     * apa adanya.
+     */
+    public function unggah_balasan($id = NULL)
     {
         if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
 
-        $tahun = $this->tahun_sah($this->input->post('tahun')) ?: (int) date('Y');
-        $nama  = (string) $this->input->post('nama', TRUE);
+        $row = $this->db->get_where('kkn_magang_pendaftaran', ['id' => (int) $id])->row();
+        if ( ! $row) { show_404(); }
 
-        if ($this->slot->ganti_nama_divisi($id, $nama)) {
-            $this->session->set_flashdata('success', 'Nama divisi diperbarui, termasuk pada pendaftaran yang menunjuk ke sana.');
-        } else {
-            $this->session->set_flashdata('error', 'Nama kosong, tidak berubah, atau sudah dipakai divisi lain.');
-        }
-        redirect('Admin_Kemitraan/slot_divisi/' . (int) $id . '/' . $tahun);
-    }
-
-    public function hapus_divisi($id = NULL)
-    {
-        if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
-
-        $tahun = $this->tahun_sah($this->input->post('tahun')) ?: (int) date('Y');
-        $hasil = $this->slot->hapus_divisi($id);
-
-        if ($hasil === TRUE) {
-            $this->session->set_flashdata('success', 'Divisi dihapus.');
-            redirect('Admin_Kemitraan/slot/' . $tahun);
+        if ($row->status !== 'Diterima') {
+            $this->session->set_flashdata('error', 'Surat balasan hanya untuk pendaftaran yang sudah diterima.');
+            redirect('Admin_Kemitraan/ubah/' . (int) $row->id);
             return;
         }
 
-        $this->session->set_flashdata('error', $hasil);
-        redirect('Admin_Kemitraan/slot_divisi/' . (int) $id . '/' . $tahun);
+        $galat = NULL;
+        $nama_berkas = $this->store_private_upload('file_surat_balasan', 'kemitraan', (int) $row->id, $galat);
+        if ( ! $nama_berkas) {
+            $this->session->set_flashdata('error', $galat ?: 'Tidak ada berkas yang diunggah.');
+            redirect('Admin_Kemitraan/ubah/' . (int) $row->id);
+            return;
+        }
+
+        // Berkas lama dibuang supaya tidak menumpuk tanpa pemilik di
+        // private_uploads/ — dokumen berisi nama dan periode seseorang.
+        if ( ! empty($row->file_surat_balasan)) {
+            $lama = $this->private_upload_dir('kemitraan', (int) $row->id) . basename($row->file_surat_balasan);
+            if (is_file($lama)) { @unlink($lama); }
+        }
+
+        $this->db->where('id', (int) $row->id)
+            ->update('kkn_magang_pendaftaran', ['file_surat_balasan' => $nama_berkas]);
+
+        $this->session->set_flashdata('success', 'Surat balasan diunggah. Mahasiswa sudah bisa mengunduhnya.');
+        redirect('Admin_Kemitraan/ubah/' . (int) $row->id);
     }
 
-    public function ubah_status_divisi($id = NULL)
-    {
-        if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
-
-        $divisi = $this->slot->divisi_by_id($id);
-        if ( ! $divisi) { show_404(); }
-
-        $tahun = (int) $this->input->post('tahun') ?: (int) date('Y');
-        $this->slot->ubah_status_divisi($divisi->id, ! (int) $divisi->aktif);
-
-        $this->session->set_flashdata('success', 'Divisi ' . html_escape($divisi->nama) . ' kini '
-            . ((int) $divisi->aktif ? 'nonaktif' : 'aktif') . '.');
-        redirect('Admin_Kemitraan/slot/' . $tahun);
-    }
+    // =========================================================
+    // DAFTAR PENDAFTARAN
+    // =========================================================
 
     public function index()
     {
@@ -204,8 +198,21 @@ class Admin_Kemitraan extends Admin_Controller {
         ], 'kkn_magang_pendaftaran.created_at');
         $data['base_url'] = 'Admin_Kemitraan';
 
+        // Filter dari query string DIVALIDASI ke daftar yang sah — bukan
+        // langsung dimasukkan ke WHERE. Tanpa filter ini, satu-satunya cara
+        // memisahkan "yang perlu ditinjau" dari yang sudah selesai adalah
+        // membaca seluruh halaman satu per satu.
+        $status_sah = ['Diajukan', 'Ditinjau Bidang', 'Diterima', 'Ditolak', 'Dibatalkan'];
+        $jenis_sah  = ['kkn', 'magang'];
+        $f_status = $this->input->get('status', TRUE);
+        $f_jenis  = $this->input->get('jenis', TRUE);
+        $f_status = in_array($f_status, $status_sah, TRUE) ? $f_status : NULL;
+        $f_jenis  = in_array($f_jenis, $jenis_sah, TRUE) ? $f_jenis : NULL;
+
         $this->db->from('kkn_magang_pendaftaran')
             ->join('usr_users', 'usr_users.id = kkn_magang_pendaftaran.user_id', 'left');
+        if ($f_status) { $this->db->where('kkn_magang_pendaftaran.status', $f_status); }
+        if ($f_jenis)  { $this->db->where('kkn_magang_pendaftaran.jenis', $f_jenis); }
         if ($table['q'] !== '') {
             $this->db->group_start()
                 ->like('usr_users.name', $table['q'])->or_like('usr_users.email', $table['q'])
@@ -220,33 +227,36 @@ class Admin_Kemitraan extends Admin_Controller {
             ->limit($table['per_page'], $table['offset'])
             ->get()->result();
         $data['table'] = $data['pager'] = $table;
+        $data['status_sah'] = $status_sah;
+        $data['jenis_sah']  = $jenis_sah;
+        $data['f_status']   = $f_status;
+        $data['f_jenis']    = $f_jenis;
         $this->render_admin('admin/kemitraan/index', $data);
     }
 
     /**
-     * Sajikan surat pengantar satu pendaftaran ke admin. Ber-guard lewat
-     * Admin_Controller, baca dari private_uploads/ (luar webroot).
-     * Menutup AUDIT_ROLE_MAHASISWA.md temuan #4: dulu admin memutuskan
-     * terima/tolak tanpa bisa membuka dokumen pendukung sama sekali.
-     */
-    /**
-     * @param string $berkas 'surat' (bawaan, kompatibel dengan tautan lama) atau
-     *                       'proposal'. WHITELIST, bukan nama kolom dari URL —
-     *                       menerima nama kolom mentah berarti mempersilakan
-     *                       siapa pun membaca kolom apa pun lewat query string.
+     * Sajikan dokumen pendukung ke superadmin. Ber-guard lewat Admin_Controller,
+     * dibaca dari private_uploads/ (luar webroot).
+     *
+     * @param string $berkas WHITELIST, bukan nama kolom dari URL — menerima nama
+     *   kolom mentah berarti mempersilakan siapa pun membaca kolom apa pun.
      */
     public function lihat_dokumen($id = NULL, $berkas = 'surat')
     {
         if ( ! is_numeric($id)) { show_404(); }
 
-        $kolom = ['surat' => 'file_surat_pengantar', 'proposal' => 'file_proposal'][$berkas] ?? NULL;
+        $kolom = [
+            'surat'    => 'file_surat_pengantar',
+            'proposal' => 'file_proposal',
+            'balasan'  => 'file_surat_balasan',
+        ][$berkas] ?? NULL;
         if ($kolom === NULL) { show_404(); }
 
         $row = $this->db->select($kolom)
             ->get_where('kkn_magang_pendaftaran', ['id' => (int) $id])->row();
         if ( ! $row || empty($row->$kolom)) { show_404(); }
 
-        $ext = strtolower(pathinfo($row->$kolom, PATHINFO_EXTENSION));
+        $ext  = strtolower(pathinfo($row->$kolom, PATHINFO_EXTENSION));
         $mime = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'][$ext] ?? 'application/octet-stream';
         $this->serve_private_file('kemitraan', (int) $id, $row->$kolom, $mime);
     }
@@ -271,7 +281,7 @@ class Admin_Kemitraan extends Admin_Controller {
             'row'    => $row,
             // Divisi hanya relevan untuk magang; di KKN kolom yang sama berisi
             // tema kegiatan yang memang teks bebas.
-            'divisi' => $row->jenis === 'magang' ? $this->slot->divisi(FALSE) : [],
+            'bidang' => $row->jenis === 'magang' ? $this->slot->bidang(FALSE) : [],
         ]);
     }
 
@@ -315,14 +325,16 @@ class Admin_Kemitraan extends Admin_Controller {
         // kuotanya: admin berwenang menempatkan orang ke bulan yang penuh, dan
         // papan tetap jujur menampilkan 3 dari 2 apa adanya. Keputusan user
         // 1 Agt 2026.
+        $bidang_kode = $row->bidang_kode;
         if ($row->jenis === 'magang') {
-            $divisi = $this->slot->divisi_by_nama($divisi_atau_tema);
-            if ( ! $divisi) {
-                $this->session->set_flashdata('error', 'Divisi tidak dikenal. Pilih dari daftar yang tersedia.');
+            $bidang = $this->slot->bidang_by_kode($divisi_atau_tema);
+            if ( ! $bidang) {
+                $this->session->set_flashdata('error', 'Bidang tidak dikenal. Pilih dari daftar yang tersedia.');
                 redirect('Admin_Kemitraan/ubah/' . (int) $id);
                 return;
             }
-            $divisi_atau_tema = $divisi->nama;
+            $bidang_kode      = $bidang->kode;
+            $divisi_atau_tema = $bidang->nama;
         }
 
         $this->db->where('id', (int) $id)->update('kkn_magang_pendaftaran', [
@@ -334,6 +346,7 @@ class Admin_Kemitraan extends Admin_Controller {
             'instansi_asal'    => $this->input->post('instansi_asal', TRUE),
             'no_hp'            => $this->input->post('no_hp', TRUE),
             'divisi_atau_tema' => $divisi_atau_tema,
+            'bidang_kode'      => $bidang_kode,
             'periode_mulai'    => $mulai,
             'periode_selesai'  => $selesai,
         ]);
@@ -381,14 +394,47 @@ class Admin_Kemitraan extends Admin_Controller {
     {
         if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
 
+        // Keberadaan barisnya diperiksa lebih dulu. Sebelumnya method ini
+        // langsung UPDATE: id yang tidak ada menyentuh nol baris lalu tetap
+        // melaporkan "Status pendaftaran diperbarui" — pesan sukses untuk
+        // sesuatu yang tidak pernah terjadi.
+        $row = $this->db->get_where('kkn_magang_pendaftaran', ['id' => (int) $id])->row();
+        if ( ! $row) { show_404(); }
+
+        // 'Ditinjau Bidang' adalah keputusan KHAS superadmin: meneruskan surat
+        // ke meja kedua. 'Diterima' tetap ada supaya ia bisa mengambil alih
+        // kalau bidangnya belum ada peninjaunya — tapi jalur normalnya adalah
+        // meneruskan, dan tombolnya di layar memang menawarkan itu lebih dulu.
         $status = $this->input->post('status', TRUE);
-        if ( ! in_array($status, ['Diterima', 'Ditolak'], TRUE)) {
+        if ( ! in_array($status, ['Ditinjau Bidang', 'Diterima', 'Ditolak'], TRUE)) {
             $this->session->set_flashdata('error', 'Status tidak valid.');
             redirect('Admin_Kemitraan');
             return;
         }
 
-        $this->db->where('id', (int) $id)->update('kkn_magang_pendaftaran', [
+        if ($status === 'Ditinjau Bidang') {
+            // Diteruskan ke bidang mana? Kalau divisinya belum ditetapkan, surat
+            // ini akan mendarat di meja yang tidak ada. Lebih baik ditahan di
+            // sini dengan alasan yang jelas daripada hilang diam-diam.
+            // `bidang_kode` kolom sungguhan sejak migrasi 031 — tidak ada lagi
+            // pencocokan lewat nama, dan tidak ada lagi pemetaan divisi yang
+            // bisa lupa diisi. KKN memang tidak melewati meja kedua.
+            if ($row->jenis !== 'magang' || empty($row->bidang_kode)) {
+                $this->session->set_flashdata('error', $row->jenis !== 'magang'
+                    ? 'Pendaftaran KKN tidak melewati tinjauan bidang — putuskan langsung di sini.'
+                    : 'Pendaftaran ini tidak menyebut bidang tujuan, jadi tidak ada yang bisa meninjaunya.');
+                redirect('Admin_Kemitraan');
+                return;
+            }
+        }
+
+        // Memproses baris yang SUDAH diputuskan diizinkan — admin berhak
+        // berubah pikiran, dan tombolnya memang dirender untuk status apa pun.
+        // Yang perlu disadari: menarik 'Dibatalkan' kembali menjadi 'Diterima'
+        // membuat baris itu memakan kuota lagi. Itu benar, tapi jangan sampai
+        // terjadi tanpa disengaja — karena itu labelnya di layar berbunyi
+        // "Ubah Keputusan", bukan "Proses".
+        $this->db->where('id', (int) $row->id)->update('kkn_magang_pendaftaran', [
             'status'        => $status,
             'catatan_admin' => trim((string) $this->input->post('catatan_admin', TRUE)),
             'reviewed_by'   => $this->get_user_id(),

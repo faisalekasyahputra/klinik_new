@@ -1,6 +1,6 @@
 <?php
 /**
- * Detail satu divisi: dua belas bulan, masing-masing dengan rentang tanggalnya
+ * Detail satu bidang: dua belas bulan, masing-masing dengan rentang tanggalnya
  * dan daftar mahasiswa yang mengisinya.
  *
  * Kolom "Terisi" bukan sekadar angka. Sebelum layar ini ada, "2 dari 2" muncul
@@ -15,60 +15,30 @@ $isian = 'w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white
 
 <div class="mb-5 flex flex-wrap items-start justify-between gap-4">
     <div>
-        <h3 class="text-xl font-black text-gray-900 dark:text-white"><?= html_escape($divisi->nama) ?></h3>
+        <h3 class="text-xl font-black text-gray-900 dark:text-white"><?= html_escape($bidang->nama) ?></h3>
         <p class="text-sm text-gray-500 dark:text-brand-muted">
             Slot tahun <?= (int) $tahun ?>.
-            <?= (int) $divisi->aktif ? '' : 'Divisi ini NONAKTIF — tidak ditawarkan ke pendaftar baru.' ?>
+            <?= (int) $bidang->aktif ? '' : 'Bidang ini sedang TIDAK MENERIMA pendaftaran magang.' ?>
         </p>
     </div>
     <a href="<?= base_url('Admin_Kemitraan/slot/' . (int) $tahun) ?>"
        class="rounded-xl border border-gray-200 dark:border-white/10 px-4 py-2 text-xs font-bold text-gray-700 dark:text-gray-300">
-        Kembali ke Daftar
+        Kembali ke Daftar Bidang
     </a>
 </div>
 
-<!-- Ganti nama dan hapus: formulir tersendiri, di LUAR formulir slot di bawah.
-     Menyarangkan <form> tidak sah di HTML dan peramban akan membuang yang dalam. -->
-<div class="mb-4 flex flex-wrap items-end gap-3 rounded-3xl border border-gray-200 dark:border-white/5 bg-white dark:bg-brand-card p-5">
-    <form method="POST" action="<?= base_url('Admin_Kemitraan/ganti_nama_divisi/' . (int) $divisi->id) ?>"
-          class="flex flex-1 flex-wrap items-end gap-3">
-        <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-        <input type="hidden" name="tahun" value="<?= (int) $tahun ?>">
-        <div class="min-w-[260px] flex-1">
-            <label for="nama-divisi" class="mb-1.5 block text-xs font-bold text-gray-900 dark:text-white">Nama divisi</label>
-            <input id="nama-divisi" name="nama" required maxlength="150" value="<?= html_escape($divisi->nama) ?>"
-                   class="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-4 py-2.5 text-sm text-gray-900 dark:text-white outline-none">
-            <p class="mt-1.5 text-[11px] text-gray-500 dark:text-brand-muted">
-                Pendaftaran yang menunjuk ke divisi ini ikut diperbarui — kalau tidak, mereka putus dari hitungan slotnya.
-            </p>
-        </div>
-        <button type="submit" class="rounded-xl border border-gray-200 dark:border-white/10 px-4 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300">
-            Simpan Nama
-        </button>
-    </form>
-
-    <form method="POST" action="<?= base_url('Admin_Kemitraan/hapus_divisi/' . (int) $divisi->id) ?>"
-          onsubmit="return confirm('Hapus divisi <?= html_escape(addslashes($divisi->nama)) ?>? Hanya bisa kalau belum pernah dipakai pendaftaran.')">
-        <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-        <input type="hidden" name="tahun" value="<?= (int) $tahun ?>">
-        <button type="submit" class="rounded-xl border border-rose-200 dark:border-rose-500/30 px-4 py-2.5 text-xs font-bold text-rose-600 dark:text-rose-400">
-            Hapus Divisi
-        </button>
-    </form>
-</div>
-
-<form method="POST" action="<?= base_url('Admin_Kemitraan/simpan_slot_divisi/' . (int) $divisi->id) ?>">
+<form method="POST" action="<?= base_url('Admin_Kemitraan/simpan_slot_bidang/' . rawurlencode($bidang->kode)) ?>">
     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
     <input type="hidden" name="tahun" value="<?= (int) $tahun ?>">
 
     <div class="mb-4 flex flex-wrap items-end gap-3 rounded-3xl border border-gray-200 dark:border-white/5 bg-white dark:bg-brand-card p-5">
         <div>
             <label for="kuota" class="mb-1.5 block text-xs font-bold text-gray-900 dark:text-white">Kuota hadir bersamaan</label>
-            <input id="kuota" name="kuota" type="number" min="0" max="255" value="<?= (int) $divisi->kuota ?>"
+            <input id="kuota" name="kuota" type="number" min="0" max="255" value="<?= (int) $bidang->kuota ?>"
                    class="w-24 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm font-bold text-gray-900 dark:text-white outline-none">
         </div>
         <p class="flex-1 text-xs text-gray-500 dark:text-brand-muted">
-            Berapa mahasiswa boleh berada di divisi ini pada hari yang sama. Dua orang yang
+            Berapa mahasiswa boleh berada di bidang ini pada hari yang sama. Dua orang yang
             periodenya tidak bertumpang tindih tidak saling menghalangi.
         </p>
     </div>
@@ -92,7 +62,7 @@ $isian = 'w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white
                         $awal    = sprintf('%04d-%02d-01', (int) $tahun, (int) $nomor);
                         $akhir   = date('Y-m-t', strtotime($awal));
                         $isi     = (int) ($terisi[(int) $tahun . '-' . (int) $nomor] ?? 0);
-                        $penuh   = $isi >= (int) $divisi->kuota;
+                        $penuh   = $isi >= (int) $bidang->kuota;
                         $orang   = $pendaftar[$nomor] ?? [];
                         ?>
                         <tr>
@@ -122,7 +92,7 @@ $isian = 'w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white
                                     <span class="text-xs text-gray-400 dark:text-brand-muted/60">—</span>
                                 <?php else: ?>
                                     <div class="mb-1 text-xs font-bold <?= $penuh ? 'text-amber-500' : 'text-gray-500 dark:text-brand-muted' ?>">
-                                        Paling ramai <?= $isi ?> dari <?= (int) $divisi->kuota ?>
+                                        Paling ramai <?= $isi ?> dari <?= (int) $bidang->kuota ?>
                                     </div>
                                     <?php foreach ($orang as $o): ?>
                                         <div class="text-[11px] text-gray-600 dark:text-gray-400">
@@ -144,7 +114,7 @@ $isian = 'w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white
                 Bulan yang kotak bukanya tidak dicentang akan ditutup, apa pun tanggal yang tertulis di sebelahnya.
             </p>
             <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white">
-                Simpan <?= html_escape($divisi->nama) ?> <?= (int) $tahun ?>
+                Simpan <?= html_escape($bidang->nama) ?> <?= (int) $tahun ?>
             </button>
         </div>
     </div>

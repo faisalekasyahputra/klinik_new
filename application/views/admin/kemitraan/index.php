@@ -1,8 +1,28 @@
 <?php $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => 'pendaftaran']); ?>
 
-<?php $this->load->helper('admin_table'); ?>
+<?php
+$this->load->helper('admin_table');
+// Filter dibangun lewat admin_table_url() supaya pencarian dan urutan yang
+// sedang aktif tidak hilang saat ganti filter, dan sebaliknya. Menyusun URL
+// sendiri di sini akan membuang salah satunya diam-diam.
+$pil = 'px-3 py-1 rounded-lg text-xs font-bold border transition-colors';
+$nyala = 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary';
+$padam = 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10';
+ob_start(); ?>
+<span class="mr-1 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted">Status:</span>
+<a href="<?= admin_table_url($base_url, ['status' => NULL]) ?>" class="<?= $pil ?> <?= empty($f_status) ? $nyala : $padam ?>">Semua</a>
+<?php foreach ($status_sah as $s): ?>
+    <a href="<?= admin_table_url($base_url, ['status' => $s]) ?>" class="<?= $pil ?> <?= $f_status === $s ? $nyala : $padam ?>"><?= html_escape($s) ?></a>
+<?php endforeach; ?>
+<span class="ml-3 mr-1 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted">Jenis:</span>
+<a href="<?= admin_table_url($base_url, ['jenis' => NULL]) ?>" class="<?= $pil ?> <?= empty($f_jenis) ? $nyala : $padam ?>">Semua</a>
+<?php foreach ($jenis_sah as $j): ?>
+    <a href="<?= admin_table_url($base_url, ['jenis' => $j]) ?>" class="<?= $pil ?> <?= $f_jenis === $j ? $nyala : $padam ?>"><?= strtoupper($j) ?></a>
+<?php endforeach;
+$filter_html = ob_get_clean();
+?>
 <div data-tabel-admin class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
-    <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari mahasiswa, instansi, divisi...'], TRUE) ?>
+    <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari mahasiswa, instansi, divisi...', 'filter_html' => $filter_html], TRUE) ?>
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
@@ -62,7 +82,11 @@
                     <td class="px-6 py-4">
                         <?php
                             // Peta status domain KKN/Magang -> kelas komponen bersama.
-                            $badge_kelas = ['Diajukan' => 'pending', 'Diterima' => 'ok', 'Ditolak' => 'reject'];
+                            // 'Dibatalkan' datang dari mahasiswa yang menarik
+                            // pendaftarannya sendiri — kuotanya sudah lepas, dan
+                            // barisnya tinggal riwayat.
+                            $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
+                                                             'Diterima' => 'ok', 'Ditolak' => 'reject', 'Dibatalkan' => 'reject'];
                         ?>
                         <?= $this->load->view('admin/components/status_badge', ['label' => $r->status, 'kelas' => $badge_kelas[$r->status] ?? 'pending'], TRUE) ?>
                     </td>
@@ -71,21 +95,26 @@
                              dibutuhkan justru setelah diproses, saat mahasiswa
                              mengabari NIM keliru atau periodenya bergeser. -->
                         <a href="<?= base_url('Admin_Kemitraan/ubah/' . $r->id) ?>" class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5">Ubah</a>
-                        <?php if ($r->status === 'Diajukan'): ?>
-                        <button @click="procOpen = !procOpen" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">Proses</button>
+                        <?php // Dirender untuk status APA PUN, bukan cuma 'Diajukan'. Dulu
+                              // keputusan yang sudah terlanjur salah tidak punya jalan
+                              // pulang sama sekali — admin harus mengubahnya lewat DB. ?>
+                        <button @click="procOpen = !procOpen" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10"><?= $r->status === 'Diajukan' ? 'Proses' : 'Ubah Keputusan' ?></button>
                         <div x-show="procOpen" x-cloak @click.outside="procOpen = false" class="absolute right-6 top-full mt-1 z-20 w-72 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
                             <?= $this->load->view('admin/components/review_form', [
                                 'action_url' => 'Admin_Kemitraan/proses/' . $r->id,
+                                // Jalur normal tahap satu adalah MENERUSKAN, bukan
+                                // menerima — keputusan menerima ada di meja bidang.
+                                // 'Terima langsung' tetap disediakan untuk divisi yang
+                                // bidangnya belum punya peninjau, dan diletakkan
+                                // terakhir supaya bukan yang paling mudah diklik.
                                 'buttons' => [
-                                    ['value' => 'Diterima', 'label' => 'Terima', 'style' => 'accept'],
+                                    ['value' => 'Ditinjau Bidang', 'label' => 'Teruskan ke Bidang', 'style' => 'accept'],
                                     ['value' => 'Ditolak', 'label' => 'Tolak', 'style' => 'reject'],
+                                    ['value' => 'Diterima', 'label' => 'Terima Langsung', 'style' => 'accept'],
                                 ],
                                 'catatan_name' => 'catatan_admin',
                             ], TRUE) ?>
                         </div>
-                        <?php else: ?>
-                        <span class="text-xs text-gray-400 dark:text-brand-muted/60">Selesai diproses</span>
-                        <?php endif; ?>
                     </td>
                 </tr>
                 <?php endforeach; endif; ?>

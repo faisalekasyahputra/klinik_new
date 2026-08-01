@@ -36,11 +36,11 @@ class KemitraanPortal extends Public_Controller
         // "tutup" tidak sama dengan "dibuka tapi sudah penuh", dan pembaca
         // berhak tahu bedanya sebelum menyusun periodenya.
         $slot_magang = [];
-        foreach ($this->slot->divisi() as $divisi) {
+        foreach ($this->slot->bidang() as $bidang) {
             $sel = [];
             foreach (Kemitraan_slot_model::nama_bulan() as $nomor => $label) {
-                $isi  = (int) ($terisi[$divisi->nama][$tahun . '-' . $nomor] ?? 0);
-                $slot = $peta[(int) $divisi->id][$nomor] ?? NULL;
+                $isi  = (int) ($terisi[$bidang->kode][$tahun . '-' . $nomor] ?? 0);
+                $slot = $peta[$bidang->kode][$nomor] ?? NULL;
 
                 if ( ! $slot) {
                     $sel[$label] = ['keadaan' => 'tutup', 'teks' => 'Tidak Tersedia', 'rentang' => ''];
@@ -48,19 +48,18 @@ class KemitraanPortal extends Public_Controller
                 }
 
                 // Rentang ditampilkan HANYA kalau bukan sebulan penuh. Menulis
-                // "1–30" di setiap sel yang utuh cuma menambah yang harus dibaca
-                // tanpa membedakan apa pun.
+                // "1–30" di setiap sel yang utuh cuma menambah yang harus dibaca.
                 $awal_bulan  = date('Y-m-01', strtotime($slot->tgl_mulai));
                 $akhir_bulan = date('Y-m-t', strtotime($slot->tgl_mulai));
                 $rentang = ($slot->tgl_mulai === $awal_bulan && $slot->tgl_selesai === $akhir_bulan)
                     ? ''
                     : (int) date('j', strtotime($slot->tgl_mulai)) . '–' . (int) date('j', strtotime($slot->tgl_selesai));
 
-                $sel[$label] = $isi >= (int) $divisi->kuota
-                    ? ['keadaan' => 'penuh', 'teks' => 'Penuh ' . $isi . '/' . (int) $divisi->kuota, 'rentang' => $rentang]
-                    : ['keadaan' => 'buka',  'teks' => 'Sisa ' . ((int) $divisi->kuota - $isi),      'rentang' => $rentang];
+                $sel[$label] = $isi >= (int) $bidang->kuota
+                    ? ['keadaan' => 'penuh', 'teks' => 'Penuh ' . $isi . '/' . (int) $bidang->kuota, 'rentang' => $rentang]
+                    : ['keadaan' => 'buka',  'teks' => 'Sisa ' . ((int) $bidang->kuota - $isi),      'rentang' => $rentang];
             }
-            $slot_magang[] = ['divisi' => $divisi->nama, 'kuota' => (int) $divisi->kuota, 'sel' => $sel];
+            $slot_magang[] = ['divisi' => $bidang->nama, 'kuota' => (int) $bidang->kuota, 'sel' => $sel];
         }
 
         $this->render('pages/kemitraan_portal/magang', [
@@ -89,8 +88,171 @@ class KemitraanPortal extends Public_Controller
             'jenis'      => $jenis,
             'nama_akun'  => (string) $this->session->userdata('name'),
             'email_akun' => (string) $this->session->userdata('email'),
-            'divisi'     => $jenis === 'magang' ? $this->slot->divisi() : [],
+            'divisi'     => $jenis === 'magang' ? $this->slot->bidang() : [],
         ]);
+    }
+
+    // =========================================================
+    // PENDAFTARAN MILIK SENDIRI — lihat, sunting, batalkan
+    //
+    // Semuanya lewat pendaftaran_milik(), yang mencocokkan user_id dari SESI.
+    // Id dari URL tidak pernah cukup: tanpa pencocokan itu, mengganti angka di
+    // alamat berarti membaca dan menyunting pendaftaran orang lain.
+    // =========================================================
+
+    public function pendaftaran($id = NULL)
+    {
+        $row = $this->pendaftaran_milik($id);
+        if ( ! $row) { return; }
+
+        $this->render('pages/kemitraan_portal/pendaftaran', [
+            'judul'      => 'Pendaftaran ' . strtoupper($row->jenis),
+            'row'        => $row,
+            'bisa_ubah'  => $row->status === 'Diajukan',
+        ]);
+    }
+
+    /**
+     * Unduh surat balasan sendiri.
+     *
+     * Berkas berada di luar webroot; satu-satunya jalan ke sana adalah endpoint
+     * ini, dan ia hanya menyajikan baris milik pemanggilnya. Surat balasan
+     * memuat nama, instansi, dan periode seseorang — ia bukan berkas publik
+     * hanya karena isinya kabar baik.
+     */
+    public function unduh_balasan($id = NULL)
+    {
+        $row = $this->pendaftaran_milik($id);
+        if ( ! $row) { return; }
+        if (empty($row->file_surat_balasan)) { show_404(); }
+
+        $ext  = strtolower(pathinfo($row->file_surat_balasan, PATHINFO_EXTENSION));
+        $mime = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'][$ext] ?? 'application/octet-stream';
+        $this->serve_private_file('kemitraan', (int) $row->id, $row->file_surat_balasan, $mime);
+    }
+
+    public function ubah($id = NULL)
+    {
+        $row = $this->pendaftaran_milik($id);
+        if ( ! $row) { return; }
+
+        // Yang sudah ditinjau TIDAK boleh berubah diam-diam di belakang
+        // peninjaunya — itu membuat keputusan admin menjadi keputusan atas data
+        // yang sudah tidak ada lagi. Keputusan user 1 Agt 2026.
+        if ($row->status !== 'Diajukan') {
+            $this->session->set_flashdata('error', 'Pendaftaran yang sudah ' . strtolower($row->status) . ' tidak bisa diubah lagi. Hubungi admin bila ada yang keliru.');
+            redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
+            return;
+        }
+
+        $this->render('pages/kemitraan_portal/ubah', [
+            'judul'      => 'Ubah Pendaftaran',
+            'row'        => $row,
+            'nama_akun'  => (string) $this->session->userdata('name'),
+            'email_akun' => (string) $this->session->userdata('email'),
+            'divisi'     => $row->jenis === 'magang' ? $this->slot->bidang() : [],
+        ]);
+    }
+
+    public function simpan_ubah($id = NULL)
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $row = $this->pendaftaran_milik($id);
+        if ( ! $row) { return; }
+
+        if ($row->status !== 'Diajukan') {
+            $this->session->set_flashdata('error', 'Pendaftaran yang sudah ' . strtolower($row->status) . ' tidak bisa diubah lagi.');
+            redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
+            return;
+        }
+
+        if ($this->form_validation->run('kemitraan_pendaftaran') === FALSE) {
+            $this->session->set_flashdata('error', validation_errors('<li>', '</li>'));
+            redirect('KemitraanPortal/ubah/' . (int) $row->id);
+            return;
+        }
+
+        $mulai   = $this->input->post('periode_mulai', TRUE);
+        $selesai = $this->input->post('periode_selesai', TRUE);
+        $divisi_atau_tema = $this->input->post('divisi_atau_tema', TRUE);
+
+        // $row->id diteruskan sebagai $abaikan_id: baris ini tidak boleh
+        // menghalangi dirinya sendiri. Tanpa itu, menyunting apa pun pada
+        // pendaftaran di bulan yang kuotanya pas akan selalu ditolak — oleh
+        // dirinya sendiri.
+        $bidang_kode = NULL;
+        $galat = $this->periksa_slot($row->jenis, $divisi_atau_tema, $bidang_kode, $mulai, $selesai, (int) $row->id);
+        if ($galat !== NULL) {
+            $this->session->set_flashdata('error', $galat);
+            redirect('KemitraanPortal/ubah/' . (int) $row->id);
+            return;
+        }
+
+        $this->db->where('id', (int) $row->id)->update('kkn_magang_pendaftaran', [
+            'nim'              => $this->input->post('nim', TRUE),
+            'tempat_lahir'     => $this->input->post('tempat_lahir', TRUE),
+            'tanggal_lahir'    => $this->input->post('tanggal_lahir', TRUE),
+            'semester'         => (int) $this->input->post('semester', TRUE),
+            'jurusan'          => $this->input->post('jurusan', TRUE),
+            'instansi_asal'    => $this->input->post('instansi_asal', TRUE),
+            'no_hp'            => $this->input->post('no_hp', TRUE),
+            'divisi_atau_tema' => $divisi_atau_tema,
+            'bidang_kode'      => $bidang_kode,
+            'periode_mulai'    => $mulai,
+            'periode_selesai'  => $selesai,
+        ]);
+
+        $this->session->set_flashdata('success', 'Pendaftaran diperbarui.');
+        redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
+    }
+
+    /**
+     * Batalkan pendaftaran sendiri.
+     *
+     * Statusnya diubah jadi 'Dibatalkan', BUKAN barisnya dihapus. Riwayatnya
+     * tetap terbaca oleh mahasiswa maupun admin, sementara kuotanya lepas
+     * seketika — peta_harian() hanya menghitung 'Diajukan' dan 'Diterima'.
+     *
+     * Ini menutup masalah yang nyata: status Diajukan sudah memakan kuota, jadi
+     * satu orang yang salah pilih divisi mengunci slot sampai ada admin yang
+     * menolaknya. Pada divisi berkuota 1, itu memblokir semua orang lain.
+     */
+    public function batal($id = NULL)
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $row = $this->pendaftaran_milik($id);
+        if ( ! $row) { return; }
+
+        if ($row->status !== 'Diajukan') {
+            $this->session->set_flashdata('error', 'Hanya pendaftaran yang masih diajukan yang bisa dibatalkan.');
+            redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
+            return;
+        }
+
+        $this->db->where('id', (int) $row->id)->update('kkn_magang_pendaftaran', ['status' => 'Dibatalkan']);
+        $this->session->set_flashdata('success', 'Pendaftaran dibatalkan. Slotnya kembali tersedia untuk mahasiswa lain.');
+        redirect('akun');
+    }
+
+    /**
+     * Ambil pendaftaran milik pemohon sendiri, atau hentikan permintaan.
+     *
+     * @return object|FALSE
+     */
+    private function pendaftaran_milik($id)
+    {
+        if ( ! is_numeric($id)) { show_404(); }
+        if ( ! $this->akses_mahasiswa('akun')) { return FALSE; }
+
+        $row = $this->db->get_where('kkn_magang_pendaftaran', [
+            'id'      => (int) $id,
+            'user_id' => $this->get_user_id(),
+        ])->row();
+
+        // 404, bukan 403: membedakan "tidak ada" dari "ada tapi bukan milikmu"
+        // memberi tahu penebak bahwa nomor itu sah.
+        if ( ! $row) { show_404(); }
+        return $row;
     }
 
     public function simpan()
@@ -113,48 +275,24 @@ class KemitraanPortal extends Public_Controller
         $periode_mulai    = $this->input->post('periode_mulai', TRUE);
         $periode_selesai  = $this->input->post('periode_selesai', TRUE);
 
-        // Urutan periode tidak pernah diperiksa sebelumnya, jadi pendaftaran
-        // yang selesai mendahului mulainya bisa tersimpan begitu saja. Selain
-        // salah pada dirinya sendiri, ia membuat penelusuran bulan di bawah
-        // tidak punya arah.
-        if ($periode_selesai < $periode_mulai) {
-            $this->tolak_pendaftaran($jenis, 'Periode selesai tidak boleh mendahului periode mulai.');
+        // Satu mahasiswa, satu pendaftaran menggantung per jenis. Tanpa ini
+        // formulir bisa dikirim berulang kali, dan karena tiap baris berstatus
+        // Diajukan memakan kuota, satu orang bisa menghabiskan seluruh kuota
+        // sebuah divisi sendirian.
+        $menggantung = $this->db->where([
+            'user_id' => $this->get_user_id(), 'jenis' => $jenis, 'status' => 'Diajukan',
+        ])->count_all_results('kkn_magang_pendaftaran');
+        if ($menggantung > 0) {
+            $this->tolak_pendaftaran($jenis, 'Anda masih punya pendaftaran ' . strtoupper($jenis)
+                . ' yang sedang ditinjau. Batalkan atau tunggu hasilnya dulu — lihat di halaman Akun.');
             return;
         }
 
-        if ($this->slot->periode_terlalu_panjang($periode_mulai, $periode_selesai)) {
-            $this->tolak_pendaftaran($jenis, 'Periode terlalu panjang. Maksimal '
-                . Kemitraan_slot_model::BATAS_HARI . ' hari.');
+        $bidang_kode = NULL;
+        $galat = $this->periksa_slot($jenis, $divisi_atau_tema, $bidang_kode, $periode_mulai, $periode_selesai);
+        if ($galat !== NULL) {
+            $this->tolak_pendaftaran($jenis, $galat);
             return;
-        }
-
-        // Slot HANYA mengikat magang. Untuk KKN, field yang sama berarti tema
-        // kegiatan — teks bebas yang tidak punya divisi untuk dicocokkan.
-        if ($jenis === 'magang') {
-            // Dicocokkan lewat NAMA, karena itulah yang tersimpan di
-            // `divisi_atau_tema` — kolom teks yang sudah dipakai pendaftaran
-            // lama dan dibaca apa adanya di meja admin. Menyimpan divisi_id di
-            // situ berarti membongkar kolom yang tidak perlu dibongkar.
-            $divisi = $this->slot->divisi_by_nama($divisi_atau_tema);
-            if ( ! $divisi || (int) $divisi->aktif !== 1) {
-                // Formulir merender select, tapi tidak merender pilihan bukan
-                // penjagaan — siapa pun bisa mengirim nilai lain dari peramban.
-                $this->tolak_pendaftaran($jenis, 'Divisi yang dipilih tidak tersedia. Silakan pilih dari daftar yang ditawarkan.');
-                return;
-            }
-
-            $halangan = $this->slot->bulan_terhalang($divisi, $periode_mulai, $periode_selesai);
-            if ($halangan) {
-                $this->tolak_pendaftaran($jenis, 'Divisi ' . html_escape($divisi->nama)
-                    . ' tidak membuka slot pada: ' . html_escape(implode(', ', $halangan))
-                    . '. Sesuaikan periode atau pilih divisi lain.');
-                return;
-            }
-
-            // Simpan nama KANONIK dari tabel, bukan teks kiriman. Keduanya
-            // cocok saat ini, tapi yang tersimpan harus selalu bisa ditelusuri
-            // balik ke satu baris divisi — bukan varian spasi yang mirip.
-            $divisi_atau_tema = $divisi->nama;
         }
 
         // user_id selalu dari sesi (anti-IDOR), bukan dari input. Baris dibuat
@@ -171,6 +309,7 @@ class KemitraanPortal extends Public_Controller
             'instansi_asal'        => $this->input->post('instansi_asal', TRUE),
             'no_hp'                => $this->input->post('no_hp', TRUE),
             'divisi_atau_tema'     => $divisi_atau_tema,
+            'bidang_kode'          => $bidang_kode,
             'periode_mulai'        => $periode_mulai,
             'periode_selesai'      => $periode_selesai,
             'file_surat_pengantar' => NULL,
@@ -209,6 +348,61 @@ class KemitraanPortal extends Public_Controller
 
         $this->session->set_flashdata('success', $pesan);
         redirect('akun');
+    }
+
+    /**
+     * Periksa periode dan slot. Kembalikan NULL kalau boleh, atau pesan alasan.
+     *
+     * Dipakai `simpan()` (pendaftaran baru) DAN `simpan_ubah()` (mahasiswa
+     * menyunting miliknya). Dua salinan pemeriksaan yang sama akan berselisih,
+     * dan yang longgar selalu yang menang — di sini yang longgar berarti
+     * mahasiswa bisa memindahkan dirinya ke bulan yang tertutup lewat layar
+     * sunting, melewati penjagaan yang sudah dipasang di pendaftaran.
+     *
+     * @param string $divisi_atau_tema  DIUBAH jadi nama kanonik dari tabel.
+     * @param int|null $abaikan_id      Baris yang tidak ikut dihitung — dipakai
+     *   saat menyunting, supaya pendaftaran tidak menghalangi dirinya sendiri.
+     */
+    private function periksa_slot($jenis, &$divisi_atau_tema, &$bidang_kode, $mulai, $selesai, $abaikan_id = NULL)
+    {
+        // Urutan periode tidak pernah diperiksa sebelumnya, jadi pendaftaran
+        // yang selesai mendahului mulainya bisa tersimpan begitu saja. Selain
+        // salah pada dirinya sendiri, ia membuat penelusuran hari di bawah
+        // tidak punya arah.
+        if ($selesai < $mulai) {
+            return 'Periode selesai tidak boleh mendahului periode mulai.';
+        }
+
+        if ($this->slot->periode_terlalu_panjang($mulai, $selesai)) {
+            return 'Periode terlalu panjang. Maksimal ' . Kemitraan_slot_model::BATAS_HARI . ' hari.';
+        }
+
+        // Slot HANYA mengikat magang. Untuk KKN, field yang sama berarti tema
+        // kegiatan — teks bebas yang tidak punya bidang untuk dicocokkan.
+        if ($jenis !== 'magang') { $bidang_kode = NULL; return NULL; }
+
+        // Formulir mengirim KODE bidang, bukan namanya. Nama bisa berubah;
+        // kode adalah kunci yang tersimpan di pendaftaran dan dipakai routing
+        // tinjauan tahap dua.
+        $bidang = $this->slot->bidang_by_kode($divisi_atau_tema);
+        if ( ! $bidang || (int) $bidang->aktif !== 1) {
+            // Formulir merender select, tapi tidak merender pilihan bukan
+            // penjagaan — siapa pun bisa mengirim nilai lain dari peramban.
+            return 'Bidang yang dipilih tidak tersedia. Silakan pilih dari daftar yang ditawarkan.';
+        }
+
+        $halangan = $this->slot->bulan_terhalang($bidang, $mulai, $selesai, $abaikan_id);
+        if ($halangan) {
+            return html_escape($bidang->nama)
+                . ' tidak membuka slot pada: ' . html_escape(implode(', ', $halangan))
+                . '. Sesuaikan periode atau pilih bidang lain.';
+        }
+
+        // Yang tersimpan: KODE di kolomnya sendiri, dan NAMA di
+        // `divisi_atau_tema` supaya layar lama tetap terbaca apa adanya.
+        $bidang_kode      = $bidang->kode;
+        $divisi_atau_tema = $bidang->nama;
+        return NULL;
     }
 
     /**

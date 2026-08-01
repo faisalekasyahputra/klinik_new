@@ -15,7 +15,7 @@
  */
 $tab = [
     'pendaftaran' => ['label' => 'Pendaftaran', 'url' => 'Admin_Kemitraan',      'ikon' => 'ph-student'],
-    'slot'        => ['label' => 'Slot & Divisi', 'url' => 'Admin_Kemitraan/slot', 'ikon' => 'ph-calendar-check'],
+    'slot'        => ['label' => 'Slot & Bidang', 'url' => 'Admin_Kemitraan/slot', 'ikon' => 'ph-calendar-check'],
 ];
 $aktif = isset($tab_aktif) ? $tab_aktif : 'pendaftaran';
 ?>

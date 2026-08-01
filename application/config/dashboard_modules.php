@@ -237,6 +237,19 @@ $config['dashboard_modules'] = [
         'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'KKN/Magang',
     ],
+    // Meja KEDUA alur surat magang. Terpisah dari 'kemitraan' di atas karena
+    // pemiliknya berbeda: yang itu sekretariat (superadmin), yang ini bidang.
+    // 'pending_where' memakai status 'Ditinjau Bidang' — vocabulary status
+    // memang beda per domain, dan di sinilah perbedaan itu dideklarasikan.
+    'kemitraan_bidang' => [
+        'label' => 'Magang Bidang Saya', 'icon' => 'ph-graduation-cap',
+        'url'   => 'Kemitraan_Bidang', 'group' => 'Layanan', 'order' => 11,
+        'roles' => ['admin_bidang'], 'scope' => 'bidang_kode',
+        'table' => 'kkn_magang_pendaftaran', 'review_by' => 'admin_bidang',
+        'pending_where' => ['status' => 'Ditinjau Bidang'],
+        'status_column' => 'status', 'owner_column' => 'user_id',
+        'badge' => TRUE,
+    ],
     // CATATAN: slot magang TIDAK punya entri sendiri di sini. Ia satu domain
     // dengan pendaftaran di atas — yang satu menetapkan tempatnya, yang lain
     // memproses orang yang mengisinya — dan hidup sebagai tab di dalam
