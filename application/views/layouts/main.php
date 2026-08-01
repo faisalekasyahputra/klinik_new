@@ -80,15 +80,8 @@
                        <a href="<?= base_url() ?>" data-tab-link data-tab-key="beranda" class="portal-tab-btn <?= $active_tab === 'beranda' ? 'active' : '' ?>">
                            <i class="fa-solid fa-grip"></i> Beranda
                        </a>
-                       <a href="<?= base_url('tab/perumahan') ?>" data-tab-link data-tab-key="perumahan" class="portal-tab-btn <?= $active_tab === 'perumahan' ? 'active' : '' ?>">
-                           <i class="fa-solid fa-house-chimney"></i> Perumahan
-                       </a>
-                       <a href="<?= base_url('tab/kawasan') ?>" data-tab-link data-tab-key="kawasan" class="portal-tab-btn <?= $active_tab === 'kawasan' ? 'active' : '' ?>">
-                           <i class="fa-solid fa-city"></i> Kawasan
-                       </a>
-                       <a href="<?= base_url('tab/pertanahan') ?>" data-tab-link data-tab-key="pertanahan" class="portal-tab-btn <?= $active_tab === 'pertanahan' ? 'active' : '' ?>">
-                           <i class="fa-solid fa-mountain-sun"></i> Pertanahan
-                       </a>
+                       <!-- Tab Perumahan / Kawasan / Pertanahan disembunyikan 1 Agu 2026 —
+                            rute tab/* dan halamannya masih hidup, hanya tidak dipajang di tab bar. -->
                        <a href="<?= base_url('tab/pengembang') ?>" data-tab-link data-tab-key="pengembang" class="portal-tab-btn <?= $active_tab === 'pengembang' ? 'active' : '' ?>">
                            <i class="fa-solid fa-helmet-safety"></i> Pengembang
                        </a>

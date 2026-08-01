@@ -20,9 +20,7 @@
         </div>
 
         <a href="<?= base_url() ?>" class="block text-zinc-400 hover:text-white py-3 text-sm border-b border-[#d6fb00]/20" @click="mobileMenu = false">Beranda</a>
-        <a href="<?= base_url('tab/perumahan') ?>" class="block text-zinc-400 hover:text-white py-3 text-sm border-b border-[#d6fb00]/20" @click="mobileMenu = false">Perumahan</a>
-        <a href="<?= base_url('tab/kawasan') ?>" class="block text-zinc-400 hover:text-white py-3 text-sm border-b border-[#d6fb00]/20" @click="mobileMenu = false">Kawasan</a>
-        <a href="<?= base_url('tab/pertanahan') ?>" class="block text-zinc-400 hover:text-white py-3 text-sm border-b border-[#d6fb00]/20" @click="mobileMenu = false">Pertanahan</a>
+<?php // Perumahan / Kawasan / Pertanahan disembunyikan 1 Agu 2026, sejalan dengan tab bar di main.php ?>
         <a href="<?= base_url('tab/pengembang') ?>" class="block text-zinc-400 hover:text-white py-3 text-sm border-b border-[#d6fb00]/20" @click="mobileMenu = false">Pengembang</a>
         <a href="<?= base_url('tab/bankdata') ?>" class="block text-zinc-400 hover:text-white py-3 text-sm border-b border-[#d6fb00]/20" @click="mobileMenu = false">Bank Data</a>
 
