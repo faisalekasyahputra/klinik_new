@@ -402,6 +402,7 @@ class Auth extends MY_Controller {
         $data = [
             'user_email'     => $this->session->userdata('email'),
             'needs_password' => $needs_password,
+            'old'            => $this->session->flashdata('ob_old') ?: [],
         ];
         $this->load->view('pages/auth/onboarding', $data);
     }
@@ -419,10 +420,15 @@ class Auth extends MY_Controller {
         $role    = html_escape($this->input->post('role'));
 
         // Validate role
-        $valid_roles = ['warga', 'pengembang', 'vendor', 'mahasiswa'];
+        // 'vendor' DICABUT. Ia bukan sekadar tidak terpakai — kolom yang diisi
+        // cabangnya (nama_usaha, alamat_usaha, jenis_usaha) tidak ada di
+        // usr_users, jadi save_profile() pasti gagal di tingkat DB. Siapa pun
+        // yang memilih kartu itu tidak pernah mendapat profil, cuma error. Nol
+        // baris berperan vendor di production, dan config/roles.php memang
+        // sudah tidak mencantumkannya sebagai role resmi.
+        $valid_roles = ['warga', 'pengembang', 'mahasiswa'];
         if (!in_array($role, $valid_roles)) {
-            $this->session->set_flashdata('error', 'Pilih peran yang valid.');
-            redirect('Auth/onboarding');
+            $this->_onboarding_fail('Pilih peran yang valid.');
             return;
         }
 
@@ -435,8 +441,7 @@ class Auth extends MY_Controller {
         $phone     = html_escape($this->input->post('phone'));
 
         if (empty($username) || empty($nama) || empty($nik_raw) || empty($alamat_raw) || empty($phone)) {
-            $this->session->set_flashdata('error', 'Semua field wajib harus diisi.');
-            redirect('Auth/onboarding');
+            $this->_onboarding_fail('Semua field wajib harus diisi.');
             return;
         }
 
@@ -447,21 +452,18 @@ class Auth extends MY_Controller {
             $password_confirm  = $this->input->post('password_confirm');
 
             if (empty($password) || empty($password_confirm)) {
-                $this->session->set_flashdata('error', 'Password wajib diisi untuk mengamankan akun Anda.');
-                redirect('Auth/onboarding');
+                $this->_onboarding_fail('Password wajib diisi untuk mengamankan akun Anda.');
                 return;
             }
 
             if ($password !== $password_confirm) {
-                $this->session->set_flashdata('error', 'Password dan konfirmasi tidak cocok.');
-                redirect('Auth/onboarding');
+                $this->_onboarding_fail('Password dan konfirmasi tidak cocok.');
                 return;
             }
 
             if (strlen($password) < 8 || !preg_match('/[A-Z]/', $password) ||
                 !preg_match('/[0-9]/', $password) || !preg_match('/[^A-Za-z0-9]/', $password)) {
-                $this->session->set_flashdata('error', 'Password harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.');
-                redirect('Auth/onboarding');
+                $this->_onboarding_fail('Password harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.');
                 return;
             }
 
@@ -473,15 +475,13 @@ class Auth extends MY_Controller {
         $this->db->where('username', $username);
         $this->db->where('id !=', $user_id);
         if ($this->db->count_all_results('usr_users') > 0) {
-            $this->session->set_flashdata('error', 'Username sudah digunakan, silakan pilih yang lain.');
-            redirect('Auth/onboarding');
+            $this->_onboarding_fail('Username sudah digunakan, silakan pilih yang lain.');
             return;
         }
 
         // NIK validation (16 digits)
         if (!preg_match('/^[0-9]{16}$/', $nik_raw)) {
-            $this->session->set_flashdata('error', 'NIK harus terdiri dari 16 digit angka.');
-            redirect('Auth/onboarding');
+            $this->_onboarding_fail('NIK harus terdiri dari 16 digit angka.');
             return;
         }
 
@@ -510,17 +510,12 @@ class Auth extends MY_Controller {
             // di meja admin. Roadmap T1a butir 3.
             $nama_perusahaan_ob = trim((string) $this->input->post('nama_perusahaan'));
             if ($nama_perusahaan_ob === '') {
-                $this->session->set_flashdata('error', 'Nama perusahaan wajib diisi untuk mendaftar sebagai pengembang.');
-                redirect('Auth/onboarding');
+                $this->_onboarding_fail('Nama perusahaan wajib diisi untuk mendaftar sebagai pengembang.');
                 return;
             }
             $profile_data['nama_perusahaan'] = html_escape($nama_perusahaan_ob);
             $profile_data['alamat_kantor']   = html_escape($this->input->post('alamat_kantor'));
             $profile_data['telp_kantor']     = html_escape($this->input->post('telp_kantor'));
-        } elseif ($role === 'vendor') {
-            $profile_data['nama_usaha']  = html_escape($this->input->post('nama_usaha'));
-            $profile_data['alamat_usaha'] = html_escape($this->input->post('alamat_usaha'));
-            $profile_data['jenis_usaha'] = html_escape($this->input->post('jenis_usaha'));
         }
 
         // Save profile
@@ -547,6 +542,29 @@ class Auth extends MY_Controller {
 
         $this->session->set_flashdata('success', 'Profil berhasil disimpan! Selamat datang di Klinik PKP.');
         $this->_redirect_after_login();
+    }
+
+    /**
+     * Gagalkan onboarding TANPA membuang isian user.
+     *
+     * Sebelumnya tiap cabang validasi memanggil set_flashdata('error') +
+     * redirect sendiri-sendiri, jadi satu digit NIK yang keliru memulangkan
+     * pengembang ke formulir kosong — 12 isian dan 2 unggahan hilang. Semua
+     * cabang sekarang lewat sini supaya isian ikut pulang bersama pesannya.
+     *
+     * Password TIDAK ikut disimpan: flashdata menumpang session, dan kata sandi
+     * polos tidak boleh singgah di sana meski cuma satu permintaan.
+     * Berkas juga tidak bisa dikembalikan — HTML melarang mengisi input file
+     * dari server, jadi formulir menyebutkannya terus terang ke user.
+     */
+    private function _onboarding_fail($pesan) {
+        $old = $this->input->post();
+        unset($old['password'], $old['password_confirm'],
+              $old[$this->security->get_csrf_token_name()]);
+
+        $this->session->set_flashdata('ob_old', $old);
+        $this->session->set_flashdata('error', $pesan);
+        redirect('Auth/onboarding');
     }
 
     // =========================================================
@@ -853,8 +871,6 @@ class Auth extends MY_Controller {
         $upload_fields = [];
         if ($role === 'pengembang') {
             $upload_fields = ['file_ktp' => 'ktp', 'file_siup' => 'siup_nib'];
-        } elseif ($role === 'vendor') {
-            $upload_fields = ['file_ktp_vendor' => 'ktp', 'file_siu_vendor' => 'surat_ijin_usaha'];
         } elseif ($role === 'mahasiswa') {
             $upload_fields = ['file_ktm' => 'ktm', 'file_surat_magang' => 'surat_magang'];
         }

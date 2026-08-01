@@ -13,7 +13,10 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | Auth::onboarding(), $valid_roles).
 |
 | 'vendor' sengaja tidak masuk daftar ini — role lama yang belum
-| dikembangkan lebih lanjut, dibiarkan apa adanya.
+| dikembangkan lebih lanjut. Sejak 1 Agt 2026 ia juga dicabut dari
+| Auth::save_onboarding(): cabangnya menulis ke kolom nama_usaha/
+| alamat_usaha/jenis_usaha yang tidak ada di usr_users, jadi memilihnya
+| menghasilkan error DB, bukan profil. Nol baris berperan vendor.
 |
 */
 $config['available_roles'] = [
