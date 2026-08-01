@@ -1,7 +1,4 @@
-<div class="mb-6">
-    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Pendaftaran KKN/Magang</h2>
-    <p class="text-sm text-gray-500 dark:text-brand-muted">Tinjau dan proses pendaftaran KKN/Magang dari mahasiswa.</p>
-</div>
+<?php $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => 'pendaftaran']); ?>
 
 <?php $this->load->helper('admin_table'); ?>
 <div data-tabel-admin class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
@@ -70,6 +67,10 @@
                         <?= $this->load->view('admin/components/status_badge', ['label' => $r->status, 'kelas' => $badge_kelas[$r->status] ?? 'pending'], TRUE) ?>
                     </td>
                     <td class="px-6 py-4 text-right relative">
+                        <!-- Tersedia pada status APA PUN: koreksi data paling sering
+                             dibutuhkan justru setelah diproses, saat mahasiswa
+                             mengabari NIM keliru atau periodenya bergeser. -->
+                        <a href="<?= base_url('Admin_Kemitraan/ubah/' . $r->id) ?>" class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5">Ubah</a>
                         <?php if ($r->status === 'Diajukan'): ?>
                         <button @click="procOpen = !procOpen" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">Proses</button>
                         <div x-show="procOpen" x-cloak @click.outside="procOpen = false" class="absolute right-6 top-full mt-1 z-20 w-72 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">

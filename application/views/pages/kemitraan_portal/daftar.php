@@ -96,7 +96,26 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
 
         <div>
             <label for="kd-divisi" class="<?= $label ?>"><?= $jenis === 'kkn' ? 'Tema Kegiatan' : 'Divisi yang Dituju' ?></label>
-            <input id="kd-divisi" name="divisi_atau_tema" x-model="divisi_atau_tema" required maxlength="150" placeholder="<?= $jenis === 'kkn' ? 'Contoh: Penataan Kawasan Kumuh' : 'Contoh: Infrastruktur dan Teknologi Digital' ?>" class="<?= $isian ?>">
+            <?php if ($jenis === 'magang'): ?>
+                <!-- Divisi dipilih dari daftar, bukan diketik. Sebelumnya ini
+                     teks bebas, jadi pendaftar bisa menulis divisi yang di
+                     papan slot berwarna merah — dan tidak ada yang menahannya.
+                     Penjagaan yang sebenarnya tetap di KemitraanPortal::simpan();
+                     select ini hanya supaya orang tidak menebak-nebak. -->
+                <select id="kd-divisi" name="divisi_atau_tema" x-model="divisi_atau_tema" required class="<?= $isian ?>">
+                    <option value="">— Pilih divisi —</option>
+                    <?php foreach ($divisi as $d): ?>
+                        <option value="<?= html_escape($d->nama) ?>"><?= html_escape($d->nama) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <p class="<?= $petunjuk ?>">
+                    Pastikan seluruh bulan dalam periode Anda terbuka di
+                    <a href="<?= base_url('KemitraanPortal/magang') ?>" class="font-bold underline">papan slot</a>.
+                    Pendaftaran ditolak kalau ada bulan yang tertutup.
+                </p>
+            <?php else: ?>
+                <input id="kd-divisi" name="divisi_atau_tema" x-model="divisi_atau_tema" required maxlength="150" placeholder="Contoh: Penataan Kawasan Kumuh" class="<?= $isian ?>">
+            <?php endif; ?>
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">

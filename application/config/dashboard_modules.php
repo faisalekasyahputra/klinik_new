@@ -237,6 +237,13 @@ $config['dashboard_modules'] = [
         'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'KKN/Magang',
     ],
+    // CATATAN: slot magang TIDAK punya entri sendiri di sini. Ia satu domain
+    // dengan pendaftaran di atas — yang satu menetapkan tempatnya, yang lain
+    // memproses orang yang mengisinya — dan hidup sebagai tab di dalam
+    // Admin_Kemitraan. Sidebar yang bertambah satu baris setiap kali ada layar
+    // baru akan berhenti bisa dibaca. Deteksi active-state di registry ini
+    // memakai prefix "url/", jadi Admin_Kemitraan/slot tetap menyalakan menu
+    // KKN/Magang tanpa entri tambahan.
     'users' => [
         'label' => 'Pengguna', 'icon' => 'ph-users',
         'url'   => 'Admin_Users', 'group' => 'Manajemen', 'order' => 10,

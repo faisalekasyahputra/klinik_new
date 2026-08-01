@@ -162,6 +162,8 @@ function bersihkan() {
         }
     }
     $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
+    // Slot 2099 yang dibuka skrip ini — tahun itu tidak pernah dipakai data asli.
+    $db->query("DELETE FROM kkn_magang_slot WHERE tahun = 2099");
     foreach ($berkas_sementara as $f) { @unlink($f); }
     foreach ($jars as $f) { @unlink($f); }
 }
@@ -187,6 +189,26 @@ foreach (['nim', 'tempat_lahir', 'tanggal_lahir', 'semester', 'jurusan'] as $f) 
 cek(strpos($form_magang['body'], 'name="file_proposal"') !== FALSE, 'Magang menawarkan unggahan proposal');
 cek(strpos($form_kkn['body'], 'name="file_proposal"') === FALSE, 'KKN TIDAK menawarkan unggahan proposal');
 cek(strpos($form_magang['body'], 'name="file_surat_pengantar"') !== FALSE, 'Surat pengantar tetap ada');
+
+// Sejak migrasi 20260701000026, pendaftaran MAGANG tunduk pada slot: divisi
+// harus terdaftar & aktif, dan setiap bulan dalam periodenya harus terbuka.
+// Skrip ini memakai periode 2099 yang tidak punya slot sama sekali, jadi
+// slotnya dibuka di sini dan ditutup lagi di bersihkan(). Dibuka untuk KEDUA
+// divisi supaya uji "tanpa NIM" tetap menguji NIM — bukan lulus karena kebetulan
+// tertahan penjagaan slot lebih dulu. KKN tidak terpengaruh: di sana field yang
+// sama berarti tema kegiatan, bukan unit kerja.
+foreach (['Sekretariat', 'Infrastruktur dan Teknologi Digital'] as $nama_divisi) {
+    $d = baris("SELECT id FROM kkn_magang_divisi WHERE nama = ?", [$nama_divisi]);
+    if ( ! $d) { continue; }
+    // tgl_mulai/tgl_selesai WAJIB sejak migrasi 20260701000028 — sebulan penuh
+    // dinyatakan eksplisit, bukan lewat NULL. LAST_DAY() mengurus panjang bulan
+    // supaya skrip ini tidak perlu tahu Februari 2099 berapa hari.
+    foreach ([1, 2] as $bulan) {
+        $awal = sprintf('2099-%02d-01', $bulan);
+        $db->query("INSERT IGNORE INTO kkn_magang_slot (divisi_id, tahun, bulan, tgl_mulai, tgl_selesai) VALUES ("
+            . (int) $d['id'] . ", 2099, " . (int) $bulan . ", '" . $awal . "', LAST_DAY('" . $awal . "'))");
+    }
+}
 
 echo "\n== Validasi menolak identitas kosong ==\n";
 $tanpa_nim = http('KemitraanPortal/simpan', [
