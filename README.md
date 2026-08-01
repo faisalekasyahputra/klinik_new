@@ -7,11 +7,35 @@
 
 ## ⚡ Quick Start (5 Menit)
 
-### 1. Extract & Pindahkan
+### 1. Clone Repo
+Repo ini **privat** — kamu harus sudah diundang sebagai collaborator di GitHub dulu.
+Clone langsung ke dalam folder `htdocs` (XAMPP/Laragon):
+
+```bash
+cd C:/xampp/htdocs && git clone -b feature/homepage-portal-v2 https://github.com/faisalekasyahputra/klinik_new.git
 ```
-Ekstrak ZIP → pindahkan ke folder htdocs (XAMPP/Laragon)
-Contoh: C:\xampp\htdocs\klinik_new\
+
+> ⚠️ **`-b feature/homepage-portal-v2` itu wajib, bukan opsional.** Tanpa itu kamu
+> dapat `main`, dan `main` **beku sejak 19 Juli 2026** — kodenya ketinggalan jauh dan
+> DB-nya belum pernah dimigrasi sama sekali. `main` disimpan untuk rilis akhir saja.
+> Branch kerja yang hidup selalu tercatat di [`AGENTS.md`](AGENTS.md) §0a — kalau
+> suatu saat pindah, percayai tabel di sana, bukan baris ini.
+>
+> 🔴 **Branch ini auto-deploy ke PRODUCTION.** Setiap `git push` ke
+> `feature/homepage-portal-v2` langsung tayang di situs asli. Tidak ada lagi staging
+> terpisah. Kerjakan dan uji di lokal; jangan push kecuali memang mau merilis.
+
+Git for Windows akan membuka jendela login GitHub di browser saat pertama kali clone;
+setelah itu kredensialnya tersimpan dan tidak ditanya lagi. Kalau jendela itu tidak
+muncul dan kamu malah dimintai password di terminal, pakai GitHub CLI:
+
+```bash
+gh auth login && gh repo clone faisalekasyahputra/klinik_new -- -b feature/homepage-portal-v2
 ```
+
+> ❌ **404 / "repository not found"** saat clone hampir selalu berarti akun GitHub-mu
+> belum punya akses, bukan URL-nya salah. Repo privat memang tampil sebagai 404 ke
+> orang luar. Minta undangan collaborator ke lead developer.
 
 ### 2. Buat File `.env`
 Copy `.env.example` → `.env`, lalu isi:

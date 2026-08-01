@@ -2,7 +2,7 @@
 
 > Peta navigasi teknis DAN titik temu antar agent (Claude Code, Cursor, Copilot, dll) yang bekerja di repo ini.
 > Isi ditulis dari pembacaan kode langsung, bukan asumsi dokumen lama. Tiap klaim penting mencantumkan tanggal verifikasi.
-> Spesifikasi produk/bisnis: [`docs/README.md`](docs/README.md). [`README.md`](README.md) di root = panduan setup untuk manusia — ✅ disegarkan 27 Jul 2026 (dulu ditandai usang; langkah `php index.php migrate` yang hilang sudah ditambahkan, jumlah controller & tabel dikoreksi).
+> Spesifikasi produk/bisnis: [`docs/README.md`](docs/README.md). [`README.md`](README.md) di root = panduan setup untuk manusia — ✅ disegarkan 1 Agu 2026 (langkah 1 "ekstrak ZIP" diganti `git clone -b feature/homepage-portal-v2` + peringatan auto-deploy; sebelumnya 27 Jul: `php index.php migrate` ditambahkan, jumlah controller & tabel dikoreksi).
 
 ---
 
@@ -73,7 +73,9 @@
 
 Tiga yang pertama sempat menyajikan `.env` publik. Kalau menyentuh staging, ingat dua situs menunjuk DB yang sama — perubahan di satu terlihat di keduanya.
 
-> 🚫 **`main` tidak boleh disentuh tanpa perintah eksplisit user.** Detail & urutan rilis yang benar ada di §1. Staging bebas — push branch fitur otomatis merilis ke sana.
+> 🚫 **`main` tidak boleh disentuh tanpa perintah eksplisit user.** Detail & urutan rilis yang benar ada di §1.
+>
+> ⚠️ **Kalimat "staging bebas, push branch fitur otomatis merilis ke sana" DICABUT 1 Agu 2026 — itu peta 26 Jul yang sudah usang.** Sejak §0a (27 Jul) tidak ada lagi staging: push ke `feature/homepage-portal-v2` merilis ke **PRODUCTION**. Tidak ada branch yang "bebas di-push" hari ini. Uji di lokal; push hanya atas perintah user.
 >
 > **Ditegaskan user 26 Jul 2026:** belum ada rencana rilis sama sekali — proyek ini masih panjang. Jangan menawarkan merge ke `main`, jangan menyiapkan PR ke `main`, jangan menjalankan migrasi production. Anggap `main` beku sampai user sendiri yang membukanya.
 
@@ -218,20 +220,28 @@ Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya
 - **Instansi:** Dinas Perumahan Rakyat & Kawasan Permukiman Prov. Jawa Tengah
 - **Stack:** CodeIgniter 3.1.13 (PHP 8.x), MySQL/MariaDB, Tailwind CSS, Alpine.js, Leaflet.js
 - **Bahasa dokumentasi & komentar kode:** Bahasa Indonesia
-- **Lingkungan (JANGAN tertukar — diverifikasi 26 Jul 2026):**
+- **Lingkungan: tabelnya ada di [§0a](#0a-keadaan-lingkungan-saat-ini), dan HANYA di sana.**
 
-  | Lingkungan | URL | Database | Deploy |
-  |---|---|---|---|
-  | **Production** | `https://palegreen-mink-703421.hostingersite.com/` | `u504551489_klinikpkp` | auto-deploy dari branch **`main`** |
-  | **Staging** | `https://floralwhite-lion-710022.hostingersite.com/` | `u504551489_klinikstg` | auto-deploy dari **branch fitur** — terbukti: push ke `feature/homepage-portal-v2` langsung membuat controller baru hidup di staging |
+  > 🔻 **Tabel lingkungan yang dulu berdiri di sini dihapus 1 Agu 2026.** Isinya peta 26 Jul — `palegreen`/`main` sebagai production dan `floralwhite` sebagai staging — padahal keputusan user 27 Jul membalik keduanya: `palegreen` dimatikan, `floralwhite` JADI production. Dua tabel lingkungan di satu dokumen berarti separuh pembaca dapat jawaban yang salah, dan yang salah di sini kebetulan yang berbunyi "aman di-push". Satu tabel saja, di §0a.
 
   Kredensial ketiga lingkungan ada di `.env` sebagai blok terpisah (lokal aktif, staging & production dikomentari). **Perhatikan saat mengambil nilai dari `.env` lewat script:** ada tiga blok `DB_PASS`, mengambil yang "terakhir" akan mendapat password PRODUCTION. Ambil per nomor baris atau per blok.
 
-  > 🚫 **JANGAN merge/push ke `main` tanpa perintah eksplisit user.** `main` = rilis ke production, otomatis, tanpa tahap konfirmasi. Aturan yang berlaku sejak 26 Jul 2026: `main` disentuh HANYA setelah seluruh pekerjaan yang sedang berjalan dinyatakan beres oleh user. Bekerja dan merilis ke staging (branch fitur) bebas; naik ke production tidak.
+  > 🚫 **JANGAN merge/push ke `main` tanpa perintah eksplisit user.** `main` = rilis ke production, otomatis, tanpa tahap konfirmasi. Aturan yang berlaku sejak 26 Jul 2026: `main` disentuh HANYA setelah seluruh pekerjaan yang sedang berjalan dinyatakan beres oleh user.
+  >
+  > 🔴 **Dan sejak 27 Jul, `feature/homepage-portal-v2` sama tidak-bebasnya:** branch itu auto-deploy ke production yang aktif. Tidak ada lagi lingkungan yang "bebas di-push". Kerja lokal bebas; setiap `git push` butuh perintah user.
 
   **Urutan naik ke production (saat sudah diizinkan):** merge ke `main` → tunggu deploy → **baru** jalankan migrasi ke DB production. Jangan dibalik; kode baru dengan skema lama akan error, sedangkan skema baru dengan kode lama aman selama migrasinya bersifat menambah.
 
 ## 2. Setup Lokal
+
+> 🌿 **Kalau kamu baru clone (agent maupun manusia): pastikan berada di branch kerja, bukan `main`.**
+> Branch kerja saat ini `feature/homepage-portal-v2` — sumber kebenarannya tabel §0a, bukan baris ini.
+> ```bash
+> git clone -b feature/homepage-portal-v2 https://github.com/faisalekasyahputra/klinik_new.git
+> git branch --show-current   # verifikasi; kalau tertulis "main", kamu salah branch
+> ```
+> `main` **beku sejak 19 Jul 2026** dan DB-nya belum pernah dimigrasi — bekerja di atasnya berarti
+> membangun di atas kode yang tidak dipakai siapa pun. Langkah setup manusia: [`README.md`](README.md).
 
 ```bash
 composer install
