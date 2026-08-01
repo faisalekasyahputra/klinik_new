@@ -28,16 +28,39 @@
                     <td class="px-6 py-4">
                         <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama_mahasiswa ?: '-') ?></div>
                         <div class="text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($r->email_mahasiswa ?: '-') ?></div>
+                        <?php
+                        // Identitas dari migrasi 20260701000025. Baris LAMA tidak
+                        // punya nilainya (kolomnya NULL demi mereka), jadi barisnya
+                        // hanya muncul kalau memang terisi — bukan deretan "-"
+                        // yang menyaru seperti data.
+                        $identitas = array_filter([
+                            $r->nim ?? NULL,
+                            ($r->jurusan ?? NULL),
+                            ($r->semester ?? NULL) ? 'Smt ' . (int) $r->semester : NULL,
+                        ]);
+                        ?>
+                        <?php if ($identitas): ?>
+                        <div class="mt-1 text-xs text-gray-500 dark:text-brand-muted"><?= html_escape(implode(' · ', $identitas)) ?></div>
+                        <?php endif; ?>
                     </td>
                     <td class="px-6 py-4 uppercase text-xs font-bold"><?= html_escape($r->jenis) ?></td>
                     <td class="px-6 py-4"><?= html_escape($r->instansi_asal) ?></td>
                     <td class="px-6 py-4">
                         <?= html_escape($r->divisi_atau_tema ?: '-') ?>
-                        <?php if (!empty($r->file_surat_pengantar)): ?>
-                        <div class="mt-1"><a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . $r->id) ?>" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> Surat pengantar</a></div>
-                        <?php else: ?>
-                        <div class="mt-1 text-[10px] text-gray-400 dark:text-brand-muted/60">Tanpa surat pengantar</div>
-                        <?php endif; ?>
+                        <?php
+                        // Dokumen didaftar dari satu tempat supaya menambah jenis
+                        // berkas berikutnya tidak berarti menyalin blok <a> lagi.
+                        // Proposal hanya ada pada magang.
+                        $dokumen = ['surat' => ['Surat pengantar', $r->file_surat_pengantar ?? NULL]];
+                        if ($r->jenis === 'magang') { $dokumen['proposal'] = ['Proposal', $r->file_proposal ?? NULL]; }
+                        ?>
+                        <?php foreach ($dokumen as $kunci => $d): ?>
+                            <?php if ( ! empty($d[1])): ?>
+                            <div class="mt-1"><a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . $r->id . '/' . $kunci) ?>" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> <?= html_escape($d[0]) ?></a></div>
+                            <?php else: ?>
+                            <div class="mt-1 text-[10px] text-gray-400 dark:text-brand-muted/60">Tanpa <?= html_escape(strtolower($d[0])) ?></div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
                     </td>
                     <td class="px-6 py-4">
                         <?php

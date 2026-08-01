@@ -40,9 +40,17 @@ class KemitraanPortal extends Public_Controller
         if ( ! in_array($jenis, ['kkn', 'magang'], TRUE)) { show_404(); }
         if ( ! $this->akses_mahasiswa('KemitraanPortal/daftar/' . $jenis)) { return; }
 
+        // Nama & email ditampilkan BACA-SAJA di formulir, diambil dari sesi.
+        // Bukan sekadar hiasan: pendaftaran ini menempel ke akun lewat user_id,
+        // dan sebelumnya pendaftar tidak pernah diberi tahu nama siapa yang
+        // ikut terkirim. Tetap tidak diterima sebagai input — `simpan()` hanya
+        // membaca user_id dari sesi (anti-IDOR), jadi mengubahnya di peramban
+        // tidak mengubah apa pun.
         $this->render('pages/kemitraan_portal/daftar', [
-            'judul' => $jenis === 'kkn' ? 'Daftar KKN Tematik' : 'Daftar Magang dan Kerja Praktik',
-            'jenis' => $jenis,
+            'judul'      => $jenis === 'kkn' ? 'Daftar KKN Tematik' : 'Daftar Magang dan Kerja Praktik',
+            'jenis'      => $jenis,
+            'nama_akun'  => (string) $this->session->userdata('name'),
+            'email_akun' => (string) $this->session->userdata('email'),
         ]);
     }
 
@@ -51,6 +59,15 @@ class KemitraanPortal extends Public_Controller
         $jenis = $this->input->post('jenis', TRUE);
         if ( ! in_array($jenis, ['kkn', 'magang'], TRUE) || $this->input->method(TRUE) !== 'POST') { show_404(); }
         if ( ! $this->akses_mahasiswa('KemitraanPortal/daftar/' . $jenis)) { return; }
+
+        // Identitas mahasiswa (migrasi 20260701000025). Kolomnya NULL di skema
+        // demi baris lama, jadi kewajiban isinya HARUS ditegakkan di sini —
+        // kalau tidak, tidak ada satu pun tempat yang memeriksanya.
+        $this->form_validation->set_rules('nim', 'NIM', 'required|trim|alpha_numeric_spaces|max_length[30]');
+        $this->form_validation->set_rules('tempat_lahir', 'Tempat Lahir', 'required|trim|max_length[100]');
+        $this->form_validation->set_rules('tanggal_lahir', 'Tanggal Lahir', 'required|regex_match[/^\d{4}-\d{2}-\d{2}$/]');
+        $this->form_validation->set_rules('semester', 'Semester', 'required|integer|greater_than[0]|less_than[15]');
+        $this->form_validation->set_rules('jurusan', 'Jurusan', 'required|trim|max_length[150]');
 
         $this->form_validation->set_rules('instansi_asal', 'Instansi Asal', 'required|trim|max_length[150]');
         $this->form_validation->set_rules('no_hp', 'Nomor HP', 'required|numeric|min_length[10]|max_length[15]');
@@ -70,27 +87,48 @@ class KemitraanPortal extends Public_Controller
         $this->db->insert('kkn_magang_pendaftaran', [
             'user_id'              => $this->get_user_id(),
             'jenis'                => $jenis,
+            'nim'                  => $this->input->post('nim', TRUE),
+            'tempat_lahir'         => $this->input->post('tempat_lahir', TRUE),
+            'tanggal_lahir'        => $this->input->post('tanggal_lahir', TRUE),
+            'semester'             => (int) $this->input->post('semester', TRUE),
+            'jurusan'              => $this->input->post('jurusan', TRUE),
             'instansi_asal'        => $this->input->post('instansi_asal', TRUE),
             'no_hp'                => $this->input->post('no_hp', TRUE),
             'divisi_atau_tema'     => $this->input->post('divisi_atau_tema', TRUE),
             'periode_mulai'        => $this->input->post('periode_mulai', TRUE),
             'periode_selesai'      => $this->input->post('periode_selesai', TRUE),
             'file_surat_pengantar' => NULL,
+            'file_proposal'        => NULL,
         ]);
         $id = $this->db->insert_id();
 
         $pesan = 'Pendaftaran ' . strtoupper($jenis) . ' berhasil dikirim. Cek status pendaftaran di halaman akun Anda.';
 
-        // Surat pengantar disimpan di luar webroot, hanya bisa dibuka admin
-        // lewat Admin_Kemitraan::lihat_dokumen() — dulu di .assets/uploads/
-        // yang bisa diakses HTTP langsung. Pendaftaran tetap tersimpan kalau
-        // berkasnya gagal; pendaftar diberi tahu apa adanya.
-        $galat = NULL;
-        $nama_berkas = $this->store_private_upload('file_surat_pengantar', 'kemitraan', $id, $galat);
-        if ($nama_berkas) {
-            $this->db->where('id', $id)->update('kkn_magang_pendaftaran', ['file_surat_pengantar' => $nama_berkas]);
-        } elseif ($galat) {
-            $pesan .= ' Namun surat pengantar gagal diunggah (' . $galat . ') — hubungi admin untuk menyusulkan.';
+        // Berkas disimpan di luar webroot, hanya bisa dibuka admin lewat
+        // Admin_Kemitraan::lihat_dokumen() — dulu di .assets/uploads/ yang bisa
+        // diakses HTTP langsung. Pendaftaran tetap tersimpan kalau berkasnya
+        // gagal; pendaftar diberi tahu apa adanya, bukan dibiarkan mengira
+        // lampirannya sudah masuk.
+        //
+        // Proposal HANYA untuk magang (keputusan user 30 Jul). Field-nya juga
+        // tidak dirender di formulir KKN, tapi pemeriksaan diulang di sini:
+        // yang menentukan apa yang tersimpan adalah server, bukan formulir yang
+        // dikirim peramban.
+        $berkas = ['file_surat_pengantar' => 'Surat pengantar'];
+        if ($jenis === 'magang') { $berkas['file_proposal'] = 'Proposal'; }
+
+        $simpan = [];
+        foreach ($berkas as $field => $label) {
+            $galat = NULL;
+            $nama_berkas = $this->store_private_upload($field, 'kemitraan', $id, $galat);
+            if ($nama_berkas) {
+                $simpan[$field] = $nama_berkas;
+            } elseif ($galat) {
+                $pesan .= ' Namun ' . strtolower($label) . ' gagal diunggah (' . $galat . ') — hubungi admin untuk menyusulkan.';
+            }
+        }
+        if ($simpan) {
+            $this->db->where('id', $id)->update('kkn_magang_pendaftaran', $simpan);
         }
 
         $this->session->set_flashdata('success', $pesan);

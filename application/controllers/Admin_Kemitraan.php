@@ -39,17 +39,26 @@ class Admin_Kemitraan extends Admin_Controller {
      * Menutup AUDIT_ROLE_MAHASISWA.md temuan #4: dulu admin memutuskan
      * terima/tolak tanpa bisa membuka dokumen pendukung sama sekali.
      */
-    public function lihat_dokumen($id = NULL)
+    /**
+     * @param string $berkas 'surat' (bawaan, kompatibel dengan tautan lama) atau
+     *                       'proposal'. WHITELIST, bukan nama kolom dari URL —
+     *                       menerima nama kolom mentah berarti mempersilakan
+     *                       siapa pun membaca kolom apa pun lewat query string.
+     */
+    public function lihat_dokumen($id = NULL, $berkas = 'surat')
     {
         if ( ! is_numeric($id)) { show_404(); }
 
-        $row = $this->db->select('file_surat_pengantar')
-            ->get_where('kkn_magang_pendaftaran', ['id' => (int) $id])->row();
-        if ( ! $row || empty($row->file_surat_pengantar)) { show_404(); }
+        $kolom = ['surat' => 'file_surat_pengantar', 'proposal' => 'file_proposal'][$berkas] ?? NULL;
+        if ($kolom === NULL) { show_404(); }
 
-        $ext = strtolower(pathinfo($row->file_surat_pengantar, PATHINFO_EXTENSION));
+        $row = $this->db->select($kolom)
+            ->get_where('kkn_magang_pendaftaran', ['id' => (int) $id])->row();
+        if ( ! $row || empty($row->$kolom)) { show_404(); }
+
+        $ext = strtolower(pathinfo($row->$kolom, PATHINFO_EXTENSION));
         $mime = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'][$ext] ?? 'application/octet-stream';
-        $this->serve_private_file('kemitraan', (int) $id, $row->file_surat_pengantar, $mime);
+        $this->serve_private_file('kemitraan', (int) $id, $row->$kolom, $mime);
     }
 
     public function proses($id = NULL)
