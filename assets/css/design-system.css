@@ -45,6 +45,66 @@
     --portal-skeleton: rgba(214, 251, 0, 0.06);
 }
 
+/* --- Permukaan Aurora ---------------------------------------------------
+   Latar kartu: beberapa kolam warna besar yang saling lebur, batik kawung
+   tipis, dan bibir cahaya 1px. Dipakai kartu menu beranda maupun slide
+   program — satu tempat supaya keduanya tidak berbeda pelan-pelan.
+
+   Pemakai wajib memberi tiga warna: --t1 (dingin, mengumpul di bawah tempat
+   teks duduk), --t2 (tengah), --t3 (hangat). Pilih satu varian .aurora-1..4
+   untuk menggeser letak kolamnya. Elemennya harus position:relative dan
+   overflow:hidden; isi kartu perlu z-index di atas 0.
+   ------------------------------------------------------------------------ */
+.aurora-surface {
+    --t1: #04203a;
+    --t2: #10608f;
+    --t3: #66dcd2;
+    --pool-cool: 14% 116%;
+    --pool-warm: 88% -18%;
+    --arc: 132% 86% at 8% -32%;
+    border: 1px solid rgba(255, 255, 255, .18);
+    color: #fff;
+    background-color: var(--t2);
+    background-image:
+        radial-gradient(var(--arc), transparent 42%, color-mix(in srgb, var(--t3) 72%, transparent) 55%, transparent 71%),
+        radial-gradient(125% 115% at var(--pool-warm), color-mix(in srgb, var(--t3) 78%, transparent), color-mix(in srgb, var(--t3) 22%, transparent) 46%, transparent 72%),
+        radial-gradient(145% 125% at var(--pool-cool), var(--t1), color-mix(in srgb, var(--t1) 55%, transparent) 46%, transparent 78%),
+        radial-gradient(160% 150% at 46% 58%, var(--t2), color-mix(in srgb, var(--t2) 55%, var(--t1)) 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .34),
+        inset 0 -1px 0 rgba(0, 0, 0, .22),
+        0 1px 2px rgba(2, 18, 24, .2),
+        0 8px 20px -10px rgba(2, 18, 24, .45);
+}
+.aurora-1 { --pool-cool: 10% 118%;  --pool-warm: 86% -20%; --arc: 130% 84% at 6% -30%; }
+.aurora-2 { --pool-cool: 78% 122%;  --pool-warm: 14% -22%; --arc: 145% 78% at 92% -26%; }
+.aurora-3 { --pool-cool: 46% 128%;  --pool-warm: 98% 12%;  --arc: 120% 96% at -18% 18%; }
+.aurora-4 { --pool-cool: 116% 96%;  --pool-warm: 22% -16%; --arc: 155% 72% at 46% -34%; }
+
+/* Batik kawung — motif yang sama dengan latar portal (layouts/main.php),
+   satu warna putih, memudar ke bawah supaya tidak mengganggu teks. */
+.aurora-surface::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cg fill='none' stroke='%23fff' stroke-width='2'%3E%3Ccircle cx='0' cy='0' r='50'/%3E%3Ccircle cx='100' cy='0' r='50'/%3E%3Ccircle cx='0' cy='100' r='50'/%3E%3Ccircle cx='100' cy='100' r='50'/%3E%3Cpath d='M-15 0h30M0 -15v30M85 0h30M100 -15v30M-15 100h30M0 85v30M85 100h30M100 85v30M50 40 60 50 50 60 40 50Z'/%3E%3C/g%3E%3Cg fill='%23fff'%3E%3Ccircle cx='0' cy='0' r='4'/%3E%3Ccircle cx='100' cy='0' r='4'/%3E%3Ccircle cx='100' cy='100' r='4'/%3E%3Ccircle cx='0' cy='100' r='4'/%3E%3Ccircle cx='50' cy='50' r='2.5'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 92px 92px;
+    opacity: .08;
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .25) 55%, transparent 88%);
+    mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .25) 55%, transparent 88%);
+    pointer-events: none;
+    z-index: 0;
+}
+/* Kilap tipis di seperempat atas — penanda arah cahaya, tidak bergerak. */
+.aurora-surface::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .12), transparent 26%);
+    pointer-events: none;
+    z-index: 0;
+}
+
 :root {
     /* ---- Backgrounds (Teal-tinted darks) ---- */
     --bg-body:        #0a1a1f;
