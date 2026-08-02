@@ -237,6 +237,12 @@ echo "\n== Surat pengantar wajib untuk magang, opsional untuk KKN ==\n";
  * KKN sengaja diuji SEBALIKNYA — masih boleh tanpa surat. Tanpa pasangan ini,
  * seseorang yang kelak melebarkan aturannya ke KKN tidak akan menemukan apa pun
  * yang memberitahunya bahwa penyempitan itu disengaja.
+ *
+ * BERGANTUNG pada slot 2099 yang dibuka skrip ini di atas. `periksa_slot()`
+ * berjalan SEBELUM gerbang surat, jadi kalau penyiapan slot itu dicabut,
+ * penolakannya datang dari gerbang slot dan uji ini berubah diam-diam menjadi
+ * uji slot yang namanya menyebut surat. Diverifikasi lewat mutasi: kedua
+ * penjaga surat dilumpuhkan -> uji ini MERAH.
  */
 $tanpa_surat = http('KemitraanPortal/simpan', [
     'csrf_kpkp_token' => token(), 'jenis' => 'magang',
