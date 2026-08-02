@@ -312,8 +312,14 @@ cek((int) nilai('SELECT COUNT(*) c FROM kkn_magang_pendaftaran WHERE instansi_as
  * hijau selamanya tanpa pernah menyentuh hal yang sebenarnya rusak, dan itu
  * lebih buruk daripada tidak ada uji sama sekali.
  *
- * Yang menutupnya bukan harness: buka layarnya, ukur scrollWidth lawan
- * clientWidth. Sudah dilakukan 2-3 Agt 2026 pada kedua layar.
+ * Yang menutupnya bukan harness melainkan PEMICU: AGENTS.md §17 poin 6 kini
+ * mewajibkan mengukur `scrollWidth - clientWidth` setiap kali ada yang menambah
+ * kolom, memperlebar isi kolom, atau mengubah lebar sidebar — lengkap dengan
+ * satu baris perintahnya. Sudah dijalankan 2-3 Agt 2026 pada kedua layar, dan
+ * keduanya nol.
+ *
+ * Kalau kamu datang ke sini hendak "melengkapi" berkas ini dengan pemeriksaan
+ * lebar: jangan. Baca dulu catatan di §17 itu.
  */
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
