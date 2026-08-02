@@ -79,6 +79,38 @@ if ( ! $suites) { fwrite(STDERR, "Tidak ada suite yang cocok.\n"); exit(1); }
 
 echo "Menjalankan " . count($suites) . " suite terhadap " . (getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new') . "\n\n";
 
+/**
+ * Sensus akun uji SEBELUM dan SESUDAH.
+ *
+ * Harness di repo ini membersihkan dirinya lewat `register_shutdown_function`
+ * atau blok `finally` — yang keduanya bisa terlewat kalau prosesnya mati di
+ * tengah. Hasilnya akun yatim menumpuk diam-diam, dan pada 2 Agt 2026 empat di
+ * antaranya ditemukan masih hidup: DUA di antaranya menyandang `admin_kabkota`
+ * penuh, dengan sandi yang tertulis di berkas harness.
+ *
+ * Runner hijau tidak pernah menyinggung itu — hijau cuma berarti asersinya
+ * lulus, bukan bahwa DB-nya ditinggalkan seperti semula. Sensus ini yang
+ * menjawabnya, dan ia berlaku untuk harness yang belum ditulis juga.
+ */
+function sensus_akun_uji() {
+    $env = [];
+    foreach (@file(dirname(AKAR, 2) . '/.env', FILE_IGNORE_NEW_LINES) ?: [] as $b) {
+        $b = trim($b);
+        if ($b === '' || $b[0] === '#' || strpos($b, '=') === FALSE) { continue; }
+        [$k, $v] = explode('=', $b, 2);
+        if ( ! isset($env[trim($k)])) { $env[trim($k)] = trim($v); }
+    }
+    if (empty($env['DB_NAME'])) { return NULL; }
+    $db = @new mysqli($env['DB_HOST'], $env['DB_USER'], $env['DB_PASS'] ?? '', $env['DB_NAME']);
+    if ($db->connect_error) { return NULL; }
+    $out = [];
+    $r = $db->query('SELECT id, email, role FROM usr_users WHERE email LIKE "%@example.test"');
+    foreach ($r ?: [] as $row) { $out[(int) $row['id']] = $row['email'] . ' [' . ($row['role'] ?: 'tanpa role') . ']'; }
+    $db->close();
+    return $out;
+}
+$akun_sebelum = sensus_akun_uji();
+
 $hasil = [];
 foreach ($suites as $nama => $s) {
     $mulai = microtime(TRUE);
@@ -126,10 +158,25 @@ $merah  = array_keys(array_filter($hasil, fn($h) => $h['kode'] !== 0 && ! $h['le
 $bisu   = array_keys(array_filter($hasil, fn($h) => $h['bisu']));
 $lewat  = array_keys(array_filter($hasil, fn($h) => $h['lewat']));
 
+$akun_sesudah = sensus_akun_uji();
+$bocor = ($akun_sebelum === NULL || $akun_sesudah === NULL)
+    ? [] : array_diff_key($akun_sesudah, $akun_sebelum);
+
 echo "\n=== Ringkasan ===\n";
 echo "  " . count($hasil) . " suite, {$total} pemeriksaan, " . count($merah) . " merah, "
    . count($bisu) . " bisu, " . count($lewat) . " dilewati\n";
 foreach ($merah as $n) { echo "  MERAH  {$n}\n"; }
 foreach ($bisu as $n)  { echo "  BISU   {$n} — exit 0 tanpa satu pun cek(); perlakukan sebagai merah\n"; }
 
-exit(($merah || $bisu) ? 1 : 0);
+if ($akun_sebelum === NULL) {
+    echo "  (sensus akun uji dilewati — DB tidak terbaca)\n";
+} elseif ($bocor) {
+    // Bocor DIHITUNG MERAH. Harness yang meninggalkan akun hidup berperan
+    // adalah lubang yang tidak akan pernah muncul di daftar asersi mana pun.
+    echo "  BOCOR  " . count($bocor) . " akun uji tertinggal setelah semua suite selesai:\n";
+    foreach ($bocor as $id => $ket) { echo "           #{$id} {$ket}\n"; }
+} else {
+    echo "  Akun uji: nol tertinggal (" . count($akun_sesudah) . " sudah ada sebelum dijalankan)\n";
+}
+
+exit(($merah || $bisu || $bocor) ? 1 : 0);
