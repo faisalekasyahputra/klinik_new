@@ -56,6 +56,16 @@
             overflow-x: hidden;
         }
 
+        /* Portal punya DUA permukaan gulir dengan kebutuhan berlawanan, dan di
+           situlah scrollbar lama salah: cangkang halaman gelap, sementara panel
+           isinya selalu `.theme-light`. Satu nilai mutlak tidak mungkin benar di
+           keduanya — yang cocok di cangkang jadi zaitun di atas putih. Default
+           di :root untuk cangkang gelap, ditimpa di dalam panel terang. */
+        :root {
+            --portal-scroll-thumb: rgba(214, 251, 0, 0.28);
+            --portal-scroll-thumb-hover: rgba(214, 251, 0, 0.55);
+        }
+
         /* Critical panel CSS: dipakai sebelum stylesheet eksternal selesai dimuat. */
         .theme-light {
             --portal-bg: #f0f6f7;
@@ -63,6 +73,8 @@
             --portal-border: rgba(0, 80, 95, 0.08);
             --portal-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
             --portal-skeleton: rgba(10, 26, 31, 0.08);
+            --portal-scroll-thumb: rgba(15, 42, 48, 0.22);
+            --portal-scroll-thumb-hover: rgba(15, 42, 48, 0.40);
         }
         .portal-panel {
             background: var(--portal-bg, #f0f6f7);
@@ -113,20 +125,31 @@
             }
         }
 
+        /* Scrollbar mengikuti tema, dan tracknya TIDAK diberi warna.
+           Versi lama memakai nilai tema gelap secara mutlak: track
+           rgba(10,26,31,.6) menjadi batang gelap melintang di bawah tabel
+           bertema terang, dan thumb hijau neon 30% terbaca zaitun. Yang paling
+           membuatnya tampak "terlalu lebar" justru tracknya, bukan ukurannya —
+           track transparan menghapus kesan itu tanpa mengurangi area seret. */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: rgba(10, 26, 31, 0.6);
-            border-radius: 4px;
+            background: transparent;
         }
         ::-webkit-scrollbar-thumb {
-            background: rgba(214, 251, 0, 0.3);
-            border-radius: 4px;
+            background: var(--portal-scroll-thumb, rgba(15, 42, 48, 0.22));
+            border-radius: 99px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: rgba(214, 251, 0, 0.6);
+            background: var(--portal-scroll-thumb-hover, rgba(15, 42, 48, 0.40));
+        }
+        /* Firefox tidak mengenal ::-webkit-*; tanpa dua baris ini ia memakai
+           scrollbar bawaan OS yang lebih tebal lagi. */
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: var(--portal-scroll-thumb, rgba(15, 42, 48, 0.22)) transparent;
         }
 
         /* Page Transition (content reveal on load) */

@@ -23,6 +23,12 @@
     /* Icons */
     --portal-icon: #0f2a30;
     --portal-skeleton: rgba(10, 26, 31, 0.08);
+
+    /* Scrollbar. Sebelumnya dipatok warna tema GELAP di layouts/head.php dan
+       dipakai kedua tema: track hitam kebiruan jadi batang gelap melintang di
+       latar putih, dan hijau neon 30% jadi zaitun. */
+    --portal-scroll-thumb: rgba(15, 42, 48, 0.22);
+    --portal-scroll-thumb-hover: rgba(15, 42, 48, 0.40);
 }
 
 .theme-dark {
@@ -43,6 +49,9 @@
     /* Icons */
     --portal-icon: #d6fb00;
     --portal-skeleton: rgba(214, 251, 0, 0.06);
+
+    --portal-scroll-thumb: rgba(214, 251, 0, 0.28);
+    --portal-scroll-thumb-hover: rgba(214, 251, 0, 0.55);
 }
 
 /* --- Permukaan Aurora ---------------------------------------------------
