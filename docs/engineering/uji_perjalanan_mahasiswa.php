@@ -115,6 +115,29 @@ function csrf($nama, $path) {
     return preg_match('/name="csrf_kpkp_token" value="([^"]+)"/', $res['body'], $m) ? $m[1] : '';
 }
 
+/**
+ * Payload pendaftaran yang sah menurut `$config['kemitraan_pendaftaran']`.
+ *
+ * Ada karena harness ini pernah membusuk diam-diam: ditulis sebelum formulir
+ * pendaftaran bertambah `nim`, `tempat_lahir`, `tanggal_lahir`, `semester`, dan
+ * `jurusan`, sehingga SETIAP POST-nya ditolak validator. Uji negatifnya tetap
+ * hijau — ditolak, tapi karena alasan yang salah — dan cuma uji positifnya yang
+ * merah. Menaruh field wajib di satu tempat berarti penambahan berikutnya cukup
+ * ditambal sekali di sini, bukan di empat payload.
+ */
+function dasar(array $ubah = []) {
+    return array_merge([
+        'jenis'           => 'kkn',
+        'nim'             => 'UJI' . mt_rand(100000, 999999),
+        'tempat_lahir'    => 'Semarang',
+        'tanggal_lahir'   => '2003-05-17',
+        'semester'        => '6',
+        'jurusan'         => 'Teknik Informatika',
+        'periode_mulai'   => '2026-09-01',
+        'periode_selesai' => '2026-10-01',
+    ], $ubah);
+}
+
 function login($nama, $email, $password) {
     // Kode HTTP saja TIDAK cukup: login gagal juga membalas 200 (redirect
     // diikuti). Yang menentukan isi JSON-nya — dan cabang JSON itu HANYA menyala
@@ -193,10 +216,9 @@ try {
 
     // Gerbang layar saja tidak cukup — pintu tulisnya diuji langsung.
     $t = csrf('warga', 'akun');
-    http('warga', 'KemitraanPortal/simpan', [
-        'csrf_kpkp_token' => $t, 'jenis' => 'kkn', 'instansi_asal' => 'Univ Tembus',
-        'no_hp' => '081200000000', 'divisi_atau_tema' => 'Tembus gerbang',
-        'periode_mulai' => '2026-09-01', 'periode_selesai' => '2026-10-01']);
+    http('warga', 'KemitraanPortal/simpan', dasar([
+        'csrf_kpkp_token' => $t, 'instansi_asal' => 'Univ Tembus',
+        'no_hp' => '081200000000', 'divisi_atau_tema' => 'Tembus gerbang']));
     cek(skalar_int('SELECT COUNT(*) c FROM kkn_magang_pendaftaran WHERE instansi_asal = ?',
         ['Univ Tembus']) === 0,
         'POST langsung dari peran warga TIDAK menulis baris');
@@ -210,9 +232,9 @@ try {
         'Nol input user_id di formulir — identitas dari sesi');
 
     // ------------------------------------------------------------------ CSRF
-    http('mhs', 'KemitraanPortal/simpan', [
-        'jenis' => 'kkn', 'instansi_asal' => 'Univ Tanpa Token', 'no_hp' => '081200000001',
-        'divisi_atau_tema' => 'x', 'periode_mulai' => '2026-09-01', 'periode_selesai' => '2026-10-01']);
+    http('mhs', 'KemitraanPortal/simpan', dasar([
+        'instansi_asal' => 'Univ Tanpa Token', 'no_hp' => '081200000001',
+        'divisi_atau_tema' => 'x']));
     cek(skalar_int('SELECT COUNT(*) c FROM kkn_magang_pendaftaran WHERE instansi_asal = ?',
         ['Univ Tanpa Token']) === 0,
         'POST tanpa token CSRF tidak menulis apa pun');
@@ -225,9 +247,9 @@ try {
     ];
     foreach ($tolak as $label => $ubah) {
         $t = csrf('mhs', 'KemitraanPortal/daftar/kkn');
-        http('mhs', 'KemitraanPortal/simpan', array_merge([
-            'csrf_kpkp_token' => $t, 'jenis' => 'kkn', 'instansi_asal' => 'Univ Tolak ' . $label,
-            'divisi_atau_tema' => 'x', 'periode_selesai' => '2026-10-01'], $ubah));
+        http('mhs', 'KemitraanPortal/simpan', array_merge(dasar([
+            'csrf_kpkp_token' => $t, 'instansi_asal' => 'Univ Tolak ' . $label,
+            'divisi_atau_tema' => 'x']), $ubah));
         cek(skalar_int('SELECT COUNT(*) c FROM kkn_magang_pendaftaran WHERE instansi_asal = ?',
             ['Univ Tolak ' . $label]) === 0, "Ditolak server: {$label}");
     }
@@ -236,15 +258,14 @@ try {
     // `user_id` DISUNTIKKAN ke payload. Kalau controller memakainya alih-alih
     // sesi, pendaftaran ini akan tercatat atas nama mahasiswa KEDUA.
     $t = csrf('mhs', 'KemitraanPortal/daftar/kkn');
-    $kirim = http('mhs', 'KemitraanPortal/simpan', [
-        'csrf_kpkp_token' => $t, 'jenis' => 'kkn',
+    $kirim = http('mhs', 'KemitraanPortal/simpan', dasar([
+        'csrf_kpkp_token' => $t,
         'user_id'          => $UID2,
         'instansi_asal'    => 'Universitas Uji Mahasiswa',
         'no_hp'            => '081234567890',
         'divisi_atau_tema' => 'Infrastruktur dan Teknologi Digital',
-        'periode_mulai'    => '2026-09-01',
         'periode_selesai'  => '2026-10-31',
-    ], TRUE, ['file_surat_pengantar' => $pdf]);
+    ]), TRUE, ['file_surat_pengantar' => $pdf]);
     wajib($kirim['code'] === 200, 'Kirim pendaftaran berhasil');
 
     $PEND = skalar_int('SELECT id FROM kkn_magang_pendaftaran WHERE instansi_asal = ?',
