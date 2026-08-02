@@ -27,13 +27,29 @@ $baris = [
     'Jurusan'              => $row->jurusan,
     'Semester'             => $row->semester ? (int) $row->semester : NULL,
     'Tempat, Tanggal Lahir' => $row->tempat_lahir && $row->tanggal_lahir
-        ? $row->tempat_lahir . ', ' . date('j F Y', strtotime($row->tanggal_lahir)) : NULL,
+        ? $row->tempat_lahir . ', ' . tgl_id($row->tanggal_lahir) : NULL,
     'Instansi Asal'        => $row->instansi_asal,
     'Nomor HP'             => $row->no_hp,
-    ($row->jenis === 'kkn' ? 'Tema Kegiatan' : 'Divisi') => $row->divisi_atau_tema,
+    // "Divisi" dihapus dinas — struktur resminya lima BIDANG, tanpa divisi
+    // (konfirmasi 1 Agt 2026). Kolomnya masih bernama `divisi_atau_tema` karena
+    // itu urusan skema; yang dibaca mahasiswa tidak boleh memakai kata yang
+    // sudah tidak dipakai organisasinya sendiri.
+    'Tema Kegiatan'        => $row->divisi_atau_tema,
     'Periode'              => $row->periode_mulai && $row->periode_selesai
-        ? date('j M Y', strtotime($row->periode_mulai)) . ' – ' . date('j M Y', strtotime($row->periode_selesai)) : NULL,
+        ? tgl_id($row->periode_mulai, TRUE) . ' – ' . tgl_id($row->periode_selesai, TRUE) : NULL,
 ];
+
+// Bidang tujuan: sebelumnya TIDAK PERNAH disebut ke pendaftar. Garis waktunya
+// bilang "Bidang penanggung jawab memutuskan" tanpa memberi tahu bidang yang
+// mana — padahal itu yang menentukan ke siapa ia harus bertanya kalau lama tak
+// ada kabar. Ketahuan waktu halaman ini dibuka di browser.
+if ($row->jenis === 'magang' && ! empty($row->bidang_kode)) {
+    $CI =& get_instance();
+    $nama_bidang = $CI->db->select('nama')->get_where('bidang', ['kode' => $row->bidang_kode])->row();
+    $baris = array_slice($baris, 0, 6, TRUE)
+        + ['Bidang Tujuan' => $nama_bidang->nama ?? $row->bidang_kode]
+        + array_slice($baris, 6, NULL, TRUE);
+}
 ?>
 <div class="mx-auto max-w-3xl p-2 sm:p-6">
     <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -44,7 +60,7 @@ $baris = [
             </h1>
             <div class="mt-2 flex flex-wrap items-center gap-2">
                 <span class="rounded-full px-3 py-1 text-xs font-bold <?= $warna_status ?>"><?= html_escape($row->status) ?></span>
-                <span class="text-xs text-[color:var(--portal-text-muted)]">Dikirim <?= date('j F Y', strtotime($row->created_at)) ?></span>
+                <span class="text-xs text-[color:var(--portal-text-muted)]">Dikirim <?= tgl_id($row->created_at) ?></span>
             </div>
         </div>
         <a href="<?= base_url('akun') ?>" data-tab-link
@@ -60,7 +76,16 @@ $baris = [
      * 'Ditolak' menghentikan garis di tahap tempat ia ditolak — catatan_bidang
      * yang terisi berarti penolakannya datang dari meja kedua.
      */
-    $ditolak_di_bidang = $row->status === 'Ditolak' && ! empty($row->reviewed_at_bidang);
+    // Ketiga kolom bidang ditulis sekaligus oleh Kemitraan_Bidang::proses(),
+    // jadi memeriksa salah satu saja sebenarnya cukup — sampai ada yang menambal
+    // baris lewat SQL manual dan hanya mengisi sebagian. Waktu itu terjadi di
+    // data uji 2 Agt 2026, halaman ini MENYANGKAL DIRINYA SENDIRI: garis
+    // waktunya bilang "berhenti di tinjauan sekretariat" sementara tepat di
+    // bawahnya terpampang "Catatan Bidang". Memeriksa ketiganya menghapus
+    // kemungkinan itu dengan biaya nol.
+    $ditolak_di_bidang = $row->status === 'Ditolak' && (
+        ! empty($row->reviewed_at_bidang) || ! empty($row->reviewed_by_bidang) || ! empty($row->catatan_bidang)
+    );
     $urut  = ['Diajukan' => 1, 'Ditinjau Bidang' => 2, 'Diterima' => 3];
     $capai = $urut[$row->status] ?? ($ditolak_di_bidang ? 2 : 1);
 

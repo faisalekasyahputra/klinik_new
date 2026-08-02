@@ -28,11 +28,14 @@ $badge_kelas = [
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
-                    <th class="px-6 py-4"><?= admin_sort_header('Mahasiswa', 'usr_users.name', $table, $base_url) ?></th>
-                    <th class="px-6 py-4"><?= admin_sort_header('Instansi Asal', 'kkn_magang_pendaftaran.instansi_asal', $table, $base_url) ?></th>
-                    <th class="px-6 py-4">Bidang &amp; Periode</th>
-                    <th class="px-6 py-4"><?= admin_sort_header('Status', 'kkn_magang_pendaftaran.status', $table, $base_url) ?></th>
-                    <th class="px-6 py-4 text-right">Aksi</th>
+                    <th class="px-4 py-4"><?= admin_sort_header('Mahasiswa', 'usr_users.name', $table, $base_url) ?></th>
+                    <th class="px-4 py-4"><?= admin_sort_header('Instansi Asal', 'kkn_magang_pendaftaran.instansi_asal', $table, $base_url) ?></th>
+                    <!-- Bukan "Bidang": seluruh baris di meja ini SUDAH bidang
+                         Anda, dan yang ditampilkan sel itu tema kegiatan. Judul
+                         lama menjanjikan nama bidang lalu memberi hal lain. -->
+                    <th class="px-4 py-4">Tema &amp; Periode</th>
+                    <th class="px-4 py-4"><?= admin_sort_header('Status', 'kkn_magang_pendaftaran.status', $table, $base_url) ?></th>
+                    <th class="px-4 py-4 text-right">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-white/5 text-gray-700 dark:text-gray-300">
@@ -40,7 +43,7 @@ $badge_kelas = [
                     <tr><td colspan="5" class="px-6 py-12 text-center text-gray-500 dark:text-brand-muted">Belum ada pendaftaran magang untuk bidang Anda.</td></tr>
                 <?php else: foreach ($rows as $r): ?>
                     <tr x-data="{ procOpen: false }">
-                        <td class="px-6 py-4">
+                        <td class="px-4 py-4">
                             <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama_mahasiswa ?: '-') ?></div>
                             <div class="text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($r->email_mahasiswa ?: '-') ?></div>
                             <?php $identitas = array_filter([$r->nim, $r->jurusan, $r->semester ? 'Smt ' . (int) $r->semester : NULL]); ?>
@@ -48,11 +51,16 @@ $badge_kelas = [
                                 <div class="mt-1 text-xs text-gray-500 dark:text-brand-muted"><?= html_escape(implode(' · ', $identitas)) ?></div>
                             <?php endif; ?>
                         </td>
-                        <td class="px-6 py-4"><?= html_escape($r->instansi_asal) ?></td>
-                        <td class="px-6 py-4">
+                        <!-- Boleh membungkus. Dengan `whitespace-nowrap` milik
+                             tabel, nama kampus panjang mendorong lebar tabel
+                             melewati viewport dan kolom Aksi — satu-satunya
+                             tombol di layar ini — hilang di balik gulir
+                             horizontal tanpa petunjuk apa pun. -->
+                        <td class="px-4 py-4 max-w-[16rem] whitespace-normal"><?= html_escape($r->instansi_asal) ?></td>
+                        <td class="px-4 py-4">
                             <div class="font-semibold"><?= html_escape($r->divisi_atau_tema) ?></div>
                             <div class="text-xs text-gray-500 dark:text-brand-muted">
-                                <?= date('j M Y', strtotime($r->periode_mulai)) ?> – <?= date('j M Y', strtotime($r->periode_selesai)) ?>
+                                <?= tgl_id($r->periode_mulai, TRUE) ?> – <?= tgl_id($r->periode_selesai, TRUE) ?>
                             </div>
                             <?php
                             $dokumen = ['surat' => ['Surat pengantar', $r->file_surat_pengantar], 'proposal' => ['Proposal', $r->file_proposal]];
@@ -64,7 +72,7 @@ $badge_kelas = [
                                 </div>
                             <?php endforeach; ?>
                         </td>
-                        <td class="px-6 py-4">
+                        <td class="px-4 py-4">
                             <?= $this->load->view('admin/components/status_badge', ['label' => $r->status, 'kelas' => $badge_kelas[$r->status] ?? 'pending'], TRUE) ?>
                             <?php if ( ! empty($r->catatan_admin)): ?>
                                 <div class="mt-1 max-w-xs whitespace-normal text-xs text-gray-500 dark:text-brand-muted">
@@ -72,7 +80,7 @@ $badge_kelas = [
                                 </div>
                             <?php endif; ?>
                         </td>
-                        <td class="px-6 py-4 text-right relative">
+                        <td class="px-4 py-4 text-right relative">
                             <?php if ($r->status === 'Ditinjau Bidang'): ?>
                                 <button @click="procOpen = !procOpen" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">Putuskan</button>
                                 <div x-show="procOpen" x-cloak @click.outside="procOpen = false" class="absolute right-6 top-full mt-1 z-20 w-72 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
