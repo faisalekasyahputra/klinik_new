@@ -165,6 +165,10 @@ function bersihkan() {
         }
     }
     $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
+    if ( ! empty($GLOBALS['mhs_uji_id'])) {
+        $db->query("DELETE FROM kkn_magang_pendaftaran WHERE user_id = " . (int) $GLOBALS['mhs_uji_id']);
+        $db->query("DELETE FROM usr_users WHERE id = " . (int) $GLOBALS['mhs_uji_id']);
+    }
     // Slot 2099 yang dibuka skrip ini — tahun itu tidak pernah dipakai data asli.
     $db->query("DELETE FROM kkn_magang_slot WHERE tahun = 2099");
     foreach ($berkas_sementara as $f) { @unlink($f); }
@@ -179,7 +183,20 @@ echo "== Prasyarat ==\n";
 // Kode HTTP saja TIDAK cukup: login gagal juga membalas 200. Yang menentukan
 // isi JSON-nya — pelajaran dari harness wizard yang sempat hijau padahal
 // akunnya tidak pernah masuk.
-wajib(login(MHS_EMAIL, MHS_PASSWORD), 'Login mahasiswa berhasil (diperiksa dari JSON, bukan kode HTTP)');
+/**
+ * Mahasiswa SENDIRI, bukan akun demo bersama — alasan yang sama dengan
+ * uji_kemitraan_slot.php: satu pendaftaran menggantung milik siapa pun di
+ * `mahasiswa@example.com` membuat SELURUH pendaftaran skrip ini ditolak, dan
+ * merahnya muncul di tempat yang tidak ada hubungannya dengan apa yang diuji.
+ * Kejadian 2 Agt 2026 waktu pendaftaran magang sungguhan pertama dibuat.
+ */
+$MHS_UJI = 'uji_daftar_mhs_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
+$db->query("INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+    VALUES ('" . $db->real_escape_string($MHS_UJI) . "', '" . password_hash(MHS_PASSWORD, PASSWORD_BCRYPT)
+    . "', 'Mahasiswa Uji Daftar', 'uji_daftar_" . mt_rand(100000, 999999) . "', 'mahasiswa', 'active', 1, NOW())");
+$GLOBALS['mhs_uji_id'] = (int) $db->insert_id;
+
+wajib(login($MHS_UJI, MHS_PASSWORD), 'Login mahasiswa uji berhasil (akun sendiri, diperiksa dari JSON)');
 
 $form_kkn    = http('KemitraanPortal/daftar/kkn');
 $form_magang = http('KemitraanPortal/daftar/magang');

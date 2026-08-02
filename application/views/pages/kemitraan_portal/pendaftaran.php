@@ -30,25 +30,36 @@ $baris = [
         ? $row->tempat_lahir . ', ' . tgl_id($row->tanggal_lahir) : NULL,
     'Instansi Asal'        => $row->instansi_asal,
     'Nomor HP'             => $row->no_hp,
-    // "Divisi" dihapus dinas — struktur resminya lima BIDANG, tanpa divisi
-    // (konfirmasi 1 Agt 2026). Kolomnya masih bernama `divisi_atau_tema` karena
-    // itu urusan skema; yang dibaca mahasiswa tidak boleh memakai kata yang
-    // sudah tidak dipakai organisasinya sendiri.
-    'Tema Kegiatan'        => $row->divisi_atau_tema,
-    'Periode'              => $row->periode_mulai && $row->periode_selesai
-        ? tgl_id($row->periode_mulai, TRUE) . ' – ' . tgl_id($row->periode_selesai, TRUE) : NULL,
 ];
 
-// Bidang tujuan: sebelumnya TIDAK PERNAH disebut ke pendaftar. Garis waktunya
-// bilang "Bidang penanggung jawab memutuskan" tanpa memberi tahu bidang yang
-// mana — padahal itu yang menentukan ke siapa ia harus bertanya kalau lama tak
-// ada kabar. Ketahuan waktu halaman ini dibuka di browser. Namanya datang dari
-// controller; view ini tidak menyentuh DB.
-if ( ! empty($nama_bidang)) {
-    $baris = array_slice($baris, 0, 6, TRUE)
-        + ['Bidang Tujuan' => $nama_bidang]
-        + array_slice($baris, 6, NULL, TRUE);
+/**
+ * Kolom `divisi_atau_tema` memuat DUA hal berbeda tergantung jenisnya.
+ *
+ * Untuk KKN ia tema kegiatan sungguhan — teks bebas yang ditulis pendaftar.
+ * Untuk magang, `periksa_slot()` menimpanya dengan nama kanonik bidang dari
+ * tabel, jadi menampilkannya sebagai "Tema Kegiatan" DI SAMPING "Bidang Tujuan"
+ * mencetak nilai yang sama dua kali dengan dua label berbeda — persis yang
+ * terlihat pada pendaftaran nyata pertama, 2 Agt 2026:
+ *
+ *     BIDANG TUJUAN   Bidang Perumahan
+ *     TEMA KEGIATAN   Bidang Perumahan
+ *
+ * "Divisi" sendiri sudah dihapus dinas (konfirmasi 1 Agt 2026); nama kolomnya
+ * dibiarkan karena itu urusan skema, bukan urusan yang dibaca mahasiswa.
+ */
+if ($row->jenis === 'magang') {
+    // Nama bidang datang dari controller — view ini tidak menyentuh DB.
+    // Sebelumnya bidang tujuan TIDAK PERNAH disebut ke pendaftar sama sekali:
+    // garis waktunya bilang "Bidang penanggung jawab memutuskan" tanpa memberi
+    // tahu yang mana, padahal itu yang menentukan ke siapa ia bertanya kalau
+    // lama tak ada kabar.
+    $baris['Bidang Tujuan'] = $nama_bidang ?: $row->divisi_atau_tema;
+} else {
+    $baris['Tema Kegiatan'] = $row->divisi_atau_tema;
 }
+
+$baris['Periode'] = $row->periode_mulai && $row->periode_selesai
+    ? tgl_id($row->periode_mulai, TRUE) . ' – ' . tgl_id($row->periode_selesai, TRUE) : NULL;
 ?>
 <div class="mx-auto max-w-3xl p-2 sm:p-6">
     <div class="mb-6 flex flex-wrap items-start justify-between gap-4">

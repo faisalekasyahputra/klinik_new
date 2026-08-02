@@ -148,6 +148,10 @@ function bersihkan() {
     global $db, $jars;
     if ( ! empty($GLOBALS['surat_uji'])) { @unlink($GLOBALS['surat_uji']); }
     $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
+    if ( ! empty($GLOBALS['mhs_uji_id'])) {
+        $db->query("DELETE FROM kkn_magang_pendaftaran WHERE user_id = " . (int) $GLOBALS['mhs_uji_id']);
+        $db->query("DELETE FROM usr_users WHERE id = " . (int) $GLOBALS['mhs_uji_id']);
+    }
     // Bidang tidak dihapus — ia struktur organisasi. Yang dipulihkan keadaan
     // magangnya: slot tahun uji dibuang, kuota dan status kembali ke bawaan.
     $db->query("DELETE FROM kkn_magang_slot WHERE tahun = " . TAHUN_UJI);
@@ -256,8 +260,25 @@ echo "== Prasyarat ==\n";
 // isi JSON-nya.
 pakai_sesi('adm');
 wajib(login(ADM_EMAIL, ADM_PASSWORD), 'Login superadmin');
+/**
+ * Mahasiswa SENDIRI, bukan akun demo bersama.
+ *
+ * Sebelumnya skrip ini masuk sebagai `mahasiswa@example.com`. Begitu akun itu
+ * punya satu pendaftaran magang menggantung — apa pun sebabnya, termasuk
+ * pendaftaran sungguhan yang dibuat orang — aturan "satu pendaftaran
+ * menggantung per mahasiswa per jenis" menolak SEMUA pendaftaran skrip ini, dan
+ * 44 pemeriksaan slot merah karena sebab yang tidak ada hubungannya dengan
+ * kuota. Kejadian 2 Agt 2026. Pelajarannya sama dengan r4/r5/r6: harness yang
+ * meminjam data bersama akan merah karena ulah orang lain.
+ */
+$MHS_UJI = 'uji_slot_mhs_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
+$db->query("INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+    VALUES ('" . $db->real_escape_string($MHS_UJI) . "', '" . password_hash(MHS_PASSWORD, PASSWORD_BCRYPT)
+    . "', 'Mahasiswa Uji Slot', 'uji_slot_" . mt_rand(100000, 999999) . "', 'mahasiswa', 'active', 1, NOW())");
+$GLOBALS['mhs_uji_id'] = (int) $db->insert_id;
+
 pakai_sesi('mhs');
-wajib(login(MHS_EMAIL, MHS_PASSWORD), 'Login mahasiswa');
+wajib(login($MHS_UJI, MHS_PASSWORD), 'Login mahasiswa uji (akun sendiri, bukan akun demo bersama)');
 pakai_sesi('bid');
 cek(login(BID_EMAIL, BID_PASSWORD), 'Login admin bidang');
 
