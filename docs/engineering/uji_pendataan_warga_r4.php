@@ -8,7 +8,7 @@ define('BASE_URL', rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new'
 define('ENV_PATH', dirname(__DIR__, 2) . '/.env');
 define('PASSWORD', getenv('UJI_WARGA_PASSWORD') ?: 'UjiWargaR4!');
 $GLOBALS['total'] = $GLOBALS['gagal'] = 0;
-$GLOBALS['users'] = $GLOBALS['assessments'] = [];
+$GLOBALS['users'] = $GLOBALS['assessments'] = $GLOBALS['rate_limit_original'] = [];
 $GLOBALS['db'] = NULL;
 $GLOBALS['private_root'] = NULL;
 
@@ -92,6 +92,29 @@ function png_with_text($text) {
     $iend = strrpos($raw, 'IEND') - 4; $data = 'Comment' . "\0" . $text; $chunk = pack('N', strlen($data)) . 'tEXt' . $data . pack('N', crc32('tEXt' . $data));
     $path = tempnam(sys_get_temp_dir(), 'uji_r4_png_') . '.png'; file_put_contents($path, substr($raw, 0, $iend) . $chunk . substr($raw, $iend)); return $path;
 }
+/**
+ * `warga_lookup` dibatasi 10 percobaan per 60 detik dan salah satu dimensinya
+ * adalah IP — sementara SELURUH harness di repo ini datang dari 127.0.0.1.
+ * Dijalankan sendirian uji ini muat; dijalankan berurutan bersama r3/r5/r6
+ * lewat runner, ember IP-nya jebol di tengah jalan dan lookup ditolak. Merahnya
+ * lalu muncul di tempat yang tidak ada hubungannya ("Draft warga tersedia"),
+ * berpindah-pindah tiap jalan, dan terbaca seperti flake padahal deterministik.
+ *
+ * Ember IP-nya dipinjam, bukan dikosongkan: isinya diingat dan dikembalikan
+ * utuh di cleanup, supaya uji ini tidak diam-diam melonggarkan pembatas laju
+ * untuk siapa pun yang jalan sesudahnya. Pola ini disalin dari R6.
+ */
+function preserve_rate_key($db, $policy, $dimension, $value) {
+    $key = hash('sha256', $policy . ':' . $dimension . ':' . $value);
+    if (array_key_exists($key, $GLOBALS['rate_limit_original'])) return;
+    $GLOBALS['rate_limit_original'][$key] = $db->row(
+        'SELECT limit_key,window_started_at,failed_attempts FROM sys_rate_limits WHERE limit_key=?', [$key]);
+    $db->run('DELETE FROM sys_rate_limits WHERE limit_key=?', [$key]);
+}
+function preserve_rate_ips($db, $policy) {
+    preserve_rate_key($db, $policy, 'ip', '127.0.0.1');
+    preserve_rate_key($db, $policy, 'ip', '::1');
+}
 function cleanup() {
     $db = $GLOBALS['db']; if (!$db) return;
     foreach (array_unique($GLOBALS['assessments']) as $id) {
@@ -100,6 +123,13 @@ function cleanup() {
         $db->run('DELETE FROM sf_penilaian_perumahan WHERE id=?', [$id]);
     }
     foreach (array_unique($GLOBALS['users']) as $id) $db->run('DELETE FROM usr_users WHERE id=?', [$id]);
+    foreach ($GLOBALS['rate_limit_original'] as $key => $row) {
+        $db->run('DELETE FROM sys_rate_limits WHERE limit_key=?', [$key]);
+        if ($row) {
+            $db->run('INSERT INTO sys_rate_limits (limit_key,window_started_at,failed_attempts) VALUES (?,?,?)',
+                [$row['limit_key'], $row['window_started_at'], $row['failed_attempts']]);
+        }
+    }
 }
 register_shutdown_function('cleanup');
 
@@ -110,6 +140,15 @@ if (!preg_match('#^(?:[A-Za-z]:|[/\\\\])#', $root)) $root = dirname(__DIR__, 2) 
 $GLOBALS['private_root'] = $root;
 echo "=== UJI PENDATAAN WARGA R4 ===\nTarget: " . BASE_URL . " | DB: {$env['DB_NAME']}\n\n";
 
+// Empat policy, bukan cuma warga_lookup: `warga_submit` batasnya 5 per JAM,
+// jadi ia jebol jauh lebih cepat daripada lookup begitu suite dijalankan
+// berturut-turut. Dimensi `nik` ikut dipinjam karena ember NIK fixture ini
+// dipakai bersama r5 dan r6 — membersihkan ember IP saja menyisakan tabrakan
+// yang muncul acak di suite mana pun yang kebetulan jalan belakangan.
+foreach (['warga_lookup', 'warga_submit', 'warga_start_revision', 'admin_queue_decision'] as $policy) {
+    preserve_rate_ips($db, $policy);
+}
+preserve_rate_key($db, 'warga_lookup', 'nik', hash_hmac('sha256', '0000000000000001', $env['KPKP_DATA_PEPPER']));
 nik_bebas($db, $env, '0000000000000001');
 
 // Existing house: lookup → langkah 1/2 → bangunan → sanitasi → lokasi.

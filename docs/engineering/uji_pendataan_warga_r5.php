@@ -13,7 +13,7 @@ define('BASEPATH', dirname(__DIR__, 2) . '/system/');
 require dirname(__DIR__, 2) . '/application/libraries/Warga_ruleset.php';
 
 $GLOBALS['total'] = $GLOBALS['gagal'] = 0;
-$GLOBALS['users'] = $GLOBALS['assessments'] = [];
+$GLOBALS['users'] = $GLOBALS['assessments'] = $GLOBALS['rate_limit_original'] = [];
 $GLOBALS['db'] = NULL;
 $GLOBALS['restored_pb'] = FALSE;
 
@@ -73,11 +73,34 @@ function citizen() { return ['family_card_number'=>'0000000000005555','full_name
 function housing($status,$candidate='0') { return ['housing_status_code'=>$status,'land_title_code'=>'hm','area_condition_code'=>'slum','occupant_count'=>'3','family_count'=>'1','house_area_m2'=>'36','has_other_land'=>'0','has_other_house'=>'0','owns_candidate_land'=>$candidate,'assistance_source_code'=>'','assistance_year'=>'']; }
 function recommendations($db,$assessment) { return $db->rows('SELECT p.kode_program,r.ruleset_version,r.eligibility_status,r.reason_codes_json,r.input_snapshot_sha256 FROM sf_rekomendasi_penilaian r JOIN sf_programs p ON p.id=r.program_id WHERE r.assessment_id=? ORDER BY r.ruleset_version,p.kode_program',[$assessment]); }
 function by_code($rows,$code) { foreach($rows as $row) if($row['kode_program']===$code) return $row; return NULL; }
+/**
+ * `warga_lookup` dibatasi 10 percobaan/60 detik dengan IP sebagai salah satu
+ * dimensinya, dan semua harness datang dari 127.0.0.1 yang sama. Sendirian uji
+ * ini muat; berurutan lewat runner, ember IP-nya jebol dan lookup ditolak —
+ * merahnya lalu muncul di tempat yang tak berhubungan dan terbaca seperti
+ * flake padahal deterministik. Embernya dipinjam lalu dikembalikan utuh, bukan
+ * dikosongkan. Pola dari R6.
+ */
+function preserve_rate_key($db,$policy,$dimension,$value) {
+    $key=hash('sha256',$policy.':'.$dimension.':'.$value);
+    if(array_key_exists($key,$GLOBALS['rate_limit_original']))return;
+    $GLOBALS['rate_limit_original'][$key]=$db->row('SELECT limit_key,window_started_at,failed_attempts FROM sys_rate_limits WHERE limit_key=?',[$key]);
+    $db->run('DELETE FROM sys_rate_limits WHERE limit_key=?',[$key]);
+}
+function preserve_rate_ips($db,$policy) {
+    preserve_rate_key($db,$policy,'ip','127.0.0.1');
+    preserve_rate_key($db,$policy,'ip','::1');
+}
 function cleanup() {
     $db=$GLOBALS['db']; if(!$db) return;
     if (!$GLOBALS['restored_pb']) $db->run("UPDATE sf_programs SET kode_program='pb' WHERE kode_program='pb_uji_hilang'");
     foreach(array_unique($GLOBALS['assessments']) as $id) $db->run('DELETE FROM sf_penilaian_perumahan WHERE id=?',[$id]);
     foreach(array_unique($GLOBALS['users']) as $id) $db->run('DELETE FROM usr_users WHERE id=?',[$id]);
+    foreach($GLOBALS['rate_limit_original'] as $key=>$row) {
+        $db->run('DELETE FROM sys_rate_limits WHERE limit_key=?',[$key]);
+        if($row) $db->run('INSERT INTO sys_rate_limits (limit_key,window_started_at,failed_attempts) VALUES (?,?,?)',
+            [$row['limit_key'],$row['window_started_at'],$row['failed_attempts']]);
+    }
 }
 register_shutdown_function('cleanup');
 
@@ -100,6 +123,11 @@ foreach(['flpp','oemah_lestari'] as $code) cek($rules->evaluate($code,['assessme
 foreach(range(1,10) as $desil) cek($rules->evaluate('rumah_apung',[],['welfare_decile'=>$desil])['eligibility_status']==='needs_data','Rumah Apung desil '.$desil.' selalu needs_data');
 
 // Jalur HTTP nyata memakai SIM-01 (desil 2) hingga rekomendasi dipersist server.
+// Empat policy, bukan cuma warga_lookup: `warga_submit` batasnya 5 per JAM.
+// Dimensi `nik` ikut dipinjam karena ember NIK fixture ini dipakai bersama r4
+// dan r6.
+foreach(['warga_lookup','warga_submit','warga_start_revision','admin_queue_decision'] as $policy)preserve_rate_ips($db,$policy);
+preserve_rate_key($db,'warga_lookup','nik',hash_hmac('sha256','0000000000000001',$env['KPKP_DATA_PEPPER']));
 nik_bebas($db,$env,'0000000000000001');
 [$user,$email]=make_user($db,'owner'); $owner=login($email);
 $r=$owner->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000001','birth_date'=>'1980-01-01']); wajib(redirect_ok($r),'Lookup SIM-01');

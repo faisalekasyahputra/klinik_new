@@ -9,7 +9,27 @@ class DB { public $m; function __construct($e) { $this->m=new mysqli($e['DB_HOST
  class HTTP { public $jar,$csrf=''; function __construct() {$this->jar=tempnam(sys_get_temp_dir(),'r3_');} function __destruct(){@unlink($this->jar);} function call($path,$fields=null){$c=curl_init(BASE.'/'.ltrim($path,'/'));$o=[CURLOPT_RETURNTRANSFER=>true,CURLOPT_HEADER=>true,CURLOPT_COOKIEJAR=>$this->jar,CURLOPT_COOKIEFILE=>$this->jar,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_TIMEOUT=>20];if($fields!==null){$fields['csrf_kpkp_token']=$this->csrf;$o+=[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>http_build_query($fields)];if($path==='Auth/do_login')$o[CURLOPT_HTTPHEADER]=['X-Requested-With: XMLHttpRequest'];}curl_setopt_array($c,$o);$raw=curl_exec($c);$info=curl_getinfo($c);curl_close($c);$body=substr($raw,$info['header_size']);if(preg_match('/name="csrf_kpkp_token"\s+value="([a-f0-9]+)"/',$body,$m))$this->csrf=$m[1];return [$info['http_code'],$body];} function login($email,$pass){$this->call('Auth/login');[$s,$b]=$this->call('Auth/do_login',['email'=>$email,'password'=>$pass]);$b=ltrim($b,"\xEF\xBB\xBF");return $s===200 && (($j=json_decode($b,true))['status']??'')==='success';} }
 if(!is_file(ENV)) die(".env tidak ditemukan\n"); $db=new DB(envv()); $stamp=time(); $pass='R3Uji!123'; $ids=[];
 function user($db,$email,$name,$pass){return $db->id("INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at) VALUES (?,?,?,?, 'warga','active',1,NOW())",[$email,password_hash($pass,PASSWORD_BCRYPT),$name,strtok($email,'@')]);}
-function cleanup($db,$ids){foreach($ids as $id){$db->q('DELETE FROM usr_users WHERE id=?',[$id]);}}
+function cleanup($db,$ids){foreach($ids as $id){$db->q('DELETE FROM usr_users WHERE id=?',[$id]);}
+  foreach($GLOBALS['rate_asli'] as $key=>$row){$db->q('DELETE FROM sys_rate_limits WHERE limit_key=?',[$key]);
+    if($row)$db->q('INSERT INTO sys_rate_limits (limit_key,window_started_at,failed_attempts) VALUES (?,?,?)',[$row['limit_key'],$row['window_started_at'],$row['failed_attempts']]);}}
+/* `warga_lookup` dibatasi 10 percobaan/60 detik dengan IP sebagai salah satu
+   dimensinya, dan semua harness datang dari 127.0.0.1 yang sama. Sendirian uji
+   ini muat; berurutan lewat runner, ember IP-nya jebol dan lookup ditolak —
+   merahnya muncul di tempat yang tak berhubungan dan terbaca seperti flake
+   padahal deterministik. Embernya dipinjam lalu dikembalikan utuh di cleanup,
+   bukan dikosongkan: uji tidak boleh diam-diam melonggarkan pembatas laju bagi
+   siapa pun yang jalan sesudahnya. Pola dari R6. */
+$GLOBALS['rate_asli']=[];
+function pinjam_rate($db,$key){if(array_key_exists($key,$GLOBALS['rate_asli']))return;
+  $GLOBALS['rate_asli'][$key]=$db->one('SELECT limit_key,window_started_at,failed_attempts FROM sys_rate_limits WHERE limit_key=?',[$key]);
+  $db->q('DELETE FROM sys_rate_limits WHERE limit_key=?',[$key]);}
+$pepper=envv()['KPKP_DATA_PEPPER'] ?? '';
+foreach(['warga_lookup','warga_submit','warga_start_revision','admin_queue_decision'] as $policy)
+  foreach(['127.0.0.1','::1'] as $ip) pinjam_rate($db,hash('sha256',$policy.':ip:'.$ip));
+/* R3 menyentuh tiga NIK fixture, bukan satu — embernya per-NIK, jadi ketiganya
+   harus dipinjam atau tabrakannya cuma berpindah ke fixture berikutnya. */
+foreach(['0000000000000002','0000000000000003','0000000000000005'] as $n)
+  pinjam_rate($db,hash('sha256','warga_lookup:nik:'.hash_hmac('sha256',$n,$pepper)));
 try {
   $a=user($db,"r3_{$stamp}_a@example.test",'Warga Uji R3 A',$pass);$b=user($db,"r3_{$stamp}_b@example.test",'Warga Uji R3 B',$pass);$ids=[$a,$b];
   $sa=new HTTP(); check($sa->login("r3_{$stamp}_a@example.test",$pass),'akun SIM-02 login');
