@@ -26,9 +26,14 @@ class KemitraanPortal extends Public_Controller
      * tunduk padanya. Sekarang dari `kkn_magang_slot`, dikelola superadmin
      * lewat Admin_Kemitraan::slot().
      */
-    public function magang()
+    public function magang($tahun = NULL)
     {
-        $tahun  = (int) date('Y');
+        // Tahun boleh diminta dari URL, tapi bawaannya BUKAN date('Y') buta:
+        // slot yang ditetapkan untuk tahun depan akan tak terlihat sama sekali
+        // kalau papan selalu memaksa tahun berjalan.
+        $tahun = in_array((int) $tahun, $this->slot->tahun_tersedia(), TRUE)
+            ? (int) $tahun
+            : $this->slot->tahun_papan();
         $peta   = $this->slot->peta_slot($tahun);
         $terisi = $this->slot->peta_terisi();
 
@@ -63,9 +68,10 @@ class KemitraanPortal extends Public_Controller
         }
 
         $this->render('pages/kemitraan_portal/magang', [
-            'judul'       => 'Magang dan Kerja Praktik',
-            'tahun'       => $tahun,
-            'slot_magang' => $slot_magang,
+            'judul'          => 'Magang dan Kerja Praktik',
+            'tahun'          => $tahun,
+            'tahun_tersedia' => $this->slot->tahun_tersedia(),
+            'slot_magang'    => $slot_magang,
         ]);
     }
 

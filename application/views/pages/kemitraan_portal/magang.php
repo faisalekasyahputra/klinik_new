@@ -1,6 +1,21 @@
 <div class="mx-auto max-w-6xl p-2 sm:p-6">
     <div class="mb-6 flex items-start justify-between gap-4"><div><span class="text-xs font-bold uppercase tracking-[.18em] text-[color:var(--portal-text-muted)]">Kemitraan</span><h1 class="mt-2 text-2xl font-black text-[color:var(--portal-text)] sm:text-4xl">Magang/Kerja Praktik</h1><p class="mt-2 text-sm text-[color:var(--portal-text-muted)]">Informasi slot magang pada divisi pemerintahan.</p></div><div class="flex shrink-0 gap-2"><a href="<?= base_url('KemitraanPortal/daftar/magang') ?>" data-tab-link data-tab-key="kemitraan_daftar_magang" class="rounded-xl bg-[color:var(--portal-brand)] px-3 py-2 text-xs font-bold text-[#0a1a1f]">Daftar Sekarang</a><a href="<?= base_url('KemitraanPortal') ?>" data-tab-link data-tab-key="kemitraan" class="rounded-xl border border-[color:var(--portal-border)] px-3 py-2 text-xs font-bold text-[color:var(--portal-text)]">Kembali</a></div></div>
     <?php $bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']; ?>
+
+    <?php if (count($tahun_tersedia) > 1): ?>
+        <!-- Muncul hanya kalau memang ada lebih dari satu tahun. Satu tombol
+             tahun yang berdiri sendiri bukan pilihan, cuma hiasan yang menyita
+             perhatian. -->
+        <div class="mb-4 flex flex-wrap items-center gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-[color:var(--portal-text-muted)]">Tahun</span>
+            <?php foreach ($tahun_tersedia as $t): ?>
+                <a href="<?= base_url('KemitraanPortal/magang/' . (int) $t) ?>" data-tab-link
+                   class="rounded-lg px-3 py-1.5 text-xs font-bold <?= (int) $t === (int) $tahun
+                        ? 'bg-[color:var(--portal-brand)] text-[#0a1a1f]'
+                        : 'border border-[color:var(--portal-border)] text-[color:var(--portal-text)]' ?>"><?= (int) $t ?></a>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
     <section class="overflow-hidden rounded-3xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] shadow-sm"><div class="border-b border-[color:var(--portal-border)] p-5 sm:p-6"><h2 class="text-lg font-black text-[color:var(--portal-text)]">Slot Divisi Pemerintahan <?= (int) $tahun ?></h2><p class="mt-1 text-xs text-[color:var(--portal-text-muted)]">Kuota dihitung dari jumlah mahasiswa yang hadir BERSAMAAN, bukan dari berapa orang menyentuh bulan itu — jadi periode yang tidak bertumpang tindih tidak saling menghalangi. Angka pada tiap sel adalah kondisi paling ramai di bulan tersebut. Hijau berarti masih ada sisa, kuning berarti sudah penuh, merah berarti bulan itu tidak dibuka.</p></div><div class="overflow-x-auto"><table class="w-full min-w-[1250px] border-collapse text-left text-xs" data-table-search data-table-sort data-table-pagination data-table-summary data-table-per-page="10"><thead class="bg-[color:var(--portal-bg)] uppercase tracking-wider text-[color:var(--portal-text-muted)]"><tr><th class="sticky left-0 z-10 min-w-[250px] border-r border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-4 py-3">Divisi</th><?php foreach ($bulan as $nama_bulan): ?><th class="min-w-[105px] border-r border-[color:var(--portal-border)] px-3 py-3 text-center"><?= $nama_bulan ?></th><?php endforeach; ?></tr></thead><tbody><?php foreach ($slot_magang as $slot): ?><tr data-table-row class="border-t border-[color:var(--portal-border)]"><td class="sticky left-0 z-[1] border-r border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-4 font-semibold text-[color:var(--portal-text)]" data-table-column><?= html_escape($slot['divisi']) ?><span class="mt-0.5 block text-[11px] font-normal text-[color:var(--portal-text-muted)]">Kuota <?= (int) $slot['kuota'] ?> mahasiswa/bulan</span></td><?php foreach ($bulan as $nama_bulan): ?><?php
     $sel = $slot['sel'][$nama_bulan] ?? ['keadaan' => 'tutup', 'teks' => 'Tidak Tersedia', 'rentang' => ''];
     // Tiga keadaan, bukan dua. "Penuh" berbeda dari "tidak dibuka": yang satu

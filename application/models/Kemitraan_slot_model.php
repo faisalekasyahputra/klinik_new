@@ -128,6 +128,30 @@ class Kemitraan_slot_model extends CI_Model
             . '–' . (int) date('j', strtotime($slot->tgl_selesai));
     }
 
+    /**
+     * Tahun yang layak ditampilkan lebih dulu di papan publik.
+     *
+     * Tahun berjalan kalau ia memang punya slot; kalau tidak, tahun TERDEKAT
+     * berikutnya yang punya. Papan yang dipatok ke `date('Y')` membuat seluruh
+     * konfigurasi tahun depan tak terlihat: dibuka Agustus 2026 untuk periode
+     * 2027, pengunjung hanya melihat dua belas kotak merah dan menyimpulkan
+     * tidak ada penerimaan sama sekali. Kena 2 Agt 2026.
+     */
+    public function tahun_papan()
+    {
+        $sekarang = (int) date('Y');
+        $punya = array_map(
+            static function ($b) { return (int) $b->tahun; },
+            $this->db->distinct()->select('tahun')->order_by('tahun', 'ASC')->get(self::TABEL_SLOT)->result()
+        );
+        if (in_array($sekarang, $punya, TRUE)) { return $sekarang; }
+
+        foreach ($punya as $t) {
+            if ($t > $sekarang) { return $t; }
+        }
+        return $sekarang;
+    }
+
     /** Tahun yang punya slot, untuk selektor tahun di layar admin. */
     public function tahun_tersedia()
     {

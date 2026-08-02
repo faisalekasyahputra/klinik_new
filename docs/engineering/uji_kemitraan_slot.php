@@ -39,10 +39,17 @@ define('BID_PASSWORD', getenv('UJI_BID_PASSWORD') ?: 'password');
 // diuji utuh; keadaannya (slot tahun uji, kuota, aktif) dipulihkan di akhir.
 define('BIDANG_UJI', getenv('UJI_BIDANG') ?: 'perumahan');
 define('SENTINEL', 'UJI-SLOT-' . date('His'));
-// Tahun uji sengaja BUKAN tahun berjalan: penyimpanan slot menulis ulang seluruh
-// tahun, jadi memakai tahun berjalan berarti menghapus slot sungguhan kalau
-// formulirnya tidak mengirim ulang semuanya. Tahun depan masih kosong.
-define('TAHUN_UJI', (int) date('Y') + 1);
+// Tahun uji sengaja JAUH di depan. `simpan_slot_bidang` menulis ulang SELURUH
+// tahun untuk satu bidang, dan `bersihkan()` menghapus seluruh slot tahun ini —
+// jadi tahun yang dipakai konfigurasi sungguhan akan musnah kalau dipilih.
+//
+// Sempat `date('Y') + 1`, dan itu meleset 2 Agt 2026 begitu slot 2027 benar-
+// benar ditetapkan: menjalankan harness akan menghapusnya tanpa peringatan.
+// Tahun uji harus di luar jangkauan perencanaan, bukan sekadar "belum dipakai
+// hari ini". Dipatok +5 karena itu batas atas yang masih diterima
+// `Admin_Kemitraan::tahun_sah()` — lebih jauh dari itu endpointnya menolak, dan
+// harness akan merah karena batas yang benar, bukan karena bug.
+define('TAHUN_UJI', (int) date('Y') + 5);
 
 $GLOBALS['t'] = 0; $GLOBALS['g'] = 0;
 
