@@ -124,7 +124,29 @@ $isi = function ($nama) use ($old) {
                 </div>
 
                 <!-- ===== LANGKAH 1 — PERAN ===== -->
-                <div class="auth-dynamic-form" :class="{ 'visible': langkah === 1 }" x-ref="langkah1">
+                <?php
+                /**
+                 * `inert` MENYERTAI setiap `visible`, jangan dipisah.
+                 *
+                 * Seksi langkah disembunyikan lewat `max-height:0; opacity:0;
+                 * overflow:hidden` (auth-pages.css) — bukan `display:none`.
+                 * Secara visual benar: tingginya nol. Tapi isinya TETAP berada
+                 * di urutan tab dan di pohon aksesibilitas.
+                 *
+                 * Diukur 3 Agt 2026 pada langkah 1: tiga seksi bertinggi 0, dan
+                 * 17 kontrol di dalamnya masih bisa difokus. Pengguna keyboard
+                 * menekan Tab dari kartu peran mendarat di "Nama Perusahaan"
+                 * lalu "Upload SIUP" — field untuk peran yang belum ia pilih,
+                 * di langkah yang belum ia capai, semuanya tak terlihat.
+                 *
+                 * `inert` adalah atribut HTML bawaan yang mencabut satu subtree
+                 * dari fokus DAN dari pembaca layar sekaligus. Dipilih alih-alih
+                 * mengurus `tabindex="-1"` per kontrol: satu atribut per seksi,
+                 * syaratnya persis kebalikan `visible`, jadi keduanya tidak bisa
+                 * berbeda pendapat.
+                 */
+                ?>
+                <div class="auth-dynamic-form" :class="{ 'visible': langkah === 1 }" :inert="langkah !== 1" x-ref="langkah1">
                     <label class="auth-label">Pilih Peran Anda <span style="color:var(--auth-red)">*</span></label>
                     <div class="auth-role-grid">
                         <!-- Warga -->
@@ -161,7 +183,7 @@ $isi = function ($nama) use ($old) {
                 </div>
 
                 <!-- ===== LANGKAH 2 — DATA PRIBADI ===== -->
-                <div class="auth-dynamic-form" :class="{ 'visible': langkah === 2 }" x-ref="langkah2">
+                <div class="auth-dynamic-form" :class="{ 'visible': langkah === 2 }" :inert="langkah !== 2" x-ref="langkah2">
                     <div class="auth-section-title">
                         <i class="fa-solid fa-user"></i> Data Pribadi
                     </div>
@@ -268,7 +290,7 @@ $isi = function ($nama) use ($old) {
                 <!-- ===== LANGKAH 3 — DOKUMEN PERAN ===== -->
                 <!-- Dilewati untuk warga: totalLangkah menjadi 2, jadi tombol
                      simpan sudah muncul di langkah 2. -->
-                <div class="auth-dynamic-form" :class="{ 'visible': langkah === 3 }" x-ref="langkah3">
+                <div class="auth-dynamic-form" :class="{ 'visible': langkah === 3 }" :inert="langkah !== 3" x-ref="langkah3">
 
                 <?php if (!empty($old)): ?>
                 <!-- Input file tidak bisa diisi ulang dari server — HTML
@@ -281,7 +303,7 @@ $isi = function ($nama) use ($old) {
                 <?php endif; ?>
 
                 <!-- ===== PENGEMBANG FIELDS ===== -->
-                <div class="auth-dynamic-form" :class="{ 'visible': role === 'pengembang' }">
+                <div class="auth-dynamic-form" :class="{ 'visible': role === 'pengembang' }" :inert="role !== 'pengembang'">
                     <div class="auth-section-title" style="color:#f59e0b;">
                         <i class="fa-solid fa-building"></i> Data Perusahaan Pengembang
                     </div>
@@ -324,7 +346,7 @@ $isi = function ($nama) use ($old) {
                 </div>
 
                 <!-- ===== MAHASISWA FIELDS ===== -->
-                <div class="auth-dynamic-form" :class="{ 'visible': role === 'mahasiswa' }">
+                <div class="auth-dynamic-form" :class="{ 'visible': role === 'mahasiswa' }" :inert="role !== 'mahasiswa'">
                     <div class="auth-section-title" style="color:#8b5cf6;">
                         <i class="fa-solid fa-graduation-cap"></i> Data Mahasiswa
                     </div>
