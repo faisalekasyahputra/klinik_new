@@ -99,8 +99,9 @@
                            <?php
                                $avatar_src = $this->session->userdata('avatar');
                                if (empty($avatar_src)) {
-                                   $fallback_name = urlencode($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
-                                   $avatar_src = "https://ui-avatars.com/api/?name={$fallback_name}&background=d6fb00&color=0a1a1f&bold=true";
+                                   // Dulu ui-avatars.com — nama pengguna dikirim
+                                   // ke pihak ketiga tiap pemuatan halaman.
+                                   $avatar_src = avatar_inisial($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
                                }
                            ?>
                            <div class="flex items-center gap-2 px-4 py-2 bg-[#0d2228] border border-[#d6fb00]/15 rounded-[14px] h-[38px]">

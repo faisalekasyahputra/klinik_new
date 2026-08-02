@@ -32,7 +32,7 @@
                     </div>
                 </div>
                 <div class="relative">
-                    <img src="<?= $this->session->userdata('avatar') ?: 'https://ui-avatars.com/api/?name='.urlencode($this->session->userdata('name') ?: 'Admin').'&background=d6fb00&color=0a1a1f&bold=true' ?>" alt="Avatar" class="h-10 w-10 rounded-xl object-cover border-2 border-transparent group-hover:border-brand-primary transition-all shadow-sm">
+                    <img src="<?= $this->session->userdata('avatar') ?: avatar_inisial($this->session->userdata('name') ?: 'Admin') ?>" alt="Avatar" class="h-10 w-10 rounded-xl object-cover border-2 border-transparent group-hover:border-brand-primary transition-all shadow-sm">
                     <div class="absolute bottom-[-2px] right-[-2px] w-3.5 h-3.5 bg-green-500 border-2 border-white dark:border-[#0a1a1f] rounded-full"></div>
                 </div>
                 <i class="ph ph-caret-down text-gray-400 dark:text-brand-muted text-xs transition-transform duration-200" :class="userMenuOpen ? 'rotate-180' : ''"></i>

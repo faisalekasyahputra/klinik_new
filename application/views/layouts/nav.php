@@ -29,8 +29,8 @@
                 <?php
                     $avatar_src_m = $this->session->userdata('avatar');
                     if (empty($avatar_src_m)) {
-                        $fallback_name_m = urlencode($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
-                        $avatar_src_m = "https://ui-avatars.com/api/?name={$fallback_name_m}&background=d6fb00&color=0a1a1f&bold=true";
+                        // Dulu ui-avatars.com — lihat catatan di main.php.
+                        $avatar_src_m = avatar_inisial($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
                     }
                 ?>
                 <div class="flex items-center gap-3 p-3 bg-[#d6fb00]/5 border border-[#d6fb00]/20 rounded-xl mb-3">
