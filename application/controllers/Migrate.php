@@ -128,7 +128,18 @@ class Migrate extends CI_Controller {
         $snapshot_id = NULL;
         $other_snapshot_id = NULL;
         $assessment_id = NULL;
+        $profile_id = NULL;
         $stamp = time();
+
+        // NIK unik per jalan. Sebelumnya dipatok '0000000000000001' — NIK demo
+        // SIMPERUM yang sama dengan yang dipakai layar dan harness lain. Begitu
+        // ada satu akun mana pun yang mengikatnya, `save_profile()` di sini
+        // membalas `nik_already_bound` dan TUJUH check runtuh berurutan. Itu
+        // bukan regresi: penjaga NIK-ganda justru sedang bekerja benar. Yang
+        // salah adalah uji yang mengandaikan dirinya pemilik tunggal sebuah NIK
+        // di DB bersama.
+        $nik = sprintf('99%014d', $stamp);
+        $nik_lain = sprintf('98%014d', $stamp);
 
         $check = function ($condition, $label) use (&$total, &$failed) {
             $total++;
@@ -165,7 +176,7 @@ class Migrate extends CI_Controller {
 
             $profile = $this->Housing_assessment_model->save_profile($user_id, [
                 'source_mode' => 'simulation',
-                'nik' => '0000000000000001',
+                'nik' => $nik,
                 'family_card_number' => '0000000000001001',
                 'full_name' => 'Warga Simulasi R1',
                 'address' => 'Alamat Sintetis R1',
@@ -175,13 +186,14 @@ class Migrate extends CI_Controller {
             ], ['full_name' => ['source' => 'simulation']]);
             $check(! empty($profile['success']), 'Model menyimpan profil');
 
-            $profile_row = empty($profile['profile_id']) ? NULL : $this->db
-                ->get_where('sf_profil_warga', ['id' => (int) $profile['profile_id']])
-                ->row_array();
+            $profile_id = empty($profile['profile_id']) ? NULL : (int) $profile['profile_id'];
+            $profile_row = $profile_id ? $this->db
+                ->get_where('sf_profil_warga', ['id' => $profile_id])
+                ->row_array() : NULL;
             $check(
                 $profile_row
-                && $profile_row['nik_ciphertext'] !== '0000000000000001'
-                && $this->encryption_lib->decrypt($profile_row['nik_ciphertext']) === '0000000000000001',
+                && $profile_row['nik_ciphertext'] !== $nik
+                && $this->encryption_lib->decrypt($profile_row['nik_ciphertext']) === $nik,
                 'NIK tersimpan terenkripsi dan dapat didekripsi'
             );
             $check(
@@ -191,7 +203,7 @@ class Migrate extends CI_Controller {
             );
 
             $snapshot = $this->Housing_assessment_model->store_source_snapshot(
-                '0000000000000001',
+                $nik,
                 'simulation',
                 'SIM-01',
                 'found',
@@ -230,7 +242,7 @@ class Migrate extends CI_Controller {
             );
 
             $other_snapshot = $this->Housing_assessment_model->store_source_snapshot(
-                '0000000000000098',
+                $nik_lain,
                 'simulation',
                 'SIM-98',
                 'not_found',
@@ -298,6 +310,10 @@ class Migrate extends CI_Controller {
             if ($other_snapshot_id) {
                 $this->db->delete('sf_rekaman_simperum', ['id' => $other_snapshot_id]);
             }
+            // Profil tidak dihapus di sini dengan sengaja: FK
+            // `fk_sf_citizen_profiles_user` sudah ON DELETE CASCADE, jadi baris
+            // di bawah ini membawanya serta. Diperiksa, bukan diandaikan — lihat
+            // check "Ikatan NIK uji dilepas" di bawah.
             if ($user_id) {
                 $this->db->delete('usr_users', ['id' => $user_id]);
             }
@@ -306,6 +322,15 @@ class Migrate extends CI_Controller {
         $leftovers = $this->db->like('email', 'uji_warga_r1_', 'after')
             ->count_all_results('usr_users');
         $check($leftovers === 0, 'Data uji dibersihkan');
+        // Menjaga cascade-nya, bukan sekadar merapikan. Kalau FK profil pernah
+        // kehilangan ON DELETE CASCADE-nya, ikatan NIK tertinggal dan uji ini
+        // merah SELAMANYA mulai jalan berikutnya — gejala yang jauh lebih mahal
+        // dibaca daripada satu check yang gagal di sini.
+        $check(
+            $this->db->where('nik_lookup_hash', $this->encryption_lib->deterministic_hash($nik))
+                ->count_all_results('sf_profil_warga') === 0,
+            'Ikatan NIK uji dilepas — jalan berikutnya tidak terhalang'
+        );
 
         echo "RINGKASAN: {$total} pemeriksaan, {$failed} gagal\n";
         if ($failed > 0) {
