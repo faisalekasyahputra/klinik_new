@@ -22,7 +22,7 @@ $isi = function ($nama) use ($old) {
     <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
 
     <!-- Alpine dimuat `defer`, jadi ada jeda sebelum x-show bekerja. Tanpa ini
          ketiga tombol navigasi (Kembali, Lanjut, Simpan) berkedip bersamaan

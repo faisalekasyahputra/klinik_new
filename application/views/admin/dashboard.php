@@ -130,7 +130,7 @@ $kelas_status = [
 
 <?php // Chart.js dimuat DI SINI, bukan di head admin — satu-satunya halaman
       // yang memakainya; halaman admin lain tak perlu membayar ~200KB. ?>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
 <script>
 (() => {
     // alpine:init hanya menembak sekali di load penuh. Saat konten di-swap

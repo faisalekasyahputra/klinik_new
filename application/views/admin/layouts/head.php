@@ -73,7 +73,7 @@
     </script>
     <!-- Alpine.js -->
     <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
     <!-- Loader progresif dashboard: klik sidebar/link internal = swap #main-content, bukan full reload -->
     <script defer src="<?= base_url('assets/js/admin-progressive.js?v=' . filemtime('assets/js/admin-progressive.js')) ?>"></script>
     <style>
@@ -97,7 +97,7 @@
         .dark select option:hover { background-color: rgba(214, 251, 0, .15); color: #d6fb00; }
     </style>
     <!-- Phosphor Icons — defer: ikon menyusul sepersekian detik, halaman tidak menunggu -->
-    <script defer src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.2"></script>
     <?php // Chart.js DIPINDAH ke satu-satunya view pemakainya (admin/dashboard.php)
           // — dulu ~200KB blocking dimuat di SEMUA halaman admin. ?>
     <style>
