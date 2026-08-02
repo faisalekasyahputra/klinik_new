@@ -313,6 +313,25 @@ class KemitraanPortal extends Public_Controller
             return;
         }
 
+        // SURAT PENGANTAR WAJIB UNTUK MAGANG — keputusan user 2 Agt 2026,
+        // membuka butir #11 yang selama ini BLOCKED. KKN sengaja TIDAK ikut:
+        // yang diminta hanya magang, dan melebarkannya sendiri berarti menolak
+        // pendaftaran yang selama ini sah tanpa ada yang memutuskannya.
+        //
+        // Diperiksa SEBELUM barisnya lahir. Seluruh alur empat tahap berdiri di
+        // atas surat ini; pendaftaran magang tanpa surat akan sampai ke meja
+        // bidang membawa tahap 1 yang tidak pernah benar-benar terjadi.
+        //
+        // `required` di formulir tidak dihitung sebagai penjagaan — ia hilang
+        // begitu POST dikirim tanpa lewat halaman itu.
+        if ($jenis === 'magang' && ( ! isset($_FILES['file_surat_pengantar'])
+            || (int) $_FILES['file_surat_pengantar']['error'] === UPLOAD_ERR_NO_FILE)) {
+            $this->tolak_pendaftaran($jenis,
+                'Surat pengantar wajib dilampirkan untuk pendaftaran magang. '
+                . 'Format JPG, PNG, atau PDF, maksimal 5 MB.');
+            return;
+        }
+
         // user_id selalu dari sesi (anti-IDOR), bukan dari input. Baris dibuat
         // dulu supaya surat pengantarnya punya folder pemilik sendiri
         // (private_uploads/kemitraan/{id}/).
@@ -351,15 +370,48 @@ class KemitraanPortal extends Public_Controller
         if ($jenis === 'magang') { $berkas['file_proposal'] = 'Proposal'; }
 
         $simpan = [];
+        $galat_berkas = [];
         foreach ($berkas as $field => $label) {
             $galat = NULL;
             $nama_berkas = $this->store_private_upload($field, 'kemitraan', $id, $galat);
             if ($nama_berkas) {
                 $simpan[$field] = $nama_berkas;
             } elseif ($galat) {
+                // Disimpan PER FIELD. Satu `$galat` bersama akan berisi galat
+                // berkas TERAKHIR saat pesannya dibaca — untuk magang itu
+                // proposal, padahal yang ditanyakan surat pengantar.
+                $galat_berkas[$field] = $galat;
                 $pesan .= ' Namun ' . strtolower($label) . ' gagal diunggah (' . $galat . ') — hubungi admin untuk menyusulkan.';
             }
         }
+
+        // Penjaga KEDUA. Yang pertama memastikan ada berkas TERKIRIM; ini
+        // memastikan berkas itu benar-benar MENDARAT. Kalau ditolak karena
+        // kebesaran atau formatnya salah, pendaftaran magangnya batal
+        // seluruhnya — dibiarkan, ia melanjutkan perjalanan tanpa dokumen yang
+        // barusan dinyatakan wajib, dengan pesan yang cuma menyuruh "hubungi
+        // admin untuk menyusulkan".
+        //
+        // Divalidasi lewat store_private_upload() yang sama, bukan pemeriksaan
+        // ukuran/MIME kedua di sini: dua definisi "berkas yang sah" akan
+        // berbeda pendapat cepat atau lambat.
+        if ($jenis === 'magang' && empty($simpan['file_surat_pengantar'])) {
+            // Proposal bisa saja sudah mendarat lebih dulu — ikut dibuang supaya
+            // tidak ada berkas yatim di folder pendaftaran yang barusan dihapus.
+            foreach ($simpan as $nama_berkas) {
+                $jalur = $this->private_upload_dir('kemitraan', $id) . basename($nama_berkas);
+                if (is_file($jalur)) { @unlink($jalur); }
+            }
+            @rmdir($this->private_upload_dir('kemitraan', $id));
+            $this->db->where('id', $id)->delete('kkn_magang_pendaftaran');
+
+            $sebab = $galat_berkas['file_surat_pengantar'] ?? NULL;
+            $this->tolak_pendaftaran($jenis,
+                'Surat pengantar gagal diunggah' . ($sebab ? ' (' . $sebab . ')' : '')
+                . ', jadi pendaftaran magang belum tersimpan. Perbaiki berkasnya lalu kirim ulang.');
+            return;
+        }
+
         if ($simpan) {
             $this->db->where('id', $id)->update('kkn_magang_pendaftaran', $simpan);
         }

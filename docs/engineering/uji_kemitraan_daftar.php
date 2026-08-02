@@ -225,6 +225,46 @@ cek($tanpa_nim['code'] === 200,
 cek(baris("SELECT id FROM kkn_magang_pendaftaran WHERE instansi_asal = ?", [SENTINEL . '-TOLAK']) === NULL,
     'POST tanpa NIM TIDAK membuat baris — validasi menahannya');
 
+echo "\n== Surat pengantar wajib untuk magang, opsional untuk KKN ==\n";
+/**
+ * Keputusan user 2 Agt 2026, membuka butir #11 yang sebelumnya BLOCKED.
+ *
+ * Yang dijaga di sini BUKAN cuma "ditolak", tapi bahwa BARISNYA TIDAK LAHIR.
+ * Seluruh alur empat tahap berdiri di atas surat ini; pendaftaran magang tanpa
+ * surat yang tetap tersimpan akan sampai ke meja bidang membawa tahap 1 yang
+ * tidak pernah benar-benar terjadi.
+ *
+ * KKN sengaja diuji SEBALIKNYA — masih boleh tanpa surat. Tanpa pasangan ini,
+ * seseorang yang kelak melebarkan aturannya ke KKN tidak akan menemukan apa pun
+ * yang memberitahunya bahwa penyempitan itu disengaja.
+ */
+$tanpa_surat = http('KemitraanPortal/simpan', [
+    'csrf_kpkp_token' => token(), 'jenis' => 'magang',
+    'nim' => 'H1A020077', 'tempat_lahir' => 'Semarang', 'tanggal_lahir' => '2003-01-01',
+    'semester' => '6', 'jurusan' => 'Teknik Sipil',
+    'instansi_asal' => SENTINEL . '-NOSURAT', 'no_hp' => '081234567890',
+    'divisi_atau_tema' => BIDANG_A, 'periode_mulai' => '2099-01-01', 'periode_selesai' => '2099-02-01',
+]);
+cek($tanpa_surat['code'] === 200, 'POST magang tanpa surat tidak meledak');
+cek(baris("SELECT id FROM kkn_magang_pendaftaran WHERE instansi_asal = ?", [SENTINEL . '-NOSURAT']) === NULL,
+    'Magang tanpa surat pengantar TIDAK membuat baris');
+
+http('KemitraanPortal/simpan', [
+    'csrf_kpkp_token' => token(), 'jenis' => 'kkn',
+    'nim' => 'H1A020078', 'tempat_lahir' => 'Semarang', 'tanggal_lahir' => '2003-01-01',
+    'semester' => '6', 'jurusan' => 'Teknik Sipil',
+    'instansi_asal' => SENTINEL . '-KKNNOSURAT', 'no_hp' => '081234567890',
+    'divisi_atau_tema' => 'Tema KKN Uji', 'periode_mulai' => '2099-01-01', 'periode_selesai' => '2099-02-01',
+]);
+cek(baris("SELECT id FROM kkn_magang_pendaftaran WHERE instansi_asal = ?", [SENTINEL . '-KKNNOSURAT']) !== NULL,
+    'KKN tanpa surat pengantar TETAP tersimpan — penyempitan ke magang disengaja');
+// Dilepas SEGERA setelah diperiksa. Aturan "satu pendaftaran menggantung per
+// mahasiswa per jenis" akan menolak uji KKN berikutnya kalau baris ini
+// dibiarkan — dan kegagalannya muncul jauh dari sini, di tempat yang tidak ada
+// hubungannya dengan surat pengantar.
+$GLOBALS['db']->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal = '"
+    . $GLOBALS['db']->real_escape_string(SENTINEL . '-KKNNOSURAT') . "'");
+
 echo "\n== Magang: identitas + dua berkas tersimpan ==\n";
 $berkas_sementara[] = $p1 = berkas_pdf('uji_surat');
 $berkas_sementara[] = $p2 = berkas_pdf('uji_proposal');

@@ -146,6 +146,7 @@ function baris($sql, $params = []) {
 
 function bersihkan() {
     global $db, $jars;
+    if ( ! empty($GLOBALS['surat_uji'])) { @unlink($GLOBALS['surat_uji']); }
     $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
     // Bidang tidak dihapus — ia struktur organisasi. Yang dipulihkan keadaan
     // magangnya: slot tahun uji dibuang, kuota dan status kembali ke bawaan.
@@ -184,10 +185,31 @@ function atur_slot($kode, $tahun, array $bulan, $kuota, array $rentang = []) {
     return http('Admin_Kemitraan/simpan_slot_bidang/' . rawurlencode($kode), http_build_query($data));
 }
 
-/** Kirim pendaftaran magang sebagai mahasiswa; kembalikan body balasannya. */
+/**
+ * PDF kecil sekali pakai untuk lampiran surat pengantar.
+ *
+ * Dibuat sekali lalu dipakai ulang; dihapus di bersihkan(). Isinya cukup
+ * dikenali sebagai PDF oleh store_private_upload().
+ */
+function berkas_surat() {
+    if (empty($GLOBALS['surat_uji'])) {
+        $GLOBALS['surat_uji'] = tempnam(sys_get_temp_dir(), 'sursl_') . '.pdf';
+        file_put_contents($GLOBALS['surat_uji'], "%PDF-1.4\n% uji slot\n%%EOF\n");
+    }
+    return $GLOBALS['surat_uji'];
+}
+
+/**
+ * Kirim pendaftaran magang sebagai mahasiswa; kembalikan body balasannya.
+ *
+ * Surat pengantar WAJIB untuk magang sejak 2 Agt 2026 dan ditolak sebelum
+ * barisnya lahir, jadi lampirannya bukan hiasan: tanpa itu SELURUH uji slot di
+ * berkas ini gagal karena sebab yang tidak ada hubungannya dengan kuota.
+ */
 function daftar_magang($kode, $mulai, $selesai) {
     pakai_sesi('mhs');
     return http('KemitraanPortal/simpan', [
+        'file_surat_pengantar' => new CURLFile(berkas_surat(), 'application/pdf', 'surat.pdf'),
         'csrf_kpkp_token'  => token('KemitraanPortal/daftar/magang'),
         'jenis'            => 'magang',
         'nim'              => '2101' . date('His'),

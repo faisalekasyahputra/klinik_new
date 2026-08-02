@@ -129,10 +129,19 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
             </div>
         </div>
 
+        <?php
+        // WAJIB untuk magang, opsional untuk KKN — keputusan user 2 Agt 2026.
+        // `required` di sini cuma kenyamanan; yang menegakkannya
+        // KemitraanPortal::simpan(), yang menolak sebelum barisnya lahir.
+        $surat_wajib = $jenis === 'magang';
+        ?>
         <div>
-            <label for="kd-surat" class="<?= $label ?>">Surat Pengantar <span class="font-normal text-[color:var(--portal-text-muted)]">(opsional)</span></label>
-            <input id="kd-surat" name="file_surat_pengantar" type="file" accept=".jpg,.jpeg,.png,.pdf" class="<?= $berkas ?>">
-            <p class="<?= $petunjuk ?>">Format JPG, PNG, atau PDF. Maksimal 5 MB.</p>
+            <label for="kd-surat" class="<?= $label ?>">Surat Pengantar
+                <span class="font-normal <?= $surat_wajib ? 'text-rose-500' : 'text-[color:var(--portal-text-muted)]' ?>"><?= $surat_wajib ? '(wajib)' : '(opsional)' ?></span></label>
+            <input id="kd-surat" name="file_surat_pengantar" type="file" accept=".jpg,.jpeg,.png,.pdf"
+                   <?= $surat_wajib ? 'required' : '' ?> class="<?= $berkas ?>">
+            <p class="<?= $petunjuk ?>">Format JPG, PNG, atau PDF. Maksimal 5 MB.<?= $surat_wajib
+                ? ' Tanpa surat pengantar, pendaftaran magang tidak bisa dikirim.' : '' ?></p>
         </div>
 
         <?php if ($jenis === 'magang'): ?>
