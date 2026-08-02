@@ -88,8 +88,27 @@ if ( ! empty($nama_bidang)) {
     $urut  = ['Diajukan' => 1, 'Ditinjau Bidang' => 2, 'Diterima' => 3];
     $capai = $urut[$row->status] ?? ($ditolak_di_bidang ? 2 : 1);
 
+    /**
+     * Keterangan tahap 1 mengikuti kenyataan, bukan janji.
+     *
+     * Surat pengantar OPSIONAL di formulir pendaftaran (tidak ada aturan wajib
+     * di `$config['kemitraan_pendaftaran']`), sementara keterangan tahap ini
+     * dipatok "Surat pengantar diterima sistem". Akibatnya halaman menyangkal
+     * dirinya sendiri di layar yang sama: tahap 1 hijau dengan klaim itu, dan
+     * beberapa sentimeter di bawahnya tertulis "Surat pengantar belum ada".
+     * Ditemukan 2 Agt 2026 pada satu-satunya pendaftaran yang ada di DB dev.
+     *
+     * Yang dikoreksi cuma keterangannya, BUKAN status hijaunya: pendaftarannya
+     * memang benar-benar masuk dan sudah dilewatkan kedua meja. Memutus rantai
+     * di tahap 1 justru akan menampilkan urutan ✗✓✓ yang lebih membingungkan
+     * daripada masalah yang diperbaikinya.
+     */
+    $ada_surat = ! empty($row->file_surat_pengantar);
+
     $tahap = [
-        ['judul' => 'Surat Masuk',              'ket' => 'Surat pengantar diterima sistem'],
+        ['judul' => 'Surat Masuk',
+         'ket'   => $ada_surat ? 'Surat pengantar diterima sistem'
+                               : 'Pendaftaran diterima sistem — tanpa surat pengantar'],
         ['judul' => 'Ditinjau Admin Disperakim', 'ket' => 'Sekretariat memeriksa dan meneruskan'],
         ['judul' => 'Ditinjau Admin Bidang',     'ket' => 'Bidang penanggung jawab memutuskan'],
         ['judul' => 'Surat Balasan',             'ket' => 'Surat resmi siap diunduh'],
