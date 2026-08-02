@@ -31,7 +31,18 @@ class Admin_Kemitraan extends Admin_Controller {
 
     public function slot($tahun = NULL)
     {
-        $tahun = $this->tahun_sah($tahun);
+        // Bawaannya BUKAN date('Y') buta. Cacat yang sama sudah diperbaiki di
+        // papan publik (KemitraanPortal::magang) 2 Agt 2026, tapi tertinggal di
+        // sisi admin: dengan 25 slot terkonfigurasi di 2027, admin membuka layar
+        // ini dan melihat 2026 kosong melompong. Selektor tahunnya memang ada,
+        // tapi orang yang baru saja melihat "tidak ada slot" tidak punya alasan
+        // untuk mengeklik tahun lain — ia menyimpulkan pekerjaannya hilang.
+        //
+        // `tahun_sah()` tetap dipakai untuk memvalidasi tahun yang DIMINTA;
+        // yang berubah hanya ke mana ia mendarat kalau tidak ada yang diminta.
+        $tahun = $tahun === NULL
+            ? $this->slot->tahun_papan()
+            : $this->tahun_sah($tahun);
         if ($tahun === NULL) { show_404(); }
 
         // FALSE: layar ini justru perlu melihat bidang nonaktif, kalau tidak

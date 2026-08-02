@@ -27,22 +27,24 @@ $filter_html = ob_get_clean();
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
-                    <th class="px-6 py-4"><?= admin_sort_header('Mahasiswa', 'usr_users.name', $table, $base_url) ?></th>
-                    <th class="px-6 py-4">Jenis</th>
-                    <th class="px-6 py-4"><?= admin_sort_header('Instansi Asal', 'kkn_magang_pendaftaran.instansi_asal', $table, $base_url) ?></th>
-                    <th class="px-6 py-4">Divisi/Tema</th>
-                    <th class="px-6 py-4"><?= admin_sort_header('Status', 'kkn_magang_pendaftaran.status', $table, $base_url) ?></th>
-                    <th class="px-6 py-4 text-right">Aksi</th>
+                    <th class="px-4 py-4"><?= admin_sort_header('Mahasiswa', 'usr_users.name', $table, $base_url) ?></th>
+                    <th class="px-4 py-4">Jenis</th>
+                    <th class="px-4 py-4"><?= admin_sort_header('Instansi Asal', 'kkn_magang_pendaftaran.instansi_asal', $table, $base_url) ?></th>
+                    <!-- "Divisi" dihapus dinas (konfirmasi 1 Agt 2026); kolomnya
+                         memuat nama BIDANG untuk magang dan tema bebas untuk KKN. -->
+                    <th class="px-4 py-4">Bidang/Tema</th>
+                    <th class="px-4 py-4"><?= admin_sort_header('Status', 'kkn_magang_pendaftaran.status', $table, $base_url) ?></th>
+                    <th class="px-4 py-4 text-right">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-white/5 text-gray-700 dark:text-gray-300">
                 <?php if (empty($rows)): ?>
                 <tr>
-                    <td colspan="6" class="px-6 py-12 text-center text-gray-500 dark:text-brand-muted">Belum ada pendaftaran KKN/Magang.</td>
+                    <td colspan="6" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">Belum ada pendaftaran KKN/Magang.</td>
                 </tr>
                 <?php else: foreach ($rows as $r): ?>
                 <tr x-data="{ procOpen: false }">
-                    <td class="px-6 py-4">
+                    <td class="px-4 py-4">
                         <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama_mahasiswa ?: '-') ?></div>
                         <div class="text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($r->email_mahasiswa ?: '-') ?></div>
                         <?php
@@ -60,9 +62,16 @@ $filter_html = ob_get_clean();
                         <div class="mt-1 text-xs text-gray-500 dark:text-brand-muted"><?= html_escape(implode(' · ', $identitas)) ?></div>
                         <?php endif; ?>
                     </td>
-                    <td class="px-6 py-4 uppercase text-xs font-bold"><?= html_escape($r->jenis) ?></td>
-                    <td class="px-6 py-4"><?= html_escape($r->instansi_asal) ?></td>
-                    <td class="px-6 py-4">
+                    <td class="px-4 py-4 uppercase text-xs font-bold"><?= html_escape($r->jenis) ?></td>
+                    <!-- Dua kolom teks ini boleh membungkus. Dengan
+                         `whitespace-nowrap` milik tabel, nama kampus dan nama
+                         bidang yang panjang mendorong lebar tabel melewati
+                         wadahnya — dan yang pertama hilang di balik gulir
+                         horizontal adalah kolom AKSI, satu-satunya tempat admin
+                         bisa memutuskan apa pun. Terukur 120px terpotong pada
+                         viewport 1440px, 3 Agt 2026. -->
+                    <td class="px-4 py-4 max-w-[14rem] whitespace-normal"><?= html_escape($r->instansi_asal) ?></td>
+                    <td class="px-4 py-4 max-w-[14rem] whitespace-normal">
                         <?= html_escape($r->divisi_atau_tema ?: '-') ?>
                         <?php
                         // Dokumen didaftar dari satu tempat supaya menambah jenis
@@ -79,7 +88,7 @@ $filter_html = ob_get_clean();
                             <?php endif; ?>
                         <?php endforeach; ?>
                     </td>
-                    <td class="px-6 py-4">
+                    <td class="px-4 py-4">
                         <?php
                             // Peta status domain KKN/Magang -> kelas komponen bersama.
                             // 'Dibatalkan' datang dari mahasiswa yang menarik
@@ -90,7 +99,7 @@ $filter_html = ob_get_clean();
                         ?>
                         <?= $this->load->view('admin/components/status_badge', ['label' => $r->status, 'kelas' => $badge_kelas[$r->status] ?? 'pending'], TRUE) ?>
                     </td>
-                    <td class="px-6 py-4 text-right relative">
+                    <td class="px-4 py-4 text-right relative">
                         <!-- Tersedia pada status APA PUN: koreksi data paling sering
                              dibutuhkan justru setelah diproses, saat mahasiswa
                              mengabari NIM keliru atau periodenya bergeser. -->
