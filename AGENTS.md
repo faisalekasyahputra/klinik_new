@@ -13,6 +13,8 @@
 <!-- Konteks lama, dipertahankan sebagai jejak: -->
 **Sebelumnya: 28 Juli 2026** (roadmap pengembang T0–T6 selesai di production; form warga R0–R7 dan adapter offline SIMPERUM R9 selesai lokal, belum di-push — lihat §0b/§0c). Kalau kamu agent yang baru masuk, baca bagian ini sampai habis sebelum menyentuh apa pun.
 
+> 🛑 **JANGAN BERSIHKAN DATA DEMO/UJI DI DB DEV — keputusan user 2 Agt 2026, berlaku sampai merge ke `main`.** Empat akun `@example.test` (dua di antaranya `admin_kabkota` aktif), sebelas akun demo, dua pendaftaran kemitraan, dan 25 slot 2027 SENGAJA dibiarkan hidup. Daftar lengkap + checklist pembersihannya di **§20**. Sudah dua kali ada agent yang mengusulkan menyapunya karena mengira itu sampah; kalau kamu berpikir begitu juga, baca §20 dulu, lalu tanyakan.
+
 ### 0a. Keadaan lingkungan saat ini
 
 > ✅ **STRUKTUR ORGANISASI DIKONFIRMASI LANGSUNG KE DINAS, 1–2 Agt 2026.** Dua hal yang selama ini ditebak, sekarang punya jawaban:
@@ -604,7 +606,7 @@ Ringkasan yang paling berdampak dari 141 temuan. Detail lengkap per subsistem: [
 | ✅ `.env` + `docs/` tersaji publik (HTTP 200 di **production & staging**) — **paparannya SUDAH ditutup 27 Jul 2026 di ketiga situs** (§0c). Yang MASIH terbuka: kredensial yang terlanjur terbaca belum dirotasi | `.htaccess` (lokal + ketiga server) |
 | Kotak **"Kredensial Demo"** memajang email admin + password `password` di halaman login, tanpa gate lingkungan — ikut tampil di production. Ada juga di wizard SRP2. ✅ **Diverifikasi 26 Jul 2026: akun `admin@klinikpkp.jatengprov.go.id` dan `warga@example.com` MEMANG ADA di DB lokal, dan login dengan password `password` BERHASIL.** Ketujuh akun demo LENGKAP ada di production sejak 27 Jul 2026 (menyusul T6, lihat §0c). ⚠️ **Bloknya sengaja DIPERTAHANKAN atas keputusan user 27 Jul 2026** — syarat & batasnya di §17 poin 14; yang harus dibereskan bukan bloknya melainkan sandi akun adminnya (§0c) | `pages/auth/login.php:136`, `pages/pengembang/syarat.php:176` |
 | Password API Sikaper **hardcode & sudah masuk riwayat git** (melanggar §9 poin 7) — rotasi kredensialnya, memindah ke `.env` saja tidak cukup | `config/sikaper.php:13` |
-| ⏸️ **DITUNDA ATAS KEPUTUSAN USER 2 Agt 2026 — lima akun sisa di DB dev, dihapus saat rilis ke `main`.** Jangan hapus lebih awal tanpa menanyakannya lagi. `#142`/`#143` (`admin_warga_*@example.test`) menyandang **`admin_kabkota` aktif** dengan sandi yang tertulis di berkas harness-nya; `#671`/`#681` (`uji.onboarding.*@example.test`) **tanpa role**; `#11` (`dev1@example.com`) rolenya berisi **path view** `pages/pengembang/pengembang` — inert karena semua pemeriksaan peran memakai perbandingan persis, tapi ia bukti sesuatu pernah menulis argumen `render()` ke kolom role, dan sumbernya belum ditelusuri. Kebocoran BARU sekarang tertangkap sendiri: `jalankan_semua.php` menyensus `%@example.test` sebelum & sesudah dan menghitung sisa sebagai MERAH | DB dev, `usr_users` |
+| ⏸️ **DITUNDA ATAS KEPUTUSAN USER 2 Agt 2026 — seluruh data demo & uji DIPERTAHANKAN sampai merge ke `main`.** Daftar lengkapnya di §20; jangan hapus apa pun dari sana lebih awal tanpa menanyakannya lagi. Yang paling perlu diingat: `#142`/`#143` menyandang **`admin_kabkota` aktif** dengan sandi yang tertulis di berkas harness. Kebocoran BARU tetap tertangkap sendiri: `jalankan_semua.php` menyensus `%@example.test` sebelum & sesudah dan menghitung sisa sebagai MERAH | DB dev, `usr_users` |
 | Chat: `session_id` dibuat browser pakai `Math.random()`, tidak terikat sesi server → siapa pun yang menebaknya membaca riwayat chat + nama/email/HP orang lain | `Chat.php:147`, `layouts/footer.php:161` |
 | Chat: `api_bot()` public-routable, tanpa login, tanpa CSRF (dikecualikan), tanpa rate limit → kuota Gemini bisa dikuras siapa saja | `Chat.php:80` |
 | ✅ **SELESAI 27 Jul 2026** — dua jalur antrean kini memakai `Program_model::create_housing_submission()`: POST hanya memilih `program_kode`; identitas, survei, kelayakan, dan wilayah diverifikasi dari sesi server | `Program.php`, `Program_model.php` |
@@ -766,3 +768,66 @@ BUKAN PENGGANTI §17. Jalankan §17 langkah 1–8 seperti biasa; Metode ini pras
 - **Sesi sebagai replika role & scope, tanpa jalur invalidasi** — Otorisasi dibaca dari sesi yang disetel saat login, sementara sumbernya di DB bisa diubah kapan saja oleh orang lain — dan tidak ada yang menyegarkan sesinya. Ini lubang di pertahanan yang justru diandalkan §17. *Contoh: `MY_Controller.php:530` dan `:563` mengambil `kabupaten_id`/`bidang_kode` DARI SESI. `Admin_Users::update_role()` menulis `role`+`kabupaten_id`+`bidang_kode` ke DB dan tidak menyentuh sesi mana pun. Akibat (a): admin ter-scope yang dipindah wilayah terus bekerja pada wilayah LAMA selama sesinya hidup — ini menembus seluruh pertahanan "WHERE ganda scope". Akibat (b): pengguna yang baru diangkat jadi pengembang ditolak wizard dengan kartu "bukan akun pengembang" tanpa diberi tahu bahwa dia cuma perlu keluar-masuk.*
 - **Aksi berisiko tanpa bukti kepemilikan, dan pintu masuk tanpa batas laju** — Aksi destruktif atau bernilai tinggi hanya memeriksa method POST; konfirmasinya seluruhnya di klien. Dan batas laju dipasang per endpoint yang kebetulan diingat, bukan per KELAS endpoint, sehingga endpoint yang ditulis belakangan lolos tanpa apa-apa. *Contoh: `Pengaturan.php:227` ganti password tanpa memverifikasi password lama; `:255` `delete_account()` hanya memeriksa method POST, konfirmasi ketik-nama sepenuhnya di klien — dan hapus akun memicu FK CASCADE ke seluruh pengajuan. Batas laju: `Auth::do_login()` punya penghitung + lockout (`Auth.php:101-120`), `do_register` tidak punya apa pun; §18 menambah `Umum::report_komentar()` tanpa login & tanpa dedup dan `Chat::api_bot()` public-routable tanpa login/CSRF/rate limit.*
 - **Kegagalan yang tidak punya jalan pulih** — "Kegagalan" diperlakukan sebagai sinonim "query gagal", sehingga seluruh kelas kegagalan lain tidak punya penanganan: token kedaluwarsa, bentuk input tak terduga, penghitung yang tidak pernah direset. Pesannya menyebut sebab yang salah dan tidak menyebut satu pun tindakan pemulihan. Sepupunya: state klien tidak disinkronkan dari respons server sesudah aksi berhasil. *Contoh: `syarat.php:532` — token CSRF kedaluwarsa di tengah unggah tampil sebagai "Koneksi terputus" dengan tombol Ulangi yang gagal terus; satu-satunya jalan keluar reload, dan itu tidak diberitahukan. `$_FILES['name']` berbentuk array memicu TypeError 500 SEBELUM pemeriksaan error. Penguncian akun tidak mereset penghitung, jadi satu salah ketik langsung mengunci 15 menit lagi. State klien: `syarat.php:437` `clearFile()` menyetel `'idle'` bukan `'done'`, sehingga membatalkan Ganti pada dokumen yang SUDAH di server menurunkan hitungan ke 13 dan mengunci tombol Kirim.*
+
+---
+
+## 20. Data Demo & Uji — DIPERTAHANKAN sampai merge ke `main`
+
+> **Keputusan user 2 Agt 2026.** Seluruh isi bagian ini SENGAJA dibiarkan hidup
+> di DB dev. **Jangan hapus apa pun dari sini lebih awal tanpa menanyakannya
+> lagi** — dua kali sudah ada agent (termasuk saya) yang mengusulkan
+> membersihkannya karena mengira itu sampah.
+>
+> Bagian ini ada karena "nanti dibersihkan" adalah janji yang paling mudah
+> hilang. Yang menjadikannya nyata: **daftar ini adalah checklist merge ke
+> `main`**, bukan catatan.
+
+### 20a. Akun uji yang tertinggal dari harness
+
+| id | email | role | catatan |
+|---|---|---|---|
+| 142 | `admin_warga_1785221142_semarang@example.test` | `admin_kabkota` | ⚠️ **wewenang nyata**, sandi tertulis di berkas harness |
+| 143 | `admin_warga_1785221142_banyumas@example.test` | `admin_kabkota` | ⚠️ sama seperti di atas |
+| 671 | `uji.onboarding.121437@example.test` | *(kosong)* | sisa harness onboarding |
+| 681 | `uji.onboarding.121935@example.test` | *(kosong)* | sisa harness onboarding |
+
+Kebocoran BARU tidak akan menambah daftar ini diam-diam: `jalankan_semua.php`
+menyensus `%@example.test` sebelum & sesudah tiap jalan, dan menghitung sisa
+sebagai MERAH.
+
+### 20b. Akun demo yang dipakai dinas untuk menelusuri sistem
+
+`#9` superadmin, `#10` warga, `#24` pengembang, `#25` mahasiswa, `#26`
+admin_kabkota, `#27` + `#712`–`#715` admin_bidang (lima bidang). Sandinya
+`password`, dan sengaja dipajang di halaman login — syarat & batas keputusan itu
+di §17 poin 14, statusnya di §18.
+
+**`#11` `dev1@example.com` adalah anomali, bukan akun demo.** Kolom `role`-nya
+berisi **path view** `pages/pengembang/pengembang`. Inert — semua pemeriksaan
+peran memakai perbandingan persis, jadi ia tidak cocok dengan apa pun — tapi ia
+bukti sesuatu pernah menulis argumen `render()` ke kolom role. **Sumbernya belum
+ditelusuri.** Jangan sekadar dihapus saat merge: perbaiki dulu apa pun yang
+menulisnya, atau anomali yang sama lahir lagi.
+
+### 20c. Data kemitraan demo
+
+| | isi |
+|---|---|
+| Pendaftaran `#2` | KKN, Diterima, **tanpa surat pengantar** — sah, KKN memang tidak mewajibkannya |
+| Pendaftaran `#656` | Magang, Diterima, alur EMPAT TAHAP penuh: surat masuk → sekretariat → Bidang Perumahan → surat balasan terunggah. Dibuat 2 Agt 2026 lewat endpoint sungguhan, bukan `INSERT` |
+| Slot 2027 | 25 baris, lima bidang × Jan/Feb/Jun/Jul/Ags |
+| Berkas privat | `private_uploads/kemitraan/656/` — surat pengantar + surat balasan |
+
+`#656` memakai kuota Perumahan Juni & Juli 2027, jadi papan publik menampilkan
+**"Sisa 1"** untuk dua bulan itu. Itu benar, bukan cacat — tapi kalau papan
+harus bersih untuk presentasi, pendaftaran inilah yang dibatalkan, bukan
+slotnya yang diubah.
+
+### 20d. Yang harus dikerjakan SAAT merge ke `main`
+
+1. Hapus 20a (empat akun), setelah memastikan tidak ada yang menggantung padanya.
+2. Putuskan nasib 20b — panel Kredensial Demo ikut dicabut atau tidak (§17 poin 14).
+3. Telusuri sumber anomali `#11` SEBELUM menghapusnya.
+4. Putuskan apakah 20c ikut dibawa sebagai contoh atau dibersihkan.
+5. Production punya keadaannya sendiri: slot 2027 **belum ditetapkan** di sana,
+   dan empat akun admin_bidang **belum dibuat**. Sandinya bukan urusan agent.
