@@ -60,6 +60,26 @@ function make_user($db, $suffix) {
     $id = $db->run("INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at) VALUES (?,?,'Uji R4',?,'warga','active',1,NOW())", [$email, password_hash(PASSWORD, PASSWORD_BCRYPT), "uji_r4_{$suffix}"]);
     $GLOBALS['users'][] = $id; return [$id, $email];
 }
+/**
+ * NIK fixture SIMPERUM adalah sumber daya BERSAMA yang langka: cuma tujuh, dan
+ * satu profil warga mengikatnya EKSKLUSIF lewat `nik_lookup_hash`. Begitu ada
+ * akun mana pun yang memegangnya, `Simperum_gateway::lookup()` gagal di
+ * `save_profile()` dengan `nik_already_bound`, tidak ada draft yang lahir, dan
+ * uji ini merah di "Draft warga tersedia" — pesan yang menunjuk ke tempat yang
+ * sepenuhnya salah. Ikatan itu bukan bug produk: penjaga NIK-ganda memang harus
+ * begitu. Diperiksa di depan supaya kegagalannya bisa dibaca sekali lihat.
+ */
+function nik_bebas($db, $env, $nik) {
+    $p = $db->row('SELECT p.id, u.email FROM sf_profil_warga p
+                   LEFT JOIN usr_users u ON u.id = p.user_id
+                   WHERE p.nik_lookup_hash = ?',
+        [hash_hmac('sha256', $nik, $env['KPKP_DATA_PEPPER'] ?? '')]);
+    wajib( ! $p, $p
+        ? "NIK fixture {$nik} SEDANG DIPEGANG profil #{$p['id']} milik "
+          . ($p['email'] ?? '[akun sudah terhapus]') . ' — lepaskan ikatannya atau pakai DB uji bersih'
+        : "NIK fixture {$nik} bebas dipakai");
+}
+
 function draft($db, $user) {
     $r = $db->row('SELECT a.* FROM sf_penilaian_perumahan a WHERE a.user_id=? AND a.status=\'draft\' ORDER BY a.id DESC LIMIT 1', [$user]);
     wajib((bool)$r, 'Draft warga tersedia'); if (!in_array((int)$r['id'], $GLOBALS['assessments'], TRUE)) $GLOBALS['assessments'][] = (int)$r['id']; return $r;
@@ -89,6 +109,8 @@ $root = $env['PRIVATE_UPLOADS_PATH'] ?? ''; if ($root === '') die("PRIVATE_UPLOA
 if (!preg_match('#^(?:[A-Za-z]:|[/\\\\])#', $root)) $root = dirname(__DIR__, 2) . DIRECTORY_SEPARATOR . $root;
 $GLOBALS['private_root'] = $root;
 echo "=== UJI PENDATAAN WARGA R4 ===\nTarget: " . BASE_URL . " | DB: {$env['DB_NAME']}\n\n";
+
+nik_bebas($db, $env, '0000000000000001');
 
 // Existing house: lookup → langkah 1/2 → bangunan → sanitasi → lokasi.
 [$existingUser, $existingEmail] = make_user($db, 'existing'); $existing = login($existingEmail);

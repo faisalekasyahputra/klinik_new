@@ -99,6 +99,19 @@ function make_user($db,$suffix,$role='warga',$kabupaten=NULL) {
     $id=$db->run("INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,kabupaten_id,created_at) VALUES (?,?,'Uji R6',?,?,'active',1,?,NOW())",[$email,password_hash(PASSWORD,PASSWORD_BCRYPT),$username,$role,$kabupaten]);
     $GLOBALS['users'][]=$id; return [$id,$email];
 }
+/**
+ * NIK fixture SIMPERUM adalah sumber daya BERSAMA yang langka: cuma tujuh, dan
+ * satu profil warga mengikatnya EKSKLUSIF lewat `nik_lookup_hash`. Begitu ada
+ * akun mana pun yang memegangnya, `Simperum_gateway::lookup()` gagal di
+ * `save_profile()` dengan `nik_already_bound`, tidak ada draft yang lahir, dan
+ * uji ini merah di "Draft warga tersedia" — pesan yang menunjuk ke tempat yang
+ * sepenuhnya salah.
+ */
+function nik_bebas($db,$env,$nik) {
+    $p=$db->row('SELECT p.id, u.email FROM sf_profil_warga p LEFT JOIN usr_users u ON u.id=p.user_id WHERE p.nik_lookup_hash=?',
+        [hash_hmac('sha256',$nik,$env['KPKP_DATA_PEPPER'] ?? '')]);
+    wajib(!$p, $p ? "NIK fixture {$nik} SEDANG DIPEGANG profil #{$p['id']} milik ".($p['email'] ?? '[akun sudah terhapus]').' — lepaskan ikatannya atau pakai DB uji bersih' : "NIK fixture {$nik} bebas dipakai");
+}
 function draft($db,$user) {
     $r=$db->row("SELECT * FROM sf_penilaian_perumahan WHERE user_id=? AND status='draft' ORDER BY id DESC LIMIT 1",[$user]);
     wajib((bool)$r,'Draft warga tersedia');
@@ -171,6 +184,7 @@ $env=env_config(ENV_PATH);$GLOBALS['db']=$db=new Db($env);
 $root=$env['PRIVATE_UPLOADS_PATH']??'';if($root==='')die("PRIVATE_UPLOADS_PATH wajib untuk uji R6.\n");
 if(!preg_match('#^(?:[A-Za-z]:|[/\\\\])#',$root))$root=dirname(__DIR__,2).DIRECTORY_SEPARATOR.$root;
 $GLOBALS['private_root']=$root;
+nik_bebas($db,$env,'0000000000000001');
 foreach(['warga_lookup','warga_submit','warga_start_revision','admin_queue_decision'] as $policy)preserve_rate_ips($db,$policy);
 preserve_rate_key(
     $db,

@@ -29,9 +29,14 @@ const PERAN  = ['warga', 'pengembang', 'mahasiswa', 'admin_kabkota', 'admin_bida
 // lain di dalamnya. Ikut hanya kalau diminta.
 const FRESH  = ['uji_rekam_data_fresh.php', 'uji_warga_fresh_r7.php'];
 
-// Menolak berjalan di DB dev secara sengaja (butuh DB khusus). Exit non-nol-nya
-// adalah penolakan, bukan kegagalan — jangan dihitung merah.
-const KHUSUS = ['uji_utang_teknis.php' => 'butuh DB berakhiran _utang'];
+// Butuh DB tersendiri menurut headernya masing-masing, bukan DB dev. Merahnya
+// di sini cuma berarti "dijalankan di tempat yang salah", bukan ada yang rusak —
+// dan merah palsu yang berdiri lama persis yang membuat orang berhenti membaca
+// keluaran runner.
+const KHUSUS = [
+    'uji_utang_teknis.php'    => 'menolak sendiri: butuh DB berakhiran _utang',
+    'uji_perjalanan_srp2.php' => 'butuh DB uji bersih + akun admin seed (lihat header berkasnya)',
+];
 
 // Empat harness ini hidup sebagai method Migrate, bukan berkas — tidak akan
 // pernah tertangkap glob, dan itulah sebabnya mereka sering terlupa dijalankan.

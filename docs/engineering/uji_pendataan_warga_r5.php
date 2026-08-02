@@ -53,6 +53,19 @@ class Session {
 }
 function login($email) { $s = new Session(); $s->get('Auth/login'); $r = $s->post('Auth/do_login', ['email'=>$email,'password'=>PASSWORD]); wajib($r['status'] === 200 && (json_decode($r['body'], TRUE)['status'] ?? '') === 'success', "Login $email"); $s->get('warga/pendataan'); return $s; }
 function make_user($db, $suffix) { $email = 'uji_r5_'.$suffix.'_'.time().'_'.mt_rand(1000,9999).'@example.test'; $id = $db->run("INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at) VALUES (?,?,'Uji R5',?,'warga','active',1,NOW())", [$email,password_hash(PASSWORD,PASSWORD_BCRYPT),'uji_r5_'.$suffix]); $GLOBALS['users'][]=$id; return [$id,$email]; }
+/**
+ * NIK fixture SIMPERUM adalah sumber daya BERSAMA yang langka: cuma tujuh, dan
+ * satu profil warga mengikatnya EKSKLUSIF lewat `nik_lookup_hash`. Begitu ada
+ * akun mana pun yang memegangnya, `Simperum_gateway::lookup()` gagal di
+ * `save_profile()` dengan `nik_already_bound`, tidak ada draft yang lahir, dan
+ * uji ini merah di "Draft warga tersedia" — pesan yang menunjuk ke tempat yang
+ * sepenuhnya salah.
+ */
+function nik_bebas($db,$env,$nik) {
+    $p=$db->row('SELECT p.id, u.email FROM sf_profil_warga p LEFT JOIN usr_users u ON u.id=p.user_id WHERE p.nik_lookup_hash=?',
+        [hash_hmac('sha256',$nik,$env['KPKP_DATA_PEPPER'] ?? '')]);
+    wajib(!$p, $p ? "NIK fixture {$nik} SEDANG DIPEGANG profil #{$p['id']} milik ".($p['email'] ?? '[akun sudah terhapus]').' — lepaskan ikatannya atau pakai DB uji bersih' : "NIK fixture {$nik} bebas dipakai");
+}
 function draft($db, $user) { $r=$db->row("SELECT a.* FROM sf_penilaian_perumahan a WHERE a.user_id=? AND a.status='draft' ORDER BY a.id DESC LIMIT 1",[$user]); wajib((bool)$r,'Draft warga tersedia'); if (!in_array((int)$r['id'],$GLOBALS['assessments'],TRUE)) $GLOBALS['assessments'][]=(int)$r['id']; return $r; }
 function post_step($s,$d,$step,$data) { return $s->post('warga/pendataan',$data+['action'=>'save','step'=>$step,'direction'=>'next','assessment_id'=>$d['id'],'lock_version'=>$d['lock_version']]); }
 function redirect_ok($r) { return in_array($r['status'],[302,303],TRUE); }
@@ -87,6 +100,7 @@ foreach(['flpp','oemah_lestari'] as $code) cek($rules->evaluate($code,['assessme
 foreach(range(1,10) as $desil) cek($rules->evaluate('rumah_apung',[],['welfare_decile'=>$desil])['eligibility_status']==='needs_data','Rumah Apung desil '.$desil.' selalu needs_data');
 
 // Jalur HTTP nyata memakai SIM-01 (desil 2) hingga rekomendasi dipersist server.
+nik_bebas($db,$env,'0000000000000001');
 [$user,$email]=make_user($db,'owner'); $owner=login($email);
 $r=$owner->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000001','birth_date'=>'1980-01-01']); wajib(redirect_ok($r),'Lookup SIM-01');
 $d=draft($db,$user); wajib(redirect_ok(post_step($owner,$d,'citizen_data',citizen())),'Simpan data warga');
