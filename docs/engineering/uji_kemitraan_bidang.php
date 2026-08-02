@@ -42,6 +42,7 @@ define('CAP', 'UJI-BIDANG-' . date('YmdHis'));
 // satu bidang saja.
 define('BIDANG_A', 'perumahan');
 define('BIDANG_B', 'kawasan');
+define('BIDANG_TANPA_REKAM', 'pertanahan');
 
 $GLOBALS['uji_total'] = 0;
 $GLOBALS['uji_gagal'] = 0;
@@ -210,9 +211,12 @@ echo 'Target: ' . BASE_URL . " | DB: {$env['DB_NAME']}\n\n";
 
 wajib(nilai('SELECT kode FROM bidang WHERE kode=?', [BIDANG_A]) === BIDANG_A, 'Bidang ' . BIDANG_A . ' ada di DB');
 wajib(nilai('SELECT kode FROM bidang WHERE kode=?', [BIDANG_B]) === BIDANG_B, 'Bidang ' . BIDANG_B . ' ada di DB');
+wajib(nilai('SELECT kode FROM bidang WHERE kode=?', [BIDANG_TANPA_REKAM]) === BIDANG_TANPA_REKAM,
+    'Bidang ' . BIDANG_TANPA_REKAM . ' ada di DB');
 
 [$adminA, $emailA] = buat_akun('admin_bidang', 'a', BIDANG_A);
 [$adminB, $emailB] = buat_akun('admin_bidang', 'b', BIDANG_B);
+[$adminTanpaRekam, $emailTanpaRekam] = buat_akun('admin_bidang', 'tanpa_rekam', BIDANG_TANPA_REKAM);
 [$yatimId, $yatimEmail] = buat_akun('admin_bidang', 'yatim', NULL);
 [$mhsId, $mhsEmail] = buat_akun('mahasiswa', 'mhs');
 [$wargaId, $wargaEmail] = buat_akun('warga', 'warga');
@@ -230,16 +234,30 @@ wajib($idx['code'] === 200 && strpos($idx['url'], 'Auth/login') === FALSE, 'Admi
 cek(strpos($idx['body'], CAP . '-' . BIDANG_A) !== FALSE, 'Pendaftaran bidang sendiri tampil di daftar');
 cek(strpos($idx['body'], CAP . '-' . BIDANG_B) === FALSE, 'Pendaftaran bidang LAIN tidak tampil di daftar');
 
+preg_match('/>Magang Bidang Saya<\/span>\s*<span[^>]*>(\d+)<\/span>/s', $idx['body'], $badge);
+$pending_bidang_a = (int) nilai('SELECT COUNT(*) c FROM kkn_magang_pendaftaran
+    WHERE status=? AND bidang_kode=?', ['Ditinjau Bidang', BIDANG_A]);
+cek(isset($badge[1]) && (int) $badge[1] === $pending_bidang_a,
+    'Badge Magang Bidang Saya hanya menghitung antrean bidang sesi');
+
+wajib(login('tanpa_rekam', $emailTanpaRekam), 'Login admin bidang tanpa Rekam Data');
+$tanpa_rekam = http('tanpa_rekam', 'Rekam_Tinjauan');
+cek($tanpa_rekam['code'] === 200
+    && strpos($tanpa_rekam['url'], 'Admin_Bidang') !== FALSE
+    && strpos($tanpa_rekam['body'], 'Aduan Bidang Saya') !== FALSE
+    && strpos($tanpa_rekam['body'], 'Peninjauan Rekam Data') === FALSE,
+    'Bidang tanpa Rekam Data kembali ke dasbor yang diizinkan tanpa menu Rekam Data');
+
 /**
- * Yang dibuktikan di sini adalah TIDAK ADA DATA YANG SAMPAI, bukan "diarahkan
- * ke Auth/login". Pengguna yang sudah login dan ditolak akan dilempar Auth ke
- * beranda, bukan ke layar login — jadi memeriksa URL tujuan membuat uji ini
- * merah untuk gerbang yang justru bekerja. Penanda pendaftaran uji yang absen
- * dari body adalah jaminan yang sebenarnya dicari.
+ * Yang dibuktikan di sini adalah layar meja bidang tidak ikut dirender, bukan
+ * "diarahkan ke Auth/login". Pengguna yang sudah login kini kembali ke
+ * dashboard perannya; mahasiswa uji memang dapat melihat pendaftarannya SENDIRI
+ * di /akun, jadi penanda data ujinya tidak boleh dijadikan bukti kebocoran.
  */
 function tak_kebagian($nama, $label) {
     $r = http($nama, 'Kemitraan_Bidang');
-    cek(strpos($r['body'], CAP) === FALSE && stripos($r['body'], 'Magang Bidang Saya') === FALSE, $label);
+    cek(strpos($r['url'], 'Kemitraan_Bidang') === FALSE
+        && stripos($r['body'], 'Magang Bidang Saya') === FALSE, $label);
 }
 
 wajib(login('mhs', $mhsEmail), 'Login mahasiswa');

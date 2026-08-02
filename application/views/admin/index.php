@@ -7,7 +7,10 @@
      @keydown.escape.window="if (!desktop) sidebarOpen = false"
      class="admin-shell flex h-screen w-full bg-[#f8fafc] dark:bg-brand-dark">
     <!-- Sidebar -->
-    <?php $this->load->view('admin/layouts/sidebar'); ?>
+    <?php $this->load->view('admin/layouts/sidebar', [
+        'dashboard_home' => $dashboard_home ?? 'akun',
+        'dashboard_menu' => $dashboard_menu ?? [],
+    ]); ?>
     <button x-cloak x-show="!desktop && sidebarOpen" @click="sidebarOpen = false"
             class="admin-sidebar-backdrop"
             :style="!desktop && sidebarOpen ? 'display:block !important;position:fixed !important;inset:0 !important;z-index:50 !important;background:rgba(10,26,31,.55);' : ''"

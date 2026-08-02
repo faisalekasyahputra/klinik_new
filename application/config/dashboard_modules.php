@@ -32,6 +32,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |   roles   - array role yang menunya TAMPIL (bukan otorisasi, lihat di atas)
 |   scope   - null | 'kabupaten_id' | 'bidang_kode' — menu hanya dirender kalau
 |             session punya kolom scope ini terisi
+|   scope_values - opsional, daftar nilai scope yang diizinkan untuk modul ini;
+|                  menu disembunyikan bila scope sesi tidak termasuk daftar
 |   group   - label section sidebar
 |   order   - urutan dalam group
 |   table, review_by - opsional, peta pengajuan->reviewer (dokumentasi hidup)
@@ -52,6 +54,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |                      admin_bidang.
 |   badge   - opsional TRUE: tampilkan counter merah di sidebar sejumlah baris
 |             yang cocok pending_where. Butuh 'table' + 'pending_where'.
+|   scope_column - opsional, kolom tabel yang menerima nilai 'scope' saat
+|                  menghitung badge. Dideklarasikan eksplisit; jangan menebak
+|                  nama kolom dari nama scope sesi.
 |   ringkas - opsional label pendek untuk kartu overview superadmin; kalau tidak
 |             diisi, modul tidak muncul sebagai kartu di Admin_Dashboard
 |   enabled - opsional, default true; set false untuk mematikan modul tanpa hapus entri
@@ -173,6 +178,7 @@ $config['dashboard_modules'] = [
         'url'   => 'Rekam_Tinjauan', 'group' => 'Layanan', 'order' => 20,
         'roles' => ['admin_bidang'],
         'scope' => 'bidang_kode',
+        'scope_values' => ['perumahan', 'kawasan'],
         'table' => 'rd_laporan', 'review_by' => 'admin_bidang',
         'status_column' => 'status', 'owner_column' => 'kabupaten_id',
         'public_where' => NULL, 'editable_where' => NULL,
@@ -247,6 +253,7 @@ $config['dashboard_modules'] = [
         'roles' => ['admin_bidang'], 'scope' => 'bidang_kode',
         'table' => 'kkn_magang_pendaftaran', 'review_by' => 'admin_bidang',
         'pending_where' => ['status' => 'Ditinjau Bidang'],
+        'scope_column' => 'bidang_kode',
         'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE,
     ],

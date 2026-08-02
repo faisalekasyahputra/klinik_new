@@ -38,6 +38,11 @@
                 </div>
                 <p class="text-gray-500 dark:text-brand-muted font-medium">Belum ada pengajuan yang tercatat.</p>
                 <p class="text-xs text-gray-400 dark:text-brand-muted/70 mt-1">Riwayat antrean, aduan, dan pengajuan lain yang Anda kirim akan muncul di sini.</p>
+                <?php if (!empty($empty_action)): ?>
+                <a href="<?= base_url($empty_action['url']) ?>" class="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90">
+                    <?= html_escape($empty_action['label']) ?> <i class="ph ph-arrow-right" aria-hidden="true"></i>
+                </a>
+                <?php endif; ?>
             </div>
         <?php else: ?>
             <div class="divide-y divide-gray-100 dark:divide-white/5">

@@ -3,7 +3,7 @@
        :class="desktop ? (sidebarOpen ? 'w-64' : 'w-20') : ''"
        :style="!desktop ? (sidebarOpen ? 'display:flex !important;position:fixed !important;inset:0 auto 0 0 !important;z-index:60 !important;width:16rem !important;transform:none !important;' : 'display:none !important;') : ''">
     <div class="h-20 flex items-center px-5 border-b border-gray-200 dark:border-white/5" :class="sidebarOpen ? 'justify-start' : 'justify-center'">
-        <a href="<?= base_url('Admin_Dashboard') ?>" class="flex items-center gap-3 group">
+        <a href="<?= base_url($dashboard_home ?? 'akun') ?>" class="flex items-center gap-3 group">
             <div class="w-10 h-10 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                 <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jateng" class="h-8 w-auto object-contain drop-shadow-sm">
             </div>
@@ -26,7 +26,7 @@
           // sub-menu cabang lama tetap terbuka. Sekarang aturannya tetap satu:
           // dashboard_menu() memutuskan, server mengirim, JS hanya menukar. ?>
     <div id="sidebar-nav" class="px-3 py-4 overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar">
-        <?php $this->load->view("admin/layouts/sidebar_nav", $data ?? []); ?>
+        <?php $this->load->view('admin/layouts/sidebar_nav', ['dashboard_menu' => $dashboard_menu ?? []]); ?>
     </div>
 
     <!-- Link to Main Website (OG Preview Style) -->

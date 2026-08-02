@@ -158,9 +158,16 @@ class Pengaturan extends MY_Controller {
 
         usort($items, fn($a, $b) => strtotime($b['created_at']) <=> strtotime($a['created_at']));
 
+        $empty_action = [
+            'warga'      => ['url' => 'warga/pendataan', 'label' => 'Mulai Pendataan Warga'],
+            'pengembang' => ['url' => 'Pengembang/syarat', 'label' => 'Mulai Sertifikasi Pengembang'],
+            'mahasiswa'  => ['url' => 'KemitraanPortal', 'label' => 'Lihat KKN & Magang'],
+        ][$role] ?? NULL;
+
         $datacontent = [
             'title' => 'Status Pengajuan',
             'items' => $items,
+            'empty_action' => $empty_action,
         ];
         $this->render_user_dashboard('pages/pengaturan/index', $datacontent);
     }

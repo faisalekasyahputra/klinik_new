@@ -345,20 +345,21 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
 </div>
 
 <script>
+(() => {
 const targetUsername = <?= json_encode($user->username ?? $user->name ?? $user->email) ?>;
 
-function openDeleteModal() {
+window.openDeleteModal = function () {
     document.getElementById('deleteModal').classList.remove('hidden');
     document.getElementById('confirmDeleteInput').value = '';
     document.getElementById('confirmDeleteInput').focus();
     checkDeleteConfirm();
 }
 
-function closeDeleteModal() {
+window.closeDeleteModal = function () {
     document.getElementById('deleteModal').classList.add('hidden');
 }
 
-function checkDeleteConfirm() {
+window.checkDeleteConfirm = function () {
     const input = document.getElementById('confirmDeleteInput').value;
     const btn = document.getElementById('btnConfirmDelete');
 
@@ -372,4 +373,5 @@ function checkDeleteConfirm() {
         btn.classList.remove('bg-red-600', 'hover:bg-red-700', 'text-white', 'cursor-pointer');
     }
 }
+})();
 </script>

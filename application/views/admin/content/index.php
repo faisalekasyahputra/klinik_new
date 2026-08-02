@@ -21,6 +21,7 @@
 
     <div class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden relative z-10 p-6">
         <form action="<?= base_url('Admin_Content/update') ?>" method="POST" enctype="multipart/form-data" class="space-y-6">
+            <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
             
             <!-- SECTION HERO -->
             <div x-show="activeTab === 'hero'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-1 translate-y-0" style="display: none;">

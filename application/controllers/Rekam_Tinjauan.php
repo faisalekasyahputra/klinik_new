@@ -29,7 +29,7 @@ class Rekam_Tinjauan extends Admin_Bidang_Controller {
         if ( ! isset(self::BIDANG_KE_DOMAIN[$this->my_bidang_kode])) {
             $this->session->set_flashdata('error',
                 'Rekam Data hanya untuk Bidang Perumahan dan Bidang Kawasan Permukiman.');
-            redirect('dashboard');
+            redirect($this->dashboard_home());
         }
         $this->domain = self::BIDANG_KE_DOMAIN[$this->my_bidang_kode];
     }

@@ -307,6 +307,19 @@ $rProfilPublik = $sesiA->get("Pengembang/profil/$cidA");
 cek($rProfilPublik['status'] === 200 && strpos($rProfilPublik['body'], $namaA) !== false,
     'Profil publik menampilkan nama perusahaan A yang BENAR (bukan perusahaan lain)');
 
+// UI admin mengikuti status baris yang benar, bukan label "Menunggu" tetap.
+$rVerifikasiDiterima = $sesiAdmin->get('Admin_Srp2/pending?status=Diterima');
+cek($rVerifikasiDiterima['status'] === 200
+    && preg_match('#' . preg_quote($namaA, '#') . '.*?<span\\b[^>]*>\\s*Diterima\\s*</span>#si', $rVerifikasiDiterima['body']) === 1,
+    'Daftar verifikasi menampilkan label Diterima pada baris yang difilter Diterima');
+
+$rDirektoriUrut = $sesiAdmin->get('Admin_Srp2?sort=status_aktif&dir=asc');
+cek($rDirektoriUrut['status'] === 200
+    && strpos($rDirektoriUrut['body'], 'sort=nama_perusahaan') !== false
+    && strpos($rDirektoriUrut['body'], 'sort=status_aktif') !== false
+    && strpos($rDirektoriUrut['body'], 'ph-sort-ascending text-brand-primary') !== false,
+    'Direktori SRP2 menyediakan header sort server-side yang aktif');
+
 // ==========================================================================
 // [N1] Transisi ilegal: Draft -> Diterima langsung, tanpa pernah dikirim
 // ==========================================================================

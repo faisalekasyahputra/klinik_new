@@ -144,6 +144,7 @@ echo 'Target: ' . BASE_URL . " | DB: {$env['DB_NAME']}\n\n";
 
 [$uidM, $emailM] = buat_akun('mahasiswa', 'mhs');
 [$uidA, $emailA] = buat_akun('admin', 'adm');
+[$uidW, $emailW] = buat_akun('warga', 'warga_kosong');
 
 $bidang_kode = (string) nilai('SELECT kode FROM bidang ORDER BY nama LIMIT 1');
 wajib($bidang_kode !== '', 'Ada bidang di DB untuk dijadikan acuan');
@@ -154,6 +155,14 @@ $kkn    = buat_pendaftaran($uidM, 'kkn', NULL, 'Tema KKN ' . CAP);
 
 wajib(login('mhs', $emailM), 'Login mahasiswa uji');
 wajib(login('adm', $emailA), 'Login admin uji');
+wajib(login('warga_kosong', $emailW), 'Login warga tanpa pengajuan');
+
+// Akun warga baru tidak punya riwayat; layar kosong harus memberi satu jalan
+// lanjut yang benar-benar tersedia, bukan berhenti di pesan kosong.
+$akun_kosong = http('warga_kosong', 'akun');
+cek(strpos($akun_kosong, 'Mulai Pendataan Warga') !== FALSE
+    && strpos($akun_kosong, 'warga/pendataan') !== FALSE,
+    'Status pengajuan kosong memberi CTA Pendataan Warga');
 
 // =========================================================== 1. ISTILAH
 echo "\n== Istilah: dinas menghapus \"divisi\", struktur resminya lima BIDANG ==\n";
@@ -280,7 +289,24 @@ foreach ($mengambang as $pola => $label) {
     cek(strpos($semua_html, $pola) === FALSE, $label);
 }
 
-// =========================================================== 7. INERT
+// =========================================================== 7. TABEL ADMIN
+echo "\n== Tabel Admin Pengguna tetap server-side ==\n";
+$admin_users = http('adm', 'Admin_Users');
+$jumlah_user = (int) nilai('SELECT COUNT(*) FROM usr_users');
+cek(strpos($admin_users, 'data-tabel-admin') !== FALSE
+    && strpos($admin_users, 'Cari nama, email, atau username...') !== FALSE
+    && strpos($admin_users, 'data-table-search') === FALSE,
+    'Admin Pengguna memakai toolbar B8 server-side, bukan tabel klien');
+cek(strpos($admin_users, 'Daftar Pengguna (' . number_format($jumlah_user) . ')') !== FALSE,
+    'Admin Pengguna menampilkan total semua pengguna, bukan jumlah halaman');
+$admin_users_urut = http('adm', 'Admin_Users?sort=name&dir=asc');
+cek(strpos($admin_users_urut, 'sort=name') !== FALSE
+    && strpos($admin_users_urut, 'sort=role') !== FALSE
+    && strpos($admin_users_urut, 'sort=created_at') !== FALSE
+    && strpos($admin_users_urut, 'ph-sort-ascending text-brand-primary') !== FALSE,
+    'Header Admin Pengguna mengaktifkan urutan server-side');
+
+// =========================================================== 8. INERT
 echo "\n== Wizard onboarding: setiap seksi terkliping juga inert ==\n";
 /**
  * Diperiksa dari SUMBER, bukan dari HTML terkirim: `:inert` adalah binding

@@ -411,7 +411,9 @@ class MY_Controller extends CI_Controller {
         foreach ($modules as $m) {
             if (array_key_exists('enabled', $m) && $m['enabled'] === FALSE) { continue; }
             if (empty($m['roles']) || ! in_array($role, $m['roles'], TRUE)) { continue; }
-            if ( ! empty($m['scope']) && empty($this->session->userdata($m['scope']))) { continue; }
+            $scope_value = ! empty($m['scope']) ? $this->session->userdata($m['scope']) : NULL;
+            if ( ! empty($m['scope']) && empty($scope_value)) { continue; }
+            if ( ! empty($m['scope_values']) && ! in_array($scope_value, $m['scope_values'], TRUE)) { continue; }
             $g = array_search($m['group'] ?? '', $group_order);
             $kandidat[] = ['g' => $g === FALSE ? 999 : $g, 'o' => $m['order'] ?? 999, 'url' => $m['url']];
         }
@@ -434,7 +436,16 @@ class MY_Controller extends CI_Controller {
         if (empty($modul['table']) || empty($modul['pending_where'])) {
             return 0;
         }
-        return (int) $this->db->where($modul['pending_where'])->count_all_results($modul['table']);
+        $query = $this->db->where($modul['pending_where']);
+        if ( ! empty($modul['scope_column'])) {
+            $scope = $modul['scope'] ?? NULL;
+            $scope_value = $scope ? $this->session->userdata($scope) : NULL;
+            if ($scope === NULL || $scope_value === NULL || $scope_value === '') {
+                return 0;
+            }
+            $query->where($modul['scope_column'], $scope_value);
+        }
+        return (int) $query->count_all_results($modul['table']);
     }
 
     /**
@@ -456,7 +467,9 @@ class MY_Controller extends CI_Controller {
         foreach ($modules as $key => $m) {
             if (array_key_exists('enabled', $m) && $m['enabled'] === FALSE) { continue; }
             if (empty($m['roles']) || ! in_array($role, $m['roles'], TRUE)) { continue; }
-            if ( ! empty($m['scope']) && empty($this->session->userdata($m['scope']))) { continue; }
+            $scope_value = ! empty($m['scope']) ? $this->session->userdata($m['scope']) : NULL;
+            if ( ! empty($m['scope']) && empty($scope_value)) { continue; }
+            if ( ! empty($m['scope_values']) && ! in_array($scope_value, $m['scope_values'], TRUE)) { continue; }
 
             $badge = NULL;
             if ( ! empty($m['badge'])) {
@@ -563,6 +576,8 @@ class MY_Controller extends CI_Controller {
      * @param array  $data Data untuk view
      */
     protected function render_user_dashboard($view, $data = []) {
+        $data['dashboard_home'] = $this->dashboard_home();
+
         // Cabang partial HANYA untuk loader dashboard (assets/js/admin-progressive.js),
         // dikenali lewat `X-Shell: admin` — BUKAN untuk sembarang permintaan AJAX.
         //

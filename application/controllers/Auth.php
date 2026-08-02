@@ -830,7 +830,7 @@ class Auth extends MY_Controller {
             return;
         }
 
-        redirect('');
+        redirect($this->dashboard_home());
     }
 
     /**

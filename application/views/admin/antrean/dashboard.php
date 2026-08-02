@@ -51,7 +51,11 @@ $filter_html = ob_get_clean();
     <div data-tabel-admin class="bg-white dark:bg-brand-card border border-gray-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm">
         <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, NIK, tiket, program...', 'filter_html' => $filter_html], TRUE) ?>
 
-        <div class="overflow-x-auto">
+        <p class="px-4 pt-3 text-xs text-gray-500 dark:text-brand-muted sm:hidden">
+            <i class="ph ph-arrows-left-right mr-1" aria-hidden="true"></i>
+            Geser tabel ke samping untuk melihat seluruh kolom, termasuk Aksi.
+        </p>
+        <div class="overflow-x-auto" role="region" aria-label="Tabel antrean perumahan; geser ke samping untuk melihat kolom Aksi" tabindex="0">
             <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="text-xs uppercase bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted font-bold tracking-wider">
                     <tr>
@@ -60,7 +64,7 @@ $filter_html = ob_get_clean();
                         <th class="px-4 py-3"><?= admin_sort_header('Program', 'sf_programs.nama_program', $table, $base_url) ?></th>
                         <th class="px-4 py-3">Kondisi Sosial</th>
                         <th class="px-4 py-3"><?= admin_sort_header('Status', 'sf_housing_queue.status_antrean', $table, $base_url) ?></th>
-                        <th class="px-4 py-3 text-center">Aksi</th>
+                        <th class="w-px whitespace-nowrap px-4 py-3 text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-white/5 text-gray-600 dark:text-brand-muted">
@@ -103,7 +107,9 @@ $filter_html = ob_get_clean();
                             <div class="text-gray-900 dark:text-white font-medium"><?= html_escape(date('d M Y', strtotime($row->created_at))) ?></div>
                             <div class="text-[10px]"><?= html_escape(date('H:i', strtotime($row->created_at))) ?></div>
                         </td>
-                        <td class="px-4 py-3">
+                        <!-- Teks panjang boleh membungkus agar kolom Aksi tidak
+                             terdorong keluar seperti kasus meja KKN/Magang. -->
+                        <td class="max-w-[14rem] whitespace-normal break-words px-4 py-3">
                             <div class="text-gray-900 dark:text-white font-bold"><?= html_escape($nama_display) ?></div>
                             <div class="text-xs font-mono font-bold text-brand-primary"><?= html_escape($row->ticket_code) ?></div>
                             <div class="text-xs font-mono mt-0.5"><?= html_escape($nik_display) ?></div>
@@ -113,14 +119,14 @@ $filter_html = ob_get_clean();
                             </div>
                             <?php endif; ?>
                         </td>
-                        <td class="px-4 py-3">
-                            <div class="inline-flex items-center px-2.5 py-1 rounded-lg bg-brand-primary/10 text-brand-primary border border-brand-primary/20 text-xs font-semibold mb-1"><?= html_escape($row->nama_program ?? 'Program belum terpetakan') ?></div>
-                            <?php if (($row->source_mode ?? '') === 'simulation'): ?><div class="mt-1 inline-flex rounded px-2 py-0.5 text-[10px] font-bold bg-amber-100 text-amber-800">Mode Simulasi — API SIMPERUM belum terhubung</div><?php endif; ?>
+                        <td class="max-w-[14rem] whitespace-normal break-words px-4 py-3">
+                            <div class="inline-block max-w-full break-words rounded-lg bg-brand-primary/10 px-2.5 py-1 text-xs font-semibold text-brand-primary border border-brand-primary/20 mb-1"><?= html_escape($row->nama_program ?? 'Program belum terpetakan') ?></div>
+                            <?php if (($row->source_mode ?? '') === 'simulation'): ?><div class="mt-1 inline-block max-w-full break-words rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">Mode Simulasi — API SIMPERUM belum terhubung</div><?php endif; ?>
                             <?php if ($desil !== '-'): ?>
                             <div class="text-[10px] text-blue-700 bg-blue-50 dark:text-white dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 px-2 py-0.5 rounded inline-block">Desil: <span class="font-bold"><?= html_escape($desil) ?></span></div>
                             <?php endif; ?>
                         </td>
-                        <td class="px-4 py-3">
+                        <td class="max-w-[14rem] whitespace-normal break-words px-4 py-3">
                             <div class="text-xs mb-1"><i class="ph ph-briefcase mr-1"></i> <?= html_escape($survey['pekerjaan'] ?? '-') ?></div>
                             <div class="text-xs mb-1"><i class="ph ph-wallet mr-1"></i> <?= html_escape($penghasilan) ?></div>
                             <?php if ($alasan !== '-'): ?>
@@ -128,7 +134,7 @@ $filter_html = ob_get_clean();
                             <?php endif; ?>
                         </td>
                         <td class="px-4 py-3"><?= $this->load->view('admin/components/status_badge', ['label' => $badge_label[$row->status_antrean] ?? $row->status_antrean, 'kelas' => $badge_kelas[$row->status_antrean] ?? 'pending'], TRUE) ?></td>
-                        <td class="px-4 py-3 text-center">
+                        <td class="w-px whitespace-nowrap px-4 py-3 text-center">
                             <?php if ( ! empty($row->assessment_id)): ?>
                             <a href="<?= base_url($base_url . '/detail/' . (int) $row->id) ?>" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-brand-primary/20 dark:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-brand-primary border border-gray-200 dark:border-white/10 transition-all duration-200"><i class="ph ph-eye"></i><span class="text-xs font-bold uppercase tracking-wider">Detail</span></a>
                             <?php else: ?>

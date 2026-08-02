@@ -61,20 +61,22 @@
     </div>
 </div>
 
-<div class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden relative z-10">
+<?php $this->load->helper('admin_table'); ?>
+<div data-tabel-admin class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden relative z-10">
     <div class="p-6 border-b border-gray-200 dark:border-white/5">
         <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <i class="ph ph-users-three text-brand-primary"></i> Daftar Pengguna (<?= count($users) ?>)
+            <i class="ph ph-users-three text-brand-primary"></i> Daftar Pengguna (<?= number_format((int) $table['total_rows']) ?>)
         </h3>
     </div>
+    <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, email, atau username...'], TRUE) ?>
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
-                    <th scope="col" class="px-6 py-4">Nama Pengguna</th>
-                    <th scope="col" class="px-6 py-4">Peran (Role)</th>
+                    <th scope="col" class="px-6 py-4"><?= admin_sort_header('Nama Pengguna', 'name', $table, $base_url) ?></th>
+                    <th scope="col" class="px-6 py-4"><?= admin_sort_header('Peran (Role)', 'role', $table, $base_url) ?></th>
                     <th scope="col" class="px-6 py-4">Scope</th>
-                    <th scope="col" class="px-6 py-4">Terdaftar</th>
+                    <th scope="col" class="px-6 py-4"><?= admin_sort_header('Terdaftar', 'created_at', $table, $base_url) ?></th>
                     <th scope="col" class="px-6 py-4 text-right">Aksi</th>
                 </tr>
             </thead>
