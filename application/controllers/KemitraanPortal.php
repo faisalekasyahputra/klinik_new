@@ -111,10 +111,22 @@ class KemitraanPortal extends Public_Controller
         $row = $this->pendaftaran_milik($id);
         if ( ! $row) { return; }
 
+        // Nama bidang diambil DI SINI, bukan di view. Pendaftar perlu tahu
+        // bidang mana yang memegang berkasnya — tanpa itu garis waktunya cuma
+        // bilang "bidang penanggung jawab" tanpa menyebut siapa. Query-nya
+        // sempat saya taruh di view; dipindah karena view yang menyentuh DB
+        // adalah pola yang akan ditiru berkas berikutnya.
+        $nama_bidang = NULL;
+        if ($row->jenis === 'magang' && ! empty($row->bidang_kode)) {
+            $b = $this->db->select('nama')->get_where('bidang', ['kode' => $row->bidang_kode])->row();
+            $nama_bidang = $b->nama ?? $row->bidang_kode;
+        }
+
         $this->render('pages/kemitraan_portal/pendaftaran', [
-            'judul'      => 'Pendaftaran ' . strtoupper($row->jenis),
-            'row'        => $row,
-            'bisa_ubah'  => $row->status === 'Diajukan',
+            'judul'       => 'Pendaftaran ' . strtoupper($row->jenis),
+            'row'         => $row,
+            'nama_bidang' => $nama_bidang,
+            'bisa_ubah'   => $row->status === 'Diajukan',
         ]);
     }
 

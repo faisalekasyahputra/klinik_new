@@ -42,12 +42,11 @@ $baris = [
 // Bidang tujuan: sebelumnya TIDAK PERNAH disebut ke pendaftar. Garis waktunya
 // bilang "Bidang penanggung jawab memutuskan" tanpa memberi tahu bidang yang
 // mana — padahal itu yang menentukan ke siapa ia harus bertanya kalau lama tak
-// ada kabar. Ketahuan waktu halaman ini dibuka di browser.
-if ($row->jenis === 'magang' && ! empty($row->bidang_kode)) {
-    $CI =& get_instance();
-    $nama_bidang = $CI->db->select('nama')->get_where('bidang', ['kode' => $row->bidang_kode])->row();
+// ada kabar. Ketahuan waktu halaman ini dibuka di browser. Namanya datang dari
+// controller; view ini tidak menyentuh DB.
+if ( ! empty($nama_bidang)) {
     $baris = array_slice($baris, 0, 6, TRUE)
-        + ['Bidang Tujuan' => $nama_bidang->nama ?? $row->bidang_kode]
+        + ['Bidang Tujuan' => $nama_bidang]
         + array_slice($baris, 6, NULL, TRUE);
 }
 ?>
