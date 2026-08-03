@@ -59,6 +59,9 @@ Folder ini berisi seluruh dokumentasi teknis proyek Klinik PKP yang telah distru
 | [BUKTI_BROWSER_WARGA_R7.md](./engineering/BUKTI_BROWSER_WARGA_R7.md) | Bukti uji browser nyata (desktop + mobile) untuk wizard, riwayat, dan antrean admin |
 | [UJI_FRESH_WARGA_R7.md](./engineering/UJI_FRESH_WARGA_R7.md) | Prosedur runner DB fresh: import baseline → migrasi 1→20 → seluruh check R1–R7 |
 | [PAKET_PRESENTASI_WARGA_R7.md](./engineering/PAKET_PRESENTASI_WARGA_R7.md) | Paket presentasi alur warga untuk dinas (skenario demo + tiket contoh) |
+| [RUNBOOK_RILIS_033_035.md](./engineering/RUNBOOK_RILIS_033_035.md) | **Rilis berjalan (4 Agt 2026)** — jejak audit, triase aduan, janji temu. Migrasi-DULU-baru-push; memuat temuan bahwa production menjalankan layar Jejak Audit tanpa tabelnya |
+| [RUNBOOK_RILIS_WIZARD_024.md](./engineering/RUNBOOK_RILIS_WIZARD_024.md) | Runbook rilis wizard Rekam Data (`…024`, 30 Jul 2026) — kasus yang TERPAKSA push-dulu |
+| [RUNBOOK_RILIS_30JUL2026.md](./engineering/RUNBOOK_RILIS_30JUL2026.md) | Runbook rilis 30 Jul 2026 — asal pola backup-terverifikasi & `set -o pipefail` |
 | [STRUKTUR_FORM_SUMBER_REKAM_DATA.md](./engineering/STRUKTUR_FORM_SUMBER_REKAM_DATA.md) | **Bukti mentah** struktur dua Google Form dinas (Perumahan 170 item/21 hal, Kawasan 178 item/22 hal), metode ekstraksi, peta percabangan, daftar nilai verbatim, dan 8 cacat form berikut lokasinya — form Perumahan wajib login, jadi ini satu-satunya salinan yang bisa dibaca agent |
 
 ---

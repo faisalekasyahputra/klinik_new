@@ -13,6 +13,8 @@
 <!-- Konteks lama, dipertahankan sebagai jejak: -->
 **Sebelumnya: 28 Juli 2026** (roadmap pengembang T0–T6 selesai di production; form warga R0–R7 dan adapter offline SIMPERUM R9 selesai lokal, belum di-push — lihat §0b/§0c). Kalau kamu agent yang baru masuk, baca bagian ini sampai habis sebelum menyentuh apa pun.
 
+> 🔴 **PRODUCTION SEDANG MENJALANKAN LAYAR JEJAK AUDIT TANPA TABELNYA** (diukur dari server 4 Agt 2026: skema `20260701000032`, kode `c348e45`). Commit `34c1506` yang membawa `catat_audit()`, layar Jejak Audit, dan Akses Staf **sudah ter-deploy**; migrasi `033` tidak pernah ikut jalan. `catat_audit()` sengaja diam kalau tabelnya tidak ada, jadi setiap penonaktifan akun, ganti peran, dan reset sandi di sana **tidak terekam** — dan layarnya tampil kosong seolah belum ada aktivitas. Jejak yang hilang tidak bisa diisi ulang. Perbaikannya tidak butuh push: begitu `033` mendarat, perekaman hidup seketika. Prosedurnya lengkap di [`RUNBOOK_RILIS_033_035.md`](docs/engineering/RUNBOOK_RILIS_033_035.md) — **migrasi DULU, baru push**, karena `034`/`035` membuat kode baru fatal di skema lama.
+
 > 🛑 **JANGAN BERSIHKAN DATA DEMO/UJI DI DB DEV — keputusan user 2 Agt 2026, berlaku sampai merge ke `main`.** Empat akun `@example.test` (dua di antaranya `admin_kabkota` aktif), sebelas akun demo, dua pendaftaran kemitraan, dan 25 slot 2027 SENGAJA dibiarkan hidup. Daftar lengkap + checklist pembersihannya di **§20**. Sudah dua kali ada agent yang mengusulkan menyapunya karena mengira itu sampah; kalau kamu berpikir begitu juga, baca §20 dulu, lalu tanyakan.
 
 ### 0a. Keadaan lingkungan saat ini
