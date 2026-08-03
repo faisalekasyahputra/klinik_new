@@ -753,6 +753,32 @@ class Auth extends MY_Controller {
                     $logged_in_user = $this->user_model->check_google_user($user_data);
 
                     if ($logged_in_user) {
+                        /**
+                         * GERBANG STATUS — kembaran dari yang ada di do_login().
+                         *
+                         * Tanpa ini, tombol "Nonaktifkan" di Akses Staf tidak
+                         * menutup apa pun bagi siapa saja yang emailnya juga
+                         * akun Google: `check_google_user()` mencocokkan lewat
+                         * EMAIL (bukan google_id) dan mengembalikan barisnya apa
+                         * adanya, berapa pun statusnya. Orang yang baru dicabut
+                         * aksesnya tinggal mengeklik "Masuk dengan Google" dan
+                         * kembali dengan role serta scope lengkap — sementara
+                         * layar Akses Staf dan jejak audit sama-sama melaporkan
+                         * pencabutan itu berhasil.
+                         *
+                         * Ditemukan lewat tinjauan adversarial 3 Agt 2026.
+                         * Pelajaran umumnya: gerbang yang dipasang di satu titik
+                         * masuk bukan gerbang — ia harus dipasang di SEMUA titik
+                         * yang membuat sesi. Di berkas ini ada tiga (do_login,
+                         * do_register, google_callback).
+                         */
+                        if (strtolower(trim((string) ($logged_in_user[0]['status'] ?? ''))) === 'nonaktif') {
+                            $this->session->set_flashdata('error',
+                                'Akun ini dinonaktifkan. Hubungi Super Admin bila menurut Anda ini keliru.');
+                            redirect('Auth/login');
+                            return;
+                        }
+
                         // Mark Google users as email-verified
                         $this->db->where('id', $logged_in_user[0]['id']);
                         $this->db->update('usr_users', [

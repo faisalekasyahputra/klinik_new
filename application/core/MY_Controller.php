@@ -18,6 +18,84 @@ class MY_Controller extends CI_Controller {
 
         // Set OWASP security headers on every response
         $this->set_security_headers();
+
+        $this->usir_kalau_nonaktif();
+    }
+
+    /**
+     * Putuskan sesi yang akunnya sudah dinonaktifkan — diperiksa TIAP PERMINTAAN.
+     *
+     * Tanpa ini, tombol "Nonaktifkan" di Akses Staf hanya menutup pintu MASUK.
+     * Orang yang sudah terlanjur login tetap memegang akses penuh sampai
+     * sesinya kedaluwarsa (`sess_expiration = 7200`, dan CI menyegarkannya
+     * selama ia terus mengklik) — jadi selama tabnya dibiarkan terbuka,
+     * pencabutan akses tidak pernah berlaku. Pesan suksesnya sendiri berbunyi
+     * "tidak bisa masuk lagi", yang secara harfiah salah untuk kasus itu.
+     *
+     * Ditemukan lewat tinjauan adversarial 3 Agt 2026, bersama lubang kembarnya
+     * di `Auth::google_callback()`.
+     *
+     * BIAYANYA satu lookup primary key per permintaan, dan HANYA untuk yang
+     * sudah login — pengunjung anonim tidak menyentuh DB sama sekali di sini.
+     * Itu harga yang wajar untuk saklar yang benar-benar memutus.
+     *
+     * SENGAJA TIDAK menyegarkan role/scope dari DB sekalipun barisnya sudah
+     * dibaca di sini. Itu lubang terpisah yang sudah tercatat di AGENTS.md §18
+     * ("Sesi sebagai replika role & scope, tanpa jalur invalidasi"), dan
+     * menambalnya sambil lalu akan mengubah perilaku otorisasi seluruh aplikasi
+     * di dalam commit yang judulnya soal Akses Staf.
+     */
+    private function usir_kalau_nonaktif() {
+        if ( ! $this->session->userdata('is_logged')) { return; }
+        $id = (int) $this->session->userdata('user_id');
+        if ($id < 1) { return; }
+
+        $row = $this->db->select('status')->get_where('usr_users', ['id' => $id])->row();
+
+        // Baris yang HILANG juga mengakhiri sesi: akun yang dihapus tidak boleh
+        // terus berjalan hanya karena cookie-nya masih ada.
+        $mati = ! $row || strtolower(trim((string) $row->status)) === 'nonaktif';
+        if ( ! $mati) { return; }
+
+        /**
+         * Kunci autentikasinya DILEPAS, sesinya tidak dihancurkan.
+         *
+         * Percobaan pertama memakai `sess_destroy()` lalu menulis flashdata —
+         * dan pesannya lenyap bersama sesi yang barusan dibunuh, jadi orangnya
+         * terlempar ke halaman login tanpa satu pun keterangan kenapa. Diuji dan
+         * ketahuan langsung: "diputus" benar, "pesan muncul" tidak.
+         *
+         * Melepas kuncinya sudah cukup: setiap gerbang membaca `is_logged` +
+         * `user_id`, dan id sesinya diregenerasi supaya cookie lama tidak bisa
+         * dipakai ulang.
+         */
+        $this->session->unset_userdata([
+            'is_logged', 'user_id', 'role', 'name', 'username', 'email',
+            'avatar', 'kabupaten_id', 'bidang_kode',
+        ]);
+        $this->session->sess_regenerate(TRUE);
+
+        // Permintaan AJAX tidak boleh di-redirect: fetch akan mengikutinya dan
+        // menerima HTML halaman login sebagai "berhasil".
+        if ($this->input->is_ajax_request()) {
+            // Ditulis LANGSUNG, bukan lewat $this->output->set_output().
+            // Kita berada di konstruktor dan mengakhiri permintaan dengan exit,
+            // sementara set_output() baru dikirim oleh CI saat _display() di
+            // akhir siklus normal — yang tidak pernah tercapai. Percobaan
+            // pertama memakai output class dan menghasilkan balasan BERBADAN
+            // KOSONG: pemanggil fetch menerima 'sukses' tanpa isi.
+            $this->output->set_status_header(401);
+            header('Content-Type: application/json');
+            echo json_encode([
+                'status' => 'error', 'code' => 'akun_nonaktif',
+                'message' => 'Akses akun ini sudah dicabut. Silakan hubungi Super Admin.',
+            ]);
+            exit;
+        }
+        $this->session->set_flashdata('error',
+            'Akses akun ini sudah dicabut. Silakan hubungi Super Admin bila menurut Anda ini keliru.');
+        redirect('Auth/login');
+        exit;
     }
 
     /**

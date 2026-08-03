@@ -271,8 +271,16 @@ $config['dashboard_modules'] = [
     // memakai prefix "url/", jadi Admin_Kemitraan/slot tetap menyalakan menu
     // KKN/Magang tanpa entri tambahan.
     'users' => [
-        'label' => 'Kelola Pengguna', 'icon' => 'ph-users',
+        'label' => 'Akses Staf', 'icon' => 'ph-users',
         'url'   => 'Admin_Users', 'group' => 'Manajemen', 'order' => 10,
+        'roles' => ['admin'], 'scope' => null,
+    ],
+    // Read-only murni: tanpa 'table'/'pending_where' karena jejak audit tidak
+    // punya keadaan "belum diproses" — badge di sini akan mengajari orang bahwa
+    // barisnya perlu dibereskan sampai nol, dan justru itu yang tidak boleh.
+    'audit' => [
+        'label' => 'Jejak Audit', 'icon' => 'ph-scroll',
+        'url'   => 'Admin_Audit', 'group' => 'Manajemen', 'order' => 20,
         'roles' => ['admin'], 'scope' => null,
     ],
     // A6 — entri 'settings' DICABUT 29 Jul 2026 bersama controller Admin_Settings

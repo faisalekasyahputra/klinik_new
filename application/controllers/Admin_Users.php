@@ -82,6 +82,39 @@ class Admin_Users extends Admin_Controller {
         // Keadaan SEBELUM diambil dulu — sesudah UPDATE ia sudah tidak ada, dan
         // "diubah dari apa" justru separuh isi dari sebuah jejak audit.
         $sebelum = $this->db->get_where('usr_users', ['id' => $id])->row();
+        if ( ! $sebelum) {
+            $this->session->set_flashdata('error', 'Akun tidak ditemukan.');
+            redirect('Admin_Users');
+            return;
+        }
+
+        /**
+         * PENGUNCIAN TOTAL YANG PALING MUDAH TERJADI ada di sini, bukan di
+         * tombol Nonaktifkan.
+         *
+         * Superadmin membuka Akses Staf, mengubah role DIRINYA SENDIRI menjadi
+         * "Warga", dan sejak detik itu tidak ada satu pun akun yang bisa membuka
+         * panel — termasuk untuk membatalkannya. Pemulihannya harus lewat DB.
+         * Satu klik, dan di DB ini cuma ada SATU superadmin.
+         *
+         * Berbeda dari menonaktifkan: menurunkan role diri sendiri sama sekali
+         * tidak tertahan penjaga akun-sendiri, karena "mengubah role" tidak
+         * terlihat seperti mencabut akses sampai akibatnya terjadi.
+         *
+         * Ditemukan 3 Agt 2026 saat menelusuri kenapa penjaga superadmin-terakhir
+         * di ubah_status tidak pernah menyala.
+         */
+        if ($sebelum->role === 'admin' && $role !== 'admin' && $this->sisa_superadmin($sebelum, $role) === 0) {
+            $this->catat_audit('role_diubah_ditolak',
+                'DITOLAK: menurunkan role Super Admin terakhir (' . $sebelum->email . ') menjadi ' . $role,
+                'usr_users', (string) $id);
+            $this->session->set_flashdata('error',
+                $sebelum->id == $this->get_user_id()
+                    ? 'Anda satu-satunya Super Admin. Menurunkan role Anda sendiri akan mengunci semua orang dari panel ini — angkat Super Admin lain dulu.'
+                    : 'Ini satu-satunya Super Admin yang masih bisa masuk. Angkat Super Admin lain dulu sebelum menurunkan rolenya.');
+            redirect('Admin_Users');
+            return;
+        }
 
         if ( ! $this->db->where('id', $id)->update('usr_users', $payload)) {
             $this->session->set_flashdata('error', 'Role pengguna belum tersimpan. Coba lagi.');
@@ -226,14 +259,40 @@ class Admin_Users extends Admin_Controller {
      * `restricted` dan tetap bisa masuk; menghitung dengan `= active` akan
      * menyimpulkan nol superadmin dan memblokir tindakan yang sah.
      */
-    private function superadmin_terakhir($user)
+    /**
+     * Berapa superadmin yang MASIH BISA MASUK kalau $user diubah jadi $role_baru?
+     *
+     * Dihitung dengan syarat yang SAMA dengan gerbang login (`status` selain
+     * 'nonaktif'), bukan `status = 'active'`. Enam akun di DB ini berstatus
+     * `restricted` dan tetap bisa masuk; menghitung dengan `= active` akan
+     * menyimpulkan nol superadmin dan memblokir tindakan yang sah.
+     *
+     * @param string|NULL $role_baru  NULL = perannya tidak berubah, hanya
+     *                                statusnya yang jadi 'nonaktif'.
+     */
+    private function sisa_superadmin($user, $role_baru = NULL)
     {
-        if ($user->role !== 'admin') { return FALSE; }
-        $sisa = $this->db->where('role', 'admin')
+        $lain = $this->db->where('role', 'admin')
             ->where('id !=', (int) $user->id)
             ->where("LOWER(TRIM(COALESCE(status,''))) !=", 'nonaktif')
             ->count_all_results('usr_users');
-        return $sisa === 0;
+
+        // Target ikut dihitung kalau SESUDAH perubahan ia masih admin yang bisa
+        // masuk. $role_baru NULL berarti kita sedang menonaktifkannya.
+        $target_tetap_admin = $role_baru === NULL ? FALSE : ($role_baru === 'admin');
+        return $lain + ($target_tetap_admin ? 1 : 0);
+    }
+
+    private function superadmin_terakhir($user)
+    {
+        // Catatan jujur: lewat UI, cabang ini nyaris tidak bisa tercapai —
+        // pelakunya sendiri selalu terhitung sebagai "admin lain" yang masih
+        // bisa masuk, jadi target tidak pernah menjadi yang terakhir; dan kalau
+        // targetnya diri sendiri, penjaga akun-sendiri menyala lebih dulu.
+        // Dipertahankan sebagai jaring kalau kelak ada jalur tulis lain.
+        // Lubang yang BENAR-BENAR bisa mengunci semua orang ada di update_role
+        // (turunkan role admin terakhir) dan dijaga tersendiri di sana.
+        return $user->role === 'admin' && $this->sisa_superadmin($user, NULL) === 0;
     }
 
     public function ubah_status()
