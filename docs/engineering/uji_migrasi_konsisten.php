@@ -19,6 +19,11 @@
  *  3. Nol berkas migrasi liar (ada di disk tapi tidak dilacak git). Berkas
  *     liar di server membuat `latest()` menargetkan nomor yang tidak ada di
  *     commit rilis (AGENTS.md §0e).
+ *  4. Setiap tabel yang DIBUAT sebuah migrasi disebut di `Migrate::status()`.
+ *     Itu satu-satunya cara membaca keadaan skema production, dan ia daftar
+ *     yang ditulis tangan — jadi ia membusuk diam-diam. Terbukti: `status()`
+ *     berhenti di migrasi 031 sementara skemanya sudah 034, dan tak ada yang
+ *     tahu sampai keluarannya dibaca baris demi baris (4 Agt 2026).
  */
 
 $root = dirname(__DIR__, 2);
@@ -112,6 +117,39 @@ if ( ! $gitHidup) {
     cek($liar === [], 'Nol berkas migrasi untracked/termodifikasi'
         . ($liar ? ' — ' . implode(' ; ', $liar) : ''));
 }
+
+// -------------------------------- 4. status() menyebut tiap tabel baru
+
+/**
+ * `Migrate::status()` adalah satu-satunya cara membaca keadaan skema server,
+ * dan isinya daftar yang ditulis TANGAN. Daftar tulis-tangan yang tidak dijaga
+ * akan tertinggal — dan kalau tertinggal, keluarannya tetap terlihat lengkap:
+ * semua yang disebutkan berkata ADA, dan yang TIDAK disebutkan tidak
+ * meninggalkan jejak apa pun bahwa ia dilewati. Terbukti 4 Agt 2026: `status()`
+ * berhenti di 031 sementara skemanya sudah 034, tanpa satu pun tanda.
+ *
+ * Yang dijaga: NOMOR migrasi terbaru harus disebut di `Migrate.php`. Bukan nama
+ * tabelnya.
+ *
+ * Versi pertama penjaga ini memang mencocokkan nama tabel, dan salah dua kali
+ * sekaligus. (a) Positif palsu: migrasi 019 me-RENAME lima tabel `sf_*` lewat
+ * peta `const`, jadi nama lamanya memang TIDAK BOLEH ada di `status()` — tapi
+ * "pernah dibuat" tetap terbaca dari `CREATE TABLE`-nya. (b) Negatif palsu:
+ * grep-nya menyapu SELURUH `Migrate.php`, termasuk method `uji_*`, sehingga
+ * tabel yang kebetulan disebut satu uji terhitung "sudah tercakup" padahal
+ * `status()` tidak pernah menyentuhnya.
+ *
+ * Nomor migrasi tidak punya dua masalah itu, dan menangkap satu kelas lagi yang
+ * nama tabel tidak bisa: migrasi yang mengubah BENTUK kolom yang sudah ada
+ * (034 membuat `aduan.bidang` NULL-able) — ia tidak melahirkan nama tabel baru
+ * untuk dicari, tapi justru itu yang paling perlu diverifikasi, karena
+ * `field_exists()` akan menjawab ADA baik migrasinya jalan maupun tidak.
+ */
+$migrateIsi = file_get_contents($root . '/application/controllers/Migrate.php');
+$tigaDigit = substr((string) $tertinggi, -3);
+$disebut = (bool) preg_match('/migrasi[^\n]{0,24}\b0*' . preg_quote($tigaDigit, '/') . '\b/i', $migrateIsi);
+cek($disebut, "Migrate::status() menyebut migrasi terbaru ({$tigaDigit}) — "
+    . 'tambahkan pemeriksaan skemanya, jangan cuma menaikkan migration_version');
 
 echo "RINGKASAN: {$total} pemeriksaan, {$gagal} gagal\n";
 exit($gagal > 0 ? 1 : 0);

@@ -80,6 +80,8 @@ class Migrate extends CI_Controller {
             'kkn_magang_bidang',
             'kkn_magang_slot',
             'kkn_magang_pendaftaran',
+            // Migrasi 033.
+            'sys_jejak_audit',
         ] as $t) {
             echo $t.': '.(in_array($t, $tables) ? 'ADA' : 'TIDAK ADA')."\n";
         }
@@ -106,6 +108,31 @@ class Migrate extends CI_Controller {
         // migrasi itu tidak benar-benar tuntas meski versinya sudah 031.
         echo 'kkn_magang_divisi (harus TIDAK ADA): '.
             (in_array('kkn_magang_divisi', $tables) ? 'MASIH ADA — migrasi 031 belum tuntas' : 'sudah lenyap')."\n";
+
+        /**
+         * Migrasi 034 — dan ini jenis pemeriksaan yang BERBEDA dari semua di
+         * atas. `field_exists('bidang', 'aduan')` akan menjawab ADA baik migrasi
+         * ini jalan maupun tidak: kolomnya memang sudah ada sejak awal. Yang
+         * berubah BENTUKNYA (NOT NULL -> NULL-able), jadi keberadaan tidak
+         * membuktikan apa pun dan bentuknya harus dibaca dari information_schema.
+         *
+         * Ini pemeriksaan yang paling perlu dibaca sebelum kode barunya naik:
+         * kalau migrasi ini TIDAK mendarat, `Umum::simpan_aduan()` menyisipkan
+         * NULL ke kolom NOT NULL, `db_debug` mati di production membuatnya
+         * mengembalikan FALSE tanpa suara, dan SETIAP pengiriman aduan gagal.
+         */
+        if (in_array('aduan', $tables)) {
+            $k = $this->db->query(
+                "SELECT IS_NULLABLE n, COLUMN_DEFAULT d FROM information_schema.COLUMNS
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'aduan' AND COLUMN_NAME = 'bidang'"
+            )->row();
+            $nullable = $k && $k->n === 'YES';
+            $sentinel = $k && stripos((string) $k->d, 'umum') !== FALSE;
+            echo 'aduan.bidang NULL-able (migrasi 034): '
+                .($nullable ? 'YA' : 'BELUM — kode baru akan gagal menyimpan aduan')."\n";
+            echo "aduan.bidang DEFAULT 'umum' dicabut: "
+                .($sentinel ? 'BELUM' : 'YA')."\n";
+        }
     }
 
     /**
