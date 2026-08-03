@@ -79,11 +79,24 @@ class Admin_Users extends Admin_Controller {
             $payload['bidang_kode'] = $bidang_kode;
         }
 
+        // Keadaan SEBELUM diambil dulu — sesudah UPDATE ia sudah tidak ada, dan
+        // "diubah dari apa" justru separuh isi dari sebuah jejak audit.
+        $sebelum = $this->db->get_where('usr_users', ['id' => $id])->row();
+
         if ( ! $this->db->where('id', $id)->update('usr_users', $payload)) {
             $this->session->set_flashdata('error', 'Role pengguna belum tersimpan. Coba lagi.');
             redirect('Admin_Users');
             return;
         }
+
+        $this->catat_audit('role_diubah',
+            'Mengubah role ' . ($sebelum->email ?? '#' . $id) . ' dari '
+            . ($sebelum->role ?: '(kosong)') . ' menjadi ' . $role,
+            'usr_users', (string) $id,
+            ['dari' => ['role' => $sebelum->role ?? NULL, 'kabupaten_id' => $sebelum->kabupaten_id ?? NULL,
+                        'bidang_kode' => $sebelum->bidang_kode ?? NULL],
+             'ke'   => $payload]);
+
         $this->session->set_flashdata('success', 'Role pengguna diperbarui.');
         redirect('Admin_Users');
     }
@@ -153,7 +166,158 @@ class Admin_Users extends Admin_Controller {
             redirect('Admin_Users');
             return;
         }
+        $this->catat_audit('staf_dibuat',
+            'Membuat akun staf ' . $payload['email'] . ' dengan role ' . $role,
+            'usr_users', (string) $this->db->insert_id(),
+            ['role' => $role, 'kabupaten_id' => $payload['kabupaten_id'] ?? NULL,
+             'bidang_kode' => $payload['bidang_kode'] ?? NULL]);
+
         $this->session->set_flashdata('success', 'Akun staff baru berhasil dibuat.');
+        redirect('Admin_Users');
+    }
+
+    // =====================================================================
+    // AKSES STAF — nonaktifkan/aktifkan, reset sandi, buka kunci.
+    //
+    // Sebelum ini superadmin hanya bisa MEMBUAT akun dan mengubah role. Tidak
+    // ada cara mencabut akses tanpa menyentuh DB langsung, dan tidak ada cara
+    // membuka akun yang terkunci 15 menit selain menunggu.
+    // =====================================================================
+
+    /**
+     * Penjaga bersama untuk setiap tindakan yang menyentuh akun lain.
+     *
+     * Mengembalikan baris user, atau NULL setelah memasang flash + redirect.
+     * Dipusatkan supaya penambahan tindakan berikutnya tidak perlu menyalin
+     * ulang pemeriksaan yang sama — dan tidak bisa lupa menyalinnya.
+     */
+    private function sasaran_sah($izinkan_diri_sendiri = FALSE)
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+
+        $id = (int) $this->input->post('id');
+        $user = $id ? $this->db->get_where('usr_users', ['id' => $id])->row() : NULL;
+        if ( ! $user) {
+            $this->session->set_flashdata('error', 'Akun tidak ditemukan.');
+            redirect('Admin_Users');
+            return NULL;
+        }
+
+        // Akun sendiri: dilarang untuk tindakan yang mencabut akses. Superadmin
+        // yang menonaktifkan dirinya sendiri kehilangan satu-satunya jalan untuk
+        // membatalkannya — pemulihannya harus lewat DB.
+        if ( ! $izinkan_diri_sendiri && (int) $user->id === (int) $this->get_user_id()) {
+            $this->catat_audit('tindakan_diri_sendiri_ditolak',
+                'DITOLAK: mencoba melakukan tindakan pencabutan akses pada akun sendiri',
+                'usr_users', (string) $user->id);
+            $this->session->set_flashdata('error',
+                'Anda tidak bisa melakukan itu pada akun Anda sendiri.');
+            redirect('Admin_Users');
+            return NULL;
+        }
+        return $user;
+    }
+
+    /**
+     * Apakah $user adalah satu-satunya superadmin yang masih bisa masuk?
+     *
+     * Dihitung dari kondisi yang SAMA dengan gerbang login (`status` selain
+     * 'nonaktif'), bukan dari `status = 'active'`. Enam akun di DB ini berstatus
+     * `restricted` dan tetap bisa masuk; menghitung dengan `= active` akan
+     * menyimpulkan nol superadmin dan memblokir tindakan yang sah.
+     */
+    private function superadmin_terakhir($user)
+    {
+        if ($user->role !== 'admin') { return FALSE; }
+        $sisa = $this->db->where('role', 'admin')
+            ->where('id !=', (int) $user->id)
+            ->where("LOWER(TRIM(COALESCE(status,''))) !=", 'nonaktif')
+            ->count_all_results('usr_users');
+        return $sisa === 0;
+    }
+
+    public function ubah_status()
+    {
+        $user = $this->sasaran_sah();
+        if ( ! $user) { return; }
+
+        $ke = $this->input->post('status', TRUE) === 'nonaktif' ? 'nonaktif' : 'active';
+
+        // Menonaktifkan superadmin terakhir = mengunci semua orang dari panel.
+        // Tidak ada jalan pulih lewat aplikasi; pemulihannya harus lewat DB.
+        if ($ke === 'nonaktif' && $this->superadmin_terakhir($user)) {
+            // Percobaan yang DITOLAK ikut dicatat. Jejak audit yang hanya
+            // merekam keberhasilan tidak bisa menjawab "siapa yang mencoba
+            // mematikan panel ini" — dan justru percobaan itu yang perlu
+            // terlihat, terlepas berhasil atau tidak.
+            $this->catat_audit('akun_dinonaktifkan_ditolak',
+                'DITOLAK: mencoba menonaktifkan Super Admin terakhir (' . $user->email . ')',
+                'usr_users', (string) $user->id);
+            $this->session->set_flashdata('error',
+                'Ini satu-satunya Super Admin yang masih bisa masuk. Angkat Super Admin lain dulu sebelum menonaktifkannya.');
+            redirect('Admin_Users');
+            return;
+        }
+
+        $this->db->where('id', (int) $user->id)->update('usr_users', ['status' => $ke]);
+        $this->catat_audit($ke === 'nonaktif' ? 'akun_dinonaktifkan' : 'akun_diaktifkan',
+            ($ke === 'nonaktif' ? 'Menonaktifkan' : 'Mengaktifkan') . ' akun ' . $user->email,
+            'usr_users', (string) $user->id, ['dari' => $user->status, 'ke' => $ke]);
+
+        $this->session->set_flashdata('success', $ke === 'nonaktif'
+            ? 'Akun ' . $user->email . ' dinonaktifkan dan tidak bisa masuk lagi.'
+            : 'Akun ' . $user->email . ' diaktifkan kembali.');
+        redirect('Admin_Users');
+    }
+
+    /**
+     * Buka akun yang terkunci karena percobaan login gagal.
+     *
+     * Boleh dilakukan pada akun sendiri — ini tindakan MEMULIHKAN akses, bukan
+     * mencabutnya, jadi larangan "jangan sentuh diri sendiri" tidak berlaku.
+     */
+    public function buka_kunci()
+    {
+        $user = $this->sasaran_sah(TRUE);
+        if ( ! $user) { return; }
+
+        $this->db->where('id', (int) $user->id)
+            ->update('usr_users', ['login_attempts' => 0, 'locked_until' => NULL]);
+        $this->catat_audit('kunci_dibuka', 'Membuka kunci akun ' . $user->email,
+            'usr_users', (string) $user->id,
+            ['login_attempts_sebelumnya' => $user->login_attempts, 'terkunci_sampai' => $user->locked_until]);
+
+        $this->session->set_flashdata('success', 'Kunci akun ' . $user->email . ' dibuka.');
+        redirect('Admin_Users');
+    }
+
+    public function reset_sandi()
+    {
+        $user = $this->sasaran_sah(TRUE);
+        if ( ! $user) { return; }
+
+        $sandi = (string) $this->input->post('password');
+        if (strlen($sandi) < 8) {
+            $this->session->set_flashdata('error', 'Password baru minimal 8 karakter.');
+            redirect('Admin_Users');
+            return;
+        }
+
+        // Penghitung gagal ikut direset: sandi baru yang langsung disambut
+        // "akun terkunci" adalah cara paling cepat membuat orang mengira
+        // resetnya tidak berhasil.
+        $this->db->where('id', (int) $user->id)->update('usr_users', [
+            'password' => password_hash($sandi, PASSWORD_BCRYPT),
+            'login_attempts' => 0, 'locked_until' => NULL,
+        ]);
+
+        // Sandinya TIDAK ikut dicatat, bahkan tidak sebagian. Jejak audit dibaca
+        // orang yang tidak selalu berhak tahu isinya.
+        $this->catat_audit('sandi_direset', 'Mereset password akun ' . $user->email,
+            'usr_users', (string) $user->id);
+
+        $this->session->set_flashdata('success',
+            'Password ' . $user->email . ' diganti. Sampaikan ke yang bersangkutan lewat jalur pribadi.');
         redirect('Admin_Users');
     }
 }

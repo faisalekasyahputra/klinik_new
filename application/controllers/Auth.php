@@ -105,6 +105,30 @@ class Auth extends MY_Controller {
             return;
         }
 
+        /**
+         * GERBANG STATUS — ditambahkan 3 Agt 2026 bersama layar Akses Staf.
+         *
+         * Sebelum ini kolom `status` TIDAK PERNAH dibaca saat login; ia hanya
+         * ditulis. Membangun tombol "nonaktifkan akun" di atasnya akan
+         * menghasilkan saklar yang berbohong: badge berubah, orangnya tetap
+         * masuk. Jadi tombolnya dan gerbangnya lahir bersamaan.
+         *
+         * Yang diblokir HANYA `nonaktif`, bukan "apa pun yang bukan active".
+         * Alasannya bukan kehati-hatian umum: di DB ini ada 6 akun berstatus
+         * `restricted` yang hari ini bekerja normal — termasuk satu-satunya akun
+         * superadmin. Memblokir "bukan active" akan mengunci pemilik sistem dari
+         * sistemnya sendiri pada deploy berikutnya, tanpa ada yang meminta itu.
+         * `restricted` peninggalan lama yang maknanya tidak pernah ditetapkan;
+         * menetapkannya sekarang lewat gerbang login adalah keputusan produk,
+         * bukan perbaikan teknis.
+         */
+        if (strtolower(trim((string) ($user->status ?? ''))) === 'nonaktif') {
+            $this->_login_fail($is_ajax,
+                'Akun ini dinonaktifkan. Hubungi Super Admin bila menurut Anda ini keliru.',
+                $error_target);
+            return;
+        }
+
         // Verify password
         if (!password_verify($password, $user->password)) {
             $this->auth_model->increment_login_attempts($user->id);

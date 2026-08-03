@@ -63,6 +63,48 @@ class MY_Controller extends CI_Controller {
     }
 
     /**
+     * Catat satu tindakan ke jejak audit pusat (`sys_jejak_audit`).
+     *
+     * Ditaruh di base controller karena pertanyaan "siapa mengubah ini" tidak
+     * mengenal batas modul: role, akun staf, slot magang, dan keputusan layanan
+     * semuanya perlu menjawabnya dengan bentuk yang sama.
+     *
+     * TIGA hal yang sengaja:
+     *
+     * 1. Pelaku diambil dari SESI, tidak pernah dari parameter. Jejak audit yang
+     *    penulisnya bisa ditentukan pemanggil bukan jejak audit.
+     * 2. Email & role pelaku disalin apa adanya. FK-nya ON DELETE SET NULL, jadi
+     *    tanpa salinan ini jejak kehilangan "siapa" tepat pada kasus yang paling
+     *    perlu ditelusuri — akun yang sudah dihapus.
+     * 3. GAGAL DIAM-DIAM, tidak pernah melempar. Audit adalah pengamat; kalau
+     *    penulisannya menggagalkan tindakan yang sedang diaudit, ia berubah dari
+     *    pelindung jadi titik gagal baru. Kegagalannya tetap masuk log error.
+     *
+     * @param string $aksi      Kata kerja pendek & stabil, untuk menyaring.
+     * @param string $ringkasan Kalimat yang dibaca manusia, disimpan SAAT
+     *                          KEJADIAN — bukan disusun ulang saat ditampilkan.
+     */
+    protected function catat_audit($aksi, $ringkasan, $objek_tipe = NULL, $objek_id = NULL, array $detail = []) {
+        try {
+            if ( ! $this->db->table_exists('sys_jejak_audit')) { return; }
+            $this->db->insert('sys_jejak_audit', [
+                'actor_id'    => $this->get_user_id() ?: NULL,
+                'actor_email' => $this->session->userdata('email') ?: NULL,
+                'actor_role'  => $this->session->userdata('role') ?: NULL,
+                'aksi'        => substr((string) $aksi, 0, 40),
+                'objek_tipe'  => $objek_tipe !== NULL ? substr((string) $objek_tipe, 0, 40) : NULL,
+                'objek_id'    => $objek_id !== NULL ? substr((string) $objek_id, 0, 60) : NULL,
+                'ringkasan'   => substr((string) $ringkasan, 0, 255),
+                'detail_json' => $detail ? json_encode($detail, JSON_UNESCAPED_UNICODE) : NULL,
+                'ip'          => $this->input->ip_address(),
+                'created_at'  => date('Y-m-d H:i:s'),
+            ]);
+        } catch (Exception $e) {
+            log_message('error', 'Gagal menulis jejak audit (' . $aksi . '): ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Get the currently logged in user's role from session
      *
      * @return string|null
