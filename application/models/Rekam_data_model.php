@@ -717,6 +717,102 @@ class Rekam_data_model extends CI_Model {
             ->get()->result_array();
     }
 
+    /**
+     * PAPAN CAKUPAN satu triwulan: SATU BARIS PER KABUPATEN, ada laporannya
+     * atau tidak.
+     *
+     * Arah JOIN-nya sengaja dari `kabupaten`, bukan dari `rd_laporan`. Semua
+     * layar rekam data yang sudah ada bertolak dari baris laporan, jadi
+     * satu-satunya hal yang TIDAK BISA mereka tampilkan adalah kabupaten yang
+     * belum melapor sama sekali — dan justru itu pertanyaan yang dibawa dinas
+     * ("belum ada rekap/submit"). Kabupaten yang tidak mengirim apa pun tidak
+     * punya baris untuk dihitung; ia hanya terlihat kalau daftar 35 kabupaten
+     * yang jadi titik berangkat.
+     *
+     * Wajib satu triwulan tertentu. Tanpa itu satu kabupaten bisa memulangkan
+     * empat baris dan "sudah/belum"-nya kehilangan arti.
+     *
+     * Status yang dipulangkan APA ADANYA dari kolomnya; penurunan "Diterima"
+     * (`terkirim` + `reviewed_at` terisi) diserahkan ke `keadaan_laporan()`
+     * supaya tidak ada dua tempat yang menerjemahkannya berbeda.
+     */
+    public function pantau($domain, $tahun, $triwulan)
+    {
+        if ( ! in_array($domain, self::DOMAINS, TRUE)) {
+            return [];
+        }
+        return $this->db
+            ->select('k.id AS kabupaten_id, k.nama AS kabupaten,'
+                . ' l.id AS laporan_id, l.status, l.current_step,'
+                . ' l.submitted_at, l.reviewed_at, l.catatan_admin')
+            ->from('kabupaten k')
+            ->join('rd_laporan l',
+                'l.kabupaten_id = k.id AND l.domain = ' . $this->db->escape($domain)
+                . ' AND l.tahun = ' . (int) $tahun . ' AND l.triwulan = ' . (int) $triwulan,
+                'left')
+            ->order_by('k.nama', 'ASC')
+            ->get()->result_array();
+    }
+
+    /**
+     * Terjemahan satu baris papan jadi keadaan yang dibaca manusia.
+     *
+     * ADA DI SINI, bukan di view, karena "Diterima" BUKAN nilai yang tersimpan:
+     * `rd_laporan.status` hanya mengenal draft|terkirim|perlu_perbaikan, dan
+     * diterima adalah `terkirim` + `reviewed_at` terisi. Aturan turunan yang
+     * disalin ke tiap layar akan menyimpang, dan yang menyimpang di sini berarti
+     * laporan yang sudah diterima terbaca sebagai masih menunggu.
+     *
+     * @return array [kunci, label]
+     */
+    public function keadaan_laporan(array $baris)
+    {
+        if (empty($baris['laporan_id']))              { return ['belum', 'Belum ada laporan']; }
+        if ($baris['status'] === 'draft')             { return ['draft', 'Draft, belum dikirim']; }
+        if ($baris['status'] === 'perlu_perbaikan')   { return ['perbaikan', 'Perlu perbaikan']; }
+        if ( ! empty($baris['reviewed_at']))          { return ['diterima', 'Diterima']; }
+        return ['menunggu', 'Menunggu ditinjau'];
+    }
+
+    /**
+     * Label kolom per domain, supaya satu view detail melayani keduanya.
+     *
+     * Dipindah ke sini dari `Rekam_Tinjauan` (private) saat layar Pantau
+     * superadmin lahir dan butuh label yang sama persis. Menyalinnya berarti
+     * dua daftar nama program yang akan menyimpang — dan yang menyimpang di
+     * sini bukan tampilan, melainkan arti angkanya.
+     */
+    public function label_domain($domain)
+    {
+        if ($domain === 'perumahan') {
+            return [
+                'sumber' => [
+                    'apbd_kabkota' => 'APBD Kabupaten/Kota', 'apbn_bsps' => 'APBN BSPS (dari Kementerian PKP)',
+                    'apbn_dak' => 'APBN DAK', 'apbn_kemensos' => 'APBN Kemensos',
+                    'apbn_dana_desa' => 'APBN Dana Desa', 'apbn_kl_lain' => 'APBN dari Kementerian/Lembaga Lain',
+                    'baznas_ri' => 'BAZNAS RI', 'baznas_kabkota' => 'BAZNAS Kab/Kota',
+                    'csr' => 'CSR', 'dana_lainnya' => 'Dana Lainnya',
+                ],
+                'program' => [
+                    'pk_rtlh' => 'PK RTLH', 'pb_rtlh' => 'PB RTLH', 'pb_backlog' => 'PB BACKLOG',
+                    'pk_bencana' => 'PK BENCANA', 'pb_bencana' => 'PB BENCANA', 'pb_relokasi' => 'PB RELOKASI',
+                ],
+            ];
+        }
+        return [
+            'indikator' => [
+                'bangunan_gedung' => 'Bangunan Gedung', 'jalan_lingkungan' => 'Jalan Lingkungan',
+                'air_minum' => 'Air Minum', 'drainase' => 'Drainase', 'air_limbah' => 'Air Limbah',
+                'persampahan' => 'Persampahan', 'proteksi_kebakaran' => 'Proteksi Kebakaran',
+            ],
+            'sumber' => [
+                'apbn' => 'APBN', 'apbd_provinsi' => 'APBD Provinsi', 'apbd_kabkota' => 'APBD Kab/Kota',
+                'dana_desa' => 'Dana Desa', 'csr' => 'CSR', 'baznas' => 'Baznas',
+                'dana_lainnya' => 'Dana Lainnya',
+            ],
+        ];
+    }
+
     /** Detail satu laporan untuk peninjau bidang. NULL kalau beda domain. */
     public function laporan_bidang($laporan_id, $domain)
     {

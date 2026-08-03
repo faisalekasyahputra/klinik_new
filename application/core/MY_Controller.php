@@ -665,6 +665,31 @@ class MY_Controller extends CI_Controller {
                 $terbuka[$naik] = TRUE;
                 $naik = $per_key[$naik]['parent'];
             }
+
+            /**
+             * Dan SELURUH keturunannya, bukan cuma anak langsung.
+             *
+             * Sebelum ini, mendarat di "Rekam Data" membuka Perumahan & Kawasan
+             * tetapi meninggalkan Rekap dan Riwayat di bawahnya terlipat — dua
+             * tingkat, jadi butuh dua klik caret lagi untuk melihat layar yang
+             * memang dicari. Dinas melaporkannya sebagai "rekap/submit tidak
+             * ada" (revisi 3 Agt 2026 butir 10); layarnya ada sejak 30 Jul,
+             * yang tidak ada adalah jalan masuk yang terlihat.
+             *
+             * Cakupannya sempit dengan sendirinya: hanya cabang yang SEDANG
+             * dibuka yang ikut terbentang. Di halaman lain tujuh entri Rekam
+             * Data tetap menyusut jadi satu, yang memang alasan penyarangan itu
+             * dibuat.
+             */
+            $turun = [$item['key']];
+            while ($turun) {
+                $kini = array_pop($turun);
+                foreach ($anak[$kini] ?? [] as $cucu) {
+                    if ( ! empty($terbuka[$cucu['key']])) { continue; }
+                    $terbuka[$cucu['key']] = TRUE;
+                    $turun[] = $cucu['key'];
+                }
+            }
         }
 
         $bangun = function ($key) use (&$bangun, $anak, $terbuka) {

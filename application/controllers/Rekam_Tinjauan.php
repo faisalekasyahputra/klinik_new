@@ -68,7 +68,10 @@ class Rekam_Tinjauan extends Admin_Bidang_Controller {
             'kabupaten'  => $kabupaten,
             'isi'        => $isi,
             'laporan'    => $isi['laporan'],
-            'label'      => $this->label_domain(),
+            'label'      => $this->rd->label_domain($this->domain),
+            // Layar INI yang memutuskan. View yang sama juga dipakai Pantau
+            // Rekam Data (superadmin) yang read-only, dan di sana nilainya FALSE.
+            'boleh_putuskan' => TRUE,
         ]);
     }
 
@@ -129,35 +132,8 @@ class Rekam_Tinjauan extends Admin_Bidang_Controller {
         redirect('Rekam_Tinjauan');
     }
 
-    /** Label per domain supaya satu view detail melayani keduanya. */
-    private function label_domain()
-    {
-        if ($this->domain === 'perumahan') {
-            return [
-                'sumber' => [
-                    'apbd_kabkota' => 'APBD Kabupaten/Kota', 'apbn_bsps' => 'APBN BSPS (dari Kementerian PKP)',
-                    'apbn_dak' => 'APBN DAK', 'apbn_kemensos' => 'APBN Kemensos',
-                    'apbn_dana_desa' => 'APBN Dana Desa', 'apbn_kl_lain' => 'APBN dari Kementerian/Lembaga Lain',
-                    'baznas_ri' => 'BAZNAS RI', 'baznas_kabkota' => 'BAZNAS Kab/Kota',
-                    'csr' => 'CSR', 'dana_lainnya' => 'Dana Lainnya',
-                ],
-                'program' => [
-                    'pk_rtlh' => 'PK RTLH', 'pb_rtlh' => 'PB RTLH', 'pb_backlog' => 'PB BACKLOG',
-                    'pk_bencana' => 'PK BENCANA', 'pb_bencana' => 'PB BENCANA', 'pb_relokasi' => 'PB RELOKASI',
-                ],
-            ];
-        }
-        return [
-            'indikator' => [
-                'bangunan_gedung' => 'Bangunan Gedung', 'jalan_lingkungan' => 'Jalan Lingkungan',
-                'air_minum' => 'Air Minum', 'drainase' => 'Drainase', 'air_limbah' => 'Air Limbah',
-                'persampahan' => 'Persampahan', 'proteksi_kebakaran' => 'Proteksi Kebakaran',
-            ],
-            'sumber' => [
-                'apbn' => 'APBN', 'apbd_provinsi' => 'APBD Provinsi', 'apbd_kabkota' => 'APBD Kab/Kota',
-                'dana_desa' => 'Dana Desa', 'csr' => 'CSR', 'baznas' => 'Baznas',
-                'dana_lainnya' => 'Dana Lainnya',
-            ],
-        ];
-    }
+    // `label_domain()` DIPINDAH ke Rekam_data_model 4 Agt 2026, saat layar
+    // Pantau superadmin butuh label yang sama persis. Dua salinan daftar nama
+    // program akan menyimpang, dan yang menyimpang di situ bukan tampilan
+    // melainkan arti angkanya.
 }

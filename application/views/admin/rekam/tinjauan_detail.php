@@ -14,14 +14,32 @@ $laporan_id = (int) $laporan['id'];
 $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
 
 $sudah_ditinjau = $laporan['status'] === 'terkirim' && ! empty($laporan['reviewed_at']);
-$bisa_diputus   = $laporan['status'] === 'terkirim' && ! $sudah_ditinjau;
+
+/**
+ * DUA syarat, dan keduanya harus benar.
+ *
+ * `$bisa_diputus` soal KEADAAN laporan; `$boleh_putuskan` soal KEWENANGAN
+ * pembacanya. View ini kini melayani dua layar: `Rekam_Tinjauan` (admin bidang,
+ * memutuskan) dan `Admin_Rekam_Data` (superadmin, memantau — read-only).
+ *
+ * Default-nya FALSE, bukan TRUE. Kalau kelak ada layar ketiga yang lupa
+ * mengirim nilai ini, yang terjadi adalah tombolnya hilang — bukan tombol
+ * keputusan yang muncul di layar yang tidak berwenang. Salah arah default di
+ * sini berarti dua jalur tulis ke keputusan yang sama, persis masalah yang
+ * dihindari Admin_Aduan.
+ */
+$boleh_putuskan = ! empty($boleh_putuskan);
+$bisa_diputus   = $boleh_putuskan && $laporan['status'] === 'terkirim' && ! $sudah_ditinjau;
+
+// Tautan kembali mengikuti layar yang memanggil, bukan dipatok ke Rekam_Tinjauan.
+$url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
 ?>
 
 <div class="space-y-4">
 
   <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
     <div class="flex flex-wrap items-center gap-3">
-      <a href="<?= base_url('Rekam_Tinjauan') ?>" class="text-sm text-blue-600 hover:underline dark:text-blue-400">&larr; Daftar</a>
+      <a href="<?= base_url($url_kembali) ?>" class="text-sm text-blue-600 hover:underline dark:text-blue-400">&larr; Daftar</a>
       <span class="rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-black/20">
         <b class="text-gray-900 dark:text-white"><?= $e($kabupaten) ?></b>
         · <?= $e($nama_tw[(int) $laporan['triwulan']] ?? $laporan['triwulan']) ?> <?= (int) $laporan['tahun'] ?>
@@ -233,6 +251,11 @@ $bisa_diputus   = $laporan['status'] === 'terkirim' && ! $sudah_ditinjau;
         </form>
       </div>
     </section>
+  <?php elseif ( ! $boleh_putuskan): ?>
+    <p class="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-white/10 dark:bg-black/20 dark:text-brand-muted">
+      <i class="ph ph-eye mr-1"></i> Halaman ini <b>hanya baca</b>. Keputusan terima atau minta
+      perbaikan tetap kewenangan Admin Bidang <?= $e(ucfirst($domain)) ?>.
+    </p>
   <?php elseif ($sudah_ditinjau): ?>
     <p class="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-white/10 dark:bg-black/20 dark:text-brand-muted">
       Laporan ini sudah <b>diterima</b> pada <?= $e($laporan['reviewed_at']) ?>. Tidak ada

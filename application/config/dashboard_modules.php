@@ -239,6 +239,23 @@ $config['dashboard_modules'] = [
         'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'Aduan Warga',
     ],
+    // Pandangan superadmin atas Rekam Data — read-only lintas kabupaten DAN
+    // lintas domain. Tanpa entri ini, superadmin (kursi yang dipakai reviewer
+    // dinas) tidak punya satu pun layar rekam data, dan fitur yang sudah
+    // lengkap sejak 30 Jul terbaca sebagai "belum ada".
+    //
+    // TANPA `badge`/`pending_where`: papan ini bukan antrean kerja superadmin.
+    // Yang menunggu keputusan adalah antrean Admin Bidang (`rekam_tinjauan`),
+    // dan badge di dua tempat untuk satu tumpukan pekerjaan membuat dua orang
+    // mengira itu tugasnya.
+    'rekam_pantau' => [
+        'label' => 'Pantau Rekam Data', 'icon' => 'ph-chart-line-up',
+        'url'   => 'Admin_Rekam_Data', 'group' => 'Pemantauan', 'order' => 20,
+        'roles' => ['admin'], 'scope' => null,
+        'table' => 'rd_laporan', 'review_by' => 'admin_bidang',
+        'status_column' => 'status', 'owner_column' => 'kabupaten_id',
+        'public_where' => NULL, 'editable_where' => NULL,
+    ],
     'kemitraan' => [
         'label' => 'Kelola KKN/Magang', 'icon' => 'ph-graduation-cap',
         'url'   => 'Admin_Kemitraan', 'group' => 'Tindak Lanjut', 'order' => 30,
