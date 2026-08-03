@@ -167,8 +167,13 @@ cek(strpos($akun_kosong, 'Mulai Pendataan Warga') !== FALSE
 // =========================================================== 1. ISTILAH
 echo "\n== Istilah: dinas menghapus \"divisi\", struktur resminya lima BIDANG ==\n";
 $papan = http('mhs', 'KemitraanPortal/magang');
-cek(stripos($papan, 'Slot Magang per Bidang') !== FALSE, 'Papan publik: judul menyebut Bidang');
-cek(preg_match('/>\s*Divisi\s*</i', $papan) === 0, 'Papan publik: tidak ada kepala kolom "Divisi"');
+// Judul papan berubah 3 Agt 2026 (revisi dinas): matriks bidang x 12 bulan
+// diganti daftar kebutuhan per bidang, jadi "Slot Magang per Bidang" menjadi
+// "Kebutuhan Magang <tahun>". Yang DIJAGA tetap sama — istilah "divisi" tidak
+// boleh kembali, dan papan harus menyebut bidang.
+cek(stripos($papan, 'Kebutuhan Magang') !== FALSE, 'Papan publik: judul menyebut kebutuhan magang');
+cek(stripos($papan, 'Kebutuhan mahasiswa magang pada tiap bidang') !== FALSE, 'Papan publik: subjudul menyebut bidang');
+cek(preg_match('/\bdivisi\b/i', $papan) === 0, 'Papan publik: kata "divisi" nol kemunculan');
 
 $adm_index = http('adm', 'Admin_Kemitraan');
 cek(stripos($adm_index, 'Bidang/Tema') !== FALSE, 'Layar admin: kolom "Bidang/Tema"');
@@ -189,10 +194,42 @@ foreach ($res ?: [] as $r) { $tahun_berslot[] = (int) $r['tahun']; }
 if ( ! $tahun_berslot) {
     cek(TRUE, 'Tidak ada slot sama sekali — pemeriksaan tahun dilewati (bukan kegagalan)');
 } else {
-    preg_match('/Slot Magang per Bidang\s*(\d{4})/i', $papan, $m);
+    preg_match('/Kebutuhan Magang\s*(\d{4})/i', $papan, $m);
     $tahun_papan = (int) ($m[1] ?? 0);
     cek(in_array($tahun_papan, $tahun_berslot, TRUE),
         "Papan publik mendarat di tahun berslot (tampil {$tahun_papan}, berslot: " . implode(',', $tahun_berslot) . ')');
+
+    /**
+     * Papan baru (daftar kebutuhan) harus MENGHITUNG, bukan sekadar mendaftar.
+     *
+     * Bentuk lamanya matriks 12 bulan yang tiap selnya menampilkan angka; yang
+     * baru meringkasnya jadi satu keadaan per bidang. Peringkasan itulah yang
+     * paling mudah salah — kalau ia memakai bulan paling PADAT alih-alih paling
+     * longgar, bidang yang masih punya bulan kosong akan tertulis "terpenuhi"
+     * dan pendaftar yang seharusnya diterima berbalik pergi. Diuji terhadap
+     * kenyataan DB, bukan terhadap teks yang kebetulan ada.
+     */
+    $bidang_longgar = $GLOBALS['db']->query(
+        'SELECT b.nama
+           FROM kkn_magang_bidang mb
+           JOIN bidang b ON b.kode = mb.bidang_kode
+          WHERE mb.aktif = 1
+            AND EXISTS (SELECT 1 FROM kkn_magang_slot s
+                         WHERE s.bidang_kode = mb.bidang_kode AND s.tahun = ' . (int) $tahun_papan . ')
+          ORDER BY b.nama LIMIT 1')->fetch_assoc();
+
+    if ($bidang_longgar) {
+        cek(strpos($papan, $bidang_longgar['nama']) !== FALSE,
+            'Papan menyebut bidang yang punya slot (' . $bidang_longgar['nama'] . ')');
+        cek(preg_match('/Kebutuhan\s*<strong[^>]*>\s*\d+ mahasiswa/i', $papan) === 1
+            || preg_match('/Kebutuhan\s*\d+ mahasiswa/i', strip_tags($papan)) === 1,
+            'Papan menyebut ANGKA kebutuhan, bukan cuma nama bidang');
+        cek(preg_match('/Masih menerima|Sudah terpenuhi|Belum dibuka/i', $papan) === 1,
+            'Tiap bidang membawa keadaan terbaca (menerima/terpenuhi/belum dibuka)');
+    }
+
+    // Matriks lama harus benar-benar lenyap, bukan cuma tersembunyi.
+    cek(preg_match('/Tidak Tersedia/i', $papan) === 0, 'Sisa matriks lama ("Tidak Tersedia") sudah tidak ada');
 
     $adm_slot = http('adm', 'Admin_Kemitraan/slot');
     preg_match('/Bulan Terbuka\s*(\d{4})/i', $adm_slot, $m2);

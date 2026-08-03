@@ -37,34 +37,56 @@ class KemitraanPortal extends Public_Controller
         $peta   = $this->slot->peta_slot($tahun);
         $terisi = $this->slot->peta_terisi();
 
-        // Tiap sel membawa keadaannya sendiri, bukan sekadar hijau/merah:
-        // "tutup" tidak sama dengan "dibuka tapi sudah penuh", dan pembaca
-        // berhak tahu bedanya sebelum menyusun periodenya.
+        /**
+         * SATU KEADAAN PER BIDANG, bukan matriks 12 bulan.
+         *
+         * Revisi dinas 3 Agt 2026: "jadwalnya hilangkan saja, langsung ke list
+         * kebutuhan magangnya saja, nanti ada keterangan kebutuhan berapa orang,
+         * terpenuhi belum terpenuhi."
+         *
+         * Yang berubah HANYA yang dibaca orang. Mesin kuotanya tidak disentuh:
+         * `periksa_slot()` tetap menolak per-bulan dan per-hari saat mendaftar,
+         * dan formulir tetap meminta periode. Papan ini menjawab satu pertanyaan
+         * — "bidang ini masih menerima atau tidak" — yang dulu harus disimpulkan
+         * sendiri dari 12 kotak berwarna.
+         *
+         * "Terpenuhi" ditentukan dari BULAN YANG PALING LONGGAR, bukan dari
+         * rata-rata atau dari puncak. Alasannya: pendaftar cuma perlu SATU bulan
+         * yang masih muat. Memakai puncak akan menulis "terpenuhi" pada bidang
+         * yang sebenarnya masih punya tiga bulan kosong — menolak orang yang
+         * seharusnya diterima, dan papan yang berbohong ke arah itu jauh lebih
+         * mahal daripada yang berbohong sebaliknya.
+         */
         $slot_magang = [];
         foreach ($this->slot->bidang() as $bidang) {
-            $sel = [];
+            $kuota   = (int) $bidang->kuota;
+            $bulan_dibuka = [];
+            $sisa_terbaik = NULL;   // NULL = belum ada satu bulan pun yang dibuka
+
             foreach (Kemitraan_slot_model::nama_bulan() as $nomor => $label) {
+                if (empty($peta[$bidang->kode][$nomor])) { continue; }
+
+                $bulan_dibuka[] = $label;
                 $isi  = (int) ($terisi[$bidang->kode][$tahun . '-' . $nomor] ?? 0);
-                $slot = $peta[$bidang->kode][$nomor] ?? NULL;
-
-                if ( ! $slot) {
-                    $sel[$label] = ['keadaan' => 'tutup', 'teks' => 'Tidak Tersedia', 'rentang' => ''];
-                    continue;
-                }
-
-                // Rentang ditampilkan HANYA kalau bukan sebulan penuh. Menulis
-                // "1–30" di setiap sel yang utuh cuma menambah yang harus dibaca.
-                $awal_bulan  = date('Y-m-01', strtotime($slot->tgl_mulai));
-                $akhir_bulan = date('Y-m-t', strtotime($slot->tgl_mulai));
-                $rentang = ($slot->tgl_mulai === $awal_bulan && $slot->tgl_selesai === $akhir_bulan)
-                    ? ''
-                    : (int) date('j', strtotime($slot->tgl_mulai)) . '–' . (int) date('j', strtotime($slot->tgl_selesai));
-
-                $sel[$label] = $isi >= (int) $bidang->kuota
-                    ? ['keadaan' => 'penuh', 'teks' => 'Penuh ' . $isi . '/' . (int) $bidang->kuota, 'rentang' => $rentang]
-                    : ['keadaan' => 'buka',  'teks' => 'Sisa ' . ((int) $bidang->kuota - $isi),      'rentang' => $rentang];
+                $sisa = max(0, $kuota - $isi);
+                if ($sisa_terbaik === NULL || $sisa > $sisa_terbaik) { $sisa_terbaik = $sisa; }
             }
-            $slot_magang[] = ['divisi' => $bidang->nama, 'kuota' => (int) $bidang->kuota, 'sel' => $sel];
+
+            if ($sisa_terbaik === NULL) {
+                $keadaan = 'tutup';   // tidak satu bulan pun dibuka tahun ini
+            } elseif ($sisa_terbaik > 0) {
+                $keadaan = 'menerima';
+            } else {
+                $keadaan = 'terpenuhi';
+            }
+
+            $slot_magang[] = [
+                'bidang'       => $bidang->nama,
+                'kuota'        => $kuota,
+                'keadaan'      => $keadaan,
+                'sisa'         => (int) $sisa_terbaik,
+                'bulan_dibuka' => $bulan_dibuka,
+            ];
         }
 
         $this->render('pages/kemitraan_portal/magang', [
