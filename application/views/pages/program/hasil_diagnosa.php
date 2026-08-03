@@ -71,11 +71,35 @@ $guides = [
                         <p class="mb-2 inline-flex items-center gap-2 rounded-full bg-[#d6fb00]/35 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#00545f]">
                             <i class="fa-solid fa-sparkles"></i> Hasil Diagnosa
                         </p>
+                        <?php
+                        /**
+                         * Judul menyebut NAMA PROGRAMNYA, bukan kalimat umum.
+                         *
+                         * Revisi dinas 3 Agt 2026: "hasil diagnosa nanti cukup
+                         * program yang cocok untuk anda adalah x, tata caranya ini."
+                         * Halaman lama membuka dengan "Program yang sesuai dengan
+                         * Anda" lalu memaksa pembaca memindai kartu untuk tahu
+                         * jawabannya — padahal jawabannya sudah dihitung.
+                         */
+                        $program_utama = '';
+                        if ( ! empty($programs)) {
+                            $program_utama = (string) $read_value($programs[0], 'title', '');
+                        }
+                        ?>
                         <h1 class="max-w-2xl text-3xl font-black leading-tight text-[color:var(--portal-text)] sm:text-4xl">
-                            Program yang sesuai dengan Anda
+                            <?php if ($program_utama !== ''): ?>
+                                Program yang cocok untuk Anda adalah
+                                <span class="text-[color:var(--portal-brand)]"><?= $escape($program_utama) ?></span>
+                            <?php else: ?>
+                                Hasil diagnosa Anda
+                            <?php endif; ?>
                         </h1>
                         <p class="mt-2 max-w-xl text-sm leading-relaxed text-[color:var(--portal-text-muted)]">
-                            Rekomendasi ini disusun dari jawaban survei Anda. Pelajari syaratnya sebelum melanjutkan pengajuan.
+                            <?php if (count($programs) > 1): ?>
+                                Tata caranya ada di bawah. Ada <?= count($programs) - 1 ?> program lain yang juga cocok — bisa Anda bandingkan sebelum memilih.
+                            <?php else: ?>
+                                Tata caranya ada di bawah. Rekomendasi ini disusun dari jawaban survei Anda.
+                            <?php endif; ?>
                         </p>
                     </div>
 
@@ -136,7 +160,9 @@ $guides = [
                                         </span>
                                     </div>
 
-                                    <p class="mt-8 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--portal-text-muted)]">Program yang didapat<?= count($programs) > 1 ? ' · ' . ($index + 1) : '' ?></p>
+                                    <?php // Program pertama = yang disebut di judul; sisanya jelas ditandai
+                                          // sebagai alternatif supaya pembaca tahu mana jawaban utamanya. ?>
+                                    <p class="mt-8 text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--portal-text-muted)]"><?= $index === 0 ? 'Program yang cocok' : 'Alternatif · ' . ($index + 1) ?></p>
                                     <h2 class="mt-2 text-2xl font-black leading-tight text-[color:var(--portal-text)] sm:text-3xl"><?= $escape($title) ?></h2>
                                     <p class="mt-3 max-w-md text-sm leading-relaxed text-[color:var(--portal-text-muted)]"><?= $escape($description) ?></p>
                                     <div class="mt-6 inline-flex items-center gap-2 text-sm font-bold" style="color: <?= $escape($color) ?>;">
@@ -145,7 +171,7 @@ $guides = [
                                     </div>
                                     <label class="mt-6 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[color:var(--portal-border)] bg-white px-3 py-2.5 text-xs font-bold text-[color:var(--portal-text)] transition hover:border-[color:var(--portal-brand)]">
                                         <input type="radio" name="program_kode" value="<?= $escape($kode) ?>" required class="h-4 w-4 accent-[color:var(--portal-brand)]">
-                                        Pilih program ini untuk diajukan
+                                        Pilih program ini
                                     </label>
                                 </div>
                             </div>
@@ -183,9 +209,25 @@ $guides = [
 
                     <?php if (!empty($programs)): ?>
                             <div class="flex flex-col items-center justify-between gap-4 rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-5 py-4 sm:flex-row">
-                                <p class="text-center text-sm text-[color:var(--portal-text-muted)] sm:text-left"><i class="fa-solid fa-circle-info mr-1 text-[color:var(--portal-brand)]"></i> Pilih satu program yang ingin Anda ajukan.</p>
+                                <?php
+                                /**
+                                 * "Simpan Data", bukan "Ajukan/Usulkan/Daftar" —
+                                 * revisi dinas 3 Agt 2026.
+                                 *
+                                 * Yang terjadi di belakang TIDAK berubah (keputusan
+                                 * user): datanya tetap masuk antrean + terbit nomor
+                                 * tiket supaya admin bisa menindaklanjuti. Yang
+                                 * diperbaiki adalah janjinya — "Ajukan" terdengar
+                                 * seperti melamar program dan bisa membuat warga
+                                 * mengira dirinya sudah terdaftar sebagai penerima.
+                                 * Keterangan di sebelahnya menyebutkan tiket, supaya
+                                 * "simpan" tidak lantas terbaca sebagai "cuma catatan
+                                 * pribadi".
+                                 */
+                                ?>
+                                <p class="text-center text-sm text-[color:var(--portal-text-muted)] sm:text-left"><i class="fa-solid fa-circle-info mr-1 text-[color:var(--portal-brand)]"></i> Pilih satu program, lalu simpan. Anda akan menerima nomor tiket untuk memantau tindak lanjutnya.</p>
                                 <button type="submit" class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[color:var(--portal-brand)] px-5 py-2.5 text-sm font-black text-white transition hover:-translate-y-0.5 hover:brightness-95">
-                                    Ajukan Program Terpilih <i class="fa-solid fa-paper-plane"></i>
+                                    Simpan Data <i class="fa-solid fa-floppy-disk"></i>
                                 </button>
                             </div>
                         </form>

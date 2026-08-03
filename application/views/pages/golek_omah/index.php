@@ -20,7 +20,10 @@
             <div class="relative z-10">
                 <i class="fa-solid fa-magnifying-glass-location mb-2.5 transition-transform duration-500 group-hover:scale-110"
                    style="font-size: 28px; color: var(--portal-icon);"></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 group-hover:text-[color:var(--portal-text)] transition-colors">Cari Rumah ?</h4>
+                <?php // "Cari Rumah" -> "Nggoleki Omah" (revisi dinas 3 Agt 2026).
+                      // URL/route `cari_rumah` sengaja TIDAK ikut berubah: ia dipakai
+                      // TAB_GROUPS di footer.php dan kemungkinan sudah di-bookmark. ?>
+                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 group-hover:text-[color:var(--portal-text)] transition-colors">Nggoleki Omah</h4>
                 <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">(Rumah Subsidi dan Non Subsidi)</p>
             </div>
             <div class="relative z-10 mt-auto pt-2.5">

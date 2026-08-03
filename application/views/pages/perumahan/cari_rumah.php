@@ -1,7 +1,7 @@
 <div class="py-4 sm:py-6 px-1 sm:px-2 relative font-outfit">
     <!-- Header -->
     <div class="text-center mb-10" data-aos="fade-down">
-        <h3 class="text-3xl sm:text-4xl font-extrabold text-[color:var(--portal-text)] tracking-tight mb-2">Cari <span class="text-[color:var(--portal-brand)]">Perumahan</span></h3>
+        <h3 class="text-3xl sm:text-4xl font-extrabold text-[color:var(--portal-text)] tracking-tight mb-2">Nggoleki <span class="text-[color:var(--portal-brand)]">Omah</span></h3>
         <p class="text-[color:var(--portal-text-muted)] text-xs">Data real-time dari Sikumbang — Tapera</p>
     </div>
 

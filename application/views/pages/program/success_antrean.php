@@ -15,9 +15,13 @@ $escape = static function ($value) {
                 <i class="fa-solid fa-check"></i>
             </div>
             <p class="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--portal-brand)]">Antrean Klinik PKP</p>
-            <h1 id="success-title" class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)] sm:text-4xl">Pengajuan terkirim</h1>
+            <?php // Istilah "pengajuan" disapu dari jalur ini (revisi dinas 3 Agt
+                  // 2026) — halaman sukses ikut, kalau tidak tombolnya berbunyi
+                  // "Simpan Data" lalu layar berikutnya bilang "Pengajuan
+                  // terkirim", dan warga tidak tahu mana yang benar. ?>
+            <h1 id="success-title" class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)] sm:text-4xl">Data Anda tersimpan</h1>
             <p class="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-[color:var(--portal-text-muted)]">
-                Data Anda sudah direkam. Simpan nomor tiket ini untuk memantau proses verifikasi pengajuan.
+                Simpan nomor tiket ini untuk memantau tindak lanjutnya oleh petugas.
             </p>
         </div>
 
@@ -41,7 +45,7 @@ $escape = static function ($value) {
                 <div>
                     <h2 class="text-sm font-black text-[color:var(--portal-text)]">Langkah berikutnya</h2>
                     <p class="mt-1 text-sm leading-relaxed text-[color:var(--portal-text-muted)]">
-                        Petugas akan memeriksa data Anda dalam 3×24 jam kerja. Pantau melalui tiket tanpa login, atau masuk ke akun untuk melihat riwayat pengajuan.
+                        Petugas akan memeriksa data Anda dalam 3×24 jam kerja. Pantau melalui tiket tanpa login, atau masuk ke akun untuk melihat riwayatnya.
                     </p>
                 </div>
             </div>

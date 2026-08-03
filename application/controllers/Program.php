@@ -343,7 +343,9 @@ class Program extends Public_Controller {
         $ticket_code = $result['ticket_code'];
         $this->session->unset_userdata(['solusi_pembiayaan_hasil', 'solusi_pembiayaan_identitas']);
         $this->session->set_flashdata('ticket_code', $ticket_code);
-        $this->session->set_flashdata('success', 'Pengajuan berhasil direkam. Nomor tiket Anda: ' . $ticket_code);
+        // Istilah "pengajuan" disapu dari jalur diagnosa (revisi dinas 3 Agt 2026);
+        // tiketnya tetap terbit karena tindak lanjut petugas tidak berubah.
+        $this->session->set_flashdata('success', 'Data Anda berhasil disimpan. Nomor tiket: ' . $ticket_code);
         redirect('Program/success');
     }
 
