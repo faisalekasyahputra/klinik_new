@@ -19,7 +19,7 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
             <i class="fa-solid fa-graduation-cap" aria-hidden="true"></i>
         </div>
         <p class="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--portal-brand)]">Kemitraan</p>
-        <h1 class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)]"><?= $jenis === 'kkn' ? 'Daftar KKN Tematik' : 'Daftar Magang / Kerja Praktik' ?></h1>
+        <h1 class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)]"><?= $jenis === 'kkn' ? 'Daftar KKN Kemitraan' : 'Daftar Magang / Kerja Praktik' ?></h1>
         <p class="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--portal-text-muted)]">Isi formulir di bawah, tim kami akan meninjau dan menghubungi Anda lewat akun terdaftar.</p>
     </div>
 

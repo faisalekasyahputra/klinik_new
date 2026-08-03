@@ -208,6 +208,44 @@ class Index extends MY_Controller {
 		$this->load->view('layouts/main',$data);
 
 	}
+	/**
+	 * Saring hasil Sikumbang menurut status rumah.
+	 *
+	 * TIGA nilai, bukan dua — dan itulah perbaikannya. Sampai 3 Agt 2026 kode ini
+	 * cuma punya cabang `semua` dan "selain itu", dan cabang "selain itu" HANYA
+	 * menyimpan baris yang PUNYA tipe subsidi. Halaman cari rumah mengirim
+	 * `komersil` saat toggle dimatikan, jatuh ke cabang itu, dan menerima daftar
+	 * yang persis sama dengan saat toggle menyala.
+	 *
+	 * Jadi tombol "Hanya Rumah Subsidi" tidak pernah bisa dimatikan — mematikannya
+	 * tidak mengubah apa pun, dan tidak ada satu pun pesan yang memberi tahu.
+	 * Ketahuan saat revisi dinas meminta toggle itu diganti dua tombol.
+	 *
+	 * `komersil` = tidak ada satu pun tipe rumah berstatus subsidi di lokasi itu.
+	 * Bukan "ada tipe komersil" — satu lokasi bisa memuat keduanya, dan lokasi
+	 * campuran memang layak muncul di daftar subsidi.
+	 */
+	private function saring_status_rumah($raw_list, $status_rumah) {
+		if ( ! is_array($raw_list)) { return []; }
+		if ($status_rumah === 'semua') { return $raw_list; }
+
+		$hasil = [];
+		foreach ($raw_list as $row) {
+			$punya_subsidi = FALSE;
+			if ( ! empty($row['tipeRumah']) && is_array($row['tipeRumah'])) {
+				foreach ($row['tipeRumah'] as $tipe) {
+					if (isset($tipe['status']) && strtolower($tipe['status']) === 'subsidi') {
+						$punya_subsidi = TRUE;
+						break;
+					}
+				}
+			}
+			$cocok = $status_rumah === 'komersil' ? ! $punya_subsidi : $punya_subsidi;
+			if ($cocok) { $hasil[] = $row; }
+		}
+		return $hasil;
+	}
+
 	public function cari_wil() {
 		$kode_wilayah = $this->input->get('kodeWilayah') ? $this->input->get('kodeWilayah') : '3374';
         $keyword      = $this->input->get('keyword') ? $this->input->get('keyword') : '';
@@ -253,27 +291,7 @@ class Index extends MY_Controller {
 		$decoded = json_decode($response, true);
 		$raw_list = isset($decoded['data']) ? $decoded['data'] : [];
 
-		$list_final = [];
-		if (is_array($raw_list)) {
-			foreach ($raw_list as $row) {
-				if ($status_rumah === 'semua') {
-					$list_final[] = $row;
-				} else {
-					$punya_subsidi = false;
-					if (!empty($row['tipeRumah'])) {
-						foreach ($row['tipeRumah'] as $tipe) {
-							if (isset($tipe['status']) && strtolower($tipe['status']) === 'subsidi') {
-								$punya_subsidi = true;
-								break; 
-							}
-						}
-					}
-					if ($punya_subsidi) {
-						$list_final[] = $row;
-					}
-				}
-			}
-		}
+		$list_final = $this->saring_status_rumah($raw_list, $status_rumah);
 
 		$datacontent['results'] = $list_final;
 		$this->load->view('components/cards/rumah', $datacontent);
@@ -328,24 +346,7 @@ class Index extends MY_Controller {
 			$decoded_data = json_decode($response, true);
 			$raw_list = isset($decoded_data['data']) ? $decoded_data['data'] : [];
 
-			if (is_array($raw_list)) {
-				foreach ($raw_list as $row) {
-					if ($status_rumah === 'semua') {
-						$list_final[] = $row;
-					} else {
-						$punya_subsidi = false;
-						if (!empty($row['tipeRumah'])) {
-							foreach ($row['tipeRumah'] as $tipe) {
-								if (isset($tipe['status']) && strtolower($tipe['status']) === 'subsidi') {
-									$punya_subsidi = true;
-									break; 
-								}
-							}
-						}
-						if ($punya_subsidi) { $list_final[] = $row; }
-					}
-				}
-			}
+			$list_final = $this->saring_status_rumah($raw_list, $status_rumah);
 		}
 
 		// Jika ada data perumahan yang lolos filter

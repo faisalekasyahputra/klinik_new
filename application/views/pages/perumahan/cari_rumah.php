@@ -43,14 +43,37 @@
                         <option value="subsidi-tertinggi">Harga Tertinggi</option>
                     </select>
                 </div>
+                <?php
+                /**
+                 * DUA TOMBOL, bukan satu toggle (revisi dinas 3 Agt 2026).
+                 *
+                 * Toggle lamanya bukan cuma kurang jelas — ia BERBOHONG. Ia
+                 * mengirim `komersil` saat dimatikan, sementara filter di
+                 * `Index::cari_wil()` hanya mengenal `semua` sebagai "jangan
+                 * saring", jadi mematikannya menghasilkan daftar yang persis
+                 * sama. Orang mengira sudah melihat rumah non-subsidi padahal
+                 * tidak pernah. Filternya ikut diperbaiki di commit yang sama
+                 * (`Index::saring_status_rumah()`).
+                 *
+                 * Dua pilihan eksplisit juga menghapus pertanyaan yang tidak
+                 * pernah terjawab toggle: "kalau dimatikan, saya melihat SEMUA
+                 * rumah atau NON-subsidi saja?"
+                 */
+                ?>
                 <div class="lg:col-span-9 flex lg:justify-end items-center mt-2 lg:mt-0">
-                    <label class="inline-flex items-center cursor-pointer group">
-                        <input id="status_subsidi" value="subsidi" onchange="cari_wil()" type="checkbox" class="sr-only" checked>
-                        <div class="relative w-11 h-6 rounded-full transition-all duration-300 bg-[color:var(--portal-brand)] border border-[color:var(--portal-border)]" id="toggle-bg">
-                            <div class="absolute top-[2px] left-[2px] w-[18px] h-[18px] rounded-full transition-all duration-300 bg-[color:var(--portal-bg)]" id="toggle-circle" style="transform: translateX(20px);"></div>
-                        </div>
-                        <span class="ml-3 text-sm font-semibold text-[color:var(--portal-text-muted)] group-hover:text-[color:var(--portal-text)] transition-colors">Hanya Rumah Subsidi</span>
-                    </label>
+                    <div role="radiogroup" aria-label="Jenis rumah"
+                         class="inline-flex rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-btn-bg)] p-1">
+                        <button type="button" id="btn-subsidi" data-status="subsidi" onclick="pilihStatus('subsidi')"
+                                role="radio" aria-checked="true"
+                                class="rounded-lg px-4 py-2 text-sm font-bold transition-all bg-[color:var(--portal-brand)] text-[#0a1a1f]">
+                            Subsidi
+                        </button>
+                        <button type="button" id="btn-komersil" data-status="komersil" onclick="pilihStatus('komersil')"
+                                role="radio" aria-checked="false"
+                                class="rounded-lg px-4 py-2 text-sm font-bold transition-all text-[color:var(--portal-text-muted)]">
+                            Non Subsidi
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -90,26 +113,36 @@
 </div>
 
 <script>
+/**
+ * Pilihan jenis rumah disimpan di satu variabel, bukan dibaca ulang dari DOM.
+ * `load_more()` dulu membaca checkbox yang sama — kalau kelak tombolnya
+ * berpindah/berganti nama, satu tempat saja yang perlu diperbaiki.
+ */
+window.statusRumahAktif = 'subsidi';
+
+function pilihStatus(status) {
+    if (window.statusRumahAktif === status) { return; }
+    window.statusRumahAktif = status;
+
+    ['subsidi', 'komersil'].forEach(function (s) {
+        var btn = document.getElementById('btn-' + s);
+        if (!btn) { return; }
+        var aktif = (s === status);
+        btn.setAttribute('aria-checked', aktif ? 'true' : 'false');
+        btn.classList.toggle('bg-[color:var(--portal-brand)]', aktif);
+        btn.classList.toggle('text-[#0a1a1f]', aktif);
+        btn.classList.toggle('text-[color:var(--portal-text-muted)]', !aktif);
+    });
+
+    cari_wil();
+}
+
 function cari_wil() {
     var keyword = document.getElementById('keyword').value;
     var kodeWilayah = document.getElementById('kodeWilayah').value;
     var sort = document.getElementById('sort').value;
     var searchBy = document.getElementById('searchBy').value;
-    let isChecked = document.getElementById('status_subsidi').checked;
-    let statusRumah = isChecked ? 'subsidi' : 'komersil';
-    
-    let toggleBg = document.getElementById('toggle-bg');
-    let toggleCircle = document.getElementById('toggle-circle');
-    
-    if (isChecked) {
-        toggleBg.style.backgroundColor = 'var(--portal-brand)';
-        toggleCircle.style.transform = 'translateX(20px)';
-        toggleCircle.style.backgroundColor = 'var(--portal-bg)';
-    } else {
-        toggleBg.style.backgroundColor = 'var(--portal-btn-bg)';
-        toggleCircle.style.transform = 'translateX(0)';
-        toggleCircle.style.backgroundColor = 'var(--portal-text-muted)';
-    }
+    let statusRumah = window.statusRumahAktif || 'subsidi';
 
     jQuery('#temp_rumah').html(`
         <div class="skeleton h-72"></div>
@@ -138,8 +171,7 @@ function load_more_data() {
     var keyword = document.getElementById('keyword').value;
     var sort = document.getElementById('sort').value;
     var searchBy = document.getElementById('searchBy').value;
-    let isChecked = document.getElementById('status_subsidi').checked;
-    let statusRumah = isChecked ? 'subsidi' : 'komersil';
+    let statusRumah = window.statusRumahAktif || 'subsidi';
     
     jQuery('#text-load').text('Sedang Memuat...');
     jQuery.ajax({

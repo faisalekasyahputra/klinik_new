@@ -17,7 +17,7 @@ class KemitraanPortal extends Public_Controller
 
     public function kkn()
     {
-        $this->render('pages/kemitraan_portal/kkn', ['judul' => 'KKN Tematik']);
+        $this->render('pages/kemitraan_portal/kkn', ['judul' => 'KKN Kemitraan']);
     }
 
     /**
@@ -90,7 +90,7 @@ class KemitraanPortal extends Public_Controller
         // "Tema Kegiatan" — itu memang teks bebas, bukan unit kerja, jadi tidak
         // ada slot yang bisa mengaturnya.
         $this->render('pages/kemitraan_portal/daftar', [
-            'judul'      => $jenis === 'kkn' ? 'Daftar KKN Tematik' : 'Daftar Magang dan Kerja Praktik',
+            'judul'      => $jenis === 'kkn' ? 'Daftar KKN Kemitraan' : 'Daftar Magang dan Kerja Praktik',
             'jenis'      => $jenis,
             'nama_akun'  => (string) $this->session->userdata('name'),
             'email_akun' => (string) $this->session->userdata('email'),

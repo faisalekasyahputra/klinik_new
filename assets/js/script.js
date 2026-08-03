@@ -53,7 +53,7 @@
 			role: "pengembang",
 		},
 		// -- Kemitraan children --
-		kkn: { label: "KKN Tematik", parent: "kemitraan", role: "kemitraan" },
+		kkn: { label: "KKN Kemitraan", parent: "kemitraan", role: "kemitraan" },
 		magang: {
 			label: "Pendaftaran Magang",
 			parent: "kemitraan",

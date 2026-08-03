@@ -196,7 +196,7 @@ file_put_contents($pdf, "%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Roo
 try {
     // ------------------------------------------------ halaman informasi publik
     foreach (['KemitraanPortal' => 'Portal kemitraan',
-              'KemitraanPortal/kkn' => 'Halaman KKN Tematik',
+              'KemitraanPortal/kkn' => 'Halaman KKN Kemitraan',
               'KemitraanPortal/magang' => 'Halaman Magang'] as $path => $label) {
         cek(http('anon', $path)['code'] === 200, $label . ' terbuka untuk publik');
     }
