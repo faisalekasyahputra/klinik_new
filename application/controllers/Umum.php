@@ -100,11 +100,6 @@ class Umum extends MY_Controller {
 		// Prefill nama/email kalau user sedang login — kosong untuk tamu.
 		$datacontent['nama_default']  = $this->session->userdata('name') ?: '';
 		$datacontent['email_default'] = $this->session->userdata('email') ?: '';
-		// Pilihan bidang datang dari tabel, bukan dari array yang ditulis ulang
-		// di dalam view — daftar yang sama pernah hidup di empat tempat dan
-		// ketiganya sudah menyimpang dari struktur dinas.
-		$this->load->model('Aduan_model');
-		$datacontent['daftar_bidang'] = $this->Aduan_model->daftar_bidang();
 		$this->render('pages/umum/aduan', $datacontent);
 	}
 
@@ -120,15 +115,11 @@ class Umum extends MY_Controller {
 		$this->form_validation->set_rules('email', 'Email', 'required|valid_email|max_length[100]');
 		$this->form_validation->set_rules('judul', 'Judul', 'required|trim|max_length[150]');
 		$this->form_validation->set_rules('pesan', 'Pesan', 'required|trim|max_length[2000]');
-		// Daftar bidang DIBACA DARI TABEL, bukan dipatok di sini. Versi lama
-		// menuliskannya sebagai literal in_list[...] — salinan ketiga dari daftar
-		// yang sama (tabel `bidang`, dropdown formulir, peta label di model) — dan
-		// ketiganya sudah menyimpang dari struktur dinas yang sebenarnya: menyebut
-		// "pengembang" dan "umum" sebagai bidang, padahal keduanya bukan.
-		// Daftar yang ditulis empat kali adalah daftar yang pasti berselisih.
-		$kode_bidang = implode(',', array_column($this->Aduan_model->daftar_bidang(), 'kode'));
-		$this->form_validation->set_rules('bidang', 'Bidang Tujuan', 'required|in_list[' . $kode_bidang . ']');
-
+		// TIDAK ADA rule `bidang` — dan itu bukan kelalaian. Pelapor tidak lagi
+		// memilih bidang (revisi dinas 3 Agt 2026); nilainya ditetapkan superadmin
+		// lewat Admin_Aduan::triase(). Menerima `bidang` dari POST di sini berarti
+		// siapa pun bisa merutekan aduannya sendiri ke bidang mana pun dengan satu
+		// field tersembunyi — gerbang triase yang dilewati lewat pintu belakang.
 		if ($this->form_validation->run() === FALSE) {
 			$this->session->set_flashdata('error', validation_errors('<li>', '</li>'));
 			redirect('umum/aduan');
@@ -144,8 +135,6 @@ class Umum extends MY_Controller {
 		// boleh kirim aduan dengan user_id NULL.
 		$user_id = $this->is_logged_in() ? $this->get_user_id() : NULL;
 
-		$bidang = $this->input->post('bidang', TRUE);
-
 		// Baris dibuat DULU supaya lampirannya punya folder pemilik sendiri
 		// (private_uploads/aduan/{id}/), pola yang sama dengan dokumen SRP2.
 		$id = $this->Aduan_model->create([
@@ -153,7 +142,11 @@ class Umum extends MY_Controller {
 			'nama'     => $nama,
 			'email'    => $email,
 			'judul'    => $judul,
-			'bidang'   => $bidang,
+			// NULL = masuk antrean triase. Bukan sentinel 'umum' seperti dulu:
+			// NULL tidak cocok dengan WHERE bidang mana pun, jadi aduan yang
+			// belum dirutekan otomatis tidak nyangkut di meja siapa pun tanpa
+			// satu baris kode penjaga. Lihat migrasi 20260701000034.
+			'bidang'   => NULL,
 			'pesan'    => $pesan,
 			'lampiran' => NULL,
 		]);
@@ -164,7 +157,9 @@ class Umum extends MY_Controller {
 			return;
 		}
 
-		$pesan_sukses = 'Aduan Anda berhasil dikirim dan diarahkan ke ' . $this->Aduan_model->bidang_label($bidang) . '. Kami akan segera menindaklanjuti.';
+		// Tidak menjanjikan bidang tujuan — belum ada, dan menyebut satu nama di
+		// sini akan jadi janji yang bisa diingkari triase.
+		$pesan_sukses = 'Aduan Anda berhasil dikirim. Kami akan memeriksa dan meneruskannya ke bidang yang menangani.';
 
 		// Lampiran disimpan di luar webroot dan hanya bisa dibuka lewat endpoint
 		// ber-guard (Admin_Bidang/Admin_Aduan) — dulu ditaruh di .assets/uploads/
@@ -189,6 +184,78 @@ class Umum extends MY_Controller {
 		// satu form langsung di aduan(). Redirect supaya bookmark/link lama
 		// tidak 404.
 		redirect('umum/aduan');
+	}
+
+	/**
+	 * Papan aduan — daftar aduan yang masuk beserta jawabannya, terbuka untuk
+	 * SEMUA pengguna yang sudah login (keputusan dinas 3 Agt 2026: aduan
+	 * "bergaya forum", supaya orang bisa melihat isunya sudah pernah diangkat
+	 * dan sudah dijawab apa).
+	 *
+	 * WAJIB LOGIN, dan gerbangnya di sini — bukan sekadar tautannya
+	 * disembunyikan di halaman aduan. Aduan bukan konten publik.
+	 *
+	 * YANG TIDAK PERNAH DI-SELECT: `pesan`, `email`, `lampiran`. Bukan
+	 * "tidak dirender" — TIDAK DIAMBIL sama sekali, jadi tidak ada di variabel
+	 * mana pun yang bisa ikut terbawa oleh view berikutnya, dump debug, atau
+	 * satu baris tampilan yang ditambahkan setahun lagi. Isi aduan bisa memuat
+	 * alamat rumah, sengketa tanah, dan nama tetangga; yang dibagikan hanya
+	 * JUDUL dan JAWABAN DINAS.
+	 *
+	 * Nama pelapor disamarkan jadi inisial DI CONTROLLER, lalu nama aslinya
+	 * dibuang dari baris sebelum sampai ke view — sama alasannya.
+	 *
+	 * TANPA kotak cari. Pencarian bebas atas daftar yang identitasnya
+	 * disamarkan adalah alat pembuka samaran: "nama tetangga saya" dicoba satu
+	 * per satu sampai ada yang cocok. Yang tidak bisa dicari tidak bisa
+	 * dipancing.
+	 */
+	public function papan_aduan()
+	{
+		if ( ! $this->is_logged_in()) {
+			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu untuk membuka papan aduan.');
+			redirect('Auth/login');
+			return;
+		}
+
+		$this->load->model('Aduan_model');
+
+		$per_hal = 20;
+		$hal = max(1, (int) $this->input->get('hal'));
+		$total = (int) $this->db->count_all('aduan');
+
+		$rows = $this->db->select('id, nama, judul, bidang, status, catatan_admin, created_at')
+			->order_by('created_at', 'DESC')
+			->limit($per_hal, ($hal - 1) * $per_hal)
+			->get('aduan')->result();
+
+		foreach ($rows as $r) {
+			$r->inisial = $this->inisial_nama($r->nama);
+			unset($r->nama);
+			// NULL dibaca sebagai "belum ditriase", bukan dikarang jadi nama
+			// bidang. Pelapor yang melihat "Bidang Perumahan" untuk aduan yang
+			// belum dirutekan akan mengira sudah ada yang memegangnya.
+			$r->bidang_label = $r->bidang ? $this->Aduan_model->bidang_label($r->bidang) : NULL;
+			unset($r->bidang);
+		}
+
+		$datacontent['judul']    = '';
+		$datacontent['rows']     = $rows;
+		$datacontent['hal']      = $hal;
+		$datacontent['hal_akhir'] = max(1, (int) ceil($total / $per_hal));
+		$datacontent['total']    = $total;
+		$this->render('pages/umum/papan_aduan', $datacontent);
+	}
+
+	/** "Siti Nur Aisyah" -> "S. N. A." — cukup untuk membedakan, tidak cukup untuk mengenali. */
+	private function inisial_nama($nama)
+	{
+		$potong = preg_split('/\s+/', trim((string) $nama), -1, PREG_SPLIT_NO_EMPTY);
+		if ( ! $potong) { return 'A.'; }
+		return implode(' ', array_map(
+			static function ($k) { return mb_strtoupper(mb_substr($k, 0, 1)) . '.'; },
+			array_slice($potong, 0, 3)
+		));
 	}
 
 	// =========================================================

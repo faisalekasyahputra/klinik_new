@@ -15,7 +15,7 @@
             { q: 'Bagaimana cara cek kelayakan bantuan rumah?', a: 'Buka menu Perumahan lalu pilih Etalase Program untuk melihat daftar program, atau langsung isi diagnosa NIK untuk mengecek program yang sesuai untuk Anda.' },
             { q: 'Bagaimana cara cek status pengajuan?', a: 'Buka tab \'Cek Status Pengajuan\' di menu utama, lalu masukkan nomor tiket dan empat digit terakhir NIK Anda.' },
             { q: 'Bagaimana cara daftar Sertifikasi Pengembang (SRP2)?', a: 'Buka menu Pengembang dari menu utama dan ikuti alur pendaftaran. Anda perlu login terlebih dahulu.' },
-            { q: 'Bagaimana cara menyampaikan aduan?', a: 'Buka halaman Aduan dari beranda, isi formulir, dan pilih bidang tujuan yang sesuai dengan aduan Anda.' },
+            { q: 'Bagaimana cara menyampaikan aduan?', a: 'Buka halaman Aduan dari beranda dan isi formulirnya. Anda tidak perlu memilih bidang tujuan — aduan Anda kami baca lebih dulu, lalu diteruskan ke bidang yang menangani.' },
         ]
      }">
 

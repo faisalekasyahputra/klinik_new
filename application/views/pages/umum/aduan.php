@@ -5,7 +5,7 @@
         </div>
         <p class="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--portal-brand)]">Layanan Pengaduan</p>
         <h1 id="aduan-title" class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)]">Sampaikan Aduan Anda</h1>
-        <p class="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--portal-text-muted)]">Isi formulir di bawah dan pilih bidang tujuan yang sesuai, aduan Anda akan langsung diteruskan ke bidang tersebut.</p>
+        <p class="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--portal-text-muted)]">Isi formulir di bawah. Aduan Anda kami baca lebih dulu, lalu diteruskan ke bidang yang menangani — Anda tidak perlu menebak bidangnya.</p>
     </div>
 
     <form id="aduan-form" class="mx-auto mt-8 max-w-2xl space-y-4" action="<?= base_url('umum/simpan_aduan') ?>" method="POST" enctype="multipart/form-data"
@@ -14,28 +14,17 @@
               email: <?= htmlspecialchars(json_encode($email_default ?? ''), ENT_QUOTES) ?>,
               judul: '',
               pesan: '',
-              bidang: '',
-              bidangLabel: 'Pilih Bidang Tujuan',
-              bidangOpen: false,
               <?php
               /**
-               * Pilihan bidang datang dari TABEL, bukan ditulis ulang di sini.
-               * Versi lama memuat lima entri hardcode yang menyebut "pengembang"
-               * dan "umum" sebagai bidang — keduanya bukan, menurut dinas
-               * sendiri (konfirmasi 1 Agt 2026). Selama daftar ini punya salinan,
-               * salinannya akan menyimpang, dan yang salah justru yang dilihat
-               * pelapor.
-               *
-               * JSON_HEX_* mengurus tanda kutip dan kurung sudut supaya nama
-               * bidang tidak bisa memutus blok <script> ini.
+               * TIDAK ADA lagi pilihan bidang di sini — revisi dinas 3 Agt 2026.
+               * Pelapor tidak tahu rumahnya urusan Bidang Perumahan atau Bidang
+               * Kawasan Permukiman, dan tebakan yang meleset dulu mendarat di
+               * meja yang salah lalu diam di sana. Superadmin yang meneruskan
+               * (Admin_Aduan::triase); sampai itu terjadi `aduan.bidang` NULL.
                */
               ?>
-              opsiBidang: <?= json_encode(
-                  array_map(static function ($b) { return ['value' => $b->kode, 'label' => $b->nama]; }, $daftar_bidang),
-                  JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
-              ) ?>,
               get isValid() {
-                  return this.nama.trim() && this.email.trim() && this.judul.trim() && this.pesan.trim() && this.bidang;
+                  return this.nama.trim() && this.email.trim() && this.judul.trim() && this.pesan.trim();
               }
           }">
         <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
@@ -54,32 +43,6 @@
         <div>
             <label for="aduan-judul" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Judul</label>
             <input id="aduan-judul" name="judul" x-model="judul" required maxlength="150" placeholder="Ringkasan singkat aduan Anda" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
-        </div>
-
-        <div>
-            <label class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Bidang Tujuan</label>
-            <div class="relative">
-                <input type="hidden" name="bidang" :value="bidang" required>
-                <button type="button" @click="bidangOpen = !bidangOpen" @click.outside="bidangOpen = false"
-                        class="flex w-full items-center justify-between rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-left text-sm shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15"
-                        :style="!bidang && 'color: var(--portal-text-muted)' || 'color: var(--portal-text)'">
-                    <span x-text="bidangLabel"></span>
-                    <i class="fa-solid fa-chevron-down text-xs transition-transform duration-200" :class="bidangOpen && 'rotate-180'" style="color: var(--portal-text-muted);"></i>
-                </button>
-                <div x-show="bidangOpen" x-cloak x-transition.origin.top
-                     class="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border shadow-lg"
-                     style="background-color: var(--portal-bg-card); border-color: var(--portal-border);">
-                    <template x-for="opt in opsiBidang" :key="opt.value">
-                        <button type="button" @click="bidang = opt.value; bidangLabel = opt.label; bidangOpen = false"
-                                class="block w-full px-4 py-2.5 text-left text-sm transition-colors"
-                                :class="bidang === opt.value ? 'font-bold' : 'font-medium'"
-                                :style="'color: var(--portal-text); background-color: ' + (bidang === opt.value ? 'var(--portal-btn-bg)' : 'transparent')"
-                                @mouseenter="$el.style.backgroundColor = 'var(--portal-btn-bg)'"
-                                @mouseleave="$el.style.backgroundColor = bidang === opt.value ? 'var(--portal-btn-bg)' : 'transparent'"
-                                x-text="opt.label"></button>
-                    </template>
-                </div>
-            </div>
         </div>
 
         <div>
@@ -103,5 +66,18 @@
 
     <div class="mx-auto mt-6 max-w-2xl rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] p-4 text-xs text-[color:var(--portal-text-muted)] shadow-sm">
         <i class="fa-solid fa-circle-info mr-2 text-[color:var(--portal-icon)]"></i> Punya pertanyaan umum seputar layanan? Cek dulu lewat tombol bantuan di pojok kanan bawah.
+        <?php
+        /**
+         * Tautan papan hanya untuk yang sudah login — bukan sekadar
+         * disembunyikan, halamannya sendiri bergerbang (Umum::papan_aduan).
+         * Tamu tidak diberi tautan yang berujung ke layar login.
+         */
+        ?>
+        <?php if ($this->session->userdata('is_logged') === TRUE): ?>
+        <div class="mt-2 border-t border-[color:var(--portal-border)] pt-2">
+            <i class="fa-solid fa-clipboard-list mr-2 text-[color:var(--portal-icon)]"></i> Ingin tahu aduan apa saja yang sudah masuk dan mana yang sudah dijawab?
+            <a href="<?= base_url('umum/papan_aduan') ?>" class="font-bold underline" style="color: var(--portal-brand)">Lihat Papan Aduan</a>.
+        </div>
+        <?php endif; ?>
     </div>
 </div>

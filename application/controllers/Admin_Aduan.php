@@ -8,10 +8,19 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * (baca milik sendiri). Kalau sebuah bidang belum punya admin_bidang
  * ter-assign, aduannya tidak terlihat SIAPA PUN di sisi admin.
  *
- * SENGAJA READ-ONLY: keputusan tetap kewenangan admin bidang masing-masing.
- * Superadmin di sini hanya untuk audit/eskalasi — tidak ada endpoint tulis,
- * jadi tidak ada jalur kedua yang bisa menimpa keputusan admin bidang tanpa
- * jejak (bandingkan masalah dua-jalur-tulis di sf_housing_queue, temuan #3).
+ * SATU-SATUNYA endpoint tulis di sini adalah triase() — MERUTEKAN aduan ke
+ * bidang, bukan MEMUTUSKAN nasibnya. Bedanya penting dan sengaja dijaga:
+ * `status` dan `catatan_admin` tetap hanya bisa disentuh Admin_Bidang, jadi
+ * tidak ada jalur kedua yang bisa menimpa keputusan admin bidang tanpa jejak
+ * (bandingkan masalah dua-jalur-tulis di sf_housing_queue, temuan #3).
+ *
+ * Triase lahir 3 Agt 2026 karena pelapor tidak lagi memilih bidang sendiri —
+ * warga tidak tahu urusannya masuk Bidang Perumahan atau Bidang Kawasan
+ * Permukiman. Aduan baru lahir dengan `bidang` NULL dan, karena NULL tidak
+ * cocok dengan WHERE mana pun, tidak muncul di meja bidang mana pun sampai
+ * dirutekan dari sini. Itu berarti layar ini sekarang jadi HAMBATAN: aduan yang
+ * tidak ditriase tidak ditangani siapa pun — karena itu ada callout jumlahnya
+ * di atas tabel.
  */
 class Admin_Aduan extends Admin_Controller {
 
@@ -26,8 +35,12 @@ class Admin_Aduan extends Admin_Controller {
         $daftar_bidang = $this->db->order_by('nama', 'ASC')->get('bidang')->result();
         $kode_valid = array_column($daftar_bidang, 'kode');
         // Filter dari query string divalidasi ke tabel bidang — bukan langsung
-        // dimasukkan ke WHERE.
-        $bidang_filter = in_array($bidang_filter, $kode_valid, TRUE) ? $bidang_filter : NULL;
+        // dimasukkan ke WHERE. Nilai semu 'belum' dipakai untuk antrean triase
+        // (bidang IS NULL); ia bukan kode bidang dan tidak boleh masuk WHERE
+        // sebagai nilai.
+        $triase_saja = ($bidang_filter === 'belum');
+        $bidang_filter = $triase_saja ? 'belum'
+            : (in_array($bidang_filter, $kode_valid, TRUE) ? $bidang_filter : NULL);
 
         // Cari + urut + paginasi semuanya server-side (B7/B8).
         $table = $this->table_state(
@@ -37,7 +50,8 @@ class Admin_Aduan extends Admin_Controller {
         $data['base_url'] = 'Admin_Aduan';
 
         $this->db->from('aduan')->join('usr_users', 'usr_users.id = aduan.reviewed_by', 'left');
-        if ($bidang_filter) { $this->db->where('aduan.bidang', $bidang_filter); }
+        if ($triase_saja) { $this->db->where('aduan.bidang IS NULL', NULL, FALSE); }
+        elseif ($bidang_filter) { $this->db->where('aduan.bidang', $bidang_filter); }
         if ($status_filter) { $this->db->where('aduan.status', $status_filter); }
         if ($table['q'] !== '') {
             $this->db->group_start()
@@ -61,11 +75,82 @@ class Admin_Aduan extends Admin_Controller {
             if ($ada_admin === 0) { $data['bidang_tanpa_admin'][] = $b->nama; }
         }
 
+        // Antrean triase: aduan yang belum dirutekan tidak muncul di meja bidang
+        // mana pun. Angkanya ditunjukkan walau filternya sedang tidak aktif —
+        // hambatan yang cuma terlihat kalau sedang dicari bukan hambatan yang
+        // terlihat.
+        $data['jml_triase'] = (int) $this->db->where('bidang IS NULL', NULL, FALSE)
+            ->count_all_results('aduan');
+
         $data['daftar_bidang'] = $daftar_bidang;
         $data['bidang_filter'] = $bidang_filter;
         $data['status_sah'] = $status_sah;
         $data['status_filter'] = $status_filter;
         $this->render_admin('admin/aduan/index', $data);
+    }
+
+    /**
+     * Rutekan satu aduan ke bidang penanganan.
+     *
+     * TIGA pembatas, masing-masing menutup hal berbeda:
+     *
+     * 1. POST saja. GET yang menulis bisa dipicu lewat <img src> di halaman mana
+     *    pun; rute aduan bukan sesuatu yang boleh berubah karena seseorang
+     *    membuka tautan.
+     * 2. Bidang dicocokkan ke TABEL `bidang`, bukan ke daftar yang ditulis ulang
+     *    di sini. Kode ngawur berarti aduan hilang dari semua meja sekaligus —
+     *    tidak cocok dengan WHERE admin bidang mana pun, dan tidak lagi NULL
+     *    sehingga hilang juga dari antrean triase. Kegagalan senyap sempurna.
+     * 3. WHERE `status='Baru'`. Setelah admin bidang mulai memproses, memindah
+     *    rutenya berarti menarik berkas dari tangan orang yang sedang
+     *    mengerjakannya — riwayat keputusannya tetap di baris itu tapi bidangnya
+     *    sudah bukan bidang yang memutuskan. Selama masih 'Baru', salah rute
+     *    justru MASIH BOLEH diperbaiki: itu tujuannya.
+     *
+     * Keberadaan barisnya dicek terpisah, bukan lewat affected_rows(): MySQL
+     * membalas 0 juga ketika nilai barunya sama persis dengan yang tersimpan
+     * (meneruskan ulang ke bidang yang sama), dan dulu itu salah dilaporkan
+     * sebagai "tidak ditemukan" di endpoint sebelah — AUDIT_ROLE_ADMIN_SCOPED #6.
+     */
+    public function triase($id = NULL)
+    {
+        if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
+        $id = (int) $id;
+
+        $bidang = (string) $this->input->post('bidang', TRUE);
+        $sah = array_column($this->db->get('bidang')->result(), 'nama', 'kode');
+        if ( ! isset($sah[$bidang])) {
+            $this->session->set_flashdata('error', 'Bidang tujuan tidak dikenal.');
+            redirect('Admin_Aduan');
+            return;
+        }
+
+        $row = $this->db->select('judul, bidang, status')->get_where('aduan', ['id' => $id])->row();
+        if ( ! $row) {
+            $this->session->set_flashdata('error', 'Aduan tidak ditemukan.');
+            redirect('Admin_Aduan');
+            return;
+        }
+        if ($row->status !== 'Baru') {
+            $this->catat_audit('aduan_triase_ditolak',
+                'Triase ditolak: aduan #' . $id . ' sudah berstatus ' . $row->status,
+                'aduan', $id, ['status' => $row->status, 'bidang_diminta' => $bidang]);
+            $this->session->set_flashdata('error',
+                'Aduan ini sudah ditangani (' . $row->status . ') — rutenya tidak bisa diubah lagi.');
+            redirect('Admin_Aduan');
+            return;
+        }
+
+        $this->db->where('id', $id)->where('status', 'Baru')
+            ->update('aduan', ['bidang' => $bidang]);
+
+        $asal = $row->bidang ? ($sah[$row->bidang] ?? $row->bidang) : 'antrean triase';
+        $this->catat_audit('aduan_ditriase',
+            'Aduan #' . $id . ' diteruskan dari ' . $asal . ' ke ' . $sah[$bidang],
+            'aduan', $id, ['dari' => $row->bidang, 'ke' => $bidang, 'judul' => $row->judul]);
+
+        $this->session->set_flashdata('success', 'Aduan diteruskan ke ' . $sah[$bidang] . '.');
+        redirect('Admin_Aduan');
     }
 
     /**

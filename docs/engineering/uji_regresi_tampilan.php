@@ -248,6 +248,11 @@ echo "\n== Bidang tujuan: disebut untuk magang, TIDAK untuk KKN ==\n";
  * ("pilih bidang tujuan yang sesuai dengan aduan Anda"), yang ikut dirender di
  * setiap halaman. Uji itu mengukur "dua kata ini ada di suatu tempat", bukan
  * "field ini ditampilkan" — dan namanya menjanjikan yang kedua.
+ *
+ * Kalimat FAQ itu sendiri sudah hilang sejak aduan tidak lagi minta bidang
+ * (3 Agt 2026), jadi versi pertama tadi kebetulan akan hijau sekarang. Justru
+ * itu alasan catatan ini dipertahankan: penjaga yang benar karena kebetulan
+ * teks di halaman lain berubah bukan penjaga yang benar.
  */
 function label_field($html) {
     preg_match_all('/<dt[^>]*>(.*?)<\/dt>/s', $html, $m);
