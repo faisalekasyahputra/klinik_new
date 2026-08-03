@@ -82,6 +82,8 @@ class Migrate extends CI_Controller {
             'kkn_magang_pendaftaran',
             // Migrasi 033.
             'sys_jejak_audit',
+            // Migrasi 035.
+            'forum_janji_temu',
         ] as $t) {
             echo $t.': '.(in_array($t, $tables) ? 'ADA' : 'TIDAK ADA')."\n";
         }

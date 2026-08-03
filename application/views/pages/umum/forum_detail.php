@@ -133,6 +133,107 @@
                 </form>
             </div>
             <?php endif; ?>
+
+            <!-- Janji temu konsultasi — HANYA pemilik topik -->
+            <?php
+            /**
+             * Panelnya tidak sekadar disembunyikan dari orang lain: `$janji`
+             * memang NULL kecuali pembacanya pemilik topik (Umum::detail).
+             * `alasan` dan `catatan_user` berisi kenapa seseorang merasa perlu
+             * bertemu petugas, dan halaman topik ini terbuka untuk tamu.
+             */
+            ?>
+            <?php if (!empty($saya_pemilik)): ?>
+            <div class="mt-4 pt-4 border-t border-[#d6fb00]/10">
+                <?php
+                /**
+                 * Kelas ditulis UTUH, bukan dirakit dari potongan
+                 * (`text-{$warna}-400`). Tailwind di proyek ini datang dari dua
+                 * arah — compiler CDN yang memindai DOM DAN CSS statis hasil
+                 * panen — dan nama kelas yang baru ada saat render tidak pernah
+                 * ikut terpanen. Yang gagal cuma warnanya, jadi ia lolos setiap
+                 * uji dan cuma terlihat kalau ada yang membuka halamannya.
+                 */
+                if (!empty($janji)):
+                    $lencana = [
+                        'diajukan'   => ['Menunggu ditinjau petugas', 'text-amber-400'],
+                        'ditawarkan' => ['Petugas menawarkan jadwal', 'text-sky-400'],
+                        'disetujui'  => ['Jadwal disepakati', 'text-emerald-400'],
+                    ][$janji->status] ?? [$janji->status, 'text-zinc-400'];
+                ?>
+                <div class="rounded-xl border border-[#d6fb00]/15 bg-[#d6fb00]/5 p-4">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <i class="fa-solid fa-calendar-check text-[#d6fb00]"></i>
+                        <span class="text-xs font-black text-zinc-200">Janji Temu Konsultasi</span>
+                        <span class="ml-auto text-[10px] font-bold <?= $lencana[1] ?>"><?= htmlspecialchars($lencana[0]) ?></span>
+                    </div>
+
+                    <?php if ($janji->jadwal_mulai): ?>
+                    <p class="mt-2.5 text-xs text-zinc-300">
+                        <i class="fa-regular fa-clock mr-1 text-zinc-500"></i>
+                        <b><?= htmlspecialchars(tgl_id($janji->jadwal_mulai)) ?>, <?= date('H:i', strtotime($janji->jadwal_mulai)) ?> WIB</b>
+                        <?php if ($janji->lokasi): ?><br><i class="fa-solid fa-location-dot mr-1 text-zinc-500"></i><?= htmlspecialchars($janji->lokasi) ?><?php endif; ?>
+                    </p>
+                    <?php endif; ?>
+
+                    <?php if ($janji->catatan_admin): ?>
+                    <p class="mt-2 text-[11px] leading-relaxed text-zinc-400"><i class="fa-solid fa-quote-left mr-1 text-zinc-600"></i><?= nl2br(htmlspecialchars($janji->catatan_admin)) ?></p>
+                    <?php endif; ?>
+
+                    <?php
+                    // Tombolnya dibangun dari ALUR model, bukan dari daftar yang
+                    // ditulis ulang di view — tombol yang ada di layar tapi
+                    // ditolak server adalah cara tercepat membuat orang mengira
+                    // sistemnya rusak.
+                    $this->load->model('Janji_temu_model');
+                    $label = [
+                        'setujui'     => ['disetujui',  'Setujui jadwal', 'fa-check',
+                                          'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'],
+                        'jadwal_lain' => ['diajukan',   'Minta jadwal lain', 'fa-rotate-left',
+                                          'bg-sky-500/10 text-sky-400 border-sky-500/20 hover:bg-sky-500/20'],
+                        'batalkan'    => ['dibatalkan', 'Batalkan', 'fa-xmark',
+                                          'bg-zinc-500/10 text-zinc-400 border-zinc-500/20 hover:bg-zinc-500/20'],
+                    ];
+                    $tersedia = array_filter($label, function ($v) use ($janji) {
+                        return $this->Janji_temu_model->boleh($janji->status, $v[0], 'pemilik');
+                    });
+                    ?>
+                    <?php if ($tersedia): ?>
+                    <form method="POST" action="<?= base_url('Umum/respon_janji_temu/' . $janji->id) ?>" class="mt-3 space-y-2">
+                        <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+                        <input type="text" name="catatan_user" maxlength="500" placeholder="Catatan untuk petugas (opsional)" class="w-full rounded-lg border border-[#d6fb00]/10 bg-[#0a1a1f] px-3 py-2 text-[11px] text-zinc-300 outline-none focus:border-[#d6fb00]/40">
+                        <div class="flex flex-wrap gap-2">
+                            <?php foreach ($tersedia as $aksi => $v): ?>
+                            <button type="submit" name="aksi" value="<?= $aksi ?>" class="text-[10px] font-bold border px-3 py-1.5 rounded-lg transition-all <?= $v[3] ?>">
+                                <i class="fa-solid <?= $v[2] ?> mr-1"></i> <?= $v[1] ?>
+                            </button>
+                            <?php endforeach; ?>
+                        </div>
+                    </form>
+                    <?php endif; ?>
+                </div>
+
+                <?php elseif (!empty($boleh_ajukan)): ?>
+                <div x-data="{ buka: false }">
+                    <button type="button" @click="buka = !buka" class="text-[10px] font-bold bg-[#d6fb00]/10 text-[#d6fb00] border border-[#d6fb00]/20 px-3 py-1.5 rounded-lg hover:bg-[#d6fb00]/20 transition-all">
+                        <i class="fa-solid fa-calendar-plus mr-1"></i> Ajukan Janji Temu
+                    </button>
+                    <form x-show="buka" x-cloak method="POST" action="<?= base_url('Umum/ajukan_janji_temu') ?>" class="mt-3 space-y-2">
+                        <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+                        <input type="hidden" name="id_diskusi" value="<?= $topik['id_diskusi'] ?>">
+                        <textarea name="alasan" rows="3" required minlength="20" maxlength="1000" placeholder="Kenapa perlu bertemu langsung? Sebutkan hal yang belum terjawab di forum ini." class="w-full rounded-lg border border-[#d6fb00]/10 bg-[#0a1a1f] px-3 py-2 text-[11px] text-zinc-300 outline-none focus:border-[#d6fb00]/40"></textarea>
+                        <button type="submit" class="text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 transition-all">
+                            <i class="fa-solid fa-paper-plane mr-1"></i> Kirim Pengajuan
+                        </button>
+                    </form>
+                </div>
+
+                <?php elseif (($topik['status'] ?? 'open') !== 'closed'): ?>
+                <?php // Sebabnya disebut. Tombol yang hilang tanpa keterangan terbaca sebagai fitur yang rusak. ?>
+                <p class="text-[11px] text-zinc-500"><i class="fa-solid fa-circle-info mr-1"></i> Janji temu bisa diajukan setelah topik ini ditanggapi petugas di forum.</p>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
         </div>
 
         <!-- Thread Connector CSS -->

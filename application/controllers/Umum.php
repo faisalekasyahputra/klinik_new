@@ -385,9 +385,198 @@ class Umum extends MY_Controller {
 		if ($this->is_logged_in()) {
 			$datacontent['user_likes'] = $this->Forum_model->get_user_likes($this->get_user_id(), $id);
 		}
-		
+
+		/**
+		 * Panel janji temu HANYA untuk pemilik topik, dan datanya hanya diambil
+		 * untuk pemilik. Bukan sekadar tidak dirender: `alasan` dan
+		 * `catatan_user` berisi kenapa seseorang merasa perlu bertemu petugas,
+		 * dan topik forum ini terbuka untuk siapa saja termasuk tamu.
+		 */
+		$datacontent['saya_pemilik'] = FALSE;
+		$datacontent['janji']        = NULL;
+		$datacontent['boleh_ajukan'] = FALSE;
+		if ($this->is_logged_in() && (int) ($datacontent['topik']['user_id'] ?? 0) === (int) $this->get_user_id()) {
+			$this->load->model('Janji_temu_model');
+			$datacontent['saya_pemilik'] = TRUE;
+			$datacontent['janji']        = $this->Janji_temu_model->hidup_untuk_topik($id);
+			// Syarat "ruang konsultasi dulu" ditampilkan dengan aturan yang SAMA
+			// dengan yang ditegakkan server (ajukan_janji_temu). Kalau tombolnya
+			// muncul memakai syarat yang lebih longgar, yang menekannya akan
+			// ditolak tanpa tahu sebabnya.
+			$datacontent['boleh_ajukan'] = ! $datacontent['janji']
+				&& ($datacontent['topik']['status'] ?? 'open') !== 'closed'
+				&& count($datacontent['komentar']) > 0;
+		}
+
 		$data['content'] = $this->load->view('pages/umum/forum_detail', $datacontent, true);
 		$this->load->view('layouts/main', $data);
+	}
+
+	// =========================================================
+	// FORUM: Janji temu konsultasi (LOGIN REQUIRED, PEMILIK TOPIK)
+	// =========================================================
+
+	/**
+	 * Ajukan tatap muka untuk satu topik.
+	 *
+	 * Halaman `Umum/forum` sudah berjudul "Konsultasi Terjadwal" dan memajang
+	 * tiga kartu alur sejak lama — "Admin meninjau", "Agenda ditentukan",
+	 * "Waktu konsultasi disampaikan setelah ditinjau" — tanpa satu pun
+	 * mekanisme di belakangnya. Ini mekanismenya.
+	 *
+	 * Empat syarat, masing-masing menutup hal berbeda:
+	 *  1. Pemilik topik saja. Diambil dari SESI lalu dicocokkan ke baris, bukan
+	 *     dari POST.
+	 *  2. Topik harus sudah DITANGGAPI. Terjemahan aturan dinas "ruang
+	 *     konsultasi dulu": pertanyaan yang selesai di forum tidak perlu
+	 *     menghabiskan slot tatap muka. Ditegakkan di server, bukan hanya
+	 *     dengan menyembunyikan tombolnya.
+	 *  3. Satu janji hidup per topik. Tanpa ini satu topik bisa melahirkan
+	 *     antrean permintaan yang semuanya menunggu petugas yang sama.
+	 *  4. Batas laju per HARI (`janji_temu_ajukan`). Yang dibatasi bukan spam,
+	 *     melainkan waktu petugas yang nyata.
+	 */
+	public function ajukan_janji_temu()
+	{
+		$this->_load_forum();
+		if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+		if ( ! $this->is_logged_in()) {
+			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu.');
+			redirect('Auth/login');
+			return;
+		}
+
+		$this->load->model('Janji_temu_model');
+		$id_diskusi = (int) $this->input->post('id_diskusi');
+		$user_id    = (int) $this->get_user_id();
+
+		$topik = $this->Forum_model->get_diskusi_by_id($id_diskusi);
+		// 404, bukan 403: topik orang lain tidak perlu dikonfirmasi keberadaannya.
+		if (empty($topik) || (int) ($topik['user_id'] ?? 0) !== $user_id) { show_404(); }
+
+		$alasan = sanitize_forum_input($this->input->post('alasan'));
+		if (mb_strlen((string) $alasan) < 20) {
+			$this->session->set_flashdata('error', 'Jelaskan dulu kenapa perlu tatap muka, minimal 20 karakter.');
+			redirect('Umum/detail/' . $id_diskusi);
+			return;
+		}
+		$cek = contains_profanity($alasan);
+		if ($cek['found']) {
+			$this->session->set_flashdata('error', 'Alasan Anda mengandung kata-kata yang tidak diperbolehkan.');
+			redirect('Umum/detail/' . $id_diskusi);
+			return;
+		}
+
+		if (($topik['status'] ?? 'open') === 'closed') {
+			$this->session->set_flashdata('error', 'Topik ini sudah ditutup.');
+			redirect('Umum/detail/' . $id_diskusi);
+			return;
+		}
+
+		if ( ! $this->Forum_model->get_komentar_by_diskusi($id_diskusi)) {
+			$this->session->set_flashdata('error',
+				'Topik ini belum ditanggapi petugas. Janji temu bisa diajukan setelah ada tanggapan di forum.');
+			redirect('Umum/detail/' . $id_diskusi);
+			return;
+		}
+
+		if ($this->Janji_temu_model->hidup_untuk_topik($id_diskusi)) {
+			$this->session->set_flashdata('error', 'Sudah ada pengajuan janji temu yang berjalan untuk topik ini.');
+			redirect('Umum/detail/' . $id_diskusi);
+			return;
+		}
+
+		$rate = $this->rate_limit_consume('janji_temu_ajukan', ['account_id' => $user_id]);
+		if (empty($rate['success']) || empty($rate['allowed'])) {
+			$this->rate_limit_reject($rate,
+				'Terlalu banyak pengajuan janji temu hari ini. Coba lagi besok.');
+			return;
+		}
+
+		$baru = $this->Janji_temu_model->buat([
+			'id_diskusi' => $id_diskusi,
+			'user_id'    => $user_id,
+			'alasan'     => $alasan,
+		]);
+		if ( ! $baru) {
+			$this->session->set_flashdata('error', 'Pengajuan belum tersimpan. Coba lagi.');
+			redirect('Umum/detail/' . $id_diskusi);
+			return;
+		}
+
+		$this->catat_audit('janji_temu_diajukan',
+			'Janji temu #' . $baru . ' diajukan untuk topik #' . $id_diskusi,
+			'forum_janji_temu', $baru, ['id_diskusi' => $id_diskusi]);
+
+		$this->session->set_flashdata('success',
+			'Pengajuan janji temu terkirim. Petugas akan menawarkan waktu dan tempatnya.');
+		redirect('Umum/detail/' . $id_diskusi);
+	}
+
+	/**
+	 * Jawaban warga atas tawaran petugas: setujui / minta jadwal lain / batalkan.
+	 *
+	 * Ketiganya lewat SATU endpoint karena ketiganya perpindahan keadaan yang
+	 * sama bentuknya, dan aturan sahnya dibaca dari `Janji_temu_model::ALUR` —
+	 * bukan ditulis ulang di sini. Endpoint terpisah per aksi berarti tiga
+	 * salinan whitelist yang akan berselisih.
+	 *
+	 * `user_id` ikut di WHERE (anti-IDOR), dan status asalnya juga: menekan
+	 * "Setujui" dua kali tidak menghasilkan dua kali apa pun.
+	 */
+	public function respon_janji_temu($id = NULL)
+	{
+		// Helper forum dimuat lazy di controller ini, dan `sanitize_forum_input()`
+		// dipakai di bawah. Tanpa baris ini method-nya fatal error — bukan
+		// menolak, bukan gagal: 500 sebelum satu pun pemeriksaan berjalan.
+		$this->_load_forum();
+		if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
+		if ( ! $this->is_logged_in()) {
+			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu.');
+			redirect('Auth/login');
+			return;
+		}
+
+		$this->load->model('Janji_temu_model');
+		$id      = (int) $id;
+		$user_id = (int) $this->get_user_id();
+
+		$row = $this->Janji_temu_model->ambil($id);
+		if ( ! $row || (int) $row->user_id !== $user_id) { show_404(); }
+
+		$aksi = (string) $this->input->post('aksi');
+		$peta = ['setujui' => 'disetujui', 'jadwal_lain' => 'diajukan', 'batalkan' => 'dibatalkan'];
+		$ke = $peta[$aksi] ?? NULL;
+
+		if ($ke === NULL || ! $this->Janji_temu_model->boleh($row->status, $ke, 'pemilik')) {
+			$this->session->set_flashdata('error', 'Tindakan itu tidak berlaku untuk keadaan pengajuan ini.');
+			redirect('Umum/detail/' . $row->id_diskusi);
+			return;
+		}
+
+		$set = ['catatan_user' => sanitize_forum_input($this->input->post('catatan_user')) ?: NULL];
+		// Minta jadwal lain = tawarannya gugur. Membiarkan jadwal lama terisi
+		// membuat baris itu terbaca seolah masih punya agenda yang disepakati.
+		if ($ke === 'diajukan') { $set['jadwal_mulai'] = NULL; $set['lokasi'] = NULL; }
+
+		$ok = $this->Janji_temu_model->transisi($id, $row->status, $ke, $set, ['user_id' => $user_id]);
+		if ( ! $ok) {
+			$this->session->set_flashdata('error', 'Pengajuan sudah berubah keadaannya. Muat ulang halaman.');
+			redirect('Umum/detail/' . $row->id_diskusi);
+			return;
+		}
+
+		$this->catat_audit('janji_temu_' . $ke,
+			'Janji temu #' . $id . ' menjadi ' . $ke . ' oleh pemohon',
+			'forum_janji_temu', $id, ['dari' => $row->status, 'ke' => $ke]);
+
+		$pesan = [
+			'disetujui'  => 'Jadwal disetujui. Sampai bertemu di lokasi yang disepakati.',
+			'diajukan'   => 'Permintaan jadwal lain terkirim ke petugas.',
+			'dibatalkan' => 'Pengajuan janji temu dibatalkan.',
+		];
+		$this->session->set_flashdata('success', $pesan[$ke]);
+		redirect('Umum/detail/' . $row->id_diskusi);
 	}
 
 	// =========================================================

@@ -249,6 +249,19 @@ $config['dashboard_modules'] = [
         'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'KKN/Magang',
     ],
+    // Janji temu konsultasi (migrasi 035). Superadmin saja: `forum_diskusi`
+    // tidak punya kolom bidang maupun kabupaten, jadi tidak ada dasar apa pun
+    // untuk membagi mejanya per scope.
+    'konsultasi_janji' => [
+        'label' => 'Janji Temu Konsultasi', 'icon' => 'ph-calendar-check',
+        'url'   => 'Admin_Konsultasi', 'group' => 'Tindak Lanjut', 'order' => 40,
+        'overview_url' => 'Admin_Konsultasi?status=diajukan',
+        'roles' => ['admin'], 'scope' => null,
+        'table' => 'forum_janji_temu', 'review_by' => 'admin',
+        'pending_where' => ['status' => 'diajukan'],
+        'status_column' => 'status', 'owner_column' => 'user_id',
+        'badge' => TRUE, 'ringkas' => 'Janji Temu',
+    ],
     // Meja KEDUA alur surat magang. Terpisah dari 'kemitraan' di atas karena
     // pemiliknya berbeda: yang itu sekretariat (superadmin), yang ini bidang.
     // 'pending_where' memakai status 'Ditinjau Bidang' — vocabulary status

@@ -57,4 +57,27 @@ $config['rate_limit_policies'] = [
         'window' => 300,
         'dimensions' => ['ip', 'account'],
     ],
+    /*
+     * Janji temu konsultasi. Per HARI, bukan per jam: yang dibatasi bukan spam
+     * melainkan penumpukan agenda tatap muka — setiap permintaan memakan waktu
+     * petugas yang nyata.
+     *
+     * HANYA dimensi `account`, dan itu disengaja — dua dimensi lain sempat ikut
+     * ditulis lalu dicabut sebelum sempat naik:
+     *
+     * - `ip` pada batas 3/hari MERUSAK. Endpoint ini wajib login, jadi `account`
+     *   sudah menjadi identitas yang sebenarnya; menambahkan IP berarti satu
+     *   kantor kelurahan, satu warnet, atau satu blok CGNAT seluler berbagi
+     *   jatah tiga permintaan sehari untuk semua orang di baliknya. Yang
+     *   tertolak adalah warga yang tidak melakukan apa-apa selain memakai
+     *   koneksi yang sama.
+     * - `object` (id topik) TIDAK MENAMBAH APA-APA di sini: hanya pemilik topik
+     *   yang bisa mengajukan, jadi penghitung per-topik selalu jadi bagian dari
+     *   penghitung per-akun yang sudah ada.
+     */
+    'janji_temu_ajukan' => [
+        'limit' => 3,
+        'window' => 86400,
+        'dimensions' => ['account'],
+    ],
 ];
