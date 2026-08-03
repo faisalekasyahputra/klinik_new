@@ -62,6 +62,9 @@ class Pengembang extends MY_Controller {
             'nama_user'        => $this->session->userdata('name') ?: $this->session->userdata('email'),
             'registration_id'  => $registration_id,
             'dokumen'          => $this->dokumen_persyaratan(),
+            // Keterangan per formulir (revisi dinas 3 Agt 2026) — helper terpisah
+            // supaya bentuk `dokumen` tidak berubah bagi empat pemakainya.
+            'keterangan'       => $this->keterangan_persyaratan(),
             'uploaded_keys'    => $uploaded_keys,
             'status_verifikasi' => $status_verifikasi,
             'catatan_admin'    => $catatan_admin,
@@ -378,6 +381,11 @@ class Pengembang extends MY_Controller {
             return;
         }
         $this->render('pages/pengembang/masuk', ['judul' => '', 'recaptcha_site_key' => getenv('RECAPTCHA_SITE_KEY') ?: '']);
+    }
+
+    private function keterangan_persyaratan() {
+        $this->load->helper('srp2');
+        return srp2_keterangan_persyaratan();
     }
 
     private function dokumen_persyaratan() {

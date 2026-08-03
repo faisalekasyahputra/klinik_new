@@ -5,7 +5,11 @@
         "wrongRole" => (bool) $wrong_role,
         "namaUser" => $nama_user ?? "",
         "registrationId" => $registration_id,
-        "dokumen" => $dokumen,
+        // Daftar 14 formulir ikut digerbangi. Ia dikirim ke peramban lewat
+        // konfigurasi ini, jadi menggerbangi markup saja masih membocorkan
+        // seluruh nama dokumen persyaratan ke pengunjung yang belum masuk.
+        "dokumen" => $is_pengembang ? $dokumen : [],
+        "keterangan" => $is_pengembang ? ($keterangan ?? []) : [],
         "uploadedKeys" => array_values($uploaded_keys),
         "statusVerifikasi" => $status_verifikasi,
         "catatanAdmin" => $catatan_admin,
@@ -37,6 +41,22 @@
             </template>
         </div>
 
+        <?php
+        /**
+         * SYARAT & FORMULIR HANYA DIRENDER SETELAH MASUK — revisi dinas 3 Agt 2026:
+         * "Syarat ketentuan SRP2 dan Formulir Pendaftaran di syaratkan login dulu."
+         *
+         * Dijaga di PHP, bukan dengan `x-show`. Menyembunyikan lewat Alpine berarti
+         * seluruh isinya tetap terkirim ke peramban dan tinggal dibuka lewat
+         * inspektur — itu menyembunyikan, bukan mensyaratkan. Yang diminta dinas
+         * yang kedua.
+         *
+         * Yang TIDAK dilakukan: redirect buta ke Auth/login. Wizard daftar-cepat
+         * pengembang ada di halaman ini dan memang jalur pendaftarannya; melempar
+         * orang keluar berarti menutup pintu masuk sekaligus.
+         */
+        ?>
+        <?php if ($is_pengembang): ?>
         <!-- ================= STEP 1: SYARAT ================= -->
         <div x-show="step === 1">
             <div class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -61,6 +81,21 @@
                 </div>
             </article>
         </div>
+        <?php endif; // $is_pengembang — akhir STEP 1 ?>
+
+        <?php if ( ! $is_pengembang): ?>
+            <?php // Yang dilihat pengunjung yang belum masuk: alasannya, lalu
+                  // pintu masuknya. Tanpa kalimat ini, halaman terasa seperti
+                  // salah alamat — bukan seperti syarat yang disengaja. ?>
+            <div class="mx-auto mb-4 max-w-md rounded-2xl p-4" style="background:var(--portal-bg-card);border:1px solid var(--portal-border)">
+                <h1 class="text-base font-black tracking-tight" style="color:var(--portal-text)">Pendaftaran SRP2</h1>
+                <p class="mt-1.5 text-xs leading-relaxed" style="color:var(--portal-text-muted)">
+                    Syarat lengkap dan formulir pendaftaran terbuka setelah Anda masuk.
+                    Belum punya akun pengembang? Daftar cepat di bawah — cukup nama
+                    perusahaan, email, dan kata sandi.
+                </p>
+            </div>
+        <?php endif; ?>
 
         <!-- ================= STEP 2: AKUN ================= -->
         <div x-show="step === 2" x-cloak class="mx-auto max-w-md">
@@ -71,6 +106,7 @@
                      KEMBALI oleh admin lewat "Minta Perbaikan" — bukan draft baru.
                      Catatannya wajib ditampilkan, kalau tidak pemohon tidak tahu
                      apa yang harus diperbaiki. -->
+                <?php if ($is_pengembang): // kartu status hanya untuk pengembang — Alpine saja tidak cukup ?>
                 <template x-if="isPengembang && (status === 'Draft' || !status)">
                     <div class="py-3 text-center">
                         <template x-if="!catatanAdmin">
@@ -123,6 +159,8 @@
                         <a href="<?= base_url('akun/profil') ?>" class="mt-5 inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wide" style="background:#d6fb00;color:#0a1a1f">Ke Profil Saya <i class="fa-solid fa-arrow-right"></i></a>
                     </div>
                 </template>
+
+                <?php endif; // $is_pengembang — akhir kartu status ?>
 
                 <!-- Kartu salah-role. Pesan & tujuan tombol sadar-role: akun pengelola
                      (admin/admin_kabkota/admin_bidang) tidak perlu disuruh "daftar akun
@@ -215,6 +253,7 @@
             </div>
         </div>
 
+        <?php if ($is_pengembang): // formulir unggah ikut digerbangi, sama seperti syarat ?>
         <!-- ================= STEP 3: UNGGAH ================= -->
         <div x-show="step === 3" x-cloak>
 
@@ -299,6 +338,13 @@
                                 <span class="shrink-0 text-[10px] font-bold" style="color:var(--portal-text-muted)">Belum diunggah</span>
                             </template>
                         </div>
+                        <?php // Keterangan per formulir (revisi dinas 3 Agt 2026) — ditaruh
+                              // DI SAMPING kotak unggahnya, bukan cuma di prosa langkah 1.
+                              // Di sinilah orang benar-benar butuh tahu "lampirkan apa";
+                              // menaruhnya di halaman sebelumnya berarti dia harus mundur
+                              // untuk mengingat. Formulir tanpa keterangan tidak menyisakan
+                              // ruang kosong sama sekali. ?>
+                        <p x-show="keterangan[key]" x-cloak class="mt-1.5 text-[10px] leading-snug" style="color:var(--portal-text-muted)"><i class="fa-solid fa-circle-info"></i> <span x-text="keterangan[key]"></span></p>
                         <p x-show="fileStatus[key] === 'error'" x-cloak class="mt-1.5 text-[10px] font-semibold" style="color:#dc2626" x-text="fileMessage[key]"></p>
                         </div>
                     </template>
@@ -336,6 +382,7 @@
                 <a href="<?= base_url('akun') ?>" class="mt-6 inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wide" style="background:#d6fb00;color:#0a1a1f"><i class="fa-solid fa-gauge-high"></i> Cek Status Pengajuan</a>
             </div>
         </div>
+        <?php endif; // $is_pengembang — akhir STEP 3 & 4 ?>
 
     </div>
 </section>
@@ -344,7 +391,10 @@
 <script>
 function srp2Wizard(config) {
     return {
-        step: 1,
+        // Bukan 1 kalau belum masuk: markup langkah 1 tidak dirender sama sekali
+        // untuk yang belum masuk (gerbang PHP di atas), jadi memulai di sana
+        // menghasilkan halaman kosong tanpa pesan apa pun.
+        step: config.isPengembang ? 1 : 2,
         isLogged: config.isLogged,
         isPengembang: config.isPengembang,
         wrongRole: config.wrongRole,
@@ -356,6 +406,9 @@ function srp2Wizard(config) {
         namaUser: config.namaUser,
         registrationId: config.registrationId,
         dokumen: config.dokumen,
+        // Boleh kosong: tidak semua formulir punya keterangan, dan yang tidak
+        // punya tidak menampilkan apa pun (bukan baris kosong).
+        keterangan: config.keterangan || {},
         status: config.statusVerifikasi,
         catatanAdmin: config.catatanAdmin,
         csrfName: config.csrfName,

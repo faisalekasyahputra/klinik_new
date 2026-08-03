@@ -236,15 +236,52 @@ $GLOBALS['regs'][] = $regB;
 isi_dokumen($regA, $SEMUA_DOK);
 isi_dokumen($regB, ['form_1']);
 
+/**
+ * SYARAT & FORMULIR WAJIB LOGIN — revisi dinas 3 Agt 2026.
+ *
+ * Asersi lama di sini berbunyi "Warga tetap dapat halaman syarat (publik)" dan
+ * memang benar untuk perilaku LAMA. Dibalik, bukan dihapus: yang dijaga
+ * sekarang adalah isinya TIDAK TERKIRIM sama sekali kepada yang belum berhak.
+ *
+ * Diperiksa dari ISI, bukan dari kode HTTP. Halamannya memang tetap 200 —
+ * pintu masuk (masuk/daftar cepat) harus tetap terbuka, jadi redirect buta ke
+ * Auth/login justru menutup jalur pendaftarannya sendiri. Yang membedakan
+ * "digerbangi" dari "disembunyikan" adalah apakah HTML-nya ikut terkirim, dan
+ * `x-show` Alpine tetap mengirimkannya.
+ */
+$anon = http('anon', 'Pengembang/syarat');
+foreach (['Akta notaris', 'Kemenkumham', 'Form 2.A', 'lampiran_SRPP'] as $rahasia) {
+    cek(strpos($anon['body'], $rahasia) === FALSE,
+        "Anonim: isi syarat \"{$rahasia}\" tidak ikut terkirim");
+}
+cek(strpos($anon['body'], 'Daftar Cepat') !== FALSE, 'Anonim: pintu masuk/daftar tetap terbuka');
+
 wajib(login('w', $emailW), 'Login warga');
 $w = http('w', 'Pengembang/syarat');
-cek(stripos($w['body'], 'name="csrf_kpkp_token"') !== FALSE || $w['code'] === 200, 'Warga tetap dapat halaman syarat (publik)');
+cek(strpos($w['body'], 'Akta notaris') === FALSE, 'Warga (salah peran) tidak kebagian isi syarat');
+cek(strpos($w['body'], 'form_10') === FALSE, 'Warga tidak kebagian daftar dokumen di konfigurasi wizard');
 // Yang dibuktikan: TIDAK ADA ISI DOKUMEN YANG SAMPAI — bukan "dibalas 404".
 // Untuk permintaan non-AJAX, `akses_pengembang()` me-REDIRECT peran yang salah
 // ke halaman masuk, jadi curl yang mengikuti redirect menerima 200 dari halaman
 // lain. Memeriksa kodenya membuat uji ini merah untuk gerbang yang bekerja.
 $wd = http('w', 'Pengembang/lihat_dokumen_saya/' . $regA . '/form_1');
 cek(strpos($wd['body'], '%PDF') === FALSE, 'Warga tidak kebagian isi dokumen pengembang mana pun');
+
+// -------------------------------------------- keterangan per formulir (butir 4-5)
+/**
+ * Yang dijaga: keterangan SAMPAI ke wizard pemohon, dan formulir yang belum
+ * punya keterangan tidak memaksa apa pun tampil. Isi keterangannya sendiri
+ * sengaja tidak dipatok di sini — dinas masih akan melengkapinya, dan uji yang
+ * mematok kalimatnya akan merah tiap kali satu formulir dilengkapi.
+ */
+$syarat_a = http('a', 'Pengembang/syarat');
+cek(strpos($syarat_a['body'], 'Data bisa didapatkan dari asosiasi') !== FALSE,
+    'Keterangan form 10/11 sampai ke wizard pemohon');
+cek(preg_match('/&quot;keterangan&quot;:\{/', $syarat_a['body']) === 1
+    || strpos($syarat_a['body'], '"keterangan":{') !== FALSE,
+    'Konfigurasi wizard membawa peta keterangan');
+cek(strpos($syarat_a['body'], 'Akta notaris') !== FALSE,
+    'Pengembang TETAP melihat isi syarat (gerbang tidak kebablasan)');
 
 // ------------------------------------------------------------ anti-IDOR baca
 $sendiri = http('a', 'Pengembang/lihat_dokumen_saya/' . $regA . '/form_1');
