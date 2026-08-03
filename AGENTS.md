@@ -243,7 +243,11 @@ Semua sudah selesai + terverifikasi lewat HTTP nyata, bukan hanya dibaca kodenya
   >
   > 🔴 **Dan sejak 27 Jul, `feature/homepage-portal-v2` sama tidak-bebasnya:** branch itu auto-deploy ke production yang aktif. Tidak ada lagi lingkungan yang "bebas di-push". Kerja lokal bebas; setiap `git push` butuh perintah user.
 
-  **Urutan naik ke production (saat sudah diizinkan):** merge ke `main` → tunggu deploy → **baru** jalankan migrasi ke DB production. Jangan dibalik; kode baru dengan skema lama akan error, sedangkan skema baru dengan kode lama aman selama migrasinya bersifat menambah.
+  **Urutan naik ke production (saat sudah diizinkan): backup DB → jalankan migrasi → BARU push/merge kode.** Bukan sebaliknya.
+
+  > 🔻 **Baris ini dulu menuliskan urutan TERBALIK** (deploy dulu, migrasi belakangan) — sambil mengeja sendiri alasan kenapa itu salah, di kalimat yang sama: *"kode baru dengan skema lama akan error, sedangkan skema baru dengan kode lama aman selama migrasinya bersifat menambah."* Premisnya benar, kesimpulannya kebalikannya. §0a baris 51 mencatat urutan yang BENAR-BENAR dipakai pada rilis 29 Jul dan berhasil: backup → migrasi → push, nol jendela "kode baru bertemu skema lama".
+  >
+  > **Dan "selama migrasinya bersifat menambah" itu syarat, bukan hiasan.** Migrasi `…033` (tabel baru) memang aman diurutkan bagaimana pun. Migrasi `…034` TIDAK: ia mengubah `aduan.bidang` dari `NOT NULL DEFAULT 'umum'` jadi NULL-able, dan kode barunya menyisipkan `NULL`. Push duluan = setiap pengiriman aduan gagal **senyap** (`db_debug` MATI di production, insert cuma mengembalikan FALSE) sampai migrasinya jalan. Sebelum memilih urutan, tanyakan dulu: apakah migrasi ini MENAMBAH, atau MENGUBAH kolom yang sudah dipakai jalur tulis?
 
 ## 2. Setup Lokal
 
