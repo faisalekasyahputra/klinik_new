@@ -297,15 +297,36 @@ echo "\n== Dependensi CDN terpatok versinya ==\n";
  * pun di repo tersentuh. Yang dijaga di sini BUKAN nomor versinya — itu boleh
  * dinaikkan kapan saja — melainkan bahwa penyebutnya tidak mengambang.
  */
-$semua_html = $papan . $adm_index . http('mhs', '/');
-$mengambang = [
-    'alpinejs@3.x.x'   => 'Alpine dipatok versinya',
-    'npm/chart.js"'    => 'Chart.js dipatok versinya',
-    'swiper@11/'       => 'Swiper dipatok versinya',
-    'phosphor-icons/web"' => 'Phosphor dipatok versinya',
+/**
+ * Tiap paket diperiksa DUA arah: bentuk mengambangnya harus absen, DAN bentuk
+ * terpatoknya harus HADIR.
+ *
+ * Versi pertama hanya memeriksa yang pertama, dan langsung menjadi hampa untuk
+ * Chart.js begitu agent lain memindahkannya keluar dari shell admin (3 Agt
+ * 2026): halaman yang disampel tidak lagi memuatnya sama sekali, jadi "tidak
+ * ada npm/chart.js tanpa versi" benar — untuk alasan yang salah.
+ *
+ * Karena itu tiap paket menyebut halaman tempat ia SUNGGUH dimuat. Kalau ada
+ * yang memindahkannya lagi, uji ini MERAH dan memaksa daftarnya ikut
+ * diperbarui — jauh lebih baik daripada diam-diam berhenti menjaga.
+ */
+$sampel = [
+    'portal'      => http('mhs', '/'),
+    'admin'       => $adm_index,
+    'papan slot'  => $papan,
+    'statistika'  => http('mhs', 'statistika'),
 ];
-foreach ($mengambang as $pola => $label) {
-    cek(strpos($semua_html, $pola) === FALSE, $label);
+$paket = [
+    'Alpine'   => ['patok' => 'alpinejs@3.15.12',   'ambang' => 'alpinejs@3.x.x',      'di' => ['portal', 'admin']],
+    'Chart.js' => ['patok' => 'chart.js@4.5.1',     'ambang' => 'npm/chart.js"',       'di' => ['statistika']],
+    'Swiper'   => ['patok' => 'swiper@11.2.10/',    'ambang' => 'swiper@11/',          'di' => ['portal']],
+    'Phosphor' => ['patok' => 'phosphor-icons/web@', 'ambang' => 'phosphor-icons/web"', 'di' => ['admin']],
+];
+foreach ($paket as $nama => $p) {
+    $html = implode('', array_map(fn($k) => $sampel[$k], $p['di']));
+    cek(strpos($html, $p['patok']) !== FALSE,
+        "{$nama} benar-benar dimuat di " . implode('/', $p['di']) . " dengan versi terpatok");
+    cek(strpos($html, $p['ambang']) === FALSE, "{$nama} tidak memakai penyebut mengambang");
 }
 
 // =========================================================== 7. TABEL ADMIN
