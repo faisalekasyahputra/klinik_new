@@ -20,6 +20,9 @@ class Admin_Aduan extends Admin_Controller {
         $data['title'] = 'Semua Aduan';
 
         $bidang_filter = $this->input->get('bidang', TRUE);
+        $status_sah = ['Baru', 'Diproses', 'Selesai'];
+        $status_filter = $this->input->get('status', TRUE);
+        $status_filter = in_array($status_filter, $status_sah, TRUE) ? $status_filter : NULL;
         $daftar_bidang = $this->db->order_by('nama', 'ASC')->get('bidang')->result();
         $kode_valid = array_column($daftar_bidang, 'kode');
         // Filter dari query string divalidasi ke tabel bidang — bukan langsung
@@ -35,6 +38,7 @@ class Admin_Aduan extends Admin_Controller {
 
         $this->db->from('aduan')->join('usr_users', 'usr_users.id = aduan.reviewed_by', 'left');
         if ($bidang_filter) { $this->db->where('aduan.bidang', $bidang_filter); }
+        if ($status_filter) { $this->db->where('aduan.status', $status_filter); }
         if ($table['q'] !== '') {
             $this->db->group_start()
                 ->like('aduan.nama', $table['q'])->or_like('aduan.email', $table['q'])
@@ -59,6 +63,8 @@ class Admin_Aduan extends Admin_Controller {
 
         $data['daftar_bidang'] = $daftar_bidang;
         $data['bidang_filter'] = $bidang_filter;
+        $data['status_sah'] = $status_sah;
+        $data['status_filter'] = $status_filter;
         $this->render_admin('admin/aduan/index', $data);
     }
 

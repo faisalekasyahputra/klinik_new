@@ -59,10 +59,12 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |                  nama kolom dari nama scope sesi.
 |   ringkas - opsional label pendek untuk kartu overview superadmin; kalau tidak
 |             diisi, modul tidak muncul sebagai kartu di Admin_Dashboard
+|   overview_url - opsional URL khusus kartu overview; `url` tetap dipakai
+|                  sidebar, sehingga kartu bisa langsung membuka antrean kerja
 |   enabled - opsional, default true; set false untuk mematikan modul tanpa hapus entri
 */
 
-$config['dashboard_module_groups'] = ['Utama', 'Layanan', 'Manajemen', 'Akun'];
+$config['dashboard_module_groups'] = ['Utama', 'Layanan', 'Tindak Lanjut', 'Pemantauan', 'Publikasi', 'Manajemen', 'Akun'];
 
 $config['dashboard_modules'] = [
 
@@ -195,13 +197,14 @@ $config['dashboard_modules'] = [
 
     // ===== Superadmin =====
     'overview' => [
-        'label' => 'Dashboard', 'icon' => 'ph-squares-four',
+        'label' => 'Ringkasan Kerja', 'icon' => 'ph-squares-four',
         'url'   => 'Admin_Dashboard', 'group' => 'Utama', 'order' => 10,
         'roles' => ['admin'], 'scope' => null,
     ],
     'validasi_antrean' => [
-        'label' => 'Validasi Antrean', 'icon' => 'ph-list-checks',
-        'url'   => 'Admin', 'group' => 'Utama', 'order' => 20,
+        'label' => 'Tinjau Antrean', 'icon' => 'ph-list-checks',
+        'url'   => 'Admin', 'group' => 'Tindak Lanjut', 'order' => 10,
+        'overview_url' => 'Admin?status=pending',
         'roles' => ['admin'], 'scope' => null,
         'table' => 'sf_housing_queue', 'review_by' => 'admin',
         'pending_where' => ['status_antrean' => 'pending'],
@@ -210,8 +213,9 @@ $config['dashboard_modules'] = [
         'badge' => TRUE, 'ringkas' => 'Antrean Perumahan',
     ],
     'srp2_verifikasi' => [
-        'label' => 'Verifikasi SRP2', 'icon' => 'ph-seal-check',
-        'url'   => 'Admin_Srp2/pending', 'group' => 'Layanan', 'order' => 10,
+        'label' => 'Tinjau SRP2', 'icon' => 'ph-seal-check',
+        'url'   => 'Admin_Srp2/pending', 'group' => 'Tindak Lanjut', 'order' => 20,
+        'overview_url' => 'Admin_Srp2/pending?status=Pending',
         'roles' => ['admin'], 'scope' => null,
         'table' => 'srp2_registrations', 'review_by' => 'admin',
         'pending_where' => ['status_verifikasi' => 'Pending'],
@@ -219,15 +223,16 @@ $config['dashboard_modules'] = [
         'badge' => TRUE, 'ringkas' => 'Sertifikasi SRP2',
     ],
     'srp2_direktori' => [
-        'label' => 'Pengembang SRP2', 'icon' => 'ph-buildings',
-        'url'   => 'Admin_Srp2', 'group' => 'Layanan', 'order' => 20,
+        'label' => 'Direktori SRP2', 'icon' => 'ph-buildings',
+        'url'   => 'Admin_Srp2', 'group' => 'Publikasi', 'order' => 10,
         'roles' => ['admin'], 'scope' => null,
     ],
     // Read-only lintas bidang untuk superadmin (audit/eskalasi). Sengaja tanpa
     // endpoint tulis — keputusan tetap kewenangan admin_bidang.
     'aduan_semua' => [
-        'label' => 'Semua Aduan', 'icon' => 'ph-chat-centered-dots',
-        'url'   => 'Admin_Aduan', 'group' => 'Layanan', 'order' => 25,
+        'label' => 'Pantau Aduan', 'icon' => 'ph-chat-centered-dots',
+        'url'   => 'Admin_Aduan', 'group' => 'Pemantauan', 'order' => 10,
+        'overview_url' => 'Admin_Aduan?status=Baru',
         'roles' => ['admin'], 'scope' => null,
         'table' => 'aduan', 'review_by' => 'admin_bidang',
         'pending_where' => ['status' => 'Baru'],
@@ -235,8 +240,9 @@ $config['dashboard_modules'] = [
         'badge' => TRUE, 'ringkas' => 'Aduan Warga',
     ],
     'kemitraan' => [
-        'label' => 'KKN/Magang', 'icon' => 'ph-graduation-cap',
-        'url'   => 'Admin_Kemitraan', 'group' => 'Layanan', 'order' => 30,
+        'label' => 'Kelola KKN/Magang', 'icon' => 'ph-graduation-cap',
+        'url'   => 'Admin_Kemitraan', 'group' => 'Tindak Lanjut', 'order' => 30,
+        'overview_url' => 'Admin_Kemitraan?status=Diajukan',
         'roles' => ['admin'], 'scope' => null,
         'table' => 'kkn_magang_pendaftaran', 'review_by' => 'admin',
         'pending_where' => ['status' => 'Diajukan'],
@@ -265,13 +271,8 @@ $config['dashboard_modules'] = [
     // memakai prefix "url/", jadi Admin_Kemitraan/slot tetap menyalakan menu
     // KKN/Magang tanpa entri tambahan.
     'users' => [
-        'label' => 'Pengguna', 'icon' => 'ph-users',
+        'label' => 'Kelola Pengguna', 'icon' => 'ph-users',
         'url'   => 'Admin_Users', 'group' => 'Manajemen', 'order' => 10,
-        'roles' => ['admin'], 'scope' => null,
-    ],
-    'content' => [
-        'label' => 'Konten Website', 'icon' => 'ph-article',
-        'url'   => 'Admin_Content', 'group' => 'Manajemen', 'order' => 20,
         'roles' => ['admin'], 'scope' => null,
     ],
     // A6 — entri 'settings' DICABUT 29 Jul 2026 bersama controller Admin_Settings

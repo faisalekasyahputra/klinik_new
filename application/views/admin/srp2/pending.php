@@ -3,7 +3,7 @@ $label_status = ['Pending' => 'Menunggu', 'Draft' => 'Diminta Perbaikan', 'Diter
 $kelas_status = ['Pending' => 'pending', 'Draft' => 'process', 'Diterima' => 'ok', 'Ditolak' => 'reject'];
 ?>
 <div class="mb-6">
-    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Verifikasi SRP2</h2>
+    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Tinjau Pengajuan SRP2</h2>
     <p class="text-sm text-gray-500 dark:text-brand-muted">Pengajuan sertifikasi pengembang<?= $status_filter === 'semua' ? '.' : ' berstatus ' . html_escape($label_status[$status_filter] ?? $status_filter) . '.' ?></p>
 </div>
 

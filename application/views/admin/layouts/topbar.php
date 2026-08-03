@@ -4,12 +4,6 @@
             <i class="ph ph-list text-2xl"></i>
         </button>
         
-        <!-- Search Bar -->
-        <div class="hidden md:flex items-center bg-gray-100 dark:bg-brand-card/50 border border-transparent dark:border-white/5 rounded-xl px-4 py-2.5 w-96 focus-within:ring-2 focus-within:ring-brand-primary/50 focus-within:border-brand-primary/30 transition-all">
-            <i class="ph ph-magnifying-glass text-gray-400 dark:text-brand-muted mr-3 text-lg"></i>
-            <input type="text" placeholder="Cari data, antrean, atau pengguna..." class="bg-transparent border-none outline-none w-full text-sm text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-brand-muted/70">
-            <div class="ml-3 px-2 py-0.5 rounded bg-gray-200 dark:bg-white/10 text-[10px] font-mono text-gray-500 dark:text-brand-muted">⌘K</div>
-        </div>
     </div>
     
     <div class="flex items-center space-x-2">

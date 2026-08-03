@@ -271,6 +271,25 @@ foreach ([['mhs', '/', 'beranda portal'], ['adm', 'Admin_Dashboard', 'dasbor adm
     cek(stripos(http($s, $path), 'data:image/svg+xml') !== FALSE, "Avatar {$label} terbit sebagai SVG lokal");
 }
 
+// =========================================================== 6. MEJA KERJA
+echo "\n== Meja kerja Super Admin ==\n";
+$overview = http('adm', 'Admin_Dashboard');
+cek(strpos($overview, 'Meja Kerja Super Admin') !== FALSE
+    && strpos($overview, 'Admin?status=pending') !== FALSE
+    && strpos($overview, 'Admin_Kemitraan?status=Diajukan') !== FALSE
+    && strpos($overview, 'tanpa_wilayah=1') !== FALSE
+    && strpos($overview, CAP . '-MAGANG') !== FALSE
+    && strpos($overview, 'cdn.jsdelivr.net/npm/chart.js') === FALSE
+    && strpos($overview, 'Cari data, antrean, atau pengguna...') === FALSE,
+    'Overview memuat antrean kerja terfilter lintas domain tanpa grafik Chart.js');
+$direktori_srp2 = http('adm', 'Admin_Srp2');
+cek(strpos($overview, 'Tinjau SRP2') !== FALSE
+    && strpos($overview, 'Direktori SRP2') !== FALSE
+    && strpos($overview, 'Pengembang SRP2') === FALSE
+    && strpos($direktori_srp2, 'Direktori Pengembang Bersertifikat') !== FALSE
+    && strpos($direktori_srp2, 'Pengajuan yang diterima masuk otomatis') !== FALSE,
+    'Menu dan halaman Direktori SRP2 membedakan publikasi dari verifikasi pengajuan');
+
 // =========================================================== 6. VERSI CDN
 echo "\n== Dependensi CDN terpatok versinya ==\n";
 /**

@@ -36,6 +36,11 @@ ob_start(); ?>
 <?php foreach ($badge_label as $kode => $label): ?>
 <a href="<?= admin_table_url($base_url, ['status' => $kode]) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= $filter_status === $kode ? 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>"><?= $label ?></a>
 <?php endforeach;
+if (!empty($can_filter_tanpa_wilayah)): ?>
+<span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted mr-1">Wilayah:</span>
+<a href="<?= admin_table_url($base_url, ['tanpa_wilayah' => NULL]) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= empty($filter_tanpa_wilayah) ? 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>">Semua</a>
+<a href="<?= admin_table_url($base_url, ['tanpa_wilayah' => '1']) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= !empty($filter_tanpa_wilayah) ? 'bg-orange-100 border-orange-300 text-orange-700 dark:bg-orange-500/20 dark:border-orange-500/50 dark:text-orange-400' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>">Belum Terpetakan</a>
+<?php endif;
 $filter_html = ob_get_clean();
 ?>
 
@@ -73,7 +78,7 @@ $filter_html = ob_get_clean();
                         <td colspan="6" class="px-6 py-16 text-center">
                             <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-black/40 border border-gray-200 dark:border-white/5 flex items-center justify-center text-2xl text-gray-300 dark:text-white/20"><i class="ph ph-tray"></i></div>
                             <p class="text-base font-medium text-gray-500 dark:text-white/60">Data tidak ditemukan</p>
-                            <p class="text-sm mt-1 text-gray-400 dark:text-brand-muted"><?= ($table['q'] !== '' || $filter_status) ? 'Tidak ada yang cocok dengan pencarian/filter ini.' : html_escape($empty_text) ?></p>
+                            <p class="text-sm mt-1 text-gray-400 dark:text-brand-muted"><?= ($table['q'] !== '' || $filter_status || !empty($filter_tanpa_wilayah)) ? 'Tidak ada yang cocok dengan pencarian/filter ini.' : html_escape($empty_text) ?></p>
                         </td>
                     </tr>
                     <?php else: foreach ($queue as $row):

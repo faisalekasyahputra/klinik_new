@@ -252,7 +252,7 @@ class MY_Controller extends CI_Controller {
      * lalu memfilter di klien; itu paradigma tabel yang dihapus di B8.
      *
      * @param int|null $kabupaten_id NULL = tanpa scope wilayah (superadmin)
-     * @return array [queue, table, pager, filter_status]
+     * @return array [queue, table, pager, filter_status, filter_tanpa_wilayah, can_filter_tanpa_wilayah]
      */
     protected function antrean_table_data($kabupaten_id = NULL) {
         $kolom_sort = [
@@ -263,11 +263,13 @@ class MY_Controller extends CI_Controller {
 
         $status = $this->input->get('status', TRUE);
         $status = in_array($status, ['pending', 'needs_revision', 'approved', 'rejected'], TRUE) ? $status : NULL;
+        $tanpa_wilayah = $kabupaten_id === NULL && $this->input->get('tanpa_wilayah', TRUE) === '1';
 
         $this->db->from('sf_housing_queue')
             ->join('sf_programs', 'sf_housing_queue.program_id = sf_programs.id', 'left');
         if ($kabupaten_id !== NULL) { $this->db->where('sf_housing_queue.kabupaten_id', $kabupaten_id); }
         if ($status) { $this->db->where('sf_housing_queue.status_antrean', $status); }
+        if ($tanpa_wilayah) { $this->db->where('sf_housing_queue.kabupaten_id IS NULL', NULL, FALSE); }
         if ($table['q'] !== '') {
             $this->db->group_start()
                 ->like('sf_housing_queue.nama_lengkap', $table['q'])
@@ -285,7 +287,11 @@ class MY_Controller extends CI_Controller {
             ->limit($table['per_page'], $table['offset'])
             ->get()->result();
 
-        return ['queue' => $queue, 'table' => $table, 'pager' => $table, 'filter_status' => $status];
+        return [
+            'queue' => $queue, 'table' => $table, 'pager' => $table,
+            'filter_status' => $status, 'filter_tanpa_wilayah' => $tanpa_wilayah,
+            'can_filter_tanpa_wilayah' => $kabupaten_id === NULL,
+        ];
     }
 
     protected function assessment_detail_data($queue_id, $kabupaten_id = NULL) {

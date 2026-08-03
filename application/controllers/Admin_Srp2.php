@@ -11,7 +11,7 @@ class Admin_Srp2 extends Admin_Controller {
     }
 
     public function index() {
-        $data['title'] = 'Daftar Pengembang SRP2';
+        $data['title'] = 'Direktori Pengembang Bersertifikat';
 
         // Pola tabel server-side B8, sama dengan pending() di berkas ini —
         // sebelumnya satu-satunya tabel admin SRP2 yang masih mengirim SELURUH

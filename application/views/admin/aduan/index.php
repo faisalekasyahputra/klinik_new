@@ -19,9 +19,14 @@ $badge_kelas = ['Baru' => 'pending', 'Diproses' => 'process', 'Selesai' => 'ok']
 
 <?php
 $this->load->helper('admin_table');
-// Filter bidang dibangun lewat admin_table_url() supaya pencarian/urutan yang
-// sedang aktif tidak hilang saat ganti filter (dan sebaliknya).
+// Filter dibangun lewat admin_table_url() supaya pencarian/urutan yang sedang
+// aktif tidak hilang saat ganti filter (dan sebaliknya).
 ob_start(); ?>
+<span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted mr-1">Status:</span>
+<a href="<?= admin_table_url($base_url, ['status' => NULL]) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= empty($status_filter) ? 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>">Semua</a>
+<?php foreach ($status_sah as $status): ?>
+<a href="<?= admin_table_url($base_url, ['status' => $status]) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= $status_filter === $status ? 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>"><?= html_escape($status) ?></a>
+<?php endforeach; ?>
 <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted mr-1">Bidang:</span>
 <a href="<?= admin_table_url($base_url, ['bidang' => NULL]) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= empty($bidang_filter) ? 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>">Semua</a>
 <?php foreach ($daftar_bidang as $b): ?>

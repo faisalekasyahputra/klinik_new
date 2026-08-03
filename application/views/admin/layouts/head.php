@@ -98,15 +98,12 @@
     </style>
     <!-- Phosphor Icons — defer: ikon menyusul sepersekian detik, halaman tidak menunggu -->
     <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.2"></script>
-    <?php // Chart.js DIPINDAH ke satu-satunya view pemakainya (admin/dashboard.php)
-          // — dulu ~200KB blocking dimuat di SEMUA halaman admin. ?>
     <style>
         [x-cloak] { display: none !important; }
         /* Main Content Entry Animation */
         #main-content {
             animation: fade-in-blur 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
         }
-        .admin-sidebar-backdrop { display: none; }
         @media (max-width: 767px) {
             .admin-sidebar {
                 position: fixed !important;
@@ -115,13 +112,6 @@
                 flex: 0 0 16rem !important;
                 width: 16rem !important;
                 transform: translateX(0) !important;
-            }
-            .admin-sidebar-backdrop {
-                display: block !important;
-                position: fixed !important;
-                inset: 0 !important;
-                z-index: 50 !important;
-                background: rgba(10, 26, 31, .55);
             }
             .admin-main { padding: 1rem; }
             .admin-topbar { padding-left: 1rem; padding-right: 1rem; }
