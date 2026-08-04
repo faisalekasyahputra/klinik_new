@@ -80,4 +80,24 @@ $config['rate_limit_policies'] = [
         'window' => 86400,
         'dimensions' => ['account'],
     ],
+    /*
+     * Cek RTLH. Tiap pencarian menyentuh API SIMPERUM dan menulis satu snapshot,
+     * jadi yang dibatasi bukan cuma penyalahgunaan melainkan juga beban ke
+     * sistem sebelah.
+     *
+     * Dimensi `account` saja, alasan yang sama dengan `janji_temu_ajukan`:
+     * endpoint-nya wajib login, jadi akun ADALAH identitasnya, dan menambahkan
+     * IP pada batas sekecil ini membuat satu kantor kelurahan atau satu blok
+     * CGNAT berbagi jatah untuk semua orang di baliknya.
+     *
+     * Batas ini bekerja BERSAMA gerbang login, bukan menggantikannya — NIK +
+     * tanggal lahir tidak menahan siapa pun (tanggalnya terkandung di NIK),
+     * jadi kalau login dicabut, angka ini yang jadi satu-satunya penahan dan
+     * ia tidak cukup.
+     */
+    'rtlh_cek' => [
+        'limit' => 10,
+        'window' => 3600,
+        'dimensions' => ['account'],
+    ],
 ];

@@ -258,10 +258,35 @@ dihapus setelah Fase 7 hijau.
    tanggapannya → panel **Janji Temu Konsultasi** muncul, ajukan.
 6. **`/Admin_Konsultasi`** — pengajuan tadi muncul, tawarkan jadwal, lalu setujui
    dari sisi warga.
+7. **`/golek_omah`** — kartu keempat sekarang **Cek Status RTLH**, bukan duplikat
+   `warga/pendataan`. Buka **tanpa login**: harus mendarat di layar login.
+8. **`/Cek_Rtlh`** setelah login — periksa satu NIK. Lihat §Catatan SIMPERUM di
+   bawah sebelum menyimpulkan hasilnya salah.
 
 **GERBANG.** Ada satu saja yang 500 atau tidak sesuai → §Rollback.
 
 Hapus aduan uji dan topik uji setelah selesai.
+
+### Catatan SIMPERUM — baca sebelum menguji Cek RTLH
+
+`SIMPERUM_MODE` di `.env` server menentukan dari mana datanya:
+
+| Nilai | Yang terjadi |
+|---|---|
+| `simulation` | Fixture sintetis. Layarnya memasang spanduk **MODE SIMULASI**; hanya NIK `...0001`–`...0005` yang "terdaftar". Berguna untuk memastikan layarnya hidup, **bukan** untuk menjawab pertanyaan warga. |
+| `api` | Data RTLH sungguhan. Butuh `SIMPERUM_BASE_URL` **https** + kunci publik/privat terisi; kalau belum, `lookup()` memulangkan `api_not_configured` dan layarnya berkata "Koneksi SIMPERUM belum dikonfigurasi". |
+
+Baca nilainya dari server, jangan diasumsikan:
+
+```
+cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && grep -E '^SIMPERUM_(MODE|BASE_URL)=' .env
+```
+
+> ⚠️ **Kalau mode-nya diubah ke `api`, satu perilaku lain ikut berubah:**
+> `Program::api_cek_simperum()` — endpoint publik lama di alur diagnosa — mulai
+> menolak dengan **409** dan mengarahkan ke Wizard Warga. Itu memang disengaja
+> (data RTLH nyata tidak lewat endpoint publik), tapi jangan kaget kalau alur
+> diagnosa lama tiba-tiba berbeda; ia bukan rusak.
 
 ---
 
