@@ -28,7 +28,33 @@ Dibaca dari server, bukan dari niat rilis:
 | Kode ter-deploy | `c348e45` |
 | Belum di-push | 5 commit (`c1ab15a` … `7308810`) |
 
+---
+
+## ✅ SUDAH DIJALANKAN 4 Agt 2026 — dan premis di bawah ternyata SALAH
+
+Fase 0–4 selesai. Hasil sebenarnya, dibaca dari server:
+
+| Fase | Hasil |
+|---|---|
+| 0 | Server ternyata di `060c67f`, **`ahead 1, behind 17`** — bukan `c348e45` seperti dugaan |
+| 1 | Backup `~/backup_klinik_pre_035.sql.gz`, **38 `CREATE TABLE`**, 22 `INSERT`, mode 600 |
+| 2 | Tiga berkas disalin, checksum cocok (`a90c6739…`, `213844a9…`, `690ea869…`) |
+| 3 | `Migrasi sukses, versi skema sekarang: 20260701000035` |
+| 4 | `sys_jejak_audit` (11 kolom) + `forum_janji_temu` (**3 FK**) ada; `aduan.bidang` `IS_NULLABLE=YES`, DEFAULT bukan `umum`; 0 baris NULL |
+| + | Deploy diluruskan: `git reset --hard origin/…` → `c348e45`, **17 commit mendarat**. 8 rute publik 200, nol kebocoran galat, 40 tabel |
+
+> 🔻 **KOREKSI PREMIS.** Bagian "Yang sedang rusak sekarang" di bawah menulis bahwa production menjalankan layar Jejak Audit tanpa tabelnya. **Itu tidak benar.** `34c1506` belum ter-deploy sama sekali — server tertinggal 17 commit. Penyebabnya: saya membaca `git ls-remote origin` (keadaan GitHub) dan menyimpulkan keadaan server dari situ.
+>
+> Yang sebenarnya rusak: **auto-deploy macet sejak 3 Agt 00:26**, karena ada commit yang dibuat LANGSUNG DI SERVER (`060c67f`) sehingga branch bercabang. Isinya identik dengan `0c1e396` yang sudah ada di origin, jadi `reset --hard` tidak menghilangkan pekerjaan apa pun — tapi selama sepuluh hari tidak ada satu pun tanda bahwa deploy berhenti.
+>
+> **Untuk rilis berikutnya:** Fase 0 WAJIB dibaca dari `ssh`, dan `git status -sb` di server adalah baris yang paling penting di seluruh runbook ini — ia yang memunculkan `ahead 1, behind 17`.
+
+> ⚠️ **YANG MASIH TERTINGGAL:** dua berkas migrasi (`034`, `035`) masih *untracked* di server. Itu **disengaja untuk sekarang** — selama keduanya ada, `php index.php migrate` adalah no-op yang aman. Kalau dihapus, `latest()` akan menargetkan `033` dan menjalankan `down()` untuk `035` & `034`. Singkirkan mereka (Fase 5) **tepat sebelum push berikutnya**, bukan lebih awal.
+
+---
+
 ## 🔴 Yang sedang rusak sekarang, dan Fase 3 memperbaikinya tanpa push
+<span style="opacity:.6">*(bagian ini DIPERTAHANKAN apa adanya sebagai jejak premis yang salah — jangan dipakai sebagai keadaan sekarang)*</span>
 
 Commit `34c1506` (3 Agt) **sudah ter-deploy**: `catat_audit()`, layar **Jejak
 Audit**, dan **Akses Staf** lengkap dengan nonaktifkan-akun, reset-sandi, dan

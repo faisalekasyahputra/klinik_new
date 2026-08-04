@@ -13,7 +13,13 @@
 <!-- Konteks lama, dipertahankan sebagai jejak: -->
 **Sebelumnya: 28 Juli 2026** (roadmap pengembang T0–T6 selesai di production; form warga R0–R7 dan adapter offline SIMPERUM R9 selesai lokal, belum di-push — lihat §0b/§0c). Kalau kamu agent yang baru masuk, baca bagian ini sampai habis sebelum menyentuh apa pun.
 
-> 🔴 **PRODUCTION SEDANG MENJALANKAN LAYAR JEJAK AUDIT TANPA TABELNYA** (diukur dari server 4 Agt 2026: skema `20260701000032`, kode `c348e45`). Commit `34c1506` yang membawa `catat_audit()`, layar Jejak Audit, dan Akses Staf **sudah ter-deploy**; migrasi `033` tidak pernah ikut jalan. `catat_audit()` sengaja diam kalau tabelnya tidak ada, jadi setiap penonaktifan akun, ganti peran, dan reset sandi di sana **tidak terekam** — dan layarnya tampil kosong seolah belum ada aktivitas. Jejak yang hilang tidak bisa diisi ulang. Perbaikannya tidak butuh push: begitu `033` mendarat, perekaman hidup seketika. Prosedurnya lengkap di [`RUNBOOK_RILIS_033_035.md`](docs/engineering/RUNBOOK_RILIS_033_035.md) — **migrasi DULU, baru push**, karena `034`/`035` membuat kode baru fatal di skema lama.
+> ✅ **RILIS 033–035 SELESAI DI PRODUCTION, 4 Agt 2026.** Backup terverifikasi (38 `CREATE TABLE`), migrasi `033`/`034`/`035` mendarat, diverifikasi dari `information_schema` — `sys_jejak_audit` (11 kolom) & `forum_janji_temu` (3 FK) ada, `aduan.bidang` NULL-able tanpa DEFAULT `umum`. Delapan rute publik 200, nol kebocoran galat. Runbook + catatan pelaksanaannya: [`RUNBOOK_RILIS_033_035.md`](docs/engineering/RUNBOOK_RILIS_033_035.md).
+>
+> 🔻 **DAN SATU KOREKSI YANG HARUS DIBACA, karena polanya akan terulang.** Runbook itu semula dibuka dengan klaim *"production sedang menjalankan layar Jejak Audit tanpa tabelnya"*. **Klaim itu SALAH.** Saya membaca `git ls-remote origin` — yaitu apa yang ada di GitHub — lalu menyimpulkan keadaan server dari situ. Server tidak pernah saya buka sampai user bertanya "kamu butuh aku yang cek?".
+>
+> Kenyataannya server tertinggal **17 commit** dan `34c1506` (kode audit) belum ter-deploy sama sekali; tidak ada layar audit di sana, jadi tidak ada yang gagal merekam. Yang sebenarnya rusak justru lebih besar: **auto-deploy MACET sejak 3 Agt 00:26** karena ada commit yang dibuat LANGSUNG DI SERVER (`060c67f`, hanya menyentuh AGENTS.md, isinya identik dengan `0c1e396` yang sudah ada di origin) sehingga branch bercabang dan `git pull` tidak bisa maju.
+>
+> **Aturannya sekarang eksplisit: `git ls-remote` BUKAN keadaan production.** Ia keadaan GitHub. Satu-satunya cara tahu apa yang berjalan di server adalah `ssh` lalu `git log -1` + `git status -sb` DI SANA — dan `git status -sb` itu yang memunculkan `ahead 1, behind 17`. **Jangan commit apa pun langsung di server**; itu yang menghentikan deploy selama sepuluh hari tanpa satu pun tanda.
 
 > 🛑 **JANGAN BERSIHKAN DATA DEMO/UJI DI DB DEV — keputusan user 2 Agt 2026, berlaku sampai merge ke `main`.** Empat akun `@example.test` (dua di antaranya `admin_kabkota` aktif), sebelas akun demo, dua pendaftaran kemitraan, dan 25 slot 2027 SENGAJA dibiarkan hidup. Daftar lengkap + checklist pembersihannya di **§20**. Sudah dua kali ada agent yang mengusulkan menyapunya karena mengira itu sampah; kalau kamu berpikir begitu juga, baca §20 dulu, lalu tanyakan.
 
@@ -56,8 +62,8 @@
 
 | | Situs | Branch | Status |
 |---|---|---|---|
-| **Lokal** | `localhost/klinik_new` | `feature/homepage-portal-v2` | skema `20260701000022` — sama dengan production sejak 30 Jul |
-| **PRODUCTION (aktif)** | `floralwhite-lion-710022`<br>dir: `~/domains/floralwhite-lion-710022.hostingersite.com/public_html`<br>DB: **`31.97.208.59`** (bukan localhost), `u504551489_klinikstg` | `feature/homepage-portal-v2` — auto-deploy | KODE `3bec51e` + DB skema **`20260701000024`**, 36 tabel, ter-push & termigrasi 30 Jul 2026 sore. *(Baris ini sempat menulis `…016` lalu `…022`; keduanya salah. Angka hanya boleh ditulis ulang setelah dibaca dari server — `Migrate::status()` untuk versinya, `information_schema` untuk bentuknya — bukan dari niat rilis.)* |
+| **Lokal** | `localhost/klinik_new` | `feature/homepage-portal-v2` | skema `20260701000035`, 10 commit belum di-push (cadangan: `backup/revisi-dinas-4agt`) |
+| **PRODUCTION (aktif)** | `floralwhite-lion-710022`<br>dir: `~/domains/floralwhite-lion-710022.hostingersite.com/public_html`<br>DB: **`31.97.208.59`** (bukan localhost), `u504551489_klinikstg` | `feature/homepage-portal-v2` — auto-deploy | KODE **`c348e45`** + DB skema **`20260701000035`**, **40 tabel** — dibaca dari server 4 Agt 2026 03:57–04:0x WIB. *(Baris ini sempat menulis `…016`, `…022`, lalu `3bec51e`+`…024`; ketiganya salah. Angka hanya boleh ditulis ulang setelah dibaca dari server — dan lihat peringatan di bawah soal cara membacanya.)* |
 | ~~production lama~~ | `palegreen-mink-703421` | `main` — beku sejak 19 Jul | 🔴 **DIMATIKAN** |
 | ~~staging lama~~ | `darkseagreen-hamster-214338` | `feature/ui-ux-revamp` | 🔴 **DIMATIKAN** |
 | ~~instalasi mati~~ | `darkgreen-cattle-889861` | tanpa git, Mei | 🔴 **DIMATIKAN** |
