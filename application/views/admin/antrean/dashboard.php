@@ -44,7 +44,10 @@ if (!empty($can_filter_tanpa_wilayah)): ?>
 $filter_html = ob_get_clean();
 ?>
 
-<div x-data="antreanModal()" class="relative z-10">
+<?php /* TANPA `z-10` — pembungkus ini memuat modal keputusan antrean, dan
+         `relative z-10` menguburnya di bawah topbar (z-40) & sidebar (z-20).
+         Alasan sama dengan `#main-content`; lihat catatan di admin/index.php. */ ?>
+<div x-data="antreanModal()" class="relative">
     <div class="mb-8">
         <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2 flex items-center gap-3">
             <i class="ph ph-map-pin text-brand-primary"></i>

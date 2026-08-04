@@ -1,4 +1,8 @@
-<div class="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-6 relative z-10" x-data="{ createOpen: false }">
+<?php /* TANPA `z-10`: pembungkus ini memuat modal "Tambah Pengguna", dan
+         `relative z-10` menguncinya di stacking context z-10 — persis alasan yang
+         sama dengan `#main-content` di admin/index.php. Dua konteks bersarang,
+         satu bug. */ ?>
+<div class="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-6" x-data="{ createOpen: false }">
     <div>
         <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Manajemen Pengguna</h2>
         <p class="text-sm text-gray-500 dark:text-brand-muted">Kelola akun, peran, dan akses pengguna dalam sistem.</p>
@@ -62,7 +66,10 @@
 </div>
 
 <?php $this->load->helper('admin_table'); ?>
-<div data-tabel-admin class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden relative z-10">
+<?php /* TANPA `z-10`: modal "Reset Sandi" (`fixed inset-0 z-50`) ditulis di dalam
+         <td> di kartu ini, jadi stacking context z-10 di sini menguburnya juga.
+         `relative` dipertahankan — popover Ubah Role di dalam sel memakainya. */ ?>
+<div data-tabel-admin class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden relative">
     <div class="p-6 border-b border-gray-200 dark:border-white/5">
         <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <i class="ph ph-users-three text-brand-primary"></i> Daftar Pengguna (<?= number_format((int) $table['total_rows']) ?>)

@@ -489,5 +489,41 @@ foreach ($popover_admin as [$berkas, $kelas]) {
         "{$berkas}: popover di dalam tabel mereset white-space");
 }
 
+// ============================== SHELL ADMIN TIDAK BOLEH MENJEBAK MODAL
+echo "\n== Shell admin: `#main-content` tidak menjebak `position: fixed` ==\n";
+/**
+ * Dua kelas di shell pernah mematahkan SETIAP modal di SELURUH layar admin
+ * sekaligus. Dilaporkan user 4 Agt 2026: "modalnya tidak muncul karena
+ * tertumpuk".
+ *
+ * 1. `animation: … both`. Bagian `forwards`-nya membuat keyframe terakhir
+ *    menempel selamanya — termasuk `transform: translateY(0) scale(1)` dan
+ *    `filter: blur(0px)`. Keduanya identitas, tidak mengubah tampilan sama
+ *    sekali, TAPI elemen ber-transform/filter jadi CONTAINING BLOCK untuk
+ *    `position: fixed`. Modal `fixed inset-0` pun terkurung di dalam <main>:
+ *    terukur x=256 (tepi sidebar), bukan 0.
+ * 2. `relative z-10` pada `#main-content` = STACKING CONTEXT. `z-50` milik
+ *    modal jadi cuma berlaku di dalam konteks z-10 itu, sementara topbar
+ *    (z-40) dan sidebar (z-20) adalah saudara DI LUARNYA — jadi modal dicat
+ *    di bawah keduanya.
+ *
+ * Keduanya diperiksa sebagai STRING karena keduanya memang kelas/nilai CSS,
+ * bukan hasil tata letak. Yang tidak bisa diperiksa dari sini — apakah modal
+ * benar-benar menutupi layar — memang butuh browser, dan itu bagian §17 poin 6.
+ */
+$shell = file_get_contents(APP_ROOT . '/application/views/admin/index.php');
+preg_match('/<main id="main-content"[^>]*class="([^"]*)"/', $shell, $mm);
+$kelas_main = $mm[1] ?? '';
+cek($kelas_main !== '', 'Kelas #main-content terbaca');
+cek( ! preg_match('/\bz-\d+\b/', $kelas_main),
+    '#main-content tanpa z-index — stacking context di sini mengubur setiap modal di bawahnya');
+
+$head = file_get_contents(APP_ROOT . '/application/views/admin/layouts/head.php');
+preg_match('/#main-content\s*\{[^}]*animation:([^;]*);/s', $head, $am);
+$anim = trim($am[1] ?? '');
+cek($anim !== '', 'Animasi #main-content terbaca');
+cek(strpos($anim, 'backwards') !== FALSE && ! preg_match('/\bboth\b|\bforwards\b/', $anim),
+    'fill-mode `backwards`, bukan `both`/`forwards` — kalau tidak, transform & filter menempel selamanya');
+
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);

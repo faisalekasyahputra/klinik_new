@@ -63,7 +63,20 @@
         <?php $this->load->view('admin/layouts/topbar'); ?>
         
         <!-- Main Content Area -->
-        <main id="main-content" class="admin-main flex-1 min-h-0 overflow-x-hidden overflow-y-auto p-8 relative z-10 custom-scrollbar">
+        <?php /* `relative` TANPA `z-10` — dan hilangnya satu kelas itu yang membuat
+                 modal admin bisa tampil sama sekali.
+
+                 `position:relative` + `z-index` bernilai = STACKING CONTEXT. Selama
+                 `#main-content` ber-`z-10`, setiap `z-50` di DALAMNYA cuma berlaku
+                 relatif terhadap sesamanya di konteks itu — jadi modal `z-50`
+                 tetap dicat DI BAWAH topbar (`z-40`) dan sidebar (`z-20`), yang
+                 saudara-saudaranya di luar. Dilaporkan user 4 Agt 2026 sebagai
+                 "modalnya tidak muncul karena tertumpuk".
+
+                 `relative` dipertahankan (dipakai penempatan di dalamnya); yang
+                 dibuang hanya z-index-nya. main tetap tercat di bawah sidebar &
+                 topbar lewat urutan dokumen, jadi nol yang berubah secara visual. */ ?>
+        <main id="main-content" class="admin-main flex-1 min-h-0 overflow-x-hidden overflow-y-auto p-8 relative custom-scrollbar">
             <!-- Injected Content -->
             <div class="animate-[fadeIn_0.3s_ease-out]">
                 <?= isset($content) ? $content : '' ?>

@@ -100,9 +100,32 @@
     <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.2"></script>
     <style>
         [x-cloak] { display: none !important; }
-        /* Main Content Entry Animation */
+        /*
+         * Main Content Entry Animation.
+         *
+         * `backwards`, BUKAN `both` — dan satu kata itu yang dulu mematahkan
+         * SETIAP modal di seluruh layar admin.
+         *
+         * `both` = `backwards` + `forwards`. Bagian `forwards` membuat keyframe
+         * terakhir MENEMPEL selamanya sesudah animasinya habis — termasuk
+         * `transform: translateY(0) scale(1)` dan `filter: blur(0px)`. Keduanya
+         * memang tidak mengubah tampilan (identitas), tapi keberadaannya saja
+         * sudah cukup: elemen ber-transform/filter menjadi CONTAINING BLOCK
+         * untuk `position: fixed` dan membuat STACKING CONTEXT baru.
+         *
+         * Akibatnya, diukur 4 Agt 2026: modal `fixed inset-0 z-50` tidak lagi
+         * menutupi layar melainkan terkurung di dalam `<main>` (x=256 alih-alih
+         * 0), dan karena `#main-content` ber-`z-10`, `z-50` modal itu terkubur
+         * di bawah topbar (z-40) dan sidebar (z-20). Dilaporkan user sebagai
+         * "modalnya tidak muncul karena tertumpuk".
+         *
+         * `backwards` tetap memberi efek masuk yang sama (keadaan `from`
+         * diterapkan sebelum animasi mulai, jadi tidak ada kedipan), tapi
+         * melepaskan transform & filter begitu selesai. Keadaan akhirnya memang
+         * identik dengan keadaan alami elemen, jadi nol yang hilang.
+         */
         #main-content {
-            animation: fade-in-blur 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+            animation: fade-in-blur 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards;
         }
         @media (max-width: 767px) {
             .admin-sidebar {
