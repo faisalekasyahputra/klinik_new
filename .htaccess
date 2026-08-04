@@ -23,6 +23,18 @@
     RewriteRule ^[^/]+\.md$ - [F,L]
     RewriteRule ^composer\.(json|lock)$ - [F,L]
 
+    # Log PHP. Berkas ini LAHIR SENDIRI saat runtime, tanpa commit — jadi ia
+    # tidak pernah muncul di tinjauan repo, tidak ada di daftar mana pun, dan
+    # tiga aturan di atas semuanya meleset: ia bukan dotfile, bukan .md, bukan
+    # di docs/. Diverifikasi 4 Agt 2026: GET /error_log membalas HTTP 200 dengan
+    # 15 KB isi, satu-satunya berkas akar yang bocor dari delapan yang diuji.
+    #
+    # Isinya saat ditemukan kebetulan tidak berbahaya (30 peringatan startup
+    # modul Hostinger). Yang ditutup di sini bukan isi itu, melainkan KELASNYA:
+    # galat PHP rutin memuat path absolut server, potongan SQL, dan kadang nilai
+    # variabel — dan di aplikasi ini variabel itu bisa berisi NIK atau email.
+    RewriteRule (^|/)(error_log|php_errorlog|[^/]+\.log)$ - [F,L]
+
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ index.php/$1 [L,QSA]
