@@ -430,5 +430,64 @@ cek((int) nilai('SELECT COUNT(*) c FROM kkn_magang_pendaftaran WHERE instansi_as
  * lebar: jangan. Baca dulu catatan di §17 itu.
  */
 
+// ============================== POPOVER DI DALAM TABEL ADMIN
+echo "\n== Popover di dalam sel tabel wajib mereset white-space ==\n";
+/**
+ * INI PEMERIKSAAN MARKUP, BUKAN TATA LETAK — dan bedanya penting supaya ia
+ * tidak melanggar catatan panjang di atas.
+ *
+ * Yang diperiksa bukan "apakah tombolnya muat" (itu butuh CSS dihitung, dan
+ * memang tidak bisa dari sini). Yang diperiksa: apakah KELAS yang menjadi
+ * perbaikannya ada. Di sini kelas itu bukan proksi longgar — ia PENYEBAB dan
+ * SEKALIGUS obatnya, jadi ketiadaannya berarti bug-nya kembali, persis.
+ *
+ * Bug-nya, ditemukan user di production 4 Agt 2026: tabel admin memakai
+ * `whitespace-nowrap`, dan `white-space` DIWARISI ke popover di dalam <td>.
+ * Kontrol form di dalamnya `display:inline-block`, jadi <select> dan tombol
+ * Simpan berjajar dalam SATU baris — tombolnya terlempar 193px ke luar
+ * pembungkus `overflow-x-auto`, terpotong dan tidak bisa diklik. Terukur:
+ * tombol di x=1371, panel berakhir di x=1385.
+ *
+ * Tiga layar kena sekaligus (Akses Staf, Kelola KKN/Magang, Magang Bidang),
+ * jadi ini bukan salah ketik di satu berkas melainkan pola yang tersalin.
+ */
+/**
+ * Yang diperiksa HANYA popover yang benar-benar berada DI DALAM `<table>`.
+ *
+ * Versi pertama penjaga ini cuma menanyakan "apakah berkasnya memuat
+ * whitespace-nowrap", dan langsung merah untuk EMPAT layar yang sebenarnya
+ * benar — modal di Katalog Program, Janji Temu, Struktur & Cakupan, dan modal
+ * Tambah Pengguna semuanya ditulis SEBAGAI SAUDARA tabel, bukan di dalamnya,
+ * jadi tidak ada yang diwariskan ke sana. `white-space` mewaris lewat pohon
+ * DOM; kedekatan di dalam berkas yang sama tidak mewariskan apa pun.
+ */
+$dalam_tabel = static function ($isi, $offset) {
+    $pos = 0;
+    while (($buka = strpos($isi, '<table', $pos)) !== FALSE) {
+        $tutup = strpos($isi, '</table>', $buka);
+        if ($tutup === FALSE) { break; }
+        if ($offset > $buka && $offset < $tutup) { return TRUE; }
+        $pos = $tutup + 8;
+    }
+    return FALSE;
+};
+
+$popover_admin = [];
+foreach (glob(APP_ROOT . '/application/views/admin/*/*.php') as $berkas) {
+    $isi = file_get_contents($berkas);
+    if (strpos($isi, 'whitespace-nowrap') === FALSE) { continue; }
+    if ( ! preg_match_all('/<div\s+x-show="[^"]+"[^>]*class="([^"]*\b(?:absolute|fixed)\b[^"]*)"/',
+        $isi, $m, PREG_OFFSET_CAPTURE)) { continue; }
+    foreach ($m[0] as $i => $hit) {
+        if ( ! $dalam_tabel($isi, $hit[1])) { continue; }
+        $popover_admin[] = [str_replace(APP_ROOT . '/application/views/admin/', '', $berkas), $m[1][$i][0]];
+    }
+}
+cek($popover_admin !== [], 'Popover DI DALAM tabel admin terbaca (' . count($popover_admin) . ' ditemukan)');
+foreach ($popover_admin as [$berkas, $kelas]) {
+    cek(strpos($kelas, 'whitespace-normal') !== FALSE,
+        "{$berkas}: popover di dalam tabel mereset white-space");
+}
+
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);

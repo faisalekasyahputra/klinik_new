@@ -83,7 +83,7 @@ $badge_kelas = [
                         <td class="px-4 py-4 text-right relative">
                             <?php if ($r->status === 'Ditinjau Bidang'): ?>
                                 <button @click="procOpen = !procOpen" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">Putuskan</button>
-                                <div x-show="procOpen" x-cloak @click.outside="procOpen = false" class="absolute right-6 top-full mt-1 z-20 w-72 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
+                                <div x-show="procOpen" x-cloak @click.outside="procOpen = false" class="absolute right-6 top-full mt-1 z-20 w-72 whitespace-normal rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
                                     <?= $this->load->view('admin/components/review_form', [
                                         'action_url' => 'Kemitraan_Bidang/proses/' . $r->id,
                                         'buttons' => [

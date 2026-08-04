@@ -108,7 +108,7 @@ $filter_html = ob_get_clean();
                               // keputusan yang sudah terlanjur salah tidak punya jalan
                               // pulang sama sekali — admin harus mengubahnya lewat DB. ?>
                         <button @click="procOpen = !procOpen" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10"><?= $r->status === 'Diajukan' ? 'Proses' : 'Ubah Keputusan' ?></button>
-                        <div x-show="procOpen" x-cloak @click.outside="procOpen = false" class="absolute right-6 top-full mt-1 z-20 w-72 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
+                        <div x-show="procOpen" x-cloak @click.outside="procOpen = false" class="absolute right-6 top-full mt-1 z-20 w-72 whitespace-normal rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
                             <?= $this->load->view('admin/components/review_form', [
                                 'action_url' => 'Admin_Kemitraan/proses/' . $r->id,
                                 // Jalur normal tahap satu adalah MENERUSKAN, bukan

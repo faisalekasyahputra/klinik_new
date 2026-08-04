@@ -247,7 +247,11 @@
                         </div>
 
                         <!-- Modal: reset sandi -->
-                        <div x-show="resetOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @keydown.escape.window="resetOpen = false">
+                        <?php /* `whitespace-normal` — alasan sama dengan panel Ubah Role di
+                                 atas. Modal ini `fixed`, tapi ia tetap DITULIS di dalam
+                                 <td>, dan `white-space` mewaris lewat pohon DOM, bukan
+                                 lewat posisi layar. Dua kolom sandinya `inline-block`. */ ?>
+                        <div x-show="resetOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center whitespace-normal bg-black/50 p-4" @keydown.escape.window="resetOpen = false">
                             <div @click.outside="resetOpen = false" class="w-full max-w-md rounded-3xl bg-white dark:bg-brand-card p-6 text-left shadow-xl" x-data="{ sandi: '', ulang: '' }">
                                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">Reset Password</h3>
                                 <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-brand-muted break-words">
@@ -286,7 +290,17 @@
                             </div>
                         </div>
 
-                        <div x-show="editOpen" x-cloak @click.outside="editOpen = false" class="absolute right-4 top-full mt-1 z-20 w-64 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
+                        <?php /* `whitespace-normal` WAJIB, bukan kerapian.
+                                 Tabel admin memakai `whitespace-nowrap` (§17 poin 6), dan
+                                 `white-space` DIWARISI sampai ke sini. Kontrol form di
+                                 dalam popover ini `display:inline-block`, jadi tanpa reset
+                                 ini mereka tidak pernah turun baris: <select> dan tombol
+                                 Simpan berjajar dalam SATU baris selebar 446px di dalam
+                                 panel 256px, dan tombolnya terlempar 193px ke luar
+                                 pembungkus `overflow-x-auto` — terpotong, tidak bisa
+                                 diklik. Terukur di production 4 Agt 2026: tombol di
+                                 x=1371 sementara panelnya berakhir di x=1385. */ ?>
+                        <div x-show="editOpen" x-cloak @click.outside="editOpen = false" class="absolute right-4 top-full mt-1 z-20 w-64 whitespace-normal rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
                             <form method="POST" action="<?= base_url('Admin_Users/update_role') ?>" class="space-y-2">
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                 <input type="hidden" name="id" value="<?= $u->id ?>">
