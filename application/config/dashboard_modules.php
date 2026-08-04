@@ -271,6 +271,15 @@ $config['dashboard_modules'] = [
         'url'   => 'Admin_Struktur', 'group' => 'Manajemen', 'order' => 30,
         'roles' => ['admin'], 'scope' => null,
     ],
+    // Katalog program bantuan. Grup Manajemen bersama Akses Staf, Jejak Audit,
+    // dan Struktur & Cakupan — keempatnya data acuan, bukan pekerjaan harian.
+    //
+    // TANPA badge: jumlah program bukan antrean.
+    'katalog_program' => [
+        'label' => 'Katalog Program', 'icon' => 'ph-list-checks',
+        'url'   => 'Admin_Katalog_Program', 'group' => 'Manajemen', 'order' => 40,
+        'roles' => ['admin'], 'scope' => null,
+    ],
     'kemitraan' => [
         'label' => 'Kelola KKN/Magang', 'icon' => 'ph-graduation-cap',
         'url'   => 'Admin_Kemitraan', 'group' => 'Tindak Lanjut', 'order' => 30,
