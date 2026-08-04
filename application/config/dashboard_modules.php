@@ -256,6 +256,21 @@ $config['dashboard_modules'] = [
         'status_column' => 'status', 'owner_column' => 'kabupaten_id',
         'public_where' => NULL, 'editable_where' => NULL,
     ],
+    // Master bidang & wilayah + cakupan petugasnya. Grup Manajemen, bersebelahan
+    // dengan Akses Staf: keduanya menjawab "siapa menangani apa", dan gerbang
+    // "belum ada petugas" di layar ini menautkan langsung ke sana.
+    //
+    // TANPA badge: nol petugas di sebuah wilayah bukan antrean yang menunggu
+    // diproses hari ini, ia keadaan struktural. Badge merah permanen berhenti
+    // dibaca dalam seminggu.
+    'struktur_cakupan' => [
+        'label' => 'Struktur & Cakupan', 'icon' => 'ph-tree-structure',
+        // order 30: Akses Staf 10, Jejak Audit 20 sudah terpakai. Dua entri
+        // ber-order sama diurutkan `usort` secara tidak stabil — posisinya bisa
+        // berpindah antar permintaan tanpa ada yang mengubah apa pun.
+        'url'   => 'Admin_Struktur', 'group' => 'Manajemen', 'order' => 30,
+        'roles' => ['admin'], 'scope' => null,
+    ],
     'kemitraan' => [
         'label' => 'Kelola KKN/Magang', 'icon' => 'ph-graduation-cap',
         'url'   => 'Admin_Kemitraan', 'group' => 'Tindak Lanjut', 'order' => 30,
