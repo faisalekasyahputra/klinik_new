@@ -8,10 +8,22 @@
 
 ## 0. BACA INI DULU — Status Terkini & Protokol Antar-Agent
 
-**Terakhir disinkronkan: 30 Juli 2026, sore** — wizard Rekam Data Perumahan TAYANG di production: kode `3bec51e`, skema **`20260701000024`**, bentuk skema diverifikasi langsung dari `information_schema` (bukan dari laporan "Migrasi sukses"). Uji klik sebagai admin kab/kota **belum dilakukan** — lihat §0a.
+**Terakhir disinkronkan: 5 Agustus 2026** — palet pastel arahan dinas (butir 1b) TAYANG di production: kode **`41e7835`**, skema **`20260701000035`** (tidak berubah — perubahan ini nol migrasi), dibaca dari server lewat `ssh` + `git log -1`. Rincian di bawah.
+
+<!-- Konteks lama, dipertahankan sebagai jejak: -->
+**Sebelumnya: 30 Juli 2026, sore** — wizard Rekam Data Perumahan TAYANG di production: kode `3bec51e`, skema **`20260701000024`**, bentuk skema diverifikasi langsung dari `information_schema` (bukan dari laporan "Migrasi sukses"). Uji klik sebagai admin kab/kota **belum dilakukan** — lihat §0a.
 
 <!-- Konteks lama, dipertahankan sebagai jejak: -->
 **Sebelumnya: 28 Juli 2026** (roadmap pengembang T0–T6 selesai di production; form warga R0–R7 dan adapter offline SIMPERUM R9 selesai lokal, belum di-push — lihat §0b/§0c). Kalau kamu agent yang baru masuk, baca bagian ini sampai habis sebelum menyentuh apa pun.
+
+> 🎨 **PALET PASTEL TAYANG, 5 Agt 2026 — kode `41e7835`, nol migrasi.** Butir 1b (arah warna dari dinas) akhirnya tidak lagi terblokir; dinas mengirim tangkapan layar skemanya. Kartu beranda dan slide program dulu kolam gelap bertinta putih, sekarang pastel bertinta gelap `#16323a`. Keduanya memakai `.aurora-surface` yang sama, dan portal dipatok `theme-light` di [`layouts/main.php:66`](application/views/layouts/main.php) — **tidak ada varian gelap yang perlu dihidupi, jadi kelasnya dibalik DI TEMPAT** alih-alih diberi kelas pengubah yang cuma akan punya satu pemakai. Makna `--t1..--t3` ikut berubah: dari dingin→hangat menjadi **muda→pekat**, sebab kolam `--t1` mendarat persis di bawah kotak teks. Ikon memakai `var(--t3)` (rona kartunya sendiri, bukan warna kesembilan) plus emboss ke dalam ber-satuan `em`. Suite tetap **37 suite / 1182 pemeriksaan / 0 merah**.
+>
+> 🔻 **Pelajaran yang lebih berharga daripada warnanya: KONTRAS ITU DIUKUR DARI PIKSEL JADI, BUKAN DARI VARIABEL.** Tinta gelap di atas pastel itu tipis marginnya, dan saya salah mengukurnya **tiga kali berturut-turut**, semuanya proksi yang terdengar masuk akal:
+> 1. terhadap `--t1` saja → lulus 11:1, padahal itu cuma satu dari tiga kolam;
+> 2. terhadap kolam terpekat (`--t3`) → gagal semua, padahal kolam itu duduk di sudut berlawanan dari teks;
+> 3. terhadap gradien yang dirasterisasi **tanpa lapisan batik di atasnya** → saya laporkan "nol gagal", padahal KONSULTASI ada di 4.44.
+>
+> Yang benar cuma satu: latar dirasterisasi ke kanvas lewat `foreignObject`, **seluruh lapisan ikut ditumpuk**, lalu piksel TERGELAP di dalam kotak teks dicuplik. Dari situ opasitas `.82`/`.65` di [`awal.php`](application/views/pages/home/awal.php) diturunkan — angka terukur, bukan angka enak dipandang, dan komentarnya menyimpan cara mengulang pengukurannya. **Kalau kelak ada kartu baru berona lebih pekat, ukur ulang; jangan menyalin angkanya.**
 
 > ✅ **RILIS PENUH SELESAI DI PRODUCTION, 4 Agt 2026 — kode `ea112ec`, skema `20260701000035`, 40 tabel.** Backup terverifikasi (38 `CREATE TABLE`) → migrasi `033`/`034`/`035` → deploy yang macet diluruskan → 28 commit mendarat (17 tertahan + 11 revisi dinas). Diverifikasi dari `information_schema` DAN dari halaman production: formulir aduan tanpa "Bidang Tujuan", hub memuat Cek RTLH dengan nol tautan duplikat, "Tematik" lenyap, juknis PDF 404, delapan layar baru semuanya ber-gerbang login. Runbook + catatan pelaksanaannya: [`RUNBOOK_RILIS_033_035.md`](docs/engineering/RUNBOOK_RILIS_033_035.md).
 >
@@ -63,12 +75,14 @@
 | | Situs | Branch | Status |
 |---|---|---|---|
 | **Lokal** | `localhost/klinik_new` | `feature/homepage-portal-v2` | skema `20260701000035` — **sinkron dengan production**, nol commit tertahan |
-| **PRODUCTION (aktif)** | `floralwhite-lion-710022`<br>dir: `~/domains/floralwhite-lion-710022.hostingersite.com/public_html`<br>DB: **`31.97.208.59`** (bukan localhost), `u504551489_klinikstg` | `feature/homepage-portal-v2` — auto-deploy | KODE **`ea112ec`** + DB skema **`20260701000035`**, **40 tabel** — dibaca dari server 4 Agt 2026. *(Baris ini sempat menulis `…016`, `…022`, lalu `3bec51e`+`…024`; ketiganya salah. Angka hanya boleh ditulis ulang setelah dibaca dari server — dan lihat peringatan di bawah soal CARA membacanya, karena `git ls-remote` bukan salah satunya.)* |
+| **PRODUCTION (aktif)** | `floralwhite-lion-710022`<br>dir: `~/domains/floralwhite-lion-710022.hostingersite.com/public_html`<br>DB: **`31.97.208.59`** (bukan localhost), `u504551489_klinikstg` | `feature/homepage-portal-v2` — auto-deploy | KODE **`41e7835`** + DB skema **`20260701000035`**, **40 tabel** — dibaca dari server 5 Agt 2026 (`ssh` → `git log -1` + `git status -sb` bersih, `Migrate status`). *(Baris ini sempat menulis `…016`, `…022`, lalu `3bec51e`+`…024`; ketiganya salah. Angka hanya boleh ditulis ulang setelah dibaca dari server — dan lihat peringatan di bawah soal CARA membacanya, karena `git ls-remote` bukan salah satunya.)* |
 | ~~production lama~~ | `palegreen-mink-703421` | `main` — beku sejak 19 Jul | 🔴 **DIMATIKAN** |
 | ~~staging lama~~ | `darkseagreen-hamster-214338` | `feature/ui-ux-revamp` | 🔴 **DIMATIKAN** |
 | ~~instalasi mati~~ | `darkgreen-cattle-889861` | tanpa git, Mei | 🔴 **DIMATIKAN** |
 
 > ⚠️ **Konsekuensi yang gampang terlewat:** push ke `feature/homepage-portal-v2` sekarang **langsung merilis ke PRODUCTION**, bukan lagi ke staging yang aman. Tidak ada lagi lingkungan uji terpisah — `darkseagreen` yang dulu berbagi DB dengan situs ini sudah dimatikan. Uji di lokal dulu.
+
+> 🔧 **Kalau MariaDB lokal (XAMPP) menolak start, itu belum tentu masalah proyek — 5 Agt 2026 memakan waktu sebelum ketahuan.** Gejalanya `Plugin 'Aria' registration as a STORAGE ENGINE failed` lalu `Could not open mysql.plugin table`; akarnya satu berkas `data\aria_log.0000000N` hilang sementara `aria_log_control` masih menunjuk ke sana. Karena semua tabel `mysql.*` itu Aria, satu berkas hilang mematikan server padahal seluruh data proyek InnoDB (`klinikpkp` = 40 tabel `.ibd`, nol Aria/MyISAM). Urutan pulihnya: cadangkan `data\mysql\` **ke luar `data\`** (kalau di dalam, MariaDB mendaftarkannya sebagai database) → hapus `aria_log_control` + `aria_log.*` + `mysql.pid` → start. **Lalu jangan berhenti di situ:** server bisa "ready for connections" sementara belasan tabel sistem masih bertanda *"from another system … Corrupt"*, yang bikin `GRANT`/`CREATE USER` gagal. `aria_chk --zerofill` TIDAK menyelesaikannya; `mysqlcheck -u root --repair mysql` yang menyelesaikan. Tutup dengan `mysqlcheck --check mysql` semua OK + suite hijau.
 >
 > Nama DB-nya tetap `u504551489_klinikstg` (menyesatkan, tapi jangan diganti tanpa alasan kuat — mengganti nama DB produksi berjalan lebih berisiko daripada namanya yang keliru).
 >
