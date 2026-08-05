@@ -59,20 +59,31 @@
    tipis, dan bibir cahaya 1px. Dipakai kartu menu beranda maupun slide
    program — satu tempat supaya keduanya tidak berbeda pelan-pelan.
 
-   Pemakai wajib memberi tiga warna: --t1 (dingin, mengumpul di bawah tempat
-   teks duduk), --t2 (tengah), --t3 (hangat). Pilih satu varian .aurora-1..4
-   untuk menggeser letak kolamnya. Elemennya harus position:relative dan
-   overflow:hidden; isi kartu perlu z-index di atas 0.
-   ------------------------------------------------------------------------ */
+   Pemakai wajib memberi tiga warna: --t1 (paling MUDA, mengumpul di bawah
+   tempat teks duduk), --t2 (tengah), --t3 (paling PEKAT, kolam kanan-atas +
+   warna ilustrasi). Pilih satu varian .aurora-1..4 untuk menggeser letak
+   kolamnya. Elemennya harus position:relative dan overflow:hidden; isi kartu
+   perlu z-index di atas 0.
+
+   Palet PASTEL bertinta gelap sejak 5 Agt 2026 (arah warna dari dinas —
+   butir 1b). Sebelumnya kolamnya gelap pekat dengan tinta putih. Urutan
+   --t1..--t3 sengaja dibalik dari terang ke pekat, BUKAN dingin ke hangat:
+   ujung --t1 mendarat persis di bawah teks, jadi yang paling muda harus di
+   sana supaya tinta gelap tetap terbaca.
+
+   Portal dipatok `theme-light` di layouts/main.php:66 — tidak ada varian
+   gelap yang perlu dihidupi, jadi tintanya dipatok langsung di sini alih-alih
+   lewat kelas pengubah yang cuma punya satu pemakai. */
 .aurora-surface {
-    --t1: #04203a;
-    --t2: #10608f;
-    --t3: #66dcd2;
+    --t1: #e8f2fc;
+    --t2: #c5ddf4;
+    --t3: #92bfe7;
+    --ink: #16323a;
     --pool-cool: 14% 116%;
     --pool-warm: 88% -18%;
     --arc: 132% 86% at 8% -32%;
-    border: 1px solid rgba(255, 255, 255, .18);
-    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .7);
+    color: var(--ink);
     background-color: var(--t2);
     background-image:
         radial-gradient(var(--arc), transparent 42%, color-mix(in srgb, var(--t3) 72%, transparent) 55%, transparent 71%),
@@ -80,10 +91,10 @@
         radial-gradient(145% 125% at var(--pool-cool), var(--t1), color-mix(in srgb, var(--t1) 55%, transparent) 46%, transparent 78%),
         radial-gradient(160% 150% at 46% 58%, var(--t2), color-mix(in srgb, var(--t2) 55%, var(--t1)) 100%);
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, .34),
-        inset 0 -1px 0 rgba(0, 0, 0, .22),
-        0 1px 2px rgba(2, 18, 24, .2),
-        0 8px 20px -10px rgba(2, 18, 24, .45);
+        inset 0 1px 0 rgba(255, 255, 255, .75),
+        inset 0 -1px 0 rgba(22, 50, 58, .06),
+        0 1px 2px rgba(22, 50, 58, .06),
+        0 8px 20px -12px rgba(22, 50, 58, .24);
 }
 .aurora-1 { --pool-cool: 10% 118%;  --pool-warm: 86% -20%; --arc: 130% 84% at 6% -30%; }
 .aurora-2 { --pool-cool: 78% 122%;  --pool-warm: 14% -22%; --arc: 145% 78% at 92% -26%; }
@@ -91,14 +102,15 @@
 .aurora-4 { --pool-cool: 116% 96%;  --pool-warm: 22% -16%; --arc: 155% 72% at 46% -34%; }
 
 /* Batik kawung — motif yang sama dengan latar portal (layouts/main.php),
-   satu warna putih, memudar ke bawah supaya tidak mengganggu teks. */
+   satu warna tinta gelap (dulu putih; di atas pastel putih tidak terlihat
+   sama sekali), memudar ke bawah supaya tidak mengganggu teks. */
 .aurora-surface::before {
     content: "";
     position: absolute;
     inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cg fill='none' stroke='%23fff' stroke-width='2'%3E%3Ccircle cx='0' cy='0' r='50'/%3E%3Ccircle cx='100' cy='0' r='50'/%3E%3Ccircle cx='0' cy='100' r='50'/%3E%3Ccircle cx='100' cy='100' r='50'/%3E%3Cpath d='M-15 0h30M0 -15v30M85 0h30M100 -15v30M-15 100h30M0 85v30M85 100h30M100 85v30M50 40 60 50 50 60 40 50Z'/%3E%3C/g%3E%3Cg fill='%23fff'%3E%3Ccircle cx='0' cy='0' r='4'/%3E%3Ccircle cx='100' cy='0' r='4'/%3E%3Ccircle cx='100' cy='100' r='4'/%3E%3Ccircle cx='0' cy='100' r='4'/%3E%3Ccircle cx='50' cy='50' r='2.5'/%3E%3C/g%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cg fill='none' stroke='%2316323a' stroke-width='2'%3E%3Ccircle cx='0' cy='0' r='50'/%3E%3Ccircle cx='100' cy='0' r='50'/%3E%3Ccircle cx='0' cy='100' r='50'/%3E%3Ccircle cx='100' cy='100' r='50'/%3E%3Cpath d='M-15 0h30M0 -15v30M85 0h30M100 -15v30M-15 100h30M0 85v30M85 100h30M100 85v30M50 40 60 50 50 60 40 50Z'/%3E%3C/g%3E%3Cg fill='%2316323a'%3E%3Ccircle cx='0' cy='0' r='4'/%3E%3Ccircle cx='100' cy='0' r='4'/%3E%3Ccircle cx='100' cy='100' r='4'/%3E%3Ccircle cx='0' cy='100' r='4'/%3E%3Ccircle cx='50' cy='50' r='2.5'/%3E%3C/g%3E%3C/svg%3E");
     background-size: 92px 92px;
-    opacity: .08;
+    opacity: .035;
     -webkit-mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .25) 55%, transparent 88%);
     mask-image: linear-gradient(180deg, #000 0%, rgba(0, 0, 0, .25) 55%, transparent 88%);
     pointer-events: none;
@@ -109,7 +121,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background: linear-gradient(180deg, rgba(255, 255, 255, .12), transparent 26%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .5), transparent 32%);
     pointer-events: none;
     z-index: 0;
 }
