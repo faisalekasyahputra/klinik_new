@@ -525,5 +525,62 @@ cek($anim !== '', 'Animasi #main-content terbaca');
 cek(strpos($anim, 'backwards') !== FALSE && ! preg_match('/\bboth\b|\bforwards\b/', $anim),
     'fill-mode `backwards`, bukan `both`/`forwards` — kalau tidak, transform & filter menempel selamanya');
 
+/* ------------------------------------------------------------------
+ * R1 — empat perbaikan label revisi dinas 5 Agt 2026 (A4, D1, D3, C3).
+ *
+ * Semuanya diikat ke SUMBER + POSISI, bukan dicocokkan sebagai substring di
+ * seluruh keluaran halaman. Alasannya bukan gaya: pola substring se-halaman
+ * sudah EMPAT KALI memberi hasil palsu di proyek ini — "Bidang Tujuan" cocok
+ * dengan FAQ di footer, `warga/pendataan` cocok dengan komentar HTML, dan
+ * seterusnya. Penjaga yang hijau karena mencocokkan tempat yang salah lebih
+ * buruk daripada tidak ada penjaga.
+ * ------------------------------------------------------------------ */
+
+// A4 — kartu "Desain Rumah" di hub Nggolek Omah.
+$hub = (string) @file_get_contents(APP_ROOT . '/application/views/pages/golek_omah/index.php');
+wajib($hub !== '', 'Sumber golek_omah/index.php terbaca');
+preg_match('/Desain Rumah<\/h4>\s*<p[^>]*>\(([^)]*)\)<\/p>/', $hub, $m4);
+$ket_desain = trim($m4[1] ?? '');
+cek($ket_desain !== '', 'A4: keterangan di bawah "Desain Rumah" ketemu');
+cek(stripos($ket_desain, 'bangun sendiri') !== FALSE,
+    'A4: keterangan menyebut "bangun sendiri" (dapat: "' . $ket_desain . '")');
+
+// D1 — label menu Kawasan. Diambil dari blok `rekam_kawasan`, bukan dari
+// kemunculan kata "Kawasan" mana pun di berkas registry.
+$reg = (string) @file_get_contents(APP_ROOT . '/application/config/dashboard_modules.php');
+wajib($reg !== '', 'Sumber dashboard_modules.php terbaca');
+preg_match("/'rekam_kawasan'\s*=>\s*\[.*?'label'\s*=>\s*'([^']*)'/s", $reg, $m1);
+$label_kawasan = $m1[1] ?? '';
+cek($label_kawasan !== '', 'D1: label modul rekam_kawasan terbaca');
+cek($label_kawasan === 'Kawasan Permukiman',
+    'D1: label modul = "Kawasan Permukiman" (dapat: "' . $label_kawasan . '")');
+/* Lebar sidebar TIDAK diperiksa di sini — itu hasil tata letak, bukan string.
+   Diukur di peramban 5 Agt 2026: teks 135,1px dari 176px ruang tersedia, sisa
+   40,9px. Label "Rekam Data Perumahan" yang sudah lama ada justru lebih
+   panjang (146,6px), jadi label ini bukan yang terpanjang di sidebar. */
+
+// D3 — label isian keterangan, DAN penjaga supaya perubahannya tidak kebablasan.
+$kaw = (string) @file_get_contents(APP_ROOT . '/application/views/admin/rekam/kawasan_input.php');
+wajib($kaw !== '', 'Sumber kawasan_input.php terbaca');
+preg_match('/<span[^>]*>([^<]*)<\/span>\s*<input name="keterangan_sumber"/', $kaw, $m3);
+$label_ket = trim($m3[1] ?? '');
+cek($label_ket !== '', 'D3: label isian keterangan_sumber terbaca');
+cek($label_ket === 'Keterangan (opsional)',
+    'D3: label = "Keterangan (opsional)" (dapat: "' . $label_ket . '")');
+cek(strpos($kaw, 'name="keterangan_sumber"') !== FALSE,
+    'D3: `name` tetap keterangan_sumber — itu nama kolom DB, bukan teks layar');
+cek(preg_match('/>Sumber\s*<b/', $kaw) === 1,
+    'D3: label "Sumber" (sumber anggaran) TIDAK ikut terhapus — dinas tidak memintanya');
+
+// C3 — triwulan tercetak di judul tabel capaian, dari satu sumber periode.
+$cap = (string) @file_get_contents(APP_ROOT . '/application/views/admin/rekam/perumahan_capaian.php');
+wajib($cap !== '', 'Sumber perumahan_capaian.php terbaca');
+cek(preg_match('/\$periode\s*=.*\$nama_tw/', $cap) === 1,
+    'C3: $periode diturunkan dari $nama_tw, bukan string triwulan rakitan sendiri');
+foreach (['Rencana', 'Realisasi'] as $sisi) {
+    cek(preg_match('/\$tabel\(\s*\'Tabel Unit ' . $sisi . ' \'\s*\.\s*\$periode/', $cap) === 1,
+        "C3: judul \"Tabel Unit {$sisi}\" membawa periode");
+}
+
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);

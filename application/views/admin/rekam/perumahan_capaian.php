@@ -20,6 +20,13 @@ $e  = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 $rp = static fn($n) => number_format((int) $n, 0, ',', '.');
 
 $nama_tw   = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV'];
+
+/* Periode yang tercetak di judul tabel — satu sumber, dipakai ketiganya.
+   Dinas hanya meminta TW dicantumkan pada "Tabel Unit Realisasi" (butir C3,
+   5 Agt 2026), tapi tabel Rencana di sebelahnya ikut diberi supaya halaman
+   tidak memajang satu judul bertriwulan dan satu tanpa — keduanya memang
+   menggambarkan triwulan yang sama. */
+$periode   = ($nama_tw[(int) $triwulan] ?? $triwulan) . ' ' . (int) $tahun;
 $mode_rekap = $mode_rekap ?? FALSE;
 $laporan    = $laporan ?? NULL;
 
@@ -179,12 +186,12 @@ $tabel = function ($judul, $sisi, array $data) use ($e, $rp, $sumber_label, $pro
       </p>
     </section>
   <?php else: ?>
-    <?php $tabel('Tabel Unit Rencana', 'rencana', $matriks); ?>
-    <?php $tabel('Tabel Unit Realisasi', 'realisasi', $matriks); ?>
+    <?php $tabel('Tabel Unit Rencana ' . $periode, 'rencana', $matriks); ?>
+    <?php $tabel('Tabel Unit Realisasi ' . $periode, 'realisasi', $matriks); ?>
   <?php endif; ?>
 
   <?php if ($kumulatif): ?>
-    <?php $tabel('Kumulatif Realisasi s.d. ' . ($nama_tw[(int) $triwulan] ?? $triwulan) . ' ' . (int) $tahun, 'realisasi', $kumulatif); ?>
+    <?php $tabel('Kumulatif Realisasi s.d. ' . $periode, 'realisasi', $kumulatif); ?>
     <p class="text-xs text-gray-500 dark:text-brand-muted">
       Tabel kumulatif dihitung oleh sistem dari laporan <b>terkirim</b> TW I sampai
       triwulan ini. Yang tersimpan di basis data tetap angka per triwulan — kumulatif

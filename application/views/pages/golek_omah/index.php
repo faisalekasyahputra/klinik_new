@@ -44,7 +44,7 @@
                 <i class="fa-solid fa-pen-ruler mb-2.5 transition-transform duration-500 group-hover:scale-110"
                    style="font-size: 28px; color: var(--portal-icon);"></i>
                 <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 group-hover:text-[color:var(--portal-text)] transition-colors">Desain Rumah</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">(Rumah Swadaya)</p>
+                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">(Rumah swadaya / bangun sendiri)</p>
             </div>
             <div class="relative z-10 mt-auto pt-2.5">
                 <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">

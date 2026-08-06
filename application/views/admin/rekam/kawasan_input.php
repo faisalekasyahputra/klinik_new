@@ -238,7 +238,11 @@ foreach ($intervensi as $row) {
           </label>
 
           <label class="text-sm">
-            <span class="font-bold text-gray-900 dark:text-white">Keterangan sumber (opsional)</span>
+<?php /* Label saja yang berubah (revisi dinas 5 Agt 2026, butir D3). `name` TETAP
+                 `keterangan_sumber` — itu nama kolom di `rd_kawasan_intervensi`, dan
+                 menggantinya berarti migrasi untuk perubahan kata di layar.
+                 Label "Sumber" di atas (sumber anggaran) BUKAN ini dan tidak disentuh. */ ?>
+            <span class="font-bold text-gray-900 dark:text-white">Keterangan (opsional)</span>
             <input name="keterangan_sumber" maxlength="150" value="<?= $e($sedang_diubah['keterangan_sumber'] ?? '') ?>"
               class="mt-1 w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 dark:border-white/10">
           </label>

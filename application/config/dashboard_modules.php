@@ -152,7 +152,7 @@ $config['dashboard_modules'] = [
         'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
     ],
     'rekam_kawasan' => [
-        'label' => 'Kawasan', 'icon' => 'ph-map-trifold',
+        'label' => 'Kawasan Permukiman', 'icon' => 'ph-map-trifold',
         'url'   => 'Rekam_Kawasan', 'group' => 'Layanan', 'order' => 24,
         'parent' => 'rekam_data',
         'roles' => ['admin_kabkota'],
