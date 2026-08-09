@@ -545,6 +545,20 @@ cek($ket_desain !== '', 'A4: keterangan di bawah "Desain Rumah" ketemu');
 cek(stripos($ket_desain, 'bangun sendiri') !== FALSE,
     'A4: keterangan menyebut "bangun sendiri" (dapat: "' . $ket_desain . '")');
 
+// A8 — Panjang & Lebar tanah jadi satu kelompok.
+$pdt = (string) @file_get_contents(APP_ROOT . '/application/views/pages/warga/pendataan.php');
+wajib($pdt !== '', 'Sumber warga/pendataan.php terbaca');
+preg_match('/<fieldset[^>]*>\s*<legend[^>]*>([^<]*)<\/legend>(.*?)<\/fieldset>/s', $pdt, $m8);
+$legend = trim($m8[1] ?? '');
+$isi_fs = $m8[2] ?? '';
+cek($legend !== '', 'A8: ada <fieldset> ber-<legend> di formulir pendataan');
+cek(stripos($legend, 'ukuran tanah') !== FALSE,
+    'A8: legend-nya "Ukuran tanah" (dapat: "' . $legend . '")');
+cek(strpos($isi_fs, 'name="land_length_m"') !== FALSE && strpos($isi_fs, 'name="land_width_m"') !== FALSE,
+    'A8: KEDUA isian tanah ada DI DALAM fieldset itu — bukan sekadar ada di halaman');
+cek(preg_match('/Ukuran Tanah\s*\x{2014}/u', $pdt) === 0,
+    'A8: nol label "Ukuran Tanah —" yang mengulang; prefiksnya sudah pindah ke legend');
+
 // D1 — label menu Kawasan. Diambil dari blok `rekam_kawasan`, bukan dari
 // kemunculan kata "Kawasan" mana pun di berkas registry.
 $reg = (string) @file_get_contents(APP_ROOT . '/application/config/dashboard_modules.php');
@@ -577,10 +591,37 @@ $cap = (string) @file_get_contents(APP_ROOT . '/application/views/admin/rekam/pe
 wajib($cap !== '', 'Sumber perumahan_capaian.php terbaca');
 cek(preg_match('/\$periode\s*=.*\$nama_tw/', $cap) === 1,
     'C3: $periode diturunkan dari $nama_tw, bukan string triwulan rakitan sendiri');
-foreach (['Rencana', 'Realisasi'] as $sisi) {
-    cek(preg_match('/\$tabel\(\s*\'Tabel Unit ' . $sisi . ' \'\s*\.\s*\$periode/', $cap) === 1,
-        "C3: judul \"Tabel Unit {$sisi}\" membawa periode");
-}
+cek(preg_match('/\$tabel\(\s*\'Tabel Unit Rencana & Realisasi \'\s*\.\s*\$periode/', $cap) === 1,
+    'C3: judul tabel gabungan membawa periode');
+cek(preg_match('/\$tabel\(\s*\'Kumulatif Realisasi s\.d\. \'\s*\.\s*\$periode/', $cap) === 1,
+    'C3: judul tabel kumulatif membawa periode');
+
+/* C2 — rencana & realisasi dalam SATU tabel.
+   Dijaga dari dua arah: yang baru harus ada, DAN yang lama harus tidak ada.
+   Arah kedua itu yang penting — tanpa itu, seseorang bisa menambahkan kembali
+   tabel terpisah di sebelahnya dan penjaga pertama tetap hijau. */
+cek(preg_match('/\$tabel\([^;]*\[\s*\'rencana\'\s*,\s*\'realisasi\'\s*\]/', $cap) === 1,
+    'C2: satu panggilan tabel memuat kedua sisi sekaligus');
+cek(preg_match('/\$tabel\(\s*\'Tabel Unit (?:Rencana|Realisasi) \'/', $cap) === 0,
+    'C2: nol tabel terpisah per sisi — dulu dua tabel yang memaksa mata bolak-balik');
+cek(preg_match('/\$tabel\(\s*\'Kumulatif[^;]*\[\s*\'realisasi\'\s*\]/', $cap) === 1,
+    'C2: tabel kumulatif TETAP satu sisi — rencana kumulatif bukan angka yang ada');
+/* Penjaga cadangan: tabel ketiga dengan judul apa pun akan lolos dari dua
+   penjaga di atas (yang mencocokkan judul lama), tapi tidak dari hitungan ini. */
+cek(substr_count($cap, '$tabel(') === 2,
+    'C2: tepat dua panggilan $tabel — gabungan + kumulatif, tidak ada tabel ketiga');
+
+/* Penjaga BENTUK, bukan sekadar isi — dan alasannya angka terukur.
+   Dua sisi digabung sebagai dua BARIS per sumber dana (rowspan). Bentuk lain
+   yang sempat dicoba — dua angka berpasangan "9.999 / 9.999" di dalam satu
+   sel — membuat tabel melebar 1100 -> 1348px pada viewport 1440, dan guliran
+   mendatarnya naik dari 35px jadi 283px. Kalau penjaga ini merah, kemungkinan
+   besar seseorang mengembalikan bentuk berpasangan itu: ukur lagi lebarnya
+   sebelum memutuskan. */
+cek(strpos($cap, 'rowspan="<?= count($sisi_list) ?>"') !== FALSE,
+    'C2: dua sisi jadi dua BARIS (rowspan), bukan dipasangkan dalam satu sel');
+cek(strpos($cap, "implode(' / '") === FALSE,
+    'C2: nol perangkaian "a / b" di dalam sel — itu yang dulu melebarkan tabel');
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);

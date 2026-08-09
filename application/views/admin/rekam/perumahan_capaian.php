@@ -41,18 +41,45 @@ $kotak  = 'rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 
 $tombol = 'inline-block rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors'
     . ' hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover';
 
-/** Satu tabel matriks untuk satu sisi angka (rencana atau realisasi). */
-$tabel = function ($judul, $sisi, array $data) use ($e, $rp, $sumber_label, $program_label) {
-    $total_unit = 0; $total_rp = 0;
+/**
+ * Satu tabel matriks. `$sisi_list` menentukan sisi angka yang ditampilkan:
+ * `['rencana','realisasi']` memberi DUA BARIS per sumber dana, `['realisasi']`
+ * memberi satu baris seperti semula.
+ *
+ * SATU TABEL, DUA BARIS PER SUMBER — bukan dua tabel terpisah, dan bukan pula
+ * dua angka berpasangan di dalam satu sel (revisi dinas 5 Agt 2026, butir C2:
+ * "target dan realisasinya dijejer aja, jangan dipisah").
+ *
+ * Bentuk berpasangan-dalam-sel dicoba lebih dulu dan DIBUANG setelah diukur:
+ * isi sel jadi `999.999.999 / 999.999.999`, dan tabelnya melebar 1100 → 1348px
+ * pada viewport 1440 — guliran mendatar naik dari 35px jadi 283px. Dua baris
+ * per sumber membuat isi sel kembali satu angka, jadi lebar kolomnya persis
+ * seperti semula: terukur 1100px, guliran 35px, sama dengan sebelum perubahan.
+ * Yang bertambah tingginya, dan menggulir ke bawah memang hal biasa —
+ * menggulir ke samping tidak.
+ *
+ * Tetap SATU closure meski tabel kumulatif cuma satu sisi. Menyalinnya jadi
+ * dua berarti dua tempat yang harus disunting setiap kali kolomnya berubah.
+ */
+$nama_sisi = ['rencana' => 'Rencana', 'realisasi' => 'Realisasi'];
+
+$tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_label, $program_label, $nama_sisi) {
+    $pasangan   = count($sisi_list) > 1;
+    $total_unit = array_fill_keys($sisi_list, 0);
+    $total_rp   = array_fill_keys($sisi_list, 0);
     ?>
     <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
       <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-brand-muted"><?= $e($judul) ?></h3>
+      <?php if ($pasangan): ?>
+        <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">Tiap sumber dana punya dua baris: <b class="text-gray-900 dark:text-white">Rencana</b> lalu <b class="text-gray-900 dark:text-white">Realisasi</b>. Dalam tiap sel, angka atas unit dan angka bawah rupiah.</p>
+      <?php endif; ?>
       <!-- Tabel lebar bergulir di wadahnya sendiri; <body> tidak ikut bergulir. -->
       <div class="mt-3 overflow-x-auto">
         <table class="w-full min-w-[1100px] text-left text-sm">
           <thead>
             <tr class="text-xs uppercase text-gray-500 dark:text-brand-muted">
               <th class="sticky left-0 bg-white py-2 pr-3 dark:bg-brand-card">Sumber Dana</th>
+              <?php if ($pasangan): ?><th class="py-2 pr-2"><span class="sr-only">Sisi angka</span></th><?php endif; ?>
               <?php foreach ($program_label as $plabel): ?>
                 <th class="px-2 py-2 text-right"><?= $e($plabel) ?><br><span class="font-normal normal-case">unit / Rp</span></th>
               <?php endforeach; ?>
@@ -61,49 +88,67 @@ $tabel = function ($judul, $sisi, array $data) use ($e, $rp, $sumber_label, $pro
           </thead>
           <tbody class="divide-y divide-gray-100 dark:divide-white/5">
             <?php foreach ($sumber_label as $skode => $slabel): ?>
-              <?php $baris = $data[$skode] ?? []; $sub_unit = 0; $sub_rp = 0; ?>
-              <tr>
-                <td class="sticky left-0 bg-white py-2 pr-3 font-medium text-gray-900 dark:bg-brand-card dark:text-white"><?= $e($slabel) ?></td>
-                <?php foreach ($program_label as $pkode => $plabel): ?>
-                  <?php
-                  $sel  = $baris[$pkode] ?? NULL;
-                  $unit = $sel ? (int) $sel[$sisi . '_unit'] : 0;
-                  $duit = $sel ? (int) $sel[$sisi . '_anggaran'] : 0;
-                  $sub_unit += $unit; $sub_rp += $duit;
-                  ?>
-                  <td class="px-2 py-2 text-right <?= $sel ? '' : 'text-gray-300 dark:text-white/20' ?>">
-                    <?php if ($sel): ?>
-                      <?= $rp($unit) ?><br>
-                      <span class="text-xs text-gray-500 dark:text-brand-muted"><?= $rp($duit) ?></span>
+              <?php
+              $baris    = $data[$skode] ?? [];
+              $sub_unit = array_fill_keys($sisi_list, 0);
+              $sub_rp   = array_fill_keys($sisi_list, 0);
+              ?>
+              <?php foreach (array_values($sisi_list) as $i => $sisi): ?>
+                <tr>
+                  <?php if ($i === 0): ?>
+                    <td rowspan="<?= count($sisi_list) ?>" class="sticky left-0 bg-white py-2 pr-3 align-top font-medium text-gray-900 dark:bg-brand-card dark:text-white"><?= $e($slabel) ?></td>
+                  <?php endif; ?>
+                  <?php if ($pasangan): ?>
+                    <td class="whitespace-nowrap py-2 pr-2 text-xs text-gray-500 dark:text-brand-muted"><?= $e($nama_sisi[$sisi] ?? $sisi) ?></td>
+                  <?php endif; ?>
+                  <?php foreach ($program_label as $pkode => $plabel): ?>
+                    <?php
+                    $sel  = $baris[$pkode] ?? NULL;
+                    $unit = $sel ? (int) $sel[$sisi . '_unit'] : 0;
+                    $duit = $sel ? (int) $sel[$sisi . '_anggaran'] : 0;
+                    $sub_unit[$sisi] += $unit; $sub_rp[$sisi] += $duit;
+                    ?>
+                    <td class="px-2 py-2 text-right <?= $sel ? '' : 'text-gray-300 dark:text-white/20' ?>">
+                      <?php if ($sel): ?>
+                        <?= $rp($unit) ?><br>
+                        <span class="text-xs text-gray-500 dark:text-brand-muted"><?= $rp($duit) ?></span>
+                      <?php else: ?>
+                        &mdash;
+                      <?php endif; ?>
+                    </td>
+                  <?php endforeach; ?>
+                  <td class="py-2 pl-2 text-right font-bold <?= $baris ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-white/20' ?>">
+                    <?php if ($baris): ?>
+                      <?= $rp($sub_unit[$sisi]) ?><br>
+                      <span class="text-xs font-normal text-gray-500 dark:text-brand-muted"><?= $rp($sub_rp[$sisi]) ?></span>
                     <?php else: ?>
+                      <?php /* Sumber tanpa satu pun baris: subtotalnya "—", bukan 0.
+                                Komentar PHP, BUKAN HTML: blok ini di dalam foreach,
+                                jadi versi HTML-nya terkirim dua belas kali per tabel. */ ?>
                       &mdash;
                     <?php endif; ?>
                   </td>
-                <?php endforeach; ?>
-                <td class="py-2 pl-2 text-right font-bold <?= $baris ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-white/20' ?>">
-                  <?php if ($baris): ?>
-                    <?= $rp($sub_unit) ?><br>
-                    <span class="text-xs font-normal text-gray-500 dark:text-brand-muted"><?= $rp($sub_rp) ?></span>
-                  <?php else: ?>
-                    <?php /* Sumber tanpa satu pun baris: subtotalnya "—", bukan 0.
-                              Komentar PHP, BUKAN HTML: blok ini di dalam foreach,
-                              jadi versi HTML-nya terkirim dua belas kali per tabel. */ ?>
-                    &mdash;
-                  <?php endif; ?>
-                </td>
-              </tr>
-              <?php $total_unit += $sub_unit; $total_rp += $sub_rp; ?>
+                </tr>
+                <?php $total_unit[$sisi] += $sub_unit[$sisi]; $total_rp[$sisi] += $sub_rp[$sisi]; ?>
+              <?php endforeach; ?>
             <?php endforeach; ?>
           </tbody>
           <tfoot>
+            <?php foreach (array_values($sisi_list) as $i => $sisi): ?>
             <tr class="font-bold text-gray-900 dark:text-white">
-              <td class="sticky left-0 bg-white pt-3 dark:bg-brand-card">Total</td>
+              <?php if ($i === 0): ?>
+                <td rowspan="<?= count($sisi_list) ?>" class="sticky left-0 bg-white pt-3 align-top dark:bg-brand-card">Total</td>
+              <?php endif; ?>
+              <?php if ($pasangan): ?>
+                <td class="whitespace-nowrap pt-3 pr-2 text-xs font-normal text-gray-500 dark:text-brand-muted"><?= $e($nama_sisi[$sisi] ?? $sisi) ?></td>
+              <?php endif; ?>
               <td class="pt-3" colspan="<?= count($program_label) ?>"></td>
               <td class="pt-3 pl-2 text-right">
-                <?= $rp($total_unit) ?> unit<br>
-                <span class="text-xs font-normal">Rp <?= $rp($total_rp) ?></span>
+                <?= $rp($total_unit[$sisi]) ?> unit<br>
+                <span class="text-xs font-normal">Rp <?= $rp($total_rp[$sisi]) ?></span>
               </td>
             </tr>
+            <?php endforeach; ?>
           </tfoot>
         </table>
       </div>
@@ -186,12 +231,13 @@ $tabel = function ($judul, $sisi, array $data) use ($e, $rp, $sumber_label, $pro
       </p>
     </section>
   <?php else: ?>
-    <?php $tabel('Tabel Unit Rencana ' . $periode, 'rencana', $matriks); ?>
-    <?php $tabel('Tabel Unit Realisasi ' . $periode, 'realisasi', $matriks); ?>
+    <?php /* Satu tabel, dua sisi berpasangan — dulu dua tabel terpisah yang
+             memaksa mata bolak-balik untuk membandingkan (butir C2). */ ?>
+    <?php $tabel('Tabel Unit Rencana & Realisasi ' . $periode, ['rencana', 'realisasi'], $matriks); ?>
   <?php endif; ?>
 
   <?php if ($kumulatif): ?>
-    <?php $tabel('Kumulatif Realisasi s.d. ' . $periode, 'realisasi', $kumulatif); ?>
+    <?php $tabel('Kumulatif Realisasi s.d. ' . $periode, ['realisasi'], $kumulatif); ?>
     <p class="text-xs text-gray-500 dark:text-brand-muted">
       Tabel kumulatif dihitung oleh sistem dari laporan <b>terkirim</b> TW I sampai
       triwulan ini. Yang tersimpan di basis data tetap angka per triwulan — kumulatif

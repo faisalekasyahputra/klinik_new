@@ -396,8 +396,16 @@ try {
     cek($tw1 === 115 && $tw2 === 5, "Tersimpan PER TRIWULAN (TW I={$tw1}, TW II={$tw2})");
 
     $r = http('kab', 'Rekam_Perumahan?tahun=' . TAHUN . '&triwulan=2');
-    cek(stripos($r['body'], 'Tabel Unit Rencana') !== FALSE, 'Layar Capaian: TABEL UNIT RENCANA');
-    cek(stripos($r['body'], 'Tabel Unit Realisasi') !== FALSE, 'Layar Capaian: TABEL UNIT REALISASI');
+    /* Dulu dua asersi terpisah untuk "Tabel Unit Rencana" dan "Tabel Unit
+       Realisasi". Sejak butir C2 (revisi dinas 5 Agt 2026) keduanya jadi SATU
+       tabel dengan dua baris per sumber dana, jadi yang dijaga sekarang judul
+       gabungannya — plus bukti bahwa penanda kedua sisi benar-benar dirender. */
+    cek(stripos($r['body'], 'Tabel Unit Rencana &amp; Realisasi') !== FALSE
+        || stripos($r['body'], 'Tabel Unit Rencana & Realisasi') !== FALSE,
+        'Layar Capaian: satu tabel gabungan Rencana & Realisasi');
+    cek(preg_match('/>\s*Rencana\s*</', $r['body']) === 1
+        && preg_match_all('/>\s*Realisasi\s*</', $r['body']) >= 1,
+        'Layar Capaian: penanda baris Rencana & Realisasi dirender');
     cek(stripos($r['body'], 'Kumulatif Realisasi') !== FALSE, 'Layar Capaian: tabel kumulatif');
 
     // 115 + 5 = 120, dan HARUS muncul apa adanya — bukan 235 (dobel) dan bukan 5.
