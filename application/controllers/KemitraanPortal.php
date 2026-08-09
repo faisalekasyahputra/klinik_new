@@ -513,9 +513,10 @@ class KemitraanPortal extends Public_Controller
     private function akses_mahasiswa($target)
     {
         if ( ! $this->is_logged_in()) {
-            $this->session->set_userdata('intended_url', $target);
             $this->session->set_flashdata('error', 'Silakan masuk atau daftar akun mahasiswa terlebih dahulu.');
-            redirect('Auth/login');
+            // $target diserahkan ke gerbang, bukan ditulis sendiri ke sesi:
+            // satu mekanisme, dan penyaringnya ikut berlaku di sini juga.
+            $this->gerbang_login($target);
             return FALSE;
         }
         if ($this->session->userdata('role') !== 'mahasiswa') {

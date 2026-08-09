@@ -35,7 +35,7 @@ class Cek_Rtlh extends MY_Controller {
         if ( ! $this->is_logged_in()) {
             $this->session->set_flashdata('error',
                 'Silakan login terlebih dahulu untuk memakai Cek RTLH.');
-            redirect('Auth/login');
+            $this->gerbang_login();
         }
     }
 

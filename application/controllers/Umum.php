@@ -214,7 +214,7 @@ class Umum extends MY_Controller {
 	{
 		if ( ! $this->is_logged_in()) {
 			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu untuk membuka papan aduan.');
-			redirect('Auth/login');
+			$this->gerbang_login();
 			return;
 		}
 
@@ -285,7 +285,7 @@ class Umum extends MY_Controller {
 		// AUTH GATE: Wajib login
 		if (!$this->is_logged_in()) {
 			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu untuk membuat diskusi.');
-			redirect('Auth/login');
+			$this->gerbang_login();
 			return;
 		}
 
@@ -442,7 +442,7 @@ class Umum extends MY_Controller {
 		if ($this->input->method(TRUE) !== 'POST') { show_404(); }
 		if ( ! $this->is_logged_in()) {
 			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu.');
-			redirect('Auth/login');
+			$this->gerbang_login();
 			return;
 		}
 
@@ -533,7 +533,7 @@ class Umum extends MY_Controller {
 		if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
 		if ( ! $this->is_logged_in()) {
 			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu.');
-			redirect('Auth/login');
+			$this->gerbang_login();
 			return;
 		}
 
@@ -588,7 +588,7 @@ class Umum extends MY_Controller {
 		// AUTH GATE
 		if (!$this->is_logged_in()) {
 			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu.');
-			redirect('Auth/login');
+			$this->gerbang_login();
 			return;
 		}
 
@@ -747,7 +747,7 @@ class Umum extends MY_Controller {
 
 	private function _check_admin() {
 		if ($this->session->userdata('is_logged') !== TRUE) {
-			redirect('Auth/login');
+			$this->gerbang_login();
 			return false;
 		}
 		$session_role = $this->session->userdata('role');

@@ -6,7 +6,7 @@ class Pengaturan extends MY_Controller {
     public function __construct() {
         parent::__construct();
         if (!$this->is_logged_in()) {
-            redirect('Auth/login');
+            $this->gerbang_login();
         }
         $this->load->model('User_model');
         $this->load->model('Auth_model');

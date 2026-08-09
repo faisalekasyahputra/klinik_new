@@ -409,7 +409,7 @@ class Auth extends MY_Controller {
      */
     public function onboarding() {
         if (!$this->is_logged_in()) {
-            redirect('Auth/login');
+            $this->gerbang_login();
             return;
         }
 
@@ -436,7 +436,7 @@ class Auth extends MY_Controller {
      */
     public function save_onboarding() {
         if (!$this->is_logged_in()) {
-            redirect('Auth/login');
+            $this->gerbang_login();
             return;
         }
 
@@ -608,7 +608,7 @@ class Auth extends MY_Controller {
      */
     public function verify_pending() {
         if (!$this->is_logged_in()) {
-            redirect('Auth/login');
+            $this->gerbang_login();
             return;
         }
 
@@ -637,7 +637,7 @@ class Auth extends MY_Controller {
     }
 
     public function lanjutkan() {
-        if (!$this->is_logged_in()) { redirect('Auth/login'); return; }
+        if (!$this->is_logged_in()) { $this->gerbang_login(); return; }
         if ($this->session->userdata('srp2_quick_registration') === TRUE) {
             // Jalur ini memang cuma peduli draft yang BELUM dikirim — kalau
             // pengajuannya sudah Pending/Diterima, buat draft baru itu keliru.
@@ -670,7 +670,7 @@ class Auth extends MY_Controller {
         } else {
             $this->session->set_flashdata('error', 'Tautan verifikasi tidak valid atau sudah kedaluwarsa.');
         }
-        redirect('Auth/login');
+        $this->gerbang_login();
     }
 
     // =========================================================
@@ -775,7 +775,7 @@ class Auth extends MY_Controller {
                         if (strtolower(trim((string) ($logged_in_user[0]['status'] ?? ''))) === 'nonaktif') {
                             $this->session->set_flashdata('error',
                                 'Akun ini dinonaktifkan. Hubungi Super Admin bila menurut Anda ini keliru.');
-                            redirect('Auth/login');
+                            $this->gerbang_login();
                             return;
                         }
 
@@ -872,12 +872,21 @@ class Auth extends MY_Controller {
             return;
         }
 
-        // Check for intended URL
+        /* Alamat tujuan yang tersimpan. Sumbernya sesi — yang kita isi sendiri
+           di sisi server lewat `MY_Controller::ingat_halaman_asal()` — jadi
+           secara asal-usul sudah aman.
+           Tetap disaring LAGI di sini, dan itu disengaja: yang menyimpan dan
+           yang memakai ada di berkas berbeda, dan penyaringan yang cuma ada di
+           sisi penyimpan akan hilang tanpa suara begitu ada jalur penyimpan
+           kedua. Dibuang kalau tidak lolos, bukan dipakai apa adanya. */
         $intended = $this->session->userdata('intended_url');
-        if (!empty($intended)) {
+        if ( ! empty($intended)) {
             $this->session->unset_userdata('intended_url');
-            redirect($intended);
-            return;
+            $aman = $this->sanitize_redirect($intended);
+            if ($aman !== '') {
+                redirect($aman);
+                return;
+            }
         }
 
         redirect($this->dashboard_home());

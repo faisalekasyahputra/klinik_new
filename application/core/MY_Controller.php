@@ -94,7 +94,7 @@ class MY_Controller extends CI_Controller {
         }
         $this->session->set_flashdata('error',
             'Akses akun ini sudah dicabut. Silakan hubungi Super Admin bila menurut Anda ini keliru.');
-        redirect('Auth/login');
+        $this->gerbang_login();
         exit;
     }
 
@@ -862,6 +862,91 @@ class MY_Controller extends CI_Controller {
         // Anything else (external URL) → reject, return empty
         return '';
     }
+
+    /**
+     * Gerbang "silakan masuk dulu" — SATU pintu untuk seluruh aplikasi.
+     *
+     * Dibuat 5 Agt 2026 (revisi dinas butir A5: "kalau user sudah login,
+     * balikkan ke menu awal dia, jangan dilempar ke dashboard, soalnya
+     * bingung"). Mesin pengingatnya sebenarnya SUDAH ADA sejak lama —
+     * `Auth::_redirect_after_login()` membaca `intended_url` dari sesi. Yang
+     * bolong: 21 tempat memanggil `$this->gerbang_login()` telanjang tanpa
+     * pernah mengisinya, dan hanya dua controller yang mengisinya sendiri.
+     * Karena itu sebagian halaman kembali dengan benar dan sebagian tidak.
+     *
+     * Ditaruh di induk, bukan ditambal di tiap controller: menambal 21 kali
+     * berarti gerbang ke-22 lupa lagi.
+     */
+    protected function gerbang_login($tujuan = NULL) {
+        $this->ingat_halaman_asal($tujuan);
+        redirect('Auth/login');
+    }
+
+    /**
+     * Catat halaman yang sedang dituju supaya bisa dikembalikan sesudah login.
+     *
+     * 🔴 INI POLA OPEN REDIRECT, dan itu bukan basa-basi. "Simpan alamat lalu
+     * arahkan ke sana sesudah login" persis mekanisme yang dipakai penyerang:
+     * korban mengeklik tautan yang tampak sah, login sungguhan di situs kita,
+     * lalu terlempar ke situs palsu dalam keadaan baru saja login — jauh lebih
+     * meyakinkan daripada halaman phishing biasa.
+     *
+     * Empat lapis penjagaannya, dan lapis pertama yang paling menentukan:
+     *
+     *   1. Alamatnya diambil dari SERVER (`uri_string()`), TIDAK PERNAH dari
+     *      query string atau isian mana pun. Alamat yang datang dari luar tidak
+     *      dipercaya sama sekali — bukan disaring, tapi tidak dipakai.
+     *   2. Hanya GET. Mengembalikan orang ke URL POST sesudah login cuma
+     *      menghasilkan galat atau tindakan terkirim dua kali.
+     *   3. Rute `auth/*` tidak pernah disimpan — akan melingkar ke layar masuk.
+     *   4. Tetap dilewatkan `sanitize_redirect()` meski sumbernya server.
+     *      Berlapis, karena satu perubahan kelak bisa mengubah asumsi ini.
+     *
+     * Dan satu hal yang tidak kelihatan tapi penting: kalau user SUDAH login,
+     * asalnya TIDAK disimpan. Gerbang di bawah ini dipakai dua keperluan —
+     * "belum login" dan "sudah login tapi salah peran/belum punya wilayah".
+     * Untuk yang kedua, menyimpan asalnya membuat lingkaran: sesudah login
+     * ulang ia dilempar ke sana lagi, lalu ditolak lagi.
+     */
+    protected function ingat_halaman_asal($tujuan = NULL) {
+        if ($this->session->userdata('is_logged')) {
+            return; // penolakan peran/scope, bukan gerbang "belum login"
+        }
+
+        if ($tujuan === NULL) {
+            // Diturunkan dari server. Hanya GET: mengembalikan orang ke URL POST
+            // sesudah login cuma menghasilkan galat atau tindakan terkirim dua kali.
+            if (strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'GET') {
+                return;
+            }
+            $tujuan = (string) uri_string();
+            if ($tujuan === '') {
+                return; // sudah di beranda; tidak ada yang perlu diingat
+            }
+            $query = (string) ($_SERVER['QUERY_STRING'] ?? '');
+            if ($query !== '') {
+                // Penyaring & tahun/triwulan hidup di query string. Tanpa ini user
+                // kembali ke halaman yang benar tapi kehilangan tapisannya.
+                $tujuan .= '?' . $query;
+            }
+        }
+        /* $tujuan yang diberikan pemanggil MENANG atas URL saat ini, dan itu
+           bukan kenyamanan belaka: `KemitraanPortal::akses_mahasiswa('akun')`
+           sengaja mengirim orang ke halaman lain, bukan ke URL yang barusan
+           ditolak. Nilainya selalu literal di kode — tidak pernah dari request —
+           dan tetap dilewatkan penyaring di bawah. */
+
+        $tujuan = (string) $tujuan;
+        if (preg_match('#^auth(/|$)#i', $tujuan)) {
+            return;
+        }
+
+        $aman = $this->sanitize_redirect($tujuan);
+        if ($aman === '') {
+            return;
+        }
+        $this->session->set_userdata('intended_url', $aman);
+    }
 }
 
 /**
@@ -882,7 +967,7 @@ class Admin_Controller extends MY_Controller {
         // Redirect jika belum login atau bukan admin
         if (!$this->session->userdata('is_logged') || $this->session->userdata('role') !== 'admin') {
             $this->session->set_flashdata('error', 'Akses ditolak. Anda bukan Administrator.');
-            redirect('Auth/login');
+            $this->gerbang_login();
         }
     }
 
@@ -909,13 +994,13 @@ class Admin_Kabkota_Controller extends MY_Controller {
 
         if ( ! $this->session->userdata('is_logged') || $this->session->userdata('role') !== 'admin_kabkota') {
             $this->session->set_flashdata('error', 'Akses ditolak. Anda bukan Admin Kabupaten/Kota.');
-            redirect('Auth/login');
+            $this->gerbang_login();
         }
 
         $this->my_kabupaten_id = $this->session->userdata('kabupaten_id');
         if (empty($this->my_kabupaten_id)) {
             $this->session->set_flashdata('error', 'Akun ini belum ditetapkan ke kabupaten/kota manapun. Hubungi superadmin.');
-            redirect('Auth/login');
+            $this->gerbang_login();
         }
     }
 
@@ -942,13 +1027,13 @@ class Admin_Bidang_Controller extends MY_Controller {
 
         if ( ! $this->session->userdata('is_logged') || $this->session->userdata('role') !== 'admin_bidang') {
             $this->session->set_flashdata('error', 'Akses ditolak. Anda bukan Admin Bidang.');
-            redirect('Auth/login');
+            $this->gerbang_login();
         }
 
         $this->my_bidang_kode = $this->session->userdata('bidang_kode');
         if (empty($this->my_bidang_kode)) {
             $this->session->set_flashdata('error', 'Akun ini belum ditetapkan ke bidang manapun. Hubungi superadmin.');
-            redirect('Auth/login');
+            $this->gerbang_login();
         }
     }
 
