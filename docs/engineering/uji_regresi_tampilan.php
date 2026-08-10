@@ -595,6 +595,40 @@ cek(strpos($fn_janji, 'sudah ditutup') !== FALSE,
 cek(preg_match('/rate_limit_consume|janji_temu_ajukan/', $fn_janji) === 1,
     'E1: batas laju pengajuan TETAP berlaku');
 
+/* A10c — cetak hasil diagnosa.
+ *
+ * YANG DIJAGA DI SINI CUMA TEKS DAN ATURAN CSS-nya, BUKAN TATA LETAK CETAKNYA.
+ * Apakah lembarnya benar-benar keluar utuh — bukan satu layar terpotong — hanya
+ * bisa dilihat dari pratinjau cetak sungguhan, dan uji yang berpura-pura
+ * mengukurnya lewat HTTP akan hijau selamanya tanpa menyentuh yang rusak. Pola
+ * pengakuan yang sama dipakai untuk kolom Aksi di akhir berkas ini.
+ *
+ * Yang tetap layak dijaga: peringatannya tidak boleh diam-diam hilang. Tanpa
+ * ketiga kalimat itu, lembar ini terbaca sebagai surat keputusan — dan warga
+ * datang ke loket merasa sudah berhak. */
+$diag = (string) @file_get_contents(APP_ROOT . '/application/views/pages/program/hasil_diagnosa.php');
+wajib($diag !== '', 'Sumber hasil_diagnosa.php terbaca');
+cek(strpos($diag, '@media print') !== FALSE, 'A10c: ada blok @media print');
+cek(strpos($diag, 'window.print()') !== FALSE, 'A10c: ada tombol cetak');
+/* `type="button"` bukan detail: tombol cetak berada DI DALAM form pengajuan,
+   dan tanpa itu ia men-submit — warga mengirim pengajuan padahal ingin mencetak. */
+cek(preg_match('/<button type="button" onclick="window\.print\(\)"/', $diag) === 1,
+    'A10c: tombol cetak bertipe button — kalau submit, ia mengirim pengajuan');
+foreach (['bukan jaminan menerima bantuan', 'belum diverifikasi petugas',
+          'BUKAN surat keputusan'] as $kalimat) {
+    cek(stripos($diag, $kalimat) !== FALSE, "A10c: peringatan memuat \"{$kalimat}\"");
+}
+cek(preg_match('/#peringatan-cetak\s*\{\s*display:\s*none/', $diag) === 1,
+    'A10c: peringatan tersembunyi di layar (hanya muncul di kertas)');
+/* Cangkang portal memasang overflow:hidden berlapis; tanpa dibuka, Ctrl+P cuma
+   mencetak satu layar lalu memotong sisanya — dan halamannya tetap terlihat
+   "berhasil dicetak". */
+cek(preg_match('/@media print.*overflow:\s*visible\s*!important/s', $diag) === 1,
+    'A10c: blok cetak membuka overflow cangkang portal');
+cek(strpos($diag, 'solusi_pembiayaan_identitas') === FALSE
+    && stripos($diag, "\$survey['nik']") === FALSE,
+    'A10c: nol NIK/identitas ikut tercetak — halaman ini tanpa login');
+
 /* C1 — layar BNBA harus bilang WAJIB, sama dengan yang ditegakkan server.
    Pelajaran dari E1 beberapa jam sebelumnya: gerbang dicabut di server tapi
    syaratnya tertinggal di tampilan, dan tombolnya tetap tidak pernah muncul.

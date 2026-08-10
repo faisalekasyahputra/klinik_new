@@ -226,12 +226,43 @@ $guides = [
                                  */
                                 ?>
                                 <p class="text-center text-sm text-[color:var(--portal-text-muted)] sm:text-left"><i class="fa-solid fa-circle-info mr-1 text-[color:var(--portal-brand)]"></i> Pilih satu program, lalu simpan. Anda akan menerima nomor tiket untuk memantau tindak lanjutnya.</p>
-                                <button type="submit" class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[color:var(--portal-brand)] px-5 py-2.5 text-sm font-black text-white transition hover:-translate-y-0.5 hover:brightness-95">
-                                    Simpan Data <i class="fa-solid fa-floppy-disk"></i>
-                                </button>
+                                <div class="flex shrink-0 items-center gap-2">
+                                    <?php /* CETAK, bukan unduh PDF buatan server (butir A10c, 5 Agt 2026).
+                                             Memasang pustaka PDF berarti dependensi baru untuk masalah yang
+                                             sudah dipecahkan tombol cetak peramban — dan renderer server-side
+                                             tidak menjalankan JS, sementara separuh kelas Tailwind portal ini
+                                             datang dari CDN JIT saat runtime, jadi hasilnya justru BERBEDA
+                                             dari yang dilihat warga.
+
+                                             `type="button"` WAJIB: tanpa itu tombol ini men-submit form di
+                                             sekelilingnya dan warga tidak mencetak melainkan mengirim
+                                             pengajuan. */ ?>
+                                    <button type="button" onclick="window.print()"
+                                            class="inline-flex items-center gap-2 rounded-xl border border-[color:var(--portal-border)] px-4 py-2.5 text-sm font-black text-[color:var(--portal-text)] transition hover:-translate-y-0.5">
+                                        Cetak Hasil <i class="fa-solid fa-print"></i>
+                                    </button>
+                                    <button type="submit" class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-[color:var(--portal-brand)] px-5 py-2.5 text-sm font-black text-white transition hover:-translate-y-0.5 hover:brightness-95">
+                                        Simpan Data <i class="fa-solid fa-floppy-disk"></i>
+                                    </button>
+                                </div>
                             </div>
                         </form>
                     <?php endif; ?>
+                </div>
+
+                <?php /* Peringatan cetak — TERSEMBUNYI di layar, muncul hanya di kertas.
+                         Keputusan user 5 Agt 2026: cetakan informatif, BUKAN berkop resmi.
+                         Berkas berkop dinas gampang dianggap keputusan, padahal isinya
+                         hitungan otomatis dari isian warga sendiri yang belum diverifikasi
+                         siapa pun — dan warga bisa datang ke loket merasa sudah berhak. */ ?>
+                <div id="peringatan-cetak" class="mt-6 rounded-2xl border-2 border-[color:var(--portal-text)] px-5 py-4">
+                    <p class="text-sm font-black text-[color:var(--portal-text)]">Lembar ini BUKAN surat keputusan.</p>
+                    <ul class="mt-2 space-y-1 text-sm text-[color:var(--portal-text)]">
+                        <li>1. Lembar ini bukan jaminan menerima bantuan.</li>
+                        <li>2. Kelompok kesejahteraan dan kelayakan di atas dihitung otomatis dari isian Anda sendiri, dan belum diverifikasi petugas.</li>
+                        <li>3. Keputusan penerima bantuan tetap mengikuti verifikasi dokumen dan ketentuan penyelenggara program.</li>
+                    </ul>
+                    <p class="mt-2 text-xs text-[color:var(--portal-text-muted)]">Dicetak dari Klinik Perumahan &amp; Kawasan Permukiman, Dinas Perkim Provinsi Jawa Tengah.</p>
                 </div>
 
                 <div class="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-5 py-4 sm:flex-row">
@@ -244,3 +275,57 @@ $guides = [
         </div>
     </div>
 </div>
+
+<style>
+/* ==========================================================================
+   CETAK — butir A10c, 5 Agt 2026.
+   ==========================================================================
+   Peringatan cetak disembunyikan di layar dan HANYA muncul di kertas: di layar
+   ia mengulang keterangan yang sudah ada di bawah, tapi di kertas ialah
+   satu-satunya yang mencegah lembar ini dibaca sebagai surat keputusan.
+
+   Yang membuat blok ini panjang bukan gaya cetaknya, melainkan CANGKANG
+   PORTAL: `layouts/main.php` memasang `overflow:hidden` + tinggi tetap di
+   EMPAT lapis bersarang (body, section, panel, dan pembungkus dalamnya),
+   sebagian lewat atribut `style=` inline sehingga hanya `!important` yang
+   bisa membukanya. Tanpa itu Ctrl+P cuma mencetak satu layar penuh lalu
+   memotong sisanya — halamannya terlihat "berhasil dicetak" padahal isinya
+   hilang, dan itu jenis kegagalan yang tidak bersuara.
+   ========================================================================== */
+#peringatan-cetak { display: none; }
+
+@media print {
+    /* 1. Buka seluruh kekangan tinggi & gulir milik cangkang portal. */
+    html, body,
+    body > div, body section, .portal-panel,
+    .portal-panel > div, .no-scrollbar {
+        height: auto !important;
+        max-height: none !important;
+        overflow: visible !important;
+        display: block !important;
+        position: static !important;
+    }
+    body { background: #fff !important; color: #000 !important; }
+
+    /* 2. Perabot layar yang tidak punya arti di kertas. */
+    nav, header, footer,
+    .portal-tab-bar, .portal-nav, [data-tab-link],
+    #peringatan-cetak ~ div,
+    button, .no-print { display: none !important; }
+
+    /* 3. Peringatan justru MUNCUL — kebalikan dari keadaan layar. */
+    #peringatan-cetak {
+        display: block !important;
+        border: 2px solid #000 !important;
+        page-break-inside: avoid;
+    }
+    #peringatan-cetak * { color: #000 !important; }
+
+    /* 4. Kartu program tidak boleh terpotong di tengah halaman. */
+    article, section, li { page-break-inside: avoid; }
+
+    /* Latar berwarna dibuang: printer kantor umumnya hitam-putih, dan pastel
+       di atas kertas putih berubah jadi abu yang justru menurunkan kontras. */
+    * { background-image: none !important; box-shadow: none !important; }
+}
+</style>
