@@ -76,6 +76,25 @@
                     </div>
                 </div>
             </div>
+
+            <?php
+            /* Butir A2 revisi dinas: dua tombol itu sudah benar, tinggal diberi
+               keterangan singkat apa bedanya.
+
+               DEFINISI UMUM, BUKAN KUTIPAN REGULASI — dan itu keputusan user
+               10 Agt 2026 sesudah dinas belum sempat mengirim rumusannya.
+               Sengaja TANPA ANGKA: batas penghasilan, harga, dan besaran uang
+               muka berubah tiap tahun dan berbeda per wilayah. Menuliskannya di
+               sini berarti memajang angka yang diam-diam basi, dan warga
+               mempercayainya. Kalau dinas kelak mengirim rumusan resmi, ganti
+               kalimat di `keteranganStatus` (satu tempat, di bawah). */
+            ?>
+            <p id="ket-status" aria-live="polite"
+               class="mt-3 text-xs leading-relaxed text-[color:var(--portal-text-muted)]">
+                Rumah dengan bantuan pembiayaan pemerintah untuk masyarakat berpenghasilan rendah &mdash;
+                uang muka dan angsuran lebih ringan, dengan syarat batas penghasilan, belum memiliki rumah,
+                dan rumahnya wajib dihuni sendiri.
+            </p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5" id="temp_rumah" data-aos="fade-up" data-aos-delay="200">
@@ -120,9 +139,20 @@
  */
 window.statusRumahAktif = 'subsidi';
 
+/* Keterangan A2. Satu tempat saja — kalau dinas mengirim rumusan resminya,
+   yang diganti cukup dua kalimat di sini (dan kalimat awal di HTML atas,
+   yang sengaja dirender server supaya sudah benar sebelum JS jalan). */
+var keteranganStatus = {
+    subsidi: 'Rumah dengan bantuan pembiayaan pemerintah untuk masyarakat berpenghasilan rendah — uang muka dan angsuran lebih ringan, dengan syarat batas penghasilan, belum memiliki rumah, dan rumahnya wajib dihuni sendiri.',
+    komersil: 'Rumah yang dijual dengan harga pasar tanpa bantuan pemerintah — tidak ada batas penghasilan maupun syarat kepemilikan, pilihan tipe dan lokasi lebih luas, dan angsurannya mengikuti bunga komersial.'
+};
+
 function pilihStatus(status) {
     if (window.statusRumahAktif === status) { return; }
     window.statusRumahAktif = status;
+
+    var ket = document.getElementById('ket-status');
+    if (ket && keteranganStatus[status]) { ket.textContent = keteranganStatus[status]; }
 
     ['subsidi', 'komersil'].forEach(function (s) {
         var btn = document.getElementById('btn-' + s);
@@ -177,7 +207,19 @@ function load_more_data() {
     jQuery.ajax({
         url: '<?= base_url('load_more') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah+'&page='+nextPage+'&limit=9',
         success: function(response) {
-            if (jQuery.trim(response) !== '') {
+            var isi = jQuery.trim(response);
+
+            /* Server mengirim penanda ini saat SIKUMBANG tidak bisa dihubungi.
+               Tanpa penanda, gagal jaringan tidak bisa dibedakan dari data
+               habis — dan salah membacanya berarti tombolnya mati permanen
+               padahal datanya masih ada. */
+            if (isi === '<!-- gagal-jaringan -->') {
+                btn.prop('disabled', false).show();
+                jQuery('#text-load').text('Coba Lagi');
+                return;
+            }
+
+            if (isi !== '') {
                 jQuery('#temp_rumah').append(response);
                 btn.attr('data-page', nextPage);
                 jQuery('#text-load').text('Muat Lebih Banyak');

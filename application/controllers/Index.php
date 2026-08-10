@@ -3,6 +3,19 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Index extends MY_Controller {
 
+	/* Batas KERAS dari SIKUMBANG, diukur bukan ditebak: `limit=500` tetap
+	   dibalas 100 baris. Wonogiri (47 lokasi) dibalas 47, jadi ini plafon,
+	   bukan jumlah tetap. */
+	const SIK_BONGKAH = 100;
+
+	/* Plafon bongkahan per permintaan. Wilayah dengan lokasi TERBANYAK di
+	   Jateng adalah 3324 (Kendal) dengan 320 lokasi = 4 bongkahan; 36 wilayah
+	   diperiksa satu per satu 10 Agt 2026. Lima memberi kelonggaran satu
+	   bongkahan tanpa membiarkan satu permintaan menyapu API tanpa batas.
+	   ponytail: kalau kelak ada wilayah > 500 lokasi, naikkan angka ini —
+	   gejalanya "Semua Data Telah Dimuat" muncul terlalu cepat di wilayah itu. */
+	const SIK_MAKS_BONGKAH = 5;
+
 	public function __construct()
 	{
 		parent::__construct();
@@ -246,118 +259,144 @@ class Index extends MY_Controller {
 		return $hasil;
 	}
 
-	public function cari_wil() {
-		$kode_wilayah = $this->input->get('kodeWilayah') ? $this->input->get('kodeWilayah') : '3374';
-        $keyword      = $this->input->get('keyword') ? $this->input->get('keyword') : '';
-        $sort         = $this->input->get('sort') ? $this->input->get('sort') : 'terbaru';
-        $status_rumah = $this->input->get('status_rumah') ? $this->input->get('status_rumah') : 'subsidi';
-		$page         = $this->input->get('page') ? $this->input->get('page') : 1;
-		$limit		  = $this->input->get('limit') ? $this->input->get('limit') : 9;
+	/**
+	 * Parameter pencarian, dibaca sekali dari query string.
+	 *
+	 * `limit` di sini adalah UKURAN HALAMAN yang tampil, bukan lagi limit yang
+	 * dikirim ke API. Dijepit 1..50 supaya satu permintaan tidak bisa memaksa
+	 * server memindai seluruh wilayah berkali-kali.
+	 */
+	private function parameter_cari() {
+		$limit = (int) ($this->input->get('limit') ?: 9);
+		$page  = (int) ($this->input->get('page') ?: 1);
 
-        $api_url = "https://sikumbang.tapera.go.id/ajax/lokasi/search";
-		$params = [
-			'kodeWilayah' =>$kode_wilayah, 
-			'keyword'     => $keyword,
-			'searchBy'    => $this->input->get('searchBy') ? $this->input->get('searchBy') : 'nama-perumahan',
-			'sort'        => $sort,
-			'limit'       => $limit,
-			'page'        => $page
+		return [
+			'kodeWilayah'  => $this->input->get('kodeWilayah') ?: '3374',
+			'keyword'      => $this->input->get('keyword') ?: '',
+			'searchBy'     => $this->input->get('searchBy') ?: 'nama-perumahan',
+			'sort'         => $this->input->get('sort') ?: 'terbaru',
+			'status_rumah' => $this->input->get('status_rumah') ?: 'subsidi',
+			'page'         => max(1, $page),
+			'limit'        => min(50, max(1, $limit)),
 		];
+	}
 
-		$full_url = $api_url . '?' . http_build_query($params);
-		
+	/**
+	 * Satu bongkahan mentah dari SIKUMBANG. NULL = gagal jaringan (beda dari
+	 * array kosong, yang berarti sumbernya memang habis — dan bedanya penting:
+	 * yang satu tidak boleh dibaca sebagai "semua data telah dimuat").
+	 */
+	private function bongkah_sikumbang(array $p, $halaman_api) {
+		$full_url = 'https://sikumbang.tapera.go.id/ajax/lokasi/search?' . http_build_query([
+			'kodeWilayah' => $p['kodeWilayah'],
+			'keyword'     => $p['keyword'],
+			'searchBy'    => $p['searchBy'],
+			'sort'        => $p['sort'],
+			'limit'       => self::SIK_BONGKAH,
+			'page'        => $halaman_api,
+		]);
+
 		$cache_file = APPPATH . 'cache/ajax_perumahan_' . md5($full_url) . '.json';
-		$cache_time = 3600; // 1 jam cache
-		$response = null;
+		$response   = NULL;
 
-		if (file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
+		if (file_exists($cache_file) && (time() - filemtime($cache_file) < 3600)) {
 			$response = file_get_contents($cache_file);
 		} else {
 			$ch = curl_init();
 			curl_setopt($ch, CURLOPT_URL, $full_url);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
 			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-			curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+			curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
 			$response = curl_exec($ch);
+			$err      = curl_error($ch);
 			curl_close($ch);
 
-			if ($response) {
-				@file_put_contents($cache_file, $response);
-			}
+			if ($err || ! $response) { return NULL; }
+			@file_put_contents($cache_file, $response);
 		}
 
-		$decoded = json_decode($response, true);
-		$raw_list = isset($decoded['data']) ? $decoded['data'] : [];
+		$decoded = json_decode($response, TRUE);
+		return isset($decoded['data']) && is_array($decoded['data']) ? $decoded['data'] : [];
+	}
 
-		$list_final = $this->saring_status_rumah($raw_list, $status_rumah);
+	/**
+	 * Daftar lokasi yang SUDAH tersaring, dipotong sesuai halaman yang diminta.
+	 *
+	 * BUTIR A3 REVISI DINAS — "kayaknya belum ke-load semua, muncul cuma 3 atau
+	 * 6 gambar saja." Keluhan itu BENAR, dan jawaban kami yang pertama keliru.
+	 *
+	 * Penyebabnya: penyaring subsidi/non-subsidi berjalan DI SINI, sementara
+	 * dulu API diminta `limit=9` lalu sembilan baris itulah yang disaring. Yang
+	 * tersisa 1–8 buah dan berubah-ubah tiap halaman. Terukur 10 Agt 2026 di
+	 * Kota Semarang (wilayah bawaan halaman ini): API mengirim 9, yang lolos
+	 * saringan subsidi hanya SATU. Angka "3 atau 6" itu bukan angka misterius,
+	 * ia sisa saringan.
+	 *
+	 * Akibat keduanya lebih jahat: halaman 3 Semarang kebetulan NOL yang cocok,
+	 * dan `load_more()` membaca balasan kosong sebagai "Semua Data Telah
+	 * Dimuat". Daftarnya mati di situ padahal halaman 4 dan seterusnya masih
+	 * berisi. Data hilang tanpa satu pun tanda.
+	 *
+	 * Sekarang bongkahannya 100 — bukan 9 — dikumpulkan sampai cukup untuk
+	 * halaman yang diminta, BARU dipotong. Halaman penuh 9 selama datanya
+	 * masih ada, dan "habis" hanya diucapkan kalau sumbernya memang habis.
+	 */
+	private function lokasi_tersaring(array $p) {
+		$butuh = $p['page'] * $p['limit'];
+		$cocok = [];
+		$gagal = FALSE;
+
+		for ($i = 1; $i <= self::SIK_MAKS_BONGKAH; $i++) {
+			$baris = $this->bongkah_sikumbang($p, $i);
+
+			if ($baris === NULL) { $gagal = TRUE; break; }   // jaringan, bukan kehabisan
+			if ( ! $baris)       { break; }                  // sumber habis
+
+			$cocok = array_merge($cocok, $this->saring_status_rumah($baris, $p['status_rumah']));
+
+			if (count($baris) < self::SIK_BONGKAH) { break; } // bongkahan terakhir
+			if (count($cocok) >= $butuh)           { break; } // sudah cukup untuk halaman ini
+		}
+
+		$potong = array_slice($cocok, ($p['page'] - 1) * $p['limit'], $p['limit']);
+		return [$potong, $gagal];
+	}
+
+	public function cari_wil() {
+		$p = $this->parameter_cari();
+		list($list_final, $gagal) = $this->lokasi_tersaring($p);
+
+		if ($gagal && ! $list_final) {
+			echo '<p class="col-span-full py-10 text-center text-sm text-[color:var(--portal-text-muted)]">'
+			   . 'Data rumah gagal diambil dari SIKUMBANG. Silakan coba lagi sebentar lagi.</p>';
+			return;
+		}
 
 		$datacontent['results'] = $list_final;
 		$this->load->view('components/cards/rumah', $datacontent);
 	}
+
 	public function load_more() {
-    // Ambil parameter dari AJAX
-		$kode_wilayah = $this->input->get('kodeWilayah') ? $this->input->get('kodeWilayah') : '3374'; // Default: Wonogiri (3312);
-        $keyword      = $this->input->get('keyword') ? $this->input->get('keyword') : '';
-        $sort         = $this->input->get('sort') ? $this->input->get('sort') : 'terbaru'; // Default: terbaru
-        $status_rumah = $this->input->get('status_rumah') ? $this->input->get('status_rumah') : 'subsidi';
-		$page         = $this->input->get('page') ? $this->input->get('page') : 2;
-		$limit		  = $this->input->get('limit') ? $this->input->get('limit') : 9;
-		$api_url = "https://sikumbang.tapera.go.id/ajax/lokasi/search";
-		$params = [
-			'kodeWilayah' => $kode_wilayah,
-			'keyword'     => $keyword,
-			'searchBy'    => $this->input->get('searchBy') ? $this->input->get('searchBy') : 'nama-perumahan',
-			'sort'        => $sort,
-			'limit'       => $limit,
-			'page'        => $page
-		];
+		$p = $this->parameter_cari();
+		if ($p['page'] < 2) { $p['page'] = 2; }
 
-		$full_url = $api_url . '?' . http_build_query($params);
+		list($list_final, $gagal) = $this->lokasi_tersaring($p);
 
-		$cache_file = APPPATH . 'cache/ajax_perumahan_' . md5($full_url) . '.json';
-		$cache_time = 3600; // 1 jam cache
-		$response = null;
-		$err = false;
-
-		if (file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
-			$response = file_get_contents($cache_file);
-		} else {
-			$ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL, $full_url);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-			curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0'); 
-			$response = curl_exec($ch);
-			$err = curl_error($ch);
-			curl_close($ch);
-
-			if (!$err && $response) {
-				@file_put_contents($cache_file, $response);
-			}
+		/* Balasan kosong dibaca JS sebagai "Semua Data Telah Dimuat", jadi ia
+		   hanya boleh keluar saat datanya BENAR-BENAR habis. Waktu jaringan
+		   gagal, kirim penanda supaya tombolnya tetap hidup dan bisa dicoba
+		   lagi — bukan dimatikan seolah data sudah tandas. */
+		if ($gagal && ! $list_final) {
+			echo '<!-- gagal-jaringan -->';
+			return;
 		}
 
-		$list_final = [];
+		if ( ! $list_final) { echo ''; return; }
 
-		if (!$err) {
-			$decoded_data = json_decode($response, true);
-			$raw_list = isset($decoded_data['data']) ? $decoded_data['data'] : [];
-
-			$list_final = $this->saring_status_rumah($raw_list, $status_rumah);
-		}
-
-		// Jika ada data perumahan yang lolos filter
-		if (!empty($list_final)) {
-			// Kirim data langsung ke sub-view card item saja
-			$datacontent['results'] = $list_final;
-			$this->load->view('components/cards/rumah', $datacontent);
-		} else {
-			// Jika kosong, jangan kirim HTML apapun agar trigger 'Semua Data Telah Dimuat' aktif di JS
-			echo "";
-		}
+		$datacontent['results'] = $list_final;
+		$this->load->view('components/cards/rumah', $datacontent);
 	}
 	public function buka_foto() {
 		$path_gambar = $this->input->get('path');
