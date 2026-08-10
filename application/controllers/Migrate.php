@@ -743,6 +743,21 @@ class Migrate extends CI_Controller {
             $check((int) $this->db->where('laporan_id', $ID1)->count_all_results('rd_perumahan_program') === 1,
                 'Program dicabut hilang dari gerbang');
             $check($this->rd->program_tanpa_angka($ID1) === [], 'Nol program kosong tersisa');
+
+            /* BNBA WAJIB sejak 5 Agt 2026 (butir C1). Gerbangnya diuji dua arah
+               di sini juga — cek ini yang paling dekat ke modelnya, tanpa HTTP. */
+            $check(empty($this->rd->kirim($ID1, $AKTOR, $KAB)['success']),
+                'Kirim ditolak selama BNBA belum dilampirkan');
+            $lampir_bnba = function ($laporan_id) {
+                $this->db->replace('rd_perumahan_bnba', [
+                    'laporan_id'   => (int) $laporan_id,
+                    'nama_asli'    => 'bnba-uji.pdf',
+                    'private_path' => 'uji/bnba-uji.pdf',
+                    'mime_type'    => 'application/pdf',
+                    'ukuran'       => 1024,
+                ]);
+            };
+            $lampir_bnba($ID1);
             $check( ! empty($this->rd->kirim($ID1, $AKTOR, $KAB)['success']), 'Kirim diterima');
 
             $check(empty($this->rd->simpan_sumber($ID1, 'pk_rtlh', 'apbn_bsps',
@@ -764,6 +779,7 @@ class Migrate extends CI_Controller {
             $this->rd->simpan_sumber($ID2, 'pk_rtlh', 'apbd_kabkota',
                 ['rencana_unit' => 10, 'rencana_anggaran' => 100000000,
                  'realisasi_unit' => 5, 'realisasi_anggaran' => 50000000], $KAB);
+            $lampir_bnba($ID2);
             $this->rd->kirim($ID2, $AKTOR, $KAB);
 
             $satu = 0; $dua = 0;

@@ -386,13 +386,19 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
       </section>
     <?php endif; ?>
 
-  <?php // ================= L4 — BNBA (opsional) ================= ?>
+  <?php // ================= L4 — BNBA (WAJIB sejak 5 Agt 2026) ================= ?>
   <?php elseif ($langkah === 'bnba'): ?>
     <section class="<?= $kotak ?>">
-      <h2 class="text-lg font-black text-gray-900 dark:text-white">Unggah BNBA <span class="text-sm font-normal text-gray-500 dark:text-brand-muted">(opsional)</span></h2>
+      <?php /* Kata "wajib" di sini HARUS sama dengan yang ditegakkan
+               `Rekam_data_model::kirim()`. Sampai 5 Agt 2026 langkah ini
+               berbunyi "opsional — boleh dilewati", dan membiarkannya berbunyi
+               begitu sesudah servernya menolak berarti layar menjanjikan
+               sesuatu yang lalu ditolak tanpa sebab yang terbaca. */ ?>
+      <h2 class="text-lg font-black text-gray-900 dark:text-white">Unggah BNBA <span class="text-sm font-normal text-red-600 dark:text-red-400">(wajib)</span></h2>
       <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
-        Daftar penerima <i>by name by address</i>. Boleh dilewati — laporan tetap
-        bisa dikirim tanpa berkas ini, sama seperti di formulir dinas.
+        Daftar penerima <i>by name by address</i>. <b class="text-gray-900 dark:text-white">Wajib dilampirkan
+        sejak 5 Agustus 2026</b> — laporan tidak bisa dikirim tanpa berkas ini.
+        Laporan yang sudah terkirim sebelum tanggal itu tetap sah.
       </p>
 
       <?php if ($bnba): ?>

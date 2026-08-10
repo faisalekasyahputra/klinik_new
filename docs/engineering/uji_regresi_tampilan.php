@@ -595,6 +595,25 @@ cek(strpos($fn_janji, 'sudah ditutup') !== FALSE,
 cek(preg_match('/rate_limit_consume|janji_temu_ajukan/', $fn_janji) === 1,
     'E1: batas laju pengajuan TETAP berlaku');
 
+/* C1 — layar BNBA harus bilang WAJIB, sama dengan yang ditegakkan server.
+   Pelajaran dari E1 beberapa jam sebelumnya: gerbang dicabut di server tapi
+   syaratnya tertinggal di tampilan, dan tombolnya tetap tidak pernah muncul.
+   Di sini arahnya kebalikan — kalau layar tetap bilang "opsional — boleh
+   dilewati" sementara server menolak, orang mengisi sampai akhir lalu ditolak
+   tanpa sebab yang terbaca. Dua-duanya cacat yang sama: layar dan server
+   menjanjikan hal berbeda. */
+$wiz = (string) @file_get_contents(APP_ROOT . '/application/views/admin/rekam/perumahan_wizard.php');
+$mdl_rd = (string) @file_get_contents(APP_ROOT . '/application/models/Rekam_data_model.php');
+wajib($wiz !== '' && $mdl_rd !== '', 'Sumber wizard & Rekam_data_model terbaca');
+preg_match('/Unggah BNBA.*?<\/p>/s', $wiz, $mb);
+$blok_bnba = $mb[0] ?? '';
+cek($blok_bnba !== '', 'C1: blok langkah BNBA di wizard terbaca');
+cek(stripos($blok_bnba, 'wajib') !== FALSE, 'C1: layar BNBA menyebut WAJIB');
+cek(stripos($blok_bnba, 'boleh dilewati') === FALSE && stripos($blok_bnba, '(opsional)') === FALSE,
+    'C1: nol sisa kata "opsional/boleh dilewati" — layar tidak boleh menjanjikan yang ditolak server');
+cek(preg_match("/count_all_results\('rd_perumahan_bnba'\)/", $mdl_rd) === 1,
+    'C1: gerbangnya benar-benar ada di kirim(), bukan cuma tulisan di layar');
+
 // A11b — nama menu. "Backlog" ditolak dengan sengaja; lihat komentar di view.
 $hub = (string) @file_get_contents(APP_ROOT . '/application/views/pages/golek_omah/index.php');
 $vrt = (string) @file_get_contents(APP_ROOT . '/application/views/pages/golek_omah/cek_rtlh.php');

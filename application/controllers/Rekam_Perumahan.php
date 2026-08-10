@@ -19,7 +19,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Rekam_Perumahan extends Admin_Kabkota_Controller {
 
-    /** Urutan langkah wizard. `bnba` opsional — boleh dilewati. */
+    /** Urutan langkah wizard. `bnba` WAJIB sejak 5 Agt 2026 (butir C1); gerbangnya
+     *  di `Rekam_data_model::kirim()`, bukan di sini. */
     private const LANGKAH = ['periode', 'program', 'isian', 'bnba', 'review'];
 
     private const LABEL_LANGKAH = [

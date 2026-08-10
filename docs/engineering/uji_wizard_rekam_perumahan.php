@@ -77,6 +77,22 @@ function q($sql, $params = []) {
     return $row;
 }
 
+/**
+ * Lampirkan BNBA langsung ke DB — BNBA WAJIB sejak 5 Agt 2026 (butir C1),
+ * dan `Rekam_data_model::kirim()` menolak laporan perumahan tanpa lampirannya.
+ *
+ * Ditulis langsung, bukan lewat `unggah_bnba`: yang diuji berkas ini bukan alur
+ * unggahnya (gerbangnya diuji dua arah di [L5] di bawah), melainkan
+ * penyiapan laporan KEDUA dan seterusnya. Menempuh ulang
+ * unggahannya cuma menyalin cakupan dan menambah sebab gagal yang bukan milik
+ * uji ini. Baris ini ikut terhapus bersama laporannya lewat FK.
+ */
+function lampirkan_bnba($laporan_id) {
+    q('INSERT INTO rd_perumahan_bnba (laporan_id, nama_asli, private_path, mime_type, ukuran)
+       VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE nama_asli = VALUES(nama_asli)',
+       [(int) $laporan_id, 'bnba-uji.pdf', 'uji/bnba-uji.pdf', 'application/pdf', 1024]);
+}
+
 /** Prepared statement mengembalikan tipe native — selalu di-cast (AGENTS.md §0e). */
 function skalar_int($sql, $params = []) {
     $row = q($sql, $params);
@@ -329,9 +345,20 @@ try {
     $halaman = 'Rekam_Perumahan/input?laporan=' . $ID1 . '&langkah=program';
     kirim_form('kab', $halaman, 'Rekam_Perumahan/simpan_program',
         ['laporan_id' => $ID1, 'program' => ['pk_rtlh']]);
+
+    /* GERBANG BNBA (butir C1, 5 Agt 2026). Sampai 4 Agt langkah BNBA boleh
+       dilewati dan laporan tetap terkirim. Diuji DUA ARAH di sini, karena satu
+       arah saja tidak membuktikan gerbangnya bekerja: */
+    $r = kirim_form('kab', $review, 'Rekam_Perumahan/kirim', ['laporan_id' => $ID1]);
+    cek(skalar_str('SELECT status AS s FROM rd_laporan WHERE id = ?', [$ID1]) === 'draft',
+        'Kirim DITOLAK selama BNBA belum dilampirkan');
+    cek(stripos($r['body'], 'BNBA') !== FALSE,
+        'Sebab penolakannya menyebut BNBA, bukan galat umum');
+
+    lampirkan_bnba($ID1);
     kirim_form('kab', $review, 'Rekam_Perumahan/kirim', ['laporan_id' => $ID1]);
     cek(skalar_str('SELECT status AS s FROM rd_laporan WHERE id = ?', [$ID1]) === 'terkirim',
-        'Kirim diterima setelah program kosong dicabut');
+        'Kirim diterima sesudah BNBA dilampirkan');
 
     // Terkunci
     kirim_form('kab', $isian, 'Rekam_Perumahan/simpan_sumber', [
@@ -357,6 +384,7 @@ try {
     cek(strpos(http('kab', $review)['body'], 'Angka APBD perlu dicek ulang.') !== FALSE,
         'Catatan peninjau SAMPAI ke layar kabupaten');
 
+    lampirkan_bnba($ID1);
     kirim_form('kab', $review, 'Rekam_Perumahan/kirim', ['laporan_id' => $ID1]);
     cek(skalar_str('SELECT status AS s FROM rd_laporan WHERE id = ?', [$ID1]) === 'terkirim',
         'Kirim ulang memakai laporan YANG SAMA');
@@ -384,6 +412,7 @@ try {
         'rencana_unit' => 10, 'rencana_anggaran' => 100000000,
         'realisasi_unit' => 5, 'realisasi_anggaran' => 50000000,
     ]);
+    lampirkan_bnba($ID2);
     kirim_form('kab', 'Rekam_Perumahan/input?laporan=' . $ID2 . '&langkah=review',
         'Rekam_Perumahan/kirim', ['laporan_id' => $ID2]);
     wajib(skalar_str('SELECT status AS s FROM rd_laporan WHERE id = ?', [$ID2]) === 'terkirim',

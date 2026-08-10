@@ -449,6 +449,26 @@ class Rekam_data_model extends CI_Model {
                 return $this->gagal('belum_lengkap',
                     count($kosong) . ' program dicentang tetapi belum punya satu pun sumber dana.');
             }
+
+            /* BNBA WAJIB sejak 5 Agt 2026 (revisi dinas butir C1). Sebelumnya
+               langkah ini boleh dilewati.
+             *
+             * "Laporan lama tetap sah" — keputusan user — terpenuhi dengan
+             * sendirinya dan itu memang alasan gerbangnya ditaruh DI SINI:
+             * `kirim()` hanya dilewati saat laporan BERPINDAH ke `terkirim`.
+             * Laporan yang sudah terkirim tidak pernah divalidasi ulang, jadi
+             * tidak ada satu pun laporan lama yang mendadak jadi tidak sah.
+             *
+             * Konsekuensi yang disengaja: laporan `perlu_perbaikan` — yang dulu
+             * dikirim tanpa BNBA lalu dikembalikan — akan diminta melampirkannya
+             * saat dikirim ulang. Tidak dikecualikan, karena pengecualian itu
+             * justru membuka jalan permanen untuk mengirim tanpa BNBA: kirim,
+             * minta dikembalikan, kirim lagi. */
+            if ( ! $this->db->where('laporan_id', $id)->count_all_results('rd_perumahan_bnba')) {
+                return $this->gagal('belum_lengkap',
+                    'Berkas BNBA (by name by address) belum dilampirkan. '
+                    . 'Sejak 5 Agustus 2026 lampiran ini wajib untuk laporan perumahan.');
+            }
         } else {
             $ringkasan = $this->db->get_where('rd_kawasan_ringkasan', ['laporan_id' => $id])->row_array();
             if ( ! $ringkasan) {

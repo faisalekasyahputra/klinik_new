@@ -77,6 +77,22 @@ function q($sql, $params = []) {
     return $row;
 }
 
+/**
+ * Lampirkan BNBA langsung ke DB — BNBA WAJIB sejak 5 Agt 2026 (butir C1),
+ * dan `Rekam_data_model::kirim()` menolak laporan perumahan tanpa lampirannya.
+ *
+ * Ditulis langsung, bukan lewat `unggah_bnba`: yang diuji berkas ini bukan alur
+ * unggahnya (itu punya penjaganya sendiri di uji_wizard_rekam_perumahan),
+ * melainkan apa yang terjadi SESUDAH laporan terkirim. Menempuh ulang
+ * unggahannya cuma menyalin cakupan dan menambah sebab gagal yang bukan milik
+ * uji ini. Baris ini ikut terhapus bersama laporannya lewat FK.
+ */
+function lampirkan_bnba($laporan_id) {
+    q('INSERT INTO rd_perumahan_bnba (laporan_id, nama_asli, private_path, mime_type, ukuran)
+       VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE nama_asli = VALUES(nama_asli)',
+       [(int) $laporan_id, 'bnba-uji.pdf', 'uji/bnba-uji.pdf', 'application/pdf', 1024]);
+}
+
 /** Selalu di-cast: prepared statement mengembalikan tipe native (AGENTS.md §0e). */
 function skalar_int($sql, $params = []) {
     $row = q($sql, $params);
@@ -196,6 +212,7 @@ try {
             'program' => 'pk_rtlh', 'sumber_dana' => 'apbd_kabkota',
             'rencana_unit' => $unit, 'rencana_anggaran' => $anggaran,
             'realisasi_unit' => $unit, 'realisasi_anggaran' => $anggaran]);
+        lampirkan_bnba($lap);
         http('kab', 'Rekam_Perumahan/kirim', [
             'csrf_kpkp_token' => csrf('kab', $wl), 'laporan_id' => $lap]);
         return $lap;
