@@ -5,6 +5,9 @@ class Simperum_gateway {
 
     private $CI;
     private $mode;
+
+    /** Butir 5: benar HANYA selama satu pemanggilan lookup() yang memintanya. */
+    private $lewati_tgl_lahir = FALSE;
     private $fixture_path;
     private $base_url;
     private $public_key;
@@ -27,15 +30,33 @@ class Simperum_gateway {
         $this->timeout = (int) $this->CI->config->item('simperum_timeout', 'simperum');
     }
 
-    public function lookup($nik, $birth_date, $requested_by = NULL)
+    /**
+     * @param bool $tanpa_tgl_lahir Lewati pengaman tanggal lahir.
+     *
+     * BUTIR 5 PUTARAN 2, dan bendera ini sengaja dibuat SEMPIT. Dinas meminta
+     * tanggal lahir dihilangkan dari layar Cek Data Rumah; keputusan itu
+     * dikonfirmasi user 11 Agt 2026 ("pakai yang terbaru, manut dinas"),
+     * membalik keputusan 5 Agt yang mempertahankannya.
+     *
+     * Yang TIDAK dilakukan: melonggarkan gateway untuk semua pemanggil.
+     * `Warga::pendataan()` memakai `lookup()` yang sama, dan di sana tanggal
+     * lahir bukan formalitas melainkan pengaman anti-penelusuran. Melepasnya
+     * di satu layar adalah keputusan dinas; melepasnya di seluruh sistem
+     * adalah kelalaian kami. Karena itu bendera ini harus DIMINTA secara
+     * eksplisit, dan hanya `Cek_Rtlh` yang memintanya.
+     */
+    public function lookup($nik, $birth_date, $requested_by = NULL, $tanpa_tgl_lahir = FALSE)
     {
         $this->internal_profile = [];
         $nik = preg_replace('/\D+/', '', (string) $nik);
         $birth_date = trim((string) $birth_date);
-        if ( ! preg_match('/^\d{16}$/', $nik)
-            || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $birth_date)) {
+        if ( ! preg_match('/^\d{16}$/', $nik)) {
+            return $this->response('invalid', 'NIK tidak valid.');
+        }
+        if ( ! $tanpa_tgl_lahir && ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $birth_date)) {
             return $this->response('invalid', 'NIK atau tanggal lahir tidak valid.');
         }
+        $this->lewati_tgl_lahir = (bool) $tanpa_tgl_lahir;
         if ($this->mode === 'api' && ! $this->api_configured()) {
             return $this->response('error', 'Koneksi SIMPERUM belum dikonfigurasi.', [], 'api_not_configured');
         }
@@ -450,7 +471,7 @@ class Simperum_gateway {
         }
 
         $canonical = $this->normalize($payload);
-        if ( ! $this->birth_date_matches($canonical['nik'] ?? '', $birth_date, $payload)) {
+        if ( ! $this->lewati_tgl_lahir && ! $this->birth_date_matches($canonical['nik'] ?? '', $birth_date, $payload)) {
             return $this->response('not_found', 'NIK dan tanggal lahir tidak cocok.');
         }
         if ($this->mode === 'api' && empty($canonical['birth_date'])) {

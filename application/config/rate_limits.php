@@ -95,6 +95,14 @@ $config['rate_limit_policies'] = [
      * jadi kalau login dicabut, angka ini yang jadi satu-satunya penahan dan
      * ia tidak cukup.
      */
+    /* Butir 5 putaran 2: batas HARIAN, pasangan dari yang per jam di bawah.
+       Sesudah tanggal lahir dilepas, dua batas ini yang menggantikan perannya
+       sebagai pengaman anti-penelusuran. */
+    'rtlh_cek_harian' => [
+        'limit' => 25,
+        'window' => 86400,
+        'dimensions' => ['account'],
+    ],
     'rtlh_cek' => [
         'limit' => 10,
         'window' => 3600,

@@ -92,14 +92,17 @@ $this->load->view('components/modal_simperum_simulasi');
                    class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm tracking-wider text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
         </div>
 
-        <div>
-            <label for="rtlh-tgl" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Tanggal Lahir</label>
-            <?php // `type=date` bawaan browser: sudah menangani keyboard, pembaca layar, dan format lokal. ?>
-            <input id="rtlh-tgl" name="tgl_lahir" type="date" required max="<?= date('Y-m-d') ?>"
-                   value="<?= html_escape($isian['tgl_lahir'] ?? '') ?>"
-                   class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
-            <p class="mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]">Harus cocok dengan NIK yang dimasukkan.</p>
-        </div>
+        <?php
+        /* BUTIR 5 PUTARAN 2: isian Tanggal Lahir DICABUT, arahan dinas
+           (dikonfirmasi user 11 Agt 2026), membalik keputusan 5 Agt.
+
+           Perannya dulu bukan syarat API - SIMPERUM memang hanya butuh NIK -
+           melainkan pengaman: memastikan yang memeriksa mengenal orang yang
+           diperiksa. Penggantinya sudah dipasang di controller, yaitu batas
+           pencarian per jam DAN per hari, di atas kewajiban masuk yang sudah
+           ada dan pencatatan tiap pencarian. Kalau isian ini kelak dikembalikan,
+           dua batas itu boleh dilonggarkan lagi, tidak sebelum itu. */
+        ?>
 
         <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-black transition hover:-translate-y-0.5"
                 style="background-color: var(--portal-brand); color: var(--portal-bg)">

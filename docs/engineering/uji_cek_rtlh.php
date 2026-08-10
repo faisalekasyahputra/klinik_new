@@ -194,12 +194,43 @@ cek(stripos($kosong['body'], 'tidak terdaftar') !== FALSE, 'NIK tanpa data RTLH 
 cek(stripos($kosong['body'], 'pendataan') !== FALSE,
     'Yang tidak terdaftar tetap diberi jalan lanjut, bukan jalan buntu');
 
-// ------------------------------------------------ 3. PENJAGA TANGGAL LAHIR
-echo "\n== 3. Tanggal lahir yang tidak cocok ditolak ==\n";
-$salah = periksa('u', NIK_ADA, '1999-09-09');
-cek(stripos($salah['body'], '<span style="color: var(--portal-brand)">TERDAFTAR</span>') === FALSE
-    && stripos($salah['body'], 'tidak cocok') !== FALSE,
-    'NIK benar + tanggal lahir salah TIDAK memulangkan data');
+// ------------------------------------- 3. TANGGAL LAHIR DICABUT, PENGGANTINYA
+/* BUTIR 5 PUTARAN 2. Blok ini dulu menjaga pengaman tanggal lahir. Dinas
+   memutuskan melepasnya dan user mengonfirmasi 11 Agt 2026, membalik keputusan
+   5 Agt. Penjaganya TIDAK dihapus, melainkan DIBALIK: yang dijaga sekarang
+   adalah bahwa penggantinya benar-benar terpasang.
+
+   Kalau tidak dibalik, satu-satunya bekas keputusan ini adalah pesan commit,
+   dan pengaman penggantinya bisa lenyap tanpa ada yang merah. */
+echo "
+== 3. Tanggal lahir dilepas, penggantinya terpasang ==
+";
+
+$tanpaTgl = periksa('u', NIK_ADA, '');
+cek(stripos($tanpaTgl['body'], 'tidak cocok') === FALSE,
+    'Pencarian tanpa tanggal lahir TIDAK lagi ditolak');
+
+$halaman = http('u', 'Cek_Rtlh')['body'];
+cek(stripos($halaman, 'name="tgl_lahir"') === FALSE,
+    'Isian tanggal lahir sudah tidak ada di layar');
+
+$kebijakan = (string) @file_get_contents(APP_ROOT . '/application/config/rate_limits.php');
+cek(strpos($kebijakan, "'rtlh_cek'") !== FALSE, 'Batas per jam masih terdaftar');
+cek(strpos($kebijakan, "'rtlh_cek_harian'") !== FALSE, 'Batas per HARI terdaftar sebagai penggantinya');
+
+$ctrl = (string) @file_get_contents(APP_ROOT . '/application/controllers/Cek_Rtlh.php');
+cek(strpos($ctrl, 'rtlh_cek_harian') !== FALSE,
+    'Controller benar-benar memakai batas harian, bukan cuma mendeklarasikannya');
+cek(strpos($ctrl, 'catat_audit') !== FALSE,
+    'Tiap pencarian tetap dicatat, jejaknya bagian dari penggantinya');
+
+/* Pengaman tanggal lahir HANYA dilepas di layar ini. Wizard pendataan warga
+   memakai gateway yang sama, dan di sana ia tetap menjaga. */
+$gw = (string) @file_get_contents(APP_ROOT . '/application/libraries/Simperum_gateway.php');
+cek(strpos($gw, 'birth_date_matches') !== FALSE,
+    'Pengaman tanggal lahir MASIH ADA di gateway, tidak dicabut untuk semua');
+cek(strpos($gw, '$tanpa_tgl_lahir = FALSE') !== FALSE,
+    'Pelepasannya harus diminta eksplisit, bawaannya tetap menjaga');
 
 // ------------------------------------------------ 4. NOL EFEK SAMPING
 echo "\n== 4. Cek cepat TIDAK menyentuh profil pendataan ==\n";

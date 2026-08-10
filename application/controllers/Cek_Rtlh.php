@@ -65,16 +65,31 @@ class Cek_Rtlh extends MY_Controller {
         // satu salah ketik. NIK-nya sendiri tidak pernah ikut ke URL.
         $this->session->set_flashdata('rtlh_isian', ['nik' => $nik, 'tgl_lahir' => $tgl]);
 
-        if ( ! preg_match('/^\d{16}$/', $nik) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $tgl)) {
-            $this->session->set_flashdata('error', 'NIK harus 16 digit dan tanggal lahir wajib diisi.');
+        if ( ! preg_match('/^\d{16}$/', $nik)) {
+            $this->session->set_flashdata('error', 'NIK harus 16 digit angka.');
             redirect('Cek_Rtlh');
             return;
         }
 
-        $rate = $this->rate_limit_consume('rtlh_cek', ['account_id' => (int) $this->get_user_id()]);
-        if (empty($rate['success']) || empty($rate['allowed'])) {
-            $this->rate_limit_reject($rate, 'Terlalu banyak pencarian. Silakan coba lagi nanti.');
-            return;
+        /* BUTIR 5 PUTARAN 2: DUA batas, bukan satu, dan itu penggantinya.
+           Tanggal lahir dulu menjadi pengaman anti-penelusuran di layar ini.
+           Dinas memutuskan melepasnya (dikonfirmasi user 11 Agt 2026), jadi
+           penggantinya dipasang bersamaan - kalau tidak, satu-satunya yang
+           menghalangi orang memeriksa status kemiskinan tetangganya adalah
+           kesabaran.
+
+           Per JAM menahan sapuan cepat; per HARI menahan yang sabar. Batas
+           per jam sendirian membiarkan 240 NIK diperiksa dalam sehari, dan
+           orang yang menelusuri memang tidak buru-buru. */
+        foreach ([
+            ['rtlh_cek', 'Terlalu banyak pencarian dalam satu jam. Silakan coba lagi nanti.'],
+            ['rtlh_cek_harian', 'Batas pencarian harian tercapai. Silakan lanjutkan besok.'],
+        ] as [$policy, $pesan]) {
+            $rate = $this->rate_limit_consume($policy, ['account_id' => (int) $this->get_user_id()]);
+            if (empty($rate['success']) || empty($rate['allowed'])) {
+                $this->rate_limit_reject($rate, $pesan);
+                return;
+            }
         }
 
         $this->load->library('simperum_gateway');
@@ -87,7 +102,7 @@ class Cek_Rtlh extends MY_Controller {
          * efek samping pada data pengajuan; wizard `Warga::pendataan()` yang
          * memang berwenang menulis ke sana.
          */
-        $hasil = $this->simperum_gateway->lookup($nik, $tgl, NULL);
+        $hasil = $this->simperum_gateway->lookup($nik, '', NULL, TRUE);
 
         $this->session->set_flashdata('rtlh_hasil', [
             'status'     => $hasil['status'],
