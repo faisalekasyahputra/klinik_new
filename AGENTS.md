@@ -8,13 +8,25 @@
 
 ## 0. BACA INI DULU — Status Terkini & Protokol Antar-Agent
 
-**Terakhir disinkronkan: 5 Agustus 2026** — palet pastel arahan dinas (butir 1b) TAYANG di production: kode **`41e7835`**, skema **`20260701000035`** (tidak berubah — perubahan ini nol migrasi), dibaca dari server lewat `ssh` + `git log -1`. Rincian di bawah.
+**Terakhir disinkronkan: 5 Agustus 2026, malam** — gelombang R1–R3 revisi dinas TAYANG: kode **`95473f8`**, skema **`20260701000035`** (ketiganya nol migrasi), dibaca dari server lewat `ssh` + `git log -1` + `git status -sb` bersih. Rincian di bawah.
 
 <!-- Konteks lama, dipertahankan sebagai jejak: -->
 **Sebelumnya: 30 Juli 2026, sore** — wizard Rekam Data Perumahan TAYANG di production: kode `3bec51e`, skema **`20260701000024`**, bentuk skema diverifikasi langsung dari `information_schema` (bukan dari laporan "Migrasi sukses"). Uji klik sebagai admin kab/kota **belum dilakukan** — lihat §0a.
 
 <!-- Konteks lama, dipertahankan sebagai jejak: -->
 **Sebelumnya: 28 Juli 2026** (roadmap pengembang T0–T6 selesai di production; form warga R0–R7 dan adapter offline SIMPERUM R9 selesai lokal, belum di-push — lihat §0b/§0c). Kalau kamu agent yang baru masuk, baca bagian ini sampai habis sebelum menyentuh apa pun.
+
+> ✅ **R1–R3 REVISI DINAS TAYANG, 5 Agt 2026 — kode `95473f8`, nol migrasi.** Ketujuh butir "jelas" dari rapat dinas selesai; 16 sisanya sengaja TIDAK disentuh karena menunggu jawaban. Peta lengkap 23 butir + statusnya: [`ROADMAP_REVISI_5AGT.md`](docs/engineering/ROADMAP_REVISI_5AGT.md).
+>
+> **R1** label (A4 "Rumah swadaya / bangun sendiri", D1 "Kawasan Permukiman", D3 "Keterangan", C3 triwulan di judul tabel). **R2** tata letak (A8 `<fieldset>`/`<legend>` "Ukuran tanah"; C2 rencana & realisasi jadi SATU tabel). **R3** A5 kembali ke halaman asal sesudah login.
+>
+> 🔻 **DUA PELAJARAN YANG AKAN TERULANG KALAU TIDAK DICATAT.**
+>
+> **1. Bentuk yang "benar" bisa merusak hal lain — dan itu hanya ketahuan dengan mengukur.** C2 mula-mula dikerjakan dengan memasangkan dua angka di dalam satu sel. Terukur pada viewport 1440 dengan label asli + angka kasus terburuk: tabel melebar 1100 → **1348px**, guliran mendatar naik 35px → **283px**. Bentuknya diganti jadi dua BARIS per sumber dana (`rowspan`), isi sel kembali satu angka, terukur **1078px / gulir 5px** di halaman sungguhan. Penjaga bentuknya menyimpan angka-angka ini supaya penggantinya kelak mengukur dulu.
+>
+> **2. `scrollWidth` TIDAK bisa dipakai mengukur elemen `overflow:hidden`.** Saat memeriksa apakah label sidebar "Kawasan Permukiman" terpotong, ketiga label melaporkan lebar identik 176px — termasuk "Rekam Data Perumahan" yang jelas lebih panjang. Pada elemen yang tidak bisa digulir, `scrollWidth` jatuh sama dengan `clientWidth`. Ditambah `document.fonts.check` mengembalikan `false` — fontnya belum termuat, jadi angkanya dari font pengganti. **Cara yang benar: span melayang (`position:absolute`, tanpa flex/overflow) sesudah `await document.fonts.ready`.** Baris acuan yang sengaja dipasang di uji itulah yang membongkarnya — tanpa pembanding, angka mustahil akan lolos sebagai fakta.
+>
+> **Gerbang login sekarang satu pintu: `MY_Controller::gerbang_login()`.** Sebelumnya 21 tempat memanggil `redirect('Auth/login')` telanjang di 6 berkas. **JANGAN menambah `redirect('Auth/login')` baru** — pakai gerbangnya, kalau tidak halaman itu kehilangan "kembali ke asal" tanpa suara. Alamat tujuan diturunkan dari `uri_string()` (server), **tidak pernah** dari query string, hanya GET, rute `auth/*` dilewati, dan disaring `sanitize_redirect()` dua kali (saat disimpan & saat dipakai). Yang SUDAH login tidak diingat asalnya — gerbang yang sama melayani "salah peran", dan mengingatnya membuat putaran. Penjaganya [`uji_gerbang_login.php`](docs/engineering/uji_gerbang_login.php); mencabut KEDUA lapis penyaring membuat pendaratan benar-benar jadi `https://jahat.example/curi`.
 
 > 🎨 **PALET PASTEL TAYANG, 5 Agt 2026 — kode `41e7835`, nol migrasi.** Butir 1b (arah warna dari dinas) akhirnya tidak lagi terblokir; dinas mengirim tangkapan layar skemanya. Kartu beranda dan slide program dulu kolam gelap bertinta putih, sekarang pastel bertinta gelap `#16323a`. Keduanya memakai `.aurora-surface` yang sama, dan portal dipatok `theme-light` di [`layouts/main.php:66`](application/views/layouts/main.php) — **tidak ada varian gelap yang perlu dihidupi, jadi kelasnya dibalik DI TEMPAT** alih-alih diberi kelas pengubah yang cuma akan punya satu pemakai. Makna `--t1..--t3` ikut berubah: dari dingin→hangat menjadi **muda→pekat**, sebab kolam `--t1` mendarat persis di bawah kotak teks. Ikon memakai `var(--t3)` (rona kartunya sendiri, bukan warna kesembilan) plus emboss ke dalam ber-satuan `em`. Suite tetap **37 suite / 1182 pemeriksaan / 0 merah**.
 >
@@ -75,7 +87,7 @@
 | | Situs | Branch | Status |
 |---|---|---|---|
 | **Lokal** | `localhost/klinik_new` | `feature/homepage-portal-v2` | skema `20260701000035` — **sinkron dengan production**, nol commit tertahan |
-| **PRODUCTION (aktif)** | `floralwhite-lion-710022`<br>dir: `~/domains/floralwhite-lion-710022.hostingersite.com/public_html`<br>DB: **`31.97.208.59`** (bukan localhost), `u504551489_klinikstg` | `feature/homepage-portal-v2` — auto-deploy | RILIS PERILAKU TERAKHIR **`41e7835`** (palet pastel) + DB skema **`20260701000035`**, **40 tabel** — dibaca dari server 5 Agt 2026 (`ssh` → `git log -1` + `git status -sb` bersih, `Migrate status`). *(Baris ini sempat menulis `…016`, `…022`, lalu `3bec51e`+`…024`; ketiganya salah. Angka hanya boleh ditulis ulang setelah dibaca dari server — dan lihat peringatan di bawah soal CARA membacanya, karena `git ls-remote` bukan salah satunya.)* |
+| **PRODUCTION (aktif)** | `floralwhite-lion-710022`<br>dir: `~/domains/floralwhite-lion-710022.hostingersite.com/public_html`<br>DB: **`31.97.208.59`** (bukan localhost), `u504551489_klinikstg` | `feature/homepage-portal-v2` — auto-deploy | RILIS PERILAKU TERAKHIR **`95473f8`** (R1–R3 revisi dinas) + DB skema **`20260701000035`**, **40 tabel** — dibaca dari server 5 Agt 2026 (`ssh` → `git log -1` + `git status -sb` bersih, `Migrate status`). *(Baris ini sempat menulis `…016`, `…022`, lalu `3bec51e`+`…024`; ketiganya salah. Angka hanya boleh ditulis ulang setelah dibaca dari server — dan lihat peringatan di bawah soal CARA membacanya, karena `git ls-remote` bukan salah satunya.)* |
 | ~~production lama~~ | `palegreen-mink-703421` | `main` — beku sejak 19 Jul | 🔴 **DIMATIKAN** |
 | ~~staging lama~~ | `darkseagreen-hamster-214338` | `feature/ui-ux-revamp` | 🔴 **DIMATIKAN** |
 | ~~instalasi mati~~ | `darkgreen-cattle-889861` | tanpa git, Mei | 🔴 **DIMATIKAN** |
