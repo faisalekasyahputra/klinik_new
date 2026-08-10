@@ -159,6 +159,30 @@ class Migrate extends CI_Controller {
             echo "aduan.bidang DEFAULT 'umum' dicabut: "
                 .($sentinel ? 'BELUM' : 'YA')."\n";
         }
+
+        /* Posisi magang (migrasi 038). Yang diperiksa BUKAN sekadar tabelnya
+           ada — FK-nya juga, karena `create_table` bisa berhasil sementara
+           `ALTER ADD CONSTRAINT` yang menyusul gagal senyap saat db_debug mati
+           (riwayat 031). Tanpa FK, posisi bisa menunjuk bidang yang sudah
+           dihapus dan papan magang menampilkan lowongan tanpa induk. */
+        if (in_array('kkn_magang_posisi', $tables, TRUE)) {
+            $kolom = $this->db->query("SELECT COLUMN_NAME c FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'kkn_magang_posisi'")->result();
+            $punya = array_column($kolom, 'c');
+            foreach (['bidang_kode', 'nama_posisi', 'kuota', 'aktif', 'urutan'] as $k) {
+                echo "kkn_magang_posisi.{$k} (migrasi 038): "
+                    .(in_array($k, $punya, TRUE) ? 'ADA' : 'HILANG')."\n";
+            }
+            $fk = $this->db->query("SELECT COUNT(*) n FROM information_schema.KEY_COLUMN_USAGE
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'kkn_magang_posisi'
+                  AND REFERENCED_TABLE_NAME = 'bidang'")->row('n');
+            echo 'kkn_magang_posisi FK ke bidang: '
+                .((int) $fk > 0 ? 'TERPASANG' : 'TIDAK ADA — posisi bisa yatim')."\n";
+            echo 'posisi magang aktif: '
+                .(int) $this->db->where('aktif', 1)->count_all_results('kkn_magang_posisi')."\n";
+        } else {
+            echo "kkn_magang_posisi (migrasi 038): BELUM ADA — layar Posisi Magang akan fatal\n";
+        }
     }
 
     /**
