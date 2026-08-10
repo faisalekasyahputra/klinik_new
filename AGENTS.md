@@ -16,6 +16,14 @@
 <!-- Konteks lama, dipertahankan sebagai jejak: -->
 **Sebelumnya: 28 Juli 2026** (roadmap pengembang T0–T6 selesai di production; form warga R0–R7 dan adapter offline SIMPERUM R9 selesai lokal, belum di-push — lihat §0b/§0c). Kalau kamu agent yang baru masuk, baca bagian ini sampai habis sebelum menyentuh apa pun.
 
+> ✅ **R4–R5 REVISI DINAS TAYANG, 10 Agt 2026 — kode `ea700cf`, skema `20260701000037`, 40 tabel.** Seluruh butir "jelas" revisi dinas kini selesai. R5 mendarat satu commit per butir seperti niatnya: A7 `91a0e34`, C1 `85f131d`, etalase program yang bisa diurus dari layar (migrasi `036`) `548a928`, A10c `93ca324`, C4/D4 `6bfc19a`, B1 (migrasi `037`) `ea700cf`. Peta 23 butir + 12 keputusan user: [`ROADMAP_REVISI_5AGT.md`](docs/engineering/ROADMAP_REVISI_5AGT.md).
+>
+> 🔻 **DUA PELAJARAN DARI R5, keduanya tentang hal yang LULUS padahal tidak seharusnya.**
+>
+> **1. Menambah kolom ke tabel yang penyimpannya merakit payload penuh = kolom itu akan lenyap diam-diam.** `Admin_Srp2::save()` selalu menyusun payload lengkap, padahal form baris tidak punya isian `sosmed_lainnya` — jadi setiap "Simpan" menge-NULL-kannya tanpa suara, dan terbukti **nol dari 67 baris** pernah terisi. Kolom tanggal B1 akan bernasib sama. Akarnya dibetulkan lebih dulu: **payload hanya memuat medan yang benar-benar dikirim** — tidak dikirim berarti tidak disentuh, dikirim kosong berarti dikosongkan. `status_aktif` sengaja dikecualikan (checkbox tak dicentang memang tidak terkirim; membacanya sebagai "biarkan" membuat sakelar yang tak bisa dimatikan). Kolom tanggal **TIDAK** dipasang di `upsert_direktori_publik()` — pemanggilnya adalah pengembang itu sendiri lewat `/akun/update_pengembang`, dan masa berlaku sertifikat bukan hal yang boleh ditulis pemegangnya.
+>
+> **2. Asersi "nilainya bertahan" bisa hijau justru karena POST-nya tidak pernah sampai.** Blok uji B1 mula-mula memakai sesi `'adm'` yang **tidak pernah di-login** — harness itu hanya membuat sesi pengembang & warga. POST-nya dibelokkan ke layar masuk, DB tidak tersentuh, dan **ketiga asersi lulus karena tidak terjadi apa-apa**. Yang membongkarnya cuma satu asersi lain yang kebetulan merah. **Setiap blok uji yang mengaku "sebagai peran X" wajib membuktikan prasyaratnya keras** — login sukses DAN layar sasaran benar-benar terbuka — sebelum satu pun asersi berjalan. Hijau tanpa prasyarat itu hijau yang tidak berarti apa-apa.
+
 > ✅ **R1–R3 REVISI DINAS TAYANG, 5 Agt 2026 — kode `95473f8`, nol migrasi.** Ketujuh butir "jelas" dari rapat dinas selesai; 16 sisanya sengaja TIDAK disentuh karena menunggu jawaban. Peta lengkap 23 butir + statusnya: [`ROADMAP_REVISI_5AGT.md`](docs/engineering/ROADMAP_REVISI_5AGT.md).
 >
 > **R1** label (A4 "Rumah swadaya / bangun sendiri", D1 "Kawasan Permukiman", D3 "Keterangan", C3 triwulan di judul tabel). **R2** tata letak (A8 `<fieldset>`/`<legend>` "Ukuran tanah"; C2 rencana & realisasi jadi SATU tabel). **R3** A5 kembali ke halaman asal sesudah login.
@@ -86,8 +94,8 @@
 
 | | Situs | Branch | Status |
 |---|---|---|---|
-| **Lokal** | `localhost/klinik_new` | `feature/homepage-portal-v2` | skema `20260701000035` — **sinkron dengan production**, nol commit tertahan |
-| **PRODUCTION (aktif)** | `floralwhite-lion-710022`<br>dir: `~/domains/floralwhite-lion-710022.hostingersite.com/public_html`<br>DB: **`31.97.208.59`** (bukan localhost), `u504551489_klinikstg` | `feature/homepage-portal-v2` — auto-deploy | RILIS PERILAKU TERAKHIR **`95473f8`** (R1–R3 revisi dinas) + DB skema **`20260701000035`**, **40 tabel** — dibaca dari server 5 Agt 2026 (`ssh` → `git log -1` + `git status -sb` bersih, `Migrate status`). *(Baris ini sempat menulis `…016`, `…022`, lalu `3bec51e`+`…024`; ketiganya salah. Angka hanya boleh ditulis ulang setelah dibaca dari server — dan lihat peringatan di bawah soal CARA membacanya, karena `git ls-remote` bukan salah satunya.)* |
+| **Lokal** | `localhost/klinik_new` | `feature/homepage-portal-v2` | skema `20260701000037` — **sinkron dengan production**, nol commit tertahan |
+| **PRODUCTION (aktif)** | `floralwhite-lion-710022`<br>dir: `~/domains/floralwhite-lion-710022.hostingersite.com/public_html`<br>DB: **`31.97.208.59`** (bukan localhost), `u504551489_klinikstg` | `feature/homepage-portal-v2` — auto-deploy | RILIS PERILAKU TERAKHIR **`ea700cf`** (R5 revisi dinas, butir terakhirnya B1) + DB skema **`20260701000037`**, **40 tabel** — dibaca dari server 10 Agt 2026 (`ssh` → `git log -1` + `git status -sb` bersih, `Migrate status`, dan bentuk kolomnya dari `information_schema`). *(Baris ini sempat menulis `…016`, `…022`, lalu `3bec51e`+`…024`; ketiganya salah. Angka hanya boleh ditulis ulang setelah dibaca dari server — dan lihat peringatan di bawah soal CARA membacanya, karena `git ls-remote` bukan salah satunya.)* |
 | ~~production lama~~ | `palegreen-mink-703421` | `main` — beku sejak 19 Jul | 🔴 **DIMATIKAN** |
 | ~~staging lama~~ | `darkseagreen-hamster-214338` | `feature/ui-ux-revamp` | 🔴 **DIMATIKAN** |
 | ~~instalasi mati~~ | `darkgreen-cattle-889861` | tanpa git, Mei | 🔴 **DIMATIKAN** |

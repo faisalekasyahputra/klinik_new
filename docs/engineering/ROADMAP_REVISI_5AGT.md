@@ -17,13 +17,27 @@
 | **R2** | A8, C2 | Tata letak | Rendah–sedang | ✅ tayang `81594e4` |
 | **R3** | A5 | Logika lintas berkas | **Sedang — ada sisi keamanan** | ✅ tayang `95473f8` |
 | **R4** | A9, A10a, A11b, E1 | Buang isian, lepas syarat, ganti nama | Rendah | ✅ tayang `7fd7478` |
-| **R5** | A7, A10c, B1, C1, C4/D4 | Aturan kelayakan, migrasi, fitur baru | **Sedang–tinggi** | belum |
+| **R5** | A7, A10c, B1, C1, C4/D4 | Aturan kelayakan, migrasi, fitur baru | **Sedang–tinggi** | ✅ tayang `ea700cf` |
 
 **R5 paling berat sejauh ini, dan bukan karena banyaknya.** A7 mengubah aturan
 kelayakan program — salah di situ berarti warga diarahkan ke bantuan yang salah,
 dan itu tidak menghasilkan galat apa pun yang kelihatan. B1 butuh migrasi.
 C1 mengubah aturan validasi laporan yang sudah berjalan. Kerjakan satu per satu
 dengan penjaganya masing-masing, jangan digabung jadi satu commit.
+
+**Selesai satu per satu seperti niatnya, lima commit + satu fitur susulan:** A7
+`91a0e34`, C1 `85f131d`, etalase program yang bisa diurus dari layar (migrasi
+`036`) `548a928`, A10c `93ca324`, C4/D4 `6bfc19a`, B1 (migrasi `037`) `ea700cf`.
+
+> 🔻 **Dua butir R5 ternyata membawa bug yang sudah berjalan, dan itu bagian
+> paling berharga dari gelombang ini.** A7 mendapati separuh penyaringnya sudah
+> ada; yang hilang justru status kepemilikan **di atas** desil. B1 mendapati
+> `Admin_Srp2::save()` merakit payload penuh padahal form baris tidak punya
+> isian `sosmed_lainnya` — jadi setiap "Simpan" menge-NULL-kannya diam-diam,
+> **nol dari 67 baris** terisi. Kalau kolom tanggal ditambahkan tanpa
+> membetulkan akarnya, tanggal sertifikat akan lenyap dengan cara yang sama.
+> Pelajarannya: sebelum menambah kolom, periksa dulu bagaimana kolom tetangganya
+> diperlakukan penyimpannya.
 
 Urutannya **berdasarkan risiko, bukan nilai**. A5 justru yang paling dirasakan dinas
 ("*soalnya bingung*"), tapi ia yang paling bisa merusak kalau tergesa. Kalau user mau
@@ -205,15 +219,15 @@ Suite baru atau tambahan di harness perjalanan yang sudah ada:
 
 | Butir | Keputusan | Kenapa begitu |
 |---|---|---|
-| **A7** | Status rumah **menyaring DI ATAS** desil, tidak menggantikannya | Menggantikan desil berarti mengubah sasaran subsidi — warga desil 9 berumah tidak layak akan masuk RTLH. Itu keputusan kebijakan, bukan tampilan |
+| **A7** | Status rumah **menyaring DI ATAS** desil, tidak menggantikannya | Menggantikan desil berarti mengubah sasaran subsidi — warga desil 9 berumah tidak layak akan masuk RTLH. Itu keputusan kebijakan, bukan tampilan. ✅ R5 |
 | **A9** | Buang dari formulir, **berkas lama tetap tersimpan** | Foto orang & bukti kepemilikan; menghapusnya tidak bisa dibatalkan dan pengajuan lama kehilangan lampirannya. ✅ R4 |
 | **A10a** | Sapuan istilah | ✅ **ternyata sudah selesai 3 Agt** — nol pekerjaan |
-| **A10c** | PDF **cetakan informatif** + peringatan tegas | Berkop resmi gampang dianggap keputusan, padahal isinya hitungan otomatis yang belum diverifikasi siapa pun. Mencegah warga datang merasa sudah berhak |
+| **A10c** | PDF **cetakan informatif** + peringatan tegas | Berkop resmi gampang dianggap keputusan, padahal isinya hitungan otomatis yang belum diverifikasi siapa pun. Mencegah warga datang merasa sudah berhak. ✅ R5 — dikerjakan sebagai **cetak browser**, bukan pustaka PDF baru |
 | **A11a** | Tanggal lahir **DIPERTAHANKAN** | Pengaman anti-penelusuran. Tanpa itu, siapa pun yang tahu NIK bisa memeriksa status kemiskinan orang lain. Nol pekerjaan |
 | **A11b** | Nama jadi **"Cek Data Rumah"** — BUKAN "Cek Backlog" | Backlog & RTLH indikator berbeda, dan API-nya mengembalikan RTLH. Menamainya backlog menjanjikan angka yang tidak ada. ✅ R4 |
-| **B1** | Kolom tanggal ditambah, **dikosongkan**, diisi admin bertahap | Menghitung otomatis dari tanggal daftar = tanggal karangan, dan masa berlaku sertifikat adalah hal yang orang percayai |
-| **C1** | BNBA wajib untuk laporan **baru**; laporan lama tetap sah | Tidak adil menuntut kabupaten/kota melengkapi aturan yang belum berlaku saat mereka mengisi |
-| **C4/D4** | Export **Excel**, **rekap saja — BNBA tidak ikut** | BNBA berisi nama & NIK; begitu jadi berkas Excel ia berpindah tangan tanpa jejak |
+| **B1** | Kolom tanggal ditambah, **dikosongkan**, diisi admin bertahap | Menghitung otomatis dari tanggal daftar = tanggal karangan, dan masa berlaku sertifikat adalah hal yang orang percayai. ✅ R5 — migrasi `037`, 68 baris production semuanya `NULL` |
+| **C1** | BNBA wajib untuk laporan **baru**; laporan lama tetap sah | Tidak adil menuntut kabupaten/kota melengkapi aturan yang belum berlaku saat mereka mengisi. ✅ R5 |
+| **C4/D4** | Export **Excel**, **rekap saja — BNBA tidak ikut** | BNBA berisi nama & NIK; begitu jadi berkas Excel ia berpindah tangan tanpa jejak. ✅ R5 |
 | **D2** | Isian **berjenjang dari daftar** | Ketik bebas membuat "PK RTLH"/"pk rtlh"/"Peningkatan Kualitas RTLH" terhitung tiga hal. **Butuh daftar resmi dari dinas** |
 | **E1** | Syarat "harus ditanggapi dulu" **dilepas** | Justru syarat itu yang membuat dinas tidak pernah melihat tombolnya. ✅ R4 |
 | **F1** | Posisi **DI DALAM** bidang, tidak menggantikan | Bidang tetap tulang punggung kuota; mesin slot & 70 cek ujinya tidak perlu dibongkar. **Butuh daftar posisi dari dinas** |
