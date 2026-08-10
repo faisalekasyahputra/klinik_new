@@ -35,6 +35,31 @@ try {
   $sa=new HTTP(); check($sa->login("r3_{$stamp}_a@example.test",$pass),'akun SIM-02 login');
   [$s]=$sa->call('warga/pendataan',['step'=>'find_data','nik'=>'0000000000000002','birth_date'=>'1990-12-31']); check(in_array($s,[302,303],true),'lookup SIM-02 memakai PRG');
   $draft=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE user_id=?',[$a]); check($draft && $draft['current_step']==='citizen_data','lookup membuat draft milik warga');
+  /* Butir A6 — kalimat desil, diperiksa DI LANGKAH `citizen_data` karena hanya
+     di situ paragrafnya dirender.
+
+     🔻 VERSI PERTAMA BLOK INI SALAH TEMPAT dan menghasilkan HIJAU HAMPA. Ia
+     dipasang sesudah langkah tersimpan, saat wizard sudah pindah ke
+     `housing_family` dan paragraf desil tidak ada di halaman. Asersi negatif
+     "tidak mengaku data resmi" LULUS justru karena tidak ada apa pun untuk
+     diperiksa. Karena itu sekarang keberadaan paragrafnya jadi PRASYARAT: kalau
+     ia tidak dirender, seluruh blok ini merah, bukan diam-diam hijau.
+
+     Yang dijaga bukan susunan katanya, melainkan bahwa SUMBERNYA disebut jujur
+     mengikuti mode. Dev bermode simulasi — dan per 10 Agt 2026 production pun
+     begitu (`SIMPERUM_MODE` tidak diset). Desil adalah angka yang dipakai orang
+     menilai haknya atas bantuan; menyebutnya "resmi" saat ia berasal dari
+     fixture adalah kekeliruan termahal di halaman ini. */
+  [, $bodyDesil]=$sa->call('warga/pendataan');
+  $adaParagraf=strpos($bodyDesil,'Kelompok kesejahteraan (desil)')!==false;
+  check($adaParagraf,'A6: paragraf desil dirender di langkah data warga (PRASYARAT)');
+  if ($adaParagraf) {
+    check(strpos($bodyDesil,'tidak dihitung ulang dari penghasilan yang Anda isi')!==false,'A6: alasan tidak dihitung ulang tetap disampaikan');
+    check(strpos($bodyDesil,'data simulasi')!==false,'A6: mode simulasi disebut apa adanya');
+    check(strpos($bodyDesil,'diambil dari data resmi SIMPERUM')===false,'A6: TIDAK mengaku "data resmi" saat sumbernya fixture');
+  } else {
+    check(false,'A6: tiga cek isi dilewati karena paragrafnya tidak ada');
+  }
   $before=(int)$db->val("SELECT COUNT(*) FROM sf_rekaman_simperum WHERE source_record_key='SIM-02'");
   [$s]=$sa->call('warga/pendataan',['step'=>'citizen_data','assessment_id'=>$draft['id'],'lock_version'=>$draft['lock_version'],'direction'=>'next','family_card_number'=>'0000000000002002','full_name'=>'Warga Simulasi Parsial','phone'=>'080000000002','birth_date'=>'1990-12-31','address'=>'Alamat Sintetis','gender_code'=>'male','marital_status_code'=>'married','education_code'=>'senior_high','occupation_code'=>'trader','income_band_code'=>'2_2_2_6','self_help_capability_code'=>'capable']); check(in_array($s,[302,303],true),'langkah data warga tersimpan');
   $after=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE id=?',[$draft['id']]); check($after['current_step']==='housing_family','save melanjutkan draft');
