@@ -731,5 +731,34 @@ cek(strpos($cap, 'rowspan="<?= count($sisi_list) ?>"') !== FALSE,
 cek(strpos($cap, "implode(' / '") === FALSE,
     'C2: nol perangkaian "a / b" di dalam sel - itu yang dulu melebarkan tabel');
 
+/* BUTIR 4 PUTARAN 2 - desain prototipe beserta RAB di halaman Panduan Desain.
+
+   Yang dijaga bukan "halamannya terbuka", melainkan tiga hal yang bisa rusak
+   tanpa satu pun galat:
+     1. Kelompok prototipe benar-benar dirender, bukan blok kosong.
+     2. RAB disebut. Ia inti permintaan dinas; kalau medannya berganti nama di
+        API, kartunya tetap tampil dan cuma RAB-nya diam-diam hilang.
+     3. Catatan rumah liliput MASIH ADA. Ia satu-satunya tempat dinas diberi
+        tahu bahwa kelompok ketiga belum punya sumber.
+
+   Sumbernya API pihak ketiga, jadi jumlah kartunya sengaja TIDAK diperiksa:
+   uji yang merah karena API orang lain sedang mati tidak berguna. */
+echo "
+== Butir 4: desain prototipe & RAB ==
+";
+$hd = http('tamu', 'panduan_desain');
+$bodyDesain = is_array($hd) ? ($hd['body'] ?? '') : (string) $hd;
+cek(strpos($bodyDesain, 'Desain Prototipe') !== FALSE, 'Bagian Desain Prototipe dirender');
+cek(strpos($bodyDesain, 'Desain KRS Jawa 3') !== FALSE, 'Bagian Desain KRS Jawa 3 tetap ada');
+cek(strpos($bodyDesain, 'Rumah liliput UGM belum tersedia') !== FALSE,
+    'Catatan rumah liliput masih disampaikan, bukan kelompok kosong yang menggantung');
+cek(strpos($bodyDesain, 'RAB') !== FALSE, 'RAB disebut di kartu');
+
+$lib = (string) @file_get_contents(APP_ROOT . '/application/libraries/Ternak_api.php');
+cek(strpos($lib, 'function get_public_liliput_designs') === FALSE,
+    'Metode bernama liliput sudah tidak ada - namanya menjanjikan data yang tidak ia punya');
+cek(strpos($lib, 'function get_public_prototype_designs') !== FALSE,
+    'Penggantinya bernama sesuai isinya');
+
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);

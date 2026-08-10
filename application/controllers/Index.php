@@ -475,6 +475,14 @@ class Index extends MY_Controller {
 
 		$datacontent['judul']='';
 		$datacontent['is_ajax_load'] = $this->input->is_ajax_request();
+
+		/* Butir 4 putaran 2: desain PROTOTIPE beserta RAB-nya. Sumbernya API
+		   KRS Jawa 3 yang sama dengan Bank Desain, dan sudah terpasang sejak
+		   lama - hanya belum pernah ditampilkan. Diambil server-side, bukan
+		   AJAX seperti katalog di bawahnya: jumlahnya sembilan, jadi menunda
+		   pemuatannya cuma menambah satu perjalanan tanpa manfaat. */
+		$datacontent['prototipe'] = $this->ternak_api->get_public_prototype_designs();
+
 		$this->render('pages/bank_desain/panduan_desain', $datacontent);
 	}
 	public function detail_desain($id = NULL)
