@@ -184,6 +184,24 @@ class Migrate extends CI_Controller {
             echo "kkn_magang_posisi (migrasi 038): BELUM ADA - layar Posisi Magang akan fatal\n";
         }
 
+        /* NIK akun unik (migrasi 041). Yang diperiksa INDEKSNYA, bukan
+           kolomnya: kolom nik/nik_lookup_hash sudah ada sejak lama, jadi
+           keberadaannya nol bukti. Tanpa indeks unik, dua akun bisa mengaku
+           NIK yang sama dan butir 8 tidak ditegakkan apa pun. */
+        if (in_array('usr_users', $tables, TRUE)) {
+            $uq = $this->db->query("SELECT NON_UNIQUE nu FROM information_schema.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usr_users'
+                  AND INDEX_NAME = 'uq_usr_nik_lookup' LIMIT 1")->row();
+            echo 'usr_users NIK UNIQUE (migrasi 041): '
+                .($uq === NULL ? 'TIDAK ADA - satu NIK bisa dipakai banyak akun'
+                    : ((int) $uq->nu === 0 ? 'TERPASANG' : 'ADA TAPI TIDAK UNIK'))."
+";
+            $isi = (int) $this->db->where('nik_lookup_hash IS NOT NULL', NULL, FALSE)
+                ->count_all_results('usr_users');
+            echo "akun dengan NIK tercatat: {$isi}
+";
+        }
+
         /* SRP2 status/NPWP (migrasi 040). UNIQUE-nya yang diperiksa, bukan
            cuma kolomnya: tanpa `uq_srp2_npwp`, butir 8 ("satu NPWP satu
            pengembang") tidak ditegakkan apa pun - dan itu justru inti

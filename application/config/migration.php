@@ -76,7 +76,7 @@ $config['migration_auto_latest'] = FALSE;
 | ini pernah tertinggal 11 versi (10 vs 21) - dijaga sekarang oleh
 | docs/engineering/uji_migrasi_konsisten.php, yang merah kalau keduanya beda.
 */
-$config['migration_version'] = 20260701000040;
+$config['migration_version'] = 20260701000041;
 
 /*
 |--------------------------------------------------------------------------

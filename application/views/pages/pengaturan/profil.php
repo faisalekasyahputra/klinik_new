@@ -99,6 +99,37 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                         <label class="<?= $label ?>">No. WhatsApp</label>
                         <input type="tel" name="phone" value="<?= htmlspecialchars($user->phone ?? '') ?>" class="<?= $isian ?>">
                     </div>
+
+                    <?php
+                    /* Butir 21 putaran 2. Dua keadaan, dan bedanya disengaja:
+
+                       BELUM ADA  : isian terbuka, boleh diisi sekali.
+                       SUDAH ADA  : ditampilkan tersamar dan DIKUNCI. NIK adalah
+                                    kunci identitas warga (butir 8); yang bisa
+                                    diganti sendiri kapan saja berarti satu orang
+                                    bisa berpindah memakai NIK orang lain, bahkan
+                                    sesudah pengajuannya dinilai.
+
+                       Yang terkunci sengaja TIDAK dikirim ulang oleh formulir
+                       (tanpa `name`), jadi tidak ada yang bisa menimpanya lewat
+                       kiriman palsu sekalipun. */
+                    ?>
+                    <div>
+                        <label class="<?= $label ?>">NIK</label>
+                        <?php if (!empty($nik_terkunci)): ?>
+                            <input type="text" value="<?= htmlspecialchars($nik_tersamar ?? 'tersimpan') ?>"
+                                   class="<?= $isian ?>" readonly aria-readonly="true">
+                            <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">
+                                Sudah terkunci pada akun ini. Bila keliru, hubungi admin untuk membetulkannya.
+                            </p>
+                        <?php else: ?>
+                            <input type="text" name="nik" inputmode="numeric" maxlength="16"
+                                   pattern="[0-9]{16}" placeholder="16 digit sesuai KTP" class="<?= $isian ?>">
+                            <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">
+                                Diisi sekali dan tidak dapat diubah sendiri setelah tersimpan. Pastikan benar.
+                            </p>
+                        <?php endif; ?>
+                    </div>
                 </div>
 
                 <div class="border-t border-gray-100 pt-3 dark:border-white/5">

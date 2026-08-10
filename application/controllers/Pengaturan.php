@@ -181,6 +181,21 @@ class Pengaturan extends MY_Controller {
 
         $datacontent = ['user' => $user, 'title' => 'Profil Saya'];
 
+        /* Butir 21: NIK ditampilkan TERSAMAR, hanya empat digit terakhir.
+           Menampilkannya utuh di layar yang bisa dibuka di ruang publik tidak
+           menambah kegunaan apa pun: pemiliknya sudah tahu NIK-nya, dan yang
+           dia perlukan cuma memastikan yang tersimpan benar. Nilai aslinya
+           tidak pernah dikirim ke halaman. */
+        $datacontent['nik_tersamar'] = NULL;
+        $datacontent['nik_terkunci'] = ! empty($user->nik_lookup_hash);
+        if ($datacontent['nik_terkunci'] && ! empty($user->nik)) {
+            $this->load->library('encryption_lib');
+            $buka = $this->encryption_lib->decrypt($user->nik);
+            $datacontent['nik_tersamar'] = (is_string($buka) && strlen($buka) >= 4)
+                ? str_repeat('*', 12) . substr($buka, -4)
+                : 'tersimpan';
+        }
+
         if ($this->session->userdata('role') === 'pengembang') {
             // Lewat satu sumber bersama, sama dengan index() dan wizard (§17 poin 13).
             $srp2 = $this->Auth_model->srp2_state($user_id);
@@ -339,6 +354,55 @@ class Pengaturan extends MY_Controller {
 
         if (!empty($username)) {
             $data['username'] = $username;
+        }
+
+        /* BUTIR 21 PUTARAN 2: isian NIK di Profil Saya.
+           Kolomnya sudah lama ada; yang tidak pernah ada adalah isiannya.
+
+           NIK DIISI SEKALI, LALU TIDAK BISA DIUBAH SENDIRI. Ini keputusan
+           keamanan, bukan kekakuan: NIK adalah kunci identitas warga (butir 8),
+           dan NIK yang bisa diganti sendiri kapan saja berarti satu orang bisa
+           berpindah-pindah memakai NIK orang lain, termasuk sesudah pengajuan
+           bantuannya dinilai. Yang salah ketik dibetulkan lewat admin.
+
+           Diperlakukan seperti NIK di modul pendataan: terenkripsi, dicari
+           lewat sidik deterministik, tidak pernah tampil utuh. Keunikannya
+           ditegakkan indeks `uq_usr_nik_lookup` (migrasi 041); pemeriksaan di
+           bawah hanya supaya pesannya ramah, bukan supaya aman. */
+        $nik_kirim = preg_replace('/\D+/', '', (string) $this->input->post('nik'));
+        if ($nik_kirim !== '') {
+            $this->load->library('encryption_lib');
+            $punya = (string) $this->db->select('nik_lookup_hash')
+                ->get_where('usr_users', ['id' => $user_id])->row('nik_lookup_hash');
+
+            if ($punya !== '') {
+                /* Sudah punya NIK. Kiriman yang SAMA dibiarkan lewat tanpa
+                   pesan galat: formulir mengirim ulang nilai yang sudah ada
+                   setiap kali disimpan, dan menolaknya akan membuat setiap
+                   penyuntingan nama atau nomor HP ikut gagal. */
+                if ( ! hash_equals($punya, $this->encryption_lib->deterministic_hash($nik_kirim))) {
+                    $this->session->set_flashdata('error',
+                        'NIK sudah terkunci pada akun ini dan tidak dapat diubah sendiri. Hubungi admin bila ada kekeliruan.');
+                    redirect('akun/profil');
+                    return;
+                }
+            } elseif (strlen($nik_kirim) !== 16) {
+                $this->session->set_flashdata('error', 'NIK harus tepat 16 digit angka.');
+                redirect('akun/profil');
+                return;
+            } else {
+                $sidik = $this->encryption_lib->deterministic_hash($nik_kirim);
+                $dipakai = $this->db->where('nik_lookup_hash', $sidik)
+                    ->where('id !=', $user_id)->count_all_results('usr_users');
+                if ($dipakai > 0) {
+                    $this->session->set_flashdata('error',
+                        'NIK ini sudah terdaftar pada akun lain. Satu NIK hanya untuk satu akun.');
+                    redirect('akun/profil');
+                    return;
+                }
+                $data['nik'] = $this->encryption_lib->encrypt($nik_kirim);
+                $data['nik_lookup_hash'] = $sidik;
+            }
         }
 
         // Ganti password opsional - dipindahkan ke sini saat User_Profile
