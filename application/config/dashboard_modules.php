@@ -307,6 +307,14 @@ $config['dashboard_modules'] = [
     // pemiliknya berbeda: yang itu sekretariat (superadmin), yang ini bidang.
     // 'pending_where' memakai status 'Ditinjau Bidang' — vocabulary status
     // memang beda per domain, dan di sinilah perbedaan itu dideklarasikan.
+    // Butir F1: daftar posisi/lowongan magang, diisi dinas sendiri. Superadmin
+    // saja — posisi berlaku lintas bidang, jadi memberi tiap admin bidang hak
+    // menyunting daftar bersama membuat bidang saling menimpa.
+    'magang_posisi' => [
+        'label' => 'Posisi Magang', 'icon' => 'ph-briefcase',
+        'url'   => 'Admin_Magang_Posisi', 'group' => 'Master', 'order' => 40,
+        'roles' => ['admin'], 'scope' => null,
+    ],
     'kemitraan_bidang' => [
         'label' => 'Magang Bidang Saya', 'icon' => 'ph-graduation-cap',
         'url'   => 'Kemitraan_Bidang', 'group' => 'Layanan', 'order' => 11,

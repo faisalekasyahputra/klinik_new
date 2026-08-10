@@ -86,6 +86,7 @@ class Migrate extends CI_Controller {
             // ada sejak awal, jadi keberadaan tabelnya nol bukti.
             // Migrasi 035.
             'forum_janji_temu',
+            'kkn_magang_posisi',
         ] as $t) {
             echo $t.': '.(in_array($t, $tables) ? 'ADA' : 'TIDAK ADA')."\n";
         }

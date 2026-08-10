@@ -57,6 +57,20 @@ class KemitraanPortal extends Public_Controller
          * seharusnya diterima, dan papan yang berbohong ke arah itu jauh lebih
          * mahal daripada yang berbohong sebaliknya.
          */
+        /* Butir F1: posisi/lowongan yang dicari tiap bidang, diisi dinas lewat
+           layar Posisi Magang. Diambil SEKALI lalu dikelompokkan — query di
+           dalam perulangan bidang berarti lima query untuk lima bidang.
+
+           Hanya yang `aktif`. Posisi yang sudah terisi dimatikan, bukan
+           dihapus, supaya catatannya tetap ada untuk periode berikutnya. */
+        $posisi_per_bidang = [];
+        if ($this->db->table_exists('kkn_magang_posisi')) {
+            foreach ($this->db->where('aktif', 1)->order_by('urutan', 'ASC')
+                         ->order_by('nama_posisi', 'ASC')->get('kkn_magang_posisi')->result() as $p) {
+                $posisi_per_bidang[$p->bidang_kode][] = $p;
+            }
+        }
+
         $slot_magang = [];
         foreach ($this->slot->bidang() as $bidang) {
             $kuota   = (int) $bidang->kuota;
@@ -86,6 +100,7 @@ class KemitraanPortal extends Public_Controller
                 'keadaan'      => $keadaan,
                 'sisa'         => (int) $sisa_terbaik,
                 'bulan_dibuka' => $bulan_dibuka,
+                'posisi'       => $posisi_per_bidang[$bidang->kode] ?? [],
             ];
         }
 

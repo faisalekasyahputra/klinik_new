@@ -72,6 +72,29 @@ $kartu = 'rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(-
                             &middot; masih bisa menerima <strong class="text-[color:var(--portal-text)]"><?= (int) $b['sisa'] ?></strong> lagi
                         <?php endif; ?>
                     </p>
+                    <?php
+                    /* Butir F1 — posisi yang dicari, DI DALAM bidang. Dinas
+                       memintanya karena "nama bidang" tidak memberi tahu
+                       mahasiswa keahlian apa yang sebenarnya dibutuhkan.
+
+                       Kalau dinas belum mengisi daftarnya, blok ini tidak
+                       muncul dan kartunya kembali seperti semula — TIDAK ada
+                       daftar karangan sebagai pengisi sementara. */
+                    ?>
+                    <?php if ( ! empty($b['posisi'])): ?>
+                        <div class="mt-2 flex flex-wrap gap-1.5">
+                            <?php foreach ($b['posisi'] as $p): ?>
+                                <span class="inline-flex items-center gap-1 rounded-full border border-[color:var(--portal-border)] px-2.5 py-1 text-[11px] text-[color:var(--portal-text)]"
+                                      <?= $p->keterangan ? 'title="' . html_escape($p->keterangan) . '"' : '' ?>>
+                                    <?= html_escape($p->nama_posisi) ?>
+                                    <?php if ((int) $p->kuota > 0): ?>
+                                        <strong class="text-[color:var(--portal-text-muted)]"><?= (int) $p->kuota ?></strong>
+                                    <?php endif; ?>
+                                </span>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+
                     <?php if ($b['bulan_dibuka']): ?>
                         <p class="mt-2 text-xs text-[color:var(--portal-text-muted)]">
                             <span class="font-semibold">Bulan dibuka:</span> <?= html_escape(implode(', ', $b['bulan_dibuka'])) ?>
