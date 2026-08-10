@@ -103,7 +103,28 @@ $kartu = 'rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(-
                         <p class="mt-2 text-xs text-[color:var(--portal-text-muted)]">Belum ada bulan yang dibuka untuk tahun ini.</p>
                     <?php endif; ?>
                 </div>
-                <span class="shrink-0 rounded-full px-3 py-1.5 text-xs font-bold <?= $gaya[0] ?>"><?= $gaya[1] ?></span>
+                <?php
+                /* Butir 19 putaran 2: di samping penanda keadaan, bidang yang
+                   masih menerima diberi tombol Daftar.
+
+                   BUTIR 24 IKUT DITERAPKAN DI SINI: tombolnya menuntut login,
+                   dan itu DIKATAKAN SEBELUM diklik. Sebelumnya halaman ini
+                   publik sementara tombol daftarnya dinding login — persis pola
+                   yang membuat orang mengira fiturnya rusak (butir 18). */
+                $sudah_masuk = (bool) $this->session->userdata('is_logged');
+                ?>
+                <div class="flex shrink-0 flex-col items-end gap-2">
+                    <span class="rounded-full px-3 py-1.5 text-xs font-bold <?= $gaya[0] ?>"><?= $gaya[1] ?></span>
+                    <?php if ($b['keadaan'] === 'menerima'): ?>
+                        <a href="<?= base_url('KemitraanPortal/daftar/magang') ?>"
+                           class="rounded-xl bg-[color:var(--portal-brand)] px-3 py-1.5 text-xs font-bold text-[#0a1a1f] transition-opacity hover:opacity-90">
+                            Daftar
+                        </a>
+                        <?php if ( ! $sudah_masuk): ?>
+                            <span class="text-[10px] text-[color:var(--portal-text-muted)]">perlu masuk dulu</span>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </div>
             </div>
         <?php endforeach; ?>
 

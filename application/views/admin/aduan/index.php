@@ -87,7 +87,12 @@ $filter_html = ob_get_clean();
                         <div class="text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($r->email) ?></div>
                     </td>
                     <td class="px-4 py-4 max-w-[280px]">
-                        <div class="font-semibold text-gray-900 dark:text-white truncate"><?= html_escape($r->judul) ?></div>
+                        <?php /* Butir 16 putaran 2: judul jadi tautan ke detail.
+                                 Tanpa ini layar detailnya ada tapi tidak
+                                 terjangkau dari mana pun. */ ?>
+                        <a href="<?= base_url('Admin_Aduan/detail/' . (int) $r->id) ?>"
+                           class="font-semibold text-gray-900 dark:text-white truncate hover:underline block"
+                           title="Lihat detail aduan"><?= html_escape($r->judul) ?></a>
                         <?php if (!empty($r->catatan_admin)): ?>
                         <div class="text-xs text-gray-500 dark:text-brand-muted mt-0.5 truncate">Catatan: <?= html_escape($r->catatan_admin) ?></div>
                         <?php endif; ?>

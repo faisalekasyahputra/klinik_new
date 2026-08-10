@@ -212,6 +212,15 @@ class MY_Controller extends CI_Controller {
      * @param array  $data Data passed to the view
      */
     protected function render($view, $data = []) {
+        /* Butir 14 putaran 2 — tombol Dashboard di samping nama pengguna.
+           Sebelumnya tombol itu HANYA muncul untuk superadmin, sehingga warga,
+           pengembang, mahasiswa, kabkota, dan bidang tidak punya satu pun jalan
+           ke dashboardnya dari situs publik. Alamatnya dihitung per peran di
+           sini supaya tata letak tidak perlu tahu peta menu siapa pun. */
+        if ( ! isset($data['dashboard_home']) && $this->session->userdata('is_logged')) {
+            $data['dashboard_home'] = $this->dashboard_home();
+        }
+
         if ($this->input->is_ajax_request()) {
             $this->load->view($view, $data);
         } else {
@@ -547,6 +556,34 @@ class MY_Controller extends CI_Controller {
 
         usort($kandidat, fn($a, $b) => [$a['g'], $a['o']] <=> [$b['g'], $b['o']]);
         return $kandidat[0]['url'];
+    }
+
+    /** Peran yang urusannya di situs publik, bukan di dashboard. */
+    private const PERAN_PUBLIK = ['warga', 'pengembang', 'mahasiswa'];
+
+    /**
+     * Ke mana orang mendarat sesudah login, saat TIDAK ada halaman asal.
+     *
+     * BUTIR 24 PUTARAN 2 — "alur dirapikan lagi, usernya masih bingung".
+     * Keputusan user 10 Agt 2026: pilihan (a) — warga tidak dibawa ke dashboard.
+     *
+     * Alasannya terukur, bukan selera. Dashboard warga, pengembang, dan
+     * mahasiswa hanya berisi DUA menu ("Status Pengajuan" dan "Profil Saya"),
+     * sementara semua yang mereka cari — Cari Rumah, Cek Data Rumah, diagnosa,
+     * pendataan — ada di situs publik, DI LUAR dashboard. Mendaratkan mereka di
+     * sana berarti memindahkan orang ke tempat lain di tengah jalan, lalu
+     * membiarkannya tanpa jalan pulang selain keluar akun.
+     *
+     * Yang punya halaman asal TIDAK lewat sini — `Auth` mengembalikannya ke
+     * tujuan semula lebih dulu (butir A5). Ini hanya jaring untuk yang menekan
+     * "Masuk" langsung dari beranda.
+     *
+     * Peran staf tetap ke dashboard: bagi mereka dashboard MEMANG tempat kerja,
+     * dan admin punya 14 menu di sana.
+     */
+    protected function tujuan_setelah_login($role = NULL) {
+        $role = $role ?: $this->current_role();
+        return in_array($role, self::PERAN_PUBLIK, TRUE) ? '' : $this->dashboard_home($role);
     }
 
     /**
@@ -1004,6 +1041,27 @@ class MY_Controller extends CI_Controller {
      * berarti gerbang ke-22 lupa lagi.
      */
     protected function gerbang_login($tujuan = NULL) {
+        /* SATU GERBANG, DUA KEADAAN YANG SAMA SEKALI BERBEDA — dan sampai 10
+           Agt 2026 keduanya diperlakukan sama, itu kekeliruannya.
+
+           Belum login  : dilempar ke halaman masuk. Masuk akal.
+           SUDAH login,
+           salah peran  : juga dilempar ke halaman masuk — PADAHAL DIA SUDAH
+                          MASUK. Yang dialami orangnya: menekan sesuatu, lalu
+                          tiba-tiba diminta login lagi tanpa penjelasan, lalu
+                          terlempar entah ke mana. Tidak ada satu pun kalimat
+                          yang memberi tahu bahwa masalahnya PERAN, bukan sesi.
+
+           Pesan dari controller pemanggil ("Anda bukan Admin Kabupaten/Kota")
+           sebenarnya sudah bagus, tetapi mendarat di halaman masuk tempat orang
+           tidak mencarinya. Sekarang pesan itu dibawa ke layar khusus yang
+           menjelaskan keadaannya dan menawarkan jalan keluar. */
+        if ($this->session->userdata('is_logged')) {
+            $this->session->set_userdata('akses_ditolak_tujuan', (string) ($tujuan ?: uri_string()));
+            redirect('Auth/akses_ditolak');
+            return;
+        }
+
         $this->ingat_halaman_asal($tujuan);
         redirect('Auth/login');
     }

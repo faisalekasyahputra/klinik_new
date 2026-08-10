@@ -828,6 +828,34 @@ class Auth extends MY_Controller {
     // LOGOUT
     // =========================================================
 
+    /**
+     * Layar "akses ditolak" — dipanggil `MY_Controller::gerbang_login()` saat
+     * orangnya SUDAH masuk tetapi perannya tidak berhak.
+     *
+     * Dibuat terpisah dari halaman masuk dengan sengaja. Melempar orang yang
+     * sudah login ke halaman login adalah jawaban yang salah untuk pertanyaan
+     * yang salah: sesinya baik-baik saja, yang tidak cocok perannya. Layar ini
+     * mengatakan itu apa adanya, lalu memberi tiga jalan keluar supaya tidak
+     * ada yang merasa mentok.
+     */
+    public function akses_ditolak() {
+        if ( ! $this->session->userdata('is_logged')) {
+            redirect('Auth/login');
+            return;
+        }
+
+        $tujuan = (string) $this->session->userdata('akses_ditolak_tujuan');
+        $this->session->unset_userdata('akses_ditolak_tujuan');
+
+        $this->render('pages/auth/akses_ditolak', [
+            'judul'         => 'Halaman ini bukan untuk peran Anda',
+            'pesan'         => (string) $this->session->flashdata('error'),
+            'tujuan'        => $this->sanitize_redirect($tujuan),
+            'peran'         => (string) $this->current_role(),
+            'tujuan_pulang' => $this->tujuan_setelah_login(),
+        ]);
+    }
+
     public function logout() {
         $curr = $this->input->get('curr', TRUE);
         $safe_redirect = $this->sanitize_redirect($curr);
@@ -889,7 +917,10 @@ class Auth extends MY_Controller {
             }
         }
 
-        redirect($this->dashboard_home());
+        /* Butir 24 putaran 2, pilihan (a): warga/pengembang/mahasiswa mendarat
+           di BERANDA, bukan dashboard. Alasan lengkapnya di
+           `MY_Controller::tujuan_setelah_login()`. */
+        redirect($this->tujuan_setelah_login());
     }
 
     /**

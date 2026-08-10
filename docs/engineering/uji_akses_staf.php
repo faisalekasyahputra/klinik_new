@@ -330,6 +330,23 @@ http('m', 'Admin_Users/reset_sandi', ['csrf_kpkp_token' => $tok_m, 'id' => $idS,
 cek($tolak['code'] === 200 && strpos($tolak['url'], 'Admin_Users') === FALSE,
     'Permintaan peran salah dibalas 200 dari halaman lain (kode HTTP tidak membuktikan apa-apa)');
 cek(kolom($idS, 'status') === 'active', 'Mahasiswa tidak berhasil menonaktifkan akun staf');
+
+/* BUTIR 24 PUTARAN 2 — yang salah peran TIDAK BOLEH dilempar ke halaman masuk.
+   Sampai 10 Agt 2026 keduanya diperlakukan sama, sehingga orang yang sudah
+   login diminta login lagi tanpa penjelasan. Sekarang ia mendarat di layar yang
+   menyebutkan bahwa yang tidak cocok adalah PERANNYA, bukan sesinya.
+
+   Diperiksa dari ISI HALAMAN, bukan kode HTTP — alasannya sama dengan blok di
+   atas: permintaan yang dialihkan tetap berbalas 200 dari halaman lain. */
+$salah_peran = http('m', 'Admin_Users');
+cek(strpos($salah_peran['url'], 'Auth/login') === FALSE,
+    'Yang SUDAH login tidak dilempar ke halaman masuk lagi');
+cek(strpos($salah_peran['body'], 'bukan untuk peran Anda') !== FALSE,
+    'Mendarat di layar akses ditolak yang menjelaskan sebabnya');
+cek(strpos($salah_peran['body'], 'tidak perlu login ulang') !== FALSE,
+    'Layar itu menegaskan sesinya masih sehat — inti kebingungannya');
+cek(strpos($salah_peran['body'], 'Auth/logout') !== FALSE,
+    'Ada jalan keluar ke akun lain, jadi bukan jalan buntu');
 cek((string) kolom($idS, 'locked_until') === $kunci_sebelum && (int) kolom($idS, 'login_attempts') === 5,
     'Mahasiswa tidak berhasil membuka kunci akun staf');
 cek((string) kolom($idS, 'password') === $hash_sebelum, 'Mahasiswa tidak berhasil mengganti sandi akun staf');

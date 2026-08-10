@@ -112,6 +112,36 @@ class Admin_Aduan extends Admin_Controller {
      * (meneruskan ulang ke bidang yang sama), dan dulu itu salah dilaporkan
      * sebagai "tidak ditemukan" di endpoint sebelah — AUDIT_ROLE_ADMIN_SCOPED #6.
      */
+    /**
+     * Detail satu aduan — butir 16 putaran 2.
+     *
+     * Sebelum ini meja aduan hanya punya daftar, penerusan ke bidang, dan lihat
+     * lampiran. Isi aduannya sendiri terpotong di daftar, sehingga admin
+     * menriase berdasarkan judul saja — menebak bidang tujuan dari satu baris
+     * kalimat, lalu salah teruskan, lalu warga menunggu di meja yang keliru.
+     *
+     * READ-ONLY. Keputusan status dan penerusan tetap lewat jalurnya sendiri
+     * (`triase()`), supaya tidak ada dua pintu tulis untuk satu hal.
+     */
+    public function detail($id = NULL)
+    {
+        $id = (int) $id;
+        $row = $this->db->select('a.*, b.nama AS nama_bidang, u.name AS nama_peninjau')
+            ->from('aduan a')
+            ->join('bidang b', 'b.kode = a.bidang', 'left')
+            ->join('usr_users u', 'u.id = a.reviewed_by', 'left')
+            ->where('a.id', $id)
+            ->get()->row();
+
+        if ( ! $row) { show_404(); return; }
+
+        $this->render_admin('admin/aduan/detail', [
+            'title'    => 'Detail Aduan',
+            'aduan'    => $row,
+            'back_url' => 'Admin_Aduan',
+        ]);
+    }
+
     public function triase($id = NULL)
     {
         if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }

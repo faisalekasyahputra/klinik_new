@@ -45,8 +45,18 @@
             <!-- Interactive Image Container -->
             <div class="absolute inset-0 w-full h-44 hover-scale-img-box bg-[color:var(--portal-bg)] border overflow-hidden" style="border-radius: 16px; border-color: var(--portal-border);">
                 <?php if (isset($row['tipeRumah'][0]['status'])): ?>
+                <?php
+                /* Butir 3 putaran 2: dinas minta "Komersil" diganti "Non Subsidi".
+                   Label ini dicetak APA ADANYA dari SIKUMBANG — di situlah kata
+                   itu muncul, bukan di tombol pilihan (tombolnya sudah benar
+                   sejak 3 Agt). Diterjemahkan saat ditampilkan; data di SIKUMBANG
+                   tidak kita ubah, dan istilah yang tidak dikenal dibiarkan lewat
+                   apa adanya supaya jenis baru dari sana tidak hilang senyap. */
+                $status_asli  = (string) $row['tipeRumah'][0]['status'];
+                $status_tampil = strcasecmp($status_asli, 'komersil') === 0 ? 'Non Subsidi' : $status_asli;
+                ?>
                 <span class="hover-scale-badge absolute top-2.5 left-2.5 z-20 bg-[color:var(--portal-brand)] text-[color:var(--portal-bg)] text-[9px] font-bold px-2 py-1 rounded-md shadow-sm tracking-widest uppercase">
-                    <?= $row['tipeRumah'][0]['status'] ?>
+                    <?= html_escape($status_tampil) ?>
                 </span>
                 <?php endif; ?>
                 

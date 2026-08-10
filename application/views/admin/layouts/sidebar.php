@@ -19,6 +19,21 @@
         </a>
     </div>
     
+    <?php
+    /* BUTIR 14 PUTARAN 2 — jalan pulang ke beranda.
+       Sebelum ini, satu-satunya cara keluar dari dashboard adalah KELUAR AKUN.
+       Logo di atas menuju dashboard, bukan beranda, jadi orang yang ingin
+       kembali ke situs publik benar-benar mentok. Ditaruh paling atas karena
+       di situlah orang mencarinya, dan tetap terbaca saat sidebar menyempit
+       (ikonnya sendiri sudah bermakna, teksnya menyusul saat melebar). */
+    ?>
+    <a href="<?= base_url() ?>"
+       class="mx-3 mt-3 flex items-center gap-3 rounded-xl border border-gray-200 dark:border-white/10 px-3 py-2 text-sm font-bold text-gray-700 dark:text-brand-muted hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+       :class="sidebarOpen ? '' : 'justify-center'">
+        <i class="ph ph-arrow-u-up-left text-lg shrink-0"></i>
+        <span x-show="sidebarOpen" class="whitespace-nowrap">Kembali ke beranda</span>
+    </a>
+
     <?php // `id` dipakai loader progresif untuk MENGGANTI seluruh isi menu tiap
           // pindah halaman. Sebelumnya loader cuma menempel aria-current lewat
           // JS, sementara sorotan dan sub-menu dirender PHP — dua implementasi

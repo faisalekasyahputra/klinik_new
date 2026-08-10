@@ -105,9 +105,19 @@
                                }
                            ?>
                            <div class="flex items-center gap-2 px-4 py-2 bg-[#0d2228] border border-[#d6fb00]/15 rounded-[14px] h-[38px]">
-                               <?php if ($this->session->userdata('role') === 'admin'): ?>
-                                   <a href="<?= base_url('Admin_Dashboard') ?>" class="text-[#d6fb00] hover:text-white transition-colors flex items-center h-full" title="Dashboard">
+                               <?php
+                               /* Butir 14 putaran 2. Dulu `=== 'admin'` — jadi
+                                  hanya superadmin yang punya jalan ke dashboard,
+                                  dan lima peran lain tidak punya sama sekali.
+                                  Sekarang semua yang masuk mendapatkannya, ke
+                                  dashboard peran masing-masing. Teksnya ikut
+                                  ditampilkan di layar lebar: ikon gauge sendirian
+                                  tidak memberi tahu ini "dashboard". */
+                               ?>
+                               <?php if ( ! empty($dashboard_home)): ?>
+                                   <a href="<?= base_url($dashboard_home) ?>" class="text-[#d6fb00] hover:text-white transition-colors flex items-center gap-1.5 h-full" title="Dashboard">
                                        <i class="fa-solid fa-gauge-high text-xs"></i>
+                                       <span class="text-[12px] font-semibold hidden md:inline">Dashboard</span>
                                    </a>
                                    <div class="w-px h-4 bg-[#d6fb00]/20 mx-1"></div>
                                <?php endif; ?>

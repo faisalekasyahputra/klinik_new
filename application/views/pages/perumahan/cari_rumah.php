@@ -73,6 +73,17 @@
                                 class="rounded-lg px-4 py-2 text-sm font-bold transition-all text-[color:var(--portal-text-muted)]">
                             Non Subsidi
                         </button>
+                        <?php
+                        /* Butir 2 putaran 2. Mesin penyaringnya SUDAH mengenal
+                           `semua` sejak toggle lama diganti dua tombol — yang
+                           hilang cuma tombolnya, sehingga tidak ada cara melihat
+                           kedua jenis sekaligus. */
+                        ?>
+                        <button type="button" id="btn-semua" data-status="semua" onclick="pilihStatus('semua')"
+                                role="radio" aria-checked="false"
+                                class="rounded-lg px-4 py-2 text-sm font-bold transition-all text-[color:var(--portal-text-muted)]">
+                            Semua
+                        </button>
                     </div>
                 </div>
             </div>
@@ -144,7 +155,8 @@ window.statusRumahAktif = 'subsidi';
    yang sengaja dirender server supaya sudah benar sebelum JS jalan). */
 var keteranganStatus = {
     subsidi: 'Rumah dengan bantuan pembiayaan pemerintah untuk masyarakat berpenghasilan rendah — uang muka dan angsuran lebih ringan, dengan syarat batas penghasilan, belum memiliki rumah, dan rumahnya wajib dihuni sendiri.',
-    komersil: 'Rumah yang dijual dengan harga pasar tanpa bantuan pemerintah — tidak ada batas penghasilan maupun syarat kepemilikan, pilihan tipe dan lokasi lebih luas, dan angsurannya mengikuti bunga komersial.'
+    komersil: 'Rumah yang dijual dengan harga pasar tanpa bantuan pemerintah — tidak ada batas penghasilan maupun syarat kepemilikan, pilihan tipe dan lokasi lebih luas, dan angsurannya mengikuti bunga komersial.',
+    semua: 'Menampilkan rumah subsidi dan non subsidi sekaligus, tanpa disaring.'
 };
 
 function pilihStatus(status) {
@@ -154,7 +166,7 @@ function pilihStatus(status) {
     var ket = document.getElementById('ket-status');
     if (ket && keteranganStatus[status]) { ket.textContent = keteranganStatus[status]; }
 
-    ['subsidi', 'komersil'].forEach(function (s) {
+    ['subsidi', 'komersil', 'semua'].forEach(function (s) {
         var btn = document.getElementById('btn-' + s);
         if (!btn) { return; }
         var aktif = (s === status);
