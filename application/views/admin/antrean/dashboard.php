@@ -17,7 +17,13 @@ $this->load->helper('housing_queue');
  * Badge di sini memakai komponen bersama admin/components/status_badge.php —
  * dulu tidak bisa karena barisnya dirender JS.
  */
+/* BUTIR B2 — sakelar kebijakan identitas warga. Dibaca SEKALI di sini, bukan
+   di dalam perulangan baris: config->load() per baris berarti ratusan kali. */
+$this->config->load('kebijakan_data', TRUE, TRUE);
+$identitas_menunggu = $this->config->item('identitas_warga_kabkota', 'kebijakan_data') === 'menunggu_keputusan';
+
 $statuses = housing_queue_statuses();
+$this->load->view('components/modal_keputusan_identitas');
 $badge_kelas = $badge_label = [];
 foreach ($statuses as $kode => $status) {
     $badge_kelas[$kode] = $status['badge'];
@@ -97,6 +103,25 @@ $filter_html = ob_get_clean();
                         $nik_display = strlen((string) $row->nik_pengaju) >= 4
                             ? str_repeat('•', 12) . substr($row->nik_pengaju, -4)
                             : ($has_assessment ? 'NIK disimpan privat' : 'NIK belum tersedia');
+
+                        /* BUTIR B2 — selama dinas belum memutuskan, identitas dan
+                           keadaan ekonomi warga diganti DATA CONTOH. Sakelarnya di
+                           `config/kebijakan_data.php`, satu tempat.
+
+                           Angka contohnya DITURUNKAN DARI ID BARIS, bukan acak:
+                           baris harus tetap bisa dibedakan satu sama lain supaya
+                           urutan, penyaring, dan halaman masih bisa diuji — dan
+                           harus SAMA setiap halaman dimuat ulang, kalau tidak
+                           penguji mengira datanya berubah-ubah sendiri. */
+                        if ($identitas_menunggu) {
+                            $nama_display = 'Warga Contoh ' . str_pad((string) $row->id, 3, '0', STR_PAD_LEFT);
+                            $nik_display  = str_repeat('•', 12) . str_pad(substr((string) $row->id, -4), 4, '0', STR_PAD_LEFT);
+                            $penghasilan  = 'Rp ' . number_format(1500000 + (((int) $row->id % 9) * 250000), 0, ',', '.');
+                            $desil        = (string) (1 + ((int) $row->id % 10));
+                            $alasan       = 'Keterangan contoh — menunggu keputusan dinas';
+                            $survey['pekerjaan'] = 'Pekerjaan contoh';
+                            $survey['status_kepemilikan'] = 'Status contoh';
+                        }
                         $payload = [
                             'id' => $row->id, 'nama' => $nama_display,
                             'program' => $row->nama_program ?? 'Program belum terpetakan', 'desil' => $desil,

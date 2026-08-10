@@ -153,8 +153,21 @@ $program_id = (int) $prog[0]['id'];
 [$uidB, $emailB] = buat_akun('admin_kabkota', 'b', $kab[1]);
 [$uidW, ]        = buat_akun('warga', 'w');
 
-$antreanA = buat_antrean($kab[0], $uidW, $program_id, 'Warga Wilayah A', '3300000000000001', 'UJISCOPEA' . mt_rand(1000, 9999));
-$antreanB = buat_antrean($kab[1], $uidW, $program_id, 'Warga Wilayah B', '3300000000000002', 'UJISCOPEB' . mt_rand(1000, 9999));
+/* `ticket_code` adalah varchar(10) dan MySQL di sini TIDAK strict: tiket yang
+   lebih panjang dipotong DIAM-DIAM. Versi pertama uji ini memakai tiket 13
+   karakter, dan akibatnya asersi "A tidak melihat antrean B" LULUS karena
+   string penuh B memang tidak pernah ada di halaman — bukan karena batas
+   wilayahnya bekerja. Panjangnya sekarang tepat 10, dan hasil simpannya
+   diperiksa sebagai prasyarat di bawah. */
+$tiketA = 'UJSA' . mt_rand(100000, 999999);
+$tiketB = 'UJSB' . mt_rand(100000, 999999);
+$antreanA = buat_antrean($kab[0], $uidW, $program_id, 'Warga Wilayah A', '3300000000000001', $tiketA);
+$antreanB = buat_antrean($kab[1], $uidW, $program_id, 'Warga Wilayah B', '3300000000000002', $tiketB);
+
+$tersimpanA = q('SELECT ticket_code FROM sf_housing_queue WHERE id=?', [$antreanA])[0]['ticket_code'];
+$tersimpanB = q('SELECT ticket_code FROM sf_housing_queue WHERE id=?', [$antreanB])[0]['ticket_code'];
+wajib($tersimpanA === $tiketA && $tersimpanB === $tiketB,
+    'PRASYARAT: kode tiket tersimpan UTUH, tidak terpotong diam-diam oleh kolom');
 
 $sesiA = new Sesi('a');
 /* Prasyarat KERAS. Kalau sesi ini tidak benar-benar sampai ke layar antrean,
@@ -164,21 +177,45 @@ wajib($sesiA->login($emailA), 'Admin kab/kota A benar-benar masuk ke layar Antre
 
 // ------------------------------------------------------- 1. Daftar ter-scope
 echo "\n== 1. Daftar hanya memuat wilayah sendiri ==\n";
+/* Pembedanya KODE TIKET, bukan nama. Sejak butir B2 nama warga diganti data
+   contoh selama menunggu keputusan dinas, jadi nama tidak lagi bisa dipakai
+   membedakan baris — dan kode tiket memang pembeda yang lebih tepat: ia bukan
+   data pribadi, dan tetap utuh apa pun keputusan kebijakannya nanti. */
 [$s, $daftarA] = $sesiA->call('Admin_Kabkota');
 cek($s === 200, 'Layar antrean A terbuka');
-cek(strpos($daftarA, 'Warga Wilayah A') !== FALSE, 'A melihat warga wilayahnya sendiri');
-cek(strpos($daftarA, 'Warga Wilayah B') === FALSE, 'A TIDAK melihat warga wilayah B');
+cek(strpos($daftarA, $tiketA) !== FALSE, 'A melihat antrean wilayahnya sendiri');
+cek(strpos($daftarA, $tiketB) === FALSE, 'A TIDAK melihat antrean wilayah B');
 
 /* Pencarian adalah kanal kebocoran tersendiri: daftar boleh ter-scope sementara
    kotak carinya menembus wilayah. Dicari dengan NIK milik B, yang paling
    spesifik dan paling mustahil muncul kebetulan. */
 [, $cariA] = $sesiA->call('Admin_Kabkota?q=3300000000000002');
-cek(strpos($cariA, 'Warga Wilayah B') === FALSE, 'Mencari NIK wilayah B tidak memunculkannya');
+cek(strpos($cariA, $tiketB) === FALSE, 'Mencari NIK wilayah B tidak memunculkannya');
 
 // ---------------------------------------------------------- 2. NIK tersamar
 echo "\n== 2. Yang terlihat di daftar ==\n";
 cek(strpos($daftarA, '3300000000000001') === FALSE, 'NIK TIDAK tampil utuh di daftar');
-cek(strpos($daftarA, '0001') !== FALSE, 'Empat digit terakhir tetap ada untuk mencocokkan');
+
+// ------------------------------------- 2b. Identitas menunggu keputusan (B2)
+echo "\n== 2b. Identitas diganti data contoh selama menunggu keputusan ==\n";
+$kebijakan = (string) @file_get_contents(APP_ROOT . '/application/config/kebijakan_data.php');
+$menunggu = strpos($kebijakan, "\$config['identitas_warga_kabkota'] = 'menunggu_keputusan';") !== FALSE;
+cek(TRUE, 'Sakelar kebijakan terbaca: ' . ($menunggu ? 'menunggu_keputusan' : 'tampil'));
+
+if ($menunggu) {
+    /* Yang dijaga: nama SUNGGUHAN tidak sampai ke layar. Ini asersi yang paling
+       gampang jadi hampa — kalau daftarnya kosong, "nama tidak muncul" lulus
+       tanpa membuktikan apa pun. Karena itu keberadaan baris contohnya diperiksa
+       lebih dulu sebagai prasyarat. */
+    cek(strpos($daftarA, 'Warga Contoh') !== FALSE, 'PRASYARAT: baris contoh benar-benar dirender');
+    cek(strpos($daftarA, 'Warga Wilayah A') === FALSE, 'Nama warga SUNGGUHAN tidak sampai ke layar');
+    cek(strpos($daftarA, 'id="modal-identitas-b2"') !== FALSE, 'Modal keputusan dinas dirender');
+    cek(strpos($daftarA, 'disampaikan kepada pengembang') !== FALSE, 'Modal meminta keputusannya disampaikan ke pengembang');
+    cek(strpos($daftarA, 'Batas wilayahnya mengikat') !== FALSE, 'Modal memisahkan yang sudah aman dari yang belum diputuskan');
+} else {
+    cek(strpos($daftarA, 'Warga Wilayah A') !== FALSE, 'Dinas memutuskan tampil: nama sungguhan muncul');
+    cek(strpos($daftarA, 'id="modal-identitas-b2"') === FALSE, 'Modal keputusan hilang sendiri sesudah diputuskan');
+}
 
 // ---------------------------------------------------------- 3. Detail & berkas
 echo "\n== 3. Detail dan berkas wilayah lain ditolak ==\n";
@@ -236,7 +273,7 @@ $sesiX = new Sesi('x');
 $tokX = $sesiX->token('Auth/login');
 $sesiX->call('Auth/do_login', ['csrf_kpkp_token' => $tokX, 'email' => $emailX, 'password' => SANDI]);
 [, $bodyX] = $sesiX->call('Admin_Kabkota');
-cek(strpos($bodyX, 'Warga Wilayah A') === FALSE && strpos($bodyX, 'Warga Wilayah B') === FALSE,
+cek(strpos($bodyX, $tiketA) === FALSE && strpos($bodyX, $tiketB) === FALSE,
     'Akun tanpa wilayah tidak melihat antrean mana pun (scope NULL = lihat semua adalah bahayanya)');
 
 echo "\n=== Ringkasan ===\n";
