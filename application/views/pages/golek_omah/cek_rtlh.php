@@ -10,6 +10,12 @@
 $terdaftar = ($hasil['status'] ?? '') === 'found';
 $tidak_ada = ($hasil['status'] ?? '') === 'not_found';
 ?>
+<?php
+/* Layar ini paling rawan disalahpahami penguji: selama SIMPERUM belum aktif,
+   SETIAP NIK sungguhan dijawab "tidak terdaftar". Tanpa pemberitahuan, itu
+   terbaca sebagai pencarian yang rusak. */
+$this->load->view('components/modal_simperum_simulasi');
+?>
 <div class="theme-light py-4 sm:py-6 px-1 sm:px-2">
     <div class="mx-auto max-w-xl text-center" data-aos="fade-down">
         <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--portal-btn-bg)] text-2xl text-[color:var(--portal-icon)]">

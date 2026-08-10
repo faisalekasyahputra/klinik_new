@@ -36,6 +36,8 @@ $badge = static function ($field) use ($provenance, $source_label) {
 };
 ?>
 
+<?php $this->load->view('components/modal_simperum_simulasi'); ?>
+
 <section class="mx-auto max-w-4xl px-1 py-3 sm:px-3 sm:py-5 font-outfit" style="color:var(--portal-text)">
     <section class="mb-10">
         <div class="mb-5 text-center">

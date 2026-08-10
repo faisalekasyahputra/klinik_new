@@ -51,6 +51,26 @@ try {
      menilai haknya atas bantuan; menyebutnya "resmi" saat ia berasal dari
      fixture adalah kekeliruan termahal di halaman ini. */
   [, $bodyDesil]=$sa->call('warga/pendataan');
+  /* Modal pemberitahuan SIMPERUM belum aktif. Muncul SETIAP halaman dibuka
+     (keputusan user 10 Agt 2026) — jadi tidak boleh ada penyimpanan "sudah
+     pernah dilihat" yang membuatnya diam di layar berikutnya. */
+  check(strpos($bodyDesil,'id="modal-simperum"')!==false,'Modal SIMPERUM belum aktif dirender saat mode simulasi');
+  check(strpos($bodyDesil,'SIMPERUM belum diaktifkan')!==false,'Modal menyebut sebabnya: belum disetujui, bukan rusak');
+  /* Modal WAJIB hilang sendiri begitu SIMPERUM aktif — kalau tidak, kelak ia
+     berbohong ke arah sebaliknya dan memberitahu penguji bahwa data sungguhan
+     itu contoh. Diperiksa STRUKTURAL, dan itu disebut apa adanya: jalur `api`
+     tidak bisa dijalankan dari sini tanpa mengubah `.env` situs yang sedang
+     diuji, dan mengutak-atik `.env` dari dalam harness adalah risiko yang jauh
+     lebih besar daripada yang dijaganya (lihat AGENTS.md §18). */
+  $komponen=(string)@file_get_contents(dirname(__DIR__,2).'/application/views/components/modal_simperum_simulasi.php');
+  check(preg_match("/simperum_mode[^\\n]*!==\\s*'simulation'\\s*\\)\\s*\\{\\s*return;/",$komponen)===1,
+        'Modal berhenti merender saat mode BUKAN simulasi (struktural)');
+  /* Dipersempit ke blok modalnya saja. Versi pertama memindai SELURUH halaman
+     dan merah karena skrip lain (tema, layout) memang memakai sessionStorage —
+     merah palsu yang menuduh kode yang tidak bersalah. */
+  $blokModal = preg_match('#id="modal-simperum".*?</script>#s',$bodyDesil,$mm) ? $mm[0] : '';
+  check($blokModal!=='','PRASYARAT: blok modal ditemukan utuh untuk diperiksa');
+  check($blokModal!=='' && strpos($blokModal,'Storage')===false && strpos($blokModal,'document.cookie')===false,'Modal tidak diingat — muncul tiap halaman dibuka');
   $adaParagraf=strpos($bodyDesil,'Kelompok kesejahteraan (desil)')!==false;
   check($adaParagraf,'A6: paragraf desil dirender di langkah data warga (PRASYARAT)');
   if ($adaParagraf) {
