@@ -11,11 +11,19 @@
 
 ## Ringkas
 
-| Gelombang | Butir | Sifat | Risiko |
-|---|---|---|---|
-| **R1** | A4, C3, D1, D3 | Label saja, nol logika | Sangat rendah |
-| **R2** | A8, C2 | Tata letak | Rendah–sedang |
-| **R3** | A5 | Logika lintas berkas | **Sedang — ada sisi keamanan** |
+| Gelombang | Butir | Sifat | Risiko | Keadaan |
+|---|---|---|---|---|
+| **R1** | A4, C3, D1, D3 | Label saja, nol logika | Sangat rendah | ✅ tayang `4b8eebf` |
+| **R2** | A8, C2 | Tata letak | Rendah–sedang | ✅ tayang `81594e4` |
+| **R3** | A5 | Logika lintas berkas | **Sedang — ada sisi keamanan** | ✅ tayang `95473f8` |
+| **R4** | A9, A10a, A11b, E1 | Buang isian, lepas syarat, ganti nama | Rendah | ✅ tayang `7fd7478` |
+| **R5** | A7, A10c, B1, C1, C4/D4 | Aturan kelayakan, migrasi, fitur baru | **Sedang–tinggi** | belum |
+
+**R5 paling berat sejauh ini, dan bukan karena banyaknya.** A7 mengubah aturan
+kelayakan program — salah di situ berarti warga diarahkan ke bantuan yang salah,
+dan itu tidak menghasilkan galat apa pun yang kelihatan. B1 butuh migrasi.
+C1 mengubah aturan validasi laporan yang sudah berjalan. Kerjakan satu per satu
+dengan penjaganya masing-masing, jangan digabung jadi satu commit.
 
 Urutannya **berdasarkan risiko, bukan nilai**. A5 justru yang paling dirasakan dinas
 ("*soalnya bingung*"), tapi ia yang paling bisa merusak kalau tergesa. Kalau user mau
@@ -189,28 +197,37 @@ Suite baru atau tambahan di harness perjalanan yang sudah ada:
 
 ---
 
-## Yang sengaja TIDAK masuk roadmap ini
+## Keputusan yang sudah diambil — 5 Agt 2026, oleh user
 
-| Butir | Alasan |
-|---|---|
-| A1, A2 | Menunggu berkas foto & kalimat definisi dari dinas |
-| A3, A9, B2, C1, C4, D2, D4, E1 | Menunggu jawaban — mengerjakannya sekarang berarti menebak |
-| A6, A10 | Sebagian bisa jalan (lihat di bawah), sebagian menunggu |
-| A7, A11 | **Berbenturan** — menyangkut aturan kelayakan & pengaman data, keputusan kebijakan |
-| B1, F1 | Perlu data baru + kepastian siapa yang mengisi |
+> Bagian ini menggantikan daftar "menunggu jawaban" yang ada di sini sebelumnya.
+> Dua belas butir sudah punya keputusan; alasannya ikut dicatat, karena
+> keputusan tanpa alasan akan dipertanyakan ulang enam bulan lagi.
 
-### Dua pekerjaan yang bisa ikut tanpa menunggu siapa pun
+| Butir | Keputusan | Kenapa begitu |
+|---|---|---|
+| **A7** | Status rumah **menyaring DI ATAS** desil, tidak menggantikannya | Menggantikan desil berarti mengubah sasaran subsidi — warga desil 9 berumah tidak layak akan masuk RTLH. Itu keputusan kebijakan, bukan tampilan |
+| **A9** | Buang dari formulir, **berkas lama tetap tersimpan** | Foto orang & bukti kepemilikan; menghapusnya tidak bisa dibatalkan dan pengajuan lama kehilangan lampirannya. ✅ R4 |
+| **A10a** | Sapuan istilah | ✅ **ternyata sudah selesai 3 Agt** — nol pekerjaan |
+| **A10c** | PDF **cetakan informatif** + peringatan tegas | Berkop resmi gampang dianggap keputusan, padahal isinya hitungan otomatis yang belum diverifikasi siapa pun. Mencegah warga datang merasa sudah berhak |
+| **A11a** | Tanggal lahir **DIPERTAHANKAN** | Pengaman anti-penelusuran. Tanpa itu, siapa pun yang tahu NIK bisa memeriksa status kemiskinan orang lain. Nol pekerjaan |
+| **A11b** | Nama jadi **"Cek Data Rumah"** — BUKAN "Cek Backlog" | Backlog & RTLH indikator berbeda, dan API-nya mengembalikan RTLH. Menamainya backlog menjanjikan angka yang tidak ada. ✅ R4 |
+| **B1** | Kolom tanggal ditambah, **dikosongkan**, diisi admin bertahap | Menghitung otomatis dari tanggal daftar = tanggal karangan, dan masa berlaku sertifikat adalah hal yang orang percayai |
+| **C1** | BNBA wajib untuk laporan **baru**; laporan lama tetap sah | Tidak adil menuntut kabupaten/kota melengkapi aturan yang belum berlaku saat mereka mengisi |
+| **C4/D4** | Export **Excel**, **rekap saja — BNBA tidak ikut** | BNBA berisi nama & NIK; begitu jadi berkas Excel ia berpindah tangan tanpa jejak |
+| **D2** | Isian **berjenjang dari daftar** | Ketik bebas membuat "PK RTLH"/"pk rtlh"/"Peningkatan Kualitas RTLH" terhitung tiga hal. **Butuh daftar resmi dari dinas** |
+| **E1** | Syarat "harus ditanggapi dulu" **dilepas** | Justru syarat itu yang membuat dinas tidak pernah melihat tombolnya. ✅ R4 |
+| **F1** | Posisi **DI DALAM** bidang, tidak menggantikan | Bidang tetap tulang punggung kuota; mesin slot & 70 cek ujinya tidak perlu dibongkar. **Butuh daftar posisi dari dinas** |
 
-Keduanya bagian dari butir yang secara keseluruhan berstatus "perlu jawaban", tapi
-bagian ini berdiri sendiri. **Belum dijadwalkan — perlu keputusan user dulu.**
+### Masih benar-benar terhenti
 
-- **A10a — sapuan istilah** "usulan/pengusulan" → "rekomendasi". Sapuan pertama sudah
-  dilakukan 3 Agt (tombol jadi "Simpan Data"); sisanya tinggal susulan. Tidak
-  bergantung pada pertanyaan desil di A10.
-- **A10c — unduh PDF hasil rekomendasi.** Fitur baru, belum ada apa pun. Isinya
-  bergantung pada program yang direkomendasikan — jadi kalau aturan desil nanti diubah
-  (pertanyaan terbuka di A10), tampilan PDF-nya ikut berubah, **tapi kerangkanya tidak**.
-  Aman dibangun lebih dulu.
+| Apa | Menunggu | Catatan |
+|---|---|---|
+| **B2** | Keterangan | Layar mana, akun apa (peran + kabupaten), data warga seperti apa yang terlihat. **Didahulukan begitu keterangannya ada** — kalau benar, ini batas kewenangan bocor, bukan cacat tampilan |
+| **A3** | Contoh nyata | Angka "3 atau 6" tidak cocok dengan pengaturan mana pun (batasnya 9 per muat). Butuh: halaman mana, kabupaten apa, penyaring apa |
+| A1, A2, A6 | Berkas & teks | 5 foto program, kalimat definisi subsidi/non-subsidi, persetujuan rumusan desil |
+| D2, F1 | Daftar | Nomenklatur program–kegiatan–sub kegiatan; daftar posisi magang |
+| Butir 4 lama | Daftar | Keterangan 11 formulir SRP2 yang belum terisi |
+| Butir 8b lama | Berkas | Buku panduan + leaflet KKN pengganti juknis |
 
 ---
 
