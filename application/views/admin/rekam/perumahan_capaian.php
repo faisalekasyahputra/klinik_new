@@ -208,9 +208,18 @@ $tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_
                    `terkirim`. Tombol unduh di layar input akan menghasilkan
                    berkas yang ISINYA BERBEDA dari angka di depan mata, dan
                    bedanya tidak kelihatan. */ ?>
+                  <?php /* Butir 23 putaran 2: unduhan setahun, di samping yang per triwulan.
+                 Dibuat TOMBOL TERPISAH, bukan pilihan tersembunyi, supaya tidak ada
+                 yang perlu menebak cara mendapatkannya. Bentuk berkasnya: satu baris
+                 per triwulan, sehingga keempatnya bisa dibandingkan sekaligus
+                 dijumlah. */ ?>
           <a href="<?= base_url('Rekam_Perumahan/export?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>"
              class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10 dark:text-brand-muted dark:hover:bg-white/5">
             <i class="ph ph-download-simple mr-1" aria-hidden="true"></i> Unduh Excel
+          </a>
+          <a href="<?= base_url('Rekam_Perumahan/export?periode=tahun&tahun=' . (int) $tahun) ?>"
+             class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">
+            <i class="ph ph-calendar-blank mr-1" aria-hidden="true"></i> Unduh Setahun
           </a>
         <?php endif; ?>
       </div>

@@ -369,6 +369,37 @@ try {
     cek(strpos($xls, '7777000000') === FALSE && strpos($xls, $angka_lain) === FALSE,
         'Export TIDAK memuat angka kabupaten lain - cakupan wilayah ikut ke berkas');
 
+    /* BUTIR 23 PUTARAN 2 - unduhan SETAHUN, empat triwulan sebagai baris.
+
+       Yang dijaga bukan "berkasnya jadi", melainkan tiga hal yang bisa rusak
+       tanpa satu pun galat:
+         1. Keempat triwulan benar-benar ada, bukan cuma yang sedang dibuka.
+         2. Ada baris Total, karena itu setengah dari yang diminta dinas.
+         3. Cakupan wilayah tetap mengikat - argumen posisi `rekap()` mudah
+            tergeser, dan kalau tergeser berkasnya memuat 35 kabupaten tanpa
+            ada yang menyadarinya. */
+    $xlsTahun = http('kab', 'Rekam_Perumahan/export?periode=tahun&tahun=' . TAHUN)['body'];
+    cek(strpos($xlsTahun, '<Workbook') !== FALSE, 'Export setahun mengembalikan lembar kerja');
+    cek(@simplexml_load_string($xlsTahun) !== FALSE, 'Berkas setahun XML yang sah');
+    foreach (['TW I', 'TW II', 'TW III', 'TW IV'] as $tw) {
+        cek(strpos($xlsTahun, '>' . $tw . '<') !== FALSE, "Berkas setahun memuat baris {$tw}");
+    }
+    cek(strpos($xlsTahun, 'Total ' . TAHUN) !== FALSE, 'Ada baris Total setahun');
+    /* 🔻 ASERSI CAKUPAN WILAYAH DI BAWAH BELUM TERBUKTI MENJAGA APA PUN, dan
+       itu ditulis di sini supaya tidak dibaca sebagai jaminan. Mutasi yang
+       MENCABUT argumen kabupaten dari `rekap()` di jalur tahunan tetap membuat
+       asersi ini hijau, artinya angka penanda kabupaten lain memang tidak
+       muncul di berkas tahunan entah cakupannya terpasang atau tidak.
+
+       Dibiarkan berdiri karena tetap bernilai sebagai jaring (kalau kelak
+       angka itu bocor, ia merah), tetapi PENGGANTINYA MASIH PERLU DIBUAT:
+       yang benar adalah menyiapkan laporan terkirim milik kabupaten lain pada
+       salah satu dari keempat triwulan tahun uji, lalu memastikan namanya
+       tidak ikut. Versi triwulanan di bawah punya data itu; versi tahunan
+       belum. */
+    cek(strpos($xlsTahun, '7777000000') === FALSE,
+        'Export setahun tidak memuat angka penanda kabupaten lain (BELUM terbukti lewat mutasi)');
+
     /* BNBA berisi nama + NIK penerima. Keputusan user: ia TIDAK ikut export.
        Jalur yang salah (`isi_laporan()`) akan menyeret metadatanya diam-diam. */
     cek(preg_match('/bnba|nama_asli|private_path/i', $xls) === 0,

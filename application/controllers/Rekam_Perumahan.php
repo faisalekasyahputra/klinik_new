@@ -116,10 +116,26 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
      * begitu jadi berkas ia berpindah tangan tanpa jejak. Karena itu jalur ini
      * lewat `rekap()`, BUKAN `isi_laporan()` yang ikut memulangkan metadata BNBA.
      */
+    /**
+     * BUTIR 23 PUTARAN 2: rekap bisa dirinci per triwulan ATAU per tahun.
+     *
+     * Dinas menyebut "di-breakdown ke per TW dan per tahun" tanpa memastikan
+     * artinya. Dua bacaan mungkin: penjumlahan setahun, atau keempat triwulan
+     * berdampingan untuk dibandingkan. Bentuk di bawah menjawab KEDUANYA dalam
+     * satu berkas, jadi tidak perlu menunggu jawaban untuk mulai berguna.
+     *
+     * Caranya: baris per TRIWULAN, bukan kolom yang melebar. Melebarkan kolom
+     * berarti empat kali lipat lebar untuk tiap program dan berkasnya tidak
+     * terbaca lagi; menambah baris membuat jumlah kolomnya tetap sama persis
+     * dengan versi triwulanan, dan baris Total menutup tiap sumber dana.
+     */
     public function export()
     {
         $tahun    = (int) ($this->input->get('tahun') ?: date('Y'));
+        $setahun  = $this->input->get('periode') === 'tahun';
         $triwulan = $this->triwulan_dari_get();
+
+        if ($setahun) { $this->export_tahunan($tahun); return; }
 
         $baris = $this->rd->rekap('perumahan', $tahun, $triwulan, $this->my_kabupaten_id);
         if ( ! $baris) {
@@ -169,6 +185,82 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         $this->kirim_spreadsheet(
             'Rekap Perumahan ' . $periode . ' - ' . $this->nama_wilayah(),
             'Rekap ' . $periode, $header, $isi);
+    }
+
+    /**
+     * Rekap setahun: empat triwulan sebagai baris, ditutup baris Total.
+     *
+     * "Sel kosong, bukan 0" tetap berlaku dan justru lebih penting di sini.
+     * Triwulan yang belum dilaporkan HARUS kosong, bukan nol: nol terbaca
+     * sebagai "sudah dilapor, capaiannya nihil", dan begitu ia masuk kolom
+     * yang dijumlah, laporan yang belum masuk berubah jadi capaian nol yang
+     * terlihat sah. Baris Total pun dibiarkan kosong kalau sumber dana itu
+     * tidak punya satu pun triwulan terlapor sepanjang tahun.
+     */
+    private function export_tahunan($tahun)
+    {
+        $program = $this->label_program();
+        $sumber  = $this->label_sumber();
+        $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV'];
+
+        $matriks = [];
+        $ada     = FALSE;
+        foreach ([1, 2, 3, 4] as $tw) {
+            $baris = $this->rd->rekap('perumahan', $tahun, $tw, $this->my_kabupaten_id);
+            $matriks[$tw] = $baris ? $this->matriks($baris) : [];
+            if ($baris) { $ada = TRUE; }
+        }
+
+        if ( ! $ada) {
+            $this->session->set_flashdata('error',
+                'Belum ada laporan terkirim sepanjang ' . $tahun . ' - tidak ada yang bisa diunduh.');
+            redirect('Rekam_Perumahan/rekap?tahun=' . $tahun);
+            return;
+        }
+
+        $header = ['Triwulan', 'Sumber Dana'];
+        foreach ($program as $plabel) {
+            $header[] = $plabel . ' - Rencana (unit)';
+            $header[] = $plabel . ' - Rencana (Rp)';
+            $header[] = $plabel . ' - Realisasi (unit)';
+            $header[] = $plabel . ' - Realisasi (Rp)';
+        }
+
+        $isi = [];
+        foreach ($sumber as $skode => $slabel) {
+            $total = [];
+            foreach ([1, 2, 3, 4] as $tw) {
+                $r = [$nama_tw[$tw], $slabel];
+                foreach ($program as $pkode => $plabel) {
+                    $sel = $matriks[$tw][$skode][$pkode] ?? NULL;
+                    foreach (['rencana_unit', 'rencana_anggaran', 'realisasi_unit', 'realisasi_anggaran'] as $medan) {
+                        $nilai = $sel ? (int) $sel[$medan] : NULL;
+                        $r[] = $nilai;
+                        if ($nilai !== NULL) {
+                            $kunci = $pkode . '|' . $medan;
+                            $total[$kunci] = ($total[$kunci] ?? 0) + $nilai;
+                        }
+                    }
+                }
+                $isi[] = $r;
+            }
+
+            $baris_total = ['Total ' . $tahun, $slabel];
+            foreach ($program as $pkode => $plabel) {
+                foreach (['rencana_unit', 'rencana_anggaran', 'realisasi_unit', 'realisasi_anggaran'] as $medan) {
+                    $baris_total[] = $total[$pkode . '|' . $medan] ?? NULL;
+                }
+            }
+            $isi[] = $baris_total;
+        }
+
+        $this->catat_audit('rekap_diunduh',
+            'Rekap perumahan setahun ' . $tahun . ' diunduh (' . $this->nama_wilayah() . ')',
+            'rd_laporan', NULL, ['tahun' => $tahun, 'periode' => 'tahun']);
+
+        $this->kirim_spreadsheet(
+            'Rekap Perumahan ' . $tahun . ' - ' . $this->nama_wilayah(),
+            'Rekap ' . $tahun, $header, $isi);
     }
 
     public function riwayat()

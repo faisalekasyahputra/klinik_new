@@ -118,10 +118,21 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
      * Cakupan wilayah datang dari `$this->my_kabupaten_id` (sesi), dan
      * `laporan_id` diturunkan dari hasil yang sudah ter-scope.
      */
+    /**
+     * Butir 23 putaran 2: rekap per triwulan atau per tahun.
+     *
+     * Bentuk kawasan berbeda dari perumahan: isinya DAFTAR KEGIATAN, bukan
+     * matriks. Jadi versi tahunannya tidak menjumlah apa pun, ia menggabungkan
+     * keempat triwulan dengan satu kolom Triwulan di depan. Menjumlahkan daftar
+     * kegiatan tidak punya arti; yang berguna justru melihat semuanya berderet.
+     */
     public function export()
     {
         $tahun    = (int) ($this->input->get('tahun') ?: date('Y'));
+        $setahun  = $this->input->get('periode') === 'tahun';
         $triwulan = $this->triwulan_dari_get();
+
+        if ($setahun) { $this->export_tahunan($tahun); return; }
 
         [$ringkasan, $intervensi] = $this->ambil_rekap($tahun, $triwulan);
         if ( ! $ringkasan) {
@@ -177,6 +188,76 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
         $this->kirim_spreadsheet(
             'Rekap Kawasan ' . $periode . ' - ' . $wilayah,
             'Rekap ' . $periode, $header, $isi);
+    }
+
+    /** Gabungan setahun: kolom Triwulan di depan, ringkasan per triwulan di bawah. */
+    private function export_tahunan($tahun)
+    {
+        $indikator = $this->label_indikator();
+        $sumber    = $this->label_sumber();
+        $nama_tw   = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV'];
+
+        $header = ['Triwulan', 'No', 'Indikator', 'Satuan', 'Nama Kegiatan', 'Lokasi',
+                   'Sumber Anggaran', 'Keterangan', 'Volume', 'Nilai Anggaran (Rp)',
+                   'Nilai Padat Karya (Rp)'];
+        $isi = [];
+        $ringkasan_tw = [];
+
+        foreach ([1, 2, 3, 4] as $tw) {
+            [$ringkasan, $intervensi] = $this->ambil_rekap($tahun, $tw);
+            if ( ! $ringkasan) { continue; }
+            $ringkasan_tw[$tw] = $ringkasan;
+            foreach ($intervensi as $i) {
+                $ind = $indikator[$i['indikator']] ?? NULL;
+                $isi[] = [
+                    $nama_tw[$tw], (int) $i['urutan'],
+                    is_array($ind) ? ($ind['label'] ?? $i['indikator']) : ($ind ?: $i['indikator']),
+                    is_array($ind) ? ($ind['satuan'] ?? '') : '',
+                    $i['nama_kegiatan'], $i['lokasi_teks'],
+                    $sumber[$i['sumber_anggaran']] ?? $i['sumber_anggaran'],
+                    $i['keterangan_sumber'],
+                    $i['volume'] !== NULL ? (float) $i['volume'] : NULL,
+                    (int) $i['nilai_anggaran'], (int) $i['nilai_padat_karya'],
+                ];
+            }
+        }
+
+        if ( ! $ringkasan_tw) {
+            $this->session->set_flashdata('error',
+                'Belum ada laporan terkirim sepanjang ' . $tahun . ' - tidak ada yang bisa diunduh.');
+            redirect('Rekam_Kawasan/rekap?tahun=' . $tahun);
+            return;
+        }
+
+        /* Ringkasan DIPISAH PER TRIWULAN, tidak dijumlah jadi satu. "Ada
+           penanganan" itu ya/tidak per periode; menjumlahkannya menghasilkan
+           angka yang tidak berarti apa-apa. Luas dan anggaran memang bisa
+           dijumlah, tetapi mencampur yang bisa dan tidak bisa dalam satu blok
+           membuat pembacanya menebak mana yang mana. */
+        $isi[] = [];
+        $isi[] = ['RINGKASAN PER TRIWULAN'];
+        foreach ($ringkasan_tw as $tw => $r) {
+            $isi[] = [
+                $nama_tw[$tw],
+                'Ada penanganan: ' . ((int) $r['ada_penanganan'] === 1 ? 'Ya' : 'Tidak'),
+                'Ada progres: ' . ((int) $r['ada_progres'] === 1 ? 'Ya' : 'Tidak'),
+                'Luas (ha)', $r['total_luas_ha'] !== NULL ? (float) $r['total_luas_ha'] : NULL,
+                'Jumlah intervensi', (int) $r['jumlah_intervensi'],
+                'Anggaran (Rp)', (int) $r['total_anggaran'],
+                'Padat karya (Rp)', (int) $r['total_padat_karya'],
+            ];
+        }
+
+        $wilayah = $this->db->where('id', $this->my_kabupaten_id)
+            ->get('kabupaten')->row('nama') ?: 'Wilayah Saya';
+
+        $this->catat_audit('rekap_diunduh',
+            'Rekap kawasan setahun ' . $tahun . ' diunduh (' . $wilayah . ')',
+            'rd_laporan', NULL, ['tahun' => $tahun, 'periode' => 'tahun']);
+
+        $this->kirim_spreadsheet(
+            'Rekap Kawasan ' . $tahun . ' - ' . $wilayah,
+            'Rekap ' . $tahun, $header, $isi);
     }
 
     public function riwayat()

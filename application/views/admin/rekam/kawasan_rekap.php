@@ -36,9 +36,18 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
                Tombol yang selalu ada lalu memuntahkan pesan galat mengajari
                orang bahwa tombolnya memang begitu. */ ?>
       <?php if ( ! empty($ringkasan)): ?>
+              <?php /* Butir 23 putaran 2: unduhan setahun, di samping yang per triwulan.
+                 Dibuat TOMBOL TERPISAH, bukan pilihan tersembunyi, supaya tidak ada
+                 yang perlu menebak cara mendapatkannya. Bentuk berkasnya: satu baris
+                 per triwulan, sehingga keempatnya bisa dibandingkan sekaligus
+                 dijumlah. */ ?>
       <a href="<?= base_url('Rekam_Kawasan/export?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>"
          class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">
         <i class="ph ph-download-simple mr-1" aria-hidden="true"></i> Unduh Excel
+      </a>
+      <a href="<?= base_url('Rekam_Kawasan/export?periode=tahun&tahun=' . (int) $tahun) ?>"
+         class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">
+        <i class="ph ph-calendar-blank mr-1" aria-hidden="true"></i> Unduh Setahun
       </a>
       <?php endif; ?>
     </div>
