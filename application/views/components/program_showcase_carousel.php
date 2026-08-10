@@ -1,4 +1,55 @@
-<?php $carousel_context = $carousel_context ?? 'home'; ?>
+<?php
+$carousel_context = $carousel_context ?? 'home';
+
+/**
+ * Isi slide datang dari `sf_programs` (migrasi 036), bukan lagi hardcode di JS
+ * bawah. Komponen mengambil datanya sendiri supaya ketiga pemanggilnya —
+ * beranda, diagnosa, pendataan warga — tidak perlu tahu apa-apa soal ini.
+ * Memuat model di view memang bukan pola paling murni, tapi sudah dipakai di
+ * `layouts/main.php` dan `forum_detail.php`, dan alternatifnya menyalin
+ * pengambilan data ke tiga tempat.
+ *
+ * `get_instance()` EKSPLISIT, bukan `$this->load->model()`. Di dalam view CI3
+ * `$this` adalah `CI_Loader`, dan mengambil model lewat proksinya gagal dengan
+ * "Undefined property: CI_Loader::$Program_model" — terjadi persis begitu saat
+ * komponen ini pertama dipindah ke DB. Pola yang dipakai `layouts/main.php`
+ * ini yang benar.
+ *
+ * WARNA TETAP DI KODE, dipetakan dari kode program. Palet pastelnya disetel dan
+ * kontrasnya diukur 5 Agt 2026; membiarkannya diedit lewat formulir admin
+ * membatalkan itu dalam satu klik. Admin mengatur kata dan foto.
+ */
+$CI =& get_instance();
+$CI->load->model('Program_model');
+$palet = [
+    'flpp'          => ['muda' => '#dff2f4', 'tengah' => '#b5e2e6', 'pekat' => '#74c9d1'],
+    'oemah_lestari' => ['muda' => '#e6f6ec', 'tengah' => '#c0e8cf', 'pekat' => '#85d3a6'],
+    'rtlh'          => ['muda' => '#fdf1dc', 'tengah' => '#f8dcab', 'pekat' => '#eebe6c'],
+    'pb'            => ['muda' => '#f2f7dc', 'tengah' => '#dfeba6', 'pekat' => '#c2d961'],
+    'rumah_apung'   => ['muda' => '#e5eefc', 'tengah' => '#c0d5f4', 'pekat' => '#8fb1e8'],
+];
+$bawaan = ['muda' => '#e8f2fc', 'tengah' => '#c5ddf4', 'pekat' => '#92bfe7'];
+
+$slides_data = [];
+foreach ($CI->Program_model->etalase() as $p) {
+    $w = $palet[$p['kode_program']] ?? $bawaan;
+    $slides_data[] = [
+        'id'          => $p['kode_program'],
+        'title'       => $p['nama_program'],
+        'badge'       => (string) ($p['badge'] ?? ''),
+        'description' => (string) $p['deskripsi_singkat'],
+        'terms'       => (string) ($p['syarat_utama'] ?? ''),
+        'image'       => base_url($p['gambar'] ?: 'assets/img/program/01_subsidif_lpp.avif'),
+        'muda'        => $w['muda'], 'tengah' => $w['tengah'], 'pekat' => $w['pekat'],
+    ];
+}
+
+/* Nol program = komponen tidak merender apa pun. Kotak kosong di beranda publik
+   terbaca sebagai fitur rusak, dan menampilkan daftar cadangan berarti
+   menghidupkan lagi sumber kedua yang justru sedang dibereskan. Kekosongannya
+   sudah dicatat ke log oleh model. */
+if ( ! $slides_data) { return; }
+?>
 
 <style>
     .program-slide-track {
@@ -101,13 +152,13 @@
             // muda → tengah → pekat, sejalan dengan --t1..--t3 di .aurora-surface.
             // Dulu bernama cool/color/warm saat palet masih gelap; nama itu jadi
             // menyesatkan begitu urutannya terang→pekat, bukan dingin→hangat.
-            slides: [
-                { id: 'flpp', title: 'KPR-FLPP Rumah Subsidi', badge: 'MBR Fixed Income', muda: '#dff2f4', tengah: '#b5e2e6', pekat: '#74c9d1', image: '<?= base_url('assets/img/program/01_subsidif_lpp.avif') ?>', description: 'Skema pembiayaan rumah subsidi dengan bunga tetap dan tenor panjang.', terms: 'Penghasilan maksimal Rp8 juta per bulan dan memenuhi ketentuan MBR.' },
-                { id: 'oemah-lestari', title: 'Oemah Lestari', badge: 'MBR & Umum', muda: '#e6f6ec', tengah: '#c0e8cf', pekat: '#85d3a6', image: '<?= base_url('assets/img/program/02_oemahletari.avif') ?>', description: 'Pembiayaan rumah terjangkau yang berpihak pada hunian ramah lingkungan.', terms: 'Skema bunga ringan melalui kolaborasi BPR-BRK.' },
-                { id: 'rtlh', title: 'Peningkatan Kualitas RTLH', badge: 'Miskin & Ekstrem', muda: '#fdf1dc', tengah: '#f8dcab', pekat: '#eebe6c', image: '<?= base_url('assets/img/program/03_rtlh.avif') ?>', description: 'Bantuan perbaikan rumah bagi masyarakat dengan hunian tidak layak.', terms: 'Terdaftar DTKS dan rumah memenuhi kriteria kerusakan.' },
-                { id: 'pb', title: 'Stimulan Pembangunan Baru', badge: 'Bencana & Relokasi', muda: '#f2f7dc', tengah: '#dfeba6', pekat: '#c2d961', image: '<?= base_url('assets/img/program/04_Bantuan.avif') ?>', description: 'Bantuan stimulan material untuk pembangunan rumah baru yang layak.', terms: 'Tersedia untuk skema backlog, relokasi, atau pascabencana.' },
-                { id: 'rumah-apung', title: 'Program Rumah Apung', badge: 'Kawasan Pesisir', muda: '#e5eefc', tengah: '#c0d5f4', pekat: '#8fb1e8', image: '<?= base_url('assets/img/program/05_areakumuh.avif') ?>', description: 'Solusi hunian adaptif untuk masyarakat pesisir terdampak rob.', terms: 'Prioritas kawasan pesisir yang mengalami genangan permanen.' }
-            ],
+            //
+            // DIRENDER DARI PHP sejak 5 Agt 2026 — isinya dari `sf_programs`
+            // (migrasi 036), bukan lagi ditulis tangan di sini. `json_encode`
+            // dengan HEX_* supaya kutip, `<`, dan `&` di teks yang diketik admin
+            // tidak bisa keluar dari konteks skrip ini.
+            slides: <?= json_encode($slides_data,
+                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?>,
             reel: [],
             dragging: false,
             jumping: false,

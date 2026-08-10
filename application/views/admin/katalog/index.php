@@ -9,12 +9,15 @@
 $csrf_nama = $this->security->get_csrf_token_name();
 $csrf_hash = $this->security->get_csrf_hash();
 ?>
-<div x-data="{ buka: false, id: 0, nama: '', desk: '', aktif: true, kode: '', dipakai: 0 }">
+<div x-data="{ buka: false, id: 0, nama: '', desk: '', aktif: true, kode: '', dipakai: 0,
+               badge: '', syarat: '', gambar: '', urutan: 99, korsel: false }">
     <div class="mb-6">
         <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Katalog Program</h2>
         <p class="text-sm text-gray-500 dark:text-brand-muted">
             Program bantuan perumahan yang bisa diajukan warga. Yang bisa diubah dari sini:
-            <b>nama</b>, <b>deskripsi</b>, dan <b>status aktif</b>.
+            <b>nama</b>, <b>deskripsi</b>, <b>status aktif</b>, serta <b>tampilannya di beranda</b> —
+            badge, syarat utama, foto, dan urutan. Warna kartu tidak diatur di sini: paletnya
+            disetel sekali supaya kontras teksnya terjaga.
         </p>
     </div>
 
@@ -89,7 +92,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                         <td class="px-4 py-3 text-xs"><?= (int) $r->dipakai ?> pengajuan</td>
                         <td class="px-4 py-3">
                             <button type="button" title="Ubah program"
-                                    @click="id=<?= (int) $r->id ?>; nama=<?= htmlspecialchars(json_encode($r->nama_program), ENT_QUOTES) ?>; desk=<?= htmlspecialchars(json_encode($r->deskripsi_singkat), ENT_QUOTES) ?>; aktif=<?= (int) $r->is_active === 1 ? 'true' : 'false' ?>; kode=<?= htmlspecialchars(json_encode($r->kode_program), ENT_QUOTES) ?>; dipakai=<?= (int) $r->dipakai ?>; buka=true"
+                                    @click="id=<?= (int) $r->id ?>; nama=<?= htmlspecialchars(json_encode($r->nama_program), ENT_QUOTES) ?>; desk=<?= htmlspecialchars(json_encode($r->deskripsi_singkat), ENT_QUOTES) ?>; aktif=<?= (int) $r->is_active === 1 ? 'true' : 'false' ?>; kode=<?= htmlspecialchars(json_encode($r->kode_program), ENT_QUOTES) ?>; dipakai=<?= (int) $r->dipakai ?>; badge=<?= htmlspecialchars(json_encode((string) $r->badge), ENT_QUOTES) ?>; syarat=<?= htmlspecialchars(json_encode((string) $r->syarat_utama), ENT_QUOTES) ?>; gambar=<?= htmlspecialchars(json_encode((string) $r->gambar), ENT_QUOTES) ?>; urutan=<?= (int) $r->urutan ?>; korsel=<?= (int) $r->tampil_korsel === 1 ? 'true' : 'false' ?>; buka=true"
                                     class="rounded-lg border border-gray-200 px-2 py-1 text-xs font-bold text-gray-600 hover:bg-gray-100 dark:border-white/10 dark:text-brand-muted dark:hover:bg-white/5">
                                 <i class="ph ph-pencil-simple" aria-hidden="true"></i> Ubah
                             </button>
@@ -119,7 +122,11 @@ $csrf_hash = $this->security->get_csrf_hash();
                 <button type="button" @click="buka = false" aria-label="Tutup" class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><i class="ph ph-x text-lg" aria-hidden="true"></i></button>
             </div>
 
-            <form method="POST" action="<?= base_url('Admin_Katalog_Program/ubah') ?>" class="mt-4 space-y-3 text-xs">
+            <?php /* `enctype` WAJIB — tanpa itu `$_FILES` kosong dan unggahan foto
+                     gagal diam-diam: formnya terkirim, teksnya tersimpan, fotonya
+                     tidak, dan tidak ada satu pun pesan galat. */ ?>
+            <form method="POST" action="<?= base_url('Admin_Katalog_Program/ubah') ?>"
+                  enctype="multipart/form-data" class="mt-4 max-h-[70vh] space-y-3 overflow-y-auto text-xs">
                 <input type="hidden" name="<?= $csrf_nama ?>" value="<?= $csrf_hash ?>">
                 <input type="hidden" name="id" :value="id">
 
@@ -135,6 +142,53 @@ $csrf_hash = $this->security->get_csrf_hash();
                     <textarea name="deskripsi_singkat" x-model="desk" rows="2"
                               class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200"></textarea>
                 </label>
+
+                <?php /* Blok etalase — yang tampil di korsel beranda (migrasi 036).
+                         Warnanya TIDAK ada di sini dengan sengaja: palet pastelnya
+                         disetel dan kontrasnya diukur, dan satu pilihan warna bebas
+                         bisa membatalkan itu. Admin mengatur kata dan foto. */ ?>
+                <div class="rounded-lg border border-gray-200 p-2.5 dark:border-white/10">
+                    <p class="mb-2 font-black text-gray-700 dark:text-gray-300">Tampilan di beranda</p>
+
+                    <label class="block">
+                        <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Badge</span>
+                        <input type="text" name="badge" x-model="badge" maxlength="60"
+                               placeholder="mis. MBR Fixed Income"
+                               class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200">
+                    </label>
+
+                    <label class="mt-2 block">
+                        <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Syarat utama</span>
+                        <textarea name="syarat_utama" x-model="syarat" rows="2" maxlength="300"
+                                  placeholder="Satu kalimat syarat yang tampil di slide"
+                                  class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200"></textarea>
+                    </label>
+
+                    <label class="mt-2 block">
+                        <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Foto program</span>
+                        <template x-if="gambar">
+                            <img :src="'<?= base_url() ?>' + gambar" alt="" class="mb-2 h-24 w-full rounded-lg object-cover">
+                        </template>
+                        <input type="file" name="gambar" accept="image/jpeg,image/png"
+                               class="w-full text-[11px] text-gray-600 dark:text-brand-muted">
+                        <span class="mt-1 block text-[11px] text-gray-500 dark:text-brand-muted">
+                            JPG atau PNG, maksimal 3&nbsp;MB. Kosongkan bila fotonya tidak diganti.
+                            Data lokasi pada foto dibersihkan otomatis sebelum ditayangkan.
+                        </span>
+                    </label>
+
+                    <div class="mt-2 flex items-center gap-3">
+                        <label class="flex items-center gap-2">
+                            <span class="font-bold text-gray-700 dark:text-gray-300">Urutan</span>
+                            <input type="number" name="urutan" x-model="urutan" min="1" max="99"
+                                   class="w-16 rounded-lg border border-gray-200 bg-white px-2 py-1 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200">
+                        </label>
+                        <label class="flex items-center gap-2">
+                            <input type="checkbox" name="tampil_korsel" value="1" x-model="korsel">
+                            <span class="font-bold text-gray-700 dark:text-gray-300">Tampilkan di beranda</span>
+                        </label>
+                    </div>
+                </div>
 
                 <label class="flex items-start gap-2 rounded-lg bg-gray-50 p-2.5 dark:bg-black/20">
                     <input type="checkbox" name="is_active" value="1" x-model="aktif" class="mt-0.5">

@@ -98,29 +98,74 @@ class Admin_Katalog_Program extends Admin_Controller {
             return;
         }
 
-        $nama = trim((string) $this->input->post('nama_program', TRUE));
-        $desk = trim((string) $this->input->post('deskripsi_singkat', TRUE));
+        $nama   = trim((string) $this->input->post('nama_program', TRUE));
+        $desk   = trim((string) $this->input->post('deskripsi_singkat', TRUE));
+        $badge  = trim((string) $this->input->post('badge', TRUE));
+        $syarat = trim((string) $this->input->post('syarat_utama', TRUE));
+        $urutan = (int) $this->input->post('urutan');
         if ($nama === '' || mb_strlen($nama) > 255) {
             $this->session->set_flashdata('error', 'Nama program wajib diisi, maksimal 255 karakter.');
             redirect('Admin_Katalog_Program');
             return;
         }
+        if (mb_strlen($badge) > 60 || mb_strlen($syarat) > 300) {
+            $this->session->set_flashdata('error', 'Badge maksimal 60 karakter, syarat utama maksimal 300.');
+            redirect('Admin_Katalog_Program');
+            return;
+        }
+        // Dijepit, bukan ditolak: urutan salah ketik bukan alasan membuang
+        // seluruh suntingan yang sudah diketik orang.
+        $urutan = max(1, min(99, $urutan ?: 99));
 
         // Checkbox yang tidak dicentang TIDAK terkirim sama sekali — itu bukan
         // "nilai lama", itu 0. Membacanya sebagai "biarkan" membuat sakelar
         // mati yang tidak pernah bisa dimatikan.
-        $aktif = $this->input->post('is_active') ? 1 : 0;
+        $aktif  = $this->input->post('is_active') ? 1 : 0;
+        $korsel = $this->input->post('tampil_korsel') ? 1 : 0;
 
-        $this->db->where('id', $id)->update('sf_programs', [
+        $set = [
             'nama_program'      => $nama,
             'deskripsi_singkat' => $desk,
             'is_active'         => $aktif,
-        ]);
+            'badge'             => $badge !== '' ? $badge : NULL,
+            'syarat_utama'      => $syarat !== '' ? $syarat : NULL,
+            'urutan'            => $urutan,
+            'tampil_korsel'     => $korsel,
+        ];
+
+        // Gambar hanya disentuh kalau memang ada berkas dikirim. Tanpa ini,
+        // menyimpan perubahan teks saja akan menghapus fotonya.
+        $gambar_baru = NULL;
+        if ( ! empty($_FILES['gambar']['name'])) {
+            $galat = NULL;
+            $gambar_baru = $this->simpan_gambar_program($lama->kode_program, $galat);
+            if ($gambar_baru === NULL) {
+                $this->session->set_flashdata('error', $galat ?: 'Gambar gagal disimpan.');
+                redirect('Admin_Katalog_Program');
+                return;
+            }
+            $set['gambar'] = $gambar_baru;
+        }
+
+        $this->db->where('id', $id)->update('sf_programs', $set);
+
+        /* Berkas lama dibuang HANYA kalau ia hasil unggahan. Berkas bawaan di
+           `assets/img/program/` ikut repo dan dipakai sebagai nilai awal migrasi
+           036 — menghapusnya berarti deploy berikutnya menghidupkannya lagi
+           sementara DB sudah menunjuk ke tempat lain. */
+        if ($gambar_baru !== NULL && strpos((string) $lama->gambar, self::DIR_UNGGAHAN) === 0) {
+            @unlink(FCPATH . $lama->gambar);
+        }
 
         $berubah = [];
-        if ($lama->nama_program !== $nama)           { $berubah[] = 'nama'; }
-        if ($lama->deskripsi_singkat !== $desk)      { $berubah[] = 'deskripsi'; }
-        if ((int) $lama->is_active !== $aktif)       { $berubah[] = $aktif ? 'diaktifkan' : 'DINONAKTIFKAN'; }
+        if ($lama->nama_program !== $nama)              { $berubah[] = 'nama'; }
+        if ($lama->deskripsi_singkat !== $desk)         { $berubah[] = 'deskripsi'; }
+        if ((string) $lama->badge !== $badge)           { $berubah[] = 'badge'; }
+        if ((string) $lama->syarat_utama !== $syarat)   { $berubah[] = 'syarat utama'; }
+        if ((int) $lama->urutan !== $urutan)            { $berubah[] = 'urutan'; }
+        if ((int) $lama->tampil_korsel !== $korsel)     { $berubah[] = $korsel ? 'ditampilkan di beranda' : 'DISEMBUNYIKAN dari beranda'; }
+        if ($gambar_baru !== NULL)                      { $berubah[] = 'gambar'; }
+        if ((int) $lama->is_active !== $aktif)          { $berubah[] = $aktif ? 'diaktifkan' : 'DINONAKTIFKAN'; }
 
         if ($berubah) {
             $this->catat_audit('program_diubah',
@@ -132,5 +177,73 @@ class Admin_Katalog_Program extends Admin_Controller {
 
         $this->session->set_flashdata('success', $berubah ? 'Program diperbarui.' : 'Tidak ada perubahan.');
         redirect('Admin_Katalog_Program');
+    }
+
+    /** Foto unggahan dipisah dari berkas bawaan yang ikut repo. */
+    const DIR_UNGGAHAN = 'assets/img/program/unggahan/';
+
+    /**
+     * Simpan foto program. Balikkan path relatif, atau NULL + $galat terisi.
+     *
+     * Gambar ini TAYANG PUBLIK di beranda, jadi ia tidak boleh diperlakukan
+     * seperti lampiran privat: yang berbahaya di sini bukan siapa yang bisa
+     * membacanya, melainkan APA yang ikut terbawa.
+     *
+     *   1. Jenis ditentukan `finfo` dari ISI berkas, bukan dari ekstensi
+     *      maupun `$_FILES['type']` — keduanya dikirim peramban dan bisa dikarang.
+     *   2. `getimagesize()` sebagai lapis kedua: berkas yang lolos finfo tapi
+     *      bukan gambar sungguhan ditolak di sini.
+     *   3. Metadata dilucuti. Foto lapangan dari ponsel membawa koordinat GPS,
+     *      dan menayangkannya di beranda publik berarti mengumumkan lokasi
+     *      pengambilannya. Pelucutnya milik induk — sama dengan yang dipakai
+     *      bukti warga, satu implementasi untuk keduanya.
+     *   4. Nama berkas DIBUANG dan diganti acak. Nama kiriman tidak pernah
+     *      menyentuh disk, jadi tidak ada jalan menembus direktori maupun
+     *      menanam ekstensi ganda.
+     */
+    private function simpan_gambar_program($kode, &$galat = NULL)
+    {
+        $f = $_FILES['gambar'];
+        if (($f['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || ! is_uploaded_file($f['tmp_name'])) {
+            $galat = 'Berkas gagal diunggah. Coba lagi.';
+            return NULL;
+        }
+        if ($f['size'] > 3 * 1024 * 1024) {
+            $galat = 'Ukuran gambar maksimal 3 MB.';
+            return NULL;
+        }
+
+        $mime = (new finfo(FILEINFO_MIME_TYPE))->file($f['tmp_name']);
+        $ext  = ['image/jpeg' => 'jpg', 'image/png' => 'png'][$mime] ?? NULL;
+        if ($ext === NULL) {
+            // WEBP/AVIF sengaja belum diterima: pelucut metadata yang ada hanya
+            // paham JPEG & PNG, dan menerima format yang tidak bisa dibersihkan
+            // sama saja menayangkan metadatanya.
+            $galat = 'Gambar harus JPG atau PNG.';
+            return NULL;
+        }
+        if (@getimagesize($f['tmp_name']) === FALSE) {
+            $galat = 'Berkas itu bukan gambar yang sah.';
+            return NULL;
+        }
+
+        $dir = FCPATH . self::DIR_UNGGAHAN;
+        if ( ! is_dir($dir) && ! @mkdir($dir, 0755, TRUE)) {
+            $galat = 'Direktori unggahan tidak bisa dibuat.';
+            return NULL;
+        }
+
+        $nama = preg_replace('/[^a-z0-9_]/', '', strtolower((string) $kode))
+              . '-' . bin2hex(random_bytes(8)) . '.' . $ext;
+        if ( ! @move_uploaded_file($f['tmp_name'], $dir . $nama)) {
+            $galat = 'Gambar gagal disimpan ke disk.';
+            return NULL;
+        }
+        if ( ! $this->strip_image_metadata($dir . $nama, $mime)) {
+            @unlink($dir . $nama);
+            $galat = 'Metadata gambar gagal dibersihkan; unggahan dibatalkan.';
+            return NULL;
+        }
+        return self::DIR_UNGGAHAN . $nama;
     }
 }

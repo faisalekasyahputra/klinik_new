@@ -82,10 +82,24 @@ class Migrate extends CI_Controller {
             'kkn_magang_pendaftaran',
             // Migrasi 033.
             'sys_jejak_audit',
+            // Migrasi 036 — kolom etalase. Kolom, bukan tabel: sf_programs sudah
+            // ada sejak awal, jadi keberadaan tabelnya nol bukti.
             // Migrasi 035.
             'forum_janji_temu',
         ] as $t) {
             echo $t.': '.(in_array($t, $tables) ? 'ADA' : 'TIDAK ADA')."\n";
+        }
+
+        // Migrasi 036 — kolom etalase program.
+        if (in_array('sf_programs', $tables)) {
+            foreach (['badge', 'syarat_utama', 'gambar', 'urutan', 'tampil_korsel'] as $k) {
+                echo 'sf_programs.'.$k.': '.
+                    ($this->db->field_exists($k, 'sf_programs') ? 'ADA' : 'TIDAK ADA')."
+";
+            }
+            $n = (int) $this->db->where('tampil_korsel', 1)->count_all_results('sf_programs');
+            echo 'program tampil di korsel: '.$n.($n === 0 ? ' — beranda akan kehilangan etalasenya' : '')."
+";
         }
 
         if (in_array('srp2_registrations', $tables)) {

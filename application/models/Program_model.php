@@ -8,6 +8,41 @@ class Program_model extends CI_Model {
         $this->load->helper('housing_queue');
     }
 
+    /**
+     * Program yang tampil di korsel etalase beranda — SATU-SATUNYA sumbernya.
+     *
+     * Sampai 5 Agt 2026 daftar ini hardcode di dalam JS komponen korsel, dan
+     * `sf_programs` cuma dipakai untuk kelayakan. Dua tempat itu sudah melenceng
+     * (judul berbeda antara katalog admin dan korsel), dan itulah yang membuat
+     * layar Katalog Program lahir sebagai pembanding. Migrasi 036 memindahkan
+     * yang DITAMPILKAN ke tabel; sejak itu korsel membaca dari sini.
+     *
+     * `is_active` IKUT MENGGERBANG. Program yang dinonaktifkan di Katalog
+     * Program tidak boleh terus dipromosikan di beranda — kalau tidak, warga
+     * mengeklik sesuatu yang pengajuannya sudah ditutup.
+     */
+    public function etalase() {
+        if ( ! $this->db->table_exists('sf_programs')
+            || ! $this->db->field_exists('tampil_korsel', 'sf_programs')) {
+            // Migrasi 036 belum jalan. Bukan alasan menampilkan data lain —
+            // dua sumber justru masalah yang sedang dibereskan.
+            log_message('error', 'Program_model::etalase() — kolom etalase belum ada; jalankan migrasi 036.');
+            return [];
+        }
+        $rows = $this->db->select('id, kode_program, nama_program, deskripsi_singkat,
+                                   badge, syarat_utama, gambar')
+            ->where(['tampil_korsel' => 1, 'is_active' => 1])
+            ->order_by('urutan', 'ASC')->order_by('id', 'ASC')
+            ->get('sf_programs')->result_array();
+
+        // `db_debug` mati di production: query gagal mengembalikan array kosong
+        // tanpa suara. Dicatat supaya kekosongan bisa ditelusuri, bukan ditebak.
+        if ( ! $rows) {
+            log_message('error', 'Program_model::etalase() — nol program etalase aktif.');
+        }
+        return $rows;
+    }
+
     public function get_program_by_code($kode_program) {
         $this->db->where('kode_program', $kode_program);
         $this->db->where('is_active', 1);

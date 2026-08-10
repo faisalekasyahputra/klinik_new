@@ -82,3 +82,9 @@ user_guide_src/build/*
 user_guide_src/cilexer/build/*
 user_guide_src/cilexer/dist/*
 user_guide_src/cilexer/pycilexer.egg-info/*
+
+# Foto program yang diunggah admin lewat Katalog Program (migrasi 036).
+# Berkas BAWAAN di assets/img/program/ tetap dilacak — ia nilai awal migrasi.
+# Yang di bawah ini data, bukan kode: ia lahir di server tempat diunggah, dan
+# `git pull` saat auto-deploy tidak menyentuh berkas tak terlacak.
+assets/img/program/unggahan/

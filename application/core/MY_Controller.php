@@ -864,6 +864,68 @@ class MY_Controller extends CI_Controller {
     }
 
     /**
+     * Lucuti metadata gambar (EXIF/komentar) di tempat, tanpa GD.
+     *
+     * DINAIKKAN ke induk 5 Agt 2026, isinya TIDAK diubah sedikit pun. Semula
+     * `private` di `Warga.php`; begitu unggahan foto program lahir,
+     * alternatifnya cuma menyalin — dan dua implementasi pelucut metadata
+     * berarti yang satu bisa diperbaiki sementara yang lain tetap membocorkan
+     * lokasi GPS pengunggah.
+     */
+    protected function strip_image_metadata($path, $mime)
+    {
+        $data = file_get_contents($path);
+        if ($data === FALSE) { return FALSE; }
+        if ($mime === 'image/png') {
+            if (substr($data, 0, 8) !== "\x89PNG\r\n\x1a\n") { return FALSE; }
+            $out = substr($data, 0, 8);
+            $offset = 8;
+            $ended = FALSE;
+            while ($offset + 12 <= strlen($data)) {
+                $length = unpack('N', substr($data, $offset, 4))[1];
+                $chunk_length = 12 + $length;
+                if ($offset + $chunk_length > strlen($data)) { return FALSE; }
+                $type = substr($data, $offset + 4, 4);
+                if ( ! in_array($type, ['eXIf', 'tEXt', 'zTXt', 'iTXt'], TRUE)) {
+                    $out .= substr($data, $offset, $chunk_length);
+                }
+                $offset += $chunk_length;
+                if ($type === 'IEND') { $ended = TRUE; break; }
+            }
+            return $ended && file_put_contents($path, $out, LOCK_EX) !== FALSE;
+        }
+        if ($mime !== 'image/jpeg' || substr($data, 0, 2) !== "\xFF\xD8") { return FALSE; }
+        $out = "\xFF\xD8";
+        $offset = 2;
+        while ($offset < strlen($data)) {
+            if (ord($data[$offset]) !== 0xFF) { return FALSE; }
+            $start = $offset++;
+            while ($offset < strlen($data) && ord($data[$offset]) === 0xFF) { $offset++; }
+            if ($offset >= strlen($data)) { return FALSE; }
+            $marker = ord($data[$offset++]);
+            if ($marker === 0xDA) {
+                $out .= substr($data, $start);
+                return file_put_contents($path, $out, LOCK_EX) !== FALSE;
+            }
+            if ($marker === 0xD9) {
+                $out .= substr($data, $start, $offset - $start);
+                return file_put_contents($path, $out, LOCK_EX) !== FALSE;
+            }
+            if ($marker === 0x01 || ($marker >= 0xD0 && $marker <= 0xD7)) {
+                $out .= substr($data, $start, $offset - $start);
+                continue;
+            }
+            if ($offset + 2 > strlen($data)) { return FALSE; }
+            $length = unpack('n', substr($data, $offset, 2))[1];
+            if ($length < 2 || $offset + $length > strlen($data)) { return FALSE; }
+            if ( ! in_array($marker, [0xE1, 0xED, 0xFE], TRUE)) {
+                $out .= substr($data, $start, ($offset - $start) + $length);
+            }
+            $offset += $length;
+        }
+        return FALSE;
+    }
+    /**
      * Gerbang "silakan masuk dulu" — SATU pintu untuk seluruh aplikasi.
      *
      * Dibuat 5 Agt 2026 (revisi dinas butir A5: "kalau user sudah login,
