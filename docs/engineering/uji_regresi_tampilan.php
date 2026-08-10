@@ -559,6 +559,61 @@ cek(strpos($isi_fs, 'name="land_length_m"') !== FALSE && strpos($isi_fs, 'name="
 cek(preg_match('/Ukuran Tanah\s*\x{2014}/u', $pdt) === 0,
     'A8: nol label "Ukuran Tanah —" yang mengulang; prefiksnya sudah pindah ke legend');
 
+/* ---------------- R4, 5 Agt 2026 ---------------- */
+
+// A9 — dua isian bukti dicabut dari formulir DAN dari whitelist unggah,
+//      tapi jenisnya TETAP sah supaya berkas lama terbaca.
+$wrg = (string) @file_get_contents(APP_ROOT . '/application/controllers/Warga.php');
+$mdl = (string) @file_get_contents(APP_ROOT . '/application/models/Housing_assessment_model.php');
+wajib($wrg !== '' && $mdl !== '', 'Sumber Warga.php & Housing_assessment_model.php terbaca');
+preg_match("/candidate_land'\)\s*return\s*\[([^\]]*)\]/", $wrg, $m9);
+$whitelist = $m9[1] ?? '';
+cek($whitelist !== '', 'A9: whitelist unggah jalur candidate_land terbaca');
+foreach (['land_transfer_proof', 'recipient_photo'] as $jenis) {
+    cek(strpos($whitelist, $jenis) === FALSE,
+        "A9: `{$jenis}` tidak bisa lagi diunggah");
+    cek(strpos($mdl, $jenis) !== FALSE,
+        "A9: `{$jenis}` TETAP jenis yang sah — berkas lama harus tetap terbaca");
+}
+cek(strpos($pdt, 'recipient_photo') === FALSE && strpos($pdt, 'land_transfer_proof') === FALSE,
+    'A9: kedua kotak unggah lenyap dari formulir pendataan');
+
+// E1 — syarat "harus ditanggapi dulu" dilepas, TIGA syarat lain tetap berdiri.
+$umum = (string) @file_get_contents(APP_ROOT . '/application/controllers/Umum.php');
+wajib($umum !== '', 'Sumber Umum.php terbaca');
+preg_match('/function ajukan_janji_temu.*?\n\t\}/s', $umum, $mj);
+$fn_janji = $mj[0] ?? '';
+cek($fn_janji !== '', 'E1: ajukan_janji_temu() ketemu');
+cek(strpos($fn_janji, 'belum ditanggapi petugas') === FALSE,
+    'E1: syarat "topik harus ditanggapi dulu" sudah dilepas');
+/* Yang di bawah ini justru inti penjaganya: melepas SATU syarat gampang sekali
+   ikut melepas yang lain tanpa sadar, dan tidak ada yang kelihatan rusak. */
+cek(strpos($fn_janji, 'hidup_untuk_topik') !== FALSE,
+    'E1: batas satu pengajuan hidup per topik TETAP berdiri');
+cek(strpos($fn_janji, 'sudah ditutup') !== FALSE,
+    'E1: topik tertutup TETAP ditolak');
+cek(preg_match('/rate_limit_consume|janji_temu_ajukan/', $fn_janji) === 1,
+    'E1: batas laju pengajuan TETAP berlaku');
+
+// A11b — nama menu. "Backlog" ditolak dengan sengaja; lihat komentar di view.
+$hub = (string) @file_get_contents(APP_ROOT . '/application/views/pages/golek_omah/index.php');
+$vrt = (string) @file_get_contents(APP_ROOT . '/application/views/pages/golek_omah/cek_rtlh.php');
+wajib($vrt !== '', 'Sumber cek_rtlh.php terbaca');
+preg_match('/<h1[^>]*>([^<]*)<\/h1>/', $vrt, $m11);
+cek(trim($m11[1] ?? '') === 'Cek Data Rumah',
+    'A11b: judul halaman = "Cek Data Rumah" (dapat: "' . trim($m11[1] ?? '') . '")');
+cek(preg_match('/<h4[^>]*>Cek Data Rumah<\/h4>/', $hub) === 1,
+    'A11b: kartu hub memakai nama yang sama');
+/* Komentar DIBUANG dulu sebelum dicocokkan. Versi pertama penjaga ini merah
+   gara-gara komentar di `cek_rtlh.php` yang menjelaskan KENAPA "Cek Backlog"
+   ditolak — frasanya ikut tercocok. Itu jebakan substring yang sama yang sudah
+   empat kali kena di proyek ini, kali ini mengenai penjaganya sendiri. Yang
+   dijaga adalah teks yang DIRENDER, bukan setiap kemunculan di berkas. */
+$tanpa_komentar = static fn($s) => preg_replace('#/\*.*?\*/|//[^\n]*#s', '', $s);
+cek(stripos($tanpa_komentar($vrt), 'Cek Backlog') === FALSE
+    && stripos($tanpa_komentar($hub), 'Cek Backlog') === FALSE,
+    'A11b: nol "Cek Backlog" di teks yang dirender — datanya RTLH, menamainya backlog menjanjikan yang tidak ada');
+
 // D1 — label menu Kawasan. Diambil dari blok `rekam_kawasan`, bukan dari
 // kemunculan kata "Kawasan" mana pun di berkas registry.
 $reg = (string) @file_get_contents(APP_ROOT . '/application/config/dashboard_modules.php');

@@ -263,16 +263,29 @@ $post_ajukan = function ($sesi, $id_diskusi, $alasan) {
     ]);
 };
 
-$r = $post_ajukan('w', $topik, 'Perlu bertemu langsung karena berkasnya banyak. ' . RAHASIA_ALASAN);
-cek(jml_janji($topik) === 0, 'Topik tanpa tanggapan: pengajuan DITOLAK (nol baris)');
-cek(stripos($r['body'], 'belum ditanggapi') !== FALSE, 'Sebab penolakannya disebut ke pengguna');
+/* DIBALIK 5 Agt 2026 (revisi dinas butir E1). Sampai 4 Agt, topik yang belum
+   ditanggapi petugas TIDAK boleh diajukan janji temu — itu terjemahan gagasan
+   "berkonsultasi di forum dulu, tatap muka belakangan". Justru syarat itulah
+   yang membuat dinas membuka menu Konsultasi Terjadwal dan menyimpulkan "belum
+   ada pilihan bikin jadwalnya": tombolnya memang tidak pernah mereka lihat.
 
-// Halamannya sendiri tidak boleh menawarkan tombolnya.
-$hal = http('w', 'Umum/detail/' . $topik);
-cek(strpos($hal['body'], 'Umum/ajukan_janji_temu') === FALSE,
-    'Formulir pengajuan tidak dirender selama topik belum ditanggapi');
-cek(stripos($hal['body'], 'setelah topik ini ditanggapi') !== FALSE,
-    'Halamannya menjelaskan sebabnya, bukan diam');
+   Yang dijaga sekarang KEBALIKANNYA — dan sekaligus bahwa melepas satu syarat
+   tidak ikut melepas yang lain. */
+$hal_awal = http('w', 'Umum/detail/' . $topik);
+cek(strpos($hal_awal['body'], 'Umum/ajukan_janji_temu') !== FALSE,
+    'Topik tanpa tanggapan: tombol pengajuan SUDAH dirender (dulu disembunyikan)');
+cek(stripos($hal_awal['body'], 'setelah topik ini ditanggapi') === FALSE,
+    'Keterangan "tunggu ditanggapi dulu" sudah tidak ada — syaratnya memang hilang');
+
+$r = $post_ajukan('w', $topik, 'Perlu bertemu langsung karena berkasnya banyak. ' . RAHASIA_ALASAN);
+cek(jml_janji($topik) === 1, 'Topik tanpa tanggapan: pengajuan DITERIMA (satu baris)');
+
+/* Sisi tampilan dan sisi server harus sepakat. Kalau tombolnya muncul memakai
+   syarat yang lebih longgar daripada yang ditegakkan server, penekannya ditolak
+   tanpa tahu sebabnya — itu justru cacat yang lebih membingungkan daripada
+   tombol yang tidak ada. */
+cek(strpos(http('w', 'Umum/detail/' . $topik)['body'], 'Umum/ajukan_janji_temu') === FALSE,
+    'Sesudah diajukan, tombolnya hilang — tampilan sepakat dengan server');
 
 beri_komentar($topik, 'Petugas Uji');
 

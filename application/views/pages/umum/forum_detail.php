@@ -228,9 +228,10 @@
                     </form>
                 </div>
 
-                <?php elseif (($topik['status'] ?? 'open') !== 'closed'): ?>
-                <?php // Sebabnya disebut. Tombol yang hilang tanpa keterangan terbaca sebagai fitur yang rusak. ?>
-                <p class="text-[11px] text-zinc-500"><i class="fa-solid fa-circle-info mr-1"></i> Janji temu bisa diajukan setelah topik ini ditanggapi petugas di forum.</p>
+                <?php /* Cabang "tunggu ditanggapi dulu" DIBUANG 5 Agt 2026 (butir E1).
+                         Syaratnya sudah tidak ada, jadi keterangan ini akan
+                         berbohong — dan keterangan yang berbohong lebih buruk
+                         daripada tidak ada keterangan. */ ?>
                 <?php endif; ?>
             </div>
             <?php endif; ?>

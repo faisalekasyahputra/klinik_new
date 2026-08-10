@@ -34,7 +34,7 @@ class Cek_Rtlh extends MY_Controller {
         parent::__construct();
         if ( ! $this->is_logged_in()) {
             $this->session->set_flashdata('error',
-                'Silakan login terlebih dahulu untuk memakai Cek RTLH.');
+                'Silakan login terlebih dahulu untuk memakai Cek Data Rumah.');
             $this->gerbang_login();
         }
     }
@@ -96,8 +96,12 @@ class Cek_Rtlh extends MY_Controller {
             'profil'     => $hasil['data']['profile'] ?? NULL,
             'nik_ekor'   => substr($nik, -4),
         ]);
+        /* Kode aksi `rtlh_dicek` SENGAJA TIDAK ikut diganti meski labelnya
+           berubah: penyaring jejak audit memakai kode ini, dan menggantinya
+           memutus entri lama dari entri baru. Yang berubah cuma kalimat yang
+           dibaca manusia. */
         $this->catat_audit('rtlh_dicek',
-            'Cek RTLH untuk NIK berakhiran ' . substr($nik, -4) . ' — hasil: ' . $hasil['status'],
+            'Cek Data Rumah untuk NIK berakhiran ' . substr($nik, -4) . ' — hasil: ' . $hasil['status'],
             'simperum', NULL, ['status' => $hasil['status'], 'mode' => $hasil['source_mode'] ?? NULL]);
 
         redirect('Cek_Rtlh');

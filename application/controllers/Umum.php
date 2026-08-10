@@ -399,13 +399,17 @@ class Umum extends MY_Controller {
 			$this->load->model('Janji_temu_model');
 			$datacontent['saya_pemilik'] = TRUE;
 			$datacontent['janji']        = $this->Janji_temu_model->hidup_untuk_topik($id);
-			// Syarat "ruang konsultasi dulu" ditampilkan dengan aturan yang SAMA
-			// dengan yang ditegakkan server (ajukan_janji_temu). Kalau tombolnya
-			// muncul memakai syarat yang lebih longgar, yang menekannya akan
-			// ditolak tanpa tahu sebabnya.
+			// Aturan di sini WAJIB sama persis dengan yang ditegakkan server di
+			// `ajukan_janji_temu()`. Kalau tombolnya muncul memakai syarat yang
+			// lebih longgar, yang menekannya ditolak tanpa tahu sebabnya; kalau
+			// lebih ketat, fiturnya tidak pernah terlihat ada.
+			//
+			// `count($komentar) > 0` DICABUT 5 Agt 2026 bersama pasangannya di
+			// server (butir E1). Justru syarat inilah yang membuat dinas membuka
+			// menu Konsultasi Terjadwal dan menyimpulkan "belum ada pilihan bikin
+			// jadwalnya" — tombolnya memang tidak pernah mereka lihat.
 			$datacontent['boleh_ajukan'] = ! $datacontent['janji']
-				&& ($datacontent['topik']['status'] ?? 'open') !== 'closed'
-				&& count($datacontent['komentar']) > 0;
+				&& ($datacontent['topik']['status'] ?? 'open') !== 'closed';
 		}
 
 		$data['content'] = $this->load->view('pages/umum/forum_detail', $datacontent, true);
@@ -473,12 +477,17 @@ class Umum extends MY_Controller {
 			return;
 		}
 
-		if ( ! $this->Forum_model->get_komentar_by_diskusi($id_diskusi)) {
-			$this->session->set_flashdata('error',
-				'Topik ini belum ditanggapi petugas. Janji temu bisa diajukan setelah ada tanggapan di forum.');
-			redirect('Umum/detail/' . $id_diskusi);
-			return;
-		}
+		/* SYARAT "topik harus ditanggapi petugas dulu" DICABUT 5 Agt 2026
+		   (revisi dinas butir E1). Semula ia menerjemahkan gagasan "berkonsultasi
+		   di forum dulu, tatap muka belakangan" — tapi di lapangan justru itu
+		   yang membuat dinas melihat menu Konsultasi Terjadwal dan menyimpulkan
+		   "belum ada pilihan bikin jadwalnya": warga yang topiknya belum
+		   ditanggapi tidak pernah melihat tombolnya sama sekali.
+
+		   Yang TIDAK ikut dilonggarkan, dan itu disengaja: pemilik topik saja
+		   (di atas), topik tertutup ditolak (di atas), satu pengajuan hidup per
+		   topik (di bawah), dan batas laju `janji_temu_ajukan`. Melepas satu
+		   syarat bukan alasan melepas sisanya. */
 
 		if ($this->Janji_temu_model->hidup_untuk_topik($id_diskusi)) {
 			$this->session->set_flashdata('error', 'Sudah ada pengajuan janji temu yang berjalan untuk topik ini.');

@@ -94,7 +94,7 @@
             <div class="relative z-10">
                 <i class="fa-solid fa-house-circle-check mb-2.5 transition-transform duration-500 group-hover:scale-110"
                    style="font-size: 28px; color: var(--portal-icon);"></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 transition-colors">Cek Status RTLH</h4>
+                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 transition-colors">Cek Data Rumah</h4>
                 <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">(Data SIMPERUM Jawa Tengah)</p>
             </div>
             <div class="relative z-10 mt-auto pt-2.5">

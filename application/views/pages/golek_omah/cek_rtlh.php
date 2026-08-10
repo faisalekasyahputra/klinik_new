@@ -16,7 +16,15 @@ $tidak_ada = ($hasil['status'] ?? '') === 'not_found';
             <i class="fa-solid fa-house-circle-check" aria-hidden="true"></i>
         </div>
         <p class="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--portal-brand)]">Data SIMPERUM</p>
-        <h1 class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)]">Cek Status RTLH</h1>
+        <?php /* "Cek Data Rumah", bukan "Cek RTLH" maupun "Cek Backlog" (revisi
+                 dinas 5 Agt 2026, butir A11). Dinas meminta "Cek Backlog", tapi
+                 backlog dan RTLH dua indikator berbeda — backlog soal
+                 kepemilikan/kepenghunian, RTLH soal kelayakan bangunan — dan API
+                 yang dipanggil halaman ini mengembalikan data RTLH. Menamainya
+                 "Backlog" berarti menjanjikan angka yang tidak ada di baliknya.
+                 Nama netral ini melepas singkatan teknisnya tanpa berbohong soal
+                 isinya. Keputusan user 5 Agt 2026. */ ?>
+        <h1 class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)]">Cek Data Rumah</h1>
         <p class="mx-auto mt-2 max-w-md text-xs leading-relaxed text-[color:var(--portal-text-muted)]">
             Periksa apakah sebuah NIK terdaftar dalam data Rumah Tidak Layak Huni Provinsi Jawa Tengah.
         </p>
