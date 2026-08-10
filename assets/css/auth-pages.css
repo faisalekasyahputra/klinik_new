@@ -1,5 +1,5 @@
 /* =============================================================
-   AUTH PAGES STYLESHEET — Klinik PKP
+   AUTH PAGES STYLESHEET - Klinik PKP
    Split-layout design: animated gradient left, white form right
    ============================================================= */
 
@@ -548,7 +548,7 @@ body.auth-page {
 }
 
 /* =============================================================
-   ONBOARDING — Role Selector Cards
+   ONBOARDING - Role Selector Cards
    ============================================================= */
 .auth-role-grid {
     display: grid;
@@ -685,7 +685,7 @@ body.auth-page {
 }
 
 /* =============================================================
-   RESPONSIVE — Mobile: Single column, gradient hidden
+   RESPONSIVE - Mobile: Single column, gradient hidden
    ============================================================= */
 @media (max-width: 1024px) {
     .auth-left {

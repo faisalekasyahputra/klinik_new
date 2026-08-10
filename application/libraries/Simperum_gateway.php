@@ -480,7 +480,7 @@ class Simperum_gateway {
             );
             if (empty($saved['success'])) {
                 // Teruskan pesan spesifik model ("Akun Anda sudah terhubung dengan
-                // NIK lain...", dst) — pesan generik terbukti membuat pengguna
+                // NIK lain...", dst) - pesan generik terbukti membuat pengguna
                 // buntu total: penyebabnya hanya bisa ditelusuri lewat query DB.
                 return $this->response('error', $saved['message'] ?? 'Profil belum dapat disimpan dengan aman.', [], $saved['code'] ?? 'profile_failed');
             }

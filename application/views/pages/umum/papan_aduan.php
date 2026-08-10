@@ -1,12 +1,12 @@
 <?php
 /**
- * Papan aduan — hanya JUDUL, bidang penanganan, status, dan JAWABAN dinas.
+ * Papan aduan - hanya JUDUL, bidang penanganan, status, dan JAWABAN dinas.
  *
  * Isi aduan (`pesan`), email pelapor, dan lampirannya TIDAK ADA di $rows sama
  * sekali: controllernya tidak pernah meng-SELECT-nya (Umum::papan_aduan). Nama
  * pelapor sudah jadi inisial sebelum sampai ke sini, dan kolom aslinya sudah
  * dibuang dari baris. Kalau suatu saat ada yang perlu ditambahkan di halaman
- * ini, tambahkan ke SELECT-nya dengan sadar — jangan mengembalikan `aduan.*`.
+ * ini, tambahkan ke SELECT-nya dengan sadar - jangan mengembalikan `aduan.*`.
  */
 $badge = [
     'Baru'     => ['Menunggu ditinjau', 'var(--portal-text-muted)'],
@@ -22,7 +22,7 @@ $badge = [
         <p class="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--portal-brand)]">Layanan Pengaduan</p>
         <h1 class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)]">Papan Aduan</h1>
         <p class="mx-auto mt-2 max-w-lg text-xs leading-relaxed text-[color:var(--portal-text-muted)]">
-            Aduan yang masuk beserta jawaban dari bidang yang menangani. Identitas pelapor dan isi aduannya tidak ditampilkan — hanya judul dan tanggapan dinas.
+            Aduan yang masuk beserta jawaban dari bidang yang menangani. Identitas pelapor dan isi aduannya tidak ditampilkan - hanya judul dan tanggapan dinas.
         </p>
         <a href="<?= base_url('umum/aduan') ?>" class="mt-4 inline-flex min-h-11 items-center gap-2 rounded-full px-5 py-2.5 text-sm font-black transition hover:-translate-y-0.5" style="background-color: var(--portal-brand); color: var(--portal-bg)">
             <i class="fa-solid fa-plus"></i> Sampaikan Aduan

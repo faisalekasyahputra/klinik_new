@@ -1,11 +1,11 @@
 <?php
 /**
- * Detail satu aduan — butir 16 putaran 2. READ-ONLY.
+ * Detail satu aduan - butir 16 putaran 2. READ-ONLY.
  *
  * Isi aduan ditampilkan UTUH di sini, dan itu justru alasan layar ini ada:
  * di daftar, `pesan` terpotong, sehingga admin menriase dari judul saja.
  *
- * Lampiran TIDAK ditautkan langsung ke berkasnya — tetap lewat
+ * Lampiran TIDAK ditautkan langsung ke berkasnya - tetap lewat
  * `Admin_Aduan/lihat_lampiran` yang sudah ada, karena itu satu-satunya jalur
  * yang memeriksa kewenangan sebelum menyajikan berkas privat.
  */

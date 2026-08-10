@@ -70,7 +70,7 @@ class Warga extends MY_Controller {
      * Pemohon membuka kembali bukti yang sudah dia unggah.
      *
      * Tanpa ini warga hanya melihat badge "Sudah tersimpan" tanpa cara
-     * memastikan yang terunggah memang berkas yang benar — dan saat petugas
+     * memastikan yang terunggah memang berkas yang benar - dan saat petugas
      * meminta perbaikan, dia tidak punya rujukan apa pun. Pola yang sama
      * sudah terbukti di Pengembang::lihat_dokumen_saya() (T3).
      *
@@ -434,7 +434,7 @@ class Warga extends MY_Controller {
     {
         if ($track === 'existing_house') return ['self_photo','house_front_photo','house_side_photo','roof_photo','floor_photo','wall_photo','latrine_photo','land_photo'];
         /* `land_transfer_proof` & `recipient_photo` DICABUT 5 Agt 2026 (revisi
-           dinas butir A9). Ini whitelist UNGGAH — mencabutnya di sini berarti
+           dinas butir A9). Ini whitelist UNGGAH - mencabutnya di sini berarti
            keduanya tidak bisa lagi dikirim, bukan sekadar tidak ditampilkan.
 
            SENGAJA TIDAK dicabut dari `Housing_assessment_model::EVIDENCE_KINDS`:

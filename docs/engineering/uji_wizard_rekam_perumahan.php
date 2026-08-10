@@ -1,6 +1,6 @@
 <?php
 /**
- * Uji W6 — wizard Rekam Data Perumahan (bentuk baru: triwulan, gerbang per
+ * Uji W6 - wizard Rekam Data Perumahan (bentuk baru: triwulan, gerbang per
  * program, Rencana + Realisasi).
  *
  * Menempuh lintasan penuh lewat HTTP sungguhan: pilih periode -> pilih program
@@ -12,8 +12,8 @@
  * Env opsional: UJI_BASE_URL, UJI_ADMIN_EMAIL, UJI_ADMIN_PASSWORD
  * Tahun sentinel 2099; seluruh jejaknya dihapus di akhir.
  *
- * DEFINISI SELESAI skrip ini BUKAN "hijau sekali". Balikkan satu perbaikan —
- * misalnya lepas sisi `rencana` dari aturan anggaran-tanpa-unit di model — dan
+ * DEFINISI SELESAI skrip ini BUKAN "hijau sekali". Balikkan satu perbaikan -
+ * misalnya lepas sisi `rencana` dari aturan anggaran-tanpa-unit di model - dan
  * skrip ini WAJIB merah di titik yang diramalkan. Skrip yang tidak pernah gagal
  * tidak membuktikan apa pun.
  */
@@ -28,7 +28,7 @@ define('TAHUN', 2099);
 $GLOBALS['uji_total'] = 0;
 $GLOBALS['uji_gagal'] = 0;
 
-/** Penanda waktu mulai — dipakai membersihkan bucket rate limit run ini saja. */
+/** Penanda waktu mulai - dipakai membersihkan bucket rate limit run ini saja. */
 $mulai = date('Y-m-d H:i:s', time() - 1);
 
 function cek($condition, $label) {
@@ -78,7 +78,7 @@ function q($sql, $params = []) {
 }
 
 /**
- * Lampirkan BNBA langsung ke DB — BNBA WAJIB sejak 5 Agt 2026 (butir C1),
+ * Lampirkan BNBA langsung ke DB - BNBA WAJIB sejak 5 Agt 2026 (butir C1),
  * dan `Rekam_data_model::kirim()` menolak laporan perumahan tanpa lampirannya.
  *
  * Ditulis langsung, bukan lewat `unggah_bnba`: yang diuji berkas ini bukan alur
@@ -93,7 +93,7 @@ function lampirkan_bnba($laporan_id) {
        [(int) $laporan_id, 'bnba-uji.pdf', 'uji/bnba-uji.pdf', 'application/pdf', 1024]);
 }
 
-/** Prepared statement mengembalikan tipe native — selalu di-cast (AGENTS.md §0e). */
+/** Prepared statement mengembalikan tipe native - selalu di-cast (AGENTS.md §0e). */
 function skalar_int($sql, $params = []) {
     $row = q($sql, $params);
     return $row ? (int) reset($row) : 0;
@@ -142,7 +142,7 @@ function csrf($nama, $path) {
 /**
  * Login WAJIB diperiksa dari isinya, bukan dari kode HTTP.
  *
- * `Auth::do_login()` membalas 303 lalu curl mengikutinya ke halaman 200 —
+ * `Auth::do_login()` membalas 303 lalu curl mengikutinya ke halaman 200 -
  * dan login yang GAGAL juga berakhir 200 di halaman login. Memeriksa kode
  * status saja membuat seluruh sisa skrip berjalan tanpa sesi sambil melapor
  * hijau. Itu nyata terjadi saat skrip ini pertama ditulis.
@@ -194,14 +194,14 @@ function bersihkan() {
 
 // ---------------------------------------------------------------- prasyarat
 
-echo "Uji W6 — Wizard Rekam Data Perumahan\n";
+echo "Uji W6 - Wizard Rekam Data Perumahan\n";
 
 $admin = q('SELECT id, kabupaten_id FROM usr_users WHERE email = ? AND role = ?',
     [ADMIN_EMAIL, 'admin_kabkota']);
 wajib($admin && ! empty($admin['kabupaten_id']), 'Akun admin_kabkota tersedia dan ter-scope');
 $KAB = (int) $admin['kabupaten_id'];
 
-// Bersihkan SISA RUN SEBELUMNYA dulu — `bersihkan()` menghapus seluruh akun
+// Bersihkan SISA RUN SEBELUMNYA dulu - `bersihkan()` menghapus seluruh akun
 // `uji_w6_%`, jadi memanggilnya SESUDAH membuat peninjau akan menghapus akun
 // yang baru saja dibuat. Itu persis yang terjadi saat skrip ini pertama
 // dijalankan: login diam-diam gagal, dan tiga pemeriksaan peninjauan merah
@@ -240,7 +240,7 @@ try {
     kirim_form('kab', 'Rekam_Perumahan/input', 'Rekam_Perumahan/mulai',
         ['tahun' => TAHUN, 'triwulan' => 9]);
     cek(skalar_int('SELECT COUNT(*) AS n FROM rd_laporan WHERE tahun = ?', [TAHUN]) === 0,
-        'Triwulan 9 ditolak — nol laporan lahir');
+        'Triwulan 9 ditolak - nol laporan lahir');
 
     kirim_form('kab', 'Rekam_Perumahan/input', 'Rekam_Perumahan/mulai',
         ['tahun' => TAHUN, 'triwulan' => 1]);
@@ -267,7 +267,7 @@ try {
     cek(strpos(http('kab', $isian)['body'], 'Belum ada data') !== FALSE,
         'Keadaan kosong jujur: "Belum ada data"');
 
-    // Negatif — program yang belum dicentang
+    // Negatif - program yang belum dicentang
     kirim_form('kab', $isian, 'Rekam_Perumahan/simpan_sumber', [
         'laporan_id' => $ID1, 'program' => 'pb_relokasi', 'sumber_dana' => 'csr',
         'realisasi_unit' => 5, 'realisasi_anggaran' => 100,
@@ -275,7 +275,7 @@ try {
     cek(skalar_int('SELECT COUNT(*) AS n FROM rd_perumahan_baris WHERE laporan_id = ? AND program = ?',
         [$ID1, 'pb_relokasi']) === 0, 'Sumber dana untuk program yang belum dicentang DITOLAK');
 
-    // Negatif — anggaran tanpa unit, kedua sisi
+    // Negatif - anggaran tanpa unit, kedua sisi
     kirim_form('kab', $isian, 'Rekam_Perumahan/simpan_sumber', [
         'laporan_id' => $ID1, 'program' => 'pk_rtlh', 'sumber_dana' => 'apbd_kabkota',
         'realisasi_unit' => 0, 'realisasi_anggaran' => 5000000,
@@ -290,7 +290,7 @@ try {
     cek(skalar_int('SELECT COUNT(*) AS n FROM rd_perumahan_baris WHERE laporan_id = ?', [$ID1]) === 0,
         'RENCANA: anggaran tanpa unit DITOLAK');
 
-    // Positif — empat angka
+    // Positif - empat angka
     kirim_form('kab', $isian, 'Rekam_Perumahan/simpan_sumber', [
         'laporan_id' => $ID1, 'program' => 'pk_rtlh', 'sumber_dana' => 'apbd_kabkota',
         'rencana_unit' => 120, 'rencana_anggaran' => 3000000000,
@@ -311,7 +311,7 @@ try {
          WHERE laporan_id = ? AND program = ? AND sumber_dana = ?',
         [$ID1, 'pk_rtlh', 'csr']) === 'PT PLN Indonesia', 'Nama perusahaan CSR tersimpan');
 
-    // Ubah — bukan menggandakan
+    // Ubah - bukan menggandakan
     kirim_form('kab', $isian, 'Rekam_Perumahan/simpan_sumber', [
         'laporan_id' => $ID1, 'program' => 'pk_rtlh', 'sumber_dana' => 'apbd_kabkota',
         'rencana_unit' => 120, 'rencana_anggaran' => 3000000000,
@@ -401,7 +401,7 @@ try {
     wajib($ID2 > 0, 'Draft TW II lahir');
 
     cek(skalar_int('SELECT COUNT(*) AS n FROM rd_perumahan_baris WHERE laporan_id = ?', [$ID2]) === 0,
-        'TW II lahir KOSONG — nol pewarisan dari TW I');
+        'TW II lahir KOSONG - nol pewarisan dari TW I');
 
     $h2 = 'Rekam_Perumahan/input?laporan=' . $ID2 . '&langkah=program';
     kirim_form('kab', $h2, 'Rekam_Perumahan/simpan_program',
@@ -428,7 +428,7 @@ try {
     /* Dulu dua asersi terpisah untuk "Tabel Unit Rencana" dan "Tabel Unit
        Realisasi". Sejak butir C2 (revisi dinas 5 Agt 2026) keduanya jadi SATU
        tabel dengan dua baris per sumber dana, jadi yang dijaga sekarang judul
-       gabungannya — plus bukti bahwa penanda kedua sisi benar-benar dirender. */
+       gabungannya - plus bukti bahwa penanda kedua sisi benar-benar dirender. */
     cek(stripos($r['body'], 'Tabel Unit Rencana &amp; Realisasi') !== FALSE
         || stripos($r['body'], 'Tabel Unit Rencana & Realisasi') !== FALSE,
         'Layar Capaian: satu tabel gabungan Rencana & Realisasi');
@@ -437,7 +437,7 @@ try {
         'Layar Capaian: penanda baris Rencana & Realisasi dirender');
     cek(stripos($r['body'], 'Kumulatif Realisasi') !== FALSE, 'Layar Capaian: tabel kumulatif');
 
-    // 115 + 5 = 120, dan HARUS muncul apa adanya — bukan 235 (dobel) dan bukan 5.
+    // 115 + 5 = 120, dan HARUS muncul apa adanya - bukan 235 (dobel) dan bukan 5.
     cek(preg_match('/120(?!\d)/', strip_tags($r['body'])) === 1
         || strpos(str_replace('.', '', strip_tags($r['body'])), '120') !== FALSE,
         'Kumulatif 115+5=120 tampil di layar');

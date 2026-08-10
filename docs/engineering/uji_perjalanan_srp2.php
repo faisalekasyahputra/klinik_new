@@ -1,8 +1,8 @@
 <?php
 /**
- * Uji perjalanan penuh SRP2 — roadmap T6, item TERPENTING.
+ * Uji perjalanan penuh SRP2 - roadmap T6, item TERPENTING.
  *
- * PHP CLI murni + curl, TANPA framework dan TANPA fixture library — repo ini
+ * PHP CLI murni + curl, TANPA framework dan TANPA fixture library - repo ini
  * tidak punya direktori tests/ sama sekali (dicek sebelum menulis ini), jadi
  * skrip ini sengaja tidak mengandaikan harness apa pun. assert() longgar (fungsi
  * cek()/wajib() di bawah) dipakai alih-alih assert() bawaan PHP karena assert()
@@ -11,7 +11,7 @@
  * CARA JALANKAN:
  *   php docs/engineering/uji_perjalanan_srp2.php
  *
- * PRASYARAT WAJIB — DB KOSONG HASIL MIGRASI, bukan DB lokal yang sudah
+ * PRASYARAT WAJIB - DB KOSONG HASIL MIGRASI, bukan DB lokal yang sudah
  * ditambal tangan (pelajaran omah_sekeng, AGENTS.md §0e: "kalau DB lokal
  * jalan, itu bukan bukti kode benar"). Siapkan DB terpisah:
  *   1. mysql -u root -e "CREATE DATABASE uji_srp2 CHARACTER SET utf8mb4;"
@@ -37,7 +37,7 @@
  *       SELURUH keputusan admin batal, bukan tersimpan sebagian.
  *
  * DEFINISI SELESAI sesungguhnya BUKAN skrip ini hijau sekali (itu cuma
- * prasyarat) — tapi skrip ini MERAH kalau satu perbaikan T1a sengaja
+ * prasyarat) - tapi skrip ini MERAH kalau satu perbaikan T1a sengaja
  * dibalikkan (buang trans_status() dari Admin_Srp2::proses()). Skrip yang
  * tidak pernah gagal tidak membuktikan apa pun.
  */
@@ -62,7 +62,7 @@ function cek($kondisi, $label) {
     return false;
 }
 
-/** Prasyarat yang kalau gagal membuat sisa skrip tidak bermakna — berhenti total. */
+/** Prasyarat yang kalau gagal membuat sisa skrip tidak bermakna - berhenti total. */
 function wajib($kondisi, $label) {
     if (cek($kondisi, $label)) { return; }
     fwrite(STDERR, "\nBerhenti: prasyarat di atas gagal, sisa uji tidak bisa dipercaya.\n");
@@ -70,7 +70,7 @@ function wajib($kondisi, $label) {
 }
 
 /**
- * Loader .env sendiri — BUKAN parse_ini_file(). File .env proyek ini memakai
+ * Loader .env sendiri - BUKAN parse_ini_file(). File .env proyek ini memakai
  * baris komentar '#' di awal, dan parse_ini_file() gagal total di baris itu
  * ("syntax error, unexpected '='"), diverifikasi sebelum menulis fungsi ini.
  */
@@ -86,9 +86,9 @@ function load_env($path) {
 }
 
 // ==========================================================================
-// AKSES DB LANGSUNG — untuk VERIFIKASI, bukan pengganti HTTP. Satu-satunya
+// AKSES DB LANGSUNG - untuk VERIFIKASI, bukan pengganti HTTP. Satu-satunya
 // tempat skrip ini menulis langsung ke DB ada di blok N3, dan itu SENGAJA
-// mensimulasikan skenario yang seharusnya sudah dicegah gerbang hulu (N2) —
+// mensimulasikan skenario yang seharusnya sudah dicegah gerbang hulu (N2) -
 // tujuannya mengisolasi transaksi Admin_Srp2::proses() itu sendiri.
 // ==========================================================================
 class Db {
@@ -126,7 +126,7 @@ class Db {
 }
 
 // ==========================================================================
-// KLIEN HTTP KECIL BERBASIS CURL — satu cookie jar per "sesi" (= satu akun
+// KLIEN HTTP KECIL BERBASIS CURL - satu cookie jar per "sesi" (= satu akun
 // login). csrf_regenerate=FALSE di config proyek ini, jadi satu token bisa
 // dipakai ulang sepanjang sesi asal cookie-nya sama.
 // ==========================================================================
@@ -217,7 +217,7 @@ $akunUji = fn(string $sufiks) => "uji_t6_{$stamp}_{$sufiks}@example.test";
 $dokumenKeys = ['form_1', 'form_2a', 'form_2b', 'form_3', 'form_4', 'form_5', 'form_6',
     'form_6b', 'form_7', 'form_8', 'form_9', 'form_10', 'form_11', 'form_13'];
 
-// PDF minimal valid — finfo mendeteksinya sebagai application/pdf sungguhan,
+// PDF minimal valid - finfo mendeteksinya sebagai application/pdf sungguhan,
 // bukan cuma nama berkas .pdf (yang justru ditolak validasi MIME di server).
 $pdfPath = sys_get_temp_dir() . '/uji_srp2_dokumen.pdf';
 file_put_contents($pdfPath, "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
@@ -274,7 +274,7 @@ wajib($regIdA > 0, 'registration_id valid diterima dari respons daftar');
 
 $rowUser = $db->baris('SELECT name, username FROM usr_users WHERE email = ?', [$emailA]);
 cek(!empty($rowUser['name']) && !empty($rowUser['username']),
-    'name & username otomatis terisi setelah daftar cepat (T5 S12-a) — bukan NULL');
+    'name & username otomatis terisi setelah daftar cepat (T5 S12-a) - bukan NULL');
 cek(($dataA['name'] ?? '') !== '', 'Respons do_register menyertakan name (T6 R2-sisa)');
 
 wajib(unggah_semua_dokumen($sesiA, $regIdA, $pdfPath, $dokumenKeys), 'Ke-14 dokumen berhasil diunggah (akun A)');
@@ -334,7 +334,7 @@ $regIdB = (int) $dataB['registration_id'];
 $sesiAdmin->postForm("Admin_Srp2/proses/$regIdB", ['status' => 'Diterima'], false);
 $rowB = $db->baris('SELECT status_verifikasi, reviewed_by FROM srp2_registrations WHERE id = ?', [$regIdB]);
 cek(($rowB['status_verifikasi'] ?? '') === 'Draft', "Transisi Draft->Diterima ditolak, status tetap Draft (dapat: {$rowB['status_verifikasi']})");
-cek(empty($rowB['reviewed_by']), 'reviewed_by tetap NULL — tidak ada keputusan yang tercatat untuk transisi ilegal');
+cek(empty($rowB['reviewed_by']), 'reviewed_by tetap NULL - tidak ada keputusan yang tercatat untuk transisi ilegal');
 
 // ==========================================================================
 // [N2] Gerbang hulu: nama bentrok direktori dicegah SEBELUM lahir jadi Pending
@@ -380,11 +380,11 @@ $db->jalankan('UPDATE srp2_registrations SET nama_perusahaan = ? WHERE id = ?', 
 $sesiAdmin->postForm("Admin_Srp2/proses/$regIdD", ['status' => 'Diterima'], false);
 $rowD = $db->baris('SELECT status_verifikasi, reviewed_by, certified_developer_id FROM srp2_registrations WHERE id = ?', [$regIdD]);
 cek(($rowD['status_verifikasi'] ?? '') === 'Pending', "Status TETAP Pending, tidak berubah sebagian (dapat: {$rowD['status_verifikasi']})");
-cek(empty($rowD['reviewed_by']), 'reviewed_by tetap NULL — transaksi dibatalkan seluruhnya, bukan sukses karangan');
-cek(empty($rowD['certified_developer_id']), 'certified_developer_id tetap NULL — tidak ada baris parsial di direktori');
+cek(empty($rowD['reviewed_by']), 'reviewed_by tetap NULL - transaksi dibatalkan seluruhnya, bukan sukses karangan');
+cek(empty($rowD['certified_developer_id']), 'certified_developer_id tetap NULL - tidak ada baris parsial di direktori');
 
 // ==========================================================================
-// BERSIH-BERSIH — akun uji dihapus lewat jalur nyata (delete_account, bukan
+// BERSIH-BERSIH - akun uji dihapus lewat jalur nyata (delete_account, bukan
 // DELETE manual), supaya sekalian membuktikan FK CASCADE + unlink berkas
 // masih bekerja setelah semua perubahan T0-T6.
 // ==========================================================================

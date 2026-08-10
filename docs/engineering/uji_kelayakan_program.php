@@ -1,12 +1,12 @@
 <?php
 /**
- * Penjaga aturan kelayakan program — desil x status kepemilikan.
+ * Penjaga aturan kelayakan program - desil x status kepemilikan.
  *
  *   php docs/engineering/uji_kelayakan_program.php
  *
  * KENAPA BERKAS INI ADA. Salah di aturan kelayakan TIDAK menghasilkan galat
  * apa pun: halamannya tetap 200, tabelnya tetap terisi, tidak ada yang merah.
- * Yang terjadi cuma warga diarahkan ke bantuan yang keliru — dan itu baru
+ * Yang terjadi cuma warga diarahkan ke bantuan yang keliru - dan itu baru
  * ketahuan berbulan-bulan kemudian di loket. Aturannya karena itu dikunci
  * sebagai MATRIKS PENUH, bukan beberapa contoh.
  *
@@ -15,7 +15,7 @@
  * gara-gara sesuatu yang lain sedang mati.
  *
  * SUMBER ATURANNYA, dan ini yang membuat matriks di bawah bukan karangan:
- * docs/meetings/22_juni_2026/ANALISA_PROGRAM_PPT_UN_HABITAT.md — ekstraksi PPT
+ * docs/meetings/22_juni_2026/ANALISA_PROGRAM_PPT_UN_HABITAT.md - ekstraksi PPT
  * UN HABITAT 2026. §1 memetakan desil -> program; §2 D menyebut PB Backlog
  * untuk "menumpang di rumah orangtua/saudara ATAU sewa/kontrak", dan §2 C
  * menyebut RTLH untuk "rumahnya masuk kategori tidak layak".
@@ -41,7 +41,7 @@ function wajib($kondisi, $label) {
 
 // CI tidak di-bootstrap; `Smart_filter::__construct()` cuma memanggil
 // get_instance(), jadi cukup distub. Kalau kelak ia benar-benar memakai CI,
-// uji ini akan gagal keras di sini — bukan diam-diam berubah makna.
+// uji ini akan gagal keras di sini - bukan diam-diam berubah makna.
 if ( ! defined('BASEPATH')) { define('BASEPATH', 1); }
 if ( ! function_exists('get_instance')) {
     function get_instance() { static $ci; if ( ! $ci) { $ci = new stdClass(); } return $ci; }
@@ -68,7 +68,7 @@ const NUMPANG   = 'Numpang/Keluarga';
 const SEWA      = 'Sewa/Kontrak';
 
 /* ---------------------------------------------------------------- 1
- * MATRIKS PENUH. Ditulis sebagai harapan, bukan disalin dari keluaran —
+ * MATRIKS PENUH. Ditulis sebagai harapan, bukan disalin dari keluaran -
  * menyalin keluaran berarti menguji bahwa kode sama dengan dirinya sendiri.
  */
 echo "== 1. Matriks penuh desil x kepemilikan ==\n";
@@ -123,9 +123,9 @@ foreach ([1, 2, 3] as $d) {
  */
 echo "\n== 3. Yang sengaja TIDAK disaring ==\n";
 cek($kode(1, '') === ['pb', 'rtlh'],
-    'Kepemilikan kosong: nol penyaringan — lebih baik menawarkan terlalu banyak daripada diam-diam menutup');
+    'Kepemilikan kosong: nol penyaringan - lebih baik menawarkan terlalu banyak daripada diam-diam menutup');
 cek(in_array('omah_sekeng', $kode(4, LAYAK), TRUE),
-    'Omah Sekeng tetap muncul apa pun kepemilikannya — dokumen sumber tidak menyebut jenis intervensinya');
+    'Omah Sekeng tetap muncul apa pun kepemilikannya - dokumen sumber tidak menyebut jenis intervensinya');
 foreach ([5, 6, 7, 8] as $d) {
     cek($kode($d, TAK_LAYAK) === $kode($d, SEWA),
         "desil {$d}: jalur pembiayaan tidak terpengaruh kepemilikan sama sekali");

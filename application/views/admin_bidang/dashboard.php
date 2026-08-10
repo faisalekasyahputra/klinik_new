@@ -8,7 +8,7 @@ $badge_kelas = ['Baru' => 'pending', 'Diproses' => 'process', 'Selesai' => 'ok']
     <div>
         <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2 flex items-center gap-3">
             <i class="ph ph-chat-centered-text text-brand-primary"></i>
-            Aduan — <?= html_escape($bidang_nama ?: 'Bidang Saya') ?>
+            Aduan - <?= html_escape($bidang_nama ?: 'Bidang Saya') ?>
         </h1>
         <p class="text-sm text-gray-500 dark:text-brand-muted">Kelola aduan warga yang masuk ke bidang Anda.</p>
     </div>

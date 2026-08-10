@@ -3,7 +3,7 @@
  * Meja kedua: bidang memutuskan pendaftaran magang yang sudah diteruskan
  * sekretariat Disperakim.
  *
- * Yang tampil hanya pendaftaran yang bidang tujuannya adalah bidang akun ini —
+ * Yang tampil hanya pendaftaran yang bidang tujuannya adalah bidang akun ini -
  * penyaringnya kolom `bidang_kode` pada pendaftaran, bukan sesuatu yang dikirim
  * peramban. Tombol keputusan hanya muncul untuk status 'Ditinjau Bidang'; yang
  * lain sudah lewat mejanya, dan tetap ditampilkan sebagai riwayat.
@@ -53,14 +53,14 @@ $badge_kelas = [
                         </td>
                         <!-- Boleh membungkus. Dengan `whitespace-nowrap` milik
                              tabel, nama kampus panjang mendorong lebar tabel
-                             melewati viewport dan kolom Aksi — satu-satunya
-                             tombol di layar ini — hilang di balik gulir
+                             melewati viewport dan kolom Aksi - satu-satunya
+                             tombol di layar ini - hilang di balik gulir
                              horizontal tanpa petunjuk apa pun. -->
                         <td class="px-4 py-4 max-w-[16rem] whitespace-normal"><?= html_escape($r->instansi_asal) ?></td>
                         <td class="px-4 py-4">
                             <div class="font-semibold"><?= html_escape($r->divisi_atau_tema) ?></div>
                             <div class="text-xs text-gray-500 dark:text-brand-muted">
-                                <?= tgl_id($r->periode_mulai, TRUE) ?> – <?= tgl_id($r->periode_selesai, TRUE) ?>
+                                <?= tgl_id($r->periode_mulai, TRUE) ?> - <?= tgl_id($r->periode_selesai, TRUE) ?>
                             </div>
                             <?php
                             $dokumen = ['surat' => ['Surat pengantar', $r->file_surat_pengantar], 'proposal' => ['Proposal', $r->file_proposal]];

@@ -1,6 +1,6 @@
 <?php
 /**
- * Uji meja tinjauan TAHAP DUA KKN/Magang — `Kemitraan_Bidang`, peran
+ * Uji meja tinjauan TAHAP DUA KKN/Magang - `Kemitraan_Bidang`, peran
  * `admin_bidang`.
  *
  *   php docs/engineering/uji_kemitraan_bidang.php
@@ -10,14 +10,14 @@
  * mencatatnya "3 suite", tapi ketiganya menyentuh peran itu sebagai latar, bukan
  * sebagai subjek. Meja ini yang memutuskan apakah seorang mahasiswa jadi magang
  * di sebuah bidang, dan berkas yang disajikannya adalah surat pengantar berisi
- * data kependudukan — dua alasan yang cukup.
+ * data kependudukan - dua alasan yang cukup.
  *
  * Yang benar-benar dijaga di sini BUKAN "layarnya terbuka", melainkan tiga hal
  * yang kalau bocor tidak akan terlihat dari layar mana pun:
  *
  *   1. SEKAT ANTAR BIDANG. Scope datang dari sesi (`$this->my_bidang_kode`),
  *      tidak pernah dari URL. Mengganti angka di URL harus 404, termasuk untuk
- *      mengunduh berkas — bukan 403, karena 403 sudah membocorkan bahwa barisnya
+ *      mengunduh berkas - bukan 403, karena 403 sudah membocorkan bahwa barisnya
  *      ada.
  *   2. URUTAN TAHAP. Bidang hanya boleh memutuskan yang SUDAH diteruskan
  *      sekretariat. Kalau ia bisa memutuskan yang masih 'Diajukan', meja pertama
@@ -126,7 +126,7 @@ function csrf($nama, $path) {
 /**
  * Kode HTTP saja TIDAK cukup: login gagal juga membalas 200 karena redirect
  * diikuti. Cabang JSON-nya hanya menyala untuk permintaan AJAX, jadi headernya
- * wajib — tanpa itu body-nya HTML, json_decode NULL, dan harness melaporkan
+ * wajib - tanpa itu body-nya HTML, json_decode NULL, dan harness melaporkan
  * "login gagal" pada login yang sebenarnya berhasil.
  */
 function login($nama, $email) {
@@ -169,7 +169,7 @@ function buat_pendaftaran($user_id, $bidang, $status, $peninjau_tahap_satu = NUL
     $GLOBALS['daftar'][] = $id;
 
     // Berkas fisiknya benar-benar ada, supaya 404 pada unduhan lintas bidang
-    // membuktikan GUARD-nya bekerja — bukan sekadar berkasnya kebetulan tidak
+    // membuktikan GUARD-nya bekerja - bukan sekadar berkasnya kebetulan tidak
     // ada. Uji negatif yang lulus karena sebab lain adalah uji yang berbohong.
     $dir = rtrim($GLOBALS['akar_privat'], '/\\') . DIRECTORY_SEPARATOR . 'kemitraan' . DIRECTORY_SEPARATOR . $id;
     if ( ! is_dir($dir)) { @mkdir($dir, 0777, TRUE); }
@@ -268,7 +268,7 @@ tak_kebagian('warga', 'Warga tidak kebagian isi meja bidang');
 
 // Akun admin_bidang TANPA bidang: gerbangnya ada di base controller, dan tanpa
 // uji ini ia cuma janji di komentar. Kalau `bidang_kode` kosong lolos, WHERE-nya
-// menjadi `bidang_kode IS NULL` atau '' — dan yang tampil bisa jadi baris orang
+// menjadi `bidang_kode IS NULL` atau '' - dan yang tampil bisa jadi baris orang
 // lain, bukan layar kosong.
 wajib(login('yatim', $yatimEmail), 'Login admin bidang tanpa bidang');
 tak_kebagian('yatim', 'Admin bidang tanpa bidang_kode tidak kebagian isi meja bidang');
@@ -285,7 +285,7 @@ cek(http('a', 'Kemitraan_Bidang/lihat_dokumen/' . $dA . '/ngawur')['code'] === 4
 cek(http('a', 'Kemitraan_Bidang/lihat_dokumen/abc/surat')['code'] === 404, 'Id bukan angka ditolak');
 
 // ------------------------------------------------------------------ menulis
-cek(http('a', 'Kemitraan_Bidang/proses/' . $dA)['code'] === 404, 'GET ke proses ditolak — hanya POST yang menulis');
+cek(http('a', 'Kemitraan_Bidang/proses/' . $dA)['code'] === 404, 'GET ke proses ditolak - hanya POST yang menulis');
 
 // CSRF: tanpa token, tidak boleh ada perubahan sama sekali.
 http('a', 'Kemitraan_Bidang/proses/' . $dA, ['status' => 'Diterima', 'catatan_admin' => 'tanpa token']);
@@ -336,7 +336,7 @@ $tok = csrf('a', 'Kemitraan_Bidang');
 http('a', 'Kemitraan_Bidang/proses/' . $dA, ['csrf_kpkp_token' => $tok, 'status' => 'Ditolak', 'catatan_admin' => 'balik keputusan']);
 cek(status_dari_db($dA) === 'Diterima', 'Keputusan yang sudah final tidak bisa dibalik lewat POST ulang');
 
-// Bidang B memutuskan barisnya sendiri — membuktikan sekat tadi bukan karena
+// Bidang B memutuskan barisnya sendiri - membuktikan sekat tadi bukan karena
 // baris B kebetulan tidak bisa diputuskan siapa pun.
 wajib(login('b', $emailB), 'Login admin bidang B');
 $tok = csrf('b', 'Kemitraan_Bidang');

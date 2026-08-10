@@ -1,6 +1,6 @@
 <?php
 /**
- * Penjaga gerbang login — "kembali ke halaman asal" DAN pengamannya.
+ * Penjaga gerbang login - "kembali ke halaman asal" DAN pengamannya.
  *
  *   php docs/engineering/uji_gerbang_login.php
  *
@@ -13,7 +13,7 @@
  * `MY_Controller::gerbang_login()`.
  *
  * SETENGAH BERKAS INI TENTANG KEAMANAN, BUKAN KENYAMANAN. "Simpan alamat lalu
- * arahkan ke sana sesudah login" adalah pola OPEN REDIRECT — korban mengeklik
+ * arahkan ke sana sesudah login" adalah pola OPEN REDIRECT - korban mengeklik
  * tautan yang tampak sah, login sungguhan di situs kita, lalu terlempar ke
  * situs palsu dalam keadaan baru saja login. Uji T4-T6 yang menjaganya, dan
  * ketiganya harus dibuktikan bisa merah sebelum dianggap ada.
@@ -21,7 +21,7 @@
  * CATATAN TEKNIS yang gampang menjebak penulis uji berikutnya: login lewat
  * AJAX membalas JSON dan TIDAK menyentuh `intended_url` sama sekali. Hanya
  * jalur non-AJAX yang memanggil `_redirect_after_login()`. Jadi uji di sini
- * sengaja TIDAK memakai header X-Requested-With — kalau dipakai, seluruh
+ * sengaja TIDAK memakai header X-Requested-With - kalau dipakai, seluruh
  * berkas ini akan hijau tanpa pernah menguji apa pun.
  */
 
@@ -74,7 +74,7 @@ function sesi($n) {
     return $GLOBALS['jar'][$n];
 }
 
-/** Balikkan badan DAN alamat akhir — yang diuji berkas ini justru alamat akhirnya. */
+/** Balikkan badan DAN alamat akhir - yang diuji berkas ini justru alamat akhirnya. */
 function http($n, $path, ?array $post = NULL) {
     $ch = curl_init(BASE_URL . '/' . ltrim($path, '/'));
     curl_setopt_array($ch, [
@@ -94,7 +94,7 @@ function http($n, $path, ?array $post = NULL) {
     return ['body' => $body, 'url' => $akhir];
 }
 
-/** Login jalur NON-AJAX — lihat catatan teknis di kepala berkas. */
+/** Login jalur NON-AJAX - lihat catatan teknis di kepala berkas. */
 function login($n, $email) {
     $b = http($n, 'Auth/login');
     $t = preg_match('/name="csrf_kpkp_token" value="([^"]+)"/', $b['body'], $m) ? $m[1] : '';
@@ -153,7 +153,7 @@ cek(strpos($masuk3['url'], 'hal=2') !== FALSE && strpos($masuk3['url'], 'urut=la
     'T3b: penyaring di query string ikut kembali (dapat: ' . $masuk3['url'] . ')');
 
 // -------------------------------------------------------------- T4-T6  KEAMANAN
-/* CATATAN HASIL MUTASI 5 Agt 2026 — dibaca sebelum "memperbaiki" uji ini.
+/* CATATAN HASIL MUTASI 5 Agt 2026 - dibaca sebelum "memperbaiki" uji ini.
  *
  * Penyaringnya BERLAPIS DUA: saat disimpan (`Auth::login()` untuk `?next=`,
  * `MY_Controller::ingat_halaman_asal()` untuk yang diturunkan server) dan saat
@@ -161,8 +161,8 @@ cek(strpos($masuk3['url'], 'hal=2') !== FALSE && strpos($masuk3['url'], 'urut=la
  *
  * Mencabut SATU lapis saja TIDAK memerahkan T4-T6, dan itu bukan cacat ujinya
  * melainkan memang maksud berlapis: lapis yang tersisa masih menahan. Yang
- * dijaga ketiga uji ini adalah SIFAT SISTEMNYA — alamat luar tidak pernah jadi
- * tujuan — bukan keberadaan satu baris kode tertentu.
+ * dijaga ketiga uji ini adalah SIFAT SISTEMNYA - alamat luar tidak pernah jadi
+ * tujuan - bukan keberadaan satu baris kode tertentu.
  *
  * Dicabut KEDUANYA, ketiganya merah, dan pendaratannya benar-benar
  * `https://jahat.example/curi`. Jadi ini bukan uji yang hijau selamanya:
@@ -187,7 +187,7 @@ foreach ($jahat as $kode => $url) {
 
    POST-nya HARUS membawa token CSRF yang sah. Tanpa itu permintaannya ditolak
    lapisan CSRF SEBELUM menyentuh gerbang, dan ujinya hijau tanpa pernah
-   menguji apa pun — persis yang terjadi pada versi pertama berkas ini.
+   menguji apa pun - persis yang terjadi pada versi pertama berkas ini.
    Prasyaratnya diperiksa eksplisit di bawah supaya kegagalan seperti itu
    ketahuan sebagai MERAH, bukan menyamar jadi lulus. */
 $awal7 = http('t7', 'Auth/login');
@@ -203,27 +203,27 @@ cek(stripos($masuk7['url'], 'cek_rtlh') === FALSE,
 /* TITIK AMATAN untuk T8 & T9: membuka `Auth/login` SAAT SUDAH LOGIN memanggil
    `_redirect_after_login()`, yang memakai lalu menghapus `intended_url`. Jadi
    apa pun yang tersimpan langsung kelihatan sebagai tujuan pendaratan.
-   Dipakai supaya keduanya tidak bergantung pada logout — logout menghancurkan
+   Dipakai supaya keduanya tidak bergantung pada logout - logout menghancurkan
    sesi, sehingga uji yang lewat sana akan hijau tanpa membuktikan apa pun. */
 
 // -------------------------------------------------------------- T8
 /* Sesudah dipakai, ingatannya HARUS terhapus. Kalau tidak, kunjungan berikutnya
    melompat ke tempat lama tanpa sebab yang bisa dijelaskan user. Sesi 't1'
-   sudah memakai tujuannya di T2 — sekarang ingatannya harus kosong. */
+   sudah memakai tujuannya di T2 - sekarang ingatannya harus kosong. */
 $lagi = http('t1', 'Auth/login');
 cek(stripos($lagi['url'], strtolower(HALAMAN)) === FALSE,
-    'T8: tujuan tidak terulang — ingatannya sekali pakai (dapat: ' . $lagi['url'] . ')');
+    'T8: tujuan tidak terulang - ingatannya sekali pakai (dapat: ' . $lagi['url'] . ')');
 
 // -------------------------------------------------------------- T9
 /* Sudah login tapi salah peran: asalnya TIDAK boleh diingat. Kalau diingat,
-   sesudah login ulang ia dilempar ke sana lagi lalu ditolak lagi — berputar. */
+   sesudah login ulang ia dilempar ke sana lagi lalu ditolak lagi - berputar. */
 $masuk9 = login('t9', $email);                       // mahasiswa, tanpa terpental dulu
 wajib(stripos($masuk9['url'], 'auth/login') === FALSE, 'T9 prasyarat: login mahasiswa berhasil');
 $tolak9 = http('t9', 'Admin_Aduan');                 // layar superadmin -> ditolak
 wajib(stripos($tolak9['url'], 'admin_aduan') === FALSE, 'T9 prasyarat: Admin_Aduan memang menolak mahasiswa');
 $amat9 = http('t9', 'Auth/login');
 cek(stripos($amat9['url'], 'admin_aduan') === FALSE,
-    'T9: penolakan PERAN tidak diingat sebagai tujuan — tidak berputar (dapat: ' . $amat9['url'] . ')');
+    'T9: penolakan PERAN tidak diingat sebagai tujuan - tidak berputar (dapat: ' . $amat9['url'] . ')');
 
 // -------------------------------------------------------------- Sumber
 /* Penjaga bentuk: alamat tujuan HARUS diturunkan dari server, tidak pernah
@@ -236,11 +236,11 @@ cek($fn !== '', 'Sumber: ingat_halaman_asal() ketemu');
 cek(strpos($fn, 'uri_string()') !== FALSE,
     'Sumber: tujuan diturunkan dari uri_string() (server), bukan dari request');
 cek( ! preg_match('/input->get|\$_GET/', $fn),
-    'Sumber: nol pembacaan query param sebagai TUJUAN — itu pintu open redirect');
+    'Sumber: nol pembacaan query param sebagai TUJUAN - itu pintu open redirect');
 cek(strpos($fn, 'sanitize_redirect') !== FALSE,
     'Sumber: tetap dilewatkan sanitize_redirect() meski sumbernya server');
 cek(preg_match("/is_logged'\)\)\s*\{\s*\n\s*return/", $fn) === 1,
-    'Sumber: yang SUDAH login tidak diingat asalnya — pencegah putaran');
+    'Sumber: yang SUDAH login tidak diingat asalnya - pencegah putaran');
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);

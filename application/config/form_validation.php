@@ -8,7 +8,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |
 | Mekanisme bawaan CI3: `$this->form_validation->run('nama_grup')` membaca
 | grup dari berkas ini. Dipakai supaya satu aturan tidak ditulis dua kali di
-| dua controller — aturan kembar adalah aturan yang cepat atau lambat
+| dua controller - aturan kembar adalah aturan yang cepat atau lambat
 | berselisih, dan yang longgar selalu yang menang.
 |
 */
@@ -19,12 +19,12 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * Dipakai `KemitraanPortal::simpan()` (mahasiswa mendaftar) DAN
  * `Admin_Kemitraan::simpan_ubah()` (superadmin menyunting baris yang sudah
  * ada). Keduanya menulis ke kolom yang sama, jadi keduanya harus tunduk pada
- * batasan yang sama — admin boleh melampaui KUOTA, tapi tidak boleh menyimpan
+ * batasan yang sama - admin boleh melampaui KUOTA, tapi tidak boleh menyimpan
  * semester 99 atau NIK berisi tanda baca.
  *
  * Kolom-kolom ini NULL di skema demi baris lama yang tidak pernah ditanyai
  * (lihat migrasi 20260701000025), jadi kewajiban isinya memang harus hidup di
- * sini — bukan di DB.
+ * sini - bukan di DB.
  */
 $config['kemitraan_pendaftaran'] = [
     ['field' => 'nim',              'label' => 'NIM',              'rules' => 'required|trim|alpha_numeric_spaces|max_length[30]'],

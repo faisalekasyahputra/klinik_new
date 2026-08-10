@@ -2,24 +2,24 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Cek RTLH — apakah satu NIK terdaftar di data Rumah Tidak Layak Huni SIMPERUM.
+ * Cek RTLH - apakah satu NIK terdaftar di data Rumah Tidak Layak Huni SIMPERUM.
  *
  * Revisi dinas 3 Agt 2026, butir 11.
  *
- * WAJIB LOGIN, dan gerbangnya di konstruktor — bukan sekadar tautannya
+ * WAJIB LOGIN, dan gerbangnya di konstruktor - bukan sekadar tautannya
  * disembunyikan. Dua alasan, dan yang kedua yang menentukan:
  *
  * 1. Ini data yang menandai KEMISKINAN. "NIK X terdaftar RTLH" adalah kalimat
  *    tentang keadaan rumah seseorang, dan bukan miliknya yang bertanya.
  * 2. Repo ini SUDAH punya aturan itu, dan aturan itu terlihat disengaja:
  *    `Program::api_cek_simperum()` publik, tetapi begitu `simperum_mode`
- *    bernilai `api` ia menolak dengan 409 — "Pencarian SIMPERUM nyata hanya
- *    tersedia melalui Wizard Baru Warga" — dan wizard itu mensyaratkan login.
+ *    bernilai `api` ia menolak dengan 409 - "Pencarian SIMPERUM nyata hanya
+ *    tersedia melalui Wizard Baru Warga" - dan wizard itu mensyaratkan login.
  *    Membangun layar publik yang memanggil API yang sama berarti membatalkan
  *    kontrol itu lewat pintu baru.
  *
  * ⚠️ NIK + TANGGAL LAHIR BUKAN DUA RAHASIA. Tanggal lahir TERKANDUNG di dalam
- * NIK (digit 7–12, ddmmyy, +40 pada hari untuk perempuan) — dan
+ * NIK (digit 7-12, ddmmyy, +40 pada hari untuk perempuan) - dan
  * `Simperum_gateway::birth_date_matches()` memang menghitungnya dari situ saat
  * sumbernya tidak memuat tanggal lahir. Jadi meminta keduanya menambah NOL
  * entropi terhadap orang yang sudah memegang NIK-nya; ia berguna sebagai
@@ -82,7 +82,7 @@ class Cek_Rtlh extends MY_Controller {
          * `$requested_by` sengaja NULL, BUKAN id pengguna.
          *
          * Mengisinya membuat `lookup()` memanggil `save_profile()` dan MENIMPA
-         * profil pendataan warga orang itu dengan data NIK yang barusan dicari —
+         * profil pendataan warga orang itu dengan data NIK yang barusan dicari -
          * termasuk kalau yang dicari NIK orang lain. Cek cepat tidak boleh punya
          * efek samping pada data pengajuan; wizard `Warga::pendataan()` yang
          * memang berwenang menulis ke sana.
@@ -101,7 +101,7 @@ class Cek_Rtlh extends MY_Controller {
            memutus entri lama dari entri baru. Yang berubah cuma kalimat yang
            dibaca manusia. */
         $this->catat_audit('rtlh_dicek',
-            'Cek Data Rumah untuk NIK berakhiran ' . substr($nik, -4) . ' — hasil: ' . $hasil['status'],
+            'Cek Data Rumah untuk NIK berakhiran ' . substr($nik, -4) . ' - hasil: ' . $hasil['status'],
             'simperum', NULL, ['status' => $hasil['status'], 'mode' => $hasil['source_mode'] ?? NULL]);
 
         redirect('Cek_Rtlh');

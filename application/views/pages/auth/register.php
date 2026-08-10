@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token-name" content="<?= $this->security->get_csrf_token_name(); ?>">
     <meta name="csrf-token-hash" content="<?= $this->security->get_csrf_hash(); ?>">
-    <title>Daftar Akun — Klinik PKP</title>
+    <title>Daftar Akun - Klinik PKP</title>
     <meta name="description" content="Buat akun baru untuk mengakses portal layanan perumahan dan kawasan permukiman terpadu.">
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
@@ -38,7 +38,7 @@
             </h1>
             <p class="auth-left__desc">
                 Daftarkan diri Anda untuk mendapatkan akses ke seluruh
-                layanan perumahan digital — informasi, aduan, dan data
+                layanan perumahan digital - informasi, aduan, dan data
                 pembangunan kawasan permukiman.
             </p>
             <div class="auth-left__badge">
@@ -98,7 +98,7 @@
                     <div class="auth-strength__bar"></div>
                     <div class="auth-strength__bar"></div>
                 </div>
-                <div class="auth-strength-label" id="strengthLabel" style="color:var(--auth-gray-400);">—</div>
+                <div class="auth-strength-label" id="strengthLabel" style="color:var(--auth-gray-400);">-</div>
 
                 <!-- Password Rules -->
                 <ul class="auth-rules" id="passwordRules">
@@ -196,7 +196,7 @@ function checkPasswordStrength(pw) {
 
     const labels = ['', 'Lemah', 'Sedang', 'Kuat', 'Sangat Kuat'];
     const colors = ['', 'var(--auth-red)', '#f97316', 'var(--auth-amber)', 'var(--auth-green)'];
-    label.textContent = pw.length === 0 ? '—' : labels[level];
+    label.textContent = pw.length === 0 ? '-' : labels[level];
     label.style.color = pw.length === 0 ? 'var(--auth-gray-400)' : colors[level];
 }
 

@@ -9,7 +9,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * otomatis oleh Admin_Srp2::proses() saat status diubah jadi Diterima.
  *
  * FK ke srp2_certified_developers.id (INT UNSIGNED, PK tabel itu sendiri,
- * BUKAN usr_users.id) — jadi tidak kena aturan "harus signed" di
+ * BUKAN usr_users.id) - jadi tidak kena aturan "harus signed" di
  * migrasi 20260701000011/12, keduanya sama-sama unsigned, aman.
  */
 class Migration_Add_srp2_certified_developer_link extends CI_Migration {

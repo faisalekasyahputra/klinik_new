@@ -33,13 +33,13 @@ $mode = $argv[1] ?? 'portal';
 if ($mode === 'admin') {
     // BUKAN cuma views/admin. Tiga view di luar direktori itu juga dirender
     // lewat render_user_dashboard()/render_scoped_admin(), artinya mereka
-    // memakai shell admin dan memuat tailwind-admin.css — tapi kelasnya tidak
+    // memakai shell admin dan memuat tailwind-admin.css - tapi kelasnya tidak
     // pernah ikut terpanen ke sana. Akibatnya `sm:grid-cols-2` dan `md:p-8` di
     // pages/pengaturan/profil.php tidak ada di CSS statis mana pun, dan
     // halaman itu selalu cat-pertama telanjang sampai CDN menyusul.
     //
     // Panen portal juga menyapu views/pages, tapi keluarannya
-    // tailwind-generated.css — berkas yang TIDAK dimuat shell admin. Jadi
+    // tailwind-generated.css - berkas yang TIDAK dimuat shell admin. Jadi
     // "sudah terpanen di portal" bukan jawaban untuk halaman ini.
     //
     // Daftar ini diturunkan dari pemanggil sungguhan:
@@ -106,12 +106,12 @@ foreach ($chunks as $chunk) {
 
 file_put_contents($root . '/uji_harvest_receiver.php', <<<PHP
 <?php
-// Receiver sementara panen tailwind — HAPUS setelah panen selesai.
+// Receiver sementara panen tailwind - HAPUS setelah panen selesai.
 if (!in_array(\$_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], TRUE)) { http_response_code(403); exit; }
 if ((\$_SERVER['HTTP_X_HARVEST_TOKEN'] ?? '') !== '$token_auth') { http_response_code(403); exit; }
 \$css = file_get_contents('php://input');
 if (strlen(\$css) < 1000) { http_response_code(422); exit('css terlalu kecil'); }
-\$n = file_put_contents(__DIR__ . '/assets/css/$out_css', "/* Hasil panen kelas view ($mode) — regenerasi: php docs/engineering/panen_tailwind.php $mode */\\n" . \$css, LOCK_EX);
+\$n = file_put_contents(__DIR__ . '/assets/css/$out_css', "/* Hasil panen kelas view ($mode) - regenerasi: php docs/engineering/panen_tailwind.php $mode */\\n" . \$css, LOCK_EX);
 header('Content-Type: application/json');
 echo json_encode(['written' => \$n]);
 PHP

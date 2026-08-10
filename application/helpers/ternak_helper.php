@@ -37,11 +37,11 @@ if ( ! function_exists('format_tanggal_api')) {
 }
 
 /**
- * Avatar inisial sebagai data URI SVG — tanpa permintaan jaringan.
+ * Avatar inisial sebagai data URI SVG - tanpa permintaan jaringan.
  *
  * Menggantikan `https://ui-avatars.com/api/?name=...`, yang mengirim NAMA ASLI
  * pengguna ke server pihak ketiga pada SETIAP pemuatan halaman, untuk setiap
- * peran yang login — bersama IP dan referer-nya. Di portal dinas, itu berarti
+ * peran yang login - bersama IP dan referer-nya. Di portal dinas, itu berarti
  * nama warga, pengembang, mahasiswa, dan admin mengalir ke luar terus-menerus
  * untuk sesuatu yang hasilnya hanya dua huruf di atas kotak berwarna.
  *
@@ -78,7 +78,7 @@ if ( ! function_exists('avatar_inisial')) {
 /**
  * Tanggal berbahasa Indonesia.
  *
- * `date('j F Y')` mengeluarkan "2 August 2026" — nama bulan Inggris di tengah
+ * `date('j F Y')` mengeluarkan "2 August 2026" - nama bulan Inggris di tengah
  * layar berbahasa Indonesia. Ketahuan 2 Agt 2026 waktu halaman pendaftaran
  * mahasiswa dibuka di browser; tidak akan pernah tertangkap harness HTTP,
  * karena responsnya 200 dan isinya "benar" bagi mesin.

@@ -7,7 +7,7 @@
  * bidang ini masih menerima atau tidak. Sekarang jawabannya yang ditampilkan,
  * bulan-bulannya jadi keterangan.
  *
- * Aturan kuotanya TIDAK berubah — `KemitraanPortal::periksa_slot()` tetap
+ * Aturan kuotanya TIDAK berubah - `KemitraanPortal::periksa_slot()` tetap
  * menolak per bulan dan per hari saat mendaftar. Halaman ini ringkasan, bukan
  * sumber kebenaran; karena itu keterangan bulan tetap ditampilkan supaya
  * pendaftar tahu periode mana yang masuk akal sebelum ditolak formulir.
@@ -56,7 +56,7 @@ $kartu = 'rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(-
             <?php
             // Tiga keadaan, bukan dua. "Belum dibuka" berbeda dari "terpenuhi":
             // yang satu belum pernah ditawarkan tahun ini, yang lain sudah habis
-            // diambil — dan pembaca menyusun rencananya dari beda itu.
+            // diambil - dan pembaca menyusun rencananya dari beda itu.
             $gaya = [
                 'menerima'  => ['bg-emerald-500/10 text-emerald-700', 'Masih menerima'],
                 'terpenuhi' => ['bg-amber-500/10 text-amber-700',     'Sudah terpenuhi'],
@@ -73,12 +73,12 @@ $kartu = 'rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(-
                         <?php endif; ?>
                     </p>
                     <?php
-                    /* Butir F1 — posisi yang dicari, DI DALAM bidang. Dinas
+                    /* Butir F1 - posisi yang dicari, DI DALAM bidang. Dinas
                        memintanya karena "nama bidang" tidak memberi tahu
                        mahasiswa keahlian apa yang sebenarnya dibutuhkan.
 
                        Kalau dinas belum mengisi daftarnya, blok ini tidak
-                       muncul dan kartunya kembali seperti semula — TIDAK ada
+                       muncul dan kartunya kembali seperti semula - TIDAK ada
                        daftar karangan sebagai pengisi sementara. */
                     ?>
                     <?php if ( ! empty($b['posisi'])): ?>
@@ -109,7 +109,7 @@ $kartu = 'rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(-
 
                    BUTIR 24 IKUT DITERAPKAN DI SINI: tombolnya menuntut login,
                    dan itu DIKATAKAN SEBELUM diklik. Sebelumnya halaman ini
-                   publik sementara tombol daftarnya dinding login — persis pola
+                   publik sementara tombol daftarnya dinding login - persis pola
                    yang membuat orang mengira fiturnya rusak (butir 18). */
                 $sudah_masuk = (bool) $this->session->userdata('is_logged');
                 ?>

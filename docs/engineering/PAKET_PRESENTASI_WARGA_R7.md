@@ -31,7 +31,7 @@ foto KTP, KK, rumah, atau lokasi warga sungguhan dalam rekaman presentasi.
 
 1. Masuk sebagai warga dan buka `/warga/pendataan`.
    Tunjukkan label persisten
-   **“Mode Simulasi — API SIMPERUM belum terhubung”** sebelum lookup.
+   **“Mode Simulasi - API SIMPERUM belum terhubung”** sebelum lookup.
 2. Lookup SIM-01. Tunjukkan nilai hasil sumber dan penanda koreksi warga.
    Jelaskan bahwa desil berasal dari sumber dan tidak dihitung ulang dari
    penghasilan.
@@ -55,7 +55,7 @@ foto KTP, KK, rumah, atau lokasi warga sungguhan dalam rekaman presentasi.
 9. Admin membuka antrean `pending` yang sama dan menyetujui. `/akun` warga harus
    menampilkan **Disetujui** tanpa aksi revisi.
 
-Target durasi walkthrough utama: 8–10 menit. SIM-02 dan SIM-03 cukup sebagai
+Target durasi walkthrough utama: 8-10 menit. SIM-02 dan SIM-03 cukup sebagai
 walkthrough singkat terpisah; jangan mengulang seluruh siklus admin.
 
 ## Shot list acceptance desktop dan mobile
@@ -85,7 +85,7 @@ C:\xampp\php\php.exe docs\engineering\uji_keamanan_warga_r7.php
 ```
 
 `uji_warga_fresh_r7.php` membuat DB sementara dari baseline, memigrasikan sampai
-versi terbaru, menjalankan rangkaian R1–R6 termasuk perjalanan revisi, kemudian
+versi terbaru, menjalankan rangkaian R1-R6 termasuk perjalanan revisi, kemudian
 memulihkan `.env` dan menghapus DB sementara. Pastikan ringkasan akhirnya
 `HIJAU` dan kedua cleanup `OK`.
 

@@ -1,11 +1,11 @@
 <?php
 /**
- * Daftar bidang penerima magang — satu baris per bidang.
+ * Daftar bidang penerima magang - satu baris per bidang.
  *
  * Daftarnya TIDAK bisa ditambah atau dihapus dari sini: lima bidang itu
  * struktur organisasi dinas (dikonfirmasi 1 Agt 2026), bukan data milik modul
  * magang. Yang bisa diatur cuma kuota, aktif/nonaktif, dan bulan mana yang
- * dibuka — dan ketiganya ada di layar detail.
+ * dibuka - dan ketiganya ada di layar detail.
  */
 ?>
 <?php $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => 'slot']); ?>
@@ -96,6 +96,6 @@
 
 <p class="mt-6 text-xs text-gray-500 dark:text-brand-muted">
     Daftar bidang mengikuti struktur dinas dan tidak diubah dari layar ini.
-    Kalau ada bidang baru atau berganti nama, itu perubahan struktur — ubah lewat
+    Kalau ada bidang baru atau berganti nama, itu perubahan struktur - ubah lewat
     tabel <code>bidang</code>, karena modul aduan juga memakainya.
 </p>

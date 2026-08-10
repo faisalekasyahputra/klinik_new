@@ -4,12 +4,12 @@
 
 This plan creates a single Notion page that holds a **Superpowers-style `SKILL.md`** for AI coding agents. The skill teaches any agent to systematically *research an existing website's visual design*, extract every styling detail, and emit a **portable design-system artifact set** (design tokens + CSS variables + Tailwind config + a component inventory). The goal: any developer working with AI on the codebase opens this one document, follows the same procedure, and produces a **consistent, modular redesign** instead of ad-hoc styling.
 
-The document is written in **English** (the standard for AI skill files) and structured exactly like a Superpowers skill: **YAML frontmatter** (`name`, `description`, `when_to_use`, `version`) followed by a body of phased instructions. It deliberately plugs into the Superpowers development path — **brainstorm → write-plan → execute-plan** — so the skill is invoked at the *research/brainstorm* stage and hands a clean spec to the planning stage.
+The document is written in **English** (the standard for AI skill files) and structured exactly like a Superpowers skill: **YAML frontmatter** (`name`, `description`, `when_to_use`, `version`) followed by a body of phased instructions. It deliberately plugs into the Superpowers development path - **brainstorm → write-plan → execute-plan** - so the skill is invoked at the *research/brainstorm* stage and hands a clean spec to the planning stage.
 
 <aside>
 🎯
 
-Key outcome: a repeatable workflow where the AI audits a site, captures **colors, typography, spacing, radii, shadows, breakpoints, and component patterns**, normalizes them into tokens, and outputs Tailwind + CSS-variable files plus a component inventory — all formatted so the next agent can rebuild the UI modularly.
+Key outcome: a repeatable workflow where the AI audits a site, captures **colors, typography, spacing, radii, shadows, breakpoints, and component patterns**, normalizes them into tokens, and outputs Tailwind + CSS-variable files plus a component inventory - all formatted so the next agent can rebuild the UI modularly.
 
 </aside>
 
@@ -20,7 +20,7 @@ The page will be rendered as a Notion doc but its core content is the raw `SKILL
 **Confirmed by the user:**
 
 - **Language:** English (standard for AI skill files)
-- **Format:** Superpowers `SKILL.md` style — YAML frontmatter + structured body
+- **Format:** Superpowers `SKILL.md` style - YAML frontmatter + structured body
 - **Required outputs from the skill:** *all* of the following
     - Design tokens (colors, typography, spacing, etc.)
     - Tailwind config / CSS variables
@@ -66,7 +66,7 @@ version: 1.0.0
 
 Naming follows Superpowers conventions (lowercase, hyphenated). `when_to_use` is written so the skill **auto-activates** on relevant tasks.
 
-### Step 3: Phase 1 — Design Audit & Capture
+### Step 3: Phase 1 - Design Audit & Capture
 
 Body section instructing the agent to systematically inventory the existing site before touching code:
 
@@ -86,11 +86,11 @@ Body section instructing the agent to systematically inventory the existing site
 <aside>
 📸
 
-Capture **raw observed values first** — normalization happens in Phase 2. Do not invent values that don't exist on the site.
+Capture **raw observed values first** - normalization happens in Phase 2. Do not invent values that don't exist on the site.
 
 </aside>
 
-### Step 4: Phase 2 — Normalize into Design Tokens
+### Step 4: Phase 2 - Normalize into Design Tokens
 
 Instructions to deduplicate and structure the raw values into a canonical token set:
 
@@ -114,7 +114,7 @@ Tokens are the single source of truth. Everything downstream (CSS vars, Tailwind
 
 </aside>
 
-### Step 5: Phase 3 — Emit CSS Variables & Tailwind Config
+### Step 5: Phase 3 - Emit CSS Variables & Tailwind Config
 
 Instructions to generate both consumable artifacts from the token set:
 
@@ -143,7 +143,7 @@ module.exports = {
 - Tailwind values **reference the CSS variables** so theming stays in one place
 - Include a checklist to verify every token maps to both outputs
 
-### Step 6: Phase 4 — Component Inventory
+### Step 6: Phase 4 - Component Inventory
 
 Instructions to catalog every reusable UI piece and bind it to tokens, enabling modular rebuilds:
 
@@ -152,12 +152,12 @@ Instructions to catalog every reusable UI piece and bind it to tokens, enabling 
 | Component | Variants | Tokens used | States |
 | --- | --- | --- | --- |
 | Button | primary, secondary, ghost | brand, radius-md, space-2/3 | hover, focus, disabled |
-| Card | default, elevated | bg-subtle, radius-md, shadow-sm | — |
+| Card | default, elevated | bg-subtle, radius-md, shadow-sm | - |
 | Input | text, error | border, radius, space | focus, error |
 - For each component, note **structure, props/variants, and accessibility** notes
 - Flag duplicated/inconsistent components to **consolidate** during redesign
 
-### Step 7: Phase 5 — Handoff & Consistency Rules
+### Step 7: Phase 5 - Handoff & Consistency Rules
 
 Close the skill with the integration + guardrails that keep every AI editor consistent:
 
@@ -171,7 +171,7 @@ brainstorm → [THIS SKILL: research + tokens] → write-plan → execute-plan
 
 **Consistency rules (the contract every AI must follow):**
 
-- [ ]  Never hardcode a style value — always reference a token
+- [ ]  Never hardcode a style value - always reference a token
 - [ ]  New values must be added to tokens *first*, then propagated
 - [ ]  Keep primitive → semantic → component token tiers intact
 - [ ]  Re-run the audit when new pages/components appear
@@ -179,7 +179,7 @@ brainstorm → [THIS SKILL: research + tokens] → write-plan → execute-plan
 <aside>
 🔁
 
-Any agent editing this codebase reads this skill, reuses the token set, and follows the same path — guaranteeing a modular, consistent redesign.
+Any agent editing this codebase reads this skill, reuses the token set, and follows the same path - guaranteeing a modular, consistent redesign.
 
 </aside>
 

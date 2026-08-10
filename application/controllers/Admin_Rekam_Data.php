@@ -2,26 +2,26 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Pantau Rekam Data — pandangan superadmin lintas kabupaten & lintas domain.
+ * Pantau Rekam Data - pandangan superadmin lintas kabupaten & lintas domain.
  *
  * LAHIR DARI KLAIM YANG TIDAK COCOK DENGAN KODE. Dinas menulis "belum ada
  * rekap/submit" (revisi 3 Agt 2026, butir 10). Kenyataannya wizard lima
  * langkah, `kirim()`, capaian, `/Rekam_Perumahan/rekap`, riwayat, dan
  * peninjauan bidang SEMUANYA sudah ada sejak rilis 30 Jul. Yang tidak ada
- * adalah **layar rekam data untuk superadmin** — dan superadmin yang dipakai
+ * adalah **layar rekam data untuk superadmin** - dan superadmin yang dipakai
  * reviewer dinas. Dari kursi itu, fitur yang lengkap memang tidak terlihat
  * sama sekali.
  *
  * READ-ONLY, dan itu bukan sekadar "tidak ada tombol": nol endpoint tulis di
  * kelas ini. Keputusan terima/minta-perbaikan tetap kewenangan Admin Bidang
  * (`Rekam_Tinjauan`). Jalur tulis kedua ke keputusan yang sama adalah cara
- * paling rapi untuk menimpa keputusan orang tanpa jejak — bandingkan alasan
+ * paling rapi untuk menimpa keputusan orang tanpa jejak - bandingkan alasan
  * yang sama di `Admin_Aduan`.
  *
  * YANG MEMBEDAKANNYA DARI LAYAR YANG SUDAH ADA: papan ini bertolak dari
  * DAFTAR KABUPATEN, bukan dari daftar laporan. Semua layar rekam data lain
  * membaca `rd_laporan`, jadi tidak satu pun bisa menampilkan kabupaten yang
- * belum melapor — mereka tidak punya baris. Padahal "siapa yang belum" persis
+ * belum melapor - mereka tidak punya baris. Padahal "siapa yang belum" persis
  * pertanyaan yang dibawa dinas.
  */
 class Admin_Rekam_Data extends Admin_Controller {
@@ -71,7 +71,7 @@ class Admin_Rekam_Data extends Admin_Controller {
             'domain'    => self::DOMAIN,
             'baris'     => $baris,
             'ringkas'   => $ringkas,
-            // Rentang tahun dari DATA, bukan dari daftar yang ditulis di view —
+            // Rentang tahun dari DATA, bukan dari daftar yang ditulis di view -
             // daftar tahun yang dipatok akan basi tanpa ada yang menyadarinya.
             'tahun_ada' => array_column(
                 $this->db->select('DISTINCT tahun', FALSE)->order_by('tahun', 'DESC')
@@ -81,7 +81,7 @@ class Admin_Rekam_Data extends Admin_Controller {
 
     /**
      * Detail satu laporan, read-only. Memakai view yang SAMA dengan peninjauan
-     * bidang — `boleh_putuskan` FALSE mematikan blok keputusannya.
+     * bidang - `boleh_putuskan` FALSE mematikan blok keputusannya.
      *
      * Tidak ada gerbang domain di sini (bandingkan `Rekam_Tinjauan` yang
      * mengunci bidang): superadmin memang berwenang lintas domain. Gerbangnya
@@ -94,10 +94,10 @@ class Admin_Rekam_Data extends Admin_Controller {
 
         $laporan = $isi['laporan'];
         $kabupaten = $this->db->where('id', (int) $laporan['kabupaten_id'])
-            ->get('kabupaten')->row('nama') ?: '—';
+            ->get('kabupaten')->row('nama') ?: '-';
 
         $this->render_admin('admin/rekam/tinjauan_detail', [
-            'title'          => 'Laporan ' . ucfirst($laporan['domain']) . ' — ' . $kabupaten,
+            'title'          => 'Laporan ' . ucfirst($laporan['domain']) . ' - ' . $kabupaten,
             'domain'         => $laporan['domain'],
             'kabupaten'      => $kabupaten,
             'isi'            => $isi,

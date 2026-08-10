@@ -1,4 +1,4 @@
-# Rekam Data — Perumahan: bentuk sebelum wizard
+# Rekam Data - Perumahan: bentuk sebelum wizard
 
 **Ditulis 30 Juli 2026, sebelum pembangunan ulang mengikuti `new_flow/rekamdata/`.**
 
@@ -7,7 +7,7 @@ dengan alasan tiap keputusan. Gunanya satu: begitu migrasi membalik kunci,
 bentuk lama tidak bisa lagi dibaca dari kode, dan aturan yang mahal ditemukan
 akan ikut hilang kalau tidak ditulis sekarang.
 
-Bagian §4 adalah yang paling berguna untuk pekerjaan berikutnya — pemetaan
+Bagian §4 adalah yang paling berguna untuk pekerjaan berikutnya - pemetaan
 eksplisit mana yang **ikut pindah**, mana yang **diganti**, dan mana yang
 **berisiko hilang tanpa disadari**.
 
@@ -20,11 +20,11 @@ Dibangun dari **Google Form dinas**, bukan dari `new_flow/rekamdata/`:
 | | |
 |---|---|
 | Judul form | *Realisasi Penanganan Backlog Perumahan (Kepemilikan dan Kelayakan) Kabupaten/Kota di Jawa Tengah 2026* |
-| Field pertama | "Data Kumulatif Sampai Dengan **Bulan**" — dropdown 12 bulan |
+| Field pertama | "Data Kumulatif Sampai Dengan **Bulan**" - dropdown 12 bulan |
 | Struktur | 21 halaman, 150 pertanyaan, **149 wajib** |
 | Percabangan | per **sumber dana**: "Ada" → halaman isian, "Tidak Ada" → gerbang berikutnya |
 | Halaman terakhir | unggah **BNBA** (By Name By Address), satu-satunya field opsional |
-| Rencana | **tidak ada sama sekali** — kata "Realisasi" ada di judulnya |
+| Rencana | **tidak ada sama sekali** - kata "Realisasi" ada di judulnya |
 
 Ekstraksi mentahnya: [`STRUKTUR_FORM_SUMBER_REKAM_DATA.md`](STRUKTUR_FORM_SUMBER_REKAM_DATA.md).
 
@@ -74,7 +74,7 @@ ditambahkan 30 Jul dari sketsa user (migrasi `…023`).
 **6 program**: `pk_rtlh`, `pb_rtlh`, `pb_backlog`, `pk_bencana`, `pb_bencana`,
 `pb_relokasi`.
 
-**3 sumber berketerangan**: `apbn_kl_lain`, `csr`, `dana_lainnya` — di form
+**3 sumber berketerangan**: `apbn_kl_lain`, `csr`, `dana_lainnya` - di form
 aslinya bernama beda (Kementerian Sumber / Perusahaan CSR / Sumber Anggaran
 Dana Lainnya) tetapi sama peran, jadi disatukan ke satu kolom.
 
@@ -82,7 +82,7 @@ Dana Lainnya) tetapi sama peran, jadi disatukan ke satu kolom.
 
 `rd_perumahan_baris` menunjuk `rd_perumahan_bagian`, **bukan** `rd_laporan`.
 Akibatnya angka hanya boleh ada kalau sumber dananya sudah dinyatakan "Ada",
-dan membatalkan centang sumber dana **menyapu angkanya lewat CASCADE** — bukan
+dan membatalkan centang sumber dana **menyapu angkanya lewat CASCADE** - bukan
 lewat JavaScript, bukan lewat pembersihan terjadwal. Ini yang membuat "nihil"
 dan "belum diisi" tidak pernah tertukar di rekap.
 
@@ -97,12 +97,12 @@ menyentuh tabel `rd_*` langsung.
 
 | Kode gagal | Aturan |
 |---|---|
-| `periode_invalid` | tahun 2020–2100, bulan 1–12, kabupaten ≥ 1 |
+| `periode_invalid` | tahun 2020-2100, bulan 1-12, kabupaten ≥ 1 |
 | `sumber_invalid` / `program_invalid` | hanya nilai dari konstanta model |
 | `bagian_belum_ada` | angka ditolak bila sumber dananya belum dinyatakan "Ada" |
 | `angka_invalid` | unit & anggaran wajib bulat tidak negatif |
 | **`unit_kosong`** | **anggaran > 0 tetapi unit = 0 ditolak** |
-| `luar_scope` | laporan di luar kabupaten pemanggil tidak ditemukan — gerbang, bukan penyaring tampilan |
+| `luar_scope` | laporan di luar kabupaten pemanggil tidak ditemukan - gerbang, bukan penyaring tampilan |
 | `transisi_invalid` | hanya transisi yang terdaftar |
 | `catatan_wajib` | minta perbaikan tanpa catatan ditolak |
 | `belum_lengkap` | kirim ditolak bila masih ada sumber dana belum dijawab |
@@ -114,7 +114,7 @@ draft ──kirim──> terkirim ──minta_perbaikan──> perlu_perbaikan �
                      └──terima──> (selesai)
 ```
 
-`STATUS_TERBUKA = [draft, perlu_perbaikan]` — hanya keduanya bisa ditulis.
+`STATUS_TERBUKA = [draft, perlu_perbaikan]` - hanya keduanya bisa ditulis.
 `terkirim` terkunci sampai peninjau mengembalikannya.
 
 ### Dua aturan yang paling mudah dilanggar ulang
@@ -123,12 +123,12 @@ draft ──kirim──> terkirim ──minta_perbaikan──> perlu_perbaikan �
    melipatgandakan capaian. Rekap SELALU menyebut periodenya eksplisit dan
    tidak pernah menggabungkan dua periode.
 2. **Nol tabel nol.** Rekap tidak merender tabel berisi nol saat tidak ada
-   laporan terkirim; sumber tanpa baris ditampilkan `—`, bukan `0`. Nol yang
+   laporan terkirim; sumber tanpa baris ditampilkan `-`, bukan `0`. Nol yang
    dikarang tidak bisa dibedakan dari nol yang benar-benar dilaporkan.
 
 ### Pewarisan antar periode
 
-`warisi()` — draft baru menyalin isi laporan **`terkirim` terakhir pada tahun
+`warisi()` - draft baru menyalin isi laporan **`terkirim` terakhir pada tahun
 yang sama dengan bulan lebih kecil**. Alasannya angkanya kumulatif: mengetik
 ulang dari nol tiap bulan membuat capaian menyusut. Layar menampilkan berapa
 baris yang diwarisi supaya pewarisan itu terlihat, bukan diam-diam.
@@ -137,7 +137,7 @@ baris yang diwarisi supaya pewarisan itu terlihat, bukan diam-diam.
 
 ## 4. Pemetaan ke wizard baru
 
-### Ikut pindah — jangan dibangun ulang dari nol
+### Ikut pindah - jangan dibangun ulang dari nol
 
 | Hal | Catatan |
 |---|---|
@@ -146,8 +146,8 @@ baris yang diwarisi supaya pewarisan itu terlihat, bukan diam-diam.
 | Siklus draft → terkirim → perlu_perbaikan | frame 003 memajang "Status: Draft", jadi memang dipakai |
 | Scope kabupaten dari sesi sebagai **gerbang** | tidak ada dropdown wilayah di layar mana pun |
 | `unit_kosong` | anggaran tanpa unit tetap tidak masuk akal di bentuk apa pun |
-| Larangan `SUM()` antar periode | **makin penting** — lihat catatan kumulatif di bawah |
-| Keadaan kosong yang jujur (`—` bukan `0`) | |
+| Larangan `SUM()` antar periode | **makin penting** - lihat catatan kumulatif di bawah |
+| Keadaan kosong yang jujur (`-` bukan `0`) | |
 | `rd_laporan`, `rd_perumahan_bnba` | tidak berubah bentuk |
 | Peninjauan bidang (`Rekam_Tinjauan`) | bekerja di level laporan, bukan baris |
 
@@ -155,7 +155,7 @@ baris yang diwarisi supaya pewarisan itu terlihat, bukan diam-diam.
 
 | Sekarang | Menjadi |
 |---|---|
-| `bulan` 1–12 kumulatif | **triwulan** 1–4, disimpan **per triwulan**, kumulatif dihitung saat tampil |
+| `bulan` 1-12 kumulatif | **triwulan** 1-4, disimpan **per triwulan**, kumulatif dihitung saat tampil |
 | Gerbang per sumber dana (12 Ada/Tidak Ada) | gerbang per **program** (6 checkbox) |
 | `rd_perumahan_bagian (laporan_id, sumber_dana)` | `(laporan_id, program)` |
 | `rd_perumahan_baris` FK ke bagian lewat `sumber_dana` | lewat `program` |
@@ -163,18 +163,18 @@ baris yang diwarisi supaya pewarisan itu terlihat, bukan diam-diam.
 | Matriks tetap 12×6 di layar isian | daftar sumber dana yang **ditambah** per program, tiap baris bisa di-Edit |
 | Satu tabel Realisasi di layar Capaian | dua tabel: RENCANA dan REALISASI |
 
-### Berisiko hilang tanpa disadari — periksa ketiganya sesudah wizard jadi
+### Berisiko hilang tanpa disadari - periksa ketiganya sesudah wizard jadi
 
 1. **BNBA.** Ada di Google Form dan sudah terbangun, tetapi **tidak muncul di
    satu pun dari 9 frame rancangan**. Kalau wizard dibangun hanya dari frame,
    unggahan BNBA hilang dan dinas kehilangan daftar penerima by-name-by-address.
 2. **Pewarisan antar periode.** Masuk akal ketika angkanya kumulatif. Begitu
    penyimpanan jadi **per triwulan**, mewarisi angka triwulan lalu justru
-   **salah** — itu akan menggandakan capaian. `warisi()` harus dicabut untuk
+   **salah** - itu akan menggandakan capaian. `warisi()` harus dicabut untuk
    perumahan, bukan sekadar dibiarkan.
 3. **Arti "kumulatif".** Keputusan 30 Jul: **simpan per triwulan, tampilkan
    kumulatif**. Dari per-triwulan kumulatif selalu bisa dihitung; dari kumulatif
-   per-triwulan tidak selalu bisa dipulihkan — butuh triwulan sebelumnya ada dan
+   per-triwulan tidak selalu bisa dipulihkan - butuh triwulan sebelumnya ada dan
    benar. Layar isian WAJIB menyebut tegas *"isi capaian triwulan ini saja"*,
    karena Google Form melatih petugas mengisi kumulatif selama bertahun-tahun.
 
@@ -185,8 +185,8 @@ baris yang diwarisi supaya pewarisan itu terlihat, bukan diam-diam.
 | Rute | Guna |
 |---|---|
 | `Rekam_Data` | publik bila tanpa sesi; layar sambutan bila Admin Kab/Kota |
-| `Rekam_Perumahan` | Capaian — tabel baca-saja, **tidak membuat draft** |
-| `Rekam_Perumahan/input` | form isian — **di sinilah draft lahir** |
+| `Rekam_Perumahan` | Capaian - tabel baca-saja, **tidak membuat draft** |
+| `Rekam_Perumahan/input` | form isian - **di sinilah draft lahir** |
 | `Rekam_Perumahan/simpan_gerbang` | POST jawaban Ada/Tidak Ada |
 | `Rekam_Perumahan/simpan_angka` | POST enam program sekaligus untuk satu sumber |
 | `Rekam_Perumahan/rekap` | rekap resmi, hanya `terkirim` |

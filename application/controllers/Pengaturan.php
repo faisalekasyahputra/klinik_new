@@ -16,7 +16,7 @@ class Pengaturan extends MY_Controller {
 
     /**
      * Item utama: satu list gabungan status SEMUA jenis pengajuan milik user
-     * (antrean perumahan, aduan, SRP2, KKN/Magang) — bukan lagi kartu terpisah
+     * (antrean perumahan, aduan, SRP2, KKN/Magang) - bukan lagi kartu terpisah
      * per jenis, supaya warga/pengembang/mahasiswa punya satu tempat pantau status.
      */
     public function index() {
@@ -33,7 +33,7 @@ class Pengaturan extends MY_Controller {
             ->order_by('sf_housing_queue.created_at', 'DESC')->get()->result() as $r) {
             $status = housing_queue_statuses()[$r->status_antrean] ?? ['label' => 'Sedang Diverifikasi', 'badge' => 'pending'];
             $items[] = [
-                'jenis' => 'Antrean Perumahan — ' . ($r->nama_program ?: 'Program'), 'icon' => 'ph-ticket',
+                'jenis' => 'Antrean Perumahan - ' . ($r->nama_program ?: 'Program'), 'icon' => 'ph-ticket',
                 'judul' => !empty($r->ticket_code) ? $r->ticket_code : 'Tiket belum tersedia',
                 'status_label' => $status['label'], 'status_kelas' => $status['badge'],
                 'created_at' => $r->created_at,
@@ -46,14 +46,14 @@ class Pengaturan extends MY_Controller {
                     ? 'Mulai Perbaikan' : null,
                 'catatan_admin' => $r->catatan_admin,
                 'is_simulation' => $r->source_mode === 'simulation',
-                // Perjalanan pengajuan, bukan cuma status terakhir — supaya
+                // Perjalanan pengajuan, bukan cuma status terakhir - supaya
                 // pemohon tahu sudah sampai mana dan apa yang sudah terjadi.
                 'riwayat' => $this->Housing_assessment_model->get_owned_timeline($r->id, (int) $user_id),
             ];
         }
 
         // catatan_admin ikut diambil supaya pelapor tahu ALASAN status berubah,
-        // bukan cuma statusnya — pola yang sudah dipakai SRP2 tapi dulu belum
+        // bukan cuma statusnya - pola yang sudah dipakai SRP2 tapi dulu belum
         // ada di aduan (AUDIT_ROLE_ADMIN_SCOPED.md #7).
         foreach ($this->db->select('id, judul, bidang, status, catatan_admin, created_at')
             ->where('user_id', (int) $user_id)->order_by('created_at', 'DESC')
@@ -70,14 +70,14 @@ class Pengaturan extends MY_Controller {
 
         if ($role === 'pengembang') {
             // Keadaan pengajuan lewat SATU sumber bersama (§17 poin 13). Dulu
-            // halaman ini query sendiri — salinan logika kedua, dan itu persis
+            // halaman ini query sendiri - salinan logika kedua, dan itu persis
             // yang dulu melahirkan bug 0/14 dokumen di wizard.
             $srp2 = $this->Auth_model->srp2_state($user_id);
             $sp2  = $srp2 ? $this->db->get_where('srp2_registrations', ['id' => $srp2['registration_id']])->row() : NULL;
             if ($sp2) {
                 // Label status + label tombol aksi. Tombolnya diberi nama sesuai
                 // apa yang BENAR-BENAR terjadi saat diklik, bukan "Kelola" untuk
-                // semua keadaan — "Kelola" pada pengajuan yang sudah final
+                // semua keadaan - "Kelola" pada pengajuan yang sudah final
                 // menjanjikan sesuatu yang tidak bisa dilakukan.
                 $peta = [
                     'Draft'    => ['Lengkapi Dokumen', 'process', 'Lengkapi'],
@@ -103,16 +103,16 @@ class Pengaturan extends MY_Controller {
                     // bukan disembunyikan (roadmap T6 R2-sisa).
                     'judul' => $sp2->nama_perusahaan ?: '(Nama perusahaan belum diisi)',
                     'status_label' => $status[0], 'status_kelas' => $status[1],
-                    // updated_at, bukan created_at — draft bisa dibuat jauh sebelum
+                    // updated_at, bukan created_at - draft bisa dibuat jauh sebelum
                     // benar-benar diisi/dikirim, tanggal aktivitas terakhir lebih relevan.
                     'created_at' => $sp2->updated_at ?: $sp2->created_at,
-                    // SEMUA status mengarah ke wizard — itu tempat dokumen pengajuan
+                    // SEMUA status mengarah ke wizard - itu tempat dokumen pengajuan
                     // ini berada, dan wizard sendiri yang menentukan mode: Draft/Ditolak
                     // bisa diedit, Pending/Diterima tampil read-only.
                     //
                     // JANGAN arahkan ke akun/profil. Pernah dilakukan untuk status
                     // Diterima dengan alasan "dokumen sudah final, yang bisa dikelola
-                    // tinggal data perusahaan" — dan itu keliru: tombol pada baris
+                    // tinggal data perusahaan" - dan itu keliru: tombol pada baris
                     // PENGAJUAN harus membawa ke pengajuan itu, bukan ke halaman lain.
                     // Edit data perusahaan punya jalannya sendiri lewat menu Profil.
                     'aksi_url' => 'Pengembang/syarat',
@@ -134,7 +134,7 @@ class Pengaturan extends MY_Controller {
                 ];
                 $status = $status_map[$p->status] ?? [$p->status, 'pending'];
                 $items[] = [
-                    'jenis' => strtoupper($p->jenis) . ' — ' . $p->instansi_asal, 'icon' => 'ph-graduation-cap',
+                    'jenis' => strtoupper($p->jenis) . ' - ' . $p->instansi_asal, 'icon' => 'ph-graduation-cap',
                     'judul' => $p->divisi_atau_tema,
                     'status_label' => $status[0], 'status_kelas' => $status[1],
                     'created_at' => $p->created_at,
@@ -144,12 +144,12 @@ class Pengaturan extends MY_Controller {
                     'aksi_url'   => 'KemitraanPortal/pendaftaran/' . (int) $p->id,
                     'aksi_label' => $p->status === 'Diajukan' ? 'Lihat / Ubah' : 'Lihat',
                     // Cabang mahasiswa satu-satunya yang dulu TIDAK mengirim ini,
-                    // padahal antrean, aduan, dan SRP2 semuanya mengirimnya — dan
+                    // padahal antrean, aduan, dan SRP2 semuanya mengirimnya - dan
                     // komentar di berkas ini sendiri (§ aduan) sudah menyebut
                     // alasannya: pelapor harus tahu ALASAN statusnya berubah,
                     // bukan cuma statusnya. Akibatnya admin menolak pendaftaran
                     // KKN, mengetik alasannya, dan mahasiswanya cuma melihat
-                    // "Ditolak" — catatannya tersimpan di DB lalu tidak
+                    // "Ditolak" - catatannya tersimpan di DB lalu tidak
                     // ditampilkan ke siapa pun. View-nya sudah siap merender.
                     'catatan_admin' => $p->catatan_admin,
                 ];
@@ -211,17 +211,17 @@ class Pengaturan extends MY_Controller {
             return;
         }
 
-        // Dokumen dikunci saat Pending/Diterima, tapi DATA-nya dulu tidak — nama
+        // Dokumen dikunci saat Pending/Diterima, tapi DATA-nya dulu tidak - nama
         // dan alamat masih bisa bergeser di bawah tangan admin yang sedang
         // menilai, dan nilai terbaru itulah yang tersalin ke direktori publik
         // saat disetujui. Tanpa gerbang ini, gerbang di kirim_pengajuan() cuma
         // dekoratif: kirim dengan nama sah, lalu ganti jadi duplikat selagi
         // Pending. Roadmap T1a butir 4.
         // PENDING: terkunci penuh. Data tidak boleh bergeser di bawah tangan
-        // admin yang sedang menilai — nilai yang dia lihat harus sama dengan
+        // admin yang sedang menilai - nilai yang dia lihat harus sama dengan
         // nilai yang tersalin ke direktori saat disetujui.
         if ($pengajuan->status_verifikasi === 'Pending') {
-            $this->session->set_flashdata('error', 'Pengajuan sedang ditinjau admin — data perusahaan tidak bisa diubah sampai ada keputusan.');
+            $this->session->set_flashdata('error', 'Pengajuan sedang ditinjau admin - data perusahaan tidak bisa diubah sampai ada keputusan.');
             redirect('akun/profil');
             return;
         }
@@ -230,14 +230,14 @@ class Pengaturan extends MY_Controller {
         //
         // Mengunci semuanya setelah disetujui terdengar aman, tapi artinya
         // pengembang yang pindah kantor atau ganti website tidak akan pernah
-        // bisa memperbarui listing publiknya — padahal formnya sendiri berjanji
-        // "Kontak publik — ditampilkan di halaman profil pengembang". Yang
+        // bisa memperbarui listing publiknya - padahal formnya sendiri berjanji
+        // "Kontak publik - ditampilkan di halaman profil pengembang". Yang
         // benar-benar tidak boleh berubah adalah NAMA: itu identitas yang
         // diverifikasi admin sekaligus kunci UNIQUE baris direktori.
         $terkunci_identitas = ($pengajuan->status_verifikasi === 'Diterima');
 
         // Simpan teks apa adanya (escape dilakukan sekali saat render lewat htmlspecialchars()
-        // di profil.php, bukan di sini — supaya tidak double-encode).
+        // di profil.php, bukan di sini - supaya tidak double-encode).
         $data = [
             'nama_perusahaan' => strtoupper(trim($this->input->post('nama_perusahaan'))),
             'alamat_kantor'   => trim($this->input->post('alamat_kantor')),
@@ -260,7 +260,7 @@ class Pengaturan extends MY_Controller {
             return;
         }
 
-        // Identitas dikunci di sini — SESUDAH $data dibentuk, bukan sebelumnya.
+        // Identitas dikunci di sini - SESUDAH $data dibentuk, bukan sebelumnya.
         // Nama adalah yang diverifikasi admin sekaligus kunci UNIQUE baris
         // direktori; kontak (alamat/website/sosmed) justru memang dimaksudkan
         // untuk bisa diperbarui pemiliknya.
@@ -275,7 +275,7 @@ class Pengaturan extends MY_Controller {
 
         // user_id selalu dari sesi, bukan dari input, supaya tidak bisa mengedit
         // data pengembang lain (anti-IDOR). `id` ikut disertakan supaya UPDATE
-        // mengenai TEPAT baris yang tadi dibaca — sebelumnya hanya WHERE user_id,
+        // mengenai TEPAT baris yang tadi dibaca - sebelumnya hanya WHERE user_id,
         // yang menimpa SEMUA baris milik user itu sekaligus.
         $this->db->trans_start();
         $this->db->where('id', $pengajuan->id)->where('user_id', $user_id);
@@ -284,7 +284,7 @@ class Pengaturan extends MY_Controller {
         // Perubahan ikut menular ke direktori publik kalau pengajuan ini memang
         // sudah terbit di sana. Dulu baris direktori hanya diisi SEKALI saat
         // approve, sehingga ganti alamat/website/Instagram tidak pernah sampai
-        // ke publik — padahal formnya berlabel "Kontak publik — ditampilkan di
+        // ke publik - padahal formnya berlabel "Kontak publik - ditampilkan di
         // halaman profil pengembang". Satu fungsi upsert yang sama dengan yang
         // dipakai Admin_Srp2::proses(), bukan salinan kedua.
         $tersinkron = FALSE;
@@ -296,13 +296,13 @@ class Pengaturan extends MY_Controller {
         $this->db->trans_complete();
 
         if ($this->db->trans_status() === FALSE) {
-            $this->session->set_flashdata('error', 'Gagal menyimpan perubahan — tidak ada yang tersimpan. Kemungkinan nama perusahaan sudah dipakai pengembang lain di direktori.');
+            $this->session->set_flashdata('error', 'Gagal menyimpan perubahan - tidak ada yang tersimpan. Kemungkinan nama perusahaan sudah dipakai pengembang lain di direktori.');
             redirect('akun/profil');
             return;
         }
 
         $this->session->set_flashdata('success', $tersinkron
-            ? 'Data pengembang berhasil diperbarui — perubahan juga tampil di profil publik Anda.'
+            ? 'Data pengembang berhasil diperbarui - perubahan juga tampil di profil publik Anda.'
             : 'Data pengembang berhasil diperbarui!');
         redirect('akun/profil');
     }
@@ -341,14 +341,14 @@ class Pengaturan extends MY_Controller {
             $data['username'] = $username;
         }
 
-        // Ganti password opsional — dipindahkan ke sini saat User_Profile
+        // Ganti password opsional - dipindahkan ke sini saat User_Profile
         // (halaman profil khusus superadmin) dilebur ke halaman ini, supaya
         // fiturnya tidak hilang. Aturan kekuatan password disamakan dengan
         // Auth::do_register()/save_onboarding(), bukan versi longgar lama
         // yang menerima password apa pun.
         $password = $this->input->post('password');
         if (!empty($password)) {
-            // Bukti kepemilikan sebelum ganti password — roadmap T5 S13. Tanpa
+            // Bukti kepemilikan sebelum ganti password - roadmap T5 S13. Tanpa
             // ini, sesi yang sempat dipakai orang lain (mis. komputer publik)
             // bisa mengunci pemilik asli keluar tanpa perlu tahu sandi lamanya.
             $current_password = (string) $this->input->post('current_password');
@@ -393,7 +393,7 @@ class Pengaturan extends MY_Controller {
             return;
         }
 
-        // Konfirmasi ketik-nama di modal cuma JS — siapa pun yang sempat
+        // Konfirmasi ketik-nama di modal cuma JS - siapa pun yang sempat
         // memakai sesi ini bisa POST langsung tanpa pernah mengetiknya.
         // Password saat ini adalah bukti kepemilikan yang sebenarnya
         // (roadmap T5 S13); tanpa ini FK CASCADE menghapus seluruh

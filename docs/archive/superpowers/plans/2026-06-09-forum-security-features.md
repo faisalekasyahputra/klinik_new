@@ -1,10 +1,10 @@
-# Forum Diskusi — Security Hardening & Feature Upgrade
+# Forum Diskusi - Security Hardening & Feature Upgrade
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Memperkuat keamanan forum diskusi Klinik PKP dan menambahkan fitur moderasi, pencarian, filter kata kotor, serta reCAPTCHA agar forum aman dari bot spam, XSS, dan penyalahgunaan — layak digunakan sebagai kanal resmi komunikasi publik instansi pemerintah.
+**Goal:** Memperkuat keamanan forum diskusi Klinik PKP dan menambahkan fitur moderasi, pencarian, filter kata kotor, serta reCAPTCHA agar forum aman dari bot spam, XSS, dan penyalahgunaan - layak digunakan sebagai kanal resmi komunikasi publik instansi pemerintah.
 
-**Architecture:** Server-side validation & security di CodeIgniter 3 (controller + model + helper), client-side UX improvements di view (Alpine.js). Semua proteksi bersifat backend-first — frontend hanya pelengkap UX. Menggunakan pola yang sudah ada di Auth controller (reCAPTCHA, session role, form validation).
+**Architecture:** Server-side validation & security di CodeIgniter 3 (controller + model + helper), client-side UX improvements di view (Alpine.js). Semua proteksi bersifat backend-first - frontend hanya pelengkap UX. Menggunakan pola yang sudah ada di Auth controller (reCAPTCHA, session role, form validation).
 
 **Tech Stack:** PHP 7.4+ / CodeIgniter 3, MySQL, Google reCAPTCHA v2, Alpine.js (sudah terinstall), Tailwind CSS JIT (sudah terinstall)
 
@@ -218,7 +218,7 @@ git commit -m "feat: add forum_helper with profanity check, sanitize, rate limit
 
 ---
 
-## Task 4: Upgrade Database — Tambah Kolom Keamanan & Fitur
+## Task 4: Upgrade Database - Tambah Kolom Keamanan & Fitur
 
 **Files:**
 - Modify: Database MySQL (via phpMyAdmin atau SQL query)
@@ -255,7 +255,7 @@ git commit -m "db: add security columns to forum tables"
 
 ---
 
-## Task 5: Upgrade Forum_model — Soft Delete, Search, Status, Report
+## Task 5: Upgrade Forum_model - Soft Delete, Search, Status, Report
 
 **Files:**
 - Modify: `application/models/Forum_model.php`
@@ -381,7 +381,7 @@ git commit -m "feat: upgrade Forum_model with soft-delete, search, status, repor
 
 ---
 
-## Task 6: Upgrade Controller — Validasi, reCAPTCHA, Rate Limit, Profanity
+## Task 6: Upgrade Controller - Validasi, reCAPTCHA, Rate Limit, Profanity
 
 **Files:**
 - Modify: `application/controllers/Umum.php` (method `forum`, `tambah_aksi`, `balas_aksi`)
@@ -412,7 +412,7 @@ class Umum extends MY_Controller {
     }
 ```
 
-- [ ] **Step 2: Upgrade method `forum()` — tambahkan search, filter, dan recaptcha key**
+- [ ] **Step 2: Upgrade method `forum()` - tambahkan search, filter, dan recaptcha key**
 
 ```php
 public function forum()
@@ -431,7 +431,7 @@ public function forum()
 }
 ```
 
-- [ ] **Step 3: Upgrade method `tambah_aksi()` — full security chain**
+- [ ] **Step 3: Upgrade method `tambah_aksi()` - full security chain**
 
 ```php
 public function tambah_aksi() {
@@ -475,7 +475,7 @@ public function tambah_aksi() {
 
     // Validasi panjang
     if (mb_strlen($judul) < 10 || mb_strlen($judul) > 200) {
-        $this->session->set_flashdata('error', 'Judul topik harus antara 10–200 karakter.');
+        $this->session->set_flashdata('error', 'Judul topik harus antara 10-200 karakter.');
         redirect('Umum/forum');
         return;
     }
@@ -521,7 +521,7 @@ public function tambah_aksi() {
 }
 ```
 
-- [ ] **Step 4: Upgrade method `balas_aksi()` — tambahkan rate limit + profanity**
+- [ ] **Step 4: Upgrade method `balas_aksi()` - tambahkan rate limit + profanity**
 
 ```php
 public function balas_aksi() {
@@ -717,7 +717,7 @@ git commit -m "security: add validation, reCAPTCHA, rate-limit, profanity to for
 
 ---
 
-## Task 7: Upgrade View Forum — Search, reCAPTCHA, Flash Messages, Status Badge
+## Task 7: Upgrade View Forum - Search, reCAPTCHA, Flash Messages, Status Badge
 
 **Files:**
 - Modify: `application/views/pages/umum/forum.php`
@@ -803,7 +803,7 @@ git commit -m "feat: add search, reCAPTCHA, status badges, flash messages to for
 
 ---
 
-## Task 8: Upgrade View Detail — reCAPTCHA, Report, Status Controls
+## Task 8: Upgrade View Detail - reCAPTCHA, Report, Status Controls
 
 **Files:**
 - Modify: `application/views/pages/perumahan/detail.php`

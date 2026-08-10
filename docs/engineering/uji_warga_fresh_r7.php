@@ -132,13 +132,13 @@ if ($admin->errno) {
 }
 
 /*
- * S5 — mengalihkan DB_NAME SAJA tidak aman.
+ * S5 - mengalihkan DB_NAME SAJA tidak aman.
  *
  * Berkas privat disimpan dengan nama folder = id pemiliknya. Id di DB
  * sementara mulai dari kecil dan TABRAKAN dengan id di DB dev, sehingga
  * pembersih yang menyapu berdasarkan isi disk (`_cleanup_owned_files()`)
  * ikut memakan berkas dev. Ini bukan kekhawatiran teoretis: 27 Jul 2026
- * 14 berkas SRP2 milik registrasi dev lenyap persis lewat jalur ini —
+ * 14 berkas SRP2 milik registrasi dev lenyap persis lewat jalur ini -
  * ledger utuh, disk kosong, dan pemiliknya mendapat 404 bisu (AGENTS.md §0e).
  *
  * Karena itu root unggahan ikut dialihkan, dan runner ABORT bila salah satu
@@ -222,7 +222,7 @@ $dropped = $admin->query("DROP DATABASE `$database`");
 $databaseCreated = ! $dropped;
 
 // Folder unggahan sementara ikut dihapus. Hanya folder ber-nama pola runner
-// ini yang disentuh — root unggahan dev tidak pernah menjadi sasaran.
+// ini yang disentuh - root unggahan dev tidak pernah menjadi sasaran.
 if (is_dir($uploadsTemp) && strpos(basename($uploadsTemp), 'uji_warga_uploads_') === 0) {
     $isi = new RecursiveIteratorIterator(
         new RecursiveDirectoryIterator($uploadsTemp, RecursiveDirectoryIterator::SKIP_DOTS),

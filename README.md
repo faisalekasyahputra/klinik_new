@@ -1,6 +1,6 @@
-# 🏠 Klinik PKP — Panduan Setup Cepat
+# 🏠 Klinik PKP - Panduan Setup Cepat
 
-> **Klinik Perumahan & Kawasan Permukiman** — Disperakim Provinsi Jawa Tengah  
+> **Klinik Perumahan & Kawasan Permukiman** - Disperakim Provinsi Jawa Tengah  
 > Portal informasi perumahan subsidi, data spasial, dan konsultasi terpadu.
 
 ---
@@ -8,7 +8,7 @@
 ## ⚡ Quick Start (5 Menit)
 
 ### 1. Clone Repo
-Repo ini **privat** — kamu harus sudah diundang sebagai collaborator di GitHub dulu.
+Repo ini **privat** - kamu harus sudah diundang sebagai collaborator di GitHub dulu.
 Clone langsung ke dalam folder `htdocs` (XAMPP/Laragon):
 
 ```bash
@@ -16,9 +16,9 @@ cd C:/xampp/htdocs && git clone -b feature/homepage-portal-v2 https://github.com
 ```
 
 > ⚠️ **`-b feature/homepage-portal-v2` itu wajib, bukan opsional.** Tanpa itu kamu
-> dapat `main`, dan `main` **beku sejak 19 Juli 2026** — kodenya ketinggalan jauh dan
+> dapat `main`, dan `main` **beku sejak 19 Juli 2026** - kodenya ketinggalan jauh dan
 > DB-nya belum pernah dimigrasi sama sekali. `main` disimpan untuk rilis akhir saja.
-> Branch kerja yang hidup selalu tercatat di [`AGENTS.md`](AGENTS.md) §0a — kalau
+> Branch kerja yang hidup selalu tercatat di [`AGENTS.md`](AGENTS.md) §0a - kalau
 > suatu saat pindah, percayai tabel di sana, bukan baris ini.
 >
 > 🔴 **Branch ini auto-deploy ke PRODUCTION.** Setiap `git push` ke
@@ -70,12 +70,12 @@ Buka **phpMyAdmin** (`http://localhost/phpmyadmin`):
 1. Buat database baru: `klinikpkp` (collation: `utf8_general_ci`)
 2. Import file: `docs/engineering/schema_klinikpkp.sql`
 
-### 5. Jalankan Migrasi — WAJIB, jangan dilewati
+### 5. Jalankan Migrasi - WAJIB, jangan dilewati
 ```bash
 php index.php migrate
 ```
 
-> ⚠️ **Berkas `schema_klinikpkp.sql` itu snapshot lama, bukan skema terbaru.** Tanpa langkah ini kamu akan kehilangan tabel `aduan`, `kabupaten`, `bidang`, `kkn_magang_pendaftaran`, seluruh tabel `srp2_*`, kolom `reviewed_by`/`reviewed_at`, dan semua foreign key — aplikasi akan error di banyak halaman.
+> ⚠️ **Berkas `schema_klinikpkp.sql` itu snapshot lama, bukan skema terbaru.** Tanpa langkah ini kamu akan kehilangan tabel `aduan`, `kabupaten`, `bidang`, `kkn_magang_pendaftaran`, seluruh tabel `srp2_*`, kolom `reviewed_by`/`reviewed_at`, dan semua foreign key - aplikasi akan error di banyak halaman.
 >
 > Sumber kebenaran skema adalah `application/migrations/`, bukan berkas `.sql`. Perintah ini juga yang dipakai untuk menyamakan skema DB manapun yang sedang ditunjuk `.env`.
 
@@ -94,7 +94,7 @@ klinik_new/
 │   ├── core/              ← MY_Controller (hierarki base controller + guard role)
 │   ├── helpers/            ← Helper functions
 │   ├── libraries/         ← Library kustom (Encryption, API)
-│   ├── migrations/        ← ⭐ SUMBER KEBENARAN skema DB (01–14)
+│   ├── migrations/        ← ⭐ SUMBER KEBENARAN skema DB (01-14)
 │   ├── models/            ← Database models
 │   └── views/             ← Tampilan (modular per fitur)
 │       ├── layouts/       ← Template (nav, head, footer)
@@ -126,7 +126,7 @@ Baca file-file di folder `docs/` untuk pemahaman mendalam:
 
 | File | Isi |
 |------|-----|
-| [`AGENTS.md`](AGENTS.md) | ⭐ **Baca duluan** — status terkini, aturan mengikat, daftar jebakan |
+| [`AGENTS.md`](AGENTS.md) | ⭐ **Baca duluan** - status terkini, aturan mengikat, daftar jebakan |
 | [`README.md`](docs/README.md) | Index dokumentasi |
 | [`PEMBACAAN_CODEBASE_26JUL2026.md`](docs/engineering/PEMBACAAN_CODEBASE_26JUL2026.md) | Peta 8 subsistem + 141 temuan |
 | [`AUDIT_SISTEM_ROLE_RINGKASAN.md`](docs/engineering/AUDIT_SISTEM_ROLE_RINGKASAN.md) | Ringkasan audit 5 peran |
@@ -155,7 +155,7 @@ Baca file-file di folder `docs/` untuk pemahaman mendalam:
 
 ## 🗄️ Tabel Database (23 tabel + legacy)
 
-Prefix menandai domainnya — tabel baru wajib mengikuti pola ini.
+Prefix menandai domainnya - tabel baru wajib mengikuti pola ini.
 
 | Tabel | Fungsi |
 |-------|--------|
@@ -178,13 +178,13 @@ Prefix menandai domainnya — tabel baru wajib mengikuti pola ini.
 | `sys_multi` | Data perumahan |
 | `sys_settings` | Konfigurasi sistem |
 | `sys_ticket_lookup_limits` | Rate limit lookup tiket publik |
-| `chat_rooms`, `chat_messages` | ⚠️ **ADA tapi menganggur** — lihat catatan di bawah |
+| `chat_rooms`, `chat_messages` | ⚠️ **ADA tapi menganggur** - lihat catatan di bawah |
 | `data_sosmed_perumahan` | Sosmed pengembang |
 | `migrations` | Versi migrasi yang sudah dijalankan |
 
-> ⚠️ **Jebakan:** `chat_rooms`/`chat_messages` ada di DB tapi tidak dipakai kode manapun. Fitur chat yang berjalan menulis ke `tb_chat` — tabel yang **tidak ada di skema maupun migrasi**, sehingga chat gagal di instalasi bersih. Lihat `AGENTS.md` §18.
+> ⚠️ **Jebakan:** `chat_rooms`/`chat_messages` ada di DB tapi tidak dipakai kode manapun. Fitur chat yang berjalan menulis ke `tb_chat` - tabel yang **tidak ada di skema maupun migrasi**, sehingga chat gagal di instalasi bersih. Lihat `AGENTS.md` §18.
 
-> Ada juga tabel legacy tanpa prefix (`kondisi`, `bendung`, `irigasi`, `saluran_pembuang`) yang dipakai dinamis oleh `Buka_peta.php` — model itu sendiri sudah tidak dipanggil dari manapun.
+> Ada juga tabel legacy tanpa prefix (`kondisi`, `bendung`, `irigasi`, `saluran_pembuang`) yang dipakai dinamis oleh `Buka_peta.php` - model itu sendiri sudah tidak dipanggil dari manapun.
 
 ---
 
@@ -194,20 +194,20 @@ Prefix menandai domainnya — tabel baru wajib mengikuti pola ini.
 |---------|--------|
 | **Blank page / Error 500** | Cek `.env` sudah dibuat dan terisi benar |
 | **Database error** | Pastikan database `klinikpkp` ada, schema diimport, **dan `php index.php migrate` sudah dijalankan** |
-| **`Table '...' doesn't exist`** | Hampir selalu karena migrasi belum dijalankan — ulangi langkah 5 |
+| **`Table '...' doesn't exist`** | Hampir selalu karena migrasi belum dijalankan - ulangi langkah 5 |
 | **CSS tidak muncul** | Pastikan `base_url` di `.env` sesuai path folder kamu |
 | **"Class not found"** | Jalankan `composer install` |
 | **Google Login gagal** | Normal jika belum setup Google OAuth credentials |
-| **MySQL XAMPP tidak mau start** | Cek `mysql/data/multi-master.info` — kalau isinya potongan teks log, singkirkan berkas itu beserta `master-*.info` dan `mysql-relay-bin-*`. Jangan sentuh `.frm`/`.ibd`/`ibdata1` |
+| **MySQL XAMPP tidak mau start** | Cek `mysql/data/multi-master.info` - kalau isinya potongan teks log, singkirkan berkas itu beserta `master-*.info` dan `mysql-relay-bin-*`. Jangan sentuh `.frm`/`.ibd`/`ibdata1` |
 
 ---
 
 ## ⚠️ Sebelum ikut mengembangkan
 
-1. **Baca [`AGENTS.md`](AGENTS.md) lebih dulu** — di sana ada status terkini, aturan yang mengikat, dan daftar jebakan yang sudah pernah memakan korban.
-2. **Jangan sentuh branch `main`** tanpa perintah eksplisit — push ke sana langsung merilis ke production tanpa konfirmasi.
-3. **Jangan commit script atau aset satu-kali-pakai ke akar repo** — semuanya ikut ter-deploy dan bisa diakses publik. Taruh di `dev-scripts/` atau `local-assets/` yang sudah di-`.gitignore`.
+1. **Baca [`AGENTS.md`](AGENTS.md) lebih dulu** - di sana ada status terkini, aturan yang mengikat, dan daftar jebakan yang sudah pernah memakan korban.
+2. **Jangan sentuh branch `main`** tanpa perintah eksplisit - push ke sana langsung merilis ke production tanpa konfirmasi.
+3. **Jangan commit script atau aset satu-kali-pakai ke akar repo** - semuanya ikut ter-deploy dan bisa diakses publik. Taruh di `dev-scripts/` atau `local-assets/` yang sudah di-`.gitignore`.
 
 ---
 
-*Klinik PKP — diperbarui 27 Juli 2026*
+*Klinik PKP - diperbarui 27 Juli 2026*

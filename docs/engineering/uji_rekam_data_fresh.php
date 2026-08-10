@@ -1,10 +1,10 @@
 <?php
 /**
- * Runner DB bersih — Rekam Data D1–D6.
+ * Runner DB bersih - Rekam Data D1-D6.
  *
  * Membuktikan modul ini jalan di instalasi FRESH, bukan cuma di DB dev yang
  * sudah lama ditambal tangan (pelajaran `omah_sekeng`, AGENTS.md §0e):
- * baseline → migrasi 1→21 → seluruh check D1–D6.
+ * baseline → migrasi 1→21 → seluruh check D1-D6.
  *
  *   php docs/engineering/uji_rekam_data_fresh.php
  *
@@ -90,7 +90,7 @@ foreach (['DB_HOST', 'DB_USER', 'DB_NAME'] as $wajib) {
 
 // Pagar keras: runner ini tidak boleh menyentuh apa pun selain localhost.
 if ( ! in_array(strtolower($config['DB_HOST']), ['localhost', '127.0.0.1', '::1'], TRUE)) {
-    fwrite(STDERR, "DB_HOST bukan localhost ({$config['DB_HOST']}) — dibatalkan.\n");
+    fwrite(STDERR, "DB_HOST bukan localhost ({$config['DB_HOST']}) - dibatalkan.\n");
     exit(1);
 }
 
@@ -138,7 +138,7 @@ $database = 'klinikpkp_uji_rd_' . $stamp;
 $uploads = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'uji_rd_uploads_' . $stamp;
 $envBackup = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'uji_rd_env_' . $stamp . '.bak';
 
-echo "=== RUNNER DB BERSIH — REKAM DATA D1-D6 ===\n";
+echo "=== RUNNER DB BERSIH - REKAM DATA D1-D6 ===\n";
 echo "DB sementara      : {$database}\n";
 echo "Unggahan sementara: {$uploads}\n";
 echo "Baseline          : docs/engineering/schema_klinikpkp.sql\n";
@@ -155,7 +155,7 @@ $dbDibuat = FALSE;
 $envDialihkan = FALSE;
 
 // Jaring pengaman untuk kegagalan biasa (exit/exception). Hard-kill TIDAK
-// menjalankan ini — itulah gunanya marker di atas.
+// menjalankan ini - itulah gunanya marker di atas.
 register_shutdown_function(static function () use (
     &$dbDibuat, &$envDialihkan, $admin, $database, $envPath, $originalEnv, $uploads
 ) {
@@ -240,7 +240,7 @@ foreach ([[$php, 'index.php', 'migrate'], [$php, 'index.php', 'migrate', 'status
 $versi = $gagal ? NULL : ($admin->query('SELECT version FROM migrations')->fetch_assoc()['version'] ?? NULL);
 
 // Versi harapan DITURUNKAN dari berkas migrasi paling akhir, tidak diketik.
-// Sebelumnya di sini tertulis '20260701000021' — benar saat ditulis, dan sejak
+// Sebelumnya di sini tertulis '20260701000021' - benar saat ditulis, dan sejak
 // migrasi 022..024 mendarat, runner ini MERAH pada sistem yang justru benar.
 // Angka yang harus cocok dengan sesuatu tidak boleh ditulis tangan: yang
 // menambah migrasi berikutnya tidak punya alasan mencari baris ini.

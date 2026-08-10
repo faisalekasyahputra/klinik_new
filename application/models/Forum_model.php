@@ -94,12 +94,12 @@ class Forum_model extends CI_Model {
     }
 
     /**
-     * B3 — laporan komentar dicatat per PELAPOR, bukan sekadar penghitung.
+     * B3 - laporan komentar dicatat per PELAPOR, bukan sekadar penghitung.
      *
      * Dulu method ini hanya menaikkan `report_count`, sehingga lima klik dari
      * satu orang bernilai sama dengan lima orang berbeda. Kini setiap laporan
      * masuk ledger `forum_laporan_komentar` ber-UNIQUE (id_komentar, user_id),
-     * lalu `report_count` DIHITUNG ULANG dari jumlah pelapor unik — bukan
+     * lalu `report_count` DIHITUNG ULANG dari jumlah pelapor unik - bukan
      * ditambah. Dengan begitu angka di kolom itu selalu berarti "berapa orang",
      * dan laporan berulang dari orang yang sama tidak bergerak sama sekali.
      *

@@ -1,7 +1,7 @@
 <div class="mb-6 relative z-10">
     <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Jejak Audit</h2>
     <p class="text-sm text-gray-500 dark:text-brand-muted max-w-2xl">
-        Rekaman tindakan yang mengubah akses dan data pengelolaan — siapa melakukannya, kapan, dan
+        Rekaman tindakan yang mengubah akses dan data pengelolaan - siapa melakukannya, kapan, dan
         terhadap apa. Termasuk percobaan yang <span class="font-bold">ditolak</span> sistem. Layar ini
         hanya bisa dibaca; barisnya tidak bisa diubah atau dihapus dari sini.
     </p>
@@ -15,7 +15,7 @@ $pil = 'px-3 py-1 rounded-lg text-xs font-bold border transition-colors';
 $nyala = 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary';
 $padam = 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10';
 
-// Aksi yang berakhiran `_ditolak` adalah percobaan yang DIBLOKIR — dibedakan
+// Aksi yang berakhiran `_ditolak` adalah percobaan yang DIBLOKIR - dibedakan
 // warnanya di pil filter maupun di baris, karena justru itu yang orang cari
 // saat membuka layar ini. Dipakai dua kali, jadi didefinisikan sekali.
 $ditolak = fn($a) => str_ends_with((string) $a, '_ditolak');
@@ -63,7 +63,7 @@ $filter_html = ob_get_clean();
                             <a href="<?= base_url($base_url) ?>" class="mt-3 text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline">Tampilkan semua jejak</a>
                             <?php else: ?>
                             <p>Belum ada jejak tercatat.</p>
-                            <p class="mt-1 text-xs">Baris akan muncul sendiri begitu ada tindakan pengelolaan — mengubah role, menonaktifkan akun, mereset sandi.</p>
+                            <p class="mt-1 text-xs">Baris akan muncul sendiri begitu ada tindakan pengelolaan - mengubah role, menonaktifkan akun, mereset sandi.</p>
                             <?php endif; ?>
                         </div>
                     </td>
@@ -80,7 +80,7 @@ $filter_html = ob_get_clean();
                         <div class="text-gray-500 dark:text-brand-muted"><?= html_escape($j->actor_role ?: '-') ?></div>
                         <?php // actor_id kosong sementara emailnya ada = akunnya sudah dihapus
                               // (FK ON DELETE SET NULL) dan salinan email inilah yang menyelamatkan
-                              // "siapa"-nya. Ditandai apa adanya, bukan disembunyikan — akun yang
+                              // "siapa"-nya. Ditandai apa adanya, bukan disembunyikan - akun yang
                               // sudah tidak ada justru yang paling sering perlu ditelusuri. ?>
                         <?php if ($j->actor_id === NULL): ?>
                         <div class="mt-1 text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">akun sudah dihapus</div>

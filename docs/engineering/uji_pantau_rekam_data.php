@@ -1,13 +1,13 @@
 <?php
 /**
- * Uji PANTAU REKAM DATA — pandangan superadmin lintas kabupaten.
+ * Uji PANTAU REKAM DATA - pandangan superadmin lintas kabupaten.
  *
  *   php docs/engineering/uji_pantau_rekam_data.php
  *
  * Layar ini lahir dari klaim dinas "belum ada rekap/submit" (revisi 3 Agt 2026,
  * butir 10) yang TIDAK cocok dengan kode: seluruh alurnya sudah ada sejak 30
- * Jul, tapi semuanya milik `admin_kabkota` dan `admin_bidang`. Superadmin —
- * kursi yang dipakai reviewer — tidak punya satu pun layar rekam data.
+ * Jul, tapi semuanya milik `admin_kabkota` dan `admin_bidang`. Superadmin -
+ * kursi yang dipakai reviewer - tidak punya satu pun layar rekam data.
  *
  * Lima janji yang dijaga di sini, semuanya rusak SENYAP:
  *
@@ -24,10 +24,10 @@
  *      statis atas kelasnya, karena method tulis yang ditambahkan enam bulan
  *      lagi akan lolos semua uji fungsional: ia BEKERJA, itu masalahnya.
  *   4. MENAMBAH PEMBACA TIDAK MENCABUT KEWENANGAN PENULIS. View detail kini
- *      dipakai dua layar dan default `boleh_putuskan`-nya FALSE — kalau
+ *      dipakai dua layar dan default `boleh_putuskan`-nya FALSE - kalau
  *      `Rekam_Tinjauan` lupa mengirimnya, tombol keputusan Admin Bidang HILANG
  *      tanpa satu pun galat. Diuji dari sisi Admin Bidang, bukan cuma superadmin.
- *   5. PENOLAKAN PERAN DIBUKTIKAN LEWAT ISI HALAMAN, bukan kode HTTP —
+ *   5. PENOLAKAN PERAN DIBUKTIKAN LEWAT ISI HALAMAN, bukan kode HTTP -
  *      permintaan dari peran salah DIALIHKAN, jadi curl yang mengikuti redirect
  *      menerima 200 dari halaman lain.
  *
@@ -207,7 +207,7 @@ wajib($papan['code'] === 200 && strpos($papan['url'], 'Auth/login') === FALSE,
 
 preg_match_all('/<tbody[^>]*>(.*?)<\/tbody>/s', $papan['body'], $tb);
 $baris = preg_match_all('/<tr[^>]*>/', $tb[1][0] ?? '', $x);
-cek($baris === $jml_kab, "Barisnya {$baris} — satu per kabupaten (harus {$jml_kab}), bukan sejumlah laporan");
+cek($baris === $jml_kab, "Barisnya {$baris} - satu per kabupaten (harus {$jml_kab}), bukan sejumlah laporan");
 
 foreach ($id_kab as $i => $kid) {
     cek(strpos($papan['body'], $kab[$kid]) !== FALSE, "Kabupaten '{$kab[$kid]}' tampil");
@@ -231,7 +231,7 @@ foreach (['Draft, belum dikirim', 'Menunggu ditinjau', 'Diterima', 'Perlu perbai
  * penurunannya perlu ditinjau ulang.
  */
 cek((int) nilai("SELECT COUNT(*) c FROM rd_laporan WHERE status='diterima'") === 0,
-    "Tidak ada status 'diterima' di DB — labelnya memang turunan reviewed_at");
+    "Tidak ada status 'diterima' di DB - labelnya memang turunan reviewed_at");
 
 echo "\n== 3. Ringkasan cakupan ==\n";
 // perumahan: 4 laporan, 3 di antaranya sudah masuk (terkirim/diterima/perbaikan)
@@ -290,7 +290,7 @@ wajib($hal_rd['code'] === 200 && strpos($hal_rd['url'], 'Auth/login') === FALSE,
 /**
  * Anak menu memang SELALU ada di DOM (disembunyikan `x-show`), jadi memeriksa
  * keberadaan tautannya saja akan hijau bahkan sebelum perbaikan ini. Yang
- * diperiksa: keadaan AWAL cabangnya — `buka: true`, bukan `buka: false`.
+ * diperiksa: keadaan AWAL cabangnya - `buka: true`, bukan `buka: false`.
  */
 cek(strpos($hal_rd['body'], 'Rekam_Perumahan/rekap') !== FALSE, 'Tautan Rekap Perumahan dirender');
 cek(strpos($hal_rd['body'], 'Rekam_Perumahan/riwayat') !== FALSE, 'Tautan Riwayat Perumahan dirender');

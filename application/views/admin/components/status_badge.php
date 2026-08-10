@@ -1,10 +1,10 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 /**
- * Badge status generik — dipakai lintas modul dashboard (SRP2, antrean,
+ * Badge status generik - dipakai lintas modul dashboard (SRP2, antrean,
  * aduan, kemitraan). Vocabulary status SENGAJA tidak diseragamkan di DB
- * (beda per domain: Pending/Diajukan/pending/Baru, dst — lihat
- * docs/engineering/AUDIT_SISTEM_ROLE_RINGKASAN.md) — pemanggil wajib
+ * (beda per domain: Pending/Diajukan/pending/Baru, dst - lihat
+ * docs/engineering/AUDIT_SISTEM_ROLE_RINGKASAN.md) - pemanggil wajib
  * memetakan status domainnya ke salah satu $kelas berikut:
  *   pending | process | ok | reject
  *

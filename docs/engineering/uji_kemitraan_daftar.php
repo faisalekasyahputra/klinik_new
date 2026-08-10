@@ -1,6 +1,6 @@
 <?php
 /**
- * Uji pendaftaran KKN/Magang — identitas mahasiswa + berkas proposal
+ * Uji pendaftaran KKN/Magang - identitas mahasiswa + berkas proposal
  * (migrasi 20260701000025).
  *
  *   php docs/engineering/uji_kemitraan_daftar.php
@@ -11,7 +11,7 @@
  *
  *   1. Proposal dikirim pada pendaftaran KKN -> HARUS diabaikan server.
  *      Formulir KKN memang tidak merender field-nya, tapi tidak merender
- *      sesuatu bukan penjagaan — siapa pun bisa menambahkannya sendiri. Yang
+ *      sesuatu bukan penjagaan - siapa pun bisa menambahkannya sendiri. Yang
  *      menentukan apa yang tersimpan adalah `KemitraanPortal::simpan()`.
  *   2. `Admin_Kemitraan::lihat_dokumen()` menerima nama berkas dari URL. Kalau
  *      itu dipetakan ke nama kolom mentah, siapa pun bisa membaca kolom apa
@@ -67,7 +67,7 @@ if ($db->connect_error) { fwrite(STDERR, "Koneksi DB gagal: {$db->connect_error}
  * `PRIVATE_UPLOADS_PATH` di .env kalau diisi, kalau tidak `dirname(FCPATH)`.
  *
  * Sempat saya hardcode ke APP_ROOT . '/private_uploads' dan tiga pemeriksaan
- * merah — padahal berkasnya tersimpan dengan benar. Yang salah alat ukurnya.
+ * merah - padahal berkasnya tersimpan dengan benar. Yang salah alat ukurnya.
  * Menebak jalur yang sudah punya satu sumber kebenaran adalah cara membuat
  * harness melapor gagal untuk hal yang tidak pernah rusak.
  */
@@ -99,7 +99,7 @@ function baris($sql, $params = []) {
 
 // Dua sesi terpisah: mahasiswa yang mendaftar, dan admin yang membuka
 // dokumennya. Satu jar untuk keduanya membuat uji whitelist di bawah tidak
-// pernah sampai ke parameternya — ia tertahan di gerbang peran lebih dulu.
+// pernah sampai ke parameternya - ia tertahan di gerbang peran lebih dulu.
 $jars = ['mhs' => tempnam(sys_get_temp_dir(), 'ujikm_m'), 'admin' => tempnam(sys_get_temp_dir(), 'ujikm_a')];
 $jar_aktif = 'mhs';
 
@@ -146,7 +146,7 @@ function login($email, $password) {
     return ($json['status'] ?? '') === 'success';
 }
 
-/** PDF minimal yang lolos finfo — store_private_upload mencocokkan ekstensi DENGAN mime. */
+/** PDF minimal yang lolos finfo - store_private_upload mencocokkan ekstensi DENGAN mime. */
 function berkas_pdf($nama) {
     $path = sys_get_temp_dir() . '/' . $nama . '.pdf';
     file_put_contents($path, "%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n");
@@ -169,7 +169,7 @@ function bersihkan() {
         $db->query("DELETE FROM kkn_magang_pendaftaran WHERE user_id = " . (int) $GLOBALS['mhs_uji_id']);
         $db->query("DELETE FROM usr_users WHERE id = " . (int) $GLOBALS['mhs_uji_id']);
     }
-    // Slot 2099 yang dibuka skrip ini — tahun itu tidak pernah dipakai data asli.
+    // Slot 2099 yang dibuka skrip ini - tahun itu tidak pernah dipakai data asli.
     $db->query("DELETE FROM kkn_magang_slot WHERE tahun = 2099");
     foreach ($berkas_sementara as $f) { @unlink($f); }
     foreach ($jars as $f) { @unlink($f); }
@@ -177,14 +177,14 @@ function bersihkan() {
 
 // ---------------------------------------------------------------- jalan
 
-echo "Uji pendaftaran KKN/Magang — " . BASE_URL . "\n\n";
+echo "Uji pendaftaran KKN/Magang - " . BASE_URL . "\n\n";
 
 echo "== Prasyarat ==\n";
 // Kode HTTP saja TIDAK cukup: login gagal juga membalas 200. Yang menentukan
-// isi JSON-nya — pelajaran dari harness wizard yang sempat hijau padahal
+// isi JSON-nya - pelajaran dari harness wizard yang sempat hijau padahal
 // akunnya tidak pernah masuk.
 /**
- * Mahasiswa SENDIRI, bukan akun demo bersama — alasan yang sama dengan
+ * Mahasiswa SENDIRI, bukan akun demo bersama - alasan yang sama dengan
  * uji_kemitraan_slot.php: satu pendaftaran menggantung milik siapa pun di
  * `mahasiswa@example.com` membuat SELURUH pendaftaran skrip ini ditolak, dan
  * merahnya muncul di tempat yang tidak ada hubungannya dengan apa yang diuji.
@@ -214,7 +214,7 @@ cek(strpos($form_magang['body'], 'name="file_surat_pengantar"') !== FALSE, 'Sura
 // bidangnya harus menerima, dan setiap bulan dalam periodenya harus terbuka.
 // Skrip ini memakai periode 2099 yang tidak punya slot sama sekali, jadi slotnya
 // dibuka di sini dan ditutup lagi di bersihkan(). Dibuka untuk KEDUA bidang yang
-// dipakai di bawah supaya uji "tanpa NIM" tetap menguji NIM — bukan lulus karena
+// dipakai di bawah supaya uji "tanpa NIM" tetap menguji NIM - bukan lulus karena
 // kebetulan tertahan penjagaan slot lebih dulu. KKN tidak terpengaruh: di sana
 // field yang sama berarti tema kegiatan, bukan unit kerja.
 //
@@ -240,7 +240,7 @@ $tanpa_nim = http('KemitraanPortal/simpan', [
 cek($tanpa_nim['code'] === 200,
     'POST tanpa NIM tidak meledak');
 cek(baris("SELECT id FROM kkn_magang_pendaftaran WHERE instansi_asal = ?", [SENTINEL . '-TOLAK']) === NULL,
-    'POST tanpa NIM TIDAK membuat baris — validasi menahannya');
+    'POST tanpa NIM TIDAK membuat baris - validasi menahannya');
 
 echo "\n== Surat pengantar wajib untuk magang, opsional untuk KKN ==\n";
 /**
@@ -251,7 +251,7 @@ echo "\n== Surat pengantar wajib untuk magang, opsional untuk KKN ==\n";
  * surat yang tetap tersimpan akan sampai ke meja bidang membawa tahap 1 yang
  * tidak pernah benar-benar terjadi.
  *
- * KKN sengaja diuji SEBALIKNYA — masih boleh tanpa surat. Tanpa pasangan ini,
+ * KKN sengaja diuji SEBALIKNYA - masih boleh tanpa surat. Tanpa pasangan ini,
  * seseorang yang kelak melebarkan aturannya ke KKN tidak akan menemukan apa pun
  * yang memberitahunya bahwa penyempitan itu disengaja.
  *
@@ -280,10 +280,10 @@ http('KemitraanPortal/simpan', [
     'divisi_atau_tema' => 'Tema KKN Uji', 'periode_mulai' => '2099-01-01', 'periode_selesai' => '2099-02-01',
 ]);
 cek(baris("SELECT id FROM kkn_magang_pendaftaran WHERE instansi_asal = ?", [SENTINEL . '-KKNNOSURAT']) !== NULL,
-    'KKN tanpa surat pengantar TETAP tersimpan — penyempitan ke magang disengaja');
+    'KKN tanpa surat pengantar TETAP tersimpan - penyempitan ke magang disengaja');
 // Dilepas SEGERA setelah diperiksa. Aturan "satu pendaftaran menggantung per
 // mahasiswa per jenis" akan menolak uji KKN berikutnya kalau baris ini
-// dibiarkan — dan kegagalannya muncul jauh dari sini, di tempat yang tidak ada
+// dibiarkan - dan kegagalannya muncul jauh dari sini, di tempat yang tidak ada
 // hubungannya dengan surat pengantar.
 $GLOBALS['db']->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal = '"
     . $GLOBALS['db']->real_escape_string(SENTINEL . '-KKNNOSURAT') . "'");
@@ -333,16 +333,16 @@ $k = baris("SELECT * FROM kkn_magang_pendaftaran WHERE instansi_asal = ?", [SENT
 wajib($k !== NULL, 'Pendaftaran KKN tersimpan');
 cek( ! empty($k['file_surat_pengantar']), 'KKN tetap menerima surat pengantar');
 cek(empty($k['file_proposal']),
-    'Proposal yang diselundupkan ke KKN TIDAK tersimpan — gerbangnya di server, bukan di formulir');
+    'Proposal yang diselundupkan ke KKN TIDAK tersimpan - gerbangnya di server, bukan di formulir');
 $dir_kkn = dir_kemitraan($k['id']);
 cek(count(glob($dir_kkn . '/*') ?: []) === 1,
-    'Hanya SATU berkas mendarat di folder KKN — selundupan tidak ikut ditulis ke disk');
+    'Hanya SATU berkas mendarat di folder KKN - selundupan tidak ikut ditulis ke disk');
 
 echo "\n== NEGATIF: nama berkas di URL tidak boleh jadi nama kolom ==\n";
 pakai_sesi('admin');
 wajib(login(ADM_EMAIL, ADM_PASSWORD), 'Login admin berhasil (sesi terpisah dari mahasiswa)');
 
-// Kunci SAH harus 200 lebih dulu. Tanpa ini "semua ditolak" ikut lulus —
+// Kunci SAH harus 200 lebih dulu. Tanpa ini "semua ditolak" ikut lulus -
 // termasuk kalau method-nya rusak total dan menolak segalanya.
 foreach (['surat', 'proposal'] as $sah) {
     $r = http('Admin_Kemitraan/lihat_dokumen/' . (int) $m['id'] . '/' . $sah, NULL, FALSE);

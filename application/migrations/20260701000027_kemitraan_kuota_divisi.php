@@ -8,7 +8,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * admin harus menghitung sendiri berapa mahasiswa sudah masuk dan mencentang
  * ulang. Itu memindahkan pekerjaan, bukan menyelesaikannya.
  *
- * SATU kolom, di tabel divisi — bukan kolom kuota di tiap baris slot. "Setiap
+ * SATU kolom, di tabel divisi - bukan kolom kuota di tiap baris slot. "Setiap
  * divisi punya slot maksimal" berarti satu angka yang berlaku untuk tiap bulan
  * yang dibuka, dan kuota per sel akan menuntut admin mengisi 12 angka per
  * divisi untuk kebutuhan yang belum pernah disebut.
@@ -16,7 +16,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * Tidak ada kolom "terisi". Jumlah itu DITURUNKAN dari `kkn_magang_pendaftaran`
  * setiap kali dibaca. Menyimpannya berarti punya dua sumber kebenaran yang
  * harus disinkronkan pada setiap pendaftaran, penolakan, dan penyuntingan
- * admin — dan yang satu pasti akan menyimpang dari yang lain.
+ * admin - dan yang satu pasti akan menyimpang dari yang lain.
  *
  * Default 2, bukan 0: nilai lama tidak boleh berarti "semua divisi tiba-tiba
  * penuh" pada saat migrasi berjalan.
@@ -27,7 +27,7 @@ class Migration_Kemitraan_kuota_divisi extends CI_Migration {
 
     public function up()
     {
-        // Idempoten — migrasi ini bisa saja pernah berjalan sebagian.
+        // Idempoten - migrasi ini bisa saja pernah berjalan sebagian.
         if ($this->db->field_exists('kuota', self::TABEL)) { return; }
 
         $this->db->query("ALTER TABLE `" . self::TABEL . "`

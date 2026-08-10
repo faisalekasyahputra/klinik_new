@@ -2,7 +2,7 @@
 /**
  * Struktur & Cakupan.
  *
- * Kode/ID sengaja ditampilkan tapi TIDAK bisa disunting — dan itu dinyatakan
+ * Kode/ID sengaja ditampilkan tapi TIDAK bisa disunting - dan itu dinyatakan
  * di layar, bukan cuma tidak disediakan. Kolom yang hilang tanpa keterangan
  * terbaca sebagai fitur yang belum jadi, lalu ada yang menambahkannya.
  */
@@ -28,12 +28,12 @@ $ada_yatim = array_sum($yatim) > 0;
             <?php else: ?>
             <strong>Rujukan utuh.</strong>
             <?php endif; ?>
-            Empat jalur di bawah ini <b>tidak dijaga foreign key</b> — kalau salah satunya
+            Empat jalur di bawah ini <b>tidak dijaga foreign key</b> - kalau salah satunya
             di atas nol, ada kunci yang berubah atau baris master yang hilang, dan tidak ada
             galat apa pun yang menyertainya.
             <ul class="mt-2 space-y-0.5 text-xs">
                 <?php foreach ($yatim as $label => $n): ?>
-                <li><span class="font-mono font-bold"><?= (int) $n ?></span> — <?= html_escape($label) ?></li>
+                <li><span class="font-mono font-bold"><?= (int) $n ?></span> - <?= html_escape($label) ?></li>
                 <?php endforeach; ?>
             </ul>
         </div>
@@ -63,7 +63,7 @@ $ada_yatim = array_sum($yatim) > 0;
                         <td class="px-4 py-3"><code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs dark:bg-black/30"><?= html_escape($b->kode) ?></code></td>
                         <td class="px-4 py-3">
                             <?php if ((int) $b->petugas === 0): ?>
-                            <a href="<?= base_url('Admin_Users') ?>" class="inline-block rounded-full bg-red-500/10 px-2.5 py-1 text-[11px] font-bold text-red-600 hover:underline dark:text-red-400">Belum ada — tetapkan</a>
+                            <a href="<?= base_url('Admin_Users') ?>" class="inline-block rounded-full bg-red-500/10 px-2.5 py-1 text-[11px] font-bold text-red-600 hover:underline dark:text-red-400">Belum ada - tetapkan</a>
                             <?php else: ?>
                             <span class="text-xs"><?= (int) $b->petugas ?> orang</span>
                             <?php endif; ?>
@@ -130,7 +130,7 @@ $ada_yatim = array_sum($yatim) > 0;
         </div>
     </div>
 
-    <?php // Satu modal untuk kedua tabel — 40 baris x formulir inline akan mendorong tabel melewati wadahnya. ?>
+    <?php // Satu modal untuk kedua tabel - 40 baris x formulir inline akan mendorong tabel melewati wadahnya. ?>
     <div x-show="buka" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
         <div @click.away="buka = false" class="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-brand-card">
             <div class="flex items-start justify-between gap-3 border-b border-gray-200 pb-3 dark:border-white/10">
@@ -155,7 +155,7 @@ $ada_yatim = array_sum($yatim) > 0;
                 <p class="rounded-lg bg-gray-50 p-2.5 text-[11px] leading-relaxed text-gray-500 dark:bg-black/20 dark:text-brand-muted">
                     <i class="ph ph-info mr-1" aria-hidden="true"></i>
                     Kodenya <b>tidak ikut berubah</b>. Kode adalah identitas yang sudah tersebar ke tabel lain,
-                    dan sebagian rujukannya tanpa foreign key — menggantinya lewat formulir akan membuat baris
+                    dan sebagian rujukannya tanpa foreign key - menggantinya lewat formulir akan membuat baris
                     menjadi yatim tanpa satu pun galat. Ganti kode adalah migrasi data.
                 </p>
 

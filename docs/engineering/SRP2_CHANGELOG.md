@@ -1,6 +1,6 @@
 # Log Perbaikan SRP2
 
-## 23 Juli 2026 — Alur akun pengembang
+## 23 Juli 2026 - Alur akun pengembang
 
 - Memisahkan profil pengajuan, unggah dokumen, dan pengiriman pengajuan.
 - Menambahkan status `Draft` sebelum berkas lengkap dikirim ke admin.

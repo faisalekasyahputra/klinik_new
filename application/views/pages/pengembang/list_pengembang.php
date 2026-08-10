@@ -88,7 +88,7 @@
                                 <td class="px-8 py-5 text-sm">
                                     <?php // Penanda kini dari direktori resmi (status_aktif = 1), bukan
                                           // dari keberadaan baris pengajuan berstatus apa pun. NIB tidak
-                                          // lagi ditampilkan — kolom itu milik baris pengajuan dan hampir
+                                          // lagi ditampilkan - kolom itu milik baris pengajuan dan hampir
                                           // selalu kosong; echo lamanya juga tanpa escape. ?>
                                     <?php if (empty($dev['sp2_tersertifikasi'])): ?>
                                         <span class="inline-flex items-center px-3 py-1 bg-zinc-500/10 text-zinc-400 border border-zinc-500/20 rounded-lg font-bold text-[10px] uppercase tracking-wider shadow-sm transition-colors">

@@ -1,12 +1,12 @@
 <?php
 /**
- * Isi menu sidebar admin — DIPAKAI DUA KALI dan itu justru maksudnya: sekali
+ * Isi menu sidebar admin - DIPAKAI DUA KALI dan itu justru maksudnya: sekali
  * oleh sidebar penuh saat halaman dimuat utuh, sekali lagi oleh
  * MY_Controller::render_user_dashboard() yang mengirimkannya ke loader
  * progresif tiap pindah halaman.
  *
  * Satu markup, satu aturan. Sebelum dipisah, sorotan aktif dirender PHP
- * sementara navigasi SPA menempelkan `aria-current` lewat JS — dua sumber
+ * sementara navigasi SPA menempelkan `aria-current` lewat JS - dua sumber
  * kebenaran yang langsung berbeda: item lama tetap menyala, item baru ikut
  * menyala, dan sub-menu cabang lama tidak pernah tertutup.
  *
@@ -15,7 +15,7 @@
  *
  * Keadaan buka-tutup AWAL dihitung dashboard_menu() (cabang yang memuat halaman
  * sekarang terbuka). Sesudah itu penggunanya yang pegang kendali lewat tombol
- * lipat — anak SELALU dirender, hanya disembunyikan Alpine, supaya cabang lain
+ * lipat - anak SELALU dirender, hanya disembunyikan Alpine, supaya cabang lain
  * bisa dibuka tanpa berpindah halaman lebih dulu.
  */
 $aktif_kelas = 'bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary';

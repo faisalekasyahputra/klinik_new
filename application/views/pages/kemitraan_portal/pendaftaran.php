@@ -4,7 +4,7 @@
  *
  * Sebelum ada halaman ini, yang bisa dilihat pendaftar cuma satu baris ringkasan
  * di /akun: jenis, instansi, divisi, status. NIM, semester, periode, dan apakah
- * berkasnya benar-benar terunggah — tidak ada satu pun yang bisa ia periksa,
+ * berkasnya benar-benar terunggah - tidak ada satu pun yang bisa ia periksa,
  * padahal itulah yang menentukan diterima atau tidaknya.
  *
  * Anti-IDOR ditegakkan di controller (pendaftaran_milik(), user_id dari sesi),
@@ -35,10 +35,10 @@ $baris = [
 /**
  * Kolom `divisi_atau_tema` memuat DUA hal berbeda tergantung jenisnya.
  *
- * Untuk KKN ia tema kegiatan sungguhan — teks bebas yang ditulis pendaftar.
+ * Untuk KKN ia tema kegiatan sungguhan - teks bebas yang ditulis pendaftar.
  * Untuk magang, `periksa_slot()` menimpanya dengan nama kanonik bidang dari
  * tabel, jadi menampilkannya sebagai "Tema Kegiatan" DI SAMPING "Bidang Tujuan"
- * mencetak nilai yang sama dua kali dengan dua label berbeda — persis yang
+ * mencetak nilai yang sama dua kali dengan dua label berbeda - persis yang
  * terlihat pada pendaftaran nyata pertama, 2 Agt 2026:
  *
  *     BIDANG TUJUAN   Bidang Perumahan
@@ -48,7 +48,7 @@ $baris = [
  * dibiarkan karena itu urusan skema, bukan urusan yang dibaca mahasiswa.
  */
 if ($row->jenis === 'magang') {
-    // Nama bidang datang dari controller — view ini tidak menyentuh DB.
+    // Nama bidang datang dari controller - view ini tidak menyentuh DB.
     // Sebelumnya bidang tujuan TIDAK PERNAH disebut ke pendaftar sama sekali:
     // garis waktunya bilang "Bidang penanggung jawab memutuskan" tanpa memberi
     // tahu yang mana, padahal itu yang menentukan ke siapa ia bertanya kalau
@@ -59,7 +59,7 @@ if ($row->jenis === 'magang') {
 }
 
 $baris['Periode'] = $row->periode_mulai && $row->periode_selesai
-    ? tgl_id($row->periode_mulai, TRUE) . ' – ' . tgl_id($row->periode_selesai, TRUE) : NULL;
+    ? tgl_id($row->periode_mulai, TRUE) . ' - ' . tgl_id($row->periode_selesai, TRUE) : NULL;
 ?>
 <div class="mx-auto max-w-3xl p-2 sm:p-6">
     <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -79,15 +79,15 @@ $baris['Periode'] = $row->periode_mulai && $row->periode_selesai
 
     <?php
     /**
-     * Garis waktu empat tahap — bentuk yang diminta user 1 Agt 2026.
+     * Garis waktu empat tahap - bentuk yang diminta user 1 Agt 2026.
      *
      * Statusnya satu kolom, tapi yang dilihat mahasiswa harus berupa PERJALANAN:
      * suratnya sekarang ada di meja siapa. "Diajukan" tidak memberi tahu itu.
-     * 'Ditolak' menghentikan garis di tahap tempat ia ditolak — catatan_bidang
+     * 'Ditolak' menghentikan garis di tahap tempat ia ditolak - catatan_bidang
      * yang terisi berarti penolakannya datang dari meja kedua.
      */
     // Ketiga kolom bidang ditulis sekaligus oleh Kemitraan_Bidang::proses(),
-    // jadi memeriksa salah satu saja sebenarnya cukup — sampai ada yang menambal
+    // jadi memeriksa salah satu saja sebenarnya cukup - sampai ada yang menambal
     // baris lewat SQL manual dan hanya mengisi sebagian. Waktu itu terjadi di
     // data uji 2 Agt 2026, halaman ini MENYANGKAL DIRINYA SENDIRI: garis
     // waktunya bilang "berhenti di tinjauan sekretariat" sementara tepat di
@@ -119,7 +119,7 @@ $baris['Periode'] = $row->periode_mulai && $row->periode_selesai
     $tahap = [
         ['judul' => 'Surat Masuk',
          'ket'   => $ada_surat ? 'Surat pengantar diterima sistem'
-                               : 'Pendaftaran diterima sistem — tanpa surat pengantar'],
+                               : 'Pendaftaran diterima sistem - tanpa surat pengantar'],
         ['judul' => 'Ditinjau Admin Disperakim', 'ket' => 'Sekretariat memeriksa dan meneruskan'],
         ['judul' => 'Ditinjau Admin Bidang',     'ket' => 'Bidang penanggung jawab memutuskan'],
         ['judul' => 'Surat Balasan',             'ket' => 'Surat resmi siap diunduh'],
@@ -159,7 +159,7 @@ $baris['Periode'] = $row->periode_mulai && $row->periode_selesai
 
         <?php if ($berhenti): ?>
             <p class="mt-1 rounded-xl bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-600">
-                Berkas berhenti di tahap <?= $ditolak_di_bidang ? 'tinjauan bidang' : ($row->status === 'Dibatalkan' ? 'ini — Anda membatalkannya sendiri' : 'tinjauan sekretariat') ?>.
+                Berkas berhenti di tahap <?= $ditolak_di_bidang ? 'tinjauan bidang' : ($row->status === 'Dibatalkan' ? 'ini - Anda membatalkannya sendiri' : 'tinjauan sekretariat') ?>.
             </p>
         <?php elseif ( ! empty($row->file_surat_balasan)): ?>
             <a href="<?= base_url('KemitraanPortal/unduh_balasan/' . (int) $row->id) ?>" target="_blank" rel="noopener"
@@ -168,7 +168,7 @@ $baris['Periode'] = $row->periode_mulai && $row->periode_selesai
             </a>
         <?php elseif ($row->status === 'Diterima'): ?>
             <p class="mt-1 text-xs text-[color:var(--portal-text-muted)]">
-                Pendaftaran Anda diterima. Surat balasan resmi sedang disiapkan sekretariat — halaman ini akan menampilkan tombol unduh begitu suratnya terbit.
+                Pendaftaran Anda diterima. Surat balasan resmi sedang disiapkan sekretariat - halaman ini akan menampilkan tombol unduh begitu suratnya terbit.
             </p>
         <?php endif; ?>
     </div>

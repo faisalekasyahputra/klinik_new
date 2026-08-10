@@ -678,7 +678,7 @@ class Housing_assessment_model extends CI_Model {
      * Riwayat perjalanan satu pengajuan, untuk PEMILIKNYA.
      *
      * Barisnya sudah lama ditulis submit/transition/revisi tapi tidak pernah
-     * ditampilkan ke pemohon — dia hanya melihat satu status terakhir dan
+     * ditampilkan ke pemohon - dia hanya melihat satu status terakhir dan
      * menunggu dalam gelap. WHERE user_id di join menjaga kepemilikan.
      */
     public function get_owned_timeline($queue_id, $user_id)

@@ -47,7 +47,7 @@ $config['rate_limit_policies'] = [
         'window' => 60,
         'dimensions' => ['ip', 'account', 'object'],
     ],
-    // B3 — laporan komentar forum. ENTRI policy, bukan mekanisme baru:
+    // B3 - laporan komentar forum. ENTRI policy, bukan mekanisme baru:
     // §17 poin 15 melarang membuat pembatas laju kedua. Dedup di ledger sudah
     // menahan laporan berulang untuk komentar YANG SAMA, jadi policy ini
     // menahan pola lain: membanjiri BANYAK komentar sekaligus. Karena itu
@@ -59,10 +59,10 @@ $config['rate_limit_policies'] = [
     ],
     /*
      * Janji temu konsultasi. Per HARI, bukan per jam: yang dibatasi bukan spam
-     * melainkan penumpukan agenda tatap muka — setiap permintaan memakan waktu
+     * melainkan penumpukan agenda tatap muka - setiap permintaan memakan waktu
      * petugas yang nyata.
      *
-     * HANYA dimensi `account`, dan itu disengaja — dua dimensi lain sempat ikut
+     * HANYA dimensi `account`, dan itu disengaja - dua dimensi lain sempat ikut
      * ditulis lalu dicabut sebelum sempat naik:
      *
      * - `ip` pada batas 3/hari MERUSAK. Endpoint ini wajib login, jadi `account`
@@ -90,7 +90,7 @@ $config['rate_limit_policies'] = [
      * IP pada batas sekecil ini membuat satu kantor kelurahan atau satu blok
      * CGNAT berbagi jatah untuk semua orang di baliknya.
      *
-     * Batas ini bekerja BERSAMA gerbang login, bukan menggantikannya — NIK +
+     * Batas ini bekerja BERSAMA gerbang login, bukan menggantikannya - NIK +
      * tanggal lahir tidak menahan siapa pun (tanggalnya terkandung di NIK),
      * jadi kalau login dicabut, angka ini yang jadi satu-satunya penahan dan
      * ia tidak cukup.

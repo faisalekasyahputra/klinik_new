@@ -68,7 +68,7 @@ $filter_html = ob_get_clean();
                 <tr>
                     <td class="px-4 py-4 text-xs"><?= html_escape(tgl_id($r->created_at, TRUE)) ?></td>
                     <td class="px-4 py-4">
-                        <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama_pemohon ?: '—') ?></div>
+                        <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama_pemohon ?: '-') ?></div>
                         <div class="text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($r->email_pemohon) ?></div>
                     </td>
                     <td class="px-4 py-4 max-w-[260px]">
@@ -81,7 +81,7 @@ $filter_html = ob_get_clean();
                             <div class="font-bold"><?= html_escape(tgl_id($r->jadwal_mulai, TRUE)) ?> <?= html_escape(date('H:i', strtotime($r->jadwal_mulai))) ?></div>
                             <div class="text-[10px] text-gray-400 dark:text-brand-muted/70 truncate max-w-[140px]"><?= html_escape($r->lokasi) ?></div>
                         <?php else: ?>
-                            <span class="text-gray-400 dark:text-brand-muted/60">—</span>
+                            <span class="text-gray-400 dark:text-brand-muted/60">-</span>
                         <?php endif; ?>
                     </td>
                     <td class="px-4 py-4 text-xs">
@@ -118,7 +118,7 @@ $filter_html = ob_get_clean();
                             </form>
                             <?php endif; ?>
                             <?php if ( ! $bisa_tawar && ! $bisa_tolak && ! $bisa_selesai): ?>
-                            <span class="text-gray-400 dark:text-brand-muted/60">—</span>
+                            <span class="text-gray-400 dark:text-brand-muted/60">-</span>
                             <?php endif; ?>
                         </div>
                     </td>

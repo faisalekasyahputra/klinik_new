@@ -37,7 +37,7 @@ if (isset($queue) && !empty($queue)) {
         <div>
             <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2 flex items-center gap-3">
                 <i class="ph ph-map-pin text-brand-primary"></i>
-                Antrean Perumahan — <?= html_escape($kabupaten_nama ?: 'Wilayah Saya') ?>
+                Antrean Perumahan - <?= html_escape($kabupaten_nama ?: 'Wilayah Saya') ?>
             </h1>
             <p class="text-sm text-gray-500 dark:text-brand-muted">Kelola antrean pengajuan program perumahan warga di wilayah Anda.</p>
         </div>

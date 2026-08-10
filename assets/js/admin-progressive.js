@@ -3,7 +3,7 @@
  *
  * Versi ringkas dari loader portal (layouts/footer.php): klik link internal
  * ke controller dashboard di-fetch sebagai partial (cabang AJAX
- * render_user_dashboard) lalu di-swap ke #main-content — sidebar/topbar tidak
+ * render_user_dashboard) lalu di-swap ke #main-content - sidebar/topbar tidak
  * dimuat ulang. Kelayakan diputuskan dari RESPONS: redirect (sesi habis),
  * bukan text/html (berkas bukti), atau dokumen utuh <!doctype (halaman tanpa
  * cabang partial) semuanya jatuh ke navigasi penuh.
@@ -95,7 +95,7 @@
      * Akarnya satu: aturan aktif dan cabang terbuka diputuskan
      * MY_Controller::dashboard_menu(), lalu SEBAGIAN disalin ulang di sini.
      * Dua implementasi untuk satu aturan pasti berbeda suatu saat. Sekarang
-     * server mengirim menunya utuh dan JS hanya menukar — satu aturan, satu
+     * server mengirim menunya utuh dan JS hanya menukar - satu aturan, satu
      * tempat.
      */
     function tukarSidebar(html) {
@@ -106,14 +106,14 @@
         var baru = tmp.querySelector('#sidebar-nav-baru');
         if (!baru) return;
         nav.innerHTML = baru.innerHTML;
-        // Menu memakai Alpine (x-show, tombol lipat) — tanpa initTree, sub-menu
+        // Menu memakai Alpine (x-show, tombol lipat) - tanpa initTree, sub-menu
         // yang baru disuntik tidak akan pernah menanggapi klik.
         if (window.Alpine) { Alpine.initTree(nav); }
     }
 
     /**
      * @param body FormData opsional. Kalau ada, permintaan dikirim sebagai POST
-     *             dan redirect JUSTRU yang ditunggu (pola PRG) — bukan tanda
+     *             dan redirect JUSTRU yang ditunggu (pola PRG) - bukan tanda
      *             sesi habis seperti pada GET.
      */
     function loadPage(url, push, tabelSaja, body) {
@@ -123,7 +123,7 @@
 
         // Alamat yang akan masuk history. Untuk POST ini BUKAN `url`: yang harus
         // tercatat adalah tujuan redirect-nya (mis. .../input?langkah=isian),
-        // bukan endpoint aksinya (.../simpan_program) — kalau endpoint aksi yang
+        // bukan endpoint aksinya (.../simpan_program) - kalau endpoint aksi yang
         // masuk history, tombol Back mengarah ke URL yang hanya menerima POST.
         var urlAkhir = url;
 
@@ -141,7 +141,7 @@
 
         // `X-Shell: admin` menandai SIAPA yang meminta, bukan sekadar "ini AJAX".
         // Tanpa ini `render_user_dashboard()` melepas shell admin untuk permintaan
-        // AJAX apa pun — termasuk dari loader portal PUBLIK di layouts/footer.php,
+        // AJAX apa pun - termasuk dari loader portal PUBLIK di layouts/footer.php,
         // yang lalu menyuntikkan markup admin ke dalam panel publik. Hasilnya
         // halaman admin tampil tanpa sidebar, tanpa tailwind-admin.css, dan tanpa
         // ikon Phosphor (portal memakai FontAwesome): judul kartu tak terbaca dan
@@ -176,7 +176,7 @@
 
                 // Penanda menu = tanda tangan partial DASHBOARD. Halaman portal
                 // publik juga punya cabang AJAX dan juga membalas potongan
-                // text/html, jadi ia lolos ketiga penjaga di atas — tanpa syarat
+                // text/html, jadi ia lolos ketiga penjaga di atas - tanpa syarat
                 // ini, tautan dari dashboard ke portal menyuntikkan markup portal
                 // ke dalam shell admin (kebalikan persis dari bug X-Shell di
                 // komentar fetch). Arah gagalnya aman: partial yang tidak
@@ -195,7 +195,7 @@
                     if (kartuBaru) {
                         wadah.innerHTML = kartuBaru.innerHTML;
                         // Wadahnya tetap, jadi komponen Alpine di LUAR kartu
-                        // (mis. modal proses antrean) tidak ikut dibuat ulang —
+                        // (mis. modal proses antrean) tidak ikut dibuat ulang -
                         // hanya isi barunya yang perlu dipasangi.
                         if (window.Alpine) { Alpine.initTree(wadah); }
                         // Sidebar sengaja TIDAK ditukar: path tidak berubah, jadi
@@ -205,7 +205,7 @@
                         if (push) { history.pushState({ adminUrl: urlAkhir }, '', urlAkhir); }
                         return;
                     }
-                    // Balasan tanpa kartu bertanda — perlakukan sebagai pindah
+                    // Balasan tanpa kartu bertanda - perlakukan sebagai pindah
                     // halaman biasa, jangan tinggalkan layar setengah tertukar.
                 }
 
@@ -236,7 +236,7 @@
         if (/Auth\//.test(link.pathname)) return;
 
         // SEMUA tautan internal lain lewat jalur progresif. Kelayakannya
-        // diputuskan dari RESPONS, bukan dari nama jalurnya — loadPage() sudah
+        // diputuskan dari RESPONS, bukan dari nama jalurnya - loadPage() sudah
         // menjatuhkan diri ke navigasi penuh pada redirect, pada balasan bukan
         // text/html, dan pada dokumen utuh.
         //
@@ -245,10 +245,10 @@
         // Rekam_Data, Rekam_Perumahan, Rekam_Kawasan, dan Rekam_Tinjauan
         // diam-diam memuat ulang seluruh halaman. Ini kelas kesalahan yang sama
         // dengan daftar jalur di layouts/footer.php yang diperbaiki lebih dulu
-        // hari ini — daftar yang menyebut nama satu per satu memang selalu bocor
+        // hari ini - daftar yang menyebut nama satu per satu memang selalu bocor
         // pada nama yang belum ada saat ia ditulis. Halaman baru kini otomatis
         // ikut, tanpa perlu diingat siapa pun.
-        // S2 — opt-out dihormati SEBELUM fetch. Tautan yang sengaja ditandai
+        // S2 - opt-out dihormati SEBELUM fetch. Tautan yang sengaja ditandai
         // tidak boleh difetch dulu lalu baru jatuh ke navigasi penuh: itu dua
         // GET untuk satu klik, dan endpoint yang menghitung kunjungan jadi
         // naik dua kali.
@@ -258,7 +258,7 @@
         loadPage(link.href, true, !!link.closest(SEL_TABEL) && lingkupTabel(link.href));
     });
 
-    // Kotak cari toolbar adalah <form method="get">, bukan tautan — tanpa ini ia
+    // Kotak cari toolbar adalah <form method="get">, bukan tautan - tanpa ini ia
     // tetap memuat ulang seluruh konten padahal hasilnya cuma mengganti isi
     // tabel yang sama, persis seperti tab status di sebelahnya.
     document.addEventListener('submit', function (e) {
@@ -275,15 +275,15 @@
             return;
         }
 
-        // POST di dalam panel bertanda — wizard Rekam Data. Setiap langkahnya
+        // POST di dalam panel bertanda - wizard Rekam Data. Setiap langkahnya
         // POST lalu redirect (PRG), jadi tanpa ini seluruh wizard memuat ulang
         // halaman penuh di SETIAP tombol: kedip putih, shell dibangun ulang,
-        // gulir lompat — padahal yang berubah cuma isi panelnya.
+        // gulir lompat - padahal yang berubah cuma isi panelnya.
         //
         // OPT-IN, bukan berlaku umum. Menangkap semua POST secara diam-diam
         // berbahaya: endpoint yang membalas JSON atau tidak redirect (login,
         // aksi Alpine) akan rusak, dan POST tidak bisa "dibatalkan lalu diulang
-        // sebagai navigasi penuh" — kirimannya sudah terjadi. Panel harus
+        // sebagai navigasi penuh" - kirimannya sudah terjadi. Panel harus
         // menyatakan diri siap.
         if (metode !== 'post' || ! form.closest(SEL_PANEL)) return;
 
@@ -292,7 +292,7 @@
         // nilainya harus diambil dari `e.submitter`. Kalau peramban tidak
         // menyediakannya, JANGAN ditangkap: mengirim tanpa nilai itu bukan
         // "sedikit kurang bagus", tapi memindahkan pengguna ke langkah yang
-        // salah. Biarkan submit biasa jalan — halaman memuat penuh, tapi benar.
+        // salah. Biarkan submit biasa jalan - halaman memuat penuh, tapi benar.
         if ( ! ('submitter' in e)) return;
 
         var data = new FormData(form);
@@ -303,7 +303,7 @@
         loadPage(form.getAttribute('action') || window.location.href, true, false, data);
     });
 
-    // S1 — entry AWAL direkam sebelum pushState pertama, supaya Back dari
+    // S1 - entry AWAL direkam sebelum pushState pertama, supaya Back dari
     // halaman pertama tidak menghasilkan popstate ber-state null (URL berubah,
     // isi layar tetap).
     if (!history.state || !history.state.adminUrl) {

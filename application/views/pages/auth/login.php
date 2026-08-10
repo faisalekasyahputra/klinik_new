@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token-name" content="<?= $this->security->get_csrf_token_name(); ?>">
     <meta name="csrf-token-hash" content="<?= $this->security->get_csrf_hash(); ?>">
-    <title>Masuk — Klinik PKP</title>
+    <title>Masuk - Klinik PKP</title>
     <meta name="description" content="Masuk ke portal layanan perumahan dan kawasan permukiman terpadu Provinsi Jawa Tengah.">
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
@@ -24,7 +24,7 @@
 <div class="auth-split">
 
     <!-- =====================================================
-         LEFT PANEL — Animated Gradient + Branding
+         LEFT PANEL - Animated Gradient + Branding
          ===================================================== -->
     <div class="auth-left" aria-hidden="true">
         <div class="auth-left__gradient"></div>
@@ -76,7 +76,7 @@
             </h1>
             <p class="auth-left__desc">
                 Sistem informasi perumahan dan kawasan permukiman terpadu
-                untuk masyarakat Jawa Tengah — akses data, layanan, dan
+                untuk masyarakat Jawa Tengah - akses data, layanan, dan
                 informasi pembangunan perumahan dalam satu platform.
             </p>
             <div class="auth-left__badge">
@@ -87,7 +87,7 @@
     </div>
 
     <!-- =====================================================
-         RIGHT PANEL — Login Form
+         RIGHT PANEL - Login Form
          ===================================================== -->
     <div class="auth-right">
         <div class="auth-form-container">
@@ -107,13 +107,13 @@
             <p class="auth-subheading">Masuk ke akun Anda untuk mengakses seluruh layanan portal.</p>
             <?php
             // CATATAN STRUKTUR: dulu ada </div> yatim di sini yang menutup
-            // .auth-form-container terlalu dini — kotak demo + form jadi hidup
+            // .auth-form-container terlalu dini - kotak demo + form jadi hidup
             // di luar container ber-max-width dan tampilan melebar tak rapi.
             ?>
 
             <?php
             // ============================================================
-            // KREDENSIAL DEMO — dikembalikan atas permintaan user 27 Jul 2026
+            // KREDENSIAL DEMO - dikembalikan atas permintaan user 27 Jul 2026
             // ------------------------------------------------------------
             // Alasannya: sistem sedang dalam tahap uji coba oleh dinas, dan
             // tanpa kredensial di layar mereka tidak bisa menelusuri keenam

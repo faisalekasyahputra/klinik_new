@@ -25,17 +25,17 @@ class Umum extends MY_Controller {
 
 	public function housing()
 	{
-		// Dulu merender mockup housing_carrier1 yang form-nya action="#" —
+		// Dulu merender mockup housing_carrier1 yang form-nya action="#" -
 		// submit-nya tidak ke mana-mana. Wizard pembiayaan yang sungguhan
 		// sudah ada di Program::solusi_pembiayaan(). Redirect supaya
 		// bookmark/link lama tidak 404, pola yang sama dengan form_aduan().
 		redirect('solusi_pembiayaan');
 	}
 
-	// S9 — `info_rumah()` DICABUT 29 Jul 2026 bersama view-nya.
+	// S9 - `info_rumah()` DICABUT 29 Jul 2026 bersama view-nya.
 	// Halaman itu me-`include "layout/head.php"` yang tidak pernah ada di
 	// `views/pages/umum/`, jadi ia membalas 200 sambil memuat "A PHP Error"
-	// dan path absolut server — diverifikasi runtime, bukan dibaca dari kode.
+	// dan path absolut server - diverifikasi runtime, bukan dibaca dari kode.
 	// Nol tautan masuk dari view mana pun maupun dari routes.php: halaman ini
 	// yatim. Menutup display_errors hanya menghilangkan bocorannya, tidak
 	// membuat halamannya berfungsi; karena itu dicabut, bukan ditambal.
@@ -97,7 +97,7 @@ class Umum extends MY_Controller {
 	public function aduan()
 	{
 		$datacontent['judul'] ='';
-		// Prefill nama/email kalau user sedang login — kosong untuk tamu.
+		// Prefill nama/email kalau user sedang login - kosong untuk tamu.
 		$datacontent['nama_default']  = $this->session->userdata('name') ?: '';
 		$datacontent['email_default'] = $this->session->userdata('email') ?: '';
 		$this->render('pages/umum/aduan', $datacontent);
@@ -115,11 +115,11 @@ class Umum extends MY_Controller {
 		$this->form_validation->set_rules('email', 'Email', 'required|valid_email|max_length[100]');
 		$this->form_validation->set_rules('judul', 'Judul', 'required|trim|max_length[150]');
 		$this->form_validation->set_rules('pesan', 'Pesan', 'required|trim|max_length[2000]');
-		// TIDAK ADA rule `bidang` — dan itu bukan kelalaian. Pelapor tidak lagi
+		// TIDAK ADA rule `bidang` - dan itu bukan kelalaian. Pelapor tidak lagi
 		// memilih bidang (revisi dinas 3 Agt 2026); nilainya ditetapkan superadmin
 		// lewat Admin_Aduan::triase(). Menerima `bidang` dari POST di sini berarti
 		// siapa pun bisa merutekan aduannya sendiri ke bidang mana pun dengan satu
-		// field tersembunyi — gerbang triase yang dilewati lewat pintu belakang.
+		// field tersembunyi - gerbang triase yang dilewati lewat pintu belakang.
 		if ($this->form_validation->run() === FALSE) {
 			$this->session->set_flashdata('error', validation_errors('<li>', '</li>'));
 			redirect('umum/aduan');
@@ -131,7 +131,7 @@ class Umum extends MY_Controller {
 		$judul = $this->input->post('judul', TRUE);
 		$pesan = $this->input->post('pesan', TRUE);
 
-		// user_id selalu dari sesi (anti-IDOR), bukan dari input — tamu tetap
+		// user_id selalu dari sesi (anti-IDOR), bukan dari input - tamu tetap
 		// boleh kirim aduan dengan user_id NULL.
 		$user_id = $this->is_logged_in() ? $this->get_user_id() : NULL;
 
@@ -157,12 +157,12 @@ class Umum extends MY_Controller {
 			return;
 		}
 
-		// Tidak menjanjikan bidang tujuan — belum ada, dan menyebut satu nama di
+		// Tidak menjanjikan bidang tujuan - belum ada, dan menyebut satu nama di
 		// sini akan jadi janji yang bisa diingkari triase.
 		$pesan_sukses = 'Aduan Anda berhasil dikirim. Kami akan memeriksa dan meneruskannya ke bidang yang menangani.';
 
 		// Lampiran disimpan di luar webroot dan hanya bisa dibuka lewat endpoint
-		// ber-guard (Admin_Bidang/Admin_Aduan) — dulu ditaruh di .assets/uploads/
+		// ber-guard (Admin_Bidang/Admin_Aduan) - dulu ditaruh di .assets/uploads/
 		// yang bisa diakses HTTP langsung. Kalau lampirannya gagal, aduannya
 		// TETAP tersimpan; user diberi tahu apa adanya, bukan dibatalkan diam-diam.
 		$galat_lampiran = NULL;
@@ -170,7 +170,7 @@ class Umum extends MY_Controller {
 		if ($nama_lampiran) {
 			$this->db->where('id', $id)->update('aduan', ['lampiran' => $nama_lampiran]);
 		} elseif ($galat_lampiran) {
-			$pesan_sukses .= ' Namun lampiran gagal diunggah (' . $galat_lampiran . ') — silakan kirim susulan bila perlu.';
+			$pesan_sukses .= ' Namun lampiran gagal diunggah (' . $galat_lampiran . ') - silakan kirim susulan bila perlu.';
 		}
 
 		$this->session->set_flashdata('success', $pesan_sukses);
@@ -187,23 +187,23 @@ class Umum extends MY_Controller {
 	}
 
 	/**
-	 * Papan aduan — daftar aduan yang masuk beserta jawabannya, terbuka untuk
+	 * Papan aduan - daftar aduan yang masuk beserta jawabannya, terbuka untuk
 	 * SEMUA pengguna yang sudah login (keputusan dinas 3 Agt 2026: aduan
 	 * "bergaya forum", supaya orang bisa melihat isunya sudah pernah diangkat
 	 * dan sudah dijawab apa).
 	 *
-	 * WAJIB LOGIN, dan gerbangnya di sini — bukan sekadar tautannya
+	 * WAJIB LOGIN, dan gerbangnya di sini - bukan sekadar tautannya
 	 * disembunyikan di halaman aduan. Aduan bukan konten publik.
 	 *
 	 * YANG TIDAK PERNAH DI-SELECT: `pesan`, `email`, `lampiran`. Bukan
-	 * "tidak dirender" — TIDAK DIAMBIL sama sekali, jadi tidak ada di variabel
+	 * "tidak dirender" - TIDAK DIAMBIL sama sekali, jadi tidak ada di variabel
 	 * mana pun yang bisa ikut terbawa oleh view berikutnya, dump debug, atau
 	 * satu baris tampilan yang ditambahkan setahun lagi. Isi aduan bisa memuat
 	 * alamat rumah, sengketa tanah, dan nama tetangga; yang dibagikan hanya
 	 * JUDUL dan JAWABAN DINAS.
 	 *
 	 * Nama pelapor disamarkan jadi inisial DI CONTROLLER, lalu nama aslinya
-	 * dibuang dari baris sebelum sampai ke view — sama alasannya.
+	 * dibuang dari baris sebelum sampai ke view - sama alasannya.
 	 *
 	 * TANPA kotak cari. Pencarian bebas atas daftar yang identitasnya
 	 * disamarkan adalah alat pembuka samaran: "nama tetangga saya" dicoba satu
@@ -247,7 +247,7 @@ class Umum extends MY_Controller {
 		$this->render('pages/umum/papan_aduan', $datacontent);
 	}
 
-	/** "Siti Nur Aisyah" -> "S. N. A." — cukup untuk membedakan, tidak cukup untuk mengenali. */
+	/** "Siti Nur Aisyah" -> "S. N. A." - cukup untuk membedakan, tidak cukup untuk mengenali. */
 	private function inisial_nama($nama)
 	{
 		$potong = preg_split('/\s+/', trim((string) $nama), -1, PREG_SPLIT_NO_EMPTY);
@@ -312,7 +312,7 @@ class Umum extends MY_Controller {
 
 		// VALIDASI PANJANG
 		if (mb_strlen($judul) < 10 || mb_strlen($judul) > 200) {
-			$this->session->set_flashdata('error', 'Judul topik harus antara 10–200 karakter.');
+			$this->session->set_flashdata('error', 'Judul topik harus antara 10-200 karakter.');
 			redirect('Umum/forum');
 			return;
 		}
@@ -339,7 +339,7 @@ class Umum extends MY_Controller {
 			return;
 		}
 
-		// INSERT — nama & email diambil dari session
+		// INSERT - nama & email diambil dari session
 		$data = [
 			'nama_user'   => $this->session->userdata('username') ?: ($this->session->userdata('name') ?: 'Pengguna'),
 			'email_user'  => $this->session->userdata('email') ?: '',
@@ -407,7 +407,7 @@ class Umum extends MY_Controller {
 			// `count($komentar) > 0` DICABUT 5 Agt 2026 bersama pasangannya di
 			// server (butir E1). Justru syarat inilah yang membuat dinas membuka
 			// menu Konsultasi Terjadwal dan menyimpulkan "belum ada pilihan bikin
-			// jadwalnya" — tombolnya memang tidak pernah mereka lihat.
+			// jadwalnya" - tombolnya memang tidak pernah mereka lihat.
 			$datacontent['boleh_ajukan'] = ! $datacontent['janji']
 				&& ($datacontent['topik']['status'] ?? 'open') !== 'closed';
 		}
@@ -424,8 +424,8 @@ class Umum extends MY_Controller {
 	 * Ajukan tatap muka untuk satu topik.
 	 *
 	 * Halaman `Umum/forum` sudah berjudul "Konsultasi Terjadwal" dan memajang
-	 * tiga kartu alur sejak lama — "Admin meninjau", "Agenda ditentukan",
-	 * "Waktu konsultasi disampaikan setelah ditinjau" — tanpa satu pun
+	 * tiga kartu alur sejak lama - "Admin meninjau", "Agenda ditentukan",
+	 * "Waktu konsultasi disampaikan setelah ditinjau" - tanpa satu pun
 	 * mekanisme di belakangnya. Ini mekanismenya.
 	 *
 	 * Empat syarat, masing-masing menutup hal berbeda:
@@ -479,7 +479,7 @@ class Umum extends MY_Controller {
 
 		/* SYARAT "topik harus ditanggapi petugas dulu" DICABUT 5 Agt 2026
 		   (revisi dinas butir E1). Semula ia menerjemahkan gagasan "berkonsultasi
-		   di forum dulu, tatap muka belakangan" — tapi di lapangan justru itu
+		   di forum dulu, tatap muka belakangan" - tapi di lapangan justru itu
 		   yang membuat dinas melihat menu Konsultasi Terjadwal dan menyimpulkan
 		   "belum ada pilihan bikin jadwalnya": warga yang topiknya belum
 		   ditanggapi tidak pernah melihat tombolnya sama sekali.
@@ -526,7 +526,7 @@ class Umum extends MY_Controller {
 	 * Jawaban warga atas tawaran petugas: setujui / minta jadwal lain / batalkan.
 	 *
 	 * Ketiganya lewat SATU endpoint karena ketiganya perpindahan keadaan yang
-	 * sama bentuknya, dan aturan sahnya dibaca dari `Janji_temu_model::ALUR` —
+	 * sama bentuknya, dan aturan sahnya dibaca dari `Janji_temu_model::ALUR` -
 	 * bukan ditulis ulang di sini. Endpoint terpisah per aksi berarti tiga
 	 * salinan whitelist yang akan berselisih.
 	 *
@@ -536,7 +536,7 @@ class Umum extends MY_Controller {
 	public function respon_janji_temu($id = NULL)
 	{
 		// Helper forum dimuat lazy di controller ini, dan `sanitize_forum_input()`
-		// dipakai di bawah. Tanpa baris ini method-nya fatal error — bukan
+		// dipakai di bawah. Tanpa baris ini method-nya fatal error - bukan
 		// menolak, bukan gagal: 500 sebelum satu pun pemeriksaan berjalan.
 		$this->_load_forum();
 		if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
@@ -660,7 +660,7 @@ class Umum extends MY_Controller {
 		// `auto_hide_reported(5)` DICABUT dari sini 29 Jul 2026 (B3/U2).
 		// Dua alasan. Pertama, penempatannya memang ganjil: menyapu auto-hide
 		// sebagai efek samping seseorang membalas komentar. Kedua dan yang
-		// menentukan: U2 ledger-only — laporan dicatat, visibilitas TIDAK
+		// menentukan: U2 ledger-only - laporan dicatat, visibilitas TIDAK
 		// berubah otomatis. Setelah B3 menghitung `report_count` dari pelapor
 		// unik, membiarkan panggilan ini justru membuat lima akun bisa
 		// menyembunyikan diskusi tanpa antrean moderasi dan tanpa jalan pulang.
@@ -674,7 +674,7 @@ class Umum extends MY_Controller {
 	// =========================================================
 
 	/**
-	 * B3 — dulu endpoint ini ANONIM: siapa pun bisa memanggilnya berulang kali
+	 * B3 - dulu endpoint ini ANONIM: siapa pun bisa memanggilnya berulang kali
 	 * dan menyensor komentar orang lain sendirian. Guard-nya sudah ada beberapa
 	 * baris di bawah, di berkas yang sama (`toggle_like()`), tinggal disalin.
 	 *
@@ -682,7 +682,7 @@ class Umum extends MY_Controller {
 	 * berarti tokennya bisa diambil anonim lewat satu GET. Yang menutup adalah
 	 * guard login + rate limit + dedup di ledger.
 	 *
-	 * `auto_hide_reported()` SENGAJA tidak lagi dipanggil — U2 ledger-only,
+	 * `auto_hide_reported()` SENGAJA tidak lagi dipanggil - U2 ledger-only,
 	 * visibilitas komentar tidak berubah sampai keputusan #10 beserta roadmap
 	 * moderasinya (antrean + restore) tersedia.
 	 */
@@ -808,7 +808,7 @@ class Umum extends MY_Controller {
 	public function pengembang() {
 		$items = $this->_get_tapera_data();
 
-		// Hanya direktori resmi yang boleh jadi dasar "tersertifikasi" — sama
+		// Hanya direktori resmi yang boleh jadi dasar "tersertifikasi" - sama
 		// dengan Pengembang::sertifikasi(). Dulu di sini SELURUH srp2_registrations
 		// dibaca tanpa filter status, lalu kolom `nib` dipakai sebagai penanda:
 		// draft yang belum pernah dikirim pun tampil "Terdata" di halaman publik.
@@ -913,7 +913,7 @@ class Umum extends MY_Controller {
 		}
 
 		// Cap "Terverifikasi SRP2" HANYA boleh dari direktori resmi pengembang
-		// bersertifikat — sumber yang SAMA dengan Pengembang::sertifikasi().
+		// bersertifikat - sumber yang SAMA dengan Pengembang::sertifikasi().
 		//
 		// Dulu di sini `get_where('srp2_registrations', ['nama_perusahaan' => $nama])`
 		// TANPA filter status: draft yang belum pernah dikirim pun ikut dicap

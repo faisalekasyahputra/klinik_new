@@ -174,7 +174,7 @@ class Auth_model extends CI_Model {
     // =========================================================
 
     /**
-     * Turunkan username unik dari local-part email — dipakai HANYA saat
+     * Turunkan username unik dari local-part email - dipakai HANYA saat
      * daftar cepat SRP2 mengisi profile_completed=1 tanpa pernah melalui
      * onboarding, sehingga name/username tidak pernah NULL (roadmap T5
      * S12-a). Bukan pengganti onboarding: user tetap bisa menggantinya
@@ -208,7 +208,7 @@ class Auth_model extends CI_Model {
 
     /**
      * Pastikan akun pengembang punya baris srp2_registrations, buat kalau belum.
-     * SATU-SATUNYA tempat draft SRP2 dibuat — sebelumnya logika ini disalin di
+     * SATU-SATUNYA tempat draft SRP2 dibuat - sebelumnya logika ini disalin di
      * empat tempat (Auth::do_login cabang AJAX, Auth::do_register,
      * Auth::lanjutkan, Pengembang::syarat) dan satu jalur terlewat:
      * Auth::save_onboarding() tidak membuatnya sama sekali, sehingga user yang
@@ -236,7 +236,7 @@ class Auth_model extends CI_Model {
         // JANGAN pernah membuat baris kedua untuk user yang sudah punya pengajuan.
         // $status_filter menyempitkan PENCARIAN, bukan izin membuat: pemanggil
         // yang mencari khusus 'Draft' (Auth::lanjutkan) dulu jatuh ke INSERT saat
-        // pengajuannya sudah Pending — draft kosong baru itu lalu menang di semua
+        // pengajuannya sudah Pending - draft kosong baru itu lalu menang di semua
         // ORDER BY id DESC, dan pengajuan yang sudah dikirim lenyap dari pandangan
         // pemohon padahal admin masih melihatnya.
         //
@@ -261,14 +261,14 @@ class Auth_model extends CI_Model {
     }
 
     /**
-     * Keadaan pengajuan SRP2 milik seorang pengembang — SATU sumber untuk
+     * Keadaan pengajuan SRP2 milik seorang pengembang - SATU sumber untuk
      * semua yang butuh tahu "sudah sampai mana orang ini".
      *
      * Dibuat karena keadaan ini dulu cuma dihitung di Pengembang::syarat(),
      * sementara Auth::do_login() (jalur AJAX wizard) hanya mengembalikan
      * registration_id. Akibatnya pengembang lama yang masuk LEWAT wizard
      * melihat keadaan tamu: 0/14 dokumen, tombol kirim terkunci, dan catatan
-     * admin tidak muncul — padahal di server semuanya sudah ada.
+     * admin tidak muncul - padahal di server semuanya sudah ada.
      *
      * @param  int $user_id
      * @return array|null  registration_id, status, catatan_admin, uploaded_keys
@@ -299,11 +299,11 @@ class Auth_model extends CI_Model {
      *
      * Dibuat karena dulu baris direktori hanya diisi SEKALI saat approve: ganti
      * alamat/website/Instagram sesudah itu tidak pernah sampai ke publik, padahal
-     * form-nya berlabel "Kontak publik — ditampilkan di halaman profil
+     * form-nya berlabel "Kontak publik - ditampilkan di halaman profil
      * pengembang". Label yang menjanjikan sesuatu yang tidak terjadi termasuk
      * kebohongan di layar (§0d).
      *
-     * Dipanggil dari dalam transaksi pemanggilnya — sengaja tidak membuka
+     * Dipanggil dari dalam transaksi pemanggilnya - sengaja tidak membuka
      * transaksi sendiri supaya tidak bersarang.
      *
      * @param  object $reg baris srp2_registrations
@@ -311,7 +311,7 @@ class Auth_model extends CI_Model {
      */
     public function upsert_direktori_publik($reg) {
         $nama = trim((string) ($reg->nama_perusahaan ?? ''));
-        // Kolom nama di direktori NOT NULL + UNIQUE — tanpa nama tidak ada yang
+        // Kolom nama di direktori NOT NULL + UNIQUE - tanpa nama tidak ada yang
         // bisa diterbitkan. Gerbangnya sendiri ada di kirim_pengajuan() (T1a).
         if ($nama === '') { return NULL; }
 
@@ -324,7 +324,7 @@ class Auth_model extends CI_Model {
         ];
 
         if ( ! empty($reg->certified_developer_id)) {
-            // Sudah terbit: segarkan isinya, JANGAN sentuh status_aktif —
+            // Sudah terbit: segarkan isinya, JANGAN sentuh status_aktif -
             // pencabutan/pengaktifan adalah keputusan admin yang terpisah.
             $this->db->where('id', (int) $reg->certified_developer_id)
                 ->update('srp2_certified_developers', $payload);

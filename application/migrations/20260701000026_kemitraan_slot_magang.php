@@ -8,12 +8,12 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * `KemitraanPortal::magang()`, dan view-nya sendiri mengaku "Data dummy untuk
  * rancangan awal". Akibatnya dua hal: tidak ada seorang pun yang bisa
  * mengubahnya tanpa deploy, dan formulir pendaftaran tidak pernah tunduk
- * padanya — `divisi_atau_tema` adalah teks bebas, jadi mahasiswa bisa
+ * padanya - `divisi_atau_tema` adalah teks bebas, jadi mahasiswa bisa
  * mengetik divisi yang di layar berwarna merah.
  *
  * DUA tabel, bukan satu. Daftar divisi harus bisa berdiri sendiri: kalau nama
  * divisi disimpan sebagai teks di baris slot, maka "daftar divisi" cuma bisa
- * diturunkan lewat SELECT DISTINCT — dan divisi yang belum punya slot sama
+ * diturunkan lewat SELECT DISTINCT - dan divisi yang belum punya slot sama
  * sekali menjadi mustahil ditampilkan.
  *
  * `kkn_magang_slot` sengaja TIDAK punya kolom `tersedia`. Baris yang ada
@@ -27,7 +27,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * ini dari Juni tahun lalu.
  *
  * FK `divisi_id` INT SIGNED mengikuti `kkn_magang_divisi.id` yang dibuat di
- * berkas ini juga — lihat AGENTS.md §0e soal errno 150 kalau tipe rujukan
+ * berkas ini juga - lihat AGENTS.md §0e soal errno 150 kalau tipe rujukan
  * tidak sama persis.
  */
 class Migration_Kemitraan_slot_magang extends CI_Migration {
@@ -74,7 +74,7 @@ class Migration_Kemitraan_slot_magang extends CI_Migration {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
         // Seed dipatok ke tahun berjalan supaya yang tampil di layar hari ini
-        // persis sama dengan sebelum migrasi — perpindahan penyimpanan tidak
+        // persis sama dengan sebelum migrasi - perpindahan penyimpanan tidak
         // boleh sekalian mengubah isinya. INSERT IGNORE: migrasi ini idempoten,
         // menjalankannya dua kali tidak menggandakan apa pun.
         $tahun = (int) date('Y');

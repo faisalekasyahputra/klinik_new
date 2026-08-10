@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verifikasi Email — Klinik PKP</title>
+    <title>Verifikasi Email - Klinik PKP</title>
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
     <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . filemtime('assets/css/auth-pages.css')) ?>">
@@ -261,7 +261,7 @@ let currentStep = 0;
 
 function runStep() {
     if (currentStep >= steps.length) {
-        // All done — call AJAX to actually verify
+        // All done - call AJAX to actually verify
         fetch('<?= base_url('Auth/do_verify_email') ?>', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

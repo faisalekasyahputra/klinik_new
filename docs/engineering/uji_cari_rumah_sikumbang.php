@@ -1,6 +1,6 @@
 <?php
 /**
- * Penjaga pencarian rumah SIKUMBANG — butir A3 revisi dinas.
+ * Penjaga pencarian rumah SIKUMBANG - butir A3 revisi dinas.
  *
  *   php docs/engineering/uji_cari_rumah_sikumbang.php
  *
@@ -10,7 +10,7 @@
  * kemungkinan datanya memang sedikit". Ternyata cocok persis.
  *
  * Penyaring subsidi/non-subsidi berjalan di sisi kita, sementara API diminta
- * `limit=9` — jadi sembilan baris itulah yang disaring, dan yang tersisa 1–8
+ * `limit=9` - jadi sembilan baris itulah yang disaring, dan yang tersisa 1-8
  * buah. Terukur 10 Agt 2026 di Kota Semarang (wilayah bawaan halaman): API
  * mengirim 9, yang lolos saringan subsidi hanya SATU. Halaman 3 malah nol,
  * dan `load_more()` membaca balasan kosong sebagai "Semua Data Telah Dimuat"
@@ -18,7 +18,7 @@
  *
  * TIDAK MENYENTUH JARINGAN. `Index::bongkah_sikumbang()` membaca cache berkas
  * lebih dulu, jadi cache-nya kita isi sendiri dengan data uji. Itu sekaligus
- * membuat penjaga ini menguji KODE KITA, bukan ketersediaan API orang lain —
+ * membuat penjaga ini menguji KODE KITA, bukan ketersediaan API orang lain -
  * uji yang merah karena SIKUMBANG sedang mati adalah uji yang tidak berguna.
  *
  * Kode wilayah uji sengaja 99xx (tidak ada di Jateng) supaya tidak mungkin
@@ -68,7 +68,7 @@ function baris($id, $subsidi) {
 /**
  * Kunci cache HARUS dihitung dengan urutan parameter yang sama persis seperti
  * `Index::bongkah_sikumbang()`. Kalau urutannya berbeda, md5-nya berbeda, dan
- * penjaga ini akan diam-diam menembak jaringan sungguhan — hijau yang salah.
+ * penjaga ini akan diam-diam menembak jaringan sungguhan - hijau yang salah.
  */
 function seed($wilayah, $halaman_api, array $baris) {
     $url = 'https://sikumbang.tapera.go.id/ajax/lokasi/search?' . http_build_query([
@@ -115,7 +115,7 @@ echo "=== UJI PENCARIAN RUMAH SIKUMBANG (butir A3) ===\n\n";
 wajib(is_dir(CACHE_DIR) && is_writable(CACHE_DIR), 'Folder cache bisa ditulis');
 
 // ---------------------------------------------------------------------------
-// Skenario 1 — "Semarang": bongkahan gemuk, yang cocok sedikit.
+// Skenario 1 - "Semarang": bongkahan gemuk, yang cocok sedikit.
 // 100 baris hanya 1 subsidi, lalu 100 baris 20 subsidi, lalu habis.
 // Total subsidi = 21. Sebelum perbaikan, halaman 1 memberi SATU kartu.
 // ---------------------------------------------------------------------------
@@ -134,10 +134,10 @@ $h3 = minta('9901', 'subsidi', 3, 'load_more');
 cek(kartu($h3) === 3, 'Halaman 3 memberi sisa 3 kartu (21 total) (dapat: ' . kartu($h3) . ')');
 
 $h4 = minta('9901', 'subsidi', 4, 'load_more');
-cek(trim($h4) === '', 'Halaman 4 kosong — "habis" diucapkan hanya saat memang habis');
+cek(trim($h4) === '', 'Halaman 4 kosong - "habis" diucapkan hanya saat memang habis');
 
 // ---------------------------------------------------------------------------
-// Skenario 2 — bongkahan pertama NOL yang cocok.
+// Skenario 2 - bongkahan pertama NOL yang cocok.
 // Inilah yang dulu mematikan tombol "Muat Lebih Banyak" secara permanen.
 // ---------------------------------------------------------------------------
 echo "\n== 2. Bongkahan pertama nol cocok tidak boleh menghentikan daftar ==\n";
@@ -152,7 +152,7 @@ $n2 = minta('9902', 'subsidi', 2, 'load_more');
 cek(kartu($n2) === 6, 'Halaman 2 memberi sisa 6 dari 15 (dapat: ' . kartu($n2) . ')');
 
 // ---------------------------------------------------------------------------
-// Skenario 3 — saringan benar-benar menyaring, bukan cuma melewatkan.
+// Skenario 3 - saringan benar-benar menyaring, bukan cuma melewatkan.
 // ---------------------------------------------------------------------------
 echo "\n== 3. Saringan memilah, dan 'semua' tidak memilah ==\n";
 $k1 = minta('9901', 'komersil', 1);
@@ -162,7 +162,7 @@ $s1 = minta('9901', 'semua', 1);
 cek(kartu($s1) === 9, '"semua" memberi 9 (dapat: ' . kartu($s1) . ')');
 
 /* Kartu subsidi dan non-subsidi harus benar-benar BERBEDA isinya. Tanpa cek
-   ini, saringan yang meloloskan segalanya tetap lulus ketiga asersi di atas —
+   ini, saringan yang meloloskan segalanya tetap lulus ketiga asersi di atas -
    dan itu persis bug toggle lama yang pernah kami perbaiki. */
 preg_match_all('#detail_perum/(\d+)#', $h1, $m_sub);
 preg_match_all('#detail_perum/(\d+)#', $k1, $m_kom);
@@ -170,7 +170,7 @@ cek($m_sub[1] && $m_kom[1] && ! array_intersect($m_sub[1], $m_kom[1]),
     'Daftar subsidi dan non-subsidi tidak beririsan sama sekali');
 
 // ---------------------------------------------------------------------------
-// Skenario 4 — ukuran halaman dijepit.
+// Skenario 4 - ukuran halaman dijepit.
 // ---------------------------------------------------------------------------
 echo "\n== 4. Ukuran halaman dijepit ==\n";
 $besar = minta('9901', 'semua', 1, 'cari_wil', 999);
@@ -180,7 +180,7 @@ $nol = minta('9901', 'semua', 1, 'cari_wil', 0);
 cek(kartu($nol) >= 1, 'limit=0 tidak menghasilkan halaman kosong (dapat: ' . kartu($nol) . ')');
 
 // ---------------------------------------------------------------------------
-// Skenario 5 — gagal jaringan tidak boleh menyamar jadi "data habis".
+// Skenario 5 - gagal jaringan tidak boleh menyamar jadi "data habis".
 //
 // Pemeriksaan STRUKTURAL, bukan simulasi, dan disebut apa adanya supaya tidak
 // dibaca sebagai bukti perilaku: `bongkah_sikumbang()` hanya mengembalikan NULL
@@ -190,7 +190,7 @@ cek(kartu($nol) >= 1, 'limit=0 tidak menghasilkan halaman kosong (dapat: ' . kar
 // 🔻 VERSI PERTAMA PENJAGA INI LOLOS DARI MUTASI, dan itu dicatat di sini
 // supaya penggantinya tidak mengulang. Dulu ia cuma mencari pola
 // `if ($baris === NULL)`. Mutasi yang membuang `$gagal = TRUE` dari dalam
-// cabang itu TETAP HIJAU — polanya masih ada, perilakunya sudah rusak.
+// cabang itu TETAP HIJAU - polanya masih ada, perilakunya sudah rusak.
 // Sekarang yang diperiksa adalah IKATANNYA: cabang NULL wajib menyalakan
 // penanda gagal, dan kedua metode wajib membacanya.
 // ---------------------------------------------------------------------------
@@ -207,7 +207,7 @@ cek(substr_count($ctrl, 'if ($gagal && ! $list_final)') === 2,
     'cari_wil() dan load_more() dua-duanya membaca penanda itu');
 
 // ---------------------------------------------------------------------------
-// Skenario 6 — keterangan A2 ada di layar dan punya kedua rumusan.
+// Skenario 6 - keterangan A2 ada di layar dan punya kedua rumusan.
 // ---------------------------------------------------------------------------
 echo "\n== 6. Keterangan subsidi & non subsidi (butir A2) ==\n";
 cek(strpos($view, 'id="ket-status"') !== FALSE, 'Ada tempat keterangan di layar');

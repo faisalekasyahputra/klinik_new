@@ -15,7 +15,7 @@ $isi = function ($nama) use ($old) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token-name" content="<?= $this->security->get_csrf_token_name(); ?>">
     <meta name="csrf-token-hash" content="<?= $this->security->get_csrf_hash(); ?>">
-    <title>Lengkapi Profil — Klinik PKP</title>
+    <title>Lengkapi Profil - Klinik PKP</title>
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
     <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . filemtime('assets/css/auth-pages.css')) ?>">
@@ -26,7 +26,7 @@ $isi = function ($nama) use ($old) {
 
     <!-- Alpine dimuat `defer`, jadi ada jeda sebelum x-show bekerja. Tanpa ini
          ketiga tombol navigasi (Kembali, Lanjut, Simpan) berkedip bersamaan
-         dulu. Langkah dan blok peran tidak butuh ini — mereka tersembunyi
+         dulu. Langkah dan blok peran tidak butuh ini - mereka tersembunyi
          lewat CSS `.auth-dynamic-form` yang default-nya memang tertutup. -->
     <style>[x-cloak] { display: none !important; }</style>
 </head>
@@ -66,11 +66,11 @@ $isi = function ($nama) use ($old) {
         </div>
     </div>
 
-    <!-- RIGHT PANEL — Onboarding Form -->
+    <!-- RIGHT PANEL - Onboarding Form -->
     <div class="auth-right" style="align-items: flex-start; padding-top: 3rem;">
         <?php
         /**
-         * Saat isian pulang karena validasi gagal, buka langkah 2 — bukan 1.
+         * Saat isian pulang karena validasi gagal, buka langkah 2 - bukan 1.
          * Perannya sudah dipilih, dan hampir semua cabang yang bisa gagal
          * (username terpakai, NIK, password) tinggal di langkah itu. Memulangkan
          * user ke pemilihan peran hanya menambah dua klik untuk keputusan yang
@@ -80,7 +80,7 @@ $isi = function ($nama) use ($old) {
         ?>
         <div class="auth-form-container" style="max-width: 520px;" x-data="onboardingForm('<?= $isi('role') ?>', <?= (int) $langkah_awal ?>)">
 
-            <!-- Back Link — halaman ini TIDAK ditegakkan secara global (cek
+            <!-- Back Link - halaman ini TIDAK ditegakkan secara global (cek
                  profile_completed cuma terjadi sekali sesudah login), jadi user
                  memang boleh pergi. Dulu tidak ada tautan apa pun ke luar, dan
                  itu membuatnya terasa seperti jebakan. -->
@@ -104,7 +104,7 @@ $isi = function ($nama) use ($old) {
                 Pilih peran dan lengkapi data Anda.
             </p>
 
-            <!-- Form — satu <form>, tiga langkah. Semua isian tetap terkirim
+            <!-- Form - satu <form>, tiga langkah. Semua isian tetap terkirim
                  dalam SATU POST di akhir; `save_onboarding()` tidak berubah
                  sama sekali. Langkah hanya urusan tampilan. -->
             <form action="<?= base_url('Auth/save_onboarding') ?>" method="POST" enctype="multipart/form-data" id="onboardingForm"
@@ -123,20 +123,20 @@ $isi = function ($nama) use ($old) {
                     </div>
                 </div>
 
-                <!-- ===== LANGKAH 1 — PERAN ===== -->
+                <!-- ===== LANGKAH 1 - PERAN ===== -->
                 <?php
                 /**
                  * `inert` MENYERTAI setiap `visible`, jangan dipisah.
                  *
                  * Seksi langkah disembunyikan lewat `max-height:0; opacity:0;
-                 * overflow:hidden` (auth-pages.css) — bukan `display:none`.
+                 * overflow:hidden` (auth-pages.css) - bukan `display:none`.
                  * Secara visual benar: tingginya nol. Tapi isinya TETAP berada
                  * di urutan tab dan di pohon aksesibilitas.
                  *
                  * Diukur 3 Agt 2026 pada langkah 1: tiga seksi bertinggi 0, dan
                  * 17 kontrol di dalamnya masih bisa difokus. Pengguna keyboard
                  * menekan Tab dari kartu peran mendarat di "Nama Perusahaan"
-                 * lalu "Upload SIUP" — field untuk peran yang belum ia pilih,
+                 * lalu "Upload SIUP" - field untuk peran yang belum ia pilih,
                  * di langkah yang belum ia capai, semuanya tak terlihat.
                  *
                  * `inert` adalah atribut HTML bawaan yang mencabut satu subtree
@@ -155,7 +155,7 @@ $isi = function ($nama) use ($old) {
                                  disembunyikan secara visual; kalau ia tetap
                                  `required` saat langkahnya lewat, submit gagal
                                  diam-diam dengan "invalid form control is not
-                                 focusable" — error di console, tanpa pesan
+                                 focusable" - error di console, tanpa pesan
                                  apa pun ke user. -->
                             <input type="radio" name="role" value="warga" x-model="role" :required="langkah === 1">
                             <div class="auth-role-card__icon" style="color:#10b981;"><i class="fa-solid fa-house-user"></i></div>
@@ -182,7 +182,7 @@ $isi = function ($nama) use ($old) {
                     </p>
                 </div>
 
-                <!-- ===== LANGKAH 2 — DATA PRIBADI ===== -->
+                <!-- ===== LANGKAH 2 - DATA PRIBADI ===== -->
                 <div class="auth-dynamic-form" :class="{ 'visible': langkah === 2 }" :inert="langkah !== 2" x-ref="langkah2">
                     <div class="auth-section-title">
                         <i class="fa-solid fa-user"></i> Data Pribadi
@@ -236,7 +236,7 @@ $isi = function ($nama) use ($old) {
                         <i class="fa-solid fa-phone auth-input-icon"></i>
                     </div>
 
-                <!-- ===== PASSWORD (akun Google) — masih bagian dari langkah 2,
+                <!-- ===== PASSWORD (akun Google) - masih bagian dari langkah 2,
                      supaya ikut divalidasi tombol Lanjut lewat x-ref langkah2 ===== -->
                 <?php if (!empty($needs_password)): ?>
                 <div style="margin-top:1.75rem;">
@@ -265,7 +265,7 @@ $isi = function ($nama) use ($old) {
                         <div class="auth-strength__bar"></div>
                         <div class="auth-strength__bar"></div>
                     </div>
-                    <div class="auth-strength-label" id="obStrengthLabel" style="color:var(--auth-gray-400);">—</div>
+                    <div class="auth-strength-label" id="obStrengthLabel" style="color:var(--auth-gray-400);">-</div>
 
                     <ul class="auth-rules" id="obPasswordRules">
                         <li id="ob-rule-length"><i class="fa-solid fa-circle"></i> Min. 8 karakter</li>
@@ -287,13 +287,13 @@ $isi = function ($nama) use ($old) {
                 <?php endif; ?>
                 </div><!-- /langkah 2 -->
 
-                <!-- ===== LANGKAH 3 — DOKUMEN PERAN ===== -->
+                <!-- ===== LANGKAH 3 - DOKUMEN PERAN ===== -->
                 <!-- Dilewati untuk warga: totalLangkah menjadi 2, jadi tombol
                      simpan sudah muncul di langkah 2. -->
                 <div class="auth-dynamic-form" :class="{ 'visible': langkah === 3 }" :inert="langkah !== 3" x-ref="langkah3">
 
                 <?php if (!empty($old)): ?>
-                <!-- Input file tidak bisa diisi ulang dari server — HTML
+                <!-- Input file tidak bisa diisi ulang dari server - HTML
                      melarangnya demi keamanan. Daripada user mengira berkasnya
                      masih terpasang lalu gagal lagi, katakan saja. -->
                 <p style="font-size:0.8rem; color:var(--auth-amber); margin:0 0 1rem; line-height:1.5;">
@@ -353,7 +353,7 @@ $isi = function ($nama) use ($old) {
 
                     <!-- Dulu keduanya WAJIB, padahal berkasnya tidak pernah
                          ditampilkan di UI mana pun (lihat catatan pada
-                         Auth::_handle_uploads) — sementara surat pengantar dan
+                         Auth::_handle_uploads) - sementara surat pengantar dan
                          proposal di pendaftaran KKN/Magang yang sesungguhnya
                          justru opsional. Gerbang wajib di depan, longgar di
                          belakang, untuk berkas yang tak dibaca siapa pun. -->
@@ -423,7 +423,7 @@ function onboardingForm(peranTerpilih, langkahAwal) {
         langkah: langkahAwal || 1,
 
         // Warga tidak punya blok dokumen sama sekali, jadi langkah 3 tidak
-        // pernah ada untuknya — tombol simpan sudah muncul di langkah 2.
+        // pernah ada untuknya - tombol simpan sudah muncul di langkah 2.
         get totalLangkah() {
             return this.role === 'warga' ? 2 : 3;
         },
@@ -438,7 +438,7 @@ function onboardingForm(peranTerpilih, langkahAwal) {
         lanjut() {
             // reportValidity() sekaligus memeriksa DAN memunculkan pesan bawaan
             // browser. every() berhenti di yang pertama tidak valid, jadi hanya
-            // satu gelembung yang tampil — bukan lima sekaligus.
+            // satu gelembung yang tampil - bukan lima sekaligus.
             const blok = this.$refs['langkah' + this.langkah];
             if (blok) {
                 const isian = Array.from(blok.querySelectorAll('input, select, textarea'));
@@ -453,7 +453,7 @@ function onboardingForm(peranTerpilih, langkahAwal) {
     };
 }
 
-// Input file telanjang tidak mengabarkan apa pun setelah dipilih — tidak nama,
+// Input file telanjang tidak mengabarkan apa pun setelah dipilih - tidak nama,
 // tidak ukuran, apalagi batas 5 MB yang ditegakkan store_private_upload().
 // Satu pendengar berdelegasi mengurus keenam input tanpa markup tambahan.
 const BATAS_UNGGAH = 5 * 1024 * 1024;
@@ -473,8 +473,8 @@ document.addEventListener('change', function (e) {
     if (!berkas) { ket.textContent = ''; return; }
 
     const kebesaran = berkas.size > BATAS_UNGGAH;
-    ket.textContent = berkas.name + ' — ' + (berkas.size / 1048576).toFixed(1) + ' MB'
-        + (kebesaran ? ' — melebihi batas 5 MB, akan ditolak server' : '');
+    ket.textContent = berkas.name + ' - ' + (berkas.size / 1048576).toFixed(1) + ' MB'
+        + (kebesaran ? ' - melebihi batas 5 MB, akan ditolak server' : '');
     ket.style.color = kebesaran ? 'var(--auth-red)' : 'var(--auth-green)';
 });
 
@@ -519,7 +519,7 @@ function checkPwStrength(pw) {
     const labels = ['', 'Lemah', 'Sedang', 'Kuat', 'Sangat Kuat'];
     const colors = ['', 'var(--auth-red)', '#f97316', 'var(--auth-amber)', 'var(--auth-green)'];
     if (label) {
-        label.textContent = pw.length === 0 ? '—' : labels[level];
+        label.textContent = pw.length === 0 ? '-' : labels[level];
         label.style.color = pw.length === 0 ? 'var(--auth-gray-400)' : colors[level];
     }
 }

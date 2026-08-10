@@ -10,14 +10,14 @@
     // Kawasan, Pertanahan, Bank Data, dan Pengembang: ikon 24px di atas judul,
     // ikon "hantu" 80px opacity .08 di pojok kanan bawah, dan tombol aksi
     // menempel di dasar lewat `mt-auto`. Sebelumnya halaman ini punya kartunya
-    // sendiri — tinggi 220px, rata tengah, judul text-2xl, tanpa tombol —
+    // sendiri - tinggi 220px, rata tengah, judul text-2xl, tanpa tombol -
     // sehingga satu-satunya halaman portal yang kartunya beda sendiri.
     //
     // `data-tab-group` sengaja TIDAK ikut disalin meski ada di kelima tab itu:
     // tidak ada satu pun kode yang membacanya (nol hasil di seluruh
     // application/ dan assets/). Menyalin atribut mati cuma memperbanyak
     // tempat yang harus dibaca orang berikutnya sebelum sadar ia tidak berarti.
-    // `data-tab-link` dan `data-tab-key` DIPAKAI — loader portal di
+    // `data-tab-link` dan `data-tab-key` DIPAKAI - loader portal di
     // layouts/footer.php membacanya untuk menyorot tab aktif.
     ?>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">

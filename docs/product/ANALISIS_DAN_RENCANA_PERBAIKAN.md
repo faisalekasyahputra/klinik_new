@@ -1,5 +1,5 @@
 # DOKUMEN ANALISIS KEAMANAN & RENCANA PERBAIKAN NON-DESTRUKTIF
-## Klinik PKP — Dinas Perumahan Rakyat & Kawasan Permukiman Provinsi Jawa Tengah
+## Klinik PKP - Dinas Perumahan Rakyat & Kawasan Permukiman Provinsi Jawa Tengah
 
 | Atribut | Detail |
 |---|---|
@@ -9,7 +9,7 @@
 | **Tanggal Analisis** | 2 Juni 2026 |
 | **Terakhir Diperbarui** | 1 Juli 2026 (v3.0 Refactor) |
 | **Status Perbaikan** | ✅ Fase 1-5 (Security) Selesai · ✅ Fase 6 (UI/UX & Auth) Selesai · 🔄 Fase 11 (Tokenisasi CSS) Sedang berjalan |
-| **Klasifikasi** | INTERNAL — Disperakim Jateng & Pengembang |
+| **Klasifikasi** | INTERNAL - Disperakim Jateng & Pengembang |
 
 ---
 
@@ -205,4 +205,4 @@ Seluruh celah keamanan kritis yang ditemukan pada audit awal telah berhasil dita
 Semua perbaikan berjalan di belakang layar (backend) tanpa mengubah desain UI dark-mode premium. Selanjutnya, pengembangan dilanjutkan ke fitur forum lanjutan, dashboard admin, dan persiapan rilis production (lihat `IMPLEMENTATION_ROADMAP.md`). Saat ini sedang dilakukan proses tokenisasi CSS untuk beralih dari Dark Theme *hardcoded* ke Light Theme berbasis CSS variables (yang mendukung Dark Mode).
 
 ---
-*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant — 1 Juli 2026 (v3.0 Refactor).*
+*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant - 1 Juli 2026 (v3.0 Refactor).*

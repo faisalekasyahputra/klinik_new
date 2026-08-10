@@ -1,8 +1,8 @@
-# Runbook rilis — jejak audit, triase aduan, janji temu (`033` → `035`)
+# Runbook rilis - jejak audit, triase aduan, janji temu (`033` → `035`)
 
 **Ditulis 4 Agustus 2026.** Melanjutkan pola
 [`RUNBOOK_RILIS_WIZARD_024.md`](RUNBOOK_RILIS_WIZARD_024.md), tapi **urutannya
-kebalikannya** — baca §"Yang berbeda" sebelum menyentuh apa pun.
+kebalikannya** - baca §"Yang berbeda" sebelum menyentuh apa pun.
 
 **Direktori production di server:**
 
@@ -30,31 +30,31 @@ Dibaca dari server, bukan dari niat rilis:
 
 ---
 
-## ✅ SUDAH DIJALANKAN 4 Agt 2026 — dan premis di bawah ternyata SALAH
+## ✅ SUDAH DIJALANKAN 4 Agt 2026 - dan premis di bawah ternyata SALAH
 
-Fase 0–4 selesai. Hasil sebenarnya, dibaca dari server:
+Fase 0-4 selesai. Hasil sebenarnya, dibaca dari server:
 
 | Fase | Hasil |
 |---|---|
-| 0 | Server ternyata di `060c67f`, **`ahead 1, behind 17`** — bukan `c348e45` seperti dugaan |
+| 0 | Server ternyata di `060c67f`, **`ahead 1, behind 17`** - bukan `c348e45` seperti dugaan |
 | 1 | Backup `~/backup_klinik_pre_035.sql.gz`, **38 `CREATE TABLE`**, 22 `INSERT`, mode 600 |
 | 2 | Tiga berkas disalin, checksum cocok (`a90c6739…`, `213844a9…`, `690ea869…`) |
 | 3 | `Migrasi sukses, versi skema sekarang: 20260701000035` |
 | 4 | `sys_jejak_audit` (11 kolom) + `forum_janji_temu` (**3 FK**) ada; `aduan.bidang` `IS_NULLABLE=YES`, DEFAULT bukan `umum`; 0 baris NULL |
 | + | Deploy diluruskan: `git reset --hard origin/…` → `c348e45`, **17 commit mendarat**. 8 rute publik 200, nol kebocoran galat, 40 tabel |
 
-> 🔻 **KOREKSI PREMIS.** Bagian "Yang sedang rusak sekarang" di bawah menulis bahwa production menjalankan layar Jejak Audit tanpa tabelnya. **Itu tidak benar.** `34c1506` belum ter-deploy sama sekali — server tertinggal 17 commit. Penyebabnya: saya membaca `git ls-remote origin` (keadaan GitHub) dan menyimpulkan keadaan server dari situ.
+> 🔻 **KOREKSI PREMIS.** Bagian "Yang sedang rusak sekarang" di bawah menulis bahwa production menjalankan layar Jejak Audit tanpa tabelnya. **Itu tidak benar.** `34c1506` belum ter-deploy sama sekali - server tertinggal 17 commit. Penyebabnya: saya membaca `git ls-remote origin` (keadaan GitHub) dan menyimpulkan keadaan server dari situ.
 >
-> Yang sebenarnya rusak: **auto-deploy macet sejak 3 Agt 00:26**, karena ada commit yang dibuat LANGSUNG DI SERVER (`060c67f`) sehingga branch bercabang. Isinya identik dengan `0c1e396` yang sudah ada di origin, jadi `reset --hard` tidak menghilangkan pekerjaan apa pun — tapi selama sepuluh hari tidak ada satu pun tanda bahwa deploy berhenti.
+> Yang sebenarnya rusak: **auto-deploy macet sejak 3 Agt 00:26**, karena ada commit yang dibuat LANGSUNG DI SERVER (`060c67f`) sehingga branch bercabang. Isinya identik dengan `0c1e396` yang sudah ada di origin, jadi `reset --hard` tidak menghilangkan pekerjaan apa pun - tapi selama sepuluh hari tidak ada satu pun tanda bahwa deploy berhenti.
 >
-> **Untuk rilis berikutnya:** Fase 0 WAJIB dibaca dari `ssh`, dan `git status -sb` di server adalah baris yang paling penting di seluruh runbook ini — ia yang memunculkan `ahead 1, behind 17`.
+> **Untuk rilis berikutnya:** Fase 0 WAJIB dibaca dari `ssh`, dan `git status -sb` di server adalah baris yang paling penting di seluruh runbook ini - ia yang memunculkan `ahead 1, behind 17`.
 
-> ⚠️ **YANG MASIH TERTINGGAL:** dua berkas migrasi (`034`, `035`) masih *untracked* di server. Itu **disengaja untuk sekarang** — selama keduanya ada, `php index.php migrate` adalah no-op yang aman. Kalau dihapus, `latest()` akan menargetkan `033` dan menjalankan `down()` untuk `035` & `034`. Singkirkan mereka (Fase 5) **tepat sebelum push berikutnya**, bukan lebih awal.
+> ⚠️ **YANG MASIH TERTINGGAL:** dua berkas migrasi (`034`, `035`) masih *untracked* di server. Itu **disengaja untuk sekarang** - selama keduanya ada, `php index.php migrate` adalah no-op yang aman. Kalau dihapus, `latest()` akan menargetkan `033` dan menjalankan `down()` untuk `035` & `034`. Singkirkan mereka (Fase 5) **tepat sebelum push berikutnya**, bukan lebih awal.
 
 ---
 
 ## 🔴 Yang sedang rusak sekarang, dan Fase 3 memperbaikinya tanpa push
-<span style="opacity:.6">*(bagian ini DIPERTAHANKAN apa adanya sebagai jejak premis yang salah — jangan dipakai sebagai keadaan sekarang)*</span>
+<span style="opacity:.6">*(bagian ini DIPERTAHANKAN apa adanya sebagai jejak premis yang salah - jangan dipakai sebagai keadaan sekarang)*</span>
 
 Commit `34c1506` (3 Agt) **sudah ter-deploy**: `catat_audit()`, layar **Jejak
 Audit**, dan **Akses Staf** lengkap dengan nonaktifkan-akun, reset-sandi, dan
@@ -68,13 +68,13 @@ if ( ! $this->db->table_exists('sys_jejak_audit')) { return; }
 ```
 
 Akibatnya di production hari ini: tombolnya bekerja, akun benar-benar
-dinonaktifkan, sandi benar-benar direset — dan **nol baris jejak**. Layar Jejak
+dinonaktifkan, sandi benar-benar direset - dan **nol baris jejak**. Layar Jejak
 Audit membuka dan tampil kosong, yang terbaca sebagai "belum ada aktivitas",
 bukan "tabelnya tidak ada". Itu persis kegagalan senyap yang tabel itu dibuat
 untuk mencegah.
 
 **Jejak yang hilang tidak bisa diisi ulang.** Begitu `033` mendarat, perekaman
-hidup seketika — kodenya sudah menunggunya, tanpa push apa pun.
+hidup seketika - kodenya sudah menunggunya, tanpa push apa pun.
 
 ---
 
@@ -86,7 +86,7 @@ tidak.
 
 | Migrasi | Terhadap kode yang ter-deploy sekarang | Kalau push duluan |
 |---|---|---|
-| `033` `sys_jejak_audit` | Tabel baru. Kode sudah menunggunya. | — |
+| `033` `sys_jejak_audit` | Tabel baru. Kode sudah menunggunya. | - |
 | `034` `aduan.bidang` NULL-able | Kode lama selalu mengirim kode bidang sah; kolom NULL-able tetap menerimanya. | `simpan_aduan()` menyisipkan `NULL` ke kolom `NOT NULL`. `db_debug` MATI → insert gagal **senyap**, **setiap** pengiriman aduan gagal. |
 | `035` `forum_janji_temu` | Tabel baru, nol kode lama menyentuhnya. | `Umum::detail()` memanggil `hidup_untuk_topik()` → `get()` mengembalikan `FALSE` → `->row()` pada `bool` = **fatal 500** di halaman topik forum, untuk pemilik topik. |
 
@@ -100,7 +100,7 @@ selesai dan belum ada yang memakai, ketiganya masih bisa turun.
 
 ---
 
-## Fase 0 — keadaan awal (baca-saja)
+## Fase 0 - keadaan awal (baca-saja)
 
 ```
 ssh hostinger
@@ -113,24 +113,24 @@ cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && git log -1
 **GERBANG:**
 
 - Baris pertama harus `DB: 31.97.208.59 / u504551489_klinikstg`. Kalau
-  `127.0.0.1 / klinikpkp`, itu mesin lokal — **BERHENTI**.
+  `127.0.0.1 / klinikpkp`, itu mesin lokal - **BERHENTI**.
 - Versi skema harus **`20260701000032`**. Bukan itu → **BERHENTI**, peta
   lingkungan sudah bergeser dari yang diasumsikan runbook ini.
 - `git status --porcelain` **wajib kosong.** Ini yang menggantung deploy 30 Jul:
   satu berkas migrasi tertinggal untracked, `git pull` menolak menimpanya, dan
   deploy berhenti diam-diam.
 
-> ℹ️ `Migrate status` di server adalah **versi lama** — keluarannya berhenti di
+> ℹ️ `Migrate status` di server adalah **versi lama** - keluarannya berhenti di
 > `kkn_magang_divisi` dan tidak menyebut `sys_jejak_audit` sama sekali. Itu bukan
 > bukti tabelnya tidak ada; enumeratornya memang belum tahu harus memeriksanya
 > (diperbaiki di `6283acb`, belum ter-deploy). Karena itu verifikasi Fase 4
 > membaca `information_schema` langsung, bukan layar ini.
 
-## Fase 1 — backup, dan buktikan backup-nya utuh
+## Fase 1 - backup, dan buktikan backup-nya utuh
 
-> **DB production TIDAK di localhost.** `DB_HOST=31.97.208.59` — baca dari `.env`
+> **DB production TIDAK di localhost.** `DB_HOST=31.97.208.59` - baca dari `.env`
 > server, jangan hafalkan dari sini. Tanpa `-h`, `mysqldump` diam-diam mencoba
-> `localhost` dan gagal dengan `Access denied ...@'localhost'` — pesan yang
+> `localhost` dan gagal dengan `Access denied ...@'localhost'` - pesan yang
 > sangat mudah dibaca sebagai "password salah".
 
 ```
@@ -138,7 +138,7 @@ cd ~ && set -o pipefail && mysqldump -h 31.97.208.59 -u u504551489_klinikstg -p 
 ```
 
 **`set -o pipefail` bukan hiasan.** Status pipa diambil dari perintah TERAKHIR,
-dan `gzip` selalu sukses — juga saat ia cuma memampatkan galat kosong. Tanpa
+dan `gzip` selalu sukses - juga saat ia cuma memampatkan galat kosong. Tanpa
 pipefail, `mysqldump` gagal pun rantai `&&` jalan terus dan menghasilkan berkas
 20 byte bernama meyakinkan. Itu terjadi sungguhan 30 Jul.
 
@@ -146,7 +146,7 @@ pipefail, `mysqldump` gagal pun rantai `&&` jalan terus dan menghasilkan berkas
 Lebih kecil → dump terpotong, **BERHENTI dan ulangi**. Berkas bernama `backup_*`
 yang isinya nol lebih berbahaya daripada tidak ada backup, karena ia menenangkan.
 
-## Fase 2 — salin TIGA berkas migrasi (dari lokal)
+## Fase 2 - salin TIGA berkas migrasi (dari lokal)
 
 ```bash
 scp application/migrations/20260701000033_jejak_audit_pusat.php application/migrations/20260701000034_aduan_bidang_triase.php application/migrations/20260701000035_forum_janji_temu.php hostinger:~/domains/floralwhite-lion-710022.hostingersite.com/public_html/application/migrations/
@@ -156,7 +156,7 @@ Kalau `scp` menolak portnya, tambahkan `-P 65002` (nilai yang dipakai runbook
 30 Jul).
 
 **HANYA tiga berkas itu.** Jangan menyalin `Migrate.php`, `migration.php`, atau
-berkas lain — semuanya TERLACAK git, dan menyuntingnya di server membuat
+berkas lain - semuanya TERLACAK git, dan menyuntingnya di server membuat
 `git status` kotor sehingga deploy Fase 6 tertolak.
 
 **GERBANG.** Di server:
@@ -168,7 +168,7 @@ cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && git status
 Harus persis tiga baris `?? application/migrations/2026070100003{3,4,5}_*.php`.
 Ada yang lain → **BERHENTI**.
 
-## Fase 3 — migrasi
+## Fase 3 - migrasi
 
 ```
 cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && php index.php migrate
@@ -184,7 +184,7 @@ masih `…032`). Jadi ketiganya jalan berurutan.
 Gagal di tengah → **BERHENTI, jangan ulangi `migrate`.** Baca dulu Fase 4 untuk
 tahu sejauh mana ia sampai, lalu §Rollback.
 
-## Fase 4 — verifikasi dari `information_schema`, bukan dari "Migrasi sukses"
+## Fase 4 - verifikasi dari `information_schema`, bukan dari "Migrasi sukses"
 
 CI menandai migrasi berhasil **tanpa memeriksa nilai balik query-nya**. Dengan
 `db_debug` mati di production, `CREATE TABLE` yang gagal tetap tercatat sukses.
@@ -194,16 +194,16 @@ Nomor versi bukan bukti; bentuk tabelnya bukti.
 mysql -h 31.97.208.59 -u u504551489_klinikstg -p u504551489_klinikstg -e "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('sys_jejak_audit','forum_janji_temu'); SELECT IS_NULLABLE, COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aduan' AND COLUMN_NAME='bidang'; SELECT COUNT(*) fk_janji_temu FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='forum_janji_temu' AND CONSTRAINT_TYPE='FOREIGN KEY';"
 ```
 
-**GERBANG — keempatnya, bukan salah satu:**
+**GERBANG - keempatnya, bukan salah satu:**
 
 | Yang dicari | Harus |
 |---|---|
 | `TABLE_NAME` | **dua baris**: `sys_jejak_audit` dan `forum_janji_temu` |
 | `aduan.bidang` `IS_NULLABLE` | `YES` |
-| `aduan.bidang` `COLUMN_DEFAULT` | `NULL` (MariaDB mencetak string `NULL`) — yang penting **bukan** `umum` |
+| `aduan.bidang` `COLUMN_DEFAULT` | `NULL` (MariaDB mencetak string `NULL`) - yang penting **bukan** `umum` |
 | `fk_janji_temu` | **3** |
 
-`fk_janji_temu` kurang dari 3 berarti tabelnya lahir tanpa pengunci relasinya —
+`fk_janji_temu` kurang dari 3 berarti tabelnya lahir tanpa pengunci relasinya -
 terlihat benar dari layar mana pun, dan baru ketahuan saat ada yang menghapus
 akun atau topik. **BERHENTI** kalau bukan 3.
 
@@ -219,10 +219,10 @@ mysql -h 31.97.208.59 -u u504551489_klinikstg -p u504551489_klinikstg -e "SELECT
 
 Ada barisnya → lubang senyap yang dijelaskan di atas sudah tertutup.
 
-## Fase 5 — singkirkan berkas salinan, LALU push
+## Fase 5 - singkirkan berkas salinan, LALU push
 
 Tiga berkas tadi masih untracked. Kalau dibiarkan, `git pull` deploy akan menolak
-menimpanya dan deploy berhenti diam-diam — persis 30 Jul.
+menimpanya dan deploy berhenti diam-diam - persis 30 Jul.
 
 Dipindah, bukan dihapus, supaya masih ada kalau Fase 6 bermasalah:
 
@@ -234,12 +234,12 @@ cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && mkdir -p ~
 
 > 🔴 **JANGAN jalankan `php index.php migrate` lagi sampai deploy Fase 6
 > mendarat.** Di jendela ini berkas tertinggi di direktori adalah `…032`,
-> sementara DB sudah `…035` — dan `latest()` akan menargetkan `032`, artinya
+> sementara DB sudah `…035` - dan `latest()` akan menargetkan `032`, artinya
 > menjalankan `down()` untuk `035`, `034`, `033`. `sys_jejak_audit` yang baru
 > saja dibuat dan masih kosong akan **lolos penjaganya dan ikut terhapus**.
 > Jendela ini hanya selama deploy; jangan diisi perintah lain.
 
-## Fase 6 — push (dari lokal)
+## Fase 6 - push (dari lokal)
 
 ```bash
 git push origin feature/homepage-portal-v2
@@ -269,37 +269,37 @@ aduan.bidang DEFAULT 'umum' dicabut: YA
 Tiga berkas di `~/migrasi_terpakai/` sekarang sudah kembali lewat git; boleh
 dihapus setelah Fase 7 hijau.
 
-## Fase 7 — bukti dari luar, lewat klik bukan curl
+## Fase 7 - bukti dari luar, lewat klik bukan curl
 
-1. **`/umum/aduan`** — tidak ada lagi dropdown "Bidang Tujuan". Kirim satu aduan
+1. **`/umum/aduan`** - tidak ada lagi dropdown "Bidang Tujuan". Kirim satu aduan
    uji; harus berhasil, dan pesannya tidak menyebut nama bidang.
-2. **`/Admin_Aduan`** (superadmin) — aduan tadi muncul, callout "menunggu
-   diteruskan" tampil, kolom Bidang berisi `— pilih bidang —`. Teruskan ke satu
+2. **`/Admin_Aduan`** (superadmin) - aduan tadi muncul, callout "menunggu
+   diteruskan" tampil, kolom Bidang berisi `- pilih bidang -`. Teruskan ke satu
    bidang; baris jejaknya muncul di **Jejak Audit**.
-3. **`/Admin_Bidang`** (admin bidang tujuan) — aduan tadi baru muncul di sini
+3. **`/Admin_Bidang`** (admin bidang tujuan) - aduan tadi baru muncul di sini
    SETELAH ditriase, tidak sebelumnya.
-4. **`/umum/papan_aduan`** — wajib login. Buka **sumber halamannya** dan cari
+4. **`/umum/papan_aduan`** - wajib login. Buka **sumber halamannya** dan cari
    isi aduan uji tadi: **tidak boleh ada**. Judul dan jawaban dinas saja.
 5. **`/Umum/forum`** → buka satu topik milik akun sendiri yang sudah ada
    tanggapannya → panel **Janji Temu Konsultasi** muncul, ajukan.
-6. **`/Admin_Konsultasi`** — pengajuan tadi muncul, tawarkan jadwal, lalu setujui
+6. **`/Admin_Konsultasi`** - pengajuan tadi muncul, tawarkan jadwal, lalu setujui
    dari sisi warga.
-7. **`/golek_omah`** — kartu keempat sekarang **Cek Status RTLH**, bukan duplikat
+7. **`/golek_omah`** - kartu keempat sekarang **Cek Status RTLH**, bukan duplikat
    `warga/pendataan`. Buka **tanpa login**: harus mendarat di layar login.
-8. **`/Cek_Rtlh`** setelah login — periksa satu NIK. Lihat §Catatan SIMPERUM di
+8. **`/Cek_Rtlh`** setelah login - periksa satu NIK. Lihat §Catatan SIMPERUM di
    bawah sebelum menyimpulkan hasilnya salah.
 
 **GERBANG.** Ada satu saja yang 500 atau tidak sesuai → §Rollback.
 
 Hapus aduan uji dan topik uji setelah selesai.
 
-### Catatan SIMPERUM — baca sebelum menguji Cek RTLH
+### Catatan SIMPERUM - baca sebelum menguji Cek RTLH
 
 `SIMPERUM_MODE` di `.env` server menentukan dari mana datanya:
 
 | Nilai | Yang terjadi |
 |---|---|
-| `simulation` | Fixture sintetis. Layarnya memasang spanduk **MODE SIMULASI**; hanya NIK `...0001`–`...0005` yang "terdaftar". Berguna untuk memastikan layarnya hidup, **bukan** untuk menjawab pertanyaan warga. |
+| `simulation` | Fixture sintetis. Layarnya memasang spanduk **MODE SIMULASI**; hanya NIK `...0001`-`...0005` yang "terdaftar". Berguna untuk memastikan layarnya hidup, **bukan** untuk menjawab pertanyaan warga. |
 | `api` | Data RTLH sungguhan. Butuh `SIMPERUM_BASE_URL` **https** + kunci publik/privat terisi; kalau belum, `lookup()` memulangkan `api_not_configured` dan layarnya berkata "Koneksi SIMPERUM belum dikonfigurasi". |
 
 Baca nilainya dari server, jangan diasumsikan:
@@ -309,7 +309,7 @@ cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && grep -E '^
 ```
 
 > ⚠️ **Kalau mode-nya diubah ke `api`, satu perilaku lain ikut berubah:**
-> `Program::api_cek_simperum()` — endpoint publik lama di alur diagnosa — mulai
+> `Program::api_cek_simperum()` - endpoint publik lama di alur diagnosa - mulai
 > menolak dengan **409** dan mengarahkan ke Wizard Warga. Itu memang disengaja
 > (data RTLH nyata tidak lewat endpoint publik), tapi jangan kaget kalau alur
 > diagnosa lama tiba-tiba berbeda; ia bukan rusak.
@@ -319,7 +319,7 @@ cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && grep -E '^
 ## Rollback
 
 > 🔴 **TIDAK ADA perintah turun.** `Migrate` hanya punya `index()` (yang memanggil
-> `latest()`) dan `status()` — **nol endpoint yang menerima versi tujuan.**
+> `latest()`) dan `status()` - **nol endpoint yang menerima versi tujuan.**
 > `php index.php migrate 20260701000032` bukan rollback, ia memanggil method
 > bernama `20260701000032` yang tidak ada. Versi pertama runbook ini menuliskan
 > perintah itu sebagai jalur rollback utama; salah, dan diperbaiki sebelum
@@ -333,7 +333,7 @@ cd ~ && zcat backup_klinik_pre_035.sql.gz | mysql -h 31.97.208.59 -u u504551489_
 ```
 
 Lalu kembalikan kode ke `c348e45` supaya kode dan skema kembali sepasang. Data
-yang masuk **setelah** backup diambil akan hilang — itu harga yang dibayar, dan
+yang masuk **setelah** backup diambil akan hilang - itu harga yang dibayar, dan
 alasan Fase 1 tidak boleh dilewati.
 
 Konsekuensi praktisnya, dan ini yang membuat Fase 1 bukan formalitas: **kalau
@@ -344,7 +344,7 @@ lulus gerbangnya.
 > Kalau kelak butuh rollback bertahap, tambahkan satu method
 > `Migrate::turun($versi)` yang memvalidasi argumennya ke daftar berkas migrasi
 > lalu memanggil `$this->migration->version()`. Jangan tambahkan sekarang, di
-> tengah rilis — endpoint tulis baru yang belum pernah diuji bukan alat rollback,
+> tengah rilis - endpoint tulis baru yang belum pernah diuji bukan alat rollback,
 > ia risiko kedua.
 
 ---
@@ -356,7 +356,7 @@ lulus gerbangnya.
 | `c1ab15a` | SRP2: syarat & formulir wajib login, keterangan per formulir |
 | `7d5c6ad` | Aduan: pelapor tidak memilih bidang, superadmin men-triase, papan aduan |
 | `341d8d7` | AGENTS.md: urutan rilis ber-migrasi dibalik ke yang benar |
-| `6283acb` | `Migrate::status()` buta terhadap `033`/`034` — diperbaiki |
+| `6283acb` | `Migrate::status()` buta terhadap `033`/`034` - diperbaiki |
 | `7308810` | Janji temu konsultasi (`035`), `Admin_Konsultasi`, panel warga |
 
 Suite lokal saat runbook ini ditulis: **33 suite, 1049 pemeriksaan, 0 merah, 0

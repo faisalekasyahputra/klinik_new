@@ -1,7 +1,7 @@
 # Audit Akurasi Form Warga untuk R3/R4
 
 **Tanggal verifikasi:** 28 Juli 2026  
-**Lingkup:** perbandingan visual seluruh artefak `C:\Users\ASUS\Downloads\formwarga` (5 `FORM_DESAIN` + 45 `FORM_DETAIL`) dengan PRD, skema, roadmap, dan fondasi R1–R2. Tidak ada data contoh penduduk ditranskripsikan.
+**Lingkup:** perbandingan visual seluruh artefak `C:\Users\ASUS\Downloads\formwarga` (5 `FORM_DESAIN` + 45 `FORM_DETAIL`) dengan PRD, skema, roadmap, dan fondasi R1-R2. Tidak ada data contoh penduduk ditranskripsikan.
 
 ## Cara membaca
 
@@ -14,7 +14,7 @@
 
 1. Dua jalur visual terkonfirmasi: `/Main/RTLH/PBDT_edit/` untuk rumah eksisting dan `/Main/Backlog/ValidasiData` untuk calon lahan/backlog. Ini sesuai DEC-WRG-005, tetapi wizard R3 harus tetap satu wizard data (DEC-WRG-018), bukan menyalin dua form lama.
 2. Semua label utama dan katalog yang terbaca sudah memiliki nama kanonik pada skema. Fondasi model telah menyediakan hampir seluruh kolom non-PII rumah/struktur/sanitasi; R3 belum membangun view/writer langkahnya.
-3. Tiga celah pemetaan implementasi yang harus ditutup pada R4: `candidate_land_address`, `location_lat`, dan `location_lng` ada di skema tetapi tidak ada dalam allowlist `DRAFT_FIELDS`; evidence belum punya writer di model R1–R2.
+3. Tiga celah pemetaan implementasi yang harus ditutup pada R4: `candidate_land_address`, `location_lat`, dan `location_lng` ada di skema tetapi tidak ada dalam allowlist `DRAFT_FIELDS`; evidence belum punya writer di model R1-R2.
 4. Jangan memperlakukan asterisk sumber sebagai kontrak final global: PRD memutuskan kewajiban berdasarkan cabang dan roadmap menunda kebijakan bukti resmi (OPEN-WRG-008).
 
 ## Audit per langkah
@@ -23,8 +23,8 @@
 
 | Label tepat pada gambar | Tipe terlihat | Wajib gambar | Opsi yang terbaca | Pemetaan | Status |
 |---|---|---:|---|---|---|
-| NIK | input angka + tombol `BDT` | Ya | — | `nik` (profil, ENC+hash) | Gambar + skema |
-| Tanggal Lahir | input tanggal/ikon kalender | Ya (RTLH) | — | `birth_date` (profil, ENC) | Gambar + PRD faktor pendamping simulasi |
+| NIK | input angka + tombol `BDT` | Ya | - | `nik` (profil, ENC+hash) | Gambar + skema |
+| Tanggal Lahir | input tanggal/ikon kalender | Ya (RTLH) | - | `birth_date` (profil, ENC) | Gambar + PRD faktor pendamping simulasi |
 | Usulan Dari | dropdown | Tidak tampak | hanya `-` | `proposal_source_code` | Skema ada; arti/opsi **OPEN-WRG-004** |
 
 **Catatan:** gambar Backlog menampilkan `Umur`, bukan Tanggal Lahir. Keputusan PRD tetap menyimpan tanggal lahir dan menurunkan umur; jangan menambah kolom umur tersendiri.
@@ -33,20 +33,20 @@
 
 | Label tepat pada gambar | Tipe terlihat | Wajib gambar | Opsi yang benar-benar terbaca | Pemetaan |
 |---|---|---:|---|---|
-| Nama | teks | Ya pada RTLH; tidak pada contoh Backlog | — | `full_name` (ENC) |
-| No. KK | teks/angka | Ya pada RTLH; tidak pada contoh Backlog | — | `family_card_number` (ENC+hash opsional) |
-| Alamat | teks | Ya pada RTLH; tidak pada contoh Backlog | — | `address` (ENC) |
-| No HP | tel | Tidak | — | `phone` (ENC) |
+| Nama | teks | Ya pada RTLH; tidak pada contoh Backlog | - | `full_name` (ENC) |
+| No. KK | teks/angka | Ya pada RTLH; tidak pada contoh Backlog | - | `family_card_number` (ENC+hash opsional) |
+| Alamat | teks | Ya pada RTLH; tidak pada contoh Backlog | - | `address` (ENC) |
+| No HP | tel | Tidak | - | `phone` (ENC) |
 | Jns. Kelamin | dropdown | Ya pada RTLH; tidak pada contoh Backlog | hanya `Laki-Laki` tampak sebagai nilai, bukan daftar lengkap | `gender_code`; katalog lengkap belum terkonfirmasi |
 | Sts. Perkawinan | dropdown | Ya | Lajang; Menikah; Cerai | `marital_status_code` |
 | Pendidikan | dropdown | Ya pada RTLH; tidak pada Backlog | Tidak Punya Ijazah; SD/sederajat; SMP/sederajat; SMA/sederajat; D1/D2/D3; D4/S1; S2/S3 | `education_code` |
 | Pekerjaan | dropdown | Ya pada RTLH; tidak pada Backlog | Petani; Peternak; Pertambangan/Penggalian; Buruh Harian; Tukang Bangunan; Pedagang; Hotel & Rumah Makan; Sopir; Dokter/Bidan/Apoteker; PNS/BUMN/D; Pemulung; Lainnya; TNI/POLRI; Pegawai Swasta; PHL/PTT; Pensiunan; Tidak Bekerja | `occupation_code`; daftar dapat berlanjut, **OPEN-WRG-006** |
-| No. NPWP / NPWP | teks | Tidak | — | `tax_number` (ENC) |
+| No. NPWP / NPWP | teks | Tidak | - | `tax_number` (ENC) |
 | Penghasilan | dropdown | Tidak pada RTLH; Ya pada Backlog | `< 1.8 jt`; `1.9 - 2.1 jt`; `2.2 - 2.6 jt`; `2.7 - 3.1 jt`; `3.2 - 3.6 jt`; `3.7 - 4.2 jt`; `4.2 - 6 jt`; `6 - 8 jt`; `> 8 jt` | `income_band_code`; batas/celah belum diputuskan |
 | Desil | angka tampilan | Tidak | contoh nilai `2` | `welfare_decile`; **PRD:** sumber routing, read-only, null bukan nol |
 | Memiliki Tabungan | checkbox | Tidak | dua nilai tidak terlihat | `has_savings` |
 | Mampu Swadaya | dropdown | Ya pada RTLH; tidak pada Backlog | Mampu; Tidak Mampu | `self_help_capability_code` |
-| Nilai Swadaya | input/angka | Tidak | — | `self_help_amount`; hanya tampak pada Backlog |
+| Nilai Swadaya | input/angka | Tidak | - | `self_help_amount`; hanya tampak pada Backlog |
 
 ### 2. Rumah dan keluarga (RTLH)
 
@@ -56,9 +56,9 @@
 | Sts. Lahan | dropdown | Ya | Sertifikat HM; Sertifikat HGB; Letter C; Letter D; Suket Desa; Akta Notaris; Lainnya | `land_title_code` |
 | Tanah Lain | dropdown | Tidak | Memiliki; Tidak Memiliki | `has_other_land` |
 | Rumah Lain | dropdown | Tidak | Memiliki; Tidak Memiliki | `has_other_house` |
-| Luas Rumah | angka | Ya | — | `house_area_m2` |
-| Jml. Penghuni | angka | Ya | — | `occupant_count` |
-| Jml. Keluarga | angka | Ya | — | `family_count` |
+| Luas Rumah | angka | Ya | - | `house_area_m2` |
+| Jml. Penghuni | angka | Ya | - | `occupant_count` |
+| Jml. Keluarga | angka | Ya | - | `family_count` |
 | Sumber Bantuan | dropdown | Tidak | APBN; APBD KAB; CSR; Sumber Lainnya; Sudah Layak Huni; Dana Desa; BSPS KL; Meninggal; Salah/Double Data; BANKAB; BAZNAS; Pindah | `assistance_source_code`; sumber/alasan tercampur, **OPEN-WRG-005** |
 | Tahun | dropdown | Tidak | 2026; 2025; 2024; 2023; 2022 (daftar terlihat bisa berlanjut) | `assistance_year` |
 | Kawasan | dropdown | Ya | Kekeringan; Kumuh; Rawan Bencana | `area_condition_code` |
@@ -80,13 +80,13 @@ Semua adalah dropdown. Label ber-asterisk pada gambar: **Pondasi, Kondisi Kolom,
 |---|---|---:|---|---|
 | Sts. Rumah | dropdown | Tidak | sama seperti Status Rumah | `housing_status_code` |
 | Memiliki Tanah | dropdown | Ya | Tidak Memiliki; Memiliki | `owns_candidate_land` |
-| Alamat Tanah | teks | Tidak | — | `candidate_land_address` (ENC) — **belum di allowlist model** |
+| Alamat Tanah | teks | Tidak | - | `candidate_land_address` (ENC) - **belum di allowlist model** |
 | Sertifikat Tanah | dropdown | Ya | Sertifikat HM; Sertifikat HGB; Letter C; Letter D; Suket Desa; Akta Notaris; Lainnya | `candidate_land_title_code` |
 | Asal Tanah | dropdown | Tidak | Milik Sendiri; Warisan; Hibah; Jual Beli | `candidate_land_origin_code` |
 | Hub. dg Pemilik | dropdown | Tidak | Orang Tua; Orang Lain | `land_owner_relationship_code` |
-| Ukuran Tanah | dua input angka `x` Lebar | Ya | — | `land_length_m`, `land_width_m`, `land_area_m2` turunan |
-| Jml. Keluarga | angka | Ya | — | `family_count` |
-| Jml. Penghuni | angka | Ya | — | `occupant_count` |
+| Ukuran Tanah | dua input angka `x` Lebar | Ya | - | `land_length_m`, `land_width_m`, `land_area_m2` turunan |
+| Jml. Keluarga | angka | Ya | - | `family_count` |
+| Jml. Penghuni | angka | Ya | - | `occupant_count` |
 | Sumber Bantuan; Tahun | dropdown | Tidak | katalog sama yang terbaca pada RTLH | `assistance_source_code`, `assistance_year` |
 | Kawasan | dropdown | Tidak pada Backlog | Kekeringan; Kumuh; Rawan Bencana; Bantaran Sungai; Bantaran Rel KA; Kawasan Buruk Lain; Kawasan Baik | `area_condition_code` |
 
@@ -126,7 +126,7 @@ Gambar tidak menjelaskan bukti mana wajib, maksimum ukuran, atau kapan `Foto Lah
 
 - [ ] Buat satu katalog kode ber-versi dari **hanya** opsi tabel audit; beri kode `SIM-*`/status provisional pada katalog yang belum lengkap.
 - [ ] Tambahkan writer aman untuk `candidate_land_address` (enkripsi), `location_lat`, dan `location_lng` (enkripsi); jangan memasukkan PII/koordinat plaintext ke JSON/log.
-- [ ] Rakit langkah kecil (5–10 pertanyaan) dari langkah R3, gunakan label di atas, dan simpan melalui `Housing_assessment_model`, bukan query controller.
+- [ ] Rakit langkah kecil (5-10 pertanyaan) dari langkah R3, gunakan label di atas, dan simpan melalui `Housing_assessment_model`, bukan query controller.
 - [ ] Tegakkan cabang: RTLH memakai struktur+sanitasi; Backlog melewatinya; perubahan cabang menonaktifkan nilai lama untuk validasi/scoring.
 - [ ] Terapkan dependensi: sertifikat/asal/relasi/ukuran hanya bila calon lahan relevan; jarak septik hanya bila septic tank; tahun hanya bersama sumber bantuan.
 - [ ] Implementasikan unggah satu-per-satu ke private storage: MIME/ukuran, strip EXIF, ownership, nama acak, lalu penggantian menghapus berkas lama setelah write baru sukses.

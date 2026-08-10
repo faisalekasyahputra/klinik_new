@@ -1,19 +1,19 @@
 <?php
 /**
- * Uji JANJI TEMU KONSULTASI — mekanisme di balik "Konsultasi Terjadwal".
+ * Uji JANJI TEMU KONSULTASI - mekanisme di balik "Konsultasi Terjadwal".
  *
  *   php docs/engineering/uji_janji_temu.php
  *
  * Halaman `Umum/forum` sudah lama berjudul "Konsultasi TERJADWAL", memajang
  * tiga kartu alur ("Admin meninjau" -> "Agenda ditentukan" -> "Waktu
  * konsultasi disampaikan setelah ditinjau"), dan tombolnya berbunyi "Ajukan
- * Konsultasi" — sementara di belakangnya `tambah_aksi()` hanya menyisipkan satu
+ * Konsultasi" - sementara di belakangnya `tambah_aksi()` hanya menyisipkan satu
  * baris forum. Migrasi 035 + `Admin_Konsultasi` mengisi janji itu; berkas ini
  * menjaga enam hal yang rusaknya SENYAP:
  *
  *   1. MESIN KEADAANNYA SATU, DIPAKAI DUA SISI. Aturan transisi hidup di
  *      `Janji_temu_model::ALUR` dan dibaca warga MAUPUN petugas. Uji ini
- *      menembak transisi ilegal dari KEDUA sisi — whitelist yang benar di satu
+ *      menembak transisi ilegal dari KEDUA sisi - whitelist yang benar di satu
  *      controller dan longgar di controller sebelah adalah persis kegagalan
  *      yang dilahirkan daftar kembar.
  *   2. TRANSISINYA ATOMIK. Status asal ikut di WHERE, jadi tombol yang ditekan
@@ -35,7 +35,7 @@
  * @example.test supaya sensus kebocoran di jalankan_semua.php melihatnya.
  *
  * PENGHITUNG RATE LIMIT SENGAJA TIDAK DIBERSIHKAN. `sys_rate_limits` hanya
- * menyimpan `limit_key` — SHA-256 atas policy + nilai dimensinya — jadi tidak
+ * menyimpan `limit_key` - SHA-256 atas policy + nilai dimensinya - jadi tidak
  * ada kolom yang bisa dicocokkan ke policy ini tanpa menyusun ulang hash-nya,
  * dan menghapus "semua baris sejak uji dimulai" akan ikut membuang penghitung
  * milik fitur lain. Barisnya tetap tertinggal, dan itu tidak apa-apa: kuncinya
@@ -136,7 +136,7 @@ function http($nama, $path, ?array $post = NULL, $ajax = FALSE) {
 /**
  * Token CSRF dari DUA bentuk yang beredar di repo ini, dan BERHENTI FATAL kalau
  * tidak ketemu. POST tanpa token ditolak SEBELUM controller mana pun berjalan,
- * dan penolakan itu tidak mengubah apa-apa — uji tulis yang kehilangan tokennya
+ * dan penolakan itu tidak mengubah apa-apa - uji tulis yang kehilangan tokennya
  * jadi hijau hampa: ia mengira gerbangnya menahan, padahal yang ditahan cuma
  * tokennya sendiri.
  */
@@ -170,7 +170,7 @@ function buat_akun($peran, $suffix) {
     return [$id, $email];
 }
 
-/** Topik forum langsung di DB — jalur pembuatannya bukan yang sedang diuji. */
+/** Topik forum langsung di DB - jalur pembuatannya bukan yang sedang diuji. */
 function buat_topik($user_id, $nama, $email, $judul) {
     $id = tulis(
         'INSERT INTO forum_diskusi (nama_user,email_user,judul_topik,kategori,isi_diskusi,user_id,status,created_at)
@@ -204,7 +204,7 @@ function bersihkan() {
                 q("DELETE FROM sys_jejak_audit WHERE objek_tipe='forum_janji_temu' AND objek_id=?", [$jid]);
             }
         }
-        // forum_janji_temu & forum_komentar ikut lenyap lewat FK CASCADE —
+        // forum_janji_temu & forum_komentar ikut lenyap lewat FK CASCADE -
         // kecuali komentar, yang memang tidak punya FK. Dihapus eksplisit.
         q('DELETE FROM forum_komentar WHERE id_diskusi=?', [$d]);
         q('DELETE FROM forum_diskusi WHERE id_diskusi=?', [$d]);
@@ -237,7 +237,7 @@ wajib((int) nilai("SELECT COUNT(*) c FROM information_schema.TABLES
     'Tabel forum_janji_temu ada');
 $fk = (int) nilai("SELECT COUNT(*) c FROM information_schema.TABLE_CONSTRAINTS
     WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='forum_janji_temu' AND CONSTRAINT_TYPE='FOREIGN KEY'");
-cek($fk === 3, "Tiga FK terpasang (diskusi, user, reviewer) — ditemukan {$fk}");
+cek($fk === 3, "Tiga FK terpasang (diskusi, user, reviewer) - ditemukan {$fk}");
 wajib((int) nilai("SELECT COUNT(*) c FROM information_schema.TABLES
     WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='sys_jejak_audit'") === 1,
     'Tabel sys_jejak_audit ada (migrasi 033)');
@@ -264,40 +264,40 @@ $post_ajukan = function ($sesi, $id_diskusi, $alasan) {
 };
 
 /* DIBALIK 5 Agt 2026 (revisi dinas butir E1). Sampai 4 Agt, topik yang belum
-   ditanggapi petugas TIDAK boleh diajukan janji temu — itu terjemahan gagasan
+   ditanggapi petugas TIDAK boleh diajukan janji temu - itu terjemahan gagasan
    "berkonsultasi di forum dulu, tatap muka belakangan". Justru syarat itulah
    yang membuat dinas membuka menu Konsultasi Terjadwal dan menyimpulkan "belum
    ada pilihan bikin jadwalnya": tombolnya memang tidak pernah mereka lihat.
 
-   Yang dijaga sekarang KEBALIKANNYA — dan sekaligus bahwa melepas satu syarat
+   Yang dijaga sekarang KEBALIKANNYA - dan sekaligus bahwa melepas satu syarat
    tidak ikut melepas yang lain. */
 $hal_awal = http('w', 'Umum/detail/' . $topik);
 cek(strpos($hal_awal['body'], 'Umum/ajukan_janji_temu') !== FALSE,
     'Topik tanpa tanggapan: tombol pengajuan SUDAH dirender (dulu disembunyikan)');
 cek(stripos($hal_awal['body'], 'setelah topik ini ditanggapi') === FALSE,
-    'Keterangan "tunggu ditanggapi dulu" sudah tidak ada — syaratnya memang hilang');
+    'Keterangan "tunggu ditanggapi dulu" sudah tidak ada - syaratnya memang hilang');
 
 $r = $post_ajukan('w', $topik, 'Perlu bertemu langsung karena berkasnya banyak. ' . RAHASIA_ALASAN);
 cek(jml_janji($topik) === 1, 'Topik tanpa tanggapan: pengajuan DITERIMA (satu baris)');
 
 /* Sisi tampilan dan sisi server harus sepakat. Kalau tombolnya muncul memakai
    syarat yang lebih longgar daripada yang ditegakkan server, penekannya ditolak
-   tanpa tahu sebabnya — itu justru cacat yang lebih membingungkan daripada
+   tanpa tahu sebabnya - itu justru cacat yang lebih membingungkan daripada
    tombol yang tidak ada. */
 cek(strpos(http('w', 'Umum/detail/' . $topik)['body'], 'Umum/ajukan_janji_temu') === FALSE,
-    'Sesudah diajukan, tombolnya hilang — tampilan sepakat dengan server');
+    'Sesudah diajukan, tombolnya hilang - tampilan sepakat dengan server');
 
 beri_komentar($topik, 'Petugas Uji');
 
 // ------------------------------------------------ 2. ANTI-IDOR
 echo "\n== 2. Hanya pemilik topik ==\n";
 // Dibandingkan ke jumlah SEBELUM, bukan ke nol. Versi pertama memakai `=== 0`
-// dan ikut merah saat gerbang di bagian 1 dimutasi — pemeriksaan yang merah
+// dan ikut merah saat gerbang di bagian 1 dimutasi - pemeriksaan yang merah
 // karena bagian lain rusak tidak memberi tahu apa pun tentang bagian ini.
 $sebelum = jml_janji($topik);
 $r = $post_ajukan('w2', $topik, 'Saya ingin ikut bertemu juga walau bukan topik saya.');
 cek(jml_janji($topik) === $sebelum, 'Warga lain TIDAK bisa mengajukan untuk topik orang (dicek dari DB)');
-cek($r['code'] === 404, 'Dibalas 404, bukan 403 — keberadaan topik orang tidak dikonfirmasi');
+cek($r['code'] === 404, 'Dibalas 404, bukan 403 - keberadaan topik orang tidak dikonfirmasi');
 
 // ------------------------------------------------ 3. AJUKAN
 echo "\n== 3. Pengajuan oleh pemilik ==\n";
@@ -306,7 +306,7 @@ cek(jml_janji($topik) === 1, 'Satu baris janji temu tercipta');
 $j = janji($topik);
 $jid = (int) $j['id'];
 cek($j['status'] === 'diajukan', "Status awal 'diajukan'");
-cek($j['jadwal_mulai'] === NULL, 'Jadwal masih kosong — belum ada yang menawarkan');
+cek($j['jadwal_mulai'] === NULL, 'Jadwal masih kosong - belum ada yang menawarkan');
 cek((int) $j['user_id'] === $idW, 'Pemohonnya diambil dari sesi, bukan dari POST');
 cek(jejak('janji_temu_diajukan', $jid) === 1, 'Jejak audit janji_temu_diajukan tercatat');
 
@@ -324,7 +324,7 @@ echo "\n== 5. Yang harus ditolak di sisi petugas ==\n";
 $t_admin = csrf('a', 'Admin_Konsultasi');
 
 cek(http('a', 'Admin_Konsultasi/tawarkan/' . $jid . '?jadwal_mulai=2030-01-01+09:00&lokasi=X')['code'] === 404,
-    'GET ke endpoint tulis dibalas 404 — hanya POST yang boleh menulis');
+    'GET ke endpoint tulis dibalas 404 - hanya POST yang boleh menulis');
 cek(status_janji($jid) === 'diajukan', 'GET tadi tidak mengubah apa pun');
 
 http('a', 'Admin_Konsultasi/tawarkan/' . $jid, ['jadwal_mulai' => '2030-01-01 09:00', 'lokasi' => 'Tanpa token']);
@@ -336,7 +336,7 @@ cek(status_janji($jid) === 'diajukan', 'Jadwal di MASA LALU ditolak');
 
 http('a', 'Admin_Konsultasi/tawarkan/' . $jid, [
     'csrf_kpkp_token' => csrf('a', 'Admin_Konsultasi'), 'jadwal_mulai' => date('Y-m-d H:i', time() + 86400), 'lokasi' => '']);
-cek(status_janji($jid) === 'diajukan', 'Lokasi kosong ditolak — warga perlu tahu harus datang ke mana');
+cek(status_janji($jid) === 'diajukan', 'Lokasi kosong ditolak - warga perlu tahu harus datang ke mana');
 
 // Peran yang salah: DIALIHKAN, jadi kodenya 200 dari halaman lain. Buktinya DB.
 http('w', 'Admin_Konsultasi/tawarkan/' . $jid, [
@@ -363,7 +363,7 @@ cek(strpos($hal['body'], $LOKASI) !== FALSE, 'Pemohon melihat lokasinya di halam
 echo "\n== 7. Transisi ilegal ditolak, dari kedua sisi ==\n";
 http('a', 'Admin_Konsultasi/selesai/' . $jid, ['csrf_kpkp_token' => csrf('a', 'Admin_Konsultasi')]);
 cek(status_janji($jid) === 'ditawarkan',
-    "'ditawarkan' -> 'selesai' ditolak — pertemuannya belum disepakati siapa pun");
+    "'ditawarkan' -> 'selesai' ditolak - pertemuannya belum disepakati siapa pun");
 cek(jejak('janji_temu_transisi_ditolak', $jid) >= 1, 'Penolakannya ikut tercatat (jejak dua arah)');
 
 $post_respon = function ($sesi, $id_janji, $id_diskusi, $aksi) {
@@ -381,7 +381,7 @@ echo "\n== 8. Warga minta jadwal lain ==\n";
 $post_respon('w', $jid, $topik, 'jadwal_lain');
 cek(status_janji($jid) === 'diajukan', "Kembali ke 'diajukan', bukan keadaan baru");
 cek(kolom_janji($jid, 'jadwal_mulai') === NULL,
-    'Jadwal lama DIKOSONGKAN — kalau tidak, barisnya terbaca seolah masih punya agenda');
+    'Jadwal lama DIKOSONGKAN - kalau tidak, barisnya terbaca seolah masih punya agenda');
 cek(kolom_janji($jid, 'lokasi') === NULL, 'Lokasi lama ikut dikosongkan');
 
 // ------------------------------------------------ 9. SETUJUI + ATOMIK
@@ -401,7 +401,7 @@ $audit_setuju = jejak('janji_temu_disetujui', $jid);
  * ⚠️ YANG DIBUKTIKAN DI SINI TERBATAS, dan batasnya disebut supaya tidak
  * dibaca lebih besar dari kenyataannya: ini membuktikan permintaan BERURUTAN
  * tidak berbuah dua kali. Ia TIDAK membuktikan `->where('status', $dari)` di
- * `Janji_temu_model::transisi()` bekerja — mencabut baris itu tidak memerahkan
+ * `Janji_temu_model::transisi()` bekerja - mencabut baris itu tidak memerahkan
  * satu pun pemeriksaan di berkas ini, karena `respon_janji_temu()` sudah
  * menolak lebih dulu lewat `boleh()`. WHERE itu lapis KEDUA, untuk permintaan
  * yang benar-benar bersamaan, dan harness berurutan tidak bisa menyentuhnya.
@@ -410,7 +410,7 @@ $audit_setuju = jejak('janji_temu_disetujui', $jid);
 $post_respon('w', $jid, $topik, 'setujui');
 cek(status_janji($jid) === 'disetujui', 'Setujui yang kedua tidak mengubah status');
 cek(jejak('janji_temu_disetujui', $jid) === $audit_setuju,
-    'Dan tidak menambah jejak — permintaan berurutan tidak berbuah dua kali');
+    'Dan tidak menambah jejak - permintaan berurutan tidak berbuah dua kali');
 
 // ------------------------------------------------ 10. SELESAI + KEADAAN AKHIR
 echo "\n== 10. Ditandai selesai, lalu terkunci ==\n";
@@ -433,7 +433,7 @@ cek($hal_lain['code'] === 200, 'Warga lain tetap bisa membaca topiknya (forum me
  * DUA pemeriksaan, dan yang kedua yang sebenarnya menggigit.
  *
  * `alasan` kebetulan memang tidak dirender di panel hari ini, jadi menyapu
- * penandanya saja nyaris hampa — ia hijau untuk halaman yang membocorkan
+ * penandanya saja nyaris hampa - ia hijau untuk halaman yang membocorkan
  * seluruh panel asal kolom itu tidak ikut dicetak. Yang diperiksa berikutnya
  * adalah PANELNYA sendiri tidak muncul untuk bukan-pemilik; itu yang akan
  * merah kalau gerbang kepemilikan di `Umum::detail` dilonggarkan.

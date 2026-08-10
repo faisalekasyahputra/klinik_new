@@ -5,7 +5,7 @@
             Nggolek <span class="text-[color:var(--portal-brand)]">Omah</span>
         </h2>
         <p class="text-[color:var(--portal-text-muted)] text-xs sm:text-sm leading-relaxed">
-            Pilih langkah yang sesuai kebutuhanmu — cari rumah yang sudah tersedia, cari panduan desain untuk bangun sendiri, atau temukan solusi pembiayaan yang cocok.
+            Pilih langkah yang sesuai kebutuhanmu - cari rumah yang sudah tersedia, cari panduan desain untuk bangun sendiri, atau temukan solusi pembiayaan yang cocok.
         </p>
     </div>
 
@@ -56,7 +56,7 @@
 
         <!-- Card 3: Temukan Solusi Pembiayaan.
              Sejak 1 Agu 2026 tujuannya wizard pendataan warga, bukan diagnosa
-             singkat `solusi_pembiayaan` — halaman lamanya masih hidup lewat rute
+             singkat `solusi_pembiayaan` - halaman lamanya masih hidup lewat rute
              langsung, belum diputuskan nasibnya. -->
         <a href="<?= base_url('warga/pendataan') ?>" data-tab-link data-tab-key="warga_pendataan" data-tab-group="perumahan"
            class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"
@@ -78,7 +78,7 @@
         </a>
 
         <!-- Card 4: Cek RTLH.
-             SEBELUMNYA kartu ini menunjuk `warga/pendataan` — tujuan yang SAMA
+             SEBELUMNYA kartu ini menunjuk `warga/pendataan` - tujuan yang SAMA
              PERSIS dengan kartu 3 di atasnya, jadi hub empat kartu ini
              sebenarnya cuma menawarkan tiga tujuan. Diganti Cek RTLH (revisi
              dinas 3 Agt 2026 butir 11), yang memang belum punya pintu masuk

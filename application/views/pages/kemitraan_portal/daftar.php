@@ -1,5 +1,5 @@
 <?php
-// Kelas isian diangkat jadi variabel — string yang sama sebelumnya ditulis
+// Kelas isian diangkat jadi variabel - string yang sama sebelumnya ditulis
 // ulang di setiap medan, dan formulir ini baru saja bertambah lima medan.
 $isian = 'w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)]'
     . ' px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors'
@@ -40,13 +40,13 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
         <?php
         // BACA-SAJA dan tanpa atribut name: nilainya tidak pernah dikirim, dan
         // `simpan()` mengambil user_id dari sesi. Ditampilkan supaya pendaftar
-        // tahu akun mana yang menempel pada pendaftaran ini — sebelumnya itu
+        // tahu akun mana yang menempel pada pendaftaran ini - sebelumnya itu
         // terjadi diam-diam.
         ?>
         <div class="rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-btn-bg)]/50 p-4">
             <p class="text-[11px] font-black uppercase tracking-wider text-[color:var(--portal-text-muted)]">Terkirim atas nama akun</p>
-            <p class="mt-1 text-sm font-bold text-[color:var(--portal-text)]"><?= html_escape($nama_akun ?: '—') ?></p>
-            <p class="text-xs text-[color:var(--portal-text-muted)]"><?= html_escape($email_akun ?: '—') ?></p>
+            <p class="mt-1 text-sm font-bold text-[color:var(--portal-text)]"><?= html_escape($nama_akun ?: '-') ?></p>
+            <p class="text-xs text-[color:var(--portal-text-muted)]"><?= html_escape($email_akun ?: '-') ?></p>
             <p class="mt-2 text-[11px] text-[color:var(--portal-text-muted)]">Ingin mengubah nama? Perbarui lewat <a href="<?= base_url('akun/profil') ?>" class="font-bold underline">Profil Saya</a>.</p>
         </div>
 
@@ -99,11 +99,11 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
             <?php if ($jenis === 'magang'): ?>
                 <!-- Divisi dipilih dari daftar, bukan diketik. Sebelumnya ini
                      teks bebas, jadi pendaftar bisa menulis divisi yang di
-                     papan slot berwarna merah — dan tidak ada yang menahannya.
+                     papan slot berwarna merah - dan tidak ada yang menahannya.
                      Penjagaan yang sebenarnya tetap di KemitraanPortal::simpan();
                      select ini hanya supaya orang tidak menebak-nebak. -->
                 <select id="kd-divisi" name="divisi_atau_tema" x-model="divisi_atau_tema" required class="<?= $isian ?>">
-                    <option value="">— Pilih bidang —</option>
+                    <option value="">- Pilih bidang -</option>
                     <?php foreach ($divisi as $d): ?>
                         <option value="<?= html_escape($d->kode) ?>"><?= html_escape($d->nama) ?></option>
                     <?php endforeach; ?>
@@ -130,7 +130,7 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
         </div>
 
         <?php
-        // WAJIB untuk magang, opsional untuk KKN — keputusan user 2 Agt 2026.
+        // WAJIB untuk magang, opsional untuk KKN - keputusan user 2 Agt 2026.
         // `required` di sini cuma kenyamanan; yang menegakkannya
         // KemitraanPortal::simpan(), yang menolak sebelum barisnya lahir.
         $surat_wajib = $jenis === 'magang';
@@ -147,12 +147,12 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
         <?php if ($jenis === 'magang'): ?>
         <?php
         // Proposal hanya untuk magang (keputusan user 30 Jul 2026). Tidak
-        // dirender untuk KKN, DAN tidak diproses server untuk KKN — lihat
+        // dirender untuk KKN, DAN tidak diproses server untuk KKN - lihat
         // KemitraanPortal::simpan(); formulir yang tidak menampilkan sesuatu
         // bukan penjagaan, ia cuma tidak menawarkannya.
         //
         // Ditandai "opsional" mengikuti surat pengantar. Menjadikan dokumen
-        // WAJIB adalah keputusan #11 (syarat bukti resmi) yang masih BLOCKED —
+        // WAJIB adalah keputusan #11 (syarat bukti resmi) yang masih BLOCKED -
         // bukan hal yang boleh diputuskan sambil merapikan formulir.
         ?>
         <div>

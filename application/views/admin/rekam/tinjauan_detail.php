@@ -1,6 +1,6 @@
 <?php
 /**
- * Rekam Data — Detail laporan + layar keputusan peninjau provinsi (D6).
+ * Rekam Data - Detail laporan + layar keputusan peninjau provinsi (D6).
  *
  * Satu view melayani dua domain; bentuk datanya memang berbeda, jadi
  * rinciannya bercabang di satu tempat saja, bukan dua berkas yang harus
@@ -20,10 +20,10 @@ $sudah_ditinjau = $laporan['status'] === 'terkirim' && ! empty($laporan['reviewe
  *
  * `$bisa_diputus` soal KEADAAN laporan; `$boleh_putuskan` soal KEWENANGAN
  * pembacanya. View ini kini melayani dua layar: `Rekam_Tinjauan` (admin bidang,
- * memutuskan) dan `Admin_Rekam_Data` (superadmin, memantau — read-only).
+ * memutuskan) dan `Admin_Rekam_Data` (superadmin, memantau - read-only).
  *
  * Default-nya FALSE, bukan TRUE. Kalau kelak ada layar ketiga yang lupa
- * mengirim nilai ini, yang terjadi adalah tombolnya hilang — bukan tombol
+ * mengirim nilai ini, yang terjadi adalah tombolnya hilang - bukan tombol
  * keputusan yang muncul di layar yang tidak berwenang. Salah arah default di
  * sini berarti dua jalur tulis ke keputusan yang sama, persis masalah yang
  * dihindari Admin_Aduan.
@@ -55,7 +55,7 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
       </span>
     </div>
     <?php /* Kalimat ini dulu berbunyi "kumulatif sampai dengan TW X, bukan
-             capaian triwulan itu saja" — persis KEBALIKAN kenyataan sejak W1,
+             capaian triwulan itu saja" - persis KEBALIKAN kenyataan sejak W1,
              sementara layar kabupaten (perumahan_capaian.php) sudah menyatakan
              yang benar. Halaman inilah tempat provinsi memutuskan terima atau
              minta perbaikan: peninjau yang membaca 200 unit sebagai "total
@@ -135,7 +135,7 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
                       <?php if ( ! empty($sel['keterangan'])): ?>
                         <span class="block text-xs italic text-gray-400"><?= $e($sel['keterangan']) ?></span>
                       <?php endif; ?>
-                    <?php else: ?>&mdash;<?php endif; ?>
+                    <?php else: ?>-<?php endif; ?>
                   </td>
                 <?php endforeach; ?>
               </tr>
@@ -164,7 +164,7 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
       $kartu = [
           ['Penanganan kumuh', $r && (int) $r['ada_penanganan'] === 1 ? 'Ada' : 'Tidak Ada'],
           ['Progres realisasi', $r && (int) $r['ada_progres'] === 1 ? 'Ada' : 'Tidak ada'],
-          ['Total luas', $r ? number_format((float) $r['total_luas_ha'], 2, ',', '.') . ' Ha' : '—'],
+          ['Total luas', $r ? number_format((float) $r['total_luas_ha'], 2, ',', '.') . ' Ha' : '-'],
           ['Total anggaran', 'Rp ' . number_format((int) $isi['total']['total_anggaran'], 0, ',', '.')],
       ];
       foreach ($kartu as [$l, $v]): ?>
@@ -244,7 +244,7 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
           </label>
           <textarea id="catatan_admin" name="catatan_admin" rows="3" required
             class="mt-1 w-full rounded-xl border border-gray-200 bg-transparent p-3 text-sm dark:border-white/10"
-            placeholder="Sebutkan apa yang perlu diperbaiki — catatan ini dibaca petugas kabupaten"></textarea>
+            placeholder="Sebutkan apa yang perlu diperbaiki - catatan ini dibaca petugas kabupaten"></textarea>
           <button class="mt-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold dark:border-white/10">
             Minta perbaikan
           </button>

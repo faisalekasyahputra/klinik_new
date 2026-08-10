@@ -1,20 +1,20 @@
 <?php
 /**
- * Rekam Data — "BANK Data / Tampilkan Buku Data" di sketsa Menu Utama.
+ * Rekam Data - "BANK Data / Tampilkan Buku Data" di sketsa Menu Utama.
  *
  * Halaman PUBLIK, di shell portal. Sengaja bukan halaman admin: kartu REKAM
  * DATA ada di beranda publik, dan sebelum ini mengekliknya melempar pengunjung
  * ke layar login dengan pesan "Akses ditolak. Anda bukan Admin Kabupaten/Kota."
- * — menuduh orang yang cuma menekan satu kartu menu.
+ * - menuduh orang yang cuma menekan satu kartu menu.
  *
  * Gayanya mengikuti `pages/home/tab_bankdata.php`, tetangga terdekatnya:
  * FontAwesome (portal TIDAK memuat Phosphor), variabel `--portal-*`, dan
- * `tl-btn-base`. Kelas `portal-home-card` SENGAJA tidak dipakai — kelas itu
+ * `tl-btn-base`. Kelas `portal-home-card` SENGAJA tidak dipakai - kelas itu
  * didefinisikan di dalam `<style>` milik `awal.php` sendiri, jadi hanya hidup
  * di beranda.
  *
  * Nol angka di sini. Pintu yang memajang ringkasan menampilkan data beberapa
- * detik lebih tua dari halaman tujuannya — dua angka berbeda untuk hal yang
+ * detik lebih tua dari halaman tujuannya - dua angka berbeda untuk hal yang
  * sama, dan yang salah justru dilihat lebih dulu.
  */
 $e = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
@@ -45,7 +45,7 @@ $domain = [
 
     <p class="mb-3 text-xs leading-relaxed text-[color:var(--portal-text-muted)]">
         Buku data capaian perumahan dan kawasan permukiman kabupaten/kota.
-        Pengisiannya dilakukan Admin Kabupaten/Kota untuk wilayahnya sendiri —
+        Pengisiannya dilakukan Admin Kabupaten/Kota untuk wilayahnya sendiri -
         membuka salah satu buku di bawah akan meminta kamu masuk lebih dulu.
     </p>
 
@@ -54,7 +54,7 @@ $domain = [
             <?php /* `data-no-page-transition` DISENGAJA: kedua tautan ini keluar dari
                       shell portal menuju shell admin. Tanpa penanda ini, loader portal
                       mem-fetch-nya dulu, mendapat dokumen utuh, lalu baru jatuh ke
-                      navigasi penuh — dua GET untuk satu klik. Pelajaran S2 yang sama
+                      navigasi penuh - dua GET untuk satu klik. Pelajaran S2 yang sama
                       dengan tautan detail forum. */ ?>
             <a href="<?= base_url($d['url']) ?>" data-no-page-transition
                class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"

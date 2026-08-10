@@ -1,4 +1,4 @@
-# 🚀 Panduan Setup Database — Klinik PKP (v3.0)
+# 🚀 Panduan Setup Database - Klinik PKP (v3.0)
 
 Dokumen ini berisi panduan setup dan daftar skema database yang telah direstrukturisasi dengan sistem *Prefix* Modular untuk mempermudah manajemen data.
 
@@ -10,7 +10,7 @@ Dokumen ini berisi panduan setup dan daftar skema database yang telah direstrukt
 
 Sejak butir B1/U0, `index.php` **fail-closed**: bila `CI_ENV` tidak ada atau
 kosong, environment dianggap **`production`**. Tanpa langkah ini instalasi lokal
-ikut menjadi production — tampilan galat hilang, dan `cookie_secure` menyala
+ikut menjadi production - tampilan galat hilang, dan `cookie_secure` menyala
 sehingga browser menolak cookie sesi di `http://localhost` dan **login putus
 lintas-request**.
 
@@ -23,7 +23,7 @@ lintas-request**.
 </Directory>
 ```
 
-Jangan menaruhnya di `.htaccess` repo — berkas yang sama dibaca lokal maupun
+Jangan menaruhnya di `.htaccess` repo - berkas yang sama dibaca lokal maupun
 production, sehingga salah satu lingkungan pasti salah kaprah.
 
 **Untuk perintah CLI.** `SetEnv` Apache **hanya** berlaku untuk request HTTP;

@@ -13,7 +13,7 @@ class Admin_Kemitraan extends Admin_Controller {
     // SLOT MAGANG PER BIDANG
     //
     // Otorisasinya datang dari Admin_Controller, yang menuntut role === 'admin'
-    // PERSIS — bukan dari entri `roles` di dashboard_modules.php, yang cuma
+    // PERSIS - bukan dari entri `roles` di dashboard_modules.php, yang cuma
     // menentukan menunya dirender atau tidak.
     //
     // Daftar bidangnya TIDAK dikelola di sini: itu struktur organisasi dinas
@@ -36,7 +36,7 @@ class Admin_Kemitraan extends Admin_Controller {
         // sisi admin: dengan 25 slot terkonfigurasi di 2027, admin membuka layar
         // ini dan melihat 2026 kosong melompong. Selektor tahunnya memang ada,
         // tapi orang yang baru saja melihat "tidak ada slot" tidak punya alasan
-        // untuk mengeklik tahun lain — ia menyimpulkan pekerjaannya hilang.
+        // untuk mengeklik tahun lain - ia menyimpulkan pekerjaannya hilang.
         //
         // `tahun_sah()` tetap dipakai untuk memvalidasi tahun yang DIMINTA;
         // yang berubah hanya ke mana ia mendarat kalau tidak ada yang diminta.
@@ -78,7 +78,7 @@ class Admin_Kemitraan extends Admin_Controller {
     }
 
     /**
-     * DETAIL satu bidang — dua belas bulan, masing-masing dengan rentang
+     * DETAIL satu bidang - dua belas bulan, masing-masing dengan rentang
      * tanggalnya dan daftar mahasiswa yang mengisinya.
      *
      * Daftar mahasiswa itu bukan hiasan: tanpa layar ini, angka "2 dari 2"
@@ -154,8 +154,8 @@ class Admin_Kemitraan extends Admin_Controller {
      * Unggah surat balasan bertanda tangan.
      *
      * Sistem TIDAK membuat suratnya. Dokumen resmi yang dikarang perangkat lunak
-     * — lengkap dengan kop dan tanda tangan yang tidak pernah dibubuhkan siapa
-     * pun — adalah dokumen palsu, apa pun niatnya. Yang diunggah di sini adalah
+     * - lengkap dengan kop dan tanda tangan yang tidak pernah dibubuhkan siapa
+     * pun - adalah dokumen palsu, apa pun niatnya. Yang diunggah di sini adalah
      * PDF yang sudah ditandatangani pejabat, dan mahasiswa mengunduh berkas itu
      * apa adanya.
      */
@@ -181,7 +181,7 @@ class Admin_Kemitraan extends Admin_Controller {
         }
 
         // Berkas lama dibuang supaya tidak menumpuk tanpa pemilik di
-        // private_uploads/ — dokumen berisi nama dan periode seseorang.
+        // private_uploads/ - dokumen berisi nama dan periode seseorang.
         if ( ! empty($row->file_surat_balasan)) {
             $lama = $this->private_upload_dir('kemitraan', (int) $row->id) . basename($row->file_surat_balasan);
             if (is_file($lama)) { @unlink($lama); }
@@ -209,7 +209,7 @@ class Admin_Kemitraan extends Admin_Controller {
         ], 'kkn_magang_pendaftaran.created_at');
         $data['base_url'] = 'Admin_Kemitraan';
 
-        // Filter dari query string DIVALIDASI ke daftar yang sah — bukan
+        // Filter dari query string DIVALIDASI ke daftar yang sah - bukan
         // langsung dimasukkan ke WHERE. Tanpa filter ini, satu-satunya cara
         // memisahkan "yang perlu ditinjau" dari yang sudah selesai adalah
         // membaca seluruh halaman satu per satu.
@@ -249,7 +249,7 @@ class Admin_Kemitraan extends Admin_Controller {
      * Sajikan dokumen pendukung ke superadmin. Ber-guard lewat Admin_Controller,
      * dibaca dari private_uploads/ (luar webroot).
      *
-     * @param string $berkas WHITELIST, bukan nama kolom dari URL — menerima nama
+     * @param string $berkas WHITELIST, bukan nama kolom dari URL - menerima nama
      *   kolom mentah berarti mempersilakan siapa pun membaca kolom apa pun.
      */
     public function lihat_dokumen($id = NULL, $berkas = 'surat')
@@ -319,7 +319,7 @@ class Admin_Kemitraan extends Admin_Controller {
         }
 
         // Batas panjang berlaku juga di sini. Admin boleh melampaui KUOTA, tapi
-        // periode 79 tahun bukan kewenangan — ia membuat setiap render halaman
+        // periode 79 tahun bukan kewenangan - ia membuat setiap render halaman
         // menelusuri puluhan ribu hari.
         if ($this->slot->periode_terlalu_panjang($mulai, $selesai)) {
             $this->session->set_flashdata('error', 'Periode terlalu panjang. Maksimal '
@@ -330,7 +330,7 @@ class Admin_Kemitraan extends Admin_Controller {
 
         $divisi_atau_tema = $this->input->post('divisi_atau_tema', TRUE);
 
-        // Divisi tetap harus NYATA — kalau tidak, papan slot dan hitungan
+        // Divisi tetap harus NYATA - kalau tidak, papan slot dan hitungan
         // terisinya menunjuk ke nama yang tidak pernah ada, dan angkanya
         // berhenti berarti apa pun. Yang TIDAK ditegakkan di sini adalah
         // kuotanya: admin berwenang menempatkan orang ke bulan yang penuh, dan
@@ -370,7 +370,7 @@ class Admin_Kemitraan extends Admin_Controller {
      * Hapus satu pendaftaran, berikut berkas pendukungnya.
      *
      * Ada demi kelengkapan CRUD, tapi ini SATU-SATUNYA aksi di modul ini yang
-     * tidak bisa dibatalkan — "Ditolak" sudah cukup untuk hampir semua kasus,
+     * tidak bisa dibatalkan - "Ditolak" sudah cukup untuk hampir semua kasus,
      * dan ia meninggalkan jejak yang bisa dibaca. Hapus disediakan untuk yang
      * memang tidak boleh tersisa: kiriman ganda, atau data yang salah orang.
      *
@@ -385,7 +385,7 @@ class Admin_Kemitraan extends Admin_Controller {
         $row = $this->db->get_where('kkn_magang_pendaftaran', ['id' => (int) $id])->row();
         if ( ! $row) { show_404(); }
 
-        // private_uploads_dir() sudah berakhiran pemisah — sama seperti dipakai
+        // private_uploads_dir() sudah berakhiran pemisah - sama seperti dipakai
         // serve_private_file(), jadi jangan tambahkan garis miring lagi.
         $dir = $this->private_upload_dir('kemitraan', (int) $row->id);
         foreach ([$row->file_surat_pengantar, $row->file_proposal] as $berkas) {
@@ -407,14 +407,14 @@ class Admin_Kemitraan extends Admin_Controller {
 
         // Keberadaan barisnya diperiksa lebih dulu. Sebelumnya method ini
         // langsung UPDATE: id yang tidak ada menyentuh nol baris lalu tetap
-        // melaporkan "Status pendaftaran diperbarui" — pesan sukses untuk
+        // melaporkan "Status pendaftaran diperbarui" - pesan sukses untuk
         // sesuatu yang tidak pernah terjadi.
         $row = $this->db->get_where('kkn_magang_pendaftaran', ['id' => (int) $id])->row();
         if ( ! $row) { show_404(); }
 
         // 'Ditinjau Bidang' adalah keputusan KHAS superadmin: meneruskan surat
         // ke meja kedua. 'Diterima' tetap ada supaya ia bisa mengambil alih
-        // kalau bidangnya belum ada peninjaunya — tapi jalur normalnya adalah
+        // kalau bidangnya belum ada peninjaunya - tapi jalur normalnya adalah
         // meneruskan, dan tombolnya di layar memang menawarkan itu lebih dulu.
         $status = $this->input->post('status', TRUE);
         if ( ! in_array($status, ['Ditinjau Bidang', 'Diterima', 'Ditolak'], TRUE)) {
@@ -427,23 +427,23 @@ class Admin_Kemitraan extends Admin_Controller {
             // Diteruskan ke bidang mana? Kalau divisinya belum ditetapkan, surat
             // ini akan mendarat di meja yang tidak ada. Lebih baik ditahan di
             // sini dengan alasan yang jelas daripada hilang diam-diam.
-            // `bidang_kode` kolom sungguhan sejak migrasi 031 — tidak ada lagi
+            // `bidang_kode` kolom sungguhan sejak migrasi 031 - tidak ada lagi
             // pencocokan lewat nama, dan tidak ada lagi pemetaan divisi yang
             // bisa lupa diisi. KKN memang tidak melewati meja kedua.
             if ($row->jenis !== 'magang' || empty($row->bidang_kode)) {
                 $this->session->set_flashdata('error', $row->jenis !== 'magang'
-                    ? 'Pendaftaran KKN tidak melewati tinjauan bidang — putuskan langsung di sini.'
+                    ? 'Pendaftaran KKN tidak melewati tinjauan bidang - putuskan langsung di sini.'
                     : 'Pendaftaran ini tidak menyebut bidang tujuan, jadi tidak ada yang bisa meninjaunya.');
                 redirect('Admin_Kemitraan');
                 return;
             }
         }
 
-        // Memproses baris yang SUDAH diputuskan diizinkan — admin berhak
+        // Memproses baris yang SUDAH diputuskan diizinkan - admin berhak
         // berubah pikiran, dan tombolnya memang dirender untuk status apa pun.
         // Yang perlu disadari: menarik 'Dibatalkan' kembali menjadi 'Diterima'
         // membuat baris itu memakan kuota lagi. Itu benar, tapi jangan sampai
-        // terjadi tanpa disengaja — karena itu labelnya di layar berbunyi
+        // terjadi tanpa disengaja - karena itu labelnya di layar berbunyi
         // "Ubah Keputusan", bukan "Proses".
         $this->db->where('id', (int) $row->id)->update('kkn_magang_pendaftaran', [
             'status'        => $status,

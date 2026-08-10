@@ -4,7 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * Opsi A dari docs/architecture/DESAIN_NORMALISASI_SKEMA_ROLE.md, kontrak #3:
  * tabel dokumen anak selalu FK ke induknya. srp2_documents.registration_id
- * sejak awal (migrasi 20260701000003) cuma INT biasa tanpa constraint —
+ * sejak awal (migrasi 20260701000003) cuma INT biasa tanpa constraint -
  * lihat AUDIT_ROLE_PENGEMBANG.md Temuan #5.
  *
  * ON DELETE CASCADE: dokumen tidak berguna tanpa baris pengajuan induknya.
@@ -13,7 +13,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * documents yang mengacu ke registration yang sudah tidak ada.
  *
  * File fisik di private_uploads/srp2/{registration_id}/ TIDAK ikut terhapus
- * otomatis oleh CASCADE ini (FK cuma bekerja di level baris DB) — pembersihan
+ * otomatis oleh CASCADE ini (FK cuma bekerja di level baris DB) - pembersihan
  * file tetap tanggung jawab kode (lihat catatan di migrasi 20260701000012
  * soal User_model::delete_user_account()).
  */

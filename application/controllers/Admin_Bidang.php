@@ -12,9 +12,9 @@ class Admin_Bidang extends Admin_Bidang_Controller {
         $table = $this->table_state(['created_at', 'nama', 'judul', 'status'], 'created_at');
         $data['base_url'] = 'Admin_Bidang';
 
-        // Scope bidang tetap wajib ikut di query hitung MAUPUN query ambil —
+        // Scope bidang tetap wajib ikut di query hitung MAUPUN query ambil -
         // pencarian tidak boleh jadi celah keluar dari scope.
-        // from() di depan, lalu count_all_results('', FALSE) — kalau tabelnya
+        // from() di depan, lalu count_all_results('', FALSE) - kalau tabelnya
         // disebut di kedua tempat, FROM tertulis dua kali dan query gagal.
         $this->db->from('aduan')->where('bidang', $this->my_bidang_kode);
         if ($table['q'] !== '') {
@@ -37,7 +37,7 @@ class Admin_Bidang extends Admin_Bidang_Controller {
 
     /**
      * Sajikan lampiran satu aduan ke admin bidang. Anti-IDOR: WHERE ganda
-     * (id + bidang dari sesi) — admin bidang lain tidak bisa membuka lampiran
+     * (id + bidang dari sesi) - admin bidang lain tidak bisa membuka lampiran
      * di luar bidangnya walau tahu ID-nya. Berkas dibaca dari private_uploads/
      * (luar webroot), bukan URL publik.
      */
@@ -66,11 +66,11 @@ class Admin_Bidang extends Admin_Bidang_Controller {
             return;
         }
 
-        // Anti-IDOR: wajib WHERE bidang juga, bukan cuma id — supaya admin
+        // Anti-IDOR: wajib WHERE bidang juga, bukan cuma id - supaya admin
         // bidang lain tidak bisa mengubah aduan di luar bidangnya. Cek dulu
         // keberadaannya di scope: affected_rows() saja tidak cukup karena
         // MySQL membalas 0 juga saat nilai barunya sama persis dengan yang
-        // tersimpan (resubmit tanpa perubahan) — dulu itu salah dilaporkan
+        // tersimpan (resubmit tanpa perubahan) - dulu itu salah dilaporkan
         // sebagai "bukan bidang Anda". Lihat AUDIT_ROLE_ADMIN_SCOPED.md #6.
         $milik_bidang = $this->db->where('id', (int) $id)
             ->where('bidang', $this->my_bidang_kode)

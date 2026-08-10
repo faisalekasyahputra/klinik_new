@@ -1,6 +1,6 @@
-# Status Sistem Klinik PKP — 30 Juli 2026
+# Status Sistem Klinik PKP - 30 Juli 2026
 
-**Semua angka dan status di dokumen ini diukur langsung hari ini** — rute diuji
+**Semua angka dan status di dokumen ini diukur langsung hari ini** - rute diuji
 ke production, suite dijalankan, tabel dihitung. Tidak ada yang disalin dari
 catatan lama. Alasannya: dokumen proyek ini sudah tiga kali terbukti menyimpan
 angka yang benar saat ditulis lalu salah tanpa ada yang menyadarinya.
@@ -13,10 +13,10 @@ angka yang benar saat ditulis lalu salah tanpa ada yang menyadarinya.
 data nyata dan tayang stabil.
 
 **Ya secara teknis, belum secara operasional, untuk Rekam Data.** Modulnya
-lengkap dan tayang, tapi **nol laporan di production** — belum ada satu kab/kota
+lengkap dan tayang, tapi **nol laporan di production** - belum ada satu kab/kota
 pun yang mengisi. Sistemnya menunggu orang, bukan menunggu kode.
 
-**Belum untuk statistika berbasis data nyata.** Angkanya masih simulasi — dan
+**Belum untuk statistika berbasis data nyata.** Angkanya masih simulasi - dan
 layarnya menyatakan itu terang-terangan, jadi tidak ada yang tersesat.
 
 **Satu hal yang belum pernah dilakukan siapa pun: menempuh seluruh alur dengan
@@ -54,12 +54,12 @@ triwulan, unggah BNBA, peninjauan Admin Bidang, rekap & riwayat.
 > **Production punya NOL laporan.** Diverifikasi dari backup pra-rilis: 12
 > `INSERT`, semuanya di tabel lain, nol di `rd_*`. Modulnya siap; belum ada
 > yang memakai. Konsekuensi praktisnya: rekap dan statistik apa pun yang
-> bersumber dari sini akan menampilkan nol — dan nol itu **jujur**, bukan
+> bersumber dari sini akan menampilkan nol - dan nol itu **jujur**, bukan
 > kerusakan.
 
 ---
 
-## 4. Simulasi — jujur, tapi bukan data
+## 4. Simulasi - jujur, tapi bukan data
 
 **`/statistika`** menampilkan angka yang dihitung dari `crc32(nama_kabupaten)`,
 bukan dari sistem mana pun. Layarnya menyatakannya sendiri: *"Belum ada satu pun
@@ -69,15 +69,15 @@ dari API eksternal.
 
 Sumber nyata yang sudah kita miliki untuk menggantikannya, berurutan:
 
-1. **Kartu pengembang** ← `srp2_certified_developers` (67 baris nyata) — bisa
+1. **Kartu pengembang** ← `srp2_certified_developers` (67 baris nyata) - bisa
    sekarang, nol pipa baru.
-2. **Daftar 35 kab/kota** ← tabel `kabupaten` (35 baris) — sekarang diketik
+2. **Daftar 35 kab/kota** ← tabel `kabupaten` (35 baris) - sekarang diketik
    manual di controller.
 3. **Kartu perumahan & kawasan** ← `rd_*` difilter `status = 'terkirim'` lewat
    `kumulatif()`. Sumber terbaik yang kita punya, karena satu-satunya yang
    batas kepercayaannya kita kendalikan sendiri. Tunggu ada isinya (§3).
 4. **Simperum/Sikumbang/Sikunang/Bank Tanah** paling akhir, dan lewat snapshot
-   tersimpan — **bukan** panggilan langsung di dalam request.
+   tersimpan - **bukan** panggilan langsung di dalam request.
 
 ---
 
@@ -86,15 +86,15 @@ Sumber nyata yang sudah kita miliki untuk menggantikannya, berurutan:
 | Hal | Keadaan | Menunggu |
 |---|---|---|
 | Chat | `/Chat` 404, kode yatim | keputusan #7 |
-| Sikaper | rute tidak ada, library yatim | keputusan #5 — **rotasi kredensial dulu, TLS dinyalakan, baru dibuka** |
+| Sikaper | rute tidak ada, library yatim | keputusan #5 - **rotasi kredensial dulu, TLS dinyalakan, baru dibuka** |
 | `Kemitraan.php` (lama) | 200 tapi nol tautan masuk | keputusan produk: cabut atau biarkan |
-| Kontrak cek tiket/NIK | — | keputusan #8 |
-| Kebijakan retensi data | — | keputusan #9 (teks "Zona Berbahaya" sudah diluruskan mengikutinya) |
-| Syarat bukti resmi | — | keputusan #11 |
+| Kontrak cek tiket/NIK | - | keputusan #8 |
+| Kebijakan retensi data | - | keputusan #9 (teks "Zona Berbahaya" sudah diluruskan mengikutinya) |
+| Syarat bukti resmi | - | keputusan #11 |
 
 **Dicabut 30 Jul 2026:** `Bank_desain` (500 permanen, view tidak pernah ada),
 `Kabupaten` (200 nol byte), `Kabupaten|Sikumbang/tambah_intervensi` (formulir
-tanpa `action` — menerima ketikan lalu membuangnya).
+tanpa `action` - menerima ketikan lalu membuangnya).
 
 ---
 
@@ -123,15 +123,15 @@ Dijalankan 30 Jul 2026 di lokal (Apache + MariaDB nyata, bukan mock):
 | `uji_simperum_gateway` | 5 | cache + 20 lookup serentak |
 | **Total** | **503** | **nol gagal** |
 
-Suite Rekam Data **sudah dibuktikan bisa MERAH** lewat mutasi — pewarisan
+Suite Rekam Data **sudah dibuktikan bisa MERAH** lewat mutasi - pewarisan
 dihidupkan lagi, scope wilayah dilepas, kalimat lama dikembalikan, whitelist
 indikator dilepas. Tiap kali hanya uji yang seharusnya merah yang merah, dan
 `git diff` kembali nol sesudahnya.
 
 **Dua suite TIDAK bisa dijalankan hari ini, dan itu bukan kegagalan kode:**
-- `uji_perjalanan_srp2` — butuh akun admin di-seed dulu (caranya di header
+- `uji_perjalanan_srp2` - butuh akun admin di-seed dulu (caranya di header
   berkasnya). **Artinya alur SRP2 tidak terverifikasi hari ini.**
-- `uji_utang_teknis` — menolak berjalan di DB dev karena ia menulis dan
+- `uji_utang_teknis` - menolak berjalan di DB dev karena ia menulis dan
   menghapus data; butuh runner DB bersih.
 
 ---
@@ -148,7 +148,7 @@ saat jalurnya ditempuh utuh. Rencana ujinya ada di §8.
 
 ---
 
-## 8. Rencana uji manual — sekali jalan, ±20 menit
+## 8. Rencana uji manual - sekali jalan, ±20 menit
 
 Login sebagai **admin kab/kota**. Tempuh dengan KLIK, jangan ketik URL.
 
@@ -183,7 +183,7 @@ Login sebagai **admin kab/kota**. Tempuh dengan KLIK, jangan ketik URL.
 ### E. Peninjauan provinsi (perlu akun Admin Bidang)
 16. `/Rekam_Tinjauan` → laporan terkirim muncul
 17. Buka detailnya → keterangannya berbunyi **"capaian TW … saja, bukan
-    kumulatif sejak Januari"** — kalau masih tertulis "kumulatif sampai dengan",
+    kumulatif sejak Januari"** - kalau masih tertulis "kumulatif sampai dengan",
     berarti deploy belum mendarat
 18. **Minta perbaikan** tanpa catatan → ditolak; dengan catatan → berhasil
 19. Kembali sebagai kab/kota → catatan peninjau terlihat **sejak langkah pertama**
@@ -197,11 +197,11 @@ lihat. Tidak perlu menebak penyebabnya.
 
 Sistem ini **layak dipresentasikan dan layak mulai dipakai** untuk portal
 publik, SRP2, pendataan warga, dan Rekam Data. Yang belum boleh diklaim:
-angka statistika sebagai data nyata, dan "sudah teruji menyeluruh" — karena
+angka statistika sebagai data nyata, dan "sudah teruji menyeluruh" - karena
 pengujian dengan mata belum pernah terjadi.
 
 Dua hal yang menunggu tindakan dan bukan keputusan:
-1. **Uji manual §8** — butuh sesi login.
-2. **Rotasi password DB production** — kredensialnya pernah terkirim ke kanal
+1. **Uji manual §8** - butuh sesi login.
+2. **Rotasi password DB production** - kredensialnya pernah terkirim ke kanal
    yang tidak semestinya. Ganti di hPanel **dan** `.env` server dalam satu
    tarikan, kalau tidak situsnya mati.

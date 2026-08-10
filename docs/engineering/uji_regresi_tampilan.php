@@ -5,7 +5,7 @@
  *   php docs/engineering/uji_regresi_tampilan.php
  *
  * Sepanjang 2-3 Agt 2026, delapan cacat ditemukan dengan membuka halaman di
- * peramban — bukan satu pun oleh 802 pemeriksaan HTTP yang sudah ada. Semuanya
+ * peramban - bukan satu pun oleh 802 pemeriksaan HTTP yang sudah ada. Semuanya
  * membalas 200 dengan markup yang sah; yang salah cuma apa yang dibaca manusia.
  * Setelah diperbaiki, tak satu pun punya penjaga: satu refactor dan semuanya
  * kembali diam-diam.
@@ -14,13 +14,13 @@
  * karena wujudnya string di HTML yang dirender. Yang KEDELAPAN sengaja tidak
  * ada di sini: kolom Aksi yang terpotong gulir horizontal butuh tata letak
  * sungguhan, dan uji yang berpura-pura mengukurnya lebih buruk daripada tidak
- * ada — lihat catatan di akhir berkas.
+ * ada - lihat catatan di akhir berkas.
  *
  * Ini BUKAN uji unit tampilan. Yang dijaga adalah janji yang bisa dibaca:
  * istilah yang dipakai dinas, tahun yang benar, bahasa tanggal, dan nama
  * pengguna yang tidak keluar ke pihak ketiga.
  *
- * Data uji dibuat dan dihapus sendiri — TIDAK meminjam pendaftaran demo yang
+ * Data uji dibuat dan dihapus sendiri - TIDAK meminjam pendaftaran demo yang
  * dipertahankan di AGENTS.md §20. Pelajaran r4/r5/r6: harness yang meminjam
  * data bersama akan merah karena ulah orang lain.
  */
@@ -106,7 +106,7 @@ function buat_akun($peran, $suffix, $bidang = NULL) {
 
 /**
  * Pendaftaran ditulis LANGSUNG ke DB. Yang diuji berkas ini adalah RENDERING,
- * bukan alur pendaftarannya — itu sudah dijaga uji_kemitraan_daftar. Menempuh
+ * bukan alur pendaftarannya - itu sudah dijaga uji_kemitraan_daftar. Menempuh
  * ulang formulirnya cuma menyalin cakupan dan menambah sebab gagal yang bukan
  * milik uji ini.
  */
@@ -169,7 +169,7 @@ echo "\n== Istilah: dinas menghapus \"divisi\", struktur resminya lima BIDANG ==
 $papan = http('mhs', 'KemitraanPortal/magang');
 // Judul papan berubah 3 Agt 2026 (revisi dinas): matriks bidang x 12 bulan
 // diganti daftar kebutuhan per bidang, jadi "Slot Magang per Bidang" menjadi
-// "Kebutuhan Magang <tahun>". Yang DIJAGA tetap sama — istilah "divisi" tidak
+// "Kebutuhan Magang <tahun>". Yang DIJAGA tetap sama - istilah "divisi" tidak
 // boleh kembali, dan papan harus menyebut bidang.
 cek(stripos($papan, 'Kebutuhan Magang') !== FALSE, 'Papan publik: judul menyebut kebutuhan magang');
 cek(stripos($papan, 'Kebutuhan mahasiswa magang pada tiap bidang') !== FALSE, 'Papan publik: subjudul menyebut bidang');
@@ -184,7 +184,7 @@ echo "\n== Tahun: layar mendarat di tahun yang PUNYA slot, bukan date('Y') buta 
 /**
  * Diuji sebagai INVARIAN, bukan angka tetap: "tahun yang ditampilkan harus
  * salah satu tahun yang benar-benar punya slot". Mematok 2027 akan membuat uji
- * ini merah tiap kali konfigurasinya berpindah tahun — merah yang tidak
+ * ini merah tiap kali konfigurasinya berpindah tahun - merah yang tidak
  * menunjukkan apa pun.
  */
 $tahun_berslot = [];
@@ -192,7 +192,7 @@ $res = $GLOBALS['db']->query('SELECT DISTINCT tahun FROM kkn_magang_slot ORDER B
 foreach ($res ?: [] as $r) { $tahun_berslot[] = (int) $r['tahun']; }
 
 if ( ! $tahun_berslot) {
-    cek(TRUE, 'Tidak ada slot sama sekali — pemeriksaan tahun dilewati (bukan kegagalan)');
+    cek(TRUE, 'Tidak ada slot sama sekali - pemeriksaan tahun dilewati (bukan kegagalan)');
 } else {
     preg_match('/Kebutuhan Magang\s*(\d{4})/i', $papan, $m);
     $tahun_papan = (int) ($m[1] ?? 0);
@@ -204,7 +204,7 @@ if ( ! $tahun_berslot) {
      *
      * Bentuk lamanya matriks 12 bulan yang tiap selnya menampilkan angka; yang
      * baru meringkasnya jadi satu keadaan per bidang. Peringkasan itulah yang
-     * paling mudah salah — kalau ia memakai bulan paling PADAT alih-alih paling
+     * paling mudah salah - kalau ia memakai bulan paling PADAT alih-alih paling
      * longgar, bidang yang masih punya bulan kosong akan tertulis "terpenuhi"
      * dan pendaftar yang seharusnya diterima berbalik pergi. Diuji terhadap
      * kenyataan DB, bukan terhadap teks yang kebetulan ada.
@@ -247,7 +247,7 @@ echo "\n== Bidang tujuan: disebut untuk magang, TIDAK untuk KKN ==\n";
  * halaman KKN yang sebenarnya benar: frasa itu juga ada di FAQ footer portal
  * ("pilih bidang tujuan yang sesuai dengan aduan Anda"), yang ikut dirender di
  * setiap halaman. Uji itu mengukur "dua kata ini ada di suatu tempat", bukan
- * "field ini ditampilkan" — dan namanya menjanjikan yang kedua.
+ * "field ini ditampilkan" - dan namanya menjanjikan yang kedua.
  *
  * Kalimat FAQ itu sendiri sudah hilang sejak aduan tidak lagi minta bidang
  * (3 Agt 2026), jadi versi pertama tadi kebetulan akan hijau sekarang. Justru
@@ -286,7 +286,7 @@ cek(preg_match('/\b(Januari|Februari|Maret|Mei|Juni|Juli|Agustus|Oktober|Desembe
 echo "\n== Privasi: nama pengguna tidak keluar ke pihak ketiga ==\n";
 /**
  * Dulu setiap pemuatan halaman memanggil ui-avatars.com dengan NAMA ASLI
- * pengguna di URL-nya — untuk semua peran, bersama IP dan referer. Penjaga ini
+ * pengguna di URL-nya - untuk semua peran, bersama IP dan referer. Penjaga ini
  * yang paling penting di berkas ini: kebocorannya diam, dan tidak ada satu pun
  * gejala di layar yang akan memberi tahu siapa pun.
  */
@@ -294,7 +294,7 @@ echo "\n== Privasi: nama pengguna tidak keluar ke pihak ketiga ==\n";
  * Ketiga permukaan diperiksa, bukan sekadar salah satunya.
  *
  * Versi pertama hanya membuka `akun` dan `Admin_Dashboard`, dan LULUS ketika
- * kebocoran sengaja dikembalikan ke `layouts/main.php` — karena navbar itu
+ * kebocoran sengaja dikembalikan ke `layouts/main.php` - karena navbar itu
  * dirender di BERANDA portal, bukan di `akun`. Uji yang tidak menyentuh
  * permukaan tempat cacatnya pernah hidup tidak menjaga apa pun; ia cuma terlihat
  * seperti menjaga. Ketahuan lewat mutasi, 3 Agt 2026.
@@ -336,8 +336,8 @@ cek(strpos($overview, 'Tinjau SRP2') !== FALSE
 echo "\n== Dependensi CDN terpatok versinya ==\n";
 /**
  * Versi mengambang berarti perilaku production bisa berubah tanpa satu baris
- * pun di repo tersentuh. Yang dijaga di sini BUKAN nomor versinya — itu boleh
- * dinaikkan kapan saja — melainkan bahwa penyebutnya tidak mengambang.
+ * pun di repo tersentuh. Yang dijaga di sini BUKAN nomor versinya - itu boleh
+ * dinaikkan kapan saja - melainkan bahwa penyebutnya tidak mengambang.
  */
 /**
  * Tiap paket diperiksa DUA arah: bentuk mengambangnya harus absen, DAN bentuk
@@ -346,11 +346,11 @@ echo "\n== Dependensi CDN terpatok versinya ==\n";
  * Versi pertama hanya memeriksa yang pertama, dan langsung menjadi hampa untuk
  * Chart.js begitu agent lain memindahkannya keluar dari shell admin (3 Agt
  * 2026): halaman yang disampel tidak lagi memuatnya sama sekali, jadi "tidak
- * ada npm/chart.js tanpa versi" benar — untuk alasan yang salah.
+ * ada npm/chart.js tanpa versi" benar - untuk alasan yang salah.
  *
  * Karena itu tiap paket menyebut halaman tempat ia SUNGGUH dimuat. Kalau ada
  * yang memindahkannya lagi, uji ini MERAH dan memaksa daftarnya ikut
- * diperbarui — jauh lebih baik daripada diam-diam berhenti menjaga.
+ * diperbarui - jauh lebih baik daripada diam-diam berhenti menjaga.
  */
 $sampel = [
     'portal'      => http('mhs', '/'),
@@ -395,7 +395,7 @@ echo "\n== Wizard onboarding: setiap seksi terkliping juga inert ==\n";
  * Alpine, jadi ia memang muncul apa adanya di markup. Yang dijaga: tidak ada
  * seksi ber-`:class="{ 'visible': ... }"` yang tidak punya `:inert`. Tanpa
  * pasangan itu, isian yang tak terlihat tetap bisa difokus keyboard dan tetap
- * diumumkan pembaca layar — 17 kontrol, terukur 3 Agt 2026.
+ * diumumkan pembaca layar - 17 kontrol, terukur 3 Agt 2026.
  */
 $src = (string) @file_get_contents(APP_ROOT . '/application/views/pages/auth/onboarding.php');
 wajib($src !== '', 'Sumber onboarding.php terbaca');
@@ -414,7 +414,7 @@ cek((int) nilai('SELECT COUNT(*) c FROM kkn_magang_pendaftaran WHERE instansi_as
  * TIDAK DIJAGA DI SINI, dan itu disengaja:
  *
  * Kolom "Aksi" yang hilang di balik gulir horizontal (meja bidang 107px,
- * layar admin 120px pada viewport 1440) tidak bisa diperiksa lewat HTTP —
+ * layar admin 120px pada viewport 1440) tidak bisa diperiksa lewat HTTP -
  * lebarnya baru ada setelah CSS dihitung dan tata letak dijalankan. Uji yang
  * mengaku memeriksanya dengan menghitung karakter atau mencocokkan kelas akan
  * hijau selamanya tanpa pernah menyentuh hal yang sebenarnya rusak, dan itu
@@ -422,7 +422,7 @@ cek((int) nilai('SELECT COUNT(*) c FROM kkn_magang_pendaftaran WHERE instansi_as
  *
  * Yang menutupnya bukan harness melainkan PEMICU: AGENTS.md §17 poin 6 kini
  * mewajibkan mengukur `scrollWidth - clientWidth` setiap kali ada yang menambah
- * kolom, memperlebar isi kolom, atau mengubah lebar sidebar — lengkap dengan
+ * kolom, memperlebar isi kolom, atau mengubah lebar sidebar - lengkap dengan
  * satu baris perintahnya. Sudah dijalankan 2-3 Agt 2026 pada kedua layar, dan
  * keduanya nol.
  *
@@ -433,18 +433,18 @@ cek((int) nilai('SELECT COUNT(*) c FROM kkn_magang_pendaftaran WHERE instansi_as
 // ============================== POPOVER DI DALAM TABEL ADMIN
 echo "\n== Popover di dalam sel tabel wajib mereset white-space ==\n";
 /**
- * INI PEMERIKSAAN MARKUP, BUKAN TATA LETAK — dan bedanya penting supaya ia
+ * INI PEMERIKSAAN MARKUP, BUKAN TATA LETAK - dan bedanya penting supaya ia
  * tidak melanggar catatan panjang di atas.
  *
  * Yang diperiksa bukan "apakah tombolnya muat" (itu butuh CSS dihitung, dan
  * memang tidak bisa dari sini). Yang diperiksa: apakah KELAS yang menjadi
- * perbaikannya ada. Di sini kelas itu bukan proksi longgar — ia PENYEBAB dan
+ * perbaikannya ada. Di sini kelas itu bukan proksi longgar - ia PENYEBAB dan
  * SEKALIGUS obatnya, jadi ketiadaannya berarti bug-nya kembali, persis.
  *
  * Bug-nya, ditemukan user di production 4 Agt 2026: tabel admin memakai
  * `whitespace-nowrap`, dan `white-space` DIWARISI ke popover di dalam <td>.
  * Kontrol form di dalamnya `display:inline-block`, jadi <select> dan tombol
- * Simpan berjajar dalam SATU baris — tombolnya terlempar 193px ke luar
+ * Simpan berjajar dalam SATU baris - tombolnya terlempar 193px ke luar
  * pembungkus `overflow-x-auto`, terpotong dan tidak bisa diklik. Terukur:
  * tombol di x=1371, panel berakhir di x=1385.
  *
@@ -456,7 +456,7 @@ echo "\n== Popover di dalam sel tabel wajib mereset white-space ==\n";
  *
  * Versi pertama penjaga ini cuma menanyakan "apakah berkasnya memuat
  * whitespace-nowrap", dan langsung merah untuk EMPAT layar yang sebenarnya
- * benar — modal di Katalog Program, Janji Temu, Struktur & Cakupan, dan modal
+ * benar - modal di Katalog Program, Janji Temu, Struktur & Cakupan, dan modal
  * Tambah Pengguna semuanya ditulis SEBAGAI SAUDARA tabel, bukan di dalamnya,
  * jadi tidak ada yang diwariskan ke sana. `white-space` mewaris lewat pohon
  * DOM; kedekatan di dalam berkas yang sama tidak mewariskan apa pun.
@@ -497,46 +497,46 @@ echo "\n== Shell admin: `#main-content` tidak menjebak `position: fixed` ==\n";
  * tertumpuk".
  *
  * 1. `animation: … both`. Bagian `forwards`-nya membuat keyframe terakhir
- *    menempel selamanya — termasuk `transform: translateY(0) scale(1)` dan
+ *    menempel selamanya - termasuk `transform: translateY(0) scale(1)` dan
  *    `filter: blur(0px)`. Keduanya identitas, tidak mengubah tampilan sama
  *    sekali, TAPI elemen ber-transform/filter jadi CONTAINING BLOCK untuk
  *    `position: fixed`. Modal `fixed inset-0` pun terkurung di dalam <main>:
  *    terukur x=256 (tepi sidebar), bukan 0.
  * 2. `relative z-10` pada `#main-content` = STACKING CONTEXT. `z-50` milik
  *    modal jadi cuma berlaku di dalam konteks z-10 itu, sementara topbar
- *    (z-40) dan sidebar (z-20) adalah saudara DI LUARNYA — jadi modal dicat
+ *    (z-40) dan sidebar (z-20) adalah saudara DI LUARNYA - jadi modal dicat
  *    di bawah keduanya.
  *
  * Keduanya diperiksa sebagai STRING karena keduanya memang kelas/nilai CSS,
- * bukan hasil tata letak. Yang tidak bisa diperiksa dari sini — apakah modal
- * benar-benar menutupi layar — memang butuh browser, dan itu bagian §17 poin 6.
+ * bukan hasil tata letak. Yang tidak bisa diperiksa dari sini - apakah modal
+ * benar-benar menutupi layar - memang butuh browser, dan itu bagian §17 poin 6.
  */
 $shell = file_get_contents(APP_ROOT . '/application/views/admin/index.php');
 preg_match('/<main id="main-content"[^>]*class="([^"]*)"/', $shell, $mm);
 $kelas_main = $mm[1] ?? '';
 cek($kelas_main !== '', 'Kelas #main-content terbaca');
 cek( ! preg_match('/\bz-\d+\b/', $kelas_main),
-    '#main-content tanpa z-index — stacking context di sini mengubur setiap modal di bawahnya');
+    '#main-content tanpa z-index - stacking context di sini mengubur setiap modal di bawahnya');
 
 $head = file_get_contents(APP_ROOT . '/application/views/admin/layouts/head.php');
 preg_match('/#main-content\s*\{[^}]*animation:([^;]*);/s', $head, $am);
 $anim = trim($am[1] ?? '');
 cek($anim !== '', 'Animasi #main-content terbaca');
 cek(strpos($anim, 'backwards') !== FALSE && ! preg_match('/\bboth\b|\bforwards\b/', $anim),
-    'fill-mode `backwards`, bukan `both`/`forwards` — kalau tidak, transform & filter menempel selamanya');
+    'fill-mode `backwards`, bukan `both`/`forwards` - kalau tidak, transform & filter menempel selamanya');
 
 /* ------------------------------------------------------------------
- * R1 — empat perbaikan label revisi dinas 5 Agt 2026 (A4, D1, D3, C3).
+ * R1 - empat perbaikan label revisi dinas 5 Agt 2026 (A4, D1, D3, C3).
  *
  * Semuanya diikat ke SUMBER + POSISI, bukan dicocokkan sebagai substring di
  * seluruh keluaran halaman. Alasannya bukan gaya: pola substring se-halaman
- * sudah EMPAT KALI memberi hasil palsu di proyek ini — "Bidang Tujuan" cocok
+ * sudah EMPAT KALI memberi hasil palsu di proyek ini - "Bidang Tujuan" cocok
  * dengan FAQ di footer, `warga/pendataan` cocok dengan komentar HTML, dan
  * seterusnya. Penjaga yang hijau karena mencocokkan tempat yang salah lebih
  * buruk daripada tidak ada penjaga.
  * ------------------------------------------------------------------ */
 
-// A4 — kartu "Desain Rumah" di hub Nggolek Omah.
+// A4 - kartu "Desain Rumah" di hub Nggolek Omah.
 $hub = (string) @file_get_contents(APP_ROOT . '/application/views/pages/golek_omah/index.php');
 wajib($hub !== '', 'Sumber golek_omah/index.php terbaca');
 preg_match('/Desain Rumah<\/h4>\s*<p[^>]*>\(([^)]*)\)<\/p>/', $hub, $m4);
@@ -545,7 +545,7 @@ cek($ket_desain !== '', 'A4: keterangan di bawah "Desain Rumah" ketemu');
 cek(stripos($ket_desain, 'bangun sendiri') !== FALSE,
     'A4: keterangan menyebut "bangun sendiri" (dapat: "' . $ket_desain . '")');
 
-// A8 — Panjang & Lebar tanah jadi satu kelompok.
+// A8 - Panjang & Lebar tanah jadi satu kelompok.
 $pdt = (string) @file_get_contents(APP_ROOT . '/application/views/pages/warga/pendataan.php');
 wajib($pdt !== '', 'Sumber warga/pendataan.php terbaca');
 preg_match('/<fieldset[^>]*>\s*<legend[^>]*>([^<]*)<\/legend>(.*?)<\/fieldset>/s', $pdt, $m8);
@@ -555,13 +555,13 @@ cek($legend !== '', 'A8: ada <fieldset> ber-<legend> di formulir pendataan');
 cek(stripos($legend, 'ukuran tanah') !== FALSE,
     'A8: legend-nya "Ukuran tanah" (dapat: "' . $legend . '")');
 cek(strpos($isi_fs, 'name="land_length_m"') !== FALSE && strpos($isi_fs, 'name="land_width_m"') !== FALSE,
-    'A8: KEDUA isian tanah ada DI DALAM fieldset itu — bukan sekadar ada di halaman');
+    'A8: KEDUA isian tanah ada DI DALAM fieldset itu - bukan sekadar ada di halaman');
 cek(preg_match('/Ukuran Tanah\s*\x{2014}/u', $pdt) === 0,
-    'A8: nol label "Ukuran Tanah —" yang mengulang; prefiksnya sudah pindah ke legend');
+    'A8: nol label "Ukuran Tanah -" yang mengulang; prefiksnya sudah pindah ke legend');
 
 /* ---------------- R4, 5 Agt 2026 ---------------- */
 
-// A9 — dua isian bukti dicabut dari formulir DAN dari whitelist unggah,
+// A9 - dua isian bukti dicabut dari formulir DAN dari whitelist unggah,
 //      tapi jenisnya TETAP sah supaya berkas lama terbaca.
 $wrg = (string) @file_get_contents(APP_ROOT . '/application/controllers/Warga.php');
 $mdl = (string) @file_get_contents(APP_ROOT . '/application/models/Housing_assessment_model.php');
@@ -573,12 +573,12 @@ foreach (['land_transfer_proof', 'recipient_photo'] as $jenis) {
     cek(strpos($whitelist, $jenis) === FALSE,
         "A9: `{$jenis}` tidak bisa lagi diunggah");
     cek(strpos($mdl, $jenis) !== FALSE,
-        "A9: `{$jenis}` TETAP jenis yang sah — berkas lama harus tetap terbaca");
+        "A9: `{$jenis}` TETAP jenis yang sah - berkas lama harus tetap terbaca");
 }
 cek(strpos($pdt, 'recipient_photo') === FALSE && strpos($pdt, 'land_transfer_proof') === FALSE,
     'A9: kedua kotak unggah lenyap dari formulir pendataan');
 
-// E1 — syarat "harus ditanggapi dulu" dilepas, TIGA syarat lain tetap berdiri.
+// E1 - syarat "harus ditanggapi dulu" dilepas, TIGA syarat lain tetap berdiri.
 $umum = (string) @file_get_contents(APP_ROOT . '/application/controllers/Umum.php');
 wajib($umum !== '', 'Sumber Umum.php terbaca');
 preg_match('/function ajukan_janji_temu.*?\n\t\}/s', $umum, $mj);
@@ -595,25 +595,25 @@ cek(strpos($fn_janji, 'sudah ditutup') !== FALSE,
 cek(preg_match('/rate_limit_consume|janji_temu_ajukan/', $fn_janji) === 1,
     'E1: batas laju pengajuan TETAP berlaku');
 
-/* A10c — cetak hasil diagnosa.
+/* A10c - cetak hasil diagnosa.
  *
  * YANG DIJAGA DI SINI CUMA TEKS DAN ATURAN CSS-nya, BUKAN TATA LETAK CETAKNYA.
- * Apakah lembarnya benar-benar keluar utuh — bukan satu layar terpotong — hanya
+ * Apakah lembarnya benar-benar keluar utuh - bukan satu layar terpotong - hanya
  * bisa dilihat dari pratinjau cetak sungguhan, dan uji yang berpura-pura
  * mengukurnya lewat HTTP akan hijau selamanya tanpa menyentuh yang rusak. Pola
  * pengakuan yang sama dipakai untuk kolom Aksi di akhir berkas ini.
  *
  * Yang tetap layak dijaga: peringatannya tidak boleh diam-diam hilang. Tanpa
- * ketiga kalimat itu, lembar ini terbaca sebagai surat keputusan — dan warga
+ * ketiga kalimat itu, lembar ini terbaca sebagai surat keputusan - dan warga
  * datang ke loket merasa sudah berhak. */
 $diag = (string) @file_get_contents(APP_ROOT . '/application/views/pages/program/hasil_diagnosa.php');
 wajib($diag !== '', 'Sumber hasil_diagnosa.php terbaca');
 cek(strpos($diag, '@media print') !== FALSE, 'A10c: ada blok @media print');
 cek(strpos($diag, 'window.print()') !== FALSE, 'A10c: ada tombol cetak');
 /* `type="button"` bukan detail: tombol cetak berada DI DALAM form pengajuan,
-   dan tanpa itu ia men-submit — warga mengirim pengajuan padahal ingin mencetak. */
+   dan tanpa itu ia men-submit - warga mengirim pengajuan padahal ingin mencetak. */
 cek(preg_match('/<button type="button" onclick="window\.print\(\)"/', $diag) === 1,
-    'A10c: tombol cetak bertipe button — kalau submit, ia mengirim pengajuan');
+    'A10c: tombol cetak bertipe button - kalau submit, ia mengirim pengajuan');
 foreach (['bukan jaminan menerima bantuan', 'belum diverifikasi petugas',
           'BUKAN surat keputusan'] as $kalimat) {
     cek(stripos($diag, $kalimat) !== FALSE, "A10c: peringatan memuat \"{$kalimat}\"");
@@ -621,18 +621,18 @@ foreach (['bukan jaminan menerima bantuan', 'belum diverifikasi petugas',
 cek(preg_match('/#peringatan-cetak\s*\{\s*display:\s*none/', $diag) === 1,
     'A10c: peringatan tersembunyi di layar (hanya muncul di kertas)');
 /* Cangkang portal memasang overflow:hidden berlapis; tanpa dibuka, Ctrl+P cuma
-   mencetak satu layar lalu memotong sisanya — dan halamannya tetap terlihat
+   mencetak satu layar lalu memotong sisanya - dan halamannya tetap terlihat
    "berhasil dicetak". */
 cek(preg_match('/@media print.*overflow:\s*visible\s*!important/s', $diag) === 1,
     'A10c: blok cetak membuka overflow cangkang portal');
 cek(strpos($diag, 'solusi_pembiayaan_identitas') === FALSE
     && stripos($diag, "\$survey['nik']") === FALSE,
-    'A10c: nol NIK/identitas ikut tercetak — halaman ini tanpa login');
+    'A10c: nol NIK/identitas ikut tercetak - halaman ini tanpa login');
 
-/* C1 — layar BNBA harus bilang WAJIB, sama dengan yang ditegakkan server.
+/* C1 - layar BNBA harus bilang WAJIB, sama dengan yang ditegakkan server.
    Pelajaran dari E1 beberapa jam sebelumnya: gerbang dicabut di server tapi
    syaratnya tertinggal di tampilan, dan tombolnya tetap tidak pernah muncul.
-   Di sini arahnya kebalikan — kalau layar tetap bilang "opsional — boleh
+   Di sini arahnya kebalikan - kalau layar tetap bilang "opsional - boleh
    dilewati" sementara server menolak, orang mengisi sampai akhir lalu ditolak
    tanpa sebab yang terbaca. Dua-duanya cacat yang sama: layar dan server
    menjanjikan hal berbeda. */
@@ -644,11 +644,11 @@ $blok_bnba = $mb[0] ?? '';
 cek($blok_bnba !== '', 'C1: blok langkah BNBA di wizard terbaca');
 cek(stripos($blok_bnba, 'wajib') !== FALSE, 'C1: layar BNBA menyebut WAJIB');
 cek(stripos($blok_bnba, 'boleh dilewati') === FALSE && stripos($blok_bnba, '(opsional)') === FALSE,
-    'C1: nol sisa kata "opsional/boleh dilewati" — layar tidak boleh menjanjikan yang ditolak server');
+    'C1: nol sisa kata "opsional/boleh dilewati" - layar tidak boleh menjanjikan yang ditolak server');
 cek(preg_match("/count_all_results\('rd_perumahan_bnba'\)/", $mdl_rd) === 1,
     'C1: gerbangnya benar-benar ada di kirim(), bukan cuma tulisan di layar');
 
-// A11b — nama menu. "Backlog" ditolak dengan sengaja; lihat komentar di view.
+// A11b - nama menu. "Backlog" ditolak dengan sengaja; lihat komentar di view.
 $hub = (string) @file_get_contents(APP_ROOT . '/application/views/pages/golek_omah/index.php');
 $vrt = (string) @file_get_contents(APP_ROOT . '/application/views/pages/golek_omah/cek_rtlh.php');
 wajib($vrt !== '', 'Sumber cek_rtlh.php terbaca');
@@ -659,15 +659,15 @@ cek(preg_match('/<h4[^>]*>Cek Data Rumah<\/h4>/', $hub) === 1,
     'A11b: kartu hub memakai nama yang sama');
 /* Komentar DIBUANG dulu sebelum dicocokkan. Versi pertama penjaga ini merah
    gara-gara komentar di `cek_rtlh.php` yang menjelaskan KENAPA "Cek Backlog"
-   ditolak — frasanya ikut tercocok. Itu jebakan substring yang sama yang sudah
+   ditolak - frasanya ikut tercocok. Itu jebakan substring yang sama yang sudah
    empat kali kena di proyek ini, kali ini mengenai penjaganya sendiri. Yang
    dijaga adalah teks yang DIRENDER, bukan setiap kemunculan di berkas. */
 $tanpa_komentar = static fn($s) => preg_replace('#/\*.*?\*/|//[^\n]*#s', '', $s);
 cek(stripos($tanpa_komentar($vrt), 'Cek Backlog') === FALSE
     && stripos($tanpa_komentar($hub), 'Cek Backlog') === FALSE,
-    'A11b: nol "Cek Backlog" di teks yang dirender — datanya RTLH, menamainya backlog menjanjikan yang tidak ada');
+    'A11b: nol "Cek Backlog" di teks yang dirender - datanya RTLH, menamainya backlog menjanjikan yang tidak ada');
 
-// D1 — label menu Kawasan. Diambil dari blok `rekam_kawasan`, bukan dari
+// D1 - label menu Kawasan. Diambil dari blok `rekam_kawasan`, bukan dari
 // kemunculan kata "Kawasan" mana pun di berkas registry.
 $reg = (string) @file_get_contents(APP_ROOT . '/application/config/dashboard_modules.php');
 wajib($reg !== '', 'Sumber dashboard_modules.php terbaca');
@@ -676,12 +676,12 @@ $label_kawasan = $m1[1] ?? '';
 cek($label_kawasan !== '', 'D1: label modul rekam_kawasan terbaca');
 cek($label_kawasan === 'Kawasan Permukiman',
     'D1: label modul = "Kawasan Permukiman" (dapat: "' . $label_kawasan . '")');
-/* Lebar sidebar TIDAK diperiksa di sini — itu hasil tata letak, bukan string.
+/* Lebar sidebar TIDAK diperiksa di sini - itu hasil tata letak, bukan string.
    Diukur di peramban 5 Agt 2026: teks 135,1px dari 176px ruang tersedia, sisa
    40,9px. Label "Rekam Data Perumahan" yang sudah lama ada justru lebih
    panjang (146,6px), jadi label ini bukan yang terpanjang di sidebar. */
 
-// D3 — label isian keterangan, DAN penjaga supaya perubahannya tidak kebablasan.
+// D3 - label isian keterangan, DAN penjaga supaya perubahannya tidak kebablasan.
 $kaw = (string) @file_get_contents(APP_ROOT . '/application/views/admin/rekam/kawasan_input.php');
 wajib($kaw !== '', 'Sumber kawasan_input.php terbaca');
 preg_match('/<span[^>]*>([^<]*)<\/span>\s*<input name="keterangan_sumber"/', $kaw, $m3);
@@ -690,11 +690,11 @@ cek($label_ket !== '', 'D3: label isian keterangan_sumber terbaca');
 cek($label_ket === 'Keterangan (opsional)',
     'D3: label = "Keterangan (opsional)" (dapat: "' . $label_ket . '")');
 cek(strpos($kaw, 'name="keterangan_sumber"') !== FALSE,
-    'D3: `name` tetap keterangan_sumber — itu nama kolom DB, bukan teks layar');
+    'D3: `name` tetap keterangan_sumber - itu nama kolom DB, bukan teks layar');
 cek(preg_match('/>Sumber\s*<b/', $kaw) === 1,
-    'D3: label "Sumber" (sumber anggaran) TIDAK ikut terhapus — dinas tidak memintanya');
+    'D3: label "Sumber" (sumber anggaran) TIDAK ikut terhapus - dinas tidak memintanya');
 
-// C3 — triwulan tercetak di judul tabel capaian, dari satu sumber periode.
+// C3 - triwulan tercetak di judul tabel capaian, dari satu sumber periode.
 $cap = (string) @file_get_contents(APP_ROOT . '/application/views/admin/rekam/perumahan_capaian.php');
 wajib($cap !== '', 'Sumber perumahan_capaian.php terbaca');
 cek(preg_match('/\$periode\s*=.*\$nama_tw/', $cap) === 1,
@@ -704,32 +704,32 @@ cek(preg_match('/\$tabel\(\s*\'Tabel Unit Rencana & Realisasi \'\s*\.\s*\$period
 cek(preg_match('/\$tabel\(\s*\'Kumulatif Realisasi s\.d\. \'\s*\.\s*\$periode/', $cap) === 1,
     'C3: judul tabel kumulatif membawa periode');
 
-/* C2 — rencana & realisasi dalam SATU tabel.
+/* C2 - rencana & realisasi dalam SATU tabel.
    Dijaga dari dua arah: yang baru harus ada, DAN yang lama harus tidak ada.
-   Arah kedua itu yang penting — tanpa itu, seseorang bisa menambahkan kembali
+   Arah kedua itu yang penting - tanpa itu, seseorang bisa menambahkan kembali
    tabel terpisah di sebelahnya dan penjaga pertama tetap hijau. */
 cek(preg_match('/\$tabel\([^;]*\[\s*\'rencana\'\s*,\s*\'realisasi\'\s*\]/', $cap) === 1,
     'C2: satu panggilan tabel memuat kedua sisi sekaligus');
 cek(preg_match('/\$tabel\(\s*\'Tabel Unit (?:Rencana|Realisasi) \'/', $cap) === 0,
-    'C2: nol tabel terpisah per sisi — dulu dua tabel yang memaksa mata bolak-balik');
+    'C2: nol tabel terpisah per sisi - dulu dua tabel yang memaksa mata bolak-balik');
 cek(preg_match('/\$tabel\(\s*\'Kumulatif[^;]*\[\s*\'realisasi\'\s*\]/', $cap) === 1,
-    'C2: tabel kumulatif TETAP satu sisi — rencana kumulatif bukan angka yang ada');
+    'C2: tabel kumulatif TETAP satu sisi - rencana kumulatif bukan angka yang ada');
 /* Penjaga cadangan: tabel ketiga dengan judul apa pun akan lolos dari dua
    penjaga di atas (yang mencocokkan judul lama), tapi tidak dari hitungan ini. */
 cek(substr_count($cap, '$tabel(') === 2,
-    'C2: tepat dua panggilan $tabel — gabungan + kumulatif, tidak ada tabel ketiga');
+    'C2: tepat dua panggilan $tabel - gabungan + kumulatif, tidak ada tabel ketiga');
 
-/* Penjaga BENTUK, bukan sekadar isi — dan alasannya angka terukur.
+/* Penjaga BENTUK, bukan sekadar isi - dan alasannya angka terukur.
    Dua sisi digabung sebagai dua BARIS per sumber dana (rowspan). Bentuk lain
-   yang sempat dicoba — dua angka berpasangan "9.999 / 9.999" di dalam satu
-   sel — membuat tabel melebar 1100 -> 1348px pada viewport 1440, dan guliran
+   yang sempat dicoba - dua angka berpasangan "9.999 / 9.999" di dalam satu
+   sel - membuat tabel melebar 1100 -> 1348px pada viewport 1440, dan guliran
    mendatarnya naik dari 35px jadi 283px. Kalau penjaga ini merah, kemungkinan
    besar seseorang mengembalikan bentuk berpasangan itu: ukur lagi lebarnya
    sebelum memutuskan. */
 cek(strpos($cap, 'rowspan="<?= count($sisi_list) ?>"') !== FALSE,
     'C2: dua sisi jadi dua BARIS (rowspan), bukan dipasangkan dalam satu sel');
 cek(strpos($cap, "implode(' / '") === FALSE,
-    'C2: nol perangkaian "a / b" di dalam sel — itu yang dulu melebarkan tabel');
+    'C2: nol perangkaian "a / b" di dalam sel - itu yang dulu melebarkan tabel');
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);

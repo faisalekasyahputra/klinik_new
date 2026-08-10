@@ -29,7 +29,7 @@
                 <?php
                     $avatar_src_m = $this->session->userdata('avatar');
                     if (empty($avatar_src_m)) {
-                        // Dulu ui-avatars.com — lihat catatan di main.php.
+                        // Dulu ui-avatars.com - lihat catatan di main.php.
                         $avatar_src_m = avatar_inisial($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
                     }
                 ?>

@@ -2,14 +2,14 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Rekam Data — Input Capaian Kawasan (tahap D4).
+ * Rekam Data - Input Capaian Kawasan (tahap D4).
  *
  * Kabupaten SELALU dari sesi, sama seperti Rekam_Perumahan. Bedanya bentuk data:
  * satu ringkasan per laporan + daftar intervensi berulang TANPA BATAS (form
  * dinas berhenti di 20 karena Google Form tidak bisa mengulang baris; batas itu
  * tidak dibawa ke sini).
  *
- * Total anggaran dan total padat karya TIDAK pernah diketik — keduanya
+ * Total anggaran dan total padat karya TIDAK pernah diketik - keduanya
  * dijumlahkan dari daftar intervensi, supaya tidak lahir dua angka yang bisa
  * saling bertentangan seperti di form aslinya.
  *
@@ -58,13 +58,13 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
         $this->render_scoped_admin('admin/rekam/kawasan_input', $data);
     }
 
-    /** Rekap satu periode. Tidak ada `SUM()` antar triwulan — lihat catatan di model. */
+    /** Rekap satu periode. Tidak ada `SUM()` antar triwulan - lihat catatan di model. */
     /**
-     * Triwulan dijepit 1..4 — SATU tempat, dipakai `rekap()` maupun `export()`.
+     * Triwulan dijepit 1..4 - SATU tempat, dipakai `rekap()` maupun `export()`.
      *
      * Sampai 5 Agt 2026 baris ini menerima `(int) get('triwulan')` apa adanya,
      * berbeda dari `Rekam_Perumahan::triwulan_dari_get()` yang sudah menjepit.
-     * Nilai 9 lolos dan cuma menghasilkan rekap kosong — tidak berbahaya di
+     * Nilai 9 lolos dan cuma menghasilkan rekap kosong - tidak berbahaya di
      * layar, tapi begitu ada export ia ikut ke NAMA BERKAS ("TW 9"), dan berkas
      * bernama triwulan yang tidak ada beredar sebagai lampiran laporan.
      */
@@ -114,7 +114,7 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
     /**
      * Unduh rekap kawasan sebagai berkas Excel (butir D4, 5 Agt 2026).
      *
-     * Memakai `ambil_rekap()` yang sama dengan layar — bukan query sendiri.
+     * Memakai `ambil_rekap()` yang sama dengan layar - bukan query sendiri.
      * Cakupan wilayah datang dari `$this->my_kabupaten_id` (sesi), dan
      * `laporan_id` diturunkan dari hasil yang sudah ter-scope.
      */
@@ -126,7 +126,7 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
         [$ringkasan, $intervensi] = $this->ambil_rekap($tahun, $triwulan);
         if ( ! $ringkasan) {
             $this->session->set_flashdata('error',
-                'Belum ada laporan terkirim untuk periode ini — tidak ada yang bisa diunduh.');
+                'Belum ada laporan terkirim untuk periode ini - tidak ada yang bisa diunduh.');
             redirect('Rekam_Kawasan/rekap?tahun=' . $tahun . '&triwulan=' . $triwulan);
             return;
         }
@@ -156,7 +156,7 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
             ];
         }
 
-        /* Ringkasan ikut sebagai baris terpisah di bawah — bukan lembar kedua.
+        /* Ringkasan ikut sebagai baris terpisah di bawah - bukan lembar kedua.
            Satu lembar lebih gampang dilampirkan ke surat daripada dua. */
         $isi[] = [];
         $isi[] = ['RINGKASAN'];
@@ -281,7 +281,7 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
     /**
      * Label + satuan indikator. Satuan diturunkan dari model (tidak disimpan di
      * DB) supaya tidak bisa bertentangan dengan indikatornya.
-     * `Proteksi Kebakaran` memang tanpa satuan di form dinas — pertanyaan
+     * `Proteksi Kebakaran` memang tanpa satuan di form dinas - pertanyaan
      * terbuka nomor 4, jangan dikarang.
      */
     private function label_indikator()

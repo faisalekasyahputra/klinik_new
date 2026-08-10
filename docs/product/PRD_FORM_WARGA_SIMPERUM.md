@@ -1,9 +1,9 @@
 # PRD Form Pendataan Warga dan Integrasi SIMPERUM
 
-**Produk:** Klinik PKP — Pendataan dan Rekomendasi Program Perumahan  
+**Produk:** Klinik PKP - Pendataan dan Rekomendasi Program Perumahan  
 **Versi:** 1.0-draft  
 **Tanggal analisis:** 27 Juli 2026  
-**Status:** R0–R2 selesai lokal; R3 wizard sedang dikerjakan  
+**Status:** R0-R2 selesai lokal; R3 wizard sedang dikerjakan  
 **Menggantikan:** Seluruh langkah diagnosa lama setelah input NIK + tanggal
 lahir. Dua input awal tersebut dipertahankan sebagai gerbang langkah pertama
 wizard baru.  
@@ -55,8 +55,8 @@ Analisis mencakup seluruh **50 gambar**:
 
 Terlihat dua route aplikasi sumber:
 
-- `/Main/RTLH/PBDT_edit/` — rumah eksisting/RTLH;
-- `/Main/Backlog/ValidasiData` — warga belum memiliki rumah atau calon lahan.
+- `/Main/RTLH/PBDT_edit/` - rumah eksisting/RTLH;
+- `/Main/Backlog/ValidasiData` - warga belum memiliki rumah atau calon lahan.
 
 Nilai contoh NIK, KK, nama, dan alamat pada gambar sengaja tidak disalin ke
 repo karena merupakan PII. Semua field dan opsi yang terbaca ditranskripsikan
@@ -127,7 +127,7 @@ Lookup dan penyimpanan draft PII hanya tersedia untuk akun aktif ber-role
 | DEC-WRG-010 | Foto/dokumen hidup di private uploads dan hanya disajikan lewat endpoint berizin | **Diputuskan** |
 | DEC-WRG-011 | Sistem dibangun lengkap sekarang memakai sumber data SIMPERUM sintetis | **Diputuskan** |
 | DEC-WRG-012 | Data simulasi melewati gateway, cache, normalisasi, enkripsi, wizard, scoring, antrean, dan admin yang sama dengan data nyata | **Diputuskan** |
-| DEC-WRG-013 | Semua layar/record simulasi diberi label `Mode Simulasi — API SIMPERUM belum terhubung` | **Diputuskan** |
+| DEC-WRG-013 | Semua layar/record simulasi diberi label `Mode Simulasi - API SIMPERUM belum terhubung` | **Diputuskan** |
 | DEC-WRG-014 | Dummy tidak di-hardcode di controller; penggantian ke API kelak terjadi di batas gateway | **Diputuskan** |
 | DEC-WRG-015 | Ruleset demo diberi versi `SIM-*` dan tidak boleh diklaim sebagai keputusan resmi Dinas | **Diputuskan** |
 | DEC-WRG-016 | Diagnosa lama hanya menyumbang gerbang NIK + tanggal lahir; seluruh langkah setelahnya digantikan wizard baru, dan hasil diagnosa/program hanya keluar setelah wizard selesai dievaluasi ruleset | **Diputuskan** |
@@ -186,7 +186,7 @@ relevan disembunyikan berdasarkan cabang.
 
 ### 9.1 Aturan UX
 
-- Maksimal kira-kira 5–10 pertanyaan terlihat per layar.
+- Maksimal kira-kira 5-10 pertanyaan terlihat per layar.
 - Tombol utama: **Simpan dan lanjut**; sekunder: **Kembali**.
 - Setiap save divalidasi di server dan mengembalikan error per field.
 - Reload membuka langkah terakhir yang berhasil disimpan.
@@ -442,7 +442,7 @@ integrasi API/aturan resmi dinyatakan production-ready.
 | 27 Jul 2026 | DEC-WRG-002/003 | Local-first dan raw snapshot immutable | Arahan user: hindari fetch SIMPERUM besar-besaran |
 | 27 Jul 2026 | DEC-WRG-005 | Pisahkan cabang rumah eksisting/calon lahan | Dua UI berbeda pada 50 artefak |
 | 27 Jul 2026 | DEC-WRG-006/007 | Rekomendasi server dengan versi/alasan | Menutup manipulasi input dan aturan yang menguap |
-| 27 Jul 2026 | DEC-WRG-011–015 | Bangun alur lengkap dengan sumber sintetis, berlabel simulasi, melalui gateway yang sama | API SIMPERUM belum diberikan sementara kebutuhan paparan mendesak |
+| 27 Jul 2026 | DEC-WRG-011-015 | Bangun alur lengkap dengan sumber sintetis, berlabel simulasi, melalui gateway yang sama | API SIMPERUM belum diberikan sementara kebutuhan paparan mendesak |
 | 28 Jul 2026 | DEC-WRG-016 | Pertahankan hanya input NIK + tanggal lahir dari diagnosa lama; wizard baru menghasilkan rekomendasi program di akhir | Klarifikasi langsung user |
 | 28 Jul 2026 | DEC-WRG-017 | Gunakan desil yang sudah dimiliki sebagai sumbu utama rekomendasi; jangan turunkan desil baru dari penghasilan | Klarifikasi langsung user |
 | 28 Jul 2026 | DEC-WRG-018 | Satu wizard data bersama; desil memilih kandidat, cabang faktual memilih modul, ruleset menilai hasil akhir | Agar kompleksitas form tidak melahirkan form terpisah per program |

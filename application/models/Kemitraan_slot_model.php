@@ -4,7 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * Ketersediaan slot magang per BIDANG (migrasi 20260701000031).
  *
- * Versi sebelumnya bekerja pada "divisi" — tujuh nama yang ternyata berasal
+ * Versi sebelumnya bekerja pada "divisi" - tujuh nama yang ternyata berasal
  * dari mockup, bukan dari struktur dinas. Dikonfirmasi 1 Agt 2026: satuan
  * terkecil organisasinya adalah bidang, dan tidak ada satuan di bawahnya.
  *
@@ -26,7 +26,7 @@ class Kemitraan_slot_model extends CI_Model
     /**
      * Status yang MEMAKAN tempat pada hitungan kehadiran.
      *
-     * Didefinisikan SEKALI karena dibaca dari dua tempat — dan daftar yang
+     * Didefinisikan SEKALI karena dibaca dari dua tempat - dan daftar yang
      * ditulis dua kali akan berselisih begitu ada status baru. 'Ditinjau
      * Bidang' ikut memakan tempat: ia belum selesai, dan orangnya masih
      * mengantre untuk periode itu. 'Ditolak' dan 'Dibatalkan' melepaskannya.
@@ -45,7 +45,7 @@ class Kemitraan_slot_model extends CI_Model
      */
     const BATAS_HARI = 400;
 
-    /** Nama bulan Indonesia, indeks 1..12 — dipakai tampilan publik & admin. */
+    /** Nama bulan Indonesia, indeks 1..12 - dipakai tampilan publik & admin. */
     public static function nama_bulan()
     {
         return [
@@ -109,9 +109,9 @@ class Kemitraan_slot_model extends CI_Model
     }
 
     /**
-     * Label rentang satu slot: 'Juni' kalau sebulan penuh, 'Juni 1–15' kalau tidak.
+     * Label rentang satu slot: 'Juni' kalau sebulan penuh, 'Juni 1-15' kalau tidak.
      *
-     * Sebulan penuh sengaja TIDAK ditulis "1–30": angka yang tidak membedakan
+     * Sebulan penuh sengaja TIDAK ditulis "1-30": angka yang tidak membedakan
      * apa pun hanya menambah yang harus dibaca.
      */
     public function label_rentang($slot, $pendek = FALSE)
@@ -125,7 +125,7 @@ class Kemitraan_slot_model extends CI_Model
             return $label;
         }
         return $label . ' ' . (int) date('j', strtotime($slot->tgl_mulai))
-            . '–' . (int) date('j', strtotime($slot->tgl_selesai));
+            . '-' . (int) date('j', strtotime($slot->tgl_selesai));
     }
 
     /**
@@ -159,7 +159,7 @@ class Kemitraan_slot_model extends CI_Model
             static function ($b) { return (int) $b->tahun; },
             $this->db->distinct()->select('tahun')->order_by('tahun', 'DESC')->get(self::TABEL_SLOT)->result()
         );
-        // Tahun berjalan selalu ikut, meski belum punya satu slot pun —
+        // Tahun berjalan selalu ikut, meski belum punya satu slot pun -
         // kalau tidak, tahun yang masih kosong justru mustahil dibuka.
         $sekarang = (int) date('Y');
         if ( ! in_array($sekarang, $tahun, TRUE)) { $tahun[] = $sekarang; }
@@ -176,7 +176,7 @@ class Kemitraan_slot_model extends CI_Model
      * bidang itu tampak kosong bagi pengunjung yang kebetulan memuat halaman.
      *
      * Rentang DIJEPIT ke batas bulannya, bukan ditolak. Admin yang mengetik
-     * 20 Juni – 5 Juli pada baris Juni jelas bermaksud "sampai akhir Juni";
+     * 20 Juni - 5 Juli pada baris Juni jelas bermaksud "sampai akhir Juni";
      * memulangkannya dengan galat untuk maksud yang sudah terbaca hanya
      * menambah satu putaran. Bulan Juli punya barisnya sendiri.
      *
@@ -276,11 +276,11 @@ class Kemitraan_slot_model extends CI_Model
      * menghitung "berapa pendaftaran menyentuh bulan ini", sehingga dua orang
      * yang tidak pernah bertemu satu hari pun bisa saling menghalangi: A pulang
      * 15 Juli, B datang 16 Juli, dan Juli tercatat terisi dua. Yang benar-benar
-     * terbatas adalah meja dan pembimbing — dan itu diukur per hari.
+     * terbatas adalah meja dan pembimbing - dan itu diukur per hari.
      *
      * DITURUNKAN, tidak pernah disimpan. Kolom "terisi" berarti dua sumber
      * kebenaran yang harus disinkronkan pada setiap pendaftaran, penolakan, dan
-     * penyuntingan admin — dan yang satu pasti menyimpang dari yang lain.
+     * penyuntingan admin - dan yang satu pasti menyimpang dari yang lain.
      *
      * Dikelompokkan lewat `bidang_kode`, kolom sungguhan sejak migrasi 031.
      * Sebelumnya pencocokannya lewat NAMA divisi, dan satu ganti nama memutus
@@ -311,7 +311,7 @@ class Kemitraan_slot_model extends CI_Model
     /**
      * Puncak kehadiran bersamaan per bidang per bulan: [bidang_kode]['Y-n'] => n.
      *
-     * Dipakai TAMPILAN saja — satu angka per sel. Penjagaan pendaftaran TIDAK
+     * Dipakai TAMPILAN saja - satu angka per sel. Penjagaan pendaftaran TIDAK
      * boleh memakai angka ini: puncak sebulan bisa terjadi pada hari-hari yang
      * tidak disentuh pemohon baru. Untuk itu ada bulan_terhalang().
      */
@@ -337,7 +337,7 @@ class Kemitraan_slot_model extends CI_Model
      * Diperiksa SETIAP HARI yang disinggung, hanya pada hari yang benar-benar
      * dilalui pemohon. Memakai puncak sebulan akan menolak orang karena
      * keramaian di tanggal yang tidak ia lewati: A di 1-10 Juni, pemohon di
-     * 20-30 Juni, kuota 1 — puncak Juni memang 1, tapi mereka tidak bertemu.
+     * 20-30 Juni, kuota 1 - puncak Juni memang 1, tapi mereka tidak bertemu.
      */
     public function bulan_terhalang($bidang, $mulai, $selesai, $abaikan_id = NULL)
     {
@@ -359,7 +359,7 @@ class Kemitraan_slot_model extends CI_Model
 
             if ( ! isset($slot[$kunci])) { $tutup[$kunci] = TRUE; continue; }
 
-            // Bulan boleh terbuka tapi harinya di luar jendela — "tidak dibuka"
+            // Bulan boleh terbuka tapi harinya di luar jendela - "tidak dibuka"
             // menyesatkan di situ, karena bulannya memang tersedia. Yang perlu
             // diketahui pemohon adalah tanggal berapa saja.
             $s = $slot[$kunci];
@@ -369,7 +369,7 @@ class Kemitraan_slot_model extends CI_Model
             if ($isi >= $kuota && $isi > ($penuh[$kunci] ?? -1)) { $penuh[$kunci] = $isi; }
         }
 
-        // Diurutkan menurut kalender, bukan menurut urutan penemuan — pesan
+        // Diurutkan menurut kalender, bukan menurut urutan penemuan - pesan
         // kesalahan yang melompat-lompat bulannya lebih sulit dibaca.
         $halangan = [];
         foreach ($bulan_periode as $kunci) {
@@ -381,7 +381,7 @@ class Kemitraan_slot_model extends CI_Model
             } elseif (isset($diluar[$kunci])) {
                 $s = $diluar[$kunci];
                 $halangan[] = $label . ' (hanya dibuka tanggal '
-                    . (int) date('j', strtotime($s->tgl_mulai)) . '–'
+                    . (int) date('j', strtotime($s->tgl_mulai)) . '-'
                     . (int) date('j', strtotime($s->tgl_selesai)) . ')';
             } elseif (isset($penuh[$kunci])) {
                 $halangan[] = $label . ' (penuh, ' . $penuh[$kunci] . ' dari ' . $kuota . ')';
@@ -443,7 +443,7 @@ class Kemitraan_slot_model extends CI_Model
     }
 
     /**
-     * Bidang tidak pernah dihapus dari sini — daftarnya adalah struktur
+     * Bidang tidak pernah dihapus dari sini - daftarnya adalah struktur
      * organisasi dinas, bukan sesuatu yang dikelola modul magang. Yang bisa
      * diatur cuma apakah ia menerima mahasiswa atau tidak.
      */

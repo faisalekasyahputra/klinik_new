@@ -10,10 +10,10 @@
  * set_flashdata('error') + redirect sendiri-sendiri, dan isian user hangus.
  * Sekarang semuanya lewat `Auth::_onboarding_fail()`. Dua hal yang diuji:
  *
- *   1. POSITIF — isian teks pulang bersama pesan errornya, termasuk peran yang
+ *   1. POSITIF - isian teks pulang bersama pesan errornya, termasuk peran yang
  *      tadi dipilih (kalau peran tidak ikut, blok isian yang benar tidak
  *      terbuka lagi dan user mengira isiannya tetap hilang).
- *   2. NEGATIF, dan ini intinya — kata sandi TIDAK BOLEH ikut pulang.
+ *   2. NEGATIF, dan ini intinya - kata sandi TIDAK BOLEH ikut pulang.
  *      _onboarding_fail() menumpang flashdata, yang tersimpan di session; kata
  *      sandi polos tidak boleh singgah di sana meski hanya satu permintaan,
  *      dan tentu saja tidak boleh terpantul ke HTML. Hapus dua baris `unset`
@@ -31,8 +31,8 @@ define('SANDI', 'UjiOnboard#' . date('His'));
 // kalau ia muncul di HTML, tidak ada keraguan dari mana asalnya.
 define('SANDI_UMPAN', 'JanganPantulkanAku#' . date('His'));
 // Nilai yang dikirim DAN diperiksa harus dihitung sekali saja. Versi pertama
-// menulis `'081200' . date('His')` di dua tempat — sekali saat menyusun POST,
-// sekali saat menyusun daftar harapan — jadi skrip merah setiap kali detiknya
+// menulis `'081200' . date('His')` di dua tempat - sekali saat menyusun POST,
+// sekali saat menyusun daftar harapan - jadi skrip merah setiap kali detiknya
 // kebetulan berganti di antara keduanya. Merahnya menuduh aplikasi untuk
 // kesalahan alat ukurnya sendiri.
 define('HP', '081200' . date('His'));
@@ -124,7 +124,7 @@ $stmt->close();
 
 // JANGAN menamai token ini `$t` di scope global: pencacah pemeriksaan hidup di
 // `$GLOBALS['t']`, yang merupakan variabel yang SAMA. Setiap cek() lalu
-// menjalankan `$t++` pada string hash — "…8547" menjadi "…8548" — dan setiap
+// menjalankan `$t++` pada string hash - "…8547" menjadi "…8548" - dan setiap
 // POST berikutnya ditolak 403 oleh CSRF karena tokennya sudah bergeser satu
 // karakter. Gejalanya menyesatkan: yang tampak rusak justru loginnya.
 $csrf = token('Auth/login');
@@ -139,7 +139,7 @@ wajib($csrf !== '', 'Token CSRF formulir onboarding terbaca');
 
 // ---------------------------------------------------------------- Kirim gagal
 
-// NIK 15 digit — gagal di cabang paling belakang, SESUDAH semua isian lain
+// NIK 15 digit - gagal di cabang paling belakang, SESUDAH semua isian lain
 // diterima. Kalau isian pulang di sini, ia pulang di cabang mana pun.
 $r = http('Auth/save_onboarding', [
     'csrf_kpkp_token'  => $csrf,
@@ -160,7 +160,7 @@ $html = $r['body'];
 
 cek(strpos($html, 'NIK harus terdiri dari 16 digit angka') !== FALSE, 'Pesan error NIK tersampaikan');
 
-// Profilnya TIDAK boleh tersimpan — kalau tersimpan, halaman ini seharusnya
+// Profilnya TIDAK boleh tersimpan - kalau tersimpan, halaman ini seharusnya
 // tidak lagi bisa dirender, dan uji di atas berbohong.
 $row = $db->query("SELECT profile_completed, role FROM usr_users WHERE email = '" . $db->real_escape_string(EMAIL) . "'")->fetch_assoc();
 cek((int) $row['profile_completed'] === 0 && $row['role'] === NULL, 'Profil tidak tersimpan saat validasi gagal');
@@ -188,7 +188,7 @@ cek(strpos($html, "onboardingForm('pengembang', 2)") !== FALSE, 'Peran dan langk
 
 // ---------------------------------------------------------------- Vendor
 
-// Kartunya dicabut dari formulir, tapi tidak merender sesuatu bukan penjagaan —
+// Kartunya dicabut dari formulir, tapi tidak merender sesuatu bukan penjagaan -
 // siapa pun bisa menembakkan role sendiri. Yang menentukan adalah $valid_roles
 // di save_onboarding(). Cabang vendor menulis ke kolom yang tidak ada di
 // usr_users, jadi menerimanya berarti error DB, bukan profil.
@@ -215,7 +215,7 @@ cek(strpos($html, SANDI_UMPAN) === FALSE, 'Kata sandi TIDAK dipantulkan ke HTML'
 // Pemeriksaan yang sesungguhnya: flashdata menumpang session, jadi HTML yang
 // bersih belum membuktikan apa-apa kalau sandinya mendarat di penyimpanan
 // session. Instalasi ini memakai driver `files` (config.php: sess_driver), jadi
-// yang ditengok berkas session — bukan tabel ci_sessions yang memang tidak ada.
+// yang ditengok berkas session - bukan tabel ci_sessions yang memang tidak ada.
 $dir_sesi = ini_get('session.save_path') ?: sys_get_temp_dir();
 $tercemar = [];
 foreach (glob(rtrim($dir_sesi, '/\\') . '/ci_session*') ?: [] as $berkas) {
@@ -224,7 +224,7 @@ foreach (glob(rtrim($dir_sesi, '/\\') . '/ci_session*') ?: [] as $berkas) {
     }
 }
 cek($tercemar === [], 'Kata sandi TIDAK tersimpan di berkas session'
-    . ($tercemar ? ' — ditemukan di: ' . implode(', ', $tercemar) : ''));
+    . ($tercemar ? ' - ditemukan di: ' . implode(', ', $tercemar) : ''));
 
 // Halaman ini satu-satunya halaman auth yang dulu tidak punya jalan keluar.
 cek(strpos($html, 'Kembali ke Beranda') !== FALSE, 'Tautan kembali ke beranda tersedia');
@@ -245,7 +245,7 @@ cek(strpos($html, 'required autocomplete="new-password"') === FALSE, 'Tidak ada 
 cek(substr_count($html, 'x-ref="langkah') === 3, 'Ketiga langkah punya x-ref untuk validasi per langkah');
 
 // Langkah-langkah itu div bersarang. Satu penutup yang salah tempat membuat
-// langkah 3 bersarang DI DALAM langkah 2 — ia lalu ikut tersembunyi selamanya
+// langkah 3 bersarang DI DALAM langkah 2 - ia lalu ikut tersembunyi selamanya
 // dan pengembang tidak pernah bisa mengunggah berkas. Peramban memperbaiki
 // sarang rusak diam-diam, jadi hitung saja.
 cek(substr_count($html, '<div') === substr_count($html, '</div>'), 'Jumlah pembuka dan penutup <div> seimbang');

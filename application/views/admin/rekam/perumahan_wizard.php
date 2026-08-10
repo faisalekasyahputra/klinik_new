@@ -1,15 +1,15 @@
 <?php
 /**
- * Rekam Data — wizard Input Capaian Perumahan (W3).
+ * Rekam Data - wizard Input Capaian Perumahan (W3).
  *
- * Lima langkah dirender server, satu berkas — mengikuti idiom
+ * Lima langkah dirender server, satu berkas - mengikuti idiom
  * `pages/warga/pendataan.php`. Tidak ada JavaScript yang wajib: form
  * tambah/ubah memakai `<details>`, sehingga layar tetap berfungsi penuh kalau
  * skrip gagal dimuat. Modal di rancangan diterjemahkan menjadi disclosure,
  * bukan ditiru dengan overlay yang butuh JS.
  *
  * Gaya: dialek `rekam` (space-y-4, p-5, tanpa shadow, dark:border-white/10) dan
- * tombol utama `bg-blue-600 dark:bg-brand-primary` — biru di terang, lime di
+ * tombol utama `bg-blue-600 dark:bg-brand-primary` - biru di terang, lime di
  * gelap. `bg-brand-primary` tanpa `dark:` menghasilkan tombol lime di halaman
  * putih; itu jebakan yang sudah pernah terjadi.
  */
@@ -121,7 +121,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
       <?php /* Spanduk ini muncul di SETIAP langkah, bukan hanya di layar isian.
                 Sebelumnya L1 dan L2 tetap menyajikan formulir yang bisa ditekan
                 untuk laporan terkunci, dan tiap kiriman dijawab "Laporan sudah
-                terkirim dan terkunci" — menawarkan tindakan yang sudah pasti
+                terkirim dan terkunci" - menawarkan tindakan yang sudah pasti
                 ditolak, lalu menyalahkan penggunanya. */ ?>
       <p class="mt-4 rounded-xl border-l-4 border-emerald-500 bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200">
         <b>Periode ini sudah dikirim dan terkunci.</b> Isinya bisa dibaca, tidak bisa diubah.
@@ -134,7 +134,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
     <?php if ($laporan && $laporan['status'] === 'perlu_perbaikan' && ! empty($laporan['catatan_admin'])): ?>
       <?php /* Catatan peninjau dulu HANYA dirender di L5 (Review & Kirim).
                 Alasan orang ini membuka wizard justru karena laporannya
-                dikembalikan — dan ia mendarat di langkah yang tersimpan di
+                dikembalikan - dan ia mendarat di langkah yang tersimpan di
                 `current_step`, yang belum tentu L5. Jadi ia melihat formulir
                 terbuka tanpa satu pun keterangan kenapa, dan baru menemukan
                 alasannya kalau kebetulan mengklik sampai langkah terakhir.
@@ -161,13 +161,13 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
     </ol>
   </section>
 
-  <?php // ================= L1 — PERIODE (frame 003) ================= ?>
+  <?php // ================= L1 - PERIODE (frame 003) ================= ?>
   <?php if ($langkah === 'periode'): ?>
     <section class="<?= $kotak ?>">
       <h2 class="text-lg font-black text-gray-900 dark:text-white">Periode Pelaporan</h2>
       <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
         Pilih tahun dan triwulan yang akan diisi. Draft baru lahir setelah tombol
-        Lanjut ditekan — membuka layar ini saja tidak membuat apa pun.
+        Lanjut ditekan - membuka layar ini saja tidak membuat apa pun.
       </p>
 
       <form method="post" action="<?= base_url('Rekam_Perumahan/mulai') ?>" class="mt-5 space-y-4">
@@ -197,11 +197,11 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
                   <?= $e($label) ?>
                 </span>
                 <?php /* Status disebut DI SINI, bukan setelah orang masuk. Periode
-                          terkirim tetap boleh dipilih — isinya boleh dibaca — tetapi
+                          terkirim tetap boleh dipilih - isinya boleh dibaca - tetapi
                           ia tahu lebih dulu bahwa tidak ada yang bisa diubah. */ ?>
                 <span class="mt-0.5 block text-[11px] font-medium
                              <?= $st ? 'text-gray-600 dark:text-brand-muted' : 'text-gray-400 dark:text-brand-muted/60' ?>">
-                  <?= $st === 'terkirim' ? 'terkunci — sudah dikirim'
+                  <?= $st === 'terkirim' ? 'terkunci - sudah dikirim'
                         : ($st === 'perlu_perbaikan' ? 'perlu perbaikan'
                         : ($st === 'draft' ? 'draft tersimpan' : 'belum diisi')) ?>
                 </span>
@@ -219,7 +219,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
       </form>
     </section>
 
-  <?php // ================= L2 — PROGRAM (frame 004) ================= ?>
+  <?php // ================= L2 - PROGRAM (frame 004) ================= ?>
   <?php elseif ($langkah === 'program'): ?>
     <section class="<?= $kotak ?>">
       <h2 class="text-lg font-black text-gray-900 dark:text-white">Program yang akan dilaporkan</h2>
@@ -277,7 +277,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
       <?php endif; ?>
     </section>
 
-  <?php // ========== L3 — ISIAN PER PROGRAM ("Setelah ada Data") ========== ?>
+  <?php // ========== L3 - ISIAN PER PROGRAM ("Setelah ada Data") ========== ?>
   <?php elseif ($langkah === 'isian'): ?>
     <?php if ( ! $program_dipilih): ?>
       <section class="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-white/10 dark:bg-brand-card">
@@ -386,18 +386,18 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
       </section>
     <?php endif; ?>
 
-  <?php // ================= L4 — BNBA (WAJIB sejak 5 Agt 2026) ================= ?>
+  <?php // ================= L4 - BNBA (WAJIB sejak 5 Agt 2026) ================= ?>
   <?php elseif ($langkah === 'bnba'): ?>
     <section class="<?= $kotak ?>">
       <?php /* Kata "wajib" di sini HARUS sama dengan yang ditegakkan
                `Rekam_data_model::kirim()`. Sampai 5 Agt 2026 langkah ini
-               berbunyi "opsional — boleh dilewati", dan membiarkannya berbunyi
+               berbunyi "opsional - boleh dilewati", dan membiarkannya berbunyi
                begitu sesudah servernya menolak berarti layar menjanjikan
                sesuatu yang lalu ditolak tanpa sebab yang terbaca. */ ?>
       <h2 class="text-lg font-black text-gray-900 dark:text-white">Unggah BNBA <span class="text-sm font-normal text-red-600 dark:text-red-400">(wajib)</span></h2>
       <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
         Daftar penerima <i>by name by address</i>. <b class="text-gray-900 dark:text-white">Wajib dilampirkan
-        sejak 5 Agustus 2026</b> — laporan tidak bisa dikirim tanpa berkas ini.
+        sejak 5 Agustus 2026</b> - laporan tidak bisa dikirim tanpa berkas ini.
         Laporan yang sudah terkirim sebelum tanggal itu tetap sah.
       </p>
 
@@ -428,7 +428,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
       </form>
     </section>
 
-  <?php // ================= L5 — REVIEW & KIRIM ================= ?>
+  <?php // ================= L5 - REVIEW & KIRIM ================= ?>
   <?php else: ?>
     <section class="<?= $kotak ?>">
       <h2 class="text-lg font-black text-gray-900 dark:text-white">Review &amp; Kirim</h2>

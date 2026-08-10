@@ -1,6 +1,6 @@
 <!-- ARSIP: kartu pilih-bidang lama, sebelum konsep diubah jadi 1 form
      langsung dengan auto-routing kata kunci. Diarsipkan 23 Juli 2026,
-     BUKAN dihapus — link "#" di tiap kartu memang tidak pernah berfungsi. -->
+     BUKAN dihapus - link "#" di tiap kartu memang tidak pernah berfungsi. -->
 <section class="w-full  pt-24 pb-16 px-4 sm:px-6 lg:px-8 relative min-h-screen font-outfit">
     <!-- Background Ornaments -->
     <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">

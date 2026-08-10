@@ -1,6 +1,6 @@
 <?php
 /**
- * Uji perjalanan MAHASISWA — pendaftaran KKN / Magang, lewat HTTP Apache nyata.
+ * Uji perjalanan MAHASISWA - pendaftaran KKN / Magang, lewat HTTP Apache nyata.
  *
  * Menempuh jalur seperti orangnya: halaman informasi publik → daftar → kirim →
  * lihat status di /akun → admin memproses → keputusan sampai ke pendaftar.
@@ -70,7 +70,7 @@ function q($sql, $params = []) {
     return $row;
 }
 
-/** Prepared statement mengembalikan tipe native — selalu di-cast (AGENTS.md §0e). */
+/** Prepared statement mengembalikan tipe native - selalu di-cast (AGENTS.md §0e). */
 function skalar_int($sql, $params = []) { $r = q($sql, $params); return $r ? (int) reset($r) : 0; }
 function skalar_str($sql, $params = []) { $r = q($sql, $params); $v = $r ? reset($r) : NULL; return $v === NULL ? '' : (string) $v; }
 
@@ -121,7 +121,7 @@ function csrf($nama, $path) {
  * Ada karena harness ini pernah membusuk diam-diam: ditulis sebelum formulir
  * pendaftaran bertambah `nim`, `tempat_lahir`, `tanggal_lahir`, `semester`, dan
  * `jurusan`, sehingga SETIAP POST-nya ditolak validator. Uji negatifnya tetap
- * hijau — ditolak, tapi karena alasan yang salah — dan cuma uji positifnya yang
+ * hijau - ditolak, tapi karena alasan yang salah - dan cuma uji positifnya yang
  * merah. Menaruh field wajib di satu tempat berarti penambahan berikutnya cukup
  * ditambal sekali di sini, bukan di empat payload.
  */
@@ -140,7 +140,7 @@ function dasar(array $ubah = []) {
 
 function login($nama, $email, $password) {
     // Kode HTTP saja TIDAK cukup: login gagal juga membalas 200 (redirect
-    // diikuti). Yang menentukan isi JSON-nya — dan cabang JSON itu HANYA menyala
+    // diikuti). Yang menentukan isi JSON-nya - dan cabang JSON itu HANYA menyala
     // untuk permintaan AJAX, jadi headernya wajib dikirim. Tanpa header ini
     // do_login me-redirect, body-nya HTML, json_decode NULL, dan harness
     // melaporkan "login gagal" pada login yang sebenarnya berhasil.
@@ -174,7 +174,7 @@ function bersihkan() {
 
 // ---------------------------------------------------------------- prasyarat
 
-echo "Uji perjalanan Mahasiswa — KKN & Magang\n";
+echo "Uji perjalanan Mahasiswa - KKN & Magang\n";
 
 $admin = q('SELECT id, email FROM usr_users WHERE role = ? LIMIT 1', ['admin']);
 wajib($admin && ! empty($admin['email']), 'Akun superadmin tersedia untuk sisi peninjau');
@@ -214,7 +214,7 @@ try {
     cek(strpos($w['url'], 'akun') !== FALSE && strpos($w['body'], 'name="instansi_asal"') === FALSE,
         'Peran BUKAN mahasiswa tidak mendapat formulir pendaftaran');
 
-    // Gerbang layar saja tidak cukup — pintu tulisnya diuji langsung.
+    // Gerbang layar saja tidak cukup - pintu tulisnya diuji langsung.
     $t = csrf('warga', 'akun');
     http('warga', 'KemitraanPortal/simpan', dasar([
         'csrf_kpkp_token' => $t, 'instansi_asal' => 'Univ Tembus',
@@ -229,7 +229,7 @@ try {
     wajib($form['code'] === 200 && strpos($form['body'], 'name="instansi_asal"') !== FALSE,
         'Mahasiswa mendapat formulir pendaftaran');
     cek(stripos($form['body'], 'name="user_id"') === FALSE,
-        'Nol input user_id di formulir — identitas dari sesi');
+        'Nol input user_id di formulir - identitas dari sesi');
 
     // ------------------------------------------------------------------ CSRF
     http('mhs', 'KemitraanPortal/simpan', dasar([
@@ -272,7 +272,7 @@ try {
         ['Universitas Uji Mahasiswa']);
     wajib($PEND > 0, 'Baris pendaftaran tercatat di DB');
     cek(skalar_int('SELECT user_id FROM kkn_magang_pendaftaran WHERE id = ?', [$PEND]) === $UID,
-        'user_id dari SESI, bukan dari POST — suntikan IDOR diabaikan');
+        'user_id dari SESI, bukan dari POST - suntikan IDOR diabaikan');
     cek(skalar_str('SELECT jenis FROM kkn_magang_pendaftaran WHERE id = ?', [$PEND]) === 'kkn',
         'Jenis tersimpan apa adanya');
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * Rekam Data — Daftar laporan untuk peninjau provinsi (D6).
+ * Rekam Data - Daftar laporan untuk peninjau provinsi (D6).
  *
  * Hanya laporan yang SUDAH dikirim. Draft milik kabupaten tidak pernah muncul
  * di sini: yang belum dikirim bukan urusan peninjau.
@@ -64,7 +64,7 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
                 $sudah_ditinjau = $row['status'] === 'terkirim' && ! empty($row['reviewed_at']);
             ?>
               <tr>
-                <td class="py-2 pr-3 font-medium text-gray-900 dark:text-white"><?= $e($row['kabupaten'] ?: '—') ?></td>
+                <td class="py-2 pr-3 font-medium text-gray-900 dark:text-white"><?= $e($row['kabupaten'] ?: '-') ?></td>
                 <td class="py-2 pr-3"><?= $e($nama_tw[(int) $row['triwulan']] ?? $row['triwulan']) ?> <?= (int) $tahun ?></td>
                 <td class="py-2 pr-3">
                   <?php if ($row['status'] === 'perlu_perbaikan'): ?>
@@ -75,7 +75,7 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
                     <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">Menunggu ditinjau</span>
                   <?php endif; ?>
                 </td>
-                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e($row['submitted_at'] ?: '—') ?></td>
+                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e($row['submitted_at'] ?: '-') ?></td>
                 <td class="py-2 text-right">
                   <a href="<?= base_url('Rekam_Tinjauan/detail/' . (int) $row['id']) ?>"
                      class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold dark:border-white/10">Periksa</a>

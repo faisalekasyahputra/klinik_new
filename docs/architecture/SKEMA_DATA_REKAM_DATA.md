@@ -1,4 +1,4 @@
-# Skema Data — Rekam Data
+# Skema Data - Rekam Data
 
 > Terpasang & diverifikasi **29 Juli 2026**, migrasi
 > [`20260701000021_add_rekam_data.php`](../../application/migrations/20260701000021_add_rekam_data.php).
@@ -86,21 +86,21 @@ erDiagram
 
 ## 2. Analisis normalisasi
 
-### 2a. Keadaan awal — sumbernya tidak ternormalisasi
+### 2a. Keadaan awal - sumbernya tidak ternormalisasi
 
 Spreadsheet dinas dan kedua Google Form sama-sama **melanggar 1NF** dengan cara berbeda:
 
 | Sumber | Pelanggaran | Wujudnya |
 |---|---|---|
-| Spreadsheet `tabel_design.png` | grup berulang jadi kolom | 12 kolom `PK RTLH · Anggaran · PB RTLH · Anggaran · …` — nama program tersimpan **di nama kolom**, bukan sebagai nilai |
-| Form Perumahan | grup berulang jadi 150 pertanyaan | `APBD KABUPATEN KOTA PK RTLH (unit)` — sumber dana DAN program keduanya di nama field |
+| Spreadsheet `tabel_design.png` | grup berulang jadi kolom | 12 kolom `PK RTLH · Anggaran · PB RTLH · Anggaran · …` - nama program tersimpan **di nama kolom**, bukan sebagai nilai |
+| Form Perumahan | grup berulang jadi 150 pertanyaan | `APBD KABUPATEN KOTA PK RTLH (unit)` - sumber dana DAN program keduanya di nama field |
 | Form Kawasan | grup berulang jadi 20 halaman | blok intervensi 1…20 identik, dibatasi jumlahnya karena Google Forms tidak bisa mengulang baris |
 
 Ketiganya juga menyimpan **nilai turunan** berdampingan dengan sumbernya:
 `Total Anggaran` Kawasan = Σ `Nilai Anggaran` intervensi, dan satuan (`Ha`, `m'`, `KK`, `unit`)
 menempel di label indikator.
 
-### 2b. 1NF — hilangkan grup berulang
+### 2b. 1NF - hilangkan grup berulang
 
 Nama program dan sumber dana dipindah dari *nama kolom* menjadi *nilai baris*:
 
@@ -116,27 +116,27 @@ SESUDAH  (6 baris, 5 kolom)
 
 Batas 20 intervensi Kawasan ikut hilang: baris tidak punya kuota.
 
-Satu kolom `SET` sempat dipakai untuk jawaban gerbang (`sumber_ada`) dan **dibatalkan** —
+Satu kolom `SET` sempat dipakai untuk jawaban gerbang (`sumber_ada`) dan **dibatalkan** -
 `SET` adalah atribut multi-nilai, tetap pelanggaran 1NF walau MySQL mendukungnya.
 Penggantinya tabel `rd_perumahan_bagian`.
 
-### 2c. 2NF — tiap atribut bergantung pada SELURUH kunci
+### 2c. 2NF - tiap atribut bergantung pada SELURUH kunci
 
 `rd_perumahan_baris`, kunci `(laporan_id, sumber_dana, program)`:
 
 | Atribut | Bergantung pada | 2NF |
 |---|---|---|
 | `unit`, `anggaran` | seluruh kunci | ✔ |
-| `keterangan` | seluruh kunci — form memang menaruh nama penyumbang **per program**, bukan per sumber dana | ✔ |
+| `keterangan` | seluruh kunci - form memang menaruh nama penyumbang **per program**, bukan per sumber dana | ✔ |
 
-> Kalau `keterangan` ternyata hanya bergantung pada `(laporan_id, sumber_dana)` — mis. bila
-> dinas memutuskan satu perusahaan CSR berlaku untuk semua program — dia harus pindah ke
+> Kalau `keterangan` ternyata hanya bergantung pada `(laporan_id, sumber_dana)` - mis. bila
+> dinas memutuskan satu perusahaan CSR berlaku untuk semua program - dia harus pindah ke
 > `rd_perumahan_bagian`. Struktur form aktual menunjukkan **tidak**, jadi biarkan di sini.
 
 `rd_kawasan_intervensi` berkunci surrogate `id` dengan kunci kandidat `(laporan_id, urutan)`;
 seluruh atribut bergantung pada barisnya sendiri. ✔
 
-### 2d. 3NF — tidak ada ketergantungan transitif
+### 2d. 3NF - tidak ada ketergantungan transitif
 
 Tiga ketergantungan transitif **sengaja tidak disimpan**, karena menyimpannya berarti
 mengundang dua angka yang bisa saling bertentangan:
@@ -149,7 +149,7 @@ mengundang dua angka yang bisa saling bertentangan:
 | `kabupaten.nama` | `kabupaten_id` | tabel `kabupaten` yang sudah ada |
 
 Yang **tetap** disimpan walau kelihatan turunan: `total_luas_ha`. Dia **tidak** bisa
-diturunkan dari `volume` intervensi, karena satuan tiap indikator berbeda — menjumlahkan
+diturunkan dari `volume` intervensi, karena satuan tiap indikator berbeda - menjumlahkan
 `m'` dengan `KK` tidak bermakna. Ini fakta tingkat laporan, bukan turunan.
 
 ### 2e. BCNF
@@ -158,7 +158,7 @@ Tiap tabel: satu-satunya determinan adalah kunci kandidatnya. Tidak ada atribut 
 yang menentukan bagian kunci. **Semua tabel BCNF.** Tidak ada dependensi multinilai
 tersisa, jadi 4NF juga terpenuhi.
 
-### 2f. Denormalisasi yang disengaja — nihil
+### 2f. Denormalisasi yang disengaja - nihil
 
 Tidak ada. Tidak ada kolom cache, tidak ada total tersimpan, tidak ada nama tersalin.
 
@@ -167,7 +167,7 @@ Tidak ada. Tidak ada kolom cache, tidak ada total tersimpan, tidak ada nama ters
 Enam tabel. Siklus draft/kirim/perbaikan ditulis **sekali** di amplop bersama, dipakai
 kedua domain.
 
-### 3a. `rd_laporan` — amplop bersama
+### 3a. `rd_laporan` - amplop bersama
 
 | Kolom | Tipe | Ket |
 |---|---|---|
@@ -175,7 +175,7 @@ kedua domain.
 | `domain` | ENUM('perumahan','kawasan') | |
 | `kabupaten_id` | INT UNSIGNED | FK `kabupaten(id)` |
 | `tahun` | SMALLINT UNSIGNED | |
-| `bulan` | TINYINT UNSIGNED | 1–12, kumulatif **sampai dengan** bulan ini |
+| `bulan` | TINYINT UNSIGNED | 1-12, kumulatif **sampai dengan** bulan ini |
 | `status` | ENUM('draft','terkirim','perlu_perbaikan') | default `draft` |
 | `submitted_at` / `submitted_by` | DATETIME / **INT** NULL | FK `usr_users(id)` ON DELETE SET NULL |
 | `reviewed_at` / `reviewed_by` | DATETIME / **INT** NULL | FK `usr_users(id)` ON DELETE SET NULL |
@@ -184,7 +184,7 @@ kedua domain.
 
 `UNIQUE (domain, kabupaten_id, tahun, bulan)` · `KEY (domain, status)`
 
-### 3b. `rd_perumahan_bagian` — jawaban gerbang
+### 3b. `rd_perumahan_bagian` - jawaban gerbang
 
 | Kolom | Tipe |
 |---|---|
@@ -194,7 +194,7 @@ kedua domain.
 Membedakan **"sumber ini nihil"** dari **"belum diisi"**. Tanpa tabel ini, nol dan kosong
 tidak terbedakan di rekap.
 
-### 3c. `rd_perumahan_baris` — angka
+### 3c. `rd_perumahan_baris` - angka
 
 `UNIQUE (laporan_id, sumber_dana, program)`
 
@@ -202,18 +202,18 @@ FK-nya menunjuk `rd_perumahan_bagian(laporan_id, sumber_dana)`, **bukan** langsu
 `rd_laporan`. Dua manfaat: angka mustahil ada tanpa sumber dananya dinyatakan, dan
 membatalkan centang sumber dana otomatis menyapu angkanya.
 
-### 3d. `rd_perumahan_bnba` — unggahan
+### 3d. `rd_perumahan_bnba` - unggahan
 
-`UNIQUE (laporan_id)` — satu berkas per laporan, sesuai form. Unggah ulang **mengganti**;
+`UNIQUE (laporan_id)` - satu berkas per laporan, sesuai form. Unggah ulang **mengganti**;
 berkas lama wajib di-`unlink()` (pola T3, AGENTS.md §0b). Berkas masuk `private_uploads`,
 bukan webroot.
 
-### 3e. `rd_kawasan_ringkasan` — 1:1 dengan laporan
+### 3e. `rd_kawasan_ringkasan` - 1:1 dengan laporan
 
 `laporan_id` sekaligus PK dan FK. Kolom: `ada_penanganan`, `ada_progres`,
 `catatan_progres`, `total_luas_ha DECIMAL(12,2)`.
 
-### 3f. `rd_kawasan_intervensi` — daftar kegiatan
+### 3f. `rd_kawasan_intervensi` - daftar kegiatan
 
 `UNIQUE (laporan_id, urutan)`. Tanpa batas jumlah.
 `volume DECIMAL(14,2)` karena `m'` dan `Ha` bisa pecahan.
@@ -224,13 +224,13 @@ bukan webroot.
 program (6)            pk_rtlh · pb_rtlh · pb_backlog · pk_bencana · pb_bencana · pb_relokasi
 
 sumber_dana (10)       apbd_kabkota · apbn_bsps · apbn_dak · apbn_kemensos · apbn_dana_desa
-  — perumahan          apbn_kl_lain · baznas_ri · baznas_kabkota · csr · dana_lainnya
+  - perumahan          apbn_kl_lain · baznas_ri · baznas_kabkota · csr · dana_lainnya
 
 sumber_anggaran (7)    apbn · apbd_provinsi · apbd_kabkota · dana_desa · csr · baznas · dana_lainnya
-  — kawasan
+  - kawasan
 
 indikator (7)          bangunan_gedung · jalan_lingkungan · air_minum · drainase
-  — kawasan            air_limbah · persampahan · proteksi_kebakaran
+  - kawasan            air_limbah · persampahan · proteksi_kebakaran
 ```
 
 > ⚠️ **Dua daftar sumber dana sengaja berbeda** karena form sumbernya memang berbeda.
@@ -273,8 +273,8 @@ indikator (7)          bangunan_gedung · jalan_lingkungan · air_minum · drain
 | Apakah terdapat progres realisasi? | `rd_kawasan_ringkasan.ada_progres` |
 | Bila "Tidak", jelaskan progres… | `rd_kawasan_ringkasan.catatan_progres` |
 | Total Luas Penanganan (Ha) | `rd_kawasan_ringkasan.total_luas_ha` |
-| Total Anggaran (Rp.) | ❌ **tidak dipindah** — `SUM(nilai_anggaran)` |
-| Sumber Anggaran (paragraf) | ❌ **tidak dipindah** — duplikat dropdown per intervensi |
+| Total Anggaran (Rp.) | ❌ **tidak dipindah** - `SUM(nilai_anggaran)` |
+| Sumber Anggaran (paragraf) | ❌ **tidak dipindah** - duplikat dropdown per intervensi |
 | Indikator Penanganan | `rd_kawasan_intervensi.indikator` |
 | Nama Kegiatan/Program | `.nama_kegiatan` |
 | Lokasi Kegiatan/Program | `.lokasi_teks` |
@@ -282,14 +282,14 @@ indikator (7)          bangunan_gedung · jalan_lingkungan · air_minum · drain
 | Volume Penanganan | `.volume` |
 | Nilai Anggaran (Rp.) | `.nilai_anggaran` |
 | Nilai Padat Karya (Rp.) | `.nilai_padat_karya` |
-| *(tidak ada di form)* | `.keterangan_sumber` — **tambahan kita**, supaya CSR Kawasan tidak anonim |
-| Apakah ada penanganan lainnya? | ❌ tidak dipindah — jadi tombol "+ Tambah Intervensi" |
+| *(tidak ada di form)* | `.keterangan_sumber` - **tambahan kita**, supaya CSR Kawasan tidak anonim |
+| Apakah ada penanganan lainnya? | ❌ tidak dipindah - jadi tombol "+ Tambah Intervensi" |
 
 ### 4c. Cacat form yang diperbaiki di skema
 
 | Cacat form | Di skema |
 |---|---|
-| `BAZNAS Kab/Kota` kehilangan PB BENCANA | ENUM `program` berlaku seragam — mustahil satu sumber kehilangan program |
+| `BAZNAS Kab/Kota` kehilangan PB BENCANA | ENUM `program` berlaku seragam - mustahil satu sumber kehilangan program |
 | `Kementerian Sumber PB BACKLOG` dobel | `UNIQUE (laporan_id, sumber_dana, program)` menolak |
 | Kawasan dibatasi 20 intervensi | tanpa batas |
 | Total Luas & Total Anggaran teks bebas | `DECIMAL` dan `BIGINT UNSIGNED` |
@@ -297,7 +297,7 @@ indikator (7)          bangunan_gedung · jalan_lingkungan · air_minum · drain
 
 ## 5. Pola query rekap
 
-**Kumulatif s.d. bulan N** — ambil laporan terakhir yang terkirim, jangan dijumlahkan
+**Kumulatif s.d. bulan N** - ambil laporan terakhir yang terkirim, jangan dijumlahkan
 antar bulan (angkanya sudah kumulatif):
 
 ```sql
@@ -327,7 +327,7 @@ WHERE l.domain='kawasan' AND l.tahun=? AND l.bulan=? AND l.status='terkirim'
 GROUP BY l.id;
 ```
 
-## 6. Bukti verifikasi — 29 Juli 2026
+## 6. Bukti verifikasi - 29 Juli 2026
 
 Dijalankan sungguhan di DB lokal `klinikpkp`, bukan dibaca dari kode:
 

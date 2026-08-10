@@ -1,10 +1,10 @@
 <?php
 /**
- * Layar posisi/lowongan magang — butir F1.
+ * Layar posisi/lowongan magang - butir F1.
  *
  * MODAL PENGINGAT muncul tiap halaman dibuka, dan isinya berubah menurut
  * keadaan: kosong sama sekali, atau sudah lama tidak disentuh. Itu permintaan
- * user — "agar mereka tidak malas update". Pengingat yang berbunyi sama dalam
+ * user - "agar mereka tidak malas update". Pengingat yang berbunyi sama dalam
  * keadaan apa pun cepat jadi hiasan yang diklik tanpa dibaca.
  */
 $hari_basi = 60;
@@ -23,7 +23,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
         <?php if ($kosong): ?>
             <h2 id="modal-posisi-judul" class="mt-1 text-lg font-black sm:text-xl">Belum ada satu pun posisi magang</h2>
             <p class="mt-3 text-sm leading-relaxed" style="color:var(--portal-text-muted,#6b7280)">
-                Selama daftar ini kosong, papan magang publik hanya menampilkan <strong>nama bidang</strong> —
+                Selama daftar ini kosong, papan magang publik hanya menampilkan <strong>nama bidang</strong> -
                 dan itulah yang dikeluhkan dinas: mahasiswa tidak tahu sebenarnya dibutuhkan keahlian apa.
             </p>
             <div class="mt-4 rounded-xl border p-3 text-xs leading-relaxed"
@@ -37,13 +37,13 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
             <h2 id="modal-posisi-judul" class="mt-1 text-lg font-black sm:text-xl">Daftar posisi belum disentuh <?= (int) $umur_hari ?> hari</h2>
             <p class="mt-3 text-sm leading-relaxed" style="color:var(--portal-text-muted,#6b7280)">
                 Mahasiswa melamar berdasarkan daftar ini. Posisi yang sudah terisi tetapi masih tercantum
-                membuat mereka mendaftar untuk sesuatu yang tidak ada lagi — dan penolakannya baru datang
+                membuat mereka mendaftar untuk sesuatu yang tidak ada lagi - dan penolakannya baru datang
                 jauh belakangan.
             </p>
             <div class="mt-4 rounded-xl border p-3 text-xs leading-relaxed"
                  style="background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.28);color:#92400e">
                 <p><strong>Cukup satu hal:</strong> matikan tanda &ldquo;Aktif&rdquo; pada posisi yang sudah
-                tidak dibuka. Tidak perlu dihapus &mdash; mematikannya menyembunyikannya dari papan publik
+                tidak dibuka. Tidak perlu dihapus - mematikannya menyembunyikannya dari papan publik
                 sambil menyimpan catatannya untuk periode berikutnya.</p>
             </div>
         <?php endif; ?>
@@ -51,7 +51,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
         <div class="mt-4 rounded-xl border p-3 text-xs leading-relaxed"
              style="background:rgba(14,165,233,.09);border-color:rgba(14,165,233,.3);color:#075985">
             <p><strong>Kuota di sini keterangan, bukan pengunci.</strong> Yang membatasi jumlah pendaftar
-            tetap kuota per bidang. Jadi mengubah daftar ini aman &mdash; tidak ada pendaftaran berjalan
+            tetap kuota per bidang. Jadi mengubah daftar ini aman - tidak ada pendaftaran berjalan
             yang ikut berubah.</p>
         </div>
 

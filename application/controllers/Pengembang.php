@@ -33,7 +33,7 @@ class Pengembang extends MY_Controller {
         $status_verifikasi = null;
         $catatan_admin = null;
         if ($is_pengembang) {
-            // Keadaan pengajuan lewat satu pintu di Auth_model — sumber yang SAMA
+            // Keadaan pengajuan lewat satu pintu di Auth_model - sumber yang SAMA
             // dipakai cabang AJAX Auth::do_login(), supaya wizard yang dibuka
             // langsung dan wizard yang baru saja login menampilkan hal identik.
             // Draft ikut dibuat di sini kalau belum ada, termasuk untuk akun yang
@@ -54,7 +54,7 @@ class Pengembang extends MY_Controller {
             'is_pengembang'    => $is_pengembang,
             'wrong_role'       => $is_logged && !$is_pengembang,
             // Tujuan tombol "Ke Dashboard Saya" diturunkan dari registry per role,
-            // bukan hardcode ke `akun` — lihat MY_Controller::dashboard_home().
+            // bukan hardcode ke `akun` - lihat MY_Controller::dashboard_home().
             'dashboard_url'    => $is_logged ? $this->dashboard_home() : 'akun',
             // Role pengelola tidak perlu disuruh "daftar akun pengembang":
             // mereka justru sisi yang memverifikasi SRP2.
@@ -62,7 +62,7 @@ class Pengembang extends MY_Controller {
             'nama_user'        => $this->session->userdata('name') ?: $this->session->userdata('email'),
             'registration_id'  => $registration_id,
             'dokumen'          => $this->dokumen_persyaratan(),
-            // Keterangan per formulir (revisi dinas 3 Agt 2026) — helper terpisah
+            // Keterangan per formulir (revisi dinas 3 Agt 2026) - helper terpisah
             // supaya bentuk `dokumen` tidak berubah bagi empat pemakainya.
             'keterangan'       => $this->keterangan_persyaratan(),
             'uploaded_keys'    => $uploaded_keys,
@@ -72,14 +72,14 @@ class Pengembang extends MY_Controller {
     }
 
     /**
-     * Diarsipkan — perannya sekarang diambil alih wizard di Pengembang/syarat
+     * Diarsipkan - perannya sekarang diambil alih wizard di Pengembang/syarat
      * (satu halaman: syarat -> masuk/daftar -> unggah dokumen -> kirim).
      * Redirect dipertahankan supaya bookmark/tautan lama tidak jadi dead-end.
      */
     public function daftar() { redirect('Pengembang/syarat'); }
 
     /**
-     * Diarsipkan — form manual 12 field digantikan wizard daftar cepat di
+     * Diarsipkan - form manual 12 field digantikan wizard daftar cepat di
      * Pengembang/syarat. Redirect dipertahankan supaya bookmark/tautan lama
      * tidak jadi dead-end. Lihat archive/formulir_sertifikasi_12field.php.
      */
@@ -92,7 +92,7 @@ class Pengembang extends MY_Controller {
         if ($this->db->table_exists('srp2_certified_developers')) {
             /* KOLOM DISEBUT SATU PER SATU, dan itu bukan gaya penulisan.
                Sebelum migrasi 040 baris ini `SELECT *`, dan begitu NPWP
-               ditambahkan ke tabel — terenkripsi sekalipun — ia IKUT TERKIRIM ke
+               ditambahkan ke tabel - terenkripsi sekalipun - ia IKUT TERKIRIM ke
                view publik tanpa ada yang mengubah baris ini. Butir 7 justru
                meminta NPWP hanya terlihat admin.
 
@@ -114,7 +114,7 @@ class Pengembang extends MY_Controller {
             //
             // Pencocokan nama itu rapuh dua arah: putus begitu nama diedit di
             // salah satu sisi, dan bisa MENARIK data perusahaan lain yang
-            // kebetulan bernama sama — nama tidak unique di srp2_registrations.
+            // kebetulan bernama sama - nama tidak unique di srp2_registrations.
             // Migrasi 20260701000014 dibuat justru untuk menggantikannya;
             // menambah kolom tanpa mencabut jalur lama meninggalkan dua definisi
             // "perusahaan yang sama". Kedua tabel juga beda collation
@@ -132,12 +132,12 @@ class Pengembang extends MY_Controller {
     }
 
     /**
-     * Diarsipkan 27 Jul 2026 — unggah dokumen SEPENUHNYA di wizard
+     * Diarsipkan 27 Jul 2026 - unggah dokumen SEPENUHNYA di wizard
      * (Pengembang/syarat), dari langkah 1 sampai kirim, tanpa pindah halaman.
      *
      * `mulai_unggah()` dan `dokumen()` adalah sisa era sebelum wizard: permukaan
      * unggah KEDUA untuk pekerjaan yang sama, dan itulah akar tiga temuan
-     * sekaligus — penulisan DB setelah seluruh loop (berkas yatim), view yang
+     * sekaligus - penulisan DB setelah seluruh loop (berkas yatim), view yang
      * tidak sadar status, dan daftar yang selalu tampil kosong. Menghapus satu
      * jalur lebih sedikit kode daripada memperbaiki tiga hal di jalur yang
      * memang tidak dipakai.
@@ -150,7 +150,7 @@ class Pengembang extends MY_Controller {
     /**
      * Sajikan satu dokumen SRP2 ke PEMILIKNYA. Selama ini serve_private_file()
      * hanya dipakai sisi pengelola (Admin_Srp2::lihat_dokumen), sehingga pemohon
-     * tidak punya cara memeriksa apa yang dulu dia kirim — dan itu membuat
+     * tidak punya cara memeriksa apa yang dulu dia kirim - dan itu membuat
      * "Minta Perbaikan" terasa buntu: admin menulis "Form 4 salah", pemohon
      * cuma melihat badge "Tersimpan" tanpa bisa membuka berkasnya.
      *
@@ -200,19 +200,19 @@ class Pengembang extends MY_Controller {
 
         // NORMALISASI SEKALI di pintu masuk, sebelum $id dipakai untuk APA PUN.
         // Dulu guard memakai is_numeric(), query memakai (int), tapi path berkas
-        // memakai $id MENTAH — dan private_upload_dir() membuang karakter non
+        // memakai $id MENTAH - dan private_upload_dir() membuang karakter non
         // alfanumerik, jadi "7.0" menjadi direktori "70". Hasilnya: baris DB
         // benar (registration_id=7) tapi berkasnya mendarat di srp2/70/, admin
         // melihat 404 untuk SETIAP dokumen, sementara hitungan 14/14 lolos.
         $id = (int) $id;
 
-        // Anti-IDOR: WHERE user_id selalu dari sesi — pengembang lain tidak bisa menulis ke registrasi ini.
+        // Anti-IDOR: WHERE user_id selalu dari sesi - pengembang lain tidak bisa menulis ke registrasi ini.
         $registration = $this->db->get_where('srp2_registrations', ['id' => $id, 'user_id' => $this->get_user_id()])->row();
         if (!$registration || !$this->db->table_exists('srp2_documents')) {
             if ($is_ajax) { $this->output->set_status_header(404)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => 'Pengajuan tidak ditemukan.'])); return; }
             show_404();
         }
-        // Dokumen dikunci setelah dikirim ke admin — mencegah file diganti diam-diam
+        // Dokumen dikunci setelah dikirim ke admin - mencegah file diganti diam-diam
         // saat sedang/sudah ditinjau (Diterima pun tidak boleh diubah lagi).
         if (in_array($registration->status_verifikasi, ['Pending', 'Diterima'], TRUE)) {
             $message = 'Dokumen tidak bisa diubah saat status ' . $registration->status_verifikasi . '.';
@@ -220,11 +220,11 @@ class Pengembang extends MY_Controller {
             $this->session->set_flashdata('error', $message); redirect('Pengembang/syarat'); return;
         }
         // Pastikan akar private_uploads/ tertutup dari akses HTTP langsung.
-        // "Di luar webroot" ternyata tidak selalu benar — tergantung posisi
+        // "Di luar webroot" ternyata tidak selalu benar - tergantung posisi
         // aplikasi terhadap DocumentRoot; lihat catatan di method itu.
         $this->ensure_private_uploads_protected();
         // Lokasi akar dari helper private_upload (bisa diatur PRIVATE_UPLOADS_PATH
-        // di .env) — jangan susun path sendiri di sini.
+        // di .env) - jangan susun path sendiri di sini.
         $path = $this->private_upload_dir('srp2', $id);
         if (!is_dir($path)) mkdir($path, 0700, TRUE);
         $allowed = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'];
@@ -241,7 +241,7 @@ class Pengembang extends MY_Controller {
         // DUA TAHAP: validasi SEMUA dulu, baru pindahkan. Dulu validasi dan
         // move_uploaded_file() berada di loop yang sama, sehingga satu berkas
         // gagal validasi membuat berkas-berkas SEBELUMNYA sudah mendarat di disk
-        // tanpa baris DB — yatim permanen yang tidak terjangkau pembersihan
+        // tanpa baris DB - yatim permanen yang tidak terjangkau pembersihan
         // apa pun. Dengan dua tahap, kegagalan validasi menyisakan NOL berkas.
         $siap = [];
         foreach ($this->dokumen_persyaratan() as $key => $label) {
@@ -263,7 +263,7 @@ class Pengembang extends MY_Controller {
 
         // Nama berkas LAMA diambil sebelum ditimpa. db->replace() menghapus baris
         // lama beserta nama berkasnya, jadi kalau tidak dicatat dulu, berkas
-        // fisiknya jadi mustahil ditemukan — dan _cleanup_owned_files() yang
+        // fisiknya jadi mustahil ditemukan - dan _cleanup_owned_files() yang
         // menyapu berdasarkan nama di DB tidak akan pernah menemukannya lagi.
         // Konsekuensi UU PDP: akta/NPWP/laporan keuangan selamat dari hapus akun.
         $lama = [];
@@ -281,7 +281,7 @@ class Pengembang extends MY_Controller {
             }
             $baru_di_disk[] = $name;
             $row = ['registration_id' => $id, 'document_key' => $key, 'original_name' => substr(basename($s['file']['name']), 0, 255), 'stored_name' => $name, 'mime_type' => $s['mime'], 'file_size' => (int) $s['file']['size']];
-            // Baris DB ditulis DI DALAM loop, bukan sesudahnya — berkas yang
+            // Baris DB ditulis DI DALAM loop, bukan sesudahnya - berkas yang
             // sudah pindah selalu punya barisnya.
             $this->db->replace('srp2_documents', $row);
             // Berkas lama dibuang SETELAH penggantinya tercatat, bukan sebelum.
@@ -319,8 +319,8 @@ class Pengembang extends MY_Controller {
             $this->session->set_flashdata('error', $message); redirect('Pengembang/syarat'); return;
         }
         // GERBANG DI HULU. Dulu 14 dokumen adalah SATU-SATUNYA syarat kirim,
-        // sehingga baris tanpa nama perusahaan — atau bernama sama persis dengan
-        // pengembang yang sudah tersertifikasi — tetap lahir dan mendarat di meja
+        // sehingga baris tanpa nama perusahaan - atau bernama sama persis dengan
+        // pengembang yang sudah tersertifikasi - tetap lahir dan mendarat di meja
         // admin. Di sana ia mustahil disetujui: kolom nama di direktori publik
         // NOT NULL dan UNIQUE, jadi approve-nya gagal. Menambal sisi admin saja
         // hanya mengubah kegagalan senyap jadi kegagalan berisik; barisnya harus
@@ -363,7 +363,7 @@ class Pengembang extends MY_Controller {
     }
 
     private function akses_pengembang($target) {
-        // Request AJAX (dipanggil wizard SRP2 lewat fetch) TIDAK BOLEH di-redirect() —
+        // Request AJAX (dipanggil wizard SRP2 lewat fetch) TIDAK BOLEH di-redirect() -
         // fetch akan diam-diam mengikuti redirect dan menerima HTML halaman lain sebagai
         // "berhasil". Balas status HTTP + JSON supaya wizard tahu harus tampilkan apa.
         if ($this->input->is_ajax_request()) {
@@ -386,7 +386,7 @@ class Pengembang extends MY_Controller {
     }
 
     /**
-     * Gerbang masuk/daftar khusus alur SRP2 — supaya user pengembang tetap di dalam
+     * Gerbang masuk/daftar khusus alur SRP2 - supaya user pengembang tetap di dalam
      * alur ini (bukan dilempar ke Auth/login umum) saat belum login. Auth/login dan
      * Auth/register utama TIDAK diubah, tetap berfungsi seperti biasa untuk role lain.
      */
@@ -406,7 +406,7 @@ class Pengembang extends MY_Controller {
     }
 
     private function dokumen_persyaratan() {
-        // Daftar sesungguhnya ada di application/helpers/srp2_helper.php — satu
+        // Daftar sesungguhnya ada di application/helpers/srp2_helper.php - satu
         // sumber kebenaran, juga dipakai Admin_Srp2::detail() untuk verifikasi.
         $this->load->helper('srp2');
         return srp2_dokumen_persyaratan();

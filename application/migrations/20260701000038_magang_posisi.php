@@ -2,12 +2,12 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Posisi/lowongan magang — butir F1 revisi dinas.
+ * Posisi/lowongan magang - butir F1 revisi dinas.
  *
  * Dinas minta papan magang menampilkan DAFTAR POSISI (programmer, arsitek,
  * pengelola data, drafter, content creator), bukan nama bidang.
  *
- * POSISI MASUK KE DALAM BIDANG, TIDAK MENGGANTIKANNYA — keputusan user 5 Agt
+ * POSISI MASUK KE DALAM BIDANG, TIDAK MENGGANTIKANNYA - keputusan user 5 Agt
  * 2026. Seluruh mesin magang bersandar pada bidang: kuota disimpan per bidang,
  * sisa slot dihitung per bidang, formulir memilih bidang, dan 70 cek uji
  * menjaganya. Menggantikan bidang dengan posisi berarti membongkar semua itu
@@ -18,12 +18,12 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * `kkn_magang_bidang.kuota`. `periksa_slot()` tidak disentuh sama sekali.
  *
  * NOL SEED. Daftar lima posisi yang disebut dinas masih berupa CONTOH dalam
- * kalimat rapat, bukan daftar resmi — menuliskannya sebagai seed membuat
+ * kalimat rapat, bukan daftar resmi - menuliskannya sebagai seed membuat
  * tebakan kita terlihat seperti keputusan dinas, dan mahasiswa melamar posisi
  * yang mungkin tidak ada. Admin mengisinya sendiri lewat layar barunya.
  *
  * Charset & tipe kolom FK DIBACA dari kolom induknya (varchar(30) utf8mb4
- * general_ci, InnoDB) — bukan ditebak. Menebak menghasilkan errno 150/1253,
+ * general_ci, InnoDB) - bukan ditebak. Menebak menghasilkan errno 150/1253,
  * dan itu sudah pernah terjadi di proyek ini.
  */
 class Migration_Magang_posisi extends CI_Migration {

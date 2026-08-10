@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Helper tabel admin — membangun URL yang MEMPERTAHANKAN parameter query lain
+ * Helper tabel admin - membangun URL yang MEMPERTAHANKAN parameter query lain
  * (filter, pencarian, urutan) saat salah satunya diubah.
  *
  * Ini menutup bug nyata: pagination lama membangun '?page=N' saja, sehingga
@@ -19,7 +19,7 @@ if ( ! function_exists('admin_table_url')) {
         foreach ($ubah as $k => $v) {
             if ($v === NULL || $v === '') { unset($params[$k]); } else { $params[$k] = $v; }
         }
-        // Ganti filter/urutan selalu balik ke halaman 1 — kalau tidak, user bisa
+        // Ganti filter/urutan selalu balik ke halaman 1 - kalau tidak, user bisa
         // terdampar di halaman 7 dari hasil yang cuma punya 2 halaman.
         if ($ubah && ! array_key_exists('page', $ubah)) { unset($params['page']); }
 

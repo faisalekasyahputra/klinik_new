@@ -79,7 +79,7 @@ $guides = [
                          * program yang cocok untuk anda adalah x, tata caranya ini."
                          * Halaman lama membuka dengan "Program yang sesuai dengan
                          * Anda" lalu memaksa pembaca memindai kartu untuk tahu
-                         * jawabannya — padahal jawabannya sudah dihitung.
+                         * jawabannya - padahal jawabannya sudah dihitung.
                          */
                         $program_utama = '';
                         if ( ! empty($programs)) {
@@ -96,7 +96,7 @@ $guides = [
                         </h1>
                         <p class="mt-2 max-w-xl text-sm leading-relaxed text-[color:var(--portal-text-muted)]">
                             <?php if (count($programs) > 1): ?>
-                                Tata caranya ada di bawah. Ada <?= count($programs) - 1 ?> program lain yang juga cocok — bisa Anda bandingkan sebelum memilih.
+                                Tata caranya ada di bawah. Ada <?= count($programs) - 1 ?> program lain yang juga cocok - bisa Anda bandingkan sebelum memilih.
                             <?php else: ?>
                                 Tata caranya ada di bawah. Rekomendasi ini disusun dari jawaban survei Anda.
                             <?php endif; ?>
@@ -211,13 +211,13 @@ $guides = [
                             <div class="flex flex-col items-center justify-between gap-4 rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] px-5 py-4 sm:flex-row">
                                 <?php
                                 /**
-                                 * "Simpan Data", bukan "Ajukan/Usulkan/Daftar" —
+                                 * "Simpan Data", bukan "Ajukan/Usulkan/Daftar" -
                                  * revisi dinas 3 Agt 2026.
                                  *
                                  * Yang terjadi di belakang TIDAK berubah (keputusan
                                  * user): datanya tetap masuk antrean + terbit nomor
                                  * tiket supaya admin bisa menindaklanjuti. Yang
-                                 * diperbaiki adalah janjinya — "Ajukan" terdengar
+                                 * diperbaiki adalah janjinya - "Ajukan" terdengar
                                  * seperti melamar program dan bisa membuat warga
                                  * mengira dirinya sudah terdaftar sebagai penerima.
                                  * Keterangan di sebelahnya menyebutkan tiket, supaya
@@ -229,7 +229,7 @@ $guides = [
                                 <div class="flex shrink-0 items-center gap-2">
                                     <?php /* CETAK, bukan unduh PDF buatan server (butir A10c, 5 Agt 2026).
                                              Memasang pustaka PDF berarti dependensi baru untuk masalah yang
-                                             sudah dipecahkan tombol cetak peramban — dan renderer server-side
+                                             sudah dipecahkan tombol cetak peramban - dan renderer server-side
                                              tidak menjalankan JS, sementara separuh kelas Tailwind portal ini
                                              datang dari CDN JIT saat runtime, jadi hasilnya justru BERBEDA
                                              dari yang dilihat warga.
@@ -250,11 +250,11 @@ $guides = [
                     <?php endif; ?>
                 </div>
 
-                <?php /* Peringatan cetak — TERSEMBUNYI di layar, muncul hanya di kertas.
+                <?php /* Peringatan cetak - TERSEMBUNYI di layar, muncul hanya di kertas.
                          Keputusan user 5 Agt 2026: cetakan informatif, BUKAN berkop resmi.
                          Berkas berkop dinas gampang dianggap keputusan, padahal isinya
                          hitungan otomatis dari isian warga sendiri yang belum diverifikasi
-                         siapa pun — dan warga bisa datang ke loket merasa sudah berhak. */ ?>
+                         siapa pun - dan warga bisa datang ke loket merasa sudah berhak. */ ?>
                 <div id="peringatan-cetak" class="mt-6 rounded-2xl border-2 border-[color:var(--portal-text)] px-5 py-4">
                     <p class="text-sm font-black text-[color:var(--portal-text)]">Lembar ini BUKAN surat keputusan.</p>
                     <ul class="mt-2 space-y-1 text-sm text-[color:var(--portal-text)]">
@@ -278,7 +278,7 @@ $guides = [
 
 <style>
 /* ==========================================================================
-   CETAK — butir A10c, 5 Agt 2026.
+   CETAK - butir A10c, 5 Agt 2026.
    ==========================================================================
    Peringatan cetak disembunyikan di layar dan HANYA muncul di kertas: di layar
    ia mengulang keterangan yang sudah ada di bawah, tapi di kertas ialah
@@ -289,7 +289,7 @@ $guides = [
    EMPAT lapis bersarang (body, section, panel, dan pembungkus dalamnya),
    sebagian lewat atribut `style=` inline sehingga hanya `!important` yang
    bisa membukanya. Tanpa itu Ctrl+P cuma mencetak satu layar penuh lalu
-   memotong sisanya — halamannya terlihat "berhasil dicetak" padahal isinya
+   memotong sisanya - halamannya terlihat "berhasil dicetak" padahal isinya
    hilang, dan itu jenis kegagalan yang tidak bersuara.
    ========================================================================== */
 #peringatan-cetak { display: none; }
@@ -313,7 +313,7 @@ $guides = [
     #peringatan-cetak ~ div,
     button, .no-print { display: none !important; }
 
-    /* 3. Peringatan justru MUNCUL — kebalikan dari keadaan layar. */
+    /* 3. Peringatan justru MUNCUL - kebalikan dari keadaan layar. */
     #peringatan-cetak {
         display: block !important;
         border: 2px solid #000 !important;

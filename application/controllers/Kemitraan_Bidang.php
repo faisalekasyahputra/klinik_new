@@ -10,7 +10,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *
  * Scope-nya datang dari `Admin_Bidang_Controller`: `$this->my_bidang_kode` diambil
  * dari sesi, bukan dari request. Yang menentukan pendaftaran mana yang terlihat
- * adalah `bidang_kode` pada pendaftarannya — kolom sungguhan sejak migrasi
+ * adalah `bidang_kode` pada pendaftarannya - kolom sungguhan sejak migrasi
  * 20260701000031, bukan pencocokan lewat nama.
  */
 class Kemitraan_Bidang extends Admin_Bidang_Controller {
@@ -33,7 +33,7 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
 
         // Disaring lewat KOLOM `bidang_kode` pada pendaftarannya. Baris lama
         // yang tidak menyebut bidang (KKN, atau pendaftaran sebelum migrasi 031)
-        // tidak muncul di sini — dan memang seharusnya begitu: ia bukan
+        // tidak muncul di sini - dan memang seharusnya begitu: ia bukan
         // tanggung jawab bidang mana pun.
         $this->db->from('kkn_magang_pendaftaran')
             ->join('usr_users', 'usr_users.id = kkn_magang_pendaftaran.user_id', 'left')
@@ -64,7 +64,7 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
      *
      * Guard-nya BUKAN sekadar "saya admin_bidang": barisnya harus benar-benar
      * milik bidang saya. Tanpa pemeriksaan itu, mengganti angka di URL berarti
-     * membaca surat pengantar milik bidang lain — dan ini dokumen kependudukan.
+     * membaca surat pengantar milik bidang lain - dan ini dokumen kependudukan.
      */
     public function lihat_dokumen($id = NULL, $berkas = 'surat')
     {
@@ -97,14 +97,14 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
 
         // Hanya yang SUDAH diteruskan sekretariat. Kalau bidang boleh memutuskan
         // surat yang belum melewati meja pertama, tahap satu berhenti berarti
-        // apa pun — dan diagram alurnya jadi hiasan.
+        // apa pun - dan diagram alurnya jadi hiasan.
         if ($row->status !== 'Ditinjau Bidang') {
             $this->session->set_flashdata('error', 'Pendaftaran ini tidak sedang menunggu tinjauan bidang (status: ' . html_escape($row->status) . ').');
             redirect('Kemitraan_Bidang');
             return;
         }
 
-        // Jejaknya ditulis ke kolom TERSENDIRI, bukan menimpa reviewed_by —
+        // Jejaknya ditulis ke kolom TERSENDIRI, bukan menimpa reviewed_by -
         // pertanyaan "siapa yang meloloskan ini ke tahap dua" justru yang paling
         // sering ditanyakan ketika ada yang keliru.
         $this->db->where('id', (int) $row->id)->update('kkn_magang_pendaftaran', [
@@ -122,7 +122,7 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
     private function baris_bidang_saya($id)
     {
         // Dicocokkan lewat KOLOM `bidang_kode`, bukan join nama divisi. Versi
-        // sebelumnya bersandar pada `divisi.nama = divisi_atau_tema` — satu ganti
+        // sebelumnya bersandar pada `divisi.nama = divisi_atau_tema` - satu ganti
         // nama dan seluruh pendaftaran putus dari bidangnya, termasuk dari guard
         // ini, yang berarti bidang kehilangan akses ke berkasnya sendiri.
         return $this->db->get_where('kkn_magang_pendaftaran', [

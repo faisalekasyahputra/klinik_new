@@ -3,18 +3,18 @@
  * Halaman persyaratan KKN Kemitraan.
  *
  * NOMENKLATUR: "KKN Tematik" -> "KKN Kemitraan" (revisi dinas 3 Agt 2026).
- * Nilai DB `kkn_magang_pendaftaran.jenis` TETAP 'kkn' — yang berubah hanya
+ * Nilai DB `kkn_magang_pendaftaran.jenis` TETAP 'kkn' - yang berubah hanya
  * yang dibaca orang. Mengganti nilai kolomnya berarti migrasi data untuk nol
  * manfaat, dan memutus setiap harness yang menyebut 'kkn'.
  *
  * JUKNIS DICABUT. Sampai 3 Agt 2026 halaman ini memasang tombol unduh ke
- * `output/pdf/juknis-kkn-kemitraan-disperakim-jateng.pdf` — 114 KB yang
+ * `output/pdf/juknis-kkn-kemitraan-disperakim-jateng.pdf` - 114 KB yang
  * tersaji LANGSUNG oleh Apache dari webroot, tanpa controller dan tanpa
  * gerbang apa pun. Dinas menyatakan dokumen itu tidak boleh dipublikasikan,
  * jadi berkasnya dipindahkan ke luar webroot (private_uploads/arsip_tidak_publik/)
  * dan tombolnya dibuang. Diverifikasi: URL lamanya kini 404.
  *
- * Penggantinya — buku panduan KKN Kemitraan + leaflet — MENUNGGU berkas dari
+ * Penggantinya - buku panduan KKN Kemitraan + leaflet - MENUNGGU berkas dari
  * dinas. Tempatnya sengaja tidak disiapkan sebagai tombol mati: tautan unduh
  * yang menuju berkas tak ada lebih buruk daripada tidak ada tautan sama sekali.
  */
@@ -39,7 +39,7 @@
         // Teks persyaratan datang dari dinas 3 Agt 2026, menggantikan empat butir
         // lama (surat pengantar, proposal, daftar peserta, rencana jadwal) yang
         // disusun perancang awal tanpa konfirmasi. Ditulis di view karena hanya
-        // dibaca di sini — memindahkannya ke DB/config berarti membangun layar
+        // dibaca di sini - memindahkannya ke DB/config berarti membangun layar
         // penyunting untuk teks yang berubah sekali setahun.
         $syarat = [
             'Surat permohonan dari perguruan tinggi mitra' =>

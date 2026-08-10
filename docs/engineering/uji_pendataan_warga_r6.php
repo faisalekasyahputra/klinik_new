@@ -104,13 +104,13 @@ function make_user($db,$suffix,$role='warga',$kabupaten=NULL) {
  * satu profil warga mengikatnya EKSKLUSIF lewat `nik_lookup_hash`. Begitu ada
  * akun mana pun yang memegangnya, `Simperum_gateway::lookup()` gagal di
  * `save_profile()` dengan `nik_already_bound`, tidak ada draft yang lahir, dan
- * uji ini merah di "Draft warga tersedia" — pesan yang menunjuk ke tempat yang
+ * uji ini merah di "Draft warga tersedia" - pesan yang menunjuk ke tempat yang
  * sepenuhnya salah.
  */
 function nik_bebas($db,$env,$nik) {
     $p=$db->row('SELECT p.id, u.email FROM sf_profil_warga p LEFT JOIN usr_users u ON u.id=p.user_id WHERE p.nik_lookup_hash=?',
         [hash_hmac('sha256',$nik,$env['KPKP_DATA_PEPPER'] ?? '')]);
-    wajib(!$p, $p ? "NIK fixture {$nik} SEDANG DIPEGANG profil #{$p['id']} milik ".($p['email'] ?? '[akun sudah terhapus]').' — lepaskan ikatannya atau pakai DB uji bersih' : "NIK fixture {$nik} bebas dipakai");
+    wajib(!$p, $p ? "NIK fixture {$nik} SEDANG DIPEGANG profil #{$p['id']} milik ".($p['email'] ?? '[akun sudah terhapus]').' - lepaskan ikatannya atau pakai DB uji bersih' : "NIK fixture {$nik} bebas dipakai");
 }
 function draft($db,$user) {
     $r=$db->row("SELECT * FROM sf_penilaian_perumahan WHERE user_id=? AND status='draft' ORDER BY id DESC LIMIT 1",[$user]);

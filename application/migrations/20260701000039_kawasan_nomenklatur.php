@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Nomenklatur kegiatan kawasan dirinci — butir D2 revisi dinas.
+ * Nomenklatur kegiatan kawasan dirinci - butir D2 revisi dinas.
  *
  * Dinas minta "nama program / kegiatan / sub kegiatan / pekerjaan" dirinci jadi
  * isian TERPISAH; dikonfirmasi user 10 Agt 2026: empat isian terpisah benar.
@@ -18,7 +18,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * memang tidak pernah direkam terpisah.
  *
  * KETIGANYA NULL-able, dan itu disengaja. Menjadikannya wajib akan menolak
- * laporan yang sedang berjalan hari ini — perubahan bentuk isian tidak boleh
+ * laporan yang sedang berjalan hari ini - perubahan bentuk isian tidak boleh
  * menghentikan pekerjaan orang. `nama_kegiatan` tetap satu-satunya yang wajib,
  * persis seperti sebelum migrasi ini.
  *
@@ -26,7 +26,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * jadi urutan amannya "migrasi dulu, kode menyusul" (AGENTS.md §51).
  *
  * Isian masih ketik-bebas. Pilihan berjenjang dari daftar resmi menunggu daftar
- * program–kegiatan–sub kegiatan dari dinas; kolom-kolom ini sudah menyiapkan
+ * program-kegiatan-sub kegiatan dari dinas; kolom-kolom ini sudah menyiapkan
  * tempatnya, sehingga nanti yang berubah cuma cara mengisinya, bukan skemanya.
  */
 class Migration_Kawasan_nomenklatur extends CI_Migration {

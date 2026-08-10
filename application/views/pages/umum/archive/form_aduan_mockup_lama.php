@@ -1,4 +1,4 @@
-<!-- ARSIP: mockup form lama, BUKAN dihapus. Ini murni tampilan palsu —
+<!-- ARSIP: mockup form lama, BUKAN dihapus. Ini murni tampilan palsu -
      action="#", data nama/email hardcode, tidak ada atribut name pada
      input, toolbar editor kaya teks tidak fungsional, tanpa CSRF.
      Diarsipkan 23 Juli 2026 saat konsep aduan diubah jadi 1 form langsung

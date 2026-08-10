@@ -16,7 +16,7 @@ $escape = static function ($value) {
             </div>
             <p class="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--portal-brand)]">Antrean Klinik PKP</p>
             <?php // Istilah "pengajuan" disapu dari jalur ini (revisi dinas 3 Agt
-                  // 2026) — halaman sukses ikut, kalau tidak tombolnya berbunyi
+                  // 2026) - halaman sukses ikut, kalau tidak tombolnya berbunyi
                   // "Simpan Data" lalu layar berikutnya bilang "Pengajuan
                   // terkirim", dan warga tidak tahu mana yang benar. ?>
             <h1 id="success-title" class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)] sm:text-4xl">Data Anda tersimpan</h1>

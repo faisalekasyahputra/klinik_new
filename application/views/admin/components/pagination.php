@@ -3,7 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 $this->load->helper('admin_table');
 /**
  * Pager server-side untuk tabel admin. LIMIT+OFFSET biasa, bukan infinite
- * scroll — halaman admin butuh posisi yang bisa di-bookmark dan total yang jelas.
+ * scroll - halaman admin butuh posisi yang bisa di-bookmark dan total yang jelas.
  *
  * Link dibangun lewat admin_table_url() supaya parameter lain (filter, cari,
  * urutan) IKUT TERBAWA. Versi pertama komponen ini membangun '?page=N' polos,
@@ -19,7 +19,7 @@ $sampai = min($pager['offset'] + $pager['per_page'], $pager['total_rows']);
 ?>
 <div class="px-6 py-3 border-t border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-black/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500 dark:text-brand-muted">
     <div>
-        Menampilkan <span class="font-bold text-gray-900 dark:text-white"><?= $dari ?></span>–<span class="font-bold text-gray-900 dark:text-white"><?= $sampai ?></span>
+        Menampilkan <span class="font-bold text-gray-900 dark:text-white"><?= $dari ?></span>-<span class="font-bold text-gray-900 dark:text-white"><?= $sampai ?></span>
         dari <span class="font-bold text-gray-900 dark:text-white"><?= number_format($pager['total_rows']) ?></span> data
     </div>
     <?php if ($pager['total_pages'] > 1): ?>

@@ -1,6 +1,6 @@
 <?php
 /**
- * Uji D3 — Rekam Data: kirim, BNBA, dan jaminan TIDAK ADA pewarisan antar triwulan.
+ * Uji D3 - Rekam Data: kirim, BNBA, dan jaminan TIDAK ADA pewarisan antar triwulan.
  *
  * Lewat HTTP Apache sungguhan. Bukti diambil dari DB dan DISK, bukan dari flash
  * di layar: berkas yang diganti harus benar-benar hilang dari disk, dan berkas
@@ -189,7 +189,7 @@ function bersihkan() {
 
 // ---------------------------------------------------------------- prasyarat
 
-echo "Uji D3 — Kirim, BNBA, Pewarisan\n";
+echo "Uji D3 - Kirim, BNBA, Pewarisan\n";
 
 $admin = q('SELECT id, kabupaten_id FROM usr_users WHERE email = ? AND role = ?',
     [ADMIN_EMAIL, 'admin_kabkota']);
@@ -223,7 +223,7 @@ try {
 
     // Membuka layar TIDAK lagi melahirkan draft (index() memakai laporan_periode()
     // yang tidak pernah menulis); draft lahir di mulai(). Dan form unggah BNBA
-    // hidup di WIZARD langkah `bnba`, bukan di layar Capaian — dua alamat berbeda
+    // hidup di WIZARD langkah `bnba`, bukan di layar Capaian - dua alamat berbeda
     // sekarang, dan harness ini dulu menganggapnya satu.
     wajib(http('kab', 'Rekam_Perumahan/input')['code'] === 200, 'Layar wizard terbuka');
     http('kab', 'Rekam_Perumahan/mulai', [
@@ -348,7 +348,7 @@ try {
     // "Angka diwarisi apa adanya, tidak dinolkan". Sahih selama angkanya
     // kumulatif s.d. bulan ini; sejak W1 angkanya per triwulan, dan mewarisi
     // TW II ke TW III lalu menambahinya membuat capaian TW II terhitung dua
-    // kali. Dibalik, bukan dihapus — penjagaannya justru makin dibutuhkan.
+    // kali. Dibalik, bukan dihapus - penjagaannya justru makin dibutuhkan.
     http('kab', 'Rekam_Perumahan/mulai', [
         'csrf_kpkp_token' => csrf('kab', 'Rekam_Perumahan/input'),
         'tahun' => TAHUN, 'triwulan' => TRIWULAN + 1]);
@@ -357,16 +357,16 @@ try {
     cek($LAP7 > 0, 'Periode berikutnya dibuat');
     cek($LAP7 !== $LAP, 'TW III laporan tersendiri');
     cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_program WHERE laporan_id = ?', [$LAP7]) === 0,
-        'TW III lahir KOSONG — nol gerbang program terbawa dari TW II');
+        'TW III lahir KOSONG - nol gerbang program terbawa dari TW II');
     cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_baris WHERE laporan_id = ?', [$LAP7]) === 0,
-        'TW III lahir KOSONG — nol baris angka terbawa dari TW II');
+        'TW III lahir KOSONG - nol baris angka terbawa dari TW II');
     // Pembanding: tanpa ini "TW III kosong" tetap hijau kalau TW II juga kosong.
     cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_baris WHERE laporan_id = ?', [$LAP]) > 0,
         'TW II tetap berisi (pembanding sahih)');
-    // Tetap berlaku, dan sekarang berlaku secara trivial — dipertahankan karena
+    // Tetap berlaku, dan sekarang berlaku secara trivial - dipertahankan karena
     // ia menjaga niat yang berbeda: bukti berkas tidak boleh berpindah periode.
     cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_bnba WHERE laporan_id = ?', [$LAP7]) === 0,
-        'BNBA TIDAK ikut ke periode baru — berkas triwulan lalu bukan bukti triwulan ini');
+        'BNBA TIDAK ikut ke periode baru - berkas triwulan lalu bukan bukti triwulan ini');
     cek(skalar('SELECT status FROM rd_laporan WHERE id = ?', [$LAP7]) === 'draft',
         'Periode baru mulai sebagai draft, bukan terkirim');
 

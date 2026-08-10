@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Rekam Data — pelaporan capaian Kabupaten/Kota, pengganti dua Google Form dinas.
+ * Rekam Data - pelaporan capaian Kabupaten/Kota, pengganti dua Google Form dinas.
  * Spesifikasi + keputusan user 29 Jul 2026: docs/product/PRD_REKAM_DATA.md
  *
  * Lima tabel: satu amplop bersama (rd_laporan) + detail per domain. Siklus
@@ -13,7 +13,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Migration_Add_rekam_data extends CI_Migration {
 
-    /** Ikut daftar di form aktual, bukan spreadsheet — keputusan user 29 Jul 2026. */
+    /** Ikut daftar di form aktual, bukan spreadsheet - keputusan user 29 Jul 2026. */
     private const SUMBER_PERUMAHAN = "'apbd_kabkota','apbn_bsps','apbn_dak','apbn_kemensos'"
         . ",'apbn_dana_desa','apbn_kl_lain','baznas_ri','baznas_kabkota','csr','dana_lainnya'";
 
@@ -61,7 +61,7 @@ class Migration_Add_rekam_data extends CI_Migration {
         // Jawaban gerbang "Ada / Tidak Ada" per sumber dana. Tabel sendiri, bukan kolom
         // SET di rd_laporan: SET adalah atribut multi-nilai (melanggar 1NF) dan lagipula
         // khusus perumahan, tidak pantas menempel di amplop bersama.
-        // Gunanya membedakan "sumber ini nihil" dari "belum diisi" — tanpa ini, nol dan
+        // Gunanya membedakan "sumber ini nihil" dari "belum diisi" - tanpa ini, nol dan
         // kosong tidak terbedakan di rekap.
         $this->db->query("CREATE TABLE IF NOT EXISTS `rd_perumahan_bagian` (
             `laporan_id` BIGINT UNSIGNED NOT NULL,
@@ -92,7 +92,7 @@ class Migration_Add_rekam_data extends CI_Migration {
                 REFERENCES `rd_perumahan_bagian` (`laporan_id`,`sumber_dana`) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
-        // BNBA (By Name By Address) — satu berkas per laporan, sesuai form.
+        // BNBA (By Name By Address) - satu berkas per laporan, sesuai form.
         // Berkas masuk private_uploads seperti dokumen SRP2, bukan webroot.
         $this->db->query("CREATE TABLE IF NOT EXISTS `rd_perumahan_bnba` (
             `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -124,7 +124,7 @@ class Migration_Add_rekam_data extends CI_Migration {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
         // Daftar intervensi. Google Form membatasi 20 karena tidak bisa mengulang baris;
-        // batas itu tidak dibawa ke sini. `satuan` sengaja tidak disimpan — diturunkan
+        // batas itu tidak dibawa ke sini. `satuan` sengaja tidak disimpan - diturunkan
         // dari `indikator`, supaya tidak bisa bertentangan dengannya.
         // `keterangan_sumber` tambahan kita: form kawasan tidak punya nama perusahaan CSR.
         $this->db->query("CREATE TABLE IF NOT EXISTS `rd_kawasan_intervensi` (

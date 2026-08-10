@@ -4,11 +4,11 @@
  *
  *   php docs/engineering/uji_jejak_audit.php
  *
- * TIDAK butuh server maupun DB — sengaja. Yang dijaga di sini adalah dua janji
+ * TIDAK butuh server maupun DB - sengaja. Yang dijaga di sini adalah dua janji
  * yang rusaknya SENYAP, bukan tampilannya:
  *
  * 1. LAYARNYA READ-ONLY. Ini bukan preferensi gaya. Jejak audit yang bisa
- *    dihapus lewat UI tidak melindungi siapa pun — orang yang paling ingin satu
+ *    dihapus lewat UI tidak melindungi siapa pun - orang yang paling ingin satu
  *    baris hilang justru orang yang memegang tombolnya. Penjaganya statis
  *    karena method tulis yang ditambahkan enam bulan lagi akan lolos semua uji
  *    fungsional: ia BEKERJA, itu masalahnya.
@@ -17,7 +17,7 @@
  *    production (AGENTS.md §17 poin 9): ORDER BY ke kolom salah ketik tidak
  *    melempar apa pun, query cuma mengembalikan FALSE dan layarnya kosong
  *    seolah memang belum ada jejak. Kolomnya dibaca dari migrasi 033, bukan
- *    disalin ke sini — daftar kembar akan berbohong begitu skemanya berubah.
+ *    disalin ke sini - daftar kembar akan berbohong begitu skemanya berubah.
  */
 
 define('APP_ROOT', dirname(__DIR__, 2));

@@ -56,12 +56,12 @@ class User_model extends CI_Model {
     /**
      * Hapus file fisik yang jadi yatim akibat FK CASCADE saat baris DB dihapus
      * di bawah (srp2_registrations->srp2_documents, kkn_magang_pendaftaran).
-     * WAJIB dipanggil SEBELUM baris DB dihapus — begitu CASCADE jalan, tidak
+     * WAJIB dipanggil SEBELUM baris DB dihapus - begitu CASCADE jalan, tidak
      * ada lagi cara menemukan nama file yang harus dihapus dari disk.
      * Lihat application/migrations/20260701000012_add_submission_owner_fk.php.
      */
     private function _cleanup_owned_files($user_id) {
-        // Lokasi akar dari helper — ikut PRIVATE_UPLOADS_PATH di .env kalau diisi.
+        // Lokasi akar dari helper - ikut PRIVATE_UPLOADS_PATH di .env kalau diisi.
         // Jangan susun path sendiri di sini; pernah terjadi path di sini tertinggal
         // di lokasi publik lama setelah penyimpanan dipindah, sehingga berkasnya
         // tidak pernah benar-benar terhapus.
@@ -76,7 +76,7 @@ class User_model extends CI_Model {
         // Menyapu dari DB saja meninggalkan berkas yatim: setiap kali dokumen
         // DIGANTI, baris lamanya hilang beserta nama berkasnya, sehingga berkas
         // fisiknya tidak lagi terjangkau pencarian apa pun. Akibatnya akta,
-        // NPWP, dan laporan keuangan bisa selamat dari penghapusan akun —
+        // NPWP, dan laporan keuangan bisa selamat dari penghapusan akun -
         // kewajiban retensi UU PDP, bukan sekadar kerapian.
         foreach ($registration_ids as $rid) {
             $dir = private_uploads_dir('srp2', $rid);
@@ -98,7 +98,7 @@ class User_model extends CI_Model {
 
         // --- Dokumen onboarding: KTP/SIUP/KTM (private_uploads/onboarding/{user_id}/) ---
         // usr_documents ikut terhapus lewat FK CASCADE, tapi FK tidak bisa
-        // menghapus file di disk — jadi harus dibersihkan di sini.
+        // menghapus file di disk - jadi harus dibersihkan di sini.
         $onboarding = $this->db->select('file_name')
             ->get_where('usr_documents', ['user_id' => $user_id])->result();
         foreach ($onboarding as $row) {
@@ -118,7 +118,7 @@ class User_model extends CI_Model {
     }
 
     public function delete_user_account($user_id) {
-        // Di luar transaksi DB dengan sengaja — unlink() tidak bisa di-rollback,
+        // Di luar transaksi DB dengan sengaja - unlink() tidak bisa di-rollback,
         // jadi lebih aman dijalankan sebelum trans_start() daripada di dalamnya.
         $this->_cleanup_owned_files($user_id);
 

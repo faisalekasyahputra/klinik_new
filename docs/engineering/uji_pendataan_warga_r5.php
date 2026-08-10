@@ -58,13 +58,13 @@ function make_user($db, $suffix) { $email = 'uji_r5_'.$suffix.'_'.time().'_'.mt_
  * satu profil warga mengikatnya EKSKLUSIF lewat `nik_lookup_hash`. Begitu ada
  * akun mana pun yang memegangnya, `Simperum_gateway::lookup()` gagal di
  * `save_profile()` dengan `nik_already_bound`, tidak ada draft yang lahir, dan
- * uji ini merah di "Draft warga tersedia" — pesan yang menunjuk ke tempat yang
+ * uji ini merah di "Draft warga tersedia" - pesan yang menunjuk ke tempat yang
  * sepenuhnya salah.
  */
 function nik_bebas($db,$env,$nik) {
     $p=$db->row('SELECT p.id, u.email FROM sf_profil_warga p LEFT JOIN usr_users u ON u.id=p.user_id WHERE p.nik_lookup_hash=?',
         [hash_hmac('sha256',$nik,$env['KPKP_DATA_PEPPER'] ?? '')]);
-    wajib(!$p, $p ? "NIK fixture {$nik} SEDANG DIPEGANG profil #{$p['id']} milik ".($p['email'] ?? '[akun sudah terhapus]').' — lepaskan ikatannya atau pakai DB uji bersih' : "NIK fixture {$nik} bebas dipakai");
+    wajib(!$p, $p ? "NIK fixture {$nik} SEDANG DIPEGANG profil #{$p['id']} milik ".($p['email'] ?? '[akun sudah terhapus]').' - lepaskan ikatannya atau pakai DB uji bersih' : "NIK fixture {$nik} bebas dipakai");
 }
 function draft($db, $user) { $r=$db->row("SELECT a.* FROM sf_penilaian_perumahan a WHERE a.user_id=? AND a.status='draft' ORDER BY a.id DESC LIMIT 1",[$user]); wajib((bool)$r,'Draft warga tersedia'); if (!in_array((int)$r['id'],$GLOBALS['assessments'],TRUE)) $GLOBALS['assessments'][]=(int)$r['id']; return $r; }
 function post_step($s,$d,$step,$data) { return $s->post('warga/pendataan',$data+['action'=>'save','step'=>$step,'direction'=>'next','assessment_id'=>$d['id'],'lock_version'=>$d['lock_version']]); }
@@ -76,7 +76,7 @@ function by_code($rows,$code) { foreach($rows as $row) if($row['kode_program']==
 /**
  * `warga_lookup` dibatasi 10 percobaan/60 detik dengan IP sebagai salah satu
  * dimensinya, dan semua harness datang dari 127.0.0.1 yang sama. Sendirian uji
- * ini muat; berurutan lewat runner, ember IP-nya jebol dan lookup ditolak —
+ * ini muat; berurutan lewat runner, ember IP-nya jebol dan lookup ditolak -
  * merahnya lalu muncul di tempat yang tak berhubungan dan terbaca seperti
  * flake padahal deterministik. Embernya dipinjam lalu dikembalikan utuh, bukan
  * dikosongkan. Pola dari R6.

@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Rekam Data — pelaporan capaian Kabupaten/Kota (tahap D1).
+ * Rekam Data - pelaporan capaian Kabupaten/Kota (tahap D1).
  *
  * Satu-satunya pintu tulis modul ini. Tiga aturan ditegakkan DI SINI, bukan di
  * view atau controller, supaya jalur mana pun tunduk pada aturan yang sama:
@@ -14,7 +14,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *   3. Tiap operasi ber-scope kabupaten. NULL = lingkup provinsi
  *      (admin / admin_bidang); angka kabupaten = admin_kabkota, wajib diisi.
  *
- * "Diterima" bukan status tersendiri di skema — ia adalah laporan `terkirim`
+ * "Diterima" bukan status tersendiri di skema - ia adalah laporan `terkirim`
  * yang `reviewed_at`-nya sudah terisi (lihat terima()). Tidak ambigu karena
  * "minta perbaikan" memindahkan statusnya, dan kirim ulang membersihkan jejak
  * peninjauan sebelumnya.
@@ -45,7 +45,7 @@ class Rekam_data_model extends CI_Model {
      *
      * Alasannya teknis, bukan kompromi: menambah nilai ENUM adalah ALTER yang
      * tidak menyentuh baris yang sudah ada, sedangkan MEMBUANG `apbn_dak`/
-     * `apbn_kemensos` bersifat destruktif begitu ada laporan memakainya — dan
+     * `apbn_kemensos` bersifat destruktif begitu ada laporan memakainya - dan
      * kalau dinas masih memakai Google Form itu, dua sumber tersebut memang
      * harus bisa dilaporkan. `apbd_provinsi` bukan nama lain dari `apbn_dak`
      * (uang provinsi vs transfer pusat) dan `baznas_provinsi` bukan nama lain
@@ -77,7 +77,7 @@ class Rekam_data_model extends CI_Model {
     ];
 
     /**
-     * Satuan diturunkan dari indikator, tidak disimpan — supaya tidak bisa
+     * Satuan diturunkan dari indikator, tidak disimpan - supaya tidak bisa
      * bertentangan dengannya. `proteksi_kebakaran` memang tanpa satuan di form
      * dinas; itu pertanyaan terbuka nomor 4, jangan dikarang.
      */
@@ -101,7 +101,7 @@ class Rekam_data_model extends CI_Model {
     /**
      * Idempoten: periode yang sama tidak pernah menghasilkan dua laporan.
      *
-     * TIDAK ADA PEWARISAN — dan itu perubahan yang disengaja, bukan yang
+     * TIDAK ADA PEWARISAN - dan itu perubahan yang disengaja, bukan yang
      * terlupa. Selama angkanya kumulatif ("s.d. bulan ini"), draft baru WAJIB
      * mewarisi periode sebelumnya; mengetik ulang dari nol membuat capaian
      * menyusut. Sejak W1 angkanya **per triwulan**, dan aturan itu berbalik
@@ -146,7 +146,7 @@ class Rekam_data_model extends CI_Model {
         $id = $ok ? (int) $this->db->insert_id() : 0;
         if ( ! $ok || ! $id) {
             // Kalah balapan dengan permintaan lain untuk periode yang sama:
-            // barisnya sudah ada, itu hasil yang sah — bukan kegagalan.
+            // barisnya sudah ada, itu hasil yang sah - bukan kegagalan.
             $ada = $this->db->get_where('rd_laporan', $kunci)->row_array();
             return $ada
                 ? ['success' => TRUE, 'laporan' => $ada, 'baru' => FALSE]
@@ -161,7 +161,7 @@ class Rekam_data_model extends CI_Model {
 
     /**
      * Pindahkan langkah wizard. Disimpan di baris supaya pengisian bisa
-     * dilanjutkan setelah keluar-masuk — idiom yang sama dipakai wizard Warga.
+     * dilanjutkan setelah keluar-masuk - idiom yang sama dipakai wizard Warga.
      */
     public function simpan_langkah($laporan_id, $domain, $langkah, $scope_kabupaten_id = NULL)
     {
@@ -176,7 +176,7 @@ class Rekam_data_model extends CI_Model {
 
     /**
      * Cari laporan satu periode TANPA membuatnya. Pasangan baca-saja dari
-     * `ambil_atau_buat_draft()` — sengaja terpisah, bukan parameter tambahan.
+     * `ambil_atau_buat_draft()` - sengaja terpisah, bukan parameter tambahan.
      *
      * Layar Capaian kini membuka tabel lebih dulu (sesuai sketsa Menu Utama),
      * dan sekadar MELIHAT tidak boleh melahirkan baris di `rd_laporan`. Kalau
@@ -203,10 +203,10 @@ class Rekam_data_model extends CI_Model {
     // -------------------------------------------------------------- perumahan
 
     /**
-     * Gerbang "program yang akan dilaporkan" (frame 004) — enam centang sekaligus,
+     * Gerbang "program yang akan dilaporkan" (frame 004) - enam centang sekaligus,
      * bukan satu per satu. Dikirim utuh supaya mencabut centang punya arti:
      * program yang hilang dari daftar dihapus gerbangnya, dan angkanya ikut
-     * tersapu lewat CASCADE — bukan lewat JavaScript, bukan lewat pembersihan
+     * tersapu lewat CASCADE - bukan lewat JavaScript, bukan lewat pembersihan
      * terjadwal.
      *
      * Karena mencabut centang MENGHAPUS angka, pemanggil wajib memastikan
@@ -257,11 +257,11 @@ class Rekam_data_model extends CI_Model {
     }
 
     /**
-     * Satu baris sumber dana di dalam satu program — tambah atau ubah.
+     * Satu baris sumber dana di dalam satu program - tambah atau ubah.
      * `$angka` = [rencana_unit, rencana_anggaran, realisasi_unit, realisasi_anggaran, keterangan]
      *
      * Programnya wajib sudah dicentang. Dijamin FK gabungan di DB, tapi
-     * diperiksa di sini juga supaya pesannya bisa dibaca manusia — FK hanya
+     * diperiksa di sini juga supaya pesannya bisa dibaca manusia - FK hanya
      * bisa menolak, tidak bisa menjelaskan.
      */
     public function simpan_sumber($laporan_id, $program, $sumber_dana, array $angka, $scope_kabupaten_id = NULL)
@@ -309,7 +309,7 @@ class Rekam_data_model extends CI_Model {
         }
 
         // Keterangan hanya bermakna di tiga sumber; di sumber lain dikosongkan,
-        // bukan ditolak — supaya payload lama tidak membuat form gagal.
+        // bukan ditolak - supaya payload lama tidak membuat form gagal.
         $keterangan = in_array($sumber_dana, self::SUMBER_BERKETERANGAN, TRUE)
             ? mb_substr(trim((string) ($angka['keterangan'] ?? '')), 0, 150)
             : '';
@@ -354,7 +354,7 @@ class Rekam_data_model extends CI_Model {
     }
 
     /**
-     * Program yang sudah dicentang tetapi belum punya satu pun sumber dana —
+     * Program yang sudah dicentang tetapi belum punya satu pun sumber dana -
      * penentu boleh-tidaknya Kirim.
      *
      * Bedanya dengan gerbang lama tajam: dulu yang ditagih adalah menjawab
@@ -376,7 +376,7 @@ class Rekam_data_model extends CI_Model {
     }
 
     /**
-     * BNBA — satu berkas per laporan (`uq_rd_bnba_laporan`). Unggah ulang
+     * BNBA - satu berkas per laporan (`uq_rd_bnba_laporan`). Unggah ulang
      * MENGGANTI. Berkas lama dikembalikan supaya pemanggil meng-`unlink()`-nya;
      * model tidak menyentuh disk, controller yang punya berkas.
      */
@@ -453,14 +453,14 @@ class Rekam_data_model extends CI_Model {
             /* BNBA WAJIB sejak 5 Agt 2026 (revisi dinas butir C1). Sebelumnya
                langkah ini boleh dilewati.
              *
-             * "Laporan lama tetap sah" — keputusan user — terpenuhi dengan
+             * "Laporan lama tetap sah" - keputusan user - terpenuhi dengan
              * sendirinya dan itu memang alasan gerbangnya ditaruh DI SINI:
              * `kirim()` hanya dilewati saat laporan BERPINDAH ke `terkirim`.
              * Laporan yang sudah terkirim tidak pernah divalidasi ulang, jadi
              * tidak ada satu pun laporan lama yang mendadak jadi tidak sah.
              *
-             * Konsekuensi yang disengaja: laporan `perlu_perbaikan` — yang dulu
-             * dikirim tanpa BNBA lalu dikembalikan — akan diminta melampirkannya
+             * Konsekuensi yang disengaja: laporan `perlu_perbaikan` - yang dulu
+             * dikirim tanpa BNBA lalu dikembalikan - akan diminta melampirkannya
              * saat dikirim ulang. Tidak dikecualikan, karena pengecualian itu
              * justru membuka jalan permanen untuk mengirim tanpa BNBA: kirim,
              * minta dikembalikan, kirim lagi. */
@@ -476,7 +476,7 @@ class Rekam_data_model extends CI_Model {
                     'Jawab dulu apakah ada penanganan kawasan permukiman kumuh.');
             }
             // "Tidak ada penanganan" dan "tidak ada progres" SAH dikirim tanpa
-            // Total Luas — itu salah satu cacat form dinas yang tidak dibawa ke
+            // Total Luas - itu salah satu cacat form dinas yang tidak dibawa ke
             // sini. Yang dijaga cuma satu: mengaku ada progres tapi nol intervensi
             // membuat rekap membaca kekosongan sebagai nol rupiah.
             if ((int) $ringkasan['ada_penanganan'] === 1 && (int) $ringkasan['ada_progres'] === 1
@@ -515,7 +515,7 @@ class Rekam_data_model extends CI_Model {
         } elseif ( ! $ada_progres && $catatan === '') {
             return $this->gagal('catatan_wajib', 'Jelaskan progres kegiatan saat ini.');
         }
-        // Total Luas SENGAJA tidak diwajibkan saat tidak ada progres — itu salah
+        // Total Luas SENGAJA tidak diwajibkan saat tidak ada progres - itu salah
         // satu cacat form dinas yang tidak dibawa ke sini (roadmap §4).
 
         $ok = $this->db->query(
@@ -558,7 +558,7 @@ class Rekam_data_model extends CI_Model {
             return $this->gagal('angka_invalid', 'Volume dan nilai harus angka tidak negatif.');
         }
 
-        /* Butir D2 — nomenklatur dirinci terpisah. Ketiganya OPSIONAL: yang
+        /* Butir D2 - nomenklatur dirinci terpisah. Ketiganya OPSIONAL: yang
            wajib tetap `nama_kegiatan` saja, persis seperti sebelum migrasi 039.
            Mengubah bentuk isian tidak boleh menghentikan laporan yang sedang
            berjalan hari ini. Kosong disimpan NULL, bukan string kosong, supaya
@@ -726,7 +726,7 @@ class Rekam_data_model extends CI_Model {
 
     /**
      * Daftar laporan yang menunggu/pernah ditinjau provinsi, satu domain saja.
-     * Draft tidak pernah muncul di sini — yang belum dikirim bukan urusan
+     * Draft tidak pernah muncul di sini - yang belum dikirim bukan urusan
      * peninjau.
      */
     public function daftar_tinjauan($domain, $tahun, $triwulan = NULL)
@@ -755,7 +755,7 @@ class Rekam_data_model extends CI_Model {
      * Arah JOIN-nya sengaja dari `kabupaten`, bukan dari `rd_laporan`. Semua
      * layar rekam data yang sudah ada bertolak dari baris laporan, jadi
      * satu-satunya hal yang TIDAK BISA mereka tampilkan adalah kabupaten yang
-     * belum melapor sama sekali — dan justru itu pertanyaan yang dibawa dinas
+     * belum melapor sama sekali - dan justru itu pertanyaan yang dibawa dinas
      * ("belum ada rekap/submit"). Kabupaten yang tidak mengirim apa pun tidak
      * punya baris untuk dihitung; ia hanya terlihat kalau daftar 35 kabupaten
      * yang jadi titik berangkat.
@@ -810,7 +810,7 @@ class Rekam_data_model extends CI_Model {
      *
      * Dipindah ke sini dari `Rekam_Tinjauan` (private) saat layar Pantau
      * superadmin lahir dan butuh label yang sama persis. Menyalinnya berarti
-     * dua daftar nama program yang akan menyimpang — dan yang menyimpang di
+     * dua daftar nama program yang akan menyimpang - dan yang menyimpang di
      * sini bukan tampilan, melainkan arti angkanya.
      */
     public function label_domain($domain)
@@ -919,7 +919,7 @@ class Rekam_data_model extends CI_Model {
 
     /**
      * Rekap SATU triwulan. Untuk angka kumulatif s.d. triwulan tertentu, pakai
-     * `kumulatif()` — jangan menjumlahkan hasil metode ini sendiri di pemanggil,
+     * `kumulatif()` - jangan menjumlahkan hasil metode ini sendiri di pemanggil,
      * karena hanya satu tempat yang boleh tahu cara menjumlahkannya.
      *
      * Satu-satunya penjumlahan yang sah di sini adalah antar kabupaten pada
@@ -959,7 +959,7 @@ class Rekam_data_model extends CI_Model {
     }
 
     /**
-     * Angka KUMULATIF perumahan s.d. satu triwulan — dijumlahkan di sini, dan
+     * Angka KUMULATIF perumahan s.d. satu triwulan - dijumlahkan di sini, dan
      * hanya di sini.
      *
      * Sejak W1 penyimpanannya per triwulan, jadi kumulatif adalah nilai
@@ -968,7 +968,7 @@ class Rekam_data_model extends CI_Model {
      * yang terhitung dua kali tetap tampak seperti angka yang wajar. Satu
      * tempat yang tahu cara menjumlahkan berarti satu tempat yang perlu benar.
      *
-     * Hanya laporan `terkirim` yang ikut — draft belum dilaporkan ke provinsi.
+     * Hanya laporan `terkirim` yang ikut - draft belum dilaporkan ke provinsi.
      */
     public function kumulatif($tahun, $triwulan, $kabupaten_id = NULL)
     {
@@ -987,7 +987,7 @@ class Rekam_data_model extends CI_Model {
     }
 
     /**
-     * Daftar periode satu tahun, baca-saja. Bukan rekap angka — hanya jejak
+     * Daftar periode satu tahun, baca-saja. Bukan rekap angka - hanya jejak
      * status supaya petugas tahu triwulan mana yang sudah dikirim dan mana yang
      * dikembalikan untuk diperbaiki.
      */
@@ -1011,7 +1011,7 @@ class Rekam_data_model extends CI_Model {
 
     /**
      * Gerbang tunggal seluruh jalur tulis: wilayah + domain + kunci `terkirim`.
-     * Semua penulis lewat sini, jadi guard-nya satu tempat — bukan diulang di
+     * Semua penulis lewat sini, jadi guard-nya satu tempat - bukan diulang di
      * tiap method dan bukan di controller.
      */
     private function laporan_untuk_tulis($laporan_id, $domain, $scope_kabupaten_id)

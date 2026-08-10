@@ -6,13 +6,13 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *
  * Formulir lama hanya menyimpan instansi asal, no. HP, divisi/tema, periode,
  * dan satu berkas surat pengantar. Mockup pendaftaran meminta NIM, tempat &
- * tanggal lahir, semester, jurusan, serta proposal — enam hal yang tidak punya
+ * tanggal lahir, semester, jurusan, serta proposal - enam hal yang tidak punya
  * tempat sama sekali di tabel ini.
  *
  * SEMUA kolom NULL, dan itu disengaja: tabel ini sudah berisi pendaftaran lama
  * yang tidak pernah ditanyai keenam hal itu. Memaksa NOT NULL berarti mengarang
  * nilai untuk baris yang sudah ada. Kewajiban diisi ditegakkan di validasi
- * formulir untuk pendaftaran BARU, bukan di skema — itu tempat yang benar untuk
+ * formulir untuk pendaftaran BARU, bukan di skema - itu tempat yang benar untuk
  * aturan yang berlaku sejak hari ini, bukan surut ke belakang.
  *
  * `tempat_lahir` dan `tanggal_lahir` sengaja DUA kolom, bukan satu "TTL". Di
@@ -48,7 +48,7 @@ class Migration_Kemitraan_identitas_mahasiswa extends CI_Migration
     public function down()
     {
         // Menurunkan ini MEMBUANG isi keenam kolom. Tidak ditahan seperti
-        // migrasi 024 karena di sini tidak ada bentuk yang berubah — kolom
+        // migrasi 024 karena di sini tidak ada bentuk yang berubah - kolom
         // lama tidak disentuh, jadi turun-naik tidak merusak data yang sudah
         // ada sebelumnya. Yang hilang hanya yang diisi setelah migrasi ini.
         foreach (array_reverse(array_keys($this->kolom)) as $nama) {

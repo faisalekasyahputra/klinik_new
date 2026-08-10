@@ -50,12 +50,12 @@ $safe_url = function ($url) {
         <?php
         // Data pembanding untuk pengambil keputusan. Kolom-kolom ini SUDAH ADA di
         // baris pengajuan tapi tidak pernah dirender, sehingga admin diminta
-        // memutuskan sertifikasi hanya berbekal nama perusahaan dan 14 berkas —
+        // memutuskan sertifikasi hanya berbekal nama perusahaan dan 14 berkas -
         // tanpa satu pun nilai yang bisa dicocokkan dengan isi berkasnya.
         // Roadmap T1b butir 2.
         //
         // Alur pendaftaran saat ini (daftar cepat) memang belum mengisi kolom
-        // identitas; yang kosong ditandai apa adanya, bukan disembunyikan —
+        // identitas; yang kosong ditandai apa adanya, bukan disembunyikan -
         // supaya terlihat bahwa datanya memang belum dikumpulkan.
         $pembanding = [
             'NIK Pemohon'    => $pendaftar->nik_ktp ?? '',
@@ -83,7 +83,7 @@ $safe_url = function ($url) {
             </dl>
             <?php if ($terisi === 0): ?>
             <p class="mt-2 rounded-lg px-2.5 py-2 text-[11px] leading-relaxed text-amber-700 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400">
-                Tidak ada satu pun data identitas terisi — alur pendaftaran cepat belum mengumpulkannya. Verifikasi sepenuhnya bersandar pada isi 14 berkas.
+                Tidak ada satu pun data identitas terisi - alur pendaftaran cepat belum mengumpulkannya. Verifikasi sepenuhnya bersandar pada isi 14 berkas.
             </p>
             <?php endif; ?>
         </div>
@@ -103,7 +103,7 @@ $safe_url = function ($url) {
             <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-brand-muted/70 mb-3">Keputusan</h4>
             <?php // "Minta Perbaikan" (value Draft) membuka kembali pengajuan tanpa
                   // mencap "Ditolak" di riwayat pemohon. Catatan wajib untuk Tolak
-                  // maupun Minta Perbaikan — divalidasi di server. ?>
+                  // maupun Minta Perbaikan - divalidasi di server. ?>
             <?= $this->load->view('admin/components/review_form', [
                 'action_url' => 'Admin_Srp2/proses/' . $pendaftar->id,
                 'buttons' => [

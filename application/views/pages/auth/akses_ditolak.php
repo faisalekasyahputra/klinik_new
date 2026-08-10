@@ -1,14 +1,14 @@
 <?php
 /**
- * Layar "akses ditolak" — modal besar di tengah halaman.
+ * Layar "akses ditolak" - modal besar di tengah halaman.
  *
  * Butir 24 putaran 2. Sampai 10 Agt 2026, orang yang SUDAH login lalu membuka
- * halaman milik peran lain dilempar ke halaman MASUK — padahal sesinya sehat.
+ * halaman milik peran lain dilempar ke halaman MASUK - padahal sesinya sehat.
  * Yang dialami: menekan sesuatu, diminta login lagi tanpa sebab, lalu terlempar
  * entah ke mana. Ini layar yang menggantikannya.
  *
  * DITULIS SEBAGAI HALAMAN, BUKAN <dialog>. Modal yang bisa ditutup akan
- * meninggalkan orang di halaman kosong di belakangnya — tidak ada apa pun untuk
+ * meninggalkan orang di halaman kosong di belakangnya - tidak ada apa pun untuk
  * kembali dilihat, karena aksesnya memang ditolak. Jadi kotaknya dipasang di
  * tengah halaman tanpa tombol tutup, dan SETIAP jalan keluarnya adalah tautan
  * yang benar-benar membawa ke suatu tempat. Tidak ada jalan buntu.
@@ -31,7 +31,7 @@ $peran_saya = $label_peran[$peran] ?? 'Belum ditentukan';
     <h1 class="mt-1 text-xl font-black sm:text-2xl"><?= html_escape($judul) ?></h1>
 
     <p class="mt-3 text-sm leading-relaxed" style="color:var(--portal-text-muted)">
-      <strong>Anda tetap masuk seperti biasa &mdash; tidak perlu login ulang.</strong>
+      <strong>Anda tetap masuk seperti biasa - tidak perlu login ulang.</strong>
       Yang tidak cocok adalah perannya: halaman yang Anda tuju diperuntukkan bagi peran lain.
     </p>
 
@@ -58,7 +58,7 @@ $peran_saya = $label_peran[$peran] ?? 'Belum ditentukan';
 
     <p class="mt-4 text-xs leading-relaxed" style="color:var(--portal-text-muted)">
       Bila Anda merasa seharusnya berhak membuka halaman ini, hubungi superadmin untuk memeriksa
-      peran akun Anda &mdash; bukan dengan membuat akun baru, karena satu orang cukup satu akun.
+      peran akun Anda - bukan dengan membuat akun baru, karena satu orang cukup satu akun.
     </p>
 
     <div class="mt-5 flex flex-wrap gap-2">

@@ -2,12 +2,12 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Meja janji temu konsultasi — sisi petugas dari mekanisme yang selama ini
+ * Meja janji temu konsultasi - sisi petugas dari mekanisme yang selama ini
  * hanya dijanjikan UI (`Umum/forum` berjudul "Konsultasi Terjadwal" dengan tiga
  * kartu alur dan nol mekanisme di belakangnya).
  *
- * SUPERADMIN, bukan admin bidang. Forum tidak punya scope apa pun — tidak ada
- * kolom bidang maupun kabupaten di `forum_diskusi` — jadi tidak ada dasar untuk
+ * SUPERADMIN, bukan admin bidang. Forum tidak punya scope apa pun - tidak ada
+ * kolom bidang maupun kabupaten di `forum_diskusi` - jadi tidak ada dasar untuk
  * membagi mejanya. Memaksakan pembagian berarti mengarang atribut yang tidak
  * ada di datanya.
  *
@@ -16,7 +16,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * peran ('admin', 'staff', 'Petugas Disperakim') yang tidak satu pun terdaftar
  * sebagai peran resmi di `usr_users.role` selain 'admin'.
  *
- * Aturan perpindahan keadaan TIDAK ditulis di sini — dibaca dari
+ * Aturan perpindahan keadaan TIDAK ditulis di sini - dibaca dari
  * `Janji_temu_model::ALUR`, satu tabel yang sama dengan yang dipakai sisi warga.
  */
 class Admin_Konsultasi extends Admin_Controller {
@@ -73,7 +73,7 @@ class Admin_Konsultasi extends Admin_Controller {
      *
      * Jadwalnya wajib DI MASA DEPAN. Bukan kerapian: tawaran bertanggal kemarin
      * akan disetujui warga, lalu muncul di daftar sebagai agenda yang sudah
-     * lewat sebelum disepakati — dan tidak ada satu pun layar yang bisa
+     * lewat sebelum disepakati - dan tidak ada satu pun layar yang bisa
      * membedakannya dari pertemuan yang benar-benar terlewat.
      */
     public function tawarkan($id = NULL)
@@ -91,7 +91,7 @@ class Admin_Konsultasi extends Admin_Controller {
 
         $lokasi = trim((string) $this->input->post('lokasi', TRUE));
         if ($lokasi === '') {
-            $this->session->set_flashdata('error', 'Lokasi wajib diisi — warga perlu tahu harus datang ke mana.');
+            $this->session->set_flashdata('error', 'Lokasi wajib diisi - warga perlu tahu harus datang ke mana.');
             redirect('Admin_Konsultasi');
             return;
         }
@@ -103,7 +103,7 @@ class Admin_Konsultasi extends Admin_Controller {
         ], 'Tawaran jadwal terkirim ke pemohon.');
     }
 
-    /** Tolak. Catatan WAJIB — penolakan tanpa sebab tidak bisa ditindaklanjuti siapa pun. */
+    /** Tolak. Catatan WAJIB - penolakan tanpa sebab tidak bisa ditindaklanjuti siapa pun. */
     public function tolak($id = NULL)
     {
         $row = $this->sasaran($id, 'ditolak');
@@ -155,7 +155,7 @@ class Admin_Konsultasi extends Admin_Controller {
                 'Transisi ' . $row->status . ' -> ' . $ke . ' ditolak untuk janji temu #' . $row->id,
                 'forum_janji_temu', $row->id, ['dari' => $row->status, 'ke' => $ke]);
             $this->session->set_flashdata('error',
-                'Pengajuan ini berstatus "' . $row->status . '" — tindakan itu tidak berlaku.');
+                'Pengajuan ini berstatus "' . $row->status . '" - tindakan itu tidak berlaku.');
             redirect('Admin_Konsultasi');
             return NULL;
         }
@@ -169,7 +169,7 @@ class Admin_Konsultasi extends Admin_Controller {
             $set + ['reviewed_by' => $this->get_user_id()]);
 
         if ( ! $ok) {
-            // Barisnya ada dan transisinya sah saat dibaca — kalau UPDATE tetap
+            // Barisnya ada dan transisinya sah saat dibaca - kalau UPDATE tetap
             // nol baris, keadaannya berubah di antara dua query itu (warga
             // membatalkan lebih dulu). Dilaporkan apa adanya, bukan "berhasil".
             $this->session->set_flashdata('error', 'Keadaan pengajuan berubah barusan. Muat ulang halaman.');

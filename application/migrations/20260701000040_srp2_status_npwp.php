@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * SRP2: status bertingkat, kabupaten, asosiasi, NPWP — butir 7, 8, 12 putaran 2.
+ * SRP2: status bertingkat, kabupaten, asosiasi, NPWP - butir 7, 8, 12 putaran 2.
  *
  * SATU MIGRASI UNTUK TIGA BUTIR, dan itu disengaja: ketiganya menyentuh tabel
  * yang sama. Memisahnya berarti tiga kali ALTER pada tabel yang sama untuk satu
@@ -11,7 +11,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * ── status_sertifikasi ───────────────────────────────────────────────────────
  * Empat tahap sesuai permintaan dinas. DEFAULT `bersertifikat`, dan itu BUKAN
  * tebakan: tabel ini bernama `srp2_certified_developers` dan layarnya berjudul
- * "Direktori Pengembang Bersertifikat" — setiap baris di dalamnya menurut
+ * "Direktori Pengembang Bersertifikat" - setiap baris di dalamnya menurut
  * definisinya memang sudah bersertifikat. Menaruh default lain justru akan
  * berbohong tentang 68 baris yang sudah ada.
  *
@@ -27,21 +27,21 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * diperbarui akan menyatakan "aktif" untuk sertifikat yang kedaluwarsa kemarin,
  * dan tidak ada satu pun galat yang muncul. Diturunkan berarti selalu benar.
  *
- * `status_aktif` yang lama TIDAK diganggu — ia hal berbeda: sakelar manual admin
+ * `status_aktif` yang lama TIDAK diganggu - ia hal berbeda: sakelar manual admin
  * untuk menayangkan/menyembunyikan dari direktori publik.
  *
  * ── NPWP: dienkripsi + sidik pencarian ───────────────────────────────────────
  * Butir 8 menjadikan NPWP kunci identitas pengembang, dan butir 7 meminta hanya
  * admin yang bisa melihatnya. Keduanya mengarah ke perlakuan yang SAMA PERSIS
- * dengan NIK warga di sistem ini — polanya sudah ada, jadi tidak dibuat baru:
+ * dengan NIK warga di sistem ini - polanya sudah ada, jadi tidak dibuat baru:
  *
- *   `npwp_ciphertext`  — nilai aslinya, terenkripsi
- *   `npwp_lookup_hash` — sidik deterministik ber-pepper, UNIQUE
+ *   `npwp_ciphertext`  - nilai aslinya, terenkripsi
+ *   `npwp_lookup_hash` - sidik deterministik ber-pepper, UNIQUE
  *
  * UNIQUE-nya yang menegakkan butir 8: satu NPWP hanya boleh dipakai satu baris,
  * sehingga perusahaan yang sama tidak bisa terdaftar dua kali dengan ejaan nama
- * berbeda. NULL dibiarkan berulang — MySQL memang tidak menganggap dua NULL
- * kembar — dan itu yang membuat 68 baris lama tetap sah selama NPWP-nya belum
+ * berbeda. NULL dibiarkan berulang - MySQL memang tidak menganggap dua NULL
+ * kembar - dan itu yang membuat 68 baris lama tetap sah selama NPWP-nya belum
  * diisi.
  *
  * ADITIF MURNI selain default status. Kode lama tetap jalan sesudahnya.
@@ -87,7 +87,7 @@ class Migration_Srp2_status_npwp extends CI_Migration {
         if ( ! $this->db->field_exists('npwp_lookup_hash', self::TABEL)) {
             $tambah['npwp_lookup_hash'] = [
                 'type' => 'CHAR', 'constraint' => 64, 'null' => TRUE,
-                'comment' => 'Butir 8; sidik deterministik, UNIQUE — satu NPWP satu baris',
+                'comment' => 'Butir 8; sidik deterministik, UNIQUE - satu NPWP satu baris',
             ];
         }
 
@@ -98,7 +98,7 @@ class Migration_Srp2_status_npwp extends CI_Migration {
         /* UNIQUE dipasang terpisah dan kegagalannya DICATAT. `db_debug` mati di
            production: ALTER yang gagal tidak bersuara sementara migrasinya tetap
            tercatat sukses (riwayat 031). Tanpa UNIQUE, butir 8 tidak ditegakkan
-           apa pun — dan itu justru inti permintaannya. Bentuknya diverifikasi
+           apa pun - dan itu justru inti permintaannya. Bentuknya diverifikasi
            `Migrate::status()`, bukan dipercaya dari sini. */
         $sudah = $this->db->query(
             "SELECT COUNT(*) n FROM information_schema.STATISTICS

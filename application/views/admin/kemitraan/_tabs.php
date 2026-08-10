@@ -2,8 +2,8 @@
 /**
  * Kepala halaman KKN/Magang: judul + tab.
  *
- * Sebelumnya domain ini terpecah jadi DUA entri sidebar — "KKN/Magang" dan
- * "Slot Magang" — padahal keduanya satu urusan: yang satu menetapkan tempatnya,
+ * Sebelumnya domain ini terpecah jadi DUA entri sidebar - "KKN/Magang" dan
+ * "Slot Magang" - padahal keduanya satu urusan: yang satu menetapkan tempatnya,
  * yang lain memproses orang yang mengisinya. Sidebar yang tumbuh satu baris
  * setiap kali ada layar baru akan berhenti bisa dibaca, dan admin harus
  * mengingat sendiri bahwa dua entri itu sebenarnya bersaudara.
@@ -22,7 +22,7 @@ $aktif = isset($tab_aktif) ? $tab_aktif : 'pendaftaran';
 <div class="mb-5">
     <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">KKN &amp; Magang</h2>
     <p class="text-sm text-gray-500 dark:text-brand-muted">
-        Tempat yang dibuka, dan orang yang mengisinya — dikelola dari satu halaman.
+        Tempat yang dibuka, dan orang yang mengisinya - dikelola dari satu halaman.
     </p>
 </div>
 

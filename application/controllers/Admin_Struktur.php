@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Struktur & Cakupan — master bidang dan wilayah, plus siapa yang menanganinya.
+ * Struktur & Cakupan - master bidang dan wilayah, plus siapa yang menanganinya.
  *
  * P1 lapisan "master & kendali" superadmin. Menjawab tiga pertanyaan yang hari
  * ini tidak punya satu pun layar: bidang apa saja yang ada, wilayah mana yang
@@ -12,7 +12,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *
  * `bidang.kode` dan `kabupaten.id` TIDAK, dan itu bukan kehati-hatian berlebih.
  * Keduanya dirujuk dari banyak tempat, dan SEBAGIAN BESAR RUJUKAN ITU TIDAK
- * PUNYA FOREIGN KEY — diverifikasi 4 Agt 2026:
+ * PUNYA FOREIGN KEY - diverifikasi 4 Agt 2026:
  *
  *   berFK      : kkn_magang_bidang.bidang_kode, kkn_magang_pendaftaran.bidang_kode,
  *                rd_laporan.kabupaten_id, sf_housing_queue.kabupaten_id,
@@ -22,7 +22,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *
  * Mengubah `kode` lewat formulir berarti: yang berFK ditolak database (berisik,
  * masih bisa ditangani), sementara yang tanpa FK **berubah jadi yatim tanpa satu
- * pun galat** — admin bidang kehilangan mejanya, aduan hilang dari semua
+ * pun galat** - admin bidang kehilangan mejanya, aduan hilang dari semua
  * dashboard, slot magang berhenti terhitung. Semuanya tetap membalas 200.
  * Mengganti kunci adalah migrasi data, bukan isian formulir.
  *
@@ -125,7 +125,7 @@ class Admin_Struktur extends Admin_Controller {
     /**
      * Berapa baris yang menunjuk master yang sudah tidak ada. LEFT JOIN, bukan
      * NOT IN: `NOT IN` dengan subquery yang memuat NULL memulangkan nol baris
-     * untuk keadaan apa pun — hijau palsu yang sangat meyakinkan.
+     * untuk keadaan apa pun - hijau palsu yang sangat meyakinkan.
      */
     private function hitung_yatim($dari, $kolom_anak, $master, $kolom_master)
     {

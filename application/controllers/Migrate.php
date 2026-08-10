@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Runner migrasi skema DB. Hanya bisa diakses dari CLI atau localhost —
+ * Runner migrasi skema DB. Hanya bisa diakses dari CLI atau localhost -
  * dipakai untuk menyamakan skema lokal & staging lewat application/migrations/,
  * menggantikan kebiasaan lama jalankan file .sql di docs/engineering/ manual satu-satu.
  */
@@ -34,25 +34,25 @@ class Migrate extends CI_Controller {
     }
 
     /**
-     * Diagnostik BACA SAJA — jalankan SEBELUM index() di lingkungan mana pun
+     * Diagnostik BACA SAJA - jalankan SEBELUM index() di lingkungan mana pun
      * yang keadaan migrasinya belum pasti (production khususnya). CI
      * migration->version() menandai migrasi sebagai berhasil TANPA memeriksa
      * nilai balik query di dalamnya (lihat system/libraries/Migration.php
      * baris ~302-309), jadi kalau tabel migrations ternyata tidak ada sama
      * sekali, latest() akan mencoba ulang migrasi 1..N dari nol dan bisa
      * menandai sukses walau CREATE TABLE-nya gagal senyap karena db_debug
-     * mati di production. Method ini tidak mengubah apa pun — dipertahankan
+     * mati di production. Method ini tidak mengubah apa pun - dipertahankan
      * sebagai alat baku, bukan sekali pakai, karena T6 dan role berikutnya
      * akan menghadapi masalah yang sama.
      */
     public function status()
     {
         $tables = $this->db->list_tables();
-        // DATABASE MANA yang sedang dibaca — disebut lebih dulu, sebelum angka
+        // DATABASE MANA yang sedang dibaca - disebut lebih dulu, sebelum angka
         // apa pun. Tanpa baris ini keluaran lokal dan production tidak bisa
         // dibedakan sama sekali, dan dua kali sudah keluaran lokal dikira
         // pembacaan server. AGENTS.md §0a bahkan mensyaratkan angka skema hanya
-        // boleh ditulis ulang setelah DIBACA DARI SERVER — syarat yang mustahil
+        // boleh ditulis ulang setelah DIBACA DARI SERVER - syarat yang mustahil
         // dipenuhi kalau keluarannya sendiri tidak menyebut ia dari mana.
         echo 'DB: '.$this->db->hostname.' / '.$this->db->database."\n";
         echo 'Total tabel: '.count($tables)."\n";
@@ -82,7 +82,7 @@ class Migrate extends CI_Controller {
             'kkn_magang_pendaftaran',
             // Migrasi 033.
             'sys_jejak_audit',
-            // Migrasi 036 — kolom etalase. Kolom, bukan tabel: sf_programs sudah
+            // Migrasi 036 - kolom etalase. Kolom, bukan tabel: sf_programs sudah
             // ada sejak awal, jadi keberadaan tabelnya nol bukti.
             // Migrasi 035.
             'forum_janji_temu',
@@ -91,7 +91,7 @@ class Migrate extends CI_Controller {
             echo $t.': '.(in_array($t, $tables) ? 'ADA' : 'TIDAK ADA')."\n";
         }
 
-        // Migrasi 037 — masa berlaku sertifikat SRP2. Kolom, bukan tabel.
+        // Migrasi 037 - masa berlaku sertifikat SRP2. Kolom, bukan tabel.
         if (in_array('srp2_certified_developers', $tables)) {
             foreach (['sertifikat_terbit', 'sertifikat_berakhir'] as $k) {
                 echo 'srp2_certified_developers.'.$k.': '.
@@ -100,7 +100,7 @@ class Migrate extends CI_Controller {
             }
         }
 
-        // Migrasi 036 — kolom etalase program.
+        // Migrasi 036 - kolom etalase program.
         if (in_array('sf_programs', $tables)) {
             foreach (['badge', 'syarat_utama', 'gambar', 'urutan', 'tampil_korsel'] as $k) {
                 echo 'sf_programs.'.$k.': '.
@@ -108,7 +108,7 @@ class Migrate extends CI_Controller {
 ";
             }
             $n = (int) $this->db->where('tampil_korsel', 1)->count_all_results('sf_programs');
-            echo 'program tampil di korsel: '.$n.($n === 0 ? ' — beranda akan kehilangan etalasenya' : '')."
+            echo 'program tampil di korsel: '.$n.($n === 0 ? ' - beranda akan kehilangan etalasenya' : '')."
 ";
         }
 
@@ -130,13 +130,13 @@ class Migrate extends CI_Controller {
             echo 'kkn_magang_slot.bidang_kode: '.
                 ($this->db->field_exists('bidang_kode', 'kkn_magang_slot') ? 'ADA' : 'TIDAK ADA')."\n";
         }
-        // Divisi HARUS sudah lenyap — migrasi 031 membuangnya. Kalau masih ada,
+        // Divisi HARUS sudah lenyap - migrasi 031 membuangnya. Kalau masih ada,
         // migrasi itu tidak benar-benar tuntas meski versinya sudah 031.
         echo 'kkn_magang_divisi (harus TIDAK ADA): '.
-            (in_array('kkn_magang_divisi', $tables) ? 'MASIH ADA — migrasi 031 belum tuntas' : 'sudah lenyap')."\n";
+            (in_array('kkn_magang_divisi', $tables) ? 'MASIH ADA - migrasi 031 belum tuntas' : 'sudah lenyap')."\n";
 
         /**
-         * Migrasi 034 — dan ini jenis pemeriksaan yang BERBEDA dari semua di
+         * Migrasi 034 - dan ini jenis pemeriksaan yang BERBEDA dari semua di
          * atas. `field_exists('bidang', 'aduan')` akan menjawab ADA baik migrasi
          * ini jalan maupun tidak: kolomnya memang sudah ada sejak awal. Yang
          * berubah BENTUKNYA (NOT NULL -> NULL-able), jadi keberadaan tidak
@@ -155,13 +155,13 @@ class Migrate extends CI_Controller {
             $nullable = $k && $k->n === 'YES';
             $sentinel = $k && stripos((string) $k->d, 'umum') !== FALSE;
             echo 'aduan.bidang NULL-able (migrasi 034): '
-                .($nullable ? 'YA' : 'BELUM — kode baru akan gagal menyimpan aduan')."\n";
+                .($nullable ? 'YA' : 'BELUM - kode baru akan gagal menyimpan aduan')."\n";
             echo "aduan.bidang DEFAULT 'umum' dicabut: "
                 .($sentinel ? 'BELUM' : 'YA')."\n";
         }
 
         /* Posisi magang (migrasi 038). Yang diperiksa BUKAN sekadar tabelnya
-           ada — FK-nya juga, karena `create_table` bisa berhasil sementara
+           ada - FK-nya juga, karena `create_table` bisa berhasil sementara
            `ALTER ADD CONSTRAINT` yang menyusul gagal senyap saat db_debug mati
            (riwayat 031). Tanpa FK, posisi bisa menunjuk bidang yang sudah
            dihapus dan papan magang menampilkan lowongan tanpa induk. */
@@ -177,16 +177,16 @@ class Migrate extends CI_Controller {
                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'kkn_magang_posisi'
                   AND REFERENCED_TABLE_NAME = 'bidang'")->row('n');
             echo 'kkn_magang_posisi FK ke bidang: '
-                .((int) $fk > 0 ? 'TERPASANG' : 'TIDAK ADA — posisi bisa yatim')."\n";
+                .((int) $fk > 0 ? 'TERPASANG' : 'TIDAK ADA - posisi bisa yatim')."\n";
             echo 'posisi magang aktif: '
                 .(int) $this->db->where('aktif', 1)->count_all_results('kkn_magang_posisi')."\n";
         } else {
-            echo "kkn_magang_posisi (migrasi 038): BELUM ADA — layar Posisi Magang akan fatal\n";
+            echo "kkn_magang_posisi (migrasi 038): BELUM ADA - layar Posisi Magang akan fatal\n";
         }
 
         /* SRP2 status/NPWP (migrasi 040). UNIQUE-nya yang diperiksa, bukan
            cuma kolomnya: tanpa `uq_srp2_npwp`, butir 8 ("satu NPWP satu
-           pengembang") tidak ditegakkan apa pun — dan itu justru inti
+           pengembang") tidak ditegakkan apa pun - dan itu justru inti
            permintaannya. ALTER terpisah seperti itu gagal senyap saat db_debug
            mati (riwayat 031). */
         if (in_array('srp2_certified_developers', $tables, TRUE)) {
@@ -200,7 +200,7 @@ class Migrate extends CI_Controller {
                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_certified_developers'
                   AND INDEX_NAME = 'uq_srp2_npwp' LIMIT 1")->row();
             echo 'srp2 NPWP UNIQUE (butir 8): '
-                .($uq === NULL ? 'TIDAK ADA — NPWP kembar bisa masuk'
+                .($uq === NULL ? 'TIDAK ADA - NPWP kembar bisa masuk'
                     : ((int) $uq->nu === 0 ? 'TERPASANG' : 'ADA TAPI TIDAK UNIQUE'))."
 ";
             $isi = (int) $this->db->where('npwp_lookup_hash IS NOT NULL', NULL, FALSE)
@@ -211,7 +211,7 @@ class Migrate extends CI_Controller {
 
         /* Nomenklatur kawasan dirinci (migrasi 039). Ketiganya WAJIB NULL-able:
            kalau kelak ada yang menjadikannya NOT NULL, laporan yang hanya
-           mengisi kegiatan langsung ditolak — dan 35 kabupaten/kota berhenti
+           mengisi kegiatan langsung ditolak - dan 35 kabupaten/kota berhenti
            bisa melapor tanpa satu pun galat yang menjelaskan kenapa. */
         if (in_array('rd_kawasan_intervensi', $tables, TRUE)) {
             $kol = $this->db->query("SELECT COLUMN_NAME c, IS_NULLABLE n FROM information_schema.COLUMNS
@@ -222,7 +222,7 @@ class Migrate extends CI_Controller {
             foreach (['nama_program', 'nama_sub_kegiatan', 'nama_pekerjaan'] as $c) {
                 echo "rd_kawasan_intervensi.{$c} (migrasi 039): "
                     .( ! isset($peta[$c]) ? 'HILANG'
-                        : ($peta[$c] === 'YES' ? 'ADA & opsional' : 'ADA TAPI WAJIB — laporan lama akan ditolak'))."\n";
+                        : ($peta[$c] === 'YES' ? 'ADA & opsional' : 'ADA TAPI WAJIB - laporan lama akan ditolak'))."\n";
             }
             $terisi = (int) $this->db->where('nama_program IS NOT NULL', NULL, FALSE)
                 ->count_all_results('rd_kawasan_intervensi');
@@ -253,7 +253,7 @@ class Migrate extends CI_Controller {
         $profile_id = NULL;
         $stamp = time();
 
-        // NIK unik per jalan. Sebelumnya dipatok '0000000000000001' — NIK demo
+        // NIK unik per jalan. Sebelumnya dipatok '0000000000000001' - NIK demo
         // SIMPERUM yang sama dengan yang dipakai layar dan harness lain. Begitu
         // ada satu akun mana pun yang mengikatnya, `save_profile()` di sini
         // membalas `nik_already_bound` dan TUJUH check runtuh berurutan. Itu
@@ -434,7 +434,7 @@ class Migrate extends CI_Controller {
             }
             // Profil tidak dihapus di sini dengan sengaja: FK
             // `fk_sf_citizen_profiles_user` sudah ON DELETE CASCADE, jadi baris
-            // di bawah ini membawanya serta. Diperiksa, bukan diandaikan — lihat
+            // di bawah ini membawanya serta. Diperiksa, bukan diandaikan - lihat
             // check "Ikatan NIK uji dilepas" di bawah.
             if ($user_id) {
                 $this->db->delete('usr_users', ['id' => $user_id]);
@@ -446,12 +446,12 @@ class Migrate extends CI_Controller {
         $check($leftovers === 0, 'Data uji dibersihkan');
         // Menjaga cascade-nya, bukan sekadar merapikan. Kalau FK profil pernah
         // kehilangan ON DELETE CASCADE-nya, ikatan NIK tertinggal dan uji ini
-        // merah SELAMANYA mulai jalan berikutnya — gejala yang jauh lebih mahal
+        // merah SELAMANYA mulai jalan berikutnya - gejala yang jauh lebih mahal
         // dibaca daripada satu check yang gagal di sini.
         $check(
             $this->db->where('nik_lookup_hash', $this->encryption_lib->deterministic_hash($nik))
                 ->count_all_results('sf_profil_warga') === 0,
-            'Ikatan NIK uji dilepas — jalan berikutnya tidak terhalang'
+            'Ikatan NIK uji dilepas - jalan berikutnya tidak terhalang'
         );
 
         echo "RINGKASAN: {$total} pemeriksaan, {$failed} gagal\n";
@@ -557,7 +557,7 @@ class Migrate extends CI_Controller {
     }
 
     /**
-     * Check Rekam Data D1 — model, siklus status, scope wilayah.
+     * Check Rekam Data D1 - model, siklus status, scope wilayah.
      *
      *   php index.php migrate uji_rekam_data_d1
      *
@@ -584,7 +584,7 @@ class Migrate extends CI_Controller {
         };
 
         // Tahun sentinel harus tetap di dalam rentang yang model anggap sah
-        // (2020-2100), jadi 2099 — bukan 2999.
+        // (2020-2100), jadi 2099 - bukan 2999.
         $TAHUN = 2099;
         $kabs = $this->db->select('id')->order_by('id', 'ASC')->limit(2)
             ->get('kabupaten')->result_array();
@@ -616,13 +616,13 @@ class Migrate extends CI_Controller {
             // program, kumulatif dihitung sekali).
             //
             // Memperbaikinya berarti punya dua suite model yang menguji hal yang
-            // sama dengan kata-kata berbeda — dan yang kedua akan tertinggal
+            // sama dengan kata-kata berbeda - dan yang kedua akan tertinggal
             // lagi pada perubahan berikutnya, persis seperti sekarang.
             //
             // Yang TIDAK dibuang: Kawasan. Modul itu tidak ditulis ulang, dan
             // tidak ada suite tingkat-model lain yang menyentuhnya. `uji_wizard_w2`
             // khusus Perumahan; D4 menguji Kawasan lewat HTTP, bukan lewat pintu
-            // tulis model — jadi penolakan seperti "indikator tak dikenal" dan
+            // tulis model - jadi penolakan seperti "indikator tak dikenal" dan
             // "satuan diturunkan, tidak disimpan" hanya dijaga di sini.
             // ================================================================
 
@@ -695,7 +695,7 @@ class Migrate extends CI_Controller {
     }
 
     /**
-     * Check wizard W2 — pintu tulis model bentuk baru.
+     * Check wizard W2 - pintu tulis model bentuk baru.
      *
      *   php index.php migrate uji_wizard_w2
      *
@@ -792,7 +792,7 @@ class Migrate extends CI_Controller {
                 'Nilai terbarui ke 95');
 
             // ----------------------------------------- pewarisan benar-benar nol
-            // Dulu ini memeriksa `$tw1['diwarisi'] === 0` — angka yang dilaporkan
+            // Dulu ini memeriksa `$tw1['diwarisi'] === 0` - angka yang dilaporkan
             // fungsi TENTANG DIRINYA SENDIRI. Pemeriksaan begitu tetap hijau
             // walaupun barisnya benar-benar tersalin, asal penghitungnya lupa
             // dinaikkan. Sekarang TW1 sudah berisi baris dan gerbang program,
@@ -802,9 +802,9 @@ class Migrate extends CI_Controller {
             $ID2 = (int) $tw2['laporan']['id'];
             $check($ID2 !== $ID1, 'TW2 laporan tersendiri');
             $check((int) $this->db->where('laporan_id', $ID2)->count_all_results('rd_perumahan_baris') === 0,
-                'TW2 lahir KOSONG — nol baris angka diwarisi dari TW1');
+                'TW2 lahir KOSONG - nol baris angka diwarisi dari TW1');
             $check((int) $this->db->where('laporan_id', $ID2)->count_all_results('rd_perumahan_program') === 0,
-                'TW2 lahir KOSONG — nol gerbang program diwarisi dari TW1');
+                'TW2 lahir KOSONG - nol gerbang program diwarisi dari TW1');
             $check((int) $this->db->where('laporan_id', $ID1)->count_all_results('rd_perumahan_baris') > 0,
                 'TW1 tetap berisi (pembanding sahih, bukan dua-duanya kebetulan kosong)');
 
@@ -838,7 +838,7 @@ class Migrate extends CI_Controller {
             $check($this->rd->program_tanpa_angka($ID1) === [], 'Nol program kosong tersisa');
 
             /* BNBA WAJIB sejak 5 Agt 2026 (butir C1). Gerbangnya diuji dua arah
-               di sini juga — cek ini yang paling dekat ke modelnya, tanpa HTTP. */
+               di sini juga - cek ini yang paling dekat ke modelnya, tanpa HTTP. */
             $check(empty($this->rd->kirim($ID1, $AKTOR, $KAB)['success']),
                 'Kirim ditolak selama BNBA belum dilampirkan');
             $lampir_bnba = function ($laporan_id) {

@@ -1,4 +1,4 @@
-# PRD — Pendaftaran SRP2 Berbasis Akun Pengembang
+# PRD - Pendaftaran SRP2 Berbasis Akun Pengembang
 
 ## Tujuan
 

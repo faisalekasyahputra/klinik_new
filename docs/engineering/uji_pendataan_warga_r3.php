@@ -14,7 +14,7 @@ function cleanup($db,$ids){foreach($ids as $id){$db->q('DELETE FROM usr_users WH
     if($row)$db->q('INSERT INTO sys_rate_limits (limit_key,window_started_at,failed_attempts) VALUES (?,?,?)',[$row['limit_key'],$row['window_started_at'],$row['failed_attempts']]);}}
 /* `warga_lookup` dibatasi 10 percobaan/60 detik dengan IP sebagai salah satu
    dimensinya, dan semua harness datang dari 127.0.0.1 yang sama. Sendirian uji
-   ini muat; berurutan lewat runner, ember IP-nya jebol dan lookup ditolak —
+   ini muat; berurutan lewat runner, ember IP-nya jebol dan lookup ditolak -
    merahnya muncul di tempat yang tak berhubungan dan terbaca seperti flake
    padahal deterministik. Embernya dipinjam lalu dikembalikan utuh di cleanup,
    bukan dikosongkan: uji tidak boleh diam-diam melonggarkan pembatas laju bagi
@@ -26,7 +26,7 @@ function pinjam_rate($db,$key){if(array_key_exists($key,$GLOBALS['rate_asli']))r
 $pepper=envv()['KPKP_DATA_PEPPER'] ?? '';
 foreach(['warga_lookup','warga_submit','warga_start_revision','admin_queue_decision'] as $policy)
   foreach(['127.0.0.1','::1'] as $ip) pinjam_rate($db,hash('sha256',$policy.':ip:'.$ip));
-/* R3 menyentuh tiga NIK fixture, bukan satu — embernya per-NIK, jadi ketiganya
+/* R3 menyentuh tiga NIK fixture, bukan satu - embernya per-NIK, jadi ketiganya
    harus dipinjam atau tabrakannya cuma berpindah ke fixture berikutnya. */
 foreach(['0000000000000002','0000000000000003','0000000000000005'] as $n)
   pinjam_rate($db,hash('sha256','warga_lookup:nik:'.hash_hmac('sha256',$n,$pepper)));
@@ -35,7 +35,7 @@ try {
   $sa=new HTTP(); check($sa->login("r3_{$stamp}_a@example.test",$pass),'akun SIM-02 login');
   [$s]=$sa->call('warga/pendataan',['step'=>'find_data','nik'=>'0000000000000002','birth_date'=>'1990-12-31']); check(in_array($s,[302,303],true),'lookup SIM-02 memakai PRG');
   $draft=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE user_id=?',[$a]); check($draft && $draft['current_step']==='citizen_data','lookup membuat draft milik warga');
-  /* Butir A6 — kalimat desil, diperiksa DI LANGKAH `citizen_data` karena hanya
+  /* Butir A6 - kalimat desil, diperiksa DI LANGKAH `citizen_data` karena hanya
      di situ paragrafnya dirender.
 
      🔻 VERSI PERTAMA BLOK INI SALAH TEMPAT dan menghasilkan HIJAU HAMPA. Ia
@@ -46,17 +46,17 @@ try {
      ia tidak dirender, seluruh blok ini merah, bukan diam-diam hijau.
 
      Yang dijaga bukan susunan katanya, melainkan bahwa SUMBERNYA disebut jujur
-     mengikuti mode. Dev bermode simulasi — dan per 10 Agt 2026 production pun
+     mengikuti mode. Dev bermode simulasi - dan per 10 Agt 2026 production pun
      begitu (`SIMPERUM_MODE` tidak diset). Desil adalah angka yang dipakai orang
      menilai haknya atas bantuan; menyebutnya "resmi" saat ia berasal dari
      fixture adalah kekeliruan termahal di halaman ini. */
   [, $bodyDesil]=$sa->call('warga/pendataan');
   /* Modal pemberitahuan SIMPERUM belum aktif. Muncul SETIAP halaman dibuka
-     (keputusan user 10 Agt 2026) — jadi tidak boleh ada penyimpanan "sudah
+     (keputusan user 10 Agt 2026) - jadi tidak boleh ada penyimpanan "sudah
      pernah dilihat" yang membuatnya diam di layar berikutnya. */
   check(strpos($bodyDesil,'id="modal-simperum"')!==false,'Modal SIMPERUM belum aktif dirender saat mode simulasi');
   check(strpos($bodyDesil,'SIMPERUM belum diaktifkan')!==false,'Modal menyebut sebabnya: belum disetujui, bukan rusak');
-  /* Modal WAJIB hilang sendiri begitu SIMPERUM aktif — kalau tidak, kelak ia
+  /* Modal WAJIB hilang sendiri begitu SIMPERUM aktif - kalau tidak, kelak ia
      berbohong ke arah sebaliknya dan memberitahu penguji bahwa data sungguhan
      itu contoh. Diperiksa STRUKTURAL, dan itu disebut apa adanya: jalur `api`
      tidak bisa dijalankan dari sini tanpa mengubah `.env` situs yang sedang
@@ -66,11 +66,11 @@ try {
   check(preg_match("/simperum_mode[^\\n]*!==\\s*'simulation'\\s*\\)\\s*\\{\\s*return;/",$komponen)===1,
         'Modal berhenti merender saat mode BUKAN simulasi (struktural)');
   /* Dipersempit ke blok modalnya saja. Versi pertama memindai SELURUH halaman
-     dan merah karena skrip lain (tema, layout) memang memakai sessionStorage —
+     dan merah karena skrip lain (tema, layout) memang memakai sessionStorage -
      merah palsu yang menuduh kode yang tidak bersalah. */
   $blokModal = preg_match('#id="modal-simperum".*?</script>#s',$bodyDesil,$mm) ? $mm[0] : '';
   check($blokModal!=='','PRASYARAT: blok modal ditemukan utuh untuk diperiksa');
-  check($blokModal!=='' && strpos($blokModal,'Storage')===false && strpos($blokModal,'document.cookie')===false,'Modal tidak diingat — muncul tiap halaman dibuka');
+  check($blokModal!=='' && strpos($blokModal,'Storage')===false && strpos($blokModal,'document.cookie')===false,'Modal tidak diingat - muncul tiap halaman dibuka');
   $adaParagraf=strpos($bodyDesil,'Kelompok kesejahteraan (desil)')!==false;
   check($adaParagraf,'A6: paragraf desil dirender di langkah data warga (PRASYARAT)');
   if ($adaParagraf) {

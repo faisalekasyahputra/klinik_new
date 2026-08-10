@@ -3,15 +3,15 @@ $carousel_context = $carousel_context ?? 'home';
 
 /**
  * Isi slide datang dari `sf_programs` (migrasi 036), bukan lagi hardcode di JS
- * bawah. Komponen mengambil datanya sendiri supaya ketiga pemanggilnya —
- * beranda, diagnosa, pendataan warga — tidak perlu tahu apa-apa soal ini.
+ * bawah. Komponen mengambil datanya sendiri supaya ketiga pemanggilnya -
+ * beranda, diagnosa, pendataan warga - tidak perlu tahu apa-apa soal ini.
  * Memuat model di view memang bukan pola paling murni, tapi sudah dipakai di
  * `layouts/main.php` dan `forum_detail.php`, dan alternatifnya menyalin
  * pengambilan data ke tiga tempat.
  *
  * `get_instance()` EKSPLISIT, bukan `$this->load->model()`. Di dalam view CI3
  * `$this` adalah `CI_Loader`, dan mengambil model lewat proksinya gagal dengan
- * "Undefined property: CI_Loader::$Program_model" — terjadi persis begitu saat
+ * "Undefined property: CI_Loader::$Program_model" - terjadi persis begitu saat
  * komponen ini pertama dipindah ke DB. Pola yang dipakai `layouts/main.php`
  * ini yang benar.
  *
@@ -62,7 +62,7 @@ if ( ! $slides_data) { return; }
        diam-diam dari slide klon ke slide pertama. */
     .program-slide-track.is-still { transition: none; }
     /* Slide berjajar rapat: garis tepi 1px milik .aurora-surface akan terlihat
-       sebagai jahitan antar slide, jadi dimatikan — bibir cahayanya sudah
+       sebagai jahitan antar slide, jadi dimatikan - bibir cahayanya sudah
        datang dari box-shadow inset, dan bingkai luar punya bordernya sendiri. */
     .program-slide { border: 0; border-radius: 0; }
 
@@ -75,7 +75,7 @@ if ( ! $slides_data) { return; }
     .program-slide-desc  { opacity: .82; }
     .program-slide-terms { opacity: .82; border-color: rgba(22, 50, 58, .16); }
     .program-slide-terms > span:first-child { opacity: 1; }
-    /* Tombol dibalik: dulu putih dengan teks sewarna slide — di atas pastel
+    /* Tombol dibalik: dulu putih dengan teks sewarna slide - di atas pastel
        muda itu putih-di-atas-putih. Sekarang tinta pekat, teks putih. */
     .program-showcase-action { background: #16323a; color: #fff; }
     /* Gambar memudar ke bawah saat satu kolom, ke kanan saat sudah dua kolom */
@@ -110,7 +110,7 @@ if ( ! $slides_data) { return; }
         <template x-for="(slide, index) in reel" :key="slide.id">
             <!-- Latar slide memakai .aurora-surface yang sama dengan kartu menu
                  beranda; slide cuma menyetor tiga warnanya sendiri. Varian aurora
-                 dihitung dari index yang sudah dimodulo panjang daftar — slide klon
+                 dihitung dari index yang sudah dimodulo panjang daftar - slide klon
                  di ujung harus persis sama dengan slide pertama, kalau tidak
                  pemulangan rel jadi kelihatan. -->
             <article class="program-slide aurora-surface relative grid w-full shrink-0 grid-cols-1 min-h-[300px] md:grid-cols-5"
@@ -153,7 +153,7 @@ if ( ! $slides_data) { return; }
             // Dulu bernama cool/color/warm saat palet masih gelap; nama itu jadi
             // menyesatkan begitu urutannya terang→pekat, bukan dingin→hangat.
             //
-            // DIRENDER DARI PHP sejak 5 Agt 2026 — isinya dari `sf_programs`
+            // DIRENDER DARI PHP sejak 5 Agt 2026 - isinya dari `sf_programs`
             // (migrasi 036), bukan lagi ditulis tangan di sini. `json_encode`
             // dengan HEX_* supaya kutip, `<`, dan `&` di teks yang diketik admin
             // tidak bisa keluar dari konteks skrip ini.
@@ -167,7 +167,7 @@ if ( ! $slides_data) { return; }
 
             // Rel berisi semua slide PLUS salinan slide pertama di ujung. Jalan
             // maju terus sampai salinan itu, lalu rel dipulangkan ke slide
-            // pertama tanpa transisi — karena gambarnya identik, perpindahan itu
+            // pertama tanpa transisi - karena gambarnya identik, perpindahan itu
             // tidak terlihat. Hasilnya maju terus satu arah, tanpa mundur balik.
             init() {
                 this.reel = [...this.slides, { ...this.slides[0], id: this.slides[0].id + '-klon' }];
@@ -176,14 +176,14 @@ if ( ! $slides_data) { return; }
             start() { this.stop(); this.timer = setInterval(() => this.next(), 6500); },
             stop() { clearInterval(this.timer); },
 
-            // Setiap perpindahan me-restart hitungan otomatis — kalau tidak,
+            // Setiap perpindahan me-restart hitungan otomatis - kalau tidak,
             // slide bisa loncat sendiri sepersekian detik setelah user menekan panah.
             go(i) { this.active = i; this.start(); },
             next() {
                 if (this.active >= this.slides.length) { this.diam(0, () => this.go(1)); return; }
                 this.go(this.active + 1);
                 // Baru masuk ke slide klon: jadwalkan pemulangannya begitu
-                // geseran selesai. Pakai timer, bukan transitionend — di tab
+                // geseran selesai. Pakai timer, bukan transitionend - di tab
                 // latar transitionend bisa tidak pernah datang dan rel akan
                 // tersangkut di klon selamanya.
                 if (this.active === this.slides.length) { setTimeout(() => this.settle(), this.durasi()); }
@@ -194,7 +194,7 @@ if ( ! $slides_data) { return; }
             },
             previous() {
                 // Dari slide pertama: pindah diam-diam ke salinan di ujung dulu,
-                // baru mundur satu langkah — jadi mundurnya juga tetap mulus.
+                // baru mundur satu langkah - jadi mundurnya juga tetap mulus.
                 if (this.active === 0) { this.diam(this.slides.length, () => this.go(this.slides.length - 1)); }
                 else { this.go(this.active - 1); }
             },

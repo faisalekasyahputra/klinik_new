@@ -1,8 +1,8 @@
 <?php
 /**
- * Rekam Data — Riwayat Pelaporan (D5). Dipakai kedua domain.
+ * Rekam Data - Riwayat Pelaporan (D5). Dipakai kedua domain.
  *
- * Baca-saja: daftar periode + statusnya. Bukan rekap angka — gunanya supaya
+ * Baca-saja: daftar periode + statusnya. Bukan rekap angka - gunanya supaya
  * petugas tahu triwulan mana yang sudah dikirim, mana yang dikembalikan untuk
  * diperbaiki, dan apa catatan peninjaunya.
  */
@@ -78,9 +78,9 @@ $warna = [
                     <?= $e($label_status) ?>
                   </span>
                 </td>
-                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e($row['submitted_at'] ?: '—') ?></td>
-                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e($row['reviewed_at'] ?: '—') ?></td>
-                <td class="py-2 pr-3 text-gray-600 dark:text-brand-muted"><?= $e($row['catatan_admin'] ?: '—') ?></td>
+                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e($row['submitted_at'] ?: '-') ?></td>
+                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e($row['reviewed_at'] ?: '-') ?></td>
+                <td class="py-2 pr-3 text-gray-600 dark:text-brand-muted"><?= $e($row['catatan_admin'] ?: '-') ?></td>
                 <td class="py-2 text-right whitespace-nowrap">
                   <a href="<?= $url_detail ?>"
                      class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold dark:border-white/10">
@@ -96,12 +96,12 @@ $warna = [
       <p class="mt-4 text-xs text-gray-500 dark:text-brand-muted">
         <?php /* "berikut kumulatifnya" sengaja hanya untuk perumahan. View ini
                  dipakai KEDUA domain, tapi Rekam_Kawasan::rekap() mengambil satu
-                 triwulan lalu membaca intervensi dari satu laporan_id — tidak ada
+                 triwulan lalu membaca intervensi dari satu laporan_id - tidak ada
                  kumulatif di sana. Menjanjikannya di layar Kawasan sama saja
                  dengan klaim "kumulatif" yang baru dicabut dari kawasan_rekap. */ ?>
         Daftar ini menampilkan status, bukan angka. <b>Lihat capaian</b> membuka angka
         triwulan itu apa adanya, termasuk yang masih draft. Untuk angka yang sudah
-        resmi — hanya laporan terkirim<?= $domain === 'perumahan' ? ', berikut kumulatifnya' : '' ?> — buka
+        resmi - hanya laporan terkirim<?= $domain === 'perumahan' ? ', berikut kumulatifnya' : '' ?> - buka
         <a class="text-blue-600 hover:underline dark:text-blue-400" href="<?= base_url($base_url . '/rekap') ?>">Rekap Pelaporan</a>.
       </p>
     </section>

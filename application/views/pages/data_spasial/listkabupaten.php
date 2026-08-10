@@ -27,15 +27,15 @@
 
 <?php
 /*
- * A3 — blok "Daftar Intervensi" DICABUT 29 Jul 2026. Tidak butuh keputusan
+ * A3 - blok "Daftar Intervensi" DICABUT 29 Jul 2026. Tidak butuh keputusan
  * produk: angka anggarannya literal di view tanpa satu pun query, dan tombol
- * tambah/ubah/hapusnya nol handler — UI yang berjanji bisa mengubah data
+ * tambah/ubah/hapusnya nol handler - UI yang berjanji bisa mengubah data
  * padahal tidak bisa (§19 langkah 3). Halaman ini publik anonim, jadi
  * angkanya bisa dikutip siapa saja.
  *
  * Catatan ditulis sebagai komentar PHP, BUKAN komentar HTML: komentar HTML
  * ikut terkirim ke pengunjung, sehingga menyebut angka aslinya di situ akan
- * membuat literal yang baru dicabut muncul lagi di respons — dan uji
+ * membuat literal yang baru dicabut muncul lagi di respons - dan uji
  * "grep respons anonim → nol hasil" gagal karena penjelasannya sendiri.
  */
 ?>

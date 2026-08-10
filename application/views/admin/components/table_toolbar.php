@@ -4,7 +4,7 @@ $this->load->helper('admin_table');
 /**
  * Toolbar tabel admin: kotak cari (server-side, GET) + slot filter opsional.
  *
- * Pencarian sengaja server-side — sepasang dengan paginasi server-side. Pola
+ * Pencarian sengaja server-side - sepasang dengan paginasi server-side. Pola
  * lama (kirim semua baris ke browser lalu filter di klien) memang terasa
  * instan tapi tidak bisa dipakai begitu data banyak; itu yang dibereskan B8.
  *
@@ -21,7 +21,7 @@ $this->load->helper('admin_table');
     <form method="get" action="<?= base_url($base_url) ?>" class="flex items-center gap-2 w-full lg:w-auto">
         <?php
         // Parameter lain (filter, urutan) dibawa sebagai hidden supaya tidak
-        // hilang saat mencari. 'page' sengaja TIDAK dibawa — hasil pencarian
+        // hilang saat mencari. 'page' sengaja TIDAK dibawa - hasil pencarian
         // baru selalu mulai dari halaman 1.
         foreach ($_GET as $k => $v) {
             if (in_array($k, ['q', 'page'], TRUE) || is_array($v)) { continue; }

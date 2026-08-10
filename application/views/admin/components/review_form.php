@@ -3,11 +3,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * Form update status generik: satu <form>, satu textarea catatan opsional,
  * beberapa tombol submit dengan value 'status' berbeda ke SATU endpoint.
- * Pola ini sudah dipakai Admin_Kemitraan::proses() sebelum komponen ini ada —
+ * Pola ini sudah dipakai Admin_Kemitraan::proses() sebelum komponen ini ada -
  * sekarang dijadikan komponen bersama, lahir bareng Admin_Srp2::proses().
  *
  * Validasi wajib/tidaknya catatan (mis. wajib saat menolak) SELALU di
- * server pada controller tujuan — form ini murni markup, jangan andalkan
+ * server pada controller tujuan - form ini murni markup, jangan andalkan
  * `required` HTML sebagai satu-satunya penjagaan.
  *
  * Variabel:

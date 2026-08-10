@@ -1,17 +1,17 @@
 <?php
 /**
- * Uji TRIASE ADUAN — aduan lahir tanpa bidang, superadmin yang merutekan.
+ * Uji TRIASE ADUAN - aduan lahir tanpa bidang, superadmin yang merutekan.
  *
  *   php docs/engineering/uji_aduan_triase.php
  *
  * Revisi dinas 3 Agt 2026 mencabut dropdown "Bidang Tujuan" dari formulir aduan.
- * Yang dijaga di sini bukan "dropdownnya sudah hilang" — itu terlihat mata dan
+ * Yang dijaga di sini bukan "dropdownnya sudah hilang" - itu terlihat mata dan
  * tidak perlu harness. Yang dijaga adalah enam janji yang rusaknya SENYAP:
  *
  *   1. GERBANGNYA DI SERVER, BUKAN DI FORMULIR. Menghapus <select> hanya
  *      menghapus cara SOPAN mengirim bidang. Kalau `simpan_aduan()` masih
  *      membaca POST['bidang'], siapa pun bisa merutekan aduannya sendiri ke
- *      bidang mana pun lewat satu field tersembunyi — melewati triase lewat
+ *      bidang mana pun lewat satu field tersembunyi - melewati triase lewat
  *      pintu belakang, dan tidak ada satu pun layar yang akan terlihat aneh.
  *      Karena itu di sini formulirnya dikirim BESERTA `bidang` yang sah.
  *   2. NULL BENAR-BENAR MENYEMBUNYIKAN. Klaim "NULL tidak cocok dengan WHERE
@@ -25,7 +25,7 @@
  *      menerima 200 dari halaman lain. Uji yang berhenti di "kodenya bukan 200"
  *      akan hijau untuk endpoint yang terbuka lebar.
  *   5. PAPAN ADUAN TIDAK MEMBOCORKAN ISI. Diperiksa dengan menanam penanda unik
- *      di `pesan` dan `email` lalu menyapu SELURUH sumber halaman — bukan dengan
+ *      di `pesan` dan `email` lalu menyapu SELURUH sumber halaman - bukan dengan
  *      memeriksa kolom yang kebetulan diingat.
  *   6. JEJAKNYA DUA ARAH: yang berhasil DAN yang ditolak.
  *
@@ -95,7 +95,7 @@ function tulis($sql, $params = []) { return (int) (q($sql, $params)['__id'] ?? 0
 function nilai($sql, $params = []) { $r = q($sql, $params); return $r && ! isset($r['__id']) ? reset($r) : NULL; }
 
 /**
- * Bidang satu aduan APA ADANYA — NULL tetap NULL, bukan '' .
+ * Bidang satu aduan APA ADANYA - NULL tetap NULL, bukan '' .
  * nilai() mengembalikan NULL juga untuk baris yang tidak ada, jadi keberadaan
  * barisnya dipastikan lewat pemanggilnya (id-nya baru saja dibuat).
  */
@@ -130,7 +130,7 @@ function http($nama, $path, ?array $post = NULL, $ajax = FALSE) {
 /**
  * Token CSRF dari DUA bentuk yang beredar di repo ini, dan BERHENTI FATAL kalau
  * tidak ketemu. Shell admin hanya memasang <input>; shell portal memasang meta.
- * POST tanpa token ditolak SEBELUM controller mana pun berjalan — dan penolakan
+ * POST tanpa token ditolak SEBELUM controller mana pun berjalan - dan penolakan
  * itu tidak mengubah apa-apa, jadi uji tulis yang kehilangan tokennya jadi hijau
  * hampa: ia mengira sudah membuktikan gerbangnya menahan, padahal yang ditahan
  * cuma tokennya sendiri.
@@ -225,7 +225,7 @@ $kolom = q("SELECT IS_NULLABLE n, COLUMN_DEFAULT d FROM information_schema.COLUM
     WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aduan' AND COLUMN_NAME='bidang'");
 wajib(($kolom['n'] ?? '') === 'YES', 'Kolom aduan.bidang sudah NULL-able');
 // MariaDB 10.2+ mengembalikan STRING 'NULL' untuk DEFAULT NULL, bukan SQL NULL.
-// Membandingkan ke NULL akan merah untuk skema yang benar — yang diperiksa di
+// Membandingkan ke NULL akan merah untuk skema yang benar - yang diperiksa di
 // sini adalah absennya sentinel 'umum', bukan bentuk balasan information_schema.
 cek(stripos((string) $kolom['d'], 'umum') === FALSE, "DEFAULT 'umum' yang basi sudah dicabut");
 wajib((int) nilai("SELECT COUNT(*) c FROM information_schema.TABLES
@@ -254,7 +254,7 @@ cek($form['code'] === 200, 'Halaman aduan terbuka untuk tamu (pengaduan tetap te
  *
  * Versi pertama pemeriksaan ini memakai `stripos($body, 'Bidang Tujuan')` dan
  * langsung merah untuk halaman yang sebenarnya sudah benar: frasa itu juga ada
- * di FAQ footer portal — yang justru baru ditulis ulang pada revisi yang sama
+ * di FAQ footer portal - yang justru baru ditulis ulang pada revisi yang sama
  * ("Anda tidak perlu memilih bidang tujuan"). Persis jebakan yang sudah
  * terdokumentasi di uji_regresi_tampilan.php, dan tetap saja terinjak.
  */
@@ -270,7 +270,7 @@ cek( ! preg_match('/<(input|select)[^>]*name="bidang"/i', $form['body']),
 echo "\n== 2. Aduan lahir tanpa bidang ==\n";
 [$id1, $r1] = kirim_aduan('tamu', 'Uji triase A ' . CAP);
 wajib($id1 > 0, 'Aduan terkirim lewat formulir sungguhan (id ' . $id1 . ')');
-cek(bidang_aduan($id1) === NULL, 'Bidangnya NULL — masuk antrean triase');
+cek(bidang_aduan($id1) === NULL, 'Bidangnya NULL - masuk antrean triase');
 cek(status_aduan($id1) === 'Baru', 'Statusnya Baru');
 cek(stripos($r1['body'], 'diarahkan ke') === FALSE,
     'Pesan sukses tidak lagi menjanjikan bidang tujuan');
@@ -287,7 +287,7 @@ echo "\n== 3. `bidang` dari POST DIABAIKAN, bukan cuma dihapus dari formulir ==\
 [$id2, ] = kirim_aduan('tamu', 'Uji triase selundupan ' . CAP, ['bidang' => $bidang_b]);
 wajib($id2 > 0, 'Aduan dengan field bidang selundupan terkirim (id ' . $id2 . ')');
 cek(bidang_aduan($id2) === NULL,
-    "POST bidang={$bidang_b} DIABAIKAN — pelapor tidak bisa merutekan aduannya sendiri");
+    "POST bidang={$bidang_b} DIABAIKAN - pelapor tidak bisa merutekan aduannya sendiri");
 
 // ------------------------------------------------ 4. NULL = TAK TERLIHAT
 echo "\n== 4. Belum ditriase = tidak muncul di meja bidang mana pun ==\n";
@@ -311,19 +311,19 @@ echo "\n== 5. Yang harus ditolak (dibuktikan lewat DB, bukan kode HTTP) ==\n";
 $t_super = csrf('super', 'Admin_Aduan');
 
 http('super', 'Admin_Aduan/triase/' . $id1, ['csrf_kpkp_token' => $t_super, 'bidang' => 'bidang_ngawur_xyz']);
-cek(bidang_aduan($id1) === NULL, 'Kode bidang ngawur ditolak — bidang tetap NULL');
+cek(bidang_aduan($id1) === NULL, 'Kode bidang ngawur ditolak - bidang tetap NULL');
 
 http('super', 'Admin_Aduan/triase/' . $id1, ['csrf_kpkp_token' => $t_super, 'bidang' => '']);
 cek(bidang_aduan($id1) === NULL, 'Bidang kosong ditolak');
 
 cek(http('super', 'Admin_Aduan/triase/' . $id1 . '?bidang=' . $bidang_a)['code'] === 404,
-    'GET ke endpoint triase dibalas 404 — hanya POST yang boleh menulis');
+    'GET ke endpoint triase dibalas 404 - hanya POST yang boleh menulis');
 cek(bidang_aduan($id1) === NULL, 'GET tadi tidak mengubah apa pun');
 
 http('super', 'Admin_Aduan/triase/' . $id1, ['bidang' => $bidang_a]);   // tanpa token
 cek(bidang_aduan($id1) === NULL, 'POST tanpa token CSRF tidak mengubah apa pun');
 
-// Peran lain: dialihkan, jadi kode HTTP-nya 200 dari halaman lain — yang
+// Peran lain: dialihkan, jadi kode HTTP-nya 200 dari halaman lain - yang
 // membuktikan penolakan adalah keadaan DB.
 http('warga', 'Admin_Aduan/triase/' . $id1, [
     'csrf_kpkp_token' => csrf('warga', 'umum/aduan'), 'bidang' => $bidang_a]);
@@ -332,7 +332,7 @@ cek(bidang_aduan($id1) === NULL, 'Warga TIDAK bisa mentriase (dicek dari DB, buk
 http('bidA', 'Admin_Bidang');   // pastikan sesinya hidup
 http('bidA', 'Admin_Aduan/triase/' . $id1, [
     'csrf_kpkp_token' => csrf('bidA', 'umum/aduan'), 'bidang' => $bidang_a]);
-cek(bidang_aduan($id1) === NULL, 'Admin bidang TIDAK bisa mentriase — itu kewenangan superadmin');
+cek(bidang_aduan($id1) === NULL, 'Admin bidang TIDAK bisa mentriase - itu kewenangan superadmin');
 
 // ------------------------------------------------ 6. TRIASE BERHASIL
 echo "\n== 6. Triase oleh superadmin ==\n";
@@ -340,7 +340,7 @@ $r = http('super', 'Admin_Aduan/triase/' . $id1, [
     'csrf_kpkp_token' => csrf('super', 'Admin_Aduan'), 'bidang' => $bidang_a]);
 cek($r['code'] === 200, 'Permintaan triase diterima server');
 cek(bidang_aduan($id1) === $bidang_a, "Bidang menjadi {$bidang_a}");
-cek(status_aduan($id1) === 'Baru', 'Status TIDAK ikut berubah — triase merutekan, bukan memutuskan');
+cek(status_aduan($id1) === 'Baru', 'Status TIDAK ikut berubah - triase merutekan, bukan memutuskan');
 cek(jejak('aduan_ditriase', $id1) === 1, 'Satu baris jejak audit aduan_ditriase tercatat');
 
 $meja2 = http('bidA', 'Admin_Bidang');
@@ -371,7 +371,7 @@ wajib(status_aduan($id1) === 'Diproses', 'Admin bidang mengubah status jadi Dipr
 http('super', 'Admin_Aduan/triase/' . $id1, [
     'csrf_kpkp_token' => csrf('super', 'Admin_Aduan'), 'bidang' => $bidang_b]);
 cek(bidang_aduan($id1) === $bidang_a,
-    'Rute TIDAK berubah — aduan yang sedang dikerjakan tidak ditarik dari tangan penanganya');
+    'Rute TIDAK berubah - aduan yang sedang dikerjakan tidak ditarik dari tangan penanganya');
 cek(jejak('aduan_triase_ditolak', $id1) === 1,
     'Penolakannya ikut tercatat di jejak audit (jejak dua arah)');
 
@@ -390,8 +390,8 @@ cek(strpos($papan['body'], $JAWABAN) !== FALSE, 'Jawaban dinas (catatan_admin) t
 /**
  * Kebocoran diperiksa dengan MENYAPU SELURUH sumber halaman, bukan dengan
  * memeriksa kolom yang kebetulan diingat. Penandanya ditanam saat aduan dibuat,
- * jadi kalau `pesan`/`email` bocor lewat jalur mana pun — atribut data-, komentar
- * HTML, blok x-data — penandanya ikut terbawa.
+ * jadi kalau `pesan`/`email` bocor lewat jalur mana pun - atribut data-, komentar
+ * HTML, blok x-data - penandanya ikut terbawa.
  */
 cek(strpos($papan['body'], RAHASIA_PESAN) === FALSE, 'Isi aduan (`pesan`) TIDAK ada di sumber halaman');
 
@@ -399,13 +399,13 @@ cek(strpos($papan['body'], RAHASIA_PESAN) === FALSE, 'Isi aduan (`pesan`) TIDAK 
  * Dan satu pemeriksaan STATIS, karena janjinya lebih keras dari yang bisa
  * dibuktikan lewat HTML: `pesan`/`email`/`lampiran` tidak pernah DI-SELECT,
  * bukan sekadar tidak dirender. Menambahkannya ke SELECT tidak akan mengubah
- * satu byte pun di halaman hari ini — sapuan penanda di atas tetap hijau — dan
+ * satu byte pun di halaman hari ini - sapuan penanda di atas tetap hijau - dan
  * baru berbuah setahun lagi ketika seseorang menambahkan satu baris tampilan.
  * Yang tidak diambil tidak bisa bocor karena kelalaian.
  */
 // Batas method dicari lewat 'function' BERIKUTNYA, bukan lewat kurung tutup
 // ber-indentasi tetap: Umum.php ber-indentasi TAB, dan versi pertama penjaga ini
-// mematok empat spasi sehingga tidak pernah cocok — `wajib` di bawahnya merah
+// mematok empat spasi sehingga tidak pernah cocok - `wajib` di bawahnya merah
 // untuk kode yang benar, dan seluruh sisa bagian ini tak pernah dijalankan.
 preg_match('/function papan_aduan\(\).*?(?=\n\s*(?:\/\*|private|public|protected)\s)/s',
     file_get_contents(APP_ROOT . '/application/controllers/Umum.php'), $pm);
@@ -420,7 +420,7 @@ cek(strpos($papan['body'], NAMA_PELAPOR) === FALSE, 'Nama lengkap pelapor TIDAK 
 cek(strpos($papan['body'], 'Z. B. W.') !== FALSE, 'Yang tampil hanya inisialnya');
 cek(strpos($papan['body'], 'Admin_Aduan/lihat_lampiran') === FALSE, 'Tidak ada tautan lampiran');
 cek( ! preg_match('/<input[^>]+name="q"/i', $papan['body']),
-    'Tidak ada kotak cari — pencarian bebas adalah alat pembuka samaran');
+    'Tidak ada kotak cari - pencarian bebas adalah alat pembuka samaran');
 
 // Aduan yang belum ditriase tampil sebagai "sedang ditinjau", bukan nama bidang karangan.
 cek(strpos($papan['body'], 'Uji triase selundupan ' . CAP) !== FALSE,

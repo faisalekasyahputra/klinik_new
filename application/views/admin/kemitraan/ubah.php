@@ -3,7 +3,7 @@
  * Sunting satu pendaftaran KKN/Magang oleh superadmin.
  *
  * Yang TIDAK bisa diubah di sini: pemilik akun (`user_id`), jenis, berkas, dan
- * status. Tiga yang pertama bukan koreksi data melainkan pemindahan identitas —
+ * status. Tiga yang pertama bukan koreksi data melainkan pemindahan identitas -
  * kalau salah orang yang mendaftar, yang benar adalah menolak lalu mendaftar
  * ulang. Status punya jalurnya sendiri di `proses()`, lengkap dengan catatan
  * peninjau dan jejak siapa-kapan.
@@ -91,7 +91,7 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
 
     <?php if ($row->jenis === 'magang'): ?>
         <p class="text-xs text-gray-500 dark:text-brand-muted">
-            Kuota TIDAK ditegakkan di layar ini — Anda boleh menempatkan mahasiswa pada bulan yang
+            Kuota TIDAK ditegakkan di layar ini - Anda boleh menempatkan mahasiswa pada bulan yang
             sudah penuh, dan papan slot akan menampilkan kelebihannya apa adanya.
         </p>
     <?php endif; ?>
@@ -112,8 +112,8 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
 
 <?php if ($row->status === 'Diterima'): ?>
     <!-- Surat balasan: DIUNGGAH, bukan dibuat sistem. Dokumen resmi yang dikarang
-         perangkat lunak — lengkap dengan kop dan tanda tangan yang tidak pernah
-         dibubuhkan siapa pun — adalah dokumen palsu, apa pun niatnya. -->
+         perangkat lunak - lengkap dengan kop dan tanda tangan yang tidak pernah
+         dibubuhkan siapa pun - adalah dokumen palsu, apa pun niatnya. -->
     <form method="POST" action="<?= base_url('Admin_Kemitraan/unggah_balasan/' . (int) $row->id) ?>"
           enctype="multipart/form-data"
           class="mt-6 rounded-3xl border border-gray-200 dark:border-white/5 bg-white dark:bg-brand-card p-6">
@@ -127,7 +127,7 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
         <?php if ( ! empty($row->file_surat_balasan)): ?>
             <p class="mb-3 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                 <i class="ph ph-check-circle"></i>
-                Sudah ada —
+                Sudah ada -
                 <a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . (int) $row->id . '/balasan') ?>" target="_blank" rel="noopener" class="underline">lihat berkasnya</a>.
                 Mengunggah lagi akan menggantikannya.
             </p>

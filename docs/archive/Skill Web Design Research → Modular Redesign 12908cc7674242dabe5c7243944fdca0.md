@@ -11,7 +11,7 @@ This document is both **human-readable** (the sections below) and **machine-read
 
 - **Where it lives:** `skills/web-design-research/SKILL.md` in the Superpowers plugin repo
 - **When it runs:** during the **brainstorm / research** phase of the Superpowers path, *before* planning a redesign
-- **Why it exists:** so anyone editing the codebase with AI produces the *same* tokens and the *same* modular structure — no ad-hoc styling
+- **Why it exists:** so anyone editing the codebase with AI produces the *same* tokens and the *same* modular structure - no ad-hoc styling
 
 ---
 
@@ -30,7 +30,7 @@ version: 1.0.0
 
 ---
 
-## Phase 1 — Design Audit & Capture
+## Phase 1 - Design Audit & Capture
 
 Systematically inventory the existing site **before touching code**.
 
@@ -50,13 +50,13 @@ Systematically inventory the existing site **before touching code**.
 <aside>
 📸
 
-Capture **raw observed values first** — normalization happens in Phase 2. Do not invent values that don't exist on the site.
+Capture **raw observed values first** - normalization happens in Phase 2. Do not invent values that don't exist on the site.
 
 </aside>
 
 ---
 
-## Phase 2 — Normalize into Design Tokens
+## Phase 2 - Normalize into Design Tokens
 
 Deduplicate and structure the raw values into a canonical token set.
 
@@ -82,7 +82,7 @@ Tokens are the single source of truth. Everything downstream (CSS variables, Tai
 
 ---
 
-## Phase 3 — Emit CSS Variables & Tailwind Config
+## Phase 3 - Emit CSS Variables & Tailwind Config
 
 Generate both consumable artifacts from the token set.
 
@@ -113,21 +113,21 @@ module.exports = {
 
 ---
 
-## Phase 4 — Component Inventory
+## Phase 4 - Component Inventory
 
 Catalog every reusable UI piece and bind it to tokens, enabling modular rebuilds.
 
 | Component | Variants | Tokens used | States |
 | --- | --- | --- | --- |
 | Button | primary, secondary, ghost | brand, radius-md, space-2/3 | hover, focus, disabled |
-| Card | default, elevated | bg-subtle, radius-md, shadow-sm | — |
+| Card | default, elevated | bg-subtle, radius-md, shadow-sm | - |
 | Input | text, error | border, radius, space | focus, error |
 - For each component, note **structure, props / variants, and accessibility** considerations
 - Flag duplicated or inconsistent components to **consolidate** during redesign
 
 ---
 
-## Phase 5 — Handoff & Consistency Rules
+## Phase 5 - Handoff & Consistency Rules
 
 This skill outputs the artifact set; the next phase consumes it.
 
@@ -137,7 +137,7 @@ This skill outputs the artifact set; the next phase consumes it.
 
 **Consistency rules (the contract every AI must follow):**
 
-- [ ]  Never hardcode a style value — always reference a token
+- [ ]  Never hardcode a style value - always reference a token
 - [ ]  New values must be added to tokens *first*, then propagated to CSS vars + Tailwind
 - [ ]  Keep the primitive → semantic → component token tiers intact
 - [ ]  Re-run the audit when new pages or components appear
@@ -145,7 +145,7 @@ This skill outputs the artifact set; the next phase consumes it.
 <aside>
 🔁
 
-Any agent editing this codebase reads this skill, reuses the token set, and follows the same path — guaranteeing a modular, consistent redesign.
+Any agent editing this codebase reads this skill, reuses the token set, and follows the same path - guaranteeing a modular, consistent redesign.
 
 </aside>
 
@@ -171,12 +171,12 @@ consistently and modularly. Run this during the brainstorm/research phase,
 before write-plan.
 
 ## Outputs (produce all of these)
-1. `design-tokens.json` — canonical, platform-neutral tokens
-2. `tokens.css` — CSS custom properties generated from the tokens
-3. `tailwind.config.js` — theme.extend referencing the CSS variables
-4. `component-inventory.md` — every reusable component mapped to tokens
+1. `design-tokens.json` - canonical, platform-neutral tokens
+2. `tokens.css` - CSS custom properties generated from the tokens
+3. `tailwind.config.js` - theme.extend referencing the CSS variables
+4. `component-inventory.md` - every reusable component mapped to tokens
 
-## Phase 1 — Design Audit & Capture
+## Phase 1 - Design Audit & Capture
 Before touching code, inventory the existing site:
 - Locate all stylesheets, theme files, CSS-in-JS, and inline styles.
 - Capture RENDERED (computed) values, not just source values.
@@ -189,7 +189,7 @@ Before touching code, inventory the existing site:
   - Assets: icons, logos, image treatments
 Rule: capture raw observed values first. Do NOT invent values not on the site.
 
-## Phase 2 — Normalize into Design Tokens
+## Phase 2 - Normalize into Design Tokens
 - Collapse near-duplicate values into a single token
   (e.g. #fafafa / #f9f9f9 -> --color-bg-subtle).
 - Use a tiered naming scheme: primitive -> semantic -> component tokens.
@@ -203,7 +203,7 @@ Rule: capture raw observed values first. Do NOT invent values not on the site.
   "radius": { "md": "8px" }
 }
 
-## Phase 3 — Emit CSS Variables & Tailwind Config
+## Phase 3 - Emit CSS Variables & Tailwind Config
 Generate both artifacts FROM the tokens.
 
 tokens.css:
@@ -224,7 +224,7 @@ module.exports = {
 
 Verify every token maps to BOTH outputs.
 
-## Phase 4 — Component Inventory
+## Phase 4 - Component Inventory
 Catalog every reusable UI piece in component-inventory.md and bind it to tokens:
 | Component | Variants                  | Tokens used                 | States              |
 |-----------|---------------------------|-----------------------------|---------------------|
@@ -234,13 +234,13 @@ Catalog every reusable UI piece in component-inventory.md and bind it to tokens:
 For each: note structure, props/variants, and accessibility considerations.
 Flag duplicated/inconsistent components to consolidate during redesign.
 
-## Phase 5 — Handoff & Consistency Rules
+## Phase 5 - Handoff & Consistency Rules
 Handoff path:
   brainstorm -> [THIS SKILL: research + tokens] -> write-plan -> execute-plan
 This skill outputs the artifact set; write-plan consumes it to scope the redesign.
 
 Consistency rules (the contract every AI must follow):
-- Never hardcode a style value — always reference a token.
+- Never hardcode a style value - always reference a token.
 - New values must be added to tokens FIRST, then propagated to CSS vars + Tailwind.
 - Keep the primitive -> semantic -> component token tiers intact.
 - Re-run the audit when new pages or components appear.

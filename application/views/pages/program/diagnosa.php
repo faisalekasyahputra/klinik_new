@@ -91,14 +91,14 @@
 
                         <div>
                             <div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5">
-                                <p class="text-[11px] text-amber-300 mb-1"><i class="fa-solid fa-flask"></i> <strong>Mode Simulasi — API SIMPERUM belum terhubung</strong></p>
+                                <p class="text-[11px] text-amber-300 mb-1"><i class="fa-solid fa-flask"></i> <strong>Mode Simulasi - API SIMPERUM belum terhubung</strong></p>
                                 <p class="text-[11px] text-blue-400 mb-1">Skenario pengujian (klik untuk salin):</p>
                                 <ul class="text-xs text-blue-300 space-y-2 ml-4 list-disc">
                                     <li>
-                                        <button type="button" @click="nik = '0000000000000001'; tgl_lahir = '1980-01-01'; simperumData = null; errorMsg = '';" class="hover:text-white underline decoration-blue-500/50 text-left">SIM-01 — RTLH lengkap</button>
+                                        <button type="button" @click="nik = '0000000000000001'; tgl_lahir = '1980-01-01'; simperumData = null; errorMsg = '';" class="hover:text-white underline decoration-blue-500/50 text-left">SIM-01 - RTLH lengkap</button>
                                     </li>
                                     <li>
-                                        <button type="button" @click="nik = '0000000000000002'; tgl_lahir = '1990-12-31'; simperumData = null; errorMsg = '';" class="hover:text-white underline decoration-blue-500/50 text-left">SIM-02 — data parsial</button>
+                                        <button type="button" @click="nik = '0000000000000002'; tgl_lahir = '1990-12-31'; simperumData = null; errorMsg = '';" class="hover:text-white underline decoration-blue-500/50 text-left">SIM-02 - data parsial</button>
                                     </li>
                                 </ul>
                             </div>

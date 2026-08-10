@@ -63,12 +63,12 @@
         <?php $this->load->view('admin/layouts/topbar'); ?>
         
         <!-- Main Content Area -->
-        <?php /* `relative` TANPA `z-10` — dan hilangnya satu kelas itu yang membuat
+        <?php /* `relative` TANPA `z-10` - dan hilangnya satu kelas itu yang membuat
                  modal admin bisa tampil sama sekali.
 
                  `position:relative` + `z-index` bernilai = STACKING CONTEXT. Selama
                  `#main-content` ber-`z-10`, setiap `z-50` di DALAMNYA cuma berlaku
-                 relatif terhadap sesamanya di konteks itu — jadi modal `z-50`
+                 relatif terhadap sesamanya di konteks itu - jadi modal `z-50`
                  tetap dicat DI BAWAH topbar (`z-40`) dan sidebar (`z-20`), yang
                  saudara-saudaranya di luar. Dilaporkan user 4 Agt 2026 sebagai
                  "modalnya tidak muncul karena tertumpuk".

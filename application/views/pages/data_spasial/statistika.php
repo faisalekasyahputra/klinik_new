@@ -19,10 +19,10 @@
 
 <?php
 /*
- * A2 — halaman DIPERTAHANKAN atas keputusan user, tetapi arah klaimnya
+ * A2 - halaman DIPERTAHANKAN atas keputusan user, tetapi arah klaimnya
  * dibalik. Seluruh angka di bawah masih SIMULASI: nilainya konstanta dikali
  * `crc32($kabupaten)` di Statistika.php, bukan hasil query ke sistem mana pun.
- * Label lamanya karena itu keliru dua kali — menyatakan provenance yang tidak
+ * Label lamanya karena itu keliru dua kali - menyatakan provenance yang tidak
  * ada, DAN meminjam kredibilitas sistem dinas yang sungguh-sungguh ada.
  * Sekarang tiap kartu menyebut sistem yang DIRENCANAKAN menjadi sumbernya,
  * bukan mengklaim sudah berasal dari sana.
@@ -37,7 +37,7 @@
                style="border-color: var(--portal-border); background-color: var(--portal-bg-card); color: var(--portal-text-muted);">
                 <b style="color: var(--portal-text);">Seluruh angka di halaman ini masih simulasi.</b>
                 Belum ada satu pun yang ditarik dari sistem sumbernya. Tiap kartu mencantumkan
-                sistem yang <b>direncanakan</b> menjadi sumbernya bila integrasinya sudah aktif —
+                sistem yang <b>direncanakan</b> menjadi sumbernya bila integrasinya sudah aktif -
                 bukan tempat angka itu berasal sekarang. Jangan dikutip sebagai data resmi.
             </p>
         </div>

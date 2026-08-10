@@ -1,23 +1,23 @@
 <?php
 /**
- * Pemberitahuan SIMPERUM belum aktif — muncul untuk penguji setiap halaman
+ * Pemberitahuan SIMPERUM belum aktif - muncul untuk penguji setiap halaman
  * yang bergantung pada SIMPERUM dibuka.
  *
  * KENAPA MODAL, BUKAN SPANDUK SAJA. Spanduk `is_simulation` sudah ada di
  * halaman pendataan sejak lama, dan penguji tetap melaporkan hasil simulasi
- * sebagai kalau itu data sungguhan — spanduk terbaca sebagai hiasan. Yang
+ * sebagai kalau itu data sungguhan - spanduk terbaca sebagai hiasan. Yang
  * dipertaruhkan bukan kenyamanan: NIK warga sungguhan selalu dijawab "tidak
  * terdaftar" oleh fixture, dan penguji yang tidak tahu itu akan melaporkannya
  * sebagai kerusakan pencarian. Modal menghentikan langkah sebentar; itu memang
  * maksudnya.
  *
- * MUNCUL SEKALI TIAP HALAMAN DIBUKA — keputusan user 10 Agt 2026. Sengaja
+ * MUNCUL SEKALI TIAP HALAMAN DIBUKA - keputusan user 10 Agt 2026. Sengaja
  * TIDAK diingat di sessionStorage: penguji berpindah antar layar dan tiap layar
  * punya ketergantungan SIMPERUM sendiri, jadi "sudah pernah lihat" bukan alasan
  * untuk diam di layar berikutnya.
  *
  * Dipasang HANYA saat mode simulasi. Begitu `SIMPERUM_MODE=api` dan kuncinya
- * terisi, berkas ini tidak merender apa pun — tanpa perlu dicabut dari view.
+ * terisi, berkas ini tidak merender apa pun - tanpa perlu dicabut dari view.
  *
  * Memakai <dialog> bawaan HTML: backdrop, tombol ESC, dan jebakan fokus sudah
  * ditangani peramban. Tidak ada pustaka modal yang perlu dimuat.
@@ -48,12 +48,12 @@ if ($CI->config->item('simperum_mode', 'simperum') !== 'simulation') { return; }
                 /* Kata "desil" dan "penghasilan" SENGAJA TIDAK dipakai di sini.
                    Modal ini juga dipasang di layar Cek Data Rumah, yang sengaja
                    hanya menjawab "terdaftar / tidak terdaftar" dan tidak pernah
-                   menyinggung kesejahteraan — `uji_cek_rtlh.php` menjaga itu dan
+                   menyinggung kesejahteraan - `uji_cek_rtlh.php` menjaga itu dan
                    langsung merah waktu kalimat ini menyebutnya. Penjaganya benar:
                    menaruh istilah kesejahteraan di layar itu menembus batas yang
                    dibangun dengan sengaja, meski cuma sebagai keterangan. */
                 ?>
-                <li>Seluruh data dan rekomendasi yang muncul adalah <strong>contoh</strong> — bukan data warga yang bersangkutan.</li>
+                <li>Seluruh data dan rekomendasi yang muncul adalah <strong>contoh</strong> - bukan data warga yang bersangkutan.</li>
                 <li>Hasil di alur ini <strong>bukan keputusan bantuan</strong> dan tidak boleh dipakai sebagai dasar apa pun.</li>
             </ul>
         </div>
@@ -78,7 +78,7 @@ if ($CI->config->item('simperum_mode', 'simperum') !== 'simulation') { return; }
     /* `showModal` baru ada sejak <dialog> didukung penuh. Kalau peramban terlalu
        tua, JANGAN memaksa: dialog tanpa showModal() tampil sebagai blok biasa
        di tengah halaman dan justru merusak tata letak. Lebih baik tidak muncul
-       daripada muncul rusak — spanduk simulasi di halaman tetap menjadi
+       daripada muncul rusak - spanduk simulasi di halaman tetap menjadi
        jaring pengamannya. */
     if (typeof d.showModal !== 'function') { return; }
 

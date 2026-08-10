@@ -1,6 +1,6 @@
 <?php
 /**
- * Uji D4 — Rekam Data: Kawasan lengkap.
+ * Uji D4 - Rekam Data: Kawasan lengkap.
  *
  * Yang dibuktikan di sini adalah hal-hal yang justru HILANG dari form dinas:
  * tanpa batas 20 intervensi, "tidak ada progres" bisa dikirim tanpa dipaksa
@@ -23,7 +23,7 @@ define('TAHUN', 2099);
 $GLOBALS['uji_total'] = 0;
 $GLOBALS['uji_gagal'] = 0;
 
-/** Penanda waktu mulai — dipakai menyapu draft yang lahir selama run ini. */
+/** Penanda waktu mulai - dipakai menyapu draft yang lahir selama run ini. */
 $mulai = date('Y-m-d H:i:s', time() - 1);
 
 function cek($condition, $label) {
@@ -158,7 +158,7 @@ function bersihkan() {
     $db->query('DELETE FROM rd_laporan WHERE tahun = ' . (int) TAHUN);
     // `pulang()` mengarahkan kembali ke layar index setelah tulisan ditolak,
     // dan index SENGAJA membuat draft periode berjalan. Untuk admin wilayah
-    // lain periodenya jatuh ke tahun berjalan, di luar tahun sentinel — jadi
+    // lain periodenya jatuh ke tahun berjalan, di luar tahun sentinel - jadi
     // draft itu harus disapu terpisah, dibatasi kabupatennya dan waktu run ini.
     if ($kab_lain) {
         $db->query(sprintf("DELETE FROM rd_laporan WHERE kabupaten_id = %d AND created_at >= '%s'",
@@ -172,7 +172,7 @@ function bersihkan() {
 
 // ---------------------------------------------------------------- prasyarat
 
-echo "Uji D4 — Kawasan lengkap\n";
+echo "Uji D4 - Kawasan lengkap\n";
 
 $admin = q('SELECT id, kabupaten_id FROM usr_users WHERE email = ? AND role = ?',
     [ADMIN_EMAIL, 'admin_kabkota']);
@@ -202,9 +202,9 @@ try {
 
     // ---------------------------------------------- bentuk skema
     cek(skalar("SHOW COLUMNS FROM rd_kawasan_intervensi LIKE 'satuan'") === NULL,
-        'Kolom `satuan` tidak ada — diturunkan dari indikator, tidak disimpan');
+        'Kolom `satuan` tidak ada - diturunkan dari indikator, tidak disimpan');
     cek(skalar("SHOW COLUMNS FROM rd_kawasan_ringkasan LIKE 'total_anggaran'") === NULL,
-        'Kolom `total_anggaran` tidak ada — dihitung, tidak disimpan');
+        'Kolom `total_anggaran` tidak ada - dihitung, tidak disimpan');
 
     // ---------------------------------------------------- periode TW II
     $url = 'Rekam_Kawasan?tahun=' . TAHUN . '&triwulan=2';
@@ -255,7 +255,7 @@ try {
         $tambah('Kegiatan ke-' . $i);
     }
     cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP]) === 25,
-        'Dua puluh lima intervensi tersimpan — batas 20 form dinas tidak dibawa ke sini');
+        'Dua puluh lima intervensi tersimpan - batas 20 form dinas tidak dibawa ke sini');
     $urutan = kolom_int('SELECT urutan FROM rd_kawasan_intervensi WHERE laporan_id = ? ORDER BY urutan', [$LAP]);
     cek($urutan === range(1, 25), 'Urutan 1..25 tanpa bolong');
 
@@ -301,7 +301,7 @@ try {
     cek(strpos($layar, 'Rp ' . number_format((int) $harusnya['p'], 0, ',', '.')) !== FALSE,
         'Total padat karya di layar sama dengan SUM intervensi');
     cek(strpos($layar, 'name="total_anggaran"') === FALSE,
-        'Nol input total anggaran — tidak bisa diketik petugas');
+        'Nol input total anggaran - tidak bisa diketik petugas');
 
     // --------------------------------------------- hapus merapatkan urutan
     $tengah = (int) skalar('SELECT id FROM rd_kawasan_intervensi WHERE laporan_id = ? AND urutan = 13', [$LAP]);
@@ -331,7 +331,7 @@ try {
     /* Dulu satu isian untuk empat hal, sehingga rekap tidak bisa
        mengelompokkan apa pun. Yang dijaga di sini: ketiganya BENAR-BENAR
        tersimpan terpisah, KOSONG jadi NULL (bukan string kosong), dan
-       ketiganya TETAP OPSIONAL — laporan yang hanya mengisi kegiatan harus
+       ketiganya TETAP OPSIONAL - laporan yang hanya mengisi kegiatan harus
        tetap bisa disimpan, kalau tidak perubahan bentuk isian ini
        menghentikan pekerjaan 35 kabupaten/kota. */
     $t = csrf('kab', $url);
@@ -363,9 +363,9 @@ try {
                    FROM rd_kawasan_intervensi WHERE id = ?', [$pertama]);
     cek($kosong['nama_program'] === NULL && $kosong['nama_sub_kegiatan'] === NULL
         && $kosong['nama_pekerjaan'] === NULL,
-        'D2: dikosongkan jadi NULL, bukan string kosong — "tidak diisi" beda dari "diisi kosong"');
+        'D2: dikosongkan jadi NULL, bukan string kosong - "tidak diisi" beda dari "diisi kosong"');
     cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP]) === 24,
-        'D2: menyimpan tanpa ketiga isian baru TETAP BERHASIL — tidak menolak laporan berjalan');
+        'D2: menyimpan tanpa ketiga isian baru TETAP BERHASIL - tidak menolak laporan berjalan');
 
     // ------------------------------------------------------- scope
     $t = csrf('lain', 'Rekam_Kawasan?tahun=' . TAHUN . '&triwulan=2');
@@ -384,7 +384,7 @@ try {
 
     // Hitung ulang di sini, JANGAN mengunci 24 untuk uji-uji sesudahnya. Kalau
     // guard scope dilepas untuk uji balik, penghapusan lintas wilayah berhasil
-    // dan jumlahnya bergeser — tanpa pembacaan ulang ini, satu mutasi
+    // dan jumlahnya bergeser - tanpa pembacaan ulang ini, satu mutasi
     // memerahkan empat uji sekaligus dan titik sebenarnya jadi kabur
     // (pelajaran D2, AGENTS.md §0e).
     $sisa = (int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP]);
@@ -411,7 +411,7 @@ try {
     // selama angka Kawasan kumulatif per bulan. Sejak W1 seluruh modul Rekam
     // Data per triwulan (keputusan user K7, ditegaskan 30 Jul 2026), dan
     // mewarisi TW II ke TW III lalu menambahinya membuat capaian TW II
-    // terhitung dua kali — dengan hasil yang tetap terlihat wajar.
+    // terhitung dua kali - dengan hasil yang tetap terlihat wajar.
     //
     // Jadi uji ini tidak dihapus, ia DIBALIK. Yang dulu dianggap benar sekarang
     // justru yang harus dicegah, dan penjagaannya tetap dibutuhkan: pewarisan
@@ -422,10 +422,10 @@ try {
     cek($LAP7 > 0, 'Periode berikutnya dibuat');
     cek($LAP7 !== $LAP, 'TW III laporan tersendiri, bukan TW II yang dipakai ulang');
     cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP7]) === 0,
-        'TW III lahir KOSONG — nol intervensi terbawa dari TW II');
+        'TW III lahir KOSONG - nol intervensi terbawa dari TW II');
     $luas7 = skalar('SELECT total_luas_ha FROM rd_kawasan_ringkasan WHERE laporan_id = ?', [$LAP7]);
     cek($luas7 === NULL || (float) $luas7 === 0.0,
-        'Ringkasan TIDAK terbawa — kosong atau 0, bukan 12.75 milik TW II');
+        'Ringkasan TIDAK terbawa - kosong atau 0, bukan 12.75 milik TW II');
     // Pembanding: tanpa baris ini, "TW III kosong" tetap hijau kalau TW II juga
     // ternyata kosong karena sebab lain, dan ujinya jadi tidak membuktikan apa pun.
     cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP]) === $sisa,

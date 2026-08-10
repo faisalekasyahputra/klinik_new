@@ -1,8 +1,8 @@
-# Roadmap Implementasi Form Warga — Simulasi SIMPERUM
+# Roadmap Implementasi Form Warga - Simulasi SIMPERUM
 
 **Versi:** 1.0  
 **Tanggal:** 27 Juli 2026  
-**Status:** Aktif — jalur simulation-first disetujui  
+**Status:** Aktif - jalur simulation-first disetujui  
 **PRD:** [`PRD_FORM_WARGA_SIMPERUM.md`](./PRD_FORM_WARGA_SIMPERUM.md)  
 **Skema:** [`SKEMA_DATA_FORM_WARGA_SIMPERUM.md`](../architecture/SKEMA_DATA_FORM_WARGA_SIMPERUM.md)
 
@@ -37,7 +37,7 @@ langsung dari fixture, atau menampilkan klaim “terhubung ke SIMPERUM”.
 | Form saat ini | Wizard komprehensif sampai submit, revisi, dan keputusan admin |
 | Antrean/admin | Alur assessment baru R6 hijau 58/58; alur lama tetap 19/19 |
 | PRD dan kamus | Selesai; 5 gambar utama + 45 detail dianalisis |
-| Implementasi roadmap ini | R0–R7 selesai lokal; R8 menunggu izin rilis |
+| Implementasi roadmap ini | R0-R7 selesai lokal; R8 menunggu izin rilis |
 
 Jangan push branch tanpa perintah eksplisit user. Jangan menjalankan migrasi
 production. Mulai dari `git status` dan pertahankan seluruh perubahan lokal
@@ -57,8 +57,8 @@ Hanya satu fase boleh berstatus **IN PROGRESS**.
 | R5 | Ruleset simulasi dan rekomendasi beralasan | **COMPLETED** | Check HTTP/DB 59/59 |
 | R6 | Submit, antrean, admin, minta perbaikan | **COMPLETED** | Check HTTP/DB 58/58 + browser warga/admin |
 | R7 | E2E, browser, keamanan, paket presentasi | **COMPLETED** | DB fresh 224/224 + browser desktop/mobile |
-| R8 | Rilis production | BLOCKED — izin user | — |
-| R9 | Driver API SIMPERUM nyata | **IN PROGRESS** — adapter offline selesai, aktivasi diblokir | Contract 27/27 + fresh 224/224 |
+| R8 | Rilis production | BLOCKED - izin user | - |
+| R9 | Driver API SIMPERUM nyata | **IN PROGRESS** - adapter offline selesai, aktivasi diblokir | Contract 27/27 + fresh 224/224 |
 
 ## 3. Kontrak Mode
 
@@ -139,11 +139,11 @@ Versi awal: `SIM-2026-01`. Ini hanya untuk membuktikan mekanisme.
 
 | Program | Aturan demo minimum | Reason code contoh |
 |---|---|---|
-| RTLH | Desil 1–3; ada rumah tidak layak; minimal satu komponen rusak sedang/berat atau sanitasi kritis | `SIM_RTLH_DAMAGE`, `SIM_RTLH_SANITATION` |
-| PB | Desil 1–4; belum punya rumah layak dan calon lahan/legalitas memenuhi data minimum | `SIM_PB_LAND_READY` |
+| RTLH | Desil 1-3; ada rumah tidak layak; minimal satu komponen rusak sedang/berat atau sanitasi kritis | `SIM_RTLH_DAMAGE`, `SIM_RTLH_SANITATION` |
+| PB | Desil 1-4; belum punya rumah layak dan calon lahan/legalitas memenuhi data minimum | `SIM_PB_LAND_READY` |
 | Omah Sekeng | Desil = 4; mampu swadaya; kebutuhan rumah/perbaikan terkonfirmasi | `SIM_OMAH_DESIL4_SELF_HELP` |
-| FLPP | Desil 5–8; belum punya rumah layak; band penghasilan dan data pembiayaan memenuhi | `SIM_FLPP_INCOME` |
-| Oemah Lestari | Desil 5–8 jalur subsidi atau 9–10 jalur non-subsidi; band penghasilan sesuai | `SIM_OEMAH_INCOME` |
+| FLPP | Desil 5-8; belum punya rumah layak; band penghasilan dan data pembiayaan memenuhi | `SIM_FLPP_INCOME` |
+| Oemah Lestari | Desil 5-8 jalur subsidi atau 9-10 jalur non-subsidi; band penghasilan sesuai | `SIM_OEMAH_INCOME` |
 | Rumah Apung | Lintas desil berdasarkan kawasan pesisir/rob; tetap `needs_data` sampai definisi resmi ada | `needs_data` |
 
 Jika input penentu kosong, hasilnya `needs_data`; jangan mengasumsikan nilai.
@@ -159,7 +159,7 @@ Halaman rekomendasi memuat banner bahwa hasil memakai ruleset simulasi.
 
 `Berkas Verval` diunggah admin dan tidak menghalangi submit warga pada mode demo.
 
-## 7. R1 — Skema DB dan Model Assessment
+## 7. R1 - Skema DB dan Model Assessment
 
 **Tujuan:** persistence yang benar sebelum UI.
 
@@ -194,7 +194,7 @@ Halaman rekomendasi memuat banner bahwa hasil memakai ruleset simulasi.
 DB fresh hijau, migrasi rollback policy tertulis, dan tidak ada controller/UI
 baru yang menulis langsung ke tabel domain.
 
-## 8. R2 — Gateway Simulasi dan Cache Local-First
+## 8. R2 - Gateway Simulasi dan Cache Local-First
 
 **Tujuan:** semua data dummy berperilaku seperti sumber eksternal.
 
@@ -226,7 +226,7 @@ Buat `docs/engineering/uji_simperum_gateway.php`:
 Mengganti isi fixture mengubah prefill tanpa menyentuh controller/form, dan
 semua lookup berikutnya berasal dari cache sampai kebijakan refresh mengizinkan.
 
-## 9. R3 — Wizard Dasar dan Save/Resume
+## 9. R3 - Wizard Dasar dan Save/Resume
 
 **Tujuan:** mempertahankan hanya input NIK + tanggal lahir dari diagnosa lama,
 lalu mengganti seluruh langkah sesudahnya dengan wizard baru.
@@ -265,12 +265,12 @@ lalu mengganti seluruh langkah sesudahnya dengan wizard baru.
 
 ### Selesai jika
 
-Skenario R3 dapat menempuh langkah 0–2, pulih setelah login ulang, dan masuk ke
+Skenario R3 dapat menempuh langkah 0-2, pulih setelah login ulang, dan masuk ke
 modul cabang yang benar tanpa kehilangan data. Mencapai halaman review baru
 menjadi acceptance lintas-fase setelah field cabang R4 tersedia; menjadikannya
 syarat R3 akan membuat R3 bergantung pada fase berikutnya.
 
-## 10. R4 — Struktur, Sanitasi, Lokasi, Evidence
+## 10. R4 - Struktur, Sanitasi, Lokasi, Evidence
 
 **Tujuan:** seluruh field dari 50 gambar hidup sesuai cabang.
 
@@ -294,7 +294,7 @@ syarat R3 akan membuat R3 bergantung pada fase berikutnya.
 - Pemilik dapat melihat file sendiri; warga lain/admin wilayah lain tidak.
 - Ganti file menghapus file lama setelah file baru tersimpan.
 
-## 11. R5 — Ruleset dan Rekomendasi Simulasi
+## 11. R5 - Ruleset dan Rekomendasi Simulasi
 
 **Tujuan:** rekomendasi lengkap dan dapat dijelaskan.
 
@@ -326,7 +326,7 @@ syarat R3 akan membuat R3 bergantung pada fase berikutnya.
   yang diprediksi, lalu hijau setelah dikembalikan.
 - POST `program_id` manipulatif ditolak.
 
-## 12. R6 — Submit, Antrean, Admin, Perbaikan
+## 12. R6 - Submit, Antrean, Admin, Perbaikan
 
 **Tujuan:** perjalanan warga sampai keputusan admin lengkap.
 
@@ -352,7 +352,7 @@ syarat R3 akan membuat R3 bergantung pada fase berikutnya.
 - Update bersamaan memakai status asal; hanya satu keputusan berhasil.
 - Nilai raw snapshot tetap sama setelah revisi.
 
-## 13. R7 — Pembuktian dan Paket Presentasi
+## 13. R7 - Pembuktian dan Paket Presentasi
 
 **Tujuan:** bukan sekadar demo yang terlihat bagus; alur terbukti.
 
@@ -381,7 +381,7 @@ syarat R3 akan membuat R3 bergantung pada fase berikutnya.
 - Tidak ada error console baru selain warning eksternal yang sudah dikenal.
 - Tidak ada klaim UI bahwa API SIMPERUM nyata sudah terhubung.
 
-## 14. R8 — Rilis
+## 14. R8 - Rilis
 
 R8 hanya boleh dimulai atas perintah eksplisit user.
 
@@ -399,7 +399,7 @@ Urutan:
 Jangan mengikuti dokumen lama yang menyebut staging aman; situs aktif sekarang
 production.
 
-## 15. R9 — Integrasi API Nyata
+## 15. R9 - Integrasi API Nyata
 
 Status 28 Juli 2026:
 
@@ -451,7 +451,7 @@ sebelum respons akhir. Jangan meninggalkan status `COMPLETED` bila check belum h
 Tambahkan entri terbaru di paling atas menggunakan template:
 
 ```md
-### YYYY-MM-DD HH:mm — Agent/Fase
+### YYYY-MM-DD HH:mm - Agent/Fase
 - Status fase: IN PROGRESS / COMPLETED / BLOCKED
 - Commit/branch: ...
 - Migrasi lokal: ...
@@ -464,7 +464,7 @@ Tambahkan entri terbaru di paling atas menggunakan template:
 - Larangan/peringatan khusus: ...
 ```
 
-### 2026-07-28 — R3 Dimulai / Penamaan Tabel Indonesia
+### 2026-07-28 - R3 Dimulai / Penamaan Tabel Indonesia
 
 - Status fase: **IN PROGRESS**
 - Commit/branch: belum dibuat; `feature/homepage-portal-v2`
@@ -482,7 +482,7 @@ Tambahkan entri terbaru di paling atas menggunakan template:
 - Larangan/peringatan khusus: `usr_users`, `sf_programs`, `sf_housing_queue`
   adalah tabel legacy production dan sengaja tidak diganti
 
-### 2026-07-28 — R3 Wizard Dasar Langkah 0–2
+### 2026-07-28 - R3 Wizard Dasar Langkah 0-2
 
 - Status fase: **IN PROGRESS**
 - Commit/branch: belum dibuat; `feature/homepage-portal-v2`
@@ -501,18 +501,18 @@ Tambahkan entri terbaru di paling atas menggunakan template:
   `warga@example.com` sebagai data simulasi lokal
 - Yang belum selesai: check R3 permanen untuk SIM-02 logout/login, pembuktian
   override tidak mengubah snapshot melalui HTTP, forged draft via HTTP, dan
-  konflik dua tab; langkah 3–6 masih placeholder dan masuk R4/R5
+  konflik dua tab; langkah 3-6 masih placeholder dan masuk R4/R5
 - Langkah pertama agent berikutnya: buat satu check HTTP R3 yang membersihkan
   data sintetisnya sendiri, lalu tutup acceptance R3 sebelum mulai R4
 - Larangan/peringatan khusus: opsi yang belum terkonfirmasi wajib mengikuti
   audit akurasi; jangan menebak isi dropdown dari gambar yang tidak terbaca
 
-### 2026-07-28 — R3 Selesai
+### 2026-07-28 - R3 Selesai
 
 - Status fase: **COMPLETED**
 - Commit/branch: belum dibuat; `feature/homepage-portal-v2`
 - Migrasi lokal: tetap `20260701000019`; production tetap `20260701000016`
-- Yang selesai: seluruh pekerjaan R3 langkah 0–2; katalog pekerjaan yang
+- Yang selesai: seluruh pekerjaan R3 langkah 0-2; katalog pekerjaan yang
   terbaca lengkap; error mempertahankan input; Back melewati validasi native;
   badge membedakan SIMPERUM/diisi warga/koreksi warga; lookup ulang menjaga
   override warga; BOM dua model lama dibersihkan agar JSON login valid
@@ -523,13 +523,13 @@ Tambahkan entri terbaru di paling atas menggunakan template:
 - Data uji dibersihkan: ya; check menghapus akun/profil/draft sintetis sendiri
   dan mempertahankan snapshot cache yang dipakai bersama
 - Yang belum selesai: R4 struktur, sanitasi, lokasi, peta, foto, dan dokumen;
-  langkah 3–6 masih placeholder
+  langkah 3-6 masih placeholder
 - Langkah pertama agent berikutnya: mulai R4 dari katalog yang sudah
   terkonfirmasi di `AUDIT_AKURASI_FORM_WARGA_R3.md`
 - Larangan/peringatan khusus: jangan menambah opsi yang ditandai OPEN dan jangan
   menaruh koordinat, foto, atau dokumen di webroot/log
 
-### 2026-07-28 — R4 Selesai
+### 2026-07-28 - R4 Selesai
 
 - Status fase: **COMPLETED**
 - Commit/branch: belum dibuat; `feature/homepage-portal-v2`
@@ -553,7 +553,7 @@ Tambahkan entri terbaru di paling atas menggunakan template:
 - Larangan/peringatan khusus: jangan menjadikan field nonaktif ikut scoring;
   berkas warga tetap privat dan tidak boleh disajikan lewat URL langsung
 
-### 2026-07-28 — R5 Selesai
+### 2026-07-28 - R5 Selesai
 
 - Status fase: **COMPLETED**
 - Commit/branch: belum dibuat; `feature/homepage-portal-v2`
@@ -584,7 +584,7 @@ Tambahkan entri terbaru di paling atas menggunakan template:
   jangan menghitung desil dari penghasilan, dan naikkan versi ruleset saat
   syarat bisnis berubah
 
-### 2026-07-28 — R6 Selesai
+### 2026-07-28 - R6 Selesai
 
 - Status fase: **COMPLETED**
 - Commit/branch: belum dibuat; `feature/homepage-portal-v2`
@@ -613,7 +613,7 @@ Tambahkan entri terbaru di paling atas menggunakan template:
 - Larangan/peringatan khusus: jangan push branch atau migrasi production tanpa
   izin user; production aktif masih skema 16
 
-### 2026-07-28 — R9 Adapter API Offline
+### 2026-07-28 - R9 Adapter API Offline
 
 - Status fase: **IN PROGRESS**; aktivasi masih diblokir
 - Commit/branch: belum dibuat; `feature/homepage-portal-v2`
@@ -623,7 +623,7 @@ Tambahkan entri terbaru di paling atas menggunakan template:
   pemetaan opsi form yang kini resmi, guard endpoint legacy, dan perpindahan
   draft saat source mode atau snapshot sumber berubah
 - Bukti runnable: contract API offline **27/27**, gateway simulation **5/5**,
-  runner DB fresh R1–R7 + legacy **224/224**
+  runner DB fresh R1-R7 + legacy **224/224**
 - Yang belum selesai: smoke test live, konfirmasi quota/error, UAT mode API,
   dan endpoint/field desil
 - Langkah pertama agent berikutnya: minta NIK uji resmi atau persetujuan
@@ -632,7 +632,7 @@ Tambahkan entri terbaru di paling atas menggunakan template:
 - Larangan/peringatan khusus: jangan menulis key ke Git/dokumen/log, jangan
   implementasikan `SaveDataRTLH`, jangan push/migrasi production
 
-### 2026-07-28 — UX Review dan Jalur Pengajuan
+### 2026-07-28 - UX Review dan Jalur Pengajuan
 
 - Status fase: **COMPLETED** lokal; tidak ada perubahan aturan kelayakan
 - Yang selesai: review menampilkan panel tindakan untuk tiga keadaan. Hasil
@@ -647,7 +647,7 @@ Tambahkan entri terbaru di paling atas menggunakan template:
   dipulihkan tepat satu baris; radio diuji tanpa menekan submit sehingga tidak
   ada tiket baru
 
-### 2026-07-28 — Koreksi UX Unggah Kosong
+### 2026-07-28 - Koreksi UX Unggah Kosong
 
 - Status: **COMPLETED** lokal; tanpa perubahan skema atau aturan kelayakan
 - Akar masalah: guard unggah menyamakan berkas kosong dengan assessment/jenis
@@ -658,7 +658,7 @@ Tambahkan entri terbaru di paling atas menggunakan template:
   tidak membuat ledger/file, PNG valid tetap tersimpan, dan IDOR tetap ditolak
 - Rilis: belum di-commit atau di-push
 
-### 2026-07-28 — Pusat Notifikasi Global
+### 2026-07-28 - Pusat Notifikasi Global
 
 - Status: **COMPLETED** lokal; tanpa perubahan skema atau aturan kelayakan
 - Portal, halaman autentikasi, dan dashboard memakai satu renderer flash serta
@@ -672,7 +672,7 @@ Tambahkan entri terbaru di paling atas menggunakan template:
   browser nyata pada Warga dan dashboard admin
 - Rilis: belum di-commit atau di-push
 
-### 2026-07-28 — R7 Selesai
+### 2026-07-28 - R7 Selesai
 
 - Status fase: **COMPLETED**
 - Commit/branch: belum dibuat; `feature/homepage-portal-v2`
@@ -705,9 +705,9 @@ Tambahkan entri terbaru di paling atas menggunakan template:
 - Langkah pertama agent berikutnya: jangan push branch atau migrasi production;
   tunggu keputusan user apakah beralih ke domain fitur lain atau menyiapkan R8
 - Larangan/peringatan khusus: production aktif auto-deploy dari branch ini dan
-  masih skema 16; push tanpa migrasi 17–20 akan merusak fitur warga
+  masih skema 16; push tanpa migrasi 17-20 akan merusak fitur warga
 
-### 2026-07-27 23:42 — R2 Gateway Simulasi
+### 2026-07-27 23:42 - R2 Gateway Simulasi
 
 - Status fase: **COMPLETED**
 - Commit/branch: belum dibuat; `feature/homepage-portal-v2`
@@ -721,14 +721,14 @@ Tambahkan entri terbaru di paling atas menggunakan template:
   → **5/5 hijau**, termasuk 20 proses serentak menghasilkan satu snapshot;
   `php docs/engineering/uji_perjalanan_warga.php` → **19/19 hijau**
 - Data uji dibersihkan: ya; seluruh snapshot probe dan baris perjalanan dihapus
-- Yang belum selesai: R3–R9; log tidak memuat raw payload berdasarkan inspeksi
+- Yang belum selesai: R3-R9; log tidak memuat raw payload berdasarkan inspeksi
   jalur kode, belum memakai observability eksternal
 - Langkah pertama agent berikutnya: mulai R3 route `/warga/pendataan`, guard role
   warga, wizard bertahap, dan save/resume memakai model R1
 - Larangan/peringatan khusus: API mode sengaja fail-closed `api_not_configured`;
   jangan menambahkan HTTP palsu atau mengirim canonical profile mentah ke browser
 
-### 2026-07-27 23:37 — R1 Fondasi Assessment
+### 2026-07-27 23:37 - R1 Fondasi Assessment
 
 - Status fase: **COMPLETED**
 - Commit/branch: belum dibuat; `feature/homepage-portal-v2`
@@ -739,14 +739,14 @@ Tambahkan entri terbaru di paling atas menggunakan template:
 - Uji dijalankan: DB fresh baseline→18; `php index.php migrate uji_warga_r1`
   pada `klinikpkp_uji_warga_r1_20260727` → **18/18 hijau**
 - Data uji dibersihkan: ya; akun, assessment, dan dua snapshot sintetis terhapus
-- Yang belum selesai: R2–R9; rollback migrasi 18 tersedia tetapi belum dijalankan
+- Yang belum selesai: R2-R9; rollback migrasi 18 tersedia tetapi belum dijalankan
   karena rollback akan menghapus tabel baru
 - Langkah pertama agent berikutnya: lanjutkan R2 melalui satu gateway; hapus mock
   bercabang dari `Program::api_cek_simperum()` setelah endpoint memakai gateway
 - Larangan/peringatan khusus: jangan push branch atau migrasi production; jangan
   mengembalikan raw fixture/PII ke browser atau log
 
-### 2026-07-27 — R0 Dokumentasi
+### 2026-07-27 - R0 Dokumentasi
 
 - Status fase: **COMPLETED**
 - Commit/branch: belum dibuat; `feature/homepage-portal-v2`
@@ -757,7 +757,7 @@ Tambahkan entri terbaru di paling atas menggunakan template:
 - Uji dijalankan: audit 56 label, hitung sumber 5+45, validasi link, pemeriksaan
   PII contoh → hijau
 - Data uji dibersihkan: tidak ada data baru dibuat
-- Yang belum selesai: seluruh R1–R9
+- Yang belum selesai: seluruh R1-R9
 - Langkah pertama agent berikutnya: mulai R1 dengan membaca skema aktual dan
   menentukan migrasi setelah versi 17
 - Larangan: jangan push branch; jangan migrasi production; jangan hardcode

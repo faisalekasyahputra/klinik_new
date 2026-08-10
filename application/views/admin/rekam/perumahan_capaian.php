@@ -1,6 +1,6 @@
 <?php
 /**
- * Rekam Data — Capaian Perumahan: TABEL UNIT RENCANA + TABEL UNIT REALISASI (W5).
+ * Rekam Data - Capaian Perumahan: TABEL UNIT RENCANA + TABEL UNIT REALISASI (W5).
  *
  * Bentuk dua tabel mengikuti `new_flow/rekamdata/tabel_design.png`, matriks 12
  * sumber dana × 6 program. Di layar isian bentuk ini tidak dipakai karena tidak
@@ -10,10 +10,10 @@
  * ATURAN YANG TIDAK BOLEH DILANGGAR:
  *
  *   1. Nol `SUM()` di view. Kolom kumulatif datang dari
- *      `Rekam_data_model::kumulatif()` — satu-satunya tempat yang boleh
+ *      `Rekam_data_model::kumulatif()` - satu-satunya tempat yang boleh
  *      menjumlahkan antar triwulan. Penjumlahan yang salah pada angka capaian
  *      tidak terlihat salah, dan itu yang membuatnya berbahaya.
- *   2. Nol tabel nol. Sumber tanpa baris ditampilkan `—`, bukan `0`. Nol yang
+ *   2. Nol tabel nol. Sumber tanpa baris ditampilkan `-`, bukan `0`. Nol yang
  *      dikarang tidak bisa dibedakan dari nol yang benar-benar dilaporkan.
  */
 $e  = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
@@ -21,10 +21,10 @@ $rp = static fn($n) => number_format((int) $n, 0, ',', '.');
 
 $nama_tw   = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV'];
 
-/* Periode yang tercetak di judul tabel — satu sumber, dipakai ketiganya.
+/* Periode yang tercetak di judul tabel - satu sumber, dipakai ketiganya.
    Dinas hanya meminta TW dicantumkan pada "Tabel Unit Realisasi" (butir C3,
    5 Agt 2026), tapi tabel Rencana di sebelahnya ikut diberi supaya halaman
-   tidak memajang satu judul bertriwulan dan satu tanpa — keduanya memang
+   tidak memajang satu judul bertriwulan dan satu tanpa - keduanya memang
    menggambarkan triwulan yang sama. */
 $periode   = ($nama_tw[(int) $triwulan] ?? $triwulan) . ' ' . (int) $tahun;
 $mode_rekap = $mode_rekap ?? FALSE;
@@ -46,16 +46,16 @@ $tombol = 'inline-block rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-
  * `['rencana','realisasi']` memberi DUA BARIS per sumber dana, `['realisasi']`
  * memberi satu baris seperti semula.
  *
- * SATU TABEL, DUA BARIS PER SUMBER — bukan dua tabel terpisah, dan bukan pula
+ * SATU TABEL, DUA BARIS PER SUMBER - bukan dua tabel terpisah, dan bukan pula
  * dua angka berpasangan di dalam satu sel (revisi dinas 5 Agt 2026, butir C2:
  * "target dan realisasinya dijejer aja, jangan dipisah").
  *
  * Bentuk berpasangan-dalam-sel dicoba lebih dulu dan DIBUANG setelah diukur:
  * isi sel jadi `999.999.999 / 999.999.999`, dan tabelnya melebar 1100 → 1348px
- * pada viewport 1440 — guliran mendatar naik dari 35px jadi 283px. Dua baris
+ * pada viewport 1440 - guliran mendatar naik dari 35px jadi 283px. Dua baris
  * per sumber membuat isi sel kembali satu angka, jadi lebar kolomnya persis
  * seperti semula: terukur 1100px, guliran 35px, sama dengan sebelum perubahan.
- * Yang bertambah tingginya, dan menggulir ke bawah memang hal biasa —
+ * Yang bertambah tingginya, dan menggulir ke bawah memang hal biasa -
  * menggulir ke samping tidak.
  *
  * Tetap SATU closure meski tabel kumulatif cuma satu sisi. Menyalinnya jadi
@@ -113,7 +113,7 @@ $tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_
                         <?= $rp($unit) ?><br>
                         <span class="text-xs text-gray-500 dark:text-brand-muted"><?= $rp($duit) ?></span>
                       <?php else: ?>
-                        &mdash;
+                        -
                       <?php endif; ?>
                     </td>
                   <?php endforeach; ?>
@@ -122,10 +122,10 @@ $tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_
                       <?= $rp($sub_unit[$sisi]) ?><br>
                       <span class="text-xs font-normal text-gray-500 dark:text-brand-muted"><?= $rp($sub_rp[$sisi]) ?></span>
                     <?php else: ?>
-                      <?php /* Sumber tanpa satu pun baris: subtotalnya "—", bukan 0.
+                      <?php /* Sumber tanpa satu pun baris: subtotalnya "-", bukan 0.
                                 Komentar PHP, BUKAN HTML: blok ini di dalam foreach,
                                 jadi versi HTML-nya terkirim dua belas kali per tabel. */ ?>
-                      &mdash;
+                      -
                     <?php endif; ?>
                   </td>
                 </tr>
@@ -161,7 +161,7 @@ $tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_
 
   <?php /* Tata letak kepala: JUDUL kiri, KENDALI kanan, keterangan di bawah.
             Versi sebelumnya menumpuk identitas wilayah, badge status, label
-            periode, dua dropdown, dan tombol Tampilkan dalam SATU baris — enam
+            periode, dua dropdown, dan tombol Tampilkan dalam SATU baris - enam
             benda dengan enam peran berbeda, dan mata tidak punya titik masuk.
             Tombol Input Capaian pun terdampar di bawah paragraf panjang, jauh
             dari kendali lain, padahal ia tindakan utama halaman ini. */ ?>
@@ -217,10 +217,10 @@ $tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_
     </div>
 
     <?php /* Keterangan dipecah jadi dua kalimat pendek. Yang paling gampang
-              salah dibaca — "per triwulan, bukan kumulatif" — berdiri sendiri
+              salah dibaca - "per triwulan, bukan kumulatif" - berdiri sendiri
               supaya tidak tenggelam di tengah paragraf. */ ?>
     <p class="mt-3 border-t border-gray-100 pt-3 text-xs leading-relaxed text-gray-500 dark:border-white/5 dark:text-brand-muted">
-      Angkanya <b>per triwulan</b>, bukan kumulatif sejak Januari — kumulatif s.d.
+      Angkanya <b>per triwulan</b>, bukan kumulatif sejak Januari - kumulatif s.d.
       triwulan ini ada di tabel paling bawah.
       <?php if ($mode_rekap): ?>
         Hanya laporan berstatus <b>terkirim</b> yang dihitung.
@@ -237,11 +237,11 @@ $tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_
         <?= $mode_rekap ? 'Belum ada laporan terkirim untuk triwulan ini.' : 'Belum ada angka tercatat untuk triwulan ini.' ?>
       </p>
       <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
-        Bukan berarti capaiannya nol — <?= $mode_rekap ? 'laporannya memang belum dikirim.' : 'triwulannya memang belum diisi.' ?>
+        Bukan berarti capaiannya nol - <?= $mode_rekap ? 'laporannya memang belum dikirim.' : 'triwulannya memang belum diisi.' ?>
       </p>
     </section>
   <?php else: ?>
-    <?php /* Satu tabel, dua sisi berpasangan — dulu dua tabel terpisah yang
+    <?php /* Satu tabel, dua sisi berpasangan - dulu dua tabel terpisah yang
              memaksa mata bolak-balik untuk membandingkan (butir C2). */ ?>
     <?php $tabel('Tabel Unit Rencana & Realisasi ' . $periode, ['rencana', 'realisasi'], $matriks); ?>
   <?php endif; ?>
@@ -250,7 +250,7 @@ $tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_
     <?php $tabel('Kumulatif Realisasi s.d. ' . $periode, ['realisasi'], $kumulatif); ?>
     <p class="text-xs text-gray-500 dark:text-brand-muted">
       Tabel kumulatif dihitung oleh sistem dari laporan <b>terkirim</b> TW I sampai
-      triwulan ini. Yang tersimpan di basis data tetap angka per triwulan — kumulatif
+      triwulan ini. Yang tersimpan di basis data tetap angka per triwulan - kumulatif
       tidak pernah diketik siapa pun, jadi tidak bisa saling bertentangan.
     </p>
   <?php endif; ?>

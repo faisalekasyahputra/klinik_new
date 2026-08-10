@@ -1,16 +1,16 @@
 <?php
 /**
- * Papan cakupan Rekam Data — 35 kabupaten × 2 domain, satu triwulan.
+ * Papan cakupan Rekam Data - 35 kabupaten × 2 domain, satu triwulan.
  *
  * Barisnya SELALU 35, ada laporannya atau tidak. Layar rekam data lain
  * menampilkan daftar laporan; yang ini menampilkan daftar KABUPATEN, karena
- * yang ditanyakan dinas adalah siapa yang BELUM — dan yang belum tidak punya
+ * yang ditanyakan dinas adalah siapa yang BELUM - dan yang belum tidak punya
  * baris laporan untuk ditampilkan.
  */
 $this->load->helper('admin_table');
 $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV'];
 
-// Warna ditulis UTUH per keadaan, bukan dirakit dari potongan nama kelas —
+// Warna ditulis UTUH per keadaan, bukan dirakit dari potongan nama kelas -
 // Tailwind di proyek ini sebagian datang dari CSS statis hasil panen, dan kelas
 // yang baru lahir saat render tidak pernah ikut terpanen.
 $gaya = [
@@ -27,7 +27,7 @@ $tautan = static function ($t, $tw) {
 <div class="mb-6">
     <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Pantau Rekam Data</h2>
     <p class="text-sm text-gray-500 dark:text-brand-muted">
-        Cakupan pelaporan seluruh kabupaten/kota untuk satu triwulan. Halaman ini <b>hanya baca</b> —
+        Cakupan pelaporan seluruh kabupaten/kota untuk satu triwulan. Halaman ini <b>hanya baca</b> -
         keputusan terima atau minta perbaikan tetap kewenangan Admin Bidang Perumahan dan Kawasan.
     </p>
 </div>
@@ -54,7 +54,7 @@ $tautan = static function ($t, $tw) {
     <div class="flex flex-wrap items-center gap-2 border-b border-gray-200 p-4 dark:border-white/5">
         <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted mr-1">Tahun:</span>
         <?php
-        // Tahun berjalan selalu ikut, walau belum ada satu pun laporannya —
+        // Tahun berjalan selalu ikut, walau belum ada satu pun laporannya -
         // kalau tidak, tahun baru tidak punya jalan masuk sampai ada yang melapor.
         $tahun_pilihan = array_values(array_unique(array_merge([date('Y')], $tahun_ada, [$tahun])));
         rsort($tahun_pilihan);
@@ -80,7 +80,7 @@ $tautan = static function ($t, $tw) {
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-white/5 text-gray-700 dark:text-gray-300">
                 <?php if (empty($baris)): ?>
-                <tr><td colspan="3" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">Tabel kabupaten kosong — seed wilayah belum jalan.</td></tr>
+                <tr><td colspan="3" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">Tabel kabupaten kosong - seed wilayah belum jalan.</td></tr>
                 <?php else: foreach ($baris as $b): ?>
                 <tr>
                     <td class="px-4 py-3 font-bold text-gray-900 dark:text-white"><?= html_escape($b['kabupaten']) ?></td>

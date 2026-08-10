@@ -225,7 +225,7 @@ $config['allow_get_array'] = TRUE;
 | your log files will fill up very fast.
 |
 */
-// 1 = hanya ERROR. Dulu 0 (mati total) — setiap show_404/error jadi bisu dan
+// 1 = hanya ERROR. Dulu 0 (mati total) - setiap show_404/error jadi bisu dan
 // diagnosa selalu berakhir bedah DB manual. Level ERROR nyaris nol biaya I/O.
 $config['log_threshold'] = 1;
 
@@ -417,7 +417,7 @@ $config['cookie_path']		= '/';
 // browser menolak cookie sesi pada http://localhost sehingga login lokal
 // putus lintas-request; `FALSE` global adalah keadaan repo selama ini,
 // sementara production diam-diam menambahkan `secure` dari konfigurasi di
-// luar repo — yaitu drift yang membuat repo dan server berbeda tanpa ada
+// luar repo - yaitu drift yang membuat repo dan server berbeda tanpa ada
 // yang tahu (butir B11).
 $config['cookie_secure']	= (ENVIRONMENT === 'production');
 $config['cookie_httponly'] 	= TRUE;

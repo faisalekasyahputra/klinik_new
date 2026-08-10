@@ -2,7 +2,7 @@
 /**
  * Katalog Program.
  *
- * Kolom "Nama di hasil diagnosa" bukan hiasan — ia dari
+ * Kolom "Nama di hasil diagnosa" bukan hiasan - ia dari
  * `Smart_filter::master_programs()`, sumber yang BERBEDA dari tabel ini, dan
  * selisihnya berarti warga melihat dua nama untuk satu program.
  */
@@ -15,7 +15,7 @@ $csrf_hash = $this->security->get_csrf_hash();
         <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Katalog Program</h2>
         <p class="text-sm text-gray-500 dark:text-brand-muted">
             Program bantuan perumahan yang bisa diajukan warga. Yang bisa diubah dari sini:
-            <b>nama</b>, <b>deskripsi</b>, <b>status aktif</b>, serta <b>tampilannya di beranda</b> —
+            <b>nama</b>, <b>deskripsi</b>, <b>status aktif</b>, serta <b>tampilannya di beranda</b> -
             badge, syarat utama, foto, dan urutan. Warna kartu tidak diatur di sini: paletnya
             disetel sekali supaya kontras teksnya terjaga.
         </p>
@@ -34,16 +34,16 @@ $csrf_hash = $this->security->get_csrf_hash();
             </p>
             <ul class="text-xs space-y-0.5 pt-1">
                 <?php if ($jml_selisih > 0): ?>
-                <li>• <b><?= (int) $jml_selisih ?> program</b> memakai nama berbeda di dua tempat — warga melihat satu nama saat memilih, nama lain di pengajuannya.</li>
+                <li>• <b><?= (int) $jml_selisih ?> program</b> memakai nama berbeda di dua tempat - warga melihat satu nama saat memilih, nama lain di pengajuannya.</li>
                 <?php endif; ?>
                 <?php if ($jml_tanpa_aturan > 0): ?>
-                <li>• <b><?= (int) $jml_tanpa_aturan ?> program</b> ada di tabel tapi tidak punya aturan kelayakan — tidak akan pernah muncul untuk warga mana pun.</li>
+                <li>• <b><?= (int) $jml_tanpa_aturan ?> program</b> ada di tabel tapi tidak punya aturan kelayakan - tidak akan pernah muncul untuk warga mana pun.</li>
                 <?php endif; ?>
                 <?php if ($tanpa_baris): ?>
-                <li>• <b><?= count($tanpa_baris) ?> program</b> punya aturan tapi <b>tidak punya baris tabel</b> (<?= html_escape(implode(', ', $tanpa_baris)) ?>) — kartunya muncul, pengajuannya gagal.</li>
+                <li>• <b><?= count($tanpa_baris) ?> program</b> punya aturan tapi <b>tidak punya baris tabel</b> (<?= html_escape(implode(', ', $tanpa_baris)) ?>) - kartunya muncul, pengajuannya gagal.</li>
                 <?php endif; ?>
             </ul>
-            <p class="text-xs pt-1">Selisih nama bisa dibereskan dari layar ini. Aturan kelayakan tidak — itu perubahan kode.</p>
+            <p class="text-xs pt-1">Selisih nama bisa dibereskan dari layar ini. Aturan kelayakan tidak - itu perubahan kode.</p>
         </div>
     </div>
     <?php endif; ?>
@@ -64,7 +64,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-white/5 text-gray-700 dark:text-gray-300">
                     <?php if (empty($rows)): ?>
-                    <tr><td colspan="7" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">Katalog kosong — seed program belum jalan.</td></tr>
+                    <tr><td colspan="7" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">Katalog kosong - seed program belum jalan.</td></tr>
                     <?php else: foreach ($rows as $r): ?>
                     <tr>
                         <?php // max-w diukur, bukan ditebak: 240px menghasilkan 6px kelebihan di 1440px (§17 poin 6). ?>
@@ -82,7 +82,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                             <?php endif; ?>
                         </td>
                         <td class="px-4 py-3"><code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs dark:bg-black/30"><?= html_escape($r->kode_program) ?></code></td>
-                        <td class="px-4 py-3 text-xs"><?= html_escape($r->nama_kategori ?: '—') ?></td>
+                        <td class="px-4 py-3 text-xs"><?= html_escape($r->nama_kategori ?: '-') ?></td>
                         <td class="px-4 py-3">
                             <?= $this->load->view('admin/components/status_badge', [
                                 'label' => (int) $r->is_active === 1 ? 'Aktif' : 'Nonaktif',
@@ -107,11 +107,11 @@ $csrf_hash = $this->security->get_csrf_hash();
     <p class="mt-3 text-xs text-gray-400 dark:text-brand-muted/70">
         <i class="ph ph-info mr-1" aria-hidden="true"></i>
         Kolom <code>batas_penghasilan_max</code> ada di tabel dan berisi nilai, tetapi
-        <b>tidak dibaca kode mana pun</b> — kelayakan dihitung dari desil, bukan penghasilan.
+        <b>tidak dibaca kode mana pun</b> - kelayakan dihitung dari desil, bukan penghasilan.
         Karena itu ia tidak ditampilkan maupun bisa diubah di sini.
     </p>
 
-    <?php // Satu modal untuk seluruh tabel — formulir per baris akan mendorongnya melewati wadahnya. ?>
+    <?php // Satu modal untuk seluruh tabel - formulir per baris akan mendorongnya melewati wadahnya. ?>
     <div x-show="buka" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
         <div @click.away="buka = false" class="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-brand-card">
             <div class="flex items-start justify-between gap-3 border-b border-gray-200 pb-3 dark:border-white/10">
@@ -122,7 +122,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                 <button type="button" @click="buka = false" aria-label="Tutup" class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><i class="ph ph-x text-lg" aria-hidden="true"></i></button>
             </div>
 
-            <?php /* `enctype` WAJIB — tanpa itu `$_FILES` kosong dan unggahan foto
+            <?php /* `enctype` WAJIB - tanpa itu `$_FILES` kosong dan unggahan foto
                      gagal diam-diam: formnya terkirim, teksnya tersimpan, fotonya
                      tidak, dan tidak ada satu pun pesan galat. */ ?>
             <form method="POST" action="<?= base_url('Admin_Katalog_Program/ubah') ?>"
@@ -143,7 +143,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                               class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200"></textarea>
                 </label>
 
-                <?php /* Blok etalase — yang tampil di korsel beranda (migrasi 036).
+                <?php /* Blok etalase - yang tampil di korsel beranda (migrasi 036).
                          Warnanya TIDAK ada di sini dengan sengaja: palet pastelnya
                          disetel dan kontrasnya diukur, dan satu pilihan warna bebas
                          bisa membatalkan itu. Admin mengatur kata dan foto. */ ?>
@@ -193,10 +193,10 @@ $csrf_hash = $this->security->get_csrf_hash();
                 <label class="flex items-start gap-2 rounded-lg bg-gray-50 p-2.5 dark:bg-black/20">
                     <input type="checkbox" name="is_active" value="1" x-model="aktif" class="mt-0.5">
                     <span>
-                        <span class="font-bold text-gray-700 dark:text-gray-300">Aktif — bisa diajukan warga</span>
+                        <span class="font-bold text-gray-700 dark:text-gray-300">Aktif - bisa diajukan warga</span>
                         <span class="mt-0.5 block text-[11px] leading-relaxed text-gray-500 dark:text-brand-muted">
                             Dimatikan berarti pengajuan BARU ditolak. Pengajuan yang sudah masuk antrean
-                            <b>tidak dibatalkan</b> — saat ini <span x-text="dipakai"></span> pengajuan memakai program ini.
+                            <b>tidak dibatalkan</b> - saat ini <span x-text="dipakai"></span> pengajuan memakai program ini.
                         </span>
                     </span>
                 </label>

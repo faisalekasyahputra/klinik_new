@@ -8,21 +8,21 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * Gejalanya: dashboard pemohon bilang "Diterima" tapi dia tidak muncul di
  * direktori publik, dan tombol "Lihat Profil Publik" tidak punya tujuan yang
  * benar. Migrasi 14 menambahkan kolomnya tapi tidak mengisi baris yang sudah
- * ada — menambah kolom tanpa mengisi data lama meninggalkan separuh sistem
+ * ada - menambah kolom tanpa mengisi data lama meninggalkan separuh sistem
  * memakai jalur baru dan separuh lagi jalur lama.
  *
  * WAJIB DIJALANKAN SEBELUM tautan profil publik dipindah ke certified_developer_id
  * (roadmap T4 butir 1). Kalau urutannya dibalik, badge dan tombol milik
  * pengembang yang SAH justru hilang karena kolomnya masih NULL.
  *
- * IDEMPOTEN — `main` beku, jadi migrasi ini akan duduk lama di branch fitur dan
+ * IDEMPOTEN - `main` beku, jadi migrasi ini akan duduk lama di branch fitur dan
  * mungkin dijalankan berulang. Dijalankan 2x berturut-turut menghasilkan DB
  * yang identik.
  *
  * ⚠️ COLLATION: `srp2_registrations.nama_perusahaan` utf8mb4_general_ci,
  * `srp2_certified_developers.nama_perusahaan` utf8mb4_unicode_ci. Join nama
  * tanpa COLLATE eksplisit gagal dengan error 1267. Ini satu-satunya tempat
- * pencocokan nama masih boleh dipakai — justru untuk MENGHAPUS ketergantungan
+ * pencocokan nama masih boleh dipakai - justru untuk MENGHAPUS ketergantungan
  * padanya; sesudah ini semua tautan lewat FK.
  */
 class Migration_Backfill_certified_developer_link extends CI_Migration {
@@ -38,7 +38,7 @@ class Migration_Backfill_certified_developer_link extends CI_Migration {
         foreach ($diterima as $reg) {
             $nama = trim((string) $reg->nama_perusahaan);
             // Tanpa nama perusahaan tidak ada yang bisa diterbitkan ke direktori
-            // (kolomnya NOT NULL). Dilewati, bukan dikarang — barisnya memang
+            // (kolomnya NOT NULL). Dilewati, bukan dikarang - barisnya memang
             // tidak seharusnya pernah lolos ke status Diterima; gerbang untuk
             // itu sudah dipasang di T1a.
             if ($nama === '') { continue; }

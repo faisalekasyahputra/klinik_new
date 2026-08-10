@@ -2,11 +2,11 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Rekam Data — Peninjauan provinsi oleh Admin Bidang (tahap D6).
+ * Rekam Data - Peninjauan provinsi oleh Admin Bidang (tahap D6).
  *
  * Scope-nya BIDANG, bukan wilayah: Admin Bidang Perumahan melihat seluruh
  * kabupaten/kota tetapi hanya domain perumahan, dan sebaliknya. Bidang lain
- * (pertanahan, pengembang, umum) tidak punya modul ini sama sekali — itu
+ * (pertanahan, pengembang, umum) tidak punya modul ini sama sekali - itu
  * dinyatakan apa adanya, bukan diam-diam menampilkan layar kosong.
  *
  * Acuan: docs/product/ROADMAP_REKAM_DATA.md (D6)
@@ -60,7 +60,7 @@ class Rekam_Tinjauan extends Admin_Bidang_Controller {
         }
 
         $kabupaten = $this->db->where('id', (int) $isi['laporan']['kabupaten_id'])
-            ->get('kabupaten')->row('nama') ?: '—';
+            ->get('kabupaten')->row('nama') ?: '-';
 
         $this->render_scoped_admin('admin/rekam/tinjauan_detail', [
             'title'      => 'Detail Laporan ' . ucfirst($this->domain),
@@ -100,7 +100,7 @@ class Rekam_Tinjauan extends Admin_Bidang_Controller {
 
     /**
      * Metode POST + rate limit keputusan. Memakai policy `admin_queue_decision`
-     * yang SUDAH ADA (dimensi ip/account/object) — §17 poin 15 melarang membuat
+     * yang SUDAH ADA (dimensi ip/account/object) - §17 poin 15 melarang membuat
      * mekanisme pembatas kedua.
      */
     private function gerbang_keputusan($laporan_id)

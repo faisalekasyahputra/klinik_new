@@ -2,17 +2,17 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Janji temu konsultasi — SATU sumber untuk aturan perpindahan keadaannya.
+ * Janji temu konsultasi - SATU sumber untuk aturan perpindahan keadaannya.
  *
  * Ada di model karena dua sisi memerlukannya: warga (`Umum`) dan petugas
  * (`Admin_Konsultasi`). Whitelist transisi yang ditulis di dua controller akan
- * berselisih — itu bukan kekhawatiran teoretis di repo ini, daftar bidang
+ * berselisih - itu bukan kekhawatiran teoretis di repo ini, daftar bidang
  * pernah hidup di empat tempat dan keempatnya sudah menyimpang.
  *
  * ⚠️ Kalau kamu menambahkan pintu tulis ketiga ke tabel ini, LEWATKAN ke sini
  * juga. AGENTS.md §18 mencatat pola "aksesor pajangan": fungsi yang diberi
  * docblock "satu-satunya sumber" lalu dipakai dua dari dua puluh pemanggil,
- * sementara sisanya query sendiri — dan bug yang sama muncul lagi di tiap
+ * sementara sisanya query sendiri - dan bug yang sama muncul lagi di tiap
  * permukaan baru sebagai bug baru.
  */
 class Janji_temu_model extends CI_Model {
@@ -25,7 +25,7 @@ class Janji_temu_model extends CI_Model {
      * terpisah yang bisa lupa diperbarui.
      *
      * Tidak ada transisi ke dirinya sendiri, dan itu penting untuk cara
-     * `transisi()` mendeteksi kegagalan — lihat catatan di sana.
+     * `transisi()` mendeteksi kegagalan - lihat catatan di sana.
      */
     const ALUR = [
         'diajukan' => [
@@ -54,7 +54,7 @@ class Janji_temu_model extends CI_Model {
         return (self::ALUR[$dari][$ke] ?? NULL) === $pelaku;
     }
 
-    /** Semua nilai status yang pernah sah — untuk chip filter & validasi. */
+    /** Semua nilai status yang pernah sah - untuk chip filter & validasi. */
     public function status_sah()
     {
         $out = array_keys(self::ALUR);
@@ -74,7 +74,7 @@ class Janji_temu_model extends CI_Model {
      * ⚠️ INI LAPIS KEDUA, DAN TIDAK ADA UJI YANG MERAH KALAU KAMU MENCABUTNYA.
      * Kedua pemanggilnya sudah menolak lebih dulu lewat `boleh()`, jadi
      * mutasi yang menghapus `->where('status', $dari)` lolos seluruh
-     * `uji_janji_temu.php` — diverifikasi 4 Agt 2026, bukan dugaan. Yang
+     * `uji_janji_temu.php` - diverifikasi 4 Agt 2026, bukan dugaan. Yang
      * dijaga baris ini adalah permintaan yang benar-benar BERSAMAAN, dan
      * harness berurutan tidak bisa menghasilkannya. Hijau di sini bukan izin
      * untuk membuangnya.
@@ -105,7 +105,7 @@ class Janji_temu_model extends CI_Model {
         return $this->db->get_where('forum_janji_temu', ['id' => (int) $id])->row();
     }
 
-    /** Janji temu yang masih berjalan untuk satu topik — nol atau satu. */
+    /** Janji temu yang masih berjalan untuk satu topik - nol atau satu. */
     public function hidup_untuk_topik($id_diskusi)
     {
         return $this->db->where('id_diskusi', (int) $id_diskusi)

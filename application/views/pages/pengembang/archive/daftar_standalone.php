@@ -1,6 +1,6 @@
 <?php
 /**
- * DIARSIPKAN (2026-07) — halaman daftar cepat standalone ini digantikan wizard
+ * DIARSIPKAN (2026-07) - halaman daftar cepat standalone ini digantikan wizard
  * satu halaman di pages/pengembang/syarat.php (step "Akun", tab Daftar Cepat).
  * Pengembang::daftar() sekarang cuma redirect ke Pengembang/syarat. Disimpan
  * sebagai referensi, tidak lagi dirender controller manapun.

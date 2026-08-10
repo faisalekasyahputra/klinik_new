@@ -21,7 +21,7 @@ class KemitraanPortal extends Public_Controller
     }
 
     /**
-     * Papan slot magang. Dulu isinya array literal di method ini — tidak ada
+     * Papan slot magang. Dulu isinya array literal di method ini - tidak ada
      * yang bisa mengubahnya tanpa deploy, dan formulir pendaftaran tidak pernah
      * tunduk padanya. Sekarang dari `kkn_magang_slot`, dikelola superadmin
      * lewat Admin_Kemitraan::slot().
@@ -47,18 +47,18 @@ class KemitraanPortal extends Public_Controller
          * Yang berubah HANYA yang dibaca orang. Mesin kuotanya tidak disentuh:
          * `periksa_slot()` tetap menolak per-bulan dan per-hari saat mendaftar,
          * dan formulir tetap meminta periode. Papan ini menjawab satu pertanyaan
-         * — "bidang ini masih menerima atau tidak" — yang dulu harus disimpulkan
+         * - "bidang ini masih menerima atau tidak" - yang dulu harus disimpulkan
          * sendiri dari 12 kotak berwarna.
          *
          * "Terpenuhi" ditentukan dari BULAN YANG PALING LONGGAR, bukan dari
          * rata-rata atau dari puncak. Alasannya: pendaftar cuma perlu SATU bulan
          * yang masih muat. Memakai puncak akan menulis "terpenuhi" pada bidang
-         * yang sebenarnya masih punya tiga bulan kosong — menolak orang yang
+         * yang sebenarnya masih punya tiga bulan kosong - menolak orang yang
          * seharusnya diterima, dan papan yang berbohong ke arah itu jauh lebih
          * mahal daripada yang berbohong sebaliknya.
          */
         /* Butir F1: posisi/lowongan yang dicari tiap bidang, diisi dinas lewat
-           layar Posisi Magang. Diambil SEKALI lalu dikelompokkan — query di
+           layar Posisi Magang. Diambil SEKALI lalu dikelompokkan - query di
            dalam perulangan bidang berarti lima query untuk lima bidang.
 
            Hanya yang `aktif`. Posisi yang sudah terisi dimatikan, bukan
@@ -120,11 +120,11 @@ class KemitraanPortal extends Public_Controller
         // Nama & email ditampilkan BACA-SAJA di formulir, diambil dari sesi.
         // Bukan sekadar hiasan: pendaftaran ini menempel ke akun lewat user_id,
         // dan sebelumnya pendaftar tidak pernah diberi tahu nama siapa yang
-        // ikut terkirim. Tetap tidak diterima sebagai input — `simpan()` hanya
+        // ikut terkirim. Tetap tidak diterima sebagai input - `simpan()` hanya
         // membaca user_id dari sesi (anti-IDOR), jadi mengubahnya di peramban
         // tidak mengubah apa pun.
         // Divisi hanya untuk magang. Di formulir KKN field yang sama berlabel
-        // "Tema Kegiatan" — itu memang teks bebas, bukan unit kerja, jadi tidak
+        // "Tema Kegiatan" - itu memang teks bebas, bukan unit kerja, jadi tidak
         // ada slot yang bisa mengaturnya.
         $this->render('pages/kemitraan_portal/daftar', [
             'judul'      => $jenis === 'kkn' ? 'Daftar KKN Kemitraan' : 'Daftar Magang dan Kerja Praktik',
@@ -136,7 +136,7 @@ class KemitraanPortal extends Public_Controller
     }
 
     // =========================================================
-    // PENDAFTARAN MILIK SENDIRI — lihat, sunting, batalkan
+    // PENDAFTARAN MILIK SENDIRI - lihat, sunting, batalkan
     //
     // Semuanya lewat pendaftaran_milik(), yang mencocokkan user_id dari SESI.
     // Id dari URL tidak pernah cukup: tanpa pencocokan itu, mengganti angka di
@@ -149,7 +149,7 @@ class KemitraanPortal extends Public_Controller
         if ( ! $row) { return; }
 
         // Nama bidang diambil DI SINI, bukan di view. Pendaftar perlu tahu
-        // bidang mana yang memegang berkasnya — tanpa itu garis waktunya cuma
+        // bidang mana yang memegang berkasnya - tanpa itu garis waktunya cuma
         // bilang "bidang penanggung jawab" tanpa menyebut siapa. Query-nya
         // sempat saya taruh di view; dipindah karena view yang menyentuh DB
         // adalah pola yang akan ditiru berkas berikutnya.
@@ -172,7 +172,7 @@ class KemitraanPortal extends Public_Controller
      *
      * Berkas berada di luar webroot; satu-satunya jalan ke sana adalah endpoint
      * ini, dan ia hanya menyajikan baris milik pemanggilnya. Surat balasan
-     * memuat nama, instansi, dan periode seseorang — ia bukan berkas publik
+     * memuat nama, instansi, dan periode seseorang - ia bukan berkas publik
      * hanya karena isinya kabar baik.
      */
     public function unduh_balasan($id = NULL)
@@ -192,7 +192,7 @@ class KemitraanPortal extends Public_Controller
         if ( ! $row) { return; }
 
         // Yang sudah ditinjau TIDAK boleh berubah diam-diam di belakang
-        // peninjaunya — itu membuat keputusan admin menjadi keputusan atas data
+        // peninjaunya - itu membuat keputusan admin menjadi keputusan atas data
         // yang sudah tidak ada lagi. Keputusan user 1 Agt 2026.
         if ($row->status !== 'Diajukan') {
             $this->session->set_flashdata('error', 'Pendaftaran yang sudah ' . strtolower($row->status) . ' tidak bisa diubah lagi. Hubungi admin bila ada yang keliru.');
@@ -233,7 +233,7 @@ class KemitraanPortal extends Public_Controller
 
         // $row->id diteruskan sebagai $abaikan_id: baris ini tidak boleh
         // menghalangi dirinya sendiri. Tanpa itu, menyunting apa pun pada
-        // pendaftaran di bulan yang kuotanya pas akan selalu ditolak — oleh
+        // pendaftaran di bulan yang kuotanya pas akan selalu ditolak - oleh
         // dirinya sendiri.
         $bidang_kode = NULL;
         $galat = $this->periksa_slot($row->jenis, $divisi_atau_tema, $bidang_kode, $mulai, $selesai, (int) $row->id);
@@ -266,7 +266,7 @@ class KemitraanPortal extends Public_Controller
      *
      * Statusnya diubah jadi 'Dibatalkan', BUKAN barisnya dihapus. Riwayatnya
      * tetap terbaca oleh mahasiswa maupun admin, sementara kuotanya lepas
-     * seketika — peta_harian() hanya menghitung 'Diajukan' dan 'Diterima'.
+     * seketika - peta_harian() hanya menghitung 'Diajukan' dan 'Diterima'.
      *
      * Ini menutup masalah yang nyata: status Diajukan sudah memakan kuota, jadi
      * satu orang yang salah pilih divisi mengunci slot sampai ada admin yang
@@ -317,7 +317,7 @@ class KemitraanPortal extends Public_Controller
         if ( ! $this->akses_mahasiswa('KemitraanPortal/daftar/' . $jenis)) { return; }
 
         // Aturannya hidup di config/form_validation.php, grup
-        // `kemitraan_pendaftaran` — mekanisme bawaan CI3. Superadmin menyunting
+        // `kemitraan_pendaftaran` - mekanisme bawaan CI3. Superadmin menyunting
         // baris yang sama lewat Admin_Kemitraan::simpan_ubah(), dan dua salinan
         // aturan yang sama akan berselisih cepat atau lambat.
         if ($this->form_validation->run('kemitraan_pendaftaran') === FALSE) {
@@ -339,7 +339,7 @@ class KemitraanPortal extends Public_Controller
         ])->count_all_results('kkn_magang_pendaftaran');
         if ($menggantung > 0) {
             $this->tolak_pendaftaran($jenis, 'Anda masih punya pendaftaran ' . strtoupper($jenis)
-                . ' yang sedang ditinjau. Batalkan atau tunggu hasilnya dulu — lihat di halaman Akun.');
+                . ' yang sedang ditinjau. Batalkan atau tunggu hasilnya dulu - lihat di halaman Akun.');
             return;
         }
 
@@ -350,7 +350,7 @@ class KemitraanPortal extends Public_Controller
             return;
         }
 
-        // SURAT PENGANTAR WAJIB UNTUK MAGANG — keputusan user 2 Agt 2026,
+        // SURAT PENGANTAR WAJIB UNTUK MAGANG - keputusan user 2 Agt 2026,
         // membuka butir #11 yang selama ini BLOCKED. KKN sengaja TIDAK ikut:
         // yang diminta hanya magang, dan melebarkannya sendiri berarti menolak
         // pendaftaran yang selama ini sah tanpa ada yang memutuskannya.
@@ -359,7 +359,7 @@ class KemitraanPortal extends Public_Controller
         // atas surat ini; pendaftaran magang tanpa surat akan sampai ke meja
         // bidang membawa tahap 1 yang tidak pernah benar-benar terjadi.
         //
-        // `required` di formulir tidak dihitung sebagai penjagaan — ia hilang
+        // `required` di formulir tidak dihitung sebagai penjagaan - ia hilang
         // begitu POST dikirim tanpa lewat halaman itu.
         if ($jenis === 'magang' && ( ! isset($_FILES['file_surat_pengantar'])
             || (int) $_FILES['file_surat_pengantar']['error'] === UPLOAD_ERR_NO_FILE)) {
@@ -394,7 +394,7 @@ class KemitraanPortal extends Public_Controller
         $pesan = 'Pendaftaran ' . strtoupper($jenis) . ' berhasil dikirim. Cek status pendaftaran di halaman akun Anda.';
 
         // Berkas disimpan di luar webroot, hanya bisa dibuka admin lewat
-        // Admin_Kemitraan::lihat_dokumen() — dulu di .assets/uploads/ yang bisa
+        // Admin_Kemitraan::lihat_dokumen() - dulu di .assets/uploads/ yang bisa
         // diakses HTTP langsung. Pendaftaran tetap tersimpan kalau berkasnya
         // gagal; pendaftar diberi tahu apa adanya, bukan dibiarkan mengira
         // lampirannya sudah masuk.
@@ -415,17 +415,17 @@ class KemitraanPortal extends Public_Controller
                 $simpan[$field] = $nama_berkas;
             } elseif ($galat) {
                 // Disimpan PER FIELD. Satu `$galat` bersama akan berisi galat
-                // berkas TERAKHIR saat pesannya dibaca — untuk magang itu
+                // berkas TERAKHIR saat pesannya dibaca - untuk magang itu
                 // proposal, padahal yang ditanyakan surat pengantar.
                 $galat_berkas[$field] = $galat;
-                $pesan .= ' Namun ' . strtolower($label) . ' gagal diunggah (' . $galat . ') — hubungi admin untuk menyusulkan.';
+                $pesan .= ' Namun ' . strtolower($label) . ' gagal diunggah (' . $galat . ') - hubungi admin untuk menyusulkan.';
             }
         }
 
         // Penjaga KEDUA. Yang pertama memastikan ada berkas TERKIRIM; ini
         // memastikan berkas itu benar-benar MENDARAT. Kalau ditolak karena
         // kebesaran atau formatnya salah, pendaftaran magangnya batal
-        // seluruhnya — dibiarkan, ia melanjutkan perjalanan tanpa dokumen yang
+        // seluruhnya - dibiarkan, ia melanjutkan perjalanan tanpa dokumen yang
         // barusan dinyatakan wajib, dengan pesan yang cuma menyuruh "hubungi
         // admin untuk menyusulkan".
         //
@@ -433,7 +433,7 @@ class KemitraanPortal extends Public_Controller
         // ukuran/MIME kedua di sini: dua definisi "berkas yang sah" akan
         // berbeda pendapat cepat atau lambat.
         if ($jenis === 'magang' && empty($simpan['file_surat_pengantar'])) {
-            // Proposal bisa saja sudah mendarat lebih dulu — ikut dibuang supaya
+            // Proposal bisa saja sudah mendarat lebih dulu - ikut dibuang supaya
             // tidak ada berkas yatim di folder pendaftaran yang barusan dihapus.
             foreach ($simpan as $nama_berkas) {
                 $jalur = $this->private_upload_dir('kemitraan', $id) . basename($nama_berkas);
@@ -462,12 +462,12 @@ class KemitraanPortal extends Public_Controller
      *
      * Dipakai `simpan()` (pendaftaran baru) DAN `simpan_ubah()` (mahasiswa
      * menyunting miliknya). Dua salinan pemeriksaan yang sama akan berselisih,
-     * dan yang longgar selalu yang menang — di sini yang longgar berarti
+     * dan yang longgar selalu yang menang - di sini yang longgar berarti
      * mahasiswa bisa memindahkan dirinya ke bulan yang tertutup lewat layar
      * sunting, melewati penjagaan yang sudah dipasang di pendaftaran.
      *
      * @param string $divisi_atau_tema  DIUBAH jadi nama kanonik dari tabel.
-     * @param int|null $abaikan_id      Baris yang tidak ikut dihitung — dipakai
+     * @param int|null $abaikan_id      Baris yang tidak ikut dihitung - dipakai
      *   saat menyunting, supaya pendaftaran tidak menghalangi dirinya sendiri.
      */
     private function periksa_slot($jenis, &$divisi_atau_tema, &$bidang_kode, $mulai, $selesai, $abaikan_id = NULL)
@@ -485,7 +485,7 @@ class KemitraanPortal extends Public_Controller
         }
 
         // Slot HANYA mengikat magang. Untuk KKN, field yang sama berarti tema
-        // kegiatan — teks bebas yang tidak punya bidang untuk dicocokkan.
+        // kegiatan - teks bebas yang tidak punya bidang untuk dicocokkan.
         if ($jenis !== 'magang') { $bidang_kode = NULL; return NULL; }
 
         // Formulir mengirim KODE bidang, bukan namanya. Nama bisa berubah;
@@ -494,7 +494,7 @@ class KemitraanPortal extends Public_Controller
         $bidang = $this->slot->bidang_by_kode($divisi_atau_tema);
         if ( ! $bidang || (int) $bidang->aktif !== 1) {
             // Formulir merender select, tapi tidak merender pilihan bukan
-            // penjagaan — siapa pun bisa mengirim nilai lain dari peramban.
+            // penjagaan - siapa pun bisa mengirim nilai lain dari peramban.
             return 'Bidang yang dipilih tidak tersedia. Silakan pilih dari daftar yang ditawarkan.';
         }
 
@@ -515,7 +515,7 @@ class KemitraanPortal extends Public_Controller
     /**
      * Pulangkan pendaftar ke formulirnya dengan alasan yang bisa dibaca.
      *
-     * Isian belum dikembalikan di sini — formulir ini belum punya mekanisme
+     * Isian belum dikembalikan di sini - formulir ini belum punya mekanisme
      * seperti Auth::_onboarding_fail(). ponytail: satu tempat memulangkan,
      * jadi kalau nanti isian ikut dipulihkan, cukup satu method yang diubah.
      */

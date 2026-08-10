@@ -16,7 +16,7 @@ $nama_bidang = array_column($daftar_bidang, 'nama', 'kode');
     <i class="ph ph-arrows-split text-lg mt-0.5"></i>
     <div>
         <strong><?= (int) $jml_triase ?> aduan menunggu diteruskan.</strong>
-        Pelapor tidak lagi memilih bidang sendiri — selama belum diteruskan, aduan ini tidak muncul di dashboard bidang mana pun.
+        Pelapor tidak lagi memilih bidang sendiri - selama belum diteruskan, aduan ini tidak muncul di dashboard bidang mana pun.
         <a href="<?= admin_table_url($base_url, ['bidang' => 'belum']) ?>" class="underline font-semibold">Tampilkan saja yang belum diteruskan</a>.
     </div>
 </div>
@@ -27,7 +27,7 @@ $nama_bidang = array_column($daftar_bidang, 'nama', 'kode');
     <i class="ph ph-warning-circle text-lg mt-0.5"></i>
     <div>
         <strong>Bidang tanpa admin ter-assign:</strong> <?= html_escape(implode(', ', $bidang_tanpa_admin)) ?>.
-        Aduan yang masuk ke bidang ini tidak akan muncul di dashboard siapa pun — tetapkan admin lewat <a href="<?= base_url('Admin_Users') ?>" class="underline font-semibold">Manajemen Pengguna</a>.
+        Aduan yang masuk ke bidang ini tidak akan muncul di dashboard siapa pun - tetapkan admin lewat <a href="<?= base_url('Admin_Users') ?>" class="underline font-semibold">Manajemen Pengguna</a>.
     </div>
 </div>
 <?php endif; ?>
@@ -56,7 +56,7 @@ $filter_html = ob_get_clean();
     /**
      * px-4, bukan px-6 seperti tabel admin lainnya. Diukur di 1440px (§17 poin
      * 6): kolom Bidang yang kini memuat <select> + tombol menambah 173px, dan
-     * tabel ini sudah kelebihan 24px SEBELUM perubahan itu — jadi kolom paling
+     * tabel ini sudah kelebihan 24px SEBELUM perubahan itu - jadi kolom paling
      * kanan ("Diproses Oleh") sudah terpotong sejak lama tanpa ada yang
      * melihatnya. Enam kolom x 2 sisi x 8px = 96px yang dihemat di sini adalah
      * yang membuat totalnya kembali muat, bersama tanggal berbahasa Indonesia
@@ -80,7 +80,7 @@ $filter_html = ob_get_clean();
                 <tr><td colspan="6" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">Belum ada aduan.</td></tr>
                 <?php else: foreach ($rows as $r): ?>
                 <tr>
-                    <?php // Bulan berbahasa Indonesia — "Aug"/"May" tidak dipakai di layar mana pun lagi. ?>
+                    <?php // Bulan berbahasa Indonesia - "Aug"/"May" tidak dipakai di layar mana pun lagi. ?>
                     <td class="px-4 py-4 text-xs"><?= html_escape(tgl_id($r->created_at, TRUE) . ' ' . date('H:i', strtotime($r->created_at))) ?></td>
                     <td class="px-4 py-4">
                         <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama) ?></div>
@@ -102,7 +102,7 @@ $filter_html = ob_get_clean();
                     </td>
                     <?php
                     /**
-                     * Kontrol rute muncul selama status masih 'Baru' — bukan hanya
+                     * Kontrol rute muncul selama status masih 'Baru' - bukan hanya
                      * saat bidangnya NULL. Salah rute paling sering ketahuan
                      * SETELAH diteruskan, dan gerbang servernya (Admin_Aduan::triase)
                      * memang mengizinkan perbaikan selama belum ada yang memproses.
@@ -116,7 +116,7 @@ $filter_html = ob_get_clean();
                             <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
                             <?php // max-w: nama bidang panjang; daftar lengkapnya tetap utuh saat dropdown dibuka. ?>
                             <select name="bidang" required class="max-w-[110px] rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-2 py-1 text-xs text-gray-700 dark:text-gray-200">
-                                <option value=""><?= $r->bidang ? '— ubah —' : '— pilih bidang —' ?></option>
+                                <option value=""><?= $r->bidang ? '- ubah -' : '- pilih bidang -' ?></option>
                                 <?php foreach ($daftar_bidang as $b): ?>
                                 <option value="<?= html_escape($b->kode) ?>" <?= $r->bidang === $b->kode ? 'selected' : '' ?>><?= html_escape($b->nama) ?></option>
                                 <?php endforeach; ?>

@@ -2,23 +2,23 @@
      ARSIP: Section "Tentang Kami" s.d. "Berita & Artikel"
      ============================================================
      Disembunyikan dari homepage (application/views/pages/home/awal.php)
-     atas permintaan user, TIDAK DIHAPUS — disimpan di sini sebagai
+     atas permintaan user, TIDAK DIHAPUS - disimpan di sini sebagai
      referensi supaya bisa dipakai ulang di halaman lain nanti.
 
      Isi (urut sesuai homepage semula):
        - SECTION 2: ABOUT (Tentang Kami)
        - SECTION 3: LAYANAN (Bento Grid)
        - SECTION 4: TAHAPAN (Pipeline Timeline)
-       - SECTION 5: BANK DESAIN (True Carousel) — versi mandirinya
+       - SECTION 5: BANK DESAIN (True Carousel) - versi mandirinya
          sudah ada di application/views/pages/bank_desain/panduan_desain.php
-       - SECTION 6: CARI PERUMAHAN (Sikumbang) — versi mandirinya
+       - SECTION 6: CARI PERUMAHAN (Sikumbang) - versi mandirinya
          sudah ada di application/views/pages/perumahan/cari_rumah.php
        - SECTION 7: BERITA & ARTIKEL
 
      File ini BUKAN view yang di-load otomatis oleh controller manapun.
      Untuk dipakai lagi: copy section yang dibutuhkan ke halaman baru,
      lalu copy juga fungsi JS terkait dari <script> di bawah (designCarousel,
-     lazy-load framework, cari_wil/load_more_data, animasi timeline SVG) —
+     lazy-load framework, cari_wil/load_more_data, animasi timeline SVG) -
      fungsi-fungsi itu awalnya ada di <script> global awal.php dan sudah
      ikut dipindah ke sini karena cuma dipakai oleh section-section ini.
      ============================================================ -->
@@ -128,7 +128,7 @@
 </section>
 
 <!-- ============================================================
-     SECTION 3: LAYANAN — Bento Grid
+     SECTION 3: LAYANAN - Bento Grid
      ============================================================ -->
 <section id="layanan-kami" class="w-full py-20 sm:py-28 scroll-mt-20 relative overflow-hidden">
     <!-- Grid Pattern Overlay with Smooth Mask Fade -->
@@ -310,7 +310,7 @@
 </section>
 
 <!-- ============================================================
-     SECTION 4: TAHAPAN — Pipeline Timeline
+     SECTION 4: TAHAPAN - Pipeline Timeline
      ============================================================ -->
 <section id="tahapan" class="w-full relative overflow-hidden py-20 sm:py-28">
     
@@ -465,7 +465,7 @@
 </section>
 
 <!-- ============================================================
-     SECTION 5: BANK DESAIN — True Carousel
+     SECTION 5: BANK DESAIN - True Carousel
      ============================================================ -->
 <section id="bank-desain" class="w-full py-20 sm:py-28 scroll-mt-20" x-data="designCarousel()" @designs-loaded.window="$nextTick(() => recalc())">
     <div class="max-w-7xl mx-auto px-6 lg:px-8">
@@ -505,7 +505,7 @@
     <div class="max-w-7xl mx-auto px-6 lg:px-8">
         <div class="text-center mb-10" data-aos="fade-down">
             <h3 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight mb-2">Cari <span class="text-[#d6fb00]">Perumahan</span></h3>
-            <p class="text-zinc-500 text-xs">Data real-time dari Sikumbang — Tapera</p>
+            <p class="text-zinc-500 text-xs">Data real-time dari Sikumbang - Tapera</p>
         </div>
 
         <style>

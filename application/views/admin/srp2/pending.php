@@ -13,7 +13,7 @@ $kelas_status = ['Pending' => 'pending', 'Draft' => 'process', 'Diterima' => 'ok
     $this->load->helper('admin_table');
     // Filter status dibangun lewat admin_table_url() supaya pencarian/urutan yang
     // sedang aktif ikut terbawa saat ganti filter (dan sebaliknya). Mengikuti pola
-    // filter bidang di admin/aduan/index.php — jangan bikin varian baru (§17.6).
+    // filter bidang di admin/aduan/index.php - jangan bikin varian baru (§17.6).
     $kelas_aktif  = 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary';
     $kelas_pasif  = 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10';
     ob_start(); ?>

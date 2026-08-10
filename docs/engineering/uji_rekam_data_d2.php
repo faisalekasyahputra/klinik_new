@@ -1,9 +1,9 @@
 <?php
 /**
- * Uji D2 — Rekam Data, Input Capaian Perumahan lewat HTTP sungguhan.
+ * Uji D2 - Rekam Data, Input Capaian Perumahan lewat HTTP sungguhan.
  *
  * Menempuh layar seperti petugas kabupaten: login, buka periode, jawab gerbang
- * sumber dana, isi enam program, dan dibuktikan di DB — bukan dari flash di layar.
+ * sumber dana, isi enam program, dan dibuktikan di DB - bukan dari flash di layar.
  *
  * Jalankan lewat Apache XAMPP (bukan `php -S`, lihat AGENTS.md §0e):
  *   php docs/engineering/uji_rekam_data_d2.php
@@ -24,7 +24,7 @@ define('TRIWULAN', 2);
 $GLOBALS['uji_total'] = 0;
 $GLOBALS['uji_gagal'] = 0;
 
-/** Penanda waktu mulai — dipakai menyapu draft yang lahir selama run ini. */
+/** Penanda waktu mulai - dipakai menyapu draft yang lahir selama run ini. */
 $mulai = date('Y-m-d H:i:s', time() - 1);
 
 function cek($condition, $label) {
@@ -143,7 +143,7 @@ function bersihkan() {
     $db->query('DELETE FROM rd_laporan WHERE tahun = ' . (int) TAHUN);
     // `pulang()` mengarahkan kembali ke layar index setelah tulisan ditolak,
     // dan index SENGAJA membuat draft periode berjalan. Untuk admin wilayah
-    // lain periodenya jatuh ke tahun berjalan, di luar tahun sentinel — jadi
+    // lain periodenya jatuh ke tahun berjalan, di luar tahun sentinel - jadi
     // draft itu harus disapu terpisah, dibatasi kabupatennya dan waktu run ini.
     if ($kab_lain) {
         $db->query(sprintf("DELETE FROM rd_laporan WHERE kabupaten_id = %d AND created_at >= '%s'",
@@ -157,7 +157,7 @@ function bersihkan() {
 
 // ---------------------------------------------------------------- prasyarat
 
-echo "Uji D2 — Input Capaian Perumahan\n";
+echo "Uji D2 - Input Capaian Perumahan\n";
 
 $admin = q('SELECT id, kabupaten_id FROM usr_users WHERE email = ? AND role = ?',
     [ADMIN_EMAIL, 'admin_kabkota']);

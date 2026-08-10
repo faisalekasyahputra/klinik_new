@@ -19,30 +19,30 @@ class Smart_filter {
 
         // LOGIKA KELAYAKAN UTAMA BERDASARKAN DESIL
 
-        /* Status kepemilikan MENYARING DI ATAS desil — tidak menggantikannya
+        /* Status kepemilikan MENYARING DI ATAS desil - tidak menggantikannya
          * (keputusan user 5 Agt 2026, revisi dinas butir A7). Desil tetap
          * menentukan program mana yang berhak; kepemilikan menentukan BENTUK
          * intervensinya. Menggantikan desil akan mengubah sasaran subsidi.
          *
-         * Pemetaannya BUKAN tebakan — diambil dari dokumen proyek sendiri,
+         * Pemetaannya BUKAN tebakan - diambil dari dokumen proyek sendiri,
          * docs/meetings/22_juni_2026/ANALISA_PROGRAM_PPT_UN_HABITAT.md §2:
          *
-         *   PB Backlog — "Warga yang menumpang di rumah orangtua/saudara
+         *   PB Backlog - "Warga yang menumpang di rumah orangtua/saudara
          *   (1 rumah dihuni >1 KK), ATAU warga yang saat ini masih sewa/kontrak
          *   rumah." Intervensinya: "Pembangunan rumah baru di lahan milik
          *   sendiri yang sah."
          *
-         *   RTLH — "perbaikan atau renovasi rumah bagi masyarakat miskin yang
+         *   RTLH - "perbaikan atau renovasi rumah bagi masyarakat miskin yang
          *   rumahnya masuk kategori tidak layak."
          *
          * Jadi `pb` untuk yang BELUM punya rumah layak huni, `rtlh` untuk yang
          * punya rumah tapi tidak layak. Gerbang `rtlh` sudah ada sejak awal;
-         * yang bolong justru pasangannya di `pb` — itu sebabnya warga berumah
+         * yang bolong justru pasangannya di `pb` - itu sebabnya warga berumah
          * layak pun tetap ditawari bantuan pembangunan baru.
          *
          * Program PEMBIAYAAN (FLPP, Oemah Lestari) sengaja TIDAK disaring:
          * membeli rumah terbuka apa pun status huniannya sekarang. Begitu juga
-         * `omah_sekeng` — dokumen sumbernya tidak menyebut ia perbaikan atau
+         * `omah_sekeng` - dokumen sumbernya tidak menyebut ia perbaikan atau
          * pembangunan, dan menyaring atas dugaan bisa menutup bantuan yang
          * seharusnya terbuka. Kalau dinas kelak memastikan jenisnya, tambahkan
          * di sini, bukan di pemanggil.
@@ -112,7 +112,7 @@ class Smart_filter {
      * ⚠️ Daftar ini TETAP jadi acuan pencocokan. `sf_programs` mengatur
      * `is_active` (yang menggerbangi pengajuan) dan `nama_program` (yang tampil
      * di antrean & /akun); yang di sini mengatur apa yang tampil di kartu hasil
-     * diagnosa. Menambah program ke tabel TIDAK membuatnya bisa dicocokkan —
+     * diagnosa. Menambah program ke tabel TIDAK membuatnya bisa dicocokkan -
      * aturannya ada di `get_eligible_programs()`, dan itu kode.
      *
      * Perhatikan `oemah_lestari` muncul DUA KALI (subsidi & non-subsidi) dengan

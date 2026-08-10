@@ -28,7 +28,7 @@ class Admin extends Admin_Controller {
             return;
         }
 
-        // S6 — jalur superadmin dulu MELEWATI pembatas laju yang sudah dipasang
+        // S6 - jalur superadmin dulu MELEWATI pembatas laju yang sudah dipasang
         // di Admin_Kabkota::update_status(). Policy `admin_queue_decision` yang
         // sama dipakai di sini, bukan mekanisme kedua (§17 poin 15): dimensi
         // ip+account+object, jadi satu akun yang membanjiri satu antrean tetap

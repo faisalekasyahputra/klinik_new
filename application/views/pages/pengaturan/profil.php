@@ -1,5 +1,5 @@
 <?php
-// Rantai fallback sampai email — username DAN name bisa dua-duanya NULL untuk
+// Rantai fallback sampai email - username DAN name bisa dua-duanya NULL untuk
 // akun daftar cepat lama, dan email selalu ada. Sebelumnya fallback berhenti di
 // $user->name, jadi kalau itu juga NULL, JS membandingkan input (selalu string)
 // dengan literal null dan tombol Hapus mustahil aktif (roadmap T5 R2-sebagian).
@@ -43,7 +43,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
 
     <?php
         // Flash success/error sudah dirender shell admin/index.php sebelum $content
-        // disuntikkan — blok di sini dulu merender ulang pesan yang sama (bug B5,
+        // disuntikkan - blok di sini dulu merender ulang pesan yang sama (bug B5,
         // sama seperti pages/pengaturan/index.php).
     ?>
 
@@ -51,17 +51,17 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
     // Riwayat keluhan "hanya tampak separo" di halaman ini ada DUA, dan yang
     // pertama sempat saya kira sudah menutup yang kedua:
     //
-    //   1. Seluruh halaman dikunci `max-w-2xl` — isinya berhenti di tengah
+    //   1. Seluruh halaman dikunci `max-w-2xl` - isinya berhenti di tengah
     //      layar. Sudah dicabut.
     //   2. Diganti grid tiga kolom: formulir dua kolom, Zona Berbahaya satu.
-    //      Masih terlihat separo, karena kotak merah itu pendek — sisa kolom
+    //      Masih terlihat separo, karena kotak merah itu pendek - sisa kolom
     //      kanannya kosong, dan `align-items: stretch` bawaan grid malah
     //      meregangkannya jadi ~240px blok merah melompong.
     //
     // Akarnya bukan tinggi kotak, tapi membagi lebar untuk isi yang tidak
     // sebanding. Sekarang tanpa kolom sama sekali: formulir memakai lebar
     // penuh dengan medannya yang melebar (empat kolom di layar lebar), dan
-    // Zona Berbahaya jadi bilah di bawah — tempat yang lebih jujur untuk
+    // Zona Berbahaya jadi bilah di bawah - tempat yang lebih jujur untuk
     // tindakan yang jarang dipakai dan tidak bisa dibatalkan, alih-alih blok
     // merah sebesar formulir di sudut kanan atas.
     ?>
@@ -124,7 +124,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                 <i class="ph ph-warning"></i> Zona Berbahaya
             </h2>
             <!--
-              S4 — teks ini DILURUSKAN 29 Jul 2026 agar cocok dengan yang
+              S4 - teks ini DILURUSKAN 29 Jul 2026 agar cocok dengan yang
               benar-benar terjadi. Sebelumnya tombolnya berbunyi "Hapus Akun
               Secara Permanen" dan keterangannya hanya menyebut profil serta
               forum, sehingga pengguna wajar menyimpulkan seluruh datanya
@@ -133,12 +133,12 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
               data pendataan Warga (profil, penilaian, snapshot SIMPERUM, dan
               foto bukti) TETAP ADA karena FK pemiliknya `SET NULL`.
               Pembersihannya sendiri menunggu kebijakan retensi (keputusan #9);
-              sampai itu turun, yang bisa segera diperbaiki adalah janjinya —
+              sampai itu turun, yang bisa segera diperbaiki adalah janjinya -
               bukan diam-diam membiarkannya salah.
             -->
             <p class="mt-2 text-xs text-gray-600 dark:text-brand-muted">Menghapus akun akan menghapus <b>akun dan akses masuk Anda</b>, serta dokumen SRP2 yang pernah Anda unggah. Diskusi dan komentar tidak dihapus, melainkan dianonimkan menjadi "Akun Dihapus" agar alur diskusi tidak rusak. Tindakan ini tidak bisa dibatalkan.</p>
 
-            <p class="mt-1 text-xs text-gray-600 dark:text-brand-muted">Data layanan yang pernah Anda kirimkan — data pendataan perumahan, hasil penilaian, dan foto bukti — <b>tidak ikut terhapus saat ini</b> dan mengikuti kebijakan retensi data yang berlaku. Untuk meminta penghapusannya, hubungi admin.</p>
+            <p class="mt-1 text-xs text-gray-600 dark:text-brand-muted">Data layanan yang pernah Anda kirimkan - data pendataan perumahan, hasil penilaian, dan foto bukti - <b>tidak ikut terhapus saat ini</b> dan mengikuti kebijakan retensi data yang berlaku. Untuk meminta penghapusannya, hubungi admin.</p>
 
             </div>
 
@@ -158,7 +158,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                 </h2>
                 <?php
                 // Draft + ada catatan = pengajuan DIBUKA KEMBALI admin lewat
-                // "Minta Perbaikan", bukan draft yang belum pernah dikirim —
+                // "Minta Perbaikan", bukan draft yang belum pernah dikirim -
                 // pembedaan yang sama persis dengan /akun (Pengaturan::index()).
                 // Sebelumnya halaman ini menampilkan "Lengkapi Dokumen" polos
                 // untuk keduanya, dan NOL keterangan, padahal flash ke admin
@@ -168,7 +168,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                 $perlu_perbaikan = ($st == 'Draft' && $ada_catatan);
 
                 // Status tak dikenal ditampilkan APA ADANYA. Cabang else dulu
-                // mencapnya "Ditolak" — mencap sesuatu sebagai penolakan yang
+                // mencapnya "Ditolak" - mencap sesuatu sebagai penolakan yang
                 // bukan penolakan itu kebohongan di layar, sekategori dengan
                 // pesan sukses karangan (§0d).
                 $badge = [
@@ -193,7 +193,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
             </div>
 
             <?php // Catatan admin ditampilkan untuk KEDUA keputusan yang mengembalikan
-                  // pekerjaan ke pemohon — Ditolak maupun Minta Perbaikan. Dulu hanya
+                  // pekerjaan ke pemohon - Ditolak maupun Minta Perbaikan. Dulu hanya
                   // Ditolak, sehingga keputusan ketiga tidak punya keterangan sama sekali. ?>
             <?php if($ada_catatan && in_array($st, ['Ditolak', 'Draft'], TRUE)): ?>
             <?php $ck = $perlu_perbaikan
@@ -208,7 +208,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
             <div class="mt-4 flex flex-wrap items-start gap-3 border-b border-gray-100 pb-4 dark:border-white/10">
                 <?php
                 // Tautan profil publik memakai certified_developer_id (PK direktori),
-                // BUKAN id pengajuan. Dulu memakai $pengajuan_sp2->id — dua tabel,
+                // BUKAN id pengajuan. Dulu memakai $pengajuan_sp2->id - dua tabel,
                 // dua urutan ID: registrasi id=7 membuka profil perusahaan LAIN,
                 // lengkap dengan badge "Bersertifikat".
                 //
@@ -224,12 +224,12 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                         <button type="button" disabled title="Sertifikat digital belum tersedia untuk diunduh" class="inline-flex cursor-not-allowed items-center gap-2 rounded-lg border border-gray-200 bg-gray-100 px-4 py-2 text-sm font-bold text-gray-400 dark:border-white/10 dark:bg-white/5 dark:text-brand-muted/60">
                             <i class="ph ph-download"></i> Download Sertifikat
                         </button>
-                        <p class="<?= $petunjuk ?>">Sertifikat digital belum tersedia untuk diunduh — proses penerbitan sedang disiapkan Admin Disperakim Jateng.</p>
+                        <p class="<?= $petunjuk ?>">Sertifikat digital belum tersedia untuk diunduh - proses penerbitan sedang disiapkan Admin Disperakim Jateng.</p>
                     </div>
                 <?php elseif($pengajuan_sp2->status_verifikasi == 'Diterima'): ?>
                     <?php // Diterima TAPI belum tertaut ke direktori publik. Sesudah
                           // backfill (migrasi 20260701000016) ini seharusnya tidak
-                          // terjadi lagi — tapi kalau terjadi, katakan apa adanya,
+                          // terjadi lagi - tapi kalau terjadi, katakan apa adanya,
                           // jangan tampilkan pesan "menunggu Diterima" kepada orang
                           // yang pengajuannya SUDAH diterima. ?>
                     <p class="text-xs text-amber-700 dark:text-amber-400">Pengajuan Anda sudah diterima, tetapi belum terbit di direktori pengembang publik. Silakan hubungi Admin Disperakim Jateng untuk penerbitannya.</p>
@@ -328,7 +328,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
             </div>
 
             <!-- Ketik-nama cuma friksi UI (dan bisa ditembus siapa pun yang
-                 sekadar memakai sesi ini) — bukti kepemilikan yang sebenarnya
+                 sekadar memakai sesi ini) - bukti kepemilikan yang sebenarnya
                  adalah password, diverifikasi SERVER di Pengaturan::delete_account()
                  (roadmap T5 S13). -->
             <div class="mb-5">

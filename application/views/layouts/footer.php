@@ -4,7 +4,7 @@
      ============================================================ -->
 
 <!-- ============================================================
-     HELP WIDGET — FAQ seputar web (Bottom Right)
+     HELP WIDGET - FAQ seputar web (Bottom Right)
      ============================================================ -->
 <div class="theme-light fixed bottom-6 right-6 z-50" x-data="{
         helpOpen: false,
@@ -15,7 +15,7 @@
             { q: 'Bagaimana cara cek kelayakan bantuan rumah?', a: 'Buka menu Perumahan lalu pilih Etalase Program untuk melihat daftar program, atau langsung isi diagnosa NIK untuk mengecek program yang sesuai untuk Anda.' },
             { q: 'Bagaimana cara cek status pengajuan?', a: 'Buka tab \'Cek Status Pengajuan\' di menu utama, lalu masukkan nomor tiket dan empat digit terakhir NIK Anda.' },
             { q: 'Bagaimana cara daftar Sertifikasi Pengembang (SRP2)?', a: 'Buka menu Pengembang dari menu utama dan ikuti alur pendaftaran. Anda perlu login terlebih dahulu.' },
-            { q: 'Bagaimana cara menyampaikan aduan?', a: 'Buka halaman Aduan dari beranda dan isi formulirnya. Anda tidak perlu memilih bidang tujuan — aduan Anda kami baca lebih dulu, lalu diteruskan ke bidang yang menangani.' },
+            { q: 'Bagaimana cara menyampaikan aduan?', a: 'Buka halaman Aduan dari beranda dan isi formulirnya. Anda tidak perlu memilih bidang tujuan - aduan Anda kami baca lebih dulu, lalu diteruskan ke bidang yang menangani.' },
         ]
      }">
 
@@ -53,12 +53,12 @@
 
 <?php
 /*
- * B2 — tombol pembuka chat DISEMBUNYIKAN 29 Jul 2026, seiring endpoint-nya
+ * B2 - tombol pembuka chat DISEMBUNYIKAN 29 Jul 2026, seiring endpoint-nya
  * dikarantina. Fiturnya memang SUDAH rusak jauh sebelum ini: ketiga endpoint
  * menulis/membaca `tb_chat` yang tidak pernah ada di skema mana pun, jadi
  * yang dihilangkan adalah janji, bukan fungsi. Menampilkan "Chat langsung
  * dengan kami" yang menuju 404 lebih buruk daripada tidak menampilkannya.
- * Dibuka kembali hanya lewat keputusan #7 — dan bila "bangun", setelah
+ * Dibuka kembali hanya lewat keputusan #7 - dan bila "bangun", setelah
  * migrasi tabel, session_id terikat sesi server, rate limit, dan layar
  * operator ada.
  */
@@ -66,7 +66,7 @@
         </div>
     </div>
 
-    <!-- Chat Widget Window — dikarantina B2: `chatOpen` tidak pernah lagi
+    <!-- Chat Widget Window - dikarantina B2: `chatOpen` tidak pernah lagi
          disetel TRUE karena tombol pembukanya sudah dihilangkan di atas.
          Markupnya dibiarkan utuh supaya keputusan #7 tetap punya dua pilihan;
          `x-show="false"` memastikan ia tidak muncul walau ada yang menyalakan
@@ -154,7 +154,7 @@
         if (initialSkeleton) initialSkeleton.classList.add('is-hidden');
     });
 
-    // Lenis smooth scroll disabled — panel now uses native overflow-y scroll
+    // Lenis smooth scroll disabled - panel now uses native overflow-y scroll
 </script>
 
 <!-- ============================================================
@@ -274,11 +274,11 @@ function globalSystem() {
 // ============================================================
 // TAB NAVIGATION LOADER
 // ============================================================
-// Link navbar bertanda [data-tab-link] tidak pindah halaman penuh —
+// Link navbar bertanda [data-tab-link] tidak pindah halaman penuh -
 // isi #page-content-wrapper ditukar via fetch AJAX, lalu
 // script di dalamnya dijalankan ulang (urut, menunggu script eksternal
 // seperti Leaflet/Chart.js selesai load sebelum script berikutnya jalan
-// — sama seperti urutan pemuatan halaman normal), Alpine & AOS di-init
+// - sama seperti urutan pemuatan halaman normal), Alpine & AOS di-init
 // ulang untuk konten baru, dan URL di-update lewat history API supaya
 // tombol back/forward & reload/bookmark tetap berfungsi wajar.
 (function () {
@@ -321,7 +321,7 @@ function globalSystem() {
     }
 
     // Jalankan ulang <script> yang ikut masuk lewat innerHTML (browser
-    // tidak otomatis mengeksekusinya), URUT satu-satu — script eksternal
+    // tidak otomatis mengeksekusinya), URUT satu-satu - script eksternal
     // (src=...) ditunggu sampai 'load' dulu sebelum lanjut ke script
     // berikutnya, supaya library seperti Leaflet/Chart.js sudah siap
     // saat script inline yang memakainya dijalankan.
@@ -350,7 +350,7 @@ function globalSystem() {
     }
 
     function reinitContent(wrapper, mutationsDeferred) {
-        // Halaman ini sudah lama "DOMContentLoaded" sejak load pertama —
+        // Halaman ini sudah lama "DOMContentLoaded" sejak load pertama -
         // script per-halaman yang menunggu event itu (pola umum di proyek
         // ini) tidak akan pernah jalan lagi kalau tidak di-shim begini.
         var originalAdd = document.addEventListener.bind(document);
@@ -392,7 +392,7 @@ function globalSystem() {
         var panel = wrapper.closest('.portal-panel');
         var myToken = ++loadToken;
 
-        // 1) Langsung aktifkan tab (progresif — tidak menunggu fetch)
+        // 1) Langsung aktifkan tab (progresif - tidak menunggu fetch)
         setActiveTabKey(key);
 
         // 2) Pertahankan tinggi panel dan tampilkan skeleton segera.
@@ -425,7 +425,7 @@ function globalSystem() {
             .then(function (res) {
                 if (myToken !== loadToken) return null;
                 // res.redirected: halaman ber-guard (mis. warga/pendataan tanpa
-                // login) me-redirect ke /login — tanpa cek ini halaman login
+                // login) me-redirect ke /login - tanpa cek ini halaman login
                 // UTUH tersuntik ke dalam panel. Jatuhkan ke navigasi penuh.
                 if (!res.ok || res.redirected) { window.location.href = url; return null; }
                 // Bukan HTML (PDF/gambar/unduhan) → biarkan browser menanganinya.
@@ -437,7 +437,7 @@ function globalSystem() {
             .then(function (html) {
                 if (html === null || html === undefined || myToken !== loadToken) return;
                 // Dokumen utuh (<!doctype/<html) = halaman berdiri sendiri yang
-                // tidak punya cabang partial AJAX — jangan disuntik ke panel.
+                // tidak punya cabang partial AJAX - jangan disuntik ke panel.
                 if (/^\s*(<!doctype|<html)/i.test(html)) { window.location.href = url; return; }
                 if (!html.trim()) html = '<div class="page-skeleton animate-pulse min-h-full"></div>';
                 // 4) Fade out skeleton → inject konten baru
@@ -451,7 +451,7 @@ function globalSystem() {
                     reinitContent(wrapper, mutationsDeferred).then(function () {
                         if (push) history.pushState({ tabUrl: url, tabKey: key }, '', url);
                         if (panel) panel.scrollTop = 0;
-                        // 5) Fade in konten baru — halus
+                        // 5) Fade in konten baru - halus
                         wrapper.style.transition = 'opacity 0.25s ease-in';
                         wrapper.style.opacity = '1';
                     }).catch(function () {
@@ -482,7 +482,7 @@ function globalSystem() {
         // Area yang PASTI berdiri sendiri (shell auth/dashboard, aksi sesi):
         // langsung navigasi penuh tanpa membuang satu fetch percobaan.
         if (/(login|register|daftar|Auth\/|akun|admin|Admin|Pengaturan|User_Profile)/.test(link.pathname)) return;
-        // S2 — opt-out dihormati SEBELUM fetch, bukan sesudah. Tanpa ini,
+        // S2 - opt-out dihormati SEBELUM fetch, bukan sesudah. Tanpa ini,
         // tautan yang sengaja ditandai tetap difetch dulu lalu baru jatuh ke
         // navigasi penuh: dua GET untuk satu klik, dan `Umum::detail()`
         // menaikkan `view_count` dua kali per klik.
@@ -498,7 +498,7 @@ function globalSystem() {
         loadTab(link.getAttribute('href'), key, true);
     });
 
-    // S1 — entry AWAL direkam sebagai state, sebelum pushState pertama.
+    // S1 - entry AWAL direkam sebagai state, sebelum pushState pertama.
     // Tanpa ini, Back dari halaman pertama menghasilkan popstate ber-state
     // null: URL kembali ke alamat lama sementara isinya tetap halaman kedua.
     if (!history.state || !history.state.tabUrl) {
@@ -515,7 +515,7 @@ function globalSystem() {
         }
         // State kosong = entry yang tidak pernah kita rekam (mis. hasil
         // navigasi penuh). Muat URL yang sedang aktif supaya isi layar selalu
-        // cocok dengan alamatnya — jangan diam.
+        // cocok dengan alamatnya - jangan diam.
         loadTab(window.location.href, null, false);
     });
 })();

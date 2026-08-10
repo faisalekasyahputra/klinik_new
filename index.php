@@ -58,7 +58,7 @@
  *
  * Sebelumnya default-nya `development`, sehingga server yang KEHILANGAN
  * konfigurasi environment-nya diam-diam menampilkan galat PHP lengkap dengan
- * path absolut ke pengunjung anonim — dan itu benar-benar terjadi di
+ * path absolut ke pengunjung anonim - dan itu benar-benar terjadi di
  * production (butir B1). Deploy yang lupa/kehilangan setelan sekarang jatuh ke
  * sisi yang aman, bukan sisi yang bocor.
  *
@@ -70,7 +70,7 @@
  *     CI_ENV=development php index.php migrate
  *
  * Lingkungan lokal menyetel `SetEnv CI_ENV development` di konfigurasi Apache
- * yang TIDAK ikut Git. Jangan menaruhnya di `.htaccess` repo — berkas yang
+ * yang TIDAK ikut Git. Jangan menaruhnya di `.htaccess` repo - berkas yang
  * sama dibaca lokal maupun production.
  */
 	$ci_env = isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : getenv('CI_ENV');
@@ -87,7 +87,7 @@
 switch (ENVIRONMENT)
 {
 	case 'development':
-		// ponytail: E_STRICT dilepas — no-op sejak PHP 8.0 dan konstantanya sendiri
+		// ponytail: E_STRICT dilepas - no-op sejak PHP 8.0 dan konstantanya sendiri
 		// deprecated di PHP 8.4, sehingga menyebutnya mencetak "Deprecated:" ke STDOUT
 		// SEBELUM error_reporting sempat dipasang. Di web tidak kelihatan (display_errors
 		// mati di php.ini Apache), tapi setiap tooling CLI yang mem-parse stdout patah.

@@ -4,8 +4,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * Daftar bidang disesuaikan dengan struktur Disperakim yang sebenarnya.
  *
- * Dikonfirmasi langsung ke dinas 1 Agt 2026: bidang ada LIMA — Sekretariat,
- * Perencanaan Teknis, Kawasan, Perumahan, Pertanahan — dan tidak ada satuan
+ * Dikonfirmasi langsung ke dinas 1 Agt 2026: bidang ada LIMA - Sekretariat,
+ * Perencanaan Teknis, Kawasan, Perumahan, Pertanahan - dan tidak ada satuan
  * di bawahnya ("habis kadinas bawahnya langsung bidang-bidang").
  *
  * Tabel ini berisi `pengembang` dan `umum`, dua-duanya BUKAN bidang. Keduanya
@@ -17,7 +17,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *
  * Penghapusan DIJAGA: baris hanya dibuang kalau benar-benar tidak dirujuk
  * usr_users maupun aduan. `aduan.bidang` tidak punya FK, jadi tidak ada yang
- * menahan penghapusan yang keliru selain pemeriksaan ini — dan aduan yang
+ * menahan penghapusan yang keliru selain pemeriksaan ini - dan aduan yang
  * bidangnya lenyap akan hilang dari dashboard siapa pun tanpa jejak.
  */
 class Migration_Bidang_sesuai_struktur_dinas extends CI_Migration {

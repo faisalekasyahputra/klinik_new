@@ -15,7 +15,7 @@
  *
  * Sandinya sengaja seragam dan tertulis terang di sini: ini kredensial mainan
  * untuk basis data pengembangan, bukan rahasia. Yang berbahaya justru sandi
- * "rahasia" yang diam-diam ikut ter-commit — ini kebalikannya, terang-terangan
+ * "rahasia" yang diam-diam ikut ter-commit - ini kebalikannya, terang-terangan
  * dan terkurung di localhost.
  */
 
@@ -77,11 +77,11 @@ if (in_array('--hapus', $argv, TRUE)) {
 // --- Acuan dari DB, bukan ditebak -------------------------------------------
 $kab = q($db, "SELECT id, nama FROM kabupaten ORDER BY id LIMIT 1")['rows'][0] ?? NULL;
 $bid = q($db, "SELECT kode, nama FROM bidang ORDER BY kode LIMIT 1")['rows'][0] ?? NULL;
-if ( ! $kab) { die("Tabel `kabupaten` kosong — seed dasar belum jalan.\n"); }
-if ( ! $bid) { die("Tabel `bidang` kosong — seed dasar belum jalan.\n"); }
+if ( ! $kab) { die("Tabel `kabupaten` kosong - seed dasar belum jalan.\n"); }
+if ( ! $bid) { die("Tabel `bidang` kosong - seed dasar belum jalan.\n"); }
 
 /* Satu akun per peran. `profile_completed = 1` supaya login tidak dibelokkan
-   ke wizard onboarding — agen menguji perjalanan perannya, bukan onboarding
+   ke wizard onboarding - agen menguji perjalanan perannya, bukan onboarding
    (itu sudah punya suite sendiri). */
 $peran = [
     'warga'         => ['nama' => 'Agen Warga',        'kab' => NULL,        'bid' => NULL],
@@ -118,7 +118,7 @@ foreach ($peran as $role => $cfg) {
     }
 
     $cakupan = $cfg['kab'] ? "kabupaten {$kab['nama']} ({$cfg['kab']})"
-             : ($cfg['bid'] ? "bidang {$bid['nama']} ({$cfg['bid']})" : '—');
+             : ($cfg['bid'] ? "bidang {$bid['nama']} ({$cfg['bid']})" : '-');
     printf("%-16s %-34s %s  [%s]\n", $role, $email, $cakupan, $tanda);
 }
 

@@ -4,7 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * Slot magang pindah dari "divisi" ke BIDANG.
  *
- * Migrasi 026 membuat `kkn_magang_divisi` berisi tujuh divisi — Administrasi
+ * Migrasi 026 membuat `kkn_magang_divisi` berisi tujuh divisi - Administrasi
  * Pemerintahan, Infrastruktur dan Teknologi Digital, PPID, dan seterusnya.
  * Ketujuhnya berasal dari array dummy di mockup lama, dan dinas mengonfirmasi
  * 1 Agt 2026 bahwa satuan terkecil organisasinya adalah BIDANG: "habis kadinas
@@ -12,7 +12,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * waktu itu bukan struktur organisasi, melainkan tebakan perancang mockup.
  *
  * Efek sampingnya justru menyederhanakan: dengan slot melekat pada bidang,
- * pertanyaan "bidang mana yang meninjau pendaftaran ini" hilang sama sekali —
+ * pertanyaan "bidang mana yang meninjau pendaftaran ini" hilang sama sekali -
  * slotnya sudah menyebut bidangnya. Kolom pemetaan divisi->bidang yang
  * ditambahkan migrasi 029 ikut lenyap bersama tabelnya.
  *
@@ -21,7 +21,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * yang tidak pernah diputuskan siapa pun. Slot harus ditetapkan ulang.
  *
  * PENDAFTARAN LAMA TIDAK DIBUANG. `bidang_kode` dibiarkan NULL untuk baris yang
- * sudah ada — riwayat pendaftaran orang tidak boleh hilang karena strukturnya
+ * sudah ada - riwayat pendaftaran orang tidak boleh hilang karena strukturnya
  * dikoreksi, dan `divisi_atau_tema` tetap menyimpan teks aslinya sebagai jejak.
  */
 class Migration_Magang_per_bidang extends CI_Migration {
@@ -48,7 +48,7 @@ class Migration_Magang_per_bidang extends CI_Migration {
         }
 
         if ( ! $this->db->field_exists('bidang_kode', 'kkn_magang_slot')) {
-            // Slot lama melekat pada divisi fiktif — dikosongkan lebih dulu,
+            // Slot lama melekat pada divisi fiktif - dikosongkan lebih dulu,
             // supaya tidak ada baris yatim saat divisi_id dicabut.
             $this->db->query("DELETE FROM `kkn_magang_slot`");
             $this->db->query("ALTER TABLE `kkn_magang_slot` DROP FOREIGN KEY `fk_slot_divisi`");
@@ -63,7 +63,7 @@ class Migration_Magang_per_bidang extends CI_Migration {
 
         if ( ! $this->db->field_exists('bidang_kode', 'kkn_magang_pendaftaran')) {
             // Kolom SUNGGUHAN, bukan pencocokan lewat nama. Sebelumnya routing
-            // tinjauan bersandar pada join `divisi.nama = divisi_atau_tema` —
+            // tinjauan bersandar pada join `divisi.nama = divisi_atau_tema` -
             // satu ganti nama dan seluruh pendaftaran putus dari bidangnya.
             $this->db->query("ALTER TABLE `kkn_magang_pendaftaran`
                 ADD COLUMN `bidang_kode` VARCHAR(30) NULL
@@ -81,7 +81,7 @@ class Migration_Magang_per_bidang extends CI_Migration {
     {
         // Tidak dikembalikan: `kkn_magang_divisi` berisi struktur yang memang
         // tidak pernah ada. Turun ke versi sebelumnya berarti kehilangan slot,
-        // dan itu memang konsekuensi yang jujur — bukan sesuatu yang bisa
+        // dan itu memang konsekuensi yang jujur - bukan sesuatu yang bisa
         // ditambal dengan menebak ulang tujuh nama divisi.
         if ($this->db->field_exists('bidang_kode', 'kkn_magang_pendaftaran')) {
             $this->db->query("ALTER TABLE `kkn_magang_pendaftaran` DROP FOREIGN KEY `fk_kkn_bidang`");

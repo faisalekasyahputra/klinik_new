@@ -1,10 +1,10 @@
 <?php
 /**
- * Cek RTLH — hasilnya sengaja SEDIKIT.
+ * Cek RTLH - hasilnya sengaja SEDIKIT.
  *
  * Yang ditampilkan: terdaftar atau tidak, plus identitas TERSAMAR secukupnya
  * untuk memastikan orangnya benar. Tidak ada desil, penghasilan, atau kondisi
- * bangunan — itu bahan penilaian program (wizard pendataan), bukan jawaban
+ * bangunan - itu bahan penilaian program (wizard pendataan), bukan jawaban
  * atas pertanyaan "apakah saya terdaftar".
  */
 $terdaftar = ($hasil['status'] ?? '') === 'found';
@@ -24,8 +24,8 @@ $this->load->view('components/modal_simperum_simulasi');
         <p class="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--portal-brand)]">Data SIMPERUM</p>
         <?php /* "Cek Data Rumah", bukan "Cek RTLH" maupun "Cek Backlog" (revisi
                  dinas 5 Agt 2026, butir A11). Dinas meminta "Cek Backlog", tapi
-                 backlog dan RTLH dua indikator berbeda — backlog soal
-                 kepemilikan/kepenghunian, RTLH soal kelayakan bangunan — dan API
+                 backlog dan RTLH dua indikator berbeda - backlog soal
+                 kepemilikan/kepenghunian, RTLH soal kelayakan bangunan - dan API
                  yang dipanggil halaman ini mengembalikan data RTLH. Menamainya
                  "Backlog" berarti menjanjikan angka yang tidak ada di baliknya.
                  Nama netral ini melepas singkatan teknisnya tanpa berbohong soal
@@ -41,7 +41,7 @@ $this->load->view('components/modal_simperum_simulasi');
         <?php if ( ! empty($hasil['simulasi'])): ?>
         <?php // Wajib terlihat: data simulasi yang disangka nyata adalah kesalahan yang menyebar. ?>
         <div class="mb-3 rounded-xl border border-dashed p-3 text-[11px] font-bold" style="border-color: var(--portal-brand); color: var(--portal-brand)">
-            <i class="fa-solid fa-flask mr-1"></i> MODE SIMULASI — angka di bawah ini data contoh, bukan data SIMPERUM sungguhan.
+            <i class="fa-solid fa-flask mr-1"></i> MODE SIMULASI - angka di bawah ini data contoh, bukan data SIMPERUM sungguhan.
         </div>
         <?php endif; ?>
 
@@ -62,10 +62,10 @@ $this->load->view('components/modal_simperum_simulasi');
                     <p class="mt-1 text-xs leading-relaxed text-[color:var(--portal-text-muted)]"><?= html_escape($hasil['pesan']) ?></p>
 
                     <?php if ($terdaftar && ! empty($hasil['profil'])): ?>
-                    <?php // Tersamar — cukup untuk memastikan orangnya benar, tidak lebih. ?>
+                    <?php // Tersamar - cukup untuk memastikan orangnya benar, tidak lebih. ?>
                     <dl class="mt-3 space-y-1 border-t pt-3 text-xs" style="border-color: var(--portal-border)">
-                        <div class="flex gap-2"><dt class="w-24 shrink-0 text-[color:var(--portal-text-muted)]">Nama</dt><dd class="font-bold text-[color:var(--portal-text)]"><?= html_escape($hasil['profil']['nama_lengkap'] ?? '—') ?></dd></div>
-                        <div class="flex gap-2"><dt class="w-24 shrink-0 text-[color:var(--portal-text-muted)]">Alamat</dt><dd class="text-[color:var(--portal-text)]"><?= html_escape($hasil['profil']['alamat'] ?? '—') ?></dd></div>
+                        <div class="flex gap-2"><dt class="w-24 shrink-0 text-[color:var(--portal-text-muted)]">Nama</dt><dd class="font-bold text-[color:var(--portal-text)]"><?= html_escape($hasil['profil']['nama_lengkap'] ?? '-') ?></dd></div>
+                        <div class="flex gap-2"><dt class="w-24 shrink-0 text-[color:var(--portal-text-muted)]">Alamat</dt><dd class="text-[color:var(--portal-text)]"><?= html_escape($hasil['profil']['alamat'] ?? '-') ?></dd></div>
                     </dl>
                     <?php endif; ?>
 
@@ -110,6 +110,6 @@ $this->load->view('components/modal_simperum_simulasi');
     <div class="mx-auto mt-6 max-w-xl rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] p-4 text-xs leading-relaxed text-[color:var(--portal-text-muted)] shadow-sm">
         <i class="fa-solid fa-shield-halved mr-2 text-[color:var(--portal-icon)]"></i>
         Pencarian dibatasi <b>10 kali per jam</b> per akun dan tercatat di jejak audit. Data RTLH menyangkut
-        keadaan tempat tinggal seseorang — gunakan hanya untuk keperluan layanan.
+        keadaan tempat tinggal seseorang - gunakan hanya untuk keperluan layanan.
     </div>
 </div>

@@ -2,20 +2,20 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * B3 — ledger pelapor komentar forum.
+ * B3 - ledger pelapor komentar forum.
  *
  * Sebelum ini `Forum_model::report_komentar()` hanya menaikkan `report_count`
  * tanpa mencatat SIAPA yang melapor, sehingga lima kali klik dari satu orang
  * bernilai sama dengan lima orang berbeda. Endpoint-nya pun anonim, jadi satu
  * pengunjung bisa menyensor komentar siapa pun sendirian.
  *
- * Bentuknya menyalin `forum_likes` — "satu aksi per pengguna per objek" yang
+ * Bentuknya menyalin `forum_likes` - "satu aksi per pengguna per objek" yang
  * sudah terbukti dipakai `Forum_model::toggle_like()`, bukan pola baru.
  *
  * KEDUA kolom FK di sini INT **SIGNED**, bukan UNSIGNED: `usr_users.id`
  * maupun `forum_komentar.id_komentar` sama-sama `int(11)` signed. Percobaan
  * pertama migrasi ini memakai UNSIGNED untuk `id_komentar` dan langsung
- * ditolak errno 150 — jebakan yang sudah tercatat di AGENTS.md §0e, dan tetap
+ * ditolak errno 150 - jebakan yang sudah tercatat di AGENTS.md §0e, dan tetap
  * memakan korban karena saya hanya memeriksanya untuk satu dari dua kolom.
  * Periksa tipe kolom rujukan, jangan menirukan gaya penulisan tabel lain.
  */

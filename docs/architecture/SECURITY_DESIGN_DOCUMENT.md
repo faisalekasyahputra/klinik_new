@@ -1,5 +1,5 @@
 # SECURITY DESIGN DOCUMENT (SDD)
-## Klinik PKP — Super App Disperakim Provinsi Jawa Tengah
+## Klinik PKP - Super App Disperakim Provinsi Jawa Tengah
 **Terakhir Diperbarui:** 9 Juni 2026
 
 ---
@@ -136,4 +136,4 @@ Sejak Juni 2026, sistem mendukung **dua jalur autentikasi**:
 *   Session di-destroy setelah penghapusan.
 
 ---
-*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant — 9 Juni 2026.*
+*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant - 9 Juni 2026.*

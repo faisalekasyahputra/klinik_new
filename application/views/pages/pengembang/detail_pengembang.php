@@ -390,7 +390,7 @@ foreach ($tapera_data as $p) {
                             <div style="color:#d6fb00;font-size:16px;font-weight:900;"><?= number_format($harga_perum/1000000,0) ?>jt</div>
                             <div style="color:#52525b;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-top:2px;">Mulai</div>
                             <?php else: ?>
-                            <div style="color:#3f3f46;font-size:16px;font-weight:900;">—</div>
+                            <div style="color:#3f3f46;font-size:16px;font-weight:900;">-</div>
                             <div style="color:#52525b;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-top:2px;">Harga</div>
                             <?php endif; ?>
                         </div>
@@ -482,7 +482,7 @@ foreach ($tapera_data as $p) {
             </span>
         </div>
         <?php // Sumbernya kini direktori resmi (srp2_certified_developers), yang
-              // memang tidak memuat NIB/asosiasi — keduanya milik baris pengajuan,
+              // memang tidak memuat NIB/asosiasi - keduanya milik baris pengajuan,
               // bukan direktori publik. Kartu alamat/website di bawah dipakai kalau
               // datanya ada. ?>
         <?php $srp2_detail = array_filter([
@@ -501,7 +501,7 @@ foreach ($tapera_data as $p) {
         <?php endif; ?>
         <?php // Tombol "Download Sertifikat" DIHAPUS: generator PDF-nya belum ada,
               // dan tombol lama memunculkan flash "berhasil diunduh (Simulasi)" tanpa
-              // mengunduh apa pun — dilarang §0d. Pola jujurnya mengikuti tombol
+              // mengunduh apa pun - dilarang §0d. Pola jujurnya mengikuti tombol
               // serupa di pages/pengaturan/profil.php. ?>
         <p style="color:#71717a;font-size:11px;margin-top:4px;">
             <i class="fa-solid fa-circle-info" style="margin-right:5px;"></i>Unduhan sertifikat digital belum tersedia.

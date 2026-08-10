@@ -4,7 +4,7 @@
  * dan daftar mahasiswa yang mengisinya.
  *
  * Kolom "Terisi" bukan sekadar angka. Sebelum layar ini ada, "2 dari 2" muncul
- * tanpa bisa ditelusuri ke siapa pun — dan hitungan yang tidak bisa ditelusuri
+ * tanpa bisa ditelusuri ke siapa pun - dan hitungan yang tidak bisa ditelusuri
  * akan dihitung ulang manual di sebelahnya, yang berarti slot ini tidak
  * menghemat apa-apa.
  */
@@ -75,7 +75,7 @@ $isian = 'w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white
                             </td>
                             <!-- min/max mengunci pemilih tanggal ke bulan barisnya. Kalau
                                  admin tetap mengirim tanggal di luar itu, model MENJEPITNYA
-                                 ke batas bulan — bukan menolak, karena maksudnya sudah
+                                 ke batas bulan - bukan menolak, karena maksudnya sudah
                                  terbaca dan bulan sebelah punya barisnya sendiri. -->
                             <td class="px-5 py-3">
                                 <input type="date" name="bulan[<?= (int) $nomor ?>][mulai]" class="<?= $isian ?>"
@@ -89,7 +89,7 @@ $isian = 'w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white
                             </td>
                             <td class="px-5 py-3">
                                 <?php if (empty($orang)): ?>
-                                    <span class="text-xs text-gray-400 dark:text-brand-muted/60">—</span>
+                                    <span class="text-xs text-gray-400 dark:text-brand-muted/60">-</span>
                                 <?php else: ?>
                                     <div class="mb-1 text-xs font-bold <?= $penuh ? 'text-amber-500' : 'text-gray-500 dark:text-brand-muted' ?>">
                                         Paling ramai <?= $isi ?> dari <?= (int) $bidang->kuota ?>
@@ -97,7 +97,7 @@ $isian = 'w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white
                                     <?php foreach ($orang as $o): ?>
                                         <div class="text-[11px] text-gray-600 dark:text-gray-400">
                                             <a href="<?= base_url('Admin_Kemitraan/ubah/' . (int) $o->id) ?>" class="font-bold hover:underline"><?= html_escape($o->nama_mahasiswa ?: '(tanpa nama)') ?></a>
-                                            &middot; <?= date('j M', strtotime($o->periode_mulai)) ?>–<?= date('j M', strtotime($o->periode_selesai)) ?>
+                                            &middot; <?= date('j M', strtotime($o->periode_mulai)) ?>-<?= date('j M', strtotime($o->periode_selesai)) ?>
                                             &middot; <?= html_escape($o->status) ?>
                                         </div>
                                     <?php endforeach; ?>

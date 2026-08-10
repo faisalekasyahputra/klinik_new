@@ -1,5 +1,5 @@
 /**
- * KlinikPKP — Shared Navigation & UI Logic
+ * KlinikPKP - Shared Navigation & UI Logic
  * Disperakim Provinsi Jawa Tengah
  *
  * Auto-injects: top bar, breadcrumb, form handling

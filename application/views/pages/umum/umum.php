@@ -40,7 +40,7 @@
         <!-- Card Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-            <!-- Card 1: Klinik Diagnosa (ex Housing Career) — CTA Utama -->
+            <!-- Card 1: Klinik Diagnosa (ex Housing Career) - CTA Utama -->
             <a href="<?= base_url('Program/diagnosa/umum') ?>" class="flex flex-col h-full group animate-fade-in-up delay-100">
                 <div class="flex-1 p-6 rounded-[24px] flex flex-col justify-between transition-all duration-300 group-hover:-translate-y-1 shadow-lg"
                      style="background: var(--bg-card); border: 1px solid rgba(214,251,0,0.15);"

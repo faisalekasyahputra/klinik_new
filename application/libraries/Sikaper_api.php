@@ -33,7 +33,7 @@ class Sikaper_api {
 
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        // B4 — SENGAJA belum diperbaiki, dan itu bukan kelalaian. Library ini
+        // B4 - SENGAJA belum diperbaiki, dan itu bukan kelalaian. Library ini
         // NOL PEMANGGIL sejak controller publik Sikaper dicabut (B6), jadi
         // baris ini tidak pernah dieksekusi. Nasibnya mengikuti keputusan #5:
         // bila integrasinya dipertahankan, rotasi kredensial dulu lalu TLS

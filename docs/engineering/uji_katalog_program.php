@@ -1,6 +1,6 @@
 <?php
 /**
- * Uji KATALOG PROGRAM — P2 master & kendali.
+ * Uji KATALOG PROGRAM - P2 master & kendali.
  *
  *   php docs/engineering/uji_katalog_program.php
  *
@@ -17,7 +17,7 @@
  * Lima janji yang dijaga:
  *
  *   1. `is_active` BUKAN HIASAN. Ia betul-betul menolak pengajuan baru.
- *      Diuji dari MODEL-nya, bukan dari layar — sakelar yang cuma mengubah
+ *      Diuji dari MODEL-nya, bukan dari layar - sakelar yang cuma mengubah
  *      badge adalah persis bug `usr_users.status` yang sudah pernah terjadi
  *      (ditulis, tidak pernah dibaca).
  *   2. `kode_program` TIDAK BISA DIUBAH lewat endpoint. Ia identitas: dicari
@@ -140,7 +140,7 @@ function jaga_program($id) {
 function bersihkan() {
     if (empty($GLOBALS['db'])) { return; }
     /**
-     * Program dipulihkan DULU — ini satu-satunya yang menyentuh data nyata.
+     * Program dipulihkan DULU - ini satu-satunya yang menyentuh data nyata.
      * Kode ikut dipulihkan, bukan cuma nama: uji di bawah sengaja MENEMBAKKAN
      * kode baru, dan kalau penjaganya kelak dilonggarkan, kodenya benar-benar
      * berubah dan pemulih berbasis id inilah yang menyelamatkannya.
@@ -208,7 +208,7 @@ if ($selisih > 0) {
     cek(strpos($hal['body'], $selisih . ' program</b> memakai nama berbeda') !== FALSE,
         "Selisih {$selisih} program disebut di layar");
     cek(stripos($hal['body'], 'dua sumber') !== FALSE,
-        'Dan sebabnya dijelaskan — katalognya memang punya dua sumber');
+        'Dan sebabnya dijelaskan - katalognya memang punya dua sumber');
 } else {
     cek(TRUE, 'Nol selisih nama (tidak ada yang perlu ditampilkan)');
     cek(TRUE, '(dilewati)');
@@ -239,16 +239,16 @@ http('a', 'Admin_Katalog_Program/ubah', [
     'kode_program' => 'kode_selundupan_' . CAP,
 ]);
 cek(nilai('SELECT kode_program FROM sf_programs WHERE id=?', [$pid]) === $asli['kode_program'],
-    "Kode ASLI ('{$asli['kode_program']}') tidak berubah — POST kode_program diabaikan");
+    "Kode ASLI ('{$asli['kode_program']}') tidak berubah - POST kode_program diabaikan");
 cek(nilai('SELECT nama_program FROM sf_programs WHERE id=?', [$pid]) === 'Nama Baru ' . CAP,
-    'Sementara namanya memang berubah — permintaannya benar-benar diproses');
+    'Sementara namanya memang berubah - permintaannya benar-benar diproses');
 
 // ------------------------------------------------ 4. is_active MENGGERBANGI
 echo "\n== 4. is_active bukan hiasan ==\n";
 /**
  * Diuji dari MODEL-nya, bukan dari layar. `Housing_assessment_model:500`
  * menolak pengajuan kalau `is_active !== 1`; sakelar yang cuma mengubah badge
- * adalah persis bug `usr_users.status` yang sudah pernah terjadi di repo ini —
+ * adalah persis bug `usr_users.status` yang sudah pernah terjadi di repo ini -
  * ditulis rapi, tidak pernah dibaca.
  */
 $kode_model = file_get_contents(APP_ROOT . '/application/models/Housing_assessment_model.php');
@@ -262,7 +262,7 @@ http('a', 'Admin_Katalog_Program/ubah', [
     'csrf_kpkp_token' => csrf('a', 'Admin_Katalog_Program'),
     'id' => $pid, 'nama_program' => 'Nama Baru ' . CAP,
     'deskripsi_singkat' => 'Deskripsi baru ' . CAP,
-    // 'is_active' sengaja TIDAK dikirim — persis yang dilakukan browser.
+    // 'is_active' sengaja TIDAK dikirim - persis yang dilakukan browser.
 ]);
 cek((int) nilai('SELECT is_active FROM sf_programs WHERE id=?', [$pid]) === 0,
     'Checkbox yang tidak dicentang = NONAKTIF, bukan "biarkan nilai lama"');
@@ -280,7 +280,7 @@ cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='program_diub
     [$idA, MULAI]) >= 3, 'Tiap perubahan tercatat sebagai program_diubah');
 cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='program_diubah' AND actor_id=? AND ringkasan LIKE ?",
     [$idA, '%DINONAKTIFKAN%']) === 1,
-    'Penonaktifan ditandai khusus di ringkasannya — bukan tenggelam sebagai "diubah"');
+    'Penonaktifan ditandai khusus di ringkasannya - bukan tenggelam sebagai "diubah"');
 
 // ------------------------------------------------ 6. YANG DITOLAK
 echo "\n== 6. Yang harus ditolak ==\n";

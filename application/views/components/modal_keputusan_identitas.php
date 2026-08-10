@@ -1,13 +1,13 @@
 <?php
 /**
- * Pemberitahuan butir B2 — identitas warga menunggu keputusan dinas.
+ * Pemberitahuan butir B2 - identitas warga menunggu keputusan dinas.
  *
  * Muncul di layar antrean setiap halaman dibuka, selama
  * `config/kebijakan_data.php` masih bernilai `menunggu_keputusan`.
  *
  * KENAPA MODAL. Tanpa ini, penguji membuka layar antrean, melihat "Warga
  * Contoh 007", dan menyimpulkan datanya rusak atau belum masuk. Yang perlu
- * mereka tahu bukan bahwa datanya contoh, melainkan KENAPA — dan bahwa
+ * mereka tahu bukan bahwa datanya contoh, melainkan KENAPA - dan bahwa
  * keputusan untuk mengembalikannya ada di tangan mereka, bukan di tangan kami.
  *
  * Begitu dinas memutuskan dan sakelarnya diubah ke `tampil`, berkas ini tidak
@@ -35,7 +35,7 @@ if ($CI->config->item('identitas_warga_kabkota', 'kebijakan_data') !== 'menunggu
             <p class="font-bold">Yang sudah dipastikan aman</p>
             <p class="mt-1">
                 <strong>Batas wilayahnya mengikat.</strong> Admin kabupaten A tidak dapat melihat,
-                membuka, mengunduh, maupun mengubah pengajuan milik kabupaten B — diuji pada empat
+                membuka, mengunduh, maupun mengubah pengajuan milik kabupaten B - diuji pada empat
                 jalur sekaligus, termasuk lewat kotak pencarian dan lewat alamat yang ditebak langsung.
                 Tidak ditemukan kebocoran antarwilayah.
             </p>
@@ -48,7 +48,7 @@ if ($CI->config->item('identitas_warga_kabkota', 'kebijakan_data') !== 'menunggu
                 Bolehkah admin kabupaten/kota melihat <strong>identitas dan keadaan ekonomi warga
                 di wilayahnya sendiri</strong>? Layar ini menampilkan nama, empat digit akhir NIK,
                 pekerjaan, penghasilan, kelompok kesejahteraan, dan status kepemilikan rumah.
-                Semuanya diperlukan untuk menilai pengajuan &mdash; dan semuanya data pribadi.
+                Semuanya diperlukan untuk menilai pengajuan - dan semuanya data pribadi.
             </p>
             <p class="mt-2">
                 <strong>Itu keputusan kebijakan, bukan keputusan teknis</strong>, sehingga kami tidak
@@ -63,9 +63,9 @@ if ($CI->config->item('identitas_warga_kabkota', 'kebijakan_data') !== 'menunggu
             <p class="font-bold">Mohon keputusannya disampaikan kepada pengembang</p>
             <p class="mt-1">Cukup salah satu dari tiga ini:</p>
             <ol class="mt-1.5 list-outside list-decimal space-y-1 pl-4">
-                <li><strong>Tampilkan seluruhnya</strong> &mdash; admin kab/kota berhak melihat identitas dan keadaan ekonomi warga wilayahnya.</li>
-                <li><strong>Tampilkan sebagian</strong> &mdash; sebutkan kolom mana yang boleh (misalnya nama dan nomor tiket saja, tanpa penghasilan dan kelompok kesejahteraan).</li>
-                <li><strong>Tetap disamarkan</strong> &mdash; penilaian dilakukan tanpa melihat identitas.</li>
+                <li><strong>Tampilkan seluruhnya</strong> - admin kab/kota berhak melihat identitas dan keadaan ekonomi warga wilayahnya.</li>
+                <li><strong>Tampilkan sebagian</strong> - sebutkan kolom mana yang boleh (misalnya nama dan nomor tiket saja, tanpa penghasilan dan kelompok kesejahteraan).</li>
+                <li><strong>Tetap disamarkan</strong> - penilaian dilakukan tanpa melihat identitas.</li>
             </ol>
             <p class="mt-2">Perubahannya satu baris di satu berkas, jadi bisa langsung tayang begitu keputusannya ada.</p>
         </div>

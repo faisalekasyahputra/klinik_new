@@ -1,6 +1,6 @@
 <?php
 /**
- * Uji slot magang — data, pengelolaan, dan penegakannya (migrasi 20260701000026).
+ * Uji slot magang - data, pengelolaan, dan penegakannya (migrasi 20260701000026).
  *
  *   php docs/engineering/uji_kemitraan_slot.php
  *
@@ -11,13 +11,13 @@
  * mengikat apa pun: `divisi_atau_tema` adalah teks bebas, jadi pendaftar bisa
  * mengetik divisi yang di layar berwarna merah. Yang diuji di sini:
  *
- *   1. Papan slot benar-benar dibaca dari DB — divisi yang dinonaktifkan
+ *   1. Papan slot benar-benar dibaca dari DB - divisi yang dinonaktifkan
  *      superadmin hilang dari halaman publik.
  *   2. Penegakan SETIAP BULAN, bukan cuma bulan mulai. Ini intinya: divisi
  *      dengan Juni dan Agustus terbuka tapi Juli tertutup HARUS menolak
  *      pendaftaran Juni-Agustus. Kalau hanya bulan mulai yang diperiksa,
  *      pemeriksaan itu lulus dan papan slotnya berbohong.
- *   3. Select di formulir bukan penjagaan — divisi yang tidak ada dan divisi
+ *   3. Select di formulir bukan penjagaan - divisi yang tidak ada dan divisi
  *      nonaktif ditembakkan langsung ke endpoint dan harus ditolak.
  *   4. Layar pengelolaan tertutup untuk non-superadmin.
  *
@@ -34,20 +34,20 @@ define('ADM_PASSWORD', getenv('UJI_ADM_PASSWORD') ?: 'password');
 define('BID_EMAIL', getenv('UJI_BID_EMAIL') ?: 'adminbidang@example.com');
 define('BID_PASSWORD', getenv('UJI_BID_PASSWORD') ?: 'password');
 
-// Bidang TIDAK bisa dibuat skrip ini — daftarnya struktur organisasi dinas.
+// Bidang TIDAK bisa dibuat skrip ini - daftarnya struktur organisasi dinas.
 // Dipakai bidang milik akun admin_bidang yang ada supaya alur tahap dua bisa
 // diuji utuh; keadaannya (slot tahun uji, kuota, aktif) dipulihkan di akhir.
 define('BIDANG_UJI', getenv('UJI_BIDANG') ?: 'perumahan');
 define('SENTINEL', 'UJI-SLOT-' . date('His'));
 // Tahun uji sengaja JAUH di depan. `simpan_slot_bidang` menulis ulang SELURUH
-// tahun untuk satu bidang, dan `bersihkan()` menghapus seluruh slot tahun ini —
+// tahun untuk satu bidang, dan `bersihkan()` menghapus seluruh slot tahun ini -
 // jadi tahun yang dipakai konfigurasi sungguhan akan musnah kalau dipilih.
 //
 // Sempat `date('Y') + 1`, dan itu meleset 2 Agt 2026 begitu slot 2027 benar-
 // benar ditetapkan: menjalankan harness akan menghapusnya tanpa peringatan.
 // Tahun uji harus di luar jangkauan perencanaan, bukan sekadar "belum dipakai
 // hari ini". Dipatok +5 karena itu batas atas yang masih diterima
-// `Admin_Kemitraan::tahun_sah()` — lebih jauh dari itu endpointnya menolak, dan
+// `Admin_Kemitraan::tahun_sah()` - lebih jauh dari itu endpointnya menolak, dan
 // harness akan merah karena batas yang benar, bukan karena bug.
 define('TAHUN_UJI', (int) date('Y') + 5);
 
@@ -92,8 +92,8 @@ function pakai_sesi($nama) { $GLOBALS['jar_aktif'] = $nama; }
 /**
  * @param bool $ajax Menandai diri XMLHttpRequest. Default MATI, dan itu
  *   penting: `MY_Controller::render()` mengirim view telanjang TANPA layout
- *   untuk permintaan AJAX, sehingga `components/notification_center` — satu-
- *   satunya tempat flashdata dirender — tidak ikut. Versi pertama skrip ini
+ *   untuk permintaan AJAX, sehingga `components/notification_center` - satu-
+ *   satunya tempat flashdata dirender - tidak ikut. Versi pertama skrip ini
  *   memasang header itu pada semua permintaan dan akibatnya membaca "tidak ada
  *   pesan penolakan" untuk penolakan yang sebenarnya terjadi. Hanya `login()`
  *   yang memakainya, karena `Auth::do_login` memang membalas JSON di sana.
@@ -152,7 +152,7 @@ function bersihkan() {
         $db->query("DELETE FROM kkn_magang_pendaftaran WHERE user_id = " . (int) $GLOBALS['mhs_uji_id']);
         $db->query("DELETE FROM usr_users WHERE id = " . (int) $GLOBALS['mhs_uji_id']);
     }
-    // Bidang tidak dihapus — ia struktur organisasi. Yang dipulihkan keadaan
+    // Bidang tidak dihapus - ia struktur organisasi. Yang dipulihkan keadaan
     // magangnya: slot tahun uji dibuang, kuota dan status kembali ke bawaan.
     $db->query("DELETE FROM kkn_magang_slot WHERE tahun = " . TAHUN_UJI);
     $db->query("UPDATE kkn_magang_bidang SET kuota = 2, aktif = 1 WHERE bidang_kode = '"
@@ -168,7 +168,7 @@ function bersihkan() {
  * bersarang. Sebagai string ia terkirim urlencoded, dan PHP menyusunnya kembali.
  *
  * @param array $bulan   nomor bulan yang dibuka
- * @param array $rentang [bulan => ['Y-m-d mulai', 'Y-m-d selesai']] — tanpa ini
+ * @param array $rentang [bulan => ['Y-m-d mulai', 'Y-m-d selesai']] - tanpa ini
  *                       bulan dibuka penuh
  */
 function atur_slot($kode, $tahun, array $bulan, $kuota, array $rentang = []) {
@@ -234,7 +234,7 @@ function daftar_magang($kode, $mulai, $selesai) {
  *
  * Aturan "satu pendaftaran menggantung per mahasiswa per jenis" diuji
  * tersendiri di bagian CRUD. Di bagian-bagian slot, yang sedang diuji adalah
- * aturan SLOT — dan skenarionya menggambarkan beberapa mahasiswa BERBEDA yang
+ * aturan SLOT - dan skenarionya menggambarkan beberapa mahasiswa BERBEDA yang
  * mengisi bulan yang sama, sementara harness ini hanya punya satu akun.
  *
  * Menerima yang sudah masuk menyingkirkan aturan yang tidak sedang diuji tanpa
@@ -253,7 +253,7 @@ function jumlah_pendaftaran() {
         ->fetch_assoc()['n'];
 }
 
-echo "\n== Uji slot magang — " . BASE_URL . " ==\n\n";
+echo "\n== Uji slot magang - " . BASE_URL . " ==\n\n";
 echo "== Prasyarat ==\n";
 
 // Kode HTTP saja TIDAK cukup: login gagal juga membalas 200. Yang menentukan
@@ -264,8 +264,8 @@ wajib(login(ADM_EMAIL, ADM_PASSWORD), 'Login superadmin');
  * Mahasiswa SENDIRI, bukan akun demo bersama.
  *
  * Sebelumnya skrip ini masuk sebagai `mahasiswa@example.com`. Begitu akun itu
- * punya satu pendaftaran magang menggantung — apa pun sebabnya, termasuk
- * pendaftaran sungguhan yang dibuat orang — aturan "satu pendaftaran
+ * punya satu pendaftaran magang menggantung - apa pun sebabnya, termasuk
+ * pendaftaran sungguhan yang dibuat orang - aturan "satu pendaftaran
  * menggantung per mahasiswa per jenis" menolak SEMUA pendaftaran skrip ini, dan
  * 44 pemeriksaan slot merah karena sebab yang tidak ada hubungannya dengan
  * kuota. Kejadian 2 Agt 2026. Pelajarannya sama dengan r4/r5/r6: harness yang
@@ -282,7 +282,7 @@ wajib(login($MHS_UJI, MHS_PASSWORD), 'Login mahasiswa uji (akun sendiri, bukan a
 pakai_sesi('bid');
 cek(login(BID_EMAIL, BID_PASSWORD), 'Login admin bidang');
 
-// Tahun uji harus kosong sebelum dipakai — penyimpanan slot menulis ulang satu
+// Tahun uji harus kosong sebelum dipakai - penyimpanan slot menulis ulang satu
 // tahun penuh, dan skrip ini tidak boleh menghapus slot orang lain.
 $sudah_ada = (int) $db->query("SELECT COUNT(*) n FROM kkn_magang_slot WHERE tahun = " . TAHUN_UJI)->fetch_assoc()['n'];
 wajib($sudah_ada === 0, 'Tahun uji ' . TAHUN_UJI . ' masih kosong (aman ditulis ulang)');
@@ -293,7 +293,7 @@ pakai_sesi('adm');
 $bidang = baris("SELECT * FROM kkn_magang_bidang WHERE bidang_kode = ?", [BIDANG_UJI]);
 wajib($bidang !== NULL, 'Bidang uji punya setelan magang');
 
-// Juni dan Agustus dibuka, JULI SENGAJA TIDAK — lubang di tengah inilah yang
+// Juni dan Agustus dibuka, JULI SENGAJA TIDAK - lubang di tengah inilah yang
 // membedakan "periksa bulan mulai" dari "periksa semua bulan".
 atur_slot(BIDANG_UJI, TAHUN_UJI, [6, 8], 2);
 $terbuka = [];
@@ -310,7 +310,7 @@ $nama_bidang = baris("SELECT nama FROM bidang WHERE kode = ?", [BIDANG_UJI])['na
 $papan = http('KemitraanPortal/magang')['body'];
 cek(strpos($papan, $nama_bidang) !== FALSE, 'Bidang muncul di papan slot publik');
 
-// Bidang yang berhenti menerima hilang dari papan — daftarnya struktur
+// Bidang yang berhenti menerima hilang dari papan - daftarnya struktur
 // organisasi, jadi yang bisa dimatikan cuma penerimaan magangnya.
 http('Admin_Kemitraan/ubah_status_bidang/' . rawurlencode(BIDANG_UJI), [
     'csrf_kpkp_token' => token('Admin_Kemitraan/slot/' . TAHUN_UJI),
@@ -356,7 +356,7 @@ http('Admin_Kemitraan/ubah_status_bidang/' . rawurlencode(BIDANG_UJI), [
     'csrf_kpkp_token' => token('Admin_Kemitraan/slot/' . TAHUN_UJI), 'tahun' => TAHUN_UJI,
 ]);
 
-// Kunci SAH harus lolos lebih dulu. Tanpa ini "semua ditolak" ikut lulus —
+// Kunci SAH harus lolos lebih dulu. Tanpa ini "semua ditolak" ikut lulus -
 // termasuk kalau penjagaannya rusak total dan menolak segalanya.
 $body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-06-05', TAHUN_UJI . '-06-30');
 cek(jumlah_pendaftaran() === 1, 'Periode yang seluruhnya terbuka DITERIMA');
@@ -367,7 +367,7 @@ cek(($tersimpan['divisi_atau_tema'] ?? '') === $nama_bidang, 'Nama bidang tersim
 
 echo "\n== Kuota menutup slot sendiri ==\n";
 
-// Kuota diturunkan ke 1 lewat formulir admin — satu tombol dengan matriksnya,
+// Kuota diturunkan ke 1 lewat formulir admin - satu tombol dengan matriksnya,
 // jadi centang bulan harus ikut dikirim atau slotnya terhapus.
 pakai_sesi('adm');
 atur_slot(BIDANG_UJI, TAHUN_UJI, [6, 8], 1);
@@ -380,19 +380,19 @@ $body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-06-10', TAHUN_UJI . '-06-20');
 cek(strpos($body, 'penuh, 1 dari 1') !== FALSE, 'Bulan yang kuotanya habis menolak pendaftaran baru');
 cek(jumlah_pendaftaran() === 1, 'Pendaftaran kedua di bulan penuh tidak tersimpan');
 
-// Agustus masih kosong dan terbuka — membuktikan yang menolak tadi memang
+// Agustus masih kosong dan terbuka - membuktikan yang menolak tadi memang
 // kuotanya, bukan penjagaan yang rusak dan menolak segalanya.
 $body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-08-01', TAHUN_UJI . '-08-20');
 cek(jumlah_pendaftaran() === 2, 'Bulan lain yang masih kosong tetap menerima');
 
-// Angka terisi harus bisa ditelusuri ke ORANGNYA, bukan muncul begitu saja —
+// Angka terisi harus bisa ditelusuri ke ORANGNYA, bukan muncul begitu saja -
 // hitungan yang tidak bisa ditelusuri akan dihitung ulang manual di sebelahnya.
 pakai_sesi('adm');
 $layar = http('Admin_Kemitraan/slot_bidang/' . rawurlencode(BIDANG_UJI) . '/' . TAHUN_UJI)['body'];
 cek(strpos($layar, 'Paling ramai 1 dari 1') !== FALSE, 'Layar detail menampilkan hitungan terisi');
 cek(strpos($layar, 'Mahasiswa') !== FALSE, 'Layar detail menyebut nama pengisinya, bukan cuma angka');
 
-// Yang DITOLAK melepaskan tempatnya kembali — itu beda utama antara menghitung
+// Yang DITOLAK melepaskan tempatnya kembali - itu beda utama antara menghitung
 // dari tabel pendaftaran dan menyimpan angka "terisi" yang harus disinkronkan.
 $juni = baris("SELECT id FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE ? AND periode_mulai LIKE ? ORDER BY id LIMIT 1",
     [SENTINEL . '%', TAHUN_UJI . '-06%']);
@@ -409,7 +409,7 @@ cek(jumlah_pendaftaran() === 3, 'Pendaftaran yang DITOLAK melepaskan kuotanya ke
 echo "\n== Kuota diukur dari kehadiran BERSAMAAN, bukan bulan tersentuh ==\n";
 
 // Kasus yang melahirkan seluruh bagian ini. Kuota 1, Juli dan Agustus dibuka.
-// A pulang 15 Juli, B datang 16 Juli — mereka tidak pernah bertemu satu hari
+// A pulang 15 Juli, B datang 16 Juli - mereka tidak pernah bertemu satu hari
 // pun. Dengan hitungan "berapa pendaftaran menyentuh bulan Juli", B DITOLAK.
 // Dengan hitungan kehadiran bersamaan, B diterima.
 pakai_sesi('adm');
@@ -421,10 +421,10 @@ wajib(jumlah_pendaftaran() === 1, 'A (1-15 Juli) diterima');
 
 terima_semua();
 $body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-07-16', TAHUN_UJI . '-08-31');
-cek(jumlah_pendaftaran() === 2, 'B (16 Juli-31 Agu) diterima — tidak pernah bertemu A');
+cek(jumlah_pendaftaran() === 2, 'B (16 Juli-31 Agu) diterima - tidak pernah bertemu A');
 
 // Pembuktian terbalik: yang BENAR-BENAR bertumpang tindih tetap ditolak. Tanpa
-// ini, "semuanya diterima" ikut lulus — termasuk kalau kuotanya tidak dicek
+// ini, "semuanya diterima" ikut lulus - termasuk kalau kuotanya tidak dicek
 // sama sekali.
 terima_semua();
 $body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-07-10', TAHUN_UJI . '-07-20');
@@ -432,7 +432,7 @@ cek(strpos($body, 'penuh, 1 dari 1') !== FALSE, 'C yang bertumpang tindih dengan
 cek(jumlah_pendaftaran() === 2, 'Tumpang tindih tidak menyisakan baris');
 
 // Puncak bulan tidak boleh dipakai sebagai penjagaan: September hanya terisi
-// pada tanggal-tanggal awal lewat B? Tidak — B berakhir 31 Agustus. Pemohon
+// pada tanggal-tanggal awal lewat B? Tidak - B berakhir 31 Agustus. Pemohon
 // September penuh harus lolos meski Agustus di sebelahnya sedang ramai.
 $body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-09-01', TAHUN_UJI . '-09-30');
 cek(jumlah_pendaftaran() === 3, 'Bulan yang bersih diterima walau bulan sebelahnya penuh');
@@ -468,7 +468,7 @@ $r = http('Admin_Kemitraan/simpan_ubah/' . (int) $sunting['id'], [
 $sesudah = baris("SELECT * FROM kkn_magang_pendaftaran WHERE id = ?", [(int) $sunting['id']]);
 cek($sesudah['nim'] === 'H1A020777', 'Admin mengubah NIM pendaftaran');
 cek($sesudah['jurusan'] === 'Arsitektur', 'Admin mengubah jurusan');
-// Agustus sudah terisi satu dan kuotanya 1 — admin TETAP boleh menempatkannya
+// Agustus sudah terisi satu dan kuotanya 1 - admin TETAP boleh menempatkannya
 // di sana. Keputusan user: admin berwenang, papan menampilkan kelebihannya.
 cek($sesudah['periode_mulai'] === TAHUN_UJI . '-08-01', 'Admin boleh melampaui kuota saat menyunting');
 
@@ -484,7 +484,7 @@ $sesudah = baris("SELECT divisi_atau_tema FROM kkn_magang_pendaftaran WHERE id =
 cek($sesudah['divisi_atau_tema'] === $nama_bidang, 'Admin tetap tidak bisa menyimpan bidang yang tidak ada');
 
 // Semester 99 ditembakkan: aturan yang sama dengan formulir mahasiswa harus
-// berlaku di layar admin — itu gunanya satu grup aturan di config, bukan dua.
+// berlaku di layar admin - itu gunanya satu grup aturan di config, bukan dua.
 http('Admin_Kemitraan/simpan_ubah/' . (int) $sunting['id'], [
     'csrf_kpkp_token'  => token('Admin_Kemitraan/ubah/' . (int) $sunting['id']),
     'nim'              => 'H1A020777', 'tempat_lahir' => 'Kudus', 'tanggal_lahir' => '2002-02-02',
@@ -500,7 +500,7 @@ echo "\n== Rentang tanggal di dalam bulan ==\n";
 
 // Juni dibuka HANYA tanggal 1-15. Bentuk lama tidak punya cara menyatakan ini:
 // Juni terbuka penuh atau tertutup penuh, dan sisanya disaring manual di meja
-// peninjauan — persis pekerjaan yang seharusnya dihapus oleh slot.
+// peninjauan - persis pekerjaan yang seharusnya dihapus oleh slot.
 $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
 atur_slot(BIDANG_UJI, TAHUN_UJI, [6], 2, [6 => [TAHUN_UJI . '-06-01', TAHUN_UJI . '-06-15']]);
 
@@ -515,7 +515,7 @@ cek(jumlah_pendaftaran() === 1, 'Periode di DALAM rentang diterima');
 
 terima_semua();
 $body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-06-10', TAHUN_UJI . '-06-25');
-cek(strpos($body, 'hanya dibuka tanggal 1–15') !== FALSE, 'Periode yang melewati rentang ditolak dengan tanggalnya');
+cek(strpos($body, 'hanya dibuka tanggal 1-15') !== FALSE, 'Periode yang melewati rentang ditolak dengan tanggalnya');
 cek(jumlah_pendaftaran() === 1, 'Yang melewati rentang tidak tersimpan');
 
 // Dijepit ke batas bulan, bukan ditolak: maksud admin sudah terbaca, dan bulan
@@ -529,7 +529,7 @@ cek($slot_juni['tgl_mulai'] === TAHUN_UJI . '-06-01' && $slot_juni['tgl_selesai'
 echo "\n== Hapus pendaftaran ==\n";
 
 // Daftar bidang TIDAK bisa ditambah, diganti nama, atau dihapus lewat modul ini
-// — ia struktur organisasi dinas, dipakai bersama modul aduan. Yang tersisa
+// - ia struktur organisasi dinas, dipakai bersama modul aduan. Yang tersisa
 // untuk diuji: menghapus pendaftaran.
 $hapus_id = baris("SELECT id FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE ? LIMIT 1", [SENTINEL . '%']);
 wajib($hapus_id !== NULL, 'Ada pendaftaran untuk dihapus');
@@ -546,14 +546,14 @@ echo "\n== Alur surat dua tahap ==\n";
 // supaya tahap dua punya meja yang benar-benar bisa dibuka.
 $bidang_adm = baris("SELECT bidang_kode FROM usr_users WHERE role = 'admin_bidang' AND bidang_kode IS NOT NULL LIMIT 1");
 if ( ! $bidang_adm) {
-    echo "  LEWAT  Tidak ada akun admin_bidang — alur tahap dua tidak bisa diuji\n";
+    echo "  LEWAT  Tidak ada akun admin_bidang - alur tahap dua tidak bisa diuji\n";
 } else {
     $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
     atur_slot(BIDANG_UJI, TAHUN_UJI, [7, 8], 3);
 
     // Tidak ada lagi pemetaan yang harus diisi: slotnya sudah menyebut bidangnya.
     cek($bidang_adm['bidang_kode'] === BIDANG_UJI,
-        'Bidang uji sama dengan bidang akun peninjau — alur tahap dua bisa diuji utuh');
+        'Bidang uji sama dengan bidang akun peninjau - alur tahap dua bisa diuji utuh');
 
     daftar_magang(BIDANG_UJI, TAHUN_UJI . '-07-01', TAHUN_UJI . '-07-20');
     $surat = baris("SELECT id, status FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE ? ORDER BY id DESC LIMIT 1", [SENTINEL . '%']);
@@ -602,7 +602,7 @@ if ( ! $bidang_adm) {
     cek(strpos($detail, 'Disetujui bidang') !== FALSE, 'Catatan bidang sampai ke mahasiswa');
     cek(strpos($detail, 'Unduh Surat Balasan') === FALSE, 'Tombol unduh belum muncul selama suratnya belum ada');
 
-    // Berkasnya belum ada, jadi endpoint unduhnya harus 404 — bukan halaman
+    // Berkasnya belum ada, jadi endpoint unduhnya harus 404 - bukan halaman
     // kosong yang menyaru berhasil.
     $r = http('KemitraanPortal/unduh_balasan/' . (int) $surat['id']);
     cek($r['code'] === 404, "Unduh surat yang belum terbit dijawab 404 (kode {$r['code']})");
@@ -611,7 +611,7 @@ if ( ! $bidang_adm) {
 echo "\n== Guard layar pengelolaan ==\n";
 
 // Kunci SAH harus lolos lebih dulu. Tanpa ini "mahasiswa tidak melihat layarnya"
-// ikut hijau walau halamannya 500 untuk semua orang — menguji ketiadaan tanpa
+// ikut hijau walau halamannya 500 untuk semua orang - menguji ketiadaan tanpa
 // pernah membuktikan ada.
 pakai_sesi('adm');
 $r = http('Admin_Kemitraan/slot/' . TAHUN_UJI);
@@ -641,7 +641,7 @@ http('Admin_Kemitraan/simpan_slot_bidang/' . rawurlencode(BIDANG_UJI), http_buil
 $sesudah = (int) $db->query("SELECT COUNT(*) n FROM kkn_magang_slot WHERE tahun = " . TAHUN_UJI)->fetch_assoc()['n'];
 // Dibandingkan dengan keadaan SEBELUMNYA, bukan angka tetap: bagian-bagian di
 // atas mengubah berapa bulan yang terbuka, dan uji yang mematok angka akan
-// merah setiap kali salah satunya disesuaikan — merah yang tidak menuduh apa pun.
+// merah setiap kali salah satunya disesuaikan - merah yang tidak menuduh apa pun.
 cek($sebelum === $sesudah && $sesudah > 0, 'Mahasiswa tidak bisa menulis slot lewat POST langsung');
 
 bersihkan();

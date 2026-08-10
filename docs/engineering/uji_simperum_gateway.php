@@ -25,12 +25,12 @@ function run_cli($root, $php, array $arguments) {
     $pipes = [];
 
     // CI_ENV WAJIB dioper. Sejak U0, index.php gagal-tertutup ke `production`
-    // kalau CI_ENV tidak diset — benar untuk keamanan, tapi CLI mewarisi
+    // kalau CI_ENV tidak diset - benar untuk keamanan, tapi CLI mewarisi
     // lingkungan kosong, jadi seluruh method uji di Migrate.php kena penjaga
     // `ENVIRONMENT === 'production' -> show_404()` dan menjawab "Not Found".
     // Tanpa baris ini suite ini melaporkan 5/5 GAGAL pada sistem yang justru
     // sehat: `uji_warga_r2` sendiri hijau 14/14 begitu env-nya benar.
-    // Kegagalan palsu lebih mahal daripada tidak ada uji — ia mengajari orang
+    // Kegagalan palsu lebih mahal daripada tidak ada uji - ia mengajari orang
     // mengabaikan warna merah.
     $env = getenv();
     $env['CI_ENV'] = 'development';

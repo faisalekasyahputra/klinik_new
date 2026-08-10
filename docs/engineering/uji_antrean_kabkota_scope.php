@@ -1,28 +1,28 @@
 <?php
 /**
- * Uji BATAS WILAYAH ANTREAN KAB/KOTA — butir B2 revisi dinas.
+ * Uji BATAS WILAYAH ANTREAN KAB/KOTA - butir B2 revisi dinas.
  *
  *   php docs/engineering/uji_antrean_kabkota_scope.php
  *
  * KENAPA BERKAS INI ADA. Dinas melaporkan "dashboard kabupaten/kota masih
  * memunculkan data warga umum". Layar itu memang ADA dan memang menampilkan
- * data warga — namanya "Antrean Wilayah Saya", dan admin kab/kota memerlukannya
+ * data warga - namanya "Antrean Wilayah Saya", dan admin kab/kota memerlukannya
  * untuk menilai pengajuan. Jadi pertanyaannya bukan "ada atau tidak", melainkan
  * APAKAH BATAS WILAYAHNYA MENGIKAT.
  *
- * Bacaan kode bilang mengikat. Bacaan kode SELALU bilang begitu — itu sebabnya
+ * Bacaan kode bilang mengikat. Bacaan kode SELALU bilang begitu - itu sebabnya
  * berkas ini ada. Yang diuji: admin kab/kota A tidak boleh melihat, membuka,
  * mengunduh, atau mengubah satu pun pengajuan warga di kabupaten B.
  *
  * EMPAT PERMUKAAN, karena menutup daftar saja tidak menutup apa pun:
- *   1. daftar   — baris B tidak muncul di layar A
- *   2. detail   — /detail/<id B> ditolak walau id-nya ditebak benar
- *   3. berkas   — /evidence/<id B> ditolak (bukti berisi foto rumah & KTP)
- *   4. tulis    — POST keputusan atas antrean B tidak mengubah apa pun
+ *   1. daftar   - baris B tidak muncul di layar A
+ *   2. detail   - /detail/<id B> ditolak walau id-nya ditebak benar
+ *   3. berkas   - /evidence/<id B> ditolak (bukti berisi foto rumah & KTP)
+ *   4. tulis    - POST keputusan atas antrean B tidak mengubah apa pun
  *
  * Nomor 4 yang paling gampang terlupa: layar bisa rapi sementara endpoint
  * tulisnya menerima id mana pun. Karena itu statusnya dibaca ULANG dari DB
- * sesudah POST — bukan disimpulkan dari pesan di layar.
+ * sesudah POST - bukan disimpulkan dari pesan di layar.
  *
  * Diperiksa juga apa yang TERLIHAT: NIK wajib tersamar di daftar. Kalau kelak
  * ada yang menampilkannya penuh "supaya gampang dicari", penjaga ini merah.
@@ -84,7 +84,7 @@ function bersihkan() {
 }
 register_shutdown_function('bersihkan');
 
-/** Satu sesi HTTP mandiri per admin — cookie jar terpisah, itu intinya. */
+/** Satu sesi HTTP mandiri per admin - cookie jar terpisah, itu intinya. */
 class Sesi {
     private $jar;
     public function __construct($nama) { $this->jar = tempnam(sys_get_temp_dir(), 'scope_' . $nama); }
@@ -156,7 +156,7 @@ $program_id = (int) $prog[0]['id'];
 /* `ticket_code` adalah varchar(10) dan MySQL di sini TIDAK strict: tiket yang
    lebih panjang dipotong DIAM-DIAM. Versi pertama uji ini memakai tiket 13
    karakter, dan akibatnya asersi "A tidak melihat antrean B" LULUS karena
-   string penuh B memang tidak pernah ada di halaman — bukan karena batas
+   string penuh B memang tidak pernah ada di halaman - bukan karena batas
    wilayahnya bekerja. Panjangnya sekarang tepat 10, dan hasil simpannya
    diperiksa sebagai prasyarat di bawah. */
 $tiketA = 'UJSA' . mt_rand(100000, 999999);
@@ -172,14 +172,14 @@ wajib($tersimpanA === $tiketA && $tersimpanB === $tiketB,
 $sesiA = new Sesi('a');
 /* Prasyarat KERAS. Kalau sesi ini tidak benar-benar sampai ke layar antrean,
    seluruh asersi "tidak melihat wilayah lain" di bawah akan lulus karena tidak
-   terjadi apa-apa — hijau yang tidak membuktikan apa pun. */
+   terjadi apa-apa - hijau yang tidak membuktikan apa pun. */
 wajib($sesiA->login($emailA), 'Admin kab/kota A benar-benar masuk ke layar Antrean');
 
 // ------------------------------------------------------- 1. Daftar ter-scope
 echo "\n== 1. Daftar hanya memuat wilayah sendiri ==\n";
 /* Pembedanya KODE TIKET, bukan nama. Sejak butir B2 nama warga diganti data
    contoh selama menunggu keputusan dinas, jadi nama tidak lagi bisa dipakai
-   membedakan baris — dan kode tiket memang pembeda yang lebih tepat: ia bukan
+   membedakan baris - dan kode tiket memang pembeda yang lebih tepat: ia bukan
    data pribadi, dan tetap utuh apa pun keputusan kebijakannya nanti. */
 [$s, $daftarA] = $sesiA->call('Admin_Kabkota');
 cek($s === 200, 'Layar antrean A terbuka');
@@ -204,7 +204,7 @@ cek(TRUE, 'Sakelar kebijakan terbaca: ' . ($menunggu ? 'menunggu_keputusan' : 't
 
 if ($menunggu) {
     /* Yang dijaga: nama SUNGGUHAN tidak sampai ke layar. Ini asersi yang paling
-       gampang jadi hampa — kalau daftarnya kosong, "nama tidak muncul" lulus
+       gampang jadi hampa - kalau daftarnya kosong, "nama tidak muncul" lulus
        tanpa membuktikan apa pun. Karena itu keberadaan baris contohnya diperiksa
        lebih dulu sebagai prasyarat. */
     cek(strpos($daftarA, 'Warga Contoh') !== FALSE, 'PRASYARAT: baris contoh benar-benar dirender');
@@ -222,7 +222,7 @@ echo "\n== 3. Detail dan berkas wilayah lain ditolak ==\n";
 /* 🔻 ASERSI INI SEMPAT HAMPA, dicatat supaya penggantinya tidak mengulang.
    Versi pertama berbunyi `$sDetB === 404 || strpos($body,'Warga Wilayah B')===FALSE`.
    Baris uji ini tidak punya `assessment_id`, dan layar detail memang tidak
-   pernah menampilkan `nama_lengkap` dari baris antrean — jadi ruas kedua SELALU
+   pernah menampilkan `nama_lengkap` dari baris antrean - jadi ruas kedua SELALU
    benar, entah batas wilayahnya bekerja atau tidak. Mutasi yang mencabut scope
    dari `get_scoped_queue_detail()` LOLOS. Sekarang yang diperiksa KODE HTTP-nya
    saja, ketat: ada scope -> baris tak ditemukan -> 404; tanpa scope -> 200. */
@@ -230,11 +230,11 @@ echo "\n== 3. Detail dan berkas wilayah lain ditolak ==\n";
 cek($sDetB === 404, 'Detail antrean wilayah B ditolak walau id-nya benar (dapat: ' . $sDetB . ')');
 
 [$sDetA, ] = $sesiA->call('Admin_Kabkota/detail/' . $antreanA);
-cek($sDetA === 200, 'PEMBANDING: detail wilayah sendiri tetap terbuka — 404 di atas bukan karena semuanya tertutup');
+cek($sDetA === 200, 'PEMBANDING: detail wilayah sendiri tetap terbuka - 404 di atas bukan karena semuanya tertutup');
 
 /* Berkas bukti TIDAK diuji lewat unduhan sungguhan, dan itu disebut apa adanya:
    tanpa assessment + berkas asli, `evidence` membalas 404 baik scope-nya bekerja
-   maupun tidak — uji yang tidak bisa membedakan apa pun. Yang dijaga di sini
+   maupun tidak - uji yang tidak bisa membedakan apa pun. Yang dijaga di sini
    adalah jalurnya: `get_scoped_queue_files()` WAJIB menurunkan izinnya dari
    `get_scoped_queue_detail()` yang sudah dijaga ketat di atas. Kalau kelak ia
    query sendiri ke `sf_berkas_penilaian`, batas wilayahnya lepas tanpa suara. */
@@ -253,7 +253,7 @@ $sesiA->call('Admin_Kabkota/update_status', [
 ]);
 $sesudah = q('SELECT status_antrean FROM sf_housing_queue WHERE id=?', [$antreanB])[0]['status_antrean'];
 cek($sebelum === $sesudah && $sesudah === 'pending',
-    'Status antrean B TIDAK berubah — dibaca ulang dari DB, bukan dari pesan layar');
+    'Status antrean B TIDAK berubah - dibaca ulang dari DB, bukan dari pesan layar');
 
 /* Pembanding wajib: kalau A juga tidak bisa memutuskan antreannya SENDIRI,
    asersi di atas hijau karena fiturnya mati, bukan karena batasnya bekerja. */

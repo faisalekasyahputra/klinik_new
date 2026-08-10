@@ -80,7 +80,7 @@
                        <a href="<?= base_url() ?>" data-tab-link data-tab-key="beranda" class="portal-tab-btn <?= $active_tab === 'beranda' ? 'active' : '' ?>">
                            <i class="fa-solid fa-grip"></i> Beranda
                        </a>
-                       <!-- Tab Perumahan / Kawasan / Pertanahan disembunyikan 1 Agu 2026 —
+                       <!-- Tab Perumahan / Kawasan / Pertanahan disembunyikan 1 Agu 2026 -
                             rute tab/* dan halamannya masih hidup, hanya tidak dipajang di tab bar. -->
                        <a href="<?= base_url('tab/pengembang') ?>" data-tab-link data-tab-key="pengembang" class="portal-tab-btn <?= $active_tab === 'pengembang' ? 'active' : '' ?>">
                            <i class="fa-solid fa-helmet-safety"></i> Pengembang
@@ -99,14 +99,14 @@
                            <?php
                                $avatar_src = $this->session->userdata('avatar');
                                if (empty($avatar_src)) {
-                                   // Dulu ui-avatars.com — nama pengguna dikirim
+                                   // Dulu ui-avatars.com - nama pengguna dikirim
                                    // ke pihak ketiga tiap pemuatan halaman.
                                    $avatar_src = avatar_inisial($this->session->userdata('username') ?: $this->session->userdata('name') ?: 'User');
                                }
                            ?>
                            <div class="flex items-center gap-2 px-4 py-2 bg-[#0d2228] border border-[#d6fb00]/15 rounded-[14px] h-[38px]">
                                <?php
-                               /* Butir 14 putaran 2. Dulu `=== 'admin'` — jadi
+                               /* Butir 14 putaran 2. Dulu `=== 'admin'` - jadi
                                   hanya superadmin yang punya jalan ke dashboard,
                                   dan lima peran lain tidak punya sama sekali.
                                   Sekarang semua yang masuk mendapatkannya, ke

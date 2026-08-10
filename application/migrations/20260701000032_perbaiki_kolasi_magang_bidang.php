@@ -10,17 +10,17 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * satu CREATE TABLE yang ditolak tetap dicatat lunas. Ketahuan hanya karena
  * `Migrate::status()` sudah diajari memeriksa tabelnya satu per satu.
  *
- * PENYEBAB — collation, bukan tipe. `bidang.kode` di production
+ * PENYEBAB - collation, bukan tipe. `bidang.kode` di production
  * `utf8mb4_general_ci`, sementara tabel baru yang cuma menyebut
  * `DEFAULT CHARSET=utf8mb4` mewarisi bawaan server: `utf8mb4_uca1400_ai_ci`
  * (MariaDB 11.4+). Foreign key antar kolom yang collation-nya beda ditolak
- * errno 150. Di lokal (XAMPP) bawaannya kebetulan `general_ci`, jadi lolos —
+ * errno 150. Di lokal (XAMPP) bawaannya kebetulan `general_ci`, jadi lolos -
  * dan itulah kenapa lokal hijau sementara production diam-diam patah.
  *
  * AGENTS.md §0e sudah memperingatkan errno 150 untuk ketidakcocokan tipe FK.
  * Peringatan itu kurang satu kata: collation juga menentukan. Migrasi ini
  * MEMBACA collation `bidang.kode` dari information_schema dan memakainya apa
- * adanya — bukan menuliskan `utf8mb4_general_ci` sebagai tebakan baru yang
+ * adanya - bukan menuliskan `utf8mb4_general_ci` sebagai tebakan baru yang
  * kebetulan benar hari ini di dua server yang kebetulan sama.
  *
  * Keadaan production sesudah 031 gagal separuh:
@@ -28,7 +28,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *   - kkn_magang_slot          : ada, MASIH ber-divisi_id, tanpa FK (sudah
  *                                dilepas 031), isinya sudah dikosongkan
  *   - kkn_magang_divisi        : sudah lenyap
- *   - kkn_magang_pendaftaran   : keempat kolom barunya ADA — tabel itu lebih
+ *   - kkn_magang_pendaftaran   : keempat kolom barunya ADA - tabel itu lebih
  *                                tua dan ber-collation general_ci, jadi FK-nya
  *                                kebetulan cocok dan lolos
  *
@@ -36,7 +36,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Migration_Perbaiki_kolasi_magang_bidang extends CI_Migration {
 
-    /** Collation kolom rujukan, dibaca dari DB — bukan diasumsikan. */
+    /** Collation kolom rujukan, dibaca dari DB - bukan diasumsikan. */
     private function kolasi_bidang_kode()
     {
         $row = $this->db->query(

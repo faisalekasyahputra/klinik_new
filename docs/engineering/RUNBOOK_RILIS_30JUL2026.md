@@ -1,6 +1,6 @@
-# Runbook Rilis — 30 Juli 2026
+# Runbook Rilis - 30 Juli 2026
 
-Rilis Rekam Data (D0–D6) + pelunasan utang teknis (P0, U0–U4, S0–S8, A1–A6) ke
+Rilis Rekam Data (D0-D6) + pelunasan utang teknis (P0, U0-U4, S0-S8, A1-A6) ke
 production `floralwhite-lion-710022`.
 
 **Status: BELUM DIJALANKAN.** Dokumen ini ditulis sebelum eksekusi. Setiap
@@ -32,9 +32,9 @@ Jangan lewati.
 
 Pada `9903743`, `application/config/migration.php` masih menunjuk
 `migration_version = 20260701000010` padahal berkas migrasi sudah sampai
-`…021`. Selisih itu tidak berbahaya selama hanya `latest()` yang dipakai —
+`…021`. Selisih itu tidak berbahaya selama hanya `latest()` yang dipakai -
 tetapi siapa pun yang kelak memanggil `Migration::current()` akan memicu
-**downgrade** `…020` → `…010`, yang menjalankan `down()` migrasi 11–20 dan
+**downgrade** `…020` → `…010`, yang menjalankan `down()` migrasi 11-20 dan
 membuang tabel serta kolom production. Perbaikannya (S8) ada di branch utang,
 di commit `0bcaed3`, dan menaikkan nilai itu ke `…022`.
 
@@ -43,7 +43,7 @@ Merilis Rekam Data sendirian justru **menanam** lubangnya.
 
 ---
 
-## Fase 1 — Baca keadaan production (baca-saja, wajib)
+## Fase 1 - Baca keadaan production (baca-saja, wajib)
 
 ```bash
 ssh hostinger
@@ -68,12 +68,12 @@ cd ~/domains/<SITUS>/public_html && git log -1 --oneline && git status --porcela
 - `migrate status` → versi skema **`20260701000020`**
 
 **GERBANG.** Kalau versi skema bukan `…020`, **BERHENTI**. AGENTS.md sendiri
-masih kontradiksi soal ini (baris 17 bilang `…20`, baris 26 bilang `…16`) —
+masih kontradiksi soal ini (baris 17 bilang `…20`, baris 26 bilang `…16`) -
 angka yang keluar dari server inilah kebenarannya, dan rencana migrasi harus
 disusun ulang mengikutinya. Kalau `git status` menunjukkan berkas terlacak yang
 termodifikasi, catat apa saja sebelum menyentuh apa pun; deploy akan menimpanya.
 
-Sekaligus catat jumlah tabel — dipakai membandingkan hasil backup nanti:
+Sekaligus catat jumlah tabel - dipakai membandingkan hasil backup nanti:
 
 ```bash
 cd ~/domains/<SITUS>/public_html && php -r '$e=parse_ini_file(".env"); $m=new mysqli("localhost",$e["DB_USER"],$e["DB_PASS"],$e["DB_NAME"]); $r=$m->query("SELECT COUNT(*) c FROM information_schema.tables WHERE table_schema=DATABASE()"); echo "tabel: ".$r->fetch_assoc()["c"]."\n";'
@@ -83,13 +83,13 @@ Diharapkan **29 tabel** (naik dari 23 pada rilis 29 Jul).
 
 ---
 
-## Fase 2 — Backup (wajib, sebelum apa pun berubah)
+## Fase 2 - Backup (wajib, sebelum apa pun berubah)
 
 ```bash
 cd ~ && mysqldump -u u504551489_klinikstg -p u504551489_klinikstg | gzip > ~/backup_klinik_pre_rilis_30jul.sql.gz
 ```
 
-*(nama user/DB ikuti `.env` server — jangan disalin buta dari sini)*
+*(nama user/DB ikuti `.env` server - jangan disalin buta dari sini)*
 
 Verifikasi backup **terbaca**, bukan sekadar ada:
 
@@ -104,16 +104,16 @@ cd ~/domains/<SITUS>/public_html && cp .env .env.bak-30jul && cp .htaccess .htac
 ```
 
 **GERBANG.** Jumlah `CREATE TABLE` harus sama dengan jumlah tabel di Fase 1
-(29). Kalau `gzip -t` gagal atau hitungannya meleset, **BERHENTI** — backup
+(29). Kalau `gzip -t` gagal atau hitungannya meleset, **BERHENTI** - backup
 yang tidak terbukti terbaca sama saja dengan tidak punya backup.
 
 ---
 
-## Fase 3 — Migrasi skema dulu, kode belakangan
+## Fase 3 - Migrasi skema dulu, kode belakangan
 
 Urutan ini terbukti pada rilis 29 Jul: skema baru + kode lama aman karena kedua
 migrasi hanya **menambah** (`…021` membuat 6 tabel `rd_*`, `…022` membuat
-`forum_laporan_komentar`). Kebalikannya — kode baru bertemu skema lama —
+`forum_laporan_komentar`). Kebalikannya - kode baru bertemu skema lama -
 langsung 500.
 
 **3a. Salin HANYA dua berkas migrasi** (dari mesin lokal):
@@ -130,14 +130,14 @@ cd ~/domains/<SITUS>/public_html && php index.php migrate && php index.php migra
 
 **Jebakan yang sudah pernah memakan korban:** `Migrasi sukses, versi skema
 sekarang: 1` **bukan** berarti turun ke versi 1. CI3 mengembalikan `TRUE`
-(tercetak `1`) kalau skema sudah di target. Jangan panik — verifikasi langsung:
+(tercetak `1`) kalau skema sudah di target. Jangan panik - verifikasi langsung:
 
 ```bash
 cd ~/domains/<SITUS>/public_html && php -r '$e=parse_ini_file(".env"); $m=new mysqli("localhost",$e["DB_USER"],$e["DB_PASS"],$e["DB_NAME"]); $r=$m->query("SELECT version FROM migrations"); $v=$r->fetch_assoc(); echo "versi: ".$v["version"]."\n"; $t=$m->query("SHOW TABLES LIKE \"rd_%\""); echo "tabel rd_*: ".$t->num_rows."\n"; $f=$m->query("SHOW TABLES LIKE \"forum_laporan_komentar\""); echo "forum_laporan_komentar: ".($f->num_rows?"ADA":"TIDAK ADA")."\n";'
 ```
 
 **GERBANG.** Harus terbaca `versi: 20260701000022`, `tabel rd_*: 6`,
-`forum_laporan_komentar: ADA`. Kalau tidak — **BERHENTI dan pulihkan DB**
+`forum_laporan_komentar: ADA`. Kalau tidak - **BERHENTI dan pulihkan DB**
 (lihat Rollback A). Jangan lanjut ke push.
 
 **3c. Hapus berkas yang barusan disalin.** Ini bukan kerapian, ini pencegah
@@ -158,13 +158,13 @@ membatalkan apa pun. Push nanti mengembalikan keduanya dengan isi identik.
 for u in "" "auth/login" "golek_omah" "umum" "listkabupaten"; do printf "%-16s " "/$u"; curl -s -o /dev/null -w "%{http_code}\n" "https://floralwhite-lion-710022.hostingersite.com/$u"; done
 ```
 
-**GERBANG.** Kelimanya harus `200`. Kalau ada yang bukan — **BERHENTI**,
+**GERBANG.** Kelimanya harus `200`. Kalau ada yang bukan - **BERHENTI**,
 pulihkan DB (Rollback A). Belum ada kode baru yang di-push, jadi pemulihannya
 masih murah.
 
 ---
 
-## Fase 4 — Rilis kode
+## Fase 4 - Rilis kode
 
 **4a. Fast-forward branch deploy** (di lokal, worktree `C:\xampp\htdocs\klinik_new`):
 
@@ -189,11 +189,11 @@ Di lokal:
 git hash-object .htaccess
 ```
 
-**GERBANG.** Kedua hash harus **sama**. Kalau berbeda, **BERHENTI** —
+**GERBANG.** Kedua hash harus **sama**. Kalau berbeda, **BERHENTI** -
 selamatkan versi server dulu (`.htaccess.bak-30jul` sudah dibuat di Fase 2),
 dan putuskan mana yang benar sebelum push.
 
-**4c. Push — ini yang merilis:**
+**4c. Push - ini yang merilis:**
 
 ```bash
 git push origin feature/homepage-portal-v2
@@ -209,7 +209,7 @@ Diharapkan `d9a2530`, status bersih, skema `20260701000022`.
 
 ---
 
-## Fase 5 — Smoke test
+## Fase 5 - Smoke test
 
 Ganti `BASE` dengan `https://floralwhite-lion-710022.hostingersite.com`.
 
@@ -220,7 +220,7 @@ Ganti `BASE` dengan `https://floralwhite-lion-710022.hostingersite.com`.
 | `/` | beranda; S1 mengubah transisi halaman |
 | `/auth/login` | pintu masuk semua role |
 | `/golek_omah` | kartu wizard warga |
-| `/umum` | forum — C1, B3, S2 semua menyentuh ini |
+| `/umum` | forum - C1, B3, S2 semua menyentuh ini |
 | `/listkabupaten` | A3 mengubah isinya |
 | `/Statistika` | A2 membalik arah klaimnya, halamannya **tetap ada** |
 | `/warga/pendataan` | wizard warga (tanpa sesi → `302` ke login, itu benar) |
@@ -246,7 +246,7 @@ curl -s -I "$BASE/" | grep -i "set-cookie"
 ```
 
 Harus ada atribut `Secure`. Kalau tidak ada, `ENVIRONMENT` tidak terbaca
-`production` di server — periksa `SetEnv CI_ENV production` di `.htaccess`.
+`production` di server - periksa `SetEnv CI_ENV production` di `.htaccess`.
 **Jangan taruh `CI_ENV` di `.env`**, tidak berpengaruh sama sekali: `index.php`
 mendefinisikan `ENVIRONMENT` ratusan baris sebelum `.env` diurai.
 
@@ -272,7 +272,7 @@ Harus `0`.
 
 ## Rollback
 
-**A — migrasi gagal (belum ada push).** Pulihkan DB dari backup Fase 2:
+**A - migrasi gagal (belum ada push).** Pulihkan DB dari backup Fase 2:
 
 ```bash
 cd ~ && zcat backup_klinik_pre_rilis_30jul.sql.gz | mysql -u u504551489_klinikstg -p u504551489_klinikstg && cd ~/domains/<SITUS>/public_html && php index.php migrate status
@@ -281,7 +281,7 @@ cd ~ && zcat backup_klinik_pre_rilis_30jul.sql.gz | mysql -u u504551489_klinikst
 Lalu hapus dua berkas migrasi yang disalin kalau masih ada. Kode belum berubah,
 jadi setelah ini production kembali persis seperti sebelum runbook dimulai.
 
-**B — kode sudah di-push dan bermasalah.** Kembalikan branch deploy ke commit
+**B - kode sudah di-push dan bermasalah.** Kembalikan branch deploy ke commit
 production lama:
 
 ```bash
@@ -292,7 +292,7 @@ Aman karena seluruh 17 commit tetap hidup di dua branch cadangan yang sudah ada
 di origin: `chore/utang-teknis-p0` (`d9a2530`) dan `backup/rekam-data-d6`
 (`9903743`). Tidak ada yang hilang.
 
-**Skema tidak perlu ikut dimundurkan** — kedua migrasi hanya menambah tabel,
+**Skema tidak perlu ikut dimundurkan** - kedua migrasi hanya menambah tabel,
 dan kode lama tidak menyentuhnya. Turunkan skema hanya kalau migrasinya sendiri
 yang merusak, lewat Rollback A.
 
@@ -300,7 +300,7 @@ yang merusak, lewat Rollback A.
 
 ## Yang akan berubah di mata pengunjung
 
-Bukan cuma perbaikan senyap — ada halaman yang benar-benar hilang. Ini
+Bukan cuma perbaikan senyap - ada halaman yang benar-benar hilang. Ini
 keputusan sadar user ("oke cabut"), dicatat di sini supaya tidak ada yang
 kaget saat dinas membukanya:
 
@@ -313,7 +313,7 @@ kaget saat dinas membukanya:
 | `/Admin_Settings` | panel pengaturan yang tidak menulis ke mana pun (A6) |
 | Widget chat | dikarantina 404 sampai keputusan #7 (B2) |
 
-`/Statistika` **tetap ada** — yang berubah arah klaimnya: sekarang menyatakan
+`/Statistika` **tetap ada** - yang berubah arah klaimnya: sekarang menyatakan
 terang-terangan bahwa angkanya berasal dari SIMPERUM, bukan mengaku sebagai
 sumber (A2).
 
@@ -323,9 +323,9 @@ sumber (A2).
 
 | Butir | Menunggu |
 |---|---|
-| #5 B5 | kanal rotasi kredensial Sikaper — library & config sengaja ditinggal utuh |
+| #5 B5 | kanal rotasi kredensial Sikaper - library & config sengaja ditinggal utuh |
 | #7 C2/C3/B7 | chat dicabut atau dibangun; `Chat.php:157` (TLS) menunggu jawabannya |
-| #8 B8 | kontrak cek tiket/NIK — butuh 3 rilis terpisah, tidak muat dalam satu hari |
+| #8 B8 | kontrak cek tiket/NIK - butuh 3 rilis terpisah, tidak muat dalam satu hari |
 | #9 | kebijakan retensi (S4 cleanup + S7 audit) |
 | #11 | syarat bukti resmi (S3 gerbang bersyarat) |
 
@@ -335,9 +335,9 @@ sumber (A2).
 
 Perbarui `AGENTS.md` §0:
 
-- baris 26 masih menulis skema production `20260701000016` — **salah**, dan
+- baris 26 masih menulis skema production `20260701000016` - **salah**, dan
   sudah salah sebelum rilis ini. Ganti dengan angka yang keluar dari
   `migrate status` di Fase 4d.
 - catat commit production baru (`d9a2530`) dan tanggalnya
-- pindahkan Rekam Data D0–D6 dari "selesai lokal" ke "tayang di production"
+- pindahkan Rekam Data D0-D6 dari "selesai lokal" ke "tayang di production"
 - catat halaman yang dicabut, supaya agent berikutnya tidak mencarinya

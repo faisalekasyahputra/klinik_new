@@ -4,20 +4,20 @@
      ============================================================
      Diarsipkan dari homepage (application/views/pages/home/awal.php)
      saat homepage dirombak jadi gaya dashboard portal sederhana
-     (menu grid + batik bg, tanpa hero besar). TIDAK DIHAPUS — isi
+     (menu grid + batik bg, tanpa hero besar). TIDAK DIHAPUS - isi
      dan fungsi JS-nya disimpan utuh di sini untuk referensi/dipakai
      ulang lagi nanti (di homepage ini atau halaman lain).
 
      Isi file ini (3 bagian independen):
-       1. HERO LAMA — judul besar + slideshow background 3 gambar
+       1. HERO LAMA - judul besar + slideshow background 3 gambar
           + fungsi JS heroBgSlider(). 4 kartu menunya (Nggolek Omah,
           Sertifikasi Pengembang, PSU dan Kawasan Kumuh, Monitoring
           Capaian Kinerja) TETAP ADA di homepage baru, cuma gaya
-          kartunya disederhanakan — link/tujuannya sama persis.
-       2. QUICK LINKS LAMA — versi kartu besar dengan watermark icon
+          kartunya disederhanakan - link/tujuannya sama persis.
+       2. QUICK LINKS LAMA - versi kartu besar dengan watermark icon
           dan glow untuk Forum Diskusi, Aduan, KKN dan Magang. Link
           ketiganya juga tetap ada di homepage baru, gaya disederhanakan.
-       3. ETALASE PROGRAM (CAROUSEL) — carousel banner geser dengan
+       3. ETALASE PROGRAM (CAROUSEL) - carousel banner geser dengan
           infinite loop, drag, parallax, dan background morph, lengkap
           dengan Alpine.data('programEtalase', ...). Di homepage baru,
           5 programnya ditampilkan sebagai menu grid sederhana saja
@@ -29,10 +29,10 @@
 
 <!-- ================= BAGIAN 1: HERO LAMA ================= -->
 <!-- ============================================================
-     SECTION 1: HERO — Full Viewport Slideshow
+     SECTION 1: HERO - Full Viewport Slideshow
      ============================================================ -->
 <section class="w-full relative overflow-hidden" style="height: 110vh;" x-data="heroBgSlider()">
-    <!-- Background Slider — image only, no per-slide text (cards/title below are static) -->
+    <!-- Background Slider - image only, no per-slide text (cards/title below are static) -->
     <div class="absolute inset-0 z-0" style="mask-image: linear-gradient(to bottom, black 0, black calc(100% - 10vh), transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 0, black calc(100% - 10vh), transparent 100%);">
         <div class="hero-slide" :class="current === 0 && 'active'">
             <div class="absolute inset-0 gradient-hero z-10"></div>
@@ -106,7 +106,7 @@
                 </div>
             </a>
 
-            <!-- Card 3: PSU dan Kawasan Kumuh — placeholder, halaman belum dibuat -->
+            <!-- Card 3: PSU dan Kawasan Kumuh - placeholder, halaman belum dibuat -->
             <div class="rounded-3xl p-6 sm:p-8 flex flex-col relative overflow-hidden opacity-50 cursor-not-allowed" style="background-color: var(--bg-card); border: 1px solid rgba(255,255,255,0.08); min-height: 220px;" data-aos="fade-up" data-aos-delay="300" title="Segera Hadir">
                 <i class="fa-solid fa-city absolute pointer-events-none" style="font-size: 120px; right: -1rem; bottom: -1rem; color: #8aacb0; opacity: 0.05;"></i>
                 <div class="relative z-10">
@@ -122,7 +122,7 @@
                 </div>
             </div>
 
-            <!-- Card 4: Monitoring Capaian Kinerja — placeholder, fitur belum dibangun -->
+            <!-- Card 4: Monitoring Capaian Kinerja - placeholder, fitur belum dibangun -->
             <div class="rounded-3xl p-6 sm:p-8 flex flex-col relative overflow-hidden opacity-50 cursor-not-allowed" style="background-color: var(--bg-card); border: 1px solid rgba(255,255,255,0.08); min-height: 220px;" data-aos="fade-up" data-aos-delay="400" title="Segera Hadir">
                 <i class="fa-solid fa-chart-line absolute pointer-events-none" style="font-size: 120px; right: -1rem; bottom: -1rem; color: #8aacb0; opacity: 0.05;"></i>
                 <div class="relative z-10">
@@ -261,7 +261,7 @@ function heroBgSlider() {
      SECTION 2.5: ETALASE PROGRAM
      ============================================================ -->
 <section id="etalase-program" class="w-full py-20 sm:py-28 relative overflow-hidden" x-data="programEtalase()">
-    <!-- Dynamic Blurred Background — morphs (crossfade) to follow the active slide, subtle & seamless into adjacent sections -->
+    <!-- Dynamic Blurred Background - morphs (crossfade) to follow the active slide, subtle & seamless into adjacent sections -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none z-0" style="mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent); -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);">
         <div class="absolute inset-0 transition-opacity duration-[1200ms] ease-in-out"
              :style="'background-image: url(' + bgImages[0] + '); background-size: cover; background-position: center; filter: blur(8px); transform: scale(1.1); opacity: ' + (bgActiveLayer === 0 ? 0.18 : 0) + ';'"></div>
@@ -287,7 +287,7 @@ function heroBgSlider() {
 
         <!-- Program Carousel (Banner Slideshow, infinite loop, draggable, parallax) -->
         <div class="relative">
-            <!-- Prev/Next — sit on the card edges, 50% overlap -->
+            <!-- Prev/Next - sit on the card edges, 50% overlap -->
             <button @click="stopAutoplay(); prev()" class="absolute top-1/2 -translate-y-1/2 -left-5 md:-left-6 z-20 w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[#0f2a30] border border-[#d6fb00]/30 hover:border-[#d6fb00]/60 text-[#8aacb0] hover:text-white flex items-center justify-center transition-all shadow-lg shadow-black/30"><i class="fa-solid fa-chevron-left text-xs"></i></button>
             <button @click="stopAutoplay(); next()" class="absolute top-1/2 -translate-y-1/2 -right-5 md:-right-6 z-20 w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[#0f2a30] border border-[#d6fb00]/30 hover:border-[#d6fb00]/60 text-[#8aacb0] hover:text-white flex items-center justify-center transition-all shadow-lg shadow-black/30"><i class="fa-solid fa-chevron-right text-xs"></i></button>
 

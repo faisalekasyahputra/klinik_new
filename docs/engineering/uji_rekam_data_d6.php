@@ -1,6 +1,6 @@
 <?php
 /**
- * Uji D6 — Rekam Data: peninjauan provinsi oleh Admin Bidang.
+ * Uji D6 - Rekam Data: peninjauan provinsi oleh Admin Bidang.
  *
  * Menempuh perjalanan penuh: kabupaten mengisi dan mengirim, provinsi meminta
  * perbaikan, kabupaten memperbaiki dan mengirim ulang, provinsi menerima.
@@ -26,7 +26,7 @@ define('TRIWULAN', 2);
 $GLOBALS['uji_total'] = 0;
 $GLOBALS['uji_gagal'] = 0;
 
-/** Penanda waktu mulai — dipakai membersihkan bucket rate limit run ini saja. */
+/** Penanda waktu mulai - dipakai membersihkan bucket rate limit run ini saja. */
 $mulai = date('Y-m-d H:i:s', time() - 1);
 
 function cek($condition, $label) {
@@ -84,7 +84,7 @@ function q($sql, $params = []) {
 }
 
 /**
- * Lampirkan BNBA langsung ke DB — BNBA WAJIB sejak 5 Agt 2026 (butir C1),
+ * Lampirkan BNBA langsung ke DB - BNBA WAJIB sejak 5 Agt 2026 (butir C1),
  * dan `Rekam_data_model::kirim()` menolak laporan perumahan tanpa lampirannya.
  *
  * Ditulis langsung, bukan lewat `unggah_bnba`: yang diuji berkas ini bukan alur
@@ -99,7 +99,7 @@ function lampirkan_bnba($laporan_id) {
        [(int) $laporan_id, 'bnba-uji.pdf', 'uji/bnba-uji.pdf', 'application/pdf', 1024]);
 }
 
-/** Prepared statement mengembalikan tipe native — selalu di-cast (AGENTS.md §0e). */
+/** Prepared statement mengembalikan tipe native - selalu di-cast (AGENTS.md §0e). */
 function skalar_int($sql, $params = []) {
     $row = q($sql, $params);
     return $row ? (int) reset($row) : 0;
@@ -160,7 +160,7 @@ function bersihkan() {
 
     // Bucket rate limit yang tersentuh selama run ini WAJIB dibersihkan.
     // Kuncinya SHA-256 dan nilai dimensinya tidak pernah disimpan, jadi tidak
-    // bisa dicocokkan ke akun uji — tapi dimensi `ip` dipakai sebagai kunci
+    // bisa dicocokkan ke akun uji - tapi dimensi `ip` dipakai sebagai kunci
     // TERPISAH, dan burst 34 permintaan di akhir run memblokir run berikutnya
     // dari IP yang sama selama satu window penuh. Tanpa ini harness tidak bisa
     // dijalankan dua kali beruntun, dan kegagalannya terlihat seperti bug kode.
@@ -175,7 +175,7 @@ function bersihkan() {
 
 // ---------------------------------------------------------------- prasyarat
 
-echo "Uji D6 — Peninjauan provinsi\n";
+echo "Uji D6 - Peninjauan provinsi\n";
 
 $admin = q('SELECT id, kabupaten_id FROM usr_users WHERE email = ? AND role = ?',
     [ADMIN_EMAIL, 'admin_kabkota']);
@@ -206,7 +206,7 @@ try {
     // draft; sejak wizard, index() memakai laporan_periode() yang tidak pernah
     // membuat apa pun (kalau layar baca ikut melahirkan draft, setiap admin yang
     // cuma menengok mengisi riwayat dengan triwulan kosong). Draft lahir di
-    // mulai(), dan penyuntingan hidup di /input — dua alamat berbeda sekarang,
+    // mulai(), dan penyuntingan hidup di /input - dua alamat berbeda sekarang,
     // dan harness ini dulu menganggapnya satu.
     $url    = 'Rekam_Perumahan?tahun=' . TAHUN . '&triwulan=' . TRIWULAN;
     $wizard = 'Rekam_Perumahan/input';
@@ -237,7 +237,7 @@ try {
     // adalah SUMBER DANA (sepuluh baris `simpan_gerbang`), dan program jadi
     // anaknya. Sejak W1 induknya PROGRAM: `simpan_program` mencentang program,
     // baru `simpan_sumber` mengisi angka per sumber dana di dalamnya. Endpoint
-    // `simpan_gerbang` dan `simpan_angka` sudah tidak ada sama sekali — harness
+    // `simpan_gerbang` dan `simpan_angka` sudah tidak ada sama sekali - harness
     // ini memanggil dua URL mati dan tetap "lolos" karena tidak pernah memeriksa
     // hasilnya, sampai baris DB di bawah yang merah.
     http('kab', 'Rekam_Perumahan/simpan_program', [
@@ -280,7 +280,7 @@ try {
     cek($detail['code'] === 200, 'Bidang Perumahan bisa membuka laporannya');
     cek(strpos($detail['body'], '6.000.000.000') !== FALSE, 'Detail menampilkan angka yang dilaporkan');
     // Uji ini DIBALIK, dan justru uji inilah yang menemukan bugnya. Ia dulu
-    // menuntut layar peninjau berbunyi "kumulatif sampai dengan" — benar selama
+    // menuntut layar peninjau berbunyi "kumulatif sampai dengan" - benar selama
     // angkanya kumulatif per bulan, KEBALIKAN kenyataan sejak W1. Kalimat itu
     // masih terpampang sampai 30 Jul 2026 di layar tempat provinsi memutuskan
     // terima atau minta perbaikan: peninjau yang membaca 30 unit sebagai total
@@ -313,7 +313,7 @@ try {
     // ------------------------------- catatan benar-benar sampai ke kabupaten
     // Penyuntingan pindah ke /input, bukan lagi di layar Capaian. Catatan
     // peninjau harus sampai ke tempat orangnya BEKERJA, bukan hanya ke layar
-    // baca — jadi diperiksa di wizard, dan tetap diperiksa di riwayat.
+    // baca - jadi diperiksa di wizard, dan tetap diperiksa di riwayat.
     $layar_kab = http('kab', $wizard_lap)['body'];
     cek(strpos($layar_kab, $catatan) !== FALSE,
         'Catatan peninjau tampil di layar input (wizard) kabupaten');
@@ -325,7 +325,7 @@ try {
     // ----------------------------------- kirim ulang memakai laporan yang SAMA
     http('kab', 'Rekam_Perumahan/simpan_program', [
         'csrf_kpkp_token' => csrf('kab', $wizard_lap),
-        // 'program[]' dua kali adalah kunci array PHP yang SAMA — yang kedua
+        // 'program[]' dua kali adalah kunci array PHP yang SAMA - yang kedua
         // menimpa yang pertama, jadi pk_rtlh justru ter-uncheck dan angkanya
         // ikut terhapus lewat cascade. Kirim sebagai array betulan.
         'laporan_id' => $LAP, 'program' => ['pk_rtlh']]);
@@ -350,7 +350,7 @@ try {
 
     // ------------------------------------------------ terima + rate limit
     // Token diambil SEKARANG, selagi laporan masih `terkirim` dan belum
-    // ditinjau — hanya pada keadaan itu form keputusan dirender, jadi hanya
+    // ditinjau - hanya pada keadaan itu form keputusan dirender, jadi hanya
     // saat itu halaman detail memuat token CSRF. Mengambilnya sesudah diterima
     // menghasilkan token KOSONG dan seluruh POST ditolak 403 sebelum menyentuh
     // limiter; uji rate limit lalu "gagal" tanpa ada yang rusak.
@@ -361,7 +361,7 @@ try {
     cek(skalar_str('SELECT reviewed_at FROM rd_laporan WHERE id = ?', [$LAP]) !== '',
         'Terima menandai laporan sudah ditinjau');
     cek(skalar_str('SELECT status FROM rd_laporan WHERE id = ?', [$LAP]) === 'terkirim',
-        'Status tetap terkirim — "diterima" bukan status tersendiri di skema');
+        'Status tetap terkirim - "diterima" bukan status tersendiri di skema');
 
     $daftar = http('bid_p', 'Rekam_Tinjauan?tahun=' . TAHUN)['body'];
     cek(strpos($daftar, 'Diterima') !== FALSE, 'Daftar menampilkan status Diterima');
@@ -371,7 +371,7 @@ try {
     cek(skalar_str('SELECT reviewed_at FROM rd_laporan WHERE id = ?', [$LAP]) === $waktu_terima,
         'Terima dua kali ditolak, stempel tidak berubah');
 
-    // Kabupaten tetap terkunci sesudah diterima — diperiksa di WIZARD, bukan di
+    // Kabupaten tetap terkunci sesudah diterima - diperiksa di WIZARD, bukan di
     // layar Capaian. Capaian baca-saja untuk semua status, jadi ia tidak pernah
     // perlu menyebut "terkunci" dan mencarinya di sana menguji halaman yang salah.
     // Yang penting: orang yang mencoba MENYUNTING diberi tahu kenapa tidak bisa.
@@ -380,7 +380,7 @@ try {
 
     // ------------------------------------------------------- rate limit
     // Policy `admin_queue_decision`: 30 per 60 detik, dimensi ip+account+object.
-    // Token yang sama dipakai berulang — `csrf_regenerate` FALSE di repo ini,
+    // Token yang sama dipakai berulang - `csrf_regenerate` FALSE di repo ini,
     // dan mengambil ulang tiap iterasi menambah 34 GET yang bisa membuat burst
     // melampaui window 60 detik sehingga counter-nya keburu direset.
     $kode_429 = 0;
@@ -399,7 +399,7 @@ try {
     // Penjaga terhadap kesalahan yang baru saja terjadi di harness ini: kalau
     // tokennya kosong, seluruh burst ditolak 403 sebelum menyentuh limiter dan
     // uji di atas "gagal" tanpa ada yang rusak.
-    cek(($ragam[403] ?? 0) === 0, 'Nol penolakan CSRF — burst benar-benar mencapai limiter');
+    cek(($ragam[403] ?? 0) === 0, 'Nol penolakan CSRF - burst benar-benar mencapai limiter');
 
 } finally {
     bersihkan();

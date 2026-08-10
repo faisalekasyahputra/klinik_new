@@ -1,11 +1,11 @@
 <?php
 /**
- * DIARSIPKAN (2026-07) — form manual 12 field ini digantikan wizard satu halaman
+ * DIARSIPKAN (2026-07) - form manual 12 field ini digantikan wizard satu halaman
  * di Pengembang::syarat() / pages/pengembang/syarat.php (syarat -> masuk/daftar
  * cepat -> unggah dokumen -> kirim, tanpa pindah halaman). Jalur resmi pendaftaran
  * SRP2 sekarang: daftar cepat (nama perusahaan + email + password) lewat
  * Auth::do_register(), lengkapi sisanya via dashboard. File ini disimpan sebagai
- * referensi, bukan dihapus — tidak lagi dirender controller manapun.
+ * referensi, bukan dihapus - tidak lagi dirender controller manapun.
  */
 ?>
 <section class="w-full max-w-4xl mx-auto rounded-[2.5rem] p-6 sm:p-10 md:p-12 shadow-2xl z-10 relative mt-8 text-left" style="background-color: var(--bg-card); border: 1px solid rgba(255,255,255,0.08);">

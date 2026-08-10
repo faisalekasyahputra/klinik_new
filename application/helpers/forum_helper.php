@@ -71,11 +71,11 @@ if (!function_exists('check_forum_rate_limit')) {
         $one_hour_ago = date('Y-m-d H:i:s', strtotime('-1 hour'));
         
         // Docblock di atas menyatakan parameternya kunci domain ('diskusi' /
-        // 'komentar'), jadi kedua pemanggilnya sudah benar — helper inilah yang
+        // 'komentar'), jadi kedua pemanggilnya sudah benar - helper inilah yang
         // melanggar kontraknya sendiri dengan memakai nilai itu mentah sebagai
         // nama tabel. Tabel nyatanya `forum_diskusi` / `forum_komentar`, jadi
         // query-nya selalu errno 1146 dan `count_all_results()` mengembalikan
-        // FALSE — lalu `FALSE < 5` bernilai TRUE dan pembatas laju ini SELALU
+        // FALSE - lalu `FALSE < 5` bernilai TRUE dan pembatas laju ini SELALU
         // meloloskan. Pemetaan disalin dari pola yang sudah ada di repo untuk
         // tabel yang sama: Forum_model::toggle_like().
         $nama_tabel = ($table === 'diskusi') ? 'forum_diskusi' : 'forum_komentar';

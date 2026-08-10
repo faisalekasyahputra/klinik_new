@@ -9,7 +9,7 @@ class Program_model extends CI_Model {
     }
 
     /**
-     * Program yang tampil di korsel etalase beranda — SATU-SATUNYA sumbernya.
+     * Program yang tampil di korsel etalase beranda - SATU-SATUNYA sumbernya.
      *
      * Sampai 5 Agt 2026 daftar ini hardcode di dalam JS komponen korsel, dan
      * `sf_programs` cuma dipakai untuk kelayakan. Dua tempat itu sudah melenceng
@@ -18,15 +18,15 @@ class Program_model extends CI_Model {
      * yang DITAMPILKAN ke tabel; sejak itu korsel membaca dari sini.
      *
      * `is_active` IKUT MENGGERBANG. Program yang dinonaktifkan di Katalog
-     * Program tidak boleh terus dipromosikan di beranda — kalau tidak, warga
+     * Program tidak boleh terus dipromosikan di beranda - kalau tidak, warga
      * mengeklik sesuatu yang pengajuannya sudah ditutup.
      */
     public function etalase() {
         if ( ! $this->db->table_exists('sf_programs')
             || ! $this->db->field_exists('tampil_korsel', 'sf_programs')) {
-            // Migrasi 036 belum jalan. Bukan alasan menampilkan data lain —
+            // Migrasi 036 belum jalan. Bukan alasan menampilkan data lain -
             // dua sumber justru masalah yang sedang dibereskan.
-            log_message('error', 'Program_model::etalase() — kolom etalase belum ada; jalankan migrasi 036.');
+            log_message('error', 'Program_model::etalase() - kolom etalase belum ada; jalankan migrasi 036.');
             return [];
         }
         $rows = $this->db->select('id, kode_program, nama_program, deskripsi_singkat,
@@ -38,7 +38,7 @@ class Program_model extends CI_Model {
         // `db_debug` mati di production: query gagal mengembalikan array kosong
         // tanpa suara. Dicatat supaya kekosongan bisa ditelusuri, bukan ditebak.
         if ( ! $rows) {
-            log_message('error', 'Program_model::etalase() — nol program etalase aktif.');
+            log_message('error', 'Program_model::etalase() - nol program etalase aktif.');
         }
         return $rows;
     }
@@ -53,10 +53,10 @@ class Program_model extends CI_Model {
      * Tentukan kabupaten_id yang boleh disimpan ke sf_housing_queue.
      *
      * URUTAN KEPERCAYAAN (jangan dibalik):
-     *   1. Domisili user yang login (usr_users.kabupaten_id) — data terverifikasi,
+     *   1. Domisili user yang login (usr_users.kabupaten_id) - data terverifikasi,
      *      tidak bisa dipalsukan pemohon lewat form.
      *   2. Pilihan user di form, TAPI wajib cocok dengan baris nyata di tabel
-     *      kabupaten — menutup nilai sembarang/ngawur.
+     *      kabupaten - menutup nilai sembarang/ngawur.
      *   3. NULL kalau dua-duanya tidak tersedia (tamu tanpa pilihan valid).
      *
      * Kenapa penting: kolom ini yang jadi dasar WHERE di dashboard Admin_Kabkota.
@@ -67,7 +67,7 @@ class Program_model extends CI_Model {
      *
      * ASUMSI PRODUK: untuk pemohon yang sudah login dan profilnya punya
      * kabupaten, domisili profil MENANG atas pilihan dropdown. Kalau nanti
-     * kebijakannya "warga boleh mengajukan ke kabupaten lain", ubah di sini —
+     * kebijakannya "warga boleh mengajukan ke kabupaten lain", ubah di sini -
      * satu tempat, bukan tersebar di controller.
      */
     public function resolve_kabupaten_id($user_id = NULL, $requested_id = NULL) {
@@ -90,7 +90,7 @@ class Program_model extends CI_Model {
     /**
      * Satu-satunya pintu masuk baris sf_housing_queue. Pemanggil WAJIB
      * menyertakan key 'kabupaten_id' (boleh bernilai NULL) yang sudah lewat
-     * resolve_kabupaten_id() — kalau lupa, dicatat ke log dan dipaksa NULL,
+     * resolve_kabupaten_id() - kalau lupa, dicatat ke log dan dipaksa NULL,
      * supaya kelalaian terlihat di log alih-alih diam-diam menghasilkan baris
      * yang tidak pernah muncul di dashboard admin manapun (kasus lama
      * Program::ajukan_solusi(), lihat AUDIT_ROLE_WARGA.md temuan #4).
@@ -100,7 +100,7 @@ class Program_model extends CI_Model {
             $data['ticket_code'] = $this->generate_ticket_code();
         }
         if ( ! array_key_exists('kabupaten_id', $data)) {
-            log_message('error', 'insert_housing_queue dipanggil tanpa kabupaten_id — baris tidak akan terlihat admin kabupaten manapun. Pakai resolve_kabupaten_id() di pemanggil.');
+            log_message('error', 'insert_housing_queue dipanggil tanpa kabupaten_id - baris tidak akan terlihat admin kabupaten manapun. Pakai resolve_kabupaten_id() di pemanggil.');
             return FALSE;
         }
         return $this->db->insert('sf_housing_queue', $data);

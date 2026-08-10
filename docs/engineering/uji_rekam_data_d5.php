@@ -1,10 +1,10 @@
 <?php
 /**
- * Uji D5 — Rekam Data: Rekap & Riwayat.
+ * Uji D5 - Rekam Data: Rekap & Riwayat.
  *
  * Uji terpenting di berkas ini adalah nomor "rekap tidak menjumlahkan antar
  * bulan". Angka modul ini kumulatif; `SUM()` lintas bulan melipatgandakan
- * capaian provinsi dan hasilnya tetap terlihat wajar — jenis kesalahan yang
+ * capaian provinsi dan hasilnya tetap terlihat wajar - jenis kesalahan yang
  * tidak akan ketahuan tanpa uji yang sengaja mencarinya.
  *
  *   php docs/engineering/uji_rekam_data_d5.php
@@ -78,7 +78,7 @@ function q($sql, $params = []) {
 }
 
 /**
- * Lampirkan BNBA langsung ke DB — BNBA WAJIB sejak 5 Agt 2026 (butir C1),
+ * Lampirkan BNBA langsung ke DB - BNBA WAJIB sejak 5 Agt 2026 (butir C1),
  * dan `Rekam_data_model::kirim()` menolak laporan perumahan tanpa lampirannya.
  *
  * Ditulis langsung, bukan lewat `unggah_bnba`: yang diuji berkas ini bukan alur
@@ -158,7 +158,7 @@ function bersihkan() {
 
 // ---------------------------------------------------------------- prasyarat
 
-echo "Uji D5 — Rekap & Riwayat\n";
+echo "Uji D5 - Rekap & Riwayat\n";
 
 $admin = q('SELECT id, kabupaten_id FROM usr_users WHERE email = ? AND role = ?',
     [ADMIN_EMAIL, 'admin_kabkota']);
@@ -189,7 +189,7 @@ try {
     cek(strpos($kosong['body'], 'Bukan berarti capaiannya nol') !== FALSE,
         'Layar membedakan "belum dikirim" dari "nol"');
     cek(strpos($kosong['body'], '<table') === FALSE,
-        'Nol tabel angka saat belum ada data — tidak merender baris nol karangan');
+        'Nol tabel angka saat belum ada data - tidak merender baris nol karangan');
 
     // ---------------------------------------------- siapkan dua periode
     // Alur pengisian ditulis ulang ke wizard: draft lahir di mulai() (membuka
@@ -222,7 +222,7 @@ try {
     cek(skalar_str('SELECT status FROM rd_laporan WHERE id = ?', [$lap6]) === 'terkirim',
         'TW II terkirim');
 
-    // TW III diisi 40 sebagai capaian TRIWULAN ITU SENDIRI — bukan "kumulatif
+    // TW III diisi 40 sebagai capaian TRIWULAN ITU SENDIRI - bukan "kumulatif
     // yang dinaikkan dari 25". Tidak ada pewarisan sejak W1, jadi 40 memang
     // angka baru, dan kumulatif s.d. TW III = 25 + 40 dihitung oleh sistem.
     $lap7 = $isi_periode(3, 40, 8000000000);
@@ -239,18 +239,18 @@ try {
     cek(strpos($rekap6, '25<br>') !== FALSE, 'Rekap TW II menampilkan 25');
     cek(strpos($rekap7, '40<br>') !== FALSE, 'Rekap TW III menampilkan 40 (capaian TW III saja)');
     // Layar rekap kini DUA tabel: per-triwulan lalu kumulatif. 65 dan 13 miliar
-    // MEMANG harus muncul — di tabel kumulatif. Mencarinya di seluruh HTML tidak
+    // MEMANG harus muncul - di tabel kumulatif. Mencarinya di seluruh HTML tidak
     // bisa membedakan "bocor ke tabel per-triwulan" dari "benar di tabel
     // kumulatif", jadi HTML-nya dipotong di judul tabel kumulatif dan yang
     // diperiksa hanya bagian atasnya. Tanpa pemotongan ini uji ini akan MERAH
-    // pada perilaku yang benar — dan itu jenis uji yang akhirnya dimatikan orang.
+    // pada perilaku yang benar - dan itu jenis uji yang akhirnya dimatikan orang.
     $batas = strpos($rekap7, 'Kumulatif Realisasi s.d.');
     wajib($batas !== FALSE, 'Tabel kumulatif ada sebagai penanda batas');
     $per_tw = substr($rekap7, 0, $batas);
     cek(strpos($per_tw, '65<br>') === FALSE,
         'Tabel per-triwulan TIDAK menjumlahkan TW II+TW III (65 tidak muncul di sana)');
     cek(strpos($rekap7, '65<br>') !== FALSE,
-        'Kumulatif 25+40=65 memang dihitung — di tabelnya sendiri, sekali');
+        'Kumulatif 25+40=65 memang dihitung - di tabelnya sendiri, sekali');
 
     // Bukti yang tidak bergantung pada HTML sama sekali: satu baris per
     // (sumber, program) per laporan, dan nilainya nilai bulan itu sendiri.
@@ -279,7 +279,7 @@ try {
     // ------------------------------------------ dua domain tidak digabung
     // Kalimat "tidak digabungkan" HILANG dari layar Perumahan saat ditulis ulang;
     // yang masih memuatnya cuma rekap Kawasan (diperiksa di bawah). Bukan
-    // kebohongan, cuma keterangan yang tinggal sebelah — jadi uji ini tidak
+    // kebohongan, cuma keterangan yang tinggal sebelah - jadi uji ini tidak
     // menuntutnya di Perumahan, dan tidak pula berpura-pura ia masih ada.
     cek(strpos($rekap7, 'per triwulan') !== FALSE,
         'Layar Perumahan tetap menerangkan cara membaca angkanya');
@@ -295,7 +295,7 @@ try {
         'TW IV masih draft (dan lahir kosong, tanpa mewarisi TW III)');
     $rekap8 = http('kab', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&triwulan=4')['body'];
     cek(strpos($rekap8, 'Belum ada laporan terkirim') !== FALSE,
-        'Draft tidak masuk rekap — hanya laporan terkirim yang dihitung');
+        'Draft tidak masuk rekap - hanya laporan terkirim yang dihitung');
 
     // ------------------------------------------------------- scope
     $rekap_lain = http('lain', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&triwulan=3')['body'];
@@ -337,7 +337,7 @@ try {
     $rekapk = http('kab', 'Rekam_Kawasan/rekap?tahun=' . TAHUN . '&triwulan=2')['body'];
     cek(strpos($rekapk, number_format(480000000, 0, ',', '.')) !== FALSE,
         'Rekap kawasan menampilkan total anggaran hasil hitung');
-    // Judulnya dulu "Angka kumulatif s.d. TW II" — dibantah keterangannya sendiri
+    // Judulnya dulu "Angka kumulatif s.d. TW II" - dibantah keterangannya sendiri
     // dua baris di bawah ("triwulan sebelumnya tidak dijumlahkan") dan dibantah
     // kodenya. Sudah diluruskan jadi "Capaian TW II"; yang dijaga di sini tetap
     // sama: periodenya disebut EKSPLISIT, tidak dibiarkan ditebak pembaca.
@@ -359,47 +359,47 @@ try {
 
     $xls = http('kab', 'Rekam_Perumahan/export?tahun=' . TAHUN . '&triwulan=2')['body'];
     cek(strpos($xls, '<Workbook') !== FALSE, 'Export perumahan mengembalikan lembar kerja');
-    cek(@simplexml_load_string($xls) !== FALSE, 'Berkasnya XML yang sah — Excel bisa membukanya');
+    cek(@simplexml_load_string($xls) !== FALSE, 'Berkasnya XML yang sah - Excel bisa membukanya');
 
     /* PALING PENTING DI SELURUH BLOK INI. Argumen cakupan `rekap()` ada di
        posisi KEEMPAT, `kumulatif()` di KETIGA; keduanya opsional. Menaruhnya di
-       tempat yang salah tidak menghasilkan galat apa pun — `WHERE kabupaten_id`
+       tempat yang salah tidak menghasilkan galat apa pun - `WHERE kabupaten_id`
        cuma tidak pernah terpasang dan berkasnya berisi seluruh 35 kabupaten. */
     $angka_lain = number_format(7777000000, 0, ',', '.');
     cek(strpos($xls, '7777000000') === FALSE && strpos($xls, $angka_lain) === FALSE,
-        'Export TIDAK memuat angka kabupaten lain — cakupan wilayah ikut ke berkas');
+        'Export TIDAK memuat angka kabupaten lain - cakupan wilayah ikut ke berkas');
 
     /* BNBA berisi nama + NIK penerima. Keputusan user: ia TIDAK ikut export.
        Jalur yang salah (`isi_laporan()`) akan menyeret metadatanya diam-diam. */
     cek(preg_match('/bnba|nama_asli|private_path/i', $xls) === 0,
-        'Nol jejak BNBA di berkas — daftar penerima tidak ikut keluar');
+        'Nol jejak BNBA di berkas - daftar penerima tidak ikut keluar');
 
     /* Header harus memakai `label_sumber()` (12 sumber), BUKAN
-       `Rekam_data_model::label_domain()` yang cuma memuat 10 — `apbd_provinsi`
+       `Rekam_data_model::label_domain()` yang cuma memuat 10 - `apbd_provinsi`
        dan `baznas_provinsi` hilang di sana. */
     foreach (['APBD Provinsi', 'BAZNAS Provinsi', 'Dana Lainnya'] as $s) {
         cek(strpos($xls, $s) !== FALSE, "Export memuat sumber \"{$s}\"");
     }
     cek(substr_count($xls, 'Rencana (unit)') === 6, 'Enam program × kolom rencana unit');
 
-    /* Sel kosong harus KOSONG, bukan 0 — "nol tabel nol". Nol karangan tidak
+    /* Sel kosong harus KOSONG, bukan 0 - "nol tabel nol". Nol karangan tidak
        bisa dibedakan dari nol yang benar-benar dilaporkan, dan di spreadsheet
        ia ikut terjumlah. */
-    /* Versi pertama penjaga ini cuma memastikan ADA sel kosong — dan itu hijau
+    /* Versi pertama penjaga ini cuma memastikan ADA sel kosong - dan itu hijau
        walau tiga dari empat kolom diisi 0, karena kolom keempat tetap kosong.
        Yang dinyatakan sekarang langsung: NOL angka nol di seluruh berkas.
        Fixture uji ini tidak pernah melaporkan 0 (25 dan 40 unit), jadi setiap
        angka nol yang muncul pasti karangan. Kalau kelak ada fixture yang
-       benar-benar melaporkan 0, penjaga ini harus diubah — bukan dilonggarkan. */
+       benar-benar melaporkan 0, penjaga ini harus diubah - bukan dilonggarkan. */
     cek(strpos($xls, '<Cell/>') !== FALSE,
         'Ada sel kosong di berkas');
     cek(preg_match('/<Data ss:Type="Number">0<\/Data>/', $xls) === 0,
-        'NOL angka nol dikarang — sumber tanpa laporan dibiarkan kosong, tidak diisi 0');
+        'NOL angka nol dikarang - sumber tanpa laporan dibiarkan kosong, tidak diisi 0');
 
     // Periode tanpa laporan → diarahkan balik, bukan berkas nol baris.
     $kosong = http('kab', 'Rekam_Perumahan/export?tahun=' . TAHUN . '&triwulan=4')['body'];
     cek(strpos($kosong, '<Workbook') === FALSE,
-        'Periode tanpa laporan tidak menghasilkan berkas — berkas nol baris terbaca sebagai "capaiannya nol"');
+        'Periode tanpa laporan tidak menghasilkan berkas - berkas nol baris terbaca sebagai "capaiannya nol"');
 
 } finally {
     bersihkan();

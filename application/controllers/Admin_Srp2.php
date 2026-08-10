@@ -7,24 +7,24 @@ class Admin_Srp2 extends Admin_Controller {
     const STATUS_SERTIFIKASI = ['belum_mendaftar', 'mendaftar', 'masih_proses', 'bersertifikat'];
 
     /**
-     * Keadaan masa berlaku — DITURUNKAN, tidak pernah disimpan.
+     * Keadaan masa berlaku - DITURUNKAN, tidak pernah disimpan.
      *
      * Dinas minta penanda aktif/non-aktif dari masa berlaku sertifikat.
      * Menyimpannya berarti ada yang harus memperbaruinya tiap hari, dan yang
      * tidak diperbarui akan berkata "aktif" untuk sertifikat yang kedaluwarsa
-     * kemarin — tanpa satu pun galat. Diturunkan berarti selalu benar.
+     * kemarin - tanpa satu pun galat. Diturunkan berarti selalu benar.
      */
     public static function keadaan_berlaku($status, $berakhir) {
         if ($status !== 'bersertifikat')        { return ['belum', 'Belum bersertifikat']; }
         if (empty($berakhir))                   { return ['tak_tercatat', 'Masa berlaku belum tercatat']; }
         return $berakhir >= date('Y-m-d')
             ? ['aktif', 'Aktif']
-            : ['kedaluwarsa', 'Non-aktif — masa berlaku habis'];
+            : ['kedaluwarsa', 'Non-aktif - masa berlaku habis'];
     }
 
     public function __construct() {
         parent::__construct();
-        // upsert_direktori_publik() dipakai proses() — satu fungsi yang sama
+        // upsert_direktori_publik() dipakai proses() - satu fungsi yang sama
         // dengan yang dipanggil saat pemohon mengubah data perusahaannya.
         $this->load->model('auth_model');
     }
@@ -32,13 +32,13 @@ class Admin_Srp2 extends Admin_Controller {
     public function index() {
         $data['title'] = 'Direktori Pengembang Bersertifikat';
 
-        // Pola tabel server-side B8, sama dengan pending() di berkas ini —
+        // Pola tabel server-side B8, sama dengan pending() di berkas ini -
         // sebelumnya satu-satunya tabel admin SRP2 yang masih mengirim SELURUH
         // baris ke browser sekaligus (67 dan terus bertambah tiap approve).
         $table = $this->table_state(['nama_perusahaan', 'created_at', 'status_aktif'], 'nama_perusahaan');
         $data['base_url'] = 'Admin_Srp2';
 
-        // from() di depan, lalu count_all_results('', FALSE) — kalau tabelnya
+        // from() di depan, lalu count_all_results('', FALSE) - kalau tabelnya
         // disebut di kedua tempat, FROM tertulis dua kali dan query gagal.
         $this->db->from('srp2_certified_developers');
         if ($table['q'] !== '') {
@@ -56,7 +56,7 @@ class Admin_Srp2 extends Admin_Controller {
             ->get('kabupaten')->result();
 
         /* NPWP dibuka HANYA di layar admin ini, dan hanya untuk baris yang
-           sedang ditampilkan — bukan seluruh direktori. Nilainya diisikan ke
+           sedang ditampilkan - bukan seluruh direktori. Nilainya diisikan ke
            formulir supaya "Simpan" tidak menghapusnya diam-diam: isian yang
            selalu terkirim tetapi dibiarkan kosong akan menge-NULL-kan kolomnya,
            dan itu persis bug `sosmed_lainnya` yang baru kami perbaiki 10 Agt.
@@ -79,7 +79,7 @@ class Admin_Srp2 extends Admin_Controller {
     }
 
     /**
-     * Daftar pengajuan SRP2 yang menunggu keputusan — menutup gap dari
+     * Daftar pengajuan SRP2 yang menunggu keputusan - menutup gap dari
      * docs/product/PRD_VERIFIKASI_ADMIN_SRP2.md Fase 1 (sebelumnya tidak
      * ada alur admin sama sekali untuk srp2_registrations, lihat
      * docs/engineering/AUDIT_ROLE_PENGEMBANG.md Temuan #1).
@@ -99,7 +99,7 @@ class Admin_Srp2 extends Admin_Controller {
         // detail/<id>. Roadmap T1b butir 1.
         //
         // Nilai defaultnya dibaca dari registry (pending_where) supaya "apa arti
-        // belum diproses" tetap satu deklarasi — dipakai badge sidebar sekaligus
+        // belum diproses" tetap satu deklarasi - dipakai badge sidebar sekaligus
         // query ini, tidak lagi ditulis ulang literalnya di dua tempat.
         $modul = $this->config->item('dashboard_modules')['srp2_verifikasi'] ?? [];
         $status_default = $modul['pending_where']['status_verifikasi'] ?? 'Pending';
@@ -112,7 +112,7 @@ class Admin_Srp2 extends Admin_Controller {
         $data['status_filter']  = $status_filter;
         $data['status_pilihan'] = $status_pilihan;
 
-        // from() di depan, lalu count_all_results('', FALSE) — kalau tabelnya
+        // from() di depan, lalu count_all_results('', FALSE) - kalau tabelnya
         // disebut di kedua tempat, FROM tertulis dua kali dan query gagal.
         $this->db->from('srp2_registrations');
         if ($status_filter !== 'semua') { $this->db->where('status_verifikasi', $status_filter); }
@@ -153,14 +153,14 @@ class Admin_Srp2 extends Admin_Controller {
     }
 
     /**
-     * Terima/tolak satu pengajuan — satu endpoint dengan field 'status',
+     * Terima/tolak satu pengajuan - satu endpoint dengan field 'status',
      * pola yang sama persis dengan Admin_Kemitraan::proses() (bukan dua
      * method terima()/tolak() terpisah seperti draft awal PRD) supaya
      * komponen admin/components/review_form.php benar-benar dipakai ulang
      * tanpa modifikasi bentuk endpoint.
      *
      * Terima otomatis meng-upsert srp2_certified_developers berbasis
-     * certified_developer_id (bukan insert baru tiap kali) — idempotent
+     * certified_developer_id (bukan insert baru tiap kali) - idempotent
      * terhadap approve berulang (PRD FR-10). Tolak wajib catatan_admin,
      * divalidasi SERVER (PRD FR-09), bukan cuma atribut required di HTML.
      */
@@ -185,7 +185,7 @@ class Admin_Srp2 extends Admin_Controller {
         // membaca $reg lalu tidak pernah menguji status lamanya: satu POST rakitan
         // bisa menerbitkan Draft berisi 0 dokumen ke direktori publik lengkap
         // dengan reviewed_by. Satu-satunya penjaga adalah kondisi if di detail.php
-        // — itu UI, bukan otorisasi. Roadmap T1a butir 6.
+        // - itu UI, bukan otorisasi. Roadmap T1a butir 6.
         $transisi_sah = [
             'Pending'  => ['Diterima', 'Ditolak', 'Draft'],
             'Diterima' => ['Draft', 'Ditolak'],
@@ -200,12 +200,12 @@ class Admin_Srp2 extends Admin_Controller {
         }
 
         // Catatan wajib untuk kedua keputusan yang mengembalikan pekerjaan ke
-        // pemohon — tanpa alasan, dia tidak tahu apa yang harus diperbaiki.
+        // pemohon - tanpa alasan, dia tidak tahu apa yang harus diperbaiki.
         $catatan = trim((string) $this->input->post('catatan_admin', TRUE));
         if (in_array($status, ['Ditolak', 'Draft'], TRUE) && $catatan === '') {
             $pesan = $status === 'Ditolak'
                 ? 'Catatan wajib diisi saat menolak pengajuan.'
-                : 'Catatan wajib diisi — jelaskan apa yang harus diperbaiki pemohon.';
+                : 'Catatan wajib diisi - jelaskan apa yang harus diperbaiki pemohon.';
             $this->session->set_flashdata('error', $pesan);
             redirect('Admin_Srp2/detail/' . (int) $id);
             return;
@@ -218,7 +218,7 @@ class Admin_Srp2 extends Admin_Controller {
         ];
         // catatan_admin hanya ditulis untuk keputusan yang MEMBAWA catatan.
         // Saat Diterima, kolomnya sengaja TIDAK disentuh: dulu di-NULL-kan,
-        // sehingga alasan "dulu diminta perbaikan karena X" hilang permanen —
+        // sehingga alasan "dulu diminta perbaikan karena X" hilang permanen -
         // dan tidak ada tabel log lain yang menyimpannya. Roadmap T1b butir 4.
         if ($status !== 'Diterima') { $update['catatan_admin'] = $catatan; }
 
@@ -226,18 +226,18 @@ class Admin_Srp2 extends Admin_Controller {
         // berjalan lepas tanpa satu pun nilai balik diperiksa, sementara flash
         // sukses tetap disetel: nama bentrok UNIQUE di direktori membuat insert
         // gagal, insert_id() jadi 0, UPDATE registrasi ditolak FK, status tetap
-        // Pending — dan admin membaca "Pengajuan diterima". Di production
+        // Pending - dan admin membaca "Pengajuan diterima". Di production
         // db_debug mati sehingga seluruh rantai itu senyap. Melanggar §0d.
         // Pola trans_start/trans_complete/trans_status mengikuti User_model.php:36.
         $this->db->trans_start();
 
         if ($status === 'Diterima') {
             // Direktori publik srp2_certified_developers tetap tabel terpisah
-            // (opsi b, docs/architecture/DESAIN_NORMALISASI_SKEMA_ROLE.md) —
+            // (opsi b, docs/architecture/DESAIN_NORMALISASI_SKEMA_ROLE.md) -
             // link berbasis ID, bukan pencocokan nama string seperti sebelumnya.
             //
             // Lewat SATU fungsi upsert yang sama dengan yang dipakai saat pemohon
-            // mengubah data perusahaannya — bukan dua salinan payload yang harus
+            // mengubah data perusahaannya - bukan dua salinan payload yang harus
             // diingat untuk diubah berbarengan.
             $cid = $this->auth_model->upsert_direktori_publik($reg);
             if ($cid) { $update['certified_developer_id'] = $cid; }
@@ -245,7 +245,7 @@ class Admin_Srp2 extends Admin_Controller {
             // Ditolak setelah pernah Diterima: cabut dari direktori publik.
             // Dulu blok direktori hanya jalan untuk 'Diterima', sehingga
             // pengecualian yang SENGAJA dibuat untuk "Minta Perbaikan" ikut
-            // menutupi cabang ini — perusahaan yang resmi ditolak tetap tampil
+            // menutupi cabang ini - perusahaan yang resmi ditolak tetap tampil
             // "Bersertifikat" di halaman publik. Dipisah eksplisit di kode,
             // bukan diandalkan pada komentar. Roadmap T1a butir 7.
             $this->db->where('id', $reg->certified_developer_id)
@@ -266,8 +266,8 @@ class Admin_Srp2 extends Admin_Controller {
         $this->db->trans_complete();
 
         if ($this->db->trans_status() === FALSE || $baris_terubah === 0) {
-            log_message('error', 'Admin_Srp2::proses gagal — id=' . (int) $id . ' ' . $asal . '->' . $status . ' baris=' . $baris_terubah);
-            $this->session->set_flashdata('error', 'Keputusan GAGAL disimpan dan sudah dibatalkan seluruhnya — tidak ada perubahan yang tersimpan. '
+            log_message('error', 'Admin_Srp2::proses gagal - id=' . (int) $id . ' ' . $asal . '->' . $status . ' baris=' . $baris_terubah);
+            $this->session->set_flashdata('error', 'Keputusan GAGAL disimpan dan sudah dibatalkan seluruhnya - tidak ada perubahan yang tersimpan. '
                 . ($status === 'Diterima'
                     ? 'Penyebab paling sering: nama perusahaan "' . $reg->nama_perusahaan . '" sudah dipakai baris lain di direktori bersertifikat.'
                     : 'Coba lagi; bila terus gagal, laporkan beserta ID pengajuan ' . (int) $id . '.'));
@@ -276,7 +276,7 @@ class Admin_Srp2 extends Admin_Controller {
         }
 
         $pesan_sukses = [
-            'Diterima' => 'Pengajuan diterima — pengembang masuk direktori publik.',
+            'Diterima' => 'Pengajuan diterima - pengembang masuk direktori publik.',
             'Ditolak'  => 'Pengajuan ditolak, catatan sudah dikirim ke pengembang.'
                 . ($reg->certified_developer_id ? ' Pengembang juga dicabut dari direktori publik.' : ''),
             'Draft'    => 'Pengajuan dibuka kembali untuk diperbaiki. Pengembang melihat catatan Anda di dashboardnya.',
@@ -287,7 +287,7 @@ class Admin_Srp2 extends Admin_Controller {
 
     /**
      * Sajikan satu dokumen SRP2 ke admin. Endpoint ber-guard (Admin_Controller),
-     * berkas dibaca dari penyimpanan privat — tidak pernah lewat path publik.
+     * berkas dibaca dari penyimpanan privat - tidak pernah lewat path publik.
      * Menutup PRD FR-11.
      */
     public function lihat_dokumen($id = NULL, $document_key = NULL) {
@@ -311,12 +311,12 @@ class Admin_Srp2 extends Admin_Controller {
          *
          * Sampai 5 Agt 2026 ketiga URL selalu dirakit tanpa syarat, padahal
          * form BARIS di tabel (views/admin/srp2/index.php) tidak punya input
-         * `sosmed_lainnya` — hanya form "Tambah pengembang" yang punya. Akibatnya
+         * `sosmed_lainnya` - hanya form "Tambah pengembang" yang punya. Akibatnya
          * setiap "Simpan" pada sebuah baris menge-NULL-kan kolom itu diam-diam.
          * Bukan dugaan: nol dari 67 baris direktori punya nilai di sana.
          *
          * Dua kolom tanggal masa berlaku (migrasi 037) akan bernasib persis sama
-         * tanpa perbaikan ini — dan tanggal sertifikat yang hilang sendiri jauh
+         * tanpa perbaikan ini - dan tanggal sertifikat yang hilang sendiri jauh
          * lebih mahal daripada tautan media sosial.
          *
          * Bedanya jelas dan disengaja:
@@ -343,7 +343,7 @@ class Admin_Srp2 extends Admin_Controller {
             $payload[$field] = $value ?: null;
         }
 
-        /* Masa berlaku (butir B1). Kosong -> NULL, bukan '' — MariaDB lokal
+        /* Masa berlaku (butir B1). Kosong -> NULL, bukan '' - MariaDB lokal
            berjalan TANPA STRICT mode, jadi '' pada kolom DATE mendarat sebagai
            '0000-00-00' tanpa satu pun galat, dan tanggal itu lolos ke layar. */
         $tanggal = [];
@@ -367,7 +367,7 @@ class Admin_Srp2 extends Admin_Controller {
 
         /* ── Butir 7: status bertingkat ─────────────────────────────────────
            Divalidasi ke daftar tertutup. Nilai di luar daftar TIDAK diam-diam
-           diabaikan — ia ditolak dengan pesan, karena status yang meleset
+           diabaikan - ia ditolak dengan pesan, karena status yang meleset
            mengubah arti seluruh baris di mata dinas. */
         if ($this->input->post('status_sertifikasi') !== NULL) {
             $s = (string) $this->input->post('status_sertifikasi', TRUE);
@@ -405,7 +405,7 @@ class Admin_Srp2 extends Admin_Controller {
         /* ── Butir 8: NPWP sebagai kunci pengembang ─────────────────────────
            Diperlakukan PERSIS seperti NIK warga: nilai aslinya dienkripsi, dan
            yang dipakai mencari/menegakkan keunikan adalah sidik deterministik.
-           Polanya tidak dibuat baru — `Encryption_lib` sudah menyediakannya.
+           Polanya tidak dibuat baru - `Encryption_lib` sudah menyediakannya.
 
            Angka saja yang disimpan. NPWP ditulis orang dengan titik dan strip
            yang berbeda-beda; menyimpan apa adanya membuat dua tulisan NPWP yang
@@ -426,7 +426,7 @@ class Admin_Srp2 extends Admin_Controller {
             }
         }
 
-        // Hasil query DIPERIKSA, bukan diasumsikan — pola sukses karangan yang
+        // Hasil query DIPERIKSA, bukan diasumsikan - pola sukses karangan yang
         // sama seperti proses() sebelum T1a. Kolom nama ber-UNIQUE, jadi bentrok
         // adalah kegagalan yang paling mungkin terjadi; di production db_debug
         // mati sehingga insert/update gagal hanya mengembalikan FALSE dan alur
@@ -436,7 +436,7 @@ class Admin_Srp2 extends Admin_Controller {
             : $this->db->insert('srp2_certified_developers', $payload);
 
         if ($ok === FALSE) {
-            log_message('error', 'Admin_Srp2::save gagal — id=' . $id . ' nama=' . $name);
+            log_message('error', 'Admin_Srp2::save gagal - id=' . $id . ' nama=' . $name);
             $this->session->set_flashdata('error', 'Gagal menyimpan: nama perusahaan "' . $name . '" kemungkinan sudah dipakai baris lain di direktori. Tidak ada perubahan yang tersimpan.');
             redirect('Admin_Srp2'); return;
         }

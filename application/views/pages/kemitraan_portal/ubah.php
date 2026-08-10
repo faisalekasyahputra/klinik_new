@@ -1,15 +1,15 @@
 <?php
 /**
- * Mahasiswa menyunting pendaftarannya sendiri — hanya selama masih Diajukan.
+ * Mahasiswa menyunting pendaftarannya sendiri - hanya selama masih Diajukan.
  *
  * Berkas TIDAK ada di sini. Mengganti unggahan berarti menghapus berkas lama
  * dari private_uploads/ sementara admin mungkin sudah membukanya sebagai dasar
  * penilaian, dan itu keputusan tersendiri yang belum pernah diminta. Yang bisa
- * dikoreksi di sini adalah isian teks — salah ketik NIM dan periode yang
+ * dikoreksi di sini adalah isian teks - salah ketik NIM dan periode yang
  * bergeser, dua hal yang selama ini menumpuk di meja superadmin.
  *
  * Penjagaan slot tetap berlaku, dengan pendaftaran ini sendiri dikecualikan
- * dari hitungan kuota — lihat KemitraanPortal::periksa_slot($abaikan_id).
+ * dari hitungan kuota - lihat KemitraanPortal::periksa_slot($abaikan_id).
  */
 $isian = 'w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)]'
     . ' px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors'
@@ -34,7 +34,7 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
 
         <div>
             <label class="<?= $label ?>">Terkirim atas nama akun</label>
-            <input value="<?= html_escape($nama_akun . ' — ' . $email_akun) ?>" class="<?= $isian_mati ?>" disabled>
+            <input value="<?= html_escape($nama_akun . ' - ' . $email_akun) ?>" class="<?= $isian_mati ?>" disabled>
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">

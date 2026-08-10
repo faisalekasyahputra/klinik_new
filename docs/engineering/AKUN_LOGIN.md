@@ -1,9 +1,9 @@
-# 🔐 Panduan Autentikasi & Akun — Klinik PKP
+# 🔐 Panduan Autentikasi & Akun - Klinik PKP
 ## Target: `c:\xampp\htdocs\klinik_new`
 **Terakhir Diperbarui:** 1 Juli 2026 (v3.0 Refactor)
 
 > **ℹ️ INFORMASI:**  
-> Sistem `klinik_new` mendukung **autentikasi hibrida** — pengguna dapat mendaftar/masuk menggunakan **email & password tradisional** atau **Google OAuth 2.0 (SSO)**. Kedua metode melewati alur onboarding yang sama.
+> Sistem `klinik_new` mendukung **autentikasi hibrida** - pengguna dapat mendaftar/masuk menggunakan **email & password tradisional** atau **Google OAuth 2.0 (SSO)**. Kedua metode melewati alur onboarding yang sama.
 
 ---
 
@@ -57,7 +57,7 @@ Semua pengguna baru wajib melengkapi data berikut sebelum akses penuh:
 ## 🗑️ 3. Penghapusan Akun (2-Langkah)
 
 1.  Klik tombol **"Hapus Akun Secara Permanen"** di zona berbahaya halaman pengaturan.
-2.  Modal konfirmasi muncul — pengguna harus **mengetik username/nama akun** secara manual.
+2.  Modal konfirmasi muncul - pengguna harus **mengetik username/nama akun** secara manual.
 3.  Setelah pengetikan cocok, tombol konfirmasi aktif.
 4.  Proses backend (`User_model::delete_user_account`):
     *   Komentar dianonimkan → `nama_komentator = 'Akun Dihapus'`, `user_id = NULL`
@@ -123,4 +123,4 @@ Bagi pengembang atau pihak eksternal yang ingin mencoba fitur sistem (seperti Ad
 *(Harap tidak mengubah password akun demo di database utama)*
 
 ---
-*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant — 1 Juli 2026 (v3.0 Refactor).*
+*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant - 1 Juli 2026 (v3.0 Refactor).*

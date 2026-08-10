@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * DIKARANTINA 29 Jul 2026 — butir B2.
+ * DIKARANTINA 29 Jul 2026 - butir B2.
  *
  * Seluruh endpoint eksternal controller ini membalas 404 sampai keputusan #7
  * (chat dicabut atau dibangun) turun. Ini containment, BUKAN penghapusan:
@@ -10,7 +10,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *
  * Kenapa perlu, padahal fiturnya memang sudah rusak: `api_bot()` berstatus
  * public sehingga routable lewat GET /Chat/api_bot/<pesan>, dan setiap
- * panggilan menembak Gemini memakai kunci API dinas — kuota bisa dikuras
+ * panggilan menembak Gemini memakai kunci API dinas - kuota bisa dikuras
  * anonim tanpa alat khusus. Menjadikan `api_bot()` private saja TIDAK cukup:
  * `kirim_pesan_lanjutan()` juga public dan memanggilnya, jadi jalur ke Gemini
  * tetap terbuka. Karena itu ketiga endpoint eksternal ditutup sekaligus.
@@ -153,12 +153,12 @@ class Chat extends MY_Controller {
         ],
         CURLOPT_POSTFIELDS => json_encode($payload),
         
-        // B4 — SENGAJA belum diperbaiki. `api_bot()` kini private dan seluruh
+        // B4 - SENGAJA belum diperbaiki. `api_bot()` kini private dan seluruh
         // endpoint Chat dikarantina 404 (B2), jadi baris ini tidak pernah
         // dieksekusi. Nasibnya mengikuti keputusan #7: bila chat dicabut, titik
         // ini hilang bersama berkasnya; bila dibangun, TLS wajib dinyalakan
         // sebelum route dibuka. Komentar lama "pengaman wajib XAMPP Windows"
-        // keliru — mematikan verifikasi sertifikat bukan pengaman, dan
+        // keliru - mematikan verifikasi sertifikat bukan pengaman, dan
         // Simperum_gateway.php membuktikan verifikasi menyala baik-baik saja
         // di lingkungan yang sama.
         CURLOPT_SSL_VERIFYPEER => false,
@@ -195,7 +195,7 @@ public function ambil_pesan() {
 /**
  * Dikarantina. Catatan untuk keputusan #7 kalau chat jadi dibangun:
  * `result_array()` di bawah TANPA `select()` mengembalikan SELURUH kolom,
- * termasuk nama/email/HP warga — dan kuncinya `session_id` buatan browser
+ * termasuk nama/email/HP warga - dan kuncinya `session_id` buatan browser
  * (`Math.random()` di footer), jadi siapa pun yang menebaknya bisa membaca
  * riwayat orang lain (B7). Wajib diperbaiki sebelum route dibuka lagi.
  */

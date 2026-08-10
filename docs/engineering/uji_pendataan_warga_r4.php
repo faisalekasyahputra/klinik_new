@@ -65,7 +65,7 @@ function make_user($db, $suffix) {
  * satu profil warga mengikatnya EKSKLUSIF lewat `nik_lookup_hash`. Begitu ada
  * akun mana pun yang memegangnya, `Simperum_gateway::lookup()` gagal di
  * `save_profile()` dengan `nik_already_bound`, tidak ada draft yang lahir, dan
- * uji ini merah di "Draft warga tersedia" — pesan yang menunjuk ke tempat yang
+ * uji ini merah di "Draft warga tersedia" - pesan yang menunjuk ke tempat yang
  * sepenuhnya salah. Ikatan itu bukan bug produk: penjaga NIK-ganda memang harus
  * begitu. Diperiksa di depan supaya kegagalannya bisa dibaca sekali lihat.
  */
@@ -76,7 +76,7 @@ function nik_bebas($db, $env, $nik) {
         [hash_hmac('sha256', $nik, $env['KPKP_DATA_PEPPER'] ?? '')]);
     wajib( ! $p, $p
         ? "NIK fixture {$nik} SEDANG DIPEGANG profil #{$p['id']} milik "
-          . ($p['email'] ?? '[akun sudah terhapus]') . ' — lepaskan ikatannya atau pakai DB uji bersih'
+          . ($p['email'] ?? '[akun sudah terhapus]') . ' - lepaskan ikatannya atau pakai DB uji bersih'
         : "NIK fixture {$nik} bebas dipakai");
 }
 
@@ -94,7 +94,7 @@ function png_with_text($text) {
 }
 /**
  * `warga_lookup` dibatasi 10 percobaan per 60 detik dan salah satu dimensinya
- * adalah IP — sementara SELURUH harness di repo ini datang dari 127.0.0.1.
+ * adalah IP - sementara SELURUH harness di repo ini datang dari 127.0.0.1.
  * Dijalankan sendirian uji ini muat; dijalankan berurutan bersama r3/r5/r6
  * lewat runner, ember IP-nya jebol di tengah jalan dan lookup ditolak. Merahnya
  * lalu muncul di tempat yang tidak ada hubungannya ("Draft warga tersedia"),
@@ -143,7 +143,7 @@ echo "=== UJI PENDATAAN WARGA R4 ===\nTarget: " . BASE_URL . " | DB: {$env['DB_N
 // Empat policy, bukan cuma warga_lookup: `warga_submit` batasnya 5 per JAM,
 // jadi ia jebol jauh lebih cepat daripada lookup begitu suite dijalankan
 // berturut-turut. Dimensi `nik` ikut dipinjam karena ember NIK fixture ini
-// dipakai bersama r5 dan r6 — membersihkan ember IP saja menyisakan tabrakan
+// dipakai bersama r5 dan r6 - membersihkan ember IP saja menyisakan tabrakan
 // yang muncul acak di suite mana pun yang kebetulan jalan belakangan.
 foreach (['warga_lookup', 'warga_submit', 'warga_start_revision', 'admin_queue_decision'] as $policy) {
     preserve_rate_ips($db, $policy);

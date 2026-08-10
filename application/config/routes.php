@@ -82,7 +82,7 @@ $route['umum']                     = 'Index/umum';
 $route['detail_perum/(:any)']      = 'Index/detail_perum/$1';
 $route['profil']                   = 'Index/profil';
 $route['tugas_pokok']              = 'Index/tugas_pokok';
-// $route['struktur'] dicabut 29 Jul 2026 (A4) — halaman memajang nama pejabat
+// $route['struktur'] dicabut 29 Jul 2026 (A4) - halaman memajang nama pejabat
 // tanpa sumber data. Alasan lengkap di Index.php.
 $route['pengembang']               = 'Index/pengembang';
 $route['kemitraan']                = 'Index/kemitraan';
@@ -95,7 +95,7 @@ $route['simulasi_kpr']             = 'Index/simulasi_kpr';
 // --- Bank Desain & Data Spasial ---
 $route['materia']                  = 'Index/materia';
 $route['sebaran']                  = 'Index/sebaran';
-// sebaran_rusun / profil_kumuh / sebaran_sdgs dicabut 29 Jul 2026 (A1) —
+// sebaran_rusun / profil_kumuh / sebaran_sdgs dicabut 29 Jul 2026 (A1) -
 // angka literal tanpa sumber, plus rusunawa bernama nyata dengan atribut
 // karangan. Alasan lengkap di Index.php.
 
@@ -123,7 +123,7 @@ $route['cari_wil']                 = 'Index/cari_wil';
 $route['load_more']                = 'Index/load_more';
 
 // --- API Integrations ---
-// $route['sikaper'] dicabut 29 Jul 2026 (B6). Menghapus alias SAJA tidak cukup —
+// $route['sikaper'] dicabut 29 Jul 2026 (B6). Menghapus alias SAJA tidak cukup -
 // CI3 tetap merutekan /Sikaper/index secara konvensional, jadi controller dan
 // view-nya ikut dihapus. Library Sikaper_api dan config-nya SENGAJA ditinggal:
 // nasibnya mengikuti keputusan #5 (apakah ada kanal rotasi kredensial).

@@ -1,5 +1,5 @@
 <?php /* TANPA `z-10`: pembungkus ini memuat modal "Tambah Pengguna", dan
-         `relative z-10` menguncinya di stacking context z-10 — persis alasan yang
+         `relative z-10` menguncinya di stacking context z-10 - persis alasan yang
          sama dengan `#main-content` di admin/index.php. Dua konteks bersarang,
          satu bug. */ ?>
 <div class="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-6" x-data="{ createOpen: false }">
@@ -68,7 +68,7 @@
 <?php $this->load->helper('admin_table'); ?>
 <?php /* TANPA `z-10`: modal "Reset Sandi" (`fixed inset-0 z-50`) ditulis di dalam
          <td> di kartu ini, jadi stacking context z-10 di sini menguburnya juga.
-         `relative` dipertahankan — popover Ubah Role di dalam sel memakainya. */ ?>
+         `relative` dipertahankan - popover Ubah Role di dalam sel memakainya. */ ?>
 <div data-tabel-admin class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden relative">
     <div class="p-6 border-b border-gray-200 dark:border-white/5">
         <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
@@ -81,7 +81,7 @@
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
                     <?php /* px-4, bukan px-6: kolom bertambah dari 5 ke 6 dan tabel ini
-                             whitespace-nowrap — AGENTS.md §17 poin 6. Kolom Aksi yang
+                             whitespace-nowrap - AGENTS.md §17 poin 6. Kolom Aksi yang
                              pertama hilang di balik gulir horizontal, dan itu sudah dua
                              kali terjadi di layar admin lain. */ ?>
                     <th scope="col" class="px-4 py-4"><?= admin_sort_header('Nama Pengguna', 'name', $table, $base_url) ?></th>
@@ -90,7 +90,7 @@
                     <?php /* Tanpa admin_sort_header(): `status` tidak ada di whitelist
                              table_state() milik controller, dan controller tidak boleh
                              disentuh di pekerjaan ini. Header urut yang menunjuk kolom
-                             di luar whitelist akan diam-diam jatuh ke urutan default —
+                             di luar whitelist akan diam-diam jatuh ke urutan default -
                              tombol yang berpura-pura mengurutkan lebih buruk daripada
                              tidak ada tombol. */ ?>
                     <th scope="col" class="px-4 py-4">Status</th>
@@ -114,14 +114,14 @@
 
                     // ---------------------------------------------------------
                     // TIGA KEADAAN AKSES. Dihitung dengan aturan yang SAMA persis
-                    // seperti gerbang login (Auth::login), bukan aturan sendiri —
+                    // seperti gerbang login (Auth::login), bukan aturan sendiri -
                     // layar ini satu-satunya tempat superadmin membaca "siapa yang
                     // masih bisa masuk", jadi begitu keduanya beda, layarnya
                     // berbohong.
                     // ---------------------------------------------------------
 
                     // `=== 'nonaktif'`, DITOLAK sadar: `!== 'active'`. Di DB ini ada
-                    // akun berstatus `restricted` yang hari ini masuk normal —
+                    // akun berstatus `restricted` yang hari ini masuk normal -
                     // menandainya "Nonaktif" membuat superadmin mengira akses
                     // orang itu sudah dicabut padahal belum sama sekali.
                     // trim+strtolower mengikuti Auth::login baris 125.
@@ -130,19 +130,19 @@
                     // Cukup dinilai dari locked_until di masa depan. Auth_model::is_locked()
                     // menuntut login_attempts >= 5 juga, tapi locked_until HANYA pernah
                     // ditulis di dalam cabang itu dan selalu di-NULL-kan bersama
-                    // penghitungnya — dua syarat itu identik di praktik. Memanggil
+                    // penghitungnya - dua syarat itu identik di praktik. Memanggil
                     // is_locked() langsung ditolak: view tidak menarik model, dan
                     // controller memang tidak boleh disentuh di pekerjaan ini.
                     $terkunci = ! empty($u->locked_until) && strtotime($u->locked_until) > time();
 
                     // Kalau keduanya benar, nonaktif yang ditampilkan. "Terkunci"
                     // menjanjikan pulih sendiri sebentar lagi; janji itu palsu untuk
-                    // akun yang juga dinonaktifkan — ia tidak pulih sampai ada manusia
+                    // akun yang juga dinonaktifkan - ia tidak pulih sampai ada manusia
                     // yang mengaktifkannya kembali.
 
                     // Server sudah menolak tindakan pencabutan akses pada akun sendiri
                     // (Admin_Users::sasaran_sah). UI ikut tahu supaya tombol yang PASTI
-                    // ditolak tidak dipajang — tombol begitu cuma memancing diklik lalu
+                    // ditolak tidak dipajang - tombol begitu cuma memancing diklik lalu
                     // melempar pesan error yang terasa seperti kerusakan.
                     $milik_sendiri = (int) $u->id === (int) $this->session->userdata('user_id');
 
@@ -182,10 +182,10 @@
                             <?php $bid = current(array_filter($bidang_list, fn($b) => $b->kode === $u->bidang_kode)) ?: null; ?>
                             <?= $bid ? html_escape($bid->nama) : '<span class="text-red-500">belum diset</span>' ?>
                         <?php else: ?>
-                            <span class="text-gray-400 dark:text-brand-muted/60">&mdash;</span>
+                            <span class="text-gray-400 dark:text-brand-muted/60">-</span>
                         <?php endif; ?>
                     </td>
-                    <?php /* Badge memakai komponen bersama admin/components/status_badge —
+                    <?php /* Badge memakai komponen bersama admin/components/status_badge -
                              pasangan dark:-nya sudah diurus di sana. Pemetaan ke kosakata
                              komponen: nonaktif→reject (merah), terkunci→pending (kuning:
                              amber terang / brand-primary #d6fb00 gelap), sisanya→ok (hijau). */ ?>
@@ -228,7 +228,7 @@
                             <?php endif; ?>
 
                             <?php /* Reset sandi TIDAK disembunyikan untuk akun sendiri:
-                                     Admin_Users::reset_sandi() memanggil sasaran_sah(TRUE) —
+                                     Admin_Users::reset_sandi() memanggil sasaran_sah(TRUE) -
                                      ini memulihkan akses, bukan mencabutnya. Sama untuk Buka Kunci. */ ?>
                             <button @click="resetOpen = true" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5">
                                 <i class="ph ph-key"></i> Reset Sandi
@@ -254,7 +254,7 @@
                         </div>
 
                         <!-- Modal: reset sandi -->
-                        <?php /* `whitespace-normal` — alasan sama dengan panel Ubah Role di
+                        <?php /* `whitespace-normal` - alasan sama dengan panel Ubah Role di
                                  atas. Modal ini `fixed`, tapi ia tetap DITULIS di dalam
                                  <td>, dan `white-space` mewaris lewat pohon DOM, bukan
                                  lewat posisi layar. Dua kolom sandinya `inline-block`. */ ?>
@@ -263,7 +263,7 @@
                                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">Reset Password</h3>
                                 <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-brand-muted break-words">
                                     Untuk <span class="font-bold text-gray-700 dark:text-gray-300"><?= html_escape($u->email) ?></span>.
-                                    Sampaikan password barunya lewat jalur pribadi — sistem tidak mengirimkannya ke siapa pun.
+                                    Sampaikan password barunya lewat jalur pribadi - sistem tidak mengirimkannya ke siapa pun.
                                 </p>
                                 <form method="POST" action="<?= base_url('Admin_Users/reset_sandi') ?>" class="space-y-3"
                                       onsubmit="return confirm(<?= html_escape(json_encode($konfirmasi_sandi)) ?>)">
@@ -304,7 +304,7 @@
                                  ini mereka tidak pernah turun baris: <select> dan tombol
                                  Simpan berjajar dalam SATU baris selebar 446px di dalam
                                  panel 256px, dan tombolnya terlempar 193px ke luar
-                                 pembungkus `overflow-x-auto` — terpotong, tidak bisa
+                                 pembungkus `overflow-x-auto` - terpotong, tidak bisa
                                  diklik. Terukur di production 4 Agt 2026: tombol di
                                  x=1371 sementara panelnya berakhir di x=1385. */ ?>
                         <div x-show="editOpen" x-cloak @click.outside="editOpen = false" class="absolute right-4 top-full mt-1 z-20 w-64 whitespace-normal rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">

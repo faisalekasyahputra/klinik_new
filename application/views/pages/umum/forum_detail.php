@@ -134,7 +134,7 @@
             </div>
             <?php endif; ?>
 
-            <!-- Janji temu konsultasi — HANYA pemilik topik -->
+            <!-- Janji temu konsultasi - HANYA pemilik topik -->
             <?php
             /**
              * Panelnya tidak sekadar disembunyikan dari orang lain: `$janji`
@@ -149,8 +149,8 @@
                 /**
                  * Kelas ditulis UTUH, bukan dirakit dari potongan
                  * (`text-{$warna}-400`). Tailwind di proyek ini datang dari dua
-                 * arah — compiler CDN yang memindai DOM DAN CSS statis hasil
-                 * panen — dan nama kelas yang baru ada saat render tidak pernah
+                 * arah - compiler CDN yang memindai DOM DAN CSS statis hasil
+                 * panen - dan nama kelas yang baru ada saat render tidak pernah
                  * ikut terpanen. Yang gagal cuma warnanya, jadi ia lolos setiap
                  * uji dan cuma terlihat kalau ada yang membuka halamannya.
                  */
@@ -182,7 +182,7 @@
 
                     <?php
                     // Tombolnya dibangun dari ALUR model, bukan dari daftar yang
-                    // ditulis ulang di view — tombol yang ada di layar tapi
+                    // ditulis ulang di view - tombol yang ada di layar tapi
                     // ditolak server adalah cara tercepat membuat orang mengira
                     // sistemnya rusak.
                     $this->load->model('Janji_temu_model');
@@ -230,7 +230,7 @@
 
                 <?php /* Cabang "tunggu ditanggapi dulu" DIBUANG 5 Agt 2026 (butir E1).
                          Syaratnya sudah tidak ada, jadi keterangan ini akan
-                         berbohong — dan keterangan yang berbohong lebih buruk
+                         berbohong - dan keterangan yang berbohong lebih buruk
                          daripada tidak ada keterangan. */ ?>
                 <?php endif; ?>
             </div>

@@ -2,26 +2,26 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * W1 wizard Rekam Data — tiga perubahan bentuk sekaligus.
+ * W1 wizard Rekam Data - tiga perubahan bentuk sekaligus.
  *
  * Acuan: docs/product/ROADMAP_WIZARD_REKAM_PERUMAHAN.md §2, dari rancangan
  * `new_flow/rekamdata/` (9 frame). Bentuk lama beserta alasannya terekam di
  * docs/engineering/REKAM_DATA_PERUMAHAN_SEBELUM_WIZARD.md.
  *
- * 1. PERIODE — `bulan` (1-12, kumulatif) menjadi `triwulan` (1-4, per triwulan).
+ * 1. PERIODE - `bulan` (1-12, kumulatif) menjadi `triwulan` (1-4, per triwulan).
  *    Kedua domain ikut; keputusan user "kawasan juga samakan, itu 1 jalur".
  *
- * 2. GERBANG DIBALIK — dulu per sumber dana (`rd_perumahan_bagian`), kini per
+ * 2. GERBANG DIBALIK - dulu per sumber dana (`rd_perumahan_bagian`), kini per
  *    program (`rd_perumahan_program`). Frame 004 memilih PROGRAM yang akan
  *    dilaporkan; sumber dana ditambahkan di dalam tiap program.
  *
- * 3. RENCANA + REALISASI — `unit`/`anggaran` menjadi empat kolom.
+ * 3. RENCANA + REALISASI - `unit`/`anggaran` menjadi empat kolom.
  *
  * Nama tabel ikut berganti karena isinya berganti. `bagian` dulu berarti
  * "bagian sumber dana"; memakai nama itu untuk gerbang program adalah jenis
  * kebohongan yang paling lama bertahan.
  *
- * BNBA (`rd_perumahan_bnba`) TIDAK disentuh — dipertahankan utuh sebagai
+ * BNBA (`rd_perumahan_bnba`) TIDAK disentuh - dipertahankan utuh sebagai
  * langkah opsional di wizard, sesuai keputusan user.
  */
 class Migration_Rekam_perumahan_wizard extends CI_Migration {
@@ -59,7 +59,7 @@ class Migration_Rekam_perumahan_wizard extends CI_Migration {
         if ($tabrakan > 0) {
             show_error("Migrasi 20260701000024 berhenti: {$tabrakan} kelompok laporan akan "
                 . 'menabrak periode yang sama setelah bulan diubah jadi triwulan '
-                . '(mis. bulan 7 dan 8 sama-sama TW III). Selesaikan dulu duplikatnya — '
+                . '(mis. bulan 7 dan 8 sama-sama TW III). Selesaikan dulu duplikatnya - '
                 . 'menggabungkan angka dua bulan menjadi satu triwulan adalah keputusan '
                 . 'isi data, bukan keputusan migrasi.');
             return;
@@ -72,7 +72,7 @@ class Migration_Rekam_perumahan_wizard extends CI_Migration {
         $this->db->query('ALTER TABLE `rd_laporan`
             ADD UNIQUE KEY `uq_rd_laporan_periode` (`domain`,`kabupaten_id`,`tahun`,`triwulan`)');
 
-        // Langkah wizard disimpan DI BARIS, bukan di sesi atau URL — supaya
+        // Langkah wizard disimpan DI BARIS, bukan di sesi atau URL - supaya
         // pengisian bisa dilanjutkan setelah keluar-masuk. Idiom yang sama
         // dipakai wizard Warga (`current_step` di tabel assessment).
         $this->db->query("ALTER TABLE `rd_laporan`
@@ -83,7 +83,7 @@ class Migration_Rekam_perumahan_wizard extends CI_Migration {
      * Gerbang pindah dari sumber dana ke program.
      *
      * Gerbang lama TIDAK bisa dipetakan langsung: "APBD ada" tidak memberi tahu
-     * program mana yang dilaporkan. Yang bisa dipercaya hanya jejak angkanya —
+     * program mana yang dilaporkan. Yang bisa dipercaya hanya jejak angkanya -
      * program yang PUNYA baris pasti dilaporkan. Itu yang dipakai.
      */
     private function gerbang_jadi_program()
@@ -137,7 +137,7 @@ class Migration_Rekam_perumahan_wizard extends CI_Migration {
 
     /**
      * Turun HANYA aman selama belum ada isi. Sesudah ada, turun berarti membuang
-     * kolom rencana dan memaksa triwulan kembali jadi bulan — dan tidak ada
+     * kolom rencana dan memaksa triwulan kembali jadi bulan - dan tidak ada
      * pemetaan jujur dari "TW III" ke satu bulan tertentu. Berhenti dengan galat
      * adalah perilaku yang DIINGINKAN.
      */

@@ -1,8 +1,8 @@
 <!-- Homepage portal: kartu menu berlatar aurora + ikon Font Awesome pejal.
-     Latar, batik, dan bibir cahayanya dari .aurora-surface (design-system.css) —
+     Latar, batik, dan bibir cahayanya dari .aurora-surface (design-system.css) -
      kelas yang sama dipakai slide program. Tiap kartu cuma menyetor tiga warna
      (--t1 paling muda → --t3 paling pekat) dan memilih satu varian .aurora-1..4.
-     Ujung --t1 selalu berkumpul di bawah, tempat teks duduk — itu yang menjaga
+     Ujung --t1 selalu berkumpul di bawah, tempat teks duduk - itu yang menjaga
      kontras tinta gelap. Palet pastel arahan dinas (5 Agt 2026); satu rona per
      kartu, --t3 sekaligus jadi warna ilustrasinya. -->
 <div class="mx-auto max-w-6xl p-2 sm:p-4 lg:p-6">
@@ -53,7 +53,7 @@
         </div>
 
         <!-- Rekam Data menunjuk modulnya sendiri; pengunjung tanpa sesi diarahkan
-             ke login, dan itu memang benar — merekam capaian wewenang admin kab/kota. -->
+             ke login, dan itu memang benar - merekam capaian wewenang admin kab/kota. -->
         <a href="<?= base_url('Rekam_Data') ?>" class="portal-home-card aurora-surface aurora-2 min-h-[130px] sm:min-h-[155px]"
            style="--t1:#fdf4da;--t2:#fadfa3;--t3:#f2c568">
             <i class="portal-home-art fa-solid fa-chart-column" aria-hidden="true"></i>
@@ -103,7 +103,7 @@
 
 <style>
     /* Warna, batik, kilap, dan bibir cahaya datang dari .aurora-surface di
-       assets/css/design-system.css — dipakai bareng slide program. Yang tinggal
+       assets/css/design-system.css - dipakai bareng slide program. Yang tinggal
        di sini cuma tata letak kartunya. */
     .portal-home-card {
         position: relative;
@@ -150,10 +150,10 @@
     .portal-home-card:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
     .portal-home-card-placeholder { cursor: not-allowed; filter: saturate(.8); }
 
-    /* Ilustrasi: ikon Font Awesome Free 6 (solid) yang sudah dimuat di head.php —
+    /* Ilustrasi: ikon Font Awesome Free 6 (solid) yang sudah dimuat di head.php -
        digambar desainer, jadi tidak perlu path buatan sendiri. Warnanya --t3,
        ujung terpekat palet kartu itu sendiri, jadi ikon selalu satu rona dengan
-       latarnya tanpa perlu warna kesembilan. (Dulu putih 15% — di atas pastel
+       latarnya tanpa perlu warna kesembilan. (Dulu putih 15% - di atas pastel
        itu praktis lenyap.) Ukurannya dibesarkan sampai menembus tepi kanan. */
     .portal-home-art {
         position: absolute;
@@ -168,7 +168,7 @@
         line-height: 1;
         opacity: .85;
         /* Emboss ke DALAM (letterpress): gelap mengintip di tepi ATAS, terang di
-           tepi BAWAH — arah cahaya dari atas, jadi mata membacanya sebagai bentuk
+           tepi BAWAH - arah cahaya dari atas, jadi mata membacanya sebagai bentuk
            yang dicetak masuk ke permukaan kartu, bukan yang menonjol keluar.
            (Menonjol = kebalikannya; tertukar arah dan efeknya terbalik total.)
            Satuan `em`, bukan px: ikon ini clamp dari ~90px sampai 190px, dan
@@ -202,9 +202,9 @@
     /* Opasitas DIUKUR, bukan dikira-kira: latar aurora dirasterisasi ke kanvas,
        lapisan batik gelap ditumpuk di atasnya, lalu piksel TERGELAP di dalam
        kotak teks tiap kartu dicuplik. Dari situ dicari alpha terkecil yang masih
-       lolos 4.5:1 (subjudul) dan 3:1 (ghost — teks besar) di kesembilan
+       lolos 4.5:1 (subjudul) dan 3:1 (ghost - teks besar) di kesembilan
        permukaan: .79 dan .61. Dipakai .82/.65, disisakan margin karena batasnya
-       bergantung palet — kartu baru dengan rona lebih pekat tidak boleh langsung
+       bergantung palet - kartu baru dengan rona lebih pekat tidak boleh langsung
        jatuh. Judul terendah 7.17:1.
 
        Batiknya WAJIB ikut dihitung: mengukur gradien saja pernah meloloskan
@@ -232,7 +232,7 @@
         box-shadow: 0 1px 2px rgba(22, 50, 58, .1);
     }
 
-    /* "Reduce motion": gerakannya diperkecil dan dipercepat, tidak dimatikan —
+    /* "Reduce motion": gerakannya diperkecil dan dipercepat, tidak dimatikan -
        user minta animasi hover ini tetap terasa (1 Agu 2026). Angkatan tinggal
        2px, teks diam, ikon berhenti berputar. */
     @media (prefers-reduced-motion: reduce) {

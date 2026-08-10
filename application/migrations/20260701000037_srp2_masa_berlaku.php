@@ -2,12 +2,12 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Masa berlaku sertifikat SRP2 — dua kolom tanggal, DIKOSONGKAN.
+ * Masa berlaku sertifikat SRP2 - dua kolom tanggal, DIKOSONGKAN.
  *
  * Revisi dinas butir B1: daftar pengembang diberi keterangan masa berlaku,
  * mulai dari tanggal terbit sampai tanggal akhir sertifikat.
  *
- * NOL UPDATE, dan itu keputusan user 5 Agt 2026 — bukan kemalasan migrasi.
+ * NOL UPDATE, dan itu keputusan user 5 Agt 2026 - bukan kemalasan migrasi.
  * Menghitung otomatis dari `created_at` akan mengisi 67 baris sekaligus dengan
  * tanggal KARANGAN, dan masa berlaku sertifikat adalah hal yang orang percayai:
  * pengembang bisa menunjukkannya ke calon pembeli, dinas bisa memakainya

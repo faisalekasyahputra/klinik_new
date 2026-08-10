@@ -9,12 +9,12 @@
  *
  * Ini BUKAN framework. Ia cuma menjalankan 24 skrip yang sudah ada apa adanya,
  * satu proses per skrip, dan membaca exit code-nya. Tidak ada satu pun harness
- * lama yang perlu diubah untuk ikut — kontraknya sudah seragam sejak awal:
+ * lama yang perlu diubah untuk ikut - kontraknya sudah seragam sejak awal:
  * exit 0 hijau, non-nol merah.
  *
  * Yang dilaporkan runner ini TAPI tidak dilaporkan skrip mana pun sendirian:
  *
- *   - Suite yang exit 0 dengan NOL pemeriksaan. Itu bukan hijau, itu bisu —
+ *   - Suite yang exit 0 dengan NOL pemeriksaan. Itu bukan hijau, itu bisu -
  *     jebakan §0e "harness yang berbohong". Skrip yang mati sebelum cek()
  *     pertama, atau yang seluruh isinya terlewat karena prasyarat, akan
  *     terlihat sukses kalau yang dibaca cuma exit code.
@@ -25,12 +25,12 @@
 const AKAR   = __DIR__;
 const PERAN  = ['warga', 'pengembang', 'mahasiswa', 'admin_kabkota', 'admin_bidang', 'admin'];
 
-// Runner DB-bersih menukar .env dan DB — mahal, dan menjalankan ulang suite
+// Runner DB-bersih menukar .env dan DB - mahal, dan menjalankan ulang suite
 // lain di dalamnya. Ikut hanya kalau diminta.
 const FRESH  = ['uji_rekam_data_fresh.php', 'uji_warga_fresh_r7.php'];
 
 // Butuh DB tersendiri menurut headernya masing-masing, bukan DB dev. Merahnya
-// di sini cuma berarti "dijalankan di tempat yang salah", bukan ada yang rusak —
+// di sini cuma berarti "dijalankan di tempat yang salah", bukan ada yang rusak -
 // dan merah palsu yang berdiri lama persis yang membuat orang berhenti membaca
 // keluaran runner.
 const KHUSUS = [
@@ -38,7 +38,7 @@ const KHUSUS = [
     'uji_perjalanan_srp2.php' => 'butuh DB uji bersih + akun admin seed (lihat header berkasnya)',
 ];
 
-// Empat harness ini hidup sebagai method Migrate, bukan berkas — tidak akan
+// Empat harness ini hidup sebagai method Migrate, bukan berkas - tidak akan
 // pernah tertangkap glob, dan itulah sebabnya mereka sering terlupa dijalankan.
 const MIGRATE = ['uji_warga_r1', 'uji_warga_r2', 'uji_rekam_data_d1', 'uji_wizard_w2'];
 
@@ -83,12 +83,12 @@ echo "Menjalankan " . count($suites) . " suite terhadap " . (getenv('UJI_BASE_UR
  * Sensus akun uji SEBELUM dan SESUDAH.
  *
  * Harness di repo ini membersihkan dirinya lewat `register_shutdown_function`
- * atau blok `finally` — yang keduanya bisa terlewat kalau prosesnya mati di
+ * atau blok `finally` - yang keduanya bisa terlewat kalau prosesnya mati di
  * tengah. Hasilnya akun yatim menumpuk diam-diam, dan pada 2 Agt 2026 empat di
  * antaranya ditemukan masih hidup: DUA di antaranya menyandang `admin_kabkota`
  * penuh, dengan sandi yang tertulis di berkas harness.
  *
- * Runner hijau tidak pernah menyinggung itu — hijau cuma berarti asersinya
+ * Runner hijau tidak pernah menyinggung itu - hijau cuma berarti asersinya
  * lulus, bukan bahwa DB-nya ditinggalkan seperti semula. Sensus ini yang
  * menjawabnya, dan ia berlaku untuk harness yang belum ditulis juga.
  */
@@ -137,7 +137,7 @@ foreach ($suites as $nama => $s) {
     printf("  %-5s %-42s %3d cek  %5.1fs%s\n", $tanda, $nama, $ok + $gagal, $hasil[$nama]['detik'],
         $lewat ? '  (' . KHUSUS[$nama] . ')' : '');
 
-    // Kegagalan dicetak utuh saat itu juga — yang dicari orang setelah runner
+    // Kegagalan dicetak utuh saat itu juga - yang dicari orang setelah runner
     // merah adalah barisnya, bukan nama berkasnya.
     if ($kode !== 0 && ! $lewat && ! $diam) {
         foreach (preg_grep('/^\s*GAGAL\s|Berhenti:|Fatal error|Uncaught/', $keluaran) as $b) {
@@ -150,7 +150,7 @@ echo "\n=== Peta peran ===\n";
 foreach (PERAN as $p) {
     $sentuh = array_keys(array_filter($suites, fn($s) => stripos($s['isi'], $p) !== FALSE));
     printf("  %-14s %2d suite  %s\n", $p, count($sentuh),
-        $sentuh ? implode(', ', array_map(fn($n) => str_replace(['uji_', '.php'], '', $n), $sentuh)) : '— TIDAK TERSENTUH —');
+        $sentuh ? implode(', ', array_map(fn($n) => str_replace(['uji_', '.php'], '', $n), $sentuh)) : '- TIDAK TERSENTUH -');
 }
 
 $total  = array_sum(array_column($hasil, 'ok')) + array_sum(array_column($hasil, 'gagal'));
@@ -166,10 +166,10 @@ echo "\n=== Ringkasan ===\n";
 echo "  " . count($hasil) . " suite, {$total} pemeriksaan, " . count($merah) . " merah, "
    . count($bisu) . " bisu, " . count($lewat) . " dilewati\n";
 foreach ($merah as $n) { echo "  MERAH  {$n}\n"; }
-foreach ($bisu as $n)  { echo "  BISU   {$n} — exit 0 tanpa satu pun cek(); perlakukan sebagai merah\n"; }
+foreach ($bisu as $n)  { echo "  BISU   {$n} - exit 0 tanpa satu pun cek(); perlakukan sebagai merah\n"; }
 
 if ($akun_sebelum === NULL) {
-    echo "  (sensus akun uji dilewati — DB tidak terbaca)\n";
+    echo "  (sensus akun uji dilewati - DB tidak terbaca)\n";
 } elseif ($bocor) {
     // Bocor DIHITUNG MERAH. Harness yang meninggalkan akun hidup berperan
     // adalah lubang yang tidak akan pernah muncul di daftar asersi mana pun.

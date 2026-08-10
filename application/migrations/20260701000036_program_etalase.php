@@ -2,24 +2,24 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Kolom etalase untuk `sf_programs` — supaya 5 program unggulan bisa diurus
+ * Kolom etalase untuk `sf_programs` - supaya 5 program unggulan bisa diurus
  * dari layar admin, bukan dari kode.
  *
- * LATAR: info program hidup di TIGA tempat yang saling melenceng —
+ * LATAR: info program hidup di TIGA tempat yang saling melenceng -
  *   1. tabel `sf_programs` (kode, nama, deskripsi_singkat, is_active),
- *   2. `Smart_filter::master_programs()` (judul, badge, ikon, warna — hardcode),
- *   3. korsel beranda (judul, badge, deskripsi, syarat, gambar — hardcode di JS).
+ *   2. `Smart_filter::master_programs()` (judul, badge, ikon, warna - hardcode),
+ *   3. korsel beranda (judul, badge, deskripsi, syarat, gambar - hardcode di JS).
  * Migrasi ini memindahkan yang DITAMPILKAN ke tabel, sehingga korsel punya satu
- * sumber dan admin bisa mengubahnya. Aturan KELAYAKAN tetap di Smart_filter —
+ * sumber dan admin bisa mengubahnya. Aturan KELAYAKAN tetap di Smart_filter -
  * itu logika, bukan tampilan, dan tidak boleh bisa diubah lewat formulir.
  *
  * WARNA SENGAJA TIDAK IKUT. Palet pastelnya baru disetel 5 Agt dan kontrasnya
  * diukur piksel per piksel; membiarkannya diedit bebas membatalkan itu dalam
- * satu klik. Admin mengatur kata dan foto — yang memang miliknya.
+ * satu klik. Admin mengatur kata dan foto - yang memang miliknya.
  *
  * ADITIF MURNI: hanya ADD COLUMN + UPDATE nilai awal. Tidak ada kolom yang
  * dibuang, tidak ada tipe yang diubah, jadi kode LAMA tetap jalan sesudah
- * migrasi ini — urutan aman "migrasi dulu, kode menyusul" (AGENTS.md §51).
+ * migrasi ini - urutan aman "migrasi dulu, kode menyusul" (AGENTS.md §51).
  */
 class Migration_Program_etalase extends CI_Migration {
 
@@ -72,7 +72,7 @@ class Migration_Program_etalase extends CI_Migration {
 
         /* Ditambahkan satu per satu dan hanya kalau BELUM ada. `add_column()`
            yang menabrak kolom eksisting akan gagal, dan dengan `db_debug` mati
-           di production kegagalan itu TIDAK bersuara — migrasinya tetap tercatat
+           di production kegagalan itu TIDAK bersuara - migrasinya tetap tercatat
            sukses (riwayat 031). Memeriksa lebih dulu membuat migrasi ini aman
            dijalankan ulang. */
         $kolom = [
@@ -103,7 +103,7 @@ class Migration_Program_etalase extends CI_Migration {
             }
         }
 
-        /* Nilai awal. `deskripsi_singkat` SUDAH ADA dan NOT NULL — hanya ditimpa
+        /* Nilai awal. `deskripsi_singkat` SUDAH ADA dan NOT NULL - hanya ditimpa
            kalau isinya kosong, supaya teks yang mungkin sudah disunting orang
            tidak tersapu migrasi. */
         foreach ($this->awal as $kode => $v) {

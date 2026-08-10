@@ -12,7 +12,7 @@ class Index extends MY_Controller {
 	   Jateng adalah 3324 (Kendal) dengan 320 lokasi = 4 bongkahan; 36 wilayah
 	   diperiksa satu per satu 10 Agt 2026. Lima memberi kelonggaran satu
 	   bongkahan tanpa membiarkan satu permintaan menyapu API tanpa batas.
-	   ponytail: kalau kelak ada wilayah > 500 lokasi, naikkan angka ini —
+	   ponytail: kalau kelak ada wilayah > 500 lokasi, naikkan angka ini -
 	   gejalanya "Semua Data Telah Dimuat" muncul terlalu cepat di wilayah itu. */
 	const SIK_MAKS_BONGKAH = 5;
 
@@ -224,18 +224,18 @@ class Index extends MY_Controller {
 	/**
 	 * Saring hasil Sikumbang menurut status rumah.
 	 *
-	 * TIGA nilai, bukan dua — dan itulah perbaikannya. Sampai 3 Agt 2026 kode ini
+	 * TIGA nilai, bukan dua - dan itulah perbaikannya. Sampai 3 Agt 2026 kode ini
 	 * cuma punya cabang `semua` dan "selain itu", dan cabang "selain itu" HANYA
 	 * menyimpan baris yang PUNYA tipe subsidi. Halaman cari rumah mengirim
 	 * `komersil` saat toggle dimatikan, jatuh ke cabang itu, dan menerima daftar
 	 * yang persis sama dengan saat toggle menyala.
 	 *
-	 * Jadi tombol "Hanya Rumah Subsidi" tidak pernah bisa dimatikan — mematikannya
+	 * Jadi tombol "Hanya Rumah Subsidi" tidak pernah bisa dimatikan - mematikannya
 	 * tidak mengubah apa pun, dan tidak ada satu pun pesan yang memberi tahu.
 	 * Ketahuan saat revisi dinas meminta toggle itu diganti dua tombol.
 	 *
 	 * `komersil` = tidak ada satu pun tipe rumah berstatus subsidi di lokasi itu.
-	 * Bukan "ada tipe komersil" — satu lokasi bisa memuat keduanya, dan lokasi
+	 * Bukan "ada tipe komersil" - satu lokasi bisa memuat keduanya, dan lokasi
 	 * campuran memang layak muncul di daftar subsidi.
 	 */
 	private function saring_status_rumah($raw_list, $status_rumah) {
@@ -283,7 +283,7 @@ class Index extends MY_Controller {
 
 	/**
 	 * Satu bongkahan mentah dari SIKUMBANG. NULL = gagal jaringan (beda dari
-	 * array kosong, yang berarti sumbernya memang habis — dan bedanya penting:
+	 * array kosong, yang berarti sumbernya memang habis - dan bedanya penting:
 	 * yang satu tidak boleh dibaca sebagai "semua data telah dimuat").
 	 */
 	private function bongkah_sikumbang(array $p, $halaman_api) {
@@ -324,12 +324,12 @@ class Index extends MY_Controller {
 	/**
 	 * Daftar lokasi yang SUDAH tersaring, dipotong sesuai halaman yang diminta.
 	 *
-	 * BUTIR A3 REVISI DINAS — "kayaknya belum ke-load semua, muncul cuma 3 atau
+	 * BUTIR A3 REVISI DINAS - "kayaknya belum ke-load semua, muncul cuma 3 atau
 	 * 6 gambar saja." Keluhan itu BENAR, dan jawaban kami yang pertama keliru.
 	 *
 	 * Penyebabnya: penyaring subsidi/non-subsidi berjalan DI SINI, sementara
 	 * dulu API diminta `limit=9` lalu sembilan baris itulah yang disaring. Yang
-	 * tersisa 1–8 buah dan berubah-ubah tiap halaman. Terukur 10 Agt 2026 di
+	 * tersisa 1-8 buah dan berubah-ubah tiap halaman. Terukur 10 Agt 2026 di
 	 * Kota Semarang (wilayah bawaan halaman ini): API mengirim 9, yang lolos
 	 * saringan subsidi hanya SATU. Angka "3 atau 6" itu bukan angka misterius,
 	 * ia sisa saringan.
@@ -339,7 +339,7 @@ class Index extends MY_Controller {
 	 * Dimuat". Daftarnya mati di situ padahal halaman 4 dan seterusnya masih
 	 * berisi. Data hilang tanpa satu pun tanda.
 	 *
-	 * Sekarang bongkahannya 100 — bukan 9 — dikumpulkan sampai cukup untuk
+	 * Sekarang bongkahannya 100 - bukan 9 - dikumpulkan sampai cukup untuk
 	 * halaman yang diminta, BARU dipotong. Halaman penuh 9 selama datanya
 	 * masih ada, dan "habis" hanya diucapkan kalau sumbernya memang habis.
 	 */
@@ -387,7 +387,7 @@ class Index extends MY_Controller {
 		/* Balasan kosong dibaca JS sebagai "Semua Data Telah Dimuat", jadi ia
 		   hanya boleh keluar saat datanya BENAR-BENAR habis. Waktu jaringan
 		   gagal, kirim penanda supaya tombolnya tetap hidup dan bisa dicoba
-		   lagi — bukan dimatikan seolah data sudah tandas. */
+		   lagi - bukan dimatikan seolah data sudah tandas. */
 		if ($gagal && ! $list_final) {
 			echo '<!-- gagal-jaringan -->';
 			return;
@@ -567,7 +567,7 @@ class Index extends MY_Controller {
 		$this->load->view('layouts/main',$data);
 	}
 
-	// A4 — struktur() DICABUT 29 Jul 2026 atas keputusan user, bersama
+	// A4 - struktur() DICABUT 29 Jul 2026 atas keputusan user, bersama
 	// view-nya. Halaman itu memajang NAMA INDIVIDU NYATA sebagai Kepala Dinas
 	// tanpa satu pun sumber data, ditambah empat placeholder "Nama Pejabat"
 	// yang tampil ke publik. Menyebut nama pejabat tanpa sumber lebih berisiko
@@ -580,12 +580,12 @@ class Index extends MY_Controller {
 		$this->load->view('layouts/main',$data);
 	}
 
-	// A1 — sebaran_rusun(), profil_kumuh(), dan sebaran_sdgs() DICABUT
+	// A1 - sebaran_rusun(), profil_kumuh(), dan sebaran_sdgs() DICABUT
 	// 29 Jul 2026 atas keputusan user, bersama ketiga view-nya, route-nya, dan
 	// kartu penautnya di beranda. Ketiganya menyajikan angka literal tanpa
 	// sumber, dan sebaran_rusun menyebut rusunawa BERNAMA NYATA berikut
 	// koordinat aslinya dengan okupansi karangan serta tuduhan kerusakan aset.
-	// Mengganti angkanya butuh seseorang yang tahu angka benarnya — itu dinas,
+	// Mengganti angkanya butuh seseorang yang tahu angka benarnya - itu dinas,
 	// bukan agent; mencabut adalah satu-satunya tindakan yang boleh diambil
 	// tanpa mengarang pengganti (§17).
 
@@ -675,35 +675,35 @@ class Index extends MY_Controller {
 	// ============================================================
 
 	/**
-	 * Tab content: Perumahan — menu cards untuk submenu perumahan
+	 * Tab content: Perumahan - menu cards untuk submenu perumahan
 	 */
 	public function tab_perumahan() {
 		$this->render('pages/home/tab_perumahan');
 	}
 
 	/**
-	 * Tab content: Kawasan — menu cards untuk submenu kawasan
+	 * Tab content: Kawasan - menu cards untuk submenu kawasan
 	 */
 	public function tab_kawasan() {
 		$this->render('pages/home/tab_kawasan');
 	}
 
 	/**
-	 * Tab content: Pertanahan — menu cards untuk submenu pertanahan
+	 * Tab content: Pertanahan - menu cards untuk submenu pertanahan
 	 */
 	public function tab_pertanahan() {
 		$this->render('pages/home/tab_pertanahan');
 	}
 
 	/**
-	 * Tab content: Pengembang — menu cards untuk submenu pengembang
+	 * Tab content: Pengembang - menu cards untuk submenu pengembang
 	 */
 	public function tab_pengembang() {
 		$this->render('pages/home/tab_pengembang');
 	}
 
 	/**
-	 * Tab content: Bank Data — menu cards untuk submenu bank data
+	 * Tab content: Bank Data - menu cards untuk submenu bank data
 	 */
 	public function tab_bankdata() {
 		$this->render('pages/home/tab_bankdata');

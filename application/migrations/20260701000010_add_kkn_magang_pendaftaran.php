@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Pendaftaran KKN/Magang nyata untuk role mahasiswa — sebelumnya
+ * Pendaftaran KKN/Magang nyata untuk role mahasiswa - sebelumnya
  * halaman KemitraanPortal cuma statis tanpa form/tabel sama sekali.
  */
 class Migration_Add_kkn_magang_pendaftaran extends CI_Migration {

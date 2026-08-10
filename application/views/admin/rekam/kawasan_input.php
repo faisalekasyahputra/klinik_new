@@ -1,6 +1,6 @@
 <?php
 /**
- * Rekam Data — Input Capaian Kawasan (D4).
+ * Rekam Data - Input Capaian Kawasan (D4).
  *
  * Daftar intervensi sebagai kartu bertumpuk + satu form inline, bukan 20 halaman
  * berurutan. Tanpa batas jumlah. Total anggaran & padat karya DIHITUNG dari
@@ -58,14 +58,14 @@ foreach ($intervensi as $row) {
       <!-- Sama seperti Perumahan: catatan peninjau harus terlihat di layar
            tempat perbaikannya dikerjakan, bukan hanya di riwayat. -->
       <p class="mt-4 rounded-r-xl border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-500/10 dark:text-red-200">
-        <b>Perlu perbaikan — catatan Admin Bidang:</b> <?= $e($laporan['catatan_admin']) ?>
+        <b>Perlu perbaikan - catatan Admin Bidang:</b> <?= $e($laporan['catatan_admin']) ?>
       </p>
     <?php endif; ?>
 
     <?php /* Di sini dulu ada spanduk "N intervensi diwarisi dari laporan
              terkirim sebelumnya. Ubah yang berubah, tambah yang baru." Sejak
-             pewarisan dicabut ia tidak mungkin muncul lagi — `diwarisi` selalu
-             0 — jadi yang tersisa cuma cabang mati yang menyiratkan perilaku
+             pewarisan dicabut ia tidak mungkin muncul lagi - `diwarisi` selalu
+             0 - jadi yang tersisa cuma cabang mati yang menyiratkan perilaku
              yang sudah tidak ada. Dibuang, bukan dibiarkan sebagai penanda
              harapan.
 
@@ -107,7 +107,7 @@ foreach ($intervensi as $row) {
             <label class="flex items-center gap-2"><input type="radio" name="ada_progres" value="0" <?= $ada_progres === 0 ? 'checked' : '' ?>> Tidak</label>
           </div>
           <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">
-            Kalau <b>Tidak</b>, cukup isi catatan progres di bawah — Total Luas tidak dipaksa terisi.
+            Kalau <b>Tidak</b>, cukup isi catatan progres di bawah - Total Luas tidak dipaksa terisi.
           </p>
         </div>
 
@@ -237,14 +237,14 @@ foreach ($intervensi as $row) {
           </label>
 
           <?php
-          /* Butir D2 — dulu SATU isian "Nama kegiatan/program" untuk empat hal
+          /* Butir D2 - dulu SATU isian "Nama kegiatan/program" untuk empat hal
              sekaligus, sehingga rekap tidak bisa mengelompokkan apa pun:
              "PK RTLH", "pk rtlh", dan "Peningkatan Kualitas RTLH" terhitung
              tiga hal berbeda.
 
              Dikelompokkan dalam <fieldset> supaya keempatnya terbaca sebagai
              satu nomenklatur berjenjang, bukan empat isian yang kebetulan
-             berdekatan — dan pembaca layar menyebut "Nomenklatur kegiatan"
+             berdekatan - dan pembaca layar menyebut "Nomenklatur kegiatan"
              sebelum tiap sub-labelnya.
 
              HANYA "Kegiatan" YANG WAJIB, sama seperti sebelum dirinci. Tiga
@@ -294,7 +294,7 @@ foreach ($intervensi as $row) {
 
           <label class="text-sm">
 <?php /* Label saja yang berubah (revisi dinas 5 Agt 2026, butir D3). `name` TETAP
-                 `keterangan_sumber` — itu nama kolom di `rd_kawasan_intervensi`, dan
+                 `keterangan_sumber` - itu nama kolom di `rd_kawasan_intervensi`, dan
                  menggantinya berarti migrasi untuk perubahan kata di layar.
                  Label "Sumber" di atas (sumber anggaran) BUKAN ini dan tidak disentuh. */ ?>
             <span class="font-bold text-gray-900 dark:text-white">Keterangan (opsional)</span>

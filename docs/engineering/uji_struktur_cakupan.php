@@ -1,6 +1,6 @@
 <?php
 /**
- * Uji STRUKTUR & CAKUPAN — master bidang/wilayah dan penjaga kuncinya.
+ * Uji STRUKTUR & CAKUPAN - master bidang/wilayah dan penjaga kuncinya.
  *
  *   php docs/engineering/uji_struktur_cakupan.php
  *
@@ -11,17 +11,17 @@
  *      dirujuk sembilan tempat, dan EMPAT di antaranya TANPA foreign key
  *      (`usr_users.bidang_kode`, `usr_users.kabupaten_id`, `aduan.bidang`,
  *      `kkn_magang_slot.bidang_kode`). Mengganti kunci lewat formulir membuat
- *      keempatnya yatim TANPA SATU PUN GALAT — admin bidang kehilangan mejanya,
+ *      keempatnya yatim TANPA SATU PUN GALAT - admin bidang kehilangan mejanya,
  *      aduan hilang dari semua dashboard, dan semuanya tetap membalas 200.
  *      Diuji dengan MENEMBAKKAN kode baru ke endpoint-nya, bukan dengan
  *      memastikan formulirnya tidak punya field itu.
  *   2. HITUNGAN YATIM BENAR-BENAR MENGHITUNG. Ia satu-satunya penjaga yang
  *      tersisa untuk empat jalur tanpa FK itu. Diuji dengan MEMBUAT satu baris
- *      yatim sungguhan lalu memastikan angkanya naik — hitungan yang selalu nol
+ *      yatim sungguhan lalu memastikan angkanya naik - hitungan yang selalu nol
  *      terlihat persis seperti sistem yang sehat.
  *   3. GANTI NAMA BEKERJA DAN TERCATAT.
  *   4. PERAN LAIN TIDAK DAPAT LAYAR INI, dibuktikan lewat keadaan DB dan isi
- *      halaman — bukan kode HTTP, karena peran salah DIALIHKAN dan curl yang
+ *      halaman - bukan kode HTTP, karena peran salah DIALIHKAN dan curl yang
  *      mengikuti redirect menerima 200 dari halaman lain.
  *
  * Semua perubahan pada tabel master DIPULIHKAN, termasuk kalau prosesnya mati
@@ -135,11 +135,11 @@ function jaga_nama($tabel, $kolom, $kunci) {
 function bersihkan() {
     if (empty($GLOBALS['db'])) { return; }
     /**
-     * Nama master dipulihkan DULU — ini satu-satunya yang menyentuh data nyata.
+     * Nama master dipulihkan DULU - ini satu-satunya yang menyentuh data nyata.
      *
      * ⚠️ PEMULIHAN KEDUA ADA KARENA PEMULIHAN PERTAMA PERNAH KALAH. Saat
      * penjaga kunci dimutasi (mensimulasikan controller yang menerima `id` dari
-     * POST), `kabupaten.id` 3301 BENAR-BENAR berubah jadi 9999 — dan `UPDATE
+     * POST), `kabupaten.id` 3301 BENAR-BENAR berubah jadi 9999 - dan `UPDATE
      * ... WHERE id=3301` di bawah tidak menemukan apa pun, jadi barisnya
      * tertinggal rusak sampai diperbaiki tangan. Harness yang menguji penjaga
      * kunci HARUS bisa memulihkan kunci, bukan cuma nama.
@@ -204,7 +204,7 @@ cek(count($tb[1]) === 2, 'Dua tabel: bidang dan wilayah');
 cek(preg_match_all('/<tr[^>]*>/', $tb[1][0] ?? '', $x) === $jml_bidang,
     "Tabel bidang memuat {$jml_bidang} baris");
 cek(preg_match_all('/<tr[^>]*>/', $tb[1][1] ?? '', $x) === $jml_kab,
-    "Tabel wilayah memuat {$jml_kab} baris — SEMUA, bukan yang berpetugas saja");
+    "Tabel wilayah memuat {$jml_kab} baris - SEMUA, bukan yang berpetugas saja");
 cek(stripos($hal['body'], 'tidak bisa diubah') !== FALSE,
     'Layar menyatakan kodenya tidak bisa diubah, bukan cuma tidak menyediakan fieldnya');
 
@@ -212,7 +212,7 @@ cek(stripos($hal['body'], 'tidak bisa diubah') !== FALSE,
 echo "\n== 2. Kunci TIDAK bisa diubah lewat endpoint ==\n";
 /**
  * Ditembakkan langsung, bukan diperiksa dari formulirnya. Formulir yang tidak
- * punya field bukan gerbang — gerbangnya adalah controller yang tidak pernah
+ * punya field bukan gerbang - gerbangnya adalah controller yang tidak pernah
  * membaca field itu.
  */
 /**
@@ -220,7 +220,7 @@ echo "\n== 2. Kunci TIDAK bisa diubah lewat endpoint ==\n";
  *
  * Versi pertama menembak `bidang`, dan dua dari tiga pemeriksaannya HIJAU
  * PALSU: ternyata kelima bidang punya baris `kkn_magang_bidang`, jadi yang
- * menolak penggantian kunci adalah FOREIGN KEY-nya, bukan controller ini —
+ * menolak penggantian kunci adalah FOREIGN KEY-nya, bukan controller ini -
  * mutasi yang menerima `kode` dari POST tetap lolos dua cek itu. Kabupaten
  * tanpa `rd_laporan`/`sf_housing_queue`/`sf_penilaian_perumahan` tidak punya
  * penyelamat itu; kalau controllernya lengah, kuncinya BENAR-BENAR berubah.
@@ -238,23 +238,23 @@ http('a', 'Admin_Struktur/ubah_nama', [
     'csrf_kpkp_token' => csrf('a', 'Admin_Struktur'),
     'jenis' => 'kabupaten', 'kunci' => $id_bebas,
     'nama'  => 'Nama Baru ' . CAP,
-    // Yang diselundupkan — dua nama field yang mungkin dipakai implementasi:
+    // Yang diselundupkan - dua nama field yang mungkin dipakai implementasi:
     'id'    => '9999',
     'kode'  => '9999',
 ]);
 cek((int) nilai('SELECT COUNT(*) c FROM kabupaten WHERE id=?', [$id_bebas]) === 1,
-    "Kunci ASLI ({$id_bebas}) masih ada — POST `id`/`kode` diabaikan");
+    "Kunci ASLI ({$id_bebas}) masih ada - POST `id`/`kode` diabaikan");
 cek((int) nilai('SELECT COUNT(*) c FROM kabupaten WHERE id=?', ['9999']) === 0,
     'Kunci selundupan TIDAK tercipta');
 cek(nilai('SELECT nama FROM kabupaten WHERE id=?', [$id_bebas]) === 'Nama Baru ' . CAP,
-    'Sementara namanya memang berubah — jadi permintaannya benar-benar diproses');
+    'Sementara namanya memang berubah - jadi permintaannya benar-benar diproses');
 
 // ------------------------------------------------ 3. JEJAK
 echo "\n== 3. Perubahan tercatat ==\n";
 cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='master_nama_diubah' AND actor_id=? AND created_at >= ?",
     [$idA, MULAI]) === 1, 'Satu baris jejak audit master_nama_diubah');
 cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='master_nama_diubah' AND actor_id=? AND ringkasan LIKE ?",
-    [$idA, '%' . $nama_asli . '%']) === 1, 'Jejaknya memuat nama LAMA — tanpa itu perubahannya tak bisa ditelusuri');
+    [$idA, '%' . $nama_asli . '%']) === 1, 'Jejaknya memuat nama LAMA - tanpa itu perubahannya tak bisa ditelusuri');
 
 // ------------------------------------------------ 4. YANG DITOLAK
 echo "\n== 4. Yang harus ditolak ==\n";
@@ -270,7 +270,7 @@ cek(nilai('SELECT nama FROM bidang WHERE kode=?', [$kode_uji]) !== 'Tanpa Token'
  *
  * Versi pertama memakai `usr_users` dan HIJAU PALSU: mutasi yang mencabut
  * whitelist tetap lolos, karena `usr_users` menyimpan namanya di kolom `name`,
- * bukan `nama` — query-nya gagal karena kebetulan penamaan, bukan karena
+ * bukan `nama` - query-nya gagal karena kebetulan penamaan, bukan karena
  * gerbangnya. `aduan` punya `id` DAN `nama` (nama pelapor), jadi ia sasaran
  * yang benar-benar bisa tertulis kalau whitelistnya lengah.
  */
@@ -285,7 +285,7 @@ http('a', 'Admin_Struktur/ubah_nama', [
     'csrf_kpkp_token' => csrf('a', 'Admin_Struktur'),
     'jenis' => 'aduan', 'kunci' => (string) $id_aduan, 'nama' => 'Nama Dirampas ' . CAP]);
 cek(nilai('SELECT nama FROM aduan WHERE id=?', [$id_aduan]) === 'Pelapor Uji ' . CAP,
-    'Jenis di luar whitelist ditolak — tabel lain (aduan) tidak bisa disentuh lewat sini');
+    'Jenis di luar whitelist ditolak - tabel lain (aduan) tidak bisa disentuh lewat sini');
 
 $sebelum = nilai('SELECT nama FROM bidang WHERE kode=?', [$kode_uji]);
 http('a', 'Admin_Struktur/ubah_nama', [
@@ -307,8 +307,8 @@ echo "\n== 5. Hitungan yatim benar-benar menghitung ==\n";
 /**
  * Pemeriksaan yang paling mudah jadi hijau hampa: angka yang SELALU nol
  * terlihat persis seperti sistem yang sehat. Karena itu di sini dibuat satu
- * baris yatim SUNGGUHAN — akun dengan `bidang_kode` yang tidak ada di tabel
- * `bidang` (dan memang tidak ada FK yang menahannya) — lalu angkanya diperiksa
+ * baris yatim SUNGGUHAN - akun dengan `bidang_kode` yang tidak ada di tabel
+ * `bidang` (dan memang tidak ada FK yang menahannya) - lalu angkanya diperiksa
  * naik, dan turun lagi setelah dipulihkan.
  */
 $blok = static function ($body) {
@@ -317,20 +317,20 @@ $blok = static function ($body) {
 };
 $awal = $blok(http('a', 'Admin_Struktur')['body']);
 wajib($awal !== '', 'Blok hitungan yatim terbaca dari halaman');
-cek(preg_match('/>0<\/span> — Petugas bidang/', $awal) === 1,
+cek(preg_match('/>0<\/span> - Petugas bidang/', $awal) === 1,
     'Sebelum dirusak: nol petugas bidang yatim');
 
 [$idY, $emailY] = buat_akun('admin_bidang', 'yatim', NULL, 'bidang_hantu_' . CAP);
 $rusak = $blok(http('a', 'Admin_Struktur')['body']);
-cek(preg_match('/>1<\/span> — Petugas bidang/', $rusak) === 1,
+cek(preg_match('/>1<\/span> - Petugas bidang/', $rusak) === 1,
     'Sesudah satu baris yatim dibuat: angkanya NAIK jadi 1');
 cek(stripos(http('a', 'Admin_Struktur')['body'], 'menunjuk data yang tidak ada lagi') !== FALSE,
     'Callout-nya berubah jadi peringatan, bukan tetap hijau');
 
 q('UPDATE usr_users SET bidang_kode=NULL WHERE id=?', [$idY]);
 $pulih = $blok(http('a', 'Admin_Struktur')['body']);
-cek(preg_match('/>0<\/span> — Petugas bidang/', $pulih) === 1,
-    'Sesudah dipulihkan: kembali nol — angkanya mengikuti keadaan, bukan tetap');
+cek(preg_match('/>0<\/span> - Petugas bidang/', $pulih) === 1,
+    'Sesudah dipulihkan: kembali nol - angkanya mengikuti keadaan, bukan tetap');
 
 // ------------------------------------------------ 6. CAKUPAN
 echo "\n== 6. Cakupan petugas ==\n";

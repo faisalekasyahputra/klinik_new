@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Diarsipkan — halaman profil khusus superadmin ini dilebur ke
+ * Diarsipkan - halaman profil khusus superadmin ini dilebur ke
  * Pengaturan::profil() (route `akun/profil`) yang sudah dipakai semua role
  * lain. Dua halaman "Profil Saya" dengan logika update nyaris identik,
  * dipisah hanya karena gate role (lihat ANCHOR_DASHBOARD_TERPADU.md B9).

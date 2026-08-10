@@ -5,7 +5,7 @@
         </div>
         <p class="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--portal-brand)]">Layanan Pengaduan</p>
         <h1 id="aduan-title" class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)]">Sampaikan Aduan Anda</h1>
-        <p class="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--portal-text-muted)]">Isi formulir di bawah. Aduan Anda kami baca lebih dulu, lalu diteruskan ke bidang yang menangani — Anda tidak perlu menebak bidangnya.</p>
+        <p class="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--portal-text-muted)]">Isi formulir di bawah. Aduan Anda kami baca lebih dulu, lalu diteruskan ke bidang yang menangani - Anda tidak perlu menebak bidangnya.</p>
     </div>
 
     <form id="aduan-form" class="mx-auto mt-8 max-w-2xl space-y-4" action="<?= base_url('umum/simpan_aduan') ?>" method="POST" enctype="multipart/form-data"
@@ -16,7 +16,7 @@
               pesan: '',
               <?php
               /**
-               * TIDAK ADA lagi pilihan bidang di sini — revisi dinas 3 Agt 2026.
+               * TIDAK ADA lagi pilihan bidang di sini - revisi dinas 3 Agt 2026.
                * Pelapor tidak tahu rumahnya urusan Bidang Perumahan atau Bidang
                * Kawasan Permukiman, dan tebakan yang meleset dulu mendarat di
                * meja yang salah lalu diam di sana. Superadmin yang meneruskan
@@ -68,7 +68,7 @@
         <i class="fa-solid fa-circle-info mr-2 text-[color:var(--portal-icon)]"></i> Punya pertanyaan umum seputar layanan? Cek dulu lewat tombol bantuan di pojok kanan bawah.
         <?php
         /**
-         * Tautan papan hanya untuk yang sudah login — bukan sekadar
+         * Tautan papan hanya untuk yang sudah login - bukan sekadar
          * disembunyikan, halamannya sendiri bergerbang (Umum::papan_aduan).
          * Tamu tidak diberi tautan yang berujung ke layar login.
          */

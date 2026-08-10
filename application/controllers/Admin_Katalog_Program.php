@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Katalog Program — P2 lapisan "master & kendali" superadmin.
+ * Katalog Program - P2 lapisan "master & kendali" superadmin.
  *
  * ═══ KATALOGNYA HIDUP DI DUA TEMPAT, DAN KEDUANYA NYATA. ═══
  *
@@ -12,7 +12,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *   `sf_programs` (tabel)          | `Smart_filter::master_programs()` (kode)
  *   -------------------------------|------------------------------------------
  *   `is_active` MENGGERBANGI        | judul & deskripsi di KARTU HASIL DIAGNOSA
- *   pengajuan — Housing_assessment  |
+ *   pengajuan - Housing_assessment  |
  *   _model:500 menolak kalau != 1   | aturan pencocokan desil -> program
  *   `nama_program` tampil di        |
  *   ANTREAN ADMIN dan /akun         |
@@ -20,17 +20,17 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * Akibat yang bisa dilihat warga: ia memilih "Bansos PB (Pembangunan Baru)"
  * di hasil diagnosa, lalu di /akun pengajuannya bernama "Stimulan Pembangunan
  * Baru". Program yang sama, dua nama. Empat dari enam program berselisih
- * seperti ini per 4 Agt 2026 — karena itu layar ini MENAMPILKAN selisihnya,
+ * seperti ini per 4 Agt 2026 - karena itu layar ini MENAMPILKAN selisihnya,
  * bukan berpura-pura tabelnya satu-satunya sumber.
  *
  * ═══ YANG BISA DIUBAH DARI SINI ═══
  *
- *   ✅ `nama_program`, `deskripsi_singkat` — yang dibaca warga di antrean/akun.
- *   ✅ `is_active` — kendali nyata: mematikannya menolak pengajuan baru.
- *   ❌ `kode_program` — identitas. `Housing_assessment_model:748` mencarinya
+ *   ✅ `nama_program`, `deskripsi_singkat` - yang dibaca warga di antrean/akun.
+ *   ✅ `is_active` - kendali nyata: mematikannya menolak pengajuan baru.
+ *   ❌ `kode_program` - identitas. `Housing_assessment_model:748` mencarinya
  *      lewat kolom ini, dan `Smart_filter` memetakannya sebagai literal di kode.
  *      Menggantinya lewat formulir memutus keduanya sekaligus.
- *   ❌ TAMBAH / HAPUS program — dan ini bukan kemalasan. Program baru di tabel
+ *   ❌ TAMBAH / HAPUS program - dan ini bukan kemalasan. Program baru di tabel
  *      TIDAK akan pernah dicocokkan ke siapa pun: aturan kelayakannya ditulis
  *      di `Smart_filter::get_eligible_programs()`, yaitu KODE. Tombol "tambah"
  *      di sini hanya akan melahirkan program hantu yang tampak terdaftar dan
@@ -69,7 +69,7 @@ class Admin_Katalog_Program extends Admin_Controller {
         $data['jml_selisih'] = count(array_filter($rows, static function ($r) { return $r->selisih; }));
         $data['jml_tanpa_aturan'] = count(array_filter($rows, static function ($r) { return $r->tanpa_aturan; }));
 
-        // Kode di Smart_filter yang TIDAK punya baris tabel — arah sebaliknya,
+        // Kode di Smart_filter yang TIDAK punya baris tabel - arah sebaliknya,
         // dan akibatnya lebih buruk: kartunya muncul di hasil diagnosa, lalu
         // pengajuannya gagal karena `program_id`-nya tidak ada.
         $kode_tabel = array_column($rows, 'kode_program');
@@ -81,7 +81,7 @@ class Admin_Katalog_Program extends Admin_Controller {
     /**
      * Ubah nama/deskripsi/status satu program. `kode_program` TIDAK ikut.
      *
-     * Mematikan program yang SEDANG DIPAKAI antrean tetap boleh — baris yang
+     * Mematikan program yang SEDANG DIPAKAI antrean tetap boleh - baris yang
      * sudah masuk antrean tidak dibatalkan, yang ditolak hanya pengajuan BARU
      * (Housing_assessment_model:500). Itu memang gunanya sakelar ini, jadi
      * jumlah pemakainya ditampilkan di layar supaya keputusannya sadar.
@@ -117,7 +117,7 @@ class Admin_Katalog_Program extends Admin_Controller {
         // seluruh suntingan yang sudah diketik orang.
         $urutan = max(1, min(99, $urutan ?: 99));
 
-        // Checkbox yang tidak dicentang TIDAK terkirim sama sekali — itu bukan
+        // Checkbox yang tidak dicentang TIDAK terkirim sama sekali - itu bukan
         // "nilai lama", itu 0. Membacanya sebagai "biarkan" membuat sakelar
         // mati yang tidak pernah bisa dimatikan.
         $aktif  = $this->input->post('is_active') ? 1 : 0;
@@ -151,7 +151,7 @@ class Admin_Katalog_Program extends Admin_Controller {
 
         /* Berkas lama dibuang HANYA kalau ia hasil unggahan. Berkas bawaan di
            `assets/img/program/` ikut repo dan dipakai sebagai nilai awal migrasi
-           036 — menghapusnya berarti deploy berikutnya menghidupkannya lagi
+           036 - menghapusnya berarti deploy berikutnya menghidupkannya lagi
            sementara DB sudah menunjuk ke tempat lain. */
         if ($gambar_baru !== NULL && strpos((string) $lama->gambar, self::DIR_UNGGAHAN) === 0) {
             @unlink(FCPATH . $lama->gambar);
@@ -190,12 +190,12 @@ class Admin_Katalog_Program extends Admin_Controller {
      * membacanya, melainkan APA yang ikut terbawa.
      *
      *   1. Jenis ditentukan `finfo` dari ISI berkas, bukan dari ekstensi
-     *      maupun `$_FILES['type']` — keduanya dikirim peramban dan bisa dikarang.
+     *      maupun `$_FILES['type']` - keduanya dikirim peramban dan bisa dikarang.
      *   2. `getimagesize()` sebagai lapis kedua: berkas yang lolos finfo tapi
      *      bukan gambar sungguhan ditolak di sini.
      *   3. Metadata dilucuti. Foto lapangan dari ponsel membawa koordinat GPS,
      *      dan menayangkannya di beranda publik berarti mengumumkan lokasi
-     *      pengambilannya. Pelucutnya milik induk — sama dengan yang dipakai
+     *      pengambilannya. Pelucutnya milik induk - sama dengan yang dipakai
      *      bukti warga, satu implementasi untuk keduanya.
      *   4. Nama berkas DIBUANG dan diganti acak. Nama kiriman tidak pernah
      *      menyentuh disk, jadi tidak ada jalan menembus direktori maupun

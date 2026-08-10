@@ -2,7 +2,7 @@
     <!-- Header -->
     <div class="text-center mb-10" data-aos="fade-down">
         <h3 class="text-3xl sm:text-4xl font-extrabold text-[color:var(--portal-text)] tracking-tight mb-2">Nggoleki <span class="text-[color:var(--portal-brand)]">Omah</span></h3>
-        <p class="text-[color:var(--portal-text-muted)] text-xs">Data real-time dari Sikumbang — Tapera</p>
+        <p class="text-[color:var(--portal-text-muted)] text-xs">Data real-time dari Sikumbang - Tapera</p>
     </div>
 
         <div class="border p-6 sm:p-8 rounded-3xl mb-10 shadow-sm bg-[color:var(--portal-bg-card)] border-[color:var(--portal-border)]" data-aos="fade-up" data-aos-delay="100">
@@ -47,7 +47,7 @@
                 /**
                  * DUA TOMBOL, bukan satu toggle (revisi dinas 3 Agt 2026).
                  *
-                 * Toggle lamanya bukan cuma kurang jelas — ia BERBOHONG. Ia
+                 * Toggle lamanya bukan cuma kurang jelas - ia BERBOHONG. Ia
                  * mengirim `komersil` saat dimatikan, sementara filter di
                  * `Index::cari_wil()` hanya mengenal `semua` sebagai "jangan
                  * saring", jadi mematikannya menghasilkan daftar yang persis
@@ -75,7 +75,7 @@
                         </button>
                         <?php
                         /* Butir 2 putaran 2. Mesin penyaringnya SUDAH mengenal
-                           `semua` sejak toggle lama diganti dua tombol — yang
+                           `semua` sejak toggle lama diganti dua tombol - yang
                            hilang cuma tombolnya, sehingga tidak ada cara melihat
                            kedua jenis sekaligus. */
                         ?>
@@ -92,7 +92,7 @@
             /* Butir A2 revisi dinas: dua tombol itu sudah benar, tinggal diberi
                keterangan singkat apa bedanya.
 
-               DEFINISI UMUM, BUKAN KUTIPAN REGULASI — dan itu keputusan user
+               DEFINISI UMUM, BUKAN KUTIPAN REGULASI - dan itu keputusan user
                10 Agt 2026 sesudah dinas belum sempat mengirim rumusannya.
                Sengaja TANPA ANGKA: batas penghasilan, harga, dan besaran uang
                muka berubah tiap tahun dan berbeda per wilayah. Menuliskannya di
@@ -102,7 +102,7 @@
             ?>
             <p id="ket-status" aria-live="polite"
                class="mt-3 text-xs leading-relaxed text-[color:var(--portal-text-muted)]">
-                Rumah dengan bantuan pembiayaan pemerintah untuk masyarakat berpenghasilan rendah &mdash;
+                Rumah dengan bantuan pembiayaan pemerintah untuk masyarakat berpenghasilan rendah -
                 uang muka dan angsuran lebih ringan, dengan syarat batas penghasilan, belum memiliki rumah,
                 dan rumahnya wajib dihuni sendiri.
             </p>
@@ -145,17 +145,17 @@
 <script>
 /**
  * Pilihan jenis rumah disimpan di satu variabel, bukan dibaca ulang dari DOM.
- * `load_more()` dulu membaca checkbox yang sama — kalau kelak tombolnya
+ * `load_more()` dulu membaca checkbox yang sama - kalau kelak tombolnya
  * berpindah/berganti nama, satu tempat saja yang perlu diperbaiki.
  */
 window.statusRumahAktif = 'subsidi';
 
-/* Keterangan A2. Satu tempat saja — kalau dinas mengirim rumusan resminya,
+/* Keterangan A2. Satu tempat saja - kalau dinas mengirim rumusan resminya,
    yang diganti cukup dua kalimat di sini (dan kalimat awal di HTML atas,
    yang sengaja dirender server supaya sudah benar sebelum JS jalan). */
 var keteranganStatus = {
-    subsidi: 'Rumah dengan bantuan pembiayaan pemerintah untuk masyarakat berpenghasilan rendah — uang muka dan angsuran lebih ringan, dengan syarat batas penghasilan, belum memiliki rumah, dan rumahnya wajib dihuni sendiri.',
-    komersil: 'Rumah yang dijual dengan harga pasar tanpa bantuan pemerintah — tidak ada batas penghasilan maupun syarat kepemilikan, pilihan tipe dan lokasi lebih luas, dan angsurannya mengikuti bunga komersial.',
+    subsidi: 'Rumah dengan bantuan pembiayaan pemerintah untuk masyarakat berpenghasilan rendah - uang muka dan angsuran lebih ringan, dengan syarat batas penghasilan, belum memiliki rumah, dan rumahnya wajib dihuni sendiri.',
+    komersil: 'Rumah yang dijual dengan harga pasar tanpa bantuan pemerintah - tidak ada batas penghasilan maupun syarat kepemilikan, pilihan tipe dan lokasi lebih luas, dan angsurannya mengikuti bunga komersial.',
     semua: 'Menampilkan rumah subsidi dan non subsidi sekaligus, tanpa disaring.'
 };
 
@@ -223,7 +223,7 @@ function load_more_data() {
 
             /* Server mengirim penanda ini saat SIKUMBANG tidak bisa dihubungi.
                Tanpa penanda, gagal jaringan tidak bisa dibedakan dari data
-               habis — dan salah membacanya berarti tombolnya mati permanen
+               habis - dan salah membacanya berarti tombolnya mati permanen
                padahal datanya masih ada. */
             if (isi === '<!-- gagal-jaringan -->') {
                 btn.prop('disabled', false).show();

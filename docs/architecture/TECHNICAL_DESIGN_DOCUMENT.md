@@ -1,5 +1,5 @@
 # TECHNICAL DESIGN DOCUMENT (TDD)
-## Klinik PKP — Arsitektur Backend & Pengembangan Kode (CodeIgniter 3)
+## Klinik PKP - Arsitektur Backend & Pengembangan Kode (CodeIgniter 3)
 **Terakhir Diperbarui:** 30 Juni 2026 (v3.0 Refactor)
 
 ---
@@ -199,4 +199,4 @@ klinik_new/
 ```
 
 ---
-*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant — 30 Juni 2026.*
+*Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant - 30 Juni 2026.*

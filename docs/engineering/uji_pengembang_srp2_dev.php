@@ -7,18 +7,18 @@
  * Sudah ada `uji_perjalanan_srp2.php`, dan ia lebih dalam: menempuh perjalanan
  * penuh sampai direktori publik, plus uji transaksi tabel-kedua-gagal. Tapi
  * headernya mensyaratkan DB uji bersih terpisah, jadi dalam praktiknya ia nyaris
- * tidak pernah dijalankan — runner pun menandainya `lewat`. Akibatnya peran
+ * tidak pernah dijalankan - runner pun menandainya `lewat`. Akibatnya peran
  * `pengembang` efektif nol cakupan sehari-hari, padahal ia memegang unggahan
  * dokumen perusahaan: KTP, NIB, laporan keuangan, akta pengurus.
  *
  * Berkas ini sengaja TIDAK menduplikasi perjalanan penuh itu. Ia mengambil
  * bagian yang paling mahal kalau bocor dan paling murah diuji di DB bersama:
  *
- *   1. ANTI-IDOR di empat pintu — baca dokumen, tulis dokumen, kirim pengajuan,
+ *   1. ANTI-IDOR di empat pintu - baca dokumen, tulis dokumen, kirim pengajuan,
  *      dan profil publik. Semua id datang dari URL; satu-satunya yang menahan
  *      adalah `WHERE user_id` dari sesi.
  *   2. GERBANG HULU kirim_pengajuan. Baris yang mustahil disetujui tidak boleh
- *      lahir jadi Pending sama sekali — bukan ditolak nanti di meja admin.
+ *      lahir jadi Pending sama sekali - bukan ditolak nanti di meja admin.
  *   3. KUNCI SETELAH DIKIRIM. Pending/Diterima berarti dokumen tidak bisa
  *      diganti diam-diam saat sedang ditinjau.
  *   4. LEDGER ADA TAPI BERKAS HILANG. Insiden nyata 29 Jul 2026; pemilik sah
@@ -107,11 +107,11 @@ function http($nama, $path, ?array $post = NULL, $ajax = FALSE) {
  *
  * DUA bentuk beredar dan harus dicoba keduanya: `<input name="csrf_kpkp_token">`
  * di form biasa, dan `<meta name="csrf-token-hash">` di halaman yang menulis
- * lewat fetch — wizard SRP2 termasuk yang kedua, dan `Pengembang/syarat` sama
+ * lewat fetch - wizard SRP2 termasuk yang kedua, dan `Pengembang/syarat` sama
  * sekali tidak punya input CSRF.
  *
  * Mengembalikan '' dianggap KESALAHAN FATAL, bukan token kosong. Versi pertama
- * berkas ini hanya mengenal bentuk input, jadi setiap POST-nya ditolak 403 —
+ * berkas ini hanya mengenal bentuk input, jadi setiap POST-nya ditolak 403 -
  * dan SELURUH uji negatifnya lulus hampa: "status tidak berubah" memang benar,
  * tapi karena CSRF, bukan karena gerbang yang sedang diuji. Uji negatif yang
  * lulus tanpa pernah menyentuh kodenya lebih berbahaya daripada uji yang merah.
@@ -177,7 +177,7 @@ function bersihkan() {
     }
     foreach ($GLOBALS['sertifikat'] as $id) { q('DELETE FROM srp2_certified_developers WHERE id=?', [$id]); }
     foreach ($GLOBALS['users'] as $id) {
-        // Draft bisa lahir sendiri saat GET /Pengembang/syarat — sapu berdasarkan
+        // Draft bisa lahir sendiri saat GET /Pengembang/syarat - sapu berdasarkan
         // pemiliknya, bukan cuma id yang sempat kita catat.
         foreach ($GLOBALS['db']->query('SELECT id FROM srp2_registrations WHERE user_id=' . (int) $id) as $r) {
             $dir = dir_srp2($r['id']);
@@ -221,7 +221,7 @@ wajib(login('a', $emailA), 'Login pengembang A');
 $s = http('a', 'Pengembang/syarat');
 wajib($s['code'] === 200, 'Pengembang mendapat wizard syarat');
 
-// Draft dibuat aplikasi sendiri lewat srp2_state() — dipakai apa adanya alih-alih
+// Draft dibuat aplikasi sendiri lewat srp2_state() - dipakai apa adanya alih-alih
 // disuntik, supaya yang diuji adalah baris yang benar-benar dilahirkan produk.
 $regA = (int) nilai('SELECT id FROM srp2_registrations WHERE user_id=? ORDER BY id DESC LIMIT 1', [$uidA]);
 wajib($regA > 0, 'Draft pengajuan A lahir dari kunjungan wizard');
@@ -237,13 +237,13 @@ isi_dokumen($regA, $SEMUA_DOK);
 isi_dokumen($regB, ['form_1']);
 
 /**
- * SYARAT & FORMULIR WAJIB LOGIN — revisi dinas 3 Agt 2026.
+ * SYARAT & FORMULIR WAJIB LOGIN - revisi dinas 3 Agt 2026.
  *
  * Asersi lama di sini berbunyi "Warga tetap dapat halaman syarat (publik)" dan
  * memang benar untuk perilaku LAMA. Dibalik, bukan dihapus: yang dijaga
  * sekarang adalah isinya TIDAK TERKIRIM sama sekali kepada yang belum berhak.
  *
- * Diperiksa dari ISI, bukan dari kode HTTP. Halamannya memang tetap 200 —
+ * Diperiksa dari ISI, bukan dari kode HTTP. Halamannya memang tetap 200 -
  * pintu masuk (masuk/daftar cepat) harus tetap terbuka, jadi redirect buta ke
  * Auth/login justru menutup jalur pendaftarannya sendiri. Yang membedakan
  * "digerbangi" dari "disembunyikan" adalah apakah HTML-nya ikut terkirim, dan
@@ -260,7 +260,7 @@ wajib(login('w', $emailW), 'Login warga');
 $w = http('w', 'Pengembang/syarat');
 cek(strpos($w['body'], 'Akta notaris') === FALSE, 'Warga (salah peran) tidak kebagian isi syarat');
 cek(strpos($w['body'], 'form_10') === FALSE, 'Warga tidak kebagian daftar dokumen di konfigurasi wizard');
-// Yang dibuktikan: TIDAK ADA ISI DOKUMEN YANG SAMPAI — bukan "dibalas 404".
+// Yang dibuktikan: TIDAK ADA ISI DOKUMEN YANG SAMPAI - bukan "dibalas 404".
 // Untuk permintaan non-AJAX, `akses_pengembang()` me-REDIRECT peran yang salah
 // ke halaman masuk, jadi curl yang mengikuti redirect menerima 200 dari halaman
 // lain. Memeriksa kodenya membuat uji ini merah untuk gerbang yang bekerja.
@@ -271,7 +271,7 @@ cek(strpos($wd['body'], '%PDF') === FALSE, 'Warga tidak kebagian isi dokumen pen
 /**
  * Yang dijaga: keterangan SAMPAI ke wizard pemohon, dan formulir yang belum
  * punya keterangan tidak memaksa apa pun tampil. Isi keterangannya sendiri
- * sengaja tidak dipatok di sini — dinas masih akan melengkapinya, dan uji yang
+ * sengaja tidak dipatok di sini - dinas masih akan melengkapinya, dan uji yang
  * mematok kalimatnya akan merah tiap kali satu formulir dilengkapi.
  */
 $syarat_a = http('a', 'Pengembang/syarat');
@@ -309,7 +309,7 @@ http('a', 'Pengembang/kirim_pengajuan/' . $regB, ['csrf_kpkp_token' => $tok]);
 cek(status_reg($regB) !== 'Pending', 'Mengirim pengajuan orang lain tidak mengubah statusnya');
 
 // ------------------------------------------------------------- gerbang hulu
-// (a) dokumen belum lengkap — B baru punya satu.
+// (a) dokumen belum lengkap - B baru punya satu.
 //
 // Nama perusahaannya SENGAJA diisi lebih dulu. Tanpa itu, gerbang nama-kosong
 // yang menahannya, bukan gerbang kelengkapan yang sedang diuji: mutasi yang
@@ -325,7 +325,7 @@ $tok = csrf('b', 'Pengembang/syarat');
 http('b', 'Pengembang/kirim_pengajuan/' . $regB, ['csrf_kpkp_token' => $tok]);
 cek(status_reg($regB) !== 'Pending', 'Dokumen belum lengkap: pengajuan tidak lahir jadi Pending');
 
-// (b) nama perusahaan kosong — 14 dokumen saja tidak cukup.
+// (b) nama perusahaan kosong - 14 dokumen saja tidak cukup.
 q('UPDATE srp2_registrations SET nama_perusahaan=NULL WHERE id=?', [$regA]);
 $tok = csrf('a', 'Pengembang/syarat');
 http('a', 'Pengembang/kirim_pengajuan/' . $regA, ['csrf_kpkp_token' => $tok]);
@@ -345,7 +345,7 @@ http('a', 'Pengembang/kirim_pengajuan/' . $regA, ['csrf_kpkp_token' => $tok]);
 cek(status_reg($regA) !== 'Pending', 'Nama bentrok direktori: pengajuan tidak lahir jadi Pending');
 
 // ------------------------------------------------------------ jalur positif
-// `reviewed_by` punya FK ke usr_users — id karangan (dulu 1) langsung ditolak
+// `reviewed_by` punya FK ke usr_users - id karangan (dulu 1) langsung ditolak
 // DB. Dipakai akun uji yang benar-benar ada; ia toh cuma perlu jadi jejak lama
 // yang harus terhapus saat kirim ulang.
 q('UPDATE srp2_registrations SET nama_perusahaan=?, catatan_admin="catatan lama", reviewed_by=?, reviewed_at=NOW()
@@ -356,7 +356,7 @@ cek($kirim['code'] === 200, 'Kirim pengajuan lengkap diterima server');
 cek(status_reg($regA) === 'Pending', 'Status berubah menjadi Pending');
 
 // Jejak keputusan LAMA harus ikut bersih. Kalau tidak, /akun menampilkan badge
-// "Dalam Peninjauan" DITAMBAH kotak penolakan lama — dua permukaan yang
+// "Dalam Peninjauan" DITAMBAH kotak penolakan lama - dua permukaan yang
 // sama-sama dilihat pemohon menceritakan hal berbeda.
 cek(nilai('SELECT catatan_admin FROM srp2_registrations WHERE id=?', [$regA]) === NULL,
     'Catatan penolakan lama ikut dibersihkan saat kirim ulang');
@@ -376,7 +376,7 @@ cek(status_reg($regA) === 'Pending', 'Kirim ulang saat Pending tidak menggandaka
 
 // ------------------------------------------- ledger ada, berkasnya lenyap
 // Insiden nyata 29 Jul 2026. Pemilik sah berhak tahu bedanya "tidak pernah ada"
-// dan "tercatat namun hilang" — 404 bisu membuat pemohon menyalahkan dirinya.
+// dan "tercatat namun hilang" - 404 bisu membuat pemohon menyalahkan dirinya.
 $hilang = (string) nilai('SELECT stored_name FROM srp2_documents WHERE registration_id=? AND document_key="form_3"', [$regA]);
 @unlink(dir_srp2($regA) . DIRECTORY_SEPARATOR . $hilang);
 $r = http('a', 'Pengembang/lihat_dokumen_saya/' . $regA . '/form_3');
@@ -396,13 +396,13 @@ cek(http('a', 'Pengembang/profil/abc')['code'] === 404, 'Profil dengan id bukan 
    PERILAKU SIMPANNYA, dan itu karena bug yang sudah berjalan hari ini:
    `Admin_Srp2::save()` merakit payload PENUH, sementara form BARIS di tabel
    tidak punya input `sosmed_lainnya`. Setiap "Simpan" pada sebuah baris
-   menge-NULL-kan kolom itu diam-diam — nol dari 67 baris direktori punya
+   menge-NULL-kan kolom itu diam-diam - nol dari 67 baris direktori punya
    nilai di sana. Dua kolom tanggal akan bernasib sama tanpa perbaikan akar,
    dan tanggal sertifikat yang hilang sendiri jauh lebih mahal. */
-echo "\n== B1 — masa berlaku sertifikat ==\n";
+echo "\n== B1 - masa berlaku sertifikat ==\n";
 
 /* Sesi superadmin dibuat DI SINI, dan prasyaratnya diperiksa keras.
-   Versi pertama blok ini memakai sesi 'adm' yang tidak pernah di-login —
+   Versi pertama blok ini memakai sesi 'adm' yang tidak pernah di-login -
    POST-nya diarahkan ke layar masuk, DB tidak tersentuh, dan ketiga asersi
    "nilainya bertahan" lulus justru karena TIDAK TERJADI APA-APA. Uji yang
    hijau karena tidak menyentuh apa pun lebih berbahaya daripada uji merah. */
@@ -425,7 +425,7 @@ $sert_b1 = tulis('INSERT INTO srp2_certified_developers
     [$nama_b1, 'https://uji.test/sosmed', '2024-01-15', '2027-01-14']);
 $GLOBALS['sertifikat'][] = $sert_b1;
 
-/* Simpan ulang MENGIRIM HANYA nama + status — persis seperti form baris lama.
+/* Simpan ulang MENGIRIM HANYA nama + status - persis seperti form baris lama.
    Ketiga medan yang tidak dikirim HARUS bertahan. */
 $tok_b1 = csrf('adm', 'Admin_Srp2');
 http('adm', 'Admin_Srp2/save', [
@@ -439,7 +439,7 @@ cek(($sesudah['sertifikat_terbit'] ?? '') === '2024-01-15',
 cek(($sesudah['sertifikat_berakhir'] ?? '') === '2027-01-14',
     'Tanggal akhir BERTAHAN saat form tidak mengirimnya');
 cek(($sesudah['sosmed_lainnya'] ?? '') === 'https://uji.test/sosmed',
-    'sosmed_lainnya BERTAHAN — bug lama yang menyapunya sudah tertutup');
+    'sosmed_lainnya BERTAHAN - bug lama yang menyapunya sudah tertutup');
 
 /* Medan DIKIRIM KOSONG tetap harus mengosongkan. Kalau tidak, admin yang salah
    isi tanggal tidak punya cara membatalkannya. */
@@ -448,7 +448,7 @@ http('adm', 'Admin_Srp2/save', [
     'nama_perusahaan' => $nama_b1, 'status_aktif' => 1, 'sertifikat_terbit' => '',
 ]);
 cek(nilai('SELECT sertifikat_terbit t FROM srp2_certified_developers WHERE id=?', [$sert_b1]) === NULL,
-    'Dikirim kosong tetap MENGOSONGKAN — beda dari tidak dikirim');
+    'Dikirim kosong tetap MENGOSONGKAN - beda dari tidak dikirim');
 
 // Terbit sesudah berakhir ditolak.
 http('adm', 'Admin_Srp2/save', [
@@ -468,15 +468,15 @@ cek(nilai('SELECT COUNT(*) c FROM srp2_certified_developers
 
 /* Pengembang TIDAK boleh menulis masa berlaku sertifikatnya sendiri:
    `upsert_direktori_publik()` punya dua pemanggil, dan yang kedua adalah
-   `Pengaturan::update_pengembang_profile()` — pengembang itu sendiri. */
+   `Pengaturan::update_pengembang_profile()` - pengembang itu sendiri. */
 $auth_src = (string) @file_get_contents(APP_ROOT . '/application/models/Auth_model.php');
 cek($auth_src !== '' && preg_match('/function upsert_direktori_publik.*?\n    \}/s', $auth_src, $mu)
     && strpos($mu[0], 'sertifikat_') === FALSE,
-    'upsert_direktori_publik() NOL kolom sertifikat — pengembang tidak menulis masa berlakunya sendiri');
+    'upsert_direktori_publik() NOL kolom sertifikat - pengembang tidak menulis masa berlakunya sendiri');
 
 
 /* ══════════════════════════════════════════════════════════════════════════
-   BUTIR 7, 8, 12 PUTARAN 2 — status bertingkat, kabupaten, asosiasi, NPWP.
+   BUTIR 7, 8, 12 PUTARAN 2 - status bertingkat, kabupaten, asosiasi, NPWP.
 
    Yang dijaga bukan "kolomnya ada", melainkan tiga janji yang bisa rusak
    TANPA satu pun galat:
@@ -485,12 +485,12 @@ cek($auth_src !== '' && preg_match('/function upsert_direktori_publik.*?\n    \}
         `Pengembang::profil()` dulu `SELECT *`, jadi menambah kolom saja sudah
         cukup untuk membocorkannya tanpa ada yang menyentuh baris itu.
      2. Satu NPWP hanya boleh dipakai satu baris (inti butir 8).
-     3. Penanda masa berlaku DITURUNKAN, bukan disimpan — supaya tak pernah basi.
+     3. Penanda masa berlaku DITURUNKAN, bukan disimpan - supaya tak pernah basi.
    ══════════════════════════════════════════════════════════════════════════ */
 echo "\n== Butir 7/8/12: status, wilayah, asosiasi, NPWP ==\n";
 
 /* Dibersihkan DI AWAL juga, bukan cuma di akhir. Kalau blok ini gagal di
-   tengah, barisnya tertinggal — dan NPWP-nya yang ber-UNIQUE membuat
+   tengah, barisnya tertinggal - dan NPWP-nya yang ber-UNIQUE membuat
    jalankan berikutnya gagal di PRASYARAT, bukan di hal yang sedang diuji.
    Kejadian nyata saat menulis penjaga ini, dan justru membuktikan UNIQUE-nya
    bekerja. */
@@ -516,13 +516,13 @@ cek(strlen((string) $barisA['npwp_lookup_hash']) === 64, 'Sidik pencarian NPWP t
 cek(strpos((string) $barisA['npwp_ciphertext'], $npwpA) === FALSE,
     'Angka NPWP tidak muncul mentah di dalam ciphertext');
 
-/* Janji 1 — diperiksa dari HALAMAN PUBLIK sungguhan. Baris ini ditayangkan
+/* Janji 1 - diperiksa dari HALAMAN PUBLIK sungguhan. Baris ini ditayangkan
    supaya benar-benar dirender; tanpa itu "NPWP tidak muncul" lulus hampa
    karena halamannya kosong. */
 $publik = http('tamu_srp2', 'pengembang/profil/' . (int) $barisA['id']);
 /* stripos, bukan strpos: halaman profil menampilkan nama perusahaan dalam
    HURUF KAPITAL. Versi pertama penjaga ini memakai strpos dan merah bukan
-   karena produknya salah — probe manual kami kebetulan bernama kapital, jadi
+   karena produknya salah - probe manual kami kebetulan bernama kapital, jadi
    nyaris menyimpulkan halamannya rusak. */
 wajib(stripos($publik['body'], $namaA) !== FALSE,
     'PRASYARAT: profil publik pengembang uji benar-benar terbuka');
@@ -530,16 +530,16 @@ cek(strpos($publik['body'], $npwpA) === FALSE, 'NPWP tidak muncul di profil publ
 cek(strpos($publik['body'], (string) $barisA['npwp_ciphertext']) === FALSE,
     'Ciphertext NPWP pun tidak ikut terkirim ke halaman publik');
 cek(strpos($publik['body'], (string) $barisA['npwp_lookup_hash']) === FALSE,
-    'Sidik pencarian tidak ikut terkirim — ia deterministik, jadi bisa diuji-tebak');
+    'Sidik pencarian tidak ikut terkirim - ia deterministik, jadi bisa diuji-tebak');
 
 /* 🔻 DAN SATU PENJAGA STRUKTURAL, karena keempat cek di atas TIDAK menjaga
    daftar SELECT-nya. Terbukti lewat mutasi: mengembalikan `SELECT *` di
-   `Pengembang::profil()` membuat keempatnya TETAP HIJAU — view-nya memang
+   `Pengembang::profil()` membuat keempatnya TETAP HIJAU - view-nya memang
    hanya mencetak medan tertentu, jadi ciphertext berhenti di memori PHP dan
    tidak sampai ke halaman.
 
    Risikonya laten, bukan nihil: begitu ada yang menambahkan satu perulangan
-   atas seluruh medan baris itu — atau satu dump saat menelusuri galat —
+   atas seluruh medan baris itu - atau satu dump saat menelusuri galat -
    ciphertext dan sidik pencariannya ikut tercetak. Yang dijaga di sini adalah
    KEPUTUSANNYA: kolom disebut satu per satu, sehingga menambah kolom sensitif
    berikutnya menuntut orang memutuskan sadar apakah ia boleh ikut. */
@@ -547,7 +547,7 @@ $peng_src = (string) @file_get_contents(APP_ROOT . '/application/controllers/Pen
 cek(preg_match('/select\(\s*.id, nama_perusahaan/', $peng_src) === 1,
     'profil() menyebut kolom satu per satu, bukan SELECT * (struktural)');
 /* Dicocokkan ke DAFTAR SELECT-nya, bukan ke seluruh berkas. Versi pertama
-   mencari 'npwp' di mana pun dan langsung merah — satu-satunya penyebutan
+   mencari 'npwp' di mana pun dan langsung merah - satu-satunya penyebutan
    di sana adalah KOMENTAR PENJELASAN kami sendiri. Pola yang sama sudah
    pernah terjadi 5 Agt (penjaga "Cek Backlog" merah oleh komentarnya
    sendiri) dan sudah dicatat di AGENTS.md; kami mengulanginya hari ini. */
@@ -556,20 +556,20 @@ preg_match('/->select\(([^;]*?)\)\s*
 cek( ! empty($msel[1]) && stripos($msel[1], 'npwp') === FALSE,
     'Daftar SELECT profil publik TIDAK memuat satu pun kolom npwp');
 
-/* Janji 2 — NPWP kembar ditolak. Dibaca dari JUMLAH BARIS, bukan pesan layar. */
+/* Janji 2 - NPWP kembar ditolak. Dibaca dari JUMLAH BARIS, bukan pesan layar. */
 $sebelum = (int) nilai('SELECT COUNT(*) c FROM srp2_certified_developers');
 http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
     'nama_perusahaan' => 'UJI SRP2 Kembar ' . mt_rand(1000, 9999), 'status_aktif' => 1,
     'status_sertifikasi' => 'bersertifikat', 'npwp' => $npwpA, 'kabupaten_id' => 0]);
 cek((int) nilai('SELECT COUNT(*) c FROM srp2_certified_developers') === $sebelum,
-    'NPWP kembar DITOLAK — satu NPWP satu pengembang (butir 8)');
+    'NPWP kembar DITOLAK - satu NPWP satu pengembang (butir 8)');
 
-/* Janji 3 — penanda masa berlaku diturunkan. Diperiksa dari LAYAR, bukan dari
+/* Janji 3 - penanda masa berlaku diturunkan. Diperiksa dari LAYAR, bukan dari
    kolom: yang dijanjikan ke dinas adalah apa yang mereka lihat. */
 $kol = q("SELECT GROUP_CONCAT(COLUMN_NAME) c FROM information_schema.COLUMNS
           WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_certified_developers'");
 cek(strpos((string) $kol['c'], 'status_berlaku') === FALSE,
-    'TIDAK ada kolom penanda masa berlaku yang disimpan — ia diturunkan');
+    'TIDAK ada kolom penanda masa berlaku yang disimpan - ia diturunkan');
 
 http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
     'id' => (int) $barisA['id'], 'nama_perusahaan' => $namaA, 'status_aktif' => 1,
@@ -592,7 +592,7 @@ http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
     'status_sertifikasi' => 'status_karangan', 'kabupaten_id' => 0]);
 cek(nilai('SELECT status_sertifikasi FROM srp2_certified_developers WHERE id = ?',
     [(int) $barisA['id']]) === 'bersertifikat',
-    'Status karangan ditolak — nilai lama tidak berubah');
+    'Status karangan ditolak - nilai lama tidak berubah');
 
 $GLOBALS['db']->query('DELETE FROM srp2_certified_developers WHERE id = ' . (int) $barisA['id']);
 $GLOBALS['db']->query("DELETE FROM srp2_certified_developers WHERE nama_perusahaan LIKE 'UJI SRP2 %'");

@@ -25,7 +25,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
-    <?php // Hasil panen kelas view admin — first paint bergaya penuh tanpa
+    <?php // Hasil panen kelas view admin - first paint bergaya penuh tanpa
           // menunggu CDN. Regenerasi: php docs/engineering/panen_tailwind.php admin
           // CDN di bawah DIUBAH ke defer (dulu blocking: layar putih sampai
           // ~110KB JS termuat & seluruh CSS di-generate ulang di setiap load)
@@ -33,12 +33,12 @@
     <link rel="stylesheet" href="<?= base_url('assets/css/tailwind-admin.css?v=' . filemtime('assets/css/tailwind-admin.css')) ?>">
     <script defer src="https://cdn.tailwindcss.com"></script>
     <?php // `type="module"` WAJIB, jangan dilepas. Skrip inline biasa dieksekusi
-          // saat parsing — sebelum CDN yang `defer` di atas jalan — sehingga
+          // saat parsing - sebelum CDN yang `defer` di atas jalan - sehingga
           // `tailwind` masih undefined dan SELURUH config di bawah hilang tanpa
           // suara. CDN lalu berjalan dengan default `darkMode: 'media'`, jadi
           // setiap kelas `dark:*` yang belum terpanen mengikuti preferensi OS,
           // BUKAN tombol tema. Akibat nyatanya: di mode terang pada perangkat
-          // ber-OS gelap, `text-gray-900 dark:text-white` tetap putih — teks
+          // ber-OS gelap, `text-gray-900 dark:text-white` tetap putih - teks
           // putih di kartu putih. Logo sidebar, "Portal Klinik PKP", dan tiap
           // judul kartu tidak terbaca. Warna `brand-*` tetap benar sepanjang
           // itu waktu karena datang dari CSS hasil panen, bukan dari CDN, dan
@@ -48,7 +48,7 @@
           // menurut urutan dokumen, jadi ia jalan sesudah CDN. Diverifikasi:
           // tailwind.config.darkMode terbaca 'class', dan judul kartu
           // rgb(17,24,39) di terang / rgb(255,255,255) di gelap.
-          // `defer` pada skrip inline TIDAK berlaku — spesifikasi mengabaikannya. ?>
+          // `defer` pada skrip inline TIDAK berlaku - spesifikasi mengabaikannya. ?>
     <script type="module">
         tailwind.config = {
             darkMode: 'class',
@@ -78,7 +78,7 @@
     <script defer src="<?= base_url('assets/js/admin-progressive.js?v=' . filemtime('assets/js/admin-progressive.js')) ?>"></script>
     <style>
         /* Penanda aktif sidebar. Sejak menu ikut dikirim server tiap pindah
-           halaman, kelas Tailwind-nya sudah benar sendiri — aturan ini tinggal
+           halaman, kelas Tailwind-nya sudah benar sendiri - aturan ini tinggal
            jaring pengaman untuk `aria-current` yang dirender server. */
         aside a[aria-current="page"] { background: #eff6ff; color: #1d4ed8; }
         .dark aside a[aria-current="page"] { background: rgba(214, 251, 0, .1); color: #d6fb00; }
@@ -86,7 +86,7 @@
         /* Daftar pilihan <select> DI DALAM shell admin.
            Kelas Tailwind `bg-transparent` cuma mengatur kotak yang terlihat;
            daftar yang terbuka digambar sistem operasi dan mewarisi warnanya
-           sendiri. Di mode gelap hasilnya latar putih dengan teks abu terang —
+           sendiri. Di mode gelap hasilnya latar putih dengan teks abu terang -
            pilihan yang tidak sedang disorot praktis tidak terbaca.
            Warna DIPAKSA di sini, pada elemennya maupun pada <option>, karena
            tidak semua peramban mewariskan warna select ke daftarnya. */
@@ -96,18 +96,18 @@
         .dark select option:checked,
         .dark select option:hover { background-color: rgba(214, 251, 0, .15); color: #d6fb00; }
     </style>
-    <!-- Phosphor Icons — defer: ikon menyusul sepersekian detik, halaman tidak menunggu -->
+    <!-- Phosphor Icons - defer: ikon menyusul sepersekian detik, halaman tidak menunggu -->
     <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.2"></script>
     <style>
         [x-cloak] { display: none !important; }
         /*
          * Main Content Entry Animation.
          *
-         * `backwards`, BUKAN `both` — dan satu kata itu yang dulu mematahkan
+         * `backwards`, BUKAN `both` - dan satu kata itu yang dulu mematahkan
          * SETIAP modal di seluruh layar admin.
          *
          * `both` = `backwards` + `forwards`. Bagian `forwards` membuat keyframe
-         * terakhir MENEMPEL selamanya sesudah animasinya habis — termasuk
+         * terakhir MENEMPEL selamanya sesudah animasinya habis - termasuk
          * `transform: translateY(0) scale(1)` dan `filter: blur(0px)`. Keduanya
          * memang tidak mengubah tampilan (identitas), tapi keberadaannya saja
          * sudah cukup: elemen ber-transform/filter menjadi CONTAINING BLOCK

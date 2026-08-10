@@ -14,7 +14,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * namanya diperbaiki sekalian alih-alih ditumpangi diam-diam.
  *
  * Kolom `ip_hash` -> `limit_key`: isinya kini sha256 dari "{scope}:{ip}", bukan
- * lagi hash IP polos. Nilai lama tetap sah sebagai baris — paling banter satu
+ * lagi hash IP polos. Nilai lama tetap sah sebagai baris - paling banter satu
  * jendela rate limit lookup tiket ter-reset saat migrasi jalan, tidak ada data
  * bermakna yang hilang.
  */

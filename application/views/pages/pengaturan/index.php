@@ -18,7 +18,7 @@
 
     <?php
         // Flash success/error sudah dirender shell admin/index.php sebelum $content
-        // disuntikkan — blok di sini dulu merender ulang pesan yang sama (bug B5).
+        // disuntikkan - blok di sini dulu merender ulang pesan yang sama (bug B5).
     ?>
 
     <?php
@@ -54,7 +54,7 @@
                     <div class="w-full min-w-0 flex-1">
                         <p class="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-brand-muted/70"><?= htmlspecialchars($item['jenis']) ?></p>
                         <p class="text-sm font-bold text-gray-900 dark:text-white truncate"><?= htmlspecialchars($item['judul']) ?></p>
-                        <?php if (!empty($item['is_simulation'])): ?><span class="mt-1 inline-flex max-w-full whitespace-normal rounded px-2 py-0.5 text-[10px] font-bold leading-tight bg-amber-100 text-amber-800">Mode Simulasi — API SIMPERUM belum terhubung</span><?php endif; ?>
+                        <?php if (!empty($item['is_simulation'])): ?><span class="mt-1 inline-flex max-w-full whitespace-normal rounded px-2 py-0.5 text-[10px] font-bold leading-tight bg-amber-100 text-amber-800">Mode Simulasi - API SIMPERUM belum terhubung</span><?php endif; ?>
                         <p class="text-xs text-gray-500 dark:text-brand-muted mt-0.5"><?= htmlspecialchars(date('d M Y, H:i', strtotime($item['created_at']))) ?></p>
                         <?php if (!empty($item['catatan_admin'])): ?>
                         <p class="text-xs mt-1.5 px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted whitespace-normal">
@@ -62,7 +62,7 @@
                         </p>
                         <?php endif; ?>
                         <?php
-                        // Perjalanan pengajuan — barisnya sudah lama dicatat server
+                        // Perjalanan pengajuan - barisnya sudah lama dicatat server
                         // (sf_riwayat_keputusan_antrean) tapi tak pernah ditampilkan,
                         // jadi pemohon cuma melihat satu status dan menunggu dalam gelap.
                         $riwayat = $item['riwayat'] ?? [];

@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Encryption_lib — Library Enkripsi Data Pribadi (PII)
+ * Encryption_lib - Library Enkripsi Data Pribadi (PII)
  * 
  * Mengimplementasikan enkripsi AES-256-GCM untuk kepatuhan UU PDP No. 27/2022.
  * Digunakan untuk mengenkripsi kolom sensitif (NIK, Alamat) di database.
@@ -44,7 +44,7 @@ class Encryption_lib {
     private $cipher = 'aes-256-gcm';
 
     /**
-     * Constructor — memuat kunci dari environment variables
+     * Constructor - memuat kunci dari environment variables
      */
     public function __construct() {
         $this->key    = hex2bin(getenv('KPKP_DATA_KEY'));
@@ -67,17 +67,17 @@ class Encryption_lib {
      * @return string|false Ciphertext dalam format base64, atau false jika gagal
      */
     /**
-     * B9 — FAIL-CLOSED. Kunci hilang MELEMPAR, bukan mengembalikan plaintext.
+     * B9 - FAIL-CLOSED. Kunci hilang MELEMPAR, bukan mengembalikan plaintext.
      *
      * Kontrak lama menggabungkan dua keadaan yang sama sekali berbeda ke dalam
      * satu `return $plaintext`: "tidak ada yang perlu dienkripsi" dan "kunci
      * enkripsinya hilang". Pemanggil tidak punya cara membedakannya, sehingga
      * NIK dan alamat warga tersimpan APA ADANYA ke kolom bernama
-     * `*_ciphertext` — dan tidak ada satu pun yang tahu. Bukan skenario
+     * `*_ciphertext` - dan tidak ada satu pun yang tahu. Bukan skenario
      * hipotetis: log lokal memuat kejadian nyata "KPKP_DATA_KEY tidak
      * ditemukan", dan constructor hanya menulis log lalu melanjutkan.
      *
-     * Plaintext kosong tetap boleh lewat — memang tidak ada isinya.
+     * Plaintext kosong tetap boleh lewat - memang tidak ada isinya.
      *
      * @throws RuntimeException bila kunci hilang/tidak valid, atau OpenSSL gagal.
      */
@@ -87,11 +87,11 @@ class Encryption_lib {
         }
         if (empty($this->key) || strlen($this->key) !== 32) {
             throw new RuntimeException(
-                'Encryption_lib: KPKP_DATA_KEY hilang atau tidak valid — penulisan dibatalkan '
+                'Encryption_lib: KPKP_DATA_KEY hilang atau tidak valid - penulisan dibatalkan '
                 . 'agar data pribadi tidak tersimpan sebagai plaintext.');
         }
 
-        // Generate random 12-byte IV (96 bit — standar GCM)
+        // Generate random 12-byte IV (96 bit - standar GCM)
         $iv = random_bytes(12);
         
         // Tag autentikasi (16 bytes output)
@@ -111,7 +111,7 @@ class Encryption_lib {
 
         if ($ciphertext === false) {
             // Dulu `return false`. Nilai itu tersimpan ke kolom sebagai string
-            // kosong dan kegagalannya tidak pernah terlihat — kolom ciphertext
+            // kosong dan kegagalannya tidak pernah terlihat - kolom ciphertext
             // berisi '' terbaca seperti "memang tidak diisi".
             $galat = openssl_error_string();
             log_message('error', 'Encryption_lib::encrypt() gagal: ' . $galat);
@@ -134,18 +134,18 @@ class Encryption_lib {
         if (empty($encoded)) {
             return $encoded;
         }
-        // B9 — kunci hilang MELEMPAR. Kontrak lama mengembalikan `$encoded`
+        // B9 - kunci hilang MELEMPAR. Kontrak lama mengembalikan `$encoded`
         // apa adanya, sehingga ciphertext base64 tersaji ke layar seolah itu
         // NIK atau alamat aslinya, dan pemanggil tidak punya cara tahu.
         if (empty($this->key) || strlen($this->key) !== 32) {
             throw new RuntimeException(
-                'Encryption_lib: KPKP_DATA_KEY hilang atau tidak valid — pembacaan dibatalkan.');
+                'Encryption_lib: KPKP_DATA_KEY hilang atau tidak valid - pembacaan dibatalkan.');
         }
 
         // Kompatibilitas plaintext LEGACY sengaja dipertahankan di sini, dan
         // hanya di sini: baris lama yang ditulis sebelum enkripsi menyala
         // memang berisi teks biasa. Bedanya dengan kontrak lama, cabang ini
-        // kini hanya tercapai bila kuncinya ADA — jadi "tidak bisa didekripsi
+        // kini hanya tercapai bila kuncinya ADA - jadi "tidak bisa didekripsi
         // karena kunci hilang" tidak lagi menyamar sebagai "ini plaintext lama".
         $decoded = base64_decode($encoded, true);
         if ($decoded === false || strlen($decoded) < 30) {
@@ -175,8 +175,8 @@ class Encryption_lib {
         );
 
         if ($plaintext === false) {
-            log_message('error', 'Encryption_lib::decrypt() gagal — data mungkin corrupt atau kunci salah');
-            // Kemungkinan data plaintext lama — kembalikan apa adanya
+            log_message('error', 'Encryption_lib::decrypt() gagal - data mungkin corrupt atau kunci salah');
+            // Kemungkinan data plaintext lama - kembalikan apa adanya
             return $encoded;
         }
 
@@ -198,14 +198,14 @@ class Encryption_lib {
         if (empty($plaintext)) {
             return '';
         }
-        // B9 — pepper kosong MELEMPAR. `hash_hmac()` dengan secret kosong tetap
+        // B9 - pepper kosong MELEMPAR. `hash_hmac()` dengan secret kosong tetap
         // menghasilkan 64 hex yang terlihat meyakinkan dan deterministik, tapi
         // siapa pun bisa menghitungnya tanpa tahu apa pun: lookup hash NIK jadi
         // bisa dibalik dengan brute force 16 digit. Itu fail-open yang paling
         // sulit terlihat, karena keluarannya tidak berbeda dari yang benar.
         if (empty($this->pepper)) {
             throw new RuntimeException(
-                'Encryption_lib: KPKP_DATA_PEPPER hilang — hash pencarian dibatalkan '
+                'Encryption_lib: KPKP_DATA_PEPPER hilang - hash pencarian dibatalkan '
                 . 'agar tidak lahir hash yang bisa dihitung siapa saja.');
         }
         return hash_hmac('sha256', $plaintext, $this->pepper);

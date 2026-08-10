@@ -17,7 +17,7 @@ class Setting_model extends CI_Model {
     {
         $query = $this->db->get($this->table);
 
-        // `get()` mengembalikan FALSE saat koneksi/query gagal — dan di
+        // `get()` mengembalikan FALSE saat koneksi/query gagal - dan di
         // production `db_debug` mati, jadi tidak ada exception yang menahannya.
         // Tanpa penjagaan ini `FALSE->result_array()` jadi fatal, dan karena
         // pemanggilnya ada di `views/layouts/main.php` (layout portal yang
@@ -62,7 +62,7 @@ class Setting_model extends CI_Model {
      * @return bool TRUE hanya bila seluruh tulisan benar-benar berhasil.
      *
      * Dulu method ini SELALU `return true`, apa pun yang terjadi pada query di
-     * dalamnya — sehingga pemanggilnya tidak punya cara membedakan berhasil dari
+     * dalamnya - sehingga pemanggilnya tidak punya cara membedakan berhasil dari
      * gagal, dan layar admin selalu mengatakan "berhasil diperbarui". Transaksi
      * dipakai supaya kegagalan di tengah tidak meninggalkan setelan separuh
      * tersimpan; polanya menyalin User_model::update_profile().

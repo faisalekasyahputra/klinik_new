@@ -47,7 +47,7 @@
                 <?php if (isset($row['tipeRumah'][0]['status'])): ?>
                 <?php
                 /* Butir 3 putaran 2: dinas minta "Komersil" diganti "Non Subsidi".
-                   Label ini dicetak APA ADANYA dari SIKUMBANG — di situlah kata
+                   Label ini dicetak APA ADANYA dari SIKUMBANG - di situlah kata
                    itu muncul, bukan di tombol pilihan (tombolnya sudah benar
                    sejak 3 Agt). Diterjemahkan saat ditampilkan; data di SIKUMBANG
                    tidak kita ubah, dan istilah yang tidak dikenal dibiarkan lewat

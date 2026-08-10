@@ -2,22 +2,22 @@
 $this->load->helper('admin_table');
 $this->load->helper('housing_queue');
 /**
- * View antrean perumahan bersama — dipakai DUA konteks:
- *   1. Admin_Kabkota::index()  — ter-scope 1 kabupaten
- *   2. Admin::index()          — superadmin, lintas wilayah
+ * View antrean perumahan bersama - dipakai DUA konteks:
+ *   1. Admin_Kabkota::index()  - ter-scope 1 kabupaten
+ *   2. Admin::index()          - superadmin, lintas wilayah
  * Data disiapkan MY_Controller::antrean_table_data(); kontrak POST update
  * status sama persis di kedua konteks (queue_id + status + catatan_admin).
  *
  * Cari/filter/urut/paginasi SEMUANYA server-side (B8). Versi sebelumnya
- * mengirim s.d. 1000 baris sebagai JSON ke browser lalu memproses di klien —
+ * mengirim s.d. 1000 baris sebagai JSON ke browser lalu memproses di klien -
  * terasa instan tapi tidak bisa dipakai begitu data menumpuk, dan bikin
  * halaman ini jadi paradigma tabel tersendiri. Alpine sekarang HANYA untuk
  * modal keputusan (interaksi yang memang milik klien).
  *
- * Badge di sini memakai komponen bersama admin/components/status_badge.php —
+ * Badge di sini memakai komponen bersama admin/components/status_badge.php -
  * dulu tidak bisa karena barisnya dirender JS.
  */
-/* BUTIR B2 — sakelar kebijakan identitas warga. Dibaca SEKALI di sini, bukan
+/* BUTIR B2 - sakelar kebijakan identitas warga. Dibaca SEKALI di sini, bukan
    di dalam perulangan baris: config->load() per baris berarti ratusan kali. */
 $this->config->load('kebijakan_data', TRUE, TRUE);
 $identitas_menunggu = $this->config->item('identitas_warga_kabkota', 'kebijakan_data') === 'menunggu_keputusan';
@@ -50,14 +50,14 @@ if (!empty($can_filter_tanpa_wilayah)): ?>
 $filter_html = ob_get_clean();
 ?>
 
-<?php /* TANPA `z-10` — pembungkus ini memuat modal keputusan antrean, dan
+<?php /* TANPA `z-10` - pembungkus ini memuat modal keputusan antrean, dan
          `relative z-10` menguburnya di bawah topbar (z-40) & sidebar (z-20).
          Alasan sama dengan `#main-content`; lihat catatan di admin/index.php. */ ?>
 <div x-data="antreanModal()" class="relative">
     <div class="mb-8">
         <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2 flex items-center gap-3">
             <i class="ph ph-map-pin text-brand-primary"></i>
-            Antrean Perumahan — <?= html_escape($scope_label) ?>
+            Antrean Perumahan - <?= html_escape($scope_label) ?>
         </h1>
         <p class="text-sm text-gray-500 dark:text-brand-muted">Kelola antrean pengajuan program perumahan warga.</p>
     </div>
@@ -104,13 +104,13 @@ $filter_html = ob_get_clean();
                             ? str_repeat('•', 12) . substr($row->nik_pengaju, -4)
                             : ($has_assessment ? 'NIK disimpan privat' : 'NIK belum tersedia');
 
-                        /* BUTIR B2 — selama dinas belum memutuskan, identitas dan
+                        /* BUTIR B2 - selama dinas belum memutuskan, identitas dan
                            keadaan ekonomi warga diganti DATA CONTOH. Sakelarnya di
                            `config/kebijakan_data.php`, satu tempat.
 
                            Angka contohnya DITURUNKAN DARI ID BARIS, bukan acak:
                            baris harus tetap bisa dibedakan satu sama lain supaya
-                           urutan, penyaring, dan halaman masih bisa diuji — dan
+                           urutan, penyaring, dan halaman masih bisa diuji - dan
                            harus SAMA setiap halaman dimuat ulang, kalau tidak
                            penguji mengira datanya berubah-ubah sendiri. */
                         if ($identitas_menunggu) {
@@ -118,7 +118,7 @@ $filter_html = ob_get_clean();
                             $nik_display  = str_repeat('•', 12) . str_pad(substr((string) $row->id, -4), 4, '0', STR_PAD_LEFT);
                             $penghasilan  = 'Rp ' . number_format(1500000 + (((int) $row->id % 9) * 250000), 0, ',', '.');
                             $desil        = (string) (1 + ((int) $row->id % 10));
-                            $alasan       = 'Keterangan contoh — menunggu keputusan dinas';
+                            $alasan       = 'Keterangan contoh - menunggu keputusan dinas';
                             $survey['pekerjaan'] = 'Pekerjaan contoh';
                             $survey['status_kepemilikan'] = 'Status contoh';
                         }
@@ -154,7 +154,7 @@ $filter_html = ob_get_clean();
                         </td>
                         <td class="max-w-[14rem] whitespace-normal break-words px-4 py-3">
                             <div class="inline-block max-w-full break-words rounded-lg bg-brand-primary/10 px-2.5 py-1 text-xs font-semibold text-brand-primary border border-brand-primary/20 mb-1"><?= html_escape($row->nama_program ?? 'Program belum terpetakan') ?></div>
-                            <?php if (($row->source_mode ?? '') === 'simulation'): ?><div class="mt-1 inline-block max-w-full break-words rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">Mode Simulasi — API SIMPERUM belum terhubung</div><?php endif; ?>
+                            <?php if (($row->source_mode ?? '') === 'simulation'): ?><div class="mt-1 inline-block max-w-full break-words rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">Mode Simulasi - API SIMPERUM belum terhubung</div><?php endif; ?>
                             <?php if ($desil !== '-'): ?>
                             <div class="text-[10px] text-blue-700 bg-blue-50 dark:text-white dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 px-2 py-0.5 rounded inline-block">Desil: <span class="font-bold"><?= html_escape($desil) ?></span></div>
                             <?php endif; ?>
@@ -183,11 +183,11 @@ $filter_html = ob_get_clean();
         <?= $this->load->view('admin/components/pagination', ['pager' => $pager, 'base_url' => $base_url], TRUE) ?>
     </div>
 
-    <?php /* Modal keputusan — satu-satunya bagian yang masih Alpine.
+    <?php /* Modal keputusan - satu-satunya bagian yang masih Alpine.
               `style="display:none"` WAJIB, dan bukan pengganti x-cloak melainkan
               pasangannya. x-cloak hanya berlaku selama atributnya masih ada;
               begitu Alpine melepasnya lalu `x-data` gagal dievaluasi, `x-show`
-              tidak pernah mengambil alih dan modal tertinggal TERLIHAT —
+              tidak pernah mengambil alih dan modal tertinggal TERLIHAT -
               menutupi seluruh halaman dengan formulir kosong yang tidak bisa
               ditutup. Terjadi nyata di layar ini.
               Dengan display:none inline, kegagalan Alpine berarti modal tetap

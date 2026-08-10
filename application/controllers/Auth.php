@@ -32,7 +32,7 @@ class Auth extends MY_Controller {
     }
 
     // =========================================================
-    // LOGIN — Email/Password
+    // LOGIN - Email/Password
     // =========================================================
 
     /**
@@ -40,7 +40,7 @@ class Auth extends MY_Controller {
      */
     public function login() {
         // Simpan tujuan lanjutan setelah login (mis. link "Sudah punya akun?"
-        // dari alur pendaftaran SRP2) — dibaca lewat ?next=, divalidasi anti-open-redirect.
+        // dari alur pendaftaran SRP2) - dibaca lewat ?next=, divalidasi anti-open-redirect.
         // WAJIB dibaca duluan SEBELUM cek is_logged_in(), supaya kalau user ternyata
         // sudah login, redirect di bawah tetap tahu harus lanjut ke mana (bukan jatuh ke beranda).
         $next = $this->input->get('next', TRUE);
@@ -71,7 +71,7 @@ class Auth extends MY_Controller {
 
         // Kalau form login ini ditanam di halaman lain (mis. wizard SRP2 Pengembang/syarat),
         // form itu kirim hidden field 'redirect_to' supaya kalau gagal (jalur non-AJAX), user
-        // tetap di halaman asalnya — bukan terlempar ke Auth/login umum. Divalidasi anti-open-redirect.
+        // tetap di halaman asalnya - bukan terlempar ke Auth/login umum. Divalidasi anti-open-redirect.
         $error_target = $this->sanitize_redirect($this->input->post('redirect_to', TRUE)) ?: 'Auth/login';
 
         // Basic validation
@@ -106,7 +106,7 @@ class Auth extends MY_Controller {
         }
 
         /**
-         * GERBANG STATUS — ditambahkan 3 Agt 2026 bersama layar Akses Staf.
+         * GERBANG STATUS - ditambahkan 3 Agt 2026 bersama layar Akses Staf.
          *
          * Sebelum ini kolom `status` TIDAK PERNAH dibaca saat login; ia hanya
          * ditulis. Membangun tombol "nonaktifkan akun" di atasnya akan
@@ -115,7 +115,7 @@ class Auth extends MY_Controller {
          *
          * Yang diblokir HANYA `nonaktif`, bukan "apa pun yang bukan active".
          * Alasannya bukan kehati-hatian umum: di DB ini ada 6 akun berstatus
-         * `restricted` yang hari ini bekerja normal — termasuk satu-satunya akun
+         * `restricted` yang hari ini bekerja normal - termasuk satu-satunya akun
          * superadmin. Memblokir "bukan active" akan mengunci pemilik sistem dari
          * sistemnya sendiri pada deploy berikutnya, tanpa ada yang meminta itu.
          * `restricted` peninggalan lama yang maknanya tidak pernah ditetapkan;
@@ -140,7 +140,7 @@ class Auth extends MY_Controller {
             return;
         }
 
-        // Success — reset attempts and create session
+        // Success - reset attempts and create session
         $this->auth_model->reset_login_attempts($user->id);
 
         $session_data = [
@@ -157,7 +157,7 @@ class Auth extends MY_Controller {
         $this->session->set_userdata($session_data);
         $this->session->sess_regenerate(TRUE);
 
-        // Draft SRP2 dipastikan ada untuk SEMUA jalur login — bukan cuma cabang
+        // Draft SRP2 dipastikan ada untuk SEMUA jalur login - bukan cuma cabang
         // AJAX. Dulu pemanggilan ini ada DI DALAM `if ($is_ajax)`, sehingga
         // pengembang yang masuk lewat halaman login utama (`Auth/login`) tidak
         // punya baris draft, dan `Pengaturan::index()` yang menjaga dengan
@@ -169,7 +169,7 @@ class Auth extends MY_Controller {
             : NULL;
         $registration_id = $srp2['registration_id'] ?? NULL;
 
-        // Wizard (mis. SRP2 di Pengembang/syarat) cuma butuh konfirmasi + role, bukan redirect —
+        // Wizard (mis. SRP2 di Pengembang/syarat) cuma butuh konfirmasi + role, bukan redirect -
         // wizard yang urus lanjutannya sendiri di sisi klien, tanpa pindah halaman.
         if ($is_ajax) {
             $this->output->set_content_type('application/json')->set_output(json_encode([
@@ -201,7 +201,7 @@ class Auth extends MY_Controller {
     }
 
     /**
-     * Balas gagal login — JSON kalau request AJAX (dipakai wizard SRP2), flashdata+redirect
+     * Balas gagal login - JSON kalau request AJAX (dipakai wizard SRP2), flashdata+redirect
      * kalau request halaman biasa (perilaku asli, tidak berubah).
      */
     private function _login_fail($is_ajax, $message, $error_target) {
@@ -217,7 +217,7 @@ class Auth extends MY_Controller {
     }
 
     // =========================================================
-    // REGISTRATION — Step 1 (Email + Password)
+    // REGISTRATION - Step 1 (Email + Password)
     // =========================================================
 
     /**
@@ -243,18 +243,18 @@ class Auth extends MY_Controller {
         $is_srp2          = $this->input->post('srp2_pengembang') === '1';
         $nama_perusahaan  = trim($this->input->post('nama_perusahaan', TRUE));
         $is_ajax          = $this->input->is_ajax_request();
-        // Wizard SRP2 sekarang tinggal di Pengembang/syarat — bukan lagi halaman
+        // Wizard SRP2 sekarang tinggal di Pengembang/syarat - bukan lagi halaman
         // Pengembang/daftar terpisah (diarsipkan, cuma jadi redirect ke sini).
         $redirect_target  = $is_srp2 ? 'Pengembang/syarat' : 'Auth/register';
 
         // Batas laju pendaftaran per IP. Tanpa ini satu skrip bisa menciptakan
         // akun pengembang aktif berulang-ulang, masing-masing berhak membuka
-        // pengajuan ke meja admin — meja verifikasi yang tercemar membatalkan
+        // pengajuan ke meja admin - meja verifikasi yang tercemar membatalkan
         // nilai seluruh mesin verifikasi. reCAPTCHA TIDAK bisa diandalkan
         // sebagai gantinya: verifikasinya dilewati seluruhnya kalau kuncinya
         // kosong, dan di .env lokal memang kosong. Roadmap T0 butir 3.
         //
-        // Dicatat pada SETIAP percobaan, bukan cuma yang gagal — di sini justru
+        // Dicatat pada SETIAP percobaan, bukan cuma yang gagal - di sini justru
         // pendaftaran yang BERHASIL berulang kali yang jadi penyalahgunaannya.
         $rate = $this->rate_limit_consume('register');
         if (empty($rate['success']) || empty($rate['allowed'])) {
@@ -303,7 +303,7 @@ class Auth extends MY_Controller {
         if ($existing) {
             // Sengaja TIDAK menyatakan bahwa emailnya sudah terdaftar: pesan
             // seperti itu menjadikan formulir pendaftaran alat pengecek
-            // keanggotaan — siapa pun bisa menguji daftar email untuk tahu
+            // keanggotaan - siapa pun bisa menguji daftar email untuk tahu
             // siapa saja punya akun di sini. Pemilik akun yang sah tetap
             // terbantu lewat tautan Masuk / Lupa Sandi.
             $this->_register_fail($is_ajax, 'Pendaftaran tidak dapat diproses dengan email tersebut. Kalau Anda sudah punya akun, silakan masuk.', $redirect_target);
@@ -329,7 +329,7 @@ class Auth extends MY_Controller {
         if ($is_srp2) {
             // Daftar cepat SRP2 langsung menyetel profile_completed=1 dan tidak
             // pernah melalui onboarding, jadi name/username akan NULL selamanya
-            // kalau tidak diisi di sini — roadmap T5 S12-a. Diturunkan dari data
+            // kalau tidak diisi di sini - roadmap T5 S12-a. Diturunkan dari data
             // yang MEMANG sudah diisi user (email, nama perusahaan), bukan
             // dikarang; pemohon tetap bebas menggantinya di /akun/profil.
             $default_username = $this->auth_model->generate_unique_username(strstr($email, '@', TRUE));
@@ -385,7 +385,7 @@ class Auth extends MY_Controller {
     }
 
     /**
-     * Balas gagal registrasi — JSON kalau request AJAX (dipakai wizard SRP2), flashdata+redirect
+     * Balas gagal registrasi - JSON kalau request AJAX (dipakai wizard SRP2), flashdata+redirect
      * kalau request halaman biasa (perilaku asli, tidak berubah).
      */
     private function _register_fail($is_ajax, $message, $redirect_target) {
@@ -401,7 +401,7 @@ class Auth extends MY_Controller {
     }
 
     // =========================================================
-    // ONBOARDING — Progressive Profiling
+    // ONBOARDING - Progressive Profiling
     // =========================================================
 
     /**
@@ -444,7 +444,7 @@ class Auth extends MY_Controller {
         $role    = html_escape($this->input->post('role'));
 
         // Validate role
-        // 'vendor' DICABUT. Ia bukan sekadar tidak terpakai — kolom yang diisi
+        // 'vendor' DICABUT. Ia bukan sekadar tidak terpakai - kolom yang diisi
         // cabangnya (nama_usaha, alamat_usaha, jenis_usaha) tidak ada di
         // usr_users, jadi save_profile() pasti gagal di tingkat DB. Siapa pun
         // yang memilih kartu itu tidak pernah mendapat profil, cuma error. Nol
@@ -573,12 +573,12 @@ class Auth extends MY_Controller {
      *
      * Sebelumnya tiap cabang validasi memanggil set_flashdata('error') +
      * redirect sendiri-sendiri, jadi satu digit NIK yang keliru memulangkan
-     * pengembang ke formulir kosong — 12 isian dan 2 unggahan hilang. Semua
+     * pengembang ke formulir kosong - 12 isian dan 2 unggahan hilang. Semua
      * cabang sekarang lewat sini supaya isian ikut pulang bersama pesannya.
      *
      * Password TIDAK ikut disimpan: flashdata menumpang session, dan kata sandi
      * polos tidak boleh singgah di sana meski cuma satu permintaan.
-     * Berkas juga tidak bisa dikembalikan — HTML melarang mengisi input file
+     * Berkas juga tidak bisa dikembalikan - HTML melarang mengisi input file
      * dari server, jadi formulir menyebutkannya terus terang ke user.
      */
     private function _onboarding_fail($pesan) {
@@ -604,7 +604,7 @@ class Auth extends MY_Controller {
     // =========================================================
 
     /**
-     * Show pending verification page (dummy — auto-verifies after countdown)
+     * Show pending verification page (dummy - auto-verifies after countdown)
      */
     public function verify_pending() {
         if (!$this->is_logged_in()) {
@@ -619,7 +619,7 @@ class Auth extends MY_Controller {
     }
 
     /**
-     * AJAX endpoint — simulate email verification
+     * AJAX endpoint - simulate email verification
      */
     public function do_verify_email() {
         if (!$this->is_logged_in()) {
@@ -639,7 +639,7 @@ class Auth extends MY_Controller {
     public function lanjutkan() {
         if (!$this->is_logged_in()) { $this->gerbang_login(); return; }
         if ($this->session->userdata('srp2_quick_registration') === TRUE) {
-            // Jalur ini memang cuma peduli draft yang BELUM dikirim — kalau
+            // Jalur ini memang cuma peduli draft yang BELUM dikirim - kalau
             // pengajuannya sudah Pending/Diterima, buat draft baru itu keliru.
             $draft_id = $this->auth_model->ensure_srp2_draft($this->get_user_id(), 'Draft');
             $this->session->unset_userdata('srp2_quick_registration');
@@ -647,7 +647,7 @@ class Auth extends MY_Controller {
             $this->session->unset_userdata('intended_url');
             // Ke WIZARD, bukan halaman unggah terpisah. Redirect lama adalah
             // satu-satunya yang masih menyeret pemohon KELUAR dari wizard di
-            // tengah alur — sisa era sebelum wizard yang lupa diperbarui.
+            // tengah alur - sisa era sebelum wizard yang lupa diperbarui.
             redirect('Pengembang/syarat');
             return;
         }
@@ -655,7 +655,7 @@ class Auth extends MY_Controller {
     }
 
     // =========================================================
-    // EMAIL VERIFICATION (Token-based — future implementation)
+    // EMAIL VERIFICATION (Token-based - future implementation)
     // =========================================================
 
     public function verify_email($token = '') {
@@ -696,7 +696,7 @@ class Auth extends MY_Controller {
     /**
      * Tutup popup OAuth dan (opsional) arahkan window pembuka ke $redirect_url.
      * $redirect_url di-json_encode, bukan di-echo mentah ke string JS berkutip
-     * tunggal — sebelumnya base_url($redirect_to) diselipkan langsung, dan
+     * tunggal - sebelumnya base_url($redirect_to) diselipkan langsung, dan
      * sanitize_redirect() cuma menolak URL eksternal, tidak membuang kutip
      * satu dari path relatif (roadmap T5, Auth.php ~:680). CSP + nonce dipasang
      * sekalian sebagai lapis kedua: halaman ini cuma perlu satu <script> inline,
@@ -754,7 +754,7 @@ class Auth extends MY_Controller {
 
                     if ($logged_in_user) {
                         /**
-                         * GERBANG STATUS — kembaran dari yang ada di do_login().
+                         * GERBANG STATUS - kembaran dari yang ada di do_login().
                          *
                          * Tanpa ini, tombol "Nonaktifkan" di Akses Staf tidak
                          * menutup apa pun bagi siapa saja yang emailnya juga
@@ -762,13 +762,13 @@ class Auth extends MY_Controller {
                          * EMAIL (bukan google_id) dan mengembalikan barisnya apa
                          * adanya, berapa pun statusnya. Orang yang baru dicabut
                          * aksesnya tinggal mengeklik "Masuk dengan Google" dan
-                         * kembali dengan role serta scope lengkap — sementara
+                         * kembali dengan role serta scope lengkap - sementara
                          * layar Akses Staf dan jejak audit sama-sama melaporkan
                          * pencabutan itu berhasil.
                          *
                          * Ditemukan lewat tinjauan adversarial 3 Agt 2026.
                          * Pelajaran umumnya: gerbang yang dipasang di satu titik
-                         * masuk bukan gerbang — ia harus dipasang di SEMUA titik
+                         * masuk bukan gerbang - ia harus dipasang di SEMUA titik
                          * yang membuat sesi. Di berkas ini ada tiga (do_login,
                          * do_register, google_callback).
                          */
@@ -799,7 +799,7 @@ class Auth extends MY_Controller {
                         $this->session->set_userdata($session_data);
                         $this->session->sess_regenerate(TRUE);
 
-                        // Check if profile is complete — redirect to new onboarding if not
+                        // Check if profile is complete - redirect to new onboarding if not
                         $user_record = $this->auth_model->find_by_id($logged_in_user[0]['id']);
                         if ($user_record && $user_record->profile_completed == 0) {
                             $redirect_to = 'onboarding';
@@ -807,7 +807,7 @@ class Auth extends MY_Controller {
 
                         // Jalur login ketiga (Google OAuth) juga membuat sesi
                         // pengembang, jadi drafnya harus dipastikan ada di sini
-                        // juga — kalau tidak, item SRP2 hilang dari /akun cuma
+                        // juga - kalau tidak, item SRP2 hilang dari /akun cuma
                         // karena user memilih masuk lewat Google.
                         if ($user_record && $user_record->role === 'pengembang') {
                             $this->auth_model->ensure_srp2_draft($user_record->id);
@@ -829,7 +829,7 @@ class Auth extends MY_Controller {
     // =========================================================
 
     /**
-     * Layar "akses ditolak" — dipanggil `MY_Controller::gerbang_login()` saat
+     * Layar "akses ditolak" - dipanggil `MY_Controller::gerbang_login()` saat
      * orangnya SUDAH masuk tetapi perannya tidak berhak.
      *
      * Dibuat terpisah dari halaman masuk dengan sengaja. Melempar orang yang
@@ -864,7 +864,7 @@ class Auth extends MY_Controller {
     }
 
     // =========================================================
-    // LEGACY — reg_user (backward compat, redirects to onboarding)
+    // LEGACY - reg_user (backward compat, redirects to onboarding)
     // =========================================================
 
     public function reg_user($id = null) {
@@ -872,7 +872,7 @@ class Auth extends MY_Controller {
     }
 
     // =========================================================
-    // LEGACY — update (backward compat)
+    // LEGACY - update (backward compat)
     // =========================================================
 
     public function update() {
@@ -900,8 +900,8 @@ class Auth extends MY_Controller {
             return;
         }
 
-        /* Alamat tujuan yang tersimpan. Sumbernya sesi — yang kita isi sendiri
-           di sisi server lewat `MY_Controller::ingat_halaman_asal()` — jadi
+        /* Alamat tujuan yang tersimpan. Sumbernya sesi - yang kita isi sendiri
+           di sisi server lewat `MY_Controller::ingat_halaman_asal()` - jadi
            secara asal-usul sudah aman.
            Tetap disaring LAGI di sini, dan itu disengaja: yang menyimpan dan
            yang memakai ada di berkas berbeda, dan penyaringan yang cuma ada di
@@ -945,7 +945,7 @@ class Auth extends MY_Controller {
     /**
      * Simpan dokumen identitas onboarding (KTP, SIUP, KTM, surat magang).
      *
-     * Sebelumnya disimpan di FCPATH.'uploads/documents/' — DI DALAM webroot,
+     * Sebelumnya disimpan di FCPATH.'uploads/documents/' - DI DALAM webroot,
      * jadi scan KTP bisa diakses lewat HTTP kalau nama filenya bocor. Nama acak
      * bukan kontrol akses, apalagi untuk dokumen kependudukan yang masuk
      * cakupan UU PDP. Sekarang lewat store_private_upload() ke
@@ -954,7 +954,7 @@ class Auth extends MY_Controller {
      * CATATAN: saat ini TIDAK ADA UI yang menampilkan kembali dokumen ini
      * (Auth_model::get_user_documents() tidak pernah dipanggil di mana pun),
      * jadi belum dibuatkan endpoint baca. Kalau nanti dibutuhkan, buat endpoint
-     * ber-guard yang memakai serve_private_file() — JANGAN kembalikan ke
+     * ber-guard yang memakai serve_private_file() - JANGAN kembalikan ke
      * direktori publik.
      */
     private function _handle_uploads($user_id, $role) {

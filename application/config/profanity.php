@@ -51,7 +51,7 @@ $config['profanity_words'] = [
     'onlyfans', 'livechat dewasa', 'video dewasa',
 
     // =============================================
-    // KATA KASAR — BAHASA INDONESIA
+    // KATA KASAR - BAHASA INDONESIA
     // =============================================
     'anjing', 'bangsat', 'bajingan', 'brengsek', 'tolol',
     'goblok', 'idiot', 'kampret', 'babi', 'monyet',
@@ -70,7 +70,7 @@ $config['profanity_words'] = [
     'tai kucing', 'mampus', 'matilah',
 
     // =============================================
-    // KATA KASAR — BAHASA JAWA & SUNDA
+    // KATA KASAR - BAHASA JAWA & SUNDA
     // =============================================
     'jancuk', 'jancok', 'dancuk', 'dancok', 'cuk',
     'asu', 'asuuu', 'diamput', 'diancuk', 'mbahmu',

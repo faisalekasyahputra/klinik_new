@@ -58,7 +58,7 @@ field RTLH ke semua warga.
 | `occupation_code` | Pekerjaan | option | Ya | SIMPERUM/warga | ⚠ daftar tengah tidak seluruhnya tertangkap |
 | `tax_number` | No. NPWP | text, ENC | Tidak | SIMPERUM/warga | Validasi format jika diisi |
 | `income_band_code` | Penghasilan | option | Ya untuk scoring | SIMPERUM/warga | Band, bukan angka karangan |
-| `welfare_decile` | Desil | tinyint 1–10 | Tidak jika sumber tak ada | SIMPERUM | Read-only; null ≠ 0 |
+| `welfare_decile` | Desil | tinyint 1-10 | Tidak jika sumber tak ada | SIMPERUM | Read-only; null ≠ 0 |
 | `has_savings` | Memiliki Tabungan | boolean | Tidak | SIMPERUM/warga | Jangan infer dari penghasilan |
 | `self_help_capability_code` | Mampu Swadaya | option | Ya | SIMPERUM/warga | Mampu/Tidak Mampu |
 | `self_help_amount` | Nilai Swadaya | decimal | Kondisional | SIMPERUM/warga | Terlihat pada varian Backlog |
@@ -82,8 +82,8 @@ field RTLH ke semua warga.
 | `candidate_land_title_code` | Sertifikat Tanah | option | Jika memiliki/calon lahan | Tidak valid jika tanah benar-benar tidak ada |
 | `candidate_land_origin_code` | Asal Tanah | option | Jika memiliki/calon lahan | |
 | `land_owner_relationship_code` | Hubungan dengan Pemilik | option | Jika bukan milik sendiri | |
-| `land_length_m` | Ukuran Tanah — Panjang | decimal | Jika calon lahan | > 0 |
-| `land_width_m` | Ukuran Tanah — Lebar | decimal | Jika calon lahan | > 0 |
+| `land_length_m` | Ukuran Tanah - Panjang | decimal | Jika calon lahan | > 0 |
+| `land_width_m` | Ukuran Tanah - Lebar | decimal | Jika calon lahan | > 0 |
 | `land_area_m2` | Luas Tanah | decimal derived | Derived | panjang × lebar |
 
 ### 3.3 Struktur Bangunan
@@ -157,7 +157,7 @@ gambar diperlakukan sebagai indikator UI sumber, bukan data bisnis.
 | Status Perkawinan | `single` Lajang; `married` Menikah; `divorced` Cerai |
 | Pendidikan | `no_certificate` Tidak Punya Ijazah; `elementary` SD/sederajat; `junior_high` SMP/sederajat; `senior_high` SMA/sederajat; `diploma_1_3` D1/D2/D3; `bachelor` D4/S1; `postgraduate` S2/S3 |
 | Mampu Swadaya | `capable` Mampu; `not_capable` Tidak Mampu |
-| Penghasilan | `<1.8 jt`; `1.9–2.1 jt`; `2.2–2.6 jt`; `2.7–3.1 jt`; `3.2–3.6 jt`; `3.7–4.2 jt`; `4.2–6 jt`; `6–8 jt`; `>8 jt` — ⚠ batas pada gambar menyisakan celah, harus dikonfirmasi |
+| Penghasilan | `<1.8 jt`; `1.9-2.1 jt`; `2.2-2.6 jt`; `2.7-3.1 jt`; `3.2-3.6 jt`; `3.7-4.2 jt`; `4.2-6 jt`; `6-8 jt`; `>8 jt` - ⚠ batas pada gambar menyisakan celah, harus dikonfirmasi |
 
 Pekerjaan yang terbaca: Petani, Peternak, Pertambangan/Penggalian, Buruh
 Harian, Tukang Bangunan, Pedagang, Hotel & Rumah Makan, Sopir,
@@ -188,10 +188,10 @@ dan Kawasan Baik.
 
 Skala kondisi bersama:
 
-1. `good` — Baik
-2. `minor_damage` — Rusak Ringan (Permukaan)
-3. `moderate_damage` — Rusak Sedang (Material)
-4. `severe_damage_or_absent` — Rusak Berat (Struktur/Tidak Ada)
+1. `good` - Baik
+2. `minor_damage` - Rusak Ringan (Permukaan)
+3. `moderate_damage` - Rusak Sedang (Material)
+4. `severe_damage_or_absent` - Rusak Berat (Struktur/Tidak Ada)
 
 | Field | Opsi yang terbaca |
 |---|---|
@@ -263,7 +263,7 @@ memakai snapshot terbaru yang belum kedaluwarsa.
 
 ### 6.3 `sf_penilaian_perumahan`
 
-Satu baris per draft/revisi, dengan kolom wide yang mengikuti §3.2–§3.4:
+Satu baris per draft/revisi, dengan kolom wide yang mengikuti §3.2-§3.4:
 
 - identitas: `id`, `user_id`, `citizen_profile_id`, `previous_version_id`
 - routing: `kabupaten_id`, `assessment_track`
@@ -381,14 +381,14 @@ atau HTTP.
 
 | Kelompok gambar | Isi yang ditranskripsikan | Bagian dokumen |
 |---|---|---|
-| `FORM_DESAIN/11.04.07*` | Identitas/ekonomi dan rumah/keluarga | §3.1–§3.2 |
-| `FORM_DESAIN/11.04.08*` | Struktur dan sanitasi/utilitas | §3.3–§3.4 |
+| `FORM_DESAIN/11.04.07*` | Identitas/ekonomi dan rumah/keluarga | §3.1-§3.2 |
+| `FORM_DESAIN/11.04.08*` | Struktur dan sanitasi/utilitas | §3.3-§3.4 |
 | `FORM_DESAIN/11.04.09` | Peta dan bukti rumah | §3.5 |
-| `FORM_DETAIL/11.04.09–11.04.11*` | Perkawinan, pekerjaan, pendidikan, penghasilan | §4.1 |
-| `FORM_DETAIL/11.04.12–11.04.15*` | Status rumah/lahan, swadaya, bantuan, kawasan, tahun | §4.2 |
-| `FORM_DETAIL/11.04.15–11.04.21*` | Kondisi struktur dan material | §4.3 |
-| `FORM_DETAIL/11.04.21–11.04.25*` | Jendela, ventilasi, air, jamban, TPA, septik, penerangan, bahan bakar | §4.4 |
-| `FORM_DETAIL/11.04.24–11.04.27*` | Jalur Backlog/calon lahan, legalitas, kawasan, foto/dokumen | §3.2, §3.5, §5 |
+| `FORM_DETAIL/11.04.09-11.04.11*` | Perkawinan, pekerjaan, pendidikan, penghasilan | §4.1 |
+| `FORM_DETAIL/11.04.12-11.04.15*` | Status rumah/lahan, swadaya, bantuan, kawasan, tahun | §4.2 |
+| `FORM_DETAIL/11.04.15-11.04.21*` | Kondisi struktur dan material | §4.3 |
+| `FORM_DETAIL/11.04.21-11.04.25*` | Jendela, ventilasi, air, jamban, TPA, septik, penerangan, bahan bakar | §4.4 |
+| `FORM_DETAIL/11.04.24-11.04.27*` | Jalur Backlog/calon lahan, legalitas, kawasan, foto/dokumen | §3.2, §3.5, §5 |
 
 Total yang diperiksa: **5 `FORM_DESAIN` + 45 `FORM_DETAIL`**. Tanda `*`
 di tabel ini berarti seluruh duplikat nama pada timestamp tersebut, bukan

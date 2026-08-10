@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Lokasi penyimpanan berkas privat — SATU sumber kebenaran.
+ * Lokasi penyimpanan berkas privat - SATU sumber kebenaran.
  *
  * Dibuat sebagai helper (bukan method di MY_Controller) supaya bisa dipakai
  * model juga: User_model::delete_user_account() perlu menghapus file fisik dan
@@ -14,11 +14,11 @@ if ( ! function_exists('private_uploads_root')) {
      * Akar direktori berkas privat, selalu diakhiri pemisah direktori.
      *
      * Diambil dari `PRIVATE_UPLOADS_PATH` di .env kalau diisi. Kalau tidak,
-     * jatuh ke `dirname(FCPATH)/private_uploads/` — perilaku lama, dipertahankan
+     * jatuh ke `dirname(FCPATH)/private_uploads/` - perilaku lama, dipertahankan
      * supaya deployment yang .env-nya belum diperbarui tidak langsung rusak.
      *
      * KENAPA JADI VARIABEL: `dirname(FCPATH)` menganggap induk folder aplikasi
-     * otomatis di luar DocumentRoot. Itu TIDAK selalu benar — di XAMPP lokal
+     * otomatis di luar DocumentRoot. Itu TIDAK selalu benar - di XAMPP lokal
      * `dirname(FCPATH)` justru DocumentRoot itu sendiri, sehingga seluruh berkas
      * privat (termasuk dokumen SRP2) tersaji lewat HTTP; diverifikasi 26 Jul 2026.
      * Dengan variabel ini, keamanannya jadi keputusan sadar per-lingkungan,

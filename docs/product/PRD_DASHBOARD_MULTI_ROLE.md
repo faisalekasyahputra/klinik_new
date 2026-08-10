@@ -10,10 +10,10 @@ Klinik PKP memiliki satu akun pengguna dengan konteks akses berbeda. Setiap peng
 
 Role produk yang ditetapkan dalam PRD ini:
 
-1. `warga` — pengguna layanan perumahan dan pengajuan program.
-2. `pengembang` — perusahaan/pelaku pengembang dan pendaftar SRP2.
-3. `mahasiswa` — pengguna magang atau penelitian.
-4. `admin` — operator internal yang memvalidasi dan mengelola sistem.
+1. `warga` - pengguna layanan perumahan dan pengajuan program.
+2. `pengembang` - perusahaan/pelaku pengembang dan pendaftar SRP2.
+3. `mahasiswa` - pengguna magang atau penelitian.
+4. `admin` - operator internal yang memvalidasi dan mengelola sistem.
 
 `vendor` masih ada di onboarding dan backend sebagai role lama. Statusnya harus diputuskan sebelum implementasi perubahan role; PRD ini tidak menganggap vendor sebagai role produk final.
 
@@ -68,14 +68,14 @@ Role produk yang ditetapkan dalam PRD ini:
 
 ## 6. Kebutuhan Fungsional
 
-### FR-1 — Dispatcher dashboard
+### FR-1 - Dispatcher dashboard
 
 - Setelah onboarding selesai, login mengarahkan user ke dashboard role-nya.
 - Role `admin` menuju layout admin.
 - Role publik menuju layout portal dengan menu yang sesuai.
 - URL dashboard tidak boleh menjadi satu-satunya pengaman; setiap endpoint memeriksa session dan role.
 
-### FR-2 — Dashboard warga
+### FR-2 - Dashboard warga
 
 - Menampilkan profil ringkas dan status kelengkapan akun.
 - Menampilkan riwayat `sf_housing_queue` milik user: tiket, program, status, waktu perubahan.
@@ -83,7 +83,7 @@ Role produk yang ditetapkan dalam PRD ini:
 - Menampilkan akses forum; membuat topik, komentar, like, dan laporan tetap mengikuti guard forum.
 - Tidak menampilkan NIK penuh, alamat terenkripsi, atau data pengajuan warga lain.
 
-### FR-3 — Dashboard pengembang
+### FR-3 - Dashboard pengembang
 
 - Menampilkan satu atau lebih pengajuan `srp2_registrations` milik user.
 - Menampilkan status `Pending`, `Diterima`, atau `Ditolak` beserta catatan admin jika ada.
@@ -92,14 +92,14 @@ Role produk yang ditetapkan dalam PRD ini:
 - Menampilkan profil publik hanya bila status verifikasi `Diterima`.
 - Mengunci aksi SRP2 dan publikasi dari warga/mahasiswa.
 
-### FR-4 — Dashboard mahasiswa
+### FR-4 - Dashboard mahasiswa
 
 - Menampilkan profil dasar dan status dokumen `ktm` serta `surat_magang`.
 - Menyediakan informasi program magang/penelitian yang dikelola admin.
 - Menampilkan status permohonan/komunikasi mahasiswa jika modul tersebut sudah tersedia.
 - Tidak boleh mendapatkan akses ke data antrean warga, data SRP2, atau menu admin.
 
-### FR-5 — Dashboard admin
+### FR-5 - Dashboard admin
 
 - Menampilkan total user, antrean pending, dan diskusi sebagai KPI awal.
 - Menampilkan dan memproses antrean `sf_housing_queue` menjadi `approved` atau `rejected` dengan catatan.
@@ -108,7 +108,7 @@ Role produk yang ditetapkan dalam PRD ini:
 - Menyediakan manajemen user yang nyata; halaman saat ini masih placeholder.
 - Mencatat aktor dan waktu perubahan status pada fase audit berikutnya.
 
-### FR-6 — Profil dan dokumen bersama
+### FR-6 - Profil dan dokumen bersama
 
 - Semua role dapat mengubah nama, username, dan telepon sesuai aturan validasi.
 - Email login tidak dapat diubah melalui profil biasa.
@@ -143,25 +143,25 @@ Role produk yang ditetapkan dalam PRD ini:
 
 ## 9. Rencana Implementasi Minimum
 
-### Fase A — Normalisasi akses
+### Fase A - Normalisasi akses
 
 - Tetapkan role kanonis dan putuskan nasib `vendor`.
 - Buat dispatcher dashboard minimal berdasarkan session role.
 - Pisahkan guard `admin`, `pengembang`, dan `mahasiswa` di backend.
 - Perbaiki akses SRP2/publikasi agar tidak hanya login-gated.
 
-### Fase B — Dashboard warga dan pengembang
+### Fase B - Dashboard warga dan pengembang
 
 - Pindahkan ringkasan `/akun` menjadi dashboard warga.
 - Jadikan ringkasan SRP2 sebagai dashboard pengembang.
 - Tambahkan daftar dokumen dan status yang bersumber dari tabel yang sudah ada.
 
-### Fase C — Dashboard mahasiswa
+### Fase C - Dashboard mahasiswa
 
 - Pakai `usr_documents` yang sudah ada untuk KTM dan surat magang.
 - Tambahkan hanya data proses yang benar-benar dibutuhkan setelah alur bisnis magang disepakati.
 
-### Fase D — Penyelesaian admin
+### Fase D - Penyelesaian admin
 
 - Hubungkan manajemen user ke `usr_users`.
 - Lengkapi validasi SRP2 dari registration ke certified developer.
@@ -186,11 +186,11 @@ Role produk yang ditetapkan dalam PRD ini:
 
 ## 12. Acuan Implementasi
 
-- `application/controllers/Auth.php` — login, onboarding, role, upload dokumen.
-- `application/core/MY_Controller.php` — base controller dan guard admin.
-- `application/controllers/Pengaturan.php` — akun, riwayat pengajuan, profil pengembang.
-- `application/controllers/Pengembang.php` — SRP2, dokumen, profil publik, publikasi.
-- `application/controllers/Program.php` — Smart Filter, antrean, tiket.
-- `application/controllers/Admin.php` dan `Admin_Dashboard.php` — operasi admin saat ini.
-- `docs/product/DESAIN_STATUS_TIKET_PENGAJUAN.md` — keputusan status tiket.
-- `docs/engineering/ROLE_DATA_RELATION_MAP.md` — peta relasi data.
+- `application/controllers/Auth.php` - login, onboarding, role, upload dokumen.
+- `application/core/MY_Controller.php` - base controller dan guard admin.
+- `application/controllers/Pengaturan.php` - akun, riwayat pengajuan, profil pengembang.
+- `application/controllers/Pengembang.php` - SRP2, dokumen, profil publik, publikasi.
+- `application/controllers/Program.php` - Smart Filter, antrean, tiket.
+- `application/controllers/Admin.php` dan `Admin_Dashboard.php` - operasi admin saat ini.
+- `docs/product/DESAIN_STATUS_TIKET_PENGAJUAN.md` - keputusan status tiket.
+- `docs/engineering/ROLE_DATA_RELATION_MAP.md` - peta relasi data.

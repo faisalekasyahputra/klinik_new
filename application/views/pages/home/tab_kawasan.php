@@ -28,10 +28,10 @@
         </a>
 
         <!--
-          A1 — tiga kartu (Sebaran Rusun, Profil Kawasan Kumuh, Sebaran Bantuan
+          A1 - tiga kartu (Sebaran Rusun, Profil Kawasan Kumuh, Sebaran Bantuan
           SDGS) DICABUT 29 Jul 2026 atas keputusan user, bersama halamannya.
-          Ketiganya menampilkan angka literal tanpa sumber apa pun — 8.420 unit,
-          4.250,8 Ha, Rp 1,2 Triliun tersalurkan — dan yang paling berat:
+          Ketiganya menampilkan angka literal tanpa sumber apa pun - 8.420 unit,
+          4.250,8 Ha, Rp 1,2 Triliun tersalurkan - dan yang paling berat:
           rusunawa BERNAMA NYATA lengkap dengan koordinat asli, diberi angka
           okupansi karangan serta tuduhan "terdapat keluhan kerusakan aset".
           Label "(Data Simulasi)" di subjudul tidak melisensikan itu.

@@ -2,12 +2,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token-name" content="<?= $this->security->get_csrf_token_name(); ?>">
     <meta name="csrf-token-hash" content="<?= $this->security->get_csrf_hash(); ?>">
-    <meta name="description" content="Portal layanan informasi perumahan dan kawasan permukiman terpadu untuk masyarakat Jawa Tengah — Disperakim Provinsi Jawa Tengah">
-    <title>Klinik PKP — Disperakim Provinsi Jawa Tengah</title>
+    <meta name="description" content="Portal layanan informasi perumahan dan kawasan permukiman terpadu untuk masyarakat Jawa Tengah - Disperakim Provinsi Jawa Tengah">
+    <title>Klinik PKP - Disperakim Provinsi Jawa Tengah</title>
 
     <!-- Open Graph -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Klinik PKP — Portal Perumahan Terpadu Jawa Tengah">
+    <meta property="og:title" content="Klinik PKP - Portal Perumahan Terpadu Jawa Tengah">
     <meta property="og:description" content="Portal informasi rumah subsidi, data spasial, dan konsultasi permukiman terpadu Jawa Tengah.">
     <meta property="og:image" content="<?= base_url('assets/img/og-cover.jpg') ?>">
     <meta property="og:image:width" content="1200">
@@ -18,7 +18,7 @@
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Klinik PKP — Portal Perumahan Terpadu Jawa Tengah">
+    <meta name="twitter:title" content="Klinik PKP - Portal Perumahan Terpadu Jawa Tengah">
     <meta name="twitter:description" content="Portal informasi rumah subsidi, data spasial, dan konsultasi permukiman terpadu Jawa Tengah.">
     <meta name="twitter:image" content="<?= base_url('assets/img/og-cover.jpg') ?>">
 
@@ -36,7 +36,7 @@
     <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/tailwind.min.css') ?>">
     <?php // Hasil panen kelas view portal (varian sm:* dst. yang TIDAK ada di
-          // tailwind.min.css beku Jun 2026) — tanpa ini first paint telanjang
+          // tailwind.min.css beku Jun 2026) - tanpa ini first paint telanjang
           // sampai CDN runtime selesai dan halaman "bergerak". Regenerasi:
           // php docs/engineering/panen_tailwind.php. CDN di bawah tetap ada
           // sebagai jaring pengaman untuk kelas yang belum terpanen. ?>
@@ -59,7 +59,7 @@
         /* Portal punya DUA permukaan gulir dengan kebutuhan berlawanan, dan di
            situlah scrollbar lama salah: cangkang halaman gelap, sementara panel
            isinya selalu `.theme-light`. Satu nilai mutlak tidak mungkin benar di
-           keduanya — yang cocok di cangkang jadi zaitun di atas putih. Default
+           keduanya - yang cocok di cangkang jadi zaitun di atas putih. Default
            di :root untuk cangkang gelap, ditimpa di dalam panel terang. */
         :root {
             --portal-scroll-thumb: rgba(214, 251, 0, 0.28);
@@ -129,7 +129,7 @@
            Versi lama memakai nilai tema gelap secara mutlak: track
            rgba(10,26,31,.6) menjadi batang gelap melintang di bawah tabel
            bertema terang, dan thumb hijau neon 30% terbaca zaitun. Yang paling
-           membuatnya tampak "terlalu lebar" justru tracknya, bukan ukurannya —
+           membuatnya tampak "terlalu lebar" justru tracknya, bukan ukurannya -
            track transparan menghapus kesan itu tanpa mengurangi area seret. */
         ::-webkit-scrollbar {
             width: 8px;
@@ -165,7 +165,7 @@
     <script>
         // Interceptor fade lama (preventDefault + tunda 150ms + navigasi penuh)
         // DIHAPUS: navigasi internal kini ditangani loader progresif global di
-        // footer.php — link portal di-fetch dan di-swap di panel, sisanya jatuh
+        // footer.php - link portal di-fetch dan di-swap di panel, sisanya jatuh
         // ke navigasi penuh biasa tanpa tunda buatan.
 
         // BFCache handler

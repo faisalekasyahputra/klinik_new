@@ -5,7 +5,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * MY_Controller Class
  * 
  * Base Application Controller providing security headers on every response.
- * Adapted from kliknikpkp_styling for klinik_new (lighter version — no auth_lib/encryption_lib/audit_model).
+ * Adapted from kliknikpkp_styling for klinik_new (lighter version - no auth_lib/encryption_lib/audit_model).
  */
 class MY_Controller extends CI_Controller {
 
@@ -23,12 +23,12 @@ class MY_Controller extends CI_Controller {
     }
 
     /**
-     * Putuskan sesi yang akunnya sudah dinonaktifkan — diperiksa TIAP PERMINTAAN.
+     * Putuskan sesi yang akunnya sudah dinonaktifkan - diperiksa TIAP PERMINTAAN.
      *
      * Tanpa ini, tombol "Nonaktifkan" di Akses Staf hanya menutup pintu MASUK.
      * Orang yang sudah terlanjur login tetap memegang akses penuh sampai
      * sesinya kedaluwarsa (`sess_expiration = 7200`, dan CI menyegarkannya
-     * selama ia terus mengklik) — jadi selama tabnya dibiarkan terbuka,
+     * selama ia terus mengklik) - jadi selama tabnya dibiarkan terbuka,
      * pencabutan akses tidak pernah berlaku. Pesan suksesnya sendiri berbunyi
      * "tidak bisa masuk lagi", yang secara harfiah salah untuk kasus itu.
      *
@@ -36,7 +36,7 @@ class MY_Controller extends CI_Controller {
      * di `Auth::google_callback()`.
      *
      * BIAYANYA satu lookup primary key per permintaan, dan HANYA untuk yang
-     * sudah login — pengunjung anonim tidak menyentuh DB sama sekali di sini.
+     * sudah login - pengunjung anonim tidak menyentuh DB sama sekali di sini.
      * Itu harga yang wajar untuk saklar yang benar-benar memutus.
      *
      * SENGAJA TIDAK menyegarkan role/scope dari DB sekalipun barisnya sudah
@@ -60,7 +60,7 @@ class MY_Controller extends CI_Controller {
         /**
          * Kunci autentikasinya DILEPAS, sesinya tidak dihancurkan.
          *
-         * Percobaan pertama memakai `sess_destroy()` lalu menulis flashdata —
+         * Percobaan pertama memakai `sess_destroy()` lalu menulis flashdata -
          * dan pesannya lenyap bersama sesi yang barusan dibunuh, jadi orangnya
          * terlempar ke halaman login tanpa satu pun keterangan kenapa. Diuji dan
          * ketahuan langsung: "diputus" benar, "pesan muncul" tidak.
@@ -81,7 +81,7 @@ class MY_Controller extends CI_Controller {
             // Ditulis LANGSUNG, bukan lewat $this->output->set_output().
             // Kita berada di konstruktor dan mengakhiri permintaan dengan exit,
             // sementara set_output() baru dikirim oleh CI saat _display() di
-            // akhir siklus normal — yang tidak pernah tercapai. Percobaan
+            // akhir siklus normal - yang tidak pernah tercapai. Percobaan
             // pertama memakai output class dan menghasilkan balasan BERBADAN
             // KOSONG: pemanggil fetch menerima 'sukses' tanpa isi.
             $this->output->set_status_header(401);
@@ -110,12 +110,12 @@ class MY_Controller extends CI_Controller {
         // Referrer Policy
         header("Referrer-Policy: strict-origin-when-cross-origin");
 
-        // HSTS — enforce HTTPS for 1 year (only effective over HTTPS)
+        // HSTS - enforce HTTPS for 1 year (only effective over HTTPS)
         if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
             header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
         }
 
-        // Permissions Policy — restrict browser APIs
+        // Permissions Policy - restrict browser APIs
         header("Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=(), usb=()");
 
         // Block cross-domain content policies (Flash/PDF)
@@ -153,14 +153,14 @@ class MY_Controller extends CI_Controller {
      *    penulisnya bisa ditentukan pemanggil bukan jejak audit.
      * 2. Email & role pelaku disalin apa adanya. FK-nya ON DELETE SET NULL, jadi
      *    tanpa salinan ini jejak kehilangan "siapa" tepat pada kasus yang paling
-     *    perlu ditelusuri — akun yang sudah dihapus.
+     *    perlu ditelusuri - akun yang sudah dihapus.
      * 3. GAGAL DIAM-DIAM, tidak pernah melempar. Audit adalah pengamat; kalau
      *    penulisannya menggagalkan tindakan yang sedang diaudit, ia berubah dari
      *    pelindung jadi titik gagal baru. Kegagalannya tetap masuk log error.
      *
      * @param string $aksi      Kata kerja pendek & stabil, untuk menyaring.
      * @param string $ringkasan Kalimat yang dibaca manusia, disimpan SAAT
-     *                          KEJADIAN — bukan disusun ulang saat ditampilkan.
+     *                          KEJADIAN - bukan disusun ulang saat ditampilkan.
      */
     protected function catat_audit($aksi, $ringkasan, $objek_tipe = NULL, $objek_id = NULL, array $detail = []) {
         try {
@@ -203,7 +203,7 @@ class MY_Controller extends CI_Controller {
     }
 
     /**
-     * Render a page view — full layout on a normal request, or just the
+     * Render a page view - full layout on a normal request, or just the
      * inner content fragment when called via AJAX (used by the navbar's
      * tab-loader in footer.php, which fetches this fragment and swaps it
      * into #page-content-wrapper instead of doing a full page navigation).
@@ -212,7 +212,7 @@ class MY_Controller extends CI_Controller {
      * @param array  $data Data passed to the view
      */
     protected function render($view, $data = []) {
-        /* Butir 14 putaran 2 — tombol Dashboard di samping nama pengguna.
+        /* Butir 14 putaran 2 - tombol Dashboard di samping nama pengguna.
            Sebelumnya tombol itu HANYA muncul untuk superadmin, sehingga warga,
            pengembang, mahasiswa, kabkota, dan bidang tidak punya satu pun jalan
            ke dashboardnya dari situs publik. Alamatnya dihitung per peran di
@@ -234,7 +234,7 @@ class MY_Controller extends CI_Controller {
      *
      * Satu-satunya pintu unggah yang boleh dipakai fitur baru. Sebelum ini ada
      * tiga jalur berbeda yang semuanya menyimpan di dalam webroot
-     * (Auth::_handle_uploads, Umum::simpan_aduan, KemitraanPortal::simpan) —
+     * (Auth::_handle_uploads, Umum::simpan_aduan, KemitraanPortal::simpan) -
      * KTP, KTM, dan lampiran aduan bisa diakses lewat HTTP kalau nama filenya
      * bocor. Nama acak bukan kontrol akses. Lihat Pola A di
      * docs/engineering/AUDIT_SISTEM_ROLE_RINGKASAN.md.
@@ -293,13 +293,13 @@ class MY_Controller extends CI_Controller {
      * KENAPA PERLU, padahal namanya sudah "private": nama direktori tidak
      * menjamin apa pun. Di layout XAMPP lokal, dirname(FCPATH) ternyata SAMA
      * DENGAN DocumentRoot Apache (C:/xampp/htdocs), sehingga private_uploads/
-     * benar-benar tersaji lewat HTTP — diverifikasi langsung: dokumen SRP2
+     * benar-benar tersaji lewat HTTP - diverifikasi langsung: dokumen SRP2
      * bisa diunduh tanpa login sama sekali. Asumsi "di luar webroot" yang
      * tertulis di AGENTS.md §9 tidak berlaku universal, tergantung di mana
      * aplikasi dipasang relatif terhadap DocumentRoot.
      *
      * Ditulis oleh KODE (bukan disiapkan manual) karena private_uploads/ ada
-     * di luar repo git — file yang ditaruh manual tidak akan ikut ter-deploy.
+     * di luar repo git - file yang ditaruh manual tidak akan ikut ter-deploy.
      *
      * BATAS: .htaccess hanya dipatuhi Apache/LiteSpeed. Kalau suatu saat
      * pindah ke nginx, proteksi ini TIDAK berlaku dan wajib diganti aturan
@@ -340,7 +340,7 @@ class MY_Controller extends CI_Controller {
     /**
      * Sajikan berkas privat ke pemanggil. Controller pemanggil WAJIB sudah
      * memastikan yang meminta memang berhak (guard role + scope) SEBELUM
-     * memanggil ini — method ini tidak tahu apa-apa soal otorisasi.
+     * memanggil ini - method ini tidak tahu apa-apa soal otorisasi.
      *
      * basename() dipakai pada nama file supaya nilai dari DB yang (entah
      * bagaimana) memuat path tidak bisa membaca file di luar direktorinya.
@@ -349,7 +349,7 @@ class MY_Controller extends CI_Controller {
         $path = $this->private_upload_dir($domain, $owner_id) . basename((string) $stored_name);
         if (empty($stored_name) || ! is_file($path)) {
             // 404 ke klien tetap opaque (anti-IDOR), tapi penyebabnya WAJIB
-            // tercatat — "mengapa 404" tidak boleh butuh bedah DB manual.
+            // tercatat - "mengapa 404" tidak boleh butuh bedah DB manual.
             log_message('error', sprintf(
                 'serve_private_file 404: domain=%s owner=%s stored=%s (%s)',
                 $domain, $owner_id, (string) $stored_name,
@@ -359,7 +359,7 @@ class MY_Controller extends CI_Controller {
         }
 
         // header() langsung, BUKAN $this->output->set_content_type():
-        // readfile() menulis body duluan sehingga antrean header CI terlambat —
+        // readfile() menulis body duluan sehingga antrean header CI terlambat -
         // PHP terlanjur mengirim text/html default, dan nosniff (dipasang di
         // constructor) melarang browser menebak, jadi gambar tampil sebagai teks.
         header('Content-Type: ' . $mime);
@@ -374,7 +374,7 @@ class MY_Controller extends CI_Controller {
      *   - Admin_Kabkota::index()  → $kabupaten_id dari sesi (ter-scope)
      *
      * Scope diterima sebagai ARGUMEN EKSPLISIT, bukan lewat state query builder
-     * yang sudah diterapkan pemanggil — supaya tidak ada kemungkinan scope
+     * yang sudah diterapkan pemanggil - supaya tidak ada kemungkinan scope
      * terlewat karena urutan pemanggilan.
      *
      * Sebelumnya halaman ini mengirim s.d. 1000 baris sebagai JSON ke browser
@@ -473,7 +473,7 @@ class MY_Controller extends CI_Controller {
      * filternya ke query builder, hitung total, baru paginate_state().
      *
      * KEAMANAN: kolom sort di-whitelist ketat lewat $sortable_columns.
-     * Nilai dari ?sort= TIDAK PERNAH boleh masuk ORDER BY apa adanya —
+     * Nilai dari ?sort= TIDAK PERNAH boleh masuk ORDER BY apa adanya -
      * CI query builder tidak meng-escape nama kolom seperti dia meng-escape
      * nilai, jadi itu jalur SQL injection. Kata kunci pencarian aman karena
      * masuk lewat like() yang di-escape sebagai nilai.
@@ -497,7 +497,7 @@ class MY_Controller extends CI_Controller {
     /**
      * Hitung state paginasi server-side dari jumlah baris total.
      * Dipakai halaman admin yang dulu merender SELURUH tabel tanpa LIMIT
-     * (Admin_Bidang/Admin_Kemitraan/Admin_Users) — aman saat data masih
+     * (Admin_Bidang/Admin_Kemitraan/Admin_Users) - aman saat data masih
      * sedikit, tapi berat begitu menumpuk. Lihat ANCHOR_DASHBOARD_TERPADU.md B7.
      *
      * Nomor halaman dibaca dari ?page= dan selalu di-clamp ke rentang valid,
@@ -524,7 +524,7 @@ class MY_Controller extends CI_Controller {
      *
      * Dipakai tombol/tautan yang mengarahkan user "kembali ke dashboardnya"
      * dari halaman publik. Dulu tautan semacam itu hardcode ke `akun`, padahal
-     * `akun` bukan dashboard semua role — superadmin misalnya sengaja TIDAK
+     * `akun` bukan dashboard semua role - superadmin misalnya sengaja TIDAK
      * punya menu "Status Pengajuan" (dia pengelola, bukan pemohon), jadi
      * dikirim ke sana berarti mendarat di halaman yang tidak ada di menunya.
      *
@@ -564,17 +564,17 @@ class MY_Controller extends CI_Controller {
     /**
      * Ke mana orang mendarat sesudah login, saat TIDAK ada halaman asal.
      *
-     * BUTIR 24 PUTARAN 2 — "alur dirapikan lagi, usernya masih bingung".
-     * Keputusan user 10 Agt 2026: pilihan (a) — warga tidak dibawa ke dashboard.
+     * BUTIR 24 PUTARAN 2 - "alur dirapikan lagi, usernya masih bingung".
+     * Keputusan user 10 Agt 2026: pilihan (a) - warga tidak dibawa ke dashboard.
      *
      * Alasannya terukur, bukan selera. Dashboard warga, pengembang, dan
      * mahasiswa hanya berisi DUA menu ("Status Pengajuan" dan "Profil Saya"),
-     * sementara semua yang mereka cari — Cari Rumah, Cek Data Rumah, diagnosa,
-     * pendataan — ada di situs publik, DI LUAR dashboard. Mendaratkan mereka di
+     * sementara semua yang mereka cari - Cari Rumah, Cek Data Rumah, diagnosa,
+     * pendataan - ada di situs publik, DI LUAR dashboard. Mendaratkan mereka di
      * sana berarti memindahkan orang ke tempat lain di tengah jalan, lalu
      * membiarkannya tanpa jalan pulang selain keluar akun.
      *
-     * Yang punya halaman asal TIDAK lewat sini — `Auth` mengembalikannya ke
+     * Yang punya halaman asal TIDAK lewat sini - `Auth` mengembalikannya ke
      * tujuan semula lebih dulu (butir A5). Ini hanya jaring untuk yang menekan
      * "Masuk" langsung dari beranda.
      *
@@ -589,7 +589,7 @@ class MY_Controller extends CI_Controller {
     /**
      * Hitung baris "belum diproses" untuk satu entri registry, berdasarkan
      * 'table' + 'pending_where' yang dideklarasikan di sana. Satu mekanisme
-     * untuk badge sidebar DAN kartu ringkas overview superadmin — sebelumnya
+     * untuk badge sidebar DAN kartu ringkas overview superadmin - sebelumnya
      * tiap counter dulu butuh method model sendiri.
      *
      * @param array $modul entri dari config dashboard_modules
@@ -614,7 +614,7 @@ class MY_Controller extends CI_Controller {
     /**
      * Bangun menu dashboard dari registry application/config/dashboard_modules.php,
      * difilter berdasarkan role & scope sesi saat ini, dikelompokkan sesuai
-     * dashboard_module_groups. INI HANYA MENGATUR TAMPILAN MENU — bukan otorisasi;
+     * dashboard_module_groups. INI HANYA MENGATUR TAMPILAN MENU - bukan otorisasi;
      * penegakan akses tetap di constructor controller tujuan tiap modul (lihat
      * peringatan di kepala file registry & docs/architecture/ANCHOR_DASHBOARD_TERPADU.md).
      *
@@ -659,7 +659,7 @@ class MY_Controller extends CI_Controller {
         // Perbandingannya TIDAK peka huruf besar-kecil: `uri_string()` memberi
         // segmen apa adanya seperti yang diketik, sedangkan registry menulis
         // nama controller berkapital (`Rekam_Perumahan`). Di Linux URL memang
-        // peka huruf, tetapi itu urusan router — bukan alasan sidebar berhenti
+        // peka huruf, tetapi itu urusan router - bukan alasan sidebar berhenti
         // menyorot saat orang tiba lewat tautan yang kapitalisasinya berbeda.
         $uri = strtolower($this->uri->uri_string());
         $best = -1; $best_i = NULL;
@@ -670,7 +670,7 @@ class MY_Controller extends CI_Controller {
         }
         foreach ($items as $i => $item) { $items[$i]['active'] = ($i === $best_i); }
 
-        // Susun jadi POHON, kedalaman bebas — `parent` boleh menunjuk item yang
+        // Susun jadi POHON, kedalaman bebas - `parent` boleh menunjuk item yang
         // sendirinya punya induk. Rekam Data memakai dua tingkat: Rekam Data →
         // Perumahan/Kawasan → Capaian/Rekap/Riwayat.
         //
@@ -685,7 +685,7 @@ class MY_Controller extends CI_Controller {
         $per_key = [];
         foreach ($items as $item) { $per_key[$item['key']] = $item; }
 
-        // Tandai seluruh leluhur item aktif sebagai "terbuka" — bukan hanya
+        // Tandai seluruh leluhur item aktif sebagai "terbuka" - bukan hanya
         // induk langsungnya. Tanpa menaiki rantainya, membuka Rekap Perumahan
         // akan membuka "Perumahan" tetapi meninggalkan "Rekam Data" terlipat,
         // dan layar yang sedang dibuka jadi tidak terlihat sama sekali.
@@ -694,7 +694,7 @@ class MY_Controller extends CI_Controller {
             if ( ! $item['active']) { continue; }
             // Item aktif membuka DIRINYA SENDIRI juga, bukan hanya leluhurnya.
             // Tanpa ini, mendarat di "Rekam Data" menyorot induknya tetapi
-            // membiarkan enam anaknya terlipat — orang sampai di halaman yang
+            // membiarkan enam anaknya terlipat - orang sampai di halaman yang
             // gunanya justru mengantar, lalu tidak melihat satu pun tujuan.
             $terbuka[$item['key']] = TRUE;
             $naik = $item['parent'];
@@ -707,7 +707,7 @@ class MY_Controller extends CI_Controller {
              * Dan SELURUH keturunannya, bukan cuma anak langsung.
              *
              * Sebelum ini, mendarat di "Rekam Data" membuka Perumahan & Kawasan
-             * tetapi meninggalkan Rekap dan Riwayat di bawahnya terlipat — dua
+             * tetapi meninggalkan Rekap dan Riwayat di bawahnya terlipat - dua
              * tingkat, jadi butuh dua klik caret lagi untuk melihat layar yang
              * memang dicari. Dinas melaporkannya sebagai "rekap/submit tidak
              * ada" (revisi 3 Agt 2026 butir 10); layarnya ada sejak 30 Jul,
@@ -734,7 +734,7 @@ class MY_Controller extends CI_Controller {
             foreach ($anak[$key] ?? [] as $item) {
                 $item['children'] = $bangun($item['key']);
                 $item['open']     = ! empty($terbuka[$item['key']]);
-                // Induk ikut menyala saat cabangnya terbuka — supaya orang tahu
+                // Induk ikut menyala saat cabangnya terbuka - supaya orang tahu
                 // sedang berada di cabang mana, bukan cuma di layar mana.
                 $item['active']   = $item['active'] || $item['open'];
                 $out[] = $item;
@@ -755,8 +755,8 @@ class MY_Controller extends CI_Controller {
 
     /**
      * Render dashboard shell (sidebar+topbar admin/index.php) yang dipakai SEMUA
-     * role login — status_pengajuan/profil (warga/pengembang/mahasiswa) maupun
-     * admin ter-scope. Menu diambil dari dashboard_menu(), bukan parameter —
+     * role login - status_pengajuan/profil (warga/pengembang/mahasiswa) maupun
+     * admin ter-scope. Menu diambil dari dashboard_menu(), bukan parameter -
      * satu sumber kebenaran untuk semua pemanggil (lihat render_admin()/
      * render_scoped_admin() di bawah, keduanya tinggal delegasi ke sini).
      *
@@ -767,14 +767,14 @@ class MY_Controller extends CI_Controller {
         $data['dashboard_home'] = $this->dashboard_home();
 
         // Cabang partial HANYA untuk loader dashboard (assets/js/admin-progressive.js),
-        // dikenali lewat `X-Shell: admin` — BUKAN untuk sembarang permintaan AJAX.
+        // dikenali lewat `X-Shell: admin` - BUKAN untuk sembarang permintaan AJAX.
         //
         // Kenapa: loader portal PUBLIK (application/views/layouts/footer.php)
         // menangkap semua tautan internal dan mem-fetch-nya dengan
         // `X-Requested-With: XMLHttpRequest`. Kalau cabang ini hanya memeriksa
         // "apakah AJAX", halaman admin dibalas TANPA shell admin lalu disuntikkan
         // ke panel publik: tanpa sidebar, tanpa tailwind-admin.css, dan tanpa ikon
-        // Phosphor (portal memakai FontAwesome) — judul kartu putih di kartu putih,
+        // Phosphor (portal memakai FontAwesome) - judul kartu putih di kartu putih,
         // ikon jadi kotak kosong. Terjadi nyata saat kartu REKAM DATA di beranda
         // publik diklik menuju /Rekam_Data.
         //
@@ -782,13 +782,13 @@ class MY_Controller extends CI_Controller {
         // UTUH, dan `loadTab()` sudah punya penjaganya: pola `^\s*(<!doctype|<html)`
         // membuatnya menyerah ke navigasi penuh sehingga shell admin yang benar
         // termuat. Perhatikan bahwa daftar jalur di footer.php
-        // (`login|admin|Admin|akun|...`) TIDAK bisa diandalkan sebagai penjaga —
+        // (`login|admin|Admin|akun|...`) TIDAK bisa diandalkan sebagai penjaga -
         // ia menyebut nama jalur satu per satu, dan `Rekam_*` tidak memuat kata
         // "admin" sama sekali. Header ini menutup seluruh keluarga itu sekaligus,
         // termasuk controller admin baru yang namanya belum ada hari ini.
         if ($this->input->is_ajax_request()
             && $this->input->get_request_header('X-Shell', TRUE) === 'admin') {
-            // Cabang partial untuk loader progresif dashboard — pola yang sama
+            // Cabang partial untuk loader progresif dashboard - pola yang sama
             // dengan render() portal. Judul dikirim lewat header supaya
             // document.title ikut diperbarui tanpa membungkus HTML.
             if (! empty($data['title'])) {
@@ -802,15 +802,15 @@ class MY_Controller extends CI_Controller {
             //
             // WAJIB `append_output()`, BUKAN `echo`. `load->view()` menumpuk ke
             // buffer internal CI yang baru dikeluarkan di akhir, sedangkan `echo`
-            // menulis langsung ke buffer PHP — hasilnya template mendarat di
+            // menulis langsung ke buffer PHP - hasilnya template mendarat di
             // posisi 0, SEBELUM kontennya. Loader memotong balasan di penanda
             // template, jadi konten yang tersisa nol byte dan seluruh halaman
             // admin tampil kosong saat dibuka lewat navigasi progresif.
             //
             // Alasannya bukan kerapian: sorotan aktif dan sub-menu diputuskan
             // dashboard_menu() (kecocokan URL terpanjang + cabang terbuka).
-            // Sebelum ini loader menyalin sebagian aturan itu di JS — mencocokkan
-            // path PERSIS dan menempel aria-current — sehingga /Rekam_Perumahan/input
+            // Sebelum ini loader menyalin sebagian aturan itu di JS - mencocokkan
+            // path PERSIS dan menempel aria-current - sehingga /Rekam_Perumahan/input
             // tidak menyorot apa pun, sorotan lama dari render server tidak pernah
             // dilepas (dua item menyala bersamaan), dan sub-menu cabang lama tetap
             // terbuka di halaman yang tidak ada hubungannya. Mengirim menu jadi
@@ -905,7 +905,7 @@ class MY_Controller extends CI_Controller {
      *
      * DINAIKKAN ke induk 5 Agt 2026, isinya TIDAK diubah sedikit pun. Semula
      * `private` di `Warga.php`; begitu unggahan foto program lahir,
-     * alternatifnya cuma menyalin — dan dua implementasi pelucut metadata
+     * alternatifnya cuma menyalin - dan dua implementasi pelucut metadata
      * berarti yang satu bisa diperbaiki sementara yang lain tetap membocorkan
      * lokasi GPS pengunggah.
      */
@@ -973,17 +973,17 @@ class MY_Controller extends CI_Controller {
      *     sini: `fputcsv` memakai KOMA, sementara di Excel berlokal Indonesia
      *     koma adalah pemisah DESIMAL dan pemisah daftarnya titik koma. Berkas
      *     koma terbuka jadi SATU KOLOM di komputer dinas. Memilih titik koma
-     *     memindahkan masalahnya ke komputer yang berlokal lain — dua-duanya
+     *     memindahkan masalahnya ke komputer yang berlokal lain - dua-duanya
      *     salah, tergantung mesin siapa yang membukanya.
      *   - SpreadsheetML menandai tiap sel `Number` atau `String` secara
      *     eksplisit, jadi angkanya mendarat sebagai angka apa pun lokalnya.
      *
      * `header()` MENTAH, bukan `$this->output->set_*`: badan berkas ditulis
-     * langsung ke keluaran, sehingga antrean header CI terlambat terkirim —
+     * langsung ke keluaran, sehingga antrean header CI terlambat terkirim -
      * alasan yang sama sudah dicatat di `serve_private_file()`.
      *
      * @param array $baris Tiap baris array nilai. Nilai NULL = sel KOSONG,
-     *              dan itu disengaja: rekap ini menganut "nol tabel nol" —
+     *              dan itu disengaja: rekap ini menganut "nol tabel nol" -
      *              sumber tanpa laporan tidak boleh ditulis 0, karena nol
      *              karangan tidak bisa dibedakan dari nol yang dilaporkan.
      */
@@ -1027,11 +1027,11 @@ class MY_Controller extends CI_Controller {
     }
 
     /**
-     * Gerbang "silakan masuk dulu" — SATU pintu untuk seluruh aplikasi.
+     * Gerbang "silakan masuk dulu" - SATU pintu untuk seluruh aplikasi.
      *
      * Dibuat 5 Agt 2026 (revisi dinas butir A5: "kalau user sudah login,
      * balikkan ke menu awal dia, jangan dilempar ke dashboard, soalnya
-     * bingung"). Mesin pengingatnya sebenarnya SUDAH ADA sejak lama —
+     * bingung"). Mesin pengingatnya sebenarnya SUDAH ADA sejak lama -
      * `Auth::_redirect_after_login()` membaca `intended_url` dari sesi. Yang
      * bolong: 21 tempat memanggil `$this->gerbang_login()` telanjang tanpa
      * pernah mengisinya, dan hanya dua controller yang mengisinya sendiri.
@@ -1041,12 +1041,12 @@ class MY_Controller extends CI_Controller {
      * berarti gerbang ke-22 lupa lagi.
      */
     protected function gerbang_login($tujuan = NULL) {
-        /* SATU GERBANG, DUA KEADAAN YANG SAMA SEKALI BERBEDA — dan sampai 10
+        /* SATU GERBANG, DUA KEADAAN YANG SAMA SEKALI BERBEDA - dan sampai 10
            Agt 2026 keduanya diperlakukan sama, itu kekeliruannya.
 
            Belum login  : dilempar ke halaman masuk. Masuk akal.
            SUDAH login,
-           salah peran  : juga dilempar ke halaman masuk — PADAHAL DIA SUDAH
+           salah peran  : juga dilempar ke halaman masuk - PADAHAL DIA SUDAH
                           MASUK. Yang dialami orangnya: menekan sesuatu, lalu
                           tiba-tiba diminta login lagi tanpa penjelasan, lalu
                           terlempar entah ke mana. Tidak ada satu pun kalimat
@@ -1072,22 +1072,22 @@ class MY_Controller extends CI_Controller {
      * 🔴 INI POLA OPEN REDIRECT, dan itu bukan basa-basi. "Simpan alamat lalu
      * arahkan ke sana sesudah login" persis mekanisme yang dipakai penyerang:
      * korban mengeklik tautan yang tampak sah, login sungguhan di situs kita,
-     * lalu terlempar ke situs palsu dalam keadaan baru saja login — jauh lebih
+     * lalu terlempar ke situs palsu dalam keadaan baru saja login - jauh lebih
      * meyakinkan daripada halaman phishing biasa.
      *
      * Empat lapis penjagaannya, dan lapis pertama yang paling menentukan:
      *
      *   1. Alamatnya diambil dari SERVER (`uri_string()`), TIDAK PERNAH dari
      *      query string atau isian mana pun. Alamat yang datang dari luar tidak
-     *      dipercaya sama sekali — bukan disaring, tapi tidak dipakai.
+     *      dipercaya sama sekali - bukan disaring, tapi tidak dipakai.
      *   2. Hanya GET. Mengembalikan orang ke URL POST sesudah login cuma
      *      menghasilkan galat atau tindakan terkirim dua kali.
-     *   3. Rute `auth/*` tidak pernah disimpan — akan melingkar ke layar masuk.
+     *   3. Rute `auth/*` tidak pernah disimpan - akan melingkar ke layar masuk.
      *   4. Tetap dilewatkan `sanitize_redirect()` meski sumbernya server.
      *      Berlapis, karena satu perubahan kelak bisa mengubah asumsi ini.
      *
      * Dan satu hal yang tidak kelihatan tapi penting: kalau user SUDAH login,
-     * asalnya TIDAK disimpan. Gerbang di bawah ini dipakai dua keperluan —
+     * asalnya TIDAK disimpan. Gerbang di bawah ini dipakai dua keperluan -
      * "belum login" dan "sudah login tapi salah peran/belum punya wilayah".
      * Untuk yang kedua, menyimpan asalnya membuat lingkaran: sesudah login
      * ulang ia dilempar ke sana lagi, lalu ditolak lagi.
@@ -1117,7 +1117,7 @@ class MY_Controller extends CI_Controller {
         /* $tujuan yang diberikan pemanggil MENANG atas URL saat ini, dan itu
            bukan kenyamanan belaka: `KemitraanPortal::akses_mahasiswa('akun')`
            sengaja mengirim orang ke halaman lain, bukan ke URL yang barusan
-           ditolak. Nilainya selalu literal di kode — tidak pernah dari request —
+           ditolak. Nilainya selalu literal di kode - tidak pernah dari request -
            dan tetap dilewatkan penyaring di bawah. */
 
         $tujuan = (string) $tujuan;
@@ -1155,7 +1155,7 @@ class Admin_Controller extends MY_Controller {
         }
     }
 
-    // Delegasi ke render_user_dashboard() — badge/menu superadmin sekarang
+    // Delegasi ke render_user_dashboard() - badge/menu superadmin sekarang
     // datang dari registry (dashboard_modules.php), bukan hardcode di sini.
     protected function render_admin($view, $data = []) {
         return $this->render_user_dashboard($view, $data);
@@ -1166,7 +1166,7 @@ class Admin_Controller extends MY_Controller {
  * Admin_Kabkota_Controller Class
  *
  * Base controller untuk admin yang di-scope ke 1 kabupaten/kota
- * (kelola antrean perumahan wilayahnya saja — lihat sf_housing_queue.kabupaten_id).
+ * (kelola antrean perumahan wilayahnya saja - lihat sf_housing_queue.kabupaten_id).
  * Scope-nya (kabupaten_id) ditaruh di session saat login, bukan dipercaya dari request.
  */
 class Admin_Kabkota_Controller extends MY_Controller {
@@ -1188,7 +1188,7 @@ class Admin_Kabkota_Controller extends MY_Controller {
         }
     }
 
-    // Delegasi ke render_user_dashboard() — menu ter-scope sekarang datang
+    // Delegasi ke render_user_dashboard() - menu ter-scope sekarang datang
     // dari registry (dashboard_modules.php, filter role+scope), bukan hardcode.
     protected function render_scoped_admin($view, $data = []) {
         return $this->render_user_dashboard($view, $data);
@@ -1199,7 +1199,7 @@ class Admin_Kabkota_Controller extends MY_Controller {
  * Admin_Bidang_Controller Class
  *
  * Base controller untuk admin yang di-scope ke 1 bidang
- * (kelola aduan yang masuk ke bidangnya saja — lihat aduan.bidang).
+ * (kelola aduan yang masuk ke bidangnya saja - lihat aduan.bidang).
  * Scope-nya (bidang_kode) ditaruh di session saat login, bukan dipercaya dari request.
  */
 class Admin_Bidang_Controller extends MY_Controller {
@@ -1221,7 +1221,7 @@ class Admin_Bidang_Controller extends MY_Controller {
         }
     }
 
-    // Delegasi ke render_user_dashboard() — menu ter-scope sekarang datang
+    // Delegasi ke render_user_dashboard() - menu ter-scope sekarang datang
     // dari registry (dashboard_modules.php, filter role+scope), bukan hardcode.
     protected function render_scoped_admin($view, $data = []) {
         return $this->render_user_dashboard($view, $data);

@@ -1,11 +1,11 @@
 <?php
 /**
- * Uji POSISI MAGANG — butir F1 revisi dinas.
+ * Uji POSISI MAGANG - butir F1 revisi dinas.
  *
  *   php docs/engineering/uji_magang_posisi.php
  *
  * Dinas minta papan magang menampilkan daftar posisi, bukan nama bidang.
- * Daftar posisinya sendiri BELUM PERNAH diberikan secara resmi — lima yang
+ * Daftar posisinya sendiri BELUM PERNAH diberikan secara resmi - lima yang
  * disebut di rapat masih berupa contoh dalam kalimat. Karena itu jawabannya
  * layar admin, bukan seed migrasi.
  *
@@ -16,7 +16,7 @@
  *      Kalau kelak ada yang menyambungkannya ke `periksa_slot()`, kuota bidang
  *      diam-diam kehilangan wewenangnya dan pendaftaran jebol.
  *   2. NOL DAFTAR KARANGAN. Selama dinas belum mengisi, papan publik TIDAK
- *      boleh menampilkan posisi contoh apa pun — mahasiswa akan melamar posisi
+ *      boleh menampilkan posisi contoh apa pun - mahasiswa akan melamar posisi
  *      yang tidak ada.
  *   3. MODAL PENGINGAT BERUBAH MENURUT KEADAAN. Pengingat yang berbunyi sama
  *      dalam keadaan apa pun cepat jadi hiasan yang diklik tanpa dibaca.
@@ -114,7 +114,7 @@ cek(stripos($seed, 'insert') === FALSE, 'Migrasi 038 TIDAK menyeed satu pun posi
 echo "\n== 2. Posisi tidak merebut wewenang kuota bidang ==\n";
 $slot_model = (string) @file_get_contents(APP_ROOT . '/application/models/Kemitraan_slot_model.php');
 cek(strpos($slot_model, 'kkn_magang_posisi') === FALSE,
-    'Mesin slot TIDAK menyentuh tabel posisi — kuota bidang tetap yang mengikat');
+    'Mesin slot TIDAK menyentuh tabel posisi - kuota bidang tetap yang mengikat');
 
 // ------------------------------------------------ 3. Papan publik tanpa isi
 echo "\n== 3. Papan publik saat daftar posisi kosong ==\n";
@@ -187,7 +187,7 @@ http('Admin_Magang_Posisi/simpan', [
     'nama_posisi' => 'UJIPOS Palsu', 'kuota' => 1, 'urutan' => 0, 'aktif' => 1,
 ]);
 cek((int) q("SELECT COUNT(*) c FROM kkn_magang_posisi")[0]['c'] === $sebelum,
-    'Bidang karangan ditolak — tidak ada baris baru');
+    'Bidang karangan ditolak - tidak ada baris baru');
 
 echo "\n=== Ringkasan ===\n";
 printf("  %d pemeriksaan, %d merah\n", $GLOBALS['uji_total'], $GLOBALS['uji_gagal']);

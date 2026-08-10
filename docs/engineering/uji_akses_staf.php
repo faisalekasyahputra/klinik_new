@@ -1,13 +1,13 @@
 <?php
 /**
- * Uji AKSES STAF — `Admin_Users::ubah_status/buka_kunci/reset_sandi` dan layar
+ * Uji AKSES STAF - `Admin_Users::ubah_status/buka_kunci/reset_sandi` dan layar
  * bacanya `Admin_Audit`.
  *
  *   php docs/engineering/uji_akses_staf.php
  *
  * Layar ini lahir 3 Agt 2026 sebagai satu-satunya cara mencabut akses tanpa
  * menyentuh DB. Yang dijaga di sini bukan "tombolnya ada", melainkan lima janji
- * yang rusaknya SENYAP — semuanya tetap membalas 200 dan tetap terlihat benar
+ * yang rusaknya SENYAP - semuanya tetap membalas 200 dan tetap terlihat benar
  * dari layar:
  *
  *   1. SAKLARNYA TIDAK BERBOHONG. `status` sempat cuma DITULIS, tidak pernah
@@ -17,13 +17,13 @@
  *   2. PELINDUNGNYA BENAR-BENAR MENAHAN. Superadmin terakhir dan akun sendiri
  *      tidak boleh dicabut aksesnya; keduanya tidak punya jalan pulih lewat
  *      aplikasi.
- *   3. PERAN LAIN TIDAK BISA MENYENTUHNYA — dan buktinya keadaan DB, BUKAN kode
+ *   3. PERAN LAIN TIDAK BISA MENYENTUHNYA - dan buktinya keadaan DB, BUKAN kode
  *      HTTP. Permintaan non-AJAX dari peran yang salah DIALIHKAN, jadi curl yang
  *      mengikuti redirect menerima 200 dari halaman lain. Uji yang berhenti di
  *      "kodenya bukan 200" akan hijau untuk endpoint yang sepenuhnya terbuka.
  *   4. JEJAKNYA LENGKAP DUA ARAH. Yang berhasil DAN yang ditolak. Jejak yang
  *      cuma merekam keberhasilan tidak bisa menjawab "siapa yang mencoba
- *      mematikan panel ini" — dan justru itu yang perlu terlihat.
+ *      mematikan panel ini" - dan justru itu yang perlu terlihat.
  *   5. SANDI TIDAK IKUT TERCATAT. Jejak audit dibaca orang yang tidak selalu
  *      berhak tahu isinya. Diperiksa dengan menyapu SEMUA kolom, bukan hanya
  *      kolom yang kebetulan diingat.
@@ -35,12 +35,12 @@
  * PERINGATAN SATU-SATUNYA: pemeriksaan "superadmin terakhir" TIDAK BISA
  * dipentaskan tanpa menyentuh baris nyata. Penjaganya menghitung superadmin
  * yang MASIH BISA MASUK di seluruh tabel, jadi selama masih ada satu superadmin
- * lain yang aktif, cabang itu tidak pernah tereksekusi — termasuk akun yang
+ * lain yang aktif, cabang itu tidak pernah tereksekusi - termasuk akun yang
  * sedang menjalankan tindakannya sendiri. Karena itu berkas ini menonaktifkan
  * SEMENTARA setiap superadmin lain, mengirim SATU permintaan, lalu memulihkan
  * nilainya persis semula (dan memulihkannya lagi lewat shutdown handler kalau
  * prosesnya mati di tengah). Perintah pemulihan manualnya dicetak SEBELUM
- * jendela itu dibuka — kalau sesuatu terjadi, barisnya sudah ada di layar.
+ * jendela itu dibuka - kalau sesuatu terjadi, barisnya sudah ada di layar.
  */
 
 define('BASE_URL', rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/'));
@@ -50,7 +50,7 @@ define('CAP', 'UJI-AKSES-' . date('YmdHis'));
 
 define('SANDI', 'UjiAkses!2026');
 define('SANDI_BARU', 'SandiBaru!' . date('YmdHis'));
-define('SANDI_PENDEK', 'abc1234');           // 7 karakter — harus ditolak.
+define('SANDI_PENDEK', 'abc1234');           // 7 karakter - harus ditolak.
 
 $GLOBALS['uji_total'] = 0;
 $GLOBALS['uji_gagal'] = 0;
@@ -133,7 +133,7 @@ function http($nama, $path, ?array $post = NULL, $ajax = FALSE) {
  * Token CSRF dari DUA bentuk yang beredar di repo ini, dan BERHENTI FATAL kalau
  * tidak ketemu.
  *
- * Kenapa dua: shell admin (`admin/layouts/head.php`) TIDAK memasang meta CSRF —
+ * Kenapa dua: shell admin (`admin/layouts/head.php`) TIDAK memasang meta CSRF -
  * tokennya cuma ada sebagai <input> di dalam formulir. Shell portal
  * (`layouts/head.php`) sebaliknya: meta ada, formulir tidak selalu. Peran non-
  * admin yang hendak menembak endpoint admin cuma bisa mengambil tokennya dari
@@ -141,7 +141,7 @@ function http($nama, $path, ?array $post = NULL, $ajax = FALSE) {
  * bisa membuktikan butir 8 sama sekali.
  *
  * Kenapa fatal, bukan string kosong: POST tanpa token DITOLAK CSRF sebelum
- * controller mana pun berjalan — dan penolakan itu tidak mengubah apa-apa. Uji
+ * controller mana pun berjalan - dan penolakan itu tidak mengubah apa-apa. Uji
  * tulis yang kehilangan tokennya karena itu jadi HIJAU HAMPA: ia mengira sudah
  * membuktikan "endpointnya menahan", padahal yang ditahan cuma tokennya sendiri.
  */
@@ -288,7 +288,7 @@ cek($masuk, 'Akun yang diaktifkan kembali bisa login');
 echo "\n== 9. GET ke endpoint tulis ditolak ==\n";
 foreach (['ubah_status', 'buka_kunci', 'reset_sandi'] as $ep) {
     cek(http('a', 'Admin_Users/' . $ep . '?id=' . $idS . '&status=nonaktif')['code'] === 404,
-        "GET Admin_Users/{$ep} dibalas 404 — hanya POST yang boleh menulis");
+        "GET Admin_Users/{$ep} dibalas 404 - hanya POST yang boleh menulis");
 }
 cek(kolom($idS, 'status') === 'active', 'Tiga GET tadi tidak mengubah status akun staf');
 
@@ -316,7 +316,7 @@ cek(stripos($pesan, 'terkunci') !== FALSE, 'Penolakannya menyebut kunci, bukan s
 // ===================================================== 8. PERAN LAIN NIHIL EFEK
 echo "\n== 8. Peran bukan admin: dibuktikan lewat DB, bukan kode HTTP ==\n";
 wajib(login('m', $emailM), 'Login mahasiswa');
-$tok_m = csrf('m', '/');   // token dari meta portal — shell admin tidak memasangnya
+$tok_m = csrf('m', '/');   // token dari meta portal - shell admin tidak memasangnya
 $hash_sebelum = (string) kolom($idS, 'password');
 $kunci_sebelum = (string) kolom($idS, 'locked_until');
 
@@ -326,17 +326,17 @@ http('m', 'Admin_Users/reset_sandi', ['csrf_kpkp_token' => $tok_m, 'id' => $idS,
 
 // Sengaja dicatat sebagai pemeriksaan tersendiri: inilah alasan sisa blok ini
 // membaca DB. Peran yang salah DIALIHKAN, dan curl yang mengikuti redirect
-// menerima 200 dari halaman lain — "bukan 200" bukan bukti apa pun di sini.
+// menerima 200 dari halaman lain - "bukan 200" bukan bukti apa pun di sini.
 cek($tolak['code'] === 200 && strpos($tolak['url'], 'Admin_Users') === FALSE,
     'Permintaan peran salah dibalas 200 dari halaman lain (kode HTTP tidak membuktikan apa-apa)');
 cek(kolom($idS, 'status') === 'active', 'Mahasiswa tidak berhasil menonaktifkan akun staf');
 
-/* BUTIR 24 PUTARAN 2 — yang salah peran TIDAK BOLEH dilempar ke halaman masuk.
+/* BUTIR 24 PUTARAN 2 - yang salah peran TIDAK BOLEH dilempar ke halaman masuk.
    Sampai 10 Agt 2026 keduanya diperlakukan sama, sehingga orang yang sudah
    login diminta login lagi tanpa penjelasan. Sekarang ia mendarat di layar yang
    menyebutkan bahwa yang tidak cocok adalah PERANNYA, bukan sesinya.
 
-   Diperiksa dari ISI HALAMAN, bukan kode HTTP — alasannya sama dengan blok di
+   Diperiksa dari ISI HALAMAN, bukan kode HTTP - alasannya sama dengan blok di
    atas: permintaan yang dialihkan tetap berbalas 200 dari halaman lain. */
 $salah_peran = http('m', 'Admin_Users');
 cek(strpos($salah_peran['url'], 'Auth/login') === FALSE,
@@ -344,7 +344,7 @@ cek(strpos($salah_peran['url'], 'Auth/login') === FALSE,
 cek(strpos($salah_peran['body'], 'bukan untuk peran Anda') !== FALSE,
     'Mendarat di layar akses ditolak yang menjelaskan sebabnya');
 cek(strpos($salah_peran['body'], 'tidak perlu login ulang') !== FALSE,
-    'Layar itu menegaskan sesinya masih sehat — inti kebingungannya');
+    'Layar itu menegaskan sesinya masih sehat - inti kebingungannya');
 cek(strpos($salah_peran['body'], 'Auth/logout') !== FALSE,
     'Ada jalan keluar ke akun lain, jadi bukan jalan buntu');
 cek((string) kolom($idS, 'locked_until') === $kunci_sebelum && (int) kolom($idS, 'login_attempts') === 5,
@@ -404,8 +404,8 @@ echo "
  * permintaan. Dua hal membuatnya tidak sahih:
  *
  * 1. Cabang itu TIDAK BISA DICAPAI lewat HTTP. Pelakunya sendiri selalu
- *    terhitung sebagai "admin lain yang masih bisa masuk" — menurut definisi ia
- *    sedang masuk — jadi target tidak pernah menjadi yang terakhir. Kalau
+ *    terhitung sebagai "admin lain yang masih bisa masuk" - menurut definisi ia
+ *    sedang masuk - jadi target tidak pernah menjadi yang terakhir. Kalau
  *    targetnya diri sendiri, penjaga akun-sendiri menyala lebih dulu.
  * 2. Memarkir SEMUA superadmin lain ikut memarkir pelakunya, dan sejak
  *    pemeriksaan status per-permintaan dipasang di MY_Controller, itu memutus
@@ -414,8 +414,8 @@ echo "
  *
  * Lubang penguncian yang BENAR-BENAR bisa terjadi ada di `update_role`:
  * superadmin menurunkan role DIRINYA SENDIRI menjadi warga. Tidak ada penjaga
- * akun-sendiri di sana — "mengubah role" tidak terlihat seperti mencabut akses
- * sampai akibatnya terjadi — dan sesudahnya tidak ada satu akun pun yang bisa
+ * akun-sendiri di sana - "mengubah role" tidak terlihat seperti mencabut akses
+ * sampai akibatnya terjadi - dan sesudahnya tidak ada satu akun pun yang bisa
  * membuka panel, termasuk untuk membatalkannya.
  *
  * Dipanggungkan dengan memarkir superadmin lain SELAIN pelaku, jadi sesi
@@ -451,7 +451,7 @@ cek(jejak('role_diubah', $idA) === 0, 'Tidak ada jejak keberhasilan yang menyert
 cek(strpos($r['body'], 'satu-satunya Super Admin') !== FALSE,
     'Alasannya disampaikan ke pelaku, bukan gagal senyap');
 [$masuk, ] = coba_login($emailA, SANDI);
-cek($masuk, 'Pelaku masih bisa masuk — panelnya selamat');
+cek($masuk, 'Pelaku masih bisa masuk - panelnya selamat');
 $pulih = TRUE;
 foreach ($lain as $id => $st) { if (kolom($id, 'status') !== $st) { $pulih = FALSE; } }
 cek($pulih, 'Status superadmin lain dipulihkan persis semula');
@@ -474,7 +474,7 @@ echo "\n== 13. Sandi tidak pernah masuk jejak audit ==\n";
 /**
  * Disapu SEMUA kolom lewat CONCAT_WS, bukan hanya `ringkasan` dan `detail_json`.
  * Kebocoran yang mungkin terjadi justru lewat kolom yang tidak diingat saat
- * menulis ujinya — dan menyebutkan kolom satu per satu berarti daftar itu harus
+ * menulis ujinya - dan menyebutkan kolom satu per satu berarti daftar itu harus
  * ikut diperbarui setiap kali skemanya tumbuh.
  */
 $sapu = "SELECT COUNT(*) c FROM sys_jejak_audit WHERE CONCAT_WS('|',
@@ -489,7 +489,7 @@ cek((int) nilai($sapu, ['%$2y$%']) === 0, 'Nol baris jejak memuat hash bcrypt');
 echo "\n== 14-15. Layar Admin_Audit ==\n";
 /**
  * Dicari lewat ?q= supaya barisnya tidak perlu kebetulan berada di halaman 1,
- * dan yang dicocokkan adalah RINGKASAN UTUH — bukan alamat emailnya saja.
+ * dan yang dicocokkan adalah RINGKASAN UTUH - bukan alamat emailnya saja.
  * Kotak pencarian ikut mencetak kata kunci yang diketik, jadi memeriksa
  * "emailnya ada di halaman" akan hijau bahkan ketika nol baris ditemukan.
  */
@@ -510,7 +510,7 @@ cek(strpos($audit_m['body'], $ringkasan_s) === FALSE
     && strpos($audit_m['body'], 'Riwayat Tindakan') === FALSE
     && strpos($audit_m['url'], 'Admin_Audit') === FALSE,
     'Mahasiswa tidak kebagian ISI layar jejak audit (dibuktikan dari isinya, bukan kodenya)');
-cek($audit_m['code'] === 200, 'Padahal balasannya tetap 200 — sekali lagi, kode HTTP bukan bukti');
+cek($audit_m['code'] === 200, 'Padahal balasannya tetap 200 - sekali lagi, kode HTTP bukan bukti');
 
 // ===================================================== BERSIH
 echo "\n== Bersih-bersih ==\n";

@@ -1,6 +1,6 @@
 <?php
 /**
- * Penjaga etalase program — admin mengurus 5 program unggulan dari layar,
+ * Penjaga etalase program - admin mengurus 5 program unggulan dari layar,
  * korsel beranda membacanya dari `sf_programs` (migrasi 036).
  *
  *   php docs/engineering/uji_etalase_program.php
@@ -102,9 +102,9 @@ wajib($komponen !== '', 'Sumber komponen korsel terbaca');
 cek(strpos($komponen, 'Program_model') !== FALSE, 'Komponen mengambil dari Program_model');
 /* Penjaga terpenting berkas ini: daftar hardcode TIDAK BOLEH hidup lagi.
    Tanpa ini, seseorang bisa menambahkan slide langsung di JS "sekali saja" dan
-   sumber ketiga itu kembali — persis keadaan yang migrasi 036 hapus. */
+   sumber ketiga itu kembali - persis keadaan yang migrasi 036 hapus. */
 cek(preg_match("/\{\s*id:\s*'[a-z_-]+'\s*,\s*title:/", $komponen) === 0,
-    'Nol slide hardcode tersisa di JS — sumber ketiga tidak hidup lagi');
+    'Nol slide hardcode tersisa di JS - sumber ketiga tidak hidup lagi');
 
 $beranda = http('/');
 foreach ($etalase as $p) {
@@ -112,7 +112,7 @@ foreach ($etalase as $p) {
         "Beranda merender slide `{$p['kode_program']}` dari DB");
 }
 
-// Jalur GAMBAR benar-benar sampai ke halaman — bukan cuma judulnya.
+// Jalur GAMBAR benar-benar sampai ke halaman - bukan cuma judulnya.
 $rtlh = q("SELECT id, gambar FROM sf_programs WHERE kode_program = 'rtlh'")[0] ?? NULL;
 wajib($rtlh !== NULL, 'Program rtlh ada di katalog');
 $semula = $rtlh['gambar'];
@@ -123,7 +123,7 @@ q("UPDATE sf_programs SET gambar = ? WHERE id = ?", [$semula, $rtlh['id']]);
 cek(strpos(http('/'), 'UJI_ETALASE.png') === FALSE, 'Nilai semula dipulihkan');
 
 // ------------------------------------------------------------------ 3. Unggah
-echo "\n== 3. Unggah foto — berkas sungguhan ==\n";
+echo "\n== 3. Unggah foto - berkas sungguhan ==\n";
 $tmp = sys_get_temp_dir();
 $png = $tmp . '/uji_etalase_asli.png';
 $im = imagecreatetruecolor(60, 40);
@@ -160,7 +160,7 @@ $kirim = function ($berkas) use ($rtlh, $semula) {
 
 $r = $kirim($palsu);
 cek(stripos($r, 'Gambar harus JPG atau PNG') !== FALSE,
-    'Berkas menyamar DITOLAK — jenis ditentukan dari isi, bukan ekstensi');
+    'Berkas menyamar DITOLAK - jenis ditentukan dari isi, bukan ekstensi');
 cek((string) (q("SELECT gambar g FROM sf_programs WHERE id = ?", [$rtlh['id']])[0]['g'] ?? '') === (string) $semula,
     'Penolakan tidak mengubah gambar yang tersimpan');
 
@@ -170,22 +170,22 @@ $baru = (string) (q("SELECT gambar g FROM sf_programs WHERE id = ?", [$rtlh['id'
 cek(strpos($baru, 'assets/img/program/unggahan/') === 0,
     'Disimpan di direktori unggahan terpisah, bukan menimpa berkas bawaan');
 cek(preg_match('#/rtlh-[a-f0-9]{16}\.png$#', $baru) === 1,
-    'Nama berkas ACAK — nama kiriman tidak pernah menyentuh disk');
+    'Nama berkas ACAK - nama kiriman tidak pernah menyentuh disk');
 cek(is_file(APP_ROOT . '/' . $baru), 'Berkasnya benar-benar ada di disk');
 if (is_file(APP_ROOT . '/' . $baru)) { $GLOBALS['bersih'][] = APP_ROOT . '/' . $baru; }
 
 // Pulihkan supaya beranda kembali memakai foto bawaan.
 q("UPDATE sf_programs SET gambar = ? WHERE id = ?", [$semula, $rtlh['id']]);
 cek((string) (q("SELECT gambar g FROM sf_programs WHERE id = ?", [$rtlh['id']])[0]['g'] ?? '') === (string) $semula,
-    'Keadaan dipulihkan — uji ini tidak meninggalkan jejak');
+    'Keadaan dipulihkan - uji ini tidak meninggalkan jejak');
 
 // ------------------------------------------------------------------ 4. Batas
 echo "\n== 4. Yang TIDAK diserahkan ke formulir ==\n";
 $ctrl = (string) @file_get_contents(APP_ROOT . '/application/controllers/Admin_Katalog_Program.php');
 cek(preg_match("/post\('(warna|muda|tengah|pekat)/", $ctrl) === 0,
-    'Warna tidak bisa diubah lewat formulir — paletnya disetel & kontrasnya diukur');
+    'Warna tidak bisa diubah lewat formulir - paletnya disetel & kontrasnya diukur');
 cek(preg_match("/post\('kode_program/", $ctrl) === 0,
-    'Kode program tidak bisa diubah — ia kunci yang dipakai aturan kelayakan');
+    'Kode program tidak bisa diubah - ia kunci yang dipakai aturan kelayakan');
 cek(strpos($komponen, '$palet') !== FALSE, 'Warna dipetakan di kode, dari kode program');
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";

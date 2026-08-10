@@ -6,7 +6,7 @@
 
         <div class="mb-5 text-center">
             <h1 class="text-xl font-black tracking-tight sm:text-2xl">Lanjutkan Pendaftaran SRP2</h1>
-            <p class="mt-1 text-xs leading-relaxed" style="color:var(--portal-text-muted)">Masuk kalau sudah punya akun pengembang, atau daftar cepat kalau baru mulai — tanpa keluar dari alur ini.</p>
+            <p class="mt-1 text-xs leading-relaxed" style="color:var(--portal-text-muted)">Masuk kalau sudah punya akun pengembang, atau daftar cepat kalau baru mulai - tanpa keluar dari alur ini.</p>
         </div>
 
         <div x-data="{ tab: 'masuk' }" class="rounded-2xl p-5 sm:p-6" style="background:var(--portal-bg-card);border:1px solid var(--portal-border);box-shadow:0 8px 24px rgba(0,80,95,.06)">
@@ -38,7 +38,7 @@
             <!-- Panel: Daftar Cepat -->
             <div x-show="tab === 'daftar'" x-cloak class="space-y-4 text-center py-2">
                 <div class="mx-auto flex h-11 w-11 items-center justify-center rounded-full text-lg" style="background:color-mix(in srgb, var(--teal) 12%, transparent);color:var(--teal)"><i class="fa-solid fa-bolt"></i></div>
-                <p class="text-xs leading-relaxed" style="color:var(--portal-text-muted)">Belum punya akun pengembang? Daftar cukup dengan nama perusahaan, email, dan kata sandi — dokumen dan data lainnya bisa dilengkapi belakangan lewat dashboard.</p>
+                <p class="text-xs leading-relaxed" style="color:var(--portal-text-muted)">Belum punya akun pengembang? Daftar cukup dengan nama perusahaan, email, dan kata sandi - dokumen dan data lainnya bisa dilengkapi belakangan lewat dashboard.</p>
                 <a href="<?= base_url('Pengembang/daftar') ?>" class="inline-flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-[11px] font-extrabold uppercase tracking-wide" style="background:#d6fb00;color:#0a1a1f"><i class="fa-solid fa-arrow-right"></i> Daftar Cepat Sekarang</a>
             </div>
         </div>

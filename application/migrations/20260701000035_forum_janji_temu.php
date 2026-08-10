@@ -2,14 +2,14 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Janji temu konsultasi — mekanisme di balik janji yang sudah dipajang.
+ * Janji temu konsultasi - mekanisme di balik janji yang sudah dipajang.
  *
  * Revisi dinas 3 Agt 2026, butir 6. Halaman `Umum/forum` berjudul "Konsultasi
  * TERJADWAL", memajang tiga kartu alur ("Admin meninjau" -> "Agenda
  * ditentukan" -> "Waktu konsultasi disampaikan setelah ditinjau"), dan
  * tombolnya berbunyi "Ajukan Konsultasi". Di belakangnya `tambah_aksi()` hanya
  * menyisipkan satu baris `forum_diskusi`. Tidak ada peninjauan, tidak ada
- * agenda, tidak ada jadwal — di mana pun. UI-nya menjanjikan tiga hal yang
+ * agenda, tidak ada jadwal - di mana pun. UI-nya menjanjikan tiga hal yang
  * tidak punya satu pun mekanisme.
  *
  * TABEL TERPISAH, bukan kolom tambahan di `forum_diskusi`. Satu topik bisa
@@ -19,7 +19,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * yang TERAKHIR, dan menghapus yang sebelumnya tanpa jejak.
  *
  * FORUM TETAP TAHAP PERTAMA. Janji temu hanya bisa diajukan setelah topiknya
- * ditanggapi — syaratnya ditegakkan di controller, bukan di sini. Alasannya:
+ * ditanggapi - syaratnya ditegakkan di controller, bukan di sini. Alasannya:
  * "ruang konsultasi dulu" berarti pertanyaan yang sudah terjawab di forum tidak
  * perlu menghabiskan slot tatap muka, dan itu aturan proses yang bisa berubah,
  * bukan bentuk data.
@@ -28,7 +28,7 @@ class Migration_Forum_janji_temu extends CI_Migration {
 
     /**
      * Bentuk kolom dibaca, tidak ditebak. `forum_diskusi` ternyata utf8
-     * (utf8mb3) dengan `id_diskusi` int(11) SIGNED — beda dari default utf8mb4
+     * (utf8mb3) dengan `id_diskusi` int(11) SIGNED - beda dari default utf8mb4
      * yang dipakai tabel-tabel yang lebih baru. Menuliskannya sebagai literal
      * di sini akan ditolak errno 1253 (kolasi) atau 150 (tipe FK), persis dua
      * kegagalan yang sudah terjadi di migrasi 031/033.
@@ -90,7 +90,7 @@ class Migration_Forum_janji_temu extends CI_Migration {
 
             -- CASCADE dua-duanya: janji temu tidak punya arti terpisah dari
             -- topik maupun orang yang mengajukannya. Bandingkan `reviewed_by`
-            -- yang SET NULL — petugas yang keluar tidak boleh menghapus agenda.
+            -- yang SET NULL - petugas yang keluar tidak boleh menghapus agenda.
             CONSTRAINT `fk_jt_diskusi` FOREIGN KEY (`id_diskusi`)
                 REFERENCES `forum_diskusi` (`id_diskusi`) ON DELETE CASCADE,
             CONSTRAINT `fk_jt_user` FOREIGN KEY (`user_id`)
@@ -108,7 +108,7 @@ class Migration_Forum_janji_temu extends CI_Migration {
 
         // Menolak menghapus agenda yang masih hidup. Baris di sini adalah janji
         // kepada warga tentang waktu dan tempat; rollback yang melenyapkannya
-        // membatalkan pertemuan tanpa ada yang tahu — termasuk petugas yang
+        // membatalkan pertemuan tanpa ada yang tahu - termasuk petugas yang
         // sudah mengosongkan jadwalnya.
         $hidup = (int) $this->db->query(
             "SELECT COUNT(*) c FROM `forum_janji_temu`
@@ -116,7 +116,7 @@ class Migration_Forum_janji_temu extends CI_Migration {
         if ($hidup > 0) {
             throw new RuntimeException(
                 "{$hidup} janji temu masih berjalan (diajukan/ditawarkan/disetujui). "
-                . 'Rollback dibatalkan — selesaikan atau batalkan dulu lewat Janji Temu Konsultasi.');
+                . 'Rollback dibatalkan - selesaikan atau batalkan dulu lewat Janji Temu Konsultasi.');
         }
 
         $this->dbforge->drop_table('forum_janji_temu', TRUE);

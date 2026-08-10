@@ -1,6 +1,6 @@
 <?php
 /**
- * Uji CEK RTLH — layar cepat "apakah NIK ini terdaftar RTLH".
+ * Uji CEK RTLH - layar cepat "apakah NIK ini terdaftar RTLH".
  *
  *   php docs/engineering/uji_cek_rtlh.php
  *
@@ -8,21 +8,21 @@
  * di antaranya rusak tanpa satu pun galat:
  *
  *   1. WAJIB LOGIN, DAN GERBANGNYA DI SERVER. Ini data yang menandai
- *      kemiskinan. Repo ini sudah punya aturannya — `Program::api_cek_simperum()`
- *      menolak 409 saat mode `api` dengan alasan "hanya lewat Wizard Warga" —
+ *      kemiskinan. Repo ini sudah punya aturannya - `Program::api_cek_simperum()`
+ *      menolak 409 saat mode `api` dengan alasan "hanya lewat Wizard Warga" -
  *      dan layar ini tidak boleh jadi pintu belakangnya.
  *   2. TIDAK ADA EFEK SAMPING KE PROFIL PENDATAAN. `Simperum_gateway::lookup()`
  *      MENIMPA profil warga si pemanggil kalau `$requested_by` diisi. Cek cepat
  *      mengirim NULL. Kalau itu terlewat, mengecek NIK ORANG LAIN akan menimpa
- *      data pengajuan sendiri dengan data orang itu — diam-diam, dan baru
+ *      data pengajuan sendiri dengan data orang itu - diam-diam, dan baru
  *      ketahuan saat pengajuannya ditolak karena datanya bukan miliknya.
  *   3. PENJAGA TANGGAL LAHIR TETAP MENAHAN. Ia bukan anti-enumerasi (tanggalnya
- *      terkandung di NIK), tapi ia memang menahan salah-ketik dan salah-orang —
+ *      terkandung di NIK), tapi ia memang menahan salah-ketik dan salah-orang -
  *      dan itu satu-satunya klaim yang boleh dibuat tentangnya.
  *   4. HASILNYA SEDIKIT. Terdaftar atau tidak, plus identitas tersamar. Desil,
- *      penghasilan, dan kondisi bangunan TIDAK ikut — itu bahan penilaian
+ *      penghasilan, dan kondisi bangunan TIDAK ikut - itu bahan penilaian
  *      program, bukan jawaban atas "apakah saya terdaftar".
- *   5. BATAS LAJU BENAR-BENAR MENAHAN, dan penolakannya 429 — bukan 200 yang
+ *   5. BATAS LAJU BENAR-BENAR MENAHAN, dan penolakannya 429 - bukan 200 yang
  *      menyamar sebagai hasil kosong.
  *
  * Memakai fixture SIMPERUM (`simperum_mode=simulation`): NIK ...0001 ada,
@@ -161,7 +161,7 @@ echo 'Target: ' . BASE_URL . " | DB: {$env['DB_NAME']}\n\n";
 echo "== 0. Prasyarat ==\n";
 $mode = trim((string) ($env['SIMPERUM_MODE'] ?? 'simulation'));
 wajib($mode === 'simulation',
-    "SIMPERUM_MODE=simulation (terbaca: {$mode}) — uji ini tidak boleh menyentuh API sungguhan");
+    "SIMPERUM_MODE=simulation (terbaca: {$mode}) - uji ini tidak boleh menyentuh API sungguhan");
 
 // ------------------------------------------------ 1. GERBANG LOGIN
 echo "\n== 1. Wajib login, gerbangnya di server ==\n";
@@ -187,7 +187,7 @@ cek(stripos($ada['body'], 'TERDAFTAR') !== FALSE, 'NIK yang ada dibaca TERDAFTAR
 cek(strpos($ada['body'], '****' . substr(NIK_ADA, -4)) !== FALSE,
     'NIK ditampilkan tersamar, hanya empat digit terakhir');
 cek(stripos($ada['body'], 'MODE SIMULASI') !== FALSE,
-    'Spanduk simulasi tampil — data contoh tidak boleh disangka nyata');
+    'Spanduk simulasi tampil - data contoh tidak boleh disangka nyata');
 
 $kosong = periksa('u', NIK_KOSONG, TGL_ADA);
 cek(stripos($kosong['body'], 'tidak terdaftar') !== FALSE, 'NIK tanpa data RTLH dibaca tidak terdaftar');
@@ -205,7 +205,7 @@ cek(stripos($salah['body'], '<span style="color: var(--portal-brand)">TERDAFTAR<
 echo "\n== 4. Cek cepat TIDAK menyentuh profil pendataan ==\n";
 /**
  * Pemeriksaan terpenting di berkas ini, dan yang paling senyap kalau rusak.
- * `lookup()` dengan `$requested_by` terisi memanggil `save_profile()` —
+ * `lookup()` dengan `$requested_by` terisi memanggil `save_profile()` -
  * mengecek NIK orang lain akan MENIMPA data pengajuan sendiri dengan data
  * orang itu, tanpa satu pun galat, dan baru ketahuan saat pengajuannya ditolak.
  */
@@ -221,12 +221,12 @@ foreach (['Desil', 'desil', 'Penghasilan', 'penghasilan', 'income_band'] as $boc
 /**
  * NIK LENGKAP boleh muncul TEPAT SEKALI, dan hanya sebagai `value` input.
  *
- * Ditemukan lewat browser, bukan lewat harness ini — versi pertama uji ini
+ * Ditemukan lewat browser, bukan lewat harness ini - versi pertama uji ini
  * tidak memeriksanya sama sekali. Itu ISIAN ORANG ITU SENDIRI, dikembalikan
  * supaya ia tidak mengetik ulang 16 digit setelah salah ketik tanggal, dan
  * halamannya ber-gerbang login; jadi bukan kebocoran. Tapi kartu HASIL-nya
  * sengaja menyamarkan jadi `****0001`, dan tanpa patokan ini tidak ada yang
- * menahan seseorang kelak mencetak NIK penuh di sana juga — dua tempat, satu
+ * menahan seseorang kelak mencetak NIK penuh di sana juga - dua tempat, satu
  * disamarkan satu tidak, dan yang kedua tidak akan terlihat salah.
  */
 $muncul = substr_count($ada['body'], NIK_ADA);
@@ -248,7 +248,7 @@ cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' 
     'Tiap pencarian tercatat (minimal 3 baris untuk pengguna ini)');
 cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' AND actor_id=? AND ringkasan LIKE ?",
     [$id1, '%' . NIK_ADA . '%']) === 0,
-    'NIK LENGKAP tidak ikut tertulis di jejak audit — hanya empat digit terakhir');
+    'NIK LENGKAP tidak ikut tertulis di jejak audit - hanya empat digit terakhir');
 
 // ------------------------------------------------ 8. BATAS LAJU
 echo "\n== 8. Batas laju 10/jam per akun ==\n";
@@ -274,11 +274,11 @@ $hub = http('u', 'golek_omah');
  * merah untuk hub yang sebenarnya sudah benar: frasa itu juga muncul di
  * komentar HTML yang baru saya tulis sendiri ("SEBELUMNYA kartu ini menunjuk
  * warga/pendataan") dan di satu komentar JavaScript di footer. Tiga kemunculan,
- * satu tautan. Ini ketiga kalinya jebakan yang sama terinjak di sesi ini —
+ * satu tautan. Ini ketiga kalinya jebakan yang sama terinjak di sesi ini -
  * uji yang mengukur "dua kata ini ada di suatu tempat" akan selalu berbeda dari
  * uji yang mengukur "tautan ini ada berapa".
  */
-// href diambil UTUH lalu awalan base_url dipotong — bukan dipungut lewat satu
+// href diambil UTUH lalu awalan base_url dipotong - bukan dipungut lewat satu
 // regex "pintar". Percobaan pertama memakai `[^"]*\/(...)` yang serakah sampai
 // garis miring TERAKHIR, jadi `/warga/pendataan` terbaca `pendataan` dan
 // hitungannya nol untuk halaman yang benar.
@@ -290,7 +290,7 @@ $tujuan = array_count_values(array_map(
 cek(($tujuan['Cek_Rtlh'] ?? 0) >= 1, 'Hub memuat kartu menuju Cek RTLH');
 // Kartu 3 & 4 dulu menunjuk tujuan yang sama: empat kartu, tiga tujuan.
 cek(($tujuan['warga/pendataan'] ?? 0) === 1,
-    'Tautan warga/pendataan tinggal SATU — kartu duplikatnya sudah diganti (ditemukan: '
+    'Tautan warga/pendataan tinggal SATU - kartu duplikatnya sudah diganti (ditemukan: '
     . ($tujuan['warga/pendataan'] ?? 0) . ')');
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";

@@ -4,14 +4,14 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * Opsi A dari docs/architecture/DESAIN_NORMALISASI_SKEMA_ROLE.md, kontrak #1:
  * user_id di tabel pengajuan selalu FK sungguhan, dengan ON DELETE dipilih
- * sadar per domain — bukan cuma KEY biasa seperti sebelumnya.
+ * sadar per domain - bukan cuma KEY biasa seperti sebelumnya.
  *
  * - aduan.user_id -> SET NULL: baris aduan tetap relevan buat admin_bidang
  *   walau pelapornya sudah hapus akun (konsisten dengan sf_housing_queue.user_id
  *   yang sudah begini sejak migrasi housing_queue_ticket).
  * - kkn_magang_pendaftaran.user_id -> CASCADE: data murni milik pribadi
  *   mahasiswa, tidak berguna lagi tanpa pemiliknya (lihat AUDIT_ROLE_MAHASISWA.md
- *   Temuan #6 — sebelumnya baris ini jadi yatim permanen saat akun dihapus).
+ *   Temuan #6 - sebelumnya baris ini jadi yatim permanen saat akun dihapus).
  * - srp2_registrations.user_id -> CASCADE: draft/pending/ditolak yang belum
  *   masuk direktori publik (srp2_certified_developers, tabel terpisah) tidak
  *   perlu bertahan tanpa pemiliknya.
@@ -19,7 +19,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * PENTING: sebelum migrasi ini dijalankan di lingkungan mana pun, pastikan
  * application/models/User_model.php::delete_user_account() SUDAH diperbarui
  * untuk unlink file fisik (private_uploads/srp2/{id}/, .assets/uploads/) SEBELUM
- * baris usr_users dihapus — begitu CASCADE menghapus baris DB, tidak ada lagi
+ * baris usr_users dihapus - begitu CASCADE menghapus baris DB, tidak ada lagi
  * cara menemukan nama file yang harus dihapus dari disk. Lihat commit yang
  * menyertakan migrasi ini untuk perubahan User_model yang dimaksud.
  *
@@ -32,7 +32,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * tabel ini didefinisikan UNSIGNED sejak migrasi awalnya masing-masing. MySQL
  * menolak FOREIGN KEY antar kolom dengan signedness berbeda (errno 150), jadi
  * ketiga kolom ini di-MODIFY ke signed INT dulu sebelum constraint ditambahkan
- * — nilai existing tidak berubah (semua ID sudah pasti non-negatif), cuma
+ * - nilai existing tidak berubah (semua ID sudah pasti non-negatif), cuma
  * definisi tipenya yang disamakan dengan usr_users.id.
  */
 class Migration_Add_submission_owner_fk extends CI_Migration {
@@ -90,7 +90,7 @@ class Migration_Add_submission_owner_fk extends CI_Migration {
         if ($this->_key_exists('aduan', 'fk_aduan_user_id')) {
             $this->db->query("ALTER TABLE `aduan` DROP FOREIGN KEY `fk_aduan_user_id`;");
         }
-        // Data yang sudah dibersihkan/di-cascade oleh up() tidak dipulihkan — sama seperti
+        // Data yang sudah dibersihkan/di-cascade oleh up() tidak dipulihkan - sama seperti
         // pola down() migrasi lain di repo ini (mis. 20260701000008_add_kabupaten.php).
     }
 

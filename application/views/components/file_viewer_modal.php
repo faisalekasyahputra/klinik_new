@@ -1,10 +1,10 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 /**
- * Penampil berkas privat dalam modal — dipakai portal DAN shell dashboard.
+ * Penampil berkas privat dalam modal - dipakai portal DAN shell dashboard.
  *
  * Dulu "Lihat berkas" = target="_blank" (tab baru putih sampai file termuat)
- * atau navigasi penuh ke biner — halaman "mati sebentar", dan loader
+ * atau navigasi penuh ke biner - halaman "mati sebentar", dan loader
  * progresif malah bekerja dua kali (fetch lalu tetap navigasi penuh).
  *
  * Cara pakai: beri atribut data-file-view (+ opsional data-file-title) pada
@@ -58,7 +58,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
     /**
      * Tampilkan kondisi DI DALAM modal dan biarkan bertahan sampai pengguna
-     * menutupnya sendiri. Dulu jalur ini menutup modal lalu navigasi penuh —
+     * menutupnya sendiri. Dulu jalur ini menutup modal lalu navigasi penuh -
      * pengulangan masalah "halaman mati sedikit" dalam bentuk kecil.
      */
     function tampilkanPesan(teks) {
@@ -82,7 +82,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
         return '';
     }
     // tutup() dipanggil EKSPLISIT di tiap jalur penutupan, bukan hanya lewat
-    // event 'close' — event antrean itu terbukti bisa tidak tiba di sebagian
+    // event 'close' - event antrean itu terbukti bisa tidak tiba di sebagian
     // lingkungan. tutup() idempoten, dobel panggil aman.
     dlg.addEventListener('close', tutup); // jalur ESC
     document.getElementById('kpkp-file-close').addEventListener('click', function () { dlg.close(); tutup(); });
@@ -102,7 +102,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                 var ct = (r.headers.get('content-type') || '');
                 // text/html = bukan berkas, melainkan halaman (mis. redirect
                 // "berkas hilang" + flash). Pesannya dipanen dari HTML itu dan
-                // ditampilkan DI DALAM modal — modal tidak menutup sendiri.
+                // ditampilkan DI DALAM modal - modal tidak menutup sendiri.
                 if (!r.ok || r.redirected || ct.indexOf('text/html') !== -1) {
                     return r.text().then(function (html) {
                         tampilkanPesan(pesanDariHtml(html)

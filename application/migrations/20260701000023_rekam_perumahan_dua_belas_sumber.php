@@ -44,7 +44,7 @@ class Migration_Rekam_perumahan_dua_belas_sumber extends CI_Migration {
 
     /**
      * Turun HANYA aman selama belum ada baris memakai dua sumber baru. Kalau
-     * ada, MySQL menolak mengubah ENUM-nya dan migrasi berhenti dengan galat —
+     * ada, MySQL menolak mengubah ENUM-nya dan migrasi berhenti dengan galat -
      * itu perilaku yang DIINGINKAN. Membiarkannya lewat berarti nilai yang
      * tidak lagi sah berubah jadi string kosong tanpa suara, dan capaian yang
      * pernah dilaporkan hilang dari rekap tanpa ada yang tahu.
@@ -58,7 +58,7 @@ class Migration_Rekam_perumahan_dua_belas_sumber extends CI_Migration {
         if ($sisa > 0) {
             show_error("Migrasi 20260701000023 tidak bisa diturunkan: ada {$sisa} baris "
                 . 'rd_perumahan_bagian memakai apbd_provinsi/baznas_provinsi. Hapus atau '
-                . 'pindahkan baris itu lebih dulu — menurunkan ENUM sekarang akan '
+                . 'pindahkan baris itu lebih dulu - menurunkan ENUM sekarang akan '
                 . 'mengosongkan nilainya tanpa suara.');
             return;
         }

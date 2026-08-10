@@ -2,10 +2,10 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Posisi/lowongan magang — layar admin. Butir F1 revisi dinas.
+ * Posisi/lowongan magang - layar admin. Butir F1 revisi dinas.
  *
  * Dinas minta papan magang menampilkan daftar posisi, bukan nama bidang, dan
- * daftar posisinya sendiri belum pernah diberikan secara resmi — yang disebut
+ * daftar posisinya sendiri belum pernah diberikan secara resmi - yang disebut
  * di rapat (programmer, arsitek, pengelola data, drafter, content creator)
  * masih berupa contoh dalam kalimat.
  *
@@ -14,7 +14,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * melamar posisi yang mungkin tidak ada. Dinas mengisinya sendiri, dan
  * menambah posisi berikutnya tidak perlu menyentuh kode sama sekali.
  *
- * POSISI ADA DI DALAM BIDANG. `kuota` di sini KETERANGAN — yang mengikat
+ * POSISI ADA DI DALAM BIDANG. `kuota` di sini KETERANGAN - yang mengikat
  * pendaftaran tetap `kkn_magang_bidang.kuota`, dan `periksa_slot()` tidak
  * disentuh. Lihat migrasi 038 untuk alasannya.
  */

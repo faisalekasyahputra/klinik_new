@@ -1,10 +1,10 @@
 <?php
 /**
- * Rekam Data — Rekap Pelaporan Kawasan (D5).
+ * Rekam Data - Rekap Pelaporan Kawasan (D5).
  *
  * Satu periode saja, tanpa `SUM()` antar triwulan. Total anggaran & padat karya
  * di sini adalah nilai TURUNAN dari daftar intervensi, sama seperti di layar
- * input — tidak ada kolomnya di DB.
+ * input - tidak ada kolomnya di DB.
  */
 $e = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
@@ -43,7 +43,7 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
       <?php endif; ?>
     </div>
 
-    <?php /* Judul ini dulu berbunyi "Angka kumulatif s.d. TW X" — dibantah oleh
+    <?php /* Judul ini dulu berbunyi "Angka kumulatif s.d. TW X" - dibantah oleh
              keterangannya sendiri dua baris di bawah ("triwulan sebelumnya tidak
              dijumlahkan"), dan dibantah oleh kodenya: Rekam_Kawasan::rekap()
              memanggil rekap() untuk SATU triwulan lalu membaca intervensi dari
@@ -62,7 +62,7 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
     <section class="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-white/10 dark:bg-brand-card">
       <p class="font-bold text-gray-900 dark:text-white">Belum ada laporan terkirim untuk periode ini.</p>
       <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
-        Bukan berarti capaiannya nol — laporannya memang belum dikirim.
+        Bukan berarti capaiannya nol - laporannya memang belum dikirim.
       </p>
       <a href="<?= base_url('Rekam_Kawasan?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>"
          class="mt-4 inline-block rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover">
@@ -130,7 +130,7 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
       </div>
 
       <?php /* Kedua angka DIHITUNG dari daftarnya, tidak diketik. Sebelumnya
-               tertulis "Perumahan 10" — benar saat ditulis, salah sejak migrasi
+               tertulis "Perumahan 10" - benar saat ditulis, salah sejak migrasi
                023 menambah apbd_provinsi dan baznas_provinsi jadi 12. Angka yang
                harus cocok dengan sebuah daftar tidak boleh ditulis tangan: orang
                yang menambah daftarnya tidak punya alasan mencari kalimat ini. */ ?>
@@ -138,7 +138,7 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
         Rekap ini <b>tidak digabungkan</b> dengan rekap Perumahan. Daftar sumber dananya
         berbeda (Kawasan <?= count(Rekam_data_model::SUMBER_KAWASAN) ?>,
         Perumahan <?= count(Rekam_data_model::SUMBER_PERUMAHAN) ?>) dan belum ada
-        pemetaan resmi dari dinas — menjumlahkan keduanya menghasilkan angka yang
+        pemetaan resmi dari dinas - menjumlahkan keduanya menghasilkan angka yang
         tidak bisa dilacak kembali.
       </p>
     </section>

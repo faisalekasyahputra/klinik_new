@@ -98,7 +98,7 @@
             });
 
             if (summary) {
-                summary.textContent = total ? 'Menampilkan ' + (start + 1) + '–' + Math.min(start + state.perPage, total) + ' dari ' + total + ' data' : 'Tidak ada data ditemukan';
+                summary.textContent = total ? 'Menampilkan ' + (start + 1) + '-' + Math.min(start + state.perPage, total) + ' dari ' + total + ' data' : 'Tidak ada data ditemukan';
             }
             if (empty) empty.hidden = total !== 0;
             renderPagination(totalPages);

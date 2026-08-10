@@ -1,6 +1,6 @@
 <?php
 /**
- * Rekam Data — layar sambutan sesudah masuk (frame 002 rancangan).
+ * Rekam Data - layar sambutan sesudah masuk (frame 002 rancangan).
  *
  * "Selamat Datang / Kabupaten X / Pelaporan Tahun Y" lalu tiga menu. Wilayah
  * dan tahun disebut di muka SEBELUM orang menyentuh angka apa pun: modul ini
@@ -8,7 +8,7 @@
  * sini adalah mengisi capaian ke wilayah atau tahun yang salah tanpa sadar.
  *
  * Rancangan aslinya hanya memuat Perumahan. Kawasan ditaruh sebagai kelompok
- * KEDUA yang terpisah, bukan dicampur ke tiga menu itu — mencampurnya membuat
+ * KEDUA yang terpisah, bukan dicampur ke tiga menu itu - mencampurnya membuat
  * "Input Capaian" ambigu antara dua domain yang bentuk datanya berbeda.
  */
 $e = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
@@ -38,7 +38,7 @@ $menu = [
       Pelaporan Tahun <?= (int) $tahun ?>
     </p>
     <p class="mx-auto mt-3 max-w-xl text-xs leading-relaxed text-gray-500 dark:text-brand-muted">
-      Wilayah diambil dari akunmu, bukan dari pilihan di layar — kamu hanya bisa
+      Wilayah diambil dari akunmu, bukan dari pilihan di layar - kamu hanya bisa
       merekam capaian wilayah sendiri.
     </p>
   </section>

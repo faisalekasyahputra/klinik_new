@@ -20,7 +20,7 @@
     </div>
     
     <?php
-    /* BUTIR 14 PUTARAN 2 — jalan pulang ke beranda.
+    /* BUTIR 14 PUTARAN 2 - jalan pulang ke beranda.
        Sebelum ini, satu-satunya cara keluar dari dashboard adalah KELUAR AKUN.
        Logo di atas menuju dashboard, bukan beranda, jadi orang yang ingin
        kembali ke situs publik benar-benar mentok. Ditaruh paling atas karena
@@ -36,7 +36,7 @@
 
     <?php // `id` dipakai loader progresif untuk MENGGANTI seluruh isi menu tiap
           // pindah halaman. Sebelumnya loader cuma menempel aria-current lewat
-          // JS, sementara sorotan dan sub-menu dirender PHP — dua implementasi
+          // JS, sementara sorotan dan sub-menu dirender PHP - dua implementasi
           // untuk satu aturan, dan hasilnya dua item menyala bersamaan sambil
           // sub-menu cabang lama tetap terbuka. Sekarang aturannya tetap satu:
           // dashboard_menu() memutuskan, server mengirim, JS hanya menukar. ?>

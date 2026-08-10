@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Rekam Data — Capaian Perumahan (wizard W3).
+ * Rekam Data - Capaian Perumahan (wizard W3).
  *
  * Kabupaten SELALU dari sesi (`$this->my_kabupaten_id`), tidak pernah dari
  * request: tidak ada dropdown wilayah di layar mana pun, dan tiap panggilan
@@ -10,7 +10,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *
  * Wizard mengikuti idiom `/warga/pendataan`: satu endpoint merender seluruh
  * langkah, POST menyimpan lalu memindahkan langkah, dan langkahnya disimpan DI
- * BARIS (`rd_laporan.current_step`) — bukan di sesi atau URL — supaya pengisian
+ * BARIS (`rd_laporan.current_step`) - bukan di sesi atau URL - supaya pengisian
  * bisa dilanjutkan setelah keluar-masuk.
  *
  * Acuan: docs/product/ROADMAP_WIZARD_REKAM_PERUMAHAN.md §3,
@@ -75,7 +75,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
      * Rekap resmi: hanya laporan `terkirim`, satu triwulan, dan angka kumulatif
      * s.d. triwulan itu berdampingan.
      *
-     * Kumulatifnya dihitung `Rekam_data_model::kumulatif()`, bukan di sini —
+     * Kumulatifnya dihitung `Rekam_data_model::kumulatif()`, bukan di sini -
      * penjumlahan antar triwulan hanya boleh terjadi di satu tempat.
      */
     public function rekap()
@@ -101,14 +101,14 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
     /**
      * Unduh rekap perumahan sebagai berkas Excel (butir C4, 5 Agt 2026).
      *
-     * MENGULANG PERSIS panggilan `rekap()` — sengaja, bukan query baru. Query
+     * MENGULANG PERSIS panggilan `rekap()` - sengaja, bukan query baru. Query
      * kedua untuk data yang sama berarti dua tempat yang bisa menyimpang, dan
      * yang menyimpang di sini adalah ANGKA CAPAIAN yang dipakai melapor ke
      * provinsi.
      *
      * 🔴 Perhatikan posisi argumen cakupan: `rekap()` menaruhnya di posisi
      * KEEMPAT, `kumulatif()` di posisi KETIGA. Keduanya opsional dan
-     * memasangnya di tempat yang salah TIDAK menghasilkan galat apa pun —
+     * memasangnya di tempat yang salah TIDAK menghasilkan galat apa pun -
      * `WHERE l.kabupaten_id` cuma tidak pernah terpasang, dan berkasnya berisi
      * seluruh 35 kabupaten. Batas kewenangan yang jebolnya tidak terlihat mata.
      *
@@ -126,7 +126,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
             // Diperiksa SEBELUM satu header pun dikirim. Berkas nol baris
             // terbaca sebagai "capaiannya memang nol", bukan "belum ada laporan".
             $this->session->set_flashdata('error',
-                'Belum ada laporan terkirim untuk periode ini — tidak ada yang bisa diunduh.');
+                'Belum ada laporan terkirim untuk periode ini - tidak ada yang bisa diunduh.');
             redirect('Rekam_Perumahan/rekap?tahun=' . $tahun . '&triwulan=' . $triwulan);
             return;
         }
@@ -139,10 +139,10 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
 
         $header = ['Sumber Dana'];
         foreach ($program as $plabel) {
-            $header[] = $plabel . ' — Rencana (unit)';
-            $header[] = $plabel . ' — Rencana (Rp)';
-            $header[] = $plabel . ' — Realisasi (unit)';
-            $header[] = $plabel . ' — Realisasi (Rp)';
+            $header[] = $plabel . ' - Rencana (unit)';
+            $header[] = $plabel . ' - Rencana (Rp)';
+            $header[] = $plabel . ' - Realisasi (unit)';
+            $header[] = $plabel . ' - Realisasi (Rp)';
         }
 
         $isi = [];
@@ -150,7 +150,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
             $r = [$slabel];
             foreach ($program as $pkode => $plabel) {
                 $sel = $matriks[$skode][$pkode] ?? NULL;
-                /* Sel KOSONG, bukan 0 — aturan "nol tabel nol" yang berlaku di
+                /* Sel KOSONG, bukan 0 - aturan "nol tabel nol" yang berlaku di
                    layar berlaku juga di berkas. Nol karangan tidak bisa
                    dibedakan dari nol yang benar-benar dilaporkan, dan di
                    spreadsheet ia ikut terjumlah. */
@@ -189,7 +189,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
 
     /**
      * Satu pintu render untuk seluruh langkah. Langkah diambil dari baris
-     * laporan, bukan dari URL — URL hanya boleh MEMILIH langkah yang sudah
+     * laporan, bukan dari URL - URL hanya boleh MEMILIH langkah yang sudah
      * boleh dibuka, tidak melompatinya.
      */
     public function input()
@@ -202,7 +202,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
 
             // Status tiap triwulan dibawa ke layar pemilihan supaya orang tahu
             // SEBELUM memilih bahwa periode itu sudah dikirim dan terkunci.
-            // Tanpa ini ia memilih TW berjalan, masuk, lalu baru ditolak — dan
+            // Tanpa ini ia memilih TW berjalan, masuk, lalu baru ditolak - dan
             // penolakan yang datang setelah tiga klik terbaca seperti kerusakan.
             $status = [];
             foreach ($this->rd->riwayat('perumahan', $this->my_kabupaten_id, $tahun,
@@ -222,7 +222,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
                 'laporan'     => NULL,
                 'terkunci'    => FALSE,
                 // Langkah 1 tidak memakai keduanya, tetapi view MEMBUATNYA jadi
-                // closure `use (...)` di awal berkas — dan `use` dievaluasi saat
+                // closure `use (...)` di awal berkas - dan `use` dievaluasi saat
                 // closure dibuat, bukan saat dipanggil. Tanpa ini PHP melempar
                 // dua Warning "Undefined variable" di setiap pembukaan wizard,
                 // padahal tidak ada yang salah dengan alurnya.
@@ -301,7 +301,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
 
         // Periode yang sudah dikirim tidak bisa diubah, jadi mengantar orang ke
         // layar pemilihan program hanya menyodorkan pintu yang terkunci. Antar
-        // langsung ke isiannya — yang memang boleh dibaca.
+        // langsung ke isiannya - yang memang boleh dibaca.
         if ($hasil['laporan']['status'] === 'terkirim') {
             redirect('Rekam_Perumahan/input?laporan=' . $id . '&langkah=isian');
             return;
@@ -352,7 +352,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         $laporan_id = (int) $this->input->post('laporan_id');
         $program    = (string) $this->input->post('program', TRUE);
 
-        // Nilai mentah SENGAJA tidak dibersihkan di sini — model yang menolak
+        // Nilai mentah SENGAJA tidak dibersihkan di sini - model yang menolak
         // negatif, bukan-angka, dan anggaran tanpa unit, supaya aturannya satu
         // tempat dan jalur lain ikut terlindungi.
         $hasil = $this->rd->simpan_sumber($laporan_id, $program,
@@ -382,7 +382,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         $this->pulang_isian($hasil, $laporan_id, $program, 'Sumber dana dihapus.');
     }
 
-    /** Pindah langkah tanpa menyimpan apa pun — tombol Lanjut/Kembali. */
+    /** Pindah langkah tanpa menyimpan apa pun - tombol Lanjut/Kembali. */
     public function langkah()
     {
         if ($this->input->method(TRUE) !== 'POST') {
@@ -403,7 +403,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
 
     /**
      * Unggah BNBA. Menekan tombol tanpa memilih berkas BUKAN error dan BUKAN
-     * 404 — pengguna dikembalikan ke layar dengan pesan yang bisa dibaca.
+     * 404 - pengguna dikembalikan ke layar dengan pesan yang bisa dibaca.
      * Bug ini pernah nyata di modul Warga (AGENTS.md §0b).
      */
     public function unggah_bnba()
@@ -436,7 +436,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         // MIME dibaca ulang dari berkas yang SUDAH mendarat, bukan dari
         // $_FILES['type'] yang datang dari klien dan bisa berisi apa saja.
         // Nilai ini nanti dipakai apa adanya sebagai header Content-Type saat
-        // penyajian — mempercayai klien di sini berarti membiarkan klien
+        // penyajian - mempercayai klien di sini berarti membiarkan klien
         // menentukan header (dan curl saja sudah mengirim octet-stream).
         $path_tersimpan = $this->private_upload_dir('rekam_bnba', $laporan_id) . $tersimpan;
         $mime = (new finfo(FILEINFO_MIME_TYPE))->file($path_tersimpan) ?: 'application/octet-stream';

@@ -18,7 +18,7 @@ class Admin_Users extends Admin_Controller {
         $table = $this->table_state(['created_at', 'name', 'email', 'role'], 'created_at');
         $data['base_url'] = 'Admin_Users';
 
-        // from() di depan lalu count_all_results('', FALSE) — JANGAN
+        // from() di depan lalu count_all_results('', FALSE) - JANGAN
         // count_all_results('usr_users', FALSE) diikuti get('usr_users'),
         // keduanya menyetel FROM sehingga jadi "FROM usr_users, usr_users".
         $this->db->from('usr_users');
@@ -79,7 +79,7 @@ class Admin_Users extends Admin_Controller {
             $payload['bidang_kode'] = $bidang_kode;
         }
 
-        // Keadaan SEBELUM diambil dulu — sesudah UPDATE ia sudah tidak ada, dan
+        // Keadaan SEBELUM diambil dulu - sesudah UPDATE ia sudah tidak ada, dan
         // "diubah dari apa" justru separuh isi dari sebuah jejak audit.
         $sebelum = $this->db->get_where('usr_users', ['id' => $id])->row();
         if ( ! $sebelum) {
@@ -94,7 +94,7 @@ class Admin_Users extends Admin_Controller {
          *
          * Superadmin membuka Akses Staf, mengubah role DIRINYA SENDIRI menjadi
          * "Warga", dan sejak detik itu tidak ada satu pun akun yang bisa membuka
-         * panel — termasuk untuk membatalkannya. Pemulihannya harus lewat DB.
+         * panel - termasuk untuk membatalkannya. Pemulihannya harus lewat DB.
          * Satu klik, dan di DB ini cuma ada SATU superadmin.
          *
          * Berbeda dari menonaktifkan: menurunkan role diri sendiri sama sekali
@@ -110,7 +110,7 @@ class Admin_Users extends Admin_Controller {
                 'usr_users', (string) $id);
             $this->session->set_flashdata('error',
                 $sebelum->id == $this->get_user_id()
-                    ? 'Anda satu-satunya Super Admin. Menurunkan role Anda sendiri akan mengunci semua orang dari panel ini — angkat Super Admin lain dulu.'
+                    ? 'Anda satu-satunya Super Admin. Menurunkan role Anda sendiri akan mengunci semua orang dari panel ini - angkat Super Admin lain dulu.'
                     : 'Ini satu-satunya Super Admin yang masih bisa masuk. Angkat Super Admin lain dulu sebelum menurunkan rolenya.');
             redirect('Admin_Users');
             return;
@@ -135,7 +135,7 @@ class Admin_Users extends Admin_Controller {
     }
 
     /**
-     * Buat akun staff (admin_kabkota/admin_bidang/dst) langsung oleh superadmin —
+     * Buat akun staff (admin_kabkota/admin_bidang/dst) langsung oleh superadmin -
      * tidak lewat pendaftaran publik Auth::onboarding().
      */
     public function create_staff()
@@ -188,7 +188,7 @@ class Admin_Users extends Admin_Controller {
 
         // Titik paling berbahaya dari enam titik A5: `usr_users.email` ber-UNIQUE,
         // jadi email duplikat membuat INSERT ditolak. Selama ini superadmin tetap
-        // diberi tahu akunnya jadi — dan setelah U0 mematikan db_debug, penolakan
+        // diberi tahu akunnya jadi - dan setelah U0 mematikan db_debug, penolakan
         // itu sepenuhnya senyap. Sebabnya disebut apa adanya supaya bisa ditindak.
         if ( ! $this->db->insert('usr_users', $payload)) {
             $galat = $this->db->error();
@@ -210,7 +210,7 @@ class Admin_Users extends Admin_Controller {
     }
 
     // =====================================================================
-    // AKSES STAF — nonaktifkan/aktifkan, reset sandi, buka kunci.
+    // AKSES STAF - nonaktifkan/aktifkan, reset sandi, buka kunci.
     //
     // Sebelum ini superadmin hanya bisa MEMBUAT akun dan mengubah role. Tidak
     // ada cara mencabut akses tanpa menyentuh DB langsung, dan tidak ada cara
@@ -222,7 +222,7 @@ class Admin_Users extends Admin_Controller {
      *
      * Mengembalikan baris user, atau NULL setelah memasang flash + redirect.
      * Dipusatkan supaya penambahan tindakan berikutnya tidak perlu menyalin
-     * ulang pemeriksaan yang sama — dan tidak bisa lupa menyalinnya.
+     * ulang pemeriksaan yang sama - dan tidak bisa lupa menyalinnya.
      */
     private function sasaran_sah($izinkan_diri_sendiri = FALSE)
     {
@@ -238,7 +238,7 @@ class Admin_Users extends Admin_Controller {
 
         // Akun sendiri: dilarang untuk tindakan yang mencabut akses. Superadmin
         // yang menonaktifkan dirinya sendiri kehilangan satu-satunya jalan untuk
-        // membatalkannya — pemulihannya harus lewat DB.
+        // membatalkannya - pemulihannya harus lewat DB.
         if ( ! $izinkan_diri_sendiri && (int) $user->id === (int) $this->get_user_id()) {
             $this->catat_audit('tindakan_diri_sendiri_ditolak',
                 'DITOLAK: mencoba melakukan tindakan pencabutan akses pada akun sendiri',
@@ -285,7 +285,7 @@ class Admin_Users extends Admin_Controller {
 
     private function superadmin_terakhir($user)
     {
-        // Catatan jujur: lewat UI, cabang ini nyaris tidak bisa tercapai —
+        // Catatan jujur: lewat UI, cabang ini nyaris tidak bisa tercapai -
         // pelakunya sendiri selalu terhitung sebagai "admin lain" yang masih
         // bisa masuk, jadi target tidak pernah menjadi yang terakhir; dan kalau
         // targetnya diri sendiri, penjaga akun-sendiri menyala lebih dulu.
@@ -307,7 +307,7 @@ class Admin_Users extends Admin_Controller {
         if ($ke === 'nonaktif' && $this->superadmin_terakhir($user)) {
             // Percobaan yang DITOLAK ikut dicatat. Jejak audit yang hanya
             // merekam keberhasilan tidak bisa menjawab "siapa yang mencoba
-            // mematikan panel ini" — dan justru percobaan itu yang perlu
+            // mematikan panel ini" - dan justru percobaan itu yang perlu
             // terlihat, terlepas berhasil atau tidak.
             $this->catat_audit('akun_dinonaktifkan_ditolak',
                 'DITOLAK: mencoba menonaktifkan Super Admin terakhir (' . $user->email . ')',
@@ -332,7 +332,7 @@ class Admin_Users extends Admin_Controller {
     /**
      * Buka akun yang terkunci karena percobaan login gagal.
      *
-     * Boleh dilakukan pada akun sendiri — ini tindakan MEMULIHKAN akses, bukan
+     * Boleh dilakukan pada akun sendiri - ini tindakan MEMULIHKAN akses, bukan
      * mencabutnya, jadi larangan "jangan sentuh diri sendiri" tidak berlaku.
      */
     public function buka_kunci()
