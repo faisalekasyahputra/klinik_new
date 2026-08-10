@@ -474,6 +474,130 @@ cek($auth_src !== '' && preg_match('/function upsert_direktori_publik.*?\n    \}
     && strpos($mu[0], 'sertifikat_') === FALSE,
     'upsert_direktori_publik() NOL kolom sertifikat — pengembang tidak menulis masa berlakunya sendiri');
 
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BUTIR 7, 8, 12 PUTARAN 2 — status bertingkat, kabupaten, asosiasi, NPWP.
+
+   Yang dijaga bukan "kolomnya ada", melainkan tiga janji yang bisa rusak
+   TANPA satu pun galat:
+
+     1. NPWP TIDAK PERNAH sampai ke halaman publik. Ini yang paling mahal:
+        `Pengembang::profil()` dulu `SELECT *`, jadi menambah kolom saja sudah
+        cukup untuk membocorkannya tanpa ada yang menyentuh baris itu.
+     2. Satu NPWP hanya boleh dipakai satu baris (inti butir 8).
+     3. Penanda masa berlaku DITURUNKAN, bukan disimpan — supaya tak pernah basi.
+   ══════════════════════════════════════════════════════════════════════════ */
+echo "\n== Butir 7/8/12: status, wilayah, asosiasi, NPWP ==\n";
+
+/* Dibersihkan DI AWAL juga, bukan cuma di akhir. Kalau blok ini gagal di
+   tengah, barisnya tertinggal — dan NPWP-nya yang ber-UNIQUE membuat
+   jalankan berikutnya gagal di PRASYARAT, bukan di hal yang sedang diuji.
+   Kejadian nyata saat menulis penjaga ini, dan justru membuktikan UNIQUE-nya
+   bekerja. */
+$GLOBALS['db']->query("DELETE FROM srp2_certified_developers WHERE nama_perusahaan LIKE 'UJI SRP2 %'");
+$npwpA  = '09' . str_pad((string) mt_rand(1, 999999999999), 13, '0', STR_PAD_LEFT);
+$namaA  = 'UJI SRP2 Alpha ' . mt_rand(1000, 9999);
+$besok  = date('Y-m-d', strtotime('+1 day'));
+$kemarin = date('Y-m-d', strtotime('-1 day'));
+
+http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
+    'nama_perusahaan' => $namaA, 'status_aktif' => 1,
+    'status_sertifikasi' => 'masih_proses', 'asosiasi' => 'REI',
+    'npwp' => $npwpA, 'kabupaten_id' => 0]);
+
+$barisA = q('SELECT * FROM srp2_certified_developers WHERE nama_perusahaan = ?', [$namaA]);
+wajib($barisA && ! isset($barisA['__id']), 'PRASYARAT: baris uji benar-benar tersimpan');
+
+cek($barisA['status_sertifikasi'] === 'masih_proses', 'Status bertingkat tersimpan apa adanya');
+cek($barisA['asosiasi'] === 'REI', 'Asosiasi tersimpan (butir 12)');
+cek( ! empty($barisA['npwp_ciphertext']) && $barisA['npwp_ciphertext'] !== $npwpA,
+    'NPWP disimpan TERENKRIPSI, bukan apa adanya');
+cek(strlen((string) $barisA['npwp_lookup_hash']) === 64, 'Sidik pencarian NPWP terbentuk');
+cek(strpos((string) $barisA['npwp_ciphertext'], $npwpA) === FALSE,
+    'Angka NPWP tidak muncul mentah di dalam ciphertext');
+
+/* Janji 1 — diperiksa dari HALAMAN PUBLIK sungguhan. Baris ini ditayangkan
+   supaya benar-benar dirender; tanpa itu "NPWP tidak muncul" lulus hampa
+   karena halamannya kosong. */
+$publik = http('tamu_srp2', 'pengembang/profil/' . (int) $barisA['id']);
+/* stripos, bukan strpos: halaman profil menampilkan nama perusahaan dalam
+   HURUF KAPITAL. Versi pertama penjaga ini memakai strpos dan merah bukan
+   karena produknya salah — probe manual kami kebetulan bernama kapital, jadi
+   nyaris menyimpulkan halamannya rusak. */
+wajib(stripos($publik['body'], $namaA) !== FALSE,
+    'PRASYARAT: profil publik pengembang uji benar-benar terbuka');
+cek(strpos($publik['body'], $npwpA) === FALSE, 'NPWP tidak muncul di profil publik');
+cek(strpos($publik['body'], (string) $barisA['npwp_ciphertext']) === FALSE,
+    'Ciphertext NPWP pun tidak ikut terkirim ke halaman publik');
+cek(strpos($publik['body'], (string) $barisA['npwp_lookup_hash']) === FALSE,
+    'Sidik pencarian tidak ikut terkirim — ia deterministik, jadi bisa diuji-tebak');
+
+/* 🔻 DAN SATU PENJAGA STRUKTURAL, karena keempat cek di atas TIDAK menjaga
+   daftar SELECT-nya. Terbukti lewat mutasi: mengembalikan `SELECT *` di
+   `Pengembang::profil()` membuat keempatnya TETAP HIJAU — view-nya memang
+   hanya mencetak medan tertentu, jadi ciphertext berhenti di memori PHP dan
+   tidak sampai ke halaman.
+
+   Risikonya laten, bukan nihil: begitu ada yang menambahkan satu perulangan
+   atas seluruh medan baris itu — atau satu dump saat menelusuri galat —
+   ciphertext dan sidik pencariannya ikut tercetak. Yang dijaga di sini adalah
+   KEPUTUSANNYA: kolom disebut satu per satu, sehingga menambah kolom sensitif
+   berikutnya menuntut orang memutuskan sadar apakah ia boleh ikut. */
+$peng_src = (string) @file_get_contents(APP_ROOT . '/application/controllers/Pengembang.php');
+cek(preg_match('/select\(\s*.id, nama_perusahaan/', $peng_src) === 1,
+    'profil() menyebut kolom satu per satu, bukan SELECT * (struktural)');
+/* Dicocokkan ke DAFTAR SELECT-nya, bukan ke seluruh berkas. Versi pertama
+   mencari 'npwp' di mana pun dan langsung merah — satu-satunya penyebutan
+   di sana adalah KOMENTAR PENJELASAN kami sendiri. Pola yang sama sudah
+   pernah terjadi 5 Agt (penjaga "Cek Backlog" merah oleh komentarnya
+   sendiri) dan sudah dicatat di AGENTS.md; kami mengulanginya hari ini. */
+preg_match('/->select\(([^;]*?)\)\s*
+\s*->get_where\(.srp2_certified_developers/s', $peng_src, $msel);
+cek( ! empty($msel[1]) && stripos($msel[1], 'npwp') === FALSE,
+    'Daftar SELECT profil publik TIDAK memuat satu pun kolom npwp');
+
+/* Janji 2 — NPWP kembar ditolak. Dibaca dari JUMLAH BARIS, bukan pesan layar. */
+$sebelum = (int) nilai('SELECT COUNT(*) c FROM srp2_certified_developers');
+http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
+    'nama_perusahaan' => 'UJI SRP2 Kembar ' . mt_rand(1000, 9999), 'status_aktif' => 1,
+    'status_sertifikasi' => 'bersertifikat', 'npwp' => $npwpA, 'kabupaten_id' => 0]);
+cek((int) nilai('SELECT COUNT(*) c FROM srp2_certified_developers') === $sebelum,
+    'NPWP kembar DITOLAK — satu NPWP satu pengembang (butir 8)');
+
+/* Janji 3 — penanda masa berlaku diturunkan. Diperiksa dari LAYAR, bukan dari
+   kolom: yang dijanjikan ke dinas adalah apa yang mereka lihat. */
+$kol = q("SELECT GROUP_CONCAT(COLUMN_NAME) c FROM information_schema.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_certified_developers'");
+cek(strpos((string) $kol['c'], 'status_berlaku') === FALSE,
+    'TIDAK ada kolom penanda masa berlaku yang disimpan — ia diturunkan');
+
+http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
+    'id' => (int) $barisA['id'], 'nama_perusahaan' => $namaA, 'status_aktif' => 1,
+    'status_sertifikasi' => 'bersertifikat', 'sertifikat_berakhir' => $kemarin,
+    'npwp' => $npwpA, 'kabupaten_id' => 0]);
+cek(strpos(http('adm', 'Admin_Srp2?q=' . urlencode($namaA))['body'], 'masa berlaku habis') !== FALSE,
+    'Sertifikat yang habis kemarin ditandai non-aktif di layar');
+
+http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
+    'id' => (int) $barisA['id'], 'nama_perusahaan' => $namaA, 'status_aktif' => 1,
+    'status_sertifikasi' => 'bersertifikat', 'sertifikat_berakhir' => $besok,
+    'npwp' => $npwpA, 'kabupaten_id' => 0]);
+$layarAktif = http('adm', 'Admin_Srp2?q=' . urlencode($namaA))['body'];
+cek(strpos($layarAktif, 'masa berlaku habis') === FALSE,
+    'Sertifikat yang masih berlaku TIDAK ditandai habis');
+
+/* Status di luar daftar ditolak, tidak diam-diam diabaikan. */
+http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
+    'id' => (int) $barisA['id'], 'nama_perusahaan' => $namaA, 'status_aktif' => 1,
+    'status_sertifikasi' => 'status_karangan', 'kabupaten_id' => 0]);
+cek(nilai('SELECT status_sertifikasi FROM srp2_certified_developers WHERE id = ?',
+    [(int) $barisA['id']]) === 'bersertifikat',
+    'Status karangan ditolak — nilai lama tidak berubah');
+
+$GLOBALS['db']->query('DELETE FROM srp2_certified_developers WHERE id = ' . (int) $barisA['id']);
+$GLOBALS['db']->query("DELETE FROM srp2_certified_developers WHERE nama_perusahaan LIKE 'UJI SRP2 %'");
+
+
 bersihkan();
 $GLOBALS['regs'] = $GLOBALS['users'] = $GLOBALS['sertifikat'] = [];
 cek((int) nilai('SELECT COUNT(*) c FROM srp2_certified_developers WHERE nama_perusahaan LIKE ?', [CAP . '%']) === 0

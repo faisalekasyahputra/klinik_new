@@ -184,6 +184,31 @@ class Migrate extends CI_Controller {
             echo "kkn_magang_posisi (migrasi 038): BELUM ADA — layar Posisi Magang akan fatal\n";
         }
 
+        /* SRP2 status/NPWP (migrasi 040). UNIQUE-nya yang diperiksa, bukan
+           cuma kolomnya: tanpa `uq_srp2_npwp`, butir 8 ("satu NPWP satu
+           pengembang") tidak ditegakkan apa pun — dan itu justru inti
+           permintaannya. ALTER terpisah seperti itu gagal senyap saat db_debug
+           mati (riwayat 031). */
+        if (in_array('srp2_certified_developers', $tables, TRUE)) {
+            foreach (['status_sertifikasi', 'kabupaten_id', 'asosiasi',
+                      'npwp_ciphertext', 'npwp_lookup_hash'] as $c) {
+                echo "srp2_certified_developers.{$c} (migrasi 040): "
+                    .($this->db->field_exists($c, 'srp2_certified_developers') ? 'ADA' : 'HILANG')."
+";
+            }
+            $uq = $this->db->query("SELECT NON_UNIQUE nu FROM information_schema.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_certified_developers'
+                  AND INDEX_NAME = 'uq_srp2_npwp' LIMIT 1")->row();
+            echo 'srp2 NPWP UNIQUE (butir 8): '
+                .($uq === NULL ? 'TIDAK ADA — NPWP kembar bisa masuk'
+                    : ((int) $uq->nu === 0 ? 'TERPASANG' : 'ADA TAPI TIDAK UNIQUE'))."
+";
+            $isi = (int) $this->db->where('npwp_lookup_hash IS NOT NULL', NULL, FALSE)
+                ->count_all_results('srp2_certified_developers');
+            echo "pengembang dengan NPWP tercatat: {$isi}
+";
+        }
+
         /* Nomenklatur kawasan dirinci (migrasi 039). Ketiganya WAJIB NULL-able:
            kalau kelak ada yang menjadikannya NOT NULL, laporan yang hanya
            mengisi kegiatan langsung ditolak — dan 35 kabupaten/kota berhenti

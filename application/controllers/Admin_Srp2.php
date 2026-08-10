@@ -3,6 +3,25 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Admin_Srp2 extends Admin_Controller {
 
+    /** Butir 7 putaran 2. Harus sama persis dengan ENUM migrasi 040. */
+    const STATUS_SERTIFIKASI = ['belum_mendaftar', 'mendaftar', 'masih_proses', 'bersertifikat'];
+
+    /**
+     * Keadaan masa berlaku — DITURUNKAN, tidak pernah disimpan.
+     *
+     * Dinas minta penanda aktif/non-aktif dari masa berlaku sertifikat.
+     * Menyimpannya berarti ada yang harus memperbaruinya tiap hari, dan yang
+     * tidak diperbarui akan berkata "aktif" untuk sertifikat yang kedaluwarsa
+     * kemarin — tanpa satu pun galat. Diturunkan berarti selalu benar.
+     */
+    public static function keadaan_berlaku($status, $berakhir) {
+        if ($status !== 'bersertifikat')        { return ['belum', 'Belum bersertifikat']; }
+        if (empty($berakhir))                   { return ['tak_tercatat', 'Masa berlaku belum tercatat']; }
+        return $berakhir >= date('Y-m-d')
+            ? ['aktif', 'Aktif']
+            : ['kedaluwarsa', 'Non-aktif — masa berlaku habis'];
+    }
+
     public function __construct() {
         parent::__construct();
         // upsert_direktori_publik() dipakai proses() — satu fungsi yang sama
@@ -33,6 +52,28 @@ class Admin_Srp2 extends Admin_Controller {
             ->limit($table['per_page'], $table['offset'])
             ->get()->result();
         $data['table'] = $data['pager'] = $table;
+        $data['kabupaten'] = $this->db->select('id, nama')->order_by('nama', 'ASC')
+            ->get('kabupaten')->result();
+
+        /* NPWP dibuka HANYA di layar admin ini, dan hanya untuk baris yang
+           sedang ditampilkan — bukan seluruh direktori. Nilainya diisikan ke
+           formulir supaya "Simpan" tidak menghapusnya diam-diam: isian yang
+           selalu terkirim tetapi dibiarkan kosong akan menge-NULL-kan kolomnya,
+           dan itu persis bug `sosmed_lainnya` yang baru kami perbaiki 10 Agt.
+
+           Gagal buka TIDAK disembunyikan jadi string kosong. Kosong berarti
+           "belum diisi", dan kalau kunci enkripsinya berganti sementara layar
+           berkata kosong, admin akan mengetik ulang NPWP ke atas data yang
+           sebenarnya masih ada. */
+        $this->load->library('encryption_lib');
+        foreach ($data['rows'] as $r) {
+            $r->npwp_plain = NULL;
+            $r->npwp_rusak = FALSE;
+            if (empty($r->npwp_ciphertext)) { continue; }
+            $buka = $this->encryption_lib->decrypt($r->npwp_ciphertext);
+            if ($buka === FALSE || $buka === NULL || $buka === '') { $r->npwp_rusak = TRUE; continue; }
+            $r->npwp_plain = $buka;
+        }
 
         $this->render_admin('admin/srp2/index', $data);
     }
@@ -322,6 +363,67 @@ class Admin_Srp2 extends Admin_Controller {
             && $tanggal['sertifikat_terbit'] > $tanggal['sertifikat_berakhir']) {
             $this->session->set_flashdata('error', 'Tanggal terbit tidak boleh melewati tanggal akhir masa berlaku.');
             redirect('Admin_Srp2'); return;
+        }
+
+        /* ── Butir 7: status bertingkat ─────────────────────────────────────
+           Divalidasi ke daftar tertutup. Nilai di luar daftar TIDAK diam-diam
+           diabaikan — ia ditolak dengan pesan, karena status yang meleset
+           mengubah arti seluruh baris di mata dinas. */
+        if ($this->input->post('status_sertifikasi') !== NULL) {
+            $s = (string) $this->input->post('status_sertifikasi', TRUE);
+            if ( ! in_array($s, self::STATUS_SERTIFIKASI, TRUE)) {
+                $this->session->set_flashdata('error', 'Status sertifikasi tidak dikenal.');
+                redirect('Admin_Srp2'); return;
+            }
+            $payload['status_sertifikasi'] = $s;
+        }
+
+        /* ── Butir 7: kabupaten ─────────────────────────────────────────────
+           Divalidasi ke TABEL, bukan sekadar dicek angka. Id yang tidak ada
+           akan lolos `is_numeric` lalu menghasilkan baris berwilayah hantu. */
+        if ($this->input->post('kabupaten_id') !== NULL) {
+            $kab = (int) $this->input->post('kabupaten_id');
+            if ($kab === 0) {
+                $payload['kabupaten_id'] = NULL;
+            } elseif ($this->db->where('id', $kab)->count_all_results('kabupaten')) {
+                $payload['kabupaten_id'] = $kab;
+            } else {
+                $this->session->set_flashdata('error', 'Kabupaten/kota tidak dikenal.');
+                redirect('Admin_Srp2'); return;
+            }
+        }
+
+        /* ── Butir 12: asosiasi ─────────────────────────────────────────────
+           Ketik bebas sampai dinas mengirim daftar resminya. Pertanyaannya
+           sudah disampaikan; sampai dijawab, mengarang daftar sendiri berarti
+           memaksa pengembang memilih asosiasi yang mungkin bukan miliknya. */
+        if ($this->input->post('asosiasi') !== NULL) {
+            $a = mb_substr(trim((string) $this->input->post('asosiasi', TRUE)), 0, 100);
+            $payload['asosiasi'] = $a === '' ? NULL : $a;
+        }
+
+        /* ── Butir 8: NPWP sebagai kunci pengembang ─────────────────────────
+           Diperlakukan PERSIS seperti NIK warga: nilai aslinya dienkripsi, dan
+           yang dipakai mencari/menegakkan keunikan adalah sidik deterministik.
+           Polanya tidak dibuat baru — `Encryption_lib` sudah menyediakannya.
+
+           Angka saja yang disimpan. NPWP ditulis orang dengan titik dan strip
+           yang berbeda-beda; menyimpan apa adanya membuat dua tulisan NPWP yang
+           sama menghasilkan dua sidik berbeda, dan UNIQUE-nya jadi tidak
+           menjaga apa pun. */
+        if ($this->input->post('npwp') !== NULL) {
+            $npwp_mentah = preg_replace('/\D+/', '', (string) $this->input->post('npwp', TRUE));
+            if ($npwp_mentah === '') {
+                $payload['npwp_ciphertext']  = NULL;
+                $payload['npwp_lookup_hash'] = NULL;
+            } elseif (strlen($npwp_mentah) < 15 || strlen($npwp_mentah) > 16) {
+                $this->session->set_flashdata('error', 'NPWP harus 15 atau 16 digit angka.');
+                redirect('Admin_Srp2'); return;
+            } else {
+                $this->load->library('encryption_lib');
+                $payload['npwp_ciphertext']  = $this->encryption_lib->encrypt($npwp_mentah);
+                $payload['npwp_lookup_hash'] = $this->encryption_lib->deterministic_hash($npwp_mentah);
+            }
         }
 
         // Hasil query DIPERIKSA, bukan diasumsikan — pola sukses karangan yang

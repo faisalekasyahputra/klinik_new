@@ -90,7 +90,24 @@ class Pengembang extends MY_Controller {
     public function profil($id = NULL) {
         if (!is_numeric($id)) show_404();
         if ($this->db->table_exists('srp2_certified_developers')) {
-            $data['pengembang'] = $this->db->get_where('srp2_certified_developers', ['id' => (int) $id, 'status_aktif' => 1])->row();
+            /* KOLOM DISEBUT SATU PER SATU, dan itu bukan gaya penulisan.
+               Sebelum migrasi 040 baris ini `SELECT *`, dan begitu NPWP
+               ditambahkan ke tabel — terenkripsi sekalipun — ia IKUT TERKIRIM ke
+               view publik tanpa ada yang mengubah baris ini. Butir 7 justru
+               meminta NPWP hanya terlihat admin.
+
+               Sidik pencarian (`npwp_lookup_hash`) sama berbahayanya: ia
+               deterministik, jadi siapa pun yang bisa membacanya dapat menguji
+               tebakan NPWP tanpa perlu memecahkan enkripsinya.
+
+               Menambah kolom baru ke tabel ini WAJIB disertai keputusan sadar
+               apakah ia masuk daftar di bawah. `SELECT *` mengambil keputusan
+               itu diam-diam, dan selalu ke arah yang salah. */
+            $data['pengembang'] = $this->db
+                ->select('id, nama_perusahaan, alamat_kantor, website, instagram, sosmed_lainnya,'
+                    . ' status_aktif, status_sertifikasi, kabupaten_id, asosiasi,'
+                    . ' sertifikat_terbit, sertifikat_berakhir, created_at, updated_at')
+                ->get_where('srp2_certified_developers', ['id' => (int) $id, 'status_aktif' => 1])->row();
 
             // Field yang kosong dilengkapi dari baris pengajuan lewat RELASI ID
             // (certified_developer_id), bukan pencocokan nama string.
