@@ -162,6 +162,23 @@ foreach ($intervensi as $row) {
                 <?php endif; ?>
               </p>
               <p class="mt-1 text-sm text-gray-600 dark:text-brand-muted"><?= $e($row['nama_kegiatan']) ?></p>
+              <?php
+              /* Bagian nomenklatur yang terisi saja yang ditampilkan. Baris
+                 lama (sebelum migrasi 039) bernilai NULL di ketiganya, dan
+                 memaksa mencetak "-" untuk ketiganya membuat daftar penuh
+                 tanda hubung tanpa memberi tahu apa pun. */
+              $rinci = array_filter([
+                  'Program'      => $row['nama_program'] ?? NULL,
+                  'Sub kegiatan' => $row['nama_sub_kegiatan'] ?? NULL,
+                  'Pekerjaan'    => $row['nama_pekerjaan'] ?? NULL,
+              ], static function ($v) { return $v !== NULL && trim((string) $v) !== ''; });
+              ?>
+              <?php if ($rinci): ?>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-brand-muted">
+                  <?php $bagian = []; foreach ($rinci as $lbl => $isi) { $bagian[] = $e($lbl) . ': ' . $e($isi); } ?>
+                  <?= implode(' &middot; ', $bagian) ?>
+                </p>
+              <?php endif; ?>
               <p class="text-sm text-gray-500 dark:text-brand-muted"><?= $e($row['lokasi_teks']) ?></p>
             </div>
             <?php if ( ! $terkunci): ?>
@@ -219,11 +236,49 @@ foreach ($intervensi as $row) {
             </select>
           </label>
 
-          <label class="text-sm md:col-span-2">
-            <span class="font-bold text-gray-900 dark:text-white">Nama kegiatan/program</span>
-            <input name="nama_kegiatan" required maxlength="500" value="<?= $e($sedang_diubah['nama_kegiatan'] ?? '') ?>"
-              class="mt-1 w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 dark:border-white/10">
-          </label>
+          <?php
+          /* Butir D2 — dulu SATU isian "Nama kegiatan/program" untuk empat hal
+             sekaligus, sehingga rekap tidak bisa mengelompokkan apa pun:
+             "PK RTLH", "pk rtlh", dan "Peningkatan Kualitas RTLH" terhitung
+             tiga hal berbeda.
+
+             Dikelompokkan dalam <fieldset> supaya keempatnya terbaca sebagai
+             satu nomenklatur berjenjang, bukan empat isian yang kebetulan
+             berdekatan — dan pembaca layar menyebut "Nomenklatur kegiatan"
+             sebelum tiap sub-labelnya.
+
+             HANYA "Kegiatan" YANG WAJIB, sama seperti sebelum dirinci. Tiga
+             lainnya opsional supaya laporan yang sedang berjalan tidak ikut
+             tertolak hanya karena bentuk isiannya berubah. */
+          ?>
+          <fieldset class="md:col-span-2 rounded-lg border border-gray-200 p-3 dark:border-white/10">
+            <legend class="px-1 text-sm font-bold text-gray-900 dark:text-white">Nomenklatur kegiatan</legend>
+            <p class="mb-2 text-xs text-gray-500 dark:text-brand-muted">
+              Dirinci terpisah agar bisa direkap. Hanya <b>Kegiatan</b> yang wajib diisi.
+            </p>
+            <div class="grid gap-3 md:grid-cols-2">
+              <label class="text-sm">
+                <span class="text-gray-600 dark:text-brand-muted">Program</span>
+                <input name="nama_program" maxlength="255" value="<?= $e($sedang_diubah['nama_program'] ?? '') ?>"
+                  class="mt-1 w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 dark:border-white/10">
+              </label>
+              <label class="text-sm">
+                <span class="text-gray-600 dark:text-brand-muted">Kegiatan <b class="text-gray-900 dark:text-white">*</b></span>
+                <input name="nama_kegiatan" required maxlength="500" value="<?= $e($sedang_diubah['nama_kegiatan'] ?? '') ?>"
+                  class="mt-1 w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 dark:border-white/10">
+              </label>
+              <label class="text-sm">
+                <span class="text-gray-600 dark:text-brand-muted">Sub kegiatan</span>
+                <input name="nama_sub_kegiatan" maxlength="255" value="<?= $e($sedang_diubah['nama_sub_kegiatan'] ?? '') ?>"
+                  class="mt-1 w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 dark:border-white/10">
+              </label>
+              <label class="text-sm">
+                <span class="text-gray-600 dark:text-brand-muted">Pekerjaan</span>
+                <input name="nama_pekerjaan" maxlength="255" value="<?= $e($sedang_diubah['nama_pekerjaan'] ?? '') ?>"
+                  class="mt-1 w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 dark:border-white/10">
+              </label>
+            </div>
+          </fieldset>
 
           <label class="text-sm md:col-span-2">
             <span class="font-bold text-gray-900 dark:text-white">Lokasi (RT, RW, Desa/Kelurahan, Kecamatan)</span>

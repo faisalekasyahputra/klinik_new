@@ -183,6 +183,26 @@ class Migrate extends CI_Controller {
         } else {
             echo "kkn_magang_posisi (migrasi 038): BELUM ADA — layar Posisi Magang akan fatal\n";
         }
+
+        /* Nomenklatur kawasan dirinci (migrasi 039). Ketiganya WAJIB NULL-able:
+           kalau kelak ada yang menjadikannya NOT NULL, laporan yang hanya
+           mengisi kegiatan langsung ditolak — dan 35 kabupaten/kota berhenti
+           bisa melapor tanpa satu pun galat yang menjelaskan kenapa. */
+        if (in_array('rd_kawasan_intervensi', $tables, TRUE)) {
+            $kol = $this->db->query("SELECT COLUMN_NAME c, IS_NULLABLE n FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rd_kawasan_intervensi'
+                  AND COLUMN_NAME IN ('nama_program','nama_sub_kegiatan','nama_pekerjaan')")->result();
+            $peta = [];
+            foreach ($kol as $k) { $peta[$k->c] = $k->n; }
+            foreach (['nama_program', 'nama_sub_kegiatan', 'nama_pekerjaan'] as $c) {
+                echo "rd_kawasan_intervensi.{$c} (migrasi 039): "
+                    .( ! isset($peta[$c]) ? 'HILANG'
+                        : ($peta[$c] === 'YES' ? 'ADA & opsional' : 'ADA TAPI WAJIB — laporan lama akan ditolak'))."\n";
+            }
+            $terisi = (int) $this->db->where('nama_program IS NOT NULL', NULL, FALSE)
+                ->count_all_results('rd_kawasan_intervensi');
+            echo "intervensi kawasan dengan program terpisah: {$terisi}\n";
+        }
     }
 
     /**

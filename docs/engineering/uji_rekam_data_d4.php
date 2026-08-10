@@ -327,6 +327,46 @@ try {
     cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP]) === 24,
         'Ubah tidak menambah baris baru');
 
+    // ------------------------------------- butir D2: nomenklatur dirinci
+    /* Dulu satu isian untuk empat hal, sehingga rekap tidak bisa
+       mengelompokkan apa pun. Yang dijaga di sini: ketiganya BENAR-BENAR
+       tersimpan terpisah, KOSONG jadi NULL (bukan string kosong), dan
+       ketiganya TETAP OPSIONAL — laporan yang hanya mengisi kegiatan harus
+       tetap bisa disimpan, kalau tidak perubahan bentuk isian ini
+       menghentikan pekerjaan 35 kabupaten/kota. */
+    $t = csrf('kab', $url);
+    http('kab', 'Rekam_Kawasan/simpan_intervensi', ['csrf_kpkp_token' => $t,
+        'laporan_id' => $LAP, 'intervensi_id' => $pertama, 'indikator' => 'air_minum',
+        'nama_program' => 'Program Kawasan Permukiman',
+        'nama_kegiatan' => 'Kegiatan diperbarui',
+        'nama_sub_kegiatan' => 'Sub Peningkatan Kualitas',
+        'nama_pekerjaan' => 'Pekerjaan Saluran RT 2',
+        'lokasi_teks' => 'RT 2 RW 2, Desa Uji',
+        'sumber_anggaran' => 'dana_desa', 'keterangan_sumber' => '',
+        'volume' => '85', 'nilai_anggaran' => '212500000', 'nilai_padat_karya' => '0']);
+    $rinci = q('SELECT nama_program, nama_kegiatan, nama_sub_kegiatan, nama_pekerjaan
+                  FROM rd_kawasan_intervensi WHERE id = ?', [$pertama]);
+    cek($rinci['nama_program'] === 'Program Kawasan Permukiman', 'D2: program tersimpan terpisah');
+    cek($rinci['nama_sub_kegiatan'] === 'Sub Peningkatan Kualitas', 'D2: sub kegiatan tersimpan terpisah');
+    cek($rinci['nama_pekerjaan'] === 'Pekerjaan Saluran RT 2', 'D2: pekerjaan tersimpan terpisah');
+    cek($rinci['nama_kegiatan'] === 'Kegiatan diperbarui', 'D2: kegiatan tidak tertimpa oleh tetangganya');
+
+    $t = csrf('kab', $url);
+    http('kab', 'Rekam_Kawasan/simpan_intervensi', ['csrf_kpkp_token' => $t,
+        'laporan_id' => $LAP, 'intervensi_id' => $pertama, 'indikator' => 'air_minum',
+        'nama_program' => '', 'nama_kegiatan' => 'Kegiatan diperbarui',
+        'nama_sub_kegiatan' => '  ', 'nama_pekerjaan' => '',
+        'lokasi_teks' => 'RT 2 RW 2, Desa Uji',
+        'sumber_anggaran' => 'dana_desa', 'keterangan_sumber' => '',
+        'volume' => '85', 'nilai_anggaran' => '212500000', 'nilai_padat_karya' => '0']);
+    $kosong = q('SELECT nama_program, nama_sub_kegiatan, nama_pekerjaan
+                   FROM rd_kawasan_intervensi WHERE id = ?', [$pertama]);
+    cek($kosong['nama_program'] === NULL && $kosong['nama_sub_kegiatan'] === NULL
+        && $kosong['nama_pekerjaan'] === NULL,
+        'D2: dikosongkan jadi NULL, bukan string kosong — "tidak diisi" beda dari "diisi kosong"');
+    cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP]) === 24,
+        'D2: menyimpan tanpa ketiga isian baru TETAP BERHASIL — tidak menolak laporan berjalan');
+
     // ------------------------------------------------------- scope
     $t = csrf('lain', 'Rekam_Kawasan?tahun=' . TAHUN . '&triwulan=2');
     http('lain', 'Rekam_Kawasan/simpan_intervensi', ['csrf_kpkp_token' => $t,

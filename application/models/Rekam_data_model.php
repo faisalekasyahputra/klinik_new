@@ -558,7 +558,18 @@ class Rekam_data_model extends CI_Model {
             return $this->gagal('angka_invalid', 'Volume dan nilai harus angka tidak negatif.');
         }
 
-        $payload = [
+        /* Butir D2 — nomenklatur dirinci terpisah. Ketiganya OPSIONAL: yang
+           wajib tetap `nama_kegiatan` saja, persis seperti sebelum migrasi 039.
+           Mengubah bentuk isian tidak boleh menghentikan laporan yang sedang
+           berjalan hari ini. Kosong disimpan NULL, bukan string kosong, supaya
+           "tidak diisi" dan "diisi kosong" tidak jadi dua hal yang sama. */
+        $rinci = [];
+        foreach (['nama_program', 'nama_sub_kegiatan', 'nama_pekerjaan'] as $k) {
+            $v = mb_substr(trim((string) ($data[$k] ?? '')), 0, 255);
+            $rinci[$k] = $v === '' ? NULL : $v;
+        }
+
+        $payload = $rinci + [
             'indikator'         => $data['indikator'],
             'nama_kegiatan'     => $nama,
             'lokasi_teks'       => $lokasi,

@@ -223,7 +223,10 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
 
         $hasil = $this->rd->simpan_intervensi($laporan_id, [
             'indikator'         => $this->input->post('indikator', TRUE),
+            'nama_program'      => $this->input->post('nama_program', TRUE),
             'nama_kegiatan'     => $this->input->post('nama_kegiatan', TRUE),
+            'nama_sub_kegiatan' => $this->input->post('nama_sub_kegiatan', TRUE),
+            'nama_pekerjaan'    => $this->input->post('nama_pekerjaan', TRUE),
             'lokasi_teks'       => $this->input->post('lokasi_teks', TRUE),
             'sumber_anggaran'   => $this->input->post('sumber_anggaran', TRUE),
             'keterangan_sumber' => $this->input->post('keterangan_sumber', TRUE),
