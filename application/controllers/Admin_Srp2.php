@@ -266,13 +266,63 @@ class Admin_Srp2 extends Admin_Controller {
         $id = (int) $this->input->post('id');
         $name = strtoupper(trim((string) $this->input->post('nama_perusahaan', TRUE)));
         if ($name === '' || strlen($name) > 180) { $this->session->set_flashdata('error', 'Nama perusahaan wajib diisi.'); redirect('Admin_Srp2'); return; }
-        $urls = [];
+        /* HANYA medan yang BENAR-BENAR DIKIRIM yang masuk payload.
+         *
+         * Sampai 5 Agt 2026 ketiga URL selalu dirakit tanpa syarat, padahal
+         * form BARIS di tabel (views/admin/srp2/index.php) tidak punya input
+         * `sosmed_lainnya` — hanya form "Tambah pengembang" yang punya. Akibatnya
+         * setiap "Simpan" pada sebuah baris menge-NULL-kan kolom itu diam-diam.
+         * Bukan dugaan: nol dari 67 baris direktori punya nilai di sana.
+         *
+         * Dua kolom tanggal masa berlaku (migrasi 037) akan bernasib persis sama
+         * tanpa perbaikan ini — dan tanggal sertifikat yang hilang sendiri jauh
+         * lebih mahal daripada tautan media sosial.
+         *
+         * Bedanya jelas dan disengaja:
+         *   - medan TIDAK dikirim  -> kolomnya tidak disentuh sama sekali,
+         *   - medan dikirim KOSONG -> kolomnya dikosongkan (itu memang maunya).
+         *
+         * `status_aktif` SENGAJA di luar aturan ini: ia checkbox, dan checkbox
+         * yang tidak dicentang memang tidak terkirim. Membacanya sebagai
+         * "biarkan" membuat sakelar yang tidak pernah bisa dimatikan.
+         */
+        $payload = [
+            'nama_perusahaan' => $name,
+            'status_aktif'    => $this->input->post('status_aktif') ? 1 : 0,
+        ];
+
+        if ($this->input->post('alamat_kantor') !== NULL) {
+            $payload['alamat_kantor'] = trim((string) $this->input->post('alamat_kantor', TRUE));
+        }
+
         foreach (['website', 'instagram', 'sosmed_lainnya'] as $field) {
+            if ($this->input->post($field) === NULL) { continue; }
             $value = trim((string) $this->input->post($field, TRUE));
             if ($value !== '' && (!filter_var($value, FILTER_VALIDATE_URL) || !in_array(strtolower(parse_url($value, PHP_URL_SCHEME)), ['http', 'https'], TRUE))) { $this->session->set_flashdata('error', 'Link ' . $field . ' harus menggunakan URL http/https yang valid.'); redirect('Admin_Srp2'); return; }
-            $urls[$field] = $value ?: null;
+            $payload[$field] = $value ?: null;
         }
-        $payload = array_merge(['nama_perusahaan' => $name, 'status_aktif' => $this->input->post('status_aktif') ? 1 : 0, 'alamat_kantor' => trim((string) $this->input->post('alamat_kantor', TRUE))], $urls);
+
+        /* Masa berlaku (butir B1). Kosong -> NULL, bukan '' — MariaDB lokal
+           berjalan TANPA STRICT mode, jadi '' pada kolom DATE mendarat sebagai
+           '0000-00-00' tanpa satu pun galat, dan tanggal itu lolos ke layar. */
+        $tanggal = [];
+        foreach (['sertifikat_terbit', 'sertifikat_berakhir'] as $field) {
+            if ($this->input->post($field) === NULL) { continue; }
+            $v = trim((string) $this->input->post($field, TRUE));
+            if ($v === '') { $payload[$field] = NULL; $tanggal[$field] = NULL; continue; }
+            $d = DateTime::createFromFormat('!Y-m-d', $v);
+            if ( ! $d || $d->format('Y-m-d') !== $v) {
+                $this->session->set_flashdata('error', 'Tanggal sertifikat harus berformat YYYY-MM-DD.');
+                redirect('Admin_Srp2'); return;
+            }
+            $payload[$field] = $v;
+            $tanggal[$field] = $v;
+        }
+        if ( ! empty($tanggal['sertifikat_terbit']) && ! empty($tanggal['sertifikat_berakhir'])
+            && $tanggal['sertifikat_terbit'] > $tanggal['sertifikat_berakhir']) {
+            $this->session->set_flashdata('error', 'Tanggal terbit tidak boleh melewati tanggal akhir masa berlaku.');
+            redirect('Admin_Srp2'); return;
+        }
 
         // Hasil query DIPERIKSA, bukan diasumsikan — pola sukses karangan yang
         // sama seperti proses() sebelum T1a. Kolom nama ber-UNIQUE, jadi bentrok

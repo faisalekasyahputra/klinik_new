@@ -90,6 +90,15 @@ class Migrate extends CI_Controller {
             echo $t.': '.(in_array($t, $tables) ? 'ADA' : 'TIDAK ADA')."\n";
         }
 
+        // Migrasi 037 — masa berlaku sertifikat SRP2. Kolom, bukan tabel.
+        if (in_array('srp2_certified_developers', $tables)) {
+            foreach (['sertifikat_terbit', 'sertifikat_berakhir'] as $k) {
+                echo 'srp2_certified_developers.'.$k.': '.
+                    ($this->db->field_exists($k, 'srp2_certified_developers') ? 'ADA' : 'TIDAK ADA')."
+";
+            }
+        }
+
         // Migrasi 036 — kolom etalase program.
         if (in_array('sf_programs', $tables)) {
             foreach (['badge', 'syarat_utama', 'gambar', 'urutan', 'tampil_korsel'] as $k) {

@@ -391,6 +391,89 @@ q('UPDATE srp2_certified_developers SET status_aktif=0 WHERE id=?', [$sert]);
 cek(http('a', 'Pengembang/profil/' . $sert)['code'] === 404, 'Profil yang dinonaktifkan tidak lagi terbuka');
 cek(http('a', 'Pengembang/profil/abc')['code'] === 404, 'Profil dengan id bukan angka ditolak');
 
+// ------------------------------------------------------- B1: masa berlaku
+/* Butir B1, 5 Agt 2026. Yang dijaga di sini BUKAN kolomnya melainkan
+   PERILAKU SIMPANNYA, dan itu karena bug yang sudah berjalan hari ini:
+   `Admin_Srp2::save()` merakit payload PENUH, sementara form BARIS di tabel
+   tidak punya input `sosmed_lainnya`. Setiap "Simpan" pada sebuah baris
+   menge-NULL-kan kolom itu diam-diam — nol dari 67 baris direktori punya
+   nilai di sana. Dua kolom tanggal akan bernasib sama tanpa perbaikan akar,
+   dan tanggal sertifikat yang hilang sendiri jauh lebih mahal. */
+echo "\n== B1 — masa berlaku sertifikat ==\n";
+
+/* Sesi superadmin dibuat DI SINI, dan prasyaratnya diperiksa keras.
+   Versi pertama blok ini memakai sesi 'adm' yang tidak pernah di-login —
+   POST-nya diarahkan ke layar masuk, DB tidak tersentuh, dan ketiga asersi
+   "nilainya bertahan" lulus justru karena TIDAK TERJADI APA-APA. Uji yang
+   hijau karena tidak menyentuh apa pun lebih berbahaya daripada uji merah. */
+[$uidAdm, $emailAdm] = buat_akun('admin', 'adm');
+wajib(login('adm', $emailAdm), 'Login superadmin uji');
+wajib(strpos(http('adm', 'Admin_Srp2')['body'], 'Tambah pengembang') !== FALSE,
+    'Sesi adm benar-benar sampai ke layar Direktori SRP2');
+
+foreach (['sertifikat_terbit', 'sertifikat_berakhir'] as $k) {
+    cek((int) nilai("SELECT COUNT(*) c FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_certified_developers'
+          AND COLUMN_NAME = ? AND DATA_TYPE = 'date' AND IS_NULLABLE = 'YES'", [$k]) === 1,
+        "Kolom `{$k}` DATE NULL ada (migrasi 037)");
+}
+
+$nama_b1 = CAP . ' Masa Berlaku';
+$sert_b1 = tulis('INSERT INTO srp2_certified_developers
+    (nama_perusahaan,status_aktif,sosmed_lainnya,sertifikat_terbit,sertifikat_berakhir,created_at)
+    VALUES (?,1,?,?,?,NOW())',
+    [$nama_b1, 'https://uji.test/sosmed', '2024-01-15', '2027-01-14']);
+$GLOBALS['sertifikat'][] = $sert_b1;
+
+/* Simpan ulang MENGIRIM HANYA nama + status — persis seperti form baris lama.
+   Ketiga medan yang tidak dikirim HARUS bertahan. */
+$tok_b1 = csrf('adm', 'Admin_Srp2');
+http('adm', 'Admin_Srp2/save', [
+    'csrf_kpkp_token' => $tok_b1, 'id' => $sert_b1,
+    'nama_perusahaan' => $nama_b1, 'status_aktif' => 1,
+]);
+$sesudah = q('SELECT sosmed_lainnya, sertifikat_terbit, sertifikat_berakhir
+              FROM srp2_certified_developers WHERE id=?', [$sert_b1]);
+cek(($sesudah['sertifikat_terbit'] ?? '') === '2024-01-15',
+    'Tanggal terbit BERTAHAN saat form tidak mengirimnya');
+cek(($sesudah['sertifikat_berakhir'] ?? '') === '2027-01-14',
+    'Tanggal akhir BERTAHAN saat form tidak mengirimnya');
+cek(($sesudah['sosmed_lainnya'] ?? '') === 'https://uji.test/sosmed',
+    'sosmed_lainnya BERTAHAN — bug lama yang menyapunya sudah tertutup');
+
+/* Medan DIKIRIM KOSONG tetap harus mengosongkan. Kalau tidak, admin yang salah
+   isi tanggal tidak punya cara membatalkannya. */
+http('adm', 'Admin_Srp2/save', [
+    'csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'), 'id' => $sert_b1,
+    'nama_perusahaan' => $nama_b1, 'status_aktif' => 1, 'sertifikat_terbit' => '',
+]);
+cek(nilai('SELECT sertifikat_terbit t FROM srp2_certified_developers WHERE id=?', [$sert_b1]) === NULL,
+    'Dikirim kosong tetap MENGOSONGKAN — beda dari tidak dikirim');
+
+// Terbit sesudah berakhir ditolak.
+http('adm', 'Admin_Srp2/save', [
+    'csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'), 'id' => $sert_b1,
+    'nama_perusahaan' => $nama_b1, 'status_aktif' => 1,
+    'sertifikat_terbit' => '2030-01-01', 'sertifikat_berakhir' => '2029-01-01',
+]);
+cek(nilai('SELECT sertifikat_terbit t FROM srp2_certified_developers WHERE id=?', [$sert_b1]) !== '2030-01-01',
+    'Terbit melewati tanggal akhir DITOLAK');
+
+/* MariaDB lokal berjalan TANPA STRICT: '' pada kolom DATE mendarat sebagai
+   '0000-00-00' tanpa galat, dan tanggal itu lolos ke layar. */
+cek(nilai('SELECT COUNT(*) c FROM srp2_certified_developers
+           WHERE sertifikat_terbit = ? OR sertifikat_berakhir = ?',
+          ['0000-00-00', '0000-00-00']) === 0,
+    'Nol tanggal 0000-00-00 di direktori');
+
+/* Pengembang TIDAK boleh menulis masa berlaku sertifikatnya sendiri:
+   `upsert_direktori_publik()` punya dua pemanggil, dan yang kedua adalah
+   `Pengaturan::update_pengembang_profile()` — pengembang itu sendiri. */
+$auth_src = (string) @file_get_contents(APP_ROOT . '/application/models/Auth_model.php');
+cek($auth_src !== '' && preg_match('/function upsert_direktori_publik.*?\n    \}/s', $auth_src, $mu)
+    && strpos($mu[0], 'sertifikat_') === FALSE,
+    'upsert_direktori_publik() NOL kolom sertifikat — pengembang tidak menulis masa berlakunya sendiri');
+
 bersihkan();
 $GLOBALS['regs'] = $GLOBALS['users'] = $GLOBALS['sertifikat'] = [];
 cek((int) nilai('SELECT COUNT(*) c FROM srp2_certified_developers WHERE nama_perusahaan LIKE ?', [CAP . '%']) === 0
