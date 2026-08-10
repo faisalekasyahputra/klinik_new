@@ -350,6 +350,57 @@ try {
     cek(strpos($rekapk, number_format(8000000000, 0, ',', '.')) === FALSE,
         'Nol angka perumahan muncul di rekap kawasan');
 
+    // ================================================================ EXPORT
+    /* Butir C4/D4, 5 Agt 2026. Ditempel di sini, bukan di harness baru: rekap
+       yang jadi sumber export sudah dibangun & diuji di berkas ini, dan uji
+       export yang menyiapkan datanya sendiri akan menguji jalur yang berbeda
+       dari yang dipakai layar. */
+    echo "\n== Export rekap ==\n";
+
+    $xls = http('kab', 'Rekam_Perumahan/export?tahun=' . TAHUN . '&triwulan=2')['body'];
+    cek(strpos($xls, '<Workbook') !== FALSE, 'Export perumahan mengembalikan lembar kerja');
+    cek(@simplexml_load_string($xls) !== FALSE, 'Berkasnya XML yang sah — Excel bisa membukanya');
+
+    /* PALING PENTING DI SELURUH BLOK INI. Argumen cakupan `rekap()` ada di
+       posisi KEEMPAT, `kumulatif()` di KETIGA; keduanya opsional. Menaruhnya di
+       tempat yang salah tidak menghasilkan galat apa pun — `WHERE kabupaten_id`
+       cuma tidak pernah terpasang dan berkasnya berisi seluruh 35 kabupaten. */
+    $angka_lain = number_format(7777000000, 0, ',', '.');
+    cek(strpos($xls, '7777000000') === FALSE && strpos($xls, $angka_lain) === FALSE,
+        'Export TIDAK memuat angka kabupaten lain — cakupan wilayah ikut ke berkas');
+
+    /* BNBA berisi nama + NIK penerima. Keputusan user: ia TIDAK ikut export.
+       Jalur yang salah (`isi_laporan()`) akan menyeret metadatanya diam-diam. */
+    cek(preg_match('/bnba|nama_asli|private_path/i', $xls) === 0,
+        'Nol jejak BNBA di berkas — daftar penerima tidak ikut keluar');
+
+    /* Header harus memakai `label_sumber()` (12 sumber), BUKAN
+       `Rekam_data_model::label_domain()` yang cuma memuat 10 — `apbd_provinsi`
+       dan `baznas_provinsi` hilang di sana. */
+    foreach (['APBD Provinsi', 'BAZNAS Provinsi', 'Dana Lainnya'] as $s) {
+        cek(strpos($xls, $s) !== FALSE, "Export memuat sumber \"{$s}\"");
+    }
+    cek(substr_count($xls, 'Rencana (unit)') === 6, 'Enam program × kolom rencana unit');
+
+    /* Sel kosong harus KOSONG, bukan 0 — "nol tabel nol". Nol karangan tidak
+       bisa dibedakan dari nol yang benar-benar dilaporkan, dan di spreadsheet
+       ia ikut terjumlah. */
+    /* Versi pertama penjaga ini cuma memastikan ADA sel kosong — dan itu hijau
+       walau tiga dari empat kolom diisi 0, karena kolom keempat tetap kosong.
+       Yang dinyatakan sekarang langsung: NOL angka nol di seluruh berkas.
+       Fixture uji ini tidak pernah melaporkan 0 (25 dan 40 unit), jadi setiap
+       angka nol yang muncul pasti karangan. Kalau kelak ada fixture yang
+       benar-benar melaporkan 0, penjaga ini harus diubah — bukan dilonggarkan. */
+    cek(strpos($xls, '<Cell/>') !== FALSE,
+        'Ada sel kosong di berkas');
+    cek(preg_match('/<Data ss:Type="Number">0<\/Data>/', $xls) === 0,
+        'NOL angka nol dikarang — sumber tanpa laporan dibiarkan kosong, tidak diisi 0');
+
+    // Periode tanpa laporan → diarahkan balik, bukan berkas nol baris.
+    $kosong = http('kab', 'Rekam_Perumahan/export?tahun=' . TAHUN . '&triwulan=4')['body'];
+    cek(strpos($kosong, '<Workbook') === FALSE,
+        'Periode tanpa laporan tidak menghasilkan berkas — berkas nol baris terbaca sebagai "capaiannya nol"');
+
 } finally {
     bersihkan();
 }

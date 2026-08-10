@@ -98,6 +98,79 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         ]);
     }
 
+    /**
+     * Unduh rekap perumahan sebagai berkas Excel (butir C4, 5 Agt 2026).
+     *
+     * MENGULANG PERSIS panggilan `rekap()` — sengaja, bukan query baru. Query
+     * kedua untuk data yang sama berarti dua tempat yang bisa menyimpang, dan
+     * yang menyimpang di sini adalah ANGKA CAPAIAN yang dipakai melapor ke
+     * provinsi.
+     *
+     * 🔴 Perhatikan posisi argumen cakupan: `rekap()` menaruhnya di posisi
+     * KEEMPAT, `kumulatif()` di posisi KETIGA. Keduanya opsional dan
+     * memasangnya di tempat yang salah TIDAK menghasilkan galat apa pun —
+     * `WHERE l.kabupaten_id` cuma tidak pernah terpasang, dan berkasnya berisi
+     * seluruh 35 kabupaten. Batas kewenangan yang jebolnya tidak terlihat mata.
+     *
+     * BNBA TIDAK IKUT (keputusan user): ia daftar penerima per nama + NIK, dan
+     * begitu jadi berkas ia berpindah tangan tanpa jejak. Karena itu jalur ini
+     * lewat `rekap()`, BUKAN `isi_laporan()` yang ikut memulangkan metadata BNBA.
+     */
+    public function export()
+    {
+        $tahun    = (int) ($this->input->get('tahun') ?: date('Y'));
+        $triwulan = $this->triwulan_dari_get();
+
+        $baris = $this->rd->rekap('perumahan', $tahun, $triwulan, $this->my_kabupaten_id);
+        if ( ! $baris) {
+            // Diperiksa SEBELUM satu header pun dikirim. Berkas nol baris
+            // terbaca sebagai "capaiannya memang nol", bukan "belum ada laporan".
+            $this->session->set_flashdata('error',
+                'Belum ada laporan terkirim untuk periode ini — tidak ada yang bisa diunduh.');
+            redirect('Rekam_Perumahan/rekap?tahun=' . $tahun . '&triwulan=' . $triwulan);
+            return;
+        }
+
+        $matriks  = $this->matriks($baris);
+        $program  = $this->label_program();
+        $sumber   = $this->label_sumber();
+        $nama_tw  = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV'];
+        $periode  = ($nama_tw[$triwulan] ?? $triwulan) . ' ' . $tahun;
+
+        $header = ['Sumber Dana'];
+        foreach ($program as $plabel) {
+            $header[] = $plabel . ' — Rencana (unit)';
+            $header[] = $plabel . ' — Rencana (Rp)';
+            $header[] = $plabel . ' — Realisasi (unit)';
+            $header[] = $plabel . ' — Realisasi (Rp)';
+        }
+
+        $isi = [];
+        foreach ($sumber as $skode => $slabel) {
+            $r = [$slabel];
+            foreach ($program as $pkode => $plabel) {
+                $sel = $matriks[$skode][$pkode] ?? NULL;
+                /* Sel KOSONG, bukan 0 — aturan "nol tabel nol" yang berlaku di
+                   layar berlaku juga di berkas. Nol karangan tidak bisa
+                   dibedakan dari nol yang benar-benar dilaporkan, dan di
+                   spreadsheet ia ikut terjumlah. */
+                $r[] = $sel ? (int) $sel['rencana_unit']       : NULL;
+                $r[] = $sel ? (int) $sel['rencana_anggaran']   : NULL;
+                $r[] = $sel ? (int) $sel['realisasi_unit']     : NULL;
+                $r[] = $sel ? (int) $sel['realisasi_anggaran'] : NULL;
+            }
+            $isi[] = $r;
+        }
+
+        $this->catat_audit('rekap_diunduh',
+            'Rekap perumahan ' . $periode . ' diunduh (' . $this->nama_wilayah() . ')',
+            'rd_laporan', NULL, ['tahun' => $tahun, 'triwulan' => $triwulan]);
+
+        $this->kirim_spreadsheet(
+            'Rekap Perumahan ' . $periode . ' - ' . $this->nama_wilayah(),
+            'Rekap ' . $periode, $header, $isi);
+    }
+
     public function riwayat()
     {
         $tahun = (int) ($this->input->get('tahun') ?: date('Y'));

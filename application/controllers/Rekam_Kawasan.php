@@ -59,20 +59,44 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
     }
 
     /** Rekap satu periode. Tidak ada `SUM()` antar triwulan — lihat catatan di model. */
-    public function rekap()
+    /**
+     * Triwulan dijepit 1..4 — SATU tempat, dipakai `rekap()` maupun `export()`.
+     *
+     * Sampai 5 Agt 2026 baris ini menerima `(int) get('triwulan')` apa adanya,
+     * berbeda dari `Rekam_Perumahan::triwulan_dari_get()` yang sudah menjepit.
+     * Nilai 9 lolos dan cuma menghasilkan rekap kosong — tidak berbahaya di
+     * layar, tapi begitu ada export ia ikut ke NAMA BERKAS ("TW 9"), dan berkas
+     * bernama triwulan yang tidak ada beredar sebagai lampiran laporan.
+     */
+    private function triwulan_dari_get()
     {
-        $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
-        $triwulan = (int) ($this->input->get('triwulan') ?: (int) ceil((int) date('n') / 3));
+        $tw = (int) $this->input->get('triwulan');
+        return ($tw >= 1 && $tw <= 4) ? $tw : (int) ceil((int) date('n') / 3);
+    }
 
-        $baris = $this->rd->rekap('kawasan', $tahun, $triwulan, $this->my_kabupaten_id);
+    /** Ringkasan + intervensi satu periode, ter-scope. Dipakai rekap() & export(). */
+    private function ambil_rekap($tahun, $triwulan)
+    {
+        $baris     = $this->rd->rekap('kawasan', $tahun, $triwulan, $this->my_kabupaten_id);
         $ringkasan = $baris[0] ?? NULL;
-
         $intervensi = [];
         if ($ringkasan) {
+            /* `laporan_id` diturunkan dari hasil yang SUDAH ter-scope, tidak
+               pernah dari request. Mengambilnya dari GET di sini akan
+               menghilangkan gerbang wilayah dalam satu baris. */
             $intervensi = $this->db->order_by('urutan', 'ASC')
                 ->get_where('rd_kawasan_intervensi', ['laporan_id' => (int) $ringkasan['laporan_id']])
                 ->result_array();
         }
+        return [$ringkasan, $intervensi];
+    }
+
+    public function rekap()
+    {
+        $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
+        $triwulan = $this->triwulan_dari_get();
+
+        [$ringkasan, $intervensi] = $this->ambil_rekap($tahun, $triwulan);
 
         $this->render_scoped_admin('admin/rekam/kawasan_rekap', [
             'title'           => 'Rekap Pelaporan Kawasan',
@@ -85,6 +109,74 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
             'indikator_label' => $this->label_indikator(),
             'sumber_label'    => $this->label_sumber(),
         ]);
+    }
+
+    /**
+     * Unduh rekap kawasan sebagai berkas Excel (butir D4, 5 Agt 2026).
+     *
+     * Memakai `ambil_rekap()` yang sama dengan layar — bukan query sendiri.
+     * Cakupan wilayah datang dari `$this->my_kabupaten_id` (sesi), dan
+     * `laporan_id` diturunkan dari hasil yang sudah ter-scope.
+     */
+    public function export()
+    {
+        $tahun    = (int) ($this->input->get('tahun') ?: date('Y'));
+        $triwulan = $this->triwulan_dari_get();
+
+        [$ringkasan, $intervensi] = $this->ambil_rekap($tahun, $triwulan);
+        if ( ! $ringkasan) {
+            $this->session->set_flashdata('error',
+                'Belum ada laporan terkirim untuk periode ini — tidak ada yang bisa diunduh.');
+            redirect('Rekam_Kawasan/rekap?tahun=' . $tahun . '&triwulan=' . $triwulan);
+            return;
+        }
+
+        $indikator = $this->label_indikator();
+        $sumber    = $this->label_sumber();
+        $nama_tw   = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV'];
+        $periode   = ($nama_tw[$triwulan] ?? $triwulan) . ' ' . $tahun;
+
+        $header = ['No', 'Indikator', 'Satuan', 'Nama Kegiatan', 'Lokasi',
+                   'Sumber Anggaran', 'Keterangan', 'Volume', 'Nilai Anggaran (Rp)',
+                   'Nilai Padat Karya (Rp)'];
+        $isi = [];
+        foreach ($intervensi as $i) {
+            $ind = $indikator[$i['indikator']] ?? NULL;
+            $isi[] = [
+                (int) $i['urutan'],
+                is_array($ind) ? ($ind['label'] ?? $i['indikator']) : ($ind ?: $i['indikator']),
+                is_array($ind) ? ($ind['satuan'] ?? '') : '',
+                $i['nama_kegiatan'],
+                $i['lokasi_teks'],
+                $sumber[$i['sumber_anggaran']] ?? $i['sumber_anggaran'],
+                $i['keterangan_sumber'],
+                $i['volume'] !== NULL ? (float) $i['volume'] : NULL,
+                (int) $i['nilai_anggaran'],
+                (int) $i['nilai_padat_karya'],
+            ];
+        }
+
+        /* Ringkasan ikut sebagai baris terpisah di bawah — bukan lembar kedua.
+           Satu lembar lebih gampang dilampirkan ke surat daripada dua. */
+        $isi[] = [];
+        $isi[] = ['RINGKASAN'];
+        $isi[] = ['Ada penanganan', (int) $ringkasan['ada_penanganan'] === 1 ? 'Ya' : 'Tidak'];
+        $isi[] = ['Ada progres',    (int) $ringkasan['ada_progres'] === 1 ? 'Ya' : 'Tidak'];
+        $isi[] = ['Total luas (ha)', $ringkasan['total_luas_ha'] !== NULL ? (float) $ringkasan['total_luas_ha'] : NULL];
+        $isi[] = ['Jumlah intervensi', (int) $ringkasan['jumlah_intervensi']];
+        $isi[] = ['Total anggaran (Rp)', (int) $ringkasan['total_anggaran']];
+        $isi[] = ['Total padat karya (Rp)', (int) $ringkasan['total_padat_karya']];
+
+        $wilayah = $this->db->where('id', $this->my_kabupaten_id)
+            ->get('kabupaten')->row('nama') ?: 'Wilayah Saya';
+
+        $this->catat_audit('rekap_diunduh',
+            'Rekap kawasan ' . $periode . ' diunduh (' . $wilayah . ')',
+            'rd_laporan', NULL, ['tahun' => $tahun, 'triwulan' => $triwulan]);
+
+        $this->kirim_spreadsheet(
+            'Rekap Kawasan ' . $periode . ' - ' . $wilayah,
+            'Rekap ' . $periode, $header, $isi);
     }
 
     public function riwayat()

@@ -32,6 +32,15 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
         </select>
         <button class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">Tampilkan</button>
       </form>
+      <?php /* Tombol unduh HANYA muncul kalau memang ada laporan terkirim.
+               Tombol yang selalu ada lalu memuntahkan pesan galat mengajari
+               orang bahwa tombolnya memang begitu. */ ?>
+      <?php if ( ! empty($ringkasan)): ?>
+      <a href="<?= base_url('Rekam_Kawasan/export?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>"
+         class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">
+        <i class="ph ph-download-simple mr-1" aria-hidden="true"></i> Unduh Excel
+      </a>
+      <?php endif; ?>
     </div>
 
     <?php /* Judul ini dulu berbunyi "Angka kumulatif s.d. TW X" — dibantah oleh

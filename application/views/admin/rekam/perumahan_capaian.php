@@ -202,6 +202,16 @@ $tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_
         <?php if ( ! $mode_rekap): ?>
           <a href="<?= base_url('Rekam_Perumahan/input' . ($laporan ? '?laporan=' . (int) $laporan['id'] : '')) ?>"
              class="<?= $tombol ?>">Input Capaian</a>
+        <?php else: ?>
+          <?php /* HANYA di mode rekap, dan itu penting: layar input menampilkan
+                   draft, sementara `rekap()` hanya menghitung laporan berstatus
+                   `terkirim`. Tombol unduh di layar input akan menghasilkan
+                   berkas yang ISINYA BERBEDA dari angka di depan mata, dan
+                   bedanya tidak kelihatan. */ ?>
+          <a href="<?= base_url('Rekam_Perumahan/export?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>"
+             class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10 dark:text-brand-muted dark:hover:bg-white/5">
+            <i class="ph ph-download-simple mr-1" aria-hidden="true"></i> Unduh Excel
+          </a>
         <?php endif; ?>
       </div>
     </div>

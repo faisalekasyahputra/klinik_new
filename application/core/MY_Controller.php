@@ -926,6 +926,70 @@ class MY_Controller extends CI_Controller {
         return FALSE;
     }
     /**
+     * Kirim satu lembar kerja ke peramban sebagai berkas Excel, lalu berhenti.
+     *
+     * SpreadsheetML (XML), BUKAN CSV dan BUKAN pustaka. Alasannya berurutan:
+     *
+     *   - Pustaka (PhpSpreadsheet) berarti dependensi baru + `composer install`
+     *     di production, untuk sebuah tabel rekap. Terlalu mahal.
+     *   - CSV terlihat lebih murah tapi punya jebakan yang justru menggigit di
+     *     sini: `fputcsv` memakai KOMA, sementara di Excel berlokal Indonesia
+     *     koma adalah pemisah DESIMAL dan pemisah daftarnya titik koma. Berkas
+     *     koma terbuka jadi SATU KOLOM di komputer dinas. Memilih titik koma
+     *     memindahkan masalahnya ke komputer yang berlokal lain — dua-duanya
+     *     salah, tergantung mesin siapa yang membukanya.
+     *   - SpreadsheetML menandai tiap sel `Number` atau `String` secara
+     *     eksplisit, jadi angkanya mendarat sebagai angka apa pun lokalnya.
+     *
+     * `header()` MENTAH, bukan `$this->output->set_*`: badan berkas ditulis
+     * langsung ke keluaran, sehingga antrean header CI terlambat terkirim —
+     * alasan yang sama sudah dicatat di `serve_private_file()`.
+     *
+     * @param array $baris Tiap baris array nilai. Nilai NULL = sel KOSONG,
+     *              dan itu disengaja: rekap ini menganut "nol tabel nol" —
+     *              sumber tanpa laporan tidak boleh ditulis 0, karena nol
+     *              karangan tidak bisa dibedakan dari nol yang dilaporkan.
+     */
+    protected function kirim_spreadsheet($nama_berkas, $nama_lembar, array $header, array $baris)
+    {
+        $x = static function ($v) {
+            return htmlspecialchars((string) $v, ENT_QUOTES | ENT_XML1, 'UTF-8');
+        };
+        $sel = static function ($v) use ($x) {
+            if ($v === NULL || $v === '') { return '<Cell/>'; }
+            if (is_int($v) || is_float($v)) {
+                return '<Cell><Data ss:Type="Number">' . $v . '</Data></Cell>';
+            }
+            return '<Cell><Data ss:Type="String">' . $x($v) . '</Data></Cell>';
+        };
+
+        $xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
+              . '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"'
+              . ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' . "\n"
+              . '<Worksheet ss:Name="' . $x(substr($nama_lembar, 0, 31)) . '"><Table>' . "\n";
+        $xml .= '<Row>';
+        foreach ($header as $h) { $xml .= '<Cell><Data ss:Type="String">' . $x($h) . '</Data></Cell>'; }
+        $xml .= "</Row>\n";
+        foreach ($baris as $r) {
+            $xml .= '<Row>';
+            foreach ($r as $v) { $xml .= $sel($v); }
+            $xml .= "</Row>\n";
+        }
+        $xml .= "</Table></Worksheet>\n</Workbook>\n";
+
+        // Nama berkas dijinakkan: ia masuk ke header HTTP, dan karakter aneh di
+        // situ adalah jalan injeksi header.
+        $aman = preg_replace('/[^A-Za-z0-9 _.-]/', '', (string) $nama_berkas);
+
+        header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $aman . '.xls"');
+        header('Content-Length: ' . strlen($xml));
+        header('Cache-Control: private, no-store');
+        echo $xml;
+        exit;
+    }
+
+    /**
      * Gerbang "silakan masuk dulu" — SATU pintu untuk seluruh aplikasi.
      *
      * Dibuat 5 Agt 2026 (revisi dinas butir A5: "kalau user sudah login,
