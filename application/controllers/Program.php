@@ -135,10 +135,32 @@ class Program extends Public_Controller {
             ]));
     }
 
+    /**
+     * BUTIR 20 PUTARAN 2: layar cek status DICABUT dari situs publik.
+     *
+     * Dulu halaman ini meminta nomor tiket plus empat digit terakhir NIK, lalu
+     * mengembalikan status pengajuan siapa pun yang cocok. Dua alasan
+     * mencabutnya, dan yang kedua tidak disebut dinas tapi lebih berat:
+     *
+     *   1. Dua tempat untuk satu hal. Dashboard tiap peran sudah memuat
+     *      "Status Pengajuan", dan menyediakannya lagi di luar membuat orang
+     *      ragu mana yang benar - salah satu sumber kebingungan butir 24.
+     *   2. Ia permukaan penelusuran. Nomor tiket berpola tetap dan empat digit
+     *      NIK hanya sepuluh ribu kemungkinan; siapa pun yang punya keduanya
+     *      bisa memeriksa pengajuan orang lain tanpa pernah masuk.
+     *
+     * TIDAK di-404-kan, dan itu disengaja. Alamatnya sudah pernah tersebar
+     * (tab beranda, tautan yang dibagikan). Halaman hilang tanpa jejak membuat
+     * orang mengira layanannya mati; diarahkan ke dashboardnya membuat mereka
+     * sampai ke tempat yang benar. Yang belum masuk lewat gerbang login, jadi
+     * sesudah masuk ia langsung mendarat di sana.
+     */
     public function cek_status_pengajuan() {
-        $this->render('pages/program/cek_status_pengajuan', [
-            'title' => 'Cek Status Pengajuan - Klinik PKP'
-        ]);
+        if ( ! $this->session->userdata('is_logged')) {
+            $this->gerbang_login();
+            return;
+        }
+        redirect('akun');
     }
 
     /**

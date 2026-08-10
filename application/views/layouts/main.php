@@ -23,8 +23,6 @@
              $active_tab = 'pertanahan';
          } elseif ($rt_method === 'tab_bankdata' || $rt_class === 'statistika') {
              $active_tab = 'bankdata';
-         } elseif ($rt_method === 'cek_status_pengajuan') {
-             $active_tab = 'status_pengajuan';
          }
        ?>
 
@@ -88,9 +86,11 @@
                        <a href="<?= base_url('tab/bankdata') ?>" data-tab-link data-tab-key="bankdata" class="portal-tab-btn <?= $active_tab === 'bankdata' ? 'active' : '' ?>">
                            <i class="fa-solid fa-chart-pie"></i> Bank Data
                        </a>
-                       <a href="<?= base_url('cek_status_pengajuan') ?>" data-tab-link data-tab-key="status_pengajuan" class="portal-tab-btn <?= $active_tab === 'status_pengajuan' ? 'active' : '' ?>">
-                           <i class="fa-solid fa-ticket"></i> Cek Status Pengajuan
-                       </a>
+                       <?php /* Butir 20 putaran 2: tab "Cek Status Pengajuan" DICABUT dari
+                                bilah publik. Status pengajuan kini hanya di dashboard tiap
+                                peran - satu tempat, dan tidak lagi bisa ditengok orang lain
+                                berbekal nomor tiket. Alasan lengkapnya di
+                                Program::cek_status_pengajuan(). */ ?>
                    </div>
 
                    <!-- Auth Button (sejajar tabs, bukan tab) -->

@@ -245,13 +245,31 @@ $approved = $db->row('SELECT status_antrean, reviewed_by FROM sf_housing_queue W
 wajib($approved['status_antrean'] === 'approved', 'Admin wilayah berhasil menyetujui');
 cek((int) $approved['reviewed_by'] === (int) $adminSemarang, 'Reviewer tercatat dari sesi admin');
 
+/* BUTIR 20 PUTARAN 2: layar cek status DICABUT dari situs publik.
+   Uji ini dulu membuka `cek_status_pengajuan` sebagai halaman publik, dan itu
+   justru yang diminta hilang: nomor tiket berpola tetap plus empat digit NIK
+   membuat pengajuan orang lain bisa ditengok tanpa pernah masuk.
+
+   Yang dijaga sekarang perilaku penggantinya: tamu DIARAHKAN, bukan dilayani,
+   dan tidak di-404-kan supaya tautan lama tidak jadi jalan buntu. */
 $lookup = new Session();
-$lookup->get('cek_status_pengajuan');
+$halamanTamu = $lookup->get('cek_status_pengajuan');
+cek(strpos((string) $halamanTamu, 'Nomor tiket') === FALSE,
+    'Formulir cek status tidak lagi disajikan ke tamu');
+
+/* Endpoint tiketnya SENGAJA tetap hidup: halaman sesudah pengajuan terkirim
+   memakainya untuk menampilkan status milik si pengaju sendiri. Yang dicabut
+   permukaan publiknya, bukan mesinnya. */
+/* Token CSRF diambil dari formulir aduan publik, bukan dari halaman cek status
+   dicabut. Tanpa ini POST-nya ditolak CSRF dan ujinya merah karena harness-nya,
+   bukan karena endpointnya rusak. */
+$lookup->get('umum/aduan');
 $lookupResult = json_body($lookup->post('Program/cek_tiket', [
     'ticket_code' => $queue['ticket_code'],
     'nik_suffix' => '0001',
 ]));
-cek(($lookupResult['status_pengajuan'] ?? '') === 'Disetujui', 'Lookup publik menampilkan status terbaru tanpa PII');
+cek(($lookupResult['status_pengajuan'] ?? '') === 'Disetujui',
+    'Endpoint tiket masih melayani halaman sesudah pengajuan, tanpa PII');
 
 echo "\n-- NEGATIF: program manipulasi tidak melahirkan baris\n";
 $before = (int) $db->scalar('SELECT COUNT(*) FROM sf_housing_queue');
