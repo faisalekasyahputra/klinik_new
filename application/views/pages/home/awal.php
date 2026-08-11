@@ -7,13 +7,13 @@
      kartu, --t3 sekaligus jadi warna ilustrasinya. -->
 <div class="mx-auto max-w-6xl p-2 sm:p-4 lg:p-6">
     <div class="space-y-3 sm:space-y-4">
-        <!-- Nggolek Omah -->
+        <!-- Golek Omah -->
         <a href="<?= base_url('golek_omah') ?>" data-tab-link data-tab-key="golek_omah"
            class="portal-home-card aurora-surface aurora-1 portal-home-card-hero min-h-[190px] sm:min-h-[250px]"
            style="--t1:#eaf7ef;--t2:#c7e9d4;--t3:#8ed6ab">
             <i class="portal-home-art fa-solid fa-house-circle-check" aria-hidden="true"></i>
             <div class="portal-home-body">
-                <h2 class="portal-home-title">NGGOLEK<br><span class="portal-home-ghost">OMAH</span></h2>
+                <h2 class="portal-home-title">GOLEK<br><span class="portal-home-ghost">OMAH</span></h2>
                 <p class="portal-home-subtitle">Cari rumah yang sesuai kebutuhan dan kemampuan.</p>
             </div>
         </a>
