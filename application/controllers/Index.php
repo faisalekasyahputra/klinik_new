@@ -16,6 +16,12 @@ class Index extends MY_Controller {
 	   gejalanya "Semua Data Telah Dimuat" muncul terlalu cepat di wilayah itu. */
 	const SIK_MAKS_BONGKAH = 5;
 
+	/* Ukuran halaman pagination Sebelumnya/Berikutnya di /cari_rumah
+	   (13 Agt 2026). Satu-satunya tempat angka 12 didefinisikan di sisi
+	   server - JS di cari_rumah.php tidak perlu tahu angka ini sama sekali,
+	   ia menghitung jumlah halaman dari wrapper yang benar-benar dirender. */
+	const HALAMAN_UKURAN = 12;
+
 	public function __construct()
 	{
 		parent::__construct();
@@ -364,30 +370,83 @@ class Index extends MY_Controller {
 		return [$potong, $gagal];
 	}
 
+	/**
+	 * SEMUA lokasi yang cocok, sampai SIK_MAKS_BONGKAH atau sumbernya
+	 * benar-benar habis - TIDAK dipotong per halaman seperti
+	 * lokasi_tersaring(). Batas kerasnya SAMA (bongkahan × plafon di atas),
+	 * cuma tidak berhenti lebih awal begitu "cukup untuk halaman yang
+	 * diminta" - karena sekarang tidak ada lagi "halaman yang diminta",
+	 * semuanya diminta sekaligus.
+	 *
+	 * Dipakai cari_wil() SAJA (13 Agt 2026, ganti pagination Sebelumnya/
+	 * Berikutnya jadi client-side penuh - lihat cari_wil() di bawah).
+	 * lokasi_tersaring() SENGAJA tidak diubah/dihapus - load_more() masih
+	 * memakainya apa adanya untuk pola "Muat Lebih Banyak" (append per
+	 * klik) di data_spasial/sikumbang.php, yang tidak ikut direvisi sesi
+	 * ini.
+	 */
+	private function semua_lokasi_tersaring(array $p) {
+		$cocok = [];
+		$gagal = FALSE;
+
+		for ($i = 1; $i <= self::SIK_MAKS_BONGKAH; $i++) {
+			$baris = $this->bongkah_sikumbang($p, $i);
+
+			if ($baris === NULL) { $gagal = TRUE; break; }   // jaringan, bukan kehabisan
+			if ( ! $baris)       { break; }                  // sumber habis
+
+			$cocok = array_merge($cocok, $this->saring_status_rumah($baris, $p['status_rumah']));
+
+			if (count($baris) < self::SIK_BONGKAH) { break; } // bongkahan terakhir
+		}
+
+		return [$cocok, $gagal];
+	}
+
+	/**
+	 * Satu permintaan mengembalikan SEMUA hasil (sampai batas aman di atas),
+	 * dipotong per HALAMAN_UKURAN dan masing-masing dibungkus
+	 * <div class="halaman-data" data-halaman="N">. JS (cari_rumah.php)
+	 * menghitung sendiri jumlah wrapper ini dari DOM untuk tahu total
+	 * halaman, dan Sebelumnya/Berikutnya sesudahnya murni menukar class
+	 * tampil/sembunyi - NOL request susulan per klik.
+	 *
+	 * Ini sengaja MENGGANTI pendekatan lama (satu request per halaman +
+	 * marker `<!-- jumlah:N -->` yang memberi tahu JS apakah halaman
+	 * berikutnya masih ada). Marker itu sempat lupa dikirim server padahal
+	 * JS sudah bergantung padanya - tombol Berikutnya terkunci disabled
+	 * PERMANEN sejak halaman pertama, walau datanya penuh. Menghitung dari
+	 * DOM yang sungguhan dirender membuat kelas bug itu terstruktur tidak
+	 * mungkin terjadi lagi: tidak ada lagi angka terpisah yang bisa lupa
+	 * disinkronkan dengan apa yang sebenarnya ada.
+	 *
+	 * Chunk pertama TIDAK diberi kelas tersembunyi apa pun - pemanggil lama
+	 * yang men-dump respons apa adanya tanpa tahu soal .halaman-data
+	 * (data_spasial/sikumbang.php) tetap melihat 12 kartu pertama sebagai
+	 * grid item biasa (.halaman-data { display:contents } membuat wrapper
+	 * ini transparan buat layout grid manapun yang menampungnya).
+	 */
 	public function cari_wil() {
 		$p = $this->parameter_cari();
-		list($list_final, $gagal) = $this->lokasi_tersaring($p);
+		list($list_final, $gagal) = $this->semua_lokasi_tersaring($p);
 
 		if ($gagal && ! $list_final) {
-			/* Penanda yang sama dengan load_more() (dibaca cari_rumah.php untuk
-			   pagination Sebelumnya/Berikutnya) - ditambahkan DI BELAKANG pesan
-			   yang sudah tampil, jadi pemanggil lama yang cuma men-dump respons
-			   apa adanya (data_spasial/sikumbang.php) tidak berubah perilakunya. */
 			echo '<p class="col-span-full py-10 text-center text-sm text-[color:var(--portal-text-muted)]">'
 			   . 'Data rumah gagal diambil dari SIKUMBANG. Silakan coba lagi sebentar lagi.</p>'
 			   . '<!-- gagal-jaringan -->';
 			return;
 		}
 
-		$datacontent['results'] = $list_final;
+		if ( ! $list_final) {
+			$this->load->view('components/cards/rumah', ['results' => []]);
+			return;
+		}
 
-		/* Dibaca cari_rumah.php (muatHalaman()) untuk memutuskan tombol
-		   Berikutnya aktif atau tidak: kurang dari $p['limit'] hasil berarti
-		   halaman ini yang terakhir. Tanpa marker ini `jumlah` di JS selalu
-		   terbaca 0 dan tombol Berikutnya terkunci disabled selamanya -
-		   walaupun kartunya penuh 12. */
-		echo '<!-- jumlah:' . count($list_final) . ' -->';
-		$this->load->view('components/cards/rumah', $datacontent);
+		foreach (array_chunk($list_final, self::HALAMAN_UKURAN) as $i => $potongan) {
+			echo '<div class="halaman-data' . ($i === 0 ? '' : ' halaman-tersembunyi') . '" data-halaman="' . ($i + 1) . '">';
+			$this->load->view('components/cards/rumah', ['results' => $potongan]);
+			echo '</div>';
+		}
 	}
 
 	public function load_more() {
