@@ -8,7 +8,7 @@
  * cari_wil() TANPA MEMBACA INI DULU. Kontrak endpoint itu berubah total:
  * Index::cari_wil() tidak lagi menerima `page`/`limit` dan mengiris SATU
  * halaman - sekarang ia SELALU mengembalikan SEMUA hasil (sampai
- * SIK_MAKS_BONGKAH) sekaligus, dipotong per Index::HALAMAN_UKURAN (12) dan
+ * SIK_MAKS_BONGKAH) sekaligus, dipotong per Index::HALAMAN_UKURAN (20) dan
  * dibungkus <div class="halaman-data" data-halaman="N">, dengan Sebelumnya/
  * Berikutnya di cari_rumah.php sekarang murni tukar tampil/sembunyi DI
  * BROWSER - nol request susulan. Skenario 1-3 & 4 di bawah (yang memanggil

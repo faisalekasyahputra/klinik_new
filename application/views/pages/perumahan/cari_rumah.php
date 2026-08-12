@@ -109,7 +109,7 @@
         </div>
 
         <?php
-        /* .halaman-data: wrapper per 12 kartu yang dikirim server (satu kali
+        /* .halaman-data: wrapper per Index::HALAMAN_UKURAN kartu yang dikirim server (satu kali
            fetch, semua halaman sekaligus - 13 Agt 2026). display:contents
            membuat wrapper ini "transparan" buat layout grid #temp_rumah -
            kartunya tetap jadi grid item langsung, bukan kotak bersarang -
@@ -220,7 +220,7 @@ function pilihStatus(status) {
 /**
  * SATU fetch untuk SEMUA halaman yang cocok (13 Agt 2026) - bukan lagi satu
  * fetch per halaman seperti sebelumnya. Server (Index::cari_wil()) membungkus
- * tiap 12 baris dalam <div class="halaman-data" data-halaman="N">;
+ * tiap Index::HALAMAN_UKURAN baris dalam <div class="halaman-data" data-halaman="N">;
  * Sebelumnya/Berikutnya sesudah ini (lihat tampilkanHalaman() di bawah) murni
  * menukar class di DOM yang SUDAH ada - nol request susulan per klik.
  *
