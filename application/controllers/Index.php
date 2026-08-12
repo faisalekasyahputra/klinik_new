@@ -369,8 +369,13 @@ class Index extends MY_Controller {
 		list($list_final, $gagal) = $this->lokasi_tersaring($p);
 
 		if ($gagal && ! $list_final) {
+			/* Penanda yang sama dengan load_more() (dibaca cari_rumah.php untuk
+			   pagination Sebelumnya/Berikutnya) - ditambahkan DI BELAKANG pesan
+			   yang sudah tampil, jadi pemanggil lama yang cuma men-dump respons
+			   apa adanya (data_spasial/sikumbang.php) tidak berubah perilakunya. */
 			echo '<p class="col-span-full py-10 text-center text-sm text-[color:var(--portal-text-muted)]">'
-			   . 'Data rumah gagal diambil dari SIKUMBANG. Silakan coba lagi sebentar lagi.</p>';
+			   . 'Data rumah gagal diambil dari SIKUMBANG. Silakan coba lagi sebentar lagi.</p>'
+			   . '<!-- gagal-jaringan -->';
 			return;
 		}
 
