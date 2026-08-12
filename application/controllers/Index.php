@@ -431,6 +431,16 @@ class Index extends MY_Controller {
 	 * manapun yang men-dump respons ini, tanpa syarat apa pun.
 	 */
 	public function cari_wil() {
+		/* Wajib: endpoint ini dipanggil GET tanpa parameter unik per state
+		   (jQuery tidak menambah cache-buster kecuali diminta), dan tanpa
+		   header ini browser boleh menyimpannya lewat heuristic caching -
+		   Edge/Chromium teramati butuh dua refresh sebelum menghubungi
+		   server lagi, menyajikan hasil pencarian LAMA (state filter
+		   sebelumnya) seolah itu balasan yang baru. Dipasang di sini, bukan
+		   cuma di JS, supaya berlaku juga untuk data_spasial/sikumbang.php
+		   yang memanggil endpoint yang sama tanpa cache:false sama sekali. */
+		$this->output->set_header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+
 		$p = $this->parameter_cari();
 		list($list_final, $gagal) = $this->semua_lokasi_tersaring($p);
 
@@ -455,6 +465,10 @@ class Index extends MY_Controller {
 	}
 
 	public function load_more() {
+		// Sama seperti cari_wil() - cegah browser (Edge teramati paling
+		// agresif) menyajikan bongkahan lama dari cache heuristik.
+		$this->output->set_header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+
 		$p = $this->parameter_cari();
 		if ($p['page'] < 2) { $p['page'] = 2; }
 
