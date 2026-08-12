@@ -267,7 +267,7 @@ class Index extends MY_Controller {
 	 * server memindai seluruh wilayah berkali-kali.
 	 */
 	private function parameter_cari() {
-		$limit = (int) ($this->input->get('limit') ?: 9);
+		$limit = (int) ($this->input->get('limit') ?: 12);
 		$page  = (int) ($this->input->get('page') ?: 1);
 
 		return [

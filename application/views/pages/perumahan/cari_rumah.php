@@ -199,7 +199,7 @@ function cari_wil() {
     jQuery('#text-load').text('Muat Lebih Banyak');
 
     $.ajax({
-        url: '<?= base_url('cari_wil') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah+'&page=1&limit=9',
+        url: '<?= base_url('cari_wil') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah+'&page=1&limit=12',
         success: function(response) { jQuery('#temp_rumah').html(response); },
         error: function() { jQuery('#temp_rumah').html('<p class="col-span-full py-10 text-center text-sm text-[color:var(--portal-text-muted)]">Data rumah gagal dimuat. Silakan coba lagi.</p>'); }
     });
@@ -217,7 +217,7 @@ function load_more_data() {
     
     jQuery('#text-load').text('Sedang Memuat...');
     jQuery.ajax({
-        url: '<?= base_url('load_more') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah+'&page='+nextPage+'&limit=9',
+        url: '<?= base_url('load_more') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah+'&page='+nextPage+'&limit=12',
         success: function(response) {
             var isi = jQuery.trim(response);
 
