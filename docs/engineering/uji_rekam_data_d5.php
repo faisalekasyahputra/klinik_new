@@ -181,6 +181,46 @@ try {
     wajib(login('kab', ADMIN_EMAIL, ADMIN_PASSWORD), 'Login admin_kabkota berhasil');
     wajib(login('lain', $email_lain, 'UjiRdD5!'), 'Login admin wilayah lain berhasil');
 
+    /* Laporan TERKIRIM milik kabupaten LAIN, dengan angka penanda 7777000000.
+       Sengaja ada supaya asersi "cakupan wilayah ikut ke berkas export" benar-
+       benar terbukti: kalau `rekap()` kehilangan argumen kabupaten, angka ini
+       yang akan bocor. Diisi di TW III agar ikut ke export triwulanan (TW II
+       yang diuji) TIDAK, tetapi ke export SETAHUN yang menyapu keempat triwulan
+       IYA - itulah yang membuat versi tahunan bisa dijaga, bukan cuma triwulanan.
+       Dibersihkan oleh bersihkan() lewat DELETE ... WHERE tahun = TAHUN. */
+    /* KOMBINASI SUMBER+PROGRAM SENGAJA BEDA dari yang dipakai $KAB
+       (apbd_kabkota + pk_rtlh). Ini bukan detail: `matriks()` mengunci sel per
+       [sumber_dana][program] dan baris terakhir MENIMPA yang pertama. Kalau
+       wilayah lain memakai kombinasi yang sama, angkanya tertimpa data $KAB dan
+       tak pernah muncul - persis kenapa mutasi cakupan sempat LOLOS. Dengan
+       kombinasi berbeda (apbn_bsps + pb_backlog), selnya tak bisa ditimpa, jadi
+       tanpa scope ia PASTI bocor, dan mutasinya merah. */
+    $isi_lain = function ($triwulan, $angka) use ($kab_lain) {
+        $w = 'Rekam_Perumahan/input';
+        http('lain', 'Rekam_Perumahan/mulai', [
+            'csrf_kpkp_token' => csrf('lain', $w),
+            'tahun' => TAHUN, 'triwulan' => $triwulan]);
+        $lap = skalar_int('SELECT id FROM rd_laporan WHERE domain = ? AND kabupaten_id = ?
+            AND tahun = ? AND triwulan = ?', ['perumahan', $kab_lain, TAHUN, $triwulan]);
+        $wl = $w . '?laporan=' . $lap;
+        http('lain', 'Rekam_Perumahan/simpan_program', [
+            'csrf_kpkp_token' => csrf('lain', $wl), 'laporan_id' => $lap,
+            'program' => ['pb_backlog']]);
+        http('lain', 'Rekam_Perumahan/simpan_sumber', [
+            'csrf_kpkp_token' => csrf('lain', $wl), 'laporan_id' => $lap,
+            'program' => 'pb_backlog', 'sumber_dana' => 'apbn_bsps',
+            'rencana_unit' => 1, 'rencana_anggaran' => $angka,
+            'realisasi_unit' => 1, 'realisasi_anggaran' => $angka]);
+        lampirkan_bnba($lap);
+        http('lain', 'Rekam_Perumahan/kirim', [
+            'csrf_kpkp_token' => csrf('lain', $wl), 'laporan_id' => $lap]);
+        return $lap;
+    };
+    $lap_lain = $isi_lain(3, 7777000000);
+    wajib($lap_lain > 0
+        && skalar_str('SELECT status FROM rd_laporan WHERE id = ?', [$lap_lain]) === 'terkirim',
+        'PRASYARAT: laporan kabupaten lain benar-benar terkirim dengan angka penanda');
+
     // ------------------------------------ rekap kosong = jujur, bukan nol
     $kosong = http('kab', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&triwulan=1');
     cek($kosong['code'] === 200, 'Layar rekap terbuka walau tanpa data');
@@ -298,11 +338,16 @@ try {
         'Draft tidak masuk rekap - hanya laporan terkirim yang dihitung');
 
     // ------------------------------------------------------- scope
+    /* Scope dibuktikan DUA ARAH, dan itu lebih kuat daripada versi lama.
+       Dulu asersi ini cuma memeriksa `lain` melihat "kosong" - bukti lemah
+       yang mencampur "lain tak punya data" dengan "lain tak melihat data $KAB".
+       Sejak `lain` kini punya TW III sendiri (7777000000), yang dijaga jadi
+       tegas: `lain` melihat MILIKNYA, dan TIDAK melihat milik $KAB. */
     $rekap_lain = http('lain', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&triwulan=3')['body'];
-    cek(strpos($rekap_lain, 'Belum ada laporan terkirim') !== FALSE,
-        'Admin wilayah lain tidak melihat rekap wilayah ini');
+    cek(strpos($rekap_lain, number_format(7777000000, 0, ',', '.')) !== FALSE,
+        'Admin wilayah lain melihat angka WILAYAHNYA SENDIRI');
     cek(strpos($rekap_lain, number_format(8000000000, 0, ',', '.')) === FALSE,
-        'Nol angka bocor ke rekap wilayah lain');
+        'Angka wilayah ini TIDAK bocor ke rekap wilayah lain');
 
     // ------------------------------------------------------ riwayat
     $riwayat = http('kab', 'Rekam_Perumahan/riwayat?tahun=' . TAHUN)['body'];
@@ -314,9 +359,14 @@ try {
     cek(strpos($riwayat, '<form method="post"') === FALSE,
         'Riwayat baca-saja: nol form POST');
 
+    /* Riwayat `lain` kini memuat TW III miliknya sendiri, jadi "kosong" bukan
+       lagi buktinya. Yang dijaga: ia melihat periode SENDIRI, dan tidak melihat
+       TW IV yang cuma dipunyai $KAB. */
     $riwayat_lain = http('lain', 'Rekam_Perumahan/riwayat?tahun=' . TAHUN)['body'];
-    cek(strpos($riwayat_lain, 'Belum ada periode') !== FALSE,
-        'Riwayat wilayah lain kosong, bukan menampilkan periode wilayah ini');
+    cek(strpos($riwayat_lain, 'TW III') !== FALSE,
+        'Riwayat wilayah lain memuat periode SENDIRI (TW III)');
+    cek(strpos($riwayat_lain, 'TW IV') === FALSE,
+        'Riwayat wilayah lain TIDAK memuat periode milik wilayah ini (TW IV)');
 
     // --------------------------------------------------- rekap kawasan
     $urlk = 'Rekam_Kawasan?tahun=' . TAHUN . '&triwulan=2';
@@ -361,13 +411,16 @@ try {
     cek(strpos($xls, '<Workbook') !== FALSE, 'Export perumahan mengembalikan lembar kerja');
     cek(@simplexml_load_string($xls) !== FALSE, 'Berkasnya XML yang sah - Excel bisa membukanya');
 
-    /* PALING PENTING DI SELURUH BLOK INI. Argumen cakupan `rekap()` ada di
-       posisi KEEMPAT, `kumulatif()` di KETIGA; keduanya opsional. Menaruhnya di
-       tempat yang salah tidak menghasilkan galat apa pun - `WHERE kabupaten_id`
-       cuma tidak pernah terpasang dan berkasnya berisi seluruh 35 kabupaten. */
+    /* Argumen cakupan `rekap()` ada di posisi KEEMPAT; menaruhnya salah tidak
+       menghasilkan galat, `WHERE kabupaten_id` cuma tidak terpasang. Wilayah
+       lain punya laporan di TW III (7777000000) dengan sumber+program BEDA dari
+       $KAB, jadi `matriks()` tidak menimpanya - tanpa scope, angkanya bocor.
+       Export triwulanan ini menguji TW II, tempat wilayah lain TIDAK punya
+       data, jadi ia lolos scope maupun tidak; yang benar-benar menguji cakupan
+       adalah export SETAHUN di bawah, yang menyapu TW III. */
     $angka_lain = number_format(7777000000, 0, ',', '.');
     cek(strpos($xls, '7777000000') === FALSE && strpos($xls, $angka_lain) === FALSE,
-        'Export TIDAK memuat angka kabupaten lain - cakupan wilayah ikut ke berkas');
+        'Export triwulan II tidak memuat angka wilayah lain (mereka tak berlaporan di TW II)');
 
     /* BUTIR 23 PUTARAN 2 - unduhan SETAHUN, empat triwulan sebagai baris.
 
@@ -385,20 +438,15 @@ try {
         cek(strpos($xlsTahun, '>' . $tw . '<') !== FALSE, "Berkas setahun memuat baris {$tw}");
     }
     cek(strpos($xlsTahun, 'Total ' . TAHUN) !== FALSE, 'Ada baris Total setahun');
-    /* 🔻 ASERSI CAKUPAN WILAYAH DI BAWAH BELUM TERBUKTI MENJAGA APA PUN, dan
-       itu ditulis di sini supaya tidak dibaca sebagai jaminan. Mutasi yang
-       MENCABUT argumen kabupaten dari `rekap()` di jalur tahunan tetap membuat
-       asersi ini hijau, artinya angka penanda kabupaten lain memang tidak
-       muncul di berkas tahunan entah cakupannya terpasang atau tidak.
-
-       Dibiarkan berdiri karena tetap bernilai sebagai jaring (kalau kelak
-       angka itu bocor, ia merah), tetapi PENGGANTINYA MASIH PERLU DIBUAT:
-       yang benar adalah menyiapkan laporan terkirim milik kabupaten lain pada
-       salah satu dari keempat triwulan tahun uji, lalu memastikan namanya
-       tidak ikut. Versi triwulanan di bawah punya data itu; versi tahunan
-       belum. */
+    /* Cakupan wilayah pada export SETAHUN, dan kini BENAR-BENAR TERBUKTI.
+       Sebelumnya asersi ini hijau tanpa arti karena tidak ada data kabupaten
+       lain di keempat triwulan tahun uji - dengan atau tanpa scope, angkanya
+       memang tak ada. Sekarang `$isi_lain(3, 7777000000)` di atas menaruh
+       laporan terkirim milik kabupaten lain di TW III, yang PASTI disapu export
+       tahunan. Kalau argumen kabupaten `rekap()` tergeser, angka ini bocor dan
+       asersi merah - dibuktikan mutasinya di bawah. */
     cek(strpos($xlsTahun, '7777000000') === FALSE,
-        'Export setahun tidak memuat angka penanda kabupaten lain (BELUM terbukti lewat mutasi)');
+        'Export setahun TIDAK memuat angka kabupaten lain (TW III wilayah lain ada, tapi tersaring)');
 
     /* BNBA berisi nama + NIK penerima. Keputusan user: ia TIDAK ikut export.
        Jalur yang salah (`isi_laporan()`) akan menyeret metadatanya diam-diam. */
