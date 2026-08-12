@@ -250,6 +250,13 @@ function cari_wil() {
 
     $.ajax({
         url: '<?= base_url('cari_wil') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah,
+        // jQuery tidak menambah cache-buster ke GET kecuali diminta -
+        // tanpa ini Edge teramati butuh dua refresh (menyajikan hasil
+        // pencarian LAMA dari cache heuristik). Header no-store di server
+        // (Index::cari_wil()) sudah menutup ini juga, cache:false di sini
+        // lapis kedua yang bekerja walau ada proxy/cache di antara yang
+        // tidak menghormati header tersebut.
+        cache: false,
         success: function(response) {
             // Gagal jaringan dibedakan dari halaman yang memang kosong -
             // lihat komentar penanda ini di Index::cari_wil().
