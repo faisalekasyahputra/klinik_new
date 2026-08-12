@@ -521,5 +521,58 @@ $GLOBALS['users'] = $GLOBALS['emails'] = [];
 cek($sisa_akun === 0, 'Akun uji dibersihkan');
 cek($sisa_jejak === 0, 'Baris sys_jejak_audit buatan uji ini dibersihkan');
 
+/* ============================================================================
+   NILAI `role` DI DB HARUS SELALU PERAN SAH, ATAU NULL.
+
+   Ditemukan 13 Agt 2026 di DB lokal: satu baris ber-role
+   `pages/pengembang/pengembang` - PATH VIEW yang bocor ke kolom peran.
+   Production BERSIH, dan ketiga jalur penulis kini sudah memvalidasi
+   (Admin_Users::ubah_role lewat in_array, create_staff lewat in_list,
+   Auth::onboarding lewat daftar tiga peran), jadi baris itu artefak dari
+   sebelum penjaga-penjaga tersebut ada.
+
+   Penjaga ini bukan untuk memperbaiki masa lalu, melainkan supaya kejadian
+   serupa TERLIHAT SEBELUM SAMPAI PRODUCTION. Role sampah tidak menghasilkan
+   galat apa pun: `dashboard_home()` cuma mengembalikan 'akun', menunya kosong,
+   dan orangnya mengira dirinya salah klik.
+
+   NULL SENGAJA DIIZINKAN. Itu keadaan sah "sudah mendaftar, belum memilih
+   peran" yang memang ditulis Auth.php saat registrasi. Menyapunya jadi 'warga'
+   berarti memberi peran kepada orang yang belum pernah memilihnya.
+
+   Daftar peran DIBACA dari config/roles.php, bukan diketik ulang di sini,
+   supaya menambah peran baru tidak membuat penjaga ini merah palsu.
+   ============================================================================ */
+echo "\n== Nilai role di DB ==\n";
+$cfg_roles = (string) @file_get_contents(APP_ROOT . '/application/config/roles.php');
+$peran_sah = [];
+if (preg_match("/available_roles'\]\s*=\s*\[(.*?)\];/s", $cfg_roles, $m_roles)) {
+    preg_match_all("/'([a-z_]+)'\s*=>/", $m_roles[1], $m_keys);
+    $peran_sah = $m_keys[1];
+}
+wajib(count($peran_sah) >= 6,
+    'PRASYARAT: daftar peran terbaca dari config/roles.php (dapat: ' . count($peran_sah) . ')');
+
+$daftar = "'" . implode("','", $peran_sah) . "'";
+$jml_aneh = (int) nilai("SELECT COUNT(*) c FROM usr_users
+                          WHERE role IS NOT NULL AND role NOT IN ({$daftar})");
+if ($jml_aneh > 0) {
+    $aneh = q("SELECT id, email, role FROM usr_users
+                WHERE role IS NOT NULL AND role NOT IN ({$daftar}) LIMIT 1");
+    echo '  DIAG baris pertama: id=' . ($aneh['id'] ?? '?')
+       . ' email=' . ($aneh['email'] ?? '?')
+       . ' role=' . var_export($aneh['role'] ?? NULL, TRUE) . "\n";
+}
+cek($jml_aneh === 0,
+    'Nol baris usr_users ber-role di luar config/roles.php (dapat: ' . $jml_aneh . ')');
+
+/* NULL boleh, TAPI hanya bagi yang belum menyelesaikan onboarding. Role NULL
+   pada akun yang mengaku profilnya lengkap berarti salah satu dari keduanya
+   berbohong, dan itu tidak akan pernah bersuara sendiri. */
+$null_tapi_lengkap = (int) nilai('SELECT COUNT(*) c FROM usr_users
+                                   WHERE role IS NULL AND profile_completed = 1');
+cek($null_tapi_lengkap === 0,
+    'Nol akun ber-role NULL yang mengaku profilnya lengkap (dapat: ' . $null_tapi_lengkap . ')');
+
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);
