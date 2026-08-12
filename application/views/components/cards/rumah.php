@@ -142,3 +142,11 @@
         </div>
     </div>
 <?php endif; ?>
+<!-- jumlah:<?= isset($results) && is_array($results) ? count($results) : 0 ?> -->
+<?php
+/* Penanda tersembunyi untuk pagination di cari_rumah.php - JS membaca angka
+   ini untuk tahu apakah halaman berikutnya masih mungkin ada (< limit berarti
+   sumbernya sudah habis di halaman ini), tanpa perlu menghitung ulang kartu
+   dari markup. Komentar HTML, jadi aman disisipkan ke pemanggil manapun yang
+   sekadar men-dump respons ini ke DOM (mis. data_spasial/sikumbang.php). */
+?>

@@ -116,10 +116,17 @@
             <div class="skeleton h-72 hidden xl:block"></div>
         </div>
 
-        <div class="w-full flex justify-center mt-12" data-aos="zoom-in" data-aos-delay="300">
-            <button id="btn-load-more" onclick="load_more_data()" data-page="1" class="group inline-flex items-center gap-2 px-12 sm:px-24 py-3.5 bg-[#d6fb00]/5 border border-[#d6fb00]/20 text-[#ecffb6] font-semibold text-xs rounded-full hover:bg-[#d6fb00]/10 hover:border-[#d6fb00]/25 tracking-wide transition-all">
-                <i class="fa-solid fa-circle-arrow-down text-sm text-[#5a7a80] group-hover:text-[#d6fb00] group-hover:translate-y-[1px] transition-all"></i>
-                <span id="text-load">Muat Lebih Banyak</span>
+        <div class="w-full flex items-center justify-center gap-3 sm:gap-4 mt-12" data-aos="zoom-in" data-aos-delay="300">
+            <button id="btn-prev-page" onclick="gantiHalaman(-1)" disabled
+                    class="group inline-flex items-center gap-2 px-5 sm:px-8 py-3.5 bg-[#d6fb00]/5 border border-[#d6fb00]/20 text-[#ecffb6] font-semibold text-xs rounded-full hover:bg-[#d6fb00]/10 hover:border-[#d6fb00]/25 tracking-wide transition-all disabled:opacity-30 disabled:pointer-events-none">
+                <i class="fa-solid fa-chevron-left text-sm text-[#5a7a80] group-hover:text-[#d6fb00] transition-all"></i>
+                <span class="hidden sm:inline">Sebelumnya</span>
+            </button>
+            <span id="label-halaman" class="text-xs font-bold uppercase tracking-widest text-[color:var(--portal-text-muted)] min-w-[92px] text-center">Halaman 1</span>
+            <button id="btn-next-page" onclick="gantiHalaman(1)"
+                    class="group inline-flex items-center gap-2 px-5 sm:px-8 py-3.5 bg-[#d6fb00]/5 border border-[#d6fb00]/20 text-[#ecffb6] font-semibold text-xs rounded-full hover:bg-[#d6fb00]/10 hover:border-[#d6fb00]/25 tracking-wide transition-all disabled:opacity-30 disabled:pointer-events-none">
+                <span class="hidden sm:inline">Berikutnya</span>
+                <i class="fa-solid fa-chevron-right text-sm text-[#5a7a80] group-hover:text-[#d6fb00] transition-all"></i>
             </button>
         </div>
 
@@ -149,6 +156,15 @@
  * berpindah/berganti nama, satu tempat saja yang perlu diperbaiki.
  */
 window.statusRumahAktif = 'subsidi';
+window.halamanSekarang = 1;
+
+var SKELETON_HALAMAN = `
+    <div class="skeleton h-72"></div>
+    <div class="skeleton h-72"></div>
+    <div class="skeleton h-72"></div>
+    <div class="skeleton h-72"></div>
+    <div class="skeleton h-72 hidden xl:block"></div>
+`;
 
 /* Keterangan A2. Satu tempat saja - kalau dinas mengirim rumusan resminya,
    yang diganti cukup dua kalimat di sini (dan kalimat awal di HTML atas,
@@ -179,75 +195,73 @@ function pilihStatus(status) {
     cari_wil();
 }
 
-function cari_wil() {
+/**
+ * Satu fungsi untuk SEMUA halaman - maju maupun mundur - bukan dua endpoint
+ * terpisah seperti sebelumnya (cari_wil untuk halaman 1, load_more untuk
+ * tombol "Muat Lebih Banyak" yang MENAMBAH ke grid). Sekarang setiap halaman
+ * MENGGANTI isi grid, dan cari_wil() di server memang sudah generik menerima
+ * parameter `page` berapa pun - tidak perlu endpoint kedua.
+ *
+ * `window.halamanSekarang` hanya diperbarui saat FETCH BERHASIL, sehingga
+ * kegagalan otomatis jadi "coba lagi" - klik Berikutnya sesudah gagal
+ * meminta ULANG halaman yang sama, bukan melompatinya.
+ */
+function muatHalaman(halaman, gulirKeAtas) {
     var keyword = document.getElementById('keyword').value;
     var kodeWilayah = document.getElementById('kodeWilayah').value;
     var sort = document.getElementById('sort').value;
     var searchBy = document.getElementById('searchBy').value;
-    let statusRumah = window.statusRumahAktif || 'subsidi';
+    var statusRumah = window.statusRumahAktif || 'subsidi';
 
-    jQuery('#temp_rumah').html(`
-        <div class="skeleton h-72"></div>
-        <div class="skeleton h-72"></div>
-        <div class="skeleton h-72"></div>
-        <div class="skeleton h-72"></div>
-        <div class="skeleton h-72 hidden xl:block"></div>
-    `);
-
-    // Setiap pencarian/filter selalu memulai pagination dari halaman pertama.
-    jQuery('#btn-load-more').attr('data-page', '1').prop('disabled', false).show();
-    jQuery('#text-load').text('Muat Lebih Banyak');
+    jQuery('#btn-prev-page, #btn-next-page').prop('disabled', true);
+    jQuery('#temp_rumah').html(SKELETON_HALAMAN);
 
     $.ajax({
-        url: '<?= base_url('cari_wil') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah+'&page=1&limit=12',
-        success: function(response) { jQuery('#temp_rumah').html(response); },
-        error: function() { jQuery('#temp_rumah').html('<p class="col-span-full py-10 text-center text-sm text-[color:var(--portal-text-muted)]">Data rumah gagal dimuat. Silakan coba lagi.</p>'); }
-    });
-}
-
-function load_more_data() {
-    let btn = jQuery('#btn-load-more');
-    let currentPage = parseInt(btn.attr('data-page'), 10) || 1;
-    let nextPage = currentPage + 1;
-    var kodeWilayah = document.getElementById('kodeWilayah').value;
-    var keyword = document.getElementById('keyword').value;
-    var sort = document.getElementById('sort').value;
-    var searchBy = document.getElementById('searchBy').value;
-    let statusRumah = window.statusRumahAktif || 'subsidi';
-    
-    jQuery('#text-load').text('Sedang Memuat...');
-    jQuery.ajax({
-        url: '<?= base_url('load_more') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah+'&page='+nextPage+'&limit=12',
+        url: '<?= base_url('cari_wil') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah+'&page='+halaman+'&limit=12',
         success: function(response) {
-            var isi = jQuery.trim(response);
-
-            /* Server mengirim penanda ini saat SIKUMBANG tidak bisa dihubungi.
-               Tanpa penanda, gagal jaringan tidak bisa dibedakan dari data
-               habis - dan salah membacanya berarti tombolnya mati permanen
-               padahal datanya masih ada. */
-            if (isi === '<!-- gagal-jaringan -->') {
-                btn.prop('disabled', false).show();
-                jQuery('#text-load').text('Coba Lagi');
+            // Gagal jaringan dibedakan dari halaman yang memang kosong -
+            // lihat komentar penanda ini di Index::cari_wil().
+            if (response.indexOf('<!-- gagal-jaringan -->') !== -1) {
+                jQuery('#temp_rumah').html(response);
+                jQuery('#btn-prev-page').prop('disabled', halaman <= 1);
+                jQuery('#btn-next-page').prop('disabled', false);
                 return;
             }
 
-            if (isi !== '') {
-                jQuery('#temp_rumah').append(response);
-                btn.attr('data-page', nextPage);
-                jQuery('#text-load').text('Muat Lebih Banyak');
-            } else {
-                jQuery('#text-load').text('Semua Data Telah Dimuat');
-                btn.prop('disabled', true).fadeOut(2000);
+            var cocok = response.match(/<!--\s*jumlah:(\d+)\s*-->/);
+            var jumlah = cocok ? parseInt(cocok[1], 10) : 0;
+
+            window.halamanSekarang = halaman;
+            jQuery('#temp_rumah').html(response);
+            jQuery('#label-halaman').text('Halaman ' + halaman);
+            jQuery('#btn-prev-page').prop('disabled', halaman <= 1);
+            // Kurang dari 12 berarti sumbernya sudah habis di halaman ini -
+            // konsisten dengan cara lokasi_tersaring() menandai "habis" di server.
+            jQuery('#btn-next-page').prop('disabled', jumlah < 12);
+
+            if (gulirKeAtas) {
+                document.getElementById('temp_rumah').scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         },
         error: function() {
-            btn.prop('disabled', false).show();
-            jQuery('#text-load').text('Coba Lagi');
+            jQuery('#temp_rumah').html('<p class="col-span-full py-10 text-center text-sm text-[color:var(--portal-text-muted)]">Data rumah gagal dimuat. Silakan coba lagi.</p>');
+            jQuery('#btn-prev-page').prop('disabled', halaman <= 1);
+            jQuery('#btn-next-page').prop('disabled', false);
         }
     });
 }
 
+function gantiHalaman(delta) {
+    var target = window.halamanSekarang + delta;
+    if (target < 1) { return; }
+    muatHalaman(target, true);
+}
+
+function cari_wil() {
+    muatHalaman(1, false);
+}
+
 document.addEventListener('DOMContentLoaded', function () {
-    cari_wil();
+    muatHalaman(1, false);
 });
 </script>
