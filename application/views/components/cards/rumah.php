@@ -84,34 +84,46 @@
 
         <!-- Content -->
         <div class="flex-grow flex flex-col">
+            <?php
+            /* html_escape() WAJIB di sini - beda dengan atribut alt di atas
+               (baris 75/80, sudah pakai htmlspecialchars()) dan badge status
+               (baris 59, sudah pakai html_escape()), TIGA medan ini dulu
+               dicetak MENTAH. Datanya dari SIKUMBANG, API eksternal diisi
+               puluhan pengembang berbeda di 35 kabupaten - satu saja berisi
+               "<" atau ">" (typo, atau memang bukan HTML) merusak struktur
+               HTML di seluruh grid: kartu-kartu SESUDAHNYA bisa "lolos" dari
+               wrapper .halaman-data yang menyembunyikannya, tampil semua
+               sekaligus walau style-nya sudah benar. Bukan cuma tata letak -
+               ini juga stored-XSS-via-API-eksternal kalau tidak dibetulkan. */
+            ?>
             <h4 class="text-[color:var(--portal-text)] font-bold text-lg mb-1.5 group-hover:text-[color:var(--portal-brand)] transition-colors line-clamp-1">
-                <?= $row['namaPerumahan'] ?>
+                <?= html_escape($row['namaPerumahan']) ?>
             </h4>
-            
+
             <p class="text-[color:var(--portal-text-muted)] text-[10px] uppercase tracking-wide mb-1 flex items-center gap-1.5">
                 <i class="fa-solid fa-location-dot text-[color:var(--portal-brand)] w-3 text-center"></i>
-                <span class="truncate"><?= $row['wilayah']['kabupaten'] ?>, <?= $row['wilayah']['provinsi'] ?></span>
+                <span class="truncate"><?= html_escape($row['wilayah']['kabupaten']) ?>, <?= html_escape($row['wilayah']['provinsi']) ?></span>
             </p>
-            
+
             <p class="text-[color:var(--portal-text-muted)] text-[10px] uppercase tracking-wide mb-3 flex items-center gap-1.5">
                 <i class="fa-solid fa-building text-[color:var(--portal-brand)] w-3 text-center"></i>
-                <span class="truncate"><?= $row['pengembang']['nama'] ?></span>
+                <span class="truncate"><?= html_escape($row['pengembang']['nama']) ?></span>
             </p>
 
             <?php if (isset($row['tipeRumah'][0]['luasBangunan'])): ?>
             <!-- Specifications -->
             <div class="flex items-center justify-between gap-2 mb-4 bg-[color:var(--portal-bg)]/50 border rounded-xl px-3 py-2" style="border-color: var(--portal-border);">
                 <div class="flex items-center gap-1.5 text-[color:var(--portal-text-muted)] text-[10px] font-semibold">
-                    <i class="fa-solid fa-ruler-combined text-[color:var(--portal-brand)]"></i> 
-                    <?= $row['tipeRumah'][0]['luasBangunan'] ?>/<?= $row['tipeRumah'][0]['luasTanah'] ?>
+                    <i class="fa-solid fa-ruler-combined text-[color:var(--portal-brand)]"></i>
+                    <?= html_escape((string) $row['tipeRumah'][0]['luasBangunan']) ?>/<?= html_escape((string) $row['tipeRumah'][0]['luasTanah']) ?>
                 </div>
                 <div class="flex items-center gap-1.5 text-[color:var(--portal-text-muted)] text-[10px] font-semibold">
-                    <i class="fa-solid fa-bed text-[color:var(--portal-brand)]"></i> 
-                    <?= $row['tipeRumah'][0]['kamarTidur'] ?>
+                    <i class="fa-solid fa-bed text-[color:var(--portal-brand)]"></i>
+                    <?= html_escape((string) $row['tipeRumah'][0]['kamarTidur']) ?>
                 </div>
                 <div class="flex items-center gap-1.5 text-[color:var(--portal-text-muted)] text-[10px] font-semibold">
-                    <i class="fa-solid fa-bath text-[color:var(--portal-brand)]"></i> 
-                    <?= $row['tipeRumah'][0]['kamarMandi'] ?>
+                    <i class="fa-solid fa-bath text-[color:var(--portal-brand)]"></i>
+                    <?= html_escape((string) $row['tipeRumah'][0]['kamarMandi']) ?>
                 </div>
             </div>
             <?php endif; ?>
@@ -127,7 +139,7 @@
                 </span>
                 <?php endif; ?>
             </div>
-            <a href="<?= base_url('detail_perum/' . $row['idLokasi']) ?>" class="bg-[#1a3d45] hover:bg-[color:var(--portal-brand)] text-[color:var(--portal-brand)] hover:text-[color:var(--portal-bg)] w-9 h-9 rounded-lg flex items-center justify-center transition-all flex-shrink-0 group/btn z-10 relative">
+            <a href="<?= base_url('detail_perum/' . html_escape($row['idLokasi'])) ?>" class="bg-[#1a3d45] hover:bg-[color:var(--portal-brand)] text-[color:var(--portal-brand)] hover:text-[color:var(--portal-bg)] w-9 h-9 rounded-lg flex items-center justify-center transition-all flex-shrink-0 group/btn z-10 relative">
                 <i class="fa-solid fa-arrow-right text-xs group-hover/btn:-rotate-45 transition-transform duration-300"></i>
             </a>
         </div>
@@ -142,11 +154,3 @@
         </div>
     </div>
 <?php endif; ?>
-<!-- jumlah:<?= isset($results) && is_array($results) ? count($results) : 0 ?> -->
-<?php
-/* Penanda tersembunyi untuk pagination di cari_rumah.php - JS membaca angka
-   ini untuk tahu apakah halaman berikutnya masih mungkin ada (< limit berarti
-   sumbernya sudah habis di halaman ini), tanpa perlu menghitung ulang kartu
-   dari markup. Komentar HTML, jadi aman disisipkan ke pemanggil manapun yang
-   sekadar men-dump respons ini ke DOM (mis. data_spasial/sikumbang.php). */
-?>
