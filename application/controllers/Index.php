@@ -409,8 +409,8 @@ class Index extends MY_Controller {
 	 * dipotong per HALAMAN_UKURAN dan masing-masing dibungkus
 	 * <div class="halaman-data" data-halaman="N">. JS (cari_rumah.php)
 	 * menghitung sendiri jumlah wrapper ini dari DOM untuk tahu total
-	 * halaman, dan Sebelumnya/Berikutnya sesudahnya murni menukar class
-	 * tampil/sembunyi - NOL request susulan per klik.
+	 * halaman, dan Sebelumnya/Berikutnya sesudahnya murni menukar
+	 * `style.display` inline per wrapper - NOL request susulan per klik.
 	 *
 	 * Ini sengaja MENGGANTI pendekatan lama (satu request per halaman +
 	 * marker `<!-- jumlah:N -->` yang memberi tahu JS apakah halaman
@@ -421,11 +421,14 @@ class Index extends MY_Controller {
 	 * mungkin terjadi lagi: tidak ada lagi angka terpisah yang bisa lupa
 	 * disinkronkan dengan apa yang sebenarnya ada.
 	 *
-	 * Chunk pertama TIDAK diberi kelas tersembunyi apa pun - pemanggil lama
-	 * yang men-dump respons apa adanya tanpa tahu soal .halaman-data
-	 * (data_spasial/sikumbang.php) tetap melihat HALAMAN_UKURAN kartu pertama sebagai
-	 * grid item biasa (.halaman-data { display:contents } membuat wrapper
-	 * ini transparan buat layout grid manapun yang menampungnya).
+	 * Chunk pertama tampil, sisanya `display:none` - keduanya ditulis lewat
+	 * atribut `style` INLINE per wrapper, BUKAN kelas yang bergantung pada
+	 * `<style>` terpisah di cari_rumah.php. Endpoint ini juga dipakai
+	 * data_spasial/sikumbang.php yang men-dump respons apa adanya tanpa
+	 * pernah memuat `<style>` itu - kalau penyembunyiannya bergantung kelas
+	 * CSS eksternal, di halaman itu SEMUA chunk akan tampil sekaligus tanpa
+	 * ada yang menyembunyikan apa pun. Inline style bekerja di halaman
+	 * manapun yang men-dump respons ini, tanpa syarat apa pun.
 	 */
 	public function cari_wil() {
 		$p = $this->parameter_cari();
@@ -444,7 +447,8 @@ class Index extends MY_Controller {
 		}
 
 		foreach (array_chunk($list_final, self::HALAMAN_UKURAN) as $i => $potongan) {
-			echo '<div class="halaman-data' . ($i === 0 ? '' : ' halaman-tersembunyi') . '" data-halaman="' . ($i + 1) . '">';
+			$gaya = $i === 0 ? 'display:contents' : 'display:none';
+			echo '<div class="halaman-data" data-halaman="' . ($i + 1) . '" style="' . $gaya . '">';
 			$this->load->view('components/cards/rumah', ['results' => $potongan]);
 			echo '</div>';
 		}
