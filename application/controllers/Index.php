@@ -17,10 +17,11 @@ class Index extends MY_Controller {
 	const SIK_MAKS_BONGKAH = 5;
 
 	/* Ukuran halaman pagination Sebelumnya/Berikutnya di /cari_rumah
-	   (13 Agt 2026). Satu-satunya tempat angka 12 didefinisikan di sisi
-	   server - JS di cari_rumah.php tidak perlu tahu angka ini sama sekali,
-	   ia menghitung jumlah halaman dari wrapper yang benar-benar dirender. */
-	const HALAMAN_UKURAN = 12;
+	   (13 Agt 2026, direvisi 12->20 hari yang sama). Satu-satunya tempat
+	   angka ini didefinisikan di sisi server - JS di cari_rumah.php tidak
+	   perlu tahu angka ini sama sekali, ia menghitung jumlah halaman dari
+	   wrapper yang benar-benar dirender. */
+	const HALAMAN_UKURAN = 20;
 
 	public function __construct()
 	{
@@ -422,7 +423,7 @@ class Index extends MY_Controller {
 	 *
 	 * Chunk pertama TIDAK diberi kelas tersembunyi apa pun - pemanggil lama
 	 * yang men-dump respons apa adanya tanpa tahu soal .halaman-data
-	 * (data_spasial/sikumbang.php) tetap melihat 12 kartu pertama sebagai
+	 * (data_spasial/sikumbang.php) tetap melihat HALAMAN_UKURAN kartu pertama sebagai
 	 * grid item biasa (.halaman-data { display:contents } membuat wrapper
 	 * ini transparan buat layout grid manapun yang menampungnya).
 	 */
