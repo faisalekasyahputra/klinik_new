@@ -17,11 +17,13 @@ class Index extends MY_Controller {
 	const SIK_MAKS_BONGKAH = 5;
 
 	/* Ukuran halaman pagination Sebelumnya/Berikutnya di /cari_rumah
-	   (13 Agt 2026, direvisi 12->20 hari yang sama). Satu-satunya tempat
+	   (13 Agt 2026, direvisi 12->20->2 hari yang sama - 2 sementara untuk
+	   memastikan penyembunyian halaman lain benar-benar bekerja, gampang
+	   diverifikasi visual sebelum dinaikkan lagi). Satu-satunya tempat
 	   angka ini didefinisikan di sisi server - JS di cari_rumah.php tidak
 	   perlu tahu angka ini sama sekali, ia menghitung jumlah halaman dari
 	   wrapper yang benar-benar dirender. */
-	const HALAMAN_UKURAN = 20;
+	const HALAMAN_UKURAN = 2;
 
 	public function __construct()
 	{
