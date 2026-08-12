@@ -109,23 +109,28 @@
         </div>
 
         <?php
-        /* .halaman-data: wrapper per Index::HALAMAN_UKURAN kartu yang dikirim server (satu kali
-           fetch, semua halaman sekaligus - 13 Agt 2026). display:contents
-           membuat wrapper ini "transparan" buat layout grid #temp_rumah -
-           kartunya tetap jadi grid item langsung, bukan kotak bersarang -
-           dan tetap transparan buat pemanggil lama yang tidak tahu soal ini
-           (data_spasial/sikumbang.php). .halaman-tersembunyi (ditambah JS)
-           mematikannya total termasuk dari layout, itulah yang dipakai
-           Sebelumnya/Berikutnya untuk tukar halaman TANPA request baru.
+        /* .halaman-data: wrapper per Index::HALAMAN_UKURAN kartu dari server
+           (satu kali fetch, semua halaman sekaligus - 13 Agt 2026). Tampil/
+           sembunyinya diatur lewat atribut `style` INLINE yang ditulis
+           server (display:contents / display:none) dan ditukar JS langsung
+           di style.display - SENGAJA BUKAN kelas CSS di <style> halaman ini.
+           Endpoint cari_wil() yang sama juga di-dump apa adanya oleh
+           data_spasial/sikumbang.php, yang tidak pernah memuat <style> di
+           halaman ini - kalau penyembunyiannya bergantung kelas CSS dari
+           sini, di sana semua halaman tampil sekaligus tanpa ada yang
+           menyembunyikan (dan kartu pertama pun bukan grid item transparan
+           lagi, karena display:contents-nya juga tidak ikut termuat).
+           Inline style bekerja di halaman manapun tanpa syarat apa pun.
 
-           #kontrol-halaman pakai kelas sendiri, BUKAN gabungan `hidden`+
-           `flex` Tailwind - dua utility display berebut specificity yang
-           urutannya tidak bisa diandalkan, dan jQuery show()/hide() juga
-           tidak tahu ini harus balik ke `flex`, bukan `block`. */
+           #kontrol-halaman TETAP pakai kelas sendiri di sini (bukan gabungan
+           `hidden`+`flex` Tailwind) - kontrol ini murni milik cari_rumah.php,
+           tidak dibagi ke halaman lain seperti .halaman-data, jadi aman
+           diatur lewat <style> halaman ini. Dua utility display Tailwind
+           berebut specificity yang urutannya tidak bisa diandalkan, dan
+           jQuery show()/hide() juga tidak tahu ini harus balik ke `flex`,
+           bukan `block`. */
         ?>
         <style>
-            .halaman-data { display: contents; }
-            .halaman-data.halaman-tersembunyi { display: none; }
             #kontrol-halaman { display: none; }
             #kontrol-halaman.kontrol-tampil { display: flex; }
         </style>
@@ -267,6 +272,12 @@ function cari_wil() {
  * ada di #temp_rumah saat ini, supaya sumber kebenarannya selalu satu: apa
  * yang sungguhan dirender server, bukan angka yang disalin ke variabel lain
  * lalu berisiko basi.
+ *
+ * Tampil/sembunyi ditulis LANGSUNG ke style.display tiap wrapper, BUKAN
+ * lewat toggle kelas - style inline-nya sendiri sudah ditulis server
+ * (Index::cari_wil()) apa adanya, tanpa syarat <style> halaman ini termuat.
+ * Lihat komentar di atas <div id="temp_rumah"> untuk alasannya (dipakai dua
+ * halaman, satunya tidak tahu apa-apa soal fitur ini).
  */
 function tampilkanHalaman(halaman, gulirKeAtas) {
     var wrapper = document.querySelectorAll('#temp_rumah .halaman-data');
@@ -282,7 +293,7 @@ function tampilkanHalaman(halaman, gulirKeAtas) {
 
     wrapper.forEach(function (el) {
         var milikHalaman = parseInt(el.getAttribute('data-halaman'), 10);
-        el.classList.toggle('halaman-tersembunyi', milikHalaman !== halaman);
+        el.style.display = (milikHalaman === halaman) ? 'contents' : 'none';
     });
 
     jQuery('#label-halaman').text('Halaman ' + halaman + ' / ' + totalHalaman);
