@@ -108,6 +108,28 @@
             </p>
         </div>
 
+        <?php
+        /* .halaman-data: wrapper per 12 kartu yang dikirim server (satu kali
+           fetch, semua halaman sekaligus - 13 Agt 2026). display:contents
+           membuat wrapper ini "transparan" buat layout grid #temp_rumah -
+           kartunya tetap jadi grid item langsung, bukan kotak bersarang -
+           dan tetap transparan buat pemanggil lama yang tidak tahu soal ini
+           (data_spasial/sikumbang.php). .halaman-tersembunyi (ditambah JS)
+           mematikannya total termasuk dari layout, itulah yang dipakai
+           Sebelumnya/Berikutnya untuk tukar halaman TANPA request baru.
+
+           #kontrol-halaman pakai kelas sendiri, BUKAN gabungan `hidden`+
+           `flex` Tailwind - dua utility display berebut specificity yang
+           urutannya tidak bisa diandalkan, dan jQuery show()/hide() juga
+           tidak tahu ini harus balik ke `flex`, bukan `block`. */
+        ?>
+        <style>
+            .halaman-data { display: contents; }
+            .halaman-data.halaman-tersembunyi { display: none; }
+            #kontrol-halaman { display: none; }
+            #kontrol-halaman.kontrol-tampil { display: flex; }
+        </style>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5" id="temp_rumah" data-aos="fade-up" data-aos-delay="200">
             <div class="skeleton h-72"></div>
             <div class="skeleton h-72"></div>
@@ -116,21 +138,13 @@
             <div class="skeleton h-72 hidden xl:block"></div>
         </div>
 
-        <div class="w-full flex items-center justify-center gap-3 sm:gap-4 mt-12" data-aos="zoom-in" data-aos-delay="300">
-            <?php
-            /* Token --portal-*, BUKAN hex #d6fb00/#ecffb6/#5a7a80 dari tombol
-               "Muat Lebih Banyak" lama - itu warna TEMA GELAP (lihat
-               design-system.css baris 43 vs 17), sementara portal publik
-               dipatok theme-light (AGENTS.md §1). Teks pucat di atas latar
-               putih nyaris tidak berkontras - bukan cuma estetik, tombolnya
-               praktis tidak kelihatan. */
-            ?>
+        <div id="kontrol-halaman" class="w-full items-center justify-center gap-3 sm:gap-4 mt-12" data-aos="zoom-in" data-aos-delay="300">
             <button id="btn-prev-page" onclick="gantiHalaman(-1)" disabled
                     class="inline-flex items-center gap-2 px-5 sm:px-8 py-3.5 rounded-full text-xs font-bold tracking-wide transition-all bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] text-[color:var(--portal-text)] hover:border-[color:var(--portal-brand)] hover:text-[color:var(--portal-brand)] disabled:opacity-40 disabled:pointer-events-none">
                 <i class="fa-solid fa-chevron-left text-sm"></i>
                 <span class="hidden sm:inline">Sebelumnya</span>
             </button>
-            <span id="label-halaman" class="text-xs font-bold uppercase tracking-widest text-[color:var(--portal-text-muted)] min-w-[92px] text-center">Halaman 1</span>
+            <span id="label-halaman" class="text-xs font-bold uppercase tracking-widest text-[color:var(--portal-text-muted)] min-w-[120px] text-center">Halaman 1</span>
             <button id="btn-next-page" onclick="gantiHalaman(1)"
                     class="inline-flex items-center gap-2 px-5 sm:px-8 py-3.5 rounded-full text-xs font-bold tracking-wide transition-all bg-[color:var(--portal-brand)] text-[color:var(--portal-bg)] hover:opacity-80 disabled:opacity-40 disabled:pointer-events-none">
                 <span class="hidden sm:inline">Berikutnya</span>
@@ -204,72 +218,88 @@ function pilihStatus(status) {
 }
 
 /**
- * Satu fungsi untuk SEMUA halaman - maju maupun mundur - bukan dua endpoint
- * terpisah seperti sebelumnya (cari_wil untuk halaman 1, load_more untuk
- * tombol "Muat Lebih Banyak" yang MENAMBAH ke grid). Sekarang setiap halaman
- * MENGGANTI isi grid, dan cari_wil() di server memang sudah generik menerima
- * parameter `page` berapa pun - tidak perlu endpoint kedua.
+ * SATU fetch untuk SEMUA halaman yang cocok (13 Agt 2026) - bukan lagi satu
+ * fetch per halaman seperti sebelumnya. Server (Index::cari_wil()) membungkus
+ * tiap 12 baris dalam <div class="halaman-data" data-halaman="N">;
+ * Sebelumnya/Berikutnya sesudah ini (lihat tampilkanHalaman() di bawah) murni
+ * menukar class di DOM yang SUDAH ada - nol request susulan per klik.
  *
- * `window.halamanSekarang` hanya diperbarui saat FETCH BERHASIL, sehingga
- * kegagalan otomatis jadi "coba lagi" - klik Berikutnya sesudah gagal
- * meminta ULANG halaman yang sama, bukan melompatinya.
+ * Ini menggantikan pendekatan lama (satu request per halaman + marker
+ * `<!-- jumlah:N -->` yang memberi tahu JS apakah halaman berikutnya masih
+ * ada). Marker itu sempat lupa dikirim server padahal JS sudah bergantung
+ * padanya - tombol Berikutnya terkunci disabled PERMANEN sejak halaman
+ * pertama, walau datanya penuh. Menghitung jumlah halaman dari wrapper yang
+ * SUNGGUHAN dirender (lihat tampilkanHalaman()) membuat kelas bug itu
+ * terstruktur tidak mungkin terjadi lagi - tidak ada lagi angka terpisah
+ * yang bisa lupa disinkronkan dengan apa yang sebenarnya ada di DOM.
  */
-function muatHalaman(halaman, gulirKeAtas) {
+function cari_wil() {
     var keyword = document.getElementById('keyword').value;
     var kodeWilayah = document.getElementById('kodeWilayah').value;
     var sort = document.getElementById('sort').value;
     var searchBy = document.getElementById('searchBy').value;
     var statusRumah = window.statusRumahAktif || 'subsidi';
 
-    jQuery('#btn-prev-page, #btn-next-page').prop('disabled', true);
+    jQuery('#kontrol-halaman').removeClass('kontrol-tampil');
     jQuery('#temp_rumah').html(SKELETON_HALAMAN);
 
     $.ajax({
-        url: '<?= base_url('cari_wil') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah+'&page='+halaman+'&limit=12',
+        url: '<?= base_url('cari_wil') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah,
         success: function(response) {
             // Gagal jaringan dibedakan dari halaman yang memang kosong -
             // lihat komentar penanda ini di Index::cari_wil().
             if (response.indexOf('<!-- gagal-jaringan -->') !== -1) {
                 jQuery('#temp_rumah').html(response);
-                jQuery('#btn-prev-page').prop('disabled', halaman <= 1);
-                jQuery('#btn-next-page').prop('disabled', false);
                 return;
             }
-
-            var cocok = response.match(/<!--\s*jumlah:(\d+)\s*-->/);
-            var jumlah = cocok ? parseInt(cocok[1], 10) : 0;
-
-            window.halamanSekarang = halaman;
             jQuery('#temp_rumah').html(response);
-            jQuery('#label-halaman').text('Halaman ' + halaman);
-            jQuery('#btn-prev-page').prop('disabled', halaman <= 1);
-            // Kurang dari 12 berarti sumbernya sudah habis di halaman ini -
-            // konsisten dengan cara lokasi_tersaring() menandai "habis" di server.
-            jQuery('#btn-next-page').prop('disabled', jumlah < 12);
-
-            if (gulirKeAtas) {
-                document.getElementById('temp_rumah').scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
+            tampilkanHalaman(1, false);
         },
         error: function() {
             jQuery('#temp_rumah').html('<p class="col-span-full py-10 text-center text-sm text-[color:var(--portal-text-muted)]">Data rumah gagal dimuat. Silakan coba lagi.</p>');
-            jQuery('#btn-prev-page').prop('disabled', halaman <= 1);
-            jQuery('#btn-next-page').prop('disabled', false);
         }
     });
 }
 
-function gantiHalaman(delta) {
-    var target = window.halamanSekarang + delta;
-    if (target < 1) { return; }
-    muatHalaman(target, true);
+/**
+ * Tukar halaman yang tampil - murni DOM, nol jaringan. Jumlah halaman
+ * dihitung ULANG tiap panggilan dari wrapper .halaman-data yang benar-benar
+ * ada di #temp_rumah saat ini, supaya sumber kebenarannya selalu satu: apa
+ * yang sungguhan dirender server, bukan angka yang disalin ke variabel lain
+ * lalu berisiko basi.
+ */
+function tampilkanHalaman(halaman, gulirKeAtas) {
+    var wrapper = document.querySelectorAll('#temp_rumah .halaman-data');
+    var totalHalaman = wrapper.length;
+
+    if (totalHalaman === 0) {
+        jQuery('#kontrol-halaman').removeClass('kontrol-tampil');
+        return;
+    }
+
+    halaman = Math.min(Math.max(halaman, 1), totalHalaman);
+    window.halamanSekarang = halaman;
+
+    wrapper.forEach(function (el) {
+        var milikHalaman = parseInt(el.getAttribute('data-halaman'), 10);
+        el.classList.toggle('halaman-tersembunyi', milikHalaman !== halaman);
+    });
+
+    jQuery('#label-halaman').text('Halaman ' + halaman + ' / ' + totalHalaman);
+    jQuery('#btn-prev-page').prop('disabled', halaman <= 1);
+    jQuery('#btn-next-page').prop('disabled', halaman >= totalHalaman);
+    jQuery('#kontrol-halaman').toggleClass('kontrol-tampil', totalHalaman > 1);
+
+    if (gulirKeAtas) {
+        document.getElementById('temp_rumah').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
-function cari_wil() {
-    muatHalaman(1, false);
+function gantiHalaman(delta) {
+    tampilkanHalaman(window.halamanSekarang + delta, true);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    muatHalaman(1, false);
+    cari_wil();
 });
 </script>

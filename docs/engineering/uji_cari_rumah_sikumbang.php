@@ -4,6 +4,25 @@
  *
  *   php docs/engineering/uji_cari_rumah_sikumbang.php
  *
+ * 🔻 USANG SEBAGIAN SEJAK 13 Agt 2026 - JANGAN PERCAYA HIJAU/MERAHNYA UNTUK
+ * cari_wil() TANPA MEMBACA INI DULU. Kontrak endpoint itu berubah total:
+ * Index::cari_wil() tidak lagi menerima `page`/`limit` dan mengiris SATU
+ * halaman - sekarang ia SELALU mengembalikan SEMUA hasil (sampai
+ * SIK_MAKS_BONGKAH) sekaligus, dipotong per Index::HALAMAN_UKURAN (12) dan
+ * dibungkus <div class="halaman-data" data-halaman="N">, dengan Sebelumnya/
+ * Berikutnya di cari_rumah.php sekarang murni tukar tampil/sembunyi DI
+ * BROWSER - nol request susulan. Skenario 1-3 & 4 di bawah (yang memanggil
+ * `minta(..., 'cari_wil', ...)` dengan `page`/`limit` custom) MENGASUMSIKAN
+ * kontrak lama dan akan salah baca hasilnya: `kartu()` menghitung SEMUA
+ * `detail_perum/` di HTML termasuk yang tersembunyi CSS (`display:none`
+ * bukan absen dari markup), jadi angkanya sekarang = TOTAL semua halaman,
+ * bukan satu halaman. Skenario yang memanggil `load_more` (bukan cari_wil)
+ * TETAP valid - Index::load_more() dan lokasi_tersaring() SENGAJA tidak
+ * diubah (masih dipakai data_spasial/sikumbang.php apa adanya). Belum
+ * ditulis ulang karena sesi ini sedang menambal produksi langsung; siapa
+ * pun yang menyentuh cari_wil() berikutnya, tulis ulang skenario 1-4 dulu
+ * sebelum percaya suite ini hijau.
+ *
  * KENAPA BERKAS INI ADA. Dinas melaporkan "kayaknya belum ke-load semua,
  * muncul cuma 3 atau 6 gambar saja". Jawaban kami yang pertama KELIRU: kami
  * menulis "angka 3 dan 6 tidak cocok dengan pengaturan mana pun, jadi
