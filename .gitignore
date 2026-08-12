@@ -1,5 +1,5 @@
 # ============================================
-# .gitignore — Klinik PKP (klinik_new)
+# .gitignore - Klinik PKP (klinik_new)
 # ============================================
 
 # ── Environment & Secrets ──────────────────
@@ -32,10 +32,10 @@ migrate_*.php
 test_api.php
 clean_bg.py
 
-# ── Dev/debug scripts (never deploy — DB access, no auth) ──
+# ── Dev/debug scripts (never deploy - DB access, no auth) ──
 /dev-scripts/
 
-# ── Large local-only artifacts (recordings, reference images — not web assets) ──
+# ── Large local-only artifacts (recordings, reference images - not web assets) ──
 /local-assets/
 
 # ── Build Output ──────────────────────────
@@ -49,13 +49,13 @@ Desktop.ini
 # ── IDE & Editor ──────────────────────────
 .idea/
 .vscode/
-# `.claude/*`, BUKAN `.claude/` — git tidak bisa membuka kembali berkas yang
+# `.claude/*`, BUKAN `.claude/` - git tidak bisa membuka kembali berkas yang
 # direktori induknya dikecualikan, jadi pengecualian di bawah cuma berlaku
 # kalau yang diabaikan isinya, bukan direktorinya.
 .claude/*
 # Agen per-peran DILACAK supaya bisa dipakai ulang siapa pun yang meng-clone
 # (permintaan user 5 Agt 2026). Isinya instruksi, bukan setelan mesin.
-# `settings.local.json` tetap terabaikan — itu preferensi per-mesin.
+# `settings.local.json` tetap terabaikan - itu preferensi per-mesin.
 !.claude/agents/
 .codex/
 /nbproject/
@@ -84,7 +84,7 @@ user_guide_src/cilexer/dist/*
 user_guide_src/cilexer/pycilexer.egg-info/*
 
 # Foto program yang diunggah admin lewat Katalog Program (migrasi 036).
-# Berkas BAWAAN di assets/img/program/ tetap dilacak — ia nilai awal migrasi.
+# Berkas BAWAAN di assets/img/program/ tetap dilacak - ia nilai awal migrasi.
 # Yang di bawah ini data, bukan kode: ia lahir di server tempat diunggah, dan
 # `git pull` saat auto-deploy tidak menyentuh berkas tak terlacak.
 assets/img/program/unggahan/

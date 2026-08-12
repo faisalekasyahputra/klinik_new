@@ -1,5 +1,5 @@
 -- Tabel aduan/pertanyaan warga. Bidang tujuan dideteksi otomatis dari
--- kata kunci pada judul+pesan (lihat Aduan_model::detect_bidang()) —
+-- kata kunci pada judul+pesan (lihat Aduan_model::detect_bidang()) -
 -- jatuh ke 'umum' kalau tidak ada kata kunci yang cocok.
 -- Belum ada dashboard admin per bidang untuk membaca/memproses aduan ini
 -- (menyusul setelah peran/role per bidang ditentukan).

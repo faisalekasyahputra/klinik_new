@@ -4,13 +4,13 @@
 -- Tabel ini SEBELUMNYA dipakai oleh Pengembang::simpan() tapi TIDAK
 -- PERNAH ada baik di docs/engineering/schema_klinikpkp.sql maupun
 -- di database staging & production yang berjalan (dikonfirmasi via
--- DESCRIBE langsung 2026-07-20 — keduanya "table doesn't exist").
+-- DESCRIBE langsung 2026-07-20 - keduanya "table doesn't exist").
 -- Artinya alur pendaftaran SRP2 belum pernah benar-benar berfungsi
 -- end-to-end di lingkungan manapun, bukan cuma soal view yang hilang.
 --
 -- Kolom user_id, instagram, website, sosmed_lainnya adalah tambahan
 -- baru untuk fitur "Cek Pengajuan" (dashboard role pengembang) dan
--- halaman Profil Pengembang — tidak ada di kode asli sebelumnya.
+-- halaman Profil Pengembang - tidak ada di kode asli sebelumnya.
 -- ==============================================================
 
 CREATE TABLE IF NOT EXISTS `srp2_registrations` (
