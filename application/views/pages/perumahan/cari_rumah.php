@@ -117,16 +117,24 @@
         </div>
 
         <div class="w-full flex items-center justify-center gap-3 sm:gap-4 mt-12" data-aos="zoom-in" data-aos-delay="300">
+            <?php
+            /* Token --portal-*, BUKAN hex #d6fb00/#ecffb6/#5a7a80 dari tombol
+               "Muat Lebih Banyak" lama - itu warna TEMA GELAP (lihat
+               design-system.css baris 43 vs 17), sementara portal publik
+               dipatok theme-light (AGENTS.md §1). Teks pucat di atas latar
+               putih nyaris tidak berkontras - bukan cuma estetik, tombolnya
+               praktis tidak kelihatan. */
+            ?>
             <button id="btn-prev-page" onclick="gantiHalaman(-1)" disabled
-                    class="group inline-flex items-center gap-2 px-5 sm:px-8 py-3.5 bg-[#d6fb00]/5 border border-[#d6fb00]/20 text-[#ecffb6] font-semibold text-xs rounded-full hover:bg-[#d6fb00]/10 hover:border-[#d6fb00]/25 tracking-wide transition-all disabled:opacity-30 disabled:pointer-events-none">
-                <i class="fa-solid fa-chevron-left text-sm text-[#5a7a80] group-hover:text-[#d6fb00] transition-all"></i>
+                    class="inline-flex items-center gap-2 px-5 sm:px-8 py-3.5 rounded-full text-xs font-bold tracking-wide transition-all bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] text-[color:var(--portal-text)] hover:border-[color:var(--portal-brand)] hover:text-[color:var(--portal-brand)] disabled:opacity-40 disabled:pointer-events-none">
+                <i class="fa-solid fa-chevron-left text-sm"></i>
                 <span class="hidden sm:inline">Sebelumnya</span>
             </button>
             <span id="label-halaman" class="text-xs font-bold uppercase tracking-widest text-[color:var(--portal-text-muted)] min-w-[92px] text-center">Halaman 1</span>
             <button id="btn-next-page" onclick="gantiHalaman(1)"
-                    class="group inline-flex items-center gap-2 px-5 sm:px-8 py-3.5 bg-[#d6fb00]/5 border border-[#d6fb00]/20 text-[#ecffb6] font-semibold text-xs rounded-full hover:bg-[#d6fb00]/10 hover:border-[#d6fb00]/25 tracking-wide transition-all disabled:opacity-30 disabled:pointer-events-none">
+                    class="inline-flex items-center gap-2 px-5 sm:px-8 py-3.5 rounded-full text-xs font-bold tracking-wide transition-all bg-[color:var(--portal-brand)] text-[color:var(--portal-bg)] hover:opacity-80 disabled:opacity-40 disabled:pointer-events-none">
                 <span class="hidden sm:inline">Berikutnya</span>
-                <i class="fa-solid fa-chevron-right text-sm text-[#5a7a80] group-hover:text-[#d6fb00] transition-all"></i>
+                <i class="fa-solid fa-chevron-right text-sm"></i>
             </button>
         </div>
 
