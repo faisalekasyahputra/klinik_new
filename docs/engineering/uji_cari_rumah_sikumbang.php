@@ -122,6 +122,10 @@ function http($path) {
 function kartu($html) {
     return substr_count($html, 'detail_perum/');
 }
+/** Jumlah wrapper halaman yang dirender server. */
+function halaman($html) {
+    return substr_count($html, 'class="halaman-data"');
+}
 function minta($wilayah, $status, $halaman, $aksi = 'cari_wil', $limit = 9) {
     return http($aksi . '?' . http_build_query([
         'kodeWilayah'  => $wilayah, 'keyword' => '', 'searchBy' => 'nama-perumahan',
@@ -138,67 +142,77 @@ wajib(is_dir(CACHE_DIR) && is_writable(CACHE_DIR), 'Folder cache bisa ditulis');
 // 100 baris hanya 1 subsidi, lalu 100 baris 20 subsidi, lalu habis.
 // Total subsidi = 21. Sebelum perbaikan, halaman 1 memberi SATU kartu.
 // ---------------------------------------------------------------------------
-echo "== 1. Yang cocok sedikit di antara yang banyak ==\n";
+echo "== 1. Yang cocok sedikit di antara yang banyak ==
+";
+/* KONTRAK BARU sejak 13 Agt 2026, dan skenario 1-4 ditulis ULANG karenanya.
+   `cari_wil()` tidak lagi menerima page/limit dan tidak lagi mengiris satu
+   halaman. Ia mengembalikan SELURUH hasil sekaligus, dipotong per
+   Index::HALAMAN_UKURAN ke dalam <div class="halaman-data">, dan tombol
+   Sebelumnya/Berikutnya cuma menukar tampil/sembunyi di browser.
+
+   Versi lama memakai `kartu()` sebagai "jumlah di satu halaman". Itu SALAH
+   BACA sekarang: halaman 2+ disembunyikan lewat CSS, jadi markup-nya tetap ada
+   dan `kartu()` menghitung TOTAL. Angkanya yang membongkar: asersi "harus 9"
+   mendapat 21, yaitu 1+20 dari kedua bongkahan. */
 seed('9901', 1, bongkah(BONGKAH, 1, 1000));
 seed('9901', 2, bongkah(BONGKAH, 20, 2000));
 seed('9901', 3, []);
 
 $h1 = minta('9901', 'subsidi', 1);
-cek(kartu($h1) === 9, 'Halaman 1 penuh 9 kartu, bukan sisa saringan (dapat: ' . kartu($h1) . ')');
+cek(kartu($h1) === 21, 'Seluruh 21 subsidi dikirim sekaligus (dapat: ' . kartu($h1) . ')');
+cek(halaman($h1) === 2, '21 kartu dipotong jadi 2 halaman @20 (dapat: ' . halaman($h1) . ')');
 
-$h2 = minta('9901', 'subsidi', 2, 'load_more');
-cek(kartu($h2) === 9, 'Halaman 2 penuh 9 kartu (dapat: ' . kartu($h2) . ')');
-
-$h3 = minta('9901', 'subsidi', 3, 'load_more');
-cek(kartu($h3) === 3, 'Halaman 3 memberi sisa 3 kartu (21 total) (dapat: ' . kartu($h3) . ')');
-
-$h4 = minta('9901', 'subsidi', 4, 'load_more');
-cek(trim($h4) === '', 'Halaman 4 kosong - "habis" diucapkan hanya saat memang habis');
-
-// ---------------------------------------------------------------------------
-// Skenario 2 - bongkahan pertama NOL yang cocok.
-// Inilah yang dulu mematikan tombol "Muat Lebih Banyak" secara permanen.
-// ---------------------------------------------------------------------------
-echo "\n== 2. Bongkahan pertama nol cocok tidak boleh menghentikan daftar ==\n";
+// ------------------------------------------------------------------ Skenario 2
+echo "
+== 2. Bongkahan pertama nol cocok tidak menghentikan pengumpulan ==
+";
 seed('9902', 1, bongkah(BONGKAH, 0, 3000));
 seed('9902', 2, bongkah(BONGKAH, 15, 4000));
 seed('9902', 3, []);
 
 $n1 = minta('9902', 'subsidi', 1);
-cek(kartu($n1) === 9, 'Halaman 1 tetap berisi 9 walau bongkahan pertama nol cocok (dapat: ' . kartu($n1) . ')');
+cek(kartu($n1) === 15, 'Ke-15 subsidi dari bongkahan KEDUA tetap terkumpul (dapat: ' . kartu($n1) . ')');
+cek(halaman($n1) === 1, '15 kartu muat dalam 1 halaman (dapat: ' . halaman($n1) . ')');
 
-$n2 = minta('9902', 'subsidi', 2, 'load_more');
-cek(kartu($n2) === 6, 'Halaman 2 memberi sisa 6 dari 15 (dapat: ' . kartu($n2) . ')');
-
-// ---------------------------------------------------------------------------
-// Skenario 3 - saringan benar-benar menyaring, bukan cuma melewatkan.
-// ---------------------------------------------------------------------------
-echo "\n== 3. Saringan memilah, dan 'semua' tidak memilah ==\n";
+// ------------------------------------------------------------------ Skenario 3
+echo "
+== 3. Saringan memilah, dan 'semua' tidak memilah ==
+";
 $k1 = minta('9901', 'komersil', 1);
-cek(kartu($k1) === 9, 'Non-subsidi juga penuh 9 (dapat: ' . kartu($k1) . ')');
+cek(kartu($k1) === 179, 'Non-subsidi: 179 dari 200 (dapat: ' . kartu($k1) . ')');
 
 $s1 = minta('9901', 'semua', 1);
-cek(kartu($s1) === 9, '"semua" memberi 9 (dapat: ' . kartu($s1) . ')');
+cek(kartu($s1) === 200, '"semua" mengembalikan 200, nol disaring (dapat: ' . kartu($s1) . ')');
+cek(kartu($h1) + kartu($k1) === kartu($s1),
+    'subsidi + non-subsidi = semua, jadi tidak ada baris yang hilang atau dobel');
 
-/* Kartu subsidi dan non-subsidi harus benar-benar BERBEDA isinya. Tanpa cek
-   ini, saringan yang meloloskan segalanya tetap lulus ketiga asersi di atas -
-   dan itu persis bug toggle lama yang pernah kami perbaiki. */
 preg_match_all('#detail_perum/(\d+)#', $h1, $m_sub);
 preg_match_all('#detail_perum/(\d+)#', $k1, $m_kom);
 cek($m_sub[1] && $m_kom[1] && ! array_intersect($m_sub[1], $m_kom[1]),
     'Daftar subsidi dan non-subsidi tidak beririsan sama sekali');
 
-// ---------------------------------------------------------------------------
-// Skenario 4 - ukuran halaman dijepit.
-// ---------------------------------------------------------------------------
-echo "\n== 4. Ukuran halaman dijepit ==\n";
-$besar = minta('9901', 'semua', 1, 'cari_wil', 999);
-cek(kartu($besar) <= 50, 'limit=999 dijepit ke maksimal 50 (dapat: ' . kartu($besar) . ')');
+// ------------------------------------------------------------------ Skenario 4
+/* HTML dari SIKUMBANG harus DI-ESCAPE. Ini bug SUNGGUHAN yang sempat tayang
+   13 Agt 2026: kartu dari halaman tersembunyi "bocor" ke halaman yang tampil.
+   Sebabnya teks dari API dicetak mentah, sehingga tag di dalamnya menutup
+   pembungkus <div class="halaman-data"> lebih awal dan sisa kartunya lepas
+   dari penyembunyian CSS.
 
-$nol = minta('9901', 'semua', 1, 'cari_wil', 0);
-cek(kartu($nol) >= 1, 'limit=0 tidak menghasilkan halaman kosong (dapat: ' . kartu($nol) . ')');
+   Halaman disembunyikan dengan CSS, bukan dibuang dari markup - jadi satu tag
+   liar cukup membongkar seluruh paginasi. Nol escape = nol paginasi. */
+echo "
+== 4. Teks dari SIKUMBANG di-escape ==
+";
+$jahat = bongkah(3, 3, 5000);
+$jahat[0]['namaPerumahan'] = 'Perum </div><b>BOCOR</b><div>';
+seed('9903', 1, $jahat);
+seed('9903', 2, []);
 
-// ---------------------------------------------------------------------------
+$x = minta('9903', 'subsidi', 1);
+cek(strpos($x, '<b>BOCOR</b>') === FALSE, 'Tag dari nama perumahan TIDAK hidup sebagai HTML');
+cek(strpos($x, 'BOCOR') !== FALSE, 'Teksnya tetap tampil, bukan lenyap diam-diam');
+cek(halaman($x) === 1, 'Pembungkus halaman tetap utuh, tidak tertutup lebih awal');
+
 // Skenario 5 - gagal jaringan tidak boleh menyamar jadi "data habis".
 //
 // Pemeriksaan STRUKTURAL, bukan simulasi, dan disebut apa adanya supaya tidak
