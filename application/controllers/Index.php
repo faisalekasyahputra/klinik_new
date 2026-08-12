@@ -380,6 +380,13 @@ class Index extends MY_Controller {
 		}
 
 		$datacontent['results'] = $list_final;
+
+		/* Dibaca cari_rumah.php (muatHalaman()) untuk memutuskan tombol
+		   Berikutnya aktif atau tidak: kurang dari $p['limit'] hasil berarti
+		   halaman ini yang terakhir. Tanpa marker ini `jumlah` di JS selalu
+		   terbaca 0 dan tombol Berikutnya terkunci disabled selamanya -
+		   walaupun kartunya penuh 12. */
+		echo '<!-- jumlah:' . count($list_final) . ' -->';
 		$this->load->view('components/cards/rumah', $datacontent);
 	}
 
