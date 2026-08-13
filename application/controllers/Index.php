@@ -19,11 +19,12 @@ class Index extends MY_Controller {
 	/* Ukuran halaman pagination Sebelumnya/Berikutnya di /cari_rumah
 	   (13 Agt 2026, direvisi 12->20->2->20 hari yang sama - sempat 2
 	   sementara untuk membuktikan bug HTML tak ter-escape di
-	   components/cards/rumah.php, lihat commit perbaikannya; sekarang akar
-	   masalahnya sudah ditutup, dikembalikan ke ukuran final). Satu-satunya
-	   tempat angka ini didefinisikan di sisi server - JS di cari_rumah.php
-	   tidak perlu tahu angka ini sama sekali, ia menghitung jumlah halaman
-	   dari wrapper yang benar-benar dirender. */
+	   components/cards/rumah.php, lihat commit perbaikannya). 14 Agt 2026:
+	   cari_wil() kembali page-based (lihat komentarnya) - angka ini sekarang
+	   dikirim ke cari_rumah.php sebagai parameter `limit` pada tiap
+	   permintaan AJAX (bukan lagi dipakai untuk array_chunk di server),
+	   tapi TETAP satu-satunya tempat ia didefinisikan - lihat
+	   `halaman_ukuran` di data yang dikirim ke view. */
 	const HALAMAN_UKURAN = 20;
 
 	public function __construct()
@@ -375,63 +376,29 @@ class Index extends MY_Controller {
 	}
 
 	/**
-	 * SEMUA lokasi yang cocok, sampai SIK_MAKS_BONGKAH atau sumbernya
-	 * benar-benar habis - TIDAK dipotong per halaman seperti
-	 * lokasi_tersaring(). Batas kerasnya SAMA (bongkahan × plafon di atas),
-	 * cuma tidak berhenti lebih awal begitu "cukup untuk halaman yang
-	 * diminta" - karena sekarang tidak ada lagi "halaman yang diminta",
-	 * semuanya diminta sekaligus.
+	 * Balik ke SATU HALAMAN per permintaan (14 Agt 2026) - "fetch semua
+	 * sekaligus" (13 Agt, lihat riwayat git untuk versi itu) diukur di
+	 * lingkungan lokal: proses PHP-nya sendiri cuma ~1,7 detik, tapi total
+	 * sampai klien terima respons 10-18 detik. Selisihnya murni waktu KIRIM
+	 * ~2,1 MB HTML (423 kartu wilayah "Seluruh Jawa Tengah") lewat Apache -
+	 * dibuktikan dengan skrip kosong yang cuma echo 2 MB teks statis dan
+	 * SAMA lambatnya, jadi bukan soal logika di sini, murni ukuran payload.
+	 * Akibatnya: navigasi ke /cari_rumah (langsung ATAU lewat klik tab yang
+	 * di-fetch AJAX oleh layouts/footer.php) menampilkan skeleton kosong
+	 * selama itu - user mengira macet dan me-refresh, yang KEBETULAN
+	 * membantu (lebih sabar / cache SIKUMBANG sudah hangat) tapi tidak
+	 * memperbaiki apa pun secara struktural: payload besarnya tetap sama
+	 * tiap percobaan.
 	 *
-	 * Dipakai cari_wil() SAJA (13 Agt 2026, ganti pagination Sebelumnya/
-	 * Berikutnya jadi client-side penuh - lihat cari_wil() di bawah).
-	 * lokasi_tersaring() SENGAJA tidak diubah/dihapus - load_more() masih
-	 * memakainya apa adanya untuk pola "Muat Lebih Banyak" (append per
-	 * klik) di data_spasial/sikumbang.php, yang tidak ikut direvisi sesi
-	 * ini.
-	 */
-	private function semua_lokasi_tersaring(array $p) {
-		$cocok = [];
-		$gagal = FALSE;
-
-		for ($i = 1; $i <= self::SIK_MAKS_BONGKAH; $i++) {
-			$baris = $this->bongkah_sikumbang($p, $i);
-
-			if ($baris === NULL) { $gagal = TRUE; break; }   // jaringan, bukan kehabisan
-			if ( ! $baris)       { break; }                  // sumber habis
-
-			$cocok = array_merge($cocok, $this->saring_status_rumah($baris, $p['status_rumah']));
-
-			if (count($baris) < self::SIK_BONGKAH) { break; } // bongkahan terakhir
-		}
-
-		return [$cocok, $gagal];
-	}
-
-	/**
-	 * Satu permintaan mengembalikan SEMUA hasil (sampai batas aman di atas),
-	 * dipotong per HALAMAN_UKURAN dan masing-masing dibungkus
-	 * <div class="halaman-data" data-halaman="N">. JS (cari_rumah.php)
-	 * menghitung sendiri jumlah wrapper ini dari DOM untuk tahu total
-	 * halaman, dan Sebelumnya/Berikutnya sesudahnya murni menukar
-	 * `style.display` inline per wrapper - NOL request susulan per klik.
-	 *
-	 * Ini sengaja MENGGANTI pendekatan lama (satu request per halaman +
-	 * marker `<!-- jumlah:N -->` yang memberi tahu JS apakah halaman
-	 * berikutnya masih ada). Marker itu sempat lupa dikirim server padahal
-	 * JS sudah bergantung padanya - tombol Berikutnya terkunci disabled
-	 * PERMANEN sejak halaman pertama, walau datanya penuh. Menghitung dari
-	 * DOM yang sungguhan dirender membuat kelas bug itu terstruktur tidak
-	 * mungkin terjadi lagi: tidak ada lagi angka terpisah yang bisa lupa
-	 * disinkronkan dengan apa yang sebenarnya ada.
-	 *
-	 * Chunk pertama tampil, sisanya `display:none` - keduanya ditulis lewat
-	 * atribut `style` INLINE per wrapper, BUKAN kelas yang bergantung pada
-	 * `<style>` terpisah di cari_rumah.php. Endpoint ini juga dipakai
-	 * data_spasial/sikumbang.php yang men-dump respons apa adanya tanpa
-	 * pernah memuat `<style>` itu - kalau penyembunyiannya bergantung kelas
-	 * CSS eksternal, di halaman itu SEMUA chunk akan tampil sekaligus tanpa
-	 * ada yang menyembunyikan apa pun. Inline style bekerja di halaman
-	 * manapun yang men-dump respons ini, tanpa syarat apa pun.
+	 * Baliknya: satu halaman (~20 kartu, puluhan KB) per permintaan,
+	 * Sebelumnya/Berikutnya masing-masing SATU request server (pola
+	 * `muatHalaman()` di cari_rumah.php, marker `<!-- jumlah:N -->`
+	 * memberi tahu JS apakah halaman berikutnya masih ada - SAMA seperti
+	 * load_more() di bawah, yang memang tidak pernah ikut diubah 13 Agt).
+	 * Trade-off yang diterima sadar: klik Berikutnya butuh satu request
+	 * lagi (bukan lagi nol seperti versi client-side), tapi tiap request
+	 * kecil dan cepat - lebih baik dari satu request raksasa yang bisa
+	 * terlihat macet di koneksi/server yang lambat mengirim payload besar.
 	 */
 	public function cari_wil() {
 		/* Wajib: endpoint ini dipanggil GET tanpa parameter unik per state
@@ -445,42 +412,31 @@ class Index extends MY_Controller {
 		$this->output->set_header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 
 		$p = $this->parameter_cari();
-		list($list_final, $gagal) = $this->semua_lokasi_tersaring($p);
+		list($list_final, $gagal) = $this->lokasi_tersaring($p);
 
 		if ($gagal && ! $list_final) {
+			/* Penanda `gagal-jaringan` dibaca sama oleh load_more() dan
+			   muatHalaman() di cari_rumah.php - jangan disatukan/diubah tanpa
+			   mengecek keduanya. */
 			echo '<p class="col-span-full py-10 text-center text-sm text-[color:var(--portal-text-muted)]">'
 			   . 'Data rumah gagal diambil dari SIKUMBANG. Silakan coba lagi sebentar lagi.</p>'
 			   . '<!-- gagal-jaringan -->';
 			return;
 		}
 
-		if ( ! $list_final) {
-			echo $this->load->view('components/cards/rumah', ['results' => []], TRUE);
-			return;
-		}
-
-		/* WAJIB argumen ketiga TRUE + echo eksplisit di sini. Tanpa TRUE,
-		   Loader::_ci_load() (system/core/Loader.php:997) tidak mencetak
-		   apa pun di tempat - ia menampung rendernya ke
-		   CI_Output::$final_output, yang baru benar-benar dikirim ke
-		   browser di _display() (system/core/Output.php:420), SETELAH
-		   seluruh method ini selesai. Sementara echo '<div>'/'</div>' di
-		   baris yang sama terkirim SEKETIKA. Akibatnya: semua wrapper
-		   kosong terkirim duluan sebagai satu urutan, lalu SELURUH isi
-		   chunk menyusul sekaligus SEBAGAI SATU BLOK DI LUAR wrapper
-		   mana pun - display:none pada halaman 2 dst. tidak menyembunyikan
-		   apa-apa karena tidak ada yang sungguhan bersarang di dalamnya.
-		   Kena nyata 13 Agt 2026: 467 kartu tampil semua padahal
-		   HALAMAN_UKURAN=20. Kode SEBELUM rewrite pagination client-side
-		   tidak kena ini - dulu cuma satu panggilan load->view() polos di
-		   akhir method, tanpa echo lain yang perlu diselang-seling
-		   dengannya, jadi urutannya kebetulan tidak pernah jadi masalah. */
-		foreach (array_chunk($list_final, self::HALAMAN_UKURAN) as $i => $potongan) {
-			$gaya = $i === 0 ? 'display:contents' : 'display:none';
-			echo '<div class="halaman-data" data-halaman="' . ($i + 1) . '" style="' . $gaya . '">';
-			echo $this->load->view('components/cards/rumah', ['results' => $potongan], TRUE);
-			echo '</div>';
-		}
+		/* Dibaca cari_rumah.php (muatHalaman()) untuk memutuskan tombol
+		   Berikutnya aktif atau tidak: kurang dari HALAMAN_UKURAN hasil
+		   berarti halaman ini yang terakhir. Tanpa marker ini JS selalu
+		   membaca jumlah=0 dan tombol Berikutnya terkunci disabled selamanya
+		   walau kartunya penuh (kena nyata di versi lama - lihat riwayat git
+		   commit a22835c - makanya marker ini WAJIB dikirim, bukan opsional).
+		   Echo duluan lalu load->view(...,TRUE) SETELAHNYA - urutan fisik di
+		   respons tidak masalah di sini (JS mencari marker & meng-html()
+		   seluruh respons apa adanya, bukan menyusun ulang struktur DOM
+		   bersarang seperti versi chunked 13 Agt yang butuh urutan
+		   ketat/echo eksplisit - lihat commit 82acef6). */
+		echo '<!-- jumlah:' . count($list_final) . ' -->';
+		echo $this->load->view('components/cards/rumah', ['results' => $list_final], TRUE);
 	}
 
 	public function load_more() {
@@ -621,6 +577,7 @@ class Index extends MY_Controller {
 	public function cari_rumah()
 	{
 		$datacontent['judul']='';
+		$datacontent['halaman_ukuran'] = self::HALAMAN_UKURAN;
 		$datacontent['kabupaten_kota_jateng'] = [
 			"3301" => "Kabupaten Cilacap",
 			"3302" => "Kabupaten Banyumas",

@@ -484,7 +484,22 @@ function globalSystem() {
         if (link.pathname === window.location.pathname && link.hash) return;
         // Area yang PASTI berdiri sendiri (shell auth/dashboard, aksi sesi):
         // langsung navigasi penuh tanpa membuang satu fetch percobaan.
-        if (/(login|register|daftar|Auth\/|akun|admin|Admin|Pengaturan|User_Profile)/.test(link.pathname)) return;
+        //
+        // `cari_rumah` sengaja IKUT di sini (14 Agt 2026) - BUKAN "berdiri
+        // sendiri" seperti yang lain, tapi PUNYA MASALAH SENDIRI: halaman itu
+        // SELALU butuh satu fetch susulan (cari_wil() mengambil kartu rumah
+        // lewat AJAX-nya sendiri, terpisah dari HTML halamannya). Lewat jalur
+        // progresif ini artinya DUA fetch berurutan sebelum kartu tampil -
+        // shell loadTab() dulu, BARU cari_wil() - bukan paralel. Diukur
+        // langsung 14 Agt 2026 lewat trace performance.now(): shell 2,6 detik
+        // + cari_wil 3,6 detik = 6,6 detik total, dua kali lipat dari akses
+        // langsung (satu page-load + satu cari_wil, tanpa fetch shell). Itu
+        // sebabnya user melapor "harus refresh dulu" HANYA lewat tombol
+        // Golek Omah (yang lewat jalur ini) - akses langsung ke /cari_rumah
+        // sudah cepat dan tidak pernah kena laporan yang sama. Navigasi penuh
+        // di sini menghapus fetch shell itu - tinggal satu round-trip
+        // (cari_wil), sama seperti akses langsung.
+        if (/(login|register|daftar|Auth\/|akun|admin|Admin|Pengaturan|User_Profile|cari_rumah)/.test(link.pathname)) return;
         // S2 - opt-out dihormati SEBELUM fetch, bukan sesudah. Tanpa ini,
         // tautan yang sengaja ditandai tetap difetch dulu lalu baru jatuh ke
         // navigasi penuh: dua GET untuk satu klik, dan `Umum::detail()`

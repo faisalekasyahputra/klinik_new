@@ -109,26 +109,14 @@
         </div>
 
         <?php
-        /* .halaman-data: wrapper per Index::HALAMAN_UKURAN kartu dari server
-           (satu kali fetch, semua halaman sekaligus - 13 Agt 2026). Tampil/
-           sembunyinya diatur lewat atribut `style` INLINE yang ditulis
-           server (display:contents / display:none) dan ditukar JS langsung
-           di style.display - SENGAJA BUKAN kelas CSS di <style> halaman ini.
-           Endpoint cari_wil() yang sama juga di-dump apa adanya oleh
-           data_spasial/sikumbang.php, yang tidak pernah memuat <style> di
-           halaman ini - kalau penyembunyiannya bergantung kelas CSS dari
-           sini, di sana semua halaman tampil sekaligus tanpa ada yang
-           menyembunyikan (dan kartu pertama pun bukan grid item transparan
-           lagi, karena display:contents-nya juga tidak ikut termuat).
-           Inline style bekerja di halaman manapun tanpa syarat apa pun.
-
-           #kontrol-halaman TETAP pakai kelas sendiri di sini (bukan gabungan
-           `hidden`+`flex` Tailwind) - kontrol ini murni milik cari_rumah.php,
-           tidak dibagi ke halaman lain seperti .halaman-data, jadi aman
-           diatur lewat <style> halaman ini. Dua utility display Tailwind
-           berebut specificity yang urutannya tidak bisa diandalkan, dan
-           jQuery show()/hide() juga tidak tahu ini harus balik ke `flex`,
-           bukan `block`. */
+        /* #kontrol-halaman pakai kelas sendiri di sini (bukan gabungan
+           `hidden`+`flex` Tailwind) - dua utility display Tailwind berebut
+           specificity yang urutannya tidak bisa diandalkan, dan jQuery
+           show()/hide() juga tidak tahu ini harus balik ke `flex`, bukan
+           `block`. 14 Agt 2026: kembali page-based (lihat muatHalaman() di
+           bawah) - #temp_rumah sekarang cuma berisi kartu HALAMAN INI SAJA
+           langsung dari server, tidak ada lagi wrapper .halaman-data /
+           display:none yang perlu disembunyikan client-side. */
         ?>
         <style>
             #kontrol-halaman { display: none; }
@@ -234,34 +222,35 @@ function pilihStatus(status) {
     cari_wil();
 }
 
+/* Ukuran halaman - SATU-SATUNYA tempat JS baca angka ini adalah dari server
+   (Index::HALAMAN_UKURAN lewat $halaman_ukuran), bukan diketik ulang di sini -
+   supaya tidak bisa diam-diam tidak sinkron dengan apa yang server benarkan
+   ke `array_slice` di Index::lokasi_tersaring(). */
+var HALAMAN_UKURAN = <?= (int) $halaman_ukuran ?>;
+
 /**
- * SATU fetch untuk SEMUA halaman yang cocok (13 Agt 2026) - bukan lagi satu
- * fetch per halaman seperti sebelumnya. Server (Index::cari_wil()) membungkus
- * tiap Index::HALAMAN_UKURAN baris dalam <div class="halaman-data" data-halaman="N">;
- * Sebelumnya/Berikutnya sesudah ini (lihat tampilkanHalaman() di bawah) murni
- * menukar class di DOM yang SUDAH ada - nol request susulan per klik.
+ * SATU HALAMAN per permintaan (kembali ke pola ini 14 Agt 2026 - lihat
+ * komentar Index::cari_wil() untuk alasannya: "fetch semua sekaligus" yang
+ * sempat dipakai 13 Agt terbukti lambat di lingkungan dengan Apache/koneksi
+ * lambat mengirim payload besar - satu pencarian bisa mengirim 2+ MB HTML
+ * dan terlihat macet beberapa detik sebelum kartu muncul).
  *
- * Ini menggantikan pendekatan lama (satu request per halaman + marker
- * `<!-- jumlah:N -->` yang memberi tahu JS apakah halaman berikutnya masih
- * ada). Marker itu sempat lupa dikirim server padahal JS sudah bergantung
- * padanya - tombol Berikutnya terkunci disabled PERMANEN sejak halaman
- * pertama, walau datanya penuh. Menghitung jumlah halaman dari wrapper yang
- * SUNGGUHAN dirender (lihat tampilkanHalaman()) membuat kelas bug itu
- * terstruktur tidak mungkin terjadi lagi - tidak ada lagi angka terpisah
- * yang bisa lupa disinkronkan dengan apa yang sebenarnya ada di DOM.
+ * `window.halamanSekarang` hanya diperbarui saat FETCH BERHASIL, sehingga
+ * kegagalan otomatis jadi "coba lagi" - klik Berikutnya sesudah gagal
+ * meminta ULANG halaman yang sama, bukan melompatinya.
  */
-function cari_wil() {
+function muatHalaman(halaman, gulirKeAtas) {
     var keyword = document.getElementById('keyword').value;
     var kodeWilayah = document.getElementById('kodeWilayah').value;
     var sort = document.getElementById('sort').value;
     var searchBy = document.getElementById('searchBy').value;
     var statusRumah = window.statusRumahAktif || 'subsidi';
 
-    jQuery('#kontrol-halaman').removeClass('kontrol-tampil');
+    jQuery('#btn-prev-page, #btn-next-page').prop('disabled', true);
     jQuery('#temp_rumah').html(SKELETON_HALAMAN);
 
     $.ajax({
-        url: '<?= base_url('cari_wil') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah,
+        url: '<?= base_url('cari_wil') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah+'&page='+halaman+'&limit='+HALAMAN_UKURAN,
         // jQuery tidak menambah cache-buster ke GET kecuali diminta -
         // tanpa ini Edge teramati butuh dua refresh (menyajikan hasil
         // pencarian LAMA dari cache heuristik). Header no-store di server
@@ -274,59 +263,44 @@ function cari_wil() {
             // lihat komentar penanda ini di Index::cari_wil().
             if (response.indexOf('<!-- gagal-jaringan -->') !== -1) {
                 jQuery('#temp_rumah').html(response);
+                jQuery('#btn-prev-page').prop('disabled', halaman <= 1);
+                jQuery('#btn-next-page').prop('disabled', false);
                 return;
             }
+
+            var cocok = response.match(/<!--\s*jumlah:(\d+)\s*-->/);
+            var jumlah = cocok ? parseInt(cocok[1], 10) : 0;
+
+            window.halamanSekarang = halaman;
             jQuery('#temp_rumah').html(response);
-            tampilkanHalaman(1, false);
+            jQuery('#kontrol-halaman').toggleClass('kontrol-tampil', halaman > 1 || jumlah >= HALAMAN_UKURAN);
+            jQuery('#label-halaman').text('Halaman ' + halaman);
+            jQuery('#btn-prev-page').prop('disabled', halaman <= 1);
+            // Kurang dari HALAMAN_UKURAN berarti sumbernya sudah habis di
+            // halaman ini - konsisten dengan cara Index::lokasi_tersaring()
+            // menandai "habis" di server.
+            jQuery('#btn-next-page').prop('disabled', jumlah < HALAMAN_UKURAN);
+
+            if (gulirKeAtas) {
+                document.getElementById('temp_rumah').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         },
         error: function() {
             jQuery('#temp_rumah').html('<p class="col-span-full py-10 text-center text-sm text-[color:var(--portal-text-muted)]">Data rumah gagal dimuat. Silakan coba lagi.</p>');
+            jQuery('#btn-prev-page').prop('disabled', halaman <= 1);
+            jQuery('#btn-next-page').prop('disabled', false);
         }
     });
 }
 
-/**
- * Tukar halaman yang tampil - murni DOM, nol jaringan. Jumlah halaman
- * dihitung ULANG tiap panggilan dari wrapper .halaman-data yang benar-benar
- * ada di #temp_rumah saat ini, supaya sumber kebenarannya selalu satu: apa
- * yang sungguhan dirender server, bukan angka yang disalin ke variabel lain
- * lalu berisiko basi.
- *
- * Tampil/sembunyi ditulis LANGSUNG ke style.display tiap wrapper, BUKAN
- * lewat toggle kelas - style inline-nya sendiri sudah ditulis server
- * (Index::cari_wil()) apa adanya, tanpa syarat <style> halaman ini termuat.
- * Lihat komentar di atas <div id="temp_rumah"> untuk alasannya (dipakai dua
- * halaman, satunya tidak tahu apa-apa soal fitur ini).
- */
-function tampilkanHalaman(halaman, gulirKeAtas) {
-    var wrapper = document.querySelectorAll('#temp_rumah .halaman-data');
-    var totalHalaman = wrapper.length;
-
-    if (totalHalaman === 0) {
-        jQuery('#kontrol-halaman').removeClass('kontrol-tampil');
-        return;
-    }
-
-    halaman = Math.min(Math.max(halaman, 1), totalHalaman);
-    window.halamanSekarang = halaman;
-
-    wrapper.forEach(function (el) {
-        var milikHalaman = parseInt(el.getAttribute('data-halaman'), 10);
-        el.style.display = (milikHalaman === halaman) ? 'contents' : 'none';
-    });
-
-    jQuery('#label-halaman').text('Halaman ' + halaman + ' / ' + totalHalaman);
-    jQuery('#btn-prev-page').prop('disabled', halaman <= 1);
-    jQuery('#btn-next-page').prop('disabled', halaman >= totalHalaman);
-    jQuery('#kontrol-halaman').toggleClass('kontrol-tampil', totalHalaman > 1);
-
-    if (gulirKeAtas) {
-        document.getElementById('temp_rumah').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+function gantiHalaman(delta) {
+    var target = window.halamanSekarang + delta;
+    if (target < 1) { return; }
+    muatHalaman(target, true);
 }
 
-function gantiHalaman(delta) {
-    tampilkanHalaman(window.halamanSekarang + delta, true);
+function cari_wil() {
+    muatHalaman(1, false);
 }
 
 document.addEventListener('DOMContentLoaded', function () {
