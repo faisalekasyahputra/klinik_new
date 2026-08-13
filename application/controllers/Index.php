@@ -455,14 +455,30 @@ class Index extends MY_Controller {
 		}
 
 		if ( ! $list_final) {
-			$this->load->view('components/cards/rumah', ['results' => []]);
+			echo $this->load->view('components/cards/rumah', ['results' => []], TRUE);
 			return;
 		}
 
+		/* WAJIB argumen ketiga TRUE + echo eksplisit di sini. Tanpa TRUE,
+		   Loader::_ci_load() (system/core/Loader.php:997) tidak mencetak
+		   apa pun di tempat - ia menampung rendernya ke
+		   CI_Output::$final_output, yang baru benar-benar dikirim ke
+		   browser di _display() (system/core/Output.php:420), SETELAH
+		   seluruh method ini selesai. Sementara echo '<div>'/'</div>' di
+		   baris yang sama terkirim SEKETIKA. Akibatnya: semua wrapper
+		   kosong terkirim duluan sebagai satu urutan, lalu SELURUH isi
+		   chunk menyusul sekaligus SEBAGAI SATU BLOK DI LUAR wrapper
+		   mana pun - display:none pada halaman 2 dst. tidak menyembunyikan
+		   apa-apa karena tidak ada yang sungguhan bersarang di dalamnya.
+		   Kena nyata 13 Agt 2026: 467 kartu tampil semua padahal
+		   HALAMAN_UKURAN=20. Kode SEBELUM rewrite pagination client-side
+		   tidak kena ini - dulu cuma satu panggilan load->view() polos di
+		   akhir method, tanpa echo lain yang perlu diselang-seling
+		   dengannya, jadi urutannya kebetulan tidak pernah jadi masalah. */
 		foreach (array_chunk($list_final, self::HALAMAN_UKURAN) as $i => $potongan) {
 			$gaya = $i === 0 ? 'display:contents' : 'display:none';
 			echo '<div class="halaman-data" data-halaman="' . ($i + 1) . '" style="' . $gaya . '">';
-			$this->load->view('components/cards/rumah', ['results' => $potongan]);
+			echo $this->load->view('components/cards/rumah', ['results' => $potongan], TRUE);
 			echo '</div>';
 		}
 	}
