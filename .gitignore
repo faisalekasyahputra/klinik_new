@@ -7,6 +7,13 @@
 .env.*
 !.env.example
 
+# Environment Postman menyimpan pub_key/priv_key SIMPERUM dalam teks biasa.
+# Pola `.env.*` di atas TIDAK menangkapnya (nama berkasnya tidak diawali .env),
+# jadi aturannya harus berdiri sendiri. Koleksinya sendiri boleh dilacak:
+# `SIMPERUM_API.postman_collection.json` sengaja dibuat tanpa kunci sama sekali
+# supaya bisa dikirim ke tim SIMPERUM sebagai bahan reproduksi.
+*.postman_environment.json
+
 # ── Dependencies ───────────────────────────
 /vendor/
 /node_modules/
