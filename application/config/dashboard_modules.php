@@ -64,7 +64,10 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |   enabled - opsional, default true; set false untuk mematikan modul tanpa hapus entri
 */
 
-$config['dashboard_module_groups'] = ['Utama', 'Layanan', 'Tindak Lanjut', 'Pemantauan', 'Publikasi', 'Manajemen', 'Akun'];
+// 'Publikasi' dicabut 14 Agt 2026 - satu-satunya isinya ('Direktori SRP2')
+// pindah jadi anak 'Tinjau SRP2' (srp2_verifikasi_aktif), jadi grupnya
+// sendiri tidak lagi punya modul apa pun untuk role mana pun.
+$config['dashboard_module_groups'] = ['Utama', 'Layanan', 'Tindak Lanjut', 'Pemantauan', 'Manajemen', 'Akun'];
 
 $config['dashboard_modules'] = [
 
@@ -222,9 +225,33 @@ $config['dashboard_modules'] = [
         'status_column' => 'status_verifikasi', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'Sertifikasi SRP2',
     ],
-    'srp2_direktori' => [
+    /* Dua anak di bawah - permintaan user 14 Agt 2026: "Tinjau SRP2" dua
+       tabel berbeda (lihat percakapan yang menemukan ini - srp2_registrations
+       vs srp2_certified_developers, cuma 1 dari 67 baris certified yang
+       tertaut ke pengajuan), jadi sidebar-nya dibuat menyuarakan itu lewat
+       submenu, bukan cuma satu tautan yang membingungkan mana yang dilihat.
+       `parent` menautkan ke srp2_verifikasi - mekanisme yang sama dipakai
+       Rekam Data → Perumahan/Kawasan di atas, lihat catatannya untuk cara
+       kerja buka/tutup & penyorotan aktifnya.
+
+       srp2_verifikasi_aktif ke Admin_Srp2 (index() - form edit inline
+       lengkap), BUKAN ke Admin_Srp2/aktif. Percobaan pertama memakai
+       Admin_Srp2/aktif (daftar ringkas baru, read-only, tombol "Kelola →"
+       melompat ke index() buat benar-benar mengedit) - user tegas menolak
+       lompatan dua-klik itu: "Direktori SRP2" di sidebar harus LANGSUNG ke
+       halaman yang bisa mengedit, satu klik. Admin_Srp2::aktif() dan
+       views/admin/srp2/aktif.php akhirnya tidak dipakai jalur mana pun -
+       DIHAPUS, bukan dibiarkan menggantung tanpa pintu masuk. */
+    'srp2_verifikasi_pengajuan' => [
+        'label' => 'SRP2 dalam Pengajuan', 'icon' => 'ph-hourglass-medium',
+        'url'   => 'Admin_Srp2/pending', 'group' => 'Tindak Lanjut', 'order' => 21,
+        'parent' => 'srp2_verifikasi',
+        'roles' => ['admin'], 'scope' => null,
+    ],
+    'srp2_verifikasi_aktif' => [
         'label' => 'Direktori SRP2', 'icon' => 'ph-buildings',
-        'url'   => 'Admin_Srp2', 'group' => 'Publikasi', 'order' => 10,
+        'url'   => 'Admin_Srp2', 'group' => 'Tindak Lanjut', 'order' => 22,
+        'parent' => 'srp2_verifikasi',
         'roles' => ['admin'], 'scope' => null,
     ],
     // Read-only lintas bidang untuk superadmin (audit/eskalasi). Sengaja tanpa

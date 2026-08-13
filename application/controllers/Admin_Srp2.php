@@ -79,6 +79,25 @@ class Admin_Srp2 extends Admin_Controller {
     }
 
     /**
+     * Halaman TERSENDIRI untuk menambah pengembang baru - dulu form inline
+     * di puncak index() (permintaan user 14 Agt 2026: form sepanjang itu
+     * selalu mendorong tabel ke bawah, padahal "tambah manual" jarang
+     * dipakai dibanding "cari/edit yang sudah ada" - direktori ini isinya
+     * 66 dari 67 baris data historis, cuma 1 hasil alur pengajuan online).
+     *
+     * Field & nama input DIPINDAH APA ADANYA, bukan ditulis ulang -
+     * save() (dituju form ini) tidak berubah sama sekali: ia sudah
+     * menerima id=0/kosong sebagai INSERT sejak awal, jadi satu-satunya
+     * yang pindah adalah tempat form-nya dirender.
+     */
+    public function tambah() {
+        $data['title'] = 'Tambah Pengembang';
+        $data['kabupaten'] = $this->db->select('id, nama')->order_by('nama', 'ASC')
+            ->get('kabupaten')->result();
+        $this->render_admin('admin/srp2/tambah', $data);
+    }
+
+    /**
      * Daftar pengajuan SRP2 yang menunggu keputusan - menutup gap dari
      * docs/product/PRD_VERIFIKASI_ADMIN_SRP2.md Fase 1 (sebelumnya tidak
      * ada alur admin sama sekali untuk srp2_registrations, lihat
