@@ -144,8 +144,20 @@
         </div>
 
         <div id="kontrol-halaman" class="w-full items-center justify-center gap-3 sm:gap-4 mt-12" data-aos="zoom-in" data-aos-delay="300">
+            <?php
+            /* Dua percobaan sebelumnya (opacity-100, lalu border/teks teal
+               di rest) belum cukup buat user - permintaannya eksplisit:
+               versi AKTIF Sebelumnya harus SAMA PERSIS dengan style
+               Berikutnya, bukan cuma "senada". Jadi resep kelasnya sekarang
+               DISALIN APA ADANYA dari Berikutnya (bg-[--portal-brand] solid
+               + text-[--portal-bg], disabled:opacity-40 buat versi mati) -
+               satu-satunya beda tinggal urutan ikon (panah kiri di depan
+               teks di sini, panah kanan di belakang teks di Berikutnya) dan
+               target onclick-nya. Kalau kelak stylenya diubah lagi, ubah
+               DUA tombol ini bersamaan supaya tidak kembali tidak sinkron. */
+            ?>
             <button id="btn-prev-page" onclick="gantiHalaman(-1)" disabled
-                    class="inline-flex items-center gap-2 px-5 sm:px-8 py-3.5 rounded-full text-xs font-bold tracking-wide transition-all bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] text-[color:var(--portal-text)] hover:border-[color:var(--portal-brand)] hover:text-[color:var(--portal-brand)] disabled:opacity-40 disabled:pointer-events-none">
+                    class="inline-flex items-center gap-2 px-5 sm:px-8 py-3.5 rounded-full text-xs font-bold tracking-wide transition-all bg-[color:var(--portal-brand)] text-[color:var(--portal-bg)] hover:opacity-80 disabled:opacity-40 disabled:pointer-events-none">
                 <i class="fa-solid fa-chevron-left text-sm"></i>
                 <span class="hidden sm:inline">Sebelumnya</span>
             </button>
