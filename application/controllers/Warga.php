@@ -123,9 +123,30 @@ class Warga extends MY_Controller {
     private function lookup()
     {
         $nik = preg_replace('/\D+/', '', (string) $this->input->post('nik', TRUE));
-        $birth_date = trim((string) $this->input->post('birth_date', TRUE));
+        $account_id = (int) $this->get_user_id();
+
+        /* Tanggal lahir DICABUT dari layar ini 14 Agt 2026 - keputusan sadar
+           user, dikonfirmasi paham risikonya (Simperum_gateway::lookup()
+           menyebutnya "pengaman anti-penelusuran", bukan formalitas). Dua
+           batas AKUN di bawah (warga_lookup_jam/harian, TANPA dimensi nik)
+           yang menggantikan perannya - pola SAMA PERSIS dengan
+           rtlh_cek/rtlh_cek_harian di Cek_Rtlh::proses() saat dinas mencabut
+           tanggal lahir di sana lebih dulu. `warga_lookup` (per-NIK) TETAP
+           dipanggil juga - dua-duanya, bukan saling gantikan: yang lama
+           menahan brute-force SATU NIK, yang baru menahan penelusuran BANYAK
+           NIK berbeda. */
+        foreach ([
+            ['warga_lookup_jam', 'Terlalu banyak percobaan pencarian data. Silakan coba lagi sebentar.'],
+            ['warga_lookup_harian', 'Batas pencarian harian tercapai. Silakan lanjutkan besok.'],
+        ] as [$policy, $pesan]) {
+            $rate = $this->rate_limit_consume($policy, ['account_id' => $account_id]);
+            if (empty($rate['success']) || empty($rate['allowed'])) {
+                $this->rate_limit_reject($rate, $pesan, $this->input->is_ajax_request());
+                return;
+            }
+        }
         $rate = $this->rate_limit_consume('warga_lookup', [
-            'account_id' => (int) $this->get_user_id(),
+            'account_id' => $account_id,
             'nik' => $nik,
         ]);
         if (empty($rate['success']) || empty($rate['allowed'])) {
@@ -136,14 +157,15 @@ class Warga extends MY_Controller {
             );
             return;
         }
-        if ( ! preg_match('/^\d{16}$/', $nik) || ! $this->valid_date($birth_date)) {
-            $this->session->set_flashdata('warga_old_input', ['nik' => $nik, 'birth_date' => $birth_date]);
-            $this->flash_errors(['nik' => 'NIK harus 16 digit.', 'birth_date' => 'Tanggal lahir tidak valid.']);
+        if ( ! preg_match('/^\d{16}$/', $nik)) {
+            $this->session->set_flashdata('warga_old_input', ['nik' => $nik]);
+            $this->flash_errors(['nik' => 'NIK harus 16 digit.']);
             redirect('warga/pendataan');
             return;
         }
 
-        $result = $this->simperum_gateway->lookup($nik, $birth_date, (int) $this->get_user_id());
+        // $tanpa_tgl_lahir=TRUE - lihat komentar di atas & Simperum_gateway::lookup().
+        $result = $this->simperum_gateway->lookup($nik, '', $account_id, TRUE);
         $this->session->set_flashdata('warga_lookup', $result);
         if (($result['status'] ?? '') !== 'found') {
             $this->session->set_flashdata('error', $result['message'] ?? 'Data belum dapat ditemukan.');

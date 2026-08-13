@@ -82,10 +82,18 @@ $badge = static function ($field) use ($provenance, $source_label) {
 
         <?php if ($step === 0): ?>
             <h2 class="text-lg font-black">Temukan Data</h2>
-            <p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Masukkan NIK dan tanggal lahir. Pencarian dilakukan dari data tersimpan; halaman ini tidak menampilkan data mentah sumber. Satu akun hanya dapat terhubung dengan satu NIK - gunakan NIK Anda sendiri.</p>
-            <div class="mt-5 grid gap-4 sm:grid-cols-2">
+            <p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Masukkan NIK. Pencarian dilakukan dari data tersimpan; halaman ini tidak menampilkan data mentah sumber. Satu akun hanya dapat terhubung dengan satu NIK - gunakan NIK Anda sendiri.</p>
+            <?php
+            /* Tanggal lahir DICABUT dari sini 14 Agt 2026 (keputusan sadar
+               user, bukan dinas - beda dengan Cek_Rtlh yang memang keputusan
+               dinas). Field-nya SENGAJA tidak pernah menjadi "opsional" -
+               dihapus total, konsisten dengan Warga::lookup() yang sekarang
+               memanggil gateway dengan $tanpa_tgl_lahir=TRUE. Penggantinya
+               BUKAN di layar ini - dua batas laju per-akun (bukan per-NIK)
+               di Warga::lookup(), lihat komentarnya. */
+            ?>
+            <div class="mt-5">
                 <div><label for="nik" class="text-xs font-bold">NIK</label><input id="nik" name="nik" inputmode="numeric" pattern="[0-9]{16}" maxlength="16" required autocomplete="off" value="<?= html_escape($value('nik')) ?>" aria-describedby="nik-error" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error('nik') ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><p id="nik-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error('nik')) ?></p></div>
-                <div><label for="birth_date" class="text-xs font-bold">Tanggal lahir</label><input id="birth_date" name="birth_date" type="date" required value="<?= html_escape($value('birth_date')) ?>" aria-describedby="birth-date-error" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error('birth_date') ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><p id="birth-date-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error('birth_date')) ?></p></div>
             </div>
         <?php elseif ($step === 1): ?>
             <h2 class="text-lg font-black">Data Warga</h2>

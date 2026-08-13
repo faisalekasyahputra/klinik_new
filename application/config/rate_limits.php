@@ -32,6 +32,24 @@ $config['rate_limit_policies'] = [
         'window' => 60,
         'dimensions' => ['ip', 'account', 'nik'],
     ],
+    /* Butir tanggal-lahir-dicabut (14 Agt 2026, Warga::pendataan()). Pola SAMA
+       PERSIS dengan rtlh_cek/rtlh_cek_harian di bawah, dan alasannya sama:
+       `warga_lookup` di atas dimensinya ip+account+NIK, jadi batasnya PER-NIK -
+       mencoba NIK berbeda-beda tidak pernah kena batas itu. Selama tanggal
+       lahir masih wajib, itu tidak masalah (tanggal lahir sendiri sudah
+       pengaman anti-penelusuran). Sesudah dicabut, dua batas AKUN ini yang
+       menggantikan perannya - TANPA dimensi nik, jadi menghitung TOTAL
+       pencarian satu akun, bukan per-NIK yang dicoba. */
+    'warga_lookup_jam' => [
+        'limit' => 10,
+        'window' => 3600,
+        'dimensions' => ['account'],
+    ],
+    'warga_lookup_harian' => [
+        'limit' => 25,
+        'window' => 86400,
+        'dimensions' => ['account'],
+    ],
     'warga_submit' => [
         'limit' => 5,
         'window' => 3600,
