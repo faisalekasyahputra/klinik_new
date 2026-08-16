@@ -413,12 +413,24 @@ class Admin_Srp2 extends Admin_Controller {
         }
 
         /* ── Butir 12: asosiasi ─────────────────────────────────────────────
-           Ketik bebas sampai dinas mengirim daftar resminya. Pertanyaannya
-           sudah disampaikan; sampai dijawab, mengarang daftar sendiri berarti
-           memaksa pengembang memilih asosiasi yang mungkin bukan miliknya. */
+           DULU ketik bebas ("sampai dinas mengirim daftar resminya"). Sejak
+           14 Agt 2026 divalidasi ke daftar tertutup srp2_daftar_asosiasi() -
+           daftar yang SAMA yang sudah lama dipakai formulir pengembang, bukan
+           daftar baru yang dikarang di sini. Alasan lengkap + siapa yang
+           memutuskan ada di komentar helper-nya. Ditolak dengan pesan (bukan
+           diabaikan diam-diam), sama seperti status_sertifikasi & kabupaten
+           di atas. */
         if ($this->input->post('asosiasi') !== NULL) {
-            $a = mb_substr(trim((string) $this->input->post('asosiasi', TRUE)), 0, 100);
-            $payload['asosiasi'] = $a === '' ? NULL : $a;
+            $this->load->helper('srp2');
+            $a = trim((string) $this->input->post('asosiasi', TRUE));
+            if ($a === '') {
+                $payload['asosiasi'] = NULL;
+            } elseif (array_key_exists($a, srp2_daftar_asosiasi())) {
+                $payload['asosiasi'] = $a;
+            } else {
+                $this->session->set_flashdata('error', 'Asosiasi tidak dikenal.');
+                redirect('Admin_Srp2'); return;
+            }
         }
 
         /* ── Butir 8: NPWP sebagai kunci pengembang ─────────────────────────

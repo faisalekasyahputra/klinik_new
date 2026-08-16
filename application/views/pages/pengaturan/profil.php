@@ -284,10 +284,25 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                     </div>
                     <div>
                         <label class="<?= $label ?>">Asosiasi</label>
+                        <?php
+                        /* Daftarnya DIPINDAH ke srp2_daftar_asosiasi() 14 Agt 2026 -
+                           dulu ditulis ulang di sini, dan formulir admin memakai
+                           ketik-bebas, jadi satu field yang sama punya dua bentuk.
+                           Sekarang satu sumber untuk kedua sisi.
+
+                           Pilihan kosong DITAMBAHKAN sekaligus: select ini `required`
+                           tapi tidak punya opsi kosong, sehingga baris yang asosiasinya
+                           masih NULL menampilkan "REI" (opsi pertama) seolah-olah itu
+                           pilihan pemiliknya - sekali Simpan ditekan, "rei" tersimpan
+                           tanpa siapa pun pernah memilihnya. Itu langsung mengotori
+                           kolom Asosiasi di direktori publik yang baru. */
+                        $this->load->helper('srp2');
+                        $asosiasi_kini = trim((string) ($pengajuan_sp2->asosiasi ?? ''));
+                        ?>
                         <select name="asosiasi" required class="<?= $isian ?>">
-                            <?php $asosiasi_labels = ['rei' => 'REI', 'himperra' => 'HIMPERRA', 'apersi' => 'APERSI', 'pi' => 'PI', 'lainnya' => 'Lainnya']; ?>
-                            <?php foreach ($asosiasi_labels as $val => $lbl): ?>
-                                <option value="<?= $val ?>" <?= $pengajuan_sp2->asosiasi === $val ? 'selected' : '' ?>><?= $lbl ?></option>
+                            <option value="" <?= $asosiasi_kini === '' ? 'selected' : '' ?>>- pilih asosiasi -</option>
+                            <?php foreach (srp2_daftar_asosiasi() as $val => $lbl): ?>
+                                <option value="<?= $val ?>" <?= $asosiasi_kini === $val ? 'selected' : '' ?>><?= $lbl ?></option>
                             <?php endforeach; ?>
                         </select>
                     </div>

@@ -11,6 +11,10 @@ $label_status = [
     'masih_proses'    => 'Masih proses',
     'bersertifikat'   => 'Bersertifikat',
 ];
+// Daftar tertutup yang SAMA dengan formulir pengembang & baris edit di
+// index.php - lihat srp2_daftar_asosiasi(). Dulu ketik bebas di sini.
+$this->load->helper('srp2');
+$daftar_asosiasi = srp2_daftar_asosiasi();
 ?>
 <div class="mb-6">
     <a href="<?= base_url('Admin_Srp2') ?>" class="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-brand-muted hover:text-gray-700 dark:hover:text-brand-light mb-3">
@@ -48,7 +52,14 @@ $label_status = [
                 <?php endforeach; ?>
             </select>
         </label>
-        <input name="asosiasi" maxlength="100" placeholder="Asosiasi (mis. REI, APERSI)" class="rounded-xl border border-gray-200 dark:border-white/10 bg-transparent px-4 py-3 text-sm" />
+        <label class="text-xs text-gray-500 dark:text-brand-muted">Asosiasi
+            <select name="asosiasi" class="mt-1 w-full rounded-xl border border-gray-200 dark:border-white/10 bg-transparent px-4 py-3 text-sm">
+                <option value="">- belum tercatat -</option>
+                <?php foreach ($daftar_asosiasi as $ka => $va): ?>
+                <option value="<?= $ka ?>"><?= $va ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
         <input name="npwp" inputmode="numeric" maxlength="25" placeholder="NPWP (15/16 digit, hanya admin)" class="rounded-xl border border-gray-200 dark:border-white/10 bg-transparent px-4 py-3 text-sm" />
         <textarea name="alamat_kantor" placeholder="Alamat kantor" class="md:col-span-2 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent px-4 py-3 text-sm"></textarea>
         <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-brand-muted"><input type="checkbox" name="status_aktif" value="1" checked /> Tampilkan di publik</label>

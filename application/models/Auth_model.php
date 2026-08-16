@@ -323,6 +323,21 @@ class Auth_model extends CI_Model {
             'sosmed_lainnya'  => $reg->sosmed_lainnya ?? NULL,
         ];
 
+        /* Asosiasi ikut menular ke direktori 14 Agt 2026. Sebelumnya TIDAK -
+           pengembang memilih asosiasinya di /akun/profil, nilainya tersimpan
+           rapi di srp2_registrations, dan berhenti di situ: kolom asosiasi di
+           direktori publik tidak pernah terisi dari jalur ini (67 dari 67
+           baris NULL saat diperiksa).
+
+           Hanya disalin kalau MEMANG TERISI - beda dari field lain di atas.
+           Kolom ini juga bisa diisi admin langsung lewat Admin_Srp2 untuk data
+           historis yang tidak punya baris registrasi berpasangan; menyalin
+           NULL apa adanya akan menghapus isian admin itu tiap kali pemohon
+           menyentuh formulir profilnya. Ini persis bug `sosmed_lainnya`
+           10 Agt (lihat komentarnya di Admin_Srp2::index()), jangan diulang. */
+        $asosiasi = trim((string) ($reg->asosiasi ?? ''));
+        if ($asosiasi !== '') { $payload['asosiasi'] = $asosiasi; }
+
         if ( ! empty($reg->certified_developer_id)) {
             // Sudah terbit: segarkan isinya, JANGAN sentuh status_aktif -
             // pencabutan/pengaktifan adalah keputusan admin yang terpisah.

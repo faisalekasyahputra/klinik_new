@@ -1,3 +1,12 @@
+<?php
+/* Kolom "Asosiasi" ditambahkan 14 Agt 2026 (permintaan user). Labelnya lewat
+   srp2_label_asosiasi() - DB menyimpan kode huruf kecil (`rei`), bukan teks
+   siap tampil, jadi mencetaknya mentah akan memunculkan "rei" di halaman
+   publik. Pencarian kotak di atas tabel otomatis ikut mencakup kolom ini
+   (portal_data_table mencocokkan ke seluruh teks baris), pengurutan lewat
+   data-table-column="asosiasi" di sel-nya. */
+$this->load->helper('srp2');
+?>
 <section class="w-full px-4 py-8 font-outfit sm:px-6 lg:px-8" style="color:var(--portal-text)">
     <div class="mx-auto max-w-6xl">
         <div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -25,12 +34,15 @@
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[620px] text-left text-xs">
+                <table class="w-full min-w-[720px] text-left text-xs">
                     <thead style="background:var(--portal-bg)">
                         <tr class="uppercase tracking-wider" style="color:var(--portal-text-muted);font-size:9px">
                             <th class="w-12 px-4 py-2.5 font-bold">No.</th>
                             <th class="px-2 py-2.5 font-bold">
                                 <button type="button" data-table-sort="nama" aria-sort="none" class="inline-flex items-center gap-1 font-bold uppercase tracking-wider" style="color:inherit">Nama Perusahaan <i data-table-sort-icon class="fa-solid fa-sort text-[9px] opacity-50"></i></button>
+                            </th>
+                            <th class="px-3 py-2.5 font-bold">
+                                <button type="button" data-table-sort="asosiasi" aria-sort="none" class="inline-flex items-center gap-1 font-bold uppercase tracking-wider" style="color:inherit">Asosiasi <i data-table-sort-icon class="fa-solid fa-sort text-[9px] opacity-50"></i></button>
                             </th>
                             <th class="px-3 py-2.5 font-bold">
                                 <button type="button" data-table-sort="status" aria-sort="none" class="inline-flex items-center gap-1 font-bold uppercase tracking-wider" style="color:inherit">Status <i data-table-sort-icon class="fa-solid fa-sort text-[9px] opacity-50"></i></button>
@@ -43,6 +55,8 @@
                             <tr data-table-row class="border-t transition-colors hover:bg-[#00a3b5]/[.04]" style="border-color:var(--portal-border)">
                                 <td data-table-index class="px-4 py-2.5 font-bold" style="color:var(--teal-bright)"><?= $i + 1 ?></td>
                                 <td data-table-column="nama" class="px-2 py-2.5 font-semibold" style="color:var(--portal-text)"><?= htmlspecialchars($row->nama_perusahaan, ENT_QUOTES, 'UTF-8') ?></td>
+                                <?php $asosiasi_kosong = trim((string) ($row->asosiasi ?? '')) === ''; ?>
+                                <td data-table-column="asosiasi" class="px-3 py-2.5 font-semibold" style="color:<?= $asosiasi_kosong ? 'var(--portal-text-muted)' : 'var(--portal-text)' ?>"><?= htmlspecialchars(srp2_label_asosiasi($row->asosiasi ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
                                 <td data-table-column="status" class="px-3 py-2.5"><span class="inline-flex items-center gap-1.5 text-[10px] font-bold" style="color:#059669"><span class="h-1.5 w-1.5 rounded-full" style="background:#10b981"></span>Aktif</span></td>
                                 <td class="px-4 py-2.5 text-right"><a href="<?= base_url('Pengembang/profil/' . $row->id) ?>" data-tab-link data-tab-key="pengembang_list" class="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[10px] font-bold" style="color:var(--teal);background:rgba(0,163,181,.08);border:1px solid rgba(0,163,181,.18)"><i class="fa-solid fa-arrow-up-right-from-square"></i> Buka</a></td>
                             </tr>

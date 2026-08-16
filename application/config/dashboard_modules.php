@@ -342,6 +342,16 @@ $config['dashboard_modules'] = [
         'url'   => 'Admin_Magang_Posisi', 'group' => 'Master', 'order' => 40,
         'roles' => ['admin'], 'scope' => null,
     ],
+    // Master daftar asosiasi pengembang (migrasi 042). Superadmin saja -
+    // daftarnya berlaku lintas wilayah, sama alasannya dengan Posisi Magang
+    // di atas. Group 'Master' mengikuti tetangganya itu; group ini memang
+    // tidak terdaftar di $config['dashboard_module_groups'] sehingga jatuh di
+    // urutan terakhir - perilaku yang sudah ada, bukan yang baru dibuat.
+    'srp2_asosiasi' => [
+        'label' => 'Asosiasi Pengembang', 'icon' => 'ph-users-three',
+        'url'   => 'Admin_Asosiasi', 'group' => 'Master', 'order' => 50,
+        'roles' => ['admin'], 'scope' => null,
+    ],
     'kemitraan_bidang' => [
         'label' => 'Magang Bidang Saya', 'icon' => 'ph-graduation-cap',
         'url'   => 'Kemitraan_Bidang', 'group' => 'Layanan', 'order' => 11,

@@ -1,4 +1,8 @@
 <?php
+// Admin_Srp2::detail() memang sudah memuatnya sebelum merender view ini,
+// tapi disebut lagi di sini supaya view tidak diam-diam bergantung pada
+// pemanggilnya (load->helper() idempoten, tidak memuat dua kali).
+$this->load->helper('srp2');
 $status_kelas = ['Draft' => 'process', 'Pending' => 'pending', 'Diterima' => 'ok', 'Ditolak' => 'reject'][$pendaftar->status_verifikasi] ?? 'pending';
 // Validasi skema URL sendiri, jangan bergantung pada global_xss_filtering
 // (DEPRECATED). Pola sama dengan pages/pengembang/profil.php:2-4. Bukan
@@ -62,7 +66,10 @@ $safe_url = function ($url) {
             'Nama Pemohon'   => $pendaftar->nama_peserta ?? '',
             'Jabatan'        => $pendaftar->jabatan ?? '',
             'NIB'            => $pendaftar->nib ?? '',
-            'Asosiasi'       => $pendaftar->asosiasi ?? '',
+            // Label, bukan kode mentah (`rei` -> `REI`). Fallback SENGAJA string
+            // kosong, bukan '-' bawaan helper: $terisi di bawah menghitung nilai
+            // yang tidak kosong, dan '-' akan terhitung sebagai "sudah diisi".
+            'Asosiasi'       => srp2_label_asosiasi($pendaftar->asosiasi ?? '', ''),
             'No. Keanggotaan'=> $pendaftar->no_keanggotaan ?? '',
             'WhatsApp'       => $pendaftar->no_whatsapp ?? '',
         ];
