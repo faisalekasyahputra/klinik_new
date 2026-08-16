@@ -9,6 +9,10 @@
  */
 $terdaftar = ($hasil['status'] ?? '') === 'found';
 $tidak_ada = ($hasil['status'] ?? '') === 'not_found';
+// 'login_required' - status sintetis dari Cek_Rtlh::periksa_anonim() (14 Agt
+// 2026), BUKAN respons Simperum_gateway. Tamu anonim tidak pernah melihat
+// hasil pencarian sungguhan - lihat komentar panjang di controller.
+$perlu_login = ($hasil['status'] ?? '') === 'login_required';
 ?>
 <?php
 /* Layar ini paling rawan disalahpahami penguji: selama SIMPERUM belum aktif,
@@ -36,7 +40,23 @@ $this->load->view('components/modal_simperum_simulasi');
         </p>
     </div>
 
-    <?php if ( ! empty($hasil)): ?>
+    <?php if ($perlu_login): ?>
+    <div class="mx-auto mt-6 max-w-xl">
+        <div class="rounded-2xl border p-5 shadow-sm" style="background-color: var(--portal-bg-card); border-color: var(--portal-brand)">
+            <div class="flex items-start gap-3">
+                <i class="fa-solid fa-lock mt-0.5 text-xl" style="color: var(--portal-brand)"></i>
+                <div class="min-w-0">
+                    <p class="text-sm font-black text-[color:var(--portal-text)]">Masuk untuk melihat hasilnya</p>
+                    <p class="mt-1 text-xs leading-relaxed text-[color:var(--portal-text-muted)]"><?= html_escape($hasil['pesan'] ?? '') ?></p>
+                    <div class="mt-3 flex flex-wrap gap-3">
+                        <a href="<?= base_url('Auth/login') ?>" class="inline-flex items-center rounded-full px-4 py-2 text-xs font-black" style="background-color: var(--portal-brand); color: var(--portal-bg)">Masuk</a>
+                        <a href="<?= base_url('Auth/register') ?>" class="inline-flex items-center rounded-full border px-4 py-2 text-xs font-bold" style="border-color: var(--portal-border); color: var(--portal-text)">Daftar Akun</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <?php elseif ( ! empty($hasil)): ?>
     <div class="mx-auto mt-6 max-w-xl">
         <?php if ( ! empty($hasil['simulasi'])): ?>
         <?php // Wajib terlihat: data simulasi yang disangka nyata adalah kesalahan yang menyebar. ?>
@@ -112,7 +132,12 @@ $this->load->view('components/modal_simperum_simulasi');
 
     <div class="mx-auto mt-6 max-w-xl rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] p-4 text-xs leading-relaxed text-[color:var(--portal-text-muted)] shadow-sm">
         <i class="fa-solid fa-shield-halved mr-2 text-[color:var(--portal-icon)]"></i>
+        <?php if ($sudah_login): ?>
         Pencarian dibatasi <b>10 kali per jam</b> per akun dan tercatat di jejak audit. Data RTLH menyangkut
         keadaan tempat tinggal seseorang - gunakan hanya untuk keperluan layanan.
+        <?php else: ?>
+        Hasil pencarian hanya ditampilkan sesudah masuk atau daftar akun - dibatasi <b>5 kali per jam</b>
+        untuk tamu. Data RTLH menyangkut keadaan tempat tinggal seseorang - gunakan hanya untuk keperluan layanan.
+        <?php endif; ?>
     </div>
 </div>

@@ -84,8 +84,11 @@
              dinas 3 Agt 2026 butir 11), yang memang belum punya pintu masuk
              dari mana pun.
 
-             Halamannya WAJIB LOGIN dan gerbangnya di controller; tamu yang
-             mengklik ini mendarat di layar login dengan keterangan. -->
+             Halamannya sendiri sudah TERBUKA utk tamu anonim sejak 14 Agt
+             2026 (permintaan user - tombol ini tidak lagi mengusir ke layar
+             login) - tapi HASIL pencarian tetap wajib login, gerbangnya
+             pindah ke Cek_Rtlh::periksa(). Lihat komentar panjang di
+             Cek_Rtlh.php sebelum mengubah ini lagi. -->
         <a href="<?= base_url('Cek_Rtlh') ?>"
            class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"
            style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-brand); box-shadow: var(--portal-shadow); min-height: 140px;">
