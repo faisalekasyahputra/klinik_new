@@ -106,6 +106,66 @@
                 uang muka dan angsuran lebih ringan, dengan syarat batas penghasilan, belum memiliki rumah,
                 dan rumahnya wajib dihuni sendiri.
             </p>
+
+            <?php
+            /* Pintasan KPR bank - permintaan user 14 Agt 2026.
+             *
+             * ⚠️ URL-NYA MASIH BERANDA RESMI, BUKAN HALAMAN KPR. User memilih
+             * mengirimkan URL KPR yang tepat sendiri; sampai itu datang,
+             * dipakai beranda yang SUDAH DIVERIFIKASI hidup. Ini disengaja:
+             * menebak jalur dalam ("/kpr", "/produk/kredit-griya/") sempat
+             * dicoba dan 2 dari 6 menghasilkan 404 - memasang tautan mati di
+             * situs dinas lebih buruk daripada satu klik tambahan. Ganti nilai
+             * `url` di array bawah ini saja, tidak ada tempat lain.
+             *
+             * Logo diunduh ke assets/img/ (izin user), BUKAN hotlink ke
+             * Wikimedia seperti pages/kpr/simulasi.php - supaya tidak
+             * bergantung server luar dan IP pengunjung tidak bocor ke sana.
+             * Berkasnya sudah diperiksa bebas <script>/handler.
+             *
+             * Bank Jateng SENGAJA tanpa logo: tidak tersedia di Wikimedia
+             * (hanya foto ATM), dan mengarang logonya jelas tidak boleh.
+             * Tampil sebagai tombol teks bergaya sama sampai berkasnya ada -
+             * begitu ada, isi `logo` dengan nama berkasnya.
+             */
+            $bank_kpr = [
+                ['nama' => 'BTN',         'logo' => 'btn.svg',          'url' => 'https://www.btn.co.id'],
+                ['nama' => 'BRI',         'logo' => 'bank-bri.svg',     'url' => 'https://bri.co.id'],
+                ['nama' => 'BCA',         'logo' => 'bank-bca.svg',     'url' => 'https://www.bca.co.id'],
+                ['nama' => 'BNI',         'logo' => 'bank-bni.svg',     'url' => 'https://www.bni.co.id'],
+                ['nama' => 'Mandiri',     'logo' => 'bank-mandiri.svg', 'url' => 'https://www.bankmandiri.co.id'],
+                ['nama' => 'Bank Jateng', 'logo' => NULL,               'url' => 'https://www.bankjateng.co.id'],
+            ];
+            ?>
+            <div class="mt-6 pt-5" style="border-top: 1px solid var(--portal-border);">
+                <p class="text-[10px] font-bold text-[color:var(--portal-text-muted)] uppercase tracking-widest mb-3">
+                    <i class="fa-solid fa-building-columns mr-1.5 text-[color:var(--portal-brand)]"></i> Ajukan KPR
+                </p>
+                <ul class="flex flex-wrap items-center gap-2.5">
+                    <?php foreach ($bank_kpr as $bank): ?>
+                    <li>
+                        <?php /* rel="noopener" wajib bersama target="_blank" - tanpa itu
+                                 halaman tujuan bisa menyetir tab ini lewat window.opener. */ ?>
+                        <a href="<?= html_escape($bank['url']) ?>" target="_blank" rel="noopener noreferrer"
+                           title="Informasi KPR <?= html_escape($bank['nama']) ?> (situs resmi, membuka tab baru)"
+                           class="group inline-flex h-11 items-center justify-center rounded-xl border px-4 transition-all hover:-translate-y-0.5"
+                           style="background:var(--portal-btn-bg);border-color:var(--portal-border)">
+                            <?php if ($bank['logo']): ?>
+                                <img src="<?= base_url('assets/img/' . $bank['logo']) ?>"
+                                     alt="KPR <?= html_escape($bank['nama']) ?>" loading="lazy"
+                                     class="h-5 w-auto max-w-[84px] object-contain opacity-80 transition-opacity group-hover:opacity-100">
+                            <?php else: ?>
+                                <span class="text-xs font-black text-[color:var(--portal-text)]"><?= html_escape($bank['nama']) ?></span>
+                            <?php endif; ?>
+                        </a>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+                <p class="mt-2.5 text-[11px] leading-relaxed text-[color:var(--portal-text-muted)]">
+                    Menuju situs resmi masing-masing bank. Klinik PKP tidak memproses pengajuan KPR dan
+                    tidak berafiliasi dengan bank mana pun - syarat, bunga, dan keputusan sepenuhnya kebijakan bank.
+                </p>
+            </div>
         </div>
 
         <?php
