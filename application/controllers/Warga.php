@@ -9,13 +9,29 @@ class Warga extends MY_Controller {
     public function __construct()
     {
         parent::__construct();
-        if ( ! $this->is_logged_in() || ! $this->has_role('warga')) {
-            $this->session->set_flashdata('error', 'Akses pendataan hanya untuk akun warga.');
-            redirect('login');
-        }
         $this->load->model('Housing_assessment_model');
         $this->load->library('Simperum_gateway');
         $this->load->library('Warga_ruleset');
+    }
+
+    /**
+     * Gerbang login+role, DIPINDAH dari __construct() 14 Agt 2026.
+     *
+     * Bukan lagi blanket guard di constructor - permintaan user: step
+     * "Temukan Data" (pendataan() GET + lookup()) dibuka untuk pengunjung
+     * ANONIM, supaya bisa cek NIK-nya dulu sebelum diminta akun. Method
+     * yang menulis data sungguhan (save/upload/submit/start_revision) dan
+     * lihat_bukti() (membuka berkas privat) TETAP wajib login+role warga -
+     * mereka yang memanggil guard ini secara eksplisit di awal method.
+     */
+    private function guard_login_warga()
+    {
+        if ( ! $this->is_logged_in() || ! $this->has_role('warga')) {
+            $this->session->set_flashdata('error', 'Akses pendataan hanya untuk akun warga.');
+            redirect('login');
+            return FALSE;
+        }
+        return TRUE;
     }
 
     public function pendataan()
@@ -25,22 +41,53 @@ class Warga extends MY_Controller {
             return;
         }
 
-        $user_id = (int) $this->get_user_id();
-        $assessment = $this->Housing_assessment_model->get_latest_owned_draft($user_id);
-        $profile = $this->Housing_assessment_model->get_owned_profile($user_id);
-        $provenance = json_decode($profile['field_provenance_json'] ?? '{}', TRUE) ?: [];
-        foreach ($provenance as $field => $meta) {
-            $provenance[$field] = is_array($meta) ? ($meta['source'] ?? 'citizen') : $meta;
+        // Anonim (atau login tapi bukan role warga - diusir seperti semula,
+        // wizard ini bukan untuknya): tampilkan step "Temukan Data" kosong,
+        // tanpa satu pun query milik akun. Login TAPI bukan warga tetap
+        // diarahkan ke login seperti perilaku lama - wizard ini murni warga.
+        if ($this->is_logged_in() && ! $this->has_role('warga')) {
+            $this->guard_login_warga();
+            return;
         }
-        if ($assessment && ! empty($assessment['simperum_snapshot_id'])) {
-            foreach ($this->Housing_assessment_model->source_snapshot_prefill($assessment['simperum_snapshot_id']) as $field => $source_value) {
-                if (array_key_exists($field, $assessment) && $assessment[$field] !== NULL) {
-                    $provenance[$field] = (string) $assessment[$field] === (string) $source_value
-                        ? $assessment['source_mode'] : 'citizen_correction';
+        $logged_in_warga = $this->is_logged_in() && $this->has_role('warga');
+        $user_id = $logged_in_warga ? (int) $this->get_user_id() : 0;
+
+        $assessment = NULL;
+        $profile = NULL;
+        $provenance = [];
+        if ($logged_in_warga) {
+            $assessment = $this->Housing_assessment_model->get_latest_owned_draft($user_id);
+            $profile = $this->Housing_assessment_model->get_owned_profile($user_id);
+            $provenance = json_decode($profile['field_provenance_json'] ?? '{}', TRUE) ?: [];
+            foreach ($provenance as $field => $meta) {
+                $provenance[$field] = is_array($meta) ? ($meta['source'] ?? 'citizen') : $meta;
+            }
+            if ($assessment && ! empty($assessment['simperum_snapshot_id'])) {
+                foreach ($this->Housing_assessment_model->source_snapshot_prefill($assessment['simperum_snapshot_id']) as $field => $source_value) {
+                    if (array_key_exists($field, $assessment) && $assessment[$field] !== NULL) {
+                        $provenance[$field] = (string) $assessment[$field] === (string) $source_value
+                            ? $assessment['source_mode'] : 'citizen_correction';
+                    }
                 }
             }
         }
         $old_input = $this->session->flashdata('warga_old_input') ?: [];
+        /* Jaring pengaman 14 Agt 2026: kalau bootstrap draft di
+           Auth::_redirect_after_login() gagal (mis. wilayah sumber belum
+           bisa dipakai - lihat komentarnya) sehingga masih mendarat di
+           step "Temukan Data" alih-alih "Data Warga", NIK yang barusan
+           dicek TETAP terisi otomatis di sini - tidak perlu diketik ulang
+           dari nol. `warga_pending_nik` di sesi ini SENGAJA TIDAK di-unset
+           di Auth.php kalau gagal (lihat komentarnya di sana), jadi masih
+           bisa dibaca. Isian flashdata (`warga_old_input`, hasil percobaan
+           submit yang gagal validasi) tetap MENANG kalau ada - itu ketikan
+           orangnya sendiri barusan. */
+        if (empty($assessment) && empty($old_input['nik'])) {
+            $pending_nik = $this->session->userdata('warga_pending_nik');
+            if ( ! empty($pending_nik)) {
+                $old_input['nik'] = $pending_nik;
+            }
+        }
         $this->render('pages/warga/pendataan', [
             'title' => 'Pendataan Warga',
             'assessment' => $assessment,
@@ -79,6 +126,7 @@ class Warga extends MY_Controller {
      */
     public function lihat_bukti($assessment_id = NULL, $file_kind = NULL)
     {
+        if ( ! $this->guard_login_warga()) { return; }
         if ( ! is_numeric($assessment_id) || empty($file_kind)) { show_404(); return; }
         $files = $this->Housing_assessment_model->get_owned_files(
             (int) $assessment_id, (int) $this->get_user_id()
@@ -101,6 +149,10 @@ class Warga extends MY_Controller {
             $this->lookup();
             return;
         }
+        if ($action === 'isi_manual') {
+            $this->isi_manual();
+            return;
+        }
         if ($action === 'save') {
             $this->save();
             return;
@@ -120,8 +172,108 @@ class Warga extends MY_Controller {
         show_404();
     }
 
+    /**
+     * Cabang ANONIM dari lookup() - permintaan user 14 Agt 2026: "Temukan
+     * Data" boleh dicoba tanpa akun, tapi TANPA menulis apa pun ke DB.
+     * $requested_by=0 ke Simperum_gateway::lookup() sudah CUKUP untuk itu
+     * (from_snapshot() hanya save_profile() kalau $requested_by terisi -
+     * lihat komentarnya) - method ini tidak perlu menghindari model secara
+     * manual, cuma tidak pernah membuat draft/profil sama sekali.
+     *
+     * Kalau ditemukan: NIK-nya (bukan hasil lengkapnya - cuma NIK) disimpan
+     * ke session `warga_pending_nik`, dan `intended_url` diisi supaya kalau
+     * orang ini login/daftar sebentar lagi, dia otomatis kembali ke sini
+     * (mekanisme yang SAMA dipakai Auth::login() untuk alur lain, lihat
+     * Auth::_redirect_after_login()). Auth::_redirect_after_login() yang
+     * membaca `warga_pending_nik` itu nanti dan benar-benar mengikatnya ke
+     * akun yang baru diketahui.
+     */
+    private function lookup_anonim()
+    {
+        $nik = preg_replace('/\D+/', '', (string) $this->input->post('nik', TRUE));
+
+        // Dimensi `ip` saja - tidak ada akun untuk dijadikan dimensi
+        // `account`. Sengaja LEBIH KETAT dari warga_lookup_jam/harian
+        // (lihat rate_limits.php), bukan lebih longgar.
+        $rate = $this->rate_limit_consume('warga_lookup_anon');
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject(
+                $rate,
+                'Terlalu banyak percobaan pencarian data. Silakan coba lagi sebentar, atau masuk/daftar akun untuk batas yang lebih longgar.',
+                $this->input->is_ajax_request()
+            );
+            return;
+        }
+        if ( ! preg_match('/^\d{16}$/', $nik)) {
+            $this->session->set_flashdata('warga_old_input', ['nik' => $nik]);
+            $this->flash_errors(['nik' => 'NIK harus 16 digit.']);
+            redirect('warga/pendataan');
+            return;
+        }
+
+        // requested_by=0 -> Simperum_gateway TIDAK menulis profil/draft apa
+        // pun, cuma mengembalikan hasil pencarian. $tanpa_tgl_lahir=TRUE,
+        // sama seperti jalur login (lihat komentar di lookup()).
+        $result = $this->simperum_gateway->lookup($nik, '', 0, TRUE);
+        $status = (string) ($result['status'] ?? '');
+
+        /* Permintaan user 14 Agt 2026: NIK genuinely TIDAK ADA di SIMPERUM
+           (status 'not_found', bukan sekadar gagal jaringan/'error') ->
+           arahkan ke pendaftaran akun, bukan cuma pesan error diam di
+           tempat. "Pendaftaran" di aplikasi ini SELALU berarti Auth/register
+           (lihat komentar Auth.php sendiri) - tidak ada halaman pendaftaran
+           lain di ranah warga.
+           `intended_url` ikut diisi SEPERTI jalur "ditemukan" - supaya
+           sesudah daftar, orangnya kembali ke wizard ini (bisa coba NIK
+           lain, atau lanjut mengisi manual - pesan asli Simperum_gateway
+           untuk not_found memang berbunyi "Silakan isi data secara manual").
+           STATUS LAIN ('error'/'invalid' - gagal jaringan, bukan "tidak
+           ada") SENGAJA TIDAK ikut diarahkan ke sini: NIK-nya mungkin saja
+           valid, cuma pengecekannya yang gagal - menyuruh daftar akun untuk
+           kegagalan sesaat itu menyesatkan.
+
+           `warga_pending_nik` DIISI JUGA di sini (bukan cuma di cabang
+           "ditemukan" di bawah) - permintaan user susulan: kalau proses
+           daftar/onboarding ini BERAWAL dari pengecekan NIK, field NIK di
+           formulir onboarding (Auth::onboarding(), lihat prefill-nya di
+           sana) langsung terisi, tidak perlu diketik ulang. Aman dipakai
+           ulang oleh Auth::_redirect_after_login() nanti - NIK yang
+           terkonfirmasi TIDAK ADA cuma membuat pemanggilan ulang gateway di
+           sana kembali menjawab not_found dan berhenti SEBELUM
+           save_profile() (lihat Simperum_gateway::from_snapshot()), jadi
+           tidak ada yang tertulis ke sf_profil_warga - aman, bukan celah. */
+        if ($status === 'not_found') {
+            $this->session->set_userdata('warga_pending_nik', $nik);
+            $this->session->set_userdata('intended_url', 'warga/pendataan');
+            $this->session->set_flashdata('info', $result['message'] ?? 'NIK tidak ditemukan di data SIMPERUM. Silakan daftar akun untuk melanjutkan pendataan secara manual.');
+            redirect('Auth/register');
+            return;
+        }
+        if ($status !== 'found') {
+            $this->session->set_flashdata('warga_lookup', $result);
+            $this->session->set_flashdata('error', $result['message'] ?? 'Data belum dapat ditemukan.');
+            redirect('warga/pendataan');
+            return;
+        }
+
+        $this->session->set_userdata('warga_pending_nik', $nik);
+        $this->session->set_userdata('intended_url', 'warga/pendataan');
+        $this->session->set_flashdata('warga_lookup', [
+            'status' => 'found_anonymous',
+            'message' => 'Data ditemukan. Masuk atau daftar akun untuk melanjutkan pendataan - NIK ini akan otomatis terhubung ke akun Anda.',
+            'simulation' => ! empty($result['simulation']),
+        ]);
+        redirect('warga/pendataan');
+    }
+
     private function lookup()
     {
+        if ( ! $this->is_logged_in()) {
+            $this->lookup_anonim();
+            return;
+        }
+        if ( ! $this->guard_login_warga()) { return; }
+
         $nik = preg_replace('/\D+/', '', (string) $this->input->post('nik', TRUE));
         $account_id = (int) $this->get_user_id();
 
@@ -168,61 +320,89 @@ class Warga extends MY_Controller {
         $result = $this->simperum_gateway->lookup($nik, '', $account_id, TRUE);
         $this->session->set_flashdata('warga_lookup', $result);
         if (($result['status'] ?? '') !== 'found') {
+            /* Respons 'not_found' dari Simperum_gateway TIDAK menyertakan
+               NIK di $result['data'] (cuma snapshot_id/cache_hit - lihat
+               Simperum_gateway::from_snapshot()). Simpan NIK-nya di
+               warga_old_input (pola sama seperti gagal validasi format di
+               atas) supaya kotak "isi manual" di view tahu NIK mana yang
+               barusan dicoba, tanpa mekanisme session baru. */
+            $this->session->set_flashdata('warga_old_input', ['nik' => $nik]);
             $this->session->set_flashdata('error', $result['message'] ?? 'Data belum dapat ditemukan.');
             redirect('warga/pendataan');
             return;
         }
 
+        // Bikin/lanjutkan draft + maju ke step "Data Warga" - dipindah ke
+        // Housing_assessment_model::bootstrap_draft_from_lookup() 14 Agt
+        // 2026 supaya Auth::_redirect_after_login() bisa memakai logika
+        // yang SAMA PERSIS (bukan disalin) untuk warga yang cek NIK anonim
+        // lalu login/daftar.
         $user_id = (int) $this->get_user_id();
-        $profile = $this->Housing_assessment_model->get_owned_profile($user_id);
-        $draft = $this->Housing_assessment_model->get_latest_owned_draft($user_id);
-        $previous_draft = NULL;
-        $source_mode = (string) ($result['source_mode'] ?? 'simulation');
-        $snapshot_id = (int) ($result['data']['snapshot_id'] ?? 0);
-        if ($draft && (
-            ($draft['source_mode'] ?? '') !== $source_mode
-            || (int) ($draft['simperum_snapshot_id'] ?? 0) !== $snapshot_id
-        )) {
-            $previous_draft = $draft;
-            $draft = NULL;
-        }
-        if ( ! $draft && $profile) {
-            $kabupaten_id = $this->Housing_assessment_model->source_snapshot_kabupaten_id($snapshot_id);
-            $created = $kabupaten_id
-                ? $this->Housing_assessment_model->create_draft(
-                    $user_id,
-                    $profile['id'],
-                    $kabupaten_id,
-                    'undetermined',
-                    $source_mode,
-                    $snapshot_id,
-                    $previous_draft['id'] ?? NULL
-                )
-                : ['success' => FALSE, 'message' => 'Wilayah sumber belum dapat dipakai untuk membuat draft.'];
-            if (empty($created['success'])) {
-                $this->session->set_flashdata('error', $created['message']);
-                redirect('warga/pendataan');
-                return;
-            }
-            $draft = $this->Housing_assessment_model->get_owned_assessment($created['assessment_id'], $user_id);
-        }
-        if ($draft && $draft['current_step'] === 'find_data') {
-            $started = $this->Housing_assessment_model->update_owned_draft(
-                $draft['id'], $user_id, $draft['lock_version'],
-                ['current_step' => 'citizen_data'] + $this->Housing_assessment_model->source_snapshot_prefill($snapshot_id)
-            );
-            if (empty($started['success'])) {
-                $this->session->set_flashdata('error', $started['message']);
-                redirect('warga/pendataan');
-                return;
-            }
+        $bootstrapped = $this->Housing_assessment_model->bootstrap_draft_from_lookup($user_id, $result);
+        if (empty($bootstrapped['success'])) {
+            $this->session->set_flashdata('error', $bootstrapped['message']);
+            redirect('warga/pendataan');
+            return;
         }
         $this->session->set_flashdata('success', 'Data awal tersimpan. Silakan periksa dan lengkapi pendataan.');
         redirect('warga/pendataan');
     }
 
+    /**
+     * Jalur "isi data secara manual" - dipakai warga yang SUDAH login saat
+     * NIK-nya tidak ditemukan di SIMPERUM (lookup() di atas, status
+     * 'not_found'). Wajib login+role warga (tidak ada jalur anonim - NIK
+     * anonim yang not_found sudah diarahkan ke Auth/register sebelum
+     * sampai sini). Hanya perlu NIK (dikirim ulang lewat field
+     * tersembunyi, lihat pendataan.php) + nama lengkap; sisanya diisi
+     * warga sendiri di step "Data Warga" seperti draft biasa.
+     */
+    private function isi_manual()
+    {
+        if ( ! $this->guard_login_warga()) { return; }
+
+        $nik = preg_replace('/\D+/', '', (string) $this->input->post('nik', TRUE));
+        $full_name = trim((string) $this->input->post('full_name', TRUE));
+
+        $errors = [];
+        if ( ! preg_match('/^\d{16}$/', $nik)) {
+            $errors['nik'] = 'NIK harus 16 digit.';
+        }
+        if ($full_name === '') {
+            $errors['full_name'] = 'Nama lengkap wajib diisi.';
+        }
+        if ($errors) {
+            /* warga_lookup (status 'not_found') yang membuat kotak "isi
+               manual" tampil TADI sudah habis dipakai - flashdata sekali
+               pakai, dikonsumsi GET yang merender formulir ini. Set ULANG
+               di sini supaya kotaknya (dan pesan error di dalamnya) tetap
+               tampil sesudah redirect balik - kalau tidak, warga mendarat
+               di halaman yang terlihat kosong tanpa cara memperbaiki
+               kesalahan ketiknya sendiri. */
+            $this->session->set_flashdata('warga_lookup', [
+                'status' => 'not_found',
+                'message' => 'Data tidak ditemukan di SIMPERUM. Silakan isi data secara manual.',
+            ]);
+            $this->session->set_flashdata('warga_old_input', ['nik' => $nik, 'full_name' => $full_name]);
+            $this->flash_errors($errors);
+            redirect('warga/pendataan');
+            return;
+        }
+
+        $user_id = (int) $this->get_user_id();
+        $result = $this->Housing_assessment_model->bootstrap_manual_draft($user_id, $nik, $full_name);
+        if (empty($result['success'])) {
+            $this->session->set_flashdata('error', $result['message'] ?? 'Data tidak dapat disimpan.');
+            redirect('warga/pendataan');
+            return;
+        }
+        $this->session->set_flashdata('success', 'Data awal tersimpan. Silakan lengkapi data warga.');
+        redirect('warga/pendataan');
+    }
+
     private function save()
     {
+        if ( ! $this->guard_login_warga()) { return; }
         $user_id = (int) $this->get_user_id();
         $assessment_id = (int) $this->input->post('assessment_id', TRUE);
         $lock_version = filter_var($this->input->post('lock_version', TRUE), FILTER_VALIDATE_INT);
@@ -299,6 +479,7 @@ class Warga extends MY_Controller {
 
     private function upload()
     {
+        if ( ! $this->guard_login_warga()) { return; }
         $user_id = (int) $this->get_user_id();
         $assessment_id = (int) $this->input->post('assessment_id', TRUE);
         $draft = $this->Housing_assessment_model->get_owned_assessment($assessment_id, $user_id);
@@ -342,6 +523,7 @@ class Warga extends MY_Controller {
 
     private function submit()
     {
+        if ( ! $this->guard_login_warga()) { return; }
         $assessment_id = (int) $this->input->post('assessment_id', TRUE);
         $rate = $this->rate_limit_consume('warga_submit', [
             'account_id' => (int) $this->get_user_id(),
@@ -372,6 +554,7 @@ class Warga extends MY_Controller {
 
     private function start_revision()
     {
+        if ( ! $this->guard_login_warga()) { return; }
         $queue_id = (int) $this->input->post('queue_id', TRUE);
         $rate = $this->rate_limit_consume('warga_start_revision', [
             'account_id' => (int) $this->get_user_id(),

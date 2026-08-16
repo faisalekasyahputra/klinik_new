@@ -95,6 +95,45 @@ $badge = static function ($field) use ($provenance, $source_label) {
             <div class="mt-5">
                 <div><label for="nik" class="text-xs font-bold">NIK</label><input id="nik" name="nik" inputmode="numeric" pattern="[0-9]{16}" maxlength="16" required autocomplete="off" value="<?= html_escape($value('nik')) ?>" aria-describedby="nik-error" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error('nik') ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><p id="nik-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error('nik')) ?></p></div>
             </div>
+            <?php
+            /* Hasil pencarian ANONIM (14 Agt 2026) - pengunjung belum login
+               yang NIK-nya ditemukan. NIK-nya sendiri sudah tersimpan di
+               session (Warga::lookup_anonim()), belum tertulis ke DB apa
+               pun - baru benar-benar terikat begitu masuk/daftar (lihat
+               Auth::_redirect_after_login()). Tombol di sini murni navigasi,
+               bukan submit apa pun. */
+            ?>
+            <?php if (($lookup['status'] ?? '') === 'found_anonymous'): ?>
+            <div class="mt-4 rounded-xl p-4 text-sm" style="background:rgba(14,165,233,.09);color:#075985">
+                <p><?= html_escape($lookup['message'] ?? '') ?></p>
+                <div class="mt-3 flex flex-wrap gap-3">
+                    <a href="<?= base_url('Auth/login') ?>" class="rounded-xl px-4 py-2.5 text-center text-sm font-black" style="background:var(--portal-brand);color:#06333b">Masuk</a>
+                    <a href="<?= base_url('Auth/register') ?>" class="rounded-xl border px-4 py-2.5 text-center text-sm font-bold" style="border-color:var(--portal-border);color:var(--portal-text)">Daftar Akun</a>
+                </div>
+            </div>
+            <?php endif; ?>
+            <?php
+            /* Warga yang SUDAH login tapi NIK-nya tidak ada di SIMPERUM -
+               janji pesan Simperum_gateway ("Silakan isi data secara
+               manual") baru benar-benar bisa ditempuh lewat kotak ini.
+               NIK-nya sudah terisi otomatis dari warga_old_input (lihat
+               Warga::lookup()), tidak perlu diketik ulang - warga cuma
+               perlu mengonfirmasi nama lengkap untuk mulai draft manual. */
+            ?>
+            <?php if (($lookup['status'] ?? '') === 'not_found'): ?>
+            <div class="mt-4 rounded-xl p-4 text-sm" style="background:rgba(217,119,6,.09);color:#92400e">
+                <p><?= html_escape($lookup['message'] ?? 'Data tidak ditemukan di SIMPERUM.') ?></p>
+                <form method="post" action="<?= html_escape($action_url) ?>" class="mt-3">
+                    <input type="hidden" name="<?= html_escape($csrf_name) ?>" value="<?= html_escape($csrf_hash) ?>">
+                    <input type="hidden" name="action" value="isi_manual">
+                    <input type="hidden" name="nik" value="<?= html_escape($value('nik')) ?>">
+                    <label for="isi_manual_full_name" class="text-xs font-bold">Nama lengkap</label>
+                    <input id="isi_manual_full_name" name="full_name" type="text" required value="<?= html_escape($value('full_name')) ?>" aria-describedby="isi_manual_full_name-error" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error('full_name') ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)">
+                    <p id="isi_manual_full_name-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error('full_name')) ?></p>
+                    <button type="submit" class="mt-3 rounded-xl px-4 py-2.5 text-sm font-black" style="background:var(--portal-brand);color:#06333b">Lanjutkan Isi Manual</button>
+                </form>
+            </div>
+            <?php endif; ?>
         <?php elseif ($step === 1): ?>
             <h2 class="text-lg font-black">Data Warga</h2>
             <p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Periksa data yang tersedia dan koreksi bila perlu. Penanda menunjukkan asal nilai.</p>
@@ -191,7 +230,7 @@ $badge = static function ($field) use ($provenance, $source_label) {
                 'SIM_RUMAH_APUNG_NEEDS_DATA' => 'Data pesisir atau rob belum tersedia pada formulir saat ini.',
             ];
             $track_labels = ['existing_house' => 'Rumah eksisting', 'candidate_land' => 'Calon lahan', 'financing' => 'Pembiayaan', 'undetermined' => 'Belum ditentukan'];
-            $source_labels = ['simulation' => 'SIMPERUM (simulasi)', 'api' => 'SIMPERUM'];
+            $source_labels = ['simulation' => 'SIMPERUM (simulasi)', 'api' => 'SIMPERUM', 'manual' => 'Diisi mandiri oleh warga'];
             $submittable_recommendations = array_values(array_filter((array) $recommendations, static fn($item) => in_array($item['eligibility_status'] ?? '', ['eligible', 'potential'], TRUE)));
             $needs_data_recommendations = array_values(array_filter((array) $recommendations, static fn($item) => ($item['eligibility_status'] ?? '') === 'needs_data'));
             $has_missing_decile = FALSE;

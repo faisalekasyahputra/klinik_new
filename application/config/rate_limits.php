@@ -50,6 +50,18 @@ $config['rate_limit_policies'] = [
         'window' => 86400,
         'dimensions' => ['account'],
     ],
+    /* Pencarian NIK ANONIM (14 Agt 2026, /warga/pendataan step "Temukan
+       Data" dibuka untuk pengunjung belum login). Dimensi `account` di
+       atas TIDAK BISA dipakai di sini - tidak ada akun sama sekali.
+       Dimensi `ip` saja, dan sengaja LEBIH KETAT dari warga_lookup_jam/
+       harian (bukan lebih longgar): pengunjung anonim tidak punya jejak
+       akun, jadi risiko penelusuran per-permintaannya lebih tinggi,
+       bukan lebih rendah. */
+    'warga_lookup_anon' => [
+        'limit' => 5,
+        'window' => 3600,
+        'dimensions' => ['ip'],
+    ],
     'warga_submit' => [
         'limit' => 5,
         'window' => 3600,

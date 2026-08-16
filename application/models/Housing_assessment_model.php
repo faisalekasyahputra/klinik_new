@@ -3,7 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Housing_assessment_model extends CI_Model {
 
-    private const SOURCE_MODES = ['simulation', 'api'];
+    private const SOURCE_MODES = ['simulation', 'api', 'manual'];
     private const TRACKS = ['undetermined', 'existing_house', 'candidate_land', 'financing'];
     private const SNAPSHOT_STATUSES = ['found', 'not_found', 'error'];
     private const EVIDENCE_KINDS = ['self_photo','house_front_photo','house_side_photo','roof_photo','floor_photo','wall_photo','latrine_photo','land_photo','candidate_land_photo','land_transfer_proof','recipient_photo','id_card_photo','family_card_photo','land_owner_family_card_photo'];
@@ -361,6 +361,141 @@ class Housing_assessment_model extends CI_Model {
             unset($row[$column]);
         }
         return $row;
+    }
+
+    /**
+     * Bikin/lanjutkan draft dari HASIL lookup Simperum_gateway yang sudah
+     * `status==='found'` - dipindah dari Warga::lookup() 14 Agt 2026 (logika
+     * APA ADANYA, bukan ditulis ulang) supaya bisa dipakai ULANG dari
+     * Auth::_redirect_after_login() juga: warga yang cek NIK ANONIM lalu
+     * login/daftar sekarang langsung mendarat di step "Data Warga", bukan
+     * balik ke "Temukan Data" dan harus cek ulang manual (itu jurang yang
+     * disadari & diterima saat pengikatan NIK-ke-akun pertama kali dibuat,
+     * sekarang ditutup).
+     *
+     * @param int   $user_id
+     * @param array $result  balikan Simperum_gateway::lookup(), WAJIB
+     *                       $result['status'] === 'found' (tidak diperiksa
+     *                       ulang di sini - itu tanggung jawab pemanggil).
+     * @return array ['success'=>bool, 'message'=>string] - kontrak sama
+     *               dengan create_draft()/update_owned_draft() di berkas
+     *               ini, supaya pemanggil bisa memperlakukannya sama.
+     */
+    public function bootstrap_draft_from_lookup($user_id, array $result)
+    {
+        $user_id = (int) $user_id;
+        $profile = $this->get_owned_profile($user_id);
+        $draft = $this->get_latest_owned_draft($user_id);
+        $previous_draft = NULL;
+        $source_mode = (string) ($result['source_mode'] ?? 'simulation');
+        $snapshot_id = (int) ($result['data']['snapshot_id'] ?? 0);
+        if ($draft && (
+            ($draft['source_mode'] ?? '') !== $source_mode
+            || (int) ($draft['simperum_snapshot_id'] ?? 0) !== $snapshot_id
+        )) {
+            $previous_draft = $draft;
+            $draft = NULL;
+        }
+        if ( ! $draft && $profile) {
+            $kabupaten_id = $this->source_snapshot_kabupaten_id($snapshot_id);
+            $created = $kabupaten_id
+                ? $this->create_draft(
+                    $user_id,
+                    $profile['id'],
+                    $kabupaten_id,
+                    'undetermined',
+                    $source_mode,
+                    $snapshot_id,
+                    $previous_draft['id'] ?? NULL
+                )
+                : ['success' => FALSE, 'message' => 'Wilayah sumber belum dapat dipakai untuk membuat draft.'];
+            if (empty($created['success'])) {
+                return $created;
+            }
+            $draft = $this->get_owned_assessment($created['assessment_id'], $user_id);
+        }
+        if ($draft && $draft['current_step'] === 'find_data') {
+            $started = $this->update_owned_draft(
+                $draft['id'], $user_id, $draft['lock_version'],
+                ['current_step' => 'citizen_data'] + $this->source_snapshot_prefill($snapshot_id)
+            );
+            if (empty($started['success'])) {
+                return $started;
+            }
+        }
+        return ['success' => TRUE];
+    }
+
+    /**
+     * Bootstrap profil+draft dari isian manual - dipakai saat NIK warga
+     * TIDAK ditemukan di SIMPERUM (status 'not_found'), warga tetap ingin
+     * lanjut pendataan tanpa data sumber. Meniru struktur
+     * bootstrap_draft_from_lookup() di atas, bedanya kabupaten_id
+     * diturunkan dari 4 digit pertama NIK (kode wilayah Kemendagri, format
+     * sama dengan kabupaten.id - lihat Simperum_gateway::normalize_api_record())
+     * bukan dari payload snapshot SIMPERUM (memang tidak ada), dan tidak
+     * ada snapshot_id/prefill sama sekali.
+     */
+    public function bootstrap_manual_draft($user_id, $nik, $full_name)
+    {
+        $user_id = (int) $user_id;
+        $nik = preg_replace('/\D+/', '', (string) $nik);
+        $full_name = trim((string) $full_name);
+
+        if ($user_id < 1 || ! preg_match('/^\d{16}$/', $nik) || $full_name === '') {
+            return $this->fail('invalid_manual_entry', 'NIK atau nama lengkap tidak valid.');
+        }
+
+        /* Cakupan wilayah DICEK LEBIH DULU, SEBELUM save_profile() - kalau
+           belum ada draft sama sekali. Urutan sebaliknya (profil dulu,
+           baru cek cakupan) pernah dicoba dan TERBUKTI BERMASALAH: profil
+           sudah terlanjur tersimpan untuk NIK di luar cakupan, lalu
+           save_profile()'s account_already_bound menolak percobaan
+           BERIKUTNYA dengan NIK yang BENAR - warga terkunci total, tidak
+           bisa memperbaiki kesalahan ketik sendiri. Kalau draft SUDAH ada
+           (akun sudah pernah lolos cakupan sebelumnya), lewati - urusan
+           NIK berbeda pada akun yang sudah terikat sudah ditangani
+           save_profile() sendiri (account_already_bound). */
+        $draft = $this->get_latest_owned_draft($user_id);
+        $kabupaten_id = NULL;
+        if ( ! $draft) {
+            $kabupaten_id = (int) substr($nik, 0, 4);
+            $scope_exists = $kabupaten_id > 0
+                && $this->db->where('id', $kabupaten_id)->count_all_results('kabupaten') === 1;
+            if ( ! $scope_exists) {
+                return $this->fail(
+                    'out_of_scope',
+                    'NIK menunjukkan wilayah di luar cakupan layanan ini. Hubungi Dinas Perakim setempat.'
+                );
+            }
+        }
+
+        $saved = $this->save_profile(
+            $user_id,
+            ['nik' => $nik, 'full_name' => $full_name, 'source_mode' => 'manual'],
+            ['full_name' => 'citizen']
+        );
+        if (empty($saved['success'])) {
+            return $saved;
+        }
+
+        if ( ! $draft) {
+            $created = $this->create_draft($user_id, $saved['profile_id'], $kabupaten_id, 'undetermined', 'manual');
+            if (empty($created['success'])) {
+                return $created;
+            }
+            $draft = $this->get_owned_assessment($created['assessment_id'], $user_id);
+        }
+        if ($draft && $draft['current_step'] === 'find_data') {
+            $started = $this->update_owned_draft(
+                $draft['id'], $user_id, $draft['lock_version'],
+                ['current_step' => 'citizen_data']
+            );
+            if (empty($started['success'])) {
+                return $started;
+            }
+        }
+        return ['success' => TRUE];
     }
 
     public function source_snapshot_kabupaten_id($snapshot_id)

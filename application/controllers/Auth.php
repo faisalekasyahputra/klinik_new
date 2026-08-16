@@ -423,10 +423,31 @@ class Auth extends MY_Controller {
         $user = $this->auth_model->find_by_id($this->get_user_id());
         $needs_password = empty($user->password);
 
+        $old = $this->session->flashdata('ob_old') ?: [];
+        /* Permintaan user 14 Agt 2026: kalau alur ini BERAWAL dari
+           pengecekan NIK di /warga/pendataan (ditemukan ATAU tidak - lihat
+           Warga::lookup_anonim(), keduanya mengisi `warga_pending_nik`),
+           field NIK di formulir onboarding langsung terisi - tidak boleh
+           mengetik ulang NIK yang baru saja dicek.
+           `ob_old` (isian dari percobaan submit SEBELUMNYA yang gagal
+           validasi) MENANG kalau keduanya ada - itu ketikan orangnya
+           sendiri barusan, lebih baru daripada NIK dari pengecekan awal.
+           TIDAK di-unset di sini dengan sengaja - baris ini cuma membaca
+           untuk prefill, Auth::_redirect_after_login() yang jadi pemilik
+           tunggal siklus hidupnya (baca lalu unset), supaya kunjungan
+           ulang ke halaman onboarding ini (mis. submit gagal sekali lalu
+           balik) tetap terprefill, bukan cuma sekali pakai. */
+        if (empty($old['nik_identitas'])) {
+            $pending_nik = $this->session->userdata('warga_pending_nik');
+            if ( ! empty($pending_nik)) {
+                $old['nik_identitas'] = $pending_nik;
+            }
+        }
+
         $data = [
             'user_email'     => $this->session->userdata('email'),
             'needs_password' => $needs_password,
-            'old'            => $this->session->flashdata('ob_old') ?: [],
+            'old'            => $old,
         ];
         $this->load->view('pages/auth/onboarding', $data);
     }
@@ -894,6 +915,53 @@ class Auth extends MY_Controller {
      */
     private function _redirect_after_login() {
         $user_id = $this->get_user_id();
+
+        /* Ikat NIK yang sempat dicari ANONIM (Warga::lookup_anonim(), sebelum
+           akun ada) ke akun yang baru saja diketahui - "gunakan NIK sebagai
+           kunci" begitu warga login/daftar, permintaan user 14 Agt 2026.
+           SEBELUM cek is_profile_complete DENGAN SENGAJA: satu-satunya
+           titik temu login (do_login()) DAN registrasi (save_onboarding(),
+           dipanggil di UJUNG onboarding - lihat baris terakhirnya) adalah
+           method ini, jadi ini juga satu-satunya tempat yang menjangkau
+           keduanya sekaligus tanpa menyalin logika ke dua tempat.
+
+           Simperum_gateway::lookup() dipanggil ULANG (bukan fungsi baru) -
+           kali ini $requested_by=$user_id BENAR terisi (beda dari panggilan
+           anonim yang $requested_by=0), jadi from_snapshot() di dalamnya
+           benar-benar menjalankan save_profile() yang mengikat NIK ke akun
+           ini. Snapshot SIMPERUM-nya sendiri sudah ke-cache dari pencarian
+           anonim tadi (get_active_source_snapshot()) - panggilan ulang ini
+           TIDAK memukul API/fixture kedua kalinya.
+
+           Kegagalan bind (mis. NIK keburu diklaim akun lain di antara
+           pencarian anonim dan login) SENGAJA TIDAK menghentikan login -
+           warga tetap masuk, cukup mencari ulang manual dari wizard kalau
+           mau. Hanya berlaku untuk role warga - akun lain tidak relevan
+           dengan wizard ini.
+
+           SUSULAN 14 Agt 2026: begitu profil terikat DAN hasilnya
+           'found' (NIK ada di SIMPERUM - kalau 'not_found' pemanggilan
+           ulang di atas cuma menegaskan lagi, tidak menyimpan apa pun,
+           lihat Simperum_gateway::from_snapshot()), draft-nya SEKALIAN
+           dibuat/dilanjutkan lewat method yang SAMA PERSIS dipakai
+           Warga::lookup() (Housing_assessment_model::
+           bootstrap_draft_from_lookup(), dipindah ke situ justru supaya
+           bisa dipanggil dari sini juga). Tanpa ini warga yang baru saja
+           login/daftar mendarat balik di step "Temukan Data" - datanya
+           SUDAH ketemu tapi harus mengetik NIK yang sama sekali lagi
+           untuk melihat step "Data Warga". Kegagalan bootstrap (mis.
+           wilayah sumber belum bisa dipakai) juga SENGAJA tidak
+           menghentikan login - sama seperti kegagalan bind di atas. */
+        $pending_nik = $this->session->userdata('warga_pending_nik');
+        if ( ! empty($pending_nik) && $this->has_role('warga')) {
+            $this->session->unset_userdata('warga_pending_nik');
+            $this->load->library('Simperum_gateway');
+            $hasil = $this->simperum_gateway->lookup($pending_nik, '', $user_id, TRUE);
+            if (($hasil['status'] ?? '') === 'found') {
+                $this->load->model('Housing_assessment_model');
+                $this->Housing_assessment_model->bootstrap_draft_from_lookup($user_id, $hasil);
+            }
+        }
 
         if (!$this->auth_model->is_profile_complete($user_id)) {
             redirect('Auth/onboarding');
