@@ -352,6 +352,15 @@ $config['dashboard_modules'] = [
         'url'   => 'Admin_Asosiasi', 'group' => 'Master', 'order' => 50,
         'roles' => ['admin'], 'scope' => null,
     ],
+    // Serah Terima PSU (migrasi 043) - mengaktifkan kartu "PSU" di beranda
+    // yang sebelumnya "Segera Hadir" (permintaan user 14 Agt 2026).
+    // Superadmin saja - berlaku lintas wilayah, alasannya sama dgn
+    // Posisi Magang & Asosiasi Pengembang di atas.
+    'psu_serah_terima' => [
+        'label' => 'Serah Terima PSU', 'icon' => 'ph-road-horizon',
+        'url'   => 'Admin_Psu', 'group' => 'Master', 'order' => 60,
+        'roles' => ['admin'], 'scope' => null,
+    ],
     'kemitraan_bidang' => [
         'label' => 'Magang Bidang Saya', 'icon' => 'ph-graduation-cap',
         'url'   => 'Kemitraan_Bidang', 'group' => 'Layanan', 'order' => 11,

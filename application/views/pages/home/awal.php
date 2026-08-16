@@ -31,15 +31,19 @@
 
         <!-- Menu layanan utama -->
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-            <!-- Placeholder sampai subhalaman PSU tersedia -->
-            <div class="portal-home-card aurora-surface aurora-3 portal-home-card-placeholder min-h-[170px] sm:min-h-[245px]"
-                 style="--t1:#e8f2fc;--t2:#c5ddf4;--t3:#92bfe7" aria-label="PSU, segera hadir">
+            <!-- PSU (Prasarana, Sarana, Utilitas) - diaktifkan 14 Agt 2026,
+                 permintaan user. Dulu placeholder "Segera Hadir"; sekarang
+                 menunjuk Psu::index() (rute /psu, lihat routes.php) - status
+                 serah terima PSU per perumahan, dikelola Admin_Psu. -->
+            <a href="<?= base_url('psu') ?>" data-tab-link data-tab-key="psu"
+               class="portal-home-card aurora-surface aurora-3 min-h-[170px] sm:min-h-[245px]"
+               style="--t1:#e8f2fc;--t2:#c5ddf4;--t3:#92bfe7">
                 <i class="portal-home-art fa-solid fa-road-bridge" aria-hidden="true"></i>
                 <div class="portal-home-body">
                     <h2 class="portal-home-title portal-home-title-sm">PSU</h2>
-                    <span class="portal-home-badge">Segera Hadir</span>
+                    <p class="portal-home-subtitle">Status serah terima PSU perumahan.</p>
                 </div>
-            </div>
+            </a>
 
             <!-- Placeholder sampai subhalaman kawasan kumuh tersedia -->
             <div class="portal-home-card aurora-surface aurora-4 portal-home-card-placeholder min-h-[170px] sm:min-h-[245px]"
