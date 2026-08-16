@@ -269,7 +269,11 @@ class Pengaturan extends MY_Controller {
             return;
         }
 
-        if (!in_array($data['asosiasi'], ['rei', 'himperra', 'apersi', 'pi', 'lainnya'], TRUE)) {
+        // Daftarnya dari srp2_daftar_asosiasi() sejak 14 Agt 2026, bukan
+        // salinan literal di sini - formulir admin (Admin_Srp2::save()) kini
+        // memvalidasi ke daftar yang SAMA.
+        $this->load->helper('srp2');
+        if ( ! array_key_exists((string) $data['asosiasi'], srp2_daftar_asosiasi())) {
             $this->session->set_flashdata('error', 'Asosiasi tidak valid.');
             redirect('akun/profil');
             return;

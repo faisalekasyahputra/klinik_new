@@ -15,7 +15,10 @@ class Pengembang extends MY_Controller {
         $data['judul'] = '';
         $table = $this->db->table_exists('srp2_certified_developers') ? 'srp2_certified_developers' : 'srp2_registrations';
         $status = $table === 'srp2_certified_developers' ? ['status_aktif' => 1] : ['status_verifikasi' => 'Diterima'];
-        $data['daftar_pengembang'] = $this->db->select('id, nama_perusahaan')->where($status)->order_by('nama_perusahaan', 'ASC')->get($table)->result();
+        // `asosiasi` ikut diambil 14 Agt 2026 - kolom baru di tabel direktori
+        // (permintaan user). Ada di KEDUA tabel yang mungkin dipakai di atas,
+        // jadi tidak perlu percabangan select terpisah.
+        $data['daftar_pengembang'] = $this->db->select('id, nama_perusahaan, asosiasi')->where($status)->order_by('nama_perusahaan', 'ASC')->get($table)->result();
         $this->render('pages/pengembang/sertifikasi', $data);
     }
 
