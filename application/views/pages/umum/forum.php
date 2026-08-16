@@ -31,6 +31,23 @@
             <?php endforeach; ?>
         </div>
 
+        <?php
+        /* PRIVASI KONSULTASI 15 Agt 2026 - lihat komentar panjang di
+           Umum::forum(). $is_logged/$is_admin dikirim controller, dipakai
+           membedakan tiga keadaan daftar di bawah: anonim (tidak melihat
+           daftar sama sekali), warga (konsultasinya sendiri saja), admin
+           (semua konsultasi - meja tinjaunya). */
+        $is_logged = $is_logged ?? FALSE;
+        $is_admin  = $is_admin ?? FALSE;
+        ?>
+
+        <?php if ($is_logged): ?>
+        <p class="-mt-2 text-[11px] leading-relaxed" style="color:var(--portal-text-muted);">
+            <i class="fa-solid fa-lock mr-1"></i>
+            <?= $is_admin
+                ? 'Anda melihat seluruh konsultasi warga sebagai admin.'
+                : 'Konsultasi ini bersifat pribadi - hanya Anda dan admin yang dapat melihatnya.' ?>
+        </p>
         <form method="GET" action="<?= base_url('Umum/forum') ?>" class="flex flex-col gap-2 sm:flex-row">
             <input type="search" name="q" value="<?= htmlspecialchars($search ?? '') ?>" placeholder="Cari konsultasi atau kebutuhan warga..." class="min-w-0 flex-1 rounded-xl border px-4 py-3 text-xs outline-none transition-colors focus:border-[color:var(--portal-brand)]" style="background:var(--portal-bg-card);border-color:var(--portal-border);color:var(--portal-text);">
             <select name="kategori" class="rounded-xl border px-4 py-3 text-xs outline-none focus:border-[color:var(--portal-brand)] sm:w-48" style="background:var(--portal-bg-card);border-color:var(--portal-border);color:var(--portal-text);">
@@ -41,9 +58,17 @@
             </select>
             <button type="submit" class="rounded-xl px-5 py-3 text-xs font-bold transition-all" style="background:var(--portal-text);color:#fff;"><i class="fa-solid fa-magnifying-glass mr-1"></i> Cari</button>
         </form>
+        <?php endif; ?>
 
         <div class="space-y-3">
-            <?php if (!empty($diskusi)): foreach ($diskusi as $row): ?>
+            <?php if ( ! $is_logged): ?>
+                <div class="rounded-2xl border border-dashed p-10 text-center" style="background:var(--portal-bg-card);border-color:var(--portal-border);color:var(--portal-text-muted);">
+                    <i class="fa-solid fa-lock mb-3 text-2xl" style="color:var(--portal-brand);"></i>
+                    <p class="text-sm font-bold" style="color:var(--portal-text);">Konsultasi bersifat pribadi</p>
+                    <p class="mx-auto mt-1.5 max-w-md text-xs leading-relaxed">Masuk untuk mengajukan atau melihat konsultasi Anda - hanya Anda dan admin yang dapat membacanya.</p>
+                    <a href="<?= base_url('Auth/login') ?>" class="mt-4 inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-xs font-bold transition-all" style="background:var(--portal-brand);color:#0a1a1f;"><i class="fa-solid fa-right-to-bracket"></i> Masuk</a>
+                </div>
+            <?php elseif (!empty($diskusi)): foreach ($diskusi as $row): ?>
                 <article class="rounded-2xl border p-4 transition-all hover:-translate-y-0.5 sm:p-5" style="background:var(--portal-bg-card);border-color:var(--portal-border);box-shadow:var(--portal-shadow);">
                     <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                         <div class="min-w-0 space-y-2">
@@ -59,7 +84,7 @@
                     </div>
                 </article>
             <?php endforeach; else: ?>
-                <div class="rounded-2xl border border-dashed p-10 text-center" style="background:var(--portal-bg-card);border-color:var(--portal-border);color:var(--portal-text-muted);"><i class="fa-regular fa-calendar-xmark mb-3 text-2xl"></i><p class="text-sm">Belum ada pengajuan konsultasi.</p></div>
+                <div class="rounded-2xl border border-dashed p-10 text-center" style="background:var(--portal-bg-card);border-color:var(--portal-border);color:var(--portal-text-muted);"><i class="fa-regular fa-calendar-xmark mb-3 text-2xl"></i><p class="text-sm"><?= $is_admin ? 'Belum ada konsultasi dari warga.' : 'Anda belum mengajukan konsultasi.' ?></p></div>
             <?php endif; ?>
         </div>
     </div>

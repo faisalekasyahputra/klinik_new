@@ -330,6 +330,20 @@ $config['dashboard_modules'] = [
         'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'Janji Temu',
     ],
+    // Daftar SEMUA topik konsultasi - bukan cuma yang sudah minta janji temu.
+    // Tambahan 15 Agt 2026: sejak konsultasi jadi privat (hanya pemilik +
+    // admin), admin butuh jalan masuk RESMI ke Umum::forum() (yang kini
+    // otomatis menampilkan SEMUA topik utk role admin, lihat komentarnya) -
+    // sebelumnya cuma bisa dicapai lewat tautan di dalam detail Janji Temu
+    // (admin/konsultasi/index.php), tidak ada menu tersendiri utk topik yang
+    // belum mengajukan janji temu sama sekali. TANPA badge - forum_diskusi
+    // tidak punya kolom "sudah dibalas admin atau belum" utk dihitung tanpa
+    // query tambahan per baris, beda dari janji_temu yang statusnya jelas.
+    'konsultasi_forum' => [
+        'label' => 'Konsultasi Warga', 'icon' => 'ph-chats-circle',
+        'url'   => 'Umum/forum', 'group' => 'Tindak Lanjut', 'order' => 41,
+        'roles' => ['admin'], 'scope' => null,
+    ],
     // Meja KEDUA alur surat magang. Terpisah dari 'kemitraan' di atas karena
     // pemiliknya berbeda: yang itu sekretariat (superadmin), yang ini bidang.
     // 'pending_where' memakai status 'Ditinjau Bidang' - vocabulary status

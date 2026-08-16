@@ -18,6 +18,42 @@ class Umum extends MY_Controller {
 		$this->load->model('Forum_model');
 	}
 
+	/**
+	 * SATU sumber "apakah ini admin" untuk seluruh area forum/konsultasi -
+	 * dipakai `_check_admin()` (gerbang keras) DAN pengecekan lunak di
+	 * forum()/detail()/balas_aksi()/toggle_like()/report_komentar().
+	 *
+	 * Menggantikan `in_array($role, ['admin','staff','Petugas Disperakim'])`
+	 * yang tersebar di berkas ini - tiga peran itu TIDAK SATU PUN terdaftar
+	 * sebagai peran resmi di `usr_users.role` selain 'admin' (lihat
+	 * peringatan yang sama di Admin_Konsultasi.php, ditulis 14 Agt 2026 saat
+	 * meja janji temu dibuat, tapi berkas INI - sumber aslinya - belum ikut
+	 * dibetulkan sampai sekarang).
+	 */
+	private function _peran_admin()
+	{
+		return $this->session->userdata('is_logged') === TRUE
+			&& $this->session->userdata('role') === 'admin';
+	}
+
+	/**
+	 * TRUE kalau akun yang sedang login boleh mengakses diskusi $id_diskusi -
+	 * pemiliknya, atau admin. SATU tempat dipakai `balas_aksi()`,
+	 * `toggle_like()`, `report_komentar()` supaya syarat kepemilikannya tidak
+	 * bisa diam-diam menyimpang antar endpoint (kekhawatiran yang sama
+	 * mendasari komentar `ajukan_janji_temu()` soal tombol vs server: aturan
+	 * di satu tempat harus SAMA PERSIS dengan yang ditegakkan di tempat lain).
+	 *
+	 * FALSE untuk diskusi yang tidak ada/sudah terhapus - dipanggilnya juga
+	 * jadi validasi keberadaan sekaligus, bukan cuma kepemilikan.
+	 */
+	private function _boleh_akses_diskusi($id_diskusi, $user_id)
+	{
+		if ($this->_peran_admin()) { return TRUE; }
+		$topik = $this->Forum_model->get_diskusi_by_id($id_diskusi);
+		return $topik && (int) ($topik['user_id'] ?? 0) === (int) $user_id;
+	}
+
 	public function index()
 	{
 		
@@ -267,11 +303,34 @@ class Umum extends MY_Controller {
 		$this->_load_forum();
 		$search   = $this->input->get('q');
 		$kategori = $this->input->get('kategori');
-		
+
 		$datacontent['judul']          = 'Forum Diskusi';
-		$datacontent['diskusi']        = $this->Forum_model->get_all_diskusi($search, $kategori);
 		$datacontent['search']         = $search;
 		$datacontent['kategori_aktif'] = $kategori;
+
+		/* PRIVASI KONSULTASI - permintaan user 15 Agt 2026: "semua orang yg
+		   konsultasi hanya bisa dilihat oleh admin". Sebelum ini SATU daftar
+		   yang sama (get_all_diskusi() tanpa batasan) dikirim ke SIAPA PUN
+		   yang membuka /Umum/forum - termasuk tamu anonim - jadi konsultasi
+		   warga A terbaca warga B begitu saja. Sekarang:
+		     - anonim  : tidak melihat satu topik pun (tidak ada "milik siapa"
+		                 untuk anonim) - cuma ajakan masuk, yang memang sudah
+		                 ada di view ini sejak awal.
+		     - warga   : HANYA topiknya sendiri (`$user_id` diisi).
+		     - admin   : SEMUA topik (`$user_id` NULL) - inilah "hanya bisa
+		                 dilihat admin" yang dimaksud.
+		   Aturan yang SAMA PERSIS ditegakkan lagi di detail()/balas_aksi()/
+		   toggle_like()/report_komentar() - daftar ini cuma menentukan apa
+		   yang TERLIHAT, bukan satu-satunya penjaga; seseorang yang menebak
+		   ID topik langsung tetap ditolak di sana. */
+		$datacontent['is_logged'] = $this->is_logged_in();
+		$datacontent['is_admin']  = $this->_peran_admin();
+		if ($datacontent['is_logged']) {
+			$user_id_pemilik = $datacontent['is_admin'] ? NULL : (int) $this->get_user_id();
+			$datacontent['diskusi'] = $this->Forum_model->get_all_diskusi($search, $kategori, $user_id_pemilik);
+		} else {
+			$datacontent['diskusi'] = [];
+		}
 
 		$this->render('pages/umum/forum', $datacontent);
 	}
@@ -373,24 +432,41 @@ class Umum extends MY_Controller {
 		$this->_load_forum();
 		$datacontent['topik'] = $this->Forum_model->get_diskusi_by_id($id);
 		if (empty($datacontent['topik'])) { show_404(); }
-		
+
+		/* PRIVASI KONSULTASI 15 Agt 2026 - lihat komentar panjang di forum().
+		   Anonim -> gerbang_login() (bukan show_404() langsung): dia BOLEH
+		   jadi pemiliknya sendiri yang sesinya sudah habis, dan
+		   ingat_halaman_asal() otomatis membawanya balik ke sini sesudah
+		   masuk. Sudah login TAPI bukan pemilik & bukan admin -> 404, "404
+		   bukan 403" - pola sama dengan gerbang janji_temu di bawah, topik
+		   orang lain tidak perlu dikonfirmasi keberadaannya. */
+		if ( ! $this->is_logged_in()) {
+			$this->gerbang_login();
+			return;
+		}
+		$user_id  = (int) $this->get_user_id();
+		$is_admin = $this->_peran_admin();
+		if ( ! $is_admin && (int) ($datacontent['topik']['user_id'] ?? 0) !== $user_id) {
+			show_404();
+		}
+		$datacontent['is_admin'] = $is_admin;
+
 		// Increment view count
 		$this->Forum_model->increment_view($id);
 		$datacontent['topik']['view_count'] = ($datacontent['topik']['view_count'] ?? 0) + 1;
-		
+
 		$datacontent['komentar'] = $this->Forum_model->get_komentar_by_diskusi($id);
-		
+
 		// User likes status (jika login)
-		$datacontent['user_likes'] = [];
-		if ($this->is_logged_in()) {
-			$datacontent['user_likes'] = $this->Forum_model->get_user_likes($this->get_user_id(), $id);
-		}
+		$datacontent['user_likes'] = $this->Forum_model->get_user_likes($user_id, $id);
 
 		/**
 		 * Panel janji temu HANYA untuk pemilik topik, dan datanya hanya diambil
 		 * untuk pemilik. Bukan sekadar tidak dirender: `alasan` dan
-		 * `catatan_user` berisi kenapa seseorang merasa perlu bertemu petugas,
-		 * dan topik forum ini terbuka untuk siapa saja termasuk tamu.
+		 * `catatan_user` berisi kenapa seseorang merasa perlu bertemu petugas.
+		 * Sejak gerbang privasi di atas, admin juga bisa membuka halaman ini
+		 * (untuk topik warga lain) TANPA jadi "pemilik" - panel ini memang
+		 * harus tetap tersembunyi baginya, dia meninjau lewat Admin_Konsultasi.
 		 */
 		$datacontent['saya_pemilik'] = FALSE;
 		$datacontent['janji']        = NULL;
@@ -601,8 +677,8 @@ class Umum extends MY_Controller {
 			return;
 		}
 
-		$user_id     = $this->get_user_id();
-		$id_diskusi  = $this->input->post('id_diskusi');
+		$user_id     = (int) $this->get_user_id();
+		$id_diskusi  = (int) $this->input->post('id_diskusi');
 		$isi_komentar = sanitize_forum_input($this->input->post('isi_komentar'));
 
 		// VALIDASI
@@ -611,6 +687,14 @@ class Umum extends MY_Controller {
 			redirect('Umum/forum');
 			return;
 		}
+
+		/* PRIVASI KONSULTASI 15 Agt 2026 - gerbang forum()/detail() menahan
+		   yang lewat browser, tapi endpoint POST ini sendiri bisa dipanggil
+		   langsung dengan id_diskusi berapa pun oleh warga lain yang sudah
+		   login. Tanpa penjagaan di sini, "hanya pemilik & admin yang lihat"
+		   masih bisa dilewati - orangnya tidak BISA MELIHAT topiknya, tapi
+		   tetap BISA MEMBALAS-nya. 404, bukan 403, pola sama dengan detail(). */
+		if ( ! $this->_boleh_akses_diskusi($id_diskusi, $user_id)) { show_404(); }
 
 		if (mb_strlen($isi_komentar) < 5) {
 			$this->session->set_flashdata('error', 'Tanggapan minimal 5 karakter.');
@@ -633,12 +717,10 @@ class Umum extends MY_Controller {
 			return;
 		}
 
-		// ROLE: ditentukan di backend
-		$role = 'Warga';
-		$session_role = $this->session->userdata('role');
-		if (in_array($session_role, ['admin', 'staff', 'Petugas Disperakim'])) {
-			$role = 'Petugas Disperakim';
-		}
+		// ROLE: ditentukan di backend, dari _peran_admin() - satu sumber
+		// yang sama dipakai gerbang privasi di atas, bukan daftar peran
+		// terpisah yang bisa menyimpang darinya.
+		$role = $this->_peran_admin() ? 'Petugas Disperakim' : 'Warga';
 
 		$data = [
 			'id_diskusi'      => $id_diskusi,
@@ -700,8 +782,21 @@ class Umum extends MY_Controller {
 			return;
 		}
 
+		/* PRIVASI KONSULTASI 15 Agt 2026 - lihat komentar panjang di forum().
+		   Melaporkan komentar mensyaratkan sudah MELIHATNYA; orang yang bukan
+		   pemilik topik & bukan admin tidak berhak atas keduanya sekaligus.
+		   404 (via id diskusi yang tidak resolve) diperlakukan sama dengan
+		   "bukan pemilik" - respons JSON generik di bawah, tidak membedakan
+		   "komentar tidak ada" dari "bukan milik Anda". */
+		$user_id    = (int) $this->get_user_id();
+		$id_diskusi = $this->Forum_model->get_diskusi_id_dari_komentar($id);
+		if ( ! $id_diskusi || ! $this->_boleh_akses_diskusi($id_diskusi, $user_id)) {
+			echo json_encode(['status' => 'error', 'message' => 'Komentar tidak ditemukan.']);
+			return;
+		}
+
 		$rate = $this->rate_limit_consume('forum_report', [
-			'account_id' => (int) $this->get_user_id(),
+			'account_id' => $user_id,
 			'object_id'  => $id,
 		]);
 		if (empty($rate['success']) || empty($rate['allowed'])) {
@@ -710,7 +805,7 @@ class Umum extends MY_Controller {
 			return;
 		}
 
-		$hasil = $this->Forum_model->report_komentar($id, $this->get_user_id());
+		$hasil = $this->Forum_model->report_komentar($id, $user_id);
 		if (empty($hasil['success'])) {
 			echo json_encode(['status' => 'error', 'message' => 'Komentar tidak ditemukan.']);
 			return;
@@ -739,14 +834,27 @@ class Umum extends MY_Controller {
 		}
 		
 		$target_type = $this->input->post('type'); // 'diskusi' atau 'komentar'
-		$target_id   = $this->input->post('id');
-		
+		$target_id   = (int) $this->input->post('id');
+
 		if (!in_array($target_type, ['diskusi', 'komentar']) || empty($target_id)) {
 			echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
 			return;
 		}
-		
-		$result = $this->Forum_model->toggle_like($this->get_user_id(), $target_type, $target_id);
+
+		/* PRIVASI KONSULTASI 15 Agt 2026 - lihat komentar panjang di forum().
+		   $target_type menentukan cara menemukan diskusi induknya: kalau
+		   yang disukai topiknya sendiri, id-nya sudah id diskusi; kalau
+		   komentar, ditelusuri dulu induknya. */
+		$user_id    = (int) $this->get_user_id();
+		$id_diskusi = $target_type === 'diskusi'
+			? $target_id
+			: $this->Forum_model->get_diskusi_id_dari_komentar($target_id);
+		if ( ! $id_diskusi || ! $this->_boleh_akses_diskusi($id_diskusi, $user_id)) {
+			echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
+			return;
+		}
+
+		$result = $this->Forum_model->toggle_like($user_id, $target_type, $target_id);
 		echo json_encode(['status' => 'ok', 'action' => $result['action'], 'count' => $result['count']]);
 	}
 
@@ -759,8 +867,7 @@ class Umum extends MY_Controller {
 			$this->gerbang_login();
 			return false;
 		}
-		$session_role = $this->session->userdata('role');
-		if (!in_array($session_role, ['admin', 'staff', 'Petugas Disperakim'])) {
+		if ( ! $this->_peran_admin()) {
 			show_error('Anda tidak memiliki izin.', 403);
 			return false;
 		}

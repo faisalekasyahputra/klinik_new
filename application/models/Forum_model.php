@@ -4,25 +4,37 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class Forum_model extends CI_Model {
 
     /**
-     * Ambil semua diskusi (filter soft-delete, search, kategori).
+     * Ambil diskusi (filter soft-delete, search, kategori), OPSIONAL dibatasi
+     * ke satu pemilik.
+     *
+     * `$user_id`: NULL = semua diskusi (dipakai admin, lihat Umum::forum()).
+     * Diisi angka = HANYA milik user itu - ini yang menegakkan privasi
+     * konsultasi (permintaan user 15 Agt 2026: "hanya bisa dilihat oleh
+     * admin"). Sebelum ini method-nya selalu mengembalikan SEMUA diskusi ke
+     * SIAPA PUN yang memanggil `Umum::forum()`, termasuk tamu anonim -
+     * konsultasi satu warga bisa dibaca warga lain begitu saja.
      */
-    public function get_all_diskusi($search = '', $kategori = '') {
+    public function get_all_diskusi($search = '', $kategori = '', $user_id = NULL) {
         $this->db->select('forum_diskusi.*, COUNT(forum_komentar.id_komentar) as total_balasan');
         $this->db->from('forum_diskusi');
         $this->db->join('forum_komentar', 'forum_diskusi.id_diskusi = forum_komentar.id_diskusi AND forum_komentar.is_deleted = 0', 'left');
         $this->db->where('forum_diskusi.is_deleted', 0);
-        
+
+        if ($user_id !== NULL) {
+            $this->db->where('forum_diskusi.user_id', (int) $user_id);
+        }
+
         if (!empty($search)) {
             $this->db->group_start();
             $this->db->like('forum_diskusi.judul_topik', $search);
             $this->db->or_like('forum_diskusi.isi_diskusi', $search);
             $this->db->group_end();
         }
-        
+
         if (!empty($kategori)) {
             $this->db->where('forum_diskusi.kategori', $kategori);
         }
-        
+
         $this->db->group_by('forum_diskusi.id_diskusi');
         $this->db->order_by('forum_diskusi.created_at', 'DESC');
         return $this->db->get()->result_array();
@@ -31,6 +43,17 @@ class Forum_model extends CI_Model {
     public function get_diskusi_by_id($id) {
         $this->db->where('is_deleted', 0);
         return $this->db->get_where('forum_diskusi', ['id_diskusi' => $id])->row_array();
+    }
+
+    /**
+     * ID diskusi induk dari satu komentar - dipakai menegakkan kepemilikan
+     * saat aksi (like/lapor) menyasar KOMENTAR, bukan topiknya langsung.
+     * NULL kalau komentarnya tidak ada/sudah dihapus.
+     */
+    public function get_diskusi_id_dari_komentar($id_komentar) {
+        $row = $this->db->select('id_diskusi')->where('is_deleted', 0)
+            ->get_where('forum_komentar', ['id_komentar' => (int) $id_komentar])->row();
+        return $row ? (int) $row->id_diskusi : NULL;
     }
 
     public function get_komentar_by_diskusi($id) {

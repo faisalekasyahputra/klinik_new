@@ -98,9 +98,15 @@
             </div>
 
             <!-- Admin Controls -->
-            <?php 
-            $is_admin = ($this->session->userdata('is_logged') === TRUE && 
-                         in_array($this->session->userdata('role'), ['admin', 'staff', 'Petugas Disperakim']));
+            <?php
+            /* $is_admin sudah dikirim Umum::detail() (dari _peran_admin(),
+               SATU sumber yang sama dgn gerbang privasinya) - dulu dihitung
+               ulang di sini dgn daftar peran usang ['admin','staff','Petugas
+               Disperakim'], dua di antaranya tidak pernah ada di
+               usr_users.role. Kalau view ini dipanggil dari tempat lain yang
+               lupa mengirim $is_admin, anggap BUKAN admin (aman-default),
+               bukan fatal error. */
+            $is_admin = $is_admin ?? FALSE;
             ?>
             <?php if ($is_admin): ?>
             <div class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-[#d6fb00]/10">
@@ -140,7 +146,12 @@
              * Panelnya tidak sekadar disembunyikan dari orang lain: `$janji`
              * memang NULL kecuali pembacanya pemilik topik (Umum::detail).
              * `alasan` dan `catatan_user` berisi kenapa seseorang merasa perlu
-             * bertemu petugas, dan halaman topik ini terbuka untuk tamu.
+             * bertemu petugas. Sejak gerbang privasi 15 Agt 2026, halaman
+             * topik ini sendiri sudah tidak lagi terbuka untuk tamu/warga
+             * lain - tapi panel ini TETAP disembunyikan dari admin (dia bisa
+             * membuka topik warga lain untuk meninjau, namun bukan
+             * "pemiliknya"), jadi pemeriksaan `$saya_pemilik` di bawah masih
+             * perlu, bukan sisa kode mati.
              */
             ?>
             <?php if (!empty($saya_pemilik)): ?>
