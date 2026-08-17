@@ -799,9 +799,17 @@ class Warga extends MY_Controller {
             ], $errors);
         }
         if ($step === 'location_evidence') {
-            $lat=$this->input->post('location_lat', TRUE); $lng=$this->input->post('location_lng', TRUE);
-            if (!is_numeric($lat) || (float)$lat < -90 || (float)$lat > 90) $errors['location_lat']='Latitude tidak valid.';
-            if (!is_numeric($lng) || (float)$lng < -180 || (float)$lng > 180) $errors['location_lng']='Longitude tidak valid.';
+            // Permintaan user 17 Agt 2026: seluruh isian di langkah ini opsional.
+            // Koordinat dan bukti foto sama-sama bisa menyusul - warga yang
+            // sedang di lokasi berbeda dari rumahnya, atau kameranya tidak
+            // aktif, tidak boleh mentok di langkah ini. Pola "validasi cuma
+            // kalau diisi" sudah dipakai field opsional lain di fungsi ini
+            // (house_area_m2, assistance_year) - lat/lng mengikuti pola yang
+            // sama, bukan pengecualian baru.
+            $lat = $this->input->post('location_lat', TRUE);
+            $lng = $this->input->post('location_lng', TRUE);
+            if ($lat !== NULL && $lat !== '' && (!is_numeric($lat) || (float)$lat < -90 || (float)$lat > 90)) $errors['location_lat']='Latitude tidak valid.';
+            if ($lng !== NULL && $lng !== '' && (!is_numeric($lng) || (float)$lng < -180 || (float)$lng > 180)) $errors['location_lng']='Longitude tidak valid.';
         }
         return $errors;
     }
