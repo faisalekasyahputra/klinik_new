@@ -132,8 +132,20 @@ class Umum extends MY_Controller {
 
 	public function aduan()
 	{
+		/* Permintaan user 16 Agt 2026: kirim aduan WAJIB login - membalik
+		   keputusan lama yang sengaja membiarkan tamu mengirim dengan
+		   user_id NULL (lihat komentar yang masih ada di simpan_aduan()
+		   sebelum diperbaiki). gerbang_login() otomatis mengingat halaman
+		   ini lewat ingat_halaman_asal(), jadi begitu login selesai orang
+		   kembali langsung ke sini (bukan ke beranda) - pola yang sama
+		   dipakai papan_aduan() di bawah. */
+		if ( ! $this->is_logged_in()) {
+			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu untuk mengirim aduan.');
+			$this->gerbang_login();
+			return;
+		}
+
 		$datacontent['judul'] ='';
-		// Prefill nama/email kalau user sedang login - kosong untuk tamu.
 		$datacontent['nama_default']  = $this->session->userdata('name') ?: '';
 		$datacontent['email_default'] = $this->session->userdata('email') ?: '';
 		$this->render('pages/umum/aduan', $datacontent);
@@ -143,6 +155,16 @@ class Umum extends MY_Controller {
 	{
 		if ($this->input->method() !== 'post') {
 			show_404();
+		}
+
+		/* Wajib login - pola sama dengan gerbang di aduan() (halaman
+		   formnya). Endpoint POST ini dipertahankan sendiri, bukan
+		   diandalkan pada form yang menyembunyikan tombolnya, karena bisa
+		   dipanggil langsung tanpa lewat halaman itu sama sekali. */
+		if ( ! $this->is_logged_in()) {
+			$this->session->set_flashdata('error', 'Silakan login terlebih dahulu untuk mengirim aduan.');
+			$this->gerbang_login();
+			return;
 		}
 
 		$this->load->model('Aduan_model');
@@ -167,9 +189,9 @@ class Umum extends MY_Controller {
 		$judul = $this->input->post('judul', TRUE);
 		$pesan = $this->input->post('pesan', TRUE);
 
-		// user_id selalu dari sesi (anti-IDOR), bukan dari input - tamu tetap
-		// boleh kirim aduan dengan user_id NULL.
-		$user_id = $this->is_logged_in() ? $this->get_user_id() : NULL;
+		// user_id dari sesi (anti-IDOR), bukan dari input. Selalu terisi
+		// sejak gerbang login di atas - tamu tidak pernah sampai baris ini.
+		$user_id = $this->get_user_id();
 
 		// Baris dibuat DULU supaya lampirannya punya folder pemilik sendiri
 		// (private_uploads/aduan/{id}/), pola yang sama dengan dokumen SRP2.
