@@ -87,6 +87,128 @@ class Admin_Rekam_Data extends Admin_Controller {
      * mengunci bidang): superadmin memang berwenang lintas domain. Gerbangnya
      * ada di kelas basenya.
      */
+    /**
+     * Unduh papan Pantau Rekam Data sebagai Excel - satu triwulan.
+     *
+     * Permintaan user 17 Agt 2026 ("bisa diexport ke excel atau pdf di
+     * breakdown ke per tw dan per tahun"). Layar ini sebelumnya TIDAK PUNYA
+     * unduhan sama sekali - berbeda dari Rekam_Perumahan/Rekam_Kawasan yang
+     * sudah dapat butir 23 putaran 2 lebih dulu.
+     *
+     * MENGULANG PERSIS query di index() - satu baris per kabupaten, kedua
+     * domain disandingkan (lihat alasannya di sana). Query kedua untuk data
+     * yang sama berarti dua tempat yang bisa menyimpang.
+     */
+    public function export()
+    {
+        $tahun    = (int) ($this->input->get('tahun') ?: date('Y'));
+        $setahun  = $this->input->get('periode') === 'tahun';
+        $triwulan = (int) $this->input->get('triwulan');
+        if ($triwulan < 1 || $triwulan > 4) {
+            $triwulan = (int) ceil((int) date('n') / 3);
+        }
+
+        if ($setahun) { $this->export_tahunan($tahun); return; }
+
+        $baris = [];
+        foreach (array_keys(self::DOMAIN) as $domain) {
+            foreach ($this->rd->pantau($domain, $tahun, $triwulan) as $r) {
+                [, $label] = $this->rd->keadaan_laporan($r);
+                $baris[$r['kabupaten_id']]['kabupaten'] = $r['kabupaten'];
+                $baris[$r['kabupaten_id']][$domain] = $label;
+            }
+        }
+
+        if ( ! $baris) {
+            // Praktis tidak pernah kosong (35 kabupaten selalu punya baris,
+            // lihat komentar pantau() di model) - dijaga untuk kasus seed
+            // wilayah belum jalan, sama seperti pesan di tabelnya.
+            $this->session->set_flashdata('error',
+                'Tabel kabupaten kosong - tidak ada yang bisa diunduh.');
+            redirect('Admin_Rekam_Data?tahun=' . $tahun . '&triwulan=' . $triwulan);
+            return;
+        }
+
+        $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV'];
+        $periode = ($nama_tw[$triwulan] ?? $triwulan) . ' ' . $tahun;
+
+        $header = ['Kabupaten/Kota'];
+        foreach (self::DOMAIN as $label) { $header[] = $label; }
+
+        $isi = [];
+        foreach ($baris as $b) {
+            $r = [$b['kabupaten']];
+            foreach (array_keys(self::DOMAIN) as $domain) {
+                $r[] = $b[$domain] ?? 'Belum ada laporan';
+            }
+            $isi[] = $r;
+        }
+
+        $this->catat_audit('rekap_diunduh',
+            'Pantau rekam data ' . $periode . ' diunduh (superadmin)',
+            'rd_laporan', NULL, ['tahun' => $tahun, 'triwulan' => $triwulan]);
+
+        $this->kirim_spreadsheet(
+            'Pantau Rekam Data ' . $periode, 'Pantau ' . $periode, $header, $isi);
+    }
+
+    /**
+     * Gabungan setahun: keempat triwulan sebagai kolom berdampingan per
+     * domain, satu baris per kabupaten - bukan "baris per triwulan" seperti
+     * Rekam_Perumahan::export_tahunan(). Bedanya sengaja: di sana tiap sel
+     * adalah MATRIKS sumber×program yang sudah lebar, jadi triwulan ditaruh
+     * sebagai baris. Di sini tiap sel cuma satu status per kabupaten, jadi
+     * melebarkan kolom (bukan baris) tetap terbaca dan malah lebih ringkas -
+     * satu baris per kabupaten, bisa dipindai vertikal.
+     */
+    private function export_tahunan($tahun)
+    {
+        $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV'];
+
+        $data = [];
+        $ada  = FALSE;
+        foreach ([1, 2, 3, 4] as $tw) {
+            foreach (array_keys(self::DOMAIN) as $domain) {
+                foreach ($this->rd->pantau($domain, $tahun, $tw) as $r) {
+                    [$kunci, $label] = $this->rd->keadaan_laporan($r);
+                    $data[$r['kabupaten_id']]['kabupaten'] = $r['kabupaten'];
+                    $data[$r['kabupaten_id']][$domain][$tw] = $label;
+                    if ($kunci !== 'belum') { $ada = TRUE; }
+                }
+            }
+        }
+
+        if ( ! $ada) {
+            $this->session->set_flashdata('error',
+                'Belum ada laporan terkirim sepanjang ' . $tahun . ' - tidak ada yang bisa diunduh.');
+            redirect('Admin_Rekam_Data?tahun=' . $tahun);
+            return;
+        }
+
+        $header = ['Kabupaten/Kota'];
+        foreach (self::DOMAIN as $label) {
+            foreach ($nama_tw as $tw_label) { $header[] = $label . ' - ' . $tw_label; }
+        }
+
+        $isi = [];
+        foreach ($data as $b) {
+            $r = [$b['kabupaten']];
+            foreach (array_keys(self::DOMAIN) as $domain) {
+                foreach ([1, 2, 3, 4] as $tw) {
+                    $r[] = $b[$domain][$tw] ?? 'Belum ada laporan';
+                }
+            }
+            $isi[] = $r;
+        }
+
+        $this->catat_audit('rekap_diunduh',
+            'Pantau rekam data setahun ' . $tahun . ' diunduh (superadmin)',
+            'rd_laporan', NULL, ['tahun' => $tahun, 'periode' => 'tahun']);
+
+        $this->kirim_spreadsheet(
+            'Pantau Rekam Data ' . $tahun, 'Pantau ' . $tahun, $header, $isi);
+    }
+
     public function detail($laporan_id = 0)
     {
         $isi = $this->rd->isi_laporan((int) $laporan_id);

@@ -9,6 +9,8 @@
 $e = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
 
+// Butir cetak (17 Agt 2026) - lihat penjelasan lengkap di partial-nya.
+$this->load->view('admin/layouts/cetak_rekap');
 ?>
 
 <div class="space-y-4">
@@ -49,6 +51,12 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
          class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">
         <i class="ph ph-calendar-blank mr-1" aria-hidden="true"></i> Unduh Setahun
       </a>
+      <?php /* "Cetak", bukan "Unduh PDF" - lihat komentar yang sama di
+               perumahan_capaian.php. */ ?>
+      <button type="button" onclick="window.print()"
+         class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">
+        <i class="ph ph-printer mr-1" aria-hidden="true"></i> Cetak
+      </button>
       <?php endif; ?>
     </div>
 

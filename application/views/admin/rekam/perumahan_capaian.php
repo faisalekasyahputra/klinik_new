@@ -28,6 +28,9 @@ $nama_tw   = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV'];
    menggambarkan triwulan yang sama. */
 $periode   = ($nama_tw[(int) $triwulan] ?? $triwulan) . ' ' . (int) $tahun;
 $mode_rekap = $mode_rekap ?? FALSE;
+
+// Butir cetak (17 Agt 2026) - lihat penjelasan lengkap di partial-nya.
+if ($mode_rekap) { $this->load->view('admin/layouts/cetak_rekap'); }
 $laporan    = $laporan ?? NULL;
 
 $warna_status = [
@@ -221,6 +224,16 @@ $tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_
              class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">
             <i class="ph ph-calendar-blank mr-1" aria-hidden="true"></i> Unduh Setahun
           </a>
+          <?php /* "Cetak", bukan "Unduh PDF" - tidak ada berkas PDF yang dibuat
+                   di server (belum ada pustaka PDF di proyek ini). Warga/admin
+                   memakai "Simpan sebagai PDF" bawaan peramban lewat dialog
+                   cetak - pola yang sama dengan "Cetak Hasil" di
+                   hasil_diagnosa.php. `type="button"` wajib supaya tidak
+                   men-submit form filter tahun/triwulan di sebelahnya. */ ?>
+          <button type="button" onclick="window.print()"
+             class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10 dark:text-brand-muted dark:hover:bg-white/5">
+            <i class="ph ph-printer mr-1" aria-hidden="true"></i> Cetak
+          </button>
         <?php endif; ?>
       </div>
     </div>

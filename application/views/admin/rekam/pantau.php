@@ -23,6 +23,9 @@ $gaya = [
 $tautan = static function ($t, $tw) {
     return base_url('Admin_Rekam_Data?tahun=' . (int) $t . '&triwulan=' . (int) $tw);
 };
+
+// Butir cetak (17 Agt 2026) - lihat penjelasan lengkap di partial-nya.
+$this->load->view('admin/layouts/cetak_rekap');
 ?>
 <div class="mb-6">
     <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Pantau Rekam Data</h2>
@@ -66,6 +69,29 @@ $tautan = static function ($t, $tw) {
         <?php foreach ($nama_tw as $n => $label): ?>
         <a href="<?= $tautan($tahun, $n) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= (int) $n === (int) $triwulan ? 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>"><?= html_escape($label) ?></a>
         <?php endforeach; ?>
+
+        <?php /* Tombol unduh HANYA muncul kalau memang ada baris kabupaten -
+                 pola yang sama dengan Rekam_Perumahan/Rekam_Kawasan. Permintaan
+                 user 17 Agt 2026: "bisa diexport ke excel atau pdf di
+                 breakdown ke per tw dan per tahun". Screenshot ini punya
+                 dua sasaran: layar per-kabupaten (Excel sudah ada sejak
+                 butir 23 putaran 2, lihat perumahan_capaian.php) dan layar
+                 lintas-kabupaten INI, yang sebelumnya tidak punya unduhan
+                 sama sekali. */ ?>
+        <?php if ( ! empty($baris)): ?>
+        <a href="<?= base_url('Admin_Rekam_Data/export?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>"
+           class="ml-auto rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10 dark:text-brand-muted dark:hover:bg-white/5">
+            <i class="ph ph-download-simple mr-1" aria-hidden="true"></i> Unduh Excel
+        </a>
+        <a href="<?= base_url('Admin_Rekam_Data/export?periode=tahun&tahun=' . (int) $tahun) ?>"
+           class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 dark:border-white/10 dark:text-brand-muted">
+            <i class="ph ph-calendar-blank mr-1" aria-hidden="true"></i> Unduh Setahun
+        </a>
+        <button type="button" onclick="window.print()"
+           class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10 dark:text-brand-muted dark:hover:bg-white/5">
+            <i class="ph ph-printer mr-1" aria-hidden="true"></i> Cetak
+        </button>
+        <?php endif; ?>
     </div>
 
     <div class="overflow-x-auto">
