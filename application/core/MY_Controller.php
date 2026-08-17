@@ -221,6 +221,24 @@ class MY_Controller extends CI_Controller {
             $data['dashboard_home'] = $this->dashboard_home();
         }
 
+        /* Permintaan user 15 Agt 2026: sesudah login, kembali ke halaman
+           TERAKHIR yang dilihat - bukan cuma ke halaman yang sempat
+           menggerbangnya (intended_url lama hanya terisi kalau orangnya
+           DITOLAK oleh login-gate).
+           ingat_halaman_asal() SUDAH punya seluruh penjagaan open-redirect
+           yang dibutuhkan (uri_string() dari server, GET saja,
+           auth/* dikecualikan, disaring sanitize_redirect()) - dan dia
+           SUDAH no-op untuk yang sudah login. Tinggal dipanggil di titik
+           yang LEBIH SERING: setiap halaman publik yang benar-benar
+           tampil, bukan cuma yang menggerbang. Ditulis LEBIH DULU dari
+           gerbang manapun (halaman yang menggerbang tidak pernah sampai
+           render() - dia redirect duluan), jadi "terakhir menang" berlaku
+           otomatis tanpa logika tambahan.
+           Cabang AJAX (fragment tab-loader di footer.php) IKUT dihitung -
+           dari sisi server itu tetap konten sungguhan yang sedang dilihat
+           orang, cuma dikirim lewat fetch, bukan navigasi penuh. */
+        $this->ingat_halaman_asal();
+
         if ($this->input->is_ajax_request()) {
             $this->load->view($view, $data);
         } else {
