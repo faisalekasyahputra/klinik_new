@@ -83,6 +83,65 @@
                 <i class="fa-solid fa-shield-halved"></i>
                 Disperakim Provinsi Jawa Tengah
             </div>
+
+            <?php
+            // ============================================================
+            // KREDENSIAL DEMO - dikembalikan atas permintaan user 27 Jul 2026
+            // ------------------------------------------------------------
+            // Alasannya: sistem sedang dalam tahap uji coba oleh dinas, dan
+            // tanpa kredensial di layar mereka tidak bisa menelusuri keenam
+            // peran. Ini keputusan sadar, bukan kelalaian.
+            //
+            // SYARAT yang membuatnya boleh ada (lihat AGENTS.md §17 poin 12):
+            // seluruh akun di sini WAJIB akun demo berisi data contoh. Begitu
+            // sistem memuat data warga sungguhan, atau begitu ada akun di sini
+            // yang memegang wewenang nyata, blok ini HARUS dicabut lagi.
+            //
+            // DIPINDAH ke panel kiri 16 Agt 2026 (permintaan user, lihat
+            // gambar bertanda centang) - sebelumnya menumpuk di atas
+            // formulir di panel kanan, mendorong username/password ke bawah
+            // layar. Klik kartu MASIH mengisi form di panel kanan seperti
+            // semula - skrip pengisi-otomatis (di bawah halaman ini)
+            // memanggil getElementById, bukan bergantung posisi DOM.
+            // ============================================================
+            ?>
+            <!-- Demo Accounts Info Box -->
+            <details class="auth-demo" open>
+                <summary>
+                    <i class="fa-solid fa-flask"></i> Kredensial Demo
+                    <span class="auth-demo__hint">klik akun untuk mengisi form</span>
+                </summary>
+                <div class="auth-demo-grid">
+                    <?php
+                    $akun_demo = [
+                        ['Admin Dashboard',           'admin@klinikpkp.jatengprov.go.id'],
+                        ['Warga (Pengaju)',           'warga@example.com'],
+                        ['Pengembang (SRP2)',         'pengembang@example.com'],
+                        ['Mahasiswa (KKN/Magang)',    'mahasiswa@example.com'],
+                        ['Admin Kab/Kota (Semarang)', 'adminkabkota@example.com'],
+                        /* Satu admin_bidang PER BIDANG (5 total, tabel `bidang`) -
+                           permintaan user 16 Agt 2026. Sebelumnya cuma ada contoh
+                           Perumahan; dinas tidak bisa menelusuri bidang lain
+                           (Kawasan, Pertanahan, Perencanaan Teknis, Sekretariat)
+                           tanpa akun uji sendiri-sendiri, dan cakupan per bidang
+                           (Admin_Bidang ter-scope `bidang_kode`) memang tidak bisa
+                           dipinjam dari akun Perumahan. Kredensial akun-akun ini
+                           sama seperti yang lain: password `password`. */
+                        ['Admin Bidang (Perumahan)',            'adminbidang@example.com'],
+                        ['Admin Bidang (Kawasan Permukiman)',   'adminbidang.kawasan@example.com'],
+                        ['Admin Bidang (Pertanahan)',           'adminbidang.pertanahan@example.com'],
+                        ['Admin Bidang (Perencanaan Teknis)',   'adminbidang.perencanaan@example.com'],
+                        ['Admin Bidang (Sekretariat)',          'adminbidang.sekretariat@example.com'],
+                    ];
+                    foreach ($akun_demo as [$label, $email]): ?>
+                    <button type="button" class="auth-demo-card" data-demo-email="<?= html_escape($email) ?>">
+                        <span class="auth-demo-card__role"><?= html_escape($label) ?></span>
+                        <span class="auth-demo-card__email"><?= html_escape($email) ?></span>
+                    </button>
+                    <?php endforeach; ?>
+                </div>
+                <p class="auth-demo-note">Akun uji berisi data contoh. Password semua akun: <code>password</code></p>
+            </details>
         </div>
     </div>
 
@@ -107,49 +166,14 @@
             <p class="auth-subheading">Masuk ke akun Anda untuk mengakses seluruh layanan portal.</p>
             <?php
             // CATATAN STRUKTUR: dulu ada </div> yatim di sini yang menutup
-            // .auth-form-container terlalu dini - kotak demo + form jadi hidup
-            // di luar container ber-max-width dan tampilan melebar tak rapi.
+            // .auth-form-container terlalu dini - form jadi hidup di luar
+            // container ber-max-width dan tampilan melebar tak rapi. Kotak
+            // Kredensial Demo yang tadinya di sini SUDAH DIPINDAH ke panel
+            // kiri (.auth-left__content, permintaan user 16 Agt 2026 - area
+            // kosong di atas logo/tagline dipakai, bukan lagi mendesak
+            // formulir turun). Cari "KREDENSIAL DEMO" di atas kalau perlu
+            // menyuntingnya.
             ?>
-
-            <?php
-            // ============================================================
-            // KREDENSIAL DEMO - dikembalikan atas permintaan user 27 Jul 2026
-            // ------------------------------------------------------------
-            // Alasannya: sistem sedang dalam tahap uji coba oleh dinas, dan
-            // tanpa kredensial di layar mereka tidak bisa menelusuri keenam
-            // peran. Ini keputusan sadar, bukan kelalaian.
-            //
-            // SYARAT yang membuatnya boleh ada (lihat AGENTS.md §17 poin 12):
-            // seluruh akun di sini WAJIB akun demo berisi data contoh. Begitu
-            // sistem memuat data warga sungguhan, atau begitu ada akun di sini
-            // yang memegang wewenang nyata, blok ini HARUS dicabut lagi.
-            // ============================================================
-            ?>
-            <!-- Demo Accounts Info Box -->
-            <details class="auth-demo" open>
-                <summary>
-                    <i class="fa-solid fa-flask"></i> Kredensial Demo
-                    <span class="auth-demo__hint">klik akun untuk mengisi form</span>
-                </summary>
-                <div class="auth-demo-grid">
-                    <?php
-                    $akun_demo = [
-                        ['Admin Dashboard',           'admin@klinikpkp.jatengprov.go.id'],
-                        ['Warga (Pengaju)',           'warga@example.com'],
-                        ['Pengembang (SRP2)',         'pengembang@example.com'],
-                        ['Mahasiswa (KKN/Magang)',    'mahasiswa@example.com'],
-                        ['Admin Kab/Kota (Semarang)', 'adminkabkota@example.com'],
-                        ['Admin Bidang (Perumahan)',  'adminbidang@example.com'],
-                    ];
-                    foreach ($akun_demo as [$label, $email]): ?>
-                    <button type="button" class="auth-demo-card" data-demo-email="<?= html_escape($email) ?>">
-                        <span class="auth-demo-card__role"><?= html_escape($label) ?></span>
-                        <span class="auth-demo-card__email"><?= html_escape($email) ?></span>
-                    </button>
-                    <?php endforeach; ?>
-                </div>
-                <p class="auth-demo-note">Akun uji berisi data contoh. Password semua akun: <code>password</code></p>
-            </details>
 
             <!-- Login Form -->
             <form action="<?= base_url('Auth/do_login') ?>" method="POST" id="loginForm">
