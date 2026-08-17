@@ -1010,12 +1010,39 @@ class MY_Controller extends CI_Controller {
         $x = static function ($v) {
             return htmlspecialchars((string) $v, ENT_QUOTES | ENT_XML1, 'UTF-8');
         };
-        $sel = static function ($v) use ($x) {
+        /* Butir cetak/rekap 17 Agt 2026: penjinak injeksi formula (CWE-1236,
+         * "CSV injection"), ditambal DI SINI - satu-satunya tempat yang
+         * merangkai sel string - supaya SEMUA pemanggil ikut terlindungi
+         * tanpa disentuh satu per satu.
+         *
+         * Sebagian besar sel di sini memang teks tetap (label kolom, nama
+         * kabupaten, status baku), tapi Rekam_Kawasan::export() ikut
+         * menyertakan ISIAN BEBAS admin kab/kota (nama kegiatan, lokasi,
+         * keterangan sumber) - dan berkas ini dibuka provinsi sebagai
+         * lampiran resmi. Kalau isian itu diawali `=`, `+`, `-`, atau `@`,
+         * sebagian pembaca spreadsheet menafsirkannya sebagai FORMULA, bukan
+         * teks apa adanya - walau `ss:Type="String"` seharusnya mencegahnya
+         * di pembaca yang taat aturan, tidak semua pembaca (LibreOffice,
+         * Google Sheets lewat impor, versi Excel lama) menghormatinya sama
+         * ketatnya. Satu baris yang lolos berarti kode yang dijalankan di
+         * komputer petugas provinsi saat membuka "lampiran resmi" dari
+         * kabupaten - eskalasi kepercayaan yang diam-diam, dan yang menaruh
+         * datanya bukan superadmin.
+         *
+         * Penjinaknya: apostrof di depan. Cara ini yang dipakai Excel sendiri
+         * saat pengguna mengetik `=` lalu ingin memaksanya jadi teks - aman
+         * dibaca ulang oleh siapa pun, dan tidak mengubah teks yang memang
+         * tidak diawali karakter itu.
+         */
+        $jinak = static function ($s) {
+            return (preg_match('/^[=+\-@\t\r]/', $s) === 1) ? "'" . $s : $s;
+        };
+        $sel = static function ($v) use ($x, $jinak) {
             if ($v === NULL || $v === '') { return '<Cell/>'; }
             if (is_int($v) || is_float($v)) {
                 return '<Cell><Data ss:Type="Number">' . $v . '</Data></Cell>';
             }
-            return '<Cell><Data ss:Type="String">' . $x($v) . '</Data></Cell>';
+            return '<Cell><Data ss:Type="String">' . $x($jinak((string) $v)) . '</Data></Cell>';
         };
 
         $xml  = '<?xml version="1.0" encoding="UTF-8"?>' . "\n"
@@ -1023,7 +1050,7 @@ class MY_Controller extends CI_Controller {
               . ' xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' . "\n"
               . '<Worksheet ss:Name="' . $x(substr($nama_lembar, 0, 31)) . '"><Table>' . "\n";
         $xml .= '<Row>';
-        foreach ($header as $h) { $xml .= '<Cell><Data ss:Type="String">' . $x($h) . '</Data></Cell>'; }
+        foreach ($header as $h) { $xml .= '<Cell><Data ss:Type="String">' . $x($jinak((string) $h)) . '</Data></Cell>'; }
         $xml .= "</Row>\n";
         foreach ($baris as $r) {
             $xml .= '<Row>';
