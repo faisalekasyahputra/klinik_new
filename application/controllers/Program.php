@@ -83,55 +83,39 @@ class Program extends Public_Controller {
         $this->simpan_pengajuan_warga('solusi_pembiayaan/hasil');
     }
 
+    /**
+     * BUTIR 20 PUTARAN 2 (susulan) - permintaan user 16 Agt 2026: "Cek status
+     * pengajuan dari frontend dihapus aja. Dipindah ke dashboardnya masing2".
+     *
+     * Endpoint INI - bukan cek_status_pengajuan() di bawah - yang sebenarnya
+     * membocorkan data: halaman itu sudah lama jadi redirect stub, tapi
+     * formulir "Cek status tanpa login" di pages/program/success_antrean.php
+     * masih hidup dan memanggil endpoint ini langsung, lewat rute yang tidak
+     * pernah ikut dicabut. Persis dua alasan yang sudah tercatat di komentar
+     * cek_status_pengajuan(): dua tempat untuk satu hal (dashboard sudah
+     * punya "Status Pengajuan"), DAN permukaan penelusuran (kode tiket
+     * berpola tetap + 4 digit NIK cuma 10.000 kemungkinan - rate limit
+     * menahan tebakan cepat, bukan menutup celahnya).
+     *
+     * TIDAK di-404-kan, alasan SAMA dengan di bawah - alamatnya sudah
+     * tertanam di halaman yang mungkin masih ter-cache di peramban orang.
+     * Yang beda: TIDAK ADA data pengajuan mana pun yang dicek di sini lagi -
+     * get_housing_queue_by_ticket() (yang jadi sumber celahnya) sudah
+     * dihapus dari model, bukan sekadar tidak dipanggil. Endpoint ini
+     * sekarang cuma menjawab "sudah pindah", apa pun yang dikirim.
+     */
     public function cek_tiket() {
         if ($this->input->method() !== 'post') {
             show_404();
         }
 
-        $rate = $this->rate_limit_inspect('ticket_lookup');
-        if (empty($rate['success']) || empty($rate['allowed'])) {
-            $this->rate_limit_reject(
-                $rate,
-                'Terlalu banyak percobaan. Silakan coba lagi sebentar.',
-                TRUE
-            );
-            return;
-        }
-
-        $ticket_code = strtoupper(trim((string) $this->input->post('ticket_code', TRUE)));
-        $nik_suffix = trim((string) $this->input->post('nik_suffix', TRUE));
-
-        if (!preg_match('/^PKP-[A-Z0-9]{6}$/', $ticket_code) || !preg_match('/^\d{4}$/', $nik_suffix)) {
-            $this->rate_limit_hit('ticket_lookup');
-            $this->output
-                ->set_status_header(422)
-                ->set_content_type('application/json')
-                ->set_output(json_encode(['status' => 'error', 'message' => 'Nomor tiket atau verifikasi tidak valid.']));
-            return;
-        }
-
-        $pengajuan = $this->Program_model->get_housing_queue_by_ticket($ticket_code, $nik_suffix);
-        if (!$pengajuan) {
-            $this->rate_limit_hit('ticket_lookup');
-            $this->output
-                ->set_status_header(404)
-                ->set_content_type('application/json')
-                ->set_output(json_encode(['status' => 'error', 'message' => 'Data pengajuan tidak ditemukan.']));
-            return;
-        }
-
-        $status_labels = housing_queue_statuses();
-
         $this->output
+            ->set_status_header(410)
             ->set_content_type('application/json')
             ->set_output(json_encode([
-                'status' => 'success',
-                'ticket_code' => $ticket_code,
-                'status_pengajuan' => isset($status_labels[$pengajuan['status_antrean']])
-                    ? $status_labels[$pengajuan['status_antrean']]['label']
-                    : 'Sedang diverifikasi',
-                'created_at' => $pengajuan['created_at'],
-                'updated_at' => $pengajuan['updated_at']
+                'status' => 'error',
+                'message' => 'Cek status lewat tiket sudah tidak tersedia di sini. Masuk ke akun Anda untuk melihat status pengajuan.',
+                'redirect_url' => base_url('Auth/login'),
             ]));
     }
 

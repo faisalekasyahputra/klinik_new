@@ -22,11 +22,10 @@ $config['rate_limit_policies'] = [
         'window' => 3600,
         'dimensions' => ['ip'],
     ],
-    'ticket_lookup' => [
-        'limit' => 5,
-        'window' => 60,
-        'dimensions' => ['ip'],
-    ],
+    /* 'ticket_lookup' DIHAPUS 16 Agt 2026 - satu-satunya pemakainya
+       (Program::cek_tiket()) sudah tidak melakukan pencarian tiket+NIK
+       apa pun lagi, lihat komentar panjang di sana. Kebijakan rate limit
+       untuk fitur yang sudah tidak ada cuma jadi entri mati. */
     'warga_lookup' => [
         'limit' => 10,
         'window' => 60,

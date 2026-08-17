@@ -233,13 +233,13 @@ class Program_model extends CI_Model {
         return $code;
     }
 
-    public function get_housing_queue_by_ticket($ticket_code, $nik_suffix) {
-        return $this->db
-            ->select('status_antrean, created_at, updated_at')
-            ->where('ticket_code', $ticket_code)
-            ->where('RIGHT(nik_pengaju, 4) =', $nik_suffix, FALSE)
-            ->get('sf_housing_queue')
-            ->row_array();
-    }
+    /* get_housing_queue_by_ticket() DIHAPUS 16 Agt 2026 - permintaan user
+       "Cek status pengajuan dari frontend dihapus aja". Method ini
+       satu-satunya pemanggilnya dulu (Program::cek_tiket()) adalah
+       pencarian tiket+4-digit-NIK tanpa login yang jadi permukaan
+       penelusuran (10.000 kemungkinan NIK, rate limit doang penahannya) -
+       lihat komentar panjang di Program::cek_tiket(). Dihapus dari model,
+       bukan cuma tidak dipanggil, supaya tidak tergoda dipakai lagi
+       lewat jalur lain nanti. */
 
 }

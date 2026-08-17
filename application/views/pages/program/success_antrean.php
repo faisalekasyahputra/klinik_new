@@ -39,44 +39,31 @@ $escape = static function ($value) {
             <?php endif; ?>
         </div>
 
+        <?php
+        /* Kotak "Cek status tanpa login" (tiket + 4 digit NIK) DICABUT
+           16 Agt 2026 - permintaan user, membereskan celah yang sama yang
+           sudah lama didokumentasikan di Program::cek_status_pengajuan()
+           tapi belum tuntas: halaman itu sudah jadi redirect stub, tapi
+           formulir di SINI masih memanggil Program::cek_tiket() langsung
+           dan tidak pernah ikut dicabut. Sekarang status pengajuan HANYA
+           lewat dashboard (halaman akun) - satu tempat, wajib login. */
+        ?>
         <div class="mx-auto mt-6 max-w-xl rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] p-5">
             <div class="flex items-start gap-3">
                 <i class="fa-solid fa-bell mt-0.5 text-[color:var(--portal-icon)]" aria-hidden="true"></i>
                 <div>
                     <h2 class="text-sm font-black text-[color:var(--portal-text)]">Langkah berikutnya</h2>
                     <p class="mt-1 text-sm leading-relaxed text-[color:var(--portal-text-muted)]">
-                        Petugas akan memeriksa data Anda dalam 3×24 jam kerja. Pantau melalui tiket tanpa login, atau masuk ke akun untuk melihat riwayatnya.
+                        Petugas akan memeriksa data Anda dalam 3×24 jam kerja. Masuk ke akun untuk memantau status dan riwayatnya.
                     </p>
                 </div>
             </div>
         </div>
 
-        <div class="mx-auto mt-8 flex max-w-xl flex-col gap-3 sm:flex-row">
-            <a href="#cek-status" class="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-[color:var(--portal-btn-bg)] px-5 py-3 text-sm font-black text-[color:var(--portal-icon)] transition hover:-translate-y-0.5 hover:brightness-95">
-                <i class="fa-solid fa-ticket" aria-hidden="true"></i> Cek Status dengan Tiket
-            </a>
-            <a href="<?= base_url('login') ?>" class="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-5 py-3 text-sm font-black text-[color:var(--portal-text)] transition hover:-translate-y-0.5 hover:border-[color:var(--portal-brand)]">
+        <div class="mx-auto mt-8 flex max-w-xl">
+            <a href="<?= base_url('login') ?>" class="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-[color:var(--portal-btn-bg)] px-5 py-3 text-sm font-black text-[color:var(--portal-icon)] transition hover:-translate-y-0.5 hover:brightness-95">
                 <i class="fa-solid fa-right-to-bracket" aria-hidden="true"></i> Masuk ke Akun
             </a>
-        </div>
-
-        <div id="cek-status" class="mx-auto mt-6 max-w-xl scroll-mt-24 rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg)] p-5" aria-labelledby="cek-status-title">
-            <div class="flex items-start gap-3">
-                <i class="fa-solid fa-shield-halved mt-0.5 text-[color:var(--portal-icon)]" aria-hidden="true"></i>
-                <div>
-                    <h2 id="cek-status-title" class="text-sm font-black text-[color:var(--portal-text)]">Cek status tanpa login</h2>
-                    <p class="mt-1 text-sm leading-relaxed text-[color:var(--portal-text-muted)]">Masukkan nomor tiket dan empat digit terakhir NIK untuk melihat status terbaru.</p>
-                </div>
-            </div>
-            <form id="ticket-check-form" class="mt-4 space-y-3">
-                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-                <label class="block text-xs font-bold text-[color:var(--portal-text)]" for="ticket-code">Nomor tiket</label>
-                <input id="ticket-code" name="ticket_code" value="<?= $ticket_code ? $escape($ticket_code) : '' ?>" required pattern="PKP-[A-Z0-9]{6}" maxlength="10" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 font-mono text-sm uppercase text-[color:var(--portal-text)] outline-none focus:border-[color:var(--portal-brand)]" placeholder="PKP-XXXXXX">
-                <label class="block text-xs font-bold text-[color:var(--portal-text)]" for="nik-suffix">Empat digit terakhir NIK</label>
-                <input id="nik-suffix" name="nik_suffix" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] outline-none focus:border-[color:var(--portal-brand)]" placeholder="Contoh: 0001">
-                <button type="submit" class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-[color:var(--portal-btn-bg)] px-5 py-3 text-sm font-black text-[color:var(--portal-icon)] transition hover:brightness-95">Lihat Status <i class="fa-solid fa-arrow-right"></i></button>
-                <p id="ticket-check-result" class="hidden rounded-xl border border-[color:var(--portal-border)] px-4 py-3 text-sm font-semibold" role="status"></p>
-            </form>
         </div>
 
         <div class="mt-8 text-center">
@@ -84,23 +71,3 @@ $escape = static function ($value) {
         </div>
     </section>
 </main>
-
-<script>
-document.getElementById('ticket-check-form')?.addEventListener('submit', async function (event) {
-    event.preventDefault();
-    const result = document.getElementById('ticket-check-result');
-    result.classList.remove('hidden');
-    result.textContent = 'Memeriksa status...';
-    try {
-        const response = await fetch('<?= base_url('solusi_pembiayaan/cek-tiket') ?>', {
-            method: 'POST',
-            body: new FormData(this),
-            headers: {'X-Requested-With': 'XMLHttpRequest'}
-        });
-        const data = await response.json();
-        result.textContent = data.status === 'success' ? data.status_pengajuan + ' · Diperbarui ' + data.updated_at : data.message;
-    } catch (error) {
-        result.textContent = 'Status belum dapat diperiksa. Silakan coba lagi.';
-    }
-});
-</script>
