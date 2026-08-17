@@ -57,7 +57,7 @@ $this->load->helper('srp2');
                                 <td data-table-column="nama" class="px-2 py-2.5 font-semibold" style="color:var(--portal-text)"><?= htmlspecialchars($row->nama_perusahaan, ENT_QUOTES, 'UTF-8') ?></td>
                                 <?php $asosiasi_kosong = trim((string) ($row->asosiasi ?? '')) === ''; ?>
                                 <td data-table-column="asosiasi" class="px-3 py-2.5 font-semibold" style="color:<?= $asosiasi_kosong ? 'var(--portal-text-muted)' : 'var(--portal-text)' ?>"><?= htmlspecialchars(srp2_label_asosiasi($row->asosiasi ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td data-table-column="status" class="px-3 py-2.5"><span class="inline-flex items-center gap-1.5 text-[10px] font-bold" style="color:#059669"><span class="h-1.5 w-1.5 rounded-full" style="background:#10b981"></span>Aktif</span></td>
+                                <td data-table-column="status" class="px-3 py-2.5"><span class="inline-flex items-center gap-1.5 text-[10px] font-bold" style="color:#059669"><span class="h-1.5 w-1.5 rounded-full" style="background:#10b981"></span>Bersertifikat</span></td>
                                 <td class="px-4 py-2.5 text-right"><a href="<?= base_url('Pengembang/profil/' . $row->id) ?>" data-tab-link data-tab-key="pengembang_list" class="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[10px] font-bold" style="color:var(--teal);background:rgba(0,163,181,.08);border:1px solid rgba(0,163,181,.18)"><i class="fa-solid fa-arrow-up-right-from-square"></i> Buka</a></td>
                             </tr>
                         <?php endforeach; ?>
