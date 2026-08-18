@@ -363,7 +363,19 @@ function cari_wil() {
     muatHalaman(1, false);
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    cari_wil();
-});
+/* Halaman ini kadang masuk lewat navigasi dinamis. Pada keadaan itu
+   DOMContentLoaded sudah berlalu sebelum skrip kartu dieksekusi, sehingga
+   cari_wil() tidak pernah dipanggil dan filter terlihat tanpa satu kartu pun.
+   Jalankan sekarang bila dokumen sudah siap; jika belum, tunggu sekali saja. */
+function mulaiCariRumah() {
+    if (document.getElementById('temp_rumah')) {
+        cari_wil();
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mulaiCariRumah, { once: true });
+} else {
+    mulaiCariRumah();
+}
 </script>
