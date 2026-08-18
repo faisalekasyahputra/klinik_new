@@ -47,16 +47,12 @@
     <!-- Link to Main Website (OG Preview Style) -->
     <div class="mt-auto px-4 mb-4" x-show="sidebarOpen" x-transition.opacity.duration.300ms>
         <a href="<?= base_url() ?>" target="_blank" class="group block overflow-hidden rounded-xl bg-white dark:bg-[#0a1a1f] border border-gray-200 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-none transition-all duration-300 relative">
-            <!-- Image Area -->
-            <div class="h-20 w-full overflow-hidden relative border-b border-gray-100 dark:border-white/5">
-                <img src="<?= base_url('assets/img/hero/hero-perumahan-subsidi.webp') ?>" alt="Beranda Klinik PKP" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                <div class="absolute top-2 right-2 bg-black/30 backdrop-blur-md rounded-md p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-white/20">
-                    <i class="ph ph-arrow-square-out text-white text-xs"></i>
-                </div>
-                <!-- Mini Logo Overlay -->
-                <div class="absolute bottom-2 left-3">
-                    <img src="<?= base_url('assets/img/logo-jateng.png') ?>" class="h-5 w-auto drop-shadow-lg" alt="Logo">
+            <!-- Penanda Beranda, bukan gambar promosi. -->
+            <div class="relative flex h-20 w-full items-center justify-center gap-2 border-b border-gray-100 bg-[color:var(--portal-bg-card)] text-[color:var(--portal-text)] dark:border-white/5 dark:bg-[#102c35]">
+                <i class="ph ph-house-line text-2xl text-[color:var(--portal-brand)]" aria-hidden="true"></i>
+                <span class="text-sm font-black">Beranda</span>
+                <div class="absolute right-2 top-2 rounded-md border border-white/20 bg-black/20 p-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                    <i class="ph ph-arrow-square-out text-xs"></i>
                 </div>
             </div>
             <!-- Text Area -->
