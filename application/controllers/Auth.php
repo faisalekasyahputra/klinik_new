@@ -464,6 +464,14 @@ class Auth extends MY_Controller {
         $user_id = $this->get_user_id();
         $role    = html_escape($this->input->post('role'));
 
+        /* Pendaftaran yang dimulai dari cek NIK tidak boleh berakhir pada
+           peran lain. Modalnya memang bertuliskan "Buat Akun Warga" dan
+           intended_url mengarah ke pendataan; memaksa peran di server
+           mencegah pilihan UI atau POST yang dimanipulasi memutus alur itu. */
+        if ( ! empty($this->session->userdata('warga_pending_nik'))) {
+            $role = 'warga';
+        }
+
         // Validate role
         // 'vendor' DICABUT. Ia bukan sekadar tidak terpakai - kolom yang diisi
         // cabangnya (nama_usaha, alamat_usaha, jenis_usaha) tidak ada di
@@ -954,12 +962,28 @@ class Auth extends MY_Controller {
            menghentikan login - sama seperti kegagalan bind di atas. */
         $pending_nik = $this->session->userdata('warga_pending_nik');
         if ( ! empty($pending_nik) && $this->has_role('warga')) {
-            $this->session->unset_userdata('warga_pending_nik');
             $this->load->library('Simperum_gateway');
             $hasil = $this->simperum_gateway->lookup($pending_nik, '', $user_id, TRUE);
             if (($hasil['status'] ?? '') === 'found') {
                 $this->load->model('Housing_assessment_model');
                 $this->Housing_assessment_model->bootstrap_draft_from_lookup($user_id, $hasil);
+                $this->session->unset_userdata('warga_pending_nik');
+            } elseif (($hasil['status'] ?? '') === 'not_found'
+                && $this->auth_model->is_profile_complete($user_id)) {
+                /* NIK tidak ditemukan sudah membawa calon warga melalui
+                   pendaftaran. Setelah onboarding selesai, buat draft manual
+                   langsung dari NIK dan nama akun agar ia tidak kembali ke
+                   langkah awal dan dipaksa mencari NIK yang sama sekali lagi. */
+                $this->load->model('Housing_assessment_model');
+                $user = $this->auth_model->find_by_id($user_id);
+                $manual = $this->Housing_assessment_model->bootstrap_manual_draft(
+                    $user_id,
+                    $pending_nik,
+                    trim((string) ($user->name ?? ''))
+                );
+                if ( ! empty($manual['success'])) {
+                    $this->session->unset_userdata('warga_pending_nik');
+                }
             }
         }
 

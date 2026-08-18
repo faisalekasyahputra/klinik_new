@@ -28,7 +28,10 @@ class Warga extends MY_Controller {
     {
         if ( ! $this->is_logged_in() || ! $this->has_role('warga')) {
             $this->session->set_flashdata('error', 'Akses pendataan hanya untuk akun warga.');
-            redirect('login');
+            // Gunakan satu gerbang agar pengunjung yang sesinya habis tetap
+            // kembali ke pendataan setelah login; redirect telanjang di sini
+            // membuang halaman asal dan memutus alur draft.
+            $this->gerbang_login();
             return FALSE;
         }
         return TRUE;

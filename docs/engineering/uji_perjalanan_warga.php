@@ -254,22 +254,22 @@ cek((int) $approved['reviewed_by'] === (int) $adminSemarang, 'Reviewer tercatat 
    dan tidak di-404-kan supaya tautan lama tidak jadi jalan buntu. */
 $lookup = new Session();
 $halamanTamu = $lookup->get('cek_status_pengajuan');
-cek(strpos((string) $halamanTamu, 'Nomor tiket') === FALSE,
+cek(strpos((string) ($halamanTamu['body'] ?? ''), 'Nomor tiket') === FALSE,
     'Formulir cek status tidak lagi disajikan ke tamu');
 
-/* Endpoint tiketnya SENGAJA tetap hidup: halaman sesudah pengajuan terkirim
-   memakainya untuk menampilkan status milik si pengaju sendiri. Yang dicabut
-   permukaan publiknya, bukan mesinnya. */
-/* Token CSRF diambil dari formulir aduan publik, bukan dari halaman cek status
-   dicabut. Tanpa ini POST-nya ditolak CSRF dan ujinya merah karena harness-nya,
-   bukan karena endpointnya rusak. */
-$lookup->get('umum/aduan');
-$lookupResult = json_body($lookup->post('Program/cek_tiket', [
+/* Endpoint tiket lama sengaja tidak lagi membaca data apa pun. Tautan lama
+   tetap mendapat jawaban yang jelas (410), tetapi tidak boleh mengetahui
+   status, nama, atau keberadaan pengajuan meski kode tiketnya benar. */
+$lookup->get('warga/pendataan');
+$lookupResponse = $lookup->post('Program/cek_tiket', [
     'ticket_code' => $queue['ticket_code'],
     'nik_suffix' => '0001',
-]));
-cek(($lookupResult['status_pengajuan'] ?? '') === 'Disetujui',
-    'Endpoint tiket masih melayani halaman sesudah pengajuan, tanpa PII');
+]);
+$lookupResult = json_body($lookupResponse);
+cek((int) ($lookupResponse['status'] ?? 0) === 410
+    && ($lookupResult['status'] ?? '') === 'error'
+    && empty($lookupResult['status_pengajuan']),
+    'Endpoint tiket lama menolak akses publik tanpa membocorkan pengajuan');
 
 echo "\n-- NEGATIF: program manipulasi tidak melahirkan baris\n";
 $before = (int) $db->scalar('SELECT COUNT(*) FROM sf_housing_queue');
