@@ -49,7 +49,7 @@
         <a href="<?= base_url() ?>" target="_blank" class="group block overflow-hidden rounded-xl bg-white dark:bg-[#0a1a1f] border border-gray-200 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-none transition-all duration-300 relative">
             <!-- Image Area -->
             <div class="h-20 w-full overflow-hidden relative border-b border-gray-100 dark:border-white/5">
-                <img src="<?= base_url('assets/img/og-cover.jpg') ?>" alt="Klinik PKP Preview" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                <img src="<?= base_url('assets/img/hero/hero-perumahan-subsidi.webp') ?>" alt="Beranda Klinik PKP" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                 <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                 <div class="absolute top-2 right-2 bg-black/30 backdrop-blur-md rounded-md p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-white/20">
                     <i class="ph ph-arrow-square-out text-white text-xs"></i>
@@ -61,8 +61,8 @@
             </div>
             <!-- Text Area -->
             <div class="p-3">
-                <h4 class="text-xs font-bold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-brand-primary transition-colors">Portal Klinik PKP</h4>
-                <p class="text-[10px] text-gray-500 dark:text-brand-muted line-clamp-2 mt-1 leading-snug">Layanan informasi perumahan & kawasan permukiman terpadu Jawa Tengah.</p>
+                <h4 class="text-xs font-bold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-brand-primary transition-colors">Beranda</h4>
+                <p class="text-[10px] text-gray-500 dark:text-brand-muted line-clamp-2 mt-1 leading-snug">Kembali ke halaman utama Portal Klinik PKP.</p>
                 <div class="flex items-center gap-1 mt-2.5 text-[9px] font-semibold text-gray-400 dark:text-brand-muted/70">
                     <i class="ph ph-link text-[10px]"></i>
                     <span class="truncate"><?= str_replace(['http://', 'https://'], '', base_url()) ?></span>

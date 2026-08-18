@@ -74,9 +74,9 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
 
 <div class="space-y-5">
     <header>
-        <h1 class="text-xl font-black">Posisi Magang</h1>
+        <h1 class="text-xl font-black">Jurusan/Bidang/Keahlian Magang</h1>
         <p class="mt-1 text-sm" style="color:var(--portal-text-muted,#6b7280)">
-            Daftar keahlian yang sedang dibutuhkan tiap bidang. Yang <strong>aktif</strong> tampil di papan
+            Daftar jurusan, bidang studi, atau keahlian yang sedang dibutuhkan tiap bidang. Yang <strong>aktif</strong> tampil di papan
             magang publik; kuota di sini keterangan, bukan pengunci pendaftaran.
         </p>
         <p class="mt-1 text-xs" style="color:var(--portal-text-muted,#6b7280)">
@@ -96,7 +96,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
           class="rounded-2xl border p-4" style="border-color:var(--portal-border,#e5e7eb)">
         <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
         <input type="hidden" name="id" value="0">
-        <p class="mb-3 text-sm font-bold">Tambah posisi</p>
+        <p class="mb-3 text-sm font-bold">Tambah kebutuhan</p>
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <label class="text-xs">Bidang
                 <select name="bidang_kode" required class="mt-1 w-full rounded-lg border p-2 text-sm">
@@ -105,7 +105,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
                     <?php endforeach; ?>
                 </select>
             </label>
-            <label class="text-xs">Nama posisi
+            <label class="text-xs">Jurusan/Bidang/Keahlian
                 <input type="text" name="nama_posisi" maxlength="100" required
                        placeholder="mis. Drafter" class="mt-1 w-full rounded-lg border p-2 text-sm">
             </label>

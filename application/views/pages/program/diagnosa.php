@@ -186,7 +186,7 @@
                                 <i class="fa-solid fa-circle-xmark text-red-400 mt-0.5"></i>
                                 <div>
                                     <h3 class="font-medium text-red-400 text-sm">Mohon Maaf, Anda Tidak Memenuhi Syarat</h3>
-                                    <p class="text-xs text-zinc-300 mt-1">Berdasarkan hasil analisa (Desil <span x-text="desil"></span>), Anda tidak memenuhi kriteria untuk program <strong class="text-white"><?= htmlspecialchars($program['nama_program']) ?></strong>. Namun, sistem kami merekomendasikan program alternatif berikut:</p>
+                                    <p class="text-xs text-zinc-300 mt-1">Berdasarkan hasil analisa (<span x-text="desilLabel || ('Desil ' + desil)"></span>), Anda tidak memenuhi kriteria untuk program <strong class="text-white"><?= htmlspecialchars($program['nama_program']) ?></strong>. Namun, sistem kami merekomendasikan program alternatif berikut:</p>
                                 </div>
                             </div>
                         </div>
@@ -202,7 +202,7 @@
                             </div>
                         </div>
 
-                        <p class="text-xs text-zinc-400 mb-6" x-show="'<?= $program['kode_program'] ?>' === 'umum'">Berdasarkan hasil analisa (Desil <span x-text="desil"></span>), Anda berhak mengikuti salah satu program prioritas berikut. Silakan pilih satu yang paling sesuai dengan kondisi Anda.</p>
+                        <p class="text-xs text-zinc-400 mb-6" x-show="'<?= $program['kode_program'] ?>' === 'umum'">Berdasarkan hasil analisa (<span x-text="desilLabel || ('Desil ' + desil)"></span>), Anda berhak mengikuti salah satu program prioritas berikut. Silakan pilih satu yang paling sesuai dengan kondisi Anda.</p>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                             <template x-for="prog in eligiblePrograms" :key="prog.id">
@@ -404,7 +404,7 @@
                         <div class="space-y-2 text-xs">
                             <div class="flex justify-between"><span class="text-zinc-500">Nama Lengkap</span><span class="font-medium text-white" x-text="simperumData?.nama_lengkap"></span></div>
                             <div class="flex justify-between"><span class="text-zinc-500">NIK</span><span class="font-medium text-white" x-text="nik"></span></div>
-                            <div class="flex justify-between"><span class="text-zinc-500">Kategori Penghasilan</span><span class="font-medium text-white" x-text="'Desil ' + desil"></span></div>
+                            <div class="flex justify-between"><span class="text-zinc-500">Kategori Penghasilan</span><span class="font-medium text-white" x-text="desilLabel || ('Desil ' + desil)"></span></div>
                         </div>
                     </div>
 
@@ -442,6 +442,7 @@ function wizardData() {
         // simperumData bisa saja masih null saat desil sudah perlu
         // ditampilkan di Etalase (bagian bawah Langkah 1 yang sama).
         desil: null,
+        desilLabel: '',
 
         eligiblePrograms: [],
         chosenProgram: null,
@@ -552,6 +553,7 @@ function wizardData() {
                         // di titik ini (step Identitas sekarang SESUDAH step
                         // ini), jadi simperumData bisa saja masih null.
                         this.desil = result.desil;
+                        this.desilLabel = result.desil_label || ('Desil ' + result.desil);
                         this.eligiblePrograms = result.eligible_programs || [];
                         this.isEligibleForTarget = result.is_eligible_for_target;
 

@@ -67,7 +67,7 @@ $kartu = 'rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(-
                 <div class="min-w-0 flex-1">
                     <h3 class="text-sm font-black text-[color:var(--portal-text)] sm:text-base"><?= html_escape($b['bidang']) ?></h3>
                     <p class="mt-1 text-xs text-[color:var(--portal-text-muted)]">
-                        Kebutuhan <strong class="text-[color:var(--portal-text)]"><?= (int) $b['kuota'] ?> mahasiswa</strong> hadir bersamaan
+                        <span class="font-semibold">Kuota:</span> <strong class="text-[color:var(--portal-text)]"><?= (int) $b['kuota'] ?> mahasiswa</strong> hadir bersamaan
                         <?php if ($b['keadaan'] === 'menerima'): ?>
                             &middot; masih bisa menerima <strong class="text-[color:var(--portal-text)]"><?= (int) $b['sisa'] ?></strong> lagi
                         <?php endif; ?>
@@ -82,11 +82,12 @@ $kartu = 'rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(-
                        daftar karangan sebagai pengisi sementara. */
                     ?>
                     <?php if ( ! empty($b['posisi'])): ?>
-                        <div class="mt-2 flex flex-wrap gap-1.5">
+                        <p class="mt-2 text-xs font-semibold text-[color:var(--portal-text-muted)]">Jurusan/Bidang/Keahlian yang dibutuhkan:</p>
+                        <div class="mt-1.5 flex flex-wrap gap-1.5">
                             <?php foreach ($b['posisi'] as $p): ?>
                                 <span class="inline-flex items-center gap-1 rounded-full border border-[color:var(--portal-border)] px-2.5 py-1 text-[11px] text-[color:var(--portal-text)]"
                                       <?= $p->keterangan ? 'title="' . html_escape($p->keterangan) . '"' : '' ?>>
-                                    <?= html_escape($p->nama_posisi) ?>
+                                    <?= html_escape($p->nama_posisi) ?><?php if ($p->keterangan): ?> &middot; <?= html_escape($p->keterangan) ?><?php endif; ?>
                                     <?php if ((int) $p->kuota > 0): ?>
                                         <strong class="text-[color:var(--portal-text-muted)]"><?= (int) $p->kuota ?></strong>
                                     <?php endif; ?>

@@ -215,6 +215,26 @@ class Program extends Public_Controller {
     }
 
     /**
+     * Mengubah pendapatan bulanan menjadi kelompok desil simulasi berdasarkan
+     * Matriks Variabel Penentuan Program Perumahan, Sheet 3.
+     */
+    private function desil_dari_penghasilan($penghasilan)
+    {
+        if ($penghasilan <= 1500000) {
+            return [1, 'Desil 1 (Sangat Miskin)'];
+        }
+        if ($penghasilan <= 2200000) {
+            return [2, 'Desil 2–3 (Miskin)'];
+        }
+        if ($penghasilan <= 2800000) {
+            return [4, 'Desil 4 (Rentan Miskin)'];
+        }
+        if ($penghasilan <= 8500000) {
+            return [5, 'Desil 5–8 (MBR)'];
+        }
+        return [9, 'Desil 9–10 (Non-MBR)'];
+    }
+    /**
      * Endpoint untuk memproses ulang data survei dan menghitung Desil + Program
      */
     public function api_kalkulasi_program() {
@@ -247,20 +267,15 @@ class Program extends Public_Controller {
         
         $this->load->library('smart_filter');
 
-        // Kalkulasi dinamis desil berdasarkan penghasilan (Rule of thumb sederhana)
-        $desil = 10; // Default
-        if ($penghasilan <= 1500000) {
-            $desil = 2; // Miskin Terbawah
-        } elseif ($penghasilan <= 2500000) {
-            $desil = 4; // Rentan Miskin
-        } elseif ($penghasilan <= 5000000) {
-            $desil = 6; // MBR Fixed Income
-        } elseif ($penghasilan <= 8000000) {
-            $desil = 8; // MBR Upper
-        }
+        /* Matriks Variabel Penentuan Program Perumahan, Sheet 3 (18 Agu 2026):
+         * rentang pendapatan menentukan kelompok desil simulasi awal. Rentang
+         * D2–3 dan D5–8 sengaja disimpan sebagai label, bukan dipalsukan sebagai
+         * satu desil resmi; angka perwakilan hanya dipakai agar filter program
+         * yang sudah ada dapat bekerja. Keputusan bantuan tetap diverifikasi.
+         */
+        [$desil, $desil_label] = $this->desil_dari_penghasilan($penghasilan);
 
         $eligible_programs = $this->smart_filter->get_eligible_programs($desil, $status_kepemilikan);
-
         // Jika user datang dari halaman spesifik (bukan 'umum'), kita cek apakah dia lolos syarat program tersebut
         $is_eligible_for_target = false;
         if ($kode_program_target && $kode_program_target !== 'umum') {
@@ -278,6 +293,7 @@ class Program extends Public_Controller {
         $response = [
             'status' => 'success',
             'desil' => $desil,
+            'desil_label' => $desil_label,
             'kode_program_target' => $kode_program_target,
             'is_eligible_for_target' => $is_eligible_for_target,
             'eligible_programs' => $eligible_programs
@@ -285,6 +301,7 @@ class Program extends Public_Controller {
 
         $this->session->set_userdata('solusi_pembiayaan_hasil', [
             'desil' => $desil,
+            'desil_label' => $desil_label,
             'eligible_programs' => $eligible_programs,
             'kabupaten_id' => $kabupaten_id,
             'data_survey' => [

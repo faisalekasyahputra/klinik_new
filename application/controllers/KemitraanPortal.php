@@ -535,7 +535,9 @@ class KemitraanPortal extends Public_Controller
             return FALSE;
         }
         if ($this->session->userdata('role') !== 'mahasiswa') {
-            $this->session->set_flashdata('error', 'Pendaftaran KKN/Magang hanya tersedia untuk akun dengan peran mahasiswa.');
+            // Ini bukan kegagalan sistem: akun ini memang memiliki jalur kerja
+            // lain. Tampilkan peringatan agar pengguna tahu tindakan yang tepat.
+            $this->session->set_flashdata('warning', 'Pendaftaran tidak tersedia. Pendaftaran KKN/Magang hanya dapat dilakukan menggunakan akun mahasiswa.');
             redirect('akun');
             return FALSE;
         }
