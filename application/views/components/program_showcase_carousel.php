@@ -30,16 +30,28 @@ $palet = [
 ];
 $bawaan = ['muda' => '#e8f2fc', 'tengah' => '#c5ddf4', 'pekat' => '#92bfe7'];
 
+/* Foto hero pilihan user (Foto Program.rar, 18 Agt 2026). Ini dipetakan
+   di kode agar kelima slide langsung konsisten di setiap lingkungan; data
+   gambar lama di sf_programs tetap menjadi cadangan untuk program lain. */
+$foto_hero_2026 = [
+    'flpp'          => 'assets/img/program/hero-2026/flpp.png',
+    'oemah_lestari' => 'assets/img/program/hero-2026/oemah-lestari.webp',
+    'rtlh'          => 'assets/img/program/hero-2026/rtlh.png',
+    'pb'            => 'assets/img/program/hero-2026/pb.jpeg',
+    'rumah_apung'   => 'assets/img/program/hero-2026/rumah-apung.png',
+];
 $slides_data = [];
 foreach ($CI->Program_model->etalase() as $p) {
     $w = $palet[$p['kode_program']] ?? $bawaan;
+    $gambar = $foto_hero_2026[$p['kode_program']]
+        ?? ($p['gambar'] ?: 'assets/img/program/01_subsidif_lpp.avif');
     $slides_data[] = [
         'id'          => $p['kode_program'],
         'title'       => $p['nama_program'],
         'badge'       => (string) ($p['badge'] ?? ''),
         'description' => (string) $p['deskripsi_singkat'],
         'terms'       => (string) ($p['syarat_utama'] ?? ''),
-        'image'       => base_url($p['gambar'] ?: 'assets/img/program/01_subsidif_lpp.avif'),
+        'image'       => base_url($gambar),
         'muda'        => $w['muda'], 'tengah' => $w['tengah'], 'pekat' => $w['pekat'],
     ];
 }

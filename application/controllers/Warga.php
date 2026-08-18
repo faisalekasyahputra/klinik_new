@@ -90,6 +90,7 @@ class Warga extends MY_Controller {
         }
         $this->render('pages/warga/pendataan', [
             'title' => 'Pendataan Warga',
+            'is_logged_in' => $logged_in_warga,
             'assessment' => $assessment,
             'profile' => $profile,
             'values' => array_merge($assessment ?: [], $profile ?: [], $old_input),
@@ -141,7 +142,11 @@ class Warga extends MY_Controller {
 
     private function handle_post()
     {
-        $action = (string) $this->input->post('action', TRUE);
+        /* Tombol isi manual berada pada form pendataan utama. Form bersarang
+           tidak valid di HTML dan membuat browser mengirim ulang lookup NIK
+           (panggilan gateway yang lambat), bukan menyimpan draft manual. */
+        $action = $this->input->post('manual_entry', TRUE) === '1'
+            ? 'isi_manual' : (string) $this->input->post('action', TRUE);
         if ($action === '') {
             $action = $this->input->post('step', TRUE) === 'find_data' ? 'lookup' : 'save';
         }
@@ -260,10 +265,13 @@ class Warga extends MY_Controller {
         $this->session->set_userdata('intended_url', 'warga/pendataan');
         $this->session->set_flashdata('warga_lookup', [
             'status' => 'found_anonymous',
-            'message' => 'Data ditemukan. Masuk atau daftar akun untuk melanjutkan pendataan - NIK ini akan otomatis terhubung ke akun Anda.',
+            'message' => 'Data ditemukan. Masuk untuk melanjutkan pendataan - NIK ini akan otomatis terhubung ke akun Anda.',
             'simulation' => ! empty($result['simulation']),
         ]);
-        redirect('warga/pendataan');
+        /* Form NIK anonim ditangkap JavaScript di pendataan.php. Redirect
+           ini tidak dirender sebagai halaman penuh: tujuan Auth/login
+           membuka modal masuk, sementara intended_url tetap sudah tercatat. */
+        redirect('Auth/login');
     }
 
     private function lookup()
@@ -712,13 +720,13 @@ class Warga extends MY_Controller {
     {
         $errors = [];
         if ($step === 'citizen_data') {
-            foreach (['family_card_number' => 'Nomor KK', 'full_name' => 'Nama lengkap', 'birth_date' => 'Tanggal lahir', 'address' => 'Alamat'] as $field => $label) {
-                if (trim((string) $this->input->post($field, TRUE)) === '') { $errors[$field] = $label . ' wajib diisi.'; }
-            }
+            /* Rekomendasi awal tidak memakai identitas administratif maupun
+               demografi. Field tersebut boleh dilengkapi nanti; validasinya
+               tetap dijalankan bila warga memang mengisi nilainya. */
             $kk = preg_replace('/\D+/', '', (string) $this->input->post('family_card_number', TRUE));
             if ($kk !== '' && ! preg_match('/^\d{16}$/', $kk)) { $errors['family_card_number'] = 'Nomor KK harus 16 digit.'; }
-            if ($this->input->post('birth_date', TRUE) !== NULL && ! $this->valid_date($this->input->post('birth_date', TRUE))) { $errors['birth_date'] = 'Tanggal lahir tidak valid.'; }
-            foreach (['gender_code', 'marital_status_code', 'education_code', 'occupation_code', 'income_band_code', 'self_help_capability_code'] as $field) {
+            if (trim((string) $this->input->post('birth_date', TRUE)) !== '' && ! $this->valid_date($this->input->post('birth_date', TRUE))) { $errors['birth_date'] = 'Tanggal lahir tidak valid.'; }
+            foreach (['income_band_code', 'self_help_capability_code'] as $field) {
                 if (trim((string) $this->input->post($field, TRUE)) === '') { $errors[$field] = 'Pilihan ini wajib diisi.'; }
             }
             $allowed = [
@@ -735,11 +743,12 @@ class Warga extends MY_Controller {
             }
         }
         if ($step === 'housing_family') {
-            foreach (['housing_status_code' => 'Status rumah', 'area_condition_code' => 'Kawasan'] as $field => $label) {
-                if (trim((string) $this->input->post($field, TRUE)) === '') { $errors[$field] = $label . ' wajib dipilih.'; }
+            if (trim((string) $this->input->post('housing_status_code', TRUE)) === '') {
+                $errors['housing_status_code'] = 'Status rumah wajib dipilih.';
             }
             foreach (['occupant_count' => 'Jumlah penghuni', 'family_count' => 'Jumlah keluarga'] as $field => $label) {
-                if (filter_var($this->input->post($field, TRUE), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === FALSE) { $errors[$field] = $label . ' minimal 1.'; }
+                $number = trim((string) $this->input->post($field, TRUE));
+                if ($number !== '' && filter_var($number, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === FALSE) { $errors[$field] = $label . ' minimal 1.'; }
             }
             $area = $this->input->post('house_area_m2', TRUE);
             if ($area !== NULL && $area !== '' && (! is_numeric($area) || (float) $area <= 0)) { $errors['house_area_m2'] = 'Luas rumah harus lebih dari nol.'; }
@@ -756,9 +765,13 @@ class Warga extends MY_Controller {
                 $value = (string) $this->input->post($field, TRUE);
                 if ($value !== '' && ! in_array($value, $options, TRUE)) { $errors[$field] = 'Pilihan tidak valid.'; }
             }
-            if ((string) $this->input->post('housing_status_code', TRUE) !== 'owned'
-                && ! in_array((string) $this->input->post('owns_candidate_land', TRUE), ['0', '1'], TRUE)) {
-                $errors['owns_candidate_land'] = 'Kepemilikan calon lahan wajib dipilih.';
+            if ((string) $this->input->post('housing_status_code', TRUE) !== 'owned') {
+                if ( ! in_array((string) $this->input->post('owns_candidate_land', TRUE), ['0', '1'], TRUE)) {
+                    $errors['owns_candidate_land'] = 'Kepemilikan calon lahan wajib dipilih.';
+                }
+                if ( ! in_array((string) $this->input->post('has_other_house', TRUE), ['0', '1'], TRUE)) {
+                    $errors['has_other_house'] = 'Kepemilikan rumah lain wajib dipilih.';
+                }
             }
             $year = (string) $this->input->post('assistance_year', TRUE);
             if ($year !== '' && ( ! ctype_digit($year) || (int) $year < 1900 || (int) $year > (int) date('Y'))) {
@@ -766,7 +779,7 @@ class Warga extends MY_Controller {
             }
         }
         if ($step === 'building_condition') {
-            foreach (['foundation_condition_code','column_condition_code','beam_condition_code','roof_frame_condition_code','floor_material_code','floor_condition_code','wall_material_code','wall_condition_code','roof_material_code','roof_condition_code'] as $field) {
+            foreach (['foundation_condition_code','column_condition_code','beam_condition_code','roof_frame_condition_code','floor_condition_code','wall_condition_code','roof_condition_code'] as $field) {
                 if (trim((string) $this->input->post($field, TRUE)) === '') $errors[$field] = 'Field ini wajib diisi.';
             }
             $condition = ['good','minor_damage','moderate_damage','severe_damage_or_absent'];

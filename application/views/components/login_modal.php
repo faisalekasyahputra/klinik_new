@@ -147,6 +147,31 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
     </div>
 </dialog>
 
+<dialog id="kpkp-register-dialog" class="kpkp-login-modal">
+    <div class="kpkp-login-modal__card">
+        <button type="button" id="kpkp-register-close" class="kpkp-login-modal__close" aria-label="Tutup"><i class="fa-solid fa-xmark"></i></button>
+        <div class="kpkp-login-modal__logo"><img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah"><span>Klinik<span class="kpkp-login-modal__logo-accent">PKP</span></span></div>
+        <h2 class="kpkp-login-modal__heading">Buat Akun Warga</h2>
+        <p class="kpkp-login-modal__subheading">Daftar untuk melanjutkan pendataan secara mandiri.</p>
+        <p id="kpkp-register-nik-info" class="kpkp-register-nik-info" hidden></p>
+        <form action="<?= base_url('Auth/do_register') ?>" method="POST" id="kpkp-register-modal-form">
+            <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+            <label class="kpkp-login-modal__label" for="kpkp_register_modal_email">Alamat Email</label>
+            <div class="kpkp-login-modal__input-group"><input type="email" id="kpkp_register_modal_email" name="email" class="kpkp-login-modal__input" placeholder="nama@email.com" required autocomplete="email"><i class="fa-solid fa-envelope kpkp-login-modal__input-icon"></i></div>
+            <label class="kpkp-login-modal__label" for="kpkp_register_modal_password">Password</label>
+            <div class="kpkp-login-modal__input-group"><input type="password" id="kpkp_register_modal_password" name="password" class="kpkp-login-modal__input" placeholder="Minimal 8 karakter, huruf besar, angka, simbol" required autocomplete="new-password"><i class="fa-solid fa-lock kpkp-login-modal__input-icon"></i></div>
+            <label class="kpkp-login-modal__label" for="kpkp_register_modal_confirm">Konfirmasi Password</label>
+            <div class="kpkp-login-modal__input-group"><input type="password" id="kpkp_register_modal_confirm" name="password_confirm" class="kpkp-login-modal__input" placeholder="Ulangi password" required autocomplete="new-password"><i class="fa-solid fa-lock kpkp-login-modal__input-icon"></i></div>
+            <?php if ($modal_recaptcha_site_key !== ''): ?>
+            <div class="kpkp-login-modal__recaptcha"><div class="g-recaptcha" data-sitekey="<?= html_escape($modal_recaptcha_site_key) ?>"></div></div>
+            <?php endif; ?>
+            <label class="kpkp-register-agreement"><input type="checkbox" name="tos_agree" required> Saya menyetujui Ketentuan Layanan dan Kebijakan Privasi.</label>
+            <button type="submit" class="kpkp-login-modal__submit" id="kpkp-register-modal-submit"><span>Daftar dan Lanjutkan</span><i class="fa-solid fa-arrow-right"></i><span class="kpkp-login-modal__spinner"></span></button>
+        </form>
+        <div class="kpkp-login-modal__footer-links" style="justify-content:center"><span>Sudah punya akun? <a href="#" id="kpkp-register-to-login" class="kpkp-login-modal__link">Masuk →</a></span></div>
+    </div>
+</dialog>
+
 <style>
 .kpkp-login-modal {
     padding: 0; border: 0; border-radius: 20px; max-width: min(92vw, 440px);
@@ -266,6 +291,9 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
     font-size: .625rem; color: #8aacb0; text-align: center;
 }
 .kpkp-login-modal__govt-badge i { font-size: 1.1rem; color: rgba(214,251,0,.4); }
+.kpkp-register-nik-info { margin: 0 0 1.2rem; padding: .75rem .85rem; border-radius: 10px; background: rgba(214,251,0,.08); border: 1px solid rgba(214,251,0,.2); color: #dcefa4; font-size: .75rem; line-height: 1.45; }
+.kpkp-register-agreement { display: flex; gap: .55rem; align-items: flex-start; margin: 0 0 1.15rem; color: #a1a1aa; font-size: .72rem; line-height: 1.45; }
+.kpkp-register-agreement input { margin-top: .15rem; accent-color: #d6fb00; }
 @media (max-width: 420px) {
     .kpkp-login-modal__demo-grid { grid-template-columns: 1fr; }
 }
@@ -288,8 +316,29 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
         if (email) email.focus();
     };
 
+    var registerDlg = document.getElementById('kpkp-register-dialog');
+    window.kpkpShowRegisterModal = function (nik) {
+        if (!registerDlg || !registerDlg.showModal) { window.location.href = '<?= base_url('Auth/register') ?>'; return; }
+        if (dlg.open) dlg.close();
+        var info = document.getElementById('kpkp-register-nik-info');
+        if (info) {
+            info.hidden = !nik;
+            info.textContent = nik ? 'NIK ' + nik + ' belum terdaftar di SIMPERUM. Buat akun untuk melanjutkan pendataan secara mandiri.' : '';
+        }
+        if (!registerDlg.open) registerDlg.showModal();
+        var email = document.getElementById('kpkp_register_modal_email');
+        if (email) email.focus();
+    };
+
     function tutup() { if (dlg.open) dlg.close(); }
+    function tutupDaftar() { if (registerDlg && registerDlg.open) registerDlg.close(); }
     document.getElementById('kpkp-login-close').addEventListener('click', tutup);
+    document.getElementById('kpkp-register-close').addEventListener('click', tutupDaftar);
+    registerDlg.addEventListener('click', function (e) { if (e.target === registerDlg) tutupDaftar(); });
+    document.getElementById('kpkp-register-modal-form').addEventListener('submit', function () {
+        var btn = document.getElementById('kpkp-register-modal-submit'); btn.classList.add('loading'); btn.disabled = true;
+    });
+    document.getElementById('kpkp-register-to-login').addEventListener('click', function (e) { e.preventDefault(); tutupDaftar(); window.kpkpShowLoginModal(); });
     dlg.addEventListener('click', function (e) { if (e.target === dlg) tutup(); }); // klik backdrop
 
     document.getElementById('kpkp-login-modal-toggle-pw').addEventListener('click', function () {
