@@ -395,6 +395,27 @@ function globalSystem() {
         var panel = wrapper.closest('.portal-panel');
         var myToken = ++loadToken;
 
+        /* Permintaan user 17 Agt 2026: tautan yang DIGERBANG login (bukan
+           tombol "Masuk" navbar) menampilkan modal, bukan navigasi penuh -
+           lihat components/login_modal.php untuk alasan lengkapnya.
+           Dua hal DIREKAM DULU di sini, sebelum langkah 1-2 di bawah
+           mengubahnya secara optimis, supaya bisa DIKEMBALIKAN kalau
+           ternyata hasil fetch-nya adalah gerbang login: tab yang tadi
+           aktif, dan isi wrapper sebelum ditimpa skeleton. Tanpa
+           mengembalikan keduanya, menutup modal tanpa login akan
+           meninggalkan halaman ini macet di skeleton selamanya. */
+        var tabSebelumnya = document.querySelector('.portal-tab-btn.active');
+        var wrapperSebelumnya = wrapper.innerHTML;
+        function batalkanDemiModalLogin() {
+            if (myToken !== loadToken) return; // dikalahkan navigasi lain, jangan ganggu
+            wrapper.style.transition = '';
+            wrapper.style.opacity = '1';
+            wrapper.innerHTML = wrapperSebelumnya;
+            document.querySelectorAll('.portal-tab-btn').forEach(function (el) { el.classList.remove('active'); });
+            if (tabSebelumnya) tabSebelumnya.classList.add('active');
+            window.kpkpShowLoginModal();
+        }
+
         // 1) Langsung aktifkan tab (progresif - tidak menunggu fetch)
         setActiveTabKey(key);
 
@@ -429,8 +450,23 @@ function globalSystem() {
                 if (myToken !== loadToken) return null;
                 // res.redirected: halaman ber-guard (mis. warga/pendataan tanpa
                 // login) me-redirect ke /login - tanpa cek ini halaman login
-                // UTUH tersuntik ke dalam panel. Jatuhkan ke navigasi penuh.
-                if (!res.ok || res.redirected) { window.location.href = url; return null; }
+                // UTUH tersuntik ke dalam panel. Jatuhkan ke navigasi penuh -
+                // KECUALI tujuan redirect-nya persis Auth/login DAN modalnya
+                // tersedia, yang berarti gerbang_login() sudah mencatat
+                // intended_url = url yang barusan digerbangi (dilakukan
+                // server pada permintaan fetch ini juga, terlepas dari
+                // hasilnya ditampilkan sebagai modal atau tidak) - modal
+                // cukup ditampilkan, bukan navigasi. Redirect ke tujuan LAIN
+                // (mis. Auth/akses_ditolak - sudah login tapi salah peran)
+                // TETAP jatuh ke navigasi penuh seperti sediakala.
+                if (!res.ok) { window.location.href = url; return null; }
+                if (res.redirected) {
+                    if (window.kpkpShowLoginModal && /\/Auth\/login(\?|$)/i.test(res.url)) {
+                        batalkanDemiModalLogin();
+                        return null;
+                    }
+                    window.location.href = url; return null;
+                }
                 // Bukan HTML (PDF/gambar/unduhan) → biarkan browser menanganinya.
                 if (((res.headers.get('content-type')) || '').indexOf('text/html') === -1) {
                     window.location.href = url; return null;
@@ -499,7 +535,16 @@ function globalSystem() {
         // sudah cepat dan tidak pernah kena laporan yang sama. Navigasi penuh
         // di sini menghapus fetch shell itu - tinggal satu round-trip
         // (cari_wil), sama seperti akses langsung.
-        if (/(login|register|daftar|Auth\/|akun|admin|Admin|Pengaturan|User_Profile|cari_rumah)/.test(link.pathname)) return;
+        // `daftar` DICABUT dari daftar ini 17 Agt 2026 - satu-satunya alasan
+        // ia ada di sini adalah menangkap pendaftaran akun (Auth/register,
+        // sudah tertangkap `register` & `Auth\/` di atas), tapi kata itu
+        // juga cocok dengan KemitraanPortal/daftar/{kkn,magang} - method
+        // yang TIDAK berdiri sendiri sama sekali dan justru salah satu
+        // sasaran modal login (lihat components/login_modal.php). Akibatnya
+        // tombol "Daftar Sekarang" di halaman KKN/Magang selalu jatuh ke
+        // navigasi penuh, walau anonim mengklik dari halaman yang sudah
+        // dimuat progresif - modalnya tidak pernah sempat dicoba.
+        if (/(login|register|Auth\/|akun|admin|Admin|Pengaturan|User_Profile|cari_rumah)/.test(link.pathname)) return;
         // S2 - opt-out dihormati SEBELUM fetch, bukan sesudah. Tanpa ini,
         // tautan yang sengaja ditandai tetap difetch dulu lalu baru jatuh ke
         // navigasi penuh: dua GET untuk satu klik, dan `Umum::detail()`
