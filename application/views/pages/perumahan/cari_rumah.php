@@ -305,33 +305,26 @@ function muatHalaman(halaman, gulirKeAtas) {
     var sort = document.getElementById('sort').value;
     var searchBy = document.getElementById('searchBy').value;
     var statusRumah = window.statusRumahAktif || 'subsidi';
-    var btnPrev = document.getElementById('btn-prev-page');
-    var btnNext = document.getElementById('btn-next-page');
-    var wadah = document.getElementById('temp_rumah');
 
-    btnPrev.disabled = true;
-    btnNext.disabled = true;
-    wadah.innerHTML = SKELETON_HALAMAN;
+    jQuery('#btn-prev-page, #btn-next-page').prop('disabled', true);
+    jQuery('#temp_rumah').html(SKELETON_HALAMAN);
 
-    /* Gunakan fetch bawaan browser, bukan jQuery. Pemuatan kartu harus tetap
-       bekerja meski CDN jQuery terlambat atau diblokir oleh browser pengguna. */
-    var url = '<?= base_url('cari_wil') ?>?kodeWilayah=' + encodeURIComponent(kodeWilayah)
-        + '&keyword=' + encodeURIComponent(keyword)
-        + '&searchBy=' + encodeURIComponent(searchBy)
-        + '&sort=' + encodeURIComponent(sort)
-        + '&status_rumah=' + encodeURIComponent(statusRumah)
-        + '&page=' + halaman + '&limit=' + HALAMAN_UKURAN;
-
-    fetch(url, { cache: 'no-store', credentials: 'same-origin' })
-        .then(function (res) {
-            if (!res.ok) { throw new Error('Respons pencarian tidak valid'); }
-            return res.text();
-        })
-        .then(function (response) {
+    $.ajax({
+        url: '<?= base_url('cari_wil') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah+'&page='+halaman+'&limit='+HALAMAN_UKURAN,
+        // jQuery tidak menambah cache-buster ke GET kecuali diminta -
+        // tanpa ini Edge teramati butuh dua refresh (menyajikan hasil
+        // pencarian LAMA dari cache heuristik). Header no-store di server
+        // (Index::cari_wil()) sudah menutup ini juga, cache:false di sini
+        // lapis kedua yang bekerja walau ada proxy/cache di antara yang
+        // tidak menghormati header tersebut.
+        cache: false,
+        success: function(response) {
+            // Gagal jaringan dibedakan dari halaman yang memang kosong -
+            // lihat komentar penanda ini di Index::cari_wil().
             if (response.indexOf('<!-- gagal-jaringan -->') !== -1) {
-                wadah.innerHTML = response;
-                btnPrev.disabled = halaman <= 1;
-                btnNext.disabled = false;
+                jQuery('#temp_rumah').html(response);
+                jQuery('#btn-prev-page').prop('disabled', halaman <= 1);
+                jQuery('#btn-next-page').prop('disabled', false);
                 return;
             }
 
@@ -339,22 +332,27 @@ function muatHalaman(halaman, gulirKeAtas) {
             var jumlah = cocok ? parseInt(cocok[1], 10) : 0;
 
             window.halamanSekarang = halaman;
-            wadah.innerHTML = response;
-            document.getElementById('kontrol-halaman').classList.toggle('kontrol-tampil', halaman > 1 || jumlah >= HALAMAN_UKURAN);
-            document.getElementById('label-halaman').textContent = 'Halaman ' + halaman;
-            btnPrev.disabled = halaman <= 1;
-            btnNext.disabled = jumlah < HALAMAN_UKURAN;
+            jQuery('#temp_rumah').html(response);
+            jQuery('#kontrol-halaman').toggleClass('kontrol-tampil', halaman > 1 || jumlah >= HALAMAN_UKURAN);
+            jQuery('#label-halaman').text('Halaman ' + halaman);
+            jQuery('#btn-prev-page').prop('disabled', halaman <= 1);
+            // Kurang dari HALAMAN_UKURAN berarti sumbernya sudah habis di
+            // halaman ini - konsisten dengan cara Index::lokasi_tersaring()
+            // menandai "habis" di server.
+            jQuery('#btn-next-page').prop('disabled', jumlah < HALAMAN_UKURAN);
 
             if (gulirKeAtas) {
-                wadah.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.getElementById('temp_rumah').scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
-        })
-        .catch(function () {
-            wadah.innerHTML = '<p class="col-span-full py-10 text-center text-sm text-[color:var(--portal-text-muted)]">Data rumah gagal dimuat. Silakan coba lagi.</p>';
-            btnPrev.disabled = halaman <= 1;
-            btnNext.disabled = false;
-        });
+        },
+        error: function() {
+            jQuery('#temp_rumah').html('<p class="col-span-full py-10 text-center text-sm text-[color:var(--portal-text-muted)]">Data rumah gagal dimuat. Silakan coba lagi.</p>');
+            jQuery('#btn-prev-page').prop('disabled', halaman <= 1);
+            jQuery('#btn-next-page').prop('disabled', false);
+        }
+    });
 }
+
 function gantiHalaman(delta) {
     var target = window.halamanSekarang + delta;
     if (target < 1) { return; }
