@@ -3,8 +3,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Warga extends MY_Controller {
 
-    private const STEPS = ['find_data', 'citizen_data', 'housing_family', 'building_condition', 'candidate_land', 'sanitation', 'location_evidence', 'review'];
-    private const STEP_LABELS = ['Temukan Data', 'Data Warga', 'Rumah & Keluarga', 'Kondisi Bangunan/Calon Lahan', 'Sanitasi & Utilitas', 'Lokasi & Bukti', 'Review & Rekomendasi'];
+    private const STEPS = ['find_data', 'citizen_data', 'housing_family', 'preliminary_recommendation', 'building_condition', 'candidate_land', 'sanitation', 'location_evidence', 'review'];
+    private const STEP_LABELS = ['Masukkan NIK', 'Isi data sesuai matriks', 'Hasil rekomendasi', 'Lengkapi data SIMPERUM'];
 
     public function __construct()
     {
@@ -450,8 +450,15 @@ class Warga extends MY_Controller {
         }
         $recommendations = NULL;
         $recommendation_hash = NULL;
-        if ($direction === 'next' && $step === 'location_evidence') {
+        /* Rekomendasi awal tampil setelah matriks inti (Data Warga dan
+           Rumah & Keluarga), kemudian hasil akhir diperbarui lagi sesudah
+           data rinci serta bukti dilengkapi. Ini mewujudkan alur:
+           NIK -> matriks -> hasil rekomendasi -> pelengkapan SIMPERUM. */
+        if ($direction === 'next' && in_array($step, ['housing_family', 'location_evidence'], TRUE)) {
             $profile = $this->Housing_assessment_model->get_owned_profile($user_id) ?: [];
+            if ($profile_change !== NULL) {
+                $profile = array_merge($profile, $profile_change['data'] ?? []);
+            }
             $effective = array_merge($draft, $data);
             $recommendations = [];
             foreach ($this->warga_ruleset->route_candidates($profile['welfare_decile'] ?? NULL) as $code) {
