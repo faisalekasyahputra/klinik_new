@@ -152,7 +152,11 @@ class Session {
         if (preg_match('/name="csrf_kpkp_token"\s+value="([a-f0-9]+)"/', $body, $match)) {
             $this->csrf = $match[1];
         }
-        return ['status' => $info['http_code'], 'body' => $body];
+        /* Header ikut dikembalikan supaya pemanggil bisa membedakan redirect
+           SUKSES dari redirect PENOLAKAN. Keduanya 302, dan tanpa Location
+           asersi "redirect sukses" hijau untuk pengajuan yang DITOLAK. */
+        return ['status' => $info['http_code'], 'body' => $body,
+                'header' => substr($raw, 0, $info['header_size'])];
     }
 }
 
@@ -167,7 +171,16 @@ function prepare_submission($session, $kabupaten_id) {
         'tgl_lahir' => '1980-01-01',
     ]);
     $survey = $session->post('Program/api_kalkulasi_program', [
-        'penghasilan' => '2000000',
+        /* 2.500.000 BUKAN angka sembarangan: ia harus jatuh di rentang desil 4,
+           karena `omah_sekeng` yang dikirim uji ini HANYA layak di desil 4
+           (Smart_filter::get_eligible_programs - desil 1 sampai 3 cuma dapat
+           `pb`/`rtlh`). Nilai lamanya 2.000.000 dulu jatuh di desil 4 waktu
+           ambangnya `<= 2.500.000`; sesudah ambang diperketat jadi
+           `<= 2.200.000` (Program::desil_dari_penghasilan), angka itu pindah
+           ke desil 2 dan pengajuannya ditolak `program_not_eligible`.
+           Kalau ambangnya berubah lagi, sesuaikan angka ini - dan penjaga
+           di bawah akan menyebutkan persis apa yang perlu diperbaiki. */
+        'penghasilan' => '2500000',
         'pekerjaan' => 'Karyawan Swasta',
         'status_kepemilikan' => 'Sewa/Kontrak',
         'alasan_pengajuan' => 'Membutuhkan rumah layak',
@@ -219,9 +232,31 @@ $guest = new Session();
 [$identity, $survey] = prepare_submission($guest, 3374);
 wajib(($identity['status'] === 200) && ((json_body($identity)['status'] ?? '') === 'success'), 'Identitas diverifikasi server');
 wajib(($survey['status'] === 200) && ((json_body($survey)['status'] ?? '') === 'success'), 'Survei dan wilayah diterima server');
+/* PRASYARAT, dan ia lahir dari kegagalan yang mahal. Ketika ambang desil
+   digeser, uji ini merah pada asersi "Baris lahir sebagai pending" - kalimat
+   yang tidak menyebut desil, program, maupun penolakan, sehingga butuh enam
+   penyelidikan untuk sampai ke sebabnya. Penjaga ini memindahkan kegagalannya
+   ke SATU LANGKAH LEBIH AWAL, di tempat sebabnya masih terbaca. */
+$diagnosa = json_body($survey);
+$layak = array_column((array) ($diagnosa['eligible_programs'] ?? []), 'kode');
+wajib(in_array('omah_sekeng', $layak, TRUE),
+    'PRASYARAT: diagnosa memang menawarkan omah_sekeng (desil '
+    . var_export($diagnosa['desil'] ?? NULL, TRUE) . ', ditawarkan: '
+    . ($layak ? implode(', ', $layak) : 'nihil')
+    . '). Kalau merah di sini, ambang Program::desil_dari_penghasilan bergeser '
+    . 'dan penghasilan uji di prepare_submission() perlu disesuaikan.');
+
 $beforeId = (int) $db->scalar('SELECT COALESCE(MAX(id), 0) FROM sf_housing_queue');
 $submit = $guest->post('Program/submit_antrean', ['program_kode' => 'omah_sekeng'], FALSE);
-cek(in_array($submit['status'], [302, 303], TRUE), 'Pengajuan menghasilkan redirect sukses');
+preg_match('/^Location:\s*(.+)$/mi', (string) ($submit['header'] ?? ''), $m_tujuan);
+$tujuan = trim($m_tujuan[1] ?? '');
+/* Bukan cuma "kodenya 302". Penolakan Program::simpan_pengajuan_warga() JUGA
+   membalas 302, cuma tujuannya `solusi_pembiayaan` alih-alih `Program/success`.
+   Versi lama asersi ini hijau untuk pengajuan yang ditolak mentah-mentah. */
+cek(in_array($submit['status'], [302, 303], TRUE)
+    && strpos($tujuan, 'Program/success') !== FALSE,
+    'Pengajuan diterima dan dialihkan ke halaman sukses (tujuan: '
+    . ($tujuan !== '' ? $tujuan : 'tidak ada Location') . ')');
 
 $queue = $db->row(
     "SELECT q.*, p.kode_program FROM sf_housing_queue q
