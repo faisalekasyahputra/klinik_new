@@ -249,6 +249,56 @@ cek(preg_match('/keteranganStatus\s*=\s*\{[^}]*subsidi[^}]*komersil/s', $view) =
 cek(strpos($view, 'aria-live') !== FALSE,
     'Perubahan keterangan terbaca pembaca layar');
 
+/* ============================================================================
+   7. KOTAK KEYWORD HARUS LEWAT PEREDAM, TIDAK MEMANGGIL cari_wil() LANGSUNG
+
+   Menjaga PEMADAMAN PRODUCTION yang sudah pernah terjadi, bukan soal kerapian.
+   `onkeyup="cari_wil()"` menembakkan satu request penuh per KETUKAN TOMBOL.
+   Dihitung di browser sungguhan dengan membungkus jQuery.ajax, bukan dibaca
+   dari kode: mengetik "semarang" mengirim DELAPAN request ('s', 'se', 'sem',
+   ... 'semarang'); sesudah peredam SATU, dengan kata utuh.
+
+   Tiap request memakan satu koneksi MySQL (diukur: satu permintaan PHP = tepat
+   satu koneksi, nol untuk aset statis DAN nol untuk 404) plus sampai lima
+   panggilan API SIKUMBANG. Basis data production dibatasi hosting pada
+   max_connections_per_hour = 500, dan begitu jatah habis SETIAP halaman
+   membalas "Unable to connect to the database" sampai jam berikutnya berganti.
+   Log server: nol galat koneksi 10 dan 11 Agt, lalu 7.623 galat 12 Agt dan
+   4.277 galat 13 Agt, berpola delapan percobaan koneksi dalam DETIK YANG SAMA.
+
+   Pindah ke pagination page-based (commit a25e745) TIDAK menghapus ini. Yang
+   berubah cuma berapa kartu dikirim balik; jumlah request tetap satu per
+   ketukan dan pengambilan SIKUMBANG tetap sampai lima bongkahan.
+
+   Blok ini SENGAJA hanya membaca berkas view: nol jaringan, nol ketergantungan
+   pada kontrak cari_wil(). Skenario 1 sampai 4 di atas sudah usang terhadap
+   a25e745 dan merah; penjaga di sini tetap sahih apa pun yang terjadi pada
+   kontrak itu, jadi jangan ikut ditulis ulang bersamanya.
+   ============================================================================ */
+echo "\n== 7. Peredam ketikan pada kotak pencarian ==\n";
+
+cek(preg_match('/id="keyword"[^>]*onkeyup="cari_wil_ketik\(\)"/', $view) === 1,
+    'Kotak keyword memanggil peredam cari_wil_ketik(), bukan cari_wil() langsung');
+
+cek(preg_match('/id="keyword"[^>]*onkeyup="cari_wil\(\)"/', $view) !== 1,
+    'Kotak keyword TIDAK menembak satu request per ketukan tombol');
+
+/* Peredamnya harus benar-benar meredam, bukan sekadar ada namanya. Versi
+   pertama penjaga ini cuma mencari nama fungsinya, dan itu masih akan hijau
+   seandainya isinya memanggil cari_wil() seketika tanpa clearTimeout. */
+if (preg_match('/function\s+cari_wil_ketik\s*\([^)]*\)\s*\{(.*?)\n\}/s', $view, $m_peredam)) {
+    cek(strpos($m_peredam[1], 'clearTimeout') !== FALSE
+        && strpos($m_peredam[1], 'setTimeout') !== FALSE,
+        'Peredam membatalkan timer sebelumnya lalu menjadwal ulang');
+} else {
+    cek(FALSE, 'PRASYARAT: fungsi cari_wil_ketik() ditemukan di view');
+}
+
+/* Dropdown memang HARUS langsung: satu perubahan pilihan adalah satu niat
+   mencari, bukan rentetan ketukan. Meredamnya cuma terasa lambat tanpa guna. */
+cek(substr_count($view, 'onchange="cari_wil()"') === 3,
+    'Tiga dropdown (wilayah, searchBy, urutan) tetap mencari seketika');
+
 echo "\n=== Ringkasan ===\n";
 printf("  %d pemeriksaan, %d merah\n", $GLOBALS['uji_total'], $GLOBALS['uji_gagal']);
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);
