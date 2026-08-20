@@ -318,7 +318,23 @@ class Index extends MY_Controller {
 			curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
 			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-			curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+			/* Dinaikkan dari 30 ke 60 detik (20 Agt 2026) - ditemukan saat
+			   menyelidiki laporan user "card rumah tidak muncul": SIKUMBANG
+			   diverifikasi LANGSUNG lewat curl baris perintah masih menjawab
+			   dengan data yang benar untuk kueri ini (limit=SIK_BONGKAH=100),
+			   tapi butuh ~40 detik - melewati batas waktu 30 detik yang
+			   dipasang di sini. Akibatnya curl_exec() dianggap gagal
+			   (CURLE_OPERATION_TIMEDOUT) padahal sumbernya sebenarnya masih
+			   hidup dan akan menjawab kalau ditunggu, dan endpoint ini
+			   membalas "gagal-jaringan" ke pengguna - kartu rumah kosong
+			   tanpa satu baris pun ditampilkan.
+			   Bukan SIK_BONGKAH yang diperkecil sebagai gantinya: nilai 100
+			   dipilih sengaja (lihat komentar lokasi_tersaring()) untuk
+			   menutup bug halaman kosong padahal data masih ada - mengecilkannya
+			   lagi menghidupkan kembali bug yang sudah diperbaiki. 60 detik
+			   memberi jarak dari 40 detik yang teramati, dan max_execution_time
+			   PHP (120 detik) masih jauh di atasnya. */
+			curl_setopt($ch, CURLOPT_TIMEOUT, 60);
 			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
 			$response = curl_exec($ch);
 			$err      = curl_error($ch);
