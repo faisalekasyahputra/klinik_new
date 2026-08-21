@@ -96,6 +96,24 @@ $config['dashboard_modules'] = [
         'roles' => ['warga', 'pengembang', 'mahasiswa'],
         'scope' => null,
     ],
+    /* Dashboard KKN - dashboard universitas (permintaan user 21 Agt 2026).
+       'order' => 5, LEBIH KECIL dari status_pengajuan (10) dengan sengaja:
+       dashboard_home() memilih kandidat urutan TERKECIL, jadi tautan
+       "Dashboard" di navbar atas (main.php) ikut berpindah ke sini untuk
+       role mahasiswa - keputusan eksplisit user, bukan efek samping.
+
+       TIDAK ada 'badge' di sini dengan sengaja - count_pending_modul() cuma
+       men-scope lewat 'scope_column' (kabupaten_id/bidang_kode gaya admin),
+       BUKAN lewat owner/user_id. Modul PRIBADI seperti ini (sama seperti
+       status_pengajuan/profil di atas, yang juga tidak punya badge) akan
+       menghitung KKN "Diajukan" milik SELURUH universitas kalau badge
+       dipaksakan - angka yang salah, bukan angka milik akun yang login. */
+    'kkn_dashboard' => [
+        'label' => 'Dashboard KKN', 'icon' => 'ph-graduation-cap',
+        'url'   => 'KemitraanPortal/kkn_dashboard', 'group' => 'Akun', 'order' => 5,
+        'roles' => ['mahasiswa'],
+        'scope' => null,
+    ],
     // admin ikut di sini (beda dari status_pengajuan) sejak User_Profile
     // dilebur ke akun/profil - superadmin tetap butuh halaman profil sendiri.
     'profil' => [

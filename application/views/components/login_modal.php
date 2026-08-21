@@ -122,7 +122,12 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
                     ['Admin Dashboard',           'admin@klinikpkp.jatengprov.go.id'],
                     ['Warga (Pengaju)',           'warga@example.com'],
                     ['Pengembang (SRP2)',         'pengembang@example.com'],
-                    ['Mahasiswa (KKN/Magang)',    'mahasiswa@example.com'],
+                    /* Dua akun terpisah dengan role SAMA ('mahasiswa') - KKN
+                       sekarang mendaftarkan kampus (permintaan user 21 Agt
+                       2026), bukan satu mahasiswa. Sinkron manual dengan
+                       pages/auth/login.php, lihat komentar di sana. */
+                    ['Universitas (KKN)',         'universitas@example.com'],
+                    ['Mahasiswa (Magang)',        'mahasiswa@example.com'],
                     ['Admin Kab/Kota (Semarang)', 'adminkabkota@example.com'],
                     ['Admin Bidang (Perumahan)',            'adminbidang@example.com'],
                     ['Admin Bidang (Kawasan Permukiman)',   'adminbidang.kawasan@example.com'],

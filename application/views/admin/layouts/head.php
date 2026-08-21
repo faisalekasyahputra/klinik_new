@@ -13,7 +13,13 @@
         }
     </script>
 
-    <?php $roleUser = $this->session->userdata('role') ? ucwords(str_replace('_', ' ', $this->session->userdata('role'))) : 'Super Admin'; ?>
+    <?php
+    // Sama seperti admin/layouts/topbar.php/sidebar.php - lihat komentar
+    // lengkap di sana. Role internal TIDAK berubah, cuma labelnya.
+    $peranSesi = $this->session->userdata('role');
+    $roleUser = $peranSesi === 'mahasiswa' ? 'Universitas'
+        : ($peranSesi ? ucwords(str_replace('_', ' ', $peranSesi)) : 'Super Admin');
+    ?>
     <title><?= isset($title) ? $title . ' - ' : '' ?><?= $roleUser ?> | Klinik PKP</title>
     
     <!-- Favicon -->

@@ -112,8 +112,18 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
 
                        Yang terkunci sengaja TIDAK dikirim ulang oleh formulir
                        (tanpa `name`), jadi tidak ada yang bisa menimpanya lewat
-                       kiriman palsu sekalipun. */
+                       kiriman palsu sekalipun.
+
+                       Blok ini HANYA untuk role warga (keluhan user 21 Agt
+                       2026, screenshot akun universitas/mahasiswa) - NIK
+                       adalah kunci pencocokan SIMPERUM/RTLH punya warga,
+                       tidak berlaku untuk pengembang/mahasiswa/admin.
+                       Sengaja disembunyikan (bukan cuma dikosongkan): field
+                       tanpa `name` tetap tidak terkirim, jadi menyembunyikan
+                       ini tidak mengubah perilaku update_profile() sama
+                       sekali - lihat pemeriksaan `$nik_kirim !== ''` di sana. */
                     ?>
+                    <?php if (($user->role ?? '') === 'warga'): ?>
                     <div>
                         <label class="<?= $label ?>">NIK</label>
                         <?php if (!empty($nik_terkunci)): ?>
@@ -130,6 +140,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                             </p>
                         <?php endif; ?>
                     </div>
+                    <?php endif; ?>
                 </div>
 
                 <div class="border-t border-gray-100 pt-3 dark:border-white/5">

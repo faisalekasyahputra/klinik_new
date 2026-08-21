@@ -61,9 +61,13 @@
         </ol>
 
         <div class="mt-7 flex flex-wrap gap-3">
-            <a href="<?= base_url('KemitraanPortal/daftar/kkn') ?>" data-tab-link data-tab-key="kemitraan_daftar_kkn"
+            <!-- Menuju dashboard KKN, bukan formulir sekali-daftar - formulir
+                 itu dipensiunkan untuk KKN (permintaan user 21 Agt 2026,
+                 lihat KemitraanPortal::daftar()). Satu universitas mengelola
+                 banyak KKN dari waktu ke waktu di dashboard ini. -->
+            <a href="<?= base_url('KemitraanPortal/kkn_dashboard') ?>" data-tab-link data-tab-key="kemitraan_kkn_dashboard"
                class="inline-flex items-center gap-2 rounded-xl bg-[color:var(--portal-brand)] px-5 py-3 text-sm font-bold text-[#0a1a1f]">
-                Daftar Sekarang <i class="fa-solid fa-arrow-right"></i>
+                Buka Dashboard KKN <i class="fa-solid fa-arrow-right"></i>
             </a>
         </div>
     </section>

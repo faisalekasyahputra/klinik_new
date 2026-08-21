@@ -480,6 +480,26 @@ class Index extends MY_Controller {
 		$this->load->view('components/cards/rumah', $datacontent);
 	}
 	public function buka_foto() {
+		/* AKAR MASALAH SEBENARNYA (20 Agt 2026), ditemukan saat menyelidiki
+		   "gambar rumah tidak muncul": bukan (cuma) SIKUMBANG lambat -
+		   `session` di-autoload untuk SELURUH controller
+		   (application/config/autoload.php) dan sess_driver='files'
+		   mengunci BERKAS SESI secara eksklusif sepanjang satu request.
+		   Satu halaman /cari_rumah memuat sampai 20 <img> sekaligus, semua
+		   membawa cookie sesi yang SAMA - tanpa baris di bawah, permintaan
+		   ke-2 menunggu permintaan ke-1 SELESAI (bukan cuma antre proses,
+		   tapi benar-benar terkunci) sebelum boleh mulai, ke-3 menunggu
+		   ke-2, dst. Diukur langsung: satu fetch SIKUMBANG yang berdiri
+		   sendiri (PHP CLI, tanpa Apache/session) cuma 13 detik, tapi lewat
+		   endpoint ini (tersangkut di belakang permintaan lain yang
+		   sama-sama menunggu kunci) pernah tercatat 114 detik lalu gagal.
+		   session_write_close() melepas kuncinya SEKARANG, di awal method -
+		   aman karena method ini tidak pernah membaca/menulis
+		   $this->session sama sekali, jadi menutupnya lebih awal tidak
+		   kehilangan apa pun, dan permintaan foto paralel bisa benar-benar
+		   berjalan paralel. */
+		session_write_close();
+
 		$path_gambar = $this->input->get('path');
 		if (empty($path_gambar)) { show_404(); }
 
@@ -504,13 +524,25 @@ class Index extends MY_Controller {
 
 		// 3. JIKA BELUM ADA, BARU DOWNLOAD VIA CURL (HANYA SEKALI SAJA)
 		$url_asli = 'https://sikumbang.tapera.go.id/' . $path_gambar;
-		
+
 		$ch = curl_init();
 		curl_setopt($ch, CURLOPT_URL, $url_asli);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+		/* Dinaikkan dari 15 ke 45 detik (20 Agt 2026) - ditemukan saat
+		   menyelidiki laporan user "gambar rumah tidak muncul di komputer
+		   ini": satu halaman /cari_rumah memuat sampai 20 foto sekaligus
+		   lewat proxy ini, dan foto yang BELUM ada di cache lokal
+		   (assets/cache_foto/) memicu curl baru ke SIKUMBANG per foto -
+		   diukur langsung lewat DevTools, 12 dari 20 permintaan macet
+		   "pending" dengan batas 15 detik yang lama, sementara SIKUMBANG
+		   sendiri (lihat bongkah_sikumbang() di atas) sudah terbukti bisa
+		   butuh puluhan detik untuk satu permintaan. Cache foto TETAP
+		   solusi utamanya untuk kunjungan berikutnya (baris ~496 di atas) -
+		   ini cuma menaikkan peluang berhasil pada CACHE MISS pertama kali,
+		   bukan menggantikan mekanisme cache-nya. */
+		curl_setopt($ch, CURLOPT_TIMEOUT, 45);
 		curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
 		$gambar_mentah = curl_exec($ch);
 		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);

@@ -110,31 +110,32 @@
             <?php
             /* Pintasan KPR bank - permintaan user 14 Agt 2026.
              *
-             * ⚠️ URL-NYA MASIH BERANDA RESMI, BUKAN HALAMAN KPR. User memilih
-             * mengirimkan URL KPR yang tepat sendiri; sampai itu datang,
-             * dipakai beranda yang SUDAH DIVERIFIKASI hidup. Ini disengaja:
-             * menebak jalur dalam ("/kpr", "/produk/kredit-griya/") sempat
-             * dicoba dan 2 dari 6 menghasilkan 404 - memasang tautan mati di
-             * situs dinas lebih buruk daripada satu klik tambahan. Ganti nilai
-             * `url` di array bawah ini saja, tidak ada tempat lain.
+             * URL diganti ke halaman KPR spesifik tiap bank (permintaan user
+             * 21 Agt 2026) - sebelumnya beranda resmi generik, sampai
+             * tautan tepatnya diberikan. Ganti nilai `url` di array bawah
+             * ini saja, tidak ada tempat lain.
+             *
+             * ⚠️ Mandiri mengarah ke domain bni.co.id - persis seperti yang
+             * diberikan user. Kemungkinan salah tempel (URL BNI dan Mandiri
+             * identik), belum dikonfirmasi - lihat pesan ke user.
              *
              * Logo diunduh ke assets/img/ (izin user), BUKAN hotlink ke
              * Wikimedia seperti pages/kpr/simulasi.php - supaya tidak
              * bergantung server luar dan IP pengunjung tidak bocor ke sana.
              * Berkasnya sudah diperiksa bebas <script>/handler.
              *
-             * Bank Jateng SENGAJA tanpa logo: tidak tersedia di Wikimedia
-             * (hanya foto ATM), dan mengarang logonya jelas tidak boleh.
-             * Tampil sebagai tombol teks bergaya sama sampai berkasnya ada -
-             * begitu ada, isi `logo` dengan nama berkasnya.
+             * Bank Jateng: berkas logonya diberikan langsung oleh user
+             * (21 Agt 2026), disimpan ke assets/img/bank-jateng.png -
+             * sebelumnya tanpa logo (tombol teks) karena tidak tersedia di
+             * Wikimedia dan mengarang logonya tidak boleh.
              */
             $bank_kpr = [
-                ['nama' => 'BTN',         'logo' => 'btn.svg',          'url' => 'https://www.btn.co.id'],
-                ['nama' => 'BRI',         'logo' => 'bank-bri.svg',     'url' => 'https://bri.co.id'],
-                ['nama' => 'BCA',         'logo' => 'bank-bca.svg',     'url' => 'https://www.bca.co.id'],
-                ['nama' => 'BNI',         'logo' => 'bank-bni.svg',     'url' => 'https://www.bni.co.id'],
-                ['nama' => 'Mandiri',     'logo' => 'bank-mandiri.svg', 'url' => 'https://www.bankmandiri.co.id'],
-                ['nama' => 'Bank Jateng', 'logo' => NULL,               'url' => 'https://www.bankjateng.co.id'],
+                ['nama' => 'BTN',         'logo' => 'btn.svg',          'url' => 'https://www.btnproperti.co.id/tools/simulasi-kpr'],
+                ['nama' => 'BRI',         'logo' => 'bank-bri.svg',     'url' => 'https://bri.co.id/web/guest/id/bri-kpr'],
+                ['nama' => 'BCA',         'logo' => 'bank-bca.svg',     'url' => 'https://rumahsaya.bca.co.id/'],
+                ['nama' => 'BNI',         'logo' => 'bank-bni.svg',     'url' => 'https://www.bni.co.id/id-id/individu/pinjaman/bni-griya/bni-griya-kpr-cermat'],
+                ['nama' => 'Mandiri',     'logo' => 'bank-mandiri.svg', 'url' => 'https://www.bni.co.id/id-id/individu/pinjaman/bni-griya/bni-griya-kpr-cermat'],
+                ['nama' => 'Bank Jateng', 'logo' => 'bank-jateng.png',  'url' => 'https://bankjateng.co.id/personal/produk-layanan/pinjaman/kpr'],
             ];
             ?>
             <div class="mt-6 pt-5" style="border-top: 1px solid var(--portal-border);">

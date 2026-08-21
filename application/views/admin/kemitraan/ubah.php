@@ -34,15 +34,32 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
       class="rounded-3xl border border-gray-200 dark:border-white/5 bg-white dark:bg-brand-card p-6 space-y-5">
     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
+    <?php
+    // KKN mendaftarkan kampus, bukan satu mahasiswa - lihat alasan lengkap
+    // di pages/kemitraan_portal/ubah.php (permintaan user 21 Agt 2026).
+    // Baris KKN lama bisa saja masih menyimpan NIM/TTL/semester dari
+    // sebelum perubahan ini - tersembunyi juga di sini supaya admin tidak
+    // menyunting data yang sudah tidak seharusnya diminta.
+    $wajib_data_pribadi = $row->jenis === 'magang';
+
+    // Label ganda untuk `jurusan` - lihat komentar lengkap di
+    // pages/kemitraan_portal/daftar.php.
+    $judul_jurusan  = $row->jenis === 'kkn' ? 'Penanggung Jawab' : 'Jurusan / Program Studi';
+    $judul_instansi = $row->jenis === 'kkn' ? 'Nama Universitas' : 'Universitas / Instansi Asal';
+    $judul_hp       = $row->jenis === 'kkn' ? 'No HP' : 'Nomor HP/WhatsApp';
+    ?>
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <?php if ($wajib_data_pribadi): ?>
         <div>
             <label for="u-nim" class="<?= $label ?>">NIM</label>
             <input id="u-nim" name="nim" value="<?= html_escape($row->nim) ?>" required maxlength="30" class="<?= $isian ?>">
         </div>
+        <?php endif; ?>
         <div>
-            <label for="u-jurusan" class="<?= $label ?>">Jurusan / Program Studi</label>
+            <label for="u-jurusan" class="<?= $label ?>"><?= html_escape($judul_jurusan) ?></label>
             <input id="u-jurusan" name="jurusan" value="<?= html_escape($row->jurusan) ?>" required maxlength="150" class="<?= $isian ?>">
         </div>
+        <?php if ($wajib_data_pribadi): ?>
         <div>
             <label for="u-tempat" class="<?= $label ?>">Tempat Lahir</label>
             <input id="u-tempat" name="tempat_lahir" value="<?= html_escape($row->tempat_lahir) ?>" required maxlength="100" class="<?= $isian ?>">
@@ -55,17 +72,23 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
             <label for="u-semester" class="<?= $label ?>">Semester</label>
             <input id="u-semester" name="semester" type="number" min="1" max="14" value="<?= (int) $row->semester ?>" required class="<?= $isian ?>">
         </div>
+        <?php endif; ?>
         <div>
-            <label for="u-instansi" class="<?= $label ?>">Universitas / Instansi Asal</label>
+            <label for="u-instansi" class="<?= $label ?>"><?= html_escape($judul_instansi) ?></label>
             <input id="u-instansi" name="instansi_asal" value="<?= html_escape($row->instansi_asal) ?>" required maxlength="150" class="<?= $isian ?>">
         </div>
         <div>
-            <label for="u-hp" class="<?= $label ?>">Nomor HP/WhatsApp</label>
+            <label for="u-hp" class="<?= $label ?>"><?= html_escape($judul_hp) ?></label>
             <input id="u-hp" name="no_hp" type="tel" value="<?= html_escape($row->no_hp) ?>" required maxlength="15" class="<?= $isian ?>">
         </div>
+        <?php
+        // Tema Kegiatan dan Periode DIHILANGKAN untuk KKN - lihat alasan
+        // lengkap di pages/kemitraan_portal/daftar.php (permintaan user
+        // 21 Agt 2026).
+        ?>
+        <?php if ($row->jenis === 'magang'): ?>
         <div>
-            <label for="u-divisi" class="<?= $label ?>"><?= $row->jenis === 'kkn' ? 'Tema Kegiatan' : 'Bidang yang Dituju' ?></label>
-            <?php if ($row->jenis === 'magang'): ?>
+            <label for="u-divisi" class="<?= $label ?>">Bidang yang Dituju</label>
                 <!-- Mengirim KODE bidang, bukan namanya: nama bisa berubah, kode
                      adalah kunci yang tersimpan dan dipakai routing tinjauan. -->
                 <select id="u-divisi" name="divisi_atau_tema" required class="<?= $isian ?>">
@@ -75,9 +98,6 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
                         </option>
                     <?php endforeach; ?>
                 </select>
-            <?php else: ?>
-                <input id="u-divisi" name="divisi_atau_tema" value="<?= html_escape($row->divisi_atau_tema) ?>" required maxlength="150" class="<?= $isian ?>">
-            <?php endif; ?>
         </div>
         <div>
             <label for="u-mulai" class="<?= $label ?>">Periode Mulai</label>
@@ -87,6 +107,7 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
             <label for="u-selesai" class="<?= $label ?>">Periode Selesai</label>
             <input id="u-selesai" name="periode_selesai" type="date" value="<?= html_escape($row->periode_selesai) ?>" required class="<?= $isian ?>">
         </div>
+        <?php endif; ?>
     </div>
 
     <?php if ($row->jenis === 'magang'): ?>

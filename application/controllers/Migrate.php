@@ -303,6 +303,27 @@ class Migrate extends CI_Controller {
         } else {
             echo "psu_serah_terima (migrasi 043): BELUM ADA - layar PSU akan fatal\n";
         }
+
+        /* Dashboard KKN universitas (migrasi 044). Kolom DAN tabel diperiksa
+           terpisah karena keduanya dipasang lewat pernyataan ALTER/CREATE
+           tersendiri - salah satunya bisa gagal senyap sementara yang lain
+           sukses. FK diperiksa tersendiri lagi dengan alasan yang sama
+           dengan psu_serah_terima di atas. */
+        echo 'kkn_magang_pendaftaran.file_surat_simperum (migrasi 044): '
+            .($this->db->field_exists('file_surat_simperum', 'kkn_magang_pendaftaran')
+                ? 'ADA' : 'HILANG - dua-surat KKN akan fatal')."\n";
+        if (in_array('kkn_peserta', $tables, TRUE)) {
+            $fk = $this->db->query("SELECT CONSTRAINT_NAME n FROM information_schema.TABLE_CONSTRAINTS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'kkn_peserta'
+                  AND CONSTRAINT_TYPE = 'FOREIGN KEY'")->result();
+            $terpasang = [];
+            foreach ($fk as $f) { $terpasang[] = $f->n; }
+            echo 'kkn_peserta fk_kkn_peserta_pendaftaran (migrasi 044): '
+                .(in_array('fk_kkn_peserta_pendaftaran', $terpasang, TRUE) ? 'TERPASANG' : 'TIDAK ADA - roster bisa yatim')."\n";
+            echo 'peserta KKN tercatat: '.(int) $this->db->count_all_results('kkn_peserta')."\n";
+        } else {
+            echo "kkn_peserta (migrasi 044): BELUM ADA - dashboard KKN akan fatal saat unggah roster\n";
+        }
     }
 
     /**

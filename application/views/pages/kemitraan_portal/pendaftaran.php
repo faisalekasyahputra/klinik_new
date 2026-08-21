@@ -22,15 +22,29 @@ $warna_status = [
     'Dibatalkan' => 'bg-gray-500/10 text-gray-500',
 ][$row->status] ?? 'bg-amber-500/10 text-amber-600';
 
-$baris = [
-    'NIM'                  => $row->nim,
-    'Jurusan'              => $row->jurusan,
-    'Semester'             => $row->semester ? (int) $row->semester : NULL,
-    'Tempat, Tanggal Lahir' => $row->tempat_lahir && $row->tanggal_lahir
-        ? $row->tempat_lahir . ', ' . tgl_id($row->tanggal_lahir) : NULL,
-    'Instansi Asal'        => $row->instansi_asal,
-    'Nomor HP'             => $row->no_hp,
-];
+/* NIM/Semester/Tempat-Tanggal Lahir HANYA untuk magang - permintaan user
+   21 Agt 2026 ("untuk kkn yang bisa mendaftar adalah universitas").
+   Ditiadakan dari daftar $baris sama sekali (bukan ditampilkan sebagai
+   "Belum diisi") untuk KKN: fieldnya bukan kosong-belum-terisi, ia memang
+   tidak berlaku begitu yang mendaftar kampus, bukan satu mahasiswa. Baris
+   KKN lama (sebelum perubahan ini) yang kebetulan masih menyimpan nilai
+   di kolom-kolom itu pun ikut tidak ditampilkan - konsisten dengan
+   formulir yang sekarang tidak lagi menanyakannya untuk KKN. */
+$baris = [];
+if ($row->jenis === 'magang') {
+    $baris['NIM'] = $row->nim;
+}
+// `jurusan` bermakna ganda seperti `divisi_atau_tema` di bawah - lihat
+// alasannya di daftar.php: untuk KKN kolom ini menyimpan nama penanggung
+// jawab kegiatan, bukan program studi.
+$baris[$row->jenis === 'kkn' ? 'Penanggung Jawab' : 'Jurusan'] = $row->jurusan;
+if ($row->jenis === 'magang') {
+    $baris['Semester'] = $row->semester ? (int) $row->semester : NULL;
+    $baris['Tempat, Tanggal Lahir'] = $row->tempat_lahir && $row->tanggal_lahir
+        ? $row->tempat_lahir . ', ' . tgl_id($row->tanggal_lahir) : NULL;
+}
+$baris[$row->jenis === 'kkn' ? 'Nama Universitas' : 'Instansi Asal'] = $row->instansi_asal;
+$baris[$row->jenis === 'kkn' ? 'No HP' : 'Nomor HP']                 = $row->no_hp;
 
 /**
  * Kolom `divisi_atau_tema` memuat DUA hal berbeda tergantung jenisnya.
@@ -47,6 +61,11 @@ $baris = [
  * "Divisi" sendiri sudah dihapus dinas (konfirmasi 1 Agt 2026); nama kolomnya
  * dibiarkan karena itu urusan skema, bukan urusan yang dibaca mahasiswa.
  */
+/* Tema Kegiatan dan Periode DIHILANGKAN dari tampilan untuk KKN (bukan
+   ditampilkan sebagai "Belum diisi") - permintaan user 21 Agt 2026, sama
+   seperti NIM/Semester/TTL di atas. KKN tidak lagi menanyakan keduanya
+   lewat formulir; baris KKN lama yang kebetulan masih menyimpan nilainya
+   pun ikut tidak ditampilkan, konsisten dengan formulir sekarang. */
 if ($row->jenis === 'magang') {
     // Nama bidang datang dari controller - view ini tidak menyentuh DB.
     // Sebelumnya bidang tujuan TIDAK PERNAH disebut ke pendaftar sama sekali:
@@ -54,12 +73,9 @@ if ($row->jenis === 'magang') {
     // tahu yang mana, padahal itu yang menentukan ke siapa ia bertanya kalau
     // lama tak ada kabar.
     $baris['Bidang Tujuan'] = $nama_bidang ?: $row->divisi_atau_tema;
-} else {
-    $baris['Tema Kegiatan'] = $row->divisi_atau_tema;
+    $baris['Periode'] = $row->periode_mulai && $row->periode_selesai
+        ? tgl_id($row->periode_mulai, TRUE) . ' - ' . tgl_id($row->periode_selesai, TRUE) : NULL;
 }
-
-$baris['Periode'] = $row->periode_mulai && $row->periode_selesai
-    ? tgl_id($row->periode_mulai, TRUE) . ' - ' . tgl_id($row->periode_selesai, TRUE) : NULL;
 ?>
 <div class="mx-auto max-w-3xl p-2 sm:p-6">
     <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -199,6 +215,14 @@ $baris['Periode'] = $row->periode_mulai && $row->periode_selesai
             <?php endforeach; ?>
         </dl>
 
+        <?php
+        // Seluruh blok Berkas DIHILANGKAN untuk KKN (bukan ditampilkan
+        // "belum ada") - permintaan user 21 Agt 2026: "tidak perlu dikasih
+        // surat pengantar". Ikon lingkaran kosong "belum ada" berarti
+        // sesuatu yang seharusnya diunggah tapi belum - salah kalau
+        // ditampilkan untuk berkas yang memang tidak pernah diminta.
+        ?>
+        <?php if ($row->jenis === 'magang'): ?>
         <!-- Berkas: yang penting bukan tautannya (mahasiswa tidak diberi akses
              baca ke private_uploads), tapi KEPASTIAN bahwa unggahannya mendarat.
              Sebelumnya tidak ada cara mengetahuinya selain bertanya ke admin. -->
@@ -206,8 +230,10 @@ $baris['Periode'] = $row->periode_mulai && $row->periode_selesai
             <div class="<?= $label ?>">Berkas</div>
             <ul class="mt-2 space-y-1.5">
                 <?php
-                $berkas = ['Surat pengantar' => $row->file_surat_pengantar];
-                if ($row->jenis === 'magang') { $berkas['Proposal magang'] = $row->file_proposal; }
+                $berkas = [
+                    'Surat pengantar' => $row->file_surat_pengantar,
+                    'Proposal magang' => $row->file_proposal,
+                ];
                 ?>
                 <?php foreach ($berkas as $nama_berkas => $tersimpan): ?>
                     <li class="flex items-center gap-2 text-sm">
@@ -225,6 +251,7 @@ $baris['Periode'] = $row->periode_mulai && $row->periode_selesai
                 Berkas hanya bisa disusulkan lewat admin. Hubungi pengelola bila ada yang keliru.
             </p>
         </div>
+        <?php endif; ?>
     </div>
 
     <?php if ($bisa_ubah): ?>

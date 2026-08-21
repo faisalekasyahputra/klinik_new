@@ -33,6 +33,7 @@ $filter_html = ob_get_clean();
                     <!-- "Divisi" dihapus dinas (konfirmasi 1 Agt 2026); kolomnya
                          memuat nama BIDANG untuk magang dan tema bebas untuk KKN. -->
                     <th class="px-4 py-4">Bidang/Tema</th>
+                    <th class="px-4 py-4"><?= admin_sort_header('Tanggal Pengajuan', 'kkn_magang_pendaftaran.created_at', $table, $base_url) ?></th>
                     <th class="px-4 py-4"><?= admin_sort_header('Status', 'kkn_magang_pendaftaran.status', $table, $base_url) ?></th>
                     <th class="px-4 py-4 text-right">Aksi</th>
                 </tr>
@@ -40,7 +41,7 @@ $filter_html = ob_get_clean();
             <tbody class="divide-y divide-gray-200 dark:divide-white/5 text-gray-700 dark:text-gray-300">
                 <?php if (empty($rows)): ?>
                 <tr>
-                    <td colspan="6" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">Belum ada pendaftaran KKN/Magang.</td>
+                    <td colspan="7" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">Belum ada pendaftaran KKN/Magang.</td>
                 </tr>
                 <?php else: foreach ($rows as $r): ?>
                 <tr x-data="{ procOpen: false }">
@@ -76,9 +77,21 @@ $filter_html = ob_get_clean();
                         <?php
                         // Dokumen didaftar dari satu tempat supaya menambah jenis
                         // berkas berikutnya tidak berarti menyalin blok <a> lagi.
-                        // Proposal hanya ada pada magang.
-                        $dokumen = ['surat' => ['Surat pengantar', $r->file_surat_pengantar ?? NULL]];
-                        if ($r->jenis === 'magang') { $dokumen['proposal'] = ['Proposal', $r->file_proposal ?? NULL]; }
+                        // Surat pengantar dan proposal HANYA ADA pada magang
+                        // sejak 21 Agt 2026 - KKN tidak lagi memintanya sama
+                        // sekali (dulu opsional), jadi "Tanpa surat pengantar"
+                        // untuk baris KKN akan salah: bukan berkas yang belum
+                        // diunggah, tapi berkas yang memang tidak pernah
+                        // diminta. KKN dari dashboard universitas (migrasi 044)
+                        // punya DUA surat sendiri, beda nama dan beda makna.
+                        $dokumen = [];
+                        if ($r->jenis === 'magang') {
+                            $dokumen['surat']    = ['Surat pengantar', $r->file_surat_pengantar ?? NULL];
+                            $dokumen['proposal'] = ['Proposal', $r->file_proposal ?? NULL];
+                        } elseif ($r->jenis === 'kkn') {
+                            $dokumen['surat']    = ['Surat permohonan mitra', $r->file_surat_pengantar ?? NULL];
+                            $dokumen['simperum'] = ['Surat permohonan SIMPERUM', $r->file_surat_simperum ?? NULL];
+                        }
                         ?>
                         <?php foreach ($dokumen as $kunci => $d): ?>
                             <?php if ( ! empty($d[1])): ?>
@@ -87,7 +100,22 @@ $filter_html = ob_get_clean();
                             <div class="mt-1 text-[10px] text-gray-400 dark:text-brand-muted/60">Tanpa <?= html_escape(strtolower($d[0])) ?></div>
                             <?php endif; ?>
                         <?php endforeach; ?>
+                        <?php if ($r->jenis === 'kkn'): ?>
+                            <!-- Jumlah peserta - roster diunggah universitas sendiri
+                                 lewat dashboardnya (migrasi 044). Dihitung di query
+                                 index() ($r->jumlah_peserta), bukan di view. Link ke
+                                 daftar sebenarnya (NIM/nama) - permintaan user 22 Agt
+                                 2026, sebelumnya cuma angka tanpa cara membaca isinya
+                                 selain buka DB langsung. Baca saja - lihat
+                                 Admin_Kemitraan::peserta(). -->
+                            <div class="mt-1">
+                                <a href="<?= base_url('Admin_Kemitraan/peserta/' . $r->id) ?>" class="text-[10px] font-bold text-gray-500 dark:text-brand-muted hover:text-blue-600 dark:hover:text-brand-primary hover:underline">
+                                    <i class="ph ph-users"></i> <?= (int) ($r->jumlah_peserta ?? 0) ?> peserta
+                                </a>
+                            </div>
+                        <?php endif; ?>
                     </td>
+                    <td class="px-4 py-4 text-xs"><?= html_escape(date('d M Y, H:i', strtotime($r->created_at))) ?></td>
                     <td class="px-4 py-4">
                         <?php
                             // Peta status domain KKN/Magang -> kelas komponen bersama.
@@ -99,7 +127,7 @@ $filter_html = ob_get_clean();
                         ?>
                         <?= $this->load->view('admin/components/status_badge', ['label' => $r->status, 'kelas' => $badge_kelas[$r->status] ?? 'pending'], TRUE) ?>
                     </td>
-                    <td class="px-4 py-4 text-right relative">
+                    <td class="px-4 py-4 text-right">
                         <!-- Tersedia pada status APA PUN: koreksi data paling sering
                              dibutuhkan justru setelah diproses, saat mahasiswa
                              mengabari NIM keliru atau periodenya bergeser. -->
@@ -107,23 +135,57 @@ $filter_html = ob_get_clean();
                         <?php // Dirender untuk status APA PUN, bukan cuma 'Diajukan'. Dulu
                               // keputusan yang sudah terlanjur salah tidak punya jalan
                               // pulang sama sekali - admin harus mengubahnya lewat DB. ?>
-                        <button @click="procOpen = !procOpen" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10"><?= $r->status === 'Diajukan' ? 'Proses' : 'Ubah Keputusan' ?></button>
-                        <div x-show="procOpen" x-cloak @click.outside="procOpen = false" class="absolute right-6 top-full mt-1 z-20 w-72 whitespace-normal rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
-                            <?= $this->load->view('admin/components/review_form', [
-                                'action_url' => 'Admin_Kemitraan/proses/' . $r->id,
-                                // Jalur normal tahap satu adalah MENERUSKAN, bukan
-                                // menerima - keputusan menerima ada di meja bidang.
-                                // 'Terima langsung' tetap disediakan untuk divisi yang
-                                // bidangnya belum punya peninjau, dan diletakkan
-                                // terakhir supaya bukan yang paling mudah diklik.
-                                'buttons' => [
-                                    ['value' => 'Ditinjau Bidang', 'label' => 'Teruskan ke Bidang', 'style' => 'accept'],
+                        <?php
+                        /* Dropdown DIBUNGKUS wrapper SENDIRI ("relative inline-block"),
+                           BUKAN mengandalkan "relative" di <td> - keluhan user 22 Agt
+                           2026 ("baris ketiga diklik, muncul di baris keempat").
+
+                           Sebabnya: baris tabel ini TINGGINYA TIDAK SERAGAM (kolom
+                           Bidang/Tema bisa memuat dua tautan surat + jumlah peserta,
+                           kadang tiga baris teks, kadang satu). Sel <td> yang jadi
+                           acuan "relative" DIREGANGKAN mengikuti tinggi baris oleh
+                           tata letak tabel - jadi "top-full" (100%) terhitung dari
+                           tinggi SEL YANG SUDAH DIREGANGKAN itu, bukan dari tinggi
+                           tombolnya sendiri. Pada baris yang tinggi, itu mendorong
+                           dropdown turun sejauh tinggi baris - tepat mendarat di
+                           baris berikutnya, persis yang dilaporkan. Wrapper baru ini
+                           setinggi tombolnya saja (inline-block, bukan sel penuh),
+                           jadi "top-full" selalu 100% dari TOMBOL, berapa pun
+                           tingginya baris. */
+                        ?>
+                        <span class="relative inline-block">
+                            <button @click="procOpen = !procOpen" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10"><?= $r->status === 'Diajukan' ? 'Proses' : 'Ubah Keputusan' ?></button>
+                            <div x-show="procOpen" x-cloak @click.outside="procOpen = false" class="absolute right-0 top-full mt-1 z-20 w-72 whitespace-normal rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
+                                <?php
+                                /* KKN TIDAK melewati meja bidang - Admin_Kemitraan::proses()
+                                   sudah menolak status 'Ditinjau Bidang' untuk jenis KKN
+                                   ("Pendaftaran KKN tidak melewati tinjauan bidang - putuskan
+                                   langsung di sini"), tapi tombolnya dulu tetap dirender di
+                                   sini untuk KEDUA jenis - keluhan user 22 Agt 2026 ("teruskan
+                                   ke bidang itu bidang mana?") justru muncul dari tombol yang
+                                   selalu gagal ini. Ditegakkan di SATU tempat (proses()); di
+                                   sini cuma tidak lagi MENAWARKAN tombol yang pasti ditolak. */
+                                $tombol_proses = [
                                     ['value' => 'Ditolak', 'label' => 'Tolak', 'style' => 'reject'],
-                                    ['value' => 'Diterima', 'label' => 'Terima Langsung', 'style' => 'accept'],
-                                ],
-                                'catatan_name' => 'catatan_admin',
-                            ], TRUE) ?>
-                        </div>
+                                    ['value' => 'Diterima', 'label' => 'Terima', 'style' => 'accept'],
+                                ];
+                                if ($r->jenis === 'magang') {
+                                    // Jalur normal tahap satu adalah MENERUSKAN, bukan
+                                    // menerima - keputusan menerima ada di meja bidang.
+                                    // 'Terima langsung' tetap disediakan untuk divisi yang
+                                    // bidangnya belum punya peninjau, dan diletakkan
+                                    // terakhir supaya bukan yang paling mudah diklik.
+                                    array_unshift($tombol_proses, ['value' => 'Ditinjau Bidang', 'label' => 'Teruskan ke Bidang', 'style' => 'accept']);
+                                    $tombol_proses[2]['label'] = 'Terima Langsung';
+                                }
+                                ?>
+                                <?= $this->load->view('admin/components/review_form', [
+                                    'action_url' => 'Admin_Kemitraan/proses/' . $r->id,
+                                    'buttons' => $tombol_proses,
+                                    'catatan_name' => 'catatan_admin',
+                                ], TRUE) ?>
+                            </div>
+                        </span>
                     </td>
                 </tr>
                 <?php endforeach; endif; ?>

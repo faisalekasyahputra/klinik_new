@@ -11,11 +11,18 @@
  * Sub-halaman (detail divisi, sunting pendaftaran) memakai kepala yang sama
  * dengan tab induknya menyala, supaya admin tidak pernah kehilangan tempatnya.
  *
- * @param string $tab_aktif 'pendaftaran' | 'slot'
+ * @param string $tab_aktif 'pendaftaran' | 'slot' | 'universitas'
  */
 $tab = [
     'pendaftaran' => ['label' => 'Pendaftaran', 'url' => 'Admin_Kemitraan',      'ikon' => 'ph-student'],
     'slot'        => ['label' => 'Slot & Bidang', 'url' => 'Admin_Kemitraan/slot', 'ikon' => 'ph-calendar-check'],
+    // Akun (bukan pengajuan) - permintaan user 22 Agt 2026: "bisa mengelola
+    // Akun KKN/Universitas". Daftar role='mahasiswa' berikut jumlah KKN
+    // yang pernah diajukan; aksi sunting/nonaktifkan/reset sandi TETAP di
+    // Admin_Users (satu sumber kebenaran untuk seluruh akun, apa pun
+    // rolenya) - tab ini menautkan ke sana per akun, tidak menyalin
+    // logikanya. Lihat Admin_Kemitraan::universitas().
+    'universitas' => ['label' => 'Akun Universitas', 'url' => 'Admin_Kemitraan/universitas', 'ikon' => 'ph-bank'],
 ];
 $aktif = isset($tab_aktif) ? $tab_aktif : 'pendaftaran';
 ?>

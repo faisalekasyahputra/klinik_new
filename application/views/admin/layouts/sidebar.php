@@ -13,7 +13,13 @@
                     Klinik<span class="text-blue-600 dark:text-brand-primary">PKP</span>
                 </span>
                 <span class="text-[10px] font-bold text-gray-500 dark:text-brand-muted uppercase tracking-wider">
-                    <?= $this->session->userdata('role') ? ucwords(str_replace('_', ' ', $this->session->userdata('role'))) : 'Super Admin' ?>
+                    <?php
+                    // Sama seperti admin/layouts/topbar.php - lihat komentar
+                    // lengkap di sana. Role internal TIDAK berubah, cuma labelnya.
+                    $peran = $this->session->userdata('role');
+                    echo $peran === 'mahasiswa' ? 'Universitas'
+                        : ($peran ? ucwords(str_replace('_', ' ', $peran)) : 'Super Admin');
+                    ?>
                 </span>
             </div>
         </a>

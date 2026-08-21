@@ -23,15 +23,34 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
         <p class="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--portal-text-muted)]">Isi formulir di bawah, tim kami akan meninjau dan menghubungi Anda lewat akun terdaftar.</p>
     </div>
 
+    <?php
+    // KKN mendaftarkan KAMPUS, bukan satu mahasiswa (permintaan user 21 Agt
+    // 2026: "untuk kkn yang bisa mendaftar adalah universitas") - NIM,
+    // tempat/tanggal lahir, dan semester adalah data pribadi SATU
+    // mahasiswa, jadi tidak lagi ditanyakan untuk jenis ini. Magang tetap
+    // per-mahasiswa seperti semula, keempatnya tetap wajib di sana.
+    $wajib_data_pribadi = $jenis === 'magang';
+
+    // Kolom `jurusan` juga bermakna GANDA seperti `divisi_atau_tema` (lihat
+    // komentarnya di pendaftaran.php) - untuk magang ia program studi
+    // mahasiswa, untuk KKN ia nama penanggung jawab kegiatan dari pihak
+    // kampus (permintaan user 21 Agt 2026: "Ganti dengan Nama Nama
+    // Universitas, Penanggung Jawab, No HP"). Nama kolom DB dibiarkan
+    // `jurusan` - itu urusan skema, bukan urusan yang dibaca mahasiswa.
+    $judul_jurusan       = $jenis === 'kkn' ? 'Penanggung Jawab' : 'Jurusan / Program Studi';
+    $placeholder_jurusan = $jenis === 'kkn' ? 'Nama penanggung jawab kegiatan' : 'Contoh: Teknik Sipil';
+    $judul_instansi      = $jenis === 'kkn' ? 'Nama Universitas' : 'Universitas / Instansi Asal';
+    $judul_hp            = $jenis === 'kkn' ? 'No HP' : 'Nomor HP/WhatsApp';
+    ?>
     <form id="kemitraan-daftar-form" class="mx-auto mt-8 max-w-2xl space-y-4" action="<?= base_url('KemitraanPortal/simpan') ?>" method="POST" enctype="multipart/form-data"
           x-data="{
               nim: '', tempat_lahir: '', tanggal_lahir: '', semester: '', jurusan: '',
               instansi_asal: '', no_hp: '', divisi_atau_tema: '', periode_mulai: '', periode_selesai: '',
               get isValid() {
-                  return this.nim.trim() && this.tempat_lahir.trim() && this.tanggal_lahir
-                      && this.semester && this.jurusan.trim()
+                  return <?= $wajib_data_pribadi ? "this.nim.trim() && this.tempat_lahir.trim() && this.tanggal_lahir && this.semester &&" : '' ?>
+                      this.jurusan.trim()
                       && this.instansi_asal.trim() && this.no_hp.trim()
-                      && this.divisi_atau_tema.trim() && this.periode_mulai && this.periode_selesai;
+                      <?= $jenis === 'magang' ? '&& this.divisi_atau_tema.trim() && this.periode_mulai && this.periode_selesai' : '' ?>;
               }
           }">
         <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
@@ -50,14 +69,16 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
             <p class="mt-2 text-[11px] text-[color:var(--portal-text-muted)]">Ingin mengubah nama? Perbarui lewat <a href="<?= base_url('akun/profil') ?>" class="font-bold underline">Profil Saya</a>.</p>
         </div>
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div class="grid grid-cols-1 gap-4 <?= $wajib_data_pribadi ? 'sm:grid-cols-2' : '' ?>">
+            <?php if ($wajib_data_pribadi): ?>
             <div>
                 <label for="kd-nim" class="<?= $label ?>">NIM</label>
                 <input id="kd-nim" name="nim" x-model="nim" required maxlength="30" placeholder="Nomor induk mahasiswa" class="<?= $isian ?>">
             </div>
+            <?php endif; ?>
             <div>
-                <label for="kd-jurusan" class="<?= $label ?>">Jurusan / Program Studi</label>
-                <input id="kd-jurusan" name="jurusan" x-model="jurusan" required maxlength="150" placeholder="Contoh: Teknik Sipil" class="<?= $isian ?>">
+                <label for="kd-jurusan" class="<?= $label ?>"><?= html_escape($judul_jurusan) ?></label>
+                <input id="kd-jurusan" name="jurusan" x-model="jurusan" required maxlength="150" placeholder="<?= html_escape($placeholder_jurusan) ?>" class="<?= $isian ?>">
             </div>
         </div>
 
@@ -66,7 +87,12 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
         // tanggal_lahir DATE). Tampilannya tetap satu baris berdampingan;
         // yang dipisah cuma penyimpanannya, supaya tanggalnya bisa diurutkan
         // dan dihitung tanpa membongkar teks bebas nanti.
+        //
+        // Seluruh blok TTL + Semester DIHILANGKAN untuk KKN (bukan cuma
+        // dikosongkan) - "tempat/tanggal lahir siapa" tidak lagi punya
+        // jawaban begitu yang mendaftar adalah kampus, bukan satu orang.
         ?>
+        <?php if ($wajib_data_pribadi): ?>
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div class="sm:col-span-2">
                 <label for="kd-tempat" class="<?= $label ?>">Tempat Lahir</label>
@@ -77,26 +103,37 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
                 <input id="kd-tanggal" name="tanggal_lahir" x-model="tanggal_lahir" type="date" required class="<?= $isian ?>">
             </div>
         </div>
+        <?php endif; ?>
 
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div class="grid grid-cols-1 gap-4 <?= $wajib_data_pribadi ? 'sm:grid-cols-3' : '' ?>">
+            <?php if ($wajib_data_pribadi): ?>
             <div>
                 <label for="kd-semester" class="<?= $label ?>">Semester</label>
                 <input id="kd-semester" name="semester" x-model="semester" type="number" min="1" max="14" required placeholder="6" class="<?= $isian ?>">
             </div>
-            <div class="sm:col-span-2">
-                <label for="kd-instansi" class="<?= $label ?>">Universitas / Instansi Asal</label>
+            <?php endif; ?>
+            <div class="<?= $wajib_data_pribadi ? 'sm:col-span-2' : '' ?>">
+                <label for="kd-instansi" class="<?= $label ?>"><?= html_escape($judul_instansi) ?></label>
                 <input id="kd-instansi" name="instansi_asal" x-model="instansi_asal" required maxlength="150" placeholder="Nama kampus/universitas" class="<?= $isian ?>">
             </div>
         </div>
 
         <div>
-            <label for="kd-hp" class="<?= $label ?>">Nomor HP/WhatsApp</label>
+            <label for="kd-hp" class="<?= $label ?>"><?= html_escape($judul_hp) ?></label>
             <input id="kd-hp" name="no_hp" x-model="no_hp" type="tel" required maxlength="15" placeholder="08xxxxxxxxxx" class="<?= $isian ?>">
         </div>
 
+        <?php
+        // Tema Kegiatan dan Periode DIHILANGKAN untuk KKN (bukan cuma
+        // dikosongkan) - permintaan user 21 Agt 2026. KKN sekarang
+        // mendaftarkan kampus lewat surat pengantar; tema dan rentang
+        // tanggal kegiatan bukan lagi sesuatu yang diminta lewat formulir
+        // ini. Magang tetap membutuhkan keduanya - itulah yang mengunci
+        // slot bulanan lewat periksa_slot().
+        ?>
+        <?php if ($jenis === 'magang'): ?>
         <div>
-            <label for="kd-divisi" class="<?= $label ?>"><?= $jenis === 'kkn' ? 'Tema Kegiatan' : 'Bidang yang Dituju' ?></label>
-            <?php if ($jenis === 'magang'): ?>
+            <label for="kd-divisi" class="<?= $label ?>">Bidang yang Dituju</label>
                 <!-- Divisi dipilih dari daftar, bukan diketik. Sebelumnya ini
                      teks bebas, jadi pendaftar bisa menulis divisi yang di
                      papan slot berwarna merah - dan tidak ada yang menahannya.
@@ -113,9 +150,6 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
                     <a href="<?= base_url('KemitraanPortal/magang') ?>" class="font-bold underline">papan slot</a>.
                     Pendaftaran ditolak kalau ada bulan yang tertutup.
                 </p>
-            <?php else: ?>
-                <input id="kd-divisi" name="divisi_atau_tema" x-model="divisi_atau_tema" required maxlength="150" placeholder="Contoh: Penataan Kawasan Kumuh" class="<?= $isian ?>">
-            <?php endif; ?>
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -128,23 +162,25 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
                 <input id="kd-selesai" name="periode_selesai" x-model="periode_selesai" type="date" required class="<?= $isian ?>">
             </div>
         </div>
+        <?php endif; ?>
 
         <?php
-        // WAJIB untuk magang, opsional untuk KKN - keputusan user 2 Agt 2026.
-        // `required` di sini cuma kenyamanan; yang menegakkannya
-        // KemitraanPortal::simpan(), yang menolak sebelum barisnya lahir.
-        $surat_wajib = $jenis === 'magang';
+        // Surat Pengantar DIHILANGKAN untuk KKN (bukan lagi opsional -
+        // permintaan user 21 Agt 2026: "tidak perlu dikasih surat
+        // pengantar"). WAJIB untuk magang seperti sebelumnya (keputusan
+        // user 2 Agt 2026). `required` di sini cuma kenyamanan; yang
+        // menegakkannya KemitraanPortal::simpan(), yang menolak sebelum
+        // barisnya lahir.
         ?>
+        <?php if ($jenis === 'magang'): ?>
         <div>
             <label for="kd-surat" class="<?= $label ?>">Surat Pengantar
-                <span class="font-normal <?= $surat_wajib ? 'text-rose-500' : 'text-[color:var(--portal-text-muted)]' ?>"><?= $surat_wajib ? '(wajib)' : '(opsional)' ?></span></label>
+                <span class="font-normal text-rose-500">(wajib)</span></label>
             <input id="kd-surat" name="file_surat_pengantar" type="file" accept=".jpg,.jpeg,.png,.pdf"
-                   <?= $surat_wajib ? 'required' : '' ?> class="<?= $berkas ?>">
-            <p class="<?= $petunjuk ?>">Format JPG, PNG, atau PDF. Maksimal 5 MB.<?= $surat_wajib
-                ? ' Tanpa surat pengantar, pendaftaran magang tidak bisa dikirim.' : '' ?></p>
+                   required class="<?= $berkas ?>">
+            <p class="<?= $petunjuk ?>">Format JPG, PNG, atau PDF. Maksimal 5 MB. Tanpa surat pengantar, pendaftaran magang tidak bisa dikirim.</p>
         </div>
 
-        <?php if ($jenis === 'magang'): ?>
         <?php
         // Proposal hanya untuk magang (keputusan user 30 Jul 2026). Tidak
         // dirender untuk KKN, DAN tidak diproses server untuk KKN - lihat

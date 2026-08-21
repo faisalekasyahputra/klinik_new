@@ -142,7 +142,12 @@ class Pengaturan extends MY_Controller {
                     // berubah tanpa pernah bisa membuka apa yang ia kirim, apalagi
                     // memperbaikinya. View-nya sudah siap merender tombol ini.
                     'aksi_url'   => 'KemitraanPortal/pendaftaran/' . (int) $p->id,
-                    'aksi_label' => $p->status === 'Diajukan' ? 'Lihat / Ubah' : 'Lihat',
+                    // KKN dari dashboard baru (21 Agt 2026) tidak punya
+                    // formulir sunting sama sekali - lihat
+                    // KemitraanPortal::ubah(). "Lihat / Ubah" untuk baris
+                    // itu menjanjikan tombol yang tidak ada di halaman
+                    // tujuannya.
+                    'aksi_label' => ($p->status === 'Diajukan' && $p->jenis !== 'kkn') ? 'Lihat / Ubah' : 'Lihat',
                     // Cabang mahasiswa satu-satunya yang dulu TIDAK mengirim ini,
                     // padahal antrean, aduan, dan SRP2 semuanya mengirimnya - dan
                     // komentar di berkas ini sendiri (§ aduan) sudah menyebut

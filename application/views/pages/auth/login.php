@@ -117,7 +117,15 @@
                         ['Admin Dashboard',           'admin@klinikpkp.jatengprov.go.id'],
                         ['Warga (Pengaju)',           'warga@example.com'],
                         ['Pengembang (SRP2)',         'pengembang@example.com'],
-                        ['Mahasiswa (KKN/Magang)',    'mahasiswa@example.com'],
+                        /* Dua akun terpisah dengan role SAMA ('mahasiswa') - KKN
+                           sekarang mendaftarkan kampus (permintaan user 21 Agt
+                           2026, lihat KemitraanPortal::daftar()), bukan satu
+                           mahasiswa, jadi akun demonya juga tidak lagi memakai
+                           nama pribadi supaya "Terkirim atas nama akun" di form
+                           KKN tidak menampilkan nama mahasiswa. Magang tetap
+                           per-mahasiswa seperti semula. */
+                        ['Universitas (KKN)',         'universitas@example.com'],
+                        ['Mahasiswa (Magang)',        'mahasiswa@example.com'],
                         ['Admin Kab/Kota (Semarang)', 'adminkabkota@example.com'],
                         /* Satu admin_bidang PER BIDANG (5 total, tabel `bidang`) -
                            permintaan user 16 Agt 2026. Sebelumnya cuma ada contoh

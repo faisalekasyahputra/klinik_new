@@ -166,6 +166,19 @@ class Admin_Users extends Admin_Controller {
             'created_at'         => date('Y-m-d H:i:s'),
         ];
 
+        /* Telepon OPSIONAL - bukan field standar akun staf, jadi kolomnya
+           dilewati sama sekali kalau kosong (bukan disimpan '' atau NULL
+           eksplisit tanpa alasan). Ditambahkan untuk formulir "Tambah
+           Universitas" (Admin_Kemitraan::universitas(), permintaan user
+           22 Agt 2026) - KemitraanPortal::kkn_tambah() MEWAJIBKAN
+           usr_users.phone terisi sebelum akun bisa mengajukan KKN, jadi
+           mengisinya di sini sekaligus berarti akun universitas yang baru
+           dibuat admin langsung bisa dipakai tanpa mampir dulu ke Profil
+           Saya. Field ini tidak berbahaya untuk role lain - cuma
+           menyimpan apa yang dikirim, sama seperti Pengaturan::update_profile(). */
+        $telp = trim((string) $this->input->post('phone', TRUE));
+        if ($telp !== '') { $payload['phone'] = $telp; }
+
         if (in_array($role, $this->config->item('roles_scoped_kabupaten'), TRUE)) {
             $kabupaten_id = (int) $this->input->post('kabupaten_id');
             if ( ! $kabupaten_id || ! $this->db->where('id', $kabupaten_id)->get('kabupaten')->row()) {

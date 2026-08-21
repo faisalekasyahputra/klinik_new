@@ -233,7 +233,13 @@ class Admin_Kemitraan extends Admin_Controller {
         }
         $table += $this->paginate_state($this->db->count_all_results('', FALSE));
 
-        $data['rows'] = $this->db->select('kkn_magang_pendaftaran.*, usr_users.name AS nama_mahasiswa, usr_users.email AS email_mahasiswa')
+        // Jumlah peserta DIHITUNG dari kkn_peserta, bukan disimpan - sama
+        // seperti KemitraanPortal::kkn_dashboard() (lihat migrasi 044).
+        // Subquery-nya aman untuk baris magang juga: pendaftaran_id yang
+        // tidak pernah dipakai magang otomatis menghitung nol.
+        $data['rows'] = $this->db->select('kkn_magang_pendaftaran.*, usr_users.name AS nama_mahasiswa,
+                usr_users.email AS email_mahasiswa, (SELECT COUNT(*) FROM kkn_peserta
+                WHERE kkn_peserta.pendaftaran_id = kkn_magang_pendaftaran.id) AS jumlah_peserta', FALSE)
             ->order_by($table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
             ->get()->result();
@@ -243,6 +249,52 @@ class Admin_Kemitraan extends Admin_Controller {
         $data['f_status']   = $f_status;
         $data['f_jenis']    = $f_jenis;
         $this->render_admin('admin/kemitraan/index', $data);
+    }
+
+    /**
+     * Daftar akun universitas/mahasiswa (role='mahasiswa') - permintaan user
+     * 22 Agt 2026: "bisa mengelola Akun KKN/Universitas". Ini daftar AKUN,
+     * beda dari index() yang mendaftar PENGAJUAN - satu akun bisa punya
+     * banyak baris kkn_magang_pendaftaran (dashboard KKN, migrasi 044).
+     *
+     * TIDAK menduplikasi sunting/nonaktifkan/reset sandi - itu tetap milik
+     * Admin_Users (satu sumber kebenaran untuk SELURUH akun apa pun
+     * rolenya, lihat komentar kepala berkas itu). Tab ini murni pandangan
+     * yang relevan untuk domain Kemitraan (jumlah KKN per akun) + jalan
+     * pintas MEMBUAT akun universitas baru tanpa harus memilih role secara
+     * manual di formulir umum Admin_Users.
+     *
+     * Catatan jujur: role 'mahasiswa' dipakai BERSAMA oleh akun universitas
+     * (KKN) dan mahasiswa perorangan (Magang) - keputusan sesi 21 Agt 2026.
+     * Daftar ini karenanya menampilkan KEDUANYA; kolom "KKN Diajukan" akan
+     * nol untuk akun yang cuma pernah Magang, bukan berarti akun itu error.
+     */
+    public function universitas()
+    {
+        $data['title'] = 'Akun Universitas';
+
+        $table = $this->table_state(['created_at', 'name', 'email'], 'created_at');
+        $data['base_url'] = 'Admin_Kemitraan/universitas';
+
+        $this->db->from('usr_users')->where('role', 'mahasiswa');
+        if ($table['q'] !== '') {
+            $this->db->group_start()
+                ->like('name', $table['q'])->or_like('email', $table['q'])
+                ->or_like('username', $table['q'])->group_end();
+        }
+        $table += $this->paginate_state($this->db->count_all_results('', FALSE));
+
+        // Jumlah KKN per akun DIHITUNG lewat subquery, sama seperti index()
+        // dan KemitraanPortal::kkn_dashboard() - satu pola yang sama di
+        // ketiga tempat, bukan tiga cara berbeda menghitung hal yang sama.
+        $data['rows'] = $this->db->select("usr_users.*, (SELECT COUNT(*) FROM kkn_magang_pendaftaran
+                WHERE kkn_magang_pendaftaran.user_id = usr_users.id
+                  AND kkn_magang_pendaftaran.jenis = 'kkn') AS jumlah_kkn", FALSE)
+            ->order_by($table['sort'], $table['dir'])
+            ->limit($table['per_page'], $table['offset'])
+            ->get()->result();
+        $data['table'] = $data['pager'] = $table;
+        $this->render_admin('admin/kemitraan/universitas', $data);
     }
 
     /**
@@ -260,6 +312,9 @@ class Admin_Kemitraan extends Admin_Controller {
             'surat'    => 'file_surat_pengantar',
             'proposal' => 'file_proposal',
             'balasan'  => 'file_surat_balasan',
+            // Surat permohonan akun SIMPERUM - KKN dari dashboard universitas
+            // (migrasi 044, permintaan user 21 Agt 2026).
+            'simperum' => 'file_surat_simperum',
         ][$berkas] ?? NULL;
         if ($kolom === NULL) { show_404(); }
 
@@ -270,6 +325,34 @@ class Admin_Kemitraan extends Admin_Controller {
         $ext  = strtolower(pathinfo($row->$kolom, PATHINFO_EXTENSION));
         $mime = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'][$ext] ?? 'application/octet-stream';
         $this->serve_private_file('kemitraan', (int) $id, $row->$kolom, $mime);
+    }
+
+    /**
+     * Lihat roster peserta satu KKN - permintaan user 22 Agt 2026 ("link
+     * untuk melihat list pesertanya"). Sebelumnya index() cuma menampilkan
+     * ANGKA jumlah peserta; admin tidak punya cara membaca NIM/nama
+     * sebenarnya tanpa membuka DB langsung.
+     *
+     * BACA SAJA - roster hanya bisa diubah universitas sendiri lewat
+     * dashboardnya (KemitraanPortal::kkn_upload_peserta()), sama seperti
+     * dua surat KKN yang juga tidak bisa diganti dari sini.
+     */
+    public function peserta($id = NULL)
+    {
+        if ( ! is_numeric($id)) { show_404(); }
+
+        $row = $this->db->select('kkn_magang_pendaftaran.*, usr_users.name AS nama_mahasiswa, usr_users.email AS email_mahasiswa')
+            ->from('kkn_magang_pendaftaran')
+            ->join('usr_users', 'usr_users.id = kkn_magang_pendaftaran.user_id', 'left')
+            ->where('kkn_magang_pendaftaran.id', (int) $id)
+            ->get()->row();
+        if ( ! $row || $row->jenis !== 'kkn') { show_404(); }
+
+        $data['title'] = 'Peserta KKN';
+        $data['row'] = $row;
+        $data['peserta'] = $this->db->where('pendaftaran_id', (int) $id)
+            ->order_by('nama', 'ASC')->get('kkn_peserta')->result();
+        $this->render_admin('admin/kemitraan/peserta', $data);
     }
 
     // =========================================================
@@ -308,6 +391,32 @@ class Admin_Kemitraan extends Admin_Controller {
             $this->session->set_flashdata('error', validation_errors('<li>', '</li>'));
             redirect('Admin_Kemitraan/ubah/' . (int) $id);
             return;
+        }
+
+        // Data pribadi mahasiswa cuma wajib untuk magang - lihat alasan
+        // lengkap di KemitraanPortal::simpan_ubah() (perubahan 21 Agt 2026).
+        // Pola sama persis dipertahankan di sini supaya admin tidak bisa
+        // "menyunting" baris KKN untuk kembali mewajibkan field yang
+        // sudah sengaja dilepas mahasiswa sendiri di sisi publik.
+        // Tema Kegiatan dan Periode juga tidak lagi wajib di sini untuk KKN
+        // (perubahan 21 Agt 2026, lihat pages/kemitraan_portal/daftar.php) -
+        // periode_mulai/periode_selesai ditambahkan ke daftar wajib-magang
+        // yang sama karena periksa_slot() (dipakai KemitraanPortal) TIDAK
+        // dipanggil di sini; tanpa pemeriksaan eksplisit ini, periode kosong
+        // untuk magang akan lolos sampai ke bulan_terhalang() di bawah.
+        if ($row->jenis === 'magang') {
+            $wajib_magang = [
+                'nim' => 'NIM', 'tempat_lahir' => 'Tempat Lahir',
+                'tanggal_lahir' => 'Tanggal Lahir', 'semester' => 'Semester',
+                'periode_mulai' => 'Periode Mulai', 'periode_selesai' => 'Periode Selesai',
+            ];
+            foreach ($wajib_magang as $field => $label) {
+                if (trim((string) $this->input->post($field, TRUE)) === '') {
+                    $this->session->set_flashdata('error', $label . ' wajib diisi untuk pendaftaran magang.');
+                    redirect('Admin_Kemitraan/ubah/' . (int) $id);
+                    return;
+                }
+            }
         }
 
         $mulai   = $this->input->post('periode_mulai', TRUE);
@@ -349,17 +458,18 @@ class Admin_Kemitraan extends Admin_Controller {
         }
 
         $this->db->where('id', (int) $id)->update('kkn_magang_pendaftaran', [
-            'nim'              => $this->input->post('nim', TRUE),
-            'tempat_lahir'     => $this->input->post('tempat_lahir', TRUE),
-            'tanggal_lahir'    => $this->input->post('tanggal_lahir', TRUE),
-            'semester'         => (int) $this->input->post('semester', TRUE),
+            'nim'              => $this->input->post('nim', TRUE) ?: NULL,
+            'tempat_lahir'     => $this->input->post('tempat_lahir', TRUE) ?: NULL,
+            'tanggal_lahir'    => $this->input->post('tanggal_lahir', TRUE) ?: NULL,
+            'semester'         => $this->input->post('semester', TRUE) !== '' && $this->input->post('semester', TRUE) !== NULL
+                ? (int) $this->input->post('semester', TRUE) : NULL,
             'jurusan'          => $this->input->post('jurusan', TRUE),
             'instansi_asal'    => $this->input->post('instansi_asal', TRUE),
             'no_hp'            => $this->input->post('no_hp', TRUE),
-            'divisi_atau_tema' => $divisi_atau_tema,
+            'divisi_atau_tema' => $divisi_atau_tema ?: NULL,
             'bidang_kode'      => $bidang_kode,
-            'periode_mulai'    => $mulai,
-            'periode_selesai'  => $selesai,
+            'periode_mulai'    => $mulai ?: NULL,
+            'periode_selesai'  => $selesai ?: NULL,
         ]);
 
         $this->session->set_flashdata('success', 'Data pendaftaran diperbarui.');
