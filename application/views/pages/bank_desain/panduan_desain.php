@@ -28,10 +28,25 @@ $prototipe = isset($prototipe) && is_array($prototipe) ? $prototipe : [];
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <?php foreach ($prototipe as $d): ?>
         <?php
+        /* path_image/path_rab/path_file dari API KRS Jawa 3 adalah path
+           RELATIF ("uploads/images/...", bukan URL utuh) - dibuktikan
+           langsung dari respons API 20 Agt 2026. Tanpa awalan host, browser
+           mencoba memuatnya relatif terhadap domain KITA (mis.
+           floralwhite-lion-710022.hostingersite.com/uploads/images/...),
+           yang tidak pernah ada di sana - ikon gambar patah di setiap kartu
+           yang isinya bukan null. detail_desain.php di folder yang sama
+           SUDAH menambahkan awalan ini dengan benar; halaman ini yang
+           ketinggalan. Diikat ke SATU closure supaya ketiganya (gambar,
+           RAB, berkas kerja) tidak bisa lupa disamakan lagi kalau nanti
+           ada field serupa yang keempat. */
+        $tautan_ternak = static function ($path) {
+            $path = trim((string) $path);
+            return $path === '' ? '' : 'https://apiternak.krsjawa3.com/' . ltrim($path, '/');
+        };
         $judul = (string) ($d['title'] ?? 'Tanpa judul');
-        $gbr   = (string) ($d['path_image'] ?? '');
-        $rab   = (string) ($d['path_rab'] ?? '');
-        $berkas = (string) ($d['path_file'] ?? '');
+        $gbr    = $tautan_ternak($d['path_image'] ?? '');
+        $rab    = $tautan_ternak($d['path_rab'] ?? '');
+        $berkas = $tautan_ternak($d['path_file'] ?? '');
         ?>
         <article class="overflow-hidden rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)]">
           <?php if ($gbr !== ''): ?>
