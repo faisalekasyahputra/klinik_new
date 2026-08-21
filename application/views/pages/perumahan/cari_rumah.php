@@ -27,7 +27,7 @@
                 <div class="lg:col-span-6">
                     <label class="block text-[10px] font-bold text-[color:var(--portal-text-muted)] uppercase tracking-widest mb-2"><i class="fa-solid fa-magnifying-glass mr-1.5 text-[color:var(--portal-brand)]"></i> Kata Kunci</label>
                     <div class="relative flex items-center">
-                        <input id="keyword" onkeyup="cari_wil()" type="text" placeholder="Masukkan kata kunci..." class="w-full rounded-xl px-4 py-3 pr-12 text-sm outline-none transition-all bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] text-[color:var(--portal-text)] focus:border-[color:var(--portal-brand)] placeholder-[color:var(--portal-text-muted)]">
+                        <input id="keyword" onkeyup="cari_wil_ketik()" type="text" placeholder="Masukkan kata kunci..." class="w-full rounded-xl px-4 py-3 pr-12 text-sm outline-none transition-all bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] text-[color:var(--portal-text)] focus:border-[color:var(--portal-brand)] placeholder-[color:var(--portal-text-muted)]">
                         <button onclick="cari_wil()" class="absolute right-1.5 flex items-center justify-center transition-all w-9 h-9 rounded-lg bg-[color:var(--portal-brand)] text-[color:var(--portal-bg)] hover:opacity-80">
                             <i class="fa-solid fa-magnifying-glass text-sm"></i>
                         </button>
@@ -357,6 +357,42 @@ function gantiHalaman(delta) {
     var target = window.halamanSekarang + delta;
     if (target < 1) { return; }
     muatHalaman(target, true);
+}
+
+/**
+ * Peredam ketikan. Kotak keyword WAJIB lewat sini, JANGAN memanggil cari_wil()
+ * langsung dari onkeyup.
+ *
+ * Sebelum ini `onkeyup="cari_wil()"` menembakkan SATU request penuh per KETUKAN
+ * TOMBOL. Dihitung di browser sungguhan dengan membungkus jQuery.ajax, bukan
+ * dibaca dari kode: mengetik "semarang" mengirim DELAPAN request, satu untuk
+ * tiap potongan kata ('s', 'se', 'sem', ... 'semarang'). Tujuh di antaranya
+ * untuk kata yang belum selesai diketik, jadi hasilnya pun dibuang.
+ *
+ * Ongkos tiap request itu satu koneksi MySQL plus sampai lima panggilan API
+ * SIKUMBANG (Index::SIK_MAKS_BONGKAH). Basis data production dibatasi hosting
+ * pada `max_connections_per_hour = 500`; begitu jatah itu habis, SETIAP halaman
+ * membalas "Unable to connect to the database" sampai jam berikutnya berganti.
+ * Sudah terjadi: log server mencatat nol galat koneksi 10 dan 11 Agt, lalu
+ * 7.623 galat 12 Agt dan 4.277 galat 13 Agt, dengan pola khas delapan percobaan
+ * koneksi dalam DETIK YANG SAMA - persis sepanjang kata yang diketik.
+ *
+ * Diukur: satu permintaan PHP = tepat satu koneksi MySQL. Aset statis dan
+ * halaman 404 nol koneksi, jadi pemindai bot di log bukan penyebabnya.
+ *
+ * Pindah ke pagination page-based (commit a25e745) TIDAK menghapus masalah ini.
+ * Yang berubah cuma berapa kartu yang dikirim balik; jumlah request tetap satu
+ * per ketukan, dan pengambilan dari SIKUMBANG tetap sampai lima bongkahan.
+ *
+ * 400 ms dipilih karena lebih panjang dari jeda antar ketukan pengetik cepat
+ * (sekitar 150 sampai 250 ms) tapi masih terasa seketika. Ketiga dropdown
+ * sengaja TETAP memanggil cari_wil() langsung: satu perubahan pilihan memang
+ * satu niat mencari, bukan rentetan.
+ */
+var jedaKetik = null;
+function cari_wil_ketik() {
+    clearTimeout(jedaKetik);
+    jedaKetik = setTimeout(cari_wil, 400);
 }
 
 function cari_wil() {

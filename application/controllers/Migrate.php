@@ -246,6 +246,63 @@ class Migrate extends CI_Controller {
                 ->count_all_results('rd_kawasan_intervensi');
             echo "intervensi kawasan dengan program terpisah: {$terisi}\n";
         }
+
+        /* SRP2 asosiasi (migrasi 042). Yang diperiksa UNIQUE-nya, bukan sekadar
+           tabelnya: `create_table()` dan `ADD UNIQUE KEY` adalah DUA pernyataan
+           terpisah di migrasi itu, dan ALTER yang kedua gagal SENYAP saat
+           db_debug mati (riwayat 031). Tanpa `uq_srp2_asosiasi_kode`, dua
+           asosiasi bisa memakai kode yang sama, dan JOIN dari
+           `srp2_registrations.asosiasi` yang menyimpan STRING kode itu jadi
+           ambigu tanpa satu pun galat. */
+        if (in_array('srp2_asosiasi', $tables, TRUE)) {
+            $uq = $this->db->query("SELECT NON_UNIQUE nu FROM information_schema.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_asosiasi'
+                  AND INDEX_NAME = 'uq_srp2_asosiasi_kode' LIMIT 1")->row();
+            echo 'srp2_asosiasi UNIQUE kode (migrasi 042): '
+                .($uq === NULL ? 'TIDAK ADA - kode asosiasi bisa dobel'
+                    : ((int) $uq->nu === 0 ? 'TERPASANG' : 'ADA TAPI TIDAK UNIK'))."\n";
+            echo 'asosiasi terdaftar: '.(int) $this->db->count_all_results('srp2_asosiasi')."\n";
+        } else {
+            echo "srp2_asosiasi (migrasi 042): BELUM ADA - kolom Asosiasi di direktori SRP2 akan kosong\n";
+        }
+
+        /* PSU serah terima (migrasi 043). Dua hal diperiksa TERPISAH dari
+           tabelnya karena keduanya dipasang lewat ALTER tersendiri:
+
+           (a) Collation kolom `asosiasi`. Migrasi itu MENYELARASKANNYA ke
+               `srp2_asosiasi.kode` dengan sengaja. Kalau ALTER-nya gagal
+               senyap, tabelnya tetap ADA dan kolomnya tetap ADA - yang rusak
+               cuma JOIN-nya, dengan "Illegal mix of collations" yang muncul
+               jauh kemudian di layar rekap, bukan saat migrasi.
+
+           (b) Kedua foreign key. Tanpa keduanya, baris PSU bisa menunjuk
+               pengembang atau kabupaten yang sudah terhapus, dan tidak ada
+               yang berteriak sampai ada yang membuka laporannya. */
+        if (in_array('psu_serah_terima', $tables, TRUE)) {
+            $kol = $this->db->query("SELECT COLLATION_NAME c FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'psu_serah_terima'
+                  AND COLUMN_NAME = 'asosiasi' LIMIT 1")->row();
+            $acuan = $this->db->query("SELECT COLLATION_NAME c FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_asosiasi'
+                  AND COLUMN_NAME = 'kode' LIMIT 1")->row();
+            echo 'psu_serah_terima.asosiasi collation (migrasi 043): '
+                .($kol === NULL ? 'KOLOM HILANG'
+                    : (($acuan !== NULL && $kol->c === $acuan->c)
+                        ? 'SELARAS dengan srp2_asosiasi.kode ('.$kol->c.')'
+                        : 'BEDA dari srp2_asosiasi.kode - JOIN akan gagal ('.$kol->c.')'))."\n";
+            $fk = $this->db->query("SELECT CONSTRAINT_NAME n FROM information_schema.TABLE_CONSTRAINTS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'psu_serah_terima'
+                  AND CONSTRAINT_TYPE = 'FOREIGN KEY'")->result();
+            $terpasang = [];
+            foreach ($fk as $f) { $terpasang[] = $f->n; }
+            foreach (['fk_psu_pengembang', 'fk_psu_kabupaten'] as $nama) {
+                echo "psu_serah_terima {$nama} (migrasi 043): "
+                    .(in_array($nama, $terpasang, TRUE) ? 'TERPASANG' : 'TIDAK ADA - baris bisa yatim')."\n";
+            }
+            echo 'serah terima PSU tercatat: '.(int) $this->db->count_all_results('psu_serah_terima')."\n";
+        } else {
+            echo "psu_serah_terima (migrasi 043): BELUM ADA - layar PSU akan fatal\n";
+        }
     }
 
     /**

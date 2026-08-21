@@ -40,6 +40,18 @@
                         <p class="text-[#5a7a80] text-[10px]"><?= $this->session->userdata('email') ?></p>
                     </div>
                 </div>
+                <?php /* Menyusul Butir 14 putaran 2 (tombol Dashboard di sebelah
+                         username, sudah ada di main.php desktop) - menu mobile ini
+                         belum ikut dapat tautannya sampai 20 Agt 2026. $dashboard_home
+                         sudah tersedia di sini juga karena nav.php dimuat lewat
+                         load->view() dari dalam main.php, jadi $data yang sama
+                         (termasuk dashboard_home dari render()) ikut ter-extract. */ ?>
+                <?php if ( ! empty($dashboard_home)): ?>
+                    <a href="<?= base_url($dashboard_home) ?>" class="flex items-center justify-center gap-2 w-full text-[#d6fb00] text-xs font-semibold py-2.5 mb-2 border border-[#d6fb00]/20 rounded-xl hover:bg-[#d6fb00]/10 transition-all duration-200" @click="mobileMenu = false">
+                        <i class="fa-solid fa-gauge-high text-sm"></i>
+                        Dashboard
+                    </a>
+                <?php endif; ?>
                 <a href="#" onClick="logout()" class="block w-full text-center text-[#ff6b6b] text-xs font-semibold py-2.5 border border-[#ff6b6b]/20 rounded-xl hover:bg-[#ff6b6b]/10 transition-all duration-200">Keluar</a>
             <?php else: ?>
                 <a href="<?= base_url('Auth/login') ?>" class="flex items-center justify-center gap-2 w-full btn-primary text-xs py-3 rounded-xl">
