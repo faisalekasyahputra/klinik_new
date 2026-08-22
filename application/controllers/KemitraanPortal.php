@@ -270,6 +270,108 @@ class KemitraanPortal extends Public_Controller
         redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
     }
 
+    // =========================================================
+    // CETAK SERTIFIKAT KKN - permintaan user 22 Agt 2026.
+    //
+    // TANPA login dengan sengaja (keputusan user): mahasiswa peserta KKN
+    // belum tentu punya akun sendiri di sistem ini - akun yang ada adalah
+    // akun UNIVERSITAS (role 'universitas'), bukan per-mahasiswa. Karena
+    // itu dicari lewat NIM, bukan lewat sesi login.
+    //
+    // Ini pencarian data pribadi TANPA login yang bisa dienumerasi (NIM
+    // sengaja dicoba satu-satu akan membocorkan siapa terdaftar KKN, kapan,
+    // dan status kelulusannya) - kelas risiko yang SAMA dengan cek-tiket
+    // yang pernah dicabut (lihat riwayat commit b9bdc93). Bedanya di sini
+    // sengaja dipertahankan (bukan luput), dengan dua pengaman:
+    //   1. rate_limit sertifikat_kkn_lookup (5/jam per IP, lihat
+    //      rate_limits.php) - anti-enumerasi sungguhan, bukan sekadar
+    //      penahan spam.
+    //   2. Hasil GAGAL tidak pernah menyebut nama/universitas - cuma
+    //      status generik. Nama & data lengkap CUMA muncul di hasil
+    //      BERHASIL, yang berarti NIM itu memang sudah terverifikasi
+    //      lulus KKN dan sertifikatnya memang untuk pemilik NIM tsb.
+    //
+    // TEMPLATE SERTIFIKAT RESMI BELUM ADA (menyusul dari user) - hasil
+    // berhasil untuk sementara menampilkan data yang sudah terverifikasi
+    // dalam tata letak siap-cetak sederhana, bukan desain resmi. Data yang
+    // ditampilkan sudah final (nama, NIM, universitas, tema, periode);
+    // yang menyusul cuma tampilannya.
+    // =========================================================
+
+    public function sertifikat_kkn()
+    {
+        $this->render('pages/kemitraan_portal/sertifikat_kkn', ['judul' => 'Cetak Sertifikat KKN']);
+    }
+
+    public function cek_sertifikat_kkn()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+
+        $rate = $this->rate_limit_consume('sertifikat_kkn_lookup');
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject(
+                $rate,
+                'Terlalu banyak percobaan pencarian. Silakan coba lagi sebentar.',
+                $this->input->is_ajax_request()
+            );
+            return;
+        }
+
+        $nim = trim((string) $this->input->post('nim', TRUE));
+        if ($nim === '' || ! preg_match('/^[A-Za-z0-9]{1,30}$/', $nim)) {
+            $this->session->set_flashdata('error', 'NIM tidak valid. Periksa kembali dan coba lagi.');
+            redirect('KemitraanPortal/sertifikat_kkn');
+            return;
+        }
+
+        /* Baris TERBARU saja (ORDER BY periode_selesai DESC LIMIT 1) - kasus
+           satu NIM ikut KKN lebih dari sekali memang mungkin (KKN periode
+           berulang tiap tahun), dan yang paling relevan untuk dicetak
+           adalah keikutsertaan yang paling akhir. */
+        $baris = $this->db
+            ->select('kkn_peserta.nama AS nama_peserta, kkn_peserta.nim,
+                kkn_magang_pendaftaran.instansi_asal, kkn_magang_pendaftaran.divisi_atau_tema,
+                kkn_magang_pendaftaran.periode_mulai, kkn_magang_pendaftaran.periode_selesai,
+                kkn_magang_pendaftaran.status')
+            ->from('kkn_peserta')
+            ->join('kkn_magang_pendaftaran', 'kkn_magang_pendaftaran.id = kkn_peserta.pendaftaran_id')
+            ->where(['kkn_peserta.nim' => $nim, 'kkn_magang_pendaftaran.jenis' => 'kkn'])
+            ->order_by('kkn_magang_pendaftaran.periode_selesai', 'DESC')
+            ->limit(1)
+            ->get()->row();
+
+        $tolak = function ($pesan) {
+            $this->session->set_flashdata('error', $pesan);
+            redirect('KemitraanPortal/sertifikat_kkn');
+        };
+
+        // Pesan GAGAL sengaja generik dan TIDAK menyebut nama/universitas -
+        // lihat catatan anti-enumerasi di kepala berkas ini.
+        if ( ! $baris) {
+            $tolak('NIM tidak ditemukan dalam data peserta KKN.');
+            return;
+        }
+        if ($baris->status !== 'Diterima') {
+            $tolak('Sertifikat belum dapat diterbitkan untuk NIM ini.');
+            return;
+        }
+        if (empty($baris->periode_selesai) || strtotime($baris->periode_selesai) >= strtotime('today')) {
+            // Tanggal selesai BOLEH disebutkan di sini - berbeda dari dua
+            // kegagalan di atas, cabang ini sudah memastikan NIM tsb memang
+            // pemilik pendaftaran yang diterima, jadi memberi tahu kapan
+            // sertifikatnya bisa dicetak adalah informasi yang MEMANG untuk
+            // pemilik NIM itu, bukan bocoran ke penebak.
+            $tolak('KKN Anda belum melewati periode pelaksanaan. Sertifikat dapat dicetak mulai '
+                . tgl_id($baris->periode_selesai) . '.');
+            return;
+        }
+
+        $this->render('pages/kemitraan_portal/sertifikat_kkn_hasil', [
+            'judul' => 'Sertifikat KKN',
+            'data'  => $baris,
+        ]);
+    }
+
     /**
      * Papan slot magang. Dulu isinya array literal di method ini - tidak ada
      * yang bisa mengubahnya tanpa deploy, dan formulir pendaftaran tidak pernah

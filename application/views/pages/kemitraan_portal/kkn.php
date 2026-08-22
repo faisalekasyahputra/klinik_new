@@ -19,7 +19,7 @@
  * yang menuju berkas tak ada lebih buruk daripada tidak ada tautan sama sekali.
  */
 ?>
-<div class="mx-auto max-w-4xl p-2 sm:p-6">
+<div class="mx-auto max-w-5xl p-2 sm:p-6">
     <div class="mb-6 flex items-start justify-between gap-4">
         <div>
             <span class="text-xs font-bold uppercase tracking-[.18em] text-[color:var(--portal-text-muted)]">Kemitraan</span>
@@ -29,6 +29,11 @@
            class="rounded-xl border border-[color:var(--portal-border)] px-3 py-2 text-xs font-bold text-[color:var(--portal-text)]">Kembali</a>
     </div>
 
+    <?php // Dua kartu berdampingan di layar lebar (permintaan user 22 Agt
+          // 2026: "buat card lagi di sampingnya"), bertumpuk di mobile.
+          // items-start supaya tinggi kartu yang berbeda tidak saling
+          // meregangkan satu sama lain. ?>
+    <div class="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
     <section class="rounded-3xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] p-5 shadow-sm sm:p-8">
         <h2 class="text-xl font-black text-[color:var(--portal-text)]">Persyaratan KKN Kemitraan</h2>
         <p class="mt-2 text-sm leading-relaxed text-[color:var(--portal-text-muted)]">
@@ -71,4 +76,39 @@
             </a>
         </div>
     </section>
+
+    <?php // Cetak Sertifikat KKN - permintaan user 22 Agt 2026. Lihat komentar
+          // anti-enumerasi lengkap di KemitraanPortal::cek_sertifikat_kkn()
+          // sebelum mengubah kartu ini. ?>
+    <section class="rounded-3xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] p-5 shadow-sm sm:p-8">
+        <h2 class="text-xl font-black text-[color:var(--portal-text)]">Cetak Sertifikat KKN</h2>
+        <p class="mt-2 text-sm leading-relaxed text-[color:var(--portal-text-muted)]">
+            Sudah menyelesaikan KKN Kemitraan? Cetak sertifikat Anda dengan memasukkan NIM.
+        </p>
+
+        <ol class="mt-6 space-y-4">
+            <li class="flex gap-4">
+                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color:var(--portal-brand)] text-xs font-black text-[#0a1a1f]">1</span>
+                <div>
+                    <div class="text-sm font-bold text-[color:var(--portal-text)]">Masukkan NIM</div>
+                    <div class="mt-1 text-sm leading-relaxed text-[color:var(--portal-text-muted)]">Tanpa perlu masuk/mendaftar akun.</div>
+                </div>
+            </li>
+            <li class="flex gap-4">
+                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color:var(--portal-brand)] text-xs font-black text-[#0a1a1f]">2</span>
+                <div>
+                    <div class="text-sm font-bold text-[color:var(--portal-text)]">Sertifikat terbit otomatis</div>
+                    <div class="mt-1 text-sm leading-relaxed text-[color:var(--portal-text-muted)]">Hanya jika pengajuan KKN Anda sudah diterima dan periode pelaksanaannya sudah selesai.</div>
+                </div>
+            </li>
+        </ol>
+
+        <div class="mt-7 flex flex-wrap gap-3">
+            <a href="<?= base_url('KemitraanPortal/sertifikat_kkn') ?>" data-tab-link data-tab-key="kemitraan_sertifikat_kkn"
+               class="inline-flex items-center gap-2 rounded-xl bg-[color:var(--portal-brand)] px-5 py-3 text-sm font-bold text-[#0a1a1f]">
+                Cetak Sertifikat KKN <i class="fa-solid fa-arrow-right"></i>
+            </a>
+        </div>
+    </section>
+    </div>
 </div>

@@ -148,4 +148,16 @@ $config['rate_limit_policies'] = [
         'window' => 3600,
         'dimensions' => ['ip'],
     ],
+    /* Cetak Sertifikat KKN, permintaan user 22 Agt 2026 - pencarian NIM TANPA
+       login (mahasiswa peserta KKN belum tentu punya akun sendiri, akun KKN
+       ada di universitas). Pola SAMA PERSIS dengan warga_lookup_anon: dimensi
+       `ip` saja (tidak ada akun untuk dijadikan dimensi), dan angkanya
+       disamakan - ini pencarian anti-enumerasi sungguhan (hasilnya
+       mengonfirmasi/menyangkal seseorang terdaftar KKN, kapan, dan status
+       kelulusannya), bukan sekadar penahan spam submit. */
+    'sertifikat_kkn_lookup' => [
+        'limit' => 5,
+        'window' => 3600,
+        'dimensions' => ['ip'],
+    ],
 ];
