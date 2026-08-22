@@ -23,15 +23,16 @@
                     <div class="text-sm font-bold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-brand-primary transition-colors"><?= html_escape($this->session->userdata('name') ?: 'Administrator') ?></div>
                     <div class="text-[10px] text-gray-500 dark:text-brand-muted uppercase tracking-wider font-semibold">
                         <?php
-                        /* Role 'mahasiswa' TIDAK diubah di DB/session - internal
-                           tetap 'mahasiswa' di setiap pemeriksaan akses (KKN
-                           universitas dan Magang perorangan sama-sama role ini,
-                           lihat KemitraanPortal::akses_mahasiswa()). Yang
-                           berubah HANYA labelnya di layar, permintaan user
-                           21 Agt 2026 - "ganti mahasiswa menjadi Universitas". */
+                        /* Sampai 21 Agt 2026, KKN (universitas) dan Magang
+                           (perorangan) berbagi SATU role 'mahasiswa' - label
+                           di layar disamarkan jadi "Universitas" lewat kasus
+                           khusus di sini, role internalnya sendiri tidak
+                           berubah. 22 Agt 2026: role 'universitas' berdiri
+                           sendiri (config/roles.php, KemitraanPortal::
+                           akses_universitas()), jadi ucwords() generik di
+                           bawah sudah cukup - tidak perlu kasus khusus lagi. */
                         $peran = $this->session->userdata('role');
-                        echo $peran === 'mahasiswa' ? 'Universitas'
-                            : ($peran ? ucwords(str_replace('_', ' ', $peran)) : 'Super Admin');
+                        echo $peran ? ucwords(str_replace('_', ' ', $peran)) : 'Super Admin';
                         ?>
                     </div>
                 </div>

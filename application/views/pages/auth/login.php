@@ -117,12 +117,15 @@
                         ['Admin Dashboard',           'admin@klinikpkp.jatengprov.go.id'],
                         ['Warga (Pengaju)',           'warga@example.com'],
                         ['Pengembang (SRP2)',         'pengembang@example.com'],
-                        /* Dua akun terpisah dengan role SAMA ('mahasiswa') - KKN
+                        /* Dua akun terpisah dengan role BERBEDA sejak 22 Agt 2026
+                           ('universitas' vs 'mahasiswa', lihat config/roles.php +
+                           KemitraanPortal::akses_universitas()/akses_mahasiswa()).
+                           Sampai 21 Agt keduanya berbagi role 'mahasiswa' - KKN
                            sekarang mendaftarkan kampus (permintaan user 21 Agt
-                           2026, lihat KemitraanPortal::daftar()), bukan satu
-                           mahasiswa, jadi akun demonya juga tidak lagi memakai
-                           nama pribadi supaya "Terkirim atas nama akun" di form
-                           KKN tidak menampilkan nama mahasiswa. Magang tetap
+                           2026, lihat KemitraanPortal::kkn_dashboard()), bukan satu
+                           mahasiswa, jadi akun demonya juga tidak memakai nama
+                           pribadi supaya "Terkirim atas nama akun" di form KKN
+                           tidak menampilkan nama mahasiswa. Magang tetap
                            per-mahasiswa seperti semula. */
                         ['Universitas (KKN)',         'universitas@example.com'],
                         ['Mahasiswa (Magang)',        'mahasiswa@example.com'],

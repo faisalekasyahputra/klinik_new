@@ -31,7 +31,7 @@ class KemitraanPortal extends Public_Controller
 
     public function kkn_dashboard()
     {
-        if ( ! $this->akses_mahasiswa('KemitraanPortal/kkn_dashboard')) { return; }
+        if ( ! $this->akses_universitas('KemitraanPortal/kkn_dashboard')) { return; }
 
         // "Jumlah Peserta" DIHITUNG dari kkn_peserta, TIDAK disimpan sebagai
         // kolom tersendiri - lihat alasan lengkap di migrasi 044.
@@ -56,7 +56,7 @@ class KemitraanPortal extends Public_Controller
     public function kkn_tambah()
     {
         if ($this->input->method(TRUE) !== 'POST') { show_404(); }
-        if ( ! $this->akses_mahasiswa('KemitraanPortal/kkn_dashboard')) { return; }
+        if ( ! $this->akses_universitas('KemitraanPortal/kkn_dashboard')) { return; }
 
         /* Satu jalan pulang untuk SEMUA penolakan di method ini, sekaligus
            menandai dashboard supaya membuka ULANG modal Tambah KKN -
@@ -624,12 +624,17 @@ class KemitraanPortal extends Public_Controller
     /**
      * Ambil pendaftaran milik pemohon sendiri, atau hentikan permintaan.
      *
+     * Dipakai baik untuk baris KKN (akun universitas) maupun Magang (akun
+     * mahasiswa) - gerbangnya karena itu akses_kemitraan() (KEDUA role),
+     * bukan akses_mahasiswa(). Anti-IDOR sesungguhnya dari pencocokan
+     * user_id di WHERE bawah, bukan dari gerbang role ini.
+     *
      * @return object|FALSE
      */
     private function pendaftaran_milik($id)
     {
         if ( ! is_numeric($id)) { show_404(); }
-        if ( ! $this->akses_mahasiswa('akun')) { return FALSE; }
+        if ( ! $this->akses_kemitraan('akun')) { return FALSE; }
 
         $row = $this->db->get_where('kkn_magang_pendaftaran', [
             'id'      => (int) $id,
@@ -923,22 +928,73 @@ class KemitraanPortal extends Public_Controller
         redirect('KemitraanPortal/daftar/' . $jenis);
     }
 
-    private function akses_mahasiswa($target)
+    /**
+     * Gerbang akses generik untuk portal Kemitraan - dipakai TIGA gerbang
+     * khusus di bawah, bukan dipanggil langsung dari luar berkas ini.
+     *
+     * Dipecah 22 Agt 2026 (permintaan user: "buat role UNIVERSITAS untuk
+     * proses KKN, dan MAHASISWA hanya untuk proses magang"). Sebelum ini
+     * KKN dan Magang berbagi SATU akses_mahasiswa() (role 'mahasiswa') -
+     * keputusan yang jujur didokumentasikan sebagai sementara di riwayat
+     * commit 3cf160e, bukan kelalaian, tapi tetap berarti akun universitas
+     * dan mahasiswa perorangan tidak bisa dibedakan lewat role.
+     *
+     * @param string $target          Diserahkan ke gerbang_login() bila belum login.
+     * @param array  $peran_diizinkan Role yang boleh lewat.
+     * @param string $pesan_tolak     Pesan warning saat sudah login tapi role tidak cocok.
+     */
+    private function akses_peran_kemitraan($target, array $peran_diizinkan, $pesan_tolak)
     {
         if ( ! $this->is_logged_in()) {
-            $this->session->set_flashdata('error', 'Silakan masuk atau daftar akun mahasiswa terlebih dahulu.');
+            $this->session->set_flashdata('error', 'Silakan masuk terlebih dahulu.');
             // $target diserahkan ke gerbang, bukan ditulis sendiri ke sesi:
             // satu mekanisme, dan penyaringnya ikut berlaku di sini juga.
             $this->gerbang_login($target);
             return FALSE;
         }
-        if ($this->session->userdata('role') !== 'mahasiswa') {
+        if ( ! in_array($this->session->userdata('role'), $peran_diizinkan, TRUE)) {
             // Ini bukan kegagalan sistem: akun ini memang memiliki jalur kerja
             // lain. Tampilkan peringatan agar pengguna tahu tindakan yang tepat.
-            $this->session->set_flashdata('warning', 'Pendaftaran tidak tersedia. Pendaftaran KKN/Magang hanya dapat dilakukan menggunakan akun mahasiswa.');
+            $this->session->set_flashdata('warning', $pesan_tolak);
             redirect('akun');
             return FALSE;
         }
         return TRUE;
+    }
+
+    /** Gerbang KKN - HANYA akun universitas. Dipakai kkn_dashboard()/kkn_tambah(). */
+    private function akses_universitas($target)
+    {
+        return $this->akses_peran_kemitraan($target, ['universitas'],
+            'Pendaftaran tidak tersedia. Pengajuan KKN hanya dapat dilakukan menggunakan akun universitas.');
+    }
+
+    /**
+     * Gerbang Magang - HANYA akun mahasiswa. Perilakunya TIDAK berubah dari
+     * sebelum 22 Agt 2026, cuma dipecah dari akses_universitas(): role
+     * 'mahasiswa' sekarang murni Magang, tidak lagi dipakai bersama KKN.
+     */
+    private function akses_mahasiswa($target)
+    {
+        return $this->akses_peran_kemitraan($target, ['mahasiswa'],
+            'Pendaftaran tidak tersedia. Pendaftaran Magang hanya dapat dilakukan menggunakan akun mahasiswa.');
+    }
+
+    /**
+     * Gerbang MILIK SENDIRI - satu-satunya yang menerima KEDUA role
+     * sekaligus, dipakai pendaftaran_milik() (lihat komentar lengkap di
+     * sana): KKN dan Magang dilihat/diubah/dibatalkan lewat jalur yang
+     * SAMA, jadi gerbangnya tidak boleh memilih salah satu.
+     *
+     * Anti-IDOR sesungguhnya TETAP dari pencocokan user_id di
+     * pendaftaran_milik(), bukan dari gerbang ini - gerbang ini cuma
+     * menyaring akun yang jelas bukan akun KKN/Magang sama sekali
+     * (mis. warga/pengembang/admin), lebih awal dan dengan pesan yang
+     * lebih jelas daripada baru gagal di query.
+     */
+    private function akses_kemitraan($target)
+    {
+        return $this->akses_peran_kemitraan($target, ['mahasiswa', 'universitas'],
+            'Pendaftaran tidak tersedia. Fitur ini hanya untuk akun mahasiswa atau universitas.');
     }
 }

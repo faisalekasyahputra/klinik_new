@@ -18,6 +18,18 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | alamat_usaha/jenis_usaha yang tidak ada di usr_users, jadi memilihnya
 | menghasilkan error DB, bukan profil. Nol baris berperan vendor.
 |
+| 'universitas' - permintaan user 22 Agt 2026: "buat role UNIVERSITAS
+| untuk proses KKN, dan MAHASISWA hanya untuk proses magang". Sebelum ini
+| KKN dan Magang BERBAGI role 'mahasiswa' (lihat riwayat commit
+| 3cf160e/KemitraanPortal::akses_mahasiswa()) - jujur didokumentasikan
+| sebagai keputusan sementara, bukan kelalaian, tapi tetap berarti akun
+| universitas dan mahasiswa perorangan tidak bisa dibedakan lewat role.
+| Sama seperti admin_kabkota/admin_bidang: scope-less (tidak butuh
+| kabupaten_id/bidang_kode), dan HANYA dibuat admin lewat Admin_Users
+| (Admin_Kemitraan::universitas(), "Tambah Universitas") - TIDAK masuk
+| Auth::save_onboarding() $valid_roles, karena universitas bukan akun
+| yang mendaftar sendiri lewat onboarding publik.
+|
 */
 $config['available_roles'] = [
     'admin'         => 'Administrator',
@@ -25,6 +37,7 @@ $config['available_roles'] = [
     'pengembang'    => 'Pengembang',
     'admin_kabkota' => 'Admin Kabupaten/Kota',
     'mahasiswa'     => 'Mahasiswa',
+    'universitas'   => 'Universitas',
     'admin_bidang'  => 'Admin Bidang',
 ];
 

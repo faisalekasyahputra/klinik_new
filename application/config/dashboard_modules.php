@@ -111,7 +111,11 @@ $config['dashboard_modules'] = [
     'kkn_dashboard' => [
         'label' => 'Dashboard KKN', 'icon' => 'ph-graduation-cap',
         'url'   => 'KemitraanPortal/kkn_dashboard', 'group' => 'Akun', 'order' => 5,
-        'roles' => ['mahasiswa'],
+        // 'universitas', bukan 'mahasiswa' lagi - permintaan user 22 Agt 2026
+        // (role terpisah, lihat config/roles.php). dashboard_home() tetap
+        // memilih order TERKECIL, jadi tautan "Dashboard" di navbar atas
+        // masih otomatis ke sini untuk role universitas.
+        'roles' => ['universitas'],
         'scope' => null,
     ],
     // admin ikut di sini (beda dari status_pengajuan) sejak User_Profile
@@ -119,7 +123,10 @@ $config['dashboard_modules'] = [
     'profil' => [
         'label' => 'Profil Saya', 'icon' => 'ph-user-circle',
         'url'   => 'akun/profil', 'group' => 'Akun', 'order' => 20,
-        'roles' => ['warga', 'pengembang', 'mahasiswa', 'admin', 'admin_kabkota', 'admin_bidang'],
+        // 'universitas' ditambahkan 22 Agt 2026 - akun ini juga butuh Profil
+        // Saya (No. HP di sana WAJIB diisi sebelum bisa mengajukan KKN
+        // pertama, lihat KemitraanPortal::kkn_tambah()).
+        'roles' => ['warga', 'pengembang', 'mahasiswa', 'universitas', 'admin', 'admin_kabkota', 'admin_bidang'],
         'scope' => null,
     ],
 
