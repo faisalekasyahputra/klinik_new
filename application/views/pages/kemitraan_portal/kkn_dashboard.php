@@ -174,7 +174,14 @@ $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
        memang deferred (berjalan belakangan, sama seperti Alpine.js) - tanpa
        menunggu, `flatpickr` belum tentu terdefinisi saat baris ini dieksekusi. */
     document.addEventListener('DOMContentLoaded', function () {
-        if (typeof flatpickr === 'undefined') { return; }
+        if (typeof flatpickr === 'undefined') {
+            // Diam-diam gagal sebelumnya - tanpa baris ini, CDN yang gagal
+            // dimuat (mis. diblokir jaringan) tidak meninggalkan jejak apa
+            // pun di Console, dan field tanggal cuma diam tanpa kalender
+            // tanpa penjelasan kenapa.
+            console.error('Flatpickr tidak termuat - cek tab Network untuk flatpickr.min.js (CDN mungkin diblokir).');
+            return;
+        }
 
         /* appendTo WAJIB diarahkan ke dalam <dialog> ini, BUKAN dibiarkan
            bawaan (document.body). <dialog>.showModal() menaruh dialognya di
