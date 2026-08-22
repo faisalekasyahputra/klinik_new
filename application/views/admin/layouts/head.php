@@ -83,6 +83,55 @@
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
     <!-- Loader progresif dashboard: klik sidebar/link internal = swap #main-content, bukan full reload -->
     <script defer src="<?= base_url('assets/js/admin-progressive.js?v=' . filemtime('assets/js/admin-progressive.js')) ?>"></script>
+    <!-- Flatpickr - permintaan user 22 Agt 2026: kolom tanggal Tambah KKN
+         (kkn_dashboard.php) diganti dari <input type="date"> ke datepicker.
+         Dimuat GLOBAL di sini (sama seperti Alpine.js), bukan per-halaman,
+         supaya halaman admin lain yang butuh kolom tanggal tinggal
+         menginisialisasi tanpa perlu include ulang. Versi dipatok
+         (bukan @latest) - pola sama dengan alpinejs@3.15.12 di atas. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/id.js"></script>
+    <style>
+        /* Kalender flatpickr diselaraskan ke token warna dashboard admin
+           (tailwind.config brand-* di atas) - BUKAN tema dark.css bawaan
+           flatpickr, yang paletnya sendiri dan akan terlihat asing di
+           samping sisa dashboard. Kalendernya nempel ke <body>, di luar
+           pohon komponen manapun, jadi aturannya global di sini, bukan
+           di-scope ke satu halaman. */
+        .flatpickr-calendar {
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15); font-family: inherit;
+        }
+        .flatpickr-calendar.arrowTop:before, .flatpickr-calendar.arrowTop:after { border-bottom-color: #fff; }
+        .flatpickr-months .flatpickr-month, .flatpickr-current-month, .flatpickr-weekdays { background: transparent; color: #111827; }
+        .flatpickr-weekday { color: #6b7280; font-weight: 700; }
+        .flatpickr-day { color: #374151; border-radius: 0.5rem; }
+        .flatpickr-day.today { border-color: #d6fb00; }
+        .flatpickr-day:hover { background: #f3f4f6; border-color: transparent; }
+        .flatpickr-day.selected, .flatpickr-day.selected:hover {
+            background: #d6fb00; border-color: #d6fb00; color: #0a1a1f; font-weight: 700;
+        }
+        .flatpickr-day.flatpickr-disabled, .flatpickr-day.flatpickr-disabled:hover { color: #d1d5db; }
+        .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay { color: #d1d5db; }
+        .flatpickr-current-month .flatpickr-monthDropdown-months, .numInputWrapper span { color: inherit; }
+        .flatpickr-prev-month, .flatpickr-next-month { color: #6b7280 !important; fill: #6b7280 !important; }
+
+        .dark .flatpickr-calendar { background: #0f2933; border-color: rgb(255 255 255 / 0.1); box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.4); }
+        .dark .flatpickr-calendar.arrowTop:before, .dark .flatpickr-calendar.arrowTop:after { border-bottom-color: #0f2933; }
+        .dark .flatpickr-months .flatpickr-month, .dark .flatpickr-current-month, .dark .flatpickr-weekdays { color: #fff; }
+        .dark .flatpickr-weekday { color: #8aacb0; }
+        .dark .flatpickr-day { color: #e5e7eb; }
+        .dark .flatpickr-day.today { border-color: #d6fb00; }
+        .dark .flatpickr-day:hover { background: rgb(255 255 255 / 0.08); border-color: transparent; }
+        .dark .flatpickr-day.selected, .dark .flatpickr-day.selected:hover {
+            background: #d6fb00; border-color: #d6fb00; color: #0a1a1f; font-weight: 700;
+        }
+        .dark .flatpickr-day.flatpickr-disabled, .dark .flatpickr-day.flatpickr-disabled:hover { color: #4b5563; }
+        .dark .flatpickr-day.prevMonthDay, .dark .flatpickr-day.nextMonthDay { color: #4b5563; }
+        .dark .flatpickr-prev-month, .dark .flatpickr-next-month { color: #8aacb0 !important; fill: #8aacb0 !important; }
+        .dark .flatpickr-prev-month:hover, .dark .flatpickr-next-month:hover { color: #d6fb00 !important; fill: #d6fb00 !important; }
+    </style>
     <style>
         /* Penanda aktif sidebar. Sejak menu ikut dikirim server tiap pindah
            halaman, kelas Tailwind-nya sudah benar sendiri - aturan ini tinggal

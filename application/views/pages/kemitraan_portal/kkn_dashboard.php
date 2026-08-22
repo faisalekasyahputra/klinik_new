@@ -108,11 +108,16 @@ $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                     <label for="kt-mulai" class="<?= $label ?>">Periode Mulai</label>
-                    <input id="kt-mulai" name="periode_mulai" type="date" required class="<?= $isian ?>">
+                    <?php /* type="text" + readonly, BUKAN type="date" lagi - permintaan
+                             user 22 Agt 2026 (datepicker, lihat flatpickr di
+                             admin/layouts/head.php). readonly tetap menjaga jaminan lama
+                             type="date": tidak ada string tanggal rusak yang bisa diketik
+                             manual, cuma sekarang lewat flatpickr, bukan validator browser. */ ?>
+                    <input id="kt-mulai" name="periode_mulai" type="text" readonly required class="<?= $isian ?>" placeholder="Pilih tanggal">
                 </div>
                 <div>
                     <label for="kt-selesai" class="<?= $label ?>">Periode Selesai</label>
-                    <input id="kt-selesai" name="periode_selesai" type="date" required class="<?= $isian ?>">
+                    <input id="kt-selesai" name="periode_selesai" type="text" readonly required class="<?= $isian ?>" placeholder="Pilih tanggal">
                 </div>
             </div>
 
@@ -158,5 +163,54 @@ $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
     // dimaksud (modal sudah tertutup lagi setelah submit).
     dlg.showModal();
     <?php endif; ?>
+})();
+</script>
+<script>
+(function () {
+    'use strict';
+    /* Flatpickr - permintaan user 22 Agt 2026. Ditunggu sampai DOMContentLoaded
+       dengan sengaja: skrip ini berjalan SEGERA saat parser sampai di sini
+       (bukan deferred), sedangkan flatpickr.min.js di admin/layouts/head.php
+       memang deferred (berjalan belakangan, sama seperti Alpine.js) - tanpa
+       menunggu, `flatpickr` belum tentu terdefinisi saat baris ini dieksekusi. */
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof flatpickr === 'undefined') { return; }
+
+        var opsi = {
+            locale: 'id',
+            // dateFormat: nilai SUNGGUHAN yang terkirim ke server (name="periode_mulai"),
+            // harus tetap Y-m-d - KemitraanPortal::kkn_tambah() membandingkannya sebagai
+            // string ("$selesai < $mulai") dan kolomnya DATE di database.
+            dateFormat: 'Y-m-d',
+            // altInput+altFormat: yang TERLIHAT pemakai memakai format Indonesia
+            // panjang, sama seperti tgl_id() dipakai menampilkan tanggal di tabel
+            // KKN pada halaman ini juga (mis. "22 Agustus 2026").
+            altInput: true,
+            altFormat: 'j F Y',
+            allowInput: false,
+        };
+        var mulai = flatpickr('#kt-mulai', opsi);
+        var selesai = flatpickr('#kt-selesai', opsi);
+
+        // altInput membuat elemen TERLIHAT baru tanpa id aslinya - id tetap
+        // menempel di input asli yang sekarang type="hidden". Tanpa baris ini,
+        // <label for="kt-mulai"> menunjuk ke elemen tersembunyi, dan mengklik
+        // labelnya tidak membuka kalender sama sekali.
+        [mulai, selesai].forEach(function (fp) {
+            if (fp && fp.altInput && fp.input && fp.input.id) {
+                fp.altInput.id = fp.input.id;
+                fp.input.removeAttribute('id');
+            }
+        });
+
+        // Periode Selesai tidak boleh mendahului Periode Mulai - penjagaan yang
+        // SAMA sudah ada di server (KemitraanPortal::kkn_tambah()), ini cuma
+        // memberi tahu lewat kalender SEBELUM submit, bukan gerbang baru.
+        if (mulai && selesai) {
+            mulai.config.onChange.push(function (dates) {
+                if (dates[0]) { selesai.set('minDate', dates[0]); }
+            });
+        }
+    });
 })();
 </script>
