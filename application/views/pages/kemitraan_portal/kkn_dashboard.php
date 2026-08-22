@@ -176,8 +176,19 @@ $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof flatpickr === 'undefined') { return; }
 
+        /* appendTo WAJIB diarahkan ke dalam <dialog> ini, BUKAN dibiarkan
+           bawaan (document.body). <dialog>.showModal() menaruh dialognya di
+           "top layer" browser - elemen APA PUN yang ditambahkan ke body DI
+           LUAR dialog (termasuk kalender flatpickr, yang bawaannya nempel ke
+           body) jadi tidak terlihat/tidak bisa diklik di belakang lapisan
+           itu, walau z-index CSS diatur setinggi apa pun. Dibuktikan: tanpa
+           appendTo ini, kalender sama sekali tidak muncul saat field diklik
+           di dalam modal Tambah KKN. */
+        var dlgUntukKalender = document.getElementById('kkn-tambah-dialog');
+
         var opsi = {
             locale: 'id',
+            appendTo: dlgUntukKalender || undefined,
             // dateFormat: nilai SUNGGUHAN yang terkirim ke server (name="periode_mulai"),
             // harus tetap Y-m-d - KemitraanPortal::kkn_tambah() membandingkannya sebagai
             // string ("$selesai < $mulai") dan kolomnya DATE di database.
