@@ -252,7 +252,7 @@ class Admin_Kemitraan extends Admin_Controller {
     }
 
     /**
-     * Daftar akun universitas/mahasiswa (role='mahasiswa') - permintaan user
+     * Daftar akun universitas (role='universitas') - permintaan user
      * 22 Agt 2026: "bisa mengelola Akun KKN/Universitas". Ini daftar AKUN,
      * beda dari index() yang mendaftar PENGAJUAN - satu akun bisa punya
      * banyak baris kkn_magang_pendaftaran (dashboard KKN, migrasi 044).
@@ -264,10 +264,14 @@ class Admin_Kemitraan extends Admin_Controller {
      * pintas MEMBUAT akun universitas baru tanpa harus memilih role secara
      * manual di formulir umum Admin_Users.
      *
-     * Catatan jujur: role 'mahasiswa' dipakai BERSAMA oleh akun universitas
-     * (KKN) dan mahasiswa perorangan (Magang) - keputusan sesi 21 Agt 2026.
-     * Daftar ini karenanya menampilkan KEDUANYA; kolom "KKN Diajukan" akan
-     * nol untuk akun yang cuma pernah Magang, bukan berarti akun itu error.
+     * Role 'universitas' sendiri, TERPISAH dari 'mahasiswa' - permintaan
+     * user 22 Agt 2026 ("buat role UNIVERSITAS untuk proses KKN, dan
+     * MAHASISWA hanya untuk proses magang"). Sebelum ini keduanya berbagi
+     * role 'mahasiswa' (keputusan sesi 21 Agt 2026, lihat riwayat commit
+     * 3cf160e) - daftar ini dulu ikut menampilkan mahasiswa perorangan yang
+     * cuma pernah Magang, dengan "KKN Diajukan" bernilai nol untuk mereka.
+     * Sejak role dipisah, filter di bawah cukup role='universitas' - tidak
+     * ada lagi akun Magang yang nyasar ke daftar ini.
      */
     public function universitas()
     {
@@ -276,7 +280,7 @@ class Admin_Kemitraan extends Admin_Controller {
         $table = $this->table_state(['created_at', 'name', 'email'], 'created_at');
         $data['base_url'] = 'Admin_Kemitraan/universitas';
 
-        $this->db->from('usr_users')->where('role', 'mahasiswa');
+        $this->db->from('usr_users')->where('role', 'universitas');
         if ($table['q'] !== '') {
             $this->db->group_start()
                 ->like('name', $table['q'])->or_like('email', $table['q'])

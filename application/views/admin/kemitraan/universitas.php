@@ -7,7 +7,7 @@ $this->load->helper('admin_table');
 <div class="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-6" x-data="{ createOpen: false }">
     <div>
         <p class="text-sm text-gray-500 dark:text-brand-muted">
-            Akun (role Mahasiswa/Universitas) yang bisa mengajukan KKN lewat dashboardnya sendiri.
+            Akun (role Universitas) yang bisa mengajukan KKN lewat dashboardnya sendiri.
             Sunting, nonaktifkan, atau reset sandi lewat <a href="<?= base_url('Admin_Users') ?>" class="font-bold text-blue-600 dark:text-brand-primary hover:underline">Manajemen Pengguna</a> -
             satu tempat untuk seluruh akun apa pun rolenya, tab ini tidak menyalinnya.
         </p>
@@ -18,19 +18,22 @@ $this->load->helper('admin_table');
 
     <!-- Modal: buat akun universitas. POST ke Admin_Users/create_staff yang
          SAMA dipakai Manajemen Pengguna - role dikirim TERSEMBUNYI sebagai
-         'mahasiswa' (bukan dipilih manual) supaya formulir ini tidak perlu
-         menanyakan sesuatu yang jawabannya sudah pasti. Nomor HP OPSIONAL
-         di sini tapi diisi kalau memang diketahui - KemitraanPortal::kkn_tambah()
-         mewajibkannya sebelum akun bisa mengajukan KKN pertamanya (lihat
-         komentar di Admin_Users::create_staff()), jadi mengisinya di sini
-         berarti akun langsung siap pakai. -->
+         'universitas' (bukan dipilih manual) supaya formulir ini tidak perlu
+         menanyakan sesuatu yang jawabannya sudah pasti. Role ini scope-less
+         (tidak butuh kabupaten_id/bidang_kode) sama seperti 'mahasiswa',
+         jadi create_staff() memprosesnya tanpa cabang tambahan - lihat
+         config/roles.php. Nomor HP OPSIONAL di sini tapi diisi kalau memang
+         diketahui - KemitraanPortal::kkn_tambah() mewajibkannya sebelum
+         akun bisa mengajukan KKN pertamanya (lihat komentar di
+         Admin_Users::create_staff()), jadi mengisinya di sini berarti akun
+         langsung siap pakai. -->
     <div x-show="createOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @keydown.escape.window="createOpen = false">
         <div @click.outside="createOpen = false" class="w-full max-w-md rounded-3xl bg-white dark:bg-brand-card p-6 shadow-xl">
             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Tambah Universitas</h3>
             <p class="mb-4 text-xs text-gray-500 dark:text-brand-muted">Akun ini bisa langsung masuk dan mengajukan KKN lewat dashboardnya.</p>
             <form method="POST" action="<?= base_url('Admin_Users/create_staff') ?>" class="space-y-3">
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-                <input type="hidden" name="role" value="mahasiswa">
+                <input type="hidden" name="role" value="universitas">
                 <div>
                     <label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Nama Universitas</label>
                     <input type="text" name="name" required maxlength="150" placeholder="Contoh: Universitas Diponegoro"

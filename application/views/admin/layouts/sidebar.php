@@ -15,10 +15,11 @@
                 <span class="text-[10px] font-bold text-gray-500 dark:text-brand-muted uppercase tracking-wider">
                     <?php
                     // Sama seperti admin/layouts/topbar.php - lihat komentar
-                    // lengkap di sana. Role internal TIDAK berubah, cuma labelnya.
+                    // lengkap di sana. Sejak role 'universitas' berdiri
+                    // sendiri (22 Agt 2026), ucwords() generik di bawah
+                    // sudah cukup - tidak perlu kasus khusus lagi.
                     $peran = $this->session->userdata('role');
-                    echo $peran === 'mahasiswa' ? 'Universitas'
-                        : ($peran ? ucwords(str_replace('_', ' ', $peran)) : 'Super Admin');
+                    echo $peran ? ucwords(str_replace('_', ' ', $peran)) : 'Super Admin';
                     ?>
                 </span>
             </div>

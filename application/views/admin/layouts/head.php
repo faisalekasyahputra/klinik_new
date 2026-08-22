@@ -15,10 +15,11 @@
 
     <?php
     // Sama seperti admin/layouts/topbar.php/sidebar.php - lihat komentar
-    // lengkap di sana. Role internal TIDAK berubah, cuma labelnya.
+    // lengkap di sana. Sejak role 'universitas' berdiri sendiri (22 Agt
+    // 2026, gantikan penyamaran label "mahasiswa" -> "Universitas"),
+    // ucwords() generik di bawah sudah cukup - tidak perlu kasus khusus lagi.
     $peranSesi = $this->session->userdata('role');
-    $roleUser = $peranSesi === 'mahasiswa' ? 'Universitas'
-        : ($peranSesi ? ucwords(str_replace('_', ' ', $peranSesi)) : 'Super Admin');
+    $roleUser = $peranSesi ? ucwords(str_replace('_', ' ', $peranSesi)) : 'Super Admin';
     ?>
     <title><?= isset($title) ? $title . ' - ' : '' ?><?= $roleUser ?> | Klinik PKP</title>
     
