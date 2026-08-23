@@ -112,6 +112,7 @@ class Warga extends MY_Controller {
         $matriks_recommendation = [];
         $matriks_decile_label = null;
         $matriks_data_simperum = null;
+        $matriks_saran_lengkapi_simperum = false;
         if ($assessment) {
             /* Keterangan "data ada/tidak ada di SIMPERUM" - permintaan
                user 23 Agt 2026. source_mode ('simulation'/'api' vs
@@ -129,29 +130,39 @@ class Warga extends MY_Controller {
             // lihat docblock lengkap di Matriks_program_ruleset.php.
             $matriks_decile_label = $this->matriks_program_ruleset->decile_label_for_income($matriks_income_code);
 
+            /* Pencocokan 20 baris SELALU dijalankan (bukan cuma saat data
+               ada di SIMPERUM) - permintaan user 23 Agt 2026: kalau NIK
+               BELUM terdaftar tapi jawaban matriksnya SEBENARNYA cocok
+               salah satu dari 15 program yang mensyaratkan verifikasi
+               (Matriks_program_ruleset::SIMPERUM_REQUIRED_PROGRAMS),
+               tunjukkan SARAN melengkapi data SIMPERUM - bukan nama
+               programnya (itu tetap ditimpa di bawah). Hasil pencocokan
+               ini dipakai untuk MENENTUKAN saran itu, bukan ditampilkan
+               langsung kalau data belum ada di SIMPERUM. */
+            $matriks_actual_match = $this->matriks_program_ruleset->match([
+                'income_code' => $matriks_income_code,
+                'welfare_decile' => $this->matriks_program_ruleset->decile_for_income($matriks_income_code),
+                'dtks_code' => $assessment['matrix_dtks_status'] ?? NULL,
+                'land_code' => $assessment['matrix_land_ownership_code'] ?? NULL,
+                'housing_code' => $assessment['matrix_current_housing_code'] ?? NULL,
+                'environment_code' => $assessment['matrix_environment_condition_code'] ?? NULL,
+                'occupation_code' => $assessment['matrix_occupation_finance_code'] ?? NULL,
+                'age_years' => $this->age_years_from_birth_date($profile['birth_date'] ?? NULL),
+                'family_code' => $assessment['matrix_marital_family_code'] ?? NULL,
+            ]);
+
             if ( ! $matriks_data_simperum) {
                 /* Permintaan user 23 Agt 2026: "Jika data tidak ada di
                    simperum maka hasil rekomendasinya adalah: 1. Oemah
                    Lestari; 2. FLPP. Apapun hasil validasinya" - MENIMPA
-                   hasil pencocokan 20 baris matriks sepenuhnya (bukan
-                   ditambahkan), sengaja TIDAK memanggil
-                   Matriks_program_ruleset::match() sama sekali di cabang
-                   ini - keduanya sengaja SALING MENIADAKAN (hasil
-                   pencocokan matriks HANYA relevan kalau data warga
-                   sungguh berasal dari SIMPERUM). */
+                   hasil pencocokan 20 baris matriks sepenuhnya untuk
+                   TAMPILAN (bukan diam-diam diabaikan sepenuhnya - dipakai
+                   di atas untuk menentukan saran). */
                 $matriks_recommendation = ['Oemah Lestari', 'FLPP'];
+                $matriks_saran_lengkapi_simperum = $this->matriks_program_ruleset
+                    ->needs_simperum_suggestion($matriks_actual_match);
             } else {
-                $matriks_recommendation = $this->matriks_program_ruleset->match([
-                    'income_code' => $matriks_income_code,
-                    'welfare_decile' => $this->matriks_program_ruleset->decile_for_income($matriks_income_code),
-                    'dtks_code' => $assessment['matrix_dtks_status'] ?? NULL,
-                    'land_code' => $assessment['matrix_land_ownership_code'] ?? NULL,
-                    'housing_code' => $assessment['matrix_current_housing_code'] ?? NULL,
-                    'environment_code' => $assessment['matrix_environment_condition_code'] ?? NULL,
-                    'occupation_code' => $assessment['matrix_occupation_finance_code'] ?? NULL,
-                    'age_years' => $this->age_years_from_birth_date($profile['birth_date'] ?? NULL),
-                    'family_code' => $assessment['matrix_marital_family_code'] ?? NULL,
-                ]);
+                $matriks_recommendation = $matriks_actual_match;
             }
         }
         $this->render('pages/warga/pendataan', [
@@ -180,6 +191,7 @@ class Warga extends MY_Controller {
             'matriks_recommendation' => $matriks_recommendation,
             'matriks_decile_label' => $matriks_decile_label,
             'matriks_data_simperum' => $matriks_data_simperum,
+            'matriks_saran_lengkapi_simperum' => $matriks_saran_lengkapi_simperum,
         ]);
     }
 

@@ -16,6 +16,7 @@ $recommendations = isset($recommendations) && is_array($recommendations) ? $reco
 $matriks_recommendation = isset($matriks_recommendation) && is_array($matriks_recommendation) ? $matriks_recommendation : [];
 $matriks_decile_label = isset($matriks_decile_label) && is_string($matriks_decile_label) ? $matriks_decile_label : null;
 $matriks_data_simperum = isset($matriks_data_simperum) ? $matriks_data_simperum : null; // true/false/null (null = belum ada draft)
+$matriks_saran_lengkapi_simperum = isset($matriks_saran_lengkapi_simperum) && $matriks_saran_lengkapi_simperum === TRUE;
 $review_summary = isset($review_summary) && is_array($review_summary) ? $review_summary : [];
 $action_url = isset($action_url) && is_string($action_url) && $action_url !== '' ? $action_url : base_url('warga/pendataan');
 $back_url = isset($back_url) && is_string($back_url) && $back_url !== '' ? $back_url : base_url();
@@ -350,6 +351,23 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
             <p class="mt-3 rounded-xl p-3 text-xs" style="background:rgba(14,165,233,.09);color:#075985">Kategori Kemiskinan (Desil): <strong><?= $matriks_decile_label !== null ? html_escape($matriks_decile_label) : 'Belum tersedia - isi Gaji di langkah sebelumnya' ?></strong></p>
             <?php if ($matriks_data_simperum === FALSE): ?>
                 <p class="mt-3 rounded-xl border p-3 text-xs" style="border-color:var(--portal-border);color:var(--portal-text-muted)">Karena data Anda belum ditemukan di SIMPERUM, rekomendasi awal di bawah ini bersifat baku (Oemah Lestari &amp; FLPP) - belum dihitung dari isian matriks di atas.</p>
+                <?php
+                /* Saran melengkapi SIMPERUM - permintaan user 23 Agt
+                   2026: KHUSUS ditampilkan kalau jawaban matriks warga
+                   SEBENARNYA cocok salah satu dari 15 program yang
+                   mensyaratkan verifikasi (PB Backlog/Relokasi/Bencana,
+                   PK Bencana/RTLH - lihat
+                   Matriks_program_ruleset::SIMPERUM_REQUIRED_PROGRAMS).
+                   Nama programnya SENGAJA TIDAK disebut di sini ("hasil
+                   yang dari xlsx tidak ditampilkan tetapi memberi
+                   saran") - cuma anjuran, bukan bocoran hasil pencocokan
+                   yang belum diverifikasi. */
+                ?>
+                <?php if ($matriks_saran_lengkapi_simperum): ?>
+                    <p class="mt-3 rounded-xl border p-3 text-xs" style="border-color:#f59e0b;background:rgba(245,158,11,.08);color:#92400e">
+                        <strong>Saran:</strong> berdasarkan jawaban matriks Anda, kemungkinan ada program bantuan lain yang lebih sesuai untuk Anda. Lengkapi data SIMPERUM terlebih dahulu (daftar/verifikasi NIK Anda) agar dapat diperiksa lebih lanjut.
+                    </p>
+                <?php endif; ?>
             <?php endif; ?>
             <?php if (empty($matriks_recommendation)): ?>
                 <p class="mt-5 rounded-xl border p-3 text-xs" style="border-color:var(--portal-border);color:var(--portal-text-muted)">Belum ada program yang cocok dengan kombinasi data matriks Anda saat ini. Ini bukan penolakan akhir - lengkapi data SIMPERUM agar dapat ditinjau lebih lanjut, atau periksa kembali isian matriks Anda.</p>

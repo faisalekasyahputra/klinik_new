@@ -85,6 +85,31 @@ class Matriks_program_ruleset {
         return $decile !== NULL ? (self::DECILE_LABELS[$decile] ?? NULL) : NULL;
     }
 
+    /**
+     * 15 program (kolom J) yang SEMUANYA berasal dari baris xlsx yang
+     * mensyaratkan DTKS='YA' (kecuali KPR-FLPP - itu satu-satunya baris
+     * ber-DTKS yang bukan bagian kelompok ini) - permintaan user 23 Agt
+     * 2026: kalau NIK warga BELUM terdaftar di SIMPERUM tapi jawaban
+     * matriksnya SEBENARNYA cocok salah satu dari 15 program ini, beri
+     * SARAN melengkapi data SIMPERUM di halaman Hasil Rekomendasi -
+     * bukan menampilkan nama programnya (itu tetap ditimpa 'Oemah
+     * Lestari'/'FLPP', lihat Warga::pendataan()), cuma anjuran supaya
+     * warga tahu kenapa perlu melengkapi data.
+     */
+    const SIMPERUM_REQUIRED_PROGRAMS = [
+        'PB Backlog (Prioritas 1)', 'PB Backlog (Prioritas 2)', 'PB Backlog (Prioritas 3)',
+        'PB Relokasi (Prioritas 1)', 'PB Relokasi (Prioritas 2)', 'PB Relokasi (Prioritas 3)',
+        'PB Bencana (Prioritas 1)', 'PB Bencana (Prioritas 2)', 'PB Bencana (Prioritas 3)',
+        'PK Bencana (Prioritas 1)', 'PK Bencana (Prioritas 2)', 'PK Bencana (Prioritas 3)',
+        'PK RTLH (Prioritas 1)', 'PK RTLH (Prioritas 2)', 'PK RTLH (Prioritas 3)',
+    ];
+
+    /** @param string[] $programs Hasil match(). @return bool */
+    public function needs_simperum_suggestion(array $programs)
+    {
+        return count(array_intersect($programs, self::SIMPERUM_REQUIRED_PROGRAMS)) > 0;
+    }
+
     const ROWS = [
         // A                    B          C           D                  E                          F                                                                G                                       H                I                              J
         ['income_gt_8_5',       [9, 10],   null,       null,              null,                      null,                                                            null,                                   null,            'family_single',               'Oemah Lestari Non-Subsidi'],
