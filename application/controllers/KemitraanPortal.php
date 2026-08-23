@@ -540,7 +540,14 @@ class KemitraanPortal extends Public_Controller
         // langsung tanpa konversi tambahan.
         $pdf->SetFont('Times', '', 13);
         $pdf->SetTextColor(10, 10, 10);
-        $pdf->Text(121.34, 62.95, $t('Nomor : 600.2/69.' . $data->id_peserta));
+        // Fallback ke NIM kalau id_peserta tidak ada di data sesi - jaga-jaga
+        // sesi LAMA (tersimpan sebelum kolom ini ditambahkan ke query
+        // cek_sertifikat_kkn(), 23 Agt 2026) masih tersangkut di browser
+        // seseorang. Tanpa ini, properti tak dikenal memicu PHP Warning yang
+        // dicetak SEBELUM byte PDF dikirim - merusak seluruh keluaran
+        // ("FPDF error: Some data has already been output").
+        $idUntukNomor = isset($data->id_peserta) && $data->id_peserta !== '' ? $data->id_peserta : $data->nim;
+        $pdf->Text(121.34, 62.95, $t('Nomor : 600.2/69.' . $idUntukNomor));
 
         // <<Nama Lengkap>> - font BrittanySignature (diunggah user 22 Agt
         // 2026), mendekati skrip/kursif biru navy templatenya. Dipusatkan
