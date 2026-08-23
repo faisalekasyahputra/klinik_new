@@ -148,7 +148,7 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
             </div>
             <?php endif; ?>
         <?php elseif ($step_slug === 'citizen_data'): ?>
-            <h2 class="text-lg font-black">Isi Data Sesuai Matriks — Data Warga</h2>
+            <h2 class="text-lg font-black">Lengkapi Data SIMPERUM — Data Warga</h2>
             <p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Untuk rekomendasi awal, wajib isi hanya <strong>Penghasilan</strong> dan <strong>Kemampuan swadaya</strong>. Isian lain opsional dan dapat dilengkapi kemudian.</p>
             <?php if (! empty($lookup['message'])): ?><p class="mt-3 rounded-xl p-3 text-xs" style="background:rgba(14,165,233,.09);color:#075985"><?= html_escape($lookup['message']) ?></p><?php endif; ?>
             <div class="mt-5 grid gap-4 sm:grid-cols-2">
