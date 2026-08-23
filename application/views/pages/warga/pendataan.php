@@ -14,6 +14,7 @@ $lookup = isset($lookup) && is_array($lookup) ? $lookup : [];
 $evidence_files = isset($evidence_files) && is_array($evidence_files) ? $evidence_files : [];
 $recommendations = isset($recommendations) && is_array($recommendations) ? $recommendations : [];
 $matriks_recommendation = isset($matriks_recommendation) && is_array($matriks_recommendation) ? $matriks_recommendation : [];
+$matriks_decile_label = isset($matriks_decile_label) && is_string($matriks_decile_label) ? $matriks_decile_label : null;
 $review_summary = isset($review_summary) && is_array($review_summary) ? $review_summary : [];
 $action_url = isset($action_url) && is_string($action_url) && $action_url !== '' ? $action_url : base_url('warga/pendataan');
 $back_url = isset($back_url) && is_string($back_url) && $back_url !== '' ? $back_url : base_url();
@@ -314,24 +315,20 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                ("PROGRAM YANG COCOK"), bukan disusun ulang.
 
                "Kategori Kemiskinan (Desil)" (kolom B) ditambahkan 23 Agt
-               2026 - bukan input baru (welfare_decile sudah ada, angka
-               1-10 dari profil/SIMPERUM), cuma diterjemahkan ke label
-               PERSIS 5 kategori kolom B Sheet4 supaya warga bisa melihat
-               kelompok mana yang dipakai mesin pencocokan tanpa harus
-               tahu artinya angka desil mentah - sama motivasinya dengan
-               "Kategori Usia" yang ditampilkan (bukan diminta isi) di
-               step sebelumnya. */
-            $desil = filter_var($value('welfare_decile'), FILTER_VALIDATE_INT);
-            $desil_label = $desil === FALSE ? null
-                : ($desil <= 1 ? 'Desil 1 (Sangat Miskin)'
-                : ($desil <= 3 ? 'Desil 2-3 (Miskin)'
-                : ($desil == 4 ? 'Desil 4 (Rentan Miskin)'
-                : ($desil <= 8 ? 'Desil 5-8 (MBR)'
-                : 'Desil 9-10 (Non-MBR)'))));
+               2026, lalu DIPERBAIKI sumbernya di hari yang sama: awalnya
+               dibaca dari welfare_decile profil (angka SIMPERUM yang
+               TIDAK terkait dengan Gaji yang baru dipilih warga di sini -
+               bisa membuat kombinasi yang menurut xlsx cocok jadi
+               dianggap tidak cocok gara-gara desil profil kebetulan beda
+               golongan). Sekarang $matriks_decile_label DITURUNKAN dari
+               Gaji (Matriks_program_ruleset::decile_label_for_income(),
+               dihitung di Warga::pendataan()) - SATU sumber yang sama
+               dipakai baik untuk tampilan ini maupun mesin pencocokan,
+               tidak bisa lagi saling berbeda. */
             ?>
             <h2 class="text-lg font-black">Hasil Rekomendasi Awal</h2>
             <p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Hasil ini dicocokkan dari data matriks yang sudah Anda isi terhadap tabel program perumahan. Lengkapi data SIMPERUM setelah ini agar pengajuan dapat ditinjau lebih lengkap.</p>
-            <p class="mt-4 rounded-xl p-3 text-xs" style="background:rgba(14,165,233,.09);color:#075985">Kategori Kemiskinan (Desil): <strong><?= $desil_label !== null ? html_escape($desil_label) : 'Belum tersedia' ?></strong><?= $desil !== FALSE ? ' (Desil ' . html_escape((string) $desil) . ')' : '' ?></p>
+            <p class="mt-4 rounded-xl p-3 text-xs" style="background:rgba(14,165,233,.09);color:#075985">Kategori Kemiskinan (Desil): <strong><?= $matriks_decile_label !== null ? html_escape($matriks_decile_label) : 'Belum tersedia - isi Gaji di langkah sebelumnya' ?></strong></p>
             <?php if (empty($matriks_recommendation)): ?>
                 <p class="mt-5 rounded-xl border p-3 text-xs" style="border-color:var(--portal-border);color:var(--portal-text-muted)">Belum ada program yang cocok dengan kombinasi data matriks Anda saat ini. Ini bukan penolakan akhir - lengkapi data SIMPERUM agar dapat ditinjau lebih lanjut, atau periksa kembali isian matriks Anda.</p>
             <?php else: ?>

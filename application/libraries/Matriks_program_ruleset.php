@@ -10,8 +10,23 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * "Lengkapi Data SIMPERUM" seterusnya/review) - dua sistem rekomendasi
  * yang hidup berdampingan, bukan saling menggantikan. Ini KHUSUS untuk
  * step "Isi Data Sesuai Matriks" (Hasil Rekomendasi awal), sumber datanya
- * 8 field matrix_*_code + welfare_decile (profil) + umur (dihitung dari
- * tanggal lahir) - PERSIS 9 kolom A-C & E-I xlsx (D dipakai juga).
+ * 8 field matrix_*_code + umur (dihitung dari tanggal lahir) - PERSIS
+ * kolom A & C-I xlsx.
+ *
+ * KOLOM B (Desil) DITURUNKAN DARI KOLOM A (Gaji), BUKAN dari
+ * welfare_decile profil - permintaan user 23 Agt 2026 ("samakan
+ * logikanya dengan xlsx-nya di Sheet4"), sesudah ditemukan lewat tes
+ * langsung bahwa welfare_decile (angka simulasi dari SIMPERUM, sumbernya
+ * TIDAK terkait dengan Gaji yang baru saja dipilih warga di step ini)
+ * bisa membuat kombinasi yang menurut xlsx seharusnya cocok (Gaji &
+ * Status Perkawinan sudah pas) jadi tidak cocok gara-gara desil profil
+ * kebetulan berbeda golongan. DIPERIKSA LANGSUNG ke tiap baris Sheet4:
+ * pasangan Gaji-Desil di 20 baris itu KONSISTEN SEMPURNA (Gaji '0-1,5jt'
+ * SELALU berpasangan dengan 'Desil 1', '1,5-2,2jt' SELALU 'Desil 2-3',
+ * dst, tidak pernah pasangan gaji yang sama muncul dengan desil
+ * berbeda) - artinya Desil di tabel ini memang REDUNDAN terhadap Gaji,
+ * bukan dimensi independen sungguhan yang butuh sumber data terpisah.
+ * INCOME_TO_DECILE di bawah ini salinan LANGSUNG pasangan itu.
  *
  * ROWS = salinan LANGSUNG kolom A-J Sheet4 baris 3-22, diterjemahkan ke
  * kode field yang dipakai form (lihat pendataan.php step 'housing_family'
@@ -29,6 +44,46 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *    age_rule|null, family_code|null, program_text]
  */
 class Matriks_program_ruleset {
+
+    /* Gaji -> satu angka desil REPRESENTATIF dari rentang yang dipakai
+       baris-baris Sheet4 (mis. income_1_5_2_2 -> 2, cukup untuk lolos
+       cek in_array($decile,[2,3]) - tidak perlu representasi rentang
+       penuh, cukup satu anggota sah dari himpunan desil baris terkait). */
+    const INCOME_TO_DECILE = [
+        'income_0_1_5' => 1,
+        'income_1_5_2_2' => 2,
+        'income_2_2_2_8' => 4,
+        'income_2_8_8_5' => 5,
+        'income_2_8_10' => 5,
+        'income_gt_8_5' => 9,
+        'income_gt_10' => 9,
+    ];
+
+    /** Label PERSIS kolom B Sheet4, dipakai tampilan "Kategori Kemiskinan
+     * (Desil)" - satu sumber kebenaran yang sama dengan yang dipakai
+     * match(), supaya yang ditampilkan ke warga PERSIS yang dipakai
+     * mesin pencocokan (tidak ada lagi dua sumber desil yang bisa
+     * berbeda seperti sebelum perubahan ini). */
+    const DECILE_LABELS = [
+        1 => 'Desil 1 (Sangat Miskin)',
+        2 => 'Desil 2-3 (Miskin)',
+        4 => 'Desil 4 (Rentan Miskin)',
+        5 => 'Desil 5-8 (MBR)',
+        9 => 'Desil 9-10 (Non-MBR)',
+    ];
+
+    /** @return int|null Null kalau kode Gaji belum diisi/tidak dikenal. */
+    public function decile_for_income($income_code)
+    {
+        return self::INCOME_TO_DECILE[$income_code] ?? NULL;
+    }
+
+    /** @return string|null Label kolom B untuk kode Gaji yang sama. */
+    public function decile_label_for_income($income_code)
+    {
+        $decile = $this->decile_for_income($income_code);
+        return $decile !== NULL ? (self::DECILE_LABELS[$decile] ?? NULL) : NULL;
+    }
 
     const ROWS = [
         // A                    B          C           D                  E                          F                                                                G                                       H                I                              J

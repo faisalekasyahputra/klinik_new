@@ -110,10 +110,15 @@ class Warga extends MY_Controller {
            umur (dihitung dari tanggal lahir profil), jadi selalu konsisten
            dengan data terbaru tanpa perlu invalidasi cache. */
         $matriks_recommendation = [];
+        $matriks_decile_label = null;
         if ($assessment) {
+            $matriks_income_code = $assessment['matrix_income_code'] ?? NULL;
+            // Desil DITURUNKAN dari Gaji (bukan welfare_decile profil) -
+            // lihat docblock lengkap di Matriks_program_ruleset.php.
+            $matriks_decile_label = $this->matriks_program_ruleset->decile_label_for_income($matriks_income_code);
             $matriks_recommendation = $this->matriks_program_ruleset->match([
-                'income_code' => $assessment['matrix_income_code'] ?? NULL,
-                'welfare_decile' => $profile['welfare_decile'] ?? NULL,
+                'income_code' => $matriks_income_code,
+                'welfare_decile' => $this->matriks_program_ruleset->decile_for_income($matriks_income_code),
                 'dtks_code' => $assessment['matrix_dtks_status'] ?? NULL,
                 'land_code' => $assessment['matrix_land_ownership_code'] ?? NULL,
                 'housing_code' => $assessment['matrix_current_housing_code'] ?? NULL,
@@ -147,6 +152,7 @@ class Warga extends MY_Controller {
                 ) : [],
             'review_summary' => ['welfare_decile'=>$profile['welfare_decile']??NULL,'assessment_track'=>$assessment['assessment_track']??NULL,'source_mode'=>$assessment['source_mode']??NULL],
             'matriks_recommendation' => $matriks_recommendation,
+            'matriks_decile_label' => $matriks_decile_label,
         ]);
     }
 
