@@ -784,13 +784,18 @@ class Warga extends MY_Controller {
                     $errors[$field] = $label . ' wajib dipilih.';
                 }
             }
+            // Kode "*_unrestricted" ("Tidak Dibatasi") DICABUT dari daftar
+            // sah 23 Agt 2026, sejalan dengan opsi itu dihapus dari select
+            // di pendataan.php - lihat komentar di sana. Submit yang tetap
+            // mengirim kode itu (mis. request manual/lama) akan ditolak
+            // sebagai "Pilihan tidak valid", bukan diam-diam diterima.
             $this->validate_options([
                 'matrix_income_code' => ['income_0_1_5', 'income_1_5_2_2', 'income_2_2_2_8', 'income_2_8_8_5', 'income_2_8_10', 'income_gt_8_5', 'income_gt_10'],
-                'matrix_land_ownership_code' => ['land_unrestricted', 'land_none', 'land_legal'],
-                'matrix_current_housing_code' => ['house_unrestricted', 'house_none_or_rent', 'house_rent_or_staying', 'house_restricted_area', 'house_disaster_affected', 'house_owned'],
-                'matrix_environment_condition_code' => ['env_unrestricted', 'env_safe', 'env_relocation_zone', 'env_disaster_severe', 'env_disaster_moderate', 'env_slum_uninhabitable'],
-                'matrix_occupation_finance_code' => ['work_unrestricted', 'work_stable_or_unstable_no_subsidy', 'work_can_save_irregular'],
-                'matrix_marital_family_code' => ['family_single', 'family_married', 'family_unrestricted_single_or_married', 'family_multi_household', 'family_head_of_household', 'family_unrestricted'],
+                'matrix_land_ownership_code' => ['land_none', 'land_legal'],
+                'matrix_current_housing_code' => ['house_none_or_rent', 'house_rent_or_staying', 'house_restricted_area', 'house_disaster_affected', 'house_owned'],
+                'matrix_environment_condition_code' => ['env_safe', 'env_relocation_zone', 'env_disaster_severe', 'env_disaster_moderate', 'env_slum_uninhabitable'],
+                'matrix_occupation_finance_code' => ['work_stable_or_unstable_no_subsidy', 'work_can_save_irregular'],
+                'matrix_marital_family_code' => ['family_single', 'family_married', 'family_multi_household', 'family_head_of_household'],
             ], $errors);
         }
         if ($step === 'housing_family_detail') {

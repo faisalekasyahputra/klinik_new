@@ -208,13 +208,19 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                     'income_gt_8_5' => '> 8,5 Juta',
                     'income_gt_10' => '> 10 Juta',
                 ]],
+                /* Opsi "Tidak Dibatasi" DIHAPUS dari semua select 23 Agt
+                   2026 - permintaan user: nilai itu di xlsx cuma berarti
+                   "baris aturan ini tidak mempedulikan kolom ini", BUKAN
+                   keadaan sungguhan yang bisa dialami warga. Warga wajib
+                   mendeskripsikan keadaan aslinya; logika "field ini tidak
+                   dipedulikan" adalah urusan mesin pencocokan aturan
+                   nanti (Warga_ruleset.php/sejenisnya), bukan pilihan yang
+                   ditampilkan sebagai jawaban. */
                 'matrix_land_ownership_code' => ['Kepemilikan Lahan', [
-                    'land_unrestricted' => 'Tidak Dibatasi',
                     'land_none' => 'Tidak Punya',
                     'land_legal' => 'Punya Lahan Sah',
                 ]],
                 'matrix_current_housing_code' => ['Kepemilikan Rumah Saat Ini', [
-                    'house_unrestricted' => 'Tidak Dibatasi',
                     'house_none_or_rent' => 'Belum Punya / Numpang / Sewa',
                     'house_rent_or_staying' => 'Menumpang / Sewa',
                     'house_restricted_area' => 'Tinggal di Area Terlarang / Numpang',
@@ -222,7 +228,6 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                     'house_owned' => 'Punya Rumah Sendiri',
                 ]],
                 'matrix_environment_condition_code' => ['Kondisi Lingkungan / Fisik Bangunan', [
-                    'env_unrestricted' => 'Tidak Dibatasi',
                     'env_safe' => 'Aman / Tidak Terdampak Bencana',
                     'env_relocation_zone' => 'Kawasan Relokasi Pemerintah (Rusunawa, Sempadan Sungai, Kumuh)',
                     'env_disaster_severe' => 'Terdampak Bencana: Kerusakan Berat / Roboh',
@@ -230,17 +235,14 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                     'env_slum_uninhabitable' => 'Kumuh / Tidak Layak: Atap, Lantai, Dinding Jelek/Rusak',
                 ]],
                 'matrix_occupation_finance_code' => ['Pekerjaan / Kondisi Finansial', [
-                    'work_unrestricted' => 'Tidak Dibatasi',
                     'work_stable_or_unstable_no_subsidy' => 'Berpenghasilan Tetap/Tidak Tetap (Belum Pernah Dapat Subsidi)',
                     'work_can_save_irregular' => 'Mampu Menabung / Penghasilan Tidak Tetap',
                 ]],
                 'matrix_marital_family_code' => ['Status Perkawinan / Keluarga', [
                     'family_single' => 'Belum Menikah',
                     'family_married' => 'Menikah',
-                    'family_unrestricted_single_or_married' => 'Tidak Dibatasi (Single / Menikah)',
                     'family_multi_household' => 'Dihuni > 1 KK (Kepala Keluarga)',
                     'family_head_of_household' => 'Kepala Keluarga (Menikah / Duda / Janda)',
-                    'family_unrestricted' => 'Tidak Dibatasi',
                 ]],
             ];
             // "Kategori Usia*" - permintaan user: dihitung otomatis dari
