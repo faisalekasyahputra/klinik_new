@@ -111,22 +111,48 @@ class Warga extends MY_Controller {
            dengan data terbaru tanpa perlu invalidasi cache. */
         $matriks_recommendation = [];
         $matriks_decile_label = null;
+        $matriks_data_simperum = null;
         if ($assessment) {
+            /* Keterangan "data ada/tidak ada di SIMPERUM" - permintaan
+               user 23 Agt 2026. source_mode ('simulation'/'api' vs
+               'manual') SUDAH ADA di draft sejak dibuat
+               (create_draft()/bootstrap_manual_draft() di
+               Housing_assessment_model) - 'manual' HANYA terjadi lewat
+               Warga::isi_manual(), jalur yang memang dipakai persis
+               ketika NIK warga TIDAK ditemukan di SIMPERUM (lihat
+               komentar lookup()/isi_manual() di controller ini). Tidak
+               perlu field baru - source_mode yang ada sudah pas artinya. */
+            $matriks_data_simperum = ($assessment['source_mode'] ?? NULL) !== 'manual';
+
             $matriks_income_code = $assessment['matrix_income_code'] ?? NULL;
             // Desil DITURUNKAN dari Gaji (bukan welfare_decile profil) -
             // lihat docblock lengkap di Matriks_program_ruleset.php.
             $matriks_decile_label = $this->matriks_program_ruleset->decile_label_for_income($matriks_income_code);
-            $matriks_recommendation = $this->matriks_program_ruleset->match([
-                'income_code' => $matriks_income_code,
-                'welfare_decile' => $this->matriks_program_ruleset->decile_for_income($matriks_income_code),
-                'dtks_code' => $assessment['matrix_dtks_status'] ?? NULL,
-                'land_code' => $assessment['matrix_land_ownership_code'] ?? NULL,
-                'housing_code' => $assessment['matrix_current_housing_code'] ?? NULL,
-                'environment_code' => $assessment['matrix_environment_condition_code'] ?? NULL,
-                'occupation_code' => $assessment['matrix_occupation_finance_code'] ?? NULL,
-                'age_years' => $this->age_years_from_birth_date($profile['birth_date'] ?? NULL),
-                'family_code' => $assessment['matrix_marital_family_code'] ?? NULL,
-            ]);
+
+            if ( ! $matriks_data_simperum) {
+                /* Permintaan user 23 Agt 2026: "Jika data tidak ada di
+                   simperum maka hasil rekomendasinya adalah: 1. Oemah
+                   Lestari; 2. FLPP. Apapun hasil validasinya" - MENIMPA
+                   hasil pencocokan 20 baris matriks sepenuhnya (bukan
+                   ditambahkan), sengaja TIDAK memanggil
+                   Matriks_program_ruleset::match() sama sekali di cabang
+                   ini - keduanya sengaja SALING MENIADAKAN (hasil
+                   pencocokan matriks HANYA relevan kalau data warga
+                   sungguh berasal dari SIMPERUM). */
+                $matriks_recommendation = ['Oemah Lestari', 'FLPP'];
+            } else {
+                $matriks_recommendation = $this->matriks_program_ruleset->match([
+                    'income_code' => $matriks_income_code,
+                    'welfare_decile' => $this->matriks_program_ruleset->decile_for_income($matriks_income_code),
+                    'dtks_code' => $assessment['matrix_dtks_status'] ?? NULL,
+                    'land_code' => $assessment['matrix_land_ownership_code'] ?? NULL,
+                    'housing_code' => $assessment['matrix_current_housing_code'] ?? NULL,
+                    'environment_code' => $assessment['matrix_environment_condition_code'] ?? NULL,
+                    'occupation_code' => $assessment['matrix_occupation_finance_code'] ?? NULL,
+                    'age_years' => $this->age_years_from_birth_date($profile['birth_date'] ?? NULL),
+                    'family_code' => $assessment['matrix_marital_family_code'] ?? NULL,
+                ]);
+            }
         }
         $this->render('pages/warga/pendataan', [
             'title' => 'Pendataan Warga',
@@ -153,6 +179,7 @@ class Warga extends MY_Controller {
             'review_summary' => ['welfare_decile'=>$profile['welfare_decile']??NULL,'assessment_track'=>$assessment['assessment_track']??NULL,'source_mode'=>$assessment['source_mode']??NULL],
             'matriks_recommendation' => $matriks_recommendation,
             'matriks_decile_label' => $matriks_decile_label,
+            'matriks_data_simperum' => $matriks_data_simperum,
         ]);
     }
 

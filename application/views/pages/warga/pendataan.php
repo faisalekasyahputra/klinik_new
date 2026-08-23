@@ -15,6 +15,7 @@ $evidence_files = isset($evidence_files) && is_array($evidence_files) ? $evidenc
 $recommendations = isset($recommendations) && is_array($recommendations) ? $recommendations : [];
 $matriks_recommendation = isset($matriks_recommendation) && is_array($matriks_recommendation) ? $matriks_recommendation : [];
 $matriks_decile_label = isset($matriks_decile_label) && is_string($matriks_decile_label) ? $matriks_decile_label : null;
+$matriks_data_simperum = isset($matriks_data_simperum) ? $matriks_data_simperum : null; // true/false/null (null = belum ada draft)
 $review_summary = isset($review_summary) && is_array($review_summary) ? $review_summary : [];
 $action_url = isset($action_url) && is_string($action_url) && $action_url !== '' ? $action_url : base_url('warga/pendataan');
 $back_url = isset($back_url) && is_string($back_url) && $back_url !== '' ? $back_url : base_url();
@@ -328,7 +329,28 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
             ?>
             <h2 class="text-lg font-black">Hasil Rekomendasi Awal</h2>
             <p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Hasil ini dicocokkan dari data matriks yang sudah Anda isi terhadap tabel program perumahan. Lengkapi data SIMPERUM setelah ini agar pengajuan dapat ditinjau lebih lengkap.</p>
-            <p class="mt-4 rounded-xl p-3 text-xs" style="background:rgba(14,165,233,.09);color:#075985">Kategori Kemiskinan (Desil): <strong><?= $matriks_decile_label !== null ? html_escape($matriks_decile_label) : 'Belum tersedia - isi Gaji di langkah sebelumnya' ?></strong></p>
+            <?php
+            /* Keterangan "Data di SIMPERUM" - permintaan user 23 Agt
+               2026. $matriks_data_simperum === FALSE berarti draft ini
+               lahir dari Warga::isi_manual() (NIK tidak ditemukan di
+               SIMPERUM saat "Masukkan NIK") - untuk kasus itu hasil
+               rekomendasi di bawah SUDAH ditimpa jadi 'Oemah Lestari'
+               + 'FLPP' TETAP di Warga::pendataan(), apa pun hasil
+               pencocokan 20 baris matriks (lihat komentar di sana) -
+               kotak keterangan ini menjelaskan KENAPA, bukan sekadar
+               status netral. */
+            $simperum_style = $matriks_data_simperum === FALSE
+                ? 'background:rgba(245,158,11,.12);color:#92400e'
+                : 'background:rgba(16,185,129,.12);color:#047857';
+            $simperum_text = $matriks_data_simperum === FALSE
+                ? 'Tidak Ada - NIK Anda tidak ditemukan di SIMPERUM, data diisi manual'
+                : 'Ada - data ini berasal dari pencarian SIMPERUM';
+            ?>
+            <p class="mt-4 rounded-xl p-3 text-xs" style="<?= $simperum_style ?>">Data di SIMPERUM: <strong><?= html_escape($simperum_text) ?></strong></p>
+            <p class="mt-3 rounded-xl p-3 text-xs" style="background:rgba(14,165,233,.09);color:#075985">Kategori Kemiskinan (Desil): <strong><?= $matriks_decile_label !== null ? html_escape($matriks_decile_label) : 'Belum tersedia - isi Gaji di langkah sebelumnya' ?></strong></p>
+            <?php if ($matriks_data_simperum === FALSE): ?>
+                <p class="mt-3 rounded-xl border p-3 text-xs" style="border-color:var(--portal-border);color:var(--portal-text-muted)">Karena data Anda belum ditemukan di SIMPERUM, rekomendasi awal di bawah ini bersifat baku (Oemah Lestari &amp; FLPP) - belum dihitung dari isian matriks di atas.</p>
+            <?php endif; ?>
             <?php if (empty($matriks_recommendation)): ?>
                 <p class="mt-5 rounded-xl border p-3 text-xs" style="border-color:var(--portal-border);color:var(--portal-text-muted)">Belum ada program yang cocok dengan kombinasi data matriks Anda saat ini. Ini bukan penolakan akhir - lengkapi data SIMPERUM agar dapat ditinjau lebih lanjut, atau periksa kembali isian matriks Anda.</p>
             <?php else: ?>
