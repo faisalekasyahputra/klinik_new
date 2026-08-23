@@ -540,13 +540,19 @@ class KemitraanPortal extends Public_Controller
 
         // <<Nama Lengkap>> - font BrittanySignature (diunggah user 22 Agt
         // 2026), mendekati skrip/kursif biru navy templatenya. Dipusatkan
-        // manual (GetStringWidth) dalam rentang horizontal yang sama
-        // dengan sebelumnya (50-207mm) karena baseline asli dari file
-        // sumber (x=93.85mm) cuma valid untuk teks placeholder "<<Nama
-        // Lengkap>>" itu sendiri, bukan patokan pemusatan untuk nama
-        // sungguhan yang panjangnya bervariasi per mahasiswa. Ukuran
-        // huruf MENGECIL OTOMATIS kalau nama kepanjangan untuk rentang
-        // ini - satu-satunya cara nama yang sangat panjang tidak meluber.
+        // manual (GetStringWidth) terhadap TITIK TENGAH KERTAS SUNGGUHAN
+        // (148.5mm, dari 297mm lebar A4 landscape) - bukan titik tengah
+        // kotak 50-207mm yang dipakai sebelumnya, yang pusatnya di 128.5mm
+        // dan membuat nama terlihat bergeser ~20mm ke kiri dibanding garis
+        // titik-titik di bawahnya (keluhan user 23 Agt 2026, dan diverifikasi
+        // dengan mengukur ulang garis titik-titik di background baru: pusat
+        // sungguhannya 148.43mm, cocok dengan titik tengah halaman, bukan
+        // 128.5mm). Baseline asli dari file sumber (x=93.85mm) TETAP tidak
+        // dipakai untuk pemusatan - itu cuma valid untuk teks placeholder
+        // "<<Nama Lengkap>>" itu sendiri, bukan patokan nama sungguhan yang
+        // panjangnya bervariasi per mahasiswa. Ukuran huruf MENGECIL
+        // OTOMATIS kalau nama kepanjangan - satu-satunya cara nama yang
+        // sangat panjang tidak meluber ke luar kertas.
         $nama = $t($data->nama_peserta);
         $namaUkuran = 44;
         $pdf->SetFont('BrittanySignature', '', $namaUkuran);
@@ -555,7 +561,7 @@ class KemitraanPortal extends Public_Controller
             $pdf->SetFont('BrittanySignature', '', $namaUkuran);
         }
         $pdf->SetTextColor(19, 61, 103);
-        $namaX = 50 + (157 - $pdf->GetStringWidth($nama)) / 2;
+        $namaX = 148.5 - $pdf->GetStringWidth($nama) / 2;
         $pdf->Text($namaX, 95.31, $nama);
 
         /* Kalimat "Atas partisipasinya ... dan <<Universitas>> dalam
