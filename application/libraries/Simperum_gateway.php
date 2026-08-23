@@ -124,7 +124,30 @@ class Simperum_gateway {
             '0000000000000098' => 'SIM-98',
             '0000000000000099' => 'SIM-99',
         ];
-        $id = $index[$nik] ?? 'SIM-98';
+        if (isset($index[$nik])) {
+            return $this->load_fixture_file($index[$nik]);
+        }
+
+        /* Permintaan user 23 Agt 2026: sambungkan pencarian NIK di mode
+           simulasi ke tabel dummy_simperum_rtlh (dummy_simperum.sql di
+           root proyek) - SIMPERUM sungguhan sedang tidak bisa diakses,
+           jadi tabel ini berperan sebagai pengganti data sumber untuk tes
+           lokal, memakai NIK APAPUN (bukan cuma 7 NIK tetap 0000..0001..99
+           di atas). Dicoba SETELAH index tetap di atas (supaya 7 NIK
+           skenario khusus itu - termasuk SIM-98/99 yang sengaja mensimulasikan
+           not_found/error - tetap berperilaku PERSIS seperti sebelumnya,
+           tidak bisa ketiban baris dummy_simperum_rtlh manapun), dan
+           SEBELUM jatuh ke SIM-98 (not_found) sebagai keadaan akhir. */
+        $dummy = $this->load_dummy_table_record($nik);
+        if ($dummy !== NULL) {
+            return $dummy;
+        }
+
+        return $this->load_fixture_file('SIM-98');
+    }
+
+    private function load_fixture_file($id)
+    {
         $json = file_get_contents($this->fixture_path . DIRECTORY_SEPARATOR . $id . '.json');
         $fixture = json_decode($json, TRUE);
         return is_array($fixture) ? $fixture : [
@@ -133,6 +156,64 @@ class Simperum_gateway {
             'response_status' => 'error',
             'error_code' => 'fixture_invalid',
         ];
+    }
+
+    /**
+     * Cari NIK di dummy_simperum_rtlh (tabel dummy LOKAL, bukan bagian
+     * migrasi resmi - lihat dummy_simperum.sql) lalu petakan lewat
+     * normalize_api_record() yang SAMA dipakai jalur API sungguhan, supaya
+     * logika pemetaan kode (AtapID/Pekerjaan/dst -> *_code) tidak
+     * diduplikasi di dua tempat yang bisa saling menyimpang.
+     *
+     * Tabel ini TIDAK WAJIB ada - kalau environment ini belum pernah
+     * menjalankan dummy_simperum.sql (mis. clone baru), query akan
+     * gagal dan method ini dengan tenang mengembalikan NULL, jatuh ke
+     * perilaku lama (SIM-98/not_found), bukan error 500.
+     *
+     * @return array|null null kalau tabel tidak ada ATAU NIK tidak ketemu
+     *                     di dalamnya - kedua kasus itu sengaja diperlakukan
+     *                     SAMA oleh pemanggil (lanjut ke SIM-98).
+     */
+    private function load_dummy_table_record($nik)
+    {
+        try {
+            $row = $this->CI->db->get_where('dummy_simperum_rtlh', ['nik' => $nik])->row_array();
+        } catch (\Throwable $e) {
+            return NULL;
+        }
+        if ( ! $row) {
+            return NULL;
+        }
+
+        // snake_case (nama kolom tabel) -> PascalCase (nama field API asli
+        // di SIMPERUM API.pdf) - normalize_api_record() dibangun untuk
+        // konsumsi bentuk PascalCase itu (dipetakan langsung dari body
+        // JSON respons API sungguhan), jadi baris tabel diterjemahkan balik
+        // ke bentuk itu di sini, bukan menulis pemetaan kode kedua.
+        $record = [
+            'IDBDT' => $row['idbdt'], 'TahunIntervensi' => $row['tahun_intervensi'],
+            'SumberDanaID' => $row['sumber_dana_id'], 'NIK' => $row['nik'], 'Nama' => $row['nama'],
+            'Alamat' => $row['alamat'], 'KodeDagri' => $row['kode_dagri'], 'AtapID' => $row['atap_id'],
+            'LantaiID' => $row['lantai_id'], 'DindingID' => $row['dinding_id'], 'GeoLat' => $row['geo_lat'],
+            'GeoLng' => $row['geo_lng'], 'JenisKelamin' => $row['jenis_kelamin'], 'TahunLahir' => $row['tahun_lahir'],
+            'Pendidikan' => $row['pendidikan'], 'Pekerjaan' => $row['pekerjaan'], 'Penghasilan' => $row['penghasilan'],
+            'MampuSwadaya' => $row['mampu_swadaya'], 'KepemilikanRumah' => $row['kepemilikan_rumah'],
+            'KepemilikanLahan' => $row['kepemilikan_lahan'], 'TanahLain' => $row['tanah_lain'],
+            'RumahLain' => $row['rumah_lain'], 'LuasRumah' => $row['luas_rumah'], 'JmlPenghuni' => $row['jml_penghuni'],
+            'JmlKK' => $row['jml_kk'], 'KawasanPerumahan' => $row['kawasan_perumahan'],
+            'AdaPondasi' => $row['ada_pondasi'], 'KondisiKolom' => $row['kondisi_kolom'],
+            'KondisiBalok' => $row['kondisi_balok'], 'KondisiRangka' => $row['kondisi_rangka'],
+            'KondisiLantai' => $row['kondisi_lantai'], 'KondisiDinding' => $row['kondisi_dinding'],
+            'KondisiAtap' => $row['kondisi_atap'], 'AdaJendela' => $row['ada_jendela'],
+            'AdaVentilasi' => $row['ada_ventilasi'], 'SumberAir' => $row['sumber_air'],
+            'JarakSepticTank' => $row['jarak_septic_tank'], 'Penerangan' => $row['penerangan'],
+        ];
+
+        $payload = $this->normalize_api_record($nik, $record, ['Message' => 'Data dummy lokal', 'Type' => 'array'], 200);
+        if (is_array($payload)) {
+            $payload['api_version'] = 'dummy-table-v1';
+        }
+        return $payload;
     }
 
     private function api_configured()
