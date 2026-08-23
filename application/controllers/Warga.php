@@ -12,8 +12,22 @@ class Warga extends MY_Controller {
        sendiri sekarang berisi 6 field xlsx Sheet4 yang BEDA. Posisinya
        universal (tidak difilter track apa pun di adjacent_step() -
        semua track butuh field ini), makanya diletakkan SEBELUM
-       percabangan building_condition/candidate_land, bukan di antaranya. */
-    private const STEPS = ['find_data', 'citizen_data', 'housing_family', 'preliminary_recommendation', 'housing_family_detail', 'building_condition', 'candidate_land', 'sanitation', 'location_evidence', 'review'];
+       percabangan building_condition/candidate_land, bukan di antaranya.
+
+       'citizen_data' DIHAPUS PERMANEN 24 Agt 2026 (permintaan user: "2 dan
+       5 gabung jadi 1 form di 5, lalu hapus 2" - mengacu ke stepper 5-bucket
+       sebelumnya, bucket 2="Data Warga" & bucket 5="Lengkapi Data SIMPERUM").
+       Field-nya (identitas warga: KK/nama/HP/tanggal lahir/alamat/dst, plus
+       income_band_code & self_help_capability_code eks-ruleset lama) SEKARANG
+       jadi bagian form 'housing_family_detail' - lihat sub-bagian "Data
+       Warga" di pendataan.php dan validasinya di step_errors(). Semua
+       pemicu step ini (profile_corrections(), $step_errors()) dipindah dari
+       cek 'citizen_data' ke 'housing_family_detail' - LIHAT method-method
+       di bawah. Draft LAMA yang sempat current_step='citizen_data' dibawa
+       ke 'housing_family' oleh migrasi 20260824000049 - tanpa itu draft
+       tersebut akan macet karena 'citizen_data' tidak ada lagi di daftar
+       ini (lihat guard baris ~526 `!in_array($step, self::STEPS, TRUE)`). */
+    private const STEPS = ['find_data', 'housing_family', 'preliminary_recommendation', 'housing_family_detail', 'building_condition', 'candidate_land', 'sanitation', 'location_evidence', 'review'];
     private const STEP_LABELS = ['Masukkan NIK', 'Isi data sesuai matriks', 'Hasil rekomendasi', 'Lengkapi data SIMPERUM'];
 
     public function __construct()
@@ -560,9 +574,13 @@ class Warga extends MY_Controller {
             $data['land_area_m2'] = round((float) $data['land_length_m'] * (float) $data['land_width_m'], 2);
         }
         $data['current_step'] = $this->adjacent_step($step, $direction, $data['assessment_track'] ?? $draft['assessment_track']);
-        $profile_change = $direction === 'next' && $step === 'citizen_data'
+        /* profile_corrections() dipicu oleh 'housing_family_detail' sejak
+           24 Agt 2026 - dulu dipicu oleh 'citizen_data' (step tersendiri,
+           sudah dihapus). Field profilnya sekarang bagian dari form
+           'housing_family_detail', lihat komentar di STEPS di atas. */
+        $profile_change = $direction === 'next' && $step === 'housing_family_detail'
             ? $this->profile_corrections($user_id) : NULL;
-        if ($direction === 'next' && $step === 'citizen_data' && $profile_change === NULL) {
+        if ($direction === 'next' && $step === 'housing_family_detail' && $profile_change === NULL) {
             $this->session->set_flashdata('error', 'Profil warga tidak ditemukan.');
             redirect('warga/pendataan');
             return;
@@ -830,29 +848,6 @@ class Warga extends MY_Controller {
     private function step_errors($step)
     {
         $errors = [];
-        if ($step === 'citizen_data') {
-            /* Rekomendasi awal tidak memakai identitas administratif maupun
-               demografi. Field tersebut boleh dilengkapi nanti; validasinya
-               tetap dijalankan bila warga memang mengisi nilainya. */
-            $kk = preg_replace('/\D+/', '', (string) $this->input->post('family_card_number', TRUE));
-            if ($kk !== '' && ! preg_match('/^\d{16}$/', $kk)) { $errors['family_card_number'] = 'Nomor KK harus 16 digit.'; }
-            if (trim((string) $this->input->post('birth_date', TRUE)) !== '' && ! $this->valid_date($this->input->post('birth_date', TRUE))) { $errors['birth_date'] = 'Tanggal lahir tidak valid.'; }
-            foreach (['income_band_code', 'self_help_capability_code'] as $field) {
-                if (trim((string) $this->input->post($field, TRUE)) === '') { $errors[$field] = 'Pilihan ini wajib diisi.'; }
-            }
-            $allowed = [
-                'gender_code' => ['male', 'female'],
-                'marital_status_code' => ['single', 'married', 'divorced'],
-                'education_code' => ['no_certificate', 'elementary', 'junior_high', 'senior_high', 'diploma_1_3', 'bachelor', 'postgraduate'],
-                'occupation_code' => ['farmer', 'horticulture', 'plantation', 'capture_fisher', 'aquaculture_fisher', 'breeder', 'forestry_agriculture_other', 'mining', 'daily_laborer', 'electricity_gas', 'construction_worker', 'trader', 'hotel_restaurant', 'driver', 'information_communication', 'finance_insurance', 'educator', 'health_worker', 'civil_servant', 'scavenger', 'military_police', 'private_employee', 'contract_worker', 'retired', 'unemployed', 'other'],
-                'income_band_code' => ['lt_1_8', '1_9_2_1', '2_2_2_6', '2_7_3_1', '3_2_3_6', '3_7_4_2', 'gt_4_2', '4_2_6', '6_8', 'gt_8'],
-                'self_help_capability_code' => ['capable', 'not_capable'],
-            ];
-            foreach ($allowed as $field => $options) {
-                $value = (string) $this->input->post($field, TRUE);
-                if ($value !== '' && ! in_array($value, $options, TRUE)) { $errors[$field] = 'Pilihan tidak valid.'; }
-            }
-        }
         if ($step === 'housing_family') {
             /* Field xlsx Sheet4 (kolom D-I bertanda '*') - permintaan user
                23 Agt 2026, lihat komentar lengkap di pendataan.php. Semua
@@ -889,6 +884,30 @@ class Warga extends MY_Controller {
             ], $errors);
         }
         if ($step === 'housing_family_detail') {
+            /* Validasi eks-step 'citizen_data' (Data Warga), DIPINDAH ke sini
+               24 Agt 2026 - step-nya sudah dihapus & digabung ke form ini,
+               lihat komentar STEPS di atas. Rekomendasi awal tidak memakai
+               identitas administratif maupun demografi. Field tersebut boleh
+               dilengkapi nanti; validasinya tetap dijalankan bila warga
+               memang mengisi nilainya. */
+            $kk = preg_replace('/\D+/', '', (string) $this->input->post('family_card_number', TRUE));
+            if ($kk !== '' && ! preg_match('/^\d{16}$/', $kk)) { $errors['family_card_number'] = 'Nomor KK harus 16 digit.'; }
+            if (trim((string) $this->input->post('birth_date', TRUE)) !== '' && ! $this->valid_date($this->input->post('birth_date', TRUE))) { $errors['birth_date'] = 'Tanggal lahir tidak valid.'; }
+            foreach (['income_band_code', 'self_help_capability_code'] as $field) {
+                if (trim((string) $this->input->post($field, TRUE)) === '') { $errors[$field] = 'Pilihan ini wajib diisi.'; }
+            }
+            $citizen_allowed = [
+                'gender_code' => ['male', 'female'],
+                'marital_status_code' => ['single', 'married', 'divorced'],
+                'education_code' => ['no_certificate', 'elementary', 'junior_high', 'senior_high', 'diploma_1_3', 'bachelor', 'postgraduate'],
+                'occupation_code' => ['farmer', 'horticulture', 'plantation', 'capture_fisher', 'aquaculture_fisher', 'breeder', 'forestry_agriculture_other', 'mining', 'daily_laborer', 'electricity_gas', 'construction_worker', 'trader', 'hotel_restaurant', 'driver', 'information_communication', 'finance_insurance', 'educator', 'health_worker', 'civil_servant', 'scavenger', 'military_police', 'private_employee', 'contract_worker', 'retired', 'unemployed', 'other'],
+                'income_band_code' => ['lt_1_8', '1_9_2_1', '2_2_2_6', '2_7_3_1', '3_2_3_6', '3_7_4_2', 'gt_4_2', '4_2_6', '6_8', 'gt_8'],
+                'self_help_capability_code' => ['capable', 'not_capable'],
+            ];
+            foreach ($citizen_allowed as $field => $options) {
+                $value = (string) $this->input->post($field, TRUE);
+                if ($value !== '' && ! in_array($value, $options, TRUE)) { $errors[$field] = 'Pilihan tidak valid.'; }
+            }
             if (trim((string) $this->input->post('housing_status_code', TRUE)) === '') {
                 $errors['housing_status_code'] = 'Status rumah wajib dipilih.';
             }

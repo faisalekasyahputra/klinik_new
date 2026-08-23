@@ -432,7 +432,10 @@ class Housing_assessment_model extends CI_Model {
         if ($draft && $draft['current_step'] === 'find_data') {
             $started = $this->update_owned_draft(
                 $draft['id'], $user_id, $draft['lock_version'],
-                ['current_step' => 'citizen_data'] + $this->source_snapshot_prefill($snapshot_id)
+                /* 'housing_family' - sejak 24 Agt 2026 step pertama sesudah
+                   find_data (step 'citizen_data' dihapus & digabung ke
+                   'housing_family_detail', lihat komentar STEPS di Warga.php). */
+                ['current_step' => 'housing_family'] + $this->source_snapshot_prefill($snapshot_id)
             );
             if (empty($started['success'])) {
                 return $started;
@@ -504,7 +507,7 @@ class Housing_assessment_model extends CI_Model {
         if ($draft && $draft['current_step'] === 'find_data') {
             $started = $this->update_owned_draft(
                 $draft['id'], $user_id, $draft['lock_version'],
-                ['current_step' => 'citizen_data']
+                ['current_step' => 'housing_family']
             );
             if (empty($started['success'])) {
                 return $started;
@@ -762,7 +765,7 @@ class Housing_assessment_model extends CI_Model {
         foreach (['id', 'created_at', 'updated_at', 'submitted_at'] as $field) unset($source[$field]);
         $source['previous_version_id'] = (int) $queue['assessment_id'];
         $source['version_no'] = (int) $source['version_no'] + 1;
-        $source['status'] = 'draft'; $source['current_step'] = 'citizen_data';
+        $source['status'] = 'draft'; $source['current_step'] = 'housing_family';
         $source['lock_version'] = 0; $source['profile_snapshot_ciphertext'] = NULL;
 
         if ( ! $this->db->insert('sf_penilaian_perumahan', $source)) {
