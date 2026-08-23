@@ -305,7 +305,18 @@ class KemitraanPortal extends Public_Controller
 
     public function cek_sertifikat_kkn()
     {
-        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        /* Redirect BALIK ke formulir pencarian, bukan show_404() - keluhan
+           user 23 Agt 2026: refresh halaman hasil (GET, bukan POST yang
+           sama seperti submit form) mendarat di 404 polos yang membingungkan.
+           NIM tetap TIDAK PERNAH muncul di URL manapun (redirect ini tanpa
+           query string), jadi larangan "hasil pencarian tidak boleh jadi
+           tautan yang bisa disimpan/dibagikan" masih tegak - yang berubah
+           cuma GET ke sini sekarang mendarat di formulir yang benar,
+           bukan halaman kosong tanpa jalan keluar. */
+        if ($this->input->method(TRUE) !== 'POST') {
+            redirect('KemitraanPortal/sertifikat_kkn');
+            return;
+        }
 
         $rate = $this->rate_limit_consume('sertifikat_kkn_lookup');
         if (empty($rate['success']) || empty($rate['allowed'])) {
@@ -366,10 +377,254 @@ class KemitraanPortal extends Public_Controller
             return;
         }
 
+        /* Disimpan ke SESI, bukan dikirim lewat query string - tombol Cetak
+           (permintaan user 22 Agt 2026: "mengarah ke tab baru") membuka
+           cetak_sertifikat_kkn() di tab terpisah, dan NIM di URL akan
+           tersimpan di riwayat/log peramban serta bisa dibagikan tanpa
+           sengaja. Sesi memang bisa dibaca ulang dari tab manapun milik
+           peramban yang sama, cocok untuk "buka di tab baru". Ditimpa
+           begitu saja tiap pencarian baru berhasil - tidak perlu dibersihkan
+           manual, dan tidak pernah bocor ke NIM lain karena tiap pencarian
+           menuliskan datanya sendiri. */
+        $this->session->set_userdata('sertifikat_kkn_cetak', (array) $baris);
+
         $this->render('pages/kemitraan_portal/sertifikat_kkn_hasil', [
             'judul' => 'Sertifikat KKN',
             'data'  => $baris,
         ]);
+    }
+
+    /**
+     * Tab cetak terpisah - permintaan user 22 Agt 2026 ("buat tombol cetak
+     * mengarah ke tab baru"). Sengaja TIDAK menyunting apa pun sendiri: baca
+     * saja dari sesi yang sudah ditulis cek_sertifikat_kkn() SETELAH lolos
+     * seluruh pemeriksaan (NIM cocok, status Diterima, periode sudah lewat)
+     * - method ini tidak menjalankan pemeriksaan itu lagi.
+     *
+     * Dirender lewat load->view() LANGSUNG, bukan render() - halaman cetak
+     * ini sengaja polos (tanpa navbar/sidebar portal), karena tab baru ini
+     * memang cuma untuk dicetak/disimpan sebagai PDF.
+     */
+    public function cetak_sertifikat_kkn()
+    {
+        $data = $this->session->userdata('sertifikat_kkn_cetak');
+        if (empty($data)) {
+            $this->session->set_flashdata('error', 'Tidak ada data sertifikat untuk dicetak. Cari NIM Anda terlebih dahulu.');
+            redirect('KemitraanPortal/sertifikat_kkn');
+            return;
+        }
+
+        $this->load->view('pages/kemitraan_portal/cetak_sertifikat_kkn', [
+            'judul' => 'Cetak Sertifikat KKN',
+            'data'  => (object) $data,
+        ]);
+    }
+
+    /**
+     * PDF sertifikat sungguhan - permintaan user 22 Agt 2026 ("isi dengan
+     * embed pdf", lalu "ganti isi pdf nya dengan file jpg itu"). Satu
+     * halaman, dibangun FPDF di atas TEMPLATE RESMI dinas
+     * (assets/img/template_sertifikat_kkn.jpg, disimpan user 22 Agt 2026)
+     * dari sesi yang SAMA dengan cetak_sertifikat_kkn() - guard identik,
+     * TIDAK memeriksa NIM ulang di sini.
+     *
+     * KOORDINAT PLACEHOLDER DIUKUR MANUAL dari piksel templatenya (1753x1240,
+     * rasio A4 lanskap persis - ~5.904 px/mm), BUKAN ditebak: setiap kotak
+     * di bawah di-crop + diberi penggaris piksel lalu diperiksa satu per
+     * satu sebelum angkanya ditulis di sini. Tetap PERKIRAAN TERBAIK dari
+     * pengukuran visual, bukan dari berkas desain sumber (.ai/.psd) yang
+     * tidak tersedia - kalau templatenya diganti/diedit ulang, koordinat
+     * ini HARUS diukur ulang, bukan diwariskan begitu saja.
+     *
+     * Output 'I' (inline) - dikirim sebagai application/pdf langsung ke
+     * body respons supaya <embed>/<iframe> di cetak_sertifikat_kkn.php bisa
+     * menampilkannya, bukan memaksa unduhan.
+     */
+    public function sertifikat_kkn_pdf()
+    {
+        /* require_once LANGSUNG, bukan mengandalkan classmap composer -
+           setasign/fpdf 1.9.0 MENYATAKAN classmap "fpdf.php" di
+           composer.json-nya sendiri, tapi entah kenapa tidak pernah
+           mendarat di vendor/composer/autoload_classmap.php walau sudah
+           composer dump-autoload berkali-kali di lingkungan ini (diverifikasi
+           langsung: entri "FPDF" nihil di classmap yang dihasilkan).
+           require_once pada berkas tunggal ini AMAN dipakai berulang -
+           gaya pakai FPDF yang paling umum di luar Composer justru begini,
+           dan idempoten (PHP tidak mendefinisikan ulang kelas yang sudah ada). */
+        require_once FCPATH . 'vendor/setasign/fpdf/fpdf.php';
+
+        $data = $this->session->userdata('sertifikat_kkn_cetak');
+        if (empty($data)) { show_404(); return; }
+        $data = (object) $data;
+
+        $template = FCPATH . 'assets/img/template_sertifikat_kkn.jpg';
+        if ( ! is_file($template)) {
+            // Template WAJIB ada - bukan sesuatu yang boleh diam-diam
+            // jatuh ke rancangan lama, karena rancangan lama itu sudah
+            // dilepas sepenuhnya (bukan cuma tidak dipakai).
+            log_message('error', 'sertifikat_kkn_pdf: template hilang di ' . $template);
+            show_404();
+            return;
+        }
+
+        // FPDF (font bawaan Arial/Times) TIDAK mengenal UTF-8 - dikonversi
+        // ke Windows-1252 sekali di sini, bukan menulis konversi berulang
+        // di tiap Cell(). //TRANSLIT menjatuhkan karakter yang benar-benar
+        // tidak punya padanan (mis. emoji) alih-alih gagal total.
+        $t = function ($s) {
+            $s = (string) ($s ?? '');
+            $hasil = @iconv('UTF-8', 'Windows-1252//TRANSLIT', $s);
+            return $hasil !== FALSE ? $hasil : $s;
+        };
+
+        $pdf = new FPDF('L', 'mm', 'A4'); // 297 x 210mm - rasio PERSIS template
+        $pdf->SetTitle('Sertifikat KKN Kemitraan - ' . $data->nama_peserta);
+        $pdf->SetAutoPageBreak(FALSE);
+
+        /* Font skrip untuk <<Nama Lengkap>> - permintaan user 22 Agt 2026,
+           mendekati kaligrafi biru navy templatenya jauh lebih dekat
+           daripada Times italic bawaan FPDF. Berkasnya
+           (BrittanySignature.json + .z, dibangkitkan SEKALI dari .ttf lewat
+           vendor/setasign/fpdf/makefont/makefont.php - lihat catatan di
+           application/fonts/) DIBACA DARI application/fonts/, bukan
+           vendor/ - font pihak ketiga yang diunggah user, bukan bagian
+           paket FPDF itu sendiri. */
+        $pdf->AddFont('BrittanySignature', '', 'BrittanySignature.json', APPPATH . 'fonts/');
+
+        /* Font utk kalimat "Atas partisipasinya... dalam kegiatan :" -
+           permintaan user 23 Agt 2026, dipilih user sendiri untuk mendekati
+           Cormorant Garamond yang dipakai versi HTML+print (Versi B) yang
+           dibandingkan sebelum ini. Dipakai instans STATIS "Regular" dari
+           paket variable-font yang dilampirkan user
+           (Cormorant_Garamond/static/CormorantGaramond-Regular.ttf, BUKAN
+           file variable-font utamanya) - makefont.php FPDF tidak
+           mendukung sumbu variabel; instans statis satu berat inilah yang
+           sungguh dipakai untuk merender, bukan cuma nama filenya yang mirip. */
+        $pdf->AddFont('CormorantGaramond', '', 'CormorantGaramond-Regular.json', APPPATH . 'fonts/');
+
+        $pdf->AddPage();
+        $pdf->Image($template, 0, 0, 297, 210, 'JPG');
+
+        /* GANTI TEMPLATE 23 Agt 2026 - user memberi file sumber aslinya
+           (PIAGAM PENGHARGAAN KKN KEMITRAAN 2025 COBA.pdf, lihat folder
+           Downloads/SLAMRET1/). Dibongkar dengan smalot/pdfparser: file
+           itu ternyata punya LAPISAN TERPISAH - satu gambar latar yang
+           SUNGGUH KOSONG (tanpa "<<ID>>"/"<<Nama Lengkap>>"/kalimat
+           Universitas ter-bake sama sekali, diekstrak jadi
+           assets/img/template_sertifikat_kkn.jpg yang sekarang, 2000x1414px)
+           plus lapisan teks vektor terpisah untuk keempat field itu di
+           atasnya. File JPG LAMA (semua placeholder ter-bake jadi piksel,
+           sumber segala kotak-penutup-warna-sampel di bawah sebelumnya)
+           disimpan sebagai template_sertifikat_kkn_lama_baked.jpg untuk
+           rujukan/rollback, tidak lagi dipakai kode ini.
+
+           Konsekuensinya: TIDAK ADA LAGI kotak penutup warna-sampel sama
+           sekali - background di sini sudah benar-benar kosong di keempat
+           area, jadi teks tinggal ditulis langsung tanpa perlu menutupi
+           apa pun (akar masalah "kelihatan ditempel" dari kotak-warna-
+           sampel sebelumnya otomatis tidak relevan lagi). Koordinat di
+           bawah BUKAN hasil ukur visual/pixel-ruler lagi, tapi dihitung
+           dari matriks transformasi PDF asli (rangkaian q/cm/Tm di
+           content stream file sumbernya) - lihat riwayat sesi untuk
+           skrip penelusurannya. */
+
+        // "Nomor : 600.2/69." + NIM - baris ini SELURUHNYA tidak ada di
+        // background baru (dulu ter-bake penuh termasuk "<<ID>>"), jadi
+        // labelnya ikut ditulis di sini, bukan cuma NIM-nya seperti versi
+        // lama. Text() FPDF memakai (x,y) SEBAGAI TITIK DASAR/BASELINE
+        // teks - persis makna Tm di PDF, jadi angka hasil penelusuran
+        // matriks bisa dipakai langsung tanpa konversi tambahan.
+        $pdf->SetFont('Times', '', 13);
+        $pdf->SetTextColor(10, 10, 10);
+        $pdf->Text(121.34, 62.95, $t('Nomor : 600.2/69.' . $data->nim));
+
+        // <<Nama Lengkap>> - font BrittanySignature (diunggah user 22 Agt
+        // 2026), mendekati skrip/kursif biru navy templatenya. Dipusatkan
+        // manual (GetStringWidth) dalam rentang horizontal yang sama
+        // dengan sebelumnya (50-207mm) karena baseline asli dari file
+        // sumber (x=93.85mm) cuma valid untuk teks placeholder "<<Nama
+        // Lengkap>>" itu sendiri, bukan patokan pemusatan untuk nama
+        // sungguhan yang panjangnya bervariasi per mahasiswa. Ukuran
+        // huruf MENGECIL OTOMATIS kalau nama kepanjangan untuk rentang
+        // ini - satu-satunya cara nama yang sangat panjang tidak meluber.
+        $nama = $t($data->nama_peserta);
+        $namaUkuran = 44;
+        $pdf->SetFont('BrittanySignature', '', $namaUkuran);
+        while ($pdf->GetStringWidth($nama) > 155 && $namaUkuran > 20) {
+            $namaUkuran -= 0.5;
+            $pdf->SetFont('BrittanySignature', '', $namaUkuran);
+        }
+        $pdf->SetTextColor(19, 61, 103);
+        $namaX = 50 + (157 - $pdf->GetStringWidth($nama)) / 2;
+        $pdf->Text($namaX, 95.31, $nama);
+
+        /* Kalimat "Atas partisipasinya ... dan <<Universitas>> dalam
+           kegiatan :" - dulu diperlakukan sebagai satu kotak sempit 35mm
+           untuk nama universitas SAJA karena sisa kalimatnya ter-bake di
+           background lama. Sekarang SELURUH kalimat itu tidak ada di
+           background baru, jadi ditulis penuh di sini sebagai satu
+           paragraf rata-tengah (MultiCell) dengan nama universitas
+           disisipkan di tengah. Rentang x=37.6-259.4mm diambil dari
+           baseline dua baris kalimat ini di file sumber (37.6mm & 97.6mm
+           dari margin kiri).
+
+           WAJIB MUAT 2 BARIS, tidak boleh lebih - diukur langsung di
+           background baru: jarak dari garis titik-titik (~104.7mm) ke
+           judul kegiatan tetap "Verifikasi dan Validasi..." (~127mm)
+           cuma cukup untuk 2 baris di ukuran wajar; baris ke-3 akan
+           bertabrakan dengan judul itu (terbukti lewat preview GD saat
+           nama universitas panjang dipaksa 16pt tetap - lihat riwayat
+           sesi). Makanya ukuran font MENGECIL OTOMATIS (bukan wrap bebas
+           seperti MultiCell biasa) sampai hasil lipatannya <=2 baris,
+           persis pola yang sama dipakai untuk Nama Lengkap di atas. */
+        $kalimat = 'Atas partisipasinya sebagai peserta Kuliah Kerja Nyata (KKN) Kemitraan Disperakim Provinsi Jawa Tengah dan '
+            . $t($data->instansi_asal) . ' dalam kegiatan :';
+
+        $hitung_baris = function ($teks, $lebar) use ($pdf) {
+            $kata = explode(' ', $teks);
+            $baris = 1;
+            $baris_ini = '';
+            foreach ($kata as $k) {
+                $coba = $baris_ini === '' ? $k : $baris_ini . ' ' . $k;
+                if ($pdf->GetStringWidth($coba) > $lebar - 2 && $baris_ini !== '') {
+                    $baris++;
+                    $baris_ini = $k;
+                } else {
+                    $baris_ini = $coba;
+                }
+            }
+            return $baris;
+        };
+
+        $kalimatBoxW = 221.8;
+        // Ukuran dasar 16pt: file sumber memakai 21.333 unit teks x skala
+        // CTM 0.75 = 16pt EFEKTIF - dan sesi lain yang membongkar file yang
+        // SAMA lewat PyMuPDF (page.get_text('dict')) menemukan angka
+        // PERSIS sama, "Cormorant Garamond Regular, 16pt", jadi ini bukan
+        // kebetulan dua taksiran beda ketemu sama, tapi dua metode
+        // independen mengukur font placeholder aslinya. FPDF di sini
+        // bekerja langsung dalam mm/pt tanpa CTM tersembunyi, jadi 16pt
+        // dipakai apa adanya sebagai titik awal sebelum pengecekan
+        // wajib-2-baris di bawah.
+        $kalimatUkuran = 16;
+        $pdf->SetFont('CormorantGaramond', '', $kalimatUkuran);
+        while ($hitung_baris($kalimat, $kalimatBoxW) > 2 && $kalimatUkuran > 9) {
+            $kalimatUkuran -= 0.5;
+            $pdf->SetFont('CormorantGaramond', '', $kalimatUkuran);
+        }
+        $kalimatLineH = $kalimatUkuran * 0.42375; // rasio sama seperti 16pt->6.78mm
+
+        $pdf->SetTextColor(10, 10, 10);
+        $pdf->SetXY(37.6, 106.5);
+        $pdf->MultiCell($kalimatBoxW, $kalimatLineH, $kalimat, 0, 'C');
+
+        // Nama kegiatan ("Verifikasi dan Validasi Rumah Tidak Layak Huni")
+        // - permintaan user 23 Agt 2026: BIARKAN APA ADANYA, tidak diganti
+        // dinamis dari data->divisi_atau_tema. Kalimat ini sekarang bagian
+        // TETAP dari gambar background (sudah ter-bake di file sumber),
+        // jadi sengaja TIDAK ADA kode yang menulis/menutup area ini lagi.
+
+        $pdf->Output('I', 'sertifikat-kkn-' . preg_replace('/[^A-Za-z0-9_-]/', '', $data->nim) . '.pdf');
     }
 
     /**

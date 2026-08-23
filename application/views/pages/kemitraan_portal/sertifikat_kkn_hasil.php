@@ -6,22 +6,15 @@
  * sebelum sampai di sini (NIM cocok, status Diterima, periode sudah lewat)
  * - halaman ini murni MENAMPILKAN, tidak memeriksa apa pun lagi.
  *
- * TEMPLATE SERTIFIKAT RESMI BELUM ADA - menyusul dari user. Tata letak di
- * bawah ini SEMENTARA: data yang ditampilkan sudah final, cuma rancangan
- * visualnya yang akan diganti begitu templatenya diterima. Ditandai jelas
- * lewat kotak kuning supaya tidak disangka sudah final oleh siapa pun yang
- * membukanya sebelum penggantian itu terjadi.
+ * Halaman ini HANYA mockup ringkasan (dipakai kalau pengunjung tidak lewat
+ * tab cetak) - sertifikat PDF sungguhan (template resmi Disperakim, sudah
+ * final sejak 23 Agt 2026) dirender terpisah oleh
+ * KemitraanPortal::sertifikat_kkn_pdf(), lihat cetak_sertifikat_kkn.php.
+ * Banner "tata letak sementara" yang dulu di sini SUDAH DIHAPUS - template
+ * resminya sudah terpasang, bukan lagi rancangan sementara.
  */
 ?>
 <div class="theme-light py-4 sm:py-6 px-1 sm:px-2 print:p-0">
-    <div class="mx-auto max-w-2xl print:hidden">
-        <div class="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-xs leading-relaxed text-amber-800">
-            <i class="fa-solid fa-triangle-exclamation mr-1.5" aria-hidden="true"></i>
-            Tata letak sertifikat di bawah ini masih sementara - menunggu desain resmi dari Disperakim.
-            Data yang tertera (nama, NIM, universitas, tema, periode) sudah terverifikasi dan final.
-        </div>
-    </div>
-
     <div class="mx-auto mt-6 max-w-2xl rounded-3xl border-2 border-[color:var(--portal-brand)] bg-[color:var(--portal-bg-card)] p-8 text-center shadow-sm print:mt-0 print:max-w-none print:rounded-none print:border-4 print:shadow-none sm:p-12">
         <p class="text-xs font-black uppercase tracking-[0.25em] text-[color:var(--portal-text-muted)]">Dinas Perumahan Rakyat &amp; Kawasan Permukiman Provinsi Jawa Tengah</p>
         <h1 class="mt-4 text-2xl font-black uppercase tracking-wide text-[color:var(--portal-text)] sm:text-3xl">Sertifikat KKN Kemitraan</h1>
@@ -48,7 +41,16 @@
     </div>
 
     <div class="mx-auto mt-6 flex max-w-2xl flex-wrap items-center justify-center gap-3 print:hidden">
-        <button type="button" onclick="window.print()"
+        <?php
+        /* window.open(), BUKAN <a target="_blank"> - permintaan user 22 Agt
+           2026: "tombol cetak mengarah ke tab baru". Loader progresif global
+           (footer.php) mencegat klik pada <a> se-origin dan mem-fetch-nya
+           lewat AJAX untuk ditukar ke panel yang SAMA; window.open() tidak
+           pernah melalui event klik <a> itu sama sekali, jadi tidak ada
+           risiko tergantung pada aturan pengecualian loader tsb membaca
+           atribut target dengan benar. */
+        ?>
+        <button type="button" onclick="window.open('<?= base_url('KemitraanPortal/cetak_sertifikat_kkn') ?>', '_blank')"
                 class="inline-flex items-center gap-2 rounded-xl bg-[color:var(--portal-brand)] px-5 py-3 text-sm font-bold text-[#0a1a1f] transition hover:opacity-90">
             <i class="fa-solid fa-print" aria-hidden="true"></i> Cetak
         </button>
