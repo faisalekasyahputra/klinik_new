@@ -7,6 +7,9 @@ $source_snapshot = isset($source_snapshot) && is_array($source_snapshot) ? $sour
 $provenance = isset($provenance) && is_array($provenance) ? $provenance : [];
 $recommendations = isset($recommendations) && is_array($recommendations) ? $recommendations : [];
 $evidence = isset($evidence) && is_array($evidence) ? $evidence : [];
+$matriks_decile_label = isset($matriks_decile_label) && is_string($matriks_decile_label) ? $matriks_decile_label : null;
+$matriks_data_simperum = isset($matriks_data_simperum) ? $matriks_data_simperum : null;
+$matriks_recommendation = isset($matriks_recommendation) && is_array($matriks_recommendation) ? $matriks_recommendation : [];
 $raw_identity = $source_snapshot['identity'] ?? [];
 $raw_socioeconomic = $source_snapshot['socioeconomic'] ?? [];
 $e = static function ($value) { return html_escape((string) ($value ?? '')); };
@@ -37,6 +40,23 @@ $field_labels = [
     'roof_material_code' => 'Bahan atap', 'roof_condition_code' => 'Kondisi atap', 'water_source_code' => 'Sumber air', 'latrine_type_code' => 'Jenis jamban',
     'feces_disposal_code' => 'Jenis TPA', 'septic_distance_code' => 'Jarak septik', 'lighting_source_code' => 'Penerangan', 'cooking_fuel_code' => 'Bahan bakar memasak',
 ];
+/* 7 field "Isi Data Sesuai Matriks" - permintaan user 23 Agt 2026,
+   halaman ini dulu tidak menampilkannya sama sekali (field-nya belum
+   ada saat halaman ini dibuat). Peta kode->label PERSIS teks yang
+   dipakai warga di pendataan.php (step 'housing_family') - sengaja
+   disalin, bukan dipusatkan, mengikuti pola $field_labels di atas yang
+   juga salinan sendiri dari label sisi warga (bukan inkonsistensi baru
+   yang diperkenalkan di sini). */
+$matriks_field_labels = ['matrix_income_code' => 'Gaji', 'matrix_dtks_status' => 'Status DTKS', 'matrix_land_ownership_code' => 'Kepemilikan Lahan', 'matrix_current_housing_code' => 'Kepemilikan Rumah Saat Ini', 'matrix_environment_condition_code' => 'Kondisi Lingkungan / Fisik Bangunan', 'matrix_occupation_finance_code' => 'Pekerjaan / Kondisi Finansial', 'matrix_marital_family_code' => 'Status Perkawinan / Keluarga'];
+$matriks_value_labels = [
+    'matrix_income_code' => ['income_0_1_5' => '0 - 1,5 Juta', 'income_1_5_2_2' => '1,5 - 2,2 Juta', 'income_2_2_2_8' => '2,2 - 2,8 Juta', 'income_2_8_8_5' => '2,8 - 8,5 Juta', 'income_2_8_10' => '2,8 - 10 Juta', 'income_gt_8_5' => '> 8,5 Juta', 'income_gt_10' => '> 10 Juta'],
+    'matrix_dtks_status' => ['dtks_ya' => 'Terdaftar DTKS', 'dtks_belum' => 'Belum Terdaftar DTKS'],
+    'matrix_land_ownership_code' => ['land_none' => 'Tidak Punya', 'land_legal' => 'Punya Lahan Sah'],
+    'matrix_current_housing_code' => ['house_none_or_rent' => 'Belum Punya / Numpang / Sewa', 'house_rent_or_staying' => 'Menumpang / Sewa', 'house_restricted_area' => 'Tinggal di Area Terlarang / Numpang', 'house_disaster_affected' => 'Punya / Terdampak Bencana', 'house_owned' => 'Punya Rumah Sendiri'],
+    'matrix_environment_condition_code' => ['env_safe' => 'Aman / Tidak Terdampak Bencana', 'env_relocation_zone' => 'Kawasan Relokasi Pemerintah (Rusunawa, Sempadan Sungai, Kumuh)', 'env_disaster_severe' => 'Terdampak Bencana: Kerusakan Berat / Roboh', 'env_disaster_moderate' => 'Terdampak Bencana: Kerusakan Sedang (30-70%)', 'env_slum_uninhabitable' => 'Kumuh / Tidak Layak: Atap, Lantai, Dinding Jelek/Rusak'],
+    'matrix_occupation_finance_code' => ['work_stable_or_unstable_no_subsidy' => 'Berpenghasilan Tetap/Tidak Tetap (Belum Pernah Dapat Subsidi)', 'work_can_save_irregular' => 'Mampu Menabung / Penghasilan Tidak Tetap'],
+    'matrix_marital_family_code' => ['family_single' => 'Belum Menikah', 'family_married' => 'Menikah', 'family_multi_household' => 'Dihuni > 1 KK (Kepala Keluarga)', 'family_head_of_household' => 'Kepala Keluarga (Menikah / Duda / Janda)'],
+];
 $identity_fields = [
     'full_name' => ['Nama lengkap', $raw_identity['full_name'] ?? NULL, $profile['full_name'] ?? NULL],
     'address' => ['Alamat', $raw_identity['address'] ?? NULL, $profile['address'] ?? NULL],
@@ -57,6 +77,35 @@ $provenance_source = static function ($field) use ($provenance) {
     <?php if ( ! empty($queue['catatan_admin'])): ?><section class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><h2 class="font-black">Catatan admin terakhir</h2><p class="mt-1 whitespace-pre-line"><?= $e($queue['catatan_admin']) ?></p></section><?php endif; ?>
 
     <section class="rounded-2xl border border-gray-200 p-4 dark:border-white/10"><h2 class="font-black text-gray-900 dark:text-white">Sumber vs koreksi warga</h2><div class="mt-3 overflow-x-auto"><table class="w-full text-left text-sm"><thead><tr class="border-b border-gray-200 text-xs text-gray-500 dark:border-white/10"><th class="py-2">Data</th><th>Sumber SIMPERUM</th><th>Nilai efektif</th><th>Asal nilai</th></tr></thead><tbody><?php foreach ($identity_fields as $key => [$label,$raw,$effective]): ?><tr class="border-b border-gray-100 dark:border-white/5"><th class="py-2 pr-3"><?= $e($label) ?></th><td class="pr-3"><?= $display($raw) ?></td><td class="pr-3"><?= $display($effective) ?></td><td><?= $e(in_array($provenance_source($key), ['simulation', 'api'], TRUE) ? 'SIMPERUM' : 'Koreksi warga') ?></td></tr><?php endforeach; ?></tbody></table></div></section>
+
+    <?php
+    /* Dua section di bawah BARU 23 Agt 2026 - permintaan user
+       ("apakah admin bisa mengelolanya?" -> "ya kerjakan"). Sebelum ini
+       7 field "Isi Data Sesuai Matriks" tersimpan di DB tapi TIDAK
+       ditampilkan sama sekali di halaman ini - lihat riwayat sesi. */
+    ?>
+    <section class="rounded-2xl border border-gray-200 p-4 dark:border-white/10"><h2 class="font-black text-gray-900 dark:text-white">Isi Data Sesuai Matriks</h2><dl class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><?php foreach ($matriks_field_labels as $key => $label): $val = $assessment[$key] ?? NULL; if ($val === NULL || $val === '') continue; $val_label = $matriks_value_labels[$key][$val] ?? $val; ?><div><dt class="text-xs text-gray-500"><?= $e($label) ?></dt><dd class="font-semibold"><?= $display($val_label) ?></dd></div><?php endforeach; ?></dl><?php if (empty(array_filter($matriks_field_labels, static function ($l, $k) use ($assessment) { return isset($assessment[$k]) && $assessment[$k] !== ''; }, ARRAY_FILTER_USE_BOTH))): ?><p class="mt-2 text-sm text-gray-500">Warga belum mengisi langkah ini.</p><?php endif; ?></section>
+
+    <section class="rounded-2xl border border-gray-200 p-4 dark:border-white/10">
+        <h2 class="font-black text-gray-900 dark:text-white">Hasil Rekomendasi (Matriks xlsx)</h2>
+        <p class="mt-1 text-xs text-gray-500">Dihitung ulang dari 7 field "Isi Data Sesuai Matriks" + tanggal lahir, sama seperti yang dilihat warga - <strong>berbeda dari sisi warga</strong>: kalau data belum ada di SIMPERUM, warga melihat 'Oemah Lestari'/'FLPP' baku, tapi admin di sini melihat hasil pencocokan APA ADANYA supaya bisa ditinjau langsung.</p>
+        <div class="mt-3 grid gap-3 sm:grid-cols-2">
+            <div class="rounded-xl bg-gray-50 p-3 dark:bg-white/5"><p class="text-xs text-gray-500">Kategori Kemiskinan (Desil)</p><p class="mt-1 font-bold"><?= $matriks_decile_label !== null ? $e($matriks_decile_label) : 'Belum tersedia (Gaji belum diisi)' ?></p></div>
+            <div class="rounded-xl bg-gray-50 p-3 dark:bg-white/5"><p class="text-xs text-gray-500">Data di SIMPERUM</p><p class="mt-1 font-bold"><?= $matriks_data_simperum === FALSE ? 'Tidak Ada - diisi manual' : 'Ada' ?></p></div>
+        </div>
+        <div class="mt-3 space-y-2">
+            <?php if (empty($matriks_recommendation)): ?>
+                <p class="text-sm text-gray-500">Tidak ada program yang cocok dengan kombinasi data matriks ini.</p>
+            <?php else: ?>
+                <?php foreach ($matriks_recommendation as $program): $syarat = $this->matriks_program_ruleset->criteria_for_program($program); ?>
+                    <article class="rounded-xl bg-gray-50 p-3 dark:bg-white/5">
+                        <strong><?= $e($program) ?></strong>
+                        <?php if ( ! empty($syarat)): ?><ul class="mt-1.5 list-disc pl-4 text-xs text-gray-600 dark:text-brand-muted"><?php foreach ($syarat as $poin): ?><li><?= $e($poin) ?></li><?php endforeach; ?></ul><?php endif; ?>
+                    </article>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </section>
 
     <section class="rounded-2xl border border-gray-200 p-4 dark:border-white/10"><h2 class="font-black text-gray-900 dark:text-white">Data assessment</h2><dl class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><?php foreach ($field_labels as $key => $label): if (!array_key_exists($key, $assessment) || $assessment[$key] === NULL || $assessment[$key] === '') continue; ?><div><dt class="text-xs text-gray-500"><?= $e($label) ?></dt><dd class="font-semibold"><?= $display($assessment[$key]) ?></dd></div><?php endforeach; ?></dl></section>
 

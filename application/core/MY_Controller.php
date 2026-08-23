@@ -444,6 +444,7 @@ class MY_Controller extends CI_Controller {
     protected function assessment_detail_data($queue_id, $kabupaten_id = NULL) {
         $this->load->model('Housing_assessment_model');
         $this->load->library('encryption_lib');
+        $this->load->library('Matriks_program_ruleset');
         $detail = $this->Housing_assessment_model->get_scoped_queue_detail($queue_id, $kabupaten_id);
         if ( ! $detail) { return NULL; }
 
@@ -467,6 +468,42 @@ class MY_Controller extends CI_Controller {
         $provenance = is_array($provenance_value)
             ? $provenance_value : (json_decode((string) $provenance_value, TRUE) ?: []);
 
+        /* Rekomendasi matriks xlsx (kolom J Sheet4) untuk ADMIN - permintaan
+           user 23 Agt 2026 ("ya kerjakan", menindaklanjuti pertanyaan
+           "apakah admin bisa mengelolanya?"). SAMA PERSIS logika yang
+           dipakai Warga::pendataan() (fungsi murni dari 7 field
+           matrix_*_code + umur, dihitung ulang di sini juga - bukan
+           disimpan ke DB, lihat catatan konsistensi di Warga.php), TAPI
+           BEDA satu hal yang disengaja: admin melihat hasil pencocokan
+           ASLI apa adanya, TIDAK ditimpa jadi 'Oemah Lestari'/'FLPP'
+           seperti di sisi warga. Penimpaan itu di sisi warga adalah
+           pengaman supaya warga tidak melihat nama program yang belum
+           terverifikasi SIMPERUM sebagai kepastian - admin adalah
+           peninjau tepercaya yang justru PERLU melihat hasil aslinya
+           untuk mengambil keputusan, dilengkapi status "data ada/tidak
+           ada di SIMPERUM" supaya tetap tahu tingkat kepercayaannya. */
+        $matriks_income_code = $assessment['matrix_income_code'] ?? NULL;
+        $matriks_birth_date = $detail['profile_snapshot']['birth_date'] ?? NULL;
+        $matriks_age_years = NULL;
+        if (trim((string) $matriks_birth_date) !== '') {
+            try {
+                $matriks_age_years = (new DateTime($matriks_birth_date))->diff(new DateTime('today'))->y;
+            } catch (Exception $e) {
+                $matriks_age_years = NULL;
+            }
+        }
+        $matriks_recommendation = $this->matriks_program_ruleset->match([
+            'income_code' => $matriks_income_code,
+            'welfare_decile' => $this->matriks_program_ruleset->decile_for_income($matriks_income_code),
+            'dtks_code' => $assessment['matrix_dtks_status'] ?? NULL,
+            'land_code' => $assessment['matrix_land_ownership_code'] ?? NULL,
+            'housing_code' => $assessment['matrix_current_housing_code'] ?? NULL,
+            'environment_code' => $assessment['matrix_environment_condition_code'] ?? NULL,
+            'occupation_code' => $assessment['matrix_occupation_finance_code'] ?? NULL,
+            'age_years' => $matriks_age_years,
+            'family_code' => $assessment['matrix_marital_family_code'] ?? NULL,
+        ]);
+
         return [
             'queue' => $detail['queue'], 'assessment' => $assessment,
             'profile' => $detail['profile_snapshot'] ?? [],
@@ -474,6 +511,9 @@ class MY_Controller extends CI_Controller {
             'provenance' => $provenance,
             'recommendations' => $recommendations,
             'evidence' => $this->Housing_assessment_model->get_scoped_queue_files($queue_id, $kabupaten_id),
+            'matriks_decile_label' => $this->matriks_program_ruleset->decile_label_for_income($matriks_income_code),
+            'matriks_data_simperum' => ($assessment['source_mode'] ?? NULL) !== 'manual',
+            'matriks_recommendation' => $matriks_recommendation,
         ];
     }
 
