@@ -340,7 +340,7 @@ class KemitraanPortal extends Public_Controller
            berulang tiap tahun), dan yang paling relevan untuk dicetak
            adalah keikutsertaan yang paling akhir. */
         $baris = $this->db
-            ->select('kkn_peserta.nama AS nama_peserta, kkn_peserta.nim,
+            ->select('kkn_peserta.id AS id_peserta, kkn_peserta.nama AS nama_peserta, kkn_peserta.nim,
                 kkn_magang_pendaftaran.instansi_asal, kkn_magang_pendaftaran.divisi_atau_tema,
                 kkn_magang_pendaftaran.periode_mulai, kkn_magang_pendaftaran.periode_selesai,
                 kkn_magang_pendaftaran.status')
@@ -528,15 +528,19 @@ class KemitraanPortal extends Public_Controller
            content stream file sumbernya) - lihat riwayat sesi untuk
            skrip penelusurannya. */
 
-        // "Nomor : 600.2/69." + NIM - baris ini SELURUHNYA tidak ada di
+        // "Nomor : 600.2/69." + <<ID>> - baris ini SELURUHNYA tidak ada di
         // background baru (dulu ter-bake penuh termasuk "<<ID>>"), jadi
-        // labelnya ikut ditulis di sini, bukan cuma NIM-nya seperti versi
-        // lama. Text() FPDF memakai (x,y) SEBAGAI TITIK DASAR/BASELINE
-        // teks - persis makna Tm di PDF, jadi angka hasil penelusuran
-        // matriks bisa dipakai langsung tanpa konversi tambahan.
+        // labelnya ikut ditulis di sini. <<ID>> memakai kkn_peserta.id
+        // (permintaan user 23 Agt 2026) - BUKAN NIM lagi seperti sebelumnya,
+        // supaya nomor surat terlihat seperti nomor urut asli (pendek,
+        // berurutan sesuai baris di DB), bukan NIM 10-16 digit yang
+        // membuatnya terlihat aneh sebagai "nomor surat". Text() FPDF
+        // memakai (x,y) SEBAGAI TITIK DASAR/BASELINE teks - persis makna
+        // Tm di PDF, jadi angka hasil penelusuran matriks bisa dipakai
+        // langsung tanpa konversi tambahan.
         $pdf->SetFont('Times', '', 13);
         $pdf->SetTextColor(10, 10, 10);
-        $pdf->Text(121.34, 62.95, $t('Nomor : 600.2/69.' . $data->nim));
+        $pdf->Text(121.34, 62.95, $t('Nomor : 600.2/69.' . $data->id_peserta));
 
         // <<Nama Lengkap>> - font BrittanySignature (diunggah user 22 Agt
         // 2026), mendekati skrip/kursif biru navy templatenya. Dipusatkan
