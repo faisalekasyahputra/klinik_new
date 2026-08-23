@@ -104,6 +104,61 @@ class Matriks_program_ruleset {
         'PK RTLH (Prioritas 1)', 'PK RTLH (Prioritas 2)', 'PK RTLH (Prioritas 3)',
     ];
 
+    /**
+     * Kriteria penerima NYATA per program - permintaan user 23 Agt 2026
+     * ("apakah bisa dimasukkan sebagai syarat-syarat hasil rekomendasi?"),
+     * dikutip LANGSUNG dari "PPT UN HABITAT 2026.pdf" (presentasi resmi
+     * Disperakim Provinsi Jawa Tengah), bukan karangan/tafsiran:
+     *   - PB Relokasi: hal. ±22, bagian "Kriteria Penerima"
+     *   - PK Bencana: hal. ±92, bagian "KRITERIA PENERIMA BANTUAN"
+     *     (ambang kerusakan mengutip Permen PUPR No. 22 Tahun 2018)
+     *   - PK RTLH (BANKEUPEMDES): hal. ±76, bagian "Kriteria Rumah"
+     *
+     * KUNCI = nama program TANPA akhiran "(Prioritas N)" - satu daftar
+     * kriteria dipakai untuk ketiga tingkat prioritas program yang sama
+     * (PDF tidak membedakan kriteria PENERIMA per tingkat prioritas,
+     * cuma urutan pemenuhannya).
+     *
+     * SENGAJA HANYA 3 PROGRAM - PDF ini TIDAK PUNYA bagian "Kriteria
+     * Penerima" eksplisit untuk PB Backlog maupun PB Bencana (sudah
+     * ditelusuri langsung, nihil - PB Backlog cuma punya rincian besaran
+     * & komponen material, PB Bencana cuma muncul di tabel ringkasan
+     * jumlah unit). Program lain (Oemah Lestari*, KPR-FLPP*, dan
+     * fallback 'Oemah Lestari'/'FLPP' saat NIK belum di SIMPERUM) juga
+     * TIDAK punya entri - TIDAK MENGARANG kriteria untuk program yang
+     * sumbernya belum ketemu, cukup tidak menampilkan kotak kriteria
+     * untuk program itu (lihat criteria_for_program()).
+     */
+    const PROGRAM_CRITERIA = [
+        'PB Relokasi' => [
+            'Rumah warga terdampak relokasi program pemerintah',
+            'Tercatat dalam data kemiskinan/kesejahteraan sosial (DTKS)',
+            'Memiliki lahan dengan kepemilikan sah, sesuai tata ruang, dan aman dari bencana',
+            'Sanggup berswadaya',
+        ],
+        'PK Bencana' => [
+            'Rumah warga terdampak bencana',
+            'Terdaftar dalam BDT (Basis Data Terpadu)',
+            'Kerusakan rumah minimal kategori Sedang (30-70%), sesuai Permen PUPR No. 22 Tahun 2018',
+        ],
+        'PK RTLH' => [
+            'Memenuhi minimal 2 dari 3 kondisi berikut: Atap, Lantai, atau Dinding rumah berkualitas jelek/rusak',
+        ],
+    ];
+
+    /**
+     * @param string $program Salah satu hasil match() - boleh dengan
+     *   atau tanpa akhiran "(Prioritas N)".
+     * @return string[] Kosong kalau program ini belum punya kriteria
+     *   terverifikasi dari sumber manapun - lihat catatan di atas,
+     *   bukan bug.
+     */
+    public function criteria_for_program($program)
+    {
+        $base = trim((string) preg_replace('/\s*\(Prioritas\s*\d+\)\s*$/u', '', (string) $program));
+        return self::PROGRAM_CRITERIA[$base] ?? [];
+    }
+
     /** @param string[] $programs Hasil match(). @return bool */
     public function needs_simperum_suggestion(array $programs)
     {

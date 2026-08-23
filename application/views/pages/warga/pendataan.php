@@ -374,9 +374,36 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
             <?php else: ?>
                 <div class="mt-5 space-y-3">
                     <?php foreach ($matriks_recommendation as $program): ?>
+                        <?php
+                        /* Syarat penerima NYATA - permintaan user 23 Agt
+                           2026 ("apakah bisa dimasukkan sebagai syarat2
+                           hasil rekomendasi?"), dikutip dari PPT UN
+                           Habitat 2026 (lihat docblock
+                           Matriks_program_ruleset::PROGRAM_CRITERIA).
+                           $this->matriks_program_ruleset terjangkau di
+                           sini walau ini view, bukan controller - CI3
+                           melekatkan pustaka yang sudah di-load ke
+                           instance super-object yang sama ($this),
+                           dipakai bukan hal baru di berkas ini (lihat
+                           $this->security/$this->load di tempat lain).
+                           Array KOSONG untuk program yang belum punya
+                           kriteria terverifikasi (PB Backlog, PB Bencana,
+                           Oemah Lestari, KPR-FLPP - lihat catatan kenapa
+                           di docblock yang sama) - TIDAK mengarang,
+                           kotak syarat cukup tidak muncul. */
+                        $syarat = $this->matriks_program_ruleset->criteria_for_program($program);
+                        ?>
                         <article class="rounded-xl border p-4" style="border-color:var(--portal-border)">
                             <h3 class="font-black"><?= html_escape($program) ?></h3>
                             <p class="mt-2 text-xs" style="color:var(--portal-text-muted)">Ini rekomendasi awal berdasarkan matriks program, bukan keputusan bantuan resmi. Lanjutkan pelengkapan data agar pengajuan dapat ditinjau.</p>
+                            <?php if ( ! empty($syarat)): ?>
+                                <div class="mt-3 rounded-lg p-3" style="background:var(--portal-btn-bg)">
+                                    <p class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--portal-text-muted)">Syarat Penerima</p>
+                                    <ul class="mt-1.5 list-disc space-y-1 pl-4 text-xs" style="color:var(--portal-text)">
+                                        <?php foreach ($syarat as $poin): ?><li><?= html_escape($poin) ?></li><?php endforeach; ?>
+                                    </ul>
+                                </div>
+                            <?php endif; ?>
                         </article>
                     <?php endforeach; ?>
                 </div>
