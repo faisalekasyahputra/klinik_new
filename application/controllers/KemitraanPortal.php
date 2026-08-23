@@ -641,6 +641,35 @@ class KemitraanPortal extends Public_Controller
         // TETAP dari gambar background (sudah ter-bake di file sumber),
         // jadi sengaja TIDAK ADA kode yang menulis/menutup area ini lagi.
 
+        /* Tanggal "31 Desember 2025" - permintaan user 23 Agt 2026: ganti
+           jadi tanggal SEKARANG (tanggal cetak), bukan tanggal tetap dari
+           template. BEDA dari field lain di atas: baris ini TIDAK genuinely
+           kosong di background baru - "Semarang, 31 Desember 2025" masih
+           ter-bake sebagai satu kesatuan gambar, jadi field ini balik
+           memakai pola tutup-lalu-tulis (kotak warna kertas) seperti versi
+           lama, BUKAN karena regresi, tapi karena field ini memang tidak
+           ikut dipisah jadi lapisan teks di file sumber PDF aslinya (cuma
+           <<ID>>, <<Nama Lengkap>>, dan kalimat Universitas yang punya
+           lapisan teks terpisah - lihat catatan di atas method ini).
+
+           Cuma "31 Desember 2025" yang ditutup, BUKAN "Semarang," di
+           depannya - stempel resmi Kepala Dinas tumpang tindih tepat di
+           bawah kata "Semarang," (dikonfirmasi lewat crop zoom), jadi
+           kotak penutup yang lebih lebar akan ikut memakan sebagian
+           stempel asli itu. Koordinat 140-181mm/146-151mm diukur presisi
+           dari background baru (column-darkness word-segmentation,
+           bukan taksiran visual): "31" mulai 141.7mm, "2025" berakhir
+           179.24mm, stempel berhenti sebelum 140mm. Warna sampul
+           (247,246,241) disampel LANGSUNG dari kertas kosong di sisi
+           kanan kotak, bukan warna rata sembarang. */
+        $tanggalCetak = $t(tgl_id(date('Y-m-d')));
+        $pdf->SetFillColor(247, 246, 241);
+        $pdf->Rect(139, 145.7, 43, 5.6, 'F');
+        $pdf->SetFont('Times', '', 13);
+        $pdf->SetTextColor(10, 10, 10);
+        $tglX = 139 + (43 - $pdf->GetStringWidth($tanggalCetak)) / 2;
+        $pdf->Text($tglX, 150.3, $tanggalCetak);
+
         $pdf->Output('I', 'sertifikat-kkn-' . preg_replace('/[^A-Za-z0-9_-]/', '', $data->nim) . '.pdf');
     }
 
