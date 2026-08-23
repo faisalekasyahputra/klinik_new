@@ -3,7 +3,16 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 /* Kontrak aman: controller boleh mengirim array; view tetap dapat dirender saat data belum ada. */
 $step_slug = isset($step) && is_string($step) ? $step : 'find_data';
-$step_index = ['find_data' => 0, 'citizen_data' => 1, 'housing_family' => 1, 'preliminary_recommendation' => 2, 'housing_family_detail' => 3, 'building_or_land' => 3, 'building_condition' => 3, 'candidate_land' => 3, 'sanitation_utilities' => 3, 'sanitation' => 3, 'location_evidence' => 3, 'review_recommendation' => 3, 'review' => 3];
+/* citizen_data dipisah ke bucket sendiri (1) - bukan lagi digabung dengan
+   housing_family di bucket "Isi Data Sesuai Matriks". Sesuai permintaan
+   user, judulnya (baris ~151) sudah "Lengkapi Data SIMPERUM — Data Warga",
+   jadi label stepper untuk bucket ini pun disamakan (lihat $step_names).
+   Bucket-nya TIDAK digabung jadi satu nomor dengan bucket 4 (housing_family_detail
+   dst, label sama) karena keduanya tidak bersebelahan secara urutan wizard -
+   housing_family & preliminary_recommendation ada DI ANTARANYA. Menyamakan
+   nomor bucket akan merusak logika centang selesai ($complete = $number < $step)
+   karena nomor step harus naik monoton mengikuti urutan wizard sebenarnya. */
+$step_index = ['find_data' => 0, 'citizen_data' => 1, 'housing_family' => 2, 'preliminary_recommendation' => 3, 'housing_family_detail' => 4, 'building_or_land' => 4, 'building_condition' => 4, 'candidate_land' => 4, 'sanitation_utilities' => 4, 'sanitation' => 4, 'location_evidence' => 4, 'review_recommendation' => 4, 'review' => 4];
 $step = $step_index[$step_slug] ?? 0;
 $step_slug = array_key_exists($step_slug, $step_index) ? $step_slug : 'find_data';
 $assessment = isset($assessment) && is_array($assessment) ? $assessment : [];
@@ -35,7 +44,7 @@ $recommendation_required = $matrix_required + [
     'owns_candidate_land' => TRUE,
 ];
 $has_errors = ! empty($errors);
-$step_names = ['Masukkan NIK', 'Isi Data Sesuai Matriks', 'Hasil Rekomendasi', 'Lengkapi Data SIMPERUM'];
+$step_names = ['Masukkan NIK', 'Lengkapi Data SIMPERUM', 'Isi Data Sesuai Matriks', 'Hasil Rekomendasi', 'Lengkapi Data SIMPERUM'];
 $source_label = ['simulation' => 'SIMPERUM (simulasi)', 'api' => 'SIMPERUM', 'citizen' => 'Diisi warga', 'citizen_correction' => 'Koreksi warga', 'admin' => 'Dikoreksi admin'];
 $is_simulation = ($assessment['source_mode'] ?? $this->config->item('simperum_mode', 'simperum')) === 'simulation';
 $provenance = isset($field_provenance) && is_array($field_provenance) ? $field_provenance : [];
@@ -70,7 +79,7 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
         <?php if ($is_simulation): ?><p class="mt-3 rounded-xl border p-3 text-xs" style="background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.25);color:#92400e"><strong>Mode Simulasi - API SIMPERUM belum terhubung.</strong> Data dan rekomendasi pada alur ini bukan keputusan bantuan resmi.</p><?php endif; ?>
     </header>
 
-    <ol class="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-4" aria-label="Tahapan pendataan">
+    <ol class="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-5 lg:grid-cols-5" aria-label="Tahapan pendataan">
         <?php foreach ($step_names as $number => $name): ?>
             <?php $active = $number === $step; $complete = $number < $step; $available = $number < count($step_names); ?>
             <li class="rounded-xl border p-2 <?= $active ? 'ring-1' : '' ?>" style="border-color:<?= $active ? 'var(--teal-bright)' : 'var(--portal-border)' ?>;background:<?= $active ? 'rgba(0,163,181,.08)' : 'var(--portal-bg-card)' ?>">
