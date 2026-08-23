@@ -13,6 +13,7 @@ $errors = isset($errors) && is_array($errors) ? $errors : [];
 $lookup = isset($lookup) && is_array($lookup) ? $lookup : [];
 $evidence_files = isset($evidence_files) && is_array($evidence_files) ? $evidence_files : [];
 $recommendations = isset($recommendations) && is_array($recommendations) ? $recommendations : [];
+$matriks_recommendation = isset($matriks_recommendation) && is_array($matriks_recommendation) ? $matriks_recommendation : [];
 $review_summary = isset($review_summary) && is_array($review_summary) ? $review_summary : [];
 $action_url = isset($action_url) && is_string($action_url) && $action_url !== '' ? $action_url : base_url('warga/pendataan');
 $back_url = isset($back_url) && is_string($back_url) && $back_url !== '' ? $back_url : base_url();
@@ -199,6 +200,14 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                 // dibedakan oleh Status Perkawinan pada baris yang sama
                 // (batas 8,5jt untuk Belum Menikah, 10jt untuk Menikah),
                 // bukan duplikasi keliru.
+                // Ke-8: kolom C xlsx ("Status DTKS") - dibutuhkan mesin
+                // pencocokan 20 baris matriks (lihat komentar di step
+                // 'preliminary_recommendation' di bawah), bukan sekadar
+                // field tampilan. 16 dari 20 baris xlsx mensyaratkan "YA".
+                'matrix_dtks_status' => ['Status DTKS', [
+                    'dtks_ya' => 'Terdaftar DTKS',
+                    'dtks_belum' => 'Belum Terdaftar DTKS',
+                ]],
                 'matrix_income_code' => ['Gaji', [
                     'income_0_1_5' => '0 - 1,5 Juta',
                     'income_1_5_2_2' => '1,5 - 2,2 Juta',
@@ -292,17 +301,28 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
         <?php elseif ($step_slug === 'sanitation'): ?>
             <h2 class="text-lg font-black">Lengkapi Data SIMPERUM — Sanitasi & Utilitas</h2><?php $sanitation=['has_window'=>['Jendela',['1'=>'Ada Jendela','0'=>'Tidak Ada']],'has_ventilation'=>['Ventilasi',['1'=>'Ada Ventilasi','0'=>'Tidak Ada']],'water_source_code'=>['Sumber Air',['bottled'=>'Air Kemasan Bermerek','refill'=>'Air Isi Ulang','piped'=>'Ledeng (jenis tidak disebut SIMPERUM)','pdam'=>'PDAM','retail_piped'=>'Leding Eceran','well'=>'Sumur','spring'=>'Mata Air','rain'=>'Air Hujan','other_unfit'=>'Lainnya/Tidak Layak']],'latrine_type_code'=>['Jenis Jamban',['swan_neck'=>'Leher Angsa','plengsengan'=>'Plengsengan','pit'=>'Cemplung/Cubluk','none'=>'Tidak Punya']],'feces_disposal_code'=>['Jenis TPA',['septic_tank'=>'Tangki Septik','ipal'=>'IPAL','water_body'=>'Kolam/Sawah/Sungai','ground_hole'=>'Lubang Tanah','open_land'=>'Pantai/Tanah Lapang/Kebun']],'septic_distance_code'=>['Jarak Septik Tank',['lt_10'=>'<10 m','gte_10'=>'>=10 m']],'lighting_source_code'=>['Sumber Penerangan',['pln'=>'PLN','pln_unmetered'=>'PLN Non Meteran','non_pln'=>'Non PLN','none'=>'Bukan Listrik']],'cooking_fuel_code'=>['BB Masak',['electric_gas'=>'Listrik/Gas','kerosene'=>'Minyak Tanah','charcoal_wood'=>'Arang/Kayu','other'=>'Lainnya']]]; ?><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Pilihan Kamar Mandi/Jamban belum ditetapkan resmi, sehingga belum diminta pada langkah ini.</p><div class="mt-5 grid gap-4 sm:grid-cols-2"><?php foreach($sanitation as $key=>[$label,$options]): ?><div><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?></label><select id="<?= $key ?>" name="<?= $key ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"><option value="">Pilih <?= strtolower($label) ?></option><?php foreach($options as $code=>$option): ?><option value="<?= $code ?>"<?= $selected($key,$code) ?>><?= html_escape($option) ?></option><?php endforeach; ?></select></div><?php endforeach; ?></div>
         <?php elseif ($step_slug === 'preliminary_recommendation'): ?>
+            <?php
+            /* Diganti 23 Agt 2026 - permintaan user: "Hasil Rekomendasi
+               ... sesuaikan dengan xlsx kolom J". Dulu daftar kartu per
+               program dari Warga_ruleset.php (mesin lama, program TETAP
+               seperti "Peningkatan Kualitas RTLH"/"Program Rumah Apung" -
+               nama program itu TIDAK ADA di xlsx sama sekali). Sekarang
+               menampilkan $matriks_recommendation - hasil pencocokan 8
+               field matriks + desil + umur terhadap 20 baris Sheet4
+               (Matriks_program_ruleset::match(), dihitung ulang di
+               Warga::pendataan() tiap render). Teksnya PERSIS kolom J
+               ("PROGRAM YANG COCOK"), bukan disusun ulang. */
+            ?>
             <h2 class="text-lg font-black">Hasil Rekomendasi Awal</h2>
-            <p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Hasil ini dihitung dari NIK dan data matriks inti yang sudah Anda isi. Lengkapi data SIMPERUM setelah ini agar hasil akhir dan pengajuan dapat ditinjau lebih lengkap.</p>
-            <?php $status_labels_awal = ['eligible' => 'Memenuhi simulasi', 'potential' => 'Berpotensi memenuhi', 'not_eligible' => 'Belum memenuhi', 'needs_data' => 'Data masih diperlukan']; $status_styles_awal = ['eligible' => 'background:rgba(16,185,129,.12);color:#047857', 'potential' => 'background:rgba(14,165,233,.12);color:#075985', 'not_eligible' => 'background:rgba(239,68,68,.1);color:#b91c1c', 'needs_data' => 'background:rgba(245,158,11,.12);color:#92400e']; ?>
-            <?php if (empty($recommendations)): ?>
-                <p class="mt-5 rounded-xl border p-3 text-xs" style="border-color:var(--portal-border);color:var(--portal-text-muted)">Hasil awal belum tersedia. Kembali dan periksa isian matriks Anda.</p>
+            <p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Hasil ini dicocokkan dari data matriks yang sudah Anda isi terhadap tabel program perumahan. Lengkapi data SIMPERUM setelah ini agar pengajuan dapat ditinjau lebih lengkap.</p>
+            <?php if (empty($matriks_recommendation)): ?>
+                <p class="mt-5 rounded-xl border p-3 text-xs" style="border-color:var(--portal-border);color:var(--portal-text-muted)">Belum ada program yang cocok dengan kombinasi data matriks Anda saat ini. Ini bukan penolakan akhir - lengkapi data SIMPERUM agar dapat ditinjau lebih lanjut, atau periksa kembali isian matriks Anda.</p>
             <?php else: ?>
                 <div class="mt-5 space-y-3">
-                    <?php foreach ($recommendations as $recommendation): $status = (string) ($recommendation['eligibility_status'] ?? 'needs_data'); ?>
+                    <?php foreach ($matriks_recommendation as $program): ?>
                         <article class="rounded-xl border p-4" style="border-color:var(--portal-border)">
-                            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><h3 class="font-black"><?= html_escape((string) ($recommendation['program_name'] ?? $recommendation['program_code'] ?? 'Program')) ?></h3><span class="inline-flex w-fit rounded-full px-2 py-1 text-[10px] font-bold" style="<?= $status_styles_awal[$status] ?? $status_styles_awal['needs_data'] ?>"><?= html_escape($status_labels_awal[$status] ?? 'Status belum dikenal') ?></span></div>
-                            <p class="mt-2 text-xs" style="color:var(--portal-text-muted)">Ini rekomendasi awal, bukan keputusan bantuan resmi. Lanjutkan pelengkapan data agar hasil akhir lebih lengkap.</p>
+                            <h3 class="font-black"><?= html_escape($program) ?></h3>
+                            <p class="mt-2 text-xs" style="color:var(--portal-text-muted)">Ini rekomendasi awal berdasarkan matriks program, bukan keputusan bantuan resmi. Lanjutkan pelengkapan data agar pengajuan dapat ditinjau.</p>
                         </article>
                     <?php endforeach; ?>
                 </div>

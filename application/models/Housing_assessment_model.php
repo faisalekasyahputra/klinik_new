@@ -42,6 +42,9 @@ class Housing_assessment_model extends CI_Model {
         // ("Pendapatan / Gaji"), BUKAN menimpa income_band_code yang sudah
         // ada di step "Data Warga" - lihat docblock migrasi 047.
         'matrix_income_code',
+        // Ke-8, migrasi 048 - kolom C xlsx ("Status DTKS"), dibutuhkan
+        // mesin pencocokan 20 baris matriks (Matriks_program_ruleset).
+        'matrix_dtks_status',
     ];
 
     public function __construct()

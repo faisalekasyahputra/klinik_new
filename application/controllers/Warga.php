@@ -22,6 +22,7 @@ class Warga extends MY_Controller {
         $this->load->model('Housing_assessment_model');
         $this->load->library('Simperum_gateway');
         $this->load->library('Warga_ruleset');
+        $this->load->library('Matriks_program_ruleset');
     }
 
     /**
@@ -101,6 +102,27 @@ class Warga extends MY_Controller {
                 $old_input['nik'] = $pending_nik;
             }
         }
+        /* Rekomendasi xlsx (kolom J Sheet4) - permintaan user 23 Agt 2026:
+           "Hasil Rekomendasi ... sesuaikan dengan xlsx kolom J". DIHITUNG
+           ULANG di sini setiap render (bukan disimpan/di-cache ke DB
+           seperti $recommendations dari Warga_ruleset.php) - fungsi murni
+           dari 8 field matrix_*_code (draft) + welfare_decile (profil) +
+           umur (dihitung dari tanggal lahir profil), jadi selalu konsisten
+           dengan data terbaru tanpa perlu invalidasi cache. */
+        $matriks_recommendation = [];
+        if ($assessment) {
+            $matriks_recommendation = $this->matriks_program_ruleset->match([
+                'income_code' => $assessment['matrix_income_code'] ?? NULL,
+                'welfare_decile' => $profile['welfare_decile'] ?? NULL,
+                'dtks_code' => $assessment['matrix_dtks_status'] ?? NULL,
+                'land_code' => $assessment['matrix_land_ownership_code'] ?? NULL,
+                'housing_code' => $assessment['matrix_current_housing_code'] ?? NULL,
+                'environment_code' => $assessment['matrix_environment_condition_code'] ?? NULL,
+                'occupation_code' => $assessment['matrix_occupation_finance_code'] ?? NULL,
+                'age_years' => $this->age_years_from_birth_date($profile['birth_date'] ?? NULL),
+                'family_code' => $assessment['matrix_marital_family_code'] ?? NULL,
+            ]);
+        }
         $this->render('pages/warga/pendataan', [
             'title' => 'Pendataan Warga',
             'is_logged_in' => $logged_in_warga,
@@ -124,7 +146,28 @@ class Warga extends MY_Controller {
                     Warga_ruleset::VERSION
                 ) : [],
             'review_summary' => ['welfare_decile'=>$profile['welfare_decile']??NULL,'assessment_track'=>$assessment['assessment_track']??NULL,'source_mode'=>$assessment['source_mode']??NULL],
+            'matriks_recommendation' => $matriks_recommendation,
         ]);
+    }
+
+    /**
+     * Umur PENUH dalam tahun dari tanggal lahir - dipakai
+     * Matriks_program_ruleset (aturan umur kolom H Sheet4) DAN tampilan
+     * "Kategori Usia" di step 'housing_family' (lihat pendataan.php,
+     * closure lokal di sana menghitung ulang dengan logika yang SAMA -
+     * disalin, bukan dipanggil dari sini, karena view tidak punya akses
+     * ke method controller; kalau batas kategori berubah, ubah DUA
+     * tempat itu bersamaan).
+     */
+    private function age_years_from_birth_date($birth_date)
+    {
+        $birth_date = trim((string) $birth_date);
+        if ($birth_date === '') { return NULL; }
+        try {
+            return (new DateTime($birth_date))->diff(new DateTime('today'))->y;
+        } catch (Exception $e) {
+            return NULL;
+        }
     }
 
     /**
@@ -623,7 +666,7 @@ class Warga extends MY_Controller {
     private function draft_data()
     {
         $data = [];
-        foreach (['assessment_track', 'housing_status_code', 'land_title_code', 'has_other_land', 'has_other_house', 'house_area_m2', 'occupant_count', 'family_count', 'assistance_source_code', 'assistance_year', 'area_condition_code', 'owns_candidate_land', 'candidate_land_title_code', 'candidate_land_origin_code', 'land_owner_relationship_code', 'land_length_m', 'land_width_m', 'land_area_m2', 'foundation_condition_code', 'column_condition_code', 'beam_condition_code', 'sloof_condition_code', 'ceiling_condition_code', 'roof_frame_condition_code', 'floor_material_code', 'floor_condition_code', 'wall_material_code', 'wall_condition_code', 'roof_material_code', 'roof_condition_code', 'has_window', 'has_ventilation', 'water_source_code', 'has_bathroom_latrine', 'latrine_type_code', 'feces_disposal_code', 'septic_distance_code', 'lighting_source_code', 'cooking_fuel_code', 'location_accuracy_m', 'matrix_land_ownership_code', 'matrix_current_housing_code', 'matrix_environment_condition_code', 'matrix_occupation_finance_code', 'matrix_marital_family_code', 'matrix_income_code'] as $field) {
+        foreach (['assessment_track', 'housing_status_code', 'land_title_code', 'has_other_land', 'has_other_house', 'house_area_m2', 'occupant_count', 'family_count', 'assistance_source_code', 'assistance_year', 'area_condition_code', 'owns_candidate_land', 'candidate_land_title_code', 'candidate_land_origin_code', 'land_owner_relationship_code', 'land_length_m', 'land_width_m', 'land_area_m2', 'foundation_condition_code', 'column_condition_code', 'beam_condition_code', 'sloof_condition_code', 'ceiling_condition_code', 'roof_frame_condition_code', 'floor_material_code', 'floor_condition_code', 'wall_material_code', 'wall_condition_code', 'roof_material_code', 'roof_condition_code', 'has_window', 'has_ventilation', 'water_source_code', 'has_bathroom_latrine', 'latrine_type_code', 'feces_disposal_code', 'septic_distance_code', 'lighting_source_code', 'cooking_fuel_code', 'location_accuracy_m', 'matrix_land_ownership_code', 'matrix_current_housing_code', 'matrix_environment_condition_code', 'matrix_occupation_finance_code', 'matrix_marital_family_code', 'matrix_income_code', 'matrix_dtks_status'] as $field) {
             if ($this->input->post($field, TRUE) !== NULL) {
                 $data[$field] = $this->input->post($field, TRUE);
             }
@@ -774,6 +817,7 @@ class Warga extends MY_Controller {
                "belum diisi" yang aman untuk matriks program. */
             foreach ([
                 'matrix_income_code' => 'Gaji',
+                'matrix_dtks_status' => 'Status DTKS',
                 'matrix_land_ownership_code' => 'Kepemilikan Lahan',
                 'matrix_current_housing_code' => 'Kepemilikan Rumah Saat Ini',
                 'matrix_environment_condition_code' => 'Kondisi Lingkungan / Fisik Bangunan',
@@ -791,6 +835,7 @@ class Warga extends MY_Controller {
             // sebagai "Pilihan tidak valid", bukan diam-diam diterima.
             $this->validate_options([
                 'matrix_income_code' => ['income_0_1_5', 'income_1_5_2_2', 'income_2_2_2_8', 'income_2_8_8_5', 'income_2_8_10', 'income_gt_8_5', 'income_gt_10'],
+                'matrix_dtks_status' => ['dtks_ya', 'dtks_belum'],
                 'matrix_land_ownership_code' => ['land_none', 'land_legal'],
                 'matrix_current_housing_code' => ['house_none_or_rent', 'house_rent_or_staying', 'house_restricted_area', 'house_disaster_affected', 'house_owned'],
                 'matrix_environment_condition_code' => ['env_safe', 'env_relocation_zone', 'env_disaster_severe', 'env_disaster_moderate', 'env_slum_uninhabitable'],
