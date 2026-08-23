@@ -3,7 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 /* Kontrak aman: controller boleh mengirim array; view tetap dapat dirender saat data belum ada. */
 $step_slug = isset($step) && is_string($step) ? $step : 'find_data';
-$step_index = ['find_data' => 0, 'citizen_data' => 1, 'housing_family' => 1, 'preliminary_recommendation' => 2, 'building_or_land' => 3, 'building_condition' => 3, 'candidate_land' => 3, 'sanitation_utilities' => 3, 'sanitation' => 3, 'location_evidence' => 3, 'review_recommendation' => 3, 'review' => 3];
+$step_index = ['find_data' => 0, 'citizen_data' => 1, 'housing_family' => 1, 'preliminary_recommendation' => 2, 'housing_family_detail' => 3, 'building_or_land' => 3, 'building_condition' => 3, 'candidate_land' => 3, 'sanitation_utilities' => 3, 'sanitation' => 3, 'location_evidence' => 3, 'review_recommendation' => 3, 'review' => 3];
 $step = $step_index[$step_slug] ?? 0;
 $step_slug = array_key_exists($step_slug, $step_index) ? $step_slug : 'find_data';
 $assessment = isset($assessment) && is_array($assessment) ? $assessment : [];
@@ -170,7 +170,86 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                 <?php if ($value('welfare_decile') !== ''): ?><p class="sm:col-span-2 rounded-xl p-3 text-xs" style="background:rgba(14,165,233,.09);color:#075985">Kelompok kesejahteraan (desil) <strong><?= html_escape($value('welfare_decile')) ?></strong>, diambil dari <?= $is_simulation ? '<strong>data simulasi</strong> - SIMPERUM belum terhubung, jadi angka ini contoh, bukan data Anda yang sebenarnya' : 'data resmi SIMPERUM' ?>. Angka ini tidak dihitung ulang dari penghasilan yang Anda isi.</p><?php endif; ?>
             </div>
         <?php elseif ($step_slug === 'housing_family'): ?>
+            <?php
+            /* Diganti total 23 Agt 2026 - permintaan user: field step ini
+               mengikuti persis kolom bertanda '*' di "MATRIKS VARIABEL
+               PENENTUAN PROGRAM PERUMAHAN.xlsx" Sheet4 (kolom D-I, kolom
+               A-C & J bukan input - A/B/C berasal dari profil/SIMPERUM,
+               J adalah hasil rekomendasi, bukan masukan). Field LAMA di
+               step ini (Status rumah dkk.) TIDAK dihapus - dipindah ke
+               step baru "housing_family_detail" (lihat blok setelah
+               'preliminary_recommendation' di bawah) karena masih dipakai
+               Warga_ruleset.php + auto-isi SIMPERUM dengan kosakata jawaban
+               yang beda dari teks xlsx ini (keputusan eksplisit user).
+
+               Kode pendek tiap pilihan (kolom kedua array di bawah) BUKAN
+               dari xlsx - xlsx cuma punya teks panjang di tiap sel. Kode
+               ini ciptaan sendiri supaya konsisten dengan pola *_code
+               field lain di tabel ini (disimpan pendek, teks panjang
+               cuma untuk tampilan) - teks pilihannya sendiri PERSIS
+               kutipan dari sel Sheet4, tidak diringkas/ditafsirkan ulang. */
+            $matriks = [
+                'matrix_land_ownership_code' => ['Kepemilikan Lahan', [
+                    'land_unrestricted' => 'Tidak Dibatasi',
+                    'land_none' => 'Tidak Punya',
+                    'land_legal' => 'Punya Lahan Sah',
+                ]],
+                'matrix_current_housing_code' => ['Kepemilikan Rumah Saat Ini', [
+                    'house_unrestricted' => 'Tidak Dibatasi',
+                    'house_none_or_rent' => 'Belum Punya / Numpang / Sewa',
+                    'house_rent_or_staying' => 'Menumpang / Sewa',
+                    'house_restricted_area' => 'Tinggal di Area Terlarang / Numpang',
+                    'house_disaster_affected' => 'Punya / Terdampak Bencana',
+                    'house_owned' => 'Punya Rumah Sendiri',
+                ]],
+                'matrix_environment_condition_code' => ['Kondisi Lingkungan / Fisik Bangunan', [
+                    'env_unrestricted' => 'Tidak Dibatasi',
+                    'env_safe' => 'Aman / Tidak Terdampak Bencana',
+                    'env_relocation_zone' => 'Kawasan Relokasi Pemerintah (Rusunawa, Sempadan Sungai, Kumuh)',
+                    'env_disaster_severe' => 'Terdampak Bencana: Kerusakan Berat / Roboh',
+                    'env_disaster_moderate' => 'Terdampak Bencana: Kerusakan Sedang (30-70%)',
+                    'env_slum_uninhabitable' => 'Kumuh / Tidak Layak: Atap, Lantai, Dinding Jelek/Rusak',
+                ]],
+                'matrix_occupation_finance_code' => ['Pekerjaan / Kondisi Finansial', [
+                    'work_unrestricted' => 'Tidak Dibatasi',
+                    'work_stable_or_unstable_no_subsidy' => 'Berpenghasilan Tetap/Tidak Tetap (Belum Pernah Dapat Subsidi)',
+                    'work_can_save_irregular' => 'Mampu Menabung / Penghasilan Tidak Tetap',
+                ]],
+                'matrix_marital_family_code' => ['Status Perkawinan / Keluarga', [
+                    'family_single' => 'Belum Menikah',
+                    'family_married' => 'Menikah',
+                    'family_unrestricted_single_or_married' => 'Tidak Dibatasi (Single / Menikah)',
+                    'family_multi_household' => 'Dihuni > 1 KK (Kepala Keluarga)',
+                    'family_head_of_household' => 'Kepala Keluarga (Menikah / Duda / Janda)',
+                    'family_unrestricted' => 'Tidak Dibatasi',
+                ]],
+            ];
+            // "Kategori Usia*" - permintaan user: dihitung otomatis dari
+            // tanggal lahir yang sudah dikumpulkan di step "Data Warga",
+            // BUKAN input baru (supaya tidak bisa keliru isi/tidak
+            // konsisten dengan tanggal lahir). Batas 3 kategori PERSIS
+            // catatan kaki xlsx Sheet4 ("Kategori Usia dibagi menjadi...").
+            $kategori_usia = null;
+            $tgl_lahir = $value('birth_date');
+            if ($tgl_lahir !== '') {
+                try {
+                    $umur = (new DateTime($tgl_lahir))->diff(new DateTime('today'))->y;
+                    $kategori_usia = $umur < 18 ? 'Non-Produktif Muda (< 18 tahun)'
+                        : ($umur < 60 ? 'Produktif (18 – 59 tahun)' : 'Non-Produktif Tua (≥ 60 tahun / Lansia)');
+                } catch (Exception $e) { $kategori_usia = null; }
+            }
+            ?>
             <h2 class="text-lg font-black">Isi Data Sesuai Matriks — Rumah & Keluarga</h2>
+            <p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Enam isian ini menentukan rekomendasi awal sesuai matriks program perumahan. Semua wajib dipilih.</p>
+            <div class="mt-5 grid gap-4 sm:grid-cols-2">
+                <?php foreach ($matriks as $key => [$label, $options]): ?><div><label for="<?= $key ?>" class="text-xs font-bold"><?= html_escape($label) ?> <?= $badge($key) ?></label><select id="<?= $key ?>" name="<?= $key ?>" required aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><option value="">Pilih <?= strtolower(html_escape($label)) ?></option><?php foreach ($options as $code => $opt_label): ?><option value="<?= html_escape($code) ?>"<?= $selected($key, $code) ?>><?= html_escape($opt_label) ?></option><?php endforeach; ?></select><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
+                <div>
+                    <label class="text-xs font-bold">Kategori Usia <span class="ml-1 inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-bold" style="background:rgba(16,185,129,.12);color:#047857">Dihitung otomatis</span></label>
+                    <p class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"><?= $kategori_usia !== null ? html_escape($kategori_usia) : 'Isi tanggal lahir di langkah "Data Warga" terlebih dahulu' ?></p>
+                </div>
+            </div>
+        <?php elseif ($step_slug === 'housing_family_detail'): ?>
+            <h2 class="text-lg font-black">Lengkapi Data SIMPERUM — Rumah & Keluarga</h2>
             <p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Untuk hasil rekomendasi awal, wajib pilih <strong>Status rumah</strong>. Bila status rumah bukan milik sendiri, pilih juga <strong>Memiliki rumah lain</strong> dan <strong>Memiliki calon lahan</strong>. Isian lain opsional.</p>
             <div class="mt-5 grid gap-4 sm:grid-cols-2">
                 <?php $housing = ['housing_status_code' => ['Status rumah', ['owned' => 'Milik sendiri', 'rent' => 'Kontrak/Sewa', 'rent_free' => 'Bebas sewa', 'official' => 'Dinas', 'staying' => 'Menumpang', 'other' => 'Lainnya']], 'land_title_code' => ['Status lahan rumah', ['certificate_unspecified' => 'Sertifikat (jenis tidak disebut SIMPERUM)', 'hm' => 'Sertifikat HM', 'hgb' => 'Sertifikat HGB', 'letter_c' => 'Letter C', 'letter_d' => 'Letter D', 'village_letter' => 'Suket Desa', 'notarial_deed' => 'Akta Notaris', 'other' => 'Lainnya']], 'area_condition_code' => ['Kawasan', ['drought' => 'Kekeringan', 'slum' => 'Kumuh', 'disaster_prone' => 'Rawan bencana', 'riverbank' => 'Bantaran sungai', 'railway' => 'Bantaran rel KA', 'poor_other' => 'Kawasan buruk lain', 'good' => 'Kawasan baik']]]; ?>

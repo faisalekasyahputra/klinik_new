@@ -30,6 +30,14 @@ class Housing_assessment_model extends CI_Model {
         'has_bathroom_latrine', 'latrine_type_code', 'feces_disposal_code',
         'septic_distance_code', 'lighting_source_code', 'cooking_fuel_code',
         'location_accuracy_m',
+        // 5 field xlsx "MATRIKS VARIABEL PENENTUAN PROGRAM PERUMAHAN.xlsx"
+        // Sheet4 (kolom D/E/F/G/I bertanda '*') - permintaan user 23 Agt
+        // 2026, migrasi 045. Field BARU, bukan menimpa housing_status_code/
+        // land_title_code/area_condition_code yang sudah ada - lihat
+        // docblock migrasi 045 untuk alasannya.
+        'matrix_land_ownership_code', 'matrix_current_housing_code',
+        'matrix_environment_condition_code', 'matrix_occupation_finance_code',
+        'matrix_marital_family_code',
     ];
 
     public function __construct()
