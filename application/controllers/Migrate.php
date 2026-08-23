@@ -324,6 +324,28 @@ class Migrate extends CI_Controller {
         } else {
             echo "kkn_peserta (migrasi 044): BELUM ADA - dashboard KKN akan fatal saat unggah roster\n";
         }
+
+        /* Matriks variabel penentuan program (migrasi 045-048). Tujuh kolom
+           baru di sf_penilaian_perumahan, dipasang lewat ADD COLUMN terpisah
+           (045: 5 kolom, 047: 1, 048: 1) plus satu ALTER lebar kolom (046 -
+           tidak menambah kolom baru, jadi tidak diperiksa tersendiri, cukup
+           lewat keberadaan kolomnya di 045). Diperiksa satu-satu seperti
+           migrasi 044 di atas: salah satu ADD COLUMN bisa gagal senyap
+           sementara yang lain sukses. */
+        $kolom_matriks = [
+            'matrix_land_ownership_code'        => 'migrasi 045',
+            'matrix_current_housing_code'       => 'migrasi 045',
+            'matrix_environment_condition_code' => 'migrasi 045',
+            'matrix_occupation_finance_code'    => 'migrasi 045/046',
+            'matrix_marital_family_code'        => 'migrasi 045/046',
+            'matrix_income_code'                => 'migrasi 047',
+            'matrix_dtks_status'                => 'migrasi 048',
+        ];
+        foreach ($kolom_matriks as $kolom => $ket) {
+            echo "sf_penilaian_perumahan.{$kolom} ({$ket}): "
+                .($this->db->field_exists($kolom, 'sf_penilaian_perumahan')
+                    ? 'ADA' : 'HILANG - Hasil Rekomendasi Awal akan salah/kosong')."\n";
+        }
     }
 
     /**
