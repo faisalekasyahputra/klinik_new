@@ -825,9 +825,19 @@ class Index extends MY_Controller {
 	}
 
 	/**
-	 * Tab content: Bank Data - menu cards untuk submenu bank data
+	 * Tab content: Bank Data - dulu menu cards (Statistik & Grafik, Data
+	 * Lainnya), sekarang viewer PDF flipbook LANGSUNG di tab ini -
+	 * permintaan user 23 Agt 2026 ("letakkan di halaman tab/bankdata,
+	 * timpa Card Statistik dan Data Lainnya"). $pdf_url/$contoh sama
+	 * persis dengan yang dipakai Dokumen::index() - lihat docblock di
+	 * sana soal dokumen CONTOH yang masih dipakai sambil menunggu berkas
+	 * resmi. SATU sumber path berkas, jangan menyimpang antara sini dan
+	 * Dokumen::index() - kalau nanti path-nya berubah, ubah keduanya.
 	 */
 	public function tab_bankdata() {
-		$this->render('pages/home/tab_bankdata');
+		$path = 'assets/dokumen/contoh_bank_data.pdf';
+		$data['pdf_url'] = base_url($path);
+		$data['contoh']  = TRUE;
+		$this->render('pages/home/tab_bankdata', $data);
 	}
 }

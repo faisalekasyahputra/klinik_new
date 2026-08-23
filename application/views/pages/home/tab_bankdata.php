@@ -1,57 +1,26 @@
 <!-- Tab Content: Bank Data -->
-<div class="py-4 sm:py-6 px-1 sm:px-2">
+<?php
+/**
+ * Dulu dua kartu ("Statistik & Grafik", "Data Lainnya") yang mengarah
+ * ke halaman lain. Permintaan user 23 Agt 2026: ganti jadi viewer PDF
+ * flipbook LANGSUNG di tab ini, di bawah judul "Bank Data" - kedua
+ * kartu itu ditimpa sepenuhnya, bukan ditambah.
+ *
+ * Akses ke Statistika sekarang HANYA lewat base_url('Statistika')
+ * langsung (controllernya tidak dihapus, cuma tidak ditautkan dari
+ * sini lagi) - kalau nanti ternyata masih dibutuhkan sebagai tautan
+ * dari tab ini juga, itu permintaan terpisah, jangan diasumsikan.
+ *
+ * $pdf_url/$contoh dikirim dari Index::tab_bankdata() - lihat catatan
+ * lengkap soal dokumen CONTOH di situ dan di Dokumen::index()
+ * (partial viewer yang sama dipakai kedua tempat).
+ */
+?>
+<div class="py-4 sm:py-6 px-1 sm:px-2 font-outfit">
     <div class="flex items-center gap-2 mb-3">
         <i class="fa-solid fa-chart-pie  text-[color:var(--portal-text)]"></i>
         <h2 class="text-sm font-bold uppercase tracking-widest text-[#2d6b75]">Bank Data</h2>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-
-        <!-- Card: Statistik & Grafik -->
-        <a href="<?= base_url('Statistika') ?>" data-tab-link data-tab-key="statistika" data-tab-group="bankdata"
-           class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"
-           style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
-            <i class="fa-solid fa-chart-pie absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none"
-               style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.08;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-chart-pie mb-2.5 transition-transform duration-500 group-hover:scale-110"
-                   style="font-size: 24px; color: var(--portal-icon); "></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 group-hover:text-[color:var(--portal-text)] transition-colors">Statistik & Grafik</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Data statistik dan visualisasi perumahan Jawa Tengah</p>
-            </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Lihat Statistik</span>
-                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                </div>
-            </div>
-        </a>
-
-        <?php
-        /* Kartu "Data Lainnya" DIAKTIFKAN 23 Agt 2026 - dulu "Segera Hadir"
-           (nonaktif, lihat riwayat git). Sekarang mengarah ke viewer PDF
-           flipbook (Dokumen::index()) - lihat komentar lengkap di
-           application/controllers/Dokumen.php soal dokumen CONTOH yang
-           masih dipakai sambil menunggu berkas resmi dari user. */
-        ?>
-        <a href="<?= base_url('Dokumen') ?>" data-tab-link data-tab-key="dokumen" data-tab-group="bankdata"
-           class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"
-           style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
-            <i class="fa-solid fa-book-open absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none"
-               style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.08;"></i>
-            <div class="relative z-10">
-                <i class="fa-solid fa-book-open mb-2.5 transition-transform duration-500 group-hover:scale-110"
-                   style="font-size: 24px; color: var(--portal-icon); "></i>
-                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 group-hover:text-[color:var(--portal-text)] transition-colors">Data Lainnya</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Dokumen dan publikasi data perumahan</p>
-            </div>
-            <div class="relative z-10 mt-auto pt-2.5">
-                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
-                    <span>Baca Dokumen</span>
-                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
-                </div>
-            </div>
-        </a>
-
-    </div>
+    <?php $this->load->view('pages/data_spasial/_dokumen_viewer', ['pdf_url' => $pdf_url, 'contoh' => $contoh]); ?>
 </div>
