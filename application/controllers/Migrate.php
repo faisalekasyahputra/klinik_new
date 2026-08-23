@@ -346,6 +346,18 @@ class Migrate extends CI_Controller {
                 .($this->db->field_exists($kolom, 'sf_penilaian_perumahan')
                     ? 'ADA' : 'HILANG - Hasil Rekomendasi Awal akan salah/kosong')."\n";
         }
+
+        /* Migrasi 049 - migrasi DATA, bukan skema: step wizard 'citizen_data'
+           dihapus (digabung ke 'housing_family_detail'), dan draft lama yang
+           sempat berhenti tepat di step itu dipindah ke 'housing_family'
+           supaya tidak macet (guard Warga::STEPS menolak step yang sudah
+           tidak dikenal). Tidak ada field_exists() di sini - yang diperiksa
+           ZERO baris tersisa, bukan keberadaan kolom. */
+        if (in_array('sf_penilaian_perumahan', $tables, TRUE)) {
+            $macet = (int) $this->db->where('current_step', 'citizen_data')->count_all_results('sf_penilaian_perumahan');
+            echo 'draft macet di citizen_data (migrasi 049, harus 0): '
+                .($macet === 0 ? 'AMAN' : $macet.' BARIS MACET - warga ini akan gagal maju di wizard')."\n";
+        }
     }
 
     /**
