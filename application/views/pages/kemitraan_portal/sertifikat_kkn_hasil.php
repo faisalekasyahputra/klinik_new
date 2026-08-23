@@ -42,15 +42,20 @@
 
     <div class="mx-auto mt-6 flex max-w-2xl flex-wrap items-center justify-center gap-3 print:hidden">
         <?php
-        /* window.open(), BUKAN <a target="_blank"> - permintaan user 22 Agt
-           2026: "tombol cetak mengarah ke tab baru". Loader progresif global
+        /* window.open() LANGSUNG ke sertifikat_kkn_pdf() - permintaan user
+           23 Agt 2026: klik Cetak di sini dulu mendarat di
+           cetak_sertifikat_kkn.php (tab perantara berisi <embed> + tombol
+           Cetak-nya sendiri), sekarang dilompati - satu klik langsung ke
+           PDF jadi, viewer PDF bawaan browser yang mengambil alih dari
+           situ. BUKAN <a target="_blank"> - permintaan user 22 Agt 2026:
+           "tombol cetak mengarah ke tab baru". Loader progresif global
            (footer.php) mencegat klik pada <a> se-origin dan mem-fetch-nya
            lewat AJAX untuk ditukar ke panel yang SAMA; window.open() tidak
            pernah melalui event klik <a> itu sama sekali, jadi tidak ada
            risiko tergantung pada aturan pengecualian loader tsb membaca
            atribut target dengan benar. */
         ?>
-        <button type="button" onclick="window.open('<?= base_url('KemitraanPortal/cetak_sertifikat_kkn') ?>', '_blank')"
+        <button type="button" onclick="window.open('<?= base_url('KemitraanPortal/sertifikat_kkn_pdf') ?>', '_blank')"
                 class="inline-flex items-center gap-2 rounded-xl bg-[color:var(--portal-brand)] px-5 py-3 text-sm font-bold text-[#0a1a1f] transition hover:opacity-90">
             <i class="fa-solid fa-print" aria-hidden="true"></i> Cetak
         </button>
