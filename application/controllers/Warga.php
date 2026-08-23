@@ -623,7 +623,7 @@ class Warga extends MY_Controller {
     private function draft_data()
     {
         $data = [];
-        foreach (['assessment_track', 'housing_status_code', 'land_title_code', 'has_other_land', 'has_other_house', 'house_area_m2', 'occupant_count', 'family_count', 'assistance_source_code', 'assistance_year', 'area_condition_code', 'owns_candidate_land', 'candidate_land_title_code', 'candidate_land_origin_code', 'land_owner_relationship_code', 'land_length_m', 'land_width_m', 'land_area_m2', 'foundation_condition_code', 'column_condition_code', 'beam_condition_code', 'sloof_condition_code', 'ceiling_condition_code', 'roof_frame_condition_code', 'floor_material_code', 'floor_condition_code', 'wall_material_code', 'wall_condition_code', 'roof_material_code', 'roof_condition_code', 'has_window', 'has_ventilation', 'water_source_code', 'has_bathroom_latrine', 'latrine_type_code', 'feces_disposal_code', 'septic_distance_code', 'lighting_source_code', 'cooking_fuel_code', 'location_accuracy_m', 'matrix_land_ownership_code', 'matrix_current_housing_code', 'matrix_environment_condition_code', 'matrix_occupation_finance_code', 'matrix_marital_family_code'] as $field) {
+        foreach (['assessment_track', 'housing_status_code', 'land_title_code', 'has_other_land', 'has_other_house', 'house_area_m2', 'occupant_count', 'family_count', 'assistance_source_code', 'assistance_year', 'area_condition_code', 'owns_candidate_land', 'candidate_land_title_code', 'candidate_land_origin_code', 'land_owner_relationship_code', 'land_length_m', 'land_width_m', 'land_area_m2', 'foundation_condition_code', 'column_condition_code', 'beam_condition_code', 'sloof_condition_code', 'ceiling_condition_code', 'roof_frame_condition_code', 'floor_material_code', 'floor_condition_code', 'wall_material_code', 'wall_condition_code', 'roof_material_code', 'roof_condition_code', 'has_window', 'has_ventilation', 'water_source_code', 'has_bathroom_latrine', 'latrine_type_code', 'feces_disposal_code', 'septic_distance_code', 'lighting_source_code', 'cooking_fuel_code', 'location_accuracy_m', 'matrix_land_ownership_code', 'matrix_current_housing_code', 'matrix_environment_condition_code', 'matrix_occupation_finance_code', 'matrix_marital_family_code', 'matrix_income_code'] as $field) {
             if ($this->input->post($field, TRUE) !== NULL) {
                 $data[$field] = $this->input->post($field, TRUE);
             }
@@ -773,6 +773,7 @@ class Warga extends MY_Controller {
                langsung menentukan rekomendasi awal, tidak ada makna
                "belum diisi" yang aman untuk matriks program. */
             foreach ([
+                'matrix_income_code' => 'Gaji',
                 'matrix_land_ownership_code' => 'Kepemilikan Lahan',
                 'matrix_current_housing_code' => 'Kepemilikan Rumah Saat Ini',
                 'matrix_environment_condition_code' => 'Kondisi Lingkungan / Fisik Bangunan',
@@ -784,6 +785,7 @@ class Warga extends MY_Controller {
                 }
             }
             $this->validate_options([
+                'matrix_income_code' => ['income_0_1_5', 'income_1_5_2_2', 'income_2_2_2_8', 'income_2_8_8_5', 'income_2_8_10', 'income_gt_8_5', 'income_gt_10'],
                 'matrix_land_ownership_code' => ['land_unrestricted', 'land_none', 'land_legal'],
                 'matrix_current_housing_code' => ['house_unrestricted', 'house_none_or_rent', 'house_rent_or_staying', 'house_restricted_area', 'house_disaster_affected', 'house_owned'],
                 'matrix_environment_condition_code' => ['env_unrestricted', 'env_safe', 'env_relocation_zone', 'env_disaster_severe', 'env_disaster_moderate', 'env_slum_uninhabitable'],

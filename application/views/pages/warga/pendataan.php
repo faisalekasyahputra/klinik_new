@@ -189,6 +189,25 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                cuma untuk tampilan) - teks pilihannya sendiri PERSIS
                kutipan dari sel Sheet4, tidak diringkas/ditafsirkan ulang. */
             $matriks = [
+                // Ke-7, menyusul terpisah 23 Agt 2026: kolom A xlsx
+                // ("Pendapatan / Gaji", tidak bertanda '*' - diminta
+                // ditambahkan tersendiri). BUKAN income_band_code yang
+                // sudah ada di step "Data Warga" - pita gajinya beda
+                // (lihat docblock migrasi 047). Dua pasang pilihan di
+                // bawah SENGAJA tumpang tindih (2,8-8,5jt vs 2,8-10jt,
+                // >8,5jt vs >10jt) - di baris asli xlsx, batasnya
+                // dibedakan oleh Status Perkawinan pada baris yang sama
+                // (batas 8,5jt untuk Belum Menikah, 10jt untuk Menikah),
+                // bukan duplikasi keliru.
+                'matrix_income_code' => ['Gaji', [
+                    'income_0_1_5' => '0 - 1,5 Juta',
+                    'income_1_5_2_2' => '1,5 - 2,2 Juta',
+                    'income_2_2_2_8' => '2,2 - 2,8 Juta',
+                    'income_2_8_8_5' => '2,8 - 8,5 Juta',
+                    'income_2_8_10' => '2,8 - 10 Juta',
+                    'income_gt_8_5' => '> 8,5 Juta',
+                    'income_gt_10' => '> 10 Juta',
+                ]],
                 'matrix_land_ownership_code' => ['Kepemilikan Lahan', [
                     'land_unrestricted' => 'Tidak Dibatasi',
                     'land_none' => 'Tidak Punya',

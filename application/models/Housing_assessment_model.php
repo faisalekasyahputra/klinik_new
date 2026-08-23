@@ -38,6 +38,10 @@ class Housing_assessment_model extends CI_Model {
         'matrix_land_ownership_code', 'matrix_current_housing_code',
         'matrix_environment_condition_code', 'matrix_occupation_finance_code',
         'matrix_marital_family_code',
+        // Ke-7, migrasi 047 (menyusul terpisah 23 Agt 2026) - kolom A xlsx
+        // ("Pendapatan / Gaji"), BUKAN menimpa income_band_code yang sudah
+        // ada di step "Data Warga" - lihat docblock migrasi 047.
+        'matrix_income_code',
     ];
 
     public function __construct()
