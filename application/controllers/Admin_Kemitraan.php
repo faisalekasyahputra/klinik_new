@@ -319,6 +319,9 @@ class Admin_Kemitraan extends Admin_Controller {
             // Surat permohonan akun SIMPERUM - KKN dari dashboard universitas
             // (migrasi 044, permintaan user 21 Agt 2026).
             'simperum' => 'file_surat_simperum',
+            // Laporan akhir KKN, hanya terisi setelah periode berakhir
+            // (migrasi 050, permintaan user 24 Agt 2026).
+            'laporan'  => 'file_laporan_akhir',
         ][$berkas] ?? NULL;
         if ($kolom === NULL) { show_404(); }
 

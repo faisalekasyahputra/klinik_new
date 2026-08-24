@@ -358,6 +358,11 @@ class Migrate extends CI_Controller {
             echo 'draft macet di citizen_data (migrasi 049, harus 0): '
                 .($macet === 0 ? 'AMAN' : $macet.' BARIS MACET - warga ini akan gagal maju di wizard')."\n";
         }
+
+        // Migrasi 050 - laporan akhir KKN. Kolom, bukan tabel.
+        echo 'kkn_magang_pendaftaran.file_laporan_akhir (migrasi 050): '
+            .($this->db->field_exists('file_laporan_akhir', 'kkn_magang_pendaftaran')
+                ? 'ADA' : 'HILANG - unggah laporan akhir KKN akan fatal')."\n";
     }
 
     /**

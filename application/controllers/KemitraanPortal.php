@@ -270,6 +270,49 @@ class KemitraanPortal extends Public_Controller
         redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
     }
 
+    /**
+     * Unggah Laporan Akhir KKN - permintaan user 24 Agt 2026 ("buat drag
+     * and drop baru untuk mengupload laporan"), diklarifikasi: laporan
+     * akhir KKN, HANYA setelah periode KKN berakhir (migrasi 050).
+     *
+     * Gerbang waktu ditegakkan DI SINI (server), bukan cuma disembunyikan
+     * di tampilan - kiriman manual sebelum periode berakhir tetap ditolak.
+     * Perbandingan tanggalnya sengaja PERSIS sama dengan
+     * cek_sertifikat_kkn() (lihat di bawah) supaya "periode sudah lewat"
+     * berarti hal yang sama di dua tempat, bukan dua tafsiran berbeda.
+     *
+     * store_private_upload() (MY_Controller) yang menangani validasi
+     * berkasnya - whitelist ekstensi, cek MIME asli, batas ukuran, nama
+     * acak - bukan ditulis ulang di sini seperti kkn_upload_peserta()
+     * (yang harus manual karena isi berkasnya DIURAI, bukan cuma
+     * disimpan). Laporan akhir cukup disimpan apa adanya.
+     */
+    public function kkn_upload_laporan($id = NULL)
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $row = $this->pendaftaran_milik($id);
+        if ( ! $row) { return; }
+        if ($row->jenis !== 'kkn') { show_404(); }
+
+        if (empty($row->periode_selesai) || strtotime($row->periode_selesai) >= strtotime('today')) {
+            $this->session->set_flashdata('error', 'Laporan akhir baru bisa diunggah setelah periode KKN berakhir.');
+            redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
+            return;
+        }
+
+        $error = NULL;
+        $nama_berkas = $this->store_private_upload('file_laporan', 'kemitraan', $row->id, $error);
+        if ( ! $nama_berkas) {
+            $this->session->set_flashdata('error', $error ?: 'Pilih berkas laporan terlebih dahulu.');
+            redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
+            return;
+        }
+
+        $this->db->where('id', $row->id)->update('kkn_magang_pendaftaran', ['file_laporan_akhir' => $nama_berkas]);
+        $this->session->set_flashdata('success', 'Laporan akhir berhasil diunggah.');
+        redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
+    }
+
     // =========================================================
     // CETAK SERTIFIKAT KKN - permintaan user 22 Agt 2026.
     //

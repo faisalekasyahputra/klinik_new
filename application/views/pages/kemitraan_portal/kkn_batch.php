@@ -188,11 +188,21 @@ $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
                     <input id="kb-peserta" name="file_peserta" type="file" accept=".xls,.xlsx" required class="sr-only">
                 </div>
                 <p class="<?= $petunjuk ?>">Baris pertama berisi judul kolom "NIM" dan "Nama". Mengunggah ulang MENGGANTI seluruh roster yang tersimpan. Maksimal 5 MB.</p>
+                <?php
+                /* pasangDropzone() didefinisikan SEKALI di sini lalu dipakai
+                   ulang untuk kotak Laporan Akhir KKN di bawah (permintaan
+                   user 24 Agt 2026) - supaya tidak ada dua salinan logika
+                   drag & drop yang bisa saling menyimpang kalau salah satu
+                   diubah nanti. Aman dipanggil berkali-kali dengan ID
+                   berbeda; kalau elemennya tidak ada di halaman (mis. kotak
+                   Laporan Akhir belum dirender karena periode belum lewat),
+                   fungsinya keluar diam-diam lewat pengecekan null di awal. */
+                ?>
                 <script>
-                (function () {
-                    var drop = document.getElementById('kb-peserta-drop');
-                    var input = document.getElementById('kb-peserta');
-                    var nama = document.getElementById('kb-peserta-nama');
+                function pasangDropzone(dropId, inputId, namaId) {
+                    var drop = document.getElementById(dropId);
+                    var input = document.getElementById(inputId);
+                    var nama = document.getElementById(namaId);
                     if (!drop || !input || !nama) { return; }
 
                     var teksAwal = nama.innerHTML;
@@ -225,7 +235,8 @@ $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
                             tampilkanNamaBerkas();
                         }
                     });
-                })();
+                }
+                pasangDropzone('kb-peserta-drop', 'kb-peserta', 'kb-peserta-nama');
                 </script>
             </div>
             <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-xs font-bold text-white shrink-0">
@@ -252,6 +263,55 @@ $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
                 </tbody>
             </table>
         </div>
+        <?php endif; ?>
+    </div>
+
+    <?php
+    /* Laporan Akhir KKN - permintaan user 24 Agt 2026 ("buat drag and drop
+       baru untuk mengupload laporan"), diklarifikasi: laporan akhir KKN,
+       HANYA setelah periode berakhir. Perbandingan tanggal PERSIS sama
+       dengan gerbang di KemitraanPortal::kkn_upload_laporan() (migrasi 050)
+       - kotak ini tidak pernah menjanjikan sesuatu yang akan ditolak
+       server begitu formulirnya benar-benar dikirim. */
+    $periode_lewat = ! empty($row->periode_selesai) && strtotime($row->periode_selesai) < strtotime('today');
+    ?>
+    <div class="<?= $kotak ?> mb-4">
+        <div class="<?= $label ?>">Laporan Akhir KKN</div>
+
+        <?php if ( ! $periode_lewat): ?>
+            <p class="mt-2 text-sm text-gray-500 dark:text-brand-muted">
+                <i class="ph ph-lock-simple" aria-hidden="true"></i>
+                Bisa diunggah setelah periode KKN berakhir<?= $row->periode_selesai ? ' (' . tgl_id($row->periode_selesai) . ')' : '' ?>.
+            </p>
+        <?php else: ?>
+            <?php if ( ! empty($row->file_laporan_akhir)): ?>
+                <div class="mt-2 flex items-center gap-2 text-sm">
+                    <i class="ph ph-check-circle text-green-500" aria-hidden="true"></i>
+                    <span class="text-gray-900 dark:text-white">Laporan akhir sudah terunggah.</span>
+                </div>
+                <p class="mt-1 text-[11px] text-gray-500 dark:text-brand-muted">Mengunggah berkas baru akan menggantikan laporan yang tersimpan.</p>
+            <?php endif; ?>
+
+            <form method="POST" action="<?= base_url('KemitraanPortal/kkn_upload_laporan/' . (int) $row->id) ?>"
+                  enctype="multipart/form-data" class="mt-4 flex flex-wrap items-end gap-3">
+                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+                <div class="flex-1 min-w-[220px]">
+                    <label for="kb-laporan" class="<?= $label ?>">Unggah Laporan Akhir (PDF/JPG/PNG)</label>
+                    <div id="kb-laporan-drop"
+                         class="group relative mt-1 flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-3 py-5 text-center transition-colors hover:border-brand-primary hover:bg-brand-primary/5 dark:border-white/15 dark:bg-black/20 dark:hover:border-brand-primary">
+                        <i class="ph ph-upload-simple text-xl text-gray-400 group-hover:text-brand-primary dark:text-brand-muted"></i>
+                        <p id="kb-laporan-nama" class="text-xs font-semibold text-gray-600 dark:text-brand-muted">
+                            Seret berkas ke sini, atau <span class="font-bold text-brand-primary">klik untuk pilih</span>
+                        </p>
+                        <input id="kb-laporan" name="file_laporan" type="file" accept=".pdf,.jpg,.jpeg,.png" required class="sr-only">
+                    </div>
+                    <p class="<?= $petunjuk ?>">Format PDF, JPG, atau PNG, maksimal 5 MB.</p>
+                    <script>pasangDropzone('kb-laporan-drop', 'kb-laporan', 'kb-laporan-nama');</script>
+                </div>
+                <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-xs font-bold text-white shrink-0">
+                    <i class="ph ph-upload-simple"></i> Unggah
+                </button>
+            </form>
         <?php endif; ?>
     </div>
 
