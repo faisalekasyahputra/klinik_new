@@ -16,9 +16,6 @@
 $kotak = 'rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-brand-card';
 $label = 'text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-brand-muted';
 $nilai = 'mt-1 text-sm font-semibold text-gray-900 dark:text-white';
-$isian = 'w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600'
-    . ' file:mr-3 file:rounded-lg file:border-0 file:bg-brand-primary/10 file:px-3 file:py-1.5'
-    . ' file:text-xs file:font-bold file:text-brand-primary dark:border-white/10 dark:bg-black/20 dark:text-brand-muted';
 $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
 
 $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
@@ -172,8 +169,64 @@ $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
             <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
             <div class="flex-1 min-w-[220px]">
                 <label for="kb-peserta" class="<?= $label ?>">Unggah Daftar Peserta (XLS/XLSX)</label>
-                <input id="kb-peserta" name="file_peserta" type="file" accept=".xls,.xlsx" required class="<?= $isian ?>">
+                <?php
+                /* Drag & drop - permintaan user 24 Agt 2026. Input <input
+                   type="file"> ASLI dipertahankan apa adanya (name/accept/
+                   required tidak berubah, backend kkn_upload_peserta() tidak
+                   perlu tahu apa pun soal ini) - cuma disembunyikan visual
+                   dan dipindah kendalinya ke kotak drop di bawah lewat JS.
+                   Kalau JS gagal/mati, label "for" tetap membuka file
+                   picker seperti sebelumnya - drag & drop cuma lapisan
+                   tambahan, bukan pengganti jalur lama. */
+                ?>
+                <div id="kb-peserta-drop"
+                     class="group relative mt-1 flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-3 py-5 text-center transition-colors hover:border-brand-primary hover:bg-brand-primary/5 dark:border-white/15 dark:bg-black/20 dark:hover:border-brand-primary">
+                    <i class="ph ph-upload-simple text-xl text-gray-400 group-hover:text-brand-primary dark:text-brand-muted"></i>
+                    <p id="kb-peserta-nama" class="text-xs font-semibold text-gray-600 dark:text-brand-muted">
+                        Seret berkas ke sini, atau <span class="font-bold text-brand-primary">klik untuk pilih</span>
+                    </p>
+                    <input id="kb-peserta" name="file_peserta" type="file" accept=".xls,.xlsx" required class="sr-only">
+                </div>
                 <p class="<?= $petunjuk ?>">Baris pertama berisi judul kolom "NIM" dan "Nama". Mengunggah ulang MENGGANTI seluruh roster yang tersimpan. Maksimal 5 MB.</p>
+                <script>
+                (function () {
+                    var drop = document.getElementById('kb-peserta-drop');
+                    var input = document.getElementById('kb-peserta');
+                    var nama = document.getElementById('kb-peserta-nama');
+                    if (!drop || !input || !nama) { return; }
+
+                    var teksAwal = nama.innerHTML;
+                    function tampilkanNamaBerkas() {
+                        var f = input.files && input.files[0];
+                        nama.textContent = f ? f.name : '';
+                        if (!f) { nama.innerHTML = teksAwal; }
+                    }
+                    input.addEventListener('change', tampilkanNamaBerkas);
+
+                    // Klik di mana pun di kotak (bukan cuma input) membuka file picker.
+                    drop.addEventListener('click', function () { input.click(); });
+
+                    ['dragenter', 'dragover'].forEach(function (evt) {
+                        drop.addEventListener(evt, function (e) {
+                            e.preventDefault(); e.stopPropagation();
+                            drop.classList.add('border-brand-primary', 'bg-brand-primary/5');
+                        });
+                    });
+                    ['dragleave', 'drop'].forEach(function (evt) {
+                        drop.addEventListener(evt, function (e) {
+                            e.preventDefault(); e.stopPropagation();
+                            drop.classList.remove('border-brand-primary', 'bg-brand-primary/5');
+                        });
+                    });
+                    drop.addEventListener('drop', function (e) {
+                        var berkas = e.dataTransfer && e.dataTransfer.files;
+                        if (berkas && berkas.length) {
+                            input.files = berkas; // DataTransfer.files -> input.files, didukung semua browser modern.
+                            tampilkanNamaBerkas();
+                        }
+                    });
+                })();
+                </script>
             </div>
             <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-xs font-bold text-white shrink-0">
                 <i class="ph ph-upload-simple"></i> Unggah
