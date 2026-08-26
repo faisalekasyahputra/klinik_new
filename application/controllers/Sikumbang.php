@@ -67,37 +67,14 @@ class Sikumbang extends MY_Controller {
 
         $full_url = $api_url . '?' . http_build_query($params);
 
-        // Caching
-        $cache_key = md5($full_url);
-        $cache_file = APPPATH . 'cache/sikumbang_cari_' . $cache_key . '.json';
-        $cache_time = 86400; // 24 jam
-        $response = null;
+        /* Cache + cadangan basi + penahan tembakan semuanya di
+           application/helpers/sikumbang_helper.php - satu pintu untuk
+           ketujuh tempat yang dulu menyalin blok yang sama. Nama berkas
+           cache-nya sengaja dipertahankan persis (`sikumbang_cari_<md5>`)
+           supaya berkas yang sudah hangat di production tidak terbuang. */
+        $cache_file = APPPATH . 'cache/sikumbang_cari_' . md5($full_url) . '.json';
 
-        if (file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
-            $response = file_get_contents($cache_file);
-        } else {
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $full_url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0'); 
-
-            $response = curl_exec($ch);
-            $err = curl_error($ch);
-            curl_close($ch);
-
-            if (!$err && $response) {
-                @file_put_contents($cache_file, $response);
-            }
-        }
-
-        if ($response) {
-            $decoded_data = json_decode($response, true);
-            // Sesuaikan indeks data berdasarkan response asli API Sikumbang
-            $data['results'] = isset($decoded_data['data']) ? $decoded_data['data'] : [];
-        }
+        list($data['results'], ) = sikumbang_data($full_url, $cache_file, 86400);
 
         $data['title'] = 'Sikumbang - Data Perumahan';
         

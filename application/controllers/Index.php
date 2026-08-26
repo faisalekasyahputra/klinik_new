@@ -138,30 +138,10 @@ class Index extends MY_Controller {
 		$full_url = $api_url . '?' . http_build_query($params);
 		
 		$cache_file = APPPATH . 'cache/ajax_perumahan_' . md5($full_url) . '.json';
-		$cache_time = 3600; // 1 jam cache
-		$response = null;
-		
-		if (file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
-			$response = file_get_contents($cache_file);
-		} else {
-			$ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL, $full_url);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-			curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-			$response = curl_exec($ch);
-			curl_close($ch);
-			
-			if ($response) {
-				@file_put_contents($cache_file, $response);
-			}
-		}
 
-		$decoded = json_decode($response, true);
-
-		$datacontent['results'] = isset($decoded['data']) ? $decoded['data'] : [];
+		/* Cadangan basi ditangani sikumbang_ambil(). Sebelumnya gagal jaringan
+		   di sini berarti kartu rumah kosong walaupun cache kemarin ada. */
+		list($datacontent['results'], ) = sikumbang_data($full_url, $cache_file, 3600);
 		$this->load->view('components/cards/rumah', $datacontent);
 	}
 	public function detail_artikel ($idYangDicari) {
@@ -187,35 +167,16 @@ class Index extends MY_Controller {
             redirect('cari_rumah');
         }
 		$cache_file = APPPATH . 'cache/sikumbang_detail_' . $idLokasi . '.json';
-		$cache_time = 86400; // 24 jam cache
-		$response = null;
-		$err = false;
+		$full_url = "https://sikumbang.tapera.go.id/lokasi-perumahan/" . $idLokasi . "/json";
 
-		// 1. Cek apakah ada cache yang valid
-		if (file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
-			$response = file_get_contents($cache_file);
-		} else {
-			// 2. Jika tidak ada cache, fetch dari API
-			$full_url = "https://sikumbang.tapera.go.id/lokasi-perumahan/" . $idLokasi . "/json";
-			$ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL, $full_url);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-			curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0'); 
-			$response = curl_exec($ch);
-			$err = curl_error($ch);
-			curl_close($ch);
+		/* Cadangan basi penting justru di sini: tanpa itu, perumahan yang
+		   kemarin bisa dibuka mendadak jadi 404 begitu SIKUMBANG tersendat -
+		   404 yang berbohong, karena datanya ada di cache dan lokasinya
+		   memang nyata. Sekarang 404 hanya keluar kalau benar-benar tidak
+		   ada apa pun yang bisa disajikan. */
+		$response = sikumbang_ambil($full_url, $cache_file, 86400);
 
-			// 3. Simpan cache jika berhasil
-			if (!$err && $response) {
-				@file_put_contents($cache_file, $response);
-			}
-		}
-
-		// 4. Jika error / kosong
-		if ($err || empty($response)) {
+		if ($response === NULL) {
 			show_404();
 		}
 
@@ -308,44 +269,39 @@ class Index extends MY_Controller {
 		]);
 
 		$cache_file = APPPATH . 'cache/ajax_perumahan_' . md5($full_url) . '.json';
-		$response   = NULL;
 
-		if (file_exists($cache_file) && (time() - filemtime($cache_file) < 3600)) {
-			$response = file_get_contents($cache_file);
-		} else {
-			$ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL, $full_url);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-			/* Dinaikkan dari 30 ke 60 detik (20 Agt 2026) - ditemukan saat
-			   menyelidiki laporan user "card rumah tidak muncul": SIKUMBANG
-			   diverifikasi LANGSUNG lewat curl baris perintah masih menjawab
-			   dengan data yang benar untuk kueri ini (limit=SIK_BONGKAH=100),
-			   tapi butuh ~40 detik - melewati batas waktu 30 detik yang
-			   dipasang di sini. Akibatnya curl_exec() dianggap gagal
-			   (CURLE_OPERATION_TIMEDOUT) padahal sumbernya sebenarnya masih
-			   hidup dan akan menjawab kalau ditunggu, dan endpoint ini
-			   membalas "gagal-jaringan" ke pengguna - kartu rumah kosong
-			   tanpa satu baris pun ditampilkan.
-			   Bukan SIK_BONGKAH yang diperkecil sebagai gantinya: nilai 100
-			   dipilih sengaja (lihat komentar lokasi_tersaring()) untuk
-			   menutup bug halaman kosong padahal data masih ada - mengecilkannya
-			   lagi menghidupkan kembali bug yang sudah diperbaiki. 60 detik
-			   memberi jarak dari 40 detik yang teramati, dan max_execution_time
-			   PHP (120 detik) masih jauh di atasnya. */
-			curl_setopt($ch, CURLOPT_TIMEOUT, 60);
-			curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-			$response = curl_exec($ch);
-			$err      = curl_error($ch);
-			curl_close($ch);
+		/* 🔻 TIMEOUT 60 DETIK DICABUT DI SINI, 26 Agt 2026 - dan pencabutan
+		   itu MEMBALIK keputusan 20 Agt yang menaikkannya dari 30 ke 60.
 
-			if ($err || ! $response) { return NULL; }
-			@file_put_contents($cache_file, $response);
-		}
+		   Alasan lama: "SIKUMBANG masih menjawab benar tapi butuh ~40 detik,
+		   jadi 30 detik memotongnya terlalu cepat dan kartu rumah kosong."
+		   Premisnya benar, obatnya yang salah sasaran. Kartu kosong itu
+		   bukan akibat timeout pendek, melainkan akibat TIDAK ADA CADANGAN:
+		   gagal berarti NULL, dan NULL berarti halaman kosong walaupun
+		   berkas cache yang masih bagus ada di disk. Timeout dipanjangkan
+		   untuk mengurangi PELUANG gagal, bukan untuk memperbaiki akibatnya.
 
-		$decoded = json_decode($response, TRUE);
-		return isset($decoded['data']) && is_array($decoded['data']) ? $decoded['data'] : [];
+		   Ongkosnya terukur 26 Agt: lokasi_tersaring() memanggil method ini
+		   sampai SIK_MAKS_BONGKAH (5) kali BERURUTAN, jadi 60 detik per
+		   bongkahan berarti kasus terburuk 300 detik dalam SATU permintaan
+		   HTTP, dan selama itu satu worker PHP terkunci. Satu tampilan
+		   /cari_rumah memegang 11 worker sekaligus (1 load_more + 10 foto).
+		   Di hosting bersama, itulah yang dilaporkan sebagai "situs mati".
+		   Terukur: /index/load_more cache dingin 19,9 detik, cache panas
+		   0,6 detik.
+
+		   sikumbang_ambil() menyediakan cadangan basi + penahan tembakan,
+		   jadi gagal TIDAK lagi berarti kosong - dan begitu itu benar,
+		   timeout pendek jadi aman. Urutannya memang begitu: cadangan dulu,
+		   baru timeout boleh dipendekkan. JANGAN naikkan lagi angka ini
+		   tanpa membaca application/helpers/sikumbang_helper.php. */
+		list($baris, $gagal) = sikumbang_data($full_url, $cache_file, 3600);
+
+		/* Kontrak NULL vs [] dipertahankan persis: NULL = gagal jaringan dan
+		   tidak ada apa pun yang bisa disajikan, [] = sumbernya memang habis.
+		   lokasi_tersaring() membedakan keduanya, dan load_more() memakai
+		   bedanya untuk memutuskan tombol "Muat lagi" mati atau hidup. */
+		return $gagal ? NULL : $baris;
 	}
 
 	/**
@@ -513,12 +469,32 @@ class Index extends MY_Controller {
 		$nama_file_lokal = md5($path_gambar) . '.jpg';
 		$path_file_lokal = $dir_cache . $nama_file_lokal;
 
-		// 2. JIKA GAMBAR SUDAH PERNAH DIDOWNLOAD (ADA DI LOKAL), LANGSUNG TAMPILKAN! (INSTAN)
-		if (file_exists($path_file_lokal)) {
+		/* 2. SUDAH ADA DI LOKAL: SERAHKAN KE WEB SERVER, JANGAN LEWAT PHP.
+
+		   Sebelumnya baris ini membaca seluruh JPEG ke memori lalu
+		   mengeluarkannya lewat CodeIgniter. Diukur di production 26 Agt
+		   2026: 760 foto, 145 MB, yang terbesar 3,5 MB - dan satu batch
+		   /cari_rumah memuat 10 foto sekaligus, jadi 10 worker PHP terpakai
+		   hanya untuk menyalurkan berkas yang SUDAH ada di disk. Di hosting
+		   bersama yang jatah entry process-nya kecil, itu penyumbang
+		   terbesar "situs mati".
+
+		   Berkasnya ada di dalam DocumentRoot dan sudah dibuktikan bisa
+		   diambil statis: GET /assets/cache_foto/<berkas> membalas 200,
+		   188 KB, nol PHP. Jadi PHP cukup menunjuk ke sana lalu selesai -
+		   worker lepas dalam hitungan milidetik, dan CDN di depan (hcdn)
+		   bisa ikut menyimpan berkas statisnya.
+
+		   302, bukan 301: kalau berkas cache kelak dihapus, 301 yang sudah
+		   terlanjur disimpan browser akan menunjuk ke berkas yang tidak ada
+		   selamanya. Cache-Control tetap dipasang supaya pengalihannya
+		   sendiri ikut disimpan browser, jadi kunjungan berikutnya tidak
+		   menyentuh PHP sama sekali. */
+		if (is_file($path_file_lokal)) {
 			$this->output
-				->set_header('Cache-Control: public, max-age=2592000') // Cache di browser 30 hari
-				->set_content_type('image/jpeg')
-				->set_output(file_get_contents($path_file_lokal));
+				->set_status_header(302)
+				->set_header('Location: ' . base_url('assets/cache_foto/' . $nama_file_lokal))
+				->set_header('Cache-Control: public, max-age=2592000');
 			return;
 		}
 
@@ -530,19 +506,25 @@ class Index extends MY_Controller {
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-		/* Dinaikkan dari 15 ke 45 detik (20 Agt 2026) - ditemukan saat
-		   menyelidiki laporan user "gambar rumah tidak muncul di komputer
-		   ini": satu halaman /cari_rumah memuat sampai 20 foto sekaligus
-		   lewat proxy ini, dan foto yang BELUM ada di cache lokal
-		   (assets/cache_foto/) memicu curl baru ke SIKUMBANG per foto -
-		   diukur langsung lewat DevTools, 12 dari 20 permintaan macet
-		   "pending" dengan batas 15 detik yang lama, sementara SIKUMBANG
-		   sendiri (lihat bongkah_sikumbang() di atas) sudah terbukti bisa
-		   butuh puluhan detik untuk satu permintaan. Cache foto TETAP
-		   solusi utamanya untuk kunjungan berikutnya (baris ~496 di atas) -
-		   ini cuma menaikkan peluang berhasil pada CACHE MISS pertama kali,
-		   bukan menggantikan mekanisme cache-nya. */
-		curl_setopt($ch, CURLOPT_TIMEOUT, 45);
+		/* 🔻 DITURUNKAN 45 KE 12 DETIK, 26 Agt 2026 - membalik kenaikan
+		   15 ke 45 yang dipasang 20 Agt.
+
+		   Alasan lama: "12 dari 20 permintaan foto macet pending dengan
+		   batas 15 detik". Gejalanya nyata, tapi memperpanjang batas cuma
+		   menukar foto yang gagal cepat dengan worker yang tertahan lama.
+		   Diukur 26 Agt: 45 detik x 10 foto per batch = 450 detik worker
+		   per satu tampilan halaman, di hosting yang jatah prosesnya kecil
+		   dan dibagi dengan 10+ domain lain. Itu bukan foto yang lebih
+		   sering muncul, itu situs yang lebih sering mati.
+
+		   Dua hal lain di method ini yang membuat batas pendek jadi aman
+		   sekarang: cache hit tidak lagi lewat PHP sama sekali (dialihkan
+		   ke berkas statis), dan jalur gagal tidak lagi mengunduh
+		   placeholder dari internet. CONNECTTIMEOUT dipasang terpisah supaya
+		   sambungan yang menggantung tidak memakan seluruh jatah waktu dan
+		   menyisakan nol detik untuk membaca gambarnya. */
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+		curl_setopt($ch, CURLOPT_TIMEOUT, 12);
 		curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
 		$gambar_mentah = curl_exec($ch);
 		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -550,17 +532,38 @@ class Index extends MY_Controller {
 
 		if ($http_code == 200 && !empty($gambar_mentah)) {
 			// Simpan file mentah ke folder cache lokal untuk pemanggilan berikutnya
-			file_put_contents($path_file_lokal, $gambar_mentah);
+			$tersimpan = @file_put_contents($path_file_lokal, $gambar_mentah);
 
-			// Tampilkan ke browser
-			$this->output
-				->set_content_type('image/jpeg')
-				->set_output($gambar_mentah);
+			/* Kalau penyimpanan berhasil, alihkan ke berkas statisnya - alasan
+			   yang sama seperti jalur cache di atas. Kalau GAGAL disimpan
+			   (folder tidak bisa ditulis), keluarkan langsung seperti dulu:
+			   mengalihkan ke berkas yang tidak jadi ada cuma menghasilkan 404. */
+			if ($tersimpan !== FALSE) {
+				$this->output
+					->set_status_header(302)
+					->set_header('Location: ' . base_url('assets/cache_foto/' . $nama_file_lokal))
+					->set_header('Cache-Control: public, max-age=2592000');
+			} else {
+				$this->output
+					->set_content_type('image/jpeg')
+					->set_output($gambar_mentah);
+			}
 		} else {
-			// Jika gambar di server Sikumbang corupt/tidak ada, tampilkan placeholder gambar kosong
+			/* 🔻 `file_get_contents('https://placehold.co/...')` DICABUT
+			   26 Agt 2026. Itu permintaan HTTP KELUAR lagi, tanpa timeout
+			   sama sekali - `default_socket_timeout` di server ini 60 detik,
+			   jadi jalur GAGAL berongkos lebih mahal daripada jalur sukses,
+			   dan tepat pada saat jaringan sedang bermasalah. Satu halaman
+			   dengan 10 foto gagal bisa menahan 10 worker sampai 10 menit
+			   total sambil menunggu layanan pihak ketiga menggambar kotak
+			   abu-abu.
+			   Placeholder-nya sudah ada di repo sejak lama
+			   (assets/img/default-placeholder.svg), jadi tidak ada yang
+			   perlu diunduh dari mana pun. */
 			$this->output
-				->set_content_type('image/jpeg')
-				->set_output(file_get_contents('https://placehold.co/600x400?text=No+Image'));
+				->set_status_header(302)
+				->set_header('Location: ' . base_url('assets/img/default-placeholder.svg'))
+				->set_header('Cache-Control: public, max-age=3600');
 		}
 	}
 	public function umum()
@@ -730,38 +733,23 @@ class Index extends MY_Controller {
 
         $full_url = $api_url . '?' . http_build_query($params);
 
-        $cache_file = APPPATH . 'cache/sikumbang_sebaran_jateng.json';
-        $cache_time = 86400; // 24 jam
+        /* Pencarian dapat berkas cache SENDIRI, bukan menumpang berkas
+           sebaran dasar. Dulu pencarian sengaja melewati cache sama sekali
+           supaya hasil tersaring tidak menimpa dataset dasar - kekhawatiran
+           yang benar, tapi obatnya membuat SETIAP pencarian menembak
+           `limit=10000` ke SIKUMBANG tanpa satu pun lapisan cache. Kunci
+           per-URL menjawab keduanya: dasar tetap utuh, pencarian ikut
+           ter-cache dan ikut punya cadangan basi.
+           ponytail: berkas per-kata-kunci tidak pernah disapu siapa pun,
+           persis seperti pola ajax_perumahan_* yang sudah ada. Kalau folder
+           cache kelak membengkak, yang dibutuhkan penyapu berkala, bukan
+           mencabut cache-nya lagi. */
         $is_searching = ($keyword != '' || $sort != 'terbaru');
-        $response = null;
-        $err = false;
+        $cache_file = $is_searching
+            ? APPPATH . 'cache/sikumbang_sebaran_' . md5($full_url) . '.json'
+            : APPPATH . 'cache/sikumbang_sebaran_jateng.json';
 
-        if (!$is_searching && file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
-            $response = file_get_contents($cache_file);
-        } else {
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $full_url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0'); 
-
-            $response = curl_exec($ch);
-            $err = curl_error($ch);
-            curl_close($ch);
-
-            if (!$err && !$is_searching && $response) {
-                @file_put_contents($cache_file, $response);
-            }
-        }
-
-        if (!$err && $response) {
-            $decoded_data = json_decode($response, true);
-            $datacontent['results'] = isset($decoded_data['data']) ? $decoded_data['data'] : [];
-        } else {
-			$datacontent['results'] = [];
-		}
+        list($datacontent['results'], ) = sikumbang_data($full_url, $cache_file, 86400);
 
 		$this->render('pages/data_spasial/sebaran', $datacontent);
 	}

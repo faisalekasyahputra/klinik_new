@@ -96,36 +96,14 @@ class Umum extends MY_Controller {
 
         $full_url = $api_url . '?' . http_build_query($params);
 
-        $cache_file = APPPATH . 'cache/sikumbang_sebaran_jateng.json';
-        $cache_time = 86400;
+        /* Sama persis dengan Index::sebaran() - lihat komentar di sana untuk
+           alasan pencarian diberi berkas cache sendiri. */
         $is_searching = ($keyword != '' || $sort != 'terbaru');
-        $response = null;
-        $err = false;
+        $cache_file = $is_searching
+            ? APPPATH . 'cache/sikumbang_sebaran_' . md5($full_url) . '.json'
+            : APPPATH . 'cache/sikumbang_sebaran_jateng.json';
 
-        if (!$is_searching && file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
-            $response = file_get_contents($cache_file);
-        } else {
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $full_url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'); 
-
-            $response = curl_exec($ch);
-            $err = curl_error($ch);
-            curl_close($ch);
-
-            if (!$err && !$is_searching && $response) {
-                @file_put_contents($cache_file, $response);
-            }
-        }
-
-        if (!$err && $response) {
-            $decoded_data = json_decode($response, true);
-            $datacontent['results'] = isset($decoded_data['data']) ? $decoded_data['data'] : [];
-        }
+        list($datacontent['results'], ) = sikumbang_data($full_url, $cache_file, 86400);
 		$data['content'] = $this->load->view('pages/data_spasial/sebaran', $datacontent, true);
 		$this->load->view('layouts/main',$data);
 	}
@@ -977,34 +955,17 @@ class Umum extends MY_Controller {
 	private function _get_tapera_data() {
 		$apiUrl     = "https://sikumbang.tapera.go.id/ajax/lokasi/search?selectedSearch=wilayah&skalaPerumahan=semua&kodeWilayah=33&sort=terbaru&searchBy=nama-perumahan&page=1&limit=500";
 		$cache_file = APPPATH . 'cache/sikumbang_pengembang_full.json';
-		$cache_time = 86400; // 24 jam
-		$response   = null;
 
-		if (file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
-			$response = file_get_contents($cache_file);
-		} else {
-			$ch = curl_init();
-			curl_setopt($ch, CURLOPT_URL, $apiUrl);
-			curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($ch, CURLOPT_HTTPHEADER, [
-				'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-				'Referer: https://sikumbang.tapera.go.id/'
-			]);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
-			curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-			curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-			$response = curl_exec($ch);
-			$err      = curl_error($ch);
-			curl_close($ch);
-
-			if (!$err && $response) {
-				@file_put_contents($cache_file, $response);
-			}
-		}
-
-		if (!$response) return [];
-		$decoded = json_decode($response, true);
-		return $decoded['data'] ?? [];
+		/* Header `Referer` yang dulu dikirim di sini SENGAJA tidak diteruskan
+		   ke helper. Diuji dari server production 26 Agt 2026: dengan dan
+		   tanpa Referer, balasannya sama persis - HTTP 200, 211747 byte
+		   keduanya. Jadi ia bukan syarat, cuma peninggalan; menambah
+		   parameter header ke helper demi satu pemanggil yang ternyata tidak
+		   membutuhkannya cuma menambah permukaan tanpa alasan. Kalau kelak
+		   SIKUMBANG mulai mensyaratkannya, ukur dulu seperti ini sebelum
+		   menambahkannya kembali. */
+		list($baris, ) = sikumbang_data($apiUrl, $cache_file, 86400);
+		return $baris;
 	}
 
 	public function detail_pengembang($nama = '') {
