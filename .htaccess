@@ -35,6 +35,24 @@
     # variabel - dan di aplikasi ini variabel itu bisa berisi NIK atau email.
     RewriteRule (^|/)(error_log|php_errorlog|[^/]+\.log)$ - [F,L]
 
+    # Dump/backup basis data. Ditemukan 26 Agt 2026: TIGA backup production
+    # UTUH menyaji HTTP 200 di akar - backup_sebelum_migrasi0{44,48,50}_*.sql,
+    # 125-131 KB, 44 tabel, berisi usr_users (termasuk hash kata sandi),
+    # sf_profil_warga, srp2_registrations, srp2_documents, sys_jejak_audit.
+    # Berkasnya lahir dari kebiasaan "backup dulu sebelum migrasi" yang
+    # menaruh dump di direktori kerja - dan direktori kerja itu DocumentRoot.
+    #
+    # Persis pola error_log di atas: bukan dotfile, bukan .md, bukan di docs/,
+    # jadi keempat aturan sebelumnya meleset semua. Temuan 24 Agt soal
+    # dummy_simperum.sql sudah menunjukkan .sql tidak tertutup, tapi ditutup
+    # sebagai "cuma data sintetis" - kelasnya tidak ikut ditambal, dan tiga
+    # dump sungguhan menyusul ke lubang yang sama.
+    #
+    # Backup-nya sudah dipindah ke ~/backup_klinik (di luar DocumentRoot).
+    # Aturan ini yang menahan pengulangannya, dan .gz ikut disebut karena
+    # runbook rilis memakai mysqldump | gzip.
+    RewriteRule (^|/)[^/]+\.(sql|dump|bak)(\.gz)?$ - [F,L]
+
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ index.php/$1 [L,QSA]
