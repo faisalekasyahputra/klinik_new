@@ -234,14 +234,43 @@ Suite baru atau tambahan di harness perjalanan yang sudah ada:
 
 ### Masih benar-benar terhenti
 
+> ♻️ **Diperiksa ulang 24 Agt 2026 terhadap riwayat git, dan tabel ini ternyata
+> sudah usang: enam dari sembilan barisnya SUDAH MENDARAT 10 Agt.** Yang tersisa
+> tinggal tiga, ketiganya menunggu berkas dari dinas dan nol pekerjaan kode.
+>
+> **B2** ✅ `eef3baa` + `3e561a5` - terbelah dua sesuai temuannya: batas wilayah
+> ternyata SUDAH mengikat (diuji empat jalur: daftar, detail, berkas, tulis, nol
+> kebocoran antarwilayah), jadi yang tersisa keputusan dinas soal identitas
+> warga, dan itu dijadikan data contoh + modal sampai mereka memutuskan.
+> **A3** ✅ `223bb32` - dan jawaban pertama kami KELIRU: artefak konfirmasi
+> menulis "angka 3 dan 6 tidak cocok dengan pengaturan mana pun". Cocok persis
+> begitu tahu halamannya. Penyaring subsidi/non-subsidi berjalan di sisi kita
+> sementara API diminta `limit=9`, jadi sembilan baris itulah yang disaring.
+> **A2** ✅ `223bb32`, **A6** ✅ `969567f` - dan A6 memaksa satu koreksi kejujuran:
+> menulis "data resmi SIMPERUM" di kalimat desil akan jadi bohong, ketahuan
+> sesudah memeriksa production.
+>
+> **D2** ✅ `500f31a` (migrasi `039`) dan **F1** ✅ `257d579` (migrasi `038`) -
+> keduanya di tabel ini tercatat "butuh daftar resmi dari dinas", dan **tidak satu
+> pun daftar itu pernah datang.** Yang membuka jalannya bukan menunggu, melainkan
+> membalik bentuknya: nomenklatur dipecah jadi empat isian terpisah, dan posisi
+> magang dijadikan master yang **diisi dinas sendiri** lewat CRUD. Pelajaran yang
+> berlaku untuk sisa daftar mana pun: **pemblokir berupa "menunggu daftar" sering
+> kali bisa diubah jadi layar tempat pemiliknya mengisi sendiri** - itu lebih
+> cepat, dan daftarnya tidak basi enam bulan lagi. Yang TIDAK boleh diubah begitu:
+> hal yang menyangkut kebijakan (A7, A11) - di sana menebak tetap menebak.
+
 | Apa | Menunggu | Catatan |
 |---|---|---|
-| **B2** | Keterangan | Layar mana, akun apa (peran + kabupaten), data warga seperti apa yang terlihat. **Didahulukan begitu keterangannya ada** - kalau benar, ini batas kewenangan bocor, bukan cacat tampilan |
-| **A3** | Contoh nyata | Angka "3 atau 6" tidak cocok dengan pengaturan mana pun (batasnya 9 per muat). Butuh: halaman mana, kabupaten apa, penyaring apa |
-| A1, A2, A6 | Berkas & teks | 5 foto program, kalimat definisi subsidi/non-subsidi, persetujuan rumusan desil |
-| D2, F1 | Daftar | Nomenklatur program-kegiatan-sub kegiatan; daftar posisi magang |
-| Butir 4 lama | Daftar | Keterangan 11 formulir SRP2 yang belum terisi |
-| Butir 8b lama | Berkas | Buku panduan + leaflet KKN pengganti juknis |
+| **A1** | Berkas | 5 foto program. Nol pekerjaan kode; tanpa fotonya kartu program tetap memakai gambar seadanya |
+| **Butir 4 lama** | Daftar | Keterangan 11 formulir SRP2 yang belum terisi |
+| **Butir 8b lama** | Berkas | Buku panduan + leaflet KKN pengganti juknis (juknis PDF-nya sudah 404 sejak rilis 4 Agt) |
+
+> ⚠️ **Dan satu putaran BARU sudah datang sesudah dokumen ini berhenti diperbarui.**
+> Revisi putaran 2 (butir bernomor 1-24, penomoran berbeda dari 23 butir di sini)
+> mendarat 10-11 Agt: [`ROADMAP_REVISI_PUTARAN2.md`](ROADMAP_REVISI_PUTARAN2.md).
+> Jangan mencampur penomorannya - "butir 4" di dokumen ini bukan "butir 4" di sana.
+
 
 ---
 
