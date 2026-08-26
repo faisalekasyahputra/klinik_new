@@ -266,30 +266,33 @@ class Migrate extends CI_Controller {
             echo "srp2_asosiasi (migrasi 042): BELUM ADA - kolom Asosiasi di direktori SRP2 akan kosong\n";
         }
 
-        /* PSU serah terima (migrasi 043). Dua hal diperiksa TERPISAH dari
-           tabelnya karena keduanya dipasang lewat ALTER tersendiri:
+        /* Collation kolom `asosiasi` diperiksa TERPISAH dari tabelnya karena
+           dipasang lewat ALTER tersendiri: kalau ALTER-nya gagal senyap,
+           tabelnya tetap ADA dan kolomnya tetap ADA - yang rusak cuma JOIN-nya,
+           dengan "Illegal mix of collations" yang muncul jauh kemudian di layar
+           rekap, bukan saat migrasi.
 
-           (a) Collation kolom `asosiasi`. Migrasi itu MENYELARASKANNYA ke
-               `srp2_asosiasi.kode` dengan sengaja. Kalau ALTER-nya gagal
-               senyap, tabelnya tetap ADA dan kolomnya tetap ADA - yang rusak
-               cuma JOIN-nya, dengan "Illegal mix of collations" yang muncul
-               jauh kemudian di layar rekap, bukan saat migrasi.
-
-           (b) Kedua foreign key. Tanpa keduanya, baris PSU bisa menunjuk
-               pengembang atau kabupaten yang sudah terhapus, dan tidak ada
-               yang berteriak sampai ada yang membuka laporannya. */
-        if (in_array('psu_serah_terima', $tables, TRUE)) {
+           Diperiksa untuk SEMUA tabel yang menyimpan kode asosiasi (migrasi
+           051), bukan cuma psu_serah_terima. Pemeriksaan lama di sini hanya
+           menyorot satu kolom, dan itulah sebabnya
+           srp2_certified_developers.asosiasi meleset diam-diam tanpa satu pun
+           baris keluaran yang menyebutnya. */
+        $acuan = $this->db->query("SELECT COLLATION_NAME c FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_asosiasi'
+              AND COLUMN_NAME = 'kode' LIMIT 1")->row();
+        foreach (['psu_serah_terima', 'srp2_certified_developers'] as $t) {
+            if ( ! in_array($t, $tables, TRUE)) { continue; }
             $kol = $this->db->query("SELECT COLLATION_NAME c FROM information_schema.COLUMNS
-                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'psu_serah_terima'
-                  AND COLUMN_NAME = 'asosiasi' LIMIT 1")->row();
-            $acuan = $this->db->query("SELECT COLLATION_NAME c FROM information_schema.COLUMNS
-                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_asosiasi'
-                  AND COLUMN_NAME = 'kode' LIMIT 1")->row();
-            echo 'psu_serah_terima.asosiasi collation (migrasi 043): '
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
+                  AND COLUMN_NAME = 'asosiasi' LIMIT 1", [$t])->row();
+            echo $t.'.asosiasi collation (migrasi 051): '
                 .($kol === NULL ? 'KOLOM HILANG'
                     : (($acuan !== NULL && $kol->c === $acuan->c)
                         ? 'SELARAS dengan srp2_asosiasi.kode ('.$kol->c.')'
                         : 'BEDA dari srp2_asosiasi.kode - JOIN akan gagal ('.$kol->c.')'))."\n";
+        }
+
+        if (in_array('psu_serah_terima', $tables, TRUE)) {
             $fk = $this->db->query("SELECT CONSTRAINT_NAME n FROM information_schema.TABLE_CONSTRAINTS
                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'psu_serah_terima'
                   AND CONSTRAINT_TYPE = 'FOREIGN KEY'")->result();
