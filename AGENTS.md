@@ -8,7 +8,7 @@
 
 ## 0. BACA INI DULU - Status Terkini & Protokol Antar-Agent
 
-**Terakhir disinkronkan: 24 Agustus 2026** - kode lokal **`2ac24f8`**, branch `feature/homepage-portal-v2` bersih dan **nol commit tertahan untuk di-push** - tetapi **TERTINGGAL 34 COMMIT DARI `origin`**, dan itu temuan utama sinkronisasi ini: **ada dev kedua yang bekerja di branch yang sama.** Lihat blok DEV KEDUA di bawah. Angka lokal di paragraf ini (kode `2ac24f8`, migrasi sampai `043`) benar untuk WORKING TREE, tetapi **origin sudah di skema `050`** - jangan memakai angka lokal sebagai keadaan proyek sebelum `git pull`.
+**Terakhir disinkronkan: 31 Agustus 2026** - production di kode **`39af177`**, skema **`20260701000051`**, `git status -sb` bersih dan sinkron dengan `origin`, dibaca lewat `ssh` DI SERVER. **SIMPERUM kini mode `api`, bukan lagi simulasi** - lihat blok di bawah beserta catatan sensitifnya. *(Baris ini sempat menulis 24 Agt / `2ac24f8` / migrasi 043; angka itu benar untuk hari itu lalu tersalip dev kedua dan enam migrasi berikutnya. Pola yang sama sudah memakan dokumen ini berkali-kali: angka hanya boleh ditulis sesudah dibaca dari server, dan langsung basi sesudahnya.)*
 
 > 🔴 **YANG PALING PENTING DARI SINKRONISASI INI: SUITE TIDAK LAGI HIJAU. 12 MERAH dari 43 suite / 1284 pemeriksaan** (dibaca dari `2ac24f8`, 20 Agt; `309c6cb` sebelumnya mencatat 14). Sampai 12 Agt suite ini selalu 0 merah, jadi angka ini BUKAN keadaan normal proyek dan jangan diperlakukan sebagai kebisingan latar.
 >
@@ -17,6 +17,29 @@
 > **Daftar 12 sisanya belum pernah ditulis di mana pun.** Ia hidup di badan commit saja, dan itu persis cara utang menghilang dari pandangan: tiap commit menulis "sisanya utang terpisah yang sudah dipetakan" tanpa peta yang bisa dibuka siapa pun. Enumerasinya butuh Apache + MySQL hidup dan belum dijalankan. **Agent berikutnya yang menyalakan XAMPP: jalankan `php docs/engineering/jalankan_semua.php`, lalu tulis daftar berkasnya DI SINI**, bukan di pesan commit.
 >
 > Konsekuensi praktis sampai itu terjadi: **"suite hijau" tidak bisa lagi dipakai sebagai gerbang rilis.** Gantinya yang masih sah dan sudah dipraktikkan `309c6cb`/`0228e92`/`2ac24f8`: jumlah merah tidak boleh NAIK, tiap commit menyebut angkanya, dan tiap commit menyebut suite mana yang keluar atau masuk daftar.
+
+> ✅ **SIMPERUM AKTIF DI PRODUCTION, 31 Agt 2026 - mode `api`, bukan lagi `simulation`.** Endpoint `GetDataRTLH?NIK=` yang selama berminggu-minggu membalas 114 detik dan `Data:[]` sudah diperbaiki dinas: kini di bawah 1 detik dengan satu baris yang NIK-nya cocok, diuji tiga NIK. Kode `39af177` memperbaiki `mask_profile()`, lalu empat baris `SIMPERUM_*` ditambahkan ke `.env` server (sebelumnya **tidak ada satu pun**, jadi menyetel `SIMPERUM_MODE=api` saja tidak akan pernah cukup - `api_configured()` menuntut base URL https plus kedua kunci).
+>
+> Diverifikasi: `Program/api_cek_simperum` membalas **409 `warga_wizard_required`** (penanda mode `api` hidup), beranda/`warga/pendataan`/`sertifikasi` 200, dan panggilan SIMPERUM **dijalankan DARI DALAM server Hostinger** membalas HTTP 200 dalam 1,0 detik dengan NIK cocok. Uji terakhir itu yang membuktikan TLS dan firewall keluar tidak menghalangi; menguji dari laptop tidak membuktikan apa pun tentang server.
+>
+> 🔻 **DELAPAN CATATAN SENSITIF. Baca sebelum menyentuh apa pun di sekitar SIMPERUM.**
+>
+> 1. **Kunci API sekarang ADA di `.env` production**, dan sebelumnya tidak. Izin `600`, dan `.env` terverifikasi **403** dari luar. Kalau `.htaccess` disentuh, uji ulang `curl https://<situs>/.env` sebelum menyatakan aman; proteksi berbasis daftar sudah tiga kali meleset di repo ini.
+> 2. **Cadangan `.env.bak-20260831-071328` dibuat SEBELUM kunci ditambahkan, jadi ia bersih dari kunci.** Cadangan berikutnya TIDAK akan bersih. Jangan menyalin `.env.bak-*` keluar server, dan jangan pernah menaruhnya di DocumentRoot.
+> 3. **PII warga sungguhan kini mengalir ke `sf_rekaman_simperum.payload_ciphertext`**, terenkripsi `KPKP_DATA_KEY`. Konsekuensinya langsung: **merotasi kunci itu sekarang menghancurkan lebih banyak data daripada sebelumnya**, dan jumlahnya bertambah tiap warga yang dicari.
+> 4. **`api_nik_mismatch` itu penahan beban, bukan hiasan.** API membalas permintaan NIK berpadding nol (`0000000000000001`) dengan baris yang kolom NIK-nya hanya **1 karakter** - perbandingan numerik di sisi mereka masih menyisakan celah. Tanpa penjaga itu, data orang lain akan tampil sebagai milik pemohon. **Jangan pernah dilonggarkan.**
+> 5. **JANGAN memakai `KodeDagri` sebagai jalan pintas pencarian NIK.** Satu desa mengembalikan **2.606 orang / 2,68 MB PII** dalam 6 detik. Menariknya untuk melayani satu orang menjadikan kita penyimpan data ribuan warga yang tidak pernah meminta layanan apa pun.
+> 6. **Lokal WAJIB tetap `simulation`**, dua alasan: suite gateway langsung **merah 2/5** kalau tidak (harness fixture jadi memanggil API sungguhan), dan mode `api` di lokal menarik PII warga nyata ke mesin pengembang.
+> 7. **Retensi belum ada penyapunya.** Snapshot `found` hidup 30 hari, `not_found` 1 hari (`Housing_assessment_model.php:145`). Tidak ada pekerjaan terjadwal yang menghapus yang kedaluwarsa; kalau UU PDP menuntut penghapusan, itu pekerjaan terpisah yang belum dikerjakan.
+> 8. **Skrip di `dev-scripts/uji_simperum_*.php` memanggil API SUNGGUHAN** dan membaca kunci dari `.env`. Gitignored, dan harus tetap begitu. Jangan memindahkannya ke repo, jangan menempelkan kunci ke dalamnya.
+>
+> 🔒 **PENULISAN BALIK KE SIMPERUM SENGAJA TIDAK DIPAKAI - keputusan user 31 Agt 2026, bukan kekurangan.** `SaveDataRTLH` memang membalas `Tidak Memiliki Akses` (401), dan **hak tulis itu tidak diminta**. Arsitekturnya local-first: hasil penarikan disimpan di basis data kita sendiri, per orang, seiring sistem berjalan. Satu warga = satu panggilan + satu snapshot terenkripsi ber-TTL 30 hari, bukan penarikan massal per wilayah. `grep -rn SaveDataRTLH application/` = **nol pemanggil**, dan itu memang harus tetap nol.
+>
+> Konsekuensi yang perlu diketahui, bukan untuk diperbaiki diam-diam: koreksi warga dan verifikasi admin **tidak pernah kembali ke SIMPERUM**, jadi lama-lama basis data mereka yang paling usang. Itu sudah disampaikan ke user dan keputusannya tetap. Kalau kelak dinas ingin data mengalir balik, itu keputusan tata kelola baru, bukan sesuatu yang boleh diaktifkan agent atas inisiatif sendiri.
+>
+> **Rollback bersih, nol migrasi:** hapus empat baris `SIMPERUM_*` dari `.env` server, atau kembalikan dari cadangan. Mode jatuh balik ke `simulation` dan wizard kembali memakai fixture.
+>
+> **Yang masih menunggu dinas** (medan terkait kosong sampai dijawab, bukan salah): [`PERMINTAAN_KODE_SIMPERUM.md`](docs/engineering/PERMINTAAN_KODE_SIMPERUM.md).
 
 > 🔴 **DEV KEDUA BEKERJA DI BRANCH YANG SAMA - ditemukan 24 Agt 2026 lewat `git fetch`.** Author `simbgsemarang-code` (plus beberapa commit ber-author `Claude` dari sesinya), **34 commit, 66 berkas, +4546 baris, 20-24 Agt**. Karena branch ini auto-deploy, seluruhnya **sudah tayang di production** tanpa melewati siapa pun di sini.
 >
