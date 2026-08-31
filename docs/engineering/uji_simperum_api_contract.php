@@ -75,7 +75,12 @@ $check(($mapped['housing']['assistance_source_code'] ?? '') === 'apbd_prov', 'Su
 $check(($mapped['housing']['area_condition_code'] ?? '') === 'good', 'Kawasan dipetakan');
 $check(($mapped['structure']['roof_material_code'] ?? '') === 'clay_tile', 'Bahan atap dipetakan');
 $check(($mapped['structure']['foundation_condition_code'] ?? '') === 'severe_damage_or_absent', 'Pondasi tidak ada dipetakan konservatif');
-$check(($mapped['sanitation']['water_source_code'] ?? '') === 'piped', 'Ledeng tidak ditebak menjadi PDAM');
+/* Dulu asersinya berbunyi "Ledeng tidak ditebak menjadi PDAM" dan memaksa kode
+   3 menjadi `piped` generik. Itu BENAR selama artinya belum diketahui. Dinas
+   mengirim daftar resminya 31 Agt 2026 dan kode 3 memang PDAM, jadi menahannya
+   di `piped` berhenti menjadi kehati-hatian dan mulai menjadi pemiskinan data.
+   Yang dijaga sekarang: pemetaan mengikuti daftar resmi, bukan tebakan lama. */
+$check(($mapped['sanitation']['water_source_code'] ?? '') === 'pdam', 'SumberAir 3 mengikuti daftar resmi dinas: PDAM');
 $check(($mapped['location']['kabupaten_id'] ?? 0) === 3374, 'KodeDagri menjadi scope kabupaten/kota');
 $invalid_location = json_decode($fixture_json, TRUE);
 $invalid_location['Data'][0]['GeoLat'] = '999';

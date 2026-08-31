@@ -975,7 +975,7 @@ class Warga extends MY_Controller {
             foreach (['water_source_code','lighting_source_code','cooking_fuel_code'] as $field) if (trim((string)$this->input->post($field, TRUE)) === '') $errors[$field] = 'Field ini wajib diisi.';
             $this->validate_options([
                 'has_window'=>['0','1'], 'has_ventilation'=>['0','1'],
-                'water_source_code'=>['bottled','refill','piped','pdam','retail_piped','well','spring','rain','other_unfit'],
+                'water_source_code'=>['bottled','refill','piped','pdam','retail_piped','well','well_protected','well_unprotected','spring','spring_unprotected','surface_water','rain','other_unfit'],
                 'latrine_type_code'=>['swan_neck','plengsengan','pit','none'],
                 'feces_disposal_code'=>['septic_tank','ipal','water_body','ground_hole','open_land'],
                 'septic_distance_code'=>['lt_10','gte_10'],

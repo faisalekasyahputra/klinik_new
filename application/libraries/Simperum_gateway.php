@@ -436,10 +436,22 @@ class Simperum_gateway {
                 'house_area_m2' => $number($record['LuasRumah'] ?? NULL),
                 'occupant_count' => $integer($record['JmlPenghuni'] ?? NULL),
                 'family_count' => $integer($record['JmlKK'] ?? NULL),
+                /* DAFTAR RESMI DARI DINAS, 31 Agt 2026. Yang ditambahkan di
+                   sini HANYA kode yang benar-benar sumber dana: 12 BANKAB dan
+                   13 BAZNAS.
+
+                   Kode 0, 6, 8, 10, 11, dan 15 SENGAJA TIDAK DIPETAKAN, dan itu
+                   bukan kelalaian: labelnya "-", "Sudah Layak Huni", "Diluar
+                   Prioritas", "Meninggal", "Salah/Double Data", dan "Pindah".
+                   Itu keterangan DISPOSISI, bukan sumber dana. Memetakannya ke
+                   sini membuat layar menyebut "Meninggal" sebagai sumber
+                   pembiayaan rumah. Keenamnya jatuh ke `unmapped_codes` apa
+                   adanya, dan itu memang perlakuan yang benar sampai ada tempat
+                   yang jujur untuk menampungnya. */
                 'assistance_source_code' => $code('SumberDanaID', [
                     '1' => 'apbn_bsps', '2' => 'apbd_prov', '3' => 'apbd_kab',
                     '4' => 'csr', '5' => 'other', '7' => 'village_fund',
-                    '9' => 'bsps_kl',
+                    '9' => 'bsps_kl', '12' => 'bankab', '13' => 'baznas',
                 ]),
                 'assistance_year' => $integer($record['TahunIntervensi'] ?? NULL),
                 'area_condition_code' => $code('KawasanPerumahan', [
@@ -479,9 +491,29 @@ class Simperum_gateway {
             'sanitation' => [
                 'has_window' => $code('AdaJendela', ['0' => 0, '1' => 1]),
                 'has_ventilation' => $code('AdaVentilasi', ['0' => 0, '1' => 1]),
+                /* DAFTAR RESMI DARI DINAS, 31 Agt 2026 (WhatsApp, menjawab
+                   permintaan kode kami). Peta sebelumnya BUKAN cuma kurang,
+                   melainkan SALAH pada tiga kode: 4 dibaca `well` padahal
+                   Leding eceran, 5 dibaca `spring` padahal Sumur, dan 6 dibaca
+                   `rain` padahal Sumur terlindung. Kode 12 ("Lainnya / Tidak
+                   Layak") tidak dipetakan sama sekali, sehingga pemicu
+                   `critical_sanitation` di Warga_ruleset.php:59 tidak pernah
+                   menyala untuk rumah bersumber air tidak layak menurut
+                   SIMPERUM. Itu bukan tampilan, itu kelayakan.
+
+                   Kode 6, 7, 9, dan 10 mendapat kode kanonik SENDIRI, tidak
+                   dilebur ke `well`/`spring`, supaya keterangan terlindung atau
+                   tidak tidak hilang. Apakah sumur/mata air tak terlindung dan
+                   air permukaan ikut dihitung "tidak layak" adalah keputusan
+                   KEBIJAKAN, bukan pemetaan - hanya kode 12 yang labelnya
+                   sendiri menyebut Tidak Layak, jadi hanya itu yang menjadi
+                   `other_unfit`. */
                 'water_source_code' => $code('SumberAir', [
-                    '1' => 'bottled', '2' => 'refill', '3' => 'piped',
-                    '4' => 'well', '5' => 'spring', '6' => 'rain',
+                    '1' => 'bottled', '2' => 'refill', '3' => 'pdam',
+                    '4' => 'retail_piped', '5' => 'well', '6' => 'well_protected',
+                    '7' => 'well_unprotected', '8' => 'spring',
+                    '9' => 'spring_unprotected', '10' => 'surface_water',
+                    '11' => 'rain', '12' => 'other_unfit',
                 ]),
                 'septic_distance_code' => $code('JarakSepticTank', [
                     '0' => 'lt_10', '1' => 'gte_10',

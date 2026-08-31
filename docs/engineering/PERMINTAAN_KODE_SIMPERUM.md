@@ -1,8 +1,11 @@
 # Permintaan Daftar Kode SIMPERUM
 
 **Tanggal:** 25 Agustus 2026
-**Status:** draft versi PDF sudah DIKIRIM ke dinas 31 Agustus 2026. Dokumen ini
-menunggu jawaban, bukan menunggu dikirim.
+**Status:** draft versi PDF sudah DIKIRIM ke dinas 31 Agustus 2026, dan **dua
+butir sudah DIJAWAB hari itu juga** lewat WhatsApp: daftar `SumberAir` 1-12 dan
+`SumberDana` 0-15. Keduanya sudah diterapkan ke kode. Dinas juga menegaskan
+"kalau ada data yang kosong berarti itu data lama, anggap saja null", yang
+menutup pertanyaan soal banyaknya medan kosong. Sisanya masih menunggu.
 **Status endpoint:** `GetDataRTLH?NIK=` sudah DIPERBAIKI. Sebelumnya 114 detik dan
 kosong, sekarang di bawah 1 detik dan mengembalikan 1 baris yang NIK-nya cocok.
 Diuji dengan 3 NIK, semuanya berhasil.
@@ -66,8 +69,8 @@ Diurut dari yang paling berdampak.
 
 | No | Yang diminta | Kenapa | Dampak sekarang |
 |---|---|---|---|
-| 1 | Daftar kode **`SumberAir`** 7 sampai 12 | Dokumen hanya memuat 1-6 | 371 rekaman, dan kode 8 serta 9 justru dua nilai terbanyak. Sumber air tampil kosong |
-| 2 | Daftar kode **`SumberDanaID`** 6, 8, 10, 15 | Dokumen memuat 1,2,3,4,5,7,9 | 177 rekaman. Sumber dana bantuan tampil kosong |
+| ~~1~~ | ~~`SumberAir` 7-12~~ | ✅ **DIJAWAB 31 Agt 2026.** Daftar resmi 1-12 diterima dan diterapkan. Ternyata bukan cuma kurang: tiga kode lama kami SALAH (4 dibaca sumur padahal Leding eceran, 5 dibaca mata air padahal Sumur, 6 dibaca air hujan padahal Sumur terlindung), dan kode 12 "Lainnya / Tidak Layak" tidak dipetakan sehingga pemicu sanitasi kritis tidak pernah menyala | - |
+| ~~2~~ | ~~`SumberDanaID` 6, 8, 10, 15~~ | ✅ **DIJAWAB 31 Agt 2026.** Yang benar-benar sumber dana ditambahkan (12 BANKAB, 13 BAZNAS). Kode 0, 6, 8, 10, 11, 15 ternyata keterangan DISPOSISI (Sudah Layak Huni, Diluar Prioritas, Meninggal, Salah/Double Data, Pindah), bukan sumber dana, jadi sengaja tidak dipetakan ke sana | - |
 | 3 | Arti nilai **`AdaPondasi`** 0 sampai 4 | Namanya menyiratkan ada/tidak ada, datanya berisi 0-4 seperti skala kondisi | 40 rekaman. Kondisi pondasi tidak terbaca |
 | 4 | Arti **`RumahLain`** nilai 4 | Didokumentasikan hanya 0/1 | 23 rekaman |
 | 5 | Arti **`Pekerjaan`** kode 23 dan **`KepemilikanLahan`** kode 0 | Di luar katalog | 2 rekaman |
