@@ -673,17 +673,69 @@ class Simperum_gateway {
 
     private function mask_profile(array $profile)
     {
+        /* DUA KOSAKATA KODE HIDUP BERDAMPINGAN DI SINI, DAN ITU DISENGAJA.
+           Fixture simulasi memakai kode wizard lama (`private_employee`,
+           `owned_habitable`), sedangkan normalize_api_record() menghasilkan kode
+           turunan katalog SIMPERUM (`daily_laborer`, `owned`). Sebelum 25 Agt 2026
+           peta di bawah HANYA memuat kosakata simulasi, jadi begitu mode `api`
+           dinyalakan seluruh label pekerjaan dan kepemilikan keluar KOSONG
+           walaupun kodenya benar. Terbukti pada NIK nyata: occupation_code
+           `daily_laborer` terpetakan, `pekerjaan` tetap ''. Jangan menghapus
+           salah satu kosakata; keduanya dipakai mode yang berbeda. */
         $occupations = [
+            // kosakata simulasi
             'private_employee' => 'Karyawan Swasta',
             'informal_worker' => 'Pekerja Informal',
             'self_employed' => 'Wiraswasta',
+            // kosakata SIMPERUM (Pekerjaan 1-22, 98, 99)
+            'farmer' => 'Petani',
+            'horticulture' => 'Petani Hortikultura',
+            'plantation' => 'Pekebun',
+            'capture_fisher' => 'Nelayan Tangkap',
+            'aquaculture_fisher' => 'Nelayan Budidaya',
+            'breeder' => 'Peternak',
+            'forestry_agriculture_other' => 'Kehutanan/Pertanian Lainnya',
+            'mining' => 'Pertambangan',
+            'daily_laborer' => 'Buruh Harian Lepas',
+            'electricity_gas' => 'Listrik dan Gas',
+            'construction_worker' => 'Buruh Bangunan',
+            'trader' => 'Pedagang',
+            'hotel_restaurant' => 'Hotel dan Rumah Makan',
+            'driver' => 'Sopir/Transportasi',
+            'information_communication' => 'Informasi dan Komunikasi',
+            'finance_insurance' => 'Keuangan dan Asuransi',
+            'educator' => 'Tenaga Pendidik',
+            'health_worker' => 'Tenaga Kesehatan',
+            'civil_servant' => 'Pegawai Negeri',
+            'scavenger' => 'Pemulung',
+            'military_police' => 'TNI/Polri',
+            'retired' => 'Pensiunan',
+            'unemployed' => 'Tidak Bekerja',
+            'other' => 'Lainnya',
         ];
         $housing = [
-            'rent' => 'Sewa/Kontrak',
+            // kosakata simulasi
             'family' => 'Numpang/Keluarga',
             'candidate_land' => 'Punya Lahan Belum Bangun',
             'owned_uninhabitable' => 'Punya Rumah Tidak Layak',
             'owned_habitable' => 'Punya Rumah Layak',
+            // kosakata SIMPERUM (KepemilikanRumah 1-5)
+            'owned' => 'Milik Sendiri',
+            'rent' => 'Sewa/Kontrak',
+            'rent_free' => 'Bebas Sewa',
+            'official' => 'Rumah Dinas',
+            'other' => 'Lainnya',
+        ];
+        /* Label rentang diturunkan dari nama kodenya sendiri (juta rupiah),
+           bukan ditebak: `lt_1_8` = di bawah 1,8 juta, `gt_4_2` = di atas 4,2 juta. */
+        $income = [
+            'lt_1_8' => 'Kurang dari Rp1,8 juta',
+            '1_9_2_1' => 'Rp1,9 juta sampai Rp2,1 juta',
+            '2_2_2_6' => 'Rp2,2 juta sampai Rp2,6 juta',
+            '2_7_3_1' => 'Rp2,7 juta sampai Rp3,1 juta',
+            '3_2_3_6' => 'Rp3,2 juta sampai Rp3,6 juta',
+            '3_7_4_2' => 'Rp3,7 juta sampai Rp4,2 juta',
+            'gt_4_2' => 'Lebih dari Rp4,2 juta',
         ];
 
         return [
@@ -692,7 +744,7 @@ class Simperum_gateway {
             'alamat' => $this->mask_words($profile['address'] ?? ''),
             'desil' => $profile['welfare_decile'] ?? NULL,
             'pekerjaan' => $occupations[$profile['occupation_code'] ?? ''] ?? '',
-            'penghasilan' => '',
+            'penghasilan' => $income[$profile['income_band_code'] ?? ''] ?? '',
             'status_kepemilikan' => $housing[$profile['housing_status_code'] ?? ''] ?? '',
             'income_band_code' => $profile['income_band_code'] ?? NULL,
         ];

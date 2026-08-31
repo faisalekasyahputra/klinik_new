@@ -669,14 +669,16 @@ class Migrate extends CI_Controller {
         }
     }
 
-    public function simperum_probe($action = 'lookup')
+    public function simperum_probe($action = 'lookup', $nik_arg = NULL, $tgl_lahir = '1980-01-01')
     {
         if (ENVIRONMENT === 'production') {
             show_404();
             return;
         }
 
-        $nik = '0000000000000001';
+        /* NIK boleh dioper supaya probe ini juga bisa menguji mode `api` dengan
+           NIK sungguhan, bukan hanya fixture simulasi. Tetap dev-only. */
+        $nik = preg_match('/^[0-9]{16}$/', (string) $nik_arg) ? $nik_arg : '0000000000000001';
         $this->load->library('encryption_lib');
         $hash = $this->encryption_lib->deterministic_hash($nik);
         if ($action === 'reset') {
@@ -691,7 +693,7 @@ class Migrate extends CI_Controller {
         }
 
         $this->load->library('simperum_gateway');
-        echo json_encode($this->simperum_gateway->lookup($nik, '1980-01-01')) . "\n";
+        echo json_encode($this->simperum_gateway->lookup($nik, $tgl_lahir)) . "\n";
     }
 
     /**
