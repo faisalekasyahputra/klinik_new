@@ -10,13 +10,25 @@
 
 **Terakhir disinkronkan: 31 Agustus 2026** - production di kode **`39af177`**, skema **`20260701000051`**, `git status -sb` bersih dan sinkron dengan `origin`, dibaca lewat `ssh` DI SERVER. **SIMPERUM kini mode `api`, bukan lagi simulasi** - lihat blok di bawah beserta catatan sensitifnya. *(Baris ini sempat menulis 24 Agt / `2ac24f8` / migrasi 043; angka itu benar untuk hari itu lalu tersalip dev kedua dan enam migrasi berikutnya. Pola yang sama sudah memakan dokumen ini berkali-kali: angka hanya boleh ditulis sesudah dibaca dari server, dan langsung basi sesudahnya.)*
 
-> 🔴 **YANG PALING PENTING DARI SINKRONISASI INI: SUITE TIDAK LAGI HIJAU. 12 MERAH dari 43 suite / 1284 pemeriksaan** (dibaca dari `2ac24f8`, 20 Agt; `309c6cb` sebelumnya mencatat 14). Sampai 12 Agt suite ini selalu 0 merah, jadi angka ini BUKAN keadaan normal proyek dan jangan diperlakukan sebagai kebisingan latar.
+> 🔴 **SUITE TIDAK LAGI HIJAU: 15 MERAH dari 44 suite / 1.248 pemeriksaan** (dijalankan penuh 31 Agt 2026, XAMPP hidup, `.env` lokal di `simulation`). Sampai 12 Agt suite ini selalu 0 merah, jadi ini BUKAN keadaan normal proyek.
 >
-> **Sebabnya bukan kode yang rusak, melainkan perilaku yang sengaja diubah tanpa harness-nya ikut diperbarui.** Dua yang sudah bernama: `60d0e60` membuka Cek RTLH untuk anonim sementara `uji_cek_rtlh` masih menuntut tamu dialihkan ke login, dan `a77909d` mewajibkan login untuk aduan sementara `uji_aduan_triase` masih mencari formulirnya di halaman tamu. Dua sudah ditutup (`uji_perjalanan_warga` di `0228e92`, `uji_migrasi_konsisten` di `2ac24f8`).
+> **Daftarnya ditulis di sini karena sebelumnya ia hanya hidup di badan commit**, dan itu persis cara utang menghilang dari pandangan: tiga commit berturut-turut menyebut angkanya lalu menyebutnya "sudah dipetakan" tanpa peta yang bisa dibuka siapa pun.
 >
-> **Daftar 12 sisanya belum pernah ditulis di mana pun.** Ia hidup di badan commit saja, dan itu persis cara utang menghilang dari pandangan: tiap commit menulis "sisanya utang terpisah yang sudah dipetakan" tanpa peta yang bisa dibuka siapa pun. Enumerasinya butuh Apache + MySQL hidup dan belum dijalankan. **Agent berikutnya yang menyalakan XAMPP: jalankan `php docs/engineering/jalankan_semua.php`, lalu tulis daftar berkasnya DI SINI**, bukan di pesan commit.
+> ```
+> uji_aduan_triase          uji_pendataan_warga_r3     uji_perjalanan_mahasiswa
+> uji_cari_rumah_sikumbang  uji_pendataan_warga_r4     uji_regresi_tampilan
+> uji_cek_rtlh              uji_pendataan_warga_r5
+> uji_etalase_program       uji_pendataan_warga_r6
+> uji_gerbang_login         uji_pengembang_srp2_dev
+> uji_janji_temu            uji_kemitraan_daftar
+> uji_pantau_rekam_data
+> ```
 >
-> Konsekuensi praktis sampai itu terjadi: **"suite hijau" tidak bisa lagi dipakai sebagai gerbang rilis.** Gantinya yang masih sah dan sudah dipraktikkan `309c6cb`/`0228e92`/`2ac24f8`: jumlah merah tidak boleh NAIK, tiap commit menyebut angkanya, dan tiap commit menyebut suite mana yang keluar atau masuk daftar.
+> **Sebabnya bukan kode rusak, melainkan perilaku yang sengaja diubah tanpa harness-nya ikut diperbarui.** Tiga sudah bernama dan terverifikasi: `cfbd760` + migrasi `049` MENGHAPUS langkah "Data Warga" sementara keempat suite `pendataan_warga_r3..r6` masih menuntutnya ada (dibuktikan 31 Agt: lima kegagalan r3 seluruhnya menyebut langkah itu); `60d0e60` membuka Cek RTLH untuk anonim sementara `uji_cek_rtlh` masih menuntut tamu dialihkan ke login; `a77909d` mewajibkan login untuk aduan sementara `uji_aduan_triase` masih mencari formulirnya di halaman tamu. **Sisanya belum ditelusuri satu per satu.**
+>
+> Angkanya bergerak 12 (24 Agt) ke 15 sekarang, dan di antaranya ada 34 commit dev kedua plus tujuh migrasi. Jadi jangan membaca kenaikan itu sebagai pembusukan diam-diam; ia sebagian besar harness yang tertinggal di belakang fitur.
+>
+> Konsekuensi praktis sampai daftar ini kosong: **"suite hijau" tidak bisa dipakai sebagai gerbang rilis.** Gantinya yang masih sah dan sudah dipraktikkan: jumlah merah tidak boleh NAIK, tiap commit menyebut angkanya, dan tiap commit menyebut suite mana yang keluar atau masuk daftar. **Kalau kamu memperbaiki satu, coret namanya dari blok di atas** - daftar yang tidak pernah menyusut sama saja dengan tidak ada daftar.
 
 > ✅ **SIMPERUM AKTIF DI PRODUCTION, 31 Agt 2026 - mode `api`, bukan lagi `simulation`.** Endpoint `GetDataRTLH?NIK=` yang selama berminggu-minggu membalas 114 detik dan `Data:[]` sudah diperbaiki dinas: kini di bawah 1 detik dengan satu baris yang NIK-nya cocok, diuji tiga NIK. Kode `39af177` memperbaiki `mask_profile()`, lalu empat baris `SIMPERUM_*` ditambahkan ke `.env` server (sebelumnya **tidak ada satu pun**, jadi menyetel `SIMPERUM_MODE=api` saja tidak akan pernah cukup - `api_configured()` menuntut base URL https plus kedua kunci).
 >
