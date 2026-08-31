@@ -30,11 +30,44 @@ foreach(['warga_lookup','warga_submit','warga_start_revision','admin_queue_decis
    harus dipinjam atau tabrakannya cuma berpindah ke fixture berikutnya. */
 foreach(['0000000000000002','0000000000000003','0000000000000005'] as $n)
   pinjam_rate($db,hash('sha256','warga_lookup:nik:'.hash_hmac('sha256',$n,$pepper)));
+/* WIZARD BERUBAH 23-24 Agt 2026 dan harness ini menyusulnya, 31 Agt 2026.
+   Step `citizen_data` DIHAPUS permanen (cfbd760 + migrasi 049); isiannya pindah
+   jadi sub-bagian di `housing_family_detail`. Sementara `housing_family` kini
+   menampung tujuh isian matriks xlsx yang MENENTUKAN rekomendasi awal, jadi
+   ia tidak bisa dilewati begitu saja. Urutannya sekarang:
+   find_data -> housing_family (matriks) -> preliminary_recommendation ->
+   housing_family_detail (data warga + rumah/keluarga). */
+/* Langkah pada POST diambil dari `current_step` draft, TIDAK dipatok nama.
+   Penjaga di Warga.php menolak dengan show_404 kalau step yang dikirim bukan
+   langkah draft saat itu, jadi nama yang dipatok membuat uji lulus karena
+   permintaannya tidak pernah sampai, bukan karena penjaganya bekerja. Persis
+   itu yang terjadi sesudah `citizen_data` dihapus. */
+function matriks() {
+  return ['matrix_income_code'=>'income_0_1_5','matrix_dtks_status'=>'dtks_ya',
+          'matrix_land_ownership_code'=>'land_none','matrix_current_housing_code'=>'house_none_or_rent',
+          'matrix_environment_condition_code'=>'env_slum_uninhabitable',
+          'matrix_occupation_finance_code'=>'work_stable_or_unstable_no_subsidy',
+          'matrix_marital_family_code'=>'family_married'];
+}
+/* Membawa draft dari `housing_family` sampai berhenti di `housing_family_detail`,
+   lalu mengembalikan barisnya. Dipakai sebelum memeriksa paragraf desil, sebab
+   paragraf itu hanya dirender di langkah detail. */
+function maju_ke_detail($sesi,$db,$uid) {
+  $d=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE user_id=?',[$uid]);
+  $sesi->call('warga/pendataan',array_merge(['step'=>'housing_family','assessment_id'=>$d['id'],'lock_version'=>$d['lock_version'],'direction'=>'next'],matriks()));
+  $d=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE id=?',[$d['id']]);
+  if ($d['current_step']==='preliminary_recommendation') {
+    $sesi->call('warga/pendataan',['step'=>'preliminary_recommendation','assessment_id'=>$d['id'],'lock_version'=>$d['lock_version'],'direction'=>'next']);
+    $d=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE id=?',[$d['id']]);
+  }
+  return $d;
+}
+
 try {
   $a=user($db,"r3_{$stamp}_a@example.test",'Warga Uji R3 A',$pass);$b=user($db,"r3_{$stamp}_b@example.test",'Warga Uji R3 B',$pass);$ids=[$a,$b];
   $sa=new HTTP(); check($sa->login("r3_{$stamp}_a@example.test",$pass),'akun SIM-02 login');
   [$s]=$sa->call('warga/pendataan',['step'=>'find_data','nik'=>'0000000000000002','birth_date'=>'1990-12-31']); check(in_array($s,[302,303],true),'lookup SIM-02 memakai PRG');
-  $draft=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE user_id=?',[$a]); check($draft && $draft['current_step']==='citizen_data','lookup membuat draft milik warga');
+  $draft=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE user_id=?',[$a]); check($draft && $draft['current_step']==='housing_family','lookup membuat draft milik warga');
   /* Butir A6 - kalimat desil, diperiksa DI LANGKAH `citizen_data` karena hanya
      di situ paragrafnya dirender.
 
@@ -50,6 +83,8 @@ try {
      begitu (`SIMPERUM_MODE` tidak diset). Desil adalah angka yang dipakai orang
      menilai haknya atas bantuan; menyebutnya "resmi" saat ia berasal dari
      fixture adalah kekeliruan termahal di halaman ini. */
+  $draft=maju_ke_detail($sa,$db,$a);
+  check($draft['current_step']==='housing_family_detail','wizard sampai di langkah detail');
   [, $bodyDesil]=$sa->call('warga/pendataan');
   /* Modal pemberitahuan SIMPERUM belum aktif. Muncul SETIAP halaman dibuka
      (keputusan user 10 Agt 2026) - jadi tidak boleh ada penyimpanan "sudah
@@ -81,8 +116,8 @@ try {
     check(false,'A6: tiga cek isi dilewati karena paragrafnya tidak ada');
   }
   $before=(int)$db->val("SELECT COUNT(*) FROM sf_rekaman_simperum WHERE source_record_key='SIM-02'");
-  [$s]=$sa->call('warga/pendataan',['step'=>'citizen_data','assessment_id'=>$draft['id'],'lock_version'=>$draft['lock_version'],'direction'=>'next','family_card_number'=>'0000000000002002','full_name'=>'Warga Simulasi Parsial','phone'=>'080000000002','birth_date'=>'1990-12-31','address'=>'Alamat Sintetis','gender_code'=>'male','marital_status_code'=>'married','education_code'=>'senior_high','occupation_code'=>'trader','income_band_code'=>'2_2_2_6','self_help_capability_code'=>'capable']); check(in_array($s,[302,303],true),'langkah data warga tersimpan');
-  $after=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE id=?',[$draft['id']]); check($after['current_step']==='housing_family','save melanjutkan draft');
+  [$s]=$sa->call('warga/pendataan',['step'=>'housing_family_detail','assessment_id'=>$draft['id'],'lock_version'=>$draft['lock_version'],'direction'=>'next','family_card_number'=>'0000000000002002','full_name'=>'Warga Simulasi Parsial','phone'=>'080000000002','birth_date'=>'1990-12-31','address'=>'Alamat Sintetis','gender_code'=>'male','marital_status_code'=>'married','education_code'=>'senior_high','occupation_code'=>'trader','income_band_code'=>'2_2_2_6','self_help_capability_code'=>'capable','housing_status_code'=>'owned','occupant_count'=>'3','family_count'=>'1']); check(in_array($s,[302,303],true),'langkah data warga tersimpan');
+  $after=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE id=?',[$draft['id']]); check($after['current_step']==='building_condition','save melanjutkan draft');
   $sa->call('Auth/logout'); $sa2=new HTTP(); check($sa2->login("r3_{$stamp}_a@example.test",$pass),'login ulang'); [$s,$body]=$sa2->call('warga/pendataan'); check($s===200 && strpos($body,'Rumah')!==false,'draft tetap setelah logout/login');
   $sa2->call('warga/pendataan'); check((int)$db->val("SELECT COUNT(*) FROM sf_rekaman_simperum WHERE source_record_key='SIM-02'")===$before,'next/reload tidak membuat snapshot baru');
   $fixture=['key'=>'SIM-05','nik'=>'0000000000000005','birth'=>'1985-05-05'];
@@ -90,11 +125,12 @@ try {
       $fixture=['key'=>'SIM-03','nik'=>'0000000000000003','birth'=>'1988-03-03'];
   }
   $sb=new HTTP(); check($sb->login("r3_{$stamp}_b@example.test",$pass),'akun koreksi login'); $sb->call('warga/pendataan',['step'=>'find_data','nik'=>$fixture['nik'],'birth_date'=>$fixture['birth']]); $d2=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE user_id=?',[$b]); check((bool)$d2,'fixture koreksi membuat draft'); $snap=$d2?$db->one('SELECT payload_sha256 FROM sf_rekaman_simperum WHERE id=?',[$d2['simperum_snapshot_id']]):null;
-  if ($d2) {$sb->call('warga/pendataan',['step'=>'citizen_data','assessment_id'=>$d2['id'],'lock_version'=>$d2['lock_version'],'direction'=>'next','family_card_number'=>'0000000000005005','full_name'=>'Warga Simulasi Koreksi','phone'=>'080000000005','birth_date'=>$fixture['birth'],'address'=>'Alamat Koreksi Warga','gender_code'=>'female','marital_status_code'=>'married','education_code'=>'senior_high','occupation_code'=>'trader','income_band_code'=>'2_2_2_6','self_help_capability_code'=>'capable']);} check($d2 && $snap['payload_sha256']===$db->val('SELECT payload_sha256 FROM sf_rekaman_simperum WHERE id=?',[$d2['simperum_snapshot_id']]),'koreksi profil tidak mengubah snapshot');
-  $sb->call('warga/pendataan',['action'=>'lookup','step'=>'find_data','nik'=>$fixture['nik'],'birth_date'=>$fixture['birth']]); $d2fresh=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE id=?',[$d2['id']]); $sb->call('warga/pendataan',['step'=>'housing_family','assessment_id'=>$d2fresh['id'],'lock_version'=>$d2fresh['lock_version'],'direction'=>'back']); [, $overrideBody]=$sb->call('warga/pendataan'); check(strpos($overrideBody,'Alamat Koreksi Warga')!==false,'lookup ulang tidak menimpa koreksi warga');
+  if ($d2) {$d2=maju_ke_detail($sb,$db,$b);}
+  if ($d2) {$sb->call('warga/pendataan',['step'=>'housing_family_detail','assessment_id'=>$d2['id'],'lock_version'=>$d2['lock_version'],'direction'=>'next','family_card_number'=>'0000000000005005','full_name'=>'Warga Simulasi Koreksi','phone'=>'080000000005','birth_date'=>$fixture['birth'],'address'=>'Alamat Koreksi Warga','gender_code'=>'female','marital_status_code'=>'married','education_code'=>'senior_high','occupation_code'=>'trader','income_band_code'=>'2_2_2_6','self_help_capability_code'=>'capable','housing_status_code'=>'owned','occupant_count'=>'3','family_count'=>'1']);} check($d2 && $snap['payload_sha256']===$db->val('SELECT payload_sha256 FROM sf_rekaman_simperum WHERE id=?',[$d2['simperum_snapshot_id']]),'koreksi profil tidak mengubah snapshot');
+  $sb->call('warga/pendataan',['action'=>'lookup','step'=>'find_data','nik'=>$fixture['nik'],'birth_date'=>$fixture['birth']]); $d2fresh=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE id=?',[$d2['id']]); $sb->call('warga/pendataan',['step'=>$d2fresh['current_step'],'assessment_id'=>$d2fresh['id'],'lock_version'=>$d2fresh['lock_version'],'direction'=>'back']); [, $overrideBody]=$sb->call('warga/pendataan'); check(strpos($overrideBody,'Alamat Koreksi Warga')!==false,'lookup ulang tidak menimpa koreksi warga');
   $db->q("UPDATE sf_rekaman_simperum SET expires_at='2000-01-01 00:00:00' WHERE id=?",[$d2['simperum_snapshot_id']]); $sb->call('warga/pendataan',['action'=>'lookup','step'=>'find_data','nik'=>$fixture['nik'],'birth_date'=>$fixture['birth']]); $refreshed=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE user_id=? ORDER BY id DESC LIMIT 1',[$b]); $refreshOk=$refreshed && (int)$refreshed['id']!==(int)$d2['id'] && (int)$refreshed['previous_version_id']===(int)$d2['id'] && (int)$refreshed['simperum_snapshot_id']!==(int)$d2['simperum_snapshot_id']; if(!$refreshOk) echo '  DIAG refresh='.json_encode(['old_assessment'=>$d2['id'],'old_snapshot'=>$d2['simperum_snapshot_id'],'latest_assessment'=>$refreshed['id']??null,'latest_parent'=>$refreshed['previous_version_id']??null,'latest_snapshot'=>$refreshed['simperum_snapshot_id']??null])."\n"; check($refreshOk,'snapshot sumber baru membuat versi assessment baru');
-  $beforeOwner=$db->val('SELECT lock_version FROM sf_penilaian_perumahan WHERE id=?',[$after['id']]); $sb->call('warga/pendataan',['step'=>'housing_family','assessment_id'=>$after['id'],'lock_version'=>$after['lock_version'],'direction'=>'back']); check((string)$beforeOwner===(string)$db->val('SELECT lock_version FROM sf_penilaian_perumahan WHERE id=?',[$after['id']]),'forged assessment milik warga lain ditolak');
-  $fresh=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE id=?',[$after['id']]); $sa2->call('warga/pendataan',['step'=>'housing_family','assessment_id'=>$fresh['id'],'lock_version'=>$fresh['lock_version'],'direction'=>'back']); $once=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE id=?',[$fresh['id']]); $sa2->call('warga/pendataan',['step'=>'housing_family','assessment_id'=>$fresh['id'],'lock_version'=>$fresh['lock_version'],'direction'=>'back']); $twice=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE id=?',[$fresh['id']]); check((int)$once['lock_version']===(int)$fresh['lock_version']+1 && (int)$twice['lock_version']===(int)$once['lock_version'],'stale lock kedua tidak overwrite diam-diam');
+  $beforeOwner=$db->val('SELECT lock_version FROM sf_penilaian_perumahan WHERE id=?',[$after['id']]); $sb->call('warga/pendataan',['step'=>$after['current_step'],'assessment_id'=>$after['id'],'lock_version'=>$after['lock_version'],'direction'=>'back']); check((string)$beforeOwner===(string)$db->val('SELECT lock_version FROM sf_penilaian_perumahan WHERE id=?',[$after['id']]),'forged assessment milik warga lain ditolak');
+  $fresh=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE id=?',[$after['id']]); $sa2->call('warga/pendataan',['step'=>$fresh['current_step'],'assessment_id'=>$fresh['id'],'lock_version'=>$fresh['lock_version'],'direction'=>'back']); $once=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE id=?',[$fresh['id']]); $sa2->call('warga/pendataan',['step'=>$fresh['current_step'],'assessment_id'=>$fresh['id'],'lock_version'=>$fresh['lock_version'],'direction'=>'back']); $twice=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE id=?',[$fresh['id']]); check((int)$once['lock_version']===(int)$fresh['lock_version']+1 && (int)$twice['lock_version']===(int)$once['lock_version'],'stale lock kedua tidak overwrite diam-diam');
 
   /* BUTIR 21 PUTARAN 2 - isian NIK di Profil Saya, dan kunci di baliknya.
 

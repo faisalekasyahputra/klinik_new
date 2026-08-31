@@ -70,6 +70,11 @@ function draft($db, $user) { $r=$db->row("SELECT a.* FROM sf_penilaian_perumahan
 function post_step($s,$d,$step,$data) { return $s->post('warga/pendataan',$data+['action'=>'save','step'=>$step,'direction'=>'next','assessment_id'=>$d['id'],'lock_version'=>$d['lock_version']]); }
 function redirect_ok($r) { return in_array($r['status'],[302,303],TRUE); }
 function citizen() { return ['family_card_number'=>'0000000000005555','full_name'=>'Warga Uji R5','address'=>'Alamat Uji R5','phone'=>'081234567890','birth_date'=>'1980-01-01','gender_code'=>'male','marital_status_code'=>'married','education_code'=>'senior_high','occupation_code'=>'private_employee','income_band_code'=>'2_2_2_6','self_help_capability_code'=>'capable']; }
+/* Wizard berubah 23-24 Agt 2026: `citizen_data` DIHAPUS (cfbd760 + migrasi 049)
+   dan isiannya pindah ke `housing_family_detail`, sementara `housing_family`
+   kini menampung tujuh isian matriks xlsx yang menentukan rekomendasi awal.
+   Harness menyusul 31 Agt 2026. */
+function matriks() { return ['matrix_income_code'=>'income_0_1_5','matrix_dtks_status'=>'dtks_ya','matrix_land_ownership_code'=>'land_none','matrix_current_housing_code'=>'house_none_or_rent','matrix_environment_condition_code'=>'env_slum_uninhabitable','matrix_occupation_finance_code'=>'work_stable_or_unstable_no_subsidy','matrix_marital_family_code'=>'family_married']; }
 function housing($status,$candidate='0') { return ['housing_status_code'=>$status,'land_title_code'=>'hm','area_condition_code'=>'slum','occupant_count'=>'3','family_count'=>'1','house_area_m2'=>'36','has_other_land'=>'0','has_other_house'=>'0','owns_candidate_land'=>$candidate,'assistance_source_code'=>'','assistance_year'=>'']; }
 function recommendations($db,$assessment) { return $db->rows('SELECT p.kode_program,r.ruleset_version,r.eligibility_status,r.reason_codes_json,r.input_snapshot_sha256 FROM sf_rekomendasi_penilaian r JOIN sf_programs p ON p.id=r.program_id WHERE r.assessment_id=? ORDER BY r.ruleset_version,p.kode_program',[$assessment]); }
 function by_code($rows,$code) { foreach($rows as $row) if($row['kode_program']===$code) return $row; return NULL; }
@@ -131,8 +136,9 @@ preserve_rate_key($db,'warga_lookup','nik',hash_hmac('sha256','0000000000000001'
 nik_bebas($db,$env,'0000000000000001');
 [$user,$email]=make_user($db,'owner'); $owner=login($email);
 $r=$owner->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000001','birth_date'=>'1980-01-01']); wajib(redirect_ok($r),'Lookup SIM-01');
-$d=draft($db,$user); wajib(redirect_ok(post_step($owner,$d,'citizen_data',citizen())),'Simpan data warga');
-$d=draft($db,$user); wajib(redirect_ok(post_step($owner,$d,'housing_family',housing('owned'))),'Pilih rumah eksisting');
+$d=draft($db,$user); wajib(redirect_ok(post_step($owner,$d,'housing_family',matriks())),'Simpan isian matriks');
+$d=draft($db,$user); if ($d['current_step']==='preliminary_recommendation') { wajib(redirect_ok(post_step($owner,$d,'preliminary_recommendation',[])),'Lewati rekomendasi awal'); $d=draft($db,$user); }
+wajib(redirect_ok(post_step($owner,$d,'housing_family_detail',citizen()+housing('owned'))),'Simpan data warga + rumah eksisting');
 $d=draft($db,$user); $building=['foundation_condition_code'=>'good','column_condition_code'=>'good','beam_condition_code'=>'moderate_damage','roof_frame_condition_code'=>'good','floor_material_code'=>'cement_plaster','floor_condition_code'=>'good','wall_material_code'=>'wall','wall_condition_code'=>'good','roof_material_code'=>'clay_tile','roof_condition_code'=>'good']; wajib(redirect_ok(post_step($owner,$d,'building_condition',$building)),'Simpan kerusakan RTLH');
 $d=draft($db,$user); $san=['has_window'=>'1','has_ventilation'=>'1','water_source_code'=>'well','latrine_type_code'=>'swan_neck','feces_disposal_code'=>'septic_tank','septic_distance_code'=>'gte_10','lighting_source_code'=>'pln','cooking_fuel_code'=>'electric_gas']; wajib(redirect_ok(post_step($owner,$d,'sanitation',$san)),'Simpan sanitasi');
 $d=draft($db,$user); wajib(redirect_ok(post_step($owner,$d,'location_evidence',['location_lat'=>'-7.123456','location_lng'=>'110.123456','location_accuracy_m'=>'8'])),'Simpan lokasi dan hitung rekomendasi server');

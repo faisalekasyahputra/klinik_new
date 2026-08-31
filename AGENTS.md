@@ -10,19 +10,18 @@
 
 **Terakhir disinkronkan: 31 Agustus 2026** - production di kode **`39af177`**, skema **`20260701000051`**, `git status -sb` bersih dan sinkron dengan `origin`, dibaca lewat `ssh` DI SERVER. **SIMPERUM kini mode `api`, bukan lagi simulasi** - lihat blok di bawah beserta catatan sensitifnya. *(Baris ini sempat menulis 24 Agt / `2ac24f8` / migrasi 043; angka itu benar untuk hari itu lalu tersalip dev kedua dan enam migrasi berikutnya. Pola yang sama sudah memakan dokumen ini berkali-kali: angka hanya boleh ditulis sesudah dibaca dari server, dan langsung basi sesudahnya.)*
 
-> 🔴 **SUITE TIDAK LAGI HIJAU: 15 MERAH dari 44 suite / 1.248 pemeriksaan** (dijalankan penuh 31 Agt 2026, XAMPP hidup, `.env` lokal di `simulation`). Sampai 12 Agt suite ini selalu 0 merah, jadi ini BUKAN keadaan normal proyek.
+> 🔴 **SUITE TIDAK LAGI HIJAU: 11 MERAH dari 44 suite / 1.381 pemeriksaan** (dijalankan penuh 31 Agt 2026, XAMPP hidup, `.env` lokal di `simulation`). Sampai 12 Agt suite ini selalu 0 merah, jadi ini BUKAN keadaan normal proyek.
 >
 > **Daftarnya ditulis di sini karena sebelumnya ia hanya hidup di badan commit**, dan itu persis cara utang menghilang dari pandangan: tiga commit berturut-turut menyebut angkanya lalu menyebutnya "sudah dipetakan" tanpa peta yang bisa dibuka siapa pun.
 >
 > ```
-> uji_aduan_triase          uji_pendataan_warga_r3     uji_perjalanan_mahasiswa
-> uji_cari_rumah_sikumbang  uji_pendataan_warga_r4     uji_regresi_tampilan
-> uji_cek_rtlh              uji_pendataan_warga_r5
-> uji_etalase_program       uji_pendataan_warga_r6
-> uji_gerbang_login         uji_pengembang_srp2_dev
-> uji_janji_temu            uji_kemitraan_daftar
-> uji_pantau_rekam_data
+> uji_aduan_triase          uji_gerbang_login          uji_pengembang_srp2_dev
+> uji_cari_rumah_sikumbang  uji_janji_temu             uji_perjalanan_mahasiswa
+> uji_cek_rtlh              uji_kemitraan_daftar       uji_regresi_tampilan
+> uji_etalase_program       uji_pantau_rekam_data
 > ```
+>
+> ✅ **Empat sudah dicoret 31 Agt 2026: `pendataan_warga_r3` sampai `r6`.** Turun 15 ke 11, pemeriksaan naik 1.248 ke 1.381.
 >
 > **Sebabnya bukan kode rusak, melainkan perilaku yang sengaja diubah tanpa harness-nya ikut diperbarui.** Tiga sudah bernama dan terverifikasi: `cfbd760` + migrasi `049` MENGHAPUS langkah "Data Warga" sementara keempat suite `pendataan_warga_r3..r6` masih menuntutnya ada (dibuktikan 31 Agt: lima kegagalan r3 seluruhnya menyebut langkah itu); `60d0e60` membuka Cek RTLH untuk anonim sementara `uji_cek_rtlh` masih menuntut tamu dialihkan ke login; `a77909d` mewajibkan login untuk aduan sementara `uji_aduan_triase` masih mencari formulirnya di halaman tamu. **Sisanya belum ditelusuri satu per satu.**
 >

@@ -121,13 +121,19 @@ function draft($db,$user) {
 }
 function post_step($s,$d,$step,$data){return $s->post('warga/pendataan',$data+['action'=>'save','step'=>$step,'direction'=>'next','assessment_id'=>$d['id'],'lock_version'=>$d['lock_version']]);}
 function citizen($name='Warga Uji R6'){return ['family_card_number'=>'0000000000006666','full_name'=>$name,'address'=>'Alamat Koreksi Uji R6','phone'=>'081234567890','birth_date'=>'1980-01-01','gender_code'=>'male','marital_status_code'=>'married','education_code'=>'senior_high','occupation_code'=>'private_employee','income_band_code'=>'2_2_2_6','self_help_capability_code'=>'capable'];}
+/* Wizard berubah 23-24 Agt 2026: `citizen_data` DIHAPUS (cfbd760 + migrasi 049),
+   isiannya pindah ke `housing_family_detail`, dan `housing_family` kini berisi
+   tujuh isian matriks xlsx. Harness menyusul 31 Agt 2026. */
+function matriks(){return ['matrix_income_code'=>'income_0_1_5','matrix_dtks_status'=>'dtks_ya','matrix_land_ownership_code'=>'land_none','matrix_current_housing_code'=>'house_none_or_rent','matrix_environment_condition_code'=>'env_slum_uninhabitable','matrix_occupation_finance_code'=>'work_stable_or_unstable_no_subsidy','matrix_marital_family_code'=>'family_married'];}
+function lewati_rekomendasi($s,$db,$uid){$d=draft($db,$uid); if($d['current_step']==='preliminary_recommendation'){post_step($s,$d,'preliminary_recommendation',[]); $d=draft($db,$uid);} return $d;}
 function housing(){return ['housing_status_code'=>'owned','land_title_code'=>'hm','area_condition_code'=>'slum','occupant_count'=>'3','family_count'=>'1','house_area_m2'=>'36','has_other_land'=>'0','has_other_house'=>'0','owns_candidate_land'=>'0','assistance_source_code'=>'','assistance_year'=>''];}
 function building($roof='good'){return ['foundation_condition_code'=>'good','column_condition_code'=>'good','beam_condition_code'=>'moderate_damage','roof_frame_condition_code'=>'good','floor_material_code'=>'cement_plaster','floor_condition_code'=>'good','wall_material_code'=>'wall','wall_condition_code'=>'good','roof_material_code'=>'clay_tile','roof_condition_code'=>$roof];}
 function sanitation(){return ['has_window'=>'1','has_ventilation'=>'1','water_source_code'=>'well','latrine_type_code'=>'swan_neck','feces_disposal_code'=>'septic_tank','septic_distance_code'=>'gte_10','lighting_source_code'=>'pln','cooking_fuel_code'=>'electric_gas'];}
 function complete_sim01($db,$user,$session,$name) {
     $r=$session->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000001','birth_date'=>'1980-01-01']); wajib(redirect_ok($r),'Lookup SIM-01');
-    $d=draft($db,$user); wajib(redirect_ok(post_step($session,$d,'citizen_data',citizen($name))),'Simpan data warga');
-    $d=draft($db,$user); wajib(redirect_ok(post_step($session,$d,'housing_family',housing())),'Pilih rumah eksisting');
+    $d=draft($db,$user); wajib(redirect_ok(post_step($session,$d,'housing_family',matriks())),'Simpan isian matriks');
+    $d=lewati_rekomendasi($session,$db,$user);
+    wajib(redirect_ok(post_step($session,$d,'housing_family_detail',citizen($name)+housing())),'Simpan data warga + rumah eksisting');
     $d=draft($db,$user); wajib(redirect_ok(post_step($session,$d,'building_condition',building())),'Simpan kondisi RTLH');
     $d=draft($db,$user); wajib(redirect_ok(post_step($session,$d,'sanitation',sanitation())),'Simpan sanitasi');
     $d=draft($db,$user); wajib(redirect_ok(post_step($session,$d,'location_evidence',['location_lat'=>'-7.005145','location_lng'=>'110.438125','location_accuracy_m'=>'8'])),'Hitung rekomendasi R5');
@@ -288,8 +294,9 @@ $revisionFile=$db->row("SELECT * FROM sf_berkas_penilaian WHERE assessment_id=? 
 cek($oldAfterRevision==$submitted&&$oldFileAfterRevision==$fileBefore&&$revisionFile['private_path']===$file['private_path']&&is_file($physical),'Versi lama, snapshot data, ledger, dan berkas tetap utuh/readable');
 
 // Edit seluruh langkah revisi, rescore, dan resubmit rekomendasi server baru.
-$r=post_step($owner,$revision,'citizen_data',citizen('Pemilik R6 Direvisi'));wajib(redirect_ok($r),'Revisi data warga');
-$revision=draft($db,$ownerId);wajib(redirect_ok(post_step($owner,$revision,'housing_family',housing())),'Revisi rumah keluarga');
+$r=post_step($owner,$revision,'housing_family',matriks());wajib(redirect_ok($r),'Revisi isian matriks');
+$revision=lewati_rekomendasi($owner,$db,$ownerId);
+wajib(redirect_ok(post_step($owner,$revision,'housing_family_detail',citizen('Pemilik R6 Direvisi')+housing())),'Revisi data warga + rumah keluarga');
 $revision=draft($db,$ownerId);$revisedBuilding=building('moderate_damage');wajib(redirect_ok(post_step($owner,$revision,'building_condition',$revisedBuilding)),'Revisi kondisi bangunan');
 $revision=draft($db,$ownerId);wajib(redirect_ok(post_step($owner,$revision,'sanitation',sanitation())),'Revisi sanitasi');
 $revision=draft($db,$ownerId);wajib(redirect_ok(post_step($owner,$revision,'location_evidence',['location_lat'=>'-7.005145','location_lng'=>'110.438125','location_accuracy_m'=>'8'])),'Rescore revisi');
