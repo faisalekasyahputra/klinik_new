@@ -1,6 +1,8 @@
 # Permintaan Daftar Kode SIMPERUM
 
 **Tanggal:** 25 Agustus 2026
+**Status:** draft versi PDF sudah DIKIRIM ke dinas 31 Agustus 2026. Dokumen ini
+menunggu jawaban, bukan menunggu dikirim.
 **Status endpoint:** `GetDataRTLH?NIK=` sudah DIPERBAIKI. Sebelumnya 114 detik dan
 kosong, sekarang di bawah 1 detik dan mengembalikan 1 baris yang NIK-nya cocok.
 Diuji dengan 3 NIK, semuanya berhasil.
