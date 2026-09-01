@@ -312,7 +312,7 @@
                                  pembungkus `overflow-x-auto` - terpotong, tidak bisa
                                  diklik. Terukur di production 4 Agt 2026: tombol di
                                  x=1371 sementara panelnya berakhir di x=1385. */ ?>
-                        <div x-show="editOpen" x-cloak @click.outside="editOpen = false" class="absolute right-4 top-full mt-1 z-20 w-64 whitespace-normal rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
+                        <div x-show="editOpen" x-cloak @click.outside="editOpen = false" class="absolute right-4 top-1/2 z-20 w-64 -translate-y-1/2 whitespace-normal rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
                             <form method="POST" action="<?= base_url('Admin_Users/update_role') ?>" class="space-y-2">
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                 <input type="hidden" name="id" value="<?= $u->id ?>">
