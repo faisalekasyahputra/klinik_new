@@ -361,6 +361,9 @@ class Pengembang extends MY_Controller {
                 'reviewed_at'       => NULL,
             ]);
 
+        $this->notify_admin_push([['role' => 'admin']], 'Pengajuan SRP2 baru',
+            'Ada pengajuan sertifikasi pengembang yang menunggu verifikasi.',
+            'Admin_Srp2/pending?status=Pending', 'srp2-' . (int) $id);
         if ($is_ajax) { $this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'success', 'message' => 'Pengajuan SRP2 berhasil dikirim dan sedang menunggu verifikasi.'])); return; }
         $this->session->set_flashdata('success', 'Pengajuan SRP2 berhasil dikirim dan sedang menunggu verifikasi.'); redirect('akun');
     }

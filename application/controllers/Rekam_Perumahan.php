@@ -581,6 +581,12 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
             return;
         }
         $laporan = $this->rd->laporan($laporan_id, $this->my_kabupaten_id);
+        $this->notify_admin_push([
+            ['role' => 'admin'],
+            ['role' => 'admin_bidang', 'bidang_kode' => 'perumahan'],
+        ], 'Rekam Data Perumahan baru',
+            'Ada laporan kabupaten/kota yang menunggu peninjauan.',
+            'Rekam_Tinjauan?domain=perumahan', 'rekam-perumahan-' . $laporan_id);
         $this->session->set_flashdata('success', 'Laporan terkirim dan terkunci.');
         redirect('Rekam_Perumahan?tahun=' . (int) $laporan['tahun'] . '&triwulan=' . (int) $laporan['triwulan']);
     }

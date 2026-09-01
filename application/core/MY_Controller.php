@@ -1216,6 +1216,21 @@ class MY_Controller extends CI_Controller {
         }
         $this->session->set_userdata('intended_url', $aman);
     }
+
+    /**
+     * Best-effort Web Push. Kegagalan kanal notifikasi tidak boleh membatalkan
+     * data bisnis yang sudah sah tersimpan.
+     */
+    protected function notify_admin_push(array $audiences, $title, $body, $url, $tag)
+    {
+        try {
+            $this->load->library('web_push_service');
+            return $this->web_push_service->notify($audiences, $title, $body, $url, $tag);
+        } catch (Throwable $e) {
+            log_message('error', 'Pemicu Web Push gagal: ' . $e->getMessage());
+            return ['sent' => 0, 'failed' => 0, 'skipped' => TRUE];
+        }
+    }
 }
 
 /**

@@ -729,7 +729,8 @@ class Housing_assessment_model extends CI_Model {
         }
         if ( ! $this->db->trans_status()) { $this->db->trans_rollback(); return $this->fail('write_failed', 'Pengajuan belum dapat disimpan.'); }
         $this->db->trans_commit();
-        return ['success' => TRUE, 'queue_id' => $queue_id, 'ticket_code' => $ticket, 'assessment_id' => $assessment_id];
+        return ['success' => TRUE, 'queue_id' => $queue_id, 'ticket_code' => $ticket,
+            'assessment_id' => $assessment_id, 'notification_needed' => TRUE];
     }
 
     public function resubmit_revision($assessment_id, $user_id, $recommendation_id, $ruleset_version)

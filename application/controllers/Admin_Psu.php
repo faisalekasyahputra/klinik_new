@@ -35,6 +35,7 @@ class Admin_Psu extends Admin_Controller {
         $this->load->helper('admin_table');
         $this->load->helper('srp2');
         $this->load->helper('psu');
+        $this->load->library('Psu_excel_import');
     }
 
     public function index()
@@ -157,6 +158,65 @@ class Admin_Psu extends Admin_Controller {
         }
 
         $this->session->set_flashdata('success', $pesan);
+        redirect('Admin_Psu');
+    }
+
+
+    public function template_excel()
+    {
+        if ($this->input->method(TRUE) !== 'GET') { show_404(); return; }
+        $path=FCPATH.'application/templates/template_import_psu.xlsx';
+        if(!is_file($path)){show_error('Template Excel PSU belum tersedia.',500);return;}
+        $this->output->set_header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+            ->set_header('Content-Disposition: attachment; filename="template_import_psu.xlsx"')
+            ->set_header('Content-Length: '.filesize($path))->set_header('Cache-Control: private, no-store, max-age=0')
+            ->set_output(file_get_contents($path));
+    }
+
+    public function import_excel()
+    {
+        if($this->input->method(TRUE)!=='POST'){show_404();return;}
+        if(empty($_FILES['file_excel'])||!is_array($_FILES['file_excel'])){
+            $this->session->set_flashdata('error','Pilih berkas Excel yang akan diimpor.');redirect('Admin_Psu');return;
+        }
+        $file=$_FILES['file_excel'];
+        if((int)$file['error']!==UPLOAD_ERR_OK){
+            $this->session->set_flashdata('error','Unggahan Excel gagal. Silakan pilih ulang berkas.');redirect('Admin_Psu');return;
+        }
+        if((int)$file['size']<=0||(int)$file['size']>5*1024*1024){
+            $this->session->set_flashdata('error','Ukuran berkas Excel harus lebih dari 0 dan maksimal 5 MB.');redirect('Admin_Psu');return;
+        }
+        $ext=strtolower(pathinfo((string)$file['name'],PATHINFO_EXTENSION));
+        if(!in_array($ext,['xlsx','xls'],TRUE)){
+            $this->session->set_flashdata('error','Format berkas harus XLSX atau XLS.');redirect('Admin_Psu');return;
+        }
+        $kab=$this->db->select('id,nama')->get('kabupaten')->result();
+        $aso=srp2_daftar_asosiasi(TRUE);
+        $dev=$this->db->select('id,nama_perusahaan')->where('status_aktif',1)->get('srp2_certified_developers')->result();
+        $result=$this->psu_excel_import->baca($file['tmp_name'],$kab,$aso,$dev);
+        if(!$result['success']){$this->session->set_flashdata('error',$result['message']);redirect('Admin_Psu');return;}
+
+        $existing=[];
+        foreach($this->db->select('nama_perumahan,kabupaten_id')->get(self::TABEL)->result() as $old)
+            $existing[$this->psu_excel_import->kunci_duplikat($old->nama_perumahan,$old->kabupaten_id)]=TRUE;
+        $insert=[];$skipped=0;$now=date('Y-m-d H:i:s');
+        foreach($result['rows'] as $row){
+            $key=$this->psu_excel_import->kunci_duplikat($row['nama_perumahan'],$row['kabupaten_id']);
+            if(isset($existing[$key])){$skipped++;continue;}
+            $existing[$key]=TRUE;$row['created_at']=$now;$row['updated_at']=$now;$insert[]=$row;
+        }
+        if(!$insert){$this->session->set_flashdata('success','Tidak ada data baru. '.$skipped.' baris duplikat dilewati.');redirect('Admin_Psu');return;}
+
+        $this->db->trans_begin();
+        foreach(array_chunk($insert,200) as $chunk)if($this->db->insert_batch(self::TABEL,$chunk)===FALSE)break;
+        if($this->db->trans_status()===FALSE){
+            $this->db->trans_rollback();$this->session->set_flashdata('error','Import gagal saat menyimpan. Seluruh perubahan dibatalkan.');
+            redirect('Admin_Psu');return;
+        }
+        $this->db->trans_commit();
+        $this->catat_audit('psu_diimpor_excel',count($insert).' data PSU diimpor dari Excel; '.$skipped.' duplikat dilewati',
+            self::TABEL,NULL,['ditambahkan'=>count($insert),'duplikat_dilewati'=>$skipped]);
+        $this->session->set_flashdata('success','Import selesai: '.count($insert).' data ditambahkan, '.$skipped.' duplikat dilewati.');
         redirect('Admin_Psu');
     }
 

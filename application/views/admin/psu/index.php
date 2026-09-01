@@ -21,6 +21,37 @@ $warna_status = [
         </div>
     </div>
 
+
+    <div class="rounded-2xl bg-white dark:bg-brand-card border border-gray-200 dark:border-white/5 p-5">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="max-w-2xl">
+                <h2 class="text-sm font-black text-gray-900 dark:text-white">Import data PSU dari Excel</h2>
+                <p class="mt-1 text-xs leading-5 text-gray-500 dark:text-brand-muted">
+                    Unduh template, isi sheet <span class="font-semibold">Data PSU</span> mulai baris 4, lalu unggah kembali.
+                    Seluruh baris divalidasi sebelum disimpan; bila ada kesalahan, tidak ada data yang masuk.
+                </p>
+            </div>
+            <a href="<?= base_url('Admin_Psu/template_excel') ?>"
+               class="inline-flex items-center rounded-xl border border-brand-primary px-4 py-2.5 text-sm font-bold text-brand-primary hover:bg-brand-primary/10">
+                Unduh template Excel
+            </a>
+        </div>
+        <form action="<?= base_url('Admin_Psu/import_excel') ?>" method="post" enctype="multipart/form-data"
+              class="mt-4 flex flex-wrap items-end gap-3">
+            <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+            <label class="min-w-[260px] flex-1 text-xs text-gray-500 dark:text-brand-muted">Berkas Excel (.xlsx atau .xls, maksimal 5 MB)
+                <input type="file" name="file_excel" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                       required class="mt-1 block w-full rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 dark:file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:font-bold">
+            </label>
+            <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-sm font-bold text-brand-dark hover:opacity-90">
+                Import data
+            </button>
+        </form>
+        <p class="mt-3 text-[11px] text-gray-400 dark:text-brand-muted">
+            Maksimal 1.000 baris. Formula ditolak. Data dengan nama perumahan dan kabupaten/kota yang sama akan dilewati sebagai duplikat.
+        </p>
+    </div>
+
     <div class="rounded-2xl bg-white dark:bg-brand-card border border-gray-200 dark:border-white/5 p-5">
         <h2 class="mb-3 text-sm font-black text-gray-900 dark:text-white">Tambah data PSU</h2>
         <form action="<?= base_url('Admin_Psu/simpan') ?>" method="post" class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">

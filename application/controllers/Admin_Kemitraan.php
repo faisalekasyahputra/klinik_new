@@ -569,6 +569,13 @@ class Admin_Kemitraan extends Admin_Controller {
             'reviewed_at'   => date('Y-m-d H:i:s'),
         ]);
 
+        if ($status === 'Ditinjau Bidang') {
+            $this->notify_admin_push([
+                ['role' => 'admin_bidang', 'bidang_kode' => $row->bidang_kode],
+            ], 'Pendaftaran magang untuk bidang Anda',
+                'Ada pendaftaran magang yang menunggu tinjauan bidang.',
+                'Kemitraan_Bidang', 'magang-bidang-' . (int) $row->id);
+        }
         $this->session->set_flashdata('success', 'Status pendaftaran diperbarui.');
         redirect('Admin_Kemitraan');
     }

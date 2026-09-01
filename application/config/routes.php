@@ -60,6 +60,11 @@ $route['forgot-password']          = 'Auth/forgot_password';
 $route['verify/(:any)']            = 'Auth/verify_email/$1';
 $route['onboarding']               = 'Auth/onboarding';
 
+// --- Web Push admin (CSRF tetap berlaku pada subscribe/unsubscribe) ---
+$route['push/config']              = 'Push/config';
+$route['push/subscribe']           = 'Push/subscribe';
+$route['push/unsubscribe']         = 'Push/unsubscribe';
+
 // --- Pendataan warga ---
 $route['warga/pendataan']          = 'Warga/pendataan';
 

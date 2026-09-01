@@ -179,6 +179,11 @@ class Admin_Aduan extends Admin_Controller {
             'Aduan #' . $id . ' diteruskan dari ' . $asal . ' ke ' . $sah[$bidang],
             'aduan', $id, ['dari' => $row->bidang, 'ke' => $bidang, 'judul' => $row->judul]);
 
+        $this->notify_admin_push([
+            ['role' => 'admin_bidang', 'bidang_kode' => $bidang],
+        ], 'Aduan baru untuk bidang Anda',
+            'Ada aduan hasil triase yang menunggu tindak lanjut.',
+            'Admin_Bidang?status=Baru', 'aduan-bidang-' . $id);
         $this->session->set_flashdata('success', 'Aduan diteruskan ke ' . $sah[$bidang] . '.');
         redirect('Admin_Aduan');
     }

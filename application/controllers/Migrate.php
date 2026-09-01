@@ -65,6 +65,8 @@ class Migrate extends CI_Controller {
 
         foreach ([
             'sys_rate_limits',
+            // Migrasi 052 - langganan perangkat Web Push admin.
+            'sys_push_subscriptions',
             'srp2_registrations',
             'srp2_certified_developers',
             'sf_profil_warga',

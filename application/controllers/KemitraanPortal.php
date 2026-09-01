@@ -189,6 +189,9 @@ class KemitraanPortal extends Public_Controller
 
         $this->db->where('id', $id)->update('kkn_magang_pendaftaran', $simpan);
 
+        $this->notify_admin_push([['role' => 'admin']], 'Pendaftaran KKN baru',
+            'Ada pendaftaran KKN yang menunggu peninjauan.',
+            'Admin_Kemitraan?status=Diajukan', 'kemitraan-' . (int) $id);
         $this->session->set_flashdata('success',
             'KKN baru berhasil diajukan. Tim kami akan meninjau kedua surat yang dilampirkan.');
         redirect('KemitraanPortal/kkn_dashboard');
@@ -1302,6 +1305,10 @@ class KemitraanPortal extends Public_Controller
             $this->db->where('id', $id)->update('kkn_magang_pendaftaran', $simpan);
         }
 
+        $this->notify_admin_push([['role' => 'admin']],
+            'Pendaftaran ' . strtoupper($jenis) . ' baru',
+            'Ada pendaftaran ' . strtoupper($jenis) . ' yang menunggu peninjauan.',
+            'Admin_Kemitraan?status=Diajukan', 'kemitraan-' . (int) $id);
         $this->session->set_flashdata('success', $pesan);
         redirect('akun');
     }

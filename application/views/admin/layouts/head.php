@@ -26,6 +26,10 @@
     <!-- Favicon -->
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
     <link rel="shortcut icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
+    <link rel="manifest" href="<?= base_url('manifest.webmanifest') ?>">
+    <meta name="theme-color" content="#00545f">
+    <meta name="csrf-token-name" content="<?= html_escape($this->security->get_csrf_token_name()) ?>">
+    <meta name="csrf-token-hash" content="<?= html_escape($this->security->get_csrf_hash()) ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -80,6 +84,7 @@
     </script>
     <!-- Alpine.js -->
     <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
+    <script defer src="<?= base_url('assets/js/admin-web-push.js?v=' . filemtime('assets/js/admin-web-push.js')) ?>"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
     <!-- Loader progresif dashboard: klik sidebar/link internal = swap #main-content, bukan full reload -->
     <script defer src="<?= base_url('assets/js/admin-progressive.js?v=' . filemtime('assets/js/admin-progressive.js')) ?>"></script>

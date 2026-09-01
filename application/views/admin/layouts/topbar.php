@@ -7,6 +7,22 @@
     </div>
     
     <div class="flex items-center space-x-2">
+        <?php if (in_array($this->session->userdata('role'), ['admin', 'admin_kabkota', 'admin_bidang'], TRUE)): ?>
+        <!-- Izin Web Push hanya diminta setelah klik pengguna, sesuai aturan browser/iOS. -->
+        <button type="button" data-web-push-toggle data-state="loading"
+                data-config-url="<?= base_url('push/config') ?>"
+                data-subscribe-url="<?= base_url('push/subscribe') ?>"
+                data-unsubscribe-url="<?= base_url('push/unsubscribe') ?>"
+                data-sw-url="<?= base_url('push-sw.js') ?>"
+                data-csrf-name="<?= html_escape($this->security->get_csrf_token_name()) ?>"
+                data-csrf-hash="<?= html_escape($this->security->get_csrf_hash()) ?>"
+                class="h-10 rounded-xl px-3 flex items-center gap-2 text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                aria-label="Memeriksa notifikasi" title="Memeriksa notifikasi">
+            <i class="ph ph-bell text-xl"></i>
+            <span data-web-push-label class="hidden xl:inline text-xs font-bold">Memeriksa notifikasi...</span>
+        </button>
+        <?php endif; ?>
+
         <!-- Theme Toggle -->
         <button @click="darkMode = !darkMode" class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-brand-primary transition-all relative overflow-hidden group">
             <div class="absolute inset-0 bg-brand-primary/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300 rounded-xl"></div>

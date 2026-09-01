@@ -209,6 +209,8 @@ class Umum extends MY_Controller {
 			$pesan_sukses .= ' Namun lampiran gagal diunggah (' . $galat_lampiran . ') - silakan kirim susulan bila perlu.';
 		}
 
+		$this->notify_admin_push([['role' => 'admin']], 'Aduan baru',
+			'Ada aduan baru yang menunggu triase.', 'Admin_Aduan?status=Baru', 'aduan-' . (int) $id);
 		$this->session->set_flashdata('success', $pesan_sukses);
 
 		redirect('umum/aduan');

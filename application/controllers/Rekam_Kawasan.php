@@ -340,6 +340,14 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
         }
         $laporan_id = (int) $this->input->post('laporan_id');
         $hasil = $this->rd->kirim($laporan_id, $this->get_user_id(), $this->my_kabupaten_id);
+        if ( ! empty($hasil['success'])) {
+            $this->notify_admin_push([
+                ['role' => 'admin'],
+                ['role' => 'admin_bidang', 'bidang_kode' => 'kawasan'],
+            ], 'Rekam Data Kawasan baru',
+                'Ada laporan kabupaten/kota yang menunggu peninjauan.',
+                'Rekam_Tinjauan?domain=kawasan', 'rekam-kawasan-' . $laporan_id);
+        }
 
         $this->pulang($hasil, $laporan_id, 'Laporan terkirim dan terkunci.');
     }

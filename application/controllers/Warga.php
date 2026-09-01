@@ -687,6 +687,18 @@ class Warga extends MY_Controller {
             (int) $this->input->post('recommendation_id', TRUE),
             Warga_ruleset::VERSION
         );
+        if ( ! empty($result['success']) && ! empty($result['notification_needed'])) {
+            $queue = $this->db->select('kabupaten_id')->get_where('sf_housing_queue', [
+                'id' => (int) $result['queue_id'],
+            ])->row_array();
+            $audiences = [['role' => 'admin']];
+            if ( ! empty($queue['kabupaten_id'])) {
+                $audiences[] = ['role' => 'admin_kabkota', 'kabupaten_id' => (int) $queue['kabupaten_id']];
+            }
+            $this->notify_admin_push($audiences, 'Pengajuan warga baru',
+                'Ada pengajuan bantuan perumahan yang menunggu peninjauan.',
+                'Admin?status=pending', 'warga-' . (int) $result['queue_id']);
+        }
         $this->session->set_flashdata(
             ! empty($result['success']) ? 'success' : 'error',
             ! empty($result['success'])
