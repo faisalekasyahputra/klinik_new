@@ -8,7 +8,7 @@
 
 ## 0. BACA INI DULU - Status Terkini & Protokol Antar-Agent
 
-**Terakhir disinkronkan: 31 Agustus 2026** - production di kode **`39af177`**, skema **`20260701000051`**, `git status -sb` bersih dan sinkron dengan `origin`, dibaca lewat `ssh` DI SERVER. **SIMPERUM kini mode `api`, bukan lagi simulasi** - lihat blok di bawah beserta catatan sensitifnya. *(Baris ini sempat menulis 24 Agt / `2ac24f8` / migrasi 043; angka itu benar untuk hari itu lalu tersalip dev kedua dan enam migrasi berikutnya. Pola yang sama sudah memakan dokumen ini berkali-kali: angka hanya boleh ditulis sesudah dibaca dari server, dan langsung basi sesudahnya.)*
+**Terakhir disinkronkan: 1 September 2026** - production di kode **`901385e`**, skema **`20260701000051`**, 44 tabel, `git status -sb` bersih dan sinkron dengan `origin`, semuanya dibaca lewat `ssh` DI SERVER sesudah deploy. Kesehatan sesudah rilis: `/`, `/auth/login`, `/berita`, `/cari_rumah` keempatnya 200 (0,3-1,1 dtk), dan aturan penutup kebocoran `.sql` diuji ulang dengan berkas sungguhan di akar - **403**, bertahan melewati deploy. **SIMPERUM kini mode `api`, bukan lagi simulasi** - lihat blok di bawah beserta catatan sensitifnya. *(Baris ini sempat menulis 24 Agt / `2ac24f8` / migrasi 043, lalu 31 Agt / `39af177`; keduanya benar untuk harinya lalu tersalip. Pola yang sama sudah memakan dokumen ini berkali-kali: angka hanya boleh ditulis sesudah dibaca dari server, dan langsung basi sesudahnya.)*
 
 > 🔴 **SUITE TIDAK LAGI HIJAU: 9 MERAH dari 45 suite / 1.466 pemeriksaan** (dijalankan penuh 1 Sep 2026, XAMPP hidup, `.env` lokal di `simulation`). Sampai 12 Agt suite ini selalu 0 merah, jadi ini BUKAN keadaan normal proyek.
 >
