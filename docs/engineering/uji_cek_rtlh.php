@@ -165,14 +165,37 @@ wajib($mode === 'simulation',
 
 // ------------------------------------------------ 1. GERBANG LOGIN
 echo "\n== 1. Wajib login, gerbangnya di server ==\n";
-$tamu = http('tamu', 'Cek_Rtlh');
-cek(strpos($tamu['url'], 'Auth/login') !== FALSE, 'Tamu dialihkan ke halaman login');
-cek(strpos($tamu['body'], 'Cek_Rtlh/periksa') === FALSE, 'Formulirnya tidak ikut terkirim ke tamu');
+/* 🔻 KONTRAKNYA BERUBAH 16 Agt 2026 (60d0e60), dan harness ini menyusul 1 Sep
+   2026. Tamu TIDAK lagi diusir dari HALAMANNYA - ia boleh membuka dan mengetik
+   NIK. Yang tetap tertutup rapat adalah HASILNYA: periksa_anonim() bahkan tidak
+   memanggil Simperum_gateway sama sekali, jadi tidak ada jawaban yang bisa bocor
+   lewat celah mana pun. Yang dijaga di bawah karena itu bukan "tamu ditolak",
+   melainkan "tamu tidak pernah mendapat jawaban".
 
-// POST langsung, melewati halamannya sama sekali.
+   🔻 DAN ASERSI LAMA DI SINI RAPUH, bukan cuma usang: ia memakai
+   `stripos($body,'TERDAFTAR')`, sementara `stripos` itu case-insensitive dan
+   halaman untuk tamu kini memuat ajakan "terdaftar" untuk mendaftar. Ia akan
+   merah selamanya tanpa ada yang bocor. Jebakan pencocokan substring
+   se-halaman ini sudah tercatat di AGENTS.md dan tetap memakan korban. */
+$tamu = http('tamu', 'Cek_Rtlh');
+cek(strpos($tamu['url'], 'Auth/login') === FALSE, 'Tamu boleh membuka halamannya, tidak diusir');
+cek(strpos($tamu['body'], 'Cek_Rtlh/periksa') !== FALSE, 'Formulirnya memang disajikan ke tamu');
+
+/* POST langsung dari tamu. Yang diukur bukan teks halaman, melainkan apakah
+   pencarian BENAR-BENAR terjadi: kalau gateway sempat dipanggil, satu baris
+   snapshot akan lahir. Nol baris baru = tidak ada oracle sama sekali. */
+$snapSebelum = (int) $GLOBALS['db']->query("SELECT COUNT(*) c FROM sf_rekaman_simperum")->fetch_assoc()['c'];
 $t_tamu = csrf('tamu', 'Auth/login');
 $r = http('tamu', 'Cek_Rtlh/periksa', ['csrf_kpkp_token' => $t_tamu, 'nik' => NIK_ADA, 'tgl_lahir' => TGL_ADA]);
-cek(stripos($r['body'], 'TERDAFTAR') === FALSE, 'POST langsung dari tamu tidak menghasilkan hasil apa pun');
+$snapSesudah = (int) $GLOBALS['db']->query("SELECT COUNT(*) c FROM sf_rekaman_simperum")->fetch_assoc()['c'];
+cek(strpos($r['body'], '****' . substr(NIK_ADA, -4)) === FALSE, 'POST tamu tidak memunculkan hasil ber-NIK');
+/* 🔻 LAPIS KEDUA, DAN BATASNYA DIUKUR, BUKAN DIDUGA. Mutasi 1 Sep 2026 yang
+   membuang cabang anonim di Cek_Rtlh::periksa() memerahkan asersi ber-NIK di
+   atas, tetapi TIDAK memerahkan yang ini: NIK uji sudah punya snapshot aktif,
+   jadi pencarian dilayani cache dan nol baris baru lahir. Jadi asersi ini hanya
+   menggigit untuk NIK yang BELUM ter-cache. Ia tetap berguna, tapi jangan
+   diandalkan sendirian, dan jangan dihapus karena "tidak pernah merah". */
+cek($snapSebelum === $snapSesudah, 'POST tamu tidak memicu pencarian SIMPERUM sama sekali');
 
 [$id1, $email1] = buat_akun('utama');
 wajib(login('u', $email1), 'Login pengguna uji');

@@ -246,8 +246,17 @@ wajib(login('warga', $emailWarga), 'Login warga');
 
 // ------------------------------------------------ 1. FORMULIR
 echo "\n== 1. Formulir tidak lagi meminta bidang ==\n";
-$form = http('tamu', 'umum/aduan');
-cek($form['code'] === 200, 'Halaman aduan terbuka untuk tamu (pengaduan tetap terbuka)');
+/* 🔻 KONTRAKNYA DIBALIK 17 Agt 2026 (a77909d) dan harness ini menyusul 1 Sep
+   2026. Aduan TIDAK lagi boleh dikirim tamu: gerbang dipasang di aduan() (form)
+   DAN di simpan_aduan() (POST), yang kedua karena endpointnya bisa dipanggil
+   langsung tanpa lewat form. Asersi lama "halaman aduan terbuka untuk tamu"
+   karena itu bukan cuma usang, ia menuntut kebalikan dari keputusan sekarang. */
+$tamuAduan = http('tamu', 'umum/aduan');
+cek(strpos($tamuAduan['url'], 'Auth/login') !== FALSE, 'Tamu diarahkan ke login, aduan tidak lagi terbuka');
+cek(strpos($tamuAduan['body'], 'id="aduan-form"') === FALSE, 'Formulir aduan tidak ikut terkirim ke tamu');
+
+$form = http('warga', 'umum/aduan');
+cek($form['code'] === 200, 'Warga yang login mendapat halaman aduan');
 
 /**
  * Diperiksa di dalam <form>-nya saja, BUKAN menyapu seluruh halaman.
@@ -268,7 +277,9 @@ cek( ! preg_match('/<(input|select)[^>]*name="bidang"/i', $form['body']),
 
 // ------------------------------------------------ 2. LAHIR NULL
 echo "\n== 2. Aduan lahir tanpa bidang ==\n";
-[$id1, $r1] = kirim_aduan('tamu', 'Uji triase A ' . CAP);
+/* Pengirimnya warga yang login, bukan tamu: sejak a77909d simpan_aduan()
+   punya gerbangnya sendiri, jadi kiriman tamu tidak akan pernah lahir. */
+[$id1, $r1] = kirim_aduan('warga', 'Uji triase A ' . CAP);
 wajib($id1 > 0, 'Aduan terkirim lewat formulir sungguhan (id ' . $id1 . ')');
 cek(bidang_aduan($id1) === NULL, 'Bidangnya NULL - masuk antrean triase');
 cek(status_aduan($id1) === 'Baru', 'Statusnya Baru');
@@ -284,7 +295,7 @@ echo "\n== 3. `bidang` dari POST DIABAIKAN, bukan cuma dihapus dari formulir ==\
  * terlihat aneh. Kode yang dikirim SAH, jadi yang diuji bukan validasi input
  * melainkan APAKAH NILAINYA DIPAKAI SAMA SEKALI.
  */
-[$id2, ] = kirim_aduan('tamu', 'Uji triase selundupan ' . CAP, ['bidang' => $bidang_b]);
+[$id2, ] = kirim_aduan('warga', 'Uji triase selundupan ' . CAP, ['bidang' => $bidang_b]);
 wajib($id2 > 0, 'Aduan dengan field bidang selundupan terkirim (id ' . $id2 . ')');
 cek(bidang_aduan($id2) === NULL,
     "POST bidang={$bidang_b} DIABAIKAN - pelapor tidak bisa merutekan aduannya sendiri");
