@@ -184,7 +184,14 @@
             #kontrol-halaman.kontrol-tampil { display: flex; }
         </style>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5" id="temp_rumah" data-aos="fade-up" data-aos-delay="200">
+        <?php
+        /* Jangan pasang AOS pada wadah hasil AJAX ini. Layout utama menggulir
+           lewat container internal, bukan window, sehingga AOS tidak selalu
+           menandai elemen sebagai `aos-animate`. Hasil `/cari_wil` sebenarnya
+           sudah masuk ke DOM, tetapi seluruh grid tetap opacity:0 - terutama
+           pada browser/profil yang baru pertama membuka halaman. */
+        ?>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5" id="temp_rumah">
             <div class="skeleton h-72"></div>
             <div class="skeleton h-72"></div>
             <div class="skeleton h-72"></div>
