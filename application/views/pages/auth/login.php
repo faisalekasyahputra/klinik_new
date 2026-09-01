@@ -114,7 +114,7 @@
                 <div class="auth-demo-grid">
                     <?php
                     $akun_demo = [
-                        ['Admin Dashboard',           'admin@klinikpkp.jatengprov.go.id'],
+                        ['Super Admin',           'admin@klinikpkp.jatengprov.go.id'],
                         ['Warga (Pengaju)',           'warga@example.com'],
                         ['Pengembang (SRP2)',         'pengembang@example.com'],
                         /* Dua akun terpisah dengan role BERBEDA sejak 22 Agt 2026

@@ -119,7 +119,7 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
             <div class="kpkp-login-modal__demo-grid">
                 <?php
                 $modal_akun_demo = [
-                    ['Admin Dashboard',           'admin@klinikpkp.jatengprov.go.id'],
+                    ['Super Admin',           'admin@klinikpkp.jatengprov.go.id'],
                     ['Warga (Pengaju)',           'warga@example.com'],
                     ['Pengembang (SRP2)',         'pengembang@example.com'],
                     /* Dua akun terpisah dengan role SAMA ('mahasiswa') - KKN

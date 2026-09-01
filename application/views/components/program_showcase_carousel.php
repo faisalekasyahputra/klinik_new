@@ -104,7 +104,43 @@ if ( ! $slides_data) { return; }
     @media (prefers-reduced-motion: reduce) {
         .program-slide-track { transition-duration: .2s; }
     }
-</style>
+
+    .program-slide-media.is-comparison {
+        min-height: 240px;
+    }
+
+    .program-slide-compare {
+        -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+        mask-image: linear-gradient(to bottom, #000 72%, transparent 100%);
+    }
+
+    .program-slide-compare-label {
+        position: absolute;
+        top: 0.75rem;
+        left: 0.75rem;
+        padding: 0.35rem 0.7rem;
+        border: 1px solid rgba(255, 255, 255, 0.75);
+        border-radius: 9999px;
+        background: rgba(8, 40, 48, 0.82);
+        color: #fff;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        line-height: 1;
+        text-transform: uppercase;
+        box-shadow: 0 6px 18px rgba(8, 40, 48, 0.2);
+    }
+
+    @media (min-width: 768px) {
+        .program-slide-media.is-comparison {
+            min-height: 300px;
+        }
+
+        .program-slide-compare {
+            -webkit-mask-image: linear-gradient(to right, #000 76%, transparent 100%);
+            mask-image: linear-gradient(to right, #000 76%, transparent 100%);
+        }
+    }</style>
 
 <div x-data="solutionProgramShowcase()" @mouseenter="stop()" @mouseleave="start()" class="relative mx-auto w-full">
     <!-- Panah disembunyikan di layar kecil: di sana geseran jari + titik indikator
@@ -130,9 +166,23 @@ if ( ! $slides_data) { return; }
                      :style="'--t1:' + slide.muda + ';--t2:' + slide.tengah + ';--t3:' + slide.pekat">
                 <!-- Mask memudar ke bawah di layar sempit (gambar di atas teks),
                      ke kanan begitu jadi dua kolom. -->
-                <div class="program-slide-media relative z-10 min-h-[170px] md:col-span-2">
-                    <img :src="slide.image" :alt="slide.title" draggable="false" loading="lazy" class="absolute inset-0 h-full w-full select-none object-cover">
-                </div>
+                <div class="program-slide-media relative z-10 min-h-[170px] md:col-span-2" :class="{ 'is-comparison': slide.id === 'rtlh' }">
+                            <template x-if="slide.id === 'rtlh'">
+                                <div class="program-slide-compare absolute inset-0 grid grid-cols-2" aria-label="Perbandingan kondisi rumah sebelum dan sesudah peningkatan kualitas">
+                                    <figure class="relative overflow-hidden border-r border-white/70">
+                                        <img src="<?= base_url('assets/img/program/hero-2026/rtlh-before.png') ?>" alt="Before - kondisi rumah sebelum peningkatan kualitas" draggable="false" class="h-full w-full select-none object-cover">
+                                        <figcaption class="program-slide-compare-label">Before</figcaption>
+                                    </figure>
+                                    <figure class="relative overflow-hidden">
+                                        <img src="<?= base_url('assets/img/program/hero-2026/rtlh-after.png') ?>" alt="After - kondisi rumah setelah peningkatan kualitas" draggable="false" class="h-full w-full select-none object-cover">
+                                        <figcaption class="program-slide-compare-label">After</figcaption>
+                                    </figure>
+                                </div>
+                            </template>
+                            <template x-if="slide.id !== 'rtlh'">
+                                <img :src="slide.image" :alt="slide.title" draggable="false" class="absolute inset-0 h-full w-full select-none object-cover">
+                            </template>
+                        </div>
                 <div class="relative z-10 flex flex-col justify-center p-6 md:col-span-3 md:p-8">
                     <span class="program-slide-badge mb-3 inline-flex w-max items-center gap-2 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-widest"><span class="h-2 w-2 rounded-full" :style="'background:' + slide.pekat"></span><span x-text="slide.badge"></span></span>
                     <h2 class="text-3xl font-black sm:text-4xl" x-text="slide.title"></h2>

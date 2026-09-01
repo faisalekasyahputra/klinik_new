@@ -67,6 +67,8 @@ class Migrate extends CI_Controller {
             'sys_rate_limits',
             // Migrasi 052 - langganan perangkat Web Push admin.
             'sys_push_subscriptions',
+            // Migrasi 053 - privilege modul per akun admin ter-scope.
+            'usr_admin_module_privileges',
             'srp2_registrations',
             'srp2_certified_developers',
             'sf_profil_warga',

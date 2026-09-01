@@ -23,6 +23,7 @@
 <?php // Perumahan / Kawasan / Pertanahan disembunyikan 1 Agu 2026, sejalan dengan tab bar di main.php ?>
         <a href="<?= base_url('tab/pengembang') ?>" class="block text-zinc-400 hover:text-white py-3 text-sm border-b border-[#d6fb00]/20" @click="mobileMenu = false">Pengembang</a>
         <a href="<?= base_url('tab/bankdata') ?>" class="block text-zinc-400 hover:text-white py-3 text-sm border-b border-[#d6fb00]/20" @click="mobileMenu = false">Bank Data</a>
+        <a href="<?= base_url('Cek_Rtlh') ?>" class="block text-zinc-400 hover:text-white py-3 text-sm border-b border-[#d6fb00]/20" @click="mobileMenu = false">Cek Data Rumah</a>
 
         <div class="pt-6">
             <?php if ($this->session->userdata('is_logged')): ?>

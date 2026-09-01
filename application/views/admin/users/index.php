@@ -212,6 +212,11 @@
                             <button @click="editOpen = !editOpen" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">
                                 <i class="ph ph-pencil-simple"></i> Ubah Role
                             </button>
+                            <?php if (in_array($u->role, ['admin_kabkota', 'admin_bidang'], TRUE)): ?>
+                            <a href="<?= base_url('Admin_Privileges/index/' . (int) $u->id) ?>" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-violet-700 hover:bg-violet-50 dark:text-violet-300 dark:hover:bg-violet-500/10">
+                                <i class="ph ph-shield-check"></i> Privilege
+                            </a>
+                            <?php endif; ?>
 
                             <?php if ($terkunci): ?>
                             <?php /* Hanya muncul kalau akun MEMANG sedang terkunci. Tombol yang

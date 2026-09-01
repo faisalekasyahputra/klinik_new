@@ -592,6 +592,33 @@ class MY_Controller extends CI_Controller {
      * @param string|null $role NULL = role sesi saat ini
      * @return string path CI, fallback 'akun'
      */
+    protected function module_privilege_allowed($module_key) {
+        $role = $this->current_role();
+        if ($role === 'admin' || ! in_array($role, ['admin_kabkota','admin_bidang'], TRUE)) { return TRUE; }
+        if ( ! $this->db->table_exists('usr_admin_module_privileges')) { return TRUE; }
+        $user_id = (int) $this->get_user_id();
+        if ($this->db->where('user_id',$user_id)->count_all_results('usr_admin_module_privileges') === 0) { return TRUE; }
+        $row = $this->db->get_where('usr_admin_module_privileges',['user_id'=>$user_id,'module_key'=>$module_key])->row();
+        return $row && (int)$row->allowed === 1;
+    }
+
+    protected function enforce_current_module_privilege() {
+        $role = $this->current_role();
+        $this->config->load('dashboard_modules', FALSE, TRUE);
+        $uri = trim($this->uri->uri_string(), '/');
+        $best = NULL; $length = -1;
+        foreach (($this->config->item('dashboard_modules') ?: []) as $key => $module) {
+            if (empty($module['roles']) || !in_array($role,$module['roles'],TRUE)) { continue; }
+            $url = trim($module['url'] ?? '', '/');
+            if ($url !== '' && (strcasecmp($uri,$url)===0 || stripos($uri,$url.'/')===0) && strlen($url)>$length) {
+                $best=$key; $length=strlen($url);
+            }
+        }
+        if ($best !== NULL && ! $this->module_privilege_allowed($best)) {
+            show_error('Akses modul ini tidak diberikan oleh Super Admin.', 403, 'Akses Ditolak');
+            exit;
+        }
+    }
     protected function dashboard_home($role = NULL) {
         $role = $role ?: $this->current_role();
         if (empty($role)) { return 'akun'; }
@@ -601,7 +628,8 @@ class MY_Controller extends CI_Controller {
         $group_order = $this->config->item('dashboard_module_groups') ?: [];
 
         $kandidat = [];
-        foreach ($modules as $m) {
+        foreach ($modules as $key => $m) {
+            if ( ! $this->module_privilege_allowed($key)) { continue; }
             if (array_key_exists('enabled', $m) && $m['enabled'] === FALSE) { continue; }
             if (empty($m['roles']) || ! in_array($role, $m['roles'], TRUE)) { continue; }
             $scope_value = ! empty($m['scope']) ? $this->session->userdata($m['scope']) : NULL;
@@ -686,6 +714,7 @@ class MY_Controller extends CI_Controller {
         $role  = $this->current_role();
         $items = [];
         foreach ($modules as $key => $m) {
+            if ( ! $this->module_privilege_allowed($key)) { continue; }
             if (array_key_exists('enabled', $m) && $m['enabled'] === FALSE) { continue; }
             if (empty($m['roles']) || ! in_array($role, $m['roles'], TRUE)) { continue; }
             $scope_value = ! empty($m['scope']) ? $this->session->userdata($m['scope']) : NULL;
@@ -1286,6 +1315,7 @@ class Admin_Kabkota_Controller extends MY_Controller {
             $this->session->set_flashdata('error', 'Akun ini belum ditetapkan ke kabupaten/kota manapun. Hubungi superadmin.');
             $this->gerbang_login();
         }
+        $this->enforce_current_module_privilege();
     }
 
     // Delegasi ke render_user_dashboard() - menu ter-scope sekarang datang
@@ -1319,6 +1349,7 @@ class Admin_Bidang_Controller extends MY_Controller {
             $this->session->set_flashdata('error', 'Akun ini belum ditetapkan ke bidang manapun. Hubungi superadmin.');
             $this->gerbang_login();
         }
+        $this->enforce_current_module_privilege();
     }
 
     // Delegasi ke render_user_dashboard() - menu ter-scope sekarang datang

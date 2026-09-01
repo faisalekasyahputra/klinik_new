@@ -122,6 +122,9 @@ class Admin_Users extends Admin_Controller {
             return;
         }
 
+        if ($sebelum->role !== $role && $this->db->table_exists('usr_admin_module_privileges')) {
+            $this->db->where('user_id', $id)->delete('usr_admin_module_privileges');
+        }
         $this->catat_audit('role_diubah',
             'Mengubah role ' . ($sebelum->email ?? '#' . $id) . ' dari '
             . ($sebelum->role ?: '(kosong)') . ' menjadi ' . $role,
