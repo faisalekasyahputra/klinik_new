@@ -17,7 +17,24 @@ $this->load->helper('srp2');
             <a href="<?= base_url('Pengembang/syarat') ?>" data-tab-link data-tab-key="pengembang_syarat" class="btn-primary inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-wide"><i class="fa-solid fa-arrow-right"></i> Daftar SRP2</a>
         </div>
 
-        <div data-portal-table data-table-per-page="10" class="overflow-hidden rounded-2xl" style="background:var(--portal-bg-card);border:1px solid var(--portal-border);box-shadow:0 8px 24px rgba(0,80,95,.06)">
+        <div class="mb-6 grid gap-3 md:grid-cols-3">
+            <a href="#daftar-pengembang" class="rounded-2xl p-4 transition hover:-translate-y-0.5" style="background:var(--portal-bg-card);border:1px solid var(--portal-border)">
+                <i class="fa-solid fa-list-check text-lg" style="color:var(--teal)"></i>
+                <h2 class="mt-2 text-sm font-black">Daftar Pengembang Tersertifikasi</h2>
+                <p class="mt-1 text-[11px] leading-relaxed" style="color:var(--portal-text-muted)">Lihat wilayah, status sertifikat, dan masa berlakunya.</p>
+            </a>
+            <a href="<?= base_url('Pengembang/syarat') ?>" data-tab-link data-tab-key="pengembang_syarat" class="rounded-2xl p-4 transition hover:-translate-y-0.5" style="background:var(--portal-bg-card);border:1px solid var(--portal-border)">
+                <i class="fa-solid fa-file-circle-check text-lg" style="color:var(--teal)"></i>
+                <h2 class="mt-2 text-sm font-black">Syarat & Ketentuan SRP2</h2>
+                <p class="mt-1 text-[11px] leading-relaxed" style="color:var(--portal-text-muted)">Pelajari persyaratan dan dokumen yang harus disiapkan.</p>
+            </a>
+            <a href="<?= base_url('Pengembang/syarat') ?>#formulir-srp2" data-tab-link data-tab-key="pengembang_syarat" class="rounded-2xl p-4 transition hover:-translate-y-0.5" style="background:var(--portal-bg-card);border:1px solid var(--portal-border)">
+                <i class="fa-solid fa-pen-to-square text-lg" style="color:var(--teal)"></i>
+                <h2 class="mt-2 text-sm font-black">Formulir Pendaftaran SRP2</h2>
+                <p class="mt-1 text-[11px] leading-relaxed" style="color:var(--portal-text-muted)">Masuk atau daftar sebagai pengembang untuk mengirim pengajuan.</p>
+            </a>
+        </div>
+        <div id="daftar-pengembang" data-portal-table data-table-per-page="10" class="overflow-hidden rounded-2xl" style="background:var(--portal-bg-card);border:1px solid var(--portal-border);box-shadow:0 8px 24px rgba(0,80,95,.06)">
             <div class="flex flex-col gap-3 border-b px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5" style="border-color:var(--portal-border)">
                 <div>
                     <h2 class="text-sm font-extrabold" style="color:var(--portal-text)">Daftar Pengembang Bersertifikat</h2>
@@ -34,7 +51,7 @@ $this->load->helper('srp2');
             </div>
 
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[720px] text-left text-xs">
+                <table class="w-full min-w-[1000px] text-left text-xs">
                     <thead style="background:var(--portal-bg)">
                         <tr class="uppercase tracking-wider" style="color:var(--portal-text-muted);font-size:9px">
                             <th class="w-12 px-4 py-2.5 font-bold">No.</th>
@@ -44,6 +61,8 @@ $this->load->helper('srp2');
                             <th class="px-3 py-2.5 font-bold">
                                 <button type="button" data-table-sort="asosiasi" aria-sort="none" class="inline-flex items-center gap-1 font-bold uppercase tracking-wider" style="color:inherit">Asosiasi <i data-table-sort-icon class="fa-solid fa-sort text-[9px] opacity-50"></i></button>
                             </th>
+                            <th class="px-3 py-2.5 font-bold">Wilayah</th>
+                            <th class="px-3 py-2.5 font-bold">Masa Berlaku</th>
                             <th class="px-3 py-2.5 font-bold">
                                 <button type="button" data-table-sort="status" aria-sort="none" class="inline-flex items-center gap-1 font-bold uppercase tracking-wider" style="color:inherit">Status <i data-table-sort-icon class="fa-solid fa-sort text-[9px] opacity-50"></i></button>
                             </th>
@@ -57,7 +76,10 @@ $this->load->helper('srp2');
                                 <td data-table-column="nama" class="px-2 py-2.5 font-semibold" style="color:var(--portal-text)"><?= htmlspecialchars($row->nama_perusahaan, ENT_QUOTES, 'UTF-8') ?></td>
                                 <?php $asosiasi_kosong = trim((string) ($row->asosiasi ?? '')) === ''; ?>
                                 <td data-table-column="asosiasi" class="px-3 py-2.5 font-semibold" style="color:<?= $asosiasi_kosong ? 'var(--portal-text-muted)' : 'var(--portal-text)' ?>"><?= htmlspecialchars(srp2_label_asosiasi($row->asosiasi ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                <td data-table-column="status" class="px-3 py-2.5"><span class="inline-flex items-center gap-1.5 text-[10px] font-bold" style="color:#059669"><span class="h-1.5 w-1.5 rounded-full" style="background:#10b981"></span>Bersertifikat</span></td>
+                                <?php $wilayah = $nama_kabupaten[(string) ($row->kabupaten_id ?? '')] ?? 'Belum tercatat'; $akhir = trim((string) ($row->sertifikat_berakhir ?? '')); $aktif = in_array((string) $row->status_sertifikasi, ['Diterima', 'bersertifikat'], TRUE) && ($akhir === '' || strtotime($akhir . ' 23:59:59') >= time()); $periode = trim((string) ($row->sertifikat_terbit ?? '')) !== '' ? date('d M Y', strtotime($row->sertifikat_terbit)) . ' - ' . ($akhir !== '' ? date('d M Y', strtotime($akhir)) : 'Belum ditentukan') : ($akhir !== '' ? 's.d. ' . date('d M Y', strtotime($akhir)) : 'Belum ditentukan'); ?>
+                                <td data-table-column="wilayah" class="px-3 py-2.5 font-semibold" style="color:var(--portal-text)"><?= html_escape($wilayah) ?></td>
+                                <td data-table-column="masa-berlaku" class="px-3 py-2.5 text-[10px]" style="color:var(--portal-text-muted)"><?= html_escape($periode) ?></td>
+                                <td data-table-column="status" class="px-3 py-2.5"><span class="inline-flex items-center gap-1.5 text-[10px] font-bold" style="color:<?= $aktif ? '#059669' : '#dc2626' ?>"><span class="h-1.5 w-1.5 rounded-full" style="background:<?= $aktif ? '#10b981' : '#ef4444' ?>"></span><?= $aktif ? 'Berlaku' : 'Tidak berlaku' ?></span></td>
                                 <td class="px-4 py-2.5 text-right"><a href="<?= base_url('Pengembang/profil/' . $row->id) ?>" data-tab-link data-tab-key="pengembang_list" class="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[10px] font-bold" style="color:var(--teal);background:rgba(0,163,181,.08);border:1px solid rgba(0,163,181,.18)"><i class="fa-solid fa-arrow-up-right-from-square"></i> Buka</a></td>
                             </tr>
                         <?php endforeach; ?>

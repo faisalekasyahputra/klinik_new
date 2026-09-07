@@ -156,7 +156,7 @@ class Warga extends MY_Controller {
             $matriks_actual_match = $this->matriks_program_ruleset->match([
                 'income_code' => $matriks_income_code,
                 'welfare_decile' => $this->matriks_program_ruleset->decile_for_income($matriks_income_code),
-                'dtks_code' => $assessment['matrix_dtks_status'] ?? NULL,
+                'dtks_code' => $assessment['matrix_dtks_status'] ?? ($matriks_data_simperum ? 'dtks_ya' : 'dtks_belum'),
                 'land_code' => $assessment['matrix_land_ownership_code'] ?? NULL,
                 'housing_code' => $assessment['matrix_current_housing_code'] ?? NULL,
                 'environment_code' => $assessment['matrix_environment_condition_code'] ?? NULL,
@@ -869,7 +869,6 @@ class Warga extends MY_Controller {
                "belum diisi" yang aman untuk matriks program. */
             foreach ([
                 'matrix_income_code' => 'Gaji',
-                'matrix_dtks_status' => 'Status DTKS',
                 'matrix_land_ownership_code' => 'Kepemilikan Lahan',
                 'matrix_current_housing_code' => 'Kepemilikan Rumah Saat Ini',
                 'matrix_environment_condition_code' => 'Kondisi Lingkungan / Fisik Bangunan',
@@ -887,7 +886,6 @@ class Warga extends MY_Controller {
             // sebagai "Pilihan tidak valid", bukan diam-diam diterima.
             $this->validate_options([
                 'matrix_income_code' => ['income_0_1_5', 'income_1_5_2_2', 'income_2_2_2_8', 'income_2_8_8_5', 'income_2_8_10', 'income_gt_8_5', 'income_gt_10'],
-                'matrix_dtks_status' => ['dtks_ya', 'dtks_belum'],
                 'matrix_land_ownership_code' => ['land_none', 'land_legal'],
                 'matrix_current_housing_code' => ['house_none_or_rent', 'house_rent_or_staying', 'house_restricted_area', 'house_disaster_affected', 'house_owned'],
                 'matrix_environment_condition_code' => ['env_safe', 'env_relocation_zone', 'env_disaster_severe', 'env_disaster_moderate', 'env_slum_uninhabitable'],

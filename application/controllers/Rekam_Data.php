@@ -22,6 +22,11 @@ class Rekam_Data extends MY_Controller {
 
     public function index()
     {
+        if ( ! $this->is_logged_in()) {
+            $this->session->set_flashdata('error', 'Silakan masuk terlebih dahulu untuk membuka Rekam Data.');
+            $this->gerbang_login('Rekam_Data');
+            return;
+        }
         // Sudah masuk sebagai Admin Kab/Kota -> layar sambutan (frame 002).
         // Nama wilayah dan tahun pelaporan disebut di muka SEBELUM menyentuh
         // angka: modul ini ter-scope satu kabupaten dan satu periode, dan

@@ -12,6 +12,11 @@ class KemitraanPortal extends Public_Controller
 
     public function index()
     {
+        if ( ! $this->is_logged_in()) {
+            $this->session->set_flashdata('error', 'Silakan masuk terlebih dahulu untuk membuka layanan KKN dan Magang.');
+            $this->gerbang_login('KemitraanPortal');
+            return;
+        }
         $this->render('pages/kemitraan_portal/index', ['judul' => 'KKN dan Magang']);
     }
 

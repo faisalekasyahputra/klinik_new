@@ -185,10 +185,6 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                 // pencocokan 20 baris matriks (lihat komentar di step
                 // 'preliminary_recommendation' di bawah), bukan sekadar
                 // field tampilan. 16 dari 20 baris xlsx mensyaratkan "YA".
-                'matrix_dtks_status' => ['Status DTKS', [
-                    'dtks_ya' => 'Terdaftar DTKS',
-                    'dtks_belum' => 'Belum Terdaftar DTKS',
-                ]],
                 'matrix_income_code' => ['Gaji', [
                     'income_0_1_5' => '0 - 1,5 Juta',
                     'income_1_5_2_2' => '1,5 - 2,2 Juta',
@@ -210,7 +206,7 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                     'land_none' => 'Tidak Punya',
                     'land_legal' => 'Punya Lahan Sah',
                 ]],
-                'matrix_current_housing_code' => ['Kepemilikan Rumah Saat Ini', [
+                'matrix_current_housing_code' => ['Status tempat tinggal saat ini', [
                     'house_none_or_rent' => 'Belum Punya / Numpang / Sewa',
                     'house_rent_or_staying' => 'Menumpang / Sewa',
                     'house_restricted_area' => 'Tinggal di Area Terlarang / Numpang',
