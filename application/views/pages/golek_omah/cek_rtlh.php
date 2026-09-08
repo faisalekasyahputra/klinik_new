@@ -86,6 +86,7 @@ $this->load->view('components/modal_simperum_simulasi');
                     <dl class="mt-3 space-y-1 border-t pt-3 text-xs" style="border-color: var(--portal-border)">
                         <div class="flex gap-2"><dt class="w-24 shrink-0 text-[color:var(--portal-text-muted)]">Nama</dt><dd class="font-bold text-[color:var(--portal-text)]"><?= html_escape($hasil['profil']['nama_lengkap'] ?? '-') ?></dd></div>
                         <div class="flex gap-2"><dt class="w-24 shrink-0 text-[color:var(--portal-text-muted)]">Alamat</dt><dd class="text-[color:var(--portal-text)]"><?= html_escape($hasil['profil']['alamat'] ?? '-') ?></dd></div>
+                        <div class="flex gap-2"><dt class="w-24 shrink-0 text-[color:var(--portal-text-muted)]">Intervensi</dt><dd class="font-bold text-[color:var(--portal-text)]"><?= html_escape($hasil['profil']['status_intervensi'] ?? 'Belum tersedia') ?></dd></div>
                     </dl>
                     <?php endif; ?>
 

@@ -382,6 +382,33 @@ class Simperum_gateway {
             '4' => 'severe_damage_or_absent',
         ];
 
+        $assistance_year = $integer($record['TahunIntervensi'] ?? NULL);
+        $assistance_source_code = $code('SumberDanaID', [
+            '1' => 'apbn_bsps', '2' => 'apbd_prov', '3' => 'apbd_kab',
+            '4' => 'csr', '5' => 'other', '7' => 'village_fund',
+            '9' => 'bsps_kl', '12' => 'bankab', '13' => 'baznas',
+        ]);
+        $source_labels = [
+            'apbn_bsps' => 'APBN/BSPS', 'apbd_prov' => 'APBD Provinsi',
+            'apbd_kab' => 'APBD Kabupaten/Kota', 'csr' => 'CSR',
+            'other' => 'Sumber lainnya', 'village_fund' => 'Dana Desa',
+            'bsps_kl' => 'BSPS-KL', 'bankab' => 'BANKAB', 'baznas' => 'BAZNAS',
+        ];
+        $disposition_labels = [
+            '6' => 'Sudah Layak Huni', '8' => 'Di luar prioritas',
+            '10' => 'Meninggal', '11' => 'Salah/duplikasi data', '15' => 'Pindah',
+        ];
+        $source_raw = trim((string) ($record['SumberDanaID'] ?? ''));
+        if ($assistance_source_code !== NULL) {
+            $intervention_status = 'Sudah diintervensi — ' . ($source_labels[$assistance_source_code] ?? 'Sumber tercatat');
+            if ($assistance_year !== NULL) $intervention_status .= ' (' . $assistance_year . ')';
+        } elseif (isset($disposition_labels[$source_raw])) {
+            $intervention_status = $disposition_labels[$source_raw];
+        } elseif ($assistance_year !== NULL) {
+            $intervention_status = 'Sudah diintervensi (' . $assistance_year . ')';
+        } else {
+            $intervention_status = 'Belum diintervensi';
+        }
         $payload = [
             'response_status' => 'found',
             'api_version' => 'simperum-rtlh-v1',
@@ -448,12 +475,9 @@ class Simperum_gateway {
                    pembiayaan rumah. Keenamnya jatuh ke `unmapped_codes` apa
                    adanya, dan itu memang perlakuan yang benar sampai ada tempat
                    yang jujur untuk menampungnya. */
-                'assistance_source_code' => $code('SumberDanaID', [
-                    '1' => 'apbn_bsps', '2' => 'apbd_prov', '3' => 'apbd_kab',
-                    '4' => 'csr', '5' => 'other', '7' => 'village_fund',
-                    '9' => 'bsps_kl', '12' => 'bankab', '13' => 'baznas',
-                ]),
-                'assistance_year' => $integer($record['TahunIntervensi'] ?? NULL),
+                'assistance_source_code' => $assistance_source_code,
+                'assistance_year' => $assistance_year,
+                'intervention_status' => $intervention_status,
                 'area_condition_code' => $code('KawasanPerumahan', [
                     '1' => 'drought', '6' => 'slum', '10' => 'disaster_prone',
                     '11' => 'riverbank', '12' => 'railway', '98' => 'poor_other',
@@ -677,6 +701,29 @@ class Simperum_gateway {
         $structure = $payload['structure'] ?? [];
         $sanitation = $payload['sanitation'] ?? [];
         $location = $payload['location'] ?? [];
+        // Snapshot lama belum memiliki intervention_status. Turunkan dari
+        // sumber dana/tahun/disposisi yang sudah tersimpan agar hasil cache
+        // langsung konsisten tanpa meminta ulang data API.
+        if (empty($housing['intervention_status'])) {
+            $source_labels = [
+                'apbn_bsps'=>'APBN/BSPS','apbd_prov'=>'APBD Provinsi',
+                'apbd_kab'=>'APBD Kabupaten/Kota','csr'=>'CSR','other'=>'Sumber lainnya',
+                'village_fund'=>'Dana Desa','bsps_kl'=>'BSPS-KL','bankab'=>'BANKAB','baznas'=>'BAZNAS',
+            ];
+            $source = $housing['assistance_source_code'] ?? NULL;
+            $year = $housing['assistance_year'] ?? NULL;
+            $raw = (string) ($payload['unmapped_codes']['SumberDanaID'] ?? '');
+            $dispositions = ['6'=>'Sudah Layak Huni','8'=>'Di luar prioritas','10'=>'Meninggal','11'=>'Salah/duplikasi data','15'=>'Pindah'];
+            if ($source !== NULL && isset($source_labels[$source])) {
+                $housing['intervention_status'] = 'Sudah diintervensi — ' . $source_labels[$source] . ($year ? ' (' . $year . ')' : '');
+            } elseif (isset($dispositions[$raw])) {
+                $housing['intervention_status'] = $dispositions[$raw];
+            } elseif ($year) {
+                $housing['intervention_status'] = 'Sudah diintervensi (' . $year . ')';
+            } else {
+                $housing['intervention_status'] = 'Belum diintervensi';
+            }
+        }
         return array_intersect_key(
             $identity + $socioeconomic + $housing + $structure + $sanitation + $location,
             array_flip([
@@ -686,7 +733,7 @@ class Simperum_gateway {
                 'has_savings', 'self_help_capability_code', 'self_help_amount',
                 'housing_status_code', 'land_title_code', 'has_other_land',
                 'has_other_house', 'house_area_m2', 'occupant_count', 'family_count',
-                'assistance_source_code', 'assistance_year', 'area_condition_code',
+                'assistance_source_code', 'assistance_year', 'intervention_status', 'area_condition_code',
                 'owns_candidate_land', 'candidate_land_address',
                 'candidate_land_title_code', 'candidate_land_origin_code',
                 'land_owner_relationship_code', 'land_length_m', 'land_width_m',
@@ -778,6 +825,7 @@ class Simperum_gateway {
             'pekerjaan' => $occupations[$profile['occupation_code'] ?? ''] ?? '',
             'penghasilan' => $income[$profile['income_band_code'] ?? ''] ?? '',
             'status_kepemilikan' => $housing[$profile['housing_status_code'] ?? ''] ?? '',
+            'status_intervensi' => $profile['intervention_status'] ?? 'Belum tersedia',
             'income_band_code' => $profile['income_band_code'] ?? NULL,
         ];
     }
