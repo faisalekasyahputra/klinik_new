@@ -156,7 +156,7 @@
                     $konfirmasi_kunci = 'Buka kunci akun ' . $u->email . '? Ia bisa langsung mencoba masuk lagi tanpa menunggu sisa waktu kunci habis.';
                     $konfirmasi_sandi = 'Ganti password akun ' . $u->email . '? Password lamanya langsung tidak berlaku dan yang bersangkutan tidak bisa masuk sampai Anda memberitahukan password barunya.';
                 ?>
-                <tr x-data="{ editOpen: false, resetOpen: false, role: '<?= html_escape($u->role ?? '') ?>' }">
+                <tr x-data="{ editOpen: false, resetOpen: false, nikResetOpen: false, role: '<?= html_escape($u->role ?? '') ?>' }">
                     <?php /* Kolom teks terpanjang dibatasi + boleh membungkus (§17 poin 6):
                              nama dan email panjang di tabel whitespace-nowrap adalah
                              sumber meluber nomor satu. */ ?>
@@ -238,6 +238,11 @@
                             <button @click="resetOpen = true" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5">
                                 <i class="ph ph-key"></i> Reset Sandi
                             </button>
+                            <?php if ($u->role === 'warga' && ! empty($warga_nik_bound[(int)$u->id])): ?>
+                            <button @click="nikResetOpen = true" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-orange-700 dark:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-500/10">
+                                <i class="ph ph-identification-card"></i> Reset NIK
+                            </button>
+                            <?php endif; ?>
 
                             <?php if ( ! $milik_sendiri): ?>
                             <form method="POST" action="<?= base_url('Admin_Users/ubah_status') ?>" class="inline"
@@ -312,6 +317,20 @@
                                  pembungkus `overflow-x-auto` - terpotong, tidak bisa
                                  diklik. Terukur di production 4 Agt 2026: tombol di
                                  x=1371 sementara panelnya berakhir di x=1385. */ ?>
+                        <?php if ($u->role === 'warga' && ! empty($warga_nik_bound[(int)$u->id])): ?>
+                        <div x-show="nikResetOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center whitespace-normal bg-black/50 p-4" @keydown.escape.window="nikResetOpen = false">
+                            <div @click.outside="nikResetOpen = false" class="w-full max-w-md rounded-3xl bg-white dark:bg-brand-card p-6 text-left shadow-xl">
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Reset NIK Warga</h3>
+                                <p class="mt-1 text-xs leading-relaxed text-gray-500 dark:text-brand-muted">Lepaskan NIK dari <strong><?= html_escape($u->email) ?></strong>. Draft yang belum dikirim ikut dihapus. Pengajuan terkirim tidak dapat direset.</p>
+                                <form method="POST" action="<?= base_url('Admin_Users/reset_nik') ?>" class="mt-4 space-y-3" onsubmit="return confirm('Reset hubungan NIK akun ini? Tindakan akan dicatat di jejak audit.')">
+                                    <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+                                    <input type="hidden" name="id" value="<?= (int) $u->id ?>">
+                                    <div><label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Alasan reset <span class="text-red-500">*</span></label><textarea name="alasan" required minlength="10" maxlength="500" rows="3" placeholder="Contoh: NIK salah saat pengisian awal" class="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-gray-800 dark:text-gray-200"></textarea></div>
+                                    <div class="flex justify-end gap-2"><button type="button" @click="nikResetOpen = false" class="rounded-xl px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 dark:text-brand-muted dark:hover:bg-white/5">Batal</button><button type="submit" class="rounded-xl bg-orange-600 px-4 py-2 text-sm font-bold text-white hover:bg-orange-700">Reset NIK</button></div>
+                                </form>
+                            </div>
+                        </div>
+                        <?php endif; ?>
                         <div x-show="editOpen" x-cloak @click.outside="editOpen = false" class="absolute right-4 top-1/2 z-20 w-64 -translate-y-1/2 whitespace-normal rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
                             <form method="POST" action="<?= base_url('Admin_Users/update_role') ?>" class="space-y-2">
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">

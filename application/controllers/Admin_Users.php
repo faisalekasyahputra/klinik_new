@@ -32,6 +32,13 @@ class Admin_Users extends Admin_Controller {
         $data['users'] = $this->db->order_by($table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
             ->get()->result();
+        $data['warga_nik_bound'] = [];
+        $user_ids = array_map(static function ($user) { return (int) $user->id; }, $data['users']);
+        if ($user_ids && $this->db->table_exists('sf_profil_warga')) {
+            $profiles = $this->db->select('user_id')->where_in('user_id', $user_ids)
+                ->get('sf_profil_warga')->result_array();
+            foreach ($profiles as $profile) $data['warga_nik_bound'][(int) $profile['user_id']] = TRUE;
+        }
         $data['table'] = $data['pager'] = $table;
         $data['available_roles'] = $this->config->item('available_roles');
         $data['kabupaten_list'] = $this->db->order_by('nama', 'ASC')->get('kabupaten')->result();
@@ -366,6 +373,75 @@ class Admin_Users extends Admin_Controller {
         redirect('Admin_Users');
     }
 
+    /**
+     * Lepaskan NIK dari akun warga yang belum pernah mengirim penilaian.
+     * Pengajuan terkirim tetap menjadi arsip resmi dan memblokir reset agar
+     * satu akun tidak dipakai bergantian oleh beberapa orang.
+     */
+    public function reset_nik()
+    {
+        $user = $this->sasaran_sah(TRUE);
+        if ( ! $user) { return; }
+
+        $alasan = trim((string) $this->input->post('alasan', TRUE));
+        if ($user->role !== 'warga') {
+            $this->session->set_flashdata('error', 'Reset NIK hanya tersedia untuk akun Warga.');
+            redirect('Admin_Users'); return;
+        }
+        if (mb_strlen($alasan) < 10 || mb_strlen($alasan) > 500) {
+            $this->session->set_flashdata('error', 'Alasan reset NIK wajib diisi 10 sampai 500 karakter.');
+            redirect('Admin_Users'); return;
+        }
+
+        $profile = $this->db->select('id')->get_where('sf_profil_warga', ['user_id'=>(int)$user->id])->row();
+        if ( ! $profile) {
+            $this->session->set_flashdata('error', 'Akun ini belum terhubung dengan NIK.');
+            redirect('Admin_Users'); return;
+        }
+
+        $submitted = $this->db->where('user_id', (int) $user->id)
+            ->where('status !=', 'draft')->count_all_results('sf_penilaian_perumahan');
+        if ($submitted > 0) {
+            $this->catat_audit('reset_nik_ditolak',
+                'DITOLAK: reset NIK akun ' . $user->email . ' karena memiliki penilaian terkirim',
+                'usr_users', (string) $user->id, ['alasan'=>$alasan]);
+            $this->session->set_flashdata('error',
+                'NIK tidak dapat direset karena akun memiliki pengajuan yang sudah dikirim. Data harus tetap menjadi arsip.');
+            redirect('Admin_Users'); return;
+        }
+
+        $drafts = $this->db->select('id')->get_where('sf_penilaian_perumahan',
+            ['user_id'=>(int)$user->id, 'status'=>'draft'])->result_array();
+        $draft_ids = array_map('intval', array_column($drafts, 'id'));
+        $files = [];
+        if ($draft_ids) {
+            $files = $this->db->select('assessment_id,private_path')->where_in('assessment_id', $draft_ids)
+                ->get('sf_berkas_penilaian')->result_array();
+        }
+
+        $this->db->trans_start();
+        if ($draft_ids) $this->db->where_in('id', $draft_ids)->delete('sf_penilaian_perumahan');
+        $this->db->where('id', (int) $profile->id)->delete('sf_profil_warga');
+        $this->db->trans_complete();
+        if ($this->db->trans_status() === FALSE) {
+            $this->session->set_flashdata('error', 'Reset NIK gagal disimpan. Coba lagi.');
+            redirect('Admin_Users'); return;
+        }
+
+        foreach ($files as $file) {
+            @unlink($this->private_upload_dir('warga_assessment', (int)$file['assessment_id'])
+                . basename((string)$file['private_path']));
+        }
+        foreach ($draft_ids as $draft_id) @rmdir($this->private_upload_dir('warga_assessment', $draft_id));
+
+        $this->catat_audit('nik_warga_direset',
+            'Mereset hubungan NIK akun warga ' . $user->email,
+            'usr_users', (string) $user->id,
+            ['alasan'=>$alasan, 'draft_dihapus'=>count($draft_ids)]);
+        $this->session->set_flashdata('success',
+            'NIK akun ' . $user->email . ' berhasil direset. Warga dapat memasukkan NIK kembali.');
+        redirect('Admin_Users');
+    }
     public function reset_sandi()
     {
         $user = $this->sasaran_sah(TRUE);
