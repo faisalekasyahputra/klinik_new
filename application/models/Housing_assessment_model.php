@@ -10,7 +10,8 @@ class Housing_assessment_model extends CI_Model {
 
     private const PROFILE_FIELDS = [
         'gender_code', 'marital_status_code', 'education_code',
-        'occupation_code', 'income_band_code', 'welfare_decile',
+        'occupation_code', 'employment_stability_code', 'monthly_income',
+        'income_band_code', 'welfare_decile',
         'has_savings', 'self_help_capability_code', 'self_help_amount',
     ];
 

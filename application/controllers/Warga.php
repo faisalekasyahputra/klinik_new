@@ -566,8 +566,7 @@ class Warga extends MY_Controller {
            yang baru butuh track ini. */
         if ($direction === 'next' && $step === 'housing_family_detail') {
             $data['assessment_track'] = $this->assessment_track(
-                (string) $this->input->post('housing_status_code', TRUE),
-                (string) $this->input->post('owns_candidate_land', TRUE)
+                (string) $this->input->post('housing_status_code', TRUE)
             );
         }
         if ($direction === 'next' && $step === 'candidate_land') {
@@ -760,7 +759,7 @@ class Warga extends MY_Controller {
         if ( ! $profile) { return NULL; }
         $data = $profile;
         $provenance = json_decode($profile['field_provenance_json'] ?? '{}', TRUE) ?: [];
-        foreach (['family_card_number', 'full_name', 'address', 'phone', 'birth_date', 'tax_number', 'gender_code', 'marital_status_code', 'education_code', 'occupation_code', 'income_band_code', 'has_savings', 'self_help_capability_code', 'self_help_amount'] as $field) {
+        foreach (['family_card_number', 'full_name', 'address', 'phone', 'birth_date', 'tax_number', 'gender_code', 'marital_status_code', 'education_code', 'occupation_code', 'employment_stability_code', 'monthly_income', 'income_band_code', 'has_savings', 'self_help_capability_code', 'self_help_amount'] as $field) {
             $value = $this->input->post($field, TRUE);
             if ($value !== NULL && (string) $value !== (string) ($profile[$field] ?? '')) {
                 $data[$field] = $value;
@@ -793,7 +792,7 @@ class Warga extends MY_Controller {
 
     private function evidence_kinds($track)
     {
-        if ($track === 'existing_house') return ['self_photo','house_front_photo','house_side_photo','roof_photo','floor_photo','wall_photo','latrine_photo','land_photo'];
+        if ($track === 'existing_house') return ['self_photo','house_front_photo','house_side_photo','roof_photo','floor_photo','wall_photo','latrine_photo'];
         /* `land_transfer_proof` & `recipient_photo` DICABUT 5 Agt 2026 (revisi
            dinas butir A9). Ini whitelist UNGGAH - mencabutnya di sini berarti
            keduanya tidak bisa lagi dikirim, bukan sekadar tidak ditampilkan.
@@ -802,7 +801,7 @@ class Warga extends MY_Controller {
            itu daftar jenis yang SAH ADA, dan berkas yang sudah terlanjur
            tersimpan harus tetap terbaca. Keputusan user: berhenti mengumpulkan,
            jangan hapus yang lama. */
-        if ($track === 'candidate_land') return ['candidate_land_photo','id_card_photo','family_card_photo','land_owner_family_card_photo'];
+        if ($track === 'candidate_land') return ['candidate_land_photo','land_transfer_proof'];
         return ['id_card_photo','family_card_photo'];
     }
 
@@ -817,10 +816,10 @@ class Warga extends MY_Controller {
         return $date && $date->format('Y-m-d') === $value;
     }
 
-    private function assessment_track($housing_status, $owns_candidate_land)
+    private function assessment_track($housing_status)
     {
         if ($housing_status === 'owned') { return 'existing_house'; }
-        return $owns_candidate_land === '1' ? 'candidate_land' : 'financing';
+        return 'candidate_land';
     }
 
     private function recommendation_input_hash(array $assessment, array $profile)
@@ -900,16 +899,22 @@ class Warga extends MY_Controller {
                identitas administratif maupun demografi. Field tersebut boleh
                dilengkapi nanti; validasinya tetap dijalankan bila warga
                memang mengisi nilainya. */
-            $kk = preg_replace('/\D+/', '', (string) $this->input->post('family_card_number', TRUE));
+            foreach (['family_card_number'=>'Nomor KK','full_name'=>'Nama','address'=>'Alamat','phone'=>'Nomor HP','birth_date'=>'Tanggal lahir','gender_code'=>'Jenis kelamin','marital_status_code'=>'Status perkawinan','education_code'=>'Pendidikan','occupation_code'=>'Pekerjaan'] as $field=>$label) {
+                if (trim((string) $this->input->post($field, TRUE)) === '') $errors[$field] = $label . ' wajib diisi.';
+            }            $kk = preg_replace('/\D+/', '', (string) $this->input->post('family_card_number', TRUE));
             if ($kk !== '' && ! preg_match('/^\d{16}$/', $kk)) { $errors['family_card_number'] = 'Nomor KK harus 16 digit.'; }
             if (trim((string) $this->input->post('birth_date', TRUE)) !== '' && ! $this->valid_date($this->input->post('birth_date', TRUE))) { $errors['birth_date'] = 'Tanggal lahir tidak valid.'; }
-            foreach (['income_band_code', 'self_help_capability_code'] as $field) {
+            foreach (['income_band_code', 'self_help_capability_code', 'employment_stability_code', 'has_savings'] as $field) {
                 if (trim((string) $this->input->post($field, TRUE)) === '') { $errors[$field] = 'Pilihan ini wajib diisi.'; }
             }
+            $monthly_income = trim((string) $this->input->post('monthly_income', TRUE));
+            if ($monthly_income === '' || ! ctype_digit($monthly_income)) { $errors['monthly_income'] = 'Pendapatan per bulan wajib berupa angka rupiah.'; }
             $citizen_allowed = [
                 'gender_code' => ['male', 'female'],
                 'marital_status_code' => ['single', 'married', 'divorced'],
                 'education_code' => ['no_certificate', 'elementary', 'junior_high', 'senior_high', 'diploma_1_3', 'bachelor', 'postgraduate'],
+                'employment_stability_code' => ['permanent', 'non_permanent'],
+                'has_savings' => ['0', '1'],
                 'occupation_code' => ['farmer', 'horticulture', 'plantation', 'capture_fisher', 'aquaculture_fisher', 'breeder', 'forestry_agriculture_other', 'mining', 'daily_laborer', 'electricity_gas', 'construction_worker', 'trader', 'hotel_restaurant', 'driver', 'information_communication', 'finance_insurance', 'educator', 'health_worker', 'civil_servant', 'scavenger', 'military_police', 'private_employee', 'contract_worker', 'retired', 'unemployed', 'other'],
                 'income_band_code' => ['lt_1_8', '1_9_2_1', '2_2_2_6', '2_7_3_1', '3_2_3_6', '3_7_4_2', 'gt_4_2', '4_2_6', '6_8', 'gt_8'],
                 'self_help_capability_code' => ['capable', 'not_capable'],
@@ -940,13 +945,13 @@ class Warga extends MY_Controller {
                 $value = (string) $this->input->post($field, TRUE);
                 if ($value !== '' && ! in_array($value, $options, TRUE)) { $errors[$field] = 'Pilihan tidak valid.'; }
             }
-            if ((string) $this->input->post('housing_status_code', TRUE) !== 'owned') {
-                if ( ! in_array((string) $this->input->post('owns_candidate_land', TRUE), ['0', '1'], TRUE)) {
-                    $errors['owns_candidate_land'] = 'Kepemilikan calon lahan wajib dipilih.';
+            if ((string) $this->input->post('housing_status_code', TRUE) === 'owned') {
+                foreach (['land_title_code', 'has_other_land', 'has_other_house'] as $field) {
+                    if (trim((string) $this->input->post($field, TRUE)) === '') $errors[$field] = 'Field ini wajib diisi untuk rumah milik sendiri.';
                 }
-                if ( ! in_array((string) $this->input->post('has_other_house', TRUE), ['0', '1'], TRUE)) {
-                    $errors['has_other_house'] = 'Kepemilikan rumah lain wajib dipilih.';
-                }
+                if ($area === NULL || $area === '') $errors['house_area_m2'] = 'Luas rumah wajib diisi.';
+            } elseif ( ! in_array((string) $this->input->post('has_other_land', TRUE), ['0', '1'], TRUE)) {
+                $errors['has_other_land'] = 'Kepemilikan tanah lain wajib dipilih.';
             }
             $year = (string) $this->input->post('assistance_year', TRUE);
             if ($year !== '' && ( ! ctype_digit($year) || (int) $year < 1900 || (int) $year > (int) date('Y'))) {
@@ -982,9 +987,9 @@ class Warga extends MY_Controller {
             ], $errors);
         }
         if ($step === 'sanitation') {
-            foreach (['water_source_code','lighting_source_code','cooking_fuel_code'] as $field) if (trim((string)$this->input->post($field, TRUE)) === '') $errors[$field] = 'Field ini wajib diisi.';
+            foreach (['has_bathroom_latrine','water_source_code','lighting_source_code','cooking_fuel_code'] as $field) if (trim((string)$this->input->post($field, TRUE)) === '') $errors[$field] = 'Field ini wajib diisi.';
             $this->validate_options([
-                'has_window'=>['0','1'], 'has_ventilation'=>['0','1'],
+                'has_window'=>['0','1'], 'has_ventilation'=>['0','1'], 'has_bathroom_latrine'=>['0','1'],
                 'water_source_code'=>['bottled','refill','piped','pdam','retail_piped','well','well_protected','well_unprotected','spring','spring_unprotected','surface_water','rain','other_unfit'],
                 'latrine_type_code'=>['swan_neck','plengsengan','pit','none'],
                 'feces_disposal_code'=>['septic_tank','ipal','water_body','ground_hole','open_land'],
