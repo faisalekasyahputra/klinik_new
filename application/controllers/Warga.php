@@ -27,7 +27,7 @@ class Warga extends MY_Controller {
        ke 'housing_family' oleh migrasi 20260824000049 - tanpa itu draft
        tersebut akan macet karena 'citizen_data' tidak ada lagi di daftar
        ini (lihat guard baris ~526 `!in_array($step, self::STEPS, TRUE)`). */
-    private const STEPS = ['find_data', 'housing_family', 'preliminary_recommendation', 'housing_family_detail', 'building_condition', 'candidate_land', 'sanitation', 'location_evidence', 'review'];
+    private const STEPS = ['find_data', 'housing_family', 'housing_family_detail', 'preliminary_recommendation', 'building_condition', 'candidate_land', 'sanitation', 'location_evidence', 'review'];
     private const STEP_LABELS = ['Masukkan NIK', 'Isi data sesuai matriks', 'Hasil rekomendasi', 'Lengkapi data SIMPERUM'];
 
     public function __construct()
@@ -564,7 +564,15 @@ class Warga extends MY_Controller {
            SEBELUM titik ini tidak terpengaruh, cuma percabangan SESUDAH
            'housing_family_detail' (building_condition/candidate_land/dst)
            yang baru butuh track ini. */
-        if ($direction === 'next' && $step === 'housing_family_detail') {
+        if ($direction === 'next' && $step === 'housing_family') {
+            $milik_sendiri = (string) $this->input->post('matrix_current_housing_code', TRUE) === 'house_owned';
+            $data['assessment_track'] = $milik_sendiri ? 'existing_house' : 'candidate_land';
+            $data['housing_status_code'] = $milik_sendiri ? 'owned' : 'other';
+        }
+        // Kompatibilitas draft lama yang sudah telanjur sampai langkah detail
+        // saat assessment_track masih undetermined.
+        if ($direction === 'next' && $step === 'housing_family_detail'
+            && ($draft['assessment_track'] ?? 'undetermined') === 'undetermined') {
             $data['assessment_track'] = $this->assessment_track(
                 (string) $this->input->post('housing_status_code', TRUE)
             );
@@ -590,7 +598,7 @@ class Warga extends MY_Controller {
            Rumah & Keluarga), kemudian hasil akhir diperbarui lagi sesudah
            data rinci serta bukti dilengkapi. Ini mewujudkan alur:
            NIK -> matriks -> hasil rekomendasi -> pelengkapan SIMPERUM. */
-        if ($direction === 'next' && in_array($step, ['housing_family', 'location_evidence'], TRUE)) {
+        if ($direction === 'next' && in_array($step, ['housing_family_detail', 'location_evidence'], TRUE)) {
             $profile = $this->Housing_assessment_model->get_owned_profile($user_id) ?: [];
             if ($profile_change !== NULL) {
                 $profile = array_merge($profile, $profile_change['data'] ?? []);
@@ -778,6 +786,9 @@ class Warga extends MY_Controller {
 
     private function adjacent_step($step, $direction, $track)
     {
+        if ($step === 'preliminary_recommendation' && $track === 'undetermined' && $direction !== 'back') {
+            return 'housing_family_detail';
+        }
         $steps = self::STEPS;
         if ($track === 'existing_house') {
             $steps = array_values(array_diff($steps, ['candidate_land']));
