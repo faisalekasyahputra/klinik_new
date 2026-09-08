@@ -30,7 +30,14 @@ $value = static function ($key, $default = '') use ($values) { return (string) (
 $selected = static function ($key, $option) use ($value) { return $value($key) === $option ? ' selected' : ''; };
 $checked = static function ($key, $option) use ($value) { return $value($key) === $option ? ' checked' : ''; };
 $field_error = static function ($key) use ($errors) { return isset($errors[$key]) ? (string) $errors[$key] : ''; };
-$matrix_required = ['income_band_code' => TRUE, 'self_help_capability_code' => TRUE];
+$matrix_required = [
+    'family_card_number' => TRUE, 'full_name' => TRUE, 'phone' => TRUE,
+    'birth_date' => TRUE, 'address' => TRUE, 'monthly_income' => TRUE,
+    'gender_code' => TRUE, 'marital_status_code' => TRUE, 'education_code' => TRUE,
+    'occupation_code' => TRUE, 'employment_stability_code' => TRUE,
+    'income_band_code' => TRUE, 'has_savings' => TRUE,
+    'self_help_capability_code' => TRUE,
+];
 /* Field ini menentukan jalur atau evaluasi awal. Badge warga selain daftar
    ini diberi keterangan Opsional agar warga tidak mengira semua wajib. */
 $recommendation_required = $matrix_required + [
@@ -274,8 +281,52 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
             <h3 class="mt-6 text-sm font-black">Data Warga</h3>
             <div class="mt-3 grid gap-4 sm:grid-cols-2">
                 <?php $text_fields = [['family_card_number','Nomor KK','text','16 digit'],['full_name','Nama lengkap','text',''],['phone','Nomor HP','tel',''],['birth_date','Tanggal lahir','date',''],['tax_number','NPWP','text',''],['monthly_income','Pendapatan per bulan (Rp)','number',''],['address','Alamat','text','']]; ?>
-                <?php foreach ($text_fields as [$key, $label, $type, $hint]): ?><div class="<?= $key === 'address' ? 'sm:col-span-2' : '' ?>"><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?></label><input id="<?= $key ?>" name="<?= $key ?>" type="<?= $type ?>"  <?= $hint ? 'maxlength="16" inputmode="numeric"' : '' ?> value="<?= html_escape($value($key)) ?>" aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
-                <?php $selects = ['gender_code' => ['Jenis kelamin', ['male' => 'Laki-laki', 'female' => 'Perempuan']], 'marital_status_code' => ['Status perkawinan', ['single' => 'Lajang', 'married' => 'Menikah', 'divorced' => 'Cerai']], 'education_code' => ['Pendidikan', ['no_certificate' => 'Tidak punya ijazah', 'elementary' => 'SD/sederajat', 'junior_high' => 'SMP/sederajat', 'senior_high' => 'SMA/sederajat', 'diploma_1_3' => 'D1/D2/D3', 'bachelor' => 'D4/S1', 'postgraduate' => 'S2/S3']], 'employment_stability_code' => ['Status pekerjaan', ['permanent' => 'Tetap', 'non_permanent' => 'Tidak tetap']], 'has_savings' => ['Memiliki tabungan', ['1' => 'Ya', '0' => 'Tidak']], 'occupation_code' => ['Pekerjaan', ['farmer' => 'Petani', 'horticulture' => 'Hortikultura', 'plantation' => 'Perkebunan', 'capture_fisher' => 'Perikanan tangkap', 'aquaculture_fisher' => 'Perikanan budidaya', 'breeder' => 'Peternak', 'forestry_agriculture_other' => 'Kehutanan & pertanian lain', 'mining' => 'Pertambangan/Penggalian', 'daily_laborer' => 'Buruh harian', 'electricity_gas' => 'Listrik & gas', 'construction_worker' => 'Tukang bangunan', 'trader' => 'Perdagangan', 'hotel_restaurant' => 'Hotel & rumah makan', 'driver' => 'Sopir', 'information_communication' => 'Informasi & komunikasi', 'finance_insurance' => 'Keuangan & asuransi', 'educator' => 'Guru/Dosen', 'health_worker' => 'Dokter/Bidan/Apoteker', 'civil_servant' => 'PNS/BUMN/D', 'scavenger' => 'Pemulung', 'military_police' => 'TNI/POLRI', 'private_employee' => 'Pegawai swasta', 'contract_worker' => 'PHL/PTT', 'retired' => 'Pensiunan', 'unemployed' => 'Tidak bekerja', 'other' => 'Lainnya']], 'income_band_code' => ['Penghasilan', ['lt_1_8' => '< 1,8 jt', '1_9_2_1' => '1,9-2,1 jt', '2_2_2_6' => '2,2-2,6 jt', '2_7_3_1' => '2,7-3,1 jt', '3_2_3_6' => '3,2-3,6 jt', '3_7_4_2' => '3,7-4,2 jt', 'gt_4_2' => '> 4,2 jt (data SIMPERUM)', '4_2_6' => '4,2-6 jt', '6_8' => '6-8 jt', 'gt_8' => '> 8 jt']], 'self_help_capability_code' => ['Kemampuan swadaya', ['capable' => 'Mampu', 'not_capable' => 'Tidak mampu']]]; ?>
+                <?php foreach ($text_fields as [$key, $label, $type, $hint]): ?><div class="<?= $key === 'address' ? 'sm:col-span-2' : '' ?>"><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?></label><input id="<?= $key ?>" name="<?= $key ?>" type="<?= $type ?>" <?= isset($matrix_required[$key]) ? 'required' : '' ?> <?= $hint ? 'maxlength="16" inputmode="numeric"' : '' ?> value="<?= html_escape($value($key)) ?>" aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
+                <?php
+                $occupation_options = [
+                    'farmer' => 'Petani',
+                    'breeder' => 'Peternak',
+                    'mining' => 'Pertambangan/Penggalian',
+                    'daily_laborer' => 'Buruh Harian',
+                    'construction_worker' => 'Tukang Bangunan',
+                    'trader' => 'Pedagang',
+                    'hotel_restaurant' => 'Hotel dan Rumah Makan',
+                    'driver' => 'Sopir',
+                    'educator' => 'Guru/Dosen',
+                    'health_worker' => 'Dokter/Bidan/Apoteker',
+                    'civil_servant' => 'PNS/BUMN/BUMD',
+                    'scavenger' => 'Pemulung',
+                    'military_police' => 'TNI/Polri',
+                    'private_employee' => 'Pegawai Swasta',
+                    'contract_worker' => 'PHL/PTT',
+                    'retired' => 'Pensiunan',
+                    'unemployed' => 'Tidak Bekerja',
+                    'other' => 'Lainnya',
+                ];
+                // Nilai teknis lama tetap terlihat dan dapat disimpan ulang,
+                // tetapi labelnya dinormalisasi ke kategori UAT terdekat.
+                $legacy_occupation_labels = [
+                    'horticulture' => 'Petani', 'plantation' => 'Petani',
+                    'capture_fisher' => 'Lainnya', 'aquaculture_fisher' => 'Lainnya',
+                    'forestry_agriculture_other' => 'Lainnya', 'electricity_gas' => 'Lainnya',
+                    'information_communication' => 'Pegawai Swasta',
+                    'finance_insurance' => 'Pegawai Swasta',
+                ];
+                $saved_occupation = (string) $value('occupation_code');
+                if (! isset($occupation_options[$saved_occupation]) && isset($legacy_occupation_labels[$saved_occupation])) {
+                    $occupation_options = [$saved_occupation => $legacy_occupation_labels[$saved_occupation]] + $occupation_options;
+                }
+                $selects = [
+                    'occupation_code' => ['Pekerjaan', $occupation_options],
+                    'employment_stability_code' => ['Status pekerjaan', ['permanent' => 'Tetap', 'non_permanent' => 'Tidak tetap']],
+                    'gender_code' => ['Jenis kelamin', ['male' => 'Laki-laki', 'female' => 'Perempuan']],
+                    'marital_status_code' => ['Status perkawinan', ['single' => 'Lajang', 'married' => 'Menikah', 'divorced' => 'Cerai']],
+                    'education_code' => ['Pendidikan', ['no_certificate' => 'Tidak punya ijazah', 'elementary' => 'SD/sederajat', 'junior_high' => 'SMP/sederajat', 'senior_high' => 'SMA/sederajat', 'diploma_1_3' => 'D1/D2/D3', 'bachelor' => 'D4/S1', 'postgraduate' => 'S2/S3']],
+                    'has_savings' => ['Memiliki tabungan', ['1' => 'Ya', '0' => 'Tidak']],
+                    'income_band_code' => ['Penghasilan', ['lt_1_8' => '< 1,8 jt', '1_9_2_1' => '1,9-2,1 jt', '2_2_2_6' => '2,2-2,6 jt', '2_7_3_1' => '2,7-3,1 jt', '3_2_3_6' => '3,2-3,6 jt', '3_7_4_2' => '3,7-4,2 jt', 'gt_4_2' => '> 4,2 jt (data SIMPERUM)', '4_2_6' => '4,2-6 jt', '6_8' => '6-8 jt', 'gt_8' => '> 8 jt']],
+                    'self_help_capability_code' => ['Kemampuan swadaya', ['capable' => 'Mampu', 'not_capable' => 'Tidak mampu']],
+                ];
+                ?>
                 <?php foreach ($selects as $key => [$label, $options]): ?><div><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?><?= isset($matrix_required[$key]) ? ' <span class="text-red-700">*</span>' : '' ?></label><select id="<?= $key ?>" name="<?= $key ?>" <?= isset($matrix_required[$key]) ? 'required' : '' ?> aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><option value="">Pilih <?= strtolower($label) ?></option><?php foreach ($options as $code => $label): ?><option value="<?= html_escape($code) ?>"<?= $selected($key, $code) ?>><?= html_escape($label) ?></option><?php endforeach; ?></select><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
                 <?php if ($value('welfare_decile') !== ''): ?><p class="sm:col-span-2 rounded-xl p-3 text-xs" style="background:rgba(14,165,233,.09);color:#075985">Kelompok kesejahteraan (desil) <strong><?= html_escape($value('welfare_decile')) ?></strong>, diambil dari <?= $is_simulation ? '<strong>data simulasi</strong> - SIMPERUM belum terhubung, jadi angka ini contoh, bukan data Anda yang sebenarnya' : 'data resmi SIMPERUM' ?>. Angka ini tidak dihitung ulang dari penghasilan yang Anda isi.</p><?php endif; ?>
             </div>
