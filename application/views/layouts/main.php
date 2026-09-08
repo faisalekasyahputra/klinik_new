@@ -12,7 +12,9 @@
          $rt_method = strtolower($this->router->fetch_method());
          $active_tab = 'beranda'; // default
 
-         if ($rt_class === 'pengembang' || $rt_method === 'tab_pengembang') {
+         if ($rt_class === 'cek_rtlh') {
+             $active_tab = 'cek_rtlh';
+         } elseif ($rt_class === 'pengembang' || $rt_method === 'tab_pengembang') {
              $active_tab = 'pengembang';
          } elseif ($rt_method === 'tab_perumahan' || in_array($rt_method, ['simulasi_kpr', 'panduan_desain', 'golek_omah', 'cari_rumah'])) {
              $active_tab = 'perumahan';
@@ -86,7 +88,7 @@
                        <a href="<?= base_url('tab/bankdata') ?>" data-tab-link data-tab-key="bankdata" class="portal-tab-btn <?= $active_tab === 'bankdata' ? 'active' : '' ?>">
                            <i class="fa-solid fa-chart-pie"></i> Bank Data
                        </a>
-                       <a href="<?= base_url('Cek_Rtlh') ?>" class="portal-tab-btn">
+                       <a href="<?= base_url('Cek_Rtlh') ?>" data-tab-link data-tab-key="cek_rtlh" class="portal-tab-btn <?= $active_tab === 'cek_rtlh' ? 'active' : '' ?>">
                            <i class="fa-solid fa-house-circle-check"></i> Cek Data Rumah
                        </a>
                        <?php /* Butir 20 putaran 2: tab "Cek Status Pengajuan" DICABUT dari
