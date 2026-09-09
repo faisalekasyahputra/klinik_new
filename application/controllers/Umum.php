@@ -922,26 +922,61 @@ class Umum extends MY_Controller {
 		// dibaca tanpa filter status, lalu kolom `nib` dipakai sebagai penanda:
 		// draft yang belum pernah dikirim pun tampil "Terdata" di halaman publik.
 		// Roadmap T0 butir 2.
-		$nama_tersertifikasi = [];
+		$direktori_srp2 = [];
 		if ($this->db->table_exists('srp2_certified_developers')) {
-			$rows = $this->db->select('nama_perusahaan')->where('status_aktif', 1)
-				->get('srp2_certified_developers')->result_array();
-			foreach ($rows as $r) { $nama_tersertifikasi[strtolower($r['nama_perusahaan'])] = TRUE; }
+			$rows = $this->db
+				->select('s.nama_perusahaan, s.status_sertifikasi, s.sertifikat_terbit, s.sertifikat_berakhir, s.asosiasi, k.nama AS wilayah_pengembang')
+				->from('srp2_certified_developers s')
+				->join('kabupaten k', 'k.id = s.kabupaten_id', 'left')
+				->where('s.status_aktif', 1)
+				->get()->result_array();
+			foreach ($rows as $r) {
+				$direktori_srp2[strtolower(trim($r['nama_perusahaan']))] = $r;
+			}
 		}
 
-		$developers = array_map(function($item) use ($nama_tersertifikasi) {
+		$status_labels = [
+			'belum_mendaftar' => 'Belum Mendaftar',
+			'mendaftar'       => 'Sudah Mendaftar',
+			'masih_proses'    => 'Masih Diproses',
+			'bersertifikat'   => 'Bersertifikat',
+		];
+		$developers = array_map(function($item) use ($direktori_srp2, $status_labels) {
 			$pengembang_nama = $item['pengembang']['nama'] ?? '-';
-			$sp2_tersertifikasi = $pengembang_nama !== '-'
-				&& isset($nama_tersertifikasi[strtolower($pengembang_nama)]);
+			$srp2 = $pengembang_nama !== '-'
+				? ($direktori_srp2[strtolower(trim($pengembang_nama))] ?? NULL)
+				: NULL;
+			$status = $srp2['status_sertifikasi'] ?? 'belum_mendaftar';
+			$terbit = $srp2['sertifikat_terbit'] ?? NULL;
+			$berakhir = $srp2['sertifikat_berakhir'] ?? NULL;
+
+			if ($status !== 'bersertifikat') {
+				$keadaan = 'belum';
+				$keadaan_label = 'Belum berlaku';
+			} elseif (empty($berakhir)) {
+				$keadaan = 'tak_tercatat';
+				$keadaan_label = 'Masa berlaku belum tercatat';
+			} elseif ($berakhir >= date('Y-m-d')) {
+				$keadaan = 'aktif';
+				$keadaan_label = 'Berlaku';
+			} else {
+				$keadaan = 'kedaluwarsa';
+				$keadaan_label = 'Tidak berlaku';
+			}
 
 			return [
 				'nama_perumahan' => $item['namaPerumahan'] ?? '-',
 				'pengembang'     => $pengembang_nama,
-				'asosiasi'       => $item['pengembang']['asosiasi'] ?? '-',
-				'kabupaten'      => $item['wilayah']['kabupaten'] ?? '-',
+				'asosiasi'       => $srp2['asosiasi'] ?? ($item['pengembang']['asosiasi'] ?? '-'),
+				'wilayah_pengembang' => $srp2['wilayah_pengembang'] ?? '-',
 				'telepon'        => $item['kantorPemasaran'][0]['noTelp'] ?? '-',
 				'email'          => $item['kantorPemasaran'][0]['email'] ?? '-',
-				'sp2_tersertifikasi' => $sp2_tersertifikasi,
+				'status_sertifikasi' => $status,
+				'status_label'   => $status_labels[$status] ?? 'Belum Mendaftar',
+				'sertifikat_terbit' => $terbit,
+				'sertifikat_berakhir' => $berakhir,
+				'keadaan_berlaku' => $keadaan,
+				'keadaan_label'  => $keadaan_label,
 			];
 		}, $items);
 
