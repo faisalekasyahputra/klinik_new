@@ -153,14 +153,6 @@ if ( ! function_exists('wizard_angka_wajar')) {
     }
 }
 
-if ( ! function_exists('wizard_step')) {
-    /** Step yang sedang aktif menurut formulirnya sendiri. */
-    function wizard_step($html) {
-        $form = wizard_form($html);
-        if ($form === NULL) { return NULL; }
-        return preg_match('/name="step"\s+value="([^"]*)"/', $form, $m) ? $m[1] : NULL;
-    }
-}
 
 if ( ! function_exists('wizard_pilih_opsi')) {
     /**

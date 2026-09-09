@@ -215,6 +215,14 @@ wajib($KANDIDAT !== [], 'Fixture simulasi tersedia (' . count($KANDIDAT) . ' NIK
 $r = $warga->minta('Auth/do_register', [
     'email' => EMAIL, 'password' => SANDI, 'password_confirm' => SANDI, 'tos_agree' => '1',
 ]);
+/* ⚠️ KODE 200 DIPERIKSA LEBIH DULU, dan itu bukan formalitas. Asersi di
+   bawahnya berbentuk "pesan galat TIDAK ada", dan pesan yang tidak ada
+   otomatis benar ketika responsnya KOSONG. Terbukti 9 Sep 2026: Apache lokal
+   mati, tiap permintaan membalas HTTP 0 dengan badan kosong, dan harness ini
+   melaporkan "Akun baru lahir" OK untuk akun yang tidak pernah lahir. Asersi
+   negatif tanpa penjaga positif di depannya adalah hijau yang tidak berarti. */
+wajib($r['kode'] === 200,
+    'Server menjawab (HTTP ' . $r['kode'] . '). Kode 0 berarti Apache mati, bukan fitur rusak.');
 wajib($r['kode'] !== 429, 'Tidak tertahan batas laju pendaftaran');
 wajib(stripos($r['body'], 'Pendaftaran tidak dapat diproses') === FALSE, 'Akun baru lahir');
 
