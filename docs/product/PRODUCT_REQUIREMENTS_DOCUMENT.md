@@ -1,5 +1,5 @@
 # PRODUCT REQUIREMENTS DOCUMENT (PRD)
-## Klinik PKP — Portal Layanan Informasi Perumahan Terpadu Jawa Tengah
+## Klinik PKP - Portal Layanan Informasi Perumahan Terpadu Jawa Tengah
 
 | Atribut | Detail |
 |---|---|
@@ -7,7 +7,7 @@
 | **Versi Dokumen** | v3.0 |
 | **Tanggal Terbit** | 1 Juli 2026 |
 | **Instansi Penyelenggara** | Dinas Perumahan Rakyat & Kawasan Permukiman Prov. Jawa Tengah |
-| **Status Dokumen** | Updated — Fase Pivot: Integrasi SIMPERUM & Onboarding Journey |
+| **Status Dokumen** | Updated - Fase Pivot: Integrasi SIMPERUM & Onboarding Journey |
 
 ---
 
@@ -43,7 +43,8 @@ Sebagai pusat layanan terpadu, Klinik PKP memberikan:
 Navigasi utama dirampingkan untuk menonjolkan 3 pilar tupoksi utama dinas, dengan total 6 komponen Navbar:
 
 1. **Menu Utilitas Kiri**: (Beranda / Logo Klinik PKP).
-2. **Menu Pengembang (SRP2)**: Halaman informasi statis yang berisi panduan pengajuan Sertifikasi Pengembang (SRP2). Halaman ini menampilkan: Info pengajuan, unduhan *template* dokumen/PDF, *Contact Person*, serta daftar Pengembang yang sudah mendapat SP2 dan yang sedang dalam proses pengajuan (belum berupa sistem interaktif).
+2. **Menu Pengembang (SRP2)**: ⚠️ **Deskripsi di bawah SUDAH USANG** (dikoreksi 26 Jul 2026) - dipertahankan sebagai jejak kebutuhan awal. Menu ini kini **sistem interaktif penuh**, bukan halaman statis: wizard pendaftaran satu halaman (syarat → masuk/daftar → unggah 14 dokumen → kirim) di `Pengembang/syarat`, plus verifikasi admin (terima/tolak + catatan) di `Admin_Srp2`, dan pengembang yang diterima otomatis masuk direktori publik. Acuan: `AGENTS.md` §14 dan [`PRD_SRP2_AKUN_PENGEMBANG.md`](./PRD_SRP2_AKUN_PENGEMBANG.md) + [`PRD_VERIFIKASI_ADMIN_SRP2.md`](./PRD_VERIFIKASI_ADMIN_SRP2.md).
+   > *Teks asli:* "Halaman informasi statis yang berisi panduan pengajuan Sertifikasi Pengembang (SRP2). Halaman ini menampilkan: Info pengajuan, unduhan *template* dokumen/PDF, *Contact Person*, serta daftar Pengembang yang sudah mendapat SP2 dan yang sedang dalam proses pengajuan (belum berupa sistem interaktif)."
 3. **Layanan Utama 1: PERUMAHAN** *(Fokus Prioritas)*
    - **Bank Data**: Tarikan data statistik (Sikumbang/API eksternal).
    - **Info KPR**: Informasi pembiayaan kredit.
@@ -70,6 +71,14 @@ Navigasi utama dirampingkan untuk menonjolkan 3 pilar tupoksi utama dinas, denga
 *   **FR-1.4:** Setiap *card* jika diklik akan memuat *Definisi Operasional, Syarat & Kriteria, dan Foto Before-After*.
 
 ### 📝 4.2 Modul Onboarding & Smart Filter
+> **Spesifikasi rinci terbaru (27 Jul 2026):**
+> [`PRD_FORM_WARGA_SIMPERUM.md`](./PRD_FORM_WARGA_SIMPERUM.md). Form dan
+> Smart Filter yang berjalan saat ini adalah prototipe sederhana; jangan
+> menganggap klaim “selesai” di roadmap lama sebagai selesainya form warga
+> komprehensif, cache local-first, atau matriks program baru. Karena API nyata
+> belum diberikan, implementasi penuh dimulai dengan data sintetis sesuai
+> [`ROADMAP_FORM_WARGA_SIMULASI_SIMPERUM.md`](./ROADMAP_FORM_WARGA_SIMULASI_SIMPERUM.md).
+
 *   **FR-2.1:** Pengguna yang tertarik pada sebuah program dapat mengklik tombol "Cek Kelayakan / Daftar".
 *   **FR-2.2:** Sistem meminta input NIK dan melakukan *fetching* ke API SIMPERUM. Jika data ditemukan, formulir terisi otomatis sebagian.
 *   **FR-2.3:** Sistem memproses data melalui *Smart Filter*. Jika tidak lolos syarat dasar program, sistem akan merekomendasikan program lain.

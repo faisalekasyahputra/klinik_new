@@ -11,14 +11,6 @@
             <span>Kembali ke Ruang Diskusi</span>
         </a>
 
-        <!-- Flash Messages -->
-        <?php if ($this->session->flashdata('error')): ?>
-        <div class="bg-red-500/10 border border-red-500/30 text-red-400 px-5 py-3 rounded-xl text-xs mb-6 flex items-center gap-2">
-            <i class="fa-solid fa-circle-exclamation"></i>
-            <?= $this->session->flashdata('error') ?>
-        </div>
-        <?php endif; ?>
-
         <!-- Topik Utama -->
         <div class="bg-[#0f2a30] border border-[#d6fb00]/20 rounded-2xl p-6 sm:p-8 mb-10 space-y-5 shadow-xl">
             <div class="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
@@ -400,14 +392,18 @@ function reportKomentar(id) {
     })
     .then(r => r.json())
     .then(d => {
-        alert(d.status === 'ok' ? 'Laporan terkirim. Terima kasih atas partisipasi Anda.' : 'Gagal mengirim laporan.');
+        if (d.status === 'ok') {
+            KPKP.notify.success('Laporan terkirim. Terima kasih atas partisipasi Anda.');
+        } else {
+            KPKP.notify.error('Gagal mengirim laporan.');
+        }
     })
-    .catch(() => alert('Terjadi kesalahan jaringan.'));
+    .catch(() => KPKP.notify.error('Terjadi kesalahan jaringan.'));
 }
 
 function toggleLike(type, id) {
     <?php if (!$is_logged): ?>
-    alert('Silakan login terlebih dahulu untuk memberikan like.');
+    KPKP.notify.warning('Silakan login terlebih dahulu untuk memberikan like.');
     return;
     <?php endif; ?>
     

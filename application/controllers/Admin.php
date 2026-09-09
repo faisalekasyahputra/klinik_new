@@ -6,62 +6,78 @@ class Admin extends Admin_Controller {
     public function __construct()
     {
         parent::__construct();
-        
-        // Load Admin_model
-        $this->load->model('Admin_model');
+        $this->load->model('Housing_assessment_model');
     }
 
     public function index()
     {
-        // Fetch housing queue data
-        $data['queue'] = $this->Admin_model->get_all_housing_queue();
         $data['title'] = 'Antrean & Validasi';
-        
-        // Load views
-        $this->render_admin('pages/admin/dashboard', $data);
+        $data['scope_label'] = 'Semua Wilayah';
+        $data['action_url']  = 'Admin/update_status';
+        $data['empty_text']  = 'Belum ada antrean yang masuk.';
+        $data['base_url']    = 'Admin';
+        $data += $this->antrean_table_data(NULL);
+
+        $this->render_admin('admin/antrean/dashboard', $data);
     }
 
     public function update_status()
     {
-        // Ensure it is a POST request
-        if ($this->input->server('REQUEST_METHOD') === 'POST') {
-            
-            // Get data from POST with XSS filtering
-            $queue_id = $this->input->post('queue_id', TRUE);
-            $status = $this->input->post('status', TRUE);
-            $catatan_admin = $this->input->post('catatan_admin', TRUE);
-
-            // Basic validation
-            if (!empty($queue_id) && in_array($status, ['approved', 'rejected'])) {
-                
-                // Update status via model
-                $update_success = $this->Admin_model->update_queue_status($queue_id, $status, $catatan_admin);
-                
-                if ($update_success) {
-                    // MOCK SIMPERUM API SYNC
-                    // In a real scenario, this would use cURL to send the approval status back to SIMPERUM API
-                    // $ch = curl_init('https://api.simperum.jatengprov.go.id/v1/housing-queue/sync');
-                    // curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(['id' => $queue_id, 'status' => $status]));
-                    // ...
-                    $mock_api_status = true; // Simulated success
-                    
-                    if ($mock_api_status) {
-                        $this->session->set_flashdata('success', 'Status pengajuan berhasil diubah menjadi '.strtoupper($status).' dan telah disinkronisasi dengan API SIMPERUM.');
-                    } else {
-                        $this->session->set_flashdata('success', 'Status diubah secara lokal, namun gagal sinkronisasi ke API SIMPERUM.');
-                    }
-                    
-                } else {
-                    $this->session->set_flashdata('error', 'Gagal memperbarui status antrean. Silakan coba lagi.');
-                }
-            } else {
-                $this->session->set_flashdata('error', 'Invalid input data provided.');
-            }
-        } else {
-            $this->session->set_flashdata('error', 'Invalid request method.');
+        if ($this->input->method(TRUE) !== 'POST') {
+            show_404();
+            return;
         }
 
-        // Redirect back to Admin dashboard
-        redirect('Admin/index');
+        // S6 - jalur superadmin dulu MELEWATI pembatas laju yang sudah dipasang
+        // di Admin_Kabkota::update_status(). Policy `admin_queue_decision` yang
+        // sama dipakai di sini, bukan mekanisme kedua (§17 poin 15): dimensi
+        // ip+account+object, jadi satu akun yang membanjiri satu antrean tetap
+        // tertahan sekalipun ia superadmin.
+        $queue_id = (int) $this->input->post('queue_id');
+        $rate = $this->rate_limit_consume('admin_queue_decision', [
+            'account_id' => (int) $this->get_user_id(),
+            'object_id'  => $queue_id,
+        ]);
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject(
+                $rate,
+                'Terlalu banyak keputusan dalam waktu singkat. Silakan coba lagi sebentar.',
+                $this->input->is_ajax_request()
+            );
+            return;
+        }
+
+        $result = $this->Housing_assessment_model->transition_queue(
+            $this->input->post('queue_id'),
+            $this->input->post('from_status', TRUE),
+            $this->input->post('status', TRUE),
+            $this->get_user_id(),
+            NULL,
+            $this->input->post('catatan_admin', TRUE)
+        );
+
+        $this->session->set_flashdata(
+            $result['success'] ? 'success' : 'error',
+            $result['success']
+                ? 'Keputusan berhasil disimpan. Sinkronisasi ke SIMPERUM belum tersedia.'
+                : $result['message']
+        );
+        redirect('Admin');
     }
+
+    public function detail($queue_id)
+    {
+        $data = $this->assessment_detail_data($queue_id, NULL);
+        if ( ! $data) { show_404(); return; }
+        $data += ['title' => 'Detail Penilaian Warga', 'back_url' => 'Admin', 'action_url' => 'Admin/update_status', 'evidence_url' => 'Admin/evidence'];
+        $this->render_admin('admin/antrean/detail', $data);
+    }
+
+    public function evidence($queue_id, $file_kind)
+    {
+        $file = $this->scoped_queue_file($queue_id, $file_kind, NULL);
+        if ( ! $file) { show_404(); return; }
+        $this->serve_private_file('warga_assessment', $file['storage_assessment_id'], $file['private_path'], $file['mime_type']);
+    }
+
 }

@@ -1,155 +1,114 @@
-<div class="w-full py-12 px-4 sm:px-6 lg:px-8">
-    <?php $current_username = htmlspecialchars($user->username ?? $user->name); ?>
-    <div class="max-w-2xl mx-auto space-y-8">
-        
-        <!-- Header -->
-        <div class="flex items-center justify-between border-b border-[#d6fb00]/20 pb-6">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-[#d6fb00]/10 rounded-xl flex items-center justify-center text-[#d6fb00] text-xl">
-                    <i class="fa-solid fa-user-gear"></i>
-                </div>
-                <div>
-                    <h1 class="text-2xl font-bold text-[#ecffb6]">Pengaturan Pengguna</h1>
-                    <p class="text-zinc-400 text-sm">Kelola profil, username, dan preferensi akun Anda.</p>
-                </div>
-            </div>
-            
-            <a href="<?= base_url('Auth/logout') ?>" class="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl transition-all font-semibold text-sm">
-                <i class="fa-solid fa-arrow-right-from-bracket"></i> <span class="hidden sm:inline">Keluar / Logout</span>
-            </a>
-        </div>
+<div class="relative z-10">
 
-        <!-- Flash Messages -->
-        <?php if ($this->session->flashdata('success')): ?>
-            <div class="bg-[#d6fb00]/10 border border-[#d6fb00]/30 text-[#ecffb6] px-4 py-3 rounded-xl flex items-start gap-3">
-                <i class="fa-solid fa-circle-check mt-1"></i>
-                <p class="text-sm font-medium"><?= $this->session->flashdata('success') ?></p>
+    <!-- Header -->
+    <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-brand-primary/10 flex items-center justify-center text-brand-primary text-xl">
+                <i class="ph ph-list-checks"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight">Status Pengajuan</h1>
+                <p class="text-gray-500 dark:text-brand-muted text-sm">Semua pengajuan yang pernah Anda kirim, dalam satu daftar.</p>
+            </div>
+        </div>
+        <a href="<?= base_url('Auth/logout') ?>" class="inline-flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 dark:bg-red-500/10 dark:hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 rounded-xl transition-all font-semibold text-sm">
+            <i class="ph ph-sign-out"></i> <span>Keluar</span>
+        </a>
+    </div>
+
+    <?php
+        // Flash success/error sudah dirender shell admin/index.php sebelum $content
+        // disuntikkan - blok di sini dulu merender ulang pesan yang sama (bug B5).
+    ?>
+
+    <?php
+        $kelas_badge = [
+            'pending' => 'bg-amber-50 dark:bg-brand-primary/10 text-amber-700 dark:text-brand-primary border-amber-200 dark:border-brand-primary/20',
+            'process' => 'bg-cyan-50 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-200 dark:border-cyan-500/20',
+            'ok'      => 'bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-500/30',
+            'reject'  => 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/30',
+        ];
+    ?>
+
+    <div class="bg-white dark:bg-brand-card rounded-3xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden">
+        <?php if (empty($items)): ?>
+            <div class="flex flex-col items-center justify-center text-center py-16 px-6">
+                <div class="w-16 h-16 mb-4 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center text-3xl text-gray-300 dark:text-white/20">
+                    <i class="ph ph-tray"></i>
+                </div>
+                <p class="text-gray-500 dark:text-brand-muted font-medium">Belum ada pengajuan yang tercatat.</p>
+                <p class="text-xs text-gray-400 dark:text-brand-muted/70 mt-1">Riwayat antrean, aduan, dan pengajuan lain yang Anda kirim akan muncul di sini.</p>
+                <?php if (!empty($empty_action)): ?>
+                <a href="<?= base_url($empty_action['url']) ?>" class="mt-5 inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2 text-sm font-bold text-white transition-opacity hover:opacity-90">
+                    <?= html_escape($empty_action['label']) ?> <i class="ph ph-arrow-right" aria-hidden="true"></i>
+                </a>
+                <?php endif; ?>
+            </div>
+        <?php else: ?>
+            <div class="divide-y divide-gray-100 dark:divide-white/5">
+                <?php foreach ($items as $item): ?>
+                <div class="flex flex-col items-start gap-3 px-4 py-4 sm:flex-row sm:items-center sm:gap-4 sm:px-6">
+                    <div class="w-10 h-10 shrink-0 rounded-xl bg-gray-100 dark:bg-white/5 flex items-center justify-center text-gray-500 dark:text-brand-muted">
+                        <i class="ph <?= $item['icon'] ?> text-lg"></i>
+                    </div>
+                    <div class="w-full min-w-0 flex-1">
+                        <p class="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-brand-muted/70"><?= htmlspecialchars($item['jenis']) ?></p>
+                        <p class="text-sm font-bold text-gray-900 dark:text-white truncate"><?= htmlspecialchars($item['judul']) ?></p>
+                        <?php if (!empty($item['is_simulation'])): ?><span class="mt-1 inline-flex max-w-full whitespace-normal rounded px-2 py-0.5 text-[10px] font-bold leading-tight bg-amber-100 text-amber-800">Mode Simulasi - API SIMPERUM belum terhubung</span><?php endif; ?>
+                        <p class="text-xs text-gray-500 dark:text-brand-muted mt-0.5"><?= htmlspecialchars(date('d M Y, H:i', strtotime($item['created_at']))) ?></p>
+                        <?php if (!empty($item['catatan_admin'])): ?>
+                        <p class="text-xs mt-1.5 px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted whitespace-normal">
+                            <span class="font-bold">Catatan admin:</span> <?= htmlspecialchars($item['catatan_admin']) ?>
+                        </p>
+                        <?php endif; ?>
+                        <?php
+                        // Perjalanan pengajuan - barisnya sudah lama dicatat server
+                        // (sf_riwayat_keputusan_antrean) tapi tak pernah ditampilkan,
+                        // jadi pemohon cuma melihat satu status dan menunggu dalam gelap.
+                        $riwayat = $item['riwayat'] ?? [];
+                        if (count($riwayat) > 1):
+                            $label_status = [
+                                'pending' => 'Dikirim, menunggu verifikasi',
+                                'needs_revision' => 'Diminta perbaikan',
+                                'approved' => 'Disetujui',
+                                'rejected' => 'Ditolak',
+                            ];
+                        ?>
+                        <details class="mt-2">
+                            <summary class="cursor-pointer text-xs font-bold text-gray-500 dark:text-brand-muted">Lihat perjalanan pengajuan (<?= count($riwayat) ?> langkah)</summary>
+                            <ol class="mt-2 space-y-1.5 border-l-2 border-gray-200 dark:border-white/10 pl-3">
+                                <?php foreach ($riwayat as $jejak): ?>
+                                <li class="text-xs text-gray-600 dark:text-brand-muted">
+                                    <span class="font-bold text-gray-900 dark:text-white"><?= htmlspecialchars($label_status[$jejak['to_status']] ?? $jejak['to_status']) ?></span>
+                                    <span class="ml-1 whitespace-nowrap text-[11px]"><?= htmlspecialchars(date('d M Y, H:i', strtotime($jejak['created_at']))) ?></span>
+                                    <?php if (!empty($jejak['note'])): ?><span class="block whitespace-normal italic"><?= htmlspecialchars($jejak['note']) ?></span><?php endif; ?>
+                                </li>
+                                <?php endforeach; ?>
+                            </ol>
+                        </details>
+                        <?php endif; ?>
+                    </div>
+                    <div class="flex w-full shrink-0 flex-row flex-wrap items-center justify-between gap-2 sm:w-auto sm:flex-col sm:flex-nowrap sm:items-end">
+                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-bold border <?= $kelas_badge[$item['status_kelas']] ?? $kelas_badge['pending'] ?>"><?= htmlspecialchars($item['status_label']) ?></span>
+                        <?php if (!empty($item['aksi_url'])): ?>
+                        <?php // Label menyebut apa yang benar-benar terjadi saat diklik.
+                              // "Kelola" untuk semua keadaan menjanjikan kemampuan mengubah
+                              // padahal pengajuan yang sudah dikirim/diterima read-only. ?>
+                        <a href="<?= base_url($item['aksi_url']) ?>" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><?= htmlspecialchars($item['aksi_label'] ?? 'Kelola') ?> →</a>
+                        <?php elseif (!empty($item['aksi_post_url'])): ?>
+                        <form action="<?= base_url($item['aksi_post_url']) ?>" method="post">
+                            <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
+                            <?php foreach (($item['aksi_post_fields'] ?? []) as $name => $value): ?>
+                            <input type="hidden" name="<?= html_escape($name) ?>" value="<?= html_escape((string) $value) ?>">
+                            <?php endforeach; ?>
+                            <button type="submit" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><?= htmlspecialchars($item['aksi_label'] ?? 'Kelola') ?> →</button>
+                        </form>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
             </div>
         <?php endif; ?>
-        
-        <?php if ($this->session->flashdata('error')): ?>
-            <div class="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-xl flex items-start gap-3">
-                <i class="fa-solid fa-circle-exclamation mt-1"></i>
-                <p class="text-sm font-medium"><?= $this->session->flashdata('error') ?></p>
-            </div>
-        <?php endif; ?>
-
-        <!-- Edit Profile Form -->
-        <div class="bg-[#0f2a30] rounded-2xl border border-[#d6fb00]/20 p-6 md:p-8 shadow-xl">
-            <h2 class="text-lg font-semibold text-[#ecffb6] mb-6 flex items-center gap-2">
-                <i class="fa-solid fa-address-card"></i> Informasi Profil
-            </h2>
-            
-            <form action="<?= base_url('akun/update') ?>" method="POST" class="space-y-5">
-                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-                
-                <div>
-                    <label class="block text-sm font-medium text-zinc-300 mb-1">Email <span class="text-zinc-500 text-xs font-normal">(Tidak dapat diubah)</span></label>
-                    <input type="email" value="<?= htmlspecialchars($user->email) ?>" disabled
-                           class="w-full bg-[#0a191c] border border-zinc-700/50 rounded-xl px-4 py-2.5 text-zinc-500 cursor-not-allowed">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[#ecffb6] mb-1">Username <span class="text-red-400">*</span></label>
-                    <p class="text-xs text-zinc-400 mb-2">Ditampilkan di forum diskusi (tanpa spasi, max 30 karakter).</p>
-                    <input type="text" name="username" value="<?= htmlspecialchars($user->username ?? '') ?>" required maxlength="30" pattern="^\S+$"
-                           oninput="this.value = this.value.replace(/\s/g, '').toLowerCase()"
-                           class="w-full bg-[#0a191c] border border-[#d6fb00]/30 rounded-xl px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-[#d6fb00] focus:ring-1 focus:ring-[#d6fb00] transition-all">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[#ecffb6] mb-1">Nama Lengkap <span class="text-red-400">*</span></label>
-                    <input type="text" name="name" value="<?= htmlspecialchars($user->name) ?>" required
-                           class="w-full bg-[#0a191c] border border-[#d6fb00]/30 rounded-xl px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-[#d6fb00] focus:ring-1 focus:ring-[#d6fb00] transition-all">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-[#ecffb6] mb-1">No. WhatsApp</label>
-                    <input type="tel" name="phone" value="<?= htmlspecialchars($user->phone ?? '') ?>"
-                           class="w-full bg-[#0a191c] border border-[#d6fb00]/30 rounded-xl px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-[#d6fb00] focus:ring-1 focus:ring-[#d6fb00] transition-all">
-                </div>
-
-                <div class="pt-4">
-                    <button type="submit" class="bg-[#d6fb00] hover:bg-[#b5d500] text-[#0f2a30] font-bold py-2.5 px-6 rounded-xl transition-colors duration-200 flex items-center gap-2">
-                        <i class="fa-solid fa-floppy-disk"></i> Simpan Perubahan
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Danger Zone -->
-        <div class="mt-12 bg-red-500/5 rounded-2xl border border-red-500/20 p-6 shadow-xl">
-            <h2 class="text-lg font-semibold text-red-400 mb-2 flex items-center gap-2">
-                <i class="fa-solid fa-triangle-exclamation"></i> Zona Berbahaya
-            </h2>
-            <p class="text-sm text-zinc-400 mb-6">Sekali Anda menghapus akun, data profil Anda tidak bisa dikembalikan. Komentar dan forum yang pernah Anda kirimkan akan dianonimkan menjadi "Akun Dihapus" agar tidak merusak alur diskusi.</p>
-            
-            <button type="button" onclick="openDeleteModal()" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-semibold py-2.5 px-6 rounded-xl transition-colors duration-200 flex items-center gap-2">
-                <i class="fa-solid fa-trash-can"></i> Hapus Akun Secara Permanen
-            </button>
-        </div>
-
     </div>
+
 </div>
-
-<!-- Delete Confirmation Modal -->
-<div id="deleteModal" class="fixed inset-0 z-50 hidden bg-[#0a191c]/80 backdrop-blur-sm flex items-center justify-center px-4">
-    <div class="bg-[#0f2a30] rounded-2xl border border-red-500/30 p-6 sm:p-8 max-w-md w-full shadow-2xl relative">
-        <button type="button" onclick="closeDeleteModal()" class="absolute top-4 right-4 text-zinc-400 hover:text-white transition-colors">
-            <i class="fa-solid fa-xmark text-xl"></i>
-        </button>
-        
-        <div class="w-12 h-12 bg-red-500/10 rounded-full flex items-center justify-center text-red-400 mb-4 mx-auto">
-            <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
-        </div>
-        
-        <h3 class="text-xl font-bold text-center text-white mb-2">Konfirmasi Hapus Akun</h3>
-        <p class="text-sm text-zinc-400 text-center mb-6">
-            Tindakan ini sangat berbahaya dan tidak dapat dibatalkan. Ketik <strong class="text-red-400 select-all"><?= $current_username ?></strong> di bawah ini untuk mengonfirmasi.
-        </p>
-        
-        <form action="<?= base_url('akun/delete') ?>" method="POST" id="deleteForm">
-            <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-            
-            <div class="mb-6">
-                <input type="text" id="confirmDeleteInput" autocomplete="off" onkeyup="checkDeleteConfirm()" placeholder="Ketik nama akun Anda"
-                       class="w-full bg-[#0a191c] border border-zinc-700/50 rounded-xl px-4 py-2.5 text-white placeholder-zinc-600 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all text-center">
-            </div>
-            
-            <button type="submit" id="btnConfirmDelete" disabled
-                    class="w-full bg-zinc-800 text-zinc-500 font-bold py-3 rounded-xl cursor-not-allowed transition-colors duration-200">
-                Hapus Akun Saya
-            </button>
-        </form>
-    </div>
-</div>
-
-<script>
-const targetUsername = <?= json_encode($user->username ?? $user->name) ?>;
-
-function openDeleteModal() {
-    document.getElementById('deleteModal').classList.remove('hidden');
-    document.getElementById('confirmDeleteInput').value = '';
-    document.getElementById('confirmDeleteInput').focus();
-    checkDeleteConfirm();
-}
-
-function closeDeleteModal() {
-    document.getElementById('deleteModal').classList.add('hidden');
-}
-
-function checkDeleteConfirm() {
-    const input = document.getElementById('confirmDeleteInput').value;
-    const btn = document.getElementById('btnConfirmDelete');
-    
-    if (input === targetUsername) {
-        btn.disabled = false;
-        btn.classList.remove('bg-zinc-800', 'text-zinc-500', 'cursor-not-allowed');
-        btn.classList.add('bg-red-500', 'hover:bg-red-600', 'text-white', 'cursor-pointer');
-    } else {
-        btn.disabled = true;
-        btn.classList.add('bg-zinc-800', 'text-zinc-500', 'cursor-not-allowed');
-        btn.classList.remove('bg-red-500', 'hover:bg-red-600', 'text-white', 'cursor-pointer');
-    }
-}
-</script>

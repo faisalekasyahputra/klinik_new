@@ -227,6 +227,9 @@ CREATE TABLE `usr_users` (
   `nik_lookup_hash` varchar(64) DEFAULT NULL,
   `kategori` varchar(50) DEFAULT NULL,
   `alamat` text DEFAULT NULL,
+  `nama_perusahaan` varchar(150) DEFAULT NULL,
+  `alamat_kantor` text DEFAULT NULL,
+  `telp_kantor` varchar(20) DEFAULT NULL,
   `updated_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
@@ -296,6 +299,7 @@ DROP TABLE IF EXISTS `sf_housing_queue`;
 /*!40101 SET character_set_client = utf8 */;
 CREATE TABLE IF NOT EXISTS `sf_housing_queue` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `ticket_code` VARCHAR(10) NULL UNIQUE,
   `user_id` INT DEFAULT NULL,
   `program_id` INT NOT NULL,
   `nik_pengaju` VARCHAR(255) NOT NULL,
@@ -310,6 +314,17 @@ CREATE TABLE IF NOT EXISTS `sf_housing_queue` (
   FOREIGN KEY (`program_id`) REFERENCES `sf_programs`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `sys_ticket_lookup_limits`
+--
+
+CREATE TABLE IF NOT EXISTS `sys_ticket_lookup_limits` (
+  `ip_hash` CHAR(64) NOT NULL,
+  `window_started_at` DATETIME NOT NULL,
+  `failed_attempts` TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  PRIMARY KEY (`ip_hash`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Table structure for table `sys_settings`

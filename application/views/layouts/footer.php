@@ -1,203 +1,129 @@
- <!-- ============================================================
-     FOOTER
+<!-- ============================================================
+     FOOTER SCRIPTS & WIDGETS
+     Visual footer bar sekarang inline di main.php
      ============================================================ -->
- <?php 
-    $CI =& get_instance();
-    $CI->load->model('Setting_model');
-    $settings = $CI->Setting_model->get_all();
- ?>
- <footer class="w-full bg-[#0a1a1f] text-zinc-400 pt-16 pb-6 mt-auto relative z-10 overflow-hidden">
-    
-    <!-- Batik Kawung Background Pattern with Top Fade Mask -->
-    <div class="absolute inset-0 z-0 pointer-events-none" style="opacity: 0.05; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 60%, black 100%); mask-image: linear-gradient(to bottom, transparent 0%, black 60%, black 100%);">
-        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="batik-kawung-pkp" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
-              <circle cx="0" cy="0" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
-              <circle cx="100" cy="0" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
-              <circle cx="0" cy="100" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
-              <circle cx="100" cy="100" r="50" fill="none" stroke="#00545f" stroke-width="2"/>
-              <line x1="-15" y1="0" x2="15" y2="0" stroke="#00545f" stroke-width="2"/>
-              <line x1="0" y1="-15" x2="0" y2="15" stroke="#00545f" stroke-width="2"/>
-              <circle cx="0" cy="0" r="4.5" fill="#d6fb00"/>
-              <line x1="85" y1="0" x2="115" y2="0" stroke="#00545f" stroke-width="2"/>
-              <line x1="100" y1="-15" x2="100" y2="15" stroke="#00545f" stroke-width="2"/>
-              <circle cx="100" cy="0" r="4.5" fill="#d6fb00"/>
-              <line x1="-15" y1="100" x2="15" y2="100" stroke="#00545f" stroke-width="2"/>
-              <line x1="0" y1="85" x2="0" y2="115" stroke="#00545f" stroke-width="2"/>
-              <circle cx="0" cy="100" r="4.5" fill="#d6fb00"/>
-              <line x1="85" y1="100" x2="115" y2="100" stroke="#00545f" stroke-width="2"/>
-              <line x1="100" y1="85" x2="100" y2="115" stroke="#00545f" stroke-width="2"/>
-              <circle cx="100" cy="100" r="4.5" fill="#d6fb00"/>
-              <polygon points="50,40 60,50 50,60 40,50" fill="none" stroke="#00a3b5" stroke-width="2"/>
-              <circle cx="50" cy="50" r="2.5" fill="#ecffb6"/>
-              <circle cx="50" cy="22" r="2" fill="#00a3b5"/>
-              <circle cx="50" cy="78" r="2" fill="#00a3b5"/>
-              <circle cx="22" cy="50" r="2" fill="#00a3b5"/>
-              <circle cx="78" cy="50" r="2" fill="#00a3b5"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#batik-kawung-pkp)" />
-        </svg>
-    </div>
-
-    <div class="max-w-7xl mx-auto px-6 lg:px-8 relative z-10">
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-12 pb-12">
-            
-            <!-- Brand -->
-            <div class="md:col-span-5 space-y-5" data-aos="fade-right">
-                <div class="flex items-center gap-3">
-                    <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" class="h-10 w-auto object-contain">
-                    <div>
-                        <h5 class="text-sm font-black tracking-tight text-white leading-none">Klinik<span class="text-[#d6fb00]">PKP</span></h5>
-                        <p class="text-[9px] text-[#8aacb0] font-bold tracking-widest uppercase mt-1">Disperakim Prov. Jateng</p>
-                    </div>
-                </div>
-                <p class="text-xs text-zinc-500 leading-relaxed max-w-sm">
-                    Klinik Perumahan dan Kawasan Permukiman hadir sebagai pusat layanan informasi dan konsultasi terpadu di wilayah Jawa Tengah.
-                </p>
-
-            </div>
-
-            <!-- Quick Links -->
-            <div class="md:col-span-3" data-aos="fade-up" data-aos-delay="100">
-                <h5 class="text-white font-bold text-xs tracking-wider uppercase mb-5">Layanan</h5>
-                <ul class="space-y-2.5 text-xs text-zinc-500">
-                    <li><a href="#" class="hover:text-[#d6fb00] transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[7px] text-zinc-700"></i> Konsultasi</a></li>
-                    <li><a href="#" class="hover:text-[#d6fb00] transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[7px] text-zinc-700"></i> Masukan & Saran</a></li>
-                    <li><a href="#" class="hover:text-[#d6fb00] transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[7px] text-zinc-700"></i> FAQ</a></li>
-                    <li><a href="#" class="hover:text-[#d6fb00] transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[7px] text-zinc-700"></i> Pejabat Struktural</a></li>
-                    <li><a href="#" class="hover:text-[#d6fb00] transition-colors flex items-center gap-2"><i class="fa-solid fa-chevron-right text-[7px] text-zinc-700"></i> Tim Magang</a></li>
-                </ul>
-            </div>
-
-            <!-- Contact -->
-            <div class="md:col-span-4 space-y-4" data-aos="fade-up" data-aos-delay="200">
-                <h5 class="text-white font-bold text-xs tracking-wider uppercase mb-5">Kontak</h5>
-                <div class="space-y-3 text-xs text-zinc-500">
-                    <div class="flex items-start gap-3">
-                        <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-zinc-600 mt-0.5 shrink-0"><i class="fa-solid fa-location-dot text-[10px]"></i></div>
-                        <p>KLINIK PKP DISPERAKIM<br><span class="text-zinc-600"><?= htmlspecialchars($settings['footer_address'] ?? 'Jl. Madukoro Blok BB, Semarang') ?></span></p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-zinc-600 shrink-0"><i class="fa-solid fa-phone text-[10px]"></i></div>
-                        <p><?= htmlspecialchars($settings['footer_phone'] ?? '+6282137191145') ?></p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <div class="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-zinc-600 shrink-0"><i class="fa-solid fa-envelope text-[10px]"></i></div>
-                        <p class="lowercase"><?= htmlspecialchars($settings['footer_email'] ?? 'klinikpkpjawa3@gmail.com') ?></p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 pt-2">
-                    <a href="#" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-[#d6fb00] hover:text-[#0a1a1f] flex items-center justify-center text-zinc-500 transition-all text-xs"><i class="fa-brands fa-facebook-f"></i></a>
-                    <a href="#" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-[#d6fb00] hover:text-[#0a1a1f] flex items-center justify-center text-zinc-500 transition-all text-xs"><i class="fa-brands fa-instagram"></i></a>
-                    <a href="#" class="w-8 h-8 rounded-lg bg-white/5 hover:bg-[#d6fb00] hover:text-[#0a1a1f] flex items-center justify-center text-zinc-500 transition-all text-xs"><i class="fa-brands fa-youtube"></i></a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Copyright -->
-        <div class="pt-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-zinc-600 font-medium" data-aos="fade-in" data-aos-delay="300">
-            <div>&copy; <?= date('Y') ?> <span class="text-zinc-500 font-semibold"><?= htmlspecialchars($settings['footer_copyright'] ?? 'KLINIK PKP JATENG') ?></span>. All Rights Reserved.</div>
-            <div class="flex items-center gap-3 text-zinc-500/80">
-                <a href="#" class="hover:text-[#d6fb00] transition-colors">Support</a>
-                <span>•</span>
-                <a href="#" class="hover:text-[#d6fb00] transition-colors">Ketentuan</a>
-                <span>•</span>
-                <a href="#" class="hover:text-[#d6fb00] transition-colors">Privasi</a>
-            </div>
-        </div>
-    </div>
-</footer>
 
 <!-- ============================================================
-     HELP WIDGET — Combined WA + Aduan (Bottom Right)
+     HELP WIDGET - FAQ seputar web (Bottom Right)
      ============================================================ -->
-<div class="fixed bottom-6 right-6 z-50" x-data="{ helpOpen: false, chatOpen: false }">
-    
-    <!-- Help Menu Card -->
+<div class="theme-light fixed bottom-6 right-6 z-50" x-data="{
+        helpOpen: false,
+        chatOpen: false,
+        openFaq: null,
+        faqs: [
+            { q: 'Apa itu Klinik PKP?', a: 'Klinik PKP adalah portal layanan informasi dan konsultasi perumahan serta kawasan permukiman dari Disperakim Provinsi Jawa Tengah.' },
+            { q: 'Bagaimana cara cek kelayakan bantuan rumah?', a: 'Buka menu Perumahan lalu pilih Etalase Program untuk melihat daftar program, atau langsung isi diagnosa NIK untuk mengecek program yang sesuai untuk Anda.' },
+            /* Butir 20 putaran 2: jawaban ini dulu menyuruh membuka tab yang kini
+               sudah dicabut. Sisa seperti ini lebih membingungkan daripada tidak
+               ada FAQ sama sekali, karena orang mencari sesuatu yang tidak ada. */
+            { q: 'Bagaimana cara cek status pengajuan?', a: 'Masuk ke akun Anda, lalu buka menu \'Status Pengajuan\' di dashboard. Status terbaru selalu ada di sana, dan hanya Anda yang bisa melihatnya.' },
+            { q: 'Bagaimana cara daftar Sertifikasi Pengembang (SRP2)?', a: 'Buka menu Pengembang dari menu utama dan ikuti alur pendaftaran. Anda perlu login terlebih dahulu.' },
+            { q: 'Bagaimana cara menyampaikan aduan?', a: 'Buka halaman Aduan dari beranda dan isi formulirnya. Anda tidak perlu memilih bidang tujuan - aduan Anda kami baca lebih dulu, lalu diteruskan ke bidang yang menangani.' },
+        ]
+     }">
+
+    <!-- FAQ Panel -->
     <div x-show="helpOpen && !chatOpen" x-cloak
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0 translate-y-2 scale-95"
-         x-transition:enter-end="opacity-1 translate-y-0 scale-100"
+         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
          x-transition:leave="transition ease-in duration-150"
-         x-transition:leave-start="opacity-1 scale-100"
+         x-transition:leave-start="opacity-100 scale-100"
          x-transition:leave-end="opacity-0 scale-95"
-         class="help-menu glass-card mb-3">
+         class="help-menu mb-3 max-h-[70vh] w-[320px] overflow-y-auto rounded-2xl shadow-2xl"
+         style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border);">
         <div class="p-5">
-            <h4 class="text-white font-bold text-sm mb-1">Butuh Bantuan?</h4>
-            <p class="text-zinc-500 text-[11px] mb-4">Pilih cara yang paling nyaman untuk Anda</p>
-            
-            <a href="https://wa.me/6282137191145" target="_blank" class="flex items-center gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all mb-2.5 group">
-                <div class="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white text-lg shrink-0"><i class="fa-brands fa-whatsapp"></i></div>
-                <div>
-                    <span class="text-white text-xs font-bold block">WhatsApp Langsung</span>
-                    <span class="text-zinc-500 text-[10px]">Chat cepat via WhatsApp</span>
-                </div>
-                <i class="fa-solid fa-arrow-up-right-from-square text-zinc-600 text-[10px] ml-auto group-hover:text-emerald-400"></i>
-            </a>
+            <h4 class="text-sm font-bold" style="color: var(--portal-text);">Pertanyaan Umum</h4>
+            <p class="mb-4 text-[11px]" style="color: var(--portal-text-muted);">Jawaban cepat seputar layanan Klinik PKP</p>
 
-            <button @click="chatOpen = true; helpOpen = false" class="w-full flex items-center gap-3 p-3 rounded-xl bg-[#d6fb00]/10 border border-[#d6fb00]/15 hover:bg-[#d6fb00]/20 transition-all group text-left">
-                <div class="w-10 h-10 bg-[#d6fb00] rounded-xl flex items-center justify-center text-[#0a1a1f] text-lg shrink-0"><i class="fa-solid fa-comments"></i></div>
-                <div>
-                    <span class="text-white text-xs font-bold block">Aduan & Diskusi</span>
-                    <span class="text-zinc-500 text-[10px]">Sampaikan keluhan atau saran</span>
-                </div>
-                <i class="fa-solid fa-chevron-right text-zinc-600 text-[10px] ml-auto group-hover:text-[#d6fb00]"></i>
-            </button>
+            <div class="space-y-2">
+                <template x-for="(faq, i) in faqs" :key="i">
+                    <div class="overflow-hidden rounded-xl border" style="border-color: var(--portal-border);">
+                        <button type="button" @click="openFaq = (openFaq === i ? null : i)"
+                                class="flex w-full items-center justify-between gap-3 px-3.5 py-3 text-left text-xs font-bold"
+                                style="color: var(--portal-text);">
+                            <span x-text="faq.q"></span>
+                            <i class="fa-solid fa-chevron-down shrink-0 text-[10px] transition-transform duration-200" :class="openFaq === i && 'rotate-180'" style="color: var(--portal-text-muted);"></i>
+                        </button>
+                        <div x-show="openFaq === i" x-cloak
+                             x-transition:enter="transition ease-out duration-150"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
+                             class="px-3.5 pb-3 text-[11px] leading-relaxed" style="color: var(--portal-text-muted);" x-text="faq.a"></div>
+                    </div>
+                </template>
+            </div>
+
+<?php
+/*
+ * B2 - tombol pembuka chat DISEMBUNYIKAN 29 Jul 2026, seiring endpoint-nya
+ * dikarantina. Fiturnya memang SUDAH rusak jauh sebelum ini: ketiga endpoint
+ * menulis/membaca `tb_chat` yang tidak pernah ada di skema mana pun, jadi
+ * yang dihilangkan adalah janji, bukan fungsi. Menampilkan "Chat langsung
+ * dengan kami" yang menuju 404 lebih buruk daripada tidak menampilkannya.
+ * Dibuka kembali hanya lewat keputusan #7 - dan bila "bangun", setelah
+ * migrasi tabel, session_id terikat sesi server, rate limit, dan layar
+ * operator ada.
+ */
+?>
         </div>
     </div>
 
-    <!-- Chat Widget Window -->
-    <div x-show="chatOpen" x-cloak
+    <!-- Chat Widget Window - dikarantina B2: `chatOpen` tidak pernah lagi
+         disetel TRUE karena tombol pembukanya sudah dihilangkan di atas.
+         Markupnya dibiarkan utuh supaya keputusan #7 tetap punya dua pilihan;
+         `x-show="false"` memastikan ia tidak muncul walau ada yang menyalakan
+         state-nya dari console. -->
+    <div x-show="false" x-cloak
          x-transition:enter="transition ease-out duration-200"
          x-transition:enter-start="opacity-0 translate-y-2 scale-95"
          x-transition:enter-end="opacity-1 translate-y-0 scale-100"
-         class="fixed bottom-24 right-6 w-[380px] bg-[#0d1f25] border border-[#d6fb00]/20 rounded-2xl overflow-hidden shadow-2xl z-50">
-        
-        <div class="bg-[#d6fb00] px-5 py-4 flex items-center justify-between">
+         class="fixed bottom-24 right-6 z-50 w-[380px] overflow-hidden rounded-2xl shadow-2xl"
+         style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border);">
+
+        <div class="flex items-center justify-between px-5 py-4" style="background-color: var(--portal-brand);">
             <div class="flex items-center gap-2">
                 <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                <h3 class="text-[#0a1a1f] font-bold text-sm">Asisten Klinik PKP</h3>
+                <h3 class="font-bold text-sm" style="color: var(--portal-bg);">Asisten Klinik PKP</h3>
             </div>
-            <button @click="chatOpen = false" class="text-black/60 hover:text-black transition-colors"><i class="fa-solid fa-xmark text-sm"></i></button>
+            <button @click="chatOpen = false" class="transition-colors" style="color: var(--portal-bg);"><i class="fa-solid fa-xmark text-sm"></i></button>
         </div>
 
         <div id="pre-chat-section" class="p-6 space-y-4">
-            <p class="text-zinc-400 text-xs text-center">Silakan lengkapi data diri Anda.</p>
+            <p class="text-xs text-center" style="color: var(--portal-text-muted);">Silakan lengkapi data diri Anda.</p>
             <form id="pre-chat-form" class="space-y-3 text-xs">
                 <div>
-                    <label class="block text-zinc-500 mb-1 font-medium">Nama Lengkap</label>
-                    <input type="text" id="reg-nama" required class="w-full bg-[#d6fb00]/5 border border-[#d6fb00]/20 focus:border-[#d6fb00]/40 rounded-xl px-3.5 py-2.5 text-white outline-none transition-all placeholder-[#5a7a80]" placeholder="Budi Santoso">
+                    <label class="block mb-1 font-medium" style="color: var(--portal-text-muted);">Nama Lengkap</label>
+                    <input type="text" id="reg-nama" required class="w-full rounded-xl px-3.5 py-2.5 outline-none transition-all" style="background-color: var(--portal-bg); border: 1px solid var(--portal-border); color: var(--portal-text);" placeholder="Budi Santoso">
                 </div>
                 <div>
-                    <label class="block text-zinc-500 mb-1 font-medium">Email</label>
-                    <input type="email" id="reg-email" required class="w-full bg-[#d6fb00]/5 border border-[#d6fb00]/20 focus:border-[#d6fb00]/40 rounded-xl px-3.5 py-2.5 text-white outline-none transition-all placeholder-[#5a7a80]" placeholder="nama@email.com">
+                    <label class="block mb-1 font-medium" style="color: var(--portal-text-muted);">Email</label>
+                    <input type="email" id="reg-email" required class="w-full rounded-xl px-3.5 py-2.5 outline-none transition-all" style="background-color: var(--portal-bg); border: 1px solid var(--portal-border); color: var(--portal-text);" placeholder="nama@email.com">
                 </div>
                 <div>
-                    <label class="block text-zinc-500 mb-1 font-medium">No. WhatsApp</label>
-                    <input type="tel" id="reg-hp" required class="w-full bg-[#d6fb00]/5 border border-[#d6fb00]/20 focus:border-[#d6fb00]/40 rounded-xl px-3.5 py-2.5 text-white outline-none transition-all placeholder-[#5a7a80]" placeholder="08XXXXXXXXXX">
+                    <label class="block mb-1 font-medium" style="color: var(--portal-text-muted);">No. WhatsApp</label>
+                    <input type="tel" id="reg-hp" required class="w-full rounded-xl px-3.5 py-2.5 outline-none transition-all" style="background-color: var(--portal-bg); border: 1px solid var(--portal-border); color: var(--portal-text);" placeholder="08XXXXXXXXXX">
                 </div>
                 <div>
-                    <label class="block text-zinc-500 mb-1 font-medium">Pesan / Keluhan</label>
-                    <textarea id="reg-pesan" rows="2" required class="w-full bg-[#d6fb00]/5 border border-[#d6fb00]/20 focus:border-[#d6fb00]/40 rounded-xl px-3.5 py-2.5 text-white outline-none transition-all placeholder-[#5a7a80] leading-relaxed" placeholder="Tanya bantuan RTLH..."></textarea>
+                    <label class="block mb-1 font-medium" style="color: var(--portal-text-muted);">Pesan / Keluhan</label>
+                    <textarea id="reg-pesan" rows="2" required class="w-full rounded-xl px-3.5 py-2.5 outline-none transition-all leading-relaxed" style="background-color: var(--portal-bg); border: 1px solid var(--portal-border); color: var(--portal-text);" placeholder="Tanya bantuan RTLH..."></textarea>
                 </div>
-                <button type="submit" class="w-full bg-[#d6fb00] hover:bg-[#ecffb6] text-[#0a1a1f] font-bold py-3 rounded-xl transition-all text-[11px] mt-1 uppercase tracking-wider">Mulai Percakapan</button>
+                <button type="submit" class="w-full font-bold py-3 rounded-xl transition-all text-[11px] mt-1 uppercase tracking-wider" style="background-color: var(--portal-brand); color: var(--portal-bg);">Mulai Percakapan</button>
             </form>
         </div>
 
         <div id="live-chat-section" class="hidden flex flex-col h-[420px]">
-            <div id="chat-body" class="flex-1 p-4 overflow-y-auto space-y-3 bg-[#090b0f] custom-scroll">
+            <div id="chat-body" class="flex-1 p-4 overflow-y-auto space-y-3 custom-scroll" style="background-color: var(--portal-bg);">
                 <div class="flex justify-start">
-                    <div class="bg-[#d6fb00]/5 border border-[#d6fb00]/20 text-zinc-300 text-xs p-3 rounded-2xl rounded-tl-none max-w-[85%] leading-relaxed">
+                    <div class="text-xs p-3 rounded-2xl rounded-tl-none max-w-[85%] leading-relaxed" style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); color: var(--portal-text-muted);">
                         Halo! Ada yang bisa saya bantu seputar perumahan Jawa Tengah?
                     </div>
                 </div>
             </div>
-            <div class="p-4 bg-[#0d1f25] border-t border-[#d6fb00]/20">
+            <div class="p-4" style="background-color: var(--portal-bg-card); border-top: 1px solid var(--portal-border);">
                 <form id="chat-form" class="flex items-center gap-2">
-                    <input type="text" id="chat-input" class="flex-1 bg-[#d6fb00]/5 border border-[#d6fb00]/20 focus:border-[#d6fb00]/40 rounded-xl px-4 py-3 text-white text-xs outline-none transition-all placeholder-[#5a7a80]" placeholder="Ketik pesan...">
-                    <button type="submit" class="bg-[#d6fb00] hover:bg-[#ecffb6] text-[#0a1a1f] w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0"><i class="fa-solid fa-paper-plane text-xs"></i></button>
+                    <input type="text" id="chat-input" class="flex-1 rounded-xl px-4 py-3 text-xs outline-none transition-all" style="background-color: var(--portal-bg); border: 1px solid var(--portal-border); color: var(--portal-text);" placeholder="Ketik pesan...">
+                    <button type="submit" class="w-10 h-10 rounded-xl flex items-center justify-center transition-all shrink-0" style="background-color: var(--portal-brand); color: var(--portal-bg);"><i class="fa-solid fa-paper-plane text-xs"></i></button>
                 </form>
             </div>
         </div>
@@ -205,16 +131,15 @@
 
     <!-- FAB Button -->
     <button @click="chatOpen ? chatOpen = false : helpOpen = !helpOpen" class="help-fab animate-glow">
-        <i class="fa-solid transition-transform duration-300" :class="helpOpen || chatOpen ? 'fa-xmark' : 'fa-headset'"></i>
+        <i class="fa-solid transition-transform duration-300" :class="helpOpen || chatOpen ? 'fa-xmark' : 'fa-circle-question'"></i>
     </button>
 </div>
 
 <!-- ============================================================
      SWIPER JS
      ============================================================ -->
-<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@11.2.10/swiper-bundle.min.js"></script>
 <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-<script src="https://unpkg.com/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
 <script>
     // Initialize AOS
     AOS.init({
@@ -223,25 +148,16 @@
         offset: 50,
     });
 
-    // Initialize Lenis
-    const lenis = new Lenis({
-        duration: 1.2,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        direction: 'vertical',
-        gestureDirection: 'vertical',
-        smooth: true,
-        mouseMultiplier: 1,
-        smoothTouch: false,
-        touchMultiplier: 2,
-        infinite: false,
+    document.addEventListener('DOMContentLoaded', function () {
+        // Langsung tanpa requestAnimationFrame: rAF tidak menembak di tab
+        // background, jadi skeleton bisa tertahan sampai tab difokuskan.
+        // Skeleton kini mulai tersembunyi (delay-appear 250ms di head.php),
+        // sehingga tidak ada transisi yang perlu ditunggu satu frame.
+        var initialSkeleton = document.getElementById('page-loading-skeleton');
+        if (initialSkeleton) initialSkeleton.classList.add('is-hidden');
     });
 
-    function raf(time) {
-        lenis.raf(time);
-        requestAnimationFrame(raf);
-    }
-
-    requestAnimationFrame(raf);
+    // Lenis smooth scroll disabled - panel now uses native overflow-y scroll
 </script>
 
 <!-- ============================================================
@@ -267,9 +183,12 @@ $(document).ready(function() {
                     $('#pre-chat-section').addClass('hidden');
                     $('#live-chat-section').removeClass('hidden');
                     muatChat();
-                } else { alert('Gagal memulai sesi.'); }
+                } else { KPKP.notify.error('Gagal memulai sesi.'); }
             },
-            error: function(xhr) { console.error(xhr.responseText); }
+            error: function(xhr) {
+                console.error(xhr.responseText);
+                KPKP.notify.error('Gagal terhubung ke layanan chat.');
+            }
         });
     });
 
@@ -354,4 +273,313 @@ function globalSystem() {
         }
     }
 }
+
+// ============================================================
+// TAB NAVIGATION LOADER
+// ============================================================
+// Link navbar bertanda [data-tab-link] tidak pindah halaman penuh -
+// isi #page-content-wrapper ditukar via fetch AJAX, lalu
+// script di dalamnya dijalankan ulang (urut, menunggu script eksternal
+// seperti Leaflet/Chart.js selesai load sebelum script berikutnya jalan
+// - sama seperti urutan pemuatan halaman normal), Alpine & AOS di-init
+// ulang untuk konten baru, dan URL di-update lewat history API supaya
+// tombol back/forward & reload/bookmark tetap berfungsi wajar.
+(function () {
+    // Maps sub-page tab keys to their parent tab, so the correct
+    // main tab stays highlighted when a sub-page is loaded via AJAX.
+    var TAB_GROUPS = {
+        simulasi_kpr: 'perumahan',
+        panduan_desain: 'perumahan',
+        golek_omah: 'perumahan',
+        cari_rumah: 'perumahan',
+        solusi_pembiayaan: 'perumahan',
+        warga_pendataan: 'perumahan',
+        etalase: 'perumahan',
+        sebaran: 'kawasan',
+        // sebaran_rusun / profil_kumuh / sebaran_sdgs dicabut 29 Jul 2026 (A1).
+        info_tanah: 'pertanahan',
+        sertifikasi_tanah: 'pertanahan',
+        sengketa: 'pertanahan',
+        bank_tanah: 'pertanahan',
+        pengembang_list: 'pengembang',
+        pengembang_syarat: 'pengembang',
+        pengembang_formulir: 'pengembang',
+        statistika: 'bankdata'
+    };
+
+    function setActiveTabKey(key) {
+        // Link tanpa key (loader global) → pertahankan highlight tab sekarang.
+        if (!key) return;
+        // Remove active from all portal tabs
+        document.querySelectorAll('.portal-tab-btn').forEach(function (el) {
+            el.classList.remove('active');
+        });
+
+        // Resolve sub-page key to parent tab key
+        var tabKey = TAB_GROUPS[key] || key;
+
+        // Activate the matching main tab
+        var activeTab = document.querySelector('.portal-tab-btn[data-tab-key="' + tabKey + '"]');
+        if (activeTab) activeTab.classList.add('active');
+    }
+
+    // Jalankan ulang <script> yang ikut masuk lewat innerHTML (browser
+    // tidak otomatis mengeksekusinya), URUT satu-satu - script eksternal
+    // (src=...) ditunggu sampai 'load' dulu sebelum lanjut ke script
+    // berikutnya, supaya library seperti Leaflet/Chart.js sudah siap
+    // saat script inline yang memakainya dijalankan.
+    function reExecuteScripts(wrapper) {
+        var scripts = Array.prototype.slice.call(wrapper.querySelectorAll('script'));
+        return scripts.reduce(function (chain, oldScript) {
+            return chain.then(function () {
+                return new Promise(function (resolve) {
+                    var newScript = document.createElement('script');
+                    for (var i = 0; i < oldScript.attributes.length; i++) {
+                        var attr = oldScript.attributes[i];
+                        newScript.setAttribute(attr.name, attr.value);
+                    }
+                    newScript.textContent = oldScript.textContent;
+                    if (newScript.src) {
+                        newScript.onload = resolve;
+                        newScript.onerror = resolve; // jangan macet kalau CDN gagal
+                        oldScript.replaceWith(newScript);
+                    } else {
+                        oldScript.replaceWith(newScript); // inline: jalan sinkron saat disisipkan
+                        resolve();
+                    }
+                });
+            });
+        }, Promise.resolve());
+    }
+
+    function reinitContent(wrapper, mutationsDeferred) {
+        // Halaman ini sudah lama "DOMContentLoaded" sejak load pertama -
+        // script per-halaman yang menunggu event itu (pola umum di proyek
+        // ini) tidak akan pernah jalan lagi kalau tidak di-shim begini.
+        var originalAdd = document.addEventListener.bind(document);
+        document.addEventListener = function (type, listener, options) {
+            if (type === 'DOMContentLoaded') { listener(); return; }
+            return originalAdd(type, listener, options);
+        };
+
+        return reExecuteScripts(wrapper).then(function () {
+            document.addEventListener = originalAdd;
+            if (mutationsDeferred && window.Alpine && Alpine.flushAndStopDeferringMutations) {
+                Alpine.flushAndStopDeferringMutations();
+            }
+            if (window.Alpine) {
+                Alpine.initTree(wrapper);
+            }
+            if (window.AOS) AOS.refreshHard();
+        }).catch(function (error) {
+            document.addEventListener = originalAdd;
+            if (mutationsDeferred && window.Alpine && Alpine.flushAndStopDeferringMutations) {
+                Alpine.flushAndStopDeferringMutations();
+            }
+            throw error;
+        });
+    }
+
+    var SKELETON_HTML = '<div class="page-skeleton animate-pulse flex min-h-full flex-col py-4 sm:py-6 px-1 sm:px-2 space-y-4">'
+        + '<div class="flex items-center gap-2 mb-3"><div class="w-4 h-4 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-3 w-36 rounded bg-[color:var(--portal-skeleton)]"></div></div>'
+        + '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">'
+        + '<div class="rounded-2xl p-3.5 sm:p-4 space-y-3" style="background:#fff;border: 1px solid var(--portal-border);min-height:120px"><div class="w-6 h-6 rounded-lg bg-[#0a1a1f]/6"></div><div class="h-3.5 w-3/4 rounded bg-[#0a1a1f]/6"></div><div class="space-y-1.5"><div class="h-2 w-full rounded bg-[#0a1a1f]/5"></div><div class="h-2 w-2/3 rounded bg-[#0a1a1f]/5"></div></div><div class="mt-auto pt-2.5"><div class="h-5 w-20 rounded-full bg-[#0a1a1f]/6"></div></div></div>'
+        + '<div class="rounded-2xl p-3.5 sm:p-4 space-y-3" style="background:#fff;border: 1px solid var(--portal-border);min-height:120px"><div class="w-6 h-6 rounded-lg bg-[#0a1a1f]/6"></div><div class="h-3.5 w-2/3 rounded bg-[#0a1a1f]/6"></div><div class="space-y-1.5"><div class="h-2 w-full rounded bg-[#0a1a1f]/5"></div><div class="h-2 w-1/2 rounded bg-[#0a1a1f]/5"></div></div><div class="mt-auto pt-2.5"><div class="h-5 w-20 rounded-full bg-[#0a1a1f]/6"></div></div></div>'
+        + '<div class="rounded-2xl p-3.5 sm:p-4 space-y-3 hidden sm:block" style="background:#fff;border: 1px solid var(--portal-border);min-height:120px"><div class="w-6 h-6 rounded-lg bg-[#0a1a1f]/6"></div><div class="h-3.5 w-1/2 rounded bg-[#0a1a1f]/6"></div><div class="space-y-1.5"><div class="h-2 w-full rounded bg-[#0a1a1f]/5"></div><div class="h-2 w-3/4 rounded bg-[#0a1a1f]/5"></div></div><div class="mt-auto pt-2.5"><div class="h-5 w-20 rounded-full bg-[#0a1a1f]/6"></div></div></div>'
+        + '</div></div>';
+
+    var loadToken = 0;
+    function loadTab(url, key, push) {
+        var wrapper = document.getElementById('page-content-wrapper');
+        if (!wrapper) { window.location.href = url; return; }
+        var panel = wrapper.closest('.portal-panel');
+        var myToken = ++loadToken;
+
+        /* Permintaan user 17 Agt 2026: tautan yang DIGERBANG login (bukan
+           tombol "Masuk" navbar) menampilkan modal, bukan navigasi penuh -
+           lihat components/login_modal.php untuk alasan lengkapnya.
+           Dua hal DIREKAM DULU di sini, sebelum langkah 1-2 di bawah
+           mengubahnya secara optimis, supaya bisa DIKEMBALIKAN kalau
+           ternyata hasil fetch-nya adalah gerbang login: tab yang tadi
+           aktif, dan isi wrapper sebelum ditimpa skeleton. Tanpa
+           mengembalikan keduanya, menutup modal tanpa login akan
+           meninggalkan halaman ini macet di skeleton selamanya. */
+        var tabSebelumnya = document.querySelector('.portal-tab-btn.active');
+        var wrapperSebelumnya = wrapper.innerHTML;
+        function batalkanDemiModalLogin() {
+            if (myToken !== loadToken) return; // dikalahkan navigasi lain, jangan ganggu
+            wrapper.style.transition = '';
+            wrapper.style.opacity = '1';
+            wrapper.innerHTML = wrapperSebelumnya;
+            document.querySelectorAll('.portal-tab-btn').forEach(function (el) { el.classList.remove('active'); });
+            if (tabSebelumnya) tabSebelumnya.classList.add('active');
+            window.kpkpShowLoginModal();
+        }
+
+        // 1) Langsung aktifkan tab (progresif - tidak menunggu fetch)
+        setActiveTabKey(key);
+
+        // 2) Pertahankan tinggi panel dan tampilkan skeleton segera.
+        wrapper.style.transition = 'opacity 0.12s ease-out';
+        wrapper.style.opacity = '1';
+        var pageSkeleton = SKELETON_HTML;
+        if (/pengembang\/(sertifikasi|syarat|formulir|profil|dokumen)|warga\/pendataan/i.test(url)) {
+            pageSkeleton = '<div class="page-skeleton animate-pulse min-h-full py-4 sm:py-6 px-1 sm:px-2">'
+                + '<div class="h-3 w-16 rounded bg-[color:var(--portal-skeleton)] mb-2"></div>'
+                + '<div class="h-7 w-64 rounded bg-[color:var(--portal-skeleton)] mb-4"></div>'
+                + '<div class="rounded-2xl overflow-hidden" style="background:var(--portal-bg-card);border:1px solid var(--portal-border)">'
+                + '<div class="flex items-center justify-between p-4 border-b" style="border-color:var(--portal-border)"><div class="h-4 w-44 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-7 w-24 rounded bg-[color:var(--portal-skeleton)]"></div></div>'
+                + '<div class="p-3 space-y-2"><div class="h-8 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-8 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-8 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-8 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-8 rounded bg-[color:var(--portal-skeleton)]"></div></div></div></div>';
+        }
+        if (key === 'panduan_desain') {
+            var designSkeletonCard = '<div class="rounded-2xl overflow-hidden" style="background:#fff;border:1px solid var(--portal-border);min-height:260px">'
+                + '<div class="h-48 bg-[color:var(--portal-skeleton)]"></div>'
+                + '<div class="space-y-2 p-4"><div class="h-2.5 w-24 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-4 w-4/5 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-9 rounded-xl bg-[color:var(--portal-skeleton)]"></div></div></div>';
+            pageSkeleton = '<div class="page-skeleton animate-pulse flex min-h-full flex-col py-4 sm:py-6 px-1 sm:px-2 space-y-4">'
+                + '<div class="flex items-center gap-2 mb-3"><div class="w-4 h-4 rounded bg-[color:var(--portal-skeleton)]"></div><div class="h-3 w-36 rounded bg-[color:var(--portal-skeleton)]"></div></div>'
+                + '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">'
+                + designSkeletonCard.repeat(5)
+                + '</div></div>';
+        }
+        wrapper.innerHTML = pageSkeleton;
+        if (panel) panel.scrollTop = 0;
+
+        // 3) Fetch konten baru
+        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+            .then(function (res) {
+                if (myToken !== loadToken) return null;
+                // res.redirected: halaman ber-guard (mis. warga/pendataan tanpa
+                // login) me-redirect ke /login - tanpa cek ini halaman login
+                // UTUH tersuntik ke dalam panel. Jatuhkan ke navigasi penuh -
+                // KECUALI tujuan redirect-nya persis Auth/login DAN modalnya
+                // tersedia, yang berarti gerbang_login() sudah mencatat
+                // intended_url = url yang barusan digerbangi (dilakukan
+                // server pada permintaan fetch ini juga, terlepas dari
+                // hasilnya ditampilkan sebagai modal atau tidak) - modal
+                // cukup ditampilkan, bukan navigasi. Redirect ke tujuan LAIN
+                // (mis. Auth/akses_ditolak - sudah login tapi salah peran)
+                // TETAP jatuh ke navigasi penuh seperti sediakala.
+                if (!res.ok) { window.location.href = url; return null; }
+                if (res.redirected) {
+                    if (window.kpkpShowLoginModal && /\/Auth\/login(\?|$)/i.test(res.url)) {
+                        batalkanDemiModalLogin();
+                        return null;
+                    }
+                    window.location.href = url; return null;
+                }
+                // Bukan HTML (PDF/gambar/unduhan) → biarkan browser menanganinya.
+                if (((res.headers.get('content-type')) || '').indexOf('text/html') === -1) {
+                    window.location.href = url; return null;
+                }
+                return res.text();
+            })
+            .then(function (html) {
+                if (html === null || html === undefined || myToken !== loadToken) return;
+                // Dokumen utuh (<!doctype/<html) = halaman berdiri sendiri yang
+                // tidak punya cabang partial AJAX - jangan disuntik ke panel.
+                if (/^\s*(<!doctype|<html)/i.test(html)) { window.location.href = url; return; }
+                if (!html.trim()) html = '<div class="page-skeleton animate-pulse min-h-full"></div>';
+                // 4) Fade out skeleton → inject konten baru
+                wrapper.style.transition = 'opacity 0.1s ease-out';
+                wrapper.style.opacity = '0';
+                setTimeout(function () {
+                    if (myToken !== loadToken) return;
+                    var mutationsDeferred = !!(window.Alpine && Alpine.deferMutations);
+                    if (mutationsDeferred) Alpine.deferMutations();
+                    wrapper.innerHTML = html;
+                    reinitContent(wrapper, mutationsDeferred).then(function () {
+                        if (push) history.pushState({ tabUrl: url, tabKey: key }, '', url);
+                        if (panel) panel.scrollTop = 0;
+                        // 5) Fade in konten baru - halus
+                        wrapper.style.transition = 'opacity 0.25s ease-in';
+                        wrapper.style.opacity = '1';
+                    }).catch(function () {
+                        // Jangan biarkan error script mengunci panel dalam keadaan opacity 0.
+                        wrapper.style.opacity = '1';
+                    });
+                }, 100);
+            })
+            .catch(function () {
+                if (myToken === loadToken) window.location.href = url;
+            });
+    }
+
+    // SEMUA link internal lewat jalur progresif, bukan hanya yang ditandai
+    // data-tab-link. Kelayakannya diputuskan dari RESPONS (redirect / bukan
+    // text/html / dokumen utuh → jatuh ke navigasi penuh di loadTab), jadi
+    // halaman baru otomatis ikut tanpa perlu menandai link satu-satu.
+    document.addEventListener('click', function (e) {
+        var link = e.target.closest('a');
+        if (!link || !link.href || e.defaultPrevented) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        if (link.target === '_blank' || link.hasAttribute('download')) return;
+        var href = link.getAttribute('href') || '';
+        if (href === '' || href.charAt(0) === '#' || /^(javascript:|mailto:|tel:)/i.test(href)) return;
+        if (link.hostname !== window.location.hostname) return;
+        // Anchor di halaman yang sama → biarkan browser scroll sendiri.
+        if (link.pathname === window.location.pathname && link.hash) return;
+        // Area yang PASTI berdiri sendiri (shell auth/dashboard, aksi sesi):
+        // langsung navigasi penuh tanpa membuang satu fetch percobaan.
+        //
+        // `cari_rumah` sengaja IKUT di sini (14 Agt 2026) - BUKAN "berdiri
+        // sendiri" seperti yang lain, tapi PUNYA MASALAH SENDIRI: halaman itu
+        // SELALU butuh satu fetch susulan (cari_wil() mengambil kartu rumah
+        // lewat AJAX-nya sendiri, terpisah dari HTML halamannya). Lewat jalur
+        // progresif ini artinya DUA fetch berurutan sebelum kartu tampil -
+        // shell loadTab() dulu, BARU cari_wil() - bukan paralel. Diukur
+        // langsung 14 Agt 2026 lewat trace performance.now(): shell 2,6 detik
+        // + cari_wil 3,6 detik = 6,6 detik total, dua kali lipat dari akses
+        // langsung (satu page-load + satu cari_wil, tanpa fetch shell). Itu
+        // sebabnya user melapor "harus refresh dulu" HANYA lewat tombol
+        // Golek Omah (yang lewat jalur ini) - akses langsung ke /cari_rumah
+        // sudah cepat dan tidak pernah kena laporan yang sama. Navigasi penuh
+        // di sini menghapus fetch shell itu - tinggal satu round-trip
+        // (cari_wil), sama seperti akses langsung.
+        // `daftar` DICABUT dari daftar ini 17 Agt 2026 - satu-satunya alasan
+        // ia ada di sini adalah menangkap pendaftaran akun (Auth/register,
+        // sudah tertangkap `register` & `Auth\/` di atas), tapi kata itu
+        // juga cocok dengan KemitraanPortal/daftar/{kkn,magang} - method
+        // yang TIDAK berdiri sendiri sama sekali dan justru salah satu
+        // sasaran modal login (lihat components/login_modal.php). Akibatnya
+        // tombol "Daftar Sekarang" di halaman KKN/Magang selalu jatuh ke
+        // navigasi penuh, walau anonim mengklik dari halaman yang sudah
+        // dimuat progresif - modalnya tidak pernah sempat dicoba.
+        if (/(login|register|Auth\/|akun|admin|Admin|Pengaturan|User_Profile|cari_rumah)/.test(link.pathname)) return;
+        // S2 - opt-out dihormati SEBELUM fetch, bukan sesudah. Tanpa ini,
+        // tautan yang sengaja ditandai tetap difetch dulu lalu baru jatuh ke
+        // navigasi penuh: dua GET untuk satu klik, dan `Umum::detail()`
+        // menaikkan `view_count` dua kali per klik.
+        if (link.hasAttribute('data-no-page-transition')
+            || link.closest('[data-no-page-transition]')) return;
+        e.preventDefault();
+        // Key dari atribut sendiri, atau pinjam dari link nav lain ber-href sama.
+        var key = link.getAttribute('data-tab-key');
+        if (!key) {
+            var kin = document.querySelector('[data-tab-link][data-tab-key][href="' + link.href + '"]');
+            if (kin) key = kin.getAttribute('data-tab-key');
+        }
+        loadTab(link.getAttribute('href'), key, true);
+    });
+
+    // S1 - entry AWAL direkam sebagai state, sebelum pushState pertama.
+    // Tanpa ini, Back dari halaman pertama menghasilkan popstate ber-state
+    // null: URL kembali ke alamat lama sementara isinya tetap halaman kedua.
+    if (!history.state || !history.state.tabUrl) {
+        var kunciAwal = null;
+        var navAwal = document.querySelector('[data-tab-link][data-tab-key].active, [data-tab-link][data-tab-key][aria-current]');
+        if (navAwal) kunciAwal = navAwal.getAttribute('data-tab-key');
+        history.replaceState({ tabUrl: window.location.href, tabKey: kunciAwal }, '', window.location.href);
+    }
+
+    window.addEventListener('popstate', function (e) {
+        if (e.state && e.state.tabUrl) {
+            loadTab(e.state.tabUrl, e.state.tabKey, false);
+            return;
+        }
+        // State kosong = entry yang tidak pernah kita rekam (mis. hasil
+        // navigasi penuh). Muat URL yang sedang aktif supaya isi layar selalu
+        // cocok dengan alamatnya - jangan diam.
+        loadTab(window.location.href, null, false);
+    });
+})();
 </script>

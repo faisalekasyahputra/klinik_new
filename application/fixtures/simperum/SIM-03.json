@@ -1,0 +1,37 @@
+{
+  "fixture_id": "SIM-03",
+  "synthetic": true,
+  "response_status": "found",
+  "api_version": "simulation-v1",
+  "identity": {
+    "nik": "0000000000000003",
+    "family_card_number": "0000000000001003",
+    "full_name": "Warga Simulasi Calon Lahan",
+    "address": "Alamat Sintetis Kabupaten Kendal",
+    "birth_date": "1988-03-03",
+    "gender_code": "male"
+  },
+  "socioeconomic": {
+    "occupation_code": "daily_laborer",
+    "income_band_code": "2_7_3_1",
+    "welfare_decile": 3,
+    "has_savings": true,
+    "self_help_capability_code": "capable",
+    "self_help_amount": 5000000
+  },
+  "housing": {
+    "housing_status_code": "rent",
+    "owns_candidate_land": true,
+    "candidate_land_title_code": "hm",
+    "candidate_land_origin_code": "inheritance",
+    "land_length_m": 12,
+    "land_width_m": 7,
+    "land_area_m2": 84,
+    "occupant_count": 3,
+    "family_count": 1
+  },
+  "structure": {},
+  "sanitation": {},
+  "location": {"kabupaten_id": 3324},
+  "missing_fields": []
+}

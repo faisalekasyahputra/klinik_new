@@ -60,28 +60,57 @@ $route['forgot-password']          = 'Auth/forgot_password';
 $route['verify/(:any)']            = 'Auth/verify_email/$1';
 $route['onboarding']               = 'Auth/onboarding';
 
+// --- Web Push admin (CSRF tetap berlaku pada subscribe/unsubscribe) ---
+$route['push/config']              = 'Push/config';
+$route['push/subscribe']           = 'Push/subscribe';
+$route['push/unsubscribe']         = 'Push/unsubscribe';
+
+// --- Pendataan warga ---
+$route['warga/pendataan']          = 'Warga/pendataan';
+
 // --- Pengaturan User ---
 $route['akun']                     = 'Pengaturan/index';
+$route['akun/profil']              = 'Pengaturan/profil';
 $route['akun/update']              = 'Pengaturan/update_profile';
 $route['akun/delete']              = 'Pengaturan/delete_account';
+$route['akun/update_pengembang']   = 'Pengaturan/update_pengembang_profile';
 
 // --- Clean URLs for Index controller ---
+$route['golek_omah']               = 'Index/golek_omah';
+$route['psu']                      = 'Psu/index';
+$route['solusi_pembiayaan']        = 'Program/solusi_pembiayaan';
+$route['detail_perum']             = 'Index/detail_perum';
+$route['solusi_pembiayaan/hasil']  = 'Program/hasil_diagnosa';
+$route['solusi_pembiayaan/ajukan'] = 'Program/ajukan_solusi';
+$route['solusi_pembiayaan/cek-tiket'] = 'Program/cek_tiket';
+$route['cek_status_pengajuan']   = 'Program/cek_status_pengajuan';
 $route['umum']                     = 'Index/umum';
 $route['detail_perum/(:any)']      = 'Index/detail_perum/$1';
 $route['profil']                   = 'Index/profil';
 $route['tugas_pokok']              = 'Index/tugas_pokok';
-$route['struktur']                 = 'Index/struktur';
+// $route['struktur'] dicabut 29 Jul 2026 (A4) - halaman memajang nama pejabat
+// tanpa sumber data. Alasan lengkap di Index.php.
 $route['pengembang']               = 'Index/pengembang';
 $route['kemitraan']                = 'Index/kemitraan';
+$route['panduan_desain']           = 'Index/panduan_desain';
+$route['panduan_desain/(:num)']     = 'Index/detail_desain/$1';
+$route['cari_rumah']               = 'Index/cari_rumah';
 $route['listkabupaten']            = 'Index/listkabupaten';
 $route['simulasi_kpr']             = 'Index/simulasi_kpr';
 
 // --- Bank Desain & Data Spasial ---
 $route['materia']                  = 'Index/materia';
 $route['sebaran']                  = 'Index/sebaran';
-$route['sebaran_rusun']            = 'Index/sebaran_rusun';
-$route['profil_kumuh']             = 'Index/profil_kumuh';
-$route['sebaran_sdgs']             = 'Index/sebaran_sdgs';
+
+/* Kawasan Kumuh (API Sikaper). Rute LOWERCASE dituliskan eksplisit, dan itu
+   bukan hiasan: `cek_rtlh` tidak punya entri di sini dan akibatnya 404 di
+   production (Linux peka huruf) walau jalan di lokal Windows - lihat §0e.
+   Jangan andalkan pencocokan nama controller. */
+$route['kawasan_kumuh']            = 'Kawasan_kumuh/index';
+$route['kawasan_kumuh/detail/(:any)'] = 'Kawasan_kumuh/detail/$1';
+// sebaran_rusun / profil_kumuh / sebaran_sdgs dicabut 29 Jul 2026 (A1) -
+// angka literal tanpa sumber, plus rusunawa bernama nyata dengan atribut
+// karangan. Alasan lengkap di Index.php.
 
 // --- Pertanahan ---
 $route['info_tanah']               = 'Index/info_tanah';
@@ -92,6 +121,13 @@ $route['bank_tanah']               = 'Index/bank_tanah';
 // --- User Profile ---
 $route['pengaturan']               = 'Index/pengaturan';
 
+// --- Portal Tab Content ---
+$route['tab/perumahan']            = 'Index/tab_perumahan';
+$route['tab/kawasan']              = 'Index/tab_kawasan';
+$route['tab/pertanahan']           = 'Index/tab_pertanahan';
+$route['tab/pengembang']           = 'Index/tab_pengembang';
+$route['tab/bankdata']             = 'Index/tab_bankdata';
+
 // --- AJAX Endpoints ---
 $route['ajax_articles']            = 'Index/ajax_articles';
 $route['ajax_house_designs']       = 'Index/ajax_house_designs';
@@ -100,4 +136,7 @@ $route['cari_wil']                 = 'Index/cari_wil';
 $route['load_more']                = 'Index/load_more';
 
 // --- API Integrations ---
-$route['sikaper']                  = 'Sikaper/index';
+// $route['sikaper'] dicabut 29 Jul 2026 (B6). Menghapus alias SAJA tidak cukup -
+// CI3 tetap merutekan /Sikaper/index secara konvensional, jadi controller dan
+// view-nya ikut dihapus. Library Sikaper_api dan config-nya SENGAJA ditinggal:
+// nasibnya mengikuti keputusan #5 (apakah ada kanal rotasi kredensial).

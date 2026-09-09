@@ -39,8 +39,14 @@ class Ternak_api {
         $url = $this->api_url . '/public/sites/' . $this->site_slug;
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+        // Baris VERIFYHOST ada DUA KALI di sini: `2` lalu langsung ditimpa
+        // `false`. Yang berlaku yang terakhir, jadi verifikasi nama host MATI -
+        // rantai sertifikat diperiksa, tapi tidak ada yang memastikan sertifikat
+        // itu memang milik host yang kita tuju. Sertifikat sah dari domain mana
+        // pun akan diterima. Baris `2` di atasnya membuatnya terbaca aman
+        // sekilas; itu yang membuatnya bertahan lama. Yang menimpa dibuang.
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($ch, CURLOPT_TIMEOUT, 15);
         
         $response = curl_exec($ch);
@@ -79,7 +85,20 @@ class Ternak_api {
     public function get_public_archives() { return $this->_extract('archives'); }
     public function get_public_videos() { return $this->_extract('videos'); }
     public function get_public_house_designs() { return $this->_extract('houseDesigns'); }
-    public function get_public_liliput_designs() { return $this->_extract('prototypeDesigns'); }
+    /**
+     * Desain PROTOTIPE, bukan liliput.
+     *
+     * Butir 4 putaran 2. Metode ini dulu bernama `get_public_liliput_designs()`
+     * padahal yang dikembalikannya `prototypeDesigns`, dan diperiksa langsung ke
+     * API 11 Agt 2026: sembilan barisnya bertipe 22/72 sampai 36/72, bukan rumah
+     * liliput. Nama yang menjanjikan hal yang datanya tidak dukung lebih
+     * berbahaya daripada nama yang jelek: pemakai berikutnya akan menayangkannya
+     * dengan label "liliput UGM" di halaman publik dan tidak ada yang merah.
+     *
+     * Rumah liliput UGM memang BELUM ADA sumbernya di API ini. Itu dicatat di
+     * layar sebagai keterangan, bukan diisi dengan data yang kebetulan ada.
+     */
+    public function get_public_prototype_designs() { return $this->_extract('prototypeDesigns'); }
     public function get_public_regulations() { return $this->_extract('regulations'); }
     
     public function get_public_site_info() {

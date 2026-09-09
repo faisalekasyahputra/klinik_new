@@ -13,19 +13,54 @@
         }
     </script>
 
-    <?php $roleUser = $this->session->userdata('role') ? ucwords(str_replace('_', ' ', $this->session->userdata('role'))) : 'Super Admin'; ?>
+    <?php
+    // Sama seperti admin/layouts/topbar.php/sidebar.php - lihat komentar
+    // lengkap di sana. Sejak role 'universitas' berdiri sendiri (22 Agt
+    // 2026, gantikan penyamaran label "mahasiswa" -> "Universitas"),
+    // ucwords() generik di bawah sudah cukup - tidak perlu kasus khusus lagi.
+    $peranSesi = $this->session->userdata('role');
+    $roleUser = $peranSesi ? ucwords(str_replace('_', ' ', $peranSesi)) : 'Super Admin';
+    ?>
     <title><?= isset($title) ? $title . ' - ' : '' ?><?= $roleUser ?> | Klinik PKP</title>
     
     <!-- Favicon -->
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
     <link rel="shortcut icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
+    <link rel="manifest" href="<?= base_url('manifest.webmanifest') ?>">
+    <meta name="theme-color" content="#00545f">
+    <meta name="csrf-token-name" content="<?= html_escape($this->security->get_csrf_token_name()) ?>">
+    <meta name="csrf-token-hash" content="<?= html_escape($this->security->get_csrf_hash()) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
+    <?php // Hasil panen kelas view admin - first paint bergaya penuh tanpa
+          // menunggu CDN. Regenerasi: php docs/engineering/panen_tailwind.php admin
+          // CDN di bawah DIUBAH ke defer (dulu blocking: layar putih sampai
+          // ~110KB JS termuat & seluruh CSS di-generate ulang di setiap load)
+          // dan kini hanya jaring pengaman untuk kelas yang belum terpanen. ?>
+    <link rel="stylesheet" href="<?= base_url('assets/css/tailwind-admin.css?v=' . filemtime('assets/css/tailwind-admin.css')) ?>">
+    <script defer src="https://cdn.tailwindcss.com"></script>
+    <?php // `type="module"` WAJIB, jangan dilepas. Skrip inline biasa dieksekusi
+          // saat parsing - sebelum CDN yang `defer` di atas jalan - sehingga
+          // `tailwind` masih undefined dan SELURUH config di bawah hilang tanpa
+          // suara. CDN lalu berjalan dengan default `darkMode: 'media'`, jadi
+          // setiap kelas `dark:*` yang belum terpanen mengikuti preferensi OS,
+          // BUKAN tombol tema. Akibat nyatanya: di mode terang pada perangkat
+          // ber-OS gelap, `text-gray-900 dark:text-white` tetap putih - teks
+          // putih di kartu putih. Logo sidebar, "Portal Klinik PKP", dan tiap
+          // judul kartu tidak terbaca. Warna `brand-*` tetap benar sepanjang
+          // itu waktu karena datang dari CSS hasil panen, bukan dari CDN, dan
+          // itulah yang menyamarkan bug ini sejak `defer` ditambahkan.
+          //
+          // Skrip `type="module"` ditunda seperti `defer` DAN dieksekusi
+          // menurut urutan dokumen, jadi ia jalan sesudah CDN. Diverifikasi:
+          // tailwind.config.darkMode terbaca 'class', dan judul kartu
+          // rgb(17,24,39) di terang / rgb(255,255,255) di gelap.
+          // `defer` pada skrip inline TIDAK berlaku - spesifikasi mengabaikannya. ?>
+    <script type="module">
         tailwind.config = {
             darkMode: 'class',
             theme: {
@@ -48,15 +83,73 @@
         }
     </script>
     <!-- Alpine.js -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <!-- Phosphor Icons -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
+    <script defer src="<?= base_url('assets/js/admin-web-push.js?v=' . filemtime('assets/js/admin-web-push.js')) ?>"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
+    <!-- Loader progresif dashboard: klik sidebar/link internal = swap #main-content, bukan full reload -->
+    <script defer src="<?= base_url('assets/js/admin-progressive.js?v=' . filemtime('assets/js/admin-progressive.js')) ?>"></script>
     <style>
-        /* Main Content Entry Animation */
+        /* Penanda aktif sidebar. Sejak menu ikut dikirim server tiap pindah
+           halaman, kelas Tailwind-nya sudah benar sendiri - aturan ini tinggal
+           jaring pengaman untuk `aria-current` yang dirender server. */
+        aside a[aria-current="page"] { background: #eff6ff; color: #1d4ed8; }
+        .dark aside a[aria-current="page"] { background: rgba(214, 251, 0, .1); color: #d6fb00; }
+
+        /* Daftar pilihan <select> DI DALAM shell admin.
+           Kelas Tailwind `bg-transparent` cuma mengatur kotak yang terlihat;
+           daftar yang terbuka digambar sistem operasi dan mewarisi warnanya
+           sendiri. Di mode gelap hasilnya latar putih dengan teks abu terang -
+           pilihan yang tidak sedang disorot praktis tidak terbaca.
+           Warna DIPAKSA di sini, pada elemennya maupun pada <option>, karena
+           tidak semua peramban mewariskan warna select ke daftarnya. */
+        .dark select { background-color: #0f2933; color: #fff; }
+        .dark select option { background-color: #0f2933; color: #fff; }
+        select option { background-color: #fff; color: #111827; }
+        .dark select option:checked,
+        .dark select option:hover { background-color: rgba(214, 251, 0, .15); color: #d6fb00; }
+    </style>
+    <!-- Phosphor Icons - defer: ikon menyusul sepersekian detik, halaman tidak menunggu -->
+    <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.2"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        /*
+         * Main Content Entry Animation.
+         *
+         * `backwards`, BUKAN `both` - dan satu kata itu yang dulu mematahkan
+         * SETIAP modal di seluruh layar admin.
+         *
+         * `both` = `backwards` + `forwards`. Bagian `forwards` membuat keyframe
+         * terakhir MENEMPEL selamanya sesudah animasinya habis - termasuk
+         * `transform: translateY(0) scale(1)` dan `filter: blur(0px)`. Keduanya
+         * memang tidak mengubah tampilan (identitas), tapi keberadaannya saja
+         * sudah cukup: elemen ber-transform/filter menjadi CONTAINING BLOCK
+         * untuk `position: fixed` dan membuat STACKING CONTEXT baru.
+         *
+         * Akibatnya, diukur 4 Agt 2026: modal `fixed inset-0 z-50` tidak lagi
+         * menutupi layar melainkan terkurung di dalam `<main>` (x=256 alih-alih
+         * 0), dan karena `#main-content` ber-`z-10`, `z-50` modal itu terkubur
+         * di bawah topbar (z-40) dan sidebar (z-20). Dilaporkan user sebagai
+         * "modalnya tidak muncul karena tertumpuk".
+         *
+         * `backwards` tetap memberi efek masuk yang sama (keadaan `from`
+         * diterapkan sebelum animasi mulai, jadi tidak ada kedipan), tapi
+         * melepaskan transform & filter begitu selesai. Keadaan akhirnya memang
+         * identik dengan keadaan alami elemen, jadi nol yang hilang.
+         */
         #main-content {
-            animation: fade-in-blur 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+            animation: fade-in-blur 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+        }
+        @media (max-width: 767px) {
+            .admin-sidebar {
+                position: fixed !important;
+                inset: 0 auto 0 0 !important;
+                z-index: 60 !important;
+                flex: 0 0 16rem !important;
+                width: 16rem !important;
+                transform: translateX(0) !important;
+            }
+            .admin-main { padding: 1rem; }
+            .admin-topbar { padding-left: 1rem; padding-right: 1rem; }
         }
 
         @keyframes fade-out-blur {

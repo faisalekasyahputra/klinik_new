@@ -5,23 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token-name" content="<?= $this->security->get_csrf_token_name(); ?>">
     <meta name="csrf-token-hash" content="<?= $this->security->get_csrf_hash(); ?>">
-    <title>Masuk — Klinik PKP</title>
+    <title>Masuk - Klinik PKP</title>
     <meta name="description" content="Masuk ke portal layanan perumahan dan kawasan permukiman terpadu Provinsi Jawa Tengah.">
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
     <!-- Styles -->
-    <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . time()) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . filemtime('assets/css/auth-pages.css')) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
 
     <!-- reCAPTCHA v2 -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="auth-page">
+<?php $this->load->view('components/notification_center'); ?>
 
 <div class="auth-split">
 
     <!-- =====================================================
-         LEFT PANEL — Animated Gradient + Branding
+         LEFT PANEL - Animated Gradient + Branding
          ===================================================== -->
     <div class="auth-left" aria-hidden="true">
         <div class="auth-left__gradient"></div>
@@ -73,18 +76,88 @@
             </h1>
             <p class="auth-left__desc">
                 Sistem informasi perumahan dan kawasan permukiman terpadu
-                untuk masyarakat Jawa Tengah — akses data, layanan, dan
+                untuk masyarakat Jawa Tengah - akses data, layanan, dan
                 informasi pembangunan perumahan dalam satu platform.
             </p>
             <div class="auth-left__badge">
                 <i class="fa-solid fa-shield-halved"></i>
                 Disperakim Provinsi Jawa Tengah
             </div>
+
+            <?php
+            // ============================================================
+            // KREDENSIAL DEMO - dikembalikan atas permintaan user 27 Jul 2026
+            // ------------------------------------------------------------
+            // Alasannya: sistem sedang dalam tahap uji coba oleh dinas, dan
+            // tanpa kredensial di layar mereka tidak bisa menelusuri keenam
+            // peran. Ini keputusan sadar, bukan kelalaian.
+            //
+            // SYARAT yang membuatnya boleh ada (lihat AGENTS.md §17 poin 12):
+            // seluruh akun di sini WAJIB akun demo berisi data contoh. Begitu
+            // sistem memuat data warga sungguhan, atau begitu ada akun di sini
+            // yang memegang wewenang nyata, blok ini HARUS dicabut lagi.
+            //
+            // DIPINDAH ke panel kiri 16 Agt 2026 (permintaan user, lihat
+            // gambar bertanda centang) - sebelumnya menumpuk di atas
+            // formulir di panel kanan, mendorong username/password ke bawah
+            // layar. Klik kartu MASIH mengisi form di panel kanan seperti
+            // semula - skrip pengisi-otomatis (di bawah halaman ini)
+            // memanggil getElementById, bukan bergantung posisi DOM.
+            // ============================================================
+            ?>
+            <!-- Demo Accounts Info Box -->
+            <details class="auth-demo" open>
+                <summary>
+                    <i class="fa-solid fa-flask"></i> Kredensial Demo
+                    <span class="auth-demo__hint">klik akun untuk mengisi form</span>
+                </summary>
+                <div class="auth-demo-grid">
+                    <?php
+                    $akun_demo = [
+                        ['Super Admin',           'admin@klinikpkp.jatengprov.go.id'],
+                        ['Warga (Pengaju)',           'warga@example.com'],
+                        ['Pengembang (SRP2)',         'pengembang@example.com'],
+                        /* Dua akun terpisah dengan role BERBEDA sejak 22 Agt 2026
+                           ('universitas' vs 'mahasiswa', lihat config/roles.php +
+                           KemitraanPortal::akses_universitas()/akses_mahasiswa()).
+                           Sampai 21 Agt keduanya berbagi role 'mahasiswa' - KKN
+                           sekarang mendaftarkan kampus (permintaan user 21 Agt
+                           2026, lihat KemitraanPortal::kkn_dashboard()), bukan satu
+                           mahasiswa, jadi akun demonya juga tidak memakai nama
+                           pribadi supaya "Terkirim atas nama akun" di form KKN
+                           tidak menampilkan nama mahasiswa. Magang tetap
+                           per-mahasiswa seperti semula. */
+                        ['Universitas (KKN)',         'universitas@example.com'],
+                        ['Mahasiswa (Magang)',        'mahasiswa@example.com'],
+                        ['Admin Kab/Kota (Semarang)', 'adminkabkota@example.com'],
+                        /* Satu admin_bidang PER BIDANG (5 total, tabel `bidang`) -
+                           permintaan user 16 Agt 2026. Sebelumnya cuma ada contoh
+                           Perumahan; dinas tidak bisa menelusuri bidang lain
+                           (Kawasan, Pertanahan, Perencanaan Teknis, Sekretariat)
+                           tanpa akun uji sendiri-sendiri, dan cakupan per bidang
+                           (Admin_Bidang ter-scope `bidang_kode`) memang tidak bisa
+                           dipinjam dari akun Perumahan. Kredensial akun-akun ini
+                           sama seperti yang lain: password `password`. */
+                        ['Admin Bidang (Perumahan)',            'adminbidang@example.com'],
+                        ['Admin Bidang (Kawasan Permukiman)',   'adminbidang.kawasan@example.com'],
+                        ['Admin Bidang (Pertanahan)',           'adminbidang.pertanahan@example.com'],
+                        ['Admin Bidang (Perencanaan Teknis)',   'adminbidang.perencanaan@example.com'],
+                        ['Admin Bidang (Sekretariat)',          'adminbidang.sekretariat@example.com'],
+                    ];
+                    foreach ($akun_demo as [$label, $email]): ?>
+                    <button type="button" class="auth-demo-card" data-demo-email="<?= html_escape($email) ?>">
+                        <span class="auth-demo-card__role"><?= html_escape($label) ?></span>
+                        <span class="auth-demo-card__email"><?= html_escape($email) ?></span>
+                    </button>
+                    <?php endforeach; ?>
+                </div>
+                <p class="auth-demo-note">Akun uji berisi data contoh. Password semua akun: <code>password</code></p>
+            </details>
         </div>
     </div>
 
     <!-- =====================================================
-         RIGHT PANEL — Login Form
+         RIGHT PANEL - Login Form
          ===================================================== -->
     <div class="auth-right">
         <div class="auth-form-container">
@@ -102,51 +175,16 @@
 
             <h2 class="auth-heading">Selamat Datang 👋</h2>
             <p class="auth-subheading">Masuk ke akun Anda untuk mengakses seluruh layanan portal.</p>
-
-            <!-- Flash Messages -->
-            <?php if ($this->session->flashdata('error')): ?>
-                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--error relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <i class="fa-solid fa-circle-exclamation mr-2"></i>
-                        <?= $this->session->flashdata('error') ?>
-                    </div>
-                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            <?php endif; ?>
-            <?php if ($this->session->flashdata('success')): ?>
-                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--success relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <i class="fa-solid fa-circle-check mr-2"></i>
-                        <?= $this->session->flashdata('success') ?>
-                    </div>
-                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            <?php endif; ?>
-            <?php if ($this->session->flashdata('warning')): ?>
-                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--warning relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <i class="fa-solid fa-triangle-exclamation mr-2"></i>
-                        <?= $this->session->flashdata('warning') ?>
-                    </div>
-                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            <?php endif; ?>
-
-            <!-- Demo Accounts Info Box -->
-            <div style="background: rgba(214, 251, 0, 0.1); border: 1px solid rgba(214, 251, 0, 0.3); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem;">
-                <h3 style="font-size: 0.8rem; font-weight: 700; color: #8aacb0; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.05em;"><i class="fa-solid fa-flask" style="margin-right: 4px;"></i> Kredensial Demo</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; font-size: 0.8rem;">
-                    <button type="button" onclick="document.getElementById('login_email').value='admin@klinikpkp.jatengprov.go.id'; document.getElementById('login_password').value='password';" style="background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 8px; border: 1px solid transparent; cursor: pointer; text-align: left; transition: all 0.2s;" onmouseover="this.style.borderColor='rgba(214,251,0,0.5)';" onmouseout="this.style.borderColor='transparent';">
-                        <div style="color: #8aacb0; font-size: 0.7rem; margin-bottom: 4px;">Admin Dashboard</div>
-                        <div style="color: #fff; font-weight: 600; line-height: 1.4; word-break: break-all;">E: admin@klinikpkp.jatengprov.go.id<br>U: admin<br>P: password</div>
-                    </button>
-                    <button type="button" onclick="document.getElementById('login_email').value='warga@example.com'; document.getElementById('login_password').value='password';" style="background: rgba(255,255,255,0.05); padding: 0.5rem; border-radius: 8px; border: 1px solid transparent; cursor: pointer; text-align: left; transition: all 0.2s;" onmouseover="this.style.borderColor='rgba(214,251,0,0.5)';" onmouseout="this.style.borderColor='transparent';">
-                        <div style="color: #8aacb0; font-size: 0.7rem; margin-bottom: 4px;">Warga (Pengaju)</div>
-                        <div style="color: #fff; font-weight: 600; line-height: 1.4; word-break: break-all;">E: warga@example.com<br>U: warga_demo<br>P: password</div>
-                    </button>
-                </div>
-                <div style="margin-top: 0.5rem; font-size: 0.7rem; color: #8aacb0; text-align: center;">Klik salah satu kotak di atas untuk mengisi form secara otomatis (menggunakan Email).</div>
-            </div>
+            <?php
+            // CATATAN STRUKTUR: dulu ada </div> yatim di sini yang menutup
+            // .auth-form-container terlalu dini - form jadi hidup di luar
+            // container ber-max-width dan tampilan melebar tak rapi. Kotak
+            // Kredensial Demo yang tadinya di sini SUDAH DIPINDAH ke panel
+            // kiri (.auth-left__content, permintaan user 16 Agt 2026 - area
+            // kosong di atas logo/tagline dipakai, bukan lagi mendesak
+            // formulir turun). Cari "KREDENSIAL DEMO" di atas kalau perlu
+            // menyuntingnya.
+            ?>
 
             <!-- Login Form -->
             <form action="<?= base_url('Auth/do_login') ?>" method="POST" id="loginForm">
@@ -247,6 +285,15 @@ document.getElementById('loginForm').addEventListener('submit', function() {
     const btn = document.getElementById('btnLogin');
     btn.classList.add('loading');
     btn.disabled = true;
+});
+
+// Kredensial demo: klik kartu -> isi form
+document.querySelectorAll('.auth-demo-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+        document.getElementById('login_email').value = card.dataset.demoEmail;
+        document.getElementById('login_password').value = 'password';
+        document.getElementById('login_email').focus();
+    });
 });
 </script>
 

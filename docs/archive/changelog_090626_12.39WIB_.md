@@ -1,6 +1,6 @@
-# 📋 CHANGELOG — Klinik PKP
+# 📋 CHANGELOG - Klinik PKP
 ## Dari `klinik_new_2` (Baseline) → `klinik_new` (Current)
-**Tanggal:** 9 Juni 2026 — 12.39 WIB  
+**Tanggal:** 9 Juni 2026 - 12.39 WIB  
 **Baseline (sebelum):** `c:\xampp\htdocs\klinik_new_2`  
 **Current (sesudah):** `c:\xampp\htdocs\klinik_new`
 
@@ -65,7 +65,7 @@ Seluruh file view yang sebelumnya berada di `application/views/` secara flat tel
 ```diff
 + views/pages/auth/login.php          (BARU)
 + views/pages/auth/register.php       (BARU)
-+ views/pages/auth/onboarding.php     (BARU — menggantikan registrasi.php)
++ views/pages/auth/onboarding.php     (BARU - menggantikan registrasi.php)
 + views/pages/auth/verify_pending.php (BARU)
 ```
 
@@ -78,7 +78,7 @@ Seluruh file view yang sebelumnya berada di `application/views/` secara flat tel
 |-------|---------|---------|
 | Login | Hanya Google OAuth popup | Google OAuth + Email/Password tradisional |
 | Register | Tidak ada (otomatis via Google) | Form pendaftaran manual (nama, email, password) |
-| Login field | — | Support email ATAU username |
+| Login field | - | Support email ATAU username |
 | Password | Tidak ada di database | Bcrypt hash, validasi kekuatan di UI |
 | Onboarding | `reg_user/$id` (form profil sederhana) | Halaman onboarding lengkap (username, password, role, NIK, alamat) |
 | Email Verification | Tidak ada | Dummy verification page (`verify_pending.php`) |
@@ -91,7 +91,7 @@ Seluruh file view yang sebelumnya berada di `application/views/` secara flat tel
 
 ### 🗑️ Penghapusan Akun
 - **Sebelum:** Tidak ada fitur hapus akun.
-- **Sesudah:** Modal konfirmasi 2-langkah — user harus mengetik nama akun. Data forum dianonimkan menjadi "Akun Dihapus".
+- **Sesudah:** Modal konfirmasi 2-langkah - user harus mengetik nama akun. Data forum dianonimkan menjadi "Akun Dihapus".
 
 ### 🖼️ Avatar Fallback
 - **Sebelum:** Hanya menampilkan foto Google (`avatar` dari session). Jika kosong, broken image.
@@ -167,7 +167,7 @@ Token CSRF diinjeksikan ke seluruh form POST.
 
 ### Filter Kata Kasar
 ```diff
-+ application/config/profanity.php  (BARU — daftar kata kasar untuk filter forum)
++ application/config/profanity.php  (BARU - daftar kata kasar untuk filter forum)
 ```
 
 ---
@@ -242,10 +242,10 @@ Token CSRF diinjeksikan ke seluruh form POST.
 ### Views (Rewrite Total)
 | View | Perubahan Utama |
 |------|----------------|
-| `awal.php` | Redesign total — hero slideshow, bento grid layanan, pipeline timeline, bank desain carousel |
+| `awal.php` | Redesign total - hero slideshow, bento grid layanan, pipeline timeline, bank desain carousel |
 | `nav.php` | Navbar responsif dengan avatar fallback, dropdown menu, mobile menu Alpine.js |
 | `forum.php` | UI modern dengan profanity filter, like system, nested reply visual |
-| `pengaturan/index.php` | Halaman baru — edit profil + modal hapus akun 2-langkah |
+| `pengaturan/index.php` | Halaman baru - edit profil + modal hapus akun 2-langkah |
 
 ---
 
@@ -312,7 +312,7 @@ Token CSRF diinjeksikan ke seluruh form POST.
 
 ## 🚀 DEPLOYMENT KE PRODUCTION (Hostinger)
 
-**Tanggal:** 9 Juni 2026 — 13:40 WIB  
+**Tanggal:** 9 Juni 2026 - 13:40 WIB  
 **URL Live:** https://palegreen-mink-703421.hostingersite.com/
 
 ### Infrastruktur
@@ -329,13 +329,13 @@ Token CSRF diinjeksikan ke seluruh form POST.
 
 ### Perubahan Config untuk Production
 
-#### `config.php` — base_url dinamis
+#### `config.php` - base_url dinamis
 ```diff
 - $config['base_url'] = 'http://localhost/klinik_new/';
 + $config['base_url'] = getenv('SITE_URL') ?: 'http://localhost/klinik_new/';
 ```
 
-#### `database.php` — credentials dari .env
+#### `database.php` - credentials dari .env
 ```diff
 - 'hostname' => 'localhost',
 - 'username' => 'root',
@@ -347,10 +347,10 @@ Token CSRF diinjeksikan ke seluruh form POST.
 + 'database' => getenv('DB_NAME') ?: 'klinikpkp',
 ```
 
-#### `schema_klinikpkp.sql` — encoding fix
+#### `schema_klinikpkp.sql` - encoding fix
 ```diff
-- Encoding: UTF-16 LE (BOM) — menyebabkan error MySQL import
-+ Encoding: UTF-8 tanpa BOM — kompatibel dengan MySQL CLI
+- Encoding: UTF-16 LE (BOM) - menyebabkan error MySQL import
++ Encoding: UTF-8 tanpa BOM - kompatibel dengan MySQL CLI
 ```
 
 ### Auto-Deploy Flow
@@ -376,7 +376,7 @@ Hostinger auto-pull → Site updated!
 5. ✅ File `.env` dibuat manual di server via SSH
 6. ✅ `composer install --no-dev --optimize-autoloader` (29 dev packages removed)
 7. ✅ Schema SQL diimport (15 tabel) via `mysql` CLI
-8. ✅ Site live — HTTP 200, homepage tampil lengkap
+8. ✅ Site live - HTTP 200, homepage tampil lengkap
 
 ### ⚠️ Post-Deploy TODO
 - [ ] Update Google OAuth redirect URI di Google Cloud Console
@@ -385,5 +385,5 @@ Hostinger auto-pull → Site updated!
 
 ---
 
-*Changelog ini dibuat & diperbarui oleh Antigravity AI Coding Assistant — 9 Juni 2026, terakhir update 13:43 WIB*
+*Changelog ini dibuat & diperbarui oleh Antigravity AI Coding Assistant - 9 Juni 2026, terakhir update 13:43 WIB*
 

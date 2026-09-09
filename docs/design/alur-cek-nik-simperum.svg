@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Alur Pemeriksaan NIK dan Pelengkapan Data SIMPERUM</title>
+  <desc id="desc">Diagram empat tahap: Masukkan NIK, isi data sesuai matriks, hasil rekomendasi, lalu lengkapi data SIMPERUM.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f4fbfb"/>
+      <stop offset="100%" stop-color="#e7f3ef"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#16323a" flood-opacity=".14"/>
+    </filter>
+    <marker id="arrow" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto">
+      <path d="M0,0 L10,5.5 L0,11 Z" fill="#177e75"/>
+    </marker>
+    <style>
+      .heading { font-family: Arial, Helvetica, sans-serif; font-size: 42px; font-weight: 700; fill: #16323a; }
+      .subheading { font-family: Arial, Helvetica, sans-serif; font-size: 23px; fill: #547078; }
+      .step-number { font-family: Arial, Helvetica, sans-serif; font-size: 21px; font-weight: 700; fill: #ffffff; }
+      .step-title { font-family: Arial, Helvetica, sans-serif; font-size: 26px; font-weight: 700; fill: #16323a; }
+      .step-detail { font-family: Arial, Helvetica, sans-serif; font-size: 19px; fill: #46636a; }
+      .connector { fill: none; stroke: #177e75; stroke-width: 6; stroke-linecap: round; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect width="1600" height="900" fill="url(#background)"/>
+  <text x="800" y="132" text-anchor="middle" class="heading">Alur Pemeriksaan NIK dan Data SIMPERUM</text>
+  <text x="800" y="177" text-anchor="middle" class="subheading">Dari identifikasi awal hingga data siap ditindaklanjuti</text>
+  <path d="M373 473 H475" class="connector"/>
+  <path d="M746 473 H848" class="connector"/>
+  <path d="M1119 473 H1221" class="connector"/>
+  <g filter="url(#shadow)">
+    <rect x="93" y="300" width="280" height="345" rx="34" fill="#ffffff"/>
+    <rect x="93" y="300" width="280" height="12" rx="6" fill="#177e75"/>
+    <circle cx="137" cy="357" r="25" fill="#177e75"/>
+    <text x="137" y="365" text-anchor="middle" class="step-number">1</text>
+    <circle cx="233" cy="436" r="49" fill="#e6f5f2" stroke="#177e75" stroke-width="3"/>
+    <path d="M213 427h40m-40 16h28m-28-32h40" stroke="#177e75" stroke-width="5" stroke-linecap="round"/>
+    <text x="233" y="525" text-anchor="middle" class="step-title">Masukkan NIK</text>
+    <text x="233" y="560" text-anchor="middle" class="step-detail">Warga memasukkan NIK</text>
+    <text x="233" y="588" text-anchor="middle" class="step-detail">untuk memulai pemeriksaan.</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="466" y="300" width="280" height="345" rx="34" fill="#ffffff"/>
+    <rect x="466" y="300" width="280" height="12" rx="6" fill="#2d9a8c"/>
+    <circle cx="510" cy="357" r="25" fill="#2d9a8c"/>
+    <text x="510" y="365" text-anchor="middle" class="step-number">2</text>
+    <rect x="558" y="390" width="94" height="105" rx="10" fill="#e6f5f2" stroke="#2d9a8c" stroke-width="3"/>
+    <path d="M578 419h53m-53 21h53m-53 21h35" stroke="#2d9a8c" stroke-width="5" stroke-linecap="round"/>
+    <text x="606" y="525" text-anchor="middle" class="step-title">Isi Data Sesuai Matriks</text>
+    <text x="606" y="560" text-anchor="middle" class="step-detail">Lengkapi data kondisi warga</text>
+    <text x="606" y="588" text-anchor="middle" class="step-detail">sesuai kebutuhan pemeriksaan.</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="839" y="300" width="280" height="345" rx="34" fill="#ffffff"/>
+    <rect x="839" y="300" width="280" height="12" rx="6" fill="#d69737"/>
+    <circle cx="883" cy="357" r="25" fill="#d69737"/>
+    <text x="883" y="365" text-anchor="middle" class="step-number">3</text>
+    <circle cx="979" cy="441" r="50" fill="#fff3dc" stroke="#d69737" stroke-width="3"/>
+    <path d="M954 443l17 17 33-39" fill="none" stroke="#d69737" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="979" y="525" text-anchor="middle" class="step-title">Hasil Rekomendasi</text>
+    <text x="979" y="560" text-anchor="middle" class="step-detail">Sistem menampilkan hasil</text>
+    <text x="979" y="588" text-anchor="middle" class="step-detail">kelayakan dan rekomendasi.</text>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="1212" y="300" width="280" height="345" rx="34" fill="#ffffff"/>
+    <rect x="1212" y="300" width="280" height="12" rx="6" fill="#6175bb"/>
+    <circle cx="1256" cy="357" r="25" fill="#6175bb"/>
+    <text x="1256" y="365" text-anchor="middle" class="step-number">4</text>
+    <path d="M1352 390l37 20v43c0 31-22 54-37 61-15-7-37-30-37-61v-43z" fill="#ebedff" stroke="#6175bb" stroke-width="3"/>
+    <path d="M1331 453l14 14 29-34" fill="none" stroke="#6175bb" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="1352" y="525" text-anchor="middle" class="step-title">Lengkapi Data SIMPERUM</text>
+    <text x="1352" y="560" text-anchor="middle" class="step-detail">Data yang masih diperlukan</text>
+    <text x="1352" y="588" text-anchor="middle" class="step-detail">dilengkapi untuk tindak lanjut.</text>
+  </g>
+  <rect x="286" y="727" width="1028" height="78" rx="20" fill="#dcefea"/>
+  <text x="800" y="777" text-anchor="middle" class="step-detail" style="font-size:22px;font-weight:700;fill:#236159">Hasil rekomendasi muncul sebelum warga melengkapi data SIMPERUM.</text>
+</svg>

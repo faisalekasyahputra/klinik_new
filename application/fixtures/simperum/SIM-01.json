@@ -1,0 +1,44 @@
+{
+  "fixture_id": "SIM-01",
+  "synthetic": true,
+  "response_status": "found",
+  "api_version": "simulation-v1",
+  "identity": {
+    "nik": "0000000000000001",
+    "family_card_number": "0000000000001001",
+    "full_name": "Warga Simulasi RTLH",
+    "address": "Alamat Sintetis Kota Semarang",
+    "phone": "080000000001",
+    "birth_date": "1980-01-01",
+    "gender_code": "male",
+    "marital_status_code": "married",
+    "education_code": "junior_high"
+  },
+  "socioeconomic": {
+    "occupation_code": "daily_laborer",
+    "income_band_code": "lt_1_8",
+    "welfare_decile": 2,
+    "has_savings": false,
+    "self_help_capability_code": "not_capable",
+    "self_help_amount": 0
+  },
+  "housing": {
+    "housing_status_code": "owned",
+    "land_title_code": "hm",
+    "occupant_count": 4,
+    "family_count": 1
+  },
+  "structure": {
+    "foundation_condition_code": "severe_damage_or_absent",
+    "floor_condition_code": "moderate_damage",
+    "wall_condition_code": "severe_damage_or_absent",
+    "roof_condition_code": "severe_damage_or_absent"
+  },
+  "sanitation": {
+    "water_source_code": "well",
+    "has_bathroom_latrine": false,
+    "lighting_source_code": "pln"
+  },
+  "location": {"kabupaten_id": 3374},
+  "missing_fields": []
+}

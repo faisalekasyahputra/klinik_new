@@ -1,0 +1,14 @@
+{
+  "fixture_id": "SIM-99",
+  "synthetic": true,
+  "response_status": "error",
+  "error_code": "SIMULATED_TIMEOUT",
+  "api_version": "simulation-v1",
+  "identity": {},
+  "socioeconomic": {},
+  "housing": {},
+  "structure": {},
+  "sanitation": {},
+  "location": {},
+  "missing_fields": []
+}

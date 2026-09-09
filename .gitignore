@@ -1,11 +1,18 @@
 # ============================================
-# .gitignore — Klinik PKP (klinik_new)
+# .gitignore - Klinik PKP (klinik_new)
 # ============================================
 
 # ── Environment & Secrets ──────────────────
 .env
 .env.*
 !.env.example
+
+# Environment Postman menyimpan pub_key/priv_key SIMPERUM dalam teks biasa.
+# Pola `.env.*` di atas TIDAK menangkapnya (nama berkasnya tidak diawali .env),
+# jadi aturannya harus berdiri sendiri. Koleksinya sendiri boleh dilacak:
+# `SIMPERUM_API.postman_collection.json` sengaja dibuat tanpa kunci sama sekali
+# supaya bisa dikirim ke tim SIMPERUM sebagai bahan reproduksi.
+*.postman_environment.json
 
 # ── Dependencies ───────────────────────────
 /vendor/
@@ -32,10 +39,10 @@ migrate_*.php
 test_api.php
 clean_bg.py
 
-# ── Dev/debug scripts (never deploy — DB access, no auth) ──
+# ── Dev/debug scripts (never deploy - DB access, no auth) ──
 /dev-scripts/
 
-# ── Large local-only artifacts (recordings, reference images — not web assets) ──
+# ── Large local-only artifacts (recordings, reference images - not web assets) ──
 /local-assets/
 
 # ── Build Output ──────────────────────────
@@ -49,12 +56,27 @@ Desktop.ini
 # ── IDE & Editor ──────────────────────────
 .idea/
 .vscode/
+# `.claude/*`, BUKAN `.claude/` - git tidak bisa membuka kembali berkas yang
+# direktori induknya dikecualikan, jadi pengecualian di bawah cuma berlaku
+# kalau yang diabaikan isinya, bukan direktorinya.
+.claude/*
+# Agen per-peran DILACAK supaya bisa dipakai ulang siapa pun yang meng-clone
+# (permintaan user 5 Agt 2026). Isinya instruksi, bukan setelan mesin.
+# `settings.local.json` tetap terabaikan - itu preferensi per-mesin.
+!.claude/agents/
+.codex/
 /nbproject/
 *.sublime-workspace
 *.sublime-project
 *.tmlanguage.cache
 *.tmPreferences.cache
 *.stTheme.cache
+
+# ── Local design references & generated artifacts ──
+/new_flow/
+/outputs/
+/output/
+/tmp/
 
 # ── Playwright / Testing ──────────────────
 .playwright-mcp/
@@ -67,3 +89,9 @@ user_guide_src/build/*
 user_guide_src/cilexer/build/*
 user_guide_src/cilexer/dist/*
 user_guide_src/cilexer/pycilexer.egg-info/*
+
+# Foto program yang diunggah admin lewat Katalog Program (migrasi 036).
+# Berkas BAWAAN di assets/img/program/ tetap dilacak - ia nilai awal migrasi.
+# Yang di bawah ini data, bukan kode: ia lahir di server tempat diunggah, dan
+# `git pull` saat auto-deploy tidak menyentuh berkas tak terlacak.
+assets/img/program/unggahan/

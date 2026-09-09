@@ -89,7 +89,7 @@ PKP pagi ini
 
 bayangan dashboard  , masayarakat tau program
 
-— menu dashboard
+- menu dashboard
 
 intinya
 
@@ -128,9 +128,9 @@ Summary
 ### Struktur Program Perumahan
 
 - Terdapat tiga kategori utama program yang harus ditampilkan di dashboard:
-  - **Pembangunan Baru** — bersumber dari APBN dan APBD Provinsi, mencakup program seperti HPBD
-  - **Peningkatan Kualitas** — mencakup RTLH dan PKN, bersumber dari APBN, APBD Provinsi, dan APBD Kabupaten
-  - **Pembiayaan Perumahan** — mencakup KPR-KTP, KUR-KPP (dari APBN), serta Omah Sekeng dan Omah Lestari (dari APBD Provinsi)
+  - **Pembangunan Baru** - bersumber dari APBN dan APBD Provinsi, mencakup program seperti HPBD
+  - **Peningkatan Kualitas** - mencakup RTLH dan PKN, bersumber dari APBN, APBD Provinsi, dan APBD Kabupaten
+  - **Pembiayaan Perumahan** - mencakup KPR-KTP, KUR-KPP (dari APBN), serta Omah Sekeng dan Omah Lestari (dari APBD Provinsi)
 - Program pembangunan baru hanya tersedia di provinsi-provinsi tertentu (top provinces)
 - Setiap program memiliki persyaratan dan kriteria penerima bantuan yang berbeda-beda
 
@@ -156,7 +156,7 @@ Summary
 - Data yang masuk akan disimpan di database sistem dan dikirim ke SIMPERUM
 - Proses validasi di SIMPERUM (misalnya ketersediaan kuota) masih perlu dikonfirmasi mekanismenya
 - Beberapa program (APBD, WB, PK) memerlukan pengecekan data terpusat; program lain seperti KPAR dan PPP tidak
-- Untuk keperluan legal/audit, disepakati agar proses tidak otomatis penuh — data tetap masuk ke sistem namun perlu dikonfirmasi manual, bukan diproses secara otomatis
+- Untuk keperluan legal/audit, disepakati agar proses tidak otomatis penuh - data tetap masuk ke sistem namun perlu dikonfirmasi manual, bukan diproses secara otomatis
 - Data yang didaftarkan namun tidak lolos seleksi akan disimpan sebagai **antrian perumahan** untuk periode berikutnya
 
 ### Catatan Tambahan

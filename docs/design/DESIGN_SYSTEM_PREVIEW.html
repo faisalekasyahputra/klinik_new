@@ -1,5 +1,5 @@
 <meta charset="UTF-8">
-<title>Token &amp; Komponen — Klinik PKP</title>
+<title>Token &amp; Komponen - Klinik PKP</title>
 <style>
   :root {
     --bg:        #0a1a1f;
@@ -16,7 +16,7 @@
     --text:      #ecffb6;
     --text-2:    #8aacb0;
     --text-3:    #5a7a80;
-    --success:   #10b981; /* decided 18 Jul 2026, was #6bcb77 — see DESIGN_SYSTEM.md §3 */
+    --success:   #10b981; /* decided 18 Jul 2026, was #6bcb77 - see DESIGN_SYSTEM.md §3 */
     --warning:   #ffd93d;
     --error:     #ff6b6b;
     --info:      #4d96ff;
@@ -38,7 +38,7 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* faint ambient glow, matches the app's own --shadow-glow token — not decoration for its own sake */
+  /* faint ambient glow, matches the app's own --shadow-glow token - not decoration for its own sake */
   body::before {
     content: "";
     position: fixed;
@@ -170,7 +170,7 @@
 <main>
 
   <h1>Token warna, diterapkan ke <em>komponen</em></h1>
-  <p class="lede">Preview visual dari <code>docs/design/DESIGN_SYSTEM.md</code> — palet kanonis dipakai beneran di komponen di bawah, plus daftar file komponen modular yang ada di kode saat ini.</p>
+  <p class="lede">Preview visual dari <code>docs/design/DESIGN_SYSTEM.md</code> - palet kanonis dipakai beneran di komponen di bawah, plus daftar file komponen modular yang ada di kode saat ini.</p>
   <p class="meta">Klinik PKP · diaudit 18 Jul 2026 dari application/views + assets/css</p>
 
   <nav class="jump">
@@ -182,14 +182,14 @@
 
   <section id="palet">
     <div class="section-head"><h2>1. Palet kanonis</h2><span class="count">16 token</span></div>
-    <p class="section-note">Nilai di bawah ini yang paling banyak dipakai di kode untuk tiap peran warna — bukan aspirasi, ini yang sudah menang secara pemakaian nyata.</p>
+    <p class="section-note">Nilai di bawah ini yang paling banyak dipakai di kode untuk tiap peran warna - bukan aspirasi, ini yang sudah menang secara pemakaian nyata.</p>
 
-    <div class="scale-label">Brand — Electric Lime</div>
+    <div class="scale-label">Brand - Electric Lime</div>
     <div class="swatches">
       <div class="swatch"><div class="fill" style="background:#f5ffd9"></div><div class="info"><span class="hex">#f5ffd9</span><span class="name">brand.50</span></div></div>
       <div class="swatch"><div class="fill" style="background:#ecffb6"></div><div class="info"><span class="hex">#ecffb6</span><span class="name">brand.100 / text.primary</span><span class="n">81×</span></div></div>
       <div class="swatch"><div class="fill" style="background:#e2ff8a"></div><div class="info"><span class="hex">#e2ff8a</span><span class="name">brand.200</span></div></div>
-      <div class="swatch"><div class="fill" style="background:#d6fb00"></div><div class="info"><span class="hex">#d6fb00</span><span class="name">brand.300 — primary</span><span class="n">1.423×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#d6fb00"></div><div class="info"><span class="hex">#d6fb00</span><span class="name">brand.300 - primary</span><span class="n">1.423×</span></div></div>
       <div class="swatch"><div class="fill" style="background:#c2e600"></div><div class="info"><span class="hex">#c2e600</span><span class="name">brand.400</span><span class="n">18×</span></div></div>
       <div class="swatch"><div class="fill" style="background:#b5d400"></div><div class="info"><span class="hex">#b5d400</span><span class="name">brand.hover (admin)</span><span class="n">4×</span></div></div>
       <div class="swatch"><div class="fill" style="background:#a8c700"></div><div class="info"><span class="hex">#a8c700</span><span class="name">brand.500</span><span class="n">5×</span></div></div>
@@ -203,7 +203,7 @@
       <div class="swatch"><div class="fill" style="background:#e0f7fa"></div><div class="info"><span class="hex">#e0f7fa</span><span class="name">teal.50</span></div></div>
       <div class="swatch"><div class="fill" style="background:#4dd0e1"></div><div class="info"><span class="hex">#4dd0e1</span><span class="name">teal.300</span></div></div>
       <div class="swatch"><div class="fill" style="background:#00a3b5"></div><div class="info"><span class="hex">#00a3b5</span><span class="name">teal.500</span><span class="n">127×</span></div></div>
-      <div class="swatch"><div class="fill" style="background:#00545f"></div><div class="info"><span class="hex">#00545f</span><span class="name">teal.700 — anchor</span><span class="n">53×</span></div></div>
+      <div class="swatch"><div class="fill" style="background:#00545f"></div><div class="info"><span class="hex">#00545f</span><span class="name">teal.700 - anchor</span><span class="n">53×</span></div></div>
       <div class="swatch"><div class="fill" style="background:#003d45"></div><div class="info"><span class="hex">#003d45</span><span class="name">teal.800</span></div></div>
       <div class="swatch"><div class="fill" style="background:#00262b"></div><div class="info"><span class="hex">#00262b</span><span class="name">teal.900</span></div></div>
     </div>
@@ -229,28 +229,28 @@
   </section>
 
   <section id="drift">
-    <div class="section-head"><h2>2. Drift — sudah diputuskan</h2><span class="count">4 pasang, 18 Jul 2026</span></div>
+    <div class="section-head"><h2>2. Drift - sudah diputuskan</h2><span class="count">4 pasang, 18 Jul 2026</span></div>
     <p class="section-note">Warna yang sama secara maksud, beda nilai hex. Kiri = yang menang, kanan = yang perlu diganti nanti saat cleanup. Keputusan diambil langsung bareng user, bukan ditebak sepihak.</p>
 
     <div class="drift-row">
-      <div class="drift-chip"><div class="dot" style="background:#00545f"></div><div><span class="hex">#00545f</span><span class="tag">teal.700 — menang</span><span class="use">53× / 6 file</span></div></div>
+      <div class="drift-chip"><div class="dot" style="background:#00545f"></div><div><span class="hex">#00545f</span><span class="tag">teal.700 - menang</span><span class="use">53× / 6 file</span></div></div>
       <div class="vs">vs</div>
-      <div class="drift-chip"><div class="dot" style="background:#005e6a"></div><div><span class="hex">#005e6a</span><span class="tag">perlu diganti</span><span class="use">52× / 4 file<br><span class="verdict resolved">diputuskan — hampir 50/50</span></span></div></div>
+      <div class="drift-chip"><div class="dot" style="background:#005e6a"></div><div><span class="hex">#005e6a</span><span class="tag">perlu diganti</span><span class="use">52× / 4 file<br><span class="verdict resolved">diputuskan - hampir 50/50</span></span></div></div>
     </div>
     <div class="drift-row">
-      <div class="drift-chip"><div class="dot" style="background:#0f2a30"></div><div><span class="hex">#0f2a30</span><span class="tag">bg.card — menang</span><span class="use">110× / 26 file</span></div></div>
+      <div class="drift-chip"><div class="dot" style="background:#0f2a30"></div><div><span class="hex">#0f2a30</span><span class="tag">bg.card - menang</span><span class="use">110× / 26 file</span></div></div>
       <div class="vs">vs</div>
       <div class="drift-chip"><div class="dot" style="background:#0f2933"></div><div><span class="hex">#0f2933</span><span class="tag">perlu diganti (admin)</span><span class="use">21× / 5 file<br><span class="verdict resolved">diputuskan</span></span></div></div>
     </div>
     <div class="drift-row">
-      <div class="drift-chip"><div class="dot" style="background:#ffd93d"></div><div><span class="hex">#ffd93d</span><span class="tag">warning — menang</span><span class="use">41× / 6 file</span></div></div>
+      <div class="drift-chip"><div class="dot" style="background:#ffd93d"></div><div><span class="hex">#ffd93d</span><span class="tag">warning - menang</span><span class="use">41× / 6 file</span></div></div>
       <div class="vs">vs</div>
       <div class="drift-chip"><div class="dot" style="background:#ffc107"></div><div><span class="hex">#ffc107</span><span class="tag">perlu diganti</span><span class="use">38× / 4 file<br><span class="verdict resolved">diputuskan</span></span></div></div>
     </div>
     <div class="drift-row">
-      <div class="drift-chip"><div class="dot" style="background:#10b981"></div><div><span class="hex">#10b981</span><span class="tag">success — MENANG (standar baru)</span><span class="use">9× / 4 file</span></div></div>
+      <div class="drift-chip"><div class="dot" style="background:#10b981"></div><div><span class="hex">#10b981</span><span class="tag">success - MENANG (standar baru)</span><span class="use">9× / 4 file</span></div></div>
       <div class="vs">vs</div>
-      <div class="drift-chip"><div class="dot" style="background:#6bcb77"></div><div><span class="hex">#6bcb77</span><span class="tag">token lama, perlu diganti</span><span class="use">59× / 8 file — mayoritas kode<br><span class="verdict flip">diputuskan — kebalikan mayoritas!</span></span></div></div>
+      <div class="drift-chip"><div class="dot" style="background:#6bcb77"></div><div><span class="hex">#6bcb77</span><span class="tag">token lama, perlu diganti</span><span class="use">59× / 8 file - mayoritas kode<br><span class="verdict flip">diputuskan - kebalikan mayoritas!</span></span></div></div>
     </div>
   </section>
 
@@ -319,7 +319,7 @@
 
   <section id="inventaris">
     <div class="section-head"><h2>4. Inventaris komponen modular</h2><span class="count">11 file</span></div>
-    <p class="section-note">Semua file layout/komponen yang benar-benar ada di <code>application/views/</code> saat ini — bukan daftar ideal, ini yang riil.</p>
+    <p class="section-note">Semua file layout/komponen yang benar-benar ada di <code>application/views/</code> saat ini - bukan daftar ideal, ini yang riil.</p>
 
     <div class="inv-group">
       <h3>Layout publik</h3>
@@ -355,7 +355,7 @@
   </section>
 
   <footer class="page">
-    Dibuat dari audit warna 18 Jul 2026 — lihat <a href="DESIGN_SYSTEM.md">DESIGN_SYSTEM.md</a> untuk penjelasan lengkap dan rekomendasi lanjutan.
+    Dibuat dari audit warna 18 Jul 2026 - lihat <a href="DESIGN_SYSTEM.md">DESIGN_SYSTEM.md</a> untuk penjelasan lengkap dan rekomendasi lanjutan.
   </footer>
 
 </main>

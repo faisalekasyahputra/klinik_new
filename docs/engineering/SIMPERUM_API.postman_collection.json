@@ -1,0 +1,558 @@
+{
+  "info": {
+    "_postman_id": "b7c1f0a2-5d84-4e19-9c33-2a6f8e1d4b70",
+    "name": "SIMPERUM API - Disperakim Jateng",
+    "description": "Koleksi uji untuk https://simperum.disperakim.jatengprov.go.id/api/pub/\n\nKoleksi resmi yang tercantum di PDF dinas (getpostman.com/collections/15171d42c7f084b367b5) sudah KEDALUWARSA dan mengembalikan linkExpiredError, jadi koleksi ini dibuat ulang dari dokumen plus pengukuran langsung tanggal 13 Agustus 2026.\n\nCARA PAKAI\n1. Import koleksi ini.\n2. Import berkas Environment terpisah, lalu isi pub_key dan priv_key di sana. JANGAN menaruh kunci di koleksi ini, supaya koleksi tetap aman dibagikan.\n3. Pilih Environment tersebut di pojok kanan atas Postman.\n4. Jalankan folder A dulu untuk memastikan token terbentuk benar.\n\nAUTENTIKASI\nHeader: Authorization: <md5>.<pub_key>\ndengan <md5> = MD5(perintah_url + private_key)\nperintah_url adalah bagian SESUDAH /api/pub/ dan TERMASUK query string.\nContoh: MD5('GetDataRTLH?NIK=3301011506480004' + private_key)\nToken dihitung otomatis oleh skrip Pre-request di tingkat koleksi.\n\nTIGA HAL YANG HARUS DIKETAHUI SEBELUM MENJALANKAN\n1. API ini SELALU membalas HTTP 200, termasuk saat token salah dan saat galat internal. Jangan pakai status code sebagai penentu berhasil. Periksa isi amplopnya.\n2. Galat internal dibungkus Success:true dengan Data berisi objek {ErrCode, Message, Error}. Jadi Success:true pun belum tentu berarti data.\n3. Folder D (NIK) LAMBAT, 90 sampai 152 detik per permintaan, dan satu permintaannya menarik 28 MB berisi data pribadi puluhan ribu warga. Baca peringatan di folder itu sebelum menjalankannya.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Membentuk header Authorization sesuai aturan dinas:",
+          "//   token = MD5(perintah_url + private_key)",
+          "//   Authorization = token + '.' + public_key",
+          "//",
+          "// perintah_url adalah bagian SESUDAH /api/pub/ dan TERMASUK query string.",
+          "// Ini titik yang paling sering salah: dokumen menulis <perintah_url> di dua",
+          "// tempat dengan arti berbeda. Yang benar sudah dibuktikan lewat pengujian",
+          "// lima varian, dan hanya varian ini yang diterima server.",
+          "const CryptoJS = require('crypto-js');",
+          "",
+          "const penuh = pm.variables.replaceIn(pm.request.url.toString());",
+          "const tanda = '/api/pub/';",
+          "const posisi = penuh.indexOf(tanda);",
+          "const perintah = posisi === -1 ? '' : penuh.substring(posisi + tanda.length);",
+          "",
+          "const priv = pm.variables.replaceIn('{{priv_key}}');",
+          "const pub  = pm.variables.replaceIn('{{pub_key}}');",
+          "",
+          "if (!priv || !pub || priv.indexOf('{{') === 0 || pub.indexOf('{{') === 0) {",
+          "    console.warn('pub_key atau priv_key belum diisi. Pilih Environment SIMPERUM dan isi keduanya.');",
+          "}",
+          "",
+          "pm.collectionVariables.set('perintah_url', perintah);",
+          "pm.collectionVariables.set('auth_token', CryptoJS.MD5(perintah + priv).toString() + '.' + pub);",
+          "",
+          "console.log('perintah_url yang di-MD5:', perintah);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Pemeriksaan yang berlaku untuk hampir semua permintaan.",
+          "// Sengaja TIDAK memeriksa status code sebagai penentu berhasil: server ini",
+          "// membalas 200 untuk token salah maupun galat internal.",
+          "if (pm.response.headers.get('Content-Type') &&",
+          "    pm.response.headers.get('Content-Type').indexOf('json') !== -1) {",
+          "",
+          "    const j = pm.response.json();",
+          "",
+          "    pm.test('Amplop memuat Success, Data, Message, Type', function () {",
+          "        pm.expect(j).to.have.property('Success');",
+          "        pm.expect(j).to.have.property('Data');",
+          "        pm.expect(j).to.have.property('Message');",
+          "    });",
+          "",
+          "    // Deteksi galat yang menyamar sebagai sukses.",
+          "    const d = j.Data;",
+          "    if (Array.isArray(d) && d.length === 1 && d[0] && (d[0].ErrCode !== undefined)) {",
+          "        console.warn('GALAT TERSAMAR: Success=' + j.Success +",
+          "                     ' tetapi Data berisi ErrCode ' + d[0].ErrCode +",
+          "                     ' -> ' + (d[0].Message || d[0].Error));",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "base_url", "value": "https://simperum.disperakim.jatengprov.go.id/api/pub", "type": "string" },
+    { "key": "kode_desa", "value": "3301012001", "type": "string" },
+    { "key": "kode_desa_2", "value": "3301012002", "type": "string" },
+    { "key": "nik_ada", "value": "3301011111600004", "type": "string" },
+    { "key": "nik_dokumen", "value": "3301011506480004", "type": "string" },
+    { "key": "nik_palsu", "value": "0000000000000001", "type": "string" },
+    { "key": "auth_token", "value": "", "type": "string" },
+    { "key": "perintah_url", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "A. Autentikasi",
+      "description": "Membuktikan bentuk token mana yang diterima. Jalankan folder ini lebih dulu.\nSemua uji di sini cepat, di bawah 3 detik.",
+      "item": [
+        {
+          "name": "A1 Token BENAR (perintah + query di-MD5)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "{{auth_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/GetDataRTLH?KodeDagri={{kode_desa}}", "host": ["{{base_url}}"], "path": ["GetDataRTLH"], "query": [{ "key": "KodeDagri", "value": "{{kode_desa}}" }] },
+            "description": "Satu-satunya bentuk token yang diterima server. Diharapkan Success=true dengan ratusan rekaman."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('Token diterima (bukan Error Invalid Token)', function () {",
+                  "    pm.expect(j.Message).to.not.eql('Error Invalid Token');",
+                  "    pm.expect(j.Success).to.eql(true);",
+                  "});",
+                  "pm.test('Mengembalikan rekaman', function () {",
+                  "    pm.expect(j.Data).to.be.an('array');",
+                  "    pm.expect(j.Data.length).to.be.above(0);",
+                  "});",
+                  "console.log('rekaman:', j.Data.length, '| ukuran byte:', pm.response.responseSize);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "A2 Token SALAH: MD5 nama perintah saja",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "{{auth_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/GetDataRTLH?KodeDagri={{kode_desa}}", "host": ["{{base_url}}"], "path": ["GetDataRTLH"], "query": [{ "key": "KodeDagri", "value": "{{kode_desa}}" }] },
+            "description": "Meng-MD5 'GetDataRTLH' saja tanpa query string. Ini bacaan alternatif dokumen yang ternyata SALAH. Diharapkan Error Invalid Token."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Sengaja menimpa token buatan skrip koleksi dengan varian yang salah.",
+                  "const CryptoJS = require('crypto-js');",
+                  "const priv = pm.variables.replaceIn('{{priv_key}}');",
+                  "const pub  = pm.variables.replaceIn('{{pub_key}}');",
+                  "pm.collectionVariables.set('auth_token', CryptoJS.MD5('GetDataRTLH' + priv).toString() + '.' + pub);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('Ditolak sebagai token salah', function () {",
+                  "    pm.expect(j.Success).to.eql(false);",
+                  "    pm.expect(j.Message).to.eql('Error Invalid Token');",
+                  "});",
+                  "pm.test('CATATAN: penolakan datang sebagai HTTP 200, bukan 401', function () {",
+                  "    pm.expect(pm.response.code).to.eql(200);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "A3 Tanpa header Authorization",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/GetDataRTLH?KodeDagri={{kode_desa}}", "host": ["{{base_url}}"], "path": ["GetDataRTLH"], "query": [{ "key": "KodeDagri", "value": "{{kode_desa}}" }] },
+            "description": "Tanpa header sama sekali. Diharapkan Error Invalid Token, tetap dengan HTTP 200."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('Ditolak tanpa header', function () {",
+                  "    pm.expect(j.Success).to.eql(false);",
+                  "    pm.expect(j.Message).to.eql('Error Invalid Token');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "A4 Private key salah",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "{{auth_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/GetDataRTLH?KodeDagri={{kode_desa}}", "host": ["{{base_url}}"], "path": ["GetDataRTLH"], "query": [{ "key": "KodeDagri", "value": "{{kode_desa}}" }] },
+            "description": "Private key diganti nilai asal. Diharapkan Error Invalid Token."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const CryptoJS = require('crypto-js');",
+                  "const pub = pm.variables.replaceIn('{{pub_key}}');",
+                  "const perintah = pm.collectionVariables.get('perintah_url');",
+                  "pm.collectionVariables.set('auth_token', CryptoJS.MD5(perintah + 'kunci-salah').toString() + '.' + pub);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('Ditolak dengan private key salah', function () {",
+                  "    pm.expect(j.Success).to.eql(false);",
+                  "    pm.expect(j.Message).to.eql('Error Invalid Token');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "B. Perintah dan penanganan galat",
+      "description": "Memperlihatkan bagaimana server melaporkan galat. Semua cepat.",
+      "item": [
+        {
+          "name": "B1 Perintah tak dikenal (membocorkan nama stored procedure)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "{{auth_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/GetDataXYZ", "host": ["{{base_url}}"], "path": ["GetDataXYZ"] },
+            "description": "TEMUAN KEAMANAN. Perintah yang tidak ada membocorkan nama skema dan pola stored procedure:\nPROCEDURE perum.PUB_GetDataXYZ does not exist\n\nPesan galat internal basis data seharusnya tidak sampai ke pemanggil publik."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('Galat dibungkus Success=true (bentuk yang menyesatkan)', function () {",
+                  "    pm.expect(j.Success).to.eql(true);",
+                  "    pm.expect(j.Data[0]).to.have.property('ErrCode');",
+                  "});",
+                  "pm.test('TEMUAN: membocorkan detail internal basis data', function () {",
+                  "    const teks = JSON.stringify(j.Data[0]);",
+                  "    pm.expect(teks).to.include('PROCEDURE');",
+                  "});",
+                  "console.log('Bocoran:', j.Data[0].Error);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "B2 Tanpa parameter",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "{{auth_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/GetDataRTLH", "host": ["{{base_url}}"], "path": ["GetDataRTLH"] },
+            "description": "Diharapkan ErrCode 403 dengan pesan 'NIK / KodeDagri is required', tetapi tetap dibungkus Success=true."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('ErrCode 403 di dalam amplop sukses', function () {",
+                  "    pm.expect(j.Success).to.eql(true);",
+                  "    pm.expect(j.Data[0].ErrCode).to.eql(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "C. GetDataRTLH by KodeDagri (SEHAT)",
+      "description": "Endpoint ini bekerja dengan baik. 2 sampai 4 detik, data lengkap 51 medan.\nHANYA menerima kode desa 10 digit penuh. Kode kecamatan 6 digit dan kabupaten 4 digit mengembalikan nol rekaman.",
+      "item": [
+        {
+          "name": "C1 Desa 10 digit (BERHASIL)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "{{auth_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/GetDataRTLH?KodeDagri={{kode_desa}}", "host": ["{{base_url}}"], "path": ["GetDataRTLH"], "query": [{ "key": "KodeDagri", "value": "{{kode_desa}}" }] },
+            "description": "Terukur: 879 rekaman, 906 KB, sekitar 2 sampai 4 detik."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('Mengembalikan rekaman', function () {",
+                  "    pm.expect(j.Data.length).to.be.above(0);",
+                  "});",
+                  "pm.test('Rekaman punya 51 medan', function () {",
+                  "    pm.expect(Object.keys(j.Data[0]).length).to.eql(51);",
+                  "});",
+                  "pm.test('KondisiAtap/Lantai/Dinding TIDAK dikirim pada GET', function () {",
+                  "    pm.expect(j.Data[0]).to.not.have.property('KondisiAtap');",
+                  "    pm.expect(j.Data[0]).to.not.have.property('KondisiLantai');",
+                  "    pm.expect(j.Data[0]).to.not.have.property('KondisiDinding');",
+                  "});",
+                  "pm.test('Cepat, di bawah 15 detik', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(15000);",
+                  "});",
+                  "console.log('rekaman:', j.Data.length, '| ms:', pm.response.responseTime);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C2 Kecamatan 6 digit (kosong, tidak didukung)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "{{auth_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/GetDataRTLH?KodeDagri=330101", "host": ["{{base_url}}"], "path": ["GetDataRTLH"], "query": [{ "key": "KodeDagri", "value": "330101" }] },
+            "description": "Agregasi per kecamatan tidak didukung. Mengembalikan nol rekaman tanpa pesan galat, jadi tidak bisa dibedakan dari 'wilayah memang kosong'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('Nol rekaman, tanpa penjelasan', function () {",
+                  "    pm.expect(j.Success).to.eql(true);",
+                  "    pm.expect(j.Data.length).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C3 Kode bukan angka (validasi bekerja)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "{{auth_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/GetDataRTLH?KodeDagri=ABC", "host": ["{{base_url}}"], "path": ["GetDataRTLH"], "query": [{ "key": "KodeDagri", "value": "ABC" }] },
+            "description": "Validasi karakter bekerja dan cepat: _KodeDagri tidak boleh ada karakter \" A \""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('Ditolak validasi dengan ErrCode 100', function () {",
+                  "    pm.expect(j.Data[0].ErrCode).to.eql(100);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "C4 Nama parameter huruf kecil (peka huruf besar-kecil)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "{{auth_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/GetDataRTLH?kodedagri={{kode_desa}}", "host": ["{{base_url}}"], "path": ["GetDataRTLH"], "query": [{ "key": "kodedagri", "value": "{{kode_desa}}" }] },
+            "description": "Nama parameter peka huruf besar-kecil. 'kodedagri' tidak dikenali, dianggap parameter tidak dikirim."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('Parameter huruf kecil tidak dikenali', function () {",
+                  "    pm.expect(j.Data[0].ErrCode).to.eql(403);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "D. GetDataRTLH by NIK (RUSAK - BACA DULU)",
+      "description": "PERINGATAN, BACA SEBELUM MENJALANKAN\n\nEndpoint ini rusak di sisi SIMPERUM, terukur 13 Agustus 2026:\n\n1. LAMBAT. 90 sampai 152 detik per permintaan. Naikkan timeout Postman di Settings, General, Request timeout, jadi 0 atau minimal 180000 ms, kalau tidak permintaan akan putus sendiri.\n\n2. SELALU KOSONG untuk NIK yang sah. Diuji 5 NIK berbeda dalam sekitar 19 panggilan, termasuk NIK contoh milik dokumen dinas sendiri dan NIK yang TERBUKTI ADA karena baru saja dikembalikan endpoint KodeDagri di desa yang sama. Semuanya nol rekaman.\n\n3. KEBOCORAN DATA MASSAL pada D3. NIK palsu 0000000000000001 mengembalikan 28,2 MB berisi 29.058 rekaman dari 37 kabupaten, lengkap dengan NIK, nomor KK, nama, alamat, dan koordinat GPS, sedangkan NIK yang diminta TIDAK ADA di antara hasilnya. Jalankan D3 HANYA bila memang perlu membuktikannya ke tim SIMPERUM, dan HAPUS hasilnya setelah itu.",
+      "item": [
+        {
+          "name": "D1 NIK yang TERBUKTI ADA di basis data (hasil: kosong)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "{{auth_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/GetDataRTLH?NIK={{nik_ada}}", "host": ["{{base_url}}"], "path": ["GetDataRTLH"], "query": [{ "key": "NIK", "value": "{{nik_ada}}" }] },
+            "description": "NIK ini diambil langsung dari hasil C1, jadi keberadaannya di basis data tidak diragukan. Terukur 109 detik dan nol rekaman.\n\nUji di bawah ini sengaja dibuat GAGAL saat cacatnya masih ada, supaya berubah hijau begitu SIMPERUM memperbaikinya."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "console.log('ms:', pm.response.responseTime, '| rekaman:', Array.isArray(j.Data) ? j.Data.length : 'bukan array');",
+                  "",
+                  "pm.test('SEHARUSNYA mengembalikan rekaman untuk NIK yang ada (kini GAGAL, itu memang cacatnya)', function () {",
+                  "    pm.expect(j.Data.length).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test('SEHARUSNYA membalas di bawah 30 detik (kini GAGAL, terukur 90 sampai 152 detik)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(30000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "D2 NIK contoh dari dokumen dinas (hasil: kosong)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "{{auth_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/GetDataRTLH?NIK={{nik_dokumen}}", "host": ["{{base_url}}"], "path": ["GetDataRTLH"], "query": [{ "key": "NIK", "value": "{{nik_dokumen}}" }] },
+            "description": "NIK 3301011506480004 adalah contoh di halaman 'Pengambilan Data Berdasarkan NIK' pada PDF dinas, yang di dokumen menghasilkan satu rekaman atas nama ABU WARDI. Kenyataannya nol rekaman setelah 90 detik."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('SEHARUSNYA cocok dengan contoh di dokumen (kini GAGAL)', function () {",
+                  "    pm.expect(j.Data.length).to.be.above(0);",
+                  "});",
+                  "console.log('ms:', pm.response.responseTime, '| rekaman:', j.Data.length);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "D3 NIK PALSU - BUKTI KEBOCORAN (28 MB, jangan dijalankan sembarangan)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "{{auth_token}}" }
+            ],
+            "url": { "raw": "{{base_url}}/GetDataRTLH?NIK={{nik_palsu}}", "host": ["{{base_url}}"], "path": ["GetDataRTLH"], "query": [{ "key": "NIK", "value": "{{nik_palsu}}" }] },
+            "description": "JANGAN dijalankan kecuali memang sedang membuktikan cacat ini ke tim SIMPERUM.\n\nNIK 0000000000000001 jelas tidak mungkin ada. Balasannya justru 28,2 MB berisi 29.058 rekaman warga nyata dari 37 kabupaten, dan NIK yang diminta tidak ada di antaranya.\n\nDugaan penyebab, untuk membantu DBA mereka: parameter NIK kemungkinan bertipe integer berkapasitas kecil. NIK asli 16 digit meluap sehingga tidak pernah cocok, sedangkan angka kecil seperti 1 lolos dan membuat kondisi penyaringnya runtuh. Ini dugaan, belum dikonfirmasi.\n\nHapus hasilnya setelah selesai. Ini data pribadi warga."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "const nikDiminta = pm.variables.replaceIn('{{nik_palsu}}');",
+                  "const n = Array.isArray(j.Data) ? j.Data.length : 0;",
+                  "",
+                  "console.log('rekaman kembali:', n, '| ukuran byte:', pm.response.responseSize);",
+                  "",
+                  "pm.test('SEHARUSNYA hanya mengembalikan NIK yang diminta (kini GAGAL: kebocoran)', function () {",
+                  "    const asing = j.Data.filter(function (r) { return r && r.NIK && r.NIK !== nikDiminta; });",
+                  "    pm.expect(asing.length, 'rekaman milik NIK lain yang ikut terkirim').to.eql(0);",
+                  "});",
+                  "",
+                  "if (n > 1) {",
+                  "    const kab = {};",
+                  "    j.Data.forEach(function (r) { if (r && r.Kabupaten) { kab[r.Kabupaten] = (kab[r.Kabupaten] || 0) + 1; } });",
+                  "    console.warn('KEBOCORAN: ' + n + ' rekaman dari ' + Object.keys(kab).length + ' kabupaten.');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "E. SaveDataRTLH (MENULIS - butuh izin dinas)",
+      "description": "POST ini MENULIS ke basis data dinas. Bersifat upsert: insert bila IDBDT atau NIK belum ada, update bila sudah ada.\n\nBELUM PERNAH DIUJI. Jangan dijalankan tanpa izin tertulis dari dinas, dan jangan memakai NIK warga sungguhan.",
+      "item": [
+        {
+          "name": "E1 SaveDataRTLH (JANGAN JALANKAN TANPA IZIN)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "{{auth_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"IDBDT\": null,\n  \"TahunIntervensi\": null,\n  \"SumberDanaID\": null,\n  \"NIK\": \"1111111111111111\",\n  \"Nama\": \"TESTING DATA\",\n  \"Alamat\": \"DUSUN SARI RW 02 RT 05\",\n  \"KodeDagri\": \"3305012007\",\n  \"Kabupaten\": \"KEBUMEN\",\n  \"Kecamatan\": \"AYAH\",\n  \"Kelurahan\": \"ARGOSARI\",\n  \"AtapID\": \"6\",\n  \"LantaiID\": \"9\",\n  \"DindingID\": \"7\",\n  \"KondisiAtap\": \"1\",\n  \"KondisiLantai\": \"1\",\n  \"KondisiDinding\": \"1\",\n  \"GeoLat\": \"-7.54853540\",\n  \"GeoLng\": \"108.77494670\",\n  \"JenisKelamin\": \"L\",\n  \"TahunLahir\": null,\n  \"Pendidikan\": null,\n  \"Pekerjaan\": null,\n  \"Penghasilan\": null,\n  \"BantuanPerumahan\": null,\n  \"KawasanPerumahan\": null,\n  \"KepemilikanLahan\": null,\n  \"KepemilikanRumah\": null,\n  \"TanahLain\": null,\n  \"RumahLain\": null,\n  \"LuasRumah\": null,\n  \"JmlPenghuni\": null,\n  \"JmlKK\": null,\n  \"AdaPondasi\": null,\n  \"KondisiKolom\": null,\n  \"KondisiBalok\": null,\n  \"KondisiRangka\": null,\n  \"AdaJendela\": null,\n  \"AdaVentilasi\": null,\n  \"SumberAir\": null,\n  \"Penerangan\": null,\n  \"LetakSanitasi\": null,\n  \"KamarMandi\": null,\n  \"JarakSepticTank\": null,\n  \"MampuSwadaya\": null,\n  \"RumahDepan\": null,\n  \"RumahSamping\": null\n}"
+            },
+            "url": { "raw": "{{base_url}}/SaveDataRTLH", "host": ["{{base_url}}"], "path": ["SaveDataRTLH"] },
+            "description": "Badan contoh diambil apa adanya dari PDF dinas, 46 medan. Perhatikan KondisiAtap, KondisiLantai, dan KondisiDinding: ketiganya HANYA ada di sini, tidak pernah dikembalikan pada GET.\n\nRumahDepan dan RumahSamping harus berupa URL yang bisa diakses dari domain simperum."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const j = pm.response.json();",
+                  "pm.test('Balasan menyatakan tersimpan', function () {",
+                  "    pm.expect(j.Message).to.include('Tersimpan');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

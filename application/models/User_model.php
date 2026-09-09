@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 defined('BASEPATH') || exit('No direct script access allowed');
 
 class User_model extends CI_Model {
@@ -53,7 +53,75 @@ class User_model extends CI_Model {
         return $this->db->trans_status();
     }
 
+    /**
+     * Hapus file fisik yang jadi yatim akibat FK CASCADE saat baris DB dihapus
+     * di bawah (srp2_registrations->srp2_documents, kkn_magang_pendaftaran).
+     * WAJIB dipanggil SEBELUM baris DB dihapus - begitu CASCADE jalan, tidak
+     * ada lagi cara menemukan nama file yang harus dihapus dari disk.
+     * Lihat application/migrations/20260701000012_add_submission_owner_fk.php.
+     */
+    private function _cleanup_owned_files($user_id) {
+        // Lokasi akar dari helper - ikut PRIVATE_UPLOADS_PATH di .env kalau diisi.
+        // Jangan susun path sendiri di sini; pernah terjadi path di sini tertinggal
+        // di lokasi publik lama setelah penyimpanan dipindah, sehingga berkasnya
+        // tidak pernah benar-benar terhapus.
+        $this->load->helper('private_upload');
+
+        // --- Dokumen SRP2 (private_uploads/srp2/{registration_id}/) ---
+        $registration_ids = array_column(
+            $this->db->select('id')->get_where('srp2_registrations', ['user_id' => $user_id])->result_array(),
+            'id'
+        );
+        // Disapu berdasarkan ISI DISK, bukan hanya nama yang tercatat DB.
+        // Menyapu dari DB saja meninggalkan berkas yatim: setiap kali dokumen
+        // DIGANTI, baris lamanya hilang beserta nama berkasnya, sehingga berkas
+        // fisiknya tidak lagi terjangkau pencarian apa pun. Akibatnya akta,
+        // NPWP, dan laporan keuangan bisa selamat dari penghapusan akun -
+        // kewajiban retensi UU PDP, bukan sekadar kerapian.
+        foreach ($registration_ids as $rid) {
+            $dir = private_uploads_dir('srp2', $rid);
+            if (!is_dir($dir)) { continue; }
+            foreach (scandir($dir) ?: [] as $berkas) {
+                if ($berkas === '.' || $berkas === '..') { continue; }
+                $this->_unlink_private($dir, $berkas);
+            }
+            @rmdir($dir);
+        }
+
+        // --- Surat pengantar KKN/Magang (private_uploads/kemitraan/{id}/) ---
+        $kkn = $this->db->select('id, file_surat_pengantar')
+            ->where('user_id', $user_id)->where('file_surat_pengantar IS NOT NULL', NULL, FALSE)
+            ->get('kkn_magang_pendaftaran')->result();
+        foreach ($kkn as $row) {
+            $this->_unlink_private(private_uploads_dir('kemitraan', $row->id), $row->file_surat_pengantar);
+        }
+
+        // --- Dokumen onboarding: KTP/SIUP/KTM (private_uploads/onboarding/{user_id}/) ---
+        // usr_documents ikut terhapus lewat FK CASCADE, tapi FK tidak bisa
+        // menghapus file di disk - jadi harus dibersihkan di sini.
+        $onboarding = $this->db->select('file_name')
+            ->get_where('usr_documents', ['user_id' => $user_id])->result();
+        foreach ($onboarding as $row) {
+            $this->_unlink_private(private_uploads_dir('onboarding', $user_id), $row->file_name);
+        }
+    }
+
+    /**
+     * Hapus satu berkas di dalam direktori privat. basename() dipakai supaya
+     * nilai dari DB yang memuat path tidak bisa menghapus file di luar direktori
+     * yang dimaksud.
+     */
+    private function _unlink_private($dir, $file_name) {
+        if ($dir === '' || empty($file_name)) { return; }
+        $path = $dir . basename((string) $file_name);
+        if (is_file($path)) { unlink($path); }
+    }
+
     public function delete_user_account($user_id) {
+        // Di luar transaksi DB dengan sengaja - unlink() tidak bisa di-rollback,
+        // jadi lebih aman dijalankan sebelum trans_start() daripada di dalamnya.
+        $this->_cleanup_owned_files($user_id);
+
         $this->db->trans_start();
 
         // Anonymize forum comments

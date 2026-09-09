@@ -141,13 +141,6 @@ foreach ($tapera_data as $p) {
             <span style="color:#d6fb00;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= htmlspecialchars($nama_pengembang) ?></span>
         </nav>
 
-        <!-- Flash -->
-        <?php if ($this->session->flashdata('success')): ?>
-        <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:#34d399;padding:14px 18px;border-radius:14px;font-size:13px;display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-            <i class="fa-solid fa-circle-check"></i><?= $this->session->flashdata('success') ?>
-        </div>
-        <?php endif; ?>
-
         <!-- Developer Header Row -->
         <div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:28px;">
 
@@ -397,7 +390,7 @@ foreach ($tapera_data as $p) {
                             <div style="color:#d6fb00;font-size:16px;font-weight:900;"><?= number_format($harga_perum/1000000,0) ?>jt</div>
                             <div style="color:#52525b;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-top:2px;">Mulai</div>
                             <?php else: ?>
-                            <div style="color:#3f3f46;font-size:16px;font-weight:900;">—</div>
+                            <div style="color:#3f3f46;font-size:16px;font-weight:900;">-</div>
                             <div style="color:#52525b;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-top:2px;">Harga</div>
                             <?php endif; ?>
                         </div>
@@ -488,26 +481,31 @@ foreach ($tapera_data as $p) {
                 <i class="fa-solid fa-circle-check" style="margin-right:5px;"></i>Verified
             </span>
         </div>
+        <?php // Sumbernya kini direktori resmi (srp2_certified_developers), yang
+              // memang tidak memuat NIB/asosiasi - keduanya milik baris pengajuan,
+              // bukan direktori publik. Kartu alamat/website di bawah dipakai kalau
+              // datanya ada. ?>
+        <?php $srp2_detail = array_filter([
+            'Alamat Kantor' => $local_data['alamat_kantor'] ?? '',
+            'Website'       => $local_data['website'] ?? '',
+        ]); ?>
+        <?php if ($srp2_detail): ?>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px;">
-            <?php if (!empty($local_data['nib'])): ?>
+            <?php foreach ($srp2_detail as $label => $nilai): ?>
             <div style="background:rgba(10,26,31,.5);border-radius:14px;padding:14px;border:1px solid rgba(255,255,255,.06);">
-                <p style="color:#52525b;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px;">NIB</p>
-                <p style="color:#fff;font-weight:700;font-size:13px;"><?= htmlspecialchars($local_data['nib']) ?></p>
+                <p style="color:#52525b;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px;"><?= htmlspecialchars($label) ?></p>
+                <p style="color:#fff;font-weight:700;font-size:13px;"><?= htmlspecialchars($nilai) ?></p>
             </div>
-            <?php endif; ?>
-            <?php if (!empty($local_data['asosiasi'])): ?>
-            <div style="background:rgba(10,26,31,.5);border-radius:14px;padding:14px;border:1px solid rgba(255,255,255,.06);">
-                <p style="color:#52525b;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px;">Asosiasi</p>
-                <p style="color:#fff;font-weight:700;font-size:13px;text-transform:uppercase;"><?= htmlspecialchars($local_data['asosiasi']) ?></p>
-            </div>
-            <?php endif; ?>
+            <?php endforeach; ?>
         </div>
-        <a href="<?= base_url('Umum/download_sertifikat') . '?nama=' . urlencode($nama_pengembang) ?>"
-           style="display:inline-flex;align-items:center;gap:8px;background:#d6fb00;color:#000;padding:12px 24px;border-radius:12px;font-weight:900;font-size:13px;text-decoration:none;transition:all .3s;box-shadow:0 4px 20px rgba(214,251,0,.2);"
-           onmouseover="this.style.background='#c5e800';this.style.transform='translateY(-2px)'"
-           onmouseout="this.style.background='#d6fb00';this.style.transform='none'">
-            <i class="fa-solid fa-certificate"></i> Download Sertifikat
-        </a>
+        <?php endif; ?>
+        <?php // Tombol "Download Sertifikat" DIHAPUS: generator PDF-nya belum ada,
+              // dan tombol lama memunculkan flash "berhasil diunduh (Simulasi)" tanpa
+              // mengunduh apa pun - dilarang §0d. Pola jujurnya mengikuti tombol
+              // serupa di pages/pengaturan/profil.php. ?>
+        <p style="color:#71717a;font-size:11px;margin-top:4px;">
+            <i class="fa-solid fa-circle-info" style="margin-right:5px;"></i>Unduhan sertifikat digital belum tersedia.
+        </p>
     </div>
     <?php endif; ?>
 

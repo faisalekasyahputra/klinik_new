@@ -4,25 +4,37 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class Forum_model extends CI_Model {
 
     /**
-     * Ambil semua diskusi (filter soft-delete, search, kategori).
+     * Ambil diskusi (filter soft-delete, search, kategori), OPSIONAL dibatasi
+     * ke satu pemilik.
+     *
+     * `$user_id`: NULL = semua diskusi (dipakai admin, lihat Umum::forum()).
+     * Diisi angka = HANYA milik user itu - ini yang menegakkan privasi
+     * konsultasi (permintaan user 15 Agt 2026: "hanya bisa dilihat oleh
+     * admin"). Sebelum ini method-nya selalu mengembalikan SEMUA diskusi ke
+     * SIAPA PUN yang memanggil `Umum::forum()`, termasuk tamu anonim -
+     * konsultasi satu warga bisa dibaca warga lain begitu saja.
      */
-    public function get_all_diskusi($search = '', $kategori = '') {
+    public function get_all_diskusi($search = '', $kategori = '', $user_id = NULL) {
         $this->db->select('forum_diskusi.*, COUNT(forum_komentar.id_komentar) as total_balasan');
         $this->db->from('forum_diskusi');
         $this->db->join('forum_komentar', 'forum_diskusi.id_diskusi = forum_komentar.id_diskusi AND forum_komentar.is_deleted = 0', 'left');
         $this->db->where('forum_diskusi.is_deleted', 0);
-        
+
+        if ($user_id !== NULL) {
+            $this->db->where('forum_diskusi.user_id', (int) $user_id);
+        }
+
         if (!empty($search)) {
             $this->db->group_start();
             $this->db->like('forum_diskusi.judul_topik', $search);
             $this->db->or_like('forum_diskusi.isi_diskusi', $search);
             $this->db->group_end();
         }
-        
+
         if (!empty($kategori)) {
             $this->db->where('forum_diskusi.kategori', $kategori);
         }
-        
+
         $this->db->group_by('forum_diskusi.id_diskusi');
         $this->db->order_by('forum_diskusi.created_at', 'DESC');
         return $this->db->get()->result_array();
@@ -31,6 +43,17 @@ class Forum_model extends CI_Model {
     public function get_diskusi_by_id($id) {
         $this->db->where('is_deleted', 0);
         return $this->db->get_where('forum_diskusi', ['id_diskusi' => $id])->row_array();
+    }
+
+    /**
+     * ID diskusi induk dari satu komentar - dipakai menegakkan kepemilikan
+     * saat aksi (like/lapor) menyasar KOMENTAR, bukan topiknya langsung.
+     * NULL kalau komentarnya tidak ada/sudah dihapus.
+     */
+    public function get_diskusi_id_dari_komentar($id_komentar) {
+        $row = $this->db->select('id_diskusi')->where('is_deleted', 0)
+            ->get_where('forum_komentar', ['id_komentar' => (int) $id_komentar])->row();
+        return $row ? (int) $row->id_diskusi : NULL;
     }
 
     public function get_komentar_by_diskusi($id) {
@@ -93,10 +116,62 @@ class Forum_model extends CI_Model {
         return $this->db->update('forum_diskusi');
     }
 
-    public function report_komentar($id) {
+    /**
+     * B3 - laporan komentar dicatat per PELAPOR, bukan sekadar penghitung.
+     *
+     * Dulu method ini hanya menaikkan `report_count`, sehingga lima klik dari
+     * satu orang bernilai sama dengan lima orang berbeda. Kini setiap laporan
+     * masuk ledger `forum_laporan_komentar` ber-UNIQUE (id_komentar, user_id),
+     * lalu `report_count` DIHITUNG ULANG dari jumlah pelapor unik - bukan
+     * ditambah. Dengan begitu angka di kolom itu selalu berarti "berapa orang",
+     * dan laporan berulang dari orang yang sama tidak bergerak sama sekali.
+     *
+     * `is_deleted` SENGAJA tidak disentuh: U2 ledger-only. Auto-hide menunggu
+     * keputusan #10 dan, bila dipilih, roadmap moderasi tersendiri yang juga
+     * menyediakan antrean + restore. Lima akun tidak boleh menjadi sensor
+     * permanen tanpa jalan pulang.
+     *
+     * @return array ['success' => bool, 'baru' => bool, 'jumlah' => int]
+     */
+    public function report_komentar($id, $user_id) {
+        $id = (int) $id;
+        $user_id = (int) $user_id;
+
+        $this->db->trans_begin();
+
+        // Kunci baris komentar induknya lebih dulu: dua request paralel dari
+        // pelapor berbeda tidak boleh sama-sama membaca hitungan lama lalu
+        // menuliskan hasil yang sama.
+        $komentar = $this->db->query(
+            'SELECT id_komentar FROM forum_komentar WHERE id_komentar = ? FOR UPDATE', [$id]
+        )->row_array();
+        if ( ! $komentar) {
+            $this->db->trans_rollback();
+            return ['success' => FALSE, 'baru' => FALSE, 'jumlah' => 0];
+        }
+
+        // UNIQUE yang menegakkan "satu laporan per orang"; INSERT kedua dari
+        // orang yang sama ditolak DB, bukan dicegah dengan SELECT-lalu-INSERT
+        // yang bisa kalah balapan.
+        $baru = (bool) $this->db->query(
+            'INSERT IGNORE INTO forum_laporan_komentar (id_komentar, user_id) VALUES (?, ?)',
+            [$id, $user_id]
+        );
+        $baru = $baru && $this->db->affected_rows() === 1;
+
+        $jumlah = (int) $this->db->where('id_komentar', $id)
+            ->count_all_results('forum_laporan_komentar');
+
         $this->db->where('id_komentar', $id);
-        $this->db->set('report_count', 'report_count + 1', FALSE);
-        return $this->db->update('forum_komentar');
+        $this->db->update('forum_komentar', ['report_count' => $jumlah]);
+
+        if ( ! $this->db->trans_status()) {
+            $this->db->trans_rollback();
+            return ['success' => FALSE, 'baru' => FALSE, 'jumlah' => 0];
+        }
+        $this->db->trans_commit();
+
+        return ['success' => TRUE, 'baru' => $baru, 'jumlah' => $jumlah];
     }
 
     /** Auto-hide konten yang dilaporkan >= threshold kali */

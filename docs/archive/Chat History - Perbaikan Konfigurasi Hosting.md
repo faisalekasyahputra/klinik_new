@@ -38,19 +38,19 @@ DB_NAME=u504551489_klinikpkp
 DB_USER=u504551489_klinikadm
 ```
 
-**Lokal kamu dan hosting kamu menunjuk ke DATABASE YANG SAMA** di server Hostinger (`31.97.208.59`). Jadi sebenarnya bukan "ikut server" — tapi **keduanya share 1 database**.
+**Lokal kamu dan hosting kamu menunjuk ke DATABASE YANG SAMA** di server Hostinger (`31.97.208.59`). Jadi sebenarnya bukan "ikut server" - tapi **keduanya share 1 database**.
 
 ### Kenapa rusak ketika XAMPP dimatikan?
 
 Kemungkinan yang terjadi:
 
 1. **Kamu mengedit data via lokal** → data berubah di database hosting → website hosting juga berubah
-2. **Session/cache conflict** — jika ada operasi yang belum selesai saat XAMPP dimatikan, bisa menyebabkan data corrupt di database shared
-3. **SITE_URL masih `localhost`** — di `.env` baris 9: `SITE_URL=http://localhost/klinik_new/`. Jika file `.env` yang sama juga diupload ke hosting, maka link CSS/JS/gambar di hosting akan mengarah ke `localhost` → **tampilan rusak total**
+2. **Session/cache conflict** - jika ada operasi yang belum selesai saat XAMPP dimatikan, bisa menyebabkan data corrupt di database shared
+3. **SITE_URL masih `localhost`** - di `.env` baris 9: `SITE_URL=http://localhost/klinik_new/`. Jika file `.env` yang sama juga diupload ke hosting, maka link CSS/JS/gambar di hosting akan mengarah ke `localhost` → **tampilan rusak total**
 
 ### ⚠️ Masalah Utama: `SITE_URL`
 
-Yang paling mungkin menyebabkan "rusak" adalah **`SITE_URL=http://localhost/klinik_new/`** juga terpakai di hosting. Artinya semua asset (CSS, JS, gambar) di hosting mencoba load dari `localhost` — yang tentu saja tidak ada di komputer pengunjung.
+Yang paling mungkin menyebabkan "rusak" adalah **`SITE_URL=http://localhost/klinik_new/`** juga terpakai di hosting. Artinya semua asset (CSS, JS, gambar) di hosting mencoba load dari `localhost` - yang tentu saja tidak ada di komputer pengunjung.
 
 ---
 
@@ -66,7 +66,7 @@ Kamu perlu **membedakan `.env` antara lokal dan hosting**:
 **Yang harus kamu lakukan di hosting:**
 1. Edit file `.env` **di hosting** (bukan lokal), set `SITE_URL` ke domain hosting kamu
 2. Set `DB_HOST=localhost` di hosting (karena database dan web server satu server)
-3. **Jangan upload `.env` lokal ke hosting** — masing-masing harus punya `.env` sendiri
+3. **Jangan upload `.env` lokal ke hosting** - masing-masing harus punya `.env` sendiri
 
 Mau saya bantu bikin file `.env` terpisah untuk hosting kamu?
 
@@ -90,14 +90,14 @@ Done! File [.env.hosting](file:///c:/xampp/htdocs/klinik_new/.env.hosting) sudah
 
 ## Cara pakai:
 
-1. **Upload ke hosting** — rename `.env.hosting` menjadi `.env` di server hosting kamu
+1. **Upload ke hosting** - rename `.env.hosting` menjadi `.env` di server hosting kamu
    - Masuk ke File Manager Hostinger → folder project → hapus/rename `.env` lama → upload `.env.hosting` → rename jadi `.env`
 
-2. **Jangan upload `.env` lokal** ke hosting lagi — biarkan masing-masing punya `.env` sendiri
+2. **Jangan upload `.env` lokal** ke hosting lagi - biarkan masing-masing punya `.env` sendiri
 
 3. **Pastikan `.gitignore`** sudah include `.env` dan `.env.hosting` supaya tidak ter-commit
 
-> ⚠️ **Jangan lupa:** Setelah ganti `.env` di hosting, kamu juga perlu **update Google OAuth Redirect URI** di [Google Cloud Console](https://console.cloud.google.com/) — tambahkan `https://palegreen-mink-703421.hostingersite.com/Auth/google_callback` sebagai Authorized Redirect URI.
+> ⚠️ **Jangan lupa:** Setelah ganti `.env` di hosting, kamu juga perlu **update Google OAuth Redirect URI** di [Google Cloud Console](https://console.cloud.google.com/) - tambahkan `https://palegreen-mink-703421.hostingersite.com/Auth/google_callback` sebagai Authorized Redirect URI.
 
 ### User Input
 

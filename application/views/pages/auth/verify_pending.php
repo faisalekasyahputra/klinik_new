@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verifikasi Email — Klinik PKP</title>
+    <title>Verifikasi Email - Klinik PKP</title>
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
-    <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . time()) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . filemtime('assets/css/auth-pages.css')) ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <style>
@@ -235,7 +235,7 @@
             </div>
 
             <!-- Continue Button (hidden until complete) -->
-            <button class="verify-btn-continue" id="btnContinue" onclick="window.location.href='<?= base_url('Auth/onboarding') ?>'">
+            <button class="verify-btn-continue" id="btnContinue" onclick="window.location.href='<?= base_url('Auth/lanjutkan') ?>'">
                 <span>Lanjutkan Lengkapi Profil</span>
                 <i class="fa-solid fa-arrow-right"></i>
             </button>
@@ -261,7 +261,7 @@ let currentStep = 0;
 
 function runStep() {
     if (currentStep >= steps.length) {
-        // All done — call AJAX to actually verify
+        // All done - call AJAX to actually verify
         fetch('<?= base_url('Auth/do_verify_email') ?>', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -281,6 +281,7 @@ function runStep() {
 
             // Show continue button
             document.getElementById('btnContinue').classList.add('show');
+            setTimeout(() => { window.location.href = '<?= base_url('Auth/lanjutkan') ?>'; }, 800);
         });
         return;
     }

@@ -91,8 +91,12 @@ function cari_wil() {
     let isChecked = document.getElementById('status_subsidi').checked;
     let statusRumah = isChecked ? 'subsidi' : 'semua';
     
-    // Tampilkan loading skeleton atau teks loading (opsional)
-    jQuery('#temp_rumah').html('<div class="col-span-full text-center py-10"><i class="fa-solid fa-circle-notch fa-spin text-4xl text-[#d6fb00]"></i><p class="mt-4 text-zinc-400">Mencari perumahan...</p></div>');
+    jQuery('#temp_rumah').html(`
+        <div class="skeleton h-72"></div>
+        <div class="skeleton h-72"></div>
+        <div class="skeleton h-72"></div>
+        <div class="skeleton h-72"></div>
+    `);
     
     $.ajax({
         url: '<?= base_url('cari_wil') ?>?kodeWilayah='+kodeWilayah+'&keyword='+keyword+'&sort='+sort+'&status_rumah='+statusRumah,

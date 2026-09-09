@@ -40,7 +40,7 @@
         <!-- Card Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-            <!-- Card 1: Klinik Diagnosa (ex Housing Career) — CTA Utama -->
+            <!-- Card 1: Klinik Diagnosa (ex Housing Career) - CTA Utama -->
             <a href="<?= base_url('Program/diagnosa/umum') ?>" class="flex flex-col h-full group animate-fade-in-up delay-100">
                 <div class="flex-1 p-6 rounded-[24px] flex flex-col justify-between transition-all duration-300 group-hover:-translate-y-1 shadow-lg"
                      style="background: var(--bg-card); border: 1px solid rgba(214,251,0,0.15);"
@@ -130,7 +130,7 @@
             </a>
 
             <!-- Card 5: Layanan & Aduan -->
-            <a href="<?= base_url('umum/aduan') ?>" class="flex flex-col h-full group animate-fade-in-up delay-400">
+            <a href="<?= base_url('umum/aduan') ?>" data-tab-link data-tab-key="aduan" class="flex flex-col h-full group animate-fade-in-up delay-400">
                 <div class="flex-1 p-6 rounded-[24px] flex flex-col justify-between transition-all duration-300 group-hover:-translate-y-1 shadow-lg"
                      style="background: var(--bg-card); border: 1px solid rgba(214,251,0,0.15);"
                      onmouseenter="this.style.borderColor='rgba(255,107,107,0.50)'; this.style.boxShadow='0 8px 30px rgba(255,107,107,0.10)';"
@@ -150,8 +150,8 @@
                 </div>
             </a>
 
-            <!-- Card 6: Forum Diskusi -->
-            <a href="<?= base_url('umum/forum') ?>" class="flex flex-col h-full group animate-fade-in-up delay-500">
+            <!-- Card 6: Konsultasi Terjadwal -->
+            <a href="<?= base_url('umum/forum') ?>" data-tab-link data-tab-key="forum" class="flex flex-col h-full group animate-fade-in-up delay-500">
                 <div class="flex-1 p-6 rounded-[24px] flex flex-col justify-between transition-all duration-300 group-hover:-translate-y-1 shadow-lg"
                      style="background: var(--bg-card); border: 1px solid rgba(214,251,0,0.15);"
                      onmouseenter="this.style.borderColor='rgba(0,163,181,0.50)'; this.style.boxShadow='0 8px 30px rgba(0,163,181,0.10)';"
@@ -161,8 +161,8 @@
                             <i class="fa-solid fa-comments text-[28px]"></i>
                         </div>
                         <div class="space-y-1.5 pt-1">
-                            <h4 class="font-bold text-base tracking-tight transition-colors" style="color: var(--text-primary);">Forum Diskusi</h4>
-                            <p class="text-xs leading-relaxed" style="color: var(--text-muted);">Ruang interaksi komunitas warga untuk saling berbagi info seputar pemeliharaan lingkungan perumahan.</p>
+                            <h4 class="font-bold text-base tracking-tight transition-colors" style="color: var(--text-primary);">Konsultasi Terjadwal</h4>
+                            <p class="text-xs leading-relaxed" style="color: var(--text-muted);">Sampaikan kebutuhan Anda untuk ditinjau admin dan diarahkan ke agenda konsultasi yang sesuai.</p>
                         </div>
                     </div>
                     <div class="flex justify-end pt-4 mt-auto">

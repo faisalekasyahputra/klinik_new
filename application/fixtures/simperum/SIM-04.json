@@ -1,0 +1,32 @@
+{
+  "fixture_id": "SIM-04",
+  "synthetic": true,
+  "response_status": "found",
+  "api_version": "simulation-v1",
+  "identity": {
+    "nik": "0000000000000004",
+    "family_card_number": "0000000000001004",
+    "full_name": "Warga Simulasi Pembiayaan",
+    "address": "Alamat Sintetis Kota Surakarta",
+    "birth_date": "1987-04-04",
+    "gender_code": "female"
+  },
+  "socioeconomic": {
+    "occupation_code": "private_employee",
+    "income_band_code": "6_8",
+    "welfare_decile": 6,
+    "has_savings": true,
+    "self_help_capability_code": "capable",
+    "self_help_amount": 15000000
+  },
+  "housing": {
+    "housing_status_code": "rent",
+    "has_other_house": false,
+    "occupant_count": 3,
+    "family_count": 1
+  },
+  "structure": {},
+  "sanitation": {},
+  "location": {"kabupaten_id": 3372},
+  "missing_fields": []
+}

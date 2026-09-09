@@ -58,8 +58,8 @@
                             <tr>
                                 <th onclick="sortTable(0)" class="cursor-pointer hover:bg-[#d6fb00]/10 transition-colors px-8 py-5 text-left text-[11px] font-black tracking-widest text-[#d6fb00] uppercase select-none"><div class="flex items-center gap-2"><i class="fa-solid fa-building text-[#d6fb00]/50"></i> <span>Nama Pengembang</span> <i class="fa-solid fa-sort text-zinc-600 ml-auto sort-icon" id="sortIcon0"></i></div></th>
                                 <th onclick="sortTable(1)" class="cursor-pointer hover:bg-[#d6fb00]/10 transition-colors px-8 py-5 text-left text-[11px] font-black tracking-widest text-[#d6fb00] uppercase select-none"><div class="flex items-center gap-2"><span>Asosiasi</span> <i class="fa-solid fa-sort text-zinc-600 ml-auto sort-icon" id="sortIcon1"></i></div></th>
-                                <th onclick="sortTable(2)" class="cursor-pointer hover:bg-[#d6fb00]/10 transition-colors px-8 py-5 text-left text-[11px] font-black tracking-widest text-[#d6fb00] uppercase select-none"><div class="flex items-center gap-2"><i class="fa-solid fa-map-location-dot text-[#d6fb00]/50"></i> <span>Kabupaten</span> <i class="fa-solid fa-sort text-zinc-600 ml-auto sort-icon" id="sortIcon2"></i></div></th>
-                                <th onclick="sortTable(3)" class="cursor-pointer hover:bg-[#d6fb00]/10 transition-colors px-8 py-5 text-left text-[11px] font-black tracking-widest text-[#d6fb00] uppercase select-none"><div class="flex items-center gap-2"><i class="fa-solid fa-file-contract text-[#d6fb00]/50"></i> <span>Status SP2</span> <i class="fa-solid fa-sort text-zinc-600 ml-auto sort-icon" id="sortIcon3"></i></div></th>
+                                <th onclick="sortTable(2)" class="cursor-pointer hover:bg-[#d6fb00]/10 transition-colors px-8 py-5 text-left text-[11px] font-black tracking-widest text-[#d6fb00] uppercase select-none"><div class="flex items-center gap-2"><i class="fa-solid fa-map-location-dot text-[#d6fb00]/50"></i> <span>Wilayah Pengembang</span> <i class="fa-solid fa-sort text-zinc-600 ml-auto sort-icon" id="sortIcon2"></i></div></th>
+                                <th onclick="sortTable(3)" class="cursor-pointer hover:bg-[#d6fb00]/10 transition-colors px-8 py-5 text-left text-[11px] font-black tracking-widest text-[#d6fb00] uppercase select-none"><div class="flex items-center gap-2"><i class="fa-solid fa-file-contract text-[#d6fb00]/50"></i> <span>Status Sertifikasi</span> <i class="fa-solid fa-sort text-zinc-600 ml-auto sort-icon" id="sortIcon3"></i></div></th>                                <th onclick="sortTable(4)" class="cursor-pointer hover:bg-[#d6fb00]/10 transition-colors px-8 py-5 text-left text-[11px] font-black tracking-widest text-[#d6fb00] uppercase select-none"><div class="flex items-center gap-2"><i class="fa-solid fa-calendar-check text-[#d6fb00]/50"></i> <span>Masa Berlaku</span> <i class="fa-solid fa-sort text-zinc-600 ml-auto sort-icon" id="sortIcon4"></i></div></th>
                                 <th class="px-8 py-5 text-center text-[11px] font-black tracking-widest text-[#d6fb00] uppercase">Aksi</th>
                             </tr>
                         </thead>
@@ -72,29 +72,51 @@
                                             <i class="fa-solid fa-industry text-sm"></i>
                                         </div>
                                         <div>
-                                            <div class="text-sm font-bold text-white group-hover:text-[#d6fb00] transition-colors"><?= $dev['pengembang'] ?></div>
-                                            <div class="text-[10px] text-zinc-500 font-medium mt-0.5"><i class="fa-solid fa-house-chimney text-[8px] mr-1"></i><?= $dev['nama_perumahan'] ?></div>
+                                            <div class="text-sm font-bold text-white group-hover:text-[#d6fb00] transition-colors"><?= html_escape($dev['pengembang']) ?></div>
+                                            <div class="text-[10px] text-zinc-500 font-medium mt-0.5"><i class="fa-solid fa-house-chimney text-[8px] mr-1"></i><?= html_escape($dev['nama_perumahan']) ?></div>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="px-8 py-5 text-sm">
                                     <span class="inline-flex items-center px-3 py-1 bg-[#0a1a1f] text-[#d6fb00] border border-[#d6fb00]/20 rounded-lg font-bold text-[10px] uppercase tracking-wider shadow-sm group-hover:border-[#d6fb00]/40 transition-colors">
-                                        <i class="fa-solid fa-users text-[#d6fb00]/60 mr-1.5"></i> <?= $dev['asosiasi'] ?>
+                                        <i class="fa-solid fa-users text-[#d6fb00]/60 mr-1.5"></i> <?= html_escape($dev['asosiasi']) ?>
                                     </span>
                                 </td>
                                 <td class="px-8 py-5 text-sm">
-                                    <span class="text-zinc-400 font-semibold group-hover:text-zinc-300 transition-colors"><?= $dev['kabupaten'] ?></span>
+                                    <span class="text-zinc-400 font-semibold group-hover:text-zinc-300 transition-colors"><?= html_escape($dev['wilayah_pengembang']) ?></span>
                                 </td>
                                 <td class="px-8 py-5 text-sm">
-                                    <?php if ($dev['sp2_status'] === 'Belum Terdata'): ?>
-                                        <span class="inline-flex items-center px-3 py-1 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg font-bold text-[10px] uppercase tracking-wider shadow-sm group-hover:border-red-500/40 transition-colors">
-                                            <i class="fa-solid fa-circle-xmark mr-1.5"></i> Belum Terdata
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="inline-flex items-center px-3 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-lg font-bold text-[10px] uppercase tracking-wider shadow-sm group-hover:border-emerald-500/40 transition-colors">
-                                            <i class="fa-solid fa-circle-check mr-1.5"></i> Terdata (NIB: <?= $dev['sp2_status'] ?>)
-                                        </span>
-                                    <?php endif; ?>
+                                    <?php
+                                    $status_warna = [
+                                        'belum_mendaftar' => 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
+                                        'mendaftar' => 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+                                        'masih_proses' => 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                                        'bersertifikat' => 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+                                    ];
+                                    ?>
+                                    <span class="inline-flex items-center px-3 py-1 border rounded-lg font-bold text-[10px] uppercase tracking-wider <?= $status_warna[$dev['status_sertifikasi']] ?? $status_warna['belum_mendaftar'] ?>">
+                                        <?= html_escape($dev['status_label']) ?>
+                                    </span>
+                                </td>
+                                <td class="px-8 py-5 text-sm">
+                                    <?php
+                                    $berlaku_warna = [
+                                        'aktif' => 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+                                        'kedaluwarsa' => 'bg-red-500/10 text-red-400 border-red-500/20',
+                                        'belum' => 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
+                                        'tak_tercatat' => 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                                    ];
+                                    $tanggal_terbit = ! empty($dev['sertifikat_terbit']) ? date('d/m/Y', strtotime($dev['sertifikat_terbit'])) : NULL;
+                                    $tanggal_akhir = ! empty($dev['sertifikat_berakhir']) ? date('d/m/Y', strtotime($dev['sertifikat_berakhir'])) : NULL;
+                                    ?>
+                                    <span class="inline-flex items-center px-3 py-1 border rounded-lg font-bold text-[10px] uppercase tracking-wider <?= $berlaku_warna[$dev['keadaan_berlaku']] ?? $berlaku_warna['tak_tercatat'] ?>">
+                                        <?= html_escape($dev['keadaan_label']) ?>
+                                    </span>
+                                    <div class="mt-1.5 text-[10px] text-zinc-500 whitespace-nowrap">
+                                        <?= $tanggal_terbit || $tanggal_akhir
+                                            ? html_escape(($tanggal_terbit ?: 'Belum tercatat') . ' – ' . ($tanggal_akhir ?: 'Belum tercatat'))
+                                            : 'Tanggal belum tercatat' ?>
+                                    </div>
                                 </td>
                                 <td class="px-8 py-5 text-center">
                                     <div class="flex items-center justify-center gap-2">

@@ -1,18 +1,18 @@
 /* ============================================================
-   KLINIK PKP — Design Tokens (CSS Custom Properties)
+   KLINIK PKP - Design Tokens (CSS Custom Properties)
    Generated from design-tokens.json
    ============================================================
    Anchor Colors:
-     #ecffb6  — Lime Cream (light)
-     #d6fb00  — Electric Lime (brand primary)
-     #00545f  — Deep Teal (secondary)
+     #ecffb6  - Lime Cream (light)
+     #d6fb00  - Electric Lime (brand primary)
+     #00545f  - Deep Teal (secondary)
    ============================================================
-   STATUS (audited 18 Jul 2026 — see docs/design/DESIGN_SYSTEM.md):
+   STATUS (audited 18 Jul 2026 - see docs/design/DESIGN_SYSTEM.md):
    This file is NOT loaded by the running app. The public site loads
    assets/css/design-system.css (its own, slightly different :root
    block) and the admin panel defines colors again inline in
    application/views/admin/layouts/head.php. Values below were
-   verified against actual hex usage across application/views — they
+   verified against actual hex usage across application/views - they
    match the dominant/most-used value for each role, but a lot of
    near-duplicate stray colors still exist in the codebase (drift).
    Read DESIGN_SYSTEM.md before treating this file as authoritative
@@ -68,7 +68,7 @@
     --border-strong:  rgba(214, 251, 0, 0.40);
 
     /* ---- Semantic ---- */
-    --success:      #10b981;  /* decided 18 Jul 2026 — was #6bcb77, see DESIGN_SYSTEM.md §3 */
+    --success:      #10b981;  /* decided 18 Jul 2026 - was #6bcb77, see DESIGN_SYSTEM.md §3 */
     --success-soft: rgba(16, 185, 129, 0.12);
     --warning:      #ffd93d;
     --warning-soft: rgba(255, 217, 61, 0.12);

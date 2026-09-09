@@ -136,6 +136,15 @@ class Auth_model extends CI_Model {
      * Increment failed login attempts. Lock account if threshold reached.
      */
     public function increment_login_attempts($user_id) {
+        // Jendela lockout sebelumnya sudah lewat, tapi login_attempts tidak
+        // pernah direset kecuali login BERHASIL -- tanpa ini, satu salah ketik
+        // sesudah menunggu penuh 15 menit langsung mengunci 15 menit lagi,
+        // selamanya, sampai kebetulan sandinya benar (roadmap T6 R2-sisa).
+        $user = $this->find_by_id($user_id);
+        if ($user && $user->locked_until && strtotime($user->locked_until) <= time()) {
+            $this->db->where('id', $user_id)->update('usr_users', ['login_attempts' => 0, 'locked_until' => NULL]);
+        }
+
         $this->db->set('login_attempts', 'login_attempts + 1', FALSE);
         $this->db->where('id', $user_id);
         $this->db->update('usr_users');
@@ -165,6 +174,26 @@ class Auth_model extends CI_Model {
     // =========================================================
 
     /**
+     * Turunkan username unik dari local-part email - dipakai HANYA saat
+     * daftar cepat SRP2 mengisi profile_completed=1 tanpa pernah melalui
+     * onboarding, sehingga name/username tidak pernah NULL (roadmap T5
+     * S12-a). Bukan pengganti onboarding: user tetap bisa menggantinya
+     * lewat /akun/profil kapan saja.
+     */
+    public function generate_unique_username($seed) {
+        $base = strtolower(preg_replace('/[^a-z0-9_]/', '', $seed));
+        if ($base === '') { $base = 'pengembang'; }
+        $base = substr($base, 0, 40);
+
+        $username = $base;
+        $suffix = 1;
+        while ($this->db->where('username', $username)->count_all_results('usr_users') > 0) {
+            $username = substr($base, 0, 40) . (++$suffix);
+        }
+        return $username;
+    }
+
+    /**
      * Save onboarding profile data.
      * $data should contain role-specific fields.
      */
@@ -175,6 +204,158 @@ class Auth_model extends CI_Model {
 
         $this->db->where('id', $user_id);
         return $this->db->update('usr_users', $data);
+    }
+
+    /**
+     * Pastikan akun pengembang punya baris srp2_registrations, buat kalau belum.
+     * SATU-SATUNYA tempat draft SRP2 dibuat - sebelumnya logika ini disalin di
+     * empat tempat (Auth::do_login cabang AJAX, Auth::do_register,
+     * Auth::lanjutkan, Pengembang::syarat) dan satu jalur terlewat:
+     * Auth::save_onboarding() tidak membuatnya sama sekali, sehingga user yang
+     * jadi pengembang lewat onboarding umum tidak melihat item SRP2 apa pun di
+     * /akun sampai kebetulan membuka wizard. Lihat PRD_VERIFIKASI_ADMIN_SRP2.md
+     * Fase 2 dan AUDIT_ROLE_PENGEMBANG.md temuan #2.
+     *
+     * Idempotent: aman dipanggil berkali-kali, tidak pernah membuat draft dobel.
+     *
+     * @param int         $user_id
+     * @param string|null $status_filter batasi pencarian ke status tertentu
+     *                                   (dipakai Auth::lanjutkan yang memang
+     *                                   cuma peduli draft yang belum dikirim)
+     * @return int|null ID baris srp2_registrations, NULL kalau user tidak ada
+     */
+    public function ensure_srp2_draft($user_id, $status_filter = NULL) {
+        $user_id = (int) $user_id;
+        if ( ! $user_id) { return NULL; }
+
+        $this->db->order_by('id', 'DESC')->where('user_id', $user_id);
+        if ($status_filter !== NULL) { $this->db->where('status_verifikasi', $status_filter); }
+        $baris = $this->db->get('srp2_registrations')->row();
+        if ($baris) { return (int) $baris->id; }
+
+        // JANGAN pernah membuat baris kedua untuk user yang sudah punya pengajuan.
+        // $status_filter menyempitkan PENCARIAN, bukan izin membuat: pemanggil
+        // yang mencari khusus 'Draft' (Auth::lanjutkan) dulu jatuh ke INSERT saat
+        // pengajuannya sudah Pending - draft kosong baru itu lalu menang di semua
+        // ORDER BY id DESC, dan pengajuan yang sudah dikirim lenyap dari pandangan
+        // pemohon padahal admin masih melihatnya.
+        //
+        // Guard diletakkan di sini, bukan di pemanggilnya, supaya kelima jalur
+        // yang memakai fungsi ini ikut benar sekaligus.
+        if ($status_filter !== NULL) {
+            $terakhir = $this->db->order_by('id', 'DESC')->where('user_id', $user_id)
+                ->get('srp2_registrations')->row();
+            if ($terakhir) { return (int) $terakhir->id; }
+        }
+
+        $user = $this->find_by_id($user_id);
+        if ( ! $user) { return NULL; }
+
+        $this->db->insert('srp2_registrations', [
+            'user_id'           => $user_id,
+            'email'             => $user->email,
+            'nama_perusahaan'   => $user->nama_perusahaan,
+            'status_verifikasi' => 'Draft',
+        ]);
+        return (int) $this->db->insert_id();
+    }
+
+    /**
+     * Keadaan pengajuan SRP2 milik seorang pengembang - SATU sumber untuk
+     * semua yang butuh tahu "sudah sampai mana orang ini".
+     *
+     * Dibuat karena keadaan ini dulu cuma dihitung di Pengembang::syarat(),
+     * sementara Auth::do_login() (jalur AJAX wizard) hanya mengembalikan
+     * registration_id. Akibatnya pengembang lama yang masuk LEWAT wizard
+     * melihat keadaan tamu: 0/14 dokumen, tombol kirim terkunci, dan catatan
+     * admin tidak muncul - padahal di server semuanya sudah ada.
+     *
+     * @param  int $user_id
+     * @return array|null  registration_id, status, catatan_admin, uploaded_keys
+     */
+    public function srp2_state($user_id) {
+        $registration_id = $this->ensure_srp2_draft($user_id);
+        if ( ! $registration_id) { return NULL; }
+
+        $baris = $this->db->get_where('srp2_registrations', ['id' => $registration_id])->row();
+        if ( ! $baris) { return NULL; }
+
+        $keys = $this->db->select('document_key')
+            ->where('registration_id', $registration_id)
+            ->get('srp2_documents')->result_array();
+
+        return [
+            'registration_id' => $registration_id,
+            'status'          => $baris->status_verifikasi,
+            'catatan_admin'   => $baris->catatan_admin,
+            'uploaded_keys'   => array_column($keys, 'document_key'),
+        ];
+    }
+
+    /**
+     * Terbitkan / segarkan baris direktori publik dari sebuah pengajuan.
+     * SATU fungsi, dipanggil dari DUA tempat: Admin_Srp2::proses() saat approve,
+     * dan Pengaturan::update_pengembang_profile() saat pemohon mengubah datanya.
+     *
+     * Dibuat karena dulu baris direktori hanya diisi SEKALI saat approve: ganti
+     * alamat/website/Instagram sesudah itu tidak pernah sampai ke publik, padahal
+     * form-nya berlabel "Kontak publik - ditampilkan di halaman profil
+     * pengembang". Label yang menjanjikan sesuatu yang tidak terjadi termasuk
+     * kebohongan di layar (§0d).
+     *
+     * Dipanggil dari dalam transaksi pemanggilnya - sengaja tidak membuka
+     * transaksi sendiri supaya tidak bersarang.
+     *
+     * @param  object $reg baris srp2_registrations
+     * @return int|null    id baris direktori, NULL kalau tidak bisa diterbitkan
+     */
+    public function upsert_direktori_publik($reg) {
+        $nama = trim((string) ($reg->nama_perusahaan ?? ''));
+        // Kolom nama di direktori NOT NULL + UNIQUE - tanpa nama tidak ada yang
+        // bisa diterbitkan. Gerbangnya sendiri ada di kirim_pengajuan() (T1a).
+        if ($nama === '') { return NULL; }
+
+        $payload = [
+            'nama_perusahaan' => $nama,
+            'alamat_kantor'   => $reg->alamat_kantor ?? NULL,
+            'website'         => $reg->website ?? NULL,
+            'instagram'       => $reg->instagram ?? NULL,
+            'sosmed_lainnya'  => $reg->sosmed_lainnya ?? NULL,
+        ];
+
+        /* Asosiasi ikut menular ke direktori 14 Agt 2026. Sebelumnya TIDAK -
+           pengembang memilih asosiasinya di /akun/profil, nilainya tersimpan
+           rapi di srp2_registrations, dan berhenti di situ: kolom asosiasi di
+           direktori publik tidak pernah terisi dari jalur ini (67 dari 67
+           baris NULL saat diperiksa).
+
+           Hanya disalin kalau MEMANG TERISI - beda dari field lain di atas.
+           Kolom ini juga bisa diisi admin langsung lewat Admin_Srp2 untuk data
+           historis yang tidak punya baris registrasi berpasangan; menyalin
+           NULL apa adanya akan menghapus isian admin itu tiap kali pemohon
+           menyentuh formulir profilnya. Ini persis bug `sosmed_lainnya`
+           10 Agt (lihat komentarnya di Admin_Srp2::index()), jangan diulang. */
+        $asosiasi = trim((string) ($reg->asosiasi ?? ''));
+        if ($asosiasi !== '') { $payload['asosiasi'] = $asosiasi; }
+
+        // NPWP sudah divalidasi dan dienkripsi saat onboarding. Nilai ini
+        // diteruskan saat pengajuan diterima tanpa pernah dibuka ke publik.
+        if ( ! empty($reg->npwp_lookup_hash) && ! empty($reg->npwp_ciphertext)) {
+            $payload['npwp_ciphertext'] = $reg->npwp_ciphertext;
+            $payload['npwp_lookup_hash'] = $reg->npwp_lookup_hash;
+        }
+        if ( ! empty($reg->certified_developer_id)) {
+            // Sudah terbit: segarkan isinya, JANGAN sentuh status_aktif -
+            // pencabutan/pengaktifan adalah keputusan admin yang terpisah.
+            $this->db->where('id', (int) $reg->certified_developer_id)
+                ->update('srp2_certified_developers', $payload);
+            return (int) $reg->certified_developer_id;
+        }
+
+        $payload['status_aktif'] = 1;
+        $this->db->insert('srp2_certified_developers', $payload);
+        $id = (int) $this->db->insert_id();
+        return $id ?: NULL;
     }
 
     /**

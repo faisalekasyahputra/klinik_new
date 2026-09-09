@@ -1,4 +1,3 @@
-﻿
 <?php
 class Buka_peta extends CI_Model
 {

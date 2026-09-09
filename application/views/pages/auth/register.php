@@ -5,15 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token-name" content="<?= $this->security->get_csrf_token_name(); ?>">
     <meta name="csrf-token-hash" content="<?= $this->security->get_csrf_hash(); ?>">
-    <title>Daftar Akun — Klinik PKP</title>
+    <title>Daftar Akun - Klinik PKP</title>
     <meta name="description" content="Buat akun baru untuk mengakses portal layanan perumahan dan kawasan permukiman terpadu.">
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
-    <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . time()) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . filemtime('assets/css/auth-pages.css')) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 </head>
 <body class="auth-page">
+<?php $this->load->view('components/notification_center'); ?>
 
 <div class="auth-split">
 
@@ -35,7 +38,7 @@
             </h1>
             <p class="auth-left__desc">
                 Daftarkan diri Anda untuk mendapatkan akses ke seluruh
-                layanan perumahan digital — informasi, aduan, dan data
+                layanan perumahan digital - informasi, aduan, dan data
                 pembangunan kawasan permukiman.
             </p>
             <div class="auth-left__badge">
@@ -62,17 +65,6 @@
 
             <h2 class="auth-heading">Buat Akun Baru</h2>
             <p class="auth-subheading">Isi data berikut untuk mendaftar. Cepat dan mudah.</p>
-
-            <!-- Flash Messages -->
-            <?php if ($this->session->flashdata('error')): ?>
-                <div x-data="{ show: true }" x-show="show" class="auth-alert auth-alert--error relative pr-10" style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <i class="fa-solid fa-circle-exclamation mr-2"></i>
-                        <?= $this->session->flashdata('error') ?>
-                    </div>
-                    <button @click="show = false" type="button" style="background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.7;"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            <?php endif; ?>
 
             <!-- Registration Form -->
             <form action="<?= base_url('Auth/do_register') ?>" method="POST" id="registerForm">
@@ -106,7 +98,7 @@
                     <div class="auth-strength__bar"></div>
                     <div class="auth-strength__bar"></div>
                 </div>
-                <div class="auth-strength-label" id="strengthLabel" style="color:var(--auth-gray-400);">—</div>
+                <div class="auth-strength-label" id="strengthLabel" style="color:var(--auth-gray-400);">-</div>
 
                 <!-- Password Rules -->
                 <ul class="auth-rules" id="passwordRules">
@@ -204,7 +196,7 @@ function checkPasswordStrength(pw) {
 
     const labels = ['', 'Lemah', 'Sedang', 'Kuat', 'Sangat Kuat'];
     const colors = ['', 'var(--auth-red)', '#f97316', 'var(--auth-amber)', 'var(--auth-green)'];
-    label.textContent = pw.length === 0 ? '—' : labels[level];
+    label.textContent = pw.length === 0 ? '-' : labels[level];
     label.style.color = pw.length === 0 ? 'var(--auth-gray-400)' : colors[level];
 }
 
@@ -215,13 +207,13 @@ document.getElementById('registerForm').addEventListener('submit', function(e) {
 
     if (pw !== pwConfirm) {
         e.preventDefault();
-        alert('Password dan Konfirmasi Password tidak cocok.');
+        KPKP.notify.error('Password dan Konfirmasi Password tidak cocok.');
         return;
     }
 
     if (pw.length < 8 || !/[A-Z]/.test(pw) || !/[0-9]/.test(pw) || !/[^A-Za-z0-9]/.test(pw)) {
         e.preventDefault();
-        alert('Password harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.');
+        KPKP.notify.error('Password harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.');
         return;
     }
 

@@ -32,13 +32,25 @@ class Auth extends MY_Controller {
     }
 
     // =========================================================
-    // LOGIN — Email/Password
+    // LOGIN - Email/Password
     // =========================================================
 
     /**
      * Display login page
      */
     public function login() {
+        // Simpan tujuan lanjutan setelah login (mis. link "Sudah punya akun?"
+        // dari alur pendaftaran SRP2) - dibaca lewat ?next=, divalidasi anti-open-redirect.
+        // WAJIB dibaca duluan SEBELUM cek is_logged_in(), supaya kalau user ternyata
+        // sudah login, redirect di bawah tetap tahu harus lanjut ke mana (bukan jatuh ke beranda).
+        $next = $this->input->get('next', TRUE);
+        if (!empty($next)) {
+            $safe_next = $this->sanitize_redirect($next);
+            if (!empty($safe_next)) {
+                $this->session->set_userdata('intended_url', $safe_next);
+            }
+        }
+
         // If already logged in, redirect
         if ($this->is_logged_in()) {
             $this->_redirect_after_login();
@@ -55,11 +67,16 @@ class Auth extends MY_Controller {
     public function do_login() {
         $login_id = trim($this->input->post('email', TRUE));
         $password = $this->input->post('password');
+        $is_ajax  = $this->input->is_ajax_request();
+
+        // Kalau form login ini ditanam di halaman lain (mis. wizard SRP2 Pengembang/syarat),
+        // form itu kirim hidden field 'redirect_to' supaya kalau gagal (jalur non-AJAX), user
+        // tetap di halaman asalnya - bukan terlempar ke Auth/login umum. Divalidasi anti-open-redirect.
+        $error_target = $this->sanitize_redirect($this->input->post('redirect_to', TRUE)) ?: 'Auth/login';
 
         // Basic validation
         if (empty($login_id) || empty($password)) {
-            $this->session->set_flashdata('error', 'Email/Username dan password wajib diisi.');
-            redirect('Auth/login');
+            $this->_login_fail($is_ajax, 'Email/Username dan password wajib diisi.', $error_target);
             return;
         }
 
@@ -67,8 +84,7 @@ class Auth extends MY_Controller {
         if (!empty($this->recaptcha_secret_key)) {
             $recaptcha_response = $this->input->post('g-recaptcha-response');
             if (!$this->_verify_recaptcha($recaptcha_response)) {
-                $this->session->set_flashdata('error', 'Verifikasi Captcha gagal. Silakan coba lagi.');
-                redirect('Auth/login');
+                $this->_login_fail($is_ajax, 'Verifikasi Captcha gagal. Silakan coba lagi.', $error_target);
                 return;
             }
         }
@@ -78,16 +94,38 @@ class Auth extends MY_Controller {
 
         if (!$user || empty($user->password)) {
             // User not found or no password (Google-only user)
-            $this->session->set_flashdata('error', 'Akun tidak ditemukan atau password salah.');
-            redirect('Auth/login');
+            $this->_login_fail($is_ajax, 'Akun tidak ditemukan atau password salah.', $error_target);
             return;
         }
 
         // Check lockout
         if ($this->auth_model->is_locked($user)) {
             $remaining = ceil($this->auth_model->lockout_remaining($user) / 60);
-            $this->session->set_flashdata('error', "Akun terkunci sementara. Coba lagi dalam {$remaining} menit.");
-            redirect('Auth/login');
+            $this->_login_fail($is_ajax, "Akun terkunci sementara. Coba lagi dalam {$remaining} menit.", $error_target);
+            return;
+        }
+
+        /**
+         * GERBANG STATUS - ditambahkan 3 Agt 2026 bersama layar Akses Staf.
+         *
+         * Sebelum ini kolom `status` TIDAK PERNAH dibaca saat login; ia hanya
+         * ditulis. Membangun tombol "nonaktifkan akun" di atasnya akan
+         * menghasilkan saklar yang berbohong: badge berubah, orangnya tetap
+         * masuk. Jadi tombolnya dan gerbangnya lahir bersamaan.
+         *
+         * Yang diblokir HANYA `nonaktif`, bukan "apa pun yang bukan active".
+         * Alasannya bukan kehati-hatian umum: di DB ini ada 6 akun berstatus
+         * `restricted` yang hari ini bekerja normal - termasuk satu-satunya akun
+         * superadmin. Memblokir "bukan active" akan mengunci pemilik sistem dari
+         * sistemnya sendiri pada deploy berikutnya, tanpa ada yang meminta itu.
+         * `restricted` peninggalan lama yang maknanya tidak pernah ditetapkan;
+         * menetapkannya sekarang lewat gerbang login adalah keputusan produk,
+         * bukan perbaikan teknis.
+         */
+        if (strtolower(trim((string) ($user->status ?? ''))) === 'nonaktif') {
+            $this->_login_fail($is_ajax,
+                'Akun ini dinonaktifkan. Hubungi Super Admin bila menurut Anda ini keliru.',
+                $error_target);
             return;
         }
 
@@ -95,36 +133,91 @@ class Auth extends MY_Controller {
         if (!password_verify($password, $user->password)) {
             $this->auth_model->increment_login_attempts($user->id);
             $attempts_left = Auth_model::MAX_LOGIN_ATTEMPTS - ($user->login_attempts + 1);
-            if ($attempts_left > 0) {
-                $this->session->set_flashdata('error', "Email atau password salah. Sisa {$attempts_left} percobaan.");
-            } else {
-                $this->session->set_flashdata('error', 'Akun terkunci selama 15 menit karena terlalu banyak percobaan gagal.');
-            }
-            redirect('Auth/login');
+            $message = $attempts_left > 0
+                ? "Email atau password salah. Sisa {$attempts_left} percobaan."
+                : 'Akun terkunci selama 15 menit karena terlalu banyak percobaan gagal.';
+            $this->_login_fail($is_ajax, $message, $error_target);
             return;
         }
 
-        // Success — reset attempts and create session
+        // Success - reset attempts and create session
         $this->auth_model->reset_login_attempts($user->id);
 
         $session_data = [
-            'user_id'   => $user->id,
-            'name'      => $user->name,
-            'username'  => $user->username ?? '',
-            'email'     => $user->email,
-            'avatar'    => $user->avatar,
-            'role'      => $user->role, // Added role to session
-            'is_logged' => TRUE,
+            'user_id'      => $user->id,
+            'name'         => $user->name,
+            'username'     => $user->username ?? '',
+            'email'        => $user->email,
+            'avatar'       => $user->avatar,
+            'role'         => $user->role, // Added role to session
+            'kabupaten_id' => $user->kabupaten_id ?? null, // scope untuk role admin_kabkota
+            'bidang_kode'  => $user->bidang_kode ?? null, // scope untuk role admin_bidang
+            'is_logged'    => TRUE,
         ];
         $this->session->set_userdata($session_data);
         $this->session->sess_regenerate(TRUE);
+
+        // Draft SRP2 dipastikan ada untuk SEMUA jalur login - bukan cuma cabang
+        // AJAX. Dulu pemanggilan ini ada DI DALAM `if ($is_ajax)`, sehingga
+        // pengembang yang masuk lewat halaman login utama (`Auth/login`) tidak
+        // punya baris draft, dan `Pengaturan::index()` yang menjaga dengan
+        // `if ($sp2)` membuat item SRP2-nya tidak muncul sama sekali di /akun.
+        // Hasilnya: fitur yang sama terlihat ada atau tidak ada, tergantung
+        // lewat pintu mana user masuk.
+        $srp2 = ($user->role === 'pengembang')
+            ? $this->auth_model->srp2_state($user->id)
+            : NULL;
+        $registration_id = $srp2['registration_id'] ?? NULL;
+
+        // Wizard (mis. SRP2 di Pengembang/syarat) cuma butuh konfirmasi + role, bukan redirect -
+        // wizard yang urus lanjutannya sendiri di sisi klien, tanpa pindah halaman.
+        if ($is_ajax) {
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status'          => 'success',
+                'role'            => $user->role,
+                'name'            => $user->name,
+                'registration_id' => $registration_id,
+                // Keadaan pengajuan ikut dikirim supaya wizard tidak menampilkan
+                // keadaan tamu (0/14 dokumen, catatan admin hilang) untuk
+                // pengembang lama yang baru saja masuk lewat wizard.
+                'srp2'            => $srp2,
+                // Dipakai wizard SRP2 saat akun yang login ternyata bukan
+                // pengembang: kartu salah-role butuh tujuan dashboard yang benar
+                // untuk role INI, bukan tautan hardcode ke `akun`.
+                'dashboard_url'   => $this->dashboard_home($user->role),
+                'is_pengelola'    => in_array($user->role, ['admin', 'admin_kabkota', 'admin_bidang'], TRUE),
+            ]));
+            return;
+        }
+
+        // Kalau sebelumnya diarahkan ke sini di tengah alur lain (mis. pendaftaran SRP2
+        // lewat link "Sudah punya akun?"), kasih tahu login berhasil dan alurnya lanjut.
+        if (!empty($this->session->userdata('intended_url'))) {
+            $this->session->set_flashdata('success', 'Anda berhasil masuk. Mari lanjutkan.');
+        }
 
         // Redirect based on profile completion
         $this->_redirect_after_login();
     }
 
+    /**
+     * Balas gagal login - JSON kalau request AJAX (dipakai wizard SRP2), flashdata+redirect
+     * kalau request halaman biasa (perilaku asli, tidak berubah).
+     */
+    private function _login_fail($is_ajax, $message, $error_target) {
+        if ($is_ajax) {
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status'  => 'error',
+                'message' => $message,
+            ]));
+            return;
+        }
+        $this->session->set_flashdata('error', $message);
+        redirect($error_target);
+    }
+
     // =========================================================
-    // REGISTRATION — Step 1 (Email + Password)
+    // REGISTRATION - Step 1 (Email + Password)
     // =========================================================
 
     /**
@@ -147,31 +240,52 @@ class Auth extends MY_Controller {
         $email            = trim($this->input->post('email', TRUE));
         $password         = $this->input->post('password');
         $password_confirm = $this->input->post('password_confirm');
+        $is_srp2          = $this->input->post('srp2_pengembang') === '1';
+        $nama_perusahaan  = trim($this->input->post('nama_perusahaan', TRUE));
+        $is_ajax          = $this->input->is_ajax_request();
+        // Wizard SRP2 sekarang tinggal di Pengembang/syarat - bukan lagi halaman
+        // Pengembang/daftar terpisah (diarsipkan, cuma jadi redirect ke sini).
+        $redirect_target  = $is_srp2 ? 'Pengembang/syarat' : 'Auth/register';
+
+        // Batas laju pendaftaran per IP. Tanpa ini satu skrip bisa menciptakan
+        // akun pengembang aktif berulang-ulang, masing-masing berhak membuka
+        // pengajuan ke meja admin - meja verifikasi yang tercemar membatalkan
+        // nilai seluruh mesin verifikasi. reCAPTCHA TIDAK bisa diandalkan
+        // sebagai gantinya: verifikasinya dilewati seluruhnya kalau kuncinya
+        // kosong, dan di .env lokal memang kosong. Roadmap T0 butir 3.
+        //
+        // Dicatat pada SETIAP percobaan, bukan cuma yang gagal - di sini justru
+        // pendaftaran yang BERHASIL berulang kali yang jadi penyalahgunaannya.
+        $rate = $this->rate_limit_consume('register');
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject(
+                $rate,
+                'Terlalu banyak percobaan pendaftaran. Silakan coba lagi sebentar.',
+                $is_ajax
+            );
+            return;
+        }
 
         // Validation
         if (empty($email) || empty($password) || empty($password_confirm)) {
-            $this->session->set_flashdata('error', 'Semua field wajib diisi.');
-            redirect('Auth/register');
+            $this->_register_fail($is_ajax, 'Semua field wajib diisi.', $redirect_target);
             return;
         }
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $this->session->set_flashdata('error', 'Format email tidak valid.');
-            redirect('Auth/register');
+            $this->_register_fail($is_ajax, 'Format email tidak valid.', $redirect_target);
             return;
         }
 
         if ($password !== $password_confirm) {
-            $this->session->set_flashdata('error', 'Password dan konfirmasi tidak cocok.');
-            redirect('Auth/register');
+            $this->_register_fail($is_ajax, 'Password dan konfirmasi tidak cocok.', $redirect_target);
             return;
         }
 
         // Password strength
         if (strlen($password) < 8 || !preg_match('/[A-Z]/', $password) ||
             !preg_match('/[0-9]/', $password) || !preg_match('/[^A-Za-z0-9]/', $password)) {
-            $this->session->set_flashdata('error', 'Password harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.');
-            redirect('Auth/register');
+            $this->_register_fail($is_ajax, 'Password harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.', $redirect_target);
             return;
         }
 
@@ -179,8 +293,7 @@ class Auth extends MY_Controller {
         if (!empty($this->recaptcha_secret_key)) {
             $recaptcha_response = $this->input->post('g-recaptcha-response');
             if (!$this->_verify_recaptcha($recaptcha_response)) {
-                $this->session->set_flashdata('error', 'Verifikasi Captcha gagal. Silakan coba lagi.');
-                redirect('Auth/register');
+                $this->_register_fail($is_ajax, 'Verifikasi Captcha gagal. Silakan coba lagi.', $redirect_target);
                 return;
             }
         }
@@ -188,39 +301,107 @@ class Auth extends MY_Controller {
         // Check if email already exists
         $existing = $this->auth_model->find_by_email($email);
         if ($existing) {
-            $this->session->set_flashdata('error', 'Email sudah terdaftar. Silakan login atau gunakan email lain.');
-            redirect('Auth/register');
+            // Sengaja TIDAK menyatakan bahwa emailnya sudah terdaftar: pesan
+            // seperti itu menjadikan formulir pendaftaran alat pengecek
+            // keanggotaan - siapa pun bisa menguji daftar email untuk tahu
+            // siapa saja punya akun di sini. Pemilik akun yang sah tetap
+            // terbantu lewat tautan Masuk / Lupa Sandi.
+            $this->_register_fail($is_ajax, 'Pendaftaran tidak dapat diproses dengan email tersebut. Kalau Anda sudah punya akun, silakan masuk.', $redirect_target);
             return;
         }
 
         // Create user
+        if ($is_srp2 && $nama_perusahaan === '') {
+            $this->_register_fail($is_ajax, 'Nama perusahaan wajib diisi untuk akun pengembang.', 'Pengembang/syarat');
+            return;
+        }
         $password_hash = password_hash($password, PASSWORD_BCRYPT);
         $user_id = $this->auth_model->create_user($email, $password_hash);
 
         if (!$user_id) {
-            $this->session->set_flashdata('error', 'Terjadi kesalahan sistem. Silakan coba lagi.');
-            redirect('Auth/register');
+            $this->_register_fail($is_ajax, 'Terjadi kesalahan sistem. Silakan coba lagi.', $redirect_target);
             return;
+        }
+
+        $registration_id = null;
+        $default_name = NULL;
+        $default_username = NULL;
+        if ($is_srp2) {
+            // Daftar cepat SRP2 langsung menyetel profile_completed=1 dan tidak
+            // pernah melalui onboarding, jadi name/username akan NULL selamanya
+            // kalau tidak diisi di sini - roadmap T5 S12-a. Diturunkan dari data
+            // yang MEMANG sudah diisi user (email, nama perusahaan), bukan
+            // dikarang; pemohon tetap bebas menggantinya di /akun/profil.
+            $default_username = $this->auth_model->generate_unique_username(strstr($email, '@', TRUE));
+            $default_name = 'Perwakilan ' . strtoupper($nama_perusahaan);
+
+            $this->db->where('id', $user_id)->update('usr_users', [
+                'role' => 'pengembang', 'nama_perusahaan' => strtoupper($nama_perusahaan),
+                'username' => $default_username, 'name' => $default_name,
+                'profile_completed' => 1, 'status' => 'active', 'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+            // Draft dibuat langsung di sini (bukan lewat detour verifikasi-email simulasi)
+            // supaya wizard bisa lanjut ke langkah unggah dokumen tanpa pindah halaman.
+            // Dipanggil SETELAH usr_users di-update supaya nama_perusahaan yang
+            // baru tersimpan ikut terbawa ke draft.
+            $registration_id = $this->auth_model->ensure_srp2_draft($user_id);
+            $this->session->set_userdata('intended_url', 'akun');
+            $this->session->set_userdata('srp2_quick_registration', TRUE);
         }
 
         // Auto-login the new user
         $session_data = [
             'user_id'   => $user_id,
-            'name'      => NULL,
-            'username'  => NULL,
+            'name'      => $default_name,
+            'username'  => $default_username,
             'email'     => $email,
             'avatar'    => NULL,
+            'role'      => $is_srp2 ? 'pengembang' : NULL,
             'is_logged' => TRUE,
         ];
         $this->session->set_userdata($session_data);
         $this->session->sess_regenerate(TRUE);
 
+        if ($is_ajax) {
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status'          => 'success',
+                'role'            => $session_data['role'],
+                // Wizard SRP2 menampilkan "Masuk sebagai <nama>" lewat field ini
+                // (syarat.php:506) -- tanpanya kartu "Anda sudah terdaftar" tampil
+                // dengan nama kosong tepat sesudah daftar cepat (roadmap T6 R2-sisa).
+                'name'            => $default_name,
+                'registration_id' => $registration_id,
+            ]));
+            return;
+        }
+
+        if ($is_srp2) {
+            redirect('Pengembang/syarat');
+            return;
+        }
+
         // Redirect to dummy email verification page
         redirect('Auth/verify_pending');
     }
 
+    /**
+     * Balas gagal registrasi - JSON kalau request AJAX (dipakai wizard SRP2), flashdata+redirect
+     * kalau request halaman biasa (perilaku asli, tidak berubah).
+     */
+    private function _register_fail($is_ajax, $message, $redirect_target) {
+        if ($is_ajax) {
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status'  => 'error',
+                'message' => $message,
+            ]));
+            return;
+        }
+        $this->session->set_flashdata('error', $message);
+        redirect($redirect_target);
+    }
+
     // =========================================================
-    // ONBOARDING — Progressive Profiling
+    // ONBOARDING - Progressive Profiling
     // =========================================================
 
     /**
@@ -228,13 +409,13 @@ class Auth extends MY_Controller {
      */
     public function onboarding() {
         if (!$this->is_logged_in()) {
-            redirect('Auth/login');
+            $this->gerbang_login();
             return;
         }
 
-        // If profile already complete, go to dashboard
+        // If profile already complete, go to dashboard (atau lanjutkan alur yang tertunda)
         if ($this->auth_model->is_profile_complete($this->get_user_id())) {
-            redirect('');
+            $this->_redirect_after_login();
             return;
         }
 
@@ -242,9 +423,31 @@ class Auth extends MY_Controller {
         $user = $this->auth_model->find_by_id($this->get_user_id());
         $needs_password = empty($user->password);
 
+        $old = $this->session->flashdata('ob_old') ?: [];
+        /* Permintaan user 14 Agt 2026: kalau alur ini BERAWAL dari
+           pengecekan NIK di /warga/pendataan (ditemukan ATAU tidak - lihat
+           Warga::lookup_anonim(), keduanya mengisi `warga_pending_nik`),
+           field NIK di formulir onboarding langsung terisi - tidak boleh
+           mengetik ulang NIK yang baru saja dicek.
+           `ob_old` (isian dari percobaan submit SEBELUMNYA yang gagal
+           validasi) MENANG kalau keduanya ada - itu ketikan orangnya
+           sendiri barusan, lebih baru daripada NIK dari pengecekan awal.
+           TIDAK di-unset di sini dengan sengaja - baris ini cuma membaca
+           untuk prefill, Auth::_redirect_after_login() yang jadi pemilik
+           tunggal siklus hidupnya (baca lalu unset), supaya kunjungan
+           ulang ke halaman onboarding ini (mis. submit gagal sekali lalu
+           balik) tetap terprefill, bukan cuma sekali pakai. */
+        if (empty($old['nik_identitas'])) {
+            $pending_nik = $this->session->userdata('warga_pending_nik');
+            if ( ! empty($pending_nik)) {
+                $old['nik_identitas'] = $pending_nik;
+            }
+        }
+
         $data = [
             'user_email'     => $this->session->userdata('email'),
             'needs_password' => $needs_password,
+            'old'            => $old,
         ];
         $this->load->view('pages/auth/onboarding', $data);
     }
@@ -254,18 +457,31 @@ class Auth extends MY_Controller {
      */
     public function save_onboarding() {
         if (!$this->is_logged_in()) {
-            redirect('Auth/login');
+            $this->gerbang_login();
             return;
         }
 
         $user_id = $this->get_user_id();
         $role    = html_escape($this->input->post('role'));
 
+        /* Pendaftaran yang dimulai dari cek NIK tidak boleh berakhir pada
+           peran lain. Modalnya memang bertuliskan "Buat Akun Warga" dan
+           intended_url mengarah ke pendataan; memaksa peran di server
+           mencegah pilihan UI atau POST yang dimanipulasi memutus alur itu. */
+        if ( ! empty($this->session->userdata('warga_pending_nik'))) {
+            $role = 'warga';
+        }
+
         // Validate role
-        $valid_roles = ['warga', 'pages/pengembang/pengembang', 'vendor', 'mahasiswa'];
+        // 'vendor' DICABUT. Ia bukan sekadar tidak terpakai - kolom yang diisi
+        // cabangnya (nama_usaha, alamat_usaha, jenis_usaha) tidak ada di
+        // usr_users, jadi save_profile() pasti gagal di tingkat DB. Siapa pun
+        // yang memilih kartu itu tidak pernah mendapat profil, cuma error. Nol
+        // baris berperan vendor di production, dan config/roles.php memang
+        // sudah tidak mencantumkannya sebagai role resmi.
+        $valid_roles = ['warga', 'pengembang', 'mahasiswa'];
         if (!in_array($role, $valid_roles)) {
-            $this->session->set_flashdata('error', 'Pilih peran yang valid.');
-            redirect('Auth/onboarding');
+            $this->_onboarding_fail('Pilih peran yang valid.');
             return;
         }
 
@@ -273,13 +489,14 @@ class Auth extends MY_Controller {
         $username  = html_escape($this->input->post('username'));
         $username  = preg_replace('/\s+/', '', strtolower($username)); // Ensure no spaces
         $nama      = html_escape($this->input->post('nama_lengkap'));
-        $nik_raw   = html_escape($this->input->post('nik_identitas'));
+        $nik_raw   = preg_replace('/\D+/', '', (string) $this->input->post('nik_identitas', TRUE));
+        $npwp_raw  = preg_replace('/\D+/', '', (string) $this->input->post('npwp', TRUE));
         $alamat_raw = html_escape($this->input->post('alamat_domisili'));
         $phone     = html_escape($this->input->post('phone'));
 
-        if (empty($username) || empty($nama) || empty($nik_raw) || empty($alamat_raw) || empty($phone)) {
-            $this->session->set_flashdata('error', 'Semua field wajib harus diisi.');
-            redirect('Auth/onboarding');
+        if (empty($username) || empty($nama) || empty($alamat_raw) || empty($phone)
+            || ($role === 'pengembang' ? empty($npwp_raw) : empty($nik_raw))) {
+            $this->_onboarding_fail('Semua field wajib harus diisi.');
             return;
         }
 
@@ -290,21 +507,18 @@ class Auth extends MY_Controller {
             $password_confirm  = $this->input->post('password_confirm');
 
             if (empty($password) || empty($password_confirm)) {
-                $this->session->set_flashdata('error', 'Password wajib diisi untuk mengamankan akun Anda.');
-                redirect('Auth/onboarding');
+                $this->_onboarding_fail('Password wajib diisi untuk mengamankan akun Anda.');
                 return;
             }
 
             if ($password !== $password_confirm) {
-                $this->session->set_flashdata('error', 'Password dan konfirmasi tidak cocok.');
-                redirect('Auth/onboarding');
+                $this->_onboarding_fail('Password dan konfirmasi tidak cocok.');
                 return;
             }
 
             if (strlen($password) < 8 || !preg_match('/[A-Z]/', $password) ||
                 !preg_match('/[0-9]/', $password) || !preg_match('/[^A-Za-z0-9]/', $password)) {
-                $this->session->set_flashdata('error', 'Password harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.');
-                redirect('Auth/onboarding');
+                $this->_onboarding_fail('Password harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.');
                 return;
             }
 
@@ -316,43 +530,60 @@ class Auth extends MY_Controller {
         $this->db->where('username', $username);
         $this->db->where('id !=', $user_id);
         if ($this->db->count_all_results('usr_users') > 0) {
-            $this->session->set_flashdata('error', 'Username sudah digunakan, silakan pilih yang lain.');
-            redirect('Auth/onboarding');
+            $this->_onboarding_fail('Username sudah digunakan, silakan pilih yang lain.');
             return;
         }
 
-        // NIK validation (16 digits)
-        if (!preg_match('/^[0-9]{16}$/', $nik_raw)) {
-            $this->session->set_flashdata('error', 'NIK harus terdiri dari 16 digit angka.');
-            redirect('Auth/onboarding');
+        // Identitas dibedakan menurut peran. Pengembang memakai NPWP perusahaan;
+        // NIK hanya diikat ke akun warga/mahasiswa.
+        if ($role === 'pengembang') {
+            if ( ! preg_match('/^[0-9]{15,16}$/', $npwp_raw)) {
+                $this->_onboarding_fail('NPWP harus terdiri dari 15 atau 16 digit angka.');
+                return;
+            }
+            $npwp_hash = $this->encryption_lib->deterministic_hash($npwp_raw);
+            $dipakai_pengajuan = $this->db->where('npwp_lookup_hash', $npwp_hash)
+                ->where('user_id !=', $user_id)->count_all_results('srp2_registrations');
+            $dipakai_direktori = $this->db->where('npwp_lookup_hash', $npwp_hash)
+                ->count_all_results('srp2_certified_developers');
+            if ($dipakai_pengajuan || $dipakai_direktori) {
+                $this->_onboarding_fail('NPWP sudah digunakan oleh pengembang lain.');
+                return;
+            }
+            $npwp_encrypted = $this->encryption_lib->encrypt($npwp_raw);
+        } elseif ( ! preg_match('/^[0-9]{16}$/', $nik_raw)) {
+            $this->_onboarding_fail('NIK harus terdiri dari 16 digit angka.');
             return;
         }
 
-        // Encrypt PII data
-        $nik_encrypted    = $this->encryption_lib->encrypt($nik_raw);
         $alamat_encrypted = $this->encryption_lib->encrypt($alamat_raw);
-        $nik_hash         = $this->encryption_lib->deterministic_hash($nik_raw);
-
         $profile_data = [
-            'username'        => $username,
-            'name'            => $nama,
-            'role'            => $role,
-            'nik'             => $nik_encrypted,
-            'nik_lookup_hash' => $nik_hash,
-            'alamat'          => $alamat_encrypted,
-            'phone'           => $phone,
-            'kategori'        => $role, // Map to existing kategori field
+            'username' => $username,
+            'name' => $nama,
+            'role' => $role,
+            'alamat' => $alamat_encrypted,
+            'phone' => $phone,
+            'kategori' => $role,
         ];
-
+        if ($role !== 'pengembang') {
+            $profile_data['nik'] = $this->encryption_lib->encrypt($nik_raw);
+            $profile_data['nik_lookup_hash'] = $this->encryption_lib->deterministic_hash($nik_raw);
+        }
         // Role-specific fields
-        if ($role === 'pages/pengembang/pengembang') {
-            $profile_data['nama_perusahaan'] = html_escape($this->input->post('nama_perusahaan'));
+        if ($role === 'pengembang') {
+            // Divalidasi di SERVER, bukan cuma atribut required di form. Ini hulu
+            // KEDUA yang melahirkan pengembang (selain daftar cepat di
+            // do_register), dan satu gerbang tidak cukup kalau ada dua hulu:
+            // nama kosong di sini akan menjadi pengajuan yang mustahil disetujui
+            // di meja admin. Roadmap T1a butir 3.
+            $nama_perusahaan_ob = trim((string) $this->input->post('nama_perusahaan'));
+            if ($nama_perusahaan_ob === '') {
+                $this->_onboarding_fail('Nama perusahaan wajib diisi untuk mendaftar sebagai pengembang.');
+                return;
+            }
+            $profile_data['nama_perusahaan'] = html_escape($nama_perusahaan_ob);
             $profile_data['alamat_kantor']   = html_escape($this->input->post('alamat_kantor'));
             $profile_data['telp_kantor']     = html_escape($this->input->post('telp_kantor'));
-        } elseif ($role === 'vendor') {
-            $profile_data['nama_usaha']  = html_escape($this->input->post('nama_usaha'));
-            $profile_data['alamat_usaha'] = html_escape($this->input->post('alamat_usaha'));
-            $profile_data['jenis_usaha'] = html_escape($this->input->post('jenis_usaha'));
         }
 
         // Save profile
@@ -361,15 +592,53 @@ class Auth extends MY_Controller {
         }
         $this->auth_model->save_profile($user_id, $profile_data);
 
+        // Jalur onboarding umum dulu TIDAK membuat draft SRP2 sama sekali,
+        // sehingga user yang jadi pengembang lewat sini tidak melihat item SRP2
+        // apa pun di /akun sampai kebetulan membuka wizard. Sekarang konsisten
+        // dengan jalur daftar cepat. Lihat PRD_VERIFIKASI_ADMIN_SRP2.md Fase 2.
+        if ($role === 'pengembang') {
+            $registration_id = $this->auth_model->ensure_srp2_draft($user_id);
+            if ($registration_id) {
+                $this->db->where('id', $registration_id)->update('srp2_registrations', [
+                    'npwp_ciphertext' => $npwp_encrypted,
+                    'npwp_lookup_hash' => $npwp_hash,
+                ]);
+            }
+        }
+
         // Handle file uploads
         $this->_handle_uploads($user_id, $role);
 
         // Update session name
         $this->session->set_userdata('name', $nama);
         $this->session->set_userdata('username', $username);
+        $this->session->set_userdata('role', $role);
 
         $this->session->set_flashdata('success', 'Profil berhasil disimpan! Selamat datang di Klinik PKP.');
-        redirect('');
+        $this->_redirect_after_login();
+    }
+
+    /**
+     * Gagalkan onboarding TANPA membuang isian user.
+     *
+     * Sebelumnya tiap cabang validasi memanggil set_flashdata('error') +
+     * redirect sendiri-sendiri, jadi satu digit NIK yang keliru memulangkan
+     * pengembang ke formulir kosong - 12 isian dan 2 unggahan hilang. Semua
+     * cabang sekarang lewat sini supaya isian ikut pulang bersama pesannya.
+     *
+     * Password TIDAK ikut disimpan: flashdata menumpang session, dan kata sandi
+     * polos tidak boleh singgah di sana meski cuma satu permintaan.
+     * Berkas juga tidak bisa dikembalikan - HTML melarang mengisi input file
+     * dari server, jadi formulir menyebutkannya terus terang ke user.
+     */
+    private function _onboarding_fail($pesan) {
+        $old = $this->input->post();
+        unset($old['password'], $old['password_confirm'],
+              $old[$this->security->get_csrf_token_name()]);
+
+        $this->session->set_flashdata('ob_old', $old);
+        $this->session->set_flashdata('error', $pesan);
+        redirect('Auth/onboarding');
     }
 
     // =========================================================
@@ -385,11 +654,11 @@ class Auth extends MY_Controller {
     // =========================================================
 
     /**
-     * Show pending verification page (dummy — auto-verifies after countdown)
+     * Show pending verification page (dummy - auto-verifies after countdown)
      */
     public function verify_pending() {
         if (!$this->is_logged_in()) {
-            redirect('Auth/login');
+            $this->gerbang_login();
             return;
         }
 
@@ -400,7 +669,7 @@ class Auth extends MY_Controller {
     }
 
     /**
-     * AJAX endpoint — simulate email verification
+     * AJAX endpoint - simulate email verification
      */
     public function do_verify_email() {
         if (!$this->is_logged_in()) {
@@ -417,8 +686,26 @@ class Auth extends MY_Controller {
         echo json_encode(['status' => 'ok']);
     }
 
+    public function lanjutkan() {
+        if (!$this->is_logged_in()) { $this->gerbang_login(); return; }
+        if ($this->session->userdata('srp2_quick_registration') === TRUE) {
+            // Jalur ini memang cuma peduli draft yang BELUM dikirim - kalau
+            // pengajuannya sudah Pending/Diterima, buat draft baru itu keliru.
+            $draft_id = $this->auth_model->ensure_srp2_draft($this->get_user_id(), 'Draft');
+            $this->session->unset_userdata('srp2_quick_registration');
+            $this->session->unset_userdata('srp2_verify_pending');
+            $this->session->unset_userdata('intended_url');
+            // Ke WIZARD, bukan halaman unggah terpisah. Redirect lama adalah
+            // satu-satunya yang masih menyeret pemohon KELUAR dari wizard di
+            // tengah alur - sisa era sebelum wizard yang lupa diperbarui.
+            redirect('Pengembang/syarat');
+            return;
+        }
+        $this->_redirect_after_login();
+    }
+
     // =========================================================
-    // EMAIL VERIFICATION (Token-based — future implementation)
+    // EMAIL VERIFICATION (Token-based - future implementation)
     // =========================================================
 
     public function verify_email($token = '') {
@@ -433,7 +720,7 @@ class Auth extends MY_Controller {
         } else {
             $this->session->set_flashdata('error', 'Tautan verifikasi tidak valid atau sudah kedaluwarsa.');
         }
-        redirect('Auth/login');
+        $this->gerbang_login();
     }
 
     // =========================================================
@@ -457,6 +744,25 @@ class Auth extends MY_Controller {
     }
 
     /**
+     * Tutup popup OAuth dan (opsional) arahkan window pembuka ke $redirect_url.
+     * $redirect_url di-json_encode, bukan di-echo mentah ke string JS berkutip
+     * tunggal - sebelumnya base_url($redirect_to) diselipkan langsung, dan
+     * sanitize_redirect() cuma menolak URL eksternal, tidak membuang kutip
+     * satu dari path relatif (roadmap T5, Auth.php ~:680). CSP + nonce dipasang
+     * sekalian sebagai lapis kedua: halaman ini cuma perlu satu <script> inline,
+     * jadi tidak ada alasan mengizinkan skrip lain dari sumber mana pun.
+     */
+    private function _oauth_close_popup($redirect_url = null) {
+        $nonce = base64_encode(random_bytes(16));
+        header("Content-Security-Policy: default-src 'none'; script-src 'nonce-{$nonce}'");
+        $script = $redirect_url === null
+            ? 'window.close();'
+            : 'window.opener.location.href = ' . json_encode($redirect_url) . '; window.close();';
+        echo '<script nonce="' . $nonce . '">' . $script . '</script>';
+        exit;
+    }
+
+    /**
      * Endpoint: base_url('auth/google_callback') -> Handle Google response
      */
     public function google_callback() {
@@ -467,11 +773,7 @@ class Auth extends MY_Controller {
 
         if (empty($state_from_google) || empty($state_from_session) ||
             !hash_equals($state_from_session, $state_from_google)) {
-            echo "<script>
-                window.opener.location.href = '" . base_url('login') . "';
-                window.close();
-            </script>";
-            exit;
+            $this->_oauth_close_popup(base_url('login'));
         }
 
         $redirect_to = $this->session->userdata('oauth_redirect');
@@ -501,6 +803,32 @@ class Auth extends MY_Controller {
                     $logged_in_user = $this->user_model->check_google_user($user_data);
 
                     if ($logged_in_user) {
+                        /**
+                         * GERBANG STATUS - kembaran dari yang ada di do_login().
+                         *
+                         * Tanpa ini, tombol "Nonaktifkan" di Akses Staf tidak
+                         * menutup apa pun bagi siapa saja yang emailnya juga
+                         * akun Google: `check_google_user()` mencocokkan lewat
+                         * EMAIL (bukan google_id) dan mengembalikan barisnya apa
+                         * adanya, berapa pun statusnya. Orang yang baru dicabut
+                         * aksesnya tinggal mengeklik "Masuk dengan Google" dan
+                         * kembali dengan role serta scope lengkap - sementara
+                         * layar Akses Staf dan jejak audit sama-sama melaporkan
+                         * pencabutan itu berhasil.
+                         *
+                         * Ditemukan lewat tinjauan adversarial 3 Agt 2026.
+                         * Pelajaran umumnya: gerbang yang dipasang di satu titik
+                         * masuk bukan gerbang - ia harus dipasang di SEMUA titik
+                         * yang membuat sesi. Di berkas ini ada tiga (do_login,
+                         * do_register, google_callback).
+                         */
+                        if (strtolower(trim((string) ($logged_in_user[0]['status'] ?? ''))) === 'nonaktif') {
+                            $this->session->set_flashdata('error',
+                                'Akun ini dinonaktifkan. Hubungi Super Admin bila menurut Anda ini keliru.');
+                            $this->gerbang_login();
+                            return;
+                        }
+
                         // Mark Google users as email-verified
                         $this->db->where('id', $logged_in_user[0]['id']);
                         $this->db->update('usr_users', [
@@ -508,53 +836,75 @@ class Auth extends MY_Controller {
                         ]);
 
                         $session_data = [
-                            'user_id'   => $logged_in_user[0]['id'],
-                            'name'      => $logged_in_user[0]['name'],
-                            'username'  => $logged_in_user[0]['username'] ?? '',
-                            'email'     => $logged_in_user[0]['email'],
-                            'avatar'    => $logged_in_user[0]['avatar'],
-                            'role'      => $logged_in_user[0]['role'] ?? null, // Added role to session
-                            'is_logged' => TRUE,
+                            'user_id'      => $logged_in_user[0]['id'],
+                            'name'         => $logged_in_user[0]['name'],
+                            'username'     => $logged_in_user[0]['username'] ?? '',
+                            'email'        => $logged_in_user[0]['email'],
+                            'avatar'       => $logged_in_user[0]['avatar'],
+                            'role'         => $logged_in_user[0]['role'] ?? null, // Added role to session
+                            'kabupaten_id' => $logged_in_user[0]['kabupaten_id'] ?? null,
+                            'bidang_kode'  => $logged_in_user[0]['bidang_kode'] ?? null,
+                            'is_logged'    => TRUE,
                         ];
                         $this->session->set_userdata($session_data);
                         $this->session->sess_regenerate(TRUE);
 
-                        // Check if profile is complete — redirect to new onboarding if not
+                        // Check if profile is complete - redirect to new onboarding if not
                         $user_record = $this->auth_model->find_by_id($logged_in_user[0]['id']);
                         if ($user_record && $user_record->profile_completed == 0) {
                             $redirect_to = 'onboarding';
                         }
 
-                        echo "
-                        <!DOCTYPE html>
-                        <html>
-                        <head><title>Mengarahkan...</title></head>
-                        <body>
-                            <script>
-                                window.opener.location.href = '" . base_url($redirect_to) . "';
-                                window.close();
-                            </script>
-                        </body>
-                        </html>";
-                        exit;
+                        // Jalur login ketiga (Google OAuth) juga membuat sesi
+                        // pengembang, jadi drafnya harus dipastikan ada di sini
+                        // juga - kalau tidak, item SRP2 hilang dari /akun cuma
+                        // karena user memilih masuk lewat Google.
+                        if ($user_record && $user_record->role === 'pengembang') {
+                            $this->auth_model->ensure_srp2_draft($user_record->id);
+                        }
+
+                        $this->_oauth_close_popup(base_url($redirect_to));
                     }
                 }
             } catch (Exception $e) {
-                echo "<script>
-                    window.opener.location.href = '" . base_url('Auth/login?status=error') . "';
-                    window.close();
-                </script>";
-                exit;
+                $this->_oauth_close_popup(base_url('Auth/login?status=error'));
             }
         }
 
-        echo "<script>window.close();</script>";
-        exit;
+        $this->_oauth_close_popup();
     }
 
     // =========================================================
     // LOGOUT
     // =========================================================
+
+    /**
+     * Layar "akses ditolak" - dipanggil `MY_Controller::gerbang_login()` saat
+     * orangnya SUDAH masuk tetapi perannya tidak berhak.
+     *
+     * Dibuat terpisah dari halaman masuk dengan sengaja. Melempar orang yang
+     * sudah login ke halaman login adalah jawaban yang salah untuk pertanyaan
+     * yang salah: sesinya baik-baik saja, yang tidak cocok perannya. Layar ini
+     * mengatakan itu apa adanya, lalu memberi tiga jalan keluar supaya tidak
+     * ada yang merasa mentok.
+     */
+    public function akses_ditolak() {
+        if ( ! $this->session->userdata('is_logged')) {
+            redirect('Auth/login');
+            return;
+        }
+
+        $tujuan = (string) $this->session->userdata('akses_ditolak_tujuan');
+        $this->session->unset_userdata('akses_ditolak_tujuan');
+
+        $this->render('pages/auth/akses_ditolak', [
+            'judul'         => 'Halaman ini bukan untuk peran Anda',
+            'pesan'         => (string) $this->session->flashdata('error'),
+            'tujuan'        => $this->sanitize_redirect($tujuan),
+            'peran'         => (string) $this->current_role(),
+            'tujuan_pulang' => $this->tujuan_setelah_login(),
+        ]);
+    }
 
     public function logout() {
         $curr = $this->input->get('curr', TRUE);
@@ -564,7 +914,7 @@ class Auth extends MY_Controller {
     }
 
     // =========================================================
-    // LEGACY — reg_user (backward compat, redirects to onboarding)
+    // LEGACY - reg_user (backward compat, redirects to onboarding)
     // =========================================================
 
     public function reg_user($id = null) {
@@ -572,7 +922,7 @@ class Auth extends MY_Controller {
     }
 
     // =========================================================
-    // LEGACY — update (backward compat)
+    // LEGACY - update (backward compat)
     // =========================================================
 
     public function update() {
@@ -595,20 +945,95 @@ class Auth extends MY_Controller {
     private function _redirect_after_login() {
         $user_id = $this->get_user_id();
 
+        /* Ikat NIK yang sempat dicari ANONIM (Warga::lookup_anonim(), sebelum
+           akun ada) ke akun yang baru saja diketahui - "gunakan NIK sebagai
+           kunci" begitu warga login/daftar, permintaan user 14 Agt 2026.
+           SEBELUM cek is_profile_complete DENGAN SENGAJA: satu-satunya
+           titik temu login (do_login()) DAN registrasi (save_onboarding(),
+           dipanggil di UJUNG onboarding - lihat baris terakhirnya) adalah
+           method ini, jadi ini juga satu-satunya tempat yang menjangkau
+           keduanya sekaligus tanpa menyalin logika ke dua tempat.
+
+           Simperum_gateway::lookup() dipanggil ULANG (bukan fungsi baru) -
+           kali ini $requested_by=$user_id BENAR terisi (beda dari panggilan
+           anonim yang $requested_by=0), jadi from_snapshot() di dalamnya
+           benar-benar menjalankan save_profile() yang mengikat NIK ke akun
+           ini. Snapshot SIMPERUM-nya sendiri sudah ke-cache dari pencarian
+           anonim tadi (get_active_source_snapshot()) - panggilan ulang ini
+           TIDAK memukul API/fixture kedua kalinya.
+
+           Kegagalan bind (mis. NIK keburu diklaim akun lain di antara
+           pencarian anonim dan login) SENGAJA TIDAK menghentikan login -
+           warga tetap masuk, cukup mencari ulang manual dari wizard kalau
+           mau. Hanya berlaku untuk role warga - akun lain tidak relevan
+           dengan wizard ini.
+
+           SUSULAN 14 Agt 2026: begitu profil terikat DAN hasilnya
+           'found' (NIK ada di SIMPERUM - kalau 'not_found' pemanggilan
+           ulang di atas cuma menegaskan lagi, tidak menyimpan apa pun,
+           lihat Simperum_gateway::from_snapshot()), draft-nya SEKALIAN
+           dibuat/dilanjutkan lewat method yang SAMA PERSIS dipakai
+           Warga::lookup() (Housing_assessment_model::
+           bootstrap_draft_from_lookup(), dipindah ke situ justru supaya
+           bisa dipanggil dari sini juga). Tanpa ini warga yang baru saja
+           login/daftar mendarat balik di step "Temukan Data" - datanya
+           SUDAH ketemu tapi harus mengetik NIK yang sama sekali lagi
+           untuk melihat step "Data Warga". Kegagalan bootstrap (mis.
+           wilayah sumber belum bisa dipakai) juga SENGAJA tidak
+           menghentikan login - sama seperti kegagalan bind di atas. */
+        $pending_nik = $this->session->userdata('warga_pending_nik');
+        if ( ! empty($pending_nik) && $this->has_role('warga')) {
+            $this->load->library('Simperum_gateway');
+            $hasil = $this->simperum_gateway->lookup($pending_nik, '', $user_id, TRUE);
+            if (($hasil['status'] ?? '') === 'found') {
+                $this->load->model('Housing_assessment_model');
+                $this->Housing_assessment_model->bootstrap_draft_from_lookup($user_id, $hasil);
+                $this->session->unset_userdata('warga_pending_nik');
+            } elseif (($hasil['status'] ?? '') === 'not_found'
+                && $this->auth_model->is_profile_complete($user_id)) {
+                /* NIK tidak ditemukan sudah membawa calon warga melalui
+                   pendaftaran. Setelah onboarding selesai, buat draft manual
+                   langsung dari NIK dan nama akun agar ia tidak kembali ke
+                   langkah awal dan dipaksa mencari NIK yang sama sekali lagi. */
+                $this->load->model('Housing_assessment_model');
+                $user = $this->auth_model->find_by_id($user_id);
+                $manual = $this->Housing_assessment_model->bootstrap_manual_draft(
+                    $user_id,
+                    $pending_nik,
+                    trim((string) ($user->name ?? ''))
+                );
+                if ( ! empty($manual['success'])) {
+                    $this->session->unset_userdata('warga_pending_nik');
+                }
+            }
+        }
+
         if (!$this->auth_model->is_profile_complete($user_id)) {
             redirect('Auth/onboarding');
             return;
         }
 
-        // Check for intended URL
+        /* Alamat tujuan yang tersimpan. Sumbernya sesi - yang kita isi sendiri
+           di sisi server lewat `MY_Controller::ingat_halaman_asal()` - jadi
+           secara asal-usul sudah aman.
+           Tetap disaring LAGI di sini, dan itu disengaja: yang menyimpan dan
+           yang memakai ada di berkas berbeda, dan penyaringan yang cuma ada di
+           sisi penyimpan akan hilang tanpa suara begitu ada jalur penyimpan
+           kedua. Dibuang kalau tidak lolos, bukan dipakai apa adanya. */
         $intended = $this->session->userdata('intended_url');
-        if (!empty($intended)) {
+        if ( ! empty($intended)) {
             $this->session->unset_userdata('intended_url');
-            redirect($intended);
-            return;
+            $aman = $this->sanitize_redirect($intended);
+            if ($aman !== '') {
+                redirect($aman);
+                return;
+            }
         }
 
-        redirect('');
+        /* Butir 24 putaran 2, pilihan (a): warga/pengembang/mahasiswa mendarat
+           di BERANDA, bukan dashboard. Alasan lengkapnya di
+           `MY_Controller::tujuan_setelah_login()`. */
+        redirect($this->tujuan_setelah_login());
     }
 
     /**
@@ -630,45 +1055,40 @@ class Auth extends MY_Controller {
     /**
      * Handle file uploads for onboarding
      */
+    /**
+     * Simpan dokumen identitas onboarding (KTP, SIUP, KTM, surat magang).
+     *
+     * Sebelumnya disimpan di FCPATH.'uploads/documents/' - DI DALAM webroot,
+     * jadi scan KTP bisa diakses lewat HTTP kalau nama filenya bocor. Nama acak
+     * bukan kontrol akses, apalagi untuk dokumen kependudukan yang masuk
+     * cakupan UU PDP. Sekarang lewat store_private_upload() ke
+     * private_uploads/onboarding/{user_id}/ di luar webroot.
+     *
+     * CATATAN: saat ini TIDAK ADA UI yang menampilkan kembali dokumen ini
+     * (Auth_model::get_user_documents() tidak pernah dipanggil di mana pun),
+     * jadi belum dibuatkan endpoint baca. Kalau nanti dibutuhkan, buat endpoint
+     * ber-guard yang memakai serve_private_file() - JANGAN kembalikan ke
+     * direktori publik.
+     */
     private function _handle_uploads($user_id, $role) {
-        // Create upload directory
-        $upload_path = FCPATH . 'uploads/documents/' . $user_id . '/';
-        if (!is_dir($upload_path)) {
-            mkdir($upload_path, 0755, TRUE);
-        }
-
-        $config = [
-            'upload_path'   => $upload_path,
-            'allowed_types' => 'pdf|jpg|jpeg|png',
-            'max_size'      => 5120, // 5MB
-            'encrypt_name'  => TRUE,
-        ];
-
-        $this->load->library('upload');
-
-        // Define upload fields per role
         $upload_fields = [];
-        if ($role === 'pages/pengembang/pengembang') {
+        if ($role === 'pengembang') {
             $upload_fields = ['file_ktp' => 'ktp', 'file_siup' => 'siup_nib'];
-        } elseif ($role === 'vendor') {
-            $upload_fields = ['file_ktp_vendor' => 'ktp', 'file_siu_vendor' => 'surat_ijin_usaha'];
         } elseif ($role === 'mahasiswa') {
             $upload_fields = ['file_ktm' => 'ktm', 'file_surat_magang' => 'surat_magang'];
         }
 
         foreach ($upload_fields as $field_name => $doc_type) {
-            if (!empty($_FILES[$field_name]['name'])) {
-                $this->upload->initialize($config);
-                if ($this->upload->do_upload($field_name)) {
-                    $file_data = $this->upload->data();
-                    $this->auth_model->save_document(
-                        $user_id,
-                        $doc_type,
-                        $file_data['file_name'],
-                        'uploads/documents/' . $user_id . '/' . $file_data['file_name'],
-                        $file_data['file_size'] * 1024
-                    );
-                }
+            $ukuran = isset($_FILES[$field_name]['size']) ? (int) $_FILES[$field_name]['size'] : 0;
+            $nama_simpan = $this->store_private_upload($field_name, 'onboarding', $user_id);
+            if ($nama_simpan) {
+                $this->auth_model->save_document(
+                    $user_id,
+                    $doc_type,
+                    $nama_simpan,
+                    'private_uploads/onboarding/' . $user_id . '/' . $nama_simpan,
+                    $ukuran
+                );
             }
         }
     }

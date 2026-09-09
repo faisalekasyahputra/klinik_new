@@ -1,17 +1,35 @@
-<section class="w-full  pt-24 pb-16 px-4 sm:px-6 lg:px-8 relative min-h-screen font-outfit overflow-hidden">
+<style>
+    .detail-perumahan [class*="bg-[#0f2a30]"] { background-color: var(--portal-bg-card) !important; }
+    .detail-perumahan [class*="bg-[#0a1a1f]"] { background-color: var(--portal-bg) !important; }
+    .detail-perumahan [class*="text-white"] { color: var(--portal-text) !important; }
+    .detail-perumahan [class*="text-zinc-"] { color: #467780 !important; }
+    .detail-perumahan [class*="border-[#d6fb00]"] { border-color: var(--portal-border) !important; }
+    .detail-perumahan [class*="text-[#d6fb00]"] { color: var(--portal-brand) !important; }
+    .detail-perumahan [class*="bg-black/"] { background-color: rgba(15, 42, 48, 0.82) !important; }
+    .detail-perumahan .shadow-xl,
+    .detail-perumahan .shadow-lg { box-shadow: var(--portal-shadow) !important; }
+    .detail-perumahan .shadow-\[0_4px_15px_rgba\(214\,251\,0\,0\.3\)\] { box-shadow: 0 4px 12px rgba(0, 163, 181, 0.14) !important; }
+    .detail-perumahan .detail-heading { color: var(--portal-text) !important; }
+    .detail-perumahan .detail-muted { color: var(--portal-text-muted) !important; }
+    .detail-perumahan .detail-primary-btn { background: var(--brand) !important; color: var(--bg-body) !important; }
+    .detail-perumahan .detail-primary-btn:hover { background: var(--brand-light) !important; }
+    .detail-perumahan .detail-secondary-btn { background: var(--portal-btn-bg) !important; color: var(--portal-text) !important; border-color: var(--portal-btn-border) !important; }
+</style>
+
+<section class="detail-perumahan w-full pt-4 sm:pt-6 lg:pt-8 pb-12 px-4 sm:px-6 lg:px-8 relative min-h-screen font-outfit overflow-hidden">
     <!-- Background Ornaments -->
     <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <!-- Batik Pattern Overlay -->
         
         
         <!-- Glow -->
-        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#d6fb00]/5 blur-[120px] rounded-full pointer-events-none"></div>
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#00a3b5]/5 blur-[120px] rounded-full pointer-events-none"></div>
     </div>
 
     <div class="max-w-7xl mx-auto relative z-10">
         
         <div class="mb-8">
-            <a href="javascript:history.back()" class="group inline-flex items-center gap-2 text-zinc-500 hover:text-[#d6fb00] text-xs font-bold uppercase tracking-wider transition-colors">
+                    <a href="javascript:history.back()" class="group inline-flex items-center gap-2 detail-muted hover:text-[#00a3b5] text-xs font-bold uppercase tracking-wider transition-colors">
                 <i class="fa-solid fa-arrow-left transition-transform group-hover:-translate-x-1"></i> Kembali ke List Hunian
             </a>
         </div>
@@ -113,7 +131,7 @@
 
                 <?php if (!empty($row['id'])): ?>
                     <div class="absolute bottom-4 right-4 z-20">
-                        <a href="https://sikumbang.tapera.go.id/lokasi/<?= $row['id'] ?>/siteplan.svg" target="_blank" class="inline-flex items-center gap-2 bg-black/70 hover:bg-[#d6fb00] hover:text-black text-white font-bold text-[11px] uppercase tracking-wider px-5 py-2.5 rounded-xl border border-[#d6fb00]/20 hover:border-[#d6fb00] backdrop-blur-md shadow-lg transition-all duration-300">
+                    <a href="https://sikumbang.tapera.go.id/lokasi/<?= $row['id'] ?>/siteplan.svg" target="_blank" class="detail-secondary-btn inline-flex items-center gap-2 bg-black/70 hover:bg-[#d6fb00] hover:text-black text-white font-bold text-[11px] uppercase tracking-wider px-5 py-2.5 rounded-xl border border-[#d6fb00]/20 hover:border-[#d6fb00] backdrop-blur-md shadow-lg transition-all duration-300">
                             <i class="fa-solid fa-map-location text-xs"></i>
                             <span>Lihat Siteplan</span>
                         </a>
@@ -124,9 +142,9 @@
 
             <div class="lg:col-span-5 flex flex-col justify-center space-y-4">
                 <span class="text-[#d6fb00] text-xs font-bold uppercase tracking-widest flex items-center gap-1.5">
-                    Unit Terverifikasi <img src="<?= base_url('assets/img/icon-verified.svg') ?>" alt="Verified" class="inline-block w-4 h-4" style="filter: brightness(0) saturate(100%) invert(89%) sepia(55%) saturate(1000%) hue-rotate(20deg) brightness(105%) contrast(104%);">
+                    Unit Terverifikasi <img src="<?= base_url('assets/img/icon-verified.svg') ?>" alt="Verified" class="inline-block w-4 h-4" style="filter: brightness(0) saturate(100%) invert(47%) sepia(78%) saturate(1200%) hue-rotate(145deg) brightness(88%) contrast(101%);">
                 </span>
-                <h1 class="text-3xl md:text-4xl font-black text-white tracking-tighter font-jakarta">
+                <h1 class="detail-heading text-3xl md:text-4xl font-black text-white tracking-tighter font-jakarta">
                     <?= isset($row['namaPerumahan']) ? htmlspecialchars($row['namaPerumahan']) : 'Nama Perumahan Tidak Tersedia' ?>
                 </h1>
                 
@@ -190,7 +208,7 @@
                         }
                     ?>
                     <?php if(!empty($wa_number)): ?>
-                    <a href="https://wa.me/<?= $wa_number ?>" target="_blank" class="w-full sm:flex-1 bg-[#d6fb00] hover:bg-[#c2e600] text-[#0a1a1f] font-black text-xs uppercase tracking-widest py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(214,251,0,0.3)] transition-all">
+                    <a href="https://wa.me/<?= $wa_number ?>" target="_blank" class="detail-primary-btn w-full sm:flex-1 bg-[#d6fb00] hover:bg-[#c2e600] text-[#0a1a1f] font-black text-xs uppercase tracking-widest py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(214,251,0,0.3)] transition-all">
                         <i class="fa-brands fa-whatsapp text-lg"></i> Hubungi via WhatsApp
                     </a>
                     <?php else: ?>
@@ -200,7 +218,7 @@
                     <?php endif; ?>
                     
                     <?php if(!empty($row['kantorPemasaran'][0]['email']) && $row['kantorPemasaran'][0]['email'] !== '-'): ?>
-                    <a href="mailto:<?= htmlspecialchars($row['kantorPemasaran'][0]['email']) ?>" class="w-full sm:w-auto flex-none bg-[#0a1a1f] hover:bg-[#1a3a40] text-white border border-[#d6fb00]/30 hover:border-[#d6fb00] font-bold text-lg py-3.5 px-5 rounded-xl flex items-center justify-center transition-all" title="Kirim Email">
+                    <a href="mailto:<?= htmlspecialchars($row['kantorPemasaran'][0]['email']) ?>" class="detail-secondary-btn w-full sm:w-auto flex-none bg-[#0a1a1f] hover:bg-[#1a3a40] text-white border border-[#d6fb00]/30 hover:border-[#d6fb00] font-bold text-lg py-3.5 px-5 rounded-xl flex items-center justify-center transition-all" title="Kirim Email">
                         <i class="fa-regular fa-envelope"></i>
                     </a>
                     <?php endif; ?>
@@ -353,8 +371,8 @@
         // 1. Inisialisasi Kontrol Peta
         const map = L.map('map').setView([lat, lng], 15);
 
-        // 2. Set Tile Layer Tema Gelap (CartoDB DarkMatter) agar sesuai style UI #0b0d12
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        // 2. Set tile layer terang agar selaras dengan portal tema cerah.
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
             subdomains: 'abcd',
             maxZoom: 20
@@ -379,7 +397,7 @@
             .bindPopup(`<div class="text-[#0a1a1f] font-sans p-1 min-w-[180px]">
                             <b class="text-xs font-black block text-zinc-900 leading-tight mb-0.5">${namaPerumahan}</b>
                             <span class="text-[10px] text-emerald-600 font-bold block mb-3 flex items-center gap-1">
-                                <img src="<?= base_url('assets/img/icon-verified.svg') ?>" alt="Verified" class="inline-block w-3 h-3" style="filter: brightness(0) saturate(100%) invert(56%) sepia(79%) saturate(400%) hue-rotate(110deg) brightness(95%) contrast(92%);"> Unit Lokasi Terverifikasi
+                                <img src="<?= base_url('assets/img/icon-verified.svg') ?>" alt="Verified" class="inline-block w-3 h-3" style="filter: brightness(0) saturate(100%) invert(47%) sepia(78%) saturate(1200%) hue-rotate(145deg) brightness(88%) contrast(101%);"> Unit Lokasi Terverifikasi
                             </span>
                             
                             <a href="${googleMapsUrl}" target="_blank" class="block text-center bg-[#d6fb00] hover:bg-[#c2e600] text-[#0a1a1f] font-black text-[10px] uppercase tracking-wider py-2 px-3 rounded-md shadow transition-colors no-underline decoration-none">

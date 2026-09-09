@@ -225,7 +225,9 @@ $config['allow_get_array'] = TRUE;
 | your log files will fill up very fast.
 |
 */
-$config['log_threshold'] = 0;
+// 1 = hanya ERROR. Dulu 0 (mati total) - setiap show_404/error jadi bisu dan
+// diagnosa selalu berakhir bedah DB manual. Level ERROR nyaris nol biaya I/O.
+$config['log_threshold'] = 1;
 
 /*
 |--------------------------------------------------------------------------
@@ -411,7 +413,13 @@ $config['sess_regenerate_destroy'] = FALSE;
 $config['cookie_prefix']	= '';
 $config['cookie_domain']	= '';
 $config['cookie_path']		= '/';
-$config['cookie_secure']	= FALSE;
+// Mengikuti environment, BUKAN nilai global. `TRUE` global akan membuat
+// browser menolak cookie sesi pada http://localhost sehingga login lokal
+// putus lintas-request; `FALSE` global adalah keadaan repo selama ini,
+// sementara production diam-diam menambahkan `secure` dari konfigurasi di
+// luar repo - yaitu drift yang membuat repo dan server berbeda tanpa ada
+// yang tahu (butir B11).
+$config['cookie_secure']	= (ENVIRONMENT === 'production');
 $config['cookie_httponly'] 	= TRUE;
 $config['cookie_samesite'] 	= 'Lax';
 
@@ -469,9 +477,9 @@ $config['csrf_exclude_uris'] = array(
     'Index/cari_wil',
     'Index/load_more',
     'Index/buka_foto',
-    'Chat/register_session',
-    'Chat/ambil_pesan',
-    'Chat/kirim_pesan_lanjutan'
+    // Tiga pengecualian Chat DICABUT 29 Jul 2026 (B2). Kalau endpoint-nya
+    // dibuka kembali lewat keputusan #7, pembukaannya tidak boleh otomatis
+    // fail-open tanpa CSRF.
 );
 
 /*

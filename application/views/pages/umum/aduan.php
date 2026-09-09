@@ -1,109 +1,83 @@
-<section class="w-full  pt-24 pb-16 px-4 sm:px-6 lg:px-8 relative min-h-screen font-outfit">
-    <!-- Background Ornaments -->
-    <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <!-- Batik Pattern Overlay -->
-        
-        
-        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#d6fb00]/5 blur-[120px] rounded-full pointer-events-none"></div>
+<div class="theme-light py-4 sm:py-6 px-1 sm:px-2">
+    <div class="mx-auto max-w-2xl text-center" data-aos="fade-down">
+        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[color:var(--portal-btn-bg)] text-2xl text-[color:var(--portal-icon)]">
+            <i class="fa-solid fa-comment-dots" aria-hidden="true"></i>
+        </div>
+        <p class="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--portal-brand)]">Layanan Pengaduan</p>
+        <h1 id="aduan-title" class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)]">Sampaikan Aduan Anda</h1>
+        <p class="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-[color:var(--portal-text-muted)]">Isi formulir di bawah. Aduan Anda kami baca lebih dulu, lalu diteruskan ke bidang yang menangani - Anda tidak perlu menebak bidangnya.</p>
     </div>
 
-    <div class="max-w-7xl mx-auto relative z-10">
-        
-        <!-- Breadcrumb -->
-        <div class="mb-10">
-            <nav class="flex text-[10px] sm:text-xs text-zinc-500 font-bold uppercase tracking-widest" aria-label="Breadcrumb">
-                <ol class="inline-flex items-center space-x-1 md:space-x-2">
-                    <li class="inline-flex items-center">
-                        <a href="<?= base_url() ?>" class="hover:text-[#d6fb00] transition-colors"><i class="fa-solid fa-house mr-2"></i>Beranda</a>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <i class="fa-solid fa-chevron-right text-[8px] mx-2"></i>
-                            <a href="<?= base_url('umum') ?>" class="hover:text-[#d6fb00] transition-colors">Layanan Umum</a>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="flex items-center">
-                            <i class="fa-solid fa-chevron-right text-[8px] mx-2"></i>
-                            <span class="text-[#d6fb00]">Layanan & Aduan</span>
-                        </div>
-                    </li>
-                </ol>
-            </nav>
+    <form id="aduan-form" class="mx-auto mt-8 max-w-2xl space-y-4" action="<?= base_url('umum/simpan_aduan') ?>" method="POST" enctype="multipart/form-data"
+          x-data="{
+              nama: <?= htmlspecialchars(json_encode($nama_default ?? ''), ENT_QUOTES) ?>,
+              email: <?= htmlspecialchars(json_encode($email_default ?? ''), ENT_QUOTES) ?>,
+              judul: '',
+              pesan: '',
+              <?php
+              /**
+               * TIDAK ADA lagi pilihan bidang di sini - revisi dinas 3 Agt 2026.
+               * Pelapor tidak tahu rumahnya urusan Bidang Perumahan atau Bidang
+               * Kawasan Permukiman, dan tebakan yang meleset dulu mendarat di
+               * meja yang salah lalu diam di sana. Superadmin yang meneruskan
+               * (Admin_Aduan::triase); sampai itu terjadi `aduan.bidang` NULL.
+               */
+              ?>
+              get isValid() {
+                  return this.nama.trim() && this.email.trim() && this.judul.trim() && this.pesan.trim();
+              }
+          }">
+        <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+                <label for="aduan-nama" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Nama Lengkap</label>
+                <input id="aduan-nama" name="nama" x-model="nama" required maxlength="150" placeholder="Nama Anda" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
+            </div>
+            <div>
+                <label for="aduan-email" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Alamat Email</label>
+                <input id="aduan-email" name="email" x-model="email" type="email" required maxlength="100" placeholder="nama@email.com" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
+            </div>
         </div>
 
-<div class="w-full max-w-4xl mx-auto bg-[#0f2a30] border border-[#d6fb00]/20 rounded-[2.5rem] p-6 sm:p-10 md:p-12 backdrop-blur-xl shadow-2xl z-10 relative mt-8">
-    
-    <div class="border-b border-[#d6fb00]/20 pb-5 mb-8">
-        <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight mb-3">
-            Layanan dan Aduan
-        </h2>
-        <p class="text-zinc-400 text-xs sm:text-sm font-medium leading-relaxed max-w-3xl">
-            Jika Anda tidak dapat menemukan solusi untuk masalah Anda di basis pengetahuan kami, Anda dapat mengirimkan tiket dengan memilih bidang yang sesuai di bawah ini.
-        </p>
-    </div>
+        <div>
+            <label for="aduan-judul" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Judul</label>
+            <input id="aduan-judul" name="judul" x-model="judul" required maxlength="150" placeholder="Ringkasan singkat aduan Anda" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15">
+        </div>
 
-    <div class="space-y-6">
-        
-        <a href="#" class="group flex items-start gap-4 p-4 rounded-2xl hover:bg-[#d6fb00]/5 border border-transparent hover:border-[#d6fb00]/20 transition-all duration-300">
-            <div class="text-[#d6fb00] group-hover:text-[#d6fb00] text-xl sm:text-2xl pt-1 transition-colors duration-300">
-                <i class="fa-solid fa-envelope-open-text"></i>
-            </div>
-            <div class="flex-1">
-                <h3 class="text-lg font-bold text-white group-hover:text-[#d6fb00] transition-colors duration-300 mb-1">
-                    Bidang Perumahan
-                </h3>
-                <p class="text-zinc-400 group-hover:text-zinc-300 text-xs sm:text-sm font-medium leading-relaxed transition-colors duration-300">
-                    Perencanaan teknis perumahan, fasilitasi pembiayaan perumahan, penanganan perumahan umum, serta peningkatan kualitas perumahan swadaya (seperti program RTLH - Rumah Tidak Layak Huni)
-                </p>
-            </div>
-        </a>
+        <div>
+            <label for="aduan-pesan" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Pesan</label>
+            <textarea id="aduan-pesan" name="pesan" x-model="pesan" required rows="6" maxlength="2000" placeholder="Tuliskan detail aduan atau pertanyaan Anda di sini." class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-3 text-sm text-[color:var(--portal-text)] shadow-sm outline-none transition-colors focus:border-[color:var(--portal-brand)] focus:ring-2 focus:ring-[color:var(--portal-brand)]/15 resize-y"></textarea>
+        </div>
 
-        <a href="#" class="group flex items-start gap-4 p-4 rounded-2xl hover:bg-[#d6fb00]/5 border border-transparent hover:border-[#d6fb00]/20 transition-all duration-300">
-            <div class="text-[#d6fb00] group-hover:text-[#d6fb00] text-xl sm:text-2xl pt-1 transition-colors duration-300">
-                <i class="fa-solid fa-envelope-open-text"></i>
-            </div>
-            <div class="flex-1">
-                <h3 class="text-lg font-bold text-white group-hover:text-[#d6fb00] transition-colors duration-300 mb-1">
-                    Bidang Kawasan Permukiman
-                </h3>
-                <p class="text-zinc-400 group-hover:text-zinc-300 text-xs sm:text-sm font-medium leading-relaxed transition-colors duration-300">
-                    Perencanaan teknis kawasan permukiman, peningkatan kualitas kawasan permukiman, serta pengembangan Prasarana, Sarana, dan Utilitas Umum (PSU) permukiman
-                </p>
-            </div>
-        </a>
+        <div>
+            <label for="aduan-lampiran" class="mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]">Lampiran <span class="font-normal text-[color:var(--portal-text-muted)]">(opsional)</span></label>
+            <input id="aduan-lampiran" name="lampiran" type="file" accept=".jpg,.jpeg,.png,.pdf" class="w-full rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-2.5 text-xs text-[color:var(--portal-text-muted)] shadow-sm file:mr-3 file:rounded-lg file:border-0 file:bg-[color:var(--portal-btn-bg)] file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-[color:var(--portal-icon)]">
+            <p class="mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]">Format JPG, PNG, atau PDF. Maksimal 5 MB.</p>
+        </div>
 
-        <a href="#" class="group flex items-start gap-4 p-4 rounded-2xl hover:bg-[#d6fb00]/5 border border-transparent hover:border-[#d6fb00]/20 transition-all duration-300">
-            <div class="text-[#d6fb00] group-hover:text-[#d6fb00] text-xl sm:text-2xl pt-1 transition-colors duration-300">
-                <i class="fa-solid fa-envelope-open-text"></i>
-            </div>
-            <div class="flex-1">
-                <h3 class="text-lg font-bold text-white group-hover:text-[#d6fb00] transition-colors duration-300 mb-1">
-                    Bidang Keterpaduan Perumahan dan Kawasan Permukiman
-                </h3>
-                <p class="text-zinc-400 group-hover:text-zinc-300 text-xs sm:text-sm font-medium leading-relaxed transition-colors duration-300">
-                    Sinkronisasi program, keterpaduan infrastruktur, serta pengelolaan data dan sistem informasi yang mencakup sektor perumahan, permukiman, hingga pertanahan
-                </p>
-            </div>
-        </a>
+        <button type="submit" :disabled="!isValid"
+                class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-black transition"
+                :style="isValid
+                    ? 'background-color: var(--portal-brand); color: var(--portal-bg); cursor: pointer;'
+                    : 'background-color: var(--portal-border); color: var(--portal-text-muted); cursor: not-allowed;'"
+                :class="isValid && 'hover:-translate-y-0.5 hover:brightness-95'">Kirim Aduan <i class="fa-solid fa-paper-plane"></i></button>
+    </form>
 
-        <a href="#" class="group flex items-start gap-4 p-4 rounded-2xl hover:bg-[#d6fb00]/5 border border-transparent hover:border-[#d6fb00]/20 transition-all duration-300">
-            <div class="text-[#d6fb00] group-hover:text-[#d6fb00] text-xl sm:text-2xl pt-1 transition-colors duration-300">
-                <i class="fa-solid fa-envelope-open-text"></i>
-            </div>
-            <div class="flex-1">
-                <h3 class="text-lg font-bold text-white group-hover:text-[#d6fb00] transition-colors duration-300 mb-1">
-                    Bidang Pertanahan
-                </h3>
-                <p class="text-zinc-400 group-hover:text-zinc-300 text-xs sm:text-sm font-medium leading-relaxed transition-colors duration-300">
-                    Fasilitasi pengadaan tanah untuk kepentingan umum, penanganan sengketa atau permasalahan pertanahan, izin lokasi, serta pengendalian pemanfaatan tanah daerah
-                </p>
-            </div>
-        </a>
-
+    <div class="mx-auto mt-6 max-w-2xl rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] p-4 text-xs text-[color:var(--portal-text-muted)] shadow-sm">
+        <i class="fa-solid fa-circle-info mr-2 text-[color:var(--portal-icon)]"></i> Punya pertanyaan umum seputar layanan? Cek dulu lewat tombol bantuan di pojok kanan bawah.
+        <?php
+        /**
+         * Tautan papan hanya untuk yang sudah login - bukan sekadar
+         * disembunyikan, halamannya sendiri bergerbang (Umum::papan_aduan).
+         * Tamu tidak diberi tautan yang berujung ke layar login.
+         */
+        ?>
+        <?php if ($this->session->userdata('is_logged') === TRUE): ?>
+        <div class="mt-2 border-t border-[color:var(--portal-border)] pt-2">
+            <i class="fa-solid fa-clipboard-list mr-2 text-[color:var(--portal-icon)]"></i> Ingin tahu aduan apa saja yang sudah masuk dan mana yang sudah dijawab?
+            <a href="<?= base_url('umum/papan_aduan') ?>" class="font-bold underline" style="color: var(--portal-brand)">Lihat Papan Aduan</a>.
+        </div>
+        <?php endif; ?>
     </div>
 </div>
-
-    </div>
-</section>
-

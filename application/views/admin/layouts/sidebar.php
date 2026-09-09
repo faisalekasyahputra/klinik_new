@@ -1,7 +1,9 @@
-<aside class="bg-white dark:bg-brand-card border-r border-gray-200 dark:border-white/5 flex flex-col transition-all duration-300 relative z-20 shadow-xl shadow-gray-200/50 dark:shadow-none" 
-       :class="sidebarOpen ? 'w-64' : 'w-20'">
+<aside x-cloak x-show="desktop || sidebarOpen"
+       class="admin-sidebar bg-white dark:bg-brand-card border-r border-gray-200 dark:border-white/5 flex flex-col transition-all duration-300 relative z-20 shadow-xl shadow-gray-200/50 dark:shadow-none"
+       :class="desktop ? (sidebarOpen ? 'w-64' : 'w-20') : ''"
+       :style="!desktop ? (sidebarOpen ? 'display:flex !important;position:fixed !important;inset:0 auto 0 0 !important;z-index:60 !important;width:16rem !important;transform:none !important;' : 'display:none !important;') : ''">
     <div class="h-20 flex items-center px-5 border-b border-gray-200 dark:border-white/5" :class="sidebarOpen ? 'justify-start' : 'justify-center'">
-        <a href="<?= base_url('Admin_Dashboard') ?>" class="flex items-center gap-3 group">
+        <a href="<?= base_url($dashboard_home ?? 'akun') ?>" class="flex items-center gap-3 group">
             <div class="w-10 h-10 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                 <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jateng" class="h-8 w-auto object-contain drop-shadow-sm">
             </div>
@@ -11,76 +13,59 @@
                     Klinik<span class="text-blue-600 dark:text-brand-primary">PKP</span>
                 </span>
                 <span class="text-[10px] font-bold text-gray-500 dark:text-brand-muted uppercase tracking-wider">
-                    <?= $this->session->userdata('role') ? ucwords(str_replace('_', ' ', $this->session->userdata('role'))) : 'Super Admin' ?>
+                    <?php
+                    // Sama seperti admin/layouts/topbar.php - lihat komentar
+                    // lengkap di sana. Sejak role 'universitas' berdiri
+                    // sendiri (22 Agt 2026), ucwords() generik di bawah
+                    // sudah cukup - tidak perlu kasus khusus lagi.
+                    $peran = $this->session->userdata('role');
+                    echo $peran ? ucwords(str_replace('_', ' ', $peran)) : 'Super Admin';
+                    ?>
                 </span>
             </div>
         </a>
     </div>
     
-    <div class="px-3 py-4 overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar">
-        <div class="text-[10px] font-bold text-gray-400 dark:text-brand-muted/70 uppercase tracking-wider mb-2 ml-2 transition-all duration-200 whitespace-nowrap overflow-hidden" x-show="sidebarOpen">Main Menu</div>
-        
-        <nav class="space-y-1 relative">
-            <a href="<?= base_url('Admin_Dashboard') ?>" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 <?= $this->uri->segment(1) == 'Admin_Dashboard' ? 'bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary shadow-sm dark:shadow-none' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-gray-900 dark:hover:text-brand-light' ?>" :class="!sidebarOpen ? 'justify-center' : ''" title="Dashboard">
-                <i class="ph ph-squares-four text-lg shrink-0 <?= $this->uri->segment(1) == 'Admin_Dashboard' ? 'opacity-100' : 'opacity-70' ?>" :class="sidebarOpen ? 'mr-3' : 'mr-0'"></i> 
-                <span x-show="sidebarOpen" class="whitespace-nowrap overflow-hidden">Dashboard</span>
-            </a>
-            
-            <a href="<?= base_url('Admin') ?>" class="relative flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 <?= $this->uri->segment(1) == 'Admin' ? 'bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary shadow-sm dark:shadow-none' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-gray-900 dark:hover:text-brand-light' ?>" :class="!sidebarOpen ? 'justify-center' : ''" title="Validasi Antrean">
-                <i class="ph ph-list-checks text-lg shrink-0 <?= $this->uri->segment(1) == 'Admin' ? 'opacity-100' : 'opacity-70' ?>" :class="sidebarOpen ? 'mr-3' : 'mr-0'"></i> 
-                <span x-show="sidebarOpen" class="whitespace-nowrap overflow-hidden flex-1">Validasi Antrean</span>
-                
-                <?php if(isset($pending_count) && $pending_count > 0): ?>
-                <!-- Badge saat expanded (di dalam baris) -->
-                <span x-show="sidebarOpen" class="flex h-5 w-5 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400 text-[10px] font-bold shrink-0">
-                    <?= $pending_count ?>
-                </span>
-                
-                <!-- Badge saat collapsed (mengambang di pojok kanan atas box) -->
-                <span x-show="!sidebarOpen" class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold border-[1.5px] border-white dark:border-brand-card shadow-sm z-10">
-                    <?= $pending_count ?>
-                </span>
-                <?php endif; ?>
-            </a>
-        </nav>
+    <?php
+    /* BUTIR 14 PUTARAN 2 - jalan pulang ke beranda.
+       Sebelum ini, satu-satunya cara keluar dari dashboard adalah KELUAR AKUN.
+       Logo di atas menuju dashboard, bukan beranda, jadi orang yang ingin
+       kembali ke situs publik benar-benar mentok. Ditaruh paling atas karena
+       di situlah orang mencarinya, dan tetap terbaca saat sidebar menyempit
+       (ikonnya sendiri sudah bermakna, teksnya menyusul saat melebar). */
+    ?>
+    <a href="<?= base_url() ?>"
+       class="mx-3 mt-3 flex items-center gap-3 rounded-xl border border-gray-200 dark:border-white/10 px-3 py-2 text-sm font-bold text-gray-700 dark:text-brand-muted hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+       :class="sidebarOpen ? '' : 'justify-center'">
+        <i class="ph ph-arrow-u-up-left text-lg shrink-0"></i>
+        <span x-show="sidebarOpen" class="whitespace-nowrap">Kembali ke beranda</span>
+    </a>
 
-        <div class="text-[10px] font-bold text-gray-400 dark:text-brand-muted/70 uppercase tracking-wider mt-6 mb-2 ml-2 transition-all duration-200 whitespace-nowrap overflow-hidden" x-show="sidebarOpen">Manajemen</div>
-        
-        <nav class="space-y-1">
-            <a href="<?= base_url('Admin_Content') ?>" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 <?= $this->uri->segment(1) == 'Admin_Content' ? 'bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary shadow-sm dark:shadow-none' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-gray-900 dark:hover:text-brand-light' ?>" :class="!sidebarOpen ? 'justify-center' : ''" title="Konten Website">
-                <i class="ph ph-article text-lg shrink-0 <?= $this->uri->segment(1) == 'Admin_Content' ? 'opacity-100' : 'opacity-70' ?>" :class="sidebarOpen ? 'mr-3' : 'mr-0'"></i> 
-                <span x-show="sidebarOpen" class="whitespace-nowrap overflow-hidden">Konten Website</span>
-            </a>
-            <a href="<?= base_url('Admin_Users') ?>" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 <?= $this->uri->segment(1) == 'Admin_Users' ? 'bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary shadow-sm dark:shadow-none' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-gray-900 dark:hover:text-brand-light' ?>" :class="!sidebarOpen ? 'justify-center' : ''" title="Pengguna">
-                <i class="ph ph-users text-lg shrink-0 <?= $this->uri->segment(1) == 'Admin_Users' ? 'opacity-100' : 'opacity-70' ?>" :class="sidebarOpen ? 'mr-3' : 'mr-0'"></i> 
-                <span x-show="sidebarOpen" class="whitespace-nowrap overflow-hidden">Pengguna</span>
-            </a>
-            <a href="<?= base_url('Admin_Settings') ?>" class="flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 <?= $this->uri->segment(1) == 'Admin_Settings' ? 'bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary shadow-sm dark:shadow-none' : 'hover:bg-gray-100 dark:hover:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-gray-900 dark:hover:text-brand-light' ?>" :class="!sidebarOpen ? 'justify-center' : ''" title="Pengaturan">
-                <i class="ph ph-sliders-horizontal text-lg shrink-0 <?= $this->uri->segment(1) == 'Admin_Settings' ? 'opacity-100' : 'opacity-70' ?>" :class="sidebarOpen ? 'mr-3' : 'mr-0'"></i> 
-                <span x-show="sidebarOpen" class="whitespace-nowrap overflow-hidden">Pengaturan</span>
-            </a>
-        </nav>
+    <?php // `id` dipakai loader progresif untuk MENGGANTI seluruh isi menu tiap
+          // pindah halaman. Sebelumnya loader cuma menempel aria-current lewat
+          // JS, sementara sorotan dan sub-menu dirender PHP - dua implementasi
+          // untuk satu aturan, dan hasilnya dua item menyala bersamaan sambil
+          // sub-menu cabang lama tetap terbuka. Sekarang aturannya tetap satu:
+          // dashboard_menu() memutuskan, server mengirim, JS hanya menukar. ?>
+    <div id="sidebar-nav" class="px-3 py-4 overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar">
+        <?php $this->load->view('admin/layouts/sidebar_nav', ['dashboard_menu' => $dashboard_menu ?? []]); ?>
     </div>
 
     <!-- Link to Main Website (OG Preview Style) -->
     <div class="mt-auto px-4 mb-4" x-show="sidebarOpen" x-transition.opacity.duration.300ms>
         <a href="<?= base_url() ?>" target="_blank" class="group block overflow-hidden rounded-xl bg-white dark:bg-[#0a1a1f] border border-gray-200 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-none transition-all duration-300 relative">
-            <!-- Image Area -->
-            <div class="h-20 w-full overflow-hidden relative border-b border-gray-100 dark:border-white/5">
-                <img src="<?= base_url('assets/img/og-cover.jpg') ?>" alt="Klinik PKP Preview" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                <div class="absolute top-2 right-2 bg-black/30 backdrop-blur-md rounded-md p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-white/20">
-                    <i class="ph ph-arrow-square-out text-white text-xs"></i>
-                </div>
-                <!-- Mini Logo Overlay -->
-                <div class="absolute bottom-2 left-3">
-                    <img src="<?= base_url('assets/img/logo-jateng.png') ?>" class="h-5 w-auto drop-shadow-lg" alt="Logo">
+            <!-- Penanda Beranda, bukan gambar promosi. -->
+            <div class="relative flex h-20 w-full items-center justify-center gap-2 border-b border-gray-100 bg-[color:var(--portal-bg-card)] text-[color:var(--portal-text)] dark:border-white/5 dark:bg-[#102c35]">
+                <i class="ph ph-house-line text-2xl text-[color:var(--portal-brand)]" aria-hidden="true"></i>
+                <span class="text-sm font-black">Beranda</span>
+                <div class="absolute right-2 top-2 rounded-md border border-white/20 bg-black/20 p-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                    <i class="ph ph-arrow-square-out text-xs"></i>
                 </div>
             </div>
             <!-- Text Area -->
             <div class="p-3">
-                <h4 class="text-xs font-bold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-brand-primary transition-colors">Portal Klinik PKP</h4>
-                <p class="text-[10px] text-gray-500 dark:text-brand-muted line-clamp-2 mt-1 leading-snug">Layanan informasi perumahan & kawasan permukiman terpadu Jawa Tengah.</p>
+                <h4 class="text-xs font-bold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-brand-primary transition-colors">Beranda</h4>
+                <p class="text-[10px] text-gray-500 dark:text-brand-muted line-clamp-2 mt-1 leading-snug">Kembali ke halaman utama Portal Klinik PKP.</p>
                 <div class="flex items-center gap-1 mt-2.5 text-[9px] font-semibold text-gray-400 dark:text-brand-muted/70">
                     <i class="ph ph-link text-[10px]"></i>
                     <span class="truncate"><?= str_replace(['http://', 'https://'], '', base_url()) ?></span>

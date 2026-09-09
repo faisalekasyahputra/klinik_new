@@ -53,7 +53,28 @@
  *
  * NOTE: If you change these, also change the error_reporting() code below
  */
-	define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
+/*
+ * FAIL-CLOSED. Default sengaja `production`, bukan `development`.
+ *
+ * Sebelumnya default-nya `development`, sehingga server yang KEHILANGAN
+ * konfigurasi environment-nya diam-diam menampilkan galat PHP lengkap dengan
+ * path absolut ke pengunjung anonim - dan itu benar-benar terjadi di
+ * production (butir B1). Deploy yang lupa/kehilangan setelan sekarang jatuh ke
+ * sisi yang aman, bukan sisi yang bocor.
+ *
+ * `getenv()` ikut dibaca, BUKAN hanya `$_SERVER`: `SetEnv` Apache hanya
+ * berlaku untuk request HTTP, sehingga proses CLI (migrasi, seluruh harness)
+ * tidak pernah melihat CI_ENV lewat `$_SERVER` dan akan jatuh ke production.
+ * Untuk menjalankan perintah CLI di lokal, setel environment-nya:
+ *
+ *     CI_ENV=development php index.php migrate
+ *
+ * Lingkungan lokal menyetel `SetEnv CI_ENV development` di konfigurasi Apache
+ * yang TIDAK ikut Git. Jangan menaruhnya di `.htaccess` repo - berkas yang
+ * sama dibaca lokal maupun production.
+ */
+	$ci_env = isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : getenv('CI_ENV');
+	define('ENVIRONMENT', is_string($ci_env) && $ci_env !== '' ? $ci_env : 'production');
 
 /*
  *---------------------------------------------------------------
@@ -66,7 +87,11 @@
 switch (ENVIRONMENT)
 {
 	case 'development':
-		error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+		// ponytail: E_STRICT dilepas - no-op sejak PHP 8.0 dan konstantanya sendiri
+		// deprecated di PHP 8.4, sehingga menyebutnya mencetak "Deprecated:" ke STDOUT
+		// SEBELUM error_reporting sempat dipasang. Di web tidak kelihatan (display_errors
+		// mati di php.ini Apache), tapi setiap tooling CLI yang mem-parse stdout patah.
+		error_reporting(E_ALL & ~E_DEPRECATED);
 		ini_set('display_errors', 1);
 	break;
 
@@ -75,11 +100,11 @@ switch (ENVIRONMENT)
 		ini_set('display_errors', 0);
 		if (version_compare(PHP_VERSION, '5.3', '>='))
 		{
-			error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
+			error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
 		}
 		else
 		{
-			error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_USER_NOTICE);
+			error_reporting(E_ALL & ~E_NOTICE & ~E_USER_NOTICE);
 		}
 	break;
 
