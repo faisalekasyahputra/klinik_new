@@ -25,7 +25,31 @@ $label = 'mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]';
         </p>
     </div>
 
-    <form class="mx-auto mt-8 max-w-md space-y-4" action="<?= base_url('KemitraanPortal/cek_sertifikat_kkn') ?>" method="POST">
+    <section class="mx-auto mt-7 max-w-md rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] p-4 text-left shadow-sm"
+             aria-labelledby="demo-nim-title">
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <h2 id="demo-nim-title" class="text-sm font-black text-[color:var(--portal-text)]">NIM Demo</h2>
+                <p class="mt-0.5 text-[11px] text-[color:var(--portal-text-muted)]">Klik salah satu NIM untuk mengisi formulir.</p>
+            </div>
+            <span class="rounded-full bg-[color:var(--portal-btn-bg)] px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-[color:var(--portal-brand)]">Uji coba</span>
+        </div>
+
+        <div class="mt-3 grid gap-2 sm:grid-cols-2">
+            <button type="button" data-demo-nim="21120226000123"
+                    class="rounded-xl border border-[color:var(--portal-border)] px-3 py-3 text-left transition hover:border-[color:var(--portal-brand)] hover:bg-[color:var(--portal-btn-bg)]">
+                <span class="block text-[11px] text-[color:var(--portal-text-muted)]">Universitas Diponegoro</span>
+                <span class="mt-1 block text-sm font-black text-[color:var(--portal-text)]">21120226000123</span>
+            </button>
+            <button type="button" data-demo-nim="530142600012"
+                    class="rounded-xl border border-[color:var(--portal-border)] px-3 py-3 text-left transition hover:border-[color:var(--portal-brand)] hover:bg-[color:var(--portal-btn-bg)]">
+                <span class="block text-[11px] text-[color:var(--portal-text-muted)]">Universitas Negeri Semarang</span>
+                <span class="mt-1 block text-sm font-black text-[color:var(--portal-text)]">530142600012</span>
+            </button>
+        </div>
+    </section>
+
+    <form class="mx-auto mt-6 max-w-md space-y-4" action="<?= base_url('KemitraanPortal/cek_sertifikat_kkn') ?>" method="POST">
         <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
         <div>
@@ -52,3 +76,14 @@ $label = 'mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]';
         </a>
     </div>
 </div>
+<script>
+document.querySelectorAll('[data-demo-nim]').forEach(function (button) {
+    button.addEventListener('click', function () {
+        var input = document.getElementById('sk-nim');
+        if (input) {
+            input.value = button.getAttribute('data-demo-nim') || '';
+            input.focus();
+        }
+    });
+});
+</script>
