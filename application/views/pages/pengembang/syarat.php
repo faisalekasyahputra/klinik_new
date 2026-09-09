@@ -546,19 +546,12 @@ function srp2Wizard(config) {
                         this.wrongRole = true;
                         return;
                     }
-                    this.isPengembang = true;
-                    this.namaUser = data.name || this.namaUser;
-                    this.registrationId = data.registration_id;
-                    // Segarkan keadaan pengajuan dari server. Tanpa ini, nilai yang
-                    // dipakai masih milik TAMU (dari saat halaman dimuat): status
-                    // kosong sehingga panel unggah tampak bisa diedit walau server
-                    // menolak, 0/14 dokumen walau sudah lengkap, dan catatan admin
-                    // tidak muncul.
-                    const s = data.srp2 || {};
-                    this.status = s.status || null;
-                    this.catatanAdmin = s.catatan_admin || null;
-                    this.tandaiBerkasTerunggah(s.uploaded_keys);
-                    this.showToast('Berhasil masuk!', false, 'success');
+                    // Login AJAX sudah membuat sesi server, tetapi header masih
+                    // merupakan HTML tamu yang dimuat sebelum login. Arahkan ke
+                    // dashboard pengembang agar layout dan seluruh status sesi
+                    // dirender ulang dalam keadaan sudah masuk.
+                    window.location.assign(this.baseUrl + (data.dashboard_url || 'akun'));
+                    return;
                 } else {
                     this.authError = data.message || 'Gagal masuk.';
                 }
