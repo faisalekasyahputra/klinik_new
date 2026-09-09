@@ -23,7 +23,7 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
 
         <!-- Card: KKN Kemitraan -->
-        <a href="<?= base_url('KemitraanPortal/kkn_dashboard') ?>" data-tab-link data-tab-key="kemitraan_kkn_dashboard"
+        <a href="<?= base_url('KemitraanPortal/kkn') ?>" data-tab-link data-tab-key="kemitraan_kkn"
            class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"
            style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
             <i class="fa-solid fa-people-group absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none"
@@ -32,7 +32,7 @@
                 <i class="fa-solid fa-people-group mb-2.5 transition-transform duration-500 group-hover:scale-110"
                    style="font-size: 24px; color: var(--portal-icon);"></i>
                 <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1">KKN Kemitraan</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Masuk sebagai akun universitas untuk mengelola pengajuan KKN.</p>
+                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Lihat informasi KKN, kelola pengajuan, atau cetak sertifikat.</p>
             </div>
             <div class="relative z-10 mt-auto pt-2.5">
                 <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
