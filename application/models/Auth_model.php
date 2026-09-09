@@ -338,6 +338,12 @@ class Auth_model extends CI_Model {
         $asosiasi = trim((string) ($reg->asosiasi ?? ''));
         if ($asosiasi !== '') { $payload['asosiasi'] = $asosiasi; }
 
+        // NPWP sudah divalidasi dan dienkripsi saat onboarding. Nilai ini
+        // diteruskan saat pengajuan diterima tanpa pernah dibuka ke publik.
+        if ( ! empty($reg->npwp_lookup_hash) && ! empty($reg->npwp_ciphertext)) {
+            $payload['npwp_ciphertext'] = $reg->npwp_ciphertext;
+            $payload['npwp_lookup_hash'] = $reg->npwp_lookup_hash;
+        }
         if ( ! empty($reg->certified_developer_id)) {
             // Sudah terbit: segarkan isinya, JANGAN sentuh status_aktif -
             // pencabutan/pengaktifan adalah keputusan admin yang terpisah.

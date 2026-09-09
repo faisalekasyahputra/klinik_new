@@ -207,15 +207,28 @@ $isi = function ($nama) use ($old) {
                         <i class="fa-solid fa-user auth-input-icon"></i>
                     </div>
 
-                    <!-- NIK -->
-                    <label class="auth-label" for="nik_identitas">No. Identitas (NIK) <span style="color:var(--auth-red)">*</span></label>
-                    <div class="auth-input-group">
-                        <input type="text" id="nik_identitas" name="nik_identitas" class="auth-input"
-                               value="<?= $isi('nik_identitas') ?>"
-                               placeholder="Masukkan 16 digit NIK" maxlength="16" pattern="[0-9]{16}"
-                               :required="langkah === 2" inputmode="numeric"
-                               oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                        <i class="fa-solid fa-id-card auth-input-icon"></i>
+                    <!-- Identitas: pengembang memakai NPWP, peran lain memakai NIK. -->
+                    <div x-show="role !== 'pengembang'" :inert="role === 'pengembang'">
+                        <label class="auth-label" for="nik_identitas">No. Identitas (NIK) <span style="color:var(--auth-red)">*</span></label>
+                        <div class="auth-input-group">
+                            <input type="text" id="nik_identitas" name="nik_identitas" class="auth-input"
+                                   value="<?= $isi('nik_identitas') ?>"
+                                   placeholder="Masukkan 16 digit NIK" maxlength="16" pattern="[0-9]{16}"
+                                   :required="langkah === 2 && role !== 'pengembang'" inputmode="numeric"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                            <i class="fa-solid fa-id-card auth-input-icon"></i>
+                        </div>
+                    </div>
+                    <div x-show="role === 'pengembang'" :inert="role !== 'pengembang'">
+                        <label class="auth-label" for="npwp">NPWP Perusahaan <span style="color:var(--auth-red)">*</span></label>
+                        <div class="auth-input-group">
+                            <input type="text" id="npwp" name="npwp" class="auth-input"
+                                   value="<?= $isi('npwp') ?>"
+                                   placeholder="Masukkan 15 atau 16 digit NPWP" minlength="15" maxlength="16" pattern="[0-9]{15,16}"
+                                   :required="langkah === 2 && role === 'pengembang'" inputmode="numeric"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                            <i class="fa-solid fa-building-shield auth-input-icon"></i>
+                        </div>
                     </div>
 
                     <!-- Alamat -->

@@ -37,6 +37,7 @@ define('SANDI_UMPAN', 'JanganPantulkanAku#' . date('His'));
 // kesalahan alat ukurnya sendiri.
 define('HP', '081200' . date('His'));
 define('TELP_KANTOR', '024550' . date('is'));
+define('NPWP_UJI', '777' . date('ymdHis')); // tepat 15 digit
 
 $GLOBALS['t'] = 0; $GLOBALS['g'] = 0;
 
@@ -139,14 +140,14 @@ wajib($csrf !== '', 'Token CSRF formulir onboarding terbaca');
 
 // ---------------------------------------------------------------- Kirim gagal
 
-// NIK 15 digit - gagal di cabang paling belakang, SESUDAH semua isian lain
+// NPWP 14 digit - gagal di cabang khusus pengembang, SESUDAH semua isian lain
 // diterima. Kalau isian pulang di sini, ia pulang di cabang mana pun.
 $r = http('Auth/save_onboarding', [
     'csrf_kpkp_token'  => $csrf,
     'role'             => 'pengembang',
     'username'         => strtolower(CAP),
     'nama_lengkap'     => 'Nama ' . CAP,
-    'nik_identitas'    => '123456789012345',
+    'npwp'             => '12345678901234',
     'alamat_domisili'  => 'Alamat ' . CAP,
     'phone'            => HP,
     'nama_perusahaan'  => 'PT ' . CAP,
@@ -155,10 +156,10 @@ $r = http('Auth/save_onboarding', [
     'password'         => SANDI_UMPAN,
     'password_confirm' => SANDI_UMPAN,
 ]);
-wajib($r['code'] === 200, "Kiriman ber-NIK cacat dipantulkan ke formulir (kode {$r['code']})");
+wajib($r['code'] === 200, "Kiriman ber-NPWP cacat dipantulkan ke formulir (kode {$r['code']})");
 $html = $r['body'];
 
-cek(strpos($html, 'NIK harus terdiri dari 16 digit angka') !== FALSE, 'Pesan error NIK tersampaikan');
+cek(strpos($html, 'NPWP harus terdiri dari 15 atau 16 digit angka') !== FALSE, 'Pesan error NPWP tersampaikan');
 
 // Profilnya TIDAK boleh tersimpan - kalau tersimpan, halaman ini seharusnya
 // tidak lagi bisa dirender, dan uji di atas berbohong.
@@ -170,7 +171,7 @@ cek((int) $row['profile_completed'] === 0 && $row['role'] === NULL, 'Profil tida
 foreach ([
     'username'        => strtolower(CAP),
     'nama_lengkap'    => 'Nama ' . CAP,
-    'nik_identitas'   => '123456789012345',
+    'npwp'            => '12345678901234',
     'phone'           => HP,
     'nama_perusahaan' => 'PT ' . CAP,
     'alamat_kantor'   => 'Kantor ' . CAP,
@@ -208,6 +209,33 @@ cek(strpos($r['body'], 'Pilih peran yang valid') !== FALSE, 'Server menolak role
 $row = $db->query("SELECT profile_completed, role FROM usr_users WHERE email = '" . $db->real_escape_string(EMAIL) . "'")->fetch_assoc();
 cek((int) $row['profile_completed'] === 0 && $row['role'] === NULL, 'Tembakan vendor tidak menyisakan profil');
 
+// ------------------------------------------------------- Simpan NPWP pengembang
+
+$r = http('Auth/save_onboarding', [
+    'csrf_kpkp_token'  => token('Auth/onboarding'),
+    'role'             => 'pengembang',
+    'username'         => strtolower(CAP),
+    'nama_lengkap'     => 'Nama ' . CAP,
+    'npwp'             => NPWP_UJI,
+    'alamat_domisili'  => 'Alamat ' . CAP,
+    'phone'            => HP,
+    'nama_perusahaan'  => 'PT ' . CAP,
+    'alamat_kantor'    => 'Kantor ' . CAP,
+    'telp_kantor'      => TELP_KANTOR,
+]);
+cek($r['code'] === 200, 'Onboarding pengembang dengan NPWP valid selesai');
+
+$row = $db->query("SELECT u.profile_completed, u.role, u.nik, u.nik_lookup_hash,
+                          r.npwp_ciphertext, r.npwp_lookup_hash
+                     FROM usr_users u
+                     LEFT JOIN srp2_registrations r ON r.user_id = u.id
+                    WHERE u.email = '" . $db->real_escape_string(EMAIL) . "'
+                    ORDER BY r.id DESC LIMIT 1")->fetch_assoc();
+cek((int) $row['profile_completed'] === 1 && $row['role'] === 'pengembang', 'Profil pengembang tersimpan');
+cek(empty($row['nik']) && empty($row['nik_lookup_hash']), 'NPWP tidak disimpan ke kolom NIK akun');
+cek( ! empty($row['npwp_ciphertext']) && strpos($row['npwp_ciphertext'], NPWP_UJI) === FALSE,
+    'NPWP tersimpan terenkripsi pada pengajuan SRP2');
+cek(strlen((string) $row['npwp_lookup_hash']) === 64, 'Sidik NPWP tersimpan untuk pemeriksaan keunikan');
 // ---------------------------------------------------------------- Sandi & jalan keluar
 
 cek(strpos($html, SANDI_UMPAN) === FALSE, 'Kata sandi TIDAK dipantulkan ke HTML');

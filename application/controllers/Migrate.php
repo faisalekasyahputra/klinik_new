@@ -231,6 +231,20 @@ class Migrate extends CI_Controller {
 ";
         }
 
+        /* NPWP pada pengajuan SRP2 (migrasi 056). Selain kedua kolom,
+           indeks unik wajib ada agar satu NPWP tidak bisa dipakai dua akun. */
+        if (in_array('srp2_registrations', $tables, TRUE)) {
+            foreach (['npwp_ciphertext', 'npwp_lookup_hash'] as $c) {
+                echo "srp2_registrations.{$c} (migrasi 056): "
+                    .($this->db->field_exists($c, 'srp2_registrations') ? 'ADA' : 'HILANG')."\n";
+            }
+            $uq = $this->db->query("SELECT NON_UNIQUE nu FROM information_schema.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_registrations'
+                  AND INDEX_NAME = 'uq_srp2_registration_npwp' LIMIT 1")->row();
+            echo 'pengajuan SRP2 NPWP UNIQUE (migrasi 056): '
+                .($uq === NULL ? 'TIDAK ADA - NPWP kembar bisa masuk'
+                    : ((int) $uq->nu === 0 ? 'TERPASANG' : 'ADA TAPI TIDAK UNIQUE'))."\n";
+        }
         /* Nomenklatur kawasan dirinci (migrasi 039). Ketiganya WAJIB NULL-able:
            kalau kelak ada yang menjadikannya NOT NULL, laporan yang hanya
            mengisi kegiatan langsung ditolak - dan 35 kabupaten/kota berhenti

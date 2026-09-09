@@ -489,11 +489,13 @@ class Auth extends MY_Controller {
         $username  = html_escape($this->input->post('username'));
         $username  = preg_replace('/\s+/', '', strtolower($username)); // Ensure no spaces
         $nama      = html_escape($this->input->post('nama_lengkap'));
-        $nik_raw   = html_escape($this->input->post('nik_identitas'));
+        $nik_raw   = preg_replace('/\D+/', '', (string) $this->input->post('nik_identitas', TRUE));
+        $npwp_raw  = preg_replace('/\D+/', '', (string) $this->input->post('npwp', TRUE));
         $alamat_raw = html_escape($this->input->post('alamat_domisili'));
         $phone     = html_escape($this->input->post('phone'));
 
-        if (empty($username) || empty($nama) || empty($nik_raw) || empty($alamat_raw) || empty($phone)) {
+        if (empty($username) || empty($nama) || empty($alamat_raw) || empty($phone)
+            || ($role === 'pengembang' ? empty($npwp_raw) : empty($nik_raw))) {
             $this->_onboarding_fail('Semua field wajib harus diisi.');
             return;
         }
@@ -532,28 +534,41 @@ class Auth extends MY_Controller {
             return;
         }
 
-        // NIK validation (16 digits)
-        if (!preg_match('/^[0-9]{16}$/', $nik_raw)) {
+        // Identitas dibedakan menurut peran. Pengembang memakai NPWP perusahaan;
+        // NIK hanya diikat ke akun warga/mahasiswa.
+        if ($role === 'pengembang') {
+            if ( ! preg_match('/^[0-9]{15,16}$/', $npwp_raw)) {
+                $this->_onboarding_fail('NPWP harus terdiri dari 15 atau 16 digit angka.');
+                return;
+            }
+            $npwp_hash = $this->encryption_lib->deterministic_hash($npwp_raw);
+            $dipakai_pengajuan = $this->db->where('npwp_lookup_hash', $npwp_hash)
+                ->where('user_id !=', $user_id)->count_all_results('srp2_registrations');
+            $dipakai_direktori = $this->db->where('npwp_lookup_hash', $npwp_hash)
+                ->count_all_results('srp2_certified_developers');
+            if ($dipakai_pengajuan || $dipakai_direktori) {
+                $this->_onboarding_fail('NPWP sudah digunakan oleh pengembang lain.');
+                return;
+            }
+            $npwp_encrypted = $this->encryption_lib->encrypt($npwp_raw);
+        } elseif ( ! preg_match('/^[0-9]{16}$/', $nik_raw)) {
             $this->_onboarding_fail('NIK harus terdiri dari 16 digit angka.');
             return;
         }
 
-        // Encrypt PII data
-        $nik_encrypted    = $this->encryption_lib->encrypt($nik_raw);
         $alamat_encrypted = $this->encryption_lib->encrypt($alamat_raw);
-        $nik_hash         = $this->encryption_lib->deterministic_hash($nik_raw);
-
         $profile_data = [
-            'username'        => $username,
-            'name'            => $nama,
-            'role'            => $role,
-            'nik'             => $nik_encrypted,
-            'nik_lookup_hash' => $nik_hash,
-            'alamat'          => $alamat_encrypted,
-            'phone'           => $phone,
-            'kategori'        => $role, // Map to existing kategori field
+            'username' => $username,
+            'name' => $nama,
+            'role' => $role,
+            'alamat' => $alamat_encrypted,
+            'phone' => $phone,
+            'kategori' => $role,
         ];
-
+        if ($role !== 'pengembang') {
+            $profile_data['nik'] = $this->encryption_lib->encrypt($nik_raw);
+            $profile_data['nik_lookup_hash'] = $this->encryption_lib->deterministic_hash($nik_raw);
+        }
         // Role-specific fields
         if ($role === 'pengembang') {
             // Divalidasi di SERVER, bukan cuma atribut required di form. Ini hulu
@@ -582,7 +597,13 @@ class Auth extends MY_Controller {
         // apa pun di /akun sampai kebetulan membuka wizard. Sekarang konsisten
         // dengan jalur daftar cepat. Lihat PRD_VERIFIKASI_ADMIN_SRP2.md Fase 2.
         if ($role === 'pengembang') {
-            $this->auth_model->ensure_srp2_draft($user_id);
+            $registration_id = $this->auth_model->ensure_srp2_draft($user_id);
+            if ($registration_id) {
+                $this->db->where('id', $registration_id)->update('srp2_registrations', [
+                    'npwp_ciphertext' => $npwp_encrypted,
+                    'npwp_lookup_hash' => $npwp_hash,
+                ]);
+            }
         }
 
         // Handle file uploads
