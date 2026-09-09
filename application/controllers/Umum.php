@@ -302,6 +302,11 @@ class Umum extends MY_Controller {
 
 	public function forum()
 	{
+		if ( ! $this->is_logged_in()) {
+			$this->session->set_flashdata('error', 'Silakan masuk terlebih dahulu untuk membuka Konsultasi.');
+			$this->gerbang_login();
+			return;
+		}
 		$this->_load_forum();
 		$search   = $this->input->get('q');
 		$kategori = $this->input->get('kategori');
@@ -315,9 +320,7 @@ class Umum extends MY_Controller {
 		   yang sama (get_all_diskusi() tanpa batasan) dikirim ke SIAPA PUN
 		   yang membuka /Umum/forum - termasuk tamu anonim - jadi konsultasi
 		   warga A terbaca warga B begitu saja. Sekarang:
-		     - anonim  : tidak melihat satu topik pun (tidak ada "milik siapa"
-		                 untuk anonim) - cuma ajakan masuk, yang memang sudah
-		                 ada di view ini sejak awal.
+		     - anonim  : diarahkan ke login sebelum memuat forum (UAT No. 15).
 		     - warga   : HANYA topiknya sendiri (`$user_id` diisi).
 		     - admin   : SEMUA topik (`$user_id` NULL) - inilah "hanya bisa
 		                 dilihat admin" yang dimaksud.

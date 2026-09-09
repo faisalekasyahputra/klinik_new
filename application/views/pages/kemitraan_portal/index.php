@@ -2,7 +2,7 @@
     <div class="mb-6 text-center">
         <span class="text-xs font-bold uppercase tracking-[.18em] text-[color:var(--portal-text-muted)]">Kemitraan</span>
         <h1 class="mt-2 text-2xl font-black text-[color:var(--portal-text)] sm:text-4xl">KKN dan Magang</h1>
-        <p class="mt-2 text-sm text-[color:var(--portal-text-muted)]">Pilih layanan KKN atau Magang. Setelah memilih, Anda akan diminta masuk menggunakan akun yang sesuai.</p>
+        <p class="mt-2 text-sm text-[color:var(--portal-text-muted)]">Pilih layanan KKN untuk akun universitas atau Magang untuk akun mahasiswa.</p>
     </div>
 
     <?php

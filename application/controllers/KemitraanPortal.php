@@ -12,7 +12,11 @@ class KemitraanPortal extends Public_Controller
 
     public function index()
     {
-        // Halaman pilihan publik; login diminta setelah pengunjung memilih layanan.
+        if ( ! $this->is_logged_in()) {
+            $this->session->set_flashdata('error', 'Silakan masuk terlebih dahulu untuk membuka KKN dan Magang.');
+            $this->gerbang_login();
+            return;
+        }
         $this->render('pages/kemitraan_portal/index', ['judul' => 'KKN dan Magang']);
     }
 

@@ -8,6 +8,10 @@
 
 ## 0. BACA INI DULU - Status Terkini & Protokol Antar-Agent
 
+**Pelacakan UAT (10 Sep 2026):** [TRACKER_UAT_2026.md](docs/engineering/TRACKER_UAT_2026.md) hanya mencatat butir yang sudah diperbaiki, dengan 10 kolom persis tabel UAT asli (permintaan user). Isi Actual Result dengan hasil uji baru dan Keterangan dengan lingkungan uji/status deploy. Jangan menambahkan butir yang belum diperbaiki ke tabel hasil. Berikutnya lihat bagian "Posisi pekerjaan" di tracker.
+
+**Verifikasi lokal terbaru, 10 Sep 2026:** 47 suite / 1.385 pemeriksaan / **13 merah**, 0 bisu, 2 dilewati; nol akun uji baru tertinggal (36 sudah ada). Ke-13 suite merah dijalankan ulang pada kode sebelum patch UAT (`f3f1e97`) dan semuanya juga merah: patch ini tidak menambah suite merah. Daftar 9 merah pada catatan 1 Sep di bawah sudah basi; empat tambahan adalah `uji_pendataan_warga_r3`, `r4`, `r5`, `r6`. Suite baru `uji_konsultasi_tamu.php` lulus 4 pemeriksaan untuk akses anonim langsung/AJAX Konsultasi dan KKN/Magang. Tidak ada migrasi pada paket UAT ini.
+
 **Terakhir disinkronkan: 1 September 2026** - production di kode **`901385e`**, skema **`20260701000051`**, 44 tabel, `git status -sb` bersih dan sinkron dengan `origin`, semuanya dibaca lewat `ssh` DI SERVER sesudah deploy. Kesehatan sesudah rilis: `/`, `/auth/login`, `/berita`, `/cari_rumah` keempatnya 200 (0,3-1,1 dtk), dan aturan penutup kebocoran `.sql` diuji ulang dengan berkas sungguhan di akar - **403**, bertahan melewati deploy. **SIMPERUM kini mode `api`, bukan lagi simulasi** - lihat blok di bawah beserta catatan sensitifnya. *(Baris ini sempat menulis 24 Agt / `2ac24f8` / migrasi 043, lalu 31 Agt / `39af177`; keduanya benar untuk harinya lalu tersalip. Pola yang sama sudah memakan dokumen ini berkali-kali: angka hanya boleh ditulis sesudah dibaca dari server, dan langsung basi sesudahnya.)*
 
 > 🔴 **SUITE TIDAK LAGI HIJAU: 9 MERAH dari 45 suite / 1.466 pemeriksaan** (dijalankan penuh 1 Sep 2026, XAMPP hidup, `.env` lokal di `simulation`). Sampai 12 Agt suite ini selalu 0 merah, jadi ini BUKAN keadaan normal proyek.

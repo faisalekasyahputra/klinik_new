@@ -19,7 +19,7 @@
         </a>
 
         <!-- Sertifikasi Pengembang -->
-        <a href="<?= base_url('Pengembang/sertifikasi') ?>" data-tab-link data-tab-key="pengembang_list"
+        <a href="<?= base_url('tab/pengembang') ?>" data-tab-link data-tab-key="pengembang"
            class="portal-home-card aurora-surface aurora-2 min-h-[150px] sm:min-h-[185px]"
            style="--t1:#f1eafb;--t2:#d9c9f0;--t3:#b39fe2">
             <i class="portal-home-art fa-solid fa-award" aria-hidden="true"></i>
