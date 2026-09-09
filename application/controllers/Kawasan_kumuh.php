@@ -35,6 +35,21 @@ class Kawasan_kumuh extends MY_Controller {
     const TAHUN_TERSEDIA = [2026, 2025, 2024, 2023, 2022, 2021, 2020];
     const TAHUN_BAWAAN   = 2025;
 
+    /** Kolom yang boleh dijadikan kunci urut, dipetakan ke medan respons API.
+     *  Whitelist, BUKAN menerima nama medan bebas dari URL: kunci urut ikut
+     *  dipakai untuk mengakses array baris, dan nama yang tidak dikenal cuma
+     *  menghasilkan urutan acak yang sulit dilacak. `kondisi` diturunkan dari
+     *  skor akhir, jadi ia berbagi medan yang sama. */
+    const KOLOM_URUT = [
+        'kawasan'    => 'nama_kawasan',
+        'kabupaten'  => 'nama_kab',
+        'skor_awal'  => 'skor_kumuh_awal',
+        'skor_akhir' => 'skor_kumuh_akhir',
+        'kondisi'    => 'skor_kumuh_akhir',
+    ];
+    const KOLOM_ANGKA = ['skor_kumuh_awal', 'skor_kumuh_akhir'];
+    const PER_HALAMAN = [25, 50, 100];
+
     public function __construct()
     {
         parent::__construct();
@@ -81,11 +96,43 @@ class Kawasan_kumuh extends MY_Controller {
             }));
         }
 
-        /* Diurutkan supaya yang skornya paling berat tampil dulu. Skor kumuh
-           TINGGI = kondisi lebih buruk (skala Sikaper), jadi urut menurun. */
-        usort($baris, function ($x, $y) {
-            return (int) ($y['skor_kumuh_akhir'] ?? 0) <=> (int) ($x['skor_kumuh_akhir'] ?? 0);
+        /* URUT. Bawaan skor akhir menurun: skor kumuh TINGGI = kondisi lebih
+           buruk (skala Sikaper), jadi yang paling berat tampil dulu. Kolom
+           teks dibandingkan tanpa peduli huruf besar-kecil karena ejaan
+           Sikaper campur ("KOTA MAGELANG" vs "Cilacap"); kolom angka
+           dibandingkan sebagai angka supaya 9 tidak jatuh sesudah 10.
+           Pengikat seri selalu nama kawasan, supaya urutan stabil antar
+           permintaan - tanpa itu, dua kawasan berskor sama bisa bertukar
+           tempat tiap kali halaman dimuat ulang. */
+        $urut = (string) $this->input->get('urut');
+        if ( ! isset(self::KOLOM_URUT[$urut])) { $urut = 'skor_akhir'; }
+        $arah = $this->input->get('arah') === 'asc' ? 'asc' : 'desc';
+        if ($this->input->get('urut') === NULL) { $arah = 'desc'; }
+        $medan = self::KOLOM_URUT[$urut];
+        $angka = in_array($medan, self::KOLOM_ANGKA, TRUE);
+
+        usort($baris, function ($x, $y) use ($medan, $angka, $arah) {
+            $a = $x[$medan] ?? ($angka ? 0 : '');
+            $b = $y[$medan] ?? ($angka ? 0 : '');
+            $c = $angka ? ((int) $a <=> (int) $b) : strcasecmp((string) $a, (string) $b);
+            if ($c === 0) {
+                $c = strcasecmp((string) ($x['nama_kawasan'] ?? ''), (string) ($y['nama_kawasan'] ?? ''));
+            }
+            return $arah === 'asc' ? $c : -$c;
         });
+
+        /* HALAMAN. Dipotong di sini, bukan di API: satu tahun sudah ada di
+           memori dari cache, jadi memotongnya gratis, dan URL-nya membawa
+           seluruh keadaan (tahun, kabupaten, urut, halaman) sehingga bisa
+           dibagikan atau di-bookmark apa adanya. */
+        $per = (int) $this->input->get('per');
+        if ( ! in_array($per, self::PER_HALAMAN, TRUE)) { $per = self::PER_HALAMAN[0]; }
+        $total   = count($baris);
+        $jumlah_hal = max(1, (int) ceil($total / $per));
+        $hal = (int) $this->input->get('hal');
+        if ($hal < 1) { $hal = 1; }
+        if ($hal > $jumlah_hal) { $hal = $jumlah_hal; }
+        $baris_hal = array_slice($baris, ($hal - 1) * $per, $per);
 
         $data = [
             'judul'          => 'Data Kawasan Kumuh Jawa Tengah',
@@ -93,8 +140,18 @@ class Kawasan_kumuh extends MY_Controller {
             'tahun_tersedia' => self::TAHUN_TERSEDIA,
             'kab_terpilih'   => $kab,
             'daftar_kab'     => $daftar_kab,
-            'baris'          => $baris,
+            'baris'          => $baris_hal,
             'gagal'          => $gagal,
+            'urut'           => $urut,
+            'arah'           => $arah,
+            'kolom_urut'     => array_keys(self::KOLOM_URUT),
+            'per'            => $per,
+            'per_pilihan'    => self::PER_HALAMAN,
+            'hal'            => $hal,
+            'jumlah_hal'     => $jumlah_hal,
+            'total'          => $total,
+            'mulai'          => $total ? ($hal - 1) * $per + 1 : 0,
+            'sampai'         => min($total, $hal * $per),
         ];
 
         $this->render('pages/data_spasial/kawasan_kumuh', $data);

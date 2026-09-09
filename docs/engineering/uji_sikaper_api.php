@@ -186,6 +186,56 @@ if ($kode === 0) {
         cek(strpos($html_d, 'Rincian RT/RW') !== FALSE, 'Detail merender bagian RT/RW');
     }
 
+    /* URUT & HALAMAN - diperiksa NILAINYA, bukan cuma "ada tautannya".
+       Kolom teks dibaca dari sel <td> pertama tiap baris, kolom angka dari sel
+       skor akhir; keduanya harus benar-benar terurut. Mengecek keberadaan
+       tombol saja akan lulus walau urutannya kacau. */
+    $sel_teks = function ($html) {
+        preg_match_all('/<td class="px-4 py-3 font-bold" style="color:var\(--portal-text\)">([^<]*)/', $html, $m);
+        return $m[1];
+    };
+    $sel_angka = function ($html) {
+        preg_match_all('/text-right font-bold" style="color:var\(--portal-text\)">(\d+)/', $html, $m);
+        return array_map('intval', $m[1]);
+    };
+    $terurut = function (array $a, $naik, $teks) {
+        for ($i = 1; $i < count($a); $i++) {
+            $c = $teks ? strcasecmp($a[$i - 1], $a[$i]) : ($a[$i - 1] <=> $a[$i]);
+            if ($naik ? $c > 0 : $c < 0) { return FALSE; }
+        }
+        return count($a) > 1;
+    };
+
+    list(, $h_asc)  = $ambil('kawasan_kumuh?urut=kawasan&arah=asc');
+    list(, $h_desc) = $ambil('kawasan_kumuh?urut=kawasan&arah=desc');
+    cek($terurut($sel_teks($h_asc), TRUE, TRUE),   'Urut kawasan menaik: sel teks benar-benar A-Z (tanpa peduli huruf besar-kecil)');
+    cek($terurut($sel_teks($h_desc), FALSE, TRUE), 'Urut kawasan menurun: sel teks benar-benar Z-A');
+
+    list(, $h_num) = $ambil('kawasan_kumuh?urut=skor_akhir&arah=desc');
+    cek($terurut($sel_angka($h_num), FALSE, FALSE), 'Urut skor akhir menurun: dibandingkan sebagai ANGKA (50 sebelum 9)');
+
+    list(, $h_hal) = $ambil('kawasan_kumuh?per=25&hal=2');
+    cek(preg_match('/Menampilkan 26&ndash;50, halaman 2 dari (\d+)/', $h_hal) === 1,
+        'Halaman 2 @25 menampilkan baris 26-50');
+    cek(substr_count($h_hal, '<tr class="border-t"') === 25, 'Halaman 2 memuat tepat 25 baris');
+
+    list(, $h_akhir) = $ambil('kawasan_kumuh?per=25&hal=99999');
+    preg_match('/halaman (\d+) dari (\d+)/', $h_akhir, $mh);
+    cek(isset($mh[1], $mh[2]) && $mh[1] === $mh[2] && (int) $mh[2] > 1,
+        'Nomor halaman di luar batas dijepit ke halaman terakhir (' . ($mh[1] ?? '?') . ' dari ' . ($mh[2] ?? '?') . ')');
+
+    list(, $h_per) = $ambil('kawasan_kumuh?per=7');
+    cek(preg_match('/Menampilkan 1&ndash;25,/', $h_per) === 1, 'Nilai per-halaman di luar whitelist jatuh ke 25');
+
+    /* Penyaring TIDAK boleh hilang saat kepala kolom diklik - itu cara paling
+       sunyi sebuah tabel membuang pilihan pengguna. */
+    list(, $h_kab) = $ambil('kawasan_kumuh?tahun=2025&kab=3301');
+    cek(preg_match('/href="[^"]*kab=3301[^"]*urut=kawasan/', $h_kab) === 1,
+        'Tautan kepala kolom mempertahankan penyaring kabupaten');
+
+    list($kode_u, ) = $ambil('kawasan_kumuh?urut=' . rawurlencode('x;DROP') . '&arah=zz&hal=-3');
+    cek($kode_u === 200, 'Parameter urut/arah/hal yang ngawur dijatuhkan ke bawaan, bukan galat');
+
     list($kode_x, ) = $ambil('kawasan_kumuh/detail/..%2f..%2fetc');
     cek($kode_x === 404, "ID berbentuk aneh ditolak 404 (dapat {$kode_x})");
 }
