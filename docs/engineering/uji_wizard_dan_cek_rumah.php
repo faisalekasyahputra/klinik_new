@@ -31,6 +31,9 @@ define('BASE', rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/
 define('ENV_PATH', dirname(__DIR__, 2) . '/.env');
 define('ADMIN_EMAIL', getenv('UJI_ADMIN_EMAIL') ?: 'adminkabkota@example.com');
 define('ADMIN_SANDI', getenv('UJI_ADMIN_PASSWORD') ?: 'password');
+/* Wilayah akun admin demo #26. Fixture dipilih agar tiketnya mendarat di
+   sini, kalau tidak keputusan admin ditolak karena di luar cakupan. */
+define('KAB_ADMIN', 3374);
 define('STEMPEL', date('ymdHis'));
 define('EMAIL', 'warga.uji+' . STEMPEL . '@akunuji.test');
 define('SANDI', 'UjiWarga123!');
@@ -192,13 +195,23 @@ foreach (['127.0.0.1', '::1'] as $ip) {
 
 /* NIK fixture + tanggal lahirnya dibaca dari berkasnya. Tanggalnya berbeda
    per fixture dan gateway mencocokkan keduanya. */
-$KANDIDAT = [];
+$UTAMA = []; $CADANGAN = [];
 foreach (glob(dirname(__DIR__, 2) . '/application/fixtures/simperum/SIM-*.json') as $f) {
     $j = json_decode((string) file_get_contents($f), TRUE);
     if (($j['response_status'] ?? '') !== 'found') { continue; }
     if (empty($j['identity']['nik']) || empty($j['identity']['birth_date'])) { continue; }
-    $KANDIDAT[$j['identity']['nik']] = $j['identity']['birth_date'];
+    /* Wilayah tiket diturunkan dari ISI FIXTURE, bukan dari isian formulir -
+       terukur 9 Sep 2026 sesudah perubahan UAT. Fixture yang wilayahnya BUKAN
+       KAB melahirkan tiket di luar cakupan admin demo, dan seluruh bagian
+       keputusan admin merah walau penegakan cakupannya justru bekerja benar.
+       Karena itu yang sewilayah didahulukan, bukan diambil urut nama berkas. */
+    if (strpos((string) file_get_contents($f), (string) KAB_ADMIN) !== FALSE) {
+        $UTAMA[$j['identity']['nik']] = $j['identity']['birth_date'];
+    } else {
+        $CADANGAN[$j['identity']['nik']] = $j['identity']['birth_date'];
+    }
 }
+$KANDIDAT = $UTAMA + $CADANGAN;
 
 echo "=== WIZARD BARU + CEK DATA RUMAH ===\n";
 echo "Target : " . BASE . "\n";
