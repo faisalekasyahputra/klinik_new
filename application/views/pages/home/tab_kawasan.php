@@ -27,6 +27,30 @@
             </div>
         </a>
 
+        <!-- Card: Kawasan Kumuh - MASUK KEMBALI 10 Sep 2026.
+             Kartu "Profil Kawasan Kumuh" dulu ikut dicabut A1 karena isinya
+             angka literal tanpa sumber. Yang ini beda pada akarnya: datanya
+             diambil langsung dari API SIKAPER dinas, per tahun dan per
+             kabupaten, jadi tidak ada satu pun angka yang kita karang. -->
+        <a href="<?= base_url('kawasan_kumuh') ?>" data-tab-link data-tab-key="kawasan_kumuh" data-tab-group="kawasan"
+           class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"
+           style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 120px;">
+            <i class="fa-solid fa-city absolute transition-transform duration-700 group-hover:scale-110 group-hover:-rotate-6 pointer-events-none"
+               style="font-size: 80px; right: -1rem; bottom: -1rem; color: var(--portal-icon); opacity: 0.08;"></i>
+            <div class="relative z-10">
+                <i class="fa-solid fa-city mb-2.5 transition-transform duration-500 group-hover:scale-110"
+                   style="font-size: 24px; color: var(--portal-icon); "></i>
+                <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1 transition-colors">Kawasan Kumuh</h4>
+                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Data kawasan kumuh per tahun dan kabupaten, sumber SIKAPER Disperakim</p>
+            </div>
+            <div class="relative z-10 mt-auto pt-2.5">
+                <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
+                    <span>Lihat Data</span>
+                    <i class="fa-solid fa-arrow-right group-hover:translate-x-1 transition-transform"></i>
+                </div>
+            </div>
+        </a>
+
         <!--
           A1 - tiga kartu (Sebaran Rusun, Profil Kawasan Kumuh, Sebaran Bantuan
           SDGS) DICABUT 29 Jul 2026 atas keputusan user, bersama halamannya.

@@ -45,15 +45,25 @@
                 </div>
             </a>
 
-            <!-- Placeholder sampai subhalaman kawasan kumuh tersedia -->
-            <div class="portal-home-card aurora-surface aurora-4 portal-home-card-placeholder min-h-[170px] sm:min-h-[245px]"
-                 style="--t1:#fdeae3;--t2:#f8c8ba;--t3:#ef9d8a" aria-label="Kawasan kumuh, segera hadir">
+            <?php /* Kawasan Kumuh - diaktifkan 10 Sep 2026. Dulu placeholder
+                 "Segera Hadir" karena API Sikaper belum tembus; sekarang
+                 menunjuk Kawasan_kumuh::index() (rute /kawasan_kumuh) yang
+                 menyajikan data kawasan kumuh se-Jateng langsung dari API
+                 dinas. Pola persis sama dengan kartu PSU di atas.
+
+                 Komentar PHP, BUKAN komentar HTML: yang HTML ikut terkirim ke
+                 peramban dan catatan internal seperti "API belum tembus" jadi
+                 terbaca siapa pun lewat view-source. Kartu PSU di atas masih
+                 memakai komentar HTML - kalau menyentuhnya nanti, ubah juga. */ ?>
+            <a href="<?= base_url('kawasan_kumuh') ?>" data-tab-link data-tab-key="kawasan_kumuh"
+               class="portal-home-card aurora-surface aurora-4 min-h-[170px] sm:min-h-[245px]"
+               style="--t1:#fdeae3;--t2:#f8c8ba;--t3:#ef9d8a">
                 <i class="portal-home-art fa-solid fa-city" aria-hidden="true"></i>
                 <div class="portal-home-body">
                     <h2 class="portal-home-title portal-home-title-sm">KAWASAN<br><span class="portal-home-ghost">KUMUH</span></h2>
-                    <span class="portal-home-badge">Segera Hadir</span>
+                    <p class="portal-home-subtitle">Data kawasan kumuh se-Jawa Tengah.</p>
                 </div>
-            </div>
+            </a>
         </div>
 
         <!-- Rekam Data menunjuk modulnya sendiri; pengunjung tanpa sesi diarahkan
