@@ -46,6 +46,14 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * ini, dan itu sebabnya SIKUMBANG_TIMEOUT di bawah jauh lebih kecil dari 60.
  */
 
+/* Mekanisme cache-nya dipakai bersama Sikaper - lihat cache_hulu_helper.php.
+   Di-`require` bersyarat, bukan diandalkan pada autoload, supaya helper ini
+   tetap bisa dipakai dari skrip CLI di luar CodeIgniter (harness di
+   docs/engineering/ memang begitu cara memanggilnya). */
+if ( ! function_exists('cache_hulu_ambil')) {
+    require_once __DIR__ . '/cache_hulu_helper.php';
+}
+
 /** Batas satu permintaan ke SIKUMBANG. Lihat catatan koreksi arah di atas. */
 define('SIKUMBANG_TIMEOUT', 12);
 
@@ -88,48 +96,34 @@ if ( ! function_exists('sikumbang_ambil')) {
      */
     function sikumbang_ambil($url, $cache_file, $ttl, $timeout = SIKUMBANG_TIMEOUT)
     {
-        $ada_cache = is_file($cache_file);
+        /* Mekanisme cache-nya DIPINDAH ke cache_hulu_ambil() 10 Sep 2026 dan
+           dipakai bersama Sikaper. Yang tinggal di sini cuma cara MENEMBAK-nya,
+           karena tiap hulu beda: Sikumbang tanpa auth ber-User-Agent peramban,
+           Sikaper pakai Basic Auth. Perilakunya tidak berubah sedikit pun -
+           nama berkas benderanya tetap `sikumbang_gagal.flag`, dan
+           uji_sikumbang_cadangan.php (11 pemeriksaan) yang membuktikannya. */
+        return cache_hulu_ambil($cache_file, $ttl, function () use ($url, $timeout) {
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL            => $url,
+                CURLOPT_RETURNTRANSFER => TRUE,
+                CURLOPT_SSL_VERIFYPEER => TRUE,
+                CURLOPT_SSL_VERIFYHOST => 2,
+                CURLOPT_CONNECTTIMEOUT => SIKUMBANG_CONNECT_TIMEOUT,
+                CURLOPT_TIMEOUT        => $timeout,
+                CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            ]);
+            $balasan = curl_exec($ch);
+            $galat   = curl_error($ch);
+            $kode    = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
 
-        // 1. Cache segar: pulang tanpa menyentuh jaringan sama sekali.
-        if ($ada_cache && (time() - filemtime($cache_file)) < $ttl) {
-            return file_get_contents($cache_file);
-        }
-
-        $bendera = dirname($cache_file) . '/sikumbang_gagal.flag';
-
-        // 2. Baru saja gagal: jangan menambah antrean ke hulu yang sedang
-        //    bermasalah. Sajikan cadangan kalau ada.
-        if (is_file($bendera) && (time() - filemtime($bendera)) < SIKUMBANG_JEDA_GAGAL) {
-            return $ada_cache ? file_get_contents($cache_file) : NULL;
-        }
-
-        $ch = curl_init();
-        curl_setopt_array($ch, [
-            CURLOPT_URL            => $url,
-            CURLOPT_RETURNTRANSFER => TRUE,
-            CURLOPT_SSL_VERIFYPEER => TRUE,
-            CURLOPT_SSL_VERIFYHOST => 2,
-            CURLOPT_CONNECTTIMEOUT => SIKUMBANG_CONNECT_TIMEOUT,
-            CURLOPT_TIMEOUT        => $timeout,
-            CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        ]);
-        $balasan = curl_exec($ch);
-        $galat   = curl_error($ch);
-        $kode    = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        /* Kode HTTP ikut diperiksa, bukan cuma $galat. Balasan 500 atau 502
-           dari hulu bukan galat curl - tanpa cek ini, badan halaman error
-           akan tertulis ke cache sebagai kalau-kalau itu data yang sah, lalu
-           disajikan sebagai "data" selama TTL penuh. */
-        if ($galat || $balasan === FALSE || $balasan === '' || $kode < 200 || $kode >= 300) {
-            @touch($bendera);
-            return $ada_cache ? file_get_contents($cache_file) : NULL;
-        }
-
-        @file_put_contents($cache_file, $balasan);
-        @unlink($bendera);
-        return $balasan;
+            /* Kode HTTP ikut diperiksa, bukan cuma $galat. Balasan 500 atau
+               502 dari hulu bukan galat curl - tanpa cek ini, badan halaman
+               error tertulis ke cache sebagai kalau-kalau itu data sah. */
+            $ok = ! $galat && is_string($balasan) && $balasan !== '' && $kode >= 200 && $kode < 300;
+            return [$ok, is_string($balasan) ? $balasan : NULL];
+        }, 'sikumbang');
     }
 }
 

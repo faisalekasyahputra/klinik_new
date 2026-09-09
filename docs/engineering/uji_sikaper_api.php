@@ -149,5 +149,46 @@ if (empty($env['SIKAPER_USERNAME']) || empty($env['SIKAPER_PASSWORD'])) {
     }
 }
 
+// ---------------------------------------------------------------------------
+echo "\nLAPIS 3. Halaman Kawasan Kumuh lewat HTTP\n";
+// ---------------------------------------------------------------------------
+$base = rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/');
+$ambil = function ($path) use ($base) {
+    $ch = curl_init($base . '/' . ltrim($path, '/'));
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => TRUE, CURLOPT_FOLLOWLOCATION => TRUE, CURLOPT_TIMEOUT => 90]);
+    $body = (string) curl_exec($ch);
+    $kode = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+    return [$kode, $body];
+};
+
+list($kode, $html) = $ambil('kawasan_kumuh');
+if ($kode === 0) {
+    lewati('Server web tidak berjalan (HTTP 0) - lapis halaman dilewati.');
+} else {
+    /* Penjaga positif lebih dulu, supaya sebabnya terbaca kalau halamannya
+       500 alih-alih hanya "teks tidak ketemu". */
+    cek($kode === 200, "Halaman /kawasan_kumuh membalas 200 (dapat {$kode})");
+    cek(strpos($html, 'Data Kawasan Kumuh Jawa Tengah') !== FALSE, 'Judul halaman dirender');
+    $n = preg_match('/(\d+) kawasan ditampilkan/', $html, $m) === 1 ? (int) $m[1] : 0;
+    cek($n > 0, 'Ada baris kawasan yang tampil (' . $n . ')');
+    cek(strpos($html, 'belum bisa ditampilkan') === FALSE, 'Bukan halaman keadaan gagal');
+
+    /* Data pribadi TIDAK boleh bocor ke halaman publik ini. Endpoint peserta
+       Lomba Habitat memuat no_hp dan nama PIC; asersi ini yang berteriak
+       kalau kelak ada yang menyambungkannya ke sini. */
+    cek(stripos($html, 'no_hp') === FALSE && preg_match('/\b08\d{9,11}\b/', $html) !== 1,
+        'Nol nomor HP / data kontak di halaman publik');
+
+    if (preg_match('#kawasan_kumuh/detail/([A-Za-z0-9_-]+)#', $html, $m)) {
+        list($kode_d, $html_d) = $ambil('kawasan_kumuh/detail/' . $m[1]);
+        cek($kode_d === 200, "Halaman detail membalas 200 (dapat {$kode_d})");
+        cek(strpos($html_d, 'Rincian RT/RW') !== FALSE, 'Detail merender bagian RT/RW');
+    }
+
+    list($kode_x, ) = $ambil('kawasan_kumuh/detail/..%2f..%2fetc');
+    cek($kode_x === 404, "ID berbentuk aneh ditolak 404 (dapat {$kode_x})");
+}
+
 echo "\n=== {$total} pemeriksaan, {$gagal} merah, {$lewat} dilewati ===\n";
 exit($gagal === 0 ? 0 : 1);

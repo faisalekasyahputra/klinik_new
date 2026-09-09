@@ -21,26 +21,60 @@ class Sikaper_api {
     /**
      * Helper untuk HTTP Request
      */
-    private function _request($endpoint, $method = 'GET', $data = [])
+    /**
+     * @param int $ttl Umur cache dalam detik. 0 = jangan di-cache.
+     *
+     * SEMUA endpoint Sikaper di-cache, dan itu bukan optimasi prematur:
+     * `data_kawasan/kawasan` untuk satu tahun saja membalas ~292 KB berisi 756
+     * kawasan. Memanggilnya tiap kunjungan halaman berarti mengulang persis
+     * kesalahan yang membuat "hostinger selalu mati" - hulu lambat menahan
+     * worker PHP, dan di hosting bersama itu menular ke seluruh situs.
+     * Datanya sendiri rekap tahunan yang berubah sangat jarang.
+     */
+    private function _request($endpoint, $method = 'GET', $data = [], $ttl = 21600)
     {
         $url = $this->base_url . ltrim($endpoint, '/');
 
+        if ($ttl > 0 && function_exists('cache_hulu_ambil')) {
+            $berkas = APPPATH . 'cache/sikaper_' . md5($url . '|' . http_build_query($data)) . '.json';
+            $isi = cache_hulu_ambil($berkas, $ttl, function () use ($url, $method, $data) {
+                $mentah = $this->_tembak($url, $method, $data);
+                return [$mentah['ok'], $mentah['body']];
+            }, 'sikaper');
+
+            if ($isi === NULL) {
+                return ['status' => FALSE, 'message' => 'Sikaper tidak dapat dihubungi dan tidak ada cadangan.', 'data' => NULL];
+            }
+            return ['status' => TRUE, 'http_code' => 200, 'data' => json_decode($isi, TRUE)];
+        }
+
+        $mentah = $this->_tembak($url, $method, $data);
+        if ( ! $mentah['ok']) {
+            return ['status' => FALSE, 'http_code' => $mentah['kode'], 'message' => $mentah['pesan'], 'data' => json_decode((string) $mentah['body'], TRUE)];
+        }
+        return ['status' => TRUE, 'http_code' => $mentah['kode'], 'data' => json_decode((string) $mentah['body'], TRUE)];
+    }
+
+    /** Tembakan mentah tanpa cache. Dipisah supaya cache_hulu_ambil() punya
+     *  callback yang bersih dan jalur tanpa-cache tetap memakai kode yang sama. */
+    private function _tembak($url, $method, $data)
+    {
+
         $ch = curl_init();
-        
+
         $headers = [
-            'Authorization: Basic ' . base64_encode($this->username . ':' . $this->password)
+            'Authorization: Basic ' . base64_encode($this->username . ':' . $this->password),
         ];
 
         curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
         /* B4 LUNAS 9 Sep 2026. Verifikasi TLS dinyalakan penuh, dan itu tidak
            mengorbankan apa pun: sertifikat host API-nya sah (Google Trust
            Services, CN=phicos.co.id) dan diuji 200 dengan verifikasi AKTIF
-           dari lokal MAUPUN dari server production. Utang ini dulu dibiarkan
-           karena library-nya yatim; sekarang ia dipakai, jadi tidak boleh
-           lagi. JANGAN kembalikan ke false "sementara" - kalau kelak ada
-           galat sertifikat, betulkan CA bundle-nya, jangan matikan
-           pemeriksaannya. */
+           dari lokal MAUPUN dari PHP di server production. Utang ini dulu
+           dibiarkan karena library-nya yatim; sekarang ia dipakai. JANGAN
+           kembalikan ke false "sementara" - kalau kelak ada galat sertifikat,
+           betulkan CA bundle-nya, jangan matikan pemeriksaannya. */
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
@@ -48,42 +82,27 @@ class Sikaper_api {
         curl_setopt($ch, CURLOPT_TIMEOUT, 15);
 
         if ($method === 'POST') {
-            curl_setopt($ch, CURLOPT_POST, true);
-            if (!empty($data)) {
+            curl_setopt($ch, CURLOPT_POST, TRUE);
+            if ( ! empty($data)) {
                 curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
             }
         }
 
-        $response = curl_exec($ch);
-        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
-        
+        $body  = curl_exec($ch);
+        $kode  = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $galat = curl_error($ch);
         curl_close($ch);
 
-        if ($error) {
-            return [
-                'status' => false,
-                'message' => 'cURL Error: ' . $error,
-                'data' => null
-            ];
-        }
+        /* Kode HTTP ikut menentukan, bukan cuma galat transport - kalau tidak,
+           badan halaman error 502 akan tertulis ke cache sebagai data sah. */
+        $ok = ! $galat && is_string($body) && $body !== '' && $kode >= 200 && $kode < 300;
 
-        $decoded = json_decode($response, true);
-        
-        if ($http_code >= 200 && $http_code < 300) {
-            return [
-                'status' => true,
-                'http_code' => $http_code,
-                'data' => $decoded
-            ];
-        } else {
-            return [
-                'status' => false,
-                'http_code' => $http_code,
-                'message' => 'API Error (HTTP ' . $http_code . ')',
-                'data' => $decoded
-            ];
-        }
+        return [
+            'ok'    => $ok,
+            'kode'  => $kode,
+            'body'  => is_string($body) ? $body : NULL,
+            'pesan' => $galat ? ('cURL Error: ' . $galat) : ('API Error (HTTP ' . $kode . ')'),
+        ];
     }
 
     // ------------------------------------------------------------------------

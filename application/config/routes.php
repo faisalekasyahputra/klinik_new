@@ -101,6 +101,13 @@ $route['simulasi_kpr']             = 'Index/simulasi_kpr';
 // --- Bank Desain & Data Spasial ---
 $route['materia']                  = 'Index/materia';
 $route['sebaran']                  = 'Index/sebaran';
+
+/* Kawasan Kumuh (API Sikaper). Rute LOWERCASE dituliskan eksplisit, dan itu
+   bukan hiasan: `cek_rtlh` tidak punya entri di sini dan akibatnya 404 di
+   production (Linux peka huruf) walau jalan di lokal Windows - lihat §0e.
+   Jangan andalkan pencocokan nama controller. */
+$route['kawasan_kumuh']            = 'Kawasan_kumuh/index';
+$route['kawasan_kumuh/detail/(:any)'] = 'Kawasan_kumuh/detail/$1';
 // sebaran_rusun / profil_kumuh / sebaran_sdgs dicabut 29 Jul 2026 (A1) -
 // angka literal tanpa sumber, plus rusunawa bernama nyata dengan atribut
 // karangan. Alasan lengkap di Index.php.
