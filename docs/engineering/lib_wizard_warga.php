@@ -186,6 +186,15 @@ if ( ! function_exists('wizard_pilih_opsi')) {
             $prefer = ['none'];
         } elseif ($nama === 'self_help_capability_code') {
             $prefer = ['capable'];
+        } elseif (strpos($nama, 'kabupaten') !== FALSE) {
+            /* 3374 (Kota Semarang) dipilih SENGAJA: itu wilayah akun admin
+               demo #26, satu-satunya kredensial admin yang harness ini punya.
+               Tanpa ini wilayahnya ikut opsi pertama - terukur mendarat di
+               3324 (Kendal) sesudah perubahan UAT 9 Sep - tiketnya di luar
+               cakupan admin, dan seluruh bagian keputusan admin merah. Merah
+               yang menuduh fitur, padahal penegakan cakupannya justru bekerja
+               dengan benar. */
+            $prefer = ['3374'];
         }
 
         foreach ($prefer as $p) {
