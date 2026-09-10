@@ -208,6 +208,7 @@ class Pengembang extends MY_Controller {
 
     public function simpan_dokumen($id = NULL) {
         $is_ajax = $this->input->is_ajax_request();
+        $return_url = $this->input->post('return_to') === 'dashboard' ? 'akun/dokumen' : 'Pengembang/syarat';
         if (!is_numeric($id) || !$this->akses_pengembang('Pengembang/syarat') || $this->input->method(TRUE) !== 'POST') { if (!$is_ajax) show_404(); return; }
 
         // NORMALISASI SEKALI di pintu masuk, sebelum $id dipakai untuk APA PUN.
@@ -229,7 +230,7 @@ class Pengembang extends MY_Controller {
         if (in_array($registration->status_verifikasi, ['Pending', 'Diterima'], TRUE)) {
             $message = 'Dokumen tidak bisa diubah saat status ' . $registration->status_verifikasi . '.';
             if ($is_ajax) { $this->output->set_status_header(409)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => $message])); return; }
-            $this->session->set_flashdata('error', $message); redirect('Pengembang/syarat'); return;
+            $this->session->set_flashdata('error', $message); redirect($return_url); return;
         }
         // Pastikan akar private_uploads/ tertutup dari akses HTTP langsung.
         // "Di luar webroot" ternyata tidak selalu benar - tergantung posisi
@@ -241,13 +242,13 @@ class Pengembang extends MY_Controller {
         if (!is_dir($path)) mkdir($path, 0700, TRUE);
         $allowed = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'];
 
-        $gagal = function ($message, $key = NULL) use ($is_ajax) {
+        $gagal = function ($message, $key = NULL) use ($is_ajax, $return_url) {
             if ($is_ajax) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(
                     array_filter(['status' => 'error', 'document_key' => $key, 'message' => $message])));
                 return;
             }
-            $this->session->set_flashdata('error', $message); redirect('Pengembang/syarat');
+            $this->session->set_flashdata('error', $message); redirect($return_url);
         };
 
         // DUA TAHAP: validasi SEMUA dulu, baru pindahkan. Dulu validasi dan
@@ -308,11 +309,12 @@ class Pengembang extends MY_Controller {
             ]));
             return;
         }
-        $this->session->set_flashdata('success', 'Dokumen berhasil diunggah.'); redirect('Pengembang/syarat');
+        $this->session->set_flashdata('success', 'Dokumen berhasil diunggah.'); redirect($return_url);
     }
 
     public function kirim_pengajuan($id = NULL) {
         $is_ajax = $this->input->is_ajax_request();
+        $return_url = $this->input->post('return_to') === 'dashboard' ? 'akun/dokumen' : 'Pengembang/syarat';
         if (!is_numeric($id) || !$this->akses_pengembang('Pengembang/syarat') || $this->input->method(TRUE) !== 'POST') { if (!$is_ajax) show_404(); return; }
         $registration = $this->db->get_where('srp2_registrations', ['id' => (int) $id, 'user_id' => $this->get_user_id()])->row();
         if (!$registration) {
@@ -328,7 +330,7 @@ class Pengembang extends MY_Controller {
         if ($uploaded < $required) {
             $message = 'Lengkapi seluruh ' . $required . ' dokumen sebelum mengirim pengajuan.';
             if ($is_ajax) { $this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => $message, 'uploaded_count' => $uploaded, 'required' => $required])); return; }
-            $this->session->set_flashdata('error', $message); redirect('Pengembang/syarat'); return;
+            $this->session->set_flashdata('error', $message); redirect($return_url); return;
         }
         // GERBANG DI HULU. Dulu 14 dokumen adalah SATU-SATUNYA syarat kirim,
         // sehingga baris tanpa nama perusahaan - atau bernama sama persis dengan

@@ -227,6 +227,69 @@ $regA = (int) nilai('SELECT id FROM srp2_registrations WHERE user_id=? ORDER BY 
 wajib($regA > 0, 'Draft pengajuan A lahir dari kunjungan wizard');
 $GLOBALS['regs'][] = $regA;
 
+$panel = http('a', 'akun/dokumen');
+cek($panel['code'] === 200 && strpos($panel['body'], 'id="srp2-dashboard-documents"') !== FALSE,
+    'Dashboard menyediakan panel dokumen SRP2');
+cek(strpos($panel['body'], 'Pengembang/simpan_dokumen/' . $regA) !== FALSE,
+    'Panel dashboard memakai pengajuan dan penyimpan yang sama dengan wizard');
+$dashboard = http('a', 'akun');
+cek(strpos($dashboard['body'], 'akun/dokumen') !== FALSE, 'Dashboard memiliki akses kelola dokumen');
+if (getenv('UJI_PANEL_SRP2')) {
+    $fixture = tempnam(sys_get_temp_dir(), 'srp2_png');
+    file_put_contents($fixture, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1cAAAAASUVORK5CYII='));
+    $upload = static function ($filename) use ($fixture, $regA) {
+        $token = csrf('a', 'akun/dokumen');
+        $ch = curl_init(BASE_URL . '/Pengembang/simpan_dokumen/' . $regA);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => TRUE, CURLOPT_FOLLOWLOCATION => TRUE,
+            CURLOPT_COOKIEJAR => sesi('a'), CURLOPT_COOKIEFILE => sesi('a'), CURLOPT_TIMEOUT => 30,
+            CURLOPT_POSTFIELDS => ['csrf_kpkp_token' => $token, 'return_to' => 'dashboard',
+                'form_1' => new CURLFile($fixture, 'image/png', $filename)]]);
+        $body = (string) curl_exec($ch); $url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL); curl_close($ch);
+        return ['body' => $body, 'url' => $url];
+    };
+    try {
+        $saved = $upload('panel-awal.png');
+        cek(str_ends_with($saved['url'], '/akun/dokumen') && strpos($saved['body'], 'panel-awal.png') !== FALSE,
+            'Unggah dari dashboard tersimpan dan kembali ke panel');
+        $wizard = html_entity_decode(http('a', 'Pengembang/syarat')['body'], ENT_QUOTES);
+        cek(strpos($wizard, '"uploadedKeys":["form_1"]') !== FALSE, 'Wizard membaca berkas yang diunggah dari dashboard');
+        $saved = $upload('panel-ganti.png');
+        cek(strpos($saved['body'], 'panel-ganti.png') !== FALSE
+            && (int) nilai('SELECT COUNT(*) FROM srp2_documents WHERE registration_id=?', [$regA]) === 1,
+            'Ganti berkas memperbarui dokumen yang sama tanpa duplikasi');
+        tulis("UPDATE srp2_registrations SET status_verifikasi='Pending' WHERE id=?", [$regA]);
+        $locked = http('a', 'akun/dokumen');
+        cek(strpos($locked['body'], 'type="file"') === FALSE && strpos($locked['body'], 'Lihat Berkas') !== FALSE,
+            'Pending tetap dapat dilihat tetapi tidak menawarkan perubahan');
+        $upload('tidak-boleh.png');
+        cek(nilai('SELECT original_name FROM srp2_documents WHERE registration_id=?', [$regA]) === 'panel-ganti.png',
+            'Server menolak penggantian saat Pending');
+        tulis("UPDATE srp2_registrations SET status_verifikasi='Draft' WHERE id=?", [$regA]);
+        $company = 'PT UJI PANEL ' . CAP;
+        http('a', 'akun/update_pengembang', ['csrf_kpkp_token' => csrf('a', 'akun/profil'),
+            'nama_perusahaan' => $company, 'alamat_kantor' => 'Alamat simulasi',
+            'asosiasi' => 'rei', 'no_keanggotaan' => 'UJI123', 'instagram' => '', 'website' => '', 'sosmed_lainnya' => '']);
+        cek(strpos(http('a', 'akun')['body'], $company) !== FALSE,
+            'Data perusahaan dari Profil tersinkron ke Status Pengajuan');
+        isi_dokumen($regA, array_values(array_diff($SEMUA_DOK, ['form_1'])));
+        $sent = http('a', 'Pengembang/kirim_pengajuan/' . $regA, [
+            'csrf_kpkp_token' => csrf('a', 'akun/dokumen'), 'return_to' => 'dashboard']);
+        cek(status_reg($regA) === 'Pending' && str_ends_with($sent['url'], '/akun'),
+            'Pengajuan lengkap dikirim dari panel dan kembali ke status dashboard');
+        $wizard = html_entity_decode(http('a', 'Pengembang/syarat')['body'], ENT_QUOTES);
+        cek(strpos($wizard, '"statusVerifikasi":"Pending"') !== FALSE,
+            'Wizard membaca status terkirim dari panel dashboard');
+        wajib(login('b', $emailB), 'Login pengembang B untuk isolasi panel');
+        cek(strpos(http('b', 'akun/dokumen')['body'], 'panel-ganti.png') === FALSE,
+            'Dashboard pengembang lain tidak memuat berkas A');
+        $GLOBALS['regs'][] = (int) nilai('SELECT id FROM srp2_registrations WHERE user_id=?', [$uidB]);
+        wajib(login('w', $emailW), 'Login warga untuk gerbang panel');
+        cek(http('w', 'akun/dokumen')['code'] === 404, 'Panel dokumen hanya untuk pengembang');
+    } finally { unlink($fixture); }
+    bersihkan();
+    exit($GLOBALS['uji_gagal'] ? 1 : 0);
+}
+
 $menu = http('a', 'warga/pendataan');
 cek($menu['code'] === 200 && strpos($menu['body'], 'Halaman ini bukan untuk peran Anda') !== FALSE,
     'UAT pengembang 8/9: wizard warga tetap dibatasi');

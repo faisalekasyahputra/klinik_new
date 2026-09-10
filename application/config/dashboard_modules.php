@@ -96,6 +96,11 @@ $config['dashboard_modules'] = [
         'roles' => ['warga', 'pengembang', 'mahasiswa'],
         'scope' => null,
     ],
+    'dokumen_srp2' => [
+        'label' => 'Dokumen SRP2', 'icon' => 'ph-files',
+        'url' => 'akun/dokumen', 'group' => 'Akun', 'order' => 15,
+        'roles' => ['pengembang'], 'scope' => null,
+    ],
     /* Dashboard KKN - dashboard universitas (permintaan user 21 Agt 2026).
        'order' => 5, LEBIH KECIL dari status_pengajuan (10) dengan sengaja:
        dashboard_home() memilih kandidat urutan TERKECIL, jadi tautan

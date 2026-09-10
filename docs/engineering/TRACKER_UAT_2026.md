@@ -6,6 +6,12 @@ Tabel memakai 10 kolom asli dan hanya mencatat butir yang telah diperbaiki. Actu
 
 ## Rilis 10 Sep 2026
 
+### Lanjutan: panel dokumen pengembang (lokal, belum deploy)
+
+Permintaan user setelah rilis: tombol Lengkapi ke wizard tetap benar, tetapi pengembang juga ingin mengelola berkas dari panel dashboard. Ditambahkan menu **Dokumen SRP2** (`akun/dokumen`) untuk melihat, mengunggah/mengganti berkas, membuka data perusahaan, dan mengirim pengajuan. Panel memakai `srp2_state` dan endpoint simpan/kirim yang sama dengan wizard; tidak ada tabel atau migrasi baru. Pending/Diterima tetap hanya dapat dilihat, dan catatan perbaikan admin ditampilkan.
+
+Uji lokal: 18 pemeriksaan lulus (`UJI_PANEL_SRP2=1 php docs/engineering/uji_pengembang_srp2_dev.php`), termasuk unggah/ganti tanpa duplikasi, status terkirim terbaca wizard, perubahan nama perusahaan terbaca dashboard, penguncian Pending, isolasi pengembang lain, serta penolakan warga. Akun/berkas sementara dibersihkan. PHP lint dan diff check lulus. Suite SRP2 lengkap juga dijalankan: masih berhenti pada prasyarat admin Direktori SRP2 yang sudah merah sebelum perubahan ini. Pemeriksaan visual belum selesai karena alat browser gagal memuat request-header policy. Ini permintaan tambahan user, bukan nomor baru pada Excel; status Not pass sumber tetap dipertahankan.
+
 Kode `222e927` telah dibaca langsung lewat SSH di production; working tree bersih dan sinkron origin. Backup pra-migrasi `backup_klinik_pre_057_20260910_014844.sql.gz` tersimpan di home server, terverifikasi 46 tabel dan gzip valid (izin 600). Migrasi `20260701000057` selesai sebelum push; information_schema membuktikan `bathroom_usage_code VARCHAR(20) NULL`, jumlah tabel tetap 46.
 
 Uji akhir lokal: **48 suite / 1.416 pemeriksaan / 13 merah / 0 bisu / 2 dilewati**. Tidak ada tambahan suite merah terhadap baseline; nol akun uji baru tertinggal (36 sudah ada). HTTP production: beranda, login, menu pengembang, Bank Data, Dokumen, Cek RTLH, dan warga/pendataan = 200; Rekam Data, Konsultasi dan KKN/Magang tamu menuju login 200. Pengujian alur dengan akun dan data simulasi tetap dilakukan di lokal; tidak mengklaim uji pengajuan atau pencarian NIK nyata di production.

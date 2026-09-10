@@ -178,8 +178,25 @@ class Pengaturan extends MY_Controller {
     }
 
     /**
-     * Edit profil pribadi + (khusus pengembang) data perusahaan SRP2 + hapus akun.
+     * Kelola berkas dari dashboard memakai pengajuan yang sama dengan wizard.
      */
+    public function dokumen() {
+        if ($this->session->userdata('role') !== 'pengembang') { show_404(); return; }
+        $state = $this->Auth_model->srp2_state($this->get_user_id());
+        if (!$state) { show_404(); return; }
+        $this->load->helper('srp2');
+        $files = [];
+        foreach ($this->db->select('document_key, original_name')->where('registration_id', $state['registration_id'])
+            ->get('srp2_documents')->result_array() as $file) {
+            $files[$file['document_key']] = $file['original_name'];
+        }
+        $this->render_user_dashboard('pages/pengaturan/dokumen', [
+            'title' => 'Dokumen SRP2', 'srp2' => $state, 'files' => $files,
+            'dokumen' => srp2_dokumen_persyaratan(), 'keterangan' => srp2_keterangan_persyaratan(),
+        ]);
+    }
+
+    /** Edit profil pribadi dan data perusahaan SRP2. */
     public function profil() {
         $user_id = $this->get_user_id();
         $user = $this->Auth_model->find_by_id($user_id);
