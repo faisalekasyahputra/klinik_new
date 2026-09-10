@@ -106,16 +106,9 @@ class Pengaturan extends MY_Controller {
                     // updated_at, bukan created_at - draft bisa dibuat jauh sebelum
                     // benar-benar diisi/dikirim, tanggal aktivitas terakhir lebih relevan.
                     'created_at' => $sp2->updated_at ?: $sp2->created_at,
-                    // SEMUA status mengarah ke wizard - itu tempat dokumen pengajuan
-                    // ini berada, dan wizard sendiri yang menentukan mode: Draft/Ditolak
-                    // bisa diedit, Pending/Diterima tampil read-only.
-                    //
-                    // JANGAN arahkan ke akun/profil. Pernah dilakukan untuk status
-                    // Diterima dengan alasan "dokumen sudah final, yang bisa dikelola
-                    // tinggal data perusahaan" - dan itu keliru: tombol pada baris
-                    // PENGAJUAN harus membawa ke pengajuan itu, bukan ke halaman lain.
-                    // Edit data perusahaan punya jalannya sendiri lewat menu Profil.
-                    'aksi_url' => 'Pengembang/syarat',
+                    // Tetap di dashboard; panel memakai pengajuan yang sama dengan wizard.
+                    // Draft/Ditolak dapat diperbaiki, Pending/Diterima hanya dapat dilihat.
+                    'aksi_url' => 'akun/dokumen',
                     'aksi_label' => $status[2],
                     // Alasan penolakan / permintaan perbaikan ikut ditampilkan di
                     // daftar, supaya pemohon tahu tanpa harus membuka wizard dulu.

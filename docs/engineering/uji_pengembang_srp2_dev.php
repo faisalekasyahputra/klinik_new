@@ -234,6 +234,8 @@ cek(strpos($panel['body'], 'Pengembang/simpan_dokumen/' . $regA) !== FALSE,
     'Panel dashboard memakai pengajuan dan penyimpan yang sama dengan wizard');
 $dashboard = http('a', 'akun');
 cek(strpos($dashboard['body'], 'akun/dokumen') !== FALSE, 'Dashboard memiliki akses kelola dokumen');
+cek((bool) preg_match('~href="[^"]*/akun/dokumen"[^>]*>Lengkapi\s*→</a>~u', $dashboard['body']),
+    'Tombol Lengkapi langsung menuju panel dokumen dashboard');
 if (getenv('UJI_PANEL_SRP2')) {
     $fixture = tempnam(sys_get_temp_dir(), 'srp2_png');
     file_put_contents($fixture, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1cAAAAASUVORK5CYII='));

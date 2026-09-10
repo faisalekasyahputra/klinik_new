@@ -8,6 +8,8 @@ Tabel memakai 10 kolom asli dan hanya mencatat butir yang telah diperbaiki. Actu
 
 ### Lanjutan: panel dokumen pengembang (deploy 10 Sep 2026)
 
+Koreksi lanjutan user: tombol Lengkapi pada Status Pengajuan langsung ke akun/dokumen. Aksi lihat/perbaiki SRP2 juga tetap di panel dashboard sesuai status. Uji terarah 19/19 lulus, termasuk tautan tombol dan sinkronisasi berkas; tanpa migrasi.
+
 Rilis `05135fa` terverifikasi langsung lewat SSH: working tree production bersih dan sinkron origin. Beranda HTTP 200; akses tamu ke `akun/dokumen` diarahkan ke login HTTP 200. Tidak ada migrasi. Uji dengan akun pengembang tetap berdasarkan hasil lokal di bawah.
 
 Permintaan user setelah rilis: tombol Lengkapi ke wizard tetap benar, tetapi pengembang juga ingin mengelola berkas dari panel dashboard. Ditambahkan menu **Dokumen SRP2** (`akun/dokumen`) untuk melihat, mengunggah/mengganti berkas, membuka data perusahaan, dan mengirim pengajuan. Panel memakai `srp2_state` dan endpoint simpan/kirim yang sama dengan wizard; tidak ada tabel atau migrasi baru. Pending/Diterima tetap hanya dapat dilihat, dan catatan perbaikan admin ditampilkan.
