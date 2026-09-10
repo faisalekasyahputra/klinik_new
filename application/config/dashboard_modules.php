@@ -101,6 +101,12 @@ $config['dashboard_modules'] = [
         'url' => 'akun/dokumen', 'group' => 'Akun', 'order' => 15,
         'roles' => ['pengembang'], 'scope' => null,
     ],
+    'sikumbang' => [
+        'label' => 'Sikumbang', 'icon' => 'ph-arrow-square-out',
+        'url' => 'https://sikumbang.tapera.go.id/user/login',
+        'group' => 'Akun', 'order' => 25,
+        'roles' => ['pengembang'], 'scope' => null,
+    ],
     /* Dashboard KKN - dashboard universitas (permintaan user 21 Agt 2026).
        'order' => 5, LEBIH KECIL dari status_pengajuan (10) dengan sengaja:
        dashboard_home() memilih kandidat urutan TERKECIL, jadi tautan

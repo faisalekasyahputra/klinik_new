@@ -109,3 +109,7 @@ Uji dua cabang masing-masing 62 pemeriksaan lulus sampai pengajuan/keputusan adm
 Verifikasi pra-rilis perbaikan isian otomatis: 48 suite / 1.430 pemeriksaan / 13 merah / 0 bisu / 2 dilewati. Daftar merah sama dengan baseline, tidak ada suite masuk/keluar. Nol akun uji baru tertinggal (36 sebelumnya); dua cabang masing-masing 62 cek lulus, termasuk koreksi HP/status yang tetap menang. Review kode tidak menemukan blocker.
 
 Rilis perbaikan isian otomatis: commit 85bb82b sudah di-push. Verifikasi production belum berhasil: dua percobaan SSH timeout dan HTTP diagnosa/beranda timeout. Jangan menyamakan HEAD GitHub dengan HEAD server. Tidak ada migrasi database pada paket ini.
+
+## Menu Sikumbang — 10 Sep 2026
+
+Permintaan tambahan user: menu Sikumbang khusus dashboard pengembang menuju https://sikumbang.tapera.go.id/user/login, dibuka di tab baru. Uji panel 21/21 lulus, termasuk URL eksternal tepat dan menu tidak tampil untuk warga. Tidak ada migrasi.

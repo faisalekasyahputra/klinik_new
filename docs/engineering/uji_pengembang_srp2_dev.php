@@ -234,6 +234,8 @@ cek(strpos($panel['body'], 'Pengembang/simpan_dokumen/' . $regA) !== FALSE,
     'Panel dashboard memakai pengajuan dan penyimpan yang sama dengan wizard');
 $dashboard = http('a', 'akun');
 cek(strpos($dashboard['body'], 'akun/dokumen') !== FALSE, 'Dashboard memiliki akses kelola dokumen');
+cek((bool) preg_match('~href="https://sikumbang\.tapera\.go\.id/user/login"\s+target="_blank" rel="noopener noreferrer"~', $dashboard['body']),
+    'Menu Sikumbang membuka URL eksternal yang tepat di tab baru');
 cek((bool) preg_match('~href="[^"]*/akun/dokumen"[^>]*>Lengkapi\s*→</a>~u', $dashboard['body']),
     'Tombol Lengkapi langsung menuju panel dokumen dashboard');
 if (getenv('UJI_PANEL_SRP2')) {
@@ -287,6 +289,8 @@ if (getenv('UJI_PANEL_SRP2')) {
         $GLOBALS['regs'][] = (int) nilai('SELECT id FROM srp2_registrations WHERE user_id=?', [$uidB]);
         wajib(login('w', $emailW), 'Login warga untuk gerbang panel');
         cek(http('w', 'akun/dokumen')['code'] === 404, 'Panel dokumen hanya untuk pengembang');
+        cek(strpos(http('w', 'akun')['body'], 'https://sikumbang.tapera.go.id/user/login') === FALSE,
+            'Menu Sikumbang tidak ditampilkan untuk warga');
     } finally { unlink($fixture); }
     bersihkan();
     exit($GLOBALS['uji_gagal'] ? 1 : 0);

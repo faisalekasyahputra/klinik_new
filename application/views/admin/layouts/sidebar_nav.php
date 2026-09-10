@@ -30,10 +30,12 @@ $gambar = function (array $items, $tingkat) use (&$gambar, $aktif_kelas, $diam_k
     foreach ($items as $item):
         $punya_anak = ! empty($item['children']);
         $akar       = $tingkat === 0;
+        $external   = strpos($item['url'], 'https://') === 0;
         ?>
         <div <?= $punya_anak ? 'x-data="{ buka: ' . (! empty($item['open']) ? 'true' : 'false') . ' }"' : '' ?>>
           <div class="relative flex items-center gap-1">
-            <a href="<?= base_url($item['url']) ?>"
+            <a href="<?= htmlspecialchars($external ? $item['url'] : base_url($item['url']), ENT_QUOTES, 'UTF-8') ?>"
+               <?= $external ? 'target="_blank" rel="noopener noreferrer"' : '' ?>
                <?= ! empty($item['active']) ? 'aria-current="page"' : '' ?>
                class="relative flex flex-1 items-center rounded-lg px-3 transition-all duration-200
                       <?= $akar ? 'py-2 text-sm font-medium' : 'py-1.5 text-[13px] font-medium' ?>
