@@ -89,7 +89,7 @@
                            <i class="fa-solid fa-chart-pie"></i> Bank Data
                        </a>
                        <a href="<?= base_url('Cek_Rtlh') ?>" data-tab-link data-tab-key="cek_rtlh" class="portal-tab-btn <?= $active_tab === 'cek_rtlh' ? 'active' : '' ?>">
-                           <i class="fa-solid fa-house-circle-check"></i> Cek Data Rumah
+                           <i class="fa-solid fa-house-circle-check"></i> Cek Backlog
                        </a>
                        <?php /* Butir 20 putaran 2: tab "Cek Status Pengajuan" DICABUT dari
                                 bilah publik. Status pengajuan kini hanya di dashboard tiap

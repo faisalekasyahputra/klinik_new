@@ -95,3 +95,7 @@ Acuan: tab warga (gid 1969868112), A1:J25. User menetapkan Expected Result dan K
 - Migrasi 057: bathroom_usage_code VARCHAR(20) NULL telah diverifikasi dari information_schema lokal. Nilai lama ada/tidak kamar mandi tidak diartikan ulang sebagai Sendiri/Bersama.
 - Suite penuh sebelum commit: 48 suite / 1.409 pemeriksaan / 14 merah. Tambahan dari baseline 13 adalah uji_migrasi_konsisten karena migrasi baru belum ter-commit dan Migrate::status belum memeriksa kolom baru. Pemeriksaan bentuk skema sudah ditambahkan; gerbang git diperiksa kembali setelah commit.
 - Tersimpan pada commit lokal c6d0154, sudah push/deploy pada 222e927. Sesudah commit, uji_migrasi_konsisten.php lulus 7/7; tambahan merah migrasi tertutup. Suite penuh dijalankan ulang sebelum rilis: 48 suite/1.416 pemeriksaan/13 merah, tanpa tambahan merah terhadap baseline.
+
+## Perubahan label menu — 10 Sep 2026
+
+Permintaan user: nama tab/menu Cek Data Rumah menjadi **Cek Backlog**. Label navigasi desktop dan mobile disesuaikan; rute dan perilaku pencarian tetap sama. Ini perubahan label, bukan penambahan sumber data Backlog.
