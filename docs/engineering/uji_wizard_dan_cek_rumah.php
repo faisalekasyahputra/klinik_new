@@ -264,23 +264,11 @@ $tamu = new Sesi('tamu');
 $r = $tamu->minta('cek_rtlh');
 cek($r['kode'] === 200, 'Halaman terbuka untuk tamu (tidak diusir ke login)');
 
-$sebelum_rekaman = $db->angka('SELECT COUNT(*) FROM sf_rekaman_simperum');
-$r = $tamu->minta('Cek_Rtlh/periksa', ['nik' => $NIK, 'tgl_lahir' => $LAHIR]);
-/* Yang dijaga BUKAN "ada pesan ramah", melainkan tidak ada ORACLE: tamu tidak
-   boleh bisa menyimpulkan NIK itu terdaftar RTLH atau tidak.
-
-   Penandanya blok hasil yang sesungguhnya, `NIK ****<4 digit>`
-   (golek_omah/cek_rtlh.php baris 75/77), BUKAN kata "terdaftar" begitu saja.
-   Versi pertama assert ini mencocokkan kata umum lalu MERAH karena teks
-   statis halaman: spanduk penjelasan, teks modal daftar, dan judulnya sendiri
-   yang justru berbunyi "Masuk untuk melihat hasilnya". Merah yang menuduh
-   kebocoran padahal tidak ada satu pun. */
+$r = $tamu->minta('Cek_Rtlh/periksa', ['nik' => $NIK]);
 $penanda_hasil = 'NIK ****' . substr($NIK, -4);
-cek(strpos($r['body'], $penanda_hasil) === FALSE, 'Hasil TIDAK dibocorkan ke tamu');
-cek(stripos($r['body'], 'Masuk untuk melihat hasilnya') !== FALSE,
-    'Tamu diarahkan masuk, bukan sekadar dibiarkan tanpa jawaban');
-cek($db->angka('SELECT COUNT(*) FROM sf_rekaman_simperum') === $sebelum_rekaman,
-    'Gateway SIMPERUM tidak dipanggil sama sekali untuk tamu (nol rekaman baru)');
+cek($r['kode'] === 200 && strpos($r['body'], $penanda_hasil) !== FALSE, 'Tamu melihat hasil dengan NIK tersamar');
+cek(strpos($r['body'], '>Nama</dt>') === FALSE && strpos($r['body'], '>Alamat</dt>') === FALSE, 'Hasil tamu tidak memuat nama atau alamat');
+cek(stripos($r['body'], 'Masuk untuk melihat hasilnya') === FALSE, 'Hasil tamu tidak diganti permintaan login');
 
 // ---------------------------------------------------------------------------
 echo "\nC. CEK DATA RUMAH - SUDAH LOGIN\n";
@@ -288,6 +276,23 @@ echo "\nC. CEK DATA RUMAH - SUDAH LOGIN\n";
 $warga->lupakan_token();
 $r = $warga->minta('Auth/do_login', ['email' => EMAIL, 'password' => SANDI]);
 wajib($r['kode'] === 200, 'Warga masuk');
+foreach (['Rekam_Data', 'KemitraanPortal'] as $path) {
+    $menu = $warga->minta($path);
+    cek($menu['kode'] === 200 && strpos($menu['body'], 'type="password"') !== FALSE
+        && strpos($menu['body'], 'akun yang sesuai') !== FALSE,
+        'UAT warga: ' . $path . ' meminta login akun yang sesuai');
+}
+$menu = $warga->minta('tab/pengembang');
+cek($menu['kode'] === 200 && strpos($menu['body'], 'Daftar Pengembang Tersertifikasi') !== FALSE
+    && strpos($menu['body'], 'Formulir Pendaftaran SRP2') !== FALSE, 'UAT warga 10: menu pilihan pengembang');
+foreach (['Pengembang/daftar', 'Pengembang/formulir'] as $path) {
+    $menu = $warga->minta($path);
+    cek($menu['kode'] === 200 && strpos($menu['body'], 'Akun ini bukan akun pengembang') !== FALSE
+        && strpos($menu['body'], 'Kembali ke Beranda') !== FALSE, 'UAT warga 11/12: peringatan dan kembali ke beranda (' . $path . ')');
+}
+$menu = $warga->minta('tab/bankdata');
+cek($menu['kode'] === 200 && strpos($menu['body'], 'Buku Data') !== FALSE
+    && strpos($menu['body'], 'dokumen-viewer-root') === FALSE, 'UAT warga 18: kategori Bank Data sebelum flipbook');
 
 $r = $warga->minta('Cek_Rtlh/periksa', ['nik' => '123', 'tgl_lahir' => $LAHIR]);
 cek(stripos($r['body'], 'NIK harus 16 digit') !== FALSE, 'NIK cacat ditolak dengan pesan yang jelas');
@@ -320,6 +325,11 @@ wajib(wizard_step($form) === 'find_data', 'Mulai dari step find_data');
 $h = $warga->minta('warga/pendataan',
     wizard_medan($form, ['action' => 'lookup', 'nik' => $NIK, 'tgl_lahir' => $LAHIR]))['body'];
 wajib(wizard_step($h) !== 'find_data', 'Lookup SIMPERUM membawa maju dari find_data');
+foreach (['monthly_income', 'occupation_code', 'education_code', 'employment_stability_code', 'area_condition_code', 'birth_date', 'marital_status_code', 'gender_code', 'phone'] as $field) {
+    cek(strpos($h, 'name="' . $field . '"') !== FALSE, 'UAT warga 9: data awal memuat ' . $field);
+}
+cek(strpos($h, 'name="matrix_dtks_status"') === FALSE, 'UAT warga 9: tidak meminta status DTKS');
+cek(strpos($h, 'name="matrix_income_code"') === FALSE, 'UAT warga 9: pendapatan angka, bukan pilihan rentang gaji');
 
 $dilewati = [];
 for ($i = 0; $i < 14; $i++) {
@@ -328,13 +338,21 @@ for ($i = 0; $i < 14; $i++) {
     if ($step === NULL) { break; }
     $dilewati[] = $step;
     if ($step === 'review') { break; }
-    $baru = $warga->minta('warga/pendataan', wizard_medan($form, ['action' => 'save']))['body'];
+    $paksa = ['action' => 'save'];
+    if ($step === 'housing_family') $paksa['matrix_current_housing_code'] = getenv('UJI_CABANG') === 'tanah' ? 'house_none_or_rent' : 'house_owned';
+    if ($step === 'housing_family_detail') $paksa['has_other_land'] = '1';
+    $baru = $warga->minta('warga/pendataan', wizard_medan($form, $paksa))['body'];
     if (wizard_step($baru) === $step) {
         wajib(FALSE, "Wizard mandek di step '{$step}' (tidak maju setelah simpan)");
     }
     $h = $baru;
 }
 cek(in_array('review', $dilewati, TRUE), 'Wizard tembus sampai review: ' . implode(' -> ', $dilewati));
+cek(getenv('UJI_CABANG') === 'tanah'
+    ? in_array('candidate_land', $dilewati, TRUE) && ! in_array('building_condition', $dilewati, TRUE)
+    : in_array('building_condition', $dilewati, TRUE) && ! in_array('candidate_land', $dilewati, TRUE),
+    'UAT warga 9: hanya cabang sesuai pilihan yang dilewati');
+cek(array_search('preliminary_recommendation', $dilewati, TRUE) < array_search('housing_family_detail', $dilewati, TRUE), 'UAT warga 9: rekomendasi tampil sebelum data pelengkap');
 
 $form = wizard_form($h);
 $payload = wizard_medan($form, ['action' => 'submit']);

@@ -436,6 +436,7 @@ function srp2Wizard(config) {
 
         init() {
             this.tandaiBerkasTerunggah(config.uploadedKeys);
+            if (this.wrongRole) this.step = 2;
             // Sudah pernah mulai pendaftaran -> langsung ke langkah unggah, bukan
             // diulang dari halaman syarat tiap kali buka.
             //

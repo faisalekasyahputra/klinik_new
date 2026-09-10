@@ -381,6 +381,13 @@ class Migrate extends CI_Controller {
         }
 
         // Migrasi 050 - laporan akhir KKN. Kolom, bukan tabel.
+        $bathroom = $this->db->query("SELECT DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, IS_NULLABLE
+            FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'sf_penilaian_perumahan' AND COLUMN_NAME = 'bathroom_usage_code'")->row_array();
+        echo 'sf_penilaian_perumahan.bathroom_usage_code (migrasi 057): '
+            .($bathroom && $bathroom['DATA_TYPE'] === 'varchar'
+                && (int) $bathroom['CHARACTER_MAXIMUM_LENGTH'] === 20 && $bathroom['IS_NULLABLE'] === 'YES'
+                ? 'ADA, VARCHAR(20) NULL' : 'HILANG ATAU BENTUK TIDAK SESUAI')."\n";
         echo 'kkn_magang_pendaftaran.file_laporan_akhir (migrasi 050): '
             .($this->db->field_exists('file_laporan_akhir', 'kkn_magang_pendaftaran')
                 ? 'ADA' : 'HILANG - unggah laporan akhir KKN akan fatal')."\n";

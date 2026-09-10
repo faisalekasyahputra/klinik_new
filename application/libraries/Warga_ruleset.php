@@ -3,7 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Warga_ruleset {
 
-    public const VERSION = 'SIM-2026-01';
+    public const VERSION = 'SIM-2026-02';
     public const STATUS = 'active';
     public const EFFECTIVE_FROM = '2026-07-28 00:00:00';
 
@@ -11,7 +11,9 @@ class Warga_ruleset {
     {
         $decile = (int) $decile;
         if ($decile < 1 || $decile > 10) {
-            return [];
+            // Kandidat awal untuk data manual; evaluate tetap meminta desil
+            // terverifikasi dan tidak mengubahnya menjadi penerima yang layak.
+            return ['flpp', 'oemah_lestari'];
         }
         if ($decile <= 3) {
             $candidates = ['rtlh', 'pb'];
@@ -93,7 +95,9 @@ class Warga_ruleset {
             return $this->result('needs_data', ['SIM_OMAH_KEBUTUHAN_BELUM_TERVERIFIKASI']);
         }
 
-        if ($track !== 'financing') {
+        // Cabang formulir bukan status kepemilikan: nonpemilik mengisi
+        // candidate_land pada UAT terbaru, termasuk calon pembiayaan.
+        if (! in_array($track, ['financing', 'candidate_land'], TRUE)) {
             return $this->result('not_eligible', ['SIM_TRACK_TIDAK_SESUAI']);
         }
         if (empty($assessment['housing_status_code'])
@@ -105,7 +109,7 @@ class Warga_ruleset {
             || (string) $assessment['has_other_house'] !== '0') {
             return $this->result('not_eligible', ['SIM_KEBUTUHAN_RUMAH_TIDAK_MEMENUHI']);
         }
-        if (empty($profile['income_band_code'])) {
+        if (empty($profile['income_band_code']) && ! isset($profile['monthly_income'])) {
             return $this->result('needs_data', ['SIM_INCOME_MISSING']);
         }
         return $this->result('potential', [

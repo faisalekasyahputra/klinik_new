@@ -28,7 +28,7 @@ class Housing_assessment_model extends CI_Model {
         'floor_material_code', 'floor_condition_code', 'wall_material_code',
         'wall_condition_code', 'roof_material_code', 'roof_condition_code',
         'has_window', 'has_ventilation', 'water_source_code',
-        'has_bathroom_latrine', 'latrine_type_code', 'feces_disposal_code',
+        'has_bathroom_latrine', 'bathroom_usage_code', 'latrine_type_code', 'feces_disposal_code',
         'septic_distance_code', 'lighting_source_code', 'cooking_fuel_code',
         'location_accuracy_m',
         // 5 field xlsx "MATRIKS VARIABEL PENENTUAN PROGRAM PERUMAHAN.xlsx"
@@ -610,7 +610,7 @@ class Housing_assessment_model extends CI_Model {
     public function get_owned_recommendations($assessment_id, $user_id, $ruleset_version = NULL)
     {
         $query = $this->db
-            ->select('r.id recommendation_id,p.kode_program program_code,p.nama_program program_name,r.eligibility_status,r.reason_codes_json,r.ruleset_version')
+            ->select('r.id recommendation_id,p.kode_program program_code,p.nama_program program_name,p.deskripsi_singkat program_description,r.eligibility_status,r.reason_codes_json,r.ruleset_version')
             ->from('sf_rekomendasi_penilaian r')
             ->join('sf_programs p', 'p.id=r.program_id')
             ->join('sf_penilaian_perumahan a', 'a.id=r.assessment_id')

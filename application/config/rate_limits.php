@@ -137,12 +137,8 @@ $config['rate_limit_policies'] = [
         'window' => 3600,
         'dimensions' => ['account'],
     ],
-    /* Cek_Rtlh dibuka utk anonim 14 Agt 2026 (halamannya saja, bukan
-       hasilnya - lihat komentar panjang di Cek_Rtlh.php). Cabang anonim
-       TIDAK memanggil Simperum_gateway sama sekali (tidak ada hasil yang
-       dikembalikan), jadi batas ini murni menahan spam submit form, bukan
-       anti-enumerasi sungguhan seperti rtlh_cek/rtlh_cek_harian - pola sama
-       dengan warga_lookup_anon. */
+    /* UAT No. 18, 10 Sep 2026: tamu bisa melihat hasil Cek Data Rumah.
+       Batas IP tetap 5/jam; membuat sesi baru tidak mengulang kuotanya. */
     'rtlh_cek_anon' => [
         'limit' => 5,
         'window' => 3600,
