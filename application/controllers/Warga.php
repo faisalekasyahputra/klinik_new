@@ -76,6 +76,14 @@ class Warga extends MY_Controller {
             }
         }
         $old_input = $this->session->flashdata('warga_old_input') ?: [];
+        // SIMPERUM tidak selalu menyediakan nomor HP. Gunakan profil akun sendiri
+        // sebagai isian awal, tanpa mengganti nilai/koreksi yang sudah disimpan.
+        if ($logged_in_warga && $profile && empty($profile['phone'])
+            && !in_array($provenance['phone'] ?? '', ['citizen', 'citizen_correction'], TRUE)) {
+            $account = $this->db->select('phone')->get_where('usr_users', ['id' => $user_id])->row();
+            $profile['phone'] = html_entity_decode((string) ($account->phone ?? ''), ENT_QUOTES, 'UTF-8');
+            $provenance['phone'] = 'account';
+        }
         /* Jaring pengaman 14 Agt 2026: kalau bootstrap draft di
            Auth::_redirect_after_login() gagal (mis. wilayah sumber belum
            bisa dipakai - lihat komentarnya) sehingga masih mendarat di

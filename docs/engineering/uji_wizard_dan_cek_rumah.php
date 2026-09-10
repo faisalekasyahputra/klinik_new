@@ -330,12 +330,49 @@ foreach (['monthly_income', 'occupation_code', 'education_code', 'employment_sta
 }
 cek(strpos($h, 'name="matrix_dtks_status"') === FALSE, 'UAT warga 9: tidak meminta status DTKS');
 cek(strpos($h, 'name="matrix_income_code"') === FALSE, 'UAT warga 9: pendapatan angka, bukan pilihan rentang gaji');
+$dom_prefill = wizard_dom($h);
+$xpath_prefill = new DOMXPath($dom_prefill);
+cek($xpath_prefill->query('//select[@name="matrix_current_housing_code"]/option[@selected and @value!=""]')->length === 1,
+    'Status tempat tinggal otomatis terpilih dari SIMPERUM');
+foreach (['occupation_code', 'education_code', 'gender_code'] as $field) {
+    cek($xpath_prefill->query('//select[@name="' . $field . '"]/option[@selected and @value!=""]')->length === 1,
+        'SIMPERUM mengisi otomatis ' . $field);
+}
 
 $dilewati = [];
+$profile_before = $db->baris('SELECT phone_ciphertext, field_provenance_json FROM sf_profil_warga WHERE user_id=?', [(string) $akun['id']]);
+$source_phone = $xpath_prefill->query('//input[@name="phone"]')->item(0)->getAttribute('value');
+$db->jalan('UPDATE sf_profil_warga SET phone_ciphertext=NULL WHERE user_id=?', [(string) $akun['id']]);
+$h = $warga->minta('warga/pendataan')['body'];
+$xpath_account = new DOMXPath(wizard_dom($h));
+cek($xpath_account->query('//input[@name="phone" and @value="081200000000"]')->length === 1,
+    'Draft lama tanpa HP sumber terisi dari profil akun yang sudah didaftarkan');
+cek($xpath_account->query('//input[@name="monthly_income" and @value=""]')->length === 1,
+    'Rentang penghasilan SIMPERUM tidak dikarang menjadi nominal rupiah');
+$corrected = json_decode($profile_before['field_provenance_json'], TRUE);
+$corrected['phone'] = ['source' => 'citizen_correction'];
+$db->jalan('UPDATE sf_profil_warga SET phone_ciphertext=?, field_provenance_json=? WHERE user_id=?',
+    [$profile_before['phone_ciphertext'], json_encode($corrected), (string) $akun['id']]);
+$db->jalan("UPDATE sf_penilaian_perumahan SET matrix_current_housing_code='house_none_or_rent' WHERE user_id=?", [(string) $akun['id']]);
+$xpath_corrected = new DOMXPath(wizard_dom($warga->minta('warga/pendataan')['body']));
+cek($xpath_corrected->query('//input[@name="phone"]')->item(0)->getAttribute('value') === $source_phone,
+    'HP koreksi tersimpan tidak ditimpa HP akun');
+cek($xpath_corrected->query('//select[@name="matrix_current_housing_code"]/option[@selected and @value="house_none_or_rent"]')->length === 1,
+    'Pilihan status tersimpan tetap menang atas status rumah sumber');
+$db->jalan('UPDATE sf_penilaian_perumahan SET matrix_current_housing_code=NULL WHERE user_id=?', [(string) $akun['id']]);
+$db->jalan('UPDATE sf_profil_warga SET phone_ciphertext=NULL, field_provenance_json=? WHERE user_id=?',
+    [$profile_before['field_provenance_json'], (string) $akun['id']]);
 for ($i = 0; $i < 14; $i++) {
     $form = wizard_form($h);
     $step = wizard_step($form);
     if ($step === NULL) { break; }
+    if ($step === 'housing_family_detail') {
+        $xpath_detail = new DOMXPath($form->ownerDocument);
+        foreach (['assistance_source_code', 'assistance_year'] as $field) {
+            cek($xpath_detail->query('//*[@name="' . $field . '" and not(ancestor::*[@hidden])]')->length === 1,
+                'UAT warga 9: sumber/tahun bantuan terlihat pada kedua cabang (' . $field . ')');
+        }
+    }
     $dilewati[] = $step;
     if ($step === 'review') { break; }
     $paksa = ['action' => 'save'];
