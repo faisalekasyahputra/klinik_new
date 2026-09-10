@@ -22,7 +22,7 @@ class Rekam_Data extends MY_Controller {
 
     public function index()
     {
-        if ($this->has_role('warga')) {
+        if ($this->has_role('warga') || $this->has_role('pengembang')) {
             $this->session->set_flashdata('error', 'Rekam Data memerlukan akun petugas. Silakan masuk dengan akun yang sesuai.');
             $this->load->view('pages/auth/login', ['recaptcha_site_key' => getenv('RECAPTCHA_SITE_KEY') ?: '']);
             return;

@@ -227,6 +227,31 @@ $regA = (int) nilai('SELECT id FROM srp2_registrations WHERE user_id=? ORDER BY 
 wajib($regA > 0, 'Draft pengajuan A lahir dari kunjungan wizard');
 $GLOBALS['regs'][] = $regA;
 
+$menu = http('a', 'warga/pendataan');
+cek($menu['code'] === 200 && strpos($menu['body'], 'Halaman ini bukan untuk peran Anda') !== FALSE,
+    'UAT pengembang 8/9: wizard warga tetap dibatasi');
+foreach (['Pengembang/daftar', 'Pengembang/formulir'] as $path) {
+    $menu = http('a', $path);
+    $html = html_entity_decode($menu['body'], ENT_QUOTES, 'UTF-8');
+    cek($menu['code'] === 200 && strpos($html, '"isPengembang":true') !== FALSE
+        && strpos($html, '"wrongRole":false') !== FALSE && strpos($html, 'form_13') !== FALSE,
+        'UAT pengembang 11/12: pendaftaran SRP2 terbuka (' . $path . ')');
+}
+
+// UAT sheet pengembang: akun pengembang bukan akun petugas/universitas/mahasiswa.
+foreach (['Rekam_Data', 'KemitraanPortal'] as $path) {
+    $menu = http('a', $path);
+    cek($menu['code'] === 200 && strpos($menu['body'], 'type="password"') !== FALSE
+        && strpos($menu['body'], 'akun yang sesuai') !== FALSE,
+        'UAT pengembang: ' . $path . ' meminta akun yang sesuai');
+}
+$menu = http('a', 'tab/pengembang');
+cek($menu['code'] === 200 && strpos($menu['body'], 'Daftar Pengembang Tersertifikasi') !== FALSE
+    && strpos($menu['body'], 'Formulir Pendaftaran SRP2') !== FALSE, 'UAT pengembang 10: menu pilihan SRP2');
+$menu = http('a', 'tab/bankdata');
+cek($menu['code'] === 200 && strpos($menu['body'], 'Buku Data') !== FALSE
+    && strpos($menu['body'], 'dokumen-viewer-root') === FALSE, 'UAT pengembang 18: kategori sebelum flipbook');
+
 wajib(login('b', $emailB), 'Login pengembang B');
 http('b', 'Pengembang/syarat');
 $regB = (int) nilai('SELECT id FROM srp2_registrations WHERE user_id=? ORDER BY id DESC LIMIT 1', [$uidB]);
