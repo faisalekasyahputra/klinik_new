@@ -7,9 +7,6 @@ $source_snapshot = isset($source_snapshot) && is_array($source_snapshot) ? $sour
 $provenance = isset($provenance) && is_array($provenance) ? $provenance : [];
 $recommendations = isset($recommendations) && is_array($recommendations) ? $recommendations : [];
 $evidence = isset($evidence) && is_array($evidence) ? $evidence : [];
-$matriks_decile_label = isset($matriks_decile_label) && is_string($matriks_decile_label) ? $matriks_decile_label : null;
-$matriks_data_simperum = isset($matriks_data_simperum) ? $matriks_data_simperum : null;
-$matriks_recommendation = isset($matriks_recommendation) && is_array($matriks_recommendation) ? $matriks_recommendation : [];
 $raw_identity = $source_snapshot['identity'] ?? [];
 $raw_socioeconomic = $source_snapshot['socioeconomic'] ?? [];
 $e = static function ($value) { return html_escape((string) ($value ?? '')); };
@@ -87,24 +84,8 @@ $provenance_source = static function ($field) use ($provenance) {
     <section class="rounded-2xl border border-gray-200 p-4 dark:border-white/10"><h2 class="font-black text-gray-900 dark:text-white">Isi Data Sesuai Matriks</h2><dl class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><?php foreach ($matriks_field_labels as $key => $label): $val = $assessment[$key] ?? NULL; if ($val === NULL || $val === '') continue; $val_label = $matriks_value_labels[$key][$val] ?? $val; ?><div><dt class="text-xs text-gray-500"><?= $e($label) ?></dt><dd class="font-semibold"><?= $display($val_label) ?></dd></div><?php endforeach; ?></dl><?php if (empty(array_filter($matriks_field_labels, static function ($l, $k) use ($assessment) { return isset($assessment[$k]) && $assessment[$k] !== ''; }, ARRAY_FILTER_USE_BOTH))): ?><p class="mt-2 text-sm text-gray-500">Warga belum mengisi langkah ini.</p><?php endif; ?></section>
 
     <section class="rounded-2xl border border-gray-200 p-4 dark:border-white/10">
-        <h2 class="font-black text-gray-900 dark:text-white">Hasil Rekomendasi (Matriks xlsx)</h2>
-        <p class="mt-1 text-xs text-gray-500">Dihitung ulang dari 7 field "Isi Data Sesuai Matriks" + tanggal lahir, sama seperti yang dilihat warga - <strong>berbeda dari sisi warga</strong>: kalau data belum ada di SIMPERUM, warga melihat 'Oemah Lestari'/'FLPP' baku, tapi admin di sini melihat hasil pencocokan APA ADANYA supaya bisa ditinjau langsung.</p>
-        <div class="mt-3 grid gap-3 sm:grid-cols-2">
-            <div class="rounded-xl bg-gray-50 p-3 dark:bg-white/5"><p class="text-xs text-gray-500">Kategori Kemiskinan (Desil)</p><p class="mt-1 font-bold"><?= $matriks_decile_label !== null ? $e($matriks_decile_label) : 'Belum tersedia (Gaji belum diisi)' ?></p></div>
-            <div class="rounded-xl bg-gray-50 p-3 dark:bg-white/5"><p class="text-xs text-gray-500">Data di SIMPERUM</p><p class="mt-1 font-bold"><?= $matriks_data_simperum === FALSE ? 'Tidak Ada - diisi manual' : 'Ada' ?></p></div>
-        </div>
-        <div class="mt-3 space-y-2">
-            <?php if (empty($matriks_recommendation)): ?>
-                <p class="text-sm text-gray-500">Tidak ada program yang cocok dengan kombinasi data matriks ini.</p>
-            <?php else: ?>
-                <?php foreach ($matriks_recommendation as $program): $syarat = $this->matriks_program_ruleset->criteria_for_program($program); ?>
-                    <article class="rounded-xl bg-gray-50 p-3 dark:bg-white/5">
-                        <strong><?= $e($program) ?></strong>
-                        <?php if ( ! empty($syarat)): ?><ul class="mt-1.5 list-disc pl-4 text-xs text-gray-600 dark:text-brand-muted"><?php foreach ($syarat as $poin): ?><li><?= $e($poin) ?></li><?php endforeach; ?></ul><?php endif; ?>
-                    </article>
-                <?php endforeach; ?>
-            <?php endif; ?>
-        </div>
+        <h2 class="font-black text-gray-900 dark:text-white">Rekomendasi awal yang tersimpan</h2>
+        <?php $this->load->view('pages/warga/matrix_result', ['matrix_result'=>$preliminary_matrix ?? NULL]); ?>
     </section>
 
     <section class="rounded-2xl border border-gray-200 p-4 dark:border-white/10"><h2 class="font-black text-gray-900 dark:text-white">Data assessment</h2><dl class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3"><?php foreach ($field_labels as $key => $label): if (!array_key_exists($key, $assessment) || $assessment[$key] === NULL || $assessment[$key] === '') continue; ?><div><dt class="text-xs text-gray-500"><?= $e($label) ?></dt><dd class="font-semibold"><?= $display($assessment[$key]) ?></dd></div><?php endforeach; ?></dl></section>

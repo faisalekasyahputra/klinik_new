@@ -2,51 +2,80 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Mesin pencocokan 20 baris "MATRIKS VARIABEL PENENTUAN PROGRAM
- * PERUMAHAN.xlsx" Sheet4 - permintaan user 23 Agt 2026: "Hasil Rekomendasi
- * ... sesuaikan dengan xlsx kolom J".
- *
- * TERPISAH dari Warga_ruleset.php (mesin lama yang MASIH DIPAKAI di step
- * "Lengkapi Data SIMPERUM" seterusnya/review) - dua sistem rekomendasi
- * yang hidup berdampingan, bukan saling menggantikan. Ini KHUSUS untuk
- * step "Isi Data Sesuai Matriks" (Hasil Rekomendasi awal), sumber datanya
- * 8 field matrix_*_code + umur (dihitung dari tanggal lahir) - PERSIS
- * kolom A & C-I xlsx.
- *
- * KOLOM B (Desil) DITURUNKAN DARI KOLOM A (Gaji), BUKAN dari
- * welfare_decile profil - permintaan user 23 Agt 2026 ("samakan
- * logikanya dengan xlsx-nya di Sheet4"), sesudah ditemukan lewat tes
- * langsung bahwa welfare_decile (angka simulasi dari SIMPERUM, sumbernya
- * TIDAK terkait dengan Gaji yang baru saja dipilih warga di step ini)
- * bisa membuat kombinasi yang menurut xlsx seharusnya cocok (Gaji &
- * Status Perkawinan sudah pas) jadi tidak cocok gara-gara desil profil
- * kebetulan berbeda golongan. DIPERIKSA LANGSUNG ke tiap baris Sheet4:
- * pasangan Gaji-Desil di 20 baris itu KONSISTEN SEMPURNA (Gaji '0-1,5jt'
- * SELALU berpasangan dengan 'Desil 1', '1,5-2,2jt' SELALU 'Desil 2-3',
- * dst, tidak pernah pasangan gaji yang sama muncul dengan desil
- * berbeda) - artinya Desil di tabel ini memang REDUNDAN terhadap Gaji,
- * bukan dimensi independen sungguhan yang butuh sumber data terpisah.
- * INCOME_TO_DECILE di bawah ini salinan LANGSUNG pasangan itu.
- *
- * ROWS = salinan LANGSUNG kolom A-J Sheet4 baris 3-22, diterjemahkan ke
- * kode field yang dipakai form (lihat pendataan.php step 'housing_family'
- * untuk kamus kode lengkapnya). `null` pada suatu kolom = "Tidak Dibatasi"
- * di xlsx asli - baris itu TIDAK MEMPEDULIKAN kolom tersebut sama sekali,
- * cocok dengan jawaban apa pun. Ini PERSIS makna yang diminta user
- * sebelumnya ("'Tidak Dibatasi' artinya tidak dimasukkan ke logika") -
- * makanya opsi itu dihapus dari pilihan warga (tidak boleh dipilih
- * sebagai JAWABAN) tapi tetap hidup DI SINI sebagai wildcard pencocokan.
- *
- * Format tiap baris (larik, bukan asosiatif - ringkas, urutan tetap TETAP
- * kolom xlsx A,B,C,D,E,F,G,H,I,J):
- *   [income_code, desil_set|null, dtks_code|null, land_code|null,
- *    housing_code|null, environment_code|null, occupation_code|null,
- *    age_rule|null, family_code|null, program_text]
+ * Matriks program dari workbook user, Sheet3 A3:J22, dibaca 10 Sep 2026.
+ * preliminary() dipakai wizard dan disimpan sebagai snapshot untuk warga/admin.
+ * match() dipertahankan untuk pemanggil lama yang memakai kode rentang gaji.
+ * Desil pasangan gaji di matriks bukan desil resmi profil SIMPERUM.
  */
 class Matriks_program_ruleset {
 
+    const VERSION = 'MATRIKS-2026-09-10';
+    // Workbook yang dibaca 10 Sep 2026: Sheet3 A3:J22 (dulu disebut Sheet3).
+    const FORM_FIELDS = [
+        'matrix_land_ownership_code' => ['Kepemilikan lahan', ['land_none'=>'Tidak punya', 'land_legal'=>'Punya lahan sah']],
+        'matrix_environment_condition_code' => ['Kondisi lingkungan / fisik bangunan', ['env_safe'=>'Aman / tidak terdampak bencana', 'env_relocation_zone'=>'Kawasan relokasi pemerintah', 'env_disaster_severe'=>'Terdampak bencana: kerusakan berat / roboh', 'env_disaster_moderate'=>'Terdampak bencana: kerusakan sedang (30–70%)', 'env_slum_uninhabitable'=>'Kumuh / tidak layak: atap, lantai, dinding jelek atau rusak']],
+        'matrix_occupation_finance_code' => ['Kondisi finansial untuk program', ['work_stable_or_unstable_no_subsidy'=>'Berpenghasilan tetap / tidak tetap, belum pernah mendapat subsidi', 'work_can_save_irregular'=>'Mampu menabung / penghasilan tidak tetap', 'work_other'=>'Kondisi lainnya']],
+        'matrix_marital_family_code' => ['Kondisi keluarga', ['family_single'=>'Belum menikah', 'family_married'=>'Menikah', 'family_head_of_household'=>'Kepala keluarga (menikah / duda / janda)', 'family_multi_household'=>'Dihuni lebih dari 1 KK (kepala keluarga)']],
+    ];
+
+    /** Hasil awal tersimpan terpisah; data yang kosong bukan persetujuan syarat. */
+    public function preliminary(array $draft, array $profile, $today = NULL)
+    {
+        $today = $today ?: date('Y-m-d');
+        $birth = DateTimeImmutable::createFromFormat('!Y-m-d', (string) ($profile['birth_date'] ?? ''));
+        $age = $birth && $birth->format('Y-m-d') === ($profile['birth_date'] ?? '') && $birth->format('Y-m-d') <= $today
+            ? $birth->diff(new DateTimeImmutable($today))->y : NULL;
+        $income = $profile['monthly_income'] ?? NULL;
+        $income = is_numeric($income) && $income >= 0 ? (float) $income : NULL;
+        $family = $draft['matrix_marital_family_code'] ?? NULL;
+        if (!$family) $family = ['single'=>'family_single', 'married'=>'family_married'][$profile['marital_status_code'] ?? ''] ?? NULL;
+        $input = [
+            'monthly_income'=>$income, 'age_years'=>$age,
+            'dtks_code'=>$draft['matrix_dtks_status'] ?? NULL,
+            'land_code'=>$draft['matrix_land_ownership_code'] ?? NULL,
+            'housing_code'=>$draft['matrix_current_housing_code'] ?? NULL,
+            'environment_code'=>$draft['matrix_environment_condition_code'] ?? NULL,
+            'occupation_code'=>$draft['matrix_occupation_finance_code'] ?? NULL,
+            'family_code'=>$family,
+            'marital_status_code'=>$profile['marital_status_code'] ?? NULL,
+        ];
+        $ranges = ['income_0_1_5'=>[0,1500000], 'income_1_5_2_2'=>[1500000,2200000], 'income_2_2_2_8'=>[2200000,2800000], 'income_2_8_8_5'=>[2800000,8500000], 'income_2_8_10'=>[2800000,10000000], 'income_gt_8_5'=>[8500000,INF], 'income_gt_10'=>[10000000,INF]];
+        $fields = [2=>['dtks_code','Status DTKS'],3=>['land_code','Kepemilikan lahan'],4=>['housing_code','Kepemilikan rumah'],5=>['environment_code','Kondisi lingkungan / bangunan'],6=>['occupation_code','Kondisi finansial'],8=>['family_code','Kondisi keluarga']];
+        $items = [];
+        foreach (self::ROWS as $index => $row) {
+            [$min,$max] = $ranges[$row[0]];
+            // Rentang yang bersinggungan di Excel tetap dapat menghasilkan dua
+            // prioritas pada batas persisnya; jangan menciptakan batas baru.
+            if ($income !== NULL && ($income < $min || $income > $max || (strpos($row[0], 'income_gt_') === 0 && $income === (float) $min))) continue;
+            $missing = $income === NULL ? ['Pendapatan per bulan'] : [];
+            foreach ($fields as $column => [$key,$label]) {
+                if ($row[$column] === NULL) continue;
+                $actual = $input[$key];
+                if ($key === 'family_code' && in_array($row[$column], ['family_single','family_married'], TRUE)) {
+                    $actual = ['single'=>'family_single','married'=>'family_married','divorced'=>'family_divorced'][$input['marital_status_code'] ?? ''] ?? NULL;
+                }
+                if ($actual === NULL || $actual === '') { $missing[] = $label; continue; }
+                // Menumpang/sewa juga memenuhi kategori gabungan belum punya.
+                if ($key === 'housing_code' && $row[$column] === 'house_none_or_rent' && $actual === 'house_rent_or_staying') continue;
+                if ($actual !== $row[$column]) continue 2;
+            }
+            if ($row[7] !== NULL) {
+                if ($age === NULL) $missing[] = 'Tanggal lahir';
+                elseif (!$this->age_matches($row[7], $age)) continue;
+            }
+            $criteria = ['Pendapatan: ' . ($max === INF ? '> Rp' . number_format($min, 0, ',', '.') : 'Rp' . number_format($min, 0, ',', '.') . '–Rp' . number_format($max, 0, ',', '.'))];
+            foreach ([3=>'matrix_land_ownership_code',5=>'matrix_environment_condition_code',6=>'matrix_occupation_finance_code',8=>'matrix_marital_family_code'] as $column=>$field) {
+                if ($row[$column] !== NULL) $criteria[] = self::FORM_FIELDS[$field][1][$row[$column]];
+            }
+            if ($row[2] !== NULL) $criteria[] = 'Status DTKS: Ya';
+            if ($row[7] !== NULL) $criteria[] = ['produktif_21'=>'Usia 21–59 tahun', 'produktif_18'=>'Usia 18–59 tahun', 'produktif_18_or_tua'=>'Usia minimal 18 tahun'][$row[7]];
+            $items[] = ['program_name'=>$row[9], 'source_row'=>$index+3, 'missing'=>$missing, 'criteria'=>$criteria];
+        }
+        return ['ruleset_version'=>self::VERSION, 'source_sheet'=>'Sheet3', 'evaluated_at'=>date('c'), 'input'=>$input, 'items'=>$items];
+    }
+
     /* Gaji -> satu angka desil REPRESENTATIF dari rentang yang dipakai
-       baris-baris Sheet4 (mis. income_1_5_2_2 -> 2, cukup untuk lolos
+       baris-baris Sheet3 (mis. income_1_5_2_2 -> 2, cukup untuk lolos
        cek in_array($decile,[2,3]) - tidak perlu representasi rentang
        penuh, cukup satu anggota sah dari himpunan desil baris terkait). */
     const INCOME_TO_DECILE = [
@@ -59,7 +88,7 @@ class Matriks_program_ruleset {
         'income_gt_10' => 9,
     ];
 
-    /** Label PERSIS kolom B Sheet4, dipakai tampilan "Kategori Kemiskinan
+    /** Label PERSIS kolom B Sheet3, dipakai tampilan "Kategori Kemiskinan
      * (Desil)" - satu sumber kebenaran yang sama dengan yang dipakai
      * match(), supaya yang ditampilkan ke warga PERSIS yang dipakai
      * mesin pencocokan (tidak ada lagi dua sumber desil yang bisa
@@ -198,7 +227,7 @@ class Matriks_program_ruleset {
      *   yang memang sengaja tidak mempedulikan kolom itu).
      * @return string[] Daftar teks "PROGRAM YANG COCOK" (kolom J) dari
      *   setiap baris yang cocok, urutan sama seperti urutan baris di
-     *   Sheet4 (baris lebih awal = prioritas lebih tinggi kalau lebih
+     *   Sheet3 (baris lebih awal = prioritas lebih tinggi kalau lebih
      *   dari satu baris cocok sekaligus). Kosong kalau tidak ada yang cocok.
      */
     public function match(array $input)
@@ -226,7 +255,7 @@ class Matriks_program_ruleset {
     }
 
     /**
-     * Tiga aturan umur PERSIS 3 varian yang muncul di kolom H Sheet4 -
+     * Tiga aturan umur PERSIS 3 varian yang muncul di kolom H Sheet3 -
      * bukan 3 kategori umum di catatan kaki xlsx ("Kategori Usia dibagi
      * menjadi..."), karena beberapa baris mensyaratkan batas LEBIH KETAT
      * (Min. 21 Tahun, bukan 18) daripada definisi umum "usia produktif"

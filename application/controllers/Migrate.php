@@ -391,6 +391,12 @@ class Migrate extends CI_Controller {
         echo 'kkn_magang_pendaftaran.file_laporan_akhir (migrasi 050): '
             .($this->db->field_exists('file_laporan_akhir', 'kkn_magang_pendaftaran')
                 ? 'ADA' : 'HILANG - unggah laporan akhir KKN akan fatal')."\n";
+        $matrix = $this->db->query("SELECT DATA_TYPE, IS_NULLABLE
+            FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'sf_penilaian_perumahan' AND COLUMN_NAME = 'preliminary_matrix_ciphertext'")->row_array();
+        echo 'sf_penilaian_perumahan.preliminary_matrix_ciphertext (migrasi 058): '
+            .($matrix && $matrix['DATA_TYPE'] === 'mediumtext' && $matrix['IS_NULLABLE'] === 'YES'
+                ? 'ADA, MEDIUMTEXT NULL' : 'HILANG ATAU BENTUK TIDAK SESUAI')."\n";
     }
 
     /**

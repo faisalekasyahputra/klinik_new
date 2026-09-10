@@ -23,10 +23,6 @@ if (empty($values['matrix_current_housing_code']) && !empty($values['housing_sta
     $values['matrix_current_housing_code'] = $values['housing_status_code'] === 'owned'
         ? 'house_owned' : 'house_none_or_rent';
 }
-if (isset($values['matrix_current_housing_code'])
-    && $values['matrix_current_housing_code'] !== 'house_owned') {
-    $values['matrix_current_housing_code'] = 'house_none_or_rent';
-}
 $value = static function ($key, $default = '') use ($values) { return (string) ($values[$key] ?? $default); };
 $selected = static function ($key, $option) use ($value) { return $value($key) === $option ? ' selected' : ''; };
 $checked = static function ($key, $option) use ($value) { return $value($key) === $option ? ' checked' : ''; };
@@ -169,6 +165,9 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                 <select id="matrix_current_housing_code" name="matrix_current_housing_code" required class="mt-1 w-full rounded-xl border px-3 py-2.5" style="background:var(--portal-btn-bg);color:var(--portal-text)">
                     <option value="">Pilih status tempat tinggal</option>
                     <option value="house_owned"<?= $selected('matrix_current_housing_code', 'house_owned') ?>>Milik sendiri</option>
+                    <option value="house_rent_or_staying"<?= $selected('matrix_current_housing_code', 'house_rent_or_staying') ?>>Bukan milik sendiri — menumpang / sewa</option>
+                    <option value="house_restricted_area"<?= $selected('matrix_current_housing_code', 'house_restricted_area') ?>>Bukan milik sendiri — tinggal di area terlarang / numpang (relokasi)</option>
+                    <option value="house_disaster_affected"<?= $selected('matrix_current_housing_code', 'house_disaster_affected') ?>>Milik sendiri — terdampak bencana</option>
                     <option value="house_none_or_rent"<?= $selected('matrix_current_housing_code', 'house_none_or_rent') ?>>Bukan milik sendiri</option>
                 </select>
                 <p class="text-xs text-red-700"><?= html_escape($field_error('matrix_current_housing_code')) ?></p>
@@ -227,6 +226,7 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                 <?php
                 unset($selects['income_band_code']);
                 $selects['area_condition_code'] = ['Kawasan', ['drought'=>'Kekeringan', 'slum'=>'Kumuh', 'disaster_prone'=>'Rawan Bencana', 'riverbank'=>'Bantaran Sungai', 'railway'=>'Bantaran Rel KA', 'poor_other'=>'Kawasan Buruk Lain', 'good'=>'Kawasan Baik']];
+                if ($initial) $selects += ($matrix_fields ?? []);
                 foreach ($selects as $key => [$label, $options]):
                     if ($initial === in_array($key, ['has_savings', 'self_help_capability_code'], TRUE)) continue;
                 ?><div><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?><?= isset($matrix_required[$key]) ? ' <span class="text-red-700">*</span>' : '' ?></label><select id="<?= $key ?>" name="<?= $key ?>" <?= isset($matrix_required[$key]) ? 'required' : '' ?> aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><option value="">Pilih <?= strtolower($label) ?></option><?php foreach ($options as $code => $label): ?><option value="<?= html_escape($code) ?>"<?= $selected($key, $code) ?>><?= html_escape($label) ?></option><?php endforeach; ?></select><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
@@ -257,17 +257,7 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
         <?php elseif ($step_slug === 'preliminary_recommendation'): ?>
             <h2 class="text-lg font-black">Hasil Rekomendasi Awal</h2>
             <p class="mt-2 text-sm">Data dan rekomendasi awal sudah tersimpan. Lengkapi data berikutnya untuk penilaian lebih lanjut; hasil ini belum merupakan keputusan bantuan.</p>
-            <?php $initial_recommendations = array_filter($recommendations, static fn($r) => $r['eligibility_status'] !== 'not_eligible'); ?>
-            <?php if (! $initial_recommendations): ?>
-                <p class="mt-4">Belum ada rekomendasi yang dapat ditentukan dari data yang tersedia. Silakan lanjutkan melengkapi data.</p>
-            <?php endif; ?>
-            <?php foreach ($initial_recommendations as $item): ?>
-                <article class="mt-4 rounded-xl border p-4" style="border-color:var(--portal-border)">
-                    <h3 class="font-bold"><?= html_escape($item['program_name']) ?></h3>
-                    <p class="mt-2 text-sm"><?= html_escape($item['program_description'] ?: 'Deskripsi program belum tersedia.') ?></p>
-                    <?php if ($item['eligibility_status'] === 'needs_data'): ?><p class="mt-2 text-xs">Perlu kelengkapan data untuk menentukan kesesuaian program.</p><?php endif; ?>
-                </article>
-            <?php endforeach; ?>
+            <?php $this->load->view('pages/warga/matrix_result', ['matrix_result'=>$preliminary_matrix ?? NULL]); ?>
         <?php elseif ($step_slug === 'location_evidence'): ?>
             <h2 class="text-lg font-black">Lengkapi Data SIMPERUM — Lokasi & Bukti</h2><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Koordinat dan berkas disimpan privat. Bukti di bawah berlabel simulasi, bukan ketetapan akhir Dinas.</p><div class="mt-5 grid gap-4 sm:grid-cols-3"><div><label for="location_lat" class="text-xs font-bold">Latitude</label><input id="location_lat" name="location_lat" type="number" step="any" value="<?= html_escape($value('location_lat')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div><div><label for="location_lng" class="text-xs font-bold">Longitude</label><input id="location_lng" name="location_lng" type="number" step="any" value="<?= html_escape($value('location_lng')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div><div><label for="location_accuracy_m" class="text-xs font-bold">Akurasi (meter)</label><input id="location_accuracy_m" name="location_accuracy_m" type="number" min="0" step="0.1" value="<?= html_escape($value('location_accuracy_m')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div></div><button type="button" id="use-location" class="mt-3 rounded-xl border px-3 py-2 text-xs font-bold" style="border-color:var(--portal-border)">Gunakan lokasi perangkat</button><?php $existing = ['self_photo'=>'Foto Diri','house_front_photo'=>'Rumah Depan','house_side_photo'=>'Rumah Samping','roof_photo'=>'Atap','floor_photo'=>'Lantai','wall_photo'=>'Dinding','latrine_photo'=>'Jamban']; $candidate=['candidate_land_photo'=>'Foto Lahan','land_transfer_proof'=>'Bukti Pindah Tangan']; $files = (($assessment['assessment_track'] ?? '') === 'candidate_land') ? $candidate : ((($assessment['assessment_track'] ?? '') === 'financing') ? ['id_card_photo'=>'Foto KTP','family_card_photo'=>'Foto KK'] : $existing); ?><fieldset class="mt-5 border-t pt-4" style="border-color:var(--portal-border)"><legend class="text-sm font-black">Bukti simulasi</legend><div class="mt-3 grid gap-3 sm:grid-cols-2"><?php foreach($files as $kind=>$label): ?><div class="rounded-xl border p-3" style="border-color:var(--portal-border)"><label for="<?= $kind ?>" class="text-xs font-bold"><?= html_escape($label) ?></label><?php if (isset($evidence_files[$kind])): $bukti = $evidence_files[$kind]; ?><span class="ml-1 inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-bold" style="background:rgba(16,185,129,.12);color:#047857">Sudah tersimpan</span>
                         <?php // Pemohon wajib bisa MEMERIKSA apa yang dia unggah - badge saja
@@ -344,6 +334,7 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
             <?php elseif ( ! empty($recommendations)): ?>
                 <section id="review-action-help" role="status" class="mt-5 rounded-xl border p-4 text-sm" style="border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.08);color:#991b1b"><h3 class="font-black">Belum ada program yang dapat diajukan</h3><p class="mt-1 text-xs">Periksa kembali data yang diisi atau lihat layanan perumahan lain. Hasil simulasi ini bukan keputusan akhir Dinas.</p></section>
             <?php endif; ?>
+            <details class="mt-5 rounded-xl border p-4"><summary class="cursor-pointer font-bold">Rekomendasi awal yang tersimpan</summary><?php $this->load->view('pages/warga/matrix_result', ['matrix_result'=>$preliminary_matrix ?? NULL]); ?></details>
             <h3 class="mt-6 text-sm font-black">Hasil rekomendasi</h3>
             <?php if (empty($recommendations)): ?>
                 <p class="mt-3 rounded-xl border p-3 text-xs" style="border-color:var(--portal-border);color:var(--portal-text-muted)">Belum ada hasil untuk ditampilkan. Lengkapi data yang diperlukan lalu simpan langkah sebelumnya.</p>

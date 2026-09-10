@@ -362,10 +362,16 @@ cek($xpath_corrected->query('//select[@name="matrix_current_housing_code"]/optio
 $db->jalan('UPDATE sf_penilaian_perumahan SET matrix_current_housing_code=NULL WHERE user_id=?', [(string) $akun['id']]);
 $db->jalan('UPDATE sf_profil_warga SET phone_ciphertext=NULL, field_provenance_json=? WHERE user_id=?',
     [$profile_before['field_provenance_json'], (string) $akun['id']]);
+$matrix_snapshot = NULL;
 for ($i = 0; $i < 14; $i++) {
     $form = wizard_form($h);
     $step = wizard_step($form);
     if ($step === NULL) { break; }
+    if ($step === 'preliminary_recommendation') {
+        $matrix_snapshot = $db->baris('SELECT preliminary_matrix_ciphertext FROM sf_penilaian_perumahan WHERE user_id=? ORDER BY id DESC LIMIT 1', [(string) $akun['id']])['preliminary_matrix_ciphertext'];
+        cek(!empty($matrix_snapshot) && strpos($matrix_snapshot, 'PK RTLH') === FALSE, 'Snapshot matriks awal disimpan terenkripsi');
+        cek(strpos($h, getenv('UJI_CABANG') === 'tanah' ? 'PB Backlog (Prioritas 1)' : 'PK RTLH (Prioritas 1)') !== FALSE, 'Hasil awal mengikuti kondisi dan prioritas matriks, bukan kandidat FLPP bawaan');
+    }
     if ($step === 'housing_family_detail') {
         $xpath_detail = new DOMXPath($form->ownerDocument);
         foreach (['assistance_source_code', 'assistance_year'] as $field) {
@@ -376,7 +382,13 @@ for ($i = 0; $i < 14; $i++) {
     $dilewati[] = $step;
     if ($step === 'review') { break; }
     $paksa = ['action' => 'save'];
-    if ($step === 'housing_family') $paksa['matrix_current_housing_code'] = getenv('UJI_CABANG') === 'tanah' ? 'house_none_or_rent' : 'house_owned';
+    if ($step === 'housing_family') $paksa += [
+        'matrix_current_housing_code'=>getenv('UJI_CABANG') === 'tanah' ? 'house_rent_or_staying' : 'house_owned',
+        'monthly_income'=>'1200000',
+        'matrix_environment_condition_code'=>getenv('UJI_CABANG') === 'tanah' ? 'env_safe' : 'env_slum_uninhabitable',
+        'matrix_land_ownership_code'=>'land_legal',
+        'matrix_marital_family_code'=>'family_multi_household',
+    ];
     if ($step === 'housing_family_detail') $paksa['has_other_land'] = '1';
     $baru = $warga->minta('warga/pendataan', wizard_medan($form, $paksa))['body'];
     if (wizard_step($baru) === $step) {
@@ -390,6 +402,8 @@ cek(getenv('UJI_CABANG') === 'tanah'
     : in_array('building_condition', $dilewati, TRUE) && ! in_array('candidate_land', $dilewati, TRUE),
     'UAT warga 9: hanya cabang sesuai pilihan yang dilewati');
 cek(array_search('preliminary_recommendation', $dilewati, TRUE) < array_search('housing_family_detail', $dilewati, TRUE), 'UAT warga 9: rekomendasi tampil sebelum data pelengkap');
+cek($matrix_snapshot !== NULL && $matrix_snapshot === $db->baris('SELECT preliminary_matrix_ciphertext FROM sf_penilaian_perumahan WHERE user_id=? ORDER BY id DESC LIMIT 1', [(string) $akun['id']])['preliminary_matrix_ciphertext'], 'Snapshot awal tidak ditimpa evaluasi data pelengkap');
+cek(strpos($h, 'Rekomendasi awal yang tersimpan') !== FALSE, 'Hasil awal tetap dapat dibuka pada review');
 
 $form = wizard_form($h);
 $payload = wizard_medan($form, ['action' => 'submit']);
@@ -442,6 +456,10 @@ wajib($r['kode'] === 200, 'Admin kab/kota masuk di sesi sendiri');
 $d = $admin->minta('Admin_Kabkota');
 cek($d['kode'] === 200, 'Dashboard antrean admin terbuka');
 cek(strpos($d['body'], (string) $tiket['id']) !== FALSE, "Tiket #{$tiket['id']} terlihat oleh admin wilayahnya");
+$detail_matrix = $admin->minta('Admin_Kabkota/detail/' . $tiket['id']);
+cek($detail_matrix['kode'] === 200 && strpos($detail_matrix['body'], 'Rekomendasi awal yang tersimpan') !== FALSE
+    && strpos($detail_matrix['body'], getenv('UJI_CABANG') === 'tanah' ? 'PB Backlog (Prioritas 1)' : 'PK RTLH (Prioritas 1)') !== FALSE,
+    'Admin wilayah melihat snapshot matriks awal yang sama dengan warga');
 
 /* Dua sesi harus benar-benar terpisah. Kalau kuki tertukar, pemeriksaan ini
    merah - dan itu memang tugasnya. */

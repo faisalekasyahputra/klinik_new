@@ -13,6 +13,7 @@ class Warga extends MY_Controller {
         $this->load->model('Housing_assessment_model');
         $this->load->library('Simperum_gateway');
         $this->load->library('Warga_ruleset');
+        $this->load->library('Matriks_program_ruleset');
     }
 
     /**
@@ -104,6 +105,8 @@ class Warga extends MY_Controller {
             'title' => 'Pendataan Warga',
             'is_logged_in' => $logged_in_warga,
             'assessment' => $assessment,
+            'preliminary_matrix' => json_decode($assessment['preliminary_matrix'] ?? 'null', TRUE),
+            'matrix_fields' => Matriks_program_ruleset::FORM_FIELDS,
             'profile' => $profile,
             'values' => array_merge($assessment ?: [], $profile ?: [], $old_input),
             'lookup' => $this->session->flashdata('warga_lookup'),
@@ -455,7 +458,7 @@ class Warga extends MY_Controller {
             $data['owns_candidate_land'] = $this->input->post('has_other_land', TRUE);
         }
         if ($direction === 'next' && $step === 'housing_family') {
-            $milik_sendiri = (string) $this->input->post('matrix_current_housing_code', TRUE) === 'house_owned';
+            $milik_sendiri = in_array((string) $this->input->post('matrix_current_housing_code', TRUE), ['house_owned', 'house_disaster_affected'], TRUE);
             $data['assessment_track'] = $milik_sendiri ? 'existing_house' : 'candidate_land';
             $data['housing_status_code'] = $milik_sendiri ? 'owned' : 'other';
         }
@@ -480,22 +483,26 @@ class Warga extends MY_Controller {
         }
         $recommendations = NULL;
         $recommendation_hash = NULL;
-        /* Rekomendasi awal tampil setelah matriks inti (Data Warga dan
-           Rumah & Keluarga), kemudian hasil akhir diperbarui lagi sesudah
-           data rinci serta bukti dilengkapi. Ini mewujudkan alur:
-           NIK -> matriks -> hasil rekomendasi -> pelengkapan SIMPERUM. */
+        // Matriks awal dan evaluasi lanjutan memiliki hasil terpisah.
         if ($direction === 'next' && in_array($step, ['housing_family', 'housing_family_detail', 'location_evidence'], TRUE)) {
             $profile = $this->Housing_assessment_model->get_owned_profile($user_id) ?: [];
             if ($profile_change !== NULL) {
                 $profile = array_merge($profile, $profile_change['data'] ?? []);
             }
             $effective = array_merge($draft, $data);
-            $recommendations = [];
-            foreach ($this->warga_ruleset->route_candidates($profile['welfare_decile'] ?? NULL) as $code) {
-                $recommendations[] = $this->warga_ruleset->evaluate($code, $effective, $profile) + [
-                    'program_code' => $code,
-                    'ruleset_version' => Warga_ruleset::VERSION,
-                ];
+            if ($step === 'housing_family') {
+                $data['preliminary_matrix'] = json_encode(
+                    $this->matriks_program_ruleset->preliminary($effective, $profile),
+                    JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+                );
+            } else {
+                $recommendations = [];
+                foreach ($this->warga_ruleset->route_candidates($profile['welfare_decile'] ?? NULL) as $code) {
+                    $recommendations[] = $this->warga_ruleset->evaluate($code, $effective, $profile) + [
+                        'program_code' => $code,
+                        'ruleset_version' => Warga_ruleset::VERSION,
+                    ];
+                }
             }
             $recommendation_hash = $this->recommendation_input_hash($effective, $profile);
         }
@@ -635,7 +642,7 @@ class Warga extends MY_Controller {
     {
         // Setiap POST hanya mengubah medan pada langkah yang sudah divalidasi.
         $fields = [
-            'housing_family' => ['matrix_current_housing_code', 'area_condition_code'],
+            'housing_family' => array_merge(['matrix_current_housing_code', 'area_condition_code'], array_keys(Matriks_program_ruleset::FORM_FIELDS)),
             'housing_family_detail' => ['housing_status_code', 'land_title_code', 'has_other_land', 'has_other_house', 'house_area_m2', 'occupant_count', 'family_count', 'assistance_source_code', 'assistance_year'],
             'building_condition' => ['foundation_condition_code', 'column_condition_code', 'beam_condition_code', 'sloof_condition_code', 'ceiling_condition_code', 'roof_frame_condition_code', 'floor_material_code', 'floor_condition_code', 'wall_material_code', 'wall_condition_code', 'roof_material_code', 'roof_condition_code'],
             'candidate_land' => ['candidate_land_address', 'candidate_land_title_code', 'candidate_land_origin_code', 'land_owner_relationship_code', 'land_length_m', 'land_width_m'],
@@ -765,9 +772,12 @@ class Warga extends MY_Controller {
         $errors = [];
         if ($step === 'housing_family') {
             $this->validate_options([
-                'matrix_current_housing_code' => ['house_owned', 'house_none_or_rent'],
+                'matrix_current_housing_code' => ['house_owned', 'house_none_or_rent', 'house_rent_or_staying', 'house_restricted_area', 'house_disaster_affected'],
                 'area_condition_code' => ['drought', 'slum', 'disaster_prone', 'riverbank', 'railway', 'poor_other', 'good'],
             ], $errors);
+            foreach (Matriks_program_ruleset::FORM_FIELDS as $field => [$label, $options]) {
+                $this->validate_options([$field => array_keys($options)], $errors);
+            }
             foreach (['matrix_current_housing_code', 'area_condition_code'] as $field) {
                 if (trim((string) $this->input->post($field, TRUE)) === '') $errors[$field] = 'Pilihan ini wajib diisi.';
             }

@@ -298,7 +298,7 @@ class Housing_assessment_model extends CI_Model {
                 $safe[$field] = $data[$field];
             }
         }
-        foreach (['candidate_land_address', 'location_lat', 'location_lng'] as $field) {
+        foreach (['candidate_land_address', 'location_lat', 'location_lng', 'preliminary_matrix'] as $field) {
             if (array_key_exists($field, $data)) {
                 if ( ! $this->encryption_ready()) {
                     return $this->fail('encryption_unavailable', 'Data sensitif belum dapat disimpan.');
@@ -980,8 +980,8 @@ class Housing_assessment_model extends CI_Model {
     private function decrypt_assessment($row)
     {
         if (!$row || !$this->encryption_ready()) return $row;
-        foreach (['candidate_land_address' => 'candidate_land_address_ciphertext', 'location_lat' => 'location_lat_ciphertext', 'location_lng' => 'location_lng_ciphertext'] as $name => $column) {
-            $row[$name] = $row[$column] === NULL ? NULL : $this->encryption_lib->decrypt($row[$column]);
+        foreach (['candidate_land_address' => 'candidate_land_address_ciphertext', 'location_lat' => 'location_lat_ciphertext', 'location_lng' => 'location_lng_ciphertext', 'preliminary_matrix'=>'preliminary_matrix_ciphertext'] as $name => $column) {
+            $row[$name] = ($row[$column] ?? NULL) === NULL ? NULL : $this->encryption_lib->decrypt($row[$column]);
             unset($row[$column]);
         }
         return $row;
