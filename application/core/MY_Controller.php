@@ -20,8 +20,48 @@ class MY_Controller extends CI_Controller {
         $this->set_security_headers();
 
         $this->usir_kalau_nonaktif();
+        $this->enforce_single_session_and_password_expiry();
     }
 
+    /** Batalkan sesi lama dan paksa penggantian kata sandi yang berusia 90 hari. */
+    private function enforce_single_session_and_password_expiry() {
+        if ( ! $this->session->userdata('is_logged')) { return; }
+        if ( ! $this->db->field_exists('active_session_hash', 'usr_users')
+            || ! $this->db->field_exists('password_expires_at', 'usr_users')) { return; }
+        $id = (int) $this->session->userdata('user_id');
+        $token = (string) $this->session->userdata('session_auth_token');
+        $row = $this->db->select('active_session_hash,password_expires_at')
+            ->get_where('usr_users', ['id' => $id])->row();
+        $token_valid = $row && ! empty($token) && ! empty($row->active_session_hash)
+            && hash_equals((string) $row->active_session_hash, hash('sha256', $token));
+        if ( ! $token_valid) {
+            $this->session->unset_userdata([
+                'is_logged', 'user_id', 'role', 'name', 'username', 'email', 'avatar',
+                'kabupaten_id', 'bidang_kode', 'session_auth_token', 'password_change_required',
+            ]);
+            $this->session->sess_regenerate(TRUE);
+            $message = 'Sesi ini berakhir karena akun digunakan untuk masuk pada perangkat lain.';
+            if ($this->input->is_ajax_request()) {
+                $this->output->set_status_header(401); header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'code' => 'sesi_digantikan', 'message' => $message]); exit;
+            }
+            $this->session->set_flashdata('error', $message);
+            redirect('Auth/login'); exit;
+        }
+
+        $expired = ! empty($row->password_expires_at) && strtotime($row->password_expires_at) <= time();
+        if ( ! $expired) { return; }
+        $this->session->set_userdata('password_change_required', TRUE);
+        $controller = strtolower((string) $this->router->fetch_class());
+        if (in_array($controller, ['auth', 'pengaturan'], TRUE)) { return; }
+        if ($this->input->is_ajax_request()) {
+            $this->output->set_status_header(403); header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'code' => 'password_kedaluwarsa',
+                'message' => 'Kata sandi telah berusia 90 hari dan harus diganti.']); exit;
+        }
+        $this->session->set_flashdata('error', 'Kata sandi telah berusia 90 hari. Ganti kata sandi untuk melanjutkan.');
+        redirect('akun/profil?password_expired=1'); exit;
+    }
     /**
      * Putuskan sesi yang akunnya sudah dinonaktifkan - diperiksa TIAP PERMINTAAN.
      *

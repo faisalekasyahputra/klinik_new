@@ -154,6 +154,8 @@ class Auth extends MY_Controller {
             'bidang_kode'  => $user->bidang_kode ?? null, // scope untuk role admin_bidang
             'is_logged'    => TRUE,
         ];
+        $session_data['password_change_required'] = $this->auth_model->password_expired($user);
+        $session_data['session_auth_token'] = $this->auth_model->issue_session_token($user->id);
         $this->session->set_userdata($session_data);
         $this->session->sess_regenerate(TRUE);
 
@@ -359,6 +361,7 @@ class Auth extends MY_Controller {
             'role'      => $is_srp2 ? 'pengembang' : NULL,
             'is_logged' => TRUE,
         ];
+        $session_data['session_auth_token'] = $this->auth_model->issue_session_token($user_id);
         $this->session->set_userdata($session_data);
         $this->session->sess_regenerate(TRUE);
 
@@ -589,6 +592,7 @@ class Auth extends MY_Controller {
         // Save profile
         if (isset($password_hash)) {
             $profile_data['password'] = $password_hash;
+            $profile_data = array_merge($profile_data, $this->auth_model->password_lifetime_fields());
         }
         $this->auth_model->save_profile($user_id, $profile_data);
 
@@ -846,6 +850,7 @@ class Auth extends MY_Controller {
                             'bidang_kode'  => $logged_in_user[0]['bidang_kode'] ?? null,
                             'is_logged'    => TRUE,
                         ];
+                        $session_data['session_auth_token'] = $this->auth_model->issue_session_token($logged_in_user[0]['id']);
                         $this->session->set_userdata($session_data);
                         $this->session->sess_regenerate(TRUE);
 
@@ -909,6 +914,8 @@ class Auth extends MY_Controller {
     public function logout() {
         $curr = $this->input->get('curr', TRUE);
         $safe_redirect = $this->sanitize_redirect($curr);
+        $this->auth_model->revoke_session_token((int) $this->session->userdata('user_id'),
+            (string) $this->session->userdata('session_auth_token'));
         $this->session->sess_destroy();
         redirect(!empty($safe_redirect) ? $safe_redirect : 'login');
     }
@@ -944,6 +951,11 @@ class Auth extends MY_Controller {
      */
     private function _redirect_after_login() {
         $user_id = $this->get_user_id();
+        if ($this->session->userdata('password_change_required')) {
+            $this->session->set_flashdata('error', 'Kata sandi telah berusia 90 hari. Ganti kata sandi untuk melanjutkan.');
+            redirect('akun/profil?password_expired=1');
+            return;
+        }
 
         /* Ikat NIK yang sempat dicari ANONIM (Warga::lookup_anonim(), sebelum
            akun ada) ke akun yang baru saja diketahui - "gunakan NIK sebagai

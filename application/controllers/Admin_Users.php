@@ -7,6 +7,7 @@ class Admin_Users extends Admin_Controller {
     {
         parent::__construct();
         $this->load->config('roles');
+        $this->load->model('auth_model');
         // Superadmin access is already checked in Admin_Controller
     }
 
@@ -174,7 +175,7 @@ class Admin_Users extends Admin_Controller {
             'profile_completed'  => 1,
             'email_verified_at'  => date('Y-m-d H:i:s'),
             'created_at'         => date('Y-m-d H:i:s'),
-        ];
+        ] + $this->auth_model->password_lifetime_fields();
 
         /* Telepon OPSIONAL - bukan field standar akun staf, jadi kolomnya
            dilewati sama sekali kalau kosong (bukan disimpan '' atau NULL
@@ -460,7 +461,8 @@ class Admin_Users extends Admin_Controller {
         $this->db->where('id', (int) $user->id)->update('usr_users', [
             'password' => password_hash($sandi, PASSWORD_BCRYPT),
             'login_attempts' => 0, 'locked_until' => NULL,
-        ]);
+            'active_session_hash' => NULL, 'active_session_at' => NULL,
+        ] + $this->auth_model->password_lifetime_fields());
 
         // Sandinya TIDAK ikut dicatat, bahkan tidak sebagian. Jejak audit dibaca
         // orang yang tidak selalu berhak tahu isinya.

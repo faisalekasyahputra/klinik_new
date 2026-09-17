@@ -9,6 +9,7 @@ class Auth_model extends CI_Model {
 
     const MAX_LOGIN_ATTEMPTS = 5;
     const LOCKOUT_MINUTES    = 15;
+    const PASSWORD_TTL_DAYS  = 90;
 
     public function __construct() {
         parent::__construct();
@@ -24,11 +25,14 @@ class Auth_model extends CI_Model {
      * Returns the new user's ID or FALSE on failure.
      */
     public function create_user($email, $password_hash) {
+        $now = date('Y-m-d H:i:s');
         $data = [
             'email'      => $email,
             'password'   => $password_hash,
             'status'     => 'restricted',
-            'created_at' => date('Y-m-d H:i:s'),
+            'password_changed_at' => $now,
+            'password_expires_at' => date('Y-m-d H:i:s', strtotime('+' . self::PASSWORD_TTL_DAYS . ' days')),
+            'created_at' => $now,
         ];
         $this->db->insert('usr_users', $data);
         return $this->db->insert_id() ?: FALSE;
@@ -169,6 +173,41 @@ class Auth_model extends CI_Model {
         ]);
     }
 
+    /** Terbitkan token sesi baru. Login terbaru membatalkan semua sesi lama. */
+    public function issue_session_token($user_id) {
+        $token = bin2hex(random_bytes(32));
+        $this->db->where('id', (int) $user_id)->update('usr_users', [
+            'active_session_hash' => hash('sha256', $token),
+            'active_session_at' => date('Y-m-d H:i:s'),
+        ]);
+        return $token;
+    }
+
+    public function session_token_valid($user_id, $token) {
+        if (empty($token)) { return FALSE; }
+        $row = $this->db->select('active_session_hash')->get_where('usr_users', ['id' => (int) $user_id])->row();
+        return $row && ! empty($row->active_session_hash)
+            && hash_equals((string) $row->active_session_hash, hash('sha256', (string) $token));
+    }
+
+    public function revoke_session_token($user_id, $token) {
+        if ( ! $this->session_token_valid($user_id, $token)) { return; }
+        $this->db->where('id', (int) $user_id)->update('usr_users', [
+            'active_session_hash' => NULL, 'active_session_at' => NULL,
+        ]);
+    }
+
+    public function password_expired($user) {
+        return ! empty($user->password_expires_at) && strtotime($user->password_expires_at) <= time();
+    }
+
+    public function password_lifetime_fields() {
+        $now = date('Y-m-d H:i:s');
+        return [
+            'password_changed_at' => $now,
+            'password_expires_at' => date('Y-m-d H:i:s', strtotime('+' . self::PASSWORD_TTL_DAYS . ' days')),
+        ];
+    }
     // =========================================================
     // Onboarding / Profile Completion
     // =========================================================
@@ -418,7 +457,8 @@ class Auth_model extends CI_Model {
             'password'           => $new_password_hash,
             'email_token'        => NULL,
             'email_token_expiry' => NULL,
-        ]);
+            'active_session_hash' => NULL,
+            'active_session_at' => NULL,
+        ] + $this->password_lifetime_fields());
     }
 }
-

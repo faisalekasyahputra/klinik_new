@@ -453,9 +453,15 @@ class Pengaturan extends MY_Controller {
                 return;
             }
             $data['password'] = password_hash($password, PASSWORD_BCRYPT);
+            $data = array_merge($data, $this->Auth_model->password_lifetime_fields());
         }
 
         $this->User_model->update_user($user_id, $data);
+
+        if (isset($data['password'])) {
+            $this->session->unset_userdata('password_change_required');
+            $this->session->set_userdata('session_auth_token', $this->Auth_model->issue_session_token($user_id));
+        }
 
         // Update session
         $this->session->set_userdata('name', $name);
