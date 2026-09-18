@@ -391,6 +391,9 @@ cek(kolom($idA, 'status') === 'active', 'Superadmin tidak bisa menonaktifkan aku
 cek(jejak('tindakan_diri_sendiri_ditolak', $idA) === 1, 'Percobaan atas akun sendiri tercatat sebagai _ditolak');
 [$masuk, ] = coba_login($emailA, SANDI);
 cek($masuk, 'Pelaku masih bisa masuk sesudah percobaan itu ditolak');
+// Sesi tunggal (migrasi 059): login percobaan di atas menggantikan token klien 'a',
+// jadi klien 'a' wajib masuk ulang sebelum dipakai lagi.
+wajib(login('a', $emailA), 'Login ulang superadmin pelaku sesudah sesinya digantikan');
 
 // ============================================ 6. PENGUNCIAN TOTAL PANEL
 echo "
@@ -452,6 +455,7 @@ cek(strpos($r['body'], 'satu-satunya Super Admin') !== FALSE,
     'Alasannya disampaikan ke pelaku, bukan gagal senyap');
 [$masuk, ] = coba_login($emailA, SANDI);
 cek($masuk, 'Pelaku masih bisa masuk - panelnya selamat');
+wajib(login('a', $emailA), 'Login ulang superadmin pelaku sesudah sesinya digantikan (sesi tunggal)');
 $pulih = TRUE;
 foreach ($lain as $id => $st) { if (kolom($id, 'status') !== $st) { $pulih = FALSE; } }
 cek($pulih, 'Status superadmin lain dipulihkan persis semula');
