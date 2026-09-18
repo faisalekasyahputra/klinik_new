@@ -286,9 +286,6 @@ class MY_Controller extends CI_Controller {
     /** Batalkan sesi lama dan paksa penggantian kata sandi yang berusia 90 hari. */
     private function enforce_single_session_and_password_expiry() {
         if ( ! $this->session->userdata('is_logged')) { return; }
-        if ( ! $this->db->field_exists('active_session_hash', 'usr_users')
-            || ! $this->db->field_exists('active_session_id_hash', 'usr_users')
-            || ! $this->db->field_exists('password_expires_at', 'usr_users')) { return; }
         $id = (int) $this->session->userdata('user_id');
         $token = (string) $this->session->userdata('session_auth_token');
         $session_id = (string) $this->session->session_id;
