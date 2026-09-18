@@ -274,7 +274,9 @@ cek( ! in_array('Bidang Tujuan', $label_kkn, TRUE), 'KKN: field "Bidang Tujuan" 
 
 // =========================================================== 4. TANGGAL
 echo "\n== Tanggal berbahasa Indonesia ==\n";
-$bulan_inggris = ['January','February','March','April','June','July','August','September','October','November','December'];
+// 'September' dan 'November' SENGAJA tidak ikut: ejaannya sama di kedua bahasa, jadi
+// memasukkannya membuat cek ini merah palsu sepanjang dua bulan itu ('May' sudah begitu).
+$bulan_inggris = ['January','February','March','April','June','July','August','October','December'];
 $ditemukan = [];
 foreach ($bulan_inggris as $b) { if (preg_match('/\b' . $b . '\b/', $hal_magang)) { $ditemukan[] = $b; } }
 cek( ! $ditemukan, 'Halaman pendaftaran: nol nama bulan Inggris' . ($ditemukan ? ' (ada: ' . implode(',', $ditemukan) . ')' : ''));
