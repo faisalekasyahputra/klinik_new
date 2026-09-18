@@ -246,8 +246,17 @@ $kelas = file_get_contents(APP_ROOT . '/application/controllers/Admin_Rekam_Data
 preg_match_all('/^\s*public\s+function\s+(\w+)/m', $kelas, $m);
 $publik = array_values(array_diff($m[1], ['__construct']));
 sort($publik);
-cek($publik === ['detail', 'index'],
-    'Hanya index() dan detail() yang publik (ditemukan: ' . implode(', ', $publik) . ')');
+// export() masuk daftar sejak f28ab1c (17 Agt 2026): unduhan rekap lewat GET, hanya membaca.
+// Yang dijaga bagian ini tetap sama - nol endpoint TULIS - jadi method baru apa pun
+// harus ditambahkan ke sini dengan sadar, dan cek db-> di bawah tetap berlaku untuknya.
+cek($publik === ['detail', 'export', 'index'],
+    'Hanya index(), detail(), dan export() yang publik (ditemukan: ' . implode(', ', $publik) . ')');
+foreach (['tamu' => 'Tamu', 'k' => 'Admin kab/kota'] as $sesi_lain => $siapa) {
+    $r = http($sesi_lain, 'Admin_Rekam_Data/export');
+    cek(strpos($r['url'], 'Admin_Rekam_Data/export') === FALSE
+        && stripos($r['body'], 'PK' . "\x03\x04") !== 0,
+        "{$siapa} TIDAK bisa mengunduh rekap superadmin (mendarat di: " . basename(parse_url($r['url'], PHP_URL_PATH)) . ')');
+}
 foreach (['insert', 'update', 'delete', 'replace', 'truncate'] as $tulis) {
     cek( ! preg_match('/->' . $tulis . '\s*\(/', $kelas), "Tidak memanggil db->{$tulis}()");
 }
