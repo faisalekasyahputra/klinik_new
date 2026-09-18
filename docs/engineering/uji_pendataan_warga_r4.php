@@ -85,15 +85,19 @@ function draft($db, $user) {
     wajib((bool)$r, 'Draft warga tersedia'); if (!in_array((int)$r['id'], $GLOBALS['assessments'], TRUE)) $GLOBALS['assessments'][] = (int)$r['id']; return $r;
 }
 function post_step($s, $d, $step, $data) { $r = $s->post('warga/pendataan', $data + ['action'=>'save','step'=>$step,'direction'=>'next','assessment_id'=>$d['id'],'lock_version'=>$d['lock_version']]); return $r; }
-function citizen_fields() { return ['family_card_number'=>'0000000000001111','full_name'=>'Warga Uji R4','address'=>'Alamat Uji R4','phone'=>'081234567890','birth_date'=>'1980-01-01','gender_code'=>'male','marital_status_code'=>'married','education_code'=>'senior_high','occupation_code'=>'private_employee','income_band_code'=>'2_2_2_6','self_help_capability_code'=>'capable']; }
+function citizen_fields() { return ['family_card_number'=>'0000000000001111','full_name'=>'Warga Uji R4','address'=>'Alamat Uji R4','phone'=>'081234567890','birth_date'=>'1980-01-01','gender_code'=>'male','marital_status_code'=>'married','education_code'=>'senior_high','occupation_code'=>'private_employee','income_band_code'=>'2_2_2_6','self_help_capability_code'=>'capable','has_savings'=>'1']; }
 /* Wizard berubah 23-24 Agt 2026: `citizen_data` DIHAPUS (cfbd760 + migrasi 049),
    isiannya pindah ke `housing_family_detail`, dan `housing_family` kini berisi
    tujuh isian matriks xlsx. Harness menyusul 31 Agt 2026. */
-function matriks() { return ['matrix_income_code'=>'income_0_1_5','matrix_dtks_status'=>'dtks_ya','matrix_land_ownership_code'=>'land_none','matrix_current_housing_code'=>'house_none_or_rent','matrix_environment_condition_code'=>'env_slum_uninhabitable','matrix_occupation_finance_code'=>'work_stable_or_unstable_no_subsidy','matrix_marital_family_code'=>'family_married']; }
+/* Berubah lagi 8-10 Sep 2026 (157e275 + 22c790f): pendapatan jadi angka rupiah, DTKS tidak
+   ditanyakan, data profil dasar WAJIB di langkah ini, dan CABANG ditentukan di sini dari
+   `matrix_current_housing_code` (milik sendiri = existing_house, selain itu = candidate_land).
+   Jalur `financing` tidak lagi bisa dicapai dari wizard. Harness menyusul 18 Sep 2026. */
+function matriks($rumah = 'house_none_or_rent') { return ['matrix_current_housing_code'=>$rumah,'area_condition_code'=>'slum','matrix_land_ownership_code'=>'land_none','matrix_environment_condition_code'=>'env_slum_uninhabitable','matrix_occupation_finance_code'=>'work_stable_or_unstable_no_subsidy','matrix_marital_family_code'=>'family_married','phone'=>'081234567890','birth_date'=>'1980-01-01','gender_code'=>'male','marital_status_code'=>'married','education_code'=>'senior_high','occupation_code'=>'trader','employment_stability_code'=>'permanent','monthly_income'=>'1200000']; }
 /* Bawa draft dari `housing_family` sampai berhenti di `housing_family_detail`. */
-function maju_ke_detail($s, $db, $uid) {
+function maju_ke_detail($s, $db, $uid, $rumah = 'house_none_or_rent') {
   $d = draft($db, $uid);
-  post_step($s, $d, 'housing_family', matriks()); $d = draft($db, $uid);
+  post_step($s, $d, 'housing_family', matriks($rumah)); $d = draft($db, $uid);
   if ($d['current_step'] === 'preliminary_recommendation') { post_step($s, $d, 'preliminary_recommendation', []); $d = draft($db, $uid); }
   return $d;
 }
@@ -166,13 +170,13 @@ nik_bebas($db, $env, '0000000000000001');
 [$existingUser, $existingEmail] = make_user($db, 'existing'); $existing = login($existingEmail);
 $r = $existing->post('warga/pendataan', ['action'=>'lookup','nik'=>'0000000000000001','birth_date'=>'1980-01-01']); wajib(in_array($r['status'], [302,303], TRUE), 'Lookup existing redirect');
 $d = draft($db, $existingUser); wajib($d['current_step'] === 'housing_family', 'Existing masuk isian matriks');
-$d = maju_ke_detail($existing, $db, $existingUser); wajib($d['current_step'] === 'housing_family_detail', 'Existing sampai langkah detail');
+$d = maju_ke_detail($existing, $db, $existingUser, 'house_owned'); wajib($d['current_step'] === 'housing_family_detail', 'Existing sampai langkah detail');
 $r = post_step($existing, $d, 'housing_family_detail', citizen_fields() + housing_fields('owned','0')); wajib(in_array($r['status'], [302,303], TRUE), 'Existing simpan Data Warga'); $d = draft($db, $existingUser);
 wajib($d['assessment_track']==='existing_house' && $d['current_step']==='building_condition', 'Satu submit detail menetapkan cabang rumah eksisting dan lanjut ke Kondisi Bangunan');
 $invalid = post_step($existing, $d, 'building_condition', ['foundation_condition_code'=>'PALSUE_ENUM']); cek(in_array($invalid['status'], [302,303], TRUE) && draft($db,$existingUser)['current_step']==='building_condition', 'Enum kondisi bangunan ilegal ditolak');
 $conditions=['foundation_condition_code'=>'good','column_condition_code'=>'minor_damage','beam_condition_code'=>'moderate_damage','roof_frame_condition_code'=>'good','floor_material_code'=>'cement_plaster','floor_condition_code'=>'minor_damage','wall_material_code'=>'wall','wall_condition_code'=>'good','roof_material_code'=>'clay_tile','roof_condition_code'=>'good'];
 $d=draft($db,$existingUser); $r=post_step($existing,$d,'building_condition',$conditions); wajib(in_array($r['status'],[302,303],TRUE),'Existing simpan kondisi bangunan'); $d=draft($db,$existingUser); wajib($d['current_step']==='sanitation','Existing lanjut sanitasi');
-$san=['has_window'=>'1','has_ventilation'=>'1','water_source_code'=>'well','latrine_type_code'=>'swan_neck','feces_disposal_code'=>'septic_tank','septic_distance_code'=>'gte_10','lighting_source_code'=>'pln','cooking_fuel_code'=>'electric_gas'];
+$san=['has_window'=>'1','has_ventilation'=>'1','water_source_code'=>'well','bathroom_usage_code'=>'own','latrine_type_code'=>'swan_neck','feces_disposal_code'=>'septic_tank','septic_distance_code'=>'gte_10','lighting_source_code'=>'pln','cooking_fuel_code'=>'electric_gas'];
 $r=post_step($existing,$d,'sanitation',$san); wajib(in_array($r['status'],[302,303],TRUE),'Existing simpan sanitasi'); $d=draft($db,$existingUser); wajib($d['current_step']==='location_evidence','Existing menuju lokasi');
 
 // Candidate land: branch skips building/sanitation and encrypts address/coordinates.
@@ -181,8 +185,10 @@ $landData=['candidate_land_address'=>'Alamat Tanah Uji Rahasia','candidate_land_
 $r=post_step($land,$d,'candidate_land',$landData); wajib(in_array($r['status'],[302,303],TRUE),'Calon lahan tersimpan'); $d=draft($db,$landUser); wajib($d['current_step']==='location_evidence' && (float)$d['land_area_m2']===96.0,'Area tanah dihitung server');
 $raw=$db->row('SELECT candidate_land_address_ciphertext FROM sf_penilaian_perumahan WHERE id=?',[$d['id']]); cek(strpos((string)$raw['candidate_land_address_ciphertext'],'Alamat Tanah Uji Rahasia')===FALSE,'Alamat tanah tidak plaintext di DB');
 
-// Financing skips both branch modules and goes directly to location.
-[$financeUser,$financeEmail]=make_user($db,'finance'); $finance=login($financeEmail); $finance->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000004','birth_date'=>'1987-04-04']); $d=maju_ke_detail($finance,$db,$financeUser); post_step($finance,$d,'housing_family_detail',citizen_fields()+housing_fields('rent','0')); $d=draft($db,$financeUser); wajib($d['assessment_track']==='financing' && $d['current_step']==='location_evidence','Pembiayaan langsung ke lokasi');
+// Dulu: jalur `financing` melompati kedua modul cabang. Sejak 157e275 (8 Sep 2026) wizard hanya
+// punya DUA cabang, jadi penyewa tanpa lahan lain pun masuk calon lahan; `financing` tinggal jenis
+// yang sah di model untuk draft lama. Yang dijaga: jalur itu tidak bisa dicapai lagi dari wizard.
+[$financeUser,$financeEmail]=make_user($db,'finance'); $finance=login($financeEmail); $finance->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000004','birth_date'=>'1987-04-04']); $d=maju_ke_detail($finance,$db,$financeUser); post_step($finance,$d,'housing_family_detail',citizen_fields()+housing_fields('rent','0')); $d=draft($db,$financeUser); wajib($d['assessment_track']==='candidate_land' && $d['current_step']==='candidate_land','Penyewa tanpa lahan lain masuk cabang calon lahan - jalur financing tidak bisa dicapai dari wizard');
 
 // Coordinates and evidence upload/replace/IDOR on existing draft.
 $d=draft($db,$existingUser); $r=post_step($existing,$d,'location_evidence',['location_lat'=>'-7.123456','location_lng'=>'110.123456','location_accuracy_m'=>'8']); wajib(in_array($r['status'],[302,303],TRUE),'Koordinat tersimpan'); $d=draft($db,$existingUser); $raw=$db->row('SELECT location_lat_ciphertext,location_lng_ciphertext FROM sf_penilaian_perumahan WHERE id=?',[$d['id']]); cek(strpos($raw['location_lat_ciphertext'],'-7.123456')===FALSE && strpos($raw['location_lng_ciphertext'],'110.123456')===FALSE,'Koordinat tidak plaintext di DB');
