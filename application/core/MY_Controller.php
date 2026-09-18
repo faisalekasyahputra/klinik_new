@@ -40,7 +40,12 @@ class MY_Controller extends CI_Controller {
                 'kabupaten_id', 'bidang_kode', 'session_auth_token', 'password_change_required',
             ]);
             $this->session->sess_regenerate(TRUE);
-            $message = 'Sesi ini berakhir karena akun digunakan untuk masuk pada perangkat lain.';
+            // "Perangkat lain" hanya benar kalau token sesi ini DIGANTIKAN token lain.
+            // Sesi tanpa token (dibuat sebelum migrasi 059) atau hash yang dikosongkan
+            // reset kata sandi bukan login ganda, jadi pesannya netral.
+            $message = ($row && ! empty($token) && ! empty($row->active_session_hash))
+                ? 'Sesi ini berakhir karena akun digunakan untuk masuk pada perangkat lain.'
+                : 'Sesi Anda telah berakhir. Silakan masuk kembali.';
             if ($this->input->is_ajax_request()) {
                 $this->output->set_status_header(401); header('Content-Type: application/json');
                 echo json_encode(['status' => 'error', 'code' => 'sesi_digantikan', 'message' => $message]); exit;

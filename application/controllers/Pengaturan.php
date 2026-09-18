@@ -452,6 +452,12 @@ class Pengaturan extends MY_Controller {
                 redirect('akun/profil');
                 return;
             }
+            // Tanpa ini kedaluwarsa 90 hari bisa dilewati dengan mengetik ulang sandi lama.
+            if (password_verify($password, (string) $user->password)) {
+                $this->session->set_flashdata('error', 'Password baru tidak boleh sama dengan password saat ini.');
+                redirect('akun/profil');
+                return;
+            }
             $data['password'] = password_hash($password, PASSWORD_BCRYPT);
             $data = array_merge($data, $this->Auth_model->password_lifetime_fields());
         }
