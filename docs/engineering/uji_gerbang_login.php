@@ -193,11 +193,15 @@ foreach ($jahat as $kode => $url) {
 $awal7 = http('t7', 'Auth/login');
 $tok7  = preg_match('/name="csrf_kpkp_token" value="([^"]+)"/', $awal7['body'], $m7) ? $m7[1] : '';
 wajib($tok7 !== '', 'T7 prasyarat: token CSRF terbaca');
-$post7 = http('t7', 'Cek_Rtlh/periksa', ['csrf_kpkp_token' => $tok7, 'nik' => '3374010101010001']);
+/* Dulu memakai `Cek_Rtlh/periksa`; sejak 14 Agt 2026 pencarian itu SENGAJA dibuka untuk tamu,
+   jadi POST-nya tidak lagi menyentuh gerbang. `Umum/ajukan_janji_temu` tetap ber-gerbang dan
+   tidak pernah jadi pendaratan wajar sesudah login, sehingga cek di bawah tidak bisa hijau
+   atau merah karena kebetulan. */
+$post7 = http('t7', 'Umum/ajukan_janji_temu', ['csrf_kpkp_token' => $tok7, 'id_diskusi' => 1, 'alasan' => 'uji gerbang']);
 wajib(stripos($post7['url'], 'auth/login') !== FALSE,
     'T7 prasyarat: POST anonim benar-benar SAMPAI ke gerbang (dapat: ' . $post7['url'] . ')');
 $masuk7 = login('t7', $email);
-cek(stripos($masuk7['url'], 'cek_rtlh') === FALSE,
+cek(stripos($masuk7['url'], 'ajukan_janji_temu') === FALSE,
     'T7: URL POST tidak diingat sebagai tujuan (dapat: ' . $masuk7['url'] . ')');
 
 /* TITIK AMATAN untuk T8 & T9: membuka `Auth/login` SAAT SUDAH LOGIN memanggil
