@@ -257,7 +257,9 @@ wajib($topik > 0, "Topik forum uji dibuat (id {$topik})");
 echo "\n== 1. Belum ditanggapi = belum boleh ajukan (gerbang di SERVER) ==\n";
 $post_ajukan = function ($sesi, $id_diskusi, $alasan) {
     return http($sesi, 'Umum/ajukan_janji_temu', [
-        'csrf_kpkp_token' => csrf($sesi, 'Umum/detail/' . $id_diskusi),
+        // Bukan-pemilik mendapat 404 di halaman topik (privasi 15 Agt 2026), jadi tokennya
+        // diambil dari daftar forum; token CSRF berlaku lintas halaman dalam satu sesi.
+        'csrf_kpkp_token' => csrf($sesi, $sesi === 'w2' ? 'Umum/forum' : 'Umum/detail/' . $id_diskusi),
         'id_diskusi' => $id_diskusi,
         'alasan' => $alasan,
     ]);
@@ -368,7 +370,9 @@ cek(jejak('janji_temu_transisi_ditolak', $jid) >= 1, 'Penolakannya ikut tercatat
 
 $post_respon = function ($sesi, $id_janji, $id_diskusi, $aksi) {
     return http($sesi, 'Umum/respon_janji_temu/' . $id_janji, [
-        'csrf_kpkp_token' => csrf($sesi, 'Umum/detail/' . $id_diskusi),
+        // Bukan-pemilik mendapat 404 di halaman topik (privasi 15 Agt 2026), jadi tokennya
+        // diambil dari daftar forum; token CSRF berlaku lintas halaman dalam satu sesi.
+        'csrf_kpkp_token' => csrf($sesi, $sesi === 'w2' ? 'Umum/forum' : 'Umum/detail/' . $id_diskusi),
         'aksi' => $aksi,
     ]);
 };
@@ -428,7 +432,8 @@ cek(status_janji($jid) === 'selesai', 'Keadaan akhir tidak bisa dibatalkan warga
 // ------------------------------------------------ 11. KERAHASIAAN
 echo "\n== 11. Isi pengajuan tidak bocor ke pembaca lain ==\n";
 $hal_lain = http('w2', 'Umum/detail/' . $topik);
-cek($hal_lain['code'] === 200, 'Warga lain tetap bisa membaca topiknya (forum memang terbuka)');
+// Sejak privasi konsultasi 15 Agt 2026 (7f63f12) topik hanya terbuka bagi pemilik dan admin.
+cek($hal_lain['code'] === 404, 'Warga lain mendapat 404 - topik orang tidak dikonfirmasi keberadaannya');
 /**
  * DUA pemeriksaan, dan yang kedua yang sebenarnya menggigit.
  *
