@@ -169,9 +169,12 @@ class MY_Controller extends CI_Controller {
         header('Permissions-Policy: ' . permissions_policy_header_value());
 
         // CSP - skrip hanya dari 'self' dan host yang disetujui, tanpa <object>,
-        // <base> terkunci (poin 9.4). Header CSP upgrade-insecure-requests yang
-        // terlihat di live juga dikirim platform hosting; browser menerapkan
-        // KEDUA header (irisan), jadi tidak saling menimpa.
+        // <base> terkunci (poin 9.4). PERINGATAN: di production header ini DITIMPA
+        // platform hosting (hcdn mengganti Content-Security-Policy aplikasi dengan
+        // `upgrade-insecure-requests` miliknya, diverifikasi 21 Sep 2026). Yang
+        // benar-benar menegakkan kebijakan di sana adalah <meta http-equiv> lewat
+        // csp_meta_tag() di setiap halaman lengkap. Header tetap dikirim untuk
+        // lingkungan yang tidak menimpanya; tes memaksa meta ada di semua halaman.
         header('Content-Security-Policy: ' . csp_header_value(isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'));
 
         // Block cross-domain content policies (Flash/PDF)

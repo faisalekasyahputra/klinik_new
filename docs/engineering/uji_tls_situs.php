@@ -260,12 +260,18 @@ if (!extension_loaded('curl')) {
         } else {
             catat('GAGAL', 'Header Permissions-Policy tidak ada');
         }
-        // 6b. CSP script-src dari aplikasi (platform hosting menambah header CSP sendiri; keduanya berlaku bersamaan).
+        // 6b. CSP script-src. Platform hosting MENIMPA header CSP aplikasi dengan miliknya (upgrade-insecure-requests),
+        // jadi yang menegakkan kebijakan di production adalah <meta http-equiv> di HTML; keduanya dibaca di sini.
+        $csp_skrip = null; $asal_csp = '';
         preg_match_all('/^content-security-policy:\s*(.+)$/im', $h['kepala'], $semua_csp);
-        $csp_skrip = null; foreach ($semua_csp[1] as $c) { if (stripos($c, 'script-src') !== false) { $csp_skrip = trim($c); } }
+        foreach ($semua_csp[1] as $c) { if (stripos($c, 'script-src') !== false) { $csp_skrip = trim($c); $asal_csp = 'header'; } }
+        if (preg_match_all('#<meta\s+http-equiv=["\']Content-Security-Policy["\']\s+content="([^"]*)"#i', $h['isi'], $mm_meta)) {
+            foreach ($mm_meta[1] as $c) { $c = html_entity_decode($c, ENT_QUOTES, 'UTF-8'); if (stripos($c, 'script-src') !== false) { $csp_skrip = trim($c); $asal_csp = 'tag meta HTML'; } }
+        }
         if ($csp_skrip === null) {
-            catat('GAGAL', 'Tidak ada CSP script-src dari aplikasi (skrip dari host mana pun dapat dimuat)');
+            catat('GAGAL', 'Tidak ada CSP script-src (baik header maupun tag meta): skrip dari host mana pun dapat dimuat');
         } else {
+            echo "             (kebijakan terbaca dari $asal_csp)\n";
             preg_match('/script-src([^;]*)/i', $csp_skrip, $ms); $sumber = preg_split('/\s+/', trim($ms[1]));
             $boleh = array_merge(content_security_policy('csp_script_sources_dasar'), content_security_policy('csp_script_hosts'));
             $asing = array_diff($sumber, $boleh);

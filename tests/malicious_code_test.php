@@ -170,6 +170,23 @@ check(strpos($csp, "object-src 'none'") !== false && strpos($csp, "base-uri 'sel
 check(strpos($csp, 'upgrade-insecure-requests') !== false && strpos(csp_header_value(false), 'upgrade-insecure-requests') === false, 'upgrade-insecure-requests hanya untuk HTTPS');
 foreach ($host_skrip as $h) { check(strpos($csp, $h) !== false, "Host $h hilang dari CSP"); }
 check(strpos($csp, '*') === false && strpos($csp, 'http:') === false, 'CSP tidak boleh memakai wildcard atau http:');
+// CSP lewat header ditimpa platform hosting di production, jadi setiap halaman HTML lengkap WAJIB memuat meta CSP.
+$meta = csp_meta_tag();
+$awalan_meta = '<meta http-equiv="Content-Security-Policy" content="';
+check(strpos($meta, $awalan_meta) === 0 && substr($meta, -2) === '">', 'csp_meta_tag() harus menghasilkan tag meta CSP yang utuh');
+check(html_entity_decode(substr($meta, strlen($awalan_meta), -2), ENT_QUOTES, 'UTF-8') === csp_header_value(false), 'Isi meta CSP harus sama dengan kebijakan (tanpa upgrade-insecure-requests pada HTTP)');
+$tanpa_meta = [];
+$dibebaskan_meta = ['errors/', 'welcome_message.php']; // template galat CI tidak boleh bergantung pada helper saat aplikasi sedang galat
+foreach (pindai_daftar($akar . '/application/views', ['php', 'html']) as $p) {
+    $rel_v = preg_replace('#^.*/application/views/#', '', $p); $isi = file_get_contents($p);
+    if (!preg_match('#<head[ >]#i', $isi)) { continue; }
+    foreach ($dibebaskan_meta as $b) { if (strpos($rel_v, $b) === 0) { continue 2; } }
+    if (strpos($isi, 'csp_meta_tag()') === false) { $tanpa_meta[] = $rel_v; continue; }
+    // meta harus mendahului skrip apa pun di halaman itu
+    $pos_meta = strpos($isi, 'csp_meta_tag()'); $pos_skrip = stripos($isi, '<script');
+    if ($pos_skrip !== false && $pos_skrip < $pos_meta) { $tanpa_meta[] = "$rel_v (meta sesudah <script>)"; }
+}
+check($tanpa_meta === [], "Halaman HTML lengkap tanpa meta CSP (CSP header ditimpa platform hosting):\n  " . implode("\n  ", $tanpa_meta));
 $pp = content_security_policy('permissions_policy');
 foreach (['camera', 'microphone', 'accelerometer', 'gyroscope', 'magnetometer', 'usb', 'serial', 'hid', 'midi', 'display-capture', 'payment'] as $f) {
     check(($pp[$f] ?? null) === '()', "Permissions-Policy harus menolak $f");

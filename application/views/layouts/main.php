@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="id">
   <head>
+    <?= csp_meta_tag() ?>
    	<?php $this->load->view('layouts/head'); ?>
   </head>
   <body class="bg-[#0a1a1f] text-[#ecffb6] h-screen overflow-hidden flex flex-col" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;" x-data="globalSystem()">

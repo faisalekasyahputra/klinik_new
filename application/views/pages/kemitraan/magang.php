@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="id">
   <head>
+    <?= csp_meta_tag() ?>
       <?php include "layout/head.php"?>"
   </head>
   <body data-page="magang" style="display:flex;align-items:center;justify-content:center;padding:40px 20px;">
