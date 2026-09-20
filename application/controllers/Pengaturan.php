@@ -510,6 +510,7 @@ class Pengaturan extends MY_Controller {
             $this->sensitive_buffer->wipe($_POST['current_password']);
         }
         if (!$valid) {
+            $this->catat_audit('ekspor_data_ditolak', 'Verifikasi sandi untuk ekspor data akun gagal', 'usr_users', (string) $user_id);
             $this->session->set_flashdata('error', 'Password salah atau akun belum memiliki password. Data tidak diekspor.');
             redirect('akun/profil');
             return;
@@ -532,6 +533,12 @@ class Pengaturan extends MY_Controller {
             $this->sensitive_buffer->wipe($data);
         }
 
+        if (!$this->catat_audit('data_akun_diekspor', 'Pemilik akun mengunduh salinan data', 'usr_users', (string) $user_id)) {
+            $this->sensitive_buffer->wipe($json);
+            $this->session->set_flashdata('error', 'Ekspor belum dapat dicatat. Silakan coba lagi.');
+            redirect('akun/profil');
+            return;
+        }
         header('Content-Type: application/json; charset=UTF-8');
         header('Content-Disposition: attachment; filename="data-akun-' . date('Ymd-His') . '.json"');
         header('Cache-Control: private, no-store, max-age=0');
@@ -561,6 +568,7 @@ class Pengaturan extends MY_Controller {
         $user = $this->Auth_model->find_by_id($user_id);
         if (!$user) { show_error('Akun tidak ditemukan.', 404); return; }
         $this->load->model('Aduan_model');
+        $this->db->trans_begin();
         $id = $this->Aduan_model->create([
             'user_id' => $user_id,
             'nama' => (string) ($user->name ?: $user->username ?: 'Pengguna'),
@@ -570,9 +578,13 @@ class Pengaturan extends MY_Controller {
             'bidang' => NULL,
             'lampiran' => NULL,
         ]);
-        if (!$id) {
-            $this->session->set_flashdata('error', 'Permintaan belum tersimpan. Coba lagi.');
+        $audited = $id && $this->catat_audit('penghapusan_data_diminta',
+            'Pemilik akun meminta peninjauan penghapusan data layanan', 'aduan', (string) $id);
+        if (!$audited || !$this->db->trans_status()) {
+            $this->db->trans_rollback();
+            $this->session->set_flashdata('error', 'Permintaan belum dapat dicatat. Coba lagi.');
         } else {
+            $this->db->trans_commit();
             $this->notify_admin_push([['role' => 'admin']], 'Permintaan data pribadi',
                 'Ada permintaan penghapusan data layanan untuk ditinjau.', 'Admin_Aduan?status=Baru', 'privasi-' . (int) $id);
             $this->session->set_flashdata('success', 'Permintaan tersimpan. Statusnya dapat dipantau pada menu Akun.');

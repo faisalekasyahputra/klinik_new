@@ -213,8 +213,8 @@ class MY_Controller extends CI_Controller {
      */
     protected function catat_audit($aksi, $ringkasan, $objek_tipe = NULL, $objek_id = NULL, array $detail = []) {
         try {
-            if ( ! $this->db->table_exists('sys_jejak_audit')) { return; }
-            $this->db->insert('sys_jejak_audit', [
+            if ( ! $this->db->table_exists('sys_jejak_audit')) { return FALSE; }
+            $saved = $this->db->insert('sys_jejak_audit', [
                 'actor_id'    => $this->get_user_id() ?: NULL,
                 'actor_email' => $this->session->userdata('email') ?: NULL,
                 'actor_role'  => $this->session->userdata('role') ?: NULL,
@@ -226,8 +226,10 @@ class MY_Controller extends CI_Controller {
                 'ip'          => $this->input->ip_address(),
                 'created_at'  => date('Y-m-d H:i:s'),
             ]);
-        } catch (Exception $e) {
+            return (bool) $saved;
+        } catch (Throwable $e) {
             log_message('error', 'Gagal menulis jejak audit (' . $aksi . '): ' . $e->getMessage());
+            return FALSE;
         }
     }
 

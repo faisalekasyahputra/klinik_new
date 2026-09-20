@@ -173,11 +173,25 @@ class User_model extends CI_Model {
         }
     }
     public function delete_user_account($user_id) {
+        $user = $this->db->select('email, role')->get_where('usr_users', ['id' => $user_id])->row_array();
+        if (!$user || !$this->db->table_exists('sys_jejak_audit')) { return FALSE; }
         // Di luar transaksi DB dengan sengaja - unlink() tidak bisa di-rollback,
         // jadi lebih aman dijalankan sebelum trans_start() daripada di dalamnya.
         $this->_cleanup_owned_files($user_id);
 
         $this->db->trans_start();
+        $this->db->insert('sys_jejak_audit', [
+            'actor_id' => $user_id,
+            'actor_email' => $user['email'],
+            'actor_role' => $user['role'],
+            'aksi' => 'akun_dihapus',
+            'objek_tipe' => 'usr_users',
+            'objek_id' => (string) $user_id,
+            'ringkasan' => 'Pemilik akun menghapus akun dan data terkait',
+            'detail_json' => NULL,
+            'ip' => $this->input->ip_address(),
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
 
         // Anonymize forum comments
         $this->db->where('user_id', $user_id);
