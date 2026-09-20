@@ -51,6 +51,12 @@ $php_buruk = [
     'new SoapClient'       => ['<?php $s = new SoapClient($w);',                     'jaringan-keluar',  'SoapClient'],
     'mail'                 => ['<?php mail($a, $b, $c);',                            'jaringan-keluar',  'mail'],
     'unggahan'             => ['<?php move_uploaded_file($a, $b);',                  'unggahan',         'move_uploaded_file'],
+    'bom waktu timestamp'  => ['<?php if (time() > 1893456000) { hapus(); }',        'fungsi-waktu',     'bom waktu'],
+    'bom waktu tanggal'    => ['<?php $t = strtotime("2027-01-01 00:00:00");',       'fungsi-waktu',     'tanggal absolut'],
+    'date dibanding literal' => ['<?php if (date("Y-m-d") == "2027-01-01") { x(); }', 'fungsi-waktu',     'date()'],
+    'shutdown function'    => ['<?php register_shutdown_function("bertahan");',      'fungsi-waktu',     'luar siklus'],
+    'ignore_user_abort'    => ['<?php ignore_user_abort(true);',                     'fungsi-waktu',     'luar siklus'],
+    'tanpa batas waktu'    => ['<?php set_time_limit(0);',                           'fungsi-waktu',     'batas waktu'],
     'webshell'             => ['<?php $t = "c99shell";',                             'tanda-webshell',   'c99shell'],
 ];
 foreach ($php_buruk as $nama => [$kode, $aturan, $sub]) {
@@ -63,6 +69,7 @@ $php_aman = [
     'require konstanta'  => '<?php require_once APPPATH . "helpers/x.php";',
     'file lokal'         => '<?php file_get_contents("/tmp/x"); fopen("data.csv", "r");',
     'string http biasa'  => '<?php $t = "kunjungi http://x.test"; echo $t;',
+    'waktu biasa'        => '<?php $kini = time(); $exp = date("Y-m-d", $kini + 3600); if ($kini > $row->expires_at) { x(); }',
 ];
 foreach ($php_aman as $nama => $kode) {
     $t = pindai_php($kode, 'x.php');
@@ -97,7 +104,7 @@ check($sisa === [], "Temuan pemindai yang belum ditinjau:\n  " . implode("\n  ",
 check(count($mentah) >= 8, 'Sinyal mentah terlalu sedikit; pemindai mungkin tidak menjangkau berkas');
 
 // Daftar izin tidak boleh basi: tiap entri harus masih menunjuk berkas yang nyata dan memang memakai kemampuannya.
-$per_aturan = ['jaringan-keluar' => PINDAI_JARINGAN_DIIZINKAN, 'unggahan' => PINDAI_UNGGAH_DIIZINKAN];
+$per_aturan = ['jaringan-keluar' => PINDAI_JARINGAN_DIIZINKAN, 'unggahan' => PINDAI_UNGGAH_DIIZINKAN, 'fungsi-waktu' => PINDAI_WAKTU_DIIZINKAN];
 foreach ($per_aturan as $aturan => $izin) {
     foreach ($izin as $rel => $alasan) {
         check(is_file($akar . '/application/' . $rel), "Daftar izin menunjuk berkas yang tidak ada: $rel");

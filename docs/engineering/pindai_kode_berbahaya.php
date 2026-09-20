@@ -44,6 +44,12 @@ const PINDAI_UNGGAH_DIIZINKAN = [
     // nama acak 128 bit, batas 2 MB, satu berkas per dokumen.
     'controllers/Pengembang.php'             => 'dokumen pengajuan pengembang (pdf/jpg/png, penyimpanan pribadi)',
 ];
+/** File yang boleh memakai fungsi waktu/ketekunan (register_shutdown_function dsb), dan alasannya. */
+const PINDAI_WAKTU_DIIZINKAN = [
+    // Ditinjau 21 Sep 2026: melepas kunci advisory MySQL di akhir permintaan YANG SAMA (deteksi akses bersamaan);
+    // tidak bertahan di luar permintaan dan tidak mengeksekusi masukan pengguna.
+    'libraries/Rate_limiter.php' => 'melepas kunci advisory MySQL saat permintaan berakhir',
+];
 /** Host yang boleh dituju oleh fetch/XHR/WebSocket dari JavaScript. */
 const PINDAI_JS_HOST_DIIZINKAN = [];
 /** Berkas JS yang boleh membuat elemen <script> secara dinamis, dan alasannya. */
@@ -155,6 +161,19 @@ function pindai_php($kode, $rel) {
     $bersih = pindai_tanpa_komentar($kode);
     if (preg_match('/\$_(GET|POST|REQUEST|COOKIE)\s*\[[^\]]*\]\s*\(/', $bersih, $m, PREG_OFFSET_CAPTURE)) { $temuan[] = ['eksekusi-dinamis', substr_count(substr($bersih, 0, $m[0][1]), "\n") + 1, 'fungsi dipanggil dari nilai masukan pengguna']; }
     if (preg_match('/\b(extract|unserialize|call_user_func(_array)?)\s*\(\s*\$_(GET|POST|REQUEST|COOKIE)/', $bersih, $m, PREG_OFFSET_CAPTURE)) { $temuan[] = ['eksekusi-dinamis', substr_count(substr($bersih, 0, $m[0][1]), "\n") + 1, $m[1][0] . '() atas masukan pengguna']; }
+    // Fungsi waktu yang dipakai sebagai pemicu (bom waktu) atau untuk bertahan di luar permintaan (ASVS 10.1.1).
+    $waktu = [
+        '/\b(time|microtime)\s*\(\s*(true)?\s*\)\s*(<=|>=|<|>|===|==)\s*[\'"]?\d{9,}/'          => 'waktu sekarang dibandingkan dengan timestamp literal (pola bom waktu)',
+        '/\b(strtotime|mktime|gmmktime)\s*\(\s*[\'"]?\d{4}-\d{2}-\d{2}/'                         => 'tanggal absolut literal dalam strtotime/mktime',
+        '/\bdate\s*\([^)]*\)\s*(<=|>=|<|>|===|==)\s*[\'"]\d{2,4}/'                                => 'keluaran date() dibandingkan dengan literal',
+        '/\b(register_shutdown_function|ignore_user_abort|pcntl_fork|posix_kill)\s*\(/'          => 'bertahan/berjalan di luar siklus permintaan',
+        '/\bset_time_limit\s*\(\s*0\s*\)/'                                                        => 'batas waktu eksekusi dimatikan',
+    ];
+    foreach ($waktu as $re => $ket) {
+        if (preg_match_all($re, $bersih, $mw, PREG_OFFSET_CAPTURE)) {
+            foreach ($mw[0] as $hit) { $temuan[] = ['fungsi-waktu', substr_count(substr($bersih, 0, $hit[1]), "\n") + 1, $ket]; }
+        }
+    }
     if (preg_match('/c99shell|r57shell|b374k|filesman|weevely|indoxploit|\bwso\s*shell/i', $bersih, $m, PREG_OFFSET_CAPTURE)) { $temuan[] = ['tanda-webshell', substr_count(substr($bersih, 0, $m[0][1]), "\n") + 1, "tanda webshell dikenal: {$m[0][0]}"]; }
     return $temuan;
 }
@@ -233,6 +252,7 @@ function pindai_terapkan_izin(array $hasil) {
             [$aturan, $baris, $ket] = $t;
             if ($aturan === 'jaringan-keluar' && isset(PINDAI_JARINGAN_DIIZINKAN[$rel_app])) { continue; }
             if ($aturan === 'unggahan' && isset(PINDAI_UNGGAH_DIIZINKAN[$rel_app])) { continue; }
+            if ($aturan === 'fungsi-waktu' && isset(PINDAI_WAKTU_DIIZINKAN[$rel_app])) { continue; }
             $sisa[$rel][] = $t;
         }
     }
