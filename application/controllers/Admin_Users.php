@@ -461,7 +461,7 @@ class Admin_Users extends Admin_Controller {
         $this->db->where('id', (int) $user->id)->update('usr_users', [
             'password' => password_hash($sandi, PASSWORD_BCRYPT),
             'login_attempts' => 0, 'locked_until' => NULL,
-            'active_session_hash' => NULL, 'active_session_at' => NULL,
+            'active_session_hash' => NULL, 'active_session_id_hash' => NULL, 'active_session_at' => NULL,
         ] + $this->auth_model->password_lifetime_fields());
 
         // Sandinya TIDAK ikut dicatat, bahkan tidak sebagian. Jejak audit dibaca

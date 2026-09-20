@@ -436,7 +436,14 @@ class Pengaturan extends MY_Controller {
             // bisa mengunci pemilik asli keluar tanpa perlu tahu sandi lamanya.
             $current_password = (string) $this->input->post('current_password');
             $user = $this->Auth_model->find_by_id($user_id);
-            if (!password_verify($current_password, (string) $user->password)) {
+            $valid_password = $user && !empty($user->password)
+                && password_verify($current_password, (string) $user->password);
+            $this->load->library('sensitive_buffer');
+            $this->sensitive_buffer->wipe($current_password);
+            if (isset($_POST['current_password'])) {
+                $this->sensitive_buffer->wipe($_POST['current_password']);
+            }
+            if (!$valid_password) {
                 $this->session->set_flashdata('error', 'Password saat ini salah.');
                 redirect('akun/profil');
                 return;
@@ -459,6 +466,9 @@ class Pengaturan extends MY_Controller {
                 return;
             }
             $data['password'] = password_hash($password, PASSWORD_BCRYPT);
+            $this->sensitive_buffer->wipe($password);
+            if (isset($_POST['password'])) { $this->sensitive_buffer->wipe($_POST['password']); }
+            if (isset($_POST['password_confirm'])) { $this->sensitive_buffer->wipe($_POST['password_confirm']); }
             $data = array_merge($data, $this->Auth_model->password_lifetime_fields());
         }
 
@@ -466,7 +476,9 @@ class Pengaturan extends MY_Controller {
 
         if (isset($data['password'])) {
             $this->session->unset_userdata('password_change_required');
-            $this->session->set_userdata('session_auth_token', $this->Auth_model->issue_session_token($user_id));
+            $this->session->sess_regenerate(TRUE);
+            $this->session->set_userdata('session_auth_token',
+                $this->Auth_model->issue_session_token($user_id, $this->session->session_id));
         }
 
         // Update session
@@ -479,6 +491,94 @@ class Pengaturan extends MY_Controller {
         redirect('akun/profil');
     }
 
+    /** Unduh salinan data milik akun setelah verifikasi sandi saat ini. */
+    public function export_account_data() {
+        if ($this->input->method() !== 'post') { show_404(); return; }
+        $user_id = (int) $this->get_user_id();
+        $rate = $this->rate_limit_consume('account_export', ['account_id' => $user_id]);
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject($rate, 'Terlalu banyak permintaan ekspor. Coba lagi nanti.');
+            return;
+        }
+        $this->load->library('sensitive_buffer');
+        $password = (string) $this->input->post('current_password');
+        $user = $this->Auth_model->find_by_id($user_id);
+        $valid = $user && !empty($user->password)
+            && password_verify($password, (string) $user->password);
+        $this->sensitive_buffer->wipe($password);
+        if (isset($_POST['current_password'])) {
+            $this->sensitive_buffer->wipe($_POST['current_password']);
+        }
+        if (!$valid) {
+            $this->session->set_flashdata('error', 'Password salah atau akun belum memiliki password. Data tidak diekspor.');
+            redirect('akun/profil');
+            return;
+        }
+
+        $data = NULL;
+        try {
+            $data = $this->User_model->export_account_data($user_id);
+            $json = json_encode([
+                'dieksport_pada' => date(DATE_ATOM),
+                'cakupan' => 'Data akun dan catatan layanan yang terkait langsung dengan akun. Isi berkas unggahan tidak disertakan.',
+                'data' => $data,
+            ], JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR);
+        } catch (Throwable $e) {
+            log_message('error', 'Ekspor data akun gagal untuk user_id=' . $user_id . ': ' . $e->getMessage());
+            $this->session->set_flashdata('error', 'Ekspor data gagal. Silakan coba lagi atau hubungi admin.');
+            redirect('akun/profil');
+            return;
+        } finally {
+            $this->sensitive_buffer->wipe($data);
+        }
+
+        header('Content-Type: application/json; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="data-akun-' . date('Ymd-His') . '.json"');
+        header('Cache-Control: private, no-store, max-age=0');
+        header('Pragma: no-cache');
+        header('X-Content-Type-Options: nosniff');
+        echo $json;
+        $this->sensitive_buffer->wipe($json);
+        exit;
+    }
+    /** Permintaan peninjauan penghapusan arsip layanan masuk antrean admin. */
+    public function request_service_data_deletion() {
+        if ($this->input->method() !== 'post') { show_404(); return; }
+        $user_id = (int) $this->get_user_id();
+        $rate = $this->rate_limit_consume('privacy_deletion_request', ['account_id' => $user_id]);
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject($rate, 'Permintaan terlalu sering. Silakan coba lagi nanti.');
+            return;
+        }
+        $title = 'Permintaan Penghapusan Data Layanan';
+        $pending = $this->db->where('user_id', $user_id)->where('judul', $title)
+            ->where('status !=', 'Selesai')->count_all_results('aduan');
+        if ($pending) {
+            $this->session->set_flashdata('error', 'Permintaan sebelumnya masih diproses. Lihat statusnya di menu Akun.');
+            redirect('akun/profil');
+            return;
+        }
+        $user = $this->Auth_model->find_by_id($user_id);
+        if (!$user) { show_error('Akun tidak ditemukan.', 404); return; }
+        $this->load->model('Aduan_model');
+        $id = $this->Aduan_model->create([
+            'user_id' => $user_id,
+            'nama' => (string) ($user->name ?: $user->username ?: 'Pengguna'),
+            'email' => (string) $user->email,
+            'judul' => $title,
+            'pesan' => 'Mohon tinjau penghapusan data layanan yang masih tersimpan setelah akun dihapus. Beri tahu data yang dapat dihapus, yang wajib diarsipkan, dan dasar retensinya.',
+            'bidang' => NULL,
+            'lampiran' => NULL,
+        ]);
+        if (!$id) {
+            $this->session->set_flashdata('error', 'Permintaan belum tersimpan. Coba lagi.');
+        } else {
+            $this->notify_admin_push([['role' => 'admin']], 'Permintaan data pribadi',
+                'Ada permintaan penghapusan data layanan untuk ditinjau.', 'Admin_Aduan?status=Baru', 'privasi-' . (int) $id);
+            $this->session->set_flashdata('success', 'Permintaan tersimpan. Statusnya dapat dipantau pada menu Akun.');
+        }
+        redirect('akun/profil');
+    }
     public function delete_account() {
         $user_id = $this->get_user_id();
 
@@ -495,7 +595,14 @@ class Pengaturan extends MY_Controller {
         // pengajuan SRP2 pemilik asli.
         $current_password = (string) $this->input->post('current_password');
         $user = $this->Auth_model->find_by_id($user_id);
-        if (!password_verify($current_password, (string) $user->password)) {
+        $valid_password = $user && !empty($user->password)
+            && password_verify($current_password, (string) $user->password);
+        $this->load->library('sensitive_buffer');
+        $this->sensitive_buffer->wipe($current_password);
+        if (isset($_POST['current_password'])) {
+            $this->sensitive_buffer->wipe($_POST['current_password']);
+        }
+        if (!$valid_password) {
             $this->session->set_flashdata('error', 'Password salah. Akun tidak dihapus.');
             redirect('akun/profil');
             return;

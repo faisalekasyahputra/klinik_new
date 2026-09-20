@@ -397,9 +397,9 @@ class Migrate extends CI_Controller {
         echo 'sf_penilaian_perumahan.preliminary_matrix_ciphertext (migrasi 058): '
             .($matrix && $matrix['DATA_TYPE'] === 'mediumtext' && $matrix['IS_NULLABLE'] === 'YES'
                 ? 'ADA, MEDIUMTEXT NULL' : 'HILANG ATAU BENTUK TIDAK SESUAI')."\n";
-        // Migrasi 059 - sesi tunggal dan kedaluwarsa kata sandi 90 hari.
-        foreach (['active_session_hash', 'active_session_at', 'password_changed_at', 'password_expires_at'] as $kolom) {
-            echo 'usr_users.'.$kolom.' (migrasi 059): '.
+        // Migrasi 059/060 - sesi tunggal, validasi ID sesi, dan sandi 90 hari.
+        foreach (['active_session_hash', 'active_session_id_hash', 'active_session_at', 'password_changed_at', 'password_expires_at'] as $kolom) {
+            echo 'usr_users.'.$kolom.' (migrasi '.($kolom === 'active_session_id_hash' ? '060' : '059').'): '.
                 ($this->db->field_exists($kolom, 'usr_users') ? 'ADA' : 'HILANG - kontrol autentikasi belum aktif')."\n";
         }
     }

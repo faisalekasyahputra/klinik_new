@@ -173,27 +173,33 @@ class Auth_model extends CI_Model {
         ]);
     }
 
-    /** Terbitkan token sesi baru. Login terbaru membatalkan semua sesi lama. */
-    public function issue_session_token($user_id) {
+    /** Terbitkan token sesi baru dan ikat ke ID sesi CI yang sedang aktif. */
+    public function issue_session_token($user_id, $session_id = NULL) {
         $token = bin2hex(random_bytes(32));
+        $session_id = (string) ($session_id ?: $this->session->session_id);
         $this->db->where('id', (int) $user_id)->update('usr_users', [
             'active_session_hash' => hash('sha256', $token),
+            'active_session_id_hash' => hash('sha256', $session_id),
             'active_session_at' => date('Y-m-d H:i:s'),
         ]);
         return $token;
     }
 
-    public function session_token_valid($user_id, $token) {
-        if (empty($token)) { return FALSE; }
-        $row = $this->db->select('active_session_hash')->get_where('usr_users', ['id' => (int) $user_id])->row();
+    public function session_token_valid($user_id, $token, $session_id = NULL) {
+        $session_id = (string) ($session_id ?: $this->session->session_id);
+        if (empty($token) || empty($session_id)) { return FALSE; }
+        $row = $this->db->select('active_session_hash,active_session_id_hash')
+            ->get_where('usr_users', ['id' => (int) $user_id])->row();
         return $row && ! empty($row->active_session_hash)
-            && hash_equals((string) $row->active_session_hash, hash('sha256', (string) $token));
+            && ! empty($row->active_session_id_hash)
+            && hash_equals((string) $row->active_session_hash, hash('sha256', (string) $token))
+            && hash_equals((string) $row->active_session_id_hash, hash('sha256', $session_id));
     }
 
     public function revoke_session_token($user_id, $token) {
         if ( ! $this->session_token_valid($user_id, $token)) { return; }
         $this->db->where('id', (int) $user_id)->update('usr_users', [
-            'active_session_hash' => NULL, 'active_session_at' => NULL,
+            'active_session_hash' => NULL, 'active_session_id_hash' => NULL, 'active_session_at' => NULL,
         ]);
     }
 
@@ -458,6 +464,7 @@ class Auth_model extends CI_Model {
             'email_token'        => NULL,
             'email_token_expiry' => NULL,
             'active_session_hash' => NULL,
+            'active_session_id_hash' => NULL,
             'active_session_at' => NULL,
         ] + $this->password_lifetime_fields());
     }

@@ -1,230 +1,173 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-/**
- * Encryption_lib - Library Enkripsi Data Pribadi (PII)
- * 
- * Mengimplementasikan enkripsi AES-256-GCM untuk kepatuhan UU PDP No. 27/2022.
- * Digunakan untuk mengenkripsi kolom sensitif (NIK, Alamat) di database.
- * 
- * Algoritma: AES-256-GCM (Galois/Counter Mode)
- * - Authenticated encryption (menjamin integritas + kerahasiaan)
- * - Random IV per operasi enkripsi (mencegah pattern analysis)
- * - Deterministic hash untuk pencarian tanpa dekripsi
- * 
- * Kunci enkripsi disimpan di file .env (KPKP_DATA_KEY & KPKP_DATA_PEPPER)
- * 
- * @package     KlinikPKP
- * @subpackage  Libraries
- */
+/** AES-256-GCM untuk data pribadi; v1 legacy dan keyring bernomor v2. */
 class Encryption_lib {
-
-    /**
-     * Kunci enkripsi AES-256 (32 bytes dari hex)
-     * @var string
-     */
-    private $key;
-
-    /**
-     * Pepper untuk deterministic hashing
-     * @var string
-     */
+    private $legacy_key;
+    private $keyring = [];
+    private $active_key_id = '';
+    private $keyring_error = false;
     private $pepper;
-
-    /**
-     * Versi format enkripsi (untuk forward compatibility)
-     * @var string
-     */
-    private $version = 'v1';
-
-    /**
-     * Cipher method
-     * @var string
-     */
     private $cipher = 'aes-256-gcm';
 
-    /**
-     * Constructor - memuat kunci dari environment variables
-     */
     public function __construct() {
-        $this->key    = hex2bin(getenv('KPKP_DATA_KEY'));
+        $legacy_hex = getenv('KPKP_DATA_KEY');
+        $this->legacy_key = self::decode_key($legacy_hex);
         $this->pepper = getenv('KPKP_DATA_PEPPER');
 
-        if (empty($this->key) || strlen($this->key) !== 32) {
-            log_message('error', 'Encryption_lib: KPKP_DATA_KEY tidak ditemukan atau tidak valid di .env');
+        $json = getenv('KPKP_DATA_KEYS');
+        $active = getenv('KPKP_ACTIVE_KEY_ID');
+        if (($json !== false && $json !== '') || ($active !== false && $active !== '')) {
+            $entries = is_string($json) ? json_decode($json, true) : null;
+            if (!is_array($entries) || !$entries || !is_string($active) || !self::valid_id($active)) {
+                $this->keyring_error = true;
+            } else {
+                foreach ($entries as $id => $hex) {
+                    $key = self::valid_id($id) ? self::decode_key($hex) : false;
+                    if ($key === false) {
+                        $this->keyring_error = true;
+                        break;
+                    }
+                    $this->keyring[$id] = $key;
+                }
+                if (!isset($this->keyring[$active])) {
+                    $this->keyring_error = true;
+                } else {
+                    $this->active_key_id = $active;
+                }
+            }
+            if ($this->keyring_error) {
+                log_message('error', 'Encryption_lib: konfigurasi keyring tidak valid');
+            }
+        }
+        if ($this->legacy_key === false && !$this->keyring) {
+            log_message('error', 'Encryption_lib: kunci enkripsi tidak tersedia');
         }
         if (empty($this->pepper)) {
-            log_message('error', 'Encryption_lib: KPKP_DATA_PEPPER tidak ditemukan di .env');
+            log_message('error', 'Encryption_lib: KPKP_DATA_PEPPER tidak ditemukan');
         }
     }
 
-    /**
-     * Enkripsi data plaintext menggunakan AES-256-GCM
-     * 
-     * Format output: base64( VERSION(2) | IV(12) | TAG(16) | CIPHERTEXT )
-     * 
-     * @param string $plaintext Data yang akan dienkripsi
-     * @return string|false Ciphertext dalam format base64, atau false jika gagal
-     */
-    /**
-     * B9 - FAIL-CLOSED. Kunci hilang MELEMPAR, bukan mengembalikan plaintext.
-     *
-     * Kontrak lama menggabungkan dua keadaan yang sama sekali berbeda ke dalam
-     * satu `return $plaintext`: "tidak ada yang perlu dienkripsi" dan "kunci
-     * enkripsinya hilang". Pemanggil tidak punya cara membedakannya, sehingga
-     * NIK dan alamat warga tersimpan APA ADANYA ke kolom bernama
-     * `*_ciphertext` - dan tidak ada satu pun yang tahu. Bukan skenario
-     * hipotetis: log lokal memuat kejadian nyata "KPKP_DATA_KEY tidak
-     * ditemukan", dan constructor hanya menulis log lalu melanjutkan.
-     *
-     * Plaintext kosong tetap boleh lewat - memang tidak ada isinya.
-     *
-     * @throws RuntimeException bila kunci hilang/tidak valid, atau OpenSSL gagal.
-     */
+    public function __destruct() {
+        require_once APPPATH . 'libraries/Sensitive_buffer.php';
+        $buffer = new Sensitive_buffer();
+        $buffer->wipe($this->legacy_key);
+        $buffer->wipe($this->keyring);
+        $buffer->wipe($this->pepper);
+    }
+
+    private static function decode_key($hex) {
+        return is_string($hex) && preg_match('/\A[0-9a-fA-F]{64}\z/', $hex) ? hex2bin($hex) : false;
+    }
+
+    private static function valid_id($id) {
+        return is_string($id) && (bool) preg_match('/\A[A-Za-z0-9_-]{1,16}\z/', $id);
+    }
+
+    private function check_config() {
+        if ($this->keyring_error) {
+            throw new RuntimeException('Encryption_lib: konfigurasi keyring tidak valid.');
+        }
+    }
+
     public function encrypt($plaintext) {
-        if (empty($plaintext)) {
-            return $plaintext;
+        if (empty($plaintext)) { return $plaintext; }
+        $this->check_config();
+        $v2 = $this->active_key_id !== '';
+        $key = $v2 ? $this->keyring[$this->active_key_id] : $this->legacy_key;
+        if ($key === false || strlen($key) !== 32) {
+            throw new RuntimeException('Encryption_lib: kunci enkripsi hilang atau tidak valid; penulisan dibatalkan.');
         }
-        if (empty($this->key) || strlen($this->key) !== 32) {
-            throw new RuntimeException(
-                'Encryption_lib: KPKP_DATA_KEY hilang atau tidak valid - penulisan dibatalkan '
-                . 'agar data pribadi tidak tersimpan sebagai plaintext.');
-        }
-
-        // Generate random 12-byte IV (96 bit - standar GCM)
         $iv = random_bytes(12);
-        
-        // Tag autentikasi (16 bytes output)
         $tag = '';
-        
-        // Enkripsi dengan AES-256-GCM
-        $ciphertext = openssl_encrypt(
-            $plaintext,
-            $this->cipher,
-            $this->key,
-            OPENSSL_RAW_DATA,
-            $iv,
-            $tag,
-            'kpkp:' . $this->version, // AAD (Additional Authenticated Data)
-            16                         // Tag length
-        );
-
+        $aad = $v2 ? 'kpkp:v2:' . $this->active_key_id : 'kpkp:v1';
+        $ciphertext = openssl_encrypt($plaintext, $this->cipher, $key, OPENSSL_RAW_DATA, $iv, $tag, $aad, 16);
         if ($ciphertext === false) {
-            // Dulu `return false`. Nilai itu tersimpan ke kolom sebagai string
-            // kosong dan kegagalannya tidak pernah terlihat - kolom ciphertext
-            // berisi '' terbaca seperti "memang tidak diisi".
-            $galat = openssl_error_string();
-            log_message('error', 'Encryption_lib::encrypt() gagal: ' . $galat);
-            throw new RuntimeException('Encryption_lib: enkripsi gagal (' . $galat . ').');
+            log_message('error', 'Encryption_lib: OpenSSL gagal mengenkripsi');
+            throw new RuntimeException('Encryption_lib: enkripsi gagal.');
         }
-
-        // Pack: version(2) + IV(12) + tag(16) + ciphertext
-        $packed = $this->version . $iv . $tag . $ciphertext;
-
-        return base64_encode($packed);
+        $header = $v2 ? 'v2' . chr(strlen($this->active_key_id)) . $this->active_key_id : 'v1';
+        return base64_encode($header . $iv . $tag . $ciphertext);
     }
 
-    /**
-     * Dekripsi data dari format terenkripsi kembali ke plaintext
-     * 
-     * @param string $encoded Data terenkripsi dalam format base64
-     * @return string|false Plaintext asli, atau false jika gagal/data corrupt
-     */
     public function decrypt($encoded) {
-        if (empty($encoded)) {
-            return $encoded;
-        }
-        // B9 - kunci hilang MELEMPAR. Kontrak lama mengembalikan `$encoded`
-        // apa adanya, sehingga ciphertext base64 tersaji ke layar seolah itu
-        // NIK atau alamat aslinya, dan pemanggil tidak punya cara tahu.
-        if (empty($this->key) || strlen($this->key) !== 32) {
-            throw new RuntimeException(
-                'Encryption_lib: KPKP_DATA_KEY hilang atau tidak valid - pembacaan dibatalkan.');
-        }
-
-        // Kompatibilitas plaintext LEGACY sengaja dipertahankan di sini, dan
-        // hanya di sini: baris lama yang ditulis sebelum enkripsi menyala
-        // memang berisi teks biasa. Bedanya dengan kontrak lama, cabang ini
-        // kini hanya tercapai bila kuncinya ADA - jadi "tidak bisa didekripsi
-        // karena kunci hilang" tidak lagi menyamar sebagai "ini plaintext lama".
+        if (empty($encoded)) { return $encoded; }
+        $this->check_config();
         $decoded = base64_decode($encoded, true);
-        if ($decoded === false || strlen($decoded) < 30) {
-            return $encoded;
+        if ($decoded === false || strlen($decoded) < 2) { return $encoded; }
+        $version = substr($decoded, 0, 2);
+        if ($version !== 'v1' && $version !== 'v2') { return $encoded; }
+
+        if ($version === 'v1') {
+            if (strlen($decoded) < 30) { return false; }
+            $key = $this->legacy_key;
+            $offset = 2;
+            $aad = 'kpkp:v1';
+            if ($key === false) {
+                throw new RuntimeException('Encryption_lib: kunci legacy tidak tersedia.');
+            }
+        } else {
+            if (strlen($decoded) < 32) { return false; }
+            $length = ord($decoded[2]);
+            $id = substr($decoded, 3, $length);
+            if ($length < 1 || $length > 16 || strlen($decoded) < 31 + $length || !self::valid_id($id)) {
+                return false;
+            }
+            if (!isset($this->keyring[$id])) {
+                throw new RuntimeException('Encryption_lib: ID kunci ciphertext tidak tersedia.');
+            }
+            $key = $this->keyring[$id];
+            $offset = 3 + $length;
+            $aad = 'kpkp:v2:' . $id;
         }
 
-        // Unpack: version(2) + IV(12) + tag(16) + ciphertext
-        $version    = substr($decoded, 0, 2);
-        $iv         = substr($decoded, 2, 12);
-        $tag        = substr($decoded, 14, 16);
-        $ciphertext = substr($decoded, 30);
-
-        if ($version !== 'v1') {
-            log_message('error', 'Encryption_lib::decrypt() versi tidak dikenal: ' . $version);
+        $plaintext = openssl_decrypt(substr($decoded, $offset + 28), $this->cipher, $key,
+            OPENSSL_RAW_DATA, substr($decoded, $offset, 12), substr($decoded, $offset + 12, 16), $aad);
+        if ($plaintext === false) {
+            log_message('error', 'Encryption_lib: ciphertext gagal autentikasi atau kunci salah');
             return false;
         }
-
-        // Dekripsi
-        $plaintext = openssl_decrypt(
-            $ciphertext,
-            $this->cipher,
-            $this->key,
-            OPENSSL_RAW_DATA,
-            $iv,
-            $tag,
-            'kpkp:' . $version // AAD harus sama persis dengan saat enkripsi
-        );
-
-        if ($plaintext === false) {
-            log_message('error', 'Encryption_lib::decrypt() gagal - data mungkin corrupt atau kunci salah');
-            // Kemungkinan data plaintext lama - kembalikan apa adanya
-            return $encoded;
-        }
-
         return $plaintext;
     }
 
-    /**
-     * Buat deterministic hash dari plaintext untuk pencarian database
-     * 
-     * Menggunakan HMAC-SHA256 dengan pepper sehingga:
-     * - Hash yang sama selalu dihasilkan untuk plaintext yang sama (deterministic)
-     * - Tidak bisa di-reverse tanpa mengetahui pepper
-     * - Bisa digunakan untuk WHERE clause: WHERE nik_lookup_hash = ?
-     * 
-     * @param string $plaintext Data yang akan di-hash (misal: NIK)
-     * @return string Hash hex 64 karakter
-     */
     public function deterministic_hash($plaintext) {
-        if (empty($plaintext)) {
-            return '';
-        }
-        // B9 - pepper kosong MELEMPAR. `hash_hmac()` dengan secret kosong tetap
-        // menghasilkan 64 hex yang terlihat meyakinkan dan deterministik, tapi
-        // siapa pun bisa menghitungnya tanpa tahu apa pun: lookup hash NIK jadi
-        // bisa dibalik dengan brute force 16 digit. Itu fail-open yang paling
-        // sulit terlihat, karena keluarannya tidak berbeda dari yang benar.
+        if (empty($plaintext)) { return ''; }
         if (empty($this->pepper)) {
-            throw new RuntimeException(
-                'Encryption_lib: KPKP_DATA_PEPPER hilang - hash pencarian dibatalkan '
-                . 'agar tidak lahir hash yang bisa dihitung siapa saja.');
+            throw new RuntimeException('Encryption_lib: KPKP_DATA_PEPPER hilang; hash pencarian dibatalkan.');
         }
         return hash_hmac('sha256', $plaintext, $this->pepper);
     }
 
-    /**
-     * Cek apakah sebuah string sudah dalam format terenkripsi
-     * 
-     * @param string $data Data yang akan dicek
-     * @return bool True jika data sudah terenkripsi
-     */
     public function is_encrypted($data) {
-        if (empty($data)) {
-            return false;
-        }
+        if (empty($data)) { return false; }
         $decoded = base64_decode($data, true);
-        if ($decoded === false || strlen($decoded) < 30) {
-            return false;
+        if ($decoded === false || strlen($decoded) < 30) { return false; }
+        $version = substr($decoded, 0, 2);
+        if ($version === 'v1') { return true; }
+        if ($version !== 'v2') { return false; }
+        $length = ord($decoded[2]);
+        return $length >= 1 && $length <= 16 && strlen($decoded) >= 31 + $length
+            && self::valid_id(substr($decoded, 3, $length));
+    }
+
+    /** Rotasi per nilai; hasil harus disimpan oleh pemanggil dalam transaksi. */
+    public function reencrypt($encoded) {
+        if ($this->active_key_id === '') {
+            throw new RuntimeException('Encryption_lib: keyring aktif wajib untuk rotasi.');
         }
-        return substr($decoded, 0, 2) === 'v1';
+        if (!$this->is_encrypted($encoded)) {
+            throw new InvalidArgumentException('Encryption_lib: hanya ciphertext yang dapat dirotasi.');
+        }
+        $plaintext = $this->decrypt($encoded);
+        if ($plaintext === false) {
+            throw new RuntimeException('Encryption_lib: ciphertext gagal didekripsi; rotasi dibatalkan.');
+        }
+        try {
+            return $this->encrypt($plaintext);
+        } finally {
+            require_once APPPATH . 'libraries/Sensitive_buffer.php';
+            $buffer = new Sensitive_buffer();
+            $buffer->wipe($plaintext);
+        }
     }
 }

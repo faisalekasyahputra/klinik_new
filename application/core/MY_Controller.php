@@ -15,6 +15,7 @@ class MY_Controller extends CI_Controller {
         // Load essential helpers
         $this->load->helper(['url', 'form', 'security']);
         $this->load->library('session');
+        $this->enforce_positive_input_validation();
 
         // Set OWASP security headers on every response
         $this->set_security_headers();
@@ -27,23 +28,26 @@ class MY_Controller extends CI_Controller {
     private function enforce_single_session_and_password_expiry() {
         if ( ! $this->session->userdata('is_logged')) { return; }
         if ( ! $this->db->field_exists('active_session_hash', 'usr_users')
+            || ! $this->db->field_exists('active_session_id_hash', 'usr_users')
             || ! $this->db->field_exists('password_expires_at', 'usr_users')) { return; }
         $id = (int) $this->session->userdata('user_id');
         $token = (string) $this->session->userdata('session_auth_token');
-        $row = $this->db->select('active_session_hash,password_expires_at')
+        $session_id = (string) $this->session->session_id;
+        $row = $this->db->select('active_session_hash,active_session_id_hash,password_expires_at')
             ->get_where('usr_users', ['id' => $id])->row();
         $token_valid = $row && ! empty($token) && ! empty($row->active_session_hash)
             && hash_equals((string) $row->active_session_hash, hash('sha256', $token));
-        if ( ! $token_valid) {
+        $session_id_valid = $row && ! empty($session_id) && ! empty($row->active_session_id_hash)
+            && hash_equals((string) $row->active_session_id_hash, hash('sha256', $session_id));
+        if ( ! $token_valid || ! $session_id_valid) {
             $this->session->unset_userdata([
                 'is_logged', 'user_id', 'role', 'name', 'username', 'email', 'avatar',
                 'kabupaten_id', 'bidang_kode', 'session_auth_token', 'password_change_required',
             ]);
             $this->session->sess_regenerate(TRUE);
-            // "Perangkat lain" hanya benar kalau token sesi ini DIGANTIKAN token lain.
-            // Sesi tanpa token (dibuat sebelum migrasi 059) atau hash yang dikosongkan
-            // reset kata sandi bukan login ganda, jadi pesannya netral.
-            $message = ($row && ! empty($token) && ! empty($row->active_session_hash))
+            // "Perangkat lain" hanya benar kalau token sesi ini digantikan.
+            // ID sesi yang tidak cocok juga tidak membuktikan login ganda.
+            $message = ($row && ! $token_valid && ! empty($token) && ! empty($row->active_session_hash))
                 ? 'Sesi ini berakhir karena akun digunakan untuk masuk pada perangkat lain.'
                 : 'Sesi Anda telah berakhir. Silakan masuk kembali.';
             if ($this->input->is_ajax_request()) {
@@ -954,21 +958,49 @@ class MY_Controller extends CI_Controller {
      * Respons seragam: batas normal menghasilkan 429 + Retry-After, sedangkan
      * kegagalan konfigurasi/penyimpanan fail-closed sebagai 503.
      */
+    /** Terapkan allowlist dan format positif untuk seluruh input web. */
+    private function enforce_positive_input_validation()
+    {
+        $this->load->library('Input_guard');
+        $status = $this->input_guard->validate_request();
+        if ( ! empty($status['valid'])) { return; }
+
+        $message = 'Permintaan ditolak karena format input tidak aman.';
+        $this->output->set_status_header(400)->set_header('Cache-Control: no-store');
+        if ($this->input->is_ajax_request()) {
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status' => 'error', 'code' => 'invalid_input', 'message' => $message,
+            ]));
+            $this->output->_display(); exit;
+        }
+        show_error($message, 400, 'Input Tidak Valid');
+        exit;
+    }
     protected function rate_limit_reject(array $result, $message, $json = FALSE)
     {
         $configured = ! empty($result['success']);
+        $is_attack_warning = $configured && ! empty($result['warning_type']);
         $safe_message = $configured
-            ? $message
+            ? ($is_attack_warning ? 'Peringatan keamanan: terdeteksi pola akses otomatis. ' : '') . $message
             : 'Layanan sementara belum dapat memproses permintaan.';
 
         $this->output->set_status_header($configured ? 429 : 503);
         if ($configured) {
             $this->output->set_header('Retry-After: ' . max(1, (int) ($result['retry_after'] ?? 1)));
         }
+        if ($is_attack_warning) {
+            $this->output->set_header('X-Security-Warning: automated-access-detected');
+        }
         if ($json) {
             $this->output
                 ->set_content_type('application/json')
-                ->set_output(json_encode(['status' => 'error', 'message' => $safe_message]));
+                ->set_output(json_encode([
+                    'status' => 'error',
+                    'code' => $is_attack_warning ? 'automated_attack_warning' : 'rate_limit_error',
+                    'message' => $safe_message,
+                    'warning_type' => $result['warning_type'] ?? NULL,
+                    'retry_after' => $configured ? max(1, (int) ($result['retry_after'] ?? 1)) : NULL,
+                ]));
             return;
         }
         $this->output

@@ -117,6 +117,61 @@ class User_model extends CI_Model {
         if (is_file($path)) { unlink($path); }
     }
 
+    /** Download account-owned records without authentication secrets or file paths. */
+    public function export_account_data($user_id) {
+        $user_id = (int) $user_id;
+        if ($user_id < 1) { throw new InvalidArgumentException('Akun tidak valid.'); }
+        $this->load->library('encryption_lib');
+        $this->load->library('sensitive_buffer');
+        $user = $this->db->get_where('usr_users', ['id' => $user_id])->row_array();
+        if (!$user) { throw new RuntimeException('Akun tidak ditemukan.'); }
+        $account_fields = ['id', 'email', 'username', 'name', 'phone', 'role',
+            'status', 'nik', 'alamat', 'npwp', 'created_at', 'updated_at'];
+        $account = array_intersect_key($user, array_flip($account_fields));
+        $this->_prepare_export_record($account);
+        $result = ['akun' => $account];
+        $owned_tables = [
+            'sf_profil_warga', 'sf_penilaian_perumahan', 'sf_housing_queue',
+            'sf_citizen_profiles', 'sf_housing_assessments',
+            'aduan', 'srp2_registrations', 'kkn_magang_pendaftaran',
+            'forum_diskusi', 'forum_komentar', 'forum_janji_temu', 'usr_documents',
+        ];
+        foreach ($owned_tables as $table) {
+            if (!$this->db->table_exists($table) || !$this->db->field_exists('user_id', $table)) {
+                continue;
+            }
+            $rows = $this->db->where('user_id', $user_id)->get($table)->result_array();
+            foreach ($rows as &$row) { $this->_prepare_export_record($row); }
+            unset($row);
+            $result[$table] = $rows;
+        }
+        $this->sensitive_buffer->wipe($user);
+        return $result;
+    }
+
+    private function _prepare_export_record(array &$record) {
+        foreach (array_keys($record) as $field) {
+            if ($field === 'nik' && is_string($record[$field]) && $record[$field] !== '') {
+                $plain_nik = $this->encryption_lib->decrypt($record[$field]);
+                if ($plain_nik === FALSE) { throw new RuntimeException('NIK tidak dapat dibaca untuk ekspor.'); }
+                $record[$field] = $plain_nik;
+            }
+            if (preg_match('/(?:password|token|secret|session|_hash$|_lookup_hash$|private_path|stored_name|file_name|^file_|_file$|lampiran|verified_by|reviewed_by)/i', $field)) {
+                unset($record[$field]);
+                continue;
+            }
+            if (substr($field, -11) === '_ciphertext') {
+                $name = substr($field, 0, -11);
+                $plain = $record[$field] === NULL ? NULL
+                    : $this->encryption_lib->decrypt($record[$field]);
+                if ($plain === FALSE) {
+                    throw new RuntimeException('Data terenkripsi tidak dapat dibaca untuk ekspor.');
+                }
+                $record[$name] = $plain;
+                unset($record[$field]);
+            }
+        }
+    }
     public function delete_user_account($user_id) {
         // Di luar transaksi DB dengan sengaja - unlink() tidak bisa di-rollback,
         // jadi lebih aman dijalankan sebelum trans_start() daripada di dalamnya.

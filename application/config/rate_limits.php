@@ -7,6 +7,13 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * bila salah satu dimensi mencapai batasnya.
  */
 $config['rate_limit_policies'] = [
+    'account_export' => ['limit' => 3, 'window' => 3600, 'dimensions' => ['account']],
+    'privacy_deletion_request' => ['limit' => 2, 'window' => 86400, 'dimensions' => ['account']],
+    'login' => [
+        'limit' => 30,
+        'window' => 300,
+        'dimensions' => ['ip'],
+    ],
     'register' => [
         'limit' => 5,
         'window' => 600,

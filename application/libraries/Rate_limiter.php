@@ -73,6 +73,7 @@ class Rate_limiter {
         }
 
         $blocked = FALSE;
+        $warning_triggered = FALSE;
         $retry_after = 0;
         foreach ($resolved['keys'] as $key) {
             $ok = $this->CI->db->query(
@@ -105,14 +106,31 @@ class Rate_limiter {
                 ->row_array();
             if ($row && (int) $row['failed_attempts'] > $resolved['limit']) {
                 $blocked = TRUE;
+                $warning_triggered = $warning_triggered || (int) $row['failed_attempts'] === $resolved['limit'] + 1;
                 $retry_after = max($retry_after, (int) $row['retry_after']);
             }
+        }
+
+        $warning_type = $blocked
+            ? ($resolved['window'] <= 60 ? 'concurrent_burst' : 'continuous_access')
+            : NULL;
+        if ($warning_triggered) {
+            $route = strtolower((string) $this->CI->router->fetch_class()) . '/'
+                . strtolower((string) $this->CI->router->fetch_method());
+            log_message('error', 'SECURITY_WARNING automated_attack_suspected policy=' . $policy_name
+                . ' type=' . $warning_type . ' function=' . $route
+                . ' ip_hash=' . hash_hmac('sha256', (string) $this->CI->input->ip_address(),
+                    (string) $this->CI->config->item('encryption_key'))
+                . ' limit=' . $resolved['limit'] . ' window=' . $resolved['window']
+                . ' retry_after=' . $retry_after);
         }
 
         return [
             'success' => TRUE,
             'allowed' => ! $blocked,
             'retry_after' => $retry_after,
+            'warning_type' => $warning_type,
+            'policy' => $policy_name,
         ];
     }
 

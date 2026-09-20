@@ -159,6 +159,19 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
             </form>
         </div>
 
+        <!-- Salinan data pribadi -->
+        <div class="<?= $kotak ?>">
+            <h2 class="<?= $judul ?>"><i class="ph ph-download-simple text-brand-primary"></i> Unduh Data Saya</h2>
+            <p class="<?= $petunjuk ?>">Unduh data akun dan catatan layanan yang terhubung ke akun Anda dalam format JSON. Berkas unggahan tidak termasuk. Simpan hasil unduhan di tempat yang aman.</p>
+            <form action="<?= base_url('akun/export') ?>" method="POST" class="mt-3 flex flex-wrap items-end gap-3">
+                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+                <div class="min-w-[220px] flex-1">
+                    <label for="export-password" class="<?= $label ?>">Password saat ini</label>
+                    <input id="export-password" name="current_password" type="password" autocomplete="current-password" required class="<?= $isian ?>">
+                </div>
+                <button type="submit" class="<?= $tombol ?>"><i class="ph ph-download-simple"></i> Unduh Data</button>
+            </form>
+        </div>
         <!-- Zona Berbahaya -->
         <div class="flex flex-col gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 lg:flex-row lg:items-center lg:justify-between dark:border-red-500/20 dark:bg-red-500/5">
             <div class="min-w-0">
@@ -180,7 +193,11 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
             -->
             <p class="mt-2 text-xs text-gray-600 dark:text-brand-muted">Menghapus akun akan menghapus <b>akun dan akses masuk Anda</b>, serta dokumen SRP2 yang pernah Anda unggah. Diskusi dan komentar tidak dihapus, melainkan dianonimkan menjadi "Akun Dihapus" agar alur diskusi tidak rusak. Tindakan ini tidak bisa dibatalkan.</p>
 
-            <p class="mt-1 text-xs text-gray-600 dark:text-brand-muted">Data layanan yang pernah Anda kirimkan - data pendataan perumahan, hasil penilaian, dan foto bukti - <b>tidak ikut terhapus saat ini</b> dan mengikuti kebijakan retensi data yang berlaku. Untuk meminta penghapusannya, hubungi admin.</p>
+            <p class="mt-1 text-xs text-gray-600 dark:text-brand-muted">Data layanan yang pernah Anda kirimkan - data pendataan perumahan, hasil penilaian, dan foto bukti - <b>tidak ikut terhapus saat ini</b> dan mengikuti kebijakan retensi data yang berlaku. Anda dapat mengajukan peninjauan penghapusannya kepada admin.</p>
+            <form action="<?= base_url('akun/request-data-deletion') ?>" method="POST" class="mt-3">
+                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+                <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-red-300 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10"><i class="ph ph-file-text"></i> Ajukan Penghapusan Data Layanan</button>
+            </form>
 
             </div>
 

@@ -69,6 +69,16 @@ class Auth extends MY_Controller {
         $password = $this->input->post('password');
         $is_ajax  = $this->input->is_ajax_request();
 
+        $rate = $this->rate_limit_consume('login');
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject(
+                $rate,
+                'Terlalu banyak percobaan masuk dalam waktu singkat. Silakan tunggu sebelum mencoba lagi.',
+                $is_ajax
+            );
+            return;
+        }
+
         // Kalau form login ini ditanam di halaman lain (mis. wizard SRP2 Pengembang/syarat),
         // form itu kirim hidden field 'redirect_to' supaya kalau gagal (jalur non-AJAX), user
         // tetap di halaman asalnya - bukan terlempar ke Auth/login umum. Divalidasi anti-open-redirect.
@@ -130,7 +140,13 @@ class Auth extends MY_Controller {
         }
 
         // Verify password
-        if (!password_verify($password, $user->password)) {
+        $password_valid = password_verify($password, $user->password);
+        $this->load->library('sensitive_buffer');
+        $this->sensitive_buffer->wipe($password);
+        if (isset($_POST['password'])) {
+            $this->sensitive_buffer->wipe($_POST['password']);
+        }
+        if (!$password_valid) {
             $this->auth_model->increment_login_attempts($user->id);
             $attempts_left = Auth_model::MAX_LOGIN_ATTEMPTS - ($user->login_attempts + 1);
             $message = $attempts_left > 0
@@ -155,9 +171,9 @@ class Auth extends MY_Controller {
             'is_logged'    => TRUE,
         ];
         $session_data['password_change_required'] = $this->auth_model->password_expired($user);
-        $session_data['session_auth_token'] = $this->auth_model->issue_session_token($user->id);
-        $this->session->set_userdata($session_data);
         $this->session->sess_regenerate(TRUE);
+        $session_data['session_auth_token'] = $this->auth_model->issue_session_token($user->id, $this->session->session_id);
+        $this->session->set_userdata($session_data);
 
         // Draft SRP2 dipastikan ada untuk SEMUA jalur login - bukan cuma cabang
         // AJAX. Dulu pemanggilan ini ada DI DALAM `if ($is_ajax)`, sehingga
@@ -361,9 +377,9 @@ class Auth extends MY_Controller {
             'role'      => $is_srp2 ? 'pengembang' : NULL,
             'is_logged' => TRUE,
         ];
-        $session_data['session_auth_token'] = $this->auth_model->issue_session_token($user_id);
-        $this->session->set_userdata($session_data);
         $this->session->sess_regenerate(TRUE);
+        $session_data['session_auth_token'] = $this->auth_model->issue_session_token($user_id, $this->session->session_id);
+        $this->session->set_userdata($session_data);
 
         if ($is_ajax) {
             $this->output->set_content_type('application/json')->set_output(json_encode([
@@ -850,9 +866,9 @@ class Auth extends MY_Controller {
                             'bidang_kode'  => $logged_in_user[0]['bidang_kode'] ?? null,
                             'is_logged'    => TRUE,
                         ];
-                        $session_data['session_auth_token'] = $this->auth_model->issue_session_token($logged_in_user[0]['id']);
-                        $this->session->set_userdata($session_data);
                         $this->session->sess_regenerate(TRUE);
+                        $session_data['session_auth_token'] = $this->auth_model->issue_session_token($logged_in_user[0]['id'], $this->session->session_id);
+                        $this->session->set_userdata($session_data);
 
                         // Check if profile is complete - redirect to new onboarding if not
                         $user_record = $this->auth_model->find_by_id($logged_in_user[0]['id']);
