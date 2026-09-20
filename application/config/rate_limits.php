@@ -7,7 +7,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * bila salah satu dimensi mencapai batasnya.
  */
 $config['rate_limit_policies'] = [
-    'account_export' => ['limit' => 3, 'window' => 3600, 'dimensions' => ['account']],
+    'account_export' => ['limit' => 3, 'window' => 3600, 'dimensions' => ['account'], 'concurrent_dimension' => 'account'],
     'privacy_deletion_request' => ['limit' => 2, 'window' => 86400, 'dimensions' => ['account']],
     'login' => [
         'limit' => 30,
@@ -37,6 +37,7 @@ $config['rate_limit_policies'] = [
         'limit' => 10,
         'window' => 60,
         'dimensions' => ['ip', 'account', 'nik'],
+        'concurrent_dimension' => 'account',
     ],
     /* Butir tanggal-lahir-dicabut (14 Agt 2026, Warga::pendataan()). Pola SAMA
        PERSIS dengan rtlh_cek/rtlh_cek_harian di bawah, dan alasannya sama:
@@ -82,6 +83,7 @@ $config['rate_limit_policies'] = [
         'limit' => 30,
         'window' => 60,
         'dimensions' => ['ip', 'account', 'object'],
+        'concurrent_dimension' => 'object',
     ],
     // B3 - laporan komentar forum. ENTRI policy, bukan mekanisme baru:
     // §17 poin 15 melarang membuat pembatas laju kedua. Dedup di ledger sudah

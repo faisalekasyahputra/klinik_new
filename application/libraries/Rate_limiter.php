@@ -12,6 +12,8 @@ class Rate_limiter {
 
     private $CI;
     private $policies = [];
+    private $held_locks = [];
+    private $shutdown_registered = FALSE;
 
     public function __construct()
     {
@@ -111,9 +113,17 @@ class Rate_limiter {
             }
         }
 
-        $warning_type = $blocked
-            ? ($resolved['window'] <= 60 ? 'concurrent_burst' : 'continuous_access')
-            : NULL;
+        $warning_type = $blocked ? ($resolved['window'] <= 60 ? 'concurrent_burst' : 'continuous_access') : NULL;
+        if ( ! $blocked && ! empty($resolved['concurrent_dimension'])) {
+            $slot = $this->acquire_concurrent_slot($policy_name, $resolved['concurrent_dimension'], $context);
+            if (empty($slot['success'])) { return $slot; }
+            if (empty($slot['allowed'])) {
+                $blocked = TRUE;
+                $warning_triggered = TRUE;
+                $retry_after = 1;
+                $warning_type = 'concurrent_access';
+            }
+        }
         if ($warning_triggered) {
             $route = strtolower((string) $this->CI->router->fetch_class()) . '/'
                 . strtolower((string) $this->CI->router->fetch_method());
@@ -180,9 +190,42 @@ class Rate_limiter {
             'limit' => $limit,
             'window' => $window,
             'keys' => array_values(array_unique($keys)),
+            'concurrent_dimension' => $policy['concurrent_dimension'] ?? NULL,
         ];
     }
 
+    /** A MySQL advisory lock lives until this request ends or its connection closes. */
+    private function acquire_concurrent_slot($policy_name, $dimension, array $context)
+    {
+        $value = $this->dimension_value($dimension, $context);
+        if ($value === NULL || $value === '') { return $this->failure('Dimensi akses bersamaan tidak lengkap.'); }
+        $name = 'kpkp:' . substr(hash('sha256', $policy_name . ':' . $dimension . ':' . $value), 0, 58);
+        if (isset($this->held_locks[$name])) { return ['success' => TRUE, 'allowed' => TRUE]; }
+        $query = $this->CI->db->query('SELECT GET_LOCK(?, 0) AS acquired', [$name]);
+        if ( ! $query) { return $this->failure('Pemeriksaan akses bersamaan gagal.'); }
+        $row = $query->row_array();
+        if ((int) ($row['acquired'] ?? -1) === 1) {
+            $this->held_locks[$name] = TRUE;
+            if ( ! $this->shutdown_registered) {
+                register_shutdown_function([$this, 'release_concurrent_locks']);
+                $this->shutdown_registered = TRUE;
+            }
+            return ['success' => TRUE, 'allowed' => TRUE];
+        }
+        if ((int) ($row['acquired'] ?? -1) === 0) {
+            return ['success' => TRUE, 'allowed' => FALSE];
+        }
+        return $this->failure('Pemeriksaan akses bersamaan tidak tersedia.');
+    }
+
+    public function release_concurrent_locks()
+    {
+        foreach (array_keys($this->held_locks) as $name) {
+            try { $this->CI->db->query('SELECT RELEASE_LOCK(?)', [$name]); }
+            catch (Throwable $ignored) { /* Connection closure also releases advisory locks. */ }
+            unset($this->held_locks[$name]);
+        }
+    }
     private function dimension_value($dimension, array $context)
     {
         if ($dimension === 'ip') {
