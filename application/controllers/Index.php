@@ -526,6 +526,7 @@ class Index extends MY_Controller {
 		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 12);
 		curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
+		curl_setopt_array($ch, transport_curl_options()); // TLS 1.2+, HTTPS saja (poin 8.2)
 		$gambar_mentah = curl_exec($ch);
 		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		curl_close($ch);

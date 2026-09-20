@@ -80,6 +80,7 @@ class Sikaper_api {
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($ch, CURLOPT_TIMEOUT, 15);
+        curl_setopt_array($ch, transport_curl_options()); // TLS 1.2+, HTTPS saja (poin 8.2)
 
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, TRUE);

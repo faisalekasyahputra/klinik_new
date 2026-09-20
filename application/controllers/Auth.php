@@ -1070,11 +1070,16 @@ class Auth extends MY_Controller {
     private function _verify_recaptcha($response) {
         if (empty($response)) return FALSE;
 
-        $verify = file_get_contents('https://www.google.com/recaptcha/api/siteverify?' . http_build_query([
+        /* Konteks stream dari transport_helper: sertifikat dan nama host
+           diverifikasi, TLS 1.2/1.3 saja, batas waktu 10 detik (dulu tanpa
+           konteks sama sekali - tanpa batas waktu, jadi Google yang lambat
+           menahan worker PHP tanpa akhir). Gagal kirim tetap berarti FALSE. */
+        $verify = @file_get_contents('https://www.google.com/recaptcha/api/siteverify?' . http_build_query([
             'secret'   => $this->recaptcha_secret_key,
             'response' => $response,
             'remoteip' => $this->input->ip_address(),
-        ]));
+        ]), FALSE, transport_stream_context());
+        if ($verify === FALSE) return FALSE;
 
         $result = json_decode($verify, TRUE);
         return isset($result['success']) && $result['success'] === TRUE;

@@ -38,7 +38,8 @@ class Web_push_service {
             'privateKey' => trim((string) getenv('WEB_PUSH_VAPID_PRIVATE_KEY')),
         ]];
         try {
-            $webPush = new WebPush($auth, ['TTL' => 3600, 'urgency' => 'normal'], 20, ['timeout' => 8, 'connect_timeout' => 4]);
+            // + verifikasi sertifikat dan TLS 1.2 ke atas (form keamanan poin 8.2), lihat transport_helper.php.
+            $webPush = new WebPush($auth, ['TTL' => 3600, 'urgency' => 'normal'], 20, ['timeout' => 8, 'connect_timeout' => 4] + transport_guzzle_options());
             $webPush->setReuseVAPIDHeaders(TRUE);
             $ids = [];
             $payload = json_encode([

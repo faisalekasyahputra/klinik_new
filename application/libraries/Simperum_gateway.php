@@ -263,6 +263,7 @@ class Simperum_gateway {
                 $options[CURLOPT_PROTOCOLS] = CURLPROTO_HTTPS;
             }
             curl_setopt_array($curl, $options);
+            curl_setopt_array($curl, transport_curl_options()); // + TLS 1.2 ke atas (poin 8.2)
             $body = curl_exec($curl);
             $result = [
                 'http_status' => (int) curl_getinfo($curl, CURLINFO_RESPONSE_CODE),

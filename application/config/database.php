@@ -73,9 +73,17 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 $active_group = 'default';
 $query_builder = TRUE;
 
+/* Enkripsi koneksi ke server database (form keamanan poin 8.2). Diatur lewat
+   env DB_SSL (off | on | verify) dan, untuk 'verify', DB_SSL_HOSTNAME - lihat
+   helpers/transport_helper.php. Bawaan (env kosong) = 'off', jadi lingkungan
+   yang belum menyetelnya (dev lokal) berperilaku persis seperti sebelumnya.
+   Kalau TLS diminta tapi koneksi jadi tidak terenkripsi, driver mysqli CI3
+   GAGAL (bukan turun diam-diam ke tanpa enkripsi). */
+require_once APPPATH . 'helpers/transport_helper.php';
+
 $db['default'] = array(
 	'dsn'	=> '',
-	'hostname' => getenv('DB_HOST') ?: 'localhost',
+	'hostname' => transport_db_hostname('localhost'),
 	'username' => getenv('DB_USER') ?: 'root',
 	'password' => getenv('DB_PASS') ?: '',
 	'database' => getenv('DB_NAME') ?: 'klinikpkp',
@@ -88,7 +96,7 @@ $db['default'] = array(
 	'char_set' => 'utf8',
 	'dbcollat' => 'utf8_general_ci',
 	'swap_pre' => '',
-	'encrypt' => FALSE,
+	'encrypt' => transport_db_encrypt(),
 	'compress' => FALSE,
 	'stricton' => FALSE,
 	'failover' => array(),

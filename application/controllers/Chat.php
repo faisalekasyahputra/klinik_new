@@ -153,18 +153,16 @@ class Chat extends MY_Controller {
         ],
         CURLOPT_POSTFIELDS => json_encode($payload),
         
-        // B4 - SENGAJA belum diperbaiki. `api_bot()` kini private dan seluruh
-        // endpoint Chat dikarantina 404 (B2), jadi baris ini tidak pernah
-        // dieksekusi. Nasibnya mengikuti keputusan #7: bila chat dicabut, titik
-        // ini hilang bersama berkasnya; bila dibangun, TLS wajib dinyalakan
-        // sebelum route dibuka. Komentar lama "pengaman wajib XAMPP Windows"
-        // keliru - mematikan verifikasi sertifikat bukan pengaman, dan
-        // Simperum_gateway.php membuktikan verifikasi menyala baik-baik saja
-        // di lingkungan yang sama.
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_SSL_VERIFYHOST => false,
-        CURLOPT_TIMEOUT => 15 
+        CURLOPT_TIMEOUT => 15
     ]);
+    /* B4 LUNAS 20 Sep 2026 (form keamanan poin 8.2). Dulu dua baris di sini
+       mematikan verifikasi sertifikat dan nama host (kunci API ikut terkirim
+       lewat sambungan yang bisa dicegat). Titik ini masih dikarantina 404
+       (B2) dan tidak dieksekusi, tapi begitu route dibuka ia harus sudah
+       benar; "pengaman wajib XAMPP Windows" keliru - Simperum_gateway
+       membuktikan verifikasi menyala baik-baik saja di lingkungan yang sama.
+       Kebijakan TLS dipasang TERAKHIR (transport_helper.php). */
+    curl_setopt_array($ch, transport_curl_options());
 
     $response = curl_exec($ch);
 

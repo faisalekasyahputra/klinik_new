@@ -19,7 +19,11 @@
 
     # Dokumentasi internal & script dev ikut ter-deploy tapi bukan untuk publik:
     # memuat skema DB lengkap, dokumen audit keamanan, dan arsitektur internal.
-    RewriteRule ^(docs|dev-scripts)/ - [F,L]
+    # `tests` ditambahkan 20 Sep 2026: skrip di dalamnya bisa DIJALANKAN lewat
+    # HTTP (bukan sekadar dibaca) karena berekstensi .php di bawah webroot.
+    # Yang diblokir direktorinya, bukan daftar berkasnya, supaya tes baru
+    # otomatis ikut terlindungi.
+    RewriteRule ^(docs|dev-scripts|tests)/ - [F,L]
     RewriteRule ^[^/]+\.md$ - [F,L]
     RewriteRule ^composer\.(json|lock)$ - [F,L]
 

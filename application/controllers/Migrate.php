@@ -55,6 +55,15 @@ class Migrate extends CI_Controller {
         // boleh ditulis ulang setelah DIBACA DARI SERVER - syarat yang mustahil
         // dipenuhi kalau keluarannya sendiri tidak menyebut ia dari mana.
         echo 'DB: '.$this->db->hostname.' / '.$this->db->database."\n";
+        // Enkripsi koneksi aplikasi -> server database (form keamanan poin 8.2).
+        // Dibaca dari SESI koneksi yang sedang dipakai, bukan dari nilai env:
+        // env bisa menyatakan 'verify' padahal koneksinya jatuh tanpa TLS.
+        $ssl_versi  = $this->db->query("SHOW SESSION STATUS LIKE 'Ssl_version'")->row_array();
+        $ssl_cipher = $this->db->query("SHOW SESSION STATUS LIKE 'Ssl_cipher'")->row_array();
+        echo 'Mode DB_SSL: '.transport_db_ssl_mode()."\n";
+        echo 'Koneksi DB terenkripsi: '.(( ! empty($ssl_versi['Value']))
+            ? $ssl_versi['Value'].' / '.($ssl_cipher['Value'] ?? '?')
+            : 'TIDAK (tanpa TLS)')."\n";
         echo 'Total tabel: '.count($tables)."\n";
         echo 'migrations: '.(in_array('migrations', $tables) ? 'ADA' : 'TIDAK ADA')."\n";
 

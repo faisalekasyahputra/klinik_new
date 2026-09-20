@@ -113,6 +113,7 @@ if ( ! function_exists('sikumbang_ambil')) {
                 CURLOPT_TIMEOUT        => $timeout,
                 CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             ]);
+            curl_setopt_array($ch, transport_curl_options()); // TLS 1.2+, HTTPS saja (poin 8.2)
             $balasan = curl_exec($ch);
             $galat   = curl_error($ch);
             $kode    = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);

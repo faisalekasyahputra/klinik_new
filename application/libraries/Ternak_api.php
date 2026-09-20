@@ -48,7 +48,8 @@ class Ternak_api {
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
         curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-        
+        curl_setopt_array($ch, transport_curl_options()); // TLS 1.2+, HTTPS saja (poin 8.2)
+
         $response = curl_exec($ch);
         curl_close($ch);
 
