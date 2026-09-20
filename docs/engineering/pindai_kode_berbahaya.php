@@ -360,6 +360,19 @@ if (in_array($mode, ['pustaka', 'semua'], true)) {
                 echo '  [PERINGATAN] ' . count($selisih) . " paket vendor/ berbeda dari lock (wajar di mesin dev dengan PHP lebih lama dari platform produksi; hanya pemeriksaan --ketat di server yang mengikat)\n";
             } elseif ($selisih) { foreach ($selisih as $s) echo "  [GAGAL] $s\n"; $gagal += count($selisih); } else { echo "[LULUS] semua " . count($a) . " paket di composer.lock terpasang persis di vendor/\n"; }
             if ($ekstra) { echo '  [PERINGATAN] paket terpasang di luar lock produksi: ' . implode(', ', array_keys($ekstra)) . "\n"; }
+            // Sisa deploy lama: deploy mempertahankan isi vendor/ sebelumnya, jadi direktori paket yang sudah tidak
+            // dipasang composer (mis. alat dev) bisa tertinggal di disk walau installed.json tidak lagi mencatatnya.
+            $sisa_dir = [];
+            foreach (glob($akar . '/vendor/*', GLOB_ONLYDIR) ?: [] as $v) {
+                $vn = basename($v); if (in_array($vn, ['composer', 'bin'], true)) { continue; }
+                foreach (glob($v . '/*', GLOB_ONLYDIR) ?: [] as $pk) { if (!isset($b[$vn . '/' . basename($pk)])) { $sisa_dir[] = $vn . '/' . basename($pk); } }
+            }
+            $bin_ok = []; foreach (($inst['packages'] ?? $inst) as $x) { foreach ((array) ($x['bin'] ?? []) as $bn) { $bin_ok[basename($bn)] = true; } }
+            foreach (glob($akar . '/vendor/bin/*') ?: [] as $bn) { if (!isset($bin_ok[basename($bn)])) { $sisa_dir[] = 'bin/' . basename($bn); } }
+            if ($sisa_dir) {
+                if (in_array('--ketat', $argv, true)) { echo '[GAGAL] vendor/ berisi ' . count($sisa_dir) . " entri sisa deploy lama yang tidak dipasang composer:\n    " . implode("\n    ", $sisa_dir) . "\n"; $gagal += count($sisa_dir); }
+                else { echo '  [PERINGATAN] vendor/ berisi ' . count($sisa_dir) . " entri yang tidak dipasang composer (sisa; --ketat menjadikannya GAGAL)\n"; }
+            } else { echo "[LULUS] vendor/ hanya berisi paket yang dipasang composer (tanpa sisa deploy lama)\n"; }
         } else { echo "  vendor/ tidak ada di mesin ini; pemeriksaan terpasang dilewati\n"; }
         $c = pindai_composer();
         if ($c) {
@@ -380,12 +393,21 @@ if ($mode === 'deploy') {
         if ($baris) { echo "[GAGAL] pohon berkas TIDAK sama dengan commit (" . count($baris) . " perbedaan):\n"; foreach (array_slice($baris, 0, 20) as $b) echo "  $b\n"; $gagal += count($baris); }
         else { [, $h] = pindai_jalankan(['git', 'rev-parse', '--short', 'HEAD']); echo '[LULUS] tidak ada berkas berubah atau asing terhadap commit ' . trim($h) . "\n"; }
     }
-    $asing = [];
+    $asing = []; $log_ok = 0;
     foreach (['assets', 'uploads', 'application/cache', 'application/logs'] as $d) {
-        foreach (pindai_daftar($akar . '/' . $d, ['php', 'phtml', 'phar', 'pht', 'php5', 'php7']) as $p) { $rel = pindai_rel($p); if ($rel !== 'application/cache/index.html') { $asing[] = $rel; } }
+        foreach (pindai_daftar($akar . '/' . $d, ['php', 'phtml', 'phar', 'pht', 'php5', 'php7']) as $p) {
+            $rel = pindai_rel($p);
+            // Berkas log CodeIgniter memang berekstensi .php (baris pertama = penjaga BASEPATH). Sah bila namanya
+            // log-YYYY-MM-DD.php dan hanya ada SATU tag <?php; tag kedua berarti isi log memuat kode (keracunan log).
+            if (strpos($rel, 'application/logs/') === 0 && preg_match('#/log-\d{4}-\d{2}-\d{2}\.php$#', $rel)) {
+                if (substr_count(file_get_contents($p), '<' . '?php') <= 1) { $log_ok++; continue; }
+                $asing[] = "$rel (memuat tag PHP kedua di dalam isi log)"; continue;
+            }
+            $asing[] = $rel;
+        }
     }
     if ($asing) { echo "[GAGAL] berkas PHP di direktori yang tidak boleh berisi kode:\n"; foreach ($asing as $a) echo "  $a\n"; $gagal += count($asing); }
-    else { echo "[LULUS] tidak ada berkas PHP di assets/, uploads/, application/cache/, application/logs/\n"; }
+    else { echo "[LULUS] tidak ada berkas PHP di assets/, uploads/, application/cache/; $log_ok berkas log CodeIgniter sah (satu tag PHP penjaga)\n"; }
     echo "\n";
 }
 echo $gagal ? "RINGKASAN: $gagal temuan/kegagalan\n" : "RINGKASAN: bersih\n";
