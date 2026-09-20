@@ -13,7 +13,8 @@ Situs ditulis `https://<situs-production>`; nilai sebenarnya dipasang saat menja
 | Koneksi | Yang mengatur | Mekanisme | Dibuktikan oleh |
 |---|---|---|---|
 | Peramban ke situs (masuk) | Penyedia hosting | Versi TLS dan cipher yang ditawarkan; pengalihan HTTP ke HTTPS | `uji_tls_situs.php` bagian 1-4 |
-| Peramban ke situs (masuk) | Aplikasi | HSTS (`MY_Controller`), cookie `Secure; HttpOnly; SameSite`, CSP `upgrade-insecure-requests` | `uji_tls_situs.php` bagian 5; `tests/transport_security_test.php` |
+| Peramban ke situs (masuk) | Aplikasi | HSTS (`MY_Controller`), cookie `Secure; HttpOnly; SameSite` | `uji_tls_situs.php` bagian 5; `tests/transport_security_test.php` |
+| Peramban ke situs (masuk) | Penyedia hosting | CSP `upgrade-insecure-requests` (dikirim platform; terlihat bahkan pada berkas statis, bukan dari kode aplikasi. Koreksi 21 Sep 2026: versi awal dokumen ini keliru menulisnya sebagai milik aplikasi) | `uji_tls_situs.php` bagian 5 |
 | Aplikasi ke layanan luar (keluar) | Aplikasi | `helpers/transport_helper.php`: sertifikat dan nama host diverifikasi, TLS 1.2 ke atas, hanya HTTPS | `tests/transport_security_test.php` (pemindaian kode) |
 | Aplikasi ke server database (keluar) | Aplikasi | `config/database.php` + env `DB_SSL`; cipher dari kebijakan | `php index.php migrate status` (dibaca dari sesi koneksi) |
 

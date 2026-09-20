@@ -134,7 +134,7 @@ check(strpos(source('config/autoload.php'), "'transport'") !== false, "Helper 't
 check(preg_match('/\$config\[\'cookie_secure\'\]\s*=\s*\(ENVIRONMENT\s*===\s*\'production\'\)/', source('config/config.php')) === 1, 'cookie_secure harus menyala di production');
 check(preg_match('/max-age=(\d+)/', source('core/MY_Controller.php'), $m) === 1 && (int) $m[1] >= $policy['transport_hsts_min_age'], 'HSTS max-age di MY_Controller di bawah batas kebijakan');
 $ht = @file_get_contents($app . '/../.htaccess');
-check($ht !== false && preg_match('/RewriteRule\s+\^\(docs\|dev-scripts\|tests\)\//', $ht) === 1, '.htaccess harus memblokir direktori tests/ (skrip di dalamnya dapat dieksekusi lewat web)');
+check($ht !== false && preg_match('/RewriteRule\s+\^\((?:[a-z-]+\|)*tests(?:\|[a-z-]+)*\)\//', $ht) === 1, '.htaccess harus memblokir direktori tests/ (skrip di dalamnya dapat dieksekusi lewat web)');
 
 // --- 8. Algoritma yang dinyatakan kebijakan benar-benar dipakai kode ---------
 check(strpos(source('libraries/Encryption_lib.php'), "'aes-256-gcm'") !== false, 'Encryption_lib harus memakai aes-256-gcm');

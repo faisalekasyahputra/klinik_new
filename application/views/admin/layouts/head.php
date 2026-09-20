@@ -42,7 +42,7 @@
           // ~110KB JS termuat & seluruh CSS di-generate ulang di setiap load)
           // dan kini hanya jaring pengaman untuk kelas yang belum terpanen. ?>
     <link rel="stylesheet" href="<?= base_url('assets/css/tailwind-admin.css?v=' . filemtime('assets/css/tailwind-admin.css')) ?>">
-    <script defer src="https://cdn.tailwindcss.com"></script>
+    <script defer src="<?= base_url('assets/js/vendor/tailwind-3.4.17.js') ?>"></script>
     <?php // `type="module"` WAJIB, jangan dilepas. Skrip inline biasa dieksekusi
           // saat parsing - sebelum CDN yang `defer` di atas jalan - sehingga
           // `tailwind` masih undefined dan SELURUH config di bawah hilang tanpa
@@ -85,7 +85,7 @@
     <!-- Alpine.js -->
     <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
     <script defer src="<?= base_url('assets/js/admin-web-push.js?v=' . filemtime('assets/js/admin-web-push.js')) ?>"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js" integrity="sha384-pb6hrQvo4s23cEUFtj0CZkzGE3jyK3pj26RIupXXxhSrrcUA/Cn0lZgcCrGH0t6L" crossorigin="anonymous"></script>
     <!-- Loader progresif dashboard: klik sidebar/link internal = swap #main-content, bukan full reload -->
     <script defer src="<?= base_url('assets/js/admin-progressive.js?v=' . filemtime('assets/js/admin-progressive.js')) ?>"></script>
     <style>
@@ -109,7 +109,7 @@
         .dark select option:hover { background-color: rgba(214, 251, 0, .15); color: #d6fb00; }
     </style>
     <!-- Phosphor Icons - defer: ikon menyusul sepersekian detik, halaman tidak menunggu -->
-    <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.2"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css" integrity="sha384-6p9AefaqUhEVheRlj1mpAkbngHXy9mbYMrIdcIt4Jlc9lOLIablJq3bBsLOjGwZ7" crossorigin="anonymous" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css" integrity="sha384-6p9AefaqUhEVheRlj1mpAkbngHXy9mbYMrIdcIt4Jlc9lOLIablJq3bBsLOjGwZ7" crossorigin="anonymous"></noscript>
     <style>
         [x-cloak] { display: none !important; }
         /*

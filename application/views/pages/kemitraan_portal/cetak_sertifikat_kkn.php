@@ -21,8 +21,8 @@
     <link rel="stylesheet" href="<?= base_url('assets/css/design-system.css?v=' . filemtime('assets/css/design-system.css')) ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/tailwind.min.css') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/tailwind-generated.css?v=' . filemtime('assets/css/tailwind-generated.css')) ?>">
-    <script defer src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css">
+    <script defer src="<?= base_url('assets/js/vendor/tailwind-3.4.17.js') ?>"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous">
 
     <style>
         html, body { background: #f0f6f7; }

@@ -164,8 +164,15 @@ class MY_Controller extends CI_Controller {
             header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
         }
 
-        // Permissions Policy - restrict browser APIs
-        header("Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=(), usb=()");
+        // Permissions Policy - semua fitur sensor/privasi ditolak kecuali yang
+        // dipakai (geolokasi). Daftar di config/content_security.php (poin 9.3).
+        header('Permissions-Policy: ' . permissions_policy_header_value());
+
+        // CSP - skrip hanya dari 'self' dan host yang disetujui, tanpa <object>,
+        // <base> terkunci (poin 9.4). Header CSP upgrade-insecure-requests yang
+        // terlihat di live juga dikirim platform hosting; browser menerapkan
+        // KEDUA header (irisan), jadi tidak saling menimpa.
+        header('Content-Security-Policy: ' . csp_header_value(isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'));
 
         // Block cross-domain content policies (Flash/PDF)
         header('X-Permitted-Cross-Domain-Policies: none');

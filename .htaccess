@@ -19,11 +19,13 @@
 
     # Dokumentasi internal & script dev ikut ter-deploy tapi bukan untuk publik:
     # memuat skema DB lengkap, dokumen audit keamanan, dan arsitektur internal.
-    # `tests` ditambahkan 20 Sep 2026: skrip di dalamnya bisa DIJALANKAN lewat
-    # HTTP (bukan sekadar dibaca) karena berekstensi .php di bawah webroot.
-    # Yang diblokir direktorinya, bukan daftar berkasnya, supaya tes baru
+    # `tests` dan `vendor` ditambahkan 20 Sep 2026: skrip di dalamnya bisa
+    # DIJALANKAN lewat HTTP (bukan sekadar dibaca) karena berekstensi .php di
+    # bawah webroot, dan vendor/composer/installed.json membuka daftar versi
+    # pustaka. Aplikasi tidak pernah memuat berkas dari vendor/ lewat URL.
+    # Yang diblokir direktorinya, bukan daftar berkasnya, supaya isi baru
     # otomatis ikut terlindungi.
-    RewriteRule ^(docs|dev-scripts|tests)/ - [F,L]
+    RewriteRule ^(docs|dev-scripts|tests|vendor)/ - [F,L]
     RewriteRule ^[^/]+\.md$ - [F,L]
     RewriteRule ^composer\.(json|lock)$ - [F,L]
 

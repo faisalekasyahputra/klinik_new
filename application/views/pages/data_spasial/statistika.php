@@ -1,6 +1,6 @@
 <div class="py-4 sm:py-6 px-1 sm:px-2 relative font-outfit z-10">
     <!-- Load Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
 
     <div class="w-full">
         

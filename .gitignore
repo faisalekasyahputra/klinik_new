@@ -17,7 +17,6 @@
 # ── Dependencies ───────────────────────────
 /vendor/
 /node_modules/
-composer.lock
 package-lock.json
 
 # ── CI3 Cache & Logs ──────────────────────

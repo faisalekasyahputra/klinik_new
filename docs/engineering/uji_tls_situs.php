@@ -13,7 +13,10 @@
  *   3. sertifikat: rantai dan nama host sah, sisa masa berlaku, jenis dan panjang kunci,
  *      algoritma tanda tangan;
  *   4. HTTP (port 80) dialihkan ke HTTPS;
- *   5. respons HTTPS: HSTS, cookie Secure+HttpOnly, upgrade-insecure-requests.
+ *   5. respons HTTPS: HSTS, cookie Secure+HttpOnly, upgrade-insecure-requests;
+ *   6. (poin 9.3 dan 9.4, kebijakan: application/config/content_security.php) Permissions-Policy
+ *      menolak fitur sensor/privasi, CSP script-src hanya host yang disetujui, aset eksternal
+ *      halaman publik ber-SRI, dan vendor/ tests/ docs/ composer.* .env tidak dapat dijangkau web.
  *
  * Status: LULUS | GAGAL | PERINGATAN | LEWAT. LEWAT = uji TIDAK DAPAT dilakukan dari mesin
  * ini (mis. OpenSSL lokal tidak punya TLS 1.0 atau cipher itu), bukan tanda situs aman.
@@ -24,6 +27,7 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 
 define('BASEPATH', __DIR__ . '/../../system/');
 require __DIR__ . '/../../application/helpers/transport_helper.php';
+require __DIR__ . '/../../application/helpers/content_security_helper.php';
 $policy = transport_policy();
 
 // ------------------------------------------------------------- argumen
@@ -191,9 +195,11 @@ function http_ambil($alamat, array $tambahan, $timeout) {
         CURLOPT_TIMEOUT => $timeout, CURLOPT_CONNECTTIMEOUT => $timeout, CURLOPT_USERAGENT => 'Klinik-PKP-uji-tls/1.0'] + $tambahan);
     $badan = curl_exec($ch);
     $info = ['galat' => curl_error($ch), 'kode' => (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE)];
-    $kepala = is_string($badan) ? substr($badan, 0, (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE)) : '';
+    $ukuran_kepala = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+    $kepala = is_string($badan) ? substr($badan, 0, $ukuran_kepala) : '';
+    $isi = is_string($badan) ? substr($badan, $ukuran_kepala) : '';
     curl_close($ch);
-    return $info + ['kepala' => $kepala];
+    return $info + ['kepala' => $kepala, 'isi' => $isi];
 }
 
 echo "\n== 4. HTTP dialihkan ke HTTPS ==\n";
@@ -236,8 +242,72 @@ if (!extension_loaded('curl')) {
             catat($lemah ? 'GAGAL' : 'LULUS', $lemah ? 'Cookie tanpa Secure+HttpOnly: ' . implode(', ', $lemah)
                                                     : count($cookies[1]) . ' cookie, semuanya Secure dan HttpOnly');
         }
+        // Header ini dikirim PLATFORM HOSTING (terlihat bahkan pada berkas statis), bukan aplikasi.
         catat(preg_match('/^content-security-policy:.*upgrade-insecure-requests/im', $h['kepala']) ? 'LULUS' : 'PERINGATAN',
-            'CSP upgrade-insecure-requests (cegah konten campuran)');
+            'CSP upgrade-insecure-requests (cegah konten campuran; dikirim platform hosting)');
+
+        // ------------------------------------------------------------- 6. konten dan izin peramban
+        echo "\n== 6. Kebijakan konten dan izin peramban (poin 9.3 dan 9.4) ==\n";
+        // 6a. Permissions-Policy: setiap fitur pada kebijakan harus terkirim persis.
+        $diminta = content_security_policy('permissions_policy');
+        if (preg_match('/^permissions-policy:\s*(.+)$/im', $h['kepala'], $m)) {
+            $aktual = [];
+            foreach (explode(',', $m[1]) as $bagian) { if (preg_match('/^([a-z-]+)=(\(.*\))$/i', trim($bagian), $mm)) { $aktual[$mm[1]] = $mm[2]; } }
+            $kurang = [];
+            foreach ($diminta as $fitur => $nilai) { if (($aktual[$fitur] ?? null) !== $nilai) { $kurang[] = "$fitur (diminta $nilai, terkirim " . ($aktual[$fitur] ?? 'tidak ada') . ')'; } }
+            catat($kurang ? 'GAGAL' : 'LULUS', $kurang ? 'Permissions-Policy tidak sesuai kebijakan: ' . implode('; ', $kurang)
+                : 'Permissions-Policy menolak ' . count(array_filter($diminta, fn($v) => $v === '()')) . ' fitur sensor/privasi; geolokasi hanya origin sendiri');
+        } else {
+            catat('GAGAL', 'Header Permissions-Policy tidak ada');
+        }
+        // 6b. CSP script-src dari aplikasi (platform hosting menambah header CSP sendiri; keduanya berlaku bersamaan).
+        preg_match_all('/^content-security-policy:\s*(.+)$/im', $h['kepala'], $semua_csp);
+        $csp_skrip = null; foreach ($semua_csp[1] as $c) { if (stripos($c, 'script-src') !== false) { $csp_skrip = trim($c); } }
+        if ($csp_skrip === null) {
+            catat('GAGAL', 'Tidak ada CSP script-src dari aplikasi (skrip dari host mana pun dapat dimuat)');
+        } else {
+            preg_match('/script-src([^;]*)/i', $csp_skrip, $ms); $sumber = preg_split('/\s+/', trim($ms[1]));
+            $boleh = array_merge(content_security_policy('csp_script_sources_dasar'), content_security_policy('csp_script_hosts'));
+            $asing = array_diff($sumber, $boleh);
+            $jelek = in_array('*', $sumber, true) || preg_grep('/^https?:$|^data:$/', $sumber);
+            catat(($asing || $jelek) ? 'GAGAL' : 'LULUS', ($asing || $jelek) ? 'CSP script-src memuat sumber di luar kebijakan: ' . implode(' ', array_merge($asing, (array) $jelek))
+                : 'CSP script-src hanya ' . count($sumber) . ' sumber yang disetujui, tanpa wildcard');
+            catat((stripos($csp_skrip, "object-src 'none'") !== false && stripos($csp_skrip, "base-uri 'self'") !== false) ? 'LULUS' : 'GAGAL', "CSP melarang <object> dan mengunci <base> (object-src 'none'; base-uri 'self')");
+        }
+        // 6c. Aset eksternal pada halaman publik: host disetujui dan ber-SRI (kecuali pengecualian tertulis).
+        $pengecualian = array_keys(content_security_policy('sri_pengecualian'));
+        $host_skrip_ok = content_security_policy('csp_script_hosts');
+        $host_css_ok = ['cdn.jsdelivr.net', 'unpkg.com', 'cdnjs.cloudflare.com', 'fonts.googleapis.com'];
+        foreach (['/', '/login'] as $jalur) {
+            $r = http_ambil("https://$host$jalur", $opsi, $timeout);
+            if ($r['kode'] !== 200 || $r['isi'] === '') { catat('LEWAT', "Halaman $jalur tidak dapat dibaca (HTTP {$r['kode']})"); continue; }
+            $tanpa_sri = []; $asing = []; $jumlah = 0;
+            preg_match_all('#<(script|link)\b([^>]*)>#i', $r['isi'], $tags, PREG_SET_ORDER);
+            foreach ($tags as $tg) {
+                $atr = $tg[2]; $url = null; $css = false;
+                if (strtolower($tg[1]) === 'script' && preg_match('#\bsrc\s*=\s*["\']((?:https?:)?//[^"\']+)["\']#i', $atr, $u)) { $url = $u[1]; }
+                elseif (strtolower($tg[1]) === 'link' && preg_match('#\brel\s*=\s*["\']stylesheet["\']#i', $atr) && preg_match('#\bhref\s*=\s*["\']((?:https?:)?//[^"\']+)["\']#i', $atr, $u)) { $url = $u[1]; $css = true; }
+                if ($url === null) { continue; }
+                $h_url = parse_url($url, PHP_URL_HOST);
+                if (strcasecmp((string) $h_url, $host) === 0) { continue; }   // aset milik situs sendiri (URL absolut) bukan aset eksternal
+                $jumlah++;
+                if (!$css && !in_array('https://' . $h_url, $host_skrip_ok, true)) { $asing[] = $url; }
+                if ($css && !in_array($h_url, $host_css_ok, true)) { $asing[] = $url; }
+                $kecuali = false; foreach ($pengecualian as $pre) { if (strpos($url, $pre) === 0) { $kecuali = true; } }
+                if (!$kecuali && stripos($atr, 'integrity=') === false) { $tanpa_sri[] = $url; }
+            }
+            if ($jumlah === 0) { catat('LEWAT', "Halaman $jalur tidak memuat aset eksternal untuk diperiksa"); continue; }
+            catat(($tanpa_sri || $asing) ? 'GAGAL' : 'LULUS', ($tanpa_sri || $asing)
+                ? "Halaman $jalur: aset eksternal bermasalah - tanpa SRI: " . implode(', ', $tanpa_sri) . ($asing ? '; host tak disetujui: ' . implode(', ', $asing) : '')
+                : "Halaman $jalur: $jumlah aset eksternal, semuanya dari host yang disetujui dan ber-SRI (kecuali pengecualian tertulis)");
+        }
+        // 6d. Jalur yang tidak boleh dapat dijangkau dari web (kode pustaka, tes, dokumen internal, konfigurasi).
+        $tertutup = [];
+        foreach (['vendor/autoload.php', 'vendor/composer/installed.json', 'tests/malicious_code_test.php', 'docs/README.md', 'composer.json', 'composer.lock', '.env'] as $jalur) {
+            $r = http_ambil("https://$host/$jalur", $opsi, $timeout);
+            if (!in_array($r['kode'], [403, 404], true)) { $tertutup[] = "/$jalur (HTTP {$r['kode']})"; }
+        }
+        catat($tertutup ? 'GAGAL' : 'LULUS', $tertutup ? 'Jalur internal dapat dijangkau dari web: ' . implode(', ', $tertutup) : 'vendor/, tests/, docs/, composer.*, dan .env tidak dapat dijangkau dari web (403/404)');
     }
 }
 
