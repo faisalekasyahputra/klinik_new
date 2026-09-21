@@ -364,8 +364,8 @@
         $row['lat']  = isset($koordinat[0]) ? trim($koordinat[0]) : '-7.0051';
         $row['long'] = isset($koordinat[1]) ? trim($koordinat[1]) : '110.4381';
         ?>
-        let lat = <?= isset($row['lat']) && !empty($row['lat']) ? $row['lat'] : '-7.0051' ?>; 
-        let lng = <?= isset($row['long']) && !empty($row['long']) ? $row['long'] : '110.4381' ?>; 
+        let lat = <?= (float) (isset($row['lat']) && !empty($row['lat']) ? $row['lat'] : '-7.0051') ?>; 
+        let lng = <?= (float) (isset($row['long']) && !empty($row['long']) ? $row['long'] : '110.4381') ?>; 
         let namaPerumahan = "<?= isset($row['namaPerumahan']) ? htmlspecialchars($row['namaPerumahan']) : 'Lokasi Perumahan' ?>";
 
         // 1. Inisialisasi Kontrol Peta

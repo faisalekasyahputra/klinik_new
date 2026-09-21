@@ -185,10 +185,10 @@
                         </div>
                         <div class="flex justify-between items-end mb-2">
                             <div class="text-lg sm:text-xl font-black font-jakarta text-[color:var(--portal-text)]"><?= number_format($stats['kawasan']['tertangani']['value'], 1, ',', '.') ?> <span class="text-lg text-zinc-500 font-normal">/ <?= number_format($stats['kawasan']['luas_kumuh']['value'], 1, ',', '.') ?> Ha</span></div>
-                            <div class="text-xl font-bold text-[#00a3b5]"><?= $stats['kawasan']['persentase']['value'] ?>%</div>
+                            <div class="text-xl font-bold text-[#00a3b5]"><?= (float) $stats['kawasan']['persentase']['value'] ?>%</div>
                         </div>
                         <div class="w-full bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] rounded-full h-4 mb-3 overflow-hidden shadow-inner">
-                            <div class="bg-gradient-to-r from-[#00545f] to-[#00a3b5] h-full rounded-full relative overflow-hidden" style="width: <?= $stats['kawasan']['persentase']['value'] ?>%">
+                            <div class="bg-gradient-to-r from-[#00545f] to-[#00a3b5] h-full rounded-full relative overflow-hidden" style="width: <?= (float) $stats['kawasan']['persentase']['value'] ?>%">
                                 <div class="absolute top-0 left-[-100%] w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_2s_infinite]"></div>
                             </div>
                         </div>
@@ -393,10 +393,10 @@
                 labels: ['TLOO', 'APBD Prov', 'BSPS', 'Omah Lestari'],
                 datasets: [{
                     data: [
-                        <?= $stats['perumahan']['tloo']['value'] ?>, 
-                        <?= $stats['perumahan']['rtlh_apbd']['value'] ?>, 
-                        <?= $stats['perumahan']['bsps']['value'] ?>,
-                        <?= $stats['perumahan']['omah_lestari']['value'] ?>
+                        <?= (float) $stats['perumahan']['tloo']['value'] ?>, 
+                        <?= (float) $stats['perumahan']['rtlh_apbd']['value'] ?>, 
+                        <?= (float) $stats['perumahan']['bsps']['value'] ?>,
+                        <?= (float) $stats['perumahan']['omah_lestari']['value'] ?>
                     ],
                     backgroundColor: ['#d6fb00', '#10b981', '#3b82f6', '#f59e0b'],
                     borderWidth: 0,
@@ -421,7 +421,7 @@
                 labels: ['Subsidi', 'Komersil'],
                 datasets: [{
                     label: 'Jumlah Unit',
-                    data: [<?= $stats['perumahan']['unit_subsidi']['value'] ?>, <?= $stats['perumahan']['unit_komersil']['value'] ?>],
+                    data: [<?= (float) $stats['perumahan']['unit_subsidi']['value'] ?>, <?= (float) $stats['perumahan']['unit_komersil']['value'] ?>],
                     backgroundColor: ['#d6fb00', '#00a3b5'],
                     borderRadius: 8,
                     barThickness: 40
@@ -445,7 +445,7 @@
             data: {
                 labels: ['Tertangani (Ha)', 'Sisa Kumuh (Ha)'],
                 datasets: [{
-                    data: [<?= $stats['kawasan']['tertangani']['value'] ?>, <?= $stats['kawasan']['sisa_kumuh']['value'] ?>],
+                    data: [<?= (float) $stats['kawasan']['tertangani']['value'] ?>, <?= (float) $stats['kawasan']['sisa_kumuh']['value'] ?>],
                     backgroundColor: ['#00a3b5', '#ff6b6b'],
                     borderWidth: 0,
                     hoverOffset: 10
@@ -469,9 +469,9 @@
                 labels: ['Total Aset (Ha)', 'Siap Bangun (Ha)', 'Termanfaatkan (Ha)'],
                 datasets: [{
                     data: [
-                        <?= $stats['pertanahan']['aset_lahan']['value'] ?>, 
-                        <?= $stats['pertanahan']['lahan_siap_bangun']['value'] ?>, 
-                        <?= $stats['pertanahan']['lahan_termanfaatkan']['value'] ?>
+                        <?= (float) $stats['pertanahan']['aset_lahan']['value'] ?>, 
+                        <?= (float) $stats['pertanahan']['lahan_siap_bangun']['value'] ?>, 
+                        <?= (float) $stats['pertanahan']['lahan_termanfaatkan']['value'] ?>
                     ],
                     backgroundColor: [
                         'rgba(0, 163, 181, 0.35)',
@@ -499,9 +499,9 @@
                 datasets: [{
                     label: 'Jumlah Pengembang',
                     data: [
-                        <?= $stats['pengembang']['total_terdaftar']['value'] ?>, 
-                        <?= $stats['pengembang']['aktif']['value'] ?>, 
-                        <?= $stats['pengembang']['proyek_berjalan']['value'] ?>
+                        <?= (float) $stats['pengembang']['total_terdaftar']['value'] ?>, 
+                        <?= (float) $stats['pengembang']['aktif']['value'] ?>, 
+                        <?= (float) $stats['pengembang']['proyek_berjalan']['value'] ?>
                     ],
                     backgroundColor: ['rgba(0, 163, 181, 0.35)', 'rgba(59, 130, 246, 0.55)', '#3b82f6'],
                     borderRadius: 6,
@@ -528,8 +528,8 @@
                 labels: ['Bantuan RTLH', 'Pembeli Subsidi'],
                 datasets: [{
                     data: [
-                        <?= $stats['penerima_manfaat']['bantuan_rtlh']['value'] ?>, 
-                        <?= $stats['penerima_manfaat']['pembeli_subsidi']['value'] ?>
+                        <?= (float) $stats['penerima_manfaat']['bantuan_rtlh']['value'] ?>, 
+                        <?= (float) $stats['penerima_manfaat']['pembeli_subsidi']['value'] ?>
                     ],
                     backgroundColor: ['#10b981', '#34d399'],
                     borderWidth: 0,
@@ -551,10 +551,10 @@
                 datasets: [{
                     label: 'Jumlah Publikasi',
                     data: [
-                        <?= $publikasi['artikel'] ?>, 
-                        <?= $publikasi['video'] ?>, 
-                        <?= $publikasi['regulasi'] ?>, 
-                        <?= $publikasi['desain_rumah'] ?>
+                        <?= (int) $publikasi['artikel'] ?>, 
+                        <?= (int) $publikasi['video'] ?>, 
+                        <?= (int) $publikasi['regulasi'] ?>, 
+                        <?= (int) $publikasi['desain_rumah'] ?>
                     ],
                     backgroundColor: ['#00a3b5', '#3b82f6', '#10b981', '#f59e0b'],
                     borderRadius: 8,

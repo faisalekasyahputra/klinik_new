@@ -53,6 +53,9 @@ const PINDAI_WAKTU_DIIZINKAN = [
     // Ditinjau 21 Sep 2026: mengirim Web Push peringatan keamanan ke admin SETELAH respons selesai dikirim, agar penolakan
     // terhadap penyerang tidak tertahan pengiriman push. Hanya berlaku di permintaan yang sama; isi pesan tetap, bukan masukan pengguna.
     'libraries/Security_alert.php' => 'kirim Web Push peringatan setelah respons selesai (permintaan yang sama)',
+    // Ditinjau 21 Sep 2026: penyapu retensi harian (poin 7.3) berjalan SETELAH respons terkirim, dijaga flock berkas penanda,
+    // hanya menghapus entri kedaluwarsa menurut config/data_lifecycle.php; tidak menerima masukan pengguna dan tidak bertahan di luar permintaan itu.
+    'core/MY_Controller.php' => 'penyapu retensi harian sesudah respons terkirim (Penyapu_retensi), dijaga flock',
 ];
 /** Host yang boleh dituju oleh fetch/XHR/WebSocket dari JavaScript. */
 const PINDAI_JS_HOST_DIIZINKAN = [];

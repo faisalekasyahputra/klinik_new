@@ -5,7 +5,6 @@ class Pengembang extends MY_Controller {
     public function __construct() {
         parent::__construct();
         $this->load->helper(['url', 'download']);
-        $this->load->model('Buka_peta');
         $this->load->model('auth_model');
         $this->load->library('session');
         date_default_timezone_set('Asia/Jakarta');

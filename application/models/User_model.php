@@ -183,16 +183,22 @@ class User_model extends CI_Model {
         // jadi lebih aman dijalankan sebelum trans_start() daripada di dalamnya.
         $this->_cleanup_owned_files($user_id);
 
+        // Poin 7.3: berkas KKN/Magang yang tertinggal dan DRAF penilaian warga ikut disapu
+        // (lihat libraries/Data_erasure.php); sisa identitas di jejak audit disamarkan di bawah.
+        $this->load->library('Data_erasure');
+        $sapu = $this->data_erasure->sapu_berkas($user_id);
+
         $this->db->trans_start();
+        $pseudonim = Data_erasure::pseudonim_surel($user['email'], (string) getenv('KPKP_DATA_PEPPER'));
         $this->db->insert('sys_jejak_audit', [
             'actor_id' => $user_id,
-            'actor_email' => $user['email'],
+            'actor_email' => $pseudonim,
             'actor_role' => $user['role'],
             'aksi' => 'akun_dihapus',
             'objek_tipe' => 'usr_users',
             'objek_id' => (string) $user_id,
             'ringkasan' => 'Pemilik akun menghapus akun dan data terkait',
-            'detail_json' => NULL,
+            'detail_json' => json_encode(['berkas_disapu' => $sapu['berkas'], 'draf_dihapus' => $sapu['draf']]),
             'ip' => $this->input->ip_address(),
             'created_at' => date('Y-m-d H:i:s'),
         ]);
@@ -209,12 +215,16 @@ class User_model extends CI_Model {
         $this->db->where('user_id', $user_id);
         $this->db->update('forum_diskusi', [
             'user_id' => NULL,
-            'nama_user' => 'Akun Dihapus'
+            'nama_user' => 'Akun Dihapus',
+            'email_user' => 'akun-dihapus@invalid',   // dulu surel pengirim tetap terbaca sesudah akun dihapus
         ]);
 
         // Delete user's likes
         $this->db->where('user_id', $user_id);
         $this->db->delete('forum_likes');
+
+        // Samarkan surel akun ini di seluruh jejak audit (baris miliknya dan penyebutannya oleh admin).
+        $this->data_erasure->samarkan_audit($user_id, $user['email']);
 
         // Finally, delete the user account
         $this->db->where('id', $user_id);

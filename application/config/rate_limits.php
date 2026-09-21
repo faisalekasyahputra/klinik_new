@@ -199,6 +199,7 @@ $config['rate_limit_policies'] = [
     'unggah_akun'  => ['limit' => 40, 'window' => 600, 'dimensions' => ['account']],
     /* Internal untuk peringatan (libraries/Security_alert.php). `senyap` = pelampauannya
        sendiri TIDAK memicu peringatan (kalau tidak, peringatan memicu peringatan). */
+    'audit_akses_dedupe' => ['limit' => 1, 'window' => 600, 'dimensions' => ['key'], 'senyap' => TRUE],
     'alert_dedupe'   => ['limit' => 1, 'window' => 1800, 'dimensions' => ['key'], 'senyap' => TRUE],
     'alert_eskalasi' => ['limit' => 3, 'window' => 3600, 'dimensions' => ['ip'],  'senyap' => TRUE],
 ];

@@ -79,7 +79,7 @@ $isi = function ($nama) use ($old) {
          */
         $langkah_awal = empty($old) ? 1 : 2;
         ?>
-        <div class="auth-form-container" style="max-width: 520px;" x-data="onboardingForm('<?= $isi('role') ?>', <?= (int) $langkah_awal ?>)">
+        <div class="auth-form-container" style="max-width: 520px;" x-data="onboardingForm(<?= htmlspecialchars(json_encode((string) ($old['role'] ?? '')), ENT_QUOTES, 'UTF-8') ?>, <?= (int) $langkah_awal ?>)">
 
             <!-- Back Link - halaman ini TIDAK ditegakkan secara global (cek
                  profile_completed cuma terjadi sekali sesudah login), jadi user

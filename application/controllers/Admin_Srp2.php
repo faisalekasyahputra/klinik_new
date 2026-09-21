@@ -66,6 +66,8 @@ class Admin_Srp2 extends Admin_Controller {
            berkata kosong, admin akan mengetik ulang NPWP ke atas data yang
            sebenarnya masih ada. */
         $this->load->library('encryption_lib');
+        // Poin 7.3: NPWP terdekripsi ditampilkan ke staf: dicatat (sekali per pelaku per jendela, bukan per baris).
+        $this->catat_akses_data_pribadi('npwp_srp2', 'srp2_registrations', 'daftar');
         foreach ($data['rows'] as $r) {
             $r->npwp_plain = NULL;
             $r->npwp_rusak = FALSE;
@@ -158,6 +160,7 @@ class Admin_Srp2 extends Admin_Controller {
         if ( ! is_numeric($id)) { show_404(); }
         $data['pendaftar'] = $this->db->get_where('srp2_registrations', ['id' => (int) $id])->row();
         if ( ! $data['pendaftar']) { show_404(); }
+        $this->catat_akses_data_pribadi('pengajuan_srp2', 'srp2_registrations', (string) (int) $id);   // poin 7.3
 
         $this->load->helper('srp2');
         $data['dokumen_list'] = srp2_dokumen_persyaratan();

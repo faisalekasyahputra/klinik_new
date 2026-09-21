@@ -192,7 +192,7 @@
                         </div>
 
                         <!-- Alert jika Lolos Program Target -->
-                        <div x-show="isEligibleForTarget && '<?= $program['kode_program'] ?>' !== 'umum'" class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 mb-4" style="display: none;">
+                        <div x-show="isEligibleForTarget && <?= htmlspecialchars(json_encode((string) $program['kode_program']), ENT_QUOTES, 'UTF-8') ?> !== 'umum'" class="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-4 mb-4" style="display: none;">
                             <div class="flex items-start gap-3">
                                 <i class="fa-solid fa-circle-check text-emerald-400 mt-0.5"></i>
                                 <div>
@@ -202,7 +202,7 @@
                             </div>
                         </div>
 
-                        <p class="text-xs text-zinc-400 mb-6" x-show="'<?= $program['kode_program'] ?>' === 'umum'">Berdasarkan hasil analisa (<span x-text="desilLabel || ('Desil ' + desil)"></span>), Anda berhak mengikuti salah satu program prioritas berikut. Silakan pilih satu yang paling sesuai dengan kondisi Anda.</p>
+                        <p class="text-xs text-zinc-400 mb-6" x-show="<?= htmlspecialchars(json_encode((string) $program['kode_program']), ENT_QUOTES, 'UTF-8') ?> === 'umum'">Berdasarkan hasil analisa (<span x-text="desilLabel || ('Desil ' + desil)"></span>), Anda berhak mengikuti salah satu program prioritas berikut. Silakan pilih satu yang paling sesuai dengan kondisi Anda.</p>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                             <template x-for="prog in eligiblePrograms" :key="prog.id">
@@ -527,8 +527,8 @@ function wizardData() {
                     formData.append('status_kepemilikan', this.survey.status_kepemilikan);
                     formData.append('alasan_pengajuan', this.survey.alasan_pengajuan);
                     formData.append('kabupaten_id', this.survey.kabupaten_id);
-                    formData.append('kode_program_target', '<?= $program['kode_program'] ?>');
-                    formData.append('simpan_hasil', '<?= $is_solusi_pembiayaan ? '1' : '0' ?>');
+                    formData.append('kode_program_target', <?= json_encode((string) $program['kode_program'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
+                    formData.append('simpan_hasil', <?= json_encode($is_solusi_pembiayaan ? '1' : '0') ?>);
                     formData.append('<?= $this->security->get_csrf_token_name(); ?>', '<?= $this->security->get_csrf_hash(); ?>');
                     
                     const response = await fetch('<?= base_url('Program/api_kalkulasi_program') ?>', {

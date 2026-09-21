@@ -30,6 +30,9 @@ class MY_Controller extends CI_Controller {
         // Validasi skema per-endpoint untuk API dan layanan web (poin 12.5).
         $this->enforce_api_schema();
 
+        // Penyapu retensi harian, dijalankan SESUDAH respons terkirim (poin 7.3).
+        $this->jadwalkan_retensi();
+
         $this->usir_kalau_nonaktif();
         $this->enforce_single_session_and_password_expiry();
     }
@@ -80,6 +83,71 @@ class MY_Controller extends CI_Controller {
         } catch (Throwable $e) {
             // Pengamat tidak boleh menjadi titik gagal: catat, lanjutkan.
             log_message('error', 'enforce_anti_automation gagal (fail-open): ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Penyapu retensi (poin 7.3, libraries/Penyapu_retensi.php): sekali per interval (bawaan 24 jam), dipicu oleh
+     * permintaan web pertama yang mendapati penanda basi, dijalankan SESUDAH respons terkirim ke klien
+     * dan dijaga flock supaya hanya satu proses yang menyapu. Murah pada jalur biasa: satu stat() berkas.
+     * Gagal diam-diam (dicatat): penyapu tidak boleh menggagalkan permintaan yang sedang dilayani.
+     */
+    private function jadwalkan_retensi()
+    {
+        static $terdaftar = FALSE;
+        if ($terdaftar || $this->input->is_cli_request()) { return; }
+        try {
+            $this->config->load('data_lifecycle', TRUE);
+            $interval = (int) ($this->config->item('data_lifecycle', 'data_lifecycle')['retensi']['interval_detik'] ?? 86400);
+            $marker = APPPATH . 'cache' . DIRECTORY_SEPARATOR . 'retensi_terakhir';
+            if ( ! is_dir(dirname($marker)) || (is_file($marker) && (int) @filemtime($marker) > time() - $interval)) { return; }
+            $terdaftar = TRUE;
+            $ci = $this;
+            register_shutdown_function(function () use ($ci, $marker, $interval) {
+                if (function_exists('fastcgi_finish_request')) { @fastcgi_finish_request(); }
+                elseif (function_exists('litespeed_finish_request')) { @litespeed_finish_request(); }
+                $fh = @fopen($marker, 'c');
+                if ( ! $fh) { return; }
+                try {
+                    if ( ! flock($fh, LOCK_EX | LOCK_NB)) { return; }
+                    clearstatcache(true, $marker);
+                    if (filesize($marker) > 0 && (int) filemtime($marker) > time() - $interval) { return; }   // proses lain baru saja menyapu
+                    ftruncate($fh, 0); fwrite($fh, date('c')); fflush($fh);   // tandai dulu: galat di tengah jalan tidak memicu ulang tiap permintaan
+                    $ci->load->library('Penyapu_retensi');
+                    $hasil = $ci->penyapu_retensi->jalankan(FALSE);
+                    $ci->penyapu_retensi->catat($hasil, 'sistem');
+                } catch (Throwable $e) {
+                    log_message('error', 'Penyapu retensi gagal: ' . $e->getMessage());
+                } finally {
+                    @flock($fh, LOCK_UN); @fclose($fh);
+                }
+            });
+        } catch (Throwable $e) {
+            log_message('error', 'jadwalkan_retensi gagal: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Catat akses STAF ke informasi pribadi (poin 7.3): berkas privat yang dibuka dan data terdekripsi yang
+     * ditampilkan. Pemilik yang melihat datanya sendiri tidak dicatat. Ditekan per pelaku+objek (bawaan 10
+     * menit) supaya menyegarkan halaman tidak membanjiri jejak audit. Gagal diam-diam (dicatat).
+     */
+    protected function catat_akses_data_pribadi($jenis, $objek_tipe, $objek_id, array $detail = [])
+    {
+        try {
+            $this->config->load('data_lifecycle', TRUE);
+            $cfg = $this->config->item('data_lifecycle', 'data_lifecycle')['audit'];
+            $peran = (string) $this->session->userdata('role');
+            if ( ! in_array($peran, $cfg['peran_staf'], TRUE)) { return FALSE; }
+            $this->load->library('Rate_limiter');
+            $kunci = hash('sha256', (int) $this->get_user_id() . '|' . $jenis . '|' . $objek_tipe . '|' . $objek_id);
+            $r = $this->rate_limiter->hit_fast('audit_akses_dedupe', ['key' => $kunci]);
+            if ( ! empty($r['success']) && (int) ($r['count'] ?? 1) > 1) { return FALSE; }
+            return $this->catat_audit('akses_' . $jenis, 'Staf mengakses informasi pribadi: ' . $jenis . ' (' . $objek_tipe . ' #' . $objek_id . ')',
+                (string) $objek_tipe, (string) $objek_id, $detail);
+        } catch (Throwable $e) {
+            log_message('error', 'catat_akses_data_pribadi gagal: ' . $e->getMessage());
+            return FALSE;
         }
     }
 
@@ -706,6 +774,9 @@ class MY_Controller extends CI_Controller {
             show_404(); return;
         }
 
+        // Poin 7.3: setiap pembukaan berkas privat oleh STAF tercatat (jenis berkas, pemilik, pelaku, waktu).
+        $this->catat_akses_data_pribadi('berkas_privat', (string) $domain, (string) $owner_id);
+
         // header() langsung, BUKAN $this->output->set_content_type():
         // readfile() menulis body duluan sehingga antrean header CI terlambat -
         // PHP terlanjur mengirim text/html default, dan nosniff (dipasang di
@@ -777,6 +848,8 @@ class MY_Controller extends CI_Controller {
         $this->load->library('Matriks_program_ruleset');
         $detail = $this->Housing_assessment_model->get_scoped_queue_detail($queue_id, $kabupaten_id);
         if ( ! $detail) { return NULL; }
+        // Poin 7.3: profil warga terdekripsi (identitas, alamat, koordinat) ditampilkan ke staf: dicatat.
+        $this->catat_akses_data_pribadi('penilaian_warga', 'sf_housing_queue', (string) (int) $queue_id);
 
         $assessment = $detail['assessment'];
         $source_row = $this->db->select('payload_ciphertext')
