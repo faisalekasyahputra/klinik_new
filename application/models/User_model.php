@@ -104,6 +104,10 @@ class User_model extends CI_Model {
         foreach ($onboarding as $row) {
             $this->_unlink_private(private_uploads_dir('onboarding', $user_id), $row->file_name);
         }
+
+        // --- Buku kuota unggahan pengguna (poin 11.1): hanya penanda kosong, tanpa data pribadi ---
+        $this->load->library('Upload_quota');
+        $this->upload_quota->forget('u' . (int) $user_id);
     }
 
     /**

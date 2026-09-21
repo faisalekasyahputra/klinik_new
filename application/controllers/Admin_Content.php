@@ -27,6 +27,16 @@ class Admin_Content extends Admin_Controller {
             $config['max_size']      = 5120; // 5MB
             $config['encrypt_name']  = TRUE;
 
+            // 11.4: pindai isi berkas sebelum library upload menyimpannya di webroot.
+            $galat_scan = NULL;
+            $ext_hero = strtolower(pathinfo((string) $_FILES['hero_background']['name'], PATHINFO_EXTENSION));
+            if ((int) $_FILES['hero_background']['error'] === UPLOAD_ERR_OK
+                && ! $this->scan_uploaded_file($_FILES['hero_background']['tmp_name'], $ext_hero, $galat_scan, 'hero_beranda')) {
+                $this->session->set_flashdata('error', $galat_scan);
+                redirect('Admin_Content');
+                return;
+            }
+
             $this->load->library('upload', $config);
 
             if ($this->upload->do_upload('hero_background')) {

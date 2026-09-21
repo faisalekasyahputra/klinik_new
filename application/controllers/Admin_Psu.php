@@ -190,6 +190,11 @@ class Admin_Psu extends Admin_Controller {
         if(!in_array($ext,['xlsx','xls'],TRUE)){
             $this->session->set_flashdata('error','Format berkas harus XLSX atau XLS.');redirect('Admin_Psu');return;
         }
+        // 11.4: makro, objek tertanam, bom zip, dan kode tertanam ditolak sebelum berkas dibaca.
+        $galat_scan=NULL;
+        if(!$this->scan_uploaded_file($file['tmp_name'],$ext,$galat_scan,'psu_import')){
+            $this->session->set_flashdata('error',$galat_scan);redirect('Admin_Psu');return;
+        }
         $kab=$this->db->select('id,nama')->get('kabupaten')->result();
         $aso=srp2_daftar_asosiasi(TRUE);
         $dev=$this->db->select('id,nama_perusahaan')->where('status_aktif',1)->get('srp2_certified_developers')->result();

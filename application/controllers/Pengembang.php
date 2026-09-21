@@ -269,10 +269,27 @@ class Pengembang extends MY_Controller {
             if ($file['error'] !== UPLOAD_ERR_OK || $file['size'] > 2097152 || !isset($allowed[$ext]) || $mime !== $allowed[$ext]) {
                 return $gagal('Berkas ' . $label . ' tidak valid. Gunakan PDF/JPG/PNG maksimal 2 MB.', $key);
             }
-            $siap[$key] = ['file' => $file, 'ext' => $ext, 'mime' => $mime];
+            // 11.4: isi berkas dipindai sebelum diterima (PDF aktif, kode tertanam, dsb).
+            $galat_scan = NULL;
+            if ( ! $this->scan_uploaded_file($file['tmp_name'], $ext, $galat_scan, 'srp2')) {
+                return $gagal('Berkas ' . $label . ' ditolak. ' . $galat_scan, $key);
+            }
+            $siap[$key] = ['file' => $file, 'ext' => $ext, 'mime' => $mime, 'name' => bin2hex(random_bytes(16)) . '.' . $ext];
         }
 
         if (empty($siap)) { return $gagal('Tidak ada berkas yang dipilih.'); }
+
+        // 11.1: jatah unggahan dipesan untuk SEMUA berkas sekaligus sebelum ada yang dipindah
+        // (semua atau tidak sama sekali): kuota terlampaui tidak boleh meninggalkan sebagian berkas.
+        $dipesan = [];
+        foreach ($siap as $key => $s) {
+            $galat_kuota = NULL;
+            if ( ! $this->reserve_upload_quota('srp2', $id, $s['name'], (int) $s['file']['size'], $galat_kuota)) {
+                foreach ($dipesan as $n) { $this->release_upload_quota('srp2', $id, $n); }
+                return $gagal($galat_kuota, $key);
+            }
+            $dipesan[] = $s['name'];
+        }
 
         // Nama berkas LAMA diambil sebelum ditimpa. db->replace() menghapus baris
         // lama beserta nama berkasnya, jadi kalau tidak dicatat dulu, berkas
@@ -285,11 +302,12 @@ class Pengembang extends MY_Controller {
 
         $stored = []; $baru_di_disk = [];
         foreach ($siap as $key => $s) {
-            $name = bin2hex(random_bytes(16)) . '.' . $s['ext'];
+            $name = $s['name'];
             if (!move_uploaded_file($s['file']['tmp_name'], $path . $name)) {
                 // Bersihkan yang sudah sempat mendarat di request INI, supaya
                 // kegagalan di tengah tidak meninggalkan jejak.
                 foreach ($baru_di_disk as $f) { @unlink($path . $f); }
+                foreach ($dipesan as $n) { $this->release_upload_quota('srp2', $id, $n); }
                 return $gagal('Berkas gagal disimpan.', $key);
             }
             $baru_di_disk[] = $name;

@@ -33,6 +33,7 @@ const PINDAI_JARINGAN_DIIZINKAN = [
     'libraries/Simperum_gateway.php'      => 'SIMPERUM (Disperakim Jateng)',
     'libraries/Ternak_api.php'            => 'API Ternak',
     'libraries/Web_push_service.php'      => 'layanan push peramban (Web Push)',
+    'libraries/Upload_scanner.php'        => 'ClamAV lewat soket clamd (unix:// atau tcp://), hanya bila CLAMD_ADDRESS diisi operator; tanpa itu tidak membuka koneksi',
 ];
 /** File yang boleh menerima unggahan (move_uploaded_file). */
 const PINDAI_UNGGAH_DIIZINKAN = [

@@ -226,6 +226,10 @@ class Admin_Katalog_Program extends Admin_Controller {
             $galat = 'Berkas itu bukan gambar yang sah.';
             return NULL;
         }
+        // 11.4: pindai isi (kode tertanam, bom dimensi) sebelum disimpan di webroot.
+        if ( ! $this->scan_uploaded_file($f['tmp_name'], $ext, $galat, 'katalog_program')) {
+            return NULL;
+        }
 
         $dir = FCPATH . self::DIR_UNGGAHAN;
         if ( ! is_dir($dir) && ! @mkdir($dir, 0755, TRUE)) {

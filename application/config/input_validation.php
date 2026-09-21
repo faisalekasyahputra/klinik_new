@@ -62,6 +62,10 @@ $config['input_allowed_fields'] = [
     'file_peserta',
     'file_proposal',
     'file_siup',
+    // Kolom berkas dokumen persyaratan SRP2 (Pengembang::simpan_dokumen); sama dengan
+    // kunci srp2_dokumen_persyaratan(). Tanpa ini Input_guard menolak unggahan dengan 400.
+    'form_1', 'form_2a', 'form_2b', 'form_3', 'form_4', 'form_5', 'form_6', 'form_6b',
+    'form_7', 'form_8', 'form_9', 'form_10', 'form_11', 'form_13',
     'file_surat_balasan',
     'file_surat_keterangan',
     'file_surat_magang',

@@ -249,6 +249,14 @@ class KemitraanPortal extends Public_Controller
             return;
         }
 
+        // 11.4: makro, objek tertanam, bom zip, dan kode tertanam ditolak sebelum berkas dibaca.
+        $galat_scan = NULL;
+        if ( ! $this->scan_uploaded_file($file['tmp_name'], $ext, $galat_scan, 'kkn_peserta')) {
+            $this->session->set_flashdata('error', $galat_scan);
+            redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
+            return;
+        }
+
         $this->load->library('kkn_peserta_import');
         $hasil = $this->kkn_peserta_import->baca($file['tmp_name']);
         if (empty($hasil['success'])) {

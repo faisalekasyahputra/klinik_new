@@ -403,6 +403,9 @@ class MY_Controller extends CI_Controller {
             return FALSE;
         }
 
+        // 11.4: isi berkas dipindai SEBELUM menyentuh penyimpanan.
+        if ( ! $this->scan_uploaded_file($file['tmp_name'], $ext, $error, $domain)) { return FALSE; }
+
         $this->ensure_private_uploads_protected();
         $dir = $this->private_upload_dir($domain, $owner_id);
         if ( ! is_dir($dir) && ! mkdir($dir, 0700, TRUE)) {
@@ -411,11 +414,83 @@ class MY_Controller extends CI_Controller {
         }
 
         $nama_simpan = bin2hex(random_bytes(16)) . '.' . $ext;
+        // 11.1: kuota jumlah berkas dan total ukuran per pengguna, dipesan sebelum berkas dipindah.
+        if ( ! $this->reserve_upload_quota($domain, $owner_id, $nama_simpan, (int) $file['size'], $error)) { return FALSE; }
         if ( ! move_uploaded_file($file['tmp_name'], $dir . $nama_simpan)) {
+            $this->release_upload_quota($domain, $owner_id, $nama_simpan);
             $error = 'Berkas gagal disimpan.';
             return FALSE;
         }
         return $nama_simpan;
+    }
+
+    /**
+     * Pindai isi satu berkas unggahan (form keamanan poin 11.4). Dipakai SEMUA titik unggah,
+     * termasuk yang tidak menyimpan berkasnya (impor Excel) atau menyimpannya di webroot
+     * (gambar katalog dan beranda). Berkas yang ditolak dicatat sebagai peringatan keamanan
+     * (jejak audit + banner admin) beserta SHA-256-nya, tanpa isi berkas.
+     * Gagal-tertutup: galat pada pemindai = berkas ditolak.
+     */
+    protected function scan_uploaded_file($tmp_name, $ext, &$error = NULL, $domain = 'unggahan') {
+        try {
+            $this->load->library('Upload_scanner');
+            $hasil = $this->upload_scanner->scan($tmp_name, $ext);
+        } catch (Throwable $e) {
+            log_message('error', 'scan_uploaded_file: pemindai gagal dimuat: ' . $e->getMessage());
+            $error = Upload_scanner::PESAN['pemindai_tak_tersedia'];
+            return FALSE;
+        }
+        if ( ! empty($hasil['ok'])) { return TRUE; }
+
+        $error = $hasil['message'];
+        try {
+            $this->load->library('Security_alert');
+            $this->security_alert->raise(
+                'berkas_berbahaya', in_array($hasil['code'], ['antivirus', 'kode_php', 'kode_dinamis', 'eicar'], TRUE) ? 'tinggi' : 'sedang',
+                "Unggahan ditolak pemindai berkas ({$hasil['code']}) pada domain '{$domain}'",
+                ['domain' => (string) $domain, 'kode' => $hasil['code'], 'ekstensi' => (string) $ext,
+                 'sha256' => $hasil['sha256'] ?? NULL, 'ukuran' => $hasil['size'] ?? NULL, 'rincian' => substr((string) ($hasil['detail'] ?? ''), 0, 160)],
+                'upl:' . $hasil['code']
+            );
+        } catch (Throwable $e) {
+            log_message('error', 'scan_uploaded_file: peringatan gagal dikirim: ' . $e->getMessage());
+        }
+        return FALSE;
+    }
+
+    /** Pengguna unggahan saat ini: akun bila login, IP bila tamu (aduan publik). */
+    private function upload_identity() {
+        $this->load->library('Upload_quota');
+        $login = (bool) $this->session->userdata('is_logged');
+        return $this->upload_quota->identify(
+            $login ? (int) $this->session->userdata('user_id') : 0,
+            $this->session->userdata('role'),
+            $this->input->ip_address()
+        );
+    }
+
+    /**
+     * Pesan jatah unggahan (form keamanan poin 11.1); FALSE + $error bila kuota pengguna terlampaui.
+     * Gagal-tertutup bila buku kuota tidak dapat ditulis.
+     */
+    protected function reserve_upload_quota($domain, $owner_id, $stored_name, $size, &$error = NULL) {
+        try {
+            $id = $this->upload_identity();
+            return $this->upload_quota->reserve($id['actor'], $id['limits'], $domain, $owner_id, $stored_name, $size, $error);
+        } catch (Throwable $e) {
+            log_message('error', 'reserve_upload_quota: ' . $e->getMessage());
+            $error = 'Gagal memeriksa kuota unggahan. Coba lagi.';
+            return FALSE;
+        }
+    }
+
+    protected function release_upload_quota($domain, $owner_id, $stored_name) {
+        try {
+            $id = $this->upload_identity();
+            $this->upload_quota->release($id['actor'], $domain, $owner_id, $stored_name);
+        } catch (Throwable $e) {
+            log_message('error', 'release_upload_quota: ' . $e->getMessage());
+        }
     }
 
     /**
