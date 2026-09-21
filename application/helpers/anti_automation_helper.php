@@ -31,10 +31,27 @@ if ( ! function_exists('anti_automation_is_scanner')) {
     }
 }
 
+if ( ! function_exists('anti_automation_api_schemas')) {
+    /** Registri skema endpoint API (config/api_schemas.php): sumber daftar endpoint API untuk kelas laju. */
+    function anti_automation_api_schemas()
+    {
+        static $skema = NULL;
+        if ($skema === NULL) {
+            $config = [];
+            require dirname(__DIR__) . '/config/api_schemas.php';
+            $skema = $config['api_schemas'];
+        }
+        return $skema;
+    }
+}
+
 if ( ! function_exists('anti_automation_route_classes')) {
     /**
      * Kelas rute untuk "controller/metode" (huruf kecil), mis. ['cari'] atau ['unduh'].
-     * Satu rute boleh masuk lebih dari satu kelas.
+     * Satu rute boleh masuk lebih dari satu kelas. Selain pola di config/anti_automation.php,
+     * SETIAP endpoint yang terdaftar di config/api_schemas.php otomatis masuk kelas yang
+     * dideklarasikannya (`class`), jadi endpoint API baru tidak bisa lolos dari batas laju
+     * dengan lupa menambahkan pola di dua tempat.
      */
     function anti_automation_route_classes($controller, $method)
     {
@@ -45,7 +62,20 @@ if ( ! function_exists('anti_automation_route_classes')) {
                 if (fnmatch($pola, $rute)) { $hasil[] = $kelas; break; }
             }
         }
+        $skema = anti_automation_api_schemas()[$rute] ?? NULL;
+        if ($skema !== NULL && ! empty($skema['class']) && ! in_array($skema['class'], $hasil, TRUE)) {
+            $hasil[] = $skema['class'];
+        }
         return $hasil;
+    }
+}
+
+if ( ! function_exists('anti_automation_route_is_json')) {
+    /** TRUE bila endpoint terdaftar sebagai API yang responsnya (termasuk penolakan) harus berbentuk JSON. */
+    function anti_automation_route_is_json($controller, $method)
+    {
+        $skema = anti_automation_api_schemas()[strtolower((string) $controller) . '/' . strtolower((string) $method)] ?? NULL;
+        return $skema !== NULL && ! empty($skema['json']);
     }
 }
 

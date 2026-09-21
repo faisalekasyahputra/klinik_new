@@ -24,6 +24,9 @@ class MY_Controller extends CI_Controller {
         // supaya permintaan yang ditolak tidak sempat menyentuh sesi/DB lebih jauh.
         $this->enforce_anti_automation();
 
+        // Validasi skema per-endpoint untuk API dan layanan web (poin 12.5).
+        $this->enforce_api_schema();
+
         $this->usir_kalau_nonaktif();
         $this->enforce_single_session_and_password_expiry();
     }
@@ -67,13 +70,89 @@ class MY_Controller extends CI_Controller {
             if ( ! empty($verdict['blocked'])) {
                 $this->rate_limit_reject($verdict['result'],
                     'Terlalu banyak permintaan dalam waktu singkat. Silakan tunggu sebentar lalu coba lagi.',
-                    $this->input->is_ajax_request());
+                    $this->input->is_ajax_request()
+                        || anti_automation_route_is_json($this->router->fetch_class(), $this->router->fetch_method()));
                 $this->output->_display(); exit;
             }
         } catch (Throwable $e) {
             // Pengamat tidak boleh menjadi titik gagal: catat, lanjutkan.
             log_message('error', 'enforce_anti_automation gagal (fail-open): ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Validasi skema per-endpoint (form keamanan poin 12.5, docs/engineering/KEAMANAN_API.md):
+     * metode, XHR, Content-Type, field wajib/tipe/rentang/enum, field tak dikenal, objek JSON
+     * bersarang, segmen URI, dan kolom berkas diperiksa SEBELUM metode controller berjalan.
+     * Endpoint yang belum terdaftar di config/api_schemas.php tidak terpengaruh (tetap lewat
+     * Input_guard). Pelanggaran STRUKTURAL (field asing, larik di tempat skalar, metode/Content-Type
+     * salah) dicatat sebagai peringatan keamanan; salah isi biasa (mis. NIK kurang digit) tidak.
+     * FAIL-CLOSED: galat pada validator menolak permintaan endpoint terdaftar.
+     */
+    private function enforce_api_schema()
+    {
+        if ($this->input->is_cli_request()) { return; }
+        $kelas = $this->router->fetch_class(); $metode = $this->router->fetch_method();
+        $this->load->library('Api_schema');
+        $skema = $this->api_schema->find($kelas, $metode);
+        if ($skema === NULL) { return; }
+
+        try {
+            $ctype = strtolower(trim(explode(';', (string) $this->input->server('CONTENT_TYPE'))[0]));
+            $json = NULL;
+            if ($ctype === 'application/json') {
+                $raw = (string) $this->input->raw_input_stream;
+                $json = $raw === '' ? NULL : json_decode($raw, TRUE, 12);
+            }
+            $hasil = $this->api_schema->validate($skema, [
+                'method'       => $this->input->method(TRUE),
+                'get'          => $_GET,
+                'post'         => $_POST,
+                'files'        => array_keys((array) $_FILES),
+                'segments'     => array_slice((array) $this->uri->rsegments, 2),
+                'ajax'         => $this->input->is_ajax_request(),
+                'content_type' => $ctype,
+                'json'         => $json,
+            ]);
+        } catch (Throwable $e) {
+            log_message('error', 'enforce_api_schema gagal: ' . $e->getMessage());
+            $hasil = ['ok' => FALSE, 'status' => 500, 'code' => 'schema_error', 'errors' => [], 'structural' => FALSE];
+        }
+        if ( ! empty($hasil['ok'])) { return; }
+
+        $rute = strtolower($kelas . '/' . $metode);
+        log_message('error', 'SECURITY_WARNING api_schema_rejected route=' . $rute . ' code=' . $hasil['code']
+            . ' fields=' . implode(',', array_slice(array_keys((array) $hasil['errors']), 0, 8)));
+        if ( ! empty($hasil['structural'])) {
+            try {
+                $this->load->library('Security_alert');
+                $this->security_alert->raise('skema_tidak_valid', 'rendah',
+                    "Kiriman ke '{$rute}' ditolak skema ({$hasil['code']}) pada struktur permintaan",
+                    ['route' => $rute, 'kode' => $hasil['code'], 'field' => array_slice(array_keys((array) $hasil['errors']), 0, 8)],
+                    'schema:' . $rute);
+            } catch (Throwable $e) { /* pengamat tidak boleh menggagalkan penolakan */ }
+        }
+
+        // Formulir peramban dengan tujuan pengalihan sendiri: pesan ramah, bukan halaman galat.
+        if (empty($skema['json']) && ! $this->input->is_ajax_request() && ! empty($skema['invalid']['redirect'])) {
+            $this->session->set_flashdata('error', (string) ($skema['invalid']['flash'] ?? 'Isian tidak valid.'));
+            redirect($skema['invalid']['redirect']);
+            exit;
+        }
+
+        $this->output->set_status_header((int) $hasil['status'])->set_header('Cache-Control: no-store');
+        if ( ! empty($hasil['allow'])) { $this->output->set_header('Allow: ' . implode(', ', $hasil['allow'])); }
+        if ( ! empty($skema['json']) || $this->input->is_ajax_request()) {
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status'  => 'error',
+                'code'    => $hasil['code'],
+                'message' => 'Permintaan tidak sesuai skema endpoint.',
+                'errors'  => $hasil['errors'],
+            ], JSON_UNESCAPED_UNICODE));
+            $this->output->_display(); exit;
+        }
+        show_error('Permintaan tidak sesuai skema endpoint.', (int) $hasil['status'], 'Permintaan Tidak Valid');
+        exit;
     }
 
     /** Batalkan sesi lama dan paksa penggantian kata sandi yang berusia 90 hari. */
