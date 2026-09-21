@@ -348,7 +348,10 @@ class Rate_limiter {
     private function dimension_value($dimension, array $context)
     {
         if ($dimension === 'ip') {
-            return (string) $this->CI->input->ip_address();
+            // IPv6 dihitung per blok /64 (satu pelanggan/perangkat lazimnya mendapat seluruh /64), supaya
+            // berganti alamat di dalam blok yang sama tidak mengulang penghitung dari nol.
+            $ip = (string) $this->CI->input->ip_address();
+            return function_exists('anti_automation_ip_bucket') ? anti_automation_ip_bucket($ip) : $ip;
         }
         if ($dimension === 'account') {
             return isset($context['account_id']) ? (string) (int) $context['account_id'] : NULL;

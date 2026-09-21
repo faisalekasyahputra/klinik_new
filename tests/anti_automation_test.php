@@ -44,6 +44,15 @@ check(anti_automation_ip_allowed('203.0.113.7', '198.51.100.1, 203.0.113.7'), 'I
 check( ! anti_automation_ip_allowed('203.0.113.70', '203.0.113.7'), 'Pencocokan IP harus persis, bukan awalan');
 check( ! anti_automation_ip_allowed('', '203.0.113.7'), 'IP kosong tidak dikecualikan');
 
+// --- 3b. Kunci penghitung IPv6 per /64
+check(anti_automation_ip_bucket('203.0.113.7') === '203.0.113.7', 'IPv4 tidak diubah');
+check(anti_automation_ip_bucket('2404:c0:b301:4e69:ed62:72cc:a4f0:8394') === anti_automation_ip_bucket('2404:00c0:b301:4e69:0:0:0:1'), 'Dua alamat IPv6 di /64 yang sama harus berbagi satu penghitung');
+check(anti_automation_ip_bucket('2404:c0:b301:4e69::1') !== anti_automation_ip_bucket('2404:c0:b301:4e6a::1'), 'IPv6 di /64 berbeda punya penghitung berbeda');
+check(anti_automation_ip_bucket('::ffff:203.0.113.7') === '203.0.113.7', 'IPv4-mapped IPv6 dihitung sebagai IPv4-nya');
+check(anti_automation_ip_bucket('::1') === anti_automation_ip_bucket('0:0:0:0:0:0:0:2'), 'Loopback IPv6 tetap satu bucket');
+check(anti_automation_ip_bucket('bukan-ip:') === 'bukan-ip:' && anti_automation_ip_bucket('') === '', 'Nilai yang tak dapat diurai dikembalikan apa adanya');
+check(strpos(sumber('libraries/Rate_limiter.php'), 'anti_automation_ip_bucket(') !== FALSE, 'Dimensi ip pada Rate_limiter harus memakai kunci /64 untuk IPv6');
+
 // --- 4. Kebijakan konsisten dengan registry pembatas laju --------------------------------------
 $config = []; require $app . '/config/rate_limits.php'; $pol = $config['rate_limit_policies'];
 $wajib = ['global_anon', 'global_akun', 'tulis_anon', 'tulis_akun', 'unggah_ip', 'unggah_akun', 'alert_dedupe', 'alert_eskalasi'];

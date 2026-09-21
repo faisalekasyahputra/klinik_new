@@ -28,6 +28,7 @@ Dokumen ini tidak memuat alamat IP, nama host, atau jalur server (repo ini publi
 | Peringatan | Pelanggaran STRUKTURAL (field asing, larik di tempat skalar, metode/Content-Type salah) dicatat sebagai peringatan `skema_tidak_valid` di Jejak Audit (tingkat rendah, penekan duplikat 30 menit); salah isi biasa seperti tanggal ngawur tidak, agar salah ketik pengguna tidak membanjiri admin | 12.5 |
 | Penjaga cakupan | `tests/api_schema_test.php` memindai semua controller: SETIAP metode publik yang menghasilkan JSON harus terdaftar di skema atau di `api_schema_exempt` dengan alasan tertulis; endpoint API baru yang lupa didaftarkan menggagalkan tes | 12.5, 12.7 |
 | Kelas laju API dari registri | `anti_automation_route_classes()` kini juga membaca `class` dari registri skema: SETIAP endpoint terdaftar otomatis kena batas per IP dan per akun untuk kelasnya (`api`: 40/menit; `cari`: 60/menit), di atas batas global dan batas tulis, tanpa menambah pola di dua tempat | 12.7 |
+| Penghitung IPv6 per /64 | Ditemukan saat uji live 12.7: klien dual-stack membagi permintaannya antara alamat IPv4 dan IPv6 sehingga penghitung per alamat tidak pernah mencapai batas, dan penyerang IPv6 dapat berganti alamat sesuka hati di dalam /64 miliknya. `Rate_limiter` kini memakai kunci `anti_automation_ip_bucket()`: IPv6 disatukan per blok /64, IPv4-mapped dihitung sebagai IPv4-nya. Klien yang sama lewat IPv4 dan IPv6 sekaligus tetap dihitung dua kali (dua kunci) | 12.7 |
 | Respons penolakan JSON | Penolakan laju endpoint API terdaftar berbentuk JSON (`code: automated_attack_warning` / `rate_limit_error`, `Retry-After`) walau klien tidak mengirim header XHR | 12.7 |
 
 ### Endpoint terdaftar
@@ -63,4 +64,5 @@ Dikecualikan dengan alasan tertulis: `auth/google` (pengalihan OAuth), `index/pa
 - **Skema memvalidasi bentuk, bukan makna bisnis.** Aturan seperti "status antrean ini boleh berpindah ke status itu" atau "NIK ini milik pemohon" tetap ada di handler dan model.
 - **Nilai tertentu sengaja tidak dibatasi pada daftar tertutup** (nilai `status` antrean admin, parameter pencarian Sikumbang) karena daftarnya milik model atau layanan luar; yang dibatasi panjang dan karakternya.
 - **Tidak ada dokumen skema publik (OpenAPI).** Aplikasi ini tidak menyediakan API untuk pihak ketiga; skema adalah kontrol internal antara halaman dan servernya.
+- **Batas laju per alamat tidak menahan penyerang dengan banyak alamat**: banyak IPv4 atau banyak blok /64 (agregasi /64 hanya menutup pergantian alamat di dalam satu blok). Batas per akun tetap berlaku bagi yang login.
 - Batas laju per IP dapat mengenai pengguna yang berbagi satu IP publik (lihat `ANTI_OTOMATISASI.md`); kelas `api` 40 permintaan per menit per IP juga berlaku untuk login/registrasi XHR.

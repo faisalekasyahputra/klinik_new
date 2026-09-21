@@ -106,6 +106,24 @@ if ( ! function_exists('anti_automation_ip_allowed')) {
     }
 }
 
+if ( ! function_exists('anti_automation_ip_bucket')) {
+    /**
+     * Kunci penghitung untuk satu alamat klien. IPv4 apa adanya; IPv6 disatukan per blok /64
+     * (penyerang IPv6 dapat berganti alamat sesuka hati di dalam /64 miliknya, sehingga penghitung
+     * per alamat tidak menahan apa pun); IPv4-mapped IPv6 (::ffff:a.b.c.d) dianggap IPv4-nya.
+     * Alamat yang tidak dapat diurai dikembalikan apa adanya.
+     */
+    function anti_automation_ip_bucket($ip)
+    {
+        $ip = trim((string) $ip);
+        if ($ip === '' || strpos($ip, ':') === FALSE) { return $ip; }
+        $bin = @inet_pton($ip);
+        if ($bin === FALSE || strlen($bin) !== 16) { return $ip; }
+        if (substr($bin, 0, 12) === hex2bin('00000000000000000000ffff')) { return (string) inet_ntop(substr($bin, 12)); }
+        return bin2hex(substr($bin, 0, 8)) . '/64';
+    }
+}
+
 if ( ! function_exists('bot_guard_fields')) {
     /** Untuk view: kolom honeypot tersembunyi + token waktu, disisipkan di dalam <form>. */
     function bot_guard_fields($form)
