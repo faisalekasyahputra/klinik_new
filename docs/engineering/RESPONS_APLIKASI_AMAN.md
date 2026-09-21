@@ -42,6 +42,8 @@ Kenapa header berkas statis dipasang dari `.htaccess` dan bukan global: `Header 
 | Beranda | 200, seluruh header, tanpa `X-Powered-By`, nol rujukan ke Google Fonts |
 | `/license.txt`, `/composer.json` | 403 (daftar izin), header keamanan ikut terpasang |
 
+Situs live (sesudah deploy, 21 Sep 2026, diukur dengan `curl`): beranda, halaman login, dan 404 router membawa X-Frame-Options, nosniff, Referrer-Policy, HSTS, COOP, CORP (404 router sebelumnya tanpa satu pun); CSS/JS/font/manifest membawa nosniff, X-Frame-Options, Referrer-Policy, HSTS dengan jenis konten `text/css`, `text/javascript`, `font/woff2`, `application/manifest+json` (lapisan tepi hosting tidak menambahkan `charset` pada aset statis, jadi charset hanya terjamin di Apache mandiri); `license.txt`, `composer.json`, `.env.example`, `tests/*.php`, dan `docs/*.md` dijawab 403; halaman login tidak lagi memuat panel demo maupun Google Fonts.
+
 ## 4. Penjaga
 
 `tests/response_safety_test.php` (offline) menggagalkan bila: `kirim_header_keamanan()` kehilangan salah satu dari sembilan header wajib, COOP menjadi `same-origin`, HSTS dikirim di HTTP; ada header keamanan dipasang di luar fungsi itu; `MY_Exceptions` tidak memasang header sebelum `parent::`; `.htaccess` kehilangan `AddType`/`AddCharset` atau memasang header keamanan di luar `FilesMatch` (header ganda); ada `echo json_encode` tanpa `Content-Type: application/json`; `serve_private_file` mengambil jenis konten dari `$mime`, kehilangan `no-store`, `Content-Length`, sandbox, atau `basename`.
