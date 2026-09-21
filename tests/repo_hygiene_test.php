@@ -5,8 +5,8 @@
  *
  * Yang dijaga: (1) berkas mati yang sudah dibuang tidak kembali, tiap view punya pemanggil; (2) DocumentRoot hanya
  * menyajikan yang publik (daftar IZIN di .htaccess) dan tidak ada salinan konfigurasi/cadangan/dump di akar; (3) repo
- * publik tidak memuat IP, akun hosting, atau kredensial bawaan; (4) fitur sampel (mode simulasi, migrasi data demo,
- * panel "Kredensial Demo") tidak aktif di production. Pelengkap: docs/engineering/bersihkan_data_sampel.php (data live).
+ * publik tidak memuat IP, akun hosting, atau kredensial bawaan; (4) fitur sampel (mode simulasi dan migrasi data demo tidak aktif di production;
+ * panel "Kredensial Demo": hanya di tiga layar yang diizinkan, sementara untuk uji coba). Pelengkap: docs/engineering/bersihkan_data_sampel.php (data live).
  */
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 
@@ -110,14 +110,19 @@ check($akun_temuan === [], "Repo publik memuat nama akun/jalur hosting:\n  " . i
 // Kredensial bawaan tidak boleh tertulis di dokumen maupun di layar login.
 $akun_doc = baca('docs/engineering/AKUN_LOGIN.md');
 check($akun_doc !== '' && preg_match('/\|\s*`?password`?\s*\||@example\.com/i', $akun_doc) === 0, 'AKUN_LOGIN.md tidak boleh memuat kata sandi bawaan');
-$LAYAR_LOGIN = ['application/views/pages/auth/login.php', 'application/views/components/login_modal.php', 'application/views/pages/pengembang/syarat.php'];
-foreach ($LAYAR_LOGIN as $v) {
-    $s = baca($v);
-    check($s !== '', "$v harus ada");
-    check(stripos($s, 'Kredensial Demo') === FALSE && strpos($s, "='password'") === FALSE && strpos($s, 'auth-demo') === FALSE && strpos($s, 'login-modal__demo') === FALSE,
-        "$v tidak boleh memajang panel/isi-otomatis kredensial demo (kata sandi bawaan di layar publik)");
+// Panel "Kredensial Demo" (sandi bawaan di layar login) DIPERTAHANKAN SEMENTARA atas keputusan pemilik produk 21 Sep 2026
+// karena sistem masih uji coba oleh dinas (AGENTS.md §20). Yang dijaga: ia hanya boleh ada di tiga layar yang
+// sudah dikenal, tidak menyebar ke view lain, dan tidak ada di dokumen. Mencabutnya = hapus tiga blok ini + CSS auth-demo
+// lalu ubah cek ini menjadi larangan penuh (riwayat: commit 15ed468 mencabutnya).
+$LAYAR_DEMO_DIIZINKAN = ['application/views/pages/auth/login.php', 'application/views/components/login_modal.php', 'application/views/pages/pengembang/syarat.php'];
+$demo_di = [];
+foreach (pindai($akar . '/application/views', ['php']) as $p) {
+    $r = rel($p); $s = (string) file_get_contents($p);
+    if (stripos($s, 'Kredensial Demo') !== FALSE || strpos($s, "='password'") !== FALSE || strpos($s, 'auth-demo') !== FALSE || strpos($s, 'login-modal__demo') !== FALSE) { $demo_di[] = $r; }
 }
-check(strpos(baca('assets/css/auth-pages.css'), 'auth-demo') === FALSE, 'CSS panel Kredensial Demo yatim harus tetap dihapus');
+$liar = array_values(array_diff($demo_di, $LAYAR_DEMO_DIIZINKAN));
+check($liar === [], "Panel/isi-otomatis kredensial demo muncul di layar yang tidak diizinkan:\n  " . implode("\n  ", $liar));
+check(strpos(baca('docs/engineering/AKUN_LOGIN.md'), 'Kredensial Demo') === FALSE, 'AKUN_LOGIN.md tidak boleh memuat kredensial');
 
 /* ============================================================ 4. Fitur sampel tidak aktif di production */
 $sim = baca('application/config/simperum.php');
