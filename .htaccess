@@ -17,6 +17,16 @@
     # sertifikat gagal diperpanjang dan situs mati total saat kedaluwarsa.
     RewriteRule (^|/)\.(?!well-known/)[^/]* - [F,L]
 
+    # Poin 12.4 (docs/engineering/URI_DAN_METODE_HTTP.md): metode selain GET/HEAD/POST/OPTIONS ditolak
+    # di lapisan server, untuk SEMUA jalur termasuk berkas statis. Terutama TRACE/TRACK: ditangani
+    # server SEBELUM PHP dan memantulkan seluruh header permintaan (termasuk Cookie) ke pemanggil.
+    # Aplikasi sendiri sudah menjawab 405 untuk PUT/DELETE/PATCH di jalur PHP (Http_policy).
+    # CATATAN: pada Apache mandiri TRACE tetap dilayani inti server walau ada aturan ini; tutup dengan
+    # `TraceEnable off` di konfigurasi server (tidak bisa lewat .htaccess). Di hosting produksi TRACE
+    # sudah ditolak 405 oleh lapisan tepi (diverifikasi 21 Sep 2026).
+    RewriteCond %{REQUEST_METHOD} !^(GET|HEAD|POST|OPTIONS)$ [NC]
+    RewriteRule ^ - [R=405,L]
+
     # Dokumentasi internal & script dev ikut ter-deploy tapi bukan untuk publik:
     # memuat skema DB lengkap, dokumen audit keamanan, dan arsitektur internal.
     # `tests` dan `vendor` ditambahkan 20 Sep 2026: skrip di dalamnya bisa
@@ -92,6 +102,8 @@
 
 # Cache-Control headers
 <IfModule mod_headers.c>
+    # Poin 12.2: buang penanda teknologi dari respons berkas statis juga (PHP sudah membuangnya sendiri).
+    Header always unset X-Powered-By
     <FilesMatch "\.(css|js)$">
         Header set Cache-Control "public, max-age=2592000"
     </FilesMatch>

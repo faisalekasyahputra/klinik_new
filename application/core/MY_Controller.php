@@ -24,6 +24,9 @@ class MY_Controller extends CI_Controller {
         // supaya permintaan yang ditolak tidak sempat menyentuh sesi/DB lebih jauh.
         $this->enforce_anti_automation();
 
+        // Kebijakan metode HTTP dan kebersihan URI (poin 12.2 dan 12.4).
+        $this->enforce_http_policy();
+
         // Validasi skema per-endpoint untuk API dan layanan web (poin 12.5).
         $this->enforce_api_schema();
 
@@ -78,6 +81,63 @@ class MY_Controller extends CI_Controller {
             // Pengamat tidak boleh menjadi titik gagal: catat, lanjutkan.
             log_message('error', 'enforce_anti_automation gagal (fail-open): ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Kebijakan metode HTTP dan kebersihan URI (form keamanan poin 12.2 dan 12.4,
+     * docs/engineering/URI_DAN_METODE_HTTP.md): hanya GET/HEAD/POST, penerowongan metode ditolak,
+     * endpoint yang mengubah keadaan hanya POST, OPTIONS dijawab dengan Allow milik rute itu, dan
+     * data pribadi/rahasia tidak boleh berada di query string maupun jalur URI. Dijalankan SESUDAH
+     * rute teresolusi (controller dan metodenya ada), jadi header Allow tidak pernah bocor untuk
+     * alamat asal-asalan. FAIL-CLOSED: galat pada pemeriksa menolak permintaan.
+     */
+    private function enforce_http_policy()
+    {
+        if ($this->input->is_cli_request()) { return; }
+        $kelas = $this->router->fetch_class(); $metode = $this->router->fetch_method();
+        try {
+            $this->load->library('Http_policy');
+            $hasil = $this->http_policy->check([
+                'route'    => strtolower($kelas . '/' . $metode),
+                'method'   => $this->input->method(TRUE),
+                'server'   => $_SERVER,
+                'get'      => $_GET,
+                'post'     => $_POST,
+                'segments' => array_slice((array) $this->uri->rsegments, 2),
+            ]);
+        } catch (Throwable $e) {
+            log_message('error', 'enforce_http_policy gagal: ' . $e->getMessage());
+            $this->output->set_status_header(500)->set_content_type('text/plain', 'utf-8')->set_output('Layanan sementara belum dapat memproses permintaan.');
+            $this->output->_display(); exit;
+        }
+        if ( ! empty($hasil['ok'])) { return; }
+
+        $this->output->set_header('Allow: ' . implode(', ', $hasil['allow']))->set_header('Cache-Control: no-store');
+        if ($hasil['code'] === 'options') {
+            $this->output->set_status_header(204);
+            $this->output->_display(); exit;
+        }
+
+        $rute = strtolower($kelas . '/' . $metode);
+        log_message('error', 'SECURITY_WARNING http_policy_rejected route=' . $rute . ' code=' . $hasil['code'] . ' method=' . $this->input->method(TRUE));
+        if ( ! empty($hasil['structural'])) {
+            try {
+                $this->load->library('Security_alert');
+                $this->security_alert->raise('kebijakan_http', 'rendah',
+                    "Permintaan ke '{$rute}' ditolak kebijakan HTTP ({$hasil['code']})",
+                    ['route' => $rute, 'kode' => $hasil['code'], 'metode' => substr((string) $this->input->method(TRUE), 0, 12)],
+                    'http:' . $hasil['code']);
+            } catch (Throwable $e) { /* pengamat tidak boleh menggagalkan penolakan */ }
+        }
+        $this->output->set_status_header((int) $hasil['status']);
+        if ($this->input->is_ajax_request() || anti_automation_route_is_json($kelas, $metode)) {
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status' => 'error', 'code' => $hasil['code'], 'message' => $hasil['message'],
+            ], JSON_UNESCAPED_UNICODE));
+            $this->output->_display(); exit;
+        }
+        show_error($hasil['message'], (int) $hasil['status'], 'Permintaan Tidak Valid');
+        exit;
     }
 
     /**
@@ -289,6 +349,9 @@ class MY_Controller extends CI_Controller {
 
         // Referrer Policy
         header("Referrer-Policy: strict-origin-when-cross-origin");
+
+        // Poin 12.2: jangan mengumumkan teknologi dan versi (X-Powered-By: PHP/x.y.z) di setiap respons.
+        header_remove('X-Powered-By');
 
         // HSTS - enforce HTTPS for 1 year (only effective over HTTPS)
         if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {

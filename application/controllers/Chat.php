@@ -119,7 +119,8 @@ class Chat extends MY_Controller {
     $api_key = getenv('GEMINI_API_KEY');
     
     // KUNCI PERUBAHAN: Gunakan /v1/ dan nama model murni tanpa embel-embel '-latest'
-    $url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" . $api_key;
+    // Poin 12.2: kunci API TIDAK boleh berada di URI (masuk log dan pesan galat); dikirim lewat header.
+    $url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent";
     $system_prompt = "[INSTRUKSI SISTEM MUTLAK]\n"
                    . "Anda adalah 'Asisten Pintar AI' resmi dari platform Klinik PKP Disperakim Provinsi Jawa Tengah.\n"
                    . "Patuhi peraturan ini saat merespons:\n"
@@ -149,7 +150,8 @@ class Chat extends MY_Controller {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST => true,
         CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json'
+            'Content-Type: application/json',
+            'x-goog-api-key: ' . $api_key
         ],
         CURLOPT_POSTFIELDS => json_encode($payload),
         

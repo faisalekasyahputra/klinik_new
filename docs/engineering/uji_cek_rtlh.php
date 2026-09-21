@@ -273,8 +273,10 @@ cek((bool) preg_match('/name="nik"[^>]*value="' . NIK_ADA . '"/', $ada['body']),
 
 // ------------------------------------------------ 6. METODE & CSRF
 echo "\n== 6. GET dan POST tanpa token ==\n";
-cek(http('u', 'Cek_Rtlh/periksa?nik=' . NIK_ADA . '&tgl_lahir=' . TGL_ADA)['code'] === 404,
-    'GET ke endpoint pencarian dibalas 404');
+// NIK dan tanggal lahir di query string ditolak 400 oleh kebijakan URI (poin 12.2) sebelum controller
+// berjalan; tanpanya, endpoint POST-only menjawab 405 (dulu 404). Yang dijaga: GET tidak pernah memberi hasil.
+cek(in_array(http('u', 'Cek_Rtlh/periksa?nik=' . NIK_ADA . '&tgl_lahir=' . TGL_ADA)['code'], [400, 404, 405], TRUE),
+    'GET ke endpoint pencarian ditolak (400/404/405), tidak memberi hasil');
 $tanpa = http('u', 'Cek_Rtlh/periksa', ['nik' => NIK_ADA, 'tgl_lahir' => TGL_ADA]);
 cek(stripos($tanpa['body'], 'MODE SIMULASI') === FALSE,
     'POST tanpa token CSRF tidak menghasilkan hasil');

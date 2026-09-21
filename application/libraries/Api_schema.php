@@ -80,6 +80,12 @@ class Api_schema {
 
         $errors = []; $struktur = FALSE;
 
+        // Data hanya boleh di badan: endpoint ber-sumber form/json tidak menerima query string apa pun
+        // (URI masuk ke log, riwayat, dan Referer; form keamanan poin 12.2).
+        if ($sumber !== 'query' && $method !== 'GET' && ! empty($req['get'])) {
+            $errors['_query'] = 'endpoint ini tidak menerima parameter di query string'; $struktur = TRUE;
+        }
+
         // Segmen URI.
         $segmen = array_values((array) ($req['segments'] ?? []));
         $aturan_segmen = $schema['segments'] ?? [];
