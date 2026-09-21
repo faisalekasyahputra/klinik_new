@@ -22,6 +22,7 @@ $verification_pending = $this->session->userdata('srp2_verify_pending') === TRUE
             </div>
         <?php else: ?>
             <form action="<?= base_url('Auth/do_register') ?>" method="post" class="rounded-2xl p-5 sm:p-6" style="background:var(--portal-bg-card);border:1px solid var(--portal-border)">
+                <?= bot_guard_fields('register') ?>
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                 <input type="hidden" name="srp2_pengembang" value="1">
                 <h1 class="text-xl font-black sm:text-2xl">Buat Akun Pengembang</h1>

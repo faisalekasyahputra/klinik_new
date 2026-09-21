@@ -89,7 +89,7 @@ $autoload['drivers'] = array();
 |
 |	$autoload['helper'] = array('url', 'file');
 */
-$autoload['helper'] =  array('url', 'file', 'ternak', 'cache_hulu', 'sikumbang', 'transport', 'content_security');
+$autoload['helper'] =  array('url', 'file', 'ternak', 'cache_hulu', 'sikumbang', 'transport', 'content_security', 'anti_automation');
 
 /*
 | -------------------------------------------------------------------

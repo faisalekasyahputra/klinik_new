@@ -189,6 +189,7 @@
 
             <!-- Login Form -->
             <form action="<?= base_url('Auth/do_login') ?>" method="POST" id="loginForm">
+                <?= bot_guard_fields('login') ?>
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
                 <!-- Email / Username -->

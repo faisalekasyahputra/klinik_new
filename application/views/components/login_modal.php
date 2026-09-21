@@ -48,6 +48,7 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
         <p class="kpkp-login-modal__subheading">Masuk ke akun Anda untuk melanjutkan.</p>
 
         <form action="<?= base_url('Auth/do_login') ?>" method="POST" id="kpkp-login-modal-form">
+                <?= bot_guard_fields('login') ?>
             <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
             <label class="kpkp-login-modal__label" for="kpkp_login_modal_email">Username atau Email</label>
@@ -160,6 +161,7 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
         <p class="kpkp-login-modal__subheading">Daftar untuk melanjutkan pendataan secara mandiri.</p>
         <p id="kpkp-register-nik-info" class="kpkp-register-nik-info" hidden></p>
         <form action="<?= base_url('Auth/do_register') ?>" method="POST" id="kpkp-register-modal-form">
+                <?= bot_guard_fields('register') ?>
             <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
             <label class="kpkp-login-modal__label" for="kpkp_register_modal_email">Alamat Email</label>
             <div class="kpkp-login-modal__input-group"><input type="email" id="kpkp_register_modal_email" name="email" class="kpkp-login-modal__input" placeholder="nama@email.com" required autocomplete="email"><i class="fa-solid fa-envelope kpkp-login-modal__input-icon"></i></div>

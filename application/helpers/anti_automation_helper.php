@@ -1,0 +1,87 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+/**
+ * Fungsi murni untuk kontrol anti-otomatisasi (form keamanan poin 10.4). Dibaca dari
+ * config/anti_automation.php langsung supaya dapat diuji tanpa memuat CodeIgniter.
+ */
+
+if ( ! function_exists('anti_automation_config')) {
+    function anti_automation_config($key = NULL, $default = NULL)
+    {
+        static $cfg = NULL;
+        if ($cfg === NULL) {
+            $config = [];
+            require dirname(__DIR__) . '/config/anti_automation.php';
+            $cfg = $config;
+        }
+        return $key === NULL ? $cfg : ($cfg[$key] ?? $default);
+    }
+}
+
+if ( ! function_exists('anti_automation_is_scanner')) {
+    /** TRUE bila User-Agent memuat tanda tangan alat serangan/pemindai yang dikenal. */
+    function anti_automation_is_scanner($user_agent)
+    {
+        $user_agent = (string) $user_agent;
+        if ($user_agent === '') { return FALSE; }
+        $pola = anti_automation_config('scanner_user_agents', []);
+        if ( ! $pola) { return FALSE; }
+        return preg_match('#(?:' . implode('|', $pola) . ')#i', $user_agent) === 1;
+    }
+}
+
+if ( ! function_exists('anti_automation_route_classes')) {
+    /**
+     * Kelas rute untuk "controller/metode" (huruf kecil), mis. ['cari'] atau ['unduh'].
+     * Satu rute boleh masuk lebih dari satu kelas.
+     */
+    function anti_automation_route_classes($controller, $method)
+    {
+        $rute = strtolower((string) $controller) . '/' . strtolower((string) $method);
+        $hasil = [];
+        foreach (anti_automation_config('route_classes', []) as $kelas => $daftar) {
+            foreach ($daftar as $pola) {
+                if (fnmatch($pola, $rute)) { $hasil[] = $kelas; break; }
+            }
+        }
+        return $hasil;
+    }
+}
+
+if ( ! function_exists('anti_automation_is_write')) {
+    function anti_automation_is_write($http_method)
+    {
+        return in_array(strtoupper((string) $http_method), anti_automation_config('write_methods', []), TRUE);
+    }
+}
+
+if ( ! function_exists('anti_automation_ip_allowed')) {
+    /**
+     * IP yang dikecualikan dari kontrol global: loopback (permintaan dari server itu sendiri:
+     * pemantauan, harness uji) dan daftar eksplisit di env ANTI_OTOMATISASI_IP_DIIZINKAN
+     * (dipisah koma; IP persis, tanpa rentang). Untuk kantor/kampus yang berbagi satu IP dan
+     * terus terkena batas; keputusan operasional yang dicatat, bukan bawaan.
+     */
+    function anti_automation_ip_allowed($ip, $daftar_env = NULL)
+    {
+        $ip = trim((string) $ip);
+        if ($ip === '') { return FALSE; }
+        if (in_array($ip, ['127.0.0.1', '::1'], TRUE)) { return TRUE; }
+        $daftar_env = $daftar_env === NULL ? (string) getenv('ANTI_OTOMATISASI_IP_DIIZINKAN') : (string) $daftar_env;
+        foreach (explode(',', $daftar_env) as $izin) {
+            if (trim($izin) !== '' && strcasecmp(trim($izin), $ip) === 0) { return TRUE; }
+        }
+        return FALSE;
+    }
+}
+
+if ( ! function_exists('bot_guard_fields')) {
+    /** Untuk view: kolom honeypot tersembunyi + token waktu, disisipkan di dalam <form>. */
+    function bot_guard_fields($form)
+    {
+        $CI =& get_instance();
+        $CI->load->library('Bot_guard');
+        return $CI->bot_guard->fields($form);
+    }
+}

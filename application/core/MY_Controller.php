@@ -20,8 +20,60 @@ class MY_Controller extends CI_Controller {
         // Set OWASP security headers on every response
         $this->set_security_headers();
 
+        // Kontrol anti-otomatisasi GLOBAL (poin 10.4): dilewati SEMUA controller, paling awal
+        // supaya permintaan yang ditolak tidak sempat menyentuh sesi/DB lebih jauh.
+        $this->enforce_anti_automation();
+
         $this->usir_kalau_nonaktif();
         $this->enforce_single_session_and_password_expiry();
+    }
+
+    /**
+     * Kontrol anti-otomatisasi global (form keamanan poin 10.4, docs/engineering/ANTI_OTOMATISASI.md).
+     *   1. User-Agent alat serangan/pemindai yang dikenal: 403 + peringatan ke admin.
+     *   2. Batas laju global/tulis/kelas rute/unggahan (libraries/Anti_automation.php): 429 +
+     *      Retry-After + X-Security-Warning, dan peringatan ke admin pada pelampauan pertama.
+     * Loopback dan IP di ANTI_OTOMATISASI_IP_DIIZINKAN dikecualikan. FAIL-OPEN bila penyimpanan
+     * pembatas laju gagal (jalur ini dilalui SETIAP halaman).
+     */
+    private function enforce_anti_automation()
+    {
+        if ($this->input->is_cli_request()) { return; }
+        try {
+            $ip = (string) $this->input->ip_address();
+            if (anti_automation_ip_allowed($ip)) { return; }
+
+            if (anti_automation_is_scanner($this->input->user_agent())) {
+                $this->load->library('Security_alert');
+                $this->security_alert->raise('pemindai_ua', 'sedang',
+                    'Alat pemindai/serangan dikenali dari User-Agent dan permintaannya ditolak (403)',
+                    ['route' => strtolower((string) $this->router->fetch_class()) . '/' . strtolower((string) $this->router->fetch_method())],
+                    'ua');
+                $this->output->set_status_header(403)->set_content_type('text/plain', 'utf-8')->set_output('Akses ditolak.');
+                $this->output->_display(); exit;
+            }
+
+            $this->load->library('Anti_automation');
+            $verdict = $this->anti_automation->guard([
+                'account_id'  => $this->session->userdata('is_logged') ? (int) $this->session->userdata('user_id') : 0,
+                'controller'  => $this->router->fetch_class(),
+                'method'      => $this->router->fetch_method(),
+                'http_method' => $this->input->method(TRUE),
+                // Hanya permintaan yang SUNGGUH membawa berkas (kolom berkas kosong = UPLOAD_ERR_NO_FILE tidak dihitung).
+                'has_files'   => (bool) array_filter((array) $_FILES, static function ($f) {
+                    return is_array($f) && (is_array($f['error'] ?? NULL) || (int) ($f['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE);
+                }),
+            ]);
+            if ( ! empty($verdict['blocked'])) {
+                $this->rate_limit_reject($verdict['result'],
+                    'Terlalu banyak permintaan dalam waktu singkat. Silakan tunggu sebentar lalu coba lagi.',
+                    $this->input->is_ajax_request());
+                $this->output->_display(); exit;
+            }
+        } catch (Throwable $e) {
+            // Pengamat tidak boleh menjadi titik gagal: catat, lanjutkan.
+            log_message('error', 'enforce_anti_automation gagal (fail-open): ' . $e->getMessage());
+        }
     }
 
     /** Batalkan sesi lama dan paksa penggantian kata sandi yang berusia 90 hari. */

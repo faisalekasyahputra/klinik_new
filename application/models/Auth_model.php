@@ -159,7 +159,10 @@ class Auth_model extends CI_Model {
             $lock_until = date('Y-m-d H:i:s', strtotime('+' . self::LOCKOUT_MINUTES . ' minutes'));
             $this->db->where('id', $user_id);
             $this->db->update('usr_users', ['locked_until' => $lock_until]);
+            // TRUE hanya pada percobaan yang MENGUNCI akun (untuk peringatan keamanan ke admin, poin 10.5).
+            return (int) $user->login_attempts === self::MAX_LOGIN_ATTEMPTS;
         }
+        return FALSE;
     }
 
     /**

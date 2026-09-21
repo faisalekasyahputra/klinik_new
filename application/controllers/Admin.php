@@ -17,6 +17,9 @@ class Admin extends Admin_Controller {
         $data['empty_text']  = 'Belum ada antrean yang masuk.';
         $data['base_url']    = 'Admin';
         $data += $this->antrean_table_data(NULL);
+        // Ringkasan peringatan keamanan otomatis (poin 10.5); hanya superadmin yang melihatnya.
+        $this->load->library('Security_alert');
+        $data['peringatan_keamanan'] = $this->security_alert->ringkasan();
 
         $this->render_admin('admin/antrean/dashboard', $data);
     }

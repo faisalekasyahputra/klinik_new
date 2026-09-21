@@ -19,6 +19,7 @@
 
             <!-- Panel: Masuk -->
             <form x-show="tab === 'masuk'" x-cloak action="<?= base_url('Auth/do_login') ?>" method="POST" class="space-y-3">
+                <?= bot_guard_fields('login') ?>
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                 <input type="hidden" name="redirect_to" value="Pengembang/masuk">
                 <label class="block text-[11px] font-bold">Email atau Username <span style="color:#dc2626">*</span>

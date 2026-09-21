@@ -54,6 +54,25 @@ $filter_html = ob_get_clean();
          `relative z-10` menguburnya di bawah topbar (z-40) & sidebar (z-20).
          Alasan sama dengan `#main-content`; lihat catatan di admin/index.php. */ ?>
 <div x-data="antreanModal()" class="relative">
+    <?php
+    /* Banner peringatan keamanan (poin 10.5): HANYA superadmin (Admin::index mengisi variabelnya).
+       Peringatan otomatis (batas laju, pemindai, jebakan, bot, kunci akun) dicatat di Jejak Audit dan
+       diringkas di sini supaya admin melihatnya tanpa perlu membuka log terenkripsi. */
+    if ( ! empty($peringatan_keamanan) && (int) $peringatan_keamanan['total'] > 0):
+        $pk = $peringatan_keamanan; $pk_tinggi = (int) $pk['tinggi'];
+    ?>
+    <a href="<?= base_url('Admin_Audit?aksi=peringatan_keamanan') ?>" role="alert"
+       class="mb-6 flex items-start gap-3 rounded-2xl border p-4 transition-colors <?= $pk_tinggi > 0 ? 'border-red-300 bg-red-50 hover:bg-red-100 dark:border-red-500/40 dark:bg-red-500/10' : 'border-amber-300 bg-amber-50 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10' ?>">
+        <i class="ph ph-shield-warning text-2xl <?= $pk_tinggi > 0 ? 'text-red-600' : 'text-amber-600' ?>"></i>
+        <span class="text-sm">
+            <strong class="block text-gray-900 dark:text-white"><?= (int) $pk['total'] ?> peringatan keamanan dalam <?= (int) $pk['jam'] ?> jam terakhir<?= $pk_tinggi > 0 ? ' (' . $pk_tinggi . ' tingkat tinggi)' : '' ?></strong>
+            <span class="text-gray-600 dark:text-brand-muted">
+                <?php $bagian = []; foreach ($pk['per_tipe'] as $tipe => $n) { $bagian[] = html_escape(str_replace('_', ' ', $tipe)) . ' ×' . (int) $n; } echo implode(', ', array_slice($bagian, 0, 5)); ?>.
+                Terakhir <?= html_escape((string) $pk['terakhir']) ?>. Klik untuk membuka Jejak Audit.
+            </span>
+        </span>
+    </a>
+    <?php endif; ?>
     <div class="mb-8">
         <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2 flex items-center gap-3">
             <i class="ph ph-map-pin text-brand-primary"></i>

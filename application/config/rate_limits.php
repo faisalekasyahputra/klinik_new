@@ -165,4 +165,40 @@ $config['rate_limit_policies'] = [
         'window' => 3600,
         'dimensions' => ['ip'],
     ],
+
+    /* ================================================================
+       KONTROL ANTI-OTOMATISASI GLOBAL (form keamanan poin 10.4), 21 Sep 2026.
+       Dipasang di MY_Controller::__construct(), jadi berlaku untuk SELURUH
+       endpoint PHP, bukan hanya yang memanggil limiter sendiri. Penjelasan:
+       docs/engineering/ANTI_OTOMATISASI.md.
+
+       Semua memakai Rate_limiter::hit_fast() (satu kueri atomik) dan jendela
+       per MENIT: kolom penghitung TINYINT UNSIGNED, jadi batas maksimum 255 per
+       jendela, dan jendela per jam tidak bisa dipakai untuk angka sebesar ini.
+       Angkanya sengaja LONGGAR: tujuannya menghentikan skrip (ratusan per menit),
+       bukan pengguna. Halaman biasa memuat 1 permintaan PHP; jajak notifikasi
+       dan navigasi progresif admin menambah beberapa per menit. Batas per-IP
+       anonim dibuat lebih tinggi dari per-akun karena satu IP kantor/kampus bisa
+       dipakai banyak orang (NAT); yang perlu lebih longgar dapat memakai
+       ANTI_OTOMATISASI_IP_DIIZINKAN di .env (lihat helpers/anti_automation_helper.php).
+       ================================================================ */
+    'global_anon'  => ['limit' => 240, 'window' => 60, 'dimensions' => ['ip']],
+    'global_akun'  => ['limit' => 240, 'window' => 60, 'dimensions' => ['account']],
+    // Permintaan yang MENGUBAH keadaan (POST/PUT/PATCH/DELETE): logika bisnis berlebihan.
+    'tulis_anon'   => ['limit' => 40,  'window' => 60, 'dimensions' => ['ip']],
+    'tulis_akun'   => ['limit' => 120, 'window' => 60, 'dimensions' => ['account']],
+    // Kelas endpoint yang mahal/rawan eksfiltrasi data (config/anti_automation.php: route_classes).
+    'kelas_cari_ip'    => ['limit' => 60, 'window' => 60, 'dimensions' => ['ip']],
+    'kelas_cari_akun'  => ['limit' => 60, 'window' => 60, 'dimensions' => ['account']],
+    'kelas_api_ip'     => ['limit' => 40, 'window' => 60, 'dimensions' => ['ip']],
+    'kelas_api_akun'   => ['limit' => 40, 'window' => 60, 'dimensions' => ['account']],
+    'kelas_unduh_ip'   => ['limit' => 40, 'window' => 60, 'dimensions' => ['ip']],
+    'kelas_unduh_akun' => ['limit' => 40, 'window' => 60, 'dimensions' => ['account']],
+    // Unggahan berlebihan: dihitung per PERMINTAAN yang membawa berkas.
+    'unggah_ip'    => ['limit' => 20, 'window' => 600, 'dimensions' => ['ip']],
+    'unggah_akun'  => ['limit' => 40, 'window' => 600, 'dimensions' => ['account']],
+    /* Internal untuk peringatan (libraries/Security_alert.php). `senyap` = pelampauannya
+       sendiri TIDAK memicu peringatan (kalau tidak, peringatan memicu peringatan). */
+    'alert_dedupe'   => ['limit' => 1, 'window' => 1800, 'dimensions' => ['key'], 'senyap' => TRUE],
+    'alert_eskalasi' => ['limit' => 3, 'window' => 3600, 'dimensions' => ['ip'],  'senyap' => TRUE],
 ];

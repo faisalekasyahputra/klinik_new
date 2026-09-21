@@ -84,6 +84,12 @@ class Auth extends MY_Controller {
         // tetap di halaman asalnya - bukan terlempar ke Auth/login umum. Divalidasi anti-open-redirect.
         $error_target = $this->sanitize_redirect($this->input->post('redirect_to', TRUE)) ?: 'Auth/login';
 
+        // Tantangan bot (honeypot + token waktu; poin 10.4). reCAPTCHA dilewati bila kuncinya kosong,
+        // dan di production kuncinya kosong, jadi tanpa ini login tidak punya tantangan bot sama sekali.
+        if ( ! $this->_bot_gate('login', $is_ajax, $error_target)) {
+            return;
+        }
+
         // Basic validation
         if (empty($login_id) || empty($password)) {
             $this->_login_fail($is_ajax, 'Email/Username dan password wajib diisi.', $error_target);
@@ -147,7 +153,17 @@ class Auth extends MY_Controller {
             $this->sensitive_buffer->wipe($_POST['password']);
         }
         if (!$password_valid) {
-            $this->auth_model->increment_login_attempts($user->id);
+            $baru_terkunci = $this->auth_model->increment_login_attempts($user->id);
+            if ($baru_terkunci === TRUE) {
+                // Akun terkunci karena gagal login beruntun: bisa salah ketik, bisa tebak-sandi/credential stuffing.
+                // Peringatan ke admin (poin 10.5); hanya id akun, tanpa email/NIK.
+                try {
+                    $this->load->library('Security_alert');
+                    $this->security_alert->raise('akun_terkunci', 'sedang',
+                        'Akun (id ' . (int) $user->id . ') terkunci karena ' . Auth_model::MAX_LOGIN_ATTEMPTS . ' percobaan login gagal beruntun',
+                        ['akun_id' => (int) $user->id], 'lock:' . (int) $user->id);
+                } catch (Throwable $e) { log_message('error', 'Auth: peringatan kunci akun gagal: ' . $e->getMessage()); }
+            }
             $attempts_left = Auth_model::MAX_LOGIN_ATTEMPTS - ($user->login_attempts + 1);
             $message = $attempts_left > 0
                 ? "Email atau password salah. Sisa {$attempts_left} percobaan."
@@ -222,6 +238,38 @@ class Auth extends MY_Controller {
      * Balas gagal login - JSON kalau request AJAX (dipakai wizard SRP2), flashdata+redirect
      * kalau request halaman biasa (perilaku asli, tidak berubah).
      */
+    /**
+     * Gerbang tantangan bot untuk login/registrasi. TRUE = lanjut. FALSE = respons penolakan
+     * sudah dikirim (pemanggil cukup return). Setiap penolakan menjadi peringatan keamanan
+     * (ditekan duplikatnya) yang dilihat administrator di Jejak Audit.
+     */
+    private function _bot_gate($form, $is_ajax, $target) {
+        $this->load->library('Bot_guard');
+        $hasil = $this->bot_guard->check($form);
+        if ( ! empty($hasil['ok'])) {
+            return TRUE;
+        }
+        try {
+            $this->load->library('Security_alert');
+            $this->security_alert->raise(
+                'bot_form', 'sedang',
+                "Formulir {$form} ditolak: tanda otomatisasi ({$hasil['reason']})",
+                ['form' => $form, 'alasan' => $hasil['reason']],
+                'bot:' . $form . ':' . $hasil['reason']
+            );
+        } catch (Throwable $e) {
+            log_message('error', 'Auth::_bot_gate: peringatan gagal: ' . $e->getMessage());
+        }
+        // Pesan SAMA untuk semua alasan: tidak membocorkan mana yang memicu penolakan.
+        $pesan = 'Verifikasi keamanan gagal. Muat ulang halaman lalu coba lagi.';
+        if ($form === 'register') {
+            $this->_register_fail($is_ajax, $pesan, $target);
+        } else {
+            $this->_login_fail($is_ajax, $pesan, $target);
+        }
+        return FALSE;
+    }
+
     private function _login_fail($is_ajax, $message, $error_target) {
         if ($is_ajax) {
             $this->output->set_content_type('application/json')->set_output(json_encode([
@@ -281,6 +329,11 @@ class Auth extends MY_Controller {
                 'Terlalu banyak percobaan pendaftaran. Silakan coba lagi sebentar.',
                 $is_ajax
             );
+            return;
+        }
+
+        // Tantangan bot (poin 10.4), lihat komentar di do_login().
+        if ( ! $this->_bot_gate('register', $is_ajax, $redirect_target)) {
             return;
         }
 

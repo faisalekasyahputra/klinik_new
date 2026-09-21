@@ -49,6 +49,9 @@ const PINDAI_WAKTU_DIIZINKAN = [
     // Ditinjau 21 Sep 2026: melepas kunci advisory MySQL di akhir permintaan YANG SAMA (deteksi akses bersamaan);
     // tidak bertahan di luar permintaan dan tidak mengeksekusi masukan pengguna.
     'libraries/Rate_limiter.php' => 'melepas kunci advisory MySQL saat permintaan berakhir',
+    // Ditinjau 21 Sep 2026: mengirim Web Push peringatan keamanan ke admin SETELAH respons selesai dikirim, agar penolakan
+    // terhadap penyerang tidak tertahan pengiriman push. Hanya berlaku di permintaan yang sama; isi pesan tetap, bukan masukan pengguna.
+    'libraries/Security_alert.php' => 'kirim Web Push peringatan setelah respons selesai (permintaan yang sama)',
 ];
 /** Host yang boleh dituju oleh fetch/XHR/WebSocket dari JavaScript. */
 const PINDAI_JS_HOST_DIIZINKAN = [];
