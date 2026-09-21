@@ -28,6 +28,12 @@ class Migration_Demo_sertifikat_kkn extends CI_Migration {
 
     public function up()
     {
+        // Poin 13.3: data demo tidak boleh dibuat di production (dulu dibuat di semua lingkungan dan
+        // menjadi sertifikat KKN "sah" yang dapat dicari publik lewat NIM).
+        if (defined('ENVIRONMENT') && ENVIRONMENT === 'production') {
+            log_message('info', 'Migrasi 055: data demo dilewati di production.');
+            return;
+        }
         if ( ! $this->db->table_exists('usr_users')
             || ! $this->db->table_exists('kkn_magang_pendaftaran')
             || ! $this->db->table_exists('kkn_peserta')) {

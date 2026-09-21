@@ -10,10 +10,10 @@ Awalnya staging sempat direncanakan pakai database production yang sama. Diputus
 
 | | |
 |---|---|
-| **Database** | `u504551489_klinikstg` |
-| **User** | `u504551489_klinikstg` |
+| **Database** | `<akun-hosting>_klinikstg` |
+| **User** | `<akun-hosting>_klinikstg` |
 | **Host** | Sama dengan production (lihat `.env`) |
-| **Dibuat** | 2026-07-19, sebagai salinan satu kali dari `u504551489_klinikpkp` |
+| **Dibuat** | 2026-07-19, sebagai salinan satu kali dari `<akun-hosting>_klinikpkp` |
 
 Password **tidak** ditulis di sini - hanya ada di `.env` server staging dan `.env` lokal (blok yang di-comment). Jangan pernah commit credential ke git.
 
@@ -23,9 +23,9 @@ Ini adalah **snapshot**, bukan replika live - isinya adalah kondisi database pro
 
 ## Cara Sync Ulang (kalau data staging sudah terlalu usang)
 
-1. Buka phpMyAdmin untuk database production (`u504551489_klinikpkp`) via hPanel
+1. Buka phpMyAdmin untuk database production (`<akun-hosting>_klinikpkp`) via hPanel
 2. Tab **Export** → Method `Quick` → Format `SQL` → **Go**
-3. Buka phpMyAdmin untuk database staging (`u504551489_klinikstg`)
+3. Buka phpMyAdmin untuk database staging (`<akun-hosting>_klinikstg`)
 4. Tab **Import** → upload file `.sql` tadi → **Go**
 
 Ini akan menimpa seluruh isi database staging dengan kondisi production terbaru - perubahan yang sempat dibuat di staging akan hilang.

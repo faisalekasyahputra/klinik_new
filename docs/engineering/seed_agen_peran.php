@@ -6,7 +6,7 @@
  *   php docs/engineering/seed_agen_peran.php --hapus  # bersihkan
  *
  * 🔴 LOKAL SAJA. Skrip ini MENOLAK JALAN kalau DB_HOST bukan localhost.
- * Production memakai `31.97.208.59`, dan akun ber-sandi yang tertulis di dalam
+ * Production memakai `<IP-SERVER-DB>`, dan akun ber-sandi yang tertulis di dalam
  * repo tidak boleh pernah ada di sana. Penjaganya di bawah, jangan dilepas.
  *
  * Semua akun memakai akhiran `@agen.test` supaya:

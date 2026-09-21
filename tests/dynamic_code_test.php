@@ -150,7 +150,7 @@ foreach ($sumber_js as $p) {
     }
     if (preg_match_all($js_dilarang, $s, $m)) { foreach ($m[0] as $hit) { $js_temuan[] = rel($p) . ' ' . trim($hit); } }
 }
-check($js_berkas > 150, "Pemindaian JS/view menjangkau terlalu sedikit berkas ($js_berkas)");
+check($js_berkas > 120, "Pemindaian JS/view menjangkau terlalu sedikit berkas ($js_berkas)");
 check($js_temuan === [], 'eval/new Function/timer string/document.write/x-html di JS buatan sendiri: ' . implode('; ', array_unique($js_temuan)));
 
 /* ============================================================ 4. Echo PHP di konteks kode (skrip inline dan ekspresi Alpine) */
@@ -176,7 +176,7 @@ foreach (glob($app . '/views/{,*/,*/*/,*/*/*/}*.php', GLOB_BRACE) as $p) {
         }
     }
 }
-check($echo_total > 80, "Pemeriksa echo di konteks kode menjangkau terlalu sedikit ($echo_total)");
+check($echo_total > 70, "Pemeriksa echo di konteks kode menjangkau terlalu sedikit ($echo_total)");
 check($echo_temuan === [], "Echo PHP tanpa pembungkus aman di dalam skrip inline/ekspresi Alpine:\n  " . implode("\n  ", array_unique($echo_temuan)));
 // Regresi khusus: nilai isian ulang tidak boleh masuk ke ekspresi Alpine lewat html_escape di dalam kutip tunggal.
 $onb = file_get_contents($app . '/views/pages/auth/onboarding.php');

@@ -86,7 +86,7 @@ Diharapkan **29 tabel** (naik dari 23 pada rilis 29 Jul).
 ## Fase 2 - Backup (wajib, sebelum apa pun berubah)
 
 ```bash
-cd ~ && mysqldump -u u504551489_klinikstg -p u504551489_klinikstg | gzip > ~/backup_klinik_pre_rilis_30jul.sql.gz
+cd ~ && mysqldump -u <akun-hosting>_klinikstg -p <akun-hosting>_klinikstg | gzip > ~/backup_klinik_pre_rilis_30jul.sql.gz
 ```
 
 *(nama user/DB ikuti `.env` server - jangan disalin buta dari sini)*
@@ -275,7 +275,7 @@ Harus `0`.
 **A - migrasi gagal (belum ada push).** Pulihkan DB dari backup Fase 2:
 
 ```bash
-cd ~ && zcat backup_klinik_pre_rilis_30jul.sql.gz | mysql -u u504551489_klinikstg -p u504551489_klinikstg && cd ~/domains/<SITUS>/public_html && php index.php migrate status
+cd ~ && zcat backup_klinik_pre_rilis_30jul.sql.gz | mysql -u <akun-hosting>_klinikstg -p <akun-hosting>_klinikstg && cd ~/domains/<SITUS>/public_html && php index.php migrate status
 ```
 
 Lalu hapus dua berkas migrasi yang disalin kalau masih ada. Kode belum berubah,

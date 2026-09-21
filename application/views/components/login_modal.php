@@ -104,47 +104,6 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
             <span>Belum punya akun? <a href="<?= base_url('Auth/register') ?>" class="kpkp-login-modal__link">Daftar →</a></span>
         </div>
 
-        <?php
-        // Kredensial Demo (§17 poin 12 AGENTS.md - wajib akun demo berisi
-        // data contoh, dicabut begitu ada data/wewenang sungguhan). Daftar
-        // akunnya SAMA PERSIS dengan pages/auth/login.php - dua salinan
-        // yang sengaja disinkronkan manual, bukan di-extract ke satu
-        // sumber, karena komponen ini dan halaman login berumur beda dan
-        // salah satu bisa dicabut duluan (butir §17 di atas).
-        ?>
-        <details class="kpkp-login-modal__demo">
-            <summary>
-                <i class="fa-solid fa-flask"></i> Kredensial Demo
-                <span class="kpkp-login-modal__demo-hint">klik akun untuk mengisi form</span>
-            </summary>
-            <div class="kpkp-login-modal__demo-grid">
-                <?php
-                $modal_akun_demo = [
-                    ['Super Admin',           'admin@klinikpkp.jatengprov.go.id'],
-                    ['Warga (Pengaju)',           'warga@example.com'],
-                    ['Pengembang (SRP2)',         'pengembang@example.com'],
-                    /* Dua akun terpisah dengan role SAMA ('mahasiswa') - KKN
-                       sekarang mendaftarkan kampus (permintaan user 21 Agt
-                       2026), bukan satu mahasiswa. Sinkron manual dengan
-                       pages/auth/login.php, lihat komentar di sana. */
-                    ['Universitas (KKN)',         'universitas@example.com'],
-                    ['Mahasiswa (Magang)',        'mahasiswa@example.com'],
-                    ['Admin Kab/Kota (Semarang)', 'adminkabkota@example.com'],
-                    ['Admin Bidang (Perumahan)',            'adminbidang@example.com'],
-                    ['Admin Bidang (Kawasan Permukiman)',   'adminbidang.kawasan@example.com'],
-                    ['Admin Bidang (Pertanahan)',           'adminbidang.pertanahan@example.com'],
-                    ['Admin Bidang (Perencanaan Teknis)',   'adminbidang.perencanaan@example.com'],
-                    ['Admin Bidang (Sekretariat)',          'adminbidang.sekretariat@example.com'],
-                ];
-                foreach ($modal_akun_demo as [$label, $email]): ?>
-                <button type="button" class="kpkp-login-modal__demo-card" data-demo-email="<?= html_escape($email) ?>">
-                    <span class="kpkp-login-modal__demo-card-role"><?= html_escape($label) ?></span>
-                    <span class="kpkp-login-modal__demo-card-email"><?= html_escape($email) ?></span>
-                </button>
-                <?php endforeach; ?>
-            </div>
-            <p class="kpkp-login-modal__demo-note">Akun uji berisi data contoh. Password semua akun: <code>password</code></p>
-        </details>
 
         <div class="kpkp-login-modal__govt-badge">
             <i class="fa-solid fa-shield-halved"></i>
@@ -263,35 +222,6 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
 }
 .kpkp-login-modal__link { color: #ecffb6; text-decoration: none; font-weight: 600; }
 .kpkp-login-modal__link:hover { color: #d6fb00; text-decoration: underline; }
-.kpkp-login-modal__demo {
-    background: rgba(214,251,0,.06); border: 1px solid rgba(214,251,0,.25);
-    border-radius: 12px; padding: .75rem .9rem; margin-top: 1.5rem;
-}
-.kpkp-login-modal__demo summary {
-    cursor: pointer; list-style: none; display: flex; align-items: center; gap: .5rem;
-    font-size: .75rem; font-weight: 700; color: #8aacb0; text-transform: uppercase;
-    letter-spacing: .05em; user-select: none;
-}
-.kpkp-login-modal__demo summary::-webkit-details-marker { display: none; }
-.kpkp-login-modal__demo summary::after {
-    content: '\f078'; font-family: 'Font Awesome 6 Free'; font-weight: 900; font-size: .6rem;
-    margin-left: auto; transition: transform .2s;
-}
-.kpkp-login-modal__demo[open] summary::after { transform: rotate(180deg); }
-.kpkp-login-modal__demo-hint { font-weight: 500; text-transform: none; letter-spacing: 0; font-size: .65rem; color: rgba(138,172,176,.75); }
-.kpkp-login-modal__demo-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .45rem; margin-top: .7rem; }
-.kpkp-login-modal__demo-card {
-    background: rgba(255,255,255,.05); padding: .5rem .6rem; border-radius: 8px;
-    border: 1px solid transparent; cursor: pointer; text-align: left; width: 100%; min-width: 0;
-    transition: border-color .2s, background .2s;
-}
-.kpkp-login-modal__demo-card:hover, .kpkp-login-modal__demo-card:focus-visible {
-    border-color: rgba(214,251,0,.5); background: rgba(255,255,255,.08); outline: none;
-}
-.kpkp-login-modal__demo-card-role { display: block; color: #8aacb0; font-size: .63rem; margin-bottom: 2px; }
-.kpkp-login-modal__demo-card-email { display: block; color: #fff; font-weight: 600; font-size: .7rem; line-height: 1.35; overflow-wrap: anywhere; }
-.kpkp-login-modal__demo-note { margin-top: .6rem; font-size: .65rem; color: #8aacb0; }
-.kpkp-login-modal__demo-note code { background: rgba(255,255,255,.08); border-radius: 4px; padding: .05rem .35rem; color: #d6fb00; font-weight: 700; }
 .kpkp-login-modal__govt-badge {
     margin-top: 1.5rem; padding-top: 1.1rem; border-top: 1px solid rgba(255,255,255,.06);
     display: flex; align-items: center; justify-content: center; gap: 10px;
@@ -301,9 +231,6 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
 .kpkp-register-nik-info { margin: 0 0 1.2rem; padding: .75rem .85rem; border-radius: 10px; background: rgba(214,251,0,.08); border: 1px solid rgba(214,251,0,.2); color: #dcefa4; font-size: .75rem; line-height: 1.45; }
 .kpkp-register-agreement { display: flex; gap: .55rem; align-items: flex-start; margin: 0 0 1.15rem; color: #a1a1aa; font-size: .72rem; line-height: 1.45; }
 .kpkp-register-agreement input { margin-top: .15rem; accent-color: #d6fb00; }
-@media (max-width: 420px) {
-    .kpkp-login-modal__demo-grid { grid-template-columns: 1fr; }
-}
 </style>
 
 <script>
@@ -368,12 +295,5 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
             'width=' + w + ',height=' + h + ',top=' + top + ',left=' + left + ',scrollbars=yes');
     });
 
-    document.querySelectorAll('.kpkp-login-modal__demo-card').forEach(function (card) {
-        card.addEventListener('click', function () {
-            document.getElementById('kpkp_login_modal_email').value = card.dataset.demoEmail;
-            document.getElementById('kpkp_login_modal_password').value = 'password';
-            document.getElementById('kpkp_login_modal_email').focus();
-        });
-    });
 })();
 </script>

@@ -201,7 +201,9 @@ foreach (['camera', 'microphone', 'accelerometer', 'gyroscope', 'magnetometer', 
 check(($pp['geolocation'] ?? null) === '(self)', 'geolocation hanya boleh untuk origin sendiri');
 foreach ($pp as $f => $v) { check($v === '()' || $v === '(self)', "Permissions-Policy $f tidak boleh membuka ke origin lain"); }
 $mc = file_get_contents($akar . '/application/core/MY_Controller.php');
-check(strpos($mc, 'csp_header_value(') !== false && strpos($mc, 'permissions_policy_header_value()') !== false, 'MY_Controller harus mengirim CSP dan Permissions-Policy dari config');
+$hh = file_get_contents($akar . '/application/helpers/content_security_helper.php');
+check(strpos($mc, 'kirim_header_keamanan()') !== false, 'MY_Controller harus mengirim header keamanan lewat kirim_header_keamanan()');
+check(strpos($hh, 'csp_header_value(') !== false && strpos($hh, 'permissions_policy_header_value()') !== false, 'kirim_header_keamanan harus mengirim CSP dan Permissions-Policy dari config');
 check(strpos(file_get_contents($akar . '/application/config/autoload.php'), "'content_security'") !== false, "Helper 'content_security' harus di-autoload");
 
 // --- 6. API sensor/privasi hanya di berkas yang disetujui, dan atas aksi pengguna ---

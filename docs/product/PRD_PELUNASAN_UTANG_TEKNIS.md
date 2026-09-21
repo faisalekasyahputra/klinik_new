@@ -109,7 +109,7 @@ Rantainya, dibaca sendiri di kode hari ini:
 - `.htaccess` repo (dibaca utuh) - **nol** `SetEnv CI_ENV`, sesuai catatan F1 inventaris
   (`git log -S"SetEnv CI_ENV" -- .htaccess` = kosong)
 - B1 diverifikasi runtime: `GET /Umum/info_rumah` di production memuat
-  "A PHP Error was encountered" + 3 path `/home/u504551489/...`
+  "A PHP Error was encountered" + 3 path `/home/<akun-hosting>/...`
 
 Kesimpulan: **selama B1 belum diperbaiki, `ENVIRONMENT` di production adalah
 `development`, jadi `db_debug` bernilai TRUE di sana.** Kalimat "`db_debug` mati di

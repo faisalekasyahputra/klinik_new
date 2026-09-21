@@ -16,9 +16,7 @@
         AOS/Swiper/notifications.js seperti layouts/head.php karena halaman
         ini tidak punya satu pun elemen yang membutuhkannya.
     -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Merriweather:wght@700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?= base_url('assets/css/fonts.css?v=' . filemtime('assets/css/fonts.css')) ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/design-system.css?v=' . filemtime('assets/css/design-system.css')) ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/tailwind.min.css') ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/tailwind-generated.css?v=' . filemtime('assets/css/tailwind-generated.css')) ?>">

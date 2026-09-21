@@ -177,7 +177,7 @@ check($form_get >= 5, "Pemindai formulir GET menemukan terlalu sedikit ($form_ge
 check($bocor === [], 'Formulir GET dengan kolom sensitif (nilainya akan masuk URI): ' . implode(', ', $bocor));
 
 // Header yang tidak membocorkan URI penuh ke pihak lain.
-$my = sumber('core/MY_Controller.php');
+$my = sumber('core/MY_Controller.php') . sumber('helpers/content_security_helper.php');
 check(preg_match('/Referrer-Policy:\s*(strict-origin-when-cross-origin|same-origin|no-referrer|strict-origin)\b/', $my) === 1, 'Referrer-Policy harus membatasi Referer (bukan unsafe-url atau no-referrer-when-downgrade)');
 check(strpos($my, 'unsafe-url') === FALSE, 'Referrer-Policy unsafe-url tidak boleh dipakai');
 check(strpos($my, "header_remove('X-Powered-By')") !== FALSE, 'X-Powered-By (teknologi dan versi PHP) harus dibuang dari respons PHP');

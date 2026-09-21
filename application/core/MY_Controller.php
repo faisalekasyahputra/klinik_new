@@ -410,37 +410,9 @@ class MY_Controller extends CI_Controller {
      * Inject essential security headers on every response
      */
     private function set_security_headers() {
-        // Anti-clickjacking
-        header('X-Frame-Options: DENY');
-        header('X-Content-Type-Options: nosniff');
-        header('X-XSS-Protection: 1; mode=block');
-
-        // Referrer Policy
-        header("Referrer-Policy: strict-origin-when-cross-origin");
-
-        // Poin 12.2: jangan mengumumkan teknologi dan versi (X-Powered-By: PHP/x.y.z) di setiap respons.
-        header_remove('X-Powered-By');
-
-        // HSTS - enforce HTTPS for 1 year (only effective over HTTPS)
-        if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
-            header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
-        }
-
-        // Permissions Policy - semua fitur sensor/privasi ditolak kecuali yang
-        // dipakai (geolokasi). Daftar di config/content_security.php (poin 9.3).
-        header('Permissions-Policy: ' . permissions_policy_header_value());
-
-        // CSP - skrip hanya dari 'self' dan host yang disetujui, tanpa <object>,
-        // <base> terkunci (poin 9.4). PERINGATAN: di production header ini DITIMPA
-        // platform hosting (hcdn mengganti Content-Security-Policy aplikasi dengan
-        // `upgrade-insecure-requests` miliknya, diverifikasi 21 Sep 2026). Yang
-        // benar-benar menegakkan kebijakan di sana adalah <meta http-equiv> lewat
-        // csp_meta_tag() di setiap halaman lengkap. Header tetap dikirim untuk
-        // lingkungan yang tidak menimpanya; tes memaksa meta ada di semua halaman.
-        header('Content-Security-Policy: ' . csp_header_value(isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'));
-
-        // Block cross-domain content policies (Flash/PDF)
-        header('X-Permitted-Cross-Domain-Policies: none');
+        // Satu-satunya sumber daftar header keamanan: helpers/content_security_helper.php. Fungsi yang sama
+        // dipakai MY_Exceptions untuk halaman galat/404 dari router, yang tidak pernah melewati controller.
+        kirim_header_keamanan();
     }
 
     /**
@@ -781,7 +753,16 @@ class MY_Controller extends CI_Controller {
         // readfile() menulis body duluan sehingga antrean header CI terlambat -
         // PHP terlanjur mengirim text/html default, dan nosniff (dipasang di
         // constructor) melarang browser menebak, jadi gambar tampil sebagai teks.
-        header('Content-Type: ' . $mime);
+        // Poin 13.5: jenis konten ditentukan dari EKSTENSI yang kita tulis sendiri (nama acak + ekstensi daftar-izin
+        // saat unggah), bukan dari $mime kiriman pemanggil/DB; yang tidak dikenal dipaksa berupa unduhan biner.
+        $aman = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'];
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $inline = isset($aman[$ext]);
+        header('Content-Type: ' . ($inline ? $aman[$ext] : 'application/octet-stream'));
+        header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment') . '; filename="berkas' . ($inline ? '.' . $ext : '.bin') . '"');
+        header('Cache-Control: private, no-store, max-age=0');
+        header('Content-Length: ' . (int) filesize($path));
+        if ($inline && $ext !== 'pdf') { header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox"); }
         readfile($path);
     }
 

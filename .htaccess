@@ -69,9 +69,28 @@
     # runbook rilis memakai mysqldump | gzip.
     RewriteRule (^|/)[^/]+\.(sql|dump|bak)(\.gz)?$ - [F,L]
 
+    # Poin 13.3: DocumentRoot menyajikan HANYA yang memang untuk publik. Berkas atau direktori yang benar-benar
+    # ada di luar daftar ini (license.txt, README, composer.*, cadangan, salinan konfigurasi, berkas sampel,
+    # direktori dev) dijawab 403, apa pun namanya dan kapan pun ia muncul. Daftar tolak per pola di atas
+    # menutup yang sudah dikenal; daftar IZIN ini menutup yang belum terpikirkan. Alamat virtual aplikasi
+    # (/login, /Program/..., dst.) bukan berkas nyata, jadi tidak terkena dan tetap diteruskan ke index.php.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^(?!$|index\.php(/|$)|push-sw\.js$|manifest\.webmanifest$|assets/|\.well-known/).+ - [F,L]
+
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ index.php/$1 [L,QSA]
+</IfModule>
+
+# Poin 13.5: jenis konten yang benar dan berkarakter set untuk aset statis (bawaan server dapat memberi
+# application/x-javascript tanpa charset). Bersama nosniff, peramban tidak menebak jenis kontennya.
+<IfModule mod_mime.c>
+    AddType text/javascript .js .mjs
+    AddType text/css .css
+    AddType application/manifest+json .webmanifest
+    AddType font/woff2 .woff2
+    AddCharset UTF-8 .js .mjs .css .webmanifest
 </IfModule>
 
 # ============================================================
@@ -104,6 +123,16 @@
 <IfModule mod_headers.c>
     # Poin 12.2: buang penanda teknologi dari respons berkas statis juga (PHP sudah membuangnya sendiri).
     Header always unset X-Powered-By
+
+    # Poin 13.5: header keamanan inti pada berkas STATIS (tidak melewati PHP). Respons PHP, termasuk 404/galat
+    # buatan CodeIgniter (MY_Exceptions), memasangnya sendiri lewat kirim_header_keamanan(); menerapkannya dua
+    # kali di sini akan MENGGANDAKAN header (mis. "X-Frame-Options: DENY, DENY" dapat diabaikan peramban).
+    <FilesMatch "\.(css|js|mjs|map|json|webmanifest|txt|xml|jpg|jpeg|png|gif|webp|svg|ico|woff|woff2|ttf|eot|pdf)$">
+        Header always set X-Content-Type-Options "nosniff"
+        Header always set X-Frame-Options "DENY"
+        Header always set Referrer-Policy "strict-origin-when-cross-origin"
+        Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    </FilesMatch>
     <FilesMatch "\.(css|js)$">
         Header set Cache-Control "public, max-age=2592000"
     </FilesMatch>

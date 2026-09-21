@@ -37,6 +37,49 @@ if ( ! function_exists('csp_header_value')) {
     }
 }
 
+if ( ! function_exists('kirim_header_keamanan')) {
+    /**
+     * Header keamanan untuk SETIAP respons PHP (poin 9.3, 9.4, 12.2, 13.5). Dipanggil MY_Controller dan
+     * MY_Exceptions (halaman 404/galat yang dibuat CodeIgniter sebelum controller berjalan). Aman dipanggil
+     * berulang: header() mengganti nilai bernama sama, tidak menggandakannya.
+     */
+    function kirim_header_keamanan()
+    {
+        if (headers_sent()) { return; }
+        $https = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on';
+
+        // Anti-clickjacking dan anti-sniffing.
+        header('X-Frame-Options: DENY');
+        header('X-Content-Type-Options: nosniff');
+        header('X-XSS-Protection: 1; mode=block');
+        header('Referrer-Policy: strict-origin-when-cross-origin');
+
+        // Poin 12.2: jangan mengumumkan teknologi dan versi (X-Powered-By: PHP/x.y.z).
+        header_remove('X-Powered-By');
+
+        // HSTS: hanya bermakna di HTTPS.
+        if ($https) { header('Strict-Transport-Security: max-age=31536000; includeSubDomains'); }
+
+        // Permissions Policy: semua fitur sensor/privasi ditolak kecuali yang dipakai (geolokasi); config/content_security.php.
+        header('Permissions-Policy: ' . permissions_policy_header_value());
+
+        // CSP: skrip hanya dari 'self' dan host yang disetujui, tanpa <object>, <base> terkunci. PERINGATAN: di
+        // production header ini DITIMPA platform hosting (hcdn mengganti Content-Security-Policy aplikasi dengan
+        // `upgrade-insecure-requests` miliknya, diverifikasi 21 Sep 2026); yang benar-benar menegakkan di sana adalah
+        // <meta http-equiv> lewat csp_meta_tag() di setiap halaman lengkap.
+        header('Content-Security-Policy: ' . csp_header_value($https));
+
+        // Blokir kebijakan lintas domain lama (Flash/PDF).
+        header('X-Permitted-Cross-Domain-Policies: none');
+
+        // Poin 13.5: isolasi lintas asal. COOP `same-origin-allow-popups` (bukan same-origin) supaya popup login
+        // Google tetap dapat menutup dirinya dan mengarahkan jendela pembuka; CORP `same-origin` melarang situs
+        // lain menyematkan respons dinamis kita (gambar/JSON) tanpa izin.
+        header('Cross-Origin-Opener-Policy: same-origin-allow-popups');
+        header('Cross-Origin-Resource-Policy: same-origin');
+    }
+}
+
 if ( ! function_exists('csp_meta_tag')) {
     /**
      * CSP sebagai <meta http-equiv>, WAJIB ada di setiap halaman HTML lengkap.

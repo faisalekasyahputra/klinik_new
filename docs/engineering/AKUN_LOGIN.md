@@ -110,17 +110,12 @@ Data session yang disimpan setelah login berhasil:
 
 ---
 
-## 👥 7. Akun Demo (Untuk Pengujian)
+## 👥 7. Akun Uji
 
-Bagi pengembang atau pihak eksternal yang ingin mencoba fitur sistem (seperti Admin Dashboard atau Pengajuan Program), dapat menggunakan kredensial demo berikut:
+**Tidak ada kredensial bawaan.** Bagian ini dulu mencantumkan akun demo (termasuk satu akun admin) dengan kata sandi `password`; akun-akun itu ternyata masih ada dan masih memakai kata sandi tersebut di database yang dilayani situs (ditemukan 21 Sep 2026, dinonaktifkan/diputar dengan `docs/engineering/bersihkan_data_sampel.php`). Kredensial bawaan yang tertulis di dokumen publik sama dengan tidak berkata sandi.
 
-| Peran (Role) | Username | Email | Password | Keterangan |
-|-------------|----------|-------|----------|------------|
-| **Admin** | `admin` | `admin@klinikpkp.jatengprov.go.id` | `password` | Mengakses Admin Dashboard & Validasi Antrean. |
-| **Warga** | `warga_demo` | `warga@example.com` | `password` | Menguji pengajuan program perumahan. |
-| **Pengembang** | `developer1` | `dev1@example.com` | `password` | Menguji fitur mitra pengembang. |
-
-*(Harap tidak mengubah password akun demo di database utama)*
+- Akun untuk pengujian dibuat oleh harness (`docs/engineering/uji_*.php`, `seed_agen_peran.php`) di database LOKAL dengan kata sandi acak/sementara, dan dihapus sesudahnya.
+- Jangan membuat akun dengan kata sandi yang tertulis di berkas terlacak. `tests/repo_hygiene_test.php` menggagalkan kredensial bawaan di dokumen dan kode.
 
 ---
 *Dokumen ini diperbarui otomatis oleh Antigravity AI Coding Assistant - 1 Juli 2026 (v3.0 Refactor).*

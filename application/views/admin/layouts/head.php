@@ -33,9 +33,7 @@
     <meta name="csrf-token-hash" content="<?= html_escape($this->security->get_csrf_hash()) ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?= base_url('assets/css/fonts.css?v=' . filemtime('assets/css/fonts.css')) ?>">
     <!-- Tailwind CSS -->
     <?php // Hasil panen kelas view admin - first paint bergaya penuh tanpa
           // menunggu CDN. Regenerasi: php docs/engineering/panen_tailwind.php admin

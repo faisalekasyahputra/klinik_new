@@ -124,7 +124,7 @@ $auth = sumber('controllers/Auth.php');
 foreach (["_bot_gate('login'", "_bot_gate('register'"] as $panggil) { check(strpos($auth, $panggil) !== FALSE, "Auth harus memanggil $panggil"); }
 check(strpos($auth, "'akun_terkunci'") !== FALSE, 'Penguncian akun harus menghasilkan peringatan keamanan');
 $formulir = ['components/login_modal.php' => 'login', 'pages/auth/login.php' => 'login', 'pages/auth/register.php' => 'register',
-             'pages/pengembang/archive/daftar_standalone.php' => 'register', 'pages/pengembang/masuk.php' => 'login'];
+             'pages/pengembang/masuk.php' => 'login'];
 foreach ($formulir as $view => $form) { check(strpos(sumber("views/$view"), "bot_guard_fields('$form')") !== FALSE, "views/$view harus menyisipkan bot_guard_fields('$form')"); }
 $iv = sumber('config/input_validation.php');
 check(strpos($iv, 'bot_token') !== FALSE && strpos($iv, 'situs_web') !== FALSE, 'Kolom bot_token/situs_web harus diizinkan oleh Input_guard');

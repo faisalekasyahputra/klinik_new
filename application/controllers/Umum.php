@@ -777,13 +777,13 @@ class Umum extends MY_Controller {
 		$this->_load_forum();
 
 		if (!$this->is_logged_in()) {
-			echo json_encode(['status' => 'error', 'message' => 'Login required']);
+			header('Content-Type: application/json; charset=utf-8'); echo json_encode(['status' => 'error', 'message' => 'Login required']);
 			return;
 		}
 
 		$id = (int) $this->input->post('id');
 		if (empty($id)) {
-			echo json_encode(['status' => 'error']);
+			header('Content-Type: application/json; charset=utf-8'); echo json_encode(['status' => 'error']);
 			return;
 		}
 
@@ -796,7 +796,7 @@ class Umum extends MY_Controller {
 		$user_id    = (int) $this->get_user_id();
 		$id_diskusi = $this->Forum_model->get_diskusi_id_dari_komentar($id);
 		if ( ! $id_diskusi || ! $this->_boleh_akses_diskusi($id_diskusi, $user_id)) {
-			echo json_encode(['status' => 'error', 'message' => 'Komentar tidak ditemukan.']);
+			header('Content-Type: application/json; charset=utf-8'); echo json_encode(['status' => 'error', 'message' => 'Komentar tidak ditemukan.']);
 			return;
 		}
 
@@ -812,13 +812,13 @@ class Umum extends MY_Controller {
 
 		$hasil = $this->Forum_model->report_komentar($id, $user_id);
 		if (empty($hasil['success'])) {
-			echo json_encode(['status' => 'error', 'message' => 'Komentar tidak ditemukan.']);
+			header('Content-Type: application/json; charset=utf-8'); echo json_encode(['status' => 'error', 'message' => 'Komentar tidak ditemukan.']);
 			return;
 		}
 
 		// Pesannya membedakan laporan baru dari laporan ulang, supaya pengguna
 		// tidak menekan berkali-kali mengira laporannya tidak masuk.
-		echo json_encode([
+		header('Content-Type: application/json; charset=utf-8'); echo json_encode([
 			'status'  => 'ok',
 			'baru'    => $hasil['baru'],
 			'message' => $hasil['baru']
@@ -834,7 +834,7 @@ class Umum extends MY_Controller {
 	public function toggle_like() {
 		$this->_load_forum();
 		if (!$this->is_logged_in()) {
-			echo json_encode(['status' => 'error', 'message' => 'Login required']);
+			header('Content-Type: application/json; charset=utf-8'); echo json_encode(['status' => 'error', 'message' => 'Login required']);
 			return;
 		}
 		
@@ -842,7 +842,7 @@ class Umum extends MY_Controller {
 		$target_id   = (int) $this->input->post('id');
 
 		if (!in_array($target_type, ['diskusi', 'komentar']) || empty($target_id)) {
-			echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
+			header('Content-Type: application/json; charset=utf-8'); echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
 			return;
 		}
 
@@ -855,12 +855,12 @@ class Umum extends MY_Controller {
 			? $target_id
 			: $this->Forum_model->get_diskusi_id_dari_komentar($target_id);
 		if ( ! $id_diskusi || ! $this->_boleh_akses_diskusi($id_diskusi, $user_id)) {
-			echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
+			header('Content-Type: application/json; charset=utf-8'); echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
 			return;
 		}
 
 		$result = $this->Forum_model->toggle_like($user_id, $target_type, $target_id);
-		echo json_encode(['status' => 'ok', 'action' => $result['action'], 'count' => $result['count']]);
+		header('Content-Type: application/json; charset=utf-8'); echo json_encode(['status' => 'ok', 'action' => $result['action'], 'count' => $result['count']]);
 	}
 
 	// =========================================================

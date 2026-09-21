@@ -746,7 +746,7 @@ class Auth extends MY_Controller {
      */
     public function do_verify_email() {
         if (!$this->is_logged_in()) {
-            echo json_encode(['status' => 'error']);
+            header('Content-Type: application/json; charset=utf-8'); echo json_encode(['status' => 'error']);
             return;
         }
 
@@ -756,7 +756,7 @@ class Auth extends MY_Controller {
             'email_verified_at' => date('Y-m-d H:i:s'),
         ]);
 
-        echo json_encode(['status' => 'ok']);
+        header('Content-Type: application/json; charset=utf-8'); echo json_encode(['status' => 'ok']);
     }
 
     public function lanjutkan() {

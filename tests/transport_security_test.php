@@ -132,7 +132,7 @@ check(strpos($db, "'encrypt' => transport_db_encrypt()") !== false, "database.ph
 check(strpos($db, "transport_db_hostname(") !== false, 'database.php harus memakai transport_db_hostname()');
 check(strpos(source('config/autoload.php'), "'transport'") !== false, "Helper 'transport' harus di-autoload");
 check(preg_match('/\$config\[\'cookie_secure\'\]\s*=\s*\(ENVIRONMENT\s*===\s*\'production\'\)/', source('config/config.php')) === 1, 'cookie_secure harus menyala di production');
-check(preg_match('/max-age=(\d+)/', source('core/MY_Controller.php'), $m) === 1 && (int) $m[1] >= $policy['transport_hsts_min_age'], 'HSTS max-age di MY_Controller di bawah batas kebijakan');
+check(preg_match('/Strict-Transport-Security:\s*max-age=(\d+)/', source('core/MY_Controller.php') . source('helpers/content_security_helper.php'), $m) === 1 && (int) $m[1] >= $policy['transport_hsts_min_age'], 'HSTS max-age di MY_Controller di bawah batas kebijakan');
 $ht = @file_get_contents($app . '/../.htaccess');
 check($ht !== false && preg_match('/RewriteRule\s+\^\((?:[a-z-]+\|)*tests(?:\|[a-z-]+)*\)\//', $ht) === 1, '.htaccess harus memblokir direktori tests/ (skrip di dalamnya dapat dieksekusi lewat web)');
 

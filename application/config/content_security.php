@@ -28,11 +28,11 @@ $config['csp_script_hosts'] = [
 $config['csp_script_sources_dasar'] = ["'self'", "'unsafe-inline'", "'unsafe-eval'"];
 
 /* Aset eksternal yang TIDAK bisa ber-SRI, dan alasannya. Tes memastikan
-   setiap aset eksternal lain di view memiliki integrity=. */
+   setiap aset eksternal lain di view memiliki integrity=. Google Fonts DIHAPUS dari daftar ini pada 21 Sep 2026
+   (poin 13.4): font kini dihosting sendiri di assets/fonts (docs/engineering/aset_eksternal_manifest.json).
+   reCAPTCHA satu-satunya sisa, dan hanya dimuat bila RECAPTCHA_SITE_KEY terisi. */
 $config['sri_pengecualian'] = [
     'https://www.google.com/recaptcha/api.js' => 'Google melarang SRI dan mengubah skripnya tanpa pemberitahuan; penyedia tepercaya yang memang diperlukan untuk reCAPTCHA.',
-    'https://fonts.googleapis.com/'           => 'CSS Google Fonts dibangkitkan per User-Agent sehingga hash tidak stabil; CSS tidak dapat menjalankan skrip.',
-    'https://fonts.gstatic.com/'              => 'Hanya preconnect ke berkas font; tidak memuat kode.',
 ];
 
 /* Izin fitur peramban. Semua yang berkaitan dengan sensor dan privasi DITOLAK,
