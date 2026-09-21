@@ -89,7 +89,7 @@ $berkas_teks[] = $akar . '/.htaccess'; $berkas_teks[] = $akar . '/.user.ini';
 $ip_temuan = []; $akun_temuan = [];
 foreach ($berkas_teks as $p) {
     $r = rel($p);
-    if (strpos($r, 'application/fixtures/') === 0 || strpos($r, 'application/cache/') === 0 || strpos($r, 'node_modules/') !== FALSE || $r === 'tests/repo_hygiene_test.php') { continue; }   // cache/salinan pihak ketiga tidak dilacak git
+    if (strpos($r, 'application/fixtures/') === 0 || strpos($r, 'application/cache/') === 0 || strpos($r, 'application/logs/') === 0 || strpos($r, 'node_modules/') !== FALSE || $r === 'tests/repo_hygiene_test.php') { continue; }   // cache, log runtime, dan salinan pihak ketiga tidak dilacak git
     $s = (string) file_get_contents($p);
     if (preg_match_all('/(?<![\d.])(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?![\d.])/', $s, $m, PREG_SET_ORDER)) {
         foreach ($m as $x) {
