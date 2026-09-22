@@ -10,6 +10,7 @@ class Input_guard {
 
     private $CI;
     private $allowed = [];
+    private $warnings = [];
 
     public function __construct() {
         $this->CI =& get_instance();
@@ -39,6 +40,11 @@ class Input_guard {
             }
         }
 
+        if ($this->warnings) {
+            log_message('error', 'SECURITY_WARNING invalid_input_format reason=' . implode('; ', array_unique($this->warnings))
+                . ' route=' . strtolower((string) $this->CI->router->fetch_class()) . '/'
+                . strtolower((string) $this->CI->router->fetch_method()));
+        }
         if ($error) {
             log_message('error', 'SECURITY_WARNING invalid_input_rejected reason=' . $error
                 . ' route=' . strtolower((string) $this->CI->router->fetch_class()) . '/'
@@ -86,6 +92,21 @@ class Input_guard {
             return 'Nilai ' . $field . ' mengandung karakter kontrol terlarang.';
         }
         if ($value === '') { return NULL; }
+        $peringatan = $this->format_warning($field, $value);
+        if ($peringatan !== NULL) { $this->warnings[] = $peringatan; }
+        return NULL;
+    }
+
+    /**
+     * Aturan format per-field (NIK, KK, NPWP, tanggal, telepon, angka, dst.).
+     * Keputusan pemilik produk 23 Sep 2026: pelanggarannya TIDAK memutus permintaan.
+     * Controller sudah memvalidasi field ini dan memantulkan pesan ramah ke formulir;
+     * 400 polos dari sini membuat salah ketik NIK/NPWP berujung halaman galat mentah.
+     * Yang tetap memutus di validate_scalar(): panjang, UTF-8, karakter kontrol,
+     * nama field di luar allowlist. Pelanggaran format hanya dicatat (SECURITY_WARNING)
+     * supaya pola serangan tetap terlihat di peringatan keamanan.
+     */
+    private function format_warning($field, $value) {
 
         // 'step' dan 'langkah' SENGAJA tidak di sini: keduanya slug teks (find_data, housing_family, bnba, isian),
         // bukan angka. Memasukkannya (21 Sep 2026) membuat seluruh wizard warga dan rekam data dijawab 400.
