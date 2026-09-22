@@ -256,6 +256,7 @@ $config['input_allowed_fields'] = [
     'address',
     'area_condition_code',
     'beam_condition_code',
+    'candidate_land_address',
     'candidate_land_origin_code',
     'candidate_land_title_code',
     'ceiling_condition_code',
@@ -288,4 +289,20 @@ $config['input_allowed_fields'] = [
     'wall_condition_code',
     'wall_material_code',
     'water_source_code',
+    /* Nama field BERKAS bukti wizard warga (Housing_assessment_model::EVIDENCE_KINDS). Input_guard
+       memeriksa $_FILES dengan allowlist yang sama; tanpa ini setiap unggahan bukti dijawab 400. */
+    'candidate_land_photo',
+    'family_card_photo',
+    'floor_photo',
+    'house_front_photo',
+    'house_side_photo',
+    'id_card_photo',
+    'land_owner_family_card_photo',
+    'land_photo',
+    'land_transfer_proof',
+    'latrine_photo',
+    'recipient_photo',
+    'roof_photo',
+    'self_photo',
+    'wall_photo',
 ];
