@@ -87,7 +87,9 @@ class Input_guard {
         }
         if ($value === '') { return NULL; }
 
-        if (preg_match('/^(?:id|.*_id|reply_to|lock_version|page|hal|limit|per|step|langkah|urutan|kuota|tahun|semester|triwulan|occupant_count|family_count)$/', $field)
+        // 'step' dan 'langkah' SENGAJA tidak di sini: keduanya slug teks (find_data, housing_family, bnba, isian),
+        // bukan angka. Memasukkannya (21 Sep 2026) membuat seluruh wizard warga dan rekam data dijawab 400.
+        if (preg_match('/^(?:id|.*_id|reply_to|lock_version|page|hal|limit|per|urutan|kuota|tahun|semester|triwulan|occupant_count|family_count)$/', $field)
             && ! preg_match('/^\d{1,20}$/D', $value)) {
             return 'Nilai numerik ' . $field . ' tidak valid.';
         }
