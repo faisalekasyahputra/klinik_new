@@ -95,6 +95,9 @@ if (is_file(ENV_PATH)) {
 if (empty($env['SIKAPER_USERNAME']) || empty($env['SIKAPER_PASSWORD'])) {
     lewati('SIKAPER_USERNAME/PASSWORD belum ada di .env - lapis hidup dilewati, bukan merah.');
 } else {
+    // Sejak f8f082f (poin 8.2) pustaka memanggil transport_curl_options() dari helper yang di CI
+    // di-autoload; di luar CI helper itu harus dimuat sendiri.
+    require dirname(__DIR__, 2) . '/application/helpers/transport_helper.php';
     require LIB_PATH;
     $kelas = new ReflectionClass('Sikaper_api');
     $api = $kelas->newInstanceWithoutConstructor();
