@@ -301,7 +301,9 @@ $lookupResponse = $lookup->post('Program/cek_tiket', [
     'nik_suffix' => '0001',
 ]);
 $lookupResult = json_body($lookupResponse);
-cek((int) ($lookupResponse['status'] ?? 0) === 410
+// 410 dari controller (dicabut 17 Agt 2026), atau 400 dari penjaga input (21 Sep 2026: nik_suffix
+// bukan field yang dikenal). Keduanya penolakan sebelum data dibaca; yang dijaga: tidak ada kebocoran.
+cek(in_array((int) ($lookupResponse['status'] ?? 0), [400, 410], TRUE)
     && ($lookupResult['status'] ?? '') === 'error'
     && empty($lookupResult['status_pengajuan']),
     'Endpoint tiket lama menolak akses publik tanpa membocorkan pengajuan');
