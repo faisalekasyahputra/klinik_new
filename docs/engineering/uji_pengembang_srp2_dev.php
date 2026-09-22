@@ -389,8 +389,8 @@ cek(http('a', 'Pengembang/lihat_dokumen_saya/' . $regA . '/form_tidak_ada')['cod
 cek(http('a', 'Pengembang/lihat_dokumen_saya/abc/form_1')['code'] === 404, 'Id bukan angka ditolak');
 
 // ------------------------------------------------------------ anti-IDOR tulis
-cek(http('a', 'Pengembang/simpan_dokumen/' . $regA)['code'] === 404, 'GET ke simpan_dokumen ditolak');
-cek(http('a', 'Pengembang/kirim_pengajuan/' . $regA)['code'] === 404, 'GET ke kirim_pengajuan ditolak');
+cek(in_array(http('a', 'Pengembang/simpan_dokumen/' . $regA)['code'], [404, 405], TRUE), /* 405: kebijakan metode HTTP 21 Sep 2026 */ 'GET ke simpan_dokumen ditolak');
+cek(in_array(http('a', 'Pengembang/kirim_pengajuan/' . $regA)['code'], [404, 405], TRUE), /* 405: kebijakan metode HTTP 21 Sep 2026 */ 'GET ke kirim_pengajuan ditolak');
 
 $dok_b_sebelum = (int) nilai('SELECT COUNT(*) c FROM srp2_documents WHERE registration_id=?', [$regB]);
 $tok = csrf('a', 'Pengembang/syarat');
