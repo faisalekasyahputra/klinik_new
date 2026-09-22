@@ -502,7 +502,7 @@ echo "\n== B1 - masa berlaku sertifikat ==\n";
    hijau karena tidak menyentuh apa pun lebih berbahaya daripada uji merah. */
 [$uidAdm, $emailAdm] = buat_akun('admin', 'adm');
 wajib(login('adm', $emailAdm), 'Login superadmin uji');
-wajib(strpos(http('adm', 'Admin_Srp2')['body'], 'Tambah pengembang') !== FALSE,
+wajib(stripos(http('adm', 'Admin_Srp2')['body'], 'Tambah pengembang') !== FALSE, /* label kini "Tambah Pengembang" */
     'Sesi adm benar-benar sampai ke layar Direktori SRP2');
 
 foreach (['sertifikat_terbit', 'sertifikat_berakhir'] as $k) {
@@ -596,14 +596,14 @@ $kemarin = date('Y-m-d', strtotime('-1 day'));
 
 http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
     'nama_perusahaan' => $namaA, 'status_aktif' => 1,
-    'status_sertifikasi' => 'masih_proses', 'asosiasi' => 'REI',
+    'status_sertifikasi' => 'masih_proses', 'asosiasi' => 'rei' /* kunci master srp2_asosiasi (19 Agt 2026), bukan label */,
     'npwp' => $npwpA, 'kabupaten_id' => 0]);
 
 $barisA = q('SELECT * FROM srp2_certified_developers WHERE nama_perusahaan = ?', [$namaA]);
 wajib($barisA && ! isset($barisA['__id']), 'PRASYARAT: baris uji benar-benar tersimpan');
 
 cek($barisA['status_sertifikasi'] === 'masih_proses', 'Status bertingkat tersimpan apa adanya');
-cek($barisA['asosiasi'] === 'REI', 'Asosiasi tersimpan (butir 12)');
+cek($barisA['asosiasi'] === 'rei', 'Asosiasi tersimpan (butir 12)');
 cek( ! empty($barisA['npwp_ciphertext']) && $barisA['npwp_ciphertext'] !== $npwpA,
     'NPWP disimpan TERENKRIPSI, bukan apa adanya');
 cek(strlen((string) $barisA['npwp_lookup_hash']) === 64, 'Sidik pencarian NPWP terbentuk');

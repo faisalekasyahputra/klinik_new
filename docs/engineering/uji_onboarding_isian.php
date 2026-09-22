@@ -185,7 +185,10 @@ cek(strpos($html, 'Alamat ' . CAP . '</textarea>') !== FALSE, 'Isian `alamat_dom
 // Peran DAN langkah ikut pulang lewat inisialisasi Alpine. Tanpa peran, blok
 // isian yang benar tertutup lagi; tanpa langkah 2, user dipulangkan ke
 // pemilihan peran untuk keputusan yang sudah ia buat.
-cek(strpos($html, "onboardingForm('pengembang', 2)") !== FALSE, 'Peran dan langkah 2 dipulihkan');
+// Sejak 21477a4 (21 Sep 2026) argumen peran ditulis lewat json_encode + htmlspecialchars, jadi di
+// sumber HTML tampak sebagai &quot;pengembang&quot;; peramban mengurainya kembali sebelum Alpine membacanya.
+cek(strpos($html, "onboardingForm('pengembang', 2)") !== FALSE
+    || strpos($html, 'onboardingForm(&quot;pengembang&quot;, 2)') !== FALSE, 'Peran dan langkah 2 dipulihkan');
 
 // ---------------------------------------------------------------- Vendor
 
