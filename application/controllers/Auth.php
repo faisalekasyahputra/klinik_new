@@ -69,7 +69,11 @@ class Auth extends MY_Controller {
         $password = $this->input->post('password');
         $is_ajax  = $this->input->is_ajax_request();
 
-        $rate = $this->rate_limit_consume('login');
+        // Keputusan pemilik produk 22 Sep 2026: yang dihitung hanya percobaan GAGAL (dicatat di
+        // _login_fail). Menghitung setiap percobaan membuat 30 login sah per 5 menit dari satu IP
+        // kantor (NAT) saling mengunci. Brute force per akun tetap ditahan lockout 5x/15 menit
+        // di Auth_model::is_locked().
+        $rate = $this->rate_limit_inspect('login');
         if (empty($rate['success']) || empty($rate['allowed'])) {
             $this->rate_limit_reject(
                 $rate,
@@ -271,6 +275,7 @@ class Auth extends MY_Controller {
     }
 
     private function _login_fail($is_ajax, $message, $error_target) {
+        $this->rate_limit_hit('login');
         if ($is_ajax) {
             $this->output->set_content_type('application/json')->set_output(json_encode([
                 'status'  => 'error',
