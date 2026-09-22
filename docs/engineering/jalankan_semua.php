@@ -34,6 +34,7 @@ const FRESH  = ['uji_rekam_data_fresh.php', 'uji_warga_fresh_r7.php'];
 // dan merah palsu yang berdiri lama persis yang membuat orang berhenti membaca
 // keluaran runner.
 const KHUSUS = [
+    'uji_tls_situs.php'         => 'alat CLI ber-argumen (php uji_tls_situs.php https://<situs>), bukan suite; jalankan manual',
     'uji_utang_teknis.php'    => 'menolak sendiri: butuh DB berakhiran _utang',
     'uji_perjalanan_srp2.php' => 'butuh DB uji bersih + akun admin seed (lihat header berkasnya)',
 ];
