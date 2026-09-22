@@ -159,8 +159,26 @@ seed('9901', 2, bongkah(BONGKAH, 20, 2000));
 seed('9901', 3, []);
 
 $h1 = minta('9901', 'subsidi', 1);
-cek(kartu($h1) === 21, 'Seluruh 21 subsidi dikirim sekaligus (dapat: ' . kartu($h1) . ')');
-cek(halaman($h1) === 2, '21 kartu dipotong jadi 2 halaman @20 (dapat: ' . halaman($h1) . ')');
+/* KONTRAK SEJAK 14 Agt 2026 (lihat komentar "Balik ke SATU HALAMAN per permintaan"
+   di Index.php): cari_wil mengembalikan SATU halaman berukuran `limit` (default
+   minta() = 9), dan marker `<!-- jumlah:N -->` menyebut isinya. Bongkahan dari
+   SIKUMBANG tetap 100 dan dikumpulkan sampai cukup untuk halaman yang diminta.
+   Asersi lama ("semua dikirim sekaligus, dipotong per 20 di server") adalah
+   kontrak 10-13 Agt yang sudah dicabut, dan berkas ini baru menyusul 22 Sep 2026. */
+function jumlah($html) {
+    return preg_match('/<!-- jumlah:(\d+) -->/', $html, $m) ? (int) $m[1] : -1;
+}
+cek(kartu($h1) === 9 && jumlah($h1) === 9,
+    'Halaman 1 berisi 9 subsidi: 1 dari bongkahan pertama + 8 dari bongkahan kedua (dapat: ' . kartu($h1) . ')');
+$h2 = minta('9901', 'subsidi', 2);
+$h3 = minta('9901', 'subsidi', 3);
+$h4 = minta('9901', 'subsidi', 4);
+cek(kartu($h2) === 9, 'Halaman 2 berisi 9 (dapat: ' . kartu($h2) . ')');
+cek(kartu($h3) === 3, 'Halaman 3 berisi sisa 3 dari total 21 (dapat: ' . kartu($h3) . ')');
+cek(kartu($h4) === 0 && jumlah($h4) === 0, 'Halaman 4 kosong dan marker jumlah:0 (dapat: ' . kartu($h4) . ')');
+preg_match_all('#detail_perum/(\d+)#', $h1 . $h2 . $h3, $m_semua_sub);
+cek(count($m_semua_sub[1]) === 21 && count(array_unique($m_semua_sub[1])) === 21,
+    'Gabungan halaman 1-3 = 21 subsidi unik, tidak ada yang hilang atau dobel');
 
 // ------------------------------------------------------------------ Skenario 2
 echo "
@@ -171,22 +189,25 @@ seed('9902', 2, bongkah(BONGKAH, 15, 4000));
 seed('9902', 3, []);
 
 $n1 = minta('9902', 'subsidi', 1);
-cek(kartu($n1) === 15, 'Ke-15 subsidi dari bongkahan KEDUA tetap terkumpul (dapat: ' . kartu($n1) . ')');
-cek(halaman($n1) === 1, '15 kartu muat dalam 1 halaman (dapat: ' . halaman($n1) . ')');
+$n2 = minta('9902', 'subsidi', 2);
+cek(kartu($n1) === 9, 'Halaman 1 tetap penuh (9) walau bongkahan pertama nol cocok (dapat: ' . kartu($n1) . ')');
+cek(kartu($n2) === 6, 'Halaman 2 berisi sisa 6 dari 15 subsidi bongkahan kedua (dapat: ' . kartu($n2) . ')');
 
 // ------------------------------------------------------------------ Skenario 3
 echo "
 == 3. Saringan memilah, dan 'semua' tidak memilah ==
 ";
-$k1 = minta('9901', 'komersil', 1);
-cek(kartu($k1) === 179, 'Non-subsidi: 179 dari 200 (dapat: ' . kartu($k1) . ')');
+$k1 = minta('9901', 'komersil', 1, 'cari_wil', 50);
+cek(kartu($k1) === 50, 'Non-subsidi: halaman 1 @50 penuh dari 179 (dapat: ' . kartu($k1) . ')');
+$k4 = minta('9901', 'komersil', 4, 'cari_wil', 50);
+cek(kartu($k4) === 29, 'Non-subsidi: halaman 4 @50 berisi sisa 29, jadi totalnya 179 (dapat: ' . kartu($k4) . ')');
 
-$s1 = minta('9901', 'semua', 1);
-cek(kartu($s1) === 200, '"semua" mengembalikan 200, nol disaring (dapat: ' . kartu($s1) . ')');
-cek(kartu($h1) + kartu($k1) === kartu($s1),
-    'subsidi + non-subsidi = semua, jadi tidak ada baris yang hilang atau dobel');
+$s1 = minta('9901', 'semua', 1, 'cari_wil', 50);
+$s4 = minta('9901', 'semua', 4, 'cari_wil', 50);
+cek(kartu($s1) === 50 && kartu($s4) === 50,
+    '"semua" tidak memilah: halaman 1 dan 4 @50 sama-sama penuh dari 200 (dapat: ' . kartu($s1) . ', ' . kartu($s4) . ')');
 
-preg_match_all('#detail_perum/(\d+)#', $h1, $m_sub);
+preg_match_all('#detail_perum/(\d+)#', $h1 . $h2 . $h3, $m_sub);
 preg_match_all('#detail_perum/(\d+)#', $k1, $m_kom);
 cek($m_sub[1] && $m_kom[1] && ! array_intersect($m_sub[1], $m_kom[1]),
     'Daftar subsidi dan non-subsidi tidak beririsan sama sekali');
@@ -211,7 +232,7 @@ seed('9903', 2, []);
 $x = minta('9903', 'subsidi', 1);
 cek(strpos($x, '<b>BOCOR</b>') === FALSE, 'Tag dari nama perumahan TIDAK hidup sebagai HTML');
 cek(strpos($x, 'BOCOR') !== FALSE, 'Teksnya tetap tampil, bukan lenyap diam-diam');
-cek(halaman($x) === 1, 'Pembungkus halaman tetap utuh, tidak tertutup lebih awal');
+cek(jumlah($x) === 3 && kartu($x) === 3, 'Ketiga kartu tetap terhitung utuh, tidak ada yang lepas karena tag liar');
 
 // Skenario 5 - gagal jaringan tidak boleh menyamar jadi "data habis".
 //
