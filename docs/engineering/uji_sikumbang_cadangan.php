@@ -33,6 +33,9 @@
  */
 
 define('BASEPATH', TRUE);   // helper menolak diakses langsung tanpa ini
+// Sejak f8f082f (poin 8.2) helper sikumbang memanggil transport_curl_options(); di CI helper transport
+// di-autoload, di luar CI harus dimuat lebih dulu.
+require dirname(__DIR__, 2) . '/application/helpers/transport_helper.php';
 require dirname(__DIR__, 2) . '/application/helpers/sikumbang_helper.php';
 
 $GLOBALS['total'] = 0;
