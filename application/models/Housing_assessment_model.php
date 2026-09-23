@@ -977,6 +977,42 @@ class Housing_assessment_model extends CI_Model {
         return $this->encryption_lib->encrypt((string) $value);
     }
 
+    /**
+     * Pendataan awal di satu wilayah (daftar revisi dinas 23 Sep 2026: "langkah ketiga harus
+     * tersimpan, 4 opsional dan bisa dipantau admin"). Draft yang sudah menyimpan rekomendasi
+     * awal (langkah 3) tetapi belum dikirim, jadi admin kab/kota bisa menindaklanjuti warga yang
+     * berhenti sebelum melengkapi data. Hanya baca; nama, HP, dan program didekripsi di sini.
+     *
+     * @return array [rows, total]
+     */
+    public function pendataan_awal_wilayah($kabupaten_id, $limit, $offset)
+    {
+        $dasar = function () use ($kabupaten_id) {
+            return $this->db->from('sf_penilaian_perumahan a')
+                ->where('a.kabupaten_id', (int) $kabupaten_id)
+                ->where('a.status', 'draft')
+                ->where('a.preliminary_matrix_ciphertext IS NOT NULL', NULL, FALSE);
+        };
+        $total = (int) $dasar()->count_all_results();
+        $rows = $dasar()
+            ->select('a.id, a.user_id, a.current_step, a.assessment_track, a.updated_at, a.preliminary_matrix_ciphertext,
+                      p.full_name_ciphertext, p.phone_ciphertext')
+            ->join('sf_profil_warga p', 'p.user_id = a.user_id', 'left')
+            ->order_by('a.updated_at', 'DESC')->limit((int) $limit, (int) $offset)
+            ->get()->result_array();
+        $siap = $this->encryption_ready();
+        foreach ($rows as &$r) {
+            $buka = function ($c) use ($siap) { return ($siap && $c !== NULL) ? $this->encryption_lib->decrypt($c) : NULL; };
+            $r['full_name'] = $buka($r['full_name_ciphertext']);
+            $r['phone'] = $buka($r['phone_ciphertext']);
+            $matriks = json_decode((string) $buka($r['preliminary_matrix_ciphertext']), TRUE);
+            $r['programs'] = array_values(array_filter(array_map(function ($i) { return $i['program_name'] ?? NULL; }, $matriks['items'] ?? [])));
+            unset($r['full_name_ciphertext'], $r['phone_ciphertext'], $r['preliminary_matrix_ciphertext']);
+        }
+        unset($r);
+        return [$rows, $total];
+    }
+
     private function decrypt_assessment($row)
     {
         if (!$row || !$this->encryption_ready()) return $row;

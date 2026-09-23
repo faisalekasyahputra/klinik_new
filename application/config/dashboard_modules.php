@@ -163,6 +163,11 @@ $config['dashboard_modules'] = [
     // Induknya `Rekam_Data` - layar sambutan. Sebelum ada entri ini, membuka
     // /Rekam_Data dari kartu beranda publik membuat sidebar TIDAK menyorot apa
     // pun: orang sampai di sana tanpa tahu sedang di cabang mana.
+    'pendataan_awal_kabkota' => [
+        'label' => 'Pendataan Awal Warga', 'icon' => 'ph-clipboard-text',
+        'url'   => 'Admin_Kabkota/pendataan_awal', 'group' => 'Layanan', 'order' => 11,
+        'roles' => ['admin_kabkota'], 'scope' => null,
+    ],
     'rekam_data' => [
         'label' => 'Rekam Data', 'icon' => 'ph-database',
         'url'   => 'Rekam_Data', 'group' => 'Layanan', 'order' => 20,

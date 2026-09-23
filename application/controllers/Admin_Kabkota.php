@@ -22,6 +22,22 @@ class Admin_Kabkota extends Admin_Kabkota_Controller {
         $this->render_scoped_admin('admin/antrean/dashboard', $data);
     }
 
+    /** Pendataan awal warga di wilayah ini: sudah menyimpan rekomendasi awal, belum dikirim. */
+    public function pendataan_awal()
+    {
+        // ponytail: offset dihitung dari ?page sebelum total diketahui; halaman di luar jangkauan
+        // cukup tampil kosong, tidak perlu query hitung terpisah.
+        [$rows, $total] = $this->Housing_assessment_model->pendataan_awal_wilayah(
+            $this->my_kabupaten_id, 25, (max(1, (int) $this->input->get('page')) - 1) * 25);
+        $table = array_merge($this->table_state([], NULL), $this->paginate_state($total));
+        $data = [
+            'title' => 'Pendataan Awal Warga',
+            'scope_label' => $this->db->where('id', $this->my_kabupaten_id)->get('kabupaten')->row('nama') ?: 'Wilayah Saya',
+            'rows' => $rows, 'table' => $table, 'pager' => $table, 'base_url' => 'Admin_Kabkota/pendataan_awal',
+        ];
+        $this->render_scoped_admin('admin/antrean/pendataan_awal', $data);
+    }
+
     public function update_status()
     {
         if ($this->input->method(TRUE) !== 'POST') {
