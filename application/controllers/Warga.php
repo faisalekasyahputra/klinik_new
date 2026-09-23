@@ -703,14 +703,10 @@ class Warga extends MY_Controller {
     private function evidence_kinds($track)
     {
         if ($track === 'existing_house') return ['self_photo','house_front_photo','house_side_photo','roof_photo','floor_photo','wall_photo','latrine_photo'];
-        /* `land_transfer_proof` & `recipient_photo` DICABUT 5 Agt 2026 (revisi
-           dinas butir A9). Ini whitelist UNGGAH - mencabutnya di sini berarti
-           keduanya tidak bisa lagi dikirim, bukan sekadar tidak ditampilkan.
-
-           SENGAJA TIDAK dicabut dari `Housing_assessment_model::EVIDENCE_KINDS`:
-           itu daftar jenis yang SAH ADA, dan berkas yang sudah terlanjur
-           tersimpan harus tetap terbaca. Keputusan user: berhenti mengumpulkan,
-           jangan hapus yang lama. */
+        /* Riwayat: `land_transfer_proof` & `recipient_photo` dicabut 5 Agt 2026 (revisi dinas A9).
+           UAT 2026 (warga/pengembang #9, cabang bukan milik sendiri) meminta "Bukti Pindah Tangan"
+           lagi, jadi `land_transfer_proof` DIKEMBALIKAN (157e275, dikonfirmasi 23 Sep 2026).
+           `recipient_photo` tetap dicabut. Keduanya tetap di EVIDENCE_KINDS supaya berkas lama terbaca. */
         if ($track === 'candidate_land') return ['candidate_land_photo','land_transfer_proof'];
         return ['id_card_photo','family_card_photo'];
     }

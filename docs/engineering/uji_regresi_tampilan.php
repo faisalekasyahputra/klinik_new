@@ -563,22 +563,22 @@ cek(preg_match('/Ukuran Tanah\s*\x{2014}/u', $pdt) === 0,
 
 /* ---------------- R4, 5 Agt 2026 ---------------- */
 
-// A9 - dua isian bukti dicabut dari formulir DAN dari whitelist unggah,
-//      tapi jenisnya TETAP sah supaya berkas lama terbaca.
+// A9 (5 Agt 2026) mencabut dua isian bukti. UAT 2026 (warga/pengembang #9) mengembalikan
+// "Bukti Pindah Tangan" untuk cabang bukan milik sendiri; `recipient_photo` tetap dicabut.
+// Kedua jenis tetap sah di model supaya berkas lama terbaca.
 $wrg = (string) @file_get_contents(APP_ROOT . '/application/controllers/Warga.php');
 $mdl = (string) @file_get_contents(APP_ROOT . '/application/models/Housing_assessment_model.php');
 wajib($wrg !== '' && $mdl !== '', 'Sumber Warga.php & Housing_assessment_model.php terbaca');
 preg_match("/candidate_land'\)\s*return\s*\[([^\]]*)\]/", $wrg, $m9);
 $whitelist = $m9[1] ?? '';
 cek($whitelist !== '', 'A9: whitelist unggah jalur candidate_land terbaca');
+cek(strpos($whitelist, 'land_transfer_proof') !== FALSE, 'UAT #9: `land_transfer_proof` (Bukti Pindah Tangan) bisa diunggah di cabang calon lahan');
+cek(strpos($whitelist, 'recipient_photo') === FALSE, 'A9: `recipient_photo` tetap tidak bisa diunggah');
 foreach (['land_transfer_proof', 'recipient_photo'] as $jenis) {
-    cek(strpos($whitelist, $jenis) === FALSE,
-        "A9: `{$jenis}` tidak bisa lagi diunggah");
-    cek(strpos($mdl, $jenis) !== FALSE,
-        "A9: `{$jenis}` TETAP jenis yang sah - berkas lama harus tetap terbaca");
+    cek(strpos($mdl, $jenis) !== FALSE, "A9: `{$jenis}` TETAP jenis yang sah - berkas lama harus tetap terbaca");
 }
-cek(strpos($pdt, 'recipient_photo') === FALSE && strpos($pdt, 'land_transfer_proof') === FALSE,
-    'A9: kedua kotak unggah lenyap dari formulir pendataan');
+cek(strpos($pdt, 'recipient_photo') === FALSE, 'A9: kotak unggah recipient_photo tidak ada di formulir pendataan');
+cek(strpos($pdt, 'Bukti Pindah Tangan') !== FALSE, 'UAT #9: kotak unggah Bukti Pindah Tangan ada di formulir pendataan');
 
 // E1 - syarat "harus ditanggapi dulu" dilepas, TIGA syarat lain tetap berdiri.
 $umum = (string) @file_get_contents(APP_ROOT . '/application/controllers/Umum.php');
