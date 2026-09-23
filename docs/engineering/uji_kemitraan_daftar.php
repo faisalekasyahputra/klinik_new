@@ -200,14 +200,18 @@ wajib(login($MHS_UJI, MHS_PASSWORD), 'Login mahasiswa uji berhasil (akun sendiri
 
 $form_kkn    = http('KemitraanPortal/daftar/kkn');
 $form_magang = http('KemitraanPortal/daftar/magang');
-wajib($form_kkn['code'] === 200 && $form_magang['code'] === 200, 'Kedua formulir terbuka untuk peran mahasiswa');
+wajib($form_magang['code'] === 200, 'Formulir magang terbuka untuk peran mahasiswa');
+// KKN FINAL (dikonfirmasi pemilik produk 23 Sep 2026): formulir sekali-daftar KKN dipensiunkan 21 Agt 2026,
+// KKN kini dikelola akun UNIVERSITAS lewat kkn_dashboard. Mahasiswa yang membuka daftar/kkn dialihkan.
+cek(strpos($form_kkn['url'], 'kkn_dashboard') !== FALSE || strpos($form_kkn['url'], 'daftar/kkn') === FALSE,
+    'Formulir KKN lama untuk mahasiswa dialihkan (mendarat di: ' . $form_kkn['url'] . ')');
 
 echo "\n== Formulir menampilkan medan yang benar ==\n";
 foreach (['nim', 'tempat_lahir', 'tanggal_lahir', 'semester', 'jurusan'] as $f) {
     cek(strpos($form_magang['body'], 'name="' . $f . '"') !== FALSE, "Medan identitas `$f` ada di formulir");
 }
 cek(strpos($form_magang['body'], 'name="file_proposal"') !== FALSE, 'Magang menawarkan unggahan proposal');
-cek(strpos($form_kkn['body'], 'name="file_proposal"') === FALSE, 'KKN TIDAK menawarkan unggahan proposal');
+cek(strpos($form_kkn['body'], 'name="nim"') === FALSE, 'Mahasiswa tidak mendapat formulir KKN perorangan');
 cek(strpos($form_magang['body'], 'name="file_surat_pengantar"') !== FALSE, 'Surat pengantar tetap ada');
 
 // Sejak migrasi 20260701000031, pendaftaran MAGANG tunduk pada slot per BIDANG:
@@ -279,8 +283,8 @@ http('KemitraanPortal/simpan', [
     'instansi_asal' => SENTINEL . '-KKNNOSURAT', 'no_hp' => '081234567890',
     'divisi_atau_tema' => 'Tema KKN Uji', 'periode_mulai' => '2099-01-01', 'periode_selesai' => '2099-02-01',
 ]);
-cek(baris("SELECT id FROM kkn_magang_pendaftaran WHERE instansi_asal = ?", [SENTINEL . '-KKNNOSURAT']) !== NULL,
-    'KKN tanpa surat pengantar TETAP tersimpan - penyempitan ke magang disengaja');
+cek(baris("SELECT id FROM kkn_magang_pendaftaran WHERE instansi_asal = ?", [SENTINEL . '-KKNNOSURAT']) === NULL,
+    'POST KKN lewat jalur mahasiswa lama TIDAK membuat baris - KKN hanya lewat dashboard universitas');
 // Dilepas SEGERA setelah diperiksa. Aturan "satu pendaftaran menggantung per
 // mahasiswa per jenis" akan menolak uji KKN berikutnya kalau baris ini
 // dibiarkan - dan kegagalannya muncul jauh dari sini, di tempat yang tidak ada
@@ -316,9 +320,13 @@ cek( ! empty($m['file_surat_pengantar']) && is_file($dir . '/' . $m['file_surat_
 cek( ! empty($m['file_proposal']) && is_file($dir . '/' . $m['file_proposal']),
     'Proposal benar-benar ada di disk, di luar webroot');
 
-echo "\n== NEGATIF: proposal pada KKN harus DIBUANG server ==\n";
+echo "\n== NEGATIF: jalur KKN mahasiswa lama tidak menulis apa pun ==\n";
+// Dulu: proposal yang diselundupkan ke KKN harus dibuang. Sejak KKN dipensiunkan dari jalur
+// mahasiswa (21 Agt 2026, final 23 Sep 2026) setiap kiriman jenis=kkn ke simpan() dialihkan
+// TANPA diproses. Yang dijaga: nol baris dan nol folder berkas baru, walau membawa dua PDF.
 $berkas_sementara[] = $p3 = berkas_pdf('uji_selundup');
-http('KemitraanPortal/simpan', [
+$folder_sebelum = count(glob(akar_privat() . '/kemitraan/*') ?: []);
+$r_kkn = http('KemitraanPortal/simpan', [
     'csrf_kpkp_token' => token(), 'jenis' => 'kkn',
     'nim' => 'H1A020100', 'tempat_lahir' => 'Solo', 'tanggal_lahir' => '2002-11-02',
     'semester' => '7', 'jurusan' => 'Arsitektur',
@@ -329,14 +337,11 @@ http('KemitraanPortal/simpan', [
     // Sengaja dikirim walau formulir KKN tidak pernah menampilkannya.
     'file_proposal'        => new CURLFile($p3, 'application/pdf', 'selundupan.pdf'),
 ]);
-$k = baris("SELECT * FROM kkn_magang_pendaftaran WHERE instansi_asal = ?", [SENTINEL . '-KKN']);
-wajib($k !== NULL, 'Pendaftaran KKN tersimpan');
-cek( ! empty($k['file_surat_pengantar']), 'KKN tetap menerima surat pengantar');
-cek(empty($k['file_proposal']),
-    'Proposal yang diselundupkan ke KKN TIDAK tersimpan - gerbangnya di server, bukan di formulir');
-$dir_kkn = dir_kemitraan($k['id']);
-cek(count(glob($dir_kkn . '/*') ?: []) === 1,
-    'Hanya SATU berkas mendarat di folder KKN - selundupan tidak ikut ditulis ke disk');
+cek(strpos($r_kkn['url'], 'simpan') === FALSE, 'POST KKN lama dialihkan, bukan diproses (mendarat di: ' . $r_kkn['url'] . ')');
+cek(baris("SELECT id FROM kkn_magang_pendaftaran WHERE instansi_asal = ?", [SENTINEL . '-KKN']) === NULL,
+    'POST KKN lama ber-berkas TIDAK membuat baris');
+cek(count(glob(akar_privat() . '/kemitraan/*') ?: []) === $folder_sebelum,
+    'POST KKN lama TIDAK menulis folder berkas baru di disk');
 
 echo "\n== NEGATIF: nama berkas di URL tidak boleh jadi nama kolom ==\n";
 pakai_sesi('admin');

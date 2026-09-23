@@ -221,8 +221,9 @@ if ( ! $tahun_berslot) {
     if ($bidang_longgar) {
         cek(strpos($papan, $bidang_longgar['nama']) !== FALSE,
             'Papan menyebut bidang yang punya slot (' . $bidang_longgar['nama'] . ')');
-        cek(preg_match('/Kebutuhan\s*<strong[^>]*>\s*\d+ mahasiswa/i', $papan) === 1
-            || preg_match('/Kebutuhan\s*\d+ mahasiswa/i', strip_tags($papan)) === 1,
+        // Sejak bb6a5a3 (18 Agt 2026) angkanya berlabel "Kuota: N mahasiswa", bukan "Kebutuhan N".
+        cek(preg_match('/(Kebutuhan|Kuota:)\s*<strong[^>]*>\s*\d+ mahasiswa/i', $papan) === 1
+            || preg_match('/(Kebutuhan|Kuota:)\s*\d+ mahasiswa/i', strip_tags($papan)) === 1,
             'Papan menyebut ANGKA kebutuhan, bukan cuma nama bidang');
         cek(preg_match('/Masih menerima|Sudah terpenuhi|Belum dibuka/i', $papan) === 1,
             'Tiap bidang membawa keadaan terbaca (menerima/terpenuhi/belum dibuka)');
@@ -267,10 +268,10 @@ cek(stripos($hal_magang, $nama_bidang) !== FALSE, 'Magang: nama bidangnya benar-
 // Dulu nilai yang sama tercetak dua kali dengan dua label berbeda.
 cek( ! in_array('Tema Kegiatan', $label_magang, TRUE), 'Magang: field "Tema Kegiatan" tidak ikut (dulu duplikat)');
 
-$hal_kkn = http('mhs', 'KemitraanPortal/pendaftaran/' . $kkn);
-$label_kkn = label_field($hal_kkn);
-cek(in_array('Tema Kegiatan', $label_kkn, TRUE), 'KKN: field "Tema Kegiatan" ada');
-cek( ! in_array('Bidang Tujuan', $label_kkn, TRUE), 'KKN: field "Bidang Tujuan" tidak ikut');
+// KKN FINAL (23 Sep 2026): KKN dikelola akun universitas lewat dashboard KKN terpadu, bukan
+// halaman pendaftaran per mahasiswa. Yang dijaga: mahasiswa tidak mendapat formulir KKN perorangan.
+$hal_kkn = http('mhs', 'KemitraanPortal/daftar/kkn');
+cek(strpos($hal_kkn, 'name="nim"') === FALSE, 'KKN: mahasiswa tidak mendapat formulir KKN perorangan');
 
 // =========================================================== 4. TANGGAL
 echo "\n== Tanggal berbahasa Indonesia ==\n";
@@ -657,8 +658,10 @@ wajib($vrt !== '', 'Sumber cek_rtlh.php terbaca');
 preg_match('/<h1[^>]*>([^<]*)<\/h1>/', $vrt, $m11);
 cek(trim($m11[1] ?? '') === 'Cek Data Rumah',
     'A11b: judul halaman = "Cek Data Rumah" (dapat: "' . trim($m11[1] ?? '') . '")');
-cek(preg_match('/<h4[^>]*>Cek Data Rumah<\/h4>/', $hub) === 1,
-    'A11b: kartu hub memakai nama yang sama');
+// Sejak 10 Sep 2026 (UAT) Cek Data Rumah tidak lagi berupa kartu di hub Golek Omah, melainkan tab
+// utama berlabel "Cek Backlog" di layout; judul di dalam halaman tetap "Cek Data Rumah" (sumbernya RTLH).
+$layout = (string) @file_get_contents(APP_ROOT . '/application/views/layouts/main.php');
+cek(preg_match('/Cek_Rtlh.{0,400}Cek (Data )?Backlog/s', $layout) === 1, 'A11b: tab utama Cek_Rtlh berlabel "Cek Data Backlog"');
 /* Komentar DIBUANG dulu sebelum dicocokkan. Versi pertama penjaga ini merah
    gara-gara komentar di `cek_rtlh.php` yang menjelaskan KENAPA "Cek Backlog"
    ditolak - frasanya ikut tercocok. Itu jebakan substring yang sama yang sudah
