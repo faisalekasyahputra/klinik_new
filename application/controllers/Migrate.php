@@ -411,6 +411,11 @@ class Migrate extends CI_Controller {
             echo 'usr_users.'.$kolom.' (migrasi '.($kolom === 'active_session_id_hash' ? '060' : '059').'): '.
                 ($this->db->field_exists($kolom, 'usr_users') ? 'ADA' : 'HILANG - kontrol autentikasi belum aktif')."\n";
         }
+        // Migrasi 061 (link dokumentasi KKN) dan migrasi 062 (tanggal sertifikat KKN oleh admin).
+        foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062'] as $kolom => $no) {
+            echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
+                ($this->db->field_exists($kolom, 'kkn_magang_pendaftaran') ? 'ADA' : 'HILANG')."\n";
+        }
     }
 
     /**
