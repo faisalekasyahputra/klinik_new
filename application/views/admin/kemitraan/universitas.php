@@ -8,8 +8,12 @@ $this->load->helper('admin_table');
     <div>
         <p class="text-sm text-gray-500 dark:text-brand-muted">
             Akun (role Universitas) yang bisa mengajukan KKN lewat dashboardnya sendiri.
+<?php if (empty($aksi_buat)): ?>
             Sunting, nonaktifkan, atau reset sandi lewat <a href="<?= base_url('Admin_Users') ?>" class="font-bold text-blue-600 dark:text-brand-primary hover:underline">Manajemen Pengguna</a> -
             satu tempat untuk seluruh akun apa pun rolenya, tab ini tidak menyalinnya.
+        <?php else: ?>
+            Sunting, nonaktifkan, atau reset sandi akun dilakukan oleh superadmin.
+<?php endif; ?>
         </p>
     </div>
     <button @click="createOpen = true" class="shrink-0 bg-blue-600 dark:bg-brand-primary text-white dark:text-brand-dark px-5 py-2.5 rounded-xl font-bold flex items-center hover:bg-blue-700 dark:hover:bg-brand-hover transition-colors shadow-sm shadow-blue-500/30 dark:shadow-brand-primary/20">
@@ -31,7 +35,7 @@ $this->load->helper('admin_table');
         <div @click.outside="createOpen = false" class="w-full max-w-md rounded-3xl bg-white dark:bg-brand-card p-6 shadow-xl">
             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Tambah Universitas</h3>
             <p class="mb-4 text-xs text-gray-500 dark:text-brand-muted">Akun ini bisa langsung masuk dan mengajukan KKN lewat dashboardnya.</p>
-            <form method="POST" action="<?= base_url('Admin_Users/create_staff') ?>" class="space-y-3">
+            <form method="POST" action="<?= base_url($aksi_buat ?? 'Admin_Users/create_staff') ?>" class="space-y-3">
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                 <input type="hidden" name="role" value="universitas">
                 <div>
@@ -122,10 +126,12 @@ $this->load->helper('admin_table');
                                  lihat komentar kepala Admin_Kemitraan::universitas(). Tautan
                                  ini membawa admin ke baris yang SAMA di Manajemen Pengguna
                                  lewat pencarian email, bukan cuma ke daftar penuh. */ ?>
+<?php if (empty($aksi_buat)): ?>
                         <a href="<?= base_url('Admin_Users?q=' . urlencode($u->email)) ?>"
                            class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">
                             <i class="ph ph-gear"></i> Kelola Akun
                         </a>
+<?php endif; ?>
                     </td>
                 </tr>
                 <?php endforeach; endif; ?>

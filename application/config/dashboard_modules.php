@@ -421,6 +421,11 @@ $config['dashboard_modules'] = [
         'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE,
     ],
+    'universitas_bidang' => [
+        'label' => 'Akun Universitas', 'icon' => 'ph-buildings',
+        'url'   => 'Kemitraan_Bidang/universitas', 'group' => 'Layanan', 'order' => 12,
+        'roles' => ['admin_bidang'], 'scope' => null,
+    ],
     // CATATAN: slot magang TIDAK punya entri sendiri di sini. Ia satu domain
     // dengan pendaftaran di atas - yang satu menetapkan tempatnya, yang lain
     // memproses orang yang mengisinya - dan hidup sebagai tab di dalam

@@ -130,4 +130,84 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
             'bidang_kode' => $this->my_bidang_kode,
         ])->row();
     }
+
+    /**
+     * Akun Universitas untuk admin bidang - UAT 2026 sheet "universitas": "akun dibuatkan
+     * admin bidang, akun diberikan kepada universitas oleh admin bidang". Sebelumnya hanya
+     * superadmin (Admin_Kemitraan::universitas). View dipakai bersama; bedanya tautan
+     * Manajemen Pengguna disembunyikan karena itu layar superadmin.
+     *
+     * Akun universitas tidak terikat bidang, jadi daftarnya tidak disaring bidang_kode.
+     * Admin bidang hanya bisa MEMBUAT role 'universitas' - role dipatok di server, bukan
+     * dibaca dari formulir, supaya endpoint ini tidak bisa dipakai membuat akun admin.
+     */
+    public function universitas()
+    {
+        $data['title'] = 'Akun Universitas';
+        $table = $this->table_state(['created_at', 'name', 'email'], 'created_at');
+        $data['base_url'] = 'Kemitraan_Bidang/universitas';
+        $data['aksi_buat'] = 'Kemitraan_Bidang/buat_universitas';
+
+        $this->db->from('usr_users')->where('role', 'universitas');
+        if ($table['q'] !== '') {
+            $this->db->group_start()
+                ->like('name', $table['q'])->or_like('email', $table['q'])
+                ->or_like('username', $table['q'])->group_end();
+        }
+        $table += $this->paginate_state($this->db->count_all_results('', FALSE));
+        $data['rows'] = $this->db->select("usr_users.*, (SELECT COUNT(*) FROM kkn_magang_pendaftaran
+                WHERE kkn_magang_pendaftaran.user_id = usr_users.id
+                  AND kkn_magang_pendaftaran.jenis = 'kkn') AS jumlah_kkn", FALSE)
+            ->order_by($table['sort'], $table['dir'])
+            ->limit($table['per_page'], $table['offset'])
+            ->get()->result();
+        $data['table'] = $data['pager'] = $table;
+        $this->render_scoped_admin('admin/kemitraan/universitas', $data);
+    }
+
+    public function buat_universitas()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $kembali = 'Kemitraan_Bidang/universitas';
+
+        $this->load->library('form_validation');
+        $this->form_validation->set_rules('name', 'Nama', 'required|trim|max_length[150]');
+        $this->form_validation->set_rules('email', 'Email', 'required|valid_email|max_length[100]|is_unique[usr_users.email]');
+        $this->form_validation->set_rules('password', 'Password', 'required|min_length[8]');
+        if ($this->form_validation->run() === FALSE) {
+            $this->session->set_flashdata('error', strip_tags(validation_errors()));
+            redirect($kembali);
+            return;
+        }
+
+        $this->load->model('auth_model');
+        $payload = [
+            'name'              => $this->input->post('name', TRUE),
+            'email'             => $this->input->post('email', TRUE),
+            'password'          => password_hash($this->input->post('password'), PASSWORD_BCRYPT),
+            'role'              => 'universitas',
+            'status'            => 'active',
+            'profile_completed' => 1,
+            'email_verified_at' => date('Y-m-d H:i:s'),
+            'created_at'        => date('Y-m-d H:i:s'),
+        ] + $this->auth_model->password_lifetime_fields();
+        $telp = trim((string) $this->input->post('phone', TRUE));
+        if ($telp !== '') { $payload['phone'] = $telp; }
+
+        if ( ! $this->db->insert('usr_users', $payload)) {
+            $galat = $this->db->error();
+            $this->session->set_flashdata('error', (int) ($galat['code'] ?? 0) === 1062
+                ? 'Akun belum dibuat: email tersebut sudah terdaftar.'
+                : 'Akun belum dibuat. Periksa isian lalu coba lagi.');
+            redirect($kembali);
+            return;
+        }
+        $id = (string) $this->db->insert_id();
+        $this->catat_audit('universitas_dibuat',
+            'Admin bidang ' . $this->my_bidang_kode . ' membuat akun universitas ' . $payload['email'],
+            'usr_users', $id, ['role' => 'universitas', 'bidang_pembuat' => $this->my_bidang_kode]);
+
+        $this->session->set_flashdata('success', 'Akun universitas berhasil dibuat. Serahkan email dan sandinya kepada universitas.');
+        redirect($kembali);
+    }
 }
