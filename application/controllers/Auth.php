@@ -572,7 +572,7 @@ class Auth extends MY_Controller {
         $phone     = html_escape($this->input->post('phone'));
 
         if (empty($username) || empty($nama) || empty($alamat_raw) || empty($phone)
-            || ($role === 'pengembang' ? empty($npwp_raw) : empty($nik_raw))) {
+            || ($role === 'pengembang' && empty($npwp_raw)) || ($role === 'warga' && empty($nik_raw))) {
             $this->_onboarding_fail('Semua field wajib harus diisi.');
             return;
         }
@@ -628,7 +628,9 @@ class Auth extends MY_Controller {
                 return;
             }
             $npwp_encrypted = $this->encryption_lib->encrypt($npwp_raw);
-        } elseif ( ! preg_match('/^[0-9]{16}$/', $nik_raw)) {
+        } elseif ($role === 'warga' && ! preg_match('/^[0-9]{16}$/', $nik_raw)) {
+            // Daftar revisi dinas 23 Sep 2026: mahasiswa tidak dimintai NIK (identitasnya NIM
+            // di formulir magang). NIK kini hanya untuk warga.
             $this->_onboarding_fail('NIK harus terdiri dari 16 digit angka.');
             return;
         }
@@ -642,7 +644,7 @@ class Auth extends MY_Controller {
             'phone' => $phone,
             'kategori' => $role,
         ];
-        if ($role !== 'pengembang') {
+        if ($role === 'warga') {
             $profile_data['nik'] = $this->encryption_lib->encrypt($nik_raw);
             $profile_data['nik_lookup_hash'] = $this->encryption_lib->deterministic_hash($nik_raw);
         }

@@ -208,14 +208,15 @@ $isi = function ($nama) use ($old) {
                         <i class="fa-solid fa-user auth-input-icon"></i>
                     </div>
 
-                    <!-- Identitas: pengembang memakai NPWP, peran lain memakai NIK. -->
-                    <div x-show="role !== 'pengembang'" :inert="role === 'pengembang'">
+                    <!-- Identitas: warga memakai NIK, pengembang memakai NPWP, mahasiswa tanpa keduanya
+                         (daftar revisi dinas 23 Sep 2026; identitas mahasiswa adalah NIM di formulir magang). -->
+                    <div x-show="role === 'warga'" :inert="role !== 'warga'">
                         <label class="auth-label" for="nik_identitas">No. Identitas (NIK) <span style="color:var(--auth-red)">*</span></label>
                         <div class="auth-input-group">
                             <input type="text" id="nik_identitas" name="nik_identitas" class="auth-input"
                                    value="<?= $isi('nik_identitas') ?>"
                                    placeholder="Masukkan 16 digit NIK" maxlength="16" pattern="[0-9]{16}"
-                                   :required="langkah === 2 && role !== 'pengembang'" inputmode="numeric"
+                                   :required="langkah === 2 && role === 'warga'" inputmode="numeric"
                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                             <i class="fa-solid fa-id-card auth-input-icon"></i>
                         </div>
