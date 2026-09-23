@@ -45,7 +45,7 @@ $filter_html = ob_get_clean();
  * kolom Aksi (AGENTS.md §17 poin 6). Selnya cuma memuat tombol kecil.
  */
 ?>
-<div data-tabel-admin x-data="{ buka: false, id: null, judul: '', mode: 'tawarkan' }"
+<div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" x-data="{ buka: false, id: null, judul: '', mode: 'tawarkan' }"
      class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari topik, pemohon, alasan...', 'filter_html' => $filter_html], TRUE) ?>
 

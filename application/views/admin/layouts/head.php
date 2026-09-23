@@ -111,6 +111,14 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css" integrity="sha384-6p9AefaqUhEVheRlj1mpAkbngHXy9mbYMrIdcIt4Jlc9lOLIablJq3bBsLOjGwZ7" crossorigin="anonymous" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css" integrity="sha384-6p9AefaqUhEVheRlj1mpAkbngHXy9mbYMrIdcIt4Jlc9lOLIablJq3bBsLOjGwZ7" crossorigin="anonymous"></noscript>
     <style>
         [x-cloak] { display: none !important; }
+        /* Kolom nomor urut tabel daftar admin (daftar revisi dinas 23 Sep 2026: "Numbering table").
+           Satu aturan untuk semua tabel ber-[data-tabel-admin]; nomor awal datang dari offset
+           paginasi yang dicetak sebagai counter-reset di pembungkus [data-tabel-admin] tiap view (reset di
+           elemen saudara seperti toolbar TIDAK diwarisi tabel), jadi halaman 2 mulai dari 26, bukan 1.
+           Baris kosong ber-colspan tidak dinomori tetapi tetap diberi sel supaya kolomnya lurus. */
+        [data-tabel-admin] table > thead > tr::before { content: "No"; display: table-cell; padding: 1rem 0.5rem 1rem 1rem; }
+        [data-tabel-admin] table > tbody > tr::before { counter-increment: baris-admin; content: counter(baris-admin); display: table-cell; padding: 1rem 0.5rem 1rem 1rem; vertical-align: top; font-size: 0.75rem; font-weight: 700; color: #6b7280; }
+        [data-tabel-admin] table > tbody > tr:has(> td[colspan])::before { counter-increment: none; content: ""; }
         /*
          * Main Content Entry Animation.
          *

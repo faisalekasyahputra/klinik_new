@@ -117,7 +117,7 @@ $warna_status = [
         </form>
     </div>
 
-    <div data-tabel-admin class="rounded-2xl bg-white dark:bg-brand-card border border-gray-200 dark:border-white/5 overflow-hidden">
+    <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="rounded-2xl bg-white dark:bg-brand-card border border-gray-200 dark:border-white/5 overflow-hidden">
         <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama perumahan atau pengembang...'], TRUE) ?>
         <div class="overflow-x-auto">
             <table class="w-full min-w-[980px] text-left text-sm">

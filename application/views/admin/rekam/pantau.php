@@ -53,7 +53,7 @@ $this->load->view('admin/layouts/cetak_rekap');
     <?php endforeach; ?>
 </div>
 
-<div data-tabel-admin class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
+<div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
     <div class="flex flex-wrap items-center gap-2 border-b border-gray-200 p-4 dark:border-white/5">
         <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted mr-1">Tahun:</span>
         <?php

@@ -29,7 +29,7 @@ ob_start(); ?>
 <?php endforeach;
 $filter_html = ob_get_clean();
 ?>
-<div data-tabel-admin class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden relative z-10">
+<div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden relative z-10">
     <div class="p-6 border-b border-gray-200 dark:border-white/5">
         <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <i class="ph ph-scroll text-brand-primary"></i> Riwayat Tindakan (<?= number_format((int) $table['total_rows']) ?>)

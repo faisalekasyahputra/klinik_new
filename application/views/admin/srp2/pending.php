@@ -8,7 +8,7 @@ $kelas_status = ['Pending' => 'pending', 'Draft' => 'process', 'Diterima' => 'ok
 </div>
 
 <?php $this->load->helper('admin_table'); ?>
-<div data-tabel-admin class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
+<div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
     <?php
     $this->load->helper('admin_table');
     // Filter status dibangun lewat admin_table_url() supaya pencarian/urutan yang

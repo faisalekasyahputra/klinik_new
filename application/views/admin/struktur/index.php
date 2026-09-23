@@ -40,7 +40,7 @@ $ada_yatim = array_sum($yatim) > 0;
     </div>
 
     <?php // ============ BIDANG ============ ?>
-    <div data-tabel-admin class="mt-6 bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
+    <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="mt-6 bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
         <div class="flex items-baseline justify-between border-b border-gray-200 p-4 dark:border-white/5">
             <h3 class="font-black text-gray-900 dark:text-white">Bidang <span class="text-gray-400 dark:text-brand-muted">(<?= count($bidang) ?>)</span></h3>
             <span class="text-xs text-gray-500 dark:text-brand-muted">Struktur dinas: habis Kadinas langsung bidang, tanpa divisi</span>
@@ -85,7 +85,7 @@ $ada_yatim = array_sum($yatim) > 0;
 
     <?php // ============ WILAYAH ============ ?>
     <?php $tanpa_petugas = count(array_filter($wilayah, static function ($w) { return (int) $w->petugas === 0; })); ?>
-    <div data-tabel-admin class="mt-6 bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
+    <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="mt-6 bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
         <div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-200 p-4 dark:border-white/5">
             <h3 class="font-black text-gray-900 dark:text-white">Kabupaten/Kota <span class="text-gray-400 dark:text-brand-muted">(<?= count($wilayah) ?>)</span></h3>
             <?php if ($tanpa_petugas > 0): ?>
