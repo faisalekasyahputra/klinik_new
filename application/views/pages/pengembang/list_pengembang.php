@@ -104,7 +104,7 @@
                                         'aktif' => 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
                                         'kedaluwarsa' => 'bg-red-500/10 text-red-400 border-red-500/20',
                                         'belum' => 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
-                                        'tak_tercatat' => 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+                                        'tak_tercatat' => 'bg-red-500/10 text-red-400 border-red-500/20',
                                     ];
                                     $tanggal_terbit = ! empty($dev['sertifikat_terbit']) ? date('d/m/Y', strtotime($dev['sertifikat_terbit'])) : NULL;
                                     $tanggal_akhir = ! empty($dev['sertifikat_berakhir']) ? date('d/m/Y', strtotime($dev['sertifikat_berakhir'])) : NULL;
