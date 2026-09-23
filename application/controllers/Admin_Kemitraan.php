@@ -518,6 +518,36 @@ class Admin_Kemitraan extends Admin_Controller {
         redirect('Admin_Kemitraan');
     }
 
+    /**
+     * Tetapkan tanggal terbit sertifikat KKN (daftar revisi dinas 23 Sep 2026, migrasi 062).
+     * Hanya KKN yang sudah Diterima. Kosong = tarik kembali (sertifikat terkunci lagi).
+     */
+    public function tanggal_sertifikat($id = NULL)
+    {
+        if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
+        $row = $this->db->get_where('kkn_magang_pendaftaran', ['id' => (int) $id, 'jenis' => 'kkn'])->row();
+        if ( ! $row) { show_404(); }
+        if ($row->status !== 'Diterima') {
+            $this->session->set_flashdata('error', 'Tanggal sertifikat hanya untuk KKN yang sudah diterima.');
+            redirect('Admin_Kemitraan');
+            return;
+        }
+        $tgl = trim((string) $this->input->post('tanggal_sertifikat', TRUE));
+        if ($tgl !== '') {
+            $d = DateTime::createFromFormat('!Y-m-d', $tgl);
+            if ( ! $d || $d->format('Y-m-d') !== $tgl) {
+                $this->session->set_flashdata('error', 'Tanggal sertifikat harus berformat YYYY-MM-DD.');
+                redirect('Admin_Kemitraan');
+                return;
+            }
+        }
+        $this->db->where('id', (int) $row->id)->update('kkn_magang_pendaftaran', ['tanggal_sertifikat' => $tgl === '' ? NULL : $tgl]);
+        $this->catat_audit('sertifikat_kkn_tanggal', ($tgl === '' ? 'Menarik tanggal sertifikat KKN ' : 'Menetapkan tanggal sertifikat KKN ' . $tgl . ' untuk ') . $row->instansi_asal,
+            'kkn_magang_pendaftaran', (string) $row->id, ['tanggal_sertifikat' => $tgl === '' ? NULL : $tgl]);
+        $this->session->set_flashdata('success', $tgl === '' ? 'Tanggal sertifikat ditarik; sertifikat terkunci kembali.' : 'Tanggal sertifikat ditetapkan. Peserta sudah bisa mencetak sertifikat.');
+        redirect('Admin_Kemitraan');
+    }
+
     public function proses($id = NULL)
     {
         if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }

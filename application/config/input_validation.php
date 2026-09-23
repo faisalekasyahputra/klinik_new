@@ -231,6 +231,7 @@ $config['input_allowed_fields'] = [
     'tampil_korsel',
     'tanpa_wilayah',
     'tanggal_lahir',
+    'tanggal_sertifikat',
     'tanggal_serah_terima',
     'telp_kantor',
     'tempat_lahir',

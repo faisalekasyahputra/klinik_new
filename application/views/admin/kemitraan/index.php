@@ -100,6 +100,16 @@ $filter_html = ob_get_clean();
                             <div class="mt-1 text-[10px] text-gray-400 dark:text-brand-muted/60">Tanpa <?= html_escape(strtolower($d[0])) ?></div>
                             <?php endif; ?>
                         <?php endforeach; ?>
+                        <?php if ($r->jenis === 'kkn' && $r->status === 'Diterima'): ?>
+                            <form method="POST" action="<?= base_url('Admin_Kemitraan/tanggal_sertifikat/' . (int) $r->id) ?>" class="mt-2 flex items-center gap-1.5">
+                                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+                                <label class="text-[10px] text-gray-500 dark:text-brand-muted">Tgl sertifikat
+                                    <input type="date" name="tanggal_sertifikat" value="<?= html_escape($r->tanggal_sertifikat ?? '') ?>" class="ml-1 rounded-md border border-gray-200 dark:border-white/10 bg-transparent px-1.5 py-0.5 text-[11px]">
+                                </label>
+                                <button type="submit" class="rounded-md px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">Simpan</button>
+                            </form>
+                            <?php if (empty($r->tanggal_sertifikat)): ?><div class="text-[10px] text-amber-600">Sertifikat terkunci sampai tanggal diisi</div><?php endif; ?>
+                        <?php endif; ?>
                         <?php if ($r->jenis === 'kkn' && ! empty($r->link_dokumentasi)): ?>
                             <div class="mt-1"><a href="<?= html_escape($r->link_dokumentasi) ?>" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-link"></i> Dokumentasi (cloud)</a></div>
                         <?php endif; ?>

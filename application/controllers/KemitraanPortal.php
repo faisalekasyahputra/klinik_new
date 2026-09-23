@@ -435,7 +435,7 @@ class KemitraanPortal extends Public_Controller
             ->select('kkn_peserta.id AS id_peserta, kkn_peserta.nama AS nama_peserta, kkn_peserta.nim,
                 kkn_magang_pendaftaran.instansi_asal, kkn_magang_pendaftaran.divisi_atau_tema,
                 kkn_magang_pendaftaran.periode_mulai, kkn_magang_pendaftaran.periode_selesai,
-                kkn_magang_pendaftaran.status')
+                kkn_magang_pendaftaran.status, kkn_magang_pendaftaran.tanggal_sertifikat')
             ->from('kkn_peserta')
             ->join('kkn_magang_pendaftaran', 'kkn_magang_pendaftaran.id = kkn_peserta.pendaftaran_id')
             ->where(['kkn_peserta.nim' => $nim, 'kkn_magang_pendaftaran.jenis' => 'kkn'])
@@ -466,6 +466,12 @@ class KemitraanPortal extends Public_Controller
             // pemilik NIM itu, bukan bocoran ke penebak.
             $tolak('KKN Anda belum melewati periode pelaksanaan. Sertifikat dapat dicetak mulai '
                 . tgl_id($baris->periode_selesai) . '.');
+            return;
+        }
+        // Daftar revisi dinas 23 Sep 2026: sertifikat baru bisa dicetak setelah admin menetapkan
+        // tanggal terbitnya (migrasi 062). Pesan boleh spesifik: NIM ini sudah terbukti diterima.
+        if (empty($baris->tanggal_sertifikat)) {
+            $tolak('Sertifikat KKN Anda sedang disiapkan. Tanggal terbit belum ditetapkan admin Disperakim; silakan cek kembali nanti.');
             return;
         }
 
@@ -754,7 +760,8 @@ class KemitraanPortal extends Public_Controller
            179.24mm, stempel berhenti sebelum 140mm. Warna sampul
            (247,246,241) disampel LANGSUNG dari kertas kosong di sisi
            kanan kotak, bukan warna rata sembarang. */
-        $tanggalCetak = $t(tgl_id(date('Y-m-d')));
+        // Tanggal terbit ditetapkan admin (migrasi 062), bukan hari pencetakan.
+        $tanggalCetak = $t(tgl_id(((array) $data)['tanggal_sertifikat'] ?? date('Y-m-d')));
         $pdf->SetFillColor(247, 246, 241);
         $pdf->Rect(139, 145.7, 43, 5.6, 'F');
         $pdf->SetFont('Times', '', 13);
