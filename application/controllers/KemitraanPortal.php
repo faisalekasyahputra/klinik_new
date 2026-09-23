@@ -308,6 +308,34 @@ class KemitraanPortal extends Public_Controller
      * (yang harus manual karena isi berkasnya DIURAI, bukan cuma
      * disimpan). Laporan akhir cukup disimpan apa adanya.
      */
+    /**
+     * Link dokumentasi KKN di cloud (daftar revisi dinas 23 Sep 2026, migrasi 061). Hanya
+     * pemilik KKN (akun universitas) yang mengisi; kosong berarti menghapus link. Hanya
+     * http/https yang diterima supaya tautan yang dibuka admin tidak bisa berupa javascript:.
+     */
+    public function kkn_simpan_dokumentasi($id = NULL)
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $row = $this->pendaftaran_milik($id);
+        if ( ! $row) { return; }
+        if ($row->jenis !== 'kkn') { show_404(); }
+
+        $kembali = 'KemitraanPortal/pendaftaran/' . (int) $row->id;
+        $url = trim((string) $this->input->post('link_dokumentasi', TRUE));
+        if ($url !== '') {
+            $skema = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+            if (strlen($url) > 500 || ! filter_var($url, FILTER_VALIDATE_URL) || ! in_array($skema, ['http', 'https'], TRUE)) {
+                $this->session->set_flashdata('error', 'Link dokumentasi harus alamat web lengkap yang diawali https:// (maksimal 500 karakter).');
+                redirect($kembali);
+                return;
+            }
+        }
+
+        $this->db->where('id', $row->id)->update('kkn_magang_pendaftaran', ['link_dokumentasi' => $url === '' ? NULL : $url]);
+        $this->session->set_flashdata('success', $url === '' ? 'Link dokumentasi dihapus.' : 'Link dokumentasi tersimpan.');
+        redirect($kembali);
+    }
+
     public function kkn_upload_laporan($id = NULL)
     {
         if ($this->input->method(TRUE) !== 'POST') { show_404(); }

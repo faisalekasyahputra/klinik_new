@@ -100,6 +100,9 @@ $filter_html = ob_get_clean();
                             <div class="mt-1 text-[10px] text-gray-400 dark:text-brand-muted/60">Tanpa <?= html_escape(strtolower($d[0])) ?></div>
                             <?php endif; ?>
                         <?php endforeach; ?>
+                        <?php if ($r->jenis === 'kkn' && ! empty($r->link_dokumentasi)): ?>
+                            <div class="mt-1"><a href="<?= html_escape($r->link_dokumentasi) ?>" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-link"></i> Dokumentasi (cloud)</a></div>
+                        <?php endif; ?>
                         <?php if ($r->jenis === 'kkn'): ?>
                             <!-- Jumlah peserta - roster diunggah universitas sendiri
                                  lewat dashboardnya (migrasi 044). Dihitung di query

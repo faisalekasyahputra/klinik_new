@@ -276,6 +276,29 @@ $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
     $periode_lewat = ! empty($row->periode_selesai) && strtotime($row->periode_selesai) < strtotime('today');
     ?>
     <div class="<?= $kotak ?> mb-4">
+        <div class="<?= $label ?>">Link Dokumentasi KKN</div>
+        <?php if ( ! empty($row->link_dokumentasi)): ?>
+            <p class="mt-2 text-sm break-all">
+                <i class="ph ph-link text-brand-primary" aria-hidden="true"></i>
+                <a href="<?= html_escape($row->link_dokumentasi) ?>" target="_blank" rel="noopener noreferrer" class="font-semibold text-brand-primary hover:underline"><?= html_escape($row->link_dokumentasi) ?></a>
+            </p>
+        <?php endif; ?>
+        <form method="POST" action="<?= base_url('KemitraanPortal/kkn_simpan_dokumentasi/' . (int) $row->id) ?>" class="mt-3 flex flex-wrap items-end gap-3">
+            <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+            <div class="flex-1 min-w-[220px]">
+                <label for="kb-dokumentasi" class="<?= $label ?>">URL folder dokumentasi (Google Drive, OneDrive, dsb.)</label>
+                <input id="kb-dokumentasi" name="link_dokumentasi" type="url" maxlength="500" placeholder="https://drive.google.com/..."
+                       value="<?= html_escape($row->link_dokumentasi ?? '') ?>"
+                       class="mt-1 w-full rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/20 px-3 py-2 text-sm text-gray-900 dark:text-white">
+                <p class="<?= $petunjuk ?>">Pastikan folder dapat dibuka oleh petugas Disperakim. Kosongkan lalu simpan untuk menghapus link.</p>
+            </div>
+            <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-xs font-bold text-white shrink-0">
+                <i class="ph ph-floppy-disk"></i> Simpan Link
+            </button>
+        </form>
+    </div>
+
+    <div class="<?= $kotak ?> mb-4">
         <div class="<?= $label ?>">Laporan Akhir KKN</div>
 
         <?php if ( ! $periode_lewat): ?>

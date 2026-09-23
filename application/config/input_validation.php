@@ -134,6 +134,7 @@ $config['input_allowed_fields'] = [
     'location_accuracy_m',
     'location_lat',
     'location_lng',
+    'link_dokumentasi',
     'lock_version',
     'lokasi',
     'lokasi_teks',
