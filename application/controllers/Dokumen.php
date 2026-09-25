@@ -33,4 +33,16 @@ class Dokumen extends Public_Controller
 
         $this->render('pages/data_spasial/dokumen', $data);
     }
+
+    /** Dokumen Bank Data unggahan admin (migrasi 063). Hanya yang aktif; id lain 404. */
+    public function lihat($id = NULL)
+    {
+        if ( ! ctype_digit((string) $id)) { show_404(); }
+        $row = $this->db->get_where('sf_bank_data_dokumen', ['id' => (int) $id, 'aktif' => 1])->row();
+        if ( ! $row || ! is_file(FCPATH . $row->berkas)) { show_404(); }
+        $data['judul']   = 'Bank Data - ' . $row->judul;
+        $data['pdf_url'] = base_url($row->berkas);
+        $data['contoh']  = FALSE;
+        $this->render('pages/data_spasial/dokumen', $data);
+    }
 }

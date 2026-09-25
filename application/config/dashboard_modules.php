@@ -348,6 +348,11 @@ $config['dashboard_modules'] = [
         'url'   => 'Admin_Katalog_Program', 'group' => 'Manajemen', 'order' => 40,
         'roles' => ['admin'], 'scope' => null,
     ],
+    'bank_data_admin' => [
+        'label' => 'Bank Data', 'icon' => 'ph-books',
+        'url'   => 'Admin_Bank_Data', 'group' => 'Manajemen', 'order' => 41,
+        'roles' => ['admin'], 'scope' => null,
+    ],
     'kemitraan' => [
         'label' => 'Kelola KKN/Magang', 'icon' => 'ph-graduation-cap',
         'url'   => 'Admin_Kemitraan', 'group' => 'Tindak Lanjut', 'order' => 30,

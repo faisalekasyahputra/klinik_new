@@ -94,3 +94,7 @@ user_guide_src/cilexer/pycilexer.egg-info/*
 # Yang di bawah ini data, bukan kode: ia lahir di server tempat diunggah, dan
 # `git pull` saat auto-deploy tidak menyentuh berkas tak terlacak.
 assets/img/program/unggahan/
+
+# PDF Bank Data yang diunggah admin (migrasi 063). Data, bukan kode: lahir di server tempat
+# diunggah, dan deploy hanya mempertahankan path yang cocok .gitignore.
+assets/dokumen/unggahan/

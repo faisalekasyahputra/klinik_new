@@ -818,6 +818,10 @@ class Index extends MY_Controller {
 	 * PDF hanya dimuat di halaman pembaca, bukan di panel tersembunyi.
 	 */
 	public function tab_bankdata() {
-		$this->render('pages/home/tab_bankdata');
+		// Kartu dari PDF unggahan admin (migrasi 063); kartu contoh tampil selama belum ada.
+		$dok = $this->db->table_exists('sf_bank_data_dokumen')
+			? $this->db->where('aktif', 1)->order_by('jenis', 'ASC')->order_by('urutan', 'ASC')->order_by('id', 'DESC')->get('sf_bank_data_dokumen')->result()
+			: [];
+		$this->render('pages/home/tab_bankdata', ['dokumen_bank' => $dok]);
 	}
 }
