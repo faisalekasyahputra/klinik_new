@@ -106,10 +106,13 @@ $nikHash=hash_hmac('sha256',$nikUji,$env['KPKP_DATA_PEPPER']);
 $scopeKeys=[
     hash('sha256','register:ip:127.0.0.1'),
     hash('sha256','register:ip:::1'),
+    // Aplikasi mengelompokkan IPv6 per /64: ::1 tercatat sebagai 0000000000000000/64.
+    hash('sha256','register:ip:0000000000000000/64'),
 ];
 $testedRateKeys=array_merge($scopeKeys,[
     hash('sha256','warga_lookup:ip:127.0.0.1'),
     hash('sha256','warga_lookup:ip:::1'),
+    hash('sha256','warga_lookup:ip:0000000000000000/64'),
     hash('sha256','warga_lookup:account:'.$userId),
     hash('sha256','warga_lookup:nik:'.$nikHash),
 ]);

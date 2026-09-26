@@ -159,6 +159,7 @@ function preserve_rate_key($db,$policy,$dimension,$value){
 function preserve_rate_ips($db,$policy){
     preserve_rate_key($db,$policy,'ip','127.0.0.1');
     preserve_rate_key($db,$policy,'ip','::1');
+    preserve_rate_key($db,$policy,'ip','0000000000000000/64'); // ::1 dikelompokkan per /64
 }
 function cleanup(){
     $db=$GLOBALS['db']; if(!$db)return;

@@ -28,7 +28,7 @@ function pinjam_rate($db,$key){if(array_key_exists($key,$GLOBALS['rate_asli']))r
   $db->q('DELETE FROM sys_rate_limits WHERE limit_key=?',[$key]);}
 $pepper=envv()['KPKP_DATA_PEPPER'] ?? '';
 foreach(['warga_lookup','warga_submit','warga_start_revision','admin_queue_decision'] as $policy)
-  foreach(['127.0.0.1','::1'] as $ip) pinjam_rate($db,hash('sha256',$policy.':ip:'.$ip));
+  foreach(['127.0.0.1','::1','0000000000000000/64'] as $ip) /* ::1 dikelompokkan per /64 */ pinjam_rate($db,hash('sha256',$policy.':ip:'.$ip));
 /* R3 menyentuh tiga NIK fixture, bukan satu - embernya per-NIK, jadi ketiganya
    harus dipinjam atau tabrakannya cuma berpindah ke fixture berikutnya. */
 foreach(['0000000000000002','0000000000000003','0000000000000005'] as $n)
