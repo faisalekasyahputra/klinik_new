@@ -320,6 +320,66 @@ if (preg_match('/function\s+cari_wil_ketik\s*\([^)]*\)\s*\{(.*?)\n\}/s', $view, 
 cek(substr_count($view, 'onchange="cari_wil()"') === 3,
     'Tiga dropdown (wilayah, searchBy, urutan) tetap mencari seketika');
 
+/* ============================================================================
+   8. Detail Perumahan (UAT Nggoleki Omah #2 dan #3, 26 Sep 2026)
+   ============================================================================ */
+echo "\n== 8. Detail perumahan: hulu gagal dan tombol WhatsApp ==\n";
+
+function http_kode($path) {
+    $ch = curl_init(BASE_URL . '/' . ltrim($path, '/'));
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => TRUE, CURLOPT_TIMEOUT => 40]);
+    $b = (string) curl_exec($ch);
+    $k = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    return [$k, $b];
+}
+
+/* Hulu gagal tanpa cache = 503 "coba lagi", bukan 404. Kegagalan ditiru dengan
+   bendera per lokasi yang masih menyala, jadi tidak ada tembakan ke SIKUMBANG. */
+$id_mati = 'UJI9901' . getmypid() . 'T001';
+$GLOBALS['bersih'][] = $bendera_mati = CACHE_DIR . 'sikumbang_detail_' . $id_mati . '_gagal.flag';
+touch($bendera_mati);
+[$k, $b] = http_kode('detail_perum/' . $id_mati);
+cek($k === 503 && strpos($b, 'data-detail-tidak-tersedia') !== FALSE && strpos($b, 'Coba lagi') !== FALSE,
+    "Hulu gagal tanpa cache: 503 dengan ajakan coba lagi, bukan 404 (dapat $k)");
+
+$src_index = file_get_contents(APP_ROOT . '/application/controllers/Index.php');
+cek(strpos($src_index, "'sikumbang_detail_' . \$idLokasi)") !== FALSE,
+    'Detail memakai bendera penahan per lokasi, satu id yang menggantung tidak membungkam kartu lain');
+
+/* Nomor WhatsApp: hanya nomor HP pertama; telepon kantor/tanpa kode area tidak jadi tautan. */
+define('BASEPATH', TRUE);
+require_once APP_ROOT . '/application/helpers/ternak_helper.php';
+foreach ([
+    '0271-593507 081393090297' => '6281393090297',
+    '+62 812-2728-8838'        => '6281227288838',
+    '0813-2829-760'            => '628132829760',
+    '0248312151'               => '',
+    '0370-7509777'             => '',
+    '3563054'                  => '',
+    ''                         => '',
+] as $masuk => $harap) {
+    cek(nomor_whatsapp($masuk) === $harap, "nomor_whatsapp('$masuk') = '$harap'");
+}
+
+$contoh = glob(CACHE_DIR . 'sikumbang_detail_*.json');
+$templat = $contoh ? json_decode(file_get_contents($contoh[0]), TRUE) : NULL;
+if ( ! isset($templat['detail']['kantorPemasaran'][0])) {
+    echo "  LEWAT Tidak ada cache detail SIKUMBANG sebagai templat; cek halaman WhatsApp dilewati.\n";
+} else {
+    foreach (['0271-593507 081393090297' => 'https://wa.me/6281393090297', '0248312151' => NULL] as $telp => $href) {
+        $id = 'UJI9902' . getmypid() . 'T00' . ($href ? 1 : 2);
+        $templat['detail']['kantorPemasaran'][0]['noTelp'] = $telp;
+        $GLOBALS['bersih'][] = $f = CACHE_DIR . 'sikumbang_detail_' . $id . '.json';
+        file_put_contents($f, json_encode($templat));
+        [$k, $b] = http_kode('detail_perum/' . $id);
+        cek($k === 200 && ($href
+                ? strpos($b, 'href="' . $href . '"') !== FALSE
+                : strpos($b, 'WhatsApp Tidak Tersedia') !== FALSE && strpos($b, 'wa.me/') === FALSE),
+            $href ? "Detail dengan dua nomor: tombol ke $href" : 'Detail dengan telepon kantor: tombol WhatsApp nonaktif');
+    }
+}
+
 echo "\n=== Ringkasan ===\n";
 printf("  %d pemeriksaan, %d merah\n", $GLOBALS['uji_total'], $GLOBALS['uji_gagal']);
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);

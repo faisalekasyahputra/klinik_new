@@ -120,9 +120,11 @@
                                 </td>
                                 <td class="px-8 py-5 text-center">
                                     <div class="flex items-center justify-center gap-2">
-                                        <a href="https://wa.me/<?= preg_replace('/[^0-9]/', '', $dev['telepon']) ?>" target="_blank" class="inline-flex items-center justify-center gap-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white px-4 py-2 rounded-xl font-bold transition-all duration-300 border border-emerald-500/20 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 hover:-translate-y-0.5">
+                                        <?php $wa_dev = nomor_whatsapp($dev['telepon'] ?? ''); if ($wa_dev !== ''): ?>
+                                        <a href="https://wa.me/<?= $wa_dev ?>" target="_blank" class="inline-flex items-center justify-center gap-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white px-4 py-2 rounded-xl font-bold transition-all duration-300 border border-emerald-500/20 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 hover:-translate-y-0.5">
                                             <i class="fa-brands fa-whatsapp text-lg"></i> <span>Hubungi</span>
                                         </a>
+                                        <?php endif; ?>
                                         <a href="<?= base_url('Umum/detail_pengembang') . '?nama=' . urlencode($dev['pengembang']) ?>" class="inline-flex items-center justify-center gap-2 bg-[#d6fb00]/10 hover:bg-[#d6fb00] text-[#d6fb00] hover:text-black px-4 py-2 rounded-xl font-bold transition-all duration-300 border border-[#d6fb00]/20 hover:border-[#d6fb00] hover:shadow-lg hover:shadow-[#d6fb00]/20 hover:-translate-y-0.5">
                                             <i class="fa-solid fa-circle-info text-lg"></i> <span>Detail</span>
                                         </a>

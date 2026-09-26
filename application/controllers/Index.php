@@ -174,10 +174,20 @@ class Index extends MY_Controller {
 		   404 yang berbohong, karena datanya ada di cache dan lokasinya
 		   memang nyata. Sekarang 404 hanya keluar kalau benar-benar tidak
 		   ada apa pun yang bisa disajikan. */
-		$response = sikumbang_ambil($full_url, $cache_file, 86400);
+		/* Bendera penahan tembakan PER LOKASI, bukan bendera host bersama (UAT
+		   Nggoleki Omah #2, 26 Sep 2026): satu id yang menggantung di SIKUMBANG
+		   terbukti membungkam kartu lain yang hulunya sehat selama 60 dtk.
+		   ponytail: saat host SIKUMBANG mati total, tiap id baru tetap membayar
+		   satu timeout; pakai bendera host lagi kalau itu terbukti menahan worker. */
+		$response = sikumbang_ambil($full_url, $cache_file, 86400, SIKUMBANG_TIMEOUT, 'sikumbang_detail_' . $idLokasi);
 
+		/* NULL = hulu gagal dan belum ada cache, BUKAN perumahan tidak ada.
+		   404 di sini membuat warga mengira perumahannya hilang. */
 		if ($response === NULL) {
-			show_404();
+			$this->output->set_status_header(503)->set_header('Retry-After: 60');
+			$data['content'] = $this->load->view('pages/perumahan/detail_tidak_tersedia', [], true);
+			$this->load->view('layouts/main', $data);
+			return;
 		}
 
 		$decoded_data = json_decode($response, true);

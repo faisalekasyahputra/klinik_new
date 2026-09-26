@@ -203,8 +203,9 @@ foreach ($tapera_data as $p) {
 
                 <!-- Action Buttons -->
                 <div style="display:flex;flex-wrap:wrap;gap:10px;">
-                    <?php if (!empty($info_pengembang['telepon']) && $info_pengembang['telepon'] !== '-'): ?>
-                    <a href="https://wa.me/<?= preg_replace('/[^0-9]/','',$info_pengembang['telepon']) ?>" target="_blank"
+                    <?php $wa_pengembang = nomor_whatsapp($info_pengembang['telepon'] ?? ''); ?>
+                    <?php if ($wa_pengembang !== ''): ?>
+                    <a href="https://wa.me/<?= $wa_pengembang ?>" target="_blank"
                        style="display:inline-flex;align-items:center;gap:8px;background:#22c55e;color:#fff;padding:12px 22px;border-radius:14px;font-weight:800;font-size:13px;text-decoration:none;transition:all .3s;box-shadow:0 4px 20px rgba(34,197,94,.3);"
                        onmouseover="this.style.background='#16a34a';this.style.transform='translateY(-2px)'"
                        onmouseout="this.style.background='#22c55e';this.style.transform='none'">

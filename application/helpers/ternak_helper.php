@@ -106,3 +106,28 @@ if ( ! function_exists('tgl_id')) {
 }
 
 
+
+/**
+ * Nomor WhatsApp (628xxx) dari teks telepon bebas, atau '' kalau tidak ada nomor HP.
+ *
+ * Data hulu (SIKUMBANG, profil pengembang) sering berisi telepon kantor, dua nomor
+ * dalam satu kolom ("0271-593507 081393090297"), atau nomor tanpa kode area. Menghapus
+ * semua non-digit menggabungkan nomor itu jadi tautan wa.me yang rusak, jadi yang
+ * diambil hanya nomor HP pertama (08..., 628..., +62 8...). Telepon rumah/kantor
+ * menghasilkan '' supaya tampilan menunjukkan WhatsApp tidak tersedia.
+ */
+if ( ! function_exists('nomor_whatsapp')) {
+    function nomor_whatsapp($teks) {
+        if ( ! preg_match_all('/(?<!\d)(?:\+?62|0)[\s.-]?8(?:[\s.-]?\d){7,10}(?!\d)/', (string) $teks, $m)) {
+            return '';
+        }
+        foreach ($m[0] as $calon) {
+            $digit = preg_replace('/\D/', '', $calon);
+            $digit = $digit[0] === '0' ? '62' . substr($digit, 1) : $digit;
+            if (preg_match('/^628\d{7,10}$/', $digit)) {
+                return $digit;
+            }
+        }
+        return '';
+    }
+}

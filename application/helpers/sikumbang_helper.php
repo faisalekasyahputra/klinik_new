@@ -86,6 +86,9 @@ if ( ! function_exists('sikumbang_ambil')) {
      *                           hangat di production tanpa alasan.
      * @param int    $ttl        Umur maksimum cache yang dianggap segar.
      * @param int    $timeout    Batas waktu curl.
+     * @param string $bendera    Nama bendera penahan tembakan. Bawaan satu untuk
+     *                           seluruh host; detail per lokasi memakai benderanya
+     *                           sendiri (lihat Index::detail_perum).
      *
      * @return string|NULL Isi balasan, atau NULL kalau gagal DAN tidak ada
      *                     cadangan apa pun. NULL sengaja dibedakan dari
@@ -94,7 +97,7 @@ if ( ! function_exists('sikumbang_ambil')) {
      *                     bedanya menentukan tombol "Muat lagi" mati atau
      *                     hidup (lihat Index::load_more).
      */
-    function sikumbang_ambil($url, $cache_file, $ttl, $timeout = SIKUMBANG_TIMEOUT)
+    function sikumbang_ambil($url, $cache_file, $ttl, $timeout = SIKUMBANG_TIMEOUT, $bendera = 'sikumbang')
     {
         /* Mekanisme cache-nya DIPINDAH ke cache_hulu_ambil() 10 Sep 2026 dan
            dipakai bersama Sikaper. Yang tinggal di sini cuma cara MENEMBAK-nya,
@@ -124,7 +127,7 @@ if ( ! function_exists('sikumbang_ambil')) {
                error tertulis ke cache sebagai kalau-kalau itu data sah. */
             $ok = ! $galat && is_string($balasan) && $balasan !== '' && $kode >= 200 && $kode < 300;
             return [$ok, is_string($balasan) ? $balasan : NULL];
-        }, 'sikumbang');
+        }, $bendera);
     }
 }
 
