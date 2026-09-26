@@ -211,7 +211,10 @@ foreach (glob(dirname(__DIR__, 2) . '/application/fixtures/simperum/SIM-*.json')
         $CADANGAN[$j['identity']['nik']] = $j['identity']['birth_date'];
     }
 }
-$KANDIDAT = $UTAMA + $CADANGAN;
+/* API-01 (Kota Semarang) didahulukan: bentuknya respons GetDataRTLH asli yang TIDAK
+   membawa desil, persis seperti production. Cek "program ditawarkan" di bawah jadi
+   membuktikan desil turunan pendapatan (keputusan 27 Sep 2026), bukan desil fixture. */
+$KANDIDAT = ['3399991508850001' => '1985-08-15'] + $UTAMA + $CADANGAN;
 
 echo "=== WIZARD BARU + CEK DATA RUMAH ===\n";
 echo "Target : " . BASE . "\n";
@@ -359,7 +362,9 @@ $db->jalan('UPDATE sf_profil_warga SET phone_ciphertext=?, field_provenance_json
     [$profile_before['phone_ciphertext'], json_encode($corrected), (string) $akun['id']]);
 $db->jalan("UPDATE sf_penilaian_perumahan SET matrix_current_housing_code='house_none_or_rent' WHERE user_id=?", [(string) $akun['id']]);
 $xpath_corrected = new DOMXPath(wizard_dom($warga->minta('warga/pendataan')['body']));
-cek($xpath_corrected->query('//input[@name="phone"]')->item(0)->getAttribute('value') === $source_phone,
+// Data berbentuk API (API-01) tidak membawa HP, jadi "koreksi" yang dipulihkan kosong: koreksi
+// itu tetap harus menang atas HP akun, bukan diisi ulang.
+cek($xpath_corrected->query('//input[@name="phone"]')->item(0)->getAttribute('value') === ($profile_before['phone_ciphertext'] === NULL ? '' : $source_phone),
     'HP koreksi tersimpan tidak ditimpa HP akun');
 cek($xpath_corrected->query('//select[@name="matrix_current_housing_code"]/option[@selected and @value="house_none_or_rent"]')->length === 1,
     'Pilihan status tersimpan tetap menang atas status rumah sumber');

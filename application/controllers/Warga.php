@@ -520,6 +520,12 @@ class Warga extends MY_Controller {
                 $profile = array_merge($profile, $profile_change['data'] ?? []);
             }
             $effective = array_merge($draft, $data);
+            // Keputusan pemilik produk 27 Sep 2026: SIMPERUM tidak mengirim desil, jadi selama
+            // desil profil kosong dipakai desil turunan pendapatan (rentang Sheet3 yang sama
+            // dengan tampilan rekomendasi awal). Desil resmi dari sumber tetap menang.
+            if (empty($profile['welfare_decile'])) {
+                $profile['welfare_decile'] = $this->matriks_program_ruleset->decile_for_monthly_income($profile['monthly_income'] ?? NULL);
+            }
             if ($step === 'housing_family') {
                 $data['preliminary_matrix'] = json_encode(
                     $this->matriks_program_ruleset->preliminary($effective, $profile),

@@ -107,6 +107,22 @@ class Matriks_program_ruleset {
         return self::INCOME_TO_DECILE[$income_code] ?? NULL;
     }
 
+    /**
+     * Desil turunan dari pendapatan angka (rupiah/bulan), memakai rentang Sheet3 yang sama
+     * dengan preliminary(). Dipakai selama SIMPERUM tidak mengirim desil (27 Sep 2026).
+     * @return int|null Null kalau pendapatan kosong/tidak valid.
+     */
+    public function decile_for_monthly_income($rupiah)
+    {
+        if ( ! is_numeric($rupiah) || $rupiah < 0) { return NULL; }
+        $rupiah = (float) $rupiah;
+        if ($rupiah <= 1500000) { return 1; }
+        if ($rupiah <= 2200000) { return 2; }
+        if ($rupiah <= 2800000) { return 4; }
+        if ($rupiah <= 8500000) { return 5; }
+        return 9;
+    }
+
     /** @return string|null Label kolom B untuk kode Gaji yang sama. */
     public function decile_label_for_income($income_code)
     {
