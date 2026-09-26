@@ -79,7 +79,12 @@ class Housing_assessment_model extends CI_Model {
         $bound = $this->db->select('id, user_id')
             ->get_where('sf_profil_warga', ['nik_lookup_hash' => $nik_hash])
             ->row_array();
-        if ($bound && (int) $bound['user_id'] !== $user_id) {
+        // NIK juga terkunci ke akun lewat usr_users.nik_lookup_hash (onboarding Auth dan
+        // Pengaturan). Pemilik yang belum mengisi pendataan belum punya baris sf_profil_warga,
+        // jadi tanpa cek ini akun lain bisa merebut NIK-nya di Cek Kelayakan (UAT warga #8).
+        $bound_account = $this->db->where('nik_lookup_hash', $nik_hash)
+            ->where('id !=', $user_id)->count_all_results('usr_users') > 0;
+        if ($bound_account || ($bound && (int) $bound['user_id'] !== $user_id)) {
             return $this->fail('nik_already_bound', 'NIK ini sudah terdaftar pada akun lain. Jika Anda merasa ini keliru, hubungi Dinas Perakim.');
         }
 

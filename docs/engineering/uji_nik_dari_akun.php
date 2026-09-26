@@ -46,8 +46,24 @@ try{
   } else { $cek(($m[1]??'x')==='' && strpos($b,'Terisi dari NIK')===false, "Akun $ket: kolom kosong, tanpa petunjuk"); }
   @unlink($j);
  }
+ // UAT warga #8: NIK yang terkunci di usr_users akun lain (pemilik belum mengisi pendataan,
+ // jadi belum punya sf_profil_warga) tetap ditolak "sudah terdaftar pada akun lain".
+ $nik2='3399990101700003'; $pinjam(hash('sha256','warga_lookup:nik:'.$enc->deterministic_hash($nik2)));
+ $akun=[];
+ foreach(['pemilik'=>$nik2,'perebut'=>null] as $peran=>$n){
+  $e="{$tag}_{$peran}@example.test"; $h=password_hash($pw,PASSWORD_BCRYPT); $nc=$n?$enc->encrypt($n):null; $nh=$n?$enc->deterministic_hash($n):null;
+  $st=$db->prepare("INSERT INTO usr_users (name,email,password,role,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at,nik,nik_lookup_hash) VALUES ('Uji NIK',?,?,'warga','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW(),?,?)");
+  $st->bind_param('ssss',$e,$h,$nc,$nh);$st->execute();$akun[$peran]=$ids[]=$db->insert_id;
+ }
+ $id=$akun['perebut']; foreach(['warga_lookup','warga_lookup_jam','warga_lookup_harian'] as $p) $pinjam(hash('sha256',"$p:account:$id"));
+ $j=tempnam(sys_get_temp_dir(),'e2e'); $http($j,'Auth/login'); $http($j,'Auth/do_login',['email'=>"{$tag}_perebut@example.test",'password'=>$pw,'csrf_kpkp_token'=>$csrf($j)]);
+ $http($j,'warga/pendataan');
+ [$k,$b]=$http($j,'warga/pendataan',['step'=>'find_data','nik'=>$nik2,'csrf_kpkp_token'=>$csrf($j)]);
+ $profil=$db->query("SELECT COUNT(*) FROM sf_profil_warga WHERE user_id=$id")->fetch_row()[0];
+ $cek(strpos($b,'sudah terdaftar pada akun lain')!==false && (int)$profil===0, "NIK terkunci di akun lain (tanpa profil pendataan): akun kedua ditolak, tidak ada profil tercipta");
+ @unlink($j);
 } finally {
- foreach($ids as $id){$db->query("DELETE FROM sf_penilaian_perumahan WHERE user_id=$id");$db->query("DELETE FROM usr_users WHERE id=$id");}
+ foreach($ids as $id){$db->query("DELETE FROM sf_profil_warga WHERE user_id=$id");$db->query("DELETE FROM sf_penilaian_perumahan WHERE user_id=$id");$db->query("DELETE FROM usr_users WHERE id=$id");}
  $db->query("DELETE FROM sf_rekaman_simperum WHERE source_record_key LIKE 'SYN-API-%'");
  foreach($rate_asli as $key=>$r){ $st=$db->prepare('DELETE FROM sys_rate_limits WHERE limit_key=?');$st->bind_param('s',$key);$st->execute();
   if($r){$st=$db->prepare('INSERT INTO sys_rate_limits (limit_key,window_started_at,failed_attempts) VALUES (?,?,?)');$st->bind_param('ssi',$r['limit_key'],$r['window_started_at'],$r['failed_attempts']);$st->execute();} }
