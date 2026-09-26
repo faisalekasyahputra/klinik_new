@@ -353,6 +353,12 @@ class Auth extends MY_Controller {
             return;
         }
 
+        // Centang S&K dulu hanya dijaga atribut required di peramban (UAT warga 26 Sep 2026).
+        if ( ! in_array((string) $this->input->post('tos_agree'), ['1', 'on', 'true'], TRUE)) {
+            $this->_register_fail($is_ajax, 'Centang persetujuan Ketentuan Layanan dan Kebijakan Privasi untuk mendaftar.', $redirect_target);
+            return;
+        }
+
         if ($password !== $password_confirm) {
             $this->_register_fail($is_ajax, 'Password dan konfirmasi tidak cocok.', $redirect_target);
             return;
@@ -398,6 +404,8 @@ class Auth extends MY_Controller {
             $this->_register_fail($is_ajax, 'Terjadi kesalahan sistem. Silakan coba lagi.', $redirect_target);
             return;
         }
+        // Bukti persetujuan S&K: waktu dan akunnya tercatat di jejak audit.
+        $this->catat_audit('persetujuan_sk', 'Menyetujui Ketentuan Layanan dan Kebijakan Privasi saat mendaftar', 'usr_users', (string) $user_id, ['email' => $email]);
 
         $registration_id = null;
         $default_name = NULL;

@@ -229,7 +229,7 @@ function daftar_cepat_srp2(Sesi $s, string $email, string $nama): array {
     $s->get('Auth/login');
     $r = $s->postForm('Auth/do_register', [
         'email' => $email, 'password' => AKUN_PASSWORD, 'password_confirm' => AKUN_PASSWORD,
-        'srp2_pengembang' => '1', 'nama_perusahaan' => $nama,
+        'srp2_pengembang' => '1', 'nama_perusahaan' => $nama, 'tos_agree' => '1',
     ]);
     return [$r, json_body($r)];
 }

@@ -241,6 +241,7 @@
                                 <input x-ref="regPasswordConfirm" type="password" autocomplete="new-password" required minlength="8" placeholder="Konfirmasi kata sandi" class="mt-1 block w-full rounded-lg px-3 py-2.5 text-xs font-normal outline-none" style="background:var(--portal-bg);border:1px solid var(--portal-border)">
                             </label>
                             <p class="text-[11px]" style="color:var(--portal-text-muted)"><i class="fa-solid fa-circle-info mr-1" style="color:var(--teal)"></i>Minimal 8 karakter, huruf besar, angka, dan simbol.</p>
+                            <label class="flex items-start gap-2 text-[11px]" style="color:var(--portal-text-muted)"><input x-ref="regTos" type="checkbox" required class="mt-0.5"> Saya menyetujui Ketentuan Layanan dan Kebijakan Privasi.</label>
                             <button type="submit" :disabled="authLoading" class="w-full rounded-lg py-2.5 text-[11px] font-extrabold uppercase disabled:opacity-60" style="background:#d6fb00;color:#0a1a1f">
                                 <span x-show="!authLoading">Daftar & Lanjutkan</span>
                                 <span x-show="authLoading" x-cloak><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Memproses...</span>
@@ -572,6 +573,7 @@ function srp2Wizard(config) {
                 fd.append('password', this.$refs.regPassword.value);
                 fd.append('password_confirm', this.$refs.regPasswordConfirm.value);
                 fd.append('srp2_pengembang', '1');
+                fd.append('tos_agree', this.$refs.regTos.checked ? '1' : '');
                 fd.append(this.csrfName, this.csrfHash);
                 const res = await fetch(this.baseUrl + 'Auth/do_register', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await res.json();
