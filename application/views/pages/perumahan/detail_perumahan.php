@@ -201,7 +201,9 @@
                 <!-- CTA Buttons -->
                 <div class="mt-4 flex flex-col sm:flex-row items-center gap-3 w-full">
                     <?php
-                        $wa_number = nomor_whatsapp($row['kantorPemasaran'][0]['noTelp'] ?? '');
+                        // noWhatsapp dari SIKUMBANG didahulukan, noTelp sebagai cadangan.
+                        $wa_number = nomor_whatsapp($row['kantorPemasaran'][0]['noWhatsapp'] ?? '')
+                            ?: nomor_whatsapp($row['kantorPemasaran'][0]['noTelp'] ?? '');
                     ?>
                     <?php if(!empty($wa_number)): ?>
                     <a href="https://wa.me/<?= $wa_number ?>" target="_blank" class="detail-primary-btn w-full sm:flex-1 bg-[#d6fb00] hover:bg-[#c2e600] text-[#0a1a1f] font-black text-xs uppercase tracking-widest py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(214,251,0,0.3)] transition-all">

@@ -119,7 +119,8 @@ if ( ! function_exists('tgl_id')) {
  */
 if ( ! function_exists('nomor_whatsapp')) {
     function nomor_whatsapp($teks) {
-        if ( ! preg_match_all('/(?<!\d)(?:\+?62|0)[\s.-]?8(?:[\s.-]?\d){7,11}(?!\d)/', (string) $teks, $m)) {
+        // Pemisah boleh lebih dari satu karakter: data SIKUMBANG memuat "0821 - 3553 - 9740".
+        if ( ! preg_match_all('/(?<!\d)(?:\+?62|0)[\s.-]*8(?:[\s.-]*\d){7,11}(?!\d)/', (string) $teks, $m)) {
             return '';
         }
         foreach ($m[0] as $calon) {
