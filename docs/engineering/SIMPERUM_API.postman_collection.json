@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "b7c1f0a2-5d84-4e19-9c33-2a6f8e1d4b70",
     "name": "SIMPERUM API - Disperakim Jateng",
-    "description": "Koleksi uji untuk https://simperum.disperakim.jatengprov.go.id/api/pub/\n\nKoleksi resmi yang tercantum di PDF dinas (getpostman.com/collections/15171d42c7f084b367b5) sudah KEDALUWARSA dan mengembalikan linkExpiredError, jadi koleksi ini dibuat ulang dari dokumen plus pengukuran langsung tanggal 13 Agustus 2026.\n\nCARA PAKAI\n1. Import koleksi ini.\n2. Import berkas Environment terpisah, lalu isi pub_key dan priv_key di sana. JANGAN menaruh kunci di koleksi ini, supaya koleksi tetap aman dibagikan.\n3. Pilih Environment tersebut di pojok kanan atas Postman.\n4. Jalankan folder A dulu untuk memastikan token terbentuk benar.\n\nAUTENTIKASI\nHeader: Authorization: <md5>.<pub_key>\ndengan <md5> = MD5(perintah_url + private_key)\nperintah_url adalah bagian SESUDAH /api/pub/ dan TERMASUK query string.\nContoh: MD5('GetDataRTLH?NIK=3301011506480004' + private_key)\nToken dihitung otomatis oleh skrip Pre-request di tingkat koleksi.\n\nTIGA HAL YANG HARUS DIKETAHUI SEBELUM MENJALANKAN\n1. API ini SELALU membalas HTTP 200, termasuk saat token salah dan saat galat internal. Jangan pakai status code sebagai penentu berhasil. Periksa isi amplopnya.\n2. Galat internal dibungkus Success:true dengan Data berisi objek {ErrCode, Message, Error}. Jadi Success:true pun belum tentu berarti data.\n3. Folder D (NIK) LAMBAT, 90 sampai 152 detik per permintaan, dan satu permintaannya menarik 28 MB berisi data pribadi puluhan ribu warga. Baca peringatan di folder itu sebelum menjalankannya.",
+    "description": "Koleksi uji untuk https://simperum.disperakim.jatengprov.go.id/api/pub/\n\nKoleksi resmi yang tercantum di PDF dinas (getpostman.com/collections/15171d42c7f084b367b5) sudah KEDALUWARSA dan mengembalikan linkExpiredError, jadi koleksi ini dibuat ulang dari dokumen plus pengukuran langsung tanggal 13 Agustus 2026.\n\nCARA PAKAI\n1. Import koleksi ini.\n2. Import berkas Environment terpisah, lalu isi pub_key dan priv_key di sana. JANGAN menaruh kunci di koleksi ini, supaya koleksi tetap aman dibagikan.\n3. Pilih Environment tersebut di pojok kanan atas Postman.\n4. Jalankan folder A dulu untuk memastikan token terbentuk benar.\n\nAUTENTIKASI\nHeader: Authorization: <md5>.<pub_key>\ndengan <md5> = MD5(perintah_url + private_key)\nperintah_url adalah bagian SESUDAH /api/pub/ dan TERMASUK query string.\nContoh: MD5('GetDataRTLH?NIK=<NIK>' + private_key)\nToken dihitung otomatis oleh skrip Pre-request di tingkat koleksi.\n\nTIGA HAL YANG HARUS DIKETAHUI SEBELUM MENJALANKAN\n1. API ini SELALU membalas HTTP 200, termasuk saat token salah dan saat galat internal. Jangan pakai status code sebagai penentu berhasil. Periksa isi amplopnya.\n2. Galat internal dibungkus Success:true dengan Data berisi objek {ErrCode, Message, Error}. Jadi Success:true pun belum tentu berarti data.\n3. Folder D (NIK) LAMBAT, 90 sampai 152 detik per permintaan, dan satu permintaannya menarik 28 MB berisi data pribadi puluhan ribu warga. Baca peringatan di folder itu sebelum menjalankannya.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "event": [
@@ -75,8 +75,8 @@
     { "key": "base_url", "value": "https://simperum.disperakim.jatengprov.go.id/api/pub", "type": "string" },
     { "key": "kode_desa", "value": "3301012001", "type": "string" },
     { "key": "kode_desa_2", "value": "3301012002", "type": "string" },
-    { "key": "nik_ada", "value": "3301011111600004", "type": "string" },
-    { "key": "nik_dokumen", "value": "3301011506480004", "type": "string" },
+    { "key": "nik_ada", "value": "ISI_NIK_UJI_DARI_DINAS", "type": "string" },
+    { "key": "nik_dokumen", "value": "ISI_NIK_CONTOH_PDF_DINAS", "type": "string" },
     { "key": "nik_palsu", "value": "0000000000000001", "type": "string" },
     { "key": "auth_token", "value": "", "type": "string" },
     { "key": "perintah_url", "value": "", "type": "string" }
@@ -427,7 +427,7 @@
               { "key": "Authorization", "value": "{{auth_token}}" }
             ],
             "url": { "raw": "{{base_url}}/GetDataRTLH?NIK={{nik_ada}}", "host": ["{{base_url}}"], "path": ["GetDataRTLH"], "query": [{ "key": "NIK", "value": "{{nik_ada}}" }] },
-            "description": "NIK ini diambil langsung dari hasil C1, jadi keberadaannya di basis data tidak diragukan. Terukur 109 detik dan nol rekaman.\n\nUji di bawah ini sengaja dibuat GAGAL saat cacatnya masih ada, supaya berubah hijau begitu SIMPERUM memperbaikinya."
+            "description": "Isi {{nik_ada}} dengan NIK uji resmi dari dinas atau NIK dari hasil C1 (sengaja tidak disimpan di repo publik). Terukur 109 detik dan nol rekaman.\n\nUji di bawah ini sengaja dibuat GAGAL saat cacatnya masih ada, supaya berubah hijau begitu SIMPERUM memperbaikinya."
           },
           "event": [
             {
@@ -459,7 +459,7 @@
               { "key": "Authorization", "value": "{{auth_token}}" }
             ],
             "url": { "raw": "{{base_url}}/GetDataRTLH?NIK={{nik_dokumen}}", "host": ["{{base_url}}"], "path": ["GetDataRTLH"], "query": [{ "key": "NIK", "value": "{{nik_dokumen}}" }] },
-            "description": "NIK 3301011506480004 adalah contoh di halaman 'Pengambilan Data Berdasarkan NIK' pada PDF dinas, yang di dokumen menghasilkan satu rekaman atas nama ABU WARDI. Kenyataannya nol rekaman setelah 90 detik."
+            "description": "Isi {{nik_dokumen}} dengan contoh NIK di halaman 'Pengambilan Data Berdasarkan NIK' pada PDF dinas (sengaja tidak disimpan di repo publik). Di dokumen contoh itu menghasilkan satu rekaman. Kenyataannya nol rekaman setelah 90 detik."
           },
           "event": [
             {

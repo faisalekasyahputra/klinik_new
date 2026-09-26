@@ -90,7 +90,7 @@
 >
 > Diverifikasi: `Program/api_cek_simperum` membalas **409 `warga_wizard_required`** (penanda mode `api` hidup), beranda/`warga/pendataan`/`sertifikasi` 200, dan panggilan SIMPERUM **dijalankan DARI DALAM server Hostinger** membalas HTTP 200 dalam 1,0 detik dengan NIK cocok. Uji terakhir itu yang membuktikan TLS dan firewall keluar tidak menghalangi; menguji dari laptop tidak membuktikan apa pun tentang server.
 >
-> 🔻 **DELAPAN CATATAN SENSITIF. Baca sebelum menyentuh apa pun di sekitar SIMPERUM.**
+> 🔻 **SEMBILAN CATATAN SENSITIF. Baca sebelum menyentuh apa pun di sekitar SIMPERUM.**
 >
 > 1. **Kunci API sekarang ADA di `.env` production**, dan sebelumnya tidak. Izin `600`, dan `.env` terverifikasi **403** dari luar. Kalau `.htaccess` disentuh, uji ulang `curl https://<situs>/.env` sebelum menyatakan aman; proteksi berbasis daftar sudah tiga kali meleset di repo ini.
 > 2. **Cadangan `.env.bak-20260831-071328` dibuat SEBELUM kunci ditambahkan, jadi ia bersih dari kunci.** Cadangan berikutnya TIDAK akan bersih. Jangan menyalin `.env.bak-*` keluar server, dan jangan pernah menaruhnya di DocumentRoot.
@@ -100,6 +100,7 @@
 > 6. **Lokal WAJIB tetap `simulation`**, dua alasan: suite gateway langsung **merah 2/5** kalau tidak (harness fixture jadi memanggil API sungguhan), dan mode `api` di lokal menarik PII warga nyata ke mesin pengembang.
 > 7. **Retensi belum ada penyapunya.** Snapshot `found` hidup 30 hari, `not_found` 1 hari (`Housing_assessment_model.php:145`). Tidak ada pekerjaan terjadwal yang menghapus yang kedaluwarsa; kalau UU PDP menuntut penghapusan, itu pekerjaan terpisah yang belum dikerjakan.
 > 8. **Skrip di `dev-scripts/uji_simperum_*.php` memanggil API SUNGGUHAN** dan membaca kunci dari `.env`. Gitignored, dan harus tetap begitu. Jangan memindahkannya ke repo, jangan menempelkan kunci ke dalamnya.
+> 9. **NIK ASLI TIDAK BOLEH MASUK REPO (repo publik).** 26 Sep 2026 dua NIK warga sungguhan ditemukan di koleksi Postman sejak `ed93cf0` dan diganti placeholder; riwayat git lama masih memuatnya. Untuk uji yang terasa seperti data asli, pakai fixture berbentuk respons `GetDataRTLH` mentah di mode simulasi: `3399991508850001` (API-01, lahir 1985-08-15, lengkap, air tidak layak), `3399995506900002` (API-02, 1990-06-15, tiga baris: pilih 2023, buang NIK terpotong), `3399990101700003` (API-03, 1970-01-01, Cilacap, kode 6 dinas + disposisi, koordinat 0,0). Awalan `3399` adalah kabupaten yang tidak ada, jadi dijamin bukan NIK warga, dan ketiganya melewati `map_api_response()` yang sama dengan production. Menambah fixture baru: tetap awalan `3399`, suite kontrak menolak NIK 16 digit lain di berkas `API-*.json`.
 >
 > 🔒 **PENULISAN BALIK KE SIMPERUM SENGAJA TIDAK DIPAKAI - keputusan user 31 Agt 2026, bukan kekurangan.** `SaveDataRTLH` memang membalas `Tidak Memiliki Akses` (401), dan **hak tulis itu tidak diminta**. Arsitekturnya local-first: hasil penarikan disimpan di basis data kita sendiri, per orang, seiring sistem berjalan. Satu warga = satu panggilan + satu snapshot terenkripsi ber-TTL 30 hari, bukan penarikan massal per wilayah. `grep -rn SaveDataRTLH application/` = **nol pemanggil**, dan itu memang harus tetap nol.
 >

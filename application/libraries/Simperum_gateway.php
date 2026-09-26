@@ -128,6 +128,23 @@ class Simperum_gateway {
             return $this->load_fixture_file($index[$nik]);
         }
 
+        /* Fixture berbentuk respons GetDataRTLH MENTAH (26 Sep 2026), dilewatkan ke
+           map_api_response() yang sama dengan production supaya uji lokal merasakan
+           prefill asli: tanpa tanggal lahir (dicocokkan ke digit NIK), banyak baris
+           per NIK, kode tak dikenal. NIK berawalan 3399 (kabupaten yang tidak ada),
+           jadi dijamin bukan NIK warga. Jangan pernah pakai NIK asli di sini. */
+        $api = [
+            '3399991508850001' => 'API-01', // lengkap, milik sendiri, belum diintervensi, air tidak layak
+            '3399995506900002' => 'API-02', // tiga baris: pilih 2023 BSPS, buang baris NIK terpotong
+            '3399990101700003' => 'API-03', // kode 6 dinas + disposisi, tahun lahir kosong, Cilacap
+        ];
+        if (isset($api[$nik])) {
+            $body = @file_get_contents($this->fixture_path . DIRECTORY_SEPARATOR . $api[$nik] . '.json');
+            $payload = $this->map_api_response($nik, ['http_status' => 200, 'body' => $body, 'curl_errno' => 0]);
+            $payload['api_version'] = 'simulation-api-v1';
+            return $payload;
+        }
+
         /* Permintaan user 23 Agt 2026: sambungkan pencarian NIK di mode
            simulasi ke tabel dummy_simperum_rtlh (dummy_simperum.sql di
            root proyek) - SIMPERUM sungguhan sedang tidak bisa diakses,
@@ -375,6 +392,10 @@ class Simperum_gateway {
             $unmapped['GeoLng'] = (string) $record['GeoLng'];
             $longitude = NULL;
         }
+        // 0,0 adalah titik di Samudra Atlantik: SIMPERUM mengirimnya untuk rumah yang belum dipetakan.
+        if ($latitude === 0.0 && $longitude === 0.0) {
+            $latitude = $longitude = NULL;
+        }
         $foundation_presence = $code('AdaPondasi', ['0' => 'absent', '1' => 'present']);
         $condition = [
             '1' => 'good',
@@ -612,14 +633,17 @@ class Simperum_gateway {
         if ( ! $this->lewati_tgl_lahir && ! $this->birth_date_matches($canonical['nik'] ?? '', $birth_date, $payload)) {
             return $this->response('not_found', 'NIK dan tanggal lahir tidak cocok.');
         }
-        if ($this->mode === 'api' && empty($canonical['birth_date'])) {
+        // Sumber tanpa tanggal lahir (API, dan fixture berbentuk API di mode simulasi):
+        // tanggal yang sudah lolos pencocokan digit NIK dipakai sebagai isian warga.
+        $tanpa_tgl_sumber = empty($payload['identity']['birth_date']);
+        if ($tanpa_tgl_sumber && empty($canonical['birth_date'])) {
             $canonical['birth_date'] = $birth_date;
         }
         $this->internal_profile = $canonical;
         if ($requested_by) {
             $canonical['source_mode'] = $this->mode;
             $provenance = array_fill_keys(array_keys($canonical), ['source' => $this->mode]);
-            if ($this->mode === 'api' && empty($payload['identity']['birth_date'])) {
+            if ($tanpa_tgl_sumber) {
                 $provenance['birth_date'] = ['source' => 'citizen'];
             }
             $existing = $this->CI->Housing_assessment_model->get_owned_profile($requested_by);

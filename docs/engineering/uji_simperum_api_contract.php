@@ -120,5 +120,42 @@ $check(
 );
 $check(strpos(json_encode($mapped), 'private-test') === FALSE, 'Payload tidak memuat private key');
 
+// Fixture simulasi berbentuk respons API mentah (API-01..03) melewati pemetaan production.
+$set('fixture_path', dirname(__DIR__, 2) . '/application/fixtures/simperum');
+$f1 = $call('load_fixture', '3399991508850001');
+$check(($f1['response_status'] ?? '') === 'found' && ($f1['source_record_key'] ?? '') === 'SYN-API-01'
+    && ($f1['housing']['housing_status_code'] ?? '') === 'owned' && ($f1['sanitation']['water_source_code'] ?? '') === 'other_unfit'
+    && ($f1['housing']['intervention_status'] ?? '') === 'Belum diintervensi' && (int) ($f1['location']['kabupaten_id'] ?? 0) === 3374,
+    'Fixture API-01: rekaman lengkap terpetakan lewat jalur API');
+$check($call('birth_date_matches', '3399991508850001', '1985-08-15', $f1) && ! $call('birth_date_matches', '3399991508850001', '1985-08-16', $f1),
+    'Fixture API-01: tanggal lahir dicocokkan ke digit NIK seperti production');
+$f2 = $call('load_fixture', '3399995506900002');
+$check(($f2['source_record_key'] ?? '') === 'SYN-API-02' && (int) ($f2['housing']['assistance_year'] ?? 0) === 2023
+    && ($f2['identity']['gender_code'] ?? '') === 'female' && $call('birth_date_matches', '3399995506900002', '1990-06-15', $f2),
+    'Fixture API-02: baris 2023 dipilih, baris NIK terpotong dibuang, NIK perempuan (hari+40) cocok');
+$f3 = $call('load_fixture', '3399990101700003');
+$check(array_key_exists('housing_status_code', $f3['housing'] ?? []) && $f3['housing']['housing_status_code'] === NULL && ($f3['source']['unmapped_codes']['KepemilikanRumah'] ?? '') === '6'
+    && ($f3['housing']['intervention_status'] ?? '') === 'Sudah Layak Huni' && $f3['identity']['birth_year'] === NULL
+    && (int) ($f3['location']['kabupaten_id'] ?? 0) === 3301,
+    'Fixture API-03: kode 6 dinas tidak ditebak, disposisi terbaca, tahun lahir kosong');
+$check(array_key_exists('location_lat', $f3['location']) && $f3['location']['location_lat'] === NULL && $f3['location']['location_lng'] === NULL
+    && ! isset($f3['source']['unmapped_codes']['GeoLat']), 'Koordinat 0,0 dari SIMPERUM dianggap belum dipetakan (NULL)');
+
+// Regresi 26 Sep 2026: "0" dulu lolos tanpa enkripsi (empty()) lalu ditolak model.
+if ( ! function_exists('log_message')) { function log_message() {} }
+defined('APPPATH') OR define('APPPATH', dirname(__DIR__, 2) . '/application/');
+require_once dirname(__DIR__, 2) . '/application/libraries/Encryption_lib.php';
+putenv('KPKP_DATA_KEYS'); putenv('KPKP_ACTIVE_KEY_ID');
+putenv('KPKP_DATA_KEY=' . str_repeat('ab', 32)); putenv('KPKP_DATA_PEPPER=uji');
+$enc = new Encryption_lib();
+$nol = $enc->encrypt('0');
+$check($enc->is_encrypted($nol) && $enc->decrypt($nol) === '0' && $enc->encrypt('') === '' && $enc->encrypt(NULL) === NULL,
+    'Encryption_lib mengenkripsi "0"; hanya NULL dan string kosong yang dilewatkan');
+
+foreach (glob(dirname(__DIR__, 2) . '/application/fixtures/simperum/API-*.json') as $berkas) {
+    $check((bool) preg_match_all('/"NIK": "(\d+)"/', file_get_contents($berkas), $m) && ! array_filter($m[1], static fn($n) => strlen($n) === 16 && strpos($n, '3399') !== 0),
+        basename($berkas) . ': semua NIK 16 digit berawalan 3399 (bukan NIK warga)');
+}
+
 echo "RINGKASAN: {$total} pemeriksaan, {$failed} gagal" . PHP_EOL;
 exit($failed > 0 ? 1 : 0);

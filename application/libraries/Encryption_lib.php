@@ -71,7 +71,9 @@ class Encryption_lib {
     }
 
     public function encrypt($plaintext) {
-        if (empty($plaintext)) { return $plaintext; }
+        // Bukan empty(): "0" (koordinat 0 dari SIMPERUM) dulu lolos TANPA dienkripsi lalu ditolak
+        // penjaga model sebagai "Data sensitif belum dapat disimpan" (26 Sep 2026).
+        if ($plaintext === NULL || $plaintext === '' || $plaintext === FALSE) { return $plaintext; }
         $this->check_config();
         $v2 = $this->active_key_id !== '';
         $key = $v2 ? $this->keyring[$this->active_key_id] : $this->legacy_key;
