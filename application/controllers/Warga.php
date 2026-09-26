@@ -76,6 +76,23 @@ class Warga extends MY_Controller {
                 }
             }
         }
+        /* Jaring pengaman prefill (26 Sep 2026): warga login tanpa draft yang akunnya ber-NIK
+           (usr_users.nik) dilookup otomatis SEKALI per sesi, lalu dialihkan supaya form tampil
+           berisi data SIMPERUM tanpa klik Cek NIK. Menjangkau NIK yang masuk lewat Pengaturan atau
+           onboarding yang prefill-nya gagal. Ditolak pembatas laju atau tidak ditemukan: form
+           tampil seperti biasa (kolom Cek NIK terisi, blok nik_dari_akun di bawah). */
+        if ($logged_in_warga && ! $assessment && ! $this->session->userdata('warga_prefill_dicoba')) {
+            $akun = $this->db->select('nik')->get_where('usr_users', ['id' => $user_id])->row();
+            $this->load->library('encryption_lib');
+            $nik_akun = preg_replace('/\D+/', '', (string) $this->encryption_lib->decrypt((string) ($akun->nik ?? '')));
+            if (strlen($nik_akun) === 16) {
+                $this->session->set_userdata('warga_prefill_dicoba', TRUE);
+                if ($this->prefill_simperum_akun($user_id, $nik_akun)) {
+                    redirect('warga/pendataan');
+                    return;
+                }
+            }
+        }
         $old_input = $this->session->flashdata('warga_old_input') ?: [];
         // SIMPERUM tidak selalu menyediakan nomor HP. Gunakan profil akun sendiri
         // sebagai isian awal, tanpa mengganti nilai/koreksi yang sudah disimpan.

@@ -63,6 +63,7 @@ class Simperum_gateway {
 
         $cached = $this->CI->Housing_assessment_model->get_active_source_snapshot($nik, $this->mode);
         if ($cached) {
+            $this->cermin($nik, $requested_by, $cached);
             return $this->from_snapshot($cached, $birth_date, TRUE, $requested_by);
         }
 
@@ -77,6 +78,7 @@ class Simperum_gateway {
         try {
             $cached = $this->CI->Housing_assessment_model->get_active_source_snapshot($nik, $this->mode);
             if ($cached) {
+                $this->cermin($nik, $requested_by, $cached);
                 return $this->from_snapshot($cached, $birth_date, TRUE, $requested_by);
             }
 
@@ -102,14 +104,94 @@ class Simperum_gateway {
             }
 
             $payload['id'] = (int) $stored['snapshot_id'];
-            return $this->from_snapshot([
+            $snapshot = [
                 'id' => (int) $stored['snapshot_id'],
                 'response_status' => $status,
                 'source_record_key' => $payload['source_record_key'] ?? $payload['fixture_id'] ?? NULL,
                 'payload' => $payload,
-            ], $birth_date, FALSE, $requested_by);
+            ];
+            $this->cermin($nik, $requested_by, $snapshot);
+            return $this->from_snapshot($snapshot, $birth_date, FALSE, $requested_by);
         } finally {
             $this->CI->db->query('SELECT RELEASE_LOCK(?)', [$lock_name]);
+        }
+    }
+
+    /**
+     * GET SEGAR untuk penyegaran mingguan (Simperum_segarkan, CLI). Melewati cache snapshot,
+     * menyimpan snapshot baru, lalu memperbarui cermin sf_data_simperum. SENGAJA tidak memanggil
+     * from_snapshot(): sf_profil_warga dan draft warga (termasuk koreksinya) tidak disentuh.
+     * Hanya GET; hanya NIK yang terikat ke akun warga $user_id.
+     *
+     * @return string found | not_found | error | unbound | busy | invalid | api_not_configured
+     */
+    public function segarkan($nik, $user_id)
+    {
+        $nik = preg_replace('/\D+/', '', (string) $nik);
+        if ( ! preg_match('/^\d{16}$/', $nik)) {
+            return 'invalid';
+        }
+        if ($this->mode === 'api' && ! $this->api_configured()) {
+            return 'api_not_configured';
+        }
+        $model = $this->CI->Housing_assessment_model;
+        if ( ! $model->nik_terikat_akun($user_id, $nik)) {
+            // Baris akun yang tidak lagi memegang NIK ini ikut dilepas di sini.
+            $model->cermin_data_simperum($user_id, $nik, NULL, 'not_found', [], $this->mode);
+            return 'unbound';
+        }
+
+        $lock_name = 'simperum:' . hash('sha256', $nik);
+        if ((int) $this->CI->db->query('SELECT GET_LOCK(?, 3) AS acquired', [$lock_name])->row()->acquired !== 1) {
+            return 'busy';
+        }
+        try {
+            $payload = $this->mode === 'api' ? $this->load_api($nik) : $this->load_fixture($nik);
+            $status = $payload['response_status'] ?? 'error';
+            $stored = $model->store_source_snapshot(
+                $nik,
+                $this->mode,
+                $payload['source_record_key'] ?? $payload['fixture_id'] ?? NULL,
+                $status,
+                $payload,
+                [
+                    'api_version' => $payload['api_version'] ?? ($this->mode === 'api' ? 'simperum-rtlh-v1' : 'simulation-v1'),
+                    'http_status' => $payload['http_status'] ?? ($status === 'error' ? 503 : 200),
+                    'error_code' => $payload['error_code'] ?? NULL,
+                ]
+            );
+            if (empty($stored['success'])) {
+                return 'error';
+            }
+            $model->cermin_data_simperum($user_id, $nik, $stored['snapshot_id'], $status, $payload, $this->mode);
+            return in_array($status, ['found', 'not_found'], TRUE) ? $status : 'error';
+        } finally {
+            $this->CI->db->query('SELECT RELEASE_LOCK(?)', [$lock_name]);
+        }
+    }
+
+    /**
+     * Cermin sf_data_simperum dari hasil lookup(). Pencarian anonim ($requested_by kosong/0: Cek_Rtlh,
+     * lookup tanpa login) tidak pernah menulis; model menolak NIK yang bukan milik akun sendiri.
+     * Kegagalan cermin tidak boleh menggagalkan pencarian warga.
+     */
+    private function cermin($nik, $requested_by, array $snapshot)
+    {
+        if ((int) $requested_by < 1) {
+            return;
+        }
+        try {
+            $this->CI->Housing_assessment_model->cermin_data_simperum(
+                (int) $requested_by,
+                $nik,
+                $snapshot['id'] ?? NULL,
+                $snapshot['response_status'] ?? 'error',
+                (array) ($snapshot['payload'] ?? []),
+                $this->mode,
+                $snapshot['fetched_at'] ?? NULL
+            );
+        } catch (\Throwable $e) {
+            log_message('error', 'Simperum_gateway: cermin data gagal: ' . $e->getMessage());
         }
     }
 
@@ -193,6 +275,11 @@ class Simperum_gateway {
      */
     private function load_dummy_table_record($nik)
     {
+        /* Dicek dulu: dengan db_debug aktif (non-production) query ke tabel yang tidak ada
+           menghentikan permintaan lewat halaman galat, bukan melempar pengecualian. */
+        if ( ! $this->CI->db->table_exists('dummy_simperum_rtlh')) {
+            return NULL;
+        }
         try {
             $row = $this->CI->db->get_where('dummy_simperum_rtlh', ['nik' => $nik])->row_array();
         } catch (\Throwable $e) {

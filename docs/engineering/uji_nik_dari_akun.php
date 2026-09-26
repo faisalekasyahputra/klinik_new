@@ -24,7 +24,14 @@ try{
   $j=tempnam(sys_get_temp_dir(),'e2e'); $http($j,'Auth/login'); $http($j,'Auth/do_login',['email'=>$e,'password'=>$pw,'csrf_kpkp_token'=>$csrf($j)]);
   [$k,$b]=$http($j,'warga/pendataan');
   preg_match('/<input id="nik" name="nik"[^>]*value="([^"]*)"/',$b,$m);
-  if($n){ $cek(($m[1]??'')===$n && strpos($b,'Terisi dari NIK yang Anda daftarkan')!==false, "Akun $ket: kolom Cek NIK terisi otomatis + petunjuk tampil");
+  if($n){
+   // Sejak 26 Sep 2026 (jaring pengaman Warga::pendataan): akun ber-NIK tanpa draft langsung dilookup, form sudah berisi.
+   $d=$db->query("SELECT current_step FROM sf_penilaian_perumahan WHERE user_id=$id")->fetch_assoc();
+   $cek(($d['current_step']??'')==='housing_family' && strpos($b,'name="step" value="housing_family"')!==false, "Akun $ket: halaman diagnosa langsung berisi data SIMPERUM tanpa klik Cek NIK");
+   // Prefill otomatis hanya sekali per sesi; sesudah draft hilang, kolom Cek NIK tetap terisi dan satu klik cukup.
+   $db->query("DELETE FROM sf_penilaian_perumahan WHERE user_id=$id");
+   [$k,$b]=$http($j,'warga/pendataan'); preg_match('/<input id="nik" name="nik"[^>]*value="([^"]*)"/',$b,$m);
+   $cek(($m[1]??'')===$n && strpos($b,'name="step" value="find_data"')!==false, "Akun $ket: prefill otomatis tidak berulang dalam sesi yang sama; kolom Cek NIK terisi");
    [$k,$b]=$http($j,'warga/pendataan',['step'=>'find_data','nik'=>$m[1],'csrf_kpkp_token'=>$csrf($j)]);
    $d=$db->query("SELECT current_step FROM sf_penilaian_perumahan WHERE user_id=$id")->fetch_assoc();
    $cek(($d['current_step']??'')==='housing_family', "Akun $ket: sekali klik Cek NIK langsung maju ke langkah berikutnya");

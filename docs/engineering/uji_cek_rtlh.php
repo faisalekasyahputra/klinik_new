@@ -151,7 +151,8 @@ wajib($mode === 'simulation',
 
 // ------------------------------------------------ 1. HASIL UNTUK TAMU (UAT No. 18)
 echo "\n== 1. Tamu melihat hasil terbatas tanpa login ==\n";
-foreach (['127.0.0.1', '::1'] as $ip) {
+// ::1 dihitung per blok /64 (anti_automation_ip_bucket), jadi kunci nyatanya '0000000000000000/64'.
+foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
     $key = hash('sha256', 'rtlh_cek_anon:ip:' . $ip);
     $GLOBALS['rate_anon_sebelum'][$key] = q('SELECT * FROM sys_rate_limits WHERE limit_key=?', [$key]);
     q('DELETE FROM sys_rate_limits WHERE limit_key=?', [$key]);

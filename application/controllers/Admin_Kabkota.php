@@ -18,6 +18,10 @@ class Admin_Kabkota extends Admin_Kabkota_Controller {
         $data['empty_text'] = 'Belum ada antrean di wilayah Anda.';
         $data['base_url'] = 'Admin_Kabkota';
         $data += $this->antrean_table_data($this->my_kabupaten_id);
+        // Cakupan wilayah: kabupaten_id dari sesi (Admin_Kabkota_Controller), bukan dari permintaan.
+        $data['tercocokkan_simperum'] = $this->db->table_exists('sf_data_simperum')
+            ? (int) $this->db->where('response_status', 'found')->where('kabupaten_id', $this->my_kabupaten_id)
+                ->count_all_results('sf_data_simperum') : 0;
 
         $this->render_scoped_admin('admin/antrean/dashboard', $data);
     }

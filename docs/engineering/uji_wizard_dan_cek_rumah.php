@@ -320,10 +320,14 @@ echo "\nD. WIZARD BARU SAMPAI TIKET\n";
 $h = $warga->minta('warga/pendataan')['body'];
 $form = wizard_form($h);
 wajib($form !== NULL, 'Formulir wizard dirender');
-wajib(wizard_step($form) === 'find_data', 'Mulai dari step find_data');
-
-$h = $warga->minta('warga/pendataan',
-    wizard_medan($form, ['action' => 'lookup', 'nik' => $NIK, 'tgl_lahir' => $LAHIR]))['body'];
+/* Sejak 26 Sep 2026 onboarding warga ber-NIK langsung melakukan lookup SIMPERUM dan membuat
+   draft (Auth::save_onboarding -> prefill_simperum_akun), jadi wizard tidak lagi mulai dari
+   find_data. Kalau prefill itu gagal, Cek NIK manual tetap jalur cadangannya. */
+if (wizard_step($form) === 'find_data') {
+    $h = $warga->minta('warga/pendataan',
+        wizard_medan($form, ['action' => 'lookup', 'nik' => $NIK, 'tgl_lahir' => $LAHIR]))['body'];
+}
+cek(wizard_step($form) !== 'find_data', 'Onboarding ber-NIK langsung membawa maju dari find_data (prefill otomatis)');
 wajib(wizard_step($h) !== 'find_data', 'Lookup SIMPERUM membawa maju dari find_data');
 foreach (['monthly_income', 'occupation_code', 'education_code', 'employment_stability_code', 'area_condition_code', 'birth_date', 'marital_status_code', 'gender_code', 'phone'] as $field) {
     cek(strpos($h, 'name="' . $field . '"') !== FALSE, 'UAT warga 9: data awal memuat ' . $field);

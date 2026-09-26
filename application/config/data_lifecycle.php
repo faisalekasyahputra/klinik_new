@@ -43,6 +43,7 @@ $config['data_lifecycle'] = [
         'sf_housing_queue.user_id'               => ['set_null', 'antrean pengajuan adalah arsip layanan; ditinjau lewat permintaan penghapusan data layanan'],
         'sf_penilaian_perumahan.user_id'         => ['set_null', 'penilaian TERKIRIM adalah arsip; DRAF dihapus beserta berkasnya saat akun dihapus'],
         'sf_profil_warga.user_id'                => ['cascade', 'profil terenkripsi milik akun'],
+        'sf_data_simperum.user_id'               => ['cascade', 'cermin data SIMPERUM hanya untuk NIK akun terdaftar'],
         'sf_rekaman_simperum.requested_by'       => ['set_null', 'snapshot dihapus oleh retensi; tidak menunjuk orang lagi'],
         'sf_riwayat_keputusan_antrean.actor_id'  => ['set_null', 'riwayat keputusan adalah arsip'],
         'srp2_registrations.user_id'             => ['cascade', 'pengajuan SRP2 milik akun; berkasnya disapu dari disk'],
@@ -71,6 +72,7 @@ $config['data_lifecycle'] = [
             'sys_push_subscriptions'       => 'kredensial langganan perangkat (kunci enkripsi push); rahasia, bukan data profil',
             'usr_admin_module_privileges'  => 'hak akses staf yang diberikan superadmin; bukan data pemilik',
             'forum_likes'                  => 'tanda suka tanpa isi pribadi',
+            'sf_data_simperum'             => 'cermin data dinas SIMPERUM, bukan isian pemilik; identitas dan datanya sudah ikut lewat sf_profil_warga',
         ],
     ],
 

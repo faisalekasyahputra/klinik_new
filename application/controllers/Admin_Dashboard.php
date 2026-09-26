@@ -35,6 +35,11 @@ class Admin_Dashboard extends Admin_Controller {
         $data['total_users'] = (int) $this->db->count_all('usr_users');
         $data['total_diskusi'] = $this->db->table_exists('forum_diskusi')
             ? (int) $this->db->count_all('forum_diskusi') : 0;
+        // Kunci hitung warga terdaftar: akun warga yang mengikat NIK (usr_users.nik_lookup_hash, UNIQUE).
+        $data['warga_terdaftar'] = (int) $this->db->where('role', 'warga')
+            ->where('nik_lookup_hash IS NOT NULL', NULL, FALSE)->count_all_results('usr_users');
+        $data['tercocokkan_simperum'] = $this->db->table_exists('sf_data_simperum')
+            ? (int) $this->db->where('response_status', 'found')->count_all_results('sf_data_simperum') : 0;
 
         // Hanya backlog aktif: riwayat yang sudah diputus bukan pekerjaan hari ini.
         $data['antrean_tanpa_wilayah'] = (int) $this->db

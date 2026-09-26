@@ -79,6 +79,15 @@ $filter_html = ob_get_clean();
             Antrean Perumahan - <?= html_escape($scope_label) ?>
         </h1>
         <p class="text-sm text-gray-500 dark:text-brand-muted">Kelola antrean pengajuan program perumahan warga.</p>
+        <?php if (isset($tercocokkan_simperum)): /* hanya Admin_Kabkota::index, sudah terbatas wilayahnya */ ?>
+        <div class="mt-4 inline-flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-white/5 dark:bg-brand-card">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400"><i class="ph ph-database text-xl"></i></div>
+            <dl>
+                <dt class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-brand-muted">Warga tercocokkan SIMPERUM di wilayah ini</dt>
+                <dd class="mt-1 text-2xl font-black leading-none text-gray-900 dark:text-white" data-tercocokkan-simperum><?= number_format((int) $tercocokkan_simperum) ?></dd>
+            </dl>
+        </div>
+        <?php endif; ?>
     </div>
 
     <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card border border-gray-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm">

@@ -694,6 +694,14 @@ class Auth extends MY_Controller {
         $this->session->set_userdata('username', $username);
         $this->session->set_userdata('role', $role);
 
+        /* Warga yang mengisi NIK saat onboarding langsung mendapat draft berisi data SIMPERUM
+           (26 Sep 2026), jadi halaman diagnosa terbuka sudah terisi. Kalau warga_pending_nik ada,
+           _redirect_after_login() di bawah sudah melakukan lookup+bootstrap yang sama; dilewati di
+           sini supaya tidak dua kali. */
+        if ($role === 'warga' && empty($this->session->userdata('warga_pending_nik'))) {
+            $this->prefill_simperum_akun($user_id, $nik_raw);
+        }
+
         $this->session->set_flashdata('success', 'Profil berhasil disimpan! Selamat datang di Klinik PKP.');
         $this->_redirect_after_login();
     }

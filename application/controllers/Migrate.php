@@ -415,6 +415,8 @@ class Migrate extends CI_Controller {
         // Migrasi 063 - dokumen Bank Data unggahan admin.
         echo 'sf_bank_data_dokumen (migrasi 063): '.($this->db->table_exists('sf_bank_data_dokumen') ? 'ADA' : 'HILANG')."
 ";
+        // Migrasi 064 - cermin data SIMPERUM (hanya NIK terdaftar, diisi dari GET).
+        echo 'sf_data_simperum (migrasi 064): '.($this->db->table_exists('sf_data_simperum') ? 'ADA' : 'HILANG')."\n";
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
                 ($this->db->field_exists($kolom, 'kkn_magang_pendaftaran') ? 'ADA' : 'HILANG')."\n";

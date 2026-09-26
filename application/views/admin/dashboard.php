@@ -89,6 +89,20 @@ $kelas_status = [
                     <dd class="mt-1 text-2xl font-black leading-none text-gray-900 dark:text-white"><?= number_format($total_users) ?></dd>
                 </div>
             </div>
+            <div class="flex items-center gap-3 py-4">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"><i class="ph ph-identification-card text-xl"></i></div>
+                <div>
+                    <dt class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-brand-muted">Warga terdaftar</dt>
+                    <dd class="mt-1 text-2xl font-black leading-none text-gray-900 dark:text-white"><?= number_format($warga_terdaftar) ?></dd>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 py-4">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400"><i class="ph ph-database text-xl"></i></div>
+                <div>
+                    <dt class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-brand-muted">Tercocokkan SIMPERUM</dt>
+                    <dd class="mt-1 text-2xl font-black leading-none text-gray-900 dark:text-white"><?= number_format($tercocokkan_simperum) ?></dd>
+                </div>
+            </div>
             <div class="flex items-center gap-3 py-4 pb-0">
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400"><i class="ph ph-chats-circle text-xl"></i></div>
                 <div>

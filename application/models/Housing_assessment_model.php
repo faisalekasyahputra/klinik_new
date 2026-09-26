@@ -214,6 +214,161 @@ class Housing_assessment_model extends CI_Model {
         return $row;
     }
 
+    /** Field rekaman GetDataRTLH -> kolom kode mentah sf_data_simperum (migrasi 064). */
+    private const KOLOM_CERMIN = [
+        'TahunIntervensi' => 'tahun_intervensi', 'SumberDanaID' => 'sumber_dana_id', 'AtapID' => 'atap_id',
+        'LantaiID' => 'lantai_id', 'DindingID' => 'dinding_id', 'KondisiAtap' => 'kondisi_atap',
+        'KondisiLantai' => 'kondisi_lantai', 'KondisiDinding' => 'kondisi_dinding',
+        'JenisKelamin' => 'jenis_kelamin', 'TahunLahir' => 'tahun_lahir', 'Pendidikan' => 'pendidikan',
+        'Pekerjaan' => 'pekerjaan', 'Penghasilan' => 'penghasilan', 'BantuanPerumahan' => 'bantuan_perumahan',
+        'KawasanPerumahan' => 'kawasan_perumahan', 'KepemilikanLahan' => 'kepemilikan_lahan',
+        'KepemilikanRumah' => 'kepemilikan_rumah', 'TanahLain' => 'tanah_lain', 'RumahLain' => 'rumah_lain',
+        'LuasRumah' => 'luas_rumah', 'JmlPenghuni' => 'jml_penghuni', 'JmlKK' => 'jml_kk',
+        'AdaPondasi' => 'ada_pondasi', 'KondisiKolom' => 'kondisi_kolom', 'KondisiBalok' => 'kondisi_balok',
+        'KondisiRangka' => 'kondisi_rangka', 'AdaJendela' => 'ada_jendela', 'AdaVentilasi' => 'ada_ventilasi',
+        'SumberAir' => 'sumber_air', 'Penerangan' => 'penerangan', 'LetakSanitasi' => 'letak_sanitasi',
+        'KamarMandi' => 'kamar_mandi', 'JarakSepticTank' => 'jarak_septic_tank', 'MampuSwadaya' => 'mampu_swadaya',
+    ];
+
+    /**
+     * NIK ini milik akun warga $user_id sendiri (usr_users.nik_lookup_hash)? Hanya NIK seperti itu
+     * yang boleh masuk cermin sf_data_simperum: Warga::lookup dan Program membiarkan akun login
+     * mencari NIK lain, dan $requested_by > 0 saja tidak berarti NIK-nya terdaftar.
+     */
+    public function nik_terikat_akun($user_id, $nik)
+    {
+        $nik = preg_replace('/\D+/', '', (string) $nik);
+        if ((int) $user_id < 1 || ! preg_match('/^\d{16}$/', $nik) || ! $this->encryption_ready()) {
+            return FALSE;
+        }
+        return $this->db->where('id', (int) $user_id)->where('role', 'warga')
+            ->where('nik_lookup_hash', $this->encryption_lib->deterministic_hash($nik))
+            ->count_all_results('usr_users') === 1;
+    }
+
+    /**
+     * Upsert cermin data SIMPERUM (migrasi 064) dari hasil GET. Cermin data DINAS: koreksi warga
+     * tidak pernah menulis ke sini, koreksi tetap di sf_profil_warga/sf_penilaian_perumahan.
+     *
+     * - found tanpa raw_record (fixture lama SIM-xx) DILEWATI: fixture itu bukan bentuk rekaman
+     *   dinas, dan baris found berkolom kosong akan terhitung "tercocokkan" tanpa data apa pun.
+     * - not_found dicatat dengan kolom data NULL, supaya penyegaran mingguan tahu.
+     * - error tidak pernah menimpa baris yang sudah ada; tanpa baris, dicatat status saja dan
+     *   next_refresh_at = sekarang supaya dicoba lagi pada putaran berikutnya.
+     *
+     * @return bool TRUE kalau baris ditulis.
+     */
+    public function cermin_data_simperum($user_id, $nik, $snapshot_id, $response_status, array $payload, $source_mode, $fetched_at = NULL)
+    {
+        $nik = preg_replace('/\D+/', '', (string) $nik);
+        if ( ! in_array($response_status, self::SNAPSHOT_STATUSES, TRUE)
+            || ! in_array($source_mode, self::SOURCE_MODES, TRUE)) {
+            return FALSE;
+        }
+        if ( ! $this->nik_terikat_akun($user_id, $nik)) {
+            // Akun ini tidak lagi memegang NIK tersebut (mis. NIK akun diganti): baris lamanya dilepas.
+            if ((int) $user_id > 0 && preg_match('/^\d{16}$/', $nik) && $this->encryption_ready()) {
+                $this->db->delete('sf_data_simperum', [
+                    'user_id' => (int) $user_id,
+                    'nik_lookup_hash' => $this->encryption_lib->deterministic_hash($nik),
+                ]);
+            }
+            return FALSE;
+        }
+        $hash = $this->encryption_lib->deterministic_hash($nik);
+        $raw = $payload['source']['raw_record'] ?? NULL;
+        if ($response_status === 'found' && ! is_array($raw)) {
+            return FALSE;
+        }
+        if ($response_status === 'error'
+            && $this->db->where('nik_lookup_hash', $hash)->count_all_results('sf_data_simperum') > 0) {
+            return FALSE;
+        }
+        $raw = ($response_status === 'found') ? $raw : [];
+        $teks = static function ($value, $max) {
+            $value = trim((string) $value);
+            return $value === '' ? NULL : mb_substr($value, 0, $max);
+        };
+
+        $fetched_at = $fetched_at ?: date('Y-m-d H:i:s');
+        $now = date('Y-m-d H:i:s');
+        $row = [
+            'user_id' => (int) $user_id,
+            'nik_lookup_hash' => $hash,
+            'nik_ciphertext' => $this->encrypt_value($nik),
+            'nama_ciphertext' => $this->encrypt_optional($raw['Nama'] ?? NULL),
+            'alamat_ciphertext' => $this->encrypt_optional($raw['Alamat'] ?? NULL),
+            'geo_lat_ciphertext' => $this->encrypt_optional($raw['GeoLat'] ?? NULL),
+            'geo_lng_ciphertext' => $this->encrypt_optional($raw['GeoLng'] ?? NULL),
+            'idbdt' => $teks($raw['IDBDT'] ?? NULL, 64),
+            'kode_dagri' => $teks($raw['KodeDagri'] ?? NULL, 20),
+            'kabupaten_id' => $response_status === 'found' && ! empty($payload['location']['kabupaten_id'])
+                ? (int) $payload['location']['kabupaten_id'] : NULL,
+        ];
+        foreach (self::KOLOM_CERMIN as $field => $kolom) {
+            $row[$kolom] = $teks($raw[$field] ?? NULL, 20);
+        }
+        $row += [
+            'response_status' => $response_status,
+            'source_mode' => $source_mode,
+            'snapshot_id' => $snapshot_id ? (int) $snapshot_id : NULL,
+            'fetched_at' => $fetched_at,
+            'next_refresh_at' => $response_status === 'error'
+                ? $now : date('Y-m-d H:i:s', strtotime($fetched_at . ' +7 days')),
+            'updated_at' => $now,
+        ];
+        foreach (['nik_ciphertext', 'nama_ciphertext', 'alamat_ciphertext', 'geo_lat_ciphertext', 'geo_lng_ciphertext'] as $kolom) {
+            if ($row[$kolom] !== NULL && ! $this->encryption_lib->is_encrypted($row[$kolom])) {
+                return FALSE;
+            }
+        }
+
+        // Satu pernyataan upsert: dua permintaan bersamaan untuk NIK yang sama tidak bisa saling tabrak UNIQUE.
+        $ubah = [];
+        foreach (array_keys($row) as $kolom) {
+            $ubah[] = $kolom . ' = VALUES(' . $kolom . ')';
+        }
+        return (bool) $this->db->query(
+            $this->db->insert_string('sf_data_simperum', $row + ['created_at' => $now])
+            . ' ON DUPLICATE KEY UPDATE ' . implode(', ', $ubah)
+        );
+    }
+
+    /**
+     * Daftar penyegaran mingguan (Simperum_segarkan): baris cermin yang jatuh tempo, lalu akun warga
+     * ber-NIK yang belum punya baris. Digabung lewat user_id, bukan nik_lookup_hash (collation beda).
+     *
+     * @return array [['user_id' => int, 'nik' => string], ...]
+     */
+    public function antrean_segarkan_simperum($batas)
+    {
+        $batas = max(0, (int) $batas);
+        if ($batas < 1 || ! $this->encryption_ready()) {
+            return [];
+        }
+        $rows = $this->db->select('user_id, nik_ciphertext AS nik')
+            ->where('next_refresh_at <=', date('Y-m-d H:i:s'))
+            ->order_by('next_refresh_at', 'ASC')->limit($batas)
+            ->get('sf_data_simperum')->result_array();
+        if (count($rows) < $batas) {
+            $rows = array_merge($rows, $this->db->select('u.id AS user_id, u.nik')
+                ->from('usr_users u')
+                ->where('u.role', 'warga')
+                ->where('u.nik_lookup_hash IS NOT NULL', NULL, FALSE)
+                ->where('NOT EXISTS (SELECT 1 FROM sf_data_simperum d WHERE d.user_id = u.id)', NULL, FALSE)
+                ->order_by('u.id', 'ASC')->limit($batas - count($rows))
+                ->get()->result_array());
+        }
+        $antrean = [];
+        foreach ($rows as $r) {
+            $nik = preg_replace('/\D+/', '', (string) $this->encryption_lib->decrypt((string) $r['nik']));
+            if (strlen($nik) === 16) {
+                $antrean[] = ['user_id' => (int) $r['user_id'], 'nik' => $nik];
+            }
+        }
+        return $antrean;
+    }
+
     public function create_draft(
         $user_id,
         $profile_id,

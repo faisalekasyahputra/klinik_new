@@ -1274,6 +1274,34 @@ class MY_Controller extends CI_Controller {
         return $this->rate_limiter->consume($policy, $context);
     }
 
+    /**
+     * Prefill otomatis wizard warga dari NIK akunnya sendiri (26 Sep 2026): lookup SIMPERUM lalu
+     * bootstrap draft, sama dengan klik Cek NIK. Dipakai Auth::save_onboarding() dan jaring pengaman
+     * Warga::pendataan(). Mengonsumsi pembatas `warga_lookup` yang sama dengan Cek NIK supaya tidak
+     * jadi jalan pintas. Gagal diam: warga masih bisa klik Cek NIK sendiri.
+     *
+     * @return bool TRUE kalau draft terbentuk dari data SIMPERUM.
+     */
+    protected function prefill_simperum_akun($user_id, $nik)
+    {
+        $user_id = (int) $user_id;
+        $nik = preg_replace('/\D+/', '', (string) $nik);
+        if ($user_id < 1 || ! preg_match('/^\d{16}$/', $nik)) {
+            return FALSE;
+        }
+        $rate = $this->rate_limit_consume('warga_lookup', ['account_id' => $user_id, 'nik' => $nik]);
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            return FALSE;
+        }
+        $this->load->library('Simperum_gateway');
+        $hasil = $this->simperum_gateway->lookup($nik, '', $user_id, TRUE);
+        if (($hasil['status'] ?? '') !== 'found') {
+            return FALSE;
+        }
+        $this->load->model('Housing_assessment_model');
+        return ! empty($this->Housing_assessment_model->bootstrap_draft_from_lookup($user_id, $hasil)['success']);
+    }
+
     protected function rate_limit_inspect($policy, array $context = [])
     {
         $this->load->library('Rate_limiter');
