@@ -1,0 +1,39 @@
+<?php
+/**
+ * Uji: NIK dari pendaftaran mengisi kolom Cek NIK di wizard warga (26 Sep 2026).
+ *
+ *   php docs/engineering/uji_nik_dari_akun.php
+ *
+ * Warga yang sudah mengisi NIK saat daftar cukup klik Cek NIK tanpa mengetik ulang.
+ * Memakai fixture API-01 (NIK 3399..., bukan NIK warga). Akun uji dibuat dan dihapus sendiri.
+ */
+define('BASEPATH','x'); define('APPPATH', dirname(__DIR__, 2) . '/application/'); function log_message(){}
+$B=rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/') . '/'; $env=[]; foreach(file(dirname(__DIR__, 2) . '/.env',FILE_IGNORE_NEW_LINES) as $l){$l=trim($l); if($l===''||$l[0]==='#'||!strpos($l,'='))continue; [$k,$v]=explode('=',$l,2); $env[trim($k)]??=trim($v); putenv(trim($k).'='.trim($v));}
+require APPPATH.'libraries/Encryption_lib.php'; $enc=new Encryption_lib();
+$db=new mysqli($env['DB_HOST'],$env['DB_USER'],$env['DB_PASS']??'',$env['DB_NAME']);
+$tag='e2enik'.bin2hex(random_bytes(2)); $pw='E2e#'.bin2hex(random_bytes(5)); $ids=[];
+$http=function($jar,$p,$post=null)use($B){$c=curl_init($B.$p);curl_setopt_array($c,[CURLOPT_RETURNTRANSFER=>1,CURLOPT_FOLLOWLOCATION=>1,CURLOPT_COOKIEJAR=>$jar,CURLOPT_COOKIEFILE=>$jar,CURLOPT_TIMEOUT=>60]);if($post!==null)curl_setopt($c,CURLOPT_POSTFIELDS,http_build_query($post));$b=(string)curl_exec($c);$k=curl_getinfo($c,CURLINFO_HTTP_CODE);curl_close($c);return [$k,html_entity_decode($b)];};
+$csrf=function($jar){foreach(file($jar) as $l){$p=explode("\t",trim($l));if(($p[5]??'')==='csrf_kpkp_cookie')return $p[6];}return '';};
+$ok=0;$gagal=0;$cek=function($c,$l)use(&$ok,&$gagal){$c?$ok++:$gagal++; echo ($c?'  OK    ':'  GAGAL ').$l."\n";};
+try{
+ $nik='3399991508850001';
+ foreach([[$nik,'dengan NIK'],[null,'tanpa NIK']] as $i=>[$n,$ket]){
+  $e="{$tag}_{$i}@example.test"; $h=password_hash($pw,PASSWORD_BCRYPT); $nc=$n?$enc->encrypt($n):null; $nh=$n?$enc->deterministic_hash($n):null;
+  $st=$db->prepare("INSERT INTO usr_users (name,email,password,role,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at,nik,nik_lookup_hash) VALUES ('Uji NIK',?,?,'warga','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW(),?,?)");
+  $st->bind_param('ssss',$e,$h,$nc,$nh);$st->execute();$id=$db->insert_id;$ids[]=$id;
+  $j=tempnam(sys_get_temp_dir(),'e2e'); $http($j,'Auth/login'); $http($j,'Auth/do_login',['email'=>$e,'password'=>$pw,'csrf_kpkp_token'=>$csrf($j)]);
+  [$k,$b]=$http($j,'warga/pendataan');
+  preg_match('/<input id="nik" name="nik"[^>]*value="([^"]*)"/',$b,$m);
+  if($n){ $cek(($m[1]??'')===$n && strpos($b,'Terisi dari NIK yang Anda daftarkan')!==false, "Akun $ket: kolom Cek NIK terisi otomatis + petunjuk tampil");
+   [$k,$b]=$http($j,'warga/pendataan',['step'=>'find_data','nik'=>$m[1],'csrf_kpkp_token'=>$csrf($j)]);
+   $d=$db->query("SELECT current_step FROM sf_penilaian_perumahan WHERE user_id=$id")->fetch_assoc();
+   $cek(($d['current_step']??'')==='housing_family', "Akun $ket: sekali klik Cek NIK langsung maju ke langkah berikutnya");
+  } else { $cek(($m[1]??'x')==='' && strpos($b,'Terisi dari NIK')===false, "Akun $ket: kolom kosong, tanpa petunjuk"); }
+  @unlink($j);
+ }
+} finally {
+ foreach($ids as $id){$db->query("DELETE FROM sf_penilaian_perumahan WHERE user_id=$id");$db->query("DELETE FROM usr_users WHERE id=$id");}
+ $db->query("DELETE FROM sf_rekaman_simperum WHERE source_record_key LIKE 'SYN-API-%'");
+ echo "RINGKASAN: ".($ok+$gagal)." pemeriksaan, $gagal gagal; akun tersisa ".$db->query("SELECT COUNT(*) FROM usr_users WHERE email LIKE '{$tag}%'")->fetch_row()[0]."\n";
+}
+exit($gagal ? 1 : 0);

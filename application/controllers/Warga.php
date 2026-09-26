@@ -101,9 +101,22 @@ class Warga extends MY_Controller {
                 $old_input['nik'] = $pending_nik;
             }
         }
+        // NIK yang diisi warga saat daftar/onboarding (usr_users.nik, terenkripsi) langsung
+        // mengisi kolom Cek NIK, jadi warga cukup klik tanpa mengetik ulang (26 Sep 2026).
+        $nik_dari_akun = FALSE;
+        if ($logged_in_warga && empty($old_input['nik']) && empty($profile['nik'])) {
+            $akun = $this->db->select('nik')->get_where('usr_users', ['id' => $user_id])->row();
+            $this->load->library('encryption_lib');
+            $nik_akun = preg_replace('/\D+/', '', (string) $this->encryption_lib->decrypt((string) ($akun->nik ?? '')));
+            if (strlen($nik_akun) === 16) {
+                $old_input['nik'] = $nik_akun;
+                $nik_dari_akun = TRUE;
+            }
+        }
         $this->render('pages/warga/pendataan', [
             'title' => 'Pendataan Warga',
             'is_logged_in' => $logged_in_warga,
+            'nik_dari_akun' => $nik_dari_akun,
             'assessment' => $assessment,
             'preliminary_matrix' => json_decode($assessment['preliminary_matrix'] ?? 'null', TRUE),
             'matrix_fields' => Matriks_program_ruleset::FORM_FIELDS,

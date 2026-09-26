@@ -116,7 +116,7 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                di Warga::lookup(), lihat komentarnya. */
             ?>
             <div class="mt-5">
-                <div><label for="nik" class="text-xs font-bold">NIK</label><input id="nik" name="nik" inputmode="numeric" pattern="[0-9]{16}" maxlength="16" required autocomplete="off" value="<?= html_escape($value('nik')) ?>" aria-describedby="nik-error" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error('nik') ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><p id="nik-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error('nik')) ?></p></div>
+                <div><label for="nik" class="text-xs font-bold">NIK</label><input id="nik" name="nik" inputmode="numeric" pattern="[0-9]{16}" maxlength="16" required autocomplete="off" value="<?= html_escape($value('nik')) ?>" aria-describedby="nik-error" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error('nik') ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><?php if ( ! empty($nik_dari_akun)): ?><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Terisi dari NIK yang Anda daftarkan. Tinggal klik tombol di bawah, atau ubah kalau keliru.</p><?php endif; ?><p id="nik-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error('nik')) ?></p></div>
             </div>
             <?php
             /* Hasil pencarian ANONIM (14 Agt 2026) - pengunjung belum login
