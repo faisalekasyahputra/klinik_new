@@ -126,6 +126,15 @@ if ( ! function_exists('sikumbang_ambil')) {
                502 dari hulu bukan galat curl - tanpa cek ini, badan halaman
                error tertulis ke cache sebagai kalau-kalau itu data sah. */
             $ok = ! $galat && is_string($balasan) && $balasan !== '' && $kode >= 200 && $kode < 300;
+            /* SIKUMBANG juga membungkus galatnya dengan HTTP 200:
+               {"error":true,"code":"ERR_UNEXPECTED",...} (UAT warga#2.0,
+               26 Sep 2026). Tanpa cek ini amplop galat tertulis ke cache
+               24 jam dan menimpa cache bagus, sehingga cadangan basi tidak
+               pernah terpakai. */
+            if ($ok) {
+                $urai = json_decode($balasan, TRUE);
+                $ok = ! (is_array($urai) && ! empty($urai['error']));
+            }
             return [$ok, is_string($balasan) ? $balasan : NULL];
         }, $bendera);
     }

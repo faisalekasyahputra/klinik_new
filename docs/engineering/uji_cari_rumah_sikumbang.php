@@ -343,6 +343,15 @@ touch($bendera_mati);
 cek($k === 503 && strpos($b, 'data-detail-tidak-tersedia') !== FALSE && strpos($b, 'Coba lagi') !== FALSE,
     "Hulu gagal tanpa cache: 503 dengan ajakan coba lagi, bukan 404 (dapat $k)");
 
+/* Cache berisi amplop galat SIKUMBANG (tanpa blok detail): 404 bersih, bukan
+   PHP Error dengan HTTP 200 (UAT warga#2.0). */
+$id_galat = 'UJI9903' . getmypid() . 'T001';
+$GLOBALS['bersih'][] = $f_galat = CACHE_DIR . 'sikumbang_detail_' . $id_galat . '.json';
+file_put_contents($f_galat, '{"error":true,"code":"ERR_UNEXPECTED","message":"Terjadi Kesalahan"}');
+[$k, $b] = http_kode('detail_perum/' . $id_galat);
+cek($k === 404 && strpos($b, 'A PHP Error') === FALSE,
+    "Detail tanpa blok detail: 404 tanpa PHP Error (dapat $k)");
+
 $src_index = file_get_contents(APP_ROOT . '/application/controllers/Index.php');
 cek(strpos($src_index, "'sikumbang_detail_' . \$idLokasi)") !== FALSE,
     'Detail memakai bendera penahan per lokasi, satu id yang menggantung tidak membungkam kartu lain');
@@ -363,7 +372,13 @@ foreach ([
 }
 
 $contoh = glob(CACHE_DIR . 'sikumbang_detail_*.json');
-$templat = $contoh ? json_decode(file_get_contents($contoh[0]), TRUE) : NULL;
+/* Berkas pertama bisa saja amplop galat lama (sebelum sikumbang_ambil menolaknya),
+   jadi cari yang benar-benar punya kantorPemasaran; dulu cek ini diam-diam LEWAT. */
+$templat = NULL;
+foreach ($contoh as $f) {
+    $templat = json_decode(file_get_contents($f), TRUE);
+    if (isset($templat['detail']['kantorPemasaran'][0])) { break; }
+}
 if ( ! isset($templat['detail']['kantorPemasaran'][0])) {
     echo "  LEWAT Tidak ada cache detail SIKUMBANG sebagai templat; cek halaman WhatsApp dilewati.\n";
 } else {

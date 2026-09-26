@@ -151,7 +151,10 @@ cek(filemtime($bendera) > time() - 5,
 echo "\n7. Jaringan sehat: cache ditulis, bendera dipadamkan\n";
 // ---------------------------------------------------------------------------
 @unlink($cache);
-touch($bendera);
+/* Bendera KEDALUWARSA, bukan segar: bendera segar membuat helper pulang NULL
+   tanpa menembak, sehingga skenario ini selalu LEWAT dengan "Sebab: tidak diketahui". */
+touch($bendera, time() - (SIKUMBANG_JEDA_GAGAL + 5));
+clearstatcache(TRUE, $bendera);
 $hasil = sikumbang_ambil(URL_HIDUP, $cache, 3600, 20);
 if ($hasil === NULL) {
     /* Sebab yang PALING SERING di sini bukan SIKUMBANG mati, melainkan XAMPP
@@ -173,6 +176,36 @@ if ($hasil === NULL) {
 } else {
     cek(file_exists($cache) && file_get_contents($cache) === $hasil, 'cache ditulis dari balasan sukses');
     cek( ! file_exists($bendera), 'bendera dipadamkan setelah sukses');
+}
+
+// ---------------------------------------------------------------------------
+echo "\n8. Amplop galat ber-HTTP 200 dari SIKUMBANG: dianggap gagal, cache bagus tidak ditimpa\n";
+// ---------------------------------------------------------------------------
+/* UAT warga#2.0: id yang tidak dikenal dibalas {"error":true,...} dengan
+   HTTP 200. Butuh jaringan sungguhan (helper hanya mau HTTPS), jadi bentuk
+   balasannya dipastikan dulu; kalau bukan amplop galat, skenario dilewati. */
+$url_galat = 'https://sikumbang.tapera.go.id/lokasi-perumahan/ZZZ9999/json';
+$ch = curl_init($url_galat);
+curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => TRUE, CURLOPT_TIMEOUT => 20]);
+$mentah = curl_exec($ch);
+$kode_mentah = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+curl_close($ch);
+$amplop = is_string($mentah) ? json_decode($mentah, TRUE) : NULL;
+if ($kode_mentah !== 200 || empty($amplop['error'])) {
+    echo "  LEWAT Skenario 8 dilewati - hulu tidak membalas amplop galat ber-HTTP 200 (kode $kode_mentah).\n";
+} else {
+    $bendera8 = $dir . '/uji_amplop_gagal.flag';
+    $GLOBALS['bersih'][] = $bendera8;
+    @unlink($bendera8);
+    tulis_cache($cache, '{"detail":{"nama":"bagus"}}', 7200);
+    $hasil = sikumbang_ambil($url_galat, $cache, 3600, 20, 'uji_amplop');
+    cek($hasil === '{"detail":{"nama":"bagus"}}', 'cadangan basi disajikan, bukan amplop galat');
+    cek(file_get_contents($cache) === '{"detail":{"nama":"bagus"}}', 'cache bagus tidak ditimpa amplop galat');
+    cek(file_exists($bendera8), 'amplop galat dicatat sebagai kegagalan');
+    @unlink($cache);
+    @unlink($bendera8);
+    cek(sikumbang_ambil($url_galat, $cache, 3600, 20, 'uji_amplop') === NULL && ! file_exists($cache),
+        'tanpa cadangan: NULL dan amplop galat tidak ditulis ke cache');
 }
 
 // ---------------------------------------------------------------------------

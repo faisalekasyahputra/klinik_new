@@ -191,7 +191,9 @@ class Index extends MY_Controller {
 		}
 
 		$decoded_data = json_decode($response, true);
-		if (empty($decoded_data)) {
+		/* Tanpa blok `detail` tidak ada yang bisa ditampilkan; sebelumnya
+		   jatuh ke PHP Error "Undefined array key" dengan HTTP 200. */
+		if (empty($decoded_data['detail']) || ! is_array($decoded_data['detail'])) {
 			show_404();
 		}
 
