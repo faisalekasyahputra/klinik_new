@@ -115,16 +115,17 @@ if ( ! function_exists('tgl_id')) {
  * semua non-digit menggabungkan nomor itu jadi tautan wa.me yang rusak, jadi yang
  * diambil hanya nomor HP pertama (08..., 628..., +62 8...). Telepon rumah/kantor
  * menghasilkan '' supaya tampilan menunjukkan WhatsApp tidak tersedia.
+ * Panjang: 08 lalu 7-11 digit (paling panjang 13 digit), nomor HP 13 digit ikut sah.
  */
 if ( ! function_exists('nomor_whatsapp')) {
     function nomor_whatsapp($teks) {
-        if ( ! preg_match_all('/(?<!\d)(?:\+?62|0)[\s.-]?8(?:[\s.-]?\d){7,10}(?!\d)/', (string) $teks, $m)) {
+        if ( ! preg_match_all('/(?<!\d)(?:\+?62|0)[\s.-]?8(?:[\s.-]?\d){7,11}(?!\d)/', (string) $teks, $m)) {
             return '';
         }
         foreach ($m[0] as $calon) {
             $digit = preg_replace('/\D/', '', $calon);
             $digit = $digit[0] === '0' ? '62' . substr($digit, 1) : $digit;
-            if (preg_match('/^628\d{7,10}$/', $digit)) {
+            if (preg_match('/^628\d{7,11}$/', $digit)) {
                 return $digit;
             }
         }
