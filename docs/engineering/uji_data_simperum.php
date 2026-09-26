@@ -81,8 +81,9 @@ try {
     $n_anon = (int) $satu("SELECT COUNT(*) n FROM sf_data_simperum WHERE nik_lookup_hash='$hash_anon'")['n'];
     $jt = $jar(); $http($jt, 'cek_rtlh');
     [$k, $b] = $http($jt, 'Cek_Rtlh/periksa', ['nik' => $NIK_ANON, 'csrf_kpkp_token' => $csrf($jt)]);
-    $cek($k === 200 && strpos($b, 'NIK ****0002') !== FALSE, 'Cek Data Rumah anonim menjawab');
-    $cek((int) $satu("SELECT COUNT(*) n FROM sf_data_simperum WHERE nik_lookup_hash='$hash_anon'")['n'] === $n_anon, 'Cek_Rtlh anonim TIDAK membuat baris cermin');
+    // Pemeriksaan kedua hanya bermakna bila pencarian benar-benar dijawab (bukan ditolak pembatas laju).
+    $cek($k === 200 && strpos($b, 'NIK ****0002') !== FALSE, 'Cek Data Rumah anonim menjawab')
+    && $cek((int) $satu("SELECT COUNT(*) n FROM sf_data_simperum WHERE nik_lookup_hash='$hash_anon'")['n'] === $n_anon, 'Cek_Rtlh anonim TIDAK membuat baris cermin');
 
     echo "D. Penyegaran mingguan (CLI)\n";
     $db->query("UPDATE sf_data_simperum SET fetched_at='2020-01-01 00:00:00', next_refresh_at='2020-01-08 00:00:00' WHERE user_id=$uid");
@@ -108,6 +109,20 @@ try {
     [$k, $b] = $http($jar(), 'simperum_segarkan');
     $cek($k === 404, 'simperum_segarkan lewat web dijawab 404 (hanya CLI)');
 
+    echo "D2. Galat penyegaran tidak menutupi hasil found\n";
+    // Tidak ada fixture galat ber-NIK 3399..., jadi dijaga di sumber: segarkan() keluar sebelum store_source_snapshot() bila bukan found/not_found.
+    $src = file_get_contents($root . '/application/libraries/Simperum_gateway.php');
+    $seg = substr($src, strpos($src, 'public function segarkan('));
+    $p_jaga = strpos($seg, 'if ( ! in_array($status, ['); $p_simpan = strpos($seg, 'store_source_snapshot(');
+    $cek($p_jaga !== FALSE && $p_simpan !== FALSE && $p_jaga < $p_simpan, 'segarkan() tidak menyimpan snapshot galat (snapshot found yang berlaku tetap dipakai)');
+
+    echo "D3. Warga yang sudah mengirim tidak dibuatkan draft baru\n";
+    $db->query("UPDATE sf_penilaian_perumahan SET status='submitted' WHERE user_id=$uid");
+    [$k, $b] = $http($login($email), 'warga/pendataan');
+    $cek($k === 200 && (int) $satu("SELECT COUNT(*) n FROM sf_penilaian_perumahan WHERE user_id=$uid AND status='draft'")['n'] === 0
+        && (int) $satu("SELECT COUNT(*) n FROM sf_penilaian_perumahan WHERE user_id=$uid")['n'] === $n_draft,
+        'Membuka warga/pendataan sesudah kirim tidak membuat draft tanpa tautan versi (kiriman ganda)');
+
     echo "E. Angka di dashboard\n";
     [, $eAdm] = $akun('admin');
     [$k, $b] = $http($login($eAdm), 'Admin_Dashboard');
@@ -122,7 +137,11 @@ try {
         $cek($angka($b, '#data-tercocokkan-simperum>([\d,]+)<#') === $n && ($kab !== 3374 || $n >= 1), "Admin kab/kota $kab: hanya menghitung wilayahnya ($n)");
     }
 
-    echo "F. Hapus akun menghapus cermin\n";
+    echo "F. Ekspor data akun memuat cermin\n";
+    $cek(strpos(file_get_contents($root . '/application/models/User_model.php'), "'sf_data_simperum'") !== FALSE
+        && in_array('sf_data_simperum', (function () use ($root) { $config = []; require $root . '/application/config/data_lifecycle.php'; return $config['data_lifecycle']['ekspor_akun']['tabel']; })(), TRUE),
+        'sf_data_simperum ikut export_account_data (kolom *_ciphertext didekripsi, *_lookup_hash dibuang)');
+    echo "G. Hapus akun menghapus cermin\n";
     $db->query("DELETE FROM sf_penilaian_perumahan WHERE user_id=$uid");
     $db->query("DELETE FROM usr_users WHERE id=$uid");
     $cek((int) $satu("SELECT COUNT(*) n FROM sf_data_simperum WHERE user_id=$uid OR nik_lookup_hash='$hash'")['n'] === 0, 'Baris cermin ikut terhapus (FK CASCADE)');

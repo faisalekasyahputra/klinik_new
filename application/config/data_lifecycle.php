@@ -66,13 +66,13 @@ $config['data_lifecycle'] = [
        dibatasi laju, diaudit). Tabel milik akun yang diekspor; sisanya dikecualikan dengan alasan. */
     'ekspor_akun' => [
         'tabel' => ['sf_profil_warga', 'sf_penilaian_perumahan', 'sf_housing_queue', 'aduan', 'srp2_registrations',
-                    'kkn_magang_pendaftaran', 'forum_diskusi', 'forum_komentar', 'forum_janji_temu', 'usr_documents'],
+                    'kkn_magang_pendaftaran', 'forum_diskusi', 'forum_komentar', 'forum_janji_temu', 'usr_documents',
+                    'sf_data_simperum'],
         'dikecualikan' => [
             'forum_laporan_komentar'       => 'laporan moderasi kepada admin; bukan data isian pemilik',
             'sys_push_subscriptions'       => 'kredensial langganan perangkat (kunci enkripsi push); rahasia, bukan data profil',
             'usr_admin_module_privileges'  => 'hak akses staf yang diberikan superadmin; bukan data pemilik',
             'forum_likes'                  => 'tanda suka tanpa isi pribadi',
-            'sf_data_simperum'             => 'cermin data dinas SIMPERUM, bukan isian pemilik; identitas dan datanya sudah ikut lewat sf_profil_warga',
         ],
     ],
 
@@ -80,7 +80,7 @@ $config['data_lifecycle'] = [
        (daftar izin pindai_kode_berbahaya.php) WAJIB tercatat di sini beserta data pribadi yang dikirim. */
     'pertukaran' => [
         'libraries/Simperum_gateway.php' => ['pihak' => 'SIMPERUM Disperakim Jateng', 'arah' => 'keluar+masuk', 'data' => 'NIK (kueri); profil RTLH (balasan)',
-            'perlindungan' => 'HTTPS terverifikasi; balasan disimpan terenkripsi (AES-256-GCM) dengan kedaluwarsa; peminta tercatat di sf_rekaman_simperum.requested_by', 'pribadi' => TRUE],
+            'perlindungan' => 'HTTPS terverifikasi; snapshot balasan disimpan terenkripsi (AES-256-GCM) dengan kedaluwarsa; peminta tercatat di sf_rekaman_simperum.requested_by; cermin sf_data_simperum hanya untuk NIK akun warga sendiri: NIK/nama/alamat/koordinat terenkripsi, IDBDT/KodeDagri dan kode mentah polos, tanpa kedaluwarsa selama akun ada (disegarkan mingguan, hanya GET), ikut terhapus bersama akun (FK CASCADE) dan ikut ekspor data akun', 'pribadi' => TRUE],
         'controllers/Auth.php'           => ['pihak' => 'Google (reCAPTCHA dan OAuth)', 'arah' => 'keluar+masuk', 'data' => 'token tantangan dan alamat IP (reCAPTCHA); surel dan nama akun Google (OAuth)',
             'perlindungan' => 'HTTPS; state OAuth sekali pakai; reCAPTCHA tidak aktif bila kunci kosong', 'pribadi' => TRUE],
         'libraries/Web_push_service.php' => ['pihak' => 'layanan push peramban', 'arah' => 'keluar', 'data' => 'judul dan isi notifikasi generik tanpa data pribadi',

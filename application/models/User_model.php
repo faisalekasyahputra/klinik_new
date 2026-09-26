@@ -139,6 +139,7 @@ class User_model extends CI_Model {
             'sf_citizen_profiles', 'sf_housing_assessments',
             'aduan', 'srp2_registrations', 'kkn_magang_pendaftaran',
             'forum_diskusi', 'forum_komentar', 'forum_janji_temu', 'usr_documents',
+            'sf_data_simperum',
         ];
         foreach ($owned_tables as $table) {
             if (!$this->db->table_exists($table) || !$this->db->field_exists('user_id', $table)) {

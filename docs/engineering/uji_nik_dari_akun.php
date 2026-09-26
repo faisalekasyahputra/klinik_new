@@ -15,12 +15,20 @@ $tag='e2enik'.bin2hex(random_bytes(2)); $pw='E2e#'.bin2hex(random_bytes(5)); $id
 $http=function($jar,$p,$post=null)use($B){$c=curl_init($B.$p);curl_setopt_array($c,[CURLOPT_RETURNTRANSFER=>1,CURLOPT_FOLLOWLOCATION=>1,CURLOPT_COOKIEJAR=>$jar,CURLOPT_COOKIEFILE=>$jar,CURLOPT_TIMEOUT=>60]);if($post!==null)curl_setopt($c,CURLOPT_POSTFIELDS,http_build_query($post));$b=(string)curl_exec($c);$k=curl_getinfo($c,CURLINFO_HTTP_CODE);curl_close($c);return [$k,html_entity_decode($b)];};
 $csrf=function($jar){foreach(file($jar) as $l){$p=explode("\t",trim($l));if(($p[5]??'')==='csrf_kpkp_cookie')return $p[6];}return '';};
 $ok=0;$gagal=0;$cek=function($c,$l)use(&$ok,&$gagal){$c?$ok++:$gagal++; echo ($c?'  OK    ':'  GAGAL ').$l."\n";};
+/* Sejak prefill otomatis suite ini memakai dua warga_lookup; ember dipinjam lalu dikembalikan utuh di finally
+   (pola uji_data_simperum, jangan kosongkan tabel). ::1 dihitung per blok /64: '0000000000000000/64'. */
+$rate_asli=[]; $pinjam=function($key)use($db,&$rate_asli){ if(array_key_exists($key,$rate_asli))return;
+ $st=$db->prepare('SELECT limit_key,window_started_at,failed_attempts FROM sys_rate_limits WHERE limit_key=?');$st->bind_param('s',$key);$st->execute(); $rate_asli[$key]=$st->get_result()->fetch_assoc();
+ $st=$db->prepare('DELETE FROM sys_rate_limits WHERE limit_key=?');$st->bind_param('s',$key);$st->execute(); };
 try{
  $nik='3399991508850001';
+ foreach(['warga_lookup','login'] as $p) foreach(['127.0.0.1','::1','0000000000000000/64'] as $ip) $pinjam(hash('sha256',"$p:ip:$ip"));
+ $pinjam(hash('sha256','warga_lookup:nik:'.$enc->deterministic_hash($nik)));
  foreach([[$nik,'dengan NIK'],[null,'tanpa NIK']] as $i=>[$n,$ket]){
   $e="{$tag}_{$i}@example.test"; $h=password_hash($pw,PASSWORD_BCRYPT); $nc=$n?$enc->encrypt($n):null; $nh=$n?$enc->deterministic_hash($n):null;
   $st=$db->prepare("INSERT INTO usr_users (name,email,password,role,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at,nik,nik_lookup_hash) VALUES ('Uji NIK',?,?,'warga','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW(),?,?)");
   $st->bind_param('ssss',$e,$h,$nc,$nh);$st->execute();$id=$db->insert_id;$ids[]=$id;
+  foreach(['warga_lookup','warga_lookup_jam','warga_lookup_harian'] as $p) $pinjam(hash('sha256',"$p:account:$id"));
   $j=tempnam(sys_get_temp_dir(),'e2e'); $http($j,'Auth/login'); $http($j,'Auth/do_login',['email'=>$e,'password'=>$pw,'csrf_kpkp_token'=>$csrf($j)]);
   [$k,$b]=$http($j,'warga/pendataan');
   preg_match('/<input id="nik" name="nik"[^>]*value="([^"]*)"/',$b,$m);
@@ -41,6 +49,8 @@ try{
 } finally {
  foreach($ids as $id){$db->query("DELETE FROM sf_penilaian_perumahan WHERE user_id=$id");$db->query("DELETE FROM usr_users WHERE id=$id");}
  $db->query("DELETE FROM sf_rekaman_simperum WHERE source_record_key LIKE 'SYN-API-%'");
+ foreach($rate_asli as $key=>$r){ $st=$db->prepare('DELETE FROM sys_rate_limits WHERE limit_key=?');$st->bind_param('s',$key);$st->execute();
+  if($r){$st=$db->prepare('INSERT INTO sys_rate_limits (limit_key,window_started_at,failed_attempts) VALUES (?,?,?)');$st->bind_param('ssi',$r['limit_key'],$r['window_started_at'],$r['failed_attempts']);$st->execute();} }
  echo "RINGKASAN: ".($ok+$gagal)." pemeriksaan, $gagal gagal; akun tersisa ".$db->query("SELECT COUNT(*) FROM usr_users WHERE email LIKE '{$tag}%'")->fetch_row()[0]."\n";
 }
 exit($gagal ? 1 : 0);

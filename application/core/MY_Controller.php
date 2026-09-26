@@ -1289,6 +1289,12 @@ class MY_Controller extends CI_Controller {
         if ($user_id < 1 || ! preg_match('/^\d{16}$/', $nik)) {
             return FALSE;
         }
+        /* Akun yang sudah pernah mengirim (penilaian selain draft) tidak dibuatkan draft baru di sini:
+           draft tanpa previous_version_id akan jadi kiriman ganda di sf_housing_queue. Revisi tetap
+           lewat start_revision (status needs_revision). */
+        if ($this->db->where('user_id', $user_id)->where('status !=', 'draft')->count_all_results('sf_penilaian_perumahan') > 0) {
+            return FALSE;
+        }
         $rate = $this->rate_limit_consume('warga_lookup', ['account_id' => $user_id, 'nik' => $nik]);
         if (empty($rate['success']) || empty($rate['allowed'])) {
             return FALSE;

@@ -148,6 +148,13 @@ class Simperum_gateway {
         try {
             $payload = $this->mode === 'api' ? $this->load_api($nik) : $this->load_fixture($nik);
             $status = $payload['response_status'] ?? 'error';
+            if ( ! in_array($status, ['found', 'not_found'], TRUE)) {
+                /* Galat TIDAK disimpan sebagai snapshot: snapshot aktif terbaru menang di
+                   get_active_source_snapshot(), jadi galat 15 menit akan menutupi hasil found yang
+                   masih berlaku. Cermin hanya mencatat galat bila belum ada baris (dicoba lagi). */
+                $model->cermin_data_simperum($user_id, $nik, NULL, 'error', [], $this->mode);
+                return 'error';
+            }
             $stored = $model->store_source_snapshot(
                 $nik,
                 $this->mode,
@@ -164,7 +171,7 @@ class Simperum_gateway {
                 return 'error';
             }
             $model->cermin_data_simperum($user_id, $nik, $stored['snapshot_id'], $status, $payload, $this->mode);
-            return in_array($status, ['found', 'not_found'], TRUE) ? $status : 'error';
+            return $status;
         } finally {
             $this->CI->db->query('SELECT RELEASE_LOCK(?)', [$lock_name]);
         }
