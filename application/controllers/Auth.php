@@ -579,8 +579,9 @@ class Auth extends MY_Controller {
         $alamat_raw = html_escape($this->input->post('alamat_domisili'));
         $phone     = html_escape($this->input->post('phone'));
 
-        if (empty($username) || empty($nama) || empty($alamat_raw) || empty($phone)
-            || ($role === 'pengembang' && empty($npwp_raw)) || ($role === 'warga' && empty($nik_raw))) {
+        // NPWP/NIK kosong sengaja TIDAK di sini: cek format per peran di bawah
+        // menangkapnya dengan pesan yang menyebut medannya (temuan 27 Sep 2026).
+        if (empty($username) || empty($nama) || empty($alamat_raw) || empty($phone)) {
             $this->_onboarding_fail('Semua field wajib harus diisi.');
             return;
         }

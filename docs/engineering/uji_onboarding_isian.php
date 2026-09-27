@@ -161,6 +161,25 @@ $html = $r['body'];
 
 cek(strpos($html, 'NPWP harus terdiri dari 15 atau 16 digit angka') !== FALSE, 'Pesan error NPWP tersampaikan');
 
+// NPWP KOSONG (atau huruf semua, yang dibuang jadi kosong) mendapat pesan yang
+// sama, bukan "Semua field wajib harus diisi." yang tidak menyebut NPWP.
+$r_kosong = http('Auth/save_onboarding', [
+    'csrf_kpkp_token'  => $csrf,
+    'role'             => 'pengembang',
+    'username'         => strtolower(CAP),
+    'nama_lengkap'     => 'Nama ' . CAP,
+    'npwp'             => '',
+    'alamat_domisili'  => 'Alamat ' . CAP,
+    'phone'            => HP,
+    'nama_perusahaan'  => 'PT ' . CAP,
+    'alamat_kantor'    => 'Kantor ' . CAP,
+    'telp_kantor'      => TELP_KANTOR,
+    'password'         => SANDI_UMPAN,
+    'password_confirm' => SANDI_UMPAN,
+]);
+cek(strpos($r_kosong['body'], 'NPWP harus terdiri dari 15 atau 16 digit angka') !== FALSE,
+    'NPWP kosong mendapat pesan NPWP, bukan pesan generik');
+
 // Profilnya TIDAK boleh tersimpan - kalau tersimpan, halaman ini seharusnya
 // tidak lagi bisa dirender, dan uji di atas berbohong.
 $row = $db->query("SELECT profile_completed, role FROM usr_users WHERE email = '" . $db->real_escape_string(EMAIL) . "'")->fetch_assoc();
