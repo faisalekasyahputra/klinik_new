@@ -41,6 +41,15 @@ try {
     [$w, $bw] = $coba('warga');
     $cek((int) $w['profile_completed'] === 0, 'Warga tanpa NIK TETAP ditolak (NIK wajib untuk warga)');
     $cek(stripos($bw, 'wajib') !== FALSE, 'Warga mendapat pesan field wajib');
+
+    // Formulir daftar tanpa JavaScript dengan isian kosong: kembali ke formulir dengan pesan, bukan halaman galat.
+    $jr = tempnam(sys_get_temp_dir(), 'obm'); $jars[] = $jr;
+    $http($jr, 'Auth/register');
+    $ch = curl_init($BASE . 'Auth/do_register');
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => 1, CURLOPT_FOLLOWLOCATION => 1, CURLOPT_COOKIEJAR => $jr, CURLOPT_COOKIEFILE => $jr, CURLOPT_TIMEOUT => 30,
+        CURLOPT_POSTFIELDS => http_build_query(['csrf_kpkp_token' => $csrf($jr), 'email' => '', 'password' => '', 'password_confirm' => '', 'tos_agree' => ''])]);
+    $br = html_entity_decode((string) curl_exec($ch)); $kode = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch); unset($ch);
+    $cek($kode === 200 && stripos($br, 'Semua field wajib diisi') !== FALSE && stripos($br, 'Permintaan Tidak Valid') === FALSE, 'Daftar non-AJAX dengan isian kosong kembali ke formulir dengan pesan ramah');
 } finally {
     $db->query("DELETE FROM usr_users WHERE email LIKE '{$tag}_%@example.test'");
     foreach ($jars as $j) @unlink($j);

@@ -107,6 +107,8 @@ $config['api_schemas'] = [
     ],
     'auth/do_register' => [
         'class' => 'api',
+        // Formulir tanpa JavaScript: kembali ke formulir dengan pesan, bukan halaman galat. Wizard SRP2 selalu XHR.
+        'invalid' => ['redirect' => 'Auth/register', 'flash' => 'Semua field wajib diisi dengan benar. Periksa kembali dan coba lagi.'],
         'methods' => ['POST' => ['fields' => $bot + [
             'email'            => ['type' => 'string', 'required' => TRUE, 'min_len' => 3, 'max_len' => 150],
             'password'         => $sandi + ['required' => TRUE],
