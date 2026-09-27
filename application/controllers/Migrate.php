@@ -417,6 +417,10 @@ class Migrate extends CI_Controller {
 ";
         // Migrasi 064 - cermin data SIMPERUM (hanya NIK terdaftar, diisi dari GET).
         echo 'sf_data_simperum (migrasi 064): '.($this->db->table_exists('sf_data_simperum') ? 'ADA' : 'HILANG')."\n";
+        // Migrasi 065 - default asosiasi SQL NULL, bukan string 'NULL' peninggalan 051.
+        $salah = (int) $this->db->query("SELECT COUNT(*) n FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE() AND COLUMN_NAME = 'asosiasi' AND COLUMN_DEFAULT = \"'NULL'\"")->row('n');
+        echo 'default asosiasi (migrasi 065): '.($salah ? $salah." kolom masih DEFAULT 'NULL'" : 'NULL')."\n";
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
                 ($this->db->field_exists($kolom, 'kkn_magang_pendaftaran') ? 'ADA' : 'HILANG')."\n";
