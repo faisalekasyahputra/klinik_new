@@ -505,12 +505,15 @@ class Admin_Kemitraan extends Admin_Controller {
         // private_uploads_dir() sudah berakhiran pemisah - sama seperti dipakai
         // serve_private_file(), jadi jangan tambahkan garis miring lagi.
         $dir = $this->private_upload_dir('kemitraan', (int) $row->id);
-        foreach ([$row->file_surat_pengantar, $row->file_proposal, $row->file_surat_balasan] as $berkas) {
-            if (empty($berkas)) { continue; }
-            $path = $dir . basename((string) $berkas);
-            if (is_file($path)) { @unlink($path); }
+        // Folder ini khusus satu pendaftaran, jadi SELURUH isinya ikut dihapus. Daftar kolom
+        // berkas dulu meninggalkan surat SIMPERUM dan laporan akhir di disk (simulasi
+        // mahasiswa 27 Sep 2026), dan akan tertinggal lagi setiap ada kolom berkas baru.
+        if (is_dir($dir)) {
+            foreach (glob($dir . '*') ?: [] as $path) {
+                if (is_file($path)) { @unlink($path); }
+            }
+            @rmdir($dir);
         }
-        if (is_dir($dir) && ! glob($dir . '*')) { @rmdir($dir); }
 
         $this->db->delete('kkn_magang_pendaftaran', ['id' => (int) $row->id]);
 

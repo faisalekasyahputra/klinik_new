@@ -30,7 +30,13 @@ $sesi = function () use (&$jars) { $j = tempnam(sys_get_temp_dir(), 'srt'); $jar
 $cari = function () use ($http, $csrf, $sesi, $nim) { $j = $sesi(); $http($j, 'KemitraanPortal/sertifikat_kkn'); return [$j, html_entity_decode($http($j, 'KemitraanPortal/cek_sertifikat_kkn', ['csrf_kpkp_token' => $csrf($j), 'nim' => $nim]))]; };
 try {
     echo "=== UJI TANGGAL SERTIFIKAT KKN ===\n";
-    $db->query("DELETE FROM sys_rate_limits");
+    // Ember sertifikat_kkn_lookup dan login per IP dipinjam lalu dikembalikan utuh (::1 tercatat per /64).
+    // Dulu seluruh tabel sys_rate_limits dikosongkan, ikut menghapus ember pengguna/suite lain.
+    foreach (['sertifikat_kkn_lookup', 'login'] as $pol) foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
+        $k = hash('sha256', $pol . ':ip:' . $ip);
+        $ember[$k] = $db->query("SELECT limit_key, window_started_at, failed_attempts FROM sys_rate_limits WHERE limit_key='$k'")->fetch_assoc();
+        $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
+    }
     $cek($db->query("SHOW COLUMNS FROM kkn_magang_pendaftaran LIKE 'tanggal_sertifikat'")->num_rows === 1, 'Kolom tanggal_sertifikat ada (migrasi 062)');
     $e = "{$tag}_adm@example.test"; $h = password_hash($sandi, PASSWORD_BCRYPT);
     $st = $db->prepare("INSERT INTO usr_users (name,email,password,role,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at) VALUES ('Uji Sert',?,?,'admin','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
@@ -70,12 +76,18 @@ try {
     $akar = strtr(trim($env['PRIVATE_UPLOADS_PATH'] ?? ''), [chr(92) => '/']);
     $akar = $akar === '' ? dirname(__DIR__, 3) . '/private_uploads' : rtrim(preg_match('#^([A-Za-z]:/|/)#', $akar) ? $akar : dirname(__DIR__, 2) . '/' . ltrim($akar, '/'), '/');
     $dirHapus = $akar . '/kemitraan/' . $kkn3;
-    @mkdir($dirHapus, 0775, TRUE); file_put_contents($dirHapus . '/balasan_uji.pdf', '%PDF-uji');
+    @mkdir($dirHapus, 0775, TRUE);
+    foreach (['balasan_uji.pdf', 'simperum_uji.pdf', 'laporan_uji.pdf'] as $nb) { file_put_contents($dirHapus . '/' . $nb, '%PDF-uji'); }
+    $db->query("UPDATE kkn_magang_pendaftaran SET file_surat_simperum='simperum_uji.pdf', file_laporan_akhir='laporan_uji.pdf' WHERE id={$kkn3}");
     $http($ja, 'Admin_Kemitraan');
     $http($ja, 'Admin_Kemitraan/hapus/' . $kkn3, ['csrf_kpkp_token' => $csrf($ja)]);
-    $cek((int) $db->query("SELECT COUNT(*) FROM kkn_magang_pendaftaran WHERE id={$kkn3}")->fetch_row()[0] === 0 && ! is_file($dirHapus . '/balasan_uji.pdf'), 'Hapus pendaftaran ikut menghapus surat balasan dari disk');
+    $cek((int) $db->query("SELECT COUNT(*) FROM kkn_magang_pendaftaran WHERE id={$kkn3}")->fetch_row()[0] === 0 && ! is_dir($dirHapus), 'Hapus pendaftaran ikut menghapus surat balasan, surat SIMPERUM, laporan akhir, dan foldernya dari disk');
 } finally {
-    if (isset($dirHapus)) { @unlink($dirHapus . '/balasan_uji.pdf'); @rmdir($dirHapus); }
+    foreach ($ember ?? [] as $k => $row) {
+        $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
+        if ($row) { $st = $db->prepare('INSERT INTO sys_rate_limits (limit_key, window_started_at, failed_attempts) VALUES (?,?,?)'); $st->bind_param('ssi', $row['limit_key'], $row['window_started_at'], $row['failed_attempts']); $st->execute(); }
+    }
+    if (isset($dirHapus)) { foreach (glob($dirHapus . '/*') ?: [] as $p) { @unlink($p); } @rmdir($dirHapus); }
     $db->query("DELETE p FROM kkn_peserta p JOIN kkn_magang_pendaftaran k ON k.id=p.pendaftaran_id WHERE k.instansi_asal LIKE '{$tag}%'");
     $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '{$tag}%'");
     $db->query("DELETE FROM usr_users WHERE email LIKE '{$tag}_%@example.test'");
