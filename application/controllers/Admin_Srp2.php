@@ -244,6 +244,22 @@ class Admin_Srp2 extends Admin_Controller {
         // dan tidak ada tabel log lain yang menyimpannya. Roadmap T1b butir 4.
         if ($status !== 'Diterima') { $update['catatan_admin'] = $catatan; }
 
+        // Bentrok nama UNIQUE di direktori diperiksa SEBELUM transaksi: dulu baru ketahuan
+        // lewat galat INSERT, yang di lingkungan db_debug hidup tampil sebagai SQL mentah
+        // (HTTP 500) dan di production hanya ditebak lewat pesan umum (simulasi pengembang
+        // 27 Sep 2026).
+        if ($status === 'Diterima') {
+            $bentrok = $this->db->where('nama_perusahaan', $reg->nama_perusahaan)
+                ->where('id !=', (int) ($reg->certified_developer_id ?: 0))
+                ->count_all_results('srp2_certified_developers');
+            if ($bentrok > 0) {
+                $this->session->set_flashdata('error', 'Pengajuan belum bisa diterima: nama perusahaan "' . $reg->nama_perusahaan
+                    . '" sudah dipakai pengembang lain di direktori bersertifikat. Minta pemohon memperbaiki nama perusahaannya, atau rapikan baris direktori yang lama lebih dulu.');
+                redirect('Admin_Srp2/detail/' . (int) $id);
+                return;
+            }
+        }
+
         // SATU TRANSAKSI untuk seluruh keputusan. Sebelumnya tiga penulisan
         // berjalan lepas tanpa satu pun nilai balik diperiksa, sementara flash
         // sukses tetap disetel: nama bentrok UNIQUE di direktori membuat insert

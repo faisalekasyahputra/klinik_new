@@ -692,6 +692,13 @@ class Auth extends MY_Controller {
                     'npwp_ciphertext' => $npwp_encrypted,
                     'npwp_lookup_hash' => $npwp_hash,
                 ]);
+                // Alamat kantor yang diisi di onboarding ikut ke pengajuan (dulu hilang dari alur
+                // SRP2, simulasi pengembang 27 Sep 2026); isian pengajuan yang sudah ada tidak ditimpa.
+                if (($profile_data['alamat_kantor'] ?? '') !== '') {
+                    $this->db->where('id', $registration_id)
+                        ->group_start()->where('alamat_kantor IS NULL', NULL, FALSE)->or_where('alamat_kantor', '')->group_end()
+                        ->update('srp2_registrations', ['alamat_kantor' => $profile_data['alamat_kantor']]);
+                }
             }
         }
 
