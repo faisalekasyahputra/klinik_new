@@ -56,23 +56,6 @@
                 </div>
             </a>
 
-            <!-- Card 2: Publikasi Sosial Media Perumahan -->
-            <a href="<?=base_url('Pengembang/publikasi')?>" class="flex flex-col h-full group">
-                <div class="bg-[#0a1a1f] border border-white/10 group-hover:border-purple-500/60 flex-1 p-6 rounded-[24px] flex flex-col justify-between group-hover:-translate-y-1 transition-all duration-300 shadow-lg group-hover:shadow-[0_8px_30px_rgba(168,85,247,0.1)] backdrop-blur-md">
-                    <div class="flex items-start gap-4">
-                        <div class="text-purple-400 shrink-0 pt-0.5 group-hover:scale-110 group-hover:rotate-[-5deg] transition-transform duration-300">
-                            <i class="fa-solid fa-bullhorn text-[28px]"></i>
-                        </div>
-                        <div class="space-y-1.5 pt-1">
-                            <h4 class="text-white font-bold text-base tracking-tight group-hover:text-purple-400 transition-colors">Publikasi Sosial Media Perumahan</h4>
-                            <p class="text-zinc-400 text-xs leading-relaxed">Fasilitas pengajuan publikasi perumahan melalui kanal media sosial resmi.</p>
-                        </div>
-                    </div>
-                    <div class="flex justify-end pt-4 mt-auto">
-                        <i class="fa-solid fa-arrow-right text-xs text-zinc-600 group-hover:text-purple-400 group-hover:translate-x-1 transition-all duration-300"></i>
-                    </div>
-                </div>
-            </a>
 
 
 

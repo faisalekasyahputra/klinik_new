@@ -317,6 +317,13 @@ foreach (['Rekam_Data', 'KemitraanPortal'] as $path) {
 $menu = http('a', 'tab/pengembang');
 cek($menu['code'] === 200 && strpos($menu['body'], 'Daftar Pengembang Tersertifikasi') !== FALSE
     && strpos($menu['body'], 'Formulir Pendaftaran SRP2') !== FALSE, 'UAT pengembang 10: menu pilihan SRP2');
+/* Fitur publikasi dicabut di 9d0566b, tetapi dua tautannya tertinggal di
+   halaman publik dan membuka 404 (temuan simulasi 27 Sep 2026). */
+foreach (['pengembang', 'cari_rumah'] as $path) {
+    $hal = http('a', $path);
+    cek($hal['code'] === 200 && strpos($hal['body'], 'Pengembang/publikasi') === FALSE,
+        'Halaman /' . $path . ' tidak menaut ke rute Pengembang/publikasi yang sudah dicabut');
+}
 $menu = http('a', 'tab/bankdata');
 cek($menu['code'] === 200 && strpos($menu['body'], 'Buku Data') !== FALSE
     && strpos($menu['body'], 'dokumen-viewer-root') === FALSE, 'UAT pengembang 18: kategori sebelum flipbook');
