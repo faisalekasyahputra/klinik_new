@@ -295,6 +295,15 @@ class MY_Controller extends CI_Controller {
             && hash_equals((string) $row->active_session_hash, hash('sha256', $token));
         $session_id_valid = $row && ! empty($session_id) && ! empty($row->active_session_id_hash)
             && hash_equals((string) $row->active_session_id_hash, hash('sha256', $session_id));
+        // CodeIgniter mengganti ID sesi tiap sess_time_to_update (300 detik) dan MEMBAWA isi
+        // sesi, termasuk token. Token yang masih cocok membuktikan ini sesi yang sama, jadi
+        // hash ID diperbarui alih-alih mengeluarkan pengguna (dulu semua peran terlempar
+        // sekitar 5 menit sekali, 27 Sep 2026). Login di perangkat lain tetap ditendang
+        // karena tokennya berbeda.
+        if ($token_valid && ! $session_id_valid && ! empty($session_id)) {
+            $this->db->where('id', $id)->update('usr_users', ['active_session_id_hash' => hash('sha256', $session_id)]);
+            $session_id_valid = TRUE;
+        }
         if ( ! $token_valid || ! $session_id_valid) {
             $this->session->unset_userdata([
                 'is_logged', 'user_id', 'role', 'name', 'username', 'email', 'avatar',
