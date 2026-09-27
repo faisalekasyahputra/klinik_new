@@ -112,6 +112,19 @@ function srp2_label_asosiasi($kode, $kosong = '-') {
     return $daftar[$kode] ?? $kode;
 }
 
+/**
+ * Sertifikat pengembang di direktori publik BERLAKU? Satu rumus untuk
+ * Pengembang/sertifikasi dan Pengembang/profil: sebelum 27 Sep 2026 profil
+ * mencetak "Bersertifikat" tetap, sehingga baris yang di direktori "Tidak
+ * berlaku" tampil sah di profilnya. Tanpa tanggal akhir = Tidak berlaku
+ * (keputusan 23 Sep 2026, UAT #12/#13).
+ */
+function srp2_sertifikat_berlaku($row) {
+    $akhir = trim((string) ($row->sertifikat_berakhir ?? ''));
+    return in_array((string) ($row->status_sertifikasi ?? ''), ['Diterima', 'bersertifikat'], TRUE)
+        && $akhir !== '' && strtotime($akhir . ' 23:59:59') >= time();
+}
+
 function srp2_dokumen_persyaratan() {
     return [
         'form_1'  => 'Form 1 - Surat Permohonan SRP2',

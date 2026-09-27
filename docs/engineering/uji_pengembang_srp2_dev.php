@@ -671,6 +671,12 @@ http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
     'npwp' => $npwpA, 'kabupaten_id' => 0]);
 cek(strpos(http('adm', 'Admin_Srp2?q=' . urlencode($namaA))['body'], 'masa berlaku habis') !== FALSE,
     'Sertifikat yang habis kemarin ditandai non-aktif di layar');
+/* Profil publik memakai rumus yang SAMA dengan direktori (27 Sep 2026):
+   dulu badge "Bersertifikat" ditulis tetap, jadi sertifikat kedaluwarsa pun
+   tampil sah di profilnya. */
+$profilHabis = http('tamu_srp2', 'Pengembang/profil/' . (int) $barisA['id'])['body'];
+cek(strpos($profilHabis, 'Tidak berlaku') !== FALSE && strpos($profilHabis, 'Bersertifikat') === FALSE,
+    'Profil publik sertifikat kedaluwarsa berlabel Tidak berlaku, bukan Bersertifikat');
 
 http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
     'id' => (int) $barisA['id'], 'nama_perusahaan' => $namaA, 'status_aktif' => 1,
@@ -679,6 +685,9 @@ http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
 $layarAktif = http('adm', 'Admin_Srp2?q=' . urlencode($namaA))['body'];
 cek(strpos($layarAktif, 'masa berlaku habis') === FALSE,
     'Sertifikat yang masih berlaku TIDAK ditandai habis');
+$profilAktif = http('tamu_srp2', 'Pengembang/profil/' . (int) $barisA['id'])['body'];
+cek(strpos($profilAktif, 'Bersertifikat') !== FALSE && strpos($profilAktif, 'Tidak berlaku') === FALSE,
+    'Profil publik sertifikat yang masih berlaku berlabel Bersertifikat');
 
 /* Status di luar daftar ditolak, tidak diam-diam diabaikan. */
 http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
