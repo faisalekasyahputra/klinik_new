@@ -69,7 +69,9 @@ class Migration_Selaraskan_kolasi_asosiasi extends CI_Migration {
                  . ' CHARACTER SET ' . $acuan->CHARACTER_SET_NAME
                  . ' COLLATE ' . $acuan->COLLATION_NAME
                  . ($meta->IS_NULLABLE === 'YES' ? ' NULL' : ' NOT NULL')
-                 . ($meta->COLUMN_DEFAULT === NULL ? '' : ' DEFAULT ' . $this->db->escape($meta->COLUMN_DEFAULT))
+                 /* MariaDB menulis default NULL sebagai TEKS "NULL"; dikutip, ia
+                    menjadi string 'NULL' (diperbaiki migrasi 065). */
+                 . (in_array($meta->COLUMN_DEFAULT, [NULL, 'NULL'], TRUE) ? '' : ' DEFAULT ' . $this->db->escape($meta->COLUMN_DEFAULT))
                  . ($meta->COLUMN_COMMENT === '' ? '' : ' COMMENT ' . $this->db->escape($meta->COLUMN_COMMENT));
 
             /* db_debug mati di production: ALTER yang gagal dicatat, bukan

@@ -657,6 +657,18 @@ preg_match('/->select\(([^;]*?)\)\s*
 cek( ! empty($msel[1]) && stripos($msel[1], 'npwp') === FALSE,
     'Daftar SELECT profil publik TIDAK memuat satu pun kolom npwp');
 
+/* Baris direktori tanpa asosiasi harus SQL NULL, bukan kata "NULL": sampai
+   migrasi 065 default kolomnya string 'NULL' (akibat migrasi 051), jadi
+   pengajuan diterima tanpa asosiasi tampil "NULL" di direktori publik. */
+$GLOBALS['db']->begin_transaction();
+q("INSERT INTO srp2_certified_developers (nama_perusahaan, status_aktif) VALUES (?, 0)", ['UJI SRP2 Tanpa Asosiasi']);
+cek(nilai("SELECT asosiasi IS NULL FROM srp2_certified_developers WHERE nama_perusahaan = 'UJI SRP2 Tanpa Asosiasi'") == 1,
+    'Baris direktori tanpa asosiasi tersimpan SQL NULL, bukan teks NULL');
+$GLOBALS['db']->rollback();
+cek((int) nilai("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
+    AND COLUMN_NAME = 'asosiasi' AND COLUMN_DEFAULT = \"'NULL'\"") === 0,
+    'Tidak ada kolom asosiasi ber-default string NULL (migrasi 065)');
+
 /* Janji 2 - NPWP kembar ditolak. Dibaca dari JUMLAH BARIS, bukan pesan layar. */
 $sebelum = (int) nilai('SELECT COUNT(*) c FROM srp2_certified_developers');
 http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
