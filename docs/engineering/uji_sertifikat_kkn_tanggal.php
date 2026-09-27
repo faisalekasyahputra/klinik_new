@@ -58,7 +58,24 @@ try {
     $cek(strpos($b, "Peserta {$tag}") !== FALSE, 'Sesudah tanggal diisi: sertifikat bisa dicari dan nama peserta tampil');
     $pdf = $http($jp, 'KemitraanPortal/sertifikat_kkn_pdf');
     $cek(substr($pdf, 0, 4) === '%PDF', 'PDF sertifikat terbentuk');
+
+    // Salinan publik mengikuti alur migrasi 062: tidak lagi "terbit otomatis".
+    $hal = html_entity_decode($http($sesi(), 'KemitraanPortal/kkn'));
+    $cek(stripos($hal, 'terbit otomatis') === FALSE && stripos($hal, 'tanggal terbit') !== FALSE, 'Halaman KKN publik menyebut tanggal terbit dari admin, bukan "terbit otomatis"');
+    $cek(stripos((string) file_get_contents(dirname(__DIR__, 2) . '/application/views/pages/kemitraan_portal/kkn_dashboard.php'), 'Tematik') === FALSE, 'Formulir Tambah KKN universitas tidak lagi mencontohkan istilah "KKN Tematik"');
+
+    // Hapus pendaftaran ikut membuang SEMUA berkasnya, termasuk surat balasan.
+    $db->query("INSERT INTO kkn_magang_pendaftaran (user_id,jenis,instansi_asal,no_hp,divisi_atau_tema,periode_mulai,periode_selesai,status,file_surat_balasan,created_at) VALUES ({$adm},'kkn','{$tag} Hapus','081234567890','Tema Uji','2026-01-01','2026-02-01','Diterima','balasan_uji.pdf',NOW())");
+    $kkn3 = $db->insert_id;
+    $akar = strtr(trim($env['PRIVATE_UPLOADS_PATH'] ?? ''), [chr(92) => '/']);
+    $akar = $akar === '' ? dirname(__DIR__, 3) . '/private_uploads' : rtrim(preg_match('#^([A-Za-z]:/|/)#', $akar) ? $akar : dirname(__DIR__, 2) . '/' . ltrim($akar, '/'), '/');
+    $dirHapus = $akar . '/kemitraan/' . $kkn3;
+    @mkdir($dirHapus, 0775, TRUE); file_put_contents($dirHapus . '/balasan_uji.pdf', '%PDF-uji');
+    $http($ja, 'Admin_Kemitraan');
+    $http($ja, 'Admin_Kemitraan/hapus/' . $kkn3, ['csrf_kpkp_token' => $csrf($ja)]);
+    $cek((int) $db->query("SELECT COUNT(*) FROM kkn_magang_pendaftaran WHERE id={$kkn3}")->fetch_row()[0] === 0 && ! is_file($dirHapus . '/balasan_uji.pdf'), 'Hapus pendaftaran ikut menghapus surat balasan dari disk');
 } finally {
+    if (isset($dirHapus)) { @unlink($dirHapus . '/balasan_uji.pdf'); @rmdir($dirHapus); }
     $db->query("DELETE p FROM kkn_peserta p JOIN kkn_magang_pendaftaran k ON k.id=p.pendaftaran_id WHERE k.instansi_asal LIKE '{$tag}%'");
     $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '{$tag}%'");
     $db->query("DELETE FROM usr_users WHERE email LIKE '{$tag}_%@example.test'");

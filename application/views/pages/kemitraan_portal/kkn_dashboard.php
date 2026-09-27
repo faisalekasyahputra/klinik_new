@@ -118,7 +118,7 @@ $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
 
             <div>
                 <label for="kt-keterangan" class="<?= $label ?>">Keterangan</label>
-                <input id="kt-keterangan" name="keterangan" required maxlength="150" placeholder="Contoh: KKN Tematik Desa Sukamaju" class="<?= $isian ?>">
+                <input id="kt-keterangan" name="keterangan" required maxlength="150" placeholder="Contoh: KKN Kemitraan Desa Sukamaju" class="<?= $isian ?>">
             </div>
 
             <div>

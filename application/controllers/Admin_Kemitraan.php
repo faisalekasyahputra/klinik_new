@@ -505,7 +505,7 @@ class Admin_Kemitraan extends Admin_Controller {
         // private_uploads_dir() sudah berakhiran pemisah - sama seperti dipakai
         // serve_private_file(), jadi jangan tambahkan garis miring lagi.
         $dir = $this->private_upload_dir('kemitraan', (int) $row->id);
-        foreach ([$row->file_surat_pengantar, $row->file_proposal] as $berkas) {
+        foreach ([$row->file_surat_pengantar, $row->file_proposal, $row->file_surat_balasan] as $berkas) {
             if (empty($berkas)) { continue; }
             $path = $dir . basename((string) $berkas);
             if (is_file($path)) { @unlink($path); }
