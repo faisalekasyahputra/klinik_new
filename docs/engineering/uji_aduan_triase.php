@@ -285,6 +285,13 @@ cek(bidang_aduan($id1) === NULL, 'Bidangnya NULL - masuk antrean triase');
 cek(status_aduan($id1) === 'Baru', 'Statusnya Baru');
 cek(stripos($r1['body'], 'diarahkan ke') === FALSE,
     'Pesan sukses tidak lagi menjanjikan bidang tujuan');
+// Pesan validasi berbahasa Indonesia (UAT pengembang 27 Sep 2026: dulu "The Nama field is required.").
+$r_kosong = http('warga', 'umum/simpan_aduan', ['csrf_kpkp_token' => csrf('warga', 'umum/aduan'), 'nama' => '',
+    'email' => 'pelapor_' . CAP . '@example.test', 'judul' => 'Uji nama kosong ' . CAP, 'pesan' => 'Isi uji nama kosong']);
+$id_kosong = (int) nilai('SELECT id FROM aduan WHERE judul=? LIMIT 1', ['Uji nama kosong ' . CAP]);
+if ($id_kosong) { $GLOBALS['aduan'][] = $id_kosong; }
+cek($id_kosong === 0 && strpos($r_kosong['body'], 'Nama wajib diisi.') !== FALSE && stripos($r_kosong['body'], 'field is required') === FALSE,
+    'Nama kosong ditolak dengan pesan berbahasa Indonesia');
 
 // ------------------------------------------------ 3. GERBANG DI SERVER
 echo "\n== 3. `bidang` dari POST DIABAIKAN, bukan cuma dihapus dari formulir ==\n";
