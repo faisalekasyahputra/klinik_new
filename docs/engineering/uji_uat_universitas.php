@@ -195,6 +195,51 @@ try {
     $scan = (new Upload_scanner(['clamd' => '']))->scan($bom, 'xlsx');
     $cek(empty($scan['ok']) && stripos($scan['message'] ?? '', 'makro') === FALSE, 'Bom zip ditolak dengan pesan yang bukan tentang makro (' . ($scan['code'] ?? '?') . ')');
 
+    // === KELOMPOK 5: sertifikat dan keputusan admin ===
+    echo "\n-- Sertifikat dan keputusan admin (U5, U7) --\n";
+    [, $hal] = $cari('21.11.1234');
+    $cek(strpos($hal, 'NIM tidak valid') === FALSE && strpos($hal, 'belum dapat diterbitkan') !== FALSE, 'Pencarian sertifikat memakai aturan NIM yang sama dengan roster: 21.11.1234 menemukan baris 21111234');
+    $nimS = 'U5' . strtoupper(bin2hex(random_bytes(4)));
+    $sert = $kkn($idB, '2026-01-01', '2026-02-01', 'Diterima', "tanggal_sertifikat='2026-03-01'");
+    $peserta($sert, $nimS, "Nama Sesi {$tag}");
+    [$jT, $hal] = $cari($nimS);
+    $cek(strpos($hal, "Nama Sesi {$tag}") !== FALSE, 'Tamu menemukan sertifikat yang sah');
+    $db->query("UPDATE kkn_magang_pendaftaran SET tanggal_sertifikat=NULL WHERE id={$sert}");
+    $cek(substr($http($jT, 'KemitraanPortal/sertifikat_kkn_pdf')[1], 0, 4) !== '%PDF', 'Sesudah tanggal ditarik, PDF tidak terbit lagi dari sesi lama');
+    $cek(strpos($http($jT, 'KemitraanPortal/cetak_sertifikat_kkn')[1], '<embed src=') === FALSE,'Sesudah tanggal ditarik, halaman cetak tidak menampilkan sertifikat dari sesi lama');
+
+    $hari = date('Y-m-d');
+    $nimH = 'U5H' . strtoupper(bin2hex(random_bytes(3)));
+    $hini = $kkn($idB, '2026-01-01', $hari, 'Diterima', "tanggal_sertifikat='2026-03-01'");
+    $peserta($hini, $nimH, 'Peserta Hari Ini');
+    [, $hal] = $cari($nimH);
+    $cek(strpos($hal, 'dapat dicetak mulai ' . $tgl(date('Y-m-d', strtotime('+1 day')))) !== FALSE, 'Pesan "dapat dicetak mulai" menyebut hari pertama cetak benar-benar bisa (besok)');
+
+    $depan = $kkn($idB, '2098-10-01', '2098-12-31', 'Diterima');
+    [, $hal] = $kirim($jAdm, 'Admin_Kemitraan/tanggal_sertifikat/' . $depan, ['tanggal_sertifikat' => '2098-10-15']);
+    $cek(stripos($hal, 'sudah bisa mencetak') === FALSE && strpos($hal, $tgl('2099-01-01')) !== FALSE, 'Flash admin untuk tanggal sebelum periode selesai menyebut kapan peserta bisa mencetak');
+
+    $nimY = 'U7' . strtoupper(bin2hex(random_bytes(4)));
+    $sah = $kkn($idB, '2026-08-01', '2026-09-01', 'Diterima', "tanggal_sertifikat='2026-09-10'");
+    $peserta($sah, $nimY, "Mahasiswa Sah {$tag}");
+    $bayang = $kkn($idA, '2098-01-01', '2098-10-31', 'Diajukan');
+    $peserta($bayang, $nimY, 'Pembayang');
+    $bayang2 = $kkn($idA, '2098-01-01', '2098-11-30', 'Dibatalkan');
+    $peserta($bayang2, $nimY, 'Pembayang Batal');
+    [, $hal] = $cari($nimY);
+    $cek(strpos($hal, "Mahasiswa Sah {$tag}") !== FALSE, 'Roster universitas lain (Diajukan/Dibatalkan) tidak membayangi sertifikat sah');
+
+    $bls = $kkn($idA, '2026-01-01', '2026-02-01', 'Diterima');
+    $http($jAdm, 'Admin_Kemitraan/ubah/' . $bls);
+    [, $hal] = $kirim($jAdm, 'Admin_Kemitraan/unggah_balasan/' . $bls, ['file_surat_balasan' => $pdf()]);
+    $cek(strpos($hal, 'Surat balasan diunggah') !== FALSE && strpos($hal, 'Mahasiswa sudah bisa') === FALSE, 'Flash surat balasan KKN tidak menyebut "Mahasiswa"');
+    $cek((int) $nilai("SELECT COUNT(*) FROM sys_jejak_audit WHERE objek_tipe='kkn_magang_pendaftaran' AND objek_id='{$bls}' AND aksi='kemitraan_balasan'") === 1, 'Unggah surat balasan tercatat di jejak audit');
+    $kirim($jAdm, 'Admin_Kemitraan/proses/' . $bls, ['status' => 'Ditolak', 'catatan_admin' => "Alasan {$tag}"]);
+    $kirim($jAdm, 'Admin_Kemitraan/proses/' . $bls, ['status' => 'Diterima', 'catatan_admin' => '']);
+    $cek((int) $nilai("SELECT COUNT(*) FROM sys_jejak_audit WHERE objek_tipe='kkn_magang_pendaftaran' AND objek_id='{$bls}' AND aksi='kemitraan_keputusan'") === 2
+        && (int) $nilai("SELECT COUNT(*) FROM sys_jejak_audit WHERE objek_id='{$bls}' AND aksi='kemitraan_keputusan' AND detail_json LIKE '%\"catatan_lama\":\"Alasan {$tag}\"%' AND detail_json LIKE '%\"status_baru\":\"Diterima\"%'") === 1,
+        'Keputusan admin tercatat di audit, termasuk alasan penolakan yang ditimpa');
+
 } finally {
     foreach ($ember as $k => $row) {
         $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");

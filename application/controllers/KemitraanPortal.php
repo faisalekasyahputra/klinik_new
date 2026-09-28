@@ -452,58 +452,34 @@ class KemitraanPortal extends Public_Controller
             return;
         }
 
-        $nim = trim((string) $this->input->post('nim', TRUE));
-        if ($nim === '' || ! preg_match('/^[A-Za-z0-9]{1,30}$/', $nim)) {
+        // Aturan format NIM yang SAMA dengan unggah roster (Kkn_peserta_import): pemisah
+        // titik/strip/spasi dibuang dulu, sisanya wajib huruf/angka.
+        $this->load->library('kkn_peserta_import');
+        $nim = Kkn_peserta_import::normalkan_nim($this->input->post('nim', TRUE));
+        if ( ! Kkn_peserta_import::nim_sah($nim)) {
             $this->session->set_flashdata('error', 'NIM tidak valid. Periksa kembali dan coba lagi.');
             redirect('KemitraanPortal/sertifikat_kkn');
             return;
         }
 
-        /* Baris TERBARU saja (ORDER BY periode_selesai DESC LIMIT 1) - kasus
-           satu NIM ikut KKN lebih dari sekali memang mungkin (KKN periode
-           berulang tiap tahun), dan yang paling relevan untuk dicetak
-           adalah keikutsertaan yang paling akhir. */
-        $baris = $this->db
-            ->select('kkn_peserta.id AS id_peserta, kkn_peserta.nama AS nama_peserta, kkn_peserta.nim,
-                kkn_magang_pendaftaran.instansi_asal, kkn_magang_pendaftaran.divisi_atau_tema,
-                kkn_magang_pendaftaran.periode_mulai, kkn_magang_pendaftaran.periode_selesai,
-                kkn_magang_pendaftaran.status, kkn_magang_pendaftaran.tanggal_sertifikat')
-            ->from('kkn_peserta')
-            ->join('kkn_magang_pendaftaran', 'kkn_magang_pendaftaran.id = kkn_peserta.pendaftaran_id')
+        /* Kalau satu NIM ada di beberapa roster (KKN berulang, atau universitas lain yang
+           salah ketik/sengaja memasukkan NIM yang sama), keikutsertaan yang SAH didahulukan:
+           Diterima dengan tanggal sertifikat, lalu Diterima, baru sisanya; di dalamnya yang
+           periodenya paling akhir. Dulu hanya periode terbaru yang dipakai, apa pun status dan
+           pemiliknya, sehingga roster Diajukan/Dibatalkan milik universitas lain membayangi
+           sertifikat sah (temuan UAT U7, 28 Sep 2026). */
+        $baris = $this->kueri_sertifikat_kkn()
             ->where(['kkn_peserta.nim' => $nim, 'kkn_magang_pendaftaran.jenis' => 'kkn'])
+            ->order_by("(kkn_magang_pendaftaran.status = 'Diterima' AND kkn_magang_pendaftaran.tanggal_sertifikat IS NOT NULL)", 'DESC', FALSE)
+            ->order_by("(kkn_magang_pendaftaran.status = 'Diterima')", 'DESC', FALSE)
             ->order_by('kkn_magang_pendaftaran.periode_selesai', 'DESC')
             ->limit(1)
             ->get()->row();
 
-        $tolak = function ($pesan) {
-            $this->session->set_flashdata('error', $pesan);
+        $alasan = $this->alasan_sertifikat_terkunci($baris);
+        if ($alasan !== NULL) {
+            $this->session->set_flashdata('error', $alasan);
             redirect('KemitraanPortal/sertifikat_kkn');
-        };
-
-        // Pesan GAGAL sengaja generik dan TIDAK menyebut nama/universitas -
-        // lihat catatan anti-enumerasi di kepala berkas ini.
-        if ( ! $baris) {
-            $tolak('NIM tidak ditemukan dalam data peserta KKN.');
-            return;
-        }
-        if ($baris->status !== 'Diterima') {
-            $tolak('Sertifikat belum dapat diterbitkan untuk NIM ini.');
-            return;
-        }
-        if (empty($baris->periode_selesai) || strtotime($baris->periode_selesai) >= strtotime('today')) {
-            // Tanggal selesai BOLEH disebutkan di sini - berbeda dari dua
-            // kegagalan di atas, cabang ini sudah memastikan NIM tsb memang
-            // pemilik pendaftaran yang diterima, jadi memberi tahu kapan
-            // sertifikatnya bisa dicetak adalah informasi yang MEMANG untuk
-            // pemilik NIM itu, bukan bocoran ke penebak.
-            $tolak('KKN Anda belum melewati periode pelaksanaan. Sertifikat dapat dicetak mulai '
-                . tgl_id($baris->periode_selesai) . '.');
-            return;
-        }
-        // Daftar revisi dinas 23 Sep 2026: sertifikat baru bisa dicetak setelah admin menetapkan
-        // tanggal terbitnya (migrasi 062). Pesan boleh spesifik: NIM ini sudah terbukti diterima.
-        if (empty($baris->tanggal_sertifikat)) {
-            $tolak('Sertifikat KKN Anda sedang disiapkan. Tanggal terbit belum ditetapkan admin Disperakim; silakan cek kembali nanti.');
             return;
         }
 
@@ -524,12 +500,77 @@ class KemitraanPortal extends Public_Controller
         ]);
     }
 
+    /** Kolom sertifikat KKN; dipakai pencarian NIM dan pemeriksaan ulang saat cetak. */
+    private function kueri_sertifikat_kkn()
+    {
+        return $this->db
+            ->select('kkn_peserta.id AS id_peserta, kkn_peserta.nama AS nama_peserta, kkn_peserta.nim,
+                kkn_magang_pendaftaran.instansi_asal, kkn_magang_pendaftaran.divisi_atau_tema,
+                kkn_magang_pendaftaran.periode_mulai, kkn_magang_pendaftaran.periode_selesai,
+                kkn_magang_pendaftaran.status, kkn_magang_pendaftaran.tanggal_sertifikat')
+            ->from('kkn_peserta')
+            ->join('kkn_magang_pendaftaran', 'kkn_magang_pendaftaran.id = kkn_peserta.pendaftaran_id');
+    }
+
+    /**
+     * NULL kalau sertifikat untuk baris ini boleh dicetak, selain itu pesan penolakannya.
+     * Satu tempat untuk pencarian dan cetak, supaya "boleh dicetak" berarti hal yang sama.
+     */
+    private function alasan_sertifikat_terkunci($baris)
+    {
+        // Pesan GAGAL sengaja generik dan TIDAK menyebut nama/universitas -
+        // lihat catatan anti-enumerasi di kepala berkas ini.
+        if ( ! $baris) {
+            return 'NIM tidak ditemukan dalam data peserta KKN.';
+        }
+        if ($baris->status !== 'Diterima') {
+            return 'Sertifikat belum dapat diterbitkan untuk NIM ini.';
+        }
+        if (empty($baris->periode_selesai) || strtotime($baris->periode_selesai) >= strtotime('today')) {
+            // Tanggal BOLEH disebutkan di sini - cabang ini sudah memastikan NIM tsb memang
+            // pemilik pendaftaran yang diterima. Yang disebut hari PERTAMA cetak benar-benar
+            // bisa (sehari sesudah periode selesai), bukan periode_selesai itu sendiri yang
+            // pada harinya masih ditolak (temuan UAT U5).
+            return 'KKN Anda belum melewati periode pelaksanaan. Sertifikat dapat dicetak mulai '
+                . tgl_id(date('Y-m-d', strtotime($baris->periode_selesai . ' +1 day'))) . '.';
+        }
+        // Daftar revisi dinas 23 Sep 2026: sertifikat baru bisa dicetak setelah admin menetapkan
+        // tanggal terbitnya (migrasi 062). Pesan boleh spesifik: NIM ini sudah terbukti diterima.
+        if (empty($baris->tanggal_sertifikat)) {
+            return 'Sertifikat KKN Anda sedang disiapkan. Tanggal terbit belum ditetapkan admin Disperakim; silakan cek kembali nanti.';
+        }
+        return NULL;
+    }
+
+    /**
+     * Data sertifikat untuk tab cetak dan PDF, DIPERIKSA ULANG ke DB. Sesi hanya menunjuk
+     * peserta mana (id_peserta); status, tanggal sertifikat, periode, dan keberadaan peserta
+     * dibaca lagi, jadi sertifikat yang ditarik admin (tanggal dikosongkan, status diubah,
+     * peserta dihapus dari roster) langsung terkunci juga bagi sesi yang sudah mencarinya
+     * (temuan UAT U5, 28 Sep 2026).
+     *
+     * @return object|NULL
+     */
+    private function sertifikat_dari_sesi()
+    {
+        $sesi = $this->session->userdata('sertifikat_kkn_cetak');
+        if (empty($sesi['id_peserta'])) { return NULL; }
+        $baris = $this->kueri_sertifikat_kkn()
+            ->where(['kkn_peserta.id' => (int) $sesi['id_peserta'], 'kkn_magang_pendaftaran.jenis' => 'kkn'])
+            ->get()->row();
+        if ($this->alasan_sertifikat_terkunci($baris) !== NULL) {
+            $this->session->unset_userdata('sertifikat_kkn_cetak');
+            return NULL;
+        }
+        return $baris;
+    }
+
     /**
      * Tab cetak terpisah - permintaan user 22 Agt 2026 ("buat tombol cetak
      * mengarah ke tab baru"). Sengaja TIDAK menyunting apa pun sendiri: baca
-     * saja dari sesi yang sudah ditulis cek_sertifikat_kkn() SETELAH lolos
-     * seluruh pemeriksaan (NIM cocok, status Diterima, periode sudah lewat)
-     * - method ini tidak menjalankan pemeriksaan itu lagi.
+     * saja peserta yang ditunjuk sesi dari cek_sertifikat_kkn(), lalu seluruh
+     * pemeriksaannya dijalankan ULANG ke DB lewat sertifikat_dari_sesi() supaya
+     * sertifikat yang ditarik admin tidak tetap tercetak dari sesi lama.
      *
      * Dirender lewat load->view() LANGSUNG, bukan render() - halaman cetak
      * ini sengaja polos (tanpa navbar/sidebar portal), karena tab baru ini
@@ -537,8 +578,8 @@ class KemitraanPortal extends Public_Controller
      */
     public function cetak_sertifikat_kkn()
     {
-        $data = $this->session->userdata('sertifikat_kkn_cetak');
-        if (empty($data)) {
+        $data = $this->sertifikat_dari_sesi();
+        if ( ! $data) {
             $this->session->set_flashdata('error', 'Tidak ada data sertifikat untuk dicetak. Cari NIM Anda terlebih dahulu.');
             redirect('KemitraanPortal/sertifikat_kkn');
             return;
@@ -546,7 +587,7 @@ class KemitraanPortal extends Public_Controller
 
         $this->load->view('pages/kemitraan_portal/cetak_sertifikat_kkn', [
             'judul' => 'Cetak Sertifikat KKN',
-            'data'  => (object) $data,
+            'data'  => $data,
         ]);
     }
 
@@ -555,8 +596,8 @@ class KemitraanPortal extends Public_Controller
      * embed pdf", lalu "ganti isi pdf nya dengan file jpg itu"). Satu
      * halaman, dibangun FPDF di atas TEMPLATE RESMI dinas
      * (assets/img/template_sertifikat_kkn.jpg, disimpan user 22 Agt 2026)
-     * dari sesi yang SAMA dengan cetak_sertifikat_kkn() - guard identik,
-     * TIDAK memeriksa NIM ulang di sini.
+     * dari sesi yang SAMA dengan cetak_sertifikat_kkn() - guard identik
+     * (sertifikat_dari_sesi(), diperiksa ulang ke DB).
      *
      * KOORDINAT PLACEHOLDER DIUKUR MANUAL dari piksel templatenya (1753x1240,
      * rasio A4 lanskap persis - ~5.904 px/mm), BUKAN ditebak: setiap kotak
@@ -583,9 +624,8 @@ class KemitraanPortal extends Public_Controller
            dan idempoten (PHP tidak mendefinisikan ulang kelas yang sudah ada). */
         require_once FCPATH . 'vendor/setasign/fpdf/fpdf.php';
 
-        $data = $this->session->userdata('sertifikat_kkn_cetak');
-        if (empty($data)) { show_404(); return; }
-        $data = (object) $data;
+        $data = $this->sertifikat_dari_sesi();
+        if ( ! $data) { show_404(); return; }
 
         $template = FCPATH . 'assets/img/template_sertifikat_kkn.jpg';
         if ( ! is_file($template)) {

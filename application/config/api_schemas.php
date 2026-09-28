@@ -143,7 +143,10 @@ $config['api_schemas'] = [
         'class' => 'api',
         'invalid' => ['redirect' => 'KemitraanPortal/sertifikat_kkn', 'flash' => 'NIM tidak valid. Periksa kembali dan coba lagi.'],
         'methods' => [
-            'POST' => ['fields' => ['nim' => ['type' => 'string', 'required' => TRUE, 'min_len' => 1, 'max_len' => 30, 'pattern' => '/^[A-Za-z0-9]+$/D']]],
+            // Titik, tanda hubung, dan spasi hanya pemisah NIM (mis. 21.11.1234); handler
+            // membuangnya lewat Kkn_peserta_import::normalkan_nim() lalu menuntut 1-30 huruf/angka,
+            // aturan yang sama dengan unggah roster (temuan UAT U4/U5).
+            'POST' => ['fields' => ['nim' => ['type' => 'string', 'required' => TRUE, 'min_len' => 1, 'max_len' => 40, 'pattern' => '/^[A-Za-z0-9][A-Za-z0-9. \-]*$/D']]],
             'GET'  => ['unknown' => 'ignore', 'fields' => []],   // handler mengalihkan GET kembali ke formulir
         ],
     ],

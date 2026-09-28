@@ -190,7 +190,12 @@ class Admin_Kemitraan extends Admin_Controller {
         $this->db->where('id', (int) $row->id)
             ->update('kkn_magang_pendaftaran', ['file_surat_balasan' => $nama_berkas]);
 
-        $this->session->set_flashdata('success', 'Surat balasan diunggah. Mahasiswa sudah bisa mengunduhnya.');
+        $this->catat_audit('kemitraan_balasan', 'Mengunggah surat balasan ' . strtoupper($row->jenis) . ' ' . $row->instansi_asal,
+            'kkn_magang_pendaftaran', (string) $row->id, ['berkas' => $nama_berkas, 'menggantikan' => $row->file_surat_balasan ?: NULL]);
+
+        // Pemohon KKN adalah akun universitas, Magang akun mahasiswa (temuan UAT U7).
+        $this->session->set_flashdata('success', 'Surat balasan diunggah. '
+            . ($row->jenis === 'kkn' ? 'Universitas' : 'Mahasiswa') . ' sudah bisa mengunduhnya.');
         redirect('Admin_Kemitraan/ubah/' . (int) $row->id);
     }
 
@@ -547,7 +552,13 @@ class Admin_Kemitraan extends Admin_Controller {
         $this->db->where('id', (int) $row->id)->update('kkn_magang_pendaftaran', ['tanggal_sertifikat' => $tgl === '' ? NULL : $tgl]);
         $this->catat_audit('sertifikat_kkn_tanggal', ($tgl === '' ? 'Menarik tanggal sertifikat KKN ' : 'Menetapkan tanggal sertifikat KKN ' . $tgl . ' untuk ') . $row->instansi_asal,
             'kkn_magang_pendaftaran', (string) $row->id, ['tanggal_sertifikat' => $tgl === '' ? NULL : $tgl]);
-        $this->session->set_flashdata('success', $tgl === '' ? 'Tanggal sertifikat ditarik; sertifikat terkunci kembali.' : 'Tanggal sertifikat ditetapkan. Peserta sudah bisa mencetak sertifikat.');
+        // Peserta baru bisa mencetak sesudah periode KKN selesai (KemitraanPortal::cek_sertifikat_kkn),
+        // jadi flash tidak boleh menjanjikan "sudah bisa" sebelum itu (temuan UAT U5).
+        $mulai_cetak = date('Y-m-d', strtotime($row->periode_selesai . ' +1 day'));
+        $this->session->set_flashdata('success', $tgl === '' ? 'Tanggal sertifikat ditarik; sertifikat terkunci kembali.'
+            : ($mulai_cetak > date('Y-m-d')
+                ? 'Tanggal sertifikat ditetapkan. Peserta bisa mencetak mulai ' . tgl_id($mulai_cetak) . ', sesudah periode KKN selesai.'
+                : 'Tanggal sertifikat ditetapkan. Peserta sudah bisa mencetak sertifikat.'));
         redirect('Admin_Kemitraan');
     }
 
@@ -601,6 +612,14 @@ class Admin_Kemitraan extends Admin_Controller {
             'reviewed_by'   => $this->get_user_id(),
             'reviewed_at'   => date('Y-m-d H:i:s'),
         ]);
+
+        // Keputusan admin dicatat beserta keadaan sebelumnya: catatan_admin ditimpa setiap kali
+        // keputusan diubah, jadi tanpa ini alasan penolakan lama hilang (temuan UAT U5).
+        $this->catat_audit('kemitraan_keputusan', 'Keputusan ' . strtoupper($row->jenis) . ' ' . $row->instansi_asal . ': ' . $row->status . ' -> ' . $status,
+            'kkn_magang_pendaftaran', (string) $row->id, [
+                'status_lama' => $row->status, 'status_baru' => $status,
+                'catatan_lama' => $row->catatan_admin, 'catatan_baru' => trim((string) $this->input->post('catatan_admin', TRUE)),
+            ]);
 
         if ($status === 'Ditinjau Bidang') {
             $this->notify_admin_push([

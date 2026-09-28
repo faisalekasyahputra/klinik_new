@@ -130,6 +130,7 @@ foreach ([['segments' => ['abc']], ['segments' => ['0']], ['segments' => []], ['
 check(count($SKEMA['pengembang/simpan_dokumen']['methods']['POST']['files']) === 2 && $SKEMA['pengembang/simpan_dokumen']['methods']['POST']['files']['max'] >= 14, 'Batas kolom berkas mencakup 14 dokumen SRP2');
 
 check(ok(v('kemitraanportal/cek_sertifikat_kkn', ['post' => ['nim' => 'A12345'], 'ajax' => FALSE])) && ! ok(v('kemitraanportal/cek_sertifikat_kkn', ['post' => ['nim' => 'A12/45'], 'ajax' => FALSE])), 'Pencarian sertifikat: NIM alfanumerik');
+check(ok(v('kemitraanportal/cek_sertifikat_kkn', ['post' => ['nim' => '21.11.1234'], 'ajax' => FALSE])) && ! ok(v('kemitraanportal/cek_sertifikat_kkn', ['post' => ['nim' => '.2111'], 'ajax' => FALSE])), 'Pencarian sertifikat: pemisah titik/strip dalam NIM sampai ke handler (dinormalkan di sana, sama dengan roster)');
 check(ok(v('kemitraanportal/cek_sertifikat_kkn', ['method' => 'GET', 'ajax' => FALSE])), 'GET ke pencarian sertifikat tetap sampai ke handler (dialihkan ke formulir)');
 check(isset($SKEMA['kemitraanportal/cek_sertifikat_kkn']['invalid']['redirect']), 'Formulir peramban punya pengalihan sendiri saat isian ditolak');
 
