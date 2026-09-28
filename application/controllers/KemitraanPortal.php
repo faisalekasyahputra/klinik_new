@@ -245,6 +245,7 @@ class KemitraanPortal extends Public_Controller
         $row = $this->pendaftaran_milik($id);
         if ( ! $row) { return; }
         if ($row->jenis !== 'kkn') { show_404(); }
+        if ( ! $this->kkn_masih_terbuka($row)) { return; }
 
         if (empty($_FILES['file_peserta']['name'])) {
             $this->session->set_flashdata('error', 'Pilih berkas daftar peserta terlebih dahulu.');
@@ -341,13 +342,14 @@ class KemitraanPortal extends Public_Controller
         $row = $this->pendaftaran_milik($id);
         if ( ! $row) { return; }
         if ($row->jenis !== 'kkn') { show_404(); }
+        if ( ! $this->kkn_masih_terbuka($row)) { return; }
 
         $kembali = 'KemitraanPortal/pendaftaran/' . (int) $row->id;
         $url = trim((string) $this->input->post('link_dokumentasi', TRUE));
         if ($url !== '') {
             $skema = strtolower((string) parse_url($url, PHP_URL_SCHEME));
             if (strlen($url) > 500 || ! filter_var($url, FILTER_VALIDATE_URL) || ! in_array($skema, ['http', 'https'], TRUE)) {
-                $this->session->set_flashdata('error', 'Link dokumentasi harus alamat web lengkap yang diawali https:// (maksimal 500 karakter).');
+                $this->session->set_flashdata('error', 'Link dokumentasi harus alamat web lengkap yang diawali http:// atau https:// (maksimal 500 karakter).');
                 redirect($kembali);
                 return;
             }
@@ -364,6 +366,7 @@ class KemitraanPortal extends Public_Controller
         $row = $this->pendaftaran_milik($id);
         if ( ! $row) { return; }
         if ($row->jenis !== 'kkn') { show_404(); }
+        if ( ! $this->kkn_masih_terbuka($row)) { return; }
 
         if (empty($row->periode_selesai) || strtotime($row->periode_selesai) >= strtotime('today')) {
             $this->session->set_flashdata('error', 'Laporan akhir baru bisa diunggah setelah periode KKN berakhir.');
@@ -380,6 +383,13 @@ class KemitraanPortal extends Public_Controller
         }
 
         $this->db->where('id', $row->id)->update('kkn_magang_pendaftaran', ['file_laporan_akhir' => $nama_berkas]);
+        // Laporan lama DIGANTI, bukan ditumpuk: berkas lamanya dibuang supaya tidak tertinggal
+        // tanpa rujukan dan memakan kuota unggahan akun (temuan UAT U6). Buku kuota dihitung
+        // dari keadaan disk, jadi penandanya ikut lepas. Pola sama dengan unggah_balasan admin.
+        if ( ! empty($row->file_laporan_akhir) && $row->file_laporan_akhir !== $nama_berkas) {
+            $lama = $this->private_upload_dir('kemitraan', (int) $row->id) . basename($row->file_laporan_akhir);
+            if (is_file($lama)) { @unlink($lama); }
+        }
         $this->session->set_flashdata('success', 'Laporan akhir berhasil diunggah.');
         redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
     }
@@ -1488,6 +1498,20 @@ class KemitraanPortal extends Public_Controller
             return FALSE;
         }
         return TRUE;
+    }
+
+    /**
+     * KKN yang sudah Dibatalkan atau Ditolak bersifat baca saja: roster, link dokumentasi,
+     * dan laporan akhir tidak bisa diubah lagi (temuan UAT universitas U3/U4/U6, 28 Sep 2026).
+     * Dipakai ketiga endpoint tulis KKN; view kkn_batch.php menyembunyikan formulirnya
+     * dengan syarat yang sama.
+     */
+    private function kkn_masih_terbuka($row)
+    {
+        if ( ! in_array($row->status, ['Dibatalkan', 'Ditolak'], TRUE)) { return TRUE; }
+        $this->session->set_flashdata('error', 'KKN yang sudah ' . strtolower($row->status) . ' tidak bisa diubah lagi.');
+        redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
+        return FALSE;
     }
 
     /** Gerbang KKN - HANYA akun universitas. Dipakai kkn_dashboard()/kkn_tambah(). */

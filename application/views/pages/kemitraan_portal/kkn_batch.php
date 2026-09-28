@@ -41,6 +41,9 @@ $tahap = [
     ['judul' => 'Surat Balasan',             'ket' => 'Surat resmi siap diunduh'],
 ];
 $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
+// KKN yang berhenti bersifat baca saja; server menolak dengan syarat yang sama
+// (KemitraanPortal::kkn_masih_terbuka()).
+$terbuka = ! $berhenti;
 ?>
 <div class="relative z-10 max-w-3xl">
 
@@ -164,6 +167,9 @@ $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
             </div>
         </div>
 
+        <?php if ( ! $terbuka): ?>
+        <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted">KKN yang sudah <?= strtolower(html_escape($row->status)) ?> tidak bisa diubah lagi: roster, link dokumentasi, dan laporan akhir hanya bisa dilihat.</p>
+        <?php else: ?>
         <form method="POST" action="<?= base_url('KemitraanPortal/kkn_upload_peserta/' . (int) $row->id) ?>"
               enctype="multipart/form-data" class="mt-4 flex flex-wrap items-end gap-3">
             <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
@@ -243,6 +249,7 @@ $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
                 <i class="ph ph-upload-simple"></i> Unggah
             </button>
         </form>
+        <?php endif; ?>
 
         <?php if ($peserta): ?>
         <div class="mt-5 overflow-x-auto rounded-xl border border-gray-200 dark:border-white/10">
@@ -283,6 +290,7 @@ $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
                 <a href="<?= html_escape($row->link_dokumentasi) ?>" target="_blank" rel="noopener noreferrer" class="font-semibold text-brand-primary hover:underline"><?= html_escape($row->link_dokumentasi) ?></a>
             </p>
         <?php endif; ?>
+        <?php if ($terbuka): ?>
         <form method="POST" action="<?= base_url('KemitraanPortal/kkn_simpan_dokumentasi/' . (int) $row->id) ?>" class="mt-3 flex flex-wrap items-end gap-3">
             <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
             <div class="flex-1 min-w-[220px]">
@@ -296,12 +304,17 @@ $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
                 <i class="ph ph-floppy-disk"></i> Simpan Link
             </button>
         </form>
+        <?php endif; ?>
     </div>
 
     <div class="<?= $kotak ?> mb-4">
         <div class="<?= $label ?>">Laporan Akhir KKN</div>
 
-        <?php if ( ! $periode_lewat): ?>
+        <?php if ( ! $terbuka): ?>
+            <p class="mt-2 text-sm text-gray-500 dark:text-brand-muted">
+                <?= ! empty($row->file_laporan_akhir) ? 'Laporan akhir sudah terunggah.' : 'Tidak ada laporan akhir.' ?>
+            </p>
+        <?php elseif ( ! $periode_lewat): ?>
             <p class="mt-2 text-sm text-gray-500 dark:text-brand-muted">
                 <i class="ph ph-lock-simple" aria-hidden="true"></i>
                 Bisa diunggah setelah periode KKN berakhir<?= $row->periode_selesai ? ' (' . tgl_id($row->periode_selesai) . ')' : '' ?>.

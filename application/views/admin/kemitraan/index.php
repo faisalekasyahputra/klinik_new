@@ -91,6 +91,9 @@ $filter_html = ob_get_clean();
                         } elseif ($r->jenis === 'kkn') {
                             $dokumen['surat']    = ['Surat permohonan mitra', $r->file_surat_pengantar ?? NULL];
                             $dokumen['simperum'] = ['Surat permohonan SIMPERUM', $r->file_surat_simperum ?? NULL];
+                            // Laporan akhir (migrasi 050) dinilai admin sebelum mengisi tanggal
+                            // sertifikat; tanpa tautan ini hanya bisa dibuka lewat URL ketikan.
+                            $dokumen['laporan']  = ['Laporan akhir', $r->file_laporan_akhir ?? NULL];
                         }
                         ?>
                         <?php foreach ($dokumen as $kunci => $d): ?>

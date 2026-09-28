@@ -150,6 +150,32 @@ try {
     $cek($jml() === $awal + 1, 'Pengajuan KKN identik (periode + keterangan) yang masih berjalan tidak membuat baris kedua');
     $cek(stripos($hal, 'sudah diajukan') !== FALSE, 'Pengajuan ganda diberi tahu sebagai duplikat');
 
+    // === KELOMPOK 3: gerbang status, laporan, dokumentasi ===
+    echo "\n-- KKN tertutup, laporan, dokumentasi (U3, U4, U6) --\n";
+    $batal = $kkn($idA, '2026-01-01', '2026-02-01', 'Dibatalkan');
+    $tolak = $kkn($idA, '2026-01-01', '2026-02-01', 'Ditolak');
+    $kirim($jA, 'KemitraanPortal/kkn_simpan_dokumentasi/' . $batal, ['link_dokumentasi' => 'https://example.test/dok']);
+    $cek($nilai("SELECT link_dokumentasi FROM kkn_magang_pendaftaran WHERE id={$batal}") === NULL, 'KKN Dibatalkan menolak link dokumentasi');
+    $kirim($jA, 'KemitraanPortal/kkn_upload_laporan/' . $batal, ['file_laporan' => $pdf()]);
+    $cek($nilai("SELECT file_laporan_akhir FROM kkn_magang_pendaftaran WHERE id={$batal}") === NULL && ! is_dir("{$uploads}/kemitraan/{$batal}"), 'KKN Dibatalkan menolak laporan akhir (tidak ada berkas mendarat)');
+    $roster($jA, $batal, [['U4B001', 'Peserta Batal']]);
+    $cek((int) $nilai("SELECT COUNT(*) FROM kkn_peserta WHERE pendaftaran_id={$batal}") === 0, 'KKN Dibatalkan menolak unggah roster');
+    $roster($jA, $tolak, [['U4T001', 'Peserta Tolak']]);
+    $cek((int) $nilai("SELECT COUNT(*) FROM kkn_peserta WHERE pendaftaran_id={$tolak}") === 0, 'KKN Ditolak menolak unggah roster');
+    [$k, $hal] = $http($jA, 'KemitraanPortal/pendaftaran/' . $batal);
+    $cek($k === 200 && strpos($hal, 'kkn_upload_peserta/') === FALSE && strpos($hal, 'kkn_simpan_dokumentasi/') === FALSE && strpos($hal, 'kkn_upload_laporan/') === FALSE, 'Detail KKN Dibatalkan tidak menampilkan formulir roster, dokumentasi, dan laporan');
+
+    $lap = $kkn($idA, '2026-01-01', '2026-02-01', 'Diterima');
+    $kirim($jA, 'KemitraanPortal/kkn_upload_laporan/' . $lap, ['file_laporan' => $pdf()]);
+    $lama = $nilai("SELECT file_laporan_akhir FROM kkn_magang_pendaftaran WHERE id={$lap}");
+    $kirim($jA, 'KemitraanPortal/kkn_upload_laporan/' . $lap, ['file_laporan' => $pdf()]);
+    $baru = $nilai("SELECT file_laporan_akhir FROM kkn_magang_pendaftaran WHERE id={$lap}");
+    $cek($lama && $baru && $lama !== $baru && ! is_file("{$uploads}/kemitraan/{$lap}/{$lama}") && is_file("{$uploads}/kemitraan/{$lap}/{$baru}"), 'Mengganti laporan akhir membuang berkas lama dari disk (kuota ikut lepas)');
+    [, $hal] = $http($jAdm, 'Admin_Kemitraan?q=' . urlencode($tag));
+    $cek(strpos($hal, 'Admin_Kemitraan/lihat_dokumen/' . $lap . '/laporan') !== FALSE, 'Daftar admin menaut ke laporan akhir KKN');
+    [, $hal] = $kirim($jA, 'KemitraanPortal/kkn_simpan_dokumentasi/' . $lap, ['link_dokumentasi' => 'ftp://contoh.test/x']);
+    $cek(strpos($hal, 'http:// atau https://') !== FALSE, 'Pesan galat link menyebut http:// atau https:// (sesuai aturan yang diterapkan)');
+
 } finally {
     foreach ($ember as $k => $row) {
         $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
