@@ -434,7 +434,10 @@ $config['dashboard_modules'] = [
     'universitas_bidang' => [
         'label' => 'Akun Universitas', 'icon' => 'ph-buildings',
         'url'   => 'Kemitraan_Bidang/universitas', 'group' => 'Layanan', 'order' => 12,
-        'roles' => ['admin_bidang'], 'scope' => null,
+        // Ber-scope bidang_kode: Admin_Bidang_Controller menolak admin bidang yang belum
+        // ditetapkan ke bidang, jadi tanpa scope akun seperti itu mendarat di menu yang
+        // langsung menolaknya (temuan UAT universitas U1, 28 Sep 2026).
+        'roles' => ['admin_bidang'], 'scope' => 'bidang_kode',
     ],
     // CATATAN: slot magang TIDAK punya entri sendiri di sini. Ia satu domain
     // dengan pendaftaran di atas - yang satu menetapkan tempatnya, yang lain

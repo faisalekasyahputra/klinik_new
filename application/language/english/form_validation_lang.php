@@ -36,3 +36,6 @@ $lang['form_validation_greater_than']              = '{field} harus lebih dari {
 $lang['form_validation_greater_than_equal_to']     = '{field} harus lebih dari atau sama dengan {param}.';
 $lang['form_validation_error_message_not_set']     = 'Pesan galat untuk {field} belum tersedia.';
 $lang['form_validation_in_list']                   = '{field} harus salah satu dari: {param}.';
+// Aturan tambahan di application/libraries/MY_Form_validation.php.
+$lang['form_validation_sandi_kuat']                = '{field} harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.';
+$lang['form_validation_nomor_hp']                  = '{field} hanya boleh berisi angka (boleh diawali +), 7 sampai 20 karakter.';

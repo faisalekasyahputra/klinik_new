@@ -1,7 +1,16 @@
 <?php
-$this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => 'universitas']);
 $this->load->helper('admin_table');
-?>
+/* Dipakai bersama superadmin (Admin_Kemitraan::universitas) dan admin bidang
+   (Kemitraan_Bidang::universitas, ditandai $aksi_buat). Tab KKN & Magang hanya untuk
+   superadmin: bagi admin bidang ketiganya menolak akses (temuan UAT universitas U1). */
+if (empty($aksi_buat)) {
+    $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => 'universitas']);
+} else { ?>
+<div class="mb-5">
+    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Akun Universitas</h2>
+    <p class="text-sm text-gray-500 dark:text-brand-muted">Buatkan akun untuk universitas mitra KKN, lalu serahkan email dan sandinya kepada universitas tersebut.</p>
+</div>
+<?php } ?>
 <?php /* TANPA `z-10` di pembungkus - alasan sama dengan admin/users/index.php:
          pembungkus ini memuat modal "Tambah Universitas". */ ?>
 <div class="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-6" x-data="{ createOpen: false }">
@@ -38,6 +47,9 @@ $this->load->helper('admin_table');
             <form method="POST" action="<?= base_url($aksi_buat ?? 'Admin_Users/create_staff') ?>" class="space-y-3">
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                 <input type="hidden" name="role" value="universitas">
+<?php if (empty($aksi_buat)): ?>
+                <input type="hidden" name="kembali" value="Admin_Kemitraan/universitas">
+<?php endif; ?>
                 <div>
                     <label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Nama Universitas</label>
                     <input type="text" name="name" required maxlength="150" placeholder="Contoh: Universitas Diponegoro"
@@ -49,11 +61,12 @@ $this->load->helper('admin_table');
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Nomor HP/WhatsApp <span class="font-normal normal-case text-gray-400">(opsional, bisa dilengkapi nanti)</span></label>
-                    <input type="tel" name="phone" maxlength="20" placeholder="08xxxxxxxxxx" class="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
+                    <input type="tel" name="phone" maxlength="20" pattern="\+?[0-9][0-9 \-]{6,19}" placeholder="08xxxxxxxxxx" class="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
                 </div>
                 <div>
                     <label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Password</label>
                     <input type="password" name="password" required minlength="8" autocomplete="new-password" class="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
+                    <p class="mt-1 text-[11px] text-gray-500 dark:text-brand-muted">Minimal 8 karakter, ada huruf besar, angka, dan simbol.</p>
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" @click="createOpen = false" class="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5">Batal</button>

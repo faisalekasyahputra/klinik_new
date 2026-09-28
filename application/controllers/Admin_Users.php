@@ -155,13 +155,23 @@ class Admin_Users extends Admin_Controller {
 
         $this->load->library('form_validation');
         $this->form_validation->set_rules('name', 'Nama', 'required|trim|max_length[150]');
-        $this->form_validation->set_rules('email', 'Email', 'required|valid_email|max_length[100]|is_unique[usr_users.email]');
-        $this->form_validation->set_rules('password', 'Password', 'required|min_length[8]');
+        $this->form_validation->set_rules('email', 'Email', 'required|valid_email|max_length[100]|is_unique[usr_users.email]',
+            ['is_unique' => 'Akun staff belum dibuat: email tersebut sudah terdaftar.']);
+        // Aturan sandi sama dengan daftar dan ganti sandi; nomor HP divalidasi di server
+        // (temuan UAT universitas U1/U2, 28 Sep 2026).
+        $this->form_validation->set_rules('password', 'Password', 'required|sandi_kuat');
+        $this->form_validation->set_rules('phone', 'Nomor HP', 'trim|max_length[20]|nomor_hp');
         $this->form_validation->set_rules('role', 'Role', 'required|in_list[' . implode(',', array_keys($this->config->item('available_roles'))) . ']');
+
+        // Formulir Tambah Universitas di tab KKN (Admin_Kemitraan/universitas) memakai endpoint
+        // ini juga; admin dikembalikan ke tab itu, bukan dipindah ke Manajemen Pengguna.
+        // Hanya tujuan di daftar ini yang diterima (bukan URL bebas dari formulir).
+        $kembali = $this->input->post('kembali', TRUE) === 'Admin_Kemitraan/universitas'
+            ? 'Admin_Kemitraan/universitas' : 'Admin_Users';
 
         if ($this->form_validation->run() === FALSE) {
             $this->session->set_flashdata('error', strip_tags(validation_errors()));
-            redirect('Admin_Users');
+            redirect($kembali);
             return;
         }
 
@@ -194,7 +204,7 @@ class Admin_Users extends Admin_Controller {
             $kabupaten_id = (int) $this->input->post('kabupaten_id');
             if ( ! $kabupaten_id || ! $this->db->where('id', $kabupaten_id)->get('kabupaten')->row()) {
                 $this->session->set_flashdata('error', 'Pilih kabupaten/kota untuk role Admin Kabupaten/Kota.');
-                redirect('Admin_Users');
+                redirect($kembali);
                 return;
             }
             $payload['kabupaten_id'] = $kabupaten_id;
@@ -204,7 +214,7 @@ class Admin_Users extends Admin_Controller {
             $bidang_kode = trim((string) $this->input->post('bidang_kode', TRUE));
             if ( ! $bidang_kode || ! $this->db->where('kode', $bidang_kode)->get('bidang')->row()) {
                 $this->session->set_flashdata('error', 'Pilih bidang untuk role Admin Bidang.');
-                redirect('Admin_Users');
+                redirect($kembali);
                 return;
             }
             $payload['bidang_kode'] = $bidang_kode;
@@ -220,7 +230,7 @@ class Admin_Users extends Admin_Controller {
             $this->session->set_flashdata('error', $duplikat
                 ? 'Akun staff belum dibuat: email tersebut sudah terdaftar.'
                 : 'Akun staff belum dibuat. Periksa isian lalu coba lagi.');
-            redirect('Admin_Users');
+            redirect($kembali);
             return;
         }
         $this->catat_audit('staf_dibuat',
@@ -230,7 +240,7 @@ class Admin_Users extends Admin_Controller {
              'bidang_kode' => $payload['bidang_kode'] ?? NULL]);
 
         $this->session->set_flashdata('success', 'Akun staff baru berhasil dibuat.');
-        redirect('Admin_Users');
+        redirect($kembali);
     }
 
     // =====================================================================

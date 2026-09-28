@@ -172,8 +172,13 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
 
         $this->load->library('form_validation');
         $this->form_validation->set_rules('name', 'Nama', 'required|trim|max_length[150]');
-        $this->form_validation->set_rules('email', 'Email', 'required|valid_email|max_length[100]|is_unique[usr_users.email]');
-        $this->form_validation->set_rules('password', 'Password', 'required|min_length[8]');
+        // Pesan email ganda disamakan dengan cabang 1062 di bawah (yang kini hanya terjangkau
+        // lewat balapan dua kiriman). Nomor HP dan kekuatan sandi divalidasi di server, bukan
+        // hanya maxlength HTML (temuan UAT universitas U1/U2, 28 Sep 2026).
+        $this->form_validation->set_rules('email', 'Email', 'required|valid_email|max_length[100]|is_unique[usr_users.email]',
+            ['is_unique' => 'Akun belum dibuat: email tersebut sudah terdaftar.']);
+        $this->form_validation->set_rules('phone', 'Nomor HP', 'trim|max_length[20]|nomor_hp');
+        $this->form_validation->set_rules('password', 'Password', 'required|sandi_kuat');
         if ($this->form_validation->run() === FALSE) {
             $this->session->set_flashdata('error', strip_tags(validation_errors()));
             redirect($kembali);
