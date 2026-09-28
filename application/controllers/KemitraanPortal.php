@@ -99,6 +99,12 @@ class KemitraanPortal extends Public_Controller
             $tolak('Periode selesai tidak boleh mendahului periode mulai.');
             return;
         }
+        // KKN yang seluruh periodenya sudah lewat tidak bisa lagi ditinjau dan dijalankan;
+        // yang masih berjalan (selesai hari ini atau nanti) tetap boleh (keputusan 29 Sep 2026).
+        if ($selesai < date('Y-m-d')) {
+            $tolak('Periode KKN sudah lewat seluruhnya. Ajukan KKN yang periodenya masih berjalan atau akan datang.');
+            return;
+        }
         if ($this->slot->periode_terlalu_panjang($mulai, $selesai)) {
             $tolak('Periode terlalu panjang. Maksimal ' . Kemitraan_slot_model::BATAS_HARI . ' hari.');
             return;
@@ -367,6 +373,13 @@ class KemitraanPortal extends Public_Controller
         if ($row->jenis !== 'kkn') { show_404(); }
         if ( ! $this->kkn_masih_terbuka($row)) { return; }
 
+        // Laporan akhir hanya untuk KKN yang Diterima (keputusan 29 Sep 2026); view kkn_batch.php
+        // menyembunyikan formulirnya dengan syarat yang sama.
+        if ($row->status !== 'Diterima') {
+            $this->session->set_flashdata('error', 'Laporan akhir hanya bisa diunggah untuk KKN yang sudah diterima.');
+            redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
+            return;
+        }
         if (empty($row->periode_selesai) || strtotime($row->periode_selesai) >= strtotime('today')) {
             $this->session->set_flashdata('error', 'Laporan akhir baru bisa diunggah setelah periode KKN berakhir.');
             redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);

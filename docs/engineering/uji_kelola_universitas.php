@@ -188,6 +188,29 @@ try {
     $kirim($jAdm, 'Admin_Users/reset_sandi', ['id' => $idU2, 'password' => $sandi2]);
     $cek(password_verify($sandi2, $baris($idU2)['password']) && $kedaluwarsa($idU2), 'Sesudah reset sandi oleh superadmin, sandi wajib diganti di login berikutnya');
 
+    // === BUTIR 3: periode lampau dan laporan sebelum Diterima ===
+    echo "\n-- Butir 3: periode KKN lampau, laporan hanya untuk Diterima --\n";
+    // Akun tersendiri supaya butir ini tidak bergantung pada hasil butir 1 dan 2.
+    [$jU] = $login($eU3);
+    $idU = $idU3;
+    $jml = fn() => (int) $nilai("SELECT COUNT(*) FROM kkn_magang_pendaftaran WHERE user_id={$idU}");
+    $tambah = fn($mulai, $selesai, $ket) => $kirim($jU, 'KemitraanPortal/kkn_tambah', ['periode_mulai' => $mulai, 'periode_selesai' => $selesai, 'keterangan' => $ket, 'file_surat_pengantar' => $pdf(), 'file_surat_simperum' => $pdf()]);
+    $awal = $jml();
+    [, $hal] = $tambah(date('Y-m-d', strtotime('-40 days')), date('Y-m-d', strtotime('-1 day')), "KKN lampau {$tag}");
+    $lampau = $jml() === $awal && stripos($hal, 'sudah lewat') !== FALSE;
+    $tambah(date('Y-m-d', strtotime('-10 days')), date('Y-m-d'), "KKN berakhir hari ini {$tag}");
+    $cek($lampau && $jml() === $awal + 1, 'KKN yang seluruh periodenya lewat ditolak; yang berakhir hari ini masih diterima');
+
+    $diajukan = $kkn($idU, '2026-01-01', '2026-02-01', 'Diajukan');
+    [, $hal] = $kirim($jU, 'KemitraanPortal/kkn_upload_laporan/' . $diajukan, ['file_laporan' => $pdf()]);
+    $cek($nilai("SELECT file_laporan_akhir FROM kkn_magang_pendaftaran WHERE id={$diajukan}") === NULL && ! is_dir("{$uploads}/kemitraan/{$diajukan}") && stripos($hal, 'diterima') !== FALSE,
+        'Laporan akhir KKN yang belum Diterima ditolak (tidak ada berkas mendarat)');
+    $diterima = $kkn($idU, '2026-01-01', '2026-02-01', 'Diterima');
+    [, $halA] = $http($jU, 'KemitraanPortal/pendaftaran/' . $diajukan);
+    [, $halB] = $http($jU, 'KemitraanPortal/pendaftaran/' . $diterima);
+    $cek(strpos($halA, 'kkn_upload_laporan/') === FALSE && strpos($halB, 'kkn_upload_laporan/') !== FALSE,
+        'Formulir laporan tidak ditawarkan sebelum Diterima, ditawarkan sesudah Diterima dan periode lewat');
+
 } finally {
     foreach ($ember as $k => $row) {
         $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");

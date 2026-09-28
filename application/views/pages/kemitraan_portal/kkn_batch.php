@@ -314,6 +314,11 @@ $terbuka = ! $berhenti;
             <p class="mt-2 text-sm text-gray-500 dark:text-brand-muted">
                 <?= ! empty($row->file_laporan_akhir) ? 'Laporan akhir sudah terunggah.' : 'Tidak ada laporan akhir.' ?>
             </p>
+        <?php elseif ($row->status !== 'Diterima'): ?>
+            <p class="mt-2 text-sm text-gray-500 dark:text-brand-muted">
+                <i class="ph ph-lock-simple" aria-hidden="true"></i>
+                Bisa diunggah setelah KKN diterima dan periodenya berakhir.
+            </p>
         <?php elseif ( ! $periode_lewat): ?>
             <p class="mt-2 text-sm text-gray-500 dark:text-brand-muted">
                 <i class="ph ph-lock-simple" aria-hidden="true"></i>
