@@ -40,7 +40,7 @@ $config['kemitraan_pendaftaran'] = [
        apa", sama seperti alasan §17 melarang pembatas laju kedua. */
     ['field' => 'nim',              'label' => 'NIM',              'rules' => 'trim|alpha_numeric_spaces|max_length[30]'],
     ['field' => 'tempat_lahir',     'label' => 'Tempat Lahir',     'rules' => 'trim|max_length[100]'],
-    ['field' => 'tanggal_lahir',    'label' => 'Tanggal Lahir',    'rules' => 'regex_match[/^\d{4}-\d{2}-\d{2}$/]'],
+    ['field' => 'tanggal_lahir',    'label' => 'Tanggal Lahir',    'rules' => 'regex_match[/^\d{4}-\d{2}-\d{2}$/]|tanggal_sah'],
     ['field' => 'semester',         'label' => 'Semester',         'rules' => 'integer|greater_than[0]|less_than[15]'],
     // Label validasi generik dengan sengaja - kolom ini bermakna ganda
     // seperti `divisi_atau_tema` (Jurusan untuk magang, Penanggung Jawab
@@ -59,8 +59,8 @@ $config['kemitraan_pendaftaran'] = [
        bidang_by_kode(), jadi pemeriksaan manual kedua di sini akan
        cuma menduplikasi pesan yang sudah jelas dari sana. */
     ['field' => 'divisi_atau_tema', 'label' => 'Divisi/Tema',      'rules' => 'trim|max_length[150]'],
-    ['field' => 'periode_mulai',    'label' => 'Periode Mulai',    'rules' => 'regex_match[/^\d{4}-\d{2}-\d{2}$/]'],
-    ['field' => 'periode_selesai',  'label' => 'Periode Selesai',  'rules' => 'regex_match[/^\d{4}-\d{2}-\d{2}$/]'],
+    ['field' => 'periode_mulai',    'label' => 'Periode Mulai',    'rules' => 'regex_match[/^\d{4}-\d{2}-\d{2}$/]|tanggal_sah'],
+    ['field' => 'periode_selesai',  'label' => 'Periode Selesai',  'rules' => 'regex_match[/^\d{4}-\d{2}-\d{2}$/]|tanggal_sah'],
 ];
 
 /**
@@ -72,7 +72,7 @@ $config['kemitraan_pendaftaran'] = [
  * masih melayani Magang.
  */
 $config['kkn_tambah'] = [
-    ['field' => 'periode_mulai',   'label' => 'Periode Mulai',   'rules' => 'required|regex_match[/^\d{4}-\d{2}-\d{2}$/]'],
-    ['field' => 'periode_selesai', 'label' => 'Periode Selesai', 'rules' => 'required|regex_match[/^\d{4}-\d{2}-\d{2}$/]'],
+    ['field' => 'periode_mulai',   'label' => 'Periode Mulai',   'rules' => 'required|regex_match[/^\d{4}-\d{2}-\d{2}$/]|tanggal_sah'],
+    ['field' => 'periode_selesai', 'label' => 'Periode Selesai', 'rules' => 'required|regex_match[/^\d{4}-\d{2}-\d{2}$/]|tanggal_sah'],
     ['field' => 'keterangan',      'label' => 'Keterangan',      'rules' => 'required|trim|max_length[150]'],
 ];

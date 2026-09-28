@@ -131,6 +131,25 @@ try {
     [, , $akhir] = $buat($jAdm, 'Admin_Users/create_staff', "{$tag}_u2univ2@example.test", '', NULL, ['kembali' => 'https://example.test/jahat']);
     $cek(strpos($akhir, 'example.test/jahat') === FALSE && substr($akhir, -strlen('Admin_Users')) === 'Admin_Users', 'Tujuan kembali di luar daftar diabaikan (tetap ke Admin_Users)');
 
+    // === KELOMPOK 2: pengajuan KKN ===
+    echo "\n-- Pengajuan KKN (U3) --\n";
+    $jml = fn() => (int) $nilai("SELECT COUNT(*) FROM kkn_magang_pendaftaran WHERE user_id={$idA}");
+    $tambah = function ($mulai, $selesai, $ket) use ($kirim, $jA, $pdf) {
+        return $kirim($jA, 'KemitraanPortal/kkn_tambah', ['periode_mulai' => $mulai, 'periode_selesai' => $selesai, 'keterangan' => $ket, 'file_surat_pengantar' => $pdf(), 'file_surat_simperum' => $pdf()]);
+    };
+    $awal = $jml();
+    $tambah('2098-02-31', '2098-03-15', "KKN {$tag} tanggal mustahil");
+    $tambah('2098-13-45', '2098-13-46', "KKN {$tag} bulan 13");
+    $cek($jml() === $awal && (int) $nilai("SELECT COUNT(*) FROM kkn_magang_pendaftaran WHERE user_id={$idA} AND periode_mulai='0000-00-00'") === 0, 'Tanggal kalender mustahil (31 Feb, bulan 13) ditolak, tanpa baris 0000-00-00');
+    [, $hal] = $kirim($jA, 'KemitraanPortal/kkn_tambah', ['periode_mulai' => '2098-02-01', 'periode_selesai' => '2098-03-01', 'keterangan' => "Isian lama {$tag}", 'file_surat_pengantar' => $pdf()]);
+    $cek(preg_match('/id="kt-keterangan"[^>]*value="Isian lama ' . $tag . '"/', $hal) === 1 && strpos($hal, 'value="2098-02-01"') !== FALSE, 'Sesudah ditolak, modal dibuka ulang dengan periode dan keterangan yang sudah diketik');
+    $cek(preg_match('/<form[^>]*kkn_tambah[^>]*onsubmit="[^"]*disabled/', $hal) === 1, 'Tombol Ajukan KKN dinonaktifkan begitu formulir dikirim (lindung kirim ganda)');
+    $awal = $jml();
+    $tambah('2098-11-01', '2098-12-15', "KKN {$tag} ganda");
+    [, $hal] = $tambah('2098-11-01', '2098-12-15', "KKN {$tag} ganda");
+    $cek($jml() === $awal + 1, 'Pengajuan KKN identik (periode + keterangan) yang masih berjalan tidak membuat baris kedua');
+    $cek(stripos($hal, 'sudah diajukan') !== FALSE, 'Pengajuan ganda diberi tahu sebagai duplikat');
+
 } finally {
     foreach ($ember as $k => $row) {
         $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");

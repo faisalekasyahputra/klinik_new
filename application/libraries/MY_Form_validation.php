@@ -26,4 +26,13 @@ class MY_Form_validation extends CI_Form_validation {
         return (bool) preg_match('/^\+?[0-9][0-9 \-]{6,19}$/', (string) $str);
     }
 
+    /**
+     * Tanggal kalender Y-m-d yang sungguh ada. regex_match saja meloloskan 2026-02-31 dan
+     * 2026-13-45, yang di MySQL non-strict tersimpan sebagai 0000-00-00 (temuan UAT U3).
+     */
+    public function tanggal_sah($str)
+    {
+        $d = DateTime::createFromFormat('!Y-m-d', (string) $str);
+        return $d !== FALSE && $d->format('Y-m-d') === (string) $str;
+    }
 }

@@ -79,6 +79,13 @@ class KemitraanPortal extends Public_Controller
         $tolak = function ($pesan) {
             $this->session->set_flashdata('error', $pesan);
             $this->session->set_flashdata('kkn_tambah_gagal', TRUE);
+            // Isian teks dibawa kembali ke modal supaya pengguna cukup memperbaiki bagian
+            // yang salah (temuan UAT U3). Berkas tidak bisa diisikan ulang oleh peramban.
+            $this->session->set_flashdata('kkn_tambah_isian', [
+                'periode_mulai'   => (string) $this->input->post('periode_mulai', TRUE),
+                'periode_selesai' => (string) $this->input->post('periode_selesai', TRUE),
+                'keterangan'      => (string) $this->input->post('keterangan', TRUE),
+            ]);
             redirect('KemitraanPortal/kkn_dashboard');
         };
 
@@ -95,6 +102,21 @@ class KemitraanPortal extends Public_Controller
         }
         if ($this->slot->periode_terlalu_panjang($mulai, $selesai)) {
             $tolak('Periode terlalu panjang. Maksimal ' . Kemitraan_slot_model::BATAS_HARI . ' hari.');
+            return;
+        }
+
+        /* Kirim ganda (klik dua kali, muat ulang sesudah kirim) menghasilkan dua pengajuan
+           identik yang sama-sama ditinjau admin (temuan UAT U3). Pengajuan dengan periode dan
+           keterangan yang sama yang masih berjalan ditolak; yang sudah Ditolak/Dibatalkan
+           boleh diajukan ulang apa adanya. */
+        $ganda = $this->db->where([
+                'user_id' => $this->get_user_id(), 'jenis' => 'kkn',
+                'periode_mulai' => $mulai, 'periode_selesai' => $selesai,
+                'divisi_atau_tema' => $this->input->post('keterangan', TRUE),
+            ])->where_not_in('status', ['Ditolak', 'Dibatalkan'])
+            ->count_all_results('kkn_magang_pendaftaran');
+        if ($ganda > 0) {
+            $tolak('KKN dengan periode dan keterangan yang sama sudah diajukan. Buka Detail KKN tersebut di daftar.');
             return;
         }
 
