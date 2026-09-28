@@ -63,9 +63,9 @@ class Umum extends MY_Controller {
 	{
 		// Dulu merender mockup housing_carrier1 yang form-nya action="#" -
 		// submit-nya tidak ke mana-mana. Wizard pembiayaan yang sungguhan
-		// sudah ada di Program::solusi_pembiayaan(). Redirect supaya
+		// sudah ada di wizard warga/pendataan (jalur diagnosa lama ikut dialihkan ke sana, 27 Sep 2026). Redirect supaya
 		// bookmark/link lama tidak 404, pola yang sama dengan form_aduan().
-		redirect('solusi_pembiayaan');
+		redirect('warga/pendataan');
 	}
 
 	// S9 - `info_rumah()` DICABUT 29 Jul 2026 bersama view-nya.
