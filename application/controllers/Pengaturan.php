@@ -605,6 +605,13 @@ class Pengaturan extends MY_Controller {
         // Password saat ini adalah bukti kepemilikan yang sebenarnya
         // (roadmap T5 S13); tanpa ini FK CASCADE menghapus seluruh
         // pengajuan SRP2 pemilik asli.
+        // Dibatasi seperti ekspor data (account_export), supaya endpoint ini tidak jadi
+        // orakel penebak sandi bagi sesi yang dibajak.
+        $rate = $this->rate_limit_consume('account_delete', ['account_id' => (int) $user_id]);
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject($rate, 'Terlalu banyak percobaan hapus akun. Coba lagi nanti.');
+            return;
+        }
         $current_password = (string) $this->input->post('current_password');
         $user = $this->Auth_model->find_by_id($user_id);
         $valid_password = $user && !empty($user->password)
@@ -615,6 +622,7 @@ class Pengaturan extends MY_Controller {
             $this->sensitive_buffer->wipe($_POST['current_password']);
         }
         if (!$valid_password) {
+            $this->catat_audit('hapus_akun_ditolak', 'Verifikasi sandi untuk hapus akun gagal', 'usr_users', (string) $user_id);
             $this->session->set_flashdata('error', 'Password salah. Akun tidak dihapus.');
             redirect('akun/profil');
             return;

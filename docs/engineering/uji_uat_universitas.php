@@ -240,6 +240,23 @@ try {
         && (int) $nilai("SELECT COUNT(*) FROM sys_jejak_audit WHERE objek_id='{$bls}' AND aksi='kemitraan_keputusan' AND detail_json LIKE '%\"catatan_lama\":\"Alasan {$tag}\"%' AND detail_json LIKE '%\"status_baru\":\"Diterima\"%'") === 1,
         'Keputusan admin tercatat di audit, termasuk alasan penolakan yang ditimpa');
 
+    // === KELOMPOK 6: akun dan halaman umum ===
+    echo "\n-- Akun dan halaman umum (U8) --\n";
+    $http($jA, 'Admin_Kemitraan');
+    [$k, $hal] = $http($jA, 'Auth/akses_ditolak');
+    $cek($k === 200 && preg_match('/Peran akun Anda<\/dt>\s*<dd[^>]*>Universitas</', $hal) === 1, 'Layar akses ditolak menampilkan peran "Universitas"');
+    [$jC] = $login($eC);
+    $http($jC, 'akun/profil');
+    $jawab = [];
+    for ($i = 0; $i < 8; $i++) { $jawab[] = $kirim($jC, 'akun/delete', ['current_password' => 'SalahSandi#' . $i])[0]; }
+    $cek(in_array(429, $jawab, TRUE) && (int) $nilai("SELECT COUNT(*) FROM usr_users WHERE id={$idC}") === 1, 'Tebakan sandi berulang di hapus akun dibatasi (429), akun tetap ada');
+    [$jW] = $login($eW);
+    [, $hal] = $http($jW, 'KemitraanPortal');
+    $cek(strpos($hal, 'akun yang sesuai') !== FALSE, 'Warga di KemitraanPortal diberi tahu butuh akun yang sesuai');
+    [, $hal] = $http($jW, 'akun');
+    $cek(strpos($hal, 'KKN dan Magang memerlukan akun') === FALSE, 'Pesan penolakan KemitraanPortal tidak muncul lagi di halaman berikutnya');
+    [, $hal] = $http($sesi(), 'Auth/login?msg=account_deleted');
+    $cek(stripos($hal, 'akun Anda sudah dihapus') !== FALSE, 'Halaman login mengonfirmasi akun sudah dihapus');
 } finally {
     foreach ($ember as $k => $row) {
         $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");

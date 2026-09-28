@@ -8,6 +8,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 $config['rate_limit_policies'] = [
     'account_export' => ['limit' => 3, 'window' => 3600, 'dimensions' => ['account'], 'concurrent_dimension' => 'account'],
+    // Verifikasi sandi di akun/delete: tanpa batas khusus, sesi yang dibajak bisa menebak sandi
+    // 120 kali/menit lewat batas umum tulis_akun (temuan UAT universitas U8).
+    'account_delete' => ['limit' => 5, 'window' => 3600, 'dimensions' => ['account']],
     'privacy_deletion_request' => ['limit' => 2, 'window' => 86400, 'dimensions' => ['account']],
     'login' => [
         'limit' => 30,

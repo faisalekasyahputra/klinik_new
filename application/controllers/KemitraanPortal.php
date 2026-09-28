@@ -13,8 +13,7 @@ class KemitraanPortal extends Public_Controller
     public function index()
     {
         if ($this->has_role('warga') || $this->has_role('pengembang')) {
-            $this->session->set_flashdata('error', 'KKN dan Magang memerlukan akun universitas atau mahasiswa. Silakan masuk dengan akun yang sesuai.');
-            $this->load->view('pages/auth/login', ['recaptcha_site_key' => getenv('RECAPTCHA_SITE_KEY') ?: '']);
+            $this->render_login_berpesan('error', 'KKN dan Magang memerlukan akun universitas atau mahasiswa. Silakan masuk dengan akun yang sesuai.');
             return;
         }
         if ( ! $this->is_logged_in()) {

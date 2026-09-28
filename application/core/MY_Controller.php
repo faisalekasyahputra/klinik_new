@@ -1571,6 +1571,17 @@ class MY_Controller extends CI_Controller {
      * Ditaruh di induk, bukan ditambal di tiap controller: menambal 21 kali
      * berarti gerbang ke-22 lupa lagi.
      */
+    /**
+     * Render halaman masuk dengan satu pesan yang HANYA untuk render ini. Pesan lewat
+     * set_flashdata() saja ikut tampil lagi di permintaan berikutnya (flashdata baru hidup
+     * satu permintaan lagi), jadi pesannya muncul dua kali (temuan UAT universitas U8).
+     */
+    protected function render_login_berpesan($tipe, $pesan, array $data = []) {
+        $this->session->set_flashdata($tipe, $pesan);
+        $this->load->view('pages/auth/login', $data + ['recaptcha_site_key' => getenv('RECAPTCHA_SITE_KEY') ?: '']);
+        $this->session->unset_userdata($tipe);
+    }
+
     protected function gerbang_login($tujuan = NULL) {
         /* SATU GERBANG, DUA KEADAAN YANG SAMA SEKALI BERBEDA - dan sampai 10
            Agt 2026 keduanya diperlakukan sama, itu kekeliruannya.

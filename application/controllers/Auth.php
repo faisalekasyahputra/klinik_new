@@ -58,6 +58,13 @@ class Auth extends MY_Controller {
         }
 
         $data = ['recaptcha_site_key' => $this->recaptcha_site_key];
+        // Pengaturan::delete_account() mengalihkan ke sini sesudah sess_destroy(), jadi
+        // flashdata tidak bisa ikut; penandanya lewat ?msg= dengan pesan tetap dari server
+        // (temuan UAT universitas U8: sebelumnya tidak ada konfirmasi sama sekali).
+        if ($this->input->get('msg', TRUE) === 'account_deleted') {
+            $this->render_login_berpesan('success', 'Akun Anda sudah dihapus.', $data);
+            return;
+        }
         $this->load->view('pages/auth/login', $data);
     }
 
