@@ -176,6 +176,25 @@ try {
     [, $hal] = $kirim($jA, 'KemitraanPortal/kkn_simpan_dokumentasi/' . $lap, ['link_dokumentasi' => 'ftp://contoh.test/x']);
     $cek(strpos($hal, 'http:// atau https://') !== FALSE, 'Pesan galat link menyebut http:// atau https:// (sesuai aturan yang diterapkan)');
 
+    // === KELOMPOK 4: roster peserta ===
+    echo "\n-- Roster peserta (U4, U5) --\n";
+    $ros = $kkn($idA, '2098-01-01', '2098-02-01', 'Diajukan');
+    $roster($jA, $ros, [['21.11.1234', 'Peserta Titik'], ['21-11-5678', 'Peserta Strip']]);
+    $nims = array_column($db->query("SELECT nim FROM kkn_peserta WHERE pendaftaran_id={$ros} ORDER BY nim")->fetch_all(), 0);
+    $cek($nims === ['21111234', '21115678'], 'NIM bertitik/berstrip dinormalkan ke bentuk yang bisa dicari (' . implode(',', $nims) . ')');
+    [, $hal] = $roster($jA, $ros, [['U4081', 'Lala Ganda'], ['U4082', 'Lili'], ['U4081', 'Lala Ganda']]);
+    $cek((int) $nilai("SELECT COUNT(*) FROM kkn_peserta WHERE pendaftaran_id={$ros}") === 2 && stripos($hal, 'Baris 4') !== FALSE, 'NIM ganda dalam satu berkas ditolak dan barisnya disebut');
+    [, $hal] = $roster($jA, $ros, [['U4#!1', 'Simbol']]);
+    $cek((int) $nilai("SELECT COUNT(*) FROM kkn_peserta WHERE pendaftaran_id={$ros} AND nim LIKE 'U4#%'") === 0 && stripos($hal, 'Baris 2') !== FALSE, 'NIM bersimbol ditolak dengan nomor baris');
+    [, $hal] = $roster($jA, $ros, [[str_repeat('7', 31), 'Panjang']]);
+    $cek(strpos($hal, 'lebih dari 30 karakter') !== FALSE && stripos($hal, 'tidak lengkap') === FALSE, 'Pesan NIM terlalu panjang tidak menyebut baris "tidak lengkap"');
+    if ( ! defined('BASEPATH')) define('BASEPATH', $AKAR . '/system/');
+    require_once $AKAR . '/application/libraries/Upload_scanner.php';
+    $bom = $xlsx([['U4BOM', 'Bom']]);
+    $z = new ZipArchive(); $z->open($bom); $z->addFromString('xl/media/pad.bin', str_repeat("\0", 5 * 1048576)); $z->close();
+    $scan = (new Upload_scanner(['clamd' => '']))->scan($bom, 'xlsx');
+    $cek(empty($scan['ok']) && stripos($scan['message'] ?? '', 'makro') === FALSE, 'Bom zip ditolak dengan pesan yang bukan tentang makro (' . ($scan['code'] ?? '?') . ')');
+
 } finally {
     foreach ($ember as $k => $row) {
         $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");

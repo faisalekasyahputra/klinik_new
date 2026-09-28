@@ -36,6 +36,8 @@ class Upload_scanner {
         'pdf_aktif'               => 'PDF berisi konten aktif (skrip atau lampiran tertanam) yang tidak diizinkan. Cetak ulang menjadi PDF biasa.',
         'pdf_tak_dapat_dipindai'  => 'Isi PDF tidak dapat dipindai. Cetak ulang menjadi PDF biasa lalu unggah kembali.',
         'excel_berbahaya'         => 'Berkas Excel berisi makro, objek tertanam, atau tautan luar yang tidak diizinkan. Simpan sebagai XLSX tanpa makro.',
+        // Struktur arsip yang tidak wajar (jumlah entri, jalur entri, rasio kompresi): bukan soal makro.
+        'excel_tidak_wajar'       => 'Struktur berkas Excel tidak wajar (terlalu banyak isi, isi terkompresi berlebihan, atau jalur isi tidak sah). Simpan ulang sebagai XLSX biasa berisi data saja lalu unggah kembali.',
         'gambar_terlalu_besar'    => 'Dimensi gambar terlalu besar.',
         'pemindai_tak_tersedia'   => 'Pemindai berkas sedang tidak tersedia, sehingga unggahan ditolak demi keamanan. Coba lagi nanti.',
         'kosong'                  => 'Berkas kosong.',
@@ -211,22 +213,22 @@ class Upload_scanner {
         if ($z->open($path, ZipArchive::RDONLY) !== TRUE) { return $this->gagal('tipe_tak_sesuai', 'zip rusak'); }
         try {
             $n = $z->numFiles;
-            if ($n < 1 || $n > (int) $this->cfg['zip_max_entries']) { return $this->gagal('excel_berbahaya', "jumlah entri $n"); }
+            if ($n < 1 || $n > (int) $this->cfg['zip_max_entries']) { return $this->gagal('excel_tidak_wajar', "jumlah entri $n"); }
             $total = 0; $nama_ada = [];
             for ($i = 0; $i < $n; $i++) {
                 $st = $z->statIndex($i);
-                if ($st === FALSE) { return $this->gagal('excel_berbahaya', 'entri tak terbaca'); }
+                if ($st === FALSE) { return $this->gagal('excel_tidak_wajar', 'entri tak terbaca'); }
                 $nama = (string) $st['name'];
                 $nama_ada[$nama] = TRUE;
-                if (preg_match('#(^|/)\.\.(/|$)|^/|\\\\#', $nama)) { return $this->gagal('excel_berbahaya', 'jalur entri berbahaya'); }
+                if (preg_match('#(^|/)\.\.(/|$)|^/|\\\\#', $nama)) { return $this->gagal('excel_tidak_wajar', 'jalur entri berbahaya'); }
                 if (preg_match('#vbaProject|/embeddings/|/externalLinks/|/activeX/|/macrosheets/|/customUI/|\.(exe|dll|js|vbs|php|bat|cmd|ps1|jar|hta|scr|lnk)$#i', $nama)) {
                     return $this->gagal('excel_berbahaya', 'entri terlarang: ' . $nama);
                 }
                 $ukuran = (int) $st['size'];
                 $total += $ukuran;
-                if ($total > (int) $this->cfg['zip_max_uncompressed']) { return $this->gagal('excel_berbahaya', 'bom zip: total terlalu besar'); }
+                if ($total > (int) $this->cfg['zip_max_uncompressed']) { return $this->gagal('excel_tidak_wajar', 'bom zip: total terlalu besar'); }
                 if ($ukuran > 1048576 && $ukuran / max(1, (int) $st['comp_size']) > (int) $this->cfg['zip_max_ratio']) {
-                    return $this->gagal('excel_berbahaya', 'bom zip: rasio kompresi ' . $nama);
+                    return $this->gagal('excel_tidak_wajar', 'bom zip: rasio kompresi ' . $nama);
                 }
                 if ($ukuran > (int) $this->cfg['zip_entry_scan_max']) { continue; }
                 $isi = $z->getFromIndex($i);

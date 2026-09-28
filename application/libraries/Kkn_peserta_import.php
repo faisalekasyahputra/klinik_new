@@ -66,28 +66,43 @@ class Kkn_peserta_import
 
         $peserta = [];
         $baris_cacat = [];
+        $nim_di_baris = [];
         foreach ($baris as $i => $r) {
             $nomor_baris = $i + 2; // +1 offset toArray 0-based, +1 lagi karena header sudah dibuang
-            $nim  = trim((string) ($r[$kol_nim] ?? ''));
+            $nim_asli = trim((string) ($r[$kol_nim] ?? ''));
             $nama = trim((string) ($r[$kol_nama] ?? ''));
 
             // Baris benar-benar kosong (sisa baris kosong di ekor sheet,
             // lazim pada Excel) dilewati diam-diam - itu bukan data cacat,
             // cuma jejak sheet yang pernah lebih panjang.
-            if ($nim === '' && $nama === '') { continue; }
+            if ($nim_asli === '' && $nama === '') { continue; }
 
-            if ($nim === '' || $nama === '') {
-                $baris_cacat[] = $nomor_baris;
+            // Tiap baris cacat membawa alasannya sendiri: pesan tunggal "tidak lengkap"
+            // dulu dipakai juga untuk NIM/Nama yang kepanjangan (temuan UAT U4).
+            if ($nim_asli === '' || $nama === '') {
+                $baris_cacat[] = $nomor_baris . ': NIM dan Nama harus terisi keduanya';
                 continue;
             }
+            $nim = self::normalkan_nim($nim_asli);
             if (mb_strlen($nim) > 30) {
-                $baris_cacat[] = $nomor_baris . ' (NIM lebih dari 30 karakter)';
+                $baris_cacat[] = $nomor_baris . ': NIM lebih dari 30 karakter';
+                continue;
+            }
+            if ( ! self::nim_sah($nim)) {
+                $baris_cacat[] = $nomor_baris . ': NIM hanya boleh berisi huruf dan angka';
                 continue;
             }
             if (mb_strlen($nama) > 150) {
-                $baris_cacat[] = $nomor_baris . ' (Nama lebih dari 150 karakter)';
+                $baris_cacat[] = $nomor_baris . ': Nama lebih dari 150 karakter';
                 continue;
             }
+            // Satu mahasiswa satu baris: NIM ganda menggelembungkan jumlah peserta dan
+            // membuat pencarian sertifikat memilih salah satu barisnya secara acak.
+            if (isset($nim_di_baris[strtoupper($nim)])) {
+                $baris_cacat[] = $nomor_baris . ': NIM sama dengan baris ' . $nim_di_baris[strtoupper($nim)];
+                continue;
+            }
+            $nim_di_baris[strtoupper($nim)] = $nomor_baris;
 
             $peserta[] = ['nim' => $nim, 'nama' => $nama];
         }
@@ -95,16 +110,34 @@ class Kkn_peserta_import
         if ($baris_cacat) {
             $tampil = array_slice($baris_cacat, 0, 10);
             $sisa = count($baris_cacat) - count($tampil);
-            return $this->gagal('Baris ' . implode(', ', $tampil)
+            return $this->gagal('Baris ' . implode('; Baris ', $tampil)
                 . ($sisa > 0 ? ' (dan ' . $sisa . ' baris lain)' : '')
-                . ' tidak lengkap - NIM dan Nama harus terisi keduanya. '
-                . 'Perbaiki lalu unggah ulang seluruh berkas.');
+                . '. Perbaiki lalu unggah ulang seluruh berkas.');
         }
         if ( ! $peserta) {
             return $this->gagal('Tidak ada baris peserta yang bisa dibaca dari berkas ini.');
         }
 
         return ['success' => TRUE, 'message' => '', 'peserta' => $peserta];
+    }
+
+    /**
+     * SATU aturan format NIM untuk dua pintu: unggah roster (di atas) dan pencarian
+     * sertifikat (KemitraanPortal::cek_sertifikat_kkn). Pemisah yang lazim di NIM
+     * (titik, tanda hubung, spasi, mis. 21.11.1234) dibuang, sehingga NIM yang ditulis
+     * dengan atau tanpa pemisah menunjuk mahasiswa yang sama. Sebelumnya importer
+     * menerima apa saja sementara pencarian hanya alfanumerik, jadi peserta ber-NIM
+     * bertitik tidak pernah bisa menemukan sertifikatnya (temuan UAT U4/U5).
+     */
+    public static function normalkan_nim($nim)
+    {
+        return preg_replace('/[.\-\s]+/u', '', trim((string) $nim));
+    }
+
+    /** NIM yang sudah dinormalkan: 1-30 huruf/angka. */
+    public static function nim_sah($nim)
+    {
+        return (bool) preg_match('/^[A-Za-z0-9]{1,30}$/', (string) $nim);
     }
 
     private function gagal($pesan)
