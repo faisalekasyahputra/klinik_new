@@ -195,7 +195,8 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
             'profile_completed' => 1,
             'email_verified_at' => date('Y-m-d H:i:s'),
             'created_at'        => date('Y-m-d H:i:s'),
-        ] + $this->auth_model->password_lifetime_fields();
+        // Sandi awal diketahui admin, jadi wajib diganti di login pertama (keputusan 29 Sep 2026).
+        ] + $this->auth_model->password_awal_fields();
         $telp = trim((string) $this->input->post('phone', TRUE));
         if ($telp !== '') { $payload['phone'] = $telp; }
 
@@ -212,7 +213,7 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
             'Admin bidang ' . $this->my_bidang_kode . ' membuat akun universitas ' . $payload['email'],
             'usr_users', $id, ['role' => 'universitas', 'bidang_pembuat' => $this->my_bidang_kode]);
 
-        $this->session->set_flashdata('success', 'Akun universitas berhasil dibuat. Serahkan email dan sandinya kepada universitas.');
+        $this->session->set_flashdata('success', 'Akun universitas berhasil dibuat. Serahkan email dan sandinya kepada universitas; sandi itu wajib diganti saat pertama masuk.');
         redirect($kembali);
     }
 }

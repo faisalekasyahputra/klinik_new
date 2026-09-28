@@ -195,6 +195,9 @@ class Pengaturan extends MY_Controller {
         $user = $this->Auth_model->find_by_id($user_id);
 
         $datacontent = ['user' => $user, 'title' => 'Profil Saya'];
+        // Alasan wajib ganti sandi tetap tampil di formulir, bukan hanya di flash sekali tampil.
+        $datacontent['pesan_ganti_sandi'] = $user && $this->Auth_model->password_expired($user)
+            ? $this->Auth_model->pesan_ganti_sandi($user) : NULL;
 
         /* Butir 21: NIK ditampilkan TERSAMAR, hanya empat digit terakhir.
            Menampilkannya utuh di layar yang bisa dibuka di ruang publik tidak

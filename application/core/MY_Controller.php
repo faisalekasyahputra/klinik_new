@@ -289,7 +289,7 @@ class MY_Controller extends CI_Controller {
         $id = (int) $this->session->userdata('user_id');
         $token = (string) $this->session->userdata('session_auth_token');
         $session_id = (string) $this->session->session_id;
-        $row = $this->db->select('active_session_hash,active_session_id_hash,password_expires_at')
+        $row = $this->db->select('active_session_hash,active_session_id_hash,password_changed_at,password_expires_at')
             ->get_where('usr_users', ['id' => $id])->row();
         $token_valid = $row && ! empty($token) && ! empty($row->active_session_hash)
             && hash_equals((string) $row->active_session_hash, hash('sha256', $token));
@@ -328,12 +328,13 @@ class MY_Controller extends CI_Controller {
         $this->session->set_userdata('password_change_required', TRUE);
         $controller = strtolower((string) $this->router->fetch_class());
         if (in_array($controller, ['auth', 'pengaturan'], TRUE)) { return; }
+        $this->load->model('Auth_model');
+        $pesan = $this->Auth_model->pesan_ganti_sandi($row);
         if ($this->input->is_ajax_request()) {
             $this->output->set_status_header(403); header('Content-Type: application/json');
-            echo json_encode(['status' => 'error', 'code' => 'password_kedaluwarsa',
-                'message' => 'Kata sandi telah berusia 90 hari dan harus diganti.']); exit;
+            echo json_encode(['status' => 'error', 'code' => 'password_kedaluwarsa', 'message' => $pesan]); exit;
         }
-        $this->session->set_flashdata('error', 'Kata sandi telah berusia 90 hari. Ganti kata sandi untuk melanjutkan.');
+        $this->session->set_flashdata('error', $pesan);
         redirect('akun/profil?password_expired=1'); exit;
     }
     /**

@@ -145,6 +145,9 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
 
                 <div class="border-t border-gray-100 pt-3 dark:border-white/5">
                     <p class="text-sm font-bold text-gray-800 dark:text-white">Ganti Password</p>
+                    <?php if ( ! empty($pesan_ganti_sandi)): ?>
+                    <p class="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"><?= html_escape($pesan_ganti_sandi) ?></p>
+                    <?php endif; ?>
                     <p class="<?= $petunjuk ?>">Kosongkan kalau tidak ingin mengubah. Minimal 8 karakter, ada huruf besar, angka, dan simbol.</p>
                     <div class="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         <input type="password" name="password" autocomplete="new-password" placeholder="Password baru" class="<?= $isian ?>">

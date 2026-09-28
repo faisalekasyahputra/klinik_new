@@ -185,7 +185,8 @@ class Admin_Users extends Admin_Controller {
             'profile_completed'  => 1,
             'email_verified_at'  => date('Y-m-d H:i:s'),
             'created_at'         => date('Y-m-d H:i:s'),
-        ] + $this->auth_model->password_lifetime_fields();
+        // Sandi awal diketahui admin, jadi wajib diganti di login pertama (keputusan 29 Sep 2026).
+        ] + $this->auth_model->password_awal_fields();
 
         /* Telepon OPSIONAL - bukan field standar akun staf, jadi kolomnya
            dilewati sama sekali kalau kosong (bukan disimpan '' atau NULL
@@ -472,7 +473,8 @@ class Admin_Users extends Admin_Controller {
             'password' => password_hash($sandi, PASSWORD_BCRYPT),
             'login_attempts' => 0, 'locked_until' => NULL,
             'active_session_hash' => NULL, 'active_session_id_hash' => NULL, 'active_session_at' => NULL,
-        ] + $this->auth_model->password_lifetime_fields());
+        // Sandi hasil reset diketahui admin, jadi wajib diganti di login berikutnya (29 Sep 2026).
+        ] + $this->auth_model->password_awal_fields());
 
         // Sandinya TIDAK ikut dicatat, bahkan tidak sebagian. Jejak audit dibaca
         // orang yang tidak selalu berhak tahu isinya.
@@ -480,7 +482,7 @@ class Admin_Users extends Admin_Controller {
             'usr_users', (string) $user->id);
 
         $this->session->set_flashdata('success',
-            'Password ' . $user->email . ' diganti. Sampaikan ke yang bersangkutan lewat jalur pribadi.');
+            'Password ' . $user->email . ' diganti. Sampaikan ke yang bersangkutan lewat jalur pribadi; sandi itu wajib diganti saat masuk.');
         redirect('Admin_Users');
     }
 }

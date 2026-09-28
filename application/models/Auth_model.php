@@ -217,6 +217,25 @@ class Auth_model extends CI_Model {
             'password_expires_at' => date('Y-m-d H:i:s', strtotime('+' . self::PASSWORD_TTL_DAYS . ' days')),
         ];
     }
+
+    /**
+     * Sandi yang ditetapkan admin (akun baru, reset) langsung kedaluwarsa, jadi login pertama
+     * diarahkan ke ganti sandi lewat mekanisme 90 hari yang sama. Sandi itu sempat diketahui
+     * admin dan dikirim lewat jalur lain (keputusan pemilik produk 29 Sep 2026).
+     */
+    public function password_awal_fields() {
+        $now = date('Y-m-d H:i:s');
+        return ['password_changed_at' => $now, 'password_expires_at' => $now];
+    }
+
+    /** Pesan wajib ganti sandi: sandi awal dari admin dikenali dari kedaluwarsa == saat ditetapkan. */
+    public function pesan_ganti_sandi($user) {
+        $dari_admin = ! empty($user->password_changed_at) && ! empty($user->password_expires_at)
+            && strtotime($user->password_expires_at) <= strtotime($user->password_changed_at);
+        return $dari_admin
+            ? 'Sandi awal dari admin harus diganti sebelum melanjutkan. Buat sandi baru yang hanya Anda ketahui.'
+            : 'Kata sandi telah berusia 90 hari. Ganti kata sandi untuk melanjutkan.';
+    }
     // =========================================================
     // Onboarding / Profile Completion
     // =========================================================

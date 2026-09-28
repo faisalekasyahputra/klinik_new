@@ -1059,7 +1059,7 @@ class Auth extends MY_Controller {
     private function _redirect_after_login() {
         $user_id = $this->get_user_id();
         if ($this->session->userdata('password_change_required')) {
-            $this->session->set_flashdata('error', 'Kata sandi telah berusia 90 hari. Ganti kata sandi untuk melanjutkan.');
+            $this->session->set_flashdata('error', $this->auth_model->pesan_ganti_sandi($this->auth_model->find_by_id($user_id)));
             redirect('akun/profil?password_expired=1');
             return;
         }
