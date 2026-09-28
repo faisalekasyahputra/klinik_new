@@ -11,6 +11,9 @@ $config['rate_limit_policies'] = [
     // Verifikasi sandi di akun/delete: tanpa batas khusus, sesi yang dibajak bisa menebak sandi
     // 120 kali/menit lewat batas umum tulis_akun (temuan UAT universitas U8).
     'account_delete' => ['limit' => 5, 'window' => 3600, 'dimensions' => ['account']],
+    // Verifikasi sandi saat ganti sandi di akun/update. Hanya yang GAGAL dihitung (inspect lalu
+    // hit, pola login), per akun dan per IP (keputusan pemilik produk 29 Sep 2026).
+    'profile_password' => ['limit' => 5, 'window' => 3600, 'dimensions' => ['account', 'ip']],
     'privacy_deletion_request' => ['limit' => 2, 'window' => 86400, 'dimensions' => ['account']],
     'login' => [
         'limit' => 30,

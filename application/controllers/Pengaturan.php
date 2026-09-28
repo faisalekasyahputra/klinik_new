@@ -350,13 +350,22 @@ class Pengaturan extends MY_Controller {
         $username = html_escape($this->input->post('username'));
         $username = preg_replace('/\s+/', '', strtolower($username));
         $name     = html_escape($this->input->post('name'));
-        $phone    = html_escape($this->input->post('phone'));
 
         if (empty($name)) {
             $this->session->set_flashdata('error', 'Nama Lengkap tidak boleh kosong.');
             redirect('akun/profil');
             return;
         }
+        // Aturan HP sama dengan akun buatan admin; sebelumnya isian apa pun disimpan dan yang
+        // lebih dari 20 karakter dipotong diam-diam oleh kolomnya (29 Sep 2026).
+        $this->load->library('form_validation');
+        $this->form_validation->set_rules('phone', 'Nomor HP', 'trim|max_length[20]|nomor_hp');
+        if ($this->form_validation->run() === FALSE) {
+            $this->session->set_flashdata('error', strip_tags(validation_errors()));
+            redirect('akun/profil');
+            return;
+        }
+        $phone = (string) $this->input->post('phone');
 
         // Check unique username if provided
         if (!empty($username)) {
@@ -437,6 +446,14 @@ class Pengaturan extends MY_Controller {
             // Bukti kepemilikan sebelum ganti password - roadmap T5 S13. Tanpa
             // ini, sesi yang sempat dipakai orang lain (mis. komputer publik)
             // bisa mengunci pemilik asli keluar tanpa perlu tahu sandi lamanya.
+            // Dibatasi seperti login: hanya percobaan GAGAL yang dihitung, per akun dan per IP,
+            // supaya formulir ini tidak jadi orakel penebak sandi bagi sesi yang dibajak (29 Sep 2026).
+            $konteks_laju = ['account_id' => (int) $user_id];
+            $rate = $this->rate_limit_inspect('profile_password', $konteks_laju);
+            if (empty($rate['success']) || empty($rate['allowed'])) {
+                $this->rate_limit_reject($rate, 'Terlalu banyak percobaan password salah. Coba lagi nanti.');
+                return;
+            }
             $current_password = (string) $this->input->post('current_password');
             $user = $this->Auth_model->find_by_id($user_id);
             $valid_password = $user && !empty($user->password)
@@ -447,6 +464,7 @@ class Pengaturan extends MY_Controller {
                 $this->sensitive_buffer->wipe($_POST['current_password']);
             }
             if (!$valid_password) {
+                $this->rate_limit_hit('profile_password', $konteks_laju);
                 $this->session->set_flashdata('error', 'Password saat ini salah.');
                 redirect('akun/profil');
                 return;

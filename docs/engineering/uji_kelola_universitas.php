@@ -228,6 +228,22 @@ try {
     $nims = array_column($db->query("SELECT nim FROM kkn_peserta WHERE pendaftaran_id={$ros}")->fetch_all(), 0);
     $cek($nims === ['K4C001'] && strpos($hal, 'kkn_upload_peserta/') !== FALSE, 'Sesudah tanggal ditarik roster terbuka lagi dan formulirnya tampil');
 
+    // === BUTIR 5: HP dan batas laju sandi di profil ===
+    echo "\n-- Butir 5: validasi HP dan batas laju sandi di profil --\n";
+    [$jP] = $login($eU4);
+    $idU2 = $idU4;
+    [, $hal] = $kirim($jP, 'akun/update', ['name' => 'Univ Dua', 'phone' => 'bukan-nomor-xx']);
+    $sampah = $baris($idU2)['phone'] === '081234567890' && strpos($hal, 'Nomor HP hanya boleh berisi angka') !== FALSE;
+    $kirim($jP, 'akun/update', ['name' => 'Univ Dua', 'phone' => str_repeat('9', 25)]);
+    $panjang = $baris($idU2)['phone'] === '081234567890';
+    $kirim($jP, 'akun/update', ['name' => 'Univ Dua', 'phone' => '+62 812-3456-7899']);
+    $cek($sampah && $panjang && $baris($idU2)['phone'] === '+62 812-3456-7899', 'HP sampah dan HP lebih dari 20 karakter di profil ditolak (tidak dipotong); HP sah tersimpan');
+    $kode = [];
+    for ($i = 0; $i < 6; $i++) {
+        $kode[] = $kirim($jP, 'akun/update', ['name' => 'Univ Dua', 'phone' => '081234567890', 'password' => $sandi2, 'password_confirm' => $sandi2, 'current_password' => 'SalahSandi#' . $i])[0];
+    }
+    $cek(array_slice($kode, 0, 5) === [200, 200, 200, 200, 200] && $kode[5] === 429 && password_verify($sandi, $baris($idU2)['password']),
+        'Percobaan sandi salah ke-6 di profil dijawab 429 (' . implode(',', $kode) . ')');
 } finally {
     foreach ($ember as $k => $row) {
         $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
