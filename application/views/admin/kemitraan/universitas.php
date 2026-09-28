@@ -21,7 +21,7 @@ if (empty($aksi_buat)) {
             Sunting, nonaktifkan, atau reset sandi lewat <a href="<?= base_url('Admin_Users') ?>" class="font-bold text-blue-600 dark:text-brand-primary hover:underline">Manajemen Pengguna</a> -
             satu tempat untuk seluruh akun apa pun rolenya, tab ini tidak menyalinnya.
         <?php else: ?>
-            Sunting, nonaktifkan, atau reset sandi akun dilakukan oleh superadmin.
+            Sunting data, reset sandi, atau nonaktifkan akun lewat tombol Kelola di tiap baris. Sandi dari admin wajib diganti universitas saat masuk.
 <?php endif; ?>
         </p>
     </div>
@@ -43,7 +43,7 @@ if (empty($aksi_buat)) {
     <div x-show="createOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @keydown.escape.window="createOpen = false">
         <div @click.outside="createOpen = false" class="w-full max-w-md rounded-3xl bg-white dark:bg-brand-card p-6 shadow-xl">
             <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-1">Tambah Universitas</h3>
-            <p class="mb-4 text-xs text-gray-500 dark:text-brand-muted">Akun ini bisa langsung masuk dan mengajukan KKN lewat dashboardnya.</p>
+            <p class="mb-4 text-xs text-gray-500 dark:text-brand-muted">Akun ini bisa langsung masuk dan mengajukan KKN lewat dashboardnya, sesudah mengganti sandi awal dari admin.</p>
             <form method="POST" action="<?= base_url($aksi_buat ?? 'Admin_Users/create_staff') ?>" class="space-y-3">
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                 <input type="hidden" name="role" value="universitas">
@@ -135,15 +135,54 @@ if (empty($aksi_buat)) {
                     </td>
                     <td class="px-4 py-4 text-xs"><?= html_escape(date('d M Y', strtotime($u->created_at ?? 'now'))) ?></td>
                     <td class="px-4 py-4 text-right">
-                        <?php /* Sunting/nonaktifkan/reset sandi TIDAK diduplikasi di sini -
-                                 lihat komentar kepala Admin_Kemitraan::universitas(). Tautan
-                                 ini membawa admin ke baris yang SAMA di Manajemen Pengguna
-                                 lewat pencarian email, bukan cuma ke daftar penuh. */ ?>
+                        <?php /* Superadmin: tautan ke baris yang SAMA di Manajemen Pengguna.
+                                 Admin bidang: kelola langsung di sini (keputusan pemilik produk
+                                 29 Sep 2026), ke Kemitraan_Bidang yang hanya menerima role universitas. */ ?>
 <?php if (empty($aksi_buat)): ?>
                         <a href="<?= base_url('Admin_Users?q=' . urlencode($u->email)) ?>"
                            class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">
                             <i class="ph ph-gear"></i> Kelola Akun
                         </a>
+<?php else:
+    $csrf_isian = '<input type="hidden" name="' . $this->security->get_csrf_token_name() . '" value="' . $this->security->get_csrf_hash() . '"><input type="hidden" name="id" value="' . (int) $u->id . '">';
+    $isian_kls = 'w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-gray-800 dark:text-gray-200';
+    $label_kls = 'mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted';
+?>
+                        <span x-data="{ kelola: false }">
+                        <button type="button" @click="kelola = true"
+                           class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">
+                            <i class="ph ph-gear"></i> Kelola
+                        </button>
+                        <div x-show="kelola" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 text-left whitespace-normal" @keydown.escape.window="kelola = false">
+                            <div @click.outside="kelola = false" class="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-white dark:bg-brand-card p-6 shadow-xl space-y-5">
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Kelola <?= html_escape($u->name) ?></h3>
+                                <form method="POST" action="<?= base_url('Kemitraan_Bidang/ubah_universitas') ?>" class="space-y-3">
+                                    <?= $csrf_isian ?>
+                                    <div><label class="<?= $label_kls ?>">Nama Universitas</label>
+                                        <input type="text" name="name" required maxlength="150" value="<?= html_escape($u->name) ?>" class="<?= $isian_kls ?>"></div>
+                                    <div><label class="<?= $label_kls ?>">Email</label>
+                                        <input type="email" name="email" required maxlength="100" value="<?= html_escape($u->email) ?>" class="<?= $isian_kls ?>"></div>
+                                    <div><label class="<?= $label_kls ?>">Nomor HP/WhatsApp</label>
+                                        <input type="tel" name="phone" maxlength="20" pattern="\+?[0-9][0-9 \-]{6,19}" value="<?= html_escape($u->phone ?? '') ?>" class="<?= $isian_kls ?>"></div>
+                                    <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 dark:bg-brand-primary text-white dark:text-brand-dark">Simpan Data</button>
+                                </form>
+                                <form method="POST" action="<?= base_url('Kemitraan_Bidang/sandi_universitas') ?>" class="space-y-3 border-t border-gray-100 dark:border-white/5 pt-4">
+                                    <?= $csrf_isian ?>
+                                    <div><label class="<?= $label_kls ?>">Sandi Baru</label>
+                                        <input type="password" name="password" required minlength="8" autocomplete="new-password" class="<?= $isian_kls ?>">
+                                        <p class="mt-1 text-[11px] text-gray-500 dark:text-brand-muted">Minimal 8 karakter, ada huruf besar, angka, dan simbol. Universitas wajib menggantinya saat masuk.</p></div>
+                                    <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 dark:bg-brand-primary text-white dark:text-brand-dark">Reset Sandi</button>
+                                </form>
+                                <form method="POST" action="<?= base_url('Kemitraan_Bidang/status_universitas') ?>" class="flex items-center justify-between gap-3 border-t border-gray-100 dark:border-white/5 pt-4"
+                                      onsubmit="return confirm('<?= $nonaktif ? 'Aktifkan kembali akun ini?' : 'Nonaktifkan akun ini? Sesinya langsung berakhir dan tidak bisa masuk.' ?>')">
+                                    <?= $csrf_isian ?>
+                                    <input type="hidden" name="status" value="<?= $nonaktif ? 'active' : 'nonaktif' ?>">
+                                    <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold <?= $nonaktif ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400' ?> hover:underline"><?= $nonaktif ? 'Aktifkan Kembali' : 'Nonaktifkan Akun' ?></button>
+                                    <button type="button" @click="kelola = false" class="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5">Tutup</button>
+                                </form>
+                            </div>
+                        </div>
+                        </span>
 <?php endif; ?>
                     </td>
                 </tr>

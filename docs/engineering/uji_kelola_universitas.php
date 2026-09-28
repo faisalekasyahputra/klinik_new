@@ -104,6 +104,68 @@ try {
     [$jAdm] = $login($eAdm); [$jBid] = $login($eBid);
     $http($jBid, 'Kemitraan_Bidang/universitas');
 
+    // === BUTIR 1: pengelolaan akun universitas oleh admin bidang ===
+    echo "\n-- Butir 1: admin bidang mengelola akun universitas --\n";
+    [, $hal] = $http($jBid, 'Kemitraan_Bidang/universitas');
+    $cek(strpos($hal, 'Kemitraan_Bidang/ubah_universitas') !== FALSE && strpos($hal, 'Kemitraan_Bidang/sandi_universitas') !== FALSE
+        && strpos($hal, 'Kemitraan_Bidang/status_universitas') !== FALSE && strpos($hal, 'dilakukan oleh superadmin') === FALSE,
+        'Halaman admin bidang memuat formulir sunting, reset sandi, dan status; teks "dilakukan oleh superadmin" hilang');
+
+    $eUbah = "{$tag}_ubah@example.test";
+    [$k] = $kirim($jBid, 'Kemitraan_Bidang/ubah_universitas', ['id' => $idU, 'name' => "Univ Baru {$tag}", 'email' => $eUbah, 'phone' => '0812 3456 7890', 'role' => 'admin']);
+    $u = $baris($idU);
+    $cek($u['name'] === "Univ Baru {$tag}" && $u['email'] === $eUbah && $u['phone'] === '0812 3456 7890' && $u['role'] === 'universitas',
+        'Sunting nama, email, HP tersimpan; role=admin yang disisipkan diabaikan (role tetap universitas)');
+    $cek($jejak('universitas_diubah', $idU) === 1, 'Sunting tercatat di jejak audit dengan objek usr_users id');
+    $eU = $eUbah;
+
+    [, $hal] = $kirim($jBid, 'Kemitraan_Bidang/ubah_universitas', ['id' => $idU, 'name' => 'X', 'email' => strtoupper($eU2), 'phone' => '']);
+    $cek($baris($idU)['email'] === $eU && strpos($hal, 'email tersebut sudah terdaftar') !== FALSE, 'Sunting ke email milik akun lain ditolak dengan pesan jelas');
+    [, $hal] = $kirim($jBid, 'Kemitraan_Bidang/ubah_universitas', ['id' => $idU, 'name' => 'X', 'email' => $eU, 'phone' => 'bukan-nomor-xx']);
+    $cek($baris($idU)['phone'] === '0812 3456 7890' && strpos($hal, 'Nomor HP hanya boleh berisi angka') !== FALSE, 'Sunting dengan HP sampah ditolak, data tidak berubah');
+
+    $hash = $baris($idU)['password'];
+    [, $hal] = $kirim($jBid, 'Kemitraan_Bidang/sandi_universitas', ['id' => $idU, 'password' => 'abcd1234']);
+    $cek($baris($idU)['password'] === $hash && strpos($hal, 'harus minimal 8 karakter, mengandung huruf besar') !== FALSE, 'Reset sandi lemah ditolak dengan aturan sandi_kuat');
+
+    [$jU] = $login($eU);
+    $hidup = $masuk($jU);
+    $kirim($jBid, 'Kemitraan_Bidang/sandi_universitas', ['id' => $idU, 'password' => $sandi2]);
+    $u = $baris($idU);
+    $cek(password_verify($sandi2, $u['password']) && $u['active_session_hash'] === NULL && $u['active_session_id_hash'] === NULL && $kedaluwarsa($idU),
+        'Reset sandi sah: sandi baru berlaku, sesi lama dicabut, sandi wajib diganti');
+    $cek($jejak('universitas_sandi_direset', $idU) === 1 && (int) $nilai("SELECT COUNT(*) FROM sys_jejak_audit WHERE objek_id='{$idU}' AND detail_json LIKE '%{$sandi2}%'") === 0,
+        'Reset sandi tercatat di audit tanpa isi sandinya');
+    $cek($hidup && ! $masuk($jU), 'Sesi universitas yang lama berakhir sesudah reset sandi');
+
+    [$jU] = $login($eU, $sandi2);
+    $hidup = $masuk($jU);
+    $kirim($jBid, 'Kemitraan_Bidang/status_universitas', ['id' => $idU, 'status' => 'nonaktif']);
+    $u = $baris($idU);
+    $cek($u['status'] === 'nonaktif' && $u['active_session_hash'] === NULL && $jejak('universitas_dinonaktifkan', $idU) === 1,
+        'Nonaktifkan: status nonaktif, sesi dikosongkan, tercatat di audit');
+    $cek($hidup && ! $masuk($jU), 'Sesi akun yang dinonaktifkan langsung berakhir');
+    [, $r] = $login($eU, $sandi2);
+    $cek(strpos($r[2], 'Auth/login') !== FALSE && strpos($r[1], 'dinonaktifkan') !== FALSE, 'Akun nonaktif tidak bisa login');
+    $kirim($jBid, 'Kemitraan_Bidang/status_universitas', ['id' => $idU, 'status' => 'active']);
+    [, $r] = $login($eU, $sandi2);
+    $cek($baris($idU)['status'] === 'active' && strpos($r[2], 'Auth/login') === FALSE && $jejak('universitas_diaktifkan', $idU) === 1,
+        'Aktifkan kembali: akun bisa login lagi, tercatat di audit');
+
+    // Batas peran: id akun peran lain (disisipkan lewat formulir) -> 404 dan tidak ada yang berubah.
+    $sasaran = ['warga' => $idW, 'pengembang' => $idP, 'mahasiswa' => $idM, 'admin' => $idAdm2, 'admin_bidang' => $idBid2, 'diri sendiri' => $idBid, 'tidak ada' => 99999999];
+    foreach ($sasaran as $peran => $id) {
+        $sebelum = $baris($id);
+        $kode = [];
+        $kode[] = $kirim($jBid, 'Kemitraan_Bidang/ubah_universitas', ['id' => $id, 'name' => 'Diretas', 'email' => "{$tag}_retas{$id}@example.test", 'phone' => ''])[0];
+        $kode[] = $kirim($jBid, 'Kemitraan_Bidang/sandi_universitas', ['id' => $id, 'password' => $sandi2])[0];
+        $kode[] = $kirim($jBid, 'Kemitraan_Bidang/status_universitas', ['id' => $id, 'status' => 'nonaktif'])[0];
+        $cek($kode === [404, 404, 404] && $baris($id) == $sebelum, "Akun {$peran}: ketiga aksi 404 dan baris tidak berubah (" . implode(',', $kode) . ')');
+    }
+    $cek($http($jBid, 'Kemitraan_Bidang/status_universitas?id=' . $idU2 . '&status=nonaktif')[0] === 404 && $baris($idU2)['status'] === 'active', 'Aksi lewat GET ditolak 404');
+    $http($jBid, 'Kemitraan_Bidang/status_universitas', ['id' => $idU2, 'status' => 'nonaktif']);
+    $cek($baris($idU2)['status'] === 'active', 'Aksi tanpa token CSRF tidak mengubah apa pun');
+
     // === BUTIR 2: sandi dari admin wajib diganti di login pertama ===
     echo "\n-- Butir 2: paksa ganti sandi di login pertama --\n";
     $eBaru = "{$tag}_baru@example.test";

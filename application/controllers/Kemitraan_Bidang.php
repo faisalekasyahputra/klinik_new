@@ -216,4 +216,113 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
         $this->session->set_flashdata('success', 'Akun universitas berhasil dibuat. Serahkan email dan sandinya kepada universitas; sandi itu wajib diganti saat pertama masuk.');
         redirect($kembali);
     }
+
+    // =====================================================================
+    // KELOLA AKUN UNIVERSITAS - keputusan pemilik produk 29 Sep 2026: admin bidang menyunting,
+    // mereset sandi, dan menonaktifkan akun universitas (sebelumnya hanya superadmin lewat
+    // Admin_Users). Batasnya ada di akun_universitas(): hanya role 'universitas'.
+    // =====================================================================
+
+    /**
+     * Akun sasaran dari POST id, HANYA kalau role-nya 'universitas'. Akun peran lain (termasuk
+     * id yang disisipkan ke formulir) dijawab 404 persis seperti akun yang tidak ada, supaya
+     * endpoint ini tidak bisa dipakai menyentuh atau menebak akun warga, pengembang, atau admin.
+     */
+    private function akun_universitas()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $user = $this->db->get_where('usr_users', ['id' => (int) $this->input->post('id'), 'role' => 'universitas'])->row();
+        if ( ! $user) { show_404(); }
+        return $user;
+    }
+
+    /** Sunting nama, email, dan nomor HP. Role tidak pernah dibaca dari formulir. */
+    public function ubah_universitas()
+    {
+        $user = $this->akun_universitas();
+        $kembali = 'Kemitraan_Bidang/universitas';
+
+        $this->load->library('form_validation');
+        $this->form_validation->set_rules('name', 'Nama', 'required|trim|max_length[150]');
+        $this->form_validation->set_rules('email', 'Email', 'required|trim|valid_email|max_length[100]');
+        $this->form_validation->set_rules('phone', 'Nomor HP', 'trim|max_length[20]|nomor_hp');
+        if ($this->form_validation->run() === FALSE) {
+            $this->session->set_flashdata('error', strip_tags(validation_errors()));
+            redirect($kembali);
+            return;
+        }
+
+        $data = [
+            'name'  => $this->input->post('name', TRUE),
+            'email' => $this->input->post('email', TRUE),
+            'phone' => trim((string) $this->input->post('phone', TRUE)) ?: NULL,
+        ];
+        // is_unique tidak bisa dipakai: email akun ini sendiri akan dianggap ganda.
+        $ganda = $this->db->where('email', $data['email'])->where('id !=', (int) $user->id)->count_all_results('usr_users');
+        $galat = $ganda > 0 ? 1062 : 0;
+        if ( ! $galat && ! $this->db->where('id', (int) $user->id)->update('usr_users', $data)) {
+            $galat = (int) ($this->db->error()['code'] ?? 0) ?: -1;
+        }
+        if ($galat) {
+            $this->session->set_flashdata('error', $galat === 1062
+                ? 'Perubahan belum disimpan: email tersebut sudah terdaftar.'
+                : 'Perubahan belum disimpan. Periksa isian lalu coba lagi.');
+            redirect($kembali);
+            return;
+        }
+
+        $berubah = array_keys(array_filter($data, fn($v, $k) => (string) $v !== (string) $user->$k, ARRAY_FILTER_USE_BOTH));
+        $this->catat_audit('universitas_diubah', 'Admin bidang ' . $this->my_bidang_kode . ' menyunting akun universitas ' . $user->email,
+            'usr_users', (string) $user->id, ['kolom' => $berubah, 'email_lama' => $user->email, 'email_baru' => $data['email']]);
+        $this->session->set_flashdata('success', 'Data akun ' . $data['email'] . ' diperbarui.');
+        redirect($kembali);
+    }
+
+    /** Reset sandi: aturan kekuatan sama dengan sandi buatan admin, dan wajib diganti saat masuk. */
+    public function sandi_universitas()
+    {
+        $user = $this->akun_universitas();
+        $kembali = 'Kemitraan_Bidang/universitas';
+
+        $this->load->library('form_validation');
+        $this->form_validation->set_rules('password', 'Password', 'required|sandi_kuat');
+        if ($this->form_validation->run() === FALSE) {
+            $this->session->set_flashdata('error', strip_tags(validation_errors()));
+            redirect($kembali);
+            return;
+        }
+
+        // Pola Admin_Users::reset_sandi: kunci gagal dibuka dan sesi yang sedang berjalan dicabut.
+        $this->load->model('auth_model');
+        $this->db->where('id', (int) $user->id)->update('usr_users', [
+            'password' => password_hash($this->input->post('password'), PASSWORD_BCRYPT),
+            'login_attempts' => 0, 'locked_until' => NULL,
+            'active_session_hash' => NULL, 'active_session_id_hash' => NULL, 'active_session_at' => NULL,
+        ] + $this->auth_model->password_awal_fields());
+        // Sandinya tidak ikut dicatat.
+        $this->catat_audit('universitas_sandi_direset', 'Admin bidang ' . $this->my_bidang_kode . ' mereset sandi akun universitas ' . $user->email,
+            'usr_users', (string) $user->id);
+        $this->session->set_flashdata('success', 'Sandi ' . $user->email . ' diganti. Sampaikan lewat jalur pribadi; universitas wajib menggantinya saat masuk.');
+        redirect($kembali);
+    }
+
+    /** Nonaktifkan atau aktifkan kembali. Menonaktifkan sekaligus mengakhiri sesi yang berjalan. */
+    public function status_universitas()
+    {
+        $user = $this->akun_universitas();
+        $ke = $this->input->post('status', TRUE) === 'nonaktif' ? 'nonaktif' : 'active';
+
+        $data = ['status' => $ke];
+        if ($ke === 'nonaktif') {
+            $data += ['active_session_hash' => NULL, 'active_session_id_hash' => NULL, 'active_session_at' => NULL];
+        }
+        $this->db->where('id', (int) $user->id)->update('usr_users', $data);
+        $this->catat_audit($ke === 'nonaktif' ? 'universitas_dinonaktifkan' : 'universitas_diaktifkan',
+            'Admin bidang ' . $this->my_bidang_kode . ($ke === 'nonaktif' ? ' menonaktifkan' : ' mengaktifkan') . ' akun universitas ' . $user->email,
+            'usr_users', (string) $user->id, ['dari' => $user->status, 'ke' => $ke]);
+        $this->session->set_flashdata('success', $ke === 'nonaktif'
+            ? 'Akun ' . $user->email . ' dinonaktifkan dan sesinya diakhiri.'
+            : 'Akun ' . $user->email . ' diaktifkan kembali.');
+        redirect('Kemitraan_Bidang/universitas');
+    }
 }
