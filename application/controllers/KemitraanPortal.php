@@ -251,6 +251,14 @@ class KemitraanPortal extends Public_Controller
         if ( ! $row) { return; }
         if ($row->jenis !== 'kkn') { show_404(); }
         if ( ! $this->kkn_masih_terbuka($row)) { return; }
+        // Begitu admin menetapkan tanggal sertifikat, roster adalah daftar penerima sertifikat
+        // dan dikunci; bila tanggalnya ditarik, roster terbuka lagi (keputusan 29 Sep 2026).
+        // View kkn_batch.php menyembunyikan formulirnya dengan syarat yang sama.
+        if ( ! empty($row->tanggal_sertifikat)) {
+            $this->session->set_flashdata('error', 'Roster peserta terkunci karena tanggal sertifikat sudah ditetapkan. Hubungi admin bila ada perubahan peserta.');
+            redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
+            return;
+        }
 
         if (empty($_FILES['file_peserta']['name'])) {
             $this->session->set_flashdata('error', 'Pilih berkas daftar peserta terlebih dahulu.');

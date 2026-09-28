@@ -155,6 +155,48 @@ $terbuka = ! $berhenti;
         </div>
     </div>
 
+    <?php /* pasangDropzone() di luar formulir roster: formulir itu bisa disembunyikan (roster
+             terkunci) sementara kotak Laporan Akhir tetap memakainya (29 Sep 2026). */ ?>
+    <script>
+        function pasangDropzone(dropId, inputId, namaId) {
+            var drop = document.getElementById(dropId);
+            var input = document.getElementById(inputId);
+            var nama = document.getElementById(namaId);
+            if (!drop || !input || !nama) { return; }
+
+            var teksAwal = nama.innerHTML;
+            function tampilkanNamaBerkas() {
+                var f = input.files && input.files[0];
+                nama.textContent = f ? f.name : '';
+                if (!f) { nama.innerHTML = teksAwal; }
+            }
+            input.addEventListener('change', tampilkanNamaBerkas);
+
+            // Klik di mana pun di kotak (bukan cuma input) membuka file picker.
+            drop.addEventListener('click', function () { input.click(); });
+
+            ['dragenter', 'dragover'].forEach(function (evt) {
+                drop.addEventListener(evt, function (e) {
+                    e.preventDefault(); e.stopPropagation();
+                    drop.classList.add('border-brand-primary', 'bg-brand-primary/5');
+                });
+            });
+            ['dragleave', 'drop'].forEach(function (evt) {
+                drop.addEventListener(evt, function (e) {
+                    e.preventDefault(); e.stopPropagation();
+                    drop.classList.remove('border-brand-primary', 'bg-brand-primary/5');
+                });
+            });
+            drop.addEventListener('drop', function (e) {
+                var berkas = e.dataTransfer && e.dataTransfer.files;
+                if (berkas && berkas.length) {
+                    input.files = berkas; // DataTransfer.files -> input.files, didukung semua browser modern.
+                    tampilkanNamaBerkas();
+                }
+            });
+        }
+    </script>
+
     <!-- Roster peserta - permintaan user 21 Agt 2026. Diisi dari unggahan
          Excel, bukan diketik satu-satu (lihat KemitraanPortal::kkn_upload_peserta()
          dan Kkn_peserta_import). Mengunggah ulang MENGGANTI seluruh roster,
@@ -169,6 +211,8 @@ $terbuka = ! $berhenti;
 
         <?php if ( ! $terbuka): ?>
         <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted">KKN yang sudah <?= strtolower(html_escape($row->status)) ?> tidak bisa diubah lagi: roster, link dokumentasi, dan laporan akhir hanya bisa dilihat.</p>
+        <?php elseif ( ! empty($row->tanggal_sertifikat)): ?>
+        <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted"><i class="ph ph-lock-simple" aria-hidden="true"></i> Roster terkunci karena tanggal sertifikat sudah ditetapkan. Hubungi admin bila ada perubahan peserta.</p>
         <?php else: ?>
         <form method="POST" action="<?= base_url('KemitraanPortal/kkn_upload_peserta/' . (int) $row->id) ?>"
               enctype="multipart/form-data" class="mt-4 flex flex-wrap items-end gap-3">
@@ -205,43 +249,6 @@ $terbuka = ! $berhenti;
                    fungsinya keluar diam-diam lewat pengecekan null di awal. */
                 ?>
                 <script>
-                function pasangDropzone(dropId, inputId, namaId) {
-                    var drop = document.getElementById(dropId);
-                    var input = document.getElementById(inputId);
-                    var nama = document.getElementById(namaId);
-                    if (!drop || !input || !nama) { return; }
-
-                    var teksAwal = nama.innerHTML;
-                    function tampilkanNamaBerkas() {
-                        var f = input.files && input.files[0];
-                        nama.textContent = f ? f.name : '';
-                        if (!f) { nama.innerHTML = teksAwal; }
-                    }
-                    input.addEventListener('change', tampilkanNamaBerkas);
-
-                    // Klik di mana pun di kotak (bukan cuma input) membuka file picker.
-                    drop.addEventListener('click', function () { input.click(); });
-
-                    ['dragenter', 'dragover'].forEach(function (evt) {
-                        drop.addEventListener(evt, function (e) {
-                            e.preventDefault(); e.stopPropagation();
-                            drop.classList.add('border-brand-primary', 'bg-brand-primary/5');
-                        });
-                    });
-                    ['dragleave', 'drop'].forEach(function (evt) {
-                        drop.addEventListener(evt, function (e) {
-                            e.preventDefault(); e.stopPropagation();
-                            drop.classList.remove('border-brand-primary', 'bg-brand-primary/5');
-                        });
-                    });
-                    drop.addEventListener('drop', function (e) {
-                        var berkas = e.dataTransfer && e.dataTransfer.files;
-                        if (berkas && berkas.length) {
-                            input.files = berkas; // DataTransfer.files -> input.files, didukung semua browser modern.
-                            tampilkanNamaBerkas();
-                        }
-                    });
-                }
                 pasangDropzone('kb-peserta-drop', 'kb-peserta', 'kb-peserta-nama');
                 </script>
             </div>

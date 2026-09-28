@@ -211,6 +211,23 @@ try {
     $cek(strpos($halA, 'kkn_upload_laporan/') === FALSE && strpos($halB, 'kkn_upload_laporan/') !== FALSE,
         'Formulir laporan tidak ditawarkan sebelum Diterima, ditawarkan sesudah Diterima dan periode lewat');
 
+    // === BUTIR 4: roster terkunci setelah tanggal sertifikat ditetapkan ===
+    echo "\n-- Butir 4: roster terkunci oleh tanggal sertifikat --\n";
+    $ros = $kkn($idU, '2026-01-01', '2026-02-01', 'Diterima');
+    $roster($jU, $ros, [['K4A001', 'Awal']]);
+    $http($jAdm, 'Admin_Kemitraan');
+    $kirim($jAdm, 'Admin_Kemitraan/tanggal_sertifikat/' . $ros, ['tanggal_sertifikat' => '2026-03-01']);
+    [, $hal] = $roster($jU, $ros, [['K4B001', 'Pengganti']]);
+    $nims = array_column($db->query("SELECT nim FROM kkn_peserta WHERE pendaftaran_id={$ros}")->fetch_all(), 0);
+    $cek($nims === ['K4A001'] && stripos($hal, 'hubungi admin') !== FALSE, 'Roster ditolak dengan pesan "hubungi admin" sesudah tanggal sertifikat ditetapkan');
+    [, $hal] = $http($jU, 'KemitraanPortal/pendaftaran/' . $ros);
+    $cek(strpos($hal, 'kkn_upload_peserta/') === FALSE && strpos($hal, 'kkn_upload_laporan/') !== FALSE, 'Formulir roster disembunyikan (formulir laporan tetap ada)');
+    $kirim($jAdm, 'Admin_Kemitraan/tanggal_sertifikat/' . $ros, ['tanggal_sertifikat' => '']);
+    $roster($jU, $ros, [['K4C001', 'Sesudah Ditarik']]);
+    [, $hal] = $http($jU, 'KemitraanPortal/pendaftaran/' . $ros);
+    $nims = array_column($db->query("SELECT nim FROM kkn_peserta WHERE pendaftaran_id={$ros}")->fetch_all(), 0);
+    $cek($nims === ['K4C001'] && strpos($hal, 'kkn_upload_peserta/') !== FALSE, 'Sesudah tanggal ditarik roster terbuka lagi dan formulirnya tampil');
+
 } finally {
     foreach ($ember as $k => $row) {
         $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
