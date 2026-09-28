@@ -372,6 +372,11 @@ cek((string) kolom($idS, 'password') === $hash_sebelum, 'Sandi pendek ditolak da
 cek(jejak('sandi_direset', $idS) === 0, 'Penolakan tidak meninggalkan jejak "sandi_direset" palsu');
 [$masuk, ] = coba_login($emailS, SANDI_PENDEK);
 cek( ! $masuk, 'Sandi pendek yang ditolak tidak pernah berlaku');
+// Panjang saja tidak cukup: aturan sandi_kuat, sama dengan reset oleh admin bidang (29 Sep 2026).
+http('a', 'Admin_Users/reset_sandi', [
+    'csrf_kpkp_token' => csrf('a', 'Admin_Users'), 'id' => $idS, 'password' => 'sandilemahsekali',
+]);
+cek((string) kolom($idS, 'password') === $hash_sebelum, 'Sandi panjang tanpa huruf besar, angka, dan simbol ditolak');
 
 // ===================================================== 4. RESET SANDI SAH
 echo "\n== 4. Reset sandi sah ==\n";

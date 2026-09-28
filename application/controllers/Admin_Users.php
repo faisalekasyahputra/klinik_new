@@ -460,8 +460,10 @@ class Admin_Users extends Admin_Controller {
         if ( ! $user) { return; }
 
         $sandi = (string) $this->input->post('password');
-        if (strlen($sandi) < 8) {
-            $this->session->set_flashdata('error', 'Password baru minimal 8 karakter.');
+        // Aturan sama dengan sandi_kuat (MY_Form_validation) dan reset oleh admin bidang (29 Sep 2026).
+        $this->load->library('form_validation');
+        if ( ! $this->form_validation->sandi_kuat($sandi)) {
+            $this->session->set_flashdata('error', 'Password baru harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol.');
             redirect('Admin_Users');
             return;
         }
