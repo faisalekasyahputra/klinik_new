@@ -62,6 +62,24 @@ try{
  $profil=$db->query("SELECT COUNT(*) FROM sf_profil_warga WHERE user_id=$id")->fetch_row()[0];
  $cek(strpos($b,'sudah terdaftar pada akun lain')!==false && (int)$profil===0, "NIK terkunci di akun lain (tanpa profil pendataan): akun kedua ditolak, tidak ada profil tercipta");
  @unlink($j);
+ // Onboarding warga dengan NIK milik akun lain (di sf_profil_warga atau usr_users) ditolak SAAT onboarding.
+ // Dulu lolos, lalu prefill SIMPERUM gagal diam-diam (nik_already_bound) dan warga terus kembali ke Cek NIK.
+ $nik3='3399990101700005'; $pinjam(hash('sha256','warga_lookup:nik:'.$enc->deterministic_hash($nik3)));
+ $st=$db->prepare("INSERT INTO usr_users (name,email,password,role,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at) VALUES ('Uji NIK',?,?,'warga','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
+ $e="{$tag}_profil@example.test"; $h=password_hash($pw,PASSWORD_BCRYPT); $st->bind_param('ss',$e,$h);$st->execute(); $ids[]=$pid=$db->insert_id;
+ $st=$db->prepare("INSERT INTO sf_profil_warga (user_id,nik_ciphertext,nik_lookup_hash,full_name_ciphertext) VALUES (?,?,?,?)");
+ $nc=$enc->encrypt($nik3); $nh=$enc->deterministic_hash($nik3); $fn=$enc->encrypt('Uji NIK'); $st->bind_param('isss',$pid,$nc,$nh,$fn); $st->execute();
+ $st=$db->prepare("INSERT INTO usr_users (name,email,password,role,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at) VALUES ('Uji NIK',?,?,NULL,'active',0,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
+ $e="{$tag}_baru@example.test"; $st->bind_param('ss',$e,$h);$st->execute(); $ids[]=$id=$db->insert_id;
+ foreach(['warga_lookup','warga_lookup_jam','warga_lookup_harian'] as $p) $pinjam(hash('sha256',"$p:account:$id"));
+ $j=tempnam(sys_get_temp_dir(),'e2e'); $http($j,'Auth/login'); $http($j,'Auth/do_login',['email'=>$e,'password'=>$pw,'csrf_kpkp_token'=>$csrf($j)]);
+ foreach([[$nik3,'profil pendataan'],[$nik2,'usr_users']] as [$n,$ket]){
+  $http($j,'Auth/onboarding');
+  [$k,$b]=$http($j,'Auth/save_onboarding',['csrf_kpkp_token'=>$csrf($j),'role'=>'warga','username'=>$tag.'baru','nama_lengkap'=>'Uji NIK','nik_identitas'=>$n,'alamat_domisili'=>'Alamat uji','phone'=>'081234567890']);
+  $u=$db->query("SELECT profile_completed,nik_lookup_hash FROM usr_users WHERE id=$id")->fetch_assoc();
+  $cek(strpos($b,'sudah terdaftar pada akun lain')!==false && (int)$u['profile_completed']===0 && $u['nik_lookup_hash']===null, "Onboarding warga dengan NIK terikat di $ket akun lain ditolak berpesan, akun tidak terikat");
+ }
+ @unlink($j);
 } finally {
  foreach($ids as $id){$db->query("DELETE FROM sf_profil_warga WHERE user_id=$id");$db->query("DELETE FROM sf_penilaian_perumahan WHERE user_id=$id");$db->query("DELETE FROM usr_users WHERE id=$id");}
  $db->query("DELETE FROM sf_rekaman_simperum WHERE source_record_key LIKE 'SYN-API-%'");

@@ -649,6 +649,17 @@ class Auth extends MY_Controller {
             // di formulir magang). NIK kini hanya untuk warga.
             $this->_onboarding_fail('NIK harus terdiri dari 16 digit angka.');
             return;
+        } elseif ($role === 'warga') {
+            /* Satu NIK satu akun, aturan yang sama dengan Pengaturan dan
+               Housing_assessment_model::save_profile. Dulu tidak dicek di sini:
+               onboarding lolos, lalu prefill SIMPERUM gagal diam-diam karena
+               nik_already_bound dan warga terus mendarat di layar Cek NIK. */
+            $nik_hash = $this->encryption_lib->deterministic_hash($nik_raw);
+            if ($this->db->where('nik_lookup_hash', $nik_hash)->where('id !=', $user_id)->count_all_results('usr_users') > 0
+                || $this->db->where('nik_lookup_hash', $nik_hash)->where('user_id !=', $user_id)->count_all_results('sf_profil_warga') > 0) {
+                $this->_onboarding_fail('NIK ini sudah terdaftar pada akun lain. Jika Anda merasa ini keliru, hubungi Dinas Perakim.');
+                return;
+            }
         }
 
         $alamat_encrypted = $this->encryption_lib->encrypt($alamat_raw);
@@ -662,7 +673,7 @@ class Auth extends MY_Controller {
         ];
         if ($role === 'warga') {
             $profile_data['nik'] = $this->encryption_lib->encrypt($nik_raw);
-            $profile_data['nik_lookup_hash'] = $this->encryption_lib->deterministic_hash($nik_raw);
+            $profile_data['nik_lookup_hash'] = $nik_hash;
         }
         // Role-specific fields
         if ($role === 'pengembang') {
