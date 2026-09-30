@@ -83,6 +83,23 @@ class Admin_Kabkota extends Admin_Kabkota_Controller {
     {
         $data = $this->assessment_detail_data($queue_id, $this->my_kabupaten_id);
         if ( ! $data) { show_404(); return; }
+        // Sakelar B2 (config/kebijakan_data.php) berlaku juga di detail, bukan hanya di daftar antrean.
+        $this->config->load('kebijakan_data', TRUE, TRUE);
+        if ($this->config->item('identitas_warga_kabkota', 'kebijakan_data') === 'menunggu_keputusan') {
+            $contoh = [
+                'full_name' => 'Warga Contoh ' . str_pad((string) (int) $queue_id, 3, '0', STR_PAD_LEFT),
+                'address' => 'Alamat contoh - menunggu keputusan dinas', 'birth_date' => '1980-01-01',
+                'family_card_number' => '0000000000000000', 'phone' => '080000000000',
+                'welfare_decile' => (string) (1 + ((int) $queue_id % 10)),
+            ];
+            $data['profile'] = $contoh + $data['profile'];
+            foreach (['identity', 'socioeconomic'] as $bagian) {
+                if (isset($data['source_snapshot'][$bagian]) && is_array($data['source_snapshot'][$bagian])) {
+                    $data['source_snapshot'][$bagian] = array_intersect_key($contoh, $data['source_snapshot'][$bagian]) + $data['source_snapshot'][$bagian];
+                }
+            }
+            unset($data['assessment']['matrix_income_code']);
+        }
         $data += ['title' => 'Detail Penilaian Warga', 'back_url' => 'Admin_Kabkota', 'action_url' => 'Admin_Kabkota/update_status', 'evidence_url' => 'Admin_Kabkota/evidence'];
         $this->render_scoped_admin('admin/antrean/detail', $data);
     }
