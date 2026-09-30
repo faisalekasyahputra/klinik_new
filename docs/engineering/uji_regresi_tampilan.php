@@ -581,6 +581,11 @@ foreach (['land_transfer_proof', 'recipient_photo'] as $jenis) {
 cek(strpos($pdt, 'recipient_photo') === FALSE, 'A9: kotak unggah recipient_photo tidak ada di formulir pendataan');
 cek(strpos($pdt, 'Bukti Pindah Tangan') !== FALSE, 'UAT #9: kotak unggah Bukti Pindah Tangan ada di formulir pendataan');
 
+// Jelajah admin kab/kota 1 Okt 2026: push "Pengajuan warga baru" untuk admin_kabkota dulu
+// ikut bertaut Admin?status=pending, halaman superadmin yang menolaknya.
+preg_match("/'role' => 'admin_kabkota'.{0,200}?'([A-Za-z_]+[^']*)', \\\$tag/s", $wrg, $mp);
+cek(($mp[1] ?? '') === 'Admin_Kabkota', 'Push pengajuan baru untuk admin kab/kota bertaut ke antrean wilayahnya, bukan Admin/');
+
 // E1 - syarat "harus ditanggapi dulu" dilepas, TIGA syarat lain tetap berdiri.
 $umum = (string) @file_get_contents(APP_ROOT . '/application/controllers/Umum.php');
 wajib($umum !== '', 'Sumber Umum.php terbaca');

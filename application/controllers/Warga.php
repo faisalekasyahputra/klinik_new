@@ -627,13 +627,15 @@ class Warga extends MY_Controller {
             $queue = $this->db->select('kabupaten_id')->get_where('sf_housing_queue', [
                 'id' => (int) $result['queue_id'],
             ])->row_array();
-            $audiences = [['role' => 'admin']];
+            $judul = 'Pengajuan warga baru';
+            $isi   = 'Ada pengajuan bantuan perumahan yang menunggu peninjauan.';
+            $tag   = 'warga-' . (int) $result['queue_id'];
+            $this->notify_admin_push([['role' => 'admin']], $judul, $isi, 'Admin?status=pending', $tag);
+            // Admin kab/kota tidak boleh masuk Admin/ (akses_ditolak), jadi tautannya ke antrean wilayahnya sendiri.
             if ( ! empty($queue['kabupaten_id'])) {
-                $audiences[] = ['role' => 'admin_kabkota', 'kabupaten_id' => (int) $queue['kabupaten_id']];
+                $this->notify_admin_push([['role' => 'admin_kabkota', 'kabupaten_id' => (int) $queue['kabupaten_id']]],
+                    $judul, $isi, 'Admin_Kabkota', $tag);
             }
-            $this->notify_admin_push($audiences, 'Pengajuan warga baru',
-                'Ada pengajuan bantuan perumahan yang menunggu peninjauan.',
-                'Admin?status=pending', 'warga-' . (int) $result['queue_id']);
         }
         $this->session->set_flashdata(
             ! empty($result['success']) ? 'success' : 'error',
