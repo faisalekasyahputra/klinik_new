@@ -367,6 +367,18 @@ try {
     cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP]) === 24,
         'D2: menyimpan tanpa ketiga isian baru TETAP BERHASIL - tidak menolak laporan berjalan');
 
+    // Isian identik: MySQL melaporkan 0 baris berubah, tapi itu tetap simpan yang sah.
+    $t = csrf('kab', $url);
+    $sama = http('kab', 'Rekam_Kawasan/simpan_intervensi', ['csrf_kpkp_token' => $t,
+        'laporan_id' => $LAP, 'intervensi_id' => $pertama, 'indikator' => 'air_minum',
+        'nama_program' => '', 'nama_kegiatan' => 'Kegiatan diperbarui',
+        'nama_sub_kegiatan' => '  ', 'nama_pekerjaan' => '',
+        'lokasi_teks' => 'RT 2 RW 2, Desa Uji',
+        'sumber_anggaran' => 'dana_desa', 'keterangan_sumber' => '',
+        'volume' => '85', 'nilai_anggaran' => '212500000', 'nilai_padat_karya' => '0']);
+    cek(strpos($sama['body'], 'Intervensi diperbarui.') !== FALSE,
+        'Ubah dengan isian identik tetap dilaporkan tersimpan');
+
     // ------------------------------------------------------- scope
     $t = csrf('lain', 'Rekam_Kawasan?tahun=' . TAHUN . '&triwulan=2');
     http('lain', 'Rekam_Kawasan/simpan_intervensi', ['csrf_kpkp_token' => $t,
@@ -431,10 +443,32 @@ try {
     cek((int) skalar('SELECT COUNT(*) c FROM rd_kawasan_intervensi WHERE laporan_id = ?', [$LAP]) === $sisa,
         'TW II tetap berisi ' . $sisa . ' intervensi (pembanding sahih)');
 
+    // Ubah intervensi milik TW II lewat laporan TW III: WHERE id+laporan_id tidak
+    // mengenai baris apa pun, jadi layar tidak boleh bilang "diperbarui".
+    $t = csrf('kab', 'Rekam_Kawasan?tahun=' . TAHUN . '&triwulan=3');
+    $lintas = http('kab', 'Rekam_Kawasan/simpan_intervensi', ['csrf_kpkp_token' => $t,
+        'laporan_id' => $LAP7, 'intervensi_id' => $pertama, 'indikator' => 'drainase',
+        'nama_kegiatan' => 'Sisipan lintas laporan', 'lokasi_teks' => 'X',
+        'sumber_anggaran' => 'apbd_kabkota', 'keterangan_sumber' => '',
+        'volume' => '1', 'nilai_anggaran' => '1', 'nilai_padat_karya' => '0']);
+    cek(skalar('SELECT nama_kegiatan FROM rd_kawasan_intervensi WHERE id = ?', [$pertama]) === 'Kegiatan diperbarui',
+        'Ubah lintas laporan tidak mengubah intervensi TW II');
+    cek(strpos($lintas['body'], 'Intervensi diperbarui.') === FALSE
+        && strpos($lintas['body'], 'Intervensi tidak ditemukan pada laporan ini.') !== FALSE,
+        'Ubah lintas laporan dilaporkan gagal, bukan sukses palsu');
+
     // ------------------- "tidak ada penanganan" boleh dikirim polos
     $url8 = 'Rekam_Kawasan?tahun=' . TAHUN . '&triwulan=4';
     http('kab', $url8);
     $LAP8 = laporan_kawasan($KAB, 4);
+    // Kotak luas dikosongkan pengguna: tanpa penanganan nilainya dinolkan, bukan ditolak.
+    $t = csrf('kab', $url8);
+    $kosong_luas = http('kab', 'Rekam_Kawasan/simpan_ringkasan', ['csrf_kpkp_token' => $t,
+        'laporan_id' => $LAP8, 'ada_penanganan' => '0', 'ada_progres' => '0',
+        'catatan_progres' => '', 'total_luas_ha' => '']);
+    cek(strpos($kosong_luas['body'], 'Ringkasan tersimpan.') !== FALSE
+        && strpos($kosong_luas['body'], 'Total luas harus angka') === FALSE,
+        '"Tidak ada penanganan" dengan kotak luas kosong tetap tersimpan');
     $t = csrf('kab', $url8);
     http('kab', 'Rekam_Kawasan/simpan_ringkasan', ['csrf_kpkp_token' => $t,
         'laporan_id' => $LAP8, 'ada_penanganan' => '0', 'ada_progres' => '0',

@@ -502,7 +502,8 @@ class Rekam_data_model extends CI_Model {
         $ada_penanganan = empty($data['ada_penanganan']) ? 0 : 1;
         $ada_progres    = empty($data['ada_progres']) ? 0 : 1;
         $catatan        = trim((string) ($data['catatan_progres'] ?? ''));
-        $luas           = $this->angka_desimal($data['total_luas_ha'] ?? 0);
+        // Tanpa penanganan luasnya toh dinolkan di bawah, jadi isian kosong tidak boleh menolak simpan.
+        $luas           = $ada_penanganan ? $this->angka_desimal($data['total_luas_ha'] ?? 0) : 0;
 
         if ($luas === NULL) {
             return $this->gagal('luas_invalid', 'Total luas harus angka tidak negatif.');
@@ -581,9 +582,15 @@ class Rekam_data_model extends CI_Model {
         ];
 
         if ($intervensi_id !== NULL) {
+            // affected_rows() tidak bisa dipakai: MySQL melaporkan 0 juga saat isian tidak berubah.
+            $milik = $this->db->where(['id' => (int) $intervensi_id, 'laporan_id' => $laporan_id])
+                ->count_all_results('rd_kawasan_intervensi');
+            if ($milik !== 1) {
+                return $this->gagal('tidak_ditemukan', 'Intervensi tidak ditemukan pada laporan ini.');
+            }
             $this->db->where(['id' => (int) $intervensi_id, 'laporan_id' => $laporan_id]);
             $ok = $this->db->update('rd_kawasan_intervensi', $payload);
-            return ($ok && $this->db->affected_rows() >= 0)
+            return $ok
                 ? ['success' => TRUE, 'intervensi_id' => (int) $intervensi_id]
                 : $this->gagal('write_failed', 'Intervensi belum tersimpan.');
         }
