@@ -134,6 +134,7 @@ class Admin_Aduan extends Admin_Controller {
             ->get()->row();
 
         if ( ! $row) { show_404(); return; }
+        $this->catat_akses_data_pribadi('aduan_warga', 'aduan', (string) $id);   // poin 7.3: nama, email, isi aduan
 
         $this->render_admin('admin/aduan/detail', [
             'title'    => 'Detail Aduan',

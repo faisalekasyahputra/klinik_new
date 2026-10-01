@@ -361,6 +361,12 @@ cek(bidang_aduan($id1) === $bidang_a, "Bidang menjadi {$bidang_a}");
 cek(status_aduan($id1) === 'Baru', 'Status TIDAK ikut berubah - triase merutekan, bukan memutuskan');
 cek(jejak('aduan_ditriase', $id1) === 1, 'Satu baris jejak audit aduan_ditriase tercatat');
 
+// Poin 7.3: detail aduan (nama, email, isi) dibuka superadmin = akses data pribadi.
+// Dibuka dua kali untuk membuktikan dedupe; daftar tidak ikut mencatat.
+cek(http('super', 'Admin_Aduan/detail/' . $id1)['code'] === 200, 'Superadmin membuka detail aduan');
+http('super', 'Admin_Aduan/detail/' . $id1);
+cek(jejak('akses_aduan_warga', $id1) === 1, 'Detail aduan tercatat SATU baris akses_aduan_warga (dedupe menahan muat ulang)');
+
 $meja2 = http('bidA', 'Admin_Bidang');
 cek(strpos($meja2['body'], 'Uji triase A ' . CAP) !== FALSE,
     'Sesudah ditriase, aduannya MUNCUL di meja admin bidang yang dituju');
