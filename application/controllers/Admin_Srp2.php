@@ -350,6 +350,11 @@ class Admin_Srp2 extends Admin_Controller {
         $id = (int) $this->input->post('id');
         $name = strtoupper(trim((string) $this->input->post('nama_perusahaan', TRUE)));
         if ($name === '' || strlen($name) > 180) { $this->session->set_flashdata('error', 'Nama perusahaan wajib diisi.'); redirect('Admin_Srp2'); return; }
+        // Pola Admin_Magang_Posisi::simpan(): UPDATE ke id yang tidak ada menyentuh nol baris tanpa galat.
+        if ($id && ! $this->db->where('id', $id)->count_all_results('srp2_certified_developers')) {
+            $this->session->set_flashdata('error', 'Pengembang tidak ditemukan.');
+            redirect('Admin_Srp2'); return;
+        }
         /* HANYA medan yang BENAR-BENAR DIKIRIM yang masuk payload.
          *
          * Sampai 5 Agt 2026 ketiga URL selalu dirakit tanpa syarat, padahal

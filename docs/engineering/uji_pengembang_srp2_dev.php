@@ -716,6 +716,18 @@ cek(nilai('SELECT status_sertifikasi FROM srp2_certified_developers WHERE id = ?
     [(int) $barisA['id']]) === 'bersertifikat',
     'Status karangan ditolak - nilai lama tidak berubah');
 
+/* Ubah id yang tidak ada: dulu UPDATE nol baris dilaporkan "diperbarui" dan
+   meninggalkan jejak srp2_direktori_diubah untuk id hantu (pola c6118f8). */
+$hantu = (int) nilai('SELECT COALESCE(MAX(id), 0) + 100000 m FROM srp2_certified_developers');
+$sebelum = (int) nilai('SELECT COUNT(*) c FROM srp2_certified_developers');
+$layarHantu = http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
+    'id' => $hantu, 'nama_perusahaan' => 'UJI SRP2 Hantu ' . mt_rand(1000, 9999), 'status_aktif' => 1])['body'];
+cek(strpos($layarHantu, 'tidak ditemukan') !== FALSE && strpos($layarHantu, 'Daftar pengembang diperbarui') === FALSE,
+    'Ubah pengembang yang tidak ada dibalas "tidak ditemukan", bukan sukses');
+cek((int) nilai('SELECT COUNT(*) c FROM srp2_certified_developers') === $sebelum, 'Tidak ada baris baru tercipta');
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE objek_tipe='srp2_certified_developers' AND objek_id=?",
+    [(string) $hantu]) === 0, 'Tidak ada jejak audit yatim untuk id yang tidak ada');
+
 $GLOBALS['db']->query('DELETE FROM srp2_certified_developers WHERE id = ' . (int) $barisA['id']);
 $GLOBALS['db']->query("DELETE FROM srp2_certified_developers WHERE nama_perusahaan LIKE 'UJI SRP2 %'");
 
