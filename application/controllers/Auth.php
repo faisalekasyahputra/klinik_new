@@ -65,6 +65,10 @@ class Auth extends MY_Controller {
             $this->render_login_berpesan('success', 'Akun Anda sudah dihapus.', $data);
             return;
         }
+        if ($this->input->get('msg', TRUE) === 'sandi_diganti') {
+            $this->render_login_berpesan('success', 'Password Anda sudah diganti. Masuk dengan sandi baru; sandi itu wajib diganti saat masuk.', $data);
+            return;
+        }
         $this->load->view('pages/auth/login', $data);
     }
 

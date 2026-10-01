@@ -585,5 +585,21 @@ $null_tapi_lengkap = (int) nilai('SELECT COUNT(*) c FROM usr_users
 cek($null_tapi_lengkap === 0,
     'Nol akun ber-role NULL yang mengaku profilnya lengkap (dapat: ' . $null_tapi_lengkap . ')');
 
+// ============================================ 12. RESET SANDI AKUN SENDIRI
+echo "\n== 12. Reset sandi akun sendiri: konfirmasinya sampai ==\n";
+/* reset_sandi mengosongkan hash sesi sasaran. Kalau sasarannya diri sendiri,
+   dulu pemeriksa sesi tunggal menimpa flash sukses dengan "Sesi Anda telah
+   berakhir" dan pelaku tidak tahu resetnya berhasil. */
+[$idD, $emailD] = buat_akun('admin', 'diri_sendiri');
+wajib(login('d', $emailD), 'PRASYARAT: superadmin kedua masuk');
+$hash_lama = (string) kolom($idD, 'password');
+$r = http('d', 'Admin_Users/reset_sandi', [
+    'csrf_kpkp_token' => csrf('d', 'Admin_Users'), 'id' => $idD, 'password' => SANDI_BARU,
+]);
+cek((string) kolom($idD, 'password') !== $hash_lama, 'PRASYARAT: sandi akun sendiri benar-benar diganti');
+cek(strpos($r['body'], 'Password Anda sudah diganti') !== FALSE && strpos($r['body'], 'Sesi Anda telah berakhir') === FALSE,
+    'Pelaku melihat konfirmasi sandi diganti, bukan pesan sesi berakhir');
+cek(http('d', 'Admin_Users')['url'] !== BASE_URL . '/Admin_Users', 'Sesi pelaku memang sudah berakhir sesudah reset');
+
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);

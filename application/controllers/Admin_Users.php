@@ -483,6 +483,15 @@ class Admin_Users extends Admin_Controller {
         $this->catat_audit('sandi_direset', 'Mereset password akun ' . $user->email,
             'usr_users', (string) $user->id);
 
+        // Hash sesi di atas ikut mengakhiri sesi pelaku bila sasarannya diri sendiri; pemeriksa
+        // sesi tunggal lalu menimpa flash sukses dengan "Sesi Anda telah berakhir". Sesinya
+        // diakhiri di sini dan konfirmasinya dibawa lewat ?msg= (pola Pengaturan::delete_account).
+        if ((int) $user->id === (int) $this->get_user_id()) {
+            $this->session->sess_destroy();
+            redirect('Auth/login?msg=sandi_diganti');
+            return;
+        }
+
         $this->session->set_flashdata('success',
             'Password ' . $user->email . ' diganti. Sampaikan ke yang bersangkutan lewat jalur pribadi; sandi itu wajib diganti saat masuk.');
         redirect('Admin_Users');
