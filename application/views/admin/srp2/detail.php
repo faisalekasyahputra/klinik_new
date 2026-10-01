@@ -13,23 +13,20 @@ $safe_url = function ($url) {
     return ($url && preg_match('#^https?://#i', $url)) ? $url : null;
 };
 ?>
-<div class="mb-6 flex items-start justify-between gap-4">
-    <div>
-        <a href="<?= base_url('Admin_Srp2/pending') ?>" class="text-xs font-bold text-gray-400 hover:text-gray-600 dark:hover:text-white">← Kembali ke daftar menunggu</a>
-        <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mt-1"><?= html_escape($pendaftar->nama_perusahaan ?: '-') ?></h2>
-        <p class="text-sm text-gray-500 dark:text-brand-muted"><?= html_escape($pendaftar->email ?: '-') ?></p>
-    </div>
-    <?= $this->load->view('admin/components/status_badge', ['label' => $pendaftar->status_verifikasi, 'kelas' => $status_kelas], TRUE) ?>
-</div>
-
+<?php $this->load->view("admin/components/judul_halaman", [
+    "jh_judul" => $pendaftar->nama_perusahaan ?: "-",
+    "jh_deskripsi" => html_escape($pendaftar->email ?: "-") . " " . $this->load->view("admin/components/status_badge", ["label" => $pendaftar->status_verifikasi, "kelas" => $status_kelas], TRUE),
+    "jh_aksi" => "<a href=\"" . base_url("Admin_Srp2/pending") . "\" class=\"tombol-kedua\"><i class=\"ph ph-arrow-left\"></i><span>Kembali ke daftar menunggu</span></a>",
+]); ?>
+<div class="tumpuk-bagian">
 <?php if (!empty($pendaftar->catatan_admin)): ?>
-<div class="mb-6 p-4 rounded-2xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 text-sm">
-    <strong>Catatan admin sebelumnya:</strong> <?= html_escape($pendaftar->catatan_admin) ?>
-</div>
+<section class="kartu-admin isi-kartu border-l-4 border-l-red-500 text-sm text-gray-800 dark:text-gray-200">
+    <strong class="text-red-700 dark:text-red-400">Catatan admin sebelumnya:</strong> <?= html_escape($pendaftar->catatan_admin) ?>
+</section>
 <?php endif; ?>
 
-<div class="grid lg:grid-cols-3 gap-6">
-    <div class="lg:col-span-2 bg-white dark:bg-brand-card rounded-3xl border border-gray-200 dark:border-white/5 p-6">
+<div class="grid grid-kartu lg:grid-cols-3">
+    <section class="lg:col-span-2 kartu-admin isi-kartu">
         <h3 class="font-bold text-gray-900 dark:text-white mb-4">Dokumen Persyaratan (<?= count($uploaded) ?>/<?= count($dokumen_list) ?>)</h3>
         <div class="divide-y divide-gray-100 dark:divide-white/5">
             <?php foreach ($dokumen_list as $key => $label): $doc = $uploaded[$key] ?? NULL; ?>
@@ -43,9 +40,9 @@ $safe_url = function ($url) {
             </div>
             <?php endforeach; ?>
         </div>
-    </div>
+    </section>
 
-    <div class="bg-white dark:bg-brand-card rounded-3xl border border-gray-200 dark:border-white/5 p-6 space-y-4">
+    <section class="kartu-admin isi-kartu space-y-4">
         <div>
             <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-brand-muted/70 mb-1">Alamat Kantor</h4>
             <p class="text-sm text-gray-700 dark:text-gray-300"><?= html_escape($pendaftar->alamat_kantor ?: '-') ?></p>
@@ -64,7 +61,8 @@ $safe_url = function ($url) {
         $pembanding = [
             'NIK Pemohon'    => $pendaftar->nik_ktp ?? '',
             'Nama Pemohon'   => $pendaftar->nama_peserta ?? '',
-            'Jabatan'        => $pendaftar->jabatan ?? '',
+            // Kode jabatan dari kolom `jabatan` (lihat migrasi add_srp2_registrations) jadi label.
+            'Jabatan'        => ['direktur_utama' => 'Direktur Utama', 'manajer_proyek' => 'Manajer Proyek', 'penanggung_jawab' => 'Penanggung Jawab', 'staf_legal' => 'Staf Legal'][$pendaftar->jabatan ?? ''] ?? str_replace('_', ' ', (string) ($pendaftar->jabatan ?? '')),
             'NIB'            => $pendaftar->nib ?? '',
             // Label, bukan kode mentah (`rei` -> `REI`). Fallback SENGAJA string
             // kosong, bukan '-' bawaan helper: $terisi di bawah menghitung nilai
@@ -115,7 +113,7 @@ $safe_url = function ($url) {
                 'action_url' => 'Admin_Srp2/proses/' . $pendaftar->id,
                 'buttons' => [
                     ['value' => 'Diterima', 'label' => 'Terima', 'style' => 'accept'],
-                    ['value' => 'Draft', 'label' => 'Minta Perbaikan', 'style' => 'neutral'],
+                    ['value' => 'Draft', 'label' => 'Minta perbaikan', 'style' => 'neutral'],
                     ['value' => 'Ditolak', 'label' => 'Tolak', 'style' => 'reject'],
                 ],
                 'catatan_name' => 'catatan_admin',
@@ -130,12 +128,13 @@ $safe_url = function ($url) {
             <?= $this->load->view('admin/components/review_form', [
                 'action_url' => 'Admin_Srp2/proses/' . $pendaftar->id,
                 'buttons' => [
-                    ['value' => 'Draft', 'label' => 'Buka untuk Diperbaiki', 'style' => 'neutral'],
+                    ['value' => 'Draft', 'label' => 'Buka untuk diperbaiki', 'style' => 'neutral'],
                 ],
                 'catatan_name' => 'catatan_admin',
                 'catatan_placeholder' => 'Wajib: jelaskan apa yang harus diperbaiki',
             ], TRUE) ?>
         </div>
         <?php endif; ?>
-    </div>
+    </section>
+</div>
 </div>

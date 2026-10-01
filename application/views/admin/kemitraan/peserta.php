@@ -5,25 +5,20 @@
  * (KemitraanPortal::kkn_upload_peserta()), bukan dari sini.
  */
 ?>
-<div class="mb-6 flex flex-wrap items-start justify-between gap-4">
-    <div>
-        <span class="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-brand-muted">Kemitraan &middot; KKN</span>
-        <h2 class="mt-1 text-2xl font-black text-gray-900 dark:text-white tracking-tight">Peserta KKN</h2>
-        <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
-            <?= html_escape($row->instansi_asal) ?> &middot; <?= html_escape($row->divisi_atau_tema ?: '(tanpa keterangan)') ?>
-        </p>
-    </div>
-    <a href="<?= base_url('Admin_Kemitraan') ?>" class="rounded-xl border border-gray-200 dark:border-white/10 px-4 py-2 text-xs font-bold text-gray-700 dark:text-gray-300">Kembali</a>
-</div>
+<?php $this->load->view('admin/components/judul_halaman', [
+    'jh_judul' => 'Peserta KKN',
+    'jh_deskripsi' => html_escape($row->instansi_asal) . ' &middot; ' . html_escape($row->divisi_atau_tema ?: '(tanpa keterangan)'),
+    'jh_aksi' => '<a href="' . base_url('Admin_Kemitraan') . '" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali</span></a>',
+]); ?>
 
-<div class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
+<div class="kartu-admin overflow-hidden">
     <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Daftar Peserta', 'kt_jumlah' => count($peserta), 'kt_keterangan' => '']); ?>
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
-                    <th class="px-4 py-4">NIM</th>
-                    <th class="px-4 py-4">Nama</th>
+                    <th class="px-4 py-3">NIM</th>
+                    <th class="px-4 py-3">Nama</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-white/5 text-gray-700 dark:text-gray-300">
@@ -40,8 +35,8 @@
                 </tr>
                 <?php else: foreach ($peserta as $p): ?>
                 <tr>
-                    <td class="px-4 py-4 text-gray-900 dark:text-white"><?= html_escape($p->nim) ?></td>
-                    <td class="px-4 py-4 text-gray-900 dark:text-white"><?= html_escape($p->nama) ?></td>
+                    <td class="px-4 py-3 text-gray-900 dark:text-white"><?= html_escape($p->nim) ?></td>
+                    <td class="px-4 py-3 text-gray-900 dark:text-white"><?= html_escape($p->nama) ?></td>
                 </tr>
                 <?php endforeach; endif; ?>
             </tbody>
