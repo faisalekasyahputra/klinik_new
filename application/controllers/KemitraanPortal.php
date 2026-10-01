@@ -559,6 +559,10 @@ class KemitraanPortal extends Public_Controller
         if (empty($baris->tanggal_sertifikat)) {
             return 'Sertifikat KKN Anda sedang disiapkan. Tanggal terbit belum ditetapkan admin Disperakim; silakan cek kembali nanti.';
         }
+        // Tanggal TERBIT: yang ditetapkan untuk hari depan baru bisa dicetak pada harinya.
+        if ($baris->tanggal_sertifikat > date('Y-m-d')) {
+            return 'Sertifikat KKN Anda dapat dicetak mulai ' . tgl_id($baris->tanggal_sertifikat) . '.';
+        }
         return NULL;
     }
 

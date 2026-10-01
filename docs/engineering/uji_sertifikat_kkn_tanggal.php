@@ -65,6 +65,14 @@ try {
     $pdf = $http($jp, 'KemitraanPortal/sertifikat_kkn_pdf');
     $cek(substr($pdf, 0, 4) === '%PDF', 'PDF sertifikat terbentuk');
 
+    // Tanggal TERBIT di hari depan: belum bisa dicetak sampai harinya, dan flash admin tidak berjanji "sudah bisa".
+    $http($ja, 'Admin_Kemitraan');
+    $flash = html_entity_decode($http($ja, 'Admin_Kemitraan/tanggal_sertifikat/' . $kkn, ['csrf_kpkp_token' => $csrf($ja), 'tanggal_sertifikat' => '2099-12-31']));
+    $cek(stripos($flash, 'sudah bisa mencetak') === FALSE && strpos($flash, '2099') !== FALSE, 'Flash admin untuk tanggal terbit hari depan menyebut tanggal mulai cetaknya');
+    [$jp2, $b] = $cari();
+    $cek(strpos($b, "Peserta {$tag}") === FALSE && strpos($b, '2099') !== FALSE, 'Tanggal terbit 2099-12-31: pencarian NIM tidak menampilkan nama, menyebut tanggal mulai cetak');
+    $cek(substr($http($jp, 'KemitraanPortal/sertifikat_kkn_pdf'), 0, 4) !== '%PDF', 'Tanggal terbit hari depan: PDF dari sesi lama ikut terkunci');
+
     // Salinan publik mengikuti alur migrasi 062: tidak lagi "terbit otomatis".
     $hal = html_entity_decode($http($sesi(), 'KemitraanPortal/kkn'));
     $cek(stripos($hal, 'terbit otomatis') === FALSE && stripos($hal, 'tanggal terbit') !== FALSE, 'Halaman KKN publik menyebut tanggal terbit dari admin, bukan "terbit otomatis"');

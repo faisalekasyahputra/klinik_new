@@ -566,10 +566,11 @@ class Admin_Kemitraan extends Admin_Controller {
             'kkn_magang_pendaftaran', (string) $row->id, ['tanggal_sertifikat' => $tgl === '' ? NULL : $tgl]);
         // Peserta baru bisa mencetak sesudah periode KKN selesai (KemitraanPortal::cek_sertifikat_kkn),
         // jadi flash tidak boleh menjanjikan "sudah bisa" sebelum itu (temuan UAT U5).
-        $mulai_cetak = date('Y-m-d', strtotime($row->periode_selesai . ' +1 day'));
+        // Juga tidak sebelum tanggal terbitnya sendiri bila ditetapkan untuk hari depan.
+        $mulai_cetak = max(date('Y-m-d', strtotime($row->periode_selesai . ' +1 day')), $tgl);
         $this->session->set_flashdata('success', $tgl === '' ? 'Tanggal sertifikat ditarik; sertifikat terkunci kembali.'
             : ($mulai_cetak > date('Y-m-d')
-                ? 'Tanggal sertifikat ditetapkan. Peserta bisa mencetak mulai ' . tgl_id($mulai_cetak) . ', sesudah periode KKN selesai.'
+                ? 'Tanggal sertifikat ditetapkan. Peserta bisa mencetak mulai ' . tgl_id($mulai_cetak) . '.'
                 : 'Tanggal sertifikat ditetapkan. Peserta sudah bisa mencetak sertifikat.'));
         redirect('Admin_Kemitraan');
     }
