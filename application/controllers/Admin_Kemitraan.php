@@ -25,8 +25,7 @@ class Admin_Kemitraan extends Admin_Controller {
     /** Batas tahun yang boleh dibuka dari URL, supaya tidak lahir halaman tak berujung. */
     private function tahun_sah($tahun)
     {
-        $tahun = (int) ($tahun ?: date('Y'));
-        return ($tahun < 2020 || $tahun > (int) date('Y') + 5) ? NULL : $tahun;
+        return $this->slot->tahun_sah($tahun);   // batasnya dipakai bersama Kemitraan_Bidang
     }
 
     public function slot($tahun = NULL)
@@ -121,12 +120,10 @@ class Admin_Kemitraan extends Admin_Controller {
         // Kuota ikut satu tombol dengan bulannya. Dua tombol simpan pada satu
         // layar berarti admin bisa mengubah angka lalu kehilangan rentangnya,
         // dan tidak ada cara menebak mana yang ia maksud.
-        $kuota = $this->input->post('kuota');
-        if (is_numeric($kuota)) { $this->slot->set_kuota($bidang->kode, $kuota); }
-
         // Formulir mengirim keadaan LENGKAP dua belas bulan; bulan yang kotak
         // bukanya tidak tercentang tidak terkirim, dan itu memang berarti tutup.
-        $berhasil = $this->slot->tulis_ulang_bidang($bidang->kode, $tahun, (array) $this->input->post('bulan'));
+        $kuota = $this->input->post('kuota');
+        $berhasil = $this->slot->simpan_pengaturan_bidang($bidang->kode, $tahun, $kuota, (array) $this->input->post('bulan'));
         if ($berhasil) {
             $this->catat_audit('magang_slot_diubah', 'Slot magang ' . $bidang->nama . ' tahun ' . $tahun . ' diperbarui',
                 'kkn_magang_bidang', (string) $bidang->kode, [

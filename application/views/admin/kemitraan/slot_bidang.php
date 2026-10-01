@@ -11,7 +11,11 @@
 $isian = 'w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20'
     . ' px-2 py-1.5 text-xs text-gray-900 dark:text-white outline-none';
 ?>
-<?php $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => 'slot']); ?>
+<?php
+// $mode_bidang: layar yang sama dibuka admin bidang untuk bidangnya sendiri (Kemitraan_Bidang::kuota).
+$mode_bidang = ! empty($mode_bidang);
+if ( ! $mode_bidang) { $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => 'slot']); }
+?>
 
 <div class="mb-5 flex flex-wrap items-start justify-between gap-4">
     <div>
@@ -21,13 +25,24 @@ $isian = 'w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white
             <?= (int) $bidang->aktif ? '' : 'Bidang ini sedang TIDAK MENERIMA pendaftaran magang.' ?>
         </p>
     </div>
+    <?php if ($mode_bidang): ?>
+    <div class="flex gap-2">
+        <?php foreach ([$tahun - 1, $tahun + 1] as $t): if ($t < 2020 || $t > (int) date('Y') + 5) { continue; } ?>
+        <a href="<?= base_url('Kemitraan_Bidang/kuota/' . (int) $t) ?>"
+           class="rounded-xl border border-gray-200 dark:border-white/10 px-4 py-2 text-xs font-bold text-gray-700 dark:text-gray-300">
+            Tahun <?= (int) $t ?>
+        </a>
+        <?php endforeach; ?>
+    </div>
+    <?php else: ?>
     <a href="<?= base_url('Admin_Kemitraan/slot/' . (int) $tahun) ?>"
        class="rounded-xl border border-gray-200 dark:border-white/10 px-4 py-2 text-xs font-bold text-gray-700 dark:text-gray-300">
         Kembali ke Daftar Bidang
     </a>
+    <?php endif; ?>
 </div>
 
-<form method="POST" action="<?= base_url('Admin_Kemitraan/simpan_slot_bidang/' . rawurlencode($bidang->kode)) ?>">
+<form method="POST" action="<?= base_url($mode_bidang ? 'Kemitraan_Bidang/simpan_kuota' : 'Admin_Kemitraan/simpan_slot_bidang/' . rawurlencode($bidang->kode)) ?>">
     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
     <input type="hidden" name="tahun" value="<?= (int) $tahun ?>">
 
@@ -96,7 +111,11 @@ $isian = 'w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white
                                     </div>
                                     <?php foreach ($orang as $o): ?>
                                         <div class="text-[11px] text-gray-600 dark:text-gray-400">
+                                            <?php if ($mode_bidang): ?>
+                                            <span class="font-bold"><?= html_escape($o->nama_mahasiswa ?: '(tanpa nama)') ?></span>
+                                            <?php else: ?>
                                             <a href="<?= base_url('Admin_Kemitraan/ubah/' . (int) $o->id) ?>" class="font-bold hover:underline"><?= html_escape($o->nama_mahasiswa ?: '(tanpa nama)') ?></a>
+                                            <?php endif; ?>
                                             &middot; <?= date('j M', strtotime($o->periode_mulai)) ?>-<?= date('j M', strtotime($o->periode_selesai)) ?>
                                             &middot; <?= html_escape($o->status) ?>
                                         </div>

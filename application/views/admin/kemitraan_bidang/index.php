@@ -20,6 +20,10 @@ $badge_kelas = [
         Surat pengantar yang sudah diteruskan sekretariat dan menunggu keputusan bidang Anda.
         Surat balasan resmi disiapkan sekretariat setelah Anda menerima.
     </p>
+    <a href="<?= base_url('Kemitraan_Bidang/kuota') ?>"
+       class="mt-3 inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 px-4 py-2 text-xs font-bold text-gray-700 dark:text-gray-300">
+        <i class="ph ph-calendar-check"></i> Atur Kuota &amp; Bulan Magang
+    </a>
 </div>
 
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">

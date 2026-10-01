@@ -125,6 +125,57 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
         redirect('Kemitraan_Bidang');
     }
 
+    /**
+     * Kuota dan bulan magang BIDANG SAYA (keputusan user 1 Okt 2026). Layar dan model sama dengan
+     * Admin_Kemitraan::slot_bidang; bedanya kode bidang selalu dari sesi, tidak pernah dari URL atau
+     * formulir, jadi bidang lain tidak bisa disentuh. Hak modulnya ikut entri kemitraan_bidang.
+     */
+    public function kuota($tahun = NULL)
+    {
+        $tahun = $tahun === NULL ? $this->slot->tahun_papan() : $this->slot->tahun_sah($tahun);
+        $bidang = $this->slot->bidang_by_kode($this->my_bidang_kode);
+        if ($tahun === NULL || ! $bidang) { show_404(); }
+
+        $this->render_scoped_admin('admin/kemitraan/slot_bidang', [
+            'title'      => 'Kuota Magang ' . $bidang->nama,
+            'bidang'     => $bidang,
+            'tahun'      => $tahun,
+            'slot'       => $this->slot->slot_bidang($bidang->kode, $tahun),
+            'pendaftar'  => $this->slot->pendaftar_bidang($bidang->kode, $tahun),
+            'terisi'     => $this->slot->peta_terisi()[$bidang->kode] ?? [],
+            'nama_bulan' => Kemitraan_slot_model::nama_bulan(),
+            'mode_bidang' => TRUE,
+        ]);
+    }
+
+    public function simpan_kuota()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $bidang = $this->slot->bidang_by_kode($this->my_bidang_kode);
+        if ( ! $bidang) { show_404(); }
+
+        $tahun = $this->slot->tahun_sah($this->input->post('tahun'));
+        if ($tahun === NULL) {
+            $this->session->set_flashdata('error', 'Tahun tidak valid.');
+            redirect('Kemitraan_Bidang/kuota');
+            return;
+        }
+
+        $kuota = $this->input->post('kuota');
+        $bulan = (array) $this->input->post('bulan');
+        $berhasil = $this->slot->simpan_pengaturan_bidang($bidang->kode, $tahun, $kuota, $bulan);
+        if ($berhasil) {
+            $this->catat_audit('magang_slot_diubah', 'Slot magang ' . $bidang->nama . ' tahun ' . $tahun . ' diperbarui oleh admin bidang',
+                'kkn_magang_bidang', (string) $bidang->kode, [
+                    'tahun' => $tahun, 'kuota' => is_numeric($kuota) ? (int) $kuota : NULL,
+                    'bulan' => array_map('intval', array_keys(array_filter($bulan, static fn($b) => ! empty($b['buka'])))),
+                ]);
+        }
+        $this->session->set_flashdata($berhasil ? 'success' : 'error',
+            $berhasil ? 'Kuota magang ' . $bidang->nama . ' tahun ' . $tahun . ' diperbarui.' : 'Kuota gagal disimpan.');
+        redirect('Kemitraan_Bidang/kuota/' . $tahun);
+    }
+
     /** Ambil satu pendaftaran, hanya kalau bidang tujuannya adalah bidang saya. */
     private function baris_bidang_saya($id)
     {
