@@ -682,6 +682,12 @@ class Rekam_data_model extends CI_Model {
 
         // WHERE menyertakan status asal: dua permintaan bersamaan, hanya satu lolos.
         $this->db->where(['id' => $laporan_id, 'status' => $dari]);
+        // `terkirim` yang reviewed_at-nya terisi = DITERIMA, dan diterima itu
+        // final (ROADMAP_REKAM_DATA.md: "diterima, terkunci"). Tanpa ini POST
+        // rakitan ke minta_perbaikan membatalkan penerimaan (UAT AB4).
+        if ($dari === 'terkirim') {
+            $this->db->where('reviewed_at', NULL);
+        }
         if ($scope_kabupaten_id !== NULL) {
             $this->db->where('kabupaten_id', (int) $scope_kabupaten_id);
         }
