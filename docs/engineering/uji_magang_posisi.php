@@ -189,6 +189,20 @@ http('Admin_Magang_Posisi/simpan', [
 cek((int) q("SELECT COUNT(*) c FROM kkn_magang_posisi")[0]['c'] === $sebelum,
     'Bidang karangan ditolak - tidak ada baris baru');
 
+// ------------------------------------------------- 7. Ubah id yang tidak ada
+echo "\n== 7. Ubah posisi yang tidak ada ditolak, bukan sukses palsu ==\n";
+$hantu = (int) q("SELECT COALESCE(MAX(id), 0) + 100000 m FROM kkn_magang_posisi")[0]['m'];
+$sebelum = (int) q("SELECT COUNT(*) c FROM kkn_magang_posisi")[0]['c'];
+$layar = http('Admin_Magang_Posisi/simpan', [
+    'csrf_kpkp_token' => token('Admin_Magang_Posisi'), 'id' => $hantu, 'bidang_kode' => $kode_bidang,
+    'nama_posisi' => 'UJIPOS Hantu', 'kuota' => 1, 'urutan' => 0, 'aktif' => 1,
+]);
+cek(strpos($layar, 'Posisi tidak ditemukan') !== FALSE && strpos($layar, 'Posisi diperbarui') === FALSE,
+    'Admin mendapat pesan "Posisi tidak ditemukan", bukan "Posisi diperbarui"');
+cek((int) q("SELECT COUNT(*) c FROM kkn_magang_posisi")[0]['c'] === $sebelum, 'Tidak ada baris baru tercipta');
+cek( ! q("SELECT id FROM sys_jejak_audit WHERE objek_tipe='kkn_magang_posisi' AND objek_id=?", [(string) $hantu]),
+    'Tidak ada jejak audit yatim untuk id yang tidak ada');
+
 echo "\n=== Ringkasan ===\n";
 printf("  %d pemeriksaan, %d merah\n", $GLOBALS['uji_total'], $GLOBALS['uji_gagal']);
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);

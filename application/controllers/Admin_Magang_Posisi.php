@@ -86,6 +86,11 @@ class Admin_Magang_Posisi extends Admin_Controller {
         ];
 
         if ($id > 0) {
+            // Sama seperti hapus(): UPDATE ke id yang tidak ada menyentuh nol baris tanpa galat.
+            if ( ! $this->db->where('id', $id)->count_all_results('kkn_magang_posisi')) {
+                $this->session->set_flashdata('error', 'Posisi tidak ditemukan.');
+                redirect('Admin_Magang_Posisi'); return;
+            }
             $this->db->where('id', $id)->update('kkn_magang_posisi', $payload);
             $this->catat_audit('magang_posisi_diubah', 'Posisi magang "' . $nama . '" diperbarui',
                 'kkn_magang_posisi', $id, ['bidang' => $bidang, 'kuota' => $kuota]);
