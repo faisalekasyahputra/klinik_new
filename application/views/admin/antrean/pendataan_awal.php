@@ -25,15 +25,15 @@ $langkah = [
     tetapi belum mengirim pengajuan. Melengkapi data sesudah rekomendasi awal bersifat opsional bagi warga;
     daftar ini untuk tindak lanjut petugas. Pengajuan yang sudah dikirim ada di Antrean Wilayah Saya.'
     . ($identitas_menunggu ? '<span class="mt-2 block text-xs text-amber-700 dark:text-amber-400">Identitas warga disamarkan sampai dinas memutuskan kebijakan tampilan data pribadi.</span>' : '')]); ?>
-<div data-tabel-admin style="counter-reset: baris-admin <?= (int) ($table['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
+<div data-tabel-admin style="counter-reset: baris-admin <?= (int) ($table['offset'] ?? 0) ?>" class="kartu-admin overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm">
-            <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
+            <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold">
                 <tr>
-                    <th class="px-4 py-4">Warga</th>
-                    <th class="px-4 py-4">Rekomendasi Awal</th>
-                    <th class="px-4 py-4">Posisi Terakhir</th>
-                    <th class="px-4 py-4">Terakhir Diperbarui</th>
+                    <th class="px-4 py-3">Warga</th>
+                    <th class="px-4 py-3">Rekomendasi awal</th>
+                    <th class="px-4 py-3">Posisi terakhir</th>
+                    <th class="px-4 py-3">Terakhir diperbarui</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-white/5 text-gray-700 dark:text-gray-300">
@@ -51,12 +51,12 @@ $langkah = [
                     </td>
                     <td class="px-4 py-3 align-top whitespace-normal">
                         <?php if ($r['programs']): foreach ($r['programs'] as $prog): ?>
-                            <div class="mb-1 inline-block rounded-lg bg-brand-primary/10 px-2 py-0.5 text-xs font-semibold text-brand-primary"><?= html_escape($prog) ?></div>
+                            <div class="mb-1 inline-block rounded-lg bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary"><?= html_escape($prog) ?></div>
                         <?php endforeach; else: ?>
                             <span class="text-xs text-gray-500 dark:text-brand-muted">Belum ada program yang cocok</span>
                         <?php endif; ?>
                     </td>
-                    <td class="px-4 py-3 align-top text-xs"><?= html_escape($langkah[$r['current_step']] ?? $r['current_step']) ?></td>
+                    <td class="px-4 py-3 align-top text-xs"><?= html_escape($langkah[$r['current_step']] ?? 'Belum melangkah lebih jauh') ?></td>
                     <td class="px-4 py-3 align-top text-xs"><?= html_escape(tgl_id($r['updated_at'], TRUE, TRUE)) ?></td>
                 </tr>
                 <?php endforeach; endif; ?>

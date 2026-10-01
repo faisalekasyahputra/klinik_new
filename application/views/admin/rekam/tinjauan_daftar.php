@@ -12,9 +12,9 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
 
 <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Laporan bidang ' . $e($domain === 'kawasan' ? 'Kawasan Permukiman' : 'Perumahan') . ' yang sudah dikirim seluruh kabupaten/kota.']); ?>
 
-<div class="space-y-4">
+<div class="tumpuk-bagian">
 
-  <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
+  <section class="kartu-admin isi-kartu">
     <div class="flex flex-wrap items-center gap-3">
       <span class="rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-black/20">
         Bidang <b class="text-gray-900 dark:text-white"><?= $e(ucfirst($domain)) ?></b>
@@ -32,7 +32,7 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
             <option value="<?= $t ?>" <?= $t === (int) $tahun ? 'selected' : '' ?>><?= $t ?></option>
           <?php endfor; ?>
         </select>
-        <button class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">Tampilkan</button>
+        <button class="tombol-kedua"><i class="ph ph-funnel"></i><span>Tampilkan</span></button>
       </form>
     </div>
     <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted">
@@ -42,17 +42,17 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
   </section>
 
   <?php if ( ! $laporan): ?>
-    <section class="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-white/10 dark:bg-brand-card">
+    <section class="kartu-admin isi-kartu text-center">
       <p class="font-bold text-gray-900 dark:text-white">Belum ada laporan yang dikirim untuk periode ini.</p>
       <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
         Laporan muncul di sini setelah kabupaten/kota menekan Kirim.
       </p>
     </section>
   <?php else: ?>
-    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
+    <section class="kartu-admin isi-kartu">
       <div class="overflow-x-auto aksi-tetap">
         <table class="w-full min-w-[760px] text-left text-sm">
-          <thead class="text-xs uppercase text-gray-500 dark:text-brand-muted">
+          <thead class="text-xs text-gray-500 dark:text-brand-muted">
             <tr>
               <th class="py-2 pr-3">Kabupaten/Kota</th>
               <th class="py-2 pr-3">Periode</th>

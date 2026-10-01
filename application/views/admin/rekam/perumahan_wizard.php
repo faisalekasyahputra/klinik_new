@@ -8,10 +8,9 @@
  * skrip gagal dimuat. Modal di rancangan diterjemahkan menjadi disclosure,
  * bukan ditiru dengan overlay yang butuh JS.
  *
- * Gaya: dialek `rekam` (space-y-4, p-5, tanpa shadow, dark:border-white/10) dan
- * tombol utama `.tombol-utama` (layouts/head.php) - biru di terang, lime di
- * gelap. `bg-brand-primary` tanpa `dark:` menghasilkan tombol lime di halaman
- * putih; itu jebakan yang sudah pernah terjadi.
+ * Gaya: set bersama di admin/layouts/head.php (.kartu-admin, .tumpuk-bagian,
+ * .tombol-utama/.tombol-kedua/.tombol-aksi, .chip-filter). Kelas tombol ditulis
+ * langsung di tiap tag supaya pemindai uji_regresi_tampilan.php bisa melihatnya.
  */
 $e = static fn($s) => htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
 $rp = static fn($n) => number_format((int) $n, 0, ',', '.');
@@ -19,11 +18,7 @@ $rp = static fn($n) => number_format((int) $n, 0, ',', '.');
 $laporan_id = (int) ($laporan['id'] ?? 0);
 $aktif      = array_search($langkah, $urutan, TRUE);
 
-$tombol = 'tombol-utama'; // gaya bersama di admin/layouts/head.php
-$tombol_lembut = 'rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold'
-    . ' text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10'
-    . ' dark:text-brand-muted dark:hover:bg-white/5';
-$kotak  = 'rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card';
+$kotak  = 'kartu-admin isi-kartu';
 $isian  = 'mt-1 block w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm'
     . ' dark:border-white/10';
 
@@ -33,10 +28,10 @@ $warna_status = [
     'terkirim'        => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300',
     'perlu_perbaikan' => 'bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300',
 ];
-$label_status = ['draft' => 'Draft', 'terkirim' => 'Terkirim', 'perlu_perbaikan' => 'Perlu Perbaikan'];
+$label_status = ['draft' => 'Draft, belum dikirim', 'terkirim' => 'Terkirim', 'perlu_perbaikan' => 'Perlu Perbaikan'];
 
 /** Form tambah/ubah satu sumber dana. Dipakai untuk baris baru maupun edit. */
-$form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $tombol, $sumber_label, $sumber_berketerangan) {
+$form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $sumber_label, $sumber_berketerangan) {
     $terkunci_sumber = $row !== NULL;
     ?>
     <form method="post" action="<?= base_url('Rekam_Perumahan/simpan_sumber') ?>" class="space-y-3">
@@ -61,7 +56,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
 
       <?php foreach (['rencana' => 'Rencana', 'realisasi' => 'Realisasi'] as $sisi => $judul): ?>
         <fieldset class="rounded-xl border border-gray-200 p-3 dark:border-white/10">
-          <legend class="px-1 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted"><?= $judul ?></legend>
+          <legend class="px-1 text-xs font-bold text-gray-500 dark:text-brand-muted"><?= $judul ?></legend>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="text-xs text-gray-500 dark:text-brand-muted">Unit</label>
@@ -89,13 +84,13 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
         </p>
       </div>
 
-      <button class="<?= $tombol ?>">Simpan</button>
+      <button class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan</span></button>
     </form>
     <?php
 };
 ?>
 
-<div data-panel-progresif class="space-y-4">
+<div data-panel-progresif class="tumpuk-bagian">
 
   <!-- ================= kepala + penunjuk langkah ================= -->
   <section class="<?= $kotak ?>">
@@ -169,7 +164,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
         Lanjut ditekan - membuka layar ini saja tidak membuat apa pun.
       </p>
 
-      <form method="post" action="<?= base_url('Rekam_Perumahan/mulai') ?>" class="mt-5 space-y-4">
+      <form method="post" action="<?= base_url('Rekam_Perumahan/mulai') ?>" class="mt-4 space-y-4">
         <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
 
         <div class="max-w-xs">
@@ -214,7 +209,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
           Angka kumulatif dihitung sendiri oleh sistem dan ditampilkan di layar Capaian.
         </p>
 
-        <button class="<?= $tombol ?>">Lanjut &rarr;</button>
+        <button class="tombol-utama"><span>Lanjut</span><i class="ph ph-arrow-right"></i></button>
       </form>
     </section>
 
@@ -247,10 +242,10 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
           <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
           <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
           <input type="hidden" name="langkah" value="isian">
-          <button class="<?= $tombol ?>">Lihat isian &rarr;</button>
+          <button class="tombol-utama"><span>Lihat isian</span><i class="ph ph-arrow-right"></i></button>
         </form>
       <?php else: ?>
-      <form method="post" action="<?= base_url('Rekam_Perumahan/simpan_program') ?>" class="mt-5 space-y-4">
+      <form method="post" action="<?= base_url('Rekam_Perumahan/simpan_program') ?>" class="mt-4 space-y-4">
         <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
         <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
 
@@ -270,7 +265,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
         </p>
 
         <div class="flex flex-wrap gap-2">
-          <button class="<?= $tombol ?>">Lanjut &rarr;</button>
+          <button class="tombol-utama"><span>Lanjut</span><i class="ph ph-arrow-right"></i></button>
         </div>
       </form>
       <?php endif; ?>
@@ -279,13 +274,13 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
   <?php // ========== L3 - ISIAN PER PROGRAM ("Setelah ada Data") ========== ?>
   <?php elseif ($langkah === 'isian'): ?>
     <?php if ( ! $program_dipilih): ?>
-      <section class="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-white/10 dark:bg-brand-card">
+      <section class="kartu-admin isi-kartu text-center">
         <p class="font-bold text-gray-900 dark:text-white">Belum ada program yang dicentang.</p>
         <form method="post" action="<?= base_url('Rekam_Perumahan/langkah') ?>" class="mt-4">
           <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
           <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
           <input type="hidden" name="langkah" value="program">
-          <button class="<?= $tombol ?>">Pilih program dulu</button>
+          <button class="tombol-utama"><span>Pilih program dulu</span></button>
         </form>
       </section>
     <?php else: ?>
@@ -294,10 +289,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
           <?php foreach ($program_dipilih as $kode): ?>
             <?php $kosong = in_array($kode, $program_kosong, TRUE); ?>
             <a href="<?= base_url('Rekam_Perumahan/input?laporan=' . $laporan_id . '&langkah=isian&program=' . rawurlencode($kode)) ?>"
-               class="rounded-lg px-3 py-1.5 text-xs font-bold
-                      <?= $kode === $program_aktif
-                            ? 'bg-blue-600 text-white dark:bg-brand-primary dark:text-brand-dark'
-                            : 'border border-gray-200 text-gray-600 dark:border-white/10 dark:text-brand-muted' ?>">
+               class="chip-filter"<?= $kode === $program_aktif ? ' aria-current="true"' : '' ?>>
               <?= $e($program_label[$kode] ?? $kode) ?><?= $kosong ? ' •' : '' ?>
             </a>
           <?php endforeach; ?>
@@ -345,7 +337,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
                       <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
                       <input type="hidden" name="program" value="<?= $e($program_aktif) ?>">
                       <input type="hidden" name="sumber_dana" value="<?= $e($kode) ?>">
-                      <button class="text-xs font-bold text-red-600 hover:underline dark:text-red-400">Hapus</button>
+                      <button class="tombol-aksi tombol-aksi-bahaya"><i class="ph ph-trash"></i><span>Hapus</span></button>
                     </form>
                   <?php endif; ?>
                 </div>
@@ -366,7 +358,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
         <?php if ( ! $terkunci): ?>
           <details class="mt-4" <?= $daftar ? '' : 'open' ?>>
             <summary class="cursor-pointer text-sm font-bold text-blue-600 dark:text-brand-primary">
-              &plus; Tambah Sumber Dana
+              &plus; Tambah sumber dana
             </summary>
             <div class="mt-3 rounded-xl border border-gray-200 p-4 dark:border-white/10">
               <?php $form_sumber($program_aktif); ?>
@@ -379,8 +371,8 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
         <form method="post" action="<?= base_url('Rekam_Perumahan/langkah') ?>" class="flex flex-wrap gap-2">
           <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
           <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
-          <button name="langkah" value="program" class="<?= $tombol_lembut ?>">&larr; Program</button>
-          <button name="langkah" value="bnba" class="<?= $tombol ?>">Lanjut &rarr;</button>
+          <button name="langkah" value="program" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Program</span></button>
+          <button name="langkah" value="bnba" class="tombol-utama"><span>Lanjut</span><i class="ph ph-arrow-right"></i></button>
         </form>
       </section>
     <?php endif; ?>
@@ -415,7 +407,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
           <?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'bnba', 'ib_accept' => '.pdf,.jpg,.jpeg,.png', 'ib_required' => FALSE, 'ib_attr' => 'aria-describedby="bnba-format"']); ?>
           <?php // Sama dengan yang ditegakkan MY_Controller::store_private_upload() (jenis dan batas bawaan 5 MB). ?>
           <p id="bnba-format" class="text-xs text-gray-500 dark:text-brand-muted">Format PDF, JPG, atau PNG, paling besar 5 MB. Daftar dari Excel disimpan sebagai PDF lebih dulu.</p>
-          <button class="<?= $tombol_lembut ?>"><?= $bnba ? 'Ganti berkas' : 'Unggah' ?></button>
+          <button class="tombol-kedua"><i class="ph ph-upload-simple"></i><span><?= $bnba ? 'Ganti berkas' : 'Unggah' ?></span></button>
         </form>
       <?php endif; ?>
     </section>
@@ -424,8 +416,8 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
       <form method="post" action="<?= base_url('Rekam_Perumahan/langkah') ?>" class="flex flex-wrap gap-2">
         <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
         <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
-        <button name="langkah" value="isian" class="<?= $tombol_lembut ?>">&larr; Isian</button>
-        <button name="langkah" value="review" class="<?= $tombol ?>">Lanjut &rarr;</button>
+        <button name="langkah" value="isian" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Isian</span></button>
+        <button name="langkah" value="review" class="tombol-utama"><span>Lanjut</span><i class="ph ph-arrow-right"></i></button>
       </form>
     </section>
 
@@ -499,14 +491,14 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
           <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
           <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
           <input type="hidden" name="langkah" value="bnba">
-          <button class="<?= $tombol_lembut ?>">&larr; BNBA</button>
+          <button class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>BNBA</span></button>
         </form>
         <?php if ( ! $terkunci): ?>
           <form method="post" action="<?= base_url('Rekam_Perumahan/kirim') ?>"
                 onsubmit="return confirm('Kirim laporan ini? Setelah terkirim, laporan terkunci sampai peninjau mengembalikannya.')">
             <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
             <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
-            <button class="<?= $tombol ?>">Kirim Laporan</button>
+            <button class="tombol-utama"><i class="ph ph-paper-plane-tilt"></i><span>Kirim laporan</span></button>
           </form>
         <?php else: ?>
           <p class="text-sm text-gray-500 dark:text-brand-muted">

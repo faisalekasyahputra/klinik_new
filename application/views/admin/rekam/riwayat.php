@@ -20,9 +20,9 @@ $warna = [
 <?php // Judul = label sidebar ("Riwayat"); domainnya disebut di baris keterangan. ?>
 <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Riwayat pelaporan ' . ($domain === 'kawasan' ? 'Kawasan Permukiman' : 'Perumahan') . ' per triwulan beserta statusnya.']); ?>
 
-<div class="space-y-4">
+<div class="tumpuk-bagian">
 
-  <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
+  <section class="kartu-admin isi-kartu">
     <div class="flex flex-wrap items-center gap-3">
       <span class="rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-black/20">
         Kabupaten/Kota <b class="text-gray-900 dark:text-white"><?= $e($scope_label) ?></b>
@@ -34,24 +34,24 @@ $warna = [
             <option value="<?= $t ?>" <?= $t === (int) $tahun ? 'selected' : '' ?>><?= $t ?></option>
           <?php endfor; ?>
         </select>
-        <button class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">Tampilkan</button>
+        <button class="tombol-kedua"><i class="ph ph-funnel"></i><span>Tampilkan</span></button>
       </form>
       <span class="ml-auto text-xs text-gray-500 dark:text-brand-muted">Baca-saja</span>
     </div>
   </section>
 
   <?php if ( ! $periode): ?>
-    <section class="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-white/10 dark:bg-brand-card">
+    <section class="kartu-admin isi-kartu text-center">
       <p class="font-bold text-gray-900 dark:text-white">Belum ada periode <?= $e($domain) ?> di tahun <?= (int) $tahun ?>.</p>
       <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
         Periode dibuat otomatis saat kamu membuka layar Input Capaian.
       </p>
     </section>
   <?php else: ?>
-    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
+    <section class="kartu-admin isi-kartu">
       <div class="overflow-x-auto aksi-tetap">
         <table class="w-full min-w-[840px] text-left text-sm">
-          <thead class="text-xs uppercase text-gray-500 dark:text-brand-muted">
+          <thead class="text-xs text-gray-500 dark:text-brand-muted">
             <tr>
               <th class="py-2 pr-3">Periode</th>
               <th class="py-2 pr-3">Status</th>

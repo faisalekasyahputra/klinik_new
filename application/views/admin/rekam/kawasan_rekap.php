@@ -13,9 +13,9 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
 $this->load->view('admin/layouts/cetak_rekap');
 ?>
 
-<div class="space-y-4">
+<div class="tumpuk-bagian">
 
-  <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
+  <section class="kartu-admin isi-kartu">
     <div class="flex flex-wrap items-center gap-3">
       <span class="rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-black/20">
         Kabupaten/Kota <b class="text-gray-900 dark:text-white"><?= $e($scope_label) ?></b>
@@ -32,7 +32,7 @@ $this->load->view('admin/layouts/cetak_rekap');
             <option value="<?= $t ?>" <?= $t === (int) $tahun ? 'selected' : '' ?>><?= $t ?></option>
           <?php endfor; ?>
         </select>
-        <button class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">Tampilkan</button>
+        <button class="tombol-kedua"><i class="ph ph-funnel"></i><span>Tampilkan</span></button>
       </form>
       <?php /* Tombol unduh HANYA muncul kalau memang ada laporan terkirim.
                Tombol yang selalu ada lalu memuntahkan pesan galat mengajari
@@ -44,18 +44,18 @@ $this->load->view('admin/layouts/cetak_rekap');
                  per triwulan, sehingga keempatnya bisa dibandingkan sekaligus
                  dijumlah. */ ?>
       <a href="<?= base_url('Rekam_Kawasan/export?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>"
-         class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">
-        <i class="ph ph-download-simple mr-1" aria-hidden="true"></i> Unduh Excel
+         class="tombol-kedua">
+        <i class="ph ph-download-simple" aria-hidden="true"></i><span>Unduh Excel</span>
       </a>
       <a href="<?= base_url('Rekam_Kawasan/export?periode=tahun&tahun=' . (int) $tahun) ?>"
-         class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">
-        <i class="ph ph-calendar-blank mr-1" aria-hidden="true"></i> Unduh Setahun
+         class="tombol-kedua">
+        <i class="ph ph-calendar-blank" aria-hidden="true"></i><span>Unduh setahun</span>
       </a>
       <?php /* "Cetak", bukan "Unduh PDF" - lihat komentar yang sama di
                perumahan_capaian.php. */ ?>
       <button type="button" onclick="window.print()"
-         class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">
-        <i class="ph ph-printer mr-1" aria-hidden="true"></i> Cetak
+         class="tombol-kedua">
+        <i class="ph ph-printer" aria-hidden="true"></i><span>Cetak</span>
       </button>
       <?php endif; ?>
     </div>
@@ -76,35 +76,35 @@ $this->load->view('admin/layouts/cetak_rekap');
   </section>
 
   <?php if ( ! $ringkasan): ?>
-    <section class="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-white/10 dark:bg-brand-card">
+    <section class="kartu-admin isi-kartu text-center">
       <p class="font-bold text-gray-900 dark:text-white">Belum ada laporan terkirim untuk periode ini.</p>
       <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
         Bukan berarti capaiannya nol - laporannya memang belum dikirim.
       </p>
       <a href="<?= base_url('Rekam_Kawasan?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>"
          class="tombol-utama mt-4">
-        Buka Input Capaian periode ini
+        <i class="ph ph-pencil-simple-line"></i><span>Buka input capaian periode ini</span>
       </a>
     </section>
   <?php else: ?>
 
-    <section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <section class="grid-kartu grid sm:grid-cols-2 lg:grid-cols-4">
       <?php
       $kartu = [
-          ['Penanganan kawasan kumuh', ((int) $ringkasan['ada_penanganan'] === 1 ? 'Ada' : 'Tidak Ada')],
+          ['Penanganan kawasan kumuh', ((int) $ringkasan['ada_penanganan'] === 1 ? 'Ada' : 'Tidak ada')],
           ['Total luas penanganan', number_format((float) $ringkasan['total_luas_ha'], 2, ',', '.') . ' Ha'],
           ['Jumlah intervensi', number_format((int) $ringkasan['jumlah_intervensi'], 0, ',', '.') . ' kegiatan'],
           ['Total anggaran', 'Rp ' . number_format((int) $ringkasan['total_anggaran'], 0, ',', '.')],
       ];
       foreach ($kartu as [$label, $nilai]): ?>
-        <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-brand-card">
+        <div class="kartu-admin isi-kartu">
           <p class="text-xs text-gray-500 dark:text-brand-muted"><?= $e($label) ?></p>
           <p class="mt-1 font-black text-gray-900 dark:text-white"><?= $e($nilai) ?></p>
         </div>
       <?php endforeach; ?>
     </section>
 
-    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
+    <section class="kartu-admin isi-kartu">
       <div class="flex flex-wrap items-center gap-3">
         <h2 class="font-bold text-gray-900 dark:text-white">Rincian intervensi</h2>
         <span class="rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-800 dark:bg-purple-500/10 dark:text-purple-300">
@@ -114,7 +114,7 @@ $this->load->view('admin/layouts/cetak_rekap');
 
       <div class="mt-4 overflow-x-auto">
         <table class="w-full min-w-[820px] text-left text-sm">
-          <thead class="text-xs uppercase text-gray-500 dark:text-brand-muted">
+          <thead class="text-xs text-gray-500 dark:text-brand-muted">
             <tr>
               <th class="py-2 pr-3">#</th>
               <th class="py-2 pr-3">Indikator</th>

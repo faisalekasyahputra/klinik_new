@@ -32,14 +32,14 @@ $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' =>
     '<b class="text-gray-900 dark:text-white">' . $e($nama_wilayah) . '</b>, pelaporan tahun ' . (int) $tahun
     . '. Wilayah diambil dari akunmu, bukan dari pilihan di layar - kamu hanya bisa merekam capaian wilayah sendiri.']); ?>
 
-<div class="space-y-4">
+<div class="tumpuk-bagian">
 
   <?php foreach ($menu as $judul => $baris): ?>
-    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
-      <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-brand-muted">
+    <section class="kartu-admin isi-kartu">
+      <h3 class="text-sm font-bold text-gray-900 dark:text-white">
         <?= $e($judul) ?>
       </h3>
-      <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div class="mt-3 grid-kartu grid grid-cols-1 sm:grid-cols-3">
         <?php foreach ($baris as [$url, $ikon, $label, $isi]): ?>
           <a href="<?= base_url($url) ?>"
              class="group flex flex-col rounded-xl border border-gray-200 p-4 transition-colors hover:border-blue-300 dark:border-white/10 dark:hover:border-brand-primary/30">

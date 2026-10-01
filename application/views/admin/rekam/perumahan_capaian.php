@@ -38,10 +38,9 @@ $warna_status = [
     'terkirim'        => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300',
     'perlu_perbaikan' => 'bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300',
 ];
-$label_status = ['draft' => 'Draft', 'terkirim' => 'Terkirim', 'perlu_perbaikan' => 'Perlu Perbaikan'];
+$label_status = ['draft' => 'Draft, belum dikirim', 'terkirim' => 'Terkirim', 'perlu_perbaikan' => 'Perlu perbaikan'];
 
-$kotak  = 'rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card';
-$tombol = 'tombol-utama'; // gaya bersama di admin/layouts/head.php
+$kotak  = 'kartu-admin isi-kartu';
 
 /**
  * Satu tabel matriks. `$sisi_list` menentukan sisi angka yang ditampilkan:
@@ -74,8 +73,8 @@ $tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_
     $total_unit = array_fill_keys($sisi_list, 0);
     $total_rp   = array_fill_keys($sisi_list, 0);
     ?>
-    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
-      <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-brand-muted"><?= $e($judul) ?></h3>
+    <section class="kartu-admin isi-kartu">
+      <h3 class="text-sm font-bold text-gray-900 dark:text-white"><?= $e($judul) ?></h3>
       <?php if ($pasangan): ?>
         <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">Tiap sumber dana punya dua baris: <b class="text-gray-900 dark:text-white">Rencana</b> lalu <b class="text-gray-900 dark:text-white">Realisasi</b>. Dalam tiap sel, angka atas unit dan angka bawah rupiah.</p>
       <?php endif; ?>
@@ -83,11 +82,11 @@ $tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_
       <div class="mt-3 overflow-x-auto">
         <table class="w-full min-w-[980px] text-left text-sm">
           <thead>
-            <tr class="text-xs uppercase text-gray-500 dark:text-brand-muted">
-              <th class="sticky left-0 bg-white py-2 pr-3 dark:bg-brand-card">Sumber Dana</th>
+            <tr class="text-xs text-gray-500 dark:text-brand-muted">
+              <th class="sticky left-0 bg-white py-2 pr-3 dark:bg-brand-card">Sumber dana</th>
               <?php if ($pasangan): ?><th class="py-2 pr-2"><span class="sr-only">Sisi angka</span></th><?php endif; ?>
               <?php foreach ($program_label as $plabel): ?>
-                <th class="px-2 py-2 text-right"><?= $e($plabel) ?><br><span class="font-normal normal-case">unit / Rp</span></th>
+                <th class="px-2 py-2 text-right"><?= $e($plabel) ?><br><span class="font-normal">unit / Rp</span></th>
               <?php endforeach; ?>
               <th class="py-2 pl-2 text-right">Subtotal</th>
             </tr>
@@ -170,7 +169,7 @@ $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' =>
     . ($laporan ? '<span class="rounded-full px-2.5 py-0.5 text-xs font-bold ' . ($warna_status[$laporan['status']] ?? '') . '">' . $e($label_status[$laporan['status']] ?? $laporan['status']) . '</span>' : '')
     . '</span>']); ?>
 
-<div class="space-y-4">
+<div class="tumpuk-bagian">
 
   <?php /* Tata letak kepala: judul dan periode lewat judul_halaman di atas, KENDALI di kotak ini.
             Versi sebelumnya menumpuk identitas wilayah, badge status, label
@@ -196,12 +195,12 @@ $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' =>
               <option value="<?= $t ?>" <?= $t === (int) $tahun ? 'selected' : '' ?>><?= $t ?></option>
             <?php endfor; ?>
           </select>
-          <button class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10 dark:text-brand-muted dark:hover:bg-white/5">Tampilkan</button>
+          <button class="tombol-kedua"><i class="ph ph-funnel"></i><span>Tampilkan</span></button>
         </form>
 
         <?php if ( ! $mode_rekap): ?>
           <a href="<?= base_url('Rekam_Perumahan/input' . ($laporan ? '?laporan=' . (int) $laporan['id'] : '')) ?>"
-             class="<?= $tombol ?>">Input Capaian</a>
+             class="tombol-utama"><i class="ph ph-pencil-simple-line"></i><span>Input capaian</span></a>
         <?php else: ?>
           <?php /* HANYA di mode rekap, dan itu penting: layar input menampilkan
                    draft, sementara `rekap()` hanya menghitung laporan berstatus
@@ -214,12 +213,12 @@ $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' =>
                  per triwulan, sehingga keempatnya bisa dibandingkan sekaligus
                  dijumlah. */ ?>
           <a href="<?= base_url('Rekam_Perumahan/export?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>"
-             class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10 dark:text-brand-muted dark:hover:bg-white/5">
-            <i class="ph ph-download-simple mr-1" aria-hidden="true"></i> Unduh Excel
+             class="tombol-kedua">
+            <i class="ph ph-download-simple" aria-hidden="true"></i><span>Unduh Excel</span>
           </a>
           <a href="<?= base_url('Rekam_Perumahan/export?periode=tahun&tahun=' . (int) $tahun) ?>"
-             class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">
-            <i class="ph ph-calendar-blank mr-1" aria-hidden="true"></i> Unduh Setahun
+             class="tombol-kedua">
+            <i class="ph ph-calendar-blank" aria-hidden="true"></i><span>Unduh setahun</span>
           </a>
           <?php /* "Cetak", bukan "Unduh PDF" - tidak ada berkas PDF yang dibuat
                    di server (belum ada pustaka PDF di proyek ini). Warga/admin
@@ -228,8 +227,8 @@ $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' =>
                    hasil_diagnosa.php. `type="button"` wajib supaya tidak
                    men-submit form filter tahun/triwulan di sebelahnya. */ ?>
           <button type="button" onclick="window.print()"
-             class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10 dark:text-brand-muted dark:hover:bg-white/5">
-            <i class="ph ph-printer mr-1" aria-hidden="true"></i> Cetak
+             class="tombol-kedua">
+            <i class="ph ph-printer" aria-hidden="true"></i><span>Cetak</span>
           </button>
         <?php endif; ?>
       </div>
@@ -251,7 +250,7 @@ $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' =>
   </section>
 
   <?php if ( ! $matriks): ?>
-    <section class="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-white/10 dark:bg-brand-card">
+    <section class="kartu-admin isi-kartu text-center">
       <p class="font-bold text-gray-900 dark:text-white">
         <?= $mode_rekap ? 'Belum ada laporan terkirim untuk triwulan ini.' : 'Belum ada angka tercatat untuk triwulan ini.' ?>
       </p>
