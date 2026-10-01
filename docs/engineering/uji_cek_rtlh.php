@@ -290,6 +290,8 @@ cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' 
 cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' AND actor_id=? AND ringkasan LIKE ?",
     [$id1, '%' . NIK_ADA . '%']) === 0,
     'NIK LENGKAP tidak ikut tertulis di jejak audit - hanya empat digit terakhir');
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' AND actor_id=? AND ringkasan REGEXP 'hasil: (found|not_found|error)$'", [$id1]) === 0,
+    'Ringkasan jejak audit memakai bahasa Indonesia (terdaftar / tidak terdaftar), bukan kode status mentah');
 
 // ------------------------------------------------ 8. BATAS LAJU
 echo "\n== 8. Batas laju 10/jam per akun ==\n";

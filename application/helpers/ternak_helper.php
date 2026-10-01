@@ -250,7 +250,9 @@ if ( ! function_exists('audit_ringkasan')) {
             $objek = audit_label_objek($j->objek_tipe, $j->objek_id);
             return 'Staf membuka ' . $jenis . ($objek !== '' ? ' (' . $objek . ')' : '');
         }
-        return str_ireplace(['privilege modul', 'privilege'], ['hak modul', 'hak modul'], (string) $j->ringkasan);
+        // Baris lama Cek Data Rumah menyimpan kode status mentah (found/not_found/error).
+        return str_ireplace(['privilege modul', 'privilege', 'hasil: not_found', 'hasil: found', 'hasil: error'],
+            ['hak modul', 'hak modul', 'hasil: tidak terdaftar', 'hasil: terdaftar', 'hasil: gagal diperiksa'], (string) $j->ringkasan);
     }
 }
 
