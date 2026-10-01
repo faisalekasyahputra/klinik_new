@@ -15,7 +15,7 @@ $this->load->helper('admin_table');
  *   $filter_html - opsional, HTML kontrol filter tambahan (mis. tombol bidang)
  */
 ?>
-<div class="px-6 py-4 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+<div class="px-4 py-3 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
     <div class="flex flex-wrap items-center gap-2"><?= $filter_html ?? '' ?></div>
 
     <form method="get" action="<?= base_url($base_url) ?>" class="flex items-center gap-2 w-full lg:w-auto">
@@ -36,7 +36,7 @@ $this->load->helper('admin_table');
         </div>
         <button type="submit" class="tombol-utama">Cari</button>
         <?php if (!empty($table['q'])): ?>
-        <a href="<?= admin_table_url($base_url, ['q' => NULL]) ?>" class="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10 transition-colors" title="Hapus pencarian">Reset</a>
+        <a href="<?= admin_table_url($base_url, ['q' => NULL]) ?>" class="tombol-kedua" title="Hapus pencarian">Reset</a>
         <?php endif; ?>
     </form>
 </div>

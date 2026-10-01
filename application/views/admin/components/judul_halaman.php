@@ -17,9 +17,9 @@
  */
 $jh_teks = isset($jh_judul) && $jh_judul !== '' ? $jh_judul : ($title ?? '');
 ?>
-<div class="mb-8 flex flex-wrap items-start justify-between gap-4" data-judul-halaman>
+<div class="mb-5 flex flex-wrap items-start justify-between gap-3" data-judul-halaman>
     <div class="min-w-0">
-        <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2"><?= html_escape($jh_teks) ?></h1>
+        <h1 class="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-1"><?= html_escape($jh_teks) ?></h1>
         <?php if ( ! empty($jh_deskripsi)): ?>
             <p class="text-sm text-gray-500 dark:text-brand-muted"><?= $jh_deskripsi ?></p>
         <?php endif; ?>

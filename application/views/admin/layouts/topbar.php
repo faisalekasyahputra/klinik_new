@@ -1,4 +1,4 @@
-<header class="admin-topbar h-20 bg-white dark:bg-[#0a1a1f] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-8 z-40 sticky top-0">
+<header class="admin-topbar h-16 bg-white dark:bg-[#0a1a1f] border-b border-gray-200 dark:border-white/5 flex items-center justify-between px-6 z-40 sticky top-0">
     <div class="flex items-center gap-6">
         <button @click="sidebarOpen = !sidebarOpen" :aria-expanded="sidebarOpen.toString()" aria-label="Buka atau tutup menu navigasi" class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all">
             <i class="ph ph-list text-2xl"></i>

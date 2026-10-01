@@ -17,4 +17,4 @@ $kelas_map = [
     'reject'  => 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-500/30',
 ];
 ?>
-<span class="inline-flex px-3 py-1 rounded-full text-xs font-bold border <?= $kelas_map[$kelas] ?? $kelas_map['pending'] ?>"><?= html_escape($label) ?></span>
+<span class="inline-flex whitespace-nowrap px-2.5 py-0.5 rounded-full text-xs font-bold border <?= $kelas_map[$kelas] ?? $kelas_map['pending'] ?>"><?= html_escape($label) ?></span>

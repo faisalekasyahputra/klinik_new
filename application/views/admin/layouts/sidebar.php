@@ -2,7 +2,7 @@
        class="admin-sidebar bg-white dark:bg-brand-card border-r border-gray-200 dark:border-white/5 flex flex-col transition-all duration-300 relative z-20 shadow-xl shadow-gray-200/50 dark:shadow-none"
        :class="desktop ? (sidebarOpen ? 'w-64' : 'w-20') : ''"
        :style="!desktop ? (sidebarOpen ? 'display:flex !important;position:fixed !important;inset:0 auto 0 0 !important;z-index:60 !important;width:16rem !important;transform:none !important;' : 'display:none !important;') : ''">
-    <div class="h-20 flex items-center px-5 border-b border-gray-200 dark:border-white/5" :class="sidebarOpen ? 'justify-start' : 'justify-center'">
+    <div class="h-16 flex items-center px-5 border-b border-gray-200 dark:border-white/5" :class="sidebarOpen ? 'justify-start' : 'justify-center'">
         <a href="<?= base_url($dashboard_home ?? 'akun') ?>" class="flex items-center gap-3 group">
             <div class="w-10 h-10 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                 <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jateng" class="h-8 w-auto object-contain drop-shadow-sm">

@@ -13,7 +13,7 @@
  * @param string   $kt_keterangan HTML tepercaya dari view untuk sisi kanan, boleh ''
  */
 ?>
-<div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-200 p-4 dark:border-white/5" data-kepala-tabel>
+<div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-gray-200 px-4 py-3 dark:border-white/5" data-kepala-tabel>
     <h2 class="font-black text-gray-900 dark:text-white"><?= html_escape($kt_judul) ?><?php if (isset($kt_jumlah) && $kt_jumlah !== NULL): ?> <span class="text-gray-400 dark:text-brand-muted">(<?= angka_id((int) $kt_jumlah) ?>)</span><?php endif; ?></h2>
     <?php if ( ! empty($kt_keterangan)): ?><?= $kt_keterangan ?><?php endif; ?>
 </div>

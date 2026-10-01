@@ -425,7 +425,8 @@ $head_admin = (string) @file_get_contents(APP_ROOT . '/application/views/admin/l
 if ( ! defined('BASEPATH')) { define('BASEPATH', APP_ROOT . '/system/'); }
 require_once APP_ROOT . '/application/helpers/ternak_helper.php'; // angka_id()
 $judul_kmp = (string) @file_get_contents(APP_ROOT . '/application/views/admin/components/judul_halaman.php');
-cek(strpos($judul_kmp, '<h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2"><?= html_escape($jh_teks) ?></h1>') !== FALSE
+// text-2xl mb-1 sejak 2 Okt 2026: judul dirapatkan atas permintaan pemilik produk (blok fondasi tampilan di akhir berkas).
+cek(strpos($judul_kmp, '<h1 class="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-1"><?= html_escape($jh_teks) ?></h1>') !== FALSE
     && strpos($judul_kmp, "\$title ?? ''") !== FALSE,
     'Komponen judul halaman: satu gaya h1, teks bawaan dari $title');
 foreach ([['Admin_Dashboard', 'Ringkasan Kerja'], ['Admin', 'Tinjau Antrean'], ['Admin_Srp2/pending', 'SRP2 dalam Pengajuan'],
@@ -1192,6 +1193,92 @@ cek(strpos($sumber('kemitraan/index.php'), 'name="tanggal_sertifikat" value="<?=
     'KKN & Magang: isian tanggal sertifikat berukuran normal (text-sm, py-2)');
 cek(strpos($head_admin, 'a[class*="rounded"][class*="py-"], .tombol-aksi, .tombol-utama { min-height: 40px; }') !== FALSE,
     'head.php: target sentuh 40px juga untuk tautan .tombol-aksi dan .tombol-utama');
+
+/* FONDASI TAMPILAN ADMIN (permintaan pemilik produk 2 Okt 2026: lebih rapat, latar polos,
+   tombol seragam). Berlaku untuk ketiga peran admin karena shell dan CSS-nya sama.
+     1. Latar shell admin polos: tanpa batik, pola SVG, glow blur, atau gradasi. Portal publik
+        tidak diperiksa di sini (bukan bagian shell admin).
+     2. Set tombol tetap di layouts/head.php: .tombol-utama dan .tombol-kedua 32px,
+        .tombol-aksi dan .chip-filter 28px, .tombol-ikon 32x32, .tombol-tab; semuanya 40px di
+        bawah 768px. Label tidak diubah kapital oleh CSS.
+     3. Kartu pekat .kartu-admin (terang dan gelap) dan token jarak --jarak-bagian/--jarak-kartu/
+        --pad-kartu; judul halaman, kepala kartu tabel, dan toolbar tabel dirapatkan.
+     4. Tombol liar: setiap <button> dan tautan bergaya tombol di view admin wajib memakai salah
+        satu kelas set tombol. Layar yang belum dimigrasi tercatat di $utang_tombol dengan
+        jumlahnya; angka itu hanya boleh TURUN. Pengecualian permanen dan alasannya:
+          - admin/index.php dan admin/layouts/*: kontrol shell (menu, tema, notifikasi, latar
+            panel geser) berukuran 40px tetap di topbar 64px, plus tata letak cetak;
+          - admin/components/pagination.php: nomor halaman kotak 32px dirakit di PHP;
+          - admin/components/review_form.php: kelasnya datang dari peta $style_class yang
+            isinya kelas set tombol (diperiksa terpisah di bawah). */
+echo "\n== Fondasi tampilan admin: latar polos, set tombol, kartu, jarak ==\n";
+$shell_admin = '';
+foreach (['index.php', 'layouts/head.php', 'layouts/sidebar.php', 'layouts/sidebar_nav.php', 'layouts/topbar.php', 'layouts/footer.php'] as $p) {
+    $shell_admin .= (string) @file_get_contents(APP_ROOT . '/application/views/admin/' . $p);
+}
+cek($shell_admin !== '' && preg_match('/gradient\(|bg-gradient-|\b(?:from|via)-(?:[a-z]+-\d|brand)|<pattern\b|url\(#batik|blur-\[/', $shell_admin) === 0,
+    'Shell admin: latar polos, tanpa gradasi, pola batik, atau glow blur');
+$dasbor_fondasi = http('adm_sisa', 'Admin_Dashboard');
+cek(strpos($dasbor_fondasi, 'batik-admin') === FALSE && strpos($dasbor_fondasi, 'blur-[120px]') === FALSE,
+    'Ringkasan Kerja yang dirender tidak lagi memuat pola batik atau glow');
+$aturan_tombol = [
+    '.tombol-utama { min-height: 2rem;', '.tombol-kedua { min-height: 2rem;', '.tombol-aksi { min-height: 1.75rem;',
+    '.chip-filter { min-height: 1.75rem;', '.tombol-tab { min-height: 2.25rem;', '.tombol-ikon { width: 2rem; height: 2rem;',
+    '.tombol-aksi-bahaya {', '.dark .tombol-kedua {', '.dark .chip-filter[aria-current="true"]', '.tombol-tab[aria-selected="true"]',
+    'text-transform: none;', ':is(.tombol-kedua, .chip-filter, .tombol-tab) { min-height: 40px; }', '.tombol-ikon { width: 40px; height: 40px; }',
+];
+$aturan_hilang = array_values(array_filter($aturan_tombol, fn($a) => strpos($head_admin, $a) === FALSE));
+cek($aturan_hilang === [], 'head.php: set tombol lengkap dengan ukuran desktop dan 40px di ponsel (hilang: ' . implode(' | ', $aturan_hilang) . ')');
+cek(strpos($head_admin, '.kartu-admin { background-color: #fff;') !== FALSE && strpos($head_admin, '.dark .kartu-admin { background-color: #0f2933;') !== FALSE
+    && strpos($head_admin, ':root { --jarak-bagian: 1.25rem; --jarak-kartu: .75rem; --pad-kartu: 1rem; }') !== FALSE,
+    'head.php: kartu pekat .kartu-admin (terang dan gelap) dan token jarak');
+cek(strpos($judul_kmp, 'class="mb-5 flex') !== FALSE
+    && strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/components/kepala_tabel.php'), 'px-4 py-3 dark:border-white/5" data-kepala-tabel') !== FALSE
+    && strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/components/table_toolbar.php'), '<div class="px-4 py-3 border-b') !== FALSE
+    && strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/index.php'), 'overflow-y-auto p-6 relative') !== FALSE,
+    'Jarak rapat: judul halaman mb-5, kepala kartu dan toolbar tabel py-3, isi utama p-6');
+$peta_review = (string) @file_get_contents(APP_ROOT . '/application/views/admin/components/review_form.php');
+cek(strpos($peta_review, "'accept'  => 'tombol-utama'") !== FALSE && strpos($peta_review, "'reject'  => 'tombol-kedua tombol-aksi-bahaya'") !== FALSE
+    && strpos($peta_review, "'neutral' => 'tombol-kedua'") !== FALSE, 'review_form.php: peta tombol berisi kelas set tombol');
+
+function tombol_liar_admin($isi) {
+    // Blok PHP di dalam atribut diratakan dulu supaya ">" dan kutip di dalamnya tidak memotong tag.
+    $isi = preg_replace_callback('/<\?(?:php|=)?(.*?)\?>/s', fn($m) => '{' . str_replace(['"', "'", '<', '>'], ' ', $m[1]) . '}', $isi);
+    preg_match_all('/<(button|a)\b((?:"[^"]*"|\'[^\']*\'|[^>\'"])*)>/s', $isi, $m, PREG_SET_ORDER);
+    $liar = 0;
+    foreach ($m as $t) {
+        // Tautan dihitung tombol bila bergaya pil/kotak: rounded + py-* dengan latar atau bingkai.
+        if ($t[1] === 'a' && ! preg_match('/tombol-|rounded[^"]*\bpy-|\bpy-[^"]*rounded/', $t[2])) { continue; }
+        if ($t[1] === 'a' && ! preg_match('/\b(?:bg-|border\b|tombol-)/', $t[2])) { continue; }
+        if (preg_match('/\b(?:tombol-utama|tombol-kedua|tombol-aksi|chip-filter|tombol-tab|tombol-ikon)\b/', $t[2])) { continue; }
+        $liar++;
+    }
+    return $liar;
+}
+// Utang migrasi per 2 Okt 2026 (84 tombol di 27 berkas). Turunkan angkanya setiap kali
+// sebuah layar dimigrasi; hapus barisnya bila sudah nol.
+$utang_tombol = [
+    'admin/aduan/detail.php' => 1, 'admin/aduan/index.php' => 6, 'admin/antrean/dashboard.php' => 6,
+    'admin/content/index.php' => 3, 'admin/dashboard.php' => 1, 'admin/katalog/index.php' => 3,
+    'admin/kemitraan/peserta.php' => 1, 'admin/kemitraan/slot.php' => 2, 'admin/kemitraan/slot_bidang.php' => 2,
+    'admin/kemitraan/ubah.php' => 3, 'admin/kemitraan/universitas.php' => 3, 'admin/kemitraan_bidang/index.php' => 1,
+    'admin/konsultasi/index.php' => 5, 'admin/psu/index.php' => 1, 'admin/rekam/kawasan_input.php' => 4,
+    'admin/rekam/kawasan_rekap.php' => 4, 'admin/rekam/pantau.php' => 5, 'admin/rekam/perumahan_capaian.php' => 4,
+    'admin/rekam/perumahan_wizard.php' => 14, 'admin/rekam/riwayat.php' => 1, 'admin/rekam/tinjauan_daftar.php' => 1,
+    'admin/rekam/tinjauan_detail.php' => 1, 'admin/srp2/pending.php' => 2, 'admin/struktur/index.php' => 4,
+    'admin/users/index.php' => 4, 'admin/users/privileges.php' => 1, 'admin_bidang/dashboard.php' => 1,
+];
+$tombol_naik = [];
+$sisa_utang = 0;
+foreach (array_merge(glob(APP_ROOT . '/application/views/admin/*.php'), glob(APP_ROOT . '/application/views/admin/*/*.php'), glob(APP_ROOT . '/application/views/admin_bidang/*.php')) as $berkas) {
+    $nama = str_replace(APP_ROOT . '/application/views/', '', $berkas);
+    if ($nama === 'admin/index.php' || strpos($nama, 'admin/layouts/') === 0
+        || in_array($nama, ['admin/components/pagination.php', 'admin/components/review_form.php'], TRUE)) { continue; }
+    $n = tombol_liar_admin((string) file_get_contents($berkas));
+    $sisa_utang += $n;
+    if ($n > ($utang_tombol[$nama] ?? 0)) { $tombol_naik[] = "{$nama}: {$n} > " . ($utang_tombol[$nama] ?? 0); }
+}
+cek($tombol_naik === [], "Tombol admin di luar set tombol tidak bertambah (sisa utang {$sisa_utang}; naik: " . implode(', ', $tombol_naik) . ')');
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);

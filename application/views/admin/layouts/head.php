@@ -116,8 +116,8 @@
            paginasi yang dicetak sebagai counter-reset di pembungkus [data-tabel-admin] tiap view (reset di
            elemen saudara seperti toolbar TIDAK diwarisi tabel), jadi halaman 2 mulai dari 26, bukan 1.
            Baris kosong ber-colspan tidak dinomori tetapi tetap diberi sel supaya kolomnya lurus. */
-        [data-tabel-admin] table > thead > tr::before { content: "No"; display: table-cell; padding: 1rem 0.5rem 1rem 1rem; }
-        [data-tabel-admin] table > tbody > tr::before { counter-increment: baris-admin; content: counter(baris-admin); display: table-cell; padding: 1rem 0.5rem 1rem 1rem; vertical-align: top; font-size: 0.75rem; font-weight: 700; color: #6b7280; }
+        [data-tabel-admin] table > thead > tr::before { content: "No"; display: table-cell; padding: .625rem .5rem .625rem 1rem; }
+        [data-tabel-admin] table > tbody > tr::before { counter-increment: baris-admin; content: counter(baris-admin); display: table-cell; padding: .625rem .5rem .625rem 1rem; vertical-align: top; font-size: 0.75rem; font-weight: 700; color: #6b7280; }
         [data-tabel-admin] table > tbody > tr:has(> td[colspan])::before { counter-increment: none; content: ""; }
         /* Kolom Aksi menempel di kanan wadah gulir (audit UI 2 Okt 2026: di 375 dan 768
            tombol Tinjau/Proses/Simpan baru terlihat setelah menggulir tabel jauh ke samping).
@@ -131,20 +131,34 @@
         .dark .aksi-tetap > table > * > tr > :last-child:not([colspan]) { background-color: #0f2933; box-shadow: inset 1px 0 0 rgba(255, 255, 255, .06); }
         .dark .aksi-tetap > table > thead.bg-gray-50 > tr > :last-child { background-color: #0c2129; }
         .dark .aksi-tetap > table > tbody > tr[class*="hover:bg-gray-50"]:hover > :last-child { background-color: #1b3440; }
-        /* Tombol admin: SATU gaya untuk ketiga peran (audit UI 2 Okt 2026). Dulu tabel memakai
-           campuran tombol berbingkai (Antrean), tautan teks biru/kuning/abu (Pengguna, Asosiasi),
-           dan tombol utama lime, biru, teal, atau hijau tergantung layarnya.
-             .tombol-utama          aksi utama layar atau formulir (Tambah, Cari, Unggah, Simpan)
-             .tombol-aksi           tombol kecil berbingkai di kolom Aksi: <i class="ph ..."></i><span>Label</span>
-             .tombol-aksi-bahaya    tambahan untuk aksi yang menghapus atau menonaktifkan
-           Label wajib di <span> sesudah ikon: di ponsel aturan .aksi-tetap di bawah menyisakan ikonnya. */
+        /* Tombol admin: SATU set untuk ketiga peran (audit UI 2 Okt 2026, dirapatkan lagi atas
+           permintaan pemilik produk). Setiap tombol dan tautan bergaya tombol di layar admin
+           memakai TEPAT SATU kelas di bawah; uji_regresi_tampilan.php memeriksanya.
+             .tombol-utama          aksi utama layar atau formulir (Tambah, Cari, Simpan); 32px
+             .tombol-kedua          aksi pendamping berbingkai (Batal, Kembali, Unduh Excel, Cetak); 32px
+             .tombol-aksi           tombol kecil berbingkai di kolom Aksi tabel; 28px
+             .tombol-aksi-bahaya    TAMBAHAN merah untuk hapus/nonaktifkan, di atas .tombol-aksi atau .tombol-kedua
+             .chip-filter           pil penyaring status/wilayah/bidang/tahun; yang aktif diberi aria-current="true"
+             .tombol-tab            tab; yang aktif diberi aria-selected="true" (tab Alpine) atau aria-current="page" (tab tautan)
+             .tombol-ikon           tombol ikon saja (tutup modal, dsb.); 32x32, wajib aria-label
+           Isi: <i class="ph ..."></i><span>Label</span>, label huruf kalimat ("Unduh Excel", bukan
+           "UNDUH EXCEL"). Label di <span> sesudah ikon: di ponsel aturan .aksi-tetap di bawah
+           menyisakan ikonnya. Urutan kaki modal: Batal (.tombol-kedua) kiri, aksi utama kanan.
+           Ukuran di bawah berlaku desktop; di bawah 768px semuanya minimal 40px (target sentuh). */
+        :is(.tombol-utama, .tombol-kedua, .tombol-aksi, .chip-filter, .tombol-tab, .tombol-ikon) { display: inline-flex; align-items: center; justify-content: center; gap: .375rem; font-weight: 700; white-space: nowrap; text-transform: none; letter-spacing: normal; transition: background-color .15s, color .15s, border-color .15s; }
+        :is(.tombol-utama, .tombol-kedua, .tombol-aksi, .chip-filter, .tombol-tab, .tombol-ikon) > i { font-size: 1rem; line-height: 1; }
+        :is(.tombol-utama, .tombol-kedua, .tombol-aksi, .chip-filter, .tombol-ikon):disabled { opacity: .5; cursor: not-allowed; }
         /* Biru di terang, lime di gelap (pola yang sudah dipakai Rekam Data): lime di latar putih tidak terbaca. */
-        .tombol-utama { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: .75rem; padding: .625rem 1.25rem; font-size: .875rem; line-height: 1.25rem; font-weight: 700; background-color: #2563eb; color: #fff; transition: background-color .15s; }
+        .tombol-utama { min-height: 2rem; border-radius: .5rem; border: 1px solid transparent; padding: .25rem .875rem; font-size: .8125rem; line-height: 1.25rem; background-color: #2563eb; color: #fff; }
         .tombol-utama:hover { background-color: #1d4ed8; }
         .dark .tombol-utama { background-color: #d6fb00; color: #0a1a1f; }
         .dark .tombol-utama:hover { background-color: #b5d400; }
-        .tombol-utama:disabled { opacity: .5; cursor: not-allowed; }
-        .tombol-aksi { display: inline-flex; align-items: center; justify-content: center; gap: .375rem; border-radius: .5rem; border: 1px solid #e5e7eb; background-color: #f9fafb; padding: .375rem .75rem; font-size: .75rem; line-height: 1rem; font-weight: 700; color: #374151; white-space: nowrap; transition: background-color .15s, color .15s; }
+        .tombol-kedua { min-height: 2rem; border-radius: .5rem; border: 1px solid #d1d5db; padding: .25rem .875rem; font-size: .8125rem; line-height: 1.25rem; background-color: #fff; color: #374151; }
+        .tombol-kedua:hover { background-color: #f3f4f6; color: #111827; }
+        .dark .tombol-kedua { border-color: rgba(255, 255, 255, .15); background-color: transparent; color: #e5e7eb; }
+        .dark .tombol-kedua:hover { background-color: rgba(255, 255, 255, .06); color: #fff; }
+        .tombol-aksi { min-height: 1.75rem; border-radius: .5rem; border: 1px solid #e5e7eb; background-color: #f9fafb; padding: .25rem .625rem; font-size: .75rem; line-height: 1rem; color: #374151; }
+        .tombol-aksi > i { font-size: .875rem; }
         .tombol-aksi:hover { background-color: #f3f4f6; color: #111827; }
         .dark .tombol-aksi { border-color: rgba(255, 255, 255, .1); background-color: rgba(255, 255, 255, .05); color: #cbd5e1; }
         .dark .tombol-aksi:hover { background-color: rgba(214, 251, 0, .1); color: #d6fb00; }
@@ -152,8 +166,43 @@
         .tombol-aksi-bahaya:hover { background-color: #fee2e2; color: #b91c1c; }
         .dark .tombol-aksi-bahaya { border-color: rgba(248, 113, 113, .3); background-color: rgba(239, 68, 68, .1); color: #f87171; }
         .dark .tombol-aksi-bahaya:hover { background-color: rgba(239, 68, 68, .2); color: #fca5a5; }
+        .chip-filter { min-height: 1.75rem; border-radius: 9999px; border: 1px solid #e5e7eb; background-color: #fff; padding: .25rem .75rem; font-size: .75rem; line-height: 1rem; color: #4b5563; }
+        .chip-filter:hover { border-color: #93c5fd; color: #1d4ed8; }
+        .chip-filter[aria-current="true"], .chip-filter[aria-pressed="true"] { border-color: #2563eb; background-color: #eff6ff; color: #1d4ed8; }
+        .dark .chip-filter { border-color: rgba(255, 255, 255, .1); background-color: transparent; color: #94a3b8; }
+        .dark .chip-filter:hover { border-color: rgba(214, 251, 0, .4); color: #d6fb00; }
+        .dark .chip-filter[aria-current="true"], .dark .chip-filter[aria-pressed="true"] { border-color: rgba(214, 251, 0, .5); background-color: rgba(214, 251, 0, .1); color: #d6fb00; }
+        .tombol-tab { min-height: 2.25rem; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: .375rem .875rem; font-size: .8125rem; line-height: 1.25rem; color: #6b7280; }
+        .tombol-tab:hover { color: #111827; border-bottom-color: #d1d5db; }
+        .tombol-tab[aria-selected="true"], .tombol-tab[aria-current="page"] { color: #2563eb; border-bottom-color: #2563eb; }
+        .dark .tombol-tab { color: #94a3b8; }
+        .dark .tombol-tab:hover { color: #fff; border-bottom-color: rgba(255, 255, 255, .2); }
+        .dark .tombol-tab[aria-selected="true"], .dark .tombol-tab[aria-current="page"] { color: #d6fb00; border-bottom-color: #d6fb00; }
+        .tombol-ikon { width: 2rem; height: 2rem; flex-shrink: 0; border-radius: .5rem; color: #6b7280; }
+        .tombol-ikon > i { font-size: 1.125rem; }
+        .tombol-ikon:hover { background-color: #f3f4f6; color: #111827; }
+        .dark .tombol-ikon { color: #94a3b8; }
+        .dark .tombol-ikon:hover { background-color: rgba(255, 255, 255, .06); color: #fff; }
         /* Beberapa tombol (atau form berisi tombol) berjajar dalam satu sel: beri jarak tanpa pembungkus. */
         td > :is(.tombol-aksi, form) + :is(.tombol-aksi, form) { margin-left: .375rem; }
+        /* Kartu dan panel admin: SATU isian pekat (permintaan pemilik produk 2 Okt 2026: kartu yang
+           cuma berbingkai tampak tembus). .kartu-admin = latar + bingkai + sudut, tanpa padding
+           (kartu tabel); tambah .isi-kartu untuk kartu berisi teks atau formulir.
+           Jarak antarbagian dan antarkartu memakai token di bawah, bukan mb-8/gap-6 per layar:
+             --jarak-bagian  antarbagian halaman (1.25rem = 20px)
+             --jarak-kartu   antarkartu dalam grid (.75rem = 12px)
+             --pad-kartu     isi kartu (1rem = 16px)
+           .tumpuk-bagian pada pembungkus menjarakkan anak-anaknya dengan --jarak-bagian;
+           .grid-kartu memberi gap --jarak-kartu pada grid. */
+        :root { --jarak-bagian: 1.25rem; --jarak-kartu: .75rem; --pad-kartu: 1rem; }
+        .kartu-admin { background-color: #fff; border: 1px solid #e5e7eb; border-radius: 1rem; }
+        .dark .kartu-admin { background-color: #0f2933; border-color: rgba(255, 255, 255, .06); }
+        .isi-kartu { padding: var(--pad-kartu); }
+        .tumpuk-bagian > * + * { margin-top: var(--jarak-bagian); }
+        .grid-kartu { gap: var(--jarak-kartu); }
+        /* Kepadatan tabel admin: sel berpadding besar (py-3/py-4/py-5) dirapatkan jadi 10px di
+           semua layar sekaligus. Padding mendatar tetap milik view. */
+        .admin-main :is(th, td):is(.py-3, .py-4, .py-5) { padding-top: .625rem; padding-bottom: .625rem; }
         /* Deret kartu ringkasan: di layar lebar semua kartu satu baris, berapa pun jumlahnya
            (style="--jumlah-kartu: N"), supaya tidak ada kartu sendirian di baris kedua
            (audit UI 2 Okt 2026: 5 kartu di grid 4 kolom). Di bawah 1280 tetap kelas Tailwind. */
@@ -179,6 +228,8 @@
             :is(button, select, input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="file"])) { min-height: 40px; }
             button { min-width: 40px; }
             a[class*="rounded"][class*="py-"], .tombol-aksi, .tombol-utama { min-height: 40px; }
+            :is(.tombol-kedua, .chip-filter, .tombol-tab) { min-height: 40px; }
+            .tombol-ikon { width: 40px; height: 40px; }
             a[class*="rounded"][class*="py-"]:not([class*="flex"], [class*="block"], [class*="grid"], .hidden) { display: inline-flex; align-items: center; }
             input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; }
         }
@@ -227,8 +278,10 @@
             }
         }
         @media (max-width: 767px) {
-            .admin-main { padding: 1rem; }
-            .admin-topbar { padding-left: 1rem; padding-right: 1rem; }
+            /* Kelas ganda: Tailwind CDN (jaring pengaman) menyuntik <style> SESUDAH blok ini,
+               jadi .p-6/.px-6 bawaan elemennya menang bila spesifisitasnya sama. */
+            .admin-main.admin-main { padding: 1rem; }
+            .admin-topbar.admin-topbar { padding-left: 1rem; padding-right: 1rem; }
             /* Kolom Aksi yang menempel menutupi kolom nama di ponsel: tombol berikon cukup
                ikonnya saja. Teks label tetap ada untuk pembaca layar (pola sr-only). */
             .aksi-tetap td:last-child :is(a, button):has(> i) > span {
