@@ -12,11 +12,18 @@ class Admin_Bidang extends Admin_Bidang_Controller {
         $table = $this->table_state(['created_at', 'nama', 'judul', 'status'], 'created_at');
         $data['base_url'] = 'Admin_Bidang';
 
+        // ?status= dipakai tautan push triase (Admin_Bidang?status=Baru).
+        // Allowlist: nilai di luar daftar diabaikan, bukan diteruskan ke query.
+        $data['status_sah'] = ['Baru', 'Diproses', 'Selesai'];
+        $status_filter = $this->input->get('status', TRUE);
+        $data['status_filter'] = in_array($status_filter, $data['status_sah'], TRUE) ? $status_filter : NULL;
+
         // Scope bidang tetap wajib ikut di query hitung MAUPUN query ambil -
         // pencarian tidak boleh jadi celah keluar dari scope.
         // from() di depan, lalu count_all_results('', FALSE) - kalau tabelnya
         // disebut di kedua tempat, FROM tertulis dua kali dan query gagal.
         $this->db->from('aduan')->where('bidang', $this->my_bidang_kode);
+        if ($data['status_filter']) { $this->db->where('status', $data['status_filter']); }
         if ($table['q'] !== '') {
             $this->db->group_start()
                 ->like('nama', $table['q'])->or_like('email', $table['q'])
@@ -82,6 +89,7 @@ class Admin_Bidang extends Admin_Bidang_Controller {
             return;
         }
 
+        $status_lama = $this->db->select('status')->where('id', (int) $id)->get('aduan')->row('status');
         $this->db->where('id', (int) $id)
             ->where('bidang', $this->my_bidang_kode)
             ->update('aduan', [
@@ -90,6 +98,9 @@ class Admin_Bidang extends Admin_Bidang_Controller {
                 'reviewed_by'   => $this->get_user_id(),
                 'reviewed_at'   => date('Y-m-d H:i:s'),
             ]);
+        $this->catat_audit('aduan_status_bidang',
+            'Status aduan #' . (int) $id . ': ' . $status_lama . ' -> ' . $status,
+            'aduan', (int) $id, ['dari' => $status_lama, 'ke' => $status, 'bidang' => $this->my_bidang_kode]);
 
         $this->session->set_flashdata('success', 'Status aduan diperbarui.');
         redirect('Admin_Bidang');

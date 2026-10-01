@@ -16,7 +16,13 @@ $badge_kelas = ['Baru' => 'pending', 'Diproses' => 'process', 'Selesai' => 'ok']
 
 <?php $this->load->helper('admin_table'); ?>
 <div data-tabel-admin class="bg-white dark:bg-brand-card border border-gray-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm">
-    <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari pelapor, judul, isi...'], TRUE) ?>
+<?php ob_start(); ?>
+<span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted mr-1">Status:</span>
+<?php foreach (array_merge([NULL], $status_sah) as $status): ?>
+<a href="<?= admin_table_url($base_url, ['status' => $status]) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= $status_filter === $status ? 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>"><?= html_escape($status ?? 'Semua') ?></a>
+<?php endforeach;
+$filter_html = ob_get_clean(); ?>
+    <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari pelapor, judul, isi...', 'filter_html' => $filter_html], TRUE) ?>
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">

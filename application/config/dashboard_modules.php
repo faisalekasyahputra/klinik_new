@@ -236,7 +236,11 @@ $config['dashboard_modules'] = [
         'scope' => 'bidang_kode',
         'table' => 'aduan', 'review_by' => 'admin_bidang',
         'pending_where' => ['status' => 'Baru'],
+        // scope_column WAJIB menemani badge: tanpanya count_pending_modul()
+        // menghitung aduan Baru milik SEMUA bidang, termasuk yang belum ditriase.
+        'scope_column' => 'bidang',
         'status_column' => 'status', 'owner_column' => 'user_id',
+        'badge' => TRUE,
     ],
 
     // ===== Superadmin =====

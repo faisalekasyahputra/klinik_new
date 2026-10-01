@@ -365,6 +365,17 @@ $meja2 = http('bidA', 'Admin_Bidang');
 cek(strpos($meja2['body'], 'Uji triase A ' . CAP) !== FALSE,
     'Sesudah ditriase, aduannya MUNCUL di meja admin bidang yang dituju');
 
+/* Badge sidebar "Aduan Bidang Saya" (UAT admin bidang AB2): dulu entri registry
+   tidak punya 'badge', jadi angka ini tidak pernah tampil. Angka harapan dari DB
+   dengan scope bidang - aduan NULL ($id2, juga Baru) tidak boleh ikut terhitung. */
+function badge_sidebar($body, $label) {
+    if ( ! preg_match('/title="' . preg_quote($label, '/') . '">.*?<\/a>/s', $body, $m)) { return -1; }
+    return preg_match('/bg-red-100[^>]*>(\d+)</', $m[0], $b) ? (int) $b[1] : 0;
+}
+$harap_badge = (int) nilai("SELECT COUNT(*) c FROM aduan WHERE bidang=? AND status='Baru'", [$bidang_a]);
+cek($harap_badge >= 1 && badge_sidebar($meja2['body'], 'Aduan Bidang Saya') === $harap_badge,
+    "Badge sidebar 'Aduan Bidang Saya' = {$harap_badge} (aduan Baru bidang {$bidang_a} saja)");
+
 // ------------------------------------------------ 7. SALAH RUTE MASIH BISA DIPERBAIKI
 echo "\n== 7. Selagi masih Baru, salah rute masih bisa diperbaiki ==\n";
 http('super', 'Admin_Aduan/triase/' . $id1, [
@@ -385,6 +396,17 @@ http('bidA', 'Admin_Bidang/update_status/' . $id1, [
     'status' => 'Diproses', 'catatan_admin' => $JAWABAN,
 ]);
 wajib(status_aduan($id1) === 'Diproses', 'Admin bidang mengubah status jadi Diproses');
+// UAT AB3: perubahan status oleh admin bidang dulu tidak meninggalkan jejak.
+cek(jejak('aduan_status_bidang', $id1) === 1, 'Perubahan status oleh admin bidang tercatat di jejak audit');
+
+// UAT AB3: tautan push triase menunjuk Admin_Bidang?status=Baru - filternya harus sungguhan.
+$judul1 = 'Uji triase A ' . CAP;
+cek(strpos(http('bidA', 'Admin_Bidang?status=Baru')['body'], $judul1) === FALSE,
+    '?status=Baru menyaring - aduan Diproses tidak tampil');
+cek(strpos(http('bidA', 'Admin_Bidang?status=Diproses')['body'], $judul1) !== FALSE,
+    '?status=Diproses menampilkan aduan Diproses');
+cek(strpos(http('bidA', 'Admin_Bidang?status=ngawur')['body'], $judul1) !== FALSE,
+    '?status di luar allowlist diabaikan (daftar penuh)');
 
 http('super', 'Admin_Aduan/triase/' . $id1, [
     'csrf_kpkp_token' => csrf('super', 'Admin_Aduan'), 'bidang' => $bidang_b]);
