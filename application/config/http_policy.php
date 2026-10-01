@@ -35,6 +35,8 @@ $config['http_policy'] = [
        Metode aman (GET/HEAD) tidak boleh punya efek samping, dan CSRF hanya melindungi POST. */
     'post_only' => [
         'admin_content/update'                 => 'ubah konten beranda',
+        'admin_users/update_role'              => 'ubah role dan cakupan akun',
+        'admin_users/create_staff'             => 'buat akun staf',
         'admin_users/ubah_status'              => 'aktif/nonaktifkan akun',
         'admin_users/buka_kunci'               => 'buka kunci akun',
         'admin_users/reset_nik'                => 'reset NIK warga',

@@ -286,13 +286,13 @@ cek($masuk, 'Akun yang diaktifkan kembali bisa login');
 
 // ===================================================== 9. GET TIDAK MENULIS
 echo "\n== 9. GET ke endpoint tulis ditolak ==\n";
-foreach (['ubah_status', 'buka_kunci', 'reset_sandi'] as $ep) {
+foreach (['ubah_status', 'buka_kunci', 'reset_sandi', 'reset_nik', 'update_role', 'create_staff'] as $ep) {
     // Sejak kebijakan metode HTTP (poin 12.4) endpoint POST-only menjawab GET dengan 405 + Allow: POST
-    // (dulu 404 dari penjaga di handler). Yang dijaga tetap sama: GET tidak boleh menulis.
-    cek(in_array(http('a', 'Admin_Users/' . $ep . '?id=' . $idS . '&status=nonaktif')['code'], [404, 405], TRUE),
-        "GET Admin_Users/{$ep} dibalas 404/405 - hanya POST yang boleh menulis");
+    // (dulu 404 dari penjaga di handler). Seragam 405 untuk seluruh endpoint tulis Admin_Users.
+    cek(http('a', 'Admin_Users/' . $ep . '?id=' . $idS . '&status=nonaktif')['code'] === 405,
+        "GET Admin_Users/{$ep} dibalas 405 - hanya POST yang boleh menulis");
 }
-cek(kolom($idS, 'status') === 'active', 'Tiga GET tadi tidak mengubah status akun staf');
+cek(kolom($idS, 'status') === 'active', 'GET tadi tidak mengubah status akun staf');
 
 // ===================================================== 10. POST TANPA CSRF
 echo "\n== 10. POST tanpa token CSRF ==\n";
