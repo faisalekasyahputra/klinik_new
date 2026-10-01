@@ -20,10 +20,14 @@ $this->load->helper('housing_queue');
 /* BUTIR B2 - sakelar kebijakan identitas warga. Dibaca SEKALI di sini, bukan
    di dalam perulangan baris: config->load() per baris berarti ratusan kali. */
 $this->config->load('kebijakan_data', TRUE, TRUE);
-$identitas_menunggu = $this->config->item('identitas_warga_kabkota', 'kebijakan_data') === 'menunggu_keputusan';
+/* Sakelar ini milik layar admin kab/kota saja. Superadmin (Admin::index)
+   mengirim $identitas_utuh = TRUE dan melihat identitas asli; tanpa penanda itu
+   view memilih aman: disamarkan. */
+$identitas_menunggu = empty($identitas_utuh)
+    && $this->config->item('identitas_warga_kabkota', 'kebijakan_data') === 'menunggu_keputusan';
 
 $statuses = housing_queue_statuses();
-$this->load->view('components/modal_keputusan_identitas');
+if ($identitas_menunggu) { $this->load->view('components/modal_keputusan_identitas'); }
 $badge_kelas = $badge_label = [];
 foreach ($statuses as $kode => $status) {
     $badge_kelas[$kode] = $status['badge'];

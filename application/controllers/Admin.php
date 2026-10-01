@@ -16,6 +16,9 @@ class Admin extends Admin_Controller {
         $data['action_url']  = 'Admin/update_status';
         $data['empty_text']  = 'Belum ada antrean yang masuk.';
         $data['base_url']    = 'Admin';
+        // Sakelar B2 (config/kebijakan_data.php) hanya untuk admin kab/kota; superadmin melihat identitas asli.
+        $data['identitas_utuh'] = TRUE;
+        $this->catat_akses_data_pribadi('identitas_warga', 'sf_housing_queue', 'daftar');
         $data += $this->antrean_table_data(NULL);
         // Ringkasan peringatan keamanan otomatis (poin 10.5); hanya superadmin yang melihatnya.
         $this->load->library('Security_alert');

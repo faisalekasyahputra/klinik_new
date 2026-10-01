@@ -217,6 +217,21 @@ if ($menunggu) {
     cek(strpos($daftarA, 'id="modal-identitas-b2"') === FALSE, 'Modal keputusan hilang sendiri sesudah diputuskan');
 }
 
+// ------------------------------- 2c. Superadmin TIDAK terkena sakelar B2
+echo "
+== 2c. Superadmin melihat identitas asli di daftar lintas wilayah ==
+";
+/* Sakelar B2 hanya untuk admin kab/kota. View daftarnya dipakai bersama dengan
+   Admin::index(), dan dulu superadmin ikut melihat 'Warga Contoh'. */
+[, $emailS] = buat_akun('admin', 's');
+$sesiS = new Sesi('s');
+$tokS = $sesiS->token('Auth/login');
+$sesiS->call('Auth/do_login', ['csrf_kpkp_token' => $tokS, 'email' => $emailS, 'password' => SANDI]);
+[$sS, $daftarS] = $sesiS->call('Admin?q=' . $tiketA);
+cek($sS === 200 && strpos($daftarS, $tiketA) !== FALSE, 'PRASYARAT: superadmin melihat baris antrean A');
+cek(strpos($daftarS, 'Warga Wilayah A') !== FALSE, 'Superadmin melihat nama warga ASLI, bukan data contoh');
+cek(strpos($daftarS, 'id="modal-identitas-b2"') === FALSE, 'Modal keputusan B2 tidak dirender untuk superadmin');
+
 // ---------------------------------------------------------- 3. Detail & berkas
 echo "\n== 3. Detail dan berkas wilayah lain ditolak ==\n";
 /* 🔻 ASERSI INI SEMPAT HAMPA, dicatat supaya penggantinya tidak mengulang.
