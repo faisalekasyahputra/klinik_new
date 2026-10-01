@@ -18,15 +18,15 @@ $warna_status = [
     <div class="rounded-2xl bg-white dark:bg-brand-card border border-gray-200 dark:border-white/5 p-5">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="max-w-2xl">
-                <h2 class="text-sm font-black text-gray-900 dark:text-white">Import data PSU dari Excel</h2>
+                <h2 class="text-sm font-black text-gray-900 dark:text-white">Impor data PSU dari Excel</h2>
                 <p class="mt-1 text-xs leading-5 text-gray-500 dark:text-brand-muted">
-                    Unduh template, isi sheet <span class="font-semibold">Data PSU</span> mulai baris 4, lalu unggah kembali.
+                    Unduh templat, isi lembar <span class="font-semibold">Data PSU</span> mulai baris 4, lalu unggah kembali.
                     Seluruh baris divalidasi sebelum disimpan; bila ada kesalahan, tidak ada data yang masuk.
                 </p>
             </div>
             <a href="<?= base_url('Admin_Psu/template_excel') ?>"
                class="inline-flex items-center rounded-xl border border-brand-primary px-4 py-2.5 text-sm font-bold text-brand-primary hover:bg-brand-primary/10">
-                Unduh template Excel
+                Unduh templat Excel
             </a>
         </div>
         <form action="<?= base_url('Admin_Psu/import_excel') ?>" method="post" enctype="multipart/form-data"
@@ -36,7 +36,7 @@ $warna_status = [
                 <div class="mt-1"><?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'file_excel', 'ib_accept' => '.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel', 'ib_required' => TRUE, 'ib_attr' => '']); ?></div>
             </div>
             <button type="submit" class="tombol-utama">
-                Import data
+                Impor data
             </button>
         </form>
         <p class="mt-3 text-[11px] text-gray-400 dark:text-brand-muted">

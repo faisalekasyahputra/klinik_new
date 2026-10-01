@@ -109,7 +109,7 @@ class Admin_Katalog_Program extends Admin_Controller {
             return;
         }
         if (mb_strlen($badge) > 60 || mb_strlen($syarat) > 300) {
-            $this->session->set_flashdata('error', 'Badge maksimal 60 karakter, syarat utama maksimal 300.');
+            $this->session->set_flashdata('error', 'Label maksimal 60 karakter, syarat utama maksimal 300.');
             redirect('Admin_Katalog_Program');
             return;
         }
@@ -160,7 +160,7 @@ class Admin_Katalog_Program extends Admin_Controller {
         $berubah = [];
         if ($lama->nama_program !== $nama)              { $berubah[] = 'nama'; }
         if ($lama->deskripsi_singkat !== $desk)         { $berubah[] = 'deskripsi'; }
-        if ((string) $lama->badge !== $badge)           { $berubah[] = 'badge'; }
+        if ((string) $lama->badge !== $badge)           { $berubah[] = 'label'; }
         if ((string) $lama->syarat_utama !== $syarat)   { $berubah[] = 'syarat utama'; }
         if ((int) $lama->urutan !== $urutan)            { $berubah[] = 'urutan'; }
         if ((int) $lama->tampil_korsel !== $korsel)     { $berubah[] = $korsel ? 'ditampilkan di beranda' : 'DISEMBUNYIKAN dari beranda'; }

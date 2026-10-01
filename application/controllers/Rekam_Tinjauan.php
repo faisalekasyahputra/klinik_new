@@ -41,7 +41,7 @@ class Rekam_Tinjauan extends Admin_Bidang_Controller {
             ? (int) $this->input->get('triwulan') : NULL;
 
         $this->render_scoped_admin('admin/rekam/tinjauan_daftar', [
-            'title'   => 'Peninjauan ' . ucfirst($this->domain),
+            'title'   => 'Peninjauan Rekam Data', // = label sidebar; bidangnya di baris keterangan
             'domain'  => $this->domain,
             'tahun'   => $tahun,
             'triwulan'   => $triwulan,

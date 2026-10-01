@@ -17,6 +17,9 @@ $warna = [
 ];
 ?>
 
+<?php // Judul = label sidebar ("Riwayat"); domainnya disebut di baris keterangan. ?>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Riwayat pelaporan ' . ($domain === 'kawasan' ? 'Kawasan Permukiman' : 'Perumahan') . ' per triwulan beserta statusnya.']); ?>
+
 <div class="space-y-4">
 
   <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
@@ -66,7 +69,8 @@ $warna = [
                 // adanya, tidak dikarang jadi status baru.
                 $label_status = $status === 'terkirim' && ! empty($row['reviewed_at'])
                     ? 'Terkirim · sudah ditinjau'
-                    : ucfirst(str_replace('_', ' ', $status));
+                    // Draf memakai label yang sama dengan Pantau Rekam Data (Rekam_data_model::keadaan_laporan).
+                    : ($status === 'draft' ? 'Draft, belum dikirim' : ucfirst(str_replace('_', ' ', $status)));
             ?>
               <?php $url_detail = $e(base_url($base_url . '?tahun=' . (int) $tahun . '&triwulan=' . (int) $row['triwulan'])); ?>
               <tr>

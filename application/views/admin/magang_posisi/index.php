@@ -53,7 +53,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
             <label class="text-xs">Bidang
                 <select name="bidang_kode" required class="mt-1 w-full rounded-lg border p-2 text-sm">
                     <?php foreach ($bidang as $b): ?>
-                        <option value="<?= html_escape($b->kode) ?>"><?= html_escape($b->nama) ?></option>
+                        <option value="<?= html_escape($b->kode) ?>"><?= html_escape(preg_replace('/^Bidang\s+/i', '', $b->nama)) ?></option>
                     <?php endforeach; ?>
                 </select>
             </label>
@@ -109,7 +109,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
                         <td class="px-3 py-2">
                             <select name="bidang_kode" form="f<?= (int) $r->id ?>" class="rounded border p-1 text-xs">
                                 <?php foreach ($bidang as $b): ?>
-                                    <option value="<?= html_escape($b->kode) ?>" <?= $b->kode === $r->bidang_kode ? 'selected' : '' ?>><?= html_escape($b->nama) ?></option>
+                                    <option value="<?= html_escape($b->kode) ?>" <?= $b->kode === $r->bidang_kode ? 'selected' : '' ?>><?= html_escape(preg_replace('/^Bidang\s+/i', '', $b->nama)) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </td>

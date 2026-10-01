@@ -22,7 +22,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                badge: '', syarat: '', gambar: '', urutan: 99, korsel: false }">
     <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Program bantuan perumahan yang bisa diajukan warga. Yang bisa diubah dari sini:
             <b>nama</b>, <b>deskripsi</b>, <b>status aktif</b>, serta <b>tampilannya di beranda</b> -
-            badge, syarat utama, foto, dan urutan. Warna kartu tidak diatur di sini: paletnya
+            label, syarat utama, foto, dan urutan. Warna kartu tidak diatur di sini: paletnya
             disetel sekali supaya kontras teksnya terjaga.']); ?>
 
     <?php if ($jml_selisih > 0 || $tanpa_baris || $jml_tanpa_aturan > 0): ?>
@@ -145,7 +145,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                     <p class="mb-2 font-black text-gray-700 dark:text-gray-300">Tampilan di beranda</p>
 
                     <label class="block">
-                        <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Badge</span>
+                        <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Label</span>
                         <input type="text" name="badge" x-model="badge" maxlength="60"
                                placeholder="mis. MBR Fixed Income"
                                class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200">

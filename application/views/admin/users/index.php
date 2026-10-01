@@ -208,7 +208,7 @@
                             </button>
                             <?php if (in_array($u->role, ['admin_kabkota', 'admin_bidang'], TRUE)): ?>
                             <a href="<?= base_url('Admin_Privileges/index/' . (int) $u->id) ?>" class="tombol-aksi">
-                                <i class="ph ph-shield-check"></i><span>Privilege</span>
+                                <i class="ph ph-shield-check"></i><span>Hak Modul</span>
                             </a>
                             <?php endif; ?>
 

@@ -441,7 +441,7 @@ foreach ([['Admin_Dashboard', 'Ringkasan Kerja'], ['Admin', 'Tinjau Antrean'], [
         "{$jalur}: judul, <title>, dan label sidebar sama-sama \"{$nama}\"");
 }
 $judul_liar = [];
-$pengecualian = ['aduan/detail.php', 'antrean/detail.php', 'srp2/detail.php', 'users/privileges.php', 'kemitraan/peserta.php', 'rekam/sambutan.php'];
+$pengecualian = ['aduan/detail.php', 'antrean/detail.php', 'srp2/detail.php', 'users/privileges.php', 'kemitraan/peserta.php'];
 foreach (array_merge(glob(APP_ROOT . '/application/views/admin/*/*.php'), glob(APP_ROOT . '/application/views/admin/*.php'), glob(APP_ROOT . '/application/views/admin_bidang/*.php')) as $berkas) {
     $nama = str_replace([APP_ROOT . '/application/views/admin/', APP_ROOT . '/application/views/'], '', $berkas);
     if (strpos($nama, 'components/') === 0 || in_array($nama, $pengecualian, TRUE)) { continue; }
@@ -1132,6 +1132,66 @@ cek(strpos($lib, 'function get_public_liliput_designs') === FALSE,
     'Metode bernama liliput sudah tidak ada - namanya menjanjikan data yang tidak ia punya');
 cek(strpos($lib, 'function get_public_prototype_designs') !== FALSE,
     'Penggantinya bernama sesuai isinya');
+
+/* AUDIT UI 2 OKT 2026, SISA TINJAUAN VISUAL.
+     1. Jejak Audit: baris akses data pribadi dibaca sebagai kalimat ("Staf membuka NPWP
+        pengembang (daftar SRP2)"), bukan "npwp_srp2 (srp2_registrations #daftar)". Hanya
+        saat tampil; baris tersimpan tidak diubah. Pencarian dengan kata dari layar tetap kena.
+     2. Istilah Inggris/teknis: Hak Modul (bukan Privilege), Peran diubah (bukan Role diubah).
+     3. Layar Rekam Data admin kab/kota dan admin bidang: judul = <title> = label sidebar.
+     4. Target sentuh 40px ikut berlaku untuk tautan .tombol-aksi dan .tombol-utama. */
+echo "\n== Audit UI: sisa tinjauan visual ==\n";
+cek(audit_label_aksi('role_diubah') === 'Peran diubah' && audit_label_aksi('role_diubah_ditolak') === 'Perubahan peran ditolak'
+    && audit_label_aksi('privilege_admin_diubah') === 'Hak modul admin diubah' && audit_label_aksi('aduan_ditriase') === 'Aduan ditriase',
+    'Label aksi audit: Peran diubah, Perubahan peran ditolak, Hak modul admin diubah');
+$baris_uji = (object) ['aksi' => 'akses_npwp_srp2', 'ringkasan' => 'Staf mengakses informasi pribadi: npwp_srp2 (srp2_registrations #daftar)',
+                       'objek_tipe' => 'srp2_registrations', 'objek_id' => 'daftar'];
+cek(audit_ringkasan($baris_uji) === 'Staf membuka NPWP pengembang (daftar SRP2)'
+    && audit_label_objek('aduan', '431') === 'aduan nomor 431',
+    'Ringkasan akses data pribadi diterjemahkan saat tampil');
+$kode_cari = audit_kode_dari_cari('npwp pengembang', ['akses_npwp_srp2', 'role_diubah']);
+cek($kode_cari['aksi'] === ['akses_npwp_srp2'], 'Pencarian "npwp pengembang" mencocokkan kode akses_npwp_srp2');
+
+[$uidS, $emailS] = buat_akun('admin', 'adm_sisa'); // akun uji awal sudah dibersihkan di tengah berkas
+wajib(login('adm_sisa', $emailS), 'Login admin uji untuk blok ini');
+http('adm_sisa', 'Admin_Srp2'); // memastikan ada baris akses_npwp_srp2 (dicatat untuk staf)
+$teks_layar = fn($html) => html_entity_decode(strip_tags(preg_replace('#<(script|style)\b.*?</\1>#s', '', $html)), ENT_QUOTES, 'UTF-8');
+$audit_akses = $teks_layar(http('adm_sisa', 'Admin_Audit?aksi=akses_npwp_srp2'));
+cek(strpos($audit_akses, 'Staf membuka NPWP pengembang (daftar SRP2)') !== FALSE && strpos($audit_akses, 'srp2_registrations') === FALSE
+    && strpos($audit_akses, 'mengakses informasi pribadi') === FALSE,
+    'Jejak Audit: baris akses NPWP tampil terbaca, tanpa nama tabel');
+cek(strpos($teks_layar(http('adm_sisa', 'Admin_Audit?q=' . urlencode('NPWP pengembang'))), 'Staf membuka NPWP pengembang') !== FALSE,
+    'Jejak Audit: mencari kata dari layar menemukan barisnya');
+$teks_staf = $teks_layar(http('adm_sisa', 'Admin_Users')) . $teks_layar(http('adm_sisa', 'Admin_Audit'));
+cek(strpos($teks_staf, 'Riwayat Tindakan') !== FALSE && strpos($teks_staf, 'Daftar Pengguna') !== FALSE && stripos($teks_staf, 'Privilege') === FALSE && strpos($teks_staf, 'Role diubah') === FALSE,
+    'Akses Staf dan Jejak Audit: tanpa "Privilege" atau "Role diubah" di teks layar');
+cek(strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/users/privileges.php'), '>Hak Modul <?=') !== FALSE,
+    'Halaman hak modul berjudul "Hak Modul"');
+
+[$uidK, $emailK] = buat_akun('admin_kabkota', 'kab');
+q('UPDATE usr_users SET kabupaten_id = (SELECT id FROM kabupaten ORDER BY id LIMIT 1) WHERE id = ?', [$uidK]);
+[$uidB, $emailB] = buat_akun('admin_bidang', 'bid', 'kawasan');
+wajib(login('kab', $emailK) && login('bid', $emailB), 'Login admin kab/kota dan admin bidang uji');
+foreach ([['kab', 'Admin_Kabkota/pendataan_awal', 'Pendataan Awal Warga'], ['kab', 'Rekam_Data', 'Rekam Data'],
+          ['kab', 'Rekam_Perumahan', 'Perumahan'], ['kab', 'Rekam_Kawasan/riwayat', 'Riwayat'],
+          ['kab', 'Rekam_Perumahan/riwayat', 'Riwayat'], ['bid', 'Rekam_Tinjauan', 'Peninjauan Rekam Data']] as [$s, $jalur, $nama]) {
+    $hal = http($s, $jalur);
+    $esc = htmlspecialchars($nama, ENT_QUOTES, 'UTF-8');
+    cek(strpos($hal, 'data-judul-halaman') !== FALSE && strpos($hal, '>' . $esc . '</h1>') !== FALSE
+        && strpos($hal, '<title>' . $nama . ' - ') !== FALSE && strpos($hal, '>' . $esc . '</span>') !== FALSE,
+        "{$jalur}: judul, <title>, dan label sidebar sama-sama \"{$nama}\"");
+}
+cek(strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/rekam/riwayat.php'), "'Draft, belum dikirim'") !== FALSE,
+    'Riwayat Rekam Data: status draf memakai label "Draft, belum dikirim" seperti Pantau Rekam Data');
+$sumber = fn($p) => (string) @file_get_contents(APP_ROOT . '/application/views/admin/' . $p);
+cek(strpos($sumber('antrean/detail.php'), 'API SIMPERUM') === FALSE && strpos($sumber('katalog/index.php'), '>Badge<') === FALSE
+    && preg_match('/>\s*(Import|Unduh template)|isi sheet/', $sumber('psu/index.php')) === 0
+    && substr_count($sumber('magang_posisi/index.php'), "preg_replace('/^Bidang\s+/i', '', \$b->nama)") === 2,
+    'Istilah layar: tanpa "API" di lencana simulasi, Label (bukan Badge), Impor/templat/lembar di PSU, bidang magang tanpa awalan');
+cek(strpos($sumber('kemitraan/index.php'), 'name="tanggal_sertifikat" value="<?= html_escape($r->tanggal_sertifikat ?? \'\') ?>" class="mt-1 block rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm') !== FALSE,
+    'KKN & Magang: isian tanggal sertifikat berukuran normal (text-sm, py-2)');
+cek(strpos($head_admin, 'a[class*="rounded"][class*="py-"], .tombol-aksi, .tombol-utama { min-height: 40px; }') !== FALSE,
+    'head.php: target sentuh 40px juga untuk tautan .tombol-aksi dan .tombol-utama');
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);

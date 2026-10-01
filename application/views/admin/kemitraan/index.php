@@ -110,7 +110,7 @@ $filter_html = ob_get_clean();
                             <form method="POST" action="<?= base_url('Admin_Kemitraan/tanggal_sertifikat/' . (int) $r->id) ?>" class="mt-2 flex flex-wrap items-end gap-1.5">
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                 <label class="text-xs font-bold text-gray-600 dark:text-brand-muted">Tanggal sertifikat
-                                    <input type="date" name="tanggal_sertifikat" value="<?= html_escape($r->tanggal_sertifikat ?? '') ?>" class="mt-1 block rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-2 py-1 text-xs">
+                                    <input type="date" name="tanggal_sertifikat" value="<?= html_escape($r->tanggal_sertifikat ?? '') ?>" class="mt-1 block rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm font-normal text-gray-800 dark:text-gray-200">
                                 </label>
                                 <button type="submit" class="tombol-aksi"><i class="ph ph-floppy-disk" aria-hidden="true"></i><span>Simpan</span></button>
                             </form>

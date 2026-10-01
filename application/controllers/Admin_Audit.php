@@ -58,7 +58,13 @@ class Admin_Audit extends Admin_Controller {
             $this->db->group_start()
                 ->like('ringkasan', $table['q'])
                 ->or_like('actor_email', $table['q'])
-                ->or_like('aksi', $table['q'])->group_end();
+                ->or_like('aksi', $table['q']);
+            // Layar menampilkan label (audit_ringkasan, audit_label_objek), bukan kode tersimpan;
+            // kata dari layar ("NPWP pengembang", "daftar SRP2") dicocokkan ke kodenya.
+            $kode = audit_kode_dari_cari($table['q'], $data['aksi_tersedia']);
+            if ($kode['aksi'])       { $this->db->or_where_in('aksi', $kode['aksi']); }
+            if ($kode['objek_tipe']) { $this->db->or_where_in('objek_tipe', $kode['objek_tipe']); }
+            $this->db->group_end();
         }
         $table += $this->paginate_state($this->db->count_all_results('', FALSE));
 

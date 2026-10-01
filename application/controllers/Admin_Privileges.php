@@ -29,7 +29,7 @@ class Admin_Privileges extends Admin_Controller {
 
     public function index($id = 0) {
         $user = $this->target($id);
-        if (!$user) { $this->session->set_flashdata('error','Privilege hanya untuk Admin Kabupaten/Kota atau Admin Bidang.'); redirect('Admin_Users'); return; }
+        if (!$user) { $this->session->set_flashdata('error','Hak modul hanya untuk Admin Kabupaten/Kota atau Admin Bidang.'); redirect('Admin_Users'); return; }
         $modules = $this->modules($user); $groups = [];
         foreach ($modules as $key => $module) { $groups[$module['group'] ?? 'Lainnya'][$key] = $module; }
         $rows = $this->db->get_where('usr_admin_module_privileges',['user_id'=>(int)$user->id])->result();
@@ -41,7 +41,7 @@ class Admin_Privileges extends Admin_Controller {
             : $this->db->get_where('bidang',['kode'=>$user->bidang_kode])->row();
         $roles = $this->config->item('available_roles') ?: [];
         $this->render_admin('admin/users/privileges', [
-            'title'=>'Atur Privilege Admin','user'=>$user,'role_label'=>$roles[$user->role] ?? $user->role,
+            'title'=>'Hak Modul','user'=>$user,'role_label'=>$roles[$user->role] ?? $user->role,
             'scope_label'=>$scope->nama ?? '-','module_groups'=>$groups,'selected'=>$selected
         ]);
     }
@@ -62,10 +62,10 @@ class Admin_Privileges extends Admin_Controller {
             ]);
         }
         $this->db->trans_complete();
-        if (!$this->db->trans_status()) { $this->session->set_flashdata('error','Privilege gagal disimpan.'); }
+        if (!$this->db->trans_status()) { $this->session->set_flashdata('error','Hak modul gagal disimpan.'); }
         else {
             $this->catat_audit('privilege_admin_diubah','Mengatur privilege modul '.$user->email,'usr_users',(string)$user->id,['modules'=>array_values($posted)]);
-            $this->session->set_flashdata('success','Privilege admin berhasil disimpan.');
+            $this->session->set_flashdata('success','Hak modul admin berhasil disimpan.');
         }
         redirect('Admin_Privileges/index/'.(int)$user->id);
     }

@@ -11,11 +11,9 @@ $this->load->helper('admin_table');
 // itu yang orang cari saat membuka layar ini.
 $ditolak = fn($a) => str_ends_with((string) $a, '_ditolak');
 
-// Kode aksi (`aduan_ditriase`) dibaca admin dinas, bukan pengembang: garis bawah jadi
-// spasi dan singkatan jadi huruf besar. Kodenya tetap di atribut title dan tetap bisa dicari.
-// ponytail: aturan umum, bukan kamus per kode, supaya kode baru tetap terbaca tanpa diedit di sini.
-$label_aksi = fn($a) => ucfirst(preg_replace_callback('/\b(srp2|nik|npwp|psu|rtlh|kkn|sk)\b/',
-    fn($m) => strtoupper($m[1]), str_replace('_', ' ', (string) $a)));
+// Kode aksi (`aduan_ditriase`) dibaca admin dinas, bukan pengembang: audit_label_aksi()
+// di ternak_helper (aturan umum plus kamus kecil). Kodenya tetap di atribut title dan tetap bisa dicari.
+$label_aksi = fn($a) => audit_label_aksi($a);
 
 // Filter aksi: SATU dropdown, bukan dinding sekitar 60 pil (audit UI 2 Okt 2026).
 // Tetap GET `aksi` yang sama, divalidasi controller lewat in_array($aksi_tersedia).
@@ -78,7 +76,7 @@ $filter_html = ob_get_clean();
                             <a href="<?= base_url($base_url) ?>" class="mt-3 text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline">Tampilkan semua jejak</a>
                             <?php else: ?>
                             <p>Belum ada jejak tercatat.</p>
-                            <p class="mt-1 text-xs">Baris akan muncul sendiri begitu ada tindakan pengelolaan - mengubah role, menonaktifkan akun, mereset sandi.</p>
+                            <p class="mt-1 text-xs">Baris akan muncul sendiri begitu ada tindakan pengelolaan - mengubah peran, menonaktifkan akun, mereset sandi.</p>
                             <?php endif; ?>
                         </div>
                     </td>
@@ -113,7 +111,8 @@ $filter_html = ob_get_clean();
                           // memakai `whitespace-nowrap`; tanpa max-w + whitespace-normal satu
                           // ringkasan panjang cukup untuk mendorong tabel melewati wadahnya. ?>
                     <td class="px-4 py-4 max-w-[24rem] whitespace-normal">
-                        <?= html_escape($j->ringkasan) ?>
+                        <?php // Diterjemahkan saat tampil (audit_ringkasan); baris tersimpan tetap apa adanya. ?>
+                        <?= html_escape(audit_ringkasan($j)) ?>
                         <?php
                         // detail_json ditaruh di <details> tertutup, bukan dirender langsung:
                         // isinya blob "dari/ke" yang membanjiri layar dan membuat kolom lain
@@ -127,7 +126,7 @@ $filter_html = ob_get_clean();
                             ? json_encode($detail, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
                             : $j->detail_json;
                         $konteks = array_filter([
-                            $j->objek_tipe ? $j->objek_tipe . '#' . $j->objek_id : NULL,
+                            $j->objek_tipe ? ucfirst(audit_label_objek($j->objek_tipe, $j->objek_id)) : NULL,
                             $j->ip ? 'IP ' . $j->ip : NULL,
                         ]);
                         ?>

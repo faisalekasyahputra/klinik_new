@@ -10,6 +10,8 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
 
 ?>
 
+<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Laporan bidang ' . $e($domain === 'kawasan' ? 'Kawasan Permukiman' : 'Perumahan') . ' yang sudah dikirim seluruh kabupaten/kota.']); ?>
+
 <div class="space-y-4">
 
   <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">

@@ -163,9 +163,16 @@ $tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_
 };
 ?>
 
+<?php // Judul = label sidebar; periode, wilayah, dan status laporan di baris keterangan.
+$this->load->view('admin/components/judul_halaman', ['jh_deskripsi' =>
+    '<span class="inline-flex flex-wrap items-center gap-2"><span>' . ($mode_rekap ? 'Rekap' : 'Capaian') . ' ' . $e($nama_tw[(int) $triwulan] ?? $triwulan) . ' ' . (int) $tahun
+    . ', ' . $e($scope_label) . '</span>'
+    . ($laporan ? '<span class="rounded-full px-2.5 py-0.5 text-xs font-bold ' . ($warna_status[$laporan['status']] ?? '') . '">' . $e($label_status[$laporan['status']] ?? $laporan['status']) . '</span>' : '')
+    . '</span>']); ?>
+
 <div class="space-y-4">
 
-  <?php /* Tata letak kepala: JUDUL kiri, KENDALI kanan, keterangan di bawah.
+  <?php /* Tata letak kepala: judul dan periode lewat judul_halaman di atas, KENDALI di kotak ini.
             Versi sebelumnya menumpuk identitas wilayah, badge status, label
             periode, dua dropdown, dan tombol Tampilkan dalam SATU baris - enam
             benda dengan enam peran berbeda, dan mata tidak punya titik masuk.
@@ -174,19 +181,6 @@ $tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_
   <section class="<?= $kotak ?>">
     <div class="flex flex-wrap items-start justify-between gap-4">
 
-      <div class="min-w-0">
-        <h2 class="text-lg font-black text-gray-900 dark:text-white">
-          <?= $mode_rekap ? 'Rekap' : 'Capaian' ?> <?= $e($nama_tw[(int) $triwulan] ?? $triwulan) ?> <?= (int) $tahun ?>
-        </h2>
-        <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-brand-muted">
-          <span><?= $e($scope_label) ?></span>
-          <?php if ($laporan): ?>
-            <span class="rounded-full px-2.5 py-0.5 text-xs font-bold <?= $warna_status[$laporan['status']] ?? '' ?>">
-              <?= $e($label_status[$laporan['status']] ?? $laporan['status']) ?>
-            </span>
-          <?php endif; ?>
-        </p>
-      </div>
 
       <div class="flex flex-wrap items-center gap-2">
         <form method="get" action="<?= base_url($mode_rekap ? 'Rekam_Perumahan/rekap' : 'Rekam_Perumahan') ?>"

@@ -154,3 +154,124 @@ if ( ! function_exists('nomor_whatsapp')) {
         return '';
     }
 }
+
+/*
+ * Jejak Audit dibaca staf dinas, bukan pengembang (audit UI 2 Okt 2026). Baris tersimpan
+ * memakai kode dan nama tabel ("akses_npwp_srp2", "srp2_registrations#daftar"); di sini
+ * kode itu diterjemahkan SAAT TAMPIL. Baris di sys_jejak_audit tidak pernah diubah:
+ * jejak audit yang ditulis ulang bukan bukti lagi.
+ * ponytail: satu kamus kecil; kode yang belum terdaftar tetap tampil dengan garis bawah jadi spasi.
+ */
+if ( ! function_exists('audit_kamus')) {
+    function audit_kamus() {
+        return [
+            // Label aksi yang tidak cukup dengan aturan umum audit_label_aksi().
+            'aksi' => [
+                'role_diubah'            => 'Peran diubah',
+                'role_diubah_ditolak'    => 'Perubahan peran ditolak',
+                'privilege_admin_diubah' => 'Hak modul admin diubah',
+            ],
+            // Jenis data pribadi dari MY_Controller::catat_akses_data_pribadi().
+            'jenis' => [
+                'berkas_privat'    => 'berkas lampiran',
+                'identitas_warga'  => 'identitas warga',
+                'aduan_warga'      => 'data pelapor aduan',
+                'npwp_srp2'        => 'NPWP pengembang',
+                'pengajuan_srp2'   => 'data pengajuan SRP2',
+                'konsultasi_warga' => 'isi konsultasi warga',
+                'penilaian_warga'  => 'hasil penilaian rumah warga',
+            ],
+            // objek_tipe: nama tabel atau domain.
+            'objek' => [
+                'aduan'                     => 'aduan',
+                'akun_terkunci'             => 'akun terkunci',
+                'batas_laju'                => 'batas percobaan',
+                'berkas_berbahaya'          => 'berkas berbahaya',
+                'bidang'                    => 'bidang',
+                'bot_form'                  => 'isian formulir otomatis',
+                'eskalasi'                  => 'eskalasi',
+                'forum_diskusi'             => 'konsultasi',
+                'forum_janji_temu'          => 'janji temu',
+                'kabupaten'                 => 'kabupaten',
+                'kemitraan'                 => 'pengajuan KKN & Magang',
+                'kkn_magang_bidang'         => 'magang bidang',
+                'kkn_magang_pendaftaran'    => 'pendaftaran magang',
+                'kkn_magang_posisi'         => 'posisi magang',
+                'psu_serah_terima'          => 'serah terima PSU',
+                'rd_laporan'                => 'laporan rekam data',
+                'rekam_bnba'                => 'lampiran BNBA',
+                'retensi'                   => 'pembersihan data lama',
+                'sf_bank_data_dokumen'      => 'dokumen bank data',
+                'sf_housing_queue'          => 'antrean pendataan',
+                'sf_programs'               => 'program',
+                'simperum'                  => 'cek RTLH',
+                'skema_tidak_valid'         => 'data tidak sesuai format',
+                'srp2'                      => 'pengajuan SRP2',
+                'srp2_asosiasi'             => 'asosiasi pengembang',
+                'srp2_certified_developers' => 'direktori SRP2',
+                'srp2_registrations'        => 'SRP2',
+                'usr_users'                 => 'akun',
+                'warga_assessment'          => 'penilaian rumah warga',
+            ],
+        ];
+    }
+}
+
+if ( ! function_exists('audit_label_aksi')) {
+    /** "aduan_ditriase" -> "Aduan ditriase"; singkatan jadi huruf besar. */
+    function audit_label_aksi($aksi) {
+        $aksi = (string) $aksi;
+        $kamus = audit_kamus()['aksi'];
+        if (isset($kamus[$aksi])) { return $kamus[$aksi]; }
+        if (strncmp($aksi, 'akses_', 6) === 0 && isset(audit_kamus()['jenis'][substr($aksi, 6)])) {
+            return 'Membuka ' . audit_kamus()['jenis'][substr($aksi, 6)];
+        }
+        return ucfirst(preg_replace_callback('/\b(srp2|nik|npwp|psu|rtlh|kkn|sk)\b/',
+            fn($m) => strtoupper($m[1]), str_replace('_', ' ', $aksi)));
+    }
+}
+
+if ( ! function_exists('audit_label_objek')) {
+    /** ("srp2_registrations", "daftar") -> "daftar SRP2"; ("aduan", "431") -> "aduan nomor 431". */
+    function audit_label_objek($tipe, $id) {
+        if ((string) $tipe === '') { return ''; }
+        $label = audit_kamus()['objek'][$tipe] ?? str_replace('_', ' ', (string) $tipe);
+        if ((string) $id === 'daftar') { return 'daftar ' . $label; }
+        return $label . ((string) $id !== '' ? ' nomor ' . $id : '');
+    }
+}
+
+if ( ! function_exists('audit_ringkasan')) {
+    /** Ringkasan baris jejak dalam bahasa layar. $j: baris sys_jejak_audit (objek). */
+    function audit_ringkasan($j) {
+        $aksi = (string) $j->aksi;
+        if (strncmp($aksi, 'akses_', 6) === 0) {
+            $jenis = audit_kamus()['jenis'][substr($aksi, 6)] ?? str_replace('_', ' ', substr($aksi, 6));
+            $objek = audit_label_objek($j->objek_tipe, $j->objek_id);
+            return 'Staf membuka ' . $jenis . ($objek !== '' ? ' (' . $objek . ')' : '');
+        }
+        return str_ireplace(['privilege modul', 'privilege'], ['hak modul', 'hak modul'], (string) $j->ringkasan);
+    }
+}
+
+if ( ! function_exists('audit_kode_dari_cari')) {
+    /**
+     * Kata kunci layar ("NPWP pengembang", "daftar SRP2", "Peran diubah") tidak ada di kolom
+     * tersimpan, jadi pencarian juga mencocokkan kode yang label tampilnya memuat kata itu.
+     * @return array ['aksi' => [...], 'objek_tipe' => [...]]
+     */
+    function audit_kode_dari_cari($q, array $aksi_tersedia) {
+        $q = mb_strtolower(trim((string) $q));
+        $hasil = ['aksi' => [], 'objek_tipe' => []];
+        if ($q === '') { return $hasil; }
+        foreach ($aksi_tersedia as $a) {
+            $teks = audit_label_aksi($a);
+            if (strncmp($a, 'akses_', 6) === 0) { $teks .= ' staf membuka ' . (audit_kamus()['jenis'][substr($a, 6)] ?? ''); }
+            if (str_contains(mb_strtolower($teks), $q)) { $hasil['aksi'][] = $a; }
+        }
+        foreach (audit_kamus()['objek'] as $tipe => $label) {
+            if (str_contains(mb_strtolower($label), $q)) { $hasil['objek_tipe'][] = $tipe; }
+        }
+        return $hasil;
+    }
+}

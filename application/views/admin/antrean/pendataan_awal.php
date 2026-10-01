@@ -20,16 +20,11 @@ $langkah = [
     'review' => 'Siap dikirim, belum dikirim',
 ];
 ?>
-<div class="mb-4">
-    <p class="text-sm text-gray-500 dark:text-brand-muted">
-        Warga di <strong><?= html_escape($scope_label) ?></strong> yang sudah menyimpan data dan rekomendasi awal,
-        tetapi belum mengirim pengajuan. Melengkapi data sesudah rekomendasi awal bersifat opsional bagi warga;
-        daftar ini untuk tindak lanjut petugas. Pengajuan yang sudah dikirim ada di Antrean Wilayah Saya.
-    </p>
-    <?php if ($identitas_menunggu): ?>
-    <p class="mt-2 text-xs text-amber-700 dark:text-amber-400">Identitas warga disamarkan sampai dinas memutuskan kebijakan tampilan data pribadi.</p>
-    <?php endif; ?>
-</div>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' =>
+    'Warga di <strong>' . html_escape($scope_label) . '</strong> yang sudah menyimpan data dan rekomendasi awal,
+    tetapi belum mengirim pengajuan. Melengkapi data sesudah rekomendasi awal bersifat opsional bagi warga;
+    daftar ini untuk tindak lanjut petugas. Pengajuan yang sudah dikirim ada di Antrean Wilayah Saya.'
+    . ($identitas_menunggu ? '<span class="mt-2 block text-xs text-amber-700 dark:text-amber-400">Identitas warga disamarkan sampai dinas memutuskan kebijakan tampilan data pribadi.</span>' : '')]); ?>
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) ($table['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm">

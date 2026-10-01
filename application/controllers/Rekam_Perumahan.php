@@ -59,7 +59,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
             : [];
 
         $this->render_scoped_admin('admin/rekam/perumahan_capaian', [
-            'title'         => 'Capaian Perumahan',
+            'title'         => 'Perumahan', // = label sidebar
             'scope_label'   => $this->nama_wilayah(),
             'tahun'         => $tahun,
             'triwulan'      => $triwulan,
@@ -268,7 +268,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
 
         $this->render_scoped_admin('admin/rekam/riwayat', [
-            'title'       => 'Riwayat Pelaporan Perumahan',
+            'title'       => 'Riwayat', // = label sidebar
             'scope_label' => $this->nama_wilayah(),
             'domain'      => 'perumahan',
             'base_url'    => 'Rekam_Perumahan',

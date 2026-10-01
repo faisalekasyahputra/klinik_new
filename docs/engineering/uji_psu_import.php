@@ -59,7 +59,7 @@ try {
         ['nama_perumahan' => "{$tag} Griya Dua", 'nama_pengembang' => 'PT Uji Dua', 'kabupaten_kota' => $kab, 'status_serah_terima' => 'proses_verifikasi', 'tampil_di_publik' => 'Tidak'],
     ];
     $pesan = $impor($xlsx($baik));
-    $cek($jumlah() === 2, 'Dua baris sah tersimpan (pesan: ' . (preg_match('/Import selesai[^.]*\./', $pesan, $m) ? $m[0] : substr(trim(preg_replace('/\s+/', ' ', $pesan)), 0, 80)) . ')');
+    $cek($jumlah() === 2, 'Dua baris sah tersimpan (pesan: ' . (preg_match('/Impor selesai[^.]*\./', $pesan, $m) ? $m[0] : substr(trim(preg_replace('/\s+/', ' ', $pesan)), 0, 80)) . ')');
     $r = $db->query("SELECT * FROM psu_serah_terima WHERE nama_perumahan='{$tag} Griya Satu'")->fetch_assoc();
     $cek($r && $r['status_serah_terima'] === 'sudah_diserahkan' && $r['tanggal_serah_terima'] === '2026-08-01' && $r['asosiasi'] === 'rei' && (int) $r['status_aktif'] === 1 && (int) $r['kabupaten_id'] > 0,
         'Isi baris terpetakan benar (status, tanggal, asosiasi, wilayah, tampil publik)');

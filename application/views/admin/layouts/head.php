@@ -172,12 +172,13 @@
         /* Target sentuh di ponsel (audit UI 2 Okt 2026: chip filter 25px, tombol Cari dan Proses
            28px, tutup modal 18x28, radio 13px). Kontrol utama minimal 40px. Tautan bergaya pil
            (rounded + py-*) ikut; yang masih inline dijadikan inline-flex supaya min-height berlaku.
+           Tautan .tombol-aksi/.tombol-utama (sudah inline-flex) ikut juga: dulu sekitar 25px.
            Tautan teks biasa dan kartu (tanpa py-*) tidak tersentuh. Tidak dibatasi ke <main>
            karena modal di sel Aksi dipindah ke <body> lewat x-teleport. */
         @media (max-width: 767px) {
             :is(button, select, input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="file"])) { min-height: 40px; }
             button { min-width: 40px; }
-            a[class*="rounded"][class*="py-"] { min-height: 40px; }
+            a[class*="rounded"][class*="py-"], .tombol-aksi, .tombol-utama { min-height: 40px; }
             a[class*="rounded"][class*="py-"]:not([class*="flex"], [class*="block"], [class*="grid"], .hidden) { display: inline-flex; align-items: center; }
             input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; }
         }

@@ -19,15 +19,15 @@ class Psu_excel_import
             $book=$reader->load($path);
         } catch (\Throwable $e) {
             log_message('error','Psu_excel_import: '.$e->getMessage());
-            return $this->gagal('Berkas tidak dapat dibaca. Gunakan template XLSX/XLS yang asli.');
+            return $this->gagal('Berkas tidak dapat dibaca. Gunakan templat XLSX/XLS yang asli.');
         }
         try {
             $sheet=$book->getSheetByName('Data PSU');
-            if(!$sheet) return $this->gagal('Sheet "Data PSU" tidak ditemukan.');
+            if(!$sheet) return $this->gagal('Lembar "Data PSU" tidak ditemukan.');
             $last=(int)$sheet->getHighestDataRow();
-            if($last>5000) return $this->gagal('Sheet terlalu panjang. Hapus baris atau format kosong di bagian bawah.');
+            if($last>5000) return $this->gagal('Lembar terlalu panjang. Hapus baris atau format kosong di bagian bawah.');
             list($header,$col)=$this->header($sheet,$last);
-            if($header===NULL) return $this->gagal('Judul kolom tidak lengkap. Jangan mengubah baris judul template.');
+            if($header===NULL) return $this->gagal('Judul kolom tidak lengkap. Jangan mengubah baris judul templat.');
 
             $kabId=$kabNama=$aso=$dev=[];
             foreach($kabupaten as $x){$kabId[(string)(int)$x->id]=(int)$x->id;$kabNama[$this->norm($x->nama)]=(int)$x->id;}
@@ -79,7 +79,7 @@ class Psu_excel_import
                 $rows[]=['nama_perumahan'=>$nama,'nama_pengembang'=>$peng,'pengembang_id'=>$pid,'asosiasi'=>$ak,'kabupaten_id'=>$kid,'status_serah_terima'=>$st,'tanggal_serah_terima'=>$date,'keterangan'=>$ket===''?NULL:$ket,'status_aktif'=>$active];
             }
             if($errors){$show=array_slice($errors,0,12);$more=count($errors)-count($show);return $this->gagal(implode(' ',$show).($more?" Masih ada {$more} kesalahan lain.":'').' Tidak ada data yang disimpan.');}
-            if(!$rows)return $this->gagal('Tidak ada baris data pada sheet "Data PSU".');
+            if(!$rows)return $this->gagal('Tidak ada baris data pada lembar "Data PSU".');
             return ['success'=>TRUE,'message'=>'','rows'=>$rows];
         } finally {$book->disconnectWorksheets();unset($book);}
     }
