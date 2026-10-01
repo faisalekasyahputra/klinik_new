@@ -158,7 +158,14 @@
         #main-content {
             animation: fade-in-blur 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards;
         }
-        @media (max-width: 767px) {
+        /* Di bawah 1024 (batas `desktop` di admin/index.php) sidebar jadi panel
+           geser di atas isi, dan yang menggulir adalah kolom kanan seutuhnya,
+           bukan <main> saja. Akibatnya footer tidak lagi menempel di dasar layar
+           ponsel memakan 48px tiap saat, melainkan ikut di akhir halaman. Topbar
+           tetap di atas karena `sticky top-0` di dalam kolom yang menggulir. */
+        @media (max-width: 1023px) {
+            .admin-kolom { overflow-y: auto !important; }
+            .admin-kolom > #main-content { flex: 1 0 auto !important; }
             .admin-sidebar {
                 position: fixed !important;
                 inset: 0 auto 0 0 !important;
@@ -167,6 +174,8 @@
                 width: 16rem !important;
                 transform: translateX(0) !important;
             }
+        }
+        @media (max-width: 767px) {
             .admin-main { padding: 1rem; }
             .admin-topbar { padding-left: 1rem; padding-right: 1rem; }
         }

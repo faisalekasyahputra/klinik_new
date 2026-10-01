@@ -65,8 +65,13 @@ $gambar = function (array $items, $tingkat) use (&$gambar, $aktif_kelas, $diam_k
           </div>
 
           <?php if ($punya_anak): ?>
+            <?php /* Tanpa x-transition (audit UI 2 Okt 2026): transisi Alpine menunggu
+                      requestAnimationFrame, jadi di tab yang belum tergambar klik caret
+                      mengubah `buka` tetapi anaknya tetap tersembunyi - Rekap/Riwayat
+                      cabang lain terukur 0 px. Buka-tutup seketika tidak bergantung
+                      pada itu. */ ?>
             <div class="ml-3 mt-1 space-y-1 border-l border-gray-200 pl-2 dark:border-white/10"
-                 x-show="buka && sidebarOpen" x-transition.opacity>
+                 x-show="buka && sidebarOpen">
               <?php $gambar($item['children'], $tingkat + 1); ?>
             </div>
           <?php endif; ?>

@@ -137,6 +137,8 @@
         } else {
             main.innerHTML = SKELETON;
             main.scrollTop = 0;
+            // Di bawah 1024 yang menggulir kolom pembungkusnya (.admin-kolom).
+            if (main.parentElement) { main.parentElement.scrollTop = 0; }
         }
 
         // `X-Shell: admin` menandai SIAPA yang meminta, bukan sekadar "ini AJAX".

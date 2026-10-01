@@ -1,9 +1,15 @@
 <?php $this->load->view('admin/layouts/head'); ?>
 <?php $this->load->view('components/notification_center'); $this->load->view('components/file_viewer_modal'); ?>
 
-<div x-data="{ sidebarOpen: false, desktop: window.innerWidth >= 768 }"
+<?php /* Batas desktop 1024, bukan 768 (audit UI 2 Okt 2026). Di 768 sidebar 256px
+         dulu terbuka permanen dan menyisakan ~447px untuk isi, jadi setiap tabel
+         menggulir di wadahnya. Di bawah 1024 sidebar kini panel geser yang
+         tertutup secara bawaan; di desktop tombol menu tetap menyempitkannya
+         jadi 80px. Angka 1024 juga dipakai media query .admin-sidebar dan
+         .admin-kolom di layouts/head.php - ubah ketiganya bersamaan. */ ?>
+<div x-data="{ sidebarOpen: false, desktop: window.innerWidth >= 1024 }"
      x-init="sidebarOpen = desktop"
-     @resize.window="sidebarOpen = (desktop && window.innerWidth < 768) ? false : sidebarOpen; desktop = window.innerWidth >= 768"
+     @resize.window="sidebarOpen = (desktop && window.innerWidth < 1024) ? false : sidebarOpen; desktop = window.innerWidth >= 1024"
      @keydown.escape.window="if (!desktop) sidebarOpen = false"
      class="admin-shell flex h-screen w-full bg-[#f8fafc] dark:bg-brand-dark">
     <!-- Sidebar -->
@@ -17,7 +23,7 @@
             aria-label="Tutup menu navigasi"></button>
     
     <!-- Main Content Wrapper -->
-    <div class="min-w-0 flex-1 flex flex-col h-screen overflow-hidden relative">
+    <div class="admin-kolom min-w-0 flex-1 flex flex-col h-screen overflow-hidden relative">
         
         <!-- Background Ambient & Batik Pattern -->
         <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden hidden dark:block">

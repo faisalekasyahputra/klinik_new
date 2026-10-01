@@ -24,6 +24,11 @@
                 </span>
             </div>
         </a>
+        <?php // Panel geser (< 1024) butuh jalan keluar selain klik latar dan Esc. ?>
+        <button type="button" x-show="!desktop" @click="sidebarOpen = false" aria-label="Tutup menu navigasi"
+                class="ml-auto w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all">
+            <i class="ph ph-x text-xl"></i>
+        </button>
     </div>
     
     <?php
@@ -47,7 +52,9 @@
           // untuk satu aturan, dan hasilnya dua item menyala bersamaan sambil
           // sub-menu cabang lama tetap terbuka. Sekarang aturannya tetap satu:
           // dashboard_menu() memutuskan, server mengirim, JS hanya menukar. ?>
-    <div id="sidebar-nav" class="px-3 py-4 overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar">
+    <?php // Pindah halaman lewat loader progresif tidak memuat ulang shell, jadi
+          // panel geser harus ditutup sendiri begitu sebuah tautan diklik. ?>
+    <div id="sidebar-nav" @click="if (!desktop && $event.target.closest('a')) sidebarOpen = false" class="px-3 py-4 overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar">
         <?php $this->load->view('admin/layouts/sidebar_nav', ['dashboard_menu' => $dashboard_menu ?? []]); ?>
     </div>
 

@@ -842,6 +842,43 @@ foreach (array_merge(glob(APP_ROOT . '/application/views/admin/*/*.php'), glob(A
 }
 cek($tabel_aksi >= 18, "Tabel admin berkolom Aksi terbaca ({$tabel_aksi} ditemukan)");
 
+/* SIDEBAR DAN TATA LETAK (audit UI 2 Okt 2026, kelompok 3). Satu shell untuk ketiga
+   peran admin (admin/index.php), jadi yang dijaga string di shell itu:
+     1. Batas desktop 1024 di Alpine DAN di media query. Di 768 sidebar 256px dulu
+        terbuka permanen dan menyisakan ~441px; kalau salah satu angka kembali ke 768
+        tanpa yang lain, sidebar setengah drawer setengah permanen.
+     2. Panel geser punya tombol tutup dan menutup diri saat tautan diklik (loader
+        progresif tidak memuat ulang shell).
+     3. Di bawah 1024 kolom kanan yang menggulir, jadi footer ikut di akhir halaman,
+        bukan menempel 48px di dasar layar ponsel. Loader ikut menggulir kolom itu.
+     4. Sub-menu tanpa x-transition: transisi Alpine menunggu requestAnimationFrame,
+        dan di tab yang belum tergambar klik caret tidak menampilkan Rekap/Riwayat.
+   Terukur 2 Okt 2026 (agen_admin, agen_admin_bidang, agen_admin_kabkota): sidebar
+   tertutup saat dimuat di 375 dan 768, konten selebar layar (tabel pengguna 696px di
+   768, dulu 441px), halaman tidak menggulir mendatar; 1440 sidebar 256px dan tombol
+   menu menyempitkannya ke 80px untuk ketiga peran. */
+echo "\n== Sidebar panel geser dan footer di layar sempit ==\n";
+$shell_admin = (string) @file_get_contents(APP_ROOT . '/application/views/admin/index.php');
+$sidebar_adm = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/sidebar.php');
+$nav_adm     = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/sidebar_nav.php');
+$progresif   = (string) @file_get_contents(APP_ROOT . '/assets/js/admin-progressive.js');
+cek(substr_count($shell_admin, 'window.innerWidth >= 1024') === 2 && strpos($shell_admin, 'innerWidth < 1024') !== FALSE
+    && strpos($shell_admin, 'innerWidth >= 768') === FALSE,
+    'Shell admin: batas desktop sidebar 1024 di x-data dan @resize');
+cek(preg_match('/@media \(max-width: 1023px\) \{\s*\.admin-kolom \{ overflow-y: auto !important; \}\s*\.admin-kolom > #main-content \{ flex: 1 0 auto !important; \}\s*\.admin-sidebar \{/', $head_admin) === 1,
+    'head.php: di bawah 1024 sidebar fixed dan kolom kanan yang menggulir');
+cek(preg_match('/class="admin-kolom [^"]*".*<main id="main-content".*admin\/layouts\/footer/s', $shell_admin) === 1,
+    'Shell admin: footer di dalam .admin-kolom sesudah <main>, jadi ikut di akhir guliran');
+cek(strpos($progresif, 'main.parentElement.scrollTop = 0') !== FALSE,
+    'Loader progresif menggulir .admin-kolom ke atas saat pindah halaman');
+cek(preg_match('/<button type="button" x-show="!desktop" @click="sidebarOpen = false" aria-label="Tutup menu navigasi"/', $sidebar_adm) === 1,
+    'Sidebar: tombol tutup panel geser di layar sempit');
+cek(strpos($sidebar_adm, '<div id="sidebar-nav" @click="if (!desktop && $event.target.closest(\'a\')) sidebarOpen = false"') !== FALSE,
+    'Sidebar: klik tautan menu menutup panel geser');
+cek(strpos($nav_adm, 'x-show="buka && sidebarOpen">') !== FALSE && ! preg_match('/<div[^>]*x-show="buka && sidebarOpen"[^>]*x-transition/', $nav_adm)
+    && strpos($nav_adm, '@click="buka = !buka"') !== FALSE,
+    'Sub-menu: caret membuka cabang lain seketika, tanpa x-transition');
+
 /* BUTIR 4 PUTARAN 2 - desain prototipe beserta RAB di halaman Panduan Desain.
 
    Yang dijaga bukan "halamannya terbuka", melainkan tiga hal yang bisa rusak
