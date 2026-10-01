@@ -64,6 +64,9 @@ class Forum_model extends CI_Model {
         // Build lookup map for parent names
         $map = [];
         foreach ($flat as &$k) {
+            // Balasan petugas tampil atas nama institusi, bukan username staf - juga untuk baris lama
+            // dan sesudah User_model::update_user menyinkronkan ulang nama_komentator.
+            if (($k['role'] ?? '') === 'Petugas Disperakim') { $k['nama_komentator'] = 'Petugas Disperakim'; }
             $map[$k['id_komentar']] = $k;
             $k['reply_to_name'] = null;
         }

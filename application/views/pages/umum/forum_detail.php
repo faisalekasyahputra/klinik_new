@@ -381,9 +381,6 @@
                                     <span class="font-bold text-zinc-200 text-xs">
                                         <?= htmlspecialchars($kom['nama_komentator']) ?>
                                     </span>
-                                    <?php if($is_staff): ?>
-                                    <span class="bg-[#d6fb00] text-black font-black text-[7px] px-1 py-0.5 rounded tracking-wider uppercase">Staff Ahli</span>
-                                    <?php endif; ?>
                                     <span class="text-[9px] text-zinc-500 hidden sm:inline">• <?= date('d M Y H:i', strtotime($kom['created_at'])) ?></span>
                                 </div>
 

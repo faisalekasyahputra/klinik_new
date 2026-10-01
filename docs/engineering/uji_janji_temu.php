@@ -499,5 +499,17 @@ http('w', 'Umum/detail/' . $topik);
 cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='akses_konsultasi_warga' AND actor_id=?", [$idW]) === 0,
     'Pemilik yang membuka topiknya sendiri tidak dicatat sebagai akses');
 
+// Username staf tidak boleh sampai ke warga: nama, setReplyTo, dan @balasan berantai.
+$username_admin = (string) nilai('SELECT username FROM usr_users WHERE id=?', [$idA]);
+$kom_admin = (int) nilai("SELECT id_komentar FROM forum_komentar WHERE id_diskusi=? AND role='Petugas Disperakim' AND user_id=?", [$topik, $idA]);
+http('w', 'Umum/balas_aksi', ['csrf_kpkp_token' => csrf('w', 'Umum/detail/' . $topik),
+    'id_diskusi' => $topik, 'reply_to' => $kom_admin, 'isi_komentar' => 'Terima kasih petugas ' . CAP]);
+$hal_warga = http('w', 'Umum/detail/' . $topik)['body'];
+wajib($username_admin !== '' && $kom_admin > 0 && strpos($hal_warga, 'Terima kasih petugas ' . CAP) !== FALSE,
+    'Balasan petugas dan balasan berantai warga ada di halaman');
+cek(strpos($hal_warga, $username_admin) === FALSE, 'Username staf tidak muncul di halaman topik warga');
+cek(strpos($hal_warga, 'Petugas Disperakim') !== FALSE && strpos($hal_warga, 'Staff Ahli') === FALSE,
+    'Balasan petugas berlabel Petugas Disperakim, tanpa badge Staff Ahli yang dobel');
+
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);
