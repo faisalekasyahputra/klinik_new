@@ -59,7 +59,7 @@
     </div>
 
     <!-- Link to Main Website (OG Preview Style) -->
-    <div class="mt-auto px-4 mb-4" x-show="sidebarOpen" x-transition.opacity.duration.300ms>
+    <div class="sidebar-kartu-beranda mt-auto px-4 mb-4" x-show="sidebarOpen" x-transition.opacity.duration.300ms>
         <a href="<?= base_url() ?>" target="_blank" class="group block overflow-hidden rounded-xl bg-white dark:bg-[#0a1a1f] border border-gray-200 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-none transition-all duration-300 relative">
             <!-- Penanda Beranda, bukan gambar promosi. -->
             <div class="relative flex h-20 w-full items-center justify-center gap-2 border-b border-gray-100 bg-[color:var(--portal-bg-card)] text-[color:var(--portal-text)] dark:border-white/5 dark:bg-[#102c35]">

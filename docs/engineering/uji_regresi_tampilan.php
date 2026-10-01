@@ -598,6 +598,13 @@ cek(preg_match("/if \( ! empty\(\\\$hasil\['success'\]\)\) \{.*?notify_admin_pus
 cek(strpos($fn_mp, "'Rekam_Perumahan' : 'Rekam_Kawasan'") !== FALSE && strpos($fn_mp, "'?tahun='") !== FALSE,
     'Push minta perbaikan bertaut ke layar Rekam_Perumahan/Rekam_Kawasan periodenya');
 
+// Cek visual 2 Okt 2026: di panel geser kartu Beranda disembunyikan, di ponsel tombol Aksi berikon cukup ikon.
+$head_admin = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/head.php');
+cek(strpos($head_admin, '.sidebar-kartu-beranda { display: none !important; }') !== FALSE
+    && strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/sidebar.php'), 'sidebar-kartu-beranda') !== FALSE,
+    'Kartu Beranda sidebar disembunyikan di bawah 1024 px');
+cek(strpos($head_admin, '.aksi-tetap td:last-child :is(a, button):has(> i) > span') !== FALSE, 'Tombol Aksi berikon jadi ikon saja di ponsel, label tetap untuk pembaca layar');
+
 // E1 - syarat "harus ditanggapi dulu" dilepas, TIGA syarat lain tetap berdiri.
 // Audit UI 2 Okt 2026: jam aplikasi WIB (production UTC, lokal Berlin) dan NOW() MySQL diselaraskan.
 cek(strpos((string) @file_get_contents(APP_ROOT . '/index.php'), "date_default_timezone_set('Asia/Jakarta')") !== FALSE

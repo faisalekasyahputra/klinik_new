@@ -186,10 +186,19 @@
                 width: 16rem !important;
                 transform: translateX(0) !important;
             }
+            /* Panel geser: kartu Beranda memakan seperempat tinggi ponsel dan memotong menu;
+               tautan "Kembali ke beranda" di atas sudah cukup. */
+            .sidebar-kartu-beranda { display: none !important; }
         }
         @media (max-width: 767px) {
             .admin-main { padding: 1rem; }
             .admin-topbar { padding-left: 1rem; padding-right: 1rem; }
+            /* Kolom Aksi yang menempel menutupi kolom nama di ponsel: tombol berikon cukup
+               ikonnya saja. Teks label tetap ada untuk pembaca layar (pola sr-only). */
+            .aksi-tetap td:last-child :is(a, button):has(> i) > span {
+                position: absolute; width: 1px; height: 1px; overflow: hidden;
+                clip: rect(0 0 0 0); white-space: nowrap;
+            }
         }
 
         @keyframes fade-out-blur {
