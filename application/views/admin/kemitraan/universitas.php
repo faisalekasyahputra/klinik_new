@@ -10,7 +10,7 @@ if (empty($aksi_buat)) {
 <?php } ?>
 <?php /* TANPA `z-10` di pembungkus - alasan sama dengan admin/users/index.php:
          pembungkus ini memuat modal "Tambah Universitas". */ ?>
-<div class="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-6" x-data="{ createOpen: false }">
+<div class="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-5" x-data="{ createOpen: false }">
     <div>
         <p class="text-sm text-gray-500 dark:text-brand-muted">
             Akun (role Universitas) yang bisa mengajukan KKN lewat dashboardnya sendiri.
@@ -23,7 +23,7 @@ if (empty($aksi_buat)) {
         </p>
     </div>
     <button @click="createOpen = true" class="tombol-utama shrink-0">
-        <i class="ph ph-bank text-lg mr-2"></i> Tambah Universitas
+        <i class="ph ph-bank"></i><span>Tambah universitas</span>
     </button>
 
     <!-- Modal: buat akun universitas. POST ke Admin_Users/create_staff yang
@@ -61,32 +61,32 @@ if (empty($aksi_buat)) {
                     <input type="tel" name="phone" maxlength="20" pattern="\+?[0-9][0-9 \-]{6,19}" placeholder="08xxxxxxxxxx" class="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
                 </div>
                 <div>
-                    <label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Password</label>
+                    <label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Sandi</label>
                     <input type="password" name="password" required minlength="8" autocomplete="new-password" class="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
                     <p class="mt-1 text-[11px] text-gray-500 dark:text-brand-muted">Minimal 8 karakter, ada huruf besar, angka, dan simbol.</p>
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
-                    <button type="button" @click="createOpen = false" class="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5">Batal</button>
-                    <button type="submit" class="tombol-utama">Buat Akun</button>
+                    <button type="button" @click="createOpen = false" class="tombol-kedua"><span>Batal</span></button>
+                    <button type="submit" class="tombol-utama"><i class="ph ph-user-plus"></i><span>Buat akun</span></button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
+<div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="kartu-admin overflow-hidden">
     <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Akun Universitas', 'kt_jumlah' => (int) $table['total_rows'], 'kt_keterangan' => '']); ?>
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, email, atau username...'], TRUE) ?>
     <div class="overflow-x-auto aksi-tetap">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
-                    <th scope="col" class="px-4 py-4"><?= admin_sort_header('Nama Universitas', 'name', $table, $base_url) ?></th>
-                    <th scope="col" class="px-4 py-4">No. HP</th>
-                    <th scope="col" class="px-4 py-4 text-center">KKN Diajukan</th>
-                    <th scope="col" class="px-4 py-4">Status</th>
-                    <th scope="col" class="px-4 py-4"><?= admin_sort_header('Terdaftar', 'created_at', $table, $base_url) ?></th>
-                    <th scope="col" class="px-4 py-4 text-right">Aksi</th>
+                    <th scope="col" class="px-4 py-3"><?= admin_sort_header('Nama Universitas', 'name', $table, $base_url) ?></th>
+                    <th scope="col" class="px-4 py-3">No. HP</th>
+                    <th scope="col" class="px-4 py-3 text-center">KKN Diajukan</th>
+                    <th scope="col" class="px-4 py-3">Status</th>
+                    <th scope="col" class="px-4 py-3"><?= admin_sort_header('Terdaftar', 'created_at', $table, $base_url) ?></th>
+                    <th scope="col" class="px-4 py-3 text-right">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-white/5 text-gray-700 dark:text-gray-300">
@@ -109,15 +109,15 @@ if (empty($aksi_buat)) {
                     $terkunci = ! empty($u->locked_until) && strtotime($u->locked_until) > time();
                 ?>
                 <tr>
-                    <td class="px-4 py-4 max-w-[14rem] whitespace-normal">
+                    <td class="px-4 py-3 max-w-[14rem] whitespace-normal">
                         <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($u->name) ?></div>
                         <div class="text-xs text-gray-500 dark:text-brand-muted break-words"><?= html_escape($u->email) ?></div>
                     </td>
-                    <td class="px-4 py-4 text-xs">
+                    <td class="px-4 py-3 text-xs">
                         <?= $u->phone ? html_escape($u->phone) : '<span class="text-red-500">belum diisi</span>' ?>
                     </td>
-                    <td class="px-4 py-4 text-center font-bold text-gray-900 dark:text-white"><?= (int) $u->jumlah_kkn ?></td>
-                    <td class="px-4 py-4">
+                    <td class="px-4 py-3 text-center font-bold text-gray-900 dark:text-white"><?= (int) $u->jumlah_kkn ?></td>
+                    <td class="px-4 py-3">
                         <?php if ($nonaktif): ?>
                             <?= $this->load->view('admin/components/status_badge', ['label' => 'Nonaktif', 'kelas' => 'reject'], TRUE) ?>
                         <?php elseif ($terkunci): ?>
@@ -126,14 +126,14 @@ if (empty($aksi_buat)) {
                             <?= $this->load->view('admin/components/status_badge', ['label' => 'Aktif', 'kelas' => 'ok'], TRUE) ?>
                         <?php endif; ?>
                     </td>
-                    <td class="px-4 py-4 text-xs"><?= html_escape(tgl_id($u->created_at ?? '', TRUE)) ?></td>
-                    <td class="px-4 py-4 text-right">
+                    <td class="px-4 py-3 text-xs"><?= html_escape(tgl_id($u->created_at ?? '', TRUE)) ?></td>
+                    <td class="px-4 py-3 text-right">
                         <?php /* Superadmin: tautan ke baris yang SAMA di Manajemen Pengguna.
                                  Admin bidang: kelola langsung di sini (keputusan pemilik produk
                                  29 Sep 2026), ke Kemitraan_Bidang yang hanya menerima role universitas. */ ?>
 <?php if (empty($aksi_buat)): ?>
                         <a href="<?= base_url('Admin_Users?q=' . urlencode($u->email)) ?>" class="tombol-aksi">
-                            <i class="ph ph-gear"></i><span>Kelola Akun</span>
+                            <i class="ph ph-gear"></i><span>Kelola akun</span>
                         </a>
 <?php else:
     $csrf_isian = '<input type="hidden" name="' . $this->security->get_csrf_token_name() . '" value="' . $this->security->get_csrf_hash() . '"><input type="hidden" name="id" value="' . (int) $u->id . '">';
@@ -157,21 +157,21 @@ if (empty($aksi_buat)) {
                                         <input type="email" name="email" required maxlength="100" value="<?= html_escape($u->email) ?>" class="<?= $isian_kls ?>"></div>
                                     <div><label class="<?= $label_kls ?>">Nomor HP/WhatsApp</label>
                                         <input type="tel" name="phone" maxlength="20" pattern="\+?[0-9][0-9 \-]{6,19}" value="<?= html_escape($u->phone ?? '') ?>" class="<?= $isian_kls ?>"></div>
-                                    <button type="submit" class="tombol-utama">Simpan Data</button>
+                                    <button type="submit" class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan data</span></button>
                                 </form>
                                 <form method="POST" action="<?= base_url('Kemitraan_Bidang/sandi_universitas') ?>" class="space-y-3 border-t border-gray-100 dark:border-white/5 pt-4">
                                     <?= $csrf_isian ?>
                                     <div><label class="<?= $label_kls ?>">Sandi Baru</label>
                                         <input type="password" name="password" required minlength="8" autocomplete="new-password" class="<?= $isian_kls ?>">
                                         <p class="mt-1 text-[11px] text-gray-500 dark:text-brand-muted">Minimal 8 karakter, ada huruf besar, angka, dan simbol. Universitas wajib menggantinya saat masuk.</p></div>
-                                    <button type="submit" class="tombol-utama">Reset Sandi</button>
+                                    <button type="submit" class="tombol-utama"><i class="ph ph-key"></i><span>Reset sandi</span></button>
                                 </form>
                                 <form method="POST" action="<?= base_url('Kemitraan_Bidang/status_universitas') ?>" class="flex items-center justify-between gap-3 border-t border-gray-100 dark:border-white/5 pt-4"
                                       onsubmit="return confirm('<?= $nonaktif ? 'Aktifkan kembali akun ini?' : 'Nonaktifkan akun ini? Sesinya langsung berakhir dan tidak bisa masuk.' ?>')">
                                     <?= $csrf_isian ?>
                                     <input type="hidden" name="status" value="<?= $nonaktif ? 'active' : 'nonaktif' ?>">
-                                    <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold <?= $nonaktif ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400' ?> hover:underline"><?= $nonaktif ? 'Aktifkan Kembali' : 'Nonaktifkan Akun' ?></button>
-                                    <button type="button" @click="kelola = false" class="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5">Tutup</button>
+                                    <button type="submit" class="tombol-kedua<?= $nonaktif ? '' : ' tombol-aksi-bahaya' ?>"><i class="ph <?= $nonaktif ? 'ph-check-circle' : 'ph-prohibit' ?>"></i><span><?= $nonaktif ? 'Aktifkan kembali' : 'Nonaktifkan akun' ?></span></button>
+                                    <button type="button" @click="kelola = false" class="tombol-kedua"><span>Tutup</span></button>
                                 </form>
                             </div>
                         </div>

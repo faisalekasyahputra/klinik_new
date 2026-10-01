@@ -16,14 +16,12 @@ $label_status = [
 $this->load->helper('srp2');
 $daftar_asosiasi = srp2_daftar_asosiasi();
 ?>
-<div class="mb-6">
-    <a href="<?= base_url('Admin_Srp2') ?>" class="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-brand-muted hover:text-gray-700 dark:hover:text-brand-light mb-3">
-        <i class="ph ph-arrow-left"></i> Kembali ke Direktori SRP2
-    </a>
+<div class="mb-4">
+    <a href="<?= base_url('Admin_Srp2') ?>" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali ke Direktori SRP2</span></a>
 </div>
 <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Tambahkan pengembang bersertifikat secara manual - dipakai untuk data historis, karena pengajuan yang diterima lewat SRP2 masuk otomatis ke direktori.']); ?>
 
-<div class="rounded-2xl bg-white dark:bg-brand-card border border-gray-200 dark:border-white/5 p-5 max-w-3xl">
+<div class="kartu-admin isi-kartu max-w-3xl">
     <form action="<?= base_url('Admin_Srp2/save') ?>" method="post" class="grid md:grid-cols-2 gap-4">
         <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
         <input name="nama_perusahaan" required maxlength="180" placeholder="Nama perusahaan" class="rounded-xl border border-gray-200 dark:border-white/10 bg-transparent px-4 py-3 text-sm" />
@@ -62,6 +60,6 @@ $daftar_asosiasi = srp2_daftar_asosiasi();
         <input name="npwp" inputmode="numeric" maxlength="25" placeholder="NPWP (15/16 digit, hanya admin)" class="rounded-xl border border-gray-200 dark:border-white/10 bg-transparent px-4 py-3 text-sm" />
         <textarea name="alamat_kantor" placeholder="Alamat kantor" class="md:col-span-2 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent px-4 py-3 text-sm"></textarea>
         <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-brand-muted"><input type="checkbox" name="status_aktif" value="1" checked /> Tampilkan di publik</label>
-        <button class="tombol-utama md:col-span-2">Simpan</button>
+        <button class="tombol-utama md:col-span-2"><i class="ph ph-floppy-disk"></i><span>Simpan</span></button>
     </form>
 </div>

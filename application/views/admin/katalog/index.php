@@ -26,7 +26,7 @@ $csrf_hash = $this->security->get_csrf_hash();
             disetel sekali supaya kontras teksnya terjaga.']); ?>
 
     <?php if ($jml_selisih > 0 || $tanpa_baris || $jml_tanpa_aturan > 0): ?>
-    <div class="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 text-sm flex items-start gap-3">
+    <div class="mb-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 text-sm flex items-start gap-3">
         <i class="ph ph-warning text-lg mt-0.5"></i>
         <div class="space-y-1">
             <strong>Nama program diambil dari dua sumber yang belum sama.</strong>
@@ -50,7 +50,7 @@ $csrf_hash = $this->security->get_csrf_hash();
     </div>
     <?php endif; ?>
 
-    <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
+    <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="kartu-admin overflow-hidden">
         <div class="overflow-x-auto aksi-tetap">
             <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
@@ -110,10 +110,10 @@ $csrf_hash = $this->security->get_csrf_hash();
         <div @click.away="buka = false" class="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-brand-card">
             <div class="flex items-start justify-between gap-3 border-b border-gray-200 pb-3 dark:border-white/10">
                 <div>
-                    <h3 class="text-sm font-black text-gray-900 dark:text-white">Ubah Program</h3>
+                    <h3 class="text-sm font-black text-gray-900 dark:text-white">Ubah program</h3>
                     <p class="mt-0.5 text-xs text-gray-500 dark:text-brand-muted">Kode <code x-text="kode"></code> (tidak bisa diubah)</p>
                 </div>
-                <button type="button" @click="buka = false" aria-label="Tutup" class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><i class="ph ph-x text-lg" aria-hidden="true"></i></button>
+                <button type="button" @click="buka = false" aria-label="Tutup" class="tombol-ikon"><i class="ph ph-x" aria-hidden="true"></i></button>
             </div>
 
             <?php /* `enctype` WAJIB - tanpa itu `$_FILES` kosong dan unggahan foto
@@ -195,8 +195,8 @@ $csrf_hash = $this->security->get_csrf_hash();
                 </label>
 
                 <div class="flex justify-end gap-2 pt-1">
-                    <button type="button" @click="buka = false" class="rounded-lg border border-gray-200 px-3 py-2 font-bold text-gray-600 dark:border-white/10 dark:text-brand-muted">Batal</button>
-                    <button type="submit" class="rounded-lg border border-brand-primary/50 bg-brand-primary/20 px-4 py-2 font-bold text-brand-primary hover:bg-brand-primary/30">Simpan</button>
+                    <button type="button" @click="buka = false" class="tombol-kedua"><span>Batal</span></button>
+                    <button type="submit" class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan</span></button>
                 </div>
             </form>
         </div>

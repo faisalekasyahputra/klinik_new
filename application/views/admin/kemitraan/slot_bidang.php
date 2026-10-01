@@ -22,23 +22,17 @@ if ( ! $mode_bidang) { $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' =
         <h3 class="text-xl font-black text-gray-900 dark:text-white"><?= html_escape($bidang->nama) ?></h3>
         <p class="text-sm text-gray-500 dark:text-brand-muted">
             Slot tahun <?= (int) $tahun ?>.
-            <?= (int) $bidang->aktif ? '' : 'Bidang ini sedang TIDAK MENERIMA pendaftaran magang.' ?>
+            <?= (int) $bidang->aktif ? '' : 'Bidang ini sedang tidak menerima pendaftaran magang.' ?>
         </p>
     </div>
     <?php if ($mode_bidang): ?>
     <div class="flex gap-2">
         <?php foreach ([$tahun - 1, $tahun + 1] as $t): if ($t < 2020 || $t > (int) date('Y') + 5) { continue; } ?>
-        <a href="<?= base_url('Kemitraan_Bidang/kuota/' . (int) $t) ?>"
-           class="rounded-xl border border-gray-200 dark:border-white/10 px-4 py-2 text-xs font-bold text-gray-700 dark:text-gray-300">
-            Tahun <?= (int) $t ?>
-        </a>
+        <a href="<?= base_url('Kemitraan_Bidang/kuota/' . (int) $t) ?>" class="tombol-kedua"><i class="ph <?= $t < $tahun ? 'ph-caret-left' : 'ph-caret-right' ?>"></i><span>Tahun <?= (int) $t ?></span></a>
         <?php endforeach; ?>
     </div>
     <?php else: ?>
-    <a href="<?= base_url('Admin_Kemitraan/slot/' . (int) $tahun) ?>"
-       class="rounded-xl border border-gray-200 dark:border-white/10 px-4 py-2 text-xs font-bold text-gray-700 dark:text-gray-300">
-        Kembali ke Daftar Bidang
-    </a>
+    <a href="<?= base_url('Admin_Kemitraan/slot/' . (int) $tahun) ?>" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali ke daftar bidang</span></a>
     <?php endif; ?>
 </div>
 
@@ -46,7 +40,7 @@ if ( ! $mode_bidang) { $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' =
     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
     <input type="hidden" name="tahun" value="<?= (int) $tahun ?>">
 
-    <div class="mb-4 flex flex-wrap items-end gap-3 rounded-3xl border border-gray-200 dark:border-white/5 bg-white dark:bg-brand-card p-5">
+    <div class="kartu-admin isi-kartu mb-4 flex flex-wrap items-end gap-3">
         <div>
             <label for="kuota" class="mb-1.5 block text-xs font-bold text-gray-900 dark:text-white">Kuota hadir bersamaan</label>
             <input id="kuota" name="kuota" type="number" min="0" max="255" value="<?= (int) $bidang->kuota ?>"
@@ -58,7 +52,7 @@ if ( ! $mode_bidang) { $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' =
         </p>
     </div>
 
-    <div class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
+    <div class="kartu-admin overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full min-w-[860px] text-left text-sm">
                 <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
@@ -132,9 +126,7 @@ if ( ! $mode_bidang) { $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' =
             <p class="text-xs text-gray-500 dark:text-brand-muted">
                 Bulan yang kotak bukanya tidak dicentang akan ditutup, apa pun tanggal yang tertulis di sebelahnya.
             </p>
-            <button type="submit" class="tombol-utama">
-                Simpan <?= html_escape($bidang->nama) ?> <?= (int) $tahun ?>
-            </button>
+            <button type="submit" class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan <?= html_escape($bidang->nama) ?> <?= (int) $tahun ?></span></button>
         </div>
     </div>
 </form>

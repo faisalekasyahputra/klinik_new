@@ -2,11 +2,11 @@
 /* Bank Data admin (migrasi 063). Kartu di tab Bank Data publik dibangun dari baris yang aktif. */
 $kolom = 'mt-1 block w-full rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm';
 ?>
-<div class="space-y-6">
+<div class="tumpuk-bagian">
     <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Unggah PDF Buku Data dan PDF Statistika. Dokumen yang aktif tampil sebagai kartu di tab
             <span class="font-semibold">Bank Data</span> portal dan dibuka dengan pembaca halaman.']); ?>
 
-    <div class="rounded-2xl bg-white dark:bg-brand-card border border-gray-200 dark:border-white/5 p-5">
+    <div class="kartu-admin isi-kartu">
         <h2 class="mb-3 text-sm font-black text-gray-900 dark:text-white">Unggah dokumen</h2>
         <form action="<?= base_url('Admin_Bank_Data/simpan') ?>" method="post" enctype="multipart/form-data" class="grid gap-3 md:grid-cols-2">
             <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
@@ -28,16 +28,16 @@ $kolom = 'mt-1 block w-full rounded-lg border border-gray-200 dark:border-white/
                 <div class="mt-1"><?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'berkas_pdf', 'ib_accept' => 'application/pdf,.pdf', 'ib_required' => TRUE, 'ib_attr' => '']); ?></div>
             </div>
             <div class="md:col-span-2">
-                <button type="submit" class="tombol-utama">Unggah</button>
+                <button type="submit" class="tombol-utama"><i class="ph ph-upload-simple"></i><span>Unggah</span></button>
             </div>
         </form>
     </div>
 
-    <div data-tabel-admin style="counter-reset: baris-admin 0" class="rounded-2xl bg-white dark:bg-brand-card border border-gray-200 dark:border-white/5 overflow-hidden">
+    <div data-tabel-admin style="counter-reset: baris-admin 0" class="kartu-admin overflow-hidden">
         <div class="overflow-x-auto aksi-tetap">
             <table class="w-full text-left text-sm">
                 <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
-                    <tr><th class="px-4 py-4">Dokumen</th><th class="px-4 py-4">Jenis</th><th class="px-4 py-4">Status</th><th class="px-4 py-4 text-right">Aksi</th></tr>
+                    <tr><th class="px-4 py-3">Dokumen</th><th class="px-4 py-3">Jenis</th><th class="px-4 py-3">Status</th><th class="px-4 py-3 text-right">Aksi</th></tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-white/5 text-gray-700 dark:text-gray-300">
                     <?php if (empty($rows)): ?>

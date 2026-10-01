@@ -42,14 +42,14 @@ if ( ! isset($badge_label['needs_revision'])) {
 // tidak hilang saat ganti filter, dan sebaliknya.
 ob_start(); ?>
 <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted mr-1">Status:</span>
-<a href="<?= admin_table_url($base_url, ['status' => NULL]) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= empty($filter_status) ? 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>">Semua</a>
+<a href="<?= admin_table_url($base_url, ['status' => NULL]) ?>" class="chip-filter"<?= empty($filter_status) ? ' aria-current="true"' : '' ?>>Semua</a>
 <?php foreach ($badge_label as $kode => $label): ?>
-<a href="<?= admin_table_url($base_url, ['status' => $kode]) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= $filter_status === $kode ? 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>"><?= $label ?></a>
+<a href="<?= admin_table_url($base_url, ['status' => $kode]) ?>" class="chip-filter"<?= $filter_status === $kode ? ' aria-current="true"' : '' ?>><?= $label ?></a>
 <?php endforeach;
 if (!empty($can_filter_tanpa_wilayah)): ?>
 <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted mr-1">Wilayah:</span>
-<a href="<?= admin_table_url($base_url, ['tanpa_wilayah' => NULL]) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= empty($filter_tanpa_wilayah) ? 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>">Semua</a>
-<a href="<?= admin_table_url($base_url, ['tanpa_wilayah' => '1']) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= !empty($filter_tanpa_wilayah) ? 'bg-orange-100 border-orange-300 text-orange-700 dark:bg-orange-500/20 dark:border-orange-500/50 dark:text-orange-400' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>">Belum Terpetakan</a>
+<a href="<?= admin_table_url($base_url, ['tanpa_wilayah' => NULL]) ?>" class="chip-filter"<?= empty($filter_tanpa_wilayah) ? ' aria-current="true"' : '' ?>>Semua</a>
+<a href="<?= admin_table_url($base_url, ['tanpa_wilayah' => '1']) ?>" class="chip-filter"<?= !empty($filter_tanpa_wilayah) ? ' aria-current="true"' : '' ?>>Belum terpetakan</a>
 <?php endif;
 $filter_html = ob_get_clean();
 ?>
@@ -66,7 +66,7 @@ $filter_html = ob_get_clean();
         $pk = $peringatan_keamanan; $pk_tinggi = (int) $pk['tinggi'];
     ?>
     <a href="<?= base_url('Admin_Audit?aksi=peringatan_keamanan') ?>" role="alert"
-       class="mb-6 flex items-start gap-3 rounded-2xl border p-4 transition-colors <?= $pk_tinggi > 0 ? 'border-red-300 bg-red-50 hover:bg-red-100 dark:border-red-500/40 dark:bg-red-500/10' : 'border-amber-300 bg-amber-50 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10' ?>">
+       class="mb-5 flex items-start gap-3 rounded-2xl border p-4 transition-colors <?= $pk_tinggi > 0 ? 'border-red-300 bg-red-50 hover:bg-red-100 dark:border-red-500/40 dark:bg-red-500/10' : 'border-amber-300 bg-amber-50 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10' ?>">
         <i class="ph ph-shield-warning text-2xl <?= $pk_tinggi > 0 ? 'text-red-600' : 'text-amber-600' ?>"></i>
         <span class="text-sm">
             <strong class="block text-gray-900 dark:text-white"><?= (int) $pk['total'] ?> peringatan keamanan dalam <?= (int) $pk['jam'] ?> jam terakhir<?= $pk_tinggi > 0 ? ' (' . $pk_tinggi . ' tingkat tinggi)' : '' ?></strong>
@@ -80,7 +80,7 @@ $filter_html = ob_get_clean();
     <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Kelola antrean pengajuan program perumahan warga, cakupan <b>' . html_escape($scope_label) . '</b>.']); ?>
     <div>
         <?php if (isset($tercocokkan_simperum)): /* hanya Admin_Kabkota::index, sudah terbatas wilayahnya */ ?>
-        <div class="-mt-4 mb-8 inline-flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-white/5 dark:bg-brand-card">
+        <div class="kartu-admin mb-5 inline-flex items-center gap-3 px-4 py-3">
             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400"><i class="ph ph-database text-xl"></i></div>
             <dl>
                 <dt class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-brand-muted">Warga tercocokkan SIMPERUM di wilayah ini</dt>
@@ -102,7 +102,7 @@ $filter_html = ob_get_clean();
     </div>
     <?php endif; ?>
 
-    <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card border border-gray-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm">
+    <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="kartu-admin overflow-hidden">
         <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, NIK, tiket, program...', 'filter_html' => $filter_html], TRUE) ?>
 
         <p class="px-4 pt-3 text-xs text-gray-500 dark:text-brand-muted sm:hidden">
@@ -193,7 +193,7 @@ $filter_html = ob_get_clean();
                             <div class="text-xs font-mono mt-0.5"><?= html_escape($nik_display) ?></div>
                             <?php if (empty($row->kabupaten_id)): ?>
                             <div class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400 border border-orange-200 dark:border-orange-500/20" title="Tidak muncul di dashboard Admin Kabupaten/Kota manapun">
-                                <i class="ph ph-map-pin-area text-[10px]"></i> Belum Terpetakan Wilayah
+                                <i class="ph ph-map-pin-area text-[10px]"></i> Belum terpetakan wilayah
                             </div>
                             <?php endif; ?>
                         </td>
@@ -243,7 +243,7 @@ $filter_html = ob_get_clean();
         <div x-show="open" x-transition class="relative w-full max-w-lg bg-white dark:bg-brand-card border border-gray-200 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="px-4 py-3 border-b border-gray-200 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5">
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-clipboard-text text-brand-primary"></i> Proses Pengajuan</h3>
-                <button type="button" @click="close()" aria-label="Tutup" class="text-gray-400 dark:text-brand-muted hover:text-gray-700 dark:hover:text-white transition-colors"><i class="ph ph-x text-lg"></i></button>
+                <button type="button" @click="close()" aria-label="Tutup" class="tombol-ikon"><i class="ph ph-x"></i></button>
             </div>
             <div class="p-6 overflow-y-auto custom-scrollbar">
                 <form action="<?= base_url($action_url) ?>" method="POST" id="formProsesAntrean">
@@ -297,8 +297,8 @@ $filter_html = ob_get_clean();
                 </form>
             </div>
             <div class="px-4 py-3 border-t border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/20 flex justify-end gap-3">
-                <button type="button" @click="close()" class="px-5 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white text-sm font-semibold hover:bg-gray-100 dark:hover:bg-white/5">Batal</button>
-                <button type="submit" form="formProsesAntrean" class="tombol-utama">Simpan Keputusan</button>
+                <button type="button" @click="close()" class="tombol-kedua"><span>Batal</span></button>
+                <button type="submit" form="formProsesAntrean" class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan keputusan</span></button>
             </div>
         </div>
     </div>

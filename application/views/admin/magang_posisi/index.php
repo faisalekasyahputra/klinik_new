@@ -23,7 +23,7 @@ $umur_hari = $terakhir_diubah ? (int) floor((time() - strtotime($terakhir_diubah
 $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
 ?>
 
-<div class="space-y-5">
+<div class="tumpuk-bagian">
     <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Daftar jurusan, bidang studi, atau keahlian yang sedang dibutuhkan tiap bidang. Yang <strong>aktif</strong> tampil di papan
             magang publik.<br><span class="text-xs">'
             . (int) $jumlah_aktif . ' posisi aktif · '
@@ -45,7 +45,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
     <?php endforeach; ?>
 
     <form action="<?= base_url('Admin_Magang_Posisi/simpan') ?>" method="post"
-          class="rounded-2xl border p-4" style="border-color:var(--portal-border,#e5e7eb)">
+          class="kartu-admin isi-kartu">
         <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
         <input type="hidden" name="id" value="0">
         <p class="mb-3 text-sm font-bold">Tambah kebutuhan</p>
@@ -80,18 +80,18 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
             <label class="flex items-center gap-2 text-xs">
                 <input type="checkbox" name="aktif" value="1" checked> Tampilkan di papan magang
             </label>
-            <button type="submit" class="tombol-utama">Tambah</button>
+            <button type="submit" class="tombol-utama"><i class="ph ph-plus"></i><span>Tambah</span></button>
         </div>
     </form>
 
     <?php if ($kosong): ?>
-        <p class="rounded-2xl border p-6 text-center text-sm" style="border-color:var(--portal-border,#e5e7eb);color:var(--portal-text-muted,#6b7280)">
+        <p class="kartu-admin isi-kartu text-center text-sm text-gray-500 dark:text-brand-muted">
             Belum ada posisi. Papan magang publik masih menampilkan nama bidang saja.
         </p>
     <?php else: ?>
-        <div class="overflow-x-auto aksi-tetap rounded-2xl border" style="border-color:var(--portal-border,#e5e7eb)">
+        <div class="kartu-admin overflow-x-auto aksi-tetap">
             <table class="w-full text-sm">
-                <thead class="text-left text-xs" style="background:rgba(0,0,0,.03)">
+                <thead class="bg-gray-50 text-left text-xs dark:bg-black/20">
                     <tr>
                         <th class="px-3 py-2">Bidang</th><th class="px-3 py-2">Posisi</th>
                         <th class="px-3 py-2">Keterangan</th><th class="px-3 py-2">Dibutuhkan</th>
@@ -101,7 +101,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
                 </thead>
                 <tbody>
                 <?php foreach ($rows as $r): ?>
-                    <tr class="border-t" style="border-color:var(--portal-border,#e5e7eb)">
+                    <tr class="border-t border-gray-100 dark:border-white/5">
                         <form action="<?= base_url('Admin_Magang_Posisi/simpan') ?>" method="post" id="f<?= (int) $r->id ?>">
                             <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
                             <input type="hidden" name="id" value="<?= (int) $r->id ?>">

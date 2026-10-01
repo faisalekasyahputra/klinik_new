@@ -5,23 +5,21 @@ $this->load->helper('admin_table');
 // Filter dibangun lewat admin_table_url() supaya pencarian dan urutan yang
 // sedang aktif tidak hilang saat ganti filter, dan sebaliknya. Menyusun URL
 // sendiri di sini akan membuang salah satunya diam-diam.
-$pil = 'px-3 py-1 rounded-lg text-xs font-bold border transition-colors';
-$nyala = 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary';
-$padam = 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10';
+$nyala = ' aria-current="true"';
 ob_start(); ?>
 <span class="mr-1 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted">Status:</span>
-<a href="<?= admin_table_url($base_url, ['status' => NULL]) ?>" class="<?= $pil ?> <?= empty($f_status) ? $nyala : $padam ?>">Semua</a>
+<a href="<?= admin_table_url($base_url, ['status' => NULL]) ?>" class="chip-filter"<?= empty($f_status) ? $nyala : '' ?>>Semua</a>
 <?php foreach ($status_sah as $s): ?>
-    <a href="<?= admin_table_url($base_url, ['status' => $s]) ?>" class="<?= $pil ?> <?= $f_status === $s ? $nyala : $padam ?>"><?= html_escape($s) ?></a>
+    <a href="<?= admin_table_url($base_url, ['status' => $s]) ?>" class="chip-filter"<?= $f_status === $s ? $nyala : '' ?>><?= html_escape($s) ?></a>
 <?php endforeach; ?>
 <span class="ml-3 mr-1 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted">Jenis:</span>
-<a href="<?= admin_table_url($base_url, ['jenis' => NULL]) ?>" class="<?= $pil ?> <?= empty($f_jenis) ? $nyala : $padam ?>">Semua</a>
+<a href="<?= admin_table_url($base_url, ['jenis' => NULL]) ?>" class="chip-filter"<?= empty($f_jenis) ? $nyala : '' ?>>Semua</a>
 <?php foreach ($jenis_sah as $j): ?>
-    <a href="<?= admin_table_url($base_url, ['jenis' => $j]) ?>" class="<?= $pil ?> <?= $f_jenis === $j ? $nyala : $padam ?>"><?= strtoupper($j) ?></a>
+    <a href="<?= admin_table_url($base_url, ['jenis' => $j]) ?>" class="chip-filter"<?= $f_jenis === $j ? $nyala : '' ?>><?= $j === 'kkn' ? 'KKN' : html_escape(ucfirst($j)) ?></a>
 <?php endforeach;
 $filter_html = ob_get_clean();
 ?>
-<div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
+<div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="kartu-admin overflow-hidden">
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari mahasiswa, instansi, divisi...', 'filter_html' => $filter_html], TRUE) ?>
     <div class="overflow-x-auto aksi-tetap">
         <table class="w-full text-left text-sm whitespace-nowrap">
@@ -63,7 +61,7 @@ $filter_html = ob_get_clean();
                         <div class="mt-1 text-xs text-gray-500 dark:text-brand-muted"><?= html_escape(implode(' · ', $identitas)) ?></div>
                         <?php endif; ?>
                     </td>
-                    <td class="px-4 py-4 uppercase text-xs font-bold"><?= html_escape($r->jenis) ?></td>
+                    <td class="px-4 py-4 text-xs font-bold"><?= $r->jenis === 'kkn' ? 'KKN' : html_escape(ucfirst($r->jenis)) ?></td>
                     <!-- Dua kolom teks ini boleh membungkus. Dengan
                          `whitespace-nowrap` milik tabel, nama kampus dan nama
                          bidang yang panjang mendorong lebar tabel melewati
@@ -159,12 +157,12 @@ $filter_html = ob_get_clean();
                                  terpotong wadah overflow-x-auto (audit UI 2 Okt 2026). Modal tidak
                                  bergantung pada tinggi baris maupun wadah. Teleport ke body karena
                                  sel Aksi sticky (lihat .aksi-tetap di layouts/head.php). */ ?>
-                            <button @click="procOpen = true" class="tombol-aksi"><i class="ph ph-pencil-simple" aria-hidden="true"></i><span><?= $r->status === 'Diajukan' ? 'Proses' : 'Ubah Keputusan' ?></span></button>
+                            <button @click="procOpen = true" class="tombol-aksi"><i class="ph ph-pencil-simple" aria-hidden="true"></i><span><?= $r->status === 'Diajukan' ? 'Proses' : 'Ubah keputusan' ?></span></button>
                             <template x-teleport="body">
                             <div x-show="procOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center whitespace-normal bg-black/50 p-4" @keydown.escape.window="procOpen = false">
                             <div @click.outside="procOpen = false" class="w-full max-w-sm rounded-3xl bg-white dark:bg-brand-card p-6 text-left shadow-xl">
                                 <h3 class="text-lg font-bold text-gray-900 dark:text-white"><?= $r->status === 'Diajukan' ? 'Proses Pendaftaran' : 'Ubah Keputusan' ?></h3>
-                                <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-brand-muted break-words"><?= html_escape($r->nama_mahasiswa ?: '-') ?> &middot; <?= strtoupper(html_escape($r->jenis)) ?> &middot; <?= html_escape($r->instansi_asal) ?></p>
+                                <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-brand-muted break-words"><?= html_escape($r->nama_mahasiswa ?: '-') ?> &middot; <?= $r->jenis === 'kkn' ? 'KKN' : html_escape(ucfirst($r->jenis)) ?> &middot; <?= html_escape($r->instansi_asal) ?></p>
                                 <?php
                                 /* KKN TIDAK melewati meja bidang - Admin_Kemitraan::proses()
                                    sudah menolak status 'Ditinjau Bidang' untuk jenis KKN
@@ -184,8 +182,8 @@ $filter_html = ob_get_clean();
                                     // 'Terima langsung' tetap disediakan untuk divisi yang
                                     // bidangnya belum punya peninjau, dan diletakkan
                                     // terakhir supaya bukan yang paling mudah diklik.
-                                    array_unshift($tombol_proses, ['value' => 'Ditinjau Bidang', 'label' => 'Teruskan ke Bidang', 'style' => 'accept']);
-                                    $tombol_proses[2]['label'] = 'Terima Langsung';
+                                    array_unshift($tombol_proses, ['value' => 'Ditinjau Bidang', 'label' => 'Teruskan ke bidang', 'style' => 'accept']);
+                                    $tombol_proses[2]['label'] = 'Terima langsung';
                                 }
                                 ?>
                                 <?= $this->load->view('admin/components/review_form', [

@@ -2,36 +2,36 @@
     <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Kelola teks, gambar hero, dan konten statis landing page.']); ?>
 
     <!-- Tabs Navigation -->
-    <div class="flex flex-wrap gap-2 mb-6 border-b border-gray-200 dark:border-white/10 relative z-10">
-        <button type="button" @click="activeTab = 'hero'" :class="activeTab === 'hero' ? 'border-blue-600 text-blue-600 dark:border-brand-primary dark:text-brand-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="px-4 py-3 font-bold border-b-2 transition-colors flex items-center gap-2">
-            <i class="ph ph-image"></i> Hero Section
+    <div class="flex flex-wrap gap-1 mb-5 border-b border-gray-200 dark:border-white/10 relative z-10" role="tablist">
+        <button type="button" role="tab" @click="activeTab = 'hero'" :aria-selected="activeTab === 'hero' ? 'true' : 'false'" class="tombol-tab">
+            <i class="ph ph-image"></i><span>Bagian utama</span>
         </button>
-        <button type="button" @click="activeTab = 'about'" :class="activeTab === 'about' ? 'border-blue-600 text-blue-600 dark:border-brand-primary dark:text-brand-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="px-4 py-3 font-bold border-b-2 transition-colors flex items-center gap-2">
-            <i class="ph ph-info"></i> Tentang Kami
+        <button type="button" role="tab" @click="activeTab = 'about'" :aria-selected="activeTab === 'about' ? 'true' : 'false'" class="tombol-tab">
+            <i class="ph ph-info"></i><span>Tentang kami</span>
         </button>
-        <button type="button" @click="activeTab = 'footer'" :class="activeTab === 'footer' ? 'border-blue-600 text-blue-600 dark:border-brand-primary dark:text-brand-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'" class="px-4 py-3 font-bold border-b-2 transition-colors flex items-center gap-2">
-            <i class="ph ph-envelope-simple"></i> Footer & Kontak
+        <button type="button" role="tab" @click="activeTab = 'footer'" :aria-selected="activeTab === 'footer' ? 'true' : 'false'" class="tombol-tab">
+            <i class="ph ph-envelope-simple"></i><span>Kaki halaman &amp; kontak</span>
         </button>
     </div>
 
-    <div class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden relative z-10 p-6">
-        <form action="<?= base_url('Admin_Content/update') ?>" method="POST" enctype="multipart/form-data" class="space-y-6">
+    <div class="kartu-admin isi-kartu overflow-hidden relative z-10">
+        <form action="<?= base_url('Admin_Content/update') ?>" method="POST" enctype="multipart/form-data" class="space-y-5">
             <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
             
             <!-- SECTION HERO -->
             <div x-show="activeTab === 'hero'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-1 translate-y-0" style="display: none;">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-white/10 pb-2 mb-4">Bagian Utama (Hero Section)</h3>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-white/10 pb-2 mb-4">Bagian utama</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Judul Hero (Gunakan HTML jika perlu)</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Judul bagian utama (boleh memakai tag HTML)</label>
                         <textarea name="hero_title" rows="3" class="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-primary/50 text-gray-800 dark:text-gray-200"><?= htmlspecialchars($settings['hero_title'] ?? '') ?></textarea>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subjudul Hero</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Subjudul bagian utama</label>
                         <textarea name="hero_subtitle" rows="3" class="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-primary/50 text-gray-800 dark:text-gray-200"><?= htmlspecialchars($settings['hero_subtitle'] ?? '') ?></textarea>
                     </div>
                     <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Gambar Background Hero (Kosongkan jika tidak ingin mengubah)</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Gambar latar bagian utama (kosongkan bila tidak diubah)</label>
                         <?php if(!empty($settings['hero_background'])): ?>
                             <div class="mb-3">
                                 <img src="<?= base_url($settings['hero_background']) ?>" class="h-32 object-cover rounded-lg border border-gray-200 dark:border-white/10">
@@ -44,18 +44,18 @@
 
             <!-- SECTION ABOUT -->
             <div x-show="activeTab === 'about'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-1 translate-y-0" style="display: none;">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-white/10 pb-2 mb-4">Tentang Kami (About Section)</h3>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-white/10 pb-2 mb-4">Tentang kami</h3>
                 <div class="grid grid-cols-1 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Judul Tentang Kami</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Judul tentang kami</label>
                         <textarea name="about_title" rows="2" class="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-primary/50 text-gray-800 dark:text-gray-200"><?= htmlspecialchars($settings['about_title'] ?? '') ?></textarea>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Deskripsi Paragraf 1</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Deskripsi paragraf 1</label>
                         <textarea name="about_desc_1" rows="4" class="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-primary/50 text-gray-800 dark:text-gray-200"><?= htmlspecialchars($settings['about_desc_1'] ?? '') ?></textarea>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Deskripsi Paragraf 2</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Deskripsi paragraf 2</label>
                         <textarea name="about_desc_2" rows="4" class="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-primary/50 text-gray-800 dark:text-gray-200"><?= htmlspecialchars($settings['about_desc_2'] ?? '') ?></textarea>
                     </div>
                 </div>
@@ -63,10 +63,10 @@
 
             <!-- SECTION FOOTER -->
             <div x-show="activeTab === 'footer'" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-1 translate-y-0" style="display: none;">
-                <h3 class="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-white/10 pb-2 mb-4">Footer (Informasi Kontak)</h3>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-white border-b border-gray-200 dark:border-white/10 pb-2 mb-4">Kaki halaman (informasi kontak)</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Alamat Lengkap</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Alamat lengkap</label>
                         <textarea name="footer_address" rows="2" class="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-primary/50 text-gray-800 dark:text-gray-200"><?= htmlspecialchars($settings['footer_address'] ?? '') ?></textarea>
                     </div>
                     <div>
@@ -78,15 +78,15 @@
                         <input type="text" name="footer_email" value="<?= htmlspecialchars($settings['footer_email'] ?? '') ?>" class="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-primary/50 text-gray-800 dark:text-gray-200">
                     </div>
                     <div class="md:col-span-2">
-                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Teks Hak Cipta (Copyright)</label>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Teks hak cipta</label>
                         <input type="text" name="footer_copyright" value="<?= htmlspecialchars($settings['footer_copyright'] ?? '') ?>" class="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-primary/50 text-gray-800 dark:text-gray-200">
                     </div>
                 </div>
             </div>
 
-            <div class="pt-6 border-t border-gray-200 dark:border-white/10 flex justify-end">
+            <div class="pt-4 border-t border-gray-200 dark:border-white/10 flex justify-end">
                 <button type="submit" class="tombol-utama">
-                    <i class="ph ph-floppy-disk text-lg mr-2"></i> Simpan Perubahan
+                    <i class="ph ph-floppy-disk"></i><span>Simpan perubahan</span>
                 </button>
             </div>
         </form>

@@ -29,14 +29,8 @@ $aktif = isset($tab_aktif) ? $tab_aktif : 'pendaftaran';
 <?php // Satu judul untuk ketiga tab, sama dengan label sidebar; tab yang menyala menunjukkan bagiannya. ?>
 <?php $this->load->view('admin/components/judul_halaman', ['jh_judul' => 'KKN & Magang', 'jh_deskripsi' => 'Tempat yang dibuka, dan orang yang mengisinya - dikelola dari satu halaman.']); ?>
 
-<div class="mb-6 flex flex-wrap gap-1 border-b border-gray-200 dark:border-white/5">
+<div class="mb-5 flex flex-wrap gap-1 border-b border-gray-200 dark:border-white/5">
     <?php foreach ($tab as $kunci => $t): ?>
-        <a href="<?= base_url($t['url']) ?>"
-           class="-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition-colors <?= $kunci === $aktif
-                ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                : 'border-transparent text-gray-500 dark:text-brand-muted hover:text-gray-800 dark:hover:text-white' ?>">
-            <i class="ph <?= $t['ikon'] ?>"></i>
-            <?= html_escape($t['label']) ?>
-        </a>
+        <a href="<?= base_url($t['url']) ?>" class="tombol-tab"<?= $kunci === $aktif ? ' aria-current="page"' : '' ?>><i class="ph <?= $t['ikon'] ?>"></i><span><?= html_escape($t['label']) ?></span></a>
     <?php endforeach; ?>
 </div>

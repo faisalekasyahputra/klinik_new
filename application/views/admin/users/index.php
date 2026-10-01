@@ -5,7 +5,7 @@
 <div x-data="{ createOpen: false }">
     <?php ob_start(); ?>
     <button @click="createOpen = true" class="tombol-utama">
-        <i class="ph ph-user-plus text-lg"></i> Tambah Pengguna Baru
+        <i class="ph ph-user-plus"></i><span>Tambah pengguna baru</span>
     </button>
     <?php $this->load->view('admin/components/judul_halaman', ['jh_aksi' => ob_get_clean(), 'jh_deskripsi' => 'Kelola akun, peran, dan akses pengguna dalam sistem.']); ?>
 
@@ -24,7 +24,7 @@
                     <input type="email" name="email" required maxlength="100" class="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
                 </div>
                 <div>
-                    <label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Password</label>
+                    <label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Sandi</label>
                     <input type="password" name="password" required minlength="8" class="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
                 </div>
                 <div>
@@ -55,8 +55,8 @@
                     </select>
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
-                    <button type="button" @click="createOpen = false" class="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5">Batal</button>
-                    <button type="submit" class="tombol-utama">Buat Akun</button>
+                    <button type="button" @click="createOpen = false" class="tombol-kedua"><span>Batal</span></button>
+                    <button type="submit" class="tombol-utama"><i class="ph ph-user-plus"></i><span>Buat akun</span></button>
                 </div>
             </form>
         </div>
@@ -67,7 +67,7 @@
 <?php /* TANPA `z-10`: modal "Reset Sandi" (`fixed inset-0 z-50`) ditulis di dalam
          <td> di kartu ini, jadi stacking context z-10 di sini menguburnya juga.
          `relative` dipertahankan - popover Ubah Role di dalam sel memakainya. */ ?>
-<div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden relative">
+<div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="kartu-admin overflow-hidden relative">
     <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Daftar Pengguna', 'kt_jumlah' => (int) $table['total_rows'], 'kt_keterangan' => '']); ?>
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, email, atau username...'], TRUE) ?>
     <div class="overflow-x-auto aksi-tetap">
@@ -78,18 +78,18 @@
                              whitespace-nowrap - AGENTS.md §17 poin 6. Kolom Aksi yang
                              pertama hilang di balik gulir horizontal, dan itu sudah dua
                              kali terjadi di layar admin lain. */ ?>
-                    <th scope="col" class="px-4 py-4"><?= admin_sort_header('Nama Pengguna', 'name', $table, $base_url) ?></th>
-                    <th scope="col" class="px-4 py-4"><?= admin_sort_header('Peran', 'role', $table, $base_url) ?></th>
-                    <th scope="col" class="px-4 py-4">Cakupan</th>
+                    <th scope="col" class="px-4 py-3"><?= admin_sort_header('Nama Pengguna', 'name', $table, $base_url) ?></th>
+                    <th scope="col" class="px-4 py-3"><?= admin_sort_header('Peran', 'role', $table, $base_url) ?></th>
+                    <th scope="col" class="px-4 py-3">Cakupan</th>
                     <?php /* Tanpa admin_sort_header(): `status` tidak ada di whitelist
                              table_state() milik controller, dan controller tidak boleh
                              disentuh di pekerjaan ini. Header urut yang menunjuk kolom
                              di luar whitelist akan diam-diam jatuh ke urutan default -
                              tombol yang berpura-pura mengurutkan lebih buruk daripada
                              tidak ada tombol. */ ?>
-                    <th scope="col" class="px-4 py-4">Status</th>
-                    <th scope="col" class="px-4 py-4"><?= admin_sort_header('Terdaftar', 'created_at', $table, $base_url) ?></th>
-                    <th scope="col" class="px-4 py-4 text-right">Aksi</th>
+                    <th scope="col" class="px-4 py-3">Status</th>
+                    <th scope="col" class="px-4 py-3"><?= admin_sort_header('Terdaftar', 'created_at', $table, $base_url) ?></th>
+                    <th scope="col" class="px-4 py-3 text-right">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-white/5 text-gray-700 dark:text-gray-300">
@@ -148,13 +148,13 @@
                         ? 'Aktifkan kembali akun ' . $u->email . '? Ia bisa langsung masuk ke sistem lagi.'
                         : 'Nonaktifkan akun ' . $u->email . '? Ia langsung tidak bisa masuk lagi, dan tetap begitu sampai ada yang mengaktifkannya kembali.';
                     $konfirmasi_kunci = 'Buka kunci akun ' . $u->email . '? Ia bisa langsung mencoba masuk lagi tanpa menunggu sisa waktu kunci habis.';
-                    $konfirmasi_sandi = 'Ganti password akun ' . $u->email . '? Password lamanya langsung tidak berlaku dan yang bersangkutan tidak bisa masuk sampai Anda memberitahukan password barunya.';
+                    $konfirmasi_sandi = 'Ganti sandi akun ' . $u->email . '? Sandi lamanya langsung tidak berlaku dan yang bersangkutan tidak bisa masuk sampai Anda memberitahukan sandi barunya.';
                 ?>
                 <tr x-data="{ editOpen: false, resetOpen: false, nikResetOpen: false, role: '<?= html_escape($u->role ?? '') ?>' }">
                     <?php /* Kolom teks terpanjang dibatasi + boleh membungkus (§17 poin 6):
                              nama dan email panjang di tabel whitespace-nowrap adalah
                              sumber meluber nomor satu. */ ?>
-                    <td class="px-4 py-4 max-w-[14rem] whitespace-normal">
+                    <td class="px-4 py-3 max-w-[14rem] whitespace-normal">
                         <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($u->name) ?></div>
                         <div class="text-xs text-gray-500 dark:text-brand-muted break-words"><?= html_escape($u->email) ?></div>
                         <?php if ($milik_sendiri): ?>
@@ -163,12 +163,12 @@
                         </span>
                         <?php endif; ?>
                     </td>
-                    <td class="px-4 py-4">
+                    <td class="px-4 py-3">
                         <span class="inline-flex px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary">
                             <?= html_escape($available_roles[$u->role] ?? ($u->role ?: '-')) ?>
                         </span>
                     </td>
-                    <td class="px-4 py-4 text-xs">
+                    <td class="px-4 py-3 text-xs">
                         <?php if ($u->role === 'admin_kabkota'): ?>
                             <?php $kab = current(array_filter($kabupaten_list, fn($k) => $k->id == $u->kabupaten_id)) ?: null; ?>
                             <?= $kab ? html_escape($kab->nama) : '<span class="text-red-500">belum diset</span>' ?>
@@ -183,7 +183,7 @@
                              pasangan dark:-nya sudah diurus di sana. Pemetaan ke kosakata
                              komponen: nonaktif→reject (merah), terkunci→pending (kuning:
                              amber terang / brand-primary #d6fb00 gelap), sisanya→ok (hijau). */ ?>
-                    <td class="px-4 py-4">
+                    <td class="px-4 py-3">
                         <?php if ($nonaktif): ?>
                             <?= $this->load->view('admin/components/status_badge', ['label' => 'Nonaktif', 'kelas' => 'reject'], TRUE) ?>
                             <div class="mt-1 text-[11px] text-gray-500 dark:text-brand-muted">diblokir manual</div>
@@ -197,18 +197,18 @@
                             <?= $this->load->view('admin/components/status_badge', ['label' => 'Aktif', 'kelas' => 'ok'], TRUE) ?>
                         <?php endif; ?>
                     </td>
-                    <td class="px-4 py-4 text-xs"><?= html_escape(tgl_id($u->created_at ?? '', TRUE)) ?></td>
-                    <td class="px-4 py-4 text-right">
+                    <td class="px-4 py-3 text-xs"><?= html_escape(tgl_id($u->created_at ?? '', TRUE)) ?></td>
+                    <td class="px-4 py-3 text-right">
                         <?php /* flex-wrap + max-w: tombol menumpuk ke bawah saat sempit,
                                  BUKAN melebarkan tabel. Kolom Aksi adalah yang pertama
                                  hilang di balik gulir horizontal (§17 poin 6). */ ?>
                         <div class="ml-auto flex max-w-[15rem] flex-wrap items-center justify-end gap-1">
                             <button @click="editOpen = true" class="tombol-aksi">
-                                <i class="ph ph-pencil-simple"></i><span>Ubah Peran</span>
+                                <i class="ph ph-pencil-simple"></i><span>Ubah peran</span>
                             </button>
                             <?php if (in_array($u->role, ['admin_kabkota', 'admin_bidang'], TRUE)): ?>
                             <a href="<?= base_url('Admin_Privileges/index/' . (int) $u->id) ?>" class="tombol-aksi">
-                                <i class="ph ph-shield-check"></i><span>Hak Modul</span>
+                                <i class="ph ph-shield-check"></i><span>Hak modul</span>
                             </a>
                             <?php endif; ?>
 
@@ -221,7 +221,7 @@
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                 <input type="hidden" name="id" value="<?= (int) $u->id ?>">
                                 <button type="submit" class="tombol-aksi">
-                                    <i class="ph ph-lock-open"></i><span>Buka Kunci</span>
+                                    <i class="ph ph-lock-open"></i><span>Buka kunci</span>
                                 </button>
                             </form>
                             <?php endif; ?>
@@ -230,7 +230,7 @@
                                      Admin_Users::reset_sandi() memanggil sasaran_sah(TRUE) -
                                      ini memulihkan akses, bukan mencabutnya. Sama untuk Buka Kunci. */ ?>
                             <button @click="resetOpen = true" class="tombol-aksi">
-                                <i class="ph ph-key"></i><span>Reset Sandi</span>
+                                <i class="ph ph-key"></i><span>Reset sandi</span>
                             </button>
                             <?php if ($u->role === 'warga' && ! empty($warga_nik_bound[(int)$u->id])): ?>
                             <button @click="nikResetOpen = true" class="tombol-aksi">
@@ -265,24 +265,24 @@
                         <template x-teleport="body">
                         <div x-show="resetOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center whitespace-normal bg-black/50 p-4" @keydown.escape.window="resetOpen = false">
                             <div @click.outside="resetOpen = false" class="w-full max-w-md rounded-3xl bg-white dark:bg-brand-card p-6 text-left shadow-xl" x-data="{ sandi: '', ulang: '' }">
-                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Reset Password</h3>
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Reset sandi</h3>
                                 <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-brand-muted break-words">
                                     Untuk <span class="font-bold text-gray-700 dark:text-gray-300"><?= html_escape($u->email) ?></span>.
-                                    Sampaikan password barunya lewat jalur pribadi - sistem tidak mengirimkannya ke siapa pun.
+                                    Sampaikan sandi barunya lewat jalur pribadi - sistem tidak mengirimkannya ke siapa pun.
                                 </p>
                                 <form method="POST" action="<?= base_url('Admin_Users/reset_sandi') ?>" class="space-y-3"
                                       onsubmit="return confirm(<?= html_escape(json_encode($konfirmasi_sandi)) ?>)">
                                     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                     <input type="hidden" name="id" value="<?= (int) $u->id ?>">
                                     <div>
-                                        <label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Password Baru</label>
+                                        <label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Sandi baru</label>
                                         <?php /* minlength 8 = ambang yang sama dengan reset_sandi() di server.
                                                  Sengaja cuma cermin, bukan pengganti: gerbangnya tetap di server. */ ?>
                                         <input type="password" name="password" x-model="sandi" required minlength="8" autocomplete="new-password"
                                                class="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
                                     </div>
                                     <div>
-                                        <label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Ulangi Password Baru</label>
+                                        <label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Ulangi sandi baru</label>
                                         <?php /* Tanpa atribut name: konfirmasi tidak perlu sampai ke server,
                                                  dan sandi yang tidak dikirim tidak bisa bocor lewat log request. */ ?>
                                         <input type="password" x-model="ulang" required minlength="8" autocomplete="new-password"
@@ -292,10 +292,10 @@
                                         Kedua isian belum sama.
                                     </p>
                                     <div class="flex justify-end gap-2 pt-1">
-                                        <button type="button" @click="resetOpen = false" class="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5">Batal</button>
+                                        <button type="button" @click="resetOpen = false" class="tombol-kedua"><span>Batal</span></button>
                                         <button type="submit" :disabled="sandi.length < 8 || sandi !== ulang"
                                                 class="tombol-utama">
-                                            Ganti Password
+                                            <i class="ph ph-key"></i><span>Ganti sandi</span>
                                         </button>
                                     </div>
                                 </form>
@@ -323,7 +323,7 @@
                                     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                     <input type="hidden" name="id" value="<?= (int) $u->id ?>">
                                     <div><label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Alasan reset <span class="text-red-500">*</span></label><textarea name="alasan" required minlength="10" maxlength="500" rows="3" placeholder="Contoh: NIK salah saat pengisian awal" class="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-gray-800 dark:text-gray-200"></textarea></div>
-                                    <div class="flex justify-end gap-2"><button type="button" @click="nikResetOpen = false" class="rounded-xl px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 dark:text-brand-muted dark:hover:bg-white/5">Batal</button><button type="submit" class="rounded-xl bg-orange-600 px-4 py-2 text-sm font-bold text-white hover:bg-orange-700">Reset NIK</button></div>
+                                    <div class="flex justify-end gap-2"><button type="button" @click="nikResetOpen = false" class="tombol-kedua"><span>Batal</span></button><button type="submit" class="tombol-kedua tombol-aksi-bahaya"><i class="ph ph-identification-card"></i><span>Reset NIK</span></button></div>
                                 </form>
                             </div>
                         </div>
@@ -362,7 +362,7 @@
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
-                                <button type="submit" class="tombol-utama w-full mt-1">Simpan</button>
+                                <button type="submit" class="tombol-utama w-full mt-1"><i class="ph ph-floppy-disk"></i><span>Simpan</span></button>
                             </form>
                         </div>
                         </div>
