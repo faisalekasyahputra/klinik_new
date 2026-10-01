@@ -478,5 +478,26 @@ for ($i = 2; $i <= 4; $i++) {
 }
 cek($sisa_ditolak, 'Penolakannya 429, bukan 200 yang menyamar sebagai sukses');
 
+// ------------------------------------------------ 13. JEJAK AKSES ADMIN KE KONSULTASI PRIVAT
+echo "\n== 13. Admin membaca dan membalas konsultasi privat = tercatat ==\n";
+/* Poin 7.3. Topik konsultasi privat hanya terbuka untuk pemilik dan admin; bacaan
+   admin dicatat lewat catat_akses_data_pribadi (dedupe 10 menit), balasannya lewat
+   catat_audit karena tiap balasan tindakan tersendiri. */
+$jejak_admin = function ($aksi, $objek) use ($idA) {
+    return (int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi=? AND objek_tipe='forum_diskusi'
+        AND objek_id=? AND actor_id=? AND created_at >= ?", [$aksi, (string) $objek, $idA, MULAI]);
+};
+http('a', 'Umum/forum');
+cek($jejak_admin('akses_konsultasi_warga', 'daftar') === 1, 'Admin membuka daftar konsultasi: satu baris akses tercatat');
+http('a', 'Umum/detail/' . $topik);
+http('a', 'Umum/detail/' . $topik);
+cek($jejak_admin('akses_konsultasi_warga', $topik) === 1, 'Admin membuka topik privat warga: satu baris akses (dedupe menahan muat ulang)');
+http('a', 'Umum/balas_aksi', ['csrf_kpkp_token' => csrf('a', 'Umum/detail/' . $topik),
+    'id_diskusi' => $topik, 'isi_komentar' => 'Balasan petugas uji ' . CAP]);
+cek($jejak_admin('konsultasi_dibalas', $topik) === 1, 'Balasan petugas tercatat di jejak audit (konsultasi_dibalas)');
+http('w', 'Umum/detail/' . $topik);
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='akses_konsultasi_warga' AND actor_id=?", [$idW]) === 0,
+    'Pemilik yang membuka topiknya sendiri tidak dicatat sebagai akses');
+
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);

@@ -333,6 +333,8 @@ class Umum extends MY_Controller {
 		if ($datacontent['is_logged']) {
 			$user_id_pemilik = $datacontent['is_admin'] ? NULL : (int) $this->get_user_id();
 			$datacontent['diskusi'] = $this->Forum_model->get_all_diskusi($search, $kategori, $user_id_pemilik);
+			// Poin 7.3: admin melihat konsultasi privat warga lain (dedupe dan filter peran di MY_Controller).
+			if ($datacontent['is_admin']) { $this->catat_akses_data_pribadi('konsultasi_warga', 'forum_diskusi', 'daftar'); }
 		} else {
 			$datacontent['diskusi'] = [];
 		}
@@ -455,6 +457,9 @@ class Umum extends MY_Controller {
 			show_404();
 		}
 		$datacontent['is_admin'] = $is_admin;
+		if ($is_admin && (int) ($datacontent['topik']['user_id'] ?? 0) !== $user_id) {
+			$this->catat_akses_data_pribadi('konsultasi_warga', 'forum_diskusi', (string) (int) $id);
+		}
 
 		// Increment view count
 		$this->Forum_model->increment_view($id);
@@ -742,6 +747,10 @@ class Umum extends MY_Controller {
 			$this->session->set_flashdata('error', 'Balasan belum tersimpan. Coba lagi.');
 			redirect('Umum/detail/' . $id_diskusi);
 			return;
+		}
+		// Tiap balasan petugas tindakan tersendiri: catat_audit langsung, tanpa dedupe.
+		if ($role === 'Petugas Disperakim') {
+			$this->catat_audit('konsultasi_dibalas', 'Petugas membalas topik konsultasi #' . $id_diskusi, 'forum_diskusi', (string) $id_diskusi);
 		}
 
 		// `auto_hide_reported(5)` DICABUT dari sini 29 Jul 2026 (B3/U2).
