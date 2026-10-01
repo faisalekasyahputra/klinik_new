@@ -64,17 +64,25 @@ class Push_subscription_model extends CI_Model {
             ->update(self::TABLE, ['aktif' => 0, 'updated_at' => date('Y-m-d H:i:s')]);
     }
 
-    /** Gabungkan langganan dari beberapa role/scope tanpa menduplikasi perangkat. */
+    /**
+     * Gabungkan langganan dari beberapa role/scope tanpa menduplikasi perangkat.
+     * Satu audiens = role (opsional disaring kabupaten_id/bidang_kode) ATAU satu akun lewat user_id.
+     */
     public function untuk_audiens(array $audiences)
     {
         $rows = [];
         foreach ($audiences as $audience) {
-            if (empty($audience['role'])) { continue; }
+            if (empty($audience['role']) && empty($audience['user_id'])) { continue; }
             $this->db->select('sys_push_subscriptions.*')->from(self::TABLE)
                 ->join('usr_users', 'usr_users.id = sys_push_subscriptions.user_id')
                 ->where('sys_push_subscriptions.aktif', 1)
-                ->where('usr_users.role', $audience['role'])
                 ->where("LOWER(TRIM(COALESCE(usr_users.status,''))) !=", 'nonaktif');
+            if ( ! empty($audience['role'])) {
+                $this->db->where('usr_users.role', $audience['role']);
+            }
+            if ( ! empty($audience['user_id'])) {
+                $this->db->where('usr_users.id', (int) $audience['user_id']);
+            }
             if (isset($audience['kabupaten_id'])) {
                 $this->db->where('usr_users.kabupaten_id', (int) $audience['kabupaten_id']);
             }

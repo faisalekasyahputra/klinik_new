@@ -7,7 +7,7 @@
     </div>
     
     <div class="flex items-center space-x-2">
-        <?php if (in_array($this->session->userdata('role'), ['admin', 'admin_kabkota', 'admin_bidang'], TRUE)): ?>
+        <?php if (in_array($this->session->userdata('role'), ['admin', 'admin_kabkota', 'admin_bidang', 'warga'], TRUE)): ?>
         <!-- Izin Web Push hanya diminta setelah klik pengguna, sesuai aturan browser/iOS. -->
         <button type="button" data-web-push-toggle data-state="loading"
                 data-config-url="<?= base_url('push/config') ?>"

@@ -89,8 +89,9 @@ class Admin_Bidang extends Admin_Bidang_Controller {
             return;
         }
 
-        $status_lama = $this->db->select('status')->where('id', (int) $id)->get('aduan')->row('status');
-        $this->db->where('id', (int) $id)
+        $lama = $this->db->select('status, user_id')->where('id', (int) $id)->get('aduan')->row();
+        $status_lama = $lama->status;
+        $ok = $this->db->where('id', (int) $id)
             ->where('bidang', $this->my_bidang_kode)
             ->update('aduan', [
                 'status'        => $status,
@@ -101,6 +102,13 @@ class Admin_Bidang extends Admin_Bidang_Controller {
         $this->catat_audit('aduan_status_bidang',
             'Status aduan #' . (int) $id . ': ' . $status_lama . ' -> ' . $status,
             'aduan', (int) $id, ['dari' => $status_lama, 'ke' => $status, 'bidang' => $this->my_bidang_kode]);
+
+        // Pelapor yang login diberi tahu bila statusnya benar-benar berubah. Payload generik;
+        // statusnya sendiri dibaca di halaman akun (Status Pengajuan).
+        if ($ok && $status !== $status_lama && ! empty($lama->user_id)) {
+            $this->notify_admin_push([['user_id' => (int) $lama->user_id]], 'Status aduan diperbarui',
+                'Ada pembaruan status untuk aduan Anda.', 'akun', 'aduan-status-' . (int) $id);
+        }
 
         $this->session->set_flashdata('success', 'Status aduan diperbarui.');
         redirect('Admin_Bidang');

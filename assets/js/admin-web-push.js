@@ -107,7 +107,7 @@
             return post(button.dataset.subscribeUrl, { subscription: JSON.stringify(subscription.toJSON()) });
         }).then(function () {
             setState('active', 'Notifikasi HP aktif');
-            notify('Perangkat ini akan menerima notifikasi pekerjaan admin baru.', 'success');
+            notify('Perangkat ini akan menerima notifikasi Klinik PKP.', 'success');
         }).catch(function (error) {
             if (currentSubscription) {
                 currentSubscription.unsubscribe();

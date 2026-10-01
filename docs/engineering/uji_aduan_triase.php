@@ -474,5 +474,27 @@ cek(strpos($papan['body'], 'Uji triase selundupan ' . CAP) !== FALSE,
 cek(stripos($papan['body'], 'Sedang ditinjau') !== FALSE,
     'Bidang NULL dibaca "sedang ditinjau", bukan dikarang jadi nama bidang');
 
+// ------------------------------------------------ 10. PUSH KE PELAPOR
+echo "\n== 10. Push ke pelapor saat status aduannya berubah ==\n";
+/* Keputusan user 1 Okt 2026. Warga yang login kini bisa berlangganan dari dashboard
+   akunnya (tombol topbar, izin peramban hanya lewat klik). Pengiriman push sendiri
+   tidak terjadi di lokal (VAPID kosong), jadi sisi kirim dijaga lewat sumber. */
+[$idWargaP, $emailWargaP] = buat_akun('warga', 'wargaPush');
+wajib(login('wargaP', $emailWargaP), 'Login akun ber-role warga');
+$akun = http('wargaP', 'akun');
+cek(strpos($akun['body'], 'data-web-push-toggle') !== FALSE, 'Tombol notifikasi HP tampil di dashboard akun warga');
+$langganan = json_encode(['endpoint' => 'https://push.example.test/' . CAP,
+    'keys' => ['p256dh' => 'BUji' . CAP, 'auth' => 'auth' . CAP]]);
+$rs = http('wargaP', 'push/subscribe', ['csrf_kpkp_token' => csrf('wargaP', 'akun'), 'subscription' => $langganan], TRUE);
+cek($rs['code'] === 200 && (int) nilai('SELECT COUNT(*) c FROM sys_push_subscriptions WHERE user_id=? AND aktif=1', [$idWargaP]) === 1,
+    'Warga bisa mendaftarkan perangkatnya lewat push/subscribe (dulu 403)');
+
+$psm = (string) file_get_contents(APP_ROOT . '/application/models/Push_subscription_model.php');
+cek(strpos($psm, "where('usr_users.id', (int) \$audience['user_id'])") !== FALSE,
+    'untuk_audiens menerima audiens per user_id');
+preg_match('/function update_status\(.*?\n    \}/s', (string) file_get_contents(APP_ROOT . '/application/controllers/Admin_Bidang.php'), $mu);
+cek(preg_match("/if \(\\\$ok && \\\$status !== \\\$status_lama && ! empty\(\\\$lama->user_id\)\) \{\s*\\\$this->notify_admin_push\(\[\['user_id' => \(int\) \\\$lama->user_id\]\].*?'akun'/s", $mu[0] ?? '') === 1,
+    'Admin_Bidang::update_status mengirim push ke pelapor hanya bila sukses, status berubah, dan ada user_id; tautan ke akun');
+
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);
