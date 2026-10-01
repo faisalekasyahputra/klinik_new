@@ -563,7 +563,7 @@ uploads/            # file upload user
 | `Sikumbang.php`, `Sikunang.php`, `Siperum.php` | Integrasi API eksternal pemerintah. ⚠️ **`Sikaper.php` sudah TIDAK ADA** (dihapus, 404 di production) - kalau dokumen lain masih menyebutnya sebagai pengecualian security header, itu usang |
 | `Pengaturan.php` | Dashboard `/akun` - profil user & hapus akun, plus section per role (`pengembang`: data SRP2 §14; `mahasiswa`: status KKN/Magang; semua role: riwayat antrean + aduan) - lihat §16 |
 | `Admin.php`, `Admin_Content.php`, `Admin_Dashboard.php`, `Admin_Settings.php`, `Admin_Users.php`, `Admin_Srp2.php`, `Admin_Kemitraan.php` | Panel superadmin (extends `Admin_Controller`) - lihat §16. ⚠️ `Admin_Settings` masih **mockup penuh**, lihat §18 |
-| `Admin_Aduan.php` | Superadmin **read-only** lintas bidang untuk `aduan` (sengaja tanpa endpoint tulis; kelola tetap di `Admin_Bidang`). Menopang menu sidebar "Semua Aduan" (`aduan_semua` di registry) - sempat tidak tercatat di dokumen ini sampai 26 Jul 2026 |
+| `Admin_Aduan.php` | Meja triase superadmin lintas bidang untuk `aduan`. Satu-satunya endpoint tulis adalah `triase()` (sejak 3 Agt 2026): merute ulang kolom `bidang` untuk aduan berstatus Baru, tercatat di jejak audit. Status dan `catatan_admin` tetap dikelola di `Admin_Bidang`. Menopang menu sidebar "Semua Aduan" (`aduan_semua` di registry) - sempat tidak tercatat di dokumen ini sampai 26 Jul 2026 |
 | `Admin_Kabkota.php`, `Admin_Bidang.php` | Panel admin ter-scope (extends `Admin_Kabkota_Controller`/`Admin_Bidang_Controller`) - lihat §16 |
 | `Migrate.php` | Runner migrasi (`php index.php migrate` → `latest()`), di-gate CLI/localhost saja |
 | `KemitraanPortal.php` | Info + pendaftaran KKN/Magang (`daftar($jenis)`/`simpan()`, login-gated role `mahasiswa`) |
