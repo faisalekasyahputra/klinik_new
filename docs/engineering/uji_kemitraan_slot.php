@@ -310,6 +310,7 @@ $nama_bidang = baris("SELECT nama FROM bidang WHERE kode = ?", [BIDANG_UJI])['na
 $papan = http('KemitraanPortal/magang')['body'];
 cek(strpos($papan, $nama_bidang) !== FALSE, 'Bidang muncul di papan slot publik');
 
+$audit_awal = (int) baris("SELECT COALESCE(MAX(id), 0) n FROM sys_jejak_audit")['n'];
 // Bidang yang berhenti menerima hilang dari papan - daftarnya struktur
 // organisasi, jadi yang bisa dimatikan cuma penerimaan magangnya.
 http('Admin_Kemitraan/ubah_status_bidang/' . rawurlencode(BIDANG_UJI), [
@@ -325,6 +326,8 @@ http('Admin_Kemitraan/ubah_status_bidang/' . rawurlencode(BIDANG_UJI), [
 ]);
 $bidang = baris("SELECT * FROM kkn_magang_bidang WHERE bidang_kode = ?", [BIDANG_UJI]);
 wajib((int) $bidang['aktif'] === 1, 'Bidang menerima lagi');
+cek(baris("SELECT COUNT(*) n FROM sys_jejak_audit WHERE aksi = 'magang_bidang_status' AND objek_id = ? AND id > ?", [BIDANG_UJI, $audit_awal])['n'] >= 2,
+    'Buka-tutup penerimaan bidang tercatat di jejak audit');
 
 echo "\n== Penegakan saat mendaftar ==\n";
 
@@ -539,6 +542,8 @@ http('Admin_Kemitraan/hapus/' . (int) $hapus_id['id'], [
 ]);
 cek(baris("SELECT id FROM kkn_magang_pendaftaran WHERE id = ?", [(int) $hapus_id['id']]) === NULL,
     'Superadmin bisa menghapus pendaftaran');
+cek(baris("SELECT id FROM sys_jejak_audit WHERE aksi = 'kemitraan_dihapus' AND objek_id = ?", [(string) (int) $hapus_id['id']]) !== NULL,
+    'Penghapusan pendaftaran tercatat di jejak audit');
 
 echo "\n== Alur surat dua tahap ==\n";
 

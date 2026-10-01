@@ -64,5 +64,19 @@ foreach ($whitelist as $w) {
 $cek((bool) preg_match('/in_array\(\$aksi,\s*\$data\[.aksi_tersedia.\],\s*TRUE\)/', $controller),
     'Filter ?aksi= dicocokkan ke daftar yang ada di tabel');
 
+echo "\n== Aksi tulis admin meninggalkan jejak audit ==\n";
+// Badan method dipotong sampai deklarasi method berikutnya; cukup untuk berkas controller CI3.
+$wajib_audit = [
+    'Admin_Srp2'      => ['proses', 'save', 'delete'],
+    'Admin_Kemitraan' => ['simpan_slot_bidang', 'ubah_status_bidang', 'simpan_ubah', 'hapus'],
+];
+foreach ($wajib_audit as $kelas => $metode) {
+    $src = file_get_contents(APP_ROOT . '/application/controllers/' . $kelas . '.php');
+    foreach ($metode as $fn) {
+        $ada = preg_match('/function\s+' . $fn . '\s*\((.*?)(?=\n\s*(?:public|protected|private)\s+function\s|\z)/s', $src, $bm);
+        $cek($ada && strpos($bm[1], 'catat_audit(') !== FALSE, "{$kelas}::{$fn}() memanggil catat_audit()");
+    }
+}
+
 echo "\nRINGKASAN: {$total} pemeriksaan, {$gagal} gagal\n";
 exit($gagal > 0 ? 1 : 0);

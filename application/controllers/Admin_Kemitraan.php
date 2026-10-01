@@ -127,6 +127,13 @@ class Admin_Kemitraan extends Admin_Controller {
         // Formulir mengirim keadaan LENGKAP dua belas bulan; bulan yang kotak
         // bukanya tidak tercentang tidak terkirim, dan itu memang berarti tutup.
         $berhasil = $this->slot->tulis_ulang_bidang($bidang->kode, $tahun, (array) $this->input->post('bulan'));
+        if ($berhasil) {
+            $this->catat_audit('magang_slot_diubah', 'Slot magang ' . $bidang->nama . ' tahun ' . $tahun . ' diperbarui',
+                'kkn_magang_bidang', (string) $bidang->kode, [
+                    'tahun' => $tahun, 'kuota' => is_numeric($kuota) ? (int) $kuota : NULL,
+                    'bulan' => array_values(array_map('intval', (array) $this->input->post('bulan'))),
+                ]);
+        }
 
         $this->session->set_flashdata(
             $berhasil ? 'success' : 'error',
@@ -144,6 +151,8 @@ class Admin_Kemitraan extends Admin_Controller {
 
         $tahun = $this->tahun_sah($this->input->post('tahun')) ?: (int) date('Y');
         $this->slot->set_aktif($bidang->kode, ! (int) $bidang->aktif);
+        $this->catat_audit('magang_bidang_status', 'Bidang ' . $bidang->nama . ((int) $bidang->aktif ? ' berhenti' : ' mulai') . ' menerima magang',
+            'kkn_magang_bidang', (string) $bidang->kode, ['aktif_lama' => (int) $bidang->aktif, 'aktif_baru' => (int) ! (int) $bidang->aktif]);
 
         $this->session->set_flashdata('success', html_escape($bidang->nama) . ' kini '
             . ((int) $bidang->aktif ? 'tidak menerima' : 'menerima') . ' pendaftaran magang.');
@@ -469,7 +478,7 @@ class Admin_Kemitraan extends Admin_Controller {
             $divisi_atau_tema = $bidang->nama;
         }
 
-        $this->db->where('id', (int) $id)->update('kkn_magang_pendaftaran', [
+        $this->db->where('id', (int) $id)->update('kkn_magang_pendaftaran', $baru = [
             'nim'              => $this->input->post('nim', TRUE) ?: NULL,
             'tempat_lahir'     => $this->input->post('tempat_lahir', TRUE) ?: NULL,
             'tanggal_lahir'    => $this->input->post('tanggal_lahir', TRUE) ?: NULL,
@@ -484,6 +493,10 @@ class Admin_Kemitraan extends Admin_Controller {
             'periode_selesai'  => $selesai ?: NULL,
         ]);
 
+        // Hanya NAMA kolom yang berubah; nilainya data pribadi mahasiswa.
+        $this->catat_audit('kemitraan_diubah', 'Data pendaftaran ' . strtoupper($row->jenis) . ' ' . $row->instansi_asal . ' diubah admin',
+            'kkn_magang_pendaftaran', (string) $row->id,
+            ['kolom' => array_keys(array_filter($baru, function ($v, $k) use ($row) { return (string) $v !== (string) $row->$k; }, ARRAY_FILTER_USE_BOTH))]);
         $this->session->set_flashdata('success', 'Data pendaftaran diperbarui.');
         redirect('Admin_Kemitraan');
     }
@@ -521,6 +534,8 @@ class Admin_Kemitraan extends Admin_Controller {
         }
 
         $this->db->delete('kkn_magang_pendaftaran', ['id' => (int) $row->id]);
+        $this->catat_audit('kemitraan_dihapus', 'Pendaftaran ' . strtoupper($row->jenis) . ' ' . $row->instansi_asal . ' dihapus beserta berkasnya',
+            'kkn_magang_pendaftaran', (string) $row->id, ['jenis' => $row->jenis, 'status' => $row->status]);
 
         $this->session->set_flashdata('success', 'Pendaftaran dihapus beserta berkasnya.');
         redirect('Admin_Kemitraan');
