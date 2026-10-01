@@ -958,8 +958,8 @@ cek(strpos($cap, "implode(' / '") === FALSE,
    sel Mahasiswa dan Aksi boleh membungkus: 1118 = 1118. Ini BUKAN pengukuran; yang
    dijaga hanya kelas pembungkusnya. Kalau merah, ukur lagi sebelum memutuskan. */
 $kmt = (string) @file_get_contents(APP_ROOT . '/application/views/admin/kemitraan/index.php');
-cek(strpos($kmt, '<td class="px-4 py-4 max-w-[14rem] whitespace-normal break-words">') !== FALSE
-    && strpos($kmt, '<td class="px-4 py-4 text-right whitespace-normal">') !== FALSE,
+cek(strpos($kmt, '<td class="px-4 py-3 max-w-[14rem] whitespace-normal break-words">') !== FALSE
+    && strpos($kmt, '<td class="px-4 py-3 text-right whitespace-normal">') !== FALSE,
     'Kemitraan: sel Mahasiswa dan Aksi boleh membungkus supaya Aksi tidak terdorong keluar wadah');
 
 /* KOLOM AKSI MENEMPEL (audit UI 2 Okt 2026, kelompok 2). Di 375 dan 768 tombol
@@ -1257,17 +1257,8 @@ function tombol_liar_admin($isi) {
 }
 // Utang migrasi per 2 Okt 2026 (84 tombol di 27 berkas). Turunkan angkanya setiap kali
 // sebuah layar dimigrasi; hapus barisnya bila sudah nol.
-$utang_tombol = [
-    'admin/aduan/detail.php' => 1, 'admin/aduan/index.php' => 6, 'admin/antrean/dashboard.php' => 6,
-    'admin/content/index.php' => 3, 'admin/dashboard.php' => 1, 'admin/katalog/index.php' => 3,
-    'admin/kemitraan/peserta.php' => 1, 'admin/kemitraan/slot.php' => 2, 'admin/kemitraan/slot_bidang.php' => 2,
-    'admin/kemitraan/ubah.php' => 3, 'admin/kemitraan/universitas.php' => 3, 'admin/kemitraan_bidang/index.php' => 1,
-    'admin/konsultasi/index.php' => 5, 'admin/psu/index.php' => 1, 'admin/rekam/kawasan_input.php' => 4,
-    'admin/rekam/kawasan_rekap.php' => 4, 'admin/rekam/pantau.php' => 5, 'admin/rekam/perumahan_capaian.php' => 4,
-    'admin/rekam/perumahan_wizard.php' => 14, 'admin/rekam/riwayat.php' => 1, 'admin/rekam/tinjauan_daftar.php' => 1,
-    'admin/rekam/tinjauan_detail.php' => 1, 'admin/srp2/pending.php' => 2, 'admin/struktur/index.php' => 4,
-    'admin/users/index.php' => 4, 'admin/users/privileges.php' => 1, 'admin_bidang/dashboard.php' => 1,
-];
+// Utang tombol lunas 2 Okt 2026 (migrasi paralel empat layar). Tombol baru di luar set langsung merah.
+$utang_tombol = [];
 $tombol_naik = [];
 $sisa_utang = 0;
 foreach (array_merge(glob(APP_ROOT . '/application/views/admin/*.php'), glob(APP_ROOT . '/application/views/admin/*/*.php'), glob(APP_ROOT . '/application/views/admin_bidang/*.php')) as $berkas) {

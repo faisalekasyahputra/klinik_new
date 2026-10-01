@@ -317,7 +317,8 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV'][$tw_kini];
 cek(preg_match('/tahun=' . date('Y') . '&amp;triwulan=' . $tw_kini . '/', $polos['body']) === 1
     || strpos($polos['body'], 'tahun=' . date('Y')) !== FALSE,
     'Tanpa parameter, papan memakai tahun berjalan (' . date('Y') . ')');
-cek(preg_match('/bg-brand-primary\/20[^>]*>' . preg_quote($nama_tw, '/') . '</', $polos['body']) === 1,
+// Filter aktif kini chip bersama (fondasi 09653d8): penanda aktifnya aria-current.
+cek(preg_match('/class="chip-filter" aria-current="true"[^>]*>\s*' . preg_quote($nama_tw, '/') . '\s*</', $polos['body']) === 1,
     "Triwulan bawaan = triwulan BERJALAN ({$nama_tw}), bukan TW I");
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";

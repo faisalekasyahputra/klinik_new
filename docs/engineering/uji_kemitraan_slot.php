@@ -629,7 +629,7 @@ cek(strpos($r['body'], $nama_bidang) !== FALSE, 'Bidang uji tampil di daftar adm
 // kehilangan jalan menyeberang.
 foreach (['Admin_Kemitraan', 'Admin_Kemitraan/slot'] as $jalur) {
     $b = http($jalur)['body'];
-    cek(strpos($b, 'Slot &amp; Bidang') !== FALSE && strpos($b, 'KKN &amp; Magang') !== FALSE,
+    cek(strpos($b, 'Slot &amp; bidang') !== FALSE && strpos($b, 'KKN &amp; Magang') !== FALSE,
         "Tab pengelolaan tampil di /$jalur");
 }
 
