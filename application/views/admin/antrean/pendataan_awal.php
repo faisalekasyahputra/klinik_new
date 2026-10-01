@@ -27,7 +27,7 @@ $langkah = [
         daftar ini untuk tindak lanjut petugas. Pengajuan yang sudah dikirim ada di Antrean Wilayah Saya.
     </p>
     <?php if ($identitas_menunggu): ?>
-    <p class="mt-2 text-xs text-amber-700 dark:text-amber-400">Identitas warga disamarkan sampai dinas memutuskan kebijakan tampilan data pribadi (butir B2).</p>
+    <p class="mt-2 text-xs text-amber-700 dark:text-amber-400">Identitas warga disamarkan sampai dinas memutuskan kebijakan tampilan data pribadi.</p>
     <?php endif; ?>
 </div>
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) ($table['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">

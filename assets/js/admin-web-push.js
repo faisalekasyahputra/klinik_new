@@ -63,7 +63,8 @@
             registration = results[0];
             var config = results[1];
             if (!config.enabled || !config.publicKey) {
-                setState('disabled', 'Web Push belum dikonfigurasi');
+                // Fitur belum dinyalakan di server: tombol mati tidak berguna bagi pengguna.
+                button.style.display = 'none';
                 return;
             }
             button.dataset.publicKey = config.publicKey;
@@ -82,7 +83,7 @@
             }
         }).catch(function (error) {
             console.error(error);
-            setState('disabled', 'Web Push belum tersedia');
+            button.style.display = 'none';
         });
     }
 

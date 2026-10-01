@@ -137,7 +137,7 @@ $filter_html = ob_get_clean();
                     <h3 class="text-sm font-black text-gray-900 dark:text-white" x-text="mode === 'tawarkan' ? 'Tawarkan Jadwal' : 'Tolak Pengajuan'"></h3>
                     <p class="text-xs text-gray-500 dark:text-brand-muted mt-0.5" x-text="judul"></p>
                 </div>
-                <button type="button" @click="buka = false" class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><i class="ph ph-x text-lg"></i></button>
+                <button type="button" @click="buka = false" aria-label="Tutup" class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><i class="ph ph-x text-lg"></i></button>
             </div>
 
             <form method="POST" :action="'<?= base_url('Admin_Konsultasi/') ?>' + mode + '/' + id" class="mt-4 space-y-3 text-xs">

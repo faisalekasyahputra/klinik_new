@@ -53,7 +53,7 @@ $csrf_hash = $this->security->get_csrf_hash();
             <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                     <tr>
-                        <th class="px-4 py-4">Nama di antrean &amp; /akun</th>
+                        <th class="px-4 py-4">Nama di antrean &amp; akun warga</th>
                         <th class="px-4 py-4">Nama di hasil diagnosa</th>
                         <th class="px-4 py-4 whitespace-normal">Kode <span class="block font-normal normal-case">(tidak bisa diubah)</span></th>
                         <th class="px-4 py-4">Kategori</th>

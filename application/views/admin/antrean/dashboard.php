@@ -231,7 +231,7 @@ $filter_html = ob_get_clean();
         <div x-show="open" x-transition class="relative w-full max-w-lg bg-white dark:bg-brand-card border border-gray-200 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="px-4 py-3 border-b border-gray-200 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5">
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-clipboard-text text-brand-primary"></i> Proses Pengajuan</h3>
-                <button @click="close()" class="text-gray-400 dark:text-brand-muted hover:text-gray-700 dark:hover:text-white transition-colors"><i class="ph ph-x text-lg"></i></button>
+                <button type="button" @click="close()" aria-label="Tutup" class="text-gray-400 dark:text-brand-muted hover:text-gray-700 dark:hover:text-white transition-colors"><i class="ph ph-x text-lg"></i></button>
             </div>
             <div class="p-6 overflow-y-auto custom-scrollbar">
                 <form action="<?= base_url($action_url) ?>" method="POST" id="formProsesAntrean">

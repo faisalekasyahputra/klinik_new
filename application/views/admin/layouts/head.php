@@ -131,6 +131,18 @@
         .dark .aksi-tetap > table > * > tr > :last-child:not([colspan]) { background-color: #0f2933; box-shadow: inset 1px 0 0 rgba(255, 255, 255, .06); }
         .dark .aksi-tetap > table > thead.bg-gray-50 > tr > :last-child { background-color: #0c2129; }
         .dark .aksi-tetap > table > tbody > tr[class*="hover:bg-gray-50"]:hover > :last-child { background-color: #1b3440; }
+        /* Target sentuh di ponsel (audit UI 2 Okt 2026: chip filter 25px, tombol Cari dan Proses
+           28px, tutup modal 18x28, radio 13px). Kontrol utama minimal 40px. Tautan bergaya pil
+           (rounded + py-*) ikut; yang masih inline dijadikan inline-flex supaya min-height berlaku.
+           Tautan teks biasa dan kartu (tanpa py-*) tidak tersentuh. Tidak dibatasi ke <main>
+           karena modal di sel Aksi dipindah ke <body> lewat x-teleport. */
+        @media (max-width: 767px) {
+            :is(button, select, input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="file"])) { min-height: 40px; }
+            button { min-width: 40px; }
+            a[class*="rounded"][class*="py-"] { min-height: 40px; }
+            a[class*="rounded"][class*="py-"]:not([class*="flex"], [class*="block"], [class*="grid"], .hidden) { display: inline-flex; align-items: center; }
+            input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; }
+        }
         /*
          * Main Content Entry Animation.
          *

@@ -396,7 +396,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
                sesuatu yang lalu ditolak tanpa sebab yang terbaca. */ ?>
       <h2 class="text-lg font-black text-gray-900 dark:text-white">Unggah BNBA <span class="text-sm font-normal text-red-600 dark:text-red-400">(wajib)</span></h2>
       <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
-        Daftar penerima <i>by name by address</i>. <b class="text-gray-900 dark:text-white">Wajib dilampirkan
+        Daftar penerima per nama dan alamat. <b class="text-gray-900 dark:text-white">Wajib dilampirkan
         sejak 5 Agustus 2026</b> - laporan tidak bisa dikirim tanpa berkas ini.
         Laporan yang sudah terkirim sebelum tanggal itu tetap sah.
       </p>
@@ -413,7 +413,9 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
         <form method="post" action="<?= base_url('Rekam_Perumahan/unggah_bnba') ?>" enctype="multipart/form-data" class="mt-4 space-y-3">
           <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
           <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
-          <input type="file" name="bnba" accept=".pdf,.jpg,.jpeg,.png" class="<?= $isian ?>">
+          <input type="file" name="bnba" accept=".pdf,.jpg,.jpeg,.png" aria-describedby="bnba-format" class="<?= $isian ?>">
+          <?php // Sama dengan yang ditegakkan MY_Controller::store_private_upload() (jenis dan batas bawaan 5 MB). ?>
+          <p id="bnba-format" class="text-xs text-gray-500 dark:text-brand-muted">Format PDF, JPG, atau PNG, paling besar 5 MB. Daftar dari Excel disimpan sebagai PDF lebih dulu.</p>
           <button class="<?= $tombol_lembut ?>"><?= $bnba ? 'Ganti berkas' : 'Unggah' ?></button>
         </form>
       <?php endif; ?>
@@ -438,17 +440,47 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
             // digandakan di sini: dua salinan pesan yang sama pada satu layar
             // membuat pembacanya mengira ada dua catatan berbeda. ?>
 
+      <?php // Ringkasan angka per program (jumlah semua sumber dana) dan status BNBA,
+            // supaya yang akan terkunci sesudah Kirim terbaca dulu di satu layar. ?>
       <ul class="mt-4 divide-y divide-gray-100 dark:divide-white/5">
         <?php foreach ($program_dipilih as $kode): ?>
-          <?php $n = count($baris[$kode] ?? []); ?>
-          <li class="flex items-center justify-between py-2.5 text-sm">
-            <span class="font-bold text-gray-900 dark:text-white"><?= $e($program_label[$kode] ?? $kode) ?></span>
-            <span class="<?= $n ? 'text-gray-500 dark:text-brand-muted' : 'font-bold text-red-600 dark:text-red-400' ?>">
-              <?= $n ? $n . ' sumber dana' : 'belum ada sumber dana' ?>
-            </span>
+          <?php
+          $daftar_prog = $baris[$kode] ?? [];
+          $n = count($daftar_prog);
+          $jumlah = static fn($kolom) => array_sum(array_column($daftar_prog, $kolom));
+          ?>
+          <li class="py-3 text-sm">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="font-bold text-gray-900 dark:text-white"><?= $e($program_label[$kode] ?? $kode) ?></span>
+              <span class="<?= $n ? 'text-gray-500 dark:text-brand-muted' : 'font-bold text-red-600 dark:text-red-400' ?>">
+                <?= $n ? $n . ' sumber dana' : 'belum ada sumber dana' ?>
+              </span>
+            </div>
+            <?php if ($n): ?>
+              <dl class="mt-1 grid grid-cols-2 gap-x-6 text-xs">
+                <dt class="text-gray-500 dark:text-brand-muted">Rencana</dt>
+                <dt class="text-gray-500 dark:text-brand-muted">Realisasi</dt>
+                <dd class="text-gray-900 dark:text-white"><?= $rp($jumlah('rencana_unit')) ?> unit, Rp <?= $rp($jumlah('rencana_anggaran')) ?></dd>
+                <dd class="text-gray-900 dark:text-white"><?= $rp($jumlah('realisasi_unit')) ?> unit, Rp <?= $rp($jumlah('realisasi_anggaran')) ?></dd>
+              </dl>
+            <?php endif; ?>
           </li>
         <?php endforeach; ?>
+        <li class="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+          <span class="font-bold text-gray-900 dark:text-white">Lampiran BNBA</span>
+          <?php if ($bnba): ?>
+            <span class="text-emerald-700 dark:text-emerald-300">Terlampir: <?= $e($bnba['nama_asli']) ?></span>
+          <?php else: ?>
+            <span class="font-bold text-red-600 dark:text-red-400">Belum dilampirkan</span>
+          <?php endif; ?>
+        </li>
       </ul>
+
+      <?php if ( ! $bnba && ! $terkunci): ?>
+        <p class="mt-4 rounded-xl border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-500/10 dark:text-red-200">
+          Laporan tidak bisa dikirim tanpa BNBA. Kembali ke langkah BNBA untuk mengunggah berkasnya.
+        </p>
+      <?php endif; ?>
 
       <?php if ($program_kosong): ?>
         <p class="mt-4 rounded-xl border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-500/10 dark:text-red-200">

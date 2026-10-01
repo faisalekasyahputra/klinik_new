@@ -20,12 +20,18 @@ $padam = 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-mut
 // saat membuka layar ini. Dipakai dua kali, jadi didefinisikan sekali.
 $ditolak = fn($a) => str_ends_with((string) $a, '_ditolak');
 
+// Kode aksi (`aduan_ditriase`) dibaca admin dinas, bukan pengembang: garis bawah jadi
+// spasi dan singkatan jadi huruf besar. Kodenya tetap di atribut title dan tetap bisa dicari.
+// ponytail: aturan umum, bukan kamus per kode, supaya kode baru tetap terbaca tanpa diedit di sini.
+$label_aksi = fn($a) => ucfirst(preg_replace_callback('/\b(srp2|nik|npwp|psu|rtlh|kkn|sk)\b/',
+    fn($m) => strtoupper($m[1]), str_replace('_', ' ', (string) $a)));
+
 ob_start(); ?>
 <span class="mr-1 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted">Aksi:</span>
 <a href="<?= admin_table_url($base_url, ['aksi' => NULL]) ?>" class="<?= $pil ?> <?= empty($f_aksi) ? $nyala : $padam ?>">Semua</a>
 <?php foreach ($aksi_tersedia as $a): ?>
     <a href="<?= admin_table_url($base_url, ['aksi' => $a]) ?>"
-       class="<?= $pil ?> <?= $f_aksi === $a ? $nyala : ($ditolak($a) ? 'border-red-200 text-red-600 hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10' : $padam) ?>"><?= html_escape($a) ?></a>
+       class="<?= $pil ?> <?= $f_aksi === $a ? $nyala : ($ditolak($a) ? 'border-red-200 text-red-600 hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10' : $padam) ?>" title="<?= html_escape($a) ?>"><?= html_escape($label_aksi($a)) ?></a>
 <?php endforeach;
 $filter_html = ob_get_clean();
 ?>
@@ -92,7 +98,7 @@ $filter_html = ob_get_clean();
                     <td class="px-4 py-4">
                         <span class="inline-flex px-2.5 py-1 rounded-lg text-xs font-bold <?= $ditolak($j->aksi)
                             ? 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400'
-                            : 'bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary' ?>"><?= html_escape($j->aksi) ?></span>
+                            : 'bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary' ?>" title="<?= html_escape($j->aksi) ?>"><?= html_escape($label_aksi($j->aksi)) ?></span>
                     </td>
                     <?php // Kolom teks terpanjang (ringkasan sampai 255 karakter). Tabel ini
                           // memakai `whitespace-nowrap`; tanpa max-w + whitespace-normal satu

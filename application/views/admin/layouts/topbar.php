@@ -24,7 +24,7 @@
         <?php endif; ?>
 
         <!-- Theme Toggle -->
-        <button @click="darkMode = !darkMode" class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-brand-primary transition-all relative overflow-hidden group">
+        <button type="button" @click="darkMode = !darkMode" :aria-pressed="darkMode.toString()" aria-label="Mode gelap" title="Mode gelap" class="w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-brand-primary transition-all relative overflow-hidden group">
             <div class="absolute inset-0 bg-brand-primary/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300 rounded-xl"></div>
             <i class="ph ph-sun text-xl relative z-10" x-show="!darkMode"></i>
             <i class="ph ph-moon text-xl relative z-10" x-show="darkMode" style="display: none;"></i>

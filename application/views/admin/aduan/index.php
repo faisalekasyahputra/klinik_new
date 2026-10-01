@@ -8,7 +8,7 @@ $nama_bidang = array_column($daftar_bidang, 'nama', 'kode');
 ?>
 <div class="mb-6">
     <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Semua Aduan</h2>
-    <p class="text-sm text-gray-500 dark:text-brand-muted">Pantauan lintas bidang, dan tempat aduan baru dirutekan ke bidang penanganan. Keputusan status dan jawabannya tetap di tangan admin bidang masing-masing.</p>
+    <p class="text-sm text-gray-500 dark:text-brand-muted">Pantauan lintas bidang, dan tempat aduan baru diteruskan ke bidang penanganan. Keputusan status dan jawabannya tetap di tangan admin bidang masing-masing.</p>
 </div>
 
 <?php if (!empty($jml_triase)): ?>
@@ -126,7 +126,7 @@ $filter_html = ob_get_clean();
                         <?php elseif ($r->bidang): ?>
                         <span class="font-bold"><?= html_escape($nama_bidang[$r->bidang] ?? $r->bidang) ?></span>
                         <?php else: ?>
-                        <span class="text-gray-400 dark:text-brand-muted/60 italic">Tidak dirutekan</span>
+                        <span class="text-gray-400 dark:text-brand-muted/60 italic">Belum diteruskan</span>
                         <?php endif; ?>
                     </td>
                     <td class="px-4 py-4"><?= $this->load->view('admin/components/status_badge', ['label' => $r->status, 'kelas' => $badge_kelas[$r->status] ?? 'pending'], TRUE) ?></td>

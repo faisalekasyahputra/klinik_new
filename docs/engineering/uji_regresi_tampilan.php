@@ -879,6 +879,69 @@ cek(strpos($nav_adm, 'x-show="buka && sidebarOpen">') !== FALSE && ! preg_match(
     && strpos($nav_adm, '@click="buka = !buka"') !== FALSE,
     'Sub-menu: caret membuka cabang lain seketika, tanpa x-transition');
 
+/* AUDIT UI 2 OKT 2026, KELOMPOK 4 - butir kecil.
+     1. Modal "data contoh" B2 sekali per sesi peramban: "Saya mengerti" diingat di
+        sessionStorage, Esc tidak.
+     2. Istilah internal dan teks bernada pengembang tidak sampai ke layar: "butir B2",
+        path controller di halaman Privilege, kode aksi mentah di Jejak Audit.
+     3. Footer tanpa tautan mati href="#"; tombol Web Push disembunyikan bila belum
+        dikonfigurasi, bukan tampil mati.
+     4. Tombol ikon punya nama yang terbaca pembaca layar (mode gelap, tutup modal).
+     5. Target sentuh 40px di ponsel lewat satu aturan di head.php.
+     6. BNBA: format dan batas ukuran tertulis, istilah Indonesia, dan layar Review
+        menunjukkan angka per program serta status BNBA sebelum Kirim.
+     7. Catatan Admin wajib hanya untuk tolak/perbaikan, di modal maupun halaman detail. */
+echo "\n== Audit UI kelompok 4: butir kecil ==\n";
+$modal_b2 = (string) @file_get_contents(APP_ROOT . '/application/views/components/modal_keputusan_identitas.php');
+cek(strpos($modal_b2, "sessionStorage.getItem(KUNCI) === '1'") !== FALSE
+    && preg_match("/getElementById\('modal-identitas-tutup'\)\.addEventListener\('click', function \(\) \{\s*try \{ sessionStorage\.setItem\(KUNCI, '1'\)/", $modal_b2) === 1,
+    'Modal B2: diingat per sesi, hanya lewat tombol Saya mengerti');
+$teks_internal = [];
+foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(APP_ROOT . '/application/views', FilesystemIterator::SKIP_DOTS)) as $f) {
+    if (substr($f, -4) !== '.php') { continue; }
+    // Buang komentar PHP dan HTML: yang diperiksa hanya teks yang sampai ke layar.
+    $isi = preg_replace(['#/\*.*?\*/#s', '#<!--.*?-->#s', '#(?<![:"\'])//[^\n]*#'], '', (string) file_get_contents($f));
+    if (preg_match('/butir B2|by name by address/i', $isi)) { $teks_internal[] = substr($f, strlen(APP_ROOT) + 1); }
+}
+cek($teks_internal === [], 'Tidak ada "butir B2" atau "by name by address" di teks layar: ' . implode(', ', $teks_internal));
+$priv = (string) @file_get_contents(APP_ROOT . '/application/views/admin/users/privileges.php');
+cek(strpos($priv, "\$module['url']") === FALSE && strpos($priv, 'Bagian dari') !== FALSE,
+    'Privilege: path controller tidak ditampilkan, menu anak menyebut induknya');
+$audit_v = (string) @file_get_contents(APP_ROOT . '/application/views/admin/audit/index.php');
+cek(substr_count($audit_v, 'html_escape($label_aksi(') === 2 && strpos($audit_v, '><?= html_escape($a) ?></a>') === FALSE,
+    'Jejak Audit: kode aksi tampil sebagai label (pil filter dan baris)');
+$footer_adm = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/footer.php');
+cek(strpos($footer_adm, 'href="#"') === FALSE, 'Footer admin tanpa tautan mati href="#"');
+$push_js = (string) @file_get_contents(APP_ROOT . '/assets/js/admin-web-push.js');
+cek(strpos($push_js, 'Web Push belum') === FALSE && substr_count($push_js, "button.style.display = 'none'") === 2,
+    'Web Push belum dikonfigurasi atau gagal: tombol disembunyikan, bukan tampil mati');
+$topbar_adm = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/topbar.php');
+cek(preg_match('/<button type="button" @click="darkMode = !darkMode"[^>]*aria-label="Mode gelap"/', $topbar_adm) === 1,
+    'Topbar: tombol mode gelap punya aria-label');
+$ikon_tanpa_nama = [];
+foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(APP_ROOT . '/application/views/admin', FilesystemIterator::SKIP_DOTS)) as $f) {
+    if (substr($f, -4) !== '.php') { continue; }
+    preg_match_all('#<button\b([^>]*)>(.*?)</button>#s', (string) file_get_contents($f), $mm, PREG_SET_ORDER);
+    foreach ($mm as $m) {
+        $teks = trim(strip_tags(preg_replace('#<\?(php|=).*?\?>#s', 'X', $m[2])));
+        if ($teks === '' && ! preg_match('/aria-label|title=|x-text/', $m[1] . $m[2])) { $ikon_tanpa_nama[] = substr($f, strlen(APP_ROOT) + 1); }
+    }
+}
+cek($ikon_tanpa_nama === [], 'Tombol ikon di layar admin punya aria-label/title: ' . implode(', ', array_unique($ikon_tanpa_nama)));
+cek(preg_match('/@media \(max-width: 767px\) \{\s*:is\(button, select, input[^)]*\)\)? \{ min-height: 40px; \}/', $head_admin) === 1
+    && strpos($head_admin, 'input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; }') !== FALSE,
+    'head.php: target sentuh 40px untuk kontrol di ponsel');
+$wizard = (string) @file_get_contents(APP_ROOT . '/application/views/admin/rekam/perumahan_wizard.php');
+cek(strpos($wizard, 'Format PDF, JPG, atau PNG, paling besar 5 MB') !== FALSE && strpos($wizard, 'Daftar penerima per nama dan alamat') !== FALSE,
+    'Langkah BNBA menyebut format dan batas 5 MB dengan istilah Indonesia');
+cek(strpos($wizard, 'Lampiran BNBA') !== FALSE && strpos($wizard, "\$jumlah('realisasi_anggaran')") !== FALSE,
+    'Review & Kirim: angka rencana/realisasi per program dan status BNBA');
+$antrean_v = (string) @file_get_contents(APP_ROOT . '/application/views/admin/antrean/dashboard.php');
+$antrean_d = (string) @file_get_contents(APP_ROOT . '/application/views/admin/antrean/detail.php');
+cek(strpos($antrean_v, ":required=\"data.status === 'rejected' || data.status === 'needs_revision'\"") !== FALSE
+    && strpos($antrean_d, "this.form.catatan_admin.required = event.target.value !== 'approved'") !== FALSE,
+    'Catatan Admin wajib hanya untuk tolak/perbaikan, di modal Tinjau dan halaman detail');
+
 /* BUTIR 4 PUTARAN 2 - desain prototipe beserta RAB di halaman Panduan Desain.
 
    Yang dijaga bukan "halamannya terbuka", melainkan tiga hal yang bisa rusak

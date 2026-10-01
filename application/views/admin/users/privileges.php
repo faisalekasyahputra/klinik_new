@@ -1,6 +1,9 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 $e = static fn($value) => html_escape((string) $value);
+// Label menu induk, supaya dua "Rekap" (Perumahan dan Kawasan) bisa dibedakan tanpa menampilkan path controller.
+$label_modul = [];
+foreach ($module_groups as $modules) { foreach ($modules as $key => $module) { $label_modul[$key] = $module['label']; } }
 ?>
 <div class="space-y-6">
     <div class="flex flex-wrap items-start justify-between gap-3">
@@ -28,7 +31,7 @@ $e = static fn($value) => html_escape((string) $value);
                         <?php foreach ($modules as $key => $module): ?>
                         <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-gray-200 p-3 hover:border-brand-primary dark:border-white/10">
                             <input type="checkbox" name="modules[]" value="<?= $e($key) ?>" <?= !empty($selected[$key]) ? 'checked' : '' ?> class="mt-1 h-4 w-4 rounded border-gray-300 text-brand-primary focus:ring-brand-primary">
-                            <span><strong class="block text-sm text-gray-900 dark:text-white"><?= $e($module['label']) ?></strong><small class="text-xs text-gray-500 dark:text-brand-muted"><?= $e($module['url']) ?></small></span>
+                            <span><strong class="block text-sm text-gray-900 dark:text-white"><?= $e($module['label']) ?></strong><?php if (!empty($module['parent']) && isset($label_modul[$module['parent']])): ?><small class="text-xs text-gray-500 dark:text-brand-muted">Bagian dari <?= $e($label_modul[$module['parent']]) ?></small><?php endif; ?></span>
                         </label>
                         <?php endforeach; ?>
                     </div>
