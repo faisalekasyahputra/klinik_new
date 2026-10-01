@@ -38,7 +38,8 @@ $pinjam = function ($key) use ($db, &$rate_asli) {
     $rate_asli[$key] = $st->get_result()->fetch_assoc();
     $st = $db->prepare('DELETE FROM sys_rate_limits WHERE limit_key=?'); $st->bind_param('s', $key); $st->execute();
 };
-$angka = function ($html, $pola) { return preg_match($pola, $html, $m) ? (int) str_replace(',', '', $m[1]) : -1; };
+// Pemisah ribuan titik (angka_id, audit UI 2 Okt 2026); dulu koma dari number_format() polos.
+$angka = function ($html, $pola) { return preg_match($pola, $html, $m) ? (int) str_replace('.', '', $m[1]) : -1; };
 
 $NIK = '3399991508850001'; $NIK_ANON = '3399995506900002';
 $hash = $enc->deterministic_hash($NIK); $hash_anon = $enc->deterministic_hash($NIK_ANON);
@@ -129,13 +130,13 @@ try {
     [$k, $b] = $http($login($eAdm), 'Admin_Dashboard');
     $wt = (int) $satu("SELECT COUNT(*) n FROM usr_users WHERE role='warga' AND nik_lookup_hash IS NOT NULL")['n'];
     $tc = (int) $satu("SELECT COUNT(*) n FROM sf_data_simperum WHERE response_status='found'")['n'];
-    $cek($angka($b, '#Warga terdaftar</dt>\s*<dd[^>]*>([\d,]+)<#') === $wt && $wt >= 1, "Super admin: kartu Warga terdaftar = $wt");
-    $cek($angka($b, '#Tercocokkan SIMPERUM</dt>\s*<dd[^>]*>([\d,]+)<#') === $tc && $tc >= 1, "Super admin: kartu Tercocokkan SIMPERUM = $tc");
+    $cek($angka($b, '#Warga terdaftar</dt>\s*<dd[^>]*>([\d.]+)<#') === $wt && $wt >= 1, "Super admin: kartu Warga terdaftar = $wt");
+    $cek($angka($b, '#Tercocokkan SIMPERUM</dt>\s*<dd[^>]*>([\d.]+)<#') === $tc && $tc >= 1, "Super admin: kartu Tercocokkan SIMPERUM = $tc");
     foreach ([3374, 3301] as $kab) {
         [, $eK] = $akun('admin_kabkota', $kab);
         [$k, $b] = $http($login($eK), 'Admin_Kabkota');
         $n = (int) $satu("SELECT COUNT(*) n FROM sf_data_simperum WHERE response_status='found' AND kabupaten_id=$kab")['n'];
-        $cek($angka($b, '#data-tercocokkan-simperum>([\d,]+)<#') === $n && ($kab !== 3374 || $n >= 1), "Admin kab/kota $kab: hanya menghitung wilayahnya ($n)");
+        $cek($angka($b, '#data-tercocokkan-simperum>([\d.]+)<#') === $n && ($kab !== 3374 || $n >= 1), "Admin kab/kota $kab: hanya menghitung wilayahnya ($n)");
     }
 
     echo "F. Ekspor data akun memuat cermin\n";

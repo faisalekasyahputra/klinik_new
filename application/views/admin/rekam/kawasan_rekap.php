@@ -82,7 +82,7 @@ $this->load->view('admin/layouts/cetak_rekap');
         Bukan berarti capaiannya nol - laporannya memang belum dikirim.
       </p>
       <a href="<?= base_url('Rekam_Kawasan?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>"
-         class="mt-4 inline-block rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover">
+         class="tombol-utama mt-4">
         Buka Input Capaian periode ini
       </a>
     </section>

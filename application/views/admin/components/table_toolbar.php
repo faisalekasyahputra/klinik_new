@@ -34,7 +34,7 @@ $this->load->helper('admin_table');
                    class="w-full bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-gray-800 dark:text-white text-xs focus:outline-none focus:border-brand-primary/50 focus:ring-1 focus:ring-brand-primary/50">
             <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-brand-muted/70 text-[10px]"></i>
         </div>
-        <button type="submit" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 dark:bg-brand-primary text-white dark:text-brand-dark hover:bg-blue-700 dark:hover:bg-brand-hover transition-colors">Cari</button>
+        <button type="submit" class="tombol-utama">Cari</button>
         <?php if (!empty($table['q'])): ?>
         <a href="<?= admin_table_url($base_url, ['q' => NULL]) ?>" class="px-3 py-1.5 rounded-lg text-xs font-bold border border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10 transition-colors" title="Hapus pencarian">Reset</a>
         <?php endif; ?>

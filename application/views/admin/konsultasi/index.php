@@ -11,10 +11,7 @@ $badge_kelas = [
 $csrf_nama = $this->security->get_csrf_token_name();
 $csrf_hash = $this->security->get_csrf_hash();
 ?>
-<div class="mb-6">
-    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Janji Temu Konsultasi</h2>
-    <p class="text-sm text-gray-500 dark:text-brand-muted">Permintaan tatap muka dari topik Konsultasi Terjadwal. Warga hanya bisa mengajukan setelah topiknya ditanggapi di forum.</p>
-</div>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Permintaan tatap muka dari topik Konsultasi Terjadwal. Warga hanya bisa mengajukan setelah topiknya ditanggapi di forum.']); ?>
 
 <?php if (!empty($jml_baru)): ?>
 <div class="mb-6 p-4 rounded-2xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-blue-800 dark:text-blue-400 text-sm flex items-start gap-3">
@@ -96,24 +93,21 @@ $filter_html = ob_get_clean();
                         ?>
                         <div class="flex items-center gap-1.5">
                             <?php if ($bisa_tawar): ?>
-                            <button type="button" @click="id = <?= (int) $r->id ?>; judul = <?= $judul_js ?>; mode = 'tawarkan'; buka = true"
-                                    class="rounded-lg bg-brand-primary/20 border border-brand-primary/50 text-brand-primary px-2 py-1 font-bold hover:bg-brand-primary/30 transition-colors">
-                                <i class="ph ph-calendar-plus"></i> Tawarkan
+                            <button type="button" @click="id = <?= (int) $r->id ?>; judul = <?= $judul_js ?>; mode = 'tawarkan'; buka = true" class="tombol-aksi">
+                                <i class="ph ph-calendar-plus"></i><span>Tawarkan</span>
                             </button>
                             <?php endif; ?>
                             <?php if ($bisa_tolak): ?>
                             <?php // Tombol ikon-saja: butuh nama yang terbaca pembaca layar, bukan cuma glyph. ?>
                             <button type="button" title="Tolak pengajuan" aria-label="Tolak pengajuan"
-                                    @click="id = <?= (int) $r->id ?>; judul = <?= $judul_js ?>; mode = 'tolak'; buka = true"
-                                    class="rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 dark:text-red-400 px-2 py-1 font-bold hover:bg-red-500/20 transition-colors">
-                                <i class="ph ph-x" aria-hidden="true"></i>
-                            </button>
+                                    @click="id = <?= (int) $r->id ?>; judul = <?= $judul_js ?>; mode = 'tolak'; buka = true" class="tombol-aksi tombol-aksi-bahaya">
+                                <i class="ph ph-x" aria-hidden="true"></i></button>
                             <?php endif; ?>
                             <?php if ($bisa_selesai): ?>
                             <form method="POST" action="<?= base_url('Admin_Konsultasi/selesai/' . $r->id) ?>" class="inline">
                                 <input type="hidden" name="<?= $csrf_nama ?>" value="<?= $csrf_hash ?>">
-                                <button type="submit" class="rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-1 font-bold hover:bg-emerald-500/20 transition-colors">
-                                    <i class="ph ph-check"></i> Selesai
+                                <button type="submit" class="tombol-aksi">
+                                    <i class="ph ph-check"></i><span>Selesai</span>
                                 </button>
                             </form>
                             <?php endif; ?>

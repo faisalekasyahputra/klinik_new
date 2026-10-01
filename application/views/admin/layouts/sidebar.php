@@ -58,26 +58,7 @@
         <?php $this->load->view('admin/layouts/sidebar_nav', ['dashboard_menu' => $dashboard_menu ?? []]); ?>
     </div>
 
-    <!-- Link to Main Website (OG Preview Style) -->
-    <div class="sidebar-kartu-beranda mt-auto px-4 mb-4" x-show="sidebarOpen" x-transition.opacity.duration.300ms>
-        <a href="<?= base_url() ?>" target="_blank" class="group block overflow-hidden rounded-xl bg-white dark:bg-[#0a1a1f] border border-gray-200 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-none transition-all duration-300 relative">
-            <!-- Penanda Beranda, bukan gambar promosi. -->
-            <div class="relative flex h-20 w-full items-center justify-center gap-2 border-b border-gray-100 bg-[color:var(--portal-bg-card)] text-[color:var(--portal-text)] dark:border-white/5 dark:bg-[#102c35]">
-                <i class="ph ph-house-line text-2xl text-[color:var(--portal-brand)]" aria-hidden="true"></i>
-                <span class="text-sm font-black">Beranda</span>
-                <div class="absolute right-2 top-2 rounded-md border border-white/20 bg-black/20 p-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                    <i class="ph ph-arrow-square-out text-xs"></i>
-                </div>
-            </div>
-            <!-- Text Area -->
-            <div class="p-3">
-                <h4 class="text-xs font-bold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-brand-primary transition-colors">Beranda</h4>
-                <p class="text-[10px] text-gray-500 dark:text-brand-muted line-clamp-2 mt-1 leading-snug">Kembali ke halaman utama Portal Klinik PKP.</p>
-                <div class="flex items-center gap-1 mt-2.5 text-[9px] font-semibold text-gray-400 dark:text-brand-muted/70">
-                    <i class="ph ph-link text-[10px]"></i>
-                    <span class="truncate"><?= str_replace(['http://', 'https://'], '', base_url()) ?></span>
-                </div>
-            </div>
-        </a>
-    </div>
+    <?php /* Kartu "Beranda" di dasar sidebar dicabut di semua ukuran (audit UI 2 Okt 2026): di
+             1440x900 ia menutupi menu Manajemen (Akses Staf, Jejak Audit), dan tautan
+             "Kembali ke beranda" di atas sudah menuju tempat yang sama. */ ?>
 </aside>

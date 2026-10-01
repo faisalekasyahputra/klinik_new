@@ -6,10 +6,7 @@ $badge_kelas = ['Baru' => 'pending', 'Diproses' => 'process', 'Selesai' => 'ok']
 $this->load->helper('admin_table');
 $nama_bidang = array_column($daftar_bidang, 'nama', 'kode');
 ?>
-<div class="mb-6">
-    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Semua Aduan</h2>
-    <p class="text-sm text-gray-500 dark:text-brand-muted">Pantauan lintas bidang, dan tempat aduan baru diteruskan ke bidang penanganan. Keputusan status dan jawabannya tetap di tangan admin bidang masing-masing.</p>
-</div>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Pantauan lintas bidang, dan tempat aduan baru diteruskan ke bidang penanganan. Keputusan status dan jawabannya tetap di tangan admin bidang masing-masing.']); ?>
 
 <?php if (!empty($jml_triase)): ?>
 <div class="mb-6 p-4 rounded-2xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-blue-800 dark:text-blue-400 text-sm flex items-start gap-3">

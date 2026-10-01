@@ -20,7 +20,7 @@ $sampai = min($pager['offset'] + $pager['per_page'], $pager['total_rows']);
 <div class="px-6 py-3 border-t border-gray-200 dark:border-white/5 bg-gray-50 dark:bg-black/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500 dark:text-brand-muted">
     <div>
         Menampilkan <span class="font-bold text-gray-900 dark:text-white"><?= $dari ?></span>-<span class="font-bold text-gray-900 dark:text-white"><?= $sampai ?></span>
-        dari <span class="font-bold text-gray-900 dark:text-white"><?= number_format($pager['total_rows']) ?></span> data
+        dari <span class="font-bold text-gray-900 dark:text-white"><?= angka_id($pager['total_rows']) ?></span> data
     </div>
     <?php if ($pager['total_pages'] > 1): ?>
     <div class="flex items-center gap-1">

@@ -30,7 +30,7 @@ class Admin_Srp2 extends Admin_Controller {
     }
 
     public function index() {
-        $data['title'] = 'Direktori Pengembang Bersertifikat';
+        $data['title'] = 'Direktori SRP2'; // = label sidebar
 
         // Pola tabel server-side B8, sama dengan pending() di berkas ini -
         // sebelumnya satu-satunya tabel admin SRP2 yang masih mengirim SELURUH
@@ -106,7 +106,7 @@ class Admin_Srp2 extends Admin_Controller {
      * docs/engineering/AUDIT_ROLE_PENGEMBANG.md Temuan #1).
      */
     public function pending() {
-        $data['title'] = 'Verifikasi SRP2';
+        $data['title'] = 'SRP2 dalam Pengajuan'; // = label sub-menu sidebar
 
         // Cari + urut + paginasi semuanya server-side (B8).
         $table = $this->table_state(['updated_at', 'nama_perusahaan', 'email'], 'updated_at');

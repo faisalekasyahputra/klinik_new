@@ -26,12 +26,8 @@ $tab = [
 ];
 $aktif = isset($tab_aktif) ? $tab_aktif : 'pendaftaran';
 ?>
-<div class="mb-5">
-    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">KKN &amp; Magang</h2>
-    <p class="text-sm text-gray-500 dark:text-brand-muted">
-        Tempat yang dibuka, dan orang yang mengisinya - dikelola dari satu halaman.
-    </p>
-</div>
+<?php // Satu judul untuk ketiga tab, sama dengan label sidebar; tab yang menyala menunjukkan bagiannya. ?>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_judul' => 'KKN & Magang', 'jh_deskripsi' => 'Tempat yang dibuka, dan orang yang mengisinya - dikelola dari satu halaman.']); ?>
 
 <div class="mb-6 flex flex-wrap gap-1 border-b border-gray-200 dark:border-white/5">
     <?php foreach ($tab as $kunci => $t): ?>

@@ -16,14 +16,9 @@ $total_pakai = static function ($kode) use ($pemakaian) {
 };
 ?>
 <div class="space-y-6">
-    <div>
-        <h1 class="text-2xl font-black text-gray-900 dark:text-white">Asosiasi Pengembang</h1>
-        <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
-            Daftar asosiasi yang bisa dipilih pengembang di <span class="font-semibold">/akun/profil</span>
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Daftar asosiasi yang bisa dipilih pengembang di <span class="font-semibold">/akun/profil</span>
             dan admin di <span class="font-semibold">Direktori SRP2</span>. Nama yang tersimpan di sini
-            juga yang tampil di kolom Asosiasi pada direktori publik.
-        </p>
-    </div>
+            juga yang tampil di kolom Asosiasi pada direktori publik.']); ?>
 
     <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/5 dark:bg-brand-card">
         <h2 class="mb-3 text-sm font-black text-gray-900 dark:text-white">Tambah asosiasi</h2>
@@ -46,7 +41,7 @@ $total_pakai = static function ($kode) use ($pemakaian) {
                     <label class="flex items-center gap-2 text-xs text-gray-500 dark:text-brand-muted">
                         <input type="checkbox" name="aktif" value="1" checked> Aktif
                     </label>
-                    <button type="submit" class="rounded-xl bg-brand-primary px-4 py-2 text-sm font-bold text-brand-dark hover:opacity-90">Tambah</button>
+                    <button type="submit" class="tombol-utama">Tambah</button>
                 </div>
             </div>
             <p class="mt-2 text-[11px] leading-relaxed text-gray-400 dark:text-brand-muted/70">
@@ -108,13 +103,13 @@ $total_pakai = static function ($kode) use ($pemakaian) {
                             <input form="<?= $fid ?>" type="checkbox" name="aktif" value="1" <?= $r->aktif ? 'checked' : '' ?>>
                         </td>
                         <td class="whitespace-nowrap px-5 py-4 text-right">
-                            <button type="submit" form="<?= $fid ?>" class="mr-3 text-xs font-bold text-blue-500 hover:underline">Simpan</button>
+                            <button type="submit" form="<?= $fid ?>" class="tombol-aksi"><i class="ph ph-floppy-disk" aria-hidden="true"></i><span>Simpan</span></button>
                             <?php if ($dipakai === 0): ?>
                             <form class="inline" action="<?= base_url('Admin_Asosiasi/hapus') ?>" method="post"
                                   onsubmit="return confirm('Hapus asosiasi <?= html_escape($r->nama) ?>?')">
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
                                 <input type="hidden" name="id" value="<?= (int) $r->id ?>">
-                                <button class="text-xs font-bold text-red-500 hover:underline">Hapus</button>
+                                <button class="tombol-aksi tombol-aksi-bahaya"><i class="ph ph-trash" aria-hidden="true"></i><span>Hapus</span></button>
                             </form>
                             <?php else: ?>
                             <span class="text-xs text-gray-300 dark:text-white/20" title="Masih dipakai <?= $dipakai ?> data">Hapus</span>

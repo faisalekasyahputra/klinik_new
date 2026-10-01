@@ -8,16 +8,13 @@ $kelas_status = [
     'Diajukan' => 'pending', 'Ditinjau Bidang' => 'process', 'Dibatalkan' => 'reject',
 ];
 ?>
-<div class="mb-8">
-    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Meja Kerja Super Admin</h2>
-    <p class="text-sm text-gray-500 dark:text-brand-muted">Buka antrean yang perlu perhatian; setiap kartu sudah mengarah ke daftar yang sesuai.</p>
-</div>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Buka antrean yang perlu perhatian; setiap kartu sudah mengarah ke daftar yang sesuai.']); ?>
 
 <?php if ($antrean_tanpa_wilayah > 0): ?>
 <a href="<?= base_url('Admin?status=pending&tanpa_wilayah=1') ?>" class="mb-6 flex items-center gap-4 rounded-2xl border border-orange-200 bg-orange-50 p-5 text-orange-800 transition-colors hover:border-orange-400 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-300">
     <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400"><i class="ph ph-map-pin-slash text-xl"></i></div>
     <div class="min-w-0 flex-1">
-        <p class="font-bold"><?= number_format($antrean_tanpa_wilayah) ?> antrean pending belum memiliki wilayah</p>
+        <p class="font-bold"><?= angka_id($antrean_tanpa_wilayah) ?> antrean pending belum memiliki wilayah</p>
         <p class="mt-0.5 text-xs text-orange-700 dark:text-orange-400/80">Tidak terlihat oleh admin kabupaten/kota mana pun.</p>
     </div>
     <span class="hidden items-center gap-1 text-xs font-bold sm:inline-flex">Buka antrean <i class="ph ph-arrow-right"></i></span>
@@ -38,7 +35,7 @@ $kelas_status = [
             </div>
             <p class="text-sm font-semibold text-gray-600 dark:text-brand-muted"><?= html_escape($k['label']) ?></p>
             <div class="mt-2 flex items-end gap-3">
-                <span class="text-3xl font-black leading-none text-gray-900 dark:text-white"><?= number_format($k['pending']) ?></span>
+                <span class="text-3xl font-black leading-none text-gray-900 dark:text-white"><?= angka_id($k['pending']) ?></span>
                 <span class="mb-0.5 text-xs font-semibold <?= $k['pending'] > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400 dark:text-brand-muted/70' ?>"><?= $k['pending'] > 0 ? 'perlu perhatian' : 'tidak ada antrean' ?></span>
             </div>
             <span class="mt-4 inline-flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-brand-primary">Buka antrean <i class="ph ph-arrow-right"></i></span>
@@ -86,28 +83,28 @@ $kelas_status = [
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400"><i class="ph ph-users text-xl"></i></div>
                 <div>
                     <dt class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-brand-muted">Akun Terdaftar</dt>
-                    <dd class="mt-1 text-2xl font-black leading-none text-gray-900 dark:text-white"><?= number_format($total_users) ?></dd>
+                    <dd class="mt-1 text-2xl font-black leading-none text-gray-900 dark:text-white"><?= angka_id($total_users) ?></dd>
                 </div>
             </div>
             <div class="flex items-center gap-3 py-4">
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"><i class="ph ph-identification-card text-xl"></i></div>
                 <div>
                     <dt class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-brand-muted">Warga terdaftar</dt>
-                    <dd class="mt-1 text-2xl font-black leading-none text-gray-900 dark:text-white"><?= number_format($warga_terdaftar) ?></dd>
+                    <dd class="mt-1 text-2xl font-black leading-none text-gray-900 dark:text-white"><?= angka_id($warga_terdaftar) ?></dd>
                 </div>
             </div>
             <div class="flex items-center gap-3 py-4">
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400"><i class="ph ph-database text-xl"></i></div>
                 <div>
                     <dt class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-brand-muted">Tercocokkan SIMPERUM</dt>
-                    <dd class="mt-1 text-2xl font-black leading-none text-gray-900 dark:text-white"><?= number_format($tercocokkan_simperum) ?></dd>
+                    <dd class="mt-1 text-2xl font-black leading-none text-gray-900 dark:text-white"><?= angka_id($tercocokkan_simperum) ?></dd>
                 </div>
             </div>
             <div class="flex items-center gap-3 py-4 pb-0">
                 <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-50 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400"><i class="ph ph-chats-circle text-xl"></i></div>
                 <div>
                     <dt class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-brand-muted">Topik Forum</dt>
-                    <dd class="mt-1 text-2xl font-black leading-none text-gray-900 dark:text-white"><?= number_format($total_diskusi) ?></dd>
+                    <dd class="mt-1 text-2xl font-black leading-none text-gray-900 dark:text-white"><?= angka_id($total_diskusi) ?></dd>
                 </div>
             </div>
         </dl>

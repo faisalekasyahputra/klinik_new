@@ -3,10 +3,7 @@ $this->load->helper('srp2');
 $label_status = srp2_label_status();
 $kelas_status = ['Pending' => 'pending', 'Draft' => 'process', 'Diterima' => 'ok', 'Ditolak' => 'reject'];
 ?>
-<div class="mb-6">
-    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Tinjau Pengajuan SRP2</h2>
-    <p class="text-sm text-gray-500 dark:text-brand-muted">Pengajuan sertifikasi pengembang<?= $status_filter === 'semua' ? '.' : ' berstatus ' . html_escape($label_status[$status_filter] ?? $status_filter) . '.' ?></p>
-</div>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Pengajuan sertifikasi pengembang' . ($status_filter === 'semua' ? '.' : ' berstatus ' . html_escape($label_status[$status_filter] ?? $status_filter) . '.')]); ?>
 
 <?php $this->load->helper('admin_table'); ?>
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
@@ -48,7 +45,7 @@ $kelas_status = ['Pending' => 'pending', 'Draft' => 'process', 'Diterima' => 'ok
                     <td class="px-6 py-4"><?= html_escape(tgl_id($r->updated_at, TRUE, TRUE)) ?></td>
                     <td class="px-6 py-4"><?= $this->load->view('admin/components/status_badge', ['label' => $label_status[$r->status_verifikasi] ?? $r->status_verifikasi, 'kelas' => $kelas_status[$r->status_verifikasi] ?? 'pending'], TRUE) ?></td>
                     <td class="px-6 py-4 text-right">
-                        <a href="<?= base_url('Admin_Srp2/detail/' . $r->id) ?>" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">Tinjau →</a>
+                        <a href="<?= base_url('Admin_Srp2/detail/' . $r->id) ?>" class="tombol-aksi"><i class="ph ph-note-pencil" aria-hidden="true"></i><span>Tinjau</span></a>
                     </td>
                 </tr>
                 <?php endforeach; endif; ?>

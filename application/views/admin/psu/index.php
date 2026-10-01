@@ -10,16 +10,9 @@ $warna_status = [
 ];
 ?>
 <div class="space-y-6">
-    <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-            <h1 class="text-2xl font-black text-gray-900 dark:text-white">Serah Terima PSU</h1>
-            <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted max-w-2xl">
-                Prasarana, Sarana, dan Utilitas perumahan. Data yang statusnya "Tampilkan di publik"
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Prasarana, Sarana, dan Utilitas perumahan. Data yang statusnya "Tampilkan di publik"
                 muncul di halaman <span class="font-semibold">/psu</span> - kartu PSU di beranda
-                sudah tidak lagi "Segera Hadir".
-            </p>
-        </div>
-    </div>
+                sudah tidak lagi "Segera Hadir".']); ?>
 
 
     <div class="rounded-2xl bg-white dark:bg-brand-card border border-gray-200 dark:border-white/5 p-5">
@@ -39,11 +32,10 @@ $warna_status = [
         <form action="<?= base_url('Admin_Psu/import_excel') ?>" method="post" enctype="multipart/form-data"
               class="mt-4 flex flex-wrap items-end gap-3">
             <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-            <label class="min-w-[260px] flex-1 text-xs text-gray-500 dark:text-brand-muted">Berkas Excel (.xlsx atau .xls, maksimal 5 MB)
-                <input type="file" name="file_excel" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
-                       required class="mt-1 block w-full rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-gray-100 dark:file:bg-white/10 file:px-3 file:py-1.5 file:text-xs file:font-bold">
-            </label>
-            <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-sm font-bold text-brand-dark hover:opacity-90">
+            <div class="min-w-[260px] flex-1 text-xs text-gray-500 dark:text-brand-muted">Berkas Excel (.xlsx atau .xls, maksimal 5 MB)
+                <div class="mt-1"><?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'file_excel', 'ib_accept' => '.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel', 'ib_required' => TRUE, 'ib_attr' => '']); ?></div>
+            </div>
+            <button type="submit" class="tombol-utama">
                 Import data
             </button>
         </form>
@@ -112,7 +104,7 @@ $warna_status = [
                 <label class="flex items-center gap-2 text-xs text-gray-500 dark:text-brand-muted">
                     <input type="checkbox" name="status_aktif" value="1" checked> Tampilkan di publik
                 </label>
-                <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-sm font-bold text-brand-dark hover:opacity-90">Tambah</button>
+                <button type="submit" class="tombol-utama">Tambah</button>
             </div>
         </form>
     </div>
@@ -190,12 +182,12 @@ $warna_status = [
                             <input form="<?= $fid ?>" type="checkbox" name="status_aktif" value="1" <?= $row->status_aktif ? 'checked' : '' ?>>
                         </td>
                         <td class="whitespace-nowrap px-5 py-4 text-right">
-                            <button type="submit" form="<?= $fid ?>" class="mr-3 text-xs font-bold text-blue-500 hover:underline">Simpan</button>
+                            <button type="submit" form="<?= $fid ?>" class="tombol-aksi"><i class="ph ph-floppy-disk" aria-hidden="true"></i><span>Simpan</span></button>
                             <form class="inline" action="<?= base_url('Admin_Psu/hapus') ?>" method="post"
                                   onsubmit="return confirm('Hapus data PSU <?= html_escape($row->nama_perumahan) ?>?')">
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                 <input type="hidden" name="id" value="<?= (int) $row->id ?>">
-                                <button class="text-xs font-bold text-red-500 hover:underline">Hapus</button>
+                                <button class="tombol-aksi tombol-aksi-bahaya"><i class="ph ph-trash" aria-hidden="true"></i><span>Hapus</span></button>
                             </form>
                         </td>
                     </tr>

@@ -12,7 +12,7 @@ class Admin_Dashboard extends Admin_Controller {
      * metrik belum bisa dihitung, jangan diisi angka karangan.
      */
     public function index() {
-        $data['title'] = 'Meja Kerja Super Admin';
+        $data['title'] = 'Ringkasan Kerja'; // = label sidebar (dashboard_modules.php)
 
         // Kartu kerja dibangun dari registry yang sama dengan sidebar, tetapi
         // hanya untuk role aktif agar modul scoped tidak bocor ke overview.

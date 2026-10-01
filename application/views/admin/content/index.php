@@ -1,10 +1,5 @@
 <div x-data="{ activeTab: 'hero' }">
-    <div class="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-6 relative z-10">
-        <div>
-            <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Manajemen Konten Website</h2>
-            <p class="text-sm text-gray-500 dark:text-brand-muted">Kelola teks, gambar hero, dan konten statis landing page.</p>
-        </div>
-    </div>
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Kelola teks, gambar hero, dan konten statis landing page.']); ?>
 
     <!-- Tabs Navigation -->
     <div class="flex flex-wrap gap-2 mb-6 border-b border-gray-200 dark:border-white/10 relative z-10">
@@ -42,7 +37,7 @@
                                 <img src="<?= base_url($settings['hero_background']) ?>" class="h-32 object-cover rounded-lg border border-gray-200 dark:border-white/10">
                             </div>
                         <?php endif; ?>
-                        <input type="file" name="hero_background" accept="image/*" class="w-full px-4 py-2 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-800 dark:text-gray-200">
+                        <?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'hero_background', 'ib_accept' => 'image/*', 'ib_required' => FALSE, 'ib_attr' => '']); ?>
                     </div>
                 </div>
             </div>
@@ -90,7 +85,7 @@
             </div>
 
             <div class="pt-6 border-t border-gray-200 dark:border-white/10 flex justify-end">
-                <button type="submit" class="bg-blue-600 dark:bg-brand-primary text-white dark:text-brand-dark px-8 py-3 rounded-xl font-bold flex items-center hover:bg-blue-700 dark:hover:bg-brand-hover transition-colors shadow-sm shadow-blue-500/30 dark:shadow-brand-primary/20">
+                <button type="submit" class="tombol-utama">
                     <i class="ph ph-floppy-disk text-lg mr-2"></i> Simpan Perubahan
                 </button>
             </div>

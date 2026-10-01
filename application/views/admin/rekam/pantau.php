@@ -27,13 +27,8 @@ $tautan = static function ($t, $tw) {
 // Butir cetak (17 Agt 2026) - lihat penjelasan lengkap di partial-nya.
 $this->load->view('admin/layouts/cetak_rekap');
 ?>
-<div class="mb-6">
-    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Pantau Rekam Data</h2>
-    <p class="text-sm text-gray-500 dark:text-brand-muted">
-        Cakupan pelaporan seluruh kabupaten/kota untuk satu triwulan. Halaman ini <b>hanya baca</b> -
-        keputusan terima atau minta perbaikan tetap kewenangan Admin Bidang Perumahan dan Kawasan.
-    </p>
-</div>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Cakupan pelaporan seluruh kabupaten/kota untuk satu triwulan. Halaman ini <b>hanya baca</b> -
+        keputusan terima atau minta perbaikan tetap kewenangan Admin Bidang Perumahan dan Kawasan.']); ?>
 
 <?php // Ringkasan didahulukan: "berapa yang belum" adalah pertanyaannya, bukan detail per baris. ?>
 <div class="mb-6 grid gap-3 sm:grid-cols-2">

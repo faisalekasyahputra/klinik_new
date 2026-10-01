@@ -26,7 +26,7 @@ class Admin_Aduan extends Admin_Controller {
 
     public function index()
     {
-        $data['title'] = 'Semua Aduan';
+        $data['title'] = 'Pantau Aduan'; // = label sidebar
 
         $bidang_filter = $this->input->get('bidang', TRUE);
         $status_sah = ['Baru', 'Diproses', 'Selesai'];

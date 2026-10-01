@@ -4,15 +4,7 @@
 // bukan di tabel. Lihat admin/components/status_badge.php.
 $badge_kelas = ['Baru' => 'pending', 'Diproses' => 'process', 'Selesai' => 'ok'];
 ?>
-<div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-    <div>
-        <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2 flex items-center gap-3">
-            <i class="ph ph-chat-centered-text text-brand-primary"></i>
-            Aduan - <?= html_escape($bidang_nama ?: 'Bidang Saya') ?>
-        </h1>
-        <p class="text-sm text-gray-500 dark:text-brand-muted">Kelola aduan warga yang masuk ke bidang Anda.</p>
-    </div>
-</div>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Kelola aduan warga yang masuk ke bidang <b>' . html_escape($bidang_nama ?: 'Anda') . '</b>.']); ?>
 
 <?php $this->load->helper('admin_table'); ?>
 <div data-tabel-admin class="bg-white dark:bg-brand-card border border-gray-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm">
@@ -57,8 +49,8 @@ $filter_html = ob_get_clean(); ?>
                         <?= $this->load->view('admin/components/status_badge', ['label' => $r->status, 'kelas' => $badge_kelas[$r->status] ?? 'pending'], TRUE) ?>
                     </td>
                     <td class="px-4 py-4 text-right">
-                        <button @click="procOpen = true" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">
-                            <i class="ph ph-note-pencil"></i> Proses
+                        <button @click="procOpen = true" class="tombol-aksi">
+                            <i class="ph ph-note-pencil"></i><span>Proses</span>
                         </button>
                         <?php /* Modal, bukan popover: panel absolut dulu terpotong wadah overflow-x-auto
                                  (audit UI 2 Okt 2026). Teleport ke body karena sel Aksi sticky. */ ?>

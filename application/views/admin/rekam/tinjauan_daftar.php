@@ -77,8 +77,7 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
                 </td>
                 <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e(tgl_id($row['submitted_at'], TRUE, TRUE)) ?></td>
                 <td class="py-2 text-right">
-                  <a href="<?= base_url('Rekam_Tinjauan/detail/' . (int) $row['id']) ?>"
-                     class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold dark:border-white/10">Periksa</a>
+                  <a href="<?= base_url('Rekam_Tinjauan/detail/' . (int) $row['id']) ?>" class="tombol-aksi"><i class="ph ph-magnifying-glass" aria-hidden="true"></i><span>Periksa</span></a>
                 </td>
               </tr>
             <?php endforeach; ?>

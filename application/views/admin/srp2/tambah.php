@@ -20,9 +20,8 @@ $daftar_asosiasi = srp2_daftar_asosiasi();
     <a href="<?= base_url('Admin_Srp2') ?>" class="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 dark:text-brand-muted hover:text-gray-700 dark:hover:text-brand-light mb-3">
         <i class="ph ph-arrow-left"></i> Kembali ke Direktori SRP2
     </a>
-    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Tambah Pengembang</h2>
-    <p class="text-sm text-gray-500 dark:text-brand-muted">Tambahkan pengembang bersertifikat secara manual - dipakai untuk data historis, karena pengajuan yang diterima lewat SRP2 masuk otomatis ke direktori.</p>
 </div>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Tambahkan pengembang bersertifikat secara manual - dipakai untuk data historis, karena pengajuan yang diterima lewat SRP2 masuk otomatis ke direktori.']); ?>
 
 <div class="rounded-2xl bg-white dark:bg-brand-card border border-gray-200 dark:border-white/5 p-5 max-w-3xl">
     <form action="<?= base_url('Admin_Srp2/save') ?>" method="post" class="grid md:grid-cols-2 gap-4">
@@ -63,6 +62,6 @@ $daftar_asosiasi = srp2_daftar_asosiasi();
         <input name="npwp" inputmode="numeric" maxlength="25" placeholder="NPWP (15/16 digit, hanya admin)" class="rounded-xl border border-gray-200 dark:border-white/10 bg-transparent px-4 py-3 text-sm" />
         <textarea name="alamat_kantor" placeholder="Alamat kantor" class="md:col-span-2 rounded-xl border border-gray-200 dark:border-white/10 bg-transparent px-4 py-3 text-sm"></textarea>
         <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-brand-muted"><input type="checkbox" name="status_aktif" value="1" checked /> Tampilkan di publik</label>
-        <button class="md:col-span-2 rounded-xl bg-brand-primary px-4 py-3 text-sm font-bold text-brand-dark">Simpan</button>
+        <button class="tombol-utama md:col-span-2">Simpan</button>
     </form>
 </div>

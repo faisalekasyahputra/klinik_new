@@ -13,7 +13,7 @@ class Admin_Users extends Admin_Controller {
 
     public function index()
     {
-        $data['title'] = 'Manajemen Pengguna';
+        $data['title'] = 'Akses Staf'; // = label sidebar
 
         // Cari + urut + paginasi semuanya server-side (B7/B8).
         $table = $this->table_state(['created_at', 'name', 'email', 'role'], 'created_at');

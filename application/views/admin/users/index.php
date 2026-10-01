@@ -2,14 +2,12 @@
          `relative z-10` menguncinya di stacking context z-10 - persis alasan yang
          sama dengan `#main-content` di admin/index.php. Dua konteks bersarang,
          satu bug. */ ?>
-<div class="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-6" x-data="{ createOpen: false }">
-    <div>
-        <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Manajemen Pengguna</h2>
-        <p class="text-sm text-gray-500 dark:text-brand-muted">Kelola akun, peran, dan akses pengguna dalam sistem.</p>
-    </div>
-    <button @click="createOpen = true" class="bg-blue-600 dark:bg-brand-primary text-white dark:text-brand-dark px-5 py-2.5 rounded-xl font-bold flex items-center hover:bg-blue-700 dark:hover:bg-brand-hover transition-colors shadow-sm shadow-blue-500/30 dark:shadow-brand-primary/20">
-        <i class="ph ph-user-plus text-lg mr-2"></i> Tambah Pengguna Baru
+<div x-data="{ createOpen: false }">
+    <?php ob_start(); ?>
+    <button @click="createOpen = true" class="tombol-utama">
+        <i class="ph ph-user-plus text-lg"></i> Tambah Pengguna Baru
     </button>
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_aksi' => ob_get_clean(), 'jh_deskripsi' => 'Kelola akun, peran, dan akses pengguna dalam sistem.']); ?>
 
     <!-- Modal: buat akun staff -->
     <div x-show="createOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" @keydown.escape.window="createOpen = false">
@@ -58,7 +56,7 @@
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" @click="createOpen = false" class="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5">Batal</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 dark:bg-brand-primary text-white dark:text-brand-dark hover:bg-blue-700 dark:hover:bg-brand-hover">Buat Akun</button>
+                    <button type="submit" class="tombol-utama">Buat Akun</button>
                 </div>
             </form>
         </div>
@@ -72,7 +70,7 @@
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden relative">
     <div class="p-6 border-b border-gray-200 dark:border-white/5">
         <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <i class="ph ph-users-three text-brand-primary"></i> Daftar Pengguna (<?= number_format((int) $table['total_rows']) ?>)
+            <i class="ph ph-users-three text-brand-primary"></i> Daftar Pengguna (<?= angka_id((int) $table['total_rows']) ?>)
         </h3>
     </div>
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, email, atau username...'], TRUE) ?>
@@ -209,12 +207,12 @@
                                  BUKAN melebarkan tabel. Kolom Aksi adalah yang pertama
                                  hilang di balik gulir horizontal (§17 poin 6). */ ?>
                         <div class="ml-auto flex max-w-[15rem] flex-wrap items-center justify-end gap-1">
-                            <button @click="editOpen = true" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">
-                                <i class="ph ph-pencil-simple"></i> Ubah Role
+                            <button @click="editOpen = true" class="tombol-aksi">
+                                <i class="ph ph-pencil-simple"></i><span>Ubah Role</span>
                             </button>
                             <?php if (in_array($u->role, ['admin_kabkota', 'admin_bidang'], TRUE)): ?>
-                            <a href="<?= base_url('Admin_Privileges/index/' . (int) $u->id) ?>" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-violet-700 hover:bg-violet-50 dark:text-violet-300 dark:hover:bg-violet-500/10">
-                                <i class="ph ph-shield-check"></i> Privilege
+                            <a href="<?= base_url('Admin_Privileges/index/' . (int) $u->id) ?>" class="tombol-aksi">
+                                <i class="ph ph-shield-check"></i><span>Privilege</span>
                             </a>
                             <?php endif; ?>
 
@@ -226,8 +224,8 @@
                                   onsubmit="return confirm(<?= html_escape(json_encode($konfirmasi_kunci)) ?>)">
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                 <input type="hidden" name="id" value="<?= (int) $u->id ?>">
-                                <button type="submit" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-amber-700 dark:text-brand-primary hover:bg-amber-50 dark:hover:bg-brand-primary/10">
-                                    <i class="ph ph-lock-open"></i> Buka Kunci
+                                <button type="submit" class="tombol-aksi">
+                                    <i class="ph ph-lock-open"></i><span>Buka Kunci</span>
                                 </button>
                             </form>
                             <?php endif; ?>
@@ -235,12 +233,12 @@
                             <?php /* Reset sandi TIDAK disembunyikan untuk akun sendiri:
                                      Admin_Users::reset_sandi() memanggil sasaran_sah(TRUE) -
                                      ini memulihkan akses, bukan mencabutnya. Sama untuk Buka Kunci. */ ?>
-                            <button @click="resetOpen = true" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5">
-                                <i class="ph ph-key"></i> Reset Sandi
+                            <button @click="resetOpen = true" class="tombol-aksi">
+                                <i class="ph ph-key"></i><span>Reset Sandi</span>
                             </button>
                             <?php if ($u->role === 'warga' && ! empty($warga_nik_bound[(int)$u->id])): ?>
-                            <button @click="nikResetOpen = true" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-orange-700 dark:text-orange-300 hover:bg-orange-50 dark:hover:bg-orange-500/10">
-                                <i class="ph ph-identification-card"></i> Reset NIK
+                            <button @click="nikResetOpen = true" class="tombol-aksi">
+                                <i class="ph ph-identification-card"></i><span>Reset NIK</span>
                             </button>
                             <?php endif; ?>
 
@@ -251,12 +249,12 @@
                                 <input type="hidden" name="id" value="<?= (int) $u->id ?>">
                                 <input type="hidden" name="status" value="<?= $nonaktif ? 'active' : 'nonaktif' ?>">
                                 <?php if ($nonaktif): ?>
-                                <button type="submit" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-500/10">
-                                    <i class="ph ph-check-circle"></i> Aktifkan
+                                <button type="submit" class="tombol-aksi">
+                                    <i class="ph ph-check-circle"></i><span>Aktifkan</span>
                                 </button>
                                 <?php else: ?>
-                                <button type="submit" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10">
-                                    <i class="ph ph-prohibit"></i> Nonaktifkan
+                                <button type="submit" class="tombol-aksi tombol-aksi-bahaya">
+                                    <i class="ph ph-prohibit"></i><span>Nonaktifkan</span>
                                 </button>
                                 <?php endif; ?>
                             </form>
@@ -300,7 +298,7 @@
                                     <div class="flex justify-end gap-2 pt-1">
                                         <button type="button" @click="resetOpen = false" class="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5">Batal</button>
                                         <button type="submit" :disabled="sandi.length < 8 || sandi !== ulang"
-                                                class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 dark:bg-brand-primary text-white dark:text-brand-dark hover:bg-blue-700 dark:hover:bg-brand-hover disabled:opacity-40 disabled:cursor-not-allowed">
+                                                class="tombol-utama">
                                             Ganti Password
                                         </button>
                                     </div>
@@ -368,7 +366,7 @@
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
-                                <button type="submit" class="w-full mt-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 dark:bg-brand-primary text-white dark:text-brand-dark hover:bg-blue-700 dark:hover:bg-brand-hover">Simpan</button>
+                                <button type="submit" class="tombol-utama w-full mt-1">Simpan</button>
                             </form>
                         </div>
                         </div>

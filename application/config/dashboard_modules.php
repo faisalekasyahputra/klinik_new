@@ -358,7 +358,7 @@ $config['dashboard_modules'] = [
         'roles' => ['admin'], 'scope' => null,
     ],
     'kemitraan' => [
-        'label' => 'Kelola KKN/Magang', 'icon' => 'ph-graduation-cap',
+        'label' => 'KKN & Magang', 'icon' => 'ph-graduation-cap',
         'url'   => 'Admin_Kemitraan', 'group' => 'Tindak Lanjut', 'order' => 30,
         'overview_url' => 'Admin_Kemitraan?status=Diajukan',
         'roles' => ['admin'], 'scope' => null,

@@ -1114,7 +1114,9 @@ class MY_Controller extends CI_Controller {
         foreach ($items as $i => $item) {
             $url = strtolower($item['url']);
             $match = ($uri === $url) || strpos($uri, $url . '/') === 0;
-            if ($match && strlen($url) > $best) { $best = strlen($url); $best_i = $i; }
+            // Seri panjang (induk dan anak berbagi URL, mis. Tinjau SRP2 dan SRP2 dalam
+            // Pengajuan): anak yang menang, karena dialah nama layar yang sedang dibuka.
+            if ($match && (strlen($url) > $best || (strlen($url) === $best && $item['parent'] !== NULL))) { $best = strlen($url); $best_i = $i; }
         }
         foreach ($items as $i => $item) { $items[$i]['active'] = ($i === $best_i); }
 
@@ -1138,6 +1140,7 @@ class MY_Controller extends CI_Controller {
         // akan membuka "Perumahan" tetapi meninggalkan "Rekam Data" terlipat,
         // dan layar yang sedang dibuka jadi tidak terlihat sama sekali.
         $terbuka = [];
+        $leluhur = []; // hanya rantai induk item aktif yang ikut menyala, bukan keturunannya
         foreach ($items as $item) {
             if ( ! $item['active']) { continue; }
             // Item aktif membuka DIRINYA SENDIRI juga, bukan hanya leluhurnya.
@@ -1148,6 +1151,7 @@ class MY_Controller extends CI_Controller {
             $naik = $item['parent'];
             while ($naik !== NULL && isset($per_key[$naik])) {
                 $terbuka[$naik] = TRUE;
+                $leluhur[$naik] = TRUE;
                 $naik = $per_key[$naik]['parent'];
             }
 
@@ -1177,14 +1181,16 @@ class MY_Controller extends CI_Controller {
             }
         }
 
-        $bangun = function ($key) use (&$bangun, $anak, $terbuka) {
+        $bangun = function ($key) use (&$bangun, $anak, $terbuka, $leluhur) {
             $out = [];
             foreach ($anak[$key] ?? [] as $item) {
                 $item['children'] = $bangun($item['key']);
                 $item['open']     = ! empty($terbuka[$item['key']]);
-                // Induk ikut menyala saat cabangnya terbuka - supaya orang tahu
-                // sedang berada di cabang mana, bukan cuma di layar mana.
-                $item['active']   = $item['active'] || $item['open'];
+                // Induk ikut menyala bila MEMUAT layar yang dibuka - supaya orang tahu
+                // sedang berada di cabang mana. Bukan sekadar terbuka: keturunan item
+                // aktif ikut terbentang, dan dulu ikut menyala sehingga di SRP2 dalam
+                // Pengajuan dua sub-menu tersorot bersamaan (audit UI 2 Okt 2026).
+                $item['active']   = $item['active'] || ! empty($leluhur[$item['key']]);
                 $out[] = $item;
             }
             return $out;
@@ -1195,7 +1201,7 @@ class MY_Controller extends CI_Controller {
             if ($item['parent'] !== NULL) { continue; }
             $item['children'] = $bangun($item['key']);
             $item['open']     = ! empty($terbuka[$item['key']]);
-            $item['active']   = $item['active'] || $item['open'];
+            $item['active']   = $item['active'] || ! empty($leluhur[$item['key']]);
             $grouped[$item['group']][] = $item;
         }
         return $grouped;

@@ -39,7 +39,7 @@ foreach ($module_groups as $modules) { foreach ($modules as $key => $module) { $
                 <?php endforeach; ?>
             </div>
             <div class="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-brand-primary/20 dark:bg-brand-primary/5 dark:text-brand-primary">Profil Saya selalu tersedia dan tidak dapat dinonaktifkan. Bila semua pilihan dikosongkan, akun tetap dapat masuk tetapi hanya bisa membuka profil.</div>
-            <button type="submit" class="mt-5 rounded-xl bg-brand-primary px-5 py-2.5 text-sm font-black text-brand-dark"><i class="ph ph-floppy-disk"></i> Simpan Privilege</button>
+            <button type="submit" class="tombol-utama mt-5"><i class="ph ph-floppy-disk"></i> Simpan Privilege</button>
         </form>
     </section>
 </div>

@@ -3,13 +3,8 @@
 $kolom = 'mt-1 block w-full rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm';
 ?>
 <div class="space-y-6">
-    <div>
-        <h1 class="text-2xl font-black text-gray-900 dark:text-white">Bank Data</h1>
-        <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted max-w-2xl">
-            Unggah PDF Buku Data dan PDF Statistika. Dokumen yang aktif tampil sebagai kartu di tab
-            <span class="font-semibold">Bank Data</span> portal dan dibuka dengan pembaca halaman.
-        </p>
-    </div>
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Unggah PDF Buku Data dan PDF Statistika. Dokumen yang aktif tampil sebagai kartu di tab
+            <span class="font-semibold">Bank Data</span> portal dan dibuka dengan pembaca halaman.']); ?>
 
     <div class="rounded-2xl bg-white dark:bg-brand-card border border-gray-200 dark:border-white/5 p-5">
         <h2 class="mb-3 text-sm font-black text-gray-900 dark:text-white">Unggah dokumen</h2>
@@ -29,11 +24,11 @@ $kolom = 'mt-1 block w-full rounded-lg border border-gray-200 dark:border-white/
             <label class="text-xs text-gray-500 dark:text-brand-muted md:col-span-2">Deskripsi singkat (opsional)
                 <input type="text" name="deskripsi" maxlength="255" class="<?= $kolom ?>">
             </label>
-            <label class="text-xs text-gray-500 dark:text-brand-muted md:col-span-2">Berkas PDF (maksimal 20 MB)
-                <input type="file" name="berkas_pdf" accept="application/pdf,.pdf" required class="<?= $kolom ?>">
-            </label>
+            <div class="text-xs text-gray-500 dark:text-brand-muted md:col-span-2">Berkas PDF (maksimal 20 MB)
+                <div class="mt-1"><?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'berkas_pdf', 'ib_accept' => 'application/pdf,.pdf', 'ib_required' => TRUE, 'ib_attr' => '']); ?></div>
+            </div>
             <div class="md:col-span-2">
-                <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-sm font-bold text-brand-dark hover:opacity-90">Unggah</button>
+                <button type="submit" class="tombol-utama">Unggah</button>
             </div>
         </form>
     </div>
@@ -59,11 +54,11 @@ $kolom = 'mt-1 block w-full rounded-lg border border-gray-200 dark:border-white/
                         <td class="px-4 py-3 text-right whitespace-nowrap">
                             <form action="<?= base_url('Admin_Bank_Data/ubah_status/' . (int) $r->id) ?>" method="post" class="inline">
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-                                <button type="submit" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10"><?= $r->aktif ? 'Sembunyikan' : 'Tampilkan' ?></button>
+                                <button type="submit" class="tombol-aksi"><i class="ph ph-eye-slash" aria-hidden="true"></i><span><?= $r->aktif ? 'Sembunyikan' : 'Tampilkan' ?></span></button>
                             </form>
                             <form action="<?= base_url('Admin_Bank_Data/hapus/' . (int) $r->id) ?>" method="post" class="inline" onsubmit="return confirm('Hapus dokumen ini beserta berkasnya?')">
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-                                <button type="submit" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10">Hapus</button>
+                                <button type="submit" class="tombol-aksi tombol-aksi-bahaya"><i class="ph ph-trash" aria-hidden="true"></i><span>Hapus</span></button>
                             </form>
                         </td>
                     </tr>

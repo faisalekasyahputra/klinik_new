@@ -77,18 +77,14 @@ $filter_html = ob_get_clean();
         </span>
     </a>
     <?php endif; ?>
-    <div class="mb-8">
-        <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2 flex items-center gap-3">
-            <i class="ph ph-map-pin text-brand-primary"></i>
-            Antrean Perumahan - <?= html_escape($scope_label) ?>
-        </h1>
-        <p class="text-sm text-gray-500 dark:text-brand-muted">Kelola antrean pengajuan program perumahan warga.</p>
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Kelola antrean pengajuan program perumahan warga, cakupan <b>' . html_escape($scope_label) . '</b>.']); ?>
+    <div>
         <?php if (isset($tercocokkan_simperum)): /* hanya Admin_Kabkota::index, sudah terbatas wilayahnya */ ?>
-        <div class="mt-4 inline-flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-white/5 dark:bg-brand-card">
+        <div class="-mt-4 mb-8 inline-flex items-center gap-3 rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-white/5 dark:bg-brand-card">
             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400"><i class="ph ph-database text-xl"></i></div>
             <dl>
                 <dt class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-brand-muted">Warga tercocokkan SIMPERUM di wilayah ini</dt>
-                <dd class="mt-1 text-2xl font-black leading-none text-gray-900 dark:text-white" data-tercocokkan-simperum><?= number_format((int) $tercocokkan_simperum) ?></dd>
+                <dd class="mt-1 text-2xl font-black leading-none text-gray-900 dark:text-white" data-tercocokkan-simperum><?= angka_id((int) $tercocokkan_simperum) ?></dd>
             </dl>
         </div>
         <?php endif; ?>
@@ -201,9 +197,9 @@ $filter_html = ob_get_clean();
                         <td class="px-4 py-3"><?= $this->load->view('admin/components/status_badge', ['label' => $badge_label[$row->status_antrean] ?? $row->status_antrean, 'kelas' => $badge_kelas[$row->status_antrean] ?? 'pending'], TRUE) ?></td>
                         <td class="w-px whitespace-nowrap px-4 py-3 text-center">
                             <?php if ( ! empty($row->assessment_id)): ?>
-                            <a href="<?= base_url($base_url . '/detail/' . (int) $row->id) ?>" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-brand-primary/20 dark:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-brand-primary border border-gray-200 dark:border-white/10 transition-all duration-200"><i class="ph ph-eye"></i><span class="text-xs font-bold uppercase tracking-wider">Detail</span></a>
+                            <a href="<?= base_url($base_url . '/detail/' . (int) $row->id) ?>" class="tombol-aksi"><i class="ph ph-eye"></i><span>Detail</span></a>
                             <?php else: ?>
-                            <button @click='openModal(<?= htmlspecialchars(json_encode($payload), ENT_QUOTES, "UTF-8") ?>)' class="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-brand-primary/20 dark:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-brand-primary border border-gray-200 dark:border-white/10 transition-all duration-200" title="Proses"><i class="ph ph-note-pencil"></i><span class="text-xs font-bold uppercase tracking-wider">Tinjau</span></button>
+                            <button @click='openModal(<?= htmlspecialchars(json_encode($payload), ENT_QUOTES, "UTF-8") ?>)' class="tombol-aksi" title="Proses"><i class="ph ph-note-pencil"></i><span>Tinjau</span></button>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -286,7 +282,7 @@ $filter_html = ob_get_clean();
             </div>
             <div class="px-4 py-3 border-t border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/20 flex justify-end gap-3">
                 <button type="button" @click="close()" class="px-5 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white text-sm font-semibold hover:bg-gray-100 dark:hover:bg-white/5">Batal</button>
-                <button type="submit" form="formProsesAntrean" class="px-5 py-2.5 rounded-xl bg-brand-primary text-brand-dark text-sm font-bold hover:brightness-95">Simpan Keputusan</button>
+                <button type="submit" form="formProsesAntrean" class="tombol-utama">Simpan Keputusan</button>
             </div>
         </div>
     </div>

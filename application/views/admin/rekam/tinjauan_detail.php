@@ -231,7 +231,7 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
           <p class="text-sm text-gray-500 dark:text-brand-muted">
             Laporan tetap terkunci untuk kabupaten dan ditandai sudah ditinjau.
           </p>
-          <button class="mt-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover">
+          <button class="tombol-utama mt-2">
             Terima laporan
           </button>
         </form>

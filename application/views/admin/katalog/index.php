@@ -11,15 +11,10 @@ $csrf_hash = $this->security->get_csrf_hash();
 ?>
 <div x-data="{ buka: false, id: 0, nama: '', desk: '', aktif: true, kode: '', dipakai: 0,
                badge: '', syarat: '', gambar: '', urutan: 99, korsel: false }">
-    <div class="mb-6">
-        <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Katalog Program</h2>
-        <p class="text-sm text-gray-500 dark:text-brand-muted">
-            Program bantuan perumahan yang bisa diajukan warga. Yang bisa diubah dari sini:
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Program bantuan perumahan yang bisa diajukan warga. Yang bisa diubah dari sini:
             <b>nama</b>, <b>deskripsi</b>, <b>status aktif</b>, serta <b>tampilannya di beranda</b> -
             badge, syarat utama, foto, dan urutan. Warna kartu tidak diatur di sini: paletnya
-            disetel sekali supaya kontras teksnya terjaga.
-        </p>
-    </div>
+            disetel sekali supaya kontras teksnya terjaga.']); ?>
 
     <?php if ($jml_selisih > 0 || $tanpa_baris || $jml_tanpa_aturan > 0): ?>
     <div class="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 text-sm flex items-start gap-3">
@@ -92,9 +87,8 @@ $csrf_hash = $this->security->get_csrf_hash();
                         <td class="px-4 py-3 text-xs"><?= (int) $r->dipakai ?> pengajuan</td>
                         <td class="px-4 py-3">
                             <button type="button" title="Ubah program"
-                                    @click="id=<?= (int) $r->id ?>; nama=<?= htmlspecialchars(json_encode($r->nama_program), ENT_QUOTES) ?>; desk=<?= htmlspecialchars(json_encode($r->deskripsi_singkat), ENT_QUOTES) ?>; aktif=<?= (int) $r->is_active === 1 ? 'true' : 'false' ?>; kode=<?= htmlspecialchars(json_encode($r->kode_program), ENT_QUOTES) ?>; dipakai=<?= (int) $r->dipakai ?>; badge=<?= htmlspecialchars(json_encode((string) $r->badge), ENT_QUOTES) ?>; syarat=<?= htmlspecialchars(json_encode((string) $r->syarat_utama), ENT_QUOTES) ?>; gambar=<?= htmlspecialchars(json_encode((string) $r->gambar), ENT_QUOTES) ?>; urutan=<?= (int) $r->urutan ?>; korsel=<?= (int) $r->tampil_korsel === 1 ? 'true' : 'false' ?>; buka=true"
-                                    class="rounded-lg border border-gray-200 px-2 py-1 text-xs font-bold text-gray-600 hover:bg-gray-100 dark:border-white/10 dark:text-brand-muted dark:hover:bg-white/5">
-                                <i class="ph ph-pencil-simple" aria-hidden="true"></i> Ubah
+                                    @click="id=<?= (int) $r->id ?>; nama=<?= htmlspecialchars(json_encode($r->nama_program), ENT_QUOTES) ?>; desk=<?= htmlspecialchars(json_encode($r->deskripsi_singkat), ENT_QUOTES) ?>; aktif=<?= (int) $r->is_active === 1 ? 'true' : 'false' ?>; kode=<?= htmlspecialchars(json_encode($r->kode_program), ENT_QUOTES) ?>; dipakai=<?= (int) $r->dipakai ?>; badge=<?= htmlspecialchars(json_encode((string) $r->badge), ENT_QUOTES) ?>; syarat=<?= htmlspecialchars(json_encode((string) $r->syarat_utama), ENT_QUOTES) ?>; gambar=<?= htmlspecialchars(json_encode((string) $r->gambar), ENT_QUOTES) ?>; urutan=<?= (int) $r->urutan ?>; korsel=<?= (int) $r->tampil_korsel === 1 ? 'true' : 'false' ?>; buka=true" class="tombol-aksi">
+                                <i class="ph ph-pencil-simple" aria-hidden="true"></i><span>Ubah</span>
                             </button>
                         </td>
                     </tr>
@@ -164,18 +158,17 @@ $csrf_hash = $this->security->get_csrf_hash();
                                   class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200"></textarea>
                     </label>
 
-                    <label class="mt-2 block">
+                    <div class="mt-2 block">
                         <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Foto program</span>
                         <template x-if="gambar">
                             <img :src="'<?= base_url() ?>' + gambar" alt="" class="mb-2 h-24 w-full rounded-lg object-cover">
                         </template>
-                        <input type="file" name="gambar" accept="image/jpeg,image/png"
-                               class="w-full text-[11px] text-gray-600 dark:text-brand-muted">
+                        <?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'gambar', 'ib_accept' => 'image/jpeg,image/png', 'ib_required' => FALSE, 'ib_attr' => '']); ?>
                         <span class="mt-1 block text-[11px] text-gray-500 dark:text-brand-muted">
                             JPG atau PNG, maksimal 3&nbsp;MB. Kosongkan bila fotonya tidak diganti.
                             Data lokasi pada foto dibersihkan otomatis sebelum ditayangkan.
                         </span>
-                    </label>
+                    </div>
 
                     <div class="mt-2 flex items-center gap-3">
                         <label class="flex items-center gap-2">

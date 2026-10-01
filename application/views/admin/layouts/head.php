@@ -131,6 +131,40 @@
         .dark .aksi-tetap > table > * > tr > :last-child:not([colspan]) { background-color: #0f2933; box-shadow: inset 1px 0 0 rgba(255, 255, 255, .06); }
         .dark .aksi-tetap > table > thead.bg-gray-50 > tr > :last-child { background-color: #0c2129; }
         .dark .aksi-tetap > table > tbody > tr[class*="hover:bg-gray-50"]:hover > :last-child { background-color: #1b3440; }
+        /* Tombol admin: SATU gaya untuk ketiga peran (audit UI 2 Okt 2026). Dulu tabel memakai
+           campuran tombol berbingkai (Antrean), tautan teks biru/kuning/abu (Pengguna, Asosiasi),
+           dan tombol utama lime, biru, teal, atau hijau tergantung layarnya.
+             .tombol-utama          aksi utama layar atau formulir (Tambah, Cari, Unggah, Simpan)
+             .tombol-aksi           tombol kecil berbingkai di kolom Aksi: <i class="ph ..."></i><span>Label</span>
+             .tombol-aksi-bahaya    tambahan untuk aksi yang menghapus atau menonaktifkan
+           Label wajib di <span> sesudah ikon: di ponsel aturan .aksi-tetap di bawah menyisakan ikonnya. */
+        /* Biru di terang, lime di gelap (pola yang sudah dipakai Rekam Data): lime di latar putih tidak terbaca. */
+        .tombol-utama { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; border-radius: .75rem; padding: .625rem 1.25rem; font-size: .875rem; line-height: 1.25rem; font-weight: 700; background-color: #2563eb; color: #fff; transition: background-color .15s; }
+        .tombol-utama:hover { background-color: #1d4ed8; }
+        .dark .tombol-utama { background-color: #d6fb00; color: #0a1a1f; }
+        .dark .tombol-utama:hover { background-color: #b5d400; }
+        .tombol-utama:disabled { opacity: .5; cursor: not-allowed; }
+        .tombol-aksi { display: inline-flex; align-items: center; justify-content: center; gap: .375rem; border-radius: .5rem; border: 1px solid #e5e7eb; background-color: #f9fafb; padding: .375rem .75rem; font-size: .75rem; line-height: 1rem; font-weight: 700; color: #374151; white-space: nowrap; transition: background-color .15s, color .15s; }
+        .tombol-aksi:hover { background-color: #f3f4f6; color: #111827; }
+        .dark .tombol-aksi { border-color: rgba(255, 255, 255, .1); background-color: rgba(255, 255, 255, .05); color: #cbd5e1; }
+        .dark .tombol-aksi:hover { background-color: rgba(214, 251, 0, .1); color: #d6fb00; }
+        .tombol-aksi-bahaya { border-color: #fecaca; background-color: #fef2f2; color: #dc2626; }
+        .tombol-aksi-bahaya:hover { background-color: #fee2e2; color: #b91c1c; }
+        .dark .tombol-aksi-bahaya { border-color: rgba(248, 113, 113, .3); background-color: rgba(239, 68, 68, .1); color: #f87171; }
+        .dark .tombol-aksi-bahaya:hover { background-color: rgba(239, 68, 68, .2); color: #fca5a5; }
+        /* Beberapa tombol (atau form berisi tombol) berjajar dalam satu sel: beri jarak tanpa pembungkus. */
+        td > :is(.tombol-aksi, form) + :is(.tombol-aksi, form) { margin-left: .375rem; }
+        /* Unggah berkas berlabel Indonesia (admin/components/input_berkas.php): input asli transparan
+           menutupi kotak, jadi klik, keyboard, dan validasi `required` tetap milik peramban. */
+        .input-berkas { position: relative; display: flex; align-items: center; gap: .75rem; width: 100%; min-height: 2.5rem; border: 1px solid #e5e7eb; border-radius: .5rem; padding: .25rem .75rem .25rem .25rem; cursor: pointer; }
+        .input-berkas > input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .input-berkas:focus-within { outline: 2px solid #2563eb; outline-offset: 2px; }
+        .input-berkas-tombol { display: inline-flex; align-items: center; gap: .375rem; flex-shrink: 0; border-radius: .375rem; background-color: #f3f4f6; padding: .375rem .75rem; font-size: .75rem; font-weight: 700; color: #374151; }
+        .input-berkas-nama { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .75rem; color: #6b7280; }
+        .dark .input-berkas { border-color: rgba(255, 255, 255, .1); }
+        .dark .input-berkas:focus-within { outline-color: #d6fb00; }
+        .dark .input-berkas-tombol { background-color: rgba(255, 255, 255, .1); color: #e5e7eb; }
+        .dark .input-berkas-nama { color: #94a3b8; }
         /* Target sentuh di ponsel (audit UI 2 Okt 2026: chip filter 25px, tombol Cari dan Proses
            28px, tutup modal 18x28, radio 13px). Kontrol utama minimal 40px. Tautan bergaya pil
            (rounded + py-*) ikut; yang masih inline dijadikan inline-flex supaya min-height berlaku.
@@ -186,9 +220,6 @@
                 width: 16rem !important;
                 transform: translateX(0) !important;
             }
-            /* Panel geser: kartu Beranda memakan seperempat tinggi ponsel dan memotong menu;
-               tautan "Kembali ke beranda" di atas sudah cukup. */
-            .sidebar-kartu-beranda { display: none !important; }
         }
         @media (max-width: 767px) {
             .admin-main { padding: 1rem; }

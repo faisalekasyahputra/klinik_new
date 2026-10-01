@@ -11,11 +11,8 @@ $csrf_hash = $this->security->get_csrf_hash();
 $ada_yatim = array_sum($yatim) > 0;
 ?>
 <div class="mb-6" x-data="{ buka: false, jenis: '', kunci: '', nama: '', label: '' }">
-    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Struktur &amp; Cakupan</h2>
-    <p class="text-sm text-gray-500 dark:text-brand-muted">
-        Bidang dan wilayah yang jadi acuan seluruh sistem, beserta siapa yang menanganinya.
-        Yang bisa diubah dari sini hanya <b>nama tampilan</b>.
-    </p>
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Bidang dan wilayah yang jadi acuan seluruh sistem, beserta siapa yang menanganinya.
+        Yang bisa diubah dari sini hanya <b>nama tampilan</b>.']); ?>
 
     <?php // ============ INTEGRITAS ============ ?>
     <div class="mt-6 p-4 rounded-2xl border text-sm flex items-start gap-3 <?= $ada_yatim
@@ -71,9 +68,8 @@ $ada_yatim = array_sum($yatim) > 0;
                         <td class="px-4 py-3 text-xs"><?= (int) $b->aduan_aktif ?></td>
                         <td class="px-4 py-3">
                             <button type="button" title="Ubah nama tampilan"
-                                    @click="jenis='bidang'; kunci=<?= htmlspecialchars(json_encode($b->kode), ENT_QUOTES) ?>; nama=<?= htmlspecialchars(json_encode($b->nama), ENT_QUOTES) ?>; label='Bidang'; buka=true"
-                                    class="rounded-lg border border-gray-200 px-2 py-1 text-xs font-bold text-gray-600 hover:bg-gray-100 dark:border-white/10 dark:text-brand-muted dark:hover:bg-white/5">
-                                <i class="ph ph-pencil-simple" aria-hidden="true"></i> Ubah nama
+                                    @click="jenis='bidang'; kunci=<?= htmlspecialchars(json_encode($b->kode), ENT_QUOTES) ?>; nama=<?= htmlspecialchars(json_encode($b->nama), ENT_QUOTES) ?>; label='Bidang'; buka=true" class="tombol-aksi">
+                                <i class="ph ph-pencil-simple" aria-hidden="true"></i><span>Ubah nama</span>
                             </button>
                         </td>
                     </tr>
@@ -118,9 +114,8 @@ $ada_yatim = array_sum($yatim) > 0;
                         <td class="px-4 py-3 text-xs"><?= (int) $w->laporan ?></td>
                         <td class="px-4 py-3">
                             <button type="button" title="Ubah nama tampilan"
-                                    @click="jenis='kabupaten'; kunci=<?= htmlspecialchars(json_encode((string) $w->id), ENT_QUOTES) ?>; nama=<?= htmlspecialchars(json_encode($w->nama), ENT_QUOTES) ?>; label='Kabupaten/Kota'; buka=true"
-                                    class="rounded-lg border border-gray-200 px-2 py-1 text-xs font-bold text-gray-600 hover:bg-gray-100 dark:border-white/10 dark:text-brand-muted dark:hover:bg-white/5">
-                                <i class="ph ph-pencil-simple" aria-hidden="true"></i> Ubah nama
+                                    @click="jenis='kabupaten'; kunci=<?= htmlspecialchars(json_encode((string) $w->id), ENT_QUOTES) ?>; nama=<?= htmlspecialchars(json_encode($w->nama), ENT_QUOTES) ?>; label='Kabupaten/Kota'; buka=true" class="tombol-aksi">
+                                <i class="ph ph-pencil-simple" aria-hidden="true"></i><span>Ubah nama</span>
                             </button>
                         </td>
                     </tr>

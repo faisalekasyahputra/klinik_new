@@ -127,7 +127,7 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
         </button>
         <a href="<?= base_url('Admin_Kemitraan') ?>"
            class="rounded-xl border border-gray-200 dark:border-white/10 px-5 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300">Batal</a>
-        <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white">Simpan Perubahan</button>
+        <button type="submit" class="tombol-utama">Simpan Perubahan</button>
     </div>
 </form>
 
@@ -155,9 +155,8 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
         <?php endif; ?>
 
         <div class="flex flex-wrap items-center gap-3">
-            <input type="file" name="file_surat_balasan" accept=".pdf" required
-                   class="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-4 py-2.5 text-xs text-gray-600 dark:text-brand-muted">
-            <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white">
+            <div class="min-w-[260px] flex-1"><?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'file_surat_balasan', 'ib_accept' => '.pdf', 'ib_required' => TRUE, 'ib_attr' => '']); ?></div>
+            <button type="submit" class="tombol-utama">
                 <?= empty($row->file_surat_balasan) ? 'Unggah' : 'Ganti Surat' ?>
             </button>
         </div>

@@ -14,16 +14,14 @@ $badge_kelas = [
     'Diterima' => 'ok', 'Ditolak' => 'reject', 'Dibatalkan' => 'reject',
 ];
 ?>
-<div class="mb-6">
-    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Magang Bidang Saya</h2>
-    <p class="text-sm text-gray-500 dark:text-brand-muted">
-        Surat pengantar yang sudah diteruskan sekretariat dan menunggu keputusan bidang Anda.
-        Surat balasan resmi disiapkan sekretariat setelah Anda menerima.
-    </p>
+<div>
+    <?php ob_start(); ?>
     <a href="<?= base_url('Kemitraan_Bidang/kuota') ?>"
-       class="mt-3 inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 px-4 py-2 text-xs font-bold text-gray-700 dark:text-gray-300">
+       class="inline-flex items-center gap-2 rounded-xl border border-gray-200 dark:border-white/10 px-4 py-2 text-xs font-bold text-gray-700 dark:text-gray-300">
         <i class="ph ph-calendar-check"></i> Atur Kuota &amp; Bulan Magang
     </a>
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_aksi' => ob_get_clean(), 'jh_deskripsi' => 'Surat pengantar yang sudah diteruskan sekretariat dan menunggu keputusan bidang Anda.
+        Surat balasan resmi disiapkan sekretariat setelah Anda menerima.']); ?>
 </div>
 
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
@@ -86,7 +84,7 @@ $badge_kelas = [
                         </td>
                         <td class="px-4 py-4 text-right">
                             <?php if ($r->status === 'Ditinjau Bidang'): ?>
-                                <button @click="procOpen = true" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">Putuskan</button>
+                                <button @click="procOpen = true" class="tombol-aksi"><i class="ph ph-gavel" aria-hidden="true"></i><span>Putuskan</span></button>
                                 <?php /* Modal, bukan popover: panel absolut dulu terpotong wadah overflow-x-auto
                                          (audit UI 2 Okt 2026). Teleport ke body karena sel Aksi sticky. */ ?>
                                 <template x-teleport="body">

@@ -150,7 +150,7 @@ $filter_html = ob_get_clean();
                         <!-- Tersedia pada status APA PUN: koreksi data paling sering
                              dibutuhkan justru setelah diproses, saat mahasiswa
                              mengabari NIM keliru atau periodenya bergeser. -->
-                        <a href="<?= base_url('Admin_Kemitraan/ubah/' . $r->id) ?>" class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5">Ubah</a>
+                        <a href="<?= base_url('Admin_Kemitraan/ubah/' . $r->id) ?>" class="tombol-aksi"><i class="ph ph-pencil-simple" aria-hidden="true"></i><span>Ubah</span></a>
                         <?php // Dirender untuk status APA PUN, bukan cuma 'Diajukan'. Dulu
                               // keputusan yang sudah terlanjur salah tidak punya jalan
                               // pulang sama sekali - admin harus mengubahnya lewat DB. ?>
@@ -159,7 +159,7 @@ $filter_html = ob_get_clean();
                                  terpotong wadah overflow-x-auto (audit UI 2 Okt 2026). Modal tidak
                                  bergantung pada tinggi baris maupun wadah. Teleport ke body karena
                                  sel Aksi sticky (lihat .aksi-tetap di layouts/head.php). */ ?>
-                            <button @click="procOpen = true" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10"><?= $r->status === 'Diajukan' ? 'Proses' : 'Ubah Keputusan' ?></button>
+                            <button @click="procOpen = true" class="tombol-aksi"><i class="ph ph-pencil-simple" aria-hidden="true"></i><span><?= $r->status === 'Diajukan' ? 'Proses' : 'Ubah Keputusan' ?></span></button>
                             <template x-teleport="body">
                             <div x-show="procOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center whitespace-normal bg-black/50 p-4" @keydown.escape.window="procOpen = false">
                             <div @click.outside="procOpen = false" class="w-full max-w-sm rounded-3xl bg-white dark:bg-brand-card p-6 text-left shadow-xl">

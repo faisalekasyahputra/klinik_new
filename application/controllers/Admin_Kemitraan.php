@@ -68,7 +68,7 @@ class Admin_Kemitraan extends Admin_Controller {
         }
 
         $this->render_admin('admin/kemitraan/slot', [
-            'title'          => 'Slot Magang',
+            'title'          => 'KKN & Magang', // satu nama untuk ketiga tab, = label sidebar
             'tahun'          => $tahun,
             'tahun_tersedia' => $this->slot->tahun_tersedia(),
             'bidang'         => $bidang,
@@ -211,7 +211,7 @@ class Admin_Kemitraan extends Admin_Controller {
 
     public function index()
     {
-        $data['title'] = 'Pendaftaran KKN/Magang';
+        $data['title'] = 'KKN & Magang'; // = label sidebar
 
         // Cari + urut + paginasi semuanya server-side (B7/B8).
         $table = $this->table_state([
@@ -286,7 +286,7 @@ class Admin_Kemitraan extends Admin_Controller {
      */
     public function universitas()
     {
-        $data['title'] = 'Akun Universitas';
+        $data['title'] = 'KKN & Magang'; // tab Akun Universitas, judul halamannya tetap satu
 
         $table = $this->table_state(['created_at', 'name', 'email'], 'created_at');
         $data['base_url'] = 'Admin_Kemitraan/universitas';

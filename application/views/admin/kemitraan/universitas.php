@@ -6,10 +6,7 @@ $this->load->helper('admin_table');
 if (empty($aksi_buat)) {
     $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => 'universitas']);
 } else { ?>
-<div class="mb-5">
-    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">Akun Universitas</h2>
-    <p class="text-sm text-gray-500 dark:text-brand-muted">Buatkan akun untuk universitas mitra KKN, lalu serahkan email dan sandinya kepada universitas tersebut.</p>
-</div>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Buatkan akun untuk universitas mitra KKN, lalu serahkan email dan sandinya kepada universitas tersebut.']); ?>
 <?php } ?>
 <?php /* TANPA `z-10` di pembungkus - alasan sama dengan admin/users/index.php:
          pembungkus ini memuat modal "Tambah Universitas". */ ?>
@@ -25,7 +22,7 @@ if (empty($aksi_buat)) {
 <?php endif; ?>
         </p>
     </div>
-    <button @click="createOpen = true" class="shrink-0 bg-blue-600 dark:bg-brand-primary text-white dark:text-brand-dark px-5 py-2.5 rounded-xl font-bold flex items-center hover:bg-blue-700 dark:hover:bg-brand-hover transition-colors shadow-sm shadow-blue-500/30 dark:shadow-brand-primary/20">
+    <button @click="createOpen = true" class="tombol-utama shrink-0">
         <i class="ph ph-bank text-lg mr-2"></i> Tambah Universitas
     </button>
 
@@ -70,7 +67,7 @@ if (empty($aksi_buat)) {
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
                     <button type="button" @click="createOpen = false" class="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5">Batal</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 dark:bg-brand-primary text-white dark:text-brand-dark hover:bg-blue-700 dark:hover:bg-brand-hover">Buat Akun</button>
+                    <button type="submit" class="tombol-utama">Buat Akun</button>
                 </div>
             </form>
         </div>
@@ -80,7 +77,7 @@ if (empty($aksi_buat)) {
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
     <div class="p-6 border-b border-gray-200 dark:border-white/5">
         <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <i class="ph ph-bank text-brand-primary"></i> Akun Universitas (<?= number_format((int) $table['total_rows']) ?>)
+            <i class="ph ph-bank text-brand-primary"></i> Akun Universitas (<?= angka_id((int) $table['total_rows']) ?>)
         </h3>
     </div>
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, email, atau username...'], TRUE) ?>
@@ -139,9 +136,8 @@ if (empty($aksi_buat)) {
                                  Admin bidang: kelola langsung di sini (keputusan pemilik produk
                                  29 Sep 2026), ke Kemitraan_Bidang yang hanya menerima role universitas. */ ?>
 <?php if (empty($aksi_buat)): ?>
-                        <a href="<?= base_url('Admin_Users?q=' . urlencode($u->email)) ?>"
-                           class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">
-                            <i class="ph ph-gear"></i> Kelola Akun
+                        <a href="<?= base_url('Admin_Users?q=' . urlencode($u->email)) ?>" class="tombol-aksi">
+                            <i class="ph ph-gear"></i><span>Kelola Akun</span>
                         </a>
 <?php else:
     $csrf_isian = '<input type="hidden" name="' . $this->security->get_csrf_token_name() . '" value="' . $this->security->get_csrf_hash() . '"><input type="hidden" name="id" value="' . (int) $u->id . '">';
@@ -149,9 +145,8 @@ if (empty($aksi_buat)) {
     $label_kls = 'mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted';
 ?>
                         <span x-data="{ kelola: false }">
-                        <button type="button" @click="kelola = true"
-                           class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">
-                            <i class="ph ph-gear"></i> Kelola
+                        <button type="button" @click="kelola = true" class="tombol-aksi">
+                            <i class="ph ph-gear"></i><span>Kelola</span>
                         </button>
                         <?php /* Teleport: sel Aksi sticky membuat stacking context, modal di dalamnya terkubur di bawah topbar (.aksi-tetap di layouts/head.php). */ ?>
                         <template x-teleport="body">
@@ -166,14 +161,14 @@ if (empty($aksi_buat)) {
                                         <input type="email" name="email" required maxlength="100" value="<?= html_escape($u->email) ?>" class="<?= $isian_kls ?>"></div>
                                     <div><label class="<?= $label_kls ?>">Nomor HP/WhatsApp</label>
                                         <input type="tel" name="phone" maxlength="20" pattern="\+?[0-9][0-9 \-]{6,19}" value="<?= html_escape($u->phone ?? '') ?>" class="<?= $isian_kls ?>"></div>
-                                    <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 dark:bg-brand-primary text-white dark:text-brand-dark">Simpan Data</button>
+                                    <button type="submit" class="tombol-utama">Simpan Data</button>
                                 </form>
                                 <form method="POST" action="<?= base_url('Kemitraan_Bidang/sandi_universitas') ?>" class="space-y-3 border-t border-gray-100 dark:border-white/5 pt-4">
                                     <?= $csrf_isian ?>
                                     <div><label class="<?= $label_kls ?>">Sandi Baru</label>
                                         <input type="password" name="password" required minlength="8" autocomplete="new-password" class="<?= $isian_kls ?>">
                                         <p class="mt-1 text-[11px] text-gray-500 dark:text-brand-muted">Minimal 8 karakter, ada huruf besar, angka, dan simbol. Universitas wajib menggantinya saat masuk.</p></div>
-                                    <button type="submit" class="px-4 py-2 rounded-xl text-sm font-bold bg-blue-600 dark:bg-brand-primary text-white dark:text-brand-dark">Reset Sandi</button>
+                                    <button type="submit" class="tombol-utama">Reset Sandi</button>
                                 </form>
                                 <form method="POST" action="<?= base_url('Kemitraan_Bidang/status_universitas') ?>" class="flex items-center justify-between gap-3 border-t border-gray-100 dark:border-white/5 pt-4"
                                       onsubmit="return confirm('<?= $nonaktif ? 'Aktifkan kembali akun ini?' : 'Nonaktifkan akun ini? Sesinya langsung berakhir dan tidak bisa masuk.' ?>')">

@@ -82,10 +82,7 @@ $warna = [
                 <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e(tgl_id($row['reviewed_at'], TRUE, TRUE)) ?></td>
                 <td class="py-2 pr-3 text-gray-600 dark:text-brand-muted"><?= $e($row['catatan_admin'] ?: '-') ?></td>
                 <td class="py-2 text-right whitespace-nowrap">
-                  <a href="<?= $url_detail ?>"
-                     class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold dark:border-white/10">
-                    Lihat capaian
-                  </a>
+                  <a href="<?= $url_detail ?>" class="tombol-aksi"><i class="ph ph-eye" aria-hidden="true"></i><span>Lihat capaian</span></a>
                 </td>
               </tr>
             <?php endforeach; ?>

@@ -56,8 +56,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
         </div>
 
         <div class="mt-5 flex justify-end">
-            <button type="button" id="modal-posisi-tutup" class="rounded-xl px-4 py-2 text-sm font-bold"
-                    style="background:var(--portal-brand,#0e6b7a);color:#fff">Mengerti, saya perbarui</button>
+            <button type="button" id="modal-posisi-tutup" class="tombol-utama">Mengerti, saya perbarui</button>
         </div>
     </div>
 </dialog>
@@ -73,17 +72,10 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
 <?php endif; ?>
 
 <div class="space-y-5">
-    <header>
-        <h1 class="text-xl font-black">Jurusan/Bidang/Keahlian Magang</h1>
-        <p class="mt-1 text-sm" style="color:var(--portal-text-muted,#6b7280)">
-            Daftar jurusan, bidang studi, atau keahlian yang sedang dibutuhkan tiap bidang. Yang <strong>aktif</strong> tampil di papan
-            magang publik; kuota di sini keterangan, bukan pengunci pendaftaran.
-        </p>
-        <p class="mt-1 text-xs" style="color:var(--portal-text-muted,#6b7280)">
-            <?= (int) $jumlah_aktif ?> posisi aktif ·
-            <?= $terakhir_diubah ? 'terakhir diperbarui ' . html_escape(tgl_id($terakhir_diubah, TRUE)) : 'belum pernah diisi' ?>
-        </p>
-    </header>
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Daftar jurusan, bidang studi, atau keahlian yang sedang dibutuhkan tiap bidang. Yang <strong>aktif</strong> tampil di papan
+            magang publik; kuota di sini keterangan, bukan pengunci pendaftaran.<br><span class="text-xs">'
+            . (int) $jumlah_aktif . ' posisi aktif · '
+            . ($terakhir_diubah ? 'terakhir diperbarui ' . html_escape(tgl_id($terakhir_diubah, TRUE)) : 'belum pernah diisi') . '</span>']); ?>
 
     <?php foreach (['success' => '#047857', 'error' => '#b91c1c'] as $jenis => $warna): ?>
         <?php if ($this->session->flashdata($jenis)): ?>
@@ -128,8 +120,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
             <label class="flex items-center gap-2 text-xs">
                 <input type="checkbox" name="aktif" value="1" checked> Tampilkan di papan magang
             </label>
-            <button type="submit" class="rounded-xl px-4 py-2 text-sm font-bold"
-                    style="background:var(--portal-brand,#0e6b7a);color:#fff">Tambah</button>
+            <button type="submit" class="tombol-utama">Tambah</button>
         </div>
     </form>
 
@@ -172,8 +163,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
                             value="<?= (int) $r->urutan ?>" class="w-16 rounded border p-1 text-xs"></td>
                         <td class="px-3 py-2"><input type="checkbox" name="aktif" value="1" form="f<?= (int) $r->id ?>" <?= $r->aktif ? 'checked' : '' ?>></td>
                         <td class="whitespace-nowrap px-3 py-2">
-                            <button type="submit" form="f<?= (int) $r->id ?>" class="rounded px-2 py-1 text-xs font-bold"
-                                    style="background:var(--portal-brand,#0e6b7a);color:#fff">Simpan</button>
+                            <button type="submit" form="f<?= (int) $r->id ?>" class="tombol-aksi"><i class="ph ph-floppy-disk" aria-hidden="true"></i><span>Simpan</span></button>
                         </td>
                     </tr>
                 <?php endforeach; ?>

@@ -132,7 +132,7 @@ if ( ! $mode_bidang) { $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' =
             <p class="text-xs text-gray-500 dark:text-brand-muted">
                 Bulan yang kotak bukanya tidak dicentang akan ditutup, apa pun tanggal yang tertulis di sebelahnya.
             </p>
-            <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white">
+            <button type="submit" class="tombol-utama">
                 Simpan <?= html_escape($bidang->nama) ?> <?= (int) $tahun ?>
             </button>
         </div>

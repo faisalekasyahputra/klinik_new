@@ -72,12 +72,8 @@
                             <?php endif; ?>
                         </td>
                         <td class="px-6 py-4 text-right whitespace-nowrap">
-                            <a href="<?= base_url('Admin_Kemitraan/slot_bidang/' . rawurlencode($b->kode) . '/' . (int) $tahun) ?>"
-                               class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">Detail</a>
-                            <button type="submit" form="bidang-<?= html_escape($b->kode) ?>"
-                                    class="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5">
-                                <?= (int) $b->aktif ? 'Setop Terima' : 'Mulai Terima' ?>
-                            </button>
+                            <a href="<?= base_url('Admin_Kemitraan/slot_bidang/' . rawurlencode($b->kode) . '/' . (int) $tahun) ?>" class="tombol-aksi"><i class="ph ph-eye" aria-hidden="true"></i><span>Detail</span></a>
+                            <button type="submit" form="bidang-<?= html_escape($b->kode) ?>" class="tombol-aksi"><i class="ph ph-power" aria-hidden="true"></i><span><?= (int) $b->aktif ? 'Setop Terima' : 'Mulai Terima' ?></span></button>
                         </td>
                     </tr>
                 <?php endforeach; ?>

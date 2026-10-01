@@ -9,7 +9,7 @@
  * bukan ditiru dengan overlay yang butuh JS.
  *
  * Gaya: dialek `rekam` (space-y-4, p-5, tanpa shadow, dark:border-white/10) dan
- * tombol utama `bg-blue-600 dark:bg-brand-primary` - biru di terang, lime di
+ * tombol utama `.tombol-utama` (layouts/head.php) - biru di terang, lime di
  * gelap. `bg-brand-primary` tanpa `dark:` menghasilkan tombol lime di halaman
  * putih; itu jebakan yang sudah pernah terjadi.
  */
@@ -19,8 +19,7 @@ $rp = static fn($n) => number_format((int) $n, 0, ',', '.');
 $laporan_id = (int) ($laporan['id'] ?? 0);
 $aktif      = array_search($langkah, $urutan, TRUE);
 
-$tombol = 'rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors'
-    . ' hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover';
+$tombol = 'tombol-utama'; // gaya bersama di admin/layouts/head.php
 $tombol_lembut = 'rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold'
     . ' text-gray-700 transition-colors hover:bg-gray-50 dark:border-white/10'
     . ' dark:text-brand-muted dark:hover:bg-white/5';
@@ -413,7 +412,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
         <form method="post" action="<?= base_url('Rekam_Perumahan/unggah_bnba') ?>" enctype="multipart/form-data" class="mt-4 space-y-3">
           <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
           <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
-          <input type="file" name="bnba" accept=".pdf,.jpg,.jpeg,.png" aria-describedby="bnba-format" class="<?= $isian ?>">
+          <?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'bnba', 'ib_accept' => '.pdf,.jpg,.jpeg,.png', 'ib_required' => FALSE, 'ib_attr' => 'aria-describedby="bnba-format"']); ?>
           <?php // Sama dengan yang ditegakkan MY_Controller::store_private_upload() (jenis dan batas bawaan 5 MB). ?>
           <p id="bnba-format" class="text-xs text-gray-500 dark:text-brand-muted">Format PDF, JPG, atau PNG, paling besar 5 MB. Daftar dari Excel disimpan sebagai PDF lebih dulu.</p>
           <button class="<?= $tombol_lembut ?>"><?= $bnba ? 'Ganti berkas' : 'Unggah' ?></button>

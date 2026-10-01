@@ -41,8 +41,7 @@ $warna_status = [
 $label_status = ['draft' => 'Draft', 'terkirim' => 'Terkirim', 'perlu_perbaikan' => 'Perlu Perbaikan'];
 
 $kotak  = 'rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card';
-$tombol = 'inline-block rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors'
-    . ' hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover';
+$tombol = 'tombol-utama'; // gaya bersama di admin/layouts/head.php
 
 /**
  * Satu tabel matriks. `$sisi_list` menentukan sisi angka yang ditampilkan:

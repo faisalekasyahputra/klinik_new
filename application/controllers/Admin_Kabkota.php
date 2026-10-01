@@ -11,7 +11,7 @@ class Admin_Kabkota extends Admin_Kabkota_Controller {
 
     public function index()
     {
-        $data['title'] = 'Antrean Perumahan Wilayah Saya';
+        $data['title'] = 'Antrean Wilayah Saya'; // = label sidebar
         $data['scope_label'] = $this->db->where('id', $this->my_kabupaten_id)
             ->get('kabupaten')->row('nama') ?: 'Wilayah Saya';
         $data['action_url'] = 'Admin_Kabkota/update_status';

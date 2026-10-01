@@ -117,6 +117,18 @@ if ( ! function_exists('tgl_id')) {
 
 
 /**
+ * Angka bulat berpemisah ribuan Indonesia: 4238 -> "4.238".
+ *
+ * number_format() tanpa argumen memakai koma ("4,238"), yang di layar dinas terbaca
+ * sebagai desimal (audit UI 2 Okt 2026: "Riwayat Tindakan (4,238)" di Jejak Audit).
+ */
+if ( ! function_exists("angka_id")) {
+    function angka_id($n) {
+        return number_format((float) $n, 0, ",", ".");
+    }
+}
+
+/**
  * Nomor WhatsApp (628xxx) dari teks telepon bebas, atau '' kalau tidak ada nomor HP.
  *
  * Data hulu (SIKUMBANG, profil pengembang) sering berisi telepon kantor, dua nomor

@@ -1,11 +1,6 @@
-<div class="mb-6 relative z-10">
-    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Jejak Audit</h2>
-    <p class="text-sm text-gray-500 dark:text-brand-muted max-w-2xl">
-        Rekaman tindakan yang mengubah akses dan data pengelolaan - siapa melakukannya, kapan, dan
+<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Rekaman tindakan yang mengubah akses dan data pengelolaan - siapa melakukannya, kapan, dan
         terhadap apa. Termasuk percobaan yang <span class="font-bold">ditolak</span> sistem. Layar ini
-        hanya bisa dibaca; barisnya tidak bisa diubah atau dihapus dari sini.
-    </p>
-</div>
+        hanya bisa dibaca; barisnya tidak bisa diubah atau dihapus dari sini.']); ?>
 
 <?php
 $this->load->helper('admin_table');
@@ -38,7 +33,7 @@ $filter_html = ob_get_clean();
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden relative z-10">
     <div class="p-6 border-b border-gray-200 dark:border-white/5">
         <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <i class="ph ph-scroll text-brand-primary"></i> Riwayat Tindakan (<?= number_format((int) $table['total_rows']) ?>)
+            <i class="ph ph-scroll text-brand-primary"></i> Riwayat Tindakan (<?= angka_id((int) $table['total_rows']) ?>)
         </h3>
     </div>
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari ringkasan, email pelaku, atau aksi...', 'filter_html' => $filter_html], TRUE) ?>

@@ -11,7 +11,7 @@ class Admin extends Admin_Controller {
 
     public function index()
     {
-        $data['title'] = 'Antrean & Validasi';
+        $data['title'] = 'Tinjau Antrean'; // = label sidebar
         $data['scope_label'] = 'Semua Wilayah';
         $data['action_url']  = 'Admin/update_status';
         $data['empty_text']  = 'Belum ada antrean yang masuk.';
