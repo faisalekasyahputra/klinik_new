@@ -586,6 +586,17 @@ cek(strpos($pdt, 'Bukti Pindah Tangan') !== FALSE, 'UAT #9: kotak unggah Bukti P
 preg_match("/'role' => 'admin_kabkota'.{0,200}?'([A-Za-z_]+[^']*)', \\\$tag/s", $wrg, $mp);
 cek(($mp[1] ?? '') === 'Admin_Kabkota', 'Push pengajuan baru untuk admin kab/kota bertaut ke antrean wilayahnya, bukan Admin/');
 
+// Keputusan user 1 Okt 2026: laporan rekam data yang dikembalikan provinsi memberi tahu
+// admin kab/kota pemiliknya, hanya bila transisinya sukses. Push tidak terkirim di lokal
+// (VAPID kosong), jadi yang dijaga sumbernya, sama seperti pemeriksaan di atas.
+$tnj = (string) @file_get_contents(APP_ROOT . '/application/controllers/Rekam_Tinjauan.php');
+preg_match('/function minta_perbaikan\(\).*?\n    \}/s', $tnj, $mt);
+$fn_mp = $mt[0] ?? '';
+cek(preg_match("/if \( ! empty\(\\\$hasil\['success'\]\)\) \{.*?notify_admin_push\(\[\['role' => 'admin_kabkota', 'kabupaten_id' => \(int\) \\\$laporan\['kabupaten_id'\]\]\]/s", $fn_mp) === 1,
+    'Push minta perbaikan rekam data: hanya bila sukses, ke admin_kabkota wilayah laporan');
+cek(strpos($fn_mp, "'Rekam_Perumahan' : 'Rekam_Kawasan'") !== FALSE && strpos($fn_mp, "'?tahun='") !== FALSE,
+    'Push minta perbaikan bertaut ke layar Rekam_Perumahan/Rekam_Kawasan periodenya');
+
 // E1 - syarat "harus ditanggapi dulu" dilepas, TIGA syarat lain tetap berdiri.
 $umum = (string) @file_get_contents(APP_ROOT . '/application/controllers/Umum.php');
 wajib($umum !== '', 'Sumber Umum.php terbaca');

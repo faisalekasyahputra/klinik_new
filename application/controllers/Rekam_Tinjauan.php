@@ -93,6 +93,17 @@ class Rekam_Tinjauan extends Admin_Bidang_Controller {
         }
         $hasil = $this->rd->minta_perbaikan($laporan_id, $this->get_user_id(),
             $this->input->post('catatan_admin', TRUE), $this->domain);
+        if ( ! empty($hasil['success'])) {
+            // Admin kab/kota pemilik laporan diberi tahu; tautan ke layar periode yang bisa ia buka.
+            $laporan = $this->db->select('kabupaten_id, tahun, triwulan')
+                ->get_where('rd_laporan', ['id' => $laporan_id])->row_array();
+            $layar = $this->domain === 'perumahan' ? 'Rekam_Perumahan' : 'Rekam_Kawasan';
+            $this->notify_admin_push([['role' => 'admin_kabkota', 'kabupaten_id' => (int) $laporan['kabupaten_id']]],
+                'Rekam Data perlu diperbaiki',
+                'Laporan rekam data dikembalikan provinsi untuk diperbaiki.',
+                $layar . '?tahun=' . (int) $laporan['tahun'] . '&triwulan=' . (int) $laporan['triwulan'],
+                'rekam-perbaikan-' . $laporan_id);
+        }
         $this->pulang($hasil, 'Laporan dikembalikan untuk diperbaiki.');
     }
 
