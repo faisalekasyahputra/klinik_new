@@ -312,6 +312,12 @@ cek($j['jadwal_mulai'] === NULL, 'Jadwal masih kosong - belum ada yang menawarka
 cek((int) $j['user_id'] === $idW, 'Pemohonnya diambil dari sesi, bukan dari POST');
 cek(jejak('janji_temu_diajukan', $jid) === 1, 'Jejak audit janji_temu_diajukan tercatat');
 
+// Meja kerja superadmin: janji temu baru ikut di "Pengajuan terbaru" seperti empat domain lain.
+$meja = http('a', 'Admin_Dashboard')['body'];
+cek(strpos($meja, 'Janji Temu') !== FALSE && strpos($meja, 'Topik uji janji temu ' . CAP) !== FALSE,
+    'Janji temu baru muncul di feed Pengajuan terbaru Admin_Dashboard');
+cek(strpos($meja, RAHASIA_ALASAN) === FALSE, 'Feed dashboard tidak memuat isi alasan pengajuan');
+
 // Alasan terlalu pendek ditolak.
 $r = $post_ajukan('w', $topik, 'pendek');
 cek(jml_janji($topik) === 1, 'Alasan < 20 karakter ditolak (tetap satu baris)');

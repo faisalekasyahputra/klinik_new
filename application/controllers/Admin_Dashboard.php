@@ -95,6 +95,17 @@ class Admin_Dashboard extends Admin_Controller {
             ];
         }
 
+        foreach ($this->db->select('jt.status, jt.created_at, d.judul_topik')
+            ->from('forum_janji_temu jt')->join('forum_diskusi d', 'd.id_diskusi = jt.id_diskusi', 'left')
+            ->order_by('jt.created_at', 'DESC')->limit(6)->get()->result() as $r) {
+            $items[] = [
+                'icon' => 'ph-calendar-check', 'jenis' => 'Janji Temu',
+                'judul' => $r->judul_topik ?: 'Janji temu konsultasi',
+                'status' => $r->status, 'waktu' => $r->created_at,
+                'url' => 'Admin_Konsultasi?status=' . rawurlencode($r->status),
+            ];
+        }
+
         usort($items, fn($a, $b) => strtotime($b['waktu']) <=> strtotime($a['waktu']));
         return array_slice($items, 0, 6);
     }
