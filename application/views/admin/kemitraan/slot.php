@@ -30,7 +30,7 @@
 </div>
 
 <div class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto aksi-tetap">
         <table class="w-full text-left text-sm">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>

@@ -82,7 +82,7 @@ $filter_html = ob_get_clean();
                 <tr>
                     <?php // Bulan berbahasa Indonesia - "Aug"/"May" tidak dipakai di layar mana pun lagi. ?>
                     <td class="px-4 py-4 text-xs"><?= html_escape(tgl_id($r->created_at, TRUE, TRUE)) ?></td>
-                    <td class="px-4 py-4">
+                    <td class="px-4 py-4 max-w-[14rem] whitespace-normal break-words">
                         <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama) ?></div>
                         <div class="text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($r->email) ?></div>
                     </td>

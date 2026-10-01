@@ -64,7 +64,7 @@ $total_pakai = static function ($kode) use ($pemakaian) {
                 Belum ada asosiasi. Selama daftar ini kosong, isian asosiasi di formulir pengembang dan admin tidak punya pilihan apa pun.
             </p>
         <?php else: ?>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto aksi-tetap">
             <table class="w-full min-w-[720px] text-left text-sm">
                 <thead class="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-black/20">
                     <tr>

@@ -49,13 +49,13 @@ $csrf_hash = $this->security->get_csrf_hash();
     <?php endif; ?>
 
     <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto aksi-tetap">
             <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                     <tr>
                         <th class="px-4 py-4">Nama di antrean &amp; /akun</th>
                         <th class="px-4 py-4">Nama di hasil diagnosa</th>
-                        <th class="px-4 py-4">Kode <span class="font-normal normal-case">(tidak bisa diubah)</span></th>
+                        <th class="px-4 py-4 whitespace-normal">Kode <span class="block font-normal normal-case">(tidak bisa diubah)</span></th>
                         <th class="px-4 py-4">Kategori</th>
                         <th class="px-4 py-4">Status</th>
                         <th class="px-4 py-4">Dipakai</th>
@@ -82,7 +82,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                             <?php endif; ?>
                         </td>
                         <td class="px-4 py-3"><code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs dark:bg-black/30"><?= html_escape($r->kode_program) ?></code></td>
-                        <td class="px-4 py-3 text-xs"><?= html_escape($r->nama_kategori ?: '-') ?></td>
+                        <td class="px-4 py-3 text-xs max-w-[14rem] whitespace-normal"><?= html_escape($r->nama_kategori ?: '-') ?></td>
                         <td class="px-4 py-3">
                             <?= $this->load->view('admin/components/status_badge', [
                                 'label' => (int) $r->is_active === 1 ? 'Aktif' : 'Nonaktif',

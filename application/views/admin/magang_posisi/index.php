@@ -138,7 +138,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
             Belum ada posisi. Papan magang publik masih menampilkan nama bidang saja.
         </p>
     <?php else: ?>
-        <div class="overflow-x-auto rounded-2xl border" style="border-color:var(--portal-border,#e5e7eb)">
+        <div class="overflow-x-auto aksi-tetap rounded-2xl border" style="border-color:var(--portal-border,#e5e7eb)">
             <table class="w-full text-sm">
                 <thead class="text-left text-xs" style="background:rgba(0,0,0,.03)">
                     <tr>

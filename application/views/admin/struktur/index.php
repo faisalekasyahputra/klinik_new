@@ -45,7 +45,7 @@ $ada_yatim = array_sum($yatim) > 0;
             <h3 class="font-black text-gray-900 dark:text-white">Bidang <span class="text-gray-400 dark:text-brand-muted">(<?= count($bidang) ?>)</span></h3>
             <span class="text-xs text-gray-500 dark:text-brand-muted">Struktur dinas: habis Kadinas langsung bidang, tanpa divisi</span>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto aksi-tetap">
             <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                     <tr>
@@ -92,7 +92,7 @@ $ada_yatim = array_sum($yatim) > 0;
             <span class="text-xs font-bold text-red-600 dark:text-red-400"><?= $tanpa_petugas ?> wilayah belum punya petugas</span>
             <?php endif; ?>
         </div>
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto aksi-tetap">
             <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                     <tr>

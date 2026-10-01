@@ -801,6 +801,47 @@ cek(strpos($kmt, '<td class="px-4 py-4 max-w-[14rem] whitespace-normal break-wor
     && strpos($kmt, '<td class="px-4 py-4 text-right whitespace-normal">') !== FALSE,
     'Kemitraan: sel Mahasiswa dan Aksi boleh membungkus supaya Aksi tidak terdorong keluar wadah');
 
+/* KOLOM AKSI MENEMPEL (audit UI 2 Okt 2026, kelompok 2). Di 375 dan 768 tombol
+   Tinjau/Proses/Simpan baru terlihat setelah tabel digulir jauh ke samping. Obatnya
+   SATU pola: kelas `aksi-tetap` pada pembungkus `overflow-x-auto` (aturan CSS-nya di
+   admin/layouts/head.php). Yang dijaga tiga hal yang masing-masing penyebab sekaligus
+   obat, bukan proksi lebar:
+     1. Aturan sticky-nya masih ada di shell.
+     2. Setiap tabel admin berkolom Aksi memakai kelasnya, dan Aksi kolom TERAKHIR
+        (aturannya menempelkan :last-child; Aksi di tengah = kolom lain yang menempel).
+     3. Sel sticky membuat stacking context, jadi modal `fixed` di dalam tabel itu
+        terkubur di bawah topbar kecuali di-teleport ke body. Popover `absolute` di
+        dalamnya juga dilarang: itu yang dulu terpotong wadah gulir.
+   Lebarnya sendiri tetap TIDAK diukur di sini (lihat catatan di atas); ukur di
+   peramban. Terukur 2 Okt 2026: kolom Aksi di tepi kanan wadah (selisih 0 px) pada
+   375 dan 768 untuk antrean, pengguna, SRP2, katalog, kemitraan, struktur, riwayat,
+   aduan bidang, magang bidang; halaman tidak menggulir mendatar. */
+echo "\n== Kolom Aksi menempel di kanan tabel admin ==\n";
+$head_admin = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/head.php');
+cek(preg_match('/\.aksi-tetap > table > \* > tr > :last-child:not\(\[colspan\]\) \{ position: sticky; right: 0; background-color: #fff;/', $head_admin) === 1
+    && strpos($head_admin, '.dark .aksi-tetap > table > * > tr > :last-child:not([colspan]) { background-color: #0f2933;') !== FALSE,
+    'Shell admin: aturan sticky kolom Aksi beserta latar pekat terang dan gelap');
+$tabel_aksi = 0;
+foreach (array_merge(glob(APP_ROOT . '/application/views/admin/*/*.php'), glob(APP_ROOT . '/application/views/admin_bidang/*.php')) as $berkas) {
+    $isi  = file_get_contents($berkas);
+    $nama = str_replace(APP_ROOT . '/application/views/', '', $berkas);
+    if ( ! preg_match_all('/<div class="(overflow-x-auto[^"]*)"[^>]*>\s*<table.*?<\/table>/s', $isi, $m, PREG_SET_ORDER)) { continue; }
+    foreach ($m as $blok) {
+        if ( ! preg_match('/<thead.*?<\/thead>/s', $blok[0], $kepala)) { continue; }
+        preg_match_all('/<th\b[^>]*>(.*?)<\/th>/s', $kepala[0], $th);
+        $label = array_map(static fn($t) => trim(strip_tags($t)), $th[1]);
+        if ( ! in_array('Aksi', $label, TRUE)) { continue; }
+        $tabel_aksi++;
+        cek(strpos($blok[1], 'aksi-tetap') !== FALSE, "{$nama}: pembungkus tabel berkolom Aksi memakai aksi-tetap");
+        cek(end($label) === 'Aksi', "{$nama}: Aksi kolom terakhir (yang ditempelkan :last-child)");
+        preg_match_all('/(<template x-teleport="body">\s*)?<div\s+x-show="[^"]+"[^>]*class="([^"]*\b(?:absolute|fixed)\b[^"]*)"/', $blok[0], $pop, PREG_SET_ORDER);
+        foreach ($pop as $p) {
+            cek(strpos($p[2], 'fixed') !== FALSE && $p[1] !== '', "{$nama}: panel di dalam tabel berupa modal yang di-teleport ke body");
+        }
+    }
+}
+cek($tabel_aksi >= 18, "Tabel admin berkolom Aksi terbaca ({$tabel_aksi} ditemukan)");
+
 /* BUTIR 4 PUTARAN 2 - desain prototipe beserta RAB di halaman Panduan Desain.
 
    Yang dijaga bukan "halamannya terbuka", melainkan tiga hal yang bisa rusak

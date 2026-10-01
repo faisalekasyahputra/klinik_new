@@ -76,7 +76,7 @@
         </h3>
     </div>
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, email, atau username...'], TRUE) ?>
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto aksi-tetap">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
@@ -204,12 +204,12 @@
                         <?php endif; ?>
                     </td>
                     <td class="px-4 py-4 text-xs"><?= html_escape(tgl_id($u->created_at ?? '', TRUE)) ?></td>
-                    <td class="px-4 py-4 text-right relative">
+                    <td class="px-4 py-4 text-right">
                         <?php /* flex-wrap + max-w: tombol menumpuk ke bawah saat sempit,
                                  BUKAN melebarkan tabel. Kolom Aksi adalah yang pertama
                                  hilang di balik gulir horizontal (§17 poin 6). */ ?>
                         <div class="ml-auto flex max-w-[15rem] flex-wrap items-center justify-end gap-1">
-                            <button @click="editOpen = !editOpen" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">
+                            <button @click="editOpen = true" class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">
                                 <i class="ph ph-pencil-simple"></i> Ubah Role
                             </button>
                             <?php if (in_array($u->role, ['admin_kabkota', 'admin_bidang'], TRUE)): ?>
@@ -268,6 +268,7 @@
                                  atas. Modal ini `fixed`, tapi ia tetap DITULIS di dalam
                                  <td>, dan `white-space` mewaris lewat pohon DOM, bukan
                                  lewat posisi layar. Dua kolom sandinya `inline-block`. */ ?>
+                        <template x-teleport="body">
                         <div x-show="resetOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center whitespace-normal bg-black/50 p-4" @keydown.escape.window="resetOpen = false">
                             <div @click.outside="resetOpen = false" class="w-full max-w-md rounded-3xl bg-white dark:bg-brand-card p-6 text-left shadow-xl" x-data="{ sandi: '', ulang: '' }">
                                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">Reset Password</h3>
@@ -306,6 +307,7 @@
                                 </form>
                             </div>
                         </div>
+                        </template>
 
                         <?php /* `whitespace-normal` WAJIB, bukan kerapian.
                                  Tabel admin memakai `whitespace-nowrap` (§17 poin 6), dan
@@ -318,6 +320,7 @@
                                  diklik. Terukur di production 4 Agt 2026: tombol di
                                  x=1371 sementara panelnya berakhir di x=1385. */ ?>
                         <?php if ($u->role === 'warga' && ! empty($warga_nik_bound[(int)$u->id])): ?>
+                        <template x-teleport="body">
                         <div x-show="nikResetOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center whitespace-normal bg-black/50 p-4" @keydown.escape.window="nikResetOpen = false">
                             <div @click.outside="nikResetOpen = false" class="w-full max-w-md rounded-3xl bg-white dark:bg-brand-card p-6 text-left shadow-xl">
                                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">Reset NIK Warga</h3>
@@ -330,8 +333,17 @@
                                 </form>
                             </div>
                         </div>
+                        </template>
                         <?php endif; ?>
-                        <div x-show="editOpen" x-cloak @click.outside="editOpen = false" class="absolute right-4 top-1/2 z-20 w-64 -translate-y-1/2 whitespace-normal rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
+                        <?php /* Ubah Role kini modal (audit UI 2 Okt 2026): popover absolut terpotong
+                                 wadah overflow-x-auto. Ketiga modal di sel ini di-teleport ke body karena
+                                 sel Aksi sticky membuat stacking context (lihat .aksi-tetap di layouts/head.php);
+                                 tanpa teleport modal terkubur di bawah topbar. */ ?>
+                        <template x-teleport="body">
+                        <div x-show="editOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center whitespace-normal bg-black/50 p-4" @keydown.escape.window="editOpen = false">
+                        <div @click.outside="editOpen = false" class="w-full max-w-sm rounded-3xl bg-white dark:bg-brand-card p-6 text-left shadow-xl">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Ubah Role</h3>
+                            <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-brand-muted break-words"><?= html_escape($u->email) ?></p>
                             <form method="POST" action="<?= base_url('Admin_Users/update_role') ?>" class="space-y-2">
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                 <input type="hidden" name="id" value="<?= $u->id ?>">
@@ -359,6 +371,8 @@
                                 <button type="submit" class="w-full mt-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 dark:bg-brand-primary text-white dark:text-brand-dark hover:bg-blue-700 dark:hover:bg-brand-hover">Simpan</button>
                             </form>
                         </div>
+                        </div>
+                        </template>
                     </td>
                 </tr>
                 <?php endforeach; endif; ?>

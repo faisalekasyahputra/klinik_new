@@ -84,7 +84,7 @@ if (empty($aksi_buat)) {
         </h3>
     </div>
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, email, atau username...'], TRUE) ?>
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto aksi-tetap">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
@@ -153,6 +153,8 @@ if (empty($aksi_buat)) {
                            class="px-2.5 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">
                             <i class="ph ph-gear"></i> Kelola
                         </button>
+                        <?php /* Teleport: sel Aksi sticky membuat stacking context, modal di dalamnya terkubur di bawah topbar (.aksi-tetap di layouts/head.php). */ ?>
+                        <template x-teleport="body">
                         <div x-show="kelola" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 text-left whitespace-normal" @keydown.escape.window="kelola = false">
                             <div @click.outside="kelola = false" class="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-white dark:bg-brand-card p-6 shadow-xl space-y-5">
                                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">Kelola <?= html_escape($u->name) ?></h3>
@@ -182,6 +184,7 @@ if (empty($aksi_buat)) {
                                 </form>
                             </div>
                         </div>
+                        </template>
                         </span>
 <?php endif; ?>
                     </td>

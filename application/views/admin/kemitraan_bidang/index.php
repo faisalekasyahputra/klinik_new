@@ -28,7 +28,7 @@ $badge_kelas = [
 
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari mahasiswa, instansi, bidang...'], TRUE) ?>
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto aksi-tetap">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
@@ -84,10 +84,16 @@ $badge_kelas = [
                                 </div>
                             <?php endif; ?>
                         </td>
-                        <td class="px-4 py-4 text-right relative">
+                        <td class="px-4 py-4 text-right">
                             <?php if ($r->status === 'Ditinjau Bidang'): ?>
-                                <button @click="procOpen = !procOpen" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">Putuskan</button>
-                                <div x-show="procOpen" x-cloak @click.outside="procOpen = false" class="absolute right-6 top-full mt-1 z-20 w-72 whitespace-normal rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
+                                <button @click="procOpen = true" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">Putuskan</button>
+                                <?php /* Modal, bukan popover: panel absolut dulu terpotong wadah overflow-x-auto
+                                         (audit UI 2 Okt 2026). Teleport ke body karena sel Aksi sticky. */ ?>
+                                <template x-teleport="body">
+                                <div x-show="procOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center whitespace-normal bg-black/50 p-4" @keydown.escape.window="procOpen = false">
+                                <div @click.outside="procOpen = false" class="w-full max-w-sm rounded-3xl bg-white dark:bg-brand-card p-6 text-left shadow-xl">
+                                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Putuskan Pendaftaran Magang</h3>
+                                    <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-brand-muted break-words"><?= html_escape($r->nama_mahasiswa ?: '-') ?> &middot; <?= html_escape($r->instansi_asal) ?></p>
                                     <?= $this->load->view('admin/components/review_form', [
                                         'action_url' => 'Kemitraan_Bidang/proses/' . $r->id,
                                         'buttons' => [
@@ -97,6 +103,8 @@ $badge_kelas = [
                                         'catatan_name' => 'catatan_admin',
                                     ], TRUE) ?>
                                 </div>
+                                </div>
+                                </template>
                             <?php else: ?>
                                 <span class="text-xs text-gray-400 dark:text-brand-muted/60">Sudah lewat meja Anda</span>
                             <?php endif; ?>

@@ -23,7 +23,7 @@ $filter_html = ob_get_clean();
 ?>
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari mahasiswa, instansi, divisi...', 'filter_html' => $filter_html], TRUE) ?>
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto aksi-tetap">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
@@ -154,27 +154,17 @@ $filter_html = ob_get_clean();
                         <?php // Dirender untuk status APA PUN, bukan cuma 'Diajukan'. Dulu
                               // keputusan yang sudah terlanjur salah tidak punya jalan
                               // pulang sama sekali - admin harus mengubahnya lewat DB. ?>
-                        <?php
-                        /* Dropdown DIBUNGKUS wrapper SENDIRI ("relative inline-block"),
-                           BUKAN mengandalkan "relative" di <td> - keluhan user 22 Agt
-                           2026 ("baris ketiga diklik, muncul di baris keempat").
-
-                           Sebabnya: baris tabel ini TINGGINYA TIDAK SERAGAM (kolom
-                           Bidang/Tema bisa memuat dua tautan surat + jumlah peserta,
-                           kadang tiga baris teks, kadang satu). Sel <td> yang jadi
-                           acuan "relative" DIREGANGKAN mengikuti tinggi baris oleh
-                           tata letak tabel - jadi "top-full" (100%) terhitung dari
-                           tinggi SEL YANG SUDAH DIREGANGKAN itu, bukan dari tinggi
-                           tombolnya sendiri. Pada baris yang tinggi, itu mendorong
-                           dropdown turun sejauh tinggi baris - tepat mendarat di
-                           baris berikutnya, persis yang dilaporkan. Wrapper baru ini
-                           setinggi tombolnya saja (inline-block, bukan sel penuh),
-                           jadi "top-full" selalu 100% dari TOMBOL, berapa pun
-                           tingginya baris. */
-                        ?>
-                        <span class="relative inline-block">
-                            <button @click="procOpen = !procOpen" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10"><?= $r->status === 'Diajukan' ? 'Proses' : 'Ubah Keputusan' ?></button>
-                            <div x-show="procOpen" x-cloak @click.outside="procOpen = false" class="absolute right-0 top-full mt-1 z-20 w-72 whitespace-normal rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
+                        <?php /* Modal, bukan dropdown. Dropdown absolut dulu bermasalah dua kali:
+                                 mendarat di baris berikutnya pada baris tinggi (22 Agt 2026), lalu
+                                 terpotong wadah overflow-x-auto (audit UI 2 Okt 2026). Modal tidak
+                                 bergantung pada tinggi baris maupun wadah. Teleport ke body karena
+                                 sel Aksi sticky (lihat .aksi-tetap di layouts/head.php). */ ?>
+                            <button @click="procOpen = true" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10"><?= $r->status === 'Diajukan' ? 'Proses' : 'Ubah Keputusan' ?></button>
+                            <template x-teleport="body">
+                            <div x-show="procOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center whitespace-normal bg-black/50 p-4" @keydown.escape.window="procOpen = false">
+                            <div @click.outside="procOpen = false" class="w-full max-w-sm rounded-3xl bg-white dark:bg-brand-card p-6 text-left shadow-xl">
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white"><?= $r->status === 'Diajukan' ? 'Proses Pendaftaran' : 'Ubah Keputusan' ?></h3>
+                                <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-brand-muted break-words"><?= html_escape($r->nama_mahasiswa ?: '-') ?> &middot; <?= strtoupper(html_escape($r->jenis)) ?> &middot; <?= html_escape($r->instansi_asal) ?></p>
                                 <?php
                                 /* KKN TIDAK melewati meja bidang - Admin_Kemitraan::proses()
                                    sudah menolak status 'Ditinjau Bidang' untuk jenis KKN
@@ -204,7 +194,8 @@ $filter_html = ob_get_clean();
                                     'catatan_name' => 'catatan_admin',
                                 ], TRUE) ?>
                             </div>
-                        </span>
+                            </div>
+                            </template>
                     </td>
                 </tr>
                 <?php endforeach; endif; ?>

@@ -25,7 +25,7 @@ $kelas_status = ['Pending' => 'pending', 'Draft' => 'process', 'Diterima' => 'ok
     <a href="<?= admin_table_url($base_url, ['status' => 'semua']) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= $status_filter === 'semua' ? $kelas_aktif : $kelas_pasif ?>">Semua</a>
     <?php $filter_html = ob_get_clean(); ?>
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari perusahaan atau email...', 'filter_html' => $filter_html], TRUE) ?>
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto aksi-tetap">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>

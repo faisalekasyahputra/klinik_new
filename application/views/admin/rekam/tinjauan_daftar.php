@@ -48,7 +48,7 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
     </section>
   <?php else: ?>
     <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto aksi-tetap">
         <table class="w-full min-w-[760px] text-left text-sm">
           <thead class="text-xs uppercase text-gray-500 dark:text-brand-muted">
             <tr>

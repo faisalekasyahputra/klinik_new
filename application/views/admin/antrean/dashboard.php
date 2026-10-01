@@ -99,9 +99,9 @@ $filter_html = ob_get_clean();
 
         <p class="px-4 pt-3 text-xs text-gray-500 dark:text-brand-muted sm:hidden">
             <i class="ph ph-arrows-left-right mr-1" aria-hidden="true"></i>
-            Geser tabel ke samping untuk melihat seluruh kolom, termasuk Aksi.
+            Geser tabel ke samping untuk melihat seluruh kolom. Kolom Aksi tetap di kanan.
         </p>
-        <div class="overflow-x-auto" role="region" aria-label="Tabel antrean perumahan; geser ke samping untuk melihat kolom Aksi" tabindex="0">
+        <div class="overflow-x-auto aksi-tetap" role="region" aria-label="Tabel antrean perumahan; geser ke samping untuk melihat kolom lain, kolom Aksi tetap di kanan" tabindex="0">
             <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="text-xs uppercase bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted font-bold tracking-wider">
                     <tr>

@@ -39,7 +39,7 @@ $kolom = 'mt-1 block w-full rounded-lg border border-gray-200 dark:border-white/
     </div>
 
     <div data-tabel-admin style="counter-reset: baris-admin 0" class="rounded-2xl bg-white dark:bg-brand-card border border-gray-200 dark:border-white/5 overflow-hidden">
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto aksi-tetap">
             <table class="w-full text-left text-sm">
                 <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                     <tr><th class="px-4 py-4">Dokumen</th><th class="px-4 py-4">Jenis</th><th class="px-4 py-4">Status</th><th class="px-4 py-4 text-right">Aksi</th></tr>

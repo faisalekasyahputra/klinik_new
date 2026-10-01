@@ -61,6 +61,10 @@ $tombol = 'inline-block rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-
  * Yang bertambah tingginya, dan menggulir ke bawah memang hal biasa -
  * menggulir ke samping tidak.
  *
+ * Lebar minimum diturunkan 1100 -> 980px (audit UI 2 Okt 2026): wadahnya 1072px
+ * pada viewport 1440, jadi 1100 memaksa gulir 28px padahal isi terlebar hanya
+ * butuh sekitar 710px. 980 tetap mencegah kolom terjepit di layar sempit.
+ *
  * Tetap SATU closure meski tabel kumulatif cuma satu sisi. Menyalinnya jadi
  * dua berarti dua tempat yang harus disunting setiap kali kolomnya berubah.
  */
@@ -78,7 +82,7 @@ $tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_
       <?php endif; ?>
       <!-- Tabel lebar bergulir di wadahnya sendiri; <body> tidak ikut bergulir. -->
       <div class="mt-3 overflow-x-auto">
-        <table class="w-full min-w-[1100px] text-left text-sm">
+        <table class="w-full min-w-[980px] text-left text-sm">
           <thead>
             <tr class="text-xs uppercase text-gray-500 dark:text-brand-muted">
               <th class="sticky left-0 bg-white py-2 pr-3 dark:bg-brand-card">Sumber Dana</th>

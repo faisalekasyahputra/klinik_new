@@ -119,6 +119,18 @@
         [data-tabel-admin] table > thead > tr::before { content: "No"; display: table-cell; padding: 1rem 0.5rem 1rem 1rem; }
         [data-tabel-admin] table > tbody > tr::before { counter-increment: baris-admin; content: counter(baris-admin); display: table-cell; padding: 1rem 0.5rem 1rem 1rem; vertical-align: top; font-size: 0.75rem; font-weight: 700; color: #6b7280; }
         [data-tabel-admin] table > tbody > tr:has(> td[colspan])::before { counter-increment: none; content: ""; }
+        /* Kolom Aksi menempel di kanan wadah gulir (audit UI 2 Okt 2026: di 375 dan 768
+           tombol Tinjau/Proses/Simpan baru terlihat setelah menggulir tabel jauh ke samping).
+           Pasang kelas `aksi-tetap` pada pembungkus `overflow-x-auto` yang kolom TERAKHIR-nya
+           Aksi. Latar sel wajib pekat supaya isi kolom lain tidak tembus saat lewat di bawahnya.
+           AWAS: sel sticky membuat stacking context, jadi modal `fixed` di dalam sel Aksi
+           terkubur di bawah topbar. Modal di sel itu WAJIB `<template x-teleport="body">`. */
+        .aksi-tetap > table > * > tr > :last-child:not([colspan]) { position: sticky; right: 0; background-color: #fff; box-shadow: inset 1px 0 0 rgba(0, 0, 0, .06); }
+        .aksi-tetap > table > thead.bg-gray-50 > tr > :last-child { background-color: #f9fafb; }
+        .aksi-tetap > table > tbody > tr[class*="hover:bg-gray-50"]:hover > :last-child { background-color: #f9fafb; }
+        .dark .aksi-tetap > table > * > tr > :last-child:not([colspan]) { background-color: #0f2933; box-shadow: inset 1px 0 0 rgba(255, 255, 255, .06); }
+        .dark .aksi-tetap > table > thead.bg-gray-50 > tr > :last-child { background-color: #0c2129; }
+        .dark .aksi-tetap > table > tbody > tr[class*="hover:bg-gray-50"]:hover > :last-child { background-color: #1b3440; }
         /*
          * Main Content Entry Animation.
          *
