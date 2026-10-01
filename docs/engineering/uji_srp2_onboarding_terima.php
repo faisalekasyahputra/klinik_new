@@ -72,6 +72,13 @@ try {
     $cek(strpos($b, 'sudah dipakai pengembang lain di direktori bersertifikat') !== FALSE, 'Admin mendapat pesan bentrok nama yang jelas');
     $cek($satu("SELECT status_verifikasi FROM srp2_registrations WHERE id={$rid}") === 'Pending'
         && (int) $satu("SELECT COUNT(*) FROM srp2_certified_developers WHERE nama_perusahaan='{$nama}'") === 1, 'Status tetap Pending dan tidak ada baris direktori baru');
+    $audit = "SELECT COUNT(*) FROM sys_jejak_audit WHERE aksi='srp2_keputusan' AND objek_tipe='srp2_registrations' AND objek_id='{$rid}'";
+    $cek((int) $satu($audit) === 0, 'Keputusan yang gagal tidak meninggalkan jejak audit');
+    // Bentrok dirapikan, keputusan diulang: kali ini tersimpan DAN tercatat di jejak audit.
+    $db->query("DELETE FROM srp2_certified_developers WHERE id={$cid_lain}");
+    $http($ja, 'Admin_Srp2/proses/' . $rid, ['csrf_kpkp_token' => $csrf($ja), 'status' => 'Diterima']);
+    $cek($satu("SELECT status_verifikasi FROM srp2_registrations WHERE id={$rid}") === 'Diterima', 'PRASYARAT: keputusan ulang tersimpan (Diterima)');
+    $cek((int) $satu($audit) === 1, 'Keputusan Diterima tercatat di jejak audit (srp2_keputusan)');
 } finally {
     $ids = $db->query("SELECT id FROM usr_users WHERE email LIKE '{$tag}\\_%@example.test'")->fetch_all();
     foreach ($ids as [$id]) {

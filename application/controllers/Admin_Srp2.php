@@ -319,6 +319,11 @@ class Admin_Srp2 extends Admin_Controller {
                 . ($reg->certified_developer_id ? ' Pengembang juga dicabut dari direktori publik.' : ''),
             'Draft'    => 'Pengajuan dibuka kembali untuk diperbaiki. Pengembang melihat catatan Anda di dashboardnya.',
         ];
+        $this->catat_audit('srp2_keputusan', 'Keputusan SRP2 ' . $reg->nama_perusahaan . ': ' . $asal . ' -> ' . $status,
+            'srp2_registrations', (string) (int) $id, [
+                'status_lama' => $asal, 'status_baru' => $status,
+                'catatan_lama' => $reg->catatan_admin, 'catatan_baru' => $status !== 'Diterima' ? $catatan : NULL,
+            ]);
         $this->session->set_flashdata('success', $pesan_sukses[$status]);
         redirect('Admin_Srp2/pending');
     }
@@ -490,11 +495,16 @@ class Admin_Srp2 extends Admin_Controller {
             $this->session->set_flashdata('error', 'Gagal menyimpan: nama perusahaan "' . $name . '" kemungkinan sudah dipakai baris lain di direktori. Tidak ada perubahan yang tersimpan.');
             redirect('Admin_Srp2'); return;
         }
+        // NPWP tidak ikut ke detail audit; cukup nama kolom yang dikirim.
+        $this->catat_audit($id ? 'srp2_direktori_diubah' : 'srp2_direktori_ditambah',
+            'Direktori pengembang "' . $name . '" ' . ($id ? 'diperbarui' : 'ditambahkan'),
+            'srp2_certified_developers', (string) ($id ?: $this->db->insert_id()), ['kolom' => array_keys($payload)]);
         $this->session->set_flashdata('success', 'Daftar pengembang diperbarui.'); redirect('Admin_Srp2');
     }
 
     public function delete($id = NULL) {
         if ($this->input->method(TRUE) !== 'POST' || !is_numeric($id)) { show_404(); }
+        $nama = $this->db->select('nama_perusahaan')->get_where('srp2_certified_developers', ['id' => (int) $id])->row('nama_perusahaan');
         // DELETE yang tidak cocok baris mana pun tetap mengembalikan TRUE, jadi
         // `affected_rows()` yang membedakan "terhapus" dari "id-nya memang tidak ada".
         if ( ! $this->db->where('id', (int) $id)->delete('srp2_certified_developers')
@@ -502,6 +512,8 @@ class Admin_Srp2 extends Admin_Controller {
             $this->session->set_flashdata('error', 'Pengembang tidak ditemukan atau sudah dihapus.');
             redirect('Admin_Srp2'); return;
         }
+        $this->catat_audit('srp2_direktori_dihapus', 'Direktori pengembang "' . $nama . '" dihapus',
+            'srp2_certified_developers', (string) (int) $id);
         $this->session->set_flashdata('success', 'Pengembang dihapus dari daftar.'); redirect('Admin_Srp2');
     }
 }
