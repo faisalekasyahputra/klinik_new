@@ -12,7 +12,9 @@ cek(array_column($result['items'], 'program_name') === ['PK RTLH (Prioritas 1)']
 cek($result['items'][0]['missing'] === [], 'Syarat lengkap cocok');
 $draft['matrix_dtks_status'] = NULL;
 $result = $rules->preliminary($draft, $profile, '2026-09-10');
-cek($result['items'][0]['missing'] === ['Status DTKS'], 'DTKS kosong tidak dianggap YA');
+// UAT dinas warga #10 (2 Okt 2026): Status DTKS dihilangkan, jadi tidak lagi disyaratkan maupun ditampilkan.
+cek($result['items'][0]['missing'] === [] && ! in_array('Status DTKS: Ya', $result['items'][0]['criteria'], TRUE), 'DTKS kosong tidak lagi menahan atau disebut di rekomendasi');
+cek($rules->kode_katalog('PK RTLH (Prioritas 1)') === 'rtlh' && $rules->kode_katalog('PB Backlog (Prioritas 2)') === 'pb' && $rules->kode_katalog('KPR-FLPP') === 'flpp' && $rules->kode_katalog('Oemah Lestari Non-Subsidi') === 'oemah_lestari', 'Nama program matriks terpetakan ke katalog untuk deskripsinya');
 $draft['matrix_environment_condition_code'] = 'env_safe';
 cek($rules->preliminary($draft, $profile, '2026-09-10')['items'] === [], 'Rumah aman tidak memperoleh rekomendasi RTLH/FLPP bawaan');
 $profile['monthly_income'] = 11000000;

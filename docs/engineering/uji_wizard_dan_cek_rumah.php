@@ -380,6 +380,14 @@ for ($i = 0; $i < 14; $i++) {
         $matrix_snapshot = $db->baris('SELECT preliminary_matrix_ciphertext FROM sf_penilaian_perumahan WHERE user_id=? ORDER BY id DESC LIMIT 1', [(string) $akun['id']])['preliminary_matrix_ciphertext'];
         cek(!empty($matrix_snapshot) && strpos($matrix_snapshot, 'PK RTLH') === FALSE, 'Snapshot matriks awal disimpan terenkripsi');
         cek(strpos($h, getenv('UJI_CABANG') === 'tanah' ? 'PB Backlog (Prioritas 1)' : 'PK RTLH (Prioritas 1)') !== FALSE, 'Hasil awal mengikuti kondisi dan prioritas matriks, bukan kandidat FLPP bawaan');
+        // UAT dinas warga #10: rekomendasi tampil beserta deskripsi program, dan Status DTKS sudah dihilangkan.
+        $deskripsi_katalog = (string) ($db->baris('SELECT deskripsi_singkat FROM sf_programs WHERE kode_program = ?', [getenv('UJI_CABANG') === 'tanah' ? 'pb' : 'rtlh'])['deskripsi_singkat'] ?? '');
+        // Dibatasi ke blok hasil matriks: carousel program di halaman yang sama juga memuat deskripsi katalog.
+        $awal_hasil = strpos($h, 'Hasil berdasarkan matriks program perumahan');
+        $blok_hasil = $awal_hasil === FALSE ? '' : substr($h, $awal_hasil, 3000);
+        cek($deskripsi_katalog !== '' && strpos($blok_hasil, htmlspecialchars($deskripsi_katalog, ENT_QUOTES)) !== FALSE, 'UAT warga #10: hasil rekomendasi menampilkan deskripsi program dari katalog');
+        // Sempit ke "Status DTKS": syarat katalog program (carousel) boleh menyebut DTKS, itu isi dari admin.
+        cek($blok_hasil !== '' && stripos($blok_hasil, 'Status DTKS') === FALSE, 'UAT warga #10: hasil rekomendasi tidak lagi menyebut Status DTKS');
     }
     if ($step === 'housing_family_detail') {
         $xpath_detail = new DOMXPath($form->ownerDocument);

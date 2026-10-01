@@ -40,7 +40,10 @@ class Matriks_program_ruleset {
             'marital_status_code'=>$profile['marital_status_code'] ?? NULL,
         ];
         $ranges = ['income_0_1_5'=>[0,1500000], 'income_1_5_2_2'=>[1500000,2200000], 'income_2_2_2_8'=>[2200000,2800000], 'income_2_8_8_5'=>[2800000,8500000], 'income_2_8_10'=>[2800000,10000000], 'income_gt_8_5'=>[8500000,INF], 'income_gt_10'=>[10000000,INF]];
-        $fields = [2=>['dtks_code','Status DTKS'],3=>['land_code','Kepemilikan lahan'],4=>['housing_code','Kepemilikan rumah'],5=>['environment_code','Kondisi lingkungan / bangunan'],6=>['occupation_code','Kondisi finansial'],8=>['family_code','Kondisi keluarga']];
+        // Kolom DTKS (indeks 2) sengaja tidak dicocokkan lagi: UAT dinas warga #10 meminta Status DTKS
+        // dihilangkan. Isiannya sudah dicabut dari wizard, jadi mensyaratkannya hanya membuat setiap
+        // rekomendasi berbunyi "perlu dilengkapi: Status DTKS" yang tidak bisa dilengkapi warga.
+        $fields = [3=>['land_code','Kepemilikan lahan'],4=>['housing_code','Kepemilikan rumah'],5=>['environment_code','Kondisi lingkungan / bangunan'],6=>['occupation_code','Kondisi finansial'],8=>['family_code','Kondisi keluarga']];
         $items = [];
         foreach (self::ROWS as $index => $row) {
             [$min,$max] = $ranges[$row[0]];
@@ -67,7 +70,6 @@ class Matriks_program_ruleset {
             foreach ([3=>'matrix_land_ownership_code',5=>'matrix_environment_condition_code',6=>'matrix_occupation_finance_code',8=>'matrix_marital_family_code'] as $column=>$field) {
                 if ($row[$column] !== NULL) $criteria[] = self::FORM_FIELDS[$field][1][$row[$column]];
             }
-            if ($row[2] !== NULL) $criteria[] = 'Status DTKS: Ya';
             if ($row[7] !== NULL) $criteria[] = ['produktif_21'=>'Usia 21–59 tahun', 'produktif_18'=>'Usia 18–59 tahun', 'produktif_18_or_tua'=>'Usia minimal 18 tahun'][$row[7]];
             $items[] = ['program_name'=>$row[9], 'source_row'=>$index+3, 'missing'=>$missing, 'criteria'=>$criteria];
         }
@@ -121,6 +123,21 @@ class Matriks_program_ruleset {
         if ($rupiah <= 2800000) { return 4; }
         if ($rupiah <= 8500000) { return 5; }
         return 9;
+    }
+
+    /**
+     * Nama program kolom J Sheet3 -> kode_program katalog sf_programs, supaya hasil
+     * rekomendasi bisa menampilkan deskripsi program (UAT dinas warga #10, butir 4).
+     * PK (Peningkatan Kualitas) -> rtlh, PB (Pembangunan Baru) -> pb.
+     */
+    public function kode_katalog($program_name)
+    {
+        $nama = (string) $program_name;
+        if (stripos($nama, 'FLPP') !== FALSE) { return 'flpp'; }
+        if (stripos($nama, 'Oemah Lestari') === 0) { return 'oemah_lestari'; }
+        if (strpos($nama, 'PK ') === 0) { return 'rtlh'; }
+        if (strpos($nama, 'PB ') === 0) { return 'pb'; }
+        return NULL;
     }
 
     /** @return string|null Label kolom B untuk kode Gaji yang sama. */
