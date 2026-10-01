@@ -90,6 +90,18 @@ $filter_html = ob_get_clean();
         <?php endif; ?>
     </div>
 
+    <?php /* Dulu tiap baris simulasi membawa kotak "Mode Simulasi" sendiri; kini
+             satu pemberitahuan di atas tabel bila ada minimal satu baris simulasi
+             di halaman ini (source_mode = 'simulation'). */
+    $ada_simulasi = FALSE;
+    foreach (($queue ?? []) as $q_sim) { if (($q_sim->source_mode ?? '') === 'simulation') { $ada_simulasi = TRUE; break; } }
+    if ($ada_simulasi): ?>
+    <div data-pemberitahuan-simulasi class="mb-4 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 text-sm flex items-start gap-3">
+        <i class="ph ph-flask text-lg mt-0.5" aria-hidden="true"></i>
+        <p><strong>Mode Simulasi.</strong> Data kependudukan belum tersambung ke SIMPERUM, jadi sebagian pengajuan memakai data simulasi.</p>
+    </div>
+    <?php endif; ?>
+
     <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card border border-gray-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm">
         <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, NIK, tiket, program...', 'filter_html' => $filter_html], TRUE) ?>
 
@@ -126,8 +138,9 @@ $filter_html = ob_get_clean();
                         $desil  = $simperum['desil'] ?? '-';
                         $alasan = $survey['alasan_pengajuan'] ?? '-';
                         $has_assessment = ! empty($row->assessment_id);
-                        $nama_display = trim((string) $row->nama_lengkap) !== ''
-                            ? $row->nama_lengkap : ($has_assessment ? 'Identitas ada di detail pengajuan' : 'Nama belum tersedia');
+                        $nama_samar   = trim((string) $row->nama_lengkap) === '';
+                        $nama_display = ! $nama_samar
+                            ? $row->nama_lengkap : ($has_assessment ? 'Nama di detail pengajuan' : 'Nama belum tersedia');
                         $nik_display = strlen((string) $row->nik_pengaju) >= 4
                             ? str_repeat('•', 12) . substr($row->nik_pengaju, -4)
                             : ($has_assessment ? 'NIK disimpan privat' : 'NIK belum tersedia');
@@ -171,18 +184,21 @@ $filter_html = ob_get_clean();
                         <!-- Teks panjang boleh membungkus agar kolom Aksi tidak
                              terdorong keluar seperti kasus meja KKN/Magang. -->
                         <td class="max-w-[14rem] whitespace-normal break-words px-4 py-3">
+                            <?php if ($nama_samar && ! $identitas_menunggu): ?>
+                            <div class="text-sm italic text-gray-400 dark:text-brand-muted" data-nama-samar><?= html_escape($nama_display) ?></div>
+                            <?php else: ?>
                             <div class="text-gray-900 dark:text-white font-bold"><?= html_escape($nama_display) ?></div>
+                            <?php endif; ?>
                             <div class="text-xs font-mono font-bold text-brand-primary"><?= html_escape($row->ticket_code) ?></div>
                             <div class="text-xs font-mono mt-0.5"><?= html_escape($nik_display) ?></div>
                             <?php if (empty($row->kabupaten_id)): ?>
                             <div class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400 border border-orange-200 dark:border-orange-500/20" title="Tidak muncul di dashboard Admin Kabupaten/Kota manapun">
-                                <i class="ph ph-map-pin-slash text-[10px]"></i> Belum Terpetakan Wilayah
+                                <i class="ph ph-map-pin-area text-[10px]"></i> Belum Terpetakan Wilayah
                             </div>
                             <?php endif; ?>
                         </td>
                         <td class="max-w-[14rem] whitespace-normal break-words px-4 py-3">
                             <div class="inline-block max-w-full break-words rounded-lg bg-brand-primary/10 px-2.5 py-1 text-xs font-semibold text-brand-primary border border-brand-primary/20 mb-1"><?= html_escape($row->nama_program ?? 'Program belum terpetakan') ?></div>
-                            <?php if (($row->source_mode ?? '') === 'simulation'): ?><div class="mt-1 inline-block max-w-full break-words rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">Mode Simulasi - API SIMPERUM belum terhubung</div><?php endif; ?>
                             <?php if ($desil !== '-'): ?>
                             <div class="text-[10px] text-blue-700 bg-blue-50 dark:text-white dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 px-2 py-0.5 rounded inline-block">Desil: <span class="font-bold"><?= html_escape($desil) ?></span></div>
                             <?php endif; ?>

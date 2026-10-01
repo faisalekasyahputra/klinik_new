@@ -1091,6 +1091,7 @@ class MY_Controller extends CI_Controller {
                 'key' => $key, 'label' => $m['label'], 'icon' => $m['icon'], 'url' => $m['url'],
                 'group' => $m['group'] ?? '', 'order' => $m['order'] ?? 999, 'badge' => $badge,
                 'parent' => $m['parent'] ?? NULL,
+                'tab_baru' => ! empty($m['tab_baru']),
             ];
         }
 

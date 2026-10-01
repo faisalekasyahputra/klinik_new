@@ -12,7 +12,7 @@ $kelas_status = [
 
 <?php if ($antrean_tanpa_wilayah > 0): ?>
 <a href="<?= base_url('Admin?status=pending&tanpa_wilayah=1') ?>" class="mb-6 flex items-center gap-4 rounded-2xl border border-orange-200 bg-orange-50 p-5 text-orange-800 transition-colors hover:border-orange-400 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-300">
-    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400"><i class="ph ph-map-pin-slash text-xl"></i></div>
+    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400"><i class="ph ph-map-pin-area text-xl"></i></div>
     <div class="min-w-0 flex-1">
         <p class="font-bold"><?= angka_id($antrean_tanpa_wilayah) ?> antrean pending belum memiliki wilayah</p>
         <p class="mt-0.5 text-xs text-orange-700 dark:text-orange-400/80">Tidak terlihat oleh admin kabupaten/kota mana pun.</p>
@@ -26,7 +26,7 @@ $kelas_status = [
         <h3 class="text-lg font-bold text-gray-900 dark:text-white">Pekerjaan yang perlu perhatian</h3>
         <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">Jumlah pada kartu adalah antrean aktif untuk masing-masing domain.</p>
     </div>
-    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+    <div class="deret-kartu grid grid-cols-1 gap-4 md:grid-cols-2" style="--jumlah-kartu: <?= max(1, count($kartu_domain)) ?>">
         <?php foreach ($kartu_domain as $k): ?>
         <a href="<?= base_url($k['url']) ?>" class="group rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-colors hover:border-blue-300 dark:border-white/5 dark:bg-brand-card dark:hover:border-brand-primary/30">
             <div class="mb-5 flex items-center justify-between gap-3">

@@ -5,6 +5,15 @@
  * Kolom "Nama di hasil diagnosa" bukan hiasan - ia dari
  * `Smart_filter::master_programs()`, sumber yang BERBEDA dari tabel ini, dan
  * selisihnya berarti warga melihat dua nama untuk satu program.
+ *
+ * Dua sumber: tabel `sf_programs` menentukan status aktif dan nama di antrean
+ * admin serta /akun warga; judul di kartu hasil diagnosa dan seluruh aturan
+ * kelayakan ada di kode (application/libraries/Smart_filter.php). Selisih nama
+ * bisa dibereskan dari layar ini, aturan kelayakan tidak (itu perubahan kode).
+ *
+ * Kolom `batas_penghasilan_max` ada di tabel dan berisi nilai, tetapi tidak
+ * dibaca kode mana pun (kelayakan dihitung dari desil, bukan penghasilan).
+ * Karena itu ia tidak ditampilkan maupun bisa diubah di sini.
  */
 $csrf_nama = $this->security->get_csrf_token_name();
 $csrf_hash = $this->security->get_csrf_hash();
@@ -20,12 +29,10 @@ $csrf_hash = $this->security->get_csrf_hash();
     <div class="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 text-sm flex items-start gap-3">
         <i class="ph ph-warning text-lg mt-0.5"></i>
         <div class="space-y-1">
-            <strong>Katalog ini punya dua sumber, dan keduanya tidak sepakat.</strong>
+            <strong>Nama program diambil dari dua sumber yang belum sama.</strong>
             <p class="text-xs leading-relaxed">
-                Tabel <code>sf_programs</code> menentukan <b>status aktif</b> dan nama yang tampil di
-                <b>antrean admin serta halaman /akun warga</b>. Sementara judul di <b>kartu hasil diagnosa</b>
-                dan seluruh aturan kelayakan ada di kode
-                (<code>application/libraries/Smart_filter.php</code>).
+                Nama di layar ini tampil di <b>antrean admin dan akun warga</b>. Judul di
+                <b>hasil diagnosa</b> dan aturan kelayakan diatur oleh pengembang.
             </p>
             <ul class="text-xs space-y-0.5 pt-1">
                 <?php if ($jml_selisih > 0): ?>
@@ -38,7 +45,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                 <li>• <b><?= count($tanpa_baris) ?> program</b> punya aturan tapi <b>tidak punya baris tabel</b> (<?= html_escape(implode(', ', $tanpa_baris)) ?>) - kartunya muncul, pengajuannya gagal.</li>
                 <?php endif; ?>
             </ul>
-            <p class="text-xs pt-1">Selisih nama bisa dibereskan dari layar ini. Aturan kelayakan tidak - itu perubahan kode.</p>
+            <p class="text-xs pt-1">Selisih nama bisa dibereskan lewat tombol Ubah. Aturan kelayakan hanya bisa diubah pengembang.</p>
         </div>
     </div>
     <?php endif; ?>
@@ -50,7 +57,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                     <tr>
                         <th class="px-4 py-4">Nama di antrean &amp; akun warga</th>
                         <th class="px-4 py-4">Nama di hasil diagnosa</th>
-                        <th class="px-4 py-4 whitespace-normal">Kode <span class="block font-normal normal-case">(tidak bisa diubah)</span></th>
+                        <th class="px-4 py-4">Kode</th>
                         <th class="px-4 py-4">Kategori</th>
                         <th class="px-4 py-4">Status</th>
                         <th class="px-4 py-4">Dipakai</th>
@@ -59,7 +66,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-white/5 text-gray-700 dark:text-gray-300">
                     <?php if (empty($rows)): ?>
-                    <tr><td colspan="7" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">Katalog kosong - seed program belum jalan.</td></tr>
+                    <tr><td colspan="7" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">Belum ada program.</td></tr>
                     <?php else: foreach ($rows as $r): ?>
                     <tr>
                         <?php // max-w diukur, bukan ditebak: 240px menghasilkan 6px kelebihan di 1440px (§17 poin 6). ?>
@@ -98,20 +105,13 @@ $csrf_hash = $this->security->get_csrf_hash();
         </div>
     </div>
 
-    <p class="mt-3 text-xs text-gray-400 dark:text-brand-muted/70">
-        <i class="ph ph-info mr-1" aria-hidden="true"></i>
-        Kolom <code>batas_penghasilan_max</code> ada di tabel dan berisi nilai, tetapi
-        <b>tidak dibaca kode mana pun</b> - kelayakan dihitung dari desil, bukan penghasilan.
-        Karena itu ia tidak ditampilkan maupun bisa diubah di sini.
-    </p>
-
     <?php // Satu modal untuk seluruh tabel - formulir per baris akan mendorongnya melewati wadahnya. ?>
     <div x-show="buka" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
         <div @click.away="buka = false" class="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-brand-card">
             <div class="flex items-start justify-between gap-3 border-b border-gray-200 pb-3 dark:border-white/10">
                 <div>
                     <h3 class="text-sm font-black text-gray-900 dark:text-white">Ubah Program</h3>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-brand-muted"><code x-text="kode"></code></p>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-brand-muted">Kode <code x-text="kode"></code> (tidak bisa diubah)</p>
                 </div>
                 <button type="button" @click="buka = false" aria-label="Tutup" class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><i class="ph ph-x text-lg" aria-hidden="true"></i></button>
             </div>
@@ -128,7 +128,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                     <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Nama program</span>
                     <input type="text" name="nama_program" x-model="nama" required maxlength="255"
                            class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200">
-                    <span class="mt-1 block text-[11px] text-gray-500 dark:text-brand-muted">Tampil di antrean admin dan halaman /akun warga.</span>
+                    <span class="mt-1 block text-[11px] text-gray-500 dark:text-brand-muted">Tampil di antrean admin dan halaman akun warga.</span>
                 </label>
 
                 <label class="block">

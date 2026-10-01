@@ -10,9 +10,9 @@ $warna_status = [
 ];
 ?>
 <div class="space-y-6">
-    <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Prasarana, Sarana, dan Utilitas perumahan. Data yang statusnya "Tampilkan di publik"
-                muncul di halaman <span class="font-semibold">/psu</span> - kartu PSU di beranda
-                sudah tidak lagi "Segera Hadir".']); ?>
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Prasarana, Sarana, dan Utilitas perumahan. Data yang ditandai "Tampilkan di publik"
+                muncul di halaman PSU situs publik.']); ?>
+    <?php // Halaman publiknya /psu (Psu::index()); kartu PSU di beranda sudah tidak lagi "Segera Hadir". ?>
 
 
     <div class="rounded-2xl bg-white dark:bg-brand-card border border-gray-200 dark:border-white/5 p-5">

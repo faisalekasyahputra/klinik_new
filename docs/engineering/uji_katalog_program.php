@@ -189,9 +189,12 @@ wajib($hal['code'] === 200 && strpos($hal['url'], 'Auth/login') === FALSE, 'Laya
 preg_match('/<tbody[^>]*>(.*?)<\/tbody>/s', $hal['body'], $tb);
 cek(preg_match_all('/<tr[^>]*>/', $tb[1] ?? '', $x) === $jml, "Tabel memuat {$jml} program");
 cek(stripos($hal['body'], 'tidak bisa diubah') !== FALSE, 'Layar menyatakan kodenya tidak bisa diubah');
-cek(strpos($hal['body'], 'batas_penghasilan_max') !== FALSE
-    && stripos($hal['body'], 'tidak dibaca kode mana pun') !== FALSE,
-    'Kolom tanpa pembaca dinyatakan apa adanya, bukan ditampilkan seolah berfungsi');
+// Audit UI 2 Okt 2026 (kelompok B): catatannya pindah dari layar ke komentar view, karena
+// nama kolom tabel bukan bacaan petugas dinas. Yang dijaga: kolomnya tetap tidak tampil
+// seolah berfungsi, dan alasannya tetap tercatat di view.
+cek(strpos($hal['body'], 'batas_penghasilan_max') === FALSE
+    && stripos((string) file_get_contents(APP_ROOT . '/application/views/admin/katalog/index.php'), 'dibaca kode mana pun') !== FALSE,
+    'Kolom tanpa pembaca tidak ditampilkan, alasannya tercatat di komentar view');
 
 // ------------------------------------------------ 2. SELISIH DUA SUMBER
 echo "\n== 2. Selisih dua sumber ditampilkan ==\n";

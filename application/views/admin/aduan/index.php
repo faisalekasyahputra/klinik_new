@@ -111,11 +111,13 @@ $filter_html = ob_get_clean();
                         <?php if ($r->status === 'Baru'): ?>
                         <form method="POST" action="<?= base_url('Admin_Aduan/triase/' . $r->id) ?>" class="flex items-center gap-1.5">
                             <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
-                            <?php // max-w: nama bidang panjang; daftar lengkapnya tetap utuh saat dropdown dibuka. ?>
-                            <select name="bidang" required class="max-w-[110px] rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-2 py-1 text-xs text-gray-700 dark:text-gray-200">
+                            <?php /* Kolom sudah berjudul "Bidang", jadi awalan "Bidang " dibuang dari
+                                     label pilihan supaya nama terpanjang (Kawasan Permukiman) muat
+                                     tanpa terpotong (audit UI 2 Okt 2026: "Bidang Perta"). */ ?>
+                            <select name="bidang" required class="w-44 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-2 py-1 text-xs text-gray-700 dark:text-gray-200">
                                 <option value=""><?= $r->bidang ? '- ubah -' : '- pilih bidang -' ?></option>
                                 <?php foreach ($daftar_bidang as $b): ?>
-                                <option value="<?= html_escape($b->kode) ?>" <?= $r->bidang === $b->kode ? 'selected' : '' ?>><?= html_escape($b->nama) ?></option>
+                                <option value="<?= html_escape($b->kode) ?>" <?= $r->bidang === $b->kode ? 'selected' : '' ?>><?= html_escape(preg_replace('/^Bidang\s+/i', '', $b->nama)) ?></option>
                                 <?php endforeach; ?>
                             </select>
                             <button type="submit" title="Teruskan ke bidang" class="rounded-lg bg-brand-primary/20 border border-brand-primary/50 text-brand-primary px-2 py-1 font-bold hover:bg-brand-primary/30 transition-colors"><i class="ph ph-paper-plane-right"></i></button>

@@ -393,6 +393,9 @@ $config['dashboard_modules'] = [
         'label' => 'Konsultasi Warga', 'icon' => 'ph-chats-circle',
         'url'   => 'Umum/forum', 'group' => 'Tindak Lanjut', 'order' => 41,
         'roles' => ['admin'], 'scope' => null,
+        // Halaman forum PUBLIK (layout portal, tanpa sidebar admin): dibuka di tab
+        // baru dan diberi ikon tautan keluar, supaya tidak terasa "keluar" dari admin.
+        'tab_baru' => TRUE,
     ],
     // Meja KEDUA alur surat magang. Terpisah dari 'kemitraan' di atas karena
     // pemiliknya berbeda: yang itu sekretariat (superadmin), yang ini bidang.

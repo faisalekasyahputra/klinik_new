@@ -383,7 +383,8 @@ cek(strpos($admin_users, 'data-tabel-admin') !== FALSE
     && strpos($admin_users, 'Cari nama, email, atau username...') !== FALSE
     && strpos($admin_users, 'data-table-search') === FALSE,
     'Admin Pengguna memakai toolbar B8 server-side, bukan tabel klien');
-cek(strpos($admin_users, 'Daftar Pengguna (' . number_format($jumlah_user, 0, ',', '.') . ')') !== FALSE, // ribuan bertitik (angka_id)
+// Jumlahnya kini di <span> abu milik admin/components/kepala_tabel.php (audit UI kelompok B).
+cek(preg_match('#Daftar Pengguna <span[^>]*>\(' . preg_quote(number_format($jumlah_user, 0, ',', '.'), '#') . '\)</span>#', $admin_users) === 1, // ribuan bertitik (angka_id)
     'Admin Pengguna menampilkan total semua pengguna, bukan jumlah halaman');
 $admin_users_urut = http('adm', 'Admin_Users?sort=name&dir=asc');
 cek(strpos($admin_users_urut, 'sort=name') !== FALSE
@@ -492,6 +493,71 @@ foreach (array_merge(glob(APP_ROOT . '/application/views/admin/*.php'), glob(APP
     if (preg_match('/number_format\((?:[^(),]|\([^()]*\))*\)/', (string) file_get_contents($berkas))) { $angka_lama[] = str_replace(APP_ROOT . '/application/views/', '', $berkas); }
 }
 cek($angka_lama === [], 'Nol number_format() tanpa pemisah Indonesia di layar admin (lain: ' . implode(', ', $angka_lama) . ')');
+
+/* KONSISTENSI LAYAR ADMIN, kelompok B (isi per layar, audit UI 2 Okt 2026):
+     8. Tidak ada teks bernada pengembang di layar (nama tabel, path, foreign key, modal
+        otomatis Posisi Magang, kotak Mode Simulasi per baris antrean).
+     9. Kepala kartu tabel lewat admin/components/kepala_tabel.php; Pengguna: Peran, Cakupan.
+    10. Jejak Audit: satu dropdown aksi, bukan dinding pil.
+    11. Ringkasan Kerja: deret kartu satu baris (.deret-kartu), ikon banner yang ADA.
+    12. Konsultasi Warga (forum publik) dibuka di tab baru dengan ikon tautan keluar.
+    13. Pantau Aduan: pilihan bidang tanpa awalan "Bidang " dan tidak dipotong 110px.
+    14. KKN & Magang: tidak ada teks 10px di baris. */
+echo "\n== Konsistensi layar admin kelompok B: isi per layar ==\n";
+$teks_dev = [];
+foreach (['struktur/index', 'katalog/index', 'asosiasi/index', 'psu/index', 'magang_posisi/index', 'antrean/dashboard'] as $v) {
+    $isi = preg_replace(['#/\*.*?\*/#s', '#<!--.*?-->#s', '#(?<![:"\'])//[^\n]*#'], '',
+        (string) @file_get_contents(APP_ROOT . "/application/views/admin/{$v}.php"));
+    foreach (['foreign key', '<code>sf_programs', 'libraries/Smart_filter', '/akun/profil', '/psu<', 'Segera Hadir', '<dialog', 'showModal',
+              'API SIMPERUM belum terhubung', 'Identitas ada di detail', 'batas_penghasilan_max', 'seed program'] as $frasa) {
+        if (stripos($isi, $frasa) !== FALSE) { $teks_dev[] = "{$v}: {$frasa}"; }
+    }
+}
+cek($teks_dev === [], 'Tidak ada teks bernada pengembang di layar admin (lain: ' . implode(', ', $teks_dev) . ')');
+$antrean_hal = http('adm', 'Admin');
+cek(substr_count($antrean_hal, 'data-pemberitahuan-simulasi') <= 1 && strpos($antrean_hal, 'Mode Simulasi - API') === FALSE,
+    'Antrean: Mode Simulasi paling banyak satu pemberitahuan di atas tabel, bukan per baris');
+
+$kepala_kmp = (string) @file_get_contents(APP_ROOT . '/application/views/admin/components/kepala_tabel.php');
+$kepala_lama = [];
+foreach (glob(APP_ROOT . '/application/views/admin/*/*.php') as $berkas) {
+    // Hanya kepala KARTU (div p-6 border-b); judul modal berikon tidak termasuk pola ini.
+    if (preg_match('#<div class="p-6 border-b[^"]*">\s*<h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">\s*<i class="ph#', (string) file_get_contents($berkas))) {
+        $kepala_lama[] = str_replace(APP_ROOT . '/application/views/', '', $berkas);
+    }
+}
+cek(strpos($kepala_kmp, 'data-kepala-tabel') !== FALSE && $kepala_lama === [],
+    'Kepala kartu tabel lewat komponen bersama, tanpa judul berikon (lain: ' . implode(', ', $kepala_lama) . ')');
+foreach (['Admin_Users' => 1, 'Admin_Audit' => 1, 'Admin_Struktur' => 2, 'Admin_Kemitraan/universitas' => 1] as $jalur => $n) {
+    cek(substr_count(http('adm', $jalur), 'data-kepala-tabel') === $n, "{$jalur}: {$n} kepala kartu tabel bersama");
+}
+cek(strpos($admin_users, 'Peran (Role)') === FALSE && strpos($admin_users, '>Scope</th>') === FALSE
+    && strpos($admin_users, '>Cakupan</th>') !== FALSE, 'Akses Staf: kolom Peran dan Cakupan, tanpa istilah Inggris');
+
+$audit_hal = http('adm', 'Admin_Audit');
+cek(strpos($audit_hal, 'data-filter-aksi') !== FALSE && strpos($audit_hal, 'id="filter-aksi" name="aksi"') !== FALSE
+    && strpos($audit_hal, '>Semua aksi</option>') !== FALSE && preg_match('#href="[^"]*Admin_Audit\?aksi=#', $audit_hal) === 0,
+    'Jejak Audit: filter aksi satu dropdown, tanpa pil tautan per aksi');
+
+$ringkasan = http('adm', 'Admin_Dashboard');
+cek(strpos($head_admin, '.grid.deret-kartu { grid-template-columns: repeat(var(--jumlah-kartu') !== FALSE
+    && preg_match('#class="deret-kartu [^"]*" style="--jumlah-kartu: (\d+)"#', $ringkasan, $dk) === 1,
+    'Ringkasan Kerja: kartu domain satu baris di layar lebar (.deret-kartu)');
+$ikon_hilang = [];
+foreach (array_merge(glob(APP_ROOT . '/application/views/admin/*.php'), glob(APP_ROOT . '/application/views/admin/*/*.php')) as $berkas) {
+    // ph-map-pin-slash tidak ada di Phosphor 2.1.2: ikonnya tampil kosong (banner Ringkasan Kerja).
+    if (strpos((string) file_get_contents($berkas), 'ph-map-pin-slash') !== FALSE) { $ikon_hilang[] = basename($berkas); }
+}
+cek($ikon_hilang === [], 'Tidak ada ikon ph-map-pin-slash yang tidak ada di Phosphor (lain: ' . implode(', ', $ikon_hilang) . ')');
+cek(preg_match('#href="[^"]*Umum/forum"\s+target="_blank" rel="noopener noreferrer" data-tab-baru#', $ringkasan) === 1
+    && strpos($ringkasan, 'ph-arrow-square-out') !== FALSE,
+    'Sidebar: Konsultasi Warga (forum publik) dibuka di tab baru dengan ikon tautan keluar');
+
+$aduan_v = (string) @file_get_contents(APP_ROOT . '/application/views/admin/aduan/index.php');
+cek(strpos($aduan_v, 'max-w-[110px]') === FALSE && strpos($aduan_v, "preg_replace('/^Bidang\\s+/i', '', \$b->nama)") !== FALSE,
+    'Pantau Aduan: pilihan bidang tidak dipotong 110px dan tanpa awalan "Bidang "');
+cek(strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/kemitraan/index.php'), 'text-[10px]') === FALSE,
+    'KKN & Magang: tidak ada teks 10px di baris tabel');
 
 bersihkan();
 $GLOBALS['daftar'] = $GLOBALS['users'] = [];
@@ -1002,8 +1068,10 @@ $priv = (string) @file_get_contents(APP_ROOT . '/application/views/admin/users/p
 cek(strpos($priv, "\$module['url']") === FALSE && strpos($priv, 'Bagian dari') !== FALSE,
     'Privilege: path controller tidak ditampilkan, menu anak menyebut induknya');
 $audit_v = (string) @file_get_contents(APP_ROOT . '/application/views/admin/audit/index.php');
-cek(substr_count($audit_v, 'html_escape($label_aksi(') === 2 && strpos($audit_v, '><?= html_escape($a) ?></a>') === FALSE,
-    'Jejak Audit: kode aksi tampil sebagai label (pil filter dan baris)');
+// Tiga, bukan dua, sejak kelompok B: pil filter jadi dropdown dengan dua kelompok pilihan
+// (aksi biasa dan "Percobaan ditolak"), ditambah label di baris.
+cek(substr_count($audit_v, 'html_escape($label_aksi(') === 3 && strpos($audit_v, '><?= html_escape($a) ?></') === FALSE,
+    'Jejak Audit: kode aksi tampil sebagai label (dropdown filter dan baris)');
 $footer_adm = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/footer.php');
 cek(strpos($footer_adm, 'href="#"') === FALSE, 'Footer admin tanpa tautan mati href="#"');
 $push_js = (string) @file_get_contents(APP_ROOT . '/assets/js/admin-web-push.js');

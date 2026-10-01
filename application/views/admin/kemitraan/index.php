@@ -103,18 +103,18 @@ $filter_html = ob_get_clean();
                             <?php if ( ! empty($d[1])): ?>
                             <div class="mt-1"><a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . $r->id . '/' . $kunci) ?>" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> <?= html_escape($d[0]) ?></a></div>
                             <?php else: ?>
-                            <div class="mt-1 text-[10px] text-gray-400 dark:text-brand-muted/60">Tanpa <?= html_escape(strtolower($d[0])) ?></div>
+                            <div class="mt-1 text-xs italic text-gray-400 dark:text-brand-muted">Tanpa <?= html_escape(strtolower($d[0])) ?></div>
                             <?php endif; ?>
                         <?php endforeach; ?>
                         <?php if ($r->jenis === 'kkn' && $r->status === 'Diterima'): ?>
-                            <form method="POST" action="<?= base_url('Admin_Kemitraan/tanggal_sertifikat/' . (int) $r->id) ?>" class="mt-2 flex items-center gap-1.5">
+                            <form method="POST" action="<?= base_url('Admin_Kemitraan/tanggal_sertifikat/' . (int) $r->id) ?>" class="mt-2 flex flex-wrap items-end gap-1.5">
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-                                <label class="text-[10px] text-gray-500 dark:text-brand-muted">Tgl sertifikat
-                                    <input type="date" name="tanggal_sertifikat" value="<?= html_escape($r->tanggal_sertifikat ?? '') ?>" class="ml-1 rounded-md border border-gray-200 dark:border-white/10 bg-transparent px-1.5 py-0.5 text-[11px]">
+                                <label class="text-xs font-bold text-gray-600 dark:text-brand-muted">Tanggal sertifikat
+                                    <input type="date" name="tanggal_sertifikat" value="<?= html_escape($r->tanggal_sertifikat ?? '') ?>" class="mt-1 block rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-2 py-1 text-xs">
                                 </label>
-                                <button type="submit" class="rounded-md px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">Simpan</button>
+                                <button type="submit" class="tombol-aksi"><i class="ph ph-floppy-disk" aria-hidden="true"></i><span>Simpan</span></button>
                             </form>
-                            <?php if (empty($r->tanggal_sertifikat)): ?><div class="text-[10px] text-amber-600">Sertifikat terkunci sampai tanggal diisi</div><?php endif; ?>
+                            <?php if (empty($r->tanggal_sertifikat)): ?><div class="mt-1 text-xs text-amber-600 dark:text-amber-400">Sertifikat terkunci sampai tanggal diisi</div><?php endif; ?>
                         <?php endif; ?>
                         <?php if ($r->jenis === 'kkn' && ! empty($r->link_dokumentasi)): ?>
                             <div class="mt-1"><a href="<?= html_escape($r->link_dokumentasi) ?>" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-link"></i> Dokumentasi (cloud)</a></div>
@@ -128,7 +128,7 @@ $filter_html = ob_get_clean();
                                  selain buka DB langsung. Baca saja - lihat
                                  Admin_Kemitraan::peserta(). -->
                             <div class="mt-1">
-                                <a href="<?= base_url('Admin_Kemitraan/peserta/' . $r->id) ?>" class="text-[10px] font-bold text-gray-500 dark:text-brand-muted hover:text-blue-600 dark:hover:text-brand-primary hover:underline">
+                                <a href="<?= base_url('Admin_Kemitraan/peserta/' . $r->id) ?>" class="text-xs font-bold text-gray-500 dark:text-brand-muted hover:text-blue-600 dark:hover:text-brand-primary hover:underline">
                                     <i class="ph ph-users"></i> <?= (int) ($r->jumlah_peserta ?? 0) ?> peserta
                                 </a>
                             </div>

@@ -75,11 +75,7 @@ if (empty($aksi_buat)) {
 </div>
 
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
-    <div class="p-6 border-b border-gray-200 dark:border-white/5">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <i class="ph ph-bank text-brand-primary"></i> Akun Universitas (<?= angka_id((int) $table['total_rows']) ?>)
-        </h3>
-    </div>
+    <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Akun Universitas', 'kt_jumlah' => (int) $table['total_rows'], 'kt_keterangan' => '']); ?>
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, email, atau username...'], TRUE) ?>
     <div class="overflow-x-auto aksi-tetap">
         <table class="w-full text-left text-sm whitespace-nowrap">

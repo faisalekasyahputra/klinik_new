@@ -17,11 +17,7 @@
 </div>
 
 <div class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
-    <div class="p-6 border-b border-gray-200 dark:border-white/5">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <i class="ph ph-users-three text-brand-primary"></i> <?= count($peserta) ?> Peserta
-        </h3>
-    </div>
+    <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Daftar Peserta', 'kt_jumlah' => count($peserta), 'kt_keterangan' => '']); ?>
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">

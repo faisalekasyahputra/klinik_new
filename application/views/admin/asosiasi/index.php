@@ -10,13 +10,17 @@
  * Hapus bahwa asosiasi itu masih menempel di data orang. Penolakannya sendiri
  * tetap di server (Admin_Asosiasi::hapus()), ini cuma supaya tidak perlu
  * mencobanya dulu untuk tahu.
+ *
+ * Kode adalah nilai yang tersimpan di data pengembang (dipilih di /akun/profil).
+ * Ia tidak bisa diubah setelah dibuat: kalau diganti, seluruh data yang
+ * terlanjur memakainya kehilangan rujukannya tanpa peringatan.
  */
 $total_pakai = static function ($kode) use ($pemakaian) {
     return array_sum($pemakaian[$kode] ?? []);
 };
 ?>
 <div class="space-y-6">
-    <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Daftar asosiasi yang bisa dipilih pengembang di <span class="font-semibold">/akun/profil</span>
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Daftar asosiasi yang bisa dipilih pengembang di profil akunnya
             dan admin di <span class="font-semibold">Direktori SRP2</span>. Nama yang tersimpan di sini
             juga yang tampil di kolom Asosiasi pada direktori publik.']); ?>
 
@@ -46,9 +50,7 @@ $total_pakai = static function ($kode) use ($pemakaian) {
             </div>
             <p class="mt-2 text-[11px] leading-relaxed text-gray-400 dark:text-brand-muted/70">
                 <i class="ph ph-info"></i>
-                Kode adalah nilai yang tersimpan di data pengembang. Ia <strong>tidak bisa diubah</strong>
-                setelah dibuat - kalau diganti, seluruh data yang terlanjur memakainya akan kehilangan
-                rujukannya tanpa peringatan. Yang tampil ke orang adalah <strong>Nama</strong>, dan itu bebas diubah.
+                Kode <strong>tidak bisa diubah</strong> setelah disimpan. Yang tampil ke orang adalah <strong>Nama</strong>, dan itu bisa diubah kapan saja.
             </p>
         </form>
     </div>

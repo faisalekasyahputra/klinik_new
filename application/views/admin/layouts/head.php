@@ -154,6 +154,10 @@
         .dark .tombol-aksi-bahaya:hover { background-color: rgba(239, 68, 68, .2); color: #fca5a5; }
         /* Beberapa tombol (atau form berisi tombol) berjajar dalam satu sel: beri jarak tanpa pembungkus. */
         td > :is(.tombol-aksi, form) + :is(.tombol-aksi, form) { margin-left: .375rem; }
+        /* Deret kartu ringkasan: di layar lebar semua kartu satu baris, berapa pun jumlahnya
+           (style="--jumlah-kartu: N"), supaya tidak ada kartu sendirian di baris kedua
+           (audit UI 2 Okt 2026: 5 kartu di grid 4 kolom). Di bawah 1280 tetap kelas Tailwind. */
+        @media (min-width: 1280px) { .grid.deret-kartu { grid-template-columns: repeat(var(--jumlah-kartu, 4), minmax(0, 1fr)); } }
         /* Unggah berkas berlabel Indonesia (admin/components/input_berkas.php): input asli transparan
            menutupi kotak, jadi klik, keyboard, dan validasi `required` tetap milik peramban. */
         .input-berkas { position: relative; display: flex; align-items: center; gap: .75rem; width: 100%; min-height: 2.5rem; border: 1px solid #e5e7eb; border-radius: .5rem; padding: .25rem .75rem .25rem .25rem; cursor: pointer; }

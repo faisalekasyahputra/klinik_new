@@ -147,9 +147,10 @@ http('Auth/do_login', ['csrf_kpkp_token' => $t, 'email' => $emailAdm, 'password'
 $layar = http('Admin_Magang_Posisi');
 wajib(strpos($layar, 'Posisi Magang') !== FALSE, 'Superadmin benar-benar sampai ke layar Posisi Magang');
 
-/* Modal pengingat versi KOSONG harus muncul sekarang. */
-cek(strpos($layar, 'Belum ada satu pun posisi magang') !== FALSE,
-    'Modal pengingat berbunyi "belum ada posisi" saat daftar kosong');
+/* Daftar kosong: keadaan kosong biasa di bawah formulir, BUKAN modal yang terbuka sendiri
+   (audit UI 2 Okt 2026, kelompok B: modal otomatis menghalangi kerja). */
+cek(strpos($layar, 'Belum ada posisi.') !== FALSE && strpos($layar, 'modal-posisi-magang') === FALSE,
+    'Daftar kosong tampil sebagai keadaan kosong biasa, tanpa modal otomatis');
 
 $t2 = token('Admin_Magang_Posisi');
 http('Admin_Magang_Posisi/simpan', [

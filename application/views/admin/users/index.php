@@ -28,7 +28,7 @@
                     <input type="password" name="password" required minlength="8" class="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
                 </div>
                 <div>
-                    <label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Role</label>
+                    <label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Peran</label>
                     <select name="role" x-model="role" required class="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-gray-800 dark:text-gray-200">
                         <option value="">Pilih role</option>
                         <?php foreach ($available_roles as $role_key => $role_label): ?>
@@ -68,11 +68,7 @@
          <td> di kartu ini, jadi stacking context z-10 di sini menguburnya juga.
          `relative` dipertahankan - popover Ubah Role di dalam sel memakainya. */ ?>
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden relative">
-    <div class="p-6 border-b border-gray-200 dark:border-white/5">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <i class="ph ph-users-three text-brand-primary"></i> Daftar Pengguna (<?= angka_id((int) $table['total_rows']) ?>)
-        </h3>
-    </div>
+    <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Daftar Pengguna', 'kt_jumlah' => (int) $table['total_rows'], 'kt_keterangan' => '']); ?>
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, email, atau username...'], TRUE) ?>
     <div class="overflow-x-auto aksi-tetap">
         <table class="w-full text-left text-sm whitespace-nowrap">
@@ -83,8 +79,8 @@
                              pertama hilang di balik gulir horizontal, dan itu sudah dua
                              kali terjadi di layar admin lain. */ ?>
                     <th scope="col" class="px-4 py-4"><?= admin_sort_header('Nama Pengguna', 'name', $table, $base_url) ?></th>
-                    <th scope="col" class="px-4 py-4"><?= admin_sort_header('Peran (Role)', 'role', $table, $base_url) ?></th>
-                    <th scope="col" class="px-4 py-4">Scope</th>
+                    <th scope="col" class="px-4 py-4"><?= admin_sort_header('Peran', 'role', $table, $base_url) ?></th>
+                    <th scope="col" class="px-4 py-4">Cakupan</th>
                     <?php /* Tanpa admin_sort_header(): `status` tidak ada di whitelist
                              table_state() milik controller, dan controller tidak boleh
                              disentuh di pekerjaan ini. Header urut yang menunjuk kolom
@@ -208,7 +204,7 @@
                                  hilang di balik gulir horizontal (§17 poin 6). */ ?>
                         <div class="ml-auto flex max-w-[15rem] flex-wrap items-center justify-end gap-1">
                             <button @click="editOpen = true" class="tombol-aksi">
-                                <i class="ph ph-pencil-simple"></i><span>Ubah Role</span>
+                                <i class="ph ph-pencil-simple"></i><span>Ubah Peran</span>
                             </button>
                             <?php if (in_array($u->role, ['admin_kabkota', 'admin_bidang'], TRUE)): ?>
                             <a href="<?= base_url('Admin_Privileges/index/' . (int) $u->id) ?>" class="tombol-aksi">
@@ -340,7 +336,7 @@
                         <template x-teleport="body">
                         <div x-show="editOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center whitespace-normal bg-black/50 p-4" @keydown.escape.window="editOpen = false">
                         <div @click.outside="editOpen = false" class="w-full max-w-sm rounded-3xl bg-white dark:bg-brand-card p-6 text-left shadow-xl">
-                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Ubah Role</h3>
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Ubah Peran</h3>
                             <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-brand-muted break-words"><?= html_escape($u->email) ?></p>
                             <form method="POST" action="<?= base_url('Admin_Users/update_role') ?>" class="space-y-2">
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">

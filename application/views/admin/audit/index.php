@@ -6,13 +6,9 @@
 $this->load->helper('admin_table');
 // Filter dibangun lewat admin_table_url() supaya pencarian dan urutan yang
 // sedang aktif tidak hilang saat ganti filter, dan sebaliknya.
-$pil = 'px-3 py-1 rounded-lg text-xs font-bold border transition-colors';
-$nyala = 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary';
-$padam = 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10';
-
 // Aksi yang berakhiran `_ditolak` adalah percobaan yang DIBLOKIR - dibedakan
-// warnanya di pil filter maupun di baris, karena justru itu yang orang cari
-// saat membuka layar ini. Dipakai dua kali, jadi didefinisikan sekali.
+// di filter (kelompok sendiri) maupun di baris (warna merah), karena justru
+// itu yang orang cari saat membuka layar ini.
 $ditolak = fn($a) => str_ends_with((string) $a, '_ditolak');
 
 // Kode aksi (`aduan_ditriase`) dibaca admin dinas, bukan pengembang: garis bawah jadi
@@ -21,21 +17,39 @@ $ditolak = fn($a) => str_ends_with((string) $a, '_ditolak');
 $label_aksi = fn($a) => ucfirst(preg_replace_callback('/\b(srp2|nik|npwp|psu|rtlh|kkn|sk)\b/',
     fn($m) => strtoupper($m[1]), str_replace('_', ' ', (string) $a)));
 
+// Filter aksi: SATU dropdown, bukan dinding sekitar 60 pil (audit UI 2 Okt 2026).
+// Tetap GET `aksi` yang sama, divalidasi controller lewat in_array($aksi_tersedia).
+// Parameter lain (q, urutan) dibawa sebagai hidden; `page` tidak, filter baru mulai dari halaman 1.
+$aksi_biasa   = array_values(array_filter($aksi_tersedia, fn($a) => ! $ditolak($a)));
+$aksi_ditolak = array_values(array_filter($aksi_tersedia, $ditolak));
 ob_start(); ?>
-<span class="mr-1 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted">Aksi:</span>
-<a href="<?= admin_table_url($base_url, ['aksi' => NULL]) ?>" class="<?= $pil ?> <?= empty($f_aksi) ? $nyala : $padam ?>">Semua</a>
-<?php foreach ($aksi_tersedia as $a): ?>
-    <a href="<?= admin_table_url($base_url, ['aksi' => $a]) ?>"
-       class="<?= $pil ?> <?= $f_aksi === $a ? $nyala : ($ditolak($a) ? 'border-red-200 text-red-600 hover:bg-red-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10' : $padam) ?>" title="<?= html_escape($a) ?>"><?= html_escape($label_aksi($a)) ?></a>
-<?php endforeach;
+<form method="get" action="<?= base_url($base_url) ?>" class="flex items-center gap-2" data-filter-aksi>
+    <?php foreach ($_GET as $k => $v) {
+        if (in_array($k, ['aksi', 'page'], TRUE) || is_array($v)) { continue; }
+        echo '<input type="hidden" name="' . html_escape($k) . '" value="' . html_escape($v) . '">';
+    } ?>
+    <label for="filter-aksi" class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted">Aksi</label>
+    <select id="filter-aksi" name="aksi" onchange="this.form.submit()"
+            class="max-w-[16rem] rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-800 dark:border-white/10 dark:bg-black/30 dark:text-white">
+        <option value="">Semua aksi</option>
+        <?php foreach ($aksi_biasa as $a): ?>
+        <option value="<?= html_escape($a) ?>" <?= $f_aksi === $a ? 'selected' : '' ?>><?= html_escape($label_aksi($a)) ?></option>
+        <?php endforeach; ?>
+        <?php if ($aksi_ditolak): ?>
+        <optgroup label="Percobaan ditolak">
+            <?php foreach ($aksi_ditolak as $a): ?>
+            <option value="<?= html_escape($a) ?>" <?= $f_aksi === $a ? 'selected' : '' ?>><?= html_escape($label_aksi($a)) ?></option>
+            <?php endforeach; ?>
+        </optgroup>
+        <?php endif; ?>
+    </select>
+    <noscript><button type="submit" class="tombol-aksi">Terapkan</button></noscript>
+</form>
+<?php
 $filter_html = ob_get_clean();
 ?>
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden relative z-10">
-    <div class="p-6 border-b border-gray-200 dark:border-white/5">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <i class="ph ph-scroll text-brand-primary"></i> Riwayat Tindakan (<?= angka_id((int) $table['total_rows']) ?>)
-        </h3>
-    </div>
+    <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Riwayat Tindakan', 'kt_jumlah' => (int) $table['total_rows'], 'kt_keterangan' => '']); ?>
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari ringkasan, email pelaku, atau aksi...', 'filter_html' => $filter_html], TRUE) ?>
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm whitespace-nowrap">

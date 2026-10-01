@@ -2,10 +2,20 @@
 /**
  * Layar posisi/lowongan magang - butir F1.
  *
- * MODAL PENGINGAT muncul tiap halaman dibuka, dan isinya berubah menurut
- * keadaan: kosong sama sekali, atau sudah lama tidak disentuh. Itu permintaan
- * user - "agar mereka tidak malas update". Pengingat yang berbunyi sama dalam
- * keadaan apa pun cepat jadi hiasan yang diklik tanpa dibaca.
+ * PENGINGAT (permintaan user, "agar mereka tidak malas update") dulu berupa
+ * modal yang terbuka sendiri tiap halaman dibuka. Kini jadi kotak biasa di
+ * atas tabel (audit UI 2 Okt 2026: modal otomatis menghalangi kerja), dan hanya
+ * muncul saat daftar sudah lama tidak diperbarui. Keadaan kosong cukup jadi
+ * baris kosong biasa di bawah formulir.
+ *
+ * Catatan yang dipindah dari modal:
+ * - Daftar sengaja tidak diisi lebih dulu. Lima contoh dari rapat (programmer,
+ *   arsitek, pengelola data, drafter, content creator) masih contoh dalam
+ *   kalimat, bukan daftar resmi; tebakan kita akan terbaca sebagai keputusan
+ *   dinas dan mahasiswa melamar posisi yang mungkin tidak ada.
+ * - Kuota di sini keterangan, bukan pengunci. Yang membatasi jumlah pendaftar
+ *   tetap kuota per bidang, jadi mengubah daftar ini tidak mengubah
+ *   pendaftaran yang sedang berjalan.
  */
 $hari_basi = 60;
 $kosong    = empty($rows);
@@ -13,69 +23,19 @@ $umur_hari = $terakhir_diubah ? (int) floor((time() - strtotime($terakhir_diubah
 $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
 ?>
 
-<?php if ($kosong || $basi): ?>
-<dialog id="modal-posisi-magang" class="rounded-2xl border p-0"
-        style="max-width:34rem;width:calc(100% - 2rem);background:var(--portal-bg-card,#fff);border-color:var(--portal-border,#e5e7eb);color:var(--portal-text,#111827)"
-        aria-labelledby="modal-posisi-judul">
-    <div class="p-5 sm:p-6">
-        <p class="text-[10px] font-bold uppercase tracking-[.18em]" style="color:#b45309">Pengingat</p>
-
-        <?php if ($kosong): ?>
-            <h2 id="modal-posisi-judul" class="mt-1 text-lg font-black sm:text-xl">Belum ada satu pun posisi magang</h2>
-            <p class="mt-3 text-sm leading-relaxed" style="color:var(--portal-text-muted,#6b7280)">
-                Selama daftar ini kosong, papan magang publik hanya menampilkan <strong>nama bidang</strong> -
-                dan itulah yang dikeluhkan dinas: mahasiswa tidak tahu sebenarnya dibutuhkan keahlian apa.
-            </p>
-            <div class="mt-4 rounded-xl border p-3 text-xs leading-relaxed"
-                 style="background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.28);color:#92400e">
-                <p><strong>Kami sengaja tidak mengisinya lebih dulu.</strong> Lima contoh yang disebut di rapat
-                (programmer, arsitek, pengelola data, drafter, content creator) masih berupa contoh dalam
-                kalimat, bukan daftar resmi. Kalau kami tuliskan sendiri, tebakan kami akan terbaca sebagai
-                keputusan dinas dan mahasiswa melamar posisi yang mungkin tidak ada.</p>
-            </div>
-        <?php else: ?>
-            <h2 id="modal-posisi-judul" class="mt-1 text-lg font-black sm:text-xl">Daftar posisi belum disentuh <?= (int) $umur_hari ?> hari</h2>
-            <p class="mt-3 text-sm leading-relaxed" style="color:var(--portal-text-muted,#6b7280)">
-                Mahasiswa melamar berdasarkan daftar ini. Posisi yang sudah terisi tetapi masih tercantum
-                membuat mereka mendaftar untuk sesuatu yang tidak ada lagi - dan penolakannya baru datang
-                jauh belakangan.
-            </p>
-            <div class="mt-4 rounded-xl border p-3 text-xs leading-relaxed"
-                 style="background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.28);color:#92400e">
-                <p><strong>Cukup satu hal:</strong> matikan tanda &ldquo;Aktif&rdquo; pada posisi yang sudah
-                tidak dibuka. Tidak perlu dihapus - mematikannya menyembunyikannya dari papan publik
-                sambil menyimpan catatannya untuk periode berikutnya.</p>
-            </div>
-        <?php endif; ?>
-
-        <div class="mt-4 rounded-xl border p-3 text-xs leading-relaxed"
-             style="background:rgba(14,165,233,.09);border-color:rgba(14,165,233,.3);color:#075985">
-            <p><strong>Kuota di sini keterangan, bukan pengunci.</strong> Yang membatasi jumlah pendaftar
-            tetap kuota per bidang. Jadi mengubah daftar ini aman - tidak ada pendaftaran berjalan
-            yang ikut berubah.</p>
-        </div>
-
-        <div class="mt-5 flex justify-end">
-            <button type="button" id="modal-posisi-tutup" class="tombol-utama">Mengerti, saya perbarui</button>
-        </div>
-    </div>
-</dialog>
-<script>
-(function () {
-    var d = document.getElementById('modal-posisi-magang');
-    if (!d || typeof d.showModal !== 'function') { return; }
-    var buka = function () { if (!d.open) { d.showModal(); } };
-    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', buka); } else { buka(); }
-    document.getElementById('modal-posisi-tutup').addEventListener('click', function () { d.close(); });
-})();
-</script>
-<?php endif; ?>
-
 <div class="space-y-5">
     <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Daftar jurusan, bidang studi, atau keahlian yang sedang dibutuhkan tiap bidang. Yang <strong>aktif</strong> tampil di papan
-            magang publik; kuota di sini keterangan, bukan pengunci pendaftaran.<br><span class="text-xs">'
+            magang publik.<br><span class="text-xs">'
             . (int) $jumlah_aktif . ' posisi aktif · '
             . ($terakhir_diubah ? 'terakhir diperbarui ' . html_escape(tgl_id($terakhir_diubah, TRUE)) : 'belum pernah diisi') . '</span>']); ?>
+
+    <?php if ($basi): ?>
+    <div data-pengingat-posisi class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 text-sm flex items-start gap-3">
+        <i class="ph ph-clock-countdown text-lg mt-0.5" aria-hidden="true"></i>
+        <p><strong>Daftar ini belum diperbarui <?= (int) $umur_hari ?> hari.</strong>
+        Matikan tanda Aktif pada posisi yang sudah tidak dibuka agar mahasiswa tidak melamar posisi yang sudah terisi.</p>
+    </div>
+    <?php endif; ?>
 
     <?php foreach (['success' => '#047857', 'error' => '#b91c1c'] as $jenis => $warna): ?>
         <?php if ($this->session->flashdata($jenis)): ?>

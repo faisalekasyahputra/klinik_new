@@ -325,7 +325,7 @@ cek(preg_match('/>0<\/span> - Petugas bidang/', $awal) === 1,
 $rusak = $blok(http('a', 'Admin_Struktur')['body']);
 cek(preg_match('/>1<\/span> - Petugas bidang/', $rusak) === 1,
     'Sesudah satu baris yatim dibuat: angkanya NAIK jadi 1');
-cek(stripos(http('a', 'Admin_Struktur')['body'], 'menunjuk data yang tidak ada lagi') !== FALSE,
+cek(stripos(http('a', 'Admin_Struktur')['body'], 'yang tidak ada lagi.</strong>') !== FALSE, // kalimat disederhanakan di audit UI kelompok B
     'Callout-nya berubah jadi peringatan, bukan tetap hijau');
 
 q('UPDATE usr_users SET bidang_kode=NULL WHERE id=?', [$idY]);
