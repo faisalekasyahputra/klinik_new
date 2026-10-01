@@ -75,6 +75,7 @@ $config['http_policy'] = [
         'rekam_kawasan/export'       => 'unduhan berkas hasil ekspor (hanya baca)',
         'rekam_perumahan/export'     => 'unduhan berkas hasil ekspor (hanya baca)',
         'index/buka_foto'            => 'penyaji foto (hanya baca)',
+        'index/detail_perum'         => 'halaman detail perumahan publik (hanya baca); yang tertangkap pemindai cuma set_status_header 503 dan cache SIKUMBANG di application/cache',
         'jebakan/index'              => 'jalur jebakan pemindai; hanya mencatat peringatan',
         'migrate/uji_warga_r1'       => 'hanya CLI atau loopback (menolak selain itu dengan 404)',
         'migrate/uji_warga_r2'       => 'hanya CLI atau loopback',
