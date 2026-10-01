@@ -198,12 +198,12 @@
                             <?php /* "Sampai kapan" wajib tampil: itu satu-satunya hal yang
                                      membedakan terkunci (sementara, pulih sendiri) dari
                                      nonaktif (keputusan manusia) di mata pembacanya. */ ?>
-                            <div class="mt-1 text-[11px] text-amber-700 dark:text-brand-primary">sampai <?= html_escape(date('d M Y H:i', strtotime($u->locked_until))) ?></div>
+                            <div class="mt-1 text-[11px] text-amber-700 dark:text-brand-primary">sampai <?= html_escape(tgl_id($u->locked_until, TRUE, TRUE)) ?></div>
                         <?php else: ?>
                             <?= $this->load->view('admin/components/status_badge', ['label' => 'Aktif', 'kelas' => 'ok'], TRUE) ?>
                         <?php endif; ?>
                     </td>
-                    <td class="px-4 py-4 text-xs"><?= html_escape(date('d M Y', strtotime($u->created_at ?? 'now'))) ?></td>
+                    <td class="px-4 py-4 text-xs"><?= html_escape(tgl_id($u->created_at ?? '', TRUE)) ?></td>
                     <td class="px-4 py-4 text-right relative">
                         <?php /* flex-wrap + max-w: tombol menumpuk ke bawah saat sempit,
                                  BUKAN melebarkan tabel. Kolom Aksi adalah yang pertama

@@ -173,7 +173,7 @@ $tabel = function ($judul, array $sisi_list, array $data) use ($e, $rp, $sumber_
 
       <div class="min-w-0">
         <h2 class="text-lg font-black text-gray-900 dark:text-white">
-          Capaian <?= $e($nama_tw[(int) $triwulan] ?? $triwulan) ?> <?= (int) $tahun ?>
+          <?= $mode_rekap ? 'Rekap' : 'Capaian' ?> <?= $e($nama_tw[(int) $triwulan] ?? $triwulan) ?> <?= (int) $tahun ?>
         </h2>
         <p class="mt-1 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-brand-muted">
           <span><?= $e($scope_label) ?></span>

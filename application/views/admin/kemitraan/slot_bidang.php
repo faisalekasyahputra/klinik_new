@@ -116,7 +116,7 @@ if ( ! $mode_bidang) { $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' =
                                             <?php else: ?>
                                             <a href="<?= base_url('Admin_Kemitraan/ubah/' . (int) $o->id) ?>" class="font-bold hover:underline"><?= html_escape($o->nama_mahasiswa ?: '(tanpa nama)') ?></a>
                                             <?php endif; ?>
-                                            &middot; <?= date('j M', strtotime($o->periode_mulai)) ?>-<?= date('j M', strtotime($o->periode_selesai)) ?>
+                                            &middot; <?= tgl_id($o->periode_mulai, TRUE) ?> - <?= tgl_id($o->periode_selesai, TRUE) ?>
                                             &middot; <?= html_escape($o->status) ?>
                                         </div>
                                     <?php endforeach; ?>

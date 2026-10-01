@@ -134,7 +134,7 @@ $filter_html = ob_get_clean();
                             </div>
                         <?php endif; ?>
                     </td>
-                    <td class="px-4 py-4 text-xs"><?= html_escape(date('d M Y, H:i', strtotime($r->created_at))) ?></td>
+                    <td class="px-4 py-4 text-xs"><?= html_escape(tgl_id($r->created_at, TRUE, TRUE)) ?></td>
                     <td class="px-4 py-4">
                         <?php
                             // Peta status domain KKN/Magang -> kelas komponen bersama.

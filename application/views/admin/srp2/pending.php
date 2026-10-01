@@ -1,5 +1,6 @@
 <?php
-$label_status = ['Pending' => 'Menunggu', 'Draft' => 'Diminta Perbaikan', 'Diterima' => 'Diterima', 'Ditolak' => 'Ditolak'];
+$this->load->helper('srp2');
+$label_status = srp2_label_status();
 $kelas_status = ['Pending' => 'pending', 'Draft' => 'process', 'Diterima' => 'ok', 'Ditolak' => 'reject'];
 ?>
 <div class="mb-6">
@@ -44,7 +45,7 @@ $kelas_status = ['Pending' => 'pending', 'Draft' => 'process', 'Diterima' => 'ok
                 <tr>
                     <td class="px-6 py-4 font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama_perusahaan) ?></td>
                     <td class="px-6 py-4"><?= html_escape($r->email) ?></td>
-                    <td class="px-6 py-4"><?= html_escape(date('d M Y, H:i', strtotime($r->updated_at))) ?></td>
+                    <td class="px-6 py-4"><?= html_escape(tgl_id($r->updated_at, TRUE, TRUE)) ?></td>
                     <td class="px-6 py-4"><?= $this->load->view('admin/components/status_badge', ['label' => $label_status[$r->status_verifikasi] ?? $r->status_verifikasi, 'kelas' => $kelas_status[$r->status_verifikasi] ?? 'pending'], TRUE) ?></td>
                     <td class="px-6 py-4 text-right">
                         <a href="<?= base_url('Admin_Srp2/detail/' . $r->id) ?>" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">Tinjau →</a>

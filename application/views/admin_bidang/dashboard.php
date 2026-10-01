@@ -41,7 +41,7 @@ $filter_html = ob_get_clean(); ?>
                 </tr>
                 <?php else: foreach ($rows as $r): ?>
                 <tr x-data="{ procOpen: false }">
-                    <td class="px-6 py-4 text-xs"><?= html_escape(date('d M Y H:i', strtotime($r->created_at))) ?></td>
+                    <td class="px-6 py-4 text-xs"><?= html_escape(tgl_id($r->created_at, TRUE, TRUE)) ?></td>
                     <td class="px-6 py-4">
                         <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama) ?></div>
                         <div class="text-xs"><?= html_escape($r->email) ?></div>

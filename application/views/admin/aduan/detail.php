@@ -22,7 +22,7 @@ $warna_status = [
             <a href="<?= base_url($back_url) ?>" class="text-xs font-bold" style="color:var(--portal-text-muted,#6b7280)">&larr; Kembali ke daftar aduan</a>
             <h1 class="mt-1 text-xl font-black"><?= $e($aduan->judul) ?></h1>
             <p class="mt-1 text-xs" style="color:var(--portal-text-muted,#6b7280)">
-                Diterima <?= $e(date('d M Y, H:i', strtotime($aduan->created_at))) ?>
+                Diterima <?= $e(tgl_id($aduan->created_at, TRUE, TRUE)) ?>
             </p>
         </div>
         <span class="rounded-full px-3 py-1.5 text-xs font-bold" style="<?= $warna_status[$aduan->status] ?? '' ?>">
@@ -51,7 +51,7 @@ $warna_status = [
             <dt class="text-xs" style="color:var(--portal-text-muted,#6b7280)">Ditinjau oleh</dt>
             <dd class="mt-0.5 font-bold">
                 <?= $aduan->reviewed_by
-                    ? $e($aduan->nama_peninjau ?: 'Petugas') . ' &middot; ' . $e(date('d M Y', strtotime($aduan->reviewed_at)))
+                    ? $e($aduan->nama_peninjau ?: 'Petugas') . ' &middot; ' . $e(tgl_id($aduan->reviewed_at, TRUE))
                     : 'Belum ditinjau' ?>
             </dd>
         </div>

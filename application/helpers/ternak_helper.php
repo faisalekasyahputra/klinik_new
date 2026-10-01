@@ -31,8 +31,8 @@ if ( ! function_exists('api_image_url')) {
  */
 if ( ! function_exists('format_tanggal_api')) {
     function format_tanggal_api($iso_date_string) {
-        if (empty($iso_date_string)) return '-';
-        return date('d M Y, H:i', strtotime($iso_date_string));
+        // Diteruskan ke tgl_id supaya bulannya Indonesia (Okt, bukan Oct).
+        return tgl_id($iso_date_string, TRUE, TRUE);
     }
 }
 
@@ -86,11 +86,19 @@ if ( ! function_exists('avatar_inisial')) {
  * `strftime()` sengaja tidak dipakai: deprecated sejak PHP 8.1 dan bergantung
  * pada locale sistem yang di Windows tidak menyediakan id_ID.
  *
+ * Satu helper ini dipakai untuk SEMUA tanggal dan waktu yang tampil di layar,
+ * supaya tidak ada lagi campuran "2026-10-02 01:22:00" (ISO mentah), "02 Oct
+ * 2026" (bulan Inggris), dan "2 Okt 2026" di aplikasi yang sama. Hanya
+ * tampilan: nilai yang disimpan di basis data tetap Y-m-d H:i:s.
+ *
  * @param string $tanggal  Apa pun yang dimengerti strtotime()
  * @param bool   $pendek   TRUE untuk "Agt", FALSE untuk "Agustus"
+ * @param bool   $jam      TRUE menambahkan jam: "2 Okt 2026, 01.22 WIB"
+ *                         (titik sebagai pemisah jam sesuai ejaan Indonesia;
+ *                         WIB karena aplikasi berjalan di Asia/Jakarta).
  */
 if ( ! function_exists('tgl_id')) {
-    function tgl_id($tanggal, $pendek = FALSE) {
+    function tgl_id($tanggal, $pendek = FALSE, $jam = FALSE) {
         if (empty($tanggal)) { return '-'; }
         $ts = strtotime($tanggal);
         if ($ts === FALSE) { return '-'; }
@@ -101,7 +109,8 @@ if ( ! function_exists('tgl_id')) {
                     'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
         $bulan = ($pendek ? $singkat : $panjang)[(int) date('n', $ts) - 1];
 
-        return date('j', $ts) . ' ' . $bulan . ' ' . date('Y', $ts);
+        return date('j', $ts) . ' ' . $bulan . ' ' . date('Y', $ts)
+            . ($jam ? ', ' . date('H.i', $ts) . ' WIB' : '');
     }
 }
 

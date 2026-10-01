@@ -81,7 +81,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
         </p>
         <p class="mt-1 text-xs" style="color:var(--portal-text-muted,#6b7280)">
             <?= (int) $jumlah_aktif ?> posisi aktif ·
-            <?= $terakhir_diubah ? 'terakhir diperbarui ' . html_escape(date('d M Y', strtotime($terakhir_diubah))) : 'belum pernah diisi' ?>
+            <?= $terakhir_diubah ? 'terakhir diperbarui ' . html_escape(tgl_id($terakhir_diubah, TRUE)) : 'belum pernah diisi' ?>
         </p>
     </header>
 

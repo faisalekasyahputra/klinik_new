@@ -67,7 +67,7 @@
         <!-- Date Badge -->
         <div class="absolute top-4 right-4 z-20 pkp-article-date w-12 h-12 rounded-xl flex flex-col items-center justify-center text-center">
             <span class="font-black text-sm leading-none" style="color: #0a1a1f;"><?=date('d',strtotime($item['createdAt']))?></span>
-            <span class="text-[9px] font-bold uppercase tracking-wider mt-0.5" style="color: rgba(10, 26, 31, 0.7);"><?=date('M',strtotime($item['createdAt']))?></span>
+            <span class="text-[9px] font-bold uppercase tracking-wider mt-0.5" style="color: rgba(10, 26, 31, 0.7);"><?= explode(' ', tgl_id($item['createdAt'], TRUE))[1] ?? '' ?></span>
         </div>
         
         <!-- Image Gradient Overlay -->

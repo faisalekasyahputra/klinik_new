@@ -258,7 +258,7 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
     </p>
   <?php elseif ($sudah_ditinjau): ?>
     <p class="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-white/10 dark:bg-black/20 dark:text-brand-muted">
-      Laporan ini sudah <b>diterima</b> pada <?= $e($laporan['reviewed_at']) ?>. Tidak ada
+      Laporan ini sudah <b>diterima</b> pada <?= $e(tgl_id($laporan['reviewed_at'], TRUE, TRUE)) ?>. Tidak ada
       keputusan lain yang bisa diambil tanpa kabupaten mengirim ulang.
     </p>
   <?php else: ?>

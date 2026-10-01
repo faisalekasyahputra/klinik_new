@@ -143,3 +143,15 @@ function srp2_dokumen_persyaratan() {
         'form_13' => 'Form 13 - Laporan Pembangunan Perumahan',
     ];
 }
+
+/**
+ * Label layar untuk status_verifikasi SRP2. Satu sumber untuk daftar
+ * Admin_Srp2/pending dan umpan Aktivitas Terkini di dasbor admin, supaya
+ * baris yang sama tidak tertulis "Draft" di satu layar dan "Diminta
+ * Perbaikan" di layar lain. Nilai yang disimpan tetap kode Inggrisnya.
+ */
+if ( ! function_exists('srp2_label_status')) {
+    function srp2_label_status() {
+        return ['Pending' => 'Menunggu', 'Draft' => 'Diminta Perbaikan', 'Diterima' => 'Diterima', 'Ditolak' => 'Ditolak'];
+    }
+}

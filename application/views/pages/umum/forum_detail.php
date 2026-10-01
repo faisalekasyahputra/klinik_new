@@ -64,7 +64,7 @@
                     Dimulai oleh <b class="text-zinc-300 ml-1"><?= htmlspecialchars($topik['nama_user']) ?></b>
                 </span>
                 <span>•</span>
-                <span class="text-zinc-500"><?= date('d M Y H:i', strtotime($topik['created_at'])) ?> WIB</span>
+                <span class="text-zinc-500"><?= tgl_id($topik['created_at'], TRUE, TRUE) ?></span>
             </div>
             
             <h1 class="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
@@ -381,7 +381,7 @@
                                     <span class="font-bold text-zinc-200 text-xs">
                                         <?= htmlspecialchars($kom['nama_komentator']) ?>
                                     </span>
-                                    <span class="text-[9px] text-zinc-500 hidden sm:inline">• <?= date('d M Y H:i', strtotime($kom['created_at'])) ?></span>
+                                    <span class="text-[9px] text-zinc-500 hidden sm:inline">• <?= tgl_id($kom['created_at'], TRUE, TRUE) ?></span>
                                 </div>
 
                                 <!-- Actions -->
@@ -423,7 +423,7 @@
 
                             <!-- Mobile Date & Quote reference -->
                             <div class="flex flex-wrap items-center gap-2 -mt-1">
-                                <span class="text-[9px] text-zinc-500 sm:hidden"><?= date('d M Y H:i', strtotime($kom['created_at'])) ?></span>
+                                <span class="text-[9px] text-zinc-500 sm:hidden"><?= tgl_id($kom['created_at'], TRUE, TRUE) ?></span>
                                 <?php if ($is_reply && !empty($kom['reply_to_name'])): ?>
                                 <a href="#komentar-<?= $kom['reply_to'] ?>" class="inline-flex items-center gap-1 bg-[#d6fb00]/[0.03] border border-[#d6fb00]/10 rounded px-1.5 py-0.5 text-[9px] text-zinc-500 hover:border-[#d6fb00]/25 transition-colors">
                                     <i class="fa-solid fa-reply fa-flip-horizontal text-[#d6fb00]/40 text-[8px]"></i>

@@ -62,7 +62,7 @@ $langkah = [
                         <?php endif; ?>
                     </td>
                     <td class="px-4 py-3 align-top text-xs"><?= html_escape($langkah[$r['current_step']] ?? $r['current_step']) ?></td>
-                    <td class="px-4 py-3 align-top text-xs"><?= html_escape($r['updated_at'] ? date('d M Y H:i', strtotime($r['updated_at'])) : '-') ?></td>
+                    <td class="px-4 py-3 align-top text-xs"><?= html_escape(tgl_id($r['updated_at'], TRUE, TRUE)) ?></td>
                 </tr>
                 <?php endforeach; endif; ?>
             </tbody>

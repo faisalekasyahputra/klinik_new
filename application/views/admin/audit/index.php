@@ -72,7 +72,7 @@ $filter_html = ob_get_clean();
                 <tr>
                     <td class="px-4 py-4 text-xs">
                         <div class="font-bold text-gray-900 dark:text-white"><?= html_escape(tgl_id($j->created_at, TRUE)) ?></div>
-                        <div class="text-gray-500 dark:text-brand-muted"><?= html_escape($j->created_at ? date('H:i', strtotime($j->created_at)) : '-') ?></div>
+                        <div class="text-gray-500 dark:text-brand-muted"><?= html_escape($j->created_at ? date('H.i', strtotime($j->created_at)) . ' WIB' : '-') ?></div>
                     </td>
                     <td class="px-4 py-4 text-xs">
                         <?php if ( ! empty($j->actor_email)): ?>

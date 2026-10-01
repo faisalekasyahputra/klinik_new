@@ -78,8 +78,8 @@ $warna = [
                     <?= $e($label_status) ?>
                   </span>
                 </td>
-                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e($row['submitted_at'] ?: '-') ?></td>
-                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e($row['reviewed_at'] ?: '-') ?></td>
+                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e(tgl_id($row['submitted_at'], TRUE, TRUE)) ?></td>
+                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e(tgl_id($row['reviewed_at'], TRUE, TRUE)) ?></td>
                 <td class="py-2 pr-3 text-gray-600 dark:text-brand-muted"><?= $e($row['catatan_admin'] ?: '-') ?></td>
                 <td class="py-2 text-right whitespace-nowrap">
                   <a href="<?= $url_detail ?>"

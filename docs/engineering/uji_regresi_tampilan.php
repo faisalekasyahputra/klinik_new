@@ -604,6 +604,40 @@ cek(strpos((string) @file_get_contents(APP_ROOT . '/index.php'), "date_default_t
     && strpos((string) @file_get_contents(APP_ROOT . '/application/core/MY_Controller.php'), "SET time_zone = '+07:00'") !== FALSE,
     'Zona waktu aplikasi WIB di PHP dan sesi MySQL');
 
+/* Audit UI 2 Okt 2026, kelompok 1: SATU format tanggal di layar. Dulu tiga bentuk hidup
+   berdampingan: ISO mentah "2026-10-02 01:29:58" (riwayat/tinjauan rekam data, banner
+   keamanan), bulan Inggris "02 Oct 2026" (antrean, aduan, kemitraan, pengguna), dan
+   "2 Okt 2026" (tgl_id). Yang dijaga: keluaran helpernya, dan nol pola lama di views. */
+if ( ! defined('BASEPATH')) { define('BASEPATH', APP_ROOT . '/system/'); }
+require_once APP_ROOT . '/application/helpers/ternak_helper.php';
+cek(tgl_id('2026-10-02 01:22:43', TRUE) === '2 Okt 2026', 'Tanggal: tgl_id pendek = "2 Okt 2026"');
+cek(tgl_id('2026-10-02 01:22:43', TRUE, TRUE) === '2 Okt 2026, 01.22 WIB',
+    'Tanggal: tgl_id berjam = "2 Okt 2026, 01.22 WIB" (dapat: "' . tgl_id('2026-10-02 01:22:43', TRUE, TRUE) . '")');
+cek(tgl_id(NULL, TRUE, TRUE) === '-' && tgl_id('', TRUE) === '-', 'Tanggal: nilai kosong jadi "-"');
+$pola_lama = [];
+$it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(APP_ROOT . '/application/views', FilesystemIterator::SKIP_DOTS));
+foreach ($it as $f) {
+    if (substr($f->getFilename(), -4) !== '.php') { continue; }
+    $src = (string) file_get_contents($f->getPathname());
+    // Format tampilan berbulan Inggris: date('d M Y'), date('j M'), date('M', ...).
+    if (preg_match("/date\(\s*'[^']*[MF][^']*'/", $src)) { $pola_lama[] = str_replace(APP_ROOT . DIRECTORY_SEPARATOR, '', $f->getPathname()); }
+}
+cek( ! $pola_lama, 'Tanggal: nol date() berbulan Inggris di views' . ($pola_lama ? ' (ada: ' . implode(', ', $pola_lama) . ')' : ''));
+foreach (['admin/rekam/riwayat.php' => "tgl_id(\$row['submitted_at'], TRUE, TRUE)",
+          'admin/rekam/tinjauan_daftar.php' => "tgl_id(\$row['submitted_at'], TRUE, TRUE)",
+          'admin/rekam/tinjauan_detail.php' => "tgl_id(\$laporan['reviewed_at'], TRUE, TRUE)",
+          'admin/antrean/dashboard.php' => "tgl_id(\$pk['terakhir'], TRUE, TRUE)"] as $v => $pola) {
+    $src = (string) @file_get_contents(APP_ROOT . '/application/views/' . $v);
+    cek(strpos($src, $pola) !== FALSE, "Tanggal: {$v} memakai tgl_id, bukan stempel ISO mentah");
+}
+// Istilah seragam: status SRP2 "Draft" tampil "Diminta Perbaikan" di dasbor DAN daftar.
+$dash_src = (string) @file_get_contents(APP_ROOT . '/application/controllers/Admin_Dashboard.php');
+$srp_src  = (string) @file_get_contents(APP_ROOT . '/application/views/admin/srp2/pending.php');
+cek(strpos($dash_src, 'srp2_label_status()') !== FALSE && strpos($srp_src, 'srp2_label_status()') !== FALSE,
+    'Istilah: label status SRP2 dari satu sumber (dasbor dan daftar Tinjau SRP2)');
+cek(strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/rekam/perumahan_wizard.php'), 'Target dan Realisasi') === FALSE,
+    'Istilah: wizard perumahan memakai "Rencana", bukan "Target"');
+
 $umum = (string) @file_get_contents(APP_ROOT . '/application/controllers/Umum.php');
 wajib($umum !== '', 'Sumber Umum.php terbaca');
 preg_match('/function ajukan_janji_temu.*?\n\t\}/s', $umum, $mj);

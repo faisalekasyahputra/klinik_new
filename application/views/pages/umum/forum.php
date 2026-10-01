@@ -75,7 +75,7 @@
                             <div class="flex flex-wrap items-center gap-2 text-[10px]" style="color:var(--portal-text-muted);">
                                 <span class="rounded-full border px-2.5 py-1 font-bold uppercase tracking-wide" style="background:rgba(0,163,181,.08);border-color:rgba(0,163,181,.18);color:var(--portal-brand);"> <?= htmlspecialchars($row['kategori']) ?></span>
                                 <?php if (($row['status'] ?? '') === 'resolved'): ?><span class="text-emerald-600"><i class="fa-solid fa-circle-check mr-1"></i>Selesai</span><?php elseif (($row['status'] ?? '') === 'closed'): ?><span class="text-red-500"><i class="fa-solid fa-lock mr-1"></i>Ditutup</span><?php endif; ?>
-                                <span>Oleh <?= htmlspecialchars($row['nama_user']) ?> · <?= date('d M Y', strtotime($row['created_at'])) ?></span>
+                                <span>Oleh <?= htmlspecialchars($row['nama_user']) ?> · <?= tgl_id($row['created_at'], TRUE) ?></span>
                             </div>
                             <h2 class="truncate text-base font-bold" style="color:var(--portal-text);"><a href="<?= base_url('Umum/detail/'.$row['id_diskusi']); ?>" data-no-page-transition class="transition-colors hover:text-[color:var(--portal-brand)]"><?= htmlspecialchars($row['judul_topik']) ?></a></h2>
                             <p class="line-clamp-2 text-xs leading-relaxed" style="color:var(--portal-text-muted);"> <?= htmlspecialchars($row['isi_diskusi']) ?></p>

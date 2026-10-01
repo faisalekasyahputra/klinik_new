@@ -72,7 +72,7 @@ $filter_html = ob_get_clean();
             <strong class="block text-gray-900 dark:text-white"><?= (int) $pk['total'] ?> peringatan keamanan dalam <?= (int) $pk['jam'] ?> jam terakhir<?= $pk_tinggi > 0 ? ' (' . $pk_tinggi . ' tingkat tinggi)' : '' ?></strong>
             <span class="text-gray-600 dark:text-brand-muted">
                 <?php $bagian = []; foreach ($pk['per_tipe'] as $tipe => $n) { $bagian[] = html_escape(str_replace('_', ' ', $tipe)) . ' ×' . (int) $n; } echo implode(', ', array_slice($bagian, 0, 5)); ?>.
-                Terakhir <?= html_escape((string) $pk['terakhir']) ?>. Klik untuk membuka Jejak Audit.
+                Terakhir <?= html_escape(tgl_id($pk['terakhir'], TRUE, TRUE)) ?>. Klik untuk membuka Jejak Audit.
             </span>
         </span>
     </a>
@@ -169,8 +169,8 @@ $filter_html = ob_get_clean();
                     ?>
                     <tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                         <td class="px-4 py-3">
-                            <div class="text-gray-900 dark:text-white font-medium"><?= html_escape(date('d M Y', strtotime($row->created_at))) ?></div>
-                            <div class="text-[10px]"><?= html_escape(date('H:i', strtotime($row->created_at))) ?></div>
+                            <div class="text-gray-900 dark:text-white font-medium"><?= html_escape(tgl_id($row->created_at, TRUE)) ?></div>
+                            <div class="text-[10px]"><?= html_escape(date('H.i', strtotime($row->created_at))) ?> WIB</div>
                         </td>
                         <!-- Teks panjang boleh membungkus agar kolom Aksi tidak
                              terdorong keluar seperti kasus meja KKN/Magang. -->

@@ -133,7 +133,7 @@ if (empty($aksi_buat)) {
                             <?= $this->load->view('admin/components/status_badge', ['label' => 'Aktif', 'kelas' => 'ok'], TRUE) ?>
                         <?php endif; ?>
                     </td>
-                    <td class="px-4 py-4 text-xs"><?= html_escape(date('d M Y', strtotime($u->created_at ?? 'now'))) ?></td>
+                    <td class="px-4 py-4 text-xs"><?= html_escape(tgl_id($u->created_at ?? '', TRUE)) ?></td>
                     <td class="px-4 py-4 text-right">
                         <?php /* Superadmin: tautan ke baris yang SAMA di Manajemen Pengguna.
                                  Admin bidang: kelola langsung di sini (keputusan pemilik produk

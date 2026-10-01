@@ -59,7 +59,7 @@ $kelas_status = [
         <div class="space-y-2">
             <?php foreach ($aktivitas as $a):
                 $housing_status = $housing_statuses[$a['status']] ?? NULL;
-                $status_label = $housing_status['label'] ?? $a['status'];
+                $status_label = $housing_status['label'] ?? ($a['label'] ?? NULL) ?? $a['status'];
                 $status_kelas = $housing_status['badge'] ?? ($kelas_status[$a['status']] ?? 'pending');
             ?>
             <a href="<?= html_escape(base_url($a['url'])) ?>" class="group flex items-start gap-3 rounded-2xl px-2 py-3 transition-colors hover:bg-gray-50 dark:hover:bg-white/5">
@@ -69,7 +69,7 @@ $kelas_status = [
                     <p class="truncate text-sm font-semibold text-gray-900 group-hover:text-blue-600 dark:text-white dark:group-hover:text-brand-primary"><?= html_escape($a['judul']) ?></p>
                     <div class="mt-1 flex items-center gap-2">
                         <?= $this->load->view('admin/components/status_badge', ['label' => $status_label, 'kelas' => $status_kelas], TRUE) ?>
-                        <span class="text-[10px] text-gray-400 dark:text-brand-muted/70"><?= html_escape(date('d M, H:i', strtotime($a['waktu']))) ?></span>
+                        <span class="text-[10px] text-gray-400 dark:text-brand-muted/70"><?= html_escape(tgl_id($a['waktu'], TRUE, TRUE)) ?></span>
                     </div>
                 </div>
                 <i class="ph ph-caret-right mt-3 text-gray-300 group-hover:text-blue-600 dark:text-brand-muted/50 dark:group-hover:text-brand-primary"></i>

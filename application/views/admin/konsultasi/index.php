@@ -78,7 +78,7 @@ $filter_html = ob_get_clean();
                     <td class="px-4 py-4"><?= $this->load->view('admin/components/status_badge', ['label' => ucfirst($r->status), 'kelas' => $badge_kelas[$r->status] ?? 'pending'], TRUE) ?></td>
                     <td class="px-4 py-4 text-xs">
                         <?php if ($r->jadwal_mulai): ?>
-                            <div class="font-bold"><?= html_escape(tgl_id($r->jadwal_mulai, TRUE)) ?> <?= html_escape(date('H:i', strtotime($r->jadwal_mulai))) ?></div>
+                            <div class="font-bold"><?= html_escape(tgl_id($r->jadwal_mulai, TRUE, TRUE)) ?></div>
                             <div class="text-[10px] text-gray-400 dark:text-brand-muted/70 truncate max-w-[140px]"><?= html_escape($r->lokasi) ?></div>
                         <?php else: ?>
                             <span class="text-gray-400 dark:text-brand-muted/60">-</span>

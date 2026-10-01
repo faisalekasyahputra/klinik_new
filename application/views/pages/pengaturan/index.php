@@ -55,7 +55,7 @@
                         <p class="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-brand-muted/70"><?= htmlspecialchars($item['jenis']) ?></p>
                         <p class="text-sm font-bold text-gray-900 dark:text-white truncate"><?= htmlspecialchars($item['judul']) ?></p>
                         <?php if (!empty($item['is_simulation'])): ?><span class="mt-1 inline-flex max-w-full whitespace-normal rounded px-2 py-0.5 text-[10px] font-bold leading-tight bg-amber-100 text-amber-800">Mode Simulasi - API SIMPERUM belum terhubung</span><?php endif; ?>
-                        <p class="text-xs text-gray-500 dark:text-brand-muted mt-0.5"><?= htmlspecialchars(date('d M Y, H:i', strtotime($item['created_at']))) ?></p>
+                        <p class="text-xs text-gray-500 dark:text-brand-muted mt-0.5"><?= htmlspecialchars(tgl_id($item['created_at'], TRUE, TRUE)) ?></p>
                         <?php if (!empty($item['catatan_admin'])): ?>
                         <p class="text-xs mt-1.5 px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted whitespace-normal">
                             <span class="font-bold">Catatan admin:</span> <?= htmlspecialchars($item['catatan_admin']) ?>
@@ -80,7 +80,7 @@
                                 <?php foreach ($riwayat as $jejak): ?>
                                 <li class="text-xs text-gray-600 dark:text-brand-muted">
                                     <span class="font-bold text-gray-900 dark:text-white"><?= htmlspecialchars($label_status[$jejak['to_status']] ?? $jejak['to_status']) ?></span>
-                                    <span class="ml-1 whitespace-nowrap text-[11px]"><?= htmlspecialchars(date('d M Y, H:i', strtotime($jejak['created_at']))) ?></span>
+                                    <span class="ml-1 whitespace-nowrap text-[11px]"><?= htmlspecialchars(tgl_id($jejak['created_at'], TRUE, TRUE)) ?></span>
                                     <?php if (!empty($jejak['note'])): ?><span class="block whitespace-normal italic"><?= htmlspecialchars($jejak['note']) ?></span><?php endif; ?>
                                 </li>
                                 <?php endforeach; ?>

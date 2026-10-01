@@ -75,7 +75,7 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
                     <span class="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">Menunggu ditinjau</span>
                   <?php endif; ?>
                 </td>
-                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e($row['submitted_at'] ?: '-') ?></td>
+                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e(tgl_id($row['submitted_at'], TRUE, TRUE)) ?></td>
                 <td class="py-2 text-right">
                   <a href="<?= base_url('Rekam_Tinjauan/detail/' . (int) $row['id']) ?>"
                      class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold dark:border-white/10">Periksa</a>

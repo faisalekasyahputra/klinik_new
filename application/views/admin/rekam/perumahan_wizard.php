@@ -314,7 +314,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $t
         <h2 class="text-lg font-black text-gray-900 dark:text-white">
           <?= $e($program_label[$program_aktif] ?? $program_aktif) ?>
         </h2>
-        <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">Target dan Realisasi</p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">Rencana dan Realisasi</p>
 
         <?php if ( ! $daftar): ?>
           <p class="mt-4 rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500 dark:border-white/10 dark:text-brand-muted">

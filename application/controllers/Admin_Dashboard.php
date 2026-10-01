@@ -76,12 +76,17 @@ class Admin_Dashboard extends Admin_Controller {
                 'url' => 'Admin_Aduan?status=' . rawurlencode($r->status),
             ];
         }
-        foreach ($this->db->select('nama_perusahaan, status_verifikasi, created_at')
-            ->order_by('created_at', 'DESC')->limit(6)->get('srp2_registrations')->result() as $r) {
+        // Label dan kolom waktu sama dengan Admin_Srp2/pending (kolom Dikirim =
+        // updated_at), supaya satu pengajuan tidak tampil beda di dua layar.
+        $this->load->helper('srp2');
+        $label_srp2 = srp2_label_status();
+        foreach ($this->db->select('nama_perusahaan, status_verifikasi, updated_at')
+            ->order_by('updated_at', 'DESC')->limit(6)->get('srp2_registrations')->result() as $r) {
             $items[] = [
                 'icon' => 'ph-seal-check', 'jenis' => 'Sertifikasi SRP2',
                 'judul' => $r->nama_perusahaan ?: 'Pengajuan SRP2',
-                'status' => $r->status_verifikasi, 'waktu' => $r->created_at,
+                'status' => $r->status_verifikasi, 'label' => $label_srp2[$r->status_verifikasi] ?? NULL,
+                'waktu' => $r->updated_at,
                 'url' => 'Admin_Srp2/pending?status=' . rawurlencode($r->status_verifikasi),
             ];
         }
