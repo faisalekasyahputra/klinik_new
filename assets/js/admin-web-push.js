@@ -72,6 +72,14 @@
             if (subscription === undefined) return;
             currentSubscription = subscription;
             setState(subscription ? 'active' : 'inactive', subscription ? 'Notifikasi HP aktif' : 'Aktifkan notifikasi HP');
+            // Perangkat bersama: langganan peramban ini mungkin masih atas nama akun yang
+            // login sebelumnya. Daftarkan ulang ke akun yang sedang login supaya push milik
+            // orang lain tidak lagi sampai ke sini.
+            // ponytail: satu POST per muat halaman; simpan penanda per akun bila terasa berat.
+            if (subscription) {
+                post(button.dataset.subscribeUrl, { subscription: JSON.stringify(subscription.toJSON()) })
+                    .catch(function (error) { console.error(error); });
+            }
         }).catch(function (error) {
             console.error(error);
             setState('disabled', 'Web Push belum tersedia');
