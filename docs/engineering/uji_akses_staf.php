@@ -467,6 +467,21 @@ $pulih = TRUE;
 foreach ($lain as $id => $st) { if (kolom($id, 'status') !== $st) { $pulih = FALSE; } }
 cek($pulih, 'Status superadmin lain dipulihkan persis semula');
 
+// ============================================ 6b. ROLE DITURUNKAN = SESI BERAKHIR
+echo "\n== 6b. Role yang diturunkan tidak tertinggal di sesi yang sedang berjalan ==\n";
+// Jelajah superadmin 1 Okt 2026: sesi B tetap memegang role admin sesudah diturunkan,
+// lalu lewat update_role menaikkan dirinya lagi.
+wajib(login('b', $emailB), 'Login superadmin sasaran (sesi berjalan)');
+wajib(http('b', 'Admin_Users')['code'] === 200, 'Sesi sasaran membuka Admin_Users sebelum diturunkan');
+http('a', 'Admin_Users/update_role', ['csrf_kpkp_token' => csrf('a', 'Admin_Users'), 'id' => $idB, 'role' => 'warga']);
+cek(kolom($idB, 'role') === 'warga', 'Role sasaran turun menjadi warga');
+$sesiB = http('b', 'Admin_Users');
+cek(strpos($sesiB['body'], 'Daftar Pengguna') === FALSE, 'Sesi lama sasaran tidak lagi membuka Admin_Users');
+http('b', 'Admin_Users/update_role', ['csrf_kpkp_token' => csrf('b', 'Auth/login'), 'id' => $idB, 'role' => 'admin']);
+cek(kolom($idB, 'role') === 'warga', 'Sesi lama sasaran tidak bisa menaikkan dirinya lagi');
+http('a', 'Admin_Users/update_role', ['csrf_kpkp_token' => csrf('a', 'Admin_Users'), 'id' => $idB, 'role' => 'admin']);
+wajib(kolom($idB, 'role') === 'admin', 'Role sasaran dipulihkan ke admin');
+
 // ===================================================== 11 & 12. JEJAK AUDIT
 echo "\n== 11-12. Jejak audit: yang berhasil DAN yang ditolak ==\n";
 foreach (['akun_dinonaktifkan' => $idS, 'akun_diaktifkan' => $idS,

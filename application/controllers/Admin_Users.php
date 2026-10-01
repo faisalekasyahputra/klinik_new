@@ -124,7 +124,16 @@ class Admin_Users extends Admin_Controller {
             return;
         }
 
-        if ( ! $this->db->where('id', $id)->update('usr_users', $payload)) {
+        // Role, kabupaten, dan bidang dibaca dari sesi; tanpa ini sesi yang sedang
+        // berjalan tetap memegang hak lama (bahkan bisa menaikkan dirinya lagi lewat
+        // update_role). Mengosongkan hash sesi mengakhirinya di request berikutnya,
+        // pola yang sama dengan reset_sandi().
+        $berubah = $sebelum->role !== $role
+            || (string) $sebelum->kabupaten_id !== (string) $payload['kabupaten_id']
+            || (string) $sebelum->bidang_kode !== (string) $payload['bidang_kode'];
+        $sesi_putus = $berubah ? ['active_session_hash' => NULL, 'active_session_id_hash' => NULL, 'active_session_at' => NULL] : [];
+
+        if ( ! $this->db->where('id', $id)->update('usr_users', $payload + $sesi_putus)) {
             $this->session->set_flashdata('error', 'Role pengguna belum tersimpan. Coba lagi.');
             redirect('Admin_Users');
             return;
@@ -141,7 +150,14 @@ class Admin_Users extends Admin_Controller {
                         'bidang_kode' => $sebelum->bidang_kode ?? NULL],
              'ke'   => $payload]);
 
-        $this->session->set_flashdata('success', 'Role pengguna diperbarui.');
+        if ($berubah && $id === (int) $this->get_user_id()) {
+            $this->session->sess_destroy();
+            redirect('Auth/login');
+            return;
+        }
+        $this->session->set_flashdata('success', $berubah
+            ? 'Role pengguna diperbarui. Sesi akun itu diakhiri; perubahan berlaku saat ia masuk lagi.'
+            : 'Role pengguna diperbarui.');
         redirect('Admin_Users');
     }
 
