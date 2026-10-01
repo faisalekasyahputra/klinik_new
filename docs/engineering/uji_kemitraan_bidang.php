@@ -187,6 +187,7 @@ function bersihkan() {
             foreach (glob($dir . DIRECTORY_SEPARATOR . '*') ?: [] as $f) { @unlink($f); }
             @rmdir($dir);
         }
+        q("DELETE FROM sys_jejak_audit WHERE objek_tipe='kkn_magang_pendaftaran' AND objek_id=?", [(string) $id]);
         q('DELETE FROM kkn_magang_pendaftaran WHERE id=?', [$id]);
     }
     foreach ($GLOBALS['users'] as $id) { q('DELETE FROM usr_users WHERE id=?', [$id]); }
@@ -330,6 +331,9 @@ cek((string) nilai('SELECT reviewed_at_bidang FROM kkn_magang_pendaftaran WHERE 
 // Inti butir 3: jejak tahap satu utuh.
 cek((int) nilai('SELECT reviewed_by FROM kkn_magang_pendaftaran WHERE id=?', [$dA]) === $wargaId,
     'Jejak peninjau TAHAP SATU tidak tertimpa keputusan bidang');
+// UAT admin bidang AB5: keputusan final bidang dulu tidak masuk jejak audit terpusat.
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='kemitraan_keputusan' AND objek_tipe='kkn_magang_pendaftaran' AND objek_id=? AND actor_id=?", [(string) $dA, $adminA]) === 1,
+    'Keputusan bidang tercatat di jejak audit (kemitraan_keputusan)');
 
 // Keputusan ganda: sudah Diterima berarti tidak lagi 'Ditinjau Bidang'.
 $tok = csrf('a', 'Kemitraan_Bidang');

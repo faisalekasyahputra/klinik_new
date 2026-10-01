@@ -113,6 +113,13 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
             'reviewed_by_bidang' => $this->get_user_id(),
             'reviewed_at_bidang' => date('Y-m-d H:i:s'),
         ]);
+        // Aksi sama dengan Admin_Kemitraan::proses() supaya Admin_Audit melihat
+        // seluruh rantai keputusan satu pendaftaran (UAT admin bidang AB5).
+        $this->catat_audit('kemitraan_keputusan', 'Keputusan bidang ' . strtoupper($row->jenis) . ' ' . $row->instansi_asal . ': ' . $row->status . ' -> ' . $status,
+            'kkn_magang_pendaftaran', (string) $row->id, [
+                'status_lama' => $row->status, 'status_baru' => $status, 'bidang' => $this->my_bidang_kode,
+                'catatan_baru' => trim((string) $this->input->post('catatan_admin', TRUE)),
+            ]);
 
         $this->session->set_flashdata('success', 'Keputusan bidang tersimpan.');
         redirect('Kemitraan_Bidang');
