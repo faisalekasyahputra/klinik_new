@@ -752,6 +752,15 @@ cek(strpos($cap, 'rowspan="<?= count($sisi_list) ?>"') !== FALSE,
 cek(strpos($cap, "implode(' / '") === FALSE,
     'C2: nol perangkaian "a / b" di dalam sel - itu yang dulu melebarkan tabel');
 
+/* Kolom Aksi Admin_Kemitraan (1 Okt 2026): terukur di peramban 1440x900, wadah tabel
+   scrollWidth 1273 vs clientWidth 1118 - tombol "Ubah Keputusan" di luar wadah. Sesudah
+   sel Mahasiswa dan Aksi boleh membungkus: 1118 = 1118. Ini BUKAN pengukuran; yang
+   dijaga hanya kelas pembungkusnya. Kalau merah, ukur lagi sebelum memutuskan. */
+$kmt = (string) @file_get_contents(APP_ROOT . '/application/views/admin/kemitraan/index.php');
+cek(strpos($kmt, '<td class="px-4 py-4 max-w-[14rem] whitespace-normal break-words">') !== FALSE
+    && strpos($kmt, '<td class="px-4 py-4 text-right whitespace-normal">') !== FALSE,
+    'Kemitraan: sel Mahasiswa dan Aksi boleh membungkus supaya Aksi tidak terdorong keluar wadah');
+
 /* BUTIR 4 PUTARAN 2 - desain prototipe beserta RAB di halaman Panduan Desain.
 
    Yang dijaga bukan "halamannya terbuka", melainkan tiga hal yang bisa rusak

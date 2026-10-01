@@ -33,7 +33,7 @@ $filter_html = ob_get_clean();
                     <!-- "Divisi" dihapus dinas (konfirmasi 1 Agt 2026); kolomnya
                          memuat nama BIDANG untuk magang dan tema bebas untuk KKN. -->
                     <th class="px-4 py-4">Bidang/Tema</th>
-                    <th class="px-4 py-4"><?= admin_sort_header('Tanggal Pengajuan', 'kkn_magang_pendaftaran.created_at', $table, $base_url) ?></th>
+                    <th class="px-4 py-4 whitespace-normal"><?= admin_sort_header('Tanggal Pengajuan', 'kkn_magang_pendaftaran.created_at', $table, $base_url) ?></th>
                     <th class="px-4 py-4"><?= admin_sort_header('Status', 'kkn_magang_pendaftaran.status', $table, $base_url) ?></th>
                     <th class="px-4 py-4 text-right">Aksi</th>
                 </tr>
@@ -45,7 +45,7 @@ $filter_html = ob_get_clean();
                 </tr>
                 <?php else: foreach ($rows as $r): ?>
                 <tr x-data="{ procOpen: false }">
-                    <td class="px-4 py-4">
+                    <td class="px-4 py-4 max-w-[14rem] whitespace-normal break-words">
                         <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama_mahasiswa ?: '-') ?></div>
                         <div class="text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($r->email_mahasiswa ?: '-') ?></div>
                         <?php
@@ -69,8 +69,11 @@ $filter_html = ob_get_clean();
                          bidang yang panjang mendorong lebar tabel melewati
                          wadahnya - dan yang pertama hilang di balik gulir
                          horizontal adalah kolom AKSI, satu-satunya tempat admin
-                         bisa memutuskan apa pun. Terukur 120px terpotong pada
-                         viewport 1440px, 3 Agt 2026. -->
+                         bisa memutuskan apa pun. Dua kolom ini saja ternyata
+                         belum cukup: 1 Okt 2026 masih terukur scrollWidth 1273 vs
+                         clientWidth 1118 pada 1440px. Kini kolom Mahasiswa ikut
+                         membungkus, judul Tanggal Pengajuan boleh dua baris, dan
+                         tombol Aksi boleh bertumpuk; terukur ulang 1118 = 1118. -->
                     <td class="px-4 py-4 max-w-[14rem] whitespace-normal"><?= html_escape($r->instansi_asal) ?></td>
                     <td class="px-4 py-4 max-w-[14rem] whitespace-normal">
                         <?= html_escape($r->divisi_atau_tema ?: '-') ?>
@@ -143,7 +146,7 @@ $filter_html = ob_get_clean();
                         ?>
                         <?= $this->load->view('admin/components/status_badge', ['label' => $r->status, 'kelas' => $badge_kelas[$r->status] ?? 'pending'], TRUE) ?>
                     </td>
-                    <td class="px-4 py-4 text-right">
+                    <td class="px-4 py-4 text-right whitespace-normal">
                         <!-- Tersedia pada status APA PUN: koreksi data paling sering
                              dibutuhkan justru setelah diproses, saat mahasiswa
                              mengabari NIM keliru atau periodenya bergeser. -->
