@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Check konsistensi migrasi - butir S8 roadmap pelunasan utang teknis.
  *

@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 
 $root = dirname(__DIR__, 2);
 $checks = [];

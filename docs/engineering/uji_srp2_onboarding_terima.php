@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji dua perbaikan SRP2 dari simulasi pengembang 27 Sep 2026:
  *

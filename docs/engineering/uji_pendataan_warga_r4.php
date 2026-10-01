@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji R4 pendataan warga melalui HTTP Apache.
  * Jalankan: php docs/engineering/uji_pendataan_warga_r4.php

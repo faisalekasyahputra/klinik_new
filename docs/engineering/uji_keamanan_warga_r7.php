@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Check keamanan minimum R7 untuk lookup pendataan warga.
  * Jalankan: php docs/engineering/uji_keamanan_warga_r7.php

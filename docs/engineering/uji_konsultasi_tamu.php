@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 // Jalankan: C:/xampp/php/php.exe docs/engineering/uji_konsultasi_tamu.php
 // UAT no login No. 15 dan 16. Sesi tamu terpisah; tidak mengubah akun/data aplikasi.
 $base = 'http://localhost/klinik_new/';

@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji layar Pendataan Awal Warga untuk admin kab/kota (Admin_Kabkota::pendataan_awal).
  *

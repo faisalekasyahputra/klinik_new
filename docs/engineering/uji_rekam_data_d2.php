@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji D2 - Rekam Data, Input Capaian Perumahan lewat HTTP sungguhan.
  *

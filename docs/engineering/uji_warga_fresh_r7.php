@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * R7: bangun DB fresh, migrasikan baseline sampai versi terbaru, jalankan
  * perjalanan R1-R6 melalui CLI + Apache/curl, lalu pulihkan .env dan hapus DB.

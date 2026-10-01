@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji TRIASE ADUAN - aduan lahir tanpa bidang, superadmin yang merutekan.
  *

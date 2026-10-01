@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji persetujuan S&K saat daftar (keputusan pemilik produk 26 Sep 2026).
  *

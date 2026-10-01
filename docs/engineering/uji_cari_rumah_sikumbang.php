@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Penjaga pencarian rumah SIKUMBANG - butir A3 revisi dinas.
  *

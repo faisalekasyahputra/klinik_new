@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji UAT alur universitas (sheet UAT "universitas" dinas, temuan U1-U8 28 Sep 2026).
  *

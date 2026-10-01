@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Penjaga regresi untuk cacat yang HANYA ketahuan dengan membuka layarnya.
  *
@@ -598,6 +599,11 @@ cek(strpos($fn_mp, "'Rekam_Perumahan' : 'Rekam_Kawasan'") !== FALSE && strpos($f
     'Push minta perbaikan bertaut ke layar Rekam_Perumahan/Rekam_Kawasan periodenya');
 
 // E1 - syarat "harus ditanggapi dulu" dilepas, TIGA syarat lain tetap berdiri.
+// Audit UI 2 Okt 2026: jam aplikasi WIB (production UTC, lokal Berlin) dan NOW() MySQL diselaraskan.
+cek(strpos((string) @file_get_contents(APP_ROOT . '/index.php'), "date_default_timezone_set('Asia/Jakarta')") !== FALSE
+    && strpos((string) @file_get_contents(APP_ROOT . '/application/core/MY_Controller.php'), "SET time_zone = '+07:00'") !== FALSE,
+    'Zona waktu aplikasi WIB di PHP dan sesi MySQL');
+
 $umum = (string) @file_get_contents(APP_ROOT . '/application/controllers/Umum.php');
 wajib($umum !== '', 'Sumber Umum.php terbaca');
 preg_match('/function ajukan_janji_temu.*?\n\t\}/s', $umum, $mj);

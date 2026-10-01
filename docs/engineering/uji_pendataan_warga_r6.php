@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji R6: submit immutable, antrean wilayah, revisi, dan keputusan admin.
  * Jalankan melalui Apache XAMPP:

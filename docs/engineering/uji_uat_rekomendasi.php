@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 define('BASEPATH', __DIR__);
 require dirname(__DIR__, 2) . '/application/libraries/Warga_ruleset.php';
 require dirname(__DIR__, 2) . '/application/libraries/Matriks_program_ruleset.php';

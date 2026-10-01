@@ -12,6 +12,11 @@ class MY_Controller extends CI_Controller {
     public function __construct() {
         parent::__construct();
 
+        // NOW()/CURRENT_TIMESTAMP MySQL harus sama dengan date() PHP (Asia/Jakarta, lihat index.php).
+        // Offset tetap, bukan nama zona: tabel zona waktu MySQL tidak selalu terisi di hosting.
+        // ponytail: WIB tanpa DST jadi +07:00 aman; ganti ke nama zona bila suatu saat pindah ke zona ber-DST.
+        $this->db->query("SET time_zone = '+07:00'");
+
         // Load essential helpers
         $this->load->helper(['url', 'form', 'security']);
         $this->load->library('session');

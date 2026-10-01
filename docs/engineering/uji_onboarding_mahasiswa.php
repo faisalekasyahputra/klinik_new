@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji onboarding mahasiswa tanpa NIK (daftar revisi dinas 23 Sep 2026).
  *

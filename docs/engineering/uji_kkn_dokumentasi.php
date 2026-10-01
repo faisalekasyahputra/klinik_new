@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji link dokumentasi KKN (migrasi 061, KemitraanPortal::kkn_simpan_dokumentasi).
  *

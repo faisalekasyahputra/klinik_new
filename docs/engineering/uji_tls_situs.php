@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * ALAT UJI KEAMANAN KOMUNIKASI SITUS (form keamanan poin 8.2 dan 8.3).
  *

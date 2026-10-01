@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji sesi tunggal dan pergantian ID sesi rutin (27 Sep 2026).
  *

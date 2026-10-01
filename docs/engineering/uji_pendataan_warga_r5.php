@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji R5 ruleset rekomendasi warga melalui HTTP Apache + pemeriksaan DB.
  * Jalankan: php docs/engineering/uji_pendataan_warga_r5.php

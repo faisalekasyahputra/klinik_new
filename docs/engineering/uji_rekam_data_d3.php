@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji D3 - Rekam Data: kirim, BNBA, dan jaminan TIDAK ADA pewarisan antar triwulan.
  *

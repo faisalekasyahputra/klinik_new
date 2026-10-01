@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji impor Excel PSU (Admin_Psu::import_excel, fitur 235bd89, 1 Sep 2026).
  *

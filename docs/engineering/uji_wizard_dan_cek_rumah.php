@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Dua fitur yang dipakai warga sungguhan hari ini:
  *   1. Cek Data Rumah (Cek_Rtlh) - pencari NIK

@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji BATAS WILAYAH ANTREAN KAB/KOTA - butir B2 revisi dinas.
  *

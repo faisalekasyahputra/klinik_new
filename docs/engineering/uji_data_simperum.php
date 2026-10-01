@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji: cermin data SIMPERUM (sf_data_simperum, migrasi 064), prefill otomatis, dan penyegaran mingguan.
  *

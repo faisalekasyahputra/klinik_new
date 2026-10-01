@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Contract check offline untuk autentikasi dan normalisasi GetDataRTLH.
  *

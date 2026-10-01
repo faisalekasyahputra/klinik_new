@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Penjaga etalase program - admin mengurus 5 program unggulan dari layar,
  * korsel beranda membacanya dari `sf_programs` (migrasi 036).

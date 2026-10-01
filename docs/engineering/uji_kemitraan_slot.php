@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji slot magang - data, pengelolaan, dan penegakannya (migrasi 20260701000026).
  *

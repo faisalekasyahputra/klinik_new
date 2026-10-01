@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji Cek Data Rumah, kontrak UAT No. 18 (10 Sep 2026).
  * Tamu mendapat status terdaftar/intervensi tanpa identitas, maksimal 5/jam/IP.

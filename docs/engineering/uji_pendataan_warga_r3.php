@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /* HTTP check R3. Jalankan: php docs/engineering/uji_pendataan_warga_r3.php */
 define('BASE', rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/'));
 define('ENV', dirname(__DIR__, 2) . '/.env');

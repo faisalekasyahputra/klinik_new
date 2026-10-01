@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Check pelunasan utang teknis - tahap U1 (butir C1, C1b, A5).
  *

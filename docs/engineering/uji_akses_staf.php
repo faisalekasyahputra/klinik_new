@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji AKSES STAF - `Admin_Users::ubah_status/buka_kunci/reset_sandi` dan layar
  * bacanya `Admin_Audit`.

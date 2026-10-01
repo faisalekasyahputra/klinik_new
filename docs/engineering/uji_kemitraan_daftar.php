@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji pendaftaran KKN/Magang - identitas mahasiswa + berkas proposal
  * (migrasi 20260701000025).

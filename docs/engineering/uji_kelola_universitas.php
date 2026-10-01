@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji keputusan pemilik produk 29 Sep 2026 untuk akun universitas dan KKN.
  *

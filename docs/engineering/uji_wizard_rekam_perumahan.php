@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji W6 - wizard Rekam Data Perumahan (bentuk baru: triwulan, gerbang per
  * program, Rencana + Realisasi).

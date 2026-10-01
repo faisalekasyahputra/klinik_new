@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Runner seluruh harness: satu perintah, semua peran, semua skenario.
  *
