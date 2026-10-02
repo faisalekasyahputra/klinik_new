@@ -125,7 +125,7 @@ foreach ($layar as $nama => $url) {
 
 echo "\n== Sumber view: utang tombol nol ==\n";
 $berkas = array_merge(
-    ['admin/antrean/dashboard.php', 'admin/aduan/index.php', 'admin/srp2/index.php', 'admin/srp2/pending.php', 'admin/srp2/tambah.php'],
+    ['admin/antrean/dashboard.php', 'admin/aduan/index.php', 'admin/srp2/index.php', 'admin/srp2/pending.php', 'admin/srp2/ubah.php'] /* tambah.php dilebur ke ubah.php 2 Okt 2026 */,
     array_map(fn($p) => 'admin/kemitraan/' . basename($p), array_filter(glob(APP_ROOT . '/application/views/admin/kemitraan/*.php'), fn($p) => basename($p) !== 'peserta.php')),
     array_map(fn($p) => str_replace(APP_ROOT . '/application/views/', '', $p), glob(APP_ROOT . '/application/views/admin/{users,audit,asosiasi,psu,katalog,struktur,bank_data,magang_posisi,konsultasi,content}/*.php', GLOB_BRACE))
 );

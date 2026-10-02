@@ -259,7 +259,7 @@ try {
         'A5 - nol pesan sukses palsu di layar');
 
     $res = http('admin', 'Admin_Srp2/delete/999999', [
-        'csrf_kpkp_token' => csrf('admin', 'Admin_Srp2')]);
+        'csrf_kpkp_token' => csrf('admin', 'Admin_Srp2/tambah')]); // daftar kini ringkas tanpa formulir (2 Okt 2026); token dari halaman tambah
     cek(stripos($res['body'], 'tidak ditemukan') !== FALSE,
         'A5 - hapus pengembang yang tidak ada dilaporkan gagal');
     cek(stripos($res['body'], 'dihapus dari daftar') === FALSE,

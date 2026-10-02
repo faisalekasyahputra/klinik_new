@@ -421,6 +421,15 @@ class Migrate extends CI_Controller {
         $salah = (int) $this->db->query("SELECT COUNT(*) n FROM information_schema.COLUMNS
             WHERE TABLE_SCHEMA = DATABASE() AND COLUMN_NAME = 'asosiasi' AND COLUMN_DEFAULT = \"'NULL'\"")->row('n');
         echo 'default asosiasi (migrasi 065): '.($salah ? $salah." kolom masih DEFAULT 'NULL'" : 'NULL')."\n";
+        // Migrasi 066 - direktori SRP2 bertaut akun: kolom, UNIQUE user_id, dan FK-nya.
+        foreach (['user_id', 'foto_profil', 'nib', 'no_keanggotaan', 'no_whatsapp', 'email_kontak'] as $kolom) {
+            echo 'srp2_certified_developers.'.$kolom.' (migrasi 066): '.
+                ($this->db->field_exists($kolom, 'srp2_certified_developers') ? 'ADA' : 'HILANG')."\n";
+        }
+        $fk066 = (int) $this->db->query("SELECT COUNT(*) n FROM information_schema.TABLE_CONSTRAINTS
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_certified_developers'
+              AND CONSTRAINT_NAME IN ('fk_srp2_direktori_user', 'uq_srp2_direktori_user')")->row('n');
+        echo 'srp2 tautan akun UNIQUE + FK (migrasi 066): '.($fk066 === 2 ? 'TERPASANG' : 'TIDAK LENGKAP ('.$fk066.'/2)')."\n";
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
                 ($this->db->field_exists($kolom, 'kkn_magang_pendaftaran') ? 'ADA' : 'HILANG')."\n";

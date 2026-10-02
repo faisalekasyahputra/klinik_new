@@ -68,7 +68,8 @@ $cek((bool) preg_match('/in_array\(\$aksi,\s*\$data\[.aksi_tersedia.\],\s*TRUE\)
 echo "\n== Aksi tulis admin meninggalkan jejak audit ==\n";
 // Badan method dipotong sampai deklarasi method berikutnya; cukup untuk berkas controller CI3.
 $wajib_audit = [
-    'Admin_Srp2'      => ['proses', 'save', 'delete'],
+    'Admin_Srp2'      => ['proses', 'save', 'delete', 'buat_akun', 'reset_sandi_akun', 'lepas_akun'],
+    'Pengaturan'      => ['simpan_perusahaan'],
     'Admin_Kemitraan' => ['simpan_slot_bidang', 'ubah_status_bidang', 'simpan_ubah', 'hapus'],
 ];
 foreach ($wajib_audit as $kelas => $metode) {

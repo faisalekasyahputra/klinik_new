@@ -1480,6 +1480,69 @@ class MY_Controller extends CI_Controller {
         }
         return FALSE;
     }
+
+    /** Folder foto/logo direktori SRP2 (aset publik, di-.gitignore supaya deploy tidak menyapunya). */
+    const DIR_FOTO_SRP2 = 'assets/img/pengembang/unggahan/';
+
+    /**
+     * Simpan foto/logo perusahaan direktori SRP2 dari $_FILES[$field]. Dipakai admin
+     * (Admin_Srp2::save) dan pengembang (Pengaturan::simpan_perusahaan), jadi satu aturan.
+     *
+     * Foto TAYANG PUBLIK, jadi isinya yang dijaga: jenis dari finfo (bukan nama/tipe kiriman),
+     * getimagesize, pemindai unggahan, lalu DIGAMBAR ULANG lewat GD. Gambar ulang membuang
+     * metadata (termasuk GPS) dan apa pun yang menumpang di luar piksel, dan sekalian
+     * mengecilkan ke sisi terpanjang 512 px. Nama berkas acak; nama kiriman tidak menyentuh disk.
+     *
+     * @return string|NULL path relatif; NULL + $galat terisi bila ditolak. Tanpa berkas: NULL, $galat NULL.
+     */
+    protected function simpan_foto_srp2($field, &$galat = NULL)
+    {
+        $galat = NULL;
+        $f = $_FILES[$field] ?? NULL;
+        if ( ! $f || is_array($f['name'] ?? NULL) || ($f['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) { return NULL; }
+        if ($f['error'] !== UPLOAD_ERR_OK || ! is_uploaded_file($f['tmp_name'])) { $galat = 'Foto gagal diunggah. Coba lagi.'; return NULL; }
+        if ($f['size'] > 2 * 1024 * 1024) { $galat = 'Ukuran foto maksimal 2 MB.'; return NULL; }
+
+        $mime = (new finfo(FILEINFO_MIME_TYPE))->file($f['tmp_name']);
+        $jenis = [
+            'image/jpeg' => ['jpg', 'imagecreatefromjpeg', 'imagejpeg', 85],
+            'image/png'  => ['png', 'imagecreatefrompng', 'imagepng', 6],
+            'image/webp' => ['webp', 'imagecreatefromwebp', 'imagewebp', 85],
+        ][$mime] ?? NULL;
+        if ($jenis === NULL || ! function_exists($jenis[1])) { $galat = 'Foto harus JPG, PNG, atau WEBP.'; return NULL; }
+        $dimensi = @getimagesize($f['tmp_name']);
+        if ($dimensi === FALSE || $dimensi[0] < 1 || $dimensi[1] < 1 || $dimensi[0] * $dimensi[1] > 25000000) {
+            $galat = 'Berkas itu bukan gambar yang sah.'; return NULL;
+        }
+        if ( ! $this->scan_uploaded_file($f['tmp_name'], $jenis[0], $galat, 'srp2_foto')) { return NULL; }
+
+        $img = @call_user_func($jenis[1], $f['tmp_name']);
+        if ( ! $img) { $galat = 'Berkas itu bukan gambar yang sah.'; return NULL; }
+        $skala = min(1, 512 / max(imagesx($img), imagesy($img)));
+        if ($skala < 1) {
+            $kecil = imagescale($img, max(1, (int) round(imagesx($img) * $skala)), max(1, (int) round(imagesy($img) * $skala)));
+            imagedestroy($img);
+            $img = $kecil;
+        }
+        if ($jenis[0] !== 'jpg') { imagealphablending($img, FALSE); imagesavealpha($img, TRUE); }
+
+        $dir = FCPATH . self::DIR_FOTO_SRP2;
+        if ( ! is_dir($dir) && ! @mkdir($dir, 0755, TRUE)) { imagedestroy($img); $galat = 'Folder foto tidak bisa dibuat.'; return NULL; }
+        $nama = bin2hex(random_bytes(16)) . '.' . $jenis[0];
+        $ok = call_user_func($jenis[2], $img, $dir . $nama, $jenis[3]);
+        imagedestroy($img);
+        if ( ! $ok) { @unlink($dir . $nama); $galat = 'Foto gagal disimpan.'; return NULL; }
+        return self::DIR_FOTO_SRP2 . $nama;
+    }
+
+    /** Hapus berkas foto direktori SRP2; hanya path di dalam folder fotonya yang disentuh. */
+    protected function hapus_foto_srp2($path)
+    {
+        $path = (string) $path;
+        if (strpos($path, self::DIR_FOTO_SRP2) === 0 && basename($path) === substr($path, strlen(self::DIR_FOTO_SRP2))) {
+            @unlink(FCPATH . $path);
+        }
+    }
     /**
      * Kirim satu lembar kerja ke peramban sebagai berkas Excel, lalu berhenti.
      *

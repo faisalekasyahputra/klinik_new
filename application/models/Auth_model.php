@@ -411,18 +411,76 @@ class Auth_model extends CI_Model {
             $payload['npwp_ciphertext'] = $reg->npwp_ciphertext;
             $payload['npwp_lookup_hash'] = $reg->npwp_lookup_hash;
         }
+        // Medan kontak migrasi 066: sama seperti asosiasi, hanya yang TERISI yang menular,
+        // supaya isian dinas di baris direktori tidak tersapu NULL dari pengajuan.
+        foreach (['nib', 'no_keanggotaan', 'no_whatsapp'] as $k) {
+            $v = trim((string) ($reg->$k ?? ''));
+            if ($v !== '') { $payload[$k] = $v; }
+        }
+
         if ( ! empty($reg->certified_developer_id)) {
             // Sudah terbit: segarkan isinya, JANGAN sentuh status_aktif -
             // pencabutan/pengaktifan adalah keputusan admin yang terpisah.
-            $this->db->where('id', (int) $reg->certified_developer_id)
-                ->update('srp2_certified_developers', $payload);
-            return (int) $reg->certified_developer_id;
+            $id = (int) $reg->certified_developer_id;
+            $this->db->where('id', $id)->update('srp2_certified_developers', $payload);
+        } else {
+            $payload['status_aktif'] = 1;
+            $this->db->insert('srp2_certified_developers', $payload);
+            $id = (int) $this->db->insert_id();
+            if ( ! $id) { return NULL; }
         }
 
-        $payload['status_aktif'] = 1;
-        $this->db->insert('srp2_certified_developers', $payload);
-        $id = (int) $this->db->insert_id();
-        return $id ?: NULL;
+        /* Email pengajuan itu email AKUN, bukan kontak publik pilihan perusahaan: hanya
+           mengisi email_kontak yang masih kosong, tidak pernah menimpanya. */
+        $email = trim((string) ($reg->email ?? ''));
+        if ($email !== '') {
+            $this->db->where('id', $id)->group_start()->where('email_kontak IS NULL', NULL, FALSE)->or_where('email_kontak', '')->group_end()
+                ->update('srp2_certified_developers', ['email_kontak' => $email]);
+        }
+
+        /* Pemilik pengajuan menjadi pemilik baris direktori (Profil Perusahaan), selama baris
+           itu belum bertuan dan akunnya belum memegang baris lain (UNIQUE user_id). */
+        if ( ! empty($reg->user_id)
+            && ! $this->db->where('user_id', (int) $reg->user_id)->where('id !=', $id)->count_all_results('srp2_certified_developers')) {
+            $this->db->where('id', $id)->where('user_id IS NULL', NULL, FALSE)
+                ->update('srp2_certified_developers', ['user_id' => (int) $reg->user_id]);
+        }
+        return $id;
+    }
+
+    /**
+     * Arah sebaliknya dari upsert_direktori_publik(): baris direktori yang tertaut akun
+     * (user_id) menyalin isinya ke pengajuan SRP2 akun itu yang menunjuk baris ini dan ke
+     * medan perusahaan di usr_users. Dipanggil sesudah admin atau pengembang mengubah baris
+     * direktori, supaya Profil Saya, Status Pengajuan, dan layar pengajuan admin tidak
+     * menampilkan data lama. Tanpa transaksi sendiri (dipanggil dari dalam transaksi).
+     *
+     * NIB dan NPWP UNIQUE di pengajuan: hanya disalin bila tidak dipakai pengajuan lain.
+     */
+    public function sinkron_pengajuan_dari_direktori($cid) {
+        $d = $this->db->get_where('srp2_certified_developers', ['id' => (int) $cid])->row();
+        if ( ! $d || ! $d->user_id) { return; }
+
+        $data = [];
+        foreach (['alamat_kantor', 'no_keanggotaan', 'no_whatsapp', 'instagram', 'website', 'sosmed_lainnya'] as $k) { $data[$k] = $d->$k; }
+        if (strlen((string) $d->nama_perusahaan) <= 150) { $data['nama_perusahaan'] = $d->nama_perusahaan; }
+        if (strlen((string) $d->asosiasi) <= 30) { $data['asosiasi'] = $d->asosiasi; }
+        $milik = function ($kolom, $nilai) use ($d, $cid) {
+            return $nilai === NULL || ! $this->db->where($kolom, $nilai)
+                ->group_start()->where('user_id !=', (int) $d->user_id)->or_where('certified_developer_id !=', (int) $cid)->or_where('certified_developer_id IS NULL', NULL, FALSE)->group_end()
+                ->count_all_results('srp2_registrations');
+        };
+        if ($milik('nib', $d->nib)) { $data['nib'] = $d->nib; }
+        if ($milik('npwp_lookup_hash', $d->npwp_lookup_hash)) {
+            $data['npwp_ciphertext'] = $d->npwp_ciphertext;
+            $data['npwp_lookup_hash'] = $d->npwp_lookup_hash;
+        }
+        $this->db->where('certified_developer_id', (int) $cid)->where('user_id', (int) $d->user_id)
+            ->update('srp2_registrations', $data);
+
+        $akun = ['alamat_kantor' => $d->alamat_kantor];
+        if (isset($data['nama_perusahaan'])) { $akun['nama_perusahaan'] = $data['nama_perusahaan']; }
+        $this->db->where('id', (int) $d->user_id)->where('role', 'pengembang')->update('usr_users', $akun);
     }
 
     /**

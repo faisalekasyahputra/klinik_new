@@ -2,48 +2,77 @@
 $this->load->helper('admin_table');
 $this->load->helper('srp2');
 
-/* Asosiasi: daftar tertutup yang SAMA dengan formulir pengembang - lihat
-   srp2_daftar_asosiasi(). Dulu isian ketik-bebas di sini; diubah 14 Agt 2026
-   (permintaan user) supaya kolom Asosiasi di direktori publik bisa seragam.
-   Tidak ada cabang "pertahankan nilai lama di luar daftar": diperiksa
-   langsung ke DB saat perubahan ini dibuat - NOL baris berisi asosiasi di
-   kedua tabel, jadi tidak ada data ketik-bebas yang bisa terhapus. */
-$daftar_asosiasi = srp2_daftar_asosiasi();
+/* Daftar ringkas (permintaan pemilik produk 2 Okt 2026): satu baris per perusahaan,
+   sunting di halaman Ubah. Dulu setiap baris formulir sunting penuh selebar 980px.
 
-/* Butir 7 putaran 2 - dua peta label, satu tempat.
-
-   `$label_status` menerjemahkan nilai ENUM ke bahasa dinas. Nilai mentahnya
-   sengaja tetap ber-garis-bawah di DB (mudah di-query, tidak berubah saat
-   kalimatnya diperhalus); yang dibaca orang diterjemahkan di sini.
-
-   `$warna_berlaku` mewarnai penanda masa berlaku yang DITURUNKAN dari tanggal -
-   lihat `Admin_Srp2::keadaan_berlaku()`. Tidak ada kolom "aktif/non-aktif" yang
-   disimpan: penanda yang disimpan harus diperbarui seseorang tiap hari, dan
-   yang terlupa akan berkata "aktif" untuk sertifikat yang habis kemarin. */
+   `$label_status` menerjemahkan ENUM ke bahasa dinas; nilai mentah tetap di DB.
+   Berlaku/Tidak berlaku DITURUNKAN dari tanggal (srp2_sertifikat_berlaku, rumus yang
+   sama dengan direktori publik), tidak pernah disimpan. */
 $label_status = [
     'belum_mendaftar' => 'Belum mendaftar',
     'mendaftar'       => 'Mendaftar',
     'masih_proses'    => 'Masih proses',
     'bersertifikat'   => 'Bersertifikat',
 ];
-$warna_berlaku = [
-    'aktif'        => 'text-emerald-600',
-    'kedaluwarsa'  => 'text-red-500',
-    'tak_tercatat' => 'text-amber-600',
-    'belum'        => 'text-gray-400',
-];
 ?>
 <div class="tumpuk-bagian">
-<?php /* Form "Tambah pengembang" dipindah ke halaman sendiri (Admin_Srp2/tambah,
-         permintaan user 14 Agt 2026) - di sini tinggal tombolnya. Field & target
-         POST-nya TIDAK berubah, lihat admin/srp2/tambah.php & Admin_Srp2::tambah(). */ ?>
 <?php $this->load->view('admin/components/judul_halaman', [
     'jh_aksi'      => '<a href="' . base_url('Admin_Srp2/tambah') . '" class="tombol-utama shrink-0"><i class="ph ph-plus"></i><span>Tambah pengembang</span></a>',
-    'jh_deskripsi' => 'Kelola profil dan penayangan publik pengembang bersertifikat. Pengajuan yang diterima masuk otomatis; entri manual hanya untuk data historis.',
+    'jh_deskripsi' => 'Kelola profil, penayangan publik, dan akun pengembang bersertifikat. Pengajuan yang diterima masuk otomatis; entri manual untuk data historis.',
 ]); ?>
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="kartu-admin overflow-hidden">
-<?php // Tabel server-side (B8) - sebelumnya seluruh baris dikirim sekaligus. ?>
 <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama perusahaan atau alamat...'], TRUE) ?>
-<div class="overflow-x-auto aksi-tetap"><table class="w-full min-w-[980px] text-left text-sm"><thead class="bg-gray-50 dark:bg-black/20 text-xs uppercase text-gray-500"><tr><th class="px-5 py-4"><?= admin_sort_header('Perusahaan', 'nama_perusahaan', $table, $base_url) ?></th><th class="px-3 py-4">Website &amp; sosmed</th><th class="px-3 py-4">Wilayah, asosiasi &amp; NPWP</th><th class="px-3 py-4"><?= admin_sort_header('Status & masa berlaku', 'status_aktif', $table, $base_url) ?></th><th class="px-5 py-4 text-right">Aksi</th></tr></thead><tbody class="divide-y divide-gray-100 dark:divide-white/5"><?php foreach ($rows as $row): $form_id = 'srp2-edit-' . $row->id; ?><form id="<?= $form_id ?>" action="<?= base_url('Admin_Srp2/save') ?>" method="post"><input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>"><input type="hidden" name="id" value="<?= $row->id ?>"></form><tr><td class="px-5 py-4 w-full min-w-[200px]"><input form="<?= $form_id ?>" name="nama_perusahaan" value="<?= htmlspecialchars($row->nama_perusahaan, ENT_QUOTES, 'UTF-8') ?>" maxlength="180" required class="w-full rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-3 py-2 text-sm text-gray-800 dark:text-white"><textarea form="<?= $form_id ?>" name="alamat_kantor" class="mt-2 w-full rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-3 py-2 text-xs text-gray-500" placeholder="Alamat kantor"><?= htmlspecialchars($row->alamat_kantor ?? '', ENT_QUOTES, 'UTF-8') ?></textarea></td><td class="px-3 py-5"><input form="<?= $form_id ?>" name="website" type="url" aria-label="Website" placeholder="Website" value="<?= htmlspecialchars($row->website ?? '', ENT_QUOTES, 'UTF-8') ?>" class="w-40 rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-3 py-2 text-xs"><input form="<?= $form_id ?>" name="instagram" type="url" aria-label="Instagram" placeholder="Instagram" value="<?= htmlspecialchars($row->instagram ?? '', ENT_QUOTES, 'UTF-8') ?>" class="mt-2 w-40 rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-3 py-2 text-xs"><input form="<?= $form_id ?>" name="sosmed_lainnya" type="url" value="<?= htmlspecialchars($row->sosmed_lainnya ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="Sosmed lainnya" class="mt-2 w-40 rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-3 py-2 text-xs"></td><td class="px-3 py-5"><select form="<?= $form_id ?>" name="kabupaten_id" aria-label="Kabupaten/Kota" class="w-40 rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-2 py-2 text-xs"><option value="0">- belum tercatat -</option><?php foreach ($kabupaten as $kb): ?><option value="<?= (int) $kb->id ?>" <?= (int) $kb->id === (int) ($row->kabupaten_id ?? 0) ? 'selected' : '' ?>><?= htmlspecialchars($kb->nama, ENT_QUOTES, 'UTF-8') ?></option><?php endforeach; ?></select><select form="<?= $form_id ?>" name="asosiasi" aria-label="Asosiasi" class="mt-2 w-40 rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-2 py-2 text-xs"><option value="">- belum tercatat -</option><?php foreach ($daftar_asosiasi as $ka => $va): ?><option value="<?= $ka ?>" <?= $ka === trim((string) ($row->asosiasi ?? '')) ? 'selected' : '' ?>><?= $va ?></option><?php endforeach; ?></select><input form="<?= $form_id ?>" name="npwp" inputmode="numeric" maxlength="25" aria-label="NPWP" value="<?= htmlspecialchars($row->npwp_plain ?? '', ENT_QUOTES, 'UTF-8') ?>" placeholder="NPWP (15/16 digit)" class="mt-2 block w-40 rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-2 py-2 text-xs"><?php if (! empty($row->npwp_rusak)): ?><span class="mt-1 block text-[10px] font-bold text-red-500">Tersimpan tapi gagal dibuka - jangan ditimpa sebelum diperiksa</span><?php endif; ?></td><td class="px-3 py-5"><select form="<?= $form_id ?>" name="status_sertifikasi" aria-label="Status sertifikasi" class="w-40 rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-2 py-2 text-xs"><?php foreach ($label_status as $k => $v): ?><option value="<?= $k ?>" <?= $k === ($row->status_sertifikasi ?? 'bersertifikat') ? 'selected' : '' ?>><?= $v ?></option><?php endforeach; ?></select><span class="mt-2 block text-[10px] font-bold uppercase text-gray-500">Masa berlaku</span><input form="<?= $form_id ?>" name="sertifikat_terbit" type="date" aria-label="Tanggal terbit sertifikat" value="<?= htmlspecialchars($row->sertifikat_terbit ?? '', ENT_QUOTES, 'UTF-8') ?>" class="mt-1 block w-36 rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-2 py-2 text-xs"><input form="<?= $form_id ?>" name="sertifikat_berakhir" type="date" aria-label="Tanggal akhir masa berlaku" value="<?= htmlspecialchars($row->sertifikat_berakhir ?? '', ENT_QUOTES, 'UTF-8') ?>" class="mt-1 block w-36 rounded-lg border border-gray-200 dark:border-white/10 bg-transparent px-2 py-2 text-xs"><?php list($kode_berlaku, $teks_berlaku) = Admin_Srp2::keadaan_berlaku($row->status_sertifikasi ?? '', $row->sertifikat_berakhir ?? ''); ?><span class="mt-2 block text-[10px] font-bold <?= $warna_berlaku[$kode_berlaku] ?>"><?= $teks_berlaku ?></span><label class="mt-2 flex items-center gap-2 text-xs text-gray-500"><input form="<?= $form_id ?>" type="checkbox" name="status_aktif" value="1" <?= $row->status_aktif ? 'checked' : '' ?>> Tampilkan di publik</label></td><td class="px-4 py-5 text-right"><div class="flex flex-col items-end gap-2"><button form="<?= $form_id ?>" class="tombol-aksi"><i class="ph ph-floppy-disk" aria-hidden="true"></i><span>Simpan</span></button><form action="<?= base_url('Admin_Srp2/delete/' . $row->id) ?>" method="post" onsubmit="return confirm('Hapus pengembang ini?')"><input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>"><button class="tombol-aksi tombol-aksi-bahaya"><i class="ph ph-trash" aria-hidden="true"></i><span>Hapus</span></button></form></div></td></tr><?php endforeach; ?><?php if (empty($rows)): ?><tr><td colspan="5" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-brand-muted">Tidak ada pengembang yang cocok dengan pencarian.</td></tr><?php endif; ?></tbody></table></div>
+<div class="overflow-x-auto aksi-tetap">
+<table class="w-full min-w-[980px] text-left text-sm" data-direktori-ringkas>
+    <thead class="bg-gray-50 dark:bg-black/20 text-xs uppercase text-gray-500">
+        <tr>
+            <th class="px-4 py-3"><?= admin_sort_header('Perusahaan', 'nama_perusahaan', $table, $base_url) ?></th>
+            <th class="px-3 py-3">Wilayah</th>
+            <th class="px-3 py-3">Asosiasi</th>
+            <th class="px-3 py-3"><?= admin_sort_header('Sertifikasi', 'sertifikat_berakhir', $table, $base_url) ?></th>
+            <th class="px-3 py-3"><?= admin_sort_header('Publik', 'status_aktif', $table, $base_url) ?></th>
+            <th class="px-3 py-3">Akun</th>
+            <th class="px-4 py-3 text-right">Aksi</th>
+        </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+    <?php foreach ($rows as $row): $berlaku = srp2_sertifikat_berlaku($row); $akhir = (string) ($row->sertifikat_berakhir ?? ''); ?>
+        <tr data-direktori-id="<?= (int) $row->id ?>">
+            <td class="px-4 py-3">
+                <div class="flex items-center gap-3">
+                    <?= srp2_logo($row, 40) ?>
+                    <div class="min-w-0">
+                        <p class="font-bold text-gray-900 dark:text-white"><?= html_escape($row->nama_perusahaan) ?></p>
+                        <p class="max-w-xs truncate text-xs text-gray-500 dark:text-brand-muted" title="<?= html_escape($row->alamat_kantor ?? '') ?>"><?= html_escape(trim((string) $row->alamat_kantor) !== '' ? $row->alamat_kantor : 'Alamat belum tercatat') ?></p>
+                    </div>
+                </div>
+            </td>
+            <td class="px-3 py-3 text-xs text-gray-700 dark:text-gray-300"><?= html_escape($row->wilayah ?: 'Belum tercatat') ?></td>
+            <td class="px-3 py-3 text-xs text-gray-700 dark:text-gray-300"><?= html_escape(srp2_label_asosiasi($row->asosiasi ?? '', 'Belum tercatat')) ?></td>
+            <td class="px-3 py-3 text-xs">
+                <span class="block font-bold text-gray-700 dark:text-gray-300"><?= html_escape($label_status[$row->status_sertifikasi] ?? $row->status_sertifikasi) ?></span>
+                <span class="mt-1 flex flex-wrap items-center gap-1">
+                    <?php $this->load->view('admin/components/status_badge', ['label' => $berlaku ? 'Berlaku' : 'Tidak berlaku', 'kelas' => $berlaku ? 'ok' : 'reject']); ?>
+                    <span class="text-gray-500 dark:text-brand-muted"><?= $akhir !== '' ? 's.d. ' . html_escape(tgl_id($akhir, TRUE)) : 'tanggal belum tercatat' ?></span>
+                </span>
+            </td>
+            <td class="px-3 py-3 text-xs"><?php $this->load->view('admin/components/status_badge', ['label' => $row->status_aktif ? 'Tampil' : 'Disembunyikan', 'kelas' => $row->status_aktif ? 'ok' : 'pending']); ?></td>
+            <td class="px-3 py-3 text-xs">
+                <?php if ($row->user_id): ?>
+                    <span class="block font-bold text-green-700 dark:text-green-400">Tertaut</span>
+                    <span class="block max-w-xs truncate text-gray-500 dark:text-brand-muted"><?= html_escape($row->akun_email ?? '') ?></span>
+                <?php else: ?>
+                    <span class="text-gray-400 dark:text-brand-muted">Belum ada akun</span>
+                <?php endif; ?>
+            </td>
+            <td class="px-4 py-3 text-right"><a href="<?= base_url('Admin_Srp2/ubah/' . (int) $row->id) ?>" class="tombol-aksi"><i class="ph ph-pencil-simple" aria-hidden="true"></i><span>Ubah</span></a></td>
+        </tr>
+    <?php endforeach; ?>
+    <?php if (empty($rows)): ?>
+        <tr><td colspan="7" class="px-5 py-10 text-center text-sm text-gray-500 dark:text-brand-muted">Tidak ada pengembang yang cocok dengan pencarian.</td></tr>
+    <?php endif; ?>
+    </tbody>
+</table>
+</div>
 <?= $this->load->view('admin/components/pagination', ['pager' => $pager, 'base_url' => $base_url], TRUE) ?>
 </div></div>

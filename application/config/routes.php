@@ -77,6 +77,8 @@ $route['akun/export']              = 'Pengaturan/export_account_data';
 $route['akun/request-data-deletion'] = 'Pengaturan/request_service_data_deletion';
 $route['akun/delete']              = 'Pengaturan/delete_account';
 $route['akun/update_pengembang']   = 'Pengaturan/update_pengembang_profile';
+$route['akun/perusahaan']          = 'Pengaturan/perusahaan';
+$route['akun/perusahaan/simpan']   = 'Pengaturan/simpan_perusahaan';
 
 // --- Clean URLs for Index controller ---
 $route['golek_omah']               = 'Index/golek_omah';

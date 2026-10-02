@@ -29,74 +29,84 @@ class Admin_Srp2 extends Admin_Controller {
         $this->load->model('auth_model');
     }
 
+    /**
+     * Daftar ringkas direktori (permintaan pemilik produk 2 Okt 2026). Dulu tiap baris
+     * adalah formulir sunting penuh; kini satu baris per perusahaan dengan tombol Ubah
+     * ke halaman detail. Cari + urut + paginasi tetap server-side (B8).
+     */
     public function index() {
         $data['title'] = 'Direktori SRP2'; // = label sidebar
 
-        // Pola tabel server-side B8, sama dengan pending() di berkas ini -
-        // sebelumnya satu-satunya tabel admin SRP2 yang masih mengirim SELURUH
-        // baris ke browser sekaligus (67 dan terus bertambah tiap approve).
-        $table = $this->table_state(['nama_perusahaan', 'created_at', 'status_aktif'], 'nama_perusahaan');
+        $table = $this->table_state(['nama_perusahaan', 'created_at', 'status_aktif', 'sertifikat_berakhir'], 'nama_perusahaan');
         $data['base_url'] = 'Admin_Srp2';
 
         // from() di depan, lalu count_all_results('', FALSE) - kalau tabelnya
         // disebut di kedua tempat, FROM tertulis dua kali dan query gagal.
-        $this->db->from('srp2_certified_developers');
+        $this->db->select('c.id, c.nama_perusahaan, c.alamat_kantor, c.foto_profil, c.asosiasi, c.status_sertifikasi,'
+                . ' c.sertifikat_terbit, c.sertifikat_berakhir, c.status_aktif, c.user_id, u.email AS akun_email, k.nama AS wilayah')
+            ->from('srp2_certified_developers c')
+            ->join('usr_users u', 'u.id = c.user_id', 'left')
+            ->join('kabupaten k', 'k.id = c.kabupaten_id', 'left');
         if ($table['q'] !== '') {
             $this->db->group_start()
-                ->like('nama_perusahaan', $table['q'])->or_like('alamat_kantor', $table['q'])
+                ->like('c.nama_perusahaan', $table['q'])->or_like('c.alamat_kantor', $table['q'])
                 ->group_end();
         }
         $table += $this->paginate_state($this->db->count_all_results('', FALSE));
 
-        $data['rows'] = $this->db->order_by($table['sort'], $table['dir'])
+        // Kolom sort dari daftar putih table_state(), diberi alias karena usr_users juga punya created_at.
+        $data['rows'] = $this->db->order_by('c.' . $table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
             ->get()->result();
         $data['table'] = $data['pager'] = $table;
-        $data['kabupaten'] = $this->db->select('id, nama')->order_by('nama', 'ASC')
-            ->get('kabupaten')->result();
-
-        /* NPWP dibuka HANYA di layar admin ini, dan hanya untuk baris yang
-           sedang ditampilkan - bukan seluruh direktori. Nilainya diisikan ke
-           formulir supaya "Simpan" tidak menghapusnya diam-diam: isian yang
-           selalu terkirim tetapi dibiarkan kosong akan menge-NULL-kan kolomnya,
-           dan itu persis bug `sosmed_lainnya` yang baru kami perbaiki 10 Agt.
-
-           Gagal buka TIDAK disembunyikan jadi string kosong. Kosong berarti
-           "belum diisi", dan kalau kunci enkripsinya berganti sementara layar
-           berkata kosong, admin akan mengetik ulang NPWP ke atas data yang
-           sebenarnya masih ada. */
-        $this->load->library('encryption_lib');
-        // Poin 7.3: NPWP terdekripsi ditampilkan ke staf: dicatat (sekali per pelaku per jendela, bukan per baris).
-        $this->catat_akses_data_pribadi('npwp_srp2', 'srp2_registrations', 'daftar');
-        foreach ($data['rows'] as $r) {
-            $r->npwp_plain = NULL;
-            $r->npwp_rusak = FALSE;
-            if (empty($r->npwp_ciphertext)) { continue; }
-            $buka = $this->encryption_lib->decrypt($r->npwp_ciphertext);
-            if ($buka === FALSE || $buka === NULL || $buka === '') { $r->npwp_rusak = TRUE; continue; }
-            $r->npwp_plain = $buka;
-        }
 
         $this->render_admin('admin/srp2/index', $data);
     }
 
-    /**
-     * Halaman TERSENDIRI untuk menambah pengembang baru - dulu form inline
-     * di puncak index() (permintaan user 14 Agt 2026: form sepanjang itu
-     * selalu mendorong tabel ke bawah, padahal "tambah manual" jarang
-     * dipakai dibanding "cari/edit yang sudah ada" - direktori ini isinya
-     * 66 dari 67 baris data historis, cuma 1 hasil alur pengajuan online).
-     *
-     * Field & nama input DIPINDAH APA ADANYA, bukan ditulis ulang -
-     * save() (dituju form ini) tidak berubah sama sekali: ia sudah
-     * menerima id=0/kosong sebagai INSERT sejak awal, jadi satu-satunya
-     * yang pindah adalah tempat form-nya dirender.
-     */
+    /** Formulir kosong untuk entri manual; satu view dengan halaman ubah. */
     public function tambah() {
-        $data['title'] = 'Tambah Pengembang';
-        $data['kabupaten'] = $this->db->select('id, nama')->order_by('nama', 'ASC')
-            ->get('kabupaten')->result();
-        $this->render_admin('admin/srp2/tambah', $data);
+        $this->render_admin('admin/srp2/ubah', [
+            'title'     => 'Tambah Pengembang',
+            'row'       => NULL,
+            'kabupaten' => $this->db->select('id, nama')->order_by('nama', 'ASC')->get('kabupaten')->result(),
+        ]);
+    }
+
+    /**
+     * Detail/ubah satu entri direktori: profil, kontak, sertifikasi, dan akun pengembang
+     * yang tertaut.
+     *
+     * NPWP dibuka HANYA di sini, untuk satu baris, dan aksesnya dicatat (poin 7.3).
+     * Nilainya diisikan ke formulir supaya "Simpan" tidak menghapusnya diam-diam. Gagal
+     * buka TIDAK disamarkan jadi kosong: kosong berarti "belum diisi", dan admin akan
+     * mengetik ulang NPWP di atas data yang sebenarnya masih ada.
+     */
+    public function ubah($id = NULL) {
+        if ( ! ctype_digit((string) $id)) { show_404(); }
+        $row = $this->db->get_where('srp2_certified_developers', ['id' => (int) $id])->row();
+        if ( ! $row) { show_404(); }
+
+        $row->npwp_plain = NULL;
+        $row->npwp_rusak = FALSE;
+        if ( ! empty($row->npwp_ciphertext)) {
+            $this->load->library('encryption_lib');
+            $this->catat_akses_data_pribadi('npwp_srp2', 'srp2_certified_developers', (string) (int) $id);
+            $buka = $this->encryption_lib->decrypt($row->npwp_ciphertext);
+            if ($buka === FALSE || $buka === NULL || $buka === '') { $row->npwp_rusak = TRUE; } else { $row->npwp_plain = $buka; }
+        }
+
+        $akun = NULL;
+        if ($row->user_id) {
+            $akun = $this->db->select('id, email, name, phone, status, active_session_at, password_changed_at, password_expires_at')
+                ->get_where('usr_users', ['id' => (int) $row->user_id])->row();
+        }
+
+        $this->render_admin('admin/srp2/ubah', [
+            'title'     => 'Ubah Pengembang',
+            'row'       => $row,
+            'akun'      => $akun,
+            'kabupaten' => $this->db->select('id, nama')->order_by('nama', 'ASC')->get('kabupaten')->result(),
+        ]);
     }
 
     /**
@@ -345,90 +355,73 @@ class Admin_Srp2 extends Admin_Controller {
         $this->serve_private_file('srp2', (int) $id, $doc->stored_name, $doc->mime_type);
     }
 
+    /**
+     * Simpan entri direktori (id kosong = tambah). Dipakai halaman tambah dan ubah.
+     *
+     * HANYA medan yang BENAR-BENAR DIKIRIM yang masuk payload: medan tidak dikirim -> kolom
+     * tidak disentuh, medan dikirim kosong -> kolom dikosongkan. Dulu payload selalu penuh
+     * dan formulir yang tidak memuat `sosmed_lainnya` menge-NULL-kannya diam-diam (5 Agt
+     * 2026); tanggal sertifikat akan bernasib sama. `status_aktif` pengecualian: checkbox
+     * yang tidak dicentang memang tidak terkirim.
+     */
     public function save() {
         if ($this->input->method(TRUE) !== 'POST') { show_404(); }
         $id = (int) $this->input->post('id');
+        $kembali = $id ? 'Admin_Srp2/ubah/' . $id : 'Admin_Srp2/tambah';
+        $gagal = function ($pesan, $tujuan = NULL) use ($kembali) {
+            $this->session->set_flashdata('error', $pesan);
+            redirect($tujuan ?: $kembali);
+        };
+
         $name = strtoupper(trim((string) $this->input->post('nama_perusahaan', TRUE)));
-        if ($name === '' || strlen($name) > 180) { $this->session->set_flashdata('error', 'Nama perusahaan wajib diisi.'); redirect('Admin_Srp2'); return; }
+        if ($name === '' || strlen($name) > 180) { $gagal('Nama perusahaan wajib diisi (maksimal 180 karakter).'); return; }
         // Pola Admin_Magang_Posisi::simpan(): UPDATE ke id yang tidak ada menyentuh nol baris tanpa galat.
-        if ($id && ! $this->db->where('id', $id)->count_all_results('srp2_certified_developers')) {
-            $this->session->set_flashdata('error', 'Pengembang tidak ditemukan.');
-            redirect('Admin_Srp2'); return;
+        $lama = $id ? $this->db->get_where('srp2_certified_developers', ['id' => $id])->row() : NULL;
+        if ($id && ! $lama) { $gagal('Pengembang tidak ditemukan.', 'Admin_Srp2'); return; }
+        // Nama UNIQUE: diperiksa lebih dulu supaya pesannya jelas, bukan menebak dari galat INSERT.
+        if ($this->db->where('nama_perusahaan', $name)->where('id !=', $id)->count_all_results('srp2_certified_developers')) {
+            $gagal('Nama perusahaan "' . $name . '" sudah dipakai baris lain di direktori.'); return;
         }
-        /* HANYA medan yang BENAR-BENAR DIKIRIM yang masuk payload.
-         *
-         * Sampai 5 Agt 2026 ketiga URL selalu dirakit tanpa syarat, padahal
-         * form BARIS di tabel (views/admin/srp2/index.php) tidak punya input
-         * `sosmed_lainnya` - hanya form "Tambah pengembang" yang punya. Akibatnya
-         * setiap "Simpan" pada sebuah baris menge-NULL-kan kolom itu diam-diam.
-         * Bukan dugaan: nol dari 67 baris direktori punya nilai di sana.
-         *
-         * Dua kolom tanggal masa berlaku (migrasi 037) akan bernasib persis sama
-         * tanpa perbaikan ini - dan tanggal sertifikat yang hilang sendiri jauh
-         * lebih mahal daripada tautan media sosial.
-         *
-         * Bedanya jelas dan disengaja:
-         *   - medan TIDAK dikirim  -> kolomnya tidak disentuh sama sekali,
-         *   - medan dikirim KOSONG -> kolomnya dikosongkan (itu memang maunya).
-         *
-         * `status_aktif` SENGAJA di luar aturan ini: ia checkbox, dan checkbox
-         * yang tidak dicentang memang tidak terkirim. Membacanya sebagai
-         * "biarkan" membuat sakelar yang tidak pernah bisa dimatikan.
-         */
+
         $payload = [
             'nama_perusahaan' => $name,
             'status_aktif'    => $this->input->post('status_aktif') ? 1 : 0,
         ];
 
-        if ($this->input->post('alamat_kantor') !== NULL) {
-            $payload['alamat_kantor'] = trim((string) $this->input->post('alamat_kantor', TRUE));
+        // Medan profil & kontak: aturan bersama dengan Profil Perusahaan dan Profil Saya.
+        $this->load->helper('srp2');
+        $masukan = [];
+        foreach (['alamat_kantor', 'website', 'instagram', 'sosmed_lainnya', 'nib', 'no_keanggotaan', 'no_whatsapp', 'email_kontak'] as $k) {
+            if ($this->input->post($k) !== NULL) { $masukan[$k] = $this->input->post($k, TRUE); }
         }
+        [$kontak, $galat] = srp2_bersihkan_profil($masukan);
+        if ($galat !== NULL) { $gagal($galat); return; }
+        $payload += $kontak;
 
-        foreach (['website', 'instagram', 'sosmed_lainnya'] as $field) {
-            if ($this->input->post($field) === NULL) { continue; }
-            $value = trim((string) $this->input->post($field, TRUE));
-            if ($value !== '' && (!filter_var($value, FILTER_VALIDATE_URL) || !in_array(strtolower(parse_url($value, PHP_URL_SCHEME)), ['http', 'https'], TRUE))) { $this->session->set_flashdata('error', 'Link ' . $field . ' harus menggunakan URL http/https yang valid.'); redirect('Admin_Srp2'); return; }
-            $payload[$field] = $value ?: null;
-        }
-
-        /* Masa berlaku (butir B1). Kosong -> NULL, bukan '' - MariaDB lokal
-           berjalan TANPA STRICT mode, jadi '' pada kolom DATE mendarat sebagai
-           '0000-00-00' tanpa satu pun galat, dan tanggal itu lolos ke layar. */
+        /* Masa berlaku (butir B1). Kosong -> NULL, bukan '': MariaDB tanpa STRICT
+           mendaratkan '' pada kolom DATE sebagai '0000-00-00' tanpa galat. */
         $tanggal = [];
         foreach (['sertifikat_terbit', 'sertifikat_berakhir'] as $field) {
             if ($this->input->post($field) === NULL) { continue; }
             $v = trim((string) $this->input->post($field, TRUE));
-            if ($v === '') { $payload[$field] = NULL; $tanggal[$field] = NULL; continue; }
+            if ($v === '') { $payload[$field] = NULL; continue; }
             $d = DateTime::createFromFormat('!Y-m-d', $v);
-            if ( ! $d || $d->format('Y-m-d') !== $v) {
-                $this->session->set_flashdata('error', 'Tanggal sertifikat harus berformat YYYY-MM-DD.');
-                redirect('Admin_Srp2'); return;
-            }
-            $payload[$field] = $v;
-            $tanggal[$field] = $v;
+            if ( ! $d || $d->format('Y-m-d') !== $v) { $gagal('Tanggal sertifikat harus berformat YYYY-MM-DD.'); return; }
+            $payload[$field] = $tanggal[$field] = $v;
         }
         if ( ! empty($tanggal['sertifikat_terbit']) && ! empty($tanggal['sertifikat_berakhir'])
             && $tanggal['sertifikat_terbit'] > $tanggal['sertifikat_berakhir']) {
-            $this->session->set_flashdata('error', 'Tanggal terbit tidak boleh melewati tanggal akhir masa berlaku.');
-            redirect('Admin_Srp2'); return;
+            $gagal('Tanggal terbit tidak boleh melewati tanggal akhir masa berlaku.'); return;
         }
 
-        /* ── Butir 7: status bertingkat ─────────────────────────────────────
-           Divalidasi ke daftar tertutup. Nilai di luar daftar TIDAK diam-diam
-           diabaikan - ia ditolak dengan pesan, karena status yang meleset
-           mengubah arti seluruh baris di mata dinas. */
+        // Butir 7: status bertingkat - daftar tertutup, nilai di luar daftar DITOLAK.
         if ($this->input->post('status_sertifikasi') !== NULL) {
             $s = (string) $this->input->post('status_sertifikasi', TRUE);
-            if ( ! in_array($s, self::STATUS_SERTIFIKASI, TRUE)) {
-                $this->session->set_flashdata('error', 'Status sertifikasi tidak dikenal.');
-                redirect('Admin_Srp2'); return;
-            }
+            if ( ! in_array($s, self::STATUS_SERTIFIKASI, TRUE)) { $gagal('Status sertifikasi tidak dikenal.'); return; }
             $payload['status_sertifikasi'] = $s;
         }
 
-        /* ── Butir 7: kabupaten ─────────────────────────────────────────────
-           Divalidasi ke TABEL, bukan sekadar dicek angka. Id yang tidak ada
-           akan lolos `is_numeric` lalu menghasilkan baris berwilayah hantu. */
+        // Butir 7: kabupaten - divalidasi ke TABEL, bukan sekadar angka.
         if ($this->input->post('kabupaten_id') !== NULL) {
             $kab = (int) $this->input->post('kabupaten_id');
             if ($kab === 0) {
@@ -436,49 +429,31 @@ class Admin_Srp2 extends Admin_Controller {
             } elseif ($this->db->where('id', $kab)->count_all_results('kabupaten')) {
                 $payload['kabupaten_id'] = $kab;
             } else {
-                $this->session->set_flashdata('error', 'Kabupaten/kota tidak dikenal.');
-                redirect('Admin_Srp2'); return;
+                $gagal('Kabupaten/kota tidak dikenal.'); return;
             }
         }
 
-        /* ── Butir 12: asosiasi ─────────────────────────────────────────────
-           DULU ketik bebas ("sampai dinas mengirim daftar resminya"). Sejak
-           14 Agt 2026 divalidasi ke daftar tertutup srp2_daftar_asosiasi() -
-           daftar yang SAMA yang sudah lama dipakai formulir pengembang, bukan
-           daftar baru yang dikarang di sini. Alasan lengkap + siapa yang
-           memutuskan ada di komentar helper-nya. Ditolak dengan pesan (bukan
-           diabaikan diam-diam), sama seperti status_sertifikasi & kabupaten
-           di atas. */
+        // Butir 12: asosiasi - daftar tertutup srp2_daftar_asosiasi(), sama dengan formulir pengembang.
         if ($this->input->post('asosiasi') !== NULL) {
-            $this->load->helper('srp2');
             $a = trim((string) $this->input->post('asosiasi', TRUE));
             if ($a === '') {
                 $payload['asosiasi'] = NULL;
             } elseif (array_key_exists($a, srp2_daftar_asosiasi())) {
                 $payload['asosiasi'] = $a;
             } else {
-                $this->session->set_flashdata('error', 'Asosiasi tidak dikenal.');
-                redirect('Admin_Srp2'); return;
+                $gagal('Asosiasi tidak dikenal.'); return;
             }
         }
 
-        /* ── Butir 8: NPWP sebagai kunci pengembang ─────────────────────────
-           Diperlakukan PERSIS seperti NIK warga: nilai aslinya dienkripsi, dan
-           yang dipakai mencari/menegakkan keunikan adalah sidik deterministik.
-           Polanya tidak dibuat baru - `Encryption_lib` sudah menyediakannya.
-
-           Angka saja yang disimpan. NPWP ditulis orang dengan titik dan strip
-           yang berbeda-beda; menyimpan apa adanya membuat dua tulisan NPWP yang
-           sama menghasilkan dua sidik berbeda, dan UNIQUE-nya jadi tidak
-           menjaga apa pun. */
+        /* Butir 8: NPWP diperlakukan seperti NIK warga - nilai asli dienkripsi, keunikan
+           lewat sidik deterministik atas ANGKA saja (titik/strip berbeda-beda tulisannya). */
         if ($this->input->post('npwp') !== NULL) {
             $npwp_mentah = preg_replace('/\D+/', '', (string) $this->input->post('npwp', TRUE));
             if ($npwp_mentah === '') {
                 $payload['npwp_ciphertext']  = NULL;
                 $payload['npwp_lookup_hash'] = NULL;
             } elseif (strlen($npwp_mentah) < 15 || strlen($npwp_mentah) > 16) {
-                $this->session->set_flashdata('error', 'NPWP harus 15 atau 16 digit angka.');
-                redirect('Admin_Srp2'); return;
+                $gagal('NPWP harus 15 atau 16 digit angka.'); return;
             } else {
                 $this->load->library('encryption_lib');
                 $payload['npwp_ciphertext']  = $this->encryption_lib->encrypt($npwp_mentah);
@@ -486,30 +461,41 @@ class Admin_Srp2 extends Admin_Controller {
             }
         }
 
-        // Hasil query DIPERIKSA, bukan diasumsikan - pola sukses karangan yang
-        // sama seperti proses() sebelum T1a. Kolom nama ber-UNIQUE, jadi bentrok
-        // adalah kegagalan yang paling mungkin terjadi; di production db_debug
-        // mati sehingga insert/update gagal hanya mengembalikan FALSE dan alur
-        // berjalan terus sampai menyetel "Daftar pengembang diperbarui".
-        $ok = $id
-            ? $this->db->where('id', $id)->update('srp2_certified_developers', $payload)
-            : $this->db->insert('srp2_certified_developers', $payload);
+        // Foto paling akhir: berkas baru mendarat sesudah semua isian lolos validasi.
+        $foto = $this->simpan_foto_srp2('foto_profil', $galat);
+        if ($galat !== NULL) { $gagal($galat); return; }
+        if ($foto !== NULL) { $payload['foto_profil'] = $foto; }
 
-        if ($ok === FALSE) {
-            log_message('error', 'Admin_Srp2::save gagal - id=' . $id . ' nama=' . $name);
-            $this->session->set_flashdata('error', 'Gagal menyimpan: nama perusahaan "' . $name . '" kemungkinan sudah dipakai baris lain di direktori. Tidak ada perubahan yang tersimpan.');
-            redirect('Admin_Srp2'); return;
+        // Hasil query DIPERIKSA: di production db_debug mati, jadi gagal hanya berupa FALSE.
+        $this->db->trans_start();
+        if ($id) {
+            $this->db->where('id', $id)->update('srp2_certified_developers', $payload);
+        } else {
+            $this->db->insert('srp2_certified_developers', $payload);
+            $id = (int) $this->db->insert_id();
         }
+        $this->auth_model->sinkron_pengajuan_dari_direktori($id);
+        $this->db->trans_complete();
+
+        if ($this->db->trans_status() === FALSE || ! $id) {
+            if ($foto !== NULL) { $this->hapus_foto_srp2($foto); }
+            log_message('error', 'Admin_Srp2::save gagal - id=' . $id . ' nama=' . $name);
+            $gagal('Gagal menyimpan: nama perusahaan atau NPWP kemungkinan sudah dipakai baris lain di direktori. Tidak ada perubahan yang tersimpan.');
+            return;
+        }
+        if ($foto !== NULL && $lama) { $this->hapus_foto_srp2($lama->foto_profil); }
+
         // NPWP tidak ikut ke detail audit; cukup nama kolom yang dikirim.
-        $this->catat_audit($id ? 'srp2_direktori_diubah' : 'srp2_direktori_ditambah',
-            'Direktori pengembang "' . $name . '" ' . ($id ? 'diperbarui' : 'ditambahkan'),
-            'srp2_certified_developers', (string) ($id ?: $this->db->insert_id()), ['kolom' => array_keys($payload)]);
-        $this->session->set_flashdata('success', 'Daftar pengembang diperbarui.'); redirect('Admin_Srp2');
+        $this->catat_audit($lama ? 'srp2_direktori_diubah' : 'srp2_direktori_ditambah',
+            'Direktori pengembang "' . $name . '" ' . ($lama ? 'diperbarui' : 'ditambahkan'),
+            'srp2_certified_developers', (string) $id, ['kolom' => array_keys($payload)]);
+        $this->session->set_flashdata('success', 'Daftar pengembang diperbarui.');
+        redirect('Admin_Srp2/ubah/' . $id);
     }
 
     public function delete($id = NULL) {
-        if ($this->input->method(TRUE) !== 'POST' || !is_numeric($id)) { show_404(); }
-        $nama = $this->db->select('nama_perusahaan')->get_where('srp2_certified_developers', ['id' => (int) $id])->row('nama_perusahaan');
+        if ($this->input->method(TRUE) !== 'POST' || ! ctype_digit((string) $id)) { show_404(); }
+        $row = $this->db->select('nama_perusahaan, foto_profil')->get_where('srp2_certified_developers', ['id' => (int) $id])->row();
         // DELETE yang tidak cocok baris mana pun tetap mengembalikan TRUE, jadi
         // `affected_rows()` yang membedakan "terhapus" dari "id-nya memang tidak ada".
         if ( ! $this->db->where('id', (int) $id)->delete('srp2_certified_developers')
@@ -517,8 +503,180 @@ class Admin_Srp2 extends Admin_Controller {
             $this->session->set_flashdata('error', 'Pengembang tidak ditemukan atau sudah dihapus.');
             redirect('Admin_Srp2'); return;
         }
-        $this->catat_audit('srp2_direktori_dihapus', 'Direktori pengembang "' . $nama . '" dihapus',
+        $this->hapus_foto_srp2($row->foto_profil ?? '');
+        $this->catat_audit('srp2_direktori_dihapus', 'Direktori pengembang "' . ($row->nama_perusahaan ?? '') . '" dihapus',
             'srp2_certified_developers', (string) (int) $id);
         $this->session->set_flashdata('success', 'Pengembang dihapus dari daftar.'); redirect('Admin_Srp2');
+    }
+
+    // =====================================================================
+    // AKUN PENGEMBANG TERTAUT (keputusan pemilik produk 2 Okt 2026): dinas membuatkan akun
+    // untuk perusahaan yang diisi manual, supaya perusahaan memperbarui datanya sendiri
+    // lewat Profil Perusahaan. Semua endpoint POST + CSRF global + batas laju global.
+    // =====================================================================
+
+    /** Baris direktori sasaran dari URL; 404 bila tidak ada atau bukan POST. */
+    private function entri_sasaran($id) {
+        if ($this->input->method(TRUE) !== 'POST' || ! ctype_digit((string) $id)) { show_404(); }
+        $row = $this->db->get_where('srp2_certified_developers', ['id' => (int) $id])->row();
+        if ( ! $row) { show_404(); }
+        return $row;
+    }
+
+    /**
+     * Sandi dari formulir, atau sandi acak bila dikosongkan: 72 bit acak + akhiran yang
+     * menjamin aturan sandi_kuat (huruf besar, angka, simbol).
+     * @return array [sandi|NULL bila tidak kuat, dibangkitkan?]
+     */
+    private function sandi_dari_formulir() {
+        $sandi = (string) $this->input->post('password');
+        if ($sandi === '') { return [strtr(base64_encode(random_bytes(9)), '+/', 'Kx') . '-7Q', TRUE]; }
+        $this->load->library('form_validation');
+        return [$this->form_validation->sandi_kuat($sandi) ? $sandi : NULL, FALSE];
+    }
+
+    /**
+     * "Buatkan akun": akun pengembang aktif yang onboarding-nya sudah lengkap, pengajuan
+     * SRP2 Diterima yang menunjuk baris ini (supaya dashboard pengembang mengenalinya
+     * sebagai bersertifikat), lalu baris direktori ditautkan. Satu transaksi.
+     */
+    public function buat_akun($id = NULL) {
+        $row = $this->entri_sasaran($id);
+        $kembali = 'Admin_Srp2/ubah/' . (int) $row->id;
+        $gagal = function ($pesan) use ($kembali) { $this->session->set_flashdata('error', 'Akun belum dibuat: ' . $pesan); redirect($kembali); };
+
+        if ($row->user_id) { $gagal('entri ini sudah tertaut ke akun lain. Lepas tautannya dulu bila ingin mengganti akun.'); return; }
+        if (strlen($row->nama_perusahaan) > 150) { $gagal('nama perusahaan lebih dari 150 karakter, sedangkan data pengajuan SRP2 hanya menampung 150.'); return; }
+
+        $email = strtolower(trim((string) $this->input->post('email', TRUE)));
+        if ($email === '' || strlen($email) > 100 || ! filter_var($email, FILTER_VALIDATE_EMAIL)) { $gagal('email tidak valid.'); return; }
+        if ($this->db->where('email', $email)->count_all_results('usr_users')) { $gagal('email tersebut sudah terdaftar.'); return; }
+        $nama_pj = trim((string) $this->input->post('nama_pj', TRUE));
+        if (mb_strlen($nama_pj) > 150) { $gagal('nama penanggung jawab maksimal 150 karakter.'); return; }
+        $this->load->helper('srp2');
+        [$wa, $galat] = srp2_bersihkan_profil(['no_whatsapp' => $this->input->post('no_whatsapp', TRUE)]);
+        if ($galat !== NULL) { $gagal($galat); return; }
+        $wa = $wa['no_whatsapp'];
+        [$sandi, $dibangkitkan] = $this->sandi_dari_formulir();
+        if ($sandi === NULL) { $gagal('sandi awal harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol (atau kosongkan supaya dibuatkan otomatis).'); return; }
+
+        // NPWP & NIB juga UNIQUE di pengajuan. NPWP yang sudah dipakai pengajuan lain berarti
+        // perusahaan ini sudah punya akun sendiri: tautkan akun itu, jangan buat yang kedua.
+        if ( ! empty($row->npwp_lookup_hash)
+            && $this->db->where('npwp_lookup_hash', $row->npwp_lookup_hash)->count_all_results('srp2_registrations')) {
+            $gagal('NPWP perusahaan ini sudah dipakai pengajuan SRP2 akun lain, kemungkinan perusahaan ini sudah mendaftar sendiri.'); return;
+        }
+        $nib = $row->nib && ! $this->db->where('nib', $row->nib)->count_all_results('srp2_registrations') ? $row->nib : NULL;
+
+        $sekarang = date('Y-m-d H:i:s');
+        $this->db->trans_begin();
+        $this->db->insert('usr_users', [
+            'name'              => $nama_pj !== '' ? $nama_pj : $row->nama_perusahaan,
+            'username'          => $this->auth_model->generate_unique_username(strstr($email, '@', TRUE)),
+            'email'             => $email,
+            'password'          => password_hash($sandi, PASSWORD_BCRYPT),
+            'role'              => 'pengembang',
+            'kategori'          => 'pengembang',
+            'status'            => 'active',
+            'profile_completed' => 1,
+            'email_verified_at' => $sekarang,
+            'created_at'        => $sekarang,
+            'phone'             => $wa,
+            'nama_perusahaan'   => $row->nama_perusahaan,
+            'alamat_kantor'     => $row->alamat_kantor,
+        // Sandi awal diketahui admin, jadi wajib diganti di login pertama (keputusan 29 Sep 2026).
+        ] + $this->auth_model->password_awal_fields());
+        $uid = (int) $this->db->insert_id();
+        $this->db->insert('srp2_registrations', [
+            'user_id'                => $uid ?: NULL,
+            'nama_peserta'           => $nama_pj !== '' ? $nama_pj : NULL,
+            'no_whatsapp'            => $wa,
+            'email'                  => $email,
+            'nama_perusahaan'        => $row->nama_perusahaan,
+            'nib'                    => $nib,
+            'asosiasi'               => $row->asosiasi,
+            'no_keanggotaan'         => $row->no_keanggotaan,
+            'alamat_kantor'          => $row->alamat_kantor,
+            'instagram'              => $row->instagram,
+            'website'                => $row->website,
+            'sosmed_lainnya'         => $row->sosmed_lainnya,
+            'npwp_ciphertext'        => $row->npwp_ciphertext,
+            'npwp_lookup_hash'       => $row->npwp_lookup_hash,
+            'status_verifikasi'      => 'Diterima',
+            'reviewed_by'            => $this->get_user_id(),
+            'reviewed_at'            => $sekarang,
+            'certified_developer_id' => (int) $row->id,
+        ]);
+        // user_id IS NULL ikut di WHERE: admin lain yang menautkan lebih dulu membuat ini nol baris.
+        $this->db->where('id', (int) $row->id)->where('user_id IS NULL', NULL, FALSE)
+            ->update('srp2_certified_developers', ['user_id' => $uid]);
+        $tertaut = $this->db->affected_rows() === 1;
+
+        if ( ! $uid || ! $tertaut || $this->db->trans_status() === FALSE) {
+            $this->db->trans_rollback();
+            log_message('error', 'Admin_Srp2::buat_akun gagal - entri=' . (int) $row->id);
+            $gagal('penyimpanan gagal dan sudah dibatalkan seluruhnya. Coba lagi.');
+            return;
+        }
+        $this->db->trans_commit();
+
+        // Sandinya TIDAK pernah masuk audit.
+        $this->catat_audit('srp2_akun_dibuat', 'Membuatkan akun pengembang ' . $email . ' untuk "' . $row->nama_perusahaan . '"',
+            'srp2_certified_developers', (string) (int) $row->id, ['user_id' => $uid, 'sandi_dibangkitkan' => $dibangkitkan]);
+        $this->session->set_flashdata('success', 'Akun pengembang ' . $email . ' dibuat dan ditautkan. Serahkan email dan sandinya lewat jalur pribadi; sandi itu wajib diganti saat pertama masuk.');
+        // Sandi acak ditampilkan SEKALI (flash) karena admin belum mengetahuinya.
+        if ($dibangkitkan) { $this->session->set_flashdata('sandi_awal', $sandi); }
+        redirect($kembali);
+    }
+
+    /** Reset sandi akun tertaut, pola Admin_Users::reset_sandi (wajib ganti, sesi diakhiri). */
+    public function reset_sandi_akun($id = NULL) {
+        $row = $this->entri_sasaran($id);
+        $kembali = 'Admin_Srp2/ubah/' . (int) $row->id;
+        $user = $row->user_id ? $this->db->get_where('usr_users', ['id' => (int) $row->user_id, 'role' => 'pengembang'])->row() : NULL;
+        if ( ! $user) { $this->session->set_flashdata('error', 'Entri ini tidak tertaut ke akun pengembang.'); redirect($kembali); return; }
+
+        [$sandi, $dibangkitkan] = $this->sandi_dari_formulir();
+        if ($sandi === NULL) {
+            $this->session->set_flashdata('error', 'Sandi baru harus minimal 8 karakter, mengandung huruf besar, angka, dan simbol (atau kosongkan supaya dibuatkan otomatis).');
+            redirect($kembali); return;
+        }
+        $this->db->where('id', (int) $user->id)->update('usr_users', [
+            'password' => password_hash($sandi, PASSWORD_BCRYPT),
+            'login_attempts' => 0, 'locked_until' => NULL,
+            'active_session_hash' => NULL, 'active_session_id_hash' => NULL, 'active_session_at' => NULL,
+        ] + $this->auth_model->password_awal_fields());
+
+        $this->catat_audit('srp2_akun_sandi_direset', 'Mereset sandi akun pengembang ' . $user->email,
+            'usr_users', (string) $user->id, ['entri_direktori' => (int) $row->id]);
+        $this->session->set_flashdata('success', 'Sandi ' . $user->email . ' diganti dan sesinya diakhiri. Sampaikan lewat jalur pribadi; sandi itu wajib diganti saat masuk.');
+        if ($dibangkitkan) { $this->session->set_flashdata('sandi_awal', $sandi); }
+        redirect($kembali);
+    }
+
+    /**
+     * Lepas tautan: baris direktori tidak lagi dimiliki akun itu. Akunnya TIDAK dihapus.
+     * Pengajuan akun itu yang menunjuk baris ini ikut dilepas (certified_developer_id NULL);
+     * kalau tidak, Profil Saya akun itu tetap menyalin datanya ke baris ini lewat
+     * upsert_direktori_publik().
+     */
+    public function lepas_akun($id = NULL) {
+        $row = $this->entri_sasaran($id);
+        $kembali = 'Admin_Srp2/ubah/' . (int) $row->id;
+        if ( ! $row->user_id) { $this->session->set_flashdata('error', 'Entri ini tidak tertaut ke akun mana pun.'); redirect($kembali); return; }
+        $email = (string) $this->db->select('email')->get_where('usr_users', ['id' => (int) $row->user_id])->row('email');
+
+        $this->db->trans_start();
+        $this->db->where('id', (int) $row->id)->update('srp2_certified_developers', ['user_id' => NULL]);
+        $this->db->where('certified_developer_id', (int) $row->id)->where('user_id', (int) $row->user_id)
+            ->update('srp2_registrations', ['certified_developer_id' => NULL]);
+        $this->db->trans_complete();
+        if ($this->db->trans_status() === FALSE) {
+            $this->session->set_flashdata('error', 'Tautan gagal dilepas. Coba lagi.'); redirect($kembali); return;
+        }
+        $this->catat_audit('srp2_akun_dilepas', 'Melepas tautan akun ' . $email . ' dari "' . $row->nama_perusahaan . '"',
+            'srp2_certified_developers', (string) (int) $row->id, ['user_id' => (int) $row->user_id]);
+        $this->session->set_flashdata('success', 'Tautan akun ' . $email . ' dilepas. Akunnya tetap ada, tetapi tidak bisa lagi mengubah entri ini.');
+        redirect($kembali);
     }
 }

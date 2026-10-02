@@ -220,6 +220,7 @@ class Pengaturan extends MY_Controller {
             $datacontent['pengajuan_sp2'] = $srp2
                 ? $this->db->get_where('srp2_registrations', ['id' => $srp2['registration_id']])->row()
                 : NULL;
+            $datacontent['direktori'] = $this->direktori_milik_saya();
         }
 
         $this->render_user_dashboard('pages/pengaturan/profil', $datacontent);
@@ -241,6 +242,15 @@ class Pengaturan extends MY_Controller {
         if (!$pengajuan) {
             $this->session->set_flashdata('error', 'Data pengajuan sertifikasi tidak ditemukan.');
             redirect('akun/profil');
+            return;
+        }
+
+        // Akun yang memegang baris direktori mengubah datanya lewat Profil Perusahaan,
+        // satu-satunya formulir untuk baris itu (2 Okt 2026). Formulir ini menulis ke
+        // pengajuan lalu menimpa direktori, jadi dua formulir berarti dua versi data.
+        if ($this->direktori_milik_saya()) {
+            $this->session->set_flashdata('error', 'Data perusahaan Anda dikelola lewat halaman Profil Perusahaan.');
+            redirect('akun/perusahaan');
             return;
         }
 
@@ -271,15 +281,25 @@ class Pengaturan extends MY_Controller {
 
         // Simpan teks apa adanya (escape dilakukan sekali saat render lewat htmlspecialchars()
         // di profil.php, bukan di sini - supaya tidak double-encode).
+        // Alamat, nomor keanggotaan, dan tautan memakai aturan yang SAMA dengan Direktori
+        // SRP2 (admin) dan Profil Perusahaan: srp2_bersihkan_profil().
+        $this->load->helper('srp2');
+        [$kontak, $galat] = srp2_bersihkan_profil([
+            'alamat_kantor'  => $this->input->post('alamat_kantor'),
+            'no_keanggotaan' => $this->input->post('no_keanggotaan'),
+            'instagram'      => $this->input->post('instagram'),
+            'website'        => $this->input->post('website'),
+            'sosmed_lainnya' => $this->input->post('sosmed_lainnya'),
+        ]);
+        if ($galat !== NULL) {
+            $this->session->set_flashdata('error', $galat);
+            redirect('akun/profil');
+            return;
+        }
         $data = [
-            'nama_perusahaan' => strtoupper(trim($this->input->post('nama_perusahaan'))),
-            'alamat_kantor'   => trim($this->input->post('alamat_kantor')),
+            'nama_perusahaan' => strtoupper(trim((string) $this->input->post('nama_perusahaan'))),
             'asosiasi'        => $this->input->post('asosiasi'),
-            'no_keanggotaan'  => trim($this->input->post('no_keanggotaan')),
-            'instagram'       => trim($this->input->post('instagram')),
-            'website'         => trim($this->input->post('website')),
-            'sosmed_lainnya'  => trim($this->input->post('sosmed_lainnya')),
-        ];
+        ] + $kontak;
 
         if (empty($data['nama_perusahaan']) || empty($data['alamat_kantor'])) {
             $this->session->set_flashdata('error', 'Nama Perusahaan dan Alamat Kantor tidak boleh kosong.');
@@ -290,7 +310,6 @@ class Pengaturan extends MY_Controller {
         // Daftarnya dari srp2_daftar_asosiasi() sejak 14 Agt 2026, bukan
         // salinan literal di sini - formulir admin (Admin_Srp2::save()) kini
         // memvalidasi ke daftar yang SAMA.
-        $this->load->helper('srp2');
         if ( ! array_key_exists((string) $data['asosiasi'], srp2_daftar_asosiasi())) {
             $this->session->set_flashdata('error', 'Asosiasi tidak valid.');
             redirect('akun/profil');
@@ -342,6 +361,89 @@ class Pengaturan extends MY_Controller {
             ? 'Data pengembang berhasil diperbarui - perubahan juga tampil di profil publik Anda.'
             : 'Data pengembang berhasil diperbarui!');
         redirect('akun/profil');
+    }
+
+    /**
+     * Baris Direktori SRP2 milik akun yang login. Pemiliknya ditentukan dari SESI
+     * (srp2_certified_developers.user_id), tidak pernah dari input: anti-IDOR.
+     */
+    private function direktori_milik_saya() {
+        if ($this->session->userdata('role') !== 'pengembang') { return NULL; }
+        return $this->db->get_where('srp2_certified_developers', ['user_id' => (int) $this->get_user_id()])->row();
+    }
+
+    /**
+     * Gerbang ganti sandi melewatkan SELURUH controller Pengaturan (supaya halaman ganti
+     * sandi bisa dibuka), jadi Profil Perusahaan menjaga dirinya sendiri: sandi awal dari
+     * admin harus diganti sebelum data publik perusahaan bisa diubah.
+     */
+    private function wajib_ganti_sandi_dulu() {
+        if ( ! $this->session->userdata('password_change_required')) { return FALSE; }
+        $this->session->set_flashdata('error', $this->Auth_model->pesan_ganti_sandi($this->Auth_model->find_by_id($this->get_user_id())));
+        redirect('akun/profil?password_expired=1');
+        return TRUE;
+    }
+
+    /**
+     * Profil Perusahaan (2 Okt 2026): pengembang yang akunnya tertaut mengubah baris
+     * direktorinya sendiri. Nama, NPWP, wilayah, status, masa berlaku, dan penayangan
+     * tetap milik dinas (hanya dibaca). Asosiasi boleh diubah karena formulir pengajuan
+     * juga membolehkannya; wilayah tidak, karena pengajuan tidak pernah menanyakannya.
+     */
+    public function perusahaan() {
+        if ($this->session->userdata('role') !== 'pengembang') { show_404(); return; }
+        if ($this->wajib_ganti_sandi_dulu()) { return; }
+        $this->load->helper('srp2');
+        $row = $this->direktori_milik_saya();
+        $this->render_user_dashboard('pages/pengaturan/perusahaan', [
+            'title'   => 'Profil Perusahaan',
+            'row'     => $row,
+            'wilayah' => $row && $row->kabupaten_id
+                ? $this->db->select('nama')->get_where('kabupaten', ['id' => (int) $row->kabupaten_id])->row('nama') : NULL,
+        ]);
+    }
+
+    public function simpan_perusahaan() {
+        if ($this->input->method(TRUE) !== 'POST' || $this->session->userdata('role') !== 'pengembang') { show_404(); return; }
+        if ($this->wajib_ganti_sandi_dulu()) { return; }
+        $row = $this->direktori_milik_saya();
+        $gagal = function ($pesan) { $this->session->set_flashdata('error', $pesan); redirect('akun/perusahaan'); };
+        if ( ! $row) { $gagal('Akun Anda belum tertaut ke entri direktori pengembang.'); return; }
+
+        $this->load->helper('srp2');
+        $masukan = [];
+        foreach (['alamat_kantor', 'no_keanggotaan', 'nib', 'no_whatsapp', 'email_kontak', 'website', 'instagram', 'sosmed_lainnya'] as $k) {
+            $masukan[$k] = $this->input->post($k, TRUE);
+        }
+        [$data, $galat] = srp2_bersihkan_profil($masukan);
+        if ($galat !== NULL) { $gagal($galat); return; }
+        if (empty($data['alamat_kantor'])) { $gagal('Alamat kantor wajib diisi.'); return; }
+        $asosiasi = trim((string) $this->input->post('asosiasi', TRUE));
+        if ($asosiasi !== '' && ! array_key_exists($asosiasi, srp2_daftar_asosiasi())) { $gagal('Asosiasi tidak valid.'); return; }
+        $data['asosiasi'] = $asosiasi !== '' ? $asosiasi : NULL;
+
+        $foto = $this->simpan_foto_srp2('foto_profil', $galat);
+        if ($galat !== NULL) { $gagal($galat); return; }
+        if ($foto !== NULL) { $data['foto_profil'] = $foto; }
+
+        $this->db->trans_start();
+        $this->db->where('id', (int) $row->id)->where('user_id', (int) $this->get_user_id())
+            ->update('srp2_certified_developers', $data);
+        $this->Auth_model->sinkron_pengajuan_dari_direktori((int) $row->id);
+        $this->db->trans_complete();
+        if ($this->db->trans_status() === FALSE) {
+            if ($foto !== NULL) { $this->hapus_foto_srp2($foto); }
+            $gagal('Perubahan gagal disimpan. Tidak ada yang tersimpan; coba lagi.');
+            return;
+        }
+        if ($foto !== NULL) { $this->hapus_foto_srp2($row->foto_profil); }
+
+        $this->catat_audit('srp2_profil_diubah_pengembang', 'Pengembang memperbarui profil perusahaan "' . $row->nama_perusahaan . '"',
+            'srp2_certified_developers', (string) (int) $row->id, ['kolom' => array_keys($data)]);
+        $this->session->set_flashdata('success', $row->status_aktif
+            ? 'Profil perusahaan disimpan dan langsung tampil di direktori publik.'
+            : 'Profil perusahaan disimpan. Entri Anda sedang tidak ditayangkan di direktori publik oleh dinas.');
+        redirect('akun/perusahaan');
     }
 
     public function update_profile() {

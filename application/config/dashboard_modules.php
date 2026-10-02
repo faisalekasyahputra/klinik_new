@@ -101,6 +101,13 @@ $config['dashboard_modules'] = [
         'url' => 'akun/dokumen', 'group' => 'Akun', 'order' => 15,
         'roles' => ['pengembang'], 'scope' => null,
     ],
+    // Profil Perusahaan (2 Okt 2026): baris Direktori SRP2 milik akun ini. Akun yang belum
+    // tertaut mendapat penjelasan di halamannya, bukan menu yang hilang-timbul.
+    'profil_perusahaan' => [
+        'label' => 'Profil Perusahaan', 'icon' => 'ph-buildings',
+        'url' => 'akun/perusahaan', 'group' => 'Akun', 'order' => 17,
+        'roles' => ['pengembang'], 'scope' => null,
+    ],
     'sikumbang' => [
         'label' => 'Sikumbang', 'icon' => 'ph-arrow-square-out',
         'url' => 'https://sikumbang.tapera.go.id/user/login',

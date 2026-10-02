@@ -18,8 +18,8 @@ class Pengembang extends MY_Controller {
         // (permintaan user). Ada di KEDUA tabel yang mungkin dipakai di atas,
         // jadi tidak perlu percabangan select terpisah.
         $select = $table === 'srp2_certified_developers'
-            ? 'id, nama_perusahaan, asosiasi, kabupaten_id, status_aktif, status_sertifikasi, sertifikat_terbit, sertifikat_berakhir'
-            : 'id, nama_perusahaan, asosiasi, kabupaten_id, status_verifikasi AS status_sertifikasi, NULL AS sertifikat_terbit, NULL AS sertifikat_berakhir';
+            ? 'id, nama_perusahaan, foto_profil, asosiasi, kabupaten_id, status_aktif, status_sertifikasi, sertifikat_terbit, sertifikat_berakhir'
+            : 'id, nama_perusahaan, NULL AS foto_profil, asosiasi, kabupaten_id, status_verifikasi AS status_sertifikasi, NULL AS sertifikat_terbit, NULL AS sertifikat_berakhir';
         $query = $this->db->select($select, FALSE);
         $query->where($status);
         $data['daftar_pengembang'] = $query->order_by('nama_perusahaan', 'ASC')->get($table)->result();
@@ -115,7 +115,7 @@ class Pengembang extends MY_Controller {
                apakah ia masuk daftar di bawah. `SELECT *` mengambil keputusan
                itu diam-diam, dan selalu ke arah yang salah. */
             $data['pengembang'] = $this->db
-                ->select('id, nama_perusahaan, alamat_kantor, website, instagram, sosmed_lainnya,'
+                ->select('id, nama_perusahaan, foto_profil, alamat_kantor, website, instagram, sosmed_lainnya, no_keanggotaan, no_whatsapp, email_kontak,'
                     . ' status_aktif, status_sertifikasi, kabupaten_id, asosiasi,'
                     . ' sertifikat_terbit, sertifikat_berakhir, created_at, updated_at')
                 ->get_where('srp2_certified_developers', ['id' => (int) $id, 'status_aktif' => 1])->row();

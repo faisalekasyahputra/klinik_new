@@ -1167,10 +1167,14 @@ cek($kode_cari['aksi'] === ['akses_npwp_srp2'], 'Pencarian "npwp pengembang" men
 
 [$uidS, $emailS] = buat_akun('admin', 'adm_sisa'); // akun uji awal sudah dibersihkan di tengah berkas
 wajib(login('adm_sisa', $emailS), 'Login admin uji untuk blok ini');
-http('adm_sisa', 'Admin_Srp2'); // memastikan ada baris akses_npwp_srp2 (dicatat untuk staf)
+/* Sejak 2 Okt 2026 NPWP dibuka di halaman ubah satu entri, bukan di daftar Direktori SRP2
+   (daftar kini ringkas, tanpa NPWP), jadi akses dicatat per entri: "direktori SRP2 nomor N". */
+$id_npwp = tulis("INSERT INTO srp2_certified_developers (nama_perusahaan, status_aktif, npwp_ciphertext) VALUES (?, 0, 'uji')", [CAP . ' NPWP AUDIT']);
+http('adm_sisa', 'Admin_Srp2/ubah/' . $id_npwp); // memastikan ada baris akses_npwp_srp2 (dicatat untuk staf)
+q('DELETE FROM srp2_certified_developers WHERE id = ?', [$id_npwp]);
 $teks_layar = fn($html) => html_entity_decode(strip_tags(preg_replace('#<(script|style)\b.*?</\1>#s', '', $html)), ENT_QUOTES, 'UTF-8');
 $audit_akses = $teks_layar(http('adm_sisa', 'Admin_Audit?aksi=akses_npwp_srp2'));
-cek(strpos($audit_akses, 'Staf membuka NPWP pengembang (daftar SRP2)') !== FALSE && strpos($audit_akses, 'srp2_registrations') === FALSE
+cek(strpos($audit_akses, 'Staf membuka NPWP pengembang (direktori SRP2 nomor ' . $id_npwp . ')') !== FALSE && strpos($audit_akses, 'srp2_certified_developers') === FALSE
     && strpos($audit_akses, 'mengakses informasi pribadi') === FALSE,
     'Jejak Audit: baris akses NPWP tampil terbaca, tanpa nama tabel');
 cek(strpos($teks_layar(http('adm_sisa', 'Admin_Audit?q=' . urlencode('NPWP pengembang'))), 'Staf membuka NPWP pengembang') !== FALSE,

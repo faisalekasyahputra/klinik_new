@@ -209,7 +209,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
             </button>
         </div>
 
-        <?php if (isset($pengajuan_sp2)): ?>
+        <?php if (isset($pengajuan_sp2)): $this->load->helper('srp2'); ?>
         <!-- SP2 Status & Data Pengembang. Selebar penuh: sub-grid isinya sampai
              tiga kolom, dan memaksanya masuk sepertiga lebar membuatnya
              bertumpuk jadi satu kolom sempit. -->
@@ -300,21 +300,25 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                 <?php endif; ?>
             </div>
 
+            <?php if ( ! empty($direktori)): ?>
+            <?php // Akun pemegang entri direktori mengubah datanya di SATU tempat: Profil Perusahaan. ?>
+            <p class="mt-4 text-sm text-gray-600 dark:text-brand-muted" data-ke-profil-perusahaan>Data perusahaan Anda dikelola lewat <a href="<?= base_url('akun/perusahaan') ?>" class="font-bold text-blue-600 underline dark:text-brand-primary">Profil Perusahaan</a>: foto, alamat, kontak, NIB, dan nomor keanggotaan.</p>
+            <?php else: ?>
             <h3 class="mt-4 text-sm font-bold text-gray-700 dark:text-gray-300">Edit Data Perusahaan</h3>
             <form action="<?= base_url('akun/update_pengembang') ?>" method="POST" class="mt-3 space-y-4">
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
                 <div class="grid gap-3 sm:grid-cols-2">
                     <div>
-                        <label class="<?= $label ?>">Nama Perusahaan</label>
+                        <label class="<?= $label ?>"><?= srp2_label_medan()['nama_perusahaan'] ?></label>
                         <input type="text" name="nama_perusahaan" value="<?= htmlspecialchars($pengajuan_sp2->nama_perusahaan) ?>" required class="<?= $isian ?> uppercase">
                     </div>
                     <div>
-                        <label class="<?= $label ?>">Alamat Kantor</label>
+                        <label class="<?= $label ?>"><?= srp2_label_medan()['alamat_kantor'] ?></label>
                         <textarea name="alamat_kantor" rows="1" required class="<?= $isian ?> resize-none"><?= htmlspecialchars($pengajuan_sp2->alamat_kantor) ?></textarea>
                     </div>
                     <div>
-                        <label class="<?= $label ?>">Asosiasi</label>
+                        <label class="<?= $label ?>"><?= srp2_label_medan()['asosiasi'] ?></label>
                         <?php
                         /* Daftarnya DIPINDAH ke srp2_daftar_asosiasi() 14 Agt 2026 -
                            dulu ditulis ulang di sini, dan formulir admin memakai
@@ -338,7 +342,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                         </select>
                     </div>
                     <div>
-                        <label class="<?= $label ?>">No. Keanggotaan</label>
+                        <label class="<?= $label ?>"><?= srp2_label_medan()['no_keanggotaan'] ?></label>
                         <input type="text" name="no_keanggotaan" value="<?= htmlspecialchars($pengajuan_sp2->no_keanggotaan) ?>" required class="<?= $isian ?>">
                     </div>
                 </div>
@@ -348,16 +352,16 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                     <p class="<?= $petunjuk ?>">Ditampilkan di halaman profil pengembang.</p>
                     <div class="mt-3 grid gap-3 sm:grid-cols-3">
                         <div>
-                            <label class="<?= $label ?>">Instagram</label>
+                            <label class="<?= $label ?>"><?= srp2_label_medan()['instagram'] ?></label>
                             <input type="text" name="instagram" value="<?= htmlspecialchars($pengajuan_sp2->instagram ?? '') ?>" placeholder="https://instagram.com/..." class="<?= $isian ?>">
                         </div>
                         <div>
-                            <label class="<?= $label ?>">Website</label>
+                            <label class="<?= $label ?>"><?= srp2_label_medan()['website'] ?></label>
                             <input type="text" name="website" value="<?= htmlspecialchars($pengajuan_sp2->website ?? '') ?>" placeholder="https://..." class="<?= $isian ?>">
                         </div>
                         <div>
-                            <label class="<?= $label ?>">Sosmed Lainnya</label>
-                            <input type="text" name="sosmed_lainnya" value="<?= htmlspecialchars($pengajuan_sp2->sosmed_lainnya ?? '') ?>" placeholder="Facebook, WhatsApp Business, dst." class="<?= $isian ?>">
+                            <label class="<?= $label ?>"><?= srp2_label_medan()['sosmed_lainnya'] ?></label>
+                            <input type="text" name="sosmed_lainnya" value="<?= htmlspecialchars($pengajuan_sp2->sosmed_lainnya ?? '') ?>" placeholder="https://..." class="<?= $isian ?>">
                         </div>
                     </div>
                 </div>
@@ -366,6 +370,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                     <i class="ph ph-floppy-disk"></i> Simpan Data Pengembang
                 </button>
             </form>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
 
