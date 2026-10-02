@@ -34,26 +34,26 @@ $login = function () use ($http, $email, $sandi, &$jars) {
     [$b] = $http($j, 'Auth/do_login', ['email' => $email, 'password' => $sandi, 'csrf_kpkp_token' => $csrf]);
     return [$j, (json_decode($b, TRUE)['status'] ?? '') === 'success'];
 };
-$hash_id = function () use ($db, $email) { return $db->query("SELECT active_session_id_hash FROM usr_users WHERE email='{$email}'")->fetch_row()[0] ?? NULL; };
+$hash_id = function () use ($db, $email) { return $db->query("SELECT sesi_aktif_id_hash FROM usr_akun WHERE email='{$email}'")->fetch_row()[0] ?? NULL; };
 $masuk = function ($jar) use ($http) { [, $u] = $http($jar, 'akun'); return strpos($u, 'Auth/login') === FALSE && strpos($u, '/login') === FALSE; };
 
 // Ember batas laju login per IP dipinjam lalu dikembalikan utuh (::1 tercatat per /64).
 $ember = [];
 foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
     $k = hash('sha256', 'login:ip:' . $ip);
-    $ember[$k] = $db->query("SELECT limit_key, window_started_at, failed_attempts FROM sys_rate_limits WHERE limit_key='$k'")->fetch_assoc();
-    $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
+    $ember[$k] = $db->query("SELECT kunci, jendela_mulai_at, jumlah_gagal FROM sys_batas_laju WHERE kunci='$k'")->fetch_assoc();
+    $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
 }
 try {
     echo "=== UJI SESI TUNGGAL ===\n";
     $h = password_hash($sandi, PASSWORD_BCRYPT);
-    $db->query("INSERT INTO usr_users (name,email,password,role,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at) VALUES ('Uji Sesi','{$email}','{$h}','pengembang','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
+    $db->query("INSERT INTO usr_akun (nama,email,kata_sandi,peran,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at) VALUES ('Uji Sesi','{$email}','{$h}','pengembang','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
 
     [$a, $ok] = $login();
     $cek($ok && $masuk($a), 'Login dan buka /akun');
 
     // Tiru pergantian ID sesi rutin: hash ID di DB tidak lagi cocok, token tetap sah.
-    $db->query("UPDATE usr_users SET active_session_id_hash='" . hash('sha256', 'id-sesi-lama-' . $tag) . "' WHERE email='{$email}'");
+    $db->query("UPDATE usr_akun SET sesi_aktif_id_hash='" . hash('sha256', 'id-sesi-lama-' . $tag) . "' WHERE email='{$email}'");
     $cek($masuk($a), 'Sesudah ID sesi berganti, pengguna yang sama TIDAK dikeluarkan');
     $cek($hash_id() !== hash('sha256', 'id-sesi-lama-' . $tag), 'Hash ID sesi di DB diperbarui ke ID yang sedang dipakai');
     $cek($masuk($a), 'Permintaan berikutnya tetap masuk');
@@ -63,10 +63,10 @@ try {
     $cek( ! $masuk($a), 'Sesi pertama ditendang karena tokennya digantikan');
     $cek($masuk($b), 'Sesi kedua tetap berjalan');
 } finally {
-    $db->query("DELETE FROM usr_users WHERE email='{$email}'");
+    $db->query("DELETE FROM usr_akun WHERE email='{$email}'");
     foreach ($ember as $k => $row) {
-        $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
-        if ($row) { $st = $db->prepare('INSERT INTO sys_rate_limits (limit_key, window_started_at, failed_attempts) VALUES (?,?,?)'); $st->bind_param('ssi', $row['limit_key'], $row['window_started_at'], $row['failed_attempts']); $st->execute(); }
+        $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
+        if ($row) { $st = $db->prepare('INSERT INTO sys_batas_laju (kunci, jendela_mulai_at, jumlah_gagal) VALUES (?,?,?)'); $st->bind_param('ssi', $row['kunci'], $row['jendela_mulai_at'], $row['jumlah_gagal']); $st->execute(); }
     }
     foreach ($jars as $f) { @unlink($f); }
 }

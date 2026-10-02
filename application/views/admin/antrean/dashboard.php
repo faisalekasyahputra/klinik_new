@@ -6,7 +6,7 @@ $this->load->helper('housing_queue');
  *   1. Admin_Kabkota::index()  - ter-scope 1 kabupaten
  *   2. Admin::index()          - superadmin, lintas wilayah
  * Data disiapkan MY_Controller::antrean_table_data(); kontrak POST update
- * status sama persis di kedua konteks (queue_id + status + catatan_admin).
+ * status sama persis di kedua konteks (antrean_id + status + catatan_admin).
  *
  * Cari/filter/urut/paginasi SEMUANYA server-side (B8). Versi sebelumnya
  * mengirim s.d. 1000 baris sebagai JSON ke browser lalu memproses di klien -
@@ -92,9 +92,9 @@ $filter_html = ob_get_clean();
 
     <?php /* Dulu tiap baris simulasi membawa kotak "Mode Simulasi" sendiri; kini
              satu pemberitahuan di atas tabel bila ada minimal satu baris simulasi
-             di halaman ini (source_mode = 'simulation'). */
+             di halaman ini (mode_sumber = 'simulation'). */
     $ada_simulasi = FALSE;
-    foreach (($queue ?? []) as $q_sim) { if (($q_sim->source_mode ?? '') === 'simulation') { $ada_simulasi = TRUE; break; } }
+    foreach (($queue ?? []) as $q_sim) { if (($q_sim->mode_sumber ?? '') === 'simulation') { $ada_simulasi = TRUE; break; } }
     if ($ada_simulasi): ?>
     <div data-pemberitahuan-simulasi class="mb-4 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 text-sm flex items-start gap-3">
         <i class="ph ph-flask text-lg mt-0.5" aria-hidden="true"></i>
@@ -121,11 +121,11 @@ $filter_html = ob_get_clean();
             <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="text-xs uppercase bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted font-bold tracking-wider">
                     <tr>
-                        <th class="px-4 py-3"><?= admin_sort_header('Tanggal', 'sf_housing_queue.created_at', $table, $base_url) ?></th>
+                        <th class="px-4 py-3"><?= admin_sort_header('Tanggal', 'sf_antrean_pengajuan.created_at', $table, $base_url) ?></th>
                         <th class="px-4 py-3">Pemohon</th>
-                        <th class="px-4 py-3"><?= admin_sort_header('Program', 'sf_programs.nama_program', $table, $base_url) ?></th>
+                        <th class="px-4 py-3"><?= admin_sort_header('Program', 'sf_program.nama_program', $table, $base_url) ?></th>
                         <th class="px-4 py-3">Kondisi Sosial</th>
-                        <th class="px-4 py-3"><?= admin_sort_header('Status', 'sf_housing_queue.status_antrean', $table, $base_url) ?></th>
+                        <th class="px-4 py-3"><?= admin_sort_header('Status', 'sf_antrean_pengajuan.status_antrean', $table, $base_url) ?></th>
                         <th class="w-px whitespace-nowrap px-4 py-3 text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -145,7 +145,7 @@ $filter_html = ob_get_clean();
                         if (is_numeric($penghasilan)) { $penghasilan = 'Rp ' . number_format((float) $penghasilan, 0, ',', '.'); }
                         $desil  = $simperum['desil'] ?? '-';
                         $alasan = $survey['alasan_pengajuan'] ?? '-';
-                        $has_assessment = ! empty($row->assessment_id);
+                        $has_assessment = ! empty($row->penilaian_id);
                         $nama_samar   = trim((string) $row->nama_lengkap) === '';
                         $nama_display = ! $nama_samar
                             ? $row->nama_lengkap : ($has_assessment ? 'Nama di detail pengajuan' : 'Nama belum tersedia');
@@ -176,7 +176,7 @@ $filter_html = ob_get_clean();
                             'program' => $row->nama_program ?? 'Program belum terpetakan', 'desil' => $desil,
                             'status' => '', 'currentStatus' => $badge_label[$row->status_antrean] ?? $row->status_antrean, 'currentStatusCode' => $row->status_antrean,
                             'catatan' => $row->catatan_admin ?? '',
-                            'ticket' => $row->ticket_code,
+                            'ticket' => $row->kode_tiket,
                             'nik' => $nik_display,
                             'pekerjaan' => $survey['pekerjaan'] ?? '-',
                             'penghasilan' => $penghasilan,
@@ -197,7 +197,7 @@ $filter_html = ob_get_clean();
                             <?php else: ?>
                             <div class="text-gray-900 dark:text-white font-bold"><?= html_escape($nama_display) ?></div>
                             <?php endif; ?>
-                            <div class="text-xs font-mono font-bold text-brand-primary"><?= html_escape($row->ticket_code) ?></div>
+                            <div class="text-xs font-mono font-bold text-brand-primary"><?= html_escape($row->kode_tiket) ?></div>
                             <div class="text-xs font-mono mt-0.5"><?= html_escape($nik_display) ?></div>
                             <?php if (empty($row->kabupaten_id)): ?>
                             <div class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400 border border-orange-200 dark:border-orange-500/20" title="Tidak muncul di dashboard Admin Kabupaten/Kota manapun">
@@ -220,7 +220,7 @@ $filter_html = ob_get_clean();
                         </td>
                         <td class="px-4 py-3"><?= $this->load->view('admin/components/status_badge', ['label' => $badge_label[$row->status_antrean] ?? $row->status_antrean, 'kelas' => $badge_kelas[$row->status_antrean] ?? 'pending'], TRUE) ?></td>
                         <td class="w-px whitespace-nowrap px-4 py-3 text-center">
-                            <?php if ( ! empty($row->assessment_id)): ?>
+                            <?php if ( ! empty($row->penilaian_id)): ?>
                             <a href="<?= base_url($base_url . '/detail/' . (int) $row->id) ?>" class="tombol-aksi"><i class="ph ph-eye"></i><span>Detail</span></a>
                             <?php else: ?>
                             <button @click='openModal(<?= htmlspecialchars(json_encode($payload), ENT_QUOTES, "UTF-8") ?>)' class="tombol-aksi" title="Proses"><i class="ph ph-note-pencil"></i><span>Tinjau</span></button>
@@ -256,8 +256,8 @@ $filter_html = ob_get_clean();
             <div class="p-6 overflow-y-auto custom-scrollbar">
                 <form action="<?= base_url($action_url) ?>" method="POST" id="formProsesAntrean">
                     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-                    <input type="hidden" name="queue_id" :value="data.id">
-                    <input type="hidden" name="from_status" :value="data.currentStatusCode">
+                    <input type="hidden" name="antrean_id" :value="data.id">
+                    <input type="hidden" name="status_awal" :value="data.currentStatusCode">
                     <div class="mb-5 bg-gray-50 dark:bg-white/5 rounded-2xl p-4 border border-gray-200 dark:border-white/5">
                         <div class="text-xs text-gray-500 dark:text-brand-muted mb-1">Pengaju</div>
                         <div class="text-gray-900 dark:text-white font-bold text-lg mb-3" x-text="data.nama"></div>

@@ -8,7 +8,7 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  * Layar ini menghadapi kenyataan yang sudah ada, bukan yang seharusnya:
  * katalog program hidup di DUA sumber dan keduanya nyata.
  *
- *   `sf_programs`                    | `Smart_filter::master_programs()`
+ *   `sf_program`                    | `Smart_filter::master_programs()`
  *   ---------------------------------|---------------------------------------
  *   `is_active` MENGGERBANGI          | judul di kartu hasil diagnosa
  *   pengajuan (Housing_assessment     | aturan pencocokan desil -> program
@@ -19,7 +19,7 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  *
  *   1. `is_active` BUKAN HIASAN. Ia betul-betul menolak pengajuan baru.
  *      Diuji dari MODEL-nya, bukan dari layar - sakelar yang cuma mengubah
- *      badge adalah persis bug `usr_users.status` yang sudah pernah terjadi
+ *      badge adalah persis bug `usr_akun.status` yang sudah pernah terjadi
  *      (ditulis, tidak pernah dibaca).
  *   2. `kode_program` TIDAK BISA DIUBAH lewat endpoint. Ia identitas: dicari
  *      `Housing_assessment_model:748` dan dipetakan sebagai literal di
@@ -31,7 +31,7 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  *      "tidak ada perubahan" membuat program aktif tidak pernah bisa dimatikan.
  *   5. TIAP PERUBAHAN TERCATAT, dan penonaktifan disebut khusus.
  *
- * Seluruh perubahan pada `sf_programs` DIPULIHKAN, termasuk kalau prosesnya
+ * Seluruh perubahan pada `sf_program` DIPULIHKAN, termasuk kalau prosesnya
  * mati di tengah.
  */
 
@@ -122,7 +122,7 @@ function login($nama, $email) {
 function buat_akun($peran, $suffix) {
     $email = 'uji_katalog_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
     $id = tulis(
-        'INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+        'INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
          VALUES (?,?,?,?,?, "active",1,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji Katalog ' . $suffix,
          'uji_katalog_' . $suffix . '_' . mt_rand(10000, 99999), $peran]
@@ -133,7 +133,7 @@ function buat_akun($peran, $suffix) {
 
 /** Simpan keadaan asli satu program SEBELUM disentuh. */
 function jaga_program($id) {
-    $r = q('SELECT id,kode_program,nama_program,deskripsi_singkat,is_active FROM sf_programs WHERE id=?', [$id]);
+    $r = q('SELECT id,kode_program,nama_program,deskripsi_singkat,aktif FROM sf_program WHERE id=?', [$id]);
     $GLOBALS['pulih'][] = $r;
     return $r;
 }
@@ -148,13 +148,13 @@ function bersihkan() {
      */
     foreach ($GLOBALS['pulih'] as $p) {
         if (empty($p['id'])) { continue; }
-        q('UPDATE sf_programs SET kode_program=?, nama_program=?, deskripsi_singkat=?, is_active=? WHERE id=?',
-            [$p['kode_program'], $p['nama_program'], $p['deskripsi_singkat'], $p['is_active'], $p['id']]);
+        q('UPDATE sf_program SET kode_program=?, nama_program=?, deskripsi_singkat=?, aktif=? WHERE id=?',
+            [$p['kode_program'], $p['nama_program'], $p['deskripsi_singkat'], $p['aktif'], $p['id']]);
     }
     $GLOBALS['pulih'] = [];
     foreach ($GLOBALS['users'] as $id) {
-        q('DELETE FROM sys_jejak_audit WHERE actor_id=?', [$id]);
-        q('DELETE FROM usr_users WHERE id=?', [$id]);
+        q('DELETE FROM sys_jejak_audit WHERE pelaku_id=?', [$id]);
+        q('DELETE FROM usr_akun WHERE id=?', [$id]);
     }
     foreach ($GLOBALS['jar'] as $j) { @unlink($j); }
     $GLOBALS['users'] = [];
@@ -174,7 +174,7 @@ echo "=== UJI KATALOG PROGRAM ===\n";
 echo 'Target: ' . BASE_URL . " | DB: {$env['DB_NAME']}\n\n";
 
 echo "== 0. Prasyarat ==\n";
-$jml = (int) nilai('SELECT COUNT(*) c FROM sf_programs');
+$jml = (int) nilai('SELECT COUNT(*) c FROM sf_program');
 wajib($jml > 0, "Katalog terisi ({$jml} program)");
 
 [$idA, $emailA] = buat_akun('admin', 'super');
@@ -192,7 +192,7 @@ cek(stripos($hal['body'], 'tidak bisa diubah') !== FALSE, 'Layar menyatakan kode
 // Audit UI 2 Okt 2026 (kelompok B): catatannya pindah dari layar ke komentar view, karena
 // nama kolom tabel bukan bacaan petugas dinas. Yang dijaga: kolomnya tetap tidak tampil
 // seolah berfungsi, dan alasannya tetap tercatat di view.
-cek(strpos($hal['body'], 'batas_penghasilan_max') === FALSE
+cek(strpos($hal['body'], 'batas_penghasilan_maks') === FALSE
     && stripos((string) file_get_contents(APP_ROOT . '/application/views/admin/katalog/index.php'), 'dibaca kode mana pun') !== FALSE,
     'Kolom tanpa pembaca tidak ditampilkan, alasannya tercatat di komentar view');
 
@@ -205,7 +205,7 @@ echo "\n== 2. Selisih dua sumber ditampilkan ==\n";
 $judul = [];
 foreach (muat_master() as $p) { $judul[$p['kode']][] = $p['title']; }
 $selisih = 0;
-foreach ($GLOBALS['db']->query('SELECT kode_program, nama_program FROM sf_programs')->fetch_all(MYSQLI_ASSOC) as $r) {
+foreach ($GLOBALS['db']->query('SELECT kode_program, nama_program FROM sf_program')->fetch_all(MYSQLI_ASSOC) as $r) {
     if (isset($judul[$r['kode_program']]) && ! in_array($r['nama_program'], $judul[$r['kode_program']], TRUE)) { $selisih++; }
 }
 if ($selisih > 0) {
@@ -231,7 +231,7 @@ function muat_master() {
 
 // ------------------------------------------------ 3. KODE TIDAK BISA DIUBAH
 echo "\n== 3. Kode program TIDAK bisa diubah lewat endpoint ==\n";
-$target = q('SELECT id FROM sf_programs WHERE is_active=1 ORDER BY id ASC LIMIT 1');
+$target = q('SELECT id FROM sf_program WHERE aktif=1 ORDER BY id ASC LIMIT 1');
 $pid = (int) $target['id'];
 $asli = jaga_program($pid);
 
@@ -242,9 +242,9 @@ http('a', 'Admin_Katalog_Program/ubah', [
     // Diselundupkan:
     'kode_program' => 'kode_selundupan_' . CAP,
 ]);
-cek(nilai('SELECT kode_program FROM sf_programs WHERE id=?', [$pid]) === $asli['kode_program'],
+cek(nilai('SELECT kode_program FROM sf_program WHERE id=?', [$pid]) === $asli['kode_program'],
     "Kode ASLI ('{$asli['kode_program']}') tidak berubah - POST kode_program diabaikan");
-cek(nilai('SELECT nama_program FROM sf_programs WHERE id=?', [$pid]) === 'Nama Baru ' . CAP,
+cek(nilai('SELECT nama_program FROM sf_program WHERE id=?', [$pid]) === 'Nama Baru ' . CAP,
     'Sementara namanya memang berubah - permintaannya benar-benar diproses');
 
 // ------------------------------------------------ 4. is_active MENGGERBANGI
@@ -252,14 +252,14 @@ echo "\n== 4. is_active bukan hiasan ==\n";
 /**
  * Diuji dari MODEL-nya, bukan dari layar. `Housing_assessment_model:500`
  * menolak pengajuan kalau `is_active !== 1`; sakelar yang cuma mengubah badge
- * adalah persis bug `usr_users.status` yang sudah pernah terjadi di repo ini -
+ * adalah persis bug `usr_akun.status` yang sudah pernah terjadi di repo ini -
  * ditulis rapi, tidak pernah dibaca.
  */
 $kode_model = file_get_contents(APP_ROOT . '/application/models/Housing_assessment_model.php');
-cek((bool) preg_match("/\(int\)\s*\\\$recommendation\['is_active'\]\s*!==\s*1/", $kode_model),
-    'Model pengajuan benar-benar membaca is_active sebagai syarat');
-cek((bool) preg_match("/->where\('is_active',\s*1\)/", file_get_contents(APP_ROOT . '/application/models/Program_model.php')),
-    'Program_model juga menyaring is_active');
+cek((bool) preg_match("/\(int\)\s*\\\$recommendation\['aktif'\]\s*!==\s*1/", $kode_model),
+    'Model pengajuan benar-benar membaca aktif (dulu is_active) sebagai syarat');
+cek((bool) preg_match("/->where\('aktif',\s*1\)/", file_get_contents(APP_ROOT . '/application/models/Program_model.php')),
+    'Program_model juga menyaring aktif');
 
 // Matikan lewat layar: checkbox TIDAK dikirim = 0.
 http('a', 'Admin_Katalog_Program/ubah', [
@@ -268,7 +268,7 @@ http('a', 'Admin_Katalog_Program/ubah', [
     'deskripsi_singkat' => 'Deskripsi baru ' . CAP,
     // 'is_active' sengaja TIDAK dikirim - persis yang dilakukan browser.
 ]);
-cek((int) nilai('SELECT is_active FROM sf_programs WHERE id=?', [$pid]) === 0,
+cek((int) nilai('SELECT aktif FROM sf_program WHERE id=?', [$pid]) === 0,
     'Checkbox yang tidak dicentang = NONAKTIF, bukan "biarkan nilai lama"');
 
 http('a', 'Admin_Katalog_Program/ubah', [
@@ -276,13 +276,13 @@ http('a', 'Admin_Katalog_Program/ubah', [
     'id' => $pid, 'nama_program' => 'Nama Baru ' . CAP,
     'deskripsi_singkat' => 'Deskripsi baru ' . CAP, 'is_active' => '1',
 ]);
-cek((int) nilai('SELECT is_active FROM sf_programs WHERE id=?', [$pid]) === 1, 'Dan bisa dinyalakan lagi');
+cek((int) nilai('SELECT aktif FROM sf_program WHERE id=?', [$pid]) === 1, 'Dan bisa dinyalakan lagi');
 
 // ------------------------------------------------ 5. JEJAK
 echo "\n== 5. Perubahan tercatat, penonaktifan disebut khusus ==\n";
-cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='program_diubah' AND actor_id=? AND created_at >= ?",
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='program_diubah' AND pelaku_id=? AND created_at >= ?",
     [$idA, MULAI]) >= 3, 'Tiap perubahan tercatat sebagai program_diubah');
-cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='program_diubah' AND actor_id=? AND ringkasan LIKE ?",
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='program_diubah' AND pelaku_id=? AND ringkasan LIKE ?",
     [$idA, '%DINONAKTIFKAN%']) === 1,
     'Penonaktifan ditandai khusus di ringkasannya - bukan tenggelam sebagai "diubah"');
 
@@ -292,20 +292,20 @@ cek(http('a', 'Admin_Katalog_Program/ubah?id=' . $pid . '&nama_program=lewat+get
     'GET ke endpoint tulis dibalas 404');
 
 http('a', 'Admin_Katalog_Program/ubah', ['id' => $pid, 'nama_program' => 'Tanpa Token']);
-cek(nilai('SELECT nama_program FROM sf_programs WHERE id=?', [$pid]) !== 'Tanpa Token',
+cek(nilai('SELECT nama_program FROM sf_program WHERE id=?', [$pid]) !== 'Tanpa Token',
     'POST tanpa token CSRF tidak mengubah apa pun');
 
-$sebelum = nilai('SELECT nama_program FROM sf_programs WHERE id=?', [$pid]);
+$sebelum = nilai('SELECT nama_program FROM sf_program WHERE id=?', [$pid]);
 http('a', 'Admin_Katalog_Program/ubah', [
     'csrf_kpkp_token' => csrf('a', 'Admin_Katalog_Program'),
     'id' => $pid, 'nama_program' => '   ', 'is_active' => '1']);
-cek(nilai('SELECT nama_program FROM sf_programs WHERE id=?', [$pid]) === $sebelum, 'Nama kosong ditolak');
+cek(nilai('SELECT nama_program FROM sf_program WHERE id=?', [$pid]) === $sebelum, 'Nama kosong ditolak');
 
 // Peran lain: DIALIHKAN, jadi kodenya 200 dari halaman lain. Buktinya DB.
 http('u', 'Admin_Katalog_Program/ubah', [
     'csrf_kpkp_token' => csrf('u', 'umum/aduan'),
     'id' => $pid, 'nama_program' => 'Diubah Warga', 'is_active' => '1']);
-cek(nilai('SELECT nama_program FROM sf_programs WHERE id=?', [$pid]) !== 'Diubah Warga',
+cek(nilai('SELECT nama_program FROM sf_program WHERE id=?', [$pid]) !== 'Diubah Warga',
     'Warga TIDAK bisa mengubah katalog (dicek dari DB, bukan kode HTTP)');
 cek(strpos(http('u', 'Admin_Katalog_Program')['body'], 'Nama di hasil diagnosa') === FALSE,
     'Dan tidak mendapat layarnya');

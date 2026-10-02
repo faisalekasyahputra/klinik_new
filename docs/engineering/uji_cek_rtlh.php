@@ -97,7 +97,7 @@ function login($nama, $email) {
 function buat_akun($suffix) {
     $email = 'uji_rtlh_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
     $id = tulis(
-        'INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+        'INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
          VALUES (?,?,?,?,"user","active",1,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji RTLH ' . $suffix,
          'uji_rtlh_' . $suffix . '_' . mt_rand(10000, 99999)]
@@ -117,14 +117,14 @@ function bersihkan() {
     if (empty($GLOBALS['db'])) { return; }
     foreach ($GLOBALS['users'] as $id) {
         q('DELETE FROM sf_profil_warga WHERE user_id=?', [$id]);
-        q('DELETE FROM sys_jejak_audit WHERE actor_id=?', [$id]);
-        q('DELETE FROM usr_users WHERE id=?', [$id]);
+        q('DELETE FROM sys_jejak_audit WHERE pelaku_id=?', [$id]);
+        q('DELETE FROM usr_akun WHERE id=?', [$id]);
     }
     foreach (($GLOBALS['rate_anon_sebelum'] ?? []) as $key => $row) {
-        q('DELETE FROM sys_rate_limits WHERE limit_key=?', [$key]);
-        if (isset($row['limit_key'])) {
-            q('INSERT INTO sys_rate_limits (limit_key,window_started_at,failed_attempts) VALUES (?,?,?)',
-                [$key, $row['window_started_at'], $row['failed_attempts']]);
+        q('DELETE FROM sys_batas_laju WHERE kunci=?', [$key]);
+        if (isset($row['kunci'])) {
+            q('INSERT INTO sys_batas_laju (kunci,jendela_mulai_at,jumlah_gagal) VALUES (?,?,?)',
+                [$key, $row['jendela_mulai_at'], $row['jumlah_gagal']]);
         }
     }
     $GLOBALS['rate_anon_sebelum'] = [];
@@ -155,8 +155,8 @@ echo "\n== 1. Tamu melihat hasil terbatas tanpa login ==\n";
 // ::1 dihitung per blok /64 (anti_automation_ip_bucket), jadi kunci nyatanya '0000000000000000/64'.
 foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
     $key = hash('sha256', 'rtlh_cek_anon:ip:' . $ip);
-    $GLOBALS['rate_anon_sebelum'][$key] = q('SELECT * FROM sys_rate_limits WHERE limit_key=?', [$key]);
-    q('DELETE FROM sys_rate_limits WHERE limit_key=?', [$key]);
+    $GLOBALS['rate_anon_sebelum'][$key] = q('SELECT * FROM sys_batas_laju WHERE kunci=?', [$key]);
+    q('DELETE FROM sys_batas_laju WHERE kunci=?', [$key]);
 }
 $tamu = http('tamu', 'Cek_Rtlh');
 wajib($tamu['code'] === 200 && strpos($tamu['body'], 'Cek_Rtlh/periksa') !== FALSE,
@@ -285,12 +285,12 @@ cek(stripos($tanpa['body'], 'MODE SIMULASI') === FALSE,
 
 // ------------------------------------------------ 7. JEJAK AUDIT
 echo "\n== 7. Tercatat di jejak audit ==\n";
-cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' AND actor_id=?", [$id1]) >= 3,
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' AND pelaku_id=?", [$id1]) >= 3,
     'Tiap pencarian tercatat (minimal 3 baris untuk pengguna ini)');
-cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' AND actor_id=? AND ringkasan LIKE ?",
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' AND pelaku_id=? AND ringkasan LIKE ?",
     [$id1, '%' . NIK_ADA . '%']) === 0,
     'NIK LENGKAP tidak ikut tertulis di jejak audit - hanya empat digit terakhir');
-cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' AND actor_id=? AND ringkasan REGEXP 'hasil: (found|not_found|error)$'", [$id1]) === 0,
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' AND pelaku_id=? AND ringkasan REGEXP 'hasil: (found|not_found|error)$'", [$id1]) === 0,
     'Ringkasan jejak audit memakai bahasa Indonesia (terdaftar / tidak terdaftar), bukan kode status mentah');
 
 // ------------------------------------------------ 8. BATAS LAJU

@@ -215,7 +215,7 @@ class Admin_Kemitraan extends Admin_Controller {
 
         // Cari + urut + paginasi semuanya server-side (B7/B8).
         $table = $this->table_state([
-            'kkn_magang_pendaftaran.created_at', 'usr_users.name',
+            'kkn_magang_pendaftaran.created_at', 'usr_akun.nama',
             'kkn_magang_pendaftaran.instansi_asal', 'kkn_magang_pendaftaran.status',
         ], 'kkn_magang_pendaftaran.created_at');
         $data['base_url'] = 'Admin_Kemitraan';
@@ -232,12 +232,12 @@ class Admin_Kemitraan extends Admin_Controller {
         $f_jenis  = in_array($f_jenis, $jenis_sah, TRUE) ? $f_jenis : NULL;
 
         $this->db->from('kkn_magang_pendaftaran')
-            ->join('usr_users', 'usr_users.id = kkn_magang_pendaftaran.user_id', 'left');
+            ->join('usr_akun', 'usr_akun.id = kkn_magang_pendaftaran.user_id', 'left');
         if ($f_status) { $this->db->where('kkn_magang_pendaftaran.status', $f_status); }
         if ($f_jenis)  { $this->db->where('kkn_magang_pendaftaran.jenis', $f_jenis); }
         if ($table['q'] !== '') {
             $this->db->group_start()
-                ->like('usr_users.name', $table['q'])->or_like('usr_users.email', $table['q'])
+                ->like('usr_akun.nama', $table['q'])->or_like('usr_akun.email', $table['q'])
                 ->or_like('kkn_magang_pendaftaran.instansi_asal', $table['q'])
                 ->or_like('kkn_magang_pendaftaran.divisi_atau_tema', $table['q'])
                 ->group_end();
@@ -248,8 +248,8 @@ class Admin_Kemitraan extends Admin_Controller {
         // seperti KemitraanPortal::kkn_dashboard() (lihat migrasi 044).
         // Subquery-nya aman untuk baris magang juga: pendaftaran_id yang
         // tidak pernah dipakai magang otomatis menghitung nol.
-        $data['rows'] = $this->db->select('kkn_magang_pendaftaran.*, usr_users.name AS nama_mahasiswa,
-                usr_users.email AS email_mahasiswa, (SELECT COUNT(*) FROM kkn_peserta
+        $data['rows'] = $this->db->select('kkn_magang_pendaftaran.*, usr_akun.nama AS nama_mahasiswa,
+                usr_akun.email AS email_mahasiswa, (SELECT COUNT(*) FROM kkn_peserta
                 WHERE kkn_peserta.pendaftaran_id = kkn_magang_pendaftaran.id) AS jumlah_peserta', FALSE)
             ->order_by($table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
@@ -288,22 +288,22 @@ class Admin_Kemitraan extends Admin_Controller {
     {
         $data['title'] = 'KKN & Magang'; // tab Akun Universitas, judul halamannya tetap satu
 
-        $table = $this->table_state(['created_at', 'name', 'email'], 'created_at');
+        $table = $this->table_state(['created_at', 'nama', 'email'], 'created_at');
         $data['base_url'] = 'Admin_Kemitraan/universitas';
 
-        $this->db->from('usr_users')->where('role', 'universitas');
+        $this->db->from('usr_akun')->where('peran', 'universitas');
         if ($table['q'] !== '') {
             $this->db->group_start()
-                ->like('name', $table['q'])->or_like('email', $table['q'])
-                ->or_like('username', $table['q'])->group_end();
+                ->like('nama', $table['q'])->or_like('email', $table['q'])
+                ->or_like('nama_pengguna', $table['q'])->group_end();
         }
         $table += $this->paginate_state($this->db->count_all_results('', FALSE));
 
         // Jumlah KKN per akun DIHITUNG lewat subquery, sama seperti index()
         // dan KemitraanPortal::kkn_dashboard() - satu pola yang sama di
         // ketiga tempat, bukan tiga cara berbeda menghitung hal yang sama.
-        $data['rows'] = $this->db->select("usr_users.*, (SELECT COUNT(*) FROM kkn_magang_pendaftaran
-                WHERE kkn_magang_pendaftaran.user_id = usr_users.id
+        $data['rows'] = $this->db->select("usr_akun.*, (SELECT COUNT(*) FROM kkn_magang_pendaftaran
+                WHERE kkn_magang_pendaftaran.user_id = usr_akun.id
                   AND kkn_magang_pendaftaran.jenis = 'kkn') AS jumlah_kkn", FALSE)
             ->order_by($table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
@@ -359,9 +359,9 @@ class Admin_Kemitraan extends Admin_Controller {
     {
         if ( ! is_numeric($id)) { show_404(); }
 
-        $row = $this->db->select('kkn_magang_pendaftaran.*, usr_users.name AS nama_mahasiswa, usr_users.email AS email_mahasiswa')
+        $row = $this->db->select('kkn_magang_pendaftaran.*, usr_akun.nama AS nama_mahasiswa, usr_akun.email AS email_mahasiswa')
             ->from('kkn_magang_pendaftaran')
-            ->join('usr_users', 'usr_users.id = kkn_magang_pendaftaran.user_id', 'left')
+            ->join('usr_akun', 'usr_akun.id = kkn_magang_pendaftaran.user_id', 'left')
             ->where('kkn_magang_pendaftaran.id', (int) $id)
             ->get()->row();
         if ( ! $row || $row->jenis !== 'kkn') { show_404(); }
@@ -381,9 +381,9 @@ class Admin_Kemitraan extends Admin_Controller {
     {
         if ( ! is_numeric($id)) { show_404(); }
 
-        $row = $this->db->select('kkn_magang_pendaftaran.*, usr_users.name AS nama_mahasiswa, usr_users.email AS email_mahasiswa')
+        $row = $this->db->select('kkn_magang_pendaftaran.*, usr_akun.nama AS nama_mahasiswa, usr_akun.email AS email_mahasiswa')
             ->from('kkn_magang_pendaftaran')
-            ->join('usr_users', 'usr_users.id = kkn_magang_pendaftaran.user_id', 'left')
+            ->join('usr_akun', 'usr_akun.id = kkn_magang_pendaftaran.user_id', 'left')
             ->where('kkn_magang_pendaftaran.id', (int) $id)
             ->get()->row();
         if ( ! $row) { show_404(); }

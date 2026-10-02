@@ -277,7 +277,7 @@ if ( ! $gagal) {
     $email = 'uji_rd_fresh@example.test';
     $sandi = 'UjiRdFresh123!';
     $ok = $admin->query(sprintf(
-        "INSERT INTO usr_users (email, password, role, kabupaten_id, name, username)
+        "INSERT INTO usr_akun (email, kata_sandi, peran, kabupaten_id, nama, nama_pengguna)
          VALUES ('%s', '%s', 'admin_kabkota', %d, 'Admin Uji Fresh', 'uji_rd_fresh')",
         $admin->real_escape_string($email),
         $admin->real_escape_string(password_hash($sandi, PASSWORD_BCRYPT)),

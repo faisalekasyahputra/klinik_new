@@ -2,7 +2,7 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /*
- * Satu registry untuk seluruh pembatas laju berbasis sys_rate_limits.
+ * Satu registry untuk seluruh pembatas laju berbasis sys_batas_laju.
  * `dimensions` menentukan penghitung yang berdiri sendiri. Permintaan ditolak
  * bila salah satu dimensi mencapai batasnya.
  */

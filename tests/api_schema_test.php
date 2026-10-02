@@ -139,7 +139,7 @@ check(ok(v('index/cari_wil', ['method' => 'GET', 'get' => $cari, 'ajax' => FALSE
 foreach ([['kodeWilayah' => '33;DROP'], ['page' => '-1'], ['limit' => '9999'], ['keyword' => str_repeat('k', 101)], ['sort' => 'a b'], ['foo' => 'bar']] as $i => $salah) {
     check( ! ok(v('index/cari_wil', ['method' => 'GET', 'get' => $salah + $cari, 'ajax' => FALSE])), "Pencarian wilayah cacat #$i harus ditolak");
 }
-check(ok(v('admin/update_status', ['post' => ['queue_id' => '5', 'from_status' => 'Baru', 'status' => 'Diterima', 'catatan_admin' => 'ok'], 'ajax' => FALSE])) && ! ok(v('admin/update_status', ['post' => ['queue_id' => 'x', 'status' => 'Diterima'], 'ajax' => FALSE])), 'Keputusan antrean admin: queue_id integer dan status wajib');
+check(ok(v('admin/update_status', ['post' => ['antrean_id' => '5', 'status_awal' => 'Baru', 'status' => 'Diterima', 'catatan_admin' => 'ok'], 'ajax' => FALSE])) && ! ok(v('admin/update_status', ['post' => ['antrean_id' => 'x', 'status' => 'Diterima'], 'ajax' => FALSE])), 'Keputusan antrean admin: antrean_id integer dan status wajib');
 
 // ------------------------------------------------------------------ 3. Registri: konsisten dengan sisa aplikasi
 $dilihat = 0;

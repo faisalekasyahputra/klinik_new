@@ -22,7 +22,7 @@ class Admin_Bidang extends Admin_Bidang_Controller {
         // pencarian tidak boleh jadi celah keluar dari scope.
         // from() di depan, lalu count_all_results('', FALSE) - kalau tabelnya
         // disebut di kedua tempat, FROM tertulis dua kali dan query gagal.
-        $this->db->from('aduan')->where('bidang', $this->my_bidang_kode);
+        $this->db->from('aduan')->where('bidang_kode', $this->my_bidang_kode);
         if ($data['status_filter']) { $this->db->where('status', $data['status_filter']); }
         if ($table['q'] !== '') {
             $this->db->group_start()
@@ -53,7 +53,7 @@ class Admin_Bidang extends Admin_Bidang_Controller {
         if ( ! is_numeric($id)) { show_404(); }
 
         $row = $this->db->select('lampiran')
-            ->where('id', (int) $id)->where('bidang', $this->my_bidang_kode)
+            ->where('id', (int) $id)->where('bidang_kode', $this->my_bidang_kode)
             ->get('aduan')->row();
         if ( ! $row || empty($row->lampiran)) { show_404(); }
 
@@ -80,7 +80,7 @@ class Admin_Bidang extends Admin_Bidang_Controller {
         // tersimpan (resubmit tanpa perubahan) - dulu itu salah dilaporkan
         // sebagai "bukan bidang Anda". Lihat AUDIT_ROLE_ADMIN_SCOPED.md #6.
         $milik_bidang = $this->db->where('id', (int) $id)
-            ->where('bidang', $this->my_bidang_kode)
+            ->where('bidang_kode', $this->my_bidang_kode)
             ->count_all_results('aduan');
 
         if ($milik_bidang === 0) {
@@ -92,7 +92,7 @@ class Admin_Bidang extends Admin_Bidang_Controller {
         $lama = $this->db->select('status, user_id')->where('id', (int) $id)->get('aduan')->row();
         $status_lama = $lama->status;
         $ok = $this->db->where('id', (int) $id)
-            ->where('bidang', $this->my_bidang_kode)
+            ->where('bidang_kode', $this->my_bidang_kode)
             ->update('aduan', [
                 'status'        => $status,
                 'catatan_admin' => trim((string) $this->input->post('catatan_admin', TRUE)),

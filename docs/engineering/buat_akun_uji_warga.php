@@ -20,7 +20,7 @@
  *
  * SEMUA LEWAT ENDPOINT SUNGGUHAN, NOL `INSERT` LANGSUNG. Itu disengaja: kalau
  * skrip ini hijau, ia sekaligus membuktikan langkah daftar dan onboarding
- * memang jalan. Menyuntik baris ke `usr_users` akan menghasilkan akun yang
+ * memang jalan. Menyuntik baris ke `usr_akun` akan menghasilkan akun yang
  * bisa dipakai TAPI tidak membuktikan apa pun tentang alurnya - dan alur itu
  * justru yang ditanyakan. Pola yang sama dipakai pendaftaran kemitraan #656
  * (§20c): dibuat lewat endpoint, bukan INSERT.

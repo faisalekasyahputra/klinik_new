@@ -66,7 +66,7 @@ class Upload_quota {
      * Pesan satu berkas baru. Panggil SEBELUM memindahkan berkas; bila berkas gagal dipindah,
      * panggil release(). @return bool FALSE (dan $error terisi) bila kuota terlampaui.
      */
-    public function reserve($actor, array $limits, $domain, $owner_id, $stored_name, $size, &$error = NULL)
+    public function reserve($actor, array $limits, $domain, $owner_id, $nama_simpan, $size, &$error = NULL)
     {
         $dir = $this->dir($actor);
         if ( ! is_dir($dir) && ! @mkdir($dir, 0700, TRUE) && ! is_dir($dir)) {
@@ -86,7 +86,7 @@ class Upload_quota {
                 $error = 'Kuota unggahan penuh: total maksimal ' . round($limits['bytes'] / 1048576) . ' MB. Hapus berkas yang tidak diperlukan atau hubungi admin.';
                 return FALSE;
             }
-            $ok = @file_put_contents($dir . $this->nama_penanda($domain, $owner_id, $stored_name, $size), '') !== FALSE;
+            $ok = @file_put_contents($dir . $this->nama_penanda($domain, $owner_id, $nama_simpan, $size), '') !== FALSE;
             if ( ! $ok) { $error = 'Gagal mencatat kuota unggahan.'; }
             return $ok;
         } finally {
@@ -95,10 +95,10 @@ class Upload_quota {
         }
     }
 
-    public function release($actor, $domain, $owner_id, $stored_name)
+    public function release($actor, $domain, $owner_id, $nama_simpan)
     {
         $dir = $this->dir($actor);
-        foreach ((array) glob($dir . $this->bersih($domain) . '~' . $this->bersih($owner_id) . '~' . $this->bersih_nama($stored_name) . '~*') as $p) { @unlink($p); }
+        foreach ((array) glob($dir . $this->bersih($domain) . '~' . $this->bersih($owner_id) . '~' . $this->bersih_nama($nama_simpan) . '~*') as $p) { @unlink($p); }
     }
 
     /** Hapus seluruh buku kuota satu pengguna (mis. saat akun dihapus). */
@@ -142,9 +142,9 @@ class Upload_quota {
         return $this->ledger . $this->bersih($actor) . DIRECTORY_SEPARATOR;
     }
 
-    private function nama_penanda($domain, $owner_id, $stored_name, $size)
+    private function nama_penanda($domain, $owner_id, $nama_simpan, $size)
     {
-        return $this->bersih($domain) . '~' . $this->bersih($owner_id) . '~' . $this->bersih_nama($stored_name) . '~' . (int) $size;
+        return $this->bersih($domain) . '~' . $this->bersih($owner_id) . '~' . $this->bersih_nama($nama_simpan) . '~' . (int) $size;
     }
 
     /** Domain, pemilik, dan pengguna: sama ketatnya dengan private_uploads_dir() (tanpa titik). */

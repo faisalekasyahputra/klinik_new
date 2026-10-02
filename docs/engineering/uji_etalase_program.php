@@ -2,12 +2,12 @@
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Penjaga etalase program - admin mengurus 5 program unggulan dari layar,
- * korsel beranda membacanya dari `sf_programs` (migrasi 036).
+ * korsel beranda membacanya dari `sf_program` (migrasi 036).
  *
  *   php docs/engineering/uji_etalase_program.php
  *
  * KENAPA BERKAS INI ADA. Sampai 5 Agt 2026 info program hidup di TIGA tempat
- * yang saling melenceng: tabel `sf_programs`, `Smart_filter::master_programs()`,
+ * yang saling melenceng: tabel `sf_program`, `Smart_filter::master_programs()`,
  * dan daftar hardcode di dalam JS korsel. Layar Katalog Program bahkan lahir
  * sebagai PEMBANDING selisih itu. Migrasi 036 memindahkan yang DITAMPILKAN ke
  * tabel; penjaga ini memastikan sumber ketiga tidak diam-diam hidup lagi.
@@ -88,12 +88,12 @@ if ($GLOBALS['db']->connect_error) { die("Koneksi DB gagal.\n"); }
 // ------------------------------------------------------------------ 1. Skema
 echo "== 1. Kolom etalase (migrasi 036) ==\n";
 $kolom = array_column(q("SELECT COLUMN_NAME n FROM information_schema.COLUMNS
-    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sf_programs'"), 'n');
-foreach (['badge', 'syarat_utama', 'gambar', 'urutan', 'tampil_korsel'] as $k) {
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sf_program'"), 'n');
+foreach (['lencana', 'syarat_utama', 'gambar', 'urutan', 'tampil_korsel'] as $k) {
     cek(in_array($k, $kolom, TRUE), "kolom `{$k}` ada");
 }
-$etalase = q("SELECT kode_program, gambar, badge FROM sf_programs
-              WHERE tampil_korsel = 1 AND is_active = 1 ORDER BY urutan");
+$etalase = q("SELECT kode_program, gambar, lencana FROM sf_program
+              WHERE tampil_korsel = 1 AND aktif = 1 ORDER BY urutan");
 cek(count($etalase) >= 1, 'Ada minimal satu program etalase aktif (dapat: ' . count($etalase) . ')');
 
 // ------------------------------------------------------------------ 2. Satu sumber
@@ -119,15 +119,15 @@ foreach ($etalase as $p) {
 // Jadi yang diuji adalah program di LUAR peta itu.
 // Program di luar peta biasanya tidak tampil di korsel (tampil_korsel = 0), jadi ia
 // dinyalakan sementara dan dipulihkan utuh sesudahnya.
-$rtlh = q("SELECT id, gambar, kode_program, tampil_korsel, is_active FROM sf_programs
+$rtlh = q("SELECT id, gambar, kode_program, tampil_korsel, aktif FROM sf_program
            WHERE kode_program NOT IN ('flpp','oemah_lestari','rtlh','pb','rumah_apung') ORDER BY urutan, id LIMIT 1")[0] ?? NULL;
 wajib($rtlh !== NULL, 'Ada program di luar peta foto hero (memakai kolom gambar)');
 $semula = $rtlh['gambar'];
-q("UPDATE sf_programs SET gambar = ?, tampil_korsel = 1, is_active = 1 WHERE id = ?", ['assets/img/program/UJI_ETALASE.png', $rtlh['id']]);
+q("UPDATE sf_program SET gambar = ?, tampil_korsel = 1, aktif = 1 WHERE id = ?", ['assets/img/program/UJI_ETALASE.png', $rtlh['id']]);
 cek(strpos(http('/'), 'UJI_ETALASE.png') !== FALSE,
     "Ganti gambar di DB langsung terlihat di korsel (program `{$rtlh['kode_program']}`)");
-q("UPDATE sf_programs SET gambar = ?, tampil_korsel = ?, is_active = ? WHERE id = ?",
-  [$semula, $rtlh['tampil_korsel'], $rtlh['is_active'], $rtlh['id']]);
+q("UPDATE sf_program SET gambar = ?, tampil_korsel = ?, aktif = ? WHERE id = ?",
+  [$semula, $rtlh['tampil_korsel'], $rtlh['aktif'], $rtlh['id']]);
 cek(strpos(http('/'), 'UJI_ETALASE.png') === FALSE, 'Nilai semula dipulihkan');
 
 // ------------------------------------------------------------------ 3. Unggah
@@ -153,18 +153,18 @@ wajib(stripos(http('Admin_Katalog_Program'), 'Katalog Program') !== FALSE,
 
 // Formulir ubah menulis SEMUA kolom, jadi nilai teksnya diambil dari baris program itu sendiri
 // supaya uji ini tidak menimpa nama/deskripsi program yang kebetulan terpilih.
-$asli = q("SELECT * FROM sf_programs WHERE id = ?", [$rtlh['id']])[0];
+$asli = q("SELECT * FROM sf_program WHERE id = ?", [$rtlh['id']])[0];
 $kirim = function ($berkas) use ($rtlh, $asli) {
     return http('Admin_Katalog_Program/ubah', [
         'csrf_kpkp_token'   => token('Admin_Katalog_Program'),
         'id'                => $rtlh['id'],
         'nama_program'      => (string) $asli['nama_program'],
         'deskripsi_singkat' => (string) $asli['deskripsi_singkat'],
-        'badge'             => (string) $asli['badge'],
+        'badge'             => (string) $asli['lencana'],
         'syarat_utama'      => (string) $asli['syarat_utama'],
         'urutan'            => (int) $asli['urutan'],
         'tampil_korsel'     => (int) $asli['tampil_korsel'],
-        'is_active'         => (int) $asli['is_active'],
+        'is_active'         => (int) $asli['aktif'],
         'gambar'            => new CURLFile($berkas),
     ], TRUE);
 };
@@ -172,12 +172,12 @@ $kirim = function ($berkas) use ($rtlh, $asli) {
 $r = $kirim($palsu);
 cek(stripos($r, 'Gambar harus JPG atau PNG') !== FALSE,
     'Berkas menyamar DITOLAK - jenis ditentukan dari isi, bukan ekstensi');
-cek((string) (q("SELECT gambar g FROM sf_programs WHERE id = ?", [$rtlh['id']])[0]['g'] ?? '') === (string) $semula,
+cek((string) (q("SELECT gambar g FROM sf_program WHERE id = ?", [$rtlh['id']])[0]['g'] ?? '') === (string) $semula,
     'Penolakan tidak mengubah gambar yang tersimpan');
 
 $r = $kirim($png);
 cek(stripos($r, 'Program diperbarui') !== FALSE, 'PNG sah diterima');
-$baru = (string) (q("SELECT gambar g FROM sf_programs WHERE id = ?", [$rtlh['id']])[0]['g'] ?? '');
+$baru = (string) (q("SELECT gambar g FROM sf_program WHERE id = ?", [$rtlh['id']])[0]['g'] ?? '');
 cek(strpos($baru, 'assets/img/program/unggahan/') === 0,
     'Disimpan di direktori unggahan terpisah, bukan menimpa berkas bawaan');
 cek(preg_match('#/' . preg_quote($rtlh['kode_program'], '#') . '-[a-f0-9]{16}\.png$#', $baru) === 1,
@@ -186,9 +186,9 @@ cek(is_file(APP_ROOT . '/' . $baru), 'Berkasnya benar-benar ada di disk');
 if (is_file(APP_ROOT . '/' . $baru)) { $GLOBALS['bersih'][] = APP_ROOT . '/' . $baru; }
 
 // Pulihkan supaya beranda kembali memakai foto bawaan.
-q("UPDATE sf_programs SET gambar = ?, nama_program = ?, deskripsi_singkat = ?, badge = ?, syarat_utama = ?, urutan = ?, tampil_korsel = ?, is_active = ? WHERE id = ?",
-  [$semula, $asli['nama_program'], $asli['deskripsi_singkat'], $asli['badge'], $asli['syarat_utama'], $asli['urutan'], $asli['tampil_korsel'], $asli['is_active'], $rtlh['id']]);
-cek((string) (q("SELECT gambar g FROM sf_programs WHERE id = ?", [$rtlh['id']])[0]['g'] ?? '') === (string) $semula,
+q("UPDATE sf_program SET gambar = ?, nama_program = ?, deskripsi_singkat = ?, lencana = ?, syarat_utama = ?, urutan = ?, tampil_korsel = ?, aktif = ? WHERE id = ?",
+  [$semula, $asli['nama_program'], $asli['deskripsi_singkat'], $asli['lencana'], $asli['syarat_utama'], $asli['urutan'], $asli['tampil_korsel'], $asli['aktif'], $rtlh['id']]);
+cek((string) (q("SELECT gambar g FROM sf_program WHERE id = ?", [$rtlh['id']])[0]['g'] ?? '') === (string) $semula,
     'Keadaan dipulihkan - uji ini tidak meninggalkan jejak');
 
 // ------------------------------------------------------------------ 4. Batas

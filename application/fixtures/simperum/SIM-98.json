@@ -1,8 +1,8 @@
 {
   "fixture_id": "SIM-98",
   "synthetic": true,
-  "response_status": "not_found",
-  "api_version": "simulation-v1",
+  "status_respons": "not_found",
+  "versi_api": "simulation-v1",
   "identity": {},
   "socioeconomic": {},
   "housing": {},

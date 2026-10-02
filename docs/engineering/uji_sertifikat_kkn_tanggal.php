@@ -32,15 +32,15 @@ $cari = function () use ($http, $csrf, $sesi, $nim) { $j = $sesi(); $http($j, 'K
 try {
     echo "=== UJI TANGGAL SERTIFIKAT KKN ===\n";
     // Ember sertifikat_kkn_lookup dan login per IP dipinjam lalu dikembalikan utuh (::1 tercatat per /64).
-    // Dulu seluruh tabel sys_rate_limits dikosongkan, ikut menghapus ember pengguna/suite lain.
+    // Dulu seluruh tabel sys_batas_laju dikosongkan, ikut menghapus ember pengguna/suite lain.
     foreach (['sertifikat_kkn_lookup', 'login'] as $pol) foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
         $k = hash('sha256', $pol . ':ip:' . $ip);
-        $ember[$k] = $db->query("SELECT limit_key, window_started_at, failed_attempts FROM sys_rate_limits WHERE limit_key='$k'")->fetch_assoc();
-        $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
+        $ember[$k] = $db->query("SELECT kunci, jendela_mulai_at, jumlah_gagal FROM sys_batas_laju WHERE kunci='$k'")->fetch_assoc();
+        $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
     }
     $cek($db->query("SHOW COLUMNS FROM kkn_magang_pendaftaran LIKE 'tanggal_sertifikat'")->num_rows === 1, 'Kolom tanggal_sertifikat ada (migrasi 062)');
     $e = "{$tag}_adm@example.test"; $h = password_hash($sandi, PASSWORD_BCRYPT);
-    $st = $db->prepare("INSERT INTO usr_users (name,email,password,role,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at) VALUES ('Uji Sert',?,?,'admin','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
+    $st = $db->prepare("INSERT INTO usr_akun (nama,email,kata_sandi,peran,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at) VALUES ('Uji Sert',?,?,'admin','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
     $st->bind_param('ss', $e, $h); $st->execute(); $adm = $db->insert_id;
     $db->query("INSERT INTO kkn_magang_pendaftaran (user_id,jenis,instansi_asal,no_hp,divisi_atau_tema,periode_mulai,periode_selesai,status,created_at) VALUES ({$adm},'kkn','{$tag} Kampus','081234567890','Tema Uji','2026-01-01','2026-02-01','Diterima',NOW())");
     $kkn = $db->insert_id;
@@ -93,13 +93,13 @@ try {
     $cek((int) $db->query("SELECT COUNT(*) FROM kkn_magang_pendaftaran WHERE id={$kkn3}")->fetch_row()[0] === 0 && ! is_dir($dirHapus), 'Hapus pendaftaran ikut menghapus surat balasan, surat SIMPERUM, laporan akhir, dan foldernya dari disk');
 } finally {
     foreach ($ember ?? [] as $k => $row) {
-        $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
-        if ($row) { $st = $db->prepare('INSERT INTO sys_rate_limits (limit_key, window_started_at, failed_attempts) VALUES (?,?,?)'); $st->bind_param('ssi', $row['limit_key'], $row['window_started_at'], $row['failed_attempts']); $st->execute(); }
+        $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
+        if ($row) { $st = $db->prepare('INSERT INTO sys_batas_laju (kunci, jendela_mulai_at, jumlah_gagal) VALUES (?,?,?)'); $st->bind_param('ssi', $row['kunci'], $row['jendela_mulai_at'], $row['jumlah_gagal']); $st->execute(); }
     }
     if (isset($dirHapus)) { foreach (glob($dirHapus . '/*') ?: [] as $p) { @unlink($p); } @rmdir($dirHapus); }
     $db->query("DELETE p FROM kkn_peserta p JOIN kkn_magang_pendaftaran k ON k.id=p.pendaftaran_id WHERE k.instansi_asal LIKE '{$tag}%'");
     $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '{$tag}%'");
-    $db->query("DELETE FROM usr_users WHERE email LIKE '{$tag}_%@example.test'");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE '{$tag}_%@example.test'");
     foreach ($jars as $j) @unlink($j);
 }
 echo "\nRINGKASAN: {$total} pemeriksaan, {$gagal} gagal\n";

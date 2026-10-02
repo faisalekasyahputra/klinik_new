@@ -10,7 +10,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *
  * Wizard mengikuti idiom `/warga/pendataan`: satu endpoint merender seluruh
  * langkah, POST menyimpan lalu memindahkan langkah, dan langkahnya disimpan DI
- * BARIS (`rd_laporan.current_step`) - bukan di sesi atau URL - supaya pengisian
+ * BARIS (`rd_laporan.langkah_sekarang`) - bukan di sesi atau URL - supaya pengisian
  * bisa dilanjutkan setelah keluar-masuk.
  *
  * Acuan: docs/product/ROADMAP_WIZARD_REKAM_PERUMAHAN.md §3,
@@ -337,7 +337,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
             return;
         }
 
-        $langkah = (string) ($this->input->get('langkah') ?: $isi['laporan']['current_step']);
+        $langkah = (string) ($this->input->get('langkah') ?: $isi['laporan']['langkah_sekarang']);
         if ( ! in_array($langkah, self::LANGKAH, TRUE) || $langkah === 'periode') {
             $langkah = 'program';
         }
@@ -535,7 +535,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
 
         $hasil = $this->rd->simpan_bnba($laporan_id, [
             'nama_asli'    => $_FILES['bnba']['name'],
-            'private_path' => $tersimpan,
+            'path_privat' => $tersimpan,
             'mime_type'    => $mime,
             'ukuran'       => filesize($path_tersimpan),
             'uploaded_by'  => $this->get_user_id(),
@@ -563,7 +563,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
             return;
         }
         $this->serve_private_file('rekam_bnba', (int) $laporan_id,
-            $berkas['private_path'], $berkas['mime_type'] ?: 'application/octet-stream');
+            $berkas['path_privat'], $berkas['mime_type'] ?: 'application/octet-stream');
     }
 
     public function kirim()

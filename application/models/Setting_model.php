@@ -3,7 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Setting_model extends CI_Model {
 
-    protected $table = 'sys_settings';
+    protected $table = 'sys_pengaturan';
 
     public function __construct()
     {
@@ -35,7 +35,7 @@ class Setting_model extends CI_Model {
 
         $settings = [];
         foreach ($query->result_array() as $row) {
-            $settings[$row['key_name']] = $row['key_value'];
+            $settings[$row['kunci']] = $row['nilai'];
         }
         return $settings;
     }
@@ -45,12 +45,12 @@ class Setting_model extends CI_Model {
      */
     public function get_by_key($key)
     {
-        $this->db->where('key_name', $key);
+        $this->db->where('kunci', $key);
         $query = $this->db->get($this->table);
         $row = $query->row_array();
         
         if ($row) {
-            return $row['key_value'];
+            return $row['nilai'];
         }
         return null;
     }
@@ -72,19 +72,19 @@ class Setting_model extends CI_Model {
         $this->db->trans_start();
 
         foreach ($data as $key => $value) {
-            $this->db->where('key_name', $key);
-            $this->db->update($this->table, ['key_value' => $value]);
+            $this->db->where('kunci', $key);
+            $this->db->update($this->table, ['nilai' => $value]);
             
             // If key doesn't exist, insert it
             if ($this->db->affected_rows() == 0) {
                 // Check if it really exists to avoid inserting if update just didn't change the value
-                $this->db->where('key_name', $key);
+                $this->db->where('kunci', $key);
                 $query = $this->db->get($this->table);
                 if ($query->num_rows() == 0) {
                     $this->db->insert($this->table, [
-                        'key_name' => $key,
-                        'key_value' => $value,
-                        'type' => 'text'
+                        'kunci' => $key,
+                        'nilai' => $value,
+                        'tipe' => 'text'
                     ]);
                 }
             }

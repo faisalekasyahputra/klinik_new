@@ -83,7 +83,7 @@ if ( ! $masuk) { @unlink($jar); exit(1); }
 $db = @new mysqli('localhost', 'root', '', 'klinikpkp');
 $satu = function ($sql) use ($db) { $q = $db->connect_errno ? FALSE : $db->query($sql); $b = $q ? $q->fetch_row() : NULL; return $b[0] ?? NULL; };
 $id_daftar = $satu('SELECT id FROM kkn_magang_pendaftaran ORDER BY id LIMIT 1');
-$id_staf   = $satu("SELECT id FROM usr_users WHERE role IN ('admin_kabkota','admin_bidang') ORDER BY id LIMIT 1");
+$id_staf   = $satu("SELECT id FROM usr_akun WHERE peran IN ('admin_kabkota','admin_bidang') ORDER BY id LIMIT 1");
 $kode_bid  = $satu('SELECT kode FROM bidang ORDER BY kode LIMIT 1');
 
 $layar = [

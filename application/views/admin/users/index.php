@@ -78,8 +78,8 @@
                              whitespace-nowrap - AGENTS.md §17 poin 6. Kolom Aksi yang
                              pertama hilang di balik gulir horizontal, dan itu sudah dua
                              kali terjadi di layar admin lain. */ ?>
-                    <th scope="col" class="px-4 py-3"><?= admin_sort_header('Nama Pengguna', 'name', $table, $base_url) ?></th>
-                    <th scope="col" class="px-4 py-3"><?= admin_sort_header('Peran', 'role', $table, $base_url) ?></th>
+                    <th scope="col" class="px-4 py-3"><?= admin_sort_header('Nama Pengguna', 'nama', $table, $base_url) ?></th>
+                    <th scope="col" class="px-4 py-3"><?= admin_sort_header('Peran', 'peran', $table, $base_url) ?></th>
                     <th scope="col" class="px-4 py-3">Cakupan</th>
                     <?php /* Tanpa admin_sort_header(): `status` tidak ada di whitelist
                              table_state() milik controller, dan controller tidak boleh
@@ -121,13 +121,13 @@
                     // trim+strtolower mengikuti Auth::login baris 125.
                     $nonaktif = strtolower(trim((string) ($u->status ?? ''))) === 'nonaktif';
 
-                    // Cukup dinilai dari locked_until di masa depan. Auth_model::is_locked()
-                    // menuntut login_attempts >= 5 juga, tapi locked_until HANYA pernah
+                    // Cukup dinilai dari terkunci_sampai di masa depan. Auth_model::is_locked()
+                    // menuntut gagal_masuk >= 5 juga, tapi terkunci_sampai HANYA pernah
                     // ditulis di dalam cabang itu dan selalu di-NULL-kan bersama
                     // penghitungnya - dua syarat itu identik di praktik. Memanggil
                     // is_locked() langsung ditolak: view tidak menarik model, dan
                     // controller memang tidak boleh disentuh di pekerjaan ini.
-                    $terkunci = ! empty($u->locked_until) && strtotime($u->locked_until) > time();
+                    $terkunci = ! empty($u->terkunci_sampai) && strtotime($u->terkunci_sampai) > time();
 
                     // Kalau keduanya benar, nonaktif yang ditampilkan. "Terkunci"
                     // menjanjikan pulih sendiri sebentar lagi; janji itu palsu untuk
@@ -150,12 +150,12 @@
                     $konfirmasi_kunci = 'Buka kunci akun ' . $u->email . '? Ia bisa langsung mencoba masuk lagi tanpa menunggu sisa waktu kunci habis.';
                     $konfirmasi_sandi = 'Ganti sandi akun ' . $u->email . '? Sandi lamanya langsung tidak berlaku dan yang bersangkutan tidak bisa masuk sampai Anda memberitahukan sandi barunya.';
                 ?>
-                <tr x-data="{ editOpen: false, resetOpen: false, nikResetOpen: false, role: '<?= html_escape($u->role ?? '') ?>' }">
+                <tr x-data="{ editOpen: false, resetOpen: false, nikResetOpen: false, role: '<?= html_escape($u->peran ?? '') ?>' }">
                     <?php /* Kolom teks terpanjang dibatasi + boleh membungkus (§17 poin 6):
                              nama dan email panjang di tabel whitespace-nowrap adalah
                              sumber meluber nomor satu. */ ?>
                     <td class="px-4 py-3 max-w-[14rem] whitespace-normal">
-                        <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($u->name) ?></div>
+                        <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($u->nama) ?></div>
                         <div class="text-xs text-gray-500 dark:text-brand-muted break-words"><?= html_escape($u->email) ?></div>
                         <?php if ($milik_sendiri): ?>
                         <span class="mt-1 inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-gray-400 dark:text-brand-muted/70">
@@ -165,14 +165,14 @@
                     </td>
                     <td class="px-4 py-3">
                         <span class="inline-flex px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary">
-                            <?= html_escape($available_roles[$u->role] ?? ($u->role ?: '-')) ?>
+                            <?= html_escape($available_roles[$u->peran] ?? ($u->peran ?: '-')) ?>
                         </span>
                     </td>
                     <td class="px-4 py-3 text-xs">
-                        <?php if ($u->role === 'admin_kabkota'): ?>
+                        <?php if ($u->peran === 'admin_kabkota'): ?>
                             <?php $kab = current(array_filter($kabupaten_list, fn($k) => $k->id == $u->kabupaten_id)) ?: null; ?>
                             <?= $kab ? html_escape($kab->nama) : '<span class="text-red-500">belum diset</span>' ?>
-                        <?php elseif ($u->role === 'admin_bidang'): ?>
+                        <?php elseif ($u->peran === 'admin_bidang'): ?>
                             <?php $bid = current(array_filter($bidang_list, fn($b) => $b->kode === $u->bidang_kode)) ?: null; ?>
                             <?= $bid ? html_escape($bid->nama) : '<span class="text-red-500">belum diset</span>' ?>
                         <?php else: ?>
@@ -192,7 +192,7 @@
                             <?php /* "Sampai kapan" wajib tampil: itu satu-satunya hal yang
                                      membedakan terkunci (sementara, pulih sendiri) dari
                                      nonaktif (keputusan manusia) di mata pembacanya. */ ?>
-                            <div class="mt-1 text-[11px] text-amber-700 dark:text-brand-primary">sampai <?= html_escape(tgl_id($u->locked_until, TRUE, TRUE)) ?></div>
+                            <div class="mt-1 text-[11px] text-amber-700 dark:text-brand-primary">sampai <?= html_escape(tgl_id($u->terkunci_sampai, TRUE, TRUE)) ?></div>
                         <?php else: ?>
                             <?= $this->load->view('admin/components/status_badge', ['label' => 'Aktif', 'kelas' => 'ok'], TRUE) ?>
                         <?php endif; ?>
@@ -206,7 +206,7 @@
                             <button @click="editOpen = true" class="tombol-aksi">
                                 <i class="ph ph-pencil-simple"></i><span>Ubah peran</span>
                             </button>
-                            <?php if (in_array($u->role, ['admin_kabkota', 'admin_bidang'], TRUE)): ?>
+                            <?php if (in_array($u->peran, ['admin_kabkota', 'admin_bidang'], TRUE)): ?>
                             <a href="<?= base_url('Admin_Privileges/index/' . (int) $u->id) ?>" class="tombol-aksi">
                                 <i class="ph ph-shield-check"></i><span>Hak modul</span>
                             </a>
@@ -232,7 +232,7 @@
                             <button @click="resetOpen = true" class="tombol-aksi">
                                 <i class="ph ph-key"></i><span>Reset sandi</span>
                             </button>
-                            <?php if ($u->role === 'warga' && ! empty($warga_nik_bound[(int)$u->id])): ?>
+                            <?php if ($u->peran === 'warga' && ! empty($warga_nik_bound[(int)$u->id])): ?>
                             <button @click="nikResetOpen = true" class="tombol-aksi">
                                 <i class="ph ph-identification-card"></i><span>Reset NIK</span>
                             </button>
@@ -313,7 +313,7 @@
                                  pembungkus `overflow-x-auto` - terpotong, tidak bisa
                                  diklik. Terukur di production 4 Agt 2026: tombol di
                                  x=1371 sementara panelnya berakhir di x=1385. */ ?>
-                        <?php if ($u->role === 'warga' && ! empty($warga_nik_bound[(int)$u->id])): ?>
+                        <?php if ($u->peran === 'warga' && ! empty($warga_nik_bound[(int)$u->id])): ?>
                         <template x-teleport="body">
                         <div x-show="nikResetOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center whitespace-normal bg-black/50 p-4" @keydown.escape.window="nikResetOpen = false">
                             <div @click.outside="nikResetOpen = false" class="w-full max-w-md rounded-3xl bg-white dark:bg-brand-card p-6 text-left shadow-xl">

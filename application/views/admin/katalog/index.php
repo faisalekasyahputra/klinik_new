@@ -6,12 +6,12 @@
  * `Smart_filter::master_programs()`, sumber yang BERBEDA dari tabel ini, dan
  * selisihnya berarti warga melihat dua nama untuk satu program.
  *
- * Dua sumber: tabel `sf_programs` menentukan status aktif dan nama di antrean
+ * Dua sumber: tabel `sf_program` menentukan status aktif dan nama di antrean
  * admin serta /akun warga; judul di kartu hasil diagnosa dan seluruh aturan
  * kelayakan ada di kode (application/libraries/Smart_filter.php). Selisih nama
  * bisa dibereskan dari layar ini, aturan kelayakan tidak (itu perubahan kode).
  *
- * Kolom `batas_penghasilan_max` ada di tabel dan berisi nilai, tetapi tidak
+ * Kolom `batas_penghasilan_maks` ada di tabel dan berisi nilai, tetapi tidak
  * dibaca kode mana pun (kelayakan dihitung dari desil, bukan penghasilan).
  * Karena itu ia tidak ditampilkan maupun bisa diubah di sini.
  */
@@ -87,14 +87,14 @@ $csrf_hash = $this->security->get_csrf_hash();
                         <td class="px-4 py-3 text-xs max-w-[14rem] whitespace-normal"><?= html_escape($r->nama_kategori ?: '-') ?></td>
                         <td class="px-4 py-3">
                             <?= $this->load->view('admin/components/status_badge', [
-                                'label' => (int) $r->is_active === 1 ? 'Aktif' : 'Nonaktif',
-                                'kelas' => (int) $r->is_active === 1 ? 'ok' : 'reject',
+                                'label' => (int) $r->aktif === 1 ? 'Aktif' : 'Nonaktif',
+                                'kelas' => (int) $r->aktif === 1 ? 'ok' : 'reject',
                             ], TRUE) ?>
                         </td>
                         <td class="px-4 py-3 text-xs"><?= (int) $r->dipakai ?> pengajuan</td>
                         <td class="px-4 py-3">
                             <button type="button" title="Ubah program"
-                                    @click="id=<?= (int) $r->id ?>; nama=<?= htmlspecialchars(json_encode($r->nama_program), ENT_QUOTES) ?>; desk=<?= htmlspecialchars(json_encode($r->deskripsi_singkat), ENT_QUOTES) ?>; aktif=<?= (int) $r->is_active === 1 ? 'true' : 'false' ?>; kode=<?= htmlspecialchars(json_encode($r->kode_program), ENT_QUOTES) ?>; dipakai=<?= (int) $r->dipakai ?>; badge=<?= htmlspecialchars(json_encode((string) $r->badge), ENT_QUOTES) ?>; syarat=<?= htmlspecialchars(json_encode((string) $r->syarat_utama), ENT_QUOTES) ?>; gambar=<?= htmlspecialchars(json_encode((string) $r->gambar), ENT_QUOTES) ?>; urutan=<?= (int) $r->urutan ?>; korsel=<?= (int) $r->tampil_korsel === 1 ? 'true' : 'false' ?>; buka=true" class="tombol-aksi">
+                                    @click="id=<?= (int) $r->id ?>; nama=<?= htmlspecialchars(json_encode($r->nama_program), ENT_QUOTES) ?>; desk=<?= htmlspecialchars(json_encode($r->deskripsi_singkat), ENT_QUOTES) ?>; aktif=<?= (int) $r->aktif === 1 ? 'true' : 'false' ?>; kode=<?= htmlspecialchars(json_encode($r->kode_program), ENT_QUOTES) ?>; dipakai=<?= (int) $r->dipakai ?>; badge=<?= htmlspecialchars(json_encode((string) $r->lencana), ENT_QUOTES) ?>; syarat=<?= htmlspecialchars(json_encode((string) $r->syarat_utama), ENT_QUOTES) ?>; gambar=<?= htmlspecialchars(json_encode((string) $r->gambar), ENT_QUOTES) ?>; urutan=<?= (int) $r->urutan ?>; korsel=<?= (int) $r->tampil_korsel === 1 ? 'true' : 'false' ?>; buka=true" class="tombol-aksi">
                                 <i class="ph ph-pencil-simple" aria-hidden="true"></i><span>Ubah</span>
                             </button>
                         </td>

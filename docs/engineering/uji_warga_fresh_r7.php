@@ -204,7 +204,7 @@ foreach ($checks as $check) {
             JOIN information_schema.TABLES t
               ON t.TABLE_SCHEMA=c.TABLE_SCHEMA AND t.TABLE_NAME=c.TABLE_NAME
             WHERE c.TABLE_SCHEMA=DATABASE()
-              AND ((c.TABLE_NAME='sf_housing_queue' AND c.COLUMN_NAME='recommendation_id')
+              AND ((c.TABLE_NAME='sf_antrean_pengajuan' AND c.COLUMN_NAME='rekomendasi_id')
                 OR (c.TABLE_NAME='sf_rekomendasi_penilaian' AND c.COLUMN_NAME='id'))");
         if ($diagnostic) {
             foreach ($diagnostic->fetch_all(MYSQLI_ASSOC) as $row) {

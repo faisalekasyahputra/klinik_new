@@ -140,8 +140,8 @@ $sandi_awal = $this->session->flashdata('sandi_awal');
         <?php if ( ! empty($akun)): ?>
             <p class="text-sm text-gray-600 dark:text-gray-300">Tertaut ke <strong class="text-gray-900 dark:text-white" data-akun-email><?= html_escape($akun->email) ?></strong>. Pemilik akun bisa mengubah foto, alamat, dan kontak lewat Profil Perusahaan.</p>
             <dl class="mt-3 space-y-1 text-xs text-gray-500 dark:text-brand-muted">
-                <div><dt class="inline">Masuk terakhir:</dt> <dd class="inline"><?= ! empty($akun->active_session_at) ? html_escape(tgl_id($akun->active_session_at)) : 'tidak ada sesi aktif' ?></dd></div>
-                <div><dt class="inline">Sandi:</dt> <dd class="inline"><?= ! empty($akun->password_expires_at) && strtotime($akun->password_expires_at) <= strtotime((string) $akun->password_changed_at) ? 'sandi dari admin, belum diganti pemilik' : 'sudah diatur pemilik' ?></dd></div>
+                <div><dt class="inline">Masuk terakhir:</dt> <dd class="inline"><?= ! empty($akun->sesi_aktif_at) ? html_escape(tgl_id($akun->sesi_aktif_at)) : 'tidak ada sesi aktif' ?></dd></div>
+                <div><dt class="inline">Sandi:</dt> <dd class="inline"><?= ! empty($akun->sandi_kedaluwarsa_at) && strtotime($akun->sandi_kedaluwarsa_at) <= strtotime((string) $akun->sandi_diganti_at) ? 'sandi dari admin, belum diganti pemilik' : 'sudah diatur pemilik' ?></dd></div>
             </dl>
             <form action="<?= base_url('Admin_Srp2/reset_sandi_akun/' . (int) $r->id) ?>" method="post" class="mt-4 space-y-2">
                 <?= $csrf ?>

@@ -26,26 +26,26 @@ class Pengaturan extends MY_Controller {
         $items = [];
 
         foreach ($this->db
-            ->select('sf_housing_queue.id, ticket_code, status_antrean, catatan_admin, source_mode, sf_housing_queue.created_at, sf_programs.nama_program')
-            ->from('sf_housing_queue')
-            ->join('sf_programs', 'sf_programs.id=sf_housing_queue.program_id', 'left')
-            ->where('sf_housing_queue.user_id', (int) $user_id)
-            ->order_by('sf_housing_queue.created_at', 'DESC')->get()->result() as $r) {
+            ->select('sf_antrean_pengajuan.id, kode_tiket, status_antrean, catatan_admin, mode_sumber, sf_antrean_pengajuan.created_at, sf_program.nama_program')
+            ->from('sf_antrean_pengajuan')
+            ->join('sf_program', 'sf_program.id=sf_antrean_pengajuan.program_id', 'left')
+            ->where('sf_antrean_pengajuan.user_id', (int) $user_id)
+            ->order_by('sf_antrean_pengajuan.created_at', 'DESC')->get()->result() as $r) {
             $status = housing_queue_statuses()[$r->status_antrean] ?? ['label' => 'Sedang Diverifikasi', 'badge' => 'pending'];
             $items[] = [
                 'jenis' => 'Antrean Perumahan - ' . ($r->nama_program ?: 'Program'), 'icon' => 'ph-ticket',
-                'judul' => !empty($r->ticket_code) ? $r->ticket_code : 'Tiket belum tersedia',
+                'judul' => !empty($r->kode_tiket) ? $r->kode_tiket : 'Tiket belum tersedia',
                 'status_label' => $status['label'], 'status_kelas' => $status['badge'],
                 'created_at' => $r->created_at,
                 'aksi_url' => null,
                 'aksi_post_url' => $r->status_antrean === 'needs_revision'
                     ? 'warga/pendataan' : null,
                 'aksi_post_fields' => $r->status_antrean === 'needs_revision'
-                    ? ['action' => 'start_revision', 'queue_id' => $r->id] : [],
+                    ? ['action' => 'start_revision', 'antrean_id' => $r->id] : [],
                 'aksi_label' => $r->status_antrean === 'needs_revision'
                     ? 'Mulai Perbaikan' : null,
                 'catatan_admin' => $r->catatan_admin,
-                'is_simulation' => $r->source_mode === 'simulation',
+                'is_simulation' => $r->mode_sumber === 'simulation',
                 // Perjalanan pengajuan, bukan cuma status terakhir - supaya
                 // pemohon tahu sudah sampai mana dan apa yang sudah terjadi.
                 'riwayat' => $this->Housing_assessment_model->get_owned_timeline($r->id, (int) $user_id),
@@ -55,7 +55,7 @@ class Pengaturan extends MY_Controller {
         // catatan_admin ikut diambil supaya pelapor tahu ALASAN status berubah,
         // bukan cuma statusnya - pola yang sudah dipakai SRP2 tapi dulu belum
         // ada di aduan (AUDIT_ROLE_ADMIN_SCOPED.md #7).
-        foreach ($this->db->select('id, judul, bidang, status, catatan_admin, created_at')
+        foreach ($this->db->select('id, judul, bidang_kode, status, catatan_admin, created_at')
             ->where('user_id', (int) $user_id)->order_by('created_at', 'DESC')
             ->get('aduan')->result() as $r) {
             $status_map = ['Baru' => 'pending', 'Diproses' => 'process', 'Selesai' => 'ok'];
@@ -73,7 +73,7 @@ class Pengaturan extends MY_Controller {
             // halaman ini query sendiri - salinan logika kedua, dan itu persis
             // yang dulu melahirkan bug 0/14 dokumen di wizard.
             $srp2 = $this->Auth_model->srp2_state($user_id);
-            $sp2  = $srp2 ? $this->db->get_where('srp2_registrations', ['id' => $srp2['registration_id']])->row() : NULL;
+            $sp2  = $srp2 ? $this->db->get_where('srp2_pengajuan', ['id' => $srp2['pengajuan_id']])->row() : NULL;
             if ($sp2) {
                 // Label status + label tombol aksi. Tombolnya diberi nama sesuai
                 // apa yang BENAR-BENAR terjadi saat diklik, bukan "Kelola" untuk
@@ -180,9 +180,9 @@ class Pengaturan extends MY_Controller {
         if (!$state) { show_404(); return; }
         $this->load->helper('srp2');
         $files = [];
-        foreach ($this->db->select('document_key, original_name')->where('registration_id', $state['registration_id'])
-            ->get('srp2_documents')->result_array() as $file) {
-            $files[$file['document_key']] = $file['original_name'];
+        foreach ($this->db->select('kunci_dokumen, nama_asli')->where('pengajuan_id', $state['pengajuan_id'])
+            ->get('srp2_dokumen')->result_array() as $file) {
+            $files[$file['kunci_dokumen']] = $file['nama_asli'];
         }
         $this->render_user_dashboard('pages/pengaturan/dokumen', [
             'title' => 'Dokumen SRP2', 'srp2' => $state, 'files' => $files,
@@ -219,7 +219,7 @@ class Pengaturan extends MY_Controller {
             // Lewat satu sumber bersama, sama dengan index() dan wizard (§17 poin 13).
             $srp2 = $this->Auth_model->srp2_state($user_id);
             $datacontent['pengajuan_sp2'] = $srp2
-                ? $this->db->get_where('srp2_registrations', ['id' => $srp2['registration_id']])->row()
+                ? $this->db->get_where('srp2_pengajuan', ['id' => $srp2['pengajuan_id']])->row()
                 : NULL;
             $datacontent['direktori'] = $this->direktori_milik_saya();
         }
@@ -239,7 +239,7 @@ class Pengaturan extends MY_Controller {
         // baris yang DICEK dan baris yang DITULIS bisa berbeda begitu satu user
         // punya lebih dari satu baris pengajuan.
         $pengajuan = $this->db->where('user_id', $user_id)
-            ->order_by('id', 'DESC')->get('srp2_registrations')->row();
+            ->order_by('id', 'DESC')->get('srp2_pengajuan')->row();
         if (!$pengajuan) {
             $this->session->set_flashdata('error', 'Data pengajuan sertifikasi tidak ditemukan.');
             redirect('akun/profil');
@@ -336,7 +336,7 @@ class Pengaturan extends MY_Controller {
         // yang menimpa SEMUA baris milik user itu sekaligus.
         $this->db->trans_start();
         $this->db->where('id', $pengajuan->id)->where('user_id', $user_id);
-        $this->db->update('srp2_registrations', $data);
+        $this->db->update('srp2_pengajuan', $data);
 
         // Perubahan ikut menular ke direktori publik kalau pengajuan ini memang
         // sudah terbit di sana. Dulu baris direktori hanya diisi SEKALI saat
@@ -345,7 +345,7 @@ class Pengaturan extends MY_Controller {
         // halaman profil pengembang". Satu fungsi upsert yang sama dengan yang
         // dipakai Admin_Srp2::proses(), bukan salinan kedua.
         $tersinkron = FALSE;
-        if ( ! empty($pengajuan->certified_developer_id)) {
+        if ( ! empty($pengajuan->pengembang_id)) {
             $segar = (object) array_merge((array) $pengajuan, $data);
             $this->Auth_model->upsert_direktori_publik($segar);
             $tersinkron = TRUE;
@@ -366,11 +366,11 @@ class Pengaturan extends MY_Controller {
 
     /**
      * Baris Direktori SRP2 milik akun yang login. Pemiliknya ditentukan dari SESI
-     * (srp2_certified_developers.user_id), tidak pernah dari input: anti-IDOR.
+     * (srp2_direktori_pengembang.user_id), tidak pernah dari input: anti-IDOR.
      */
     private function direktori_milik_saya() {
         if ($this->session->userdata('role') !== 'pengembang') { return NULL; }
-        return $this->db->get_where('srp2_certified_developers', ['user_id' => (int) $this->get_user_id()])->row();
+        return $this->db->get_where('srp2_direktori_pengembang', ['user_id' => (int) $this->get_user_id()])->row();
     }
 
     /**
@@ -429,7 +429,7 @@ class Pengaturan extends MY_Controller {
 
         $this->db->trans_start();
         $this->db->where('id', (int) $row->id)->where('user_id', (int) $this->get_user_id())
-            ->update('srp2_certified_developers', $data);
+            ->update('srp2_direktori_pengembang', $data);
         $this->Auth_model->sinkron_pengajuan_dari_direktori((int) $row->id);
         $this->db->trans_complete();
         if ($this->db->trans_status() === FALSE) {
@@ -440,7 +440,7 @@ class Pengaturan extends MY_Controller {
         if ($foto !== NULL) { $this->hapus_foto_srp2($row->foto_profil); }
 
         $this->catat_audit('srp2_profil_diubah_pengembang', 'Pengembang memperbarui profil perusahaan "' . $row->nama_perusahaan . '"',
-            'srp2_certified_developers', (string) (int) $row->id, ['kolom' => array_keys($data)]);
+            'srp2_direktori_pengembang', (string) (int) $row->id, ['kolom' => array_keys($data)]);
         $this->session->set_flashdata('success', $row->status_aktif
             ? 'Profil perusahaan disimpan dan langsung tampil di direktori publik.'
             : 'Profil perusahaan disimpan. Entri Anda sedang tidak ditayangkan di direktori publik oleh dinas.');
@@ -472,9 +472,9 @@ class Pengaturan extends MY_Controller {
 
         // Check unique username if provided
         if (!empty($username)) {
-            $this->db->where('username', $username);
+            $this->db->where('nama_pengguna', $username);
             $this->db->where('id !=', $user_id);
-            if ($this->db->count_all_results('usr_users') > 0) {
+            if ($this->db->count_all_results('usr_akun') > 0) {
                 $this->session->set_flashdata('error', 'Username sudah digunakan, silakan pilih yang lain.');
                 redirect('akun/profil');
                 return;
@@ -482,12 +482,12 @@ class Pengaturan extends MY_Controller {
         }
 
         $data = [
-            'name'  => $name,
-            'phone' => $phone
+            'nama'  => $name,
+            'no_hp' => $phone
         ];
 
         if (!empty($username)) {
-            $data['username'] = $username;
+            $data['nama_pengguna'] = $username;
         }
 
         /* BUTIR 21 PUTARAN 2: isian NIK di Profil Saya.
@@ -507,7 +507,7 @@ class Pengaturan extends MY_Controller {
         if ($nik_kirim !== '') {
             $this->load->library('encryption_lib');
             $punya = (string) $this->db->select('nik_lookup_hash')
-                ->get_where('usr_users', ['id' => $user_id])->row('nik_lookup_hash');
+                ->get_where('usr_akun', ['id' => $user_id])->row('nik_lookup_hash');
 
             if ($punya !== '') {
                 /* Sudah punya NIK. Kiriman yang SAMA dibiarkan lewat tanpa
@@ -527,7 +527,7 @@ class Pengaturan extends MY_Controller {
             } else {
                 $sidik = $this->encryption_lib->deterministic_hash($nik_kirim);
                 $dipakai = $this->db->where('nik_lookup_hash', $sidik)
-                    ->where('id !=', $user_id)->count_all_results('usr_users');
+                    ->where('id !=', $user_id)->count_all_results('usr_akun');
                 if ($dipakai > 0) {
                     $this->session->set_flashdata('error',
                         'NIK ini sudah terdaftar pada akun lain. Satu NIK hanya untuk satu akun.');
@@ -559,8 +559,8 @@ class Pengaturan extends MY_Controller {
             }
             $current_password = (string) $this->input->post('current_password');
             $user = $this->Auth_model->find_by_id($user_id);
-            $valid_password = $user && !empty($user->password)
-                && password_verify($current_password, (string) $user->password);
+            $valid_password = $user && !empty($user->kata_sandi)
+                && password_verify($current_password, (string) $user->kata_sandi);
             $this->load->library('sensitive_buffer');
             $this->sensitive_buffer->wipe($current_password);
             if (isset($_POST['current_password'])) {
@@ -584,12 +584,12 @@ class Pengaturan extends MY_Controller {
                 return;
             }
             // Tanpa ini kedaluwarsa 90 hari bisa dilewati dengan mengetik ulang sandi lama.
-            if (password_verify($password, (string) $user->password)) {
+            if (password_verify($password, (string) $user->kata_sandi)) {
                 $this->session->set_flashdata('error', 'Password baru tidak boleh sama dengan password saat ini.');
                 redirect('akun/profil');
                 return;
             }
-            $data['password'] = password_hash($password, PASSWORD_BCRYPT);
+            $data['kata_sandi'] = password_hash($password, PASSWORD_BCRYPT);
             $this->sensitive_buffer->wipe($password);
             if (isset($_POST['password'])) { $this->sensitive_buffer->wipe($_POST['password']); }
             if (isset($_POST['password_confirm'])) { $this->sensitive_buffer->wipe($_POST['password_confirm']); }
@@ -598,7 +598,7 @@ class Pengaturan extends MY_Controller {
 
         $this->User_model->update_user($user_id, $data);
 
-        if (isset($data['password'])) {
+        if (isset($data['kata_sandi'])) {
             $this->session->unset_userdata('password_change_required');
             $this->session->sess_regenerate(TRUE);
             $this->session->set_userdata('session_auth_token',
@@ -627,14 +627,14 @@ class Pengaturan extends MY_Controller {
         $this->load->library('sensitive_buffer');
         $password = (string) $this->input->post('current_password');
         $user = $this->Auth_model->find_by_id($user_id);
-        $valid = $user && !empty($user->password)
-            && password_verify($password, (string) $user->password);
+        $valid = $user && !empty($user->kata_sandi)
+            && password_verify($password, (string) $user->kata_sandi);
         $this->sensitive_buffer->wipe($password);
         if (isset($_POST['current_password'])) {
             $this->sensitive_buffer->wipe($_POST['current_password']);
         }
         if (!$valid) {
-            $this->catat_audit('ekspor_data_ditolak', 'Verifikasi sandi untuk ekspor data akun gagal', 'usr_users', (string) $user_id);
+            $this->catat_audit('ekspor_data_ditolak', 'Verifikasi sandi untuk ekspor data akun gagal', 'usr_akun', (string) $user_id);
             $this->session->set_flashdata('error', 'Password salah atau akun belum memiliki password. Data tidak diekspor.');
             redirect('akun/profil');
             return;
@@ -657,7 +657,7 @@ class Pengaturan extends MY_Controller {
             $this->sensitive_buffer->wipe($data);
         }
 
-        if (!$this->catat_audit('data_akun_diekspor', 'Pemilik akun mengunduh salinan data', 'usr_users', (string) $user_id)) {
+        if (!$this->catat_audit('data_akun_diekspor', 'Pemilik akun mengunduh salinan data', 'usr_akun', (string) $user_id)) {
             $this->sensitive_buffer->wipe($json);
             $this->session->set_flashdata('error', 'Ekspor belum dapat dicatat. Silakan coba lagi.');
             redirect('akun/profil');
@@ -695,11 +695,11 @@ class Pengaturan extends MY_Controller {
         $this->db->trans_begin();
         $id = $this->Aduan_model->create([
             'user_id' => $user_id,
-            'nama' => (string) ($user->name ?: $user->username ?: 'Pengguna'),
+            'nama' => (string) ($user->nama ?: $user->nama_pengguna ?: 'Pengguna'),
             'email' => (string) $user->email,
             'judul' => $title,
             'pesan' => 'Mohon tinjau penghapusan data layanan yang masih tersimpan setelah akun dihapus. Beri tahu data yang dapat dihapus, yang wajib diarsipkan, dan dasar retensinya.',
-            'bidang' => NULL,
+            'bidang_kode' => NULL,
             'lampiran' => NULL,
         ]);
         $audited = $id && $this->catat_audit('penghapusan_data_diminta',
@@ -738,15 +738,15 @@ class Pengaturan extends MY_Controller {
         }
         $current_password = (string) $this->input->post('current_password');
         $user = $this->Auth_model->find_by_id($user_id);
-        $valid_password = $user && !empty($user->password)
-            && password_verify($current_password, (string) $user->password);
+        $valid_password = $user && !empty($user->kata_sandi)
+            && password_verify($current_password, (string) $user->kata_sandi);
         $this->load->library('sensitive_buffer');
         $this->sensitive_buffer->wipe($current_password);
         if (isset($_POST['current_password'])) {
             $this->sensitive_buffer->wipe($_POST['current_password']);
         }
         if (!$valid_password) {
-            $this->catat_audit('hapus_akun_ditolak', 'Verifikasi sandi untuk hapus akun gagal', 'usr_users', (string) $user_id);
+            $this->catat_audit('hapus_akun_ditolak', 'Verifikasi sandi untuk hapus akun gagal', 'usr_akun', (string) $user_id);
             $this->session->set_flashdata('error', 'Password salah. Akun tidak dihapus.');
             redirect('akun/profil');
             return;

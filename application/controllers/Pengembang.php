@@ -12,12 +12,12 @@ class Pengembang extends MY_Controller {
 
     public function sertifikasi() {
         $data['judul'] = '';
-        $table = $this->db->table_exists('srp2_certified_developers') ? 'srp2_certified_developers' : 'srp2_registrations';
-        $status = $table === 'srp2_certified_developers' ? ['status_aktif' => 1] : ['status_verifikasi' => 'Diterima'];
+        $table = $this->db->table_exists('srp2_direktori_pengembang') ? 'srp2_direktori_pengembang' : 'srp2_pengajuan';
+        $status = $table === 'srp2_direktori_pengembang' ? ['status_aktif' => 1] : ['status_verifikasi' => 'Diterima'];
         // `asosiasi` ikut diambil 14 Agt 2026 - kolom baru di tabel direktori
         // (permintaan user). Ada di KEDUA tabel yang mungkin dipakai di atas,
         // jadi tidak perlu percabangan select terpisah.
-        $select = $table === 'srp2_certified_developers'
+        $select = $table === 'srp2_direktori_pengembang'
             ? 'id, nama_perusahaan, foto_profil, asosiasi, kabupaten_id, status_aktif, status_sertifikasi, sertifikat_terbit, sertifikat_berakhir'
             : 'id, nama_perusahaan, NULL AS foto_profil, asosiasi, kabupaten_id, status_verifikasi AS status_sertifikasi, NULL AS sertifikat_terbit, NULL AS sertifikat_berakhir';
         $query = $this->db->select($select, FALSE);
@@ -39,7 +39,7 @@ class Pengembang extends MY_Controller {
         $role = $this->session->userdata('role');
         $is_pengembang = $is_logged && $role === 'pengembang';
 
-        $registration_id = null;
+        $pengajuan_id = null;
         $uploaded_keys = [];
         $status_verifikasi = null;
         $catatan_admin = null;
@@ -51,7 +51,7 @@ class Pengembang extends MY_Controller {
             // rolenya di-set manual admin.
             $srp2 = $this->auth_model->srp2_state($this->get_user_id());
             if ($srp2) {
-                $registration_id   = $srp2['registration_id'];
+                $pengajuan_id   = $srp2['pengajuan_id'];
                 $status_verifikasi = $srp2['status'];
                 $catatan_admin     = $srp2['catatan_admin'];
                 $uploaded_keys     = $srp2['uploaded_keys'];
@@ -70,8 +70,8 @@ class Pengembang extends MY_Controller {
             // Role pengelola tidak perlu disuruh "daftar akun pengembang":
             // mereka justru sisi yang memverifikasi SRP2.
             'is_pengelola'     => $is_logged && in_array($role, ['admin', 'admin_kabkota', 'admin_bidang'], TRUE),
-            'nama_user'        => $this->session->userdata('name') ?: $this->session->userdata('email'),
-            'registration_id'  => $registration_id,
+            'nama_pengguna'        => $this->session->userdata('name') ?: $this->session->userdata('email'),
+            'pengajuan_id'  => $pengajuan_id,
             'dokumen'          => $this->dokumen_persyaratan(),
             // Keterangan per formulir (revisi dinas 3 Agt 2026) - helper terpisah
             // supaya bentuk `dokumen` tidak berubah bagi empat pemakainya.
@@ -100,7 +100,7 @@ class Pengembang extends MY_Controller {
 
     public function profil($id = NULL) {
         if (!is_numeric($id)) show_404();
-        if ($this->db->table_exists('srp2_certified_developers')) {
+        if ($this->db->table_exists('srp2_direktori_pengembang')) {
             /* KOLOM DISEBUT SATU PER SATU, dan itu bukan gaya penulisan.
                Sebelum migrasi 040 baris ini `SELECT *`, dan begitu NPWP
                ditambahkan ke tabel - terenkripsi sekalipun - ia IKUT TERKIRIM ke
@@ -118,12 +118,12 @@ class Pengembang extends MY_Controller {
                 ->select('id, nama_perusahaan, foto_profil, alamat_kantor, website, instagram, sosmed_lainnya, no_keanggotaan, no_whatsapp, email_kontak,'
                     . ' status_aktif, status_sertifikasi, kabupaten_id, asosiasi,'
                     . ' sertifikat_terbit, sertifikat_berakhir, created_at, updated_at')
-                ->get_where('srp2_certified_developers', ['id' => (int) $id, 'status_aktif' => 1])->row();
+                ->get_where('srp2_direktori_pengembang', ['id' => (int) $id, 'status_aktif' => 1])->row();
 
             // Baris direktori adalah SATU sumber profil perusahaan (migrasi 070): medan kosong tidak
             // lagi dilengkapi dari pengajuan. Saat diterima, upsert_direktori_publik() sudah menyalin
             // isian pengajuan ke sini; sesudahnya pemilik menyunting baris ini di Profil Perusahaan.
-        } else $data['pengembang'] = $this->db->get_where('srp2_registrations', ['id' => (int) $id, 'status_verifikasi' => 'Diterima'])->row();
+        } else $data['pengembang'] = $this->db->get_where('srp2_pengajuan', ['id' => (int) $id, 'status_verifikasi' => 'Diterima'])->row();
         if (!$data['pengembang']) show_404();
         $this->render('pages/pengembang/profil', $data);
     }
@@ -141,7 +141,7 @@ class Pengembang extends MY_Controller {
      *
      * Redirect dipertahankan supaya bookmark/tautan lama tidak jadi dead-end.
      */
-    public function mulai_unggah($document_key = NULL) { redirect('Pengembang/syarat'); }
+    public function mulai_unggah($kunci_dokumen = NULL) { redirect('Pengembang/syarat'); }
     public function dokumen($id = NULL) { redirect('Pengembang/syarat'); }
 
     /**
@@ -155,15 +155,15 @@ class Pengembang extends MY_Controller {
      * DAN user_id dari sesi, sehingga pengembang lain tidak bisa membuka berkas
      * yang bukan miliknya.
      */
-    public function lihat_dokumen_saya($id = NULL, $document_key = NULL) {
-        if (!is_numeric($id) || empty($document_key) || !$this->akses_pengembang('Pengembang/syarat')) { show_404(); return; }
+    public function lihat_dokumen_saya($id = NULL, $kunci_dokumen = NULL) {
+        if (!is_numeric($id) || empty($kunci_dokumen) || !$this->akses_pengembang('Pengembang/syarat')) { show_404(); return; }
         $id = (int) $id;
 
-        $milik = $this->db->get_where('srp2_registrations', ['id' => $id, 'user_id' => $this->get_user_id()])->row();
+        $milik = $this->db->get_where('srp2_pengajuan', ['id' => $id, 'user_id' => $this->get_user_id()])->row();
         if (!$milik) { show_404(); return; }
 
-        $doc = $this->db->where(['registration_id' => $id, 'document_key' => $document_key])
-            ->get('srp2_documents')->row();
+        $doc = $this->db->where(['pengajuan_id' => $id, 'kunci_dokumen' => $kunci_dokumen])
+            ->get('srp2_dokumen')->row();
         if (!$doc) { show_404(); return; }
 
         // Pemilik sah + ledger ada tapi FISIKNYA hilang → jangan 404 bisu.
@@ -171,24 +171,24 @@ class Pengembang extends MY_Controller {
         // ber-DB-sementara yang berbagi folder private_uploads (tabrakan id).
         // 404 tetap untuk bukan-pemilik/key salah (anti-IDOR), tapi pemilik
         // berhak tahu bedanya "tidak pernah ada" dan "tercatat namun hilang".
-        $path = $this->private_upload_dir('srp2', $id) . basename((string) $doc->stored_name);
+        $path = $this->private_upload_dir('srp2', $id) . basename((string) $doc->nama_simpan);
         if (!is_file($path)) {
             log_message('error', sprintf(
                 'Berkas SRP2 tercatat di ledger tapi hilang dari disk: reg=%d key=%s stored=%s user=%d',
-                $id, $document_key, $doc->stored_name, $this->get_user_id()
+                $id, $kunci_dokumen, $doc->nama_simpan, $this->get_user_id()
             ));
             // Bahasa manusia, bukan bahasa sistem: label dokumen yang dikenal
             // pemohon (bukan kunci mentah form_1), tanpa "tercatat"/"fisik"/
             // "penyimpanan". Detail teknisnya sudah aman di log ERROR di atas.
             $labels = $this->dokumen_persyaratan();
             $this->session->set_flashdata('error',
-                'Maaf, dokumen "' . ($labels[$document_key] ?? $document_key) . '" sudah tidak tersedia dan tidak bisa dibuka. '
+                'Maaf, dokumen "' . ($labels[$kunci_dokumen] ?? $kunci_dokumen) . '" sudah tidak tersedia dan tidak bisa dibuka. '
                 . 'Silakan hubungi admin agar pengajuan Anda dibuka kembali, lalu unggah ulang dokumen tersebut.');
             redirect('Pengembang/syarat');
             return;
         }
 
-        $this->serve_private_file('srp2', $id, $doc->stored_name, $doc->mime_type);
+        $this->serve_private_file('srp2', $id, $doc->nama_simpan, $doc->mime_type);
     }
 
     public function simpan_dokumen($id = NULL) {
@@ -200,13 +200,13 @@ class Pengembang extends MY_Controller {
         // Dulu guard memakai is_numeric(), query memakai (int), tapi path berkas
         // memakai $id MENTAH - dan private_upload_dir() membuang karakter non
         // alfanumerik, jadi "7.0" menjadi direktori "70". Hasilnya: baris DB
-        // benar (registration_id=7) tapi berkasnya mendarat di srp2/70/, admin
+        // benar (pengajuan_id=7) tapi berkasnya mendarat di srp2/70/, admin
         // melihat 404 untuk SETIAP dokumen, sementara hitungan 14/14 lolos.
         $id = (int) $id;
 
         // Anti-IDOR: WHERE user_id selalu dari sesi - pengembang lain tidak bisa menulis ke registrasi ini.
-        $registration = $this->db->get_where('srp2_registrations', ['id' => $id, 'user_id' => $this->get_user_id()])->row();
-        if (!$registration || !$this->db->table_exists('srp2_documents')) {
+        $registration = $this->db->get_where('srp2_pengajuan', ['id' => $id, 'user_id' => $this->get_user_id()])->row();
+        if (!$registration || !$this->db->table_exists('srp2_dokumen')) {
             if ($is_ajax) { $this->output->set_status_header(404)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => 'Pengajuan tidak ditemukan.'])); return; }
             show_404();
         }
@@ -230,7 +230,7 @@ class Pengembang extends MY_Controller {
         $gagal = function ($message, $key = NULL) use ($is_ajax, $return_url) {
             if ($is_ajax) {
                 $this->output->set_content_type('application/json')->set_output(json_encode(
-                    array_filter(['status' => 'error', 'document_key' => $key, 'message' => $message])));
+                    array_filter(['status' => 'error', 'kunci_dokumen' => $key, 'message' => $message])));
                 return;
             }
             $this->session->set_flashdata('error', $message); redirect($return_url);
@@ -282,8 +282,8 @@ class Pengembang extends MY_Controller {
         // menyapu berdasarkan nama di DB tidak akan pernah menemukannya lagi.
         // Konsekuensi UU PDP: akta/NPWP/laporan keuangan selamat dari hapus akun.
         $lama = [];
-        foreach ($this->db->where('registration_id', $id)->where_in('document_key', array_keys($siap))
-                     ->get('srp2_documents')->result() as $d) { $lama[$d->document_key] = $d->stored_name; }
+        foreach ($this->db->where('pengajuan_id', $id)->where_in('kunci_dokumen', array_keys($siap))
+                     ->get('srp2_dokumen')->result() as $d) { $lama[$d->kunci_dokumen] = $d->nama_simpan; }
 
         $stored = []; $baru_di_disk = [];
         foreach ($siap as $key => $s) {
@@ -296,19 +296,19 @@ class Pengembang extends MY_Controller {
                 return $gagal('Berkas gagal disimpan.', $key);
             }
             $baru_di_disk[] = $name;
-            $row = ['registration_id' => $id, 'document_key' => $key, 'original_name' => substr(basename($s['file']['name']), 0, 255), 'stored_name' => $name, 'mime_type' => $s['mime'], 'file_size' => (int) $s['file']['size']];
+            $row = ['pengajuan_id' => $id, 'kunci_dokumen' => $key, 'nama_asli' => substr(basename($s['file']['name']), 0, 255), 'nama_simpan' => $name, 'mime_type' => $s['mime'], 'ukuran_berkas' => (int) $s['file']['size']];
             // Baris DB ditulis DI DALAM loop, bukan sesudahnya - berkas yang
             // sudah pindah selalu punya barisnya.
-            $this->db->replace('srp2_documents', $row);
+            $this->db->replace('srp2_dokumen', $row);
             // Berkas lama dibuang SETELAH penggantinya tercatat, bukan sebelum.
             if (!empty($lama[$key]) && $lama[$key] !== $name) { @unlink($path . basename($lama[$key])); }
             $stored[] = $row;
         }
 
         if ($is_ajax) {
-            $uploaded_count = $this->db->where('registration_id', $id)->count_all_results('srp2_documents');
+            $uploaded_count = $this->db->where('pengajuan_id', $id)->count_all_results('srp2_dokumen');
             $this->output->set_content_type('application/json')->set_output(json_encode([
-                'status' => 'success', 'document_key' => $stored[0]['document_key'], 'uploaded_count' => $uploaded_count,
+                'status' => 'success', 'kunci_dokumen' => $stored[0]['kunci_dokumen'], 'uploaded_count' => $uploaded_count,
             ]));
             return;
         }
@@ -319,7 +319,7 @@ class Pengembang extends MY_Controller {
         $is_ajax = $this->input->is_ajax_request();
         $return_url = $this->input->post('return_to') === 'dashboard' ? 'akun/dokumen' : 'Pengembang/syarat';
         if (!is_numeric($id) || !$this->akses_pengembang('Pengembang/syarat') || $this->input->method(TRUE) !== 'POST') { if (!$is_ajax) show_404(); return; }
-        $registration = $this->db->get_where('srp2_registrations', ['id' => (int) $id, 'user_id' => $this->get_user_id()])->row();
+        $registration = $this->db->get_where('srp2_pengajuan', ['id' => (int) $id, 'user_id' => $this->get_user_id()])->row();
         if (!$registration) {
             if ($is_ajax) { $this->output->set_status_header(404)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => 'Pengajuan tidak ditemukan.'])); return; }
             show_404();
@@ -329,7 +329,7 @@ class Pengembang extends MY_Controller {
             if ($is_ajax) { $this->output->set_status_header(409)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => $message])); return; }
             $this->session->set_flashdata('error', $message); redirect('akun'); return;
         }
-        $required = count($this->dokumen_persyaratan()); $uploaded = $this->db->where('registration_id', (int) $id)->count_all_results('srp2_documents');
+        $required = count($this->dokumen_persyaratan()); $uploaded = $this->db->where('pengajuan_id', (int) $id)->count_all_results('srp2_dokumen');
         if ($uploaded < $required) {
             $message = 'Lengkapi seluruh ' . $required . ' dokumen sebelum mengirim pengajuan.';
             if ($is_ajax) { $this->output->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'message' => $message, 'uploaded_count' => $uploaded, 'required' => $required])); return; }
@@ -353,8 +353,8 @@ class Pengembang extends MY_Controller {
         // Bentrok dengan direktori publik milik ORANG LAIN. Baris direktori milik
         // pemohon ini sendiri (kirim ulang setelah diperbaiki) sengaja dikecualikan.
         $this->db->where('nama_perusahaan', $nama);
-        if ($registration->certified_developer_id) { $this->db->where('id !=', $registration->certified_developer_id); }
-        if ($this->db->count_all_results('srp2_certified_developers') > 0) {
+        if ($registration->pengembang_id) { $this->db->where('id !=', $registration->pengembang_id); }
+        if ($this->db->count_all_results('srp2_direktori_pengembang') > 0) {
             $message = 'Nama perusahaan "' . $nama . '" sudah terdaftar di direktori pengembang bersertifikat. Periksa kembali penulisannya di halaman Profil, atau hubungi admin bila ini memang perusahaan Anda.';
             if ($is_ajax) { $this->output->set_status_header(409)->set_content_type('application/json')->set_output(json_encode(['status' => 'error', 'code' => 'nama_perusahaan_bentrok', 'message' => $message, 'redirect' => base_url('akun/profil')])); return; }
             $this->session->set_flashdata('error', $message); redirect('akun/profil'); return;
@@ -368,7 +368,7 @@ class Pengembang extends MY_Controller {
         // catatan penolakan, tepat sesudah pemohon selesai memperbaiki. Dua
         // permukaan yang sama-sama dia lihat menceritakan hal berbeda.
         $this->db->where('id', (int) $id)->where('user_id', $this->get_user_id())
-            ->update('srp2_registrations', [
+            ->update('srp2_pengajuan', [
                 'status_verifikasi' => 'Pending',
                 'catatan_admin'     => NULL,
                 'reviewed_by'       => NULL,

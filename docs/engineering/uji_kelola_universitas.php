@@ -30,10 +30,10 @@ $uploads = $uploads === '' ? dirname($AKAR) . '/private_uploads' : rtrim(preg_ma
 
 $cek = function ($ok, $l) use (&$total, &$gagal) { $total++; if (!$ok) $gagal++; echo ($ok ? '  OK    ' : '  GAGAL ') . $l . "\n"; };
 $nilai = function ($sql) use ($db) { $r = $db->query($sql); $b = $r ? $r->fetch_row() : NULL; return $b ? $b[0] : NULL; };
-$baris = function ($id) use ($db) { return $db->query('SELECT * FROM usr_users WHERE id=' . (int) $id)->fetch_assoc(); };
+$baris = function ($id) use ($db) { return $db->query('SELECT * FROM usr_akun WHERE id=' . (int) $id)->fetch_assoc(); };
 $akun = function ($role, $bidang = NULL, $telp = '081234567890') use ($db, $tag, $sandi, &$uid) {
     $e = "{$tag}_{$role}" . count($uid) . '@example.test'; $h = password_hash($sandi, PASSWORD_BCRYPT);
-    $st = $db->prepare("INSERT INTO usr_users (name,email,password,role,bidang_kode,phone,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at) VALUES (?,?,?,?,?,?,'active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
+    $st = $db->prepare("INSERT INTO usr_akun (nama,email,kata_sandi,peran,bidang_kode,no_hp,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at) VALUES (?,?,?,?,?,?,'active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
     $nama = "Uji {$role} {$tag}";
     $st->bind_param('ssssss', $nama, $e, $h, $role, $bidang, $telp); $st->execute();
     $uid[] = $db->insert_id; return [$db->insert_id, $e];
@@ -78,8 +78,8 @@ $kkn = function ($user, $mulai, $selesai, $status, $tambahan = '') use ($db, $ta
     if ($tambahan !== '') $db->query("UPDATE kkn_magang_pendaftaran SET {$tambahan} WHERE id={$id}");
     return $id;
 };
-$jejak = fn($aksi, $id) => (int) $nilai("SELECT COUNT(*) FROM sys_jejak_audit WHERE aksi='{$aksi}' AND objek_tipe='usr_users' AND objek_id='" . (int) $id . "'");
-$kedaluwarsa = fn($id) => (int) $nilai("SELECT password_expires_at <= NOW() FROM usr_users WHERE id=" . (int) $id) === 1;
+$jejak = fn($aksi, $id) => (int) $nilai("SELECT COUNT(*) FROM sys_jejak_audit WHERE aksi='{$aksi}' AND objek_tipe='usr_akun' AND objek_id='" . (int) $id . "'");
+$kedaluwarsa = fn($id) => (int) $nilai("SELECT sandi_kedaluwarsa_at <= NOW() FROM usr_akun WHERE id=" . (int) $id) === 1;
 // Masih login? akun/profil terbuka untuk setiap peran, juga saat sandi wajib diganti.
 $masuk = fn($jar) => strpos($http($jar, 'akun/profil')[2], 'Auth/login') === FALSE;
 $ember_ip = function ($pol) { $k = []; foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) $k[] = hash('sha256', $pol . ':ip:' . $ip); return $k; };
@@ -88,8 +88,8 @@ $ember = [];
 try {
     echo "=== UJI KELOLA UNIVERSITAS (keputusan 29 Sep 2026) ===\n";
     foreach (['login', 'profile_password'] as $pol) foreach ($ember_ip($pol) as $k) {
-        $ember[$k] = $db->query("SELECT limit_key, window_started_at, failed_attempts FROM sys_rate_limits WHERE limit_key='$k'")->fetch_assoc();
-        $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
+        $ember[$k] = $db->query("SELECT kunci, jendela_mulai_at, jumlah_gagal FROM sys_batas_laju WHERE kunci='$k'")->fetch_assoc();
+        $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
     }
     [$idAdm, $eAdm] = $akun('admin');
     [$idBid, $eBid] = $akun('admin_bidang', 'kawasan');
@@ -115,25 +115,25 @@ try {
     $eUbah = "{$tag}_ubah@example.test";
     [$k] = $kirim($jBid, 'Kemitraan_Bidang/ubah_universitas', ['id' => $idU, 'name' => "Univ Baru {$tag}", 'email' => $eUbah, 'phone' => '0812 3456 7890', 'role' => 'admin']);
     $u = $baris($idU);
-    $cek($u['name'] === "Univ Baru {$tag}" && $u['email'] === $eUbah && $u['phone'] === '0812 3456 7890' && $u['role'] === 'universitas',
+    $cek($u['nama'] === "Univ Baru {$tag}" && $u['email'] === $eUbah && $u['no_hp'] === '0812 3456 7890' && $u['peran'] === 'universitas',
         'Sunting nama, email, HP tersimpan; role=admin yang disisipkan diabaikan (role tetap universitas)');
-    $cek($jejak('universitas_diubah', $idU) === 1, 'Sunting tercatat di jejak audit dengan objek usr_users id');
+    $cek($jejak('universitas_diubah', $idU) === 1, 'Sunting tercatat di jejak audit dengan objek usr_akun id');
     $eU = $eUbah;
 
     [, $hal] = $kirim($jBid, 'Kemitraan_Bidang/ubah_universitas', ['id' => $idU, 'name' => 'X', 'email' => strtoupper($eU2), 'phone' => '']);
     $cek($baris($idU)['email'] === $eU && strpos($hal, 'email tersebut sudah terdaftar') !== FALSE, 'Sunting ke email milik akun lain ditolak dengan pesan jelas');
     [, $hal] = $kirim($jBid, 'Kemitraan_Bidang/ubah_universitas', ['id' => $idU, 'name' => 'X', 'email' => $eU, 'phone' => 'bukan-nomor-xx']);
-    $cek($baris($idU)['phone'] === '0812 3456 7890' && strpos($hal, 'Nomor HP hanya boleh berisi angka') !== FALSE, 'Sunting dengan HP sampah ditolak, data tidak berubah');
+    $cek($baris($idU)['no_hp'] === '0812 3456 7890' && strpos($hal, 'Nomor HP hanya boleh berisi angka') !== FALSE, 'Sunting dengan HP sampah ditolak, data tidak berubah');
 
-    $hash = $baris($idU)['password'];
+    $hash = $baris($idU)['kata_sandi'];
     [, $hal] = $kirim($jBid, 'Kemitraan_Bidang/sandi_universitas', ['id' => $idU, 'password' => 'abcd1234']);
-    $cek($baris($idU)['password'] === $hash && strpos($hal, 'harus minimal 8 karakter, mengandung huruf besar') !== FALSE, 'Reset sandi lemah ditolak dengan aturan sandi_kuat');
+    $cek($baris($idU)['kata_sandi'] === $hash && strpos($hal, 'harus minimal 8 karakter, mengandung huruf besar') !== FALSE, 'Reset sandi lemah ditolak dengan aturan sandi_kuat');
 
     [$jU] = $login($eU);
     $hidup = $masuk($jU);
     $kirim($jBid, 'Kemitraan_Bidang/sandi_universitas', ['id' => $idU, 'password' => $sandi2]);
     $u = $baris($idU);
-    $cek(password_verify($sandi2, $u['password']) && $u['active_session_hash'] === NULL && $u['active_session_id_hash'] === NULL && $kedaluwarsa($idU),
+    $cek(password_verify($sandi2, $u['kata_sandi']) && $u['sesi_aktif_hash'] === NULL && $u['sesi_aktif_id_hash'] === NULL && $kedaluwarsa($idU),
         'Reset sandi sah: sandi baru berlaku, sesi lama dicabut, sandi wajib diganti');
     $cek($jejak('universitas_sandi_direset', $idU) === 1 && (int) $nilai("SELECT COUNT(*) FROM sys_jejak_audit WHERE objek_id='{$idU}' AND detail_json LIKE '%{$sandi2}%'") === 0,
         'Reset sandi tercatat di audit tanpa isi sandinya');
@@ -143,7 +143,7 @@ try {
     $hidup = $masuk($jU);
     $kirim($jBid, 'Kemitraan_Bidang/status_universitas', ['id' => $idU, 'status' => 'nonaktif']);
     $u = $baris($idU);
-    $cek($u['status'] === 'nonaktif' && $u['active_session_hash'] === NULL && $jejak('universitas_dinonaktifkan', $idU) === 1,
+    $cek($u['status'] === 'nonaktif' && $u['sesi_aktif_hash'] === NULL && $jejak('universitas_dinonaktifkan', $idU) === 1,
         'Nonaktifkan: status nonaktif, sesi dikosongkan, tercatat di audit');
     $cek($hidup && ! $masuk($jU), 'Sesi akun yang dinonaktifkan langsung berakhir');
     [, $r] = $login($eU, $sandi2);
@@ -171,23 +171,23 @@ try {
     echo "\n-- Butir 2: paksa ganti sandi di login pertama --\n";
     $eBaru = "{$tag}_baru@example.test";
     $kirim($jBid, 'Kemitraan_Bidang/buat_universitas', ['name' => 'Univ Baru', 'email' => $eBaru, 'phone' => '081234567890', 'password' => $sandi]);
-    $idBaru = (int) $nilai("SELECT id FROM usr_users WHERE email='{$eBaru}'");
+    $idBaru = (int) $nilai("SELECT id FROM usr_akun WHERE email='{$eBaru}'");
     [$jBaru, $r] = $login($eBaru);
     $cek($idBaru > 0 && strpos($r[2], 'akun/profil?password_expired=1') !== FALSE && stripos($r[1], 'sandi awal dari admin') !== FALSE,
         'Akun buatan admin bidang: login pertama diarahkan ke ganti sandi dengan pesan sandi awal dari admin');
     [, , $akhir] = $http($jBaru, 'KemitraanPortal/kkn_dashboard');
     $kirim($jBaru, 'akun/update', ['name' => 'Univ Baru', 'phone' => '081234567890', 'password' => $sandi2, 'password_confirm' => $sandi2, 'current_password' => $sandi]);
     [$k, , $akhir2] = $http($jBaru, 'KemitraanPortal/kkn_dashboard');
-    $cek(strpos($akhir, 'password_expired=1') !== FALSE && (int) $nilai("SELECT password_expires_at > DATE_ADD(NOW(), INTERVAL 89 DAY) FROM usr_users WHERE id={$idBaru}") === 1
+    $cek(strpos($akhir, 'password_expired=1') !== FALSE && (int) $nilai("SELECT sandi_kedaluwarsa_at > DATE_ADD(NOW(), INTERVAL 89 DAY) FROM usr_akun WHERE id={$idBaru}") === 1
         && $k === 200 && strpos($akhir2, 'kkn_dashboard') !== FALSE,
         'Sebelum ganti sandi dashboard tertahan; sesudahnya masa berlaku 90 hari dan dashboard terbuka');
     $eStaf = "{$tag}_staf@example.test";
     $http($jAdm, 'Admin_Users');
     $kirim($jAdm, 'Admin_Users/create_staff', ['name' => 'Univ Staf', 'email' => $eStaf, 'phone' => '', 'password' => $sandi, 'role' => 'universitas']);
-    $idStaf = (int) $nilai("SELECT id FROM usr_users WHERE email='{$eStaf}'");
+    $idStaf = (int) $nilai("SELECT id FROM usr_akun WHERE email='{$eStaf}'");
     $cek($idStaf > 0 && $kedaluwarsa($idStaf), 'Akun buatan superadmin (create_staff) wajib ganti sandi di login pertama');
     $kirim($jAdm, 'Admin_Users/reset_sandi', ['id' => $idU2, 'password' => $sandi2]);
-    $cek(password_verify($sandi2, $baris($idU2)['password']) && $kedaluwarsa($idU2), 'Sesudah reset sandi oleh superadmin, sandi wajib diganti di login berikutnya');
+    $cek(password_verify($sandi2, $baris($idU2)['kata_sandi']) && $kedaluwarsa($idU2), 'Sesudah reset sandi oleh superadmin, sandi wajib diganti di login berikutnya');
 
     // === BUTIR 3: periode lampau dan laporan sebelum Diterima ===
     echo "\n-- Butir 3: periode KKN lampau, laporan hanya untuk Diterima --\n";
@@ -234,25 +234,25 @@ try {
     [$jP] = $login($eU4);
     $idU2 = $idU4;
     [, $hal] = $kirim($jP, 'akun/update', ['name' => 'Univ Dua', 'phone' => 'bukan-nomor-xx']);
-    $sampah = $baris($idU2)['phone'] === '081234567890' && strpos($hal, 'Nomor HP hanya boleh berisi angka') !== FALSE;
+    $sampah = $baris($idU2)['no_hp'] === '081234567890' && strpos($hal, 'Nomor HP hanya boleh berisi angka') !== FALSE;
     $kirim($jP, 'akun/update', ['name' => 'Univ Dua', 'phone' => str_repeat('9', 25)]);
-    $panjang = $baris($idU2)['phone'] === '081234567890';
+    $panjang = $baris($idU2)['no_hp'] === '081234567890';
     $kirim($jP, 'akun/update', ['name' => 'Univ Dua', 'phone' => '+62 812-3456-7899']);
-    $cek($sampah && $panjang && $baris($idU2)['phone'] === '+62 812-3456-7899', 'HP sampah dan HP lebih dari 20 karakter di profil ditolak (tidak dipotong); HP sah tersimpan');
+    $cek($sampah && $panjang && $baris($idU2)['no_hp'] === '+62 812-3456-7899', 'HP sampah dan HP lebih dari 20 karakter di profil ditolak (tidak dipotong); HP sah tersimpan');
     $kode = [];
     for ($i = 0; $i < 6; $i++) {
         $kode[] = $kirim($jP, 'akun/update', ['name' => 'Univ Dua', 'phone' => '081234567890', 'password' => $sandi2, 'password_confirm' => $sandi2, 'current_password' => 'SalahSandi#' . $i])[0];
     }
-    $cek(array_slice($kode, 0, 5) === [200, 200, 200, 200, 200] && $kode[5] === 429 && password_verify($sandi, $baris($idU2)['password']),
+    $cek(array_slice($kode, 0, 5) === [200, 200, 200, 200, 200] && $kode[5] === 429 && password_verify($sandi, $baris($idU2)['kata_sandi']),
         'Percobaan sandi salah ke-6 di profil dijawab 429 (' . implode(',', $kode) . ')');
 } finally {
     foreach ($ember as $k => $row) {
-        $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
-        if ($row) { $st = $db->prepare('INSERT INTO sys_rate_limits (limit_key, window_started_at, failed_attempts) VALUES (?,?,?)'); $st->bind_param('ssi', $row['limit_key'], $row['window_started_at'], $row['failed_attempts']); $st->execute(); }
+        $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
+        if ($row) { $st = $db->prepare('INSERT INTO sys_batas_laju (kunci, jendela_mulai_at, jumlah_gagal) VALUES (?,?,?)'); $st->bind_param('ssi', $row['kunci'], $row['jendela_mulai_at'], $row['jumlah_gagal']); $st->execute(); }
     }
-    $semua = array_column($db->query("SELECT id FROM usr_users WHERE email LIKE '{$tag}%@example.test'")->fetch_all(), 0);
+    $semua = array_column($db->query("SELECT id FROM usr_akun WHERE email LIKE '{$tag}%@example.test'")->fetch_all(), 0);
     foreach ($semua as $u) {
-        foreach (['profile_password', 'account_delete', 'tulis_akun', 'account_export'] as $pol) $db->query("DELETE FROM sys_rate_limits WHERE limit_key='" . hash('sha256', "{$pol}:account:{$u}") . "'");
+        foreach (['profile_password', 'account_delete', 'tulis_akun', 'account_export'] as $pol) $db->query("DELETE FROM sys_batas_laju WHERE kunci='" . hash('sha256', "{$pol}:account:{$u}") . "'");
         foreach (array_column($db->query("SELECT id FROM kkn_magang_pendaftaran WHERE user_id=" . (int) $u)->fetch_all(), 0) as $p) {
             foreach (glob("{$uploads}/kemitraan/{$p}/*") ?: [] as $f) @unlink($f);
             @rmdir("{$uploads}/kemitraan/{$p}");
@@ -262,7 +262,7 @@ try {
         $db->query("DELETE FROM kkn_magang_pendaftaran WHERE user_id=" . (int) $u);
         $db->query("DELETE FROM sf_penilaian_perumahan WHERE user_id=" . (int) $u);
     }
-    $db->query("DELETE FROM usr_users WHERE email LIKE '{$tag}%@example.test'");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE '{$tag}%@example.test'");
     foreach (array_merge($jars, $tmp) as $f) @unlink($f);
 }
 echo "\nRINGKASAN: {$total} pemeriksaan, {$gagal} gagal\n";

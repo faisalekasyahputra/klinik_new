@@ -1,24 +1,24 @@
 {
   "fixture_id": "SIM-05",
   "synthetic": true,
-  "response_status": "found",
-  "api_version": "simulation-v1",
+  "status_respons": "found",
+  "versi_api": "simulation-v1",
   "identity": {
     "nik": "0000000000000005",
     "family_card_number": "0000000000001005",
     "full_name": "Warga Simulasi Koreksi",
     "address": "Alamat Sumber Lama Sintetis",
     "birth_date": "1985-05-05",
-    "gender_code": "male"
+    "jenis_kelamin": "male"
   },
   "socioeconomic": {
-    "occupation_code": "trader",
-    "income_band_code": "2_7_3_1",
-    "welfare_decile": 4,
-    "self_help_capability_code": "capable",
-    "self_help_amount": 3000000
+    "pekerjaan": "trader",
+    "kelompok_penghasilan": "2_7_3_1",
+    "desil_kesejahteraan": 4,
+    "mampu_swadaya": "capable",
+    "nilai_swadaya": 3000000
   },
-  "housing": {"housing_status_code": "rent", "occupant_count": 5, "family_count": 2},
+  "housing": {"kepemilikan_rumah": "rent", "jml_penghuni": 5, "jml_kk": 2},
   "structure": {},
   "sanitation": {},
   "location": {"kabupaten_id": 3374},

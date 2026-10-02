@@ -26,7 +26,7 @@ $csrf = function ($jar) { foreach (file($jar) as $l) { $p = explode("\t", trim($
 $jar = function () use (&$jars) { $j = tempnam(sys_get_temp_dir(), 'ds'); $jars[] = $j; return $j; };
 $akun = function ($role, $kab = NULL, $lengkap = 1) use ($db, $tag, $pw, &$ids) {
     $e = "{$tag}_{$role}_" . count($ids) . '@example.test'; $h = password_hash($pw, PASSWORD_BCRYPT);
-    $st = $db->prepare("INSERT INTO usr_users (name,email,password,role,kabupaten_id,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at) VALUES ('Uji DS',?,?,?,?,'active',?,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
+    $st = $db->prepare("INSERT INTO usr_akun (nama,email,kata_sandi,peran,kabupaten_id,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at) VALUES ('Uji DS',?,?,?,?,'active',?,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
     $st->bind_param('sssii', $e, $h, $role, $kab, $lengkap); $st->execute(); $ids[] = $db->insert_id; return [$db->insert_id, $e];
 };
 $login = function ($email) use ($http, $csrf, $jar, $pw) { $j = $jar(); $http($j, 'Auth/login'); $http($j, 'Auth/do_login', ['email' => $email, 'password' => $pw, 'csrf_kpkp_token' => $csrf($j)]); return $j; };
@@ -34,9 +34,9 @@ $login = function ($email) use ($http, $csrf, $jar, $pw) { $j = $jar(); $http($j
    simulasi lain berjalan di localhost dengan IP yang sama, jadi ember tidak boleh dikosongkan permanen. */
 $pinjam = function ($key) use ($db, &$rate_asli) {
     if (array_key_exists($key, $rate_asli)) return;
-    $st = $db->prepare('SELECT limit_key,window_started_at,failed_attempts FROM sys_rate_limits WHERE limit_key=?'); $st->bind_param('s', $key); $st->execute();
+    $st = $db->prepare('SELECT kunci,jendela_mulai_at,jumlah_gagal FROM sys_batas_laju WHERE kunci=?'); $st->bind_param('s', $key); $st->execute();
     $rate_asli[$key] = $st->get_result()->fetch_assoc();
-    $st = $db->prepare('DELETE FROM sys_rate_limits WHERE limit_key=?'); $st->bind_param('s', $key); $st->execute();
+    $st = $db->prepare('DELETE FROM sys_batas_laju WHERE kunci=?'); $st->bind_param('s', $key); $st->execute();
 };
 // Pemisah ribuan titik (angka_id, audit UI 2 Okt 2026); dulu koma dari number_format() polos.
 $angka = function ($html, $pola) { return preg_match($pola, $html, $m) ? (int) str_replace('.', '', $m[1]) : -1; };
@@ -45,7 +45,7 @@ $NIK = '3399991508850001'; $NIK_ANON = '3399995506900002';
 $hash = $enc->deterministic_hash($NIK); $hash_anon = $enc->deterministic_hash($NIK_ANON);
 try {
     echo "=== UJI CERMIN DATA SIMPERUM ===\n";
-    if ( ! $cek((int) $satu("SELECT COUNT(*) n FROM usr_users WHERE nik_lookup_hash='$hash'")['n'] === 0, 'Prasyarat: NIK API-01 belum terdaftar di akun mana pun')) { throw new RuntimeException('NIK fixture masih terpakai akun lain'); }
+    if ( ! $cek((int) $satu("SELECT COUNT(*) n FROM usr_akun WHERE nik_lookup_hash='$hash'")['n'] === 0, 'Prasyarat: NIK API-01 belum terdaftar di akun mana pun')) { throw new RuntimeException('NIK fixture masih terpakai akun lain'); }
     // ::1 dihitung per blok /64 (anti_automation_ip_bucket), jadi kunci nyatanya '0000000000000000/64'.
     foreach (['warga_lookup', 'rtlh_cek_anon', 'login'] as $p) foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) $pinjam(hash('sha256', "$p:ip:$ip"));
     foreach ([$NIK, $NIK_ANON] as $n) $pinjam(hash('sha256', 'warga_lookup:nik:' . $enc->deterministic_hash($n)));
@@ -56,9 +56,9 @@ try {
     $jw = $login($email);
     $http($jw, 'Auth/save_onboarding', ['role' => 'warga', 'username' => $tag, 'nama_lengkap' => 'Warga Uji DS', 'nik_identitas' => $NIK,
         'alamat_domisili' => 'Jl. Uji No. 1, Kota Semarang', 'phone' => '081200000000', 'csrf_kpkp_token' => $csrf($jw)]);
-    $cek((int) $satu("SELECT COUNT(*) n FROM usr_users WHERE id=$uid AND nik_lookup_hash='$hash'")['n'] === 1, 'NIK onboarding terikat ke akun (kunci hitung)');
+    $cek((int) $satu("SELECT COUNT(*) n FROM usr_akun WHERE id=$uid AND nik_lookup_hash='$hash'")['n'] === 1, 'NIK onboarding terikat ke akun (kunci hitung)');
     $row = $satu("SELECT * FROM sf_data_simperum WHERE user_id=$uid");
-    $cek($row && $row['response_status'] === 'found' && $row['nik_lookup_hash'] === $hash, 'Onboarding langsung membuat baris cermin found');
+    $cek($row && $row['status_respons'] === 'found' && $row['nik_lookup_hash'] === $hash, 'Onboarding langsung membuat baris cermin found');
     $cek($row && $row['sumber_air'] === '12' && $row['kepemilikan_rumah'] === '1' && $row['atap_id'] === '5' && $row['ada_pondasi'] === '0'
         && $row['bantuan_perumahan'] === '0' && $row['letak_sanitasi'] === NULL && $row['kode_dagri'] === '3374120003' && $row['idbdt'] === 'SYN-API-01',
         'Kode mentah SIMPERUM tersimpan apa adanya (sumber_air 12, kepemilikan_rumah 1, nilai "0" tidak hilang)');
@@ -70,14 +70,14 @@ try {
     $cek($row && strtotime($row['next_refresh_at']) - strtotime($row['fetched_at']) === 7 * 86400, 'next_refresh_at = fetched_at + 7 hari');
 
     echo "B. Halaman diagnosa sudah berisi\n";
-    $draft = $satu("SELECT id, current_step, water_source_code FROM sf_penilaian_perumahan WHERE user_id=$uid ORDER BY id DESC LIMIT 1");
-    $cek($draft && $draft['current_step'] === 'housing_family' && $draft['water_source_code'] === 'other_unfit', 'Draft dibuat dari SIMPERUM saat onboarding (tanpa klik Cek NIK)');
+    $draft = $satu("SELECT id, langkah_sekarang, sumber_air FROM sf_penilaian_perumahan WHERE user_id=$uid ORDER BY id DESC LIMIT 1");
+    $cek($draft && $draft['langkah_sekarang'] === 'housing_family' && $draft['sumber_air'] === 'other_unfit', 'Draft dibuat dari SIMPERUM saat onboarding (tanpa klik Cek NIK)');
     [$k, $b] = $http($jw, 'warga/pendataan');
     $cek($k === 200 && strpos($b, 'name="step" value="housing_family"') !== FALSE && strpos($b, 'name="step" value="find_data"') === FALSE,
         'warga/pendataan langsung di langkah sesudah find_data');
     $dom = new DOMDocument(); @$dom->loadHTML($b); $xp = new DOMXPath($dom);
-    $cek($xp->query('//select[@name="occupation_code"]/option[@selected and @value!=""]')->length === 1
-        && $xp->query('//select[@name="education_code"]/option[@selected and @value!=""]')->length === 1, 'Form berisi data SIMPERUM (pekerjaan, pendidikan terpilih)');
+    $cek($xp->query('//select[@name="pekerjaan"]/option[@selected and @value!=""]')->length === 1
+        && $xp->query('//select[@name="pendidikan"]/option[@selected and @value!=""]')->length === 1, 'Form berisi data SIMPERUM (pekerjaan, pendidikan terpilih)');
 
     echo "C. Pencarian anonim tidak menulis cermin\n";
     $n_anon = (int) $satu("SELECT COUNT(*) n FROM sf_data_simperum WHERE nik_lookup_hash='$hash_anon'")['n'];
@@ -89,9 +89,9 @@ try {
 
     echo "D. Penyegaran mingguan (CLI)\n";
     $db->query("UPDATE sf_data_simperum SET fetched_at='2020-01-01 00:00:00', next_refresh_at='2020-01-08 00:00:00' WHERE user_id=$uid");
-    $db->query("UPDATE sf_penilaian_perumahan SET water_source_code='pdam' WHERE id=" . (int) $draft['id']); // koreksi warga
+    $db->query("UPDATE sf_penilaian_perumahan SET sumber_air='pdam' WHERE id=" . (int) $draft['id']); // koreksi warga
     $profil = $satu("SELECT * FROM sf_profil_warga WHERE user_id=$uid");
-    $d_sebelum = $satu("SELECT lock_version, updated_at, water_source_code FROM sf_penilaian_perumahan WHERE id=" . (int) $draft['id']);
+    $d_sebelum = $satu("SELECT versi_kunci, updated_at, sumber_air FROM sf_penilaian_perumahan WHERE id=" . (int) $draft['id']);
     $n_draft = (int) $satu("SELECT COUNT(*) n FROM sf_penilaian_perumahan WHERE user_id=$uid")['n'];
     $php = PHP_BINARY; $keluar = [];
     putenv('CI_ENV=development'); // mode simulation; production memaksa api
@@ -102,10 +102,10 @@ try {
     $cek(strpos($teks, $NIK) === FALSE && stripos($teks, 'SUGENG') === FALSE, 'Keluaran CLI hanya angka (tanpa NIK/nama)');
     $baru = $satu("SELECT * FROM sf_data_simperum WHERE user_id=$uid");
     $cek($baru && strtotime($baru['fetched_at']) > strtotime('2020-01-02') && strtotime($baru['next_refresh_at']) - strtotime($baru['fetched_at']) === 7 * 86400
-        && (int) $baru['snapshot_id'] !== (int) $row['snapshot_id'], 'fetched_at diperbarui, next_refresh_at +7 hari, snapshot baru');
+        && (int) $baru['rekaman_id'] !== (int) $row['rekaman_id'], 'fetched_at diperbarui, next_refresh_at +7 hari, snapshot baru');
     $profil2 = $satu("SELECT * FROM sf_profil_warga WHERE user_id=$uid");
-    $d_sesudah = $satu("SELECT lock_version, updated_at, water_source_code FROM sf_penilaian_perumahan WHERE id=" . (int) $draft['id']);
-    $cek($profil2 == $profil && $d_sesudah == $d_sebelum && $d_sesudah['water_source_code'] === 'pdam'
+    $d_sesudah = $satu("SELECT versi_kunci, updated_at, sumber_air FROM sf_penilaian_perumahan WHERE id=" . (int) $draft['id']);
+    $cek($profil2 == $profil && $d_sesudah == $d_sebelum && $d_sesudah['sumber_air'] === 'pdam'
         && (int) $satu("SELECT COUNT(*) n FROM sf_penilaian_perumahan WHERE user_id=$uid")['n'] === $n_draft,
         'Penyegaran tidak menyentuh profil, draft, maupun koreksi warga');
     [$k, $b] = $http($jar(), 'simperum_segarkan');
@@ -128,14 +128,14 @@ try {
     echo "E. Angka di dashboard\n";
     [, $eAdm] = $akun('admin');
     [$k, $b] = $http($login($eAdm), 'Admin_Dashboard');
-    $wt = (int) $satu("SELECT COUNT(*) n FROM usr_users WHERE role='warga' AND nik_lookup_hash IS NOT NULL")['n'];
-    $tc = (int) $satu("SELECT COUNT(*) n FROM sf_data_simperum WHERE response_status='found'")['n'];
+    $wt = (int) $satu("SELECT COUNT(*) n FROM usr_akun WHERE peran='warga' AND nik_lookup_hash IS NOT NULL")['n'];
+    $tc = (int) $satu("SELECT COUNT(*) n FROM sf_data_simperum WHERE status_respons='found'")['n'];
     $cek($angka($b, '#Warga terdaftar</dt>\s*<dd[^>]*>([\d.]+)<#') === $wt && $wt >= 1, "Super admin: kartu Warga terdaftar = $wt");
     $cek($angka($b, '#Tercocokkan SIMPERUM</dt>\s*<dd[^>]*>([\d.]+)<#') === $tc && $tc >= 1, "Super admin: kartu Tercocokkan SIMPERUM = $tc");
     foreach ([3374, 3301] as $kab) {
         [, $eK] = $akun('admin_kabkota', $kab);
         [$k, $b] = $http($login($eK), 'Admin_Kabkota');
-        $n = (int) $satu("SELECT COUNT(*) n FROM sf_data_simperum WHERE response_status='found' AND kabupaten_id=$kab")['n'];
+        $n = (int) $satu("SELECT COUNT(*) n FROM sf_data_simperum WHERE status_respons='found' AND kabupaten_id=$kab")['n'];
         $cek($angka($b, '#data-tercocokkan-simperum>([\d.]+)<#') === $n && ($kab !== 3374 || $n >= 1), "Admin kab/kota $kab: hanya menghitung wilayahnya ($n)");
     }
 
@@ -145,18 +145,18 @@ try {
         'sf_data_simperum ikut export_account_data (kolom *_ciphertext didekripsi, *_lookup_hash dibuang)');
     echo "G. Hapus akun menghapus cermin\n";
     $db->query("DELETE FROM sf_penilaian_perumahan WHERE user_id=$uid");
-    $db->query("DELETE FROM usr_users WHERE id=$uid");
+    $db->query("DELETE FROM usr_akun WHERE id=$uid");
     $cek((int) $satu("SELECT COUNT(*) n FROM sf_data_simperum WHERE user_id=$uid OR nik_lookup_hash='$hash'")['n'] === 0, 'Baris cermin ikut terhapus (FK CASCADE)');
 } catch (Throwable $e) {
     $cek(FALSE, 'Pengecualian: ' . $e->getMessage());
 } finally {
-    foreach ($ids as $id) { $db->query("DELETE FROM sf_penilaian_perumahan WHERE user_id=$id"); $db->query("DELETE FROM usr_users WHERE id=$id"); }
-    $db->query("DELETE FROM sf_rekaman_simperum WHERE source_record_key LIKE 'SYN-API-%'");
+    foreach ($ids as $id) { $db->query("DELETE FROM sf_penilaian_perumahan WHERE user_id=$id"); $db->query("DELETE FROM usr_akun WHERE id=$id"); }
+    $db->query("DELETE FROM sf_rekaman_simperum WHERE kunci_rekaman_sumber LIKE 'SYN-API-%'");
     foreach ($rate_asli as $key => $r) {
-        $st = $db->prepare('DELETE FROM sys_rate_limits WHERE limit_key=?'); $st->bind_param('s', $key); $st->execute();
-        if ($r) { $st = $db->prepare('INSERT INTO sys_rate_limits (limit_key,window_started_at,failed_attempts) VALUES (?,?,?)'); $st->bind_param('ssi', $r['limit_key'], $r['window_started_at'], $r['failed_attempts']); $st->execute(); }
+        $st = $db->prepare('DELETE FROM sys_batas_laju WHERE kunci=?'); $st->bind_param('s', $key); $st->execute();
+        if ($r) { $st = $db->prepare('INSERT INTO sys_batas_laju (kunci,jendela_mulai_at,jumlah_gagal) VALUES (?,?,?)'); $st->bind_param('ssi', $r['kunci'], $r['jendela_mulai_at'], $r['jumlah_gagal']); $st->execute(); }
     }
     foreach ($jars as $j) @unlink($j);
-    echo "RINGKASAN: " . ($ok + $gagal) . " pemeriksaan, $gagal gagal; akun tersisa " . $db->query("SELECT COUNT(*) FROM usr_users WHERE email LIKE '{$tag}%'")->fetch_row()[0] . "\n";
+    echo "RINGKASAN: " . ($ok + $gagal) . " pemeriksaan, $gagal gagal; akun tersisa " . $db->query("SELECT COUNT(*) FROM usr_akun WHERE email LIKE '{$tag}%'")->fetch_row()[0] . "\n";
 }
 exit($gagal ? 1 : 0);

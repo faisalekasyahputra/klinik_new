@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
- * Uji migrasi 069: kunci asing yang tadinya diandaikan kode, dan perapian indeks usr_users.
+ * Uji migrasi 069: kunci asing yang tadinya diandaikan kode, dan perapian indeks usr_akun.
  *
  *   php docs/engineering/uji_integritas_fk_indeks.php
  *
@@ -34,8 +34,15 @@ echo "Uji integritas FK + indeks (migrasi 069)\n";
 define('BASEPATH', $root . '/system/');
 if ( ! class_exists('CI_Migration')) { class CI_Migration {} }
 require_once $root . '/application/migrations/20260701000069_fk_indeks_integritas.php';
-$FK = Migration_Fk_indeks_integritas::FK;
-$INDEKS = Migration_Fk_indeks_integritas::INDEKS;
+require_once $root . '/application/migrations/20260701000072_penamaan_indonesia.php';
+// Konstanta 069 memakai nama sebelum migrasi 072; diterjemahkan lewat peta 072.
+$T = 'Migration_Penamaan_indonesia';
+$FK = array_map(function ($d) use ($T) {
+    return [$T::tabel($d[0]), $T::kolom($d[0], $d[1]), $T::tabel($d[2]), $T::kolom($d[2], $d[3]), $d[4]];
+}, Migration_Fk_indeks_integritas::FK);
+$INDEKS = array_map(function ($d) use ($T) {
+    return [$T::tabel($d[0]), preg_replace_callback('/`([a-z_]+)`/', function ($m) use ($T, $d) { return '`' . $T::kolom($d[0], $m[1]) . '`'; }, $d[1])];
+}, Migration_Fk_indeks_integritas::INDEKS);
 
 $env = [];
 foreach (@file($root . '/.env', FILE_IGNORE_NEW_LINES) ?: [] as $b) {
@@ -77,11 +84,11 @@ $bersih = function () use ($m, $tag, $kab) {
     $m->query("DELETE FROM forum_diskusi WHERE judul_topik LIKE '{$tag}%'");
     $m->query("DELETE FROM aduan WHERE judul LIKE '{$tag}%'");
     $m->query("DELETE FROM psu_serah_terima WHERE nama_perumahan LIKE '{$tag}%'");
-    $m->query("DELETE FROM srp2_registrations WHERE nama_perusahaan LIKE '{$tag}%'");
-    $m->query("DELETE FROM srp2_certified_developers WHERE nama_perusahaan LIKE '{$tag}%'");
+    $m->query("DELETE FROM srp2_pengajuan WHERE nama_perusahaan LIKE '{$tag}%'");
+    $m->query("DELETE FROM srp2_direktori_pengembang WHERE nama_perusahaan LIKE '{$tag}%'");
     $m->query("DELETE FROM sf_data_simperum WHERE nik_lookup_hash LIKE '{$tag}%'");
     $m->query("DELETE FROM sf_rekaman_simperum WHERE nik_lookup_hash LIKE '{$tag}%'");
-    $m->query("DELETE FROM usr_users WHERE email LIKE '%{$tag}@example.test'");
+    $m->query("DELETE FROM usr_akun WHERE email LIKE '%{$tag}@example.test'");
     $m->query("DELETE FROM srp2_asosiasi WHERE kode LIKE '{$tag}%'");
     $m->query("DELETE FROM bidang WHERE kode = '{$tag}'");
     $m->query("DELETE FROM kabupaten WHERE id = {$kab} AND nama LIKE '{$tag}%'");
@@ -106,94 +113,94 @@ foreach ($INDEKS as $nama => [$t]) {
 }
 cek(nilai("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sf_data_simperum' AND COLUMN_NAME = 'kabupaten_id'") === 'int(10) unsigned',
     'sf_data_simperum.kabupaten_id INT(10) UNSIGNED (sama dengan kabupaten.id)');
-cek(nilai("SELECT CONCAT(COLUMN_TYPE, ' ', COLLATION_NAME) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_certified_developers' AND COLUMN_NAME = 'asosiasi'") === 'varchar(30) utf8mb4_unicode_ci',
-    'srp2_certified_developers.asosiasi VARCHAR(30) utf8mb4_unicode_ci (sama dengan srp2_asosiasi.kode)');
+cek(nilai("SELECT CONCAT(COLUMN_TYPE, ' ', COLLATION_NAME) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_direktori_pengembang' AND COLUMN_NAME = 'asosiasi'") === 'varchar(30) utf8mb4_unicode_ci',
+    'srp2_direktori_pengembang.asosiasi VARCHAR(30) utf8mb4_unicode_ci (sama dengan srp2_asosiasi.kode)');
 
 // ------------------------------------------------------------------ fixture (semua bertanda)
 jalan('INSERT INTO kabupaten (id, nama) VALUES (?, ?)', [$kab, $tag . ' kab']);
 jalan("INSERT INTO bidang (kode, nama) VALUES (?, ?)", [$tag, $tag . ' bidang']);
 jalan("INSERT INTO srp2_asosiasi (kode, nama, created_at) VALUES (?, ?, NOW())", [$tag, $tag . ' asosiasi']);
 $surel = function ($s) use ($tag) { return $s . '_' . $tag . '@example.test'; };
-jalan('INSERT INTO usr_users (email, username) VALUES (?, ?)', [$surel('warga'), $tag . 'w']);
+jalan('INSERT INTO usr_akun (email, nama_pengguna) VALUES (?, ?)', [$surel('warga'), $tag . 'w']);
 $uid = id_terakhir();
-jalan("INSERT INTO usr_users (email, role, kabupaten_id, bidang_kode) VALUES (?, 'admin_kabkota', ?, ?)", [$surel('staf'), $kab, $tag]);
+jalan("INSERT INTO usr_akun (email, peran, kabupaten_id, bidang_kode) VALUES (?, 'admin_kabkota', ?, ?)", [$surel('staf'), $kab, $tag]);
 $staf = id_terakhir();
 cek($uid > 0 && $staf > 0, 'fixture akun uji (kabupaten dan bidang sah) tersimpan');
-jalan("INSERT INTO forum_diskusi (nama_user, email_user, judul_topik, kategori, isi_diskusi, user_id, created_at) VALUES ('Uji', ?, ?, 'umum', 'isi', ?, NOW())", [$surel('warga'), $tag . ' topik', $uid]);
+jalan("INSERT INTO forum_diskusi (nama_pengguna, email_pengguna, judul_topik, kategori, isi_diskusi, user_id, created_at) VALUES ('Uji', ?, ?, 'umum', 'isi', ?, NOW())", [$surel('warga'), $tag . ' topik', $uid]);
 $did = id_terakhir();
-jalan("INSERT INTO forum_komentar (id_diskusi, nama_komentator, isi_komentar, user_id, role, created_at) VALUES (?, 'Uji', ?, ?, 'Warga', NOW())", [$did, $tag . ' komentar', $uid]);
+jalan("INSERT INTO forum_komentar (diskusi_id, nama_komentator, isi_komentar, user_id, peran, created_at) VALUES (?, 'Uji', ?, ?, 'Warga', NOW())", [$did, $tag . ' komentar', $uid]);
 $kid = id_terakhir();
-jalan("INSERT INTO forum_likes (user_id, target_type, target_id) VALUES (?, 'diskusi', ?)", [$uid, $did]);
-jalan("INSERT INTO aduan (nama, email, judul, pesan, bidang) VALUES ('Uji', ?, ?, 'pesan', ?)", [$surel('warga'), $tag . ' aduan', $tag]);
+jalan("INSERT INTO forum_suka (user_id, jenis_target, target_id) VALUES (?, 'diskusi', ?)", [$uid, $did]);
+jalan("INSERT INTO aduan (nama, email, judul, pesan, bidang_kode) VALUES ('Uji', ?, ?, 'pesan', ?)", [$surel('warga'), $tag . ' aduan', $tag]);
 $aid = id_terakhir();
-jalan("INSERT INTO srp2_certified_developers (nama_perusahaan, kabupaten_id, asosiasi) VALUES (?, ?, NULL)", [$tag . ' PT', $kab]);
+jalan("INSERT INTO srp2_direktori_pengembang (nama_perusahaan, kabupaten_id, asosiasi) VALUES (?, ?, NULL)", [$tag . ' PT', $kab]);
 $devid = id_terakhir();
-jalan("INSERT INTO srp2_registrations (nama_perusahaan, asosiasi) VALUES (?, ?)", [$tag . ' daftar', $tag]);
+jalan("INSERT INTO srp2_pengajuan (nama_perusahaan, asosiasi) VALUES (?, ?)", [$tag . ' daftar', $tag]);
 $regid = id_terakhir();
 jalan("INSERT INTO psu_serah_terima (nama_perumahan, nama_pengembang, asosiasi) VALUES (?, 'Uji', NULL)", [$tag . ' psu']);
 $psuid = id_terakhir();
-jalan("INSERT INTO sf_rekaman_simperum (nik_lookup_hash, source_mode, response_status, fetched_at, expires_at) VALUES (?, 'simulation', 'found', NOW(), NOW())", [$hash('s')]);
+jalan("INSERT INTO sf_rekaman_simperum (nik_lookup_hash, mode_sumber, status_respons, fetched_at, expires_at) VALUES (?, 'simulation', 'found', NOW(), NOW())", [$hash('s')]);
 $snap = id_terakhir();
-jalan("INSERT INTO sf_data_simperum (user_id, nik_lookup_hash, kabupaten_id, response_status, source_mode, snapshot_id, fetched_at, next_refresh_at) VALUES (?, ?, ?, 'found', 'simulation', ?, NOW(), NOW())", [$uid, $hash('d'), $kab, $snap]);
+jalan("INSERT INTO sf_data_simperum (user_id, nik_lookup_hash, kabupaten_id, status_respons, mode_sumber, rekaman_id, fetched_at, next_refresh_at) VALUES (?, ?, ?, 'found', 'simulation', ?, NOW(), NOW())", [$uid, $hash('d'), $kab, $snap]);
 $simid = id_terakhir();
 cek(min($did, $kid, $aid, $devid, $regid, $psuid, $snap, $simid) > 0, 'fixture forum, aduan, SRP2, PSU, SIMPERUM tersimpan dengan rujukan sah');
 
 // ------------------------------------------------------------------ 2. yatim ditolak
 $tidak_ada = $tag . 'x';
 $yatim = [
-    'fk_forum_komentar_diskusi'      => ['UPDATE forum_komentar SET id_diskusi = ? WHERE id_komentar = ?', [2147483000, $kid]],
-    'fk_forum_komentar_user'         => ['UPDATE forum_komentar SET user_id = ? WHERE id_komentar = ?', [2147483000, $kid]],
-    'fk_forum_diskusi_user'          => ['UPDATE forum_diskusi SET user_id = ? WHERE id_diskusi = ?', [2147483000, $did]],
-    'fk_forum_likes_user'            => ["INSERT INTO forum_likes (user_id, target_type, target_id) VALUES (?, 'komentar', ?)", [2147483000, $kid]],
-    'fk_usr_users_kabupaten'         => ['UPDATE usr_users SET kabupaten_id = ? WHERE id = ?', [$kab + 1000, $staf]],
-    'fk_usr_users_bidang'            => ['UPDATE usr_users SET bidang_kode = ? WHERE id = ?', [$tidak_ada, $staf]],
-    'fk_aduan_bidang'                => ['UPDATE aduan SET bidang = ? WHERE id = ?', [$tidak_ada, $aid]],
-    'fk_srp2_direktori_kabupaten'    => ['UPDATE srp2_certified_developers SET kabupaten_id = ? WHERE id = ?', [$kab + 1000, $devid]],
-    'fk_srp2_direktori_asosiasi'     => ['UPDATE srp2_certified_developers SET asosiasi = ? WHERE id = ?', [$tidak_ada, $devid]],
-    'fk_srp2_registrations_asosiasi' => ['UPDATE srp2_registrations SET asosiasi = ? WHERE id = ?', [$tidak_ada, $regid]],
+    'fk_forum_komentar_diskusi'      => ['UPDATE forum_komentar SET diskusi_id = ? WHERE id = ?', [2147483000, $kid]],
+    'fk_forum_komentar_user'         => ['UPDATE forum_komentar SET user_id = ? WHERE id = ?', [2147483000, $kid]],
+    'fk_forum_diskusi_user'          => ['UPDATE forum_diskusi SET user_id = ? WHERE id = ?', [2147483000, $did]],
+    'fk_forum_likes_user'            => ["INSERT INTO forum_suka (user_id, jenis_target, target_id) VALUES (?, 'komentar', ?)", [2147483000, $kid]],
+    'fk_usr_users_kabupaten'         => ['UPDATE usr_akun SET kabupaten_id = ? WHERE id = ?', [$kab + 1000, $staf]],
+    'fk_usr_users_bidang'            => ['UPDATE usr_akun SET bidang_kode = ? WHERE id = ?', [$tidak_ada, $staf]],
+    'fk_aduan_bidang'                => ['UPDATE aduan SET bidang_kode = ? WHERE id = ?', [$tidak_ada, $aid]],
+    'fk_srp2_direktori_kabupaten'    => ['UPDATE srp2_direktori_pengembang SET kabupaten_id = ? WHERE id = ?', [$kab + 1000, $devid]],
+    'fk_srp2_direktori_asosiasi'     => ['UPDATE srp2_direktori_pengembang SET asosiasi = ? WHERE id = ?', [$tidak_ada, $devid]],
+    'fk_srp2_registrations_asosiasi' => ['UPDATE srp2_pengajuan SET asosiasi = ? WHERE id = ?', [$tidak_ada, $regid]],
     'fk_psu_asosiasi'                => ['UPDATE psu_serah_terima SET asosiasi = ? WHERE id = ?', [$tidak_ada, $psuid]],
     'fk_sf_data_simperum_kabupaten'  => ['UPDATE sf_data_simperum SET kabupaten_id = ? WHERE id = ?', [$kab + 1000, $simid]],
-    'fk_sf_data_simperum_snapshot'   => ['UPDATE sf_data_simperum SET snapshot_id = ? WHERE id = ?', [9000000000, $simid]],
+    'fk_sf_data_simperum_snapshot'   => ['UPDATE sf_data_simperum SET rekaman_id = ? WHERE id = ?', [9000000000, $simid]],
 ];
 foreach ($yatim as $nama => [$sql, $b]) {
     cek(jalan($sql, $b) === 1452, "$nama: nilai yatim ditolak (errno 1452)");
 }
-cek(jalan('UPDATE aduan SET bidang = ? WHERE id = ?', ['', $aid]) === 1452, 'aduan.bidang string kosong ditolak (NULL-lah "belum ditriase")');
-cek(jalan('UPDATE srp2_registrations SET asosiasi = NULL WHERE id = ?', [$regid]) === 0
-    && jalan('UPDATE srp2_registrations SET asosiasi = ? WHERE id = ?', [$tag, $regid]) === 0, 'asosiasi NULL tetap boleh');
+cek(jalan('UPDATE aduan SET bidang_kode = ? WHERE id = ?', ['', $aid]) === 1452, 'aduan.bidang string kosong ditolak (NULL-lah "belum ditriase")');
+cek(jalan('UPDATE srp2_pengajuan SET asosiasi = NULL WHERE id = ?', [$regid]) === 0
+    && jalan('UPDATE srp2_pengajuan SET asosiasi = ? WHERE id = ?', [$tag, $regid]) === 0, 'asosiasi NULL tetap boleh');
 
 // ------------------------------------------------------------------ 3. hapus induk
 cek(jalan('DELETE FROM srp2_asosiasi WHERE kode = ?', [$tag]) === 1451, 'hapus asosiasi yang masih dipakai pengajuan ditolak (RESTRICT)');
 cek(jalan('UPDATE srp2_asosiasi SET kode = ? WHERE kode = ?', [$tidak_ada, $tag]) === 1451, 'mengganti kode asosiasi yang dipakai ditolak (tanpa ON UPDATE CASCADE)');
 cek(jalan('DELETE FROM bidang WHERE kode = ?', [$tag]) === 1451, 'hapus bidang yang masih jadi cakupan staf ditolak (RESTRICT)');
 cek(jalan('DELETE FROM kabupaten WHERE id = ?', [$kab]) === 1451, 'hapus kabupaten yang masih jadi cakupan staf ditolak (RESTRICT)');
-jalan('UPDATE usr_users SET kabupaten_id = NULL, bidang_kode = NULL WHERE id = ?', [$staf]);
-cek(jalan('DELETE FROM bidang WHERE kode = ?', [$tag]) === 0 && nilai('SELECT COUNT(*) FROM aduan WHERE id = ? AND bidang IS NULL', [$aid]) == 1,
+jalan('UPDATE usr_akun SET kabupaten_id = NULL, bidang_kode = NULL WHERE id = ?', [$staf]);
+cek(jalan('DELETE FROM bidang WHERE kode = ?', [$tag]) === 0 && nilai('SELECT COUNT(*) FROM aduan WHERE id = ? AND bidang_kode IS NULL', [$aid]) == 1,
     'hapus bidang: aduan kembali ke antrean triase (SET NULL), barisnya tetap');
 cek(jalan('DELETE FROM kabupaten WHERE id = ?', [$kab]) === 0
-    && nilai('SELECT COUNT(*) FROM srp2_certified_developers WHERE id = ? AND kabupaten_id IS NULL', [$devid]) == 1
+    && nilai('SELECT COUNT(*) FROM srp2_direktori_pengembang WHERE id = ? AND kabupaten_id IS NULL', [$devid]) == 1
     && nilai('SELECT COUNT(*) FROM sf_data_simperum WHERE id = ? AND kabupaten_id IS NULL', [$simid]) == 1,
     'hapus kabupaten: direktori SRP2 dan cermin SIMPERUM kehilangan kabupaten (SET NULL), barisnya tetap');
-cek(jalan('DELETE FROM sf_rekaman_simperum WHERE id = ?', [$snap]) === 0 && nilai('SELECT COUNT(*) FROM sf_data_simperum WHERE id = ? AND snapshot_id IS NULL', [$simid]) == 1,
-    'hapus snapshot (seperti penyapu retensi): cermin SIMPERUM tetap, snapshot_id NULL (SET NULL)');
-cek(jalan('DELETE FROM usr_users WHERE id = ?', [$uid]) === 0, 'hapus akun yang punya topik, komentar, suka, cermin SIMPERUM berhasil');
-cek(nilai('SELECT COUNT(*) FROM forum_diskusi WHERE id_diskusi = ? AND user_id IS NULL', [$did]) == 1
-    && nilai('SELECT COUNT(*) FROM forum_komentar WHERE id_komentar = ? AND user_id IS NULL', [$kid]) == 1,
+cek(jalan('DELETE FROM sf_rekaman_simperum WHERE id = ?', [$snap]) === 0 && nilai('SELECT COUNT(*) FROM sf_data_simperum WHERE id = ? AND rekaman_id IS NULL', [$simid]) == 1,
+    'hapus snapshot (seperti penyapu retensi): cermin SIMPERUM tetap, rekaman_id NULL (SET NULL)');
+cek(jalan('DELETE FROM usr_akun WHERE id = ?', [$uid]) === 0, 'hapus akun yang punya topik, komentar, suka, cermin SIMPERUM berhasil');
+cek(nilai('SELECT COUNT(*) FROM forum_diskusi WHERE id = ? AND user_id IS NULL', [$did]) == 1
+    && nilai('SELECT COUNT(*) FROM forum_komentar WHERE id = ? AND user_id IS NULL', [$kid]) == 1,
     'hapus akun: topik dan komentar bertahan tanpa tautan akun (SET NULL)');
-cek(nilai('SELECT COUNT(*) FROM forum_likes WHERE target_type = ? AND target_id = ?', ['diskusi', $did]) == 0, 'hapus akun: tanda suka ikut terhapus (CASCADE)');
+cek(nilai('SELECT COUNT(*) FROM forum_suka WHERE jenis_target = ? AND target_id = ?', ['diskusi', $did]) == 0, 'hapus akun: tanda suka ikut terhapus (CASCADE)');
 cek(nilai('SELECT COUNT(*) FROM sf_data_simperum WHERE id = ?', [$simid]) == 0, 'hapus akun: cermin SIMPERUM ikut terhapus (CASCADE lama, tetap)');
-cek(jalan('DELETE FROM forum_diskusi WHERE id_diskusi = ?', [$did]) === 0 && nilai('SELECT COUNT(*) FROM forum_komentar WHERE id_komentar = ?', [$kid]) == 0,
+cek(jalan('DELETE FROM forum_diskusi WHERE id = ?', [$did]) === 0 && nilai('SELECT COUNT(*) FROM forum_komentar WHERE id = ?', [$kid]) == 0,
     'hapus topik: komentarnya ikut terhapus (CASCADE)');
 
-// ------------------------------------------------------------------ 4. indeks usr_users
-cek((int) nilai("SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usr_users' AND INDEX_NAME = 'idx_users_email'") === 0,
+// ------------------------------------------------------------------ 4. indeks usr_akun
+cek((int) nilai("SELECT COUNT(*) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usr_akun' AND INDEX_NAME = 'idx_users_email'") === 0,
     'indeks kembar idx_users_email sudah tidak ada');
-cek((int) nilai("SELECT COUNT(DISTINCT INDEX_NAME) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usr_users' AND COLUMN_NAME = 'email' AND NON_UNIQUE = 0") === 1,
+cek((int) nilai("SELECT COUNT(DISTINCT INDEX_NAME) FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usr_akun' AND COLUMN_NAME = 'email' AND NON_UNIQUE = 0") === 1,
     'email tepat satu indeks UNIQUE');
-cek(jalan('INSERT INTO usr_users (email) VALUES (?)', [strtoupper($surel('staf'))]) === 1062, 'surel kembar (beda huruf besar) tetap ditolak (errno 1062)');
-jalan('INSERT INTO usr_users (email, username) VALUES (?, ?)', [$surel('a'), $tag . 'u']);
-cek(jalan('INSERT INTO usr_users (email, username) VALUES (?, ?)', [$surel('b'), strtoupper($tag . 'u')]) === 1062, 'username kembar ditolak (errno 1062)');
-cek(jalan('INSERT INTO usr_users (email) VALUES (?)', [$surel('c')]) === 0 && jalan('INSERT INTO usr_users (email) VALUES (?)', [$surel('d')]) === 0,
+cek(jalan('INSERT INTO usr_akun (email) VALUES (?)', [strtoupper($surel('staf'))]) === 1062, 'surel kembar (beda huruf besar) tetap ditolak (errno 1062)');
+jalan('INSERT INTO usr_akun (email, nama_pengguna) VALUES (?, ?)', [$surel('a'), $tag . 'u']);
+cek(jalan('INSERT INTO usr_akun (email, nama_pengguna) VALUES (?, ?)', [$surel('b'), strtoupper($tag . 'u')]) === 1062, 'username kembar ditolak (errno 1062)');
+cek(jalan('INSERT INTO usr_akun (email) VALUES (?)', [$surel('c')]) === 0 && jalan('INSERT INTO usr_akun (email) VALUES (?)', [$surel('d')]) === 0,
     'username NULL boleh lebih dari satu');
 
 // ------------------------------------------------------------------ 5. diagnostik
@@ -235,24 +242,24 @@ $masuk = function ($nama, $email) use ($http, $csrf, $sandi) {
     return (json_decode($r['body'], TRUE)['status'] ?? '') === 'success';
 };
 $akun = function ($peran, $s) use ($surel, $sandi, $tag) {
-    jalan("INSERT INTO usr_users (email, password, name, username, role, status, profile_completed, phone, created_at, password_changed_at)
+    jalan("INSERT INTO usr_akun (email, kata_sandi, nama, nama_pengguna, peran, status, profil_lengkap, no_hp, created_at, sandi_diganti_at)
         VALUES (?, ?, ?, ?, ?, 'active', 1, '081200000069', NOW(), NOW())", [$surel($s), password_hash($sandi, PASSWORD_BCRYPT), 'Uji ' . $s, $tag . $s, $peran]);
     return id_terakhir();
 };
 
 $hw = $akun('warga', 'hapus');
-jalan("INSERT INTO forum_diskusi (nama_user, email_user, judul_topik, kategori, isi_diskusi, user_id, created_at) VALUES ('Uji', ?, ?, 'umum', 'isi', ?, NOW())", [$surel('hapus'), $tag . ' topik http', $hw]);
+jalan("INSERT INTO forum_diskusi (nama_pengguna, email_pengguna, judul_topik, kategori, isi_diskusi, user_id, created_at) VALUES ('Uji', ?, ?, 'umum', 'isi', ?, NOW())", [$surel('hapus'), $tag . ' topik http', $hw]);
 $hd = id_terakhir();
-jalan("INSERT INTO forum_komentar (id_diskusi, nama_komentator, isi_komentar, user_id, role, created_at) VALUES (?, 'Uji', ?, ?, 'Warga', NOW())", [$hd, $tag . ' komentar http', $hw]);
+jalan("INSERT INTO forum_komentar (diskusi_id, nama_komentator, isi_komentar, user_id, peran, created_at) VALUES (?, 'Uji', ?, ?, 'Warga', NOW())", [$hd, $tag . ' komentar http', $hw]);
 $hk = id_terakhir();
-jalan("INSERT INTO forum_likes (user_id, target_type, target_id) VALUES (?, 'diskusi', ?)", [$hw, $hd]);
+jalan("INSERT INTO forum_suka (user_id, jenis_target, target_id) VALUES (?, 'diskusi', ?)", [$hw, $hd]);
 if (cek($hw > 0 && $masuk('w', $surel('hapus')), 'HTTP: warga uji masuk')) {
     $http('w', 'akun/delete', ['csrf_kpkp_token' => $csrf('w', 'akun/profil'), 'current_password' => $sandi]);
-    cek((int) nilai('SELECT COUNT(*) FROM usr_users WHERE id = ?', [$hw]) === 0, 'HTTP hapus akun (Pengaturan::delete_account): akun terhapus');
-    cek((int) nilai("SELECT COUNT(*) FROM forum_diskusi WHERE id_diskusi = ? AND user_id IS NULL AND email_user = 'akun-dihapus@invalid'", [$hd]) === 1
-        && (int) nilai("SELECT COUNT(*) FROM forum_komentar WHERE id_komentar = ? AND user_id IS NULL AND nama_komentator = 'Akun Dihapus'", [$hk]) === 1,
+    cek((int) nilai('SELECT COUNT(*) FROM usr_akun WHERE id = ?', [$hw]) === 0, 'HTTP hapus akun (Pengaturan::delete_account): akun terhapus');
+    cek((int) nilai("SELECT COUNT(*) FROM forum_diskusi WHERE id = ? AND user_id IS NULL AND email_pengguna = 'akun-dihapus@invalid'", [$hd]) === 1
+        && (int) nilai("SELECT COUNT(*) FROM forum_komentar WHERE id = ? AND user_id IS NULL AND nama_komentator = 'Akun Dihapus'", [$hk]) === 1,
         'HTTP hapus akun: topik dan komentar bertahan teranonim');
-    cek((int) nilai('SELECT COUNT(*) FROM forum_likes WHERE user_id = ?', [$hw]) === 0, 'HTTP hapus akun: tanda suka terhapus');
+    cek((int) nilai('SELECT COUNT(*) FROM forum_suka WHERE user_id = ?', [$hw]) === 0, 'HTTP hapus akun: tanda suka terhapus');
 }
 
 $adm = $akun('admin', 'admin');
@@ -270,10 +277,10 @@ if (cek($adm > 0 && $asoid > 0 && $psu2 > 0 && $masuk('a', $surel('admin')), 'HT
 }
 foreach ($jar as $f) { @unlink($f); }
 // Jejak audit yang lahir dari dua akun uji ini saja (pelaku admin uji, atau pelaku NULL = warga uji yang sudah dihapus).
-$m->query('DELETE FROM sys_jejak_audit WHERE id > ' . $audit0 . ' AND (actor_id = ' . (int) $adm . " OR (actor_id IS NULL AND IFNULL(actor_role, '') <> 'sistem'))");
+$m->query('DELETE FROM sys_jejak_audit WHERE id > ' . $audit0 . ' AND (pelaku_id = ' . (int) $adm . " OR (pelaku_id IS NULL AND IFNULL(pelaku_peran, '') <> 'sistem'))");
 
 $bersih();
-cek((int) nilai("SELECT COUNT(*) FROM usr_users WHERE email LIKE ?", ['%' . $tag . '@example.test']) === 0, 'data uji bersih');
+cek((int) nilai("SELECT COUNT(*) FROM usr_akun WHERE email LIKE ?", ['%' . $tag . '@example.test']) === 0, 'data uji bersih');
 
 echo "\nHasil: " . ($total - $gagal) . "/$total OK\n";
 exit($gagal ? 1 : 0);

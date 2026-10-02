@@ -137,7 +137,7 @@ function login($nama, $email) {
 function buat_akun($peran, $suffix) {
     $email = 'uji_bang_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
     $id = tulis(
-        'INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+        'INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
          VALUES (?,?,?,?,?, "active",1,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji Bang ' . $suffix,
          'uji_bang_' . $suffix . '_' . mt_rand(10000, 99999), $peran]
@@ -158,12 +158,12 @@ function isi_dokumen($reg_id, array $kunci) {
     foreach ($kunci as $k) {
         $simpan = $k . '_' . mt_rand(100000, 999999) . '.pdf';
         file_put_contents($dir . DIRECTORY_SEPARATOR . $simpan, "%PDF-1.4\n% " . $k . "\n%%EOF\n");
-        q('INSERT INTO srp2_documents (registration_id,document_key,original_name,stored_name,mime_type,file_size,created_at)
+        q('INSERT INTO srp2_dokumen (pengajuan_id,kunci_dokumen,nama_asli,nama_simpan,mime_type,ukuran_berkas,created_at)
            VALUES (?,?,?,?,"application/pdf",64,NOW())', [$reg_id, $k, $k . '.pdf', $simpan]);
     }
 }
 
-function status_reg($id) { return (string) nilai('SELECT status_verifikasi FROM srp2_registrations WHERE id=?', [$id]); }
+function status_reg($id) { return (string) nilai('SELECT status_verifikasi FROM srp2_pengajuan WHERE id=?', [$id]); }
 
 function bersihkan() {
     if (empty($GLOBALS['db'])) { return; }
@@ -173,23 +173,23 @@ function bersihkan() {
             foreach (glob($dir . DIRECTORY_SEPARATOR . '*') ?: [] as $f) { @unlink($f); }
             @rmdir($dir);
         }
-        q('DELETE FROM srp2_documents WHERE registration_id=?', [$id]);
-        q('DELETE FROM srp2_registrations WHERE id=?', [$id]);
+        q('DELETE FROM srp2_dokumen WHERE pengajuan_id=?', [$id]);
+        q('DELETE FROM srp2_pengajuan WHERE id=?', [$id]);
     }
-    foreach ($GLOBALS['sertifikat'] as $id) { q('DELETE FROM srp2_certified_developers WHERE id=?', [$id]); }
+    foreach ($GLOBALS['sertifikat'] as $id) { q('DELETE FROM srp2_direktori_pengembang WHERE id=?', [$id]); }
     foreach ($GLOBALS['users'] as $id) {
         // Draft bisa lahir sendiri saat GET /Pengembang/syarat - sapu berdasarkan
         // pemiliknya, bukan cuma id yang sempat kita catat.
-        foreach ($GLOBALS['db']->query('SELECT id FROM srp2_registrations WHERE user_id=' . (int) $id) as $r) {
+        foreach ($GLOBALS['db']->query('SELECT id FROM srp2_pengajuan WHERE user_id=' . (int) $id) as $r) {
             $dir = dir_srp2($r['id']);
             if (is_dir($dir)) {
                 foreach (glob($dir . DIRECTORY_SEPARATOR . '*') ?: [] as $f) { @unlink($f); }
                 @rmdir($dir);
             }
-            q('DELETE FROM srp2_documents WHERE registration_id=?', [$r['id']]);
+            q('DELETE FROM srp2_dokumen WHERE pengajuan_id=?', [$r['id']]);
         }
-        q('DELETE FROM srp2_registrations WHERE user_id=?', [$id]);
-        q('DELETE FROM usr_users WHERE id=?', [$id]);
+        q('DELETE FROM srp2_pengajuan WHERE user_id=?', [$id]);
+        q('DELETE FROM usr_akun WHERE id=?', [$id]);
     }
     foreach ($GLOBALS['jar'] as $j) { @unlink($j); }
 }
@@ -224,7 +224,7 @@ wajib($s['code'] === 200, 'Pengembang mendapat wizard syarat');
 
 // Draft dibuat aplikasi sendiri lewat srp2_state() - dipakai apa adanya alih-alih
 // disuntik, supaya yang diuji adalah baris yang benar-benar dilahirkan produk.
-$regA = (int) nilai('SELECT id FROM srp2_registrations WHERE user_id=? ORDER BY id DESC LIMIT 1', [$uidA]);
+$regA = (int) nilai('SELECT id FROM srp2_pengajuan WHERE user_id=? ORDER BY id DESC LIMIT 1', [$uidA]);
 wajib($regA > 0, 'Draft pengajuan A lahir dari kunjungan wizard');
 $GLOBALS['regs'][] = $regA;
 
@@ -260,16 +260,16 @@ if (getenv('UJI_PANEL_SRP2')) {
         cek(strpos($wizard, '"uploadedKeys":["form_1"]') !== FALSE, 'Wizard membaca berkas yang diunggah dari dashboard');
         $saved = $upload('panel-ganti.png');
         cek(strpos($saved['body'], 'panel-ganti.png') !== FALSE
-            && (int) nilai('SELECT COUNT(*) FROM srp2_documents WHERE registration_id=?', [$regA]) === 1,
+            && (int) nilai('SELECT COUNT(*) FROM srp2_dokumen WHERE pengajuan_id=?', [$regA]) === 1,
             'Ganti berkas memperbarui dokumen yang sama tanpa duplikasi');
-        tulis("UPDATE srp2_registrations SET status_verifikasi='Pending' WHERE id=?", [$regA]);
+        tulis("UPDATE srp2_pengajuan SET status_verifikasi='Pending' WHERE id=?", [$regA]);
         $locked = http('a', 'akun/dokumen');
         cek(strpos($locked['body'], 'type="file"') === FALSE && strpos($locked['body'], 'Lihat Berkas') !== FALSE,
             'Pending tetap dapat dilihat tetapi tidak menawarkan perubahan');
         $upload('tidak-boleh.png');
-        cek(nilai('SELECT original_name FROM srp2_documents WHERE registration_id=?', [$regA]) === 'panel-ganti.png',
+        cek(nilai('SELECT nama_asli FROM srp2_dokumen WHERE pengajuan_id=?', [$regA]) === 'panel-ganti.png',
             'Server menolak penggantian saat Pending');
-        tulis("UPDATE srp2_registrations SET status_verifikasi='Draft' WHERE id=?", [$regA]);
+        tulis("UPDATE srp2_pengajuan SET status_verifikasi='Draft' WHERE id=?", [$regA]);
         $company = 'PT UJI PANEL ' . CAP;
         http('a', 'akun/update_pengembang', ['csrf_kpkp_token' => csrf('a', 'akun/profil'),
             'nama_perusahaan' => $company, 'alamat_kantor' => 'Alamat simulasi',
@@ -287,7 +287,7 @@ if (getenv('UJI_PANEL_SRP2')) {
         wajib(login('b', $emailB), 'Login pengembang B untuk isolasi panel');
         cek(strpos(http('b', 'akun/dokumen')['body'], 'panel-ganti.png') === FALSE,
             'Dashboard pengembang lain tidak memuat berkas A');
-        $GLOBALS['regs'][] = (int) nilai('SELECT id FROM srp2_registrations WHERE user_id=?', [$uidB]);
+        $GLOBALS['regs'][] = (int) nilai('SELECT id FROM srp2_pengajuan WHERE user_id=?', [$uidB]);
         wajib(login('w', $emailW), 'Login warga untuk gerbang panel');
         cek(http('w', 'akun/dokumen')['code'] === 404, 'Panel dokumen hanya untuk pengembang');
         cek(strpos(http('w', 'akun')['body'], 'https://sikumbang.tapera.go.id/user/login') === FALSE,
@@ -331,7 +331,7 @@ cek($menu['code'] === 200 && strpos($menu['body'], 'Buku Data') !== FALSE
 
 wajib(login('b', $emailB), 'Login pengembang B');
 http('b', 'Pengembang/syarat');
-$regB = (int) nilai('SELECT id FROM srp2_registrations WHERE user_id=? ORDER BY id DESC LIMIT 1', [$uidB]);
+$regB = (int) nilai('SELECT id FROM srp2_pengajuan WHERE user_id=? ORDER BY id DESC LIMIT 1', [$uidB]);
 wajib($regB > 0 && $regB !== $regA, 'Draft pengajuan B lahir terpisah');
 $GLOBALS['regs'][] = $regB;
 
@@ -400,10 +400,10 @@ cek(http('a', 'Pengembang/lihat_dokumen_saya/abc/form_1')['code'] === 404, 'Id b
 cek(in_array(http('a', 'Pengembang/simpan_dokumen/' . $regA)['code'], [404, 405], TRUE), /* 405: kebijakan metode HTTP 21 Sep 2026 */ 'GET ke simpan_dokumen ditolak');
 cek(in_array(http('a', 'Pengembang/kirim_pengajuan/' . $regA)['code'], [404, 405], TRUE), /* 405: kebijakan metode HTTP 21 Sep 2026 */ 'GET ke kirim_pengajuan ditolak');
 
-$dok_b_sebelum = (int) nilai('SELECT COUNT(*) c FROM srp2_documents WHERE registration_id=?', [$regB]);
+$dok_b_sebelum = (int) nilai('SELECT COUNT(*) c FROM srp2_dokumen WHERE pengajuan_id=?', [$regB]);
 $tok = csrf('a', 'Pengembang/syarat');
-http('a', 'Pengembang/simpan_dokumen/' . $regB, ['csrf_kpkp_token' => $tok, 'document_key' => 'form_2a']);
-cek((int) nilai('SELECT COUNT(*) c FROM srp2_documents WHERE registration_id=?', [$regB]) === $dok_b_sebelum,
+http('a', 'Pengembang/simpan_dokumen/' . $regB, ['csrf_kpkp_token' => $tok, 'kunci_dokumen' => 'form_2a']);
+cek((int) nilai('SELECT COUNT(*) c FROM srp2_dokumen WHERE pengajuan_id=?', [$regB]) === $dok_b_sebelum,
     'Menulis dokumen ke pengajuan orang lain tidak menambah baris');
 
 $tok = csrf('a', 'Pengembang/syarat');
@@ -418,7 +418,7 @@ cek(status_reg($regB) !== 'Pending', 'Mengirim pengajuan orang lain tidak mengub
 // melumpuhkan pemeriksaan 14-dokumen tetap membuat uji ini hijau. Uji negatif
 // harus menyisakan TEPAT SATU alasan gagal, kalau tidak ia mengukur hal lain
 // daripada namanya.
-q('UPDATE srp2_registrations SET nama_perusahaan=? WHERE id=?', [CAP . ' Bangun Sendiri', $regB]);
+q('UPDATE srp2_pengajuan SET nama_perusahaan=? WHERE id=?', [CAP . ' Bangun Sendiri', $regB]);
 
 // Tidak perlu login ulang: tiap nama sesi punya cookie jar sendiri yang tetap
 // terautentikasi sepanjang skrip. Login berulang justru menambah permukaan
@@ -428,7 +428,7 @@ http('b', 'Pengembang/kirim_pengajuan/' . $regB, ['csrf_kpkp_token' => $tok]);
 cek(status_reg($regB) !== 'Pending', 'Dokumen belum lengkap: pengajuan tidak lahir jadi Pending');
 
 // (b) nama perusahaan kosong - 14 dokumen saja tidak cukup.
-q('UPDATE srp2_registrations SET nama_perusahaan=NULL WHERE id=?', [$regA]);
+q('UPDATE srp2_pengajuan SET nama_perusahaan=NULL WHERE id=?', [$regA]);
 $tok = csrf('a', 'Pengembang/syarat');
 http('a', 'Pengembang/kirim_pengajuan/' . $regA, ['csrf_kpkp_token' => $tok]);
 cek(status_reg($regA) !== 'Pending', 'Nama perusahaan kosong: pengajuan tidak lahir jadi Pending');
@@ -438,19 +438,19 @@ cek(status_reg($regA) !== 'Pending', 'Nama perusahaan kosong: pengajuan tidak la
 //     ia lolos ke meja admin, approve-nya mustahil dan pemohon menunggu sesuatu
 //     yang tidak akan pernah terjadi.
 $nama_bentrok = CAP . ' Membangun Jaya';
-$sert = tulis('INSERT INTO srp2_certified_developers (nama_perusahaan,status_aktif,created_at)
+$sert = tulis('INSERT INTO srp2_direktori_pengembang (nama_perusahaan,status_aktif,created_at)
                VALUES (?,1,NOW())', [$nama_bentrok]);
 $GLOBALS['sertifikat'][] = $sert;
-q('UPDATE srp2_registrations SET nama_perusahaan=? WHERE id=?', [$nama_bentrok, $regA]);
+q('UPDATE srp2_pengajuan SET nama_perusahaan=? WHERE id=?', [$nama_bentrok, $regA]);
 $tok = csrf('a', 'Pengembang/syarat');
 http('a', 'Pengembang/kirim_pengajuan/' . $regA, ['csrf_kpkp_token' => $tok]);
 cek(status_reg($regA) !== 'Pending', 'Nama bentrok direktori: pengajuan tidak lahir jadi Pending');
 
 // ------------------------------------------------------------ jalur positif
-// `reviewed_by` punya FK ke usr_users - id karangan (dulu 1) langsung ditolak
+// `reviewed_by` punya FK ke usr_akun - id karangan (dulu 1) langsung ditolak
 // DB. Dipakai akun uji yang benar-benar ada; ia toh cuma perlu jadi jejak lama
 // yang harus terhapus saat kirim ulang.
-q('UPDATE srp2_registrations SET nama_perusahaan=?, catatan_admin="catatan lama", reviewed_by=?, reviewed_at=NOW()
+q('UPDATE srp2_pengajuan SET nama_perusahaan=?, catatan_admin="catatan lama", reviewed_by=?, reviewed_at=NOW()
    WHERE id=?', [CAP . ' Karya Mandiri', $uidW, $regA]);
 $tok = csrf('a', 'Pengembang/syarat');
 $kirim = http('a', 'Pengembang/kirim_pengajuan/' . $regA, ['csrf_kpkp_token' => $tok]);
@@ -460,16 +460,16 @@ cek(status_reg($regA) === 'Pending', 'Status berubah menjadi Pending');
 // Jejak keputusan LAMA harus ikut bersih. Kalau tidak, /akun menampilkan badge
 // "Dalam Peninjauan" DITAMBAH kotak penolakan lama - dua permukaan yang
 // sama-sama dilihat pemohon menceritakan hal berbeda.
-cek(nilai('SELECT catatan_admin FROM srp2_registrations WHERE id=?', [$regA]) === NULL,
+cek(nilai('SELECT catatan_admin FROM srp2_pengajuan WHERE id=?', [$regA]) === NULL,
     'Catatan penolakan lama ikut dibersihkan saat kirim ulang');
-cek(nilai('SELECT reviewed_at FROM srp2_registrations WHERE id=?', [$regA]) === NULL,
+cek(nilai('SELECT reviewed_at FROM srp2_pengajuan WHERE id=?', [$regA]) === NULL,
     'Jejak waktu tinjauan lama ikut dibersihkan');
 
 // -------------------------------------------------------- kunci pasca-kirim
-$dok_a_sebelum = (int) nilai('SELECT COUNT(*) c FROM srp2_documents WHERE registration_id=?', [$regA]);
+$dok_a_sebelum = (int) nilai('SELECT COUNT(*) c FROM srp2_dokumen WHERE pengajuan_id=?', [$regA]);
 $tok = csrf('a', 'Pengembang/syarat');
-http('a', 'Pengembang/simpan_dokumen/' . $regA, ['csrf_kpkp_token' => $tok, 'document_key' => 'form_1']);
-cek((int) nilai('SELECT COUNT(*) c FROM srp2_documents WHERE registration_id=?', [$regA]) === $dok_a_sebelum,
+http('a', 'Pengembang/simpan_dokumen/' . $regA, ['csrf_kpkp_token' => $tok, 'kunci_dokumen' => 'form_1']);
+cek((int) nilai('SELECT COUNT(*) c FROM srp2_dokumen WHERE pengajuan_id=?', [$regA]) === $dok_a_sebelum,
     'Dokumen terkunci setelah status Pending');
 
 $tok = csrf('a', 'Pengembang/syarat');
@@ -479,7 +479,7 @@ cek(status_reg($regA) === 'Pending', 'Kirim ulang saat Pending tidak menggandaka
 // ------------------------------------------- ledger ada, berkasnya lenyap
 // Insiden nyata 29 Jul 2026. Pemilik sah berhak tahu bedanya "tidak pernah ada"
 // dan "tercatat namun hilang" - 404 bisu membuat pemohon menyalahkan dirinya.
-$hilang = (string) nilai('SELECT stored_name FROM srp2_documents WHERE registration_id=? AND document_key="form_3"', [$regA]);
+$hilang = (string) nilai('SELECT nama_simpan FROM srp2_dokumen WHERE pengajuan_id=? AND kunci_dokumen="form_3"', [$regA]);
 @unlink(dir_srp2($regA) . DIRECTORY_SEPARATOR . $hilang);
 $r = http('a', 'Pengembang/lihat_dokumen_saya/' . $regA . '/form_3');
 cek($r['code'] === 200 && strpos($r['body'], '%PDF') === FALSE,
@@ -489,7 +489,7 @@ cek(stripos($r['body'], 'tidak tersedia') !== FALSE || stripos($r['body'], 'ungg
 
 // ------------------------------------------------------------ profil publik
 cek(http('a', 'Pengembang/profil/' . $sert)['code'] === 200, 'Profil pengembang bersertifikat aktif terbuka');
-q('UPDATE srp2_certified_developers SET status_aktif=0 WHERE id=?', [$sert]);
+q('UPDATE srp2_direktori_pengembang SET status_aktif=0 WHERE id=?', [$sert]);
 cek(http('a', 'Pengembang/profil/' . $sert)['code'] === 404, 'Profil yang dinonaktifkan tidak lagi terbuka');
 cek(http('a', 'Pengembang/profil/abc')['code'] === 404, 'Profil dengan id bukan angka ditolak');
 
@@ -515,13 +515,13 @@ wajib(stripos(http('adm', 'Admin_Srp2')['body'], 'Tambah pengembang') !== FALSE,
 
 foreach (['sertifikat_terbit', 'sertifikat_berakhir'] as $k) {
     cek((int) nilai("SELECT COUNT(*) c FROM information_schema.COLUMNS
-        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_certified_developers'
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_direktori_pengembang'
           AND COLUMN_NAME = ? AND DATA_TYPE = 'date' AND IS_NULLABLE = 'YES'", [$k]) === 1,
         "Kolom `{$k}` DATE NULL ada (migrasi 037)");
 }
 
 $nama_b1 = CAP . ' Masa Berlaku';
-$sert_b1 = tulis('INSERT INTO srp2_certified_developers
+$sert_b1 = tulis('INSERT INTO srp2_direktori_pengembang
     (nama_perusahaan,status_aktif,sosmed_lainnya,sertifikat_terbit,sertifikat_berakhir,created_at)
     VALUES (?,1,?,?,?,NOW())',
     [$nama_b1, 'https://uji.test/sosmed', '2024-01-15', '2027-01-14']);
@@ -535,7 +535,7 @@ http('adm', 'Admin_Srp2/save', [
     'nama_perusahaan' => $nama_b1, 'status_aktif' => 1,
 ]);
 $sesudah = q('SELECT sosmed_lainnya, sertifikat_terbit, sertifikat_berakhir
-              FROM srp2_certified_developers WHERE id=?', [$sert_b1]);
+              FROM srp2_direktori_pengembang WHERE id=?', [$sert_b1]);
 cek(($sesudah['sertifikat_terbit'] ?? '') === '2024-01-15',
     'Tanggal terbit BERTAHAN saat form tidak mengirimnya');
 cek(($sesudah['sertifikat_berakhir'] ?? '') === '2027-01-14',
@@ -549,7 +549,7 @@ http('adm', 'Admin_Srp2/save', [
     'csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'), 'id' => $sert_b1,
     'nama_perusahaan' => $nama_b1, 'status_aktif' => 1, 'sertifikat_terbit' => '',
 ]);
-cek(nilai('SELECT sertifikat_terbit t FROM srp2_certified_developers WHERE id=?', [$sert_b1]) === NULL,
+cek(nilai('SELECT sertifikat_terbit t FROM srp2_direktori_pengembang WHERE id=?', [$sert_b1]) === NULL,
     'Dikirim kosong tetap MENGOSONGKAN - beda dari tidak dikirim');
 
 // Terbit sesudah berakhir ditolak.
@@ -558,12 +558,12 @@ http('adm', 'Admin_Srp2/save', [
     'nama_perusahaan' => $nama_b1, 'status_aktif' => 1,
     'sertifikat_terbit' => '2030-01-01', 'sertifikat_berakhir' => '2029-01-01',
 ]);
-cek(nilai('SELECT sertifikat_terbit t FROM srp2_certified_developers WHERE id=?', [$sert_b1]) !== '2030-01-01',
+cek(nilai('SELECT sertifikat_terbit t FROM srp2_direktori_pengembang WHERE id=?', [$sert_b1]) !== '2030-01-01',
     'Terbit melewati tanggal akhir DITOLAK');
 
 /* MariaDB lokal berjalan TANPA STRICT: '' pada kolom DATE mendarat sebagai
    '0000-00-00' tanpa galat, dan tanggal itu lolos ke layar. */
-cek(nilai('SELECT COUNT(*) c FROM srp2_certified_developers
+cek(nilai('SELECT COUNT(*) c FROM srp2_direktori_pengembang
            WHERE sertifikat_terbit = ? OR sertifikat_berakhir = ?',
           ['0000-00-00', '0000-00-00']) === 0,
     'Nol tanggal 0000-00-00 di direktori');
@@ -596,7 +596,7 @@ echo "\n== Butir 7/8/12: status, wilayah, asosiasi, NPWP ==\n";
    jalankan berikutnya gagal di PRASYARAT, bukan di hal yang sedang diuji.
    Kejadian nyata saat menulis penjaga ini, dan justru membuktikan UNIQUE-nya
    bekerja. */
-$GLOBALS['db']->query("DELETE FROM srp2_certified_developers WHERE nama_perusahaan LIKE 'UJI SRP2 %'");
+$GLOBALS['db']->query("DELETE FROM srp2_direktori_pengembang WHERE nama_perusahaan LIKE 'UJI SRP2 %'");
 $npwpA  = '09' . str_pad((string) mt_rand(1, 999999999999), 13, '0', STR_PAD_LEFT);
 $namaA  = 'UJI SRP2 Alpha ' . mt_rand(1000, 9999);
 $besok  = date('Y-m-d', strtotime('+1 day'));
@@ -607,7 +607,7 @@ http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
     'status_sertifikasi' => 'masih_proses', 'asosiasi' => 'rei' /* kunci master srp2_asosiasi (19 Agt 2026), bukan label */,
     'npwp' => $npwpA, 'kabupaten_id' => 0]);
 
-$barisA = q('SELECT * FROM srp2_certified_developers WHERE nama_perusahaan = ?', [$namaA]);
+$barisA = q('SELECT * FROM srp2_direktori_pengembang WHERE nama_perusahaan = ?', [$namaA]);
 wajib($barisA && ! isset($barisA['__id']), 'PRASYARAT: baris uji benar-benar tersimpan');
 
 cek($barisA['status_sertifikasi'] === 'masih_proses', 'Status bertingkat tersimpan apa adanya');
@@ -654,7 +654,7 @@ cek(preg_match('/select\(\s*.id, nama_perusahaan/', $peng_src) === 1,
    pernah terjadi 5 Agt (penjaga "Cek Backlog" merah oleh komentarnya
    sendiri) dan sudah dicatat di AGENTS.md; kami mengulanginya hari ini. */
 preg_match('/->select\(([^;]*?)\)\s*
-\s*->get_where\(.srp2_certified_developers/s', $peng_src, $msel);
+\s*->get_where\(.srp2_direktori_pengembang/s', $peng_src, $msel);
 cek( ! empty($msel[1]) && stripos($msel[1], 'npwp') === FALSE,
     'Daftar SELECT profil publik TIDAK memuat satu pun kolom npwp');
 
@@ -662,8 +662,8 @@ cek( ! empty($msel[1]) && stripos($msel[1], 'npwp') === FALSE,
    migrasi 065 default kolomnya string 'NULL' (akibat migrasi 051), jadi
    pengajuan diterima tanpa asosiasi tampil "NULL" di direktori publik. */
 $GLOBALS['db']->begin_transaction();
-q("INSERT INTO srp2_certified_developers (nama_perusahaan, status_aktif) VALUES (?, 0)", ['UJI SRP2 Tanpa Asosiasi']);
-cek(nilai("SELECT asosiasi IS NULL FROM srp2_certified_developers WHERE nama_perusahaan = 'UJI SRP2 Tanpa Asosiasi'") == 1,
+q("INSERT INTO srp2_direktori_pengembang (nama_perusahaan, status_aktif) VALUES (?, 0)", ['UJI SRP2 Tanpa Asosiasi']);
+cek(nilai("SELECT asosiasi IS NULL FROM srp2_direktori_pengembang WHERE nama_perusahaan = 'UJI SRP2 Tanpa Asosiasi'") == 1,
     'Baris direktori tanpa asosiasi tersimpan SQL NULL, bukan teks NULL');
 $GLOBALS['db']->rollback();
 cek((int) nilai("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
@@ -671,17 +671,17 @@ cek((int) nilai("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCH
     'Tidak ada kolom asosiasi ber-default string NULL (migrasi 065)');
 
 /* Janji 2 - NPWP kembar ditolak. Dibaca dari JUMLAH BARIS, bukan pesan layar. */
-$sebelum = (int) nilai('SELECT COUNT(*) c FROM srp2_certified_developers');
+$sebelum = (int) nilai('SELECT COUNT(*) c FROM srp2_direktori_pengembang');
 http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
     'nama_perusahaan' => 'UJI SRP2 Kembar ' . mt_rand(1000, 9999), 'status_aktif' => 1,
     'status_sertifikasi' => 'bersertifikat', 'npwp' => $npwpA, 'kabupaten_id' => 0]);
-cek((int) nilai('SELECT COUNT(*) c FROM srp2_certified_developers') === $sebelum,
+cek((int) nilai('SELECT COUNT(*) c FROM srp2_direktori_pengembang') === $sebelum,
     'NPWP kembar DITOLAK - satu NPWP satu pengembang (butir 8)');
 
 /* Janji 3 - penanda masa berlaku diturunkan. Diperiksa dari LAYAR, bukan dari
    kolom: yang dijanjikan ke dinas adalah apa yang mereka lihat. */
 $kol = q("SELECT GROUP_CONCAT(COLUMN_NAME) c FROM information_schema.COLUMNS
-          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_certified_developers'");
+          WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_direktori_pengembang'");
 cek(strpos((string) $kol['c'], 'status_berlaku') === FALSE,
     'TIDAK ada kolom penanda masa berlaku yang disimpan - ia diturunkan');
 
@@ -716,30 +716,30 @@ cek(strpos($profilAktif, 'Bersertifikat') !== FALSE && strpos($profilAktif, 'Tid
 http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
     'id' => (int) $barisA['id'], 'nama_perusahaan' => $namaA, 'status_aktif' => 1,
     'status_sertifikasi' => 'status_karangan', 'kabupaten_id' => 0]);
-cek(nilai('SELECT status_sertifikasi FROM srp2_certified_developers WHERE id = ?',
+cek(nilai('SELECT status_sertifikasi FROM srp2_direktori_pengembang WHERE id = ?',
     [(int) $barisA['id']]) === 'bersertifikat',
     'Status karangan ditolak - nilai lama tidak berubah');
 
 /* Ubah id yang tidak ada: dulu UPDATE nol baris dilaporkan "diperbarui" dan
    meninggalkan jejak srp2_direktori_diubah untuk id hantu (pola c6118f8). */
-$hantu = (int) nilai('SELECT COALESCE(MAX(id), 0) + 100000 m FROM srp2_certified_developers');
-$sebelum = (int) nilai('SELECT COUNT(*) c FROM srp2_certified_developers');
+$hantu = (int) nilai('SELECT COALESCE(MAX(id), 0) + 100000 m FROM srp2_direktori_pengembang');
+$sebelum = (int) nilai('SELECT COUNT(*) c FROM srp2_direktori_pengembang');
 $layarHantu = http('adm', 'Admin_Srp2/save', ['csrf_kpkp_token' => csrf('adm', 'Admin_Srp2'),
     'id' => $hantu, 'nama_perusahaan' => 'UJI SRP2 Hantu ' . mt_rand(1000, 9999), 'status_aktif' => 1])['body'];
 cek(strpos($layarHantu, 'tidak ditemukan') !== FALSE && strpos($layarHantu, 'Daftar pengembang diperbarui') === FALSE,
     'Ubah pengembang yang tidak ada dibalas "tidak ditemukan", bukan sukses');
-cek((int) nilai('SELECT COUNT(*) c FROM srp2_certified_developers') === $sebelum, 'Tidak ada baris baru tercipta');
-cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE objek_tipe='srp2_certified_developers' AND objek_id=?",
+cek((int) nilai('SELECT COUNT(*) c FROM srp2_direktori_pengembang') === $sebelum, 'Tidak ada baris baru tercipta');
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE objek_tipe='srp2_direktori_pengembang' AND objek_id=?",
     [(string) $hantu]) === 0, 'Tidak ada jejak audit yatim untuk id yang tidak ada');
 
-$GLOBALS['db']->query('DELETE FROM srp2_certified_developers WHERE id = ' . (int) $barisA['id']);
-$GLOBALS['db']->query("DELETE FROM srp2_certified_developers WHERE nama_perusahaan LIKE 'UJI SRP2 %'");
+$GLOBALS['db']->query('DELETE FROM srp2_direktori_pengembang WHERE id = ' . (int) $barisA['id']);
+$GLOBALS['db']->query("DELETE FROM srp2_direktori_pengembang WHERE nama_perusahaan LIKE 'UJI SRP2 %'");
 
 
 bersihkan();
 $GLOBALS['regs'] = $GLOBALS['users'] = $GLOBALS['sertifikat'] = [];
-cek((int) nilai('SELECT COUNT(*) c FROM srp2_certified_developers WHERE nama_perusahaan LIKE ?', [CAP . '%']) === 0
-    && (int) nilai('SELECT COUNT(*) c FROM usr_users WHERE email LIKE ?', ['uji_bang_%']) === 0,
+cek((int) nilai('SELECT COUNT(*) c FROM srp2_direktori_pengembang WHERE nama_perusahaan LIKE ?', [CAP . '%']) === 0
+    && (int) nilai('SELECT COUNT(*) c FROM usr_akun WHERE email LIKE ?', ['uji_bang_%']) === 0,
     'Data uji dibersihkan');
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";

@@ -46,7 +46,7 @@ $impor = function ($file) use ($http, $csrf) {
 };
 try {
     $h = password_hash($sandi, PASSWORD_BCRYPT);
-    $st = $db->prepare("INSERT INTO usr_users (name,email,password,role,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at) VALUES ('Uji PSU',?,?,'admin','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
+    $st = $db->prepare("INSERT INTO usr_akun (nama,email,kata_sandi,peran,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at) VALUES ('Uji PSU',?,?,'admin','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
     $st->bind_param('ss', $email, $h); $st->execute(); $uid = $db->insert_id;
     $http('Auth/login'); $http('Auth/do_login', ['email' => $email, 'password' => $sandi, 'csrf_kpkp_token' => $csrf()]);
     [$b] = $http('Admin_Psu'); $cek(strpos($b, 'Admin_Psu/import_excel') !== FALSE, 'Admin membuka layar PSU dengan formulir impor');
@@ -75,10 +75,10 @@ try {
     $pub = html_entity_decode($http('Psu')[0]);
     $cek(strpos($pub, "{$tag} Griya Satu") !== FALSE && strpos($pub, "{$tag} Griya Dua") === FALSE, 'Halaman publik PSU menampilkan baris Tampil=Ya saja');
 
-    $cek((int) $db->query("SELECT COUNT(*) FROM sys_jejak_audit WHERE aksi='psu_diimpor_excel' AND actor_id={$uid}")->fetch_row()[0] === 1, 'Impor dicatat sekali di jejak audit (impor duplikat & cacat tidak tercatat)');
+    $cek((int) $db->query("SELECT COUNT(*) FROM sys_jejak_audit WHERE aksi='psu_diimpor_excel' AND pelaku_id={$uid}")->fetch_row()[0] === 1, 'Impor dicatat sekali di jejak audit (impor duplikat & cacat tidak tercatat)');
 } finally {
     $db->query("DELETE FROM psu_serah_terima WHERE nama_perumahan LIKE '{$tag}%'");
-    $db->query("DELETE FROM usr_users WHERE email='" . $db->real_escape_string($email) . "'");
+    $db->query("DELETE FROM usr_akun WHERE email='" . $db->real_escape_string($email) . "'");
     foreach ($tmp as $f) @unlink($f); @unlink($jar);
     echo "pembersihan selesai\n";
 }

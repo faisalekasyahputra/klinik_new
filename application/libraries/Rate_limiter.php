@@ -4,7 +4,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * Pembatas laju bersama berbasis fixed window.
  *
- * Nilai dimensi tidak pernah disimpan. limit_key adalah SHA-256 atas policy,
+ * Nilai dimensi tidak pernah disimpan. kunci adalah SHA-256 atas policy,
  * nama dimensi, dan nilai yang sudah dinormalisasi. NIK terlebih dahulu di-HMAC
  * memakai KPKP_DATA_PEPPER melalui Encryption_lib.
  */
@@ -38,20 +38,20 @@ class Rate_limiter {
         foreach ($resolved['keys'] as $key) {
             $row = $this->CI->db
                 ->select(
-                    'failed_attempts, GREATEST(1, ' . $resolved['window']
-                    . ' - TIMESTAMPDIFF(SECOND, window_started_at, NOW())) AS retry_after',
+                    'jumlah_gagal, GREATEST(1, ' . $resolved['window']
+                    . ' - TIMESTAMPDIFF(SECOND, jendela_mulai_at, NOW())) AS retry_after',
                     FALSE
                 )
-                ->where('limit_key', $key)
+                ->where('kunci', $key)
                 ->where(
-                    'window_started_at > DATE_SUB(NOW(), INTERVAL '
+                    'jendela_mulai_at > DATE_SUB(NOW(), INTERVAL '
                     . $resolved['window'] . ' SECOND)',
                     NULL,
                     FALSE
                 )
-                ->get('sys_rate_limits')
+                ->get('sys_batas_laju')
                 ->row_array();
-            if ($row && (int) $row['failed_attempts'] >= $resolved['limit']) {
+            if ($row && (int) $row['jumlah_gagal'] >= $resolved['limit']) {
                 $retry_after = max($retry_after, (int) $row['retry_after']);
             }
         }
@@ -79,18 +79,18 @@ class Rate_limiter {
         $retry_after = 0;
         foreach ($resolved['keys'] as $key) {
             $ok = $this->CI->db->query(
-                'INSERT INTO sys_rate_limits (limit_key, window_started_at, failed_attempts)
+                'INSERT INTO sys_batas_laju (kunci, jendela_mulai_at, jumlah_gagal)
                  VALUES (?, NOW(), 1)
                  ON DUPLICATE KEY UPDATE
-                    failed_attempts = IF(
-                        window_started_at <= DATE_SUB(NOW(), INTERVAL ' . $resolved['window'] . ' SECOND),
+                    jumlah_gagal = IF(
+                        jendela_mulai_at <= DATE_SUB(NOW(), INTERVAL ' . $resolved['window'] . ' SECOND),
                         1,
-                        LEAST(255, failed_attempts + 1)
+                        LEAST(255, jumlah_gagal + 1)
                     ),
-                    window_started_at = IF(
-                        window_started_at <= DATE_SUB(NOW(), INTERVAL ' . $resolved['window'] . ' SECOND),
+                    jendela_mulai_at = IF(
+                        jendela_mulai_at <= DATE_SUB(NOW(), INTERVAL ' . $resolved['window'] . ' SECOND),
                         NOW(),
-                        window_started_at
+                        jendela_mulai_at
                     )',
                 [$key]
             );
@@ -99,16 +99,16 @@ class Rate_limiter {
             }
             $row = $this->CI->db
                 ->select(
-                    'failed_attempts, GREATEST(1, ' . $resolved['window']
-                    . ' - TIMESTAMPDIFF(SECOND, window_started_at, NOW())) AS retry_after',
+                    'jumlah_gagal, GREATEST(1, ' . $resolved['window']
+                    . ' - TIMESTAMPDIFF(SECOND, jendela_mulai_at, NOW())) AS retry_after',
                     FALSE
                 )
-                ->where('limit_key', $key)
-                ->get('sys_rate_limits')
+                ->where('kunci', $key)
+                ->get('sys_batas_laju')
                 ->row_array();
-            if ($row && (int) $row['failed_attempts'] > $resolved['limit']) {
+            if ($row && (int) $row['jumlah_gagal'] > $resolved['limit']) {
                 $blocked = TRUE;
-                $warning_triggered = $warning_triggered || (int) $row['failed_attempts'] === $resolved['limit'] + 1;
+                $warning_triggered = $warning_triggered || (int) $row['jumlah_gagal'] === $resolved['limit'] + 1;
                 $retry_after = max($retry_after, (int) $row['retry_after']);
             }
         }
@@ -175,18 +175,18 @@ class Rate_limiter {
         $blocked_keys = [];
         foreach ($resolved['keys'] as $key) {
             $ok = $this->CI->db->query(
-                'INSERT INTO sys_rate_limits (limit_key, window_started_at, failed_attempts)
+                'INSERT INTO sys_batas_laju (kunci, jendela_mulai_at, jumlah_gagal)
                  VALUES (?, NOW(), 1)
                  ON DUPLICATE KEY UPDATE
-                    failed_attempts = LAST_INSERT_ID(IF(
-                        window_started_at <= DATE_SUB(NOW(), INTERVAL ' . $window . ' SECOND),
+                    jumlah_gagal = LAST_INSERT_ID(IF(
+                        jendela_mulai_at <= DATE_SUB(NOW(), INTERVAL ' . $window . ' SECOND),
                         1,
-                        LEAST(255, failed_attempts + 1)
+                        LEAST(255, jumlah_gagal + 1)
                     )),
-                    window_started_at = IF(
-                        window_started_at <= DATE_SUB(NOW(), INTERVAL ' . $window . ' SECOND),
+                    jendela_mulai_at = IF(
+                        jendela_mulai_at <= DATE_SUB(NOW(), INTERVAL ' . $window . ' SECOND),
                         NOW(),
-                        window_started_at
+                        jendela_mulai_at
                     )',
                 [$key]
             );
@@ -207,8 +207,8 @@ class Rate_limiter {
         if ($blocked) {
             foreach ($blocked_keys as $key) {
                 $row = $this->CI->db->query(
-                    'SELECT GREATEST(1, ' . $window . ' - TIMESTAMPDIFF(SECOND, window_started_at, NOW())) AS retry_after
-                     FROM sys_rate_limits WHERE limit_key = ?',
+                    'SELECT GREATEST(1, ' . $window . ' - TIMESTAMPDIFF(SECOND, jendela_mulai_at, NOW())) AS retry_after
+                     FROM sys_batas_laju WHERE kunci = ?',
                     [$key]
                 );
                 $r = $row ? $row->row_array() : NULL;

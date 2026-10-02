@@ -170,7 +170,7 @@ class Rekam_data_model extends CI_Model {
             return $gerbang;
         }
         $this->db->where('id', (int) $gerbang['laporan']['id'])
-            ->update('rd_laporan', ['current_step' => mb_substr((string) $langkah, 0, 24)]);
+            ->update('rd_laporan', ['langkah_sekarang' => mb_substr((string) $langkah, 0, 24)]);
         return ['success' => TRUE];
     }
 
@@ -394,7 +394,7 @@ class Rekam_data_model extends CI_Model {
         $ok = $this->db->insert('rd_perumahan_bnba', [
             'laporan_id'   => $laporan_id,
             'nama_asli'    => mb_substr((string) $meta['nama_asli'], 0, 255),
-            'private_path' => (string) $meta['private_path'],
+            'path_privat' => (string) $meta['path_privat'],
             'mime_type'    => mb_substr((string) $meta['mime_type'], 0, 100),
             'ukuran'       => (int) $meta['ukuran'],
             'uploaded_by'  => (int) $meta['uploaded_by'] ?: NULL,
@@ -404,7 +404,7 @@ class Rekam_data_model extends CI_Model {
             return $this->gagal('write_failed', 'Berkas BNBA belum tercatat.');
         }
         $this->db->trans_commit();
-        return ['success' => TRUE, 'path_lama' => $lama['private_path'] ?? NULL];
+        return ['success' => TRUE, 'path_lama' => $lama['path_privat'] ?? NULL];
     }
 
     /** Baca BNBA ter-scope. NULL kalau laporannya di luar wilayah pemanggil. */
@@ -787,7 +787,7 @@ class Rekam_data_model extends CI_Model {
         }
         return $this->db
             ->select('k.id AS kabupaten_id, k.nama AS kabupaten,'
-                . ' l.id AS laporan_id, l.status, l.current_step,'
+                . ' l.id AS laporan_id, l.status, l.langkah_sekarang,'
                 . ' l.submitted_at, l.reviewed_at, l.catatan_admin')
             ->from('kabupaten k')
             ->join('rd_laporan l',
@@ -1014,7 +1014,7 @@ class Rekam_data_model extends CI_Model {
             return [];
         }
         return $this->db
-            ->select('id, triwulan, status, current_step, submitted_at, reviewed_at, catatan_admin, updated_at')
+            ->select('id, triwulan, status, langkah_sekarang, submitted_at, reviewed_at, catatan_admin, updated_at')
             ->where(['domain' => $domain, 'kabupaten_id' => (int) $kabupaten_id, 'tahun' => (int) $tahun])
             ->order_by('triwulan', 'DESC')
             ->get('rd_laporan')->result_array();

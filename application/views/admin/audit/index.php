@@ -54,7 +54,7 @@ $filter_html = ob_get_clean();
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
                     <th scope="col" class="px-4 py-3"><?= admin_sort_header('Waktu', 'created_at', $table, $base_url) ?></th>
-                    <th scope="col" class="px-4 py-3"><?= admin_sort_header('Pelaku', 'actor_email', $table, $base_url) ?></th>
+                    <th scope="col" class="px-4 py-3"><?= admin_sort_header('Pelaku', 'pelaku_email', $table, $base_url) ?></th>
                     <th scope="col" class="px-4 py-3"><?= admin_sort_header('Aksi', 'aksi', $table, $base_url) ?></th>
                     <th scope="col" class="px-4 py-3">Ringkasan</th>
                 </tr>
@@ -88,14 +88,14 @@ $filter_html = ob_get_clean();
                         <div class="text-gray-500 dark:text-brand-muted"><?= html_escape($j->created_at ? date('H.i', strtotime($j->created_at)) . ' WIB' : '-') ?></div>
                     </td>
                     <td class="px-4 py-3 text-xs">
-                        <?php if ( ! empty($j->actor_email)): ?>
-                        <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($j->actor_email) ?></div>
-                        <div class="text-gray-500 dark:text-brand-muted"><?= html_escape($j->actor_role ?: '-') ?></div>
-                        <?php // actor_id kosong sementara emailnya ada = akunnya sudah dihapus
+                        <?php if ( ! empty($j->pelaku_email)): ?>
+                        <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($j->pelaku_email) ?></div>
+                        <div class="text-gray-500 dark:text-brand-muted"><?= html_escape($j->pelaku_peran ?: '-') ?></div>
+                        <?php // pelaku_id kosong sementara emailnya ada = akunnya sudah dihapus
                               // (FK ON DELETE SET NULL) dan salinan email inilah yang menyelamatkan
                               // "siapa"-nya. Ditandai apa adanya, bukan disembunyikan - akun yang
                               // sudah tidak ada justru yang paling sering perlu ditelusuri. ?>
-                        <?php if ($j->actor_id === NULL): ?>
+                        <?php if ($j->pelaku_id === NULL): ?>
                         <div class="mt-1 text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">akun sudah dihapus</div>
                         <?php endif; ?>
                         <?php else: ?>

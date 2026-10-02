@@ -31,6 +31,7 @@ $daftar = function ($isi, $pola) { return preg_match($pola, $isi, $m) ? array_ma
 if ( ! class_exists('CI_Migration')) { class CI_Migration {} }
 if ( ! class_exists('CI_Model')) { class CI_Model {} }
 require $AKAR . '/application/migrations/20260701000071_status_tertutup_tabel_mati.php';
+require $AKAR . '/application/migrations/20260701000072_penamaan_indonesia.php';
 $M = 'Migration_Status_tertutup_tabel_mati';
 $cache_uji = NULL;
 
@@ -62,7 +63,9 @@ try {
     foreach ($db->query("SELECT TABLE_NAME, CONSTRAINT_NAME, CHECK_CLAUSE FROM information_schema.CHECK_CONSTRAINTS
         WHERE CONSTRAINT_SCHEMA=DATABASE()")->fetch_all(MYSQLI_ASSOC) as $r) $klausa[$r['TABLE_NAME'] . '.' . $r['CONSTRAINT_NAME']] = $r['CHECK_CLAUSE'];
     $db->query("SET SESSION sql_mode = ''"); // koneksi aplikasi: stricton FALSE membuang STRICT_*
-    foreach ($M::CEK as $nama => [$tabel, $kolom, $nilai]) {
+    // Tabel/kolom di konstanta 071 memakai nama sebelum migrasi 072; diterjemahkan lewat peta 072.
+    foreach ($M::CEK as $nama => [$tabel_071, $kolom_071, $nilai]) {
+        [$tabel, $kolom] = [Migration_Penamaan_indonesia::tabel($tabel_071), Migration_Penamaan_indonesia::kolom($tabel_071, $kolom_071)];
         $k = $klausa["$tabel.$nama"] ?? '';
         $lengkap = $k !== '' && stripos($k, 'binary') !== FALSE;
         foreach ($nilai as $v) $lengkap = $lengkap && strpos($k, "'$v'") !== FALSE;
@@ -85,20 +88,20 @@ try {
     $cek($sama($daftar($sumber('controllers/Admin_Kemitraan.php'), '/\$status_sah = \[([^\]]+)\]/'), $C['ck_kkn_pendaftaran_status'][2]),
         'kkn_magang_pendaftaran: himpunan = $status_sah Admin_Kemitraan');
     $cek($sama($daftar($sumber('controllers/Admin_Srp2.php'), '/\$status_pilihan = \[([^\]]+)\]/'), $C['ck_srp2_status_verifikasi'][2]),
-        'srp2_registrations: himpunan = $status_pilihan Admin_Srp2');
+        'srp2_pengajuan: himpunan = $status_pilihan Admin_Srp2');
     require_once $AKAR . '/application/models/Janji_temu_model.php';
     $alur = array_keys(Janji_temu_model::ALUR);
     foreach (Janji_temu_model::ALUR as $ke) $alur = array_merge($alur, array_keys($ke));
     $cek($sama(array_values(array_unique($alur)), $C['ck_janji_temu_status'][2]), 'forum_janji_temu: himpunan = Janji_temu_model::ALUR');
     require_once $AKAR . '/application/helpers/housing_queue_helper.php';
-    $enum = $satu("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='sf_housing_queue' AND COLUMN_NAME='status_antrean'");
+    $enum = $satu("SELECT COLUMN_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='sf_antrean_pengajuan' AND COLUMN_NAME='status_antrean'");
     preg_match_all("/'([^']+)'/", (string) $enum, $em);
     $cek($sama(array_keys(housing_queue_statuses()), $C['ck_riwayat_antrean_ke'][2]) && $sama($em[1], $C['ck_riwayat_antrean_ke'][2])
         && $C['ck_riwayat_antrean_dari'][2] === $C['ck_riwayat_antrean_ke'][2], 'sf_riwayat_keputusan_antrean: himpunan = housing_queue_statuses() = ENUM status_antrean');
     $kode = $sumber('models/Auth_model.php') . $sumber('controllers/Admin_Users.php') . $sumber('controllers/Kemitraan_Bidang.php') . $sumber('models/Housing_assessment_model.php');
     $ada = TRUE;
     foreach (array_merge($C['ck_usr_users_status'][2], $C['ck_penilaian_status'][2]) as $v) $ada = $ada && strpos($kode, "'$v'") !== FALSE;
-    $cek($ada, 'usr_users.status dan sf_penilaian_perumahan.status: tiap nilai himpunan memang ditulis penulisnya');
+    $cek($ada, 'usr_akun.status dan sf_penilaian_perumahan.status: tiap nilai himpunan memang ditulis penulisnya');
 
     echo "\n-- Penyapu cache hulu --\n";
     $config = []; require $AKAR . '/application/config/data_lifecycle.php';

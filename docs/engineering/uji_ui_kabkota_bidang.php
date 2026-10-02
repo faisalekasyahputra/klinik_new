@@ -37,7 +37,7 @@ function akun($role, $kab = NULL, $bidang = NULL) {
     global $db, $tag, $sandi, $users;
     $e = "{$tag}_{$role}_" . mt_rand(1000, 9999) . '@example.test';
     $h = password_hash($sandi, PASSWORD_BCRYPT);
-    $st = $db->prepare("INSERT INTO usr_users (name,email,username,password,role,kabupaten_id,bidang_kode,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at)
+    $st = $db->prepare("INSERT INTO usr_akun (nama,email,nama_pengguna,kata_sandi,peran,kabupaten_id,bidang_kode,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at)
         VALUES ('Uji UI KB',?,?,?,?,?,?,'active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
     $u = $tag . mt_rand(10000, 99999);
     $st->bind_param('ssssis', $e, $u, $h, $role, $kab, $bidang);
@@ -49,7 +49,7 @@ function akun($role, $kab = NULL, $bidang = NULL) {
 function laporan($domain, $kab, $tahun, $tw, $status, $step = 'review') {
     global $db, $laporan;
     $kirim = $status === 'draft' ? NULL : date('Y-m-d H:i:s');
-    $st = $db->prepare("INSERT INTO rd_laporan (domain,kabupaten_id,tahun,triwulan,status,current_step,submitted_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,NOW(),NOW())");
+    $st = $db->prepare("INSERT INTO rd_laporan (domain,kabupaten_id,tahun,triwulan,status,langkah_sekarang,submitted_at,created_at,updated_at) VALUES (?,?,?,?,?,?,?,NOW(),NOW())");
     $st->bind_param('siiisss', $domain, $kab, $tahun, $tw, $status, $step, $kirim);
     $st->execute();
     return $laporan[] = (int) $db->insert_id;
@@ -188,10 +188,10 @@ try {
         $db->query("DELETE FROM rd_laporan WHERE id IN ({$ids})");
     }
     foreach ($users as $id) {
-        $db->query('DELETE FROM sys_jejak_audit WHERE actor_id=' . (int) $id);
-        $db->query('DELETE FROM usr_users WHERE id=' . (int) $id);
+        $db->query('DELETE FROM sys_jejak_audit WHERE pelaku_id=' . (int) $id);
+        $db->query('DELETE FROM usr_akun WHERE id=' . (int) $id);
     }
-    $db->query("DELETE FROM usr_users WHERE email LIKE '{$tag}_%@example.test'");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE '{$tag}_%@example.test'");
     foreach ($jars as $jj) { @unlink($jj); }
 }
 echo "\nRINGKASAN: {$total} pemeriksaan, {$gagal} gagal\n";

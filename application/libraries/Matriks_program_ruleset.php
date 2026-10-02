@@ -12,10 +12,10 @@ class Matriks_program_ruleset {
     const VERSION = 'MATRIKS-2026-09-10';
     // Workbook yang dibaca 10 Sep 2026: Sheet3 A3:J22 (dulu disebut Sheet3).
     const FORM_FIELDS = [
-        'matrix_land_ownership_code' => ['Kepemilikan lahan', ['land_none'=>'Tidak punya', 'land_legal'=>'Punya lahan sah']],
-        'matrix_environment_condition_code' => ['Kondisi lingkungan / fisik bangunan', ['env_safe'=>'Aman / tidak terdampak bencana', 'env_relocation_zone'=>'Kawasan relokasi pemerintah', 'env_disaster_severe'=>'Terdampak bencana: kerusakan berat / roboh', 'env_disaster_moderate'=>'Terdampak bencana: kerusakan sedang (30–70%)', 'env_slum_uninhabitable'=>'Kumuh / tidak layak: atap, lantai, dinding jelek atau rusak']],
-        'matrix_occupation_finance_code' => ['Kondisi finansial untuk program', ['work_stable_or_unstable_no_subsidy'=>'Berpenghasilan tetap / tidak tetap, belum pernah mendapat subsidi', 'work_can_save_irregular'=>'Mampu menabung / penghasilan tidak tetap', 'work_other'=>'Kondisi lainnya']],
-        'matrix_marital_family_code' => ['Kondisi keluarga', ['family_single'=>'Belum menikah', 'family_married'=>'Menikah', 'family_head_of_household'=>'Kepala keluarga (menikah / duda / janda)', 'family_multi_household'=>'Dihuni lebih dari 1 KK (kepala keluarga)']],
+        'matriks_kepemilikan_lahan' => ['Kepemilikan lahan', ['land_none'=>'Tidak punya', 'land_legal'=>'Punya lahan sah']],
+        'matriks_kondisi_lingkungan' => ['Kondisi lingkungan / fisik bangunan', ['env_safe'=>'Aman / tidak terdampak bencana', 'env_relocation_zone'=>'Kawasan relokasi pemerintah', 'env_disaster_severe'=>'Terdampak bencana: kerusakan berat / roboh', 'env_disaster_moderate'=>'Terdampak bencana: kerusakan sedang (30–70%)', 'env_slum_uninhabitable'=>'Kumuh / tidak layak: atap, lantai, dinding jelek atau rusak']],
+        'matriks_pekerjaan_keuangan' => ['Kondisi finansial untuk program', ['work_stable_or_unstable_no_subsidy'=>'Berpenghasilan tetap / tidak tetap, belum pernah mendapat subsidi', 'work_can_save_irregular'=>'Mampu menabung / penghasilan tidak tetap', 'work_other'=>'Kondisi lainnya']],
+        'matriks_status_keluarga' => ['Kondisi keluarga', ['family_single'=>'Belum menikah', 'family_married'=>'Menikah', 'family_head_of_household'=>'Kepala keluarga (menikah / duda / janda)', 'family_multi_household'=>'Dihuni lebih dari 1 KK (kepala keluarga)']],
     ];
 
     /** Hasil awal tersimpan terpisah; data yang kosong bukan persetujuan syarat. */
@@ -25,25 +25,25 @@ class Matriks_program_ruleset {
         $birth = DateTimeImmutable::createFromFormat('!Y-m-d', (string) ($profile['birth_date'] ?? ''));
         $age = $birth && $birth->format('Y-m-d') === ($profile['birth_date'] ?? '') && $birth->format('Y-m-d') <= $today
             ? $birth->diff(new DateTimeImmutable($today))->y : NULL;
-        $income = $profile['monthly_income'] ?? NULL;
+        $income = $profile['penghasilan'] ?? NULL;
         $income = is_numeric($income) && $income >= 0 ? (float) $income : NULL;
-        $family = $draft['matrix_marital_family_code'] ?? NULL;
-        if (!$family) $family = ['single'=>'family_single', 'married'=>'family_married'][$profile['marital_status_code'] ?? ''] ?? NULL;
+        $family = $draft['matriks_status_keluarga'] ?? NULL;
+        if (!$family) $family = ['single'=>'family_single', 'married'=>'family_married'][$profile['status_perkawinan'] ?? ''] ?? NULL;
         $input = [
-            'monthly_income'=>$income, 'age_years'=>$age,
-            'dtks_code'=>$draft['matrix_dtks_status'] ?? NULL,
-            'land_code'=>$draft['matrix_land_ownership_code'] ?? NULL,
-            'housing_code'=>$draft['matrix_current_housing_code'] ?? NULL,
-            'environment_code'=>$draft['matrix_environment_condition_code'] ?? NULL,
-            'occupation_code'=>$draft['matrix_occupation_finance_code'] ?? NULL,
+            'penghasilan'=>$income, 'age_years'=>$age,
+            'dtks_code'=>$draft['matriks_status_dtks'] ?? NULL,
+            'land_code'=>$draft['matriks_kepemilikan_lahan'] ?? NULL,
+            'housing_code'=>$draft['matriks_rumah_sekarang'] ?? NULL,
+            'environment_code'=>$draft['matriks_kondisi_lingkungan'] ?? NULL,
+            'pekerjaan'=>$draft['matriks_pekerjaan_keuangan'] ?? NULL,
             'family_code'=>$family,
-            'marital_status_code'=>$profile['marital_status_code'] ?? NULL,
+            'status_perkawinan'=>$profile['status_perkawinan'] ?? NULL,
         ];
         $ranges = ['income_0_1_5'=>[0,1500000], 'income_1_5_2_2'=>[1500000,2200000], 'income_2_2_2_8'=>[2200000,2800000], 'income_2_8_8_5'=>[2800000,8500000], 'income_2_8_10'=>[2800000,10000000], 'income_gt_8_5'=>[8500000,INF], 'income_gt_10'=>[10000000,INF]];
         // Kolom DTKS (indeks 2) sengaja tidak dicocokkan lagi: UAT dinas warga #10 meminta Status DTKS
         // dihilangkan. Isiannya sudah dicabut dari wizard, jadi mensyaratkannya hanya membuat setiap
         // rekomendasi berbunyi "perlu dilengkapi: Status DTKS" yang tidak bisa dilengkapi warga.
-        $fields = [3=>['land_code','Kepemilikan lahan'],4=>['housing_code','Kepemilikan rumah'],5=>['environment_code','Kondisi lingkungan / bangunan'],6=>['occupation_code','Kondisi finansial'],8=>['family_code','Kondisi keluarga']];
+        $fields = [3=>['land_code','Kepemilikan lahan'],4=>['housing_code','Kepemilikan rumah'],5=>['environment_code','Kondisi lingkungan / bangunan'],6=>['pekerjaan','Kondisi finansial'],8=>['family_code','Kondisi keluarga']];
         $items = [];
         foreach (self::ROWS as $index => $row) {
             [$min,$max] = $ranges[$row[0]];
@@ -55,7 +55,7 @@ class Matriks_program_ruleset {
                 if ($row[$column] === NULL) continue;
                 $actual = $input[$key];
                 if ($key === 'family_code' && in_array($row[$column], ['family_single','family_married'], TRUE)) {
-                    $actual = ['single'=>'family_single','married'=>'family_married','divorced'=>'family_divorced'][$input['marital_status_code'] ?? ''] ?? NULL;
+                    $actual = ['single'=>'family_single','married'=>'family_married','divorced'=>'family_divorced'][$input['status_perkawinan'] ?? ''] ?? NULL;
                 }
                 if ($actual === NULL || $actual === '') { $missing[] = $label; continue; }
                 // Menumpang/sewa juga memenuhi kategori gabungan belum punya.
@@ -67,13 +67,13 @@ class Matriks_program_ruleset {
                 elseif (!$this->age_matches($row[7], $age)) continue;
             }
             $criteria = ['Pendapatan: ' . ($max === INF ? '> Rp' . number_format($min, 0, ',', '.') : 'Rp' . number_format($min, 0, ',', '.') . '–Rp' . number_format($max, 0, ',', '.'))];
-            foreach ([3=>'matrix_land_ownership_code',5=>'matrix_environment_condition_code',6=>'matrix_occupation_finance_code',8=>'matrix_marital_family_code'] as $column=>$field) {
+            foreach ([3=>'matriks_kepemilikan_lahan',5=>'matriks_kondisi_lingkungan',6=>'matriks_pekerjaan_keuangan',8=>'matriks_status_keluarga'] as $column=>$field) {
                 if ($row[$column] !== NULL) $criteria[] = self::FORM_FIELDS[$field][1][$row[$column]];
             }
             if ($row[7] !== NULL) $criteria[] = ['produktif_21'=>'Usia 21–59 tahun', 'produktif_18'=>'Usia 18–59 tahun', 'produktif_18_or_tua'=>'Usia minimal 18 tahun'][$row[7]];
             $items[] = ['program_name'=>$row[9], 'source_row'=>$index+3, 'missing'=>$missing, 'criteria'=>$criteria];
         }
-        return ['ruleset_version'=>self::VERSION, 'source_sheet'=>'Sheet3', 'evaluated_at'=>date('c'), 'input'=>$input, 'items'=>$items];
+        return ['versi_aturan'=>self::VERSION, 'source_sheet'=>'Sheet3', 'evaluated_at'=>date('c'), 'input'=>$input, 'items'=>$items];
     }
 
     /* Gaji -> satu angka desil REPRESENTATIF dari rentang yang dipakai
@@ -126,7 +126,7 @@ class Matriks_program_ruleset {
     }
 
     /**
-     * Nama program kolom J Sheet3 -> kode_program katalog sf_programs, supaya hasil
+     * Nama program kolom J Sheet3 -> kode_program katalog sf_program, supaya hasil
      * rekomendasi bisa menampilkan deskripsi program (UAT dinas warga #10, butir 4).
      * PK (Peningkatan Kualitas) -> rtlh, PB (Pembangunan Baru) -> pb.
      */
@@ -252,9 +252,9 @@ class Matriks_program_ruleset {
     ];
 
     /**
-     * @param array $input Kunci yang dipakai: income_code, welfare_decile,
+     * @param array $input Kunci yang dipakai: income_code, desil_kesejahteraan,
      *   dtks_code, land_code, housing_code, environment_code,
-     *   occupation_code, age_years, family_code - null/'' berarti belum
+     *   pekerjaan, age_years, family_code - null/'' berarti belum
      *   diisi (baris yang mensyaratkan kolom itu otomatis tidak cocok,
      *   BUKAN dianggap wildcard - beda dari 'Tidak Dibatasi' di sumbernya
      *   yang memang sengaja tidak mempedulikan kolom itu).
@@ -271,14 +271,14 @@ class Matriks_program_ruleset {
 
             if ($income !== null && $income !== ($input['income_code'] ?? NULL)) { continue; }
             if ($deciles !== null) {
-                $decile = filter_var($input['welfare_decile'] ?? NULL, FILTER_VALIDATE_INT);
+                $decile = filter_var($input['desil_kesejahteraan'] ?? NULL, FILTER_VALIDATE_INT);
                 if ($decile === FALSE || ! in_array($decile, $deciles, TRUE)) { continue; }
             }
             if ($dtks !== null && $dtks !== ($input['dtks_code'] ?? NULL)) { continue; }
             if ($land !== null && $land !== ($input['land_code'] ?? NULL)) { continue; }
             if ($housing !== null && $housing !== ($input['housing_code'] ?? NULL)) { continue; }
             if ($environment !== null && $environment !== ($input['environment_code'] ?? NULL)) { continue; }
-            if ($occupation !== null && $occupation !== ($input['occupation_code'] ?? NULL)) { continue; }
+            if ($occupation !== null && $occupation !== ($input['pekerjaan'] ?? NULL)) { continue; }
             if ($age_rule !== null && ! $this->age_matches($age_rule, $input['age_years'] ?? NULL)) { continue; }
             if ($family !== null && $family !== ($input['family_code'] ?? NULL)) { continue; }
 

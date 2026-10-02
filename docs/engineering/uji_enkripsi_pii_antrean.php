@@ -6,8 +6,8 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  *   php docs/engineering/uji_enkripsi_pii_antrean.php
  *
  * Fase 3 normalisasi langkah 1 (keputusan pemilik produk 2 Okt 2026). Yang dijaga:
- *   A. Bentuk skema: kolom polos sf_housing_queue (nik_pengaju, nama_lengkap, data_*_json) dan
- *      srp2_registrations.nik_ktp HILANG; pasangan *_ciphertext + sidik + indeksnya ADA;
+ *   A. Bentuk skema: kolom polos sf_antrean_pengajuan (nik_pengaju, nama_lengkap, data_*_json) dan
+ *      srp2_pengajuan.nik_ktp HILANG; pasangan *_ciphertext + sidik + indeksnya ADA;
  *      Migrate::status() melaporkannya.
  *   B. Isi DB: tidak ada baris antrean/SRP2 yang menyimpan NIK 16 digit polos, setiap ciphertext
  *      sungguhan terenkripsi, dan tidak ada kode aplikasi yang menulis kolom polos lagi.
@@ -37,21 +37,21 @@ $csrf = function ($jar) { foreach (file($jar) as $l) { $p = explode("\t", trim($
 $jar = function () use (&$jars) { $j = tempnam(sys_get_temp_dir(), 'pii'); $jars[] = $j; return $j; };
 $akun = function ($role, $kab = NULL) use ($db, $tag, $pw, &$ids) {
     $e = "{$tag}_{$role}_" . count($ids) . '@example.test'; $h = password_hash($pw, PASSWORD_BCRYPT);
-    $st = $db->prepare("INSERT INTO usr_users (name,email,password,role,kabupaten_id,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at) VALUES ('Uji PII',?,?,?,?,'active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
+    $st = $db->prepare("INSERT INTO usr_akun (nama,email,kata_sandi,peran,kabupaten_id,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at) VALUES ('Uji PII',?,?,?,?,'active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
     $st->bind_param('sssi', $e, $h, $role, $kab); $st->execute(); $ids[] = $db->insert_id; return [$db->insert_id, $e];
 };
 $login = function ($email) use ($http, $csrf, $jar, $pw) { $j = $jar(); $http($j, 'Auth/login'); $http($j, 'Auth/do_login', ['email' => $email, 'password' => $pw, 'csrf_kpkp_token' => $csrf($j)]); return $j; };
 $pinjam = function ($key) use ($db, &$rate_asli) {
     if (array_key_exists($key, $rate_asli)) return;
-    $st = $db->prepare('SELECT limit_key,window_started_at,failed_attempts FROM sys_rate_limits WHERE limit_key=?'); $st->bind_param('s', $key); $st->execute();
+    $st = $db->prepare('SELECT kunci,jendela_mulai_at,jumlah_gagal FROM sys_batas_laju WHERE kunci=?'); $st->bind_param('s', $key); $st->execute();
     $rate_asli[$key] = $st->get_result()->fetch_assoc();
-    $st = $db->prepare('DELETE FROM sys_rate_limits WHERE limit_key=?'); $st->bind_param('s', $key); $st->execute();
+    $st = $db->prepare('DELETE FROM sys_batas_laju WHERE kunci=?'); $st->bind_param('s', $key); $st->execute();
 };
 // Tiket tepat 10 karakter: kolomnya varchar(10) dan MySQL non-strict memotong diam-diam (uji scope).
 $tiket = function () { return 'UPI' . strtoupper(bin2hex(random_bytes(3))) . 'X'; };
 $antre = function ($kab, $uid, $prog, $nama, $nik, $t) use ($db, $enc, &$antrean) {
     $survey = json_encode(['pekerjaan' => 'Karyawan Swasta', 'penghasilan' => 2500000, 'status_kepemilikan' => 'Sewa/Kontrak', 'alasan_pengajuan' => 'Uji enkripsi']);
-    $st = $db->prepare("INSERT INTO sf_housing_queue (ticket_code,user_id,kabupaten_id,program_id,nik_pengaju_ciphertext,nik_pengaju_lookup_hash,nama_lengkap_ciphertext,data_survey_json_ciphertext,status_antrean,source_mode,created_at) VALUES (?,?,?,?,?,?,?,?,'pending','legacy',NOW())");
+    $st = $db->prepare("INSERT INTO sf_antrean_pengajuan (kode_tiket,user_id,kabupaten_id,program_id,nik_pengaju_ciphertext,nik_pengaju_lookup_hash,nama_lengkap_ciphertext,data_survey_json_ciphertext,status_antrean,mode_sumber,created_at) VALUES (?,?,?,?,?,?,?,?,'pending','legacy',NOW())");
     $c1 = $enc->encrypt($nik); $h = $enc->deterministic_hash($nik); $c2 = $enc->encrypt($nama); $c3 = $enc->encrypt($survey);
     $st->bind_param('siiissss', $t, $uid, $kab, $prog, $c1, $h, $c2, $c3); $st->execute(); $antrean[] = $db->insert_id; return $db->insert_id;
 };
@@ -62,9 +62,9 @@ try {
 
     echo "A. Bentuk skema\n";
     $kolom = function ($t) use ($db) { return array_column($db->query("SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='$t'")->fetch_all(MYSQLI_ASSOC), 'COLUMN_NAME'); };
-    $kq = $kolom('sf_housing_queue'); $ks = $kolom('srp2_registrations');
-    $cek( ! array_intersect(['nik_pengaju', 'nama_lengkap', 'data_simperum_json', 'data_survey_json'], $kq), 'sf_housing_queue tidak lagi punya kolom NIK/nama/JSON polos');
-    $cek( ! in_array('nik_ktp', $ks, TRUE), 'srp2_registrations tidak lagi punya kolom nik_ktp polos');
+    $kq = $kolom('sf_antrean_pengajuan'); $ks = $kolom('srp2_pengajuan');
+    $cek( ! array_intersect(['nik_pengaju', 'nama_lengkap', 'data_simperum_json', 'data_survey_json'], $kq), 'sf_antrean_pengajuan tidak lagi punya kolom NIK/nama/JSON polos');
+    $cek( ! in_array('nik_ktp', $ks, TRUE), 'srp2_pengajuan tidak lagi punya kolom nik_ktp polos');
     $cek( ! array_diff(['nik_pengaju_ciphertext', 'nik_pengaju_lookup_hash', 'nama_lengkap_ciphertext', 'data_simperum_json_ciphertext', 'data_survey_json_ciphertext'], $kq), 'Pasangan terenkripsi antrean lengkap');
     $cek( ! array_diff(['nik_ktp_ciphertext', 'nik_ktp_lookup_hash'], $ks), 'Pasangan terenkripsi NIK SRP2 lengkap');
     $idx = $satu("SELECT GROUP_CONCAT(CONCAT(INDEX_NAME,':',NON_UNIQUE)) g FROM information_schema.STATISTICS WHERE TABLE_SCHEMA=DATABASE() AND INDEX_NAME IN ('idx_sf_queue_nik_lookup','uq_srp2_registration_nik','uq_nik_ktp')")['g'] ?? '';
@@ -74,14 +74,14 @@ try {
 
     echo "B. Isi DB dan penulis\n";
     $polos16 = 0; $bukan_sandi = 0;
-    foreach ($db->query('SELECT * FROM sf_housing_queue')->fetch_all(MYSQLI_ASSOC) as $r) {
+    foreach ($db->query('SELECT * FROM sf_antrean_pengajuan')->fetch_all(MYSQLI_ASSOC) as $r) {
         foreach ($r as $k => $v) {
-            if ($v === NULL || $v === '' || in_array($k, ['submission_key', 'nik_pengaju_lookup_hash'], TRUE)) continue;
+            if ($v === NULL || $v === '' || in_array($k, ['kunci_pengajuan', 'nik_pengaju_lookup_hash'], TRUE)) continue;
             if (preg_match('/(?<!\d)\d{16}(?!\d)/', (string) $v)) $polos16++;
             if (substr($k, -11) === '_ciphertext' && ! $enc->is_encrypted($v)) $bukan_sandi++;
         }
     }
-    foreach ($db->query('SELECT nik_ktp_ciphertext c FROM srp2_registrations WHERE nik_ktp_ciphertext IS NOT NULL')->fetch_all(MYSQLI_ASSOC) as $r) { if ( ! $enc->is_encrypted($r['c'])) $bukan_sandi++; }
+    foreach ($db->query('SELECT nik_ktp_ciphertext c FROM srp2_pengajuan WHERE nik_ktp_ciphertext IS NOT NULL')->fetch_all(MYSQLI_ASSOC) as $r) { if ( ! $enc->is_encrypted($r['c'])) $bukan_sandi++; }
     $cek($polos16 === 0, 'Tidak ada baris antrean yang memuat deret 16 digit polos (' . $polos16 . ' temuan)');
     $cek($bukan_sandi === 0, 'Setiap nilai *_ciphertext benar-benar ciphertext (' . $bukan_sandi . ' bukan)');
     $penulis = 0;
@@ -89,7 +89,7 @@ try {
         if (substr($f, -4) !== '.php' || strpos(str_replace('\\', '/', $f), '/migrations/') !== FALSE || strpos(str_replace('\\', '/', $f), '/logs/') !== FALSE) continue;
         $isi = file_get_contents($f);
         // Hanya berkas yang menyentuh kedua tabel; larik profil tersamar Simperum_gateway juga berkunci nama_lengkap.
-        if (strpos($isi, 'sf_housing_queue') === FALSE && strpos($isi, 'srp2_registrations') === FALSE) continue;
+        if (strpos($isi, 'sf_antrean_pengajuan') === FALSE && strpos($isi, 'srp2_pengajuan') === FALSE) continue;
         $penulis += preg_match_all("/'(nik_pengaju|nama_lengkap|data_simperum_json|data_survey_json|nik_ktp)'\s*=>/", $isi);
     }
     $cek($penulis === 0, 'Tidak ada kode aplikasi yang menulis kolom polos lama (' . $penulis . ' temuan)');
@@ -98,7 +98,7 @@ try {
 
     echo "C. Layar: terdekripsi untuk superadmin, tersamar untuk kab/kota\n";
     $kab = array_column($db->query('SELECT id FROM kabupaten ORDER BY id LIMIT 2')->fetch_all(MYSQLI_ASSOC), 'id');
-    $prog = (int) ($satu('SELECT id FROM sf_programs ORDER BY id LIMIT 1')['id'] ?? 0);
+    $prog = (int) ($satu('SELECT id FROM sf_program ORDER BY id LIMIT 1')['id'] ?? 0);
     if ( ! $cek(count($kab) === 2 && $prog > 0, 'Prasyarat: dua kabupaten dan satu program')) throw new RuntimeException('prasyarat');
     [$uidW] = $akun('warga');
     $nikA = '99' . str_pad((string) random_int(0, 99999999999999), 14, '0', STR_PAD_LEFT);
@@ -107,7 +107,7 @@ try {
     $tA = $tiket(); $tB = $tiket();
     $qA = $antre((int) $kab[0], $uidW, $prog, $namaA, $nikA, $tA);
     $qB = $antre((int) $kab[1], $uidW, $prog, $namaB, $nikB, $tB);
-    $mentah = $satu("SELECT * FROM sf_housing_queue WHERE id=$qA");
+    $mentah = $satu("SELECT * FROM sf_antrean_pengajuan WHERE id=$qA");
     $cek($mentah && strpos(json_encode($mentah), $nikA) === FALSE && strpos(json_encode($mentah), $tag) === FALSE, 'Baris mentah tiket uji tidak memuat NIK maupun nama polos');
 
     [, $eS] = $akun('admin');
@@ -148,7 +148,7 @@ try {
     $nikS = '99' . str_pad((string) random_int(0, 99999999999999), 14, '0', STR_PAD_LEFT);
     $ins = function ($nama) use ($db, $enc, $nikS, &$srp2) {
         $c = $enc->encrypt($nikS); $h = $enc->deterministic_hash($nikS);
-        $st = $db->prepare("INSERT INTO srp2_registrations (nama_perusahaan,nama_peserta,nik_ktp_ciphertext,nik_ktp_lookup_hash) VALUES (?,'Uji PII',?,?)");
+        $st = $db->prepare("INSERT INTO srp2_pengajuan (nama_perusahaan,nama_peserta,nik_ktp_ciphertext,nik_ktp_lookup_hash) VALUES (?,'Uji PII',?,?)");
         $st->bind_param('sss', $nama, $c, $h); $ok = $st->execute(); $errno = $st->errno;
         if ($ok) $srp2[] = $db->insert_id;
         return [$ok, $errno, $ok ? $db->insert_id : 0];
@@ -162,16 +162,16 @@ try {
 } catch (Throwable $e) {
     $cek(FALSE, 'Pengecualian: ' . get_class($e));
 } finally {
-    foreach ($antrean as $id) $db->query('DELETE FROM sf_housing_queue WHERE id=' . (int) $id);
-    foreach ($srp2 as $id) $db->query('DELETE FROM srp2_registrations WHERE id=' . (int) $id);
-    foreach ($ids as $id) $db->query('DELETE FROM usr_users WHERE id=' . (int) $id);
+    foreach ($antrean as $id) $db->query('DELETE FROM sf_antrean_pengajuan WHERE id=' . (int) $id);
+    foreach ($srp2 as $id) $db->query('DELETE FROM srp2_pengajuan WHERE id=' . (int) $id);
+    foreach ($ids as $id) $db->query('DELETE FROM usr_akun WHERE id=' . (int) $id);
     foreach ($rate_asli as $key => $r) {
-        $st = $db->prepare('DELETE FROM sys_rate_limits WHERE limit_key=?'); $st->bind_param('s', $key); $st->execute();
-        if ($r) { $st = $db->prepare('INSERT INTO sys_rate_limits (limit_key,window_started_at,failed_attempts) VALUES (?,?,?)'); $st->bind_param('ssi', $r['limit_key'], $r['window_started_at'], $r['failed_attempts']); $st->execute(); }
+        $st = $db->prepare('DELETE FROM sys_batas_laju WHERE kunci=?'); $st->bind_param('s', $key); $st->execute();
+        if ($r) { $st = $db->prepare('INSERT INTO sys_batas_laju (kunci,jendela_mulai_at,jumlah_gagal) VALUES (?,?,?)'); $st->bind_param('ssi', $r['kunci'], $r['jendela_mulai_at'], $r['jumlah_gagal']); $st->execute(); }
     }
     foreach ($jars as $j) @unlink($j);
     echo "RINGKASAN: " . ($ok + $gagal) . " pemeriksaan, $gagal gagal; akun tersisa "
-        . $db->query("SELECT COUNT(*) FROM usr_users WHERE email LIKE '{$tag}%'")->fetch_row()[0] . ', baris SRP2 tersisa '
-        . $db->query("SELECT COUNT(*) FROM srp2_registrations WHERE nama_perusahaan LIKE 'UJI {$tag}%'")->fetch_row()[0] . "\n";
+        . $db->query("SELECT COUNT(*) FROM usr_akun WHERE email LIKE '{$tag}%'")->fetch_row()[0] . ', baris SRP2 tersisa '
+        . $db->query("SELECT COUNT(*) FROM srp2_pengajuan WHERE nama_perusahaan LIKE 'UJI {$tag}%'")->fetch_row()[0] . "\n";
 }
 exit($gagal ? 1 : 0);

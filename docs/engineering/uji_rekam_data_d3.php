@@ -182,7 +182,7 @@ function bersihkan() {
         @rmdir($dir);
     }
     $db->query('DELETE FROM rd_laporan WHERE tahun = ' . (int) TAHUN);
-    $db->query("DELETE FROM usr_users WHERE email LIKE 'uji_rd_d3_%'");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE 'uji_rd_d3_%'");
     foreach (array_merge($jars, $berkas_uji) as $f) {
         @unlink($f);
     }
@@ -192,7 +192,7 @@ function bersihkan() {
 
 echo "Uji D3 - Kirim, BNBA, Pewarisan\n";
 
-$admin = q('SELECT id, kabupaten_id FROM usr_users WHERE email = ? AND role = ?',
+$admin = q('SELECT id, kabupaten_id FROM usr_akun WHERE email = ? AND peran = ?',
     [ADMIN_EMAIL, 'admin_kabkota']);
 wajib($admin && ! empty($admin['kabupaten_id']), 'Akun admin_kabkota tersedia dan ter-scope');
 $KAB = (int) $admin['kabupaten_id'];
@@ -203,7 +203,7 @@ wajib($kab_lain > 0, 'Ada kabupaten kedua untuk uji scope');
 $stamp = time();
 $email_lain = "uji_rd_d3_{$stamp}@example.test";
 $db->query(sprintf(
-    "INSERT INTO usr_users (email, password, role, kabupaten_id, name, username)
+    "INSERT INTO usr_akun (email, kata_sandi, peran, kabupaten_id, nama, nama_pengguna)
      VALUES ('%s', '%s', 'admin_kabkota', %d, 'Uji D3 Lain', 'uji_rd_d3_%d')",
     $db->real_escape_string($email_lain),
     $db->real_escape_string(password_hash('UjiRdD3!', PASSWORD_BCRYPT)),
@@ -256,10 +256,10 @@ try {
     $t = csrf('kab', $url);
     http('kab', 'Rekam_Perumahan/unggah_bnba',
         ['csrf_kpkp_token' => $t, 'laporan_id' => $LAP], TRUE, ['bnba' => $pdf_a]);
-    $bnba = q('SELECT private_path, nama_asli, ukuran FROM rd_perumahan_bnba WHERE laporan_id = ?', [$LAP]);
+    $bnba = q('SELECT path_privat, nama_asli, ukuran FROM rd_perumahan_bnba WHERE laporan_id = ?', [$LAP]);
     cek($bnba !== NULL, 'PDF tersimpan di ledger');
     cek(count(isi_dir(dir_bnba($LAP))) === 1, 'Tepat satu berkas di disk');
-    cek($bnba && is_file(dir_bnba($LAP) . $bnba['private_path']),
+    cek($bnba && is_file(dir_bnba($LAP) . $bnba['path_privat']),
         'Nama di ledger cocok dengan berkas nyata di disk');
 
     // --------------------------------------------------------- penyajian
@@ -278,18 +278,18 @@ try {
     cek(strpos($anonim['body'], '%PDF') === FALSE, 'Nol byte PDF bocor ke anonim');
 
     // Berkas privat tidak boleh tersaji langsung lewat URL, terlepas dari endpoint.
-    $langsung = http(NULL, '../private_uploads/rekam_bnba/' . $LAP . '/' . $bnba['private_path'], NULL, FALSE);
+    $langsung = http(NULL, '../private_uploads/rekam_bnba/' . $LAP . '/' . $bnba['path_privat'], NULL, FALSE);
     cek($langsung['code'] !== 200, 'Akses langsung ke private_uploads tidak 200');
 
     // ------------------------------------------------------ unggah ulang
     $t = csrf('kab', $url);
     http('kab', 'Rekam_Perumahan/unggah_bnba',
         ['csrf_kpkp_token' => $t, 'laporan_id' => $LAP], TRUE, ['bnba' => $pdf_b]);
-    $bnba2 = q('SELECT private_path FROM rd_perumahan_bnba WHERE laporan_id = ?', [$LAP]);
+    $bnba2 = q('SELECT path_privat FROM rd_perumahan_bnba WHERE laporan_id = ?', [$LAP]);
     cek((int) skalar('SELECT COUNT(*) c FROM rd_perumahan_bnba WHERE laporan_id = ?', [$LAP]) === 1,
         'Unggah ulang mengganti, bukan menambah baris');
     cek(count(isi_dir(dir_bnba($LAP))) === 1, 'Berkas lama benar-benar hilang dari disk');
-    cek($bnba2 && $bnba2['private_path'] !== $bnba['private_path'], 'Berkas yang tersimpan memang yang baru');
+    cek($bnba2 && $bnba2['path_privat'] !== $bnba['path_privat'], 'Berkas yang tersimpan memang yang baru');
     cek(http('kab', 'Rekam_Perumahan/unduh_bnba/' . $LAP)['body'] === file_get_contents($pdf_b),
         'Yang tersaji sekarang isi berkas kedua');
 
@@ -340,8 +340,8 @@ try {
     $t = csrf('kab', $url);
     http('kab', 'Rekam_Perumahan/unggah_bnba',
         ['csrf_kpkp_token' => $t, 'laporan_id' => $LAP], TRUE, ['bnba' => $pdf_a]);
-    cek(skalar('SELECT private_path FROM rd_perumahan_bnba WHERE laporan_id = ?', [$LAP])
-        === $bnba2['private_path'], 'Unggah setelah terkirim ditolak, berkas lama utuh');
+    cek(skalar('SELECT path_privat FROM rd_perumahan_bnba WHERE laporan_id = ?', [$LAP])
+        === $bnba2['path_privat'], 'Unggah setelah terkirim ditolak, berkas lama utuh');
     cek(count(isi_dir(dir_bnba($LAP))) === 1, 'Nol berkas yatim dari unggahan yang ditolak');
 
     // ------------------------------------------ TIDAK ADA PEWARISAN (TW III)

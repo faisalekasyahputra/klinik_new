@@ -9,7 +9,7 @@ foreach ($module_groups as $modules) { foreach ($modules as $key => $module) { $
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
             <p class="text-xs font-bold uppercase tracking-[.16em] text-brand-muted">Akses Staf</p>
-            <h1 class="mt-1 text-2xl font-black text-gray-900 dark:text-white">Hak Modul <?= $e($user->name ?: $user->email) ?></h1>
+            <h1 class="mt-1 text-2xl font-black text-gray-900 dark:text-white">Hak Modul <?= $e($user->nama ?: $user->email) ?></h1>
             <p class="mt-2 max-w-2xl text-sm text-gray-500 dark:text-brand-muted">Pilih modul yang boleh dibuka akun ini. Pembatasan berlaku pada menu dan akses URL langsung.</p>
         </div>
         <a href="<?= base_url('Admin_Users') ?>" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali</span></a>

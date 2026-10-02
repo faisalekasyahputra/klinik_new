@@ -155,17 +155,17 @@ function selesai($kode = NULL) {
     if ($sudah) { return; }
     $sudah = TRUE;
 
-    $akun = $db->baris('SELECT id FROM usr_users WHERE email = ?', [EMAIL]);
+    $akun = $db->baris('SELECT id FROM usr_akun WHERE email = ?', [EMAIL]);
     if ($akun) {
         $id = (string) $akun['id'];
-        $db->jalan('DELETE FROM sf_riwayat_keputusan_antrean WHERE queue_id IN (SELECT id FROM sf_housing_queue WHERE user_id = ?)', [$id]);
-        $db->jalan('DELETE FROM sf_rekomendasi_penilaian WHERE assessment_id IN (SELECT id FROM sf_penilaian_perumahan WHERE user_id = ?)', [$id]);
-        $db->jalan('DELETE FROM sf_housing_queue WHERE user_id = ?', [$id]);
+        $db->jalan('DELETE FROM sf_riwayat_keputusan_antrean WHERE antrean_id IN (SELECT id FROM sf_antrean_pengajuan WHERE user_id = ?)', [$id]);
+        $db->jalan('DELETE FROM sf_rekomendasi_penilaian WHERE penilaian_id IN (SELECT id FROM sf_penilaian_perumahan WHERE user_id = ?)', [$id]);
+        $db->jalan('DELETE FROM sf_antrean_pengajuan WHERE user_id = ?', [$id]);
         $db->jalan('DELETE FROM sf_penilaian_perumahan WHERE user_id = ?', [$id]);
         $db->jalan('DELETE FROM sf_profil_warga WHERE user_id = ?', [$id]);
         $db->jalan('DELETE FROM sf_rekaman_simperum WHERE requested_by = ?', [$id]);
         $db->jalan('DELETE FROM aduan WHERE user_id = ?', [$id]);
-        $db->jalan('DELETE FROM usr_users WHERE id = ?', [$id]);
+        $db->jalan('DELETE FROM usr_akun WHERE id = ?', [$id]);
         echo "\n  (bersih-bersih: akun uji #{$id} dan seluruh barisnya dihapus)\n";
     }
 
@@ -190,7 +190,7 @@ foreach (['127.0.0.1', '::1'] as $ip) {
     foreach (['register', 'simperum_lookup', 'warga_lookup', 'rtlh_cek', 'rtlh_cek_harian',
               'warga_submit', 'warga_start_revision', 'admin_queue_decision',
               'rtlh_cek_anon'] as $p) {
-        $db->jalan('DELETE FROM sys_rate_limits WHERE limit_key = ?', [hash('sha256', $p . ':ip:' . $ip)]);
+        $db->jalan('DELETE FROM sys_batas_laju WHERE kunci = ?', [hash('sha256', $p . ':ip:' . $ip)]);
     }
 }
 
@@ -199,7 +199,7 @@ foreach (['127.0.0.1', '::1'] as $ip) {
 $UTAMA = []; $CADANGAN = [];
 foreach (glob(dirname(__DIR__, 2) . '/application/fixtures/simperum/SIM-*.json') as $f) {
     $j = json_decode((string) file_get_contents($f), TRUE);
-    if (($j['response_status'] ?? '') !== 'found') { continue; }
+    if (($j['status_respons'] ?? '') !== 'found') { continue; }
     if (empty($j['identity']['nik']) || empty($j['identity']['birth_date'])) { continue; }
     /* Wilayah tiket diturunkan dari ISI FIXTURE, bukan dari isian formulir -
        terukur 9 Sep 2026 sesudah perubahan UAT. Fixture yang wilayahnya BUKAN
@@ -250,15 +250,15 @@ foreach ($KANDIDAT as $nik => $lahir) {
         'nama_lengkap' => 'Warga Uji ' . STEMPEL, 'nik_identitas' => $nik,
         'alamat_domisili' => 'Jl. Uji No. 1, Kota Semarang', 'phone' => '081200000000',
     ]);
-    $a = $db->baris('SELECT role FROM usr_users WHERE email = ?', [EMAIL]);
-    if ($a && $a['role'] === 'warga') { $NIK = $nik; $LAHIR = $lahir; break; }
+    $a = $db->baris('SELECT peran FROM usr_akun WHERE email = ?', [EMAIL]);
+    if ($a && $a['peran'] === 'warga') { $NIK = $nik; $LAHIR = $lahir; break; }
     $tolak[$nik] = 'ditolak onboarding';
 }
 wajib($NIK !== NULL, 'Satu NIK fixture terikat ke akun uji. Ditolak: ' . json_encode($tolak));
 echo "  -> NIK {$NIK} (lahir {$LAHIR})\n";
 
-$akun = $db->baris('SELECT id, role, nik FROM usr_users WHERE email = ?', [EMAIL]);
-cek($akun['role'] === 'warga', 'DB: peran warga');
+$akun = $db->baris('SELECT id, peran, nik FROM usr_akun WHERE email = ?', [EMAIL]);
+cek($akun['peran'] === 'warga', 'DB: peran warga');
 cek( ! preg_match('/^[0-9]{16}$/', (string) $akun['nik']), 'DB: NIK terenkripsi, bukan 16 digit polos');
 
 // ---------------------------------------------------------------------------
@@ -333,56 +333,56 @@ if (wizard_step($form) === 'find_data') {
 }
 cek(wizard_step($form) !== 'find_data', 'Onboarding ber-NIK langsung membawa maju dari find_data (prefill otomatis)');
 wajib(wizard_step($h) !== 'find_data', 'Lookup SIMPERUM membawa maju dari find_data');
-foreach (['monthly_income', 'occupation_code', 'education_code', 'employment_stability_code', 'area_condition_code', 'birth_date', 'marital_status_code', 'gender_code', 'phone'] as $field) {
+foreach (['penghasilan', 'pekerjaan', 'pendidikan', 'stabilitas_pekerjaan', 'kawasan_perumahan', 'birth_date', 'status_perkawinan', 'jenis_kelamin', 'phone'] as $field) {
     cek(strpos($h, 'name="' . $field . '"') !== FALSE, 'UAT warga 9: data awal memuat ' . $field);
 }
-cek(strpos($h, 'name="matrix_dtks_status"') === FALSE, 'UAT warga 9: tidak meminta status DTKS');
-cek(strpos($h, 'name="matrix_income_code"') === FALSE, 'UAT warga 9: pendapatan angka, bukan pilihan rentang gaji');
+cek(strpos($h, 'name="matriks_status_dtks"') === FALSE, 'UAT warga 9: tidak meminta status DTKS');
+cek(strpos($h, 'name="matriks_penghasilan"') === FALSE, 'UAT warga 9: pendapatan angka, bukan pilihan rentang gaji');
 $dom_prefill = wizard_dom($h);
 $xpath_prefill = new DOMXPath($dom_prefill);
-cek($xpath_prefill->query('//select[@name="matrix_current_housing_code"]/option[@selected and @value!=""]')->length === 1,
+cek($xpath_prefill->query('//select[@name="matriks_rumah_sekarang"]/option[@selected and @value!=""]')->length === 1,
     'Status tempat tinggal otomatis terpilih dari SIMPERUM');
-foreach (['occupation_code', 'education_code', 'gender_code'] as $field) {
+foreach (['pekerjaan', 'pendidikan', 'jenis_kelamin'] as $field) {
     cek($xpath_prefill->query('//select[@name="' . $field . '"]/option[@selected and @value!=""]')->length === 1,
         'SIMPERUM mengisi otomatis ' . $field);
 }
 
 $dilewati = [];
-$profile_before = $db->baris('SELECT phone_ciphertext, field_provenance_json FROM sf_profil_warga WHERE user_id=?', [(string) $akun['id']]);
+$profile_before = $db->baris('SELECT no_hp_ciphertext, asal_isian_json FROM sf_profil_warga WHERE user_id=?', [(string) $akun['id']]);
 $source_phone = $xpath_prefill->query('//input[@name="phone"]')->item(0)->getAttribute('value');
-$db->jalan('UPDATE sf_profil_warga SET phone_ciphertext=NULL WHERE user_id=?', [(string) $akun['id']]);
+$db->jalan('UPDATE sf_profil_warga SET no_hp_ciphertext=NULL WHERE user_id=?', [(string) $akun['id']]);
 $h = $warga->minta('warga/pendataan')['body'];
 $xpath_account = new DOMXPath(wizard_dom($h));
 cek($xpath_account->query('//input[@name="phone" and @value="081200000000"]')->length === 1,
     'Draft lama tanpa HP sumber terisi dari profil akun yang sudah didaftarkan');
-cek($xpath_account->query('//input[@name="monthly_income" and @value=""]')->length === 1,
+cek($xpath_account->query('//input[@name="penghasilan" and @value=""]')->length === 1,
     'Rentang penghasilan SIMPERUM tidak dikarang menjadi nominal rupiah');
-$corrected = json_decode($profile_before['field_provenance_json'], TRUE);
+$corrected = json_decode($profile_before['asal_isian_json'], TRUE);
 $corrected['phone'] = ['source' => 'citizen_correction'];
-$db->jalan('UPDATE sf_profil_warga SET phone_ciphertext=?, field_provenance_json=? WHERE user_id=?',
-    [$profile_before['phone_ciphertext'], json_encode($corrected), (string) $akun['id']]);
-$db->jalan("UPDATE sf_penilaian_perumahan SET matrix_current_housing_code='house_none_or_rent' WHERE user_id=?", [(string) $akun['id']]);
+$db->jalan('UPDATE sf_profil_warga SET no_hp_ciphertext=?, asal_isian_json=? WHERE user_id=?',
+    [$profile_before['no_hp_ciphertext'], json_encode($corrected), (string) $akun['id']]);
+$db->jalan("UPDATE sf_penilaian_perumahan SET matriks_rumah_sekarang='house_none_or_rent' WHERE user_id=?", [(string) $akun['id']]);
 $xpath_corrected = new DOMXPath(wizard_dom($warga->minta('warga/pendataan')['body']));
 // Data berbentuk API (API-01) tidak membawa HP, jadi "koreksi" yang dipulihkan kosong: koreksi
 // itu tetap harus menang atas HP akun, bukan diisi ulang.
-cek($xpath_corrected->query('//input[@name="phone"]')->item(0)->getAttribute('value') === ($profile_before['phone_ciphertext'] === NULL ? '' : $source_phone),
+cek($xpath_corrected->query('//input[@name="phone"]')->item(0)->getAttribute('value') === ($profile_before['no_hp_ciphertext'] === NULL ? '' : $source_phone),
     'HP koreksi tersimpan tidak ditimpa HP akun');
-cek($xpath_corrected->query('//select[@name="matrix_current_housing_code"]/option[@selected and @value="house_none_or_rent"]')->length === 1,
+cek($xpath_corrected->query('//select[@name="matriks_rumah_sekarang"]/option[@selected and @value="house_none_or_rent"]')->length === 1,
     'Pilihan status tersimpan tetap menang atas status rumah sumber');
-$db->jalan('UPDATE sf_penilaian_perumahan SET matrix_current_housing_code=NULL WHERE user_id=?', [(string) $akun['id']]);
-$db->jalan('UPDATE sf_profil_warga SET phone_ciphertext=NULL, field_provenance_json=? WHERE user_id=?',
-    [$profile_before['field_provenance_json'], (string) $akun['id']]);
+$db->jalan('UPDATE sf_penilaian_perumahan SET matriks_rumah_sekarang=NULL WHERE user_id=?', [(string) $akun['id']]);
+$db->jalan('UPDATE sf_profil_warga SET no_hp_ciphertext=NULL, asal_isian_json=? WHERE user_id=?',
+    [$profile_before['asal_isian_json'], (string) $akun['id']]);
 $matrix_snapshot = NULL;
 for ($i = 0; $i < 14; $i++) {
     $form = wizard_form($h);
     $step = wizard_step($form);
     if ($step === NULL) { break; }
     if ($step === 'preliminary_recommendation') {
-        $matrix_snapshot = $db->baris('SELECT preliminary_matrix_ciphertext FROM sf_penilaian_perumahan WHERE user_id=? ORDER BY id DESC LIMIT 1', [(string) $akun['id']])['preliminary_matrix_ciphertext'];
+        $matrix_snapshot = $db->baris('SELECT matriks_awal_ciphertext FROM sf_penilaian_perumahan WHERE user_id=? ORDER BY id DESC LIMIT 1', [(string) $akun['id']])['matriks_awal_ciphertext'];
         cek(!empty($matrix_snapshot) && strpos($matrix_snapshot, 'PK RTLH') === FALSE, 'Snapshot matriks awal disimpan terenkripsi');
         cek(strpos($h, getenv('UJI_CABANG') === 'tanah' ? 'PB Backlog (Prioritas 1)' : 'PK RTLH (Prioritas 1)') !== FALSE, 'Hasil awal mengikuti kondisi dan prioritas matriks, bukan kandidat FLPP bawaan');
         // UAT dinas warga #10: rekomendasi tampil beserta deskripsi program, dan Status DTKS sudah dihilangkan.
-        $deskripsi_katalog = (string) ($db->baris('SELECT deskripsi_singkat FROM sf_programs WHERE kode_program = ?', [getenv('UJI_CABANG') === 'tanah' ? 'pb' : 'rtlh'])['deskripsi_singkat'] ?? '');
+        $deskripsi_katalog = (string) ($db->baris('SELECT deskripsi_singkat FROM sf_program WHERE kode_program = ?', [getenv('UJI_CABANG') === 'tanah' ? 'pb' : 'rtlh'])['deskripsi_singkat'] ?? '');
         // Dibatasi ke blok hasil matriks: carousel program di halaman yang sama juga memuat deskripsi katalog.
         $awal_hasil = strpos($h, 'Hasil berdasarkan matriks program perumahan');
         $blok_hasil = $awal_hasil === FALSE ? '' : substr($h, $awal_hasil, 3000);
@@ -392,7 +392,7 @@ for ($i = 0; $i < 14; $i++) {
     }
     if ($step === 'housing_family_detail') {
         $xpath_detail = new DOMXPath($form->ownerDocument);
-        foreach (['assistance_source_code', 'assistance_year'] as $field) {
+        foreach (['bantuan_perumahan', 'tahun_intervensi'] as $field) {
             cek($xpath_detail->query('//*[@name="' . $field . '" and not(ancestor::*[@hidden])]')->length === 1,
                 'UAT warga 9: sumber/tahun bantuan terlihat pada kedua cabang (' . $field . ')');
         }
@@ -401,13 +401,13 @@ for ($i = 0; $i < 14; $i++) {
     if ($step === 'review') { break; }
     $paksa = ['action' => 'save'];
     if ($step === 'housing_family') $paksa += [
-        'matrix_current_housing_code'=>getenv('UJI_CABANG') === 'tanah' ? 'house_rent_or_staying' : 'house_owned',
-        'monthly_income'=>'1200000',
-        'matrix_environment_condition_code'=>getenv('UJI_CABANG') === 'tanah' ? 'env_safe' : 'env_slum_uninhabitable',
-        'matrix_land_ownership_code'=>'land_legal',
-        'matrix_marital_family_code'=>'family_multi_household',
+        'matriks_rumah_sekarang'=>getenv('UJI_CABANG') === 'tanah' ? 'house_rent_or_staying' : 'house_owned',
+        'penghasilan'=>'1200000',
+        'matriks_kondisi_lingkungan'=>getenv('UJI_CABANG') === 'tanah' ? 'env_safe' : 'env_slum_uninhabitable',
+        'matriks_kepemilikan_lahan'=>'land_legal',
+        'matriks_status_keluarga'=>'family_multi_household',
     ];
-    if ($step === 'housing_family_detail') $paksa['has_other_land'] = '1';
+    if ($step === 'housing_family_detail') $paksa['tanah_lain'] = '1';
     $baru = $warga->minta('warga/pendataan', wizard_medan($form, $paksa))['body'];
     if (wizard_step($baru) === $step) {
         wajib(FALSE, "Wizard mandek di step '{$step}' (tidak maju setelah simpan)");
@@ -420,19 +420,19 @@ cek(getenv('UJI_CABANG') === 'tanah'
     : in_array('building_condition', $dilewati, TRUE) && ! in_array('candidate_land', $dilewati, TRUE),
     'UAT warga 9: hanya cabang sesuai pilihan yang dilewati');
 cek(array_search('preliminary_recommendation', $dilewati, TRUE) < array_search('housing_family_detail', $dilewati, TRUE), 'UAT warga 9: rekomendasi tampil sebelum data pelengkap');
-cek($matrix_snapshot !== NULL && $matrix_snapshot === $db->baris('SELECT preliminary_matrix_ciphertext FROM sf_penilaian_perumahan WHERE user_id=? ORDER BY id DESC LIMIT 1', [(string) $akun['id']])['preliminary_matrix_ciphertext'], 'Snapshot awal tidak ditimpa evaluasi data pelengkap');
+cek($matrix_snapshot !== NULL && $matrix_snapshot === $db->baris('SELECT matriks_awal_ciphertext FROM sf_penilaian_perumahan WHERE user_id=? ORDER BY id DESC LIMIT 1', [(string) $akun['id']])['matriks_awal_ciphertext'], 'Snapshot awal tidak ditimpa evaluasi data pelengkap');
 cek(strpos($h, 'Rekomendasi awal yang tersimpan') !== FALSE, 'Hasil awal tetap dapat dibuka pada review');
 
 $form = wizard_form($h);
 $payload = wizard_medan($form, ['action' => 'submit']);
 /* Radio ini HANYA dirender kalau ada rekomendasi berstatus eligible/potential
    (pendataan.php). Ketiadaannya berarti mesin rekomendasi tidak menghasilkan
-   apa pun - itulah yang terjadi pada jalur isi-manual, karena welfare_decile
+   apa pun - itulah yang terjadi pada jalur isi-manual, karena desil_kesejahteraan
    hanya terisi dari SIMPERUM. Diperiksa terpisah supaya sebabnya terbaca. */
-wajib(isset($payload['recommendation_id']) && $payload['recommendation_id'] !== '',
-    'Step review menawarkan program untuk diajukan (recommendation_id dirender)');
+wajib(isset($payload['rekomendasi_id']) && $payload['rekomendasi_id'] !== '',
+    'Step review menawarkan program untuk diajukan (rekomendasi_id dirender)');
 
-$sebelum = $db->angka('SELECT COALESCE(MAX(id),0) FROM sf_housing_queue');
+$sebelum = $db->angka('SELECT COALESCE(MAX(id),0) FROM sf_antrean_pengajuan');
 $r = $warga->minta('warga/pendataan', $payload);
 preg_match('/tiket ([A-Z0-9\/-]+)/i', $r['body'], $m);
 /* Kalau gagal, SEBABNYA ikut dicetak. Submit bisa ditolak karena batas laju
@@ -456,11 +456,11 @@ cek( ! empty($m[1]), 'Pengajuan terkirim dan bernomor tiket'
 
 $tiket = $db->baris(
     'SELECT q.id, q.status_antrean, q.kabupaten_id, p.kode_program, p.nama_program
-     FROM sf_housing_queue q LEFT JOIN sf_programs p ON p.id = q.program_id
+     FROM sf_antrean_pengajuan q LEFT JOIN sf_program p ON p.id = q.program_id
      WHERE q.id > ? ORDER BY q.id DESC LIMIT 1', [(string) $sebelum]);
 wajib($tiket !== NULL, 'Baris antrean lahir di DB');
 cek($tiket['status_antrean'] === 'pending', 'Lahir sebagai pending');
-cek( ! empty($tiket['kode_program']), 'Terikat ke program SUNGGUHAN dari sf_programs: '
+cek( ! empty($tiket['kode_program']), 'Terikat ke program SUNGGUHAN dari sf_program: '
     . $tiket['kode_program'] . ' (' . $tiket['nama_program'] . ')');
 $catatan[] = "Program yang diajukan: {$tiket['kode_program']} - {$tiket['nama_program']}";
 $catatan[] = "Kabupaten tiket: {$tiket['kabupaten_id']}";
@@ -487,19 +487,19 @@ cek($cek_silang['kode'] !== 200, 'Sesi warga tetap warga, tidak bisa membuka lay
 $admin->lupakan_token();
 $admin->minta('Admin_Kabkota/detail/' . $tiket['id']);
 $admin->minta('Admin_Kabkota/update_status', [
-    'queue_id' => $tiket['id'], 'from_status' => 'pending',
+    'antrean_id' => $tiket['id'], 'status_awal' => 'pending',
     'status' => 'needs_revision', 'catatan_admin' => 'Tinjau ulang oleh harness uji.',
 ], FALSE);
-$b = $db->baris('SELECT status_antrean, reviewed_by, catatan_admin FROM sf_housing_queue WHERE id = ?', [(string) $tiket['id']]);
+$b = $db->baris('SELECT status_antrean, reviewed_by, catatan_admin FROM sf_antrean_pengajuan WHERE id = ?', [(string) $tiket['id']]);
 cek($b['status_antrean'] === 'needs_revision', 'Keputusan tinjau ulang tersimpan');
 cek( ! empty($b['reviewed_by']), 'Pengambil keputusan tercatat');
 cek(trim((string) $b['catatan_admin']) !== '', 'Catatan admin tersimpan');
 
 $admin->minta('Admin_Kabkota/update_status', [
-    'queue_id' => $tiket['id'], 'from_status' => 'pending',
+    'antrean_id' => $tiket['id'], 'status_awal' => 'pending',
     'status' => 'approved', 'catatan_admin' => '',
 ], FALSE);
-cek($db->baris('SELECT status_antrean FROM sf_housing_queue WHERE id = ?', [(string) $tiket['id']])['status_antrean'] === 'needs_revision',
+cek($db->baris('SELECT status_antrean FROM sf_antrean_pengajuan WHERE id = ?', [(string) $tiket['id']])['status_antrean'] === 'needs_revision',
     'Transisi dari status yang sudah berubah DITOLAK (tetap needs_revision)');
 
 selesai();

@@ -61,7 +61,7 @@
                 </span>
                 <?php endif; ?>
                 <span class="flex items-center gap-1">
-                    Dimulai oleh <b class="text-zinc-300 ml-1"><?= htmlspecialchars($topik['nama_user']) ?></b>
+                    Dimulai oleh <b class="text-zinc-300 ml-1"><?= htmlspecialchars($topik['nama_pengguna']) ?></b>
                 </span>
                 <span>•</span>
                 <span class="text-zinc-500"><?= tgl_id($topik['created_at'], TRUE, TRUE) ?></span>
@@ -79,17 +79,17 @@
 
             <!-- Engagement Stats -->
             <?php $is_logged = ($this->session->userdata('is_logged') === TRUE); ?>
-            <?php $topik_liked = isset($user_likes['diskusi_' . $topik['id_diskusi']]); ?>
+            <?php $topik_liked = isset($user_likes['diskusi_' . $topik['id']]); ?>
             <div class="flex items-center gap-4 mt-5 pt-4 border-t border-[#d6fb00]/10">
                 <div class="flex items-center gap-1.5 text-zinc-500 text-[11px]">
                     <i class="fa-regular fa-eye"></i>
-                    <span><?= $topik['view_count'] ?? 0 ?> dilihat</span>
+                    <span><?= $topik['jumlah_dilihat'] ?? 0 ?> dilihat</span>
                 </div>
-                <button id="like-diskusi-<?= $topik['id_diskusi'] ?>" 
-                        onclick="toggleLike('diskusi', <?= $topik['id_diskusi'] ?>)" 
+                <button id="like-diskusi-<?= $topik['id'] ?>" 
+                        onclick="toggleLike('diskusi', <?= $topik['id'] ?>)" 
                         class="flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-xl transition-all <?= $topik_liked ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20' : 'bg-[#d6fb00]/5 text-zinc-500 hover:text-pink-400 hover:bg-pink-500/10' ?> <?= $is_logged ? 'cursor-pointer' : 'cursor-default opacity-60' ?>">
                     <i class="<?= $topik_liked ? 'fa-solid' : 'fa-regular' ?> fa-heart"></i>
-                    <span id="like-count-diskusi-<?= $topik['id_diskusi'] ?>"><?= $topik['like_count'] ?? 0 ?></span>
+                    <span id="like-count-diskusi-<?= $topik['id'] ?>"><?= $topik['jumlah_suka'] ?? 0 ?></span>
                 </button>
                 <div class="flex items-center gap-1.5 text-zinc-500 text-[11px]">
                     <i class="fa-regular fa-comment-dots"></i>
@@ -103,7 +103,7 @@
                SATU sumber yang sama dgn gerbang privasinya) - dulu dihitung
                ulang di sini dgn daftar peran usang ['admin','staff','Petugas
                Disperakim'], dua di antaranya tidak pernah ada di
-               usr_users.role. Kalau view ini dipanggil dari tempat lain yang
+               usr_akun.peran. Kalau view ini dipanggil dari tempat lain yang
                lupa mengirim $is_admin, anggap BUKAN admin (aman-default),
                bukan fatal error. */
             $is_admin = $is_admin ?? FALSE;
@@ -113,7 +113,7 @@
                 <?php if (($topik['status'] ?? 'open') !== 'resolved'): ?>
                 <form method="POST" action="<?= base_url('Umum/update_status_diskusi') ?>" class="inline">
                     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-                    <input type="hidden" name="id_diskusi" value="<?= $topik['id_diskusi'] ?>">
+                    <input type="hidden" name="id_diskusi" value="<?= $topik['id'] ?>">
                     <input type="hidden" name="status" value="resolved">
                     <button type="submit" class="text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 transition-all">
                         <i class="fa-solid fa-circle-check mr-1"></i> Tandai Selesai
@@ -123,7 +123,7 @@
                 <?php if (($topik['status'] ?? 'open') !== 'closed'): ?>
                 <form method="POST" action="<?= base_url('Umum/update_status_diskusi') ?>" class="inline">
                     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-                    <input type="hidden" name="id_diskusi" value="<?= $topik['id_diskusi'] ?>">
+                    <input type="hidden" name="id_diskusi" value="<?= $topik['id'] ?>">
                     <input type="hidden" name="status" value="closed">
                     <button type="submit" class="text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition-all">
                         <i class="fa-solid fa-lock mr-1"></i> Tutup Diskusi
@@ -132,7 +132,7 @@
                 <?php endif; ?>
                 <form method="POST" action="<?= base_url('Umum/delete_diskusi') ?>" class="inline" onsubmit="return confirm('Yakin ingin menghapus diskusi ini?')">
                     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-                    <input type="hidden" name="id_diskusi" value="<?= $topik['id_diskusi'] ?>">
+                    <input type="hidden" name="id_diskusi" value="<?= $topik['id'] ?>">
                     <button type="submit" class="text-[10px] font-bold bg-zinc-500/10 text-zinc-400 border border-zinc-500/20 px-3 py-1.5 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-all">
                         <i class="fa-solid fa-trash mr-1"></i> Hapus
                     </button>
@@ -231,7 +231,7 @@
                     </button>
                     <form x-show="buka" x-cloak method="POST" action="<?= base_url('Umum/ajukan_janji_temu') ?>" class="mt-3 space-y-2">
                         <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-                        <input type="hidden" name="id_diskusi" value="<?= $topik['id_diskusi'] ?>">
+                        <input type="hidden" name="id_diskusi" value="<?= $topik['id'] ?>">
                         <textarea name="alasan" rows="3" required minlength="20" maxlength="1000" placeholder="Kenapa perlu bertemu langsung? Sebutkan hal yang belum terjawab di forum ini." class="w-full rounded-lg border border-[#d6fb00]/10 bg-[#0a1a1f] px-3 py-2 text-[11px] text-zinc-300 outline-none focus:border-[#d6fb00]/40"></textarea>
                         <button type="submit" class="text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-lg hover:bg-emerald-500/20 transition-all">
                             <i class="fa-solid fa-paper-plane mr-1"></i> Kirim Pengajuan
@@ -334,12 +334,12 @@
             $by_id = [];
             foreach ($komentar as $k) {
                 $k['children'] = [];
-                $by_id[$k['id_komentar']] = $k;
+                $by_id[$k['id']] = $k;
             }
             $tree = [];
             foreach ($by_id as $id => &$k) {
-                if (!empty($k['reply_to']) && isset($by_id[$k['reply_to']])) {
-                    $by_id[$k['reply_to']]['children'][] = &$k;
+                if (!empty($k['balasan_untuk_id']) && isset($by_id[$k['balasan_untuk_id']])) {
+                    $by_id[$k['balasan_untuk_id']]['children'][] = &$k;
                 } else {
                     $tree[] = &$k;
                 }
@@ -352,11 +352,11 @@
                 echo '<div class="thr-wrap ' . ($is_child ? 'thr-children ml-7 sm:ml-9 mt-1.5' : '') . '">';
                 
                 foreach ($nodes as $idx => $kom):
-                    $is_staff = ($kom['role'] == 'Petugas Disperakim');
+                    $is_staff = ($kom['peran'] == 'Petugas Disperakim');
                     $has_child = !empty($kom['children']);
                     $is_reply = ($depth > 0);
             ?>
-            <div id="komentar-<?= $kom['id_komentar'] ?>" class="thr-node relative <?= $has_child ? 'has-child' : '' ?> <?= $idx > 0 ? 'mt-3' : '' ?> <?= $is_reply && $idx > 0 ? 'mt-1.5' : '' ?>">
+            <div id="komentar-<?= $kom['id'] ?>" class="thr-node relative <?= $has_child ? 'has-child' : '' ?> <?= $idx > 0 ? 'mt-3' : '' ?> <?= $is_reply && $idx > 0 ? 'mt-1.5' : '' ?>">
                 
                 <!-- L-bend connector from parent line to this avatar -->
                 <?php if ($is_reply): ?>
@@ -385,19 +385,19 @@
                                 </div>
 
                                 <!-- Actions -->
-                                <?php $kom_liked = isset($user_likes['komentar_' . $kom['id_komentar']]); ?>
+                                <?php $kom_liked = isset($user_likes['komentar_' . $kom['id']]); ?>
                                 <div class="flex items-center gap-0.5 shrink-0 -mt-1 -mr-1">
                                     <!-- Like -->
-                                    <button id="like-komentar-<?= $kom['id_komentar'] ?>" 
-                                            onclick="toggleLike('komentar', <?= $kom['id_komentar'] ?>)" 
+                                    <button id="like-komentar-<?= $kom['id'] ?>" 
+                                            onclick="toggleLike('komentar', <?= $kom['id'] ?>)" 
                                             class="flex items-center gap-1 text-[10px] px-1.5 py-1 rounded transition-colors <?= $kom_liked ? 'text-pink-400' : 'text-zinc-500 hover:text-pink-400' ?> <?= $is_logged ? 'cursor-pointer' : 'cursor-default opacity-60' ?>">
                                         <i class="<?= $kom_liked ? 'fa-solid' : 'fa-regular' ?> fa-heart"></i>
-                                        <span id="like-count-komentar-<?= $kom['id_komentar'] ?>"><?= $kom['like_count'] ?? 0 ?></span>
+                                        <span id="like-count-komentar-<?= $kom['id'] ?>"><?= $kom['jumlah_suka'] ?? 0 ?></span>
                                     </button>
 
                                     <!-- Reply -->
                                     <?php if ($is_logged && ($topik['status'] ?? 'open') !== 'closed'): ?>
-                                    <button onclick="setReplyTo(<?= $kom['id_komentar'] ?>, '<?= htmlspecialchars(addslashes($kom['nama_komentator']), ENT_QUOTES) ?>')" 
+                                    <button onclick="setReplyTo(<?= $kom['id'] ?>, '<?= htmlspecialchars(addslashes($kom['nama_komentator']), ENT_QUOTES) ?>')" 
                                             class="text-[10px] text-zinc-500 hover:text-[#d6fb00] transition-colors px-1.5 py-1 rounded" title="Balas">
                                         <i class="fa-solid fa-reply"></i>
                                     </button>
@@ -407,14 +407,14 @@
                                     <?php if ($is_admin): ?>
                                     <form method="POST" action="<?= base_url('Umum/delete_komentar') ?>" class="inline" onsubmit="return confirm('Hapus komentar ini?')">
                                         <input type="hidden" name="<?= $ci->security->get_csrf_token_name(); ?>" value="<?= $ci->security->get_csrf_hash(); ?>">
-                                        <input type="hidden" name="id_komentar" value="<?= $kom['id_komentar'] ?>">
-                                        <input type="hidden" name="id_diskusi" value="<?= $topik['id_diskusi'] ?>">
+                                        <input type="hidden" name="id_komentar" value="<?= $kom['id'] ?>">
+                                        <input type="hidden" name="id_diskusi" value="<?= $topik['id'] ?>">
                                         <button type="submit" class="text-[10px] text-zinc-500 hover:text-red-400 transition-colors px-1.5 py-1 rounded" title="Hapus">
                                             <i class="fa-solid fa-trash-can"></i>
                                         </button>
                                     </form>
                                     <?php elseif ($is_logged): ?>
-                                    <button onclick="reportKomentar(<?= $kom['id_komentar'] ?>)" class="text-[10px] text-zinc-500 hover:text-red-400 transition-colors px-1.5 py-1 rounded" title="Laporkan">
+                                    <button onclick="reportKomentar(<?= $kom['id'] ?>)" class="text-[10px] text-zinc-500 hover:text-red-400 transition-colors px-1.5 py-1 rounded" title="Laporkan">
                                         <i class="fa-regular fa-flag"></i>
                                     </button>
                                     <?php endif; ?>
@@ -425,7 +425,7 @@
                             <div class="flex flex-wrap items-center gap-2 -mt-1">
                                 <span class="text-[9px] text-zinc-500 sm:hidden"><?= tgl_id($kom['created_at'], TRUE, TRUE) ?></span>
                                 <?php if ($is_reply && !empty($kom['reply_to_name'])): ?>
-                                <a href="#komentar-<?= $kom['reply_to'] ?>" class="inline-flex items-center gap-1 bg-[#d6fb00]/[0.03] border border-[#d6fb00]/10 rounded px-1.5 py-0.5 text-[9px] text-zinc-500 hover:border-[#d6fb00]/25 transition-colors">
+                                <a href="#komentar-<?= $kom['balasan_untuk_id'] ?>" class="inline-flex items-center gap-1 bg-[#d6fb00]/[0.03] border border-[#d6fb00]/10 rounded px-1.5 py-0.5 text-[9px] text-zinc-500 hover:border-[#d6fb00]/25 transition-colors">
                                     <i class="fa-solid fa-reply fa-flip-horizontal text-[#d6fb00]/40 text-[8px]"></i>
                                     <span class="text-[#d6fb00]/70 font-bold">@<?= htmlspecialchars($kom['reply_to_name']) ?></span>
                                 </a>
@@ -466,8 +466,8 @@
                 <?php if (($topik['status'] ?? 'open') !== 'closed'): ?>
                 <form id="reply-form" action="<?= base_url('Umum/balas_aksi') ?>" method="POST" class="bg-[#0f2a30] border border-[#d6fb00]/20 rounded-2xl p-6 mt-8 space-y-4 text-xs shadow-xl relative z-10">
                     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-                    <input type="hidden" name="id_diskusi" value="<?= $topik['id_diskusi'] ?>">
-                    <input type="hidden" name="reply_to" id="reply_to_input" value="">
+                    <input type="hidden" name="id_diskusi" value="<?= $topik['id'] ?>">
+                    <input type="hidden" name="balasan_untuk_id" id="reply_to_input" value="">
                     
                     <h4 class="text-white font-bold text-sm tracking-tight flex items-center gap-2">
                         <i class="fa-solid fa-reply text-[#00a3b5] text-xs"></i> Tambahkan Informasi

@@ -1,5 +1,7 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
+// Label jejak audit menerjemahkan objek_tipe lama (sebelum migrasi 072); helper ini juga dimuat tanpa autoload oleh suite.
+require_once __DIR__ . '/kunci_tersimpan_helper.php';
 
 /**
  * Menyusun URL absolut untuk aset file atau gambar
@@ -157,7 +159,7 @@ if ( ! function_exists('nomor_whatsapp')) {
 
 /*
  * Jejak Audit dibaca staf dinas, bukan pengembang (audit UI 2 Okt 2026). Baris tersimpan
- * memakai kode dan nama tabel ("akses_npwp_srp2", "srp2_registrations#daftar"); di sini
+ * memakai kode dan nama tabel ("akses_npwp_srp2", "srp2_pengajuan#daftar"); di sini
  * kode itu diterjemahkan SAAT TAMPIL. Baris di sys_jejak_audit tidak pernah diubah:
  * jejak audit yang ditulis ulang bukan bukti lagi.
  * ponytail: satu kamus kecil; kode yang belum terdaftar tetap tampil dengan garis bawah jadi spasi.
@@ -202,15 +204,15 @@ if ( ! function_exists('audit_kamus')) {
                 'rekam_bnba'                => 'lampiran BNBA',
                 'retensi'                   => 'pembersihan data lama',
                 'sf_bank_data_dokumen'      => 'dokumen bank data',
-                'sf_housing_queue'          => 'antrean pendataan',
-                'sf_programs'               => 'program',
+                'sf_antrean_pengajuan'      => 'antrean pendataan',
+                'sf_program'                => 'program',
                 'simperum'                  => 'cek RTLH',
                 'skema_tidak_valid'         => 'data tidak sesuai format',
                 'srp2'                      => 'pengajuan SRP2',
                 'srp2_asosiasi'             => 'asosiasi pengembang',
-                'srp2_certified_developers' => 'direktori SRP2',
-                'srp2_registrations'        => 'SRP2',
-                'usr_users'                 => 'akun',
+                'srp2_direktori_pengembang' => 'direktori SRP2',
+                'srp2_pengajuan'            => 'SRP2',
+                'usr_akun'                  => 'akun',
                 'warga_assessment'          => 'penilaian rumah warga',
             ],
         ];
@@ -232,9 +234,10 @@ if ( ! function_exists('audit_label_aksi')) {
 }
 
 if ( ! function_exists('audit_label_objek')) {
-    /** ("srp2_registrations", "daftar") -> "daftar SRP2"; ("aduan", "431") -> "aduan nomor 431". */
+    /** ("srp2_pengajuan", "daftar") -> "daftar SRP2"; ("aduan", "431") -> "aduan nomor 431". */
     function audit_label_objek($tipe, $id) {
         if ((string) $tipe === '') { return ''; }
+        $tipe = kunci_tersimpan_objek($tipe); // baris sebelum migrasi 072 menyimpan nama tabel lama
         $label = audit_kamus()['objek'][$tipe] ?? str_replace('_', ' ', (string) $tipe);
         if ((string) $id === 'daftar') { return 'daftar ' . $label; }
         return $label . ((string) $id !== '' ? ' nomor ' . $id : '');
@@ -272,7 +275,10 @@ if ( ! function_exists('audit_kode_dari_cari')) {
             if (str_contains(mb_strtolower($teks), $q)) { $hasil['aksi'][] = $a; }
         }
         foreach (audit_kamus()['objek'] as $tipe => $label) {
-            if (str_contains(mb_strtolower($label), $q)) { $hasil['objek_tipe'][] = $tipe; }
+            if (str_contains(mb_strtolower($label), $q)) {
+                // Baris lama menyimpan nama tabel sebelum migrasi 072; keduanya dicari.
+                $hasil['objek_tipe'] = array_merge($hasil['objek_tipe'], [$tipe], array_keys(kunci_tersimpan_tabel(), $tipe, TRUE));
+            }
         }
         return $hasil;
     }

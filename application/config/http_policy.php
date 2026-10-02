@@ -82,6 +82,7 @@ $config['http_policy'] = [
         'migrate/simperum_probe'     => 'hanya CLI atau loopback',
         'migrate/uji_rekam_data_d1'  => 'hanya CLI atau loopback',
         'migrate/uji_wizard_w2'      => 'hanya CLI atau loopback',
+        'migrate/ke'                 => 'hanya CLI (naik/turun ke versi skema tertentu untuk rollback); web dijawab 404',
     ],
 
     /* URI KELUAR (aplikasi memanggil layanan lain) yang membawa data pribadi di query string karena

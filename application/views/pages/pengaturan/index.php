@@ -79,9 +79,9 @@
                             <ol class="mt-2 space-y-1.5 border-l-2 border-gray-200 dark:border-white/10 pl-3">
                                 <?php foreach ($riwayat as $jejak): ?>
                                 <li class="text-xs text-gray-600 dark:text-brand-muted">
-                                    <span class="font-bold text-gray-900 dark:text-white"><?= htmlspecialchars($label_status[$jejak['to_status']] ?? $jejak['to_status']) ?></span>
+                                    <span class="font-bold text-gray-900 dark:text-white"><?= htmlspecialchars($label_status[$jejak['status_akhir']] ?? $jejak['status_akhir']) ?></span>
                                     <span class="ml-1 whitespace-nowrap text-[11px]"><?= htmlspecialchars(tgl_id($jejak['created_at'], TRUE, TRUE)) ?></span>
-                                    <?php if (!empty($jejak['note'])): ?><span class="block whitespace-normal italic"><?= htmlspecialchars($jejak['note']) ?></span><?php endif; ?>
+                                    <?php if (!empty($jejak['catatan'])): ?><span class="block whitespace-normal italic"><?= htmlspecialchars($jejak['catatan']) ?></span><?php endif; ?>
                                 </li>
                                 <?php endforeach; ?>
                             </ol>

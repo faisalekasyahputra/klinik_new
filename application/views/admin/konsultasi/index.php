@@ -69,7 +69,7 @@ $filter_html = ob_get_clean();
                         <div class="text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($r->email_pemohon) ?></div>
                     </td>
                     <td class="px-4 py-3 max-w-[260px]">
-                        <a href="<?= base_url('Umum/detail/' . $r->id_diskusi) ?>" target="_blank" rel="noopener" class="font-semibold text-gray-900 dark:text-white hover:underline block truncate"><?= html_escape($r->judul_topik ?: '(topik terhapus)') ?></a>
+                        <a href="<?= base_url('Umum/detail/' . $r->diskusi_id) ?>" target="_blank" rel="noopener" class="font-semibold text-gray-900 dark:text-white hover:underline block truncate"><?= html_escape($r->judul_topik ?: '(topik terhapus)') ?></a>
                         <div class="text-xs text-gray-500 dark:text-brand-muted truncate"><?= html_escape($r->alasan) ?></div>
                     </td>
                     <td class="px-4 py-3"><?= $this->load->view('admin/components/status_badge', ['label' => ucfirst($r->status), 'kelas' => $badge_kelas[$r->status] ?? 'pending'], TRUE) ?></td>

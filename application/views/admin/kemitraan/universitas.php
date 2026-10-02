@@ -81,7 +81,7 @@ if (empty($aksi_buat)) {
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
-                    <th scope="col" class="px-4 py-3"><?= admin_sort_header('Nama Universitas', 'name', $table, $base_url) ?></th>
+                    <th scope="col" class="px-4 py-3"><?= admin_sort_header('Nama Universitas', 'nama', $table, $base_url) ?></th>
                     <th scope="col" class="px-4 py-3">No. HP</th>
                     <th scope="col" class="px-4 py-3 text-center">KKN Diajukan</th>
                     <th scope="col" class="px-4 py-3">Status</th>
@@ -106,15 +106,15 @@ if (empty($aksi_buat)) {
                     // komentar lengkap di sana. Disalin, bukan dipanggil dari
                     // controller: view ini tidak boleh menarik model baru.
                     $nonaktif = strtolower(trim((string) ($u->status ?? ''))) === 'nonaktif';
-                    $terkunci = ! empty($u->locked_until) && strtotime($u->locked_until) > time();
+                    $terkunci = ! empty($u->terkunci_sampai) && strtotime($u->terkunci_sampai) > time();
                 ?>
                 <tr>
                     <td class="px-4 py-3 max-w-[14rem] whitespace-normal">
-                        <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($u->name) ?></div>
+                        <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($u->nama) ?></div>
                         <div class="text-xs text-gray-500 dark:text-brand-muted break-words"><?= html_escape($u->email) ?></div>
                     </td>
                     <td class="px-4 py-3 text-xs">
-                        <?= $u->phone ? html_escape($u->phone) : '<span class="text-red-500">belum diisi</span>' ?>
+                        <?= $u->no_hp ? html_escape($u->no_hp) : '<span class="text-red-500">belum diisi</span>' ?>
                     </td>
                     <td class="px-4 py-3 text-center font-bold text-gray-900 dark:text-white"><?= (int) $u->jumlah_kkn ?></td>
                     <td class="px-4 py-3">
@@ -148,15 +148,15 @@ if (empty($aksi_buat)) {
                         <template x-teleport="body">
                         <div x-show="kelola" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 text-left whitespace-normal" @keydown.escape.window="kelola = false">
                             <div @click.outside="kelola = false" class="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-white dark:bg-brand-card p-6 shadow-xl space-y-5">
-                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Kelola <?= html_escape($u->name) ?></h3>
+                                <h3 class="text-lg font-bold text-gray-900 dark:text-white">Kelola <?= html_escape($u->nama) ?></h3>
                                 <form method="POST" action="<?= base_url('Kemitraan_Bidang/ubah_universitas') ?>" class="space-y-3">
                                     <?= $csrf_isian ?>
                                     <div><label class="<?= $label_kls ?>">Nama Universitas</label>
-                                        <input type="text" name="name" required maxlength="150" value="<?= html_escape($u->name) ?>" class="<?= $isian_kls ?>"></div>
+                                        <input type="text" name="name" required maxlength="150" value="<?= html_escape($u->nama) ?>" class="<?= $isian_kls ?>"></div>
                                     <div><label class="<?= $label_kls ?>">Email</label>
                                         <input type="email" name="email" required maxlength="100" value="<?= html_escape($u->email) ?>" class="<?= $isian_kls ?>"></div>
                                     <div><label class="<?= $label_kls ?>">Nomor HP/WhatsApp</label>
-                                        <input type="tel" name="phone" maxlength="20" pattern="\+?[0-9][0-9 \-]{6,19}" value="<?= html_escape($u->phone ?? '') ?>" class="<?= $isian_kls ?>"></div>
+                                        <input type="tel" name="phone" maxlength="20" pattern="\+?[0-9][0-9 \-]{6,19}" value="<?= html_escape($u->no_hp ?? '') ?>" class="<?= $isian_kls ?>"></div>
                                     <button type="submit" class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan data</span></button>
                                 </form>
                                 <form method="POST" action="<?= base_url('Kemitraan_Bidang/sandi_universitas') ?>" class="space-y-3 border-t border-gray-100 dark:border-white/5 pt-4">

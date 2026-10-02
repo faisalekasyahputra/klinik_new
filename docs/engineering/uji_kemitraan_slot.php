@@ -151,7 +151,7 @@ function bersihkan() {
     $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
     if ( ! empty($GLOBALS['mhs_uji_id'])) {
         $db->query("DELETE FROM kkn_magang_pendaftaran WHERE user_id = " . (int) $GLOBALS['mhs_uji_id']);
-        $db->query("DELETE FROM usr_users WHERE id = " . (int) $GLOBALS['mhs_uji_id']);
+        $db->query("DELETE FROM usr_akun WHERE id = " . (int) $GLOBALS['mhs_uji_id']);
     }
     // Bidang tidak dihapus - ia struktur organisasi. Yang dipulihkan keadaan
     // magangnya: slot tahun uji dibuang, kuota dan status kembali ke bawaan.
@@ -273,7 +273,7 @@ wajib(login(ADM_EMAIL, ADM_PASSWORD), 'Login superadmin');
  * meminjam data bersama akan merah karena ulah orang lain.
  */
 $MHS_UJI = 'uji_slot_mhs_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
-$db->query("INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+$db->query("INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
     VALUES ('" . $db->real_escape_string($MHS_UJI) . "', '" . password_hash(MHS_PASSWORD, PASSWORD_BCRYPT)
     . "', 'Mahasiswa Uji Slot', 'uji_slot_" . mt_rand(100000, 999999) . "', 'mahasiswa', 'active', 1, NOW())");
 $GLOBALS['mhs_uji_id'] = (int) $db->insert_id;
@@ -550,7 +550,7 @@ echo "\n== Alur surat dua tahap ==\n";
 
 // Divisi uji ditetapkan ke bidang yang SAMA dengan akun admin bidang yang ada,
 // supaya tahap dua punya meja yang benar-benar bisa dibuka.
-$bidang_adm = baris("SELECT bidang_kode FROM usr_users WHERE role = 'admin_bidang' AND bidang_kode IS NOT NULL LIMIT 1");
+$bidang_adm = baris("SELECT bidang_kode FROM usr_akun WHERE peran = 'admin_bidang' AND bidang_kode IS NOT NULL LIMIT 1");
 if ( ! $bidang_adm) {
     echo "  LEWAT  Tidak ada akun admin_bidang - alur tahap dua tidak bisa diuji\n";
 } else {

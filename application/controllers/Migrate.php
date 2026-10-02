@@ -34,6 +34,23 @@ class Migrate extends CI_Controller {
     }
 
     /**
+     * CLI saja: `php index.php migrate ke <versi 14 digit>` - naik ATAU turun ke versi tertentu.
+     * Dipakai untuk rollback rilis ber-migrasi (mis. 072 ke 071) tanpa skrip sementara di server.
+     * Seperti index(), CI menandai sukses tanpa memeriksa query; baca hasilnya dari `migrate status`.
+     */
+    public function ke($versi = NULL)
+    {
+        if ( ! $this->input->is_cli_request() || ! preg_match('/^\d{14}$/', (string) $versi)) {
+            show_404();
+            return;
+        }
+        $result = $this->migration->version($versi);
+        echo $result === FALSE
+            ? 'Migrasi gagal: '.$this->migration->error_string()."\n"
+            : "Migrasi sukses, versi skema sekarang: {$result}\n";
+    }
+
+    /**
      * Diagnostik BACA SAJA - jalankan SEBELUM index() di lingkungan mana pun
      * yang keadaan migrasinya belum pasti (production khususnya). CI
      * migration->version() menandai migrasi sebagai berhasil TANPA memeriksa
@@ -73,13 +90,13 @@ class Migrate extends CI_Controller {
         }
 
         foreach ([
-            'sys_rate_limits',
+            'sys_batas_laju',
             // Migrasi 052 - langganan perangkat Web Push admin.
-            'sys_push_subscriptions',
+            'sys_langganan_notifikasi',
             // Migrasi 053 - privilege modul per akun admin ter-scope.
-            'usr_admin_module_privileges',
-            'srp2_registrations',
-            'srp2_certified_developers',
+            'usr_hak_modul_admin',
+            'srp2_pengajuan',
+            'srp2_direktori_pengembang',
             'sf_profil_warga',
             'sf_rekaman_simperum',
             'sf_penilaian_perumahan',
@@ -95,7 +112,7 @@ class Migrate extends CI_Controller {
             'kkn_magang_pendaftaran',
             // Migrasi 033.
             'sys_jejak_audit',
-            // Migrasi 036 - kolom etalase. Kolom, bukan tabel: sf_programs sudah
+            // Migrasi 036 - kolom etalase. Kolom, bukan tabel: sf_program sudah
             // ada sejak awal, jadi keberadaan tabelnya nol bukti.
             // Migrasi 035.
             'forum_janji_temu',
@@ -105,29 +122,29 @@ class Migrate extends CI_Controller {
         }
 
         // Migrasi 037 - masa berlaku sertifikat SRP2. Kolom, bukan tabel.
-        if (in_array('srp2_certified_developers', $tables)) {
+        if (in_array('srp2_direktori_pengembang', $tables)) {
             foreach (['sertifikat_terbit', 'sertifikat_berakhir'] as $k) {
-                echo 'srp2_certified_developers.'.$k.': '.
-                    ($this->db->field_exists($k, 'srp2_certified_developers') ? 'ADA' : 'TIDAK ADA')."
+                echo 'srp2_direktori_pengembang.'.$k.': '.
+                    ($this->db->field_exists($k, 'srp2_direktori_pengembang') ? 'ADA' : 'TIDAK ADA')."
 ";
             }
         }
 
         // Migrasi 036 - kolom etalase program.
-        if (in_array('sf_programs', $tables)) {
-            foreach (['badge', 'syarat_utama', 'gambar', 'urutan', 'tampil_korsel'] as $k) {
-                echo 'sf_programs.'.$k.': '.
-                    ($this->db->field_exists($k, 'sf_programs') ? 'ADA' : 'TIDAK ADA')."
+        if (in_array('sf_program', $tables)) {
+            foreach (['lencana', 'syarat_utama', 'gambar', 'urutan', 'tampil_korsel'] as $k) {
+                echo 'sf_program.'.$k.': '.
+                    ($this->db->field_exists($k, 'sf_program') ? 'ADA' : 'TIDAK ADA')."
 ";
             }
-            $n = (int) $this->db->where('tampil_korsel', 1)->count_all_results('sf_programs');
+            $n = (int) $this->db->where('tampil_korsel', 1)->count_all_results('sf_program');
             echo 'program tampil di korsel: '.$n.($n === 0 ? ' - beranda akan kehilangan etalasenya' : '')."
 ";
         }
 
-        if (in_array('srp2_registrations', $tables)) {
-            echo 'srp2_registrations.certified_developer_id: '.
-                ($this->db->field_exists('certified_developer_id', 'srp2_registrations') ? 'ADA' : 'TIDAK ADA')."\n";
+        if (in_array('srp2_pengajuan', $tables)) {
+            echo 'srp2_pengajuan.pengembang_id: '.
+                ($this->db->field_exists('pengembang_id', 'srp2_pengajuan') ? 'ADA' : 'TIDAK ADA')."\n";
         }
 
         // Kolom, bukan cuma tabel: migrasi 029 dan 031 menambah kolom pada
@@ -163,13 +180,13 @@ class Migrate extends CI_Controller {
         if (in_array('aduan', $tables)) {
             $k = $this->db->query(
                 "SELECT IS_NULLABLE n, COLUMN_DEFAULT d FROM information_schema.COLUMNS
-                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'aduan' AND COLUMN_NAME = 'bidang'"
+                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'aduan' AND COLUMN_NAME = 'bidang_kode'"
             )->row();
             $nullable = $k && $k->n === 'YES';
             $sentinel = $k && stripos((string) $k->d, 'umum') !== FALSE;
-            echo 'aduan.bidang NULL-able (migrasi 034): '
+            echo 'aduan.bidang_kode NULL-able (migrasi 034): '
                 .($nullable ? 'YA' : 'BELUM - kode baru akan gagal menyimpan aduan')."\n";
-            echo "aduan.bidang DEFAULT 'umum' dicabut: "
+            echo "aduan.bidang_kode DEFAULT 'umum' dicabut: "
                 .($sentinel ? 'BELUM' : 'YA')."\n";
         }
 
@@ -201,16 +218,16 @@ class Migrate extends CI_Controller {
            kolomnya: kolom nik/nik_lookup_hash sudah ada sejak lama, jadi
            keberadaannya nol bukti. Tanpa indeks unik, dua akun bisa mengaku
            NIK yang sama dan butir 8 tidak ditegakkan apa pun. */
-        if (in_array('usr_users', $tables, TRUE)) {
+        if (in_array('usr_akun', $tables, TRUE)) {
             $uq = $this->db->query("SELECT NON_UNIQUE nu FROM information_schema.STATISTICS
-                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usr_users'
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usr_akun'
                   AND INDEX_NAME = 'uq_usr_nik_lookup' LIMIT 1")->row();
-            echo 'usr_users NIK UNIQUE (migrasi 041): '
+            echo 'usr_akun NIK UNIQUE (migrasi 041): '
                 .($uq === NULL ? 'TIDAK ADA - satu NIK bisa dipakai banyak akun'
                     : ((int) $uq->nu === 0 ? 'TERPASANG' : 'ADA TAPI TIDAK UNIK'))."
 ";
             $isi = (int) $this->db->where('nik_lookup_hash IS NOT NULL', NULL, FALSE)
-                ->count_all_results('usr_users');
+                ->count_all_results('usr_akun');
             echo "akun dengan NIK tercatat: {$isi}
 ";
         }
@@ -220,35 +237,35 @@ class Migrate extends CI_Controller {
            pengembang") tidak ditegakkan apa pun - dan itu justru inti
            permintaannya. ALTER terpisah seperti itu gagal senyap saat db_debug
            mati (riwayat 031). */
-        if (in_array('srp2_certified_developers', $tables, TRUE)) {
+        if (in_array('srp2_direktori_pengembang', $tables, TRUE)) {
             foreach (['status_sertifikasi', 'kabupaten_id', 'asosiasi',
                       'npwp_ciphertext', 'npwp_lookup_hash'] as $c) {
-                echo "srp2_certified_developers.{$c} (migrasi 040): "
-                    .($this->db->field_exists($c, 'srp2_certified_developers') ? 'ADA' : 'HILANG')."
+                echo "srp2_direktori_pengembang.{$c} (migrasi 040): "
+                    .($this->db->field_exists($c, 'srp2_direktori_pengembang') ? 'ADA' : 'HILANG')."
 ";
             }
             $uq = $this->db->query("SELECT NON_UNIQUE nu FROM information_schema.STATISTICS
-                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_certified_developers'
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_direktori_pengembang'
                   AND INDEX_NAME = 'uq_srp2_npwp' LIMIT 1")->row();
             echo 'srp2 NPWP UNIQUE (butir 8): '
                 .($uq === NULL ? 'TIDAK ADA - NPWP kembar bisa masuk'
                     : ((int) $uq->nu === 0 ? 'TERPASANG' : 'ADA TAPI TIDAK UNIQUE'))."
 ";
             $isi = (int) $this->db->where('npwp_lookup_hash IS NOT NULL', NULL, FALSE)
-                ->count_all_results('srp2_certified_developers');
+                ->count_all_results('srp2_direktori_pengembang');
             echo "pengembang dengan NPWP tercatat: {$isi}
 ";
         }
 
         /* NPWP pada pengajuan SRP2 (migrasi 056). Selain kedua kolom,
            indeks unik wajib ada agar satu NPWP tidak bisa dipakai dua akun. */
-        if (in_array('srp2_registrations', $tables, TRUE)) {
+        if (in_array('srp2_pengajuan', $tables, TRUE)) {
             foreach (['npwp_ciphertext', 'npwp_lookup_hash'] as $c) {
-                echo "srp2_registrations.{$c} (migrasi 056): "
-                    .($this->db->field_exists($c, 'srp2_registrations') ? 'ADA' : 'HILANG')."\n";
+                echo "srp2_pengajuan.{$c} (migrasi 056): "
+                    .($this->db->field_exists($c, 'srp2_pengajuan') ? 'ADA' : 'HILANG')."\n";
             }
             $uq = $this->db->query("SELECT NON_UNIQUE nu FROM information_schema.STATISTICS
-                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_registrations'
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_pengajuan'
                   AND INDEX_NAME = 'uq_srp2_registration_npwp' LIMIT 1")->row();
             echo 'pengajuan SRP2 NPWP UNIQUE (migrasi 056): '
                 .($uq === NULL ? 'TIDAK ADA - NPWP kembar bisa masuk'
@@ -279,7 +296,7 @@ class Migrate extends CI_Controller {
            terpisah di migrasi itu, dan ALTER yang kedua gagal SENYAP saat
            db_debug mati (riwayat 031). Tanpa `uq_srp2_asosiasi_kode`, dua
            asosiasi bisa memakai kode yang sama, dan JOIN dari
-           `srp2_registrations.asosiasi` yang menyimpan STRING kode itu jadi
+           `srp2_pengajuan.asosiasi` yang menyimpan STRING kode itu jadi
            ambigu tanpa satu pun galat. */
         if (in_array('srp2_asosiasi', $tables, TRUE)) {
             $uq = $this->db->query("SELECT NON_UNIQUE nu FROM information_schema.STATISTICS
@@ -302,12 +319,12 @@ class Migrate extends CI_Controller {
            Diperiksa untuk SEMUA tabel yang menyimpan kode asosiasi (migrasi
            051), bukan cuma psu_serah_terima. Pemeriksaan lama di sini hanya
            menyorot satu kolom, dan itulah sebabnya
-           srp2_certified_developers.asosiasi meleset diam-diam tanpa satu pun
+           srp2_direktori_pengembang.asosiasi meleset diam-diam tanpa satu pun
            baris keluaran yang menyebutnya. */
         $acuan = $this->db->query("SELECT COLLATION_NAME c FROM information_schema.COLUMNS
             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_asosiasi'
               AND COLUMN_NAME = 'kode' LIMIT 1")->row();
-        foreach (['psu_serah_terima', 'srp2_certified_developers'] as $t) {
+        foreach (['psu_serah_terima', 'srp2_direktori_pengembang'] as $t) {
             if ( ! in_array($t, $tables, TRUE)) { continue; }
             $kol = $this->db->query("SELECT COLLATION_NAME c FROM information_schema.COLUMNS
                 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
@@ -363,13 +380,13 @@ class Migrate extends CI_Controller {
            migrasi 044 di atas: salah satu ADD COLUMN bisa gagal senyap
            sementara yang lain sukses. */
         $kolom_matriks = [
-            'matrix_land_ownership_code'        => 'migrasi 045',
-            'matrix_current_housing_code'       => 'migrasi 045',
-            'matrix_environment_condition_code' => 'migrasi 045',
-            'matrix_occupation_finance_code'    => 'migrasi 045/046',
-            'matrix_marital_family_code'        => 'migrasi 045/046',
-            'matrix_income_code'                => 'migrasi 047',
-            'matrix_dtks_status'                => 'migrasi 048',
+            'matriks_kepemilikan_lahan'        => 'migrasi 045',
+            'matriks_rumah_sekarang'       => 'migrasi 045',
+            'matriks_kondisi_lingkungan' => 'migrasi 045',
+            'matriks_pekerjaan_keuangan'    => 'migrasi 045/046',
+            'matriks_status_keluarga'        => 'migrasi 045/046',
+            'matriks_penghasilan'                => 'migrasi 047',
+            'matriks_status_dtks'                => 'migrasi 048',
         ];
         foreach ($kolom_matriks as $kolom => $ket) {
             echo "sf_penilaian_perumahan.{$kolom} ({$ket}): "
@@ -384,7 +401,7 @@ class Migrate extends CI_Controller {
            tidak dikenal). Tidak ada field_exists() di sini - yang diperiksa
            ZERO baris tersisa, bukan keberadaan kolom. */
         if (in_array('sf_penilaian_perumahan', $tables, TRUE)) {
-            $macet = (int) $this->db->where('current_step', 'citizen_data')->count_all_results('sf_penilaian_perumahan');
+            $macet = (int) $this->db->where('langkah_sekarang', 'citizen_data')->count_all_results('sf_penilaian_perumahan');
             echo 'draft macet di citizen_data (migrasi 049, harus 0): '
                 .($macet === 0 ? 'AMAN' : $macet.' BARIS MACET - warga ini akan gagal maju di wizard')."\n";
         }
@@ -392,8 +409,8 @@ class Migrate extends CI_Controller {
         // Migrasi 050 - laporan akhir KKN. Kolom, bukan tabel.
         $bathroom = $this->db->query("SELECT DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, IS_NULLABLE
             FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
-            AND TABLE_NAME = 'sf_penilaian_perumahan' AND COLUMN_NAME = 'bathroom_usage_code'")->row_array();
-        echo 'sf_penilaian_perumahan.bathroom_usage_code (migrasi 057): '
+            AND TABLE_NAME = 'sf_penilaian_perumahan' AND COLUMN_NAME = 'penggunaan_kamar_mandi'")->row_array();
+        echo 'sf_penilaian_perumahan.penggunaan_kamar_mandi (migrasi 057): '
             .($bathroom && $bathroom['DATA_TYPE'] === 'varchar'
                 && (int) $bathroom['CHARACTER_MAXIMUM_LENGTH'] === 20 && $bathroom['IS_NULLABLE'] === 'YES'
                 ? 'ADA, VARCHAR(20) NULL' : 'HILANG ATAU BENTUK TIDAK SESUAI')."\n";
@@ -402,14 +419,14 @@ class Migrate extends CI_Controller {
                 ? 'ADA' : 'HILANG - unggah laporan akhir KKN akan fatal')."\n";
         $matrix = $this->db->query("SELECT DATA_TYPE, IS_NULLABLE
             FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE()
-            AND TABLE_NAME = 'sf_penilaian_perumahan' AND COLUMN_NAME = 'preliminary_matrix_ciphertext'")->row_array();
-        echo 'sf_penilaian_perumahan.preliminary_matrix_ciphertext (migrasi 058): '
+            AND TABLE_NAME = 'sf_penilaian_perumahan' AND COLUMN_NAME = 'matriks_awal_ciphertext'")->row_array();
+        echo 'sf_penilaian_perumahan.matriks_awal_ciphertext (migrasi 058): '
             .($matrix && $matrix['DATA_TYPE'] === 'mediumtext' && $matrix['IS_NULLABLE'] === 'YES'
                 ? 'ADA, MEDIUMTEXT NULL' : 'HILANG ATAU BENTUK TIDAK SESUAI')."\n";
         // Migrasi 059/060 - sesi tunggal, validasi ID sesi, dan sandi 90 hari.
-        foreach (['active_session_hash', 'active_session_id_hash', 'active_session_at', 'password_changed_at', 'password_expires_at'] as $kolom) {
-            echo 'usr_users.'.$kolom.' (migrasi '.($kolom === 'active_session_id_hash' ? '060' : '059').'): '.
-                ($this->db->field_exists($kolom, 'usr_users') ? 'ADA' : 'HILANG - kontrol autentikasi belum aktif')."\n";
+        foreach (['sesi_aktif_hash', 'sesi_aktif_id_hash', 'sesi_aktif_at', 'sandi_diganti_at', 'sandi_kedaluwarsa_at'] as $kolom) {
+            echo 'usr_akun.'.$kolom.' (migrasi '.($kolom === 'sesi_aktif_id_hash' ? '060' : '059').'): '.
+                ($this->db->field_exists($kolom, 'usr_akun') ? 'ADA' : 'HILANG - kontrol autentikasi belum aktif')."\n";
         }
         // Migrasi 061 (link dokumentasi KKN) dan migrasi 062 (tanggal sertifikat KKN oleh admin).
         // Migrasi 063 - dokumen Bank Data unggahan admin.
@@ -423,20 +440,20 @@ class Migrate extends CI_Controller {
         echo 'default asosiasi (migrasi 065): '.($salah ? $salah." kolom masih DEFAULT 'NULL'" : 'NULL')."\n";
         // Migrasi 066 - direktori SRP2 bertaut akun: kolom, UNIQUE user_id, dan FK-nya.
         foreach (['user_id', 'foto_profil', 'nib', 'no_keanggotaan', 'no_whatsapp', 'email_kontak'] as $kolom) {
-            echo 'srp2_certified_developers.'.$kolom.' (migrasi 066): '.
-                ($this->db->field_exists($kolom, 'srp2_certified_developers') ? 'ADA' : 'HILANG')."\n";
+            echo 'srp2_direktori_pengembang.'.$kolom.' (migrasi 066): '.
+                ($this->db->field_exists($kolom, 'srp2_direktori_pengembang') ? 'ADA' : 'HILANG')."\n";
         }
         $fk066 = (int) $this->db->query("SELECT COUNT(*) n FROM information_schema.TABLE_CONSTRAINTS
-            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_certified_developers'
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_direktori_pengembang'
               AND CONSTRAINT_NAME IN ('fk_srp2_direktori_user', 'uq_srp2_direktori_user')")->row('n');
         echo 'srp2 tautan akun UNIQUE + FK (migrasi 066): '.($fk066 === 2 ? 'TERPASANG' : 'TIDAK LENGKAP ('.$fk066.'/2)')."\n";
         // Migrasi 067 - PII antrean & NIK SRP2 terenkripsi: kolom polos HARUS hilang, pasangan
         // terenkripsi + indeks sidik HARUS ada. Hanya hitungan yang dicetak, tidak pernah nilai.
         $bentuk067 = [
-            'sf_housing_queue' => [['nik_pengaju', 'nama_lengkap', 'data_simperum_json', 'data_survey_json'],
+            'sf_antrean_pengajuan' => [['nik_pengaju', 'nama_lengkap', 'data_simperum_json', 'data_survey_json'],
                 ['nik_pengaju_ciphertext', 'nik_pengaju_lookup_hash', 'nama_lengkap_ciphertext', 'data_simperum_json_ciphertext', 'data_survey_json_ciphertext'],
                 'idx_sf_queue_nik_lookup'],
-            'srp2_registrations' => [['nik_ktp'], ['nik_ktp_ciphertext', 'nik_ktp_lookup_hash'], 'uq_srp2_registration_nik'],
+            'srp2_pengajuan' => [['nik_ktp'], ['nik_ktp_ciphertext', 'nik_ktp_lookup_hash'], 'uq_srp2_registration_nik'],
         ];
         foreach ($bentuk067 as $tabel => [$polos, $sandi, $indeks]) {
             $sisa = array_filter($polos, function ($k) use ($tabel) { return $this->db->field_exists($k, $tabel); });
@@ -464,7 +481,7 @@ class Migrate extends CI_Controller {
             ? 'SERAGAM utf8mb4_unicode_ci ('.$c068->t.' tabel, '.$c068->k.' kolom string; '.$c068->ka.' kolom ascii disengaja)'
             : 'BELUM ('.$c068->ts.' dari '.$c068->t.' tabel dan '.$c068->ks.' dari '.$c068->k.' kolom menyimpang)')
             .'; default database '.$c068->d."\n";
-        // Migrasi 069 - FK yang tadinya diandaikan kode + perapian indeks usr_users. Daftar FK/indeks
+        // Migrasi 069 - FK yang tadinya diandaikan kode + perapian indeks usr_akun. Daftar FK/indeks
         // dibaca dari berkas migrasinya sendiri supaya diagnostik ini tidak bisa menyimpang darinya.
         require_once APPPATH.'migrations/20260701000069_fk_indeks_integritas.php';
         $fk069 = []; $kurang069 = [];
@@ -476,20 +493,22 @@ class Migrate extends CI_Controller {
         $idx069 = [];
         foreach ($this->db->query("SELECT TABLE_NAME t, INDEX_NAME n FROM information_schema.STATISTICS
             WHERE TABLE_SCHEMA = DATABASE() GROUP BY TABLE_NAME, INDEX_NAME")->result() as $r) { $idx069[$r->t.'.'.$r->n] = TRUE; }
+        // Nama tabel di konstanta 069 adalah nama sebelum migrasi 072; diterjemahkan lewat peta 072.
+        require_once APPPATH.'migrations/20260701000072_penamaan_indonesia.php';
         foreach (Migration_Fk_indeks_integritas::INDEKS as $nama => $def) {
-            if ( ! isset($idx069[$def[0].'.'.$nama])) { $kurang069[] = 'indeks '.$nama.' hilang'; }
+            if ( ! isset($idx069[Migration_Penamaan_indonesia::tabel($def[0]).'.'.$nama])) { $kurang069[] = 'indeks '.$nama.' hilang'; }
         }
-        if (isset($idx069['usr_users.idx_users_email'])) { $kurang069[] = 'indeks kembar idx_users_email masih ada'; }
-        if ( ! isset($idx069['usr_users.email'])) { $kurang069[] = 'UNIQUE email hilang'; }
+        if (isset($idx069['usr_akun.idx_users_email'])) { $kurang069[] = 'indeks kembar idx_users_email masih ada'; }
+        if ( ! isset($idx069['usr_akun.email'])) { $kurang069[] = 'UNIQUE email hilang'; }
         echo 'FK + indeks integritas (migrasi 069): '.($kurang069
             ? 'BELUM ('.implode('; ', $kurang069).')'
             : 'TERPASANG ('.count(Migration_Fk_indeks_integritas::FK).' FK, '.count(Migration_Fk_indeks_integritas::INDEKS).' indeks, email UNIQUE tunggal)')."\n";
-        // Migrasi 070 - satu sumber data perusahaan: kolom perusahaan usr_users dibuang.
+        // Migrasi 070 - satu sumber data perusahaan: kolom perusahaan usr_akun dibuang.
         $sisa070 = array_values(array_filter(['nama_perusahaan', 'alamat_kantor', 'telp_kantor'],
-            function ($k) { return $this->db->field_exists($k, 'usr_users'); }));
-        echo 'sumber tunggal perusahaan (migrasi 070): '.($sisa070 ? 'BELUM (usr_users masih punya '.implode(', ', $sisa070).')'
-            : 'TERPASANG (usr_users tanpa kolom perusahaan; '.$this->db->where('user_id IS NOT NULL', NULL, FALSE)
-                ->count_all_results('srp2_certified_developers').' baris direktori tertaut akun)')."\n";
+            function ($k) { return $this->db->field_exists($k, 'usr_akun'); }));
+        echo 'sumber tunggal perusahaan (migrasi 070): '.($sisa070 ? 'BELUM (usr_akun masih punya '.implode(', ', $sisa070).')'
+            : 'TERPASANG (usr_akun tanpa kolom perusahaan; '.$this->db->where('user_id IS NOT NULL', NULL, FALSE)
+                ->count_all_results('srp2_direktori_pengembang').' baris direktori tertaut akun)')."\n";
         // Migrasi 071 - tabel mati dibuang + CHECK kosakata status. Daftarnya dari konstanta migrasi.
         require_once APPPATH.'migrations/20260701000071_status_tertutup_tabel_mati.php';
         $kurang071 = array_map(function ($t) { return $t.' masih ada'; },
@@ -502,6 +521,30 @@ class Migrate extends CI_Controller {
         echo 'status tertutup + tabel mati (migrasi 071): '.($kurang071 ? 'BELUM ('.implode('; ', $kurang071).')'
             : 'TERPASANG ('.count(Migration_Status_tertutup_tabel_mati::CEK).' CHECK, '
                 .count(Migration_Status_tertutup_tabel_mati::TABEL_MATI).' tabel mati tidak ada)')."\n";
+        // Migrasi 072 - nama tabel/kolom Bahasa Indonesia + COMMENT setiap tabel. Daftar dari konstanta migrasinya.
+        $kurang072 = [];
+        foreach (Migration_Penamaan_indonesia::TABEL as $lama => $baru) {
+            if ($this->db->table_exists($lama)) { $kurang072[] = 'tabel lama '.$lama.' masih ada'; }
+            if ( ! $this->db->table_exists($baru)) { $kurang072[] = 'tabel '.$baru.' hilang'; }
+        }
+        $n_kolom072 = 0;
+        foreach (Migration_Penamaan_indonesia::KOLOM as $lama => $peta) {
+            $t = Migration_Penamaan_indonesia::tabel($lama);
+            $ada = $this->db->table_exists($t) ? $this->db->list_fields($t) : [];
+            foreach ($peta as $k_lama => $k_baru) {
+                $n_kolom072++;
+                if ( ! in_array($k_baru, $ada, TRUE)) { $kurang072[] = $t.'.'.$k_baru.' hilang'; }
+                if ($k_lama !== $k_baru && in_array($k_lama, $ada, TRUE)) { $kurang072[] = $t.'.'.$k_lama.' masih ada'; }
+            }
+        }
+        $tanpa_komentar = array_column($this->db->query("SELECT TABLE_NAME t FROM information_schema.TABLES
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE' AND TABLE_COMMENT = ''")->result_array(), 't');
+        if ($tanpa_komentar) { $kurang072[] = count($tanpa_komentar).' tabel tanpa COMMENT ('.implode(', ', array_slice($tanpa_komentar, 0, 5)).')'; }
+        echo 'nama Bahasa Indonesia (migrasi 072): '.($kurang072
+            ? 'BELUM ('.implode('; ', array_slice($kurang072, 0, 10)).(count($kurang072) > 10 ? '; dan '.(count($kurang072) - 10).' lagi' : '').')'
+            : 'TERPASANG ('.count(Migration_Penamaan_indonesia::TABEL).' tabel dan '.$n_kolom072.' kolom berganti nama, '
+                .count(Migration_Penamaan_indonesia::KOMENTAR).' tabel ber-COMMENT)')."
+";
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
                 ($this->db->field_exists($kolom, 'kkn_magang_pendaftaran') ? 'ADA' : 'HILANG')."\n";
@@ -525,9 +568,9 @@ class Migrate extends CI_Controller {
         $total = 0;
         $failed = 0;
         $user_id = NULL;
-        $snapshot_id = NULL;
+        $rekaman_id = NULL;
         $other_snapshot_id = NULL;
-        $assessment_id = NULL;
+        $penilaian_id = NULL;
         $profile_id = NULL;
         $stamp = time();
 
@@ -560,14 +603,14 @@ class Migrate extends CI_Controller {
                 $check($this->db->table_exists($table), "Tabel {$table} tersedia");
             }
 
-            $this->db->insert('usr_users', [
+            $this->db->insert('usr_akun', [
                 'email' => "uji_warga_r1_{$stamp}@example.test",
-                'password' => password_hash('UjiWargaR1!', PASSWORD_BCRYPT),
-                'name' => 'Warga Simulasi R1',
-                'username' => "uji_warga_r1_{$stamp}",
-                'role' => 'warga',
+                'kata_sandi' => password_hash('UjiWargaR1!', PASSWORD_BCRYPT),
+                'nama' => 'Warga Simulasi R1',
+                'nama_pengguna' => "uji_warga_r1_{$stamp}",
+                'peran' => 'warga',
                 'status' => 'active',
-                'profile_completed' => 1,
+                'profil_lengkap' => 1,
                 'kabupaten_id' => 3374,
                 'created_at' => date('Y-m-d H:i:s'),
             ]);
@@ -575,14 +618,14 @@ class Migrate extends CI_Controller {
             $check($user_id > 0, 'Akun sintetis dibuat');
 
             $profile = $this->Housing_assessment_model->save_profile($user_id, [
-                'source_mode' => 'simulation',
+                'mode_sumber' => 'simulation',
                 'nik' => $nik,
                 'family_card_number' => '0000000000001001',
                 'full_name' => 'Warga Simulasi R1',
                 'address' => 'Alamat Sintetis R1',
                 'birth_date' => '1980-01-01',
-                'gender_code' => 'male',
-                'welfare_decile' => 2,
+                'jenis_kelamin' => 'male',
+                'desil_kesejahteraan' => 2,
             ], ['full_name' => ['source' => 'simulation']]);
             $check(! empty($profile['success']), 'Model menyimpan profil');
 
@@ -598,7 +641,7 @@ class Migrate extends CI_Controller {
             );
             $check(
                 $profile_row
-                && strpos((string) $profile_row['full_name_ciphertext'], 'Warga Simulasi') === FALSE,
+                && strpos((string) $profile_row['nama_ciphertext'], 'Warga Simulasi') === FALSE,
                 'Nama tidak tersimpan plaintext'
             );
 
@@ -608,18 +651,18 @@ class Migrate extends CI_Controller {
                 'SIM-01',
                 'found',
                 ['fixture_id' => 'SIM-01', 'synthetic' => TRUE],
-                ['api_version' => 'simulation-v1', 'requested_by' => $user_id]
+                ['versi_api' => 'simulation-v1', 'requested_by' => $user_id]
             );
-            $snapshot_id = empty($snapshot['snapshot_id']) ? NULL : (int) $snapshot['snapshot_id'];
+            $rekaman_id = empty($snapshot['rekaman_id']) ? NULL : (int) $snapshot['rekaman_id'];
             $check(! empty($snapshot['success']), 'Snapshot simulasi tersimpan');
 
-            $snapshot_row = $snapshot_id ? $this->db
-                ->get_where('sf_rekaman_simperum', ['id' => $snapshot_id])
+            $snapshot_row = $rekaman_id ? $this->db
+                ->get_where('sf_rekaman_simperum', ['id' => $rekaman_id])
                 ->row_array() : NULL;
             $check(
                 $snapshot_row
-                && strpos((string) $snapshot_row['payload_ciphertext'], 'SIM-01') === FALSE
-                && $this->encryption_lib->is_encrypted($snapshot_row['payload_ciphertext']),
+                && strpos((string) $snapshot_row['muatan_ciphertext'], 'SIM-01') === FALSE
+                && $this->encryption_lib->is_encrypted($snapshot_row['muatan_ciphertext']),
                 'Payload snapshot terenkripsi'
             );
 
@@ -648,8 +691,8 @@ class Migrate extends CI_Controller {
                 'not_found',
                 NULL
             );
-            $other_snapshot_id = empty($other_snapshot['snapshot_id'])
-                ? NULL : (int) $other_snapshot['snapshot_id'];
+            $other_snapshot_id = empty($other_snapshot['rekaman_id'])
+                ? NULL : (int) $other_snapshot['rekaman_id'];
             $mismatched_draft = $this->Housing_assessment_model->create_draft(
                 $user_id,
                 (int) ($profile['profile_id'] ?? 0),
@@ -670,25 +713,25 @@ class Migrate extends CI_Controller {
                 3374,
                 'existing_house',
                 'simulation',
-                $snapshot_id
+                $rekaman_id
             );
-            $assessment_id = empty($draft['assessment_id']) ? NULL : (int) $draft['assessment_id'];
+            $penilaian_id = empty($draft['penilaian_id']) ? NULL : (int) $draft['penilaian_id'];
             $check(! empty($draft['success']), 'Draft assessment dibuat');
 
             $first_update = $this->Housing_assessment_model->update_owned_draft(
-                $assessment_id,
+                $penilaian_id,
                 $user_id,
                 0,
-                ['current_step' => 'housing', 'housing_status_code' => 'owned']
+                ['langkah_sekarang' => 'housing', 'kepemilikan_rumah' => 'owned']
             );
-            $check(! empty($first_update['success']) && (int) $first_update['lock_version'] === 1,
-                'Update pertama dengan lock_version 0 berhasil');
+            $check(! empty($first_update['success']) && (int) $first_update['versi_kunci'] === 1,
+                'Update pertama dengan versi_kunci 0 berhasil');
 
             $stale_update = $this->Housing_assessment_model->update_owned_draft(
-                $assessment_id,
+                $penilaian_id,
                 $user_id,
                 0,
-                ['current_step' => 'structure']
+                ['langkah_sekarang' => 'structure']
             );
             $check(
                 empty($stale_update['success']) && ($stale_update['code'] ?? '') === 'stale_or_not_owned',
@@ -696,16 +739,16 @@ class Migrate extends CI_Controller {
             );
 
             $wrong_owner = $this->Housing_assessment_model->get_owned_assessment(
-                $assessment_id,
+                $penilaian_id,
                 $user_id + 999999
             );
             $check($wrong_owner === NULL, 'Assessment tidak terbaca sebagai user lain');
         } finally {
-            if ($assessment_id) {
-                $this->db->delete('sf_penilaian_perumahan', ['id' => $assessment_id]);
+            if ($penilaian_id) {
+                $this->db->delete('sf_penilaian_perumahan', ['id' => $penilaian_id]);
             }
-            if ($snapshot_id) {
-                $this->db->delete('sf_rekaman_simperum', ['id' => $snapshot_id]);
+            if ($rekaman_id) {
+                $this->db->delete('sf_rekaman_simperum', ['id' => $rekaman_id]);
             }
             if ($other_snapshot_id) {
                 $this->db->delete('sf_rekaman_simperum', ['id' => $other_snapshot_id]);
@@ -715,12 +758,12 @@ class Migrate extends CI_Controller {
             // di bawah ini membawanya serta. Diperiksa, bukan diandaikan - lihat
             // check "Ikatan NIK uji dilepas" di bawah.
             if ($user_id) {
-                $this->db->delete('usr_users', ['id' => $user_id]);
+                $this->db->delete('usr_akun', ['id' => $user_id]);
             }
         }
 
         $leftovers = $this->db->like('email', 'uji_warga_r1_', 'after')
-            ->count_all_results('usr_users');
+            ->count_all_results('usr_akun');
         $check($leftovers === 0, 'Data uji dibersihkan');
         // Menjaga cascade-nya, bukan sekadar merapikan. Kalau FK profil pernah
         // kehilangan ON DELETE CASCADE-nya, ikatan NIK tertinggal dan uji ini
@@ -869,7 +912,7 @@ class Migrate extends CI_Controller {
         $kabs = $this->db->select('id')->order_by('id', 'ASC')->limit(2)
             ->get('kabupaten')->result_array();
         $aktor = $this->db->select('id')->order_by('id', 'ASC')->limit(1)
-            ->get('usr_users')->row_array();
+            ->get('usr_akun')->row_array();
         if (count($kabs) < 2 || ! $aktor) {
             fwrite(STDERR, "Prasyarat gagal: butuh >=2 kabupaten dan >=1 pengguna.\n");
             exit(1);
@@ -1000,7 +1043,7 @@ class Migrate extends CI_Controller {
 
         $TAHUN = 2099;
         $kabs = $this->db->select('id')->order_by('id', 'ASC')->limit(2)->get('kabupaten')->result_array();
-        $aktor = $this->db->select('id')->order_by('id', 'ASC')->limit(1)->get('usr_users')->row_array();
+        $aktor = $this->db->select('id')->order_by('id', 'ASC')->limit(1)->get('usr_akun')->row_array();
         if (count($kabs) < 2 || ! $aktor) {
             fwrite(STDERR, "Prasyarat gagal: butuh >=2 kabupaten dan >=1 pengguna.\n");
             exit(1);
@@ -1125,7 +1168,7 @@ class Migrate extends CI_Controller {
                 $this->db->replace('rd_perumahan_bnba', [
                     'laporan_id'   => (int) $laporan_id,
                     'nama_asli'    => 'bnba-uji.pdf',
-                    'private_path' => 'uji/bnba-uji.pdf',
+                    'path_privat' => 'uji/bnba-uji.pdf',
                     'mime_type'    => 'application/pdf',
                     'ukuran'       => 1024,
                 ]);

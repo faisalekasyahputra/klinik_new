@@ -175,7 +175,8 @@ $menyimpang = [];
 foreach ($berkas as $f) {
     if ( ! preg_match('/^(\d+)_/', basename($f), $mm) || strcmp($mm[1], '20260701000068') <= 0) { continue; }
     $isi = file_get_contents($f);
-    if (preg_match('/CREATE\s+TABLE/i', $isi) && stripos($isi, 'utf8mb4_unicode_ci') === FALSE) {
+    // SHOW CREATE TABLE dan kunci hasil "Create Table" hanya membaca definisi (migrasi 072), tidak membuat tabel.
+    if (preg_match('/(?<!SHOW )CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`\w]/i', $isi) && stripos($isi, 'utf8mb4_unicode_ci') === FALSE) {
         $menyimpang[] = basename($f) . ' (CREATE TABLE tanpa utf8mb4_unicode_ci)';
     }
     preg_match_all('/\b(?:COLLATE|CHARSET|CHARACTER\s+SET)\s*=?\s*[\'"]?(\w+)/i', $isi, $kk);

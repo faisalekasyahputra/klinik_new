@@ -25,7 +25,7 @@ $filter_html = ob_get_clean();
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
-                    <th class="px-4 py-3"><?= admin_sort_header('Mahasiswa', 'usr_users.name', $table, $base_url) ?></th>
+                    <th class="px-4 py-3"><?= admin_sort_header('Mahasiswa', 'usr_akun.nama', $table, $base_url) ?></th>
                     <th class="px-4 py-3">Jenis</th>
                     <th class="px-4 py-3"><?= admin_sort_header('Instansi Asal', 'kkn_magang_pendaftaran.instansi_asal', $table, $base_url) ?></th>
                     <!-- "Divisi" dihapus dinas (konfirmasi 1 Agt 2026); kolomnya

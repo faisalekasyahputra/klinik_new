@@ -25,7 +25,7 @@ $total = 0; $gagal = 0; $jars = []; $tmp = [];
 
 $cek = function ($ok, $l) use (&$total, &$gagal) { $total++; if (!$ok) $gagal++; echo ($ok ? '  OK    ' : '  GAGAL ') . $l . "\n"; };
 $nilai = function ($sql) use ($db) { $r = $db->query($sql); $b = $r ? $r->fetch_row() : NULL; return $b ? $b[0] : NULL; };
-$entri = fn($id) => $db->query('SELECT * FROM srp2_certified_developers WHERE id=' . (int) $id)->fetch_assoc();
+$entri = fn($id) => $db->query('SELECT * FROM srp2_direktori_pengembang WHERE id=' . (int) $id)->fetch_assoc();
 /** @return array [kode, body ter-decode, url_akhir] */
 $http = function ($jar, $path, $post = NULL) use ($BASE) {
     $ch = curl_init($BASE . $path);
@@ -49,7 +49,7 @@ $kirim = function ($jar, $path, array $isi) use ($http, $csrf) { return $http($j
 $masuk = fn($jar) => strpos($http($jar, 'akun/profil')[2], 'Auth/login') === FALSE;
 $akun_db = function ($role) use ($db, $tag, $sandi) {
     static $n = 0; $e = "{$tag}_{$role}" . (++$n) . '@example.test'; $h = password_hash($sandi, PASSWORD_BCRYPT);
-    $db->query("INSERT INTO usr_users (name,username,email,password,role,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at)
+    $db->query("INSERT INTO usr_akun (nama,nama_pengguna,email,kata_sandi,peran,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at)
         VALUES ('Uji {$role}','{$tag}{$n}','{$e}','{$h}','{$role}','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
     return [(int) $db->insert_id, $e];
 };
@@ -77,21 +77,21 @@ $sandi_flash = fn($body) => preg_match('#data-sandi-awal>.*?font-mono[^>]*>\s*([
 $ember = [];
 foreach (['login', 'profile_password'] as $pol) foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
     $k = hash('sha256', $pol . ':ip:' . $ip);
-    $ember[$k] = $db->query("SELECT limit_key, window_started_at, failed_attempts FROM sys_rate_limits WHERE limit_key='$k'")->fetch_assoc();
-    $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
+    $ember[$k] = $db->query("SELECT kunci, jendela_mulai_at, jumlah_gagal FROM sys_batas_laju WHERE kunci='$k'")->fetch_assoc();
+    $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
 }
 $ids = []; $foto_awal = [];
 try {
     echo "=== UJI DIREKTORI SRP2 BERTAUT AKUN ===\n";
     $cek((int) $nilai("SELECT COUNT(*) FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA=DATABASE()
-        AND TABLE_NAME='srp2_certified_developers' AND CONSTRAINT_NAME IN ('fk_srp2_direktori_user','uq_srp2_direktori_user')") === 2,
+        AND TABLE_NAME='srp2_direktori_pengembang' AND CONSTRAINT_NAME IN ('fk_srp2_direktori_user','uq_srp2_direktori_user')") === 2,
         'PRASYARAT: migrasi 066 terpasang (UNIQUE + FK user_id)');
 
     $namaA = "PT. YURIS PRATAMA {$TAG}"; $namaB = "CV. {$TAG} BETA SENTOSA";
-    $db->query("INSERT INTO srp2_certified_developers (nama_perusahaan, alamat_kantor, status_aktif, status_sertifikasi, sertifikat_berakhir)
+    $db->query("INSERT INTO srp2_direktori_pengembang (nama_perusahaan, alamat_kantor, status_aktif, status_sertifikasi, sertifikat_berakhir)
         VALUES ('{$namaA}', 'Jl. Awal {$TAG}', 1, 'bersertifikat', DATE_ADD(CURDATE(), INTERVAL 1 YEAR)), ('{$namaB}', 'Jl. Beta {$TAG}', 1, 'bersertifikat', NULL)");
-    $idA = (int) $nilai("SELECT id FROM srp2_certified_developers WHERE nama_perusahaan='{$namaA}'");
-    $idB = (int) $nilai("SELECT id FROM srp2_certified_developers WHERE nama_perusahaan='{$namaB}'");
+    $idA = (int) $nilai("SELECT id FROM srp2_direktori_pengembang WHERE nama_perusahaan='{$namaA}'");
+    $idB = (int) $nilai("SELECT id FROM srp2_direktori_pengembang WHERE nama_perusahaan='{$namaB}'");
     $ids = [$idA, $idB];
 
     [$idAdm, $eAdm] = $akun_db('admin');
@@ -126,7 +126,7 @@ try {
     $cek($a['alamat_kantor'] === 'Jl. Admin ' . $TAG && $a['nib'] === '1234567890123' && $a['no_whatsapp'] === '081234567890'
         && $a['email_kontak'] === "kontak.{$tag}@example.test" && $a['no_keanggotaan'] === 'KTA-' . $TAG,
         'Simpan detail: alamat, NIB, WhatsApp (dinormalkan ke angka), email kontak, no keanggotaan tersimpan');
-    $cek(strpos($hal, 'Daftar pengembang diperbarui') !== FALSE && $jejak('srp2_direktori_diubah', 'srp2_certified_developers', $idA) === 1,
+    $cek(strpos($hal, 'Daftar pengembang diperbarui') !== FALSE && $jejak('srp2_direktori_diubah', 'srp2_direktori_pengembang', $idA) === 1,
         'Simpan kembali ke halaman ubah dengan pesan sukses dan tercatat di jejak audit');
     [, $hal] = $kirim($jAdm, 'Admin_Srp2/save', ['nib' => '123'] + $isian);
     $cek($entri($idA)['nib'] === '1234567890123' && strpos($hal, 'NIB harus 13 digit angka') !== FALSE, 'NIB bukan 13 digit ditolak, nilai lama bertahan');
@@ -162,29 +162,29 @@ try {
     $eA = "{$tag}_pemilik@example.test";
     [, $hal] = $kirim($jAdm, 'Admin_Srp2/buat_akun/' . $idA, ['email' => $eA, 'nama_pj' => 'Budi ' . $TAG, 'no_whatsapp' => '081234567890', 'password' => '']);
     $sandiA = $sandi_flash($hal);
-    $u = $db->query("SELECT * FROM usr_users WHERE email='{$eA}'")->fetch_assoc();
+    $u = $db->query("SELECT * FROM usr_akun WHERE email='{$eA}'")->fetch_assoc();
     $uidA = (int) ($u['id'] ?? 0);
-    $cek($uidA > 0 && $u['role'] === 'pengembang' && $u['status'] === 'active' && (int) $u['profile_completed'] === 1
+    $cek($uidA > 0 && $u['peran'] === 'pengembang' && $u['status'] === 'active' && (int) $u['profil_lengkap'] === 1
         && ! array_key_exists('nama_perusahaan', $u) && ! array_key_exists('alamat_kantor', $u),
         'Akun pengembang aktif lahir dengan onboarding lengkap; data perusahaan tetap di baris direktori (migrasi 070)');
-    $cek($sandiA !== '' && password_verify($sandiA, (string) ($u['password'] ?? '')) && strtotime($u['password_expires_at']) <= strtotime($u['password_changed_at']),
+    $cek($sandiA !== '' && password_verify($sandiA, (string) ($u['kata_sandi'] ?? '')) && strtotime($u['sandi_kedaluwarsa_at']) <= strtotime($u['sandi_diganti_at']),
         'Sandi awal yang dibangkitkan tampil sekali ke admin, sah, dan wajib diganti di login pertama');
-    $reg = $db->query("SELECT * FROM srp2_registrations WHERE user_id={$uidA}")->fetch_assoc();
-    $cek($reg && $reg['status_verifikasi'] === 'Diterima' && (int) $reg['certified_developer_id'] === $idA && $reg['nib'] === '1234567890123'
+    $reg = $db->query("SELECT * FROM srp2_pengajuan WHERE user_id={$uidA}")->fetch_assoc();
+    $cek($reg && $reg['status_verifikasi'] === 'Diterima' && (int) $reg['pengembang_id'] === $idA && $reg['nib'] === '1234567890123'
         && $reg['nama_peserta'] === 'Budi ' . $TAG, 'Pengajuan SRP2 Diterima dibuat menunjuk entri ini (NIB & penanggung jawab tersalin)');
     $cek((int) $entri($idA)['user_id'] === $uidA, 'Entri direktori tertaut ke akun baru');
-    $cek($jejak('srp2_akun_dibuat', 'srp2_certified_developers', $idA) === 1
+    $cek($jejak('srp2_akun_dibuat', 'srp2_direktori_pengembang', $idA) === 1
         && (int) $nilai("SELECT COUNT(*) FROM sys_jejak_audit WHERE detail_json LIKE '%" . $db->real_escape_string($sandiA) . "%'") === 0,
         'Tercatat di jejak audit (srp2_akun_dibuat) tanpa isi sandinya');
     $http($jAdm, 'Admin_Srp2/ubah/' . $idA); // flash sekali pakai sudah habis di permintaan sebelumnya
     $cek($sandi_flash($http($jAdm, 'Admin_Srp2/ubah/' . $idA)[1]) === '', 'Sandi awal tidak tampil lagi pada kunjungan berikutnya');
 
     [, $hal] = $kirim($jAdm, 'Admin_Srp2/buat_akun/' . $idB, ['email' => strtoupper($eA), 'password' => '']);
-    $cek($entri($idB)['user_id'] === NULL && (int) $nilai("SELECT COUNT(*) FROM usr_users WHERE email='{$eA}'") === 1 && strpos($hal, 'email tersebut sudah terdaftar') !== FALSE,
+    $cek($entri($idB)['user_id'] === NULL && (int) $nilai("SELECT COUNT(*) FROM usr_akun WHERE email='{$eA}'") === 1 && strpos($hal, 'email tersebut sudah terdaftar') !== FALSE,
         'Email yang sudah dipakai ditolak, entri B tetap tanpa akun');
     $eLain = "{$tag}_kedua@example.test";
     [, $hal] = $kirim($jAdm, 'Admin_Srp2/buat_akun/' . $idA, ['email' => $eLain, 'password' => '']);
-    $cek((int) $entri($idA)['user_id'] === $uidA && (int) $nilai("SELECT COUNT(*) FROM usr_users WHERE email='{$eLain}'") === 0 && strpos($hal, 'sudah tertaut') !== FALSE,
+    $cek((int) $entri($idA)['user_id'] === $uidA && (int) $nilai("SELECT COUNT(*) FROM usr_akun WHERE email='{$eLain}'") === 0 && strpos($hal, 'sudah tertaut') !== FALSE,
         'Tautan kedua ke entri yang sudah tertaut ditolak, tidak ada akun yatim');
     [, $hal] = $kirim($jAdm, 'Admin_Srp2/buat_akun/' . $idB, ['email' => $eLain, 'password' => 'lemah123']);
     $cek($entri($idB)['user_id'] === NULL && strpos($hal, 'huruf besar, angka, dan simbol') !== FALSE, 'Sandi awal lemah ditolak dengan aturan sandi_kuat');
@@ -201,9 +201,9 @@ try {
     [, , $url] = $http($jP, 'Auth/onboarding');
     $cek(strpos($url, 'onboarding') === FALSE, 'Onboarding tidak diminta lagi (profil sudah lengkap)');
     $sandiBaru = 'Br1#' . bin2hex(random_bytes(5));
-    $kirim($jP, 'akun/update', ['username' => $u['username'], 'name' => $u['name'], 'phone' => '081234567890',
+    $kirim($jP, 'akun/update', ['username' => $u['nama_pengguna'], 'name' => $u['nama'], 'phone' => '081234567890',
         'password' => $sandiBaru, 'password_confirm' => $sandiBaru, 'current_password' => $sandiA]);
-    $cek((int) $nilai("SELECT password_expires_at > NOW() FROM usr_users WHERE id={$uidA}") === 1, 'PRASYARAT: pengembang mengganti sandi awalnya lewat Profil Saya');
+    $cek((int) $nilai("SELECT sandi_kedaluwarsa_at > NOW() FROM usr_akun WHERE id={$uidA}") === 1, 'PRASYARAT: pengembang mengganti sandi awalnya lewat Profil Saya');
     [$k, $hal] = $http($jP, 'akun/perusahaan');
     $cek($k === 200 && strpos($hal, 'data-form-perusahaan') !== FALSE && strpos($hal, $namaA) !== FALSE && strpos($hal, 'src="' . $BASE . $fotoA . '"') !== FALSE
         && strpos($hal, 'name="nama_perusahaan"') === FALSE && strpos($hal, 'name="npwp"') === FALSE,
@@ -227,9 +227,9 @@ try {
     $cek($fotoA2 !== $fotoA && (bool) preg_match('#\.jpg$#', $fotoA2) && is_file($AKAR . '/' . $fotoA2) && ! is_file($AKAR . '/' . $fotoA), 'Foto baru pengembang menggantikan foto lama (berkas lama dihapus)');
     $b = $entri($idB);
     $cek($b['alamat_kantor'] === 'Jl. Beta ' . $TAG && $b['foto_profil'] === NULL && $b['nib'] === NULL, 'Anti-IDOR: id entri lain di formulir tidak menyentuh entri B');
-    $cek(strpos($hal, 'langsung tampil di direktori publik') !== FALSE && $jejak('srp2_profil_diubah_pengembang', 'srp2_certified_developers', $idA) === 1,
+    $cek(strpos($hal, 'langsung tampil di direktori publik') !== FALSE && $jejak('srp2_profil_diubah_pengembang', 'srp2_direktori_pengembang', $idA) === 1,
         'Pesan sukses jujur dan tercatat di jejak audit (srp2_profil_diubah_pengembang)');
-    $reg = $db->query("SELECT * FROM srp2_registrations WHERE user_id={$uidA}")->fetch_assoc();
+    $reg = $db->query("SELECT * FROM srp2_pengajuan WHERE user_id={$uidA}")->fetch_assoc();
     $cek($reg['alamat_kantor'] === 'Jl. Pemilik ' . $TAG && $reg['no_keanggotaan'] === 'KTA2-' . $TAG && $reg['nib'] === '9876543210123',
         'Pengajuan SRP2 akun ikut tersinkron dari direktori');
     [, $hal] = $kirim($jP, 'akun/perusahaan/simpan', ['website' => 'javascript:alert(1)'] + $isianP);
@@ -255,12 +255,12 @@ try {
     $cek($http($jW, 'akun/perusahaan')[0] === 404, 'Profil Perusahaan hanya untuk peran pengembang (warga 404)');
 
     $namaG = "PT {$TAG} GAMMA"; $nibG = (string) random_int(1000000000000, 9999999999999);
-    $db->query("INSERT INTO srp2_registrations (user_id, email, nama_perusahaan, nib, no_keanggotaan, no_whatsapp, alamat_kantor, status_verifikasi)
+    $db->query("INSERT INTO srp2_pengajuan (user_id, email, nama_perusahaan, nib, no_keanggotaan, no_whatsapp, alamat_kantor, status_verifikasi)
         VALUES ({$uidL}, '{$eL}', '{$namaG}', '{$nibG}', 'KTA-G', '081299998888', 'Jl. Gamma', 'Pending')");
     $ridG = (int) $db->insert_id;
     $http($jAdm, 'Admin_Srp2/detail/' . $ridG);
     $kirim($jAdm, 'Admin_Srp2/proses/' . $ridG, ['status' => 'Diterima']);
-    $g = $db->query("SELECT * FROM srp2_certified_developers WHERE nama_perusahaan='{$namaG}'")->fetch_assoc();
+    $g = $db->query("SELECT * FROM srp2_direktori_pengembang WHERE nama_perusahaan='{$namaG}'")->fetch_assoc();
     $idG = (int) ($g['id'] ?? 0); if ($idG) { $ids[] = $idG; }
     $cek($g && (int) $g['user_id'] === $uidL && $g['nib'] === $nibG && $g['no_keanggotaan'] === 'KTA-G' && $g['no_whatsapp'] === '081299998888' && $g['email_kontak'] === $eL,
         'Pengajuan diterima: entri baru tertaut ke pemohon dan NIB/keanggotaan/WhatsApp/email ikut tersalin');
@@ -272,50 +272,50 @@ try {
     echo "\n-- Reset sandi & lepas tautan --\n";
     [, $hal] = $kirim($jAdm, 'Admin_Srp2/reset_sandi_akun/' . $idA, ['password' => '']);
     $sandiR = $sandi_flash($hal);
-    $u = $db->query("SELECT * FROM usr_users WHERE id={$uidA}")->fetch_assoc();
-    $cek($sandiR !== '' && password_verify($sandiR, $u['password']) && strtotime($u['password_expires_at']) <= strtotime($u['password_changed_at']) && $u['active_session_hash'] === NULL,
+    $u = $db->query("SELECT * FROM usr_akun WHERE id={$uidA}")->fetch_assoc();
+    $cek($sandiR !== '' && password_verify($sandiR, $u['kata_sandi']) && strtotime($u['sandi_kedaluwarsa_at']) <= strtotime($u['sandi_diganti_at']) && $u['sesi_aktif_hash'] === NULL,
         'Reset sandi: sandi baru tampil sekali, wajib diganti, sesi dicabut');
     $cek( ! $masuk($jP), 'Sesi pengembang yang lama berakhir sesudah reset sandi');
     $jP = $login($eA, $sandiR);
     $cek(strpos($http($jP, 'akun/perusahaan')[2], 'password_expired=1') !== FALSE, 'Login dengan sandi reset sah dan diarahkan mengganti sandi');
-    $cek($jejak('srp2_akun_sandi_direset', 'usr_users', $uidA) === 1, 'Reset sandi tercatat di jejak audit');
+    $cek($jejak('srp2_akun_sandi_direset', 'usr_akun', $uidA) === 1, 'Reset sandi tercatat di jejak audit');
 
     [, $hal] = $kirim($jAdm, 'Admin_Srp2/lepas_akun/' . $idA, []);
-    $cek($entri($idA)['user_id'] === NULL && (int) $nilai("SELECT COUNT(*) FROM usr_users WHERE id={$uidA}") === 1
-        && $nilai("SELECT certified_developer_id FROM srp2_registrations WHERE user_id={$uidA}") === NULL,
+    $cek($entri($idA)['user_id'] === NULL && (int) $nilai("SELECT COUNT(*) FROM usr_akun WHERE id={$uidA}") === 1
+        && $nilai("SELECT pengembang_id FROM srp2_pengajuan WHERE user_id={$uidA}") === NULL,
         'Lepas tautan: entri tanpa pemilik, akun tetap ada, pengajuannya tidak lagi menunjuk entri');
-    $cek(strpos($hal, 'data-form-buat-akun') !== FALSE && $jejak('srp2_akun_dilepas', 'srp2_certified_developers', $idA) === 1, 'Kartu akun kembali ke Buatkan akun; tercatat di jejak audit');
-    $db->query("UPDATE usr_users SET password_expires_at=DATE_ADD(NOW(), INTERVAL 90 DAY) WHERE id={$uidA}");
+    $cek(strpos($hal, 'data-form-buat-akun') !== FALSE && $jejak('srp2_akun_dilepas', 'srp2_direktori_pengembang', $idA) === 1, 'Kartu akun kembali ke Buatkan akun; tercatat di jejak audit');
+    $db->query("UPDATE usr_akun SET sandi_kedaluwarsa_at=DATE_ADD(NOW(), INTERVAL 90 DAY) WHERE id={$uidA}");
     $jP = $login($eA, $sandiR);
     $cek(strpos($http($jP, 'akun/perusahaan')[1], 'data-perusahaan-belum-tertaut') !== FALSE, 'Akun yang dilepas tidak lagi memegang Profil Perusahaan');
 
     echo "\n-- Hapus entri --\n";
     $kirim($jAdm, 'Admin_Srp2/delete/' . $idA, []);
     clearstatcache(); // berkas dihapus proses Apache; cache stat CLI masih ingat hasil lama
-    $cek($entri($idA) === NULL && ! is_file($AKAR . '/' . $fotoA2) && $jejak('srp2_direktori_dihapus', 'srp2_certified_developers', $idA) === 1,
+    $cek($entri($idA) === NULL && ! is_file($AKAR . '/' . $fotoA2) && $jejak('srp2_direktori_dihapus', 'srp2_direktori_pengembang', $idA) === 1,
         'Hapus entri membuang barisnya, berkas fotonya, dan tercatat di jejak audit');
 } catch (Throwable $e) {
     // Galat tak terduga dicatat sebagai GAGAL supaya pembersihan di bawah tetap berjalan.
     $cek(FALSE, "Galat tak terduga: " . $e->getMessage() . " (baris " . $e->getLine() . ")");
 } finally {
-    foreach ($ids as $id) { $f = $nilai('SELECT foto_profil FROM srp2_certified_developers WHERE id=' . (int) $id); if ($f && strpos($f, 'assets/img/pengembang/unggahan/') === 0) @unlink($AKAR . '/' . $f); }
-    $uids = array_map(fn($r) => (int) $r[0], $db->query("SELECT id FROM usr_users WHERE email LIKE '{$tag}\\_%@example.test'")->fetch_all());
+    foreach ($ids as $id) { $f = $nilai('SELECT foto_profil FROM srp2_direktori_pengembang WHERE id=' . (int) $id); if ($f && strpos($f, 'assets/img/pengembang/unggahan/') === 0) @unlink($AKAR . '/' . $f); }
+    $uids = array_map(fn($r) => (int) $r[0], $db->query("SELECT id FROM usr_akun WHERE email LIKE '{$tag}\\_%@example.test'")->fetch_all());
     foreach ($uids as $id) {
-        $db->query("DELETE FROM srp2_registrations WHERE user_id={$id}");
-        $db->query("DELETE FROM usr_documents WHERE user_id={$id}");
+        $db->query("DELETE FROM srp2_pengajuan WHERE user_id={$id}");
+        $db->query("DELETE FROM usr_dokumen WHERE user_id={$id}");
     }
     $daftar_id = implode(',', array_map('intval', $ids ?: [0]));
-    $db->query("DELETE FROM srp2_certified_developers WHERE id IN ({$daftar_id}) OR nama_perusahaan LIKE '%{$TAG}%'");
+    $db->query("DELETE FROM srp2_direktori_pengembang WHERE id IN ({$daftar_id}) OR nama_perusahaan LIKE '%{$TAG}%'");
     $uid_txt = implode(',', array_map(fn($i) => "'{$i}'", $uids ?: [0]));
-    $db->query("DELETE FROM sys_jejak_audit WHERE (objek_tipe='srp2_certified_developers' AND objek_id IN ({$daftar_id}))
-        OR (objek_tipe='usr_users' AND objek_id IN ({$uid_txt})) OR actor_email LIKE '{$tag}\\_%@example.test'");
-    $db->query("DELETE FROM usr_users WHERE email LIKE '{$tag}\\_%@example.test'");
+    $db->query("DELETE FROM sys_jejak_audit WHERE (objek_tipe='srp2_direktori_pengembang' AND objek_id IN ({$daftar_id}))
+        OR (objek_tipe='usr_akun' AND objek_id IN ({$uid_txt})) OR pelaku_email LIKE '{$tag}\\_%@example.test'");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE '{$tag}\\_%@example.test'");
     foreach ($ember as $k => $row) {
-        $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
-        if ($row) { $st = $db->prepare('INSERT INTO sys_rate_limits (limit_key, window_started_at, failed_attempts) VALUES (?,?,?)'); $st->bind_param('ssi', $row['limit_key'], $row['window_started_at'], $row['failed_attempts']); $st->execute(); }
+        $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
+        if ($row) { $st = $db->prepare('INSERT INTO sys_batas_laju (kunci, jendela_mulai_at, jumlah_gagal) VALUES (?,?,?)'); $st->bind_param('ssi', $row['kunci'], $row['jendela_mulai_at'], $row['jumlah_gagal']); $st->execute(); }
     }
     foreach (array_merge($jars, $tmp) as $f) { @unlink($f); }
-    $sisa = (int) $nilai("SELECT COUNT(*) FROM usr_users WHERE email LIKE '{$tag}\\_%@example.test'") + (int) $nilai("SELECT COUNT(*) FROM srp2_certified_developers WHERE nama_perusahaan LIKE '%{$TAG}%'");
+    $sisa = (int) $nilai("SELECT COUNT(*) FROM usr_akun WHERE email LIKE '{$tag}\\_%@example.test'") + (int) $nilai("SELECT COUNT(*) FROM srp2_direktori_pengembang WHERE nama_perusahaan LIKE '%{$TAG}%'");
     $cek($sisa === 0, 'Data uji (akun, entri direktori, foto) dibersihkan');
 }
 echo "\nRINGKASAN: {$total} pemeriksaan, {$gagal} gagal\n";

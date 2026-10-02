@@ -401,9 +401,9 @@ class Kemitraan_slot_model extends CI_Model
     {
         $baris = $this->db->select(self::TABEL_DAFTAR . '.id, ' . self::TABEL_DAFTAR . '.periode_mulai,
                 ' . self::TABEL_DAFTAR . '.periode_selesai, ' . self::TABEL_DAFTAR . '.status,
-                ' . self::TABEL_DAFTAR . '.instansi_asal, usr_users.name AS nama_mahasiswa')
+                ' . self::TABEL_DAFTAR . '.instansi_asal, usr_akun.nama AS nama_mahasiswa')
             ->from(self::TABEL_DAFTAR)
-            ->join('usr_users', 'usr_users.id = ' . self::TABEL_DAFTAR . '.user_id', 'left')
+            ->join('usr_akun', 'usr_akun.id = ' . self::TABEL_DAFTAR . '.user_id', 'left')
             ->where(self::TABEL_DAFTAR . '.jenis', 'magang')
             ->where(self::TABEL_DAFTAR . '.bidang_kode', (string) $kode)
             ->where_in(self::TABEL_DAFTAR . '.status', self::STATUS_MEMAKAI_KUOTA)

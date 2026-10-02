@@ -30,7 +30,7 @@ class Warga_ruleset {
 
     public function evaluate($code, array $assessment, array $profile)
     {
-        $decile = (int) ($profile['welfare_decile'] ?? 0);
+        $decile = (int) ($profile['desil_kesejahteraan'] ?? 0);
         if ($decile < 1 || $decile > 10) {
             return $this->result('needs_data', ['SIM_DECILE_MISSING']);
         }
@@ -48,18 +48,18 @@ class Warga_ruleset {
             return $this->result('not_eligible', ['SIM_DESIL_TIDAK_SESUAI']);
         }
 
-        $track = $assessment['assessment_track'] ?? 'undetermined';
+        $track = $assessment['jalur_penilaian'] ?? 'undetermined';
         if ($code === 'rtlh') {
             if ($track !== 'existing_house') {
                 return $this->result('not_eligible', ['SIM_TRACK_TIDAK_SESUAI']);
             }
             $damaged = $this->has_value($assessment, [
-                'foundation_condition_code', 'column_condition_code',
-                'beam_condition_code', 'roof_frame_condition_code',
-                'floor_condition_code', 'wall_condition_code', 'roof_condition_code',
+                'kondisi_pondasi', 'kondisi_kolom',
+                'kondisi_balok', 'kondisi_rangka',
+                'kondisi_lantai', 'kondisi_dinding', 'kondisi_atap',
             ], ['moderate_damage', 'severe_damage_or_absent']);
-            $critical_sanitation = in_array($assessment['water_source_code'] ?? '', ['other_unfit'], TRUE)
-                || in_array($assessment['latrine_type_code'] ?? '', ['none'], TRUE);
+            $critical_sanitation = in_array($assessment['sumber_air'] ?? '', ['other_unfit'], TRUE)
+                || in_array($assessment['jenis_kloset'] ?? '', ['none'], TRUE);
             if ($damaged) {
                 return $this->result('eligible', ['SIM_RTLH_DAMAGE']);
             }
@@ -70,23 +70,23 @@ class Warga_ruleset {
 
         if ($code === 'pb') {
             $ready = $track === 'candidate_land'
-                && ! empty($assessment['owns_candidate_land'])
+                && ! empty($assessment['punya_lahan_calon'])
                 && ! empty($assessment['candidate_land_address'])
-                && ! empty($assessment['candidate_land_title_code'])
-                && ! empty($assessment['candidate_land_origin_code'])
-                && (float) ($assessment['land_length_m'] ?? 0) > 0
-                && (float) ($assessment['land_width_m'] ?? 0) > 0
-                && (float) ($assessment['land_area_m2'] ?? 0) > 0;
+                && ! empty($assessment['status_lahan_calon'])
+                && ! empty($assessment['asal_lahan_calon'])
+                && (float) ($assessment['panjang_lahan_m'] ?? 0) > 0
+                && (float) ($assessment['lebar_lahan_m'] ?? 0) > 0
+                && (float) ($assessment['luas_lahan_m2'] ?? 0) > 0;
             return $ready
                 ? $this->result('eligible', ['SIM_PB_LAND_READY'])
                 : $this->result('needs_data', ['SIM_PB_LAND_READY']);
         }
 
         if ($code === 'omah_sekeng') {
-            if (empty($profile['self_help_capability_code'])) {
+            if (empty($profile['mampu_swadaya'])) {
                 return $this->result('needs_data', ['SIM_OMAH_DESIL4_SELF_HELP']);
             }
-            if ($profile['self_help_capability_code'] !== 'capable') {
+            if ($profile['mampu_swadaya'] !== 'capable') {
                 return $this->result('not_eligible', ['SIM_OMAH_DESIL4_SELF_HELP']);
             }
             if ( ! in_array($track, ['existing_house', 'candidate_land'], TRUE)) {
@@ -100,16 +100,16 @@ class Warga_ruleset {
         if (! in_array($track, ['financing', 'candidate_land'], TRUE)) {
             return $this->result('not_eligible', ['SIM_TRACK_TIDAK_SESUAI']);
         }
-        if (empty($assessment['housing_status_code'])
-            || ! array_key_exists('has_other_house', $assessment)
-            || $assessment['has_other_house'] === NULL || $assessment['has_other_house'] === '') {
+        if (empty($assessment['kepemilikan_rumah'])
+            || ! array_key_exists('rumah_lain', $assessment)
+            || $assessment['rumah_lain'] === NULL || $assessment['rumah_lain'] === '') {
             return $this->result('needs_data', ['SIM_KEBUTUHAN_RUMAH_BELUM_LENGKAP']);
         }
-        if ($assessment['housing_status_code'] === 'owned'
-            || (string) $assessment['has_other_house'] !== '0') {
+        if ($assessment['kepemilikan_rumah'] === 'owned'
+            || (string) $assessment['rumah_lain'] !== '0') {
             return $this->result('not_eligible', ['SIM_KEBUTUHAN_RUMAH_TIDAK_MEMENUHI']);
         }
-        if (empty($profile['income_band_code']) && ! isset($profile['monthly_income'])) {
+        if (empty($profile['kelompok_penghasilan']) && ! isset($profile['penghasilan'])) {
             return $this->result('needs_data', ['SIM_INCOME_MISSING']);
         }
         return $this->result('potential', [
@@ -129,6 +129,6 @@ class Warga_ruleset {
 
     private function result($status, array $reasons)
     {
-        return ['eligibility_status' => $status, 'reason_codes' => $reasons];
+        return ['status_kelayakan' => $status, 'reason_codes' => $reasons];
     }
 }

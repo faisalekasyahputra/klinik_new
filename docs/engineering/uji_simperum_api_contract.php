@@ -51,8 +51,8 @@ $mapped = $call('map_api_response', '3374010101900001', [
     'curl_errno' => 0,
 ]);
 
-$check(($mapped['response_status'] ?? '') === 'found', 'Respons sukses menjadi found');
-$check(($mapped['source_record_key'] ?? '') === 'SYN-001', 'IDBDT menjadi source record key');
+$check(($mapped['status_respons'] ?? '') === 'found', 'Respons sukses menjadi found');
+$check(($mapped['kunci_rekaman_sumber'] ?? '') === 'SYN-001', 'IDBDT menjadi source record key');
 $without_source_id = json_decode($fixture_json, TRUE);
 unset($without_source_id['Data'][0]['IDBDT']);
 $without_source_id = $call('map_api_response', '3374010101900001', [
@@ -61,27 +61,27 @@ $without_source_id = $call('map_api_response', '3374010101900001', [
     'curl_errno' => 0,
 ]);
 $check(
-    array_key_exists('source_record_key', $without_source_id)
-        && $without_source_id['source_record_key'] === NULL,
+    array_key_exists('kunci_rekaman_sumber', $without_source_id)
+        && $without_source_id['kunci_rekaman_sumber'] === NULL,
     'NIK tidak menjadi source record key plaintext saat IDBDT kosong'
 );
 $check(($mapped['identity']['full_name'] ?? '') === 'WARGA KONTRAK SINTETIS', 'Identitas dipetakan');
-$check(($mapped['identity']['gender_code'] ?? '') === 'male', 'Jenis kelamin dipetakan');
-$check(($mapped['identity']['education_code'] ?? '') === 'bachelor', 'Pendidikan dipetakan');
-$check(($mapped['socioeconomic']['occupation_code'] ?? '') === 'educator', 'Pekerjaan dipetakan');
-$check(($mapped['socioeconomic']['income_band_code'] ?? '') === 'gt_4_2', 'Penghasilan dipetakan tanpa mempersempit rentang');
-$check(($mapped['socioeconomic']['welfare_decile'] ?? NULL) === NULL, 'Desil tidak dikarang');
-$check(($mapped['housing']['land_title_code'] ?? '') === 'certificate_unspecified', 'Jenis sertifikat yang tidak rinci dipertahankan');
-$check(($mapped['housing']['assistance_source_code'] ?? '') === 'apbd_prov', 'Sumber bantuan dipetakan');
-$check(($mapped['housing']['area_condition_code'] ?? '') === 'good', 'Kawasan dipetakan');
-$check(($mapped['structure']['roof_material_code'] ?? '') === 'clay_tile', 'Bahan atap dipetakan');
-$check(($mapped['structure']['foundation_condition_code'] ?? '') === 'severe_damage_or_absent', 'Pondasi tidak ada dipetakan konservatif');
+$check(($mapped['identity']['jenis_kelamin'] ?? '') === 'male', 'Jenis kelamin dipetakan');
+$check(($mapped['identity']['pendidikan'] ?? '') === 'bachelor', 'Pendidikan dipetakan');
+$check(($mapped['socioeconomic']['pekerjaan'] ?? '') === 'educator', 'Pekerjaan dipetakan');
+$check(($mapped['socioeconomic']['kelompok_penghasilan'] ?? '') === 'gt_4_2', 'Penghasilan dipetakan tanpa mempersempit rentang');
+$check(($mapped['socioeconomic']['desil_kesejahteraan'] ?? NULL) === NULL, 'Desil tidak dikarang');
+$check(($mapped['housing']['kepemilikan_lahan'] ?? '') === 'certificate_unspecified', 'Jenis sertifikat yang tidak rinci dipertahankan');
+$check(($mapped['housing']['bantuan_perumahan'] ?? '') === 'apbd_prov', 'Sumber bantuan dipetakan');
+$check(($mapped['housing']['kawasan_perumahan'] ?? '') === 'good', 'Kawasan dipetakan');
+$check(($mapped['structure']['bahan_atap'] ?? '') === 'clay_tile', 'Bahan atap dipetakan');
+$check(($mapped['structure']['kondisi_pondasi'] ?? '') === 'severe_damage_or_absent', 'Pondasi tidak ada dipetakan konservatif');
 /* Dulu asersinya berbunyi "Ledeng tidak ditebak menjadi PDAM" dan memaksa kode
    3 menjadi `piped` generik. Itu BENAR selama artinya belum diketahui. Dinas
    mengirim daftar resminya 31 Agt 2026 dan kode 3 memang PDAM, jadi menahannya
    di `piped` berhenti menjadi kehati-hatian dan mulai menjadi pemiskinan data.
    Yang dijaga sekarang: pemetaan mengikuti daftar resmi, bukan tebakan lama. */
-$check(($mapped['sanitation']['water_source_code'] ?? '') === 'pdam', 'SumberAir 3 mengikuti daftar resmi dinas: PDAM');
+$check(($mapped['sanitation']['sumber_air'] ?? '') === 'pdam', 'SumberAir 3 mengikuti daftar resmi dinas: PDAM');
 $check(($mapped['location']['kabupaten_id'] ?? 0) === 3374, 'KodeDagri menjadi scope kabupaten/kota');
 $invalid_location = json_decode($fixture_json, TRUE);
 $invalid_location['Data'][0]['GeoLat'] = '999';
@@ -94,7 +94,7 @@ $check( ! $call('birth_date_matches', '3374010101900001', '1990-01-02', $mapped)
 
 $empty = json_encode(['Success' => TRUE, 'Data' => [], 'Message' => '', 'Type' => 'array']);
 $check(
-    $call('map_api_response', '3374010101900001', ['http_status' => 200, 'body' => $empty, 'curl_errno' => 0])['response_status'] === 'not_found',
+    $call('map_api_response', '3374010101900001', ['http_status' => 200, 'body' => $empty, 'curl_errno' => 0])['status_respons'] === 'not_found',
     'Data kosong menjadi not_found'
 );
 $mismatch = json_decode($fixture_json, TRUE);
@@ -124,18 +124,18 @@ $check(strpos(json_encode($mapped), 'private-test') === FALSE, 'Payload tidak me
 // Fixture simulasi berbentuk respons API mentah (API-01..03) melewati pemetaan production.
 $set('fixture_path', dirname(__DIR__, 2) . '/application/fixtures/simperum');
 $f1 = $call('load_fixture', '3399991508850001');
-$check(($f1['response_status'] ?? '') === 'found' && ($f1['source_record_key'] ?? '') === 'SYN-API-01'
-    && ($f1['housing']['housing_status_code'] ?? '') === 'owned' && ($f1['sanitation']['water_source_code'] ?? '') === 'other_unfit'
+$check(($f1['status_respons'] ?? '') === 'found' && ($f1['kunci_rekaman_sumber'] ?? '') === 'SYN-API-01'
+    && ($f1['housing']['kepemilikan_rumah'] ?? '') === 'owned' && ($f1['sanitation']['sumber_air'] ?? '') === 'other_unfit'
     && ($f1['housing']['intervention_status'] ?? '') === 'Belum diintervensi' && (int) ($f1['location']['kabupaten_id'] ?? 0) === 3374,
     'Fixture API-01: rekaman lengkap terpetakan lewat jalur API');
 $check($call('birth_date_matches', '3399991508850001', '1985-08-15', $f1) && ! $call('birth_date_matches', '3399991508850001', '1985-08-16', $f1),
     'Fixture API-01: tanggal lahir dicocokkan ke digit NIK seperti production');
 $f2 = $call('load_fixture', '3399995506900002');
-$check(($f2['source_record_key'] ?? '') === 'SYN-API-02' && (int) ($f2['housing']['assistance_year'] ?? 0) === 2023
-    && ($f2['identity']['gender_code'] ?? '') === 'female' && $call('birth_date_matches', '3399995506900002', '1990-06-15', $f2),
+$check(($f2['kunci_rekaman_sumber'] ?? '') === 'SYN-API-02' && (int) ($f2['housing']['tahun_intervensi'] ?? 0) === 2023
+    && ($f2['identity']['jenis_kelamin'] ?? '') === 'female' && $call('birth_date_matches', '3399995506900002', '1990-06-15', $f2),
     'Fixture API-02: baris 2023 dipilih, baris NIK terpotong dibuang, NIK perempuan (hari+40) cocok');
 $f3 = $call('load_fixture', '3399990101700003');
-$check(array_key_exists('housing_status_code', $f3['housing'] ?? []) && $f3['housing']['housing_status_code'] === NULL && ($f3['source']['unmapped_codes']['KepemilikanRumah'] ?? '') === '6'
+$check(array_key_exists('kepemilikan_rumah', $f3['housing'] ?? []) && $f3['housing']['kepemilikan_rumah'] === NULL && ($f3['source']['unmapped_codes']['KepemilikanRumah'] ?? '') === '6'
     && ($f3['housing']['intervention_status'] ?? '') === 'Sudah Layak Huni' && $f3['identity']['birth_year'] === NULL
     && (int) ($f3['location']['kabupaten_id'] ?? 0) === 3301,
     'Fixture API-03: kode 6 dinas tidak ditebak, disposisi terbaca, tahun lahir kosong');

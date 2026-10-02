@@ -61,7 +61,7 @@ class Admin_Psu extends Admin_Controller {
         $data['kabupaten']  = $this->db->select('id, nama')->order_by('nama', 'ASC')->get('kabupaten')->result();
         $data['asosiasi']   = srp2_daftar_asosiasi(TRUE);
         $data['pengembang'] = $this->db->select('id, nama_perusahaan')->where('status_aktif', 1)
-            ->order_by('nama_perusahaan', 'ASC')->get('srp2_certified_developers')->result();
+            ->order_by('nama_perusahaan', 'ASC')->get('srp2_direktori_pengembang')->result();
 
         $this->render_admin('admin/psu/index', $data);
     }
@@ -120,7 +120,7 @@ class Admin_Psu extends Admin_Controller {
            BUKAN kesalahan, itu memang keadaan sahnya. */
         $pengembang_id = (int) $this->input->post('pengembang_id');
         if ($pengembang_id !== 0 && ! $this->db->where('id', $pengembang_id)
-            ->count_all_results('srp2_certified_developers')) {
+            ->count_all_results('srp2_direktori_pengembang')) {
             $this->session->set_flashdata('error', 'Pengembang di direktori SRP2 tidak dikenal.');
             redirect('Admin_Psu'); return;
         }
@@ -197,7 +197,7 @@ class Admin_Psu extends Admin_Controller {
         }
         $kab=$this->db->select('id,nama')->get('kabupaten')->result();
         $aso=srp2_daftar_asosiasi(TRUE);
-        $dev=$this->db->select('id,nama_perusahaan')->where('status_aktif',1)->get('srp2_certified_developers')->result();
+        $dev=$this->db->select('id,nama_perusahaan')->where('status_aktif',1)->get('srp2_direktori_pengembang')->result();
         $result=$this->psu_excel_import->baca($file['tmp_name'],$kab,$aso,$dev);
         if(!$result['success']){$this->session->set_flashdata('error',$result['message']);redirect('Admin_Psu');return;}
 

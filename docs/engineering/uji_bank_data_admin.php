@@ -21,7 +21,7 @@ $total = 0; $gagal = 0; $jars = []; $tmp = [];
 $cek = function ($ok, $l) use (&$total, &$gagal) { $total++; if (!$ok) $gagal++; echo ($ok ? '  OK    ' : '  GAGAL ') . $l . "\n"; };
 $akun = function ($role) use ($db, $tag, $sandi) {
     $e = strtolower($tag) . "_{$role}@example.test"; $h = password_hash($sandi, PASSWORD_BCRYPT);
-    $st = $db->prepare("INSERT INTO usr_users (name,email,password,role,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at) VALUES ('Uji BD',?,?,?,'active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
+    $st = $db->prepare("INSERT INTO usr_akun (nama,email,kata_sandi,peran,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at) VALUES ('Uji BD',?,?,?,'active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
     $st->bind_param('sss', $e, $h, $role); $st->execute(); return $e;
 };
 $http = function ($jar, $path, $post = NULL, $multi = FALSE) use ($BASE) {
@@ -84,7 +84,7 @@ try {
 } finally {
     foreach ($db->query("SELECT berkas FROM sf_bank_data_dokumen WHERE judul LIKE '{$tag}%'")->fetch_all() as $b) { @unlink($root . '/' . $b[0]); }
     $db->query("DELETE FROM sf_bank_data_dokumen WHERE judul LIKE '{$tag}%'");
-    $db->query("DELETE FROM usr_users WHERE email LIKE '" . strtolower($tag) . "_%@example.test'");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE '" . strtolower($tag) . "_%@example.test'");
     foreach (array_merge($jars, $tmp) as $f) { @unlink($f); }
 }
 echo "\nRINGKASAN: {$total} pemeriksaan, {$gagal} gagal\n";

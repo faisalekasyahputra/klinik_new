@@ -31,9 +31,9 @@ $this->load->view('admin/components/judul_halaman', [
         <div>
             <dt class="text-xs text-gray-500 dark:text-brand-muted">Bidang tujuan</dt>
             <dd class="mt-0.5 font-bold text-gray-900 dark:text-white">
-                <?= $aduan->bidang === NULL
+                <?= $aduan->bidang_kode === NULL
                     ? '<span class="text-amber-700 dark:text-amber-300">Belum ditriase</span>'
-                    : $e($aduan->nama_bidang ?: $aduan->bidang) ?>
+                    : $e($aduan->nama_bidang ?: $aduan->bidang_kode) ?>
             </dd>
         </div>
         <div>

@@ -19,7 +19,7 @@ $total = 0; $gagal = 0; $jars = [];
 $cek = function ($ok, $l) use (&$total, &$gagal) { $total++; if (!$ok) $gagal++; echo ($ok ? '  OK    ' : '  GAGAL ') . $l . "\n"; };
 $akun = function ($role) use ($db, $tag, $sandi) {
     $e = "{$tag}_{$role}_" . mt_rand(100, 999) . '@example.test'; $h = password_hash($sandi, PASSWORD_BCRYPT);
-    $st = $db->prepare("INSERT INTO usr_users (name,email,password,role,phone,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at) VALUES ('Uji Dok',?,?,?,'081234567890','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
+    $st = $db->prepare("INSERT INTO usr_akun (nama,email,kata_sandi,peran,no_hp,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at) VALUES ('Uji Dok',?,?,?,'081234567890','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
     $st->bind_param('sss', $e, $h, $role); $st->execute(); return [$db->insert_id, $e];
 };
 $http = function ($jar, $path, $post = NULL) use ($BASE) {
@@ -57,7 +57,7 @@ try {
     $cek($link($kkn) === NULL, 'Mengosongkan lalu simpan menghapus link');
 } finally {
     $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '{$tag}%'");
-    $db->query("DELETE FROM usr_users WHERE email LIKE '{$tag}_%@example.test'");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE '{$tag}_%@example.test'");
     foreach ($jars as $j) @unlink($j);
 }
 echo "\nRINGKASAN: {$total} pemeriksaan, {$gagal} gagal\n";

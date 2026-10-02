@@ -64,10 +64,10 @@ class Penyapu_retensi {
         $tugas = [
             'snapshot_simperum' => [
                 "FROM sf_rekaman_simperum WHERE expires_at < (NOW() - INTERVAL {$sn} DAY)
-                    AND id NOT IN (SELECT simperum_snapshot_id FROM sf_penilaian_perumahan
-                                   WHERE simperum_snapshot_id IS NOT NULL AND status <> 'draft')", 'DELETE'],
-            'rate_limit' => ['FROM sys_rate_limits WHERE window_started_at < (NOW() - INTERVAL ' . (int) $p['rate_limit_hari'] . ' DAY)', 'DELETE'],
-            'langganan_push_nonaktif' => ['FROM sys_push_subscriptions WHERE aktif = 0 AND updated_at < (NOW() - INTERVAL ' . (int) $p['langganan_push_nonaktif_hari'] . ' DAY)', 'DELETE'],
+                    AND id NOT IN (SELECT rekaman_simperum_id FROM sf_penilaian_perumahan
+                                   WHERE rekaman_simperum_id IS NOT NULL AND status <> 'draft')", 'DELETE'],
+            'rate_limit' => ['FROM sys_batas_laju WHERE jendela_mulai_at < (NOW() - INTERVAL ' . (int) $p['rate_limit_hari'] . ' DAY)', 'DELETE'],
+            'langganan_push_nonaktif' => ['FROM sys_langganan_notifikasi WHERE aktif = 0 AND updated_at < (NOW() - INTERVAL ' . (int) $p['langganan_push_nonaktif_hari'] . ' DAY)', 'DELETE'],
             'jejak_audit' => ['FROM sys_jejak_audit WHERE created_at < (NOW() - INTERVAL ' . (int) $p['jejak_audit_hari'] . ' DAY)', 'DELETE'],
         ];
         $hasil = [];
@@ -76,8 +76,8 @@ class Penyapu_retensi {
         }
         $tk = (int) $p['token_surel_lewat_hari'];
         $hasil['token_surel'] = $this->sql_ubah(
-            "FROM usr_users WHERE email_token IS NOT NULL AND email_token_expiry < (NOW() - INTERVAL {$tk} DAY)",
-            'UPDATE usr_users SET email_token = NULL, email_token_expiry = NULL WHERE email_token IS NOT NULL AND email_token_expiry < (NOW() - INTERVAL ' . $tk . ' DAY)',
+            "FROM usr_akun WHERE token_email IS NOT NULL AND token_email_kedaluwarsa < (NOW() - INTERVAL {$tk} DAY)",
+            'UPDATE usr_akun SET token_email = NULL, token_email_kedaluwarsa = NULL WHERE token_email IS NOT NULL AND token_email_kedaluwarsa < (NOW() - INTERVAL ' . $tk . ' DAY)',
             $kering);
         $hasil['log_aplikasi'] = $this->sapu_log((int) $p['log_aplikasi_hari'], $kering);
         $hasil['cache_hulu'] = $this->sapu_cache((int) $p['cache_hulu_hari'], $kering);
@@ -95,7 +95,7 @@ class Penyapu_retensi {
         foreach ($hasil['tugas'] as $nama => $h) { $ringkas[$nama] = $h['galat'] === NULL ? $h['jumlah'] : 'galat'; }
         try {
             return (bool) $this->db->query(
-                'INSERT INTO sys_jejak_audit (actor_id, actor_email, actor_role, aksi, objek_tipe, objek_id, ringkasan, detail_json, ip, created_at)
+                'INSERT INTO sys_jejak_audit (pelaku_id, pelaku_email, pelaku_peran, aksi, objek_tipe, objek_id, ringkasan, detail_json, ip, created_at)
                  VALUES (NULL, NULL, ?, ?, ?, NULL, ?, ?, ?, NOW())',
                 ['sistem', 'retensi_dijalankan', 'retensi', 'Penyapu retensi: ' . $hasil['total'] . ' entri kedaluwarsa dihapus/dibersihkan', json_encode($ringkas), substr((string) $ip, 0, 45)]
             );

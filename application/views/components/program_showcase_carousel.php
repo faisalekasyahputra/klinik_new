@@ -2,7 +2,7 @@
 $carousel_context = $carousel_context ?? 'home';
 
 /**
- * Isi slide datang dari `sf_programs` (migrasi 036), bukan lagi hardcode di JS
+ * Isi slide datang dari `sf_program` (migrasi 036), bukan lagi hardcode di JS
  * bawah. Komponen mengambil datanya sendiri supaya ketiga pemanggilnya -
  * beranda, diagnosa, pendataan warga - tidak perlu tahu apa-apa soal ini.
  * Memuat model di view memang bukan pola paling murni, tapi sudah dipakai di
@@ -32,7 +32,7 @@ $bawaan = ['muda' => '#e8f2fc', 'tengah' => '#c5ddf4', 'pekat' => '#92bfe7'];
 
 /* Foto hero pilihan user (Foto Program.rar, 18 Agt 2026). Ini dipetakan
    di kode agar kelima slide langsung konsisten di setiap lingkungan; data
-   gambar lama di sf_programs tetap menjadi cadangan untuk program lain. */
+   gambar lama di sf_program tetap menjadi cadangan untuk program lain. */
 $foto_hero_2026 = [
     'flpp'          => 'assets/img/program/hero-2026/flpp.png',
     'oemah_lestari' => 'assets/img/program/hero-2026/oemah-lestari.webp',
@@ -48,7 +48,7 @@ foreach ($CI->Program_model->etalase() as $p) {
     $slides_data[] = [
         'id'          => $p['kode_program'],
         'title'       => $p['nama_program'],
-        'badge'       => (string) ($p['badge'] ?? ''),
+        'badge'       => (string) ($p['lencana'] ?? ''),
         'description' => (string) $p['deskripsi_singkat'],
         'terms'       => (string) ($p['syarat_utama'] ?? ''),
         'image'       => base_url($gambar),
@@ -215,7 +215,7 @@ if ( ! $slides_data) { return; }
             // Dulu bernama cool/color/warm saat palet masih gelap; nama itu jadi
             // menyesatkan begitu urutannya terang→pekat, bukan dingin→hangat.
             //
-            // DIRENDER DARI PHP sejak 5 Agt 2026 - isinya dari `sf_programs`
+            // DIRENDER DARI PHP sejak 5 Agt 2026 - isinya dari `sf_program`
             // (migrasi 036), bukan lagi ditulis tangan di sini. `json_encode`
             // dengan HEX_* supaya kutip, `<`, dan `&` di teks yang diketik admin
             // tidak bisa keluar dari konteks skrip ini.

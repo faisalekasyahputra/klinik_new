@@ -1,9 +1,9 @@
 <?php
 // Rantai fallback sampai email - username DAN name bisa dua-duanya NULL untuk
 // akun daftar cepat lama, dan email selalu ada. Sebelumnya fallback berhenti di
-// $user->name, jadi kalau itu juga NULL, JS membandingkan input (selalu string)
+// $user->nama, jadi kalau itu juga NULL, JS membandingkan input (selalu string)
 // dengan literal null dan tombol Hapus mustahil aktif (roadmap T5 R2-sebagian).
-$current_username = htmlspecialchars($user->username ?? $user->name ?? $user->email);
+$current_username = htmlspecialchars($user->nama_pengguna ?? $user->nama ?? $user->email);
 
 // Kelas dialek admin, diangkat jadi variabel seperti perumahan_wizard.php.
 // Sebelumnya string panjang yang sama ditulis ulang 15 kali di berkas ini; satu
@@ -84,7 +84,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
 
                     <div>
                         <label class="<?= $label ?>">Username <span class="text-red-500">*</span></label>
-                        <input type="text" name="username" value="<?= htmlspecialchars($user->username ?? '') ?>" required maxlength="30" pattern="^\S+$"
+                        <input type="text" name="username" value="<?= htmlspecialchars($user->nama_pengguna ?? '') ?>" required maxlength="30" pattern="^\S+$"
                                oninput="this.value = this.value.replace(/\s/g, '').toLowerCase()"
                                class="<?= $isian ?>">
                         <p class="<?= $petunjuk ?>">Tampil di forum diskusi. Tanpa spasi, maks. 30 karakter.</p>
@@ -92,12 +92,12 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
 
                     <div>
                         <label class="<?= $label ?>">Nama Lengkap <span class="text-red-500">*</span></label>
-                        <input type="text" name="name" value="<?= htmlspecialchars($user->name) ?>" required class="<?= $isian ?>">
+                        <input type="text" name="name" value="<?= htmlspecialchars($user->nama) ?>" required class="<?= $isian ?>">
                     </div>
 
                     <div>
                         <label class="<?= $label ?>">No. WhatsApp</label>
-                        <input type="tel" name="phone" value="<?= htmlspecialchars($user->phone ?? '') ?>" class="<?= $isian ?>">
+                        <input type="tel" name="phone" value="<?= htmlspecialchars($user->no_hp ?? '') ?>" class="<?= $isian ?>">
                     </div>
 
                     <?php
@@ -123,7 +123,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                        ini tidak mengubah perilaku update_profile() sama
                        sekali - lihat pemeriksaan `$nik_kirim !== ''` di sana. */
                     ?>
-                    <?php if (($user->role ?? '') === 'warga'): ?>
+                    <?php if (($user->peran ?? '') === 'warga'): ?>
                     <div>
                         <label class="<?= $label ?>">NIK</label>
                         <?php if (!empty($nik_terkunci)): ?>
@@ -269,7 +269,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
 
             <div class="mt-4 flex flex-wrap items-start gap-3 border-b border-gray-100 pb-4 dark:border-white/10">
                 <?php
-                // Tautan profil publik memakai certified_developer_id (PK direktori),
+                // Tautan profil publik memakai pengembang_id (PK direktori),
                 // BUKAN id pengajuan. Dulu memakai $pengajuan_sp2->id - dua tabel,
                 // dua urutan ID: registrasi id=7 membuka profil perusahaan LAIN,
                 // lengkap dengan badge "Bersertifikat".
@@ -278,8 +278,8 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                 // untuk semua status Diterima, jadi tidak ada jalan BENAR sama
                 // sekali dari dashboard ke profil publik.
                 ?>
-                <?php if($pengajuan_sp2->status_verifikasi == 'Diterima' && !empty($pengajuan_sp2->certified_developer_id)): ?>
-                    <a href="<?= base_url('Pengembang/profil/' . (int) $pengajuan_sp2->certified_developer_id) ?>" target="_blank" class="inline-flex items-center gap-2 rounded-lg border border-brand-primary/30 bg-brand-primary/10 px-4 py-2 text-sm font-bold text-brand-hover transition-colors hover:bg-brand-primary/20 dark:text-brand-primary">
+                <?php if($pengajuan_sp2->status_verifikasi == 'Diterima' && !empty($pengajuan_sp2->pengembang_id)): ?>
+                    <a href="<?= base_url('Pengembang/profil/' . (int) $pengajuan_sp2->pengembang_id) ?>" target="_blank" class="inline-flex items-center gap-2 rounded-lg border border-brand-primary/30 bg-brand-primary/10 px-4 py-2 text-sm font-bold text-brand-hover transition-colors hover:bg-brand-primary/20 dark:text-brand-primary">
                         <i class="ph ph-eye"></i> Lihat Profil Publik
                     </a>
                     <div>
@@ -374,7 +374,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
         </div>
         <?php endif; ?>
 
-        <?php if (($user->role ?? '') === 'pengembang' && !isset($pengajuan_sp2)): ?>
+        <?php if (($user->peran ?? '') === 'pengembang' && !isset($pengajuan_sp2)): ?>
         <div class="<?= $kotak ?>">
             <h2 class="<?= $judul ?>">Lengkapi Pengajuan SRP2</h2>
             <p class="mt-2 text-sm text-gray-500 dark:text-brand-muted">Akun pengembang sudah aktif. Lengkapi profil pengajuan sebelum mengunggah dokumen persyaratan.</p>
@@ -428,7 +428,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
 
 <script>
 (() => {
-const targetUsername = <?= json_encode($user->username ?? $user->name ?? $user->email) ?>;
+const targetUsername = <?= json_encode($user->nama_pengguna ?? $user->nama ?? $user->email) ?>;
 
 window.openDeleteModal = function () {
     document.getElementById('deleteModal').classList.remove('hidden');

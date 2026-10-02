@@ -12,28 +12,28 @@ class Program_model extends CI_Model {
      * Program yang tampil di korsel etalase beranda - SATU-SATUNYA sumbernya.
      *
      * Sampai 5 Agt 2026 daftar ini hardcode di dalam JS komponen korsel, dan
-     * `sf_programs` cuma dipakai untuk kelayakan. Dua tempat itu sudah melenceng
+     * `sf_program` cuma dipakai untuk kelayakan. Dua tempat itu sudah melenceng
      * (judul berbeda antara katalog admin dan korsel), dan itulah yang membuat
      * layar Katalog Program lahir sebagai pembanding. Migrasi 036 memindahkan
      * yang DITAMPILKAN ke tabel; sejak itu korsel membaca dari sini.
      *
-     * `is_active` IKUT MENGGERBANG. Program yang dinonaktifkan di Katalog
+     * `aktif` IKUT MENGGERBANG. Program yang dinonaktifkan di Katalog
      * Program tidak boleh terus dipromosikan di beranda - kalau tidak, warga
      * mengeklik sesuatu yang pengajuannya sudah ditutup.
      */
     public function etalase() {
-        if ( ! $this->db->table_exists('sf_programs')
-            || ! $this->db->field_exists('tampil_korsel', 'sf_programs')) {
+        if ( ! $this->db->table_exists('sf_program')
+            || ! $this->db->field_exists('tampil_korsel', 'sf_program')) {
             // Migrasi 036 belum jalan. Bukan alasan menampilkan data lain -
             // dua sumber justru masalah yang sedang dibereskan.
             log_message('error', 'Program_model::etalase() - kolom etalase belum ada; jalankan migrasi 036.');
             return [];
         }
         $rows = $this->db->select('id, kode_program, nama_program, deskripsi_singkat,
-                                   badge, syarat_utama, gambar')
-            ->where(['tampil_korsel' => 1, 'is_active' => 1])
+                                   lencana, syarat_utama, gambar')
+            ->where(['tampil_korsel' => 1, 'aktif' => 1])
             ->order_by('urutan', 'ASC')->order_by('id', 'ASC')
-            ->get('sf_programs')->result_array();
+            ->get('sf_program')->result_array();
 
         // `db_debug` mati di production: query gagal mengembalikan array kosong
         // tanpa suara. Dicatat supaya kekosongan bisa ditelusuri, bukan ditebak.
@@ -45,15 +45,15 @@ class Program_model extends CI_Model {
 
     public function get_program_by_code($kode_program) {
         $this->db->where('kode_program', $kode_program);
-        $this->db->where('is_active', 1);
-        return $this->db->get('sf_programs')->row_array();
+        $this->db->where('aktif', 1);
+        return $this->db->get('sf_program')->row_array();
     }
 
     /**
-     * Tentukan kabupaten_id yang boleh disimpan ke sf_housing_queue.
+     * Tentukan kabupaten_id yang boleh disimpan ke sf_antrean_pengajuan.
      *
      * URUTAN KEPERCAYAAN (jangan dibalik):
-     *   1. Domisili user yang login (usr_users.kabupaten_id) - data terverifikasi,
+     *   1. Domisili user yang login (usr_akun.kabupaten_id) - data terverifikasi,
      *      tidak bisa dipalsukan pemohon lewat form.
      *   2. Pilihan user di form, TAPI wajib cocok dengan baris nyata di tabel
      *      kabupaten - menutup nilai sembarang/ngawur.
@@ -73,7 +73,7 @@ class Program_model extends CI_Model {
     public function resolve_kabupaten_id($user_id = NULL, $requested_id = NULL) {
         if ( ! empty($user_id)) {
             $profil = $this->db->select('kabupaten_id')
-                ->get_where('usr_users', ['id' => (int) $user_id])->row();
+                ->get_where('usr_akun', ['id' => (int) $user_id])->row();
             if ($profil && ! empty($profil->kabupaten_id)) {
                 return (int) $profil->kabupaten_id;
             }
@@ -88,19 +88,19 @@ class Program_model extends CI_Model {
     }
 
     /* insert_housing_queue() dan create_housing_submission() DIHAPUS 2 Okt 2026 (migrasi 067):
-       keduanya penulis NIK/nama/JSON polos ke sf_housing_queue untuk jalur diagnosa lama yang
+       keduanya penulis NIK/nama/JSON polos ke sf_antrean_pengajuan untuk jalur diagnosa lama yang
        tidak lagi dipanggil siapa pun sejak 27 Sep 2026 (lihat Program.php). Satu-satunya
        penulis antrean sekarang Housing_assessment_model::submit_owned_assessment(). */
 
-    public function transition_housing_queue($queue_id, $status, $reviewer_id, $kabupaten_id = NULL, $catatan = '') {
-        $queue_id = (int) $queue_id;
+    public function transition_housing_queue($antrean_id, $status, $reviewer_id, $kabupaten_id = NULL, $catatan = '') {
+        $antrean_id = (int) $antrean_id;
         $catatan = trim((string) $catatan);
 
-        $this->db->where('id', $queue_id);
+        $this->db->where('id', $antrean_id);
         if ($kabupaten_id !== NULL) {
             $this->db->where('kabupaten_id', (int) $kabupaten_id);
         }
-        $row = $this->db->get('sf_housing_queue')->row();
+        $row = $this->db->get('sf_antrean_pengajuan')->row();
 
         if ( ! $row) {
             return ['success' => FALSE, 'code' => 'not_found', 'message' => 'Data pengajuan tidak ditemukan dalam kewenangan Anda.'];
@@ -112,12 +112,12 @@ class Program_model extends CI_Model {
             return ['success' => FALSE, 'code' => 'note_required', 'message' => 'Catatan alasan penolakan wajib diisi.'];
         }
 
-        $this->db->where('id', $queue_id)
+        $this->db->where('id', $antrean_id)
             ->where('status_antrean', $row->status_antrean);
         if ($kabupaten_id !== NULL) {
             $this->db->where('kabupaten_id', (int) $kabupaten_id);
         }
-        $updated = $this->db->update('sf_housing_queue', [
+        $updated = $this->db->update('sf_antrean_pengajuan', [
             'status_antrean' => $status,
             'catatan_admin'  => $status === 'rejected' ? $catatan : NULL,
             'reviewed_by'    => (int) $reviewer_id,
@@ -139,7 +139,7 @@ class Program_model extends CI_Model {
             for ($i = 0; $i < 6; $i++) {
                 $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
             }
-            $exists = $this->db->where('ticket_code', $code)->count_all_results('sf_housing_queue') > 0;
+            $exists = $this->db->where('kode_tiket', $code)->count_all_results('sf_antrean_pengajuan') > 0;
         } while ($exists);
 
         return $code;

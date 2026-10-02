@@ -25,7 +25,7 @@ class Umum extends MY_Controller {
 	 *
 	 * Menggantikan `in_array($role, ['admin','staff','Petugas Disperakim'])`
 	 * yang tersebar di berkas ini - tiga peran itu TIDAK SATU PUN terdaftar
-	 * sebagai peran resmi di `usr_users.role` selain 'admin' (lihat
+	 * sebagai peran resmi di `usr_akun.peran` selain 'admin' (lihat
 	 * peringatan yang sama di Admin_Konsultasi.php, ditulis 14 Agt 2026 saat
 	 * meja janji temu dibuat, tapi berkas INI - sumber aslinya - belum ikut
 	 * dibetulkan sampai sekarang).
@@ -182,7 +182,7 @@ class Umum extends MY_Controller {
 			// NULL tidak cocok dengan WHERE bidang mana pun, jadi aduan yang
 			// belum dirutekan otomatis tidak nyangkut di meja siapa pun tanpa
 			// satu baris kode penjaga. Lihat migrasi 20260701000034.
-			'bidang'   => NULL,
+			'bidang_kode'   => NULL,
 			'pesan'    => $pesan,
 			'lampiran' => NULL,
 		]);
@@ -262,7 +262,7 @@ class Umum extends MY_Controller {
 		$hal = max(1, (int) $this->input->get('hal'));
 		$total = (int) $this->db->count_all('aduan');
 
-		$rows = $this->db->select('id, nama, judul, bidang, status, catatan_admin, created_at')
+		$rows = $this->db->select('id, nama, judul, bidang_kode, status, catatan_admin, created_at')
 			->order_by('created_at', 'DESC')
 			->limit($per_hal, ($hal - 1) * $per_hal)
 			->get('aduan')->result();
@@ -273,8 +273,8 @@ class Umum extends MY_Controller {
 			// NULL dibaca sebagai "belum ditriase", bukan dikarang jadi nama
 			// bidang. Pelapor yang melihat "Bidang Perumahan" untuk aduan yang
 			// belum dirutekan akan mengira sudah ada yang memegangnya.
-			$r->bidang_label = $r->bidang ? $this->Aduan_model->bidang_label($r->bidang) : NULL;
-			unset($r->bidang);
+			$r->bidang_label = $r->bidang_kode ? $this->Aduan_model->bidang_label($r->bidang_kode) : NULL;
+			unset($r->bidang_kode);
 		}
 
 		$datacontent['judul']    = '';
@@ -407,13 +407,13 @@ class Umum extends MY_Controller {
 
 		// INSERT - nama & email diambil dari session
 		$data = [
-			'nama_user'   => $this->session->userdata('username') ?: ($this->session->userdata('name') ?: 'Pengguna'),
-			'email_user'  => $this->session->userdata('email') ?: '',
+			'nama_pengguna'   => $this->session->userdata('username') ?: ($this->session->userdata('name') ?: 'Pengguna'),
+			'email_pengguna'  => $this->session->userdata('email') ?: '',
 			'judul_topik' => $judul,
 			'kategori'    => $kat,
 			'isi_diskusi' => $isi,
 			'user_id'     => $user_id,
-			'ip_address'  => $this->input->ip_address(),
+			'alamat_ip'  => $this->input->ip_address(),
 			'status'      => 'open',
 			'created_at'  => date('Y-m-d H:i:s')
 		];
@@ -463,7 +463,7 @@ class Umum extends MY_Controller {
 
 		// Increment view count
 		$this->Forum_model->increment_view($id);
-		$datacontent['topik']['view_count'] = ($datacontent['topik']['view_count'] ?? 0) + 1;
+		$datacontent['topik']['jumlah_dilihat'] = ($datacontent['topik']['jumlah_dilihat'] ?? 0) + 1;
 
 		$datacontent['komentar'] = $this->Forum_model->get_komentar_by_diskusi($id);
 
@@ -589,7 +589,7 @@ class Umum extends MY_Controller {
 		}
 
 		$baru = $this->Janji_temu_model->buat([
-			'id_diskusi' => $id_diskusi,
+			'diskusi_id' => $id_diskusi,
 			'user_id'    => $user_id,
 			'alasan'     => $alasan,
 		]);
@@ -645,7 +645,7 @@ class Umum extends MY_Controller {
 
 		if ($ke === NULL || ! $this->Janji_temu_model->boleh($row->status, $ke, 'pemilik')) {
 			$this->session->set_flashdata('error', 'Tindakan itu tidak berlaku untuk keadaan pengajuan ini.');
-			redirect('Umum/detail/' . $row->id_diskusi);
+			redirect('Umum/detail/' . $row->diskusi_id);
 			return;
 		}
 
@@ -657,7 +657,7 @@ class Umum extends MY_Controller {
 		$ok = $this->Janji_temu_model->transisi($id, $row->status, $ke, $set, ['user_id' => $user_id]);
 		if ( ! $ok) {
 			$this->session->set_flashdata('error', 'Pengajuan sudah berubah keadaannya. Muat ulang halaman.');
-			redirect('Umum/detail/' . $row->id_diskusi);
+			redirect('Umum/detail/' . $row->diskusi_id);
 			return;
 		}
 
@@ -671,7 +671,7 @@ class Umum extends MY_Controller {
 			'dibatalkan' => 'Pengajuan janji temu dibatalkan.',
 		];
 		$this->session->set_flashdata('success', $pesan[$ke]);
-		redirect('Umum/detail/' . $row->id_diskusi);
+		redirect('Umum/detail/' . $row->diskusi_id);
 	}
 
 	// =========================================================
@@ -733,13 +733,13 @@ class Umum extends MY_Controller {
 		$role = $this->_peran_admin() ? 'Petugas Disperakim' : 'Warga';
 
 		$data = [
-			'id_diskusi'      => $id_diskusi,
-			'reply_to'        => $this->input->post('reply_to') ?: NULL,
+			'diskusi_id'      => $id_diskusi,
+			'balasan_untuk_id'        => $this->input->post('balasan_untuk_id') ?: NULL,
 			'nama_komentator' => $this->session->userdata('username') ?: ($this->session->userdata('name') ?: 'Pengguna'),
 			'isi_komentar'    => $isi_komentar,
-			'role'            => $role,
+			'peran'            => $role,
 			'user_id'         => $user_id,
-			'ip_address'      => $this->input->ip_address(),
+			'alamat_ip'      => $this->input->ip_address(),
 			'created_at'      => date('Y-m-d H:i:s')
 		];
 
@@ -757,7 +757,7 @@ class Umum extends MY_Controller {
 		// Dua alasan. Pertama, penempatannya memang ganjil: menyapu auto-hide
 		// sebagai efek samping seseorang membalas komentar. Kedua dan yang
 		// menentukan: U2 ledger-only - laporan dicatat, visibilitas TIDAK
-		// berubah otomatis. Setelah B3 menghitung `report_count` dari pelapor
+		// berubah otomatis. Setelah B3 menghitung `jumlah_laporan` dari pelapor
 		// unik, membiarkan panggilan ini justru membuat lima akun bisa
 		// menyembunyikan diskusi tanpa antrean moderasi dan tanpa jalan pulang.
 		// Auto-hide baru boleh hidup lewat keputusan #10 beserta roadmapnya.
@@ -847,20 +847,20 @@ class Umum extends MY_Controller {
 			return;
 		}
 		
-		$target_type = $this->input->post('type'); // 'diskusi' atau 'komentar'
+		$jenis_target = $this->input->post('type'); // 'diskusi' atau 'komentar'
 		$target_id   = (int) $this->input->post('id');
 
-		if (!in_array($target_type, ['diskusi', 'komentar']) || empty($target_id)) {
+		if (!in_array($jenis_target, ['diskusi', 'komentar']) || empty($target_id)) {
 			header('Content-Type: application/json; charset=utf-8'); echo json_encode(['status' => 'error', 'message' => 'Invalid request']);
 			return;
 		}
 
 		/* PRIVASI KONSULTASI 15 Agt 2026 - lihat komentar panjang di forum().
-		   $target_type menentukan cara menemukan diskusi induknya: kalau
+		   $jenis_target menentukan cara menemukan diskusi induknya: kalau
 		   yang disukai topiknya sendiri, id-nya sudah id diskusi; kalau
 		   komentar, ditelusuri dulu induknya. */
 		$user_id    = (int) $this->get_user_id();
-		$id_diskusi = $target_type === 'diskusi'
+		$id_diskusi = $jenis_target === 'diskusi'
 			? $target_id
 			: $this->Forum_model->get_diskusi_id_dari_komentar($target_id);
 		if ( ! $id_diskusi || ! $this->_boleh_akses_diskusi($id_diskusi, $user_id)) {
@@ -868,7 +868,7 @@ class Umum extends MY_Controller {
 			return;
 		}
 
-		$result = $this->Forum_model->toggle_like($user_id, $target_type, $target_id);
+		$result = $this->Forum_model->toggle_like($user_id, $jenis_target, $target_id);
 		header('Content-Type: application/json; charset=utf-8'); echo json_encode(['status' => 'ok', 'action' => $result['action'], 'count' => $result['count']]);
 	}
 
@@ -930,15 +930,15 @@ class Umum extends MY_Controller {
 		$items = $this->_get_tapera_data();
 
 		// Hanya direktori resmi yang boleh jadi dasar "tersertifikasi" - sama
-		// dengan Pengembang::sertifikasi(). Dulu di sini SELURUH srp2_registrations
+		// dengan Pengembang::sertifikasi(). Dulu di sini SELURUH srp2_pengajuan
 		// dibaca tanpa filter status, lalu kolom `nib` dipakai sebagai penanda:
 		// draft yang belum pernah dikirim pun tampil "Terdata" di halaman publik.
 		// Roadmap T0 butir 2.
 		$direktori_srp2 = [];
-		if ($this->db->table_exists('srp2_certified_developers')) {
+		if ($this->db->table_exists('srp2_direktori_pengembang')) {
 			$rows = $this->db
 				->select('s.nama_perusahaan, s.status_sertifikasi, s.sertifikat_terbit, s.sertifikat_berakhir, s.asosiasi, k.nama AS wilayah_pengembang')
-				->from('srp2_certified_developers s')
+				->from('srp2_direktori_pengembang s')
 				->join('kabupaten k', 'k.id = s.kabupaten_id', 'left')
 				->where('s.status_aktif', 1)
 				->get()->result_array();
@@ -1055,13 +1055,13 @@ class Umum extends MY_Controller {
 		// Cap "Terverifikasi SRP2" HANYA boleh dari direktori resmi pengembang
 		// bersertifikat - sumber yang SAMA dengan Pengembang::sertifikasi().
 		//
-		// Dulu di sini `get_where('srp2_registrations', ['nama_perusahaan' => $nama])`
+		// Dulu di sini `get_where('srp2_pengajuan', ['nama_perusahaan' => $nama])`
 		// TANPA filter status: draft yang belum pernah dikirim pun ikut dicap
 		// terverifikasi di halaman publik, dan siapa pun bisa mendaftar memakai
 		// nama perusahaan orang lain lalu mendapat cap itu. Roadmap T0 butir 2.
 		$local_data = [];
-		if ($this->db->table_exists('srp2_certified_developers')) {
-			$local_data = $this->db->get_where('srp2_certified_developers', [
+		if ($this->db->table_exists('srp2_direktori_pengembang')) {
+			$local_data = $this->db->get_where('srp2_direktori_pengembang', [
 				'nama_perusahaan' => $nama,
 				'status_aktif'    => 1,
 			])->row_array();

@@ -26,7 +26,7 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
         $data['title'] = 'Magang Bidang Saya';
 
         $table = $this->table_state([
-            'kkn_magang_pendaftaran.created_at', 'usr_users.name',
+            'kkn_magang_pendaftaran.created_at', 'usr_akun.nama',
             'kkn_magang_pendaftaran.instansi_asal', 'kkn_magang_pendaftaran.status',
         ], 'kkn_magang_pendaftaran.created_at');
         $data['base_url'] = 'Kemitraan_Bidang';
@@ -36,21 +36,21 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
         // tidak muncul di sini - dan memang seharusnya begitu: ia bukan
         // tanggung jawab bidang mana pun.
         $this->db->from('kkn_magang_pendaftaran')
-            ->join('usr_users', 'usr_users.id = kkn_magang_pendaftaran.user_id', 'left')
+            ->join('usr_akun', 'usr_akun.id = kkn_magang_pendaftaran.user_id', 'left')
             ->where('kkn_magang_pendaftaran.jenis', 'magang')
             ->where('kkn_magang_pendaftaran.bidang_kode', $this->my_bidang_kode);
 
         if ($table['q'] !== '') {
             $this->db->group_start()
-                ->like('usr_users.name', $table['q'])->or_like('usr_users.email', $table['q'])
+                ->like('usr_akun.nama', $table['q'])->or_like('usr_akun.email', $table['q'])
                 ->or_like('kkn_magang_pendaftaran.instansi_asal', $table['q'])
                 ->or_like('kkn_magang_pendaftaran.divisi_atau_tema', $table['q'])
                 ->group_end();
         }
         $table += $this->paginate_state($this->db->count_all_results('', FALSE));
 
-        $data['rows'] = $this->db->select('kkn_magang_pendaftaran.*, usr_users.name AS nama_mahasiswa,
-                usr_users.email AS email_mahasiswa')
+        $data['rows'] = $this->db->select('kkn_magang_pendaftaran.*, usr_akun.nama AS nama_mahasiswa,
+                usr_akun.email AS email_mahasiswa')
             ->order_by($table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
             ->get()->result();
@@ -202,19 +202,19 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
     public function universitas()
     {
         $data['title'] = 'Akun Universitas';
-        $table = $this->table_state(['created_at', 'name', 'email'], 'created_at');
+        $table = $this->table_state(['created_at', 'nama', 'email'], 'created_at');
         $data['base_url'] = 'Kemitraan_Bidang/universitas';
         $data['aksi_buat'] = 'Kemitraan_Bidang/buat_universitas';
 
-        $this->db->from('usr_users')->where('role', 'universitas');
+        $this->db->from('usr_akun')->where('peran', 'universitas');
         if ($table['q'] !== '') {
             $this->db->group_start()
-                ->like('name', $table['q'])->or_like('email', $table['q'])
-                ->or_like('username', $table['q'])->group_end();
+                ->like('nama', $table['q'])->or_like('email', $table['q'])
+                ->or_like('nama_pengguna', $table['q'])->group_end();
         }
         $table += $this->paginate_state($this->db->count_all_results('', FALSE));
-        $data['rows'] = $this->db->select("usr_users.*, (SELECT COUNT(*) FROM kkn_magang_pendaftaran
-                WHERE kkn_magang_pendaftaran.user_id = usr_users.id
+        $data['rows'] = $this->db->select("usr_akun.*, (SELECT COUNT(*) FROM kkn_magang_pendaftaran
+                WHERE kkn_magang_pendaftaran.user_id = usr_akun.id
                   AND kkn_magang_pendaftaran.jenis = 'kkn') AS jumlah_kkn", FALSE)
             ->order_by($table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
@@ -233,7 +233,7 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
         // Pesan email ganda disamakan dengan cabang 1062 di bawah (yang kini hanya terjangkau
         // lewat balapan dua kiriman). Nomor HP dan kekuatan sandi divalidasi di server, bukan
         // hanya maxlength HTML (temuan UAT universitas U1/U2, 28 Sep 2026).
-        $this->form_validation->set_rules('email', 'Email', 'required|valid_email|max_length[100]|is_unique[usr_users.email]',
+        $this->form_validation->set_rules('email', 'Email', 'required|valid_email|max_length[100]|is_unique[usr_akun.email]',
             ['is_unique' => 'Akun belum dibuat: email tersebut sudah terdaftar.']);
         $this->form_validation->set_rules('phone', 'Nomor HP', 'trim|max_length[20]|nomor_hp');
         $this->form_validation->set_rules('password', 'Password', 'required|sandi_kuat');
@@ -245,20 +245,20 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
 
         $this->load->model('auth_model');
         $payload = [
-            'name'              => $this->input->post('name', TRUE),
+            'nama'              => $this->input->post('name', TRUE),
             'email'             => $this->input->post('email', TRUE),
-            'password'          => password_hash($this->input->post('password'), PASSWORD_BCRYPT),
-            'role'              => 'universitas',
+            'kata_sandi'        => password_hash($this->input->post('password'), PASSWORD_BCRYPT),
+            'peran'             => 'universitas',
             'status'            => 'active',
-            'profile_completed' => 1,
+            'profil_lengkap' => 1,
             'email_verified_at' => date('Y-m-d H:i:s'),
             'created_at'        => date('Y-m-d H:i:s'),
         // Sandi awal diketahui admin, jadi wajib diganti di login pertama (keputusan 29 Sep 2026).
         ] + $this->auth_model->password_awal_fields();
         $telp = trim((string) $this->input->post('phone', TRUE));
-        if ($telp !== '') { $payload['phone'] = $telp; }
+        if ($telp !== '') { $payload['no_hp'] = $telp; }
 
-        if ( ! $this->db->insert('usr_users', $payload)) {
+        if ( ! $this->db->insert('usr_akun', $payload)) {
             $galat = $this->db->error();
             $this->session->set_flashdata('error', (int) ($galat['code'] ?? 0) === 1062
                 ? 'Akun belum dibuat: email tersebut sudah terdaftar.'
@@ -269,7 +269,7 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
         $id = (string) $this->db->insert_id();
         $this->catat_audit('universitas_dibuat',
             'Admin bidang ' . $this->my_bidang_kode . ' membuat akun universitas ' . $payload['email'],
-            'usr_users', $id, ['role' => 'universitas', 'bidang_pembuat' => $this->my_bidang_kode]);
+            'usr_akun', $id, ['role' => 'universitas', 'bidang_pembuat' => $this->my_bidang_kode]);
 
         $this->session->set_flashdata('success', 'Akun universitas berhasil dibuat. Serahkan email dan sandinya kepada universitas; sandi itu wajib diganti saat pertama masuk.');
         redirect($kembali);
@@ -289,7 +289,7 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
     private function akun_universitas()
     {
         if ($this->input->method(TRUE) !== 'POST') { show_404(); }
-        $user = $this->db->get_where('usr_users', ['id' => (int) $this->input->post('id'), 'role' => 'universitas'])->row();
+        $user = $this->db->get_where('usr_akun', ['id' => (int) $this->input->post('id'), 'peran' => 'universitas'])->row();
         if ( ! $user) { show_404(); }
         return $user;
     }
@@ -311,14 +311,14 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
         }
 
         $data = [
-            'name'  => $this->input->post('name', TRUE),
+            'nama'  => $this->input->post('name', TRUE),
             'email' => $this->input->post('email', TRUE),
-            'phone' => trim((string) $this->input->post('phone', TRUE)) ?: NULL,
+            'no_hp' => trim((string) $this->input->post('phone', TRUE)) ?: NULL,
         ];
         // is_unique tidak bisa dipakai: email akun ini sendiri akan dianggap ganda.
-        $ganda = $this->db->where('email', $data['email'])->where('id !=', (int) $user->id)->count_all_results('usr_users');
+        $ganda = $this->db->where('email', $data['email'])->where('id !=', (int) $user->id)->count_all_results('usr_akun');
         $galat = $ganda > 0 ? 1062 : 0;
-        if ( ! $galat && ! $this->db->where('id', (int) $user->id)->update('usr_users', $data)) {
+        if ( ! $galat && ! $this->db->where('id', (int) $user->id)->update('usr_akun', $data)) {
             $galat = (int) ($this->db->error()['code'] ?? 0) ?: -1;
         }
         if ($galat) {
@@ -331,7 +331,7 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
 
         $berubah = array_keys(array_filter($data, fn($v, $k) => (string) $v !== (string) $user->$k, ARRAY_FILTER_USE_BOTH));
         $this->catat_audit('universitas_diubah', 'Admin bidang ' . $this->my_bidang_kode . ' menyunting akun universitas ' . $user->email,
-            'usr_users', (string) $user->id, ['kolom' => $berubah, 'email_lama' => $user->email, 'email_baru' => $data['email']]);
+            'usr_akun', (string) $user->id, ['kolom' => $berubah, 'email_lama' => $user->email, 'email_baru' => $data['email']]);
         $this->session->set_flashdata('success', 'Data akun ' . $data['email'] . ' diperbarui.');
         redirect($kembali);
     }
@@ -352,14 +352,14 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
 
         // Pola Admin_Users::reset_sandi: kunci gagal dibuka dan sesi yang sedang berjalan dicabut.
         $this->load->model('auth_model');
-        $this->db->where('id', (int) $user->id)->update('usr_users', [
-            'password' => password_hash($this->input->post('password'), PASSWORD_BCRYPT),
-            'login_attempts' => 0, 'locked_until' => NULL,
-            'active_session_hash' => NULL, 'active_session_id_hash' => NULL, 'active_session_at' => NULL,
+        $this->db->where('id', (int) $user->id)->update('usr_akun', [
+            'kata_sandi' => password_hash($this->input->post('password'), PASSWORD_BCRYPT),
+            'gagal_masuk' => 0, 'terkunci_sampai' => NULL,
+            'sesi_aktif_hash' => NULL, 'sesi_aktif_id_hash' => NULL, 'sesi_aktif_at' => NULL,
         ] + $this->auth_model->password_awal_fields());
         // Sandinya tidak ikut dicatat.
         $this->catat_audit('universitas_sandi_direset', 'Admin bidang ' . $this->my_bidang_kode . ' mereset sandi akun universitas ' . $user->email,
-            'usr_users', (string) $user->id);
+            'usr_akun', (string) $user->id);
         $this->session->set_flashdata('success', 'Sandi ' . $user->email . ' diganti. Sampaikan lewat jalur pribadi; universitas wajib menggantinya saat masuk.');
         redirect($kembali);
     }
@@ -372,12 +372,12 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
 
         $data = ['status' => $ke];
         if ($ke === 'nonaktif') {
-            $data += ['active_session_hash' => NULL, 'active_session_id_hash' => NULL, 'active_session_at' => NULL];
+            $data += ['sesi_aktif_hash' => NULL, 'sesi_aktif_id_hash' => NULL, 'sesi_aktif_at' => NULL];
         }
-        $this->db->where('id', (int) $user->id)->update('usr_users', $data);
+        $this->db->where('id', (int) $user->id)->update('usr_akun', $data);
         $this->catat_audit($ke === 'nonaktif' ? 'universitas_dinonaktifkan' : 'universitas_diaktifkan',
             'Admin bidang ' . $this->my_bidang_kode . ($ke === 'nonaktif' ? ' menonaktifkan' : ' mengaktifkan') . ' akun universitas ' . $user->email,
-            'usr_users', (string) $user->id, ['dari' => $user->status, 'ke' => $ke]);
+            'usr_akun', (string) $user->id, ['dari' => $user->status, 'ke' => $ke]);
         $this->session->set_flashdata('success', $ke === 'nonaktif'
             ? 'Akun ' . $user->email . ' dinonaktifkan dan sesinya diakhiri.'
             : 'Akun ' . $user->email . ' diaktifkan kembali.');

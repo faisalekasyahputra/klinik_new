@@ -25,14 +25,14 @@ $daftar = function ($email, $tos) use ($BASE, &$jars) {
     $b = (string) curl_exec($c); curl_close($c); if (getenv("UJI_DEBUG")) echo $b, "
 "; return json_decode($b, TRUE) ?: ['raw' => substr($b, 0, 200)];
 };
-$ada = function ($email) use ($db) { $st = $db->prepare('SELECT id FROM usr_users WHERE email=?'); $st->bind_param('s', $email); $st->execute(); return $st->get_result()->fetch_row()[0] ?? NULL; };
+$ada = function ($email) use ($db) { $st = $db->prepare('SELECT id FROM usr_akun WHERE email=?'); $st->bind_param('s', $email); $st->execute(); return $st->get_result()->fetch_row()[0] ?? NULL; };
 // Ember batas laju pendaftaran per IP dipinjam lalu dikembalikan utuh (::1 tercatat per /64),
 // supaya suite lain yang juga mendaftar tidak membuat suite ini merah 429.
 $ember = [];
 foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
     $k = hash('sha256', 'register:ip:' . $ip);
-    $ember[$k] = $db->query("SELECT limit_key, window_started_at, failed_attempts FROM sys_rate_limits WHERE limit_key='$k'")->fetch_assoc();
-    $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
+    $ember[$k] = $db->query("SELECT kunci, jendela_mulai_at, jumlah_gagal FROM sys_batas_laju WHERE kunci='$k'")->fetch_assoc();
+    $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
 }
 try {
     echo "=== UJI PERSETUJUAN S&K ===\n";
@@ -45,12 +45,12 @@ try {
     $jml = $id ? (int) $db->query("SELECT COUNT(*) FROM sys_jejak_audit WHERE aksi='persetujuan_sk' AND objek_id='" . (int) $id . "'")->fetch_row()[0] : 0;
     $cek($jml === 1, 'Persetujuan S&K tercatat sekali di jejak audit untuk akun itu');
 } finally {
-    $db->query("DELETE FROM sys_jejak_audit WHERE aksi='persetujuan_sk' AND objek_id IN (SELECT id FROM usr_users WHERE email LIKE '{$tag}\_%@example.test')");
-    $db->query("DELETE FROM usr_users WHERE email LIKE '{$tag}\_%@example.test'");
+    $db->query("DELETE FROM sys_jejak_audit WHERE aksi='persetujuan_sk' AND objek_id IN (SELECT id FROM usr_akun WHERE email LIKE '{$tag}\_%@example.test')");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE '{$tag}\_%@example.test'");
     foreach ($jars as $f) { @unlink($f); }
     foreach ($ember as $k => $row) {
-        $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
-        if ($row) { $st = $db->prepare('INSERT INTO sys_rate_limits (limit_key, window_started_at, failed_attempts) VALUES (?,?,?)'); $st->bind_param('ssi', $row['limit_key'], $row['window_started_at'], $row['failed_attempts']); $st->execute(); }
+        $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
+        if ($row) { $st = $db->prepare('INSERT INTO sys_batas_laju (kunci, jendela_mulai_at, jumlah_gagal) VALUES (?,?,?)'); $st->bind_param('ssi', $row['kunci'], $row['jendela_mulai_at'], $row['jumlah_gagal']); $st->execute(); }
     }
 }
 echo "\nRINGKASAN: {$total} pemeriksaan, {$gagal} gagal\n";

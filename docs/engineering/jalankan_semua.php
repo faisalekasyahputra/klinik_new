@@ -106,8 +106,8 @@ function sensus_akun_uji() {
     $db = @new mysqli($env['DB_HOST'], $env['DB_USER'], $env['DB_PASS'] ?? '', $env['DB_NAME']);
     if ($db->connect_error) { return NULL; }
     $out = [];
-    $r = $db->query('SELECT id, email, role FROM usr_users WHERE email LIKE "%@example.test"');
-    foreach ($r ?: [] as $row) { $out[(int) $row['id']] = $row['email'] . ' [' . ($row['role'] ?: 'tanpa role') . ']'; }
+    $r = $db->query('SELECT id, email, peran FROM usr_akun WHERE email LIKE "%@example.test"');
+    foreach ($r ?: [] as $row) { $out[(int) $row['id']] = $row['email'] . ' [' . ($row['peran'] ?: 'tanpa role') . ']'; }
     // Draft asesmen yatim: FK user_id ON DELETE SET NULL, jadi suite yang menghapus akun tanpa
     // menghapus draftnya meninggalkan baris user_id NULL yang tidak tertangkap sensus akun (26 Sep 2026).
     $y = $db->query('SELECT COUNT(*) c FROM sf_penilaian_perumahan WHERE user_id IS NULL');

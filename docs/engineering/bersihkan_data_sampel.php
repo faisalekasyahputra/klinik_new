@@ -12,12 +12,12 @@
  *  1. AKUN DENGAN KATA SANDI BAWAAN. Setiap akun yang hash-nya cocok dengan daftar kata sandi bawaan
  *     yang umum (mis. `password`, pernah tertulis di dokumen publik) dianggap bocor:
  *       - peran admin: kata sandi diganti acak (dicetak SEKALI ke terminal, tidak disimpan di mana pun),
- *         dipaksa diganti saat masuk pertama (password_expires_at), sesi dicabut;
+ *         dipaksa diganti saat masuk pertama (sandi_kedaluwarsa_at), sesi dicabut;
  *       - peran lain: status menjadi `nonaktif` (gerbang login menolaknya) dan sesi dicabut. Tidak dihapus:
  *         superadmin dapat mengaktifkannya kembali dari layar Pengguna dan menetapkan kata sandi baru.
  *  2. DATA DEMO KKN: pendaftaran bertema `DEMO-SERTIFIKAT-KKN-*` (dibuat migrasi 055 di semua lingkungan)
  *     beserta pesertanya (CASCADE). Dulu menjadi sertifikat "sah" yang dapat dicari publik lewat NIM.
- *  3. DATA SIMULASI SIMPERUM: antrean bernama/ber-NIK fiktif dan snapshot ber-source_mode=simulation.
+ *  3. DATA SIMULASI SIMPERUM: antrean bernama/ber-NIK fiktif dan snapshot ber-mode_sumber=simulation.
  * Hasil (hanya jumlah) dicatat di jejak audit sebagai `data_sampel_dibersihkan`.
  */
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
@@ -45,25 +45,25 @@ $baru_admin = [];
 
 // ---- 1. Akun berkata sandi bawaan
 echo "\n== 1. Akun dengan kata sandi bawaan ==\n";
-$akun = $m->query("SELECT id, email, role, status, password FROM usr_users WHERE password IS NOT NULL AND password <> ''")->fetch_all(MYSQLI_ASSOC);
+$akun = $m->query("SELECT id, email, peran, status, kata_sandi FROM usr_akun WHERE kata_sandi IS NOT NULL AND kata_sandi <> ''")->fetch_all(MYSQLI_ASSOC);
 $bocor = [];
 foreach ($akun as $a) {
-    foreach (KATA_SANDI_BAWAAN as $k) { if (password_verify($k, $a['password'])) { $bocor[] = $a; break; } }
+    foreach (KATA_SANDI_BAWAAN as $k) { if (password_verify($k, $a['kata_sandi'])) { $bocor[] = $a; break; } }
 }
 if ( ! $bocor) { echo "  tidak ada\n"; }
 foreach ($bocor as $a) {
-    $admin = $a['role'] === 'admin';
-    echo sprintf("  #%d %-28s peran=%-14s status=%-10s -> %s\n", $a['id'], samar($a['email']), $a['role'], $a['status'] ?? '-', $admin ? 'kata sandi DIPUTAR + wajib ganti' : 'DINONAKTIFKAN');
+    $admin = $a['peran'] === 'admin';
+    echo sprintf("  #%d %-28s peran=%-14s status=%-10s -> %s\n", $a['id'], samar($a['email']), $a['peran'], $a['status'] ?? '-', $admin ? 'kata sandi DIPUTAR + wajib ganti' : 'DINONAKTIFKAN');
     if ( ! $ya) { continue; }
     if ($admin) {
         $sandi = acak();
         $hash = password_hash($sandi, PASSWORD_BCRYPT);
-        $st = $m->prepare("UPDATE usr_users SET password = ?, password_changed_at = NOW(), password_expires_at = (NOW() - INTERVAL 1 MINUTE), login_attempts = 0, locked_until = NULL,
-                           active_session_hash = NULL, active_session_id_hash = NULL, active_session_at = NULL WHERE id = ?");
+        $st = $m->prepare("UPDATE usr_akun SET kata_sandi = ?, sandi_diganti_at = NOW(), sandi_kedaluwarsa_at = (NOW() - INTERVAL 1 MINUTE), gagal_masuk = 0, terkunci_sampai = NULL,
+                           sesi_aktif_hash = NULL, sesi_aktif_id_hash = NULL, sesi_aktif_at = NULL WHERE id = ?");
         $st->bind_param('si', $hash, $a['id']); $st->execute();
         if ($st->affected_rows === 1) { $ringkas['akun_admin_diputar']++; $baru_admin[] = [$a['email'], $sandi]; }
     } else {
-        $st = $m->prepare("UPDATE usr_users SET status = 'nonaktif', active_session_hash = NULL, active_session_id_hash = NULL, active_session_at = NULL WHERE id = ? AND (status IS NULL OR status <> 'nonaktif')");
+        $st = $m->prepare("UPDATE usr_akun SET status = 'nonaktif', sesi_aktif_hash = NULL, sesi_aktif_id_hash = NULL, sesi_aktif_at = NULL WHERE id = ? AND (status IS NULL OR status <> 'nonaktif')");
         $st->bind_param('i', $a['id']); $st->execute();
         $ringkas['akun_dinonaktifkan'] += $st->affected_rows > 0 ? 1 : 0;
     }
@@ -85,22 +85,22 @@ if ( ! function_exists('log_message')) { function log_message() {} }
 require APPPATH . 'libraries/Encryption_lib.php';
 $enc = new Encryption_lib();
 $id_simulasi = [];
-foreach ($m->query("SELECT id, nama_lengkap_ciphertext, nik_pengaju_ciphertext FROM sf_housing_queue WHERE source_mode = 'simulation'")->fetch_all(MYSQLI_ASSOC) as $r) {
+foreach ($m->query("SELECT id, nama_lengkap_ciphertext, nik_pengaju_ciphertext FROM sf_antrean_pengajuan WHERE mode_sumber = 'simulation'")->fetch_all(MYSQLI_ASSOC) as $r) {
     $nama = (string) $enc->decrypt($r['nama_lengkap_ciphertext']);
     $nik = (string) $enc->decrypt($r['nik_pengaju_ciphertext']);
     if (stripos($nama, 'Simulasi') !== FALSE || strpos($nik, '000000000000') === 0) { $id_simulasi[] = (int) $r['id']; }
 }
 $kondisi_antrean = $id_simulasi ? 'id IN (' . implode(',', $id_simulasi) . ')' : '0';
 $n_antrean = count($id_simulasi);
-$n_snap = jumlah($m, "SELECT COUNT(*) FROM sf_rekaman_simperum WHERE source_mode = 'simulation'");
+$n_snap = jumlah($m, "SELECT COUNT(*) FROM sf_rekaman_simperum WHERE mode_sumber = 'simulation'");
 echo "  antrean simulasi: $n_antrean, snapshot simulasi: $n_snap\n";
 if ($ya) {
-    if ($n_antrean > 0) { $m->query("DELETE FROM sf_housing_queue WHERE $kondisi_antrean"); $ringkas['antrean_simulasi_dihapus'] = $m->affected_rows; }
-    if ($n_snap > 0) { $m->query("DELETE FROM sf_rekaman_simperum WHERE source_mode = 'simulation'"); $ringkas['snapshot_simulasi_dihapus'] = $m->affected_rows; }
+    if ($n_antrean > 0) { $m->query("DELETE FROM sf_antrean_pengajuan WHERE $kondisi_antrean"); $ringkas['antrean_simulasi_dihapus'] = $m->affected_rows; }
+    if ($n_snap > 0) { $m->query("DELETE FROM sf_rekaman_simperum WHERE mode_sumber = 'simulation'"); $ringkas['snapshot_simulasi_dihapus'] = $m->affected_rows; }
 }
 
 if ($ya) {
-    $st = $m->prepare("INSERT INTO sys_jejak_audit (actor_role, aksi, objek_tipe, ringkasan, detail_json, ip, created_at) VALUES ('sistem', 'data_sampel_dibersihkan', 'konfigurasi', ?, ?, 'cli', NOW())");
+    $st = $m->prepare("INSERT INTO sys_jejak_audit (pelaku_peran, aksi, objek_tipe, ringkasan, detail_json, ip, created_at) VALUES ('sistem', 'data_sampel_dibersihkan', 'konfigurasi', ?, ?, 'cli', NOW())");
     $ring = 'Pembersih data sampel: ' . array_sum($ringkas) . ' entri';
     $json = json_encode($ringkas);
     $st->bind_param('ss', $ring, $json); $st->execute();

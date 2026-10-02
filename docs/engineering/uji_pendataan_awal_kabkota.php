@@ -23,11 +23,11 @@ $total = 0; $gagal = 0; $jars = []; $users = []; $asesmen = [];
 $cek = function ($ok, $l) use (&$total, &$gagal) { $total++; if (!$ok) $gagal++; echo ($ok ? '  OK    ' : '  GAGAL ') . $l . "\n"; };
 $akun = function ($role, $kab = NULL) use ($db, $tag, $sandi, &$users) {
     $e = "{$tag}_{$role}_" . mt_rand(1000, 9999) . '@example.test'; $h = password_hash($sandi, PASSWORD_BCRYPT);
-    $st = $db->prepare("INSERT INTO usr_users (name,email,password,role,kabupaten_id,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at) VALUES ('Uji PAw',?,?,?,?,'active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
+    $st = $db->prepare("INSERT INTO usr_akun (nama,email,kata_sandi,peran,kabupaten_id,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at) VALUES ('Uji PAw',?,?,?,?,'active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
     $st->bind_param('sssi', $e, $h, $role, $kab); $st->execute(); $users[] = $db->insert_id; return [$db->insert_id, $e];
 };
 $draft = function ($uid, $kab, $status, $step, $matriks) use ($db, &$asesmen) {
-    $st = $db->prepare("INSERT INTO sf_penilaian_perumahan (user_id,kabupaten_id,assessment_track,status,current_step,version_no,lock_version,source_mode,preliminary_matrix_ciphertext,created_at,updated_at) VALUES (?,?,'candidate_land',?,?,1,1,'simulation',?,NOW(),NOW())");
+    $st = $db->prepare("INSERT INTO sf_penilaian_perumahan (user_id,kabupaten_id,jalur_penilaian,status,langkah_sekarang,no_versi,versi_kunci,mode_sumber,matriks_awal_ciphertext,created_at,updated_at) VALUES (?,?,'candidate_land',?,?,1,1,'simulation',?,NOW(),NOW())");
     $st->bind_param('iisss', $uid, $kab, $status, $step, $matriks); $st->execute(); $asesmen[] = $db->insert_id; return $db->insert_id;
 };
 $http = function ($jar, $path, $post = NULL) use ($BASE) {
@@ -67,8 +67,8 @@ try {
     $cek(strpos($bw, $prog) === FALSE, 'Warga TIDAK bisa membuka layar ini');
 } finally {
     foreach ($asesmen as $id) $db->query("DELETE FROM sf_penilaian_perumahan WHERE id=" . (int) $id);
-    foreach ($users as $id) $db->query("DELETE FROM usr_users WHERE id=" . (int) $id);
-    $db->query("DELETE FROM usr_users WHERE email LIKE '{$tag}_%@example.test'");
+    foreach ($users as $id) $db->query("DELETE FROM usr_akun WHERE id=" . (int) $id);
+    $db->query("DELETE FROM usr_akun WHERE email LIKE '{$tag}_%@example.test'");
     foreach ($jars as $jj) @unlink($jj);
 }
 echo "\nRINGKASAN: {$total} pemeriksaan, {$gagal} gagal\n";

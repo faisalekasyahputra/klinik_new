@@ -102,6 +102,6 @@ check(strpos($sp, 'no-store') !== FALSE && strpos($sp, 'private') !== FALSE, 'se
 check(preg_match('/filename="berkas/', $sp) === 1, 'serve_private_file: nama unduhan harus netral (bukan nama tersimpan/asli)');
 check(strpos($sp, 'Content-Length') !== FALSE, 'serve_private_file: Content-Length harus dikirim');
 check(strpos($sp, "sandbox") !== FALSE && strpos($sp, "default-src 'none'") !== FALSE, 'serve_private_file: gambar harus dilindungi CSP sandbox');
-check(strpos($sp, 'basename((string) $stored_name)') !== FALSE || strpos($mc, 'basename((string) $stored_name)') !== FALSE, 'serve_private_file: nama berkas harus di-basename (anti path traversal)');
+check(strpos($sp, 'basename((string) $nama_simpan)') !== FALSE || strpos($mc, 'basename((string) $nama_simpan)') !== FALSE, 'serve_private_file: nama berkas harus di-basename (anti path traversal)');
 
 echo "response_safety_test: OK ($total pemeriksaan; $n_json respons JSON, " . count($WAJIB) . " header wajib)\n";

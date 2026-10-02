@@ -52,7 +52,7 @@ class Admin_Bank_Data extends Admin_Controller {
         $now = date('Y-m-d H:i:s');
         $row = ['jenis' => $jenis, 'judul' => $judul, 'deskripsi' => $deskripsi === '' ? NULL : $deskripsi,
                 'berkas' => self::DIR . $nama, 'ukuran' => (int) $f['size'], 'aktif' => 1, 'urutan' => max(0, min(999, $urutan)),
-                'diunggah_oleh' => (int) $this->get_user_id(), 'created_at' => $now, 'updated_at' => $now];
+                'uploaded_by' => (int) $this->get_user_id(), 'created_at' => $now, 'updated_at' => $now];
         if ( ! $this->db->insert(self::TABEL, $row)) {
             @unlink($dir . $nama);
             return $this->gagal('Dokumen belum tersimpan. Coba lagi.');

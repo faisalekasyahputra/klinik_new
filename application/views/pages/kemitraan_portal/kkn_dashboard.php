@@ -13,7 +13,7 @@
  *
  * Identitas universitas (nama akun) dan kontaknya (No. HP) SENGAJA tidak
  * diminta ulang di formulir Tambah KKN - keduanya diambil dari akun sendiri
- * (session name + usr_users.phone), makanya tautan "Profil Saya" di sidebar
+ * (session name + usr_akun.no_hp), makanya tautan "Profil Saya" di sidebar
  * benar-benar dipakai untuk melengkapinya, bukan hiasan.
  */
 $label = 'mb-1 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-brand-muted';

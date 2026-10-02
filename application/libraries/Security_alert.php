@@ -104,9 +104,9 @@ class Security_alert {
         $sesi = isset($this->CI->session) ? $this->CI->session : NULL;
         $detail['tingkat'] = $tingkat;
         return (bool) $this->CI->db->insert('sys_jejak_audit', [
-            'actor_id'    => $sesi ? ($sesi->userdata('user_id') ?: NULL) : NULL,
-            'actor_email' => $sesi ? ($sesi->userdata('email') ?: NULL) : NULL,
-            'actor_role'  => $sesi ? ($sesi->userdata('role') ?: NULL) : NULL,
+            'pelaku_id'    => $sesi ? ($sesi->userdata('user_id') ?: NULL) : NULL,
+            'pelaku_email' => $sesi ? ($sesi->userdata('email') ?: NULL) : NULL,
+            'pelaku_peran'  => $sesi ? ($sesi->userdata('role') ?: NULL) : NULL,
             'aksi'        => substr((string) ($this->cfg['aksi'] ?? 'peringatan_keamanan'), 0, 40),
             'objek_tipe'  => substr((string) $tipe, 0, 40),
             'objek_id'    => $tingkat,

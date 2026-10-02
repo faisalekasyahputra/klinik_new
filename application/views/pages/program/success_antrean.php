@@ -1,5 +1,5 @@
 <?php
-$ticket_code = isset($ticket_code) && $ticket_code !== '' ? $ticket_code : NULL;
+$kode_tiket = isset($kode_tiket) && $kode_tiket !== '' ? $kode_tiket : NULL;
 $escape = static function ($value) {
     return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 };
@@ -28,10 +28,10 @@ $escape = static function ($value) {
         <div class="mx-auto mt-8 max-w-xl rounded-2xl border border-dashed border-[color:var(--portal-brand)] bg-[color:var(--portal-bg)] p-5 text-center" aria-label="Nomor tiket pengajuan">
             <p class="text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--portal-text-muted)]">Nomor tiket Anda</p>
             <p class="mt-2 break-all font-mono text-2xl font-black tracking-[0.12em] text-[color:var(--portal-text)] sm:text-3xl">
-                <?= $ticket_code ? $escape($ticket_code) : 'MENUNGGU SISTEM TIKET' ?>
+                <?= $kode_tiket ? $escape($kode_tiket) : 'MENUNGGU SISTEM TIKET' ?>
             </p>
-            <?php if ($ticket_code): ?>
-                <button type="button" class="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-2 text-xs font-bold text-[color:var(--portal-text)] transition hover:border-[color:var(--portal-brand)]" onclick="navigator.clipboard && navigator.clipboard.writeText('<?= $escape($ticket_code) ?>')">
+            <?php if ($kode_tiket): ?>
+                <button type="button" class="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-4 py-2 text-xs font-bold text-[color:var(--portal-text)] transition hover:border-[color:var(--portal-brand)]" onclick="navigator.clipboard && navigator.clipboard.writeText('<?= $escape($kode_tiket) ?>')">
                     <i class="fa-regular fa-copy" aria-hidden="true"></i> Salin nomor tiket
                 </button>
             <?php else: ?>

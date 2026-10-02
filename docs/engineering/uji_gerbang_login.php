@@ -106,7 +106,7 @@ function login($n, $email) {
 
 function buat_akun($peran) {
     $email = 'uji_gerbang_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
-    $id = tulis('INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+    $id = tulis('INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
                  VALUES (?,?,?,?,?, "active",1,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji Gerbang',
          'uji_gerbang_' . mt_rand(10000, 99999), $peran]);
@@ -116,7 +116,7 @@ function buat_akun($peran) {
 
 function bersihkan() {
     if ( ! empty($GLOBALS['db'])) {
-        foreach ($GLOBALS['users'] as $id) { q('DELETE FROM usr_users WHERE id=?', [$id]); }
+        foreach ($GLOBALS['users'] as $id) { q('DELETE FROM usr_akun WHERE id=?', [$id]); }
     }
     foreach ($GLOBALS['jar'] as $j) { @unlink($j); }
 }

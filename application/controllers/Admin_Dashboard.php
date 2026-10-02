@@ -10,20 +10,20 @@ class Admin_Dashboard extends Admin_Controller {
      * muncul saat angkanya diklik. String = kondisi mentah (tanpa escape).
      */
     private const KARTU = [
-        'validasi_antrean' => ['label' => 'Antrean Perumahan', 'lihat' => 'Lihat antrean', 'url' => 'Admin', 'table' => 'sf_housing_queue', 'rincian' => [
+        'validasi_antrean' => ['label' => 'Antrean Perumahan', 'lihat' => 'Lihat antrean', 'url' => 'Admin', 'table' => 'sf_antrean_pengajuan', 'rincian' => [
             ['Menunggu', ['status_antrean' => 'pending'], 'Admin?status=pending'],
             ['Perlu perbaikan', ['status_antrean' => 'needs_revision'], 'Admin?status=needs_revision'],
             ['Disetujui', ['status_antrean' => 'approved'], 'Admin?status=approved'],
             ['Ditolak', ['status_antrean' => 'rejected'], 'Admin?status=rejected'],
         ]],
-        'srp2_verifikasi' => ['label' => 'Sertifikasi SRP2', 'lihat' => 'Lihat pengajuan', 'url' => 'Admin_Srp2/pending', 'table' => 'srp2_registrations', 'rincian' => [
+        'srp2_verifikasi' => ['label' => 'Sertifikasi SRP2', 'lihat' => 'Lihat pengajuan', 'url' => 'Admin_Srp2/pending', 'table' => 'srp2_pengajuan', 'rincian' => [
             ['Menunggu', ['status_verifikasi' => 'Pending'], 'Admin_Srp2/pending?status=Pending'],
             ['Diminta perbaikan', ['status_verifikasi' => 'Draft'], 'Admin_Srp2/pending?status=Draft'],
             // NULL: dihitung lewat Admin_Srp2::keadaan_berlaku(), lihat srp2_aktif().
             ['Bersertifikat aktif', NULL, 'Admin_Srp2'],
         ]],
         'aduan_semua' => ['label' => 'Aduan Warga', 'lihat' => 'Lihat aduan', 'url' => 'Admin_Aduan', 'table' => 'aduan', 'rincian' => [
-            ['Belum diteruskan', 'bidang IS NULL', 'Admin_Aduan?bidang=belum'],
+            ['Belum diteruskan', 'bidang_kode IS NULL', 'Admin_Aduan?bidang=belum'],
             ['Baru', ['status' => 'Baru'], 'Admin_Aduan?status=Baru'],
             ['Diproses', ['status' => 'Diproses'], 'Admin_Aduan?status=Diproses'],
             ['Selesai', ['status' => 'Selesai'], 'Admin_Aduan?status=Selesai'],
@@ -81,8 +81,8 @@ class Admin_Dashboard extends Admin_Controller {
         $data['rekam'] = $tampil('rekam_pantau') ? $this->ringkas_rekam_data() : NULL;
 
         // Akun per peran. Staf = ketiga peran admin; akun tanpa peran tidak dihitung.
-        $per_peran = array_column($this->db->select('role, COUNT(*) AS n', FALSE)
-            ->group_by('role')->get('usr_users')->result_array(), 'n', 'role');
+        $per_peran = array_column($this->db->select('peran, COUNT(*) AS n', FALSE)
+            ->group_by('peran')->get('usr_akun')->result_array(), 'n', 'peran');
         $data['akun_peran'] = [
             'Warga'       => (int) ($per_peran['warga'] ?? 0),
             'Pengembang'  => (int) ($per_peran['pengembang'] ?? 0),
@@ -95,11 +95,11 @@ class Admin_Dashboard extends Admin_Controller {
         $data['total_diskusi']   = $hitung('forum_diskusi');
         $data['total_psu']       = $hitung('psu_serah_terima');
         $data['total_bank_data'] = $hitung('sf_bank_data_dokumen');
-        // Kunci hitung warga terdaftar: akun warga yang mengikat NIK (usr_users.nik_lookup_hash, UNIQUE).
-        $data['warga_terdaftar'] = (int) $this->db->where('role', 'warga')
-            ->where('nik_lookup_hash IS NOT NULL', NULL, FALSE)->count_all_results('usr_users');
+        // Kunci hitung warga terdaftar: akun warga yang mengikat NIK (usr_akun.nik_lookup_hash, UNIQUE).
+        $data['warga_terdaftar'] = (int) $this->db->where('peran', 'warga')
+            ->where('nik_lookup_hash IS NOT NULL', NULL, FALSE)->count_all_results('usr_akun');
         $data['tercocokkan_simperum'] = $this->db->table_exists('sf_data_simperum')
-            ? (int) $this->db->where('response_status', 'found')->count_all_results('sf_data_simperum') : 0;
+            ? (int) $this->db->where('status_respons', 'found')->count_all_results('sf_data_simperum') : 0;
         $this->load->library('Security_alert');
         $data['peringatan_keamanan'] = $this->security_alert->ringkasan();
 
@@ -107,7 +107,7 @@ class Admin_Dashboard extends Admin_Controller {
         $data['antrean_tanpa_wilayah'] = (int) $this->db
             ->where('kabupaten_id IS NULL', NULL, FALSE)
             ->where('status_antrean', 'pending')
-            ->count_all_results('sf_housing_queue');
+            ->count_all_results('sf_antrean_pengajuan');
 
         $data['aktivitas'] = $this->aktivitas_terkini();
 
@@ -120,7 +120,7 @@ class Admin_Dashboard extends Admin_Controller {
         require_once APPPATH . 'controllers/Admin_Srp2.php';
         $n = 0;
         foreach ($this->db->select('status_sertifikasi, sertifikat_berakhir')
-            ->get('srp2_certified_developers')->result() as $r) {
+            ->get('srp2_direktori_pengembang')->result() as $r) {
             if (Admin_Srp2::keadaan_berlaku($r->status_sertifikasi ?? '', $r->sertifikat_berakhir ?? '')[0] === 'aktif') { $n++; }
         }
         return $n;
@@ -154,7 +154,7 @@ class Admin_Dashboard extends Admin_Controller {
         $items = [];
 
         foreach ($this->db->select('nama_lengkap_ciphertext, status_antrean, created_at')
-            ->order_by('created_at', 'DESC')->limit(6)->get('sf_housing_queue')->result() as $r) {
+            ->order_by('created_at', 'DESC')->limit(6)->get('sf_antrean_pengajuan')->result() as $r) {
             $this->buka_pii_antrean($r); // nama tiket lama terenkripsi (migrasi 067)
             $items[] = [
                 'icon' => 'ph-ticket', 'jenis' => 'Antrean Perumahan',
@@ -176,7 +176,7 @@ class Admin_Dashboard extends Admin_Controller {
         $this->load->helper('srp2');
         $label_srp2 = srp2_label_status();
         foreach ($this->db->select('nama_perusahaan, status_verifikasi, updated_at')
-            ->order_by('updated_at', 'DESC')->limit(6)->get('srp2_registrations')->result() as $r) {
+            ->order_by('updated_at', 'DESC')->limit(6)->get('srp2_pengajuan')->result() as $r) {
             $items[] = [
                 'icon' => 'ph-seal-check', 'jenis' => 'Sertifikasi SRP2',
                 'judul' => $r->nama_perusahaan ?: 'Pengajuan SRP2',
@@ -196,7 +196,7 @@ class Admin_Dashboard extends Admin_Controller {
         }
 
         foreach ($this->db->select('jt.status, jt.created_at, d.judul_topik')
-            ->from('forum_janji_temu jt')->join('forum_diskusi d', 'd.id_diskusi = jt.id_diskusi', 'left')
+            ->from('forum_janji_temu jt')->join('forum_diskusi d', 'd.id = jt.diskusi_id', 'left')
             ->order_by('jt.created_at', 'DESC')->limit(6)->get()->result() as $r) {
             $items[] = [
                 'icon' => 'ph-calendar-check', 'jenis' => 'Janji Temu',

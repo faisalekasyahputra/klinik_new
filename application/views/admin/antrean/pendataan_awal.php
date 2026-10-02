@@ -56,7 +56,7 @@ $langkah = [
                             <span class="text-xs text-gray-500 dark:text-brand-muted">Belum ada program yang cocok</span>
                         <?php endif; ?>
                     </td>
-                    <td class="px-4 py-3 align-top text-xs"><?= html_escape($langkah[$r['current_step']] ?? 'Belum melangkah lebih jauh') ?></td>
+                    <td class="px-4 py-3 align-top text-xs"><?= html_escape($langkah[$r['langkah_sekarang']] ?? 'Belum melangkah lebih jauh') ?></td>
                     <td class="px-4 py-3 align-top text-xs"><?= html_escape(tgl_id($r['updated_at'], TRUE, TRUE)) ?></td>
                 </tr>
                 <?php endforeach; endif; ?>

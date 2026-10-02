@@ -76,22 +76,22 @@ function cleanup_r7() {
     global $scopeKeys, $testedRateKeys, $preservedRateRows;
     if (!$db) return;
     if ($userId) {
-        $db->run('DELETE FROM sf_housing_queue WHERE user_id=?',[$userId]);
+        $db->run('DELETE FROM sf_antrean_pengajuan WHERE user_id=?',[$userId]);
         $db->run('DELETE FROM sf_penilaian_perumahan WHERE user_id=?',[$userId]);
         $db->run('DELETE FROM sf_profil_warga WHERE user_id=?',[$userId]);
     }
     foreach(array_unique($snapshotIds) as $id)$db->run('DELETE FROM sf_rekaman_simperum WHERE id=?',[$id]);
-    if ($userId)$db->run('DELETE FROM usr_users WHERE id=?',[$userId]);
+    if ($userId)$db->run('DELETE FROM usr_akun WHERE id=?',[$userId]);
     foreach (array_unique(array_merge(
         $testedRateKeys,
         array_diff($rateKeysAfter, $rateKeysBefore)
     )) as $key) {
-        $db->run('DELETE FROM sys_rate_limits WHERE limit_key=?', [$key]);
+        $db->run('DELETE FROM sys_batas_laju WHERE kunci=?', [$key]);
     }
     foreach ($preservedRateRows as $row) {
         $db->run(
-            'INSERT INTO sys_rate_limits (limit_key,window_started_at,failed_attempts) VALUES (?,?,?)',
-            [$row['limit_key'], $row['window_started_at'], $row['failed_attempts']]
+            'INSERT INTO sys_batas_laju (kunci,jendela_mulai_at,jumlah_gagal) VALUES (?,?,?)',
+            [$row['kunci'], $row['jendela_mulai_at'], $row['jumlah_gagal']]
         );
     }
 }
@@ -100,7 +100,7 @@ register_shutdown_function('cleanup_r7');
 if(!is_file(ENV_PATH))die(".env tidak ditemukan.\n");
 $env=env_r7(ENV_PATH);$db=new DbR7($env);
 $email='uji_r7_'.time().'_'.mt_rand(1000,9999).'@example.test';
-$userId=$db->run("INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at) VALUES (?,?,'Uji R7','uji_r7','warga','active',1,NOW())",[$email,password_hash(PASSWORD,PASSWORD_BCRYPT)]);
+$userId=$db->run("INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at) VALUES (?,?,'Uji R7','uji_r7','warga','active',1,NOW())",[$email,password_hash(PASSWORD,PASSWORD_BCRYPT)]);
 
 $nikUji='0000000000000001';
 $nikHash=hash_hmac('sha256',$nikUji,$env['KPKP_DATA_PEPPER']);
@@ -118,11 +118,11 @@ $testedRateKeys=array_merge($scopeKeys,[
     hash('sha256','warga_lookup:nik:'.$nikHash),
 ]);
 foreach($testedRateKeys as $key){
-    $rows=$db->rows('SELECT limit_key,window_started_at,failed_attempts FROM sys_rate_limits WHERE limit_key=?',[$key]);
+    $rows=$db->rows('SELECT kunci,jendela_mulai_at,jumlah_gagal FROM sys_batas_laju WHERE kunci=?',[$key]);
     if($rows)$preservedRateRows[]=$rows[0];
-    $db->run('DELETE FROM sys_rate_limits WHERE limit_key=?',[$key]);
+    $db->run('DELETE FROM sys_batas_laju WHERE kunci=?',[$key]);
 }
-$rateKeysBefore=array_column($db->rows('SELECT limit_key FROM sys_rate_limits'),'limit_key');
+$rateKeysBefore=array_column($db->rows('SELECT kunci FROM sys_batas_laju'),'kunci');
 
 $http=new HttpR7();$http->get('Auth/login');
 $login=$http->post('Auth/do_login',['email'=>$email,'password'=>PASSWORD]);
@@ -138,26 +138,26 @@ check_r7($csrf['status']===403
 
 // Scope lain yang penuh tidak boleh memblokir lookup warga.
 foreach ($scopeKeys as $scopeKey) {
-    $db->run("INSERT INTO sys_rate_limits (limit_key,window_started_at,failed_attempts) VALUES (?,NOW(),255) ON DUPLICATE KEY UPDATE window_started_at=NOW(),failed_attempts=255",[$scopeKey]);
+    $db->run("INSERT INTO sys_batas_laju (kunci,jendela_mulai_at,jumlah_gagal) VALUES (?,NOW(),255) ON DUPLICATE KEY UPDATE jendela_mulai_at=NOW(),jumlah_gagal=255",[$scopeKey]);
 }
 $first=$http->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000001','birth_date'=>'1980-01-01']);
 check_r7($first['status']!==429,'Penghitung scope register tidak memblokir lookup warga');
 
-$snapshotIds=array_column($db->rows('SELECT simperum_snapshot_id FROM sf_penilaian_perumahan WHERE user_id=? AND simperum_snapshot_id IS NOT NULL',[$userId]),'simperum_snapshot_id');
+$snapshotIds=array_column($db->rows('SELECT rekaman_simperum_id FROM sf_penilaian_perumahan WHERE user_id=? AND rekaman_simperum_id IS NOT NULL',[$userId]),'rekaman_simperum_id');
 $responses=[$first];
 for($i=1;$i<11;$i++)$responses[]=$http->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000001','birth_date'=>'1980-01-01']);
 $blocked=$responses[10];
 check_r7($blocked['status']===429&&$blocked['retry_after']!==NULL&&$blocked['retry_after']>0,
     'Lookup ke-11 diblokir 429 dengan Retry-After');
 
-$rateKeysAfter=array_column($db->rows('SELECT limit_key FROM sys_rate_limits'),'limit_key');
+$rateKeysAfter=array_column($db->rows('SELECT kunci FROM sys_batas_laju'),'kunci');
 $newKeys=array_values(array_diff($rateKeysAfter,$rateKeysBefore,$scopeKeys));
 check_r7(count($newKeys)>=3
     && !in_array('0000000000000001',$newKeys,TRUE)
     && count(array_filter($newKeys,fn($key)=>preg_match('/^[a-f0-9]{64}$/',$key)))===count($newKeys),
     'Registry mencatat dimensi IP, akun, dan hash NIK tanpa PII mentah');
 
-foreach($newKeys as $key)$db->run("UPDATE sys_rate_limits SET window_started_at=DATE_SUB(NOW(),INTERVAL 1 DAY) WHERE limit_key=?",[$key]);
+foreach($newKeys as $key)$db->run("UPDATE sys_batas_laju SET jendela_mulai_at=DATE_SUB(NOW(),INTERVAL 1 DAY) WHERE kunci=?",[$key]);
 $reset=$http->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000001','birth_date'=>'1980-01-01']);
 check_r7($reset['status']!==429,'Jendela kedaluwarsa reset dan lookup dapat dilanjutkan');
 

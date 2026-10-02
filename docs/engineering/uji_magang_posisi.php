@@ -65,7 +65,7 @@ function q($sql, $p = []) {
 function bersihkan() {
     if (empty($GLOBALS['db'])) { return; }
     $GLOBALS['db']->query("DELETE FROM kkn_magang_posisi WHERE nama_posisi LIKE 'UJIPOS %'");
-    foreach ($GLOBALS['users'] as $id) { $GLOBALS['db']->query('DELETE FROM usr_users WHERE id=' . (int) $id); }
+    foreach ($GLOBALS['users'] as $id) { $GLOBALS['db']->query('DELETE FROM usr_akun WHERE id=' . (int) $id); }
     @unlink(jar());
 }
 function jar() { static $j; if ( ! $j) { $j = tempnam(sys_get_temp_dir(), 'posisi_'); } return $j; }
@@ -134,7 +134,7 @@ $kode_bidang = $bidang[0]['kode'];
 
 $emailAdm = 'uji_posisi_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
 $uid = NULL;
-$st = $GLOBALS['db']->prepare('INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+$st = $GLOBALS['db']->prepare('INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
     VALUES (?,?,?,?,"admin","active",1,NOW())');
 $nm = 'Uji Posisi'; $un = 'uji_posisi_' . mt_rand(10000, 99999);
 $pw = password_hash(SANDI, PASSWORD_BCRYPT);

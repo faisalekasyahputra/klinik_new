@@ -296,19 +296,19 @@ class MY_Controller extends CI_Controller {
         $id = (int) $this->session->userdata('user_id');
         $token = (string) $this->session->userdata('session_auth_token');
         $session_id = (string) $this->session->session_id;
-        $row = $this->db->select('active_session_hash,active_session_id_hash,password_changed_at,password_expires_at')
-            ->get_where('usr_users', ['id' => $id])->row();
-        $token_valid = $row && ! empty($token) && ! empty($row->active_session_hash)
-            && hash_equals((string) $row->active_session_hash, hash('sha256', $token));
-        $session_id_valid = $row && ! empty($session_id) && ! empty($row->active_session_id_hash)
-            && hash_equals((string) $row->active_session_id_hash, hash('sha256', $session_id));
+        $row = $this->db->select('sesi_aktif_hash,sesi_aktif_id_hash,sandi_diganti_at,sandi_kedaluwarsa_at')
+            ->get_where('usr_akun', ['id' => $id])->row();
+        $token_valid = $row && ! empty($token) && ! empty($row->sesi_aktif_hash)
+            && hash_equals((string) $row->sesi_aktif_hash, hash('sha256', $token));
+        $session_id_valid = $row && ! empty($session_id) && ! empty($row->sesi_aktif_id_hash)
+            && hash_equals((string) $row->sesi_aktif_id_hash, hash('sha256', $session_id));
         // CodeIgniter mengganti ID sesi tiap sess_time_to_update (300 detik) dan MEMBAWA isi
         // sesi, termasuk token. Token yang masih cocok membuktikan ini sesi yang sama, jadi
         // hash ID diperbarui alih-alih mengeluarkan pengguna (dulu semua peran terlempar
         // sekitar 5 menit sekali, 27 Sep 2026). Login di perangkat lain tetap ditendang
         // karena tokennya berbeda.
         if ($token_valid && ! $session_id_valid && ! empty($session_id)) {
-            $this->db->where('id', $id)->update('usr_users', ['active_session_id_hash' => hash('sha256', $session_id)]);
+            $this->db->where('id', $id)->update('usr_akun', ['sesi_aktif_id_hash' => hash('sha256', $session_id)]);
             $session_id_valid = TRUE;
         }
         if ( ! $token_valid || ! $session_id_valid) {
@@ -319,7 +319,7 @@ class MY_Controller extends CI_Controller {
             $this->session->sess_regenerate(TRUE);
             // "Perangkat lain" hanya benar kalau token sesi ini digantikan.
             // ID sesi yang tidak cocok juga tidak membuktikan login ganda.
-            $message = ($row && ! $token_valid && ! empty($token) && ! empty($row->active_session_hash))
+            $message = ($row && ! $token_valid && ! empty($token) && ! empty($row->sesi_aktif_hash))
                 ? 'Sesi ini berakhir karena akun digunakan untuk masuk pada perangkat lain.'
                 : 'Sesi Anda telah berakhir. Silakan masuk kembali.';
             if ($this->input->is_ajax_request()) {
@@ -330,7 +330,7 @@ class MY_Controller extends CI_Controller {
             redirect('Auth/login'); exit;
         }
 
-        $expired = ! empty($row->password_expires_at) && strtotime($row->password_expires_at) <= time();
+        $expired = ! empty($row->sandi_kedaluwarsa_at) && strtotime($row->sandi_kedaluwarsa_at) <= time();
         if ( ! $expired) { return; }
         $this->session->set_userdata('password_change_required', TRUE);
         $controller = strtolower((string) $this->router->fetch_class());
@@ -372,7 +372,7 @@ class MY_Controller extends CI_Controller {
         $id = (int) $this->session->userdata('user_id');
         if ($id < 1) { return; }
 
-        $row = $this->db->select('status')->get_where('usr_users', ['id' => $id])->row();
+        $row = $this->db->select('status')->get_where('usr_akun', ['id' => $id])->row();
 
         // Baris yang HILANG juga mengakhiri sesi: akun yang dihapus tidak boleh
         // terus berjalan hanya karena cookie-nya masih ada.
@@ -473,9 +473,9 @@ class MY_Controller extends CI_Controller {
         try {
             if ( ! $this->db->table_exists('sys_jejak_audit')) { return FALSE; }
             $saved = $this->db->insert('sys_jejak_audit', [
-                'actor_id'    => $this->get_user_id() ?: NULL,
-                'actor_email' => $this->session->userdata('email') ?: NULL,
-                'actor_role'  => $this->session->userdata('role') ?: NULL,
+                'pelaku_id'    => $this->get_user_id() ?: NULL,
+                'pelaku_email' => $this->session->userdata('email') ?: NULL,
+                'pelaku_peran'  => $this->session->userdata('role') ?: NULL,
                 'aksi'        => substr((string) $aksi, 0, 40),
                 'objek_tipe'  => $objek_tipe !== NULL ? substr((string) $objek_tipe, 0, 40) : NULL,
                 'objek_id'    => $objek_id !== NULL ? substr((string) $objek_id, 0, 60) : NULL,
@@ -669,10 +669,10 @@ class MY_Controller extends CI_Controller {
      * Pesan jatah unggahan (form keamanan poin 11.1); FALSE + $error bila kuota pengguna terlampaui.
      * Gagal-tertutup bila buku kuota tidak dapat ditulis.
      */
-    protected function reserve_upload_quota($domain, $owner_id, $stored_name, $size, &$error = NULL) {
+    protected function reserve_upload_quota($domain, $owner_id, $nama_simpan, $size, &$error = NULL) {
         try {
             $id = $this->upload_identity();
-            return $this->upload_quota->reserve($id['actor'], $id['limits'], $domain, $owner_id, $stored_name, $size, $error);
+            return $this->upload_quota->reserve($id['actor'], $id['limits'], $domain, $owner_id, $nama_simpan, $size, $error);
         } catch (Throwable $e) {
             log_message('error', 'reserve_upload_quota: ' . $e->getMessage());
             $error = 'Gagal memeriksa kuota unggahan. Coba lagi.';
@@ -680,10 +680,10 @@ class MY_Controller extends CI_Controller {
         }
     }
 
-    protected function release_upload_quota($domain, $owner_id, $stored_name) {
+    protected function release_upload_quota($domain, $owner_id, $nama_simpan) {
         try {
             $id = $this->upload_identity();
-            $this->upload_quota->release($id['actor'], $domain, $owner_id, $stored_name);
+            $this->upload_quota->release($id['actor'], $domain, $owner_id, $nama_simpan);
         } catch (Throwable $e) {
             log_message('error', 'release_upload_quota: ' . $e->getMessage());
         }
@@ -747,15 +747,15 @@ class MY_Controller extends CI_Controller {
      * basename() dipakai pada nama file supaya nilai dari DB yang (entah
      * bagaimana) memuat path tidak bisa membaca file di luar direktorinya.
      */
-    protected function serve_private_file($domain, $owner_id, $stored_name, $mime = 'application/octet-stream') {
-        $path = $this->private_upload_dir($domain, $owner_id) . basename((string) $stored_name);
-        if (empty($stored_name) || ! is_file($path)) {
+    protected function serve_private_file($domain, $owner_id, $nama_simpan, $mime = 'application/octet-stream') {
+        $path = $this->private_upload_dir($domain, $owner_id) . basename((string) $nama_simpan);
+        if (empty($nama_simpan) || ! is_file($path)) {
             // 404 ke klien tetap opaque (anti-IDOR), tapi penyebabnya WAJIB
             // tercatat - "mengapa 404" tidak boleh butuh bedah DB manual.
             log_message('error', sprintf(
                 'serve_private_file 404: domain=%s owner=%s stored=%s (%s)',
-                $domain, $owner_id, (string) $stored_name,
-                empty($stored_name) ? 'stored_name kosong' : 'berkas tidak ada di disk'
+                $domain, $owner_id, (string) $nama_simpan,
+                empty($nama_simpan) ? 'nama_simpan kosong' : 'berkas tidak ada di disk'
             ));
             show_404(); return;
         }
@@ -800,23 +800,23 @@ class MY_Controller extends CI_Controller {
     protected function antrean_table_data($kabupaten_id = NULL) {
         // Nama pemohon terenkripsi sejak migrasi 067: tidak bisa diurutkan maupun dicari di SQL.
         $kolom_sort = [
-            'sf_housing_queue.created_at', 'sf_programs.nama_program', 'sf_housing_queue.status_antrean',
+            'sf_antrean_pengajuan.created_at', 'sf_program.nama_program', 'sf_antrean_pengajuan.status_antrean',
         ];
-        $table = $this->table_state($kolom_sort, 'sf_housing_queue.created_at');
+        $table = $this->table_state($kolom_sort, 'sf_antrean_pengajuan.created_at');
 
         $status = $this->input->get('status', TRUE);
         $status = in_array($status, ['pending', 'needs_revision', 'approved', 'rejected'], TRUE) ? $status : NULL;
         $tanpa_wilayah = $kabupaten_id === NULL && $this->input->get('tanpa_wilayah', TRUE) === '1';
 
-        $this->db->from('sf_housing_queue')
-            ->join('sf_programs', 'sf_housing_queue.program_id = sf_programs.id', 'left');
-        if ($kabupaten_id !== NULL) { $this->db->where('sf_housing_queue.kabupaten_id', $kabupaten_id); }
-        if ($status) { $this->db->where('sf_housing_queue.status_antrean', $status); }
-        if ($tanpa_wilayah) { $this->db->where('sf_housing_queue.kabupaten_id IS NULL', NULL, FALSE); }
+        $this->db->from('sf_antrean_pengajuan')
+            ->join('sf_program', 'sf_antrean_pengajuan.program_id = sf_program.id', 'left');
+        if ($kabupaten_id !== NULL) { $this->db->where('sf_antrean_pengajuan.kabupaten_id', $kabupaten_id); }
+        if ($status) { $this->db->where('sf_antrean_pengajuan.status_antrean', $status); }
+        if ($tanpa_wilayah) { $this->db->where('sf_antrean_pengajuan.kabupaten_id IS NULL', NULL, FALSE); }
         if ($table['q'] !== '') {
             $this->db->group_start()
-                ->like('sf_housing_queue.ticket_code', $table['q'])
-                ->or_like('sf_programs.nama_program', $table['q']);
+                ->like('sf_antrean_pengajuan.kode_tiket', $table['q'])
+                ->or_like('sf_program.nama_program', $table['q']);
             /* NIK dicari hanya utuh 16 digit, lewat sidiknya (migrasi 067): tiket lama menyimpannya
                di antrean, tiket wizard di sf_profil_warga. Klausa ini di dalam group yang di-AND
                dengan scope wilayah, jadi NIK wilayah lain tetap tidak muncul. Pencarian nama
@@ -824,9 +824,9 @@ class MY_Controller extends CI_Controller {
             if (preg_match('/^\d{16}$/', $table['q'])) {
                 $this->load->library('encryption_lib');
                 $sidik = $this->encryption_lib->deterministic_hash($table['q']);
-                $this->db->or_where('sf_housing_queue.nik_pengaju_lookup_hash', $sidik)
-                    ->or_where('sf_housing_queue.assessment_id IN (SELECT a.id FROM sf_penilaian_perumahan a'
-                        . ' JOIN sf_profil_warga p ON p.id = a.citizen_profile_id'
+                $this->db->or_where('sf_antrean_pengajuan.nik_pengaju_lookup_hash', $sidik)
+                    ->or_where('sf_antrean_pengajuan.penilaian_id IN (SELECT a.id FROM sf_penilaian_perumahan a'
+                        . ' JOIN sf_profil_warga p ON p.id = a.profil_warga_id'
                         . ' WHERE p.nik_lookup_hash = ' . $this->db->escape($sidik) . ')', NULL, FALSE);
             }
             $this->db->group_end();
@@ -835,7 +835,7 @@ class MY_Controller extends CI_Controller {
         // FALSE = pertahankan state query builder untuk query ambil di bawah.
         $table += $this->paginate_state($this->db->count_all_results('', FALSE));
 
-        $queue = $this->db->select('sf_housing_queue.*, sf_programs.nama_program')
+        $queue = $this->db->select('sf_antrean_pengajuan.*, sf_program.nama_program')
             ->order_by($table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
             ->get()->result();
@@ -866,34 +866,35 @@ class MY_Controller extends CI_Controller {
         return $row;
     }
 
-    protected function assessment_detail_data($queue_id, $kabupaten_id = NULL) {
+    protected function assessment_detail_data($antrean_id, $kabupaten_id = NULL) {
         $this->load->model('Housing_assessment_model');
         $this->load->library('encryption_lib');
         $this->load->library('Matriks_program_ruleset');
-        $detail = $this->Housing_assessment_model->get_scoped_queue_detail($queue_id, $kabupaten_id);
+        $detail = $this->Housing_assessment_model->get_scoped_queue_detail($antrean_id, $kabupaten_id);
         if ( ! $detail) { return NULL; }
         // Poin 7.3: profil warga terdekripsi (identitas, alamat, koordinat) ditampilkan ke staf: dicatat.
-        $this->catat_akses_data_pribadi('penilaian_warga', 'sf_housing_queue', (string) (int) $queue_id);
+        $this->catat_akses_data_pribadi('penilaian_warga', 'sf_antrean_pengajuan', (string) (int) $antrean_id);
 
         $assessment = $detail['assessment'];
-        $source_row = $this->db->select('payload_ciphertext')
-            ->get_where('sf_rekaman_simperum', ['id' => (int) ($assessment['simperum_snapshot_id'] ?? 0)])
+        $source_row = $this->db->select('muatan_ciphertext')
+            ->get_where('sf_rekaman_simperum', ['id' => (int) ($assessment['rekaman_simperum_id'] ?? 0)])
             ->row_array();
         $source = $source_row
-            ? json_decode($this->encryption_lib->decrypt($source_row['payload_ciphertext']), TRUE) : [];
-        $selected_id = (int) ($detail['queue']['recommendation_id'] ?? 0);
+            ? kunci_tersimpan_ke_baru(json_decode($this->encryption_lib->decrypt($source_row['muatan_ciphertext']), TRUE)) : [];
+        $selected_id = (int) ($detail['queue']['rekomendasi_id'] ?? 0);
         $recommendations = $this->Housing_assessment_model->get_owned_recommendations(
             (int) ($assessment['id'] ?? 0),
             (int) ($detail['queue']['user_id'] ?? 0)
         );
         foreach ($recommendations as &$recommendation) {
-            $recommendation['is_selected'] = (int) $recommendation['recommendation_id'] === $selected_id;
+            $recommendation['is_selected'] = (int) $recommendation['rekomendasi_id'] === $selected_id;
         }
         unset($recommendation);
-        $provenance_value = $assessment['field_provenance_json']
-            ?? $detail['profile_snapshot']['field_provenance_json'] ?? [];
+        $provenance_value = $assessment['asal_isian_json']
+            ?? $detail['profile_snapshot']['asal_isian_json'] ?? [];
         $provenance = is_array($provenance_value)
             ? $provenance_value : (json_decode((string) $provenance_value, TRUE) ?: []);
+        $provenance = kunci_tersimpan_ke_baru($provenance);
 
         // Admin membaca snapshot yang sama dengan warga, bukan menghitung ulang.
         $preliminary_matrix = json_decode($assessment['preliminary_matrix'] ?? 'null', TRUE);
@@ -904,15 +905,15 @@ class MY_Controller extends CI_Controller {
             'source_snapshot' => is_array($source) ? $source : [],
             'provenance' => $provenance,
             'recommendations' => $recommendations,
-            'evidence' => $this->Housing_assessment_model->get_scoped_queue_files($queue_id, $kabupaten_id),
+            'evidence' => $this->Housing_assessment_model->get_scoped_queue_files($antrean_id, $kabupaten_id),
             'preliminary_matrix' => $preliminary_matrix,
         ];
     }
 
-    protected function scoped_queue_file($queue_id, $file_kind, $kabupaten_id = NULL) {
+    protected function scoped_queue_file($antrean_id, $jenis_berkas, $kabupaten_id = NULL) {
         $this->load->model('Housing_assessment_model');
-        foreach ($this->Housing_assessment_model->get_scoped_queue_files($queue_id, $kabupaten_id) as $file) {
-            if (hash_equals((string) $file['file_kind'], (string) $file_kind)) { return $file; }
+        foreach ($this->Housing_assessment_model->get_scoped_queue_files($antrean_id, $kabupaten_id) as $file) {
+            if (hash_equals((string) $file['jenis_berkas'], (string) $jenis_berkas)) { return $file; }
         }
         return NULL;
     }
@@ -984,14 +985,14 @@ class MY_Controller extends CI_Controller {
      * @param string|null $role NULL = role sesi saat ini
      * @return string path CI, fallback 'akun'
      */
-    protected function module_privilege_allowed($module_key) {
+    protected function module_privilege_allowed($kunci_modul) {
         $role = $this->current_role();
         if ($role === 'admin' || ! in_array($role, ['admin_kabkota','admin_bidang'], TRUE)) { return TRUE; }
-        if ( ! $this->db->table_exists('usr_admin_module_privileges')) { return TRUE; }
+        if ( ! $this->db->table_exists('usr_hak_modul_admin')) { return TRUE; }
         $user_id = (int) $this->get_user_id();
-        if ($this->db->where('user_id',$user_id)->count_all_results('usr_admin_module_privileges') === 0) { return TRUE; }
-        $row = $this->db->get_where('usr_admin_module_privileges',['user_id'=>$user_id,'module_key'=>$module_key])->row();
-        return $row && (int)$row->allowed === 1;
+        if ($this->db->where('user_id',$user_id)->count_all_results('usr_hak_modul_admin') === 0) { return TRUE; }
+        $row = $this->db->get_where('usr_hak_modul_admin',['user_id'=>$user_id,'kunci_modul'=>$kunci_modul])->row();
+        return $row && (int)$row->diizinkan === 1;
     }
 
     protected function enforce_current_module_privilege() {
@@ -1344,7 +1345,7 @@ class MY_Controller extends CI_Controller {
             return FALSE;
         }
         /* Akun yang sudah pernah mengirim (penilaian selain draft) tidak dibuatkan draft baru di sini:
-           draft tanpa previous_version_id akan jadi kiriman ganda di sf_housing_queue. Revisi tetap
+           draft tanpa versi_sebelumnya_id akan jadi kiriman ganda di sf_antrean_pengajuan. Revisi tetap
            lewat start_revision (status needs_revision). */
         if ($this->db->where('user_id', $user_id)->where('status !=', 'draft')->count_all_results('sf_penilaian_perumahan') > 0) {
             return FALSE;
@@ -1831,7 +1832,7 @@ class Admin_Controller extends MY_Controller {
  * Admin_Kabkota_Controller Class
  *
  * Base controller untuk admin yang di-scope ke 1 kabupaten/kota
- * (kelola antrean perumahan wilayahnya saja - lihat sf_housing_queue.kabupaten_id).
+ * (kelola antrean perumahan wilayahnya saja - lihat sf_antrean_pengajuan.kabupaten_id).
  * Scope-nya (kabupaten_id) ditaruh di session saat login, bukan dipercaya dari request.
  */
 class Admin_Kabkota_Controller extends MY_Controller {
@@ -1865,7 +1866,7 @@ class Admin_Kabkota_Controller extends MY_Controller {
  * Admin_Bidang_Controller Class
  *
  * Base controller untuk admin yang di-scope ke 1 bidang
- * (kelola aduan yang masuk ke bidangnya saja - lihat aduan.bidang).
+ * (kelola aduan yang masuk ke bidangnya saja - lihat aduan.bidang_kode).
  * Scope-nya (bidang_kode) ditaruh di session saat login, bukan dipercaya dari request.
  */
 class Admin_Bidang_Controller extends MY_Controller {

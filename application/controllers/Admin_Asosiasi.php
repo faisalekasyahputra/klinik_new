@@ -14,7 +14,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * semua perubahan masuk jejak audit.
  *
  * ⚠️ `kode` TIDAK BISA DIUBAH setelah dibuat, dan itu disengaja. Tiga tabel
- * lain (`srp2_certified_developers.asosiasi`, `srp2_registrations.asosiasi`,
+ * lain (`srp2_direktori_pengembang.asosiasi`, `srp2_pengajuan.asosiasi`,
  * `psu_serah_terima.asosiasi`) menyimpan STRING kode ini, bukan id. Sejak
  * migrasi 069 ketiganya ber-FK ON DELETE RESTRICT tanpa ON UPDATE CASCADE:
  * DB menolak menghapus atau mengganti kode yang masih dipakai. Yang dibaca
@@ -37,8 +37,8 @@ class Admin_Asosiasi extends Admin_Controller {
            satu query per baris di dalam view. */
         $pakai = [];
         foreach ([
-            'srp2_certified_developers' => 'direktori',
-            'srp2_registrations'        => 'pengajuan',
+            'srp2_direktori_pengembang' => 'direktori',
+            'srp2_pengajuan'        => 'pengajuan',
             'psu_serah_terima'          => 'psu',
         ] as $tabel => $sebutan) {
             foreach ($this->db->select('asosiasi, COUNT(*) AS jml')->from($tabel)
@@ -131,7 +131,7 @@ class Admin_Asosiasi extends Admin_Controller {
            Sarannya menonaktifkan, karena itu memang yang dimaksud admin hampir
            setiap kali - berhenti menawarkan tanpa merusak data lama. */
         $terpakai = 0;
-        foreach (['srp2_certified_developers', 'srp2_registrations', 'psu_serah_terima'] as $tabel) {
+        foreach (['srp2_direktori_pengembang', 'srp2_pengajuan', 'psu_serah_terima'] as $tabel) {
             $terpakai += (int) $this->db->where('asosiasi', $row->kode)->count_all_results($tabel);
         }
         if ($terpakai > 0) {

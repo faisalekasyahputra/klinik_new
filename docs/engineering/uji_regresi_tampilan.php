@@ -97,7 +97,7 @@ function login($n, $email) {
 
 function buat_akun($peran, $suffix, $bidang = NULL) {
     $email = 'uji_tampil_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
-    $id = tulis('INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,bidang_kode,created_at)
+    $id = tulis('INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,bidang_kode,created_at)
                  VALUES (?,?,?,?,?, "active",1,?,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji Tampilan ' . $suffix,
          'uji_tampil_' . $suffix . '_' . mt_rand(10000, 99999), $peran, $bidang]);
@@ -127,7 +127,7 @@ function bersihkan() {
     foreach ($GLOBALS['daftar'] as $id) { q('DELETE FROM kkn_magang_pendaftaran WHERE id=?', [$id]); }
     foreach ($GLOBALS['users'] as $id) {
         q('DELETE FROM kkn_magang_pendaftaran WHERE user_id=?', [$id]);
-        q('DELETE FROM usr_users WHERE id=?', [$id]);
+        q('DELETE FROM usr_akun WHERE id=?', [$id]);
     }
     foreach ($GLOBALS['jar'] as $j) { @unlink($j); }
 }
@@ -383,7 +383,7 @@ foreach ($paket as $nama => $p) {
 // =========================================================== 7. TABEL ADMIN
 echo "\n== Tabel Admin Pengguna tetap server-side ==\n";
 $admin_users = http('adm', 'Admin_Users');
-$jumlah_user = (int) nilai('SELECT COUNT(*) FROM usr_users');
+$jumlah_user = (int) nilai('SELECT COUNT(*) FROM usr_akun');
 cek(strpos($admin_users, 'data-tabel-admin') !== FALSE
     && strpos($admin_users, 'Cari nama, email, atau username...') !== FALSE
     && strpos($admin_users, 'data-table-search') === FALSE,
@@ -391,9 +391,9 @@ cek(strpos($admin_users, 'data-tabel-admin') !== FALSE
 // Jumlahnya kini di <span> abu milik admin/components/kepala_tabel.php (audit UI kelompok B).
 cek(preg_match('#Daftar Pengguna <span[^>]*>\(' . preg_quote(number_format($jumlah_user, 0, ',', '.'), '#') . '\)</span>#', $admin_users) === 1, // ribuan bertitik (angka_id)
     'Admin Pengguna menampilkan total semua pengguna, bukan jumlah halaman');
-$admin_users_urut = http('adm', 'Admin_Users?sort=name&dir=asc');
-cek(strpos($admin_users_urut, 'sort=name') !== FALSE
-    && strpos($admin_users_urut, 'sort=role') !== FALSE
+$admin_users_urut = http('adm', 'Admin_Users?sort=nama&dir=asc'); // kunci urut = nama kolom (migrasi 072: name/role jadi nama/peran)
+cek(strpos($admin_users_urut, 'sort=nama') !== FALSE
+    && strpos($admin_users_urut, 'sort=peran') !== FALSE
     && strpos($admin_users_urut, 'sort=created_at') !== FALSE
     && strpos($admin_users_urut, 'ph-sort-ascending text-brand-primary') !== FALSE,
     'Header Admin Pengguna mengaktifkan urutan server-side');
@@ -514,8 +514,8 @@ $teks_dev = [];
 foreach (['struktur/index', 'katalog/index', 'asosiasi/index', 'psu/index', 'magang_posisi/index', 'antrean/dashboard'] as $v) {
     $isi = preg_replace(['#/\*.*?\*/#s', '#<!--.*?-->#s', '#(?<![:"\'])//[^\n]*#'], '',
         (string) @file_get_contents(APP_ROOT . "/application/views/admin/{$v}.php"));
-    foreach (['foreign key', '<code>sf_programs', 'libraries/Smart_filter', '/akun/profil', '/psu<', 'Segera Hadir', '<dialog', 'showModal',
-              'API SIMPERUM belum terhubung', 'Identitas ada di detail', 'batas_penghasilan_max', 'seed program'] as $frasa) {
+    foreach (['foreign key', '<code>sf_program', 'libraries/Smart_filter', '/akun/profil', '/psu<', 'Segera Hadir', '<dialog', 'showModal',
+              'API SIMPERUM belum terhubung', 'Identitas ada di detail', 'batas_penghasilan_maks', 'seed program'] as $frasa) {
         if (stripos($isi, $frasa) !== FALSE) { $teks_dev[] = "{$v}: {$frasa}"; }
     }
 }
@@ -721,7 +721,7 @@ $isi_fs = $m8[2] ?? '';
 cek($legend !== '', 'A8: ada <fieldset> ber-<legend> di formulir pendataan');
 cek(stripos($legend, 'ukuran tanah') !== FALSE,
     'A8: legend-nya "Ukuran tanah" (dapat: "' . $legend . '")');
-cek(strpos($isi_fs, 'name="land_length_m"') !== FALSE && strpos($isi_fs, 'name="land_width_m"') !== FALSE,
+cek(strpos($isi_fs, 'name="panjang_lahan_m"') !== FALSE && strpos($isi_fs, 'name="lebar_lahan_m"') !== FALSE,
     'A8: KEDUA isian tanah ada DI DALAM fieldset itu - bukan sekadar ada di halaman');
 cek(preg_match('/Ukuran Tanah\s*\x{2014}/u', $pdt) === 0,
     'A8: nol label "Ukuran Tanah -" yang mengulang; prefiksnya sudah pindah ke legend');
@@ -1148,7 +1148,7 @@ cek(strpos($lib, 'function get_public_prototype_designs') !== FALSE,
 
 /* AUDIT UI 2 OKT 2026, SISA TINJAUAN VISUAL.
      1. Jejak Audit: baris akses data pribadi dibaca sebagai kalimat ("Staf membuka NPWP
-        pengembang (daftar SRP2)"), bukan "npwp_srp2 (srp2_registrations #daftar)". Hanya
+        pengembang (daftar SRP2)"), bukan "npwp_srp2 (srp2_pengajuan #daftar)". Hanya
         saat tampil; baris tersimpan tidak diubah. Pencarian dengan kata dari layar tetap kena.
      2. Istilah Inggris/teknis: Hak Modul (bukan Privilege), Peran diubah (bukan Role diubah).
      3. Layar Rekam Data admin kab/kota dan admin bidang: judul = <title> = label sidebar.
@@ -1157,8 +1157,8 @@ echo "\n== Audit UI: sisa tinjauan visual ==\n";
 cek(audit_label_aksi('role_diubah') === 'Peran diubah' && audit_label_aksi('role_diubah_ditolak') === 'Perubahan peran ditolak'
     && audit_label_aksi('privilege_admin_diubah') === 'Hak modul admin diubah' && audit_label_aksi('aduan_ditriase') === 'Aduan ditriase',
     'Label aksi audit: Peran diubah, Perubahan peran ditolak, Hak modul admin diubah');
-$baris_uji = (object) ['aksi' => 'akses_npwp_srp2', 'ringkasan' => 'Staf mengakses informasi pribadi: npwp_srp2 (srp2_registrations #daftar)',
-                       'objek_tipe' => 'srp2_registrations', 'objek_id' => 'daftar'];
+$baris_uji = (object) ['aksi' => 'akses_npwp_srp2', 'ringkasan' => 'Staf mengakses informasi pribadi: npwp_srp2 (srp2_pengajuan #daftar)',
+                       'objek_tipe' => 'srp2_pengajuan', 'objek_id' => 'daftar'];
 cek(audit_ringkasan($baris_uji) === 'Staf membuka NPWP pengembang (daftar SRP2)'
     && audit_label_objek('aduan', '431') === 'aduan nomor 431',
     'Ringkasan akses data pribadi diterjemahkan saat tampil');
@@ -1169,12 +1169,12 @@ cek($kode_cari['aksi'] === ['akses_npwp_srp2'], 'Pencarian "npwp pengembang" men
 wajib(login('adm_sisa', $emailS), 'Login admin uji untuk blok ini');
 /* Sejak 2 Okt 2026 NPWP dibuka di halaman ubah satu entri, bukan di daftar Direktori SRP2
    (daftar kini ringkas, tanpa NPWP), jadi akses dicatat per entri: "direktori SRP2 nomor N". */
-$id_npwp = tulis("INSERT INTO srp2_certified_developers (nama_perusahaan, status_aktif, npwp_ciphertext) VALUES (?, 0, 'uji')", [CAP . ' NPWP AUDIT']);
+$id_npwp = tulis("INSERT INTO srp2_direktori_pengembang (nama_perusahaan, status_aktif, npwp_ciphertext) VALUES (?, 0, 'uji')", [CAP . ' NPWP AUDIT']);
 http('adm_sisa', 'Admin_Srp2/ubah/' . $id_npwp); // memastikan ada baris akses_npwp_srp2 (dicatat untuk staf)
-q('DELETE FROM srp2_certified_developers WHERE id = ?', [$id_npwp]);
+q('DELETE FROM srp2_direktori_pengembang WHERE id = ?', [$id_npwp]);
 $teks_layar = fn($html) => html_entity_decode(strip_tags(preg_replace('#<(script|style)\b.*?</\1>#s', '', $html)), ENT_QUOTES, 'UTF-8');
 $audit_akses = $teks_layar(http('adm_sisa', 'Admin_Audit?aksi=akses_npwp_srp2'));
-cek(strpos($audit_akses, 'Staf membuka NPWP pengembang (direktori SRP2 nomor ' . $id_npwp . ')') !== FALSE && strpos($audit_akses, 'srp2_certified_developers') === FALSE
+cek(strpos($audit_akses, 'Staf membuka NPWP pengembang (direktori SRP2 nomor ' . $id_npwp . ')') !== FALSE && strpos($audit_akses, 'srp2_direktori_pengembang') === FALSE
     && strpos($audit_akses, 'mengakses informasi pribadi') === FALSE,
     'Jejak Audit: baris akses NPWP tampil terbaca, tanpa nama tabel');
 cek(strpos($teks_layar(http('adm_sisa', 'Admin_Audit?q=' . urlencode('NPWP pengembang'))), 'Staf membuka NPWP pengembang') !== FALSE,
@@ -1186,7 +1186,7 @@ cek(strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/user
     'Halaman hak modul berjudul "Hak Modul"');
 
 [$uidK, $emailK] = buat_akun('admin_kabkota', 'kab');
-q('UPDATE usr_users SET kabupaten_id = (SELECT id FROM kabupaten ORDER BY id LIMIT 1) WHERE id = ?', [$uidK]);
+q('UPDATE usr_akun SET kabupaten_id = (SELECT id FROM kabupaten ORDER BY id LIMIT 1) WHERE id = ?', [$uidK]);
 [$uidB, $emailB] = buat_akun('admin_bidang', 'bid', 'kawasan');
 wajib(login('kab', $emailK) && login('bid', $emailB), 'Login admin kab/kota dan admin bidang uji');
 foreach ([['kab', 'Admin_Kabkota/pendataan_awal', 'Pendataan Awal Warga'], ['kab', 'Rekam_Data', 'Rekam Data'],

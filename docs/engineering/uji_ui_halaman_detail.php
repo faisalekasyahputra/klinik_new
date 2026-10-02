@@ -91,7 +91,7 @@ foreach (['admin/antrean/detail.php', 'admin/aduan/detail.php', 'admin/srp2/deta
 echo "\n== Detail Penilaian Warga (superadmin) ==\n";
 if ( ! login('su', 'admin@klinikpkp.jatengprov.go.id', 'password')) { cek(FALSE, 'Login superadmin'); exit(1); }
 // Antrean contoh 49 (cabang calon lahan, isian lahan lengkap); bila tidak ada, antrean terbaru.
-$qid = (int) ($satu('SELECT id FROM sf_housing_queue WHERE id = 49') ?: $satu('SELECT MAX(id) FROM sf_housing_queue'));
+$qid = (int) ($satu('SELECT id FROM sf_antrean_pengajuan WHERE id = 49') ?: $satu('SELECT MAX(id) FROM sf_antrean_pengajuan'));
 $html = http('su', 'Admin/detail/' . $qid);
 $isi = isi($html);
 $t = teks($isi);
@@ -107,19 +107,19 @@ foreach (['hm<', 'inheritance', 'parent<', 'eligible', 'needs_data', 'not_eligib
 cek(preg_match('/\b\d{4}-\d{2}-\d{2}\b/', $t) === 0, 'Tidak ada tanggal ISO mentah di layar');
 cek(preg_match('/\b\d+\.\d{2}\b/', $t) === 0, 'Tidak ada desimal gaya Inggris (12.00)');
 cek(preg_match('/\x{2013}|\x{2014}/u', $t) === 0, 'Tidak ada en dash atau em dash di layar');
-$asesmen = $db->query('SELECT a.* FROM sf_housing_queue q JOIN sf_penilaian_perumahan a ON a.id = q.assessment_id WHERE q.id = ' . $qid);
+$asesmen = $db->query('SELECT a.* FROM sf_antrean_pengajuan q JOIN sf_penilaian_perumahan a ON a.id = q.penilaian_id WHERE q.id = ' . $qid);
 $a = $asesmen ? $asesmen->fetch_assoc() : NULL;
-if ($a && ($a['candidate_land_title_code'] ?? '') === 'hm') { cek(strpos($t, 'Sertifikat HM') !== FALSE, 'Sertifikat calon lahan "hm" tampil "Sertifikat HM"'); }
-if ($a && ($a['candidate_land_origin_code'] ?? '') === 'inheritance') { cek(strpos($t, 'Warisan') !== FALSE, 'Asal tanah "inheritance" tampil "Warisan"'); }
-if ($a && ($a['land_owner_relationship_code'] ?? '') === 'parent') { cek(strpos($t, 'Orang Tua') !== FALSE, 'Hubungan "parent" tampil "Orang Tua"'); }
+if ($a && ($a['status_lahan_calon'] ?? '') === 'hm') { cek(strpos($t, 'Sertifikat HM') !== FALSE, 'Sertifikat calon lahan "hm" tampil "Sertifikat HM"'); }
+if ($a && ($a['asal_lahan_calon'] ?? '') === 'inheritance') { cek(strpos($t, 'Warisan') !== FALSE, 'Asal tanah "inheritance" tampil "Warisan"'); }
+if ($a && ($a['hubungan_pemilik_lahan'] ?? '') === 'parent') { cek(strpos($t, 'Orang Tua') !== FALSE, 'Hubungan "parent" tampil "Orang Tua"'); }
 if (strpos($isi, 'name="status" value="approved"') !== FALSE) {
     cek(substr_count($isi, 'class="pilihan-keputusan"') === 3, 'Tiga pilihan keputusan bergaya .pilihan-keputusan');
     cek(preg_match('/<button class="tombol-utama"><i class="ph [^"]+"><\/i><span>Simpan keputusan<\/span><\/button>/', $isi) === 1, 'Tombol Simpan keputusan memakai .tombol-utama berikon');
 }
 
 echo "\n== Detail Penilaian Warga (admin kab/kota, B2) ==\n";
-$kab_q = (int) $satu('SELECT kabupaten_id FROM sf_housing_queue WHERE id = ' . $qid);
-if ($kab_q === (int) $satu("SELECT kabupaten_id FROM usr_users WHERE email = 'adminkabkota@example.com'") && login('kab', 'adminkabkota@example.com', 'password')) {
+$kab_q = (int) $satu('SELECT kabupaten_id FROM sf_antrean_pengajuan WHERE id = ' . $qid);
+if ($kab_q === (int) $satu("SELECT kabupaten_id FROM usr_akun WHERE email = 'adminkabkota@example.com'") && login('kab', 'adminkabkota@example.com', 'password')) {
     $isi_k = isi(http('kab', 'Admin_Kabkota/detail/' . $qid));
     $t_k = teks($isi_k);
     cek($isi_k !== '' && section_tanpa_kartu($isi_k) === 0, "Admin_Kabkota/detail/{$qid}: view sama, setiap section berkelas kartu-admin");
@@ -132,7 +132,7 @@ if ($kab_q === (int) $satu("SELECT kabupaten_id FROM usr_users WHERE email = 'ad
     echo "  LEWAT antrean {$qid} bukan milik adminkabkota@example.com\n";
 }
 if (login('agen', 'agen_admin_kabkota@agen.test', 'AgenUji!2026')) {
-    $kab_agen = (int) $satu("SELECT kabupaten_id FROM usr_users WHERE email = 'agen_admin_kabkota@agen.test'");
+    $kab_agen = (int) $satu("SELECT kabupaten_id FROM usr_akun WHERE email = 'agen_admin_kabkota@agen.test'");
     if ($kab_agen !== $kab_q) {
         cek(strpos(http('agen', 'Admin_Kabkota/detail/' . $qid), 'data-judul-halaman>') === FALSE, 'Cakupan wilayah: admin kab/kota lain tidak bisa membuka antrean ini');
     }
@@ -149,7 +149,7 @@ if ($aid) {
 }
 
 echo "\n== Detail SRP2 ==\n";
-$sid = (int) ($satu("SELECT id FROM srp2_registrations WHERE status_verifikasi = 'Pending' ORDER BY id LIMIT 1") ?: $satu('SELECT MIN(id) FROM srp2_registrations'));
+$sid = (int) ($satu("SELECT id FROM srp2_pengajuan WHERE status_verifikasi = 'Pending' ORDER BY id LIMIT 1") ?: $satu('SELECT MIN(id) FROM srp2_pengajuan'));
 if ($sid) {
     $isi = isi(http('su', 'Admin_Srp2/detail/' . $sid));
     $t = teks($isi);

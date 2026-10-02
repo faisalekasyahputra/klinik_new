@@ -4,8 +4,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 /**
  * Daftar dokumen persyaratan SRP2 - SATU sumber kebenaran dipakai wizard
  * pemohon (Pengembang::dokumen_persyaratan()) dan verifikasi admin
- * (Admin_Srp2::detail()). Key harus persis sama dengan document_key yang
- * tersimpan di srp2_documents - jangan diubah tanpa migrasi data.
+ * (Admin_Srp2::detail()). Key harus persis sama dengan kunci_dokumen yang
+ * tersimpan di srp2_dokumen - jangan diubah tanpa migrasi data.
  */
 /**
  * Keterangan tambahan per formulir - apa yang harus DILAMPIRKAN atau dari mana
@@ -41,7 +41,7 @@ function srp2_keterangan_persyaratan() {
  * publik, profil publik, detail admin).
  *
  * Kunci = yang tersimpan di DB (huruf kecil, jangan diubah tanpa migrasi data -
- * `srp2_registrations.asosiasi` sudah memakai kode ini sejak migrasi
+ * `srp2_pengajuan.asosiasi` sudah memakai kode ini sejak migrasi
  * 20260701000001). Nilai = yang dibaca orang.
  *
  * SUMBERNYA TABEL `srp2_asosiasi` sejak 14 Agt 2026 (migrasi 042), bukan lagi

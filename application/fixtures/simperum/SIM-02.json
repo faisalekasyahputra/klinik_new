@@ -1,28 +1,28 @@
 {
   "fixture_id": "SIM-02",
   "synthetic": true,
-  "response_status": "found",
-  "api_version": "simulation-v1",
+  "status_respons": "found",
+  "versi_api": "simulation-v1",
   "identity": {
     "nik": "0000000000000002",
     "family_card_number": "0000000000001002",
     "full_name": "Warga Simulasi Parsial",
     "address": "Alamat Sintetis Kabupaten Demak",
     "birth_date": "1990-12-31",
-    "gender_code": "female"
+    "jenis_kelamin": "female"
   },
-  "socioeconomic": {"welfare_decile": 3},
+  "socioeconomic": {"desil_kesejahteraan": 3},
   "housing": {},
   "structure": {},
   "sanitation": {},
   "location": {"kabupaten_id": 3321},
   "missing_fields": [
-    "marital_status_code",
-    "education_code",
-    "occupation_code",
-    "income_band_code",
-    "self_help_capability_code",
-    "housing_status_code",
+    "status_perkawinan",
+    "pendidikan",
+    "pekerjaan",
+    "kelompok_penghasilan",
+    "mampu_swadaya",
+    "kepemilikan_rumah",
     "structure",
     "sanitation"
   ]

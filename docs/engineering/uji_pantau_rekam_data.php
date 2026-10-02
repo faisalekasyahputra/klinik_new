@@ -130,7 +130,7 @@ function login($nama, $email) {
 function buat_akun($peran, $suffix, $kab = NULL, $bidang = NULL) {
     $email = 'uji_pantau_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
     $id = tulis(
-        'INSERT INTO usr_users (email,password,name,username,role,kabupaten_id,bidang_kode,status,profile_completed,created_at)
+        'INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,kabupaten_id,bidang_kode,status,profil_lengkap,created_at)
          VALUES (?,?,?,?,?,?,?, "active",1,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji Pantau ' . $suffix,
          'uji_pantau_' . $suffix . '_' . mt_rand(10000, 99999), $peran, $kab, $bidang]
@@ -141,7 +141,7 @@ function buat_akun($peran, $suffix, $kab = NULL, $bidang = NULL) {
 
 function buat_laporan($domain, $kab, $status, $ditinjau = FALSE) {
     $id = tulis(
-        'INSERT INTO rd_laporan (domain,kabupaten_id,tahun,triwulan,status,current_step,submitted_at,reviewed_at,created_at,updated_at)
+        'INSERT INTO rd_laporan (domain,kabupaten_id,tahun,triwulan,status,langkah_sekarang,submitted_at,reviewed_at,created_at,updated_at)
          VALUES (?,?,?,?,?,"selesai", ?, ?, NOW(), NOW())',
         [$domain, $kab, TAHUN, TW, $status,
          $status === 'draft' ? NULL : date('Y-m-d H:i:s'),
@@ -155,8 +155,8 @@ function bersihkan() {
     if (empty($GLOBALS['db'])) { return; }
     foreach ($GLOBALS['laporan'] as $id) { q('DELETE FROM rd_laporan WHERE id=?', [$id]); }
     foreach ($GLOBALS['users'] as $id) {
-        q('DELETE FROM sys_jejak_audit WHERE actor_id=?', [$id]);
-        q('DELETE FROM usr_users WHERE id=?', [$id]);
+        q('DELETE FROM sys_jejak_audit WHERE pelaku_id=?', [$id]);
+        q('DELETE FROM usr_akun WHERE id=?', [$id]);
     }
     foreach ($GLOBALS['jar'] as $j) { @unlink($j); }
     $GLOBALS['laporan'] = $GLOBALS['users'] = [];

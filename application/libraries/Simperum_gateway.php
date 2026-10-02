@@ -85,15 +85,15 @@ class Simperum_gateway {
             $payload = $this->mode === 'api'
                 ? $this->load_api($nik)
                 : $this->load_fixture($nik);
-            $status = $payload['response_status'] ?? 'error';
+            $status = $payload['status_respons'] ?? 'error';
             $stored = $this->CI->Housing_assessment_model->store_source_snapshot(
                 $nik,
                 $this->mode,
-                $payload['source_record_key'] ?? $payload['fixture_id'] ?? NULL,
+                $payload['kunci_rekaman_sumber'] ?? $payload['fixture_id'] ?? NULL,
                 $status,
                 $payload,
                 [
-                    'api_version' => $payload['api_version'] ?? ($this->mode === 'api' ? 'simperum-rtlh-v1' : 'simulation-v1'),
+                    'versi_api' => $payload['versi_api'] ?? ($this->mode === 'api' ? 'simperum-rtlh-v1' : 'simulation-v1'),
                     'http_status' => $payload['http_status'] ?? ($status === 'error' ? 503 : 200),
                     'error_code' => $payload['error_code'] ?? NULL,
                     'requested_by' => $requested_by,
@@ -103,11 +103,11 @@ class Simperum_gateway {
                 return $this->response('error', 'Data belum dapat disimpan dengan aman.', [], $stored['code'] ?? 'write_failed');
             }
 
-            $payload['id'] = (int) $stored['snapshot_id'];
+            $payload['id'] = (int) $stored['rekaman_id'];
             $snapshot = [
-                'id' => (int) $stored['snapshot_id'],
-                'response_status' => $status,
-                'source_record_key' => $payload['source_record_key'] ?? $payload['fixture_id'] ?? NULL,
+                'id' => (int) $stored['rekaman_id'],
+                'status_respons' => $status,
+                'kunci_rekaman_sumber' => $payload['kunci_rekaman_sumber'] ?? $payload['fixture_id'] ?? NULL,
                 'payload' => $payload,
             ];
             $this->cermin($nik, $requested_by, $snapshot);
@@ -147,7 +147,7 @@ class Simperum_gateway {
         }
         try {
             $payload = $this->mode === 'api' ? $this->load_api($nik) : $this->load_fixture($nik);
-            $status = $payload['response_status'] ?? 'error';
+            $status = $payload['status_respons'] ?? 'error';
             if ( ! in_array($status, ['found', 'not_found'], TRUE)) {
                 /* Galat TIDAK disimpan sebagai snapshot: snapshot aktif terbaru menang di
                    get_active_source_snapshot(), jadi galat 15 menit akan menutupi hasil found yang
@@ -158,11 +158,11 @@ class Simperum_gateway {
             $stored = $model->store_source_snapshot(
                 $nik,
                 $this->mode,
-                $payload['source_record_key'] ?? $payload['fixture_id'] ?? NULL,
+                $payload['kunci_rekaman_sumber'] ?? $payload['fixture_id'] ?? NULL,
                 $status,
                 $payload,
                 [
-                    'api_version' => $payload['api_version'] ?? ($this->mode === 'api' ? 'simperum-rtlh-v1' : 'simulation-v1'),
+                    'versi_api' => $payload['versi_api'] ?? ($this->mode === 'api' ? 'simperum-rtlh-v1' : 'simulation-v1'),
                     'http_status' => $payload['http_status'] ?? ($status === 'error' ? 503 : 200),
                     'error_code' => $payload['error_code'] ?? NULL,
                 ]
@@ -170,7 +170,7 @@ class Simperum_gateway {
             if (empty($stored['success'])) {
                 return 'error';
             }
-            $model->cermin_data_simperum($user_id, $nik, $stored['snapshot_id'], $status, $payload, $this->mode);
+            $model->cermin_data_simperum($user_id, $nik, $stored['rekaman_id'], $status, $payload, $this->mode);
             return $status;
         } finally {
             $this->CI->db->query('SELECT RELEASE_LOCK(?)', [$lock_name]);
@@ -192,7 +192,7 @@ class Simperum_gateway {
                 (int) $requested_by,
                 $nik,
                 $snapshot['id'] ?? NULL,
-                $snapshot['response_status'] ?? 'error',
+                $snapshot['status_respons'] ?? 'error',
                 (array) ($snapshot['payload'] ?? []),
                 $this->mode,
                 $snapshot['fetched_at'] ?? NULL
@@ -230,7 +230,7 @@ class Simperum_gateway {
         if (isset($api[$nik])) {
             $body = @file_get_contents($this->fixture_path . DIRECTORY_SEPARATOR . $api[$nik] . '.json');
             $payload = $this->map_api_response($nik, ['http_status' => 200, 'body' => $body, 'curl_errno' => 0]);
-            $payload['api_version'] = 'simulation-api-v1';
+            $payload['versi_api'] = 'simulation-api-v1';
             return $payload;
         }
 
@@ -259,7 +259,7 @@ class Simperum_gateway {
         return is_array($fixture) ? $fixture : [
             'fixture_id' => $id,
             'synthetic' => TRUE,
-            'response_status' => 'error',
+            'status_respons' => 'error',
             'error_code' => 'fixture_invalid',
         ];
     }
@@ -322,7 +322,7 @@ class Simperum_gateway {
 
         $payload = $this->normalize_api_record($nik, $record, ['Message' => 'Data dummy lokal', 'Type' => 'array'], 200);
         if (is_array($payload)) {
-            $payload['api_version'] = 'dummy-table-v1';
+            $payload['versi_api'] = 'dummy-table-v1';
         }
         return $payload;
     }
@@ -424,8 +424,8 @@ class Simperum_gateway {
         }
         if (empty($records)) {
             return [
-                'response_status' => 'not_found',
-                'api_version' => 'simperum-rtlh-v1',
+                'status_respons' => 'not_found',
+                'versi_api' => 'simperum-rtlh-v1',
                 'http_status' => $http_status,
                 'source' => ['message' => $response['Message'] ?? NULL],
             ];
@@ -498,8 +498,8 @@ class Simperum_gateway {
             '4' => 'severe_damage_or_absent',
         ];
 
-        $assistance_year = $integer($record['TahunIntervensi'] ?? NULL);
-        $assistance_source_code = $code('SumberDanaID', [
+        $tahun_intervensi = $integer($record['TahunIntervensi'] ?? NULL);
+        $bantuan_perumahan = $code('SumberDanaID', [
             '1' => 'apbn_bsps', '2' => 'apbd_prov', '3' => 'apbd_kab',
             '4' => 'csr', '5' => 'other', '7' => 'village_fund',
             '9' => 'bsps_kl', '12' => 'bankab', '13' => 'baznas',
@@ -515,35 +515,35 @@ class Simperum_gateway {
             '10' => 'Meninggal', '11' => 'Salah/duplikasi data', '15' => 'Pindah',
         ];
         $source_raw = trim((string) ($record['SumberDanaID'] ?? ''));
-        if ($assistance_source_code !== NULL) {
-            $intervention_status = 'Sudah diintervensi — ' . ($source_labels[$assistance_source_code] ?? 'Sumber tercatat');
-            if ($assistance_year !== NULL) $intervention_status .= ' (' . $assistance_year . ')';
+        if ($bantuan_perumahan !== NULL) {
+            $intervention_status = 'Sudah diintervensi — ' . ($source_labels[$bantuan_perumahan] ?? 'Sumber tercatat');
+            if ($tahun_intervensi !== NULL) $intervention_status .= ' (' . $tahun_intervensi . ')';
         } elseif (isset($disposition_labels[$source_raw])) {
             $intervention_status = $disposition_labels[$source_raw];
-        } elseif ($assistance_year !== NULL) {
-            $intervention_status = 'Sudah diintervensi (' . $assistance_year . ')';
+        } elseif ($tahun_intervensi !== NULL) {
+            $intervention_status = 'Sudah diintervensi (' . $tahun_intervensi . ')';
         } else {
             $intervention_status = 'Belum diintervensi';
         }
         $payload = [
-            'response_status' => 'found',
-            'api_version' => 'simperum-rtlh-v1',
+            'status_respons' => 'found',
+            'versi_api' => 'simperum-rtlh-v1',
             'http_status' => (int) $http_status,
-            'source_record_key' => $text($record['IDBDT'] ?? NULL),
+            'kunci_rekaman_sumber' => $text($record['IDBDT'] ?? NULL),
             'identity' => [
                 'nik' => $nik,
                 'full_name' => $text($record['Nama'] ?? NULL),
                 'address' => $text($record['Alamat'] ?? NULL),
                 'birth_year' => $birth_year,
-                'gender_code' => $code('JenisKelamin', ['L' => 'male', 'P' => 'female']),
-                'education_code' => $code('Pendidikan', [
+                'jenis_kelamin' => $code('JenisKelamin', ['L' => 'male', 'P' => 'female']),
+                'pendidikan' => $code('Pendidikan', [
                     '0' => 'no_certificate', '1' => 'elementary', '2' => 'junior_high',
                     '3' => 'senior_high', '4' => 'diploma_1_3', '5' => 'bachelor',
                     '6' => 'postgraduate',
                 ]),
             ],
             'socioeconomic' => [
-                'occupation_code' => $code('Pekerjaan', [
+                'pekerjaan' => $code('Pekerjaan', [
                     '1' => 'farmer', '2' => 'horticulture', '3' => 'plantation',
                     '4' => 'capture_fisher', '5' => 'aquaculture_fisher', '6' => 'breeder',
                     '7' => 'forestry_agriculture_other', '8' => 'mining',
@@ -555,30 +555,30 @@ class Simperum_gateway {
                     '19' => 'civil_servant', '20' => 'scavenger', '21' => 'other',
                     '22' => 'military_police', '98' => 'retired', '99' => 'unemployed',
                 ]),
-                'income_band_code' => $code('Penghasilan', [
+                'kelompok_penghasilan' => $code('Penghasilan', [
                     '1' => 'lt_1_8', '2' => '1_9_2_1', '3' => '2_2_2_6',
                     '4' => '2_7_3_1', '5' => '3_2_3_6', '6' => '3_7_4_2',
                     '7' => 'gt_4_2',
                 ]),
-                'self_help_capability_code' => $code('MampuSwadaya', [
+                'mampu_swadaya' => $code('MampuSwadaya', [
                     '0' => 'not_capable', '1' => 'capable',
                 ]),
-                'welfare_decile' => NULL,
+                'desil_kesejahteraan' => NULL,
             ],
             'housing' => [
-                'housing_status_code' => $code('KepemilikanRumah', [
+                'kepemilikan_rumah' => $code('KepemilikanRumah', [
                     '1' => 'owned', '2' => 'rent', '3' => 'rent_free',
                     '4' => 'official', '5' => 'other',
                 ]),
-                'land_title_code' => $code('KepemilikanLahan', [
+                'kepemilikan_lahan' => $code('KepemilikanLahan', [
                     '1' => 'certificate_unspecified', '2' => 'letter_c',
                     '3' => 'letter_d', '4' => 'village_letter',
                 ]),
-                'has_other_land' => $code('TanahLain', ['0' => 0, '1' => 1]),
-                'has_other_house' => $code('RumahLain', ['0' => 0, '1' => 1]),
-                'house_area_m2' => $number($record['LuasRumah'] ?? NULL),
-                'occupant_count' => $integer($record['JmlPenghuni'] ?? NULL),
-                'family_count' => $integer($record['JmlKK'] ?? NULL),
+                'tanah_lain' => $code('TanahLain', ['0' => 0, '1' => 1]),
+                'rumah_lain' => $code('RumahLain', ['0' => 0, '1' => 1]),
+                'luas_rumah' => $number($record['LuasRumah'] ?? NULL),
+                'jml_penghuni' => $integer($record['JmlPenghuni'] ?? NULL),
+                'jml_kk' => $integer($record['JmlKK'] ?? NULL),
                 /* DAFTAR RESMI DARI DINAS, 31 Agt 2026. Yang ditambahkan di
                    sini HANYA kode yang benar-benar sumber dana: 12 BANKAB dan
                    13 BAZNAS.
@@ -591,46 +591,46 @@ class Simperum_gateway {
                    pembiayaan rumah. Keenamnya jatuh ke `unmapped_codes` apa
                    adanya, dan itu memang perlakuan yang benar sampai ada tempat
                    yang jujur untuk menampungnya. */
-                'assistance_source_code' => $assistance_source_code,
-                'assistance_year' => $assistance_year,
+                'bantuan_perumahan' => $bantuan_perumahan,
+                'tahun_intervensi' => $tahun_intervensi,
                 'intervention_status' => $intervention_status,
-                'area_condition_code' => $code('KawasanPerumahan', [
+                'kawasan_perumahan' => $code('KawasanPerumahan', [
                     '1' => 'drought', '6' => 'slum', '10' => 'disaster_prone',
                     '11' => 'riverbank', '12' => 'railway', '98' => 'poor_other',
                     '99' => 'good',
                 ]),
             ],
             'structure' => [
-                'foundation_condition_code' => $foundation_presence === 'absent'
+                'kondisi_pondasi' => $foundation_presence === 'absent'
                     ? 'severe_damage_or_absent' : NULL,
-                'column_condition_code' => $code('KondisiKolom', $condition),
-                'beam_condition_code' => $code('KondisiBalok', $condition),
-                'roof_frame_condition_code' => $code('KondisiRangka', $condition),
-                'floor_material_code' => $code('LantaiID', [
+                'kondisi_kolom' => $code('KondisiKolom', $condition),
+                'kondisi_balok' => $code('KondisiBalok', $condition),
+                'kondisi_rangka' => $code('KondisiRangka', $condition),
+                'bahan_lantai' => $code('LantaiID', [
                     '1' => 'marble_granite', '2' => 'ceramic',
                     '3' => 'parquet_vinyl_carpet', '4' => 'tile_terrazzo',
                     '5' => 'high_quality_wood', '6' => 'cement_plaster',
                     '7' => 'bamboo', '8' => 'low_quality_wood',
                     '9' => 'soil', '10' => 'other',
                 ]),
-                'floor_condition_code' => $code('KondisiLantai', $condition),
-                'wall_material_code' => $code('DindingID', [
+                'kondisi_lantai' => $code('KondisiLantai', $condition),
+                'bahan_dinding' => $code('DindingID', [
                     '1' => 'wall', '2' => 'plaster_grc', '3' => 'wood',
                     '4' => 'woven_bamboo', '5' => 'log', '6' => 'bamboo',
                     '7' => 'other',
                 ]),
-                'wall_condition_code' => $code('KondisiDinding', $condition),
-                'roof_material_code' => $code('AtapID', [
+                'kondisi_dinding' => $code('KondisiDinding', $condition),
+                'bahan_atap' => $code('AtapID', [
                     '1' => 'concrete', '2' => 'ceramic', '3' => 'metal',
                     '4' => 'clay_tile', '5' => 'asbestos', '6' => 'zinc',
                     '7' => 'shingle', '8' => 'bamboo', '9' => 'thatch',
                     '10' => 'other',
                 ]),
-                'roof_condition_code' => $code('KondisiAtap', $condition),
+                'kondisi_atap' => $code('KondisiAtap', $condition),
             ],
             'sanitation' => [
-                'has_window' => $code('AdaJendela', ['0' => 0, '1' => 1]),
-                'has_ventilation' => $code('AdaVentilasi', ['0' => 0, '1' => 1]),
+                'ada_jendela' => $code('AdaJendela', ['0' => 0, '1' => 1]),
+                'ada_ventilasi' => $code('AdaVentilasi', ['0' => 0, '1' => 1]),
                 /* DAFTAR RESMI DARI DINAS, 31 Agt 2026 (WhatsApp, menjawab
                    permintaan kode kami). Peta sebelumnya BUKAN cuma kurang,
                    melainkan SALAH pada tiga kode: 4 dibaca `well` padahal
@@ -648,17 +648,17 @@ class Simperum_gateway {
                    KEBIJAKAN, bukan pemetaan - hanya kode 12 yang labelnya
                    sendiri menyebut Tidak Layak, jadi hanya itu yang menjadi
                    `other_unfit`. */
-                'water_source_code' => $code('SumberAir', [
+                'sumber_air' => $code('SumberAir', [
                     '1' => 'bottled', '2' => 'refill', '3' => 'pdam',
                     '4' => 'retail_piped', '5' => 'well', '6' => 'well_protected',
                     '7' => 'well_unprotected', '8' => 'spring',
                     '9' => 'spring_unprotected', '10' => 'surface_water',
                     '11' => 'rain', '12' => 'other_unfit',
                 ]),
-                'septic_distance_code' => $code('JarakSepticTank', [
+                'jarak_septic_tank' => $code('JarakSepticTank', [
                     '0' => 'lt_10', '1' => 'gte_10',
                 ]),
-                'lighting_source_code' => $code('Penerangan', [
+                'penerangan' => $code('Penerangan', [
                     '1' => 'pln', '2' => 'pln_unmetered',
                     '3' => 'non_pln', '4' => 'none',
                 ]),
@@ -696,8 +696,8 @@ class Simperum_gateway {
     private function api_error($code, $http_status)
     {
         return [
-            'response_status' => 'error',
-            'api_version' => 'simperum-rtlh-v1',
+            'status_respons' => 'error',
+            'versi_api' => 'simperum-rtlh-v1',
             'http_status' => (int) $http_status,
             'error_code' => $code,
         ];
@@ -706,10 +706,10 @@ class Simperum_gateway {
     private function from_snapshot(array $snapshot, $birth_date, $cache_hit, $requested_by)
     {
         $payload = $snapshot['payload'] ?? [];
-        $status = $snapshot['response_status'] ?? 'error';
+        $status = $snapshot['status_respons'] ?? 'error';
         if ($status === 'not_found') {
             return $this->response('not_found', 'Data tidak ditemukan. Silakan isi data secara manual.', [
-                'snapshot_id' => (int) $snapshot['id'],
+                'rekaman_id' => (int) $snapshot['id'],
                 'cache_hit' => $cache_hit,
             ]);
         }
@@ -718,7 +718,7 @@ class Simperum_gateway {
                 ? 'Data SIMPERUM belum dapat diambil. Silakan coba lagi.'
                 : 'SIMPERUM simulasi sedang tidak tersedia. Silakan isi manual.';
             return $this->response('error', $message, [
-                'snapshot_id' => (int) $snapshot['id'],
+                'rekaman_id' => (int) $snapshot['id'],
                 'cache_hit' => $cache_hit,
             ], $payload['error_code'] ?? 'source_error');
         }
@@ -735,13 +735,13 @@ class Simperum_gateway {
         }
         $this->internal_profile = $canonical;
         if ($requested_by) {
-            $canonical['source_mode'] = $this->mode;
+            $canonical['mode_sumber'] = $this->mode;
             $provenance = array_fill_keys(array_keys($canonical), ['source' => $this->mode]);
             if ($tanpa_tgl_sumber) {
                 $provenance['birth_date'] = ['source' => 'citizen'];
             }
             $existing = $this->CI->Housing_assessment_model->get_owned_profile($requested_by);
-            $existing_provenance = json_decode($existing['field_provenance_json'] ?? '{}', TRUE) ?: [];
+            $existing_provenance = kunci_tersimpan_ke_baru(json_decode($existing['asal_isian_json'] ?? '{}', TRUE) ?: []);
             foreach ($existing_provenance as $field => $meta) {
                 $source = is_array($meta) ? ($meta['source'] ?? '') : $meta;
                 if (in_array($source, ['citizen', 'citizen_correction'], TRUE)
@@ -766,9 +766,9 @@ class Simperum_gateway {
         return $this->response('found', $this->mode === 'api'
             ? 'Data SIMPERUM ditemukan.'
             : 'Data simulasi ditemukan.', [
-            'snapshot_id' => (int) $snapshot['id'],
-            'fixture_id' => $snapshot['source_record_key'] ?? NULL,
-            'source_record_key' => $snapshot['source_record_key'] ?? NULL,
+            'rekaman_id' => (int) $snapshot['id'],
+            'fixture_id' => $snapshot['kunci_rekaman_sumber'] ?? NULL,
+            'kunci_rekaman_sumber' => $snapshot['kunci_rekaman_sumber'] ?? NULL,
             'cache_hit' => $cache_hit,
             'missing_fields' => array_values($payload['missing_fields'] ?? []),
             'profile' => $this->mask_profile($canonical),
@@ -829,8 +829,8 @@ class Simperum_gateway {
                 'apbd_kab'=>'APBD Kabupaten/Kota','csr'=>'CSR','other'=>'Sumber lainnya',
                 'village_fund'=>'Dana Desa','bsps_kl'=>'BSPS-KL','bankab'=>'BANKAB','baznas'=>'BAZNAS',
             ];
-            $source = $housing['assistance_source_code'] ?? NULL;
-            $year = $housing['assistance_year'] ?? NULL;
+            $source = $housing['bantuan_perumahan'] ?? NULL;
+            $year = $housing['tahun_intervensi'] ?? NULL;
             $raw = (string) ($payload['unmapped_codes']['SumberDanaID'] ?? '');
             $dispositions = ['6'=>'Sudah Layak Huni','8'=>'Di luar prioritas','10'=>'Meninggal','11'=>'Salah/duplikasi data','15'=>'Pindah'];
             if ($source !== NULL && isset($source_labels[$source])) {
@@ -847,24 +847,24 @@ class Simperum_gateway {
             $identity + $socioeconomic + $housing + $structure + $sanitation + $location,
             array_flip([
                 'nik', 'family_card_number', 'full_name', 'address', 'phone',
-                'birth_date', 'gender_code', 'marital_status_code', 'education_code',
-                'occupation_code', 'tax_number', 'income_band_code', 'welfare_decile',
-                'has_savings', 'self_help_capability_code', 'self_help_amount',
-                'housing_status_code', 'land_title_code', 'has_other_land',
-                'has_other_house', 'house_area_m2', 'occupant_count', 'family_count',
-                'assistance_source_code', 'assistance_year', 'intervention_status', 'area_condition_code',
-                'owns_candidate_land', 'candidate_land_address',
-                'candidate_land_title_code', 'candidate_land_origin_code',
-                'land_owner_relationship_code', 'land_length_m', 'land_width_m',
-                'land_area_m2', 'foundation_condition_code', 'column_condition_code',
-                'beam_condition_code', 'sloof_condition_code',
-                'ceiling_condition_code', 'roof_frame_condition_code',
-                'floor_material_code', 'floor_condition_code', 'wall_material_code',
-                'wall_condition_code', 'roof_material_code', 'roof_condition_code',
-                'has_window', 'has_ventilation', 'water_source_code',
-                'has_bathroom_latrine', 'latrine_type_code', 'feces_disposal_code',
-                'septic_distance_code', 'lighting_source_code', 'cooking_fuel_code',
-                'location_lat', 'location_lng', 'location_accuracy_m', 'kabupaten_id',
+                'birth_date', 'jenis_kelamin', 'status_perkawinan', 'pendidikan',
+                'pekerjaan', 'tax_number', 'kelompok_penghasilan', 'desil_kesejahteraan',
+                'punya_tabungan', 'mampu_swadaya', 'nilai_swadaya',
+                'kepemilikan_rumah', 'kepemilikan_lahan', 'tanah_lain',
+                'rumah_lain', 'luas_rumah', 'jml_penghuni', 'jml_kk',
+                'bantuan_perumahan', 'tahun_intervensi', 'intervention_status', 'kawasan_perumahan',
+                'punya_lahan_calon', 'candidate_land_address',
+                'status_lahan_calon', 'asal_lahan_calon',
+                'hubungan_pemilik_lahan', 'panjang_lahan_m', 'lebar_lahan_m',
+                'luas_lahan_m2', 'kondisi_pondasi', 'kondisi_kolom',
+                'kondisi_balok', 'kondisi_sloof',
+                'kondisi_plafon', 'kondisi_rangka',
+                'bahan_lantai', 'kondisi_lantai', 'bahan_dinding',
+                'kondisi_dinding', 'bahan_atap', 'kondisi_atap',
+                'ada_jendela', 'ada_ventilasi', 'sumber_air',
+                'kamar_mandi', 'jenis_kloset', 'pembuangan_tinja',
+                'jarak_septic_tank', 'penerangan', 'bahan_bakar_masak',
+                'location_lat', 'location_lng', 'akurasi_lokasi_m', 'kabupaten_id',
             ])
         );
     }
@@ -877,8 +877,8 @@ class Simperum_gateway {
            turunan katalog SIMPERUM (`daily_laborer`, `owned`). Sebelum 25 Agt 2026
            peta di bawah HANYA memuat kosakata simulasi, jadi begitu mode `api`
            dinyalakan seluruh label pekerjaan dan kepemilikan keluar KOSONG
-           walaupun kodenya benar. Terbukti pada NIK nyata: occupation_code
-           `daily_laborer` terpetakan, `pekerjaan` tetap ''. Jangan menghapus
+           walaupun kodenya benar. Terbukti pada NIK nyata: kode pekerjaan
+           `daily_laborer` terpetakan, label `pekerjaan` tetap ''. Jangan menghapus
            salah satu kosakata; keduanya dipakai mode yang berbeda. */
         $occupations = [
             // kosakata simulasi
@@ -940,12 +940,12 @@ class Simperum_gateway {
             'nik' => isset($profile['nik']) ? str_repeat('*', 12) . substr($profile['nik'], -4) : NULL,
             'nama_lengkap' => $this->mask_words($profile['full_name'] ?? ''),
             'alamat' => $this->mask_words($profile['address'] ?? ''),
-            'desil' => $profile['welfare_decile'] ?? NULL,
-            'pekerjaan' => $occupations[$profile['occupation_code'] ?? ''] ?? '',
-            'penghasilan' => $income[$profile['income_band_code'] ?? ''] ?? '',
-            'status_kepemilikan' => $housing[$profile['housing_status_code'] ?? ''] ?? '',
+            'desil' => $profile['desil_kesejahteraan'] ?? NULL,
+            'pekerjaan' => $occupations[$profile['pekerjaan'] ?? ''] ?? '',
+            'penghasilan' => $income[$profile['kelompok_penghasilan'] ?? ''] ?? '',
+            'status_kepemilikan' => $housing[$profile['kepemilikan_rumah'] ?? ''] ?? '',
             'status_intervensi' => $profile['intervention_status'] ?? 'Belum tersedia',
-            'income_band_code' => $profile['income_band_code'] ?? NULL,
+            'kelompok_penghasilan' => $profile['kelompok_penghasilan'] ?? NULL,
         ];
     }
 
@@ -965,7 +965,7 @@ class Simperum_gateway {
         return [
             'status' => $status,
             'message' => $message,
-            'source_mode' => $this->mode,
+            'mode_sumber' => $this->mode,
             'simulation' => $this->mode === 'simulation',
             'code' => $code,
             'data' => $data,

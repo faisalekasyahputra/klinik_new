@@ -82,7 +82,7 @@ $isi = function ($nama) use ($old) {
         <div class="auth-form-container" style="max-width: 520px;" x-data="onboardingForm(<?= htmlspecialchars(json_encode((string) ($old['role'] ?? '')), ENT_QUOTES, 'UTF-8') ?>, <?= (int) $langkah_awal ?>)">
 
             <!-- Back Link - halaman ini TIDAK ditegakkan secara global (cek
-                 profile_completed cuma terjadi sekali sesudah login), jadi user
+                 profil_lengkap cuma terjadi sekali sesudah login), jadi user
                  memang boleh pergi. Dulu tidak ada tautan apa pun ke luar, dan
                  itu membuatnya terasa seperti jebakan. -->
             <a href="<?= base_url() ?>" class="auth-back-link">

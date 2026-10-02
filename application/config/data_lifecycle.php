@@ -22,7 +22,7 @@ $config['data_lifecycle'] = [
         'cache_hulu_hari'               => 30,    // cache layanan luar yang tak tersegarkan sekian hari (TTL terpanjang 1 hari)
     ],
 
-    /* PENGHAPUSAN 2: hapus akun. Nasib SETIAP kolom yang menunjuk ke usr_users. cascade = barisnya ikut
+    /* PENGHAPUSAN 2: hapus akun. Nasib SETIAP kolom yang menunjuk ke usr_akun. cascade = barisnya ikut
        terhapus; set_null = baris arsip layanan/keputusan tetap ada tanpa tautan ke akun (alasan wajib);
        Data_erasure menyapu berkas dan menyamarkan sisa identitas lebih dulu. Diperiksa terhadap skema
        nyata oleh tests/data_lifecycle_db_test.php. */
@@ -34,7 +34,7 @@ $config['data_lifecycle'] = [
         'forum_janji_temu.reviewed_by'           => ['set_null', 'atribusi petugas'],
         'forum_komentar.user_id'                 => ['set_null', 'komentar bertahan; User_model menganonimkan nama lebih dulu (FK migrasi 069)'],
         'forum_laporan_komentar.user_id'         => ['cascade', 'laporan milik akun'],
-        'forum_likes.user_id'                    => ['cascade', 'tanda suka milik akun; User_model juga menghapusnya eksplisit (FK migrasi 069)'],
+        'forum_suka.user_id'                    => ['cascade', 'tanda suka milik akun; User_model juga menghapusnya eksplisit (FK migrasi 069)'],
         'kkn_magang_pendaftaran.user_id'         => ['cascade', 'pendaftaran milik akun; SEMUA berkasnya disapu dari disk'],
         'kkn_magang_pendaftaran.reviewed_by_bidang' => ['set_null', 'atribusi petugas'],
         'kkn_magang_pendaftaran.reviewed_by'     => ['set_null', 'atribusi petugas'],
@@ -43,21 +43,21 @@ $config['data_lifecycle'] = [
         'rd_perumahan_bnba.uploaded_by'          => ['set_null', 'atribusi petugas'],
         'sf_berkas_penilaian.uploaded_by'        => ['set_null', 'berkas penilaian terkirim adalah arsip; draf disapu'],
         'sf_berkas_penilaian.verified_by'        => ['set_null', 'atribusi petugas'],
-        'sf_housing_queue.reviewed_by'           => ['set_null', 'atribusi petugas'],
-        'sf_housing_queue.user_id'               => ['set_null', 'antrean pengajuan adalah arsip layanan; ditinjau lewat permintaan penghapusan data layanan'],
+        'sf_antrean_pengajuan.reviewed_by'           => ['set_null', 'atribusi petugas'],
+        'sf_antrean_pengajuan.user_id'               => ['set_null', 'antrean pengajuan adalah arsip layanan; ditinjau lewat permintaan penghapusan data layanan'],
         'sf_penilaian_perumahan.user_id'         => ['set_null', 'penilaian TERKIRIM adalah arsip; DRAF dihapus beserta berkasnya saat akun dihapus'],
         'sf_profil_warga.user_id'                => ['cascade', 'profil terenkripsi milik akun'],
         'sf_data_simperum.user_id'               => ['cascade', 'cermin data SIMPERUM hanya untuk NIK akun terdaftar'],
         'sf_rekaman_simperum.requested_by'       => ['set_null', 'snapshot dihapus oleh retensi; tidak menunjuk orang lagi'],
-        'sf_riwayat_keputusan_antrean.actor_id'  => ['set_null', 'riwayat keputusan adalah arsip'],
-        'srp2_certified_developers.user_id'      => ['set_null', 'baris direktori publik milik dinas bertahan; tautan ke akun pengembang lepas (FK migrasi 066)'],
-        'srp2_registrations.user_id'             => ['cascade', 'pengajuan SRP2 milik akun; berkasnya disapu dari disk'],
-        'srp2_registrations.reviewed_by'         => ['set_null', 'atribusi petugas'],
-        'sys_jejak_audit.actor_id'               => ['set_null', 'jejak audit disimpan; surel pelaku disamarkan (pseudonim) saat akun dihapus'],
-        'sys_push_subscriptions.user_id'         => ['cascade', 'langganan perangkat milik akun'],
-        'usr_admin_module_privileges.user_id'    => ['cascade', 'hak modul milik akun'],
-        'usr_admin_module_privileges.updated_by' => ['set_null', 'atribusi petugas'],
-        'usr_documents.user_id'                  => ['cascade', 'dokumen onboarding milik akun; berkasnya disapu dari disk'],
+        'sf_riwayat_keputusan_antrean.pelaku_id'  => ['set_null', 'riwayat keputusan adalah arsip'],
+        'srp2_direktori_pengembang.user_id'      => ['set_null', 'baris direktori publik milik dinas bertahan; tautan ke akun pengembang lepas (FK migrasi 066)'],
+        'srp2_pengajuan.user_id'             => ['cascade', 'pengajuan SRP2 milik akun; berkasnya disapu dari disk'],
+        'srp2_pengajuan.reviewed_by'         => ['set_null', 'atribusi petugas'],
+        'sys_jejak_audit.pelaku_id'               => ['set_null', 'jejak audit disimpan; surel pelaku disamarkan (pseudonim) saat akun dihapus'],
+        'sys_langganan_notifikasi.user_id'         => ['cascade', 'langganan perangkat milik akun'],
+        'usr_hak_modul_admin.user_id'    => ['cascade', 'hak modul milik akun'],
+        'usr_hak_modul_admin.updated_by' => ['set_null', 'atribusi petugas'],
+        'usr_dokumen.user_id'                  => ['cascade', 'dokumen onboarding milik akun; berkasnya disapu dari disk'],
     ],
 
     /* Kolom pemilik TANPA kunci asing: Data_erasure/User_model menanganinya secara eksplisit.
@@ -67,15 +67,15 @@ $config['data_lifecycle'] = [
     /* PERTUKARAN 1: ekspor data akun oleh pemilik (Pengaturan/export_account_data, butuh kata sandi,
        dibatasi laju, diaudit). Tabel milik akun yang diekspor; sisanya dikecualikan dengan alasan. */
     'ekspor_akun' => [
-        'tabel' => ['sf_profil_warga', 'sf_penilaian_perumahan', 'sf_housing_queue', 'aduan', 'srp2_registrations',
-                    'kkn_magang_pendaftaran', 'forum_diskusi', 'forum_komentar', 'forum_janji_temu', 'usr_documents',
+        'tabel' => ['sf_profil_warga', 'sf_penilaian_perumahan', 'sf_antrean_pengajuan', 'aduan', 'srp2_pengajuan',
+                    'kkn_magang_pendaftaran', 'forum_diskusi', 'forum_komentar', 'forum_janji_temu', 'usr_dokumen',
                     'sf_data_simperum'],
         'dikecualikan' => [
             'forum_laporan_komentar'       => 'laporan moderasi kepada admin; bukan data isian pemilik',
-            'sys_push_subscriptions'       => 'kredensial langganan perangkat (kunci enkripsi push); rahasia, bukan data profil',
-            'usr_admin_module_privileges'  => 'hak akses staf yang diberikan superadmin; bukan data pemilik',
-            'forum_likes'                  => 'tanda suka tanpa isi pribadi',
-            'srp2_certified_developers'    => 'entri direktori publik perusahaan yang dikelola dinas; pemilik melihat dan menyunting isinya di Profil Perusahaan',
+            'sys_langganan_notifikasi'       => 'kredensial langganan perangkat (kunci enkripsi push); rahasia, bukan data profil',
+            'usr_hak_modul_admin'  => 'hak akses staf yang diberikan superadmin; bukan data pemilik',
+            'forum_suka'                  => 'tanda suka tanpa isi pribadi',
+            'srp2_direktori_pengembang'    => 'entri direktori publik perusahaan yang dikelola dinas; pemilik melihat dan menyunting isinya di Profil Perusahaan',
         ],
     ],
 

@@ -168,8 +168,8 @@ $config['api_schemas'] = [
     'admin/update_status' => [
         'class' => 'api',
         'methods' => ['POST' => ['fields' => [
-            'queue_id'      => $id + ['required' => TRUE],
-            'from_status'   => ['type' => 'string', 'max_len' => 50],
+            'antrean_id'      => $id + ['required' => TRUE],
+            'status_awal'   => ['type' => 'string', 'max_len' => 50],
             'status'        => ['type' => 'string', 'required' => TRUE, 'max_len' => 50],
             'catatan_admin' => ['type' => 'string', 'max_len' => 5000],
         ]]],
@@ -177,8 +177,8 @@ $config['api_schemas'] = [
     'admin_kabkota/update_status' => [
         'class' => 'api',
         'methods' => ['POST' => ['fields' => [
-            'queue_id'      => $id + ['required' => TRUE],
-            'from_status'   => ['type' => 'string', 'max_len' => 50],
+            'antrean_id'      => $id + ['required' => TRUE],
+            'status_awal'   => ['type' => 'string', 'max_len' => 50],
             'status'        => ['type' => 'string', 'required' => TRUE, 'max_len' => 50],
             'catatan_admin' => ['type' => 'string', 'max_len' => 5000],
         ]]],

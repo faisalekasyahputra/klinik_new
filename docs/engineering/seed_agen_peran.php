@@ -64,10 +64,10 @@ function q($db, $sql, $p = []) {
 
 // --- Mode hapus --------------------------------------------------------------
 if (in_array('--hapus', $argv, TRUE)) {
-    $r = q($db, "SELECT id, email FROM usr_users WHERE email LIKE ?", ['%' . TANDA]);
+    $r = q($db, "SELECT id, email FROM usr_akun WHERE email LIKE ?", ['%' . TANDA]);
     foreach ($r['rows'] as $u) {
         q($db, 'DELETE FROM kkn_magang_pendaftaran WHERE user_id=?', [$u['id']]);
-        q($db, 'DELETE FROM usr_users WHERE id=?', [$u['id']]);
+        q($db, 'DELETE FROM usr_akun WHERE id=?', [$u['id']]);
         echo "  hapus {$u['email']}\n";
     }
     echo "Selesai: " . count($r['rows']) . " akun agen dihapus.\n";
@@ -80,7 +80,7 @@ $bid = q($db, "SELECT kode, nama FROM bidang ORDER BY kode LIMIT 1")['rows'][0] 
 if ( ! $kab) { die("Tabel `kabupaten` kosong - seed dasar belum jalan.\n"); }
 if ( ! $bid) { die("Tabel `bidang` kosong - seed dasar belum jalan.\n"); }
 
-/* Satu akun per peran. `profile_completed = 1` supaya login tidak dibelokkan
+/* Satu akun per peran. `profil_lengkap = 1` supaya login tidak dibelokkan
    ke wizard onboarding - agen menguji perjalanan perannya, bukan onboarding
    (itu sudah punya suite sendiri). */
 $peran = [
@@ -99,19 +99,19 @@ echo str_repeat('-', 86) . "\n";
 
 foreach ($peran as $role => $cfg) {
     $email = 'agen_' . $role . TANDA;
-    $ada = q($db, 'SELECT id FROM usr_users WHERE email=?', [$email])['rows'][0] ?? NULL;
+    $ada = q($db, 'SELECT id FROM usr_akun WHERE email=?', [$email])['rows'][0] ?? NULL;
 
     if ($ada) {
         // Disegarkan, bukan dilewati: sandi/role/scope dikembalikan ke keadaan
         // yang diketahui, supaya agen tidak gagal gara-gara sisa percobaan lama.
-        q($db, 'UPDATE usr_users SET password=?, role=?, status="active", profile_completed=1,
-                name=?, kabupaten_id=?, bidang_kode=? WHERE id=?',
+        q($db, 'UPDATE usr_akun SET kata_sandi=?, peran=?, status="active", profil_lengkap=1,
+                nama=?, kabupaten_id=?, bidang_kode=? WHERE id=?',
             [$hash, $role, $cfg['nama'], $cfg['kab'], $cfg['bid'], $ada['id']]);
         $id = $ada['id'];
         $tanda = 'disegarkan';
     } else {
-        $id = q($db, 'INSERT INTO usr_users (email,password,name,username,role,status,
-                profile_completed,kabupaten_id,bidang_kode,created_at)
+        $id = q($db, 'INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,
+                profil_lengkap,kabupaten_id,bidang_kode,created_at)
                 VALUES (?,?,?,?,?, "active",1,?,?, NOW())',
             [$email, $hash, $cfg['nama'], 'agen_' . $role, $role, $cfg['kab'], $cfg['bid']])['id'];
         $tanda = 'dibuat';

@@ -205,14 +205,14 @@ $GLOBALS['rate_asli'] = [];
 foreach (['login', 'simperum_lookup', 'housing_submit', 'admin_queue_decision', 'kelas_api_ip', 'tulis_anon'] as $policy) {
     foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
         $key = hash('sha256', $policy . ':ip:' . $ip);
-        $GLOBALS['rate_asli'][$key] = $db->row('SELECT limit_key, window_started_at, failed_attempts FROM sys_rate_limits WHERE limit_key = ?', [$key]);
-        $db->run('DELETE FROM sys_rate_limits WHERE limit_key = ?', [$key]);
+        $GLOBALS['rate_asli'][$key] = $db->row('SELECT kunci, jendela_mulai_at, jumlah_gagal FROM sys_batas_laju WHERE kunci = ?', [$key]);
+        $db->run('DELETE FROM sys_batas_laju WHERE kunci = ?', [$key]);
     }
 }
 
 $stamp = time();
 $passwordHash = password_hash(ADMIN_PASSWORD, PASSWORD_BCRYPT);
-$awalQueue = (int) $db->scalar('SELECT COALESCE(MAX(id), 0) FROM sf_housing_queue');
+$awalQueue = (int) $db->scalar('SELECT COALESCE(MAX(id), 0) FROM sf_antrean_pengajuan');
 $GLOBALS['akun_uji'] = [];
 
 /* Bersih-bersih dipasang sebagai shutdown handler supaya `wajib()` yang
@@ -224,24 +224,24 @@ register_shutdown_function(function () use ($db, $awalQueue) {
     foreach ($GLOBALS['akun_uji'] as $id) {
         $db->run('DELETE FROM sf_rekaman_simperum WHERE requested_by = ?', [$id]);
         $db->run('DELETE FROM sf_penilaian_perumahan WHERE user_id = ?', [$id]);
-        $db->run('DELETE FROM sf_housing_queue WHERE user_id = ?', [$id]);
+        $db->run('DELETE FROM sf_antrean_pengajuan WHERE user_id = ?', [$id]);
     }
-    $db->run('DELETE FROM sf_housing_queue WHERE id > ? AND user_id IS NULL', [$awalQueue]);
+    $db->run('DELETE FROM sf_antrean_pengajuan WHERE id > ? AND user_id IS NULL', [$awalQueue]);
     foreach ($GLOBALS['akun_uji'] as $id) {
-        $db->run('DELETE FROM usr_users WHERE id = ?', [$id]);
+        $db->run('DELETE FROM usr_akun WHERE id = ?', [$id]);
     }
     foreach ($GLOBALS['rate_asli'] as $key => $row) {
-        $db->run('DELETE FROM sys_rate_limits WHERE limit_key = ?', [$key]);
+        $db->run('DELETE FROM sys_batas_laju WHERE kunci = ?', [$key]);
         if ($row) {
-            $db->run('INSERT INTO sys_rate_limits (limit_key, window_started_at, failed_attempts) VALUES (?, ?, ?)',
-                [$row['limit_key'], $row['window_started_at'], $row['failed_attempts']]);
+            $db->run('INSERT INTO sys_batas_laju (kunci, jendela_mulai_at, jumlah_gagal) VALUES (?, ?, ?)',
+                [$row['kunci'], $row['jendela_mulai_at'], $row['jumlah_gagal']]);
         }
     }
 });
 
 function akun_uji($db, $email, $name, $role, $kabupaten_id, $hash) {
     $id = $db->run(
-        "INSERT INTO usr_users (email, password, name, username, role, status, profile_completed, kabupaten_id, created_at)
+        "INSERT INTO usr_akun (email, kata_sandi, nama, nama_pengguna, peran, status, profil_lengkap, kabupaten_id, created_at)
          VALUES (?, ?, ?, ?, ?, 'active', 1, ?, NOW())",
         [$email, $hash, $name, strtok($email, '@'), $role, $kabupaten_id]
     );
@@ -257,7 +257,7 @@ $emailMhs = "mhs_pw_{$stamp}@example.test";
 echo "=== UJI PERJALANAN WARGA ===\n";
 echo "Target: " . BASE_URL . " | DB: {$env['DB_NAME']}\n\n";
 
-$programId = $db->scalar("SELECT id FROM sf_programs WHERE kode_program = 'omah_sekeng'");
+$programId = $db->scalar("SELECT id FROM sf_program WHERE kode_program = 'omah_sekeng'");
 wajib($programId !== NULL, 'Seed Omah Sekeng tersedia');
 
 $adminSemarang = akun_uji($db, $emailSemarang, 'Admin Semarang Uji', 'admin_kabkota', 3374, $passwordHash);
@@ -289,7 +289,7 @@ $tamu->get('Auth/login');
 wajib($tamu->csrf !== NULL, 'Tamu memegang token CSRF sah');
 
 foreach (['tamu' => [$tamu, NULL], 'mahasiswa' => [$mhs, $mhsId]] as $siapa => [$sesi, $uid]) {
-    $qSebelum = (int) $db->scalar('SELECT COUNT(*) FROM sf_housing_queue');
+    $qSebelum = (int) $db->scalar('SELECT COUNT(*) FROM sf_antrean_pengajuan');
     $pSebelum = (int) $db->scalar('SELECT COUNT(*) FROM sf_profil_warga');
     $sSebelum = (int) $db->scalar('SELECT COALESCE(MAX(id), 0) FROM sf_rekaman_simperum');
 
@@ -316,8 +316,8 @@ foreach (['tamu' => [$tamu, NULL], 'mahasiswa' => [$mhs, $mhsId]] as $siapa => [
     cek($subAjax['status'] === 410 && (json_body($subAjax)['code'] ?? '') === 'jalur_dipindah',
         "{$siapa}: POST submit_antrean (AJAX) dijawab 410 jalur_dipindah (HTTP {$subAjax['status']})");
 
-    cek((int) $db->scalar('SELECT COUNT(*) FROM sf_housing_queue') === $qSebelum,
-        "{$siapa}: nol baris sf_housing_queue lahir dari jalur lama");
+    cek((int) $db->scalar('SELECT COUNT(*) FROM sf_antrean_pengajuan') === $qSebelum,
+        "{$siapa}: nol baris sf_antrean_pengajuan lahir dari jalur lama");
     cek((int) $db->scalar('SELECT COUNT(*) FROM sf_profil_warga') === $pSebelum,
         "{$siapa}: nol baris sf_profil_warga lahir dari jalur lama");
     cek((int) $db->scalar('SELECT COALESCE(MAX(id), 0) FROM sf_rekaman_simperum') === $sSebelum,
@@ -335,22 +335,22 @@ echo "\n-- POSITIF: tiket wilayah Semarang -> admin wilayah -> approve -> cek ti
    uji_wizard_dan_cek_rumah.php. Menjalankannya dua kali cuma menggandakan
    pemakaian kolam NIK fixture. Yang diuji DI SINI adalah sisi admin kab/kota
    (cakupan wilayah, reviewer, transisi), dan baris berbentuk tiket lama
-   (source_mode 'legacy', tanpa assessment_id) memang masih ada di DB dan
+   (mode_sumber 'legacy', tanpa penilaian_id) memang masih ada di DB dan
    tetap harus bisa diputuskan admin. Pemiliknya akun warga uji, bukan tamu. */
 $alfabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 do {
     $tiket = 'PKP-';
     for ($i = 0; $i < 6; $i++) { $tiket .= $alfabet[random_int(0, strlen($alfabet) - 1)]; }
-} while ($db->scalar('SELECT id FROM sf_housing_queue WHERE ticket_code = ?', [$tiket]));
+} while ($db->scalar('SELECT id FROM sf_antrean_pengajuan WHERE kode_tiket = ?', [$tiket]));
 $queueId = $db->run(
-    "INSERT INTO sf_housing_queue (ticket_code, user_id, kabupaten_id, program_id, nik_pengaju_ciphertext,
+    "INSERT INTO sf_antrean_pengajuan (kode_tiket, user_id, kabupaten_id, program_id, nik_pengaju_ciphertext,
         nik_pengaju_lookup_hash, nama_lengkap_ciphertext, data_survey_json_ciphertext, status_antrean, created_at, updated_at)
      VALUES (?, ?, 3374, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())",
     [$tiket, $wargaId, $programId, $enc->encrypt('0000000000000001'), $enc->deterministic_hash('0000000000000001'),
         $enc->encrypt('Warga Uji Perjalanan'), $enc->encrypt(json_encode(['penghasilan' => 2500000, 'pekerjaan' => 'Karyawan Swasta',
         'status_kepemilikan' => 'Sewa/Kontrak', 'alasan_pengajuan' => 'Membutuhkan rumah layak']))]
 );
-$queue = $db->row('SELECT * FROM sf_housing_queue WHERE id = ?', [$queueId]);
+$queue = $db->row('SELECT * FROM sf_antrean_pengajuan WHERE id = ?', [$queueId]);
 wajib($queue && $queue['status_antrean'] === 'pending', 'Baris tiket uji lahir sebagai pending');
 
 $admin = new Session();
@@ -358,9 +358,9 @@ $admin->get('Auth/login');
 $login = json_body($admin->post('Auth/do_login', ['email' => $emailSemarang, 'password' => ADMIN_PASSWORD]));
 wajib(($login['status'] ?? '') === 'success' && ($login['role'] ?? '') === 'admin_kabkota', 'Admin Kota Semarang login');
 $dashboard = $admin->get('Admin_Kabkota');
-cek(strpos($dashboard['body'], $queue['ticket_code']) !== FALSE, 'Tiket terlihat di dashboard admin wilayah yang benar');
-$admin->post('Admin_Kabkota/update_status', ['queue_id' => $queue['id'], 'status' => 'approved', 'catatan_admin' => ''], FALSE);
-$approved = $db->row('SELECT status_antrean, reviewed_by FROM sf_housing_queue WHERE id = ?', [$queue['id']]);
+cek(strpos($dashboard['body'], $queue['kode_tiket']) !== FALSE, 'Tiket terlihat di dashboard admin wilayah yang benar');
+$admin->post('Admin_Kabkota/update_status', ['antrean_id' => $queue['id'], 'status' => 'approved', 'catatan_admin' => ''], FALSE);
+$approved = $db->row('SELECT status_antrean, reviewed_by FROM sf_antrean_pengajuan WHERE id = ?', [$queue['id']]);
 wajib($approved['status_antrean'] === 'approved', 'Admin wilayah berhasil menyetujui');
 cek((int) $approved['reviewed_by'] === (int) $adminSemarang, 'Reviewer tercatat dari sesi admin');
 
@@ -381,7 +381,7 @@ cek(strpos((string) ($halamanTamu['body'] ?? ''), 'Nomor tiket') === FALSE,
    status, nama, atau keberadaan pengajuan meski kode tiketnya benar. */
 $lookup->get('Auth/login');
 $lookupResponse = $lookup->post('Program/cek_tiket', [
-    'ticket_code' => $queue['ticket_code'],
+    'kode_tiket' => $queue['kode_tiket'],
     'nik_suffix' => '0001',
 ]);
 $lookupResult = json_body($lookupResponse);
@@ -398,17 +398,17 @@ $wrongAdmin->get('Auth/login');
 $wrongLogin = json_body($wrongAdmin->post('Auth/do_login', ['email' => $emailBanyumas, 'password' => ADMIN_PASSWORD]));
 wajib(($wrongLogin['status'] ?? '') === 'success', 'Admin Kabupaten Banyumas login');
 $wrongAdmin->post('Admin_Kabkota/update_status', [
-    'queue_id' => $queue['id'], 'status' => 'rejected', 'catatan_admin' => 'Salah wilayah',
+    'antrean_id' => $queue['id'], 'status' => 'rejected', 'catatan_admin' => 'Salah wilayah',
 ], FALSE);
-cek($db->scalar('SELECT status_antrean FROM sf_housing_queue WHERE id = ?', [$queue['id']]) === 'approved',
+cek($db->scalar('SELECT status_antrean FROM sf_antrean_pengajuan WHERE id = ?', [$queue['id']]) === 'approved',
     'Admin wilayah lain tidak dapat mengubah baris');
-cek(strpos($wrongAdmin->get('Admin_Kabkota')['body'], $queue['ticket_code']) === FALSE,
+cek(strpos($wrongAdmin->get('Admin_Kabkota')['body'], $queue['kode_tiket']) === FALSE,
     'Tiket tidak terlihat di dashboard admin wilayah lain');
 
 $admin->post('Admin_Kabkota/update_status', [
-    'queue_id' => $queue['id'], 'status' => 'approved', 'catatan_admin' => '',
+    'antrean_id' => $queue['id'], 'status' => 'approved', 'catatan_admin' => '',
 ], FALSE);
-cek($db->scalar('SELECT status_antrean FROM sf_housing_queue WHERE id = ?', [$queue['id']]) === 'approved',
+cek($db->scalar('SELECT status_antrean FROM sf_antrean_pengajuan WHERE id = ?', [$queue['id']]) === 'approved',
     'Transisi approved → approved ditolak');
 
 echo "\n=== RINGKASAN ===\n";

@@ -9,9 +9,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * Ini bukan kelalaian yang bisa ditambal layar ini; ini pembagian tugas yang
  * sudah terlanjur ada, dan layar ini menyatakannya apa adanya:
  *
- *   `sf_programs` (tabel)          | `Smart_filter::master_programs()` (kode)
+ *   `sf_program` (tabel)          | `Smart_filter::master_programs()` (kode)
  *   -------------------------------|------------------------------------------
- *   `is_active` MENGGERBANGI        | judul & deskripsi di KARTU HASIL DIAGNOSA
+ *   `aktif` MENGGERBANGI        | judul & deskripsi di KARTU HASIL DIAGNOSA
  *   pengajuan - Housing_assessment  |
  *   _model:500 menolak kalau != 1   | aturan pencocokan desil -> program
  *   `nama_program` tampil di        |
@@ -26,7 +26,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * ═══ YANG BISA DIUBAH DARI SINI ═══
  *
  *   ✅ `nama_program`, `deskripsi_singkat` - yang dibaca warga di antrean/akun.
- *   ✅ `is_active` - kendali nyata: mematikannya menolak pengajuan baru.
+ *   ✅ `aktif` - kendali nyata: mematikannya menolak pengajuan baru.
  *   ❌ `kode_program` - identitas. `Housing_assessment_model:748` mencarinya
  *      lewat kolom ini, dan `Smart_filter` memetakannya sebagai literal di kode.
  *      Menggantinya lewat formulir memutus keduanya sekaligus.
@@ -52,9 +52,9 @@ class Admin_Katalog_Program extends Admin_Controller {
 
         $rows = $this->db
             ->select('p.*, k.nama_kategori,'
-                . ' (SELECT COUNT(*) FROM sf_housing_queue q WHERE q.program_id = p.id) AS dipakai', FALSE)
-            ->from('sf_programs p')
-            ->join('sf_program_kategori k', 'k.id = p.id_kategori', 'left')
+                . ' (SELECT COUNT(*) FROM sf_antrean_pengajuan q WHERE q.program_id = p.id) AS dipakai', FALSE)
+            ->from('sf_program p')
+            ->join('sf_program_kategori k', 'k.id = p.kategori_id', 'left')
             ->order_by('k.nama_kategori', 'ASC')->order_by('p.nama_program', 'ASC')
             ->get()->result();
 
@@ -91,7 +91,7 @@ class Admin_Katalog_Program extends Admin_Controller {
         if ($this->input->method(TRUE) !== 'POST') { show_404(); }
 
         $id = (int) $this->input->post('id');
-        $lama = $this->db->get_where('sf_programs', ['id' => $id])->row();
+        $lama = $this->db->get_where('sf_program', ['id' => $id])->row();
         if ( ! $lama) {
             $this->session->set_flashdata('error', 'Program tidak ditemukan.');
             redirect('Admin_Katalog_Program');
@@ -126,8 +126,8 @@ class Admin_Katalog_Program extends Admin_Controller {
         $set = [
             'nama_program'      => $nama,
             'deskripsi_singkat' => $desk,
-            'is_active'         => $aktif,
-            'badge'             => $badge !== '' ? $badge : NULL,
+            'aktif'         => $aktif,
+            'lencana'             => $badge !== '' ? $badge : NULL,
             'syarat_utama'      => $syarat !== '' ? $syarat : NULL,
             'urutan'            => $urutan,
             'tampil_korsel'     => $korsel,
@@ -147,7 +147,7 @@ class Admin_Katalog_Program extends Admin_Controller {
             $set['gambar'] = $gambar_baru;
         }
 
-        $this->db->where('id', $id)->update('sf_programs', $set);
+        $this->db->where('id', $id)->update('sf_program', $set);
 
         /* Berkas lama dibuang HANYA kalau ia hasil unggahan. Berkas bawaan di
            `assets/img/program/` ikut repo dan dipakai sebagai nilai awal migrasi
@@ -160,18 +160,18 @@ class Admin_Katalog_Program extends Admin_Controller {
         $berubah = [];
         if ($lama->nama_program !== $nama)              { $berubah[] = 'nama'; }
         if ($lama->deskripsi_singkat !== $desk)         { $berubah[] = 'deskripsi'; }
-        if ((string) $lama->badge !== $badge)           { $berubah[] = 'label'; }
+        if ((string) $lama->lencana !== $badge)           { $berubah[] = 'label'; }
         if ((string) $lama->syarat_utama !== $syarat)   { $berubah[] = 'syarat utama'; }
         if ((int) $lama->urutan !== $urutan)            { $berubah[] = 'urutan'; }
         if ((int) $lama->tampil_korsel !== $korsel)     { $berubah[] = $korsel ? 'ditampilkan di beranda' : 'DISEMBUNYIKAN dari beranda'; }
         if ($gambar_baru !== NULL)                      { $berubah[] = 'gambar'; }
-        if ((int) $lama->is_active !== $aktif)          { $berubah[] = $aktif ? 'diaktifkan' : 'DINONAKTIFKAN'; }
+        if ((int) $lama->aktif !== $aktif)          { $berubah[] = $aktif ? 'diaktifkan' : 'DINONAKTIFKAN'; }
 
         if ($berubah) {
             $this->catat_audit('program_diubah',
                 'Program ' . $lama->kode_program . ': ' . implode(', ', $berubah),
-                'sf_programs', $id,
-                ['dari' => ['nama' => $lama->nama_program, 'aktif' => (int) $lama->is_active],
+                'sf_program', $id,
+                ['dari' => ['nama' => $lama->nama_program, 'aktif' => (int) $lama->aktif],
                  'ke'   => ['nama' => $nama, 'aktif' => $aktif]]);
         }
 

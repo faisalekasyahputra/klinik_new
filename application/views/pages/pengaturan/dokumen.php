@@ -26,10 +26,10 @@ $button = 'inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2 
             <?php if (!empty($keterangan[$key])): ?><p class="mt-2 text-sm text-gray-500 dark:text-brand-muted"><?= html_escape($keterangan[$key]) ?></p><?php endif; ?>
             <?php if (isset($files[$key])): ?>
                 <p class="mt-3 break-all text-sm">Tersimpan: <?= html_escape($files[$key]) ?></p>
-                <a href="<?= base_url('Pengembang/lihat_dokumen_saya/' . (int) $srp2['registration_id'] . '/' . $key) ?>" target="_blank" rel="noopener" class="mt-2 inline-block text-sm font-bold underline">Lihat Berkas</a>
+                <a href="<?= base_url('Pengembang/lihat_dokumen_saya/' . (int) $srp2['pengajuan_id'] . '/' . $key) ?>" target="_blank" rel="noopener" class="mt-2 inline-block text-sm font-bold underline">Lihat Berkas</a>
             <?php else: ?><p class="mt-3 text-sm text-gray-500 dark:text-brand-muted">Belum diunggah</p><?php endif; ?>
             <?php if (!$locked): ?>
-                <form action="<?= base_url('Pengembang/simpan_dokumen/' . (int) $srp2['registration_id']) ?>" method="post" enctype="multipart/form-data" class="mt-4 space-y-3">
+                <form action="<?= base_url('Pengembang/simpan_dokumen/' . (int) $srp2['pengajuan_id']) ?>" method="post" enctype="multipart/form-data" class="mt-4 space-y-3">
                     <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
                     <input type="hidden" name="return_to" value="dashboard">
                     <label for="upload_<?= $key ?>" class="block text-sm"><?= isset($files[$key]) ? 'Pilih Berkas Pengganti' : 'Pilih Berkas' ?></label>
@@ -43,7 +43,7 @@ $button = 'inline-flex items-center gap-2 rounded-lg bg-brand-primary px-4 py-2 
     <div class="flex flex-wrap items-center justify-between gap-4">
         <a href="<?= base_url('akun') ?>" class="text-sm font-bold underline">Kembali ke Status Pengajuan</a>
         <?php if (!$locked): ?>
-            <form action="<?= base_url('Pengembang/kirim_pengajuan/' . (int) $srp2['registration_id']) ?>" method="post">
+            <form action="<?= base_url('Pengembang/kirim_pengajuan/' . (int) $srp2['pengajuan_id']) ?>" method="post">
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
                 <input type="hidden" name="return_to" value="dashboard">
                 <button type="submit" <?= $count < count($dokumen) ? 'disabled' : '' ?> class="<?= $button ?> disabled:opacity-50">Kirim Pengajuan</button>

@@ -14,7 +14,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * SENGAJA memakai `Admin_Controller`, BUKAN `_check_admin()` gaya lama yang
  * masih beredar di beberapa controller: gerbang lama itu menerima campuran
  * peran ('admin', 'staff', 'Petugas Disperakim') yang tidak satu pun terdaftar
- * sebagai peran resmi di `usr_users.role` selain 'admin'.
+ * sebagai peran resmi di `usr_akun.peran` selain 'admin'.
  *
  * Aturan perpindahan keadaan TIDAK ditulis di sini - dibaca dari
  * `Janji_temu_model::ALUR`, satu tabel yang sama dengan yang dipakai sisi warga.
@@ -42,19 +42,19 @@ class Admin_Konsultasi extends Admin_Controller {
         $data['base_url'] = 'Admin_Konsultasi';
 
         $this->db->from('forum_janji_temu jt')
-            ->join('forum_diskusi d', 'd.id_diskusi = jt.id_diskusi', 'left')
-            ->join('usr_users u', 'u.id = jt.user_id', 'left');
+            ->join('forum_diskusi d', 'd.id = jt.diskusi_id', 'left')
+            ->join('usr_akun u', 'u.id = jt.user_id', 'left');
         if ($status_filter) { $this->db->where('jt.status', $status_filter); }
         if ($table['q'] !== '') {
             $this->db->group_start()
-                ->like('d.judul_topik', $table['q'])->or_like('u.name', $table['q'])
+                ->like('d.judul_topik', $table['q'])->or_like('u.nama', $table['q'])
                 ->or_like('jt.alasan', $table['q'])
                 ->group_end();
         }
         $table += $this->paginate_state($this->db->count_all_results('', FALSE));
 
         $data['rows'] = $this->db
-            ->select('jt.*, d.judul_topik, d.kategori, u.name AS nama_pemohon, u.email AS email_pemohon')
+            ->select('jt.*, d.judul_topik, d.kategori, u.nama AS nama_pemohon, u.email AS email_pemohon')
             ->order_by($table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
             ->get()->result();

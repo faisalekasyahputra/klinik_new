@@ -5,7 +5,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * KEPUTUSAN PEMILIK PRODUK 27 Sep 2026: jalur diagnosa LAMA (solusi_pembiayaan,
  * Program/diagnosa, api_cek_simperum, api_kalkulasi_program, submit_antrean)
  * dialihkan ke wizard warga `warga/pendataan`, supaya tidak ada lagi dua jalur
- * pengajuan. Di mode simulasi jalur lama menerbitkan tiket sf_housing_queue
+ * pengajuan. Di mode simulasi jalur lama menerbitkan tiket sf_antrean_pengajuan
  * tanpa login atau atas nama akun non-warga (mahasiswa, pengembang, akun tanpa
  * peran), tiket tamu tidak bisa dipantau siapa pun, dan api_cek_simperum
  * mengikat NIK ke akun non-warga.
@@ -112,7 +112,7 @@ class Program extends Public_Controller {
     /**
      * Jawaban tunggal untuk seluruh POST jalur lama (keputusan 27 Sep 2026).
      * Tidak membaca satu pun isian, tidak menyentuh sesi diagnosa, SIMPERUM,
-     * maupun sf_housing_queue. Skrip lama (AJAX) mendapat 410 berisi tujuan
+     * maupun sf_antrean_pengajuan. Skrip lama (AJAX) mendapat 410 berisi tujuan
      * barunya; formulir biasa dialihkan dengan pesan info.
      */
     private function jalur_dipindah() {
@@ -134,7 +134,7 @@ class Program extends Public_Controller {
 
     public function success() {
         $data['title'] = 'Pengajuan Berhasil - Klinik PKP';
-        $data['ticket_code'] = $this->session->flashdata('ticket_code');
+        $data['kode_tiket'] = $this->session->flashdata('kode_tiket');
 
         $data['content'] = $this->load->view('pages/program/success_antrean', $data, TRUE);
         $this->load->view('layouts/main', $data);

@@ -125,14 +125,14 @@ class KemitraanPortal extends Public_Controller
             return;
         }
 
-        /* Nomor HP diambil dari PROFIL AKUN (usr_users.phone), bukan
+        /* Nomor HP diambil dari PROFIL AKUN (usr_akun.no_hp), bukan
            diminta ulang di formulir ini - formulir Tambah KKN cuma
            periode+keterangan+dua surat (permintaan user 21 Agt 2026).
            Kalau belum diisi, pemohon diarahkan melengkapi Profil Saya
            dulu - inilah yang membuat tombol "Ubah Profil" di dashboard
            berguna sungguhan, bukan sekadar hiasan. */
-        $telp = trim((string) $this->db->select('phone')
-            ->get_where('usr_users', ['id' => $this->get_user_id()])->row('phone'));
+        $telp = trim((string) $this->db->select('no_hp')
+            ->get_where('usr_akun', ['id' => $this->get_user_id()])->row('no_hp'));
         if ($telp === '') {
             $tolak('Lengkapi Nomor HP/WhatsApp di Profil Saya sebelum menambah KKN.');
             return;
@@ -1173,7 +1173,7 @@ class KemitraanPortal extends Public_Controller
         // memperbarui nama akunnya, bukan cuma baris pendaftarannya.
         if ($row->jenis === 'kkn') {
             $nama_kampus = $this->input->post('instansi_asal', TRUE);
-            $this->db->where('id', $this->get_user_id())->update('usr_users', ['name' => $nama_kampus]);
+            $this->db->where('id', $this->get_user_id())->update('usr_akun', ['nama' => $nama_kampus]);
             $this->session->set_userdata('name', $nama_kampus);
         }
 
@@ -1382,7 +1382,7 @@ class KemitraanPortal extends Public_Controller
            bukan kampusnya. */
         if ($jenis === 'kkn') {
             $nama_kampus = $this->input->post('instansi_asal', TRUE);
-            $this->db->where('id', $this->get_user_id())->update('usr_users', ['name' => $nama_kampus]);
+            $this->db->where('id', $this->get_user_id())->update('usr_akun', ['nama' => $nama_kampus]);
             $this->session->set_userdata('name', $nama_kampus);
         }
 

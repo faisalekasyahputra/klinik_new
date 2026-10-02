@@ -84,18 +84,20 @@ KPKP_DATA_PEPPER=your_random_pepper_string_here
 
 Sistem database Klinik PKP kini menggunakan standar *prefix* berdasarkan fungsi modul:
 
+> **Penamaan Bahasa Indonesia (migrasi 072, Okt 2026).** Nama tabel dan kolom memakai Bahasa Indonesia (mis. `usr_akun.nama`, `usr_akun.peran`, `sf_antrean_pengajuan.kode_tiket`); istilah teknis tetap Inggris (`id`, `*_at`, `*_by`, `*_ciphertext`, `*_lookup_hash`, `*_json`). Setiap tabel punya COMMENT yang menjelaskan isinya dan arti prefiksnya (`sf_` = warga dan perumahan, `rd_` = rekam data kab/kota, `srp2_` = sertifikasi pengembang, `usr_` = akun, `sys_` = sistem, `kkn_` = KKN dan magang, `forum_` = konsultasi, `chat_` = obrolan): baca dengan `SELECT TABLE_NAME, TABLE_COMMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE();`. `schema_klinikpkp.sql` di langkah 2 adalah baseline SEBELUM migrasi (masih memakai nama lama); jalankan `php index.php migrate` sesudah import supaya skema mencapai versi terbaru. Peta lengkap nama lama ke baru ada di konstanta `TABEL`/`KOLOM` berkas `application/migrations/20260701000072_penamaan_indonesia.php`. Kunci JSON yang tersimpan (asal isian, salinan profil, muatan SIMPERUM, matriks awal) sengaja TIDAK diganti; lihat `application/helpers/kunci_tersimpan_helper.php`.
+
 ### 1. Modul Smart Filter & Program (`sf_`)
 | Tabel | Fungsi |
 |-------|--------|
-| `sf_programs` | Master data program perumahan (RTLH, PB, dll) |
+| `sf_program` | Master data program perumahan (RTLH, PB, dll) |
 | `sf_program_kategori` | Kategori program |
-| `sf_housing_queue` | Antrean pengajuan (*Onboarding Journey*) masyarakat |
+| `sf_antrean_pengajuan` | Antrean pengajuan (*Onboarding Journey*) masyarakat |
 
 ### 2. Modul Autentikasi & Pengguna (`usr_`)
 | Tabel | Fungsi |
 |-------|--------|
-| `usr_users` | Akun publik (SSO Google & Tradisional) |
-| `usr_documents` | Dokumen persyaratan (KTP, KK, dll) pengguna |
+| `usr_akun` | Akun publik (SSO Google & Tradisional) |
+| `usr_dokumen` | Dokumen persyaratan (KTP, KK, dll) pengguna |
 | `user` | *(Legacy)* Akun ASN/Staf internal |
 
 ### 3. Modul Forum & Komunitas (`forum_`)
@@ -103,12 +105,12 @@ Sistem database Klinik PKP kini menggunakan standar *prefix* berdasarkan fungsi 
 |-------|--------|
 | `forum_diskusi` | Topik diskusi / *thread* komunitas |
 | `forum_komentar` | Balasan diskusi (*nested*) |
-| `forum_likes` | *Upvote* / *Likes* komunitas |
+| `forum_suka` | *Upvote* / *Likes* komunitas |
 
 ### 4. Modul Sistem Utama (`sys_`)
 | Tabel | Fungsi |
 |-------|--------|
-| `sys_settings` | Pengaturan *global* website |
+| `sys_pengaturan` | Pengaturan *global* website |
 
 ### 5. Modul Data Pendukung (`data_` & lainnya)
 | Tabel | Fungsi |
@@ -116,6 +118,6 @@ Sistem database Klinik PKP kini menggunakan standar *prefix* berdasarkan fungsi 
 | `kondisi`, `irigasi`, `saluran_pembuang` | Data spasial dan pemetaan kawasan GIS |
 
 ## Catatan Keamanan
-- **UU PDP Compliant:** Kolom `nik` dan `alamat` di `usr_users` disimpan secara terenkripsi (`AES-256-GCM`). 
+- **UU PDP Compliant:** Kolom `nik` dan `alamat` di `usr_akun` disimpan secara terenkripsi (`AES-256-GCM`). 
 - **Pencarian Cepat:** Pencarian NIK dilakukan melalui kolom `nik_lookup_hash` yang berisi *hash* SHA-256 (tanpa perlu deskripsi manual).
 - **Password:** Di-*hash* menggunakan `password_hash()` standar PHP (BCRYPT).

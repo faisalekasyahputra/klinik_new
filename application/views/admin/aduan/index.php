@@ -67,7 +67,7 @@ $filter_html = ob_get_clean();
                     <th class="px-4 py-3"><?= admin_sort_header('Tanggal', 'aduan.created_at', $table, $base_url) ?></th>
                     <th class="px-4 py-3"><?= admin_sort_header('Pelapor', 'aduan.nama', $table, $base_url) ?></th>
                     <th class="px-4 py-3"><?= admin_sort_header('Judul', 'aduan.judul', $table, $base_url) ?></th>
-                    <th class="px-4 py-3"><?= admin_sort_header('Bidang', 'aduan.bidang', $table, $base_url) ?></th>
+                    <th class="px-4 py-3"><?= admin_sort_header('Bidang', 'aduan.bidang_kode', $table, $base_url) ?></th>
                     <th class="px-4 py-3"><?= admin_sort_header('Status', 'aduan.status', $table, $base_url) ?></th>
                     <th class="px-4 py-3">Diproses Oleh</th>
                 </tr>
@@ -115,15 +115,15 @@ $filter_html = ob_get_clean();
                                      label pilihan supaya nama terpanjang (Kawasan Permukiman) muat
                                      tanpa terpotong (audit UI 2 Okt 2026: "Bidang Perta"). */ ?>
                             <select name="bidang" required class="w-44 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-2 py-1 text-xs text-gray-700 dark:text-gray-200">
-                                <option value=""><?= $r->bidang ? '- ubah -' : '- pilih bidang -' ?></option>
+                                <option value=""><?= $r->bidang_kode ? '- ubah -' : '- pilih bidang -' ?></option>
                                 <?php foreach ($daftar_bidang as $b): ?>
-                                <option value="<?= html_escape($b->kode) ?>" <?= $r->bidang === $b->kode ? 'selected' : '' ?>><?= html_escape(preg_replace('/^Bidang\s+/i', '', $b->nama)) ?></option>
+                                <option value="<?= html_escape($b->kode) ?>" <?= $r->bidang_kode === $b->kode ? 'selected' : '' ?>><?= html_escape(preg_replace('/^Bidang\s+/i', '', $b->nama)) ?></option>
                                 <?php endforeach; ?>
                             </select>
                             <button type="submit" title="Teruskan ke bidang" aria-label="Teruskan ke bidang" class="tombol-aksi"><i class="ph ph-paper-plane-right"></i></button>
                         </form>
-                        <?php elseif ($r->bidang): ?>
-                        <span class="font-bold"><?= html_escape($nama_bidang[$r->bidang] ?? $r->bidang) ?></span>
+                        <?php elseif ($r->bidang_kode): ?>
+                        <span class="font-bold"><?= html_escape($nama_bidang[$r->bidang_kode] ?? $r->bidang_kode) ?></span>
                         <?php else: ?>
                         <span class="text-gray-400 dark:text-brand-muted/60 italic">Belum diteruskan</span>
                         <?php endif; ?>

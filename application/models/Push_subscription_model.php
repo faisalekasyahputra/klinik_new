@@ -3,7 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Push_subscription_model extends CI_Model {
 
-    const TABLE = 'sys_push_subscriptions';
+    const TABLE = 'sys_langganan_notifikasi';
 
     public function __construct()
     {
@@ -73,21 +73,21 @@ class Push_subscription_model extends CI_Model {
         $rows = [];
         foreach ($audiences as $audience) {
             if (empty($audience['role']) && empty($audience['user_id'])) { continue; }
-            $this->db->select('sys_push_subscriptions.*')->from(self::TABLE)
-                ->join('usr_users', 'usr_users.id = sys_push_subscriptions.user_id')
-                ->where('sys_push_subscriptions.aktif', 1)
-                ->where("LOWER(TRIM(COALESCE(usr_users.status,''))) !=", 'nonaktif');
+            $this->db->select('sys_langganan_notifikasi.*')->from(self::TABLE)
+                ->join('usr_akun', 'usr_akun.id = sys_langganan_notifikasi.user_id')
+                ->where('sys_langganan_notifikasi.aktif', 1)
+                ->where("LOWER(TRIM(COALESCE(usr_akun.status,''))) !=", 'nonaktif');
             if ( ! empty($audience['role'])) {
-                $this->db->where('usr_users.role', $audience['role']);
+                $this->db->where('usr_akun.peran', $audience['role']);
             }
             if ( ! empty($audience['user_id'])) {
-                $this->db->where('usr_users.id', (int) $audience['user_id']);
+                $this->db->where('usr_akun.id', (int) $audience['user_id']);
             }
             if (isset($audience['kabupaten_id'])) {
-                $this->db->where('usr_users.kabupaten_id', (int) $audience['kabupaten_id']);
+                $this->db->where('usr_akun.kabupaten_id', (int) $audience['kabupaten_id']);
             }
             if (isset($audience['bidang_kode'])) {
-                $this->db->where('usr_users.bidang_kode', (string) $audience['bidang_kode']);
+                $this->db->where('usr_akun.bidang_kode', (string) $audience['bidang_kode']);
             }
             foreach ($this->db->get()->result_array() as $row) {
                 try {
@@ -109,11 +109,11 @@ class Push_subscription_model extends CI_Model {
         $now = date('Y-m-d H:i:s');
         if ($success) {
             return $this->db->where('id', (int) $id)->update(self::TABLE, [
-                'gagal_berturut' => 0, 'last_success_at' => $now, 'updated_at' => $now,
+                'gagal_berturut' => 0, 'terakhir_berhasil_at' => $now, 'updated_at' => $now,
             ]);
         }
         $this->db->set('gagal_berturut', 'LEAST(gagal_berturut + 1, 255)', FALSE)
-            ->set('last_failure_at', $now)->set('updated_at', $now);
+            ->set('terakhir_gagal_at', $now)->set('updated_at', $now);
         if ($expired) { $this->db->set('aktif', 0); }
         return $this->db->where('id', (int) $id)->update(self::TABLE);
     }

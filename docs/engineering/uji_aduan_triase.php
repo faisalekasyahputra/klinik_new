@@ -100,7 +100,7 @@ function nilai($sql, $params = []) { $r = q($sql, $params); return $r && ! isset
  * nilai() mengembalikan NULL juga untuk baris yang tidak ada, jadi keberadaan
  * barisnya dipastikan lewat pemanggilnya (id-nya baru saja dibuat).
  */
-function bidang_aduan($id) { return nilai('SELECT bidang FROM aduan WHERE id=?', [$id]); }
+function bidang_aduan($id) { return nilai('SELECT bidang_kode FROM aduan WHERE id=?', [$id]); }
 function status_aduan($id) { return nilai('SELECT status FROM aduan WHERE id=?', [$id]); }
 
 function sesi($nama) {
@@ -158,7 +158,7 @@ function login($nama, $email, $sandi = SANDI) {
 function buat_akun($peran, $suffix, $bidang_kode = NULL) {
     $email = 'uji_triase_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
     $id = tulis(
-        'INSERT INTO usr_users (email,password,name,username,role,bidang_kode,status,profile_completed,created_at)
+        'INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,bidang_kode,status,profil_lengkap,created_at)
          VALUES (?,?,?,?,?,?, "active",1,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji Triase ' . $suffix,
          'uji_triase_' . $suffix . '_' . mt_rand(10000, 99999), $peran, $bidang_kode]
@@ -200,8 +200,8 @@ function bersihkan() {
     }
     // Sisa jejak milik akun uji (aksi yang objeknya bukan aduan, mis. login).
     foreach ($GLOBALS['users'] as $id) {
-        q('DELETE FROM sys_jejak_audit WHERE actor_id=?', [$id]);
-        q('DELETE FROM usr_users WHERE id=?', [$id]);
+        q('DELETE FROM sys_jejak_audit WHERE pelaku_id=?', [$id]);
+        q('DELETE FROM usr_akun WHERE id=?', [$id]);
     }
     foreach ($GLOBALS['jar'] as $j) { @unlink($j); }
     $GLOBALS['aduan'] = $GLOBALS['users'] = [];
@@ -223,8 +223,8 @@ echo 'Target: ' . BASE_URL . " | DB: {$env['DB_NAME']}\n\n";
 // ------------------------------------------------ PRASYARAT SKEMA
 echo "== 0. Prasyarat skema (migrasi 20260701000034) ==\n";
 $kolom = q("SELECT IS_NULLABLE n, COLUMN_DEFAULT d FROM information_schema.COLUMNS
-    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aduan' AND COLUMN_NAME='bidang'");
-wajib(($kolom['n'] ?? '') === 'YES', 'Kolom aduan.bidang sudah NULL-able');
+    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aduan' AND COLUMN_NAME='bidang_kode'");
+wajib(($kolom['n'] ?? '') === 'YES', 'Kolom aduan.bidang_kode sudah NULL-able');
 // MariaDB 10.2+ mengembalikan STRING 'NULL' untuk DEFAULT NULL, bukan SQL NULL.
 // Membandingkan ke NULL akan merah untuk skema yang benar - yang diperiksa di
 // sini adalah absennya sentinel 'umum', bukan bentuk balasan information_schema.
@@ -379,7 +379,7 @@ function badge_sidebar($body, $label) {
     if ( ! preg_match('/title="' . preg_quote($label, '/') . '">.*?<\/a>/s', $body, $m)) { return -1; }
     return preg_match('/bg-red-100[^>]*>(\d+)</', $m[0], $b) ? (int) $b[1] : 0;
 }
-$harap_badge = (int) nilai("SELECT COUNT(*) c FROM aduan WHERE bidang=? AND status='Baru'", [$bidang_a]);
+$harap_badge = (int) nilai("SELECT COUNT(*) c FROM aduan WHERE bidang_kode=? AND status='Baru'", [$bidang_a]);
 cek($harap_badge >= 1 && badge_sidebar($meja2['body'], 'Aduan Bidang Saya') === $harap_badge,
     "Badge sidebar 'Aduan Bidang Saya' = {$harap_badge} (aduan Baru bidang {$bidang_a} saja)");
 
@@ -487,11 +487,11 @@ cek(strpos($akun['body'], 'data-web-push-toggle') !== FALSE, 'Tombol notifikasi 
 $langganan = json_encode(['endpoint' => 'https://push.example.test/' . CAP,
     'keys' => ['p256dh' => 'BUji' . CAP, 'auth' => 'auth' . CAP]]);
 $rs = http('wargaP', 'push/subscribe', ['csrf_kpkp_token' => csrf('wargaP', 'akun'), 'subscription' => $langganan], TRUE);
-cek($rs['code'] === 200 && (int) nilai('SELECT COUNT(*) c FROM sys_push_subscriptions WHERE user_id=? AND aktif=1', [$idWargaP]) === 1,
+cek($rs['code'] === 200 && (int) nilai('SELECT COUNT(*) c FROM sys_langganan_notifikasi WHERE user_id=? AND aktif=1', [$idWargaP]) === 1,
     'Warga bisa mendaftarkan perangkatnya lewat push/subscribe (dulu 403)');
 
 $psm = (string) file_get_contents(APP_ROOT . '/application/models/Push_subscription_model.php');
-cek(strpos($psm, "where('usr_users.id', (int) \$audience['user_id'])") !== FALSE,
+cek(strpos($psm, "where('usr_akun.id', (int) \$audience['user_id'])") !== FALSE,
     'untuk_audiens menerima audiens per user_id');
 preg_match('/function update_status\(.*?\n    \}/s', (string) file_get_contents(APP_ROOT . '/application/controllers/Admin_Bidang.php'), $mu);
 cek(preg_match("/if \(\\\$ok && \\\$status !== \\\$status_lama && ! empty\(\\\$lama->user_id\)\) \{\s*\\\$this->notify_admin_push\(\[\['user_id' => \(int\) \\\$lama->user_id\]\].*?'akun'/s", $mu[0] ?? '') === 1,

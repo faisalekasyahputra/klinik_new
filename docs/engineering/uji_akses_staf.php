@@ -103,7 +103,7 @@ function q($sql, $params = []) {
 function tulis($sql, $params = []) { return (int) (q($sql, $params)['__id'] ?? 0); }
 function nilai($sql, $params = []) { $r = q($sql, $params); return $r && ! isset($r['__id']) ? reset($r) : NULL; }
 
-function kolom($id, $nama) { return nilai("SELECT `{$nama}` FROM usr_users WHERE id=?", [$id]); }
+function kolom($id, $nama) { return nilai("SELECT `{$nama}` FROM usr_akun WHERE id=?", [$id]); }
 
 function sesi($nama) {
     if ( ! isset($GLOBALS['jar'][$nama])) {
@@ -191,7 +191,7 @@ function login($nama, $email, $sandi = SANDI) {
 function buat_akun($peran, $suffix) {
     $email = 'uji_akses_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
     $id = tulis(
-        'INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+        'INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
          VALUES (?,?,?,?,?, "active",1,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji Akses ' . $suffix,
          'uji_akses_' . $suffix . '_' . mt_rand(10000, 99999), $peran]
@@ -205,7 +205,7 @@ function buat_akun($peran, $suffix) {
 function jejak($aksi, $objek_id) {
     return (int) nilai(
         "SELECT COUNT(*) c FROM sys_jejak_audit
-         WHERE aksi=? AND objek_tipe='usr_users' AND objek_id=? AND created_at >= ?",
+         WHERE aksi=? AND objek_tipe='usr_akun' AND objek_id=? AND created_at >= ?",
         [$aksi, (string) $objek_id, MULAI]);
 }
 
@@ -215,21 +215,21 @@ function bersihkan() {
     // Pemulihan superadmin lain didahulukan: kalau prosesnya mati di dalam
     // jendela, ini satu-satunya yang benar-benar mendesak.
     foreach ($GLOBALS['pulih_admin'] as $id => $status) {
-        q('UPDATE usr_users SET status=? WHERE id=?', [$status, $id]);
+        q('UPDATE usr_akun SET status=? WHERE id=?', [$status, $id]);
     }
     $GLOBALS['pulih_admin'] = [];
 
     // Jejak audit dihapus SEBELUM akunnya: FK-nya ON DELETE SET NULL, jadi
-    // menghapus user duluan mengosongkan actor_id dan barisnya jadi lebih sulit
+    // menghapus user duluan mengosongkan pelaku_id dan barisnya jadi lebih sulit
     // dikenali. Dicocokkan lewat email pelaku DAN objek, karena satu tindakan
     // bisa punya salah satunya saja.
     foreach ($GLOBALS['users'] as $id) {
-        q("DELETE FROM sys_jejak_audit WHERE objek_tipe='usr_users' AND objek_id=?", [(string) $id]);
+        q("DELETE FROM sys_jejak_audit WHERE objek_tipe='usr_akun' AND objek_id=?", [(string) $id]);
     }
     foreach ($GLOBALS['emails'] as $email) {
-        q('DELETE FROM sys_jejak_audit WHERE actor_email=?', [$email]);
+        q('DELETE FROM sys_jejak_audit WHERE pelaku_email=?', [$email]);
     }
-    foreach ($GLOBALS['users'] as $id) { q('DELETE FROM usr_users WHERE id=?', [$id]); }
+    foreach ($GLOBALS['users'] as $id) { q('DELETE FROM usr_akun WHERE id=?', [$id]); }
     foreach ($GLOBALS['jar'] as $j) { @unlink($j); }
 }
 register_shutdown_function('bersihkan');
@@ -297,11 +297,11 @@ cek(kolom($idS, 'status') === 'active', 'GET tadi tidak mengubah status akun sta
 
 // ===================================================== 10. POST TANPA CSRF
 echo "\n== 10. POST tanpa token CSRF ==\n";
-$hash_sebelum = (string) kolom($idS, 'password');
+$hash_sebelum = (string) kolom($idS, 'kata_sandi');
 http('a', 'Admin_Users/ubah_status', ['id' => $idS, 'status' => 'nonaktif']);
 http('a', 'Admin_Users/reset_sandi', ['id' => $idS, 'password' => SANDI_BARU]);
 cek(kolom($idS, 'status') === 'active', 'POST ubah_status tanpa token tidak mengubah status');
-cek((string) kolom($idS, 'password') === $hash_sebelum, 'POST reset_sandi tanpa token tidak mengubah sandi');
+cek((string) kolom($idS, 'kata_sandi') === $hash_sebelum, 'POST reset_sandi tanpa token tidak mengubah sandi');
 
 // ===================================================== 3a. TERKUNCI
 echo "\n== 3. Akun terkunci ==\n";
@@ -311,7 +311,7 @@ echo "\n== 3. Akun terkunci ==\n";
  * penguncian cuma menyalin cakupan uji lain dan menambah sebab merah yang bukan
  * miliknya.
  */
-q('UPDATE usr_users SET login_attempts=5, locked_until=DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE id=?', [$idS]);
+q('UPDATE usr_akun SET gagal_masuk=5, terkunci_sampai=DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE id=?', [$idS]);
 [$masuk, $pesan] = coba_login($emailS, SANDI);
 cek( ! $masuk, 'Akun terkunci tidak bisa login walau sandinya benar');
 cek(stripos($pesan, 'terkunci') !== FALSE, 'Penolakannya menyebut kunci, bukan sandi salah');
@@ -320,8 +320,8 @@ cek(stripos($pesan, 'terkunci') !== FALSE, 'Penolakannya menyebut kunci, bukan s
 echo "\n== 8. Peran bukan admin: dibuktikan lewat DB, bukan kode HTTP ==\n";
 wajib(login('m', $emailM), 'Login mahasiswa');
 $tok_m = csrf('m', '/');   // token dari meta portal - shell admin tidak memasangnya
-$hash_sebelum = (string) kolom($idS, 'password');
-$kunci_sebelum = (string) kolom($idS, 'locked_until');
+$hash_sebelum = (string) kolom($idS, 'kata_sandi');
+$kunci_sebelum = (string) kolom($idS, 'terkunci_sampai');
 
 $tolak = http('m', 'Admin_Users/ubah_status', ['csrf_kpkp_token' => $tok_m, 'id' => $idS, 'status' => 'nonaktif']);
 http('m', 'Admin_Users/buka_kunci', ['csrf_kpkp_token' => $tok_m, 'id' => $idS]);
@@ -350,26 +350,26 @@ cek(strpos($salah_peran['body'], 'tidak perlu login ulang') !== FALSE,
     'Layar itu menegaskan sesinya masih sehat - inti kebingungannya');
 cek(strpos($salah_peran['body'], 'Auth/logout') !== FALSE,
     'Ada jalan keluar ke akun lain, jadi bukan jalan buntu');
-cek((string) kolom($idS, 'locked_until') === $kunci_sebelum && (int) kolom($idS, 'login_attempts') === 5,
+cek((string) kolom($idS, 'terkunci_sampai') === $kunci_sebelum && (int) kolom($idS, 'gagal_masuk') === 5,
     'Mahasiswa tidak berhasil membuka kunci akun staf');
-cek((string) kolom($idS, 'password') === $hash_sebelum, 'Mahasiswa tidak berhasil mengganti sandi akun staf');
-cek((int) nilai('SELECT COUNT(*) c FROM sys_jejak_audit WHERE actor_id=? AND created_at >= ?', [$idM, MULAI]) === 0,
+cek((string) kolom($idS, 'kata_sandi') === $hash_sebelum, 'Mahasiswa tidak berhasil mengganti sandi akun staf');
+cek((int) nilai('SELECT COUNT(*) c FROM sys_jejak_audit WHERE pelaku_id=? AND created_at >= ?', [$idM, MULAI]) === 0,
     'Nol jejak audit atas nama mahasiswa (tindakannya memang tidak pernah berjalan)');
 
 // ===================================================== 3b. BUKA KUNCI
 http('a', 'Admin_Users/buka_kunci', ['csrf_kpkp_token' => csrf('a', 'Admin_Users'), 'id' => $idS]);
-cek((int) kolom($idS, 'login_attempts') === 0 && kolom($idS, 'locked_until') === NULL,
+cek((int) kolom($idS, 'gagal_masuk') === 0 && kolom($idS, 'terkunci_sampai') === NULL,
     'buka_kunci mengosongkan penghitung gagal dan masa kunci');
 [$masuk, ] = coba_login($emailS, SANDI);
 cek($masuk, 'Setelah buka_kunci, akun bisa login lagi');
 
 // ===================================================== 5. SANDI TERLALU PENDEK
 echo "\n== 5. Reset sandi < 8 karakter ditolak ==\n";
-$hash_sebelum = (string) kolom($idS, 'password');
+$hash_sebelum = (string) kolom($idS, 'kata_sandi');
 http('a', 'Admin_Users/reset_sandi', [
     'csrf_kpkp_token' => csrf('a', 'Admin_Users'), 'id' => $idS, 'password' => SANDI_PENDEK,
 ]);
-cek((string) kolom($idS, 'password') === $hash_sebelum, 'Sandi pendek ditolak dan HASH TIDAK BERUBAH');
+cek((string) kolom($idS, 'kata_sandi') === $hash_sebelum, 'Sandi pendek ditolak dan HASH TIDAK BERUBAH');
 cek(jejak('sandi_direset', $idS) === 0, 'Penolakan tidak meninggalkan jejak "sandi_direset" palsu');
 [$masuk, ] = coba_login($emailS, SANDI_PENDEK);
 cek( ! $masuk, 'Sandi pendek yang ditolak tidak pernah berlaku');
@@ -377,14 +377,14 @@ cek( ! $masuk, 'Sandi pendek yang ditolak tidak pernah berlaku');
 http('a', 'Admin_Users/reset_sandi', [
     'csrf_kpkp_token' => csrf('a', 'Admin_Users'), 'id' => $idS, 'password' => 'sandilemahsekali',
 ]);
-cek((string) kolom($idS, 'password') === $hash_sebelum, 'Sandi panjang tanpa huruf besar, angka, dan simbol ditolak');
+cek((string) kolom($idS, 'kata_sandi') === $hash_sebelum, 'Sandi panjang tanpa huruf besar, angka, dan simbol ditolak');
 
 // ===================================================== 4. RESET SANDI SAH
 echo "\n== 4. Reset sandi sah ==\n";
 http('a', 'Admin_Users/reset_sandi', [
     'csrf_kpkp_token' => csrf('a', 'Admin_Users'), 'id' => $idS, 'password' => SANDI_BARU,
 ]);
-cek((string) kolom($idS, 'password') !== $hash_sebelum, 'Hash sandi berubah');
+cek((string) kolom($idS, 'kata_sandi') !== $hash_sebelum, 'Hash sandi berubah');
 [$masuk, ] = coba_login($emailS, SANDI_BARU);
 cek($masuk, 'Sandi BARU berlaku');
 [$masuk, ] = coba_login($emailS, SANDI);
@@ -434,7 +434,7 @@ echo "
  * superadmin menurunkan dirinya sendiri.
  */
 $lain = [];
-$res = $GLOBALS['db']->query("SELECT id, status FROM usr_users WHERE role='admin' AND id <> " . (int) $idA);
+$res = $GLOBALS['db']->query("SELECT id, status FROM usr_akun WHERE peran='admin' AND id <> " . (int) $idA);
 foreach ($res ?: [] as $row) { $lain[(int) $row['id']] = $row['status']; }
 
 echo "  ! " . count($lain) . " superadmin lain diparkir SEMENTARA (pelaku TIDAK ikut diparkir).
@@ -442,20 +442,20 @@ echo "  ! " . count($lain) . " superadmin lain diparkir SEMENTARA (pelaku TIDAK 
 echo "    Pulihkan manual bila proses ini mati di tengah:
 ";
 foreach ($lain as $id => $st) {
-    echo "      UPDATE usr_users SET status=" . ($st === NULL ? 'NULL' : "'" . $st . "'") . " WHERE id={$id};
+    echo "      UPDATE usr_akun SET status=" . ($st === NULL ? 'NULL' : "'" . $st . "'") . " WHERE id={$id};
 ";
 }
 $GLOBALS['pulih_admin'] = $lain;
-foreach (array_keys($lain) as $id) { q("UPDATE usr_users SET status='nonaktif' WHERE id=?", [$id]); }
+foreach (array_keys($lain) as $id) { q("UPDATE usr_akun SET status='nonaktif' WHERE id=?", [$id]); }
 
 $r = http('a', 'Admin_Users/update_role', [
     'csrf_kpkp_token' => csrf('a', 'Admin_Users'), 'id' => $idA, 'role' => 'warga',
 ]);
 
-foreach ($lain as $id => $st) { q('UPDATE usr_users SET status=? WHERE id=?', [$st, $id]); }
+foreach ($lain as $id => $st) { q('UPDATE usr_akun SET status=? WHERE id=?', [$st, $id]); }
 $GLOBALS['pulih_admin'] = [];
 
-cek(kolom($idA, 'role') === 'admin',
+cek(kolom($idA, 'peran') === 'admin',
     'Superadmin TERAKHIR tidak bisa menurunkan role dirinya sendiri');
 cek(jejak('role_diubah_ditolak', $idA) === 1, 'Percobaan itu tercatat sebagai _ditolak');
 cek(jejak('role_diubah', $idA) === 0, 'Tidak ada jejak keberhasilan yang menyertainya');
@@ -475,13 +475,13 @@ echo "\n== 6b. Role yang diturunkan tidak tertinggal di sesi yang sedang berjala
 wajib(login('b', $emailB), 'Login superadmin sasaran (sesi berjalan)');
 wajib(http('b', 'Admin_Users')['code'] === 200, 'Sesi sasaran membuka Admin_Users sebelum diturunkan');
 http('a', 'Admin_Users/update_role', ['csrf_kpkp_token' => csrf('a', 'Admin_Users'), 'id' => $idB, 'role' => 'warga']);
-cek(kolom($idB, 'role') === 'warga', 'Role sasaran turun menjadi warga');
+cek(kolom($idB, 'peran') === 'warga', 'Role sasaran turun menjadi warga');
 $sesiB = http('b', 'Admin_Users');
 cek(strpos($sesiB['body'], 'Daftar Pengguna') === FALSE, 'Sesi lama sasaran tidak lagi membuka Admin_Users');
 http('b', 'Admin_Users/update_role', ['csrf_kpkp_token' => csrf('b', 'Auth/login'), 'id' => $idB, 'role' => 'admin']);
-cek(kolom($idB, 'role') === 'warga', 'Sesi lama sasaran tidak bisa menaikkan dirinya lagi');
+cek(kolom($idB, 'peran') === 'warga', 'Sesi lama sasaran tidak bisa menaikkan dirinya lagi');
 http('a', 'Admin_Users/update_role', ['csrf_kpkp_token' => csrf('a', 'Admin_Users'), 'id' => $idB, 'role' => 'admin']);
-wajib(kolom($idB, 'role') === 'admin', 'Role sasaran dipulihkan ke admin');
+wajib(kolom($idB, 'peran') === 'admin', 'Role sasaran dipulihkan ke admin');
 
 // ===================================================== 11 & 12. JEJAK AUDIT
 echo "\n== 11-12. Jejak audit: yang berhasil DAN yang ditolak ==\n";
@@ -492,7 +492,7 @@ foreach (['akun_dinonaktifkan' => $idS, 'akun_diaktifkan' => $idS,
 foreach (['tindakan_diri_sendiri_ditolak' => $idA, 'role_diubah_ditolak' => $idA] as $aksi => $objek) {
     cek(jejak($aksi, $objek) === 1, "Jejak percobaan DITOLAK '{$aksi}' tercatat");
 }
-cek((int) nilai('SELECT COUNT(*) c FROM sys_jejak_audit WHERE actor_id=? AND created_at >= ? AND (actor_email<>? OR actor_role<>?)',
+cek((int) nilai('SELECT COUNT(*) c FROM sys_jejak_audit WHERE pelaku_id=? AND created_at >= ? AND (pelaku_email<>? OR pelaku_peran<>?)',
     [$idA, MULAI, $emailA, 'admin']) === 0,
     'Pelaku setiap jejak diambil dari sesi (email + role tersalin apa adanya)');
 
@@ -505,7 +505,7 @@ echo "\n== 13. Sandi tidak pernah masuk jejak audit ==\n";
  * ikut diperbarui setiap kali skemanya tumbuh.
  */
 $sapu = "SELECT COUNT(*) c FROM sys_jejak_audit WHERE CONCAT_WS('|',
-    COALESCE(actor_email,''), COALESCE(actor_role,''), aksi, COALESCE(objek_tipe,''),
+    COALESCE(pelaku_email,''), COALESCE(pelaku_peran,''), aksi, COALESCE(objek_tipe,''),
     COALESCE(objek_id,''), ringkasan, COALESCE(detail_json,''), COALESCE(ip,'')) LIKE ?";
 foreach (['sandi baru' => SANDI_BARU, 'sandi awal' => SANDI, 'sandi pendek' => SANDI_PENDEK] as $label => $s) {
     cek((int) nilai($sapu, ['%' . $s . '%']) === 0, "Nol baris jejak memuat {$label}");
@@ -542,8 +542,8 @@ cek($audit_m['code'] === 200, 'Padahal balasannya tetap 200 - sekali lagi, kode 
 // ===================================================== BERSIH
 echo "\n== Bersih-bersih ==\n";
 bersihkan();
-$sisa_akun = (int) nilai('SELECT COUNT(*) c FROM usr_users WHERE email LIKE ?', ['uji_akses_%@example.test']);
-$sisa_jejak = (int) nilai('SELECT COUNT(*) c FROM sys_jejak_audit WHERE actor_email LIKE ?', ['uji_akses_%@example.test']);
+$sisa_akun = (int) nilai('SELECT COUNT(*) c FROM usr_akun WHERE email LIKE ?', ['uji_akses_%@example.test']);
+$sisa_jejak = (int) nilai('SELECT COUNT(*) c FROM sys_jejak_audit WHERE pelaku_email LIKE ?', ['uji_akses_%@example.test']);
 $GLOBALS['users'] = $GLOBALS['emails'] = [];
 cek($sisa_akun === 0, 'Akun uji dibersihkan');
 cek($sisa_jejak === 0, 'Baris sys_jejak_audit buatan uji ini dibersihkan');
@@ -581,23 +581,23 @@ wajib(count($peran_sah) >= 6,
     'PRASYARAT: daftar peran terbaca dari config/roles.php (dapat: ' . count($peran_sah) . ')');
 
 $daftar = "'" . implode("','", $peran_sah) . "'";
-$jml_aneh = (int) nilai("SELECT COUNT(*) c FROM usr_users
-                          WHERE role IS NOT NULL AND role NOT IN ({$daftar})");
+$jml_aneh = (int) nilai("SELECT COUNT(*) c FROM usr_akun
+                          WHERE peran IS NOT NULL AND peran NOT IN ({$daftar})");
 if ($jml_aneh > 0) {
-    $aneh = q("SELECT id, email, role FROM usr_users
-                WHERE role IS NOT NULL AND role NOT IN ({$daftar}) LIMIT 1");
+    $aneh = q("SELECT id, email, peran FROM usr_akun
+                WHERE peran IS NOT NULL AND peran NOT IN ({$daftar}) LIMIT 1");
     echo '  DIAG baris pertama: id=' . ($aneh['id'] ?? '?')
        . ' email=' . ($aneh['email'] ?? '?')
-       . ' role=' . var_export($aneh['role'] ?? NULL, TRUE) . "\n";
+       . ' role=' . var_export($aneh['peran'] ?? NULL, TRUE) . "\n";
 }
 cek($jml_aneh === 0,
-    'Nol baris usr_users ber-role di luar config/roles.php (dapat: ' . $jml_aneh . ')');
+    'Nol baris usr_akun ber-role di luar config/roles.php (dapat: ' . $jml_aneh . ')');
 
 /* NULL boleh, TAPI hanya bagi yang belum menyelesaikan onboarding. Role NULL
    pada akun yang mengaku profilnya lengkap berarti salah satu dari keduanya
    berbohong, dan itu tidak akan pernah bersuara sendiri. */
-$null_tapi_lengkap = (int) nilai('SELECT COUNT(*) c FROM usr_users
-                                   WHERE role IS NULL AND profile_completed = 1');
+$null_tapi_lengkap = (int) nilai('SELECT COUNT(*) c FROM usr_akun
+                                   WHERE peran IS NULL AND profil_lengkap = 1');
 cek($null_tapi_lengkap === 0,
     'Nol akun ber-role NULL yang mengaku profilnya lengkap (dapat: ' . $null_tapi_lengkap . ')');
 
@@ -608,11 +608,11 @@ echo "\n== 12. Reset sandi akun sendiri: konfirmasinya sampai ==\n";
    berakhir" dan pelaku tidak tahu resetnya berhasil. */
 [$idD, $emailD] = buat_akun('admin', 'diri_sendiri');
 wajib(login('d', $emailD), 'PRASYARAT: superadmin kedua masuk');
-$hash_lama = (string) kolom($idD, 'password');
+$hash_lama = (string) kolom($idD, 'kata_sandi');
 $r = http('d', 'Admin_Users/reset_sandi', [
     'csrf_kpkp_token' => csrf('d', 'Admin_Users'), 'id' => $idD, 'password' => SANDI_BARU,
 ]);
-cek((string) kolom($idD, 'password') !== $hash_lama, 'PRASYARAT: sandi akun sendiri benar-benar diganti');
+cek((string) kolom($idD, 'kata_sandi') !== $hash_lama, 'PRASYARAT: sandi akun sendiri benar-benar diganti');
 cek(strpos($r['body'], 'Password Anda sudah diganti') !== FALSE && strpos($r['body'], 'Sesi Anda telah berakhir') === FALSE,
     'Pelaku melihat konfirmasi sandi diganti, bukan pesan sesi berakhir');
 cek(http('d', 'Admin_Users')['url'] !== BASE_URL . '/Admin_Users', 'Sesi pelaku memang sudah berakhir sesudah reset');

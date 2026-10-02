@@ -47,13 +47,13 @@ $GLOBALS['db'] = new mysqli($env['DB_HOST'] ?? 'localhost', $env['DB_USER'] ?? '
 $GLOBALS['db']->set_charset('utf8mb4');
 
 register_shutdown_function(function () use (&$akun, $jar) {
-    foreach ($akun as $id) { $GLOBALS['db']->query('DELETE FROM usr_users WHERE id=' . (int) $id); }
+    foreach ($akun as $id) { $GLOBALS['db']->query('DELETE FROM usr_akun WHERE id=' . (int) $id); }
     @unlink($jar);
 });
 
 echo "== Ringkasan Kerja super admin ==\n";
 $email = 'uji_ringkas_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
-$st = $GLOBALS['db']->prepare('INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+$st = $GLOBALS['db']->prepare('INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
     VALUES (?,?,"Uji Ringkasan Kerja",?,"admin","active",1,NOW())');
 $hash = password_hash(SANDI, PASSWORD_BCRYPT);
 $uname = 'uji_ringkas_' . mt_rand(10000, 99999);
@@ -76,15 +76,15 @@ function angka_tautan($html, $tujuan) {
 $harap = function () {
     $o = [];
     foreach (['pending', 'needs_revision', 'approved', 'rejected'] as $s) {
-        $o["Admin?status=$s"] = n("SELECT COUNT(*) FROM sf_housing_queue WHERE status_antrean='$s'");
+        $o["Admin?status=$s"] = n("SELECT COUNT(*) FROM sf_antrean_pengajuan WHERE status_antrean='$s'");
     }
     foreach (['Pending', 'Draft'] as $s) {
-        $o["Admin_Srp2/pending?status=$s"] = n("SELECT COUNT(*) FROM srp2_registrations WHERE status_verifikasi='$s'");
+        $o["Admin_Srp2/pending?status=$s"] = n("SELECT COUNT(*) FROM srp2_pengajuan WHERE status_verifikasi='$s'");
     }
     // Admin_Srp2::keadaan_berlaku: bersertifikat + tanggal akhir terisi + belum lewat.
-    $o['Admin_Srp2'] = n("SELECT COUNT(*) FROM srp2_certified_developers WHERE status_sertifikasi='bersertifikat'
+    $o['Admin_Srp2'] = n("SELECT COUNT(*) FROM srp2_direktori_pengembang WHERE status_sertifikasi='bersertifikat'
         AND sertifikat_berakhir IS NOT NULL AND sertifikat_berakhir <> '' AND sertifikat_berakhir >= CURDATE()");
-    $o['Admin_Aduan?bidang=belum'] = n('SELECT COUNT(*) FROM aduan WHERE bidang IS NULL');
+    $o['Admin_Aduan?bidang=belum'] = n('SELECT COUNT(*) FROM aduan WHERE bidang_kode IS NULL');
     foreach (['Baru', 'Diproses', 'Selesai'] as $s) {
         $o["Admin_Aduan?status=$s"] = n("SELECT COUNT(*) FROM aduan WHERE status='$s'");
     }
@@ -153,8 +153,8 @@ foreach ($tk[0] as $tok) {
 cek($bersarang === 0, "Tidak ada tautan bersarang ($bersarang)");
 
 // Ringkasan Sistem: akun per peran dan peringatan keamanan.
-$staf = n("SELECT COUNT(*) FROM usr_users WHERE role IN ('admin','admin_kabkota','admin_bidang')");
-$warga = n("SELECT COUNT(*) FROM usr_users WHERE role='warga'");
+$staf = n("SELECT COUNT(*) FROM usr_akun WHERE peran IN ('admin','admin_kabkota','admin_bidang')");
+$warga = n("SELECT COUNT(*) FROM usr_akun WHERE peran='warga'");
 cek(preg_match('#>Staf</dt><dd[^>]*>' . $staf . '<#', $html) === 1 && preg_match('#>Warga</dt><dd[^>]*>' . $warga . '<#', $html) === 1,
     "Ringkasan Sistem: akun staf ($staf) dan warga ($warga) = COUNT DB");
 cek(preg_match('#href="[^"]*Admin_Audit\?aksi=peringatan_keamanan"[^>]*data-peringatan-keamanan>[\d.]+<#', $html) === 1,

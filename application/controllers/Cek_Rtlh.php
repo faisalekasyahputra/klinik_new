@@ -68,7 +68,7 @@ class Cek_Rtlh extends MY_Controller {
         $this->catat_audit('rtlh_dicek',
             'Cek Data Rumah untuk NIK berakhiran ' . substr($nik, -4) . ' - hasil: '
                 . (['found' => 'terdaftar', 'not_found' => 'tidak terdaftar', 'error' => 'gagal diperiksa'][$hasil['status']] ?? $hasil['status']),
-            'simperum', NULL, ['status' => $hasil['status'], 'mode' => $hasil['source_mode'] ?? NULL]);
+            'simperum', NULL, ['status' => $hasil['status'], 'mode' => $hasil['mode_sumber'] ?? NULL]);
         redirect('Cek_Rtlh');
     }
 }

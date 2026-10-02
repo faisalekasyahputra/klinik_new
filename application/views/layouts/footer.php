@@ -549,7 +549,7 @@ function globalSystem() {
         // S2 - opt-out dihormati SEBELUM fetch, bukan sesudah. Tanpa ini,
         // tautan yang sengaja ditandai tetap difetch dulu lalu baru jatuh ke
         // navigasi penuh: dua GET untuk satu klik, dan `Umum::detail()`
-        // menaikkan `view_count` dua kali per klik.
+        // menaikkan `jumlah_dilihat` dua kali per klik.
         if (link.hasAttribute('data-no-page-transition')
             || link.closest('[data-no-page-transition]')) return;
         e.preventDefault();

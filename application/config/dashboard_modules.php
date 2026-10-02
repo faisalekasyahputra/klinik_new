@@ -160,7 +160,7 @@ $config['dashboard_modules'] = [
         'url'   => 'Admin_Kabkota', 'group' => 'Layanan', 'order' => 10,
         'roles' => ['admin_kabkota'],
         'scope' => 'kabupaten_id',
-        'table' => 'sf_housing_queue', 'review_by' => 'admin_kabkota',
+        'table' => 'sf_antrean_pengajuan', 'review_by' => 'admin_kabkota',
         'pending_where' => ['status_antrean' => 'pending'],
         'status_column' => 'status_antrean', 'owner_column' => 'user_id',
         'public_where' => NULL, 'editable_where' => NULL,
@@ -251,7 +251,7 @@ $config['dashboard_modules'] = [
         'pending_where' => ['status' => 'Baru'],
         // scope_column WAJIB menemani badge: tanpanya count_pending_modul()
         // menghitung aduan Baru milik SEMUA bidang, termasuk yang belum ditriase.
-        'scope_column' => 'bidang',
+        'scope_column' => 'bidang_kode',
         'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE,
     ],
@@ -267,7 +267,7 @@ $config['dashboard_modules'] = [
         'url'   => 'Admin', 'group' => 'Tindak Lanjut', 'order' => 10,
         'overview_url' => 'Admin?status=pending',
         'roles' => ['admin'], 'scope' => null,
-        'table' => 'sf_housing_queue', 'review_by' => 'admin',
+        'table' => 'sf_antrean_pengajuan', 'review_by' => 'admin',
         'pending_where' => ['status_antrean' => 'pending'],
         'status_column' => 'status_antrean', 'owner_column' => 'user_id',
         'public_where' => NULL, 'editable_where' => NULL,
@@ -278,14 +278,14 @@ $config['dashboard_modules'] = [
         'url'   => 'Admin_Srp2/pending', 'group' => 'Tindak Lanjut', 'order' => 20,
         'overview_url' => 'Admin_Srp2/pending?status=Pending',
         'roles' => ['admin'], 'scope' => null,
-        'table' => 'srp2_registrations', 'review_by' => 'admin',
+        'table' => 'srp2_pengajuan', 'review_by' => 'admin',
         'pending_where' => ['status_verifikasi' => 'Pending'],
         'status_column' => 'status_verifikasi', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'Sertifikasi SRP2',
     ],
     /* Dua anak di bawah - permintaan user 14 Agt 2026: "Tinjau SRP2" dua
-       tabel berbeda (lihat percakapan yang menemukan ini - srp2_registrations
-       vs srp2_certified_developers, cuma 1 dari 67 baris certified yang
+       tabel berbeda (lihat percakapan yang menemukan ini - srp2_pengajuan
+       vs srp2_direktori_pengembang, cuma 1 dari 67 baris certified yang
        tertaut ke pengajuan), jadi sidebar-nya dibuat menyuarakan itu lewat
        submenu, bukan cuma satu tautan yang membingungkan mana yang dilihat.
        `parent` menautkan ke srp2_verifikasi - mekanisme yang sama dipakai

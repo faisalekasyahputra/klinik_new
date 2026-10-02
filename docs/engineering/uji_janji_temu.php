@@ -35,8 +35,8 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  * Data & akun dibuat sendiri, dibersihkan sendiri. Email uji berakhiran
  * @example.test supaya sensus kebocoran di jalankan_semua.php melihatnya.
  *
- * PENGHITUNG RATE LIMIT SENGAJA TIDAK DIBERSIHKAN. `sys_rate_limits` hanya
- * menyimpan `limit_key` - SHA-256 atas policy + nilai dimensinya - jadi tidak
+ * PENGHITUNG RATE LIMIT SENGAJA TIDAK DIBERSIHKAN. `sys_batas_laju` hanya
+ * menyimpan `kunci` - SHA-256 atas policy + nilai dimensinya - jadi tidak
  * ada kolom yang bisa dicocokkan ke policy ini tanpa menyusun ulang hash-nya,
  * dan menghapus "semua baris sejak uji dimulai" akan ikut membuang penghitung
  * milik fitur lain. Barisnya tetap tertinggal, dan itu tidak apa-apa: kuncinya
@@ -101,12 +101,12 @@ function tulis($sql, $params = []) { return (int) (q($sql, $params)['__id'] ?? 0
 function nilai($sql, $params = []) { $r = q($sql, $params); return $r && ! isset($r['__id']) ? reset($r) : NULL; }
 
 function janji($id_diskusi) {
-    return q('SELECT * FROM forum_janji_temu WHERE id_diskusi=? ORDER BY id DESC LIMIT 1', [$id_diskusi]);
+    return q('SELECT * FROM forum_janji_temu WHERE diskusi_id=? ORDER BY id DESC LIMIT 1', [$id_diskusi]);
 }
 function status_janji($id) { return nilai('SELECT status FROM forum_janji_temu WHERE id=?', [$id]); }
 function kolom_janji($id, $k) { return nilai("SELECT `{$k}` FROM forum_janji_temu WHERE id=?", [$id]); }
 function jml_janji($id_diskusi) {
-    return (int) nilai('SELECT COUNT(*) c FROM forum_janji_temu WHERE id_diskusi=?', [$id_diskusi]);
+    return (int) nilai('SELECT COUNT(*) c FROM forum_janji_temu WHERE diskusi_id=?', [$id_diskusi]);
 }
 
 function sesi($nama) {
@@ -162,7 +162,7 @@ function login($nama, $email, $sandi = SANDI) {
 function buat_akun($peran, $suffix) {
     $email = 'uji_janji_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
     $id = tulis(
-        'INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+        'INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
          VALUES (?,?,?,?,?, "active",1,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji Janji ' . $suffix,
          'uji_janji_' . $suffix . '_' . mt_rand(10000, 99999), $peran]
@@ -174,7 +174,7 @@ function buat_akun($peran, $suffix) {
 /** Topik forum langsung di DB - jalur pembuatannya bukan yang sedang diuji. */
 function buat_topik($user_id, $nama, $email, $judul) {
     $id = tulis(
-        'INSERT INTO forum_diskusi (nama_user,email_user,judul_topik,kategori,isi_diskusi,user_id,status,created_at)
+        'INSERT INTO forum_diskusi (nama_pengguna,email_pengguna,judul_topik,kategori,isi_diskusi,user_id,status,created_at)
          VALUES (?,?,?,"RTLH","Isi topik uji janji temu yang cukup panjang.",?,"open",NOW())',
         [$nama, $email, $judul, $user_id]
     );
@@ -184,7 +184,7 @@ function buat_topik($user_id, $nama, $email, $judul) {
 
 function beri_komentar($id_diskusi, $nama) {
     return tulis(
-        'INSERT INTO forum_komentar (id_diskusi,nama_komentator,isi_komentar,role,created_at)
+        'INSERT INTO forum_komentar (diskusi_id,nama_komentator,isi_komentar,peran,created_at)
          VALUES (?,?,"Silakan lengkapi datanya dulu ya.","Petugas Disperakim",NOW())',
         [$id_diskusi, $nama]
     );
@@ -200,19 +200,19 @@ function jejak($aksi, $id) {
 function bersihkan() {
     if (empty($GLOBALS['db'])) { return; }
     foreach ($GLOBALS['diskusi'] as $d) {
-        foreach (q('SELECT GROUP_CONCAT(id) g FROM forum_janji_temu WHERE id_diskusi=?', [$d]) as $g) {
+        foreach (q('SELECT GROUP_CONCAT(id) g FROM forum_janji_temu WHERE diskusi_id=?', [$d]) as $g) {
             foreach (array_filter(explode(',', (string) $g)) as $jid) {
                 q("DELETE FROM sys_jejak_audit WHERE objek_tipe='forum_janji_temu' AND objek_id=?", [$jid]);
             }
         }
         // forum_janji_temu & forum_komentar ikut lenyap lewat FK CASCADE -
         // kecuali komentar, yang memang tidak punya FK. Dihapus eksplisit.
-        q('DELETE FROM forum_komentar WHERE id_diskusi=?', [$d]);
-        q('DELETE FROM forum_diskusi WHERE id_diskusi=?', [$d]);
+        q('DELETE FROM forum_komentar WHERE diskusi_id=?', [$d]);
+        q('DELETE FROM forum_diskusi WHERE id=?', [$d]);
     }
     foreach ($GLOBALS['users'] as $id) {
-        q('DELETE FROM sys_jejak_audit WHERE actor_id=?', [$id]);
-        q('DELETE FROM usr_users WHERE id=?', [$id]);
+        q('DELETE FROM sys_jejak_audit WHERE pelaku_id=?', [$id]);
+        q('DELETE FROM usr_akun WHERE id=?', [$id]);
     }
     foreach ($GLOBALS['jar'] as $j) { @unlink($j); }
     $GLOBALS['diskusi'] = $GLOBALS['users'] = [];
@@ -486,7 +486,7 @@ echo "\n== 13. Admin membaca dan membalas konsultasi privat = tercatat ==\n";
    catat_audit karena tiap balasan tindakan tersendiri. */
 $jejak_admin = function ($aksi, $objek) use ($idA) {
     return (int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi=? AND objek_tipe='forum_diskusi'
-        AND objek_id=? AND actor_id=? AND created_at >= ?", [$aksi, (string) $objek, $idA, MULAI]);
+        AND objek_id=? AND pelaku_id=? AND created_at >= ?", [$aksi, (string) $objek, $idA, MULAI]);
 };
 http('a', 'Umum/forum');
 cek($jejak_admin('akses_konsultasi_warga', 'daftar') === 1, 'Admin membuka daftar konsultasi: satu baris akses tercatat');
@@ -497,14 +497,14 @@ http('a', 'Umum/balas_aksi', ['csrf_kpkp_token' => csrf('a', 'Umum/detail/' . $t
     'id_diskusi' => $topik, 'isi_komentar' => 'Balasan petugas uji ' . CAP]);
 cek($jejak_admin('konsultasi_dibalas', $topik) === 1, 'Balasan petugas tercatat di jejak audit (konsultasi_dibalas)');
 http('w', 'Umum/detail/' . $topik);
-cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='akses_konsultasi_warga' AND actor_id=?", [$idW]) === 0,
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='akses_konsultasi_warga' AND pelaku_id=?", [$idW]) === 0,
     'Pemilik yang membuka topiknya sendiri tidak dicatat sebagai akses');
 
 // Username staf tidak boleh sampai ke warga: nama, setReplyTo, dan @balasan berantai.
-$username_admin = (string) nilai('SELECT username FROM usr_users WHERE id=?', [$idA]);
-$kom_admin = (int) nilai("SELECT id_komentar FROM forum_komentar WHERE id_diskusi=? AND role='Petugas Disperakim' AND user_id=?", [$topik, $idA]);
+$username_admin = (string) nilai('SELECT nama_pengguna FROM usr_akun WHERE id=?', [$idA]);
+$kom_admin = (int) nilai("SELECT id FROM forum_komentar WHERE diskusi_id=? AND peran='Petugas Disperakim' AND user_id=?", [$topik, $idA]);
 http('w', 'Umum/balas_aksi', ['csrf_kpkp_token' => csrf('w', 'Umum/detail/' . $topik),
-    'id_diskusi' => $topik, 'reply_to' => $kom_admin, 'isi_komentar' => 'Terima kasih petugas ' . CAP]);
+    'id_diskusi' => $topik, 'balasan_untuk_id' => $kom_admin, 'isi_komentar' => 'Terima kasih petugas ' . CAP]);
 $hal_warga = http('w', 'Umum/detail/' . $topik)['body'];
 wajib($username_admin !== '' && $kom_admin > 0 && strpos($hal_warga, 'Terima kasih petugas ' . CAP) !== FALSE,
     'Balasan petugas dan balasan berantai warga ada di halaman');

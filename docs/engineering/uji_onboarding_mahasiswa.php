@@ -6,7 +6,7 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  *   php docs/engineering/uji_onboarding_mahasiswa.php
  *
  * Mahasiswa tidak dimintai NIK (identitasnya NIM di formulir magang); warga tetap wajib NIK.
- * Dua akun sekali pakai berstatus profile_completed=0 dibuat dan dihapus sendiri.
+ * Dua akun sekali pakai berstatus profil_lengkap=0 dibuat dan dihapus sendiri.
  */
 $BASE = rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/') . '/';
 $env = [];
@@ -25,22 +25,22 @@ $http = function ($jar, $path, $post = NULL) use ($BASE) {
 $csrf = function ($jar) { foreach (file($jar) as $l) { $p = explode("\t", trim($l)); if (($p[5] ?? '') === 'csrf_kpkp_cookie') return $p[6]; } return ''; };
 $coba = function ($peran) use ($db, $tag, $sandi, $http, $csrf, &$jars) {
     $email = "{$tag}_{$peran}@example.test"; $h = password_hash($sandi, PASSWORD_BCRYPT);
-    $st = $db->prepare("INSERT INTO usr_users (name,email,password,role,profile_completed,status,email_verified_at,password_changed_at,password_expires_at,created_at) VALUES ('Uji Onb',?,?,NULL,0,'active',NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
+    $st = $db->prepare("INSERT INTO usr_akun (nama,email,kata_sandi,peran,profil_lengkap,status,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at) VALUES ('Uji Onb',?,?,NULL,0,'active',NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
     $st->bind_param('ss', $email, $h); $st->execute(); $id = $db->insert_id;
     $j = tempnam(sys_get_temp_dir(), 'obm'); $jars[] = $j;
     $http($j, 'Auth/login'); $http($j, 'Auth/do_login', ['email' => $email, 'password' => $sandi, 'csrf_kpkp_token' => $csrf($j)]);
     $http($j, 'Auth/onboarding');
     $b = $http($j, 'Auth/save_onboarding', ['csrf_kpkp_token' => $csrf($j), 'role' => $peran, 'username' => $tag . $peran,
         'nama_lengkap' => 'Uji ' . $peran, 'alamat_domisili' => 'Jl. Uji No. 1', 'phone' => '081234567890', 'nik_identitas' => '']);
-    return [$db->query("SELECT role, profile_completed, nik, nik_lookup_hash FROM usr_users WHERE id={$id}")->fetch_assoc(), $b];
+    return [$db->query("SELECT peran, profil_lengkap, nik, nik_lookup_hash FROM usr_akun WHERE id={$id}")->fetch_assoc(), $b];
 };
 try {
     echo "=== UJI ONBOARDING MAHASISWA TANPA NIK ===\n";
     [$m, $bm] = $coba('mahasiswa');
-    $cek($m['role'] === 'mahasiswa' && (int) $m['profile_completed'] === 1, 'Mahasiswa tanpa NIK menyelesaikan onboarding');
+    $cek($m['peran'] === 'mahasiswa' && (int) $m['profil_lengkap'] === 1, 'Mahasiswa tanpa NIK menyelesaikan onboarding');
     $cek($m['nik'] === NULL && $m['nik_lookup_hash'] === NULL, 'Tidak ada NIK kosong/terenkripsi yang tersimpan untuk mahasiswa');
     [$w, $bw] = $coba('warga');
-    $cek((int) $w['profile_completed'] === 0, 'Warga tanpa NIK TETAP ditolak (NIK wajib untuk warga)');
+    $cek((int) $w['profil_lengkap'] === 0, 'Warga tanpa NIK TETAP ditolak (NIK wajib untuk warga)');
     $cek(stripos($bw, 'wajib') !== FALSE, 'Warga mendapat pesan field wajib');
 
     // Formulir daftar tanpa JavaScript dengan isian kosong: kembali ke formulir dengan pesan, bukan halaman galat.
@@ -52,7 +52,7 @@ try {
     $br = html_entity_decode((string) curl_exec($ch)); $kode = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch); unset($ch);
     $cek($kode === 200 && stripos($br, 'Semua field wajib diisi') !== FALSE && stripos($br, 'Permintaan Tidak Valid') === FALSE, 'Daftar non-AJAX dengan isian kosong kembali ke formulir dengan pesan ramah');
 } finally {
-    $db->query("DELETE FROM usr_users WHERE email LIKE '{$tag}_%@example.test'");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE '{$tag}_%@example.test'");
     foreach ($jars as $j) @unlink($j);
 }
 echo "\nRINGKASAN: {$total} pemeriksaan, {$gagal} gagal\n";

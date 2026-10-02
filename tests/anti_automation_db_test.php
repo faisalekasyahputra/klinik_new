@@ -9,7 +9,7 @@
  *  3. kepekaan uji: pencacah "baca lalu tulis" yang naif dijalankan dengan cara yang sama dan HARUS
  *     menghasilkan hitungan ganda, jadi uji ini memang bisa merah bila atomisitasnya rusak.
  *
- * Butuh MySQL yang menyimpan tabel sys_rate_limits (skema aplikasi). Env: DB_HOST (bawaan 127.0.0.1),
+ * Butuh MySQL yang menyimpan tabel sys_batas_laju (skema aplikasi). Env: DB_HOST (bawaan 127.0.0.1),
  * DB_USER (root), DB_PASS, DB_NAME (klinikpkp). Tanpa DB: gagal, kecuali UJI_DB_BOLEH_LEWATI=1.
  * Jalankan:  php tests/anti_automation_db_test.php
  */
@@ -74,13 +74,13 @@ function uji_kunci($policy, $nilai) { return hash('sha256', $policy . ':key:' . 
 /** Pencacah naif (baca lalu tulis) untuk membuktikan bahwa uji ini peka terhadap pembaruan yang hilang. */
 function uji_naif($m, $policy, $nilai) {
     $kunci = uji_kunci($policy, $nilai);
-    $st = $m->prepare('SELECT failed_attempts FROM sys_rate_limits WHERE limit_key = ?');
+    $st = $m->prepare('SELECT jumlah_gagal FROM sys_batas_laju WHERE kunci = ?');
     $st->bind_param('s', $kunci); $st->execute();
     $baris = $st->get_result()->fetch_assoc();
-    $baru = ($baris ? (int) $baris['failed_attempts'] : 0) + 1;
+    $baru = ($baris ? (int) $baris['jumlah_gagal'] : 0) + 1;
     usleep(random_int(0, 300));
-    $st2 = $m->prepare('INSERT INTO sys_rate_limits (limit_key, window_started_at, failed_attempts) VALUES (?, NOW(), ?)
-                        ON DUPLICATE KEY UPDATE failed_attempts = VALUES(failed_attempts)');
+    $st2 = $m->prepare('INSERT INTO sys_batas_laju (kunci, jendela_mulai_at, jumlah_gagal) VALUES (?, NOW(), ?)
+                        ON DUPLICATE KEY UPDATE jumlah_gagal = VALUES(jumlah_gagal)');
     $st2->bind_param('si', $kunci, $baru); $st2->execute();
     return $baru;
 }
@@ -116,14 +116,14 @@ if ( ! $m) {
     fwrite(STDERR, "anti_automation_db_test: GAGAL, MySQL tidak terhubung (set UJI_DB_BOLEH_LEWATI=1 untuk melewati)\n");
     exit(1);
 }
-$cek = $m->query("SHOW TABLES LIKE 'sys_rate_limits'");
-if ( ! $cek || $cek->num_rows === 0) { fwrite(STDERR, "tabel sys_rate_limits tidak ada\n"); exit(1); }
+$cek = $m->query("SHOW TABLES LIKE 'sys_batas_laju'");
+if ( ! $cek || $cek->num_rows === 0) { fwrite(STDERR, "tabel sys_batas_laju tidak ada\n"); exit(1); }
 
 $lim = uji_limiter($m);
 $run = bin2hex(random_bytes(6));
 $dipakai = [];
 register_shutdown_function(function () use ($m, &$dipakai) {
-    foreach ($dipakai as $kunci) { $st = $m->prepare('DELETE FROM sys_rate_limits WHERE limit_key = ?'); $st->bind_param('s', $kunci); $st->execute(); }
+    foreach ($dipakai as $kunci) { $st = $m->prepare('DELETE FROM sys_batas_laju WHERE kunci = ?'); $st->bind_param('s', $kunci); $st->execute(); }
 });
 $pakai = function ($policy, $nilai) use (&$dipakai) { return $dipakai[] = uji_kunci($policy, $nilai); };
 
@@ -146,7 +146,7 @@ sleep(2);
 check($lim->hit_fast('uji_jendela', ['key' => $k])['count'] === 1, 'Setelah jendela berakhir hitungan harus kembali ke 1');
 
 $k = "tutup-$run"; $kunci_tutup = $pakai('uji_tutup', $k);
-$m->query("INSERT INTO sys_rate_limits (limit_key, window_started_at, failed_attempts) VALUES ('$kunci_tutup', NOW(), 254)");
+$m->query("INSERT INTO sys_batas_laju (kunci, jendela_mulai_at, jumlah_gagal) VALUES ('$kunci_tutup', NOW(), 254)");
 $a = $lim->hit_fast('uji_tutup', ['key' => $k]); $b = $lim->hit_fast('uji_tutup', ['key' => $k]); $c = $lim->hit_fast('uji_tutup', ['key' => $k]);
 check([$a['count'], $b['count'], $c['count']] === [255, 255, 255], 'Hitungan harus berhenti di 255 (batas TINYINT), bukan meluap');
 check($c['allowed'] === TRUE, 'Pada limit 255 hitungan 255 masih diizinkan (blokir hanya bila > limit)');
@@ -178,9 +178,9 @@ $hitungan = uji_serentak('atomik', 'uji_konkuren', $k, $proses, $per);
 sort($hitungan);
 check(count($hitungan) === $n, 'Jumlah hasil pekerja harus ' . $n . ', dapat ' . count($hitungan));
 check($hitungan === range(1, $n), "Hitungan serentak harus persis permutasi 1..$n (tanpa pembaruan hilang/ganda); dapat: " . implode(',', $hitungan));
-$st = $m->prepare('SELECT failed_attempts FROM sys_rate_limits WHERE limit_key = ?');
+$st = $m->prepare('SELECT jumlah_gagal FROM sys_batas_laju WHERE kunci = ?');
 $st->bind_param('s', $kk); $st->execute();
-check((int) $st->get_result()->fetch_assoc()['failed_attempts'] === $n, 'Nilai akhir di tabel harus sama dengan jumlah permintaan');
+check((int) $st->get_result()->fetch_assoc()['jumlah_gagal'] === $n, 'Nilai akhir di tabel harus sama dengan jumlah permintaan');
 
 // --- 3. Kepekaan: pencacah naif HARUS menunjukkan hitungan ganda ---------------------------
 $naif_ganda = FALSE;

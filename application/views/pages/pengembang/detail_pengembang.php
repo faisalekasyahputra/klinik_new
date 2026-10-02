@@ -482,7 +482,7 @@ foreach ($tapera_data as $p) {
                 <i class="fa-solid fa-circle-check" style="margin-right:5px;"></i>Verified
             </span>
         </div>
-        <?php // Sumbernya kini direktori resmi (srp2_certified_developers), yang
+        <?php // Sumbernya kini direktori resmi (srp2_direktori_pengembang), yang
               // memang tidak memuat NIB/asosiasi - keduanya milik baris pengajuan,
               // bukan direktori publik. Kartu alamat/website di bawah dipakai kalau
               // datanya ada. ?>

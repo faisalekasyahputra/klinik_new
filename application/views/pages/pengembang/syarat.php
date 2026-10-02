@@ -3,8 +3,8 @@
         "isLogged" => (bool) $is_logged,
         "isPengembang" => (bool) $is_pengembang,
         "wrongRole" => (bool) $wrong_role,
-        "namaUser" => $nama_user ?? "",
-        "registrationId" => $registration_id,
+        "namaUser" => $nama_pengguna ?? "",
+        "registrationId" => $pengajuan_id,
         // Daftar 14 formulir ikut digerbangi. Ia dikirim ke peramban lewat
         // konfigurasi ini, jadi menggerbangi markup saja masih membocorkan
         // seluruh nama dokumen persyaratan ke pengunjung yang belum masuk.
@@ -579,7 +579,7 @@ function srp2Wizard(config) {
                 const data = await res.json();
                 if (data.status === 'success') {
                     this.isLogged = true; this.isPengembang = true;
-                    this.registrationId = data.registration_id;
+                    this.registrationId = data.pengajuan_id;
                     this.showToast('Akun berhasil dibuat!', false, 'success');
                 } else {
                     this.regError = data.message || 'Gagal mendaftar.';

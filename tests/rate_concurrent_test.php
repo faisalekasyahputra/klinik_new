@@ -11,7 +11,7 @@ class FakeDatabase {
     public $locks = [];
     private $last_lock = '';
     public function query($sql, $args = []) {
-        if (strpos($sql, 'INSERT INTO sys_rate_limits') !== false) { $this->count++; return true; }
+        if (strpos($sql, 'INSERT INTO sys_batas_laju') !== false) { $this->count++; return true; }
         if (strpos($sql, 'GET_LOCK') !== false) {
             $name = $args[0];
             if (isset($this->locks[$name])) { return new FakeResult(['acquired' => 0]); }
@@ -23,7 +23,7 @@ class FakeDatabase {
     }
     public function select($fields, $escape = true) { return $this; }
     public function where($key, $value = null, $escape = true) { return $this; }
-    public function get($table) { return new FakeResult(['failed_attempts' => $this->count, 'retry_after' => 60]); }
+    public function get($table) { return new FakeResult(['jumlah_gagal' => $this->count, 'retry_after' => 60]); }
 }
 class FakeConfig {
     public function load($name, $section = false) {}

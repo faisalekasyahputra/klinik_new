@@ -129,7 +129,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
       <?php /* Catatan peninjau dulu HANYA dirender di L5 (Review & Kirim).
                 Alasan orang ini membuka wizard justru karena laporannya
                 dikembalikan - dan ia mendarat di langkah yang tersimpan di
-                `current_step`, yang belum tentu L5. Jadi ia melihat formulir
+                `langkah_sekarang`, yang belum tentu L5. Jadi ia melihat formulir
                 terbuka tanpa satu pun keterangan kenapa, dan baru menemukan
                 alasannya kalau kebetulan mengklik sampai langkah terakhir.
                 Alasan yang sama persis dengan spanduk terkunci di atas: kalau

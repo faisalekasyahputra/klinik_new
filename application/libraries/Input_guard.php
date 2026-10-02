@@ -110,7 +110,7 @@ class Input_guard {
 
         // 'step' dan 'langkah' SENGAJA tidak di sini: keduanya slug teks (find_data, housing_family, bnba, isian),
         // bukan angka. Memasukkannya (21 Sep 2026) membuat seluruh wizard warga dan rekam data dijawab 400.
-        if (preg_match('/^(?:id|.*_id|reply_to|lock_version|page|hal|limit|per|urutan|kuota|tahun|semester|triwulan|occupant_count|family_count)$/', $field)
+        if (preg_match('/^(?:id|.*_id|balasan_untuk_id|versi_kunci|page|hal|limit|per|urutan|kuota|tahun|semester|triwulan|jml_penghuni|jml_kk)$/', $field)
             && ! preg_match('/^\d{1,20}$/D', $value)) {
             return 'Nilai numerik ' . $field . ' tidak valid.';
         }
@@ -126,7 +126,7 @@ class Input_guard {
         if ($field === 'npwp' && ! preg_match('/^[0-9.\- ]{15,24}$/D', $value)) {
             return 'Format NPWP tidak valid.';
         }
-        if (in_array($field, ['email', 'email_user', 'footer_email'], TRUE)
+        if (in_array($field, ['email', 'email_pengguna', 'footer_email'], TRUE)
             && ! filter_var($value, FILTER_VALIDATE_EMAIL)
             && ! preg_match('/^[A-Za-z0-9._-]{3,100}$/D', $value)) {
             return 'Format email atau username tidak valid.';
@@ -142,11 +142,11 @@ class Input_guard {
             && ! preg_match('/^[0-9+(). \-]{7,30}$/D', $value)) {
             return 'Format nomor telepon tidak valid.';
         }
-        if (preg_match('/^(?:monthly_income|penghasilan|nilai_anggaran|nilai_padat_karya|rencana_anggaran|realisasi_anggaran|rencana_unit|realisasi_unit|total_luas_ha|house_area_m2|land_length_m|land_width_m|location_accuracy_m|location_lat|location_lng|volume)$/', $field)
+        if (preg_match('/^(?:penghasilan|penghasilan|nilai_anggaran|nilai_padat_karya|rencana_anggaran|realisasi_anggaran|rencana_unit|realisasi_unit|total_luas_ha|luas_rumah|panjang_lahan_m|lebar_lahan_m|akurasi_lokasi_m|location_lat|location_lng|volume)$/', $field)
             && ! preg_match('/^-?\d{1,15}(?:[.,]\d{1,8})?$/D', $value)) {
             return 'Format angka ' . $field . ' tidak valid.';
         }
-        if (preg_match('/^(?:aktif|is_active|status_aktif|ada_penanganan|ada_progres|manual_entry|has_other_land|has_other_house|owns_candidate_land|tampil_korsel|simpan_hasil|srp2_pengembang|tos_agree|pernyataan)$/', $field)
+        if (preg_match('/^(?:aktif|is_active|status_aktif|ada_penanganan|ada_progres|manual_entry|tanah_lain|rumah_lain|punya_lahan_calon|tampil_korsel|simpan_hasil|srp2_pengembang|tos_agree|pernyataan)$/', $field)
             && ! in_array(strtolower($value), ['0', '1', 'on', 'yes', 'true', 'false', 'ya', 'tidak'], TRUE)) {
             return 'Nilai pilihan ' . $field . ' tidak valid.';
         }

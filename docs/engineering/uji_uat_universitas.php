@@ -28,7 +28,7 @@ $cek = function ($ok, $l) use (&$total, &$gagal) { $total++; if (!$ok) $gagal++;
 $nilai = function ($sql) use ($db) { $r = $db->query($sql); $b = $r ? $r->fetch_row() : NULL; return $b ? $b[0] : NULL; };
 $akun = function ($role, $bidang = NULL, $telp = '081234567890') use ($db, $tag, $sandi, &$uid) {
     $e = "{$tag}_{$role}" . count($uid) . '@example.test'; $h = password_hash($sandi, PASSWORD_BCRYPT);
-    $st = $db->prepare("INSERT INTO usr_users (name,email,password,role,bidang_kode,phone,status,profile_completed,email_verified_at,password_changed_at,password_expires_at,created_at) VALUES (?,?,?,?,?,?,'active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
+    $st = $db->prepare("INSERT INTO usr_akun (nama,email,kata_sandi,peran,bidang_kode,no_hp,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at) VALUES (?,?,?,?,?,?,'active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
     $nama = "Uji {$role} {$tag}";
     $st->bind_param('ssssss', $nama, $e, $h, $role, $bidang, $telp); $st->execute();
     $uid[] = $db->insert_id; return [$db->insert_id, $e];
@@ -76,7 +76,7 @@ $peserta = function ($kkn, $nim, $nama) use ($db) { $st = $db->prepare("INSERT I
 // sudah disimpan di awal dan dikembalikan di akhir.
 $ember_ip = function ($pol) { $k = []; foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) $k[] = hash('sha256', $pol . ':ip:' . $ip); return $k; };
 $cari = function ($nim, $jar = NULL) use ($http, $csrf, $sesi, $db, $ember_ip) {
-    foreach ($ember_ip('sertifikat_kkn_lookup') as $k) $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
+    foreach ($ember_ip('sertifikat_kkn_lookup') as $k) $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
     $j = $jar ?: $sesi(); $http($j, 'KemitraanPortal/sertifikat_kkn');
     return [$j, $http($j, 'KemitraanPortal/cek_sertifikat_kkn', ['csrf_kpkp_token' => $csrf($j), 'nim' => $nim])[1]];
 };
@@ -87,8 +87,8 @@ $ember = [];
 try {
     echo "=== UJI UAT UNIVERSITAS ===\n";
     foreach (['sertifikat_kkn_lookup', 'login'] as $pol) foreach ($ember_ip($pol) as $k) {
-        $ember[$k] = $db->query("SELECT limit_key, window_started_at, failed_attempts FROM sys_rate_limits WHERE limit_key='$k'")->fetch_assoc();
-        $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
+        $ember[$k] = $db->query("SELECT kunci, jendela_mulai_at, jumlah_gagal FROM sys_batas_laju WHERE kunci='$k'")->fetch_assoc();
+        $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
     }
     [$idAdm, $eAdm] = $akun('admin');
     [$idBid, $eBid] = $akun('admin_bidang', 'kawasan');
@@ -113,22 +113,22 @@ try {
         return $kirim($jar, $path, ['name' => 'Univ ' . $email, 'email' => $email, 'phone' => $telp, 'password' => $pw ?? $sandi, 'role' => 'universitas'] + $extra);
     };
     $buat($jBid, 'Kemitraan_Bidang/buat_universitas', $eBaru, '081234567890');
-    $cek((int) $nilai("SELECT COUNT(*) FROM usr_users WHERE email='{$eBaru}' AND role='universitas'") === 1, 'Admin bidang membuat akun universitas');
+    $cek((int) $nilai("SELECT COUNT(*) FROM usr_akun WHERE email='{$eBaru}' AND peran='universitas'") === 1, 'Admin bidang membuat akun universitas');
     [, $hal] = $buat($jBid, 'Kemitraan_Bidang/buat_universitas', strtoupper(substr($eBaru, 0, 6)) . substr($eBaru, 6), '081234567890');
-    $cek(strpos($hal, 'email tersebut sudah terdaftar') !== FALSE && (int) $nilai("SELECT COUNT(*) FROM usr_users WHERE email='{$eBaru}'") === 1, 'Email ganda (beda huruf besar) ditolak dengan pesan "email tersebut sudah terdaftar"');
+    $cek(strpos($hal, 'email tersebut sudah terdaftar') !== FALSE && (int) $nilai("SELECT COUNT(*) FROM usr_akun WHERE email='{$eBaru}'") === 1, 'Email ganda (beda huruf besar) ditolak dengan pesan "email tersebut sudah terdaftar"');
     $buat($jBid, 'Kemitraan_Bidang/buat_universitas', "{$tag}_hp1@example.test", 'bukan-nomor-xx');
-    $cek((int) $nilai("SELECT COUNT(*) FROM usr_users WHERE email='{$tag}_hp1@example.test'") === 0, 'Nomor HP bukan angka ditolak server');
+    $cek((int) $nilai("SELECT COUNT(*) FROM usr_akun WHERE email='{$tag}_hp1@example.test'") === 0, 'Nomor HP bukan angka ditolak server');
     $buat($jBid, 'Kemitraan_Bidang/buat_universitas', "{$tag}_hp2@example.test", str_repeat('9', 25));
-    $cek((int) $nilai("SELECT COUNT(*) FROM usr_users WHERE email='{$tag}_hp2@example.test'") === 0, 'Nomor HP lebih dari 20 karakter ditolak, bukan dipotong diam-diam');
+    $cek((int) $nilai("SELECT COUNT(*) FROM usr_akun WHERE email='{$tag}_hp2@example.test'") === 0, 'Nomor HP lebih dari 20 karakter ditolak, bukan dipotong diam-diam');
     $buat($jBid, 'Kemitraan_Bidang/buat_universitas', "{$tag}_pw1@example.test", '', 'abcd1234');
-    $cek((int) $nilai("SELECT COUNT(*) FROM usr_users WHERE email='{$tag}_pw1@example.test'") === 0, 'Admin bidang: sandi awal tanpa huruf besar/simbol ditolak (aturan sama dengan ganti sandi)');
+    $cek((int) $nilai("SELECT COUNT(*) FROM usr_akun WHERE email='{$tag}_pw1@example.test'") === 0, 'Admin bidang: sandi awal tanpa huruf besar/simbol ditolak (aturan sama dengan ganti sandi)');
     $http($jAdm, 'Admin_Kemitraan/universitas');
     $buat($jAdm, 'Admin_Users/create_staff', "{$tag}_pw2@example.test", '', 'abcd1234');
-    $cek((int) $nilai("SELECT COUNT(*) FROM usr_users WHERE email='{$tag}_pw2@example.test'") === 0, 'Superadmin: sandi awal lemah ditolak create_staff');
+    $cek((int) $nilai("SELECT COUNT(*) FROM usr_akun WHERE email='{$tag}_pw2@example.test'") === 0, 'Superadmin: sandi awal lemah ditolak create_staff');
     [, $hal] = $http($jAdm, 'Admin_Kemitraan/universitas');
     $cek(preg_match('/name="kembali"\s+value="Admin_Kemitraan\/universitas"/', $hal) === 1, 'Formulir Tambah Universitas superadmin membawa tujuan kembali');
     [, , $akhir] = $buat($jAdm, 'Admin_Users/create_staff', "{$tag}_u2univ@example.test", '081234567890', NULL, ['kembali' => 'Admin_Kemitraan/universitas']);
-    $cek((int) $nilai("SELECT COUNT(*) FROM usr_users WHERE email='{$tag}_u2univ@example.test'") === 1 && substr($akhir, -strlen('Admin_Kemitraan/universitas')) === 'Admin_Kemitraan/universitas', 'Sesudah Tambah Universitas superadmin kembali ke tab Universitas (' . basename(dirname($akhir)) . '/' . basename($akhir) . ')');
+    $cek((int) $nilai("SELECT COUNT(*) FROM usr_akun WHERE email='{$tag}_u2univ@example.test'") === 1 && substr($akhir, -strlen('Admin_Kemitraan/universitas')) === 'Admin_Kemitraan/universitas', 'Sesudah Tambah Universitas superadmin kembali ke tab Universitas (' . basename(dirname($akhir)) . '/' . basename($akhir) . ')');
     [, , $akhir] = $buat($jAdm, 'Admin_Users/create_staff', "{$tag}_u2univ2@example.test", '', NULL, ['kembali' => 'https://example.test/jahat']);
     $cek(strpos($akhir, 'example.test/jahat') === FALSE && substr($akhir, -strlen('Admin_Users')) === 'Admin_Users', 'Tujuan kembali di luar daftar diabaikan (tetap ke Admin_Users)');
 
@@ -250,7 +250,7 @@ try {
     $http($jC, 'akun/profil');
     $jawab = [];
     for ($i = 0; $i < 8; $i++) { $jawab[] = $kirim($jC, 'akun/delete', ['current_password' => 'SalahSandi#' . $i])[0]; }
-    $cek(in_array(429, $jawab, TRUE) && (int) $nilai("SELECT COUNT(*) FROM usr_users WHERE id={$idC}") === 1, 'Tebakan sandi berulang di hapus akun dibatasi (429), akun tetap ada');
+    $cek(in_array(429, $jawab, TRUE) && (int) $nilai("SELECT COUNT(*) FROM usr_akun WHERE id={$idC}") === 1, 'Tebakan sandi berulang di hapus akun dibatasi (429), akun tetap ada');
     [$jW] = $login($eW);
     [, $hal] = $http($jW, 'KemitraanPortal');
     $cek(strpos($hal, 'akun yang sesuai') !== FALSE, 'Warga di KemitraanPortal diberi tahu butuh akun yang sesuai');
@@ -260,12 +260,12 @@ try {
     $cek(stripos($hal, 'akun Anda sudah dihapus') !== FALSE, 'Halaman login mengonfirmasi akun sudah dihapus');
 } finally {
     foreach ($ember as $k => $row) {
-        $db->query("DELETE FROM sys_rate_limits WHERE limit_key='$k'");
-        if ($row) { $st = $db->prepare('INSERT INTO sys_rate_limits (limit_key, window_started_at, failed_attempts) VALUES (?,?,?)'); $st->bind_param('ssi', $row['limit_key'], $row['window_started_at'], $row['failed_attempts']); $st->execute(); }
+        $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
+        if ($row) { $st = $db->prepare('INSERT INTO sys_batas_laju (kunci, jendela_mulai_at, jumlah_gagal) VALUES (?,?,?)'); $st->bind_param('ssi', $row['kunci'], $row['jendela_mulai_at'], $row['jumlah_gagal']); $st->execute(); }
     }
-    $semua = array_column($db->query("SELECT id FROM usr_users WHERE email LIKE '{$tag}%@example.test'")->fetch_all(), 0);
+    $semua = array_column($db->query("SELECT id FROM usr_akun WHERE email LIKE '{$tag}%@example.test'")->fetch_all(), 0);
     foreach ($semua as $u) {
-        foreach (['account_delete', 'tulis_akun', 'account_export'] as $pol) $db->query("DELETE FROM sys_rate_limits WHERE limit_key='" . hash('sha256', "{$pol}:account:{$u}") . "'");
+        foreach (['account_delete', 'tulis_akun', 'account_export'] as $pol) $db->query("DELETE FROM sys_batas_laju WHERE kunci='" . hash('sha256', "{$pol}:account:{$u}") . "'");
         foreach (array_column($db->query("SELECT id FROM kkn_magang_pendaftaran WHERE user_id=" . (int) $u)->fetch_all(), 0) as $p) {
             foreach (glob("{$uploads}/kemitraan/{$p}/*") ?: [] as $f) @unlink($f);
             @rmdir("{$uploads}/kemitraan/{$p}");
@@ -275,7 +275,7 @@ try {
         $db->query("DELETE FROM kkn_magang_pendaftaran WHERE user_id=" . (int) $u);
         $db->query("DELETE FROM sf_penilaian_perumahan WHERE user_id=" . (int) $u);
     }
-    $db->query("DELETE FROM usr_users WHERE email LIKE '{$tag}%@example.test'");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE '{$tag}%@example.test'");
     foreach (array_merge($jars, $tmp) as $f) @unlink($f);
 }
 echo "\nRINGKASAN: {$total} pemeriksaan, {$gagal} gagal\n";

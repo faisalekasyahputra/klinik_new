@@ -167,12 +167,12 @@ function bersihkan() {
     global $db, $jars, $akun;
     if (isset($akun)) {
         foreach ($akun as $email) {
-            $uid = $db->query("SELECT id FROM usr_users WHERE email = '"
+            $uid = $db->query("SELECT id FROM usr_akun WHERE email = '"
                 . $db->real_escape_string($email) . "'")->fetch_assoc()['id'] ?? NULL;
             if ($uid) { $db->query('DELETE FROM kkn_magang_pendaftaran WHERE user_id = ' . (int) $uid); }
         }
     }
-    $db->query("DELETE FROM usr_users WHERE email LIKE 'uji_mhs_%'");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE 'uji_mhs_%'");
     $db->query("DELETE FROM kkn_magang_slot WHERE tahun = 2098");
     foreach ($jars as $f) { @unlink($f); }
 }
@@ -183,19 +183,19 @@ echo "Uji perjalanan Mahasiswa - KKN & Magang\n";
 // Slot magang bidang perumahan untuk periode uji 2098 (tahun yang tidak dipakai data asli).
 $db->query("INSERT IGNORE INTO kkn_magang_slot (bidang_kode, tahun, bulan, tgl_mulai, tgl_selesai) VALUES ('perumahan', 2098, 1, '2098-01-01', '2098-01-31')");
 
-$admin = q('SELECT id, email FROM usr_users WHERE role = ? LIMIT 1', ['admin']);
+$admin = q('SELECT id, email FROM usr_akun WHERE peran = ? LIMIT 1', ['admin']);
 wajib($admin && ! empty($admin['email']), 'Akun superadmin tersedia untuk sisi peninjau');
 
 foreach (['mhs' => 'mahasiswa', 'mhs2' => 'mahasiswa', 'warga' => 'warga'] as $k => $role) {
     $db->query(sprintf(
-        "INSERT INTO usr_users (email, password, role, name, username)
+        "INSERT INTO usr_akun (email, kata_sandi, peran, nama, nama_pengguna)
          VALUES ('%s', '%s', '%s', 'Uji %s', 'uji_mhs_%s_%d')",
         $db->real_escape_string($akun[$k]),
         $db->real_escape_string(password_hash('UjiMhs!2026', PASSWORD_BCRYPT)),
         $db->real_escape_string($role), $k, $k, $stamp));
 }
-$UID  = skalar_int('SELECT id FROM usr_users WHERE email = ?', [$akun['mhs']]);
-$UID2 = skalar_int('SELECT id FROM usr_users WHERE email = ?', [$akun['mhs2']]);
+$UID  = skalar_int('SELECT id FROM usr_akun WHERE email = ?', [$akun['mhs']]);
+$UID2 = skalar_int('SELECT id FROM usr_akun WHERE email = ?', [$akun['mhs2']]);
 
 $pdf = tempnam(sys_get_temp_dir(), 'surat_') . '.pdf';
 file_put_contents($pdf, "%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF");
@@ -350,7 +350,7 @@ try {
     bersihkan();
 }
 
-cek(skalar_int("SELECT COUNT(*) c FROM usr_users WHERE email LIKE 'uji_mhs_%'") === 0,
+cek(skalar_int("SELECT COUNT(*) c FROM usr_akun WHERE email LIKE 'uji_mhs_%'") === 0,
     'Data uji dibersihkan');
 
 echo "RINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";

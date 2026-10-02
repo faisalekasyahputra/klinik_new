@@ -79,8 +79,8 @@ function tulis($sql, $p = []) {
 }
 function bersihkan() {
     if (empty($GLOBALS['db'])) { return; }
-    foreach ($GLOBALS['antrean'] as $id) { $GLOBALS['db']->query('DELETE FROM sf_housing_queue WHERE id=' . (int) $id); }
-    foreach ($GLOBALS['users'] as $id)   { $GLOBALS['db']->query('DELETE FROM usr_users WHERE id=' . (int) $id); }
+    foreach ($GLOBALS['antrean'] as $id) { $GLOBALS['db']->query('DELETE FROM sf_antrean_pengajuan WHERE id=' . (int) $id); }
+    foreach ($GLOBALS['users'] as $id)   { $GLOBALS['db']->query('DELETE FROM usr_akun WHERE id=' . (int) $id); }
     foreach (glob(sys_get_temp_dir() . '/scope_*') as $f) { @unlink($f); }
 }
 register_shutdown_function('bersihkan');
@@ -117,7 +117,7 @@ class Sesi {
 function buat_akun($peran, $suffix, $kab = NULL) {
     $email = 'uji_scope_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
     $id = tulis(
-        'INSERT INTO usr_users (email,password,name,username,role,kabupaten_id,status,profile_completed,created_at)
+        'INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,kabupaten_id,status,profil_lengkap,created_at)
          VALUES (?,?,?,?,?,?, "active",1,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji Scope ' . $suffix,
          'uji_scope_' . $suffix . '_' . mt_rand(10000, 99999), $peran, $kab]
@@ -130,7 +130,7 @@ function buat_akun($peran, $suffix, $kab = NULL) {
 function buat_antrean($kab, $user_id, $program_id, $nama, $nik, $tiket) {
     $enc = $GLOBALS['enc'];
     $id = tulis(
-        'INSERT INTO sf_housing_queue (user_id,program_id,kabupaten_id,nama_lengkap_ciphertext,nik_pengaju_ciphertext,nik_pengaju_lookup_hash,ticket_code,status_antrean,created_at)
+        'INSERT INTO sf_antrean_pengajuan (user_id,program_id,kabupaten_id,nama_lengkap_ciphertext,nik_pengaju_ciphertext,nik_pengaju_lookup_hash,kode_tiket,status_antrean,created_at)
          VALUES (?,?,?,?,?,?,?, "pending", NOW())',
         [$user_id, $program_id, $kab, $enc->encrypt($nama), $enc->encrypt($nik), $enc->deterministic_hash($nik), $tiket]
     );
@@ -153,7 +153,7 @@ if ($GLOBALS['db']->connect_error) { die("Koneksi DB gagal.\n"); }
 echo "== 0. Prasyarat ==\n";
 $kab = array_column(q('SELECT id FROM kabupaten ORDER BY id LIMIT 2'), 'id');
 wajib(count($kab) === 2, 'Ada minimal dua kabupaten untuk diadu');
-$prog = q('SELECT id FROM sf_programs ORDER BY id LIMIT 1');
+$prog = q('SELECT id FROM sf_program ORDER BY id LIMIT 1');
 wajib($prog, 'Ada minimal satu program');
 $program_id = (int) $prog[0]['id'];
 
@@ -161,7 +161,7 @@ $program_id = (int) $prog[0]['id'];
 [$uidB, $emailB] = buat_akun('admin_kabkota', 'b', $kab[1]);
 [$uidW, ]        = buat_akun('warga', 'w');
 
-/* `ticket_code` adalah varchar(10) dan MySQL di sini TIDAK strict: tiket yang
+/* `kode_tiket` adalah varchar(10) dan MySQL di sini TIDAK strict: tiket yang
    lebih panjang dipotong DIAM-DIAM. Versi pertama uji ini memakai tiket 13
    karakter, dan akibatnya asersi "A tidak melihat antrean B" LULUS karena
    string penuh B memang tidak pernah ada di halaman - bukan karena batas
@@ -172,8 +172,8 @@ $tiketB = 'UJSB' . mt_rand(100000, 999999);
 $antreanA = buat_antrean($kab[0], $uidW, $program_id, 'Warga Wilayah A', '3300000000000001', $tiketA);
 $antreanB = buat_antrean($kab[1], $uidW, $program_id, 'Warga Wilayah B', '3300000000000002', $tiketB);
 
-$tersimpanA = q('SELECT ticket_code FROM sf_housing_queue WHERE id=?', [$antreanA])[0]['ticket_code'];
-$tersimpanB = q('SELECT ticket_code FROM sf_housing_queue WHERE id=?', [$antreanB])[0]['ticket_code'];
+$tersimpanA = q('SELECT kode_tiket FROM sf_antrean_pengajuan WHERE id=?', [$antreanA])[0]['kode_tiket'];
+$tersimpanB = q('SELECT kode_tiket FROM sf_antrean_pengajuan WHERE id=?', [$antreanB])[0]['kode_tiket'];
 wajib($tersimpanA === $tiketA && $tersimpanB === $tiketB,
     'PRASYARAT: kode tiket tersimpan UTUH, tidak terpotong diam-diam oleh kolom');
 
@@ -244,7 +244,7 @@ cek(strpos($daftarS, 'id="modal-identitas-b2"') === FALSE, 'Modal keputusan B2 t
 echo "\n== 3. Detail dan berkas wilayah lain ditolak ==\n";
 /* 🔻 ASERSI INI SEMPAT HAMPA, dicatat supaya penggantinya tidak mengulang.
    Versi pertama berbunyi `$sDetB === 404 || strpos($body,'Warga Wilayah B')===FALSE`.
-   Baris uji ini tidak punya `assessment_id`, dan layar detail memang tidak
+   Baris uji ini tidak punya `penilaian_id`, dan layar detail memang tidak
    pernah menampilkan `nama_lengkap` dari baris antrean - jadi ruas kedua SELALU
    benar, entah batas wilayahnya bekerja atau tidak. Mutasi yang mencabut scope
    dari `get_scoped_queue_detail()` LOLOS. Sekarang yang diperiksa KODE HTTP-nya
@@ -262,19 +262,19 @@ cek($sDetA === 200, 'PEMBANDING: detail wilayah sendiri tetap terbuka - 404 di a
    `get_scoped_queue_detail()` yang sudah dijaga ketat di atas. Kalau kelak ia
    query sendiri ke `sf_berkas_penilaian`, batas wilayahnya lepas tanpa suara. */
 $model = (string) @file_get_contents(APP_ROOT . '/application/models/Housing_assessment_model.php');
-cek(preg_match('/function get_scoped_queue_files.*?get_scoped_queue_detail\(\$queue_id, \$kabupaten_id\)/s', $model) === 1,
+cek(preg_match('/function get_scoped_queue_files.*?get_scoped_queue_detail\(\$antrean_id, \$kabupaten_id\)/s', $model) === 1,
     'Berkas bukti menurunkan izinnya dari detail yang ter-scope, bukan query sendiri');
 
 // ------------------------------------------------------------- 4. Sisi tulis
 echo "\n== 4. Keputusan atas wilayah lain tidak mengubah apa pun ==\n";
-$sebelum = q('SELECT status_antrean FROM sf_housing_queue WHERE id=?', [$antreanB])[0]['status_antrean'];
+$sebelum = q('SELECT status_antrean FROM sf_antrean_pengajuan WHERE id=?', [$antreanB])[0]['status_antrean'];
 $tok = $sesiA->token('Admin_Kabkota');
 $sesiA->call('Admin_Kabkota/update_status', [
-    'csrf_kpkp_token' => $tok, 'queue_id' => $antreanB,
-    'from_status' => 'pending', 'status' => 'approved',
+    'csrf_kpkp_token' => $tok, 'antrean_id' => $antreanB,
+    'status_awal' => 'pending', 'status' => 'approved',
     'catatan_admin' => 'percobaan lintas wilayah',
 ]);
-$sesudah = q('SELECT status_antrean FROM sf_housing_queue WHERE id=?', [$antreanB])[0]['status_antrean'];
+$sesudah = q('SELECT status_antrean FROM sf_antrean_pengajuan WHERE id=?', [$antreanB])[0]['status_antrean'];
 cek($sebelum === $sesudah && $sesudah === 'pending',
     'Status antrean B TIDAK berubah - dibaca ulang dari DB, bukan dari pesan layar');
 
@@ -282,11 +282,11 @@ cek($sebelum === $sesudah && $sesudah === 'pending',
    asersi di atas hijau karena fiturnya mati, bukan karena batasnya bekerja. */
 $tok2 = $sesiA->token('Admin_Kabkota');
 $sesiA->call('Admin_Kabkota/update_status', [
-    'csrf_kpkp_token' => $tok2, 'queue_id' => $antreanA,
-    'from_status' => 'pending', 'status' => 'approved',
+    'csrf_kpkp_token' => $tok2, 'antrean_id' => $antreanA,
+    'status_awal' => 'pending', 'status' => 'approved',
     'catatan_admin' => 'keputusan wilayah sendiri',
 ]);
-$statusA = q('SELECT status_antrean FROM sf_housing_queue WHERE id=?', [$antreanA])[0]['status_antrean'];
+$statusA = q('SELECT status_antrean FROM sf_antrean_pengajuan WHERE id=?', [$antreanA])[0]['status_antrean'];
 cek($statusA === 'approved', 'PEMBANDING: A tetap bisa memutuskan antrean wilayahnya sendiri');
 
 // -------------------------------------------- 5. Akun tanpa wilayah ditolak

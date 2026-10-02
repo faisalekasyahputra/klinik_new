@@ -11,7 +11,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *     tertinggal sebagai berkas yatim;
  *   - DRAF penilaian warga (bukan arsip) tetap ada setelah akun dihapus (FK SET NULL), lengkap dengan
  *     data terenkripsi dan foto buktinya;
- *   - surel pelaku tetap terbaca di jejak audit dan surel pengirim tetap di forum_diskusi.email_user.
+ *   - surel pelaku tetap terbaca di jejak audit dan surel pengirim tetap di forum_diskusi.email_pengguna.
  * Yang SENGAJA tidak dihapus (arsip layanan/keputusan) ada di config/data_lifecycle.php beserta alasannya.
  *
  * Tidak bergantung pada CodeIgniter: menerima adaptor DB (query(), affected_rows()) dan akar berkas privat.
@@ -78,7 +78,7 @@ class Data_erasure {
         if ($email === '') { return 0; }
         $pseudo = self::pseudonim_surel($email, $this->pepper);
         $n = 0;
-        $this->db->query('UPDATE sys_jejak_audit SET actor_email = ? WHERE actor_id = ?', [$pseudo, $user_id]);
+        $this->db->query('UPDATE sys_jejak_audit SET pelaku_email = ? WHERE pelaku_id = ?', [$pseudo, $user_id]);
         $n += (int) $this->db->affected_rows();
         foreach (['ringkasan', 'detail_json'] as $kolom) {
             $this->db->query("UPDATE sys_jejak_audit SET {$kolom} = REPLACE({$kolom}, ?, ?) WHERE {$kolom} LIKE ?", [$email, $pseudo, '%' . $email . '%']);

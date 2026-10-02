@@ -168,7 +168,7 @@ function bersihkan() {
     $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
     if ( ! empty($GLOBALS['mhs_uji_id'])) {
         $db->query("DELETE FROM kkn_magang_pendaftaran WHERE user_id = " . (int) $GLOBALS['mhs_uji_id']);
-        $db->query("DELETE FROM usr_users WHERE id = " . (int) $GLOBALS['mhs_uji_id']);
+        $db->query("DELETE FROM usr_akun WHERE id = " . (int) $GLOBALS['mhs_uji_id']);
     }
     // Slot 2099 yang dibuka skrip ini - tahun itu tidak pernah dipakai data asli.
     $db->query("DELETE FROM kkn_magang_slot WHERE tahun = 2099");
@@ -192,7 +192,7 @@ echo "== Prasyarat ==\n";
  * Kejadian 2 Agt 2026 waktu pendaftaran magang sungguhan pertama dibuat.
  */
 $MHS_UJI = 'uji_daftar_mhs_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
-$db->query("INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+$db->query("INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
     VALUES ('" . $db->real_escape_string($MHS_UJI) . "', '" . password_hash(MHS_PASSWORD, PASSWORD_BCRYPT)
     . "', 'Mahasiswa Uji Daftar', 'uji_daftar_" . mt_rand(100000, 999999) . "', 'mahasiswa', 'active', 1, NOW())");
 $GLOBALS['mhs_uji_id'] = (int) $db->insert_id;
