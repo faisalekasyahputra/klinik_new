@@ -105,7 +105,12 @@ $tanggal = static function ($v) { return $v === NULL || $v === '' ? NULL : tgl_i
 $identity_fields['birth_date'][1] = $tanggal($identity_fields['birth_date'][1]);
 $identity_fields['birth_date'][2] = $tanggal($identity_fields['birth_date'][2]);
 $source_mode = $assessment['source_mode'] ?? '';
-$lencana = ['simulation' => 'Mode Simulasi: data kependudukan belum tersambung ke SIMPERUM', 'manual' => 'Diisi mandiri warga, tidak melalui SIMPERUM'][$source_mode] ?? '';
+// Lencana mengikuti mode koneksi yang aktif (lihat catatan banner di antrean/dashboard.php).
+$this->config->load('simperum', FALSE, TRUE);
+$lencana = ['simulation' => $this->config->item('simperum_mode') === 'api'
+        ? 'Data uji coba: dibuat dengan data simulasi sebelum SIMPERUM tersambung'
+        : 'Mode Simulasi: data kependudukan belum tersambung ke SIMPERUM',
+    'manual' => 'Diisi mandiri warga, tidak melalui SIMPERUM'][$source_mode] ?? '';
 ?>
 <style>
     /* Pilihan keputusan: radio dibungkus label berbingkai, seukuran kontrol form admin. */

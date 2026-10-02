@@ -98,7 +98,15 @@ $filter_html = ob_get_clean();
     if ($ada_simulasi): ?>
     <div data-pemberitahuan-simulasi class="mb-4 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 text-sm flex items-start gap-3">
         <i class="ph ph-flask text-lg mt-0.5" aria-hidden="true"></i>
+        <?php /* Banner muncul karena ADA baris bersumber simulasi, bukan karena mode koneksinya.
+                 Di production SIMPERUM sudah tersambung (mode api) sementara baris lama dari masa
+                 uji coba tetap bertanda simulasi; kalimatnya mengikuti mode yang benar-benar aktif. */
+        $this->config->load('simperum', FALSE, TRUE);
+        if ($this->config->item('simperum_mode') === 'api'): ?>
+        <p><strong>Data uji coba.</strong> SIMPERUM sudah tersambung. Pengajuan bertanda simulasi di daftar ini dibuat saat uji coba, sebelum sambungan aktif.</p>
+        <?php else: ?>
         <p><strong>Mode Simulasi.</strong> Data kependudukan belum tersambung ke SIMPERUM, jadi sebagian pengajuan memakai data simulasi.</p>
+        <?php endif; ?>
     </div>
     <?php endif; ?>
 
