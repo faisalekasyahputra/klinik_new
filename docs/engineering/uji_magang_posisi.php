@@ -149,8 +149,12 @@ wajib(strpos($layar, 'Posisi Magang') !== FALSE, 'Superadmin benar-benar sampai 
 
 /* Daftar kosong: keadaan kosong biasa di bawah formulir, BUKAN modal yang terbuka sendiri
    (audit UI 2 Okt 2026, kelompok B: modal otomatis menghalangi kerja). */
-cek(strpos($layar, 'Belum ada posisi.') !== FALSE && strpos($layar, 'modal-posisi-magang') === FALSE,
-    'Daftar kosong tampil sebagai keadaan kosong biasa, tanpa modal otomatis');
+// Sejak DB lokal disinkronkan dengan production (2 Okt 2026) daftarnya bisa berisi posisi
+// sungguhan; yang dijaga tetap sama: tidak ada modal yang terbuka sendiri.
+$ada_posisi = (int) (q('SELECT COUNT(*) n FROM kkn_magang_posisi')[0]['n'] ?? 0) > 0;
+cek(strpos($layar, 'modal-posisi-magang') === FALSE
+    && ($ada_posisi || strpos($layar, 'Belum ada posisi.') !== FALSE),
+    'Daftar posisi tampil biasa (kosong: keadaan kosong), tanpa modal otomatis');
 
 $t2 = token('Admin_Magang_Posisi');
 http('Admin_Magang_Posisi/simpan', [
