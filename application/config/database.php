@@ -93,8 +93,10 @@ $db['default'] = array(
 	'db_debug' => (ENVIRONMENT !== 'production'),
 	'cache_on' => FALSE,
 	'cachedir' => '',
-	'char_set' => 'utf8',
-	'dbcollat' => 'utf8_general_ci',
+	// utf8mb4 + collation eksplisit (migrasi 068): 'utf8' = utf8mb3, emoji ditolak/terpotong.
+	// dbcollat juga dipakai dbforge untuk CREATE TABLE dan oleh MY_Controller untuk SET NAMES.
+	'char_set' => 'utf8mb4',
+	'dbcollat' => 'utf8mb4_unicode_ci',
 	'swap_pre' => '',
 	'encrypt' => transport_db_encrypt(),
 	'compress' => FALSE,

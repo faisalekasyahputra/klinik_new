@@ -448,6 +448,22 @@ class Migrate extends CI_Controller {
                 : 'BELUM ('.($sisa ? 'kolom polos masih ada: '.implode(',', $sisa).'; ' : '')
                     .($kurang ? 'kolom hilang: '.implode(',', $kurang).'; ' : '').($ada_indeks ? '' : 'indeks '.$indeks.' hilang').')')."\n";
         }
+        // Migrasi 068 - satu charset/collation: setiap tabel dan kolom string utf8mb4_unicode_ci.
+        // Kolom ascii (ascii_bin, migrasi 052/053) pengecualian disengaja dan hanya dihitung.
+        $c068 = $this->db->query("SELECT
+            (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE') t,
+            (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'
+                AND TABLE_COLLATION <> 'utf8mb4_unicode_ci') ts,
+            (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND COLLATION_NAME IS NOT NULL
+                AND CHARACTER_SET_NAME <> 'ascii') k,
+            (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND COLLATION_NAME IS NOT NULL
+                AND CHARACTER_SET_NAME <> 'ascii' AND COLLATION_NAME <> 'utf8mb4_unicode_ci') ks,
+            (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND CHARACTER_SET_NAME = 'ascii') ka,
+            (SELECT DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = DATABASE()) d")->row();
+        echo 'charset/collation (migrasi 068): '.((int) $c068->ts === 0 && (int) $c068->ks === 0
+            ? 'SERAGAM utf8mb4_unicode_ci ('.$c068->t.' tabel, '.$c068->k.' kolom string; '.$c068->ka.' kolom ascii disengaja)'
+            : 'BELUM ('.$c068->ts.' dari '.$c068->t.' tabel dan '.$c068->ks.' dari '.$c068->k.' kolom menyimpang)')
+            .'; default database '.$c068->d."\n";
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
                 ($this->db->field_exists($kolom, 'kkn_magang_pendaftaran') ? 'ADA' : 'HILANG')."\n";

@@ -15,7 +15,9 @@ class MY_Controller extends CI_Controller {
         // NOW()/CURRENT_TIMESTAMP MySQL harus sama dengan date() PHP (Asia/Jakarta, lihat index.php).
         // Offset tetap, bukan nama zona: tabel zona waktu MySQL tidak selalu terisi di hosting.
         // ponytail: WIB tanpa DST jadi +07:00 aman; ganti ke nama zona bila suatu saat pindah ke zona ber-DST.
-        $this->db->query("SET time_zone = '+07:00'");
+        // NAMES: collation koneksi eksplisit dari config/database.php (char_set, dbcollat); tanpa
+        // ini literal string dibandingkan dengan uca1400_ai_ci di 11.8 dan general_ci di 10.4.
+        $this->db->query("SET time_zone = '+07:00', NAMES ".$this->db->char_set.' COLLATE '.$this->db->dbcollat);
 
         // Load essential helpers
         $this->load->helper(['url', 'form', 'security']);
