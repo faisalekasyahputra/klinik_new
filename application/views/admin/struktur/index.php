@@ -7,11 +7,10 @@
  * terbaca sebagai fitur yang belum jadi, lalu ada yang menambahkannya.
  * Pernyataan itu kini ada di modal Ubah Nama, bukan di kepala kolom.
  *
- * Kotak integritas: empat jalur rujukan di $yatim TIDAK dijaga foreign key.
- * Kalau salah satunya di atas nol, ada kunci yang berubah atau baris master
- * yang hilang, dan tidak ada galat apa pun yang menyertainya. Mengganti kode
- * adalah migrasi data, bukan isian formulir: sebagian rujukannya tanpa FK,
- * jadi menggantinya lewat formulir membuat baris yatim tanpa satu pun galat.
+ * Kotak integritas: empat jalur rujukan di $yatim. Sejak migrasi 069 semuanya
+ * dijaga foreign key, jadi angkanya mestinya selalu nol; di atas nol berarti
+ * FK-nya hilang dari skema. Mengganti kode tetap migrasi data, bukan isian
+ * formulir.
  */
 $csrf_nama = $this->security->get_csrf_token_name();
 $csrf_hash = $this->security->get_csrf_hash();

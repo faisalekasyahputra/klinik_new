@@ -11,23 +11,16 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * ═══ SATU-SATUNYA YANG BISA DIUBAH DARI SINI ADALAH `nama`. ═══
  *
  * `bidang.kode` dan `kabupaten.id` TIDAK, dan itu bukan kehati-hatian berlebih.
- * Keduanya dirujuk dari banyak tempat, dan SEBAGIAN BESAR RUJUKAN ITU TIDAK
- * PUNYA FOREIGN KEY - diverifikasi 4 Agt 2026:
+ * Keduanya dirujuk dari banyak tempat. Sejak migrasi 069 (2 Okt 2026) semua
+ * rujukan itu ber-FK: kkn_magang_bidang/pendaftaran/posisi.bidang_kode,
+ * kkn_magang_slot.bidang_kode (lewat kkn_magang_bidang), rd_laporan,
+ * sf_housing_queue, sf_penilaian_perumahan, psu_serah_terima, sf_data_simperum,
+ * srp2_certified_developers .kabupaten_id, serta usr_users.bidang_kode,
+ * usr_users.kabupaten_id, aduan.bidang (yang terakhir tiga ini baru di 069).
  *
- *   berFK      : kkn_magang_bidang.bidang_kode, kkn_magang_pendaftaran.bidang_kode,
- *                rd_laporan.kabupaten_id, sf_housing_queue.kabupaten_id,
- *                sf_penilaian_perumahan.kabupaten_id
- *   TANPA FK   : usr_users.bidang_kode, usr_users.kabupaten_id, aduan.bidang,
- *                kkn_magang_slot.bidang_kode
- *
- * Mengubah `kode` lewat formulir berarti: yang berFK ditolak database (berisik,
- * masih bisa ditangani), sementara yang tanpa FK **berubah jadi yatim tanpa satu
- * pun galat** - admin bidang kehilangan mejanya, aduan hilang dari semua
- * dashboard, slot magang berhenti terhitung. Semuanya tetap membalas 200.
- * Mengganti kunci adalah migrasi data, bukan isian formulir.
- *
- * Karena itu layar ini juga MENGHITUNG yatimnya: satu-satunya penjaga yang
- * tersisa untuk empat jalur tanpa FK di atas adalah ada yang melihat angkanya.
+ * Mengubah `kode` lewat formulir berarti DB menolaknya; mengganti kunci adalah
+ * migrasi data, bukan isian formulir. Hitungan yatim di layar ini dipertahankan
+ * sebagai pemeriksaan silang (nol = keadaan benar).
  */
 class Admin_Struktur extends Admin_Controller {
 

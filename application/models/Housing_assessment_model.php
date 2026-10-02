@@ -310,6 +310,11 @@ class Housing_assessment_model extends CI_Model {
             'kabupaten_id' => $response_status === 'found' && ! empty($payload['location']['kabupaten_id'])
                 ? (int) $payload['location']['kabupaten_id'] : NULL,
         ];
+        // FK ke kabupaten (migrasi 069): kode wilayah dari KodeDagri SIMPERUM yang tidak ada di
+        // tabel kabupaten dicatat NULL, supaya upsert cermin tidak ditolak seluruhnya.
+        if ($row['kabupaten_id'] !== NULL && ! $this->db->where('id', $row['kabupaten_id'])->count_all_results('kabupaten')) {
+            $row['kabupaten_id'] = NULL;
+        }
         foreach (self::KOLOM_CERMIN as $field => $kolom) {
             $row[$kolom] = $teks($raw[$field] ?? NULL, 20);
         }

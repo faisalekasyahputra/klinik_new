@@ -307,10 +307,11 @@ cek(strpos(http('k', 'Admin_Struktur')['body'], 'Kode Kemendagri') === FALSE,
 echo "\n== 5. Hitungan yatim benar-benar menghitung ==\n";
 /**
  * Pemeriksaan yang paling mudah jadi hijau hampa: angka yang SELALU nol
- * terlihat persis seperti sistem yang sehat. Karena itu di sini dibuat satu
- * baris yatim SUNGGUHAN - akun dengan `bidang_kode` yang tidak ada di tabel
- * `bidang` (dan memang tidak ada FK yang menahannya) - lalu angkanya diperiksa
- * naik, dan turun lagi setelah dipulihkan.
+ * terlihat persis seperti sistem yang sehat. Sejak migrasi 069 FK
+ * `fk_usr_users_bidang` menolak baris yatim, dan itu diperiksa lebih dulu.
+ * Lalu satu baris yatim SUNGGUHAN dibuat dengan FOREIGN_KEY_CHECKS=0 (meniru
+ * skema yang kehilangan FK-nya) supaya angkanya terbukti naik, dan turun lagi
+ * setelah dipulihkan.
  */
 $blok = static function ($body) {
     preg_match('/<ul class="mt-2 space-y-0\.5 text-xs">(.*?)<\/ul>/s', $body, $m);
@@ -321,7 +322,16 @@ wajib($awal !== '', 'Blok hitungan yatim terbaca dari halaman');
 cek(preg_match('/>0<\/span> - Petugas bidang/', $awal) === 1,
     'Sebelum dirusak: nol petugas bidang yatim');
 
+try {
+    buat_akun('admin_bidang', 'yatim_ditolak', NULL, 'bidang_hantu_' . CAP);
+    $ditolak = FALSE;
+} catch (mysqli_sql_exception $e) {
+    $ditolak = $e->getCode() === 1452;
+}
+cek($ditolak, 'DB menolak akun dengan bidang yang tidak ada (FK migrasi 069)');
+q('SET FOREIGN_KEY_CHECKS = 0');
 [$idY, $emailY] = buat_akun('admin_bidang', 'yatim', NULL, 'bidang_hantu_' . CAP);
+q('SET FOREIGN_KEY_CHECKS = 1');
 $rusak = $blok(http('a', 'Admin_Struktur')['body']);
 cek(preg_match('/>1<\/span> - Petugas bidang/', $rusak) === 1,
     'Sesudah satu baris yatim dibuat: angkanya NAIK jadi 1');

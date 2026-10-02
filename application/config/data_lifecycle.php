@@ -28,9 +28,12 @@ $config['data_lifecycle'] = [
     'fk_usr_users' => [
         'aduan.user_id'                          => ['set_null', 'arsip layanan; pesan dan lampiran ditinjau admin lewat permintaan penghapusan data layanan'],
         'aduan.reviewed_by'                      => ['set_null', 'atribusi petugas'],
+        'forum_diskusi.user_id'                  => ['set_null', 'topik bertahan; User_model menganonimkan nama dan surel lebih dulu (FK migrasi 069)'],
         'forum_janji_temu.user_id'               => ['cascade', 'janji temu milik akun'],
         'forum_janji_temu.reviewed_by'           => ['set_null', 'atribusi petugas'],
+        'forum_komentar.user_id'                 => ['set_null', 'komentar bertahan; User_model menganonimkan nama lebih dulu (FK migrasi 069)'],
         'forum_laporan_komentar.user_id'         => ['cascade', 'laporan milik akun'],
+        'forum_likes.user_id'                    => ['cascade', 'tanda suka milik akun; User_model juga menghapusnya eksplisit (FK migrasi 069)'],
         'kkn_magang_pendaftaran.user_id'         => ['cascade', 'pendaftaran milik akun; SEMUA berkasnya disapu dari disk'],
         'kkn_magang_pendaftaran.reviewed_by_bidang' => ['set_null', 'atribusi petugas'],
         'kkn_magang_pendaftaran.reviewed_by'     => ['set_null', 'atribusi petugas'],
@@ -46,6 +49,7 @@ $config['data_lifecycle'] = [
         'sf_data_simperum.user_id'               => ['cascade', 'cermin data SIMPERUM hanya untuk NIK akun terdaftar'],
         'sf_rekaman_simperum.requested_by'       => ['set_null', 'snapshot dihapus oleh retensi; tidak menunjuk orang lagi'],
         'sf_riwayat_keputusan_antrean.actor_id'  => ['set_null', 'riwayat keputusan adalah arsip'],
+        'srp2_certified_developers.user_id'      => ['set_null', 'baris direktori publik milik dinas bertahan; tautan ke akun pengembang lepas (FK migrasi 066)'],
         'srp2_registrations.user_id'             => ['cascade', 'pengajuan SRP2 milik akun; berkasnya disapu dari disk'],
         'srp2_registrations.reviewed_by'         => ['set_null', 'atribusi petugas'],
         'sys_jejak_audit.actor_id'               => ['set_null', 'jejak audit disimpan; surel pelaku disamarkan (pseudonim) saat akun dihapus'],
@@ -55,12 +59,9 @@ $config['data_lifecycle'] = [
         'usr_documents.user_id'                  => ['cascade', 'dokumen onboarding milik akun; berkasnya disapu dari disk'],
     ],
 
-    /* Kolom pemilik TANPA kunci asing: Data_erasure/User_model menanganinya secara eksplisit. */
-    'kolom_tanpa_fk' => [
-        'forum_diskusi.user_id'    => 'dianonimkan (user_id NULL, nama dan surel disamarkan)',
-        'forum_komentar.user_id'   => 'dianonimkan (user_id NULL, nama disamarkan)',
-        'forum_likes.user_id'      => 'dihapus',
-    ],
+    /* Kolom pemilik TANPA kunci asing: Data_erasure/User_model menanganinya secara eksplisit.
+       Kosong sejak migrasi 069 (tiga kolom forum kini ber-FK, lihat fk_usr_users). */
+    'kolom_tanpa_fk' => [],
 
     /* PERTUKARAN 1: ekspor data akun oleh pemilik (Pengaturan/export_account_data, butuh kata sandi,
        dibatasi laju, diaudit). Tabel milik akun yang diekspor; sisanya dikecualikan dengan alasan. */
@@ -73,6 +74,7 @@ $config['data_lifecycle'] = [
             'sys_push_subscriptions'       => 'kredensial langganan perangkat (kunci enkripsi push); rahasia, bukan data profil',
             'usr_admin_module_privileges'  => 'hak akses staf yang diberikan superadmin; bukan data pemilik',
             'forum_likes'                  => 'tanda suka tanpa isi pribadi',
+            'srp2_certified_developers'    => 'entri direktori publik perusahaan yang dikelola dinas; pemilik melihat dan menyunting isinya di Profil Perusahaan',
         ],
     ],
 

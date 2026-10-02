@@ -464,6 +464,26 @@ class Migrate extends CI_Controller {
             ? 'SERAGAM utf8mb4_unicode_ci ('.$c068->t.' tabel, '.$c068->k.' kolom string; '.$c068->ka.' kolom ascii disengaja)'
             : 'BELUM ('.$c068->ts.' dari '.$c068->t.' tabel dan '.$c068->ks.' dari '.$c068->k.' kolom menyimpang)')
             .'; default database '.$c068->d."\n";
+        // Migrasi 069 - FK yang tadinya diandaikan kode + perapian indeks usr_users. Daftar FK/indeks
+        // dibaca dari berkas migrasinya sendiri supaya diagnostik ini tidak bisa menyimpang darinya.
+        require_once APPPATH.'migrations/20260701000069_fk_indeks_integritas.php';
+        $fk069 = []; $kurang069 = [];
+        foreach ($this->db->query("SELECT CONSTRAINT_NAME n, DELETE_RULE d FROM information_schema.REFERENTIAL_CONSTRAINTS
+            WHERE CONSTRAINT_SCHEMA = DATABASE()")->result() as $r) { $fk069[$r->n] = $r->d; }
+        foreach (Migration_Fk_indeks_integritas::FK as $nama => $def) {
+            if (($fk069[$nama] ?? NULL) !== $def[4]) { $kurang069[] = $nama.(isset($fk069[$nama]) ? '='.$fk069[$nama] : ' hilang'); }
+        }
+        $idx069 = [];
+        foreach ($this->db->query("SELECT TABLE_NAME t, INDEX_NAME n FROM information_schema.STATISTICS
+            WHERE TABLE_SCHEMA = DATABASE() GROUP BY TABLE_NAME, INDEX_NAME")->result() as $r) { $idx069[$r->t.'.'.$r->n] = TRUE; }
+        foreach (Migration_Fk_indeks_integritas::INDEKS as $nama => $def) {
+            if ( ! isset($idx069[$def[0].'.'.$nama])) { $kurang069[] = 'indeks '.$nama.' hilang'; }
+        }
+        if (isset($idx069['usr_users.idx_users_email'])) { $kurang069[] = 'indeks kembar idx_users_email masih ada'; }
+        if ( ! isset($idx069['usr_users.email'])) { $kurang069[] = 'UNIQUE email hilang'; }
+        echo 'FK + indeks integritas (migrasi 069): '.($kurang069
+            ? 'BELUM ('.implode('; ', $kurang069).')'
+            : 'TERPASANG ('.count(Migration_Fk_indeks_integritas::FK).' FK, '.count(Migration_Fk_indeks_integritas::INDEKS).' indeks, email UNIQUE tunggal)')."\n";
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
                 ($this->db->field_exists($kolom, 'kkn_magang_pendaftaran') ? 'ADA' : 'HILANG')."\n";
