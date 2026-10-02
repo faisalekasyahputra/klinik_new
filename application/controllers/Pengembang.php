@@ -412,7 +412,8 @@ class Pengembang extends MY_Controller {
      */
     public function masuk() {
         if ($this->is_logged_in()) {
-            $intended = $this->session->userdata('intended_url') ?: 'Pengembang/syarat';
+            // intended_url bisa berasal dari ?next= (Auth::login), jadi disaring ulang sebelum redirect().
+            $intended = $this->sanitize_redirect((string) $this->session->userdata('intended_url')) ?: 'Pengembang/syarat';
             $this->session->unset_userdata('intended_url');
             redirect($intended);
             return;

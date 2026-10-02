@@ -59,7 +59,9 @@ check($n_view > 100, "Pemeriksa view menjangkau terlalu sedikit ($n_view)");
 check($yatim === [], "View tanpa pemanggil (kode mati):\n  " . implode("\n  ", $yatim));
 
 /* ============================================================ 2. DocumentRoot: hanya yang publik */
-$ht = baca('.htaccess');
+// Akhir baris dinormalkan: di git berkas ini LF, tetapi checkout Windows (core.autocrlf=true) memberi CRLF,
+// dan pencarian '-d' . "\n" di bawah lalu gagal walau urutan aturannya benar.
+$ht = str_replace("\r\n", "\n", baca('.htaccess'));
 check(preg_match('#RewriteRule \^\(\?!\$\|index\\\\\.php\(/\|\$\)\|push-sw\\\\\.js\$\|manifest\\\\\.webmanifest\$\|assets/\|\\\\\.well-known/\)\.\+ - \[F,L\]#', $ht) === 1,
     '.htaccess harus menolak (403) setiap berkas/direktori nyata di luar daftar izin (index.php, push-sw.js, manifest.webmanifest, assets/, .well-known/)');
 check(preg_match('#RewriteCond %\{REQUEST_FILENAME\} -f \[OR\]\s*\n\s*RewriteCond %\{REQUEST_FILENAME\} -d\s*\n\s*RewriteRule \^\(\?!#', $ht) === 1,

@@ -295,7 +295,8 @@ class Auth extends MY_Controller {
             return;
         }
         $this->session->set_flashdata('error', $message);
-        redirect($error_target);
+        // Lapis kedua: disaring ulang tepat sebelum redirect(), bukan hanya saat dibaca dari POST.
+        redirect($this->sanitize_redirect($error_target) ?: 'Auth/login');
     }
 
     // =========================================================
@@ -493,7 +494,7 @@ class Auth extends MY_Controller {
             return;
         }
         $this->session->set_flashdata('error', $message);
-        redirect($redirect_target);
+        redirect($this->sanitize_redirect($redirect_target) ?: 'Auth/register');
     }
 
     // =========================================================
@@ -901,12 +902,9 @@ class Auth extends MY_Controller {
             $this->_oauth_close_popup(base_url('login'));
         }
 
-        $redirect_to = $this->session->userdata('oauth_redirect');
+        // Disaring saat disimpan di google(), dan disaring ULANG di sini sebelum dipakai (lapis kedua).
+        $redirect_to = $this->sanitize_redirect((string) $this->session->userdata('oauth_redirect'));
         $this->session->unset_userdata('oauth_redirect');
-
-        if (empty($redirect_to)) {
-            $redirect_to = '';
-        }
 
         if ($this->input->get('code')) {
             try {
