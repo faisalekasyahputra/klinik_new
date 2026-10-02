@@ -94,7 +94,7 @@ function citizen_fields() { return ['family_card_number'=>'0000000000001111','fu
    ditanyakan, data profil dasar WAJIB di langkah ini, dan CABANG ditentukan di sini dari
    `matriks_rumah_sekarang` (milik sendiri = existing_house, selain itu = candidate_land).
    Jalur `financing` tidak lagi bisa dicapai dari wizard. Harness menyusul 18 Sep 2026. */
-function matriks($rumah = 'house_none_or_rent') { return ['matriks_rumah_sekarang'=>$rumah,'kawasan_perumahan'=>'slum','matriks_kepemilikan_lahan'=>'land_none','matriks_kondisi_lingkungan'=>'env_slum_uninhabitable','matriks_pekerjaan_keuangan'=>'work_stable_or_unstable_no_subsidy','matriks_status_keluarga'=>'family_married','phone'=>'081234567890','birth_date'=>'1980-01-01','jenis_kelamin'=>'male','status_perkawinan'=>'married','pendidikan'=>'senior_high','pekerjaan'=>'trader','stabilitas_pekerjaan'=>'permanent','penghasilan'=>'1200000']; }
+function matriks($rumah = 'house_none_or_rent') { return ['matriks_rumah_sekarang'=>$rumah,'kawasan_perumahan'=>'slum','matriks_kepemilikan_lahan'=>'land_none','matriks_kondisi_lingkungan'=>'env_slum_uninhabitable','matriks_pekerjaan_keuangan'=>'work_stable_or_unstable_no_subsidy','matriks_status_keluarga'=>'family_married','phone'=>'081234567890','birth_date'=>'1980-01-01','jenis_kelamin'=>'male','status_perkawinan'=>'married','pendidikan'=>'senior_high','pekerjaan'=>'trader','stabilitas_pekerjaan'=>'permanent','penghasilan_bulanan'=>'1200000']; }
 /* Bawa draft dari `housing_family` sampai berhenti di `housing_family_detail`. */
 function maju_ke_detail($s, $db, $uid, $rumah = 'house_none_or_rent') {
   $d = draft($db, $uid);

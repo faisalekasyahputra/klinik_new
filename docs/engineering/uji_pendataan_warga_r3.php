@@ -54,7 +54,7 @@ function matriks() {
           'matriks_pekerjaan_keuangan'=>'work_stable_or_unstable_no_subsidy',
           'matriks_status_keluarga'=>'family_married',
           'phone'=>'081234567890','birth_date'=>'1980-01-01','jenis_kelamin'=>'male','status_perkawinan'=>'married',
-          'pendidikan'=>'senior_high','pekerjaan'=>'trader','stabilitas_pekerjaan'=>'permanent','penghasilan'=>'1200000'];
+          'pendidikan'=>'senior_high','pekerjaan'=>'trader','stabilitas_pekerjaan'=>'permanent','penghasilan_bulanan'=>'1200000'];
 }
 /* Membawa draft dari `housing_family` sampai berhenti di `housing_family_detail`,
    lalu mengembalikan barisnya. Dipakai sebelum memeriksa paragraf desil, sebab

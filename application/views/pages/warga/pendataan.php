@@ -29,7 +29,7 @@ $checked = static function ($key, $option) use ($value) { return $value($key) ==
 $field_error = static function ($key) use ($errors) { return isset($errors[$key]) ? (string) $errors[$key] : ''; };
 $matrix_required = [
     'family_card_number' => TRUE, 'full_name' => TRUE, 'phone' => TRUE,
-    'birth_date' => TRUE, 'address' => TRUE, 'penghasilan' => TRUE,
+    'birth_date' => TRUE, 'address' => TRUE, 'penghasilan_bulanan' => TRUE,
     'jenis_kelamin' => TRUE, 'status_perkawinan' => TRUE, 'pendidikan' => TRUE,
     'pekerjaan' => TRUE, 'stabilitas_pekerjaan' => TRUE,
     'kawasan_perumahan' => TRUE, 'punya_tabungan' => TRUE,
@@ -176,8 +176,8 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
             <?php endif; ?>
             <h3 class="mt-6 text-sm font-black">Data Warga</h3>
             <div class="mt-3 grid gap-4 sm:grid-cols-2">
-                <?php $text_fields = [['family_card_number','Nomor KK','text','16 digit'],['full_name','Nama lengkap','text',''],['phone','Nomor HP','tel',''],['birth_date','Tanggal lahir','date',''],['tax_number','NPWP','text',''],['penghasilan','Pendapatan per bulan (Rp)','number',''],['address','Alamat','text','']]; ?>
-                <?php foreach ($text_fields as [$key, $label, $type, $hint]): if ($initial !== in_array($key, ['phone', 'birth_date', 'penghasilan'], TRUE)) continue; ?><div class="<?= $key === 'address' ? 'sm:col-span-2' : '' ?>"><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?></label><input id="<?= $key ?>" name="<?= $key ?>" type="<?= $type ?>" <?= isset($matrix_required[$key]) ? 'required' : '' ?> <?= $hint ? 'maxlength="16" inputmode="numeric"' : '' ?> value="<?= html_escape($value($key)) ?>" aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
+                <?php $text_fields = [['family_card_number','Nomor KK','text','16 digit'],['full_name','Nama lengkap','text',''],['phone','Nomor HP','tel',''],['birth_date','Tanggal lahir','date',''],['tax_number','NPWP','text',''],['penghasilan_bulanan','Pendapatan per bulan (Rp)','number',''],['address','Alamat','text','']]; ?>
+                <?php foreach ($text_fields as [$key, $label, $type, $hint]): if ($initial !== in_array($key, ['phone', 'birth_date', 'penghasilan_bulanan'], TRUE)) continue; ?><div class="<?= $key === 'address' ? 'sm:col-span-2' : '' ?>"><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?></label><input id="<?= $key ?>" name="<?= $key ?>" type="<?= $type ?>" <?= isset($matrix_required[$key]) ? 'required' : '' ?> <?= $hint ? 'maxlength="16" inputmode="numeric"' : '' ?> value="<?= html_escape($value($key)) ?>" aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
                 <?php
                 $occupation_options = [
                     'farmer' => 'Petani',

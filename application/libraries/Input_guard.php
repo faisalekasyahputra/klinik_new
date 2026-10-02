@@ -142,7 +142,7 @@ class Input_guard {
             && ! preg_match('/^[0-9+(). \-]{7,30}$/D', $value)) {
             return 'Format nomor telepon tidak valid.';
         }
-        if (preg_match('/^(?:penghasilan|penghasilan|nilai_anggaran|nilai_padat_karya|rencana_anggaran|realisasi_anggaran|rencana_unit|realisasi_unit|total_luas_ha|luas_rumah|panjang_lahan_m|lebar_lahan_m|akurasi_lokasi_m|location_lat|location_lng|volume)$/', $field)
+        if (preg_match('/^(?:penghasilan_bulanan|penghasilan|nilai_anggaran|nilai_padat_karya|rencana_anggaran|realisasi_anggaran|rencana_unit|realisasi_unit|total_luas_ha|luas_rumah|panjang_lahan_m|lebar_lahan_m|akurasi_lokasi_m|location_lat|location_lng|volume)$/', $field)
             && ! preg_match('/^-?\d{1,15}(?:[.,]\d{1,8})?$/D', $value)) {
             return 'Format angka ' . $field . ' tidak valid.';
         }

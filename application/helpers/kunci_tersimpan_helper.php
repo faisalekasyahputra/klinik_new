@@ -31,7 +31,7 @@ function kunci_tersimpan_peta()
         'education_code'                    => 'pendidikan',
         'occupation_code'                   => 'pekerjaan',
         'employment_stability_code'         => 'stabilitas_pekerjaan',
-        'monthly_income'                    => 'penghasilan',
+        'monthly_income'                    => 'penghasilan_bulanan',
         'income_band_code'                  => 'kelompok_penghasilan',
         'welfare_decile'                    => 'desil_kesejahteraan',
         'has_savings'                       => 'punya_tabungan',

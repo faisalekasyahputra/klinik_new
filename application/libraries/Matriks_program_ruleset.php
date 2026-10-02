@@ -25,12 +25,12 @@ class Matriks_program_ruleset {
         $birth = DateTimeImmutable::createFromFormat('!Y-m-d', (string) ($profile['birth_date'] ?? ''));
         $age = $birth && $birth->format('Y-m-d') === ($profile['birth_date'] ?? '') && $birth->format('Y-m-d') <= $today
             ? $birth->diff(new DateTimeImmutable($today))->y : NULL;
-        $income = $profile['penghasilan'] ?? NULL;
+        $income = $profile['penghasilan_bulanan'] ?? NULL;
         $income = is_numeric($income) && $income >= 0 ? (float) $income : NULL;
         $family = $draft['matriks_status_keluarga'] ?? NULL;
         if (!$family) $family = ['single'=>'family_single', 'married'=>'family_married'][$profile['status_perkawinan'] ?? ''] ?? NULL;
         $input = [
-            'penghasilan'=>$income, 'age_years'=>$age,
+            'penghasilan_bulanan'=>$income, 'age_years'=>$age,
             'dtks_code'=>$draft['matriks_status_dtks'] ?? NULL,
             'land_code'=>$draft['matriks_kepemilikan_lahan'] ?? NULL,
             'housing_code'=>$draft['matriks_rumah_sekarang'] ?? NULL,

@@ -333,7 +333,7 @@ if (wizard_step($form) === 'find_data') {
 }
 cek(wizard_step($form) !== 'find_data', 'Onboarding ber-NIK langsung membawa maju dari find_data (prefill otomatis)');
 wajib(wizard_step($h) !== 'find_data', 'Lookup SIMPERUM membawa maju dari find_data');
-foreach (['penghasilan', 'pekerjaan', 'pendidikan', 'stabilitas_pekerjaan', 'kawasan_perumahan', 'birth_date', 'status_perkawinan', 'jenis_kelamin', 'phone'] as $field) {
+foreach (['penghasilan_bulanan', 'pekerjaan', 'pendidikan', 'stabilitas_pekerjaan', 'kawasan_perumahan', 'birth_date', 'status_perkawinan', 'jenis_kelamin', 'phone'] as $field) {
     cek(strpos($h, 'name="' . $field . '"') !== FALSE, 'UAT warga 9: data awal memuat ' . $field);
 }
 cek(strpos($h, 'name="matriks_status_dtks"') === FALSE, 'UAT warga 9: tidak meminta status DTKS');
@@ -355,7 +355,7 @@ $h = $warga->minta('warga/pendataan')['body'];
 $xpath_account = new DOMXPath(wizard_dom($h));
 cek($xpath_account->query('//input[@name="phone" and @value="081200000000"]')->length === 1,
     'Draft lama tanpa HP sumber terisi dari profil akun yang sudah didaftarkan');
-cek($xpath_account->query('//input[@name="penghasilan" and @value=""]')->length === 1,
+cek($xpath_account->query('//input[@name="penghasilan_bulanan" and @value=""]')->length === 1,
     'Rentang penghasilan SIMPERUM tidak dikarang menjadi nominal rupiah');
 $corrected = json_decode($profile_before['asal_isian_json'], TRUE);
 $corrected['phone'] = ['source' => 'citizen_correction'];
@@ -402,7 +402,7 @@ for ($i = 0; $i < 14; $i++) {
     $paksa = ['action' => 'save'];
     if ($step === 'housing_family') $paksa += [
         'matriks_rumah_sekarang'=>getenv('UJI_CABANG') === 'tanah' ? 'house_rent_or_staying' : 'house_owned',
-        'penghasilan'=>'1200000',
+        'penghasilan_bulanan'=>'1200000',
         'matriks_kondisi_lingkungan'=>getenv('UJI_CABANG') === 'tanah' ? 'env_safe' : 'env_slum_uninhabitable',
         'matriks_kepemilikan_lahan'=>'land_legal',
         'matriks_status_keluarga'=>'family_multi_household',

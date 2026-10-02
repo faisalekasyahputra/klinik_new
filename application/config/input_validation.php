@@ -153,7 +153,7 @@ $config['input_allowed_fields'] = [
     'matriks_status_keluarga',
     'matriks_pekerjaan_keuangan',
     'modules',
-    'penghasilan',
+    'penghasilan_bulanan',
     'msg',
     'nama',
     'nama_kegiatan',

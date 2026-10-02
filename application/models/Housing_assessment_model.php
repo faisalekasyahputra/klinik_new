@@ -10,7 +10,7 @@ class Housing_assessment_model extends CI_Model {
 
     private const PROFILE_FIELDS = [
         'jenis_kelamin', 'status_perkawinan', 'pendidikan',
-        'pekerjaan', 'stabilitas_pekerjaan', 'penghasilan',
+        'pekerjaan', 'stabilitas_pekerjaan', 'penghasilan_bulanan',
         'kelompok_penghasilan', 'desil_kesejahteraan',
         'punya_tabungan', 'mampu_swadaya', 'nilai_swadaya',
     ];

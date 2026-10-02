@@ -524,7 +524,7 @@ class Warga extends MY_Controller {
             // desil profil kosong dipakai desil turunan pendapatan (rentang Sheet3 yang sama
             // dengan tampilan rekomendasi awal). Desil resmi dari sumber tetap menang.
             if (empty($profile['desil_kesejahteraan'])) {
-                $profile['desil_kesejahteraan'] = $this->matriks_program_ruleset->decile_for_monthly_income($profile['penghasilan'] ?? NULL);
+                $profile['desil_kesejahteraan'] = $this->matriks_program_ruleset->decile_for_monthly_income($profile['penghasilan_bulanan'] ?? NULL);
             }
             if ($step === 'housing_family') {
                 $data['preliminary_matrix'] = json_encode(
@@ -702,7 +702,7 @@ class Warga extends MY_Controller {
         $data = $profile;
         $provenance = kunci_tersimpan_ke_baru(json_decode($profile['asal_isian_json'] ?? '{}', TRUE) ?: []);
         $fields = $step === 'housing_family'
-            ? ['phone', 'birth_date', 'jenis_kelamin', 'status_perkawinan', 'pendidikan', 'pekerjaan', 'stabilitas_pekerjaan', 'penghasilan']
+            ? ['phone', 'birth_date', 'jenis_kelamin', 'status_perkawinan', 'pendidikan', 'pekerjaan', 'stabilitas_pekerjaan', 'penghasilan_bulanan']
             : ['family_card_number', 'full_name', 'address', 'tax_number', 'punya_tabungan', 'mampu_swadaya'];
         foreach ($fields as $field) {
             $value = $this->input->post($field, TRUE);
@@ -773,7 +773,7 @@ class Warga extends MY_Controller {
             'profile' => [
                 'desil_kesejahteraan' => $profile['desil_kesejahteraan'] ?? NULL,
                 'kelompok_penghasilan' => $profile['kelompok_penghasilan'] ?? NULL,
-                'penghasilan' => $profile['penghasilan'] ?? NULL,
+                'penghasilan_bulanan' => $profile['penghasilan_bulanan'] ?? NULL,
                 'mampu_swadaya' => $profile['mampu_swadaya'] ?? NULL,
             ],
             'assessment' => [
@@ -835,8 +835,8 @@ class Warga extends MY_Controller {
             foreach (($step === 'housing_family' ? ['stabilitas_pekerjaan'] : ['mampu_swadaya', 'punya_tabungan']) as $field) {
                 if (trim((string) $this->input->post($field, TRUE)) === '') { $errors[$field] = 'Pilihan ini wajib diisi.'; }
             }
-            $penghasilan = trim((string) $this->input->post('penghasilan', TRUE));
-            if ($step === 'housing_family' && ($penghasilan === '' || ! ctype_digit($penghasilan) || (float) $penghasilan > 999999999999)) { $errors['penghasilan'] = 'Pendapatan per bulan wajib berupa angka rupiah.'; }
+            $penghasilan_bulanan = trim((string) $this->input->post('penghasilan_bulanan', TRUE));
+            if ($step === 'housing_family' && ($penghasilan_bulanan === '' || ! ctype_digit($penghasilan_bulanan) || (float) $penghasilan_bulanan > 999999999999)) { $errors['penghasilan_bulanan'] = 'Pendapatan per bulan wajib berupa angka rupiah.'; }
             $citizen_allowed = [
                 'jenis_kelamin' => ['male', 'female'],
                 'status_perkawinan' => ['single', 'married', 'divorced'],

@@ -109,7 +109,7 @@ class Warga_ruleset {
             || (string) $assessment['rumah_lain'] !== '0') {
             return $this->result('not_eligible', ['SIM_KEBUTUHAN_RUMAH_TIDAK_MEMENUHI']);
         }
-        if (empty($profile['kelompok_penghasilan']) && ! isset($profile['penghasilan'])) {
+        if (empty($profile['kelompok_penghasilan']) && ! isset($profile['penghasilan_bulanan'])) {
             return $this->result('needs_data', ['SIM_INCOME_MISSING']);
         }
         return $this->result('potential', [
