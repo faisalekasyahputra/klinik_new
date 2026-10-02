@@ -44,6 +44,11 @@ const PINDAI_UNGGAH_DIIZINKAN = [
     // Ditinjau 20 Sep 2026: ekstensi dan MIME harus cocok dengan daftar putih (pdf/jpg/png),
     // nama acak 128 bit, batas 2 MB, satu berkas per dokumen.
     'controllers/Pengembang.php'             => 'dokumen pengajuan pengembang (pdf/jpg/png, penyimpanan pribadi)',
+    // Ditinjau 2 Okt 2026: hanya role admin (Admin_Controller + registry modul, roles ['admin']), POST ber-CSRF;
+    // batas 20 MB, MIME dari finfo harus application/pdf, isi lolos scan_uploaded_file (JS/aksi otomatis ditolak),
+    // nama = jenis dari daftar tetap + 16 hex acak + ".pdf" tetap; nama kiriman tidak menyentuh disk. Folder publik
+    // assets/dokumen/unggahan/ (di-gitignore) hanya pernah menerima .pdf, jadi tidak ada yang bisa dieksekusi.
+    'controllers/Admin_Bank_Data.php'        => 'PDF publik Bank Data (admin saja, MIME pdf, pindai isi, nama acak .pdf)',
 ];
 /** File yang boleh memakai fungsi waktu/ketekunan (register_shutdown_function dsb), dan alasannya. */
 const PINDAI_WAKTU_DIIZINKAN = [
