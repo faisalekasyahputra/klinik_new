@@ -318,13 +318,28 @@ class Auth_model extends CI_Model {
         $user = $this->find_by_id($user_id);
         if ( ! $user) { return NULL; }
 
+        // Data perusahaan tidak lagi ada di usr_users (migrasi 070): pemanggil yang punya isian
+        // perusahaan menuliskannya lewat isi_pengajuan_kosong() sesudah draft ada.
         $this->db->insert('srp2_registrations', [
             'user_id'           => $user_id,
             'email'             => $user->email,
-            'nama_perusahaan'   => $user->nama_perusahaan,
             'status_verifikasi' => 'Draft',
         ]);
         return (int) $this->db->insert_id();
+    }
+
+    /**
+     * Isi medan perusahaan pengajuan yang MASIH KOSONG; isian pengajuan yang sudah ada tidak
+     * ditimpa. Tempat data perusahaan akun pengembang yang belum punya baris direktori
+     * (migrasi 070); sesudah tertaut, sumbernya srp2_certified_developers.
+     */
+    public function isi_pengajuan_kosong($registration_id, array $data) {
+        foreach ($data as $kolom => $nilai) {
+            if (trim((string) $nilai) === '') { continue; }
+            $this->db->where('id', (int) $registration_id)
+                ->group_start()->where($kolom . ' IS NULL', NULL, FALSE)->or_where($kolom, '')->group_end()
+                ->update('srp2_registrations', [$kolom => $nilai]);
+        }
     }
 
     /**
@@ -450,9 +465,9 @@ class Auth_model extends CI_Model {
 
     /**
      * Arah sebaliknya dari upsert_direktori_publik(): baris direktori yang tertaut akun
-     * (user_id) menyalin isinya ke pengajuan SRP2 akun itu yang menunjuk baris ini dan ke
-     * medan perusahaan di usr_users. Dipanggil sesudah admin atau pengembang mengubah baris
-     * direktori, supaya Profil Saya, Status Pengajuan, dan layar pengajuan admin tidak
+     * (user_id) menyalin isinya ke pengajuan SRP2 akun itu yang menunjuk baris ini (usr_users
+     * tidak lagi menyimpan data perusahaan sejak migrasi 070). Dipanggil sesudah admin atau
+     * pengembang mengubah baris direktori, supaya Profil Saya, Status Pengajuan, dan layar pengajuan admin tidak
      * menampilkan data lama. Tanpa transaksi sendiri (dipanggil dari dalam transaksi).
      *
      * NIB dan NPWP UNIQUE di pengajuan: hanya disalin bila tidak dipakai pengajuan lain.
@@ -477,10 +492,6 @@ class Auth_model extends CI_Model {
         }
         $this->db->where('certified_developer_id', (int) $cid)->where('user_id', (int) $d->user_id)
             ->update('srp2_registrations', $data);
-
-        $akun = ['alamat_kantor' => $d->alamat_kantor];
-        if (isset($data['nama_perusahaan'])) { $akun['nama_perusahaan'] = $data['nama_perusahaan']; }
-        $this->db->where('id', (int) $d->user_id)->where('role', 'pengembang')->update('usr_users', $akun);
     }
 
     /**

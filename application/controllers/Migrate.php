@@ -484,6 +484,12 @@ class Migrate extends CI_Controller {
         echo 'FK + indeks integritas (migrasi 069): '.($kurang069
             ? 'BELUM ('.implode('; ', $kurang069).')'
             : 'TERPASANG ('.count(Migration_Fk_indeks_integritas::FK).' FK, '.count(Migration_Fk_indeks_integritas::INDEKS).' indeks, email UNIQUE tunggal)')."\n";
+        // Migrasi 070 - satu sumber data perusahaan: kolom perusahaan usr_users dibuang.
+        $sisa070 = array_values(array_filter(['nama_perusahaan', 'alamat_kantor', 'telp_kantor'],
+            function ($k) { return $this->db->field_exists($k, 'usr_users'); }));
+        echo 'sumber tunggal perusahaan (migrasi 070): '.($sisa070 ? 'BELUM (usr_users masih punya '.implode(', ', $sisa070).')'
+            : 'TERPASANG (usr_users tanpa kolom perusahaan; '.$this->db->where('user_id IS NOT NULL', NULL, FALSE)
+                ->count_all_results('srp2_certified_developers').' baris direktori tertaut akun)')."\n";
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
                 ($this->db->field_exists($kolom, 'kkn_magang_pendaftaran') ? 'ADA' : 'HILANG')."\n";

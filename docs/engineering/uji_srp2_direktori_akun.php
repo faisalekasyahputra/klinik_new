@@ -165,8 +165,8 @@ try {
     $u = $db->query("SELECT * FROM usr_users WHERE email='{$eA}'")->fetch_assoc();
     $uidA = (int) ($u['id'] ?? 0);
     $cek($uidA > 0 && $u['role'] === 'pengembang' && $u['status'] === 'active' && (int) $u['profile_completed'] === 1
-        && $u['nama_perusahaan'] === $namaA && $u['alamat_kantor'] === 'Jl. Admin ' . $TAG,
-        'Akun pengembang aktif lahir dengan onboarding lengkap dan data perusahaan tersalin');
+        && ! array_key_exists('nama_perusahaan', $u) && ! array_key_exists('alamat_kantor', $u),
+        'Akun pengembang aktif lahir dengan onboarding lengkap; data perusahaan tetap di baris direktori (migrasi 070)');
     $cek($sandiA !== '' && password_verify($sandiA, (string) ($u['password'] ?? '')) && strtotime($u['password_expires_at']) <= strtotime($u['password_changed_at']),
         'Sandi awal yang dibangkitkan tampil sekali ke admin, sah, dan wajib diganti di login pertama');
     $reg = $db->query("SELECT * FROM srp2_registrations WHERE user_id={$uidA}")->fetch_assoc();

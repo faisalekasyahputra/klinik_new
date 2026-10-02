@@ -120,23 +120,9 @@ class Pengembang extends MY_Controller {
                     . ' sertifikat_terbit, sertifikat_berakhir, created_at, updated_at')
                 ->get_where('srp2_certified_developers', ['id' => (int) $id, 'status_aktif' => 1])->row();
 
-            // Field yang kosong dilengkapi dari baris pengajuan lewat RELASI ID
-            // (certified_developer_id), bukan pencocokan nama string.
-            //
-            // Pencocokan nama itu rapuh dua arah: putus begitu nama diedit di
-            // salah satu sisi, dan bisa MENARIK data perusahaan lain yang
-            // kebetulan bernama sama - nama tidak unique di srp2_registrations.
-            // Migrasi 20260701000014 dibuat justru untuk menggantikannya;
-            // menambah kolom tanpa mencabut jalur lama meninggalkan dua definisi
-            // "perusahaan yang sama". Kedua tabel juga beda collation
-            // (general_ci vs unicode_ci), jadi join namanya bahkan tidak sah.
-            if ($data['pengembang'] && $this->db->table_exists('srp2_registrations')) {
-                $registration = $this->db->get_where('srp2_registrations', [
-                    'certified_developer_id' => (int) $id,
-                    'status_verifikasi'      => 'Diterima',
-                ])->row();
-                if ($registration) foreach (['asosiasi', 'no_keanggotaan', 'alamat_kantor', 'instagram', 'website', 'sosmed_lainnya'] as $field) if (empty($data['pengembang']->$field)) $data['pengembang']->$field = $registration->$field ?? NULL;
-            }
+            // Baris direktori adalah SATU sumber profil perusahaan (migrasi 070): medan kosong tidak
+            // lagi dilengkapi dari pengajuan. Saat diterima, upsert_direktori_publik() sudah menyalin
+            // isian pengajuan ke sini; sesudahnya pemilik menyunting baris ini di Profil Perusahaan.
         } else $data['pengembang'] = $this->db->get_where('srp2_registrations', ['id' => (int) $id, 'status_verifikasi' => 'Diterima'])->row();
         if (!$data['pengembang']) show_404();
         $this->render('pages/pengembang/profil', $data);

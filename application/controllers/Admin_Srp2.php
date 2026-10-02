@@ -587,8 +587,7 @@ class Admin_Srp2 extends Admin_Controller {
             'email_verified_at' => $sekarang,
             'created_at'        => $sekarang,
             'phone'             => $wa,
-            'nama_perusahaan'   => $row->nama_perusahaan,
-            'alamat_kantor'     => $row->alamat_kantor,
+        // Data perusahaan tetap di baris direktori ini (migrasi 070), tidak disalin ke akun.
         // Sandi awal diketahui admin, jadi wajib diganti di login pertama (keputusan 29 Sep 2026).
         ] + $this->auth_model->password_awal_fields());
         $uid = (int) $this->db->insert_id();

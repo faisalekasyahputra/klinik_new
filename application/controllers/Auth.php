@@ -431,15 +431,15 @@ class Auth extends MY_Controller {
             $default_name = 'Perwakilan ' . strtoupper($nama_perusahaan);
 
             $this->db->where('id', $user_id)->update('usr_users', [
-                'role' => 'pengembang', 'nama_perusahaan' => strtoupper($nama_perusahaan),
+                'role' => 'pengembang',
                 'username' => $default_username, 'name' => $default_name,
                 'profile_completed' => 1, 'status' => 'active', 'updated_at' => date('Y-m-d H:i:s'),
             ]);
             // Draft dibuat langsung di sini (bukan lewat detour verifikasi-email simulasi)
             // supaya wizard bisa lanjut ke langkah unggah dokumen tanpa pindah halaman.
-            // Dipanggil SETELAH usr_users di-update supaya nama_perusahaan yang
-            // baru tersimpan ikut terbawa ke draft.
+            // Nama perusahaan disimpan di pengajuan, bukan usr_users (migrasi 070).
             $registration_id = $this->auth_model->ensure_srp2_draft($user_id);
+            $this->auth_model->isi_pengajuan_kosong($registration_id, ['nama_perusahaan' => strtoupper($nama_perusahaan)]);
             $this->session->set_userdata('intended_url', 'akun');
             $this->session->set_userdata('srp2_quick_registration', TRUE);
         }
@@ -691,9 +691,12 @@ class Auth extends MY_Controller {
                 $this->_onboarding_fail('Nama perusahaan wajib diisi untuk mendaftar sebagai pengembang.');
                 return;
             }
-            $profile_data['nama_perusahaan'] = html_escape($nama_perusahaan_ob);
-            $profile_data['alamat_kantor']   = html_escape($this->input->post('alamat_kantor'));
-            $profile_data['telp_kantor']     = html_escape($this->input->post('telp_kantor'));
+            // Data perusahaan masuk ke pengajuan SRP2 di bawah, bukan usr_users (migrasi 070).
+            // Telepon kantor tidak lagi diminta: nomor akun (phone) sudah diisi di formulir yang sama.
+            $perusahaan_ob = [
+                'nama_perusahaan' => html_escape($nama_perusahaan_ob),
+                'alamat_kantor'   => html_escape((string) $this->input->post('alamat_kantor')),
+            ];
         }
 
         // Save profile
@@ -714,13 +717,9 @@ class Auth extends MY_Controller {
                     'npwp_ciphertext' => $npwp_encrypted,
                     'npwp_lookup_hash' => $npwp_hash,
                 ]);
-                // Alamat kantor yang diisi di onboarding ikut ke pengajuan (dulu hilang dari alur
+                // Nama dan alamat kantor dari onboarding ke pengajuan (alamat dulu hilang dari alur
                 // SRP2, simulasi pengembang 27 Sep 2026); isian pengajuan yang sudah ada tidak ditimpa.
-                if (($profile_data['alamat_kantor'] ?? '') !== '') {
-                    $this->db->where('id', $registration_id)
-                        ->group_start()->where('alamat_kantor IS NULL', NULL, FALSE)->or_where('alamat_kantor', '')->group_end()
-                        ->update('srp2_registrations', ['alamat_kantor' => $profile_data['alamat_kantor']]);
-                }
+                $this->auth_model->isi_pengajuan_kosong($registration_id, $perusahaan_ob);
             }
         }
 

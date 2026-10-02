@@ -339,14 +339,6 @@ $isi = function ($nama) use ($old) {
                         <i class="fa-solid fa-location-dot auth-input-icon" style="top:1rem;transform:none;"></i>
                     </div>
 
-                    <label class="auth-label" for="telp_kantor">No. Telepon Kantor</label>
-                    <div class="auth-input-group">
-                        <input type="tel" id="telp_kantor" name="telp_kantor" class="auth-input"
-                               value="<?= $isi('telp_kantor') ?>"
-                               placeholder="Nomor telepon kantor">
-                        <i class="fa-solid fa-phone-office auth-input-icon"></i>
-                    </div>
-
                     <label class="auth-label">Upload KTP Penanggung Jawab <span style="color:var(--auth-red)">*</span></label>
                     <div class="auth-input-group">
                         <input type="file" name="file_ktp" class="auth-file-input" accept=".pdf,.jpg,.jpeg,.png"

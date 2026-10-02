@@ -101,7 +101,8 @@ class Pengaturan extends MY_Controller {
                     // menanyakan nama perusahaan, dan ensure_srp2_draft() ikut
                     // membuat draft dengan kolom itu kosong. Ditandai apa adanya,
                     // bukan disembunyikan (roadmap T6 R2-sisa).
-                    'judul' => $sp2->nama_perusahaan ?: '(Nama perusahaan belum diisi)',
+                    // Akun tertaut direktori: nama dari baris direktori, satu sumber (migrasi 070).
+                    'judul' => ($this->direktori_milik_saya()->nama_perusahaan ?? '') ?: ($sp2->nama_perusahaan ?: '(Nama perusahaan belum diisi)'),
                     'status_label' => $status[0], 'status_kelas' => $status[1],
                     // updated_at, bukan created_at - draft bisa dibuat jauh sebelum
                     // benar-benar diisi/dikirim, tanggal aktivitas terakhir lebih relevan.

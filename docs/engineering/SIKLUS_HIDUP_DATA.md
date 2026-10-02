@@ -33,6 +33,8 @@ Yang sudah baik dan diverifikasi (tidak diubah): ekspor data akun oleh pemilik (
 | **Audit akses staf** | `MY_Controller::catat_akses_data_pribadi()`: pembukaan berkas privat oleh staf (`serve_private_file`, satu-satunya pintu), profil warga terdekripsi di detail antrean, NPWP di daftar SRP2, dan detail pengajuan SRP2 dicatat di `sys_jejak_audit` (pelaku, peran, objek, waktu). Pemilik yang melihat datanya sendiri tidak dicatat. Ditekan per pelaku+objek 10 menit supaya menyegarkan halaman tidak membanjiri log |
 | Penjaga | `tests/data_lifecycle_test.php` (offline) dan `tests/data_lifecycle_db_test.php` (MySQL nyata; wajib `UJI_DB_BOLEH_TULIS=1` karena menjalankan penyapu sungguhan) |
 
+**Data perusahaan pengembang (migrasi 070, 2 Okt 2026):** kolom `nama_perusahaan`, `alamat_kantor`, `telp_kantor` dibuang dari `usr_users`. Sebelum tersertifikasi data itu hidup di `srp2_registrations` (CASCADE saat hapus akun, ikut ekspor akun; dulu salinan di `usr_users` tidak ikut ekspor), sesudahnya di `srp2_certified_developers` (milik dinas, `user_id` SET NULL, dikecualikan dari ekspor dengan alasan). Tidak ada kebijakan baru di `config/data_lifecycle.php`: kedua tabel sudah tercakup.
+
 ## 3. Sikap kegagalan (sengaja)
 
 - Penyapu retensi dan audit akses **gagal diam-diam** (dicatat di log): pengamat tidak boleh menggagalkan permintaan yang sedang dilayani. Konsekuensinya audit akses bisa terlewat bila DB bermasalah pada saat itu.
