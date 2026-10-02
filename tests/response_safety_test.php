@@ -15,7 +15,8 @@ $akar = realpath(__DIR__ . '/..');
 $total = 0;
 function check($kondisi, $pesan) { global $total; $total++; if ( ! $kondisi) { throw new RuntimeException($pesan); } }
 function rel($p) { global $akar; return ltrim(str_replace('\\', '/', substr($p, strlen($akar))), '/'); }
-function baca($r) { global $akar; $p = $akar . '/' . $r; return is_file($p) ? (string) file_get_contents($p) : ''; }
+// Akhir baris dinormalkan ke LF: git menyimpan LF, checkout Windows (core.autocrlf=true) memberi CRLF, dan pola di bawah memakai \n.
+function baca($r) { global $akar; $p = $akar . '/' . $r; return is_file($p) ? str_replace("\r\n", "\n", (string) file_get_contents($p)) : ''; }
 
 /* ============================================================ 1. Satu sumber header keamanan */
 $helper = baca('application/helpers/content_security_helper.php');
