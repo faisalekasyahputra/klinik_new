@@ -11,23 +11,16 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * ═══ SATU-SATUNYA YANG BISA DIUBAH DARI SINI ADALAH `nama`. ═══
  *
  * `bidang.kode` dan `kabupaten.id` TIDAK, dan itu bukan kehati-hatian berlebih.
- * Keduanya dirujuk dari banyak tempat, dan SEBAGIAN BESAR RUJUKAN ITU TIDAK
- * PUNYA FOREIGN KEY - diverifikasi 4 Agt 2026:
+ * Keduanya dirujuk dari banyak tempat. Sejak migrasi 069 (2 Okt 2026) semua
+ * rujukan itu ber-FK: kkn_magang_bidang/pendaftaran/posisi.bidang_kode,
+ * kkn_magang_slot.bidang_kode (lewat kkn_magang_bidang), rd_laporan,
+ * sf_antrean_pengajuan, sf_penilaian_perumahan, psu_serah_terima, sf_data_simperum,
+ * srp2_direktori_pengembang .kabupaten_id, serta usr_akun.bidang_kode,
+ * usr_akun.kabupaten_id, aduan.bidang_kode (yang terakhir tiga ini baru di 069).
  *
- *   berFK      : kkn_magang_bidang.bidang_kode, kkn_magang_pendaftaran.bidang_kode,
- *                rd_laporan.kabupaten_id, sf_housing_queue.kabupaten_id,
- *                sf_penilaian_perumahan.kabupaten_id
- *   TANPA FK   : usr_users.bidang_kode, usr_users.kabupaten_id, aduan.bidang,
- *                kkn_magang_slot.bidang_kode
- *
- * Mengubah `kode` lewat formulir berarti: yang berFK ditolak database (berisik,
- * masih bisa ditangani), sementara yang tanpa FK **berubah jadi yatim tanpa satu
- * pun galat** - admin bidang kehilangan mejanya, aduan hilang dari semua
- * dashboard, slot magang berhenti terhitung. Semuanya tetap membalas 200.
- * Mengganti kunci adalah migrasi data, bukan isian formulir.
- *
- * Karena itu layar ini juga MENGHITUNG yatimnya: satu-satunya penjaga yang
- * tersisa untuk empat jalur tanpa FK di atas adalah ada yang melihat angkanya.
+ * Mengubah `kode` lewat formulir berarti DB menolaknya; mengganti kunci adalah
+ * migrasi data, bukan isian formulir. Hitungan yatim di layar ini dipertahankan
+ * sebagai pemeriksaan silang (nol = keadaan benar).
  */
 class Admin_Struktur extends Admin_Controller {
 
@@ -43,13 +36,13 @@ class Admin_Struktur extends Admin_Controller {
 
         $data['bidang'] = $this->db
             ->select('b.kode, b.nama,'
-                . ' (SELECT COUNT(*) FROM usr_users u WHERE u.role = "admin_bidang" AND u.bidang_kode = b.kode) AS petugas,'
-                . ' (SELECT COUNT(*) FROM aduan a WHERE a.bidang = b.kode AND a.status != "Selesai") AS aduan_aktif', FALSE)
+                . ' (SELECT COUNT(*) FROM usr_akun u WHERE u.peran = "admin_bidang" AND u.bidang_kode = b.kode) AS petugas,'
+                . ' (SELECT COUNT(*) FROM aduan a WHERE a.bidang_kode = b.kode AND a.status != "Selesai") AS aduan_aktif', FALSE)
             ->from('bidang b')->order_by('b.nama', 'ASC')->get()->result();
 
         $data['wilayah'] = $this->db
             ->select('k.id, k.nama,'
-                . ' (SELECT COUNT(*) FROM usr_users u WHERE u.role = "admin_kabkota" AND u.kabupaten_id = k.id) AS petugas,'
+                . ' (SELECT COUNT(*) FROM usr_akun u WHERE u.peran = "admin_kabkota" AND u.kabupaten_id = k.id) AS petugas,'
                 . ' (SELECT COUNT(*) FROM rd_laporan l WHERE l.kabupaten_id = k.id) AS laporan', FALSE)
             ->from('kabupaten k')->order_by('k.nama', 'ASC')->get()->result();
 
@@ -58,11 +51,11 @@ class Admin_Struktur extends Admin_Controller {
         // atau baris master yang hilang, dan tidak ada galat yang menyertainya.
         $data['yatim'] = [
             'Petugas bidang menunjuk bidang yang tidak ada' => $this->hitung_yatim(
-                'usr_users u', 'u.bidang_kode', 'bidang b', 'b.kode'),
+                'usr_akun u', 'u.bidang_kode', 'bidang b', 'b.kode'),
             'Petugas wilayah menunjuk kabupaten yang tidak ada' => $this->hitung_yatim(
-                'usr_users u', 'u.kabupaten_id', 'kabupaten k', 'k.id'),
+                'usr_akun u', 'u.kabupaten_id', 'kabupaten k', 'k.id'),
             'Aduan menunjuk bidang yang tidak ada' => $this->hitung_yatim(
-                'aduan a', 'a.bidang', 'bidang b', 'b.kode'),
+                'aduan a', 'a.bidang_kode', 'bidang b', 'b.kode'),
             'Slot magang menunjuk bidang yang tidak ada' => $this->hitung_yatim(
                 'kkn_magang_slot s', 's.bidang_kode', 'bidang b', 'b.kode'),
         ];

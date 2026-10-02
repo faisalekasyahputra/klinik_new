@@ -71,9 +71,14 @@ $route['warga/pendataan']          = 'Warga/pendataan';
 // --- Pengaturan User ---
 $route['akun']                     = 'Pengaturan/index';
 $route['akun/profil']              = 'Pengaturan/profil';
+$route['akun/dokumen']             = 'Pengaturan/dokumen';
 $route['akun/update']              = 'Pengaturan/update_profile';
+$route['akun/export']              = 'Pengaturan/export_account_data';
+$route['akun/request-data-deletion'] = 'Pengaturan/request_service_data_deletion';
 $route['akun/delete']              = 'Pengaturan/delete_account';
 $route['akun/update_pengembang']   = 'Pengaturan/update_pengembang_profile';
+$route['akun/perusahaan']          = 'Pengaturan/perusahaan';
+$route['akun/perusahaan/simpan']   = 'Pengaturan/simpan_perusahaan';
 
 // --- Clean URLs for Index controller ---
 $route['golek_omah']               = 'Index/golek_omah';
@@ -140,3 +145,13 @@ $route['load_more']                = 'Index/load_more';
 // CI3 tetap merutekan /Sikaper/index secara konvensional, jadi controller dan
 // view-nya ikut dihapus. Library Sikaper_api dan config-nya SENGAJA ditinggal:
 // nasibnya mengikuti keputusan #5 (apakah ada kanal rotasi kredensial).
+
+// --- Jalur jebakan pemindai otomatis (poin 10.4/10.5) ---
+// Daftar alamatnya di config/anti_automation.php (`probe_paths`); semuanya diarahkan ke
+// Jebakan::index, yang mencatat peringatan keamanan lalu menjawab 404 biasa. Dibungkus closure
+// supaya variabel $config milik berkas config itu tidak bocor ke lingkup routes.
+(function () use (&$route) {
+    $config = [];
+    require APPPATH . 'config/anti_automation.php';
+    foreach ($config['probe_paths'] as $jalur) { $route[$jalur] = 'Jebakan/index'; }
+})();

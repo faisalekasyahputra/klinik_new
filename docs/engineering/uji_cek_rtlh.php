@@ -1,34 +1,13 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
- * Uji CEK RTLH - layar cepat "apakah NIK ini terdaftar RTLH".
- *
- *   php docs/engineering/uji_cek_rtlh.php
- *
- * Revisi dinas 3 Agt 2026, butir 11. Yang dijaga di sini LIMA janji, dan tiga
- * di antaranya rusak tanpa satu pun galat:
- *
- *   1. WAJIB LOGIN, DAN GERBANGNYA DI SERVER. Ini data yang menandai
- *      kemiskinan. Repo ini sudah punya aturannya - `Program::api_cek_simperum()`
- *      menolak 409 saat mode `api` dengan alasan "hanya lewat Wizard Warga" -
- *      dan layar ini tidak boleh jadi pintu belakangnya.
- *   2. TIDAK ADA EFEK SAMPING KE PROFIL PENDATAAN. `Simperum_gateway::lookup()`
- *      MENIMPA profil warga si pemanggil kalau `$requested_by` diisi. Cek cepat
- *      mengirim NULL. Kalau itu terlewat, mengecek NIK ORANG LAIN akan menimpa
- *      data pengajuan sendiri dengan data orang itu - diam-diam, dan baru
- *      ketahuan saat pengajuannya ditolak karena datanya bukan miliknya.
- *   3. PENJAGA TANGGAL LAHIR TETAP MENAHAN. Ia bukan anti-enumerasi (tanggalnya
- *      terkandung di NIK), tapi ia memang menahan salah-ketik dan salah-orang -
- *      dan itu satu-satunya klaim yang boleh dibuat tentangnya.
- *   4. HASILNYA SEDIKIT. Terdaftar atau tidak, plus identitas tersamar. Desil,
- *      penghasilan, dan kondisi bangunan TIDAK ikut - itu bahan penilaian
- *      program, bukan jawaban atas "apakah saya terdaftar".
- *   5. BATAS LAJU BENAR-BENAR MENAHAN, dan penolakannya 429 - bukan 200 yang
- *      menyamar sebagai hasil kosong.
- *
- * Memakai fixture SIMPERUM (`simperum_mode=simulation`): NIK ...0001 ada,
- * ...0098 dan NIK tak dikenal tidak ada. Uji ini TIDAK menyentuh API sungguhan.
+ * Uji Cek Data Rumah, kontrak UAT No. 18 (10 Sep 2026).
+ * Tamu mendapat status terdaftar/intervensi tanpa identitas, maksimal 5/jam/IP.
+ * Pengguna login tetap dibatasi 10/jam dan 25/hari, dengan profil tersamar.
+ * Menjaga CSRF, metode POST, pencatatan audit, dan profil pendataan tetap utuh.
+ * php docs/engineering/uji_cek_rtlh.php
+ * Hanya mode simulation: tidak memanggil API SIMPERUM sungguhan.
  */
-
 define('BASE_URL', rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/'));
 define('APP_ROOT', dirname(__DIR__, 2));
 define('ENV_PATH', APP_ROOT . '/.env');
@@ -118,7 +97,7 @@ function login($nama, $email) {
 function buat_akun($suffix) {
     $email = 'uji_rtlh_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
     $id = tulis(
-        'INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+        'INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
          VALUES (?,?,?,?,"user","active",1,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji RTLH ' . $suffix,
          'uji_rtlh_' . $suffix . '_' . mt_rand(10000, 99999)]
@@ -138,9 +117,17 @@ function bersihkan() {
     if (empty($GLOBALS['db'])) { return; }
     foreach ($GLOBALS['users'] as $id) {
         q('DELETE FROM sf_profil_warga WHERE user_id=?', [$id]);
-        q('DELETE FROM sys_jejak_audit WHERE actor_id=?', [$id]);
-        q('DELETE FROM usr_users WHERE id=?', [$id]);
+        q('DELETE FROM sys_jejak_audit WHERE pelaku_id=?', [$id]);
+        q('DELETE FROM usr_akun WHERE id=?', [$id]);
     }
+    foreach (($GLOBALS['rate_anon_sebelum'] ?? []) as $key => $row) {
+        q('DELETE FROM sys_batas_laju WHERE kunci=?', [$key]);
+        if (isset($row['kunci'])) {
+            q('INSERT INTO sys_batas_laju (kunci,jendela_mulai_at,jumlah_gagal) VALUES (?,?,?)',
+                [$key, $row['jendela_mulai_at'], $row['jumlah_gagal']]);
+        }
+    }
+    $GLOBALS['rate_anon_sebelum'] = [];
     foreach ($GLOBALS['jar'] as $j) { @unlink($j); }
     $GLOBALS['users'] = [];
 }
@@ -163,39 +150,37 @@ $mode = trim((string) ($env['SIMPERUM_MODE'] ?? 'simulation'));
 wajib($mode === 'simulation',
     "SIMPERUM_MODE=simulation (terbaca: {$mode}) - uji ini tidak boleh menyentuh API sungguhan");
 
-// ------------------------------------------------ 1. GERBANG LOGIN
-echo "\n== 1. Wajib login, gerbangnya di server ==\n";
-/* 🔻 KONTRAKNYA BERUBAH 16 Agt 2026 (60d0e60), dan harness ini menyusul 1 Sep
-   2026. Tamu TIDAK lagi diusir dari HALAMANNYA - ia boleh membuka dan mengetik
-   NIK. Yang tetap tertutup rapat adalah HASILNYA: periksa_anonim() bahkan tidak
-   memanggil Simperum_gateway sama sekali, jadi tidak ada jawaban yang bisa bocor
-   lewat celah mana pun. Yang dijaga di bawah karena itu bukan "tamu ditolak",
-   melainkan "tamu tidak pernah mendapat jawaban".
-
-   🔻 DAN ASERSI LAMA DI SINI RAPUH, bukan cuma usang: ia memakai
-   `stripos($body,'TERDAFTAR')`, sementara `stripos` itu case-insensitive dan
-   halaman untuk tamu kini memuat ajakan "terdaftar" untuk mendaftar. Ia akan
-   merah selamanya tanpa ada yang bocor. Jebakan pencocokan substring
-   se-halaman ini sudah tercatat di AGENTS.md dan tetap memakan korban. */
+// ------------------------------------------------ 1. HASIL UNTUK TAMU (UAT No. 18)
+echo "\n== 1. Tamu melihat hasil terbatas tanpa login ==\n";
+// ::1 dihitung per blok /64 (anti_automation_ip_bucket), jadi kunci nyatanya '0000000000000000/64'.
+foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
+    $key = hash('sha256', 'rtlh_cek_anon:ip:' . $ip);
+    $GLOBALS['rate_anon_sebelum'][$key] = q('SELECT * FROM sys_batas_laju WHERE kunci=?', [$key]);
+    q('DELETE FROM sys_batas_laju WHERE kunci=?', [$key]);
+}
 $tamu = http('tamu', 'Cek_Rtlh');
-cek(strpos($tamu['url'], 'Auth/login') === FALSE, 'Tamu boleh membuka halamannya, tidak diusir');
-cek(strpos($tamu['body'], 'Cek_Rtlh/periksa') !== FALSE, 'Formulirnya memang disajikan ke tamu');
-
-/* POST langsung dari tamu. Yang diukur bukan teks halaman, melainkan apakah
-   pencarian BENAR-BENAR terjadi: kalau gateway sempat dipanggil, satu baris
-   snapshot akan lahir. Nol baris baru = tidak ada oracle sama sekali. */
-$snapSebelum = (int) $GLOBALS['db']->query("SELECT COUNT(*) c FROM sf_rekaman_simperum")->fetch_assoc()['c'];
-$t_tamu = csrf('tamu', 'Auth/login');
-$r = http('tamu', 'Cek_Rtlh/periksa', ['csrf_kpkp_token' => $t_tamu, 'nik' => NIK_ADA, 'tgl_lahir' => TGL_ADA]);
-$snapSesudah = (int) $GLOBALS['db']->query("SELECT COUNT(*) c FROM sf_rekaman_simperum")->fetch_assoc()['c'];
-cek(strpos($r['body'], '****' . substr(NIK_ADA, -4)) === FALSE, 'POST tamu tidak memunculkan hasil ber-NIK');
-/* 🔻 LAPIS KEDUA, DAN BATASNYA DIUKUR, BUKAN DIDUGA. Mutasi 1 Sep 2026 yang
-   membuang cabang anonim di Cek_Rtlh::periksa() memerahkan asersi ber-NIK di
-   atas, tetapi TIDAK memerahkan yang ini: NIK uji sudah punya snapshot aktif,
-   jadi pencarian dilayani cache dan nol baris baru lahir. Jadi asersi ini hanya
-   menggigit untuk NIK yang BELUM ter-cache. Ia tetap berguna, tapi jangan
-   diandalkan sendirian, dan jangan dihapus karena "tidak pernah merah". */
-cek($snapSebelum === $snapSesudah, 'POST tamu tidak memicu pencarian SIMPERUM sama sekali');
+wajib($tamu['code'] === 200 && strpos($tamu['body'], 'Cek_Rtlh/periksa') !== FALSE,
+    'Halaman tamu 200 dan formulir pencarian tersedia');
+$r = periksa('tamu', NIK_ADA, '');
+wajib($r['code'] === 200, 'POST tamu mendapat halaman hasil 200');
+cek(strpos($r['body'], '****0001') !== FALSE && strpos($r['body'], 'TERDAFTAR') !== FALSE,
+    'Tamu mendapatkan hasil terdaftar dengan NIK tersamar');
+cek(strpos($r['body'], '>Intervensi</dt>') !== FALSE, 'Status intervensi ditampilkan kepada tamu');
+cek(strpos($r['body'], '>Nama</dt>') === FALSE && strpos($r['body'], '>Alamat</dt>') === FALSE,
+    'Hasil tamu tidak menyertakan nama atau alamat');
+cek(strpos($r['body'], 'Masuk untuk melihat hasilnya') === FALSE, 'Hasil tamu tidak diganti ajakan login');
+$tidak = periksa('tamu', NIK_KOSONG, '');
+cek($tidak['code'] === 200 && strpos($tidak['body'], '****0098') !== FALSE && strpos($tidak['body'], 'tidak terdaftar') !== FALSE,
+    'Tamu mendapatkan hasil tidak ditemukan');
+$galat = periksa('tamu', '0000000000000099', '');
+cek($galat['code'] === 200 && strpos($galat['body'], 'Pencarian belum berhasil') !== FALSE,
+    'Galat sumber tidak disamarkan sebagai tidak terdaftar');
+$invalid = periksa('tamu', '123', '');
+cek($invalid['code'] === 200 && strpos($invalid['body'], 'NIK harus 16 digit') !== FALSE,
+    'NIK tidak valid ditolak sebelum menghabiskan kuota pencarian');
+periksa('tamu', NIK_ADA, '');
+cek(periksa('tamu', NIK_ADA, '')['code'] === 200, 'Pencarian tamu ke-5 masih diizinkan');
+cek(periksa('tamu', NIK_ADA, '')['code'] === 429, 'Pencarian tamu ke-6 ditolak 429');
 
 [$id1, $email1] = buat_akun('utama');
 wajib(login('u', $email1), 'Login pengguna uji');
@@ -290,19 +275,23 @@ cek((bool) preg_match('/name="nik"[^>]*value="' . NIK_ADA . '"/', $ada['body']),
 
 // ------------------------------------------------ 6. METODE & CSRF
 echo "\n== 6. GET dan POST tanpa token ==\n";
-cek(http('u', 'Cek_Rtlh/periksa?nik=' . NIK_ADA . '&tgl_lahir=' . TGL_ADA)['code'] === 404,
-    'GET ke endpoint pencarian dibalas 404');
+// NIK dan tanggal lahir di query string ditolak 400 oleh kebijakan URI (poin 12.2) sebelum controller
+// berjalan; tanpanya, endpoint POST-only menjawab 405 (dulu 404). Yang dijaga: GET tidak pernah memberi hasil.
+cek(in_array(http('u', 'Cek_Rtlh/periksa?nik=' . NIK_ADA . '&tgl_lahir=' . TGL_ADA)['code'], [400, 404, 405], TRUE),
+    'GET ke endpoint pencarian ditolak (400/404/405), tidak memberi hasil');
 $tanpa = http('u', 'Cek_Rtlh/periksa', ['nik' => NIK_ADA, 'tgl_lahir' => TGL_ADA]);
 cek(stripos($tanpa['body'], 'MODE SIMULASI') === FALSE,
     'POST tanpa token CSRF tidak menghasilkan hasil');
 
 // ------------------------------------------------ 7. JEJAK AUDIT
 echo "\n== 7. Tercatat di jejak audit ==\n";
-cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' AND actor_id=?", [$id1]) >= 3,
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' AND pelaku_id=?", [$id1]) >= 3,
     'Tiap pencarian tercatat (minimal 3 baris untuk pengguna ini)');
-cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' AND actor_id=? AND ringkasan LIKE ?",
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' AND pelaku_id=? AND ringkasan LIKE ?",
     [$id1, '%' . NIK_ADA . '%']) === 0,
     'NIK LENGKAP tidak ikut tertulis di jejak audit - hanya empat digit terakhir');
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='rtlh_dicek' AND pelaku_id=? AND ringkasan REGEXP 'hasil: (found|not_found|error)$'", [$id1]) === 0,
+    'Ringkasan jejak audit memakai bahasa Indonesia (terdaftar / tidak terdaftar), bukan kode status mentah');
 
 // ------------------------------------------------ 8. BATAS LAJU
 echo "\n== 8. Batas laju 10/jam per akun ==\n";

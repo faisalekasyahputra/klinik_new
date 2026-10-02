@@ -9,6 +9,7 @@ class Auth_model extends CI_Model {
 
     const MAX_LOGIN_ATTEMPTS = 5;
     const LOCKOUT_MINUTES    = 15;
+    const PASSWORD_TTL_DAYS  = 90;
 
     public function __construct() {
         parent::__construct();
@@ -24,13 +25,16 @@ class Auth_model extends CI_Model {
      * Returns the new user's ID or FALSE on failure.
      */
     public function create_user($email, $password_hash) {
+        $now = date('Y-m-d H:i:s');
         $data = [
             'email'      => $email,
-            'password'   => $password_hash,
+            'kata_sandi' => $password_hash,
             'status'     => 'restricted',
-            'created_at' => date('Y-m-d H:i:s'),
+            'sandi_diganti_at' => $now,
+            'sandi_kedaluwarsa_at' => date('Y-m-d H:i:s', strtotime('+' . self::PASSWORD_TTL_DAYS . ' days')),
+            'created_at' => $now,
         ];
-        $this->db->insert('usr_users', $data);
+        $this->db->insert('usr_akun', $data);
         return $this->db->insert_id() ?: FALSE;
     }
 
@@ -39,7 +43,7 @@ class Auth_model extends CI_Model {
      * Returns user row as object or NULL.
      */
     public function find_by_email($email) {
-        return $this->db->get_where('usr_users', ['email' => $email])->row();
+        return $this->db->get_where('usr_akun', ['email' => $email])->row();
     }
 
     /**
@@ -49,16 +53,16 @@ class Auth_model extends CI_Model {
     public function find_by_login($login_id) {
         $this->db->group_start();
         $this->db->where('email', $login_id);
-        $this->db->or_where('username', $login_id);
+        $this->db->or_where('nama_pengguna', $login_id);
         $this->db->group_end();
-        return $this->db->get('usr_users')->row();
+        return $this->db->get('usr_akun')->row();
     }
 
     /**
      * Find user by ID.
      */
     public function find_by_id($id) {
-        return $this->db->get_where('usr_users', ['id' => (int)$id])->row();
+        return $this->db->get_where('usr_akun', ['id' => (int)$id])->row();
     }
 
     // =========================================================
@@ -74,9 +78,9 @@ class Auth_model extends CI_Model {
         $expiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
 
         $this->db->where('id', $user_id);
-        $this->db->update('usr_users', [
-            'email_token'        => $token,
-            'email_token_expiry' => $expiry,
+        $this->db->update('usr_akun', [
+            'token_email'        => $token,
+            'token_email_kedaluwarsa' => $expiry,
         ]);
         return $token;
     }
@@ -85,23 +89,23 @@ class Auth_model extends CI_Model {
      * Verify an email token. Returns the user object or NULL.
      */
     public function verify_email_token($token) {
-        $user = $this->db->get_where('usr_users', [
-            'email_token' => $token,
+        $user = $this->db->get_where('usr_akun', [
+            'token_email' => $token,
         ])->row();
 
         if (!$user) return NULL;
 
         // Check expiry
-        if (strtotime($user->email_token_expiry) < time()) {
+        if (strtotime($user->token_email_kedaluwarsa) < time()) {
             return NULL;
         }
 
         // Mark email as verified
         $this->db->where('id', $user->id);
-        $this->db->update('usr_users', [
+        $this->db->update('usr_akun', [
             'email_verified_at'  => date('Y-m-d H:i:s'),
-            'email_token'        => NULL,
-            'email_token_expiry' => NULL,
+            'token_email'        => NULL,
+            'token_email_kedaluwarsa' => NULL,
         ]);
 
         return $user;
@@ -115,8 +119,8 @@ class Auth_model extends CI_Model {
      * Check if a user account is currently locked.
      */
     public function is_locked($user) {
-        if ($user->login_attempts >= self::MAX_LOGIN_ATTEMPTS && $user->locked_until) {
-            return strtotime($user->locked_until) > time();
+        if ($user->gagal_masuk >= self::MAX_LOGIN_ATTEMPTS && $user->terkunci_sampai) {
+            return strtotime($user->terkunci_sampai) > time();
         }
         return FALSE;
     }
@@ -125,8 +129,8 @@ class Auth_model extends CI_Model {
      * Get remaining lockout seconds.
      */
     public function lockout_remaining($user) {
-        if ($user->locked_until) {
-            $remaining = strtotime($user->locked_until) - time();
+        if ($user->terkunci_sampai) {
+            $remaining = strtotime($user->terkunci_sampai) - time();
             return max(0, $remaining);
         }
         return 0;
@@ -136,26 +140,29 @@ class Auth_model extends CI_Model {
      * Increment failed login attempts. Lock account if threshold reached.
      */
     public function increment_login_attempts($user_id) {
-        // Jendela lockout sebelumnya sudah lewat, tapi login_attempts tidak
+        // Jendela lockout sebelumnya sudah lewat, tapi gagal_masuk tidak
         // pernah direset kecuali login BERHASIL -- tanpa ini, satu salah ketik
         // sesudah menunggu penuh 15 menit langsung mengunci 15 menit lagi,
         // selamanya, sampai kebetulan sandinya benar (roadmap T6 R2-sisa).
         $user = $this->find_by_id($user_id);
-        if ($user && $user->locked_until && strtotime($user->locked_until) <= time()) {
-            $this->db->where('id', $user_id)->update('usr_users', ['login_attempts' => 0, 'locked_until' => NULL]);
+        if ($user && $user->terkunci_sampai && strtotime($user->terkunci_sampai) <= time()) {
+            $this->db->where('id', $user_id)->update('usr_akun', ['gagal_masuk' => 0, 'terkunci_sampai' => NULL]);
         }
 
-        $this->db->set('login_attempts', 'login_attempts + 1', FALSE);
+        $this->db->set('gagal_masuk', 'gagal_masuk + 1', FALSE);
         $this->db->where('id', $user_id);
-        $this->db->update('usr_users');
+        $this->db->update('usr_akun');
 
         // Check if we need to lock
         $user = $this->find_by_id($user_id);
-        if ($user && $user->login_attempts >= self::MAX_LOGIN_ATTEMPTS) {
+        if ($user && $user->gagal_masuk >= self::MAX_LOGIN_ATTEMPTS) {
             $lock_until = date('Y-m-d H:i:s', strtotime('+' . self::LOCKOUT_MINUTES . ' minutes'));
             $this->db->where('id', $user_id);
-            $this->db->update('usr_users', ['locked_until' => $lock_until]);
+            $this->db->update('usr_akun', ['terkunci_sampai' => $lock_until]);
+            // TRUE hanya pada percobaan yang MENGUNCI akun (untuk peringatan keamanan ke admin, poin 10.5).
+            return (int) $user->gagal_masuk === self::MAX_LOGIN_ATTEMPTS;
         }
+        return FALSE;
     }
 
     /**
@@ -163,19 +170,79 @@ class Auth_model extends CI_Model {
      */
     public function reset_login_attempts($user_id) {
         $this->db->where('id', $user_id);
-        $this->db->update('usr_users', [
-            'login_attempts' => 0,
-            'locked_until'   => NULL,
+        $this->db->update('usr_akun', [
+            'gagal_masuk' => 0,
+            'terkunci_sampai'   => NULL,
         ]);
     }
 
+    /** Terbitkan token sesi baru dan ikat ke ID sesi CI yang sedang aktif. */
+    public function issue_session_token($user_id, $session_id = NULL) {
+        $token = bin2hex(random_bytes(32));
+        $session_id = (string) ($session_id ?: $this->session->session_id);
+        $this->db->where('id', (int) $user_id)->update('usr_akun', [
+            'sesi_aktif_hash' => hash('sha256', $token),
+            'sesi_aktif_id_hash' => hash('sha256', $session_id),
+            'sesi_aktif_at' => date('Y-m-d H:i:s'),
+        ]);
+        return $token;
+    }
+
+    public function session_token_valid($user_id, $token, $session_id = NULL) {
+        $session_id = (string) ($session_id ?: $this->session->session_id);
+        if (empty($token) || empty($session_id)) { return FALSE; }
+        $row = $this->db->select('sesi_aktif_hash,sesi_aktif_id_hash')
+            ->get_where('usr_akun', ['id' => (int) $user_id])->row();
+        return $row && ! empty($row->sesi_aktif_hash)
+            && ! empty($row->sesi_aktif_id_hash)
+            && hash_equals((string) $row->sesi_aktif_hash, hash('sha256', (string) $token))
+            && hash_equals((string) $row->sesi_aktif_id_hash, hash('sha256', $session_id));
+    }
+
+    public function revoke_session_token($user_id, $token) {
+        if ( ! $this->session_token_valid($user_id, $token)) { return; }
+        $this->db->where('id', (int) $user_id)->update('usr_akun', [
+            'sesi_aktif_hash' => NULL, 'sesi_aktif_id_hash' => NULL, 'sesi_aktif_at' => NULL,
+        ]);
+    }
+
+    public function password_expired($user) {
+        return ! empty($user->sandi_kedaluwarsa_at) && strtotime($user->sandi_kedaluwarsa_at) <= time();
+    }
+
+    public function password_lifetime_fields() {
+        $now = date('Y-m-d H:i:s');
+        return [
+            'sandi_diganti_at' => $now,
+            'sandi_kedaluwarsa_at' => date('Y-m-d H:i:s', strtotime('+' . self::PASSWORD_TTL_DAYS . ' days')),
+        ];
+    }
+
+    /**
+     * Sandi yang ditetapkan admin (akun baru, reset) langsung kedaluwarsa, jadi login pertama
+     * diarahkan ke ganti sandi lewat mekanisme 90 hari yang sama. Sandi itu sempat diketahui
+     * admin dan dikirim lewat jalur lain (keputusan pemilik produk 29 Sep 2026).
+     */
+    public function password_awal_fields() {
+        $now = date('Y-m-d H:i:s');
+        return ['sandi_diganti_at' => $now, 'sandi_kedaluwarsa_at' => $now];
+    }
+
+    /** Pesan wajib ganti sandi: sandi awal dari admin dikenali dari kedaluwarsa == saat ditetapkan. */
+    public function pesan_ganti_sandi($user) {
+        $dari_admin = ! empty($user->sandi_diganti_at) && ! empty($user->sandi_kedaluwarsa_at)
+            && strtotime($user->sandi_kedaluwarsa_at) <= strtotime($user->sandi_diganti_at);
+        return $dari_admin
+            ? 'Sandi awal dari admin harus diganti sebelum melanjutkan. Buat sandi baru yang hanya Anda ketahui.'
+            : 'Kata sandi telah berusia 90 hari. Ganti kata sandi untuk melanjutkan.';
+    }
     // =========================================================
     // Onboarding / Profile Completion
     // =========================================================
 
     /**
      * Turunkan username unik dari local-part email - dipakai HANYA saat
-     * daftar cepat SRP2 mengisi profile_completed=1 tanpa pernah melalui
+     * daftar cepat SRP2 mengisi profil_lengkap=1 tanpa pernah melalui
      * onboarding, sehingga name/username tidak pernah NULL (roadmap T5
      * S12-a). Bukan pengganti onboarding: user tetap bisa menggantinya
      * lewat /akun/profil kapan saja.
@@ -187,7 +254,7 @@ class Auth_model extends CI_Model {
 
         $username = $base;
         $suffix = 1;
-        while ($this->db->where('username', $username)->count_all_results('usr_users') > 0) {
+        while ($this->db->where('nama_pengguna', $username)->count_all_results('usr_akun') > 0) {
             $username = substr($base, 0, 40) . (++$suffix);
         }
         return $username;
@@ -198,16 +265,16 @@ class Auth_model extends CI_Model {
      * $data should contain role-specific fields.
      */
     public function save_profile($user_id, $data) {
-        $data['profile_completed'] = 1;
+        $data['profil_lengkap'] = 1;
         $data['status']            = 'active';
         $data['updated_at']        = date('Y-m-d H:i:s');
 
         $this->db->where('id', $user_id);
-        return $this->db->update('usr_users', $data);
+        return $this->db->update('usr_akun', $data);
     }
 
     /**
-     * Pastikan akun pengembang punya baris srp2_registrations, buat kalau belum.
+     * Pastikan akun pengembang punya baris srp2_pengajuan, buat kalau belum.
      * SATU-SATUNYA tempat draft SRP2 dibuat - sebelumnya logika ini disalin di
      * empat tempat (Auth::do_login cabang AJAX, Auth::do_register,
      * Auth::lanjutkan, Pengembang::syarat) dan satu jalur terlewat:
@@ -222,7 +289,7 @@ class Auth_model extends CI_Model {
      * @param string|null $status_filter batasi pencarian ke status tertentu
      *                                   (dipakai Auth::lanjutkan yang memang
      *                                   cuma peduli draft yang belum dikirim)
-     * @return int|null ID baris srp2_registrations, NULL kalau user tidak ada
+     * @return int|null ID baris srp2_pengajuan, NULL kalau user tidak ada
      */
     public function ensure_srp2_draft($user_id, $status_filter = NULL) {
         $user_id = (int) $user_id;
@@ -230,7 +297,7 @@ class Auth_model extends CI_Model {
 
         $this->db->order_by('id', 'DESC')->where('user_id', $user_id);
         if ($status_filter !== NULL) { $this->db->where('status_verifikasi', $status_filter); }
-        $baris = $this->db->get('srp2_registrations')->row();
+        $baris = $this->db->get('srp2_pengajuan')->row();
         if ($baris) { return (int) $baris->id; }
 
         // JANGAN pernah membuat baris kedua untuk user yang sudah punya pengajuan.
@@ -244,20 +311,35 @@ class Auth_model extends CI_Model {
         // yang memakai fungsi ini ikut benar sekaligus.
         if ($status_filter !== NULL) {
             $terakhir = $this->db->order_by('id', 'DESC')->where('user_id', $user_id)
-                ->get('srp2_registrations')->row();
+                ->get('srp2_pengajuan')->row();
             if ($terakhir) { return (int) $terakhir->id; }
         }
 
         $user = $this->find_by_id($user_id);
         if ( ! $user) { return NULL; }
 
-        $this->db->insert('srp2_registrations', [
+        // Data perusahaan tidak lagi ada di usr_akun (migrasi 070): pemanggil yang punya isian
+        // perusahaan menuliskannya lewat isi_pengajuan_kosong() sesudah draft ada.
+        $this->db->insert('srp2_pengajuan', [
             'user_id'           => $user_id,
             'email'             => $user->email,
-            'nama_perusahaan'   => $user->nama_perusahaan,
             'status_verifikasi' => 'Draft',
         ]);
         return (int) $this->db->insert_id();
+    }
+
+    /**
+     * Isi medan perusahaan pengajuan yang MASIH KOSONG; isian pengajuan yang sudah ada tidak
+     * ditimpa. Tempat data perusahaan akun pengembang yang belum punya baris direktori
+     * (migrasi 070); sesudah tertaut, sumbernya srp2_direktori_pengembang.
+     */
+    public function isi_pengajuan_kosong($pengajuan_id, array $data) {
+        foreach ($data as $kolom => $nilai) {
+            if (trim((string) $nilai) === '') { continue; }
+            $this->db->where('id', (int) $pengajuan_id)
+                ->group_start()->where($kolom . ' IS NULL', NULL, FALSE)->or_where($kolom, '')->group_end()
+                ->update('srp2_pengajuan', [$kolom => $nilai]);
+        }
     }
 
     /**
@@ -266,29 +348,29 @@ class Auth_model extends CI_Model {
      *
      * Dibuat karena keadaan ini dulu cuma dihitung di Pengembang::syarat(),
      * sementara Auth::do_login() (jalur AJAX wizard) hanya mengembalikan
-     * registration_id. Akibatnya pengembang lama yang masuk LEWAT wizard
+     * pengajuan_id. Akibatnya pengembang lama yang masuk LEWAT wizard
      * melihat keadaan tamu: 0/14 dokumen, tombol kirim terkunci, dan catatan
      * admin tidak muncul - padahal di server semuanya sudah ada.
      *
      * @param  int $user_id
-     * @return array|null  registration_id, status, catatan_admin, uploaded_keys
+     * @return array|null  pengajuan_id, status, catatan_admin, uploaded_keys
      */
     public function srp2_state($user_id) {
-        $registration_id = $this->ensure_srp2_draft($user_id);
-        if ( ! $registration_id) { return NULL; }
+        $pengajuan_id = $this->ensure_srp2_draft($user_id);
+        if ( ! $pengajuan_id) { return NULL; }
 
-        $baris = $this->db->get_where('srp2_registrations', ['id' => $registration_id])->row();
+        $baris = $this->db->get_where('srp2_pengajuan', ['id' => $pengajuan_id])->row();
         if ( ! $baris) { return NULL; }
 
-        $keys = $this->db->select('document_key')
-            ->where('registration_id', $registration_id)
-            ->get('srp2_documents')->result_array();
+        $keys = $this->db->select('kunci_dokumen')
+            ->where('pengajuan_id', $pengajuan_id)
+            ->get('srp2_dokumen')->result_array();
 
         return [
-            'registration_id' => $registration_id,
+            'pengajuan_id' => $pengajuan_id,
             'status'          => $baris->status_verifikasi,
             'catatan_admin'   => $baris->catatan_admin,
-            'uploaded_keys'   => array_column($keys, 'document_key'),
+            'uploaded_keys'   => array_column($keys, 'kunci_dokumen'),
         ];
     }
 
@@ -306,7 +388,7 @@ class Auth_model extends CI_Model {
      * Dipanggil dari dalam transaksi pemanggilnya - sengaja tidak membuka
      * transaksi sendiri supaya tidak bersarang.
      *
-     * @param  object $reg baris srp2_registrations
+     * @param  object $reg baris srp2_pengajuan
      * @return int|null    id baris direktori, NULL kalau tidak bisa diterbitkan
      */
     public function upsert_direktori_publik($reg) {
@@ -325,7 +407,7 @@ class Auth_model extends CI_Model {
 
         /* Asosiasi ikut menular ke direktori 14 Agt 2026. Sebelumnya TIDAK -
            pengembang memilih asosiasinya di /akun/profil, nilainya tersimpan
-           rapi di srp2_registrations, dan berhenti di situ: kolom asosiasi di
+           rapi di srp2_pengajuan, dan berhenti di situ: kolom asosiasi di
            direktori publik tidak pernah terisi dari jalur ini (67 dari 67
            baris NULL saat diperiksa).
 
@@ -344,18 +426,72 @@ class Auth_model extends CI_Model {
             $payload['npwp_ciphertext'] = $reg->npwp_ciphertext;
             $payload['npwp_lookup_hash'] = $reg->npwp_lookup_hash;
         }
-        if ( ! empty($reg->certified_developer_id)) {
-            // Sudah terbit: segarkan isinya, JANGAN sentuh status_aktif -
-            // pencabutan/pengaktifan adalah keputusan admin yang terpisah.
-            $this->db->where('id', (int) $reg->certified_developer_id)
-                ->update('srp2_certified_developers', $payload);
-            return (int) $reg->certified_developer_id;
+        // Medan kontak migrasi 066: sama seperti asosiasi, hanya yang TERISI yang menular,
+        // supaya isian dinas di baris direktori tidak tersapu NULL dari pengajuan.
+        foreach (['nib', 'no_keanggotaan', 'no_whatsapp'] as $k) {
+            $v = trim((string) ($reg->$k ?? ''));
+            if ($v !== '') { $payload[$k] = $v; }
         }
 
-        $payload['status_aktif'] = 1;
-        $this->db->insert('srp2_certified_developers', $payload);
-        $id = (int) $this->db->insert_id();
-        return $id ?: NULL;
+        if ( ! empty($reg->pengembang_id)) {
+            // Sudah terbit: segarkan isinya, JANGAN sentuh status_aktif -
+            // pencabutan/pengaktifan adalah keputusan admin yang terpisah.
+            $id = (int) $reg->pengembang_id;
+            $this->db->where('id', $id)->update('srp2_direktori_pengembang', $payload);
+        } else {
+            $payload['status_aktif'] = 1;
+            $this->db->insert('srp2_direktori_pengembang', $payload);
+            $id = (int) $this->db->insert_id();
+            if ( ! $id) { return NULL; }
+        }
+
+        /* Email pengajuan itu email AKUN, bukan kontak publik pilihan perusahaan: hanya
+           mengisi email_kontak yang masih kosong, tidak pernah menimpanya. */
+        $email = trim((string) ($reg->email ?? ''));
+        if ($email !== '') {
+            $this->db->where('id', $id)->group_start()->where('email_kontak IS NULL', NULL, FALSE)->or_where('email_kontak', '')->group_end()
+                ->update('srp2_direktori_pengembang', ['email_kontak' => $email]);
+        }
+
+        /* Pemilik pengajuan menjadi pemilik baris direktori (Profil Perusahaan), selama baris
+           itu belum bertuan dan akunnya belum memegang baris lain (UNIQUE user_id). */
+        if ( ! empty($reg->user_id)
+            && ! $this->db->where('user_id', (int) $reg->user_id)->where('id !=', $id)->count_all_results('srp2_direktori_pengembang')) {
+            $this->db->where('id', $id)->where('user_id IS NULL', NULL, FALSE)
+                ->update('srp2_direktori_pengembang', ['user_id' => (int) $reg->user_id]);
+        }
+        return $id;
+    }
+
+    /**
+     * Arah sebaliknya dari upsert_direktori_publik(): baris direktori yang tertaut akun
+     * (user_id) menyalin isinya ke pengajuan SRP2 akun itu yang menunjuk baris ini (usr_akun
+     * tidak lagi menyimpan data perusahaan sejak migrasi 070). Dipanggil sesudah admin atau
+     * pengembang mengubah baris direktori, supaya Profil Saya, Status Pengajuan, dan layar pengajuan admin tidak
+     * menampilkan data lama. Tanpa transaksi sendiri (dipanggil dari dalam transaksi).
+     *
+     * NIB dan NPWP UNIQUE di pengajuan: hanya disalin bila tidak dipakai pengajuan lain.
+     */
+    public function sinkron_pengajuan_dari_direktori($cid) {
+        $d = $this->db->get_where('srp2_direktori_pengembang', ['id' => (int) $cid])->row();
+        if ( ! $d || ! $d->user_id) { return; }
+
+        $data = [];
+        foreach (['alamat_kantor', 'no_keanggotaan', 'no_whatsapp', 'instagram', 'website', 'sosmed_lainnya'] as $k) { $data[$k] = $d->$k; }
+        if (strlen((string) $d->nama_perusahaan) <= 150) { $data['nama_perusahaan'] = $d->nama_perusahaan; }
+        if (strlen((string) $d->asosiasi) <= 30) { $data['asosiasi'] = $d->asosiasi; }
+        $milik = function ($kolom, $nilai) use ($d, $cid) {
+            return $nilai === NULL || ! $this->db->where($kolom, $nilai)
+                ->group_start()->where('user_id !=', (int) $d->user_id)->or_where('pengembang_id !=', (int) $cid)->or_where('pengembang_id IS NULL', NULL, FALSE)->group_end()
+                ->count_all_results('srp2_pengajuan');
+        };
+        if ($milik('nib', $d->nib)) { $data['nib'] = $d->nib; }
+        if ($milik('npwp_lookup_hash', $d->npwp_lookup_hash)) {
+            $data['npwp_ciphertext'] = $d->npwp_ciphertext;
+            $data['npwp_lookup_hash'] = $d->npwp_lookup_hash;
+        }
+        $this->db->where('pengembang_id', (int) $cid)->where('user_id', (int) $d->user_id)
+            ->update('srp2_pengajuan', $data);
     }
 
     /**
@@ -363,7 +499,7 @@ class Auth_model extends CI_Model {
      */
     public function is_profile_complete($user_id) {
         $user = $this->find_by_id($user_id);
-        return $user && $user->profile_completed == 1;
+        return $user && $user->profil_lengkap == 1;
     }
 
     // =========================================================
@@ -373,13 +509,13 @@ class Auth_model extends CI_Model {
     /**
      * Save a document record linked to a user.
      */
-    public function save_document($user_id, $doc_type, $file_name, $file_path, $file_size) {
-        return $this->db->insert('usr_documents', [
+    public function save_document($user_id, $jenis_dokumen, $file_name, $file_path, $file_size) {
+        return $this->db->insert('usr_dokumen', [
             'user_id'     => $user_id,
-            'doc_type'    => $doc_type,
-            'file_name'   => $file_name,
-            'file_path'   => $file_path,
-            'file_size'   => $file_size,
+            'jenis_dokumen'    => $jenis_dokumen,
+            'nama_berkas' => $file_name,
+            'path_berkas' => $file_path,
+            'ukuran_berkas' => $file_size,
             'uploaded_at' => date('Y-m-d H:i:s'),
         ]);
     }
@@ -388,7 +524,7 @@ class Auth_model extends CI_Model {
      * Get all documents for a user.
      */
     public function get_user_documents($user_id) {
-        return $this->db->get_where('usr_documents', ['user_id' => $user_id])->result();
+        return $this->db->get_where('usr_dokumen', ['user_id' => $user_id])->result();
     }
 
     // =========================================================
@@ -406,19 +542,21 @@ class Auth_model extends CI_Model {
      * Reset password using token.
      */
     public function reset_password($token, $new_password_hash) {
-        $user = $this->db->get_where('usr_users', ['email_token' => $token])->row();
+        $user = $this->db->get_where('usr_akun', ['token_email' => $token])->row();
         if (!$user) return FALSE;
 
-        if (strtotime($user->email_token_expiry) < time()) {
+        if (strtotime($user->token_email_kedaluwarsa) < time()) {
             return FALSE;
         }
 
         $this->db->where('id', $user->id);
-        return $this->db->update('usr_users', [
-            'password'           => $new_password_hash,
-            'email_token'        => NULL,
-            'email_token_expiry' => NULL,
-        ]);
+        return $this->db->update('usr_akun', [
+            'kata_sandi'         => $new_password_hash,
+            'token_email'        => NULL,
+            'token_email_kedaluwarsa' => NULL,
+            'sesi_aktif_hash' => NULL,
+            'sesi_aktif_id_hash' => NULL,
+            'sesi_aktif_at' => NULL,
+        ] + $this->password_lifetime_fields());
     }
 }
-

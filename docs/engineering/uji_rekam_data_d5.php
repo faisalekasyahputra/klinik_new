@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji D5 - Rekam Data: Rekap & Riwayat.
  *
@@ -88,7 +89,7 @@ function q($sql, $params = []) {
  * uji ini. Baris ini ikut terhapus bersama laporannya lewat FK.
  */
 function lampirkan_bnba($laporan_id) {
-    q('INSERT INTO rd_perumahan_bnba (laporan_id, nama_asli, private_path, mime_type, ukuran)
+    q('INSERT INTO rd_perumahan_bnba (laporan_id, nama_asli, path_privat, mime_type, ukuran)
        VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE nama_asli = VALUES(nama_asli)',
        [(int) $laporan_id, 'bnba-uji.pdf', 'uji/bnba-uji.pdf', 'application/pdf', 1024]);
 }
@@ -150,7 +151,7 @@ function login($nama, $email, $password) {
 function bersihkan() {
     global $db, $jars;
     $db->query('DELETE FROM rd_laporan WHERE tahun = ' . (int) TAHUN);
-    $db->query("DELETE FROM usr_users WHERE email LIKE 'uji_rd_d5_%'");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE 'uji_rd_d5_%'");
     foreach ($jars as $f) {
         @unlink($f);
     }
@@ -160,7 +161,7 @@ function bersihkan() {
 
 echo "Uji D5 - Rekap & Riwayat\n";
 
-$admin = q('SELECT id, kabupaten_id FROM usr_users WHERE email = ? AND role = ?',
+$admin = q('SELECT id, kabupaten_id FROM usr_akun WHERE email = ? AND peran = ?',
     [ADMIN_EMAIL, 'admin_kabkota']);
 wajib($admin && ! empty($admin['kabupaten_id']), 'Akun admin_kabkota tersedia dan ter-scope');
 $KAB = (int) $admin['kabupaten_id'];
@@ -171,7 +172,7 @@ wajib($kab_lain > 0, 'Ada kabupaten kedua untuk uji scope');
 $stamp = time();
 $email_lain = "uji_rd_d5_{$stamp}@example.test";
 $db->query(sprintf(
-    "INSERT INTO usr_users (email, password, role, kabupaten_id, name, username)
+    "INSERT INTO usr_akun (email, kata_sandi, peran, kabupaten_id, nama, nama_pengguna)
      VALUES ('%s', '%s', 'admin_kabkota', %d, 'Uji D5 Lain', 'uji_rd_d5_%d')",
     $db->real_escape_string($email_lain),
     $db->real_escape_string(password_hash('UjiRdD5!', PASSWORD_BCRYPT)),
@@ -450,7 +451,7 @@ try {
 
     /* BNBA berisi nama + NIK penerima. Keputusan user: ia TIDAK ikut export.
        Jalur yang salah (`isi_laporan()`) akan menyeret metadatanya diam-diam. */
-    cek(preg_match('/bnba|nama_asli|private_path/i', $xls) === 0,
+    cek(preg_match('/bnba|nama_asli|path_privat/i', $xls) === 0,
         'Nol jejak BNBA di berkas - daftar penerima tidak ikut keluar');
 
     /* Header harus memakai `label_sumber()` (12 sumber), BUKAN

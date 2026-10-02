@@ -96,6 +96,24 @@ $config['dashboard_modules'] = [
         'roles' => ['warga', 'pengembang', 'mahasiswa'],
         'scope' => null,
     ],
+    'dokumen_srp2' => [
+        'label' => 'Dokumen SRP2', 'icon' => 'ph-files',
+        'url' => 'akun/dokumen', 'group' => 'Akun', 'order' => 15,
+        'roles' => ['pengembang'], 'scope' => null,
+    ],
+    // Profil Perusahaan (2 Okt 2026): baris Direktori SRP2 milik akun ini. Akun yang belum
+    // tertaut mendapat penjelasan di halamannya, bukan menu yang hilang-timbul.
+    'profil_perusahaan' => [
+        'label' => 'Profil Perusahaan', 'icon' => 'ph-buildings',
+        'url' => 'akun/perusahaan', 'group' => 'Akun', 'order' => 17,
+        'roles' => ['pengembang'], 'scope' => null,
+    ],
+    'sikumbang' => [
+        'label' => 'Sikumbang', 'icon' => 'ph-arrow-square-out',
+        'url' => 'https://sikumbang.tapera.go.id/user/login',
+        'group' => 'Akun', 'order' => 25,
+        'roles' => ['pengembang'], 'scope' => null,
+    ],
     /* Dashboard KKN - dashboard universitas (permintaan user 21 Agt 2026).
        'order' => 5, LEBIH KECIL dari status_pengajuan (10) dengan sengaja:
        dashboard_home() memilih kandidat urutan TERKECIL, jadi tautan
@@ -123,6 +141,12 @@ $config['dashboard_modules'] = [
     'profil' => [
         'label' => 'Profil Saya', 'icon' => 'ph-user-circle',
         'url'   => 'akun/profil', 'group' => 'Akun', 'order' => 20,
+        // Tidak tampil di sidebar (permintaan user 2 Okt 2026): Profil Saya dan Keluar sudah
+        // ada di menu profil topbar. Modul tetap terdaftar untuk hak akses dan judul halaman.
+        'sidebar' => FALSE,
+        // Tidak tampil di sidebar (permintaan user 2 Okt 2026): Profil Saya dan Keluar sudah
+        // ada di menu profil topbar. Modul tetap terdaftar untuk hak akses dan judul halaman.
+        'sidebar' => FALSE,
         // 'universitas' ditambahkan 22 Agt 2026 - akun ini juga butuh Profil
         // Saya (No. HP di sana WAJIB diisi sebelum bisa mengajukan KKN
         // pertama, lihat KemitraanPortal::kkn_tambah()).
@@ -136,7 +160,7 @@ $config['dashboard_modules'] = [
         'url'   => 'Admin_Kabkota', 'group' => 'Layanan', 'order' => 10,
         'roles' => ['admin_kabkota'],
         'scope' => 'kabupaten_id',
-        'table' => 'sf_housing_queue', 'review_by' => 'admin_kabkota',
+        'table' => 'sf_antrean_pengajuan', 'review_by' => 'admin_kabkota',
         'pending_where' => ['status_antrean' => 'pending'],
         'status_column' => 'status_antrean', 'owner_column' => 'user_id',
         'public_where' => NULL, 'editable_where' => NULL,
@@ -152,6 +176,11 @@ $config['dashboard_modules'] = [
     // Induknya `Rekam_Data` - layar sambutan. Sebelum ada entri ini, membuka
     // /Rekam_Data dari kartu beranda publik membuat sidebar TIDAK menyorot apa
     // pun: orang sampai di sana tanpa tahu sedang di cabang mana.
+    'pendataan_awal_kabkota' => [
+        'label' => 'Pendataan Awal Warga', 'icon' => 'ph-clipboard-text',
+        'url'   => 'Admin_Kabkota/pendataan_awal', 'group' => 'Layanan', 'order' => 11,
+        'roles' => ['admin_kabkota'], 'scope' => null,
+    ],
     'rekam_data' => [
         'label' => 'Rekam Data', 'icon' => 'ph-database',
         'url'   => 'Rekam_Data', 'group' => 'Layanan', 'order' => 20,
@@ -220,7 +249,11 @@ $config['dashboard_modules'] = [
         'scope' => 'bidang_kode',
         'table' => 'aduan', 'review_by' => 'admin_bidang',
         'pending_where' => ['status' => 'Baru'],
+        // scope_column WAJIB menemani badge: tanpanya count_pending_modul()
+        // menghitung aduan Baru milik SEMUA bidang, termasuk yang belum ditriase.
+        'scope_column' => 'bidang_kode',
         'status_column' => 'status', 'owner_column' => 'user_id',
+        'badge' => TRUE,
     ],
 
     // ===== Superadmin =====
@@ -234,7 +267,7 @@ $config['dashboard_modules'] = [
         'url'   => 'Admin', 'group' => 'Tindak Lanjut', 'order' => 10,
         'overview_url' => 'Admin?status=pending',
         'roles' => ['admin'], 'scope' => null,
-        'table' => 'sf_housing_queue', 'review_by' => 'admin',
+        'table' => 'sf_antrean_pengajuan', 'review_by' => 'admin',
         'pending_where' => ['status_antrean' => 'pending'],
         'status_column' => 'status_antrean', 'owner_column' => 'user_id',
         'public_where' => NULL, 'editable_where' => NULL,
@@ -245,14 +278,14 @@ $config['dashboard_modules'] = [
         'url'   => 'Admin_Srp2/pending', 'group' => 'Tindak Lanjut', 'order' => 20,
         'overview_url' => 'Admin_Srp2/pending?status=Pending',
         'roles' => ['admin'], 'scope' => null,
-        'table' => 'srp2_registrations', 'review_by' => 'admin',
+        'table' => 'srp2_pengajuan', 'review_by' => 'admin',
         'pending_where' => ['status_verifikasi' => 'Pending'],
         'status_column' => 'status_verifikasi', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'Sertifikasi SRP2',
     ],
     /* Dua anak di bawah - permintaan user 14 Agt 2026: "Tinjau SRP2" dua
-       tabel berbeda (lihat percakapan yang menemukan ini - srp2_registrations
-       vs srp2_certified_developers, cuma 1 dari 67 baris certified yang
+       tabel berbeda (lihat percakapan yang menemukan ini - srp2_pengajuan
+       vs srp2_direktori_pengembang, cuma 1 dari 67 baris certified yang
        tertaut ke pengajuan), jadi sidebar-nya dibuat menyuarakan itu lewat
        submenu, bukan cuma satu tautan yang membingungkan mana yang dilihat.
        `parent` menautkan ke srp2_verifikasi - mekanisme yang sama dipakai
@@ -332,8 +365,13 @@ $config['dashboard_modules'] = [
         'url'   => 'Admin_Katalog_Program', 'group' => 'Manajemen', 'order' => 40,
         'roles' => ['admin'], 'scope' => null,
     ],
+    'bank_data_admin' => [
+        'label' => 'Bank Data', 'icon' => 'ph-books',
+        'url'   => 'Admin_Bank_Data', 'group' => 'Manajemen', 'order' => 41,
+        'roles' => ['admin'], 'scope' => null,
+    ],
     'kemitraan' => [
-        'label' => 'Kelola KKN/Magang', 'icon' => 'ph-graduation-cap',
+        'label' => 'KKN & Magang', 'icon' => 'ph-graduation-cap',
         'url'   => 'Admin_Kemitraan', 'group' => 'Tindak Lanjut', 'order' => 30,
         'overview_url' => 'Admin_Kemitraan?status=Diajukan',
         'roles' => ['admin'], 'scope' => null,
@@ -368,6 +406,9 @@ $config['dashboard_modules'] = [
         'label' => 'Konsultasi Warga', 'icon' => 'ph-chats-circle',
         'url'   => 'Umum/forum', 'group' => 'Tindak Lanjut', 'order' => 41,
         'roles' => ['admin'], 'scope' => null,
+        // Halaman forum PUBLIK (layout portal, tanpa sidebar admin): dibuka di tab
+        // baru dan diberi ikon tautan keluar, supaya tidak terasa "keluar" dari admin.
+        'tab_baru' => TRUE,
     ],
     // Meja KEDUA alur surat magang. Terpisah dari 'kemitraan' di atas karena
     // pemiliknya berbeda: yang itu sekretariat (superadmin), yang ini bidang.
@@ -409,6 +450,14 @@ $config['dashboard_modules'] = [
         'scope_column' => 'bidang_kode',
         'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE,
+    ],
+    'universitas_bidang' => [
+        'label' => 'Akun Universitas', 'icon' => 'ph-buildings',
+        'url'   => 'Kemitraan_Bidang/universitas', 'group' => 'Layanan', 'order' => 12,
+        // Ber-scope bidang_kode: Admin_Bidang_Controller menolak admin bidang yang belum
+        // ditetapkan ke bidang, jadi tanpa scope akun seperti itu mendarat di menu yang
+        // langsung menolaknya (temuan UAT universitas U1, 28 Sep 2026).
+        'roles' => ['admin_bidang'], 'scope' => 'bidang_kode',
     ],
     // CATATAN: slot magang TIDAK punya entri sendiri di sini. Ia satu domain
     // dengan pendaftaran di atas - yang satu menetapkan tempatnya, yang lain

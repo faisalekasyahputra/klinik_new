@@ -159,30 +159,27 @@ Prefix menandai domainnya - tabel baru wajib mengikuti pola ini.
 
 | Tabel | Fungsi |
 |-------|--------|
-| `usr_users` | Data pengguna (auth, profil, scope wilayah/bidang) |
-| `usr_documents` | Dokumen user |
-| `sf_programs` | Program perumahan |
+| `usr_akun` | Data pengguna (auth, profil, scope wilayah/bidang) |
+| `usr_dokumen` | Dokumen user |
+| `sf_program` | Program perumahan |
 | `sf_program_kategori` | Kategori program |
-| `sf_housing_queue` | Antrean kelayakan + tiket `PKP-XXXXXX` |
+| `sf_antrean_pengajuan` | Antrean kelayakan + tiket `PKP-XXXXXX` |
 | `forum_diskusi` | Thread forum |
-| `forum_komentar` | Komentar forum (nested lewat `reply_to`) |
-| `forum_likes` | Like pada thread & komentar |
-| `srp2_registrations` | Pendaftaran sertifikasi pengembang |
-| `srp2_documents` | 14 dokumen persyaratan SRP2 |
-| `srp2_certified_developers` | Direktori publik pengembang bersertifikat |
+| `forum_komentar` | Komentar forum (nested lewat `balasan_untuk_id`) |
+| `forum_suka` | Like pada thread & komentar |
+| `srp2_pengajuan` | Pendaftaran sertifikasi pengembang |
+| `srp2_dokumen` | 14 dokumen persyaratan SRP2 |
+| `srp2_direktori_pengembang` | Direktori publik pengembang bersertifikat |
 | `aduan` | Pengaduan masyarakat (per bidang) |
 | `kkn_magang_pendaftaran` | Pendaftaran KKN & Magang |
 | `kabupaten` | 35 kabupaten/kota Jateng (kode Kemendagri) |
 | `bidang` | 5 bidang penanganan aduan |
-| `sys_menu` | Menu navigasi |
-| `sys_multi` | Data perumahan |
-| `sys_settings` | Konfigurasi sistem |
+| `sys_pengaturan` | Konfigurasi sistem |
 | `sys_ticket_lookup_limits` | Rate limit lookup tiket publik |
-| `chat_rooms`, `chat_messages` | ⚠️ **ADA tapi menganggur** - lihat catatan di bawah |
-| `data_sosmed_perumahan` | Sosmed pengembang |
+| `chat_ruang`, `chat_pesan` | ⚠️ **ADA tapi menganggur** - lihat catatan di bawah |
 | `migrations` | Versi migrasi yang sudah dijalankan |
 
-> ⚠️ **Jebakan:** `chat_rooms`/`chat_messages` ada di DB tapi tidak dipakai kode manapun. Fitur chat yang berjalan menulis ke `tb_chat` - tabel yang **tidak ada di skema maupun migrasi**, sehingga chat gagal di instalasi bersih. Lihat `AGENTS.md` §18.
+> ⚠️ **Jebakan:** `chat_ruang`/`chat_pesan` ada di DB tapi tidak dipakai kode manapun. Fitur chat yang berjalan menulis ke `tb_chat` - tabel yang **tidak ada di skema maupun migrasi**, sehingga chat gagal di instalasi bersih. Lihat `AGENTS.md` §18.
 
 > Ada juga tabel legacy tanpa prefix (`kondisi`, `bendung`, `irigasi`, `saluran_pembuang`) yang dipakai dinamis oleh `Buka_peta.php` - model itu sendiri sudah tidak dipanggil dari manapun.
 

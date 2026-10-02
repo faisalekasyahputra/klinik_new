@@ -12,11 +12,18 @@ class Admin_Bidang extends Admin_Bidang_Controller {
         $table = $this->table_state(['created_at', 'nama', 'judul', 'status'], 'created_at');
         $data['base_url'] = 'Admin_Bidang';
 
+        // ?status= dipakai tautan push triase (Admin_Bidang?status=Baru).
+        // Allowlist: nilai di luar daftar diabaikan, bukan diteruskan ke query.
+        $data['status_sah'] = ['Baru', 'Diproses', 'Selesai'];
+        $status_filter = $this->input->get('status', TRUE);
+        $data['status_filter'] = in_array($status_filter, $data['status_sah'], TRUE) ? $status_filter : NULL;
+
         // Scope bidang tetap wajib ikut di query hitung MAUPUN query ambil -
         // pencarian tidak boleh jadi celah keluar dari scope.
         // from() di depan, lalu count_all_results('', FALSE) - kalau tabelnya
         // disebut di kedua tempat, FROM tertulis dua kali dan query gagal.
-        $this->db->from('aduan')->where('bidang', $this->my_bidang_kode);
+        $this->db->from('aduan')->where('bidang_kode', $this->my_bidang_kode);
+        if ($data['status_filter']) { $this->db->where('status', $data['status_filter']); }
         if ($table['q'] !== '') {
             $this->db->group_start()
                 ->like('nama', $table['q'])->or_like('email', $table['q'])
@@ -46,7 +53,7 @@ class Admin_Bidang extends Admin_Bidang_Controller {
         if ( ! is_numeric($id)) { show_404(); }
 
         $row = $this->db->select('lampiran')
-            ->where('id', (int) $id)->where('bidang', $this->my_bidang_kode)
+            ->where('id', (int) $id)->where('bidang_kode', $this->my_bidang_kode)
             ->get('aduan')->row();
         if ( ! $row || empty($row->lampiran)) { show_404(); }
 
@@ -73,7 +80,7 @@ class Admin_Bidang extends Admin_Bidang_Controller {
         // tersimpan (resubmit tanpa perubahan) - dulu itu salah dilaporkan
         // sebagai "bukan bidang Anda". Lihat AUDIT_ROLE_ADMIN_SCOPED.md #6.
         $milik_bidang = $this->db->where('id', (int) $id)
-            ->where('bidang', $this->my_bidang_kode)
+            ->where('bidang_kode', $this->my_bidang_kode)
             ->count_all_results('aduan');
 
         if ($milik_bidang === 0) {
@@ -82,14 +89,26 @@ class Admin_Bidang extends Admin_Bidang_Controller {
             return;
         }
 
-        $this->db->where('id', (int) $id)
-            ->where('bidang', $this->my_bidang_kode)
+        $lama = $this->db->select('status, user_id')->where('id', (int) $id)->get('aduan')->row();
+        $status_lama = $lama->status;
+        $ok = $this->db->where('id', (int) $id)
+            ->where('bidang_kode', $this->my_bidang_kode)
             ->update('aduan', [
                 'status'        => $status,
                 'catatan_admin' => trim((string) $this->input->post('catatan_admin', TRUE)),
                 'reviewed_by'   => $this->get_user_id(),
                 'reviewed_at'   => date('Y-m-d H:i:s'),
             ]);
+        $this->catat_audit('aduan_status_bidang',
+            'Status aduan #' . (int) $id . ': ' . $status_lama . ' -> ' . $status,
+            'aduan', (int) $id, ['dari' => $status_lama, 'ke' => $status, 'bidang' => $this->my_bidang_kode]);
+
+        // Pelapor yang login diberi tahu bila statusnya benar-benar berubah. Payload generik;
+        // statusnya sendiri dibaca di halaman akun (Status Pengajuan).
+        if ($ok && $status !== $status_lama && ! empty($lama->user_id)) {
+            $this->notify_admin_push([['user_id' => (int) $lama->user_id]], 'Status aduan diperbarui',
+                'Ada pembaruan status untuk aduan Anda.', 'akun', 'aduan-status-' . (int) $id);
+        }
 
         $this->session->set_flashdata('success', 'Status aduan diperbarui.');
         redirect('Admin_Bidang');

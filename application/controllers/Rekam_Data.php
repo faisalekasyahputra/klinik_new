@@ -22,6 +22,10 @@ class Rekam_Data extends MY_Controller {
 
     public function index()
     {
+        if ($this->has_role('warga') || $this->has_role('pengembang')) {
+            $this->render_login_berpesan('error', 'Rekam Data memerlukan akun petugas. Silakan masuk dengan akun yang sesuai.');
+            return;
+        }
         if ( ! $this->is_logged_in()) {
             $this->session->set_flashdata('error', 'Silakan masuk terlebih dahulu untuk membuka Rekam Data.');
             $this->gerbang_login('Rekam_Data');

@@ -12,16 +12,338 @@ class MY_Controller extends CI_Controller {
     public function __construct() {
         parent::__construct();
 
+        // NOW()/CURRENT_TIMESTAMP MySQL harus sama dengan date() PHP (Asia/Jakarta, lihat index.php).
+        // Offset tetap, bukan nama zona: tabel zona waktu MySQL tidak selalu terisi di hosting.
+        // ponytail: WIB tanpa DST jadi +07:00 aman; ganti ke nama zona bila suatu saat pindah ke zona ber-DST.
+        // NAMES: collation koneksi eksplisit dari config/database.php (char_set, dbcollat); tanpa
+        // ini literal string dibandingkan dengan uca1400_ai_ci di 11.8 dan general_ci di 10.4.
+        $this->db->query("SET time_zone = '+07:00', NAMES ".$this->db->char_set.' COLLATE '.$this->db->dbcollat);
+
         // Load essential helpers
         $this->load->helper(['url', 'form', 'security']);
         $this->load->library('session');
+        $this->enforce_positive_input_validation();
 
         // Set OWASP security headers on every response
         $this->set_security_headers();
 
+        // Kontrol anti-otomatisasi GLOBAL (poin 10.4): dilewati SEMUA controller, paling awal
+        // supaya permintaan yang ditolak tidak sempat menyentuh sesi/DB lebih jauh.
+        $this->enforce_anti_automation();
+
+        // Kebijakan metode HTTP dan kebersihan URI (poin 12.2 dan 12.4).
+        $this->enforce_http_policy();
+
+        // Validasi skema per-endpoint untuk API dan layanan web (poin 12.5).
+        $this->enforce_api_schema();
+
+        // Penyapu retensi harian, dijalankan SESUDAH respons terkirim (poin 7.3).
+        $this->jadwalkan_retensi();
+
         $this->usir_kalau_nonaktif();
+        $this->enforce_single_session_and_password_expiry();
     }
 
+    /**
+     * Kontrol anti-otomatisasi global (form keamanan poin 10.4, docs/engineering/ANTI_OTOMATISASI.md).
+     *   1. User-Agent alat serangan/pemindai yang dikenal: 403 + peringatan ke admin.
+     *   2. Batas laju global/tulis/kelas rute/unggahan (libraries/Anti_automation.php): 429 +
+     *      Retry-After + X-Security-Warning, dan peringatan ke admin pada pelampauan pertama.
+     * Loopback dan IP di ANTI_OTOMATISASI_IP_DIIZINKAN dikecualikan. FAIL-OPEN bila penyimpanan
+     * pembatas laju gagal (jalur ini dilalui SETIAP halaman).
+     */
+    private function enforce_anti_automation()
+    {
+        if ($this->input->is_cli_request()) { return; }
+        try {
+            $ip = (string) $this->input->ip_address();
+            if (anti_automation_ip_allowed($ip)) { return; }
+
+            if (anti_automation_is_scanner($this->input->user_agent())) {
+                $this->load->library('Security_alert');
+                $this->security_alert->raise('pemindai_ua', 'sedang',
+                    'Alat pemindai/serangan dikenali dari User-Agent dan permintaannya ditolak (403)',
+                    ['route' => strtolower((string) $this->router->fetch_class()) . '/' . strtolower((string) $this->router->fetch_method())],
+                    'ua');
+                $this->output->set_status_header(403)->set_content_type('text/plain', 'utf-8')->set_output('Akses ditolak.');
+                $this->output->_display(); exit;
+            }
+
+            $this->load->library('Anti_automation');
+            $verdict = $this->anti_automation->guard([
+                'account_id'  => $this->session->userdata('is_logged') ? (int) $this->session->userdata('user_id') : 0,
+                'controller'  => $this->router->fetch_class(),
+                'method'      => $this->router->fetch_method(),
+                'http_method' => $this->input->method(TRUE),
+                // Hanya permintaan yang SUNGGUH membawa berkas (kolom berkas kosong = UPLOAD_ERR_NO_FILE tidak dihitung).
+                'has_files'   => (bool) array_filter((array) $_FILES, static function ($f) {
+                    return is_array($f) && (is_array($f['error'] ?? NULL) || (int) ($f['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE);
+                }),
+            ]);
+            if ( ! empty($verdict['blocked'])) {
+                $this->rate_limit_reject($verdict['result'],
+                    'Terlalu banyak permintaan dalam waktu singkat. Silakan tunggu sebentar lalu coba lagi.',
+                    $this->input->is_ajax_request()
+                        || anti_automation_route_is_json($this->router->fetch_class(), $this->router->fetch_method()));
+                $this->output->_display(); exit;
+            }
+        } catch (Throwable $e) {
+            // Pengamat tidak boleh menjadi titik gagal: catat, lanjutkan.
+            log_message('error', 'enforce_anti_automation gagal (fail-open): ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Penyapu retensi (poin 7.3, libraries/Penyapu_retensi.php): sekali per interval (bawaan 24 jam), dipicu oleh
+     * permintaan web pertama yang mendapati penanda basi, dijalankan SESUDAH respons terkirim ke klien
+     * dan dijaga flock supaya hanya satu proses yang menyapu. Murah pada jalur biasa: satu stat() berkas.
+     * Gagal diam-diam (dicatat): penyapu tidak boleh menggagalkan permintaan yang sedang dilayani.
+     */
+    private function jadwalkan_retensi()
+    {
+        static $terdaftar = FALSE;
+        if ($terdaftar || $this->input->is_cli_request()) { return; }
+        try {
+            $this->config->load('data_lifecycle', TRUE);
+            $interval = (int) ($this->config->item('data_lifecycle', 'data_lifecycle')['retensi']['interval_detik'] ?? 86400);
+            $marker = APPPATH . 'cache' . DIRECTORY_SEPARATOR . 'retensi_terakhir';
+            if ( ! is_dir(dirname($marker)) || (is_file($marker) && (int) @filemtime($marker) > time() - $interval)) { return; }
+            $terdaftar = TRUE;
+            $ci = $this;
+            register_shutdown_function(function () use ($ci, $marker, $interval) {
+                if (function_exists('fastcgi_finish_request')) { @fastcgi_finish_request(); }
+                elseif (function_exists('litespeed_finish_request')) { @litespeed_finish_request(); }
+                $fh = @fopen($marker, 'c');
+                if ( ! $fh) { return; }
+                try {
+                    if ( ! flock($fh, LOCK_EX | LOCK_NB)) { return; }
+                    clearstatcache(true, $marker);
+                    if (filesize($marker) > 0 && (int) filemtime($marker) > time() - $interval) { return; }   // proses lain baru saja menyapu
+                    ftruncate($fh, 0); fwrite($fh, date('c')); fflush($fh);   // tandai dulu: galat di tengah jalan tidak memicu ulang tiap permintaan
+                    $ci->load->library('Penyapu_retensi');
+                    $hasil = $ci->penyapu_retensi->jalankan(FALSE);
+                    $ci->penyapu_retensi->catat($hasil, 'sistem');
+                } catch (Throwable $e) {
+                    log_message('error', 'Penyapu retensi gagal: ' . $e->getMessage());
+                } finally {
+                    @flock($fh, LOCK_UN); @fclose($fh);
+                }
+            });
+        } catch (Throwable $e) {
+            log_message('error', 'jadwalkan_retensi gagal: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Catat akses STAF ke informasi pribadi (poin 7.3): berkas privat yang dibuka dan data terdekripsi yang
+     * ditampilkan. Pemilik yang melihat datanya sendiri tidak dicatat. Ditekan per pelaku+objek (bawaan 10
+     * menit) supaya menyegarkan halaman tidak membanjiri jejak audit. Gagal diam-diam (dicatat).
+     */
+    protected function catat_akses_data_pribadi($jenis, $objek_tipe, $objek_id, array $detail = [])
+    {
+        try {
+            $this->config->load('data_lifecycle', TRUE);
+            $cfg = $this->config->item('data_lifecycle', 'data_lifecycle')['audit'];
+            $peran = (string) $this->session->userdata('role');
+            if ( ! in_array($peran, $cfg['peran_staf'], TRUE)) { return FALSE; }
+            $this->load->library('Rate_limiter');
+            $kunci = hash('sha256', (int) $this->get_user_id() . '|' . $jenis . '|' . $objek_tipe . '|' . $objek_id);
+            $r = $this->rate_limiter->hit_fast('audit_akses_dedupe', ['key' => $kunci]);
+            if ( ! empty($r['success']) && (int) ($r['count'] ?? 1) > 1) { return FALSE; }
+            return $this->catat_audit('akses_' . $jenis, 'Staf mengakses informasi pribadi: ' . $jenis . ' (' . $objek_tipe . ' #' . $objek_id . ')',
+                (string) $objek_tipe, (string) $objek_id, $detail);
+        } catch (Throwable $e) {
+            log_message('error', 'catat_akses_data_pribadi gagal: ' . $e->getMessage());
+            return FALSE;
+        }
+    }
+
+    /**
+     * Kebijakan metode HTTP dan kebersihan URI (form keamanan poin 12.2 dan 12.4,
+     * docs/engineering/URI_DAN_METODE_HTTP.md): hanya GET/HEAD/POST, penerowongan metode ditolak,
+     * endpoint yang mengubah keadaan hanya POST, OPTIONS dijawab dengan Allow milik rute itu, dan
+     * data pribadi/rahasia tidak boleh berada di query string maupun jalur URI. Dijalankan SESUDAH
+     * rute teresolusi (controller dan metodenya ada), jadi header Allow tidak pernah bocor untuk
+     * alamat asal-asalan. FAIL-CLOSED: galat pada pemeriksa menolak permintaan.
+     */
+    private function enforce_http_policy()
+    {
+        if ($this->input->is_cli_request()) { return; }
+        $kelas = $this->router->fetch_class(); $metode = $this->router->fetch_method();
+        try {
+            $this->load->library('Http_policy');
+            $hasil = $this->http_policy->check([
+                'route'    => strtolower($kelas . '/' . $metode),
+                'method'   => $this->input->method(TRUE),
+                'server'   => $_SERVER,
+                'get'      => $_GET,
+                'post'     => $_POST,
+                'segments' => array_slice((array) $this->uri->rsegments, 2),
+            ]);
+        } catch (Throwable $e) {
+            log_message('error', 'enforce_http_policy gagal: ' . $e->getMessage());
+            $this->output->set_status_header(500)->set_content_type('text/plain', 'utf-8')->set_output('Layanan sementara belum dapat memproses permintaan.');
+            $this->output->_display(); exit;
+        }
+        if ( ! empty($hasil['ok'])) { return; }
+
+        $this->output->set_header('Allow: ' . implode(', ', $hasil['allow']))->set_header('Cache-Control: no-store');
+        if ($hasil['code'] === 'options') {
+            $this->output->set_status_header(204);
+            $this->output->_display(); exit;
+        }
+
+        $rute = strtolower($kelas . '/' . $metode);
+        log_message('error', 'SECURITY_WARNING http_policy_rejected route=' . $rute . ' code=' . $hasil['code'] . ' method=' . $this->input->method(TRUE));
+        if ( ! empty($hasil['structural'])) {
+            try {
+                $this->load->library('Security_alert');
+                $this->security_alert->raise('kebijakan_http', 'rendah',
+                    "Permintaan ke '{$rute}' ditolak kebijakan HTTP ({$hasil['code']})",
+                    ['route' => $rute, 'kode' => $hasil['code'], 'metode' => substr((string) $this->input->method(TRUE), 0, 12)],
+                    'http:' . $hasil['code']);
+            } catch (Throwable $e) { /* pengamat tidak boleh menggagalkan penolakan */ }
+        }
+        $this->output->set_status_header((int) $hasil['status']);
+        if ($this->input->is_ajax_request() || anti_automation_route_is_json($kelas, $metode)) {
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status' => 'error', 'code' => $hasil['code'], 'message' => $hasil['message'],
+            ], JSON_UNESCAPED_UNICODE));
+            $this->output->_display(); exit;
+        }
+        show_error($hasil['message'], (int) $hasil['status'], 'Permintaan Tidak Valid');
+        exit;
+    }
+
+    /**
+     * Validasi skema per-endpoint (form keamanan poin 12.5, docs/engineering/KEAMANAN_API.md):
+     * metode, XHR, Content-Type, field wajib/tipe/rentang/enum, field tak dikenal, objek JSON
+     * bersarang, segmen URI, dan kolom berkas diperiksa SEBELUM metode controller berjalan.
+     * Endpoint yang belum terdaftar di config/api_schemas.php tidak terpengaruh (tetap lewat
+     * Input_guard). Pelanggaran STRUKTURAL (field asing, larik di tempat skalar, metode/Content-Type
+     * salah) dicatat sebagai peringatan keamanan; salah isi biasa (mis. NIK kurang digit) tidak.
+     * FAIL-CLOSED: galat pada validator menolak permintaan endpoint terdaftar.
+     */
+    private function enforce_api_schema()
+    {
+        if ($this->input->is_cli_request()) { return; }
+        $kelas = $this->router->fetch_class(); $metode = $this->router->fetch_method();
+        $this->load->library('Api_schema');
+        $skema = $this->api_schema->find($kelas, $metode);
+        if ($skema === NULL) { return; }
+
+        try {
+            $ctype = strtolower(trim(explode(';', (string) $this->input->server('CONTENT_TYPE'))[0]));
+            $json = NULL;
+            if ($ctype === 'application/json') {
+                $raw = (string) $this->input->raw_input_stream;
+                $json = $raw === '' ? NULL : json_decode($raw, TRUE, 12);
+            }
+            $hasil = $this->api_schema->validate($skema, [
+                'method'       => $this->input->method(TRUE),
+                'get'          => $_GET,
+                'post'         => $_POST,
+                'files'        => array_keys((array) $_FILES),
+                'segments'     => array_slice((array) $this->uri->rsegments, 2),
+                'ajax'         => $this->input->is_ajax_request(),
+                'content_type' => $ctype,
+                'json'         => $json,
+            ]);
+        } catch (Throwable $e) {
+            log_message('error', 'enforce_api_schema gagal: ' . $e->getMessage());
+            $hasil = ['ok' => FALSE, 'status' => 500, 'code' => 'schema_error', 'errors' => [], 'structural' => FALSE];
+        }
+        if ( ! empty($hasil['ok'])) { return; }
+
+        $rute = strtolower($kelas . '/' . $metode);
+        log_message('error', 'SECURITY_WARNING api_schema_rejected route=' . $rute . ' code=' . $hasil['code']
+            . ' fields=' . implode(',', array_slice(array_keys((array) $hasil['errors']), 0, 8)));
+        if ( ! empty($hasil['structural'])) {
+            try {
+                $this->load->library('Security_alert');
+                $this->security_alert->raise('skema_tidak_valid', 'rendah',
+                    "Kiriman ke '{$rute}' ditolak skema ({$hasil['code']}) pada struktur permintaan",
+                    ['route' => $rute, 'kode' => $hasil['code'], 'field' => array_slice(array_keys((array) $hasil['errors']), 0, 8)],
+                    'schema:' . $rute);
+            } catch (Throwable $e) { /* pengamat tidak boleh menggagalkan penolakan */ }
+        }
+
+        // Formulir peramban dengan tujuan pengalihan sendiri: pesan ramah, bukan halaman galat.
+        if (empty($skema['json']) && ! $this->input->is_ajax_request() && ! empty($skema['invalid']['redirect'])) {
+            $this->session->set_flashdata('error', (string) ($skema['invalid']['flash'] ?? 'Isian tidak valid.'));
+            redirect($skema['invalid']['redirect']);
+            exit;
+        }
+
+        $this->output->set_status_header((int) $hasil['status'])->set_header('Cache-Control: no-store');
+        if ( ! empty($hasil['allow'])) { $this->output->set_header('Allow: ' . implode(', ', $hasil['allow'])); }
+        if ( ! empty($skema['json']) || $this->input->is_ajax_request()) {
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status'  => 'error',
+                'code'    => $hasil['code'],
+                'message' => 'Permintaan tidak sesuai skema endpoint.',
+                'errors'  => $hasil['errors'],
+            ], JSON_UNESCAPED_UNICODE));
+            $this->output->_display(); exit;
+        }
+        show_error('Permintaan tidak sesuai skema endpoint.', (int) $hasil['status'], 'Permintaan Tidak Valid');
+        exit;
+    }
+
+    /** Batalkan sesi lama dan paksa penggantian kata sandi yang berusia 90 hari. */
+    private function enforce_single_session_and_password_expiry() {
+        if ( ! $this->session->userdata('is_logged')) { return; }
+        $id = (int) $this->session->userdata('user_id');
+        $token = (string) $this->session->userdata('session_auth_token');
+        $session_id = (string) $this->session->session_id;
+        $row = $this->db->select('sesi_aktif_hash,sesi_aktif_id_hash,sandi_diganti_at,sandi_kedaluwarsa_at')
+            ->get_where('usr_akun', ['id' => $id])->row();
+        $token_valid = $row && ! empty($token) && ! empty($row->sesi_aktif_hash)
+            && hash_equals((string) $row->sesi_aktif_hash, hash('sha256', $token));
+        $session_id_valid = $row && ! empty($session_id) && ! empty($row->sesi_aktif_id_hash)
+            && hash_equals((string) $row->sesi_aktif_id_hash, hash('sha256', $session_id));
+        // CodeIgniter mengganti ID sesi tiap sess_time_to_update (300 detik) dan MEMBAWA isi
+        // sesi, termasuk token. Token yang masih cocok membuktikan ini sesi yang sama, jadi
+        // hash ID diperbarui alih-alih mengeluarkan pengguna (dulu semua peran terlempar
+        // sekitar 5 menit sekali, 27 Sep 2026). Login di perangkat lain tetap ditendang
+        // karena tokennya berbeda.
+        if ($token_valid && ! $session_id_valid && ! empty($session_id)) {
+            $this->db->where('id', $id)->update('usr_akun', ['sesi_aktif_id_hash' => hash('sha256', $session_id)]);
+            $session_id_valid = TRUE;
+        }
+        if ( ! $token_valid || ! $session_id_valid) {
+            $this->session->unset_userdata([
+                'is_logged', 'user_id', 'role', 'name', 'username', 'email', 'avatar',
+                'kabupaten_id', 'bidang_kode', 'session_auth_token', 'password_change_required',
+            ]);
+            $this->session->sess_regenerate(TRUE);
+            // "Perangkat lain" hanya benar kalau token sesi ini digantikan.
+            // ID sesi yang tidak cocok juga tidak membuktikan login ganda.
+            $message = ($row && ! $token_valid && ! empty($token) && ! empty($row->sesi_aktif_hash))
+                ? 'Sesi ini berakhir karena akun digunakan untuk masuk pada perangkat lain.'
+                : 'Sesi Anda telah berakhir. Silakan masuk kembali.';
+            if ($this->input->is_ajax_request()) {
+                $this->output->set_status_header(401); header('Content-Type: application/json');
+                echo json_encode(['status' => 'error', 'code' => 'sesi_digantikan', 'message' => $message]); exit;
+            }
+            $this->session->set_flashdata('error', $message);
+            redirect('Auth/login'); exit;
+        }
+
+        $expired = ! empty($row->sandi_kedaluwarsa_at) && strtotime($row->sandi_kedaluwarsa_at) <= time();
+        if ( ! $expired) { return; }
+        $this->session->set_userdata('password_change_required', TRUE);
+        $controller = strtolower((string) $this->router->fetch_class());
+        if (in_array($controller, ['auth', 'pengaturan'], TRUE)) { return; }
+        $this->load->model('Auth_model');
+        $pesan = $this->Auth_model->pesan_ganti_sandi($row);
+        if ($this->input->is_ajax_request()) {
+            $this->output->set_status_header(403); header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'code' => 'password_kedaluwarsa', 'message' => $pesan]); exit;
+        }
+        $this->session->set_flashdata('error', $pesan);
+        redirect('akun/profil?password_expired=1'); exit;
+    }
     /**
      * Putuskan sesi yang akunnya sudah dinonaktifkan - diperiksa TIAP PERMINTAAN.
      *
@@ -50,7 +372,7 @@ class MY_Controller extends CI_Controller {
         $id = (int) $this->session->userdata('user_id');
         if ($id < 1) { return; }
 
-        $row = $this->db->select('status')->get_where('usr_users', ['id' => $id])->row();
+        $row = $this->db->select('status')->get_where('usr_akun', ['id' => $id])->row();
 
         // Baris yang HILANG juga mengakhiri sesi: akun yang dihapus tidak boleh
         // terus berjalan hanya karena cookie-nya masih ada.
@@ -102,24 +424,9 @@ class MY_Controller extends CI_Controller {
      * Inject essential security headers on every response
      */
     private function set_security_headers() {
-        // Anti-clickjacking
-        header('X-Frame-Options: DENY');
-        header('X-Content-Type-Options: nosniff');
-        header('X-XSS-Protection: 1; mode=block');
-
-        // Referrer Policy
-        header("Referrer-Policy: strict-origin-when-cross-origin");
-
-        // HSTS - enforce HTTPS for 1 year (only effective over HTTPS)
-        if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
-            header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
-        }
-
-        // Permissions Policy - restrict browser APIs
-        header("Permissions-Policy: camera=(), microphone=(), geolocation=(self), payment=(), usb=()");
-
-        // Block cross-domain content policies (Flash/PDF)
-        header('X-Permitted-Cross-Domain-Policies: none');
+        // Satu-satunya sumber daftar header keamanan: helpers/content_security_helper.php. Fungsi yang sama
+        // dipakai MY_Exceptions untuk halaman galat/404 dari router, yang tidak pernah melewati controller.
+        kirim_header_keamanan();
     }
 
     /**
@@ -164,11 +471,11 @@ class MY_Controller extends CI_Controller {
      */
     protected function catat_audit($aksi, $ringkasan, $objek_tipe = NULL, $objek_id = NULL, array $detail = []) {
         try {
-            if ( ! $this->db->table_exists('sys_jejak_audit')) { return; }
-            $this->db->insert('sys_jejak_audit', [
-                'actor_id'    => $this->get_user_id() ?: NULL,
-                'actor_email' => $this->session->userdata('email') ?: NULL,
-                'actor_role'  => $this->session->userdata('role') ?: NULL,
+            if ( ! $this->db->table_exists('sys_jejak_audit')) { return FALSE; }
+            $saved = $this->db->insert('sys_jejak_audit', [
+                'pelaku_id'    => $this->get_user_id() ?: NULL,
+                'pelaku_email' => $this->session->userdata('email') ?: NULL,
+                'pelaku_peran'  => $this->session->userdata('role') ?: NULL,
                 'aksi'        => substr((string) $aksi, 0, 40),
                 'objek_tipe'  => $objek_tipe !== NULL ? substr((string) $objek_tipe, 0, 40) : NULL,
                 'objek_id'    => $objek_id !== NULL ? substr((string) $objek_id, 0, 60) : NULL,
@@ -177,8 +484,10 @@ class MY_Controller extends CI_Controller {
                 'ip'          => $this->input->ip_address(),
                 'created_at'  => date('Y-m-d H:i:s'),
             ]);
-        } catch (Exception $e) {
+            return (bool) $saved;
+        } catch (Throwable $e) {
             log_message('error', 'Gagal menulis jejak audit (' . $aksi . '): ' . $e->getMessage());
+            return FALSE;
         }
     }
 
@@ -290,6 +599,9 @@ class MY_Controller extends CI_Controller {
             return FALSE;
         }
 
+        // 11.4: isi berkas dipindai SEBELUM menyentuh penyimpanan.
+        if ( ! $this->scan_uploaded_file($file['tmp_name'], $ext, $error, $domain)) { return FALSE; }
+
         $this->ensure_private_uploads_protected();
         $dir = $this->private_upload_dir($domain, $owner_id);
         if ( ! is_dir($dir) && ! mkdir($dir, 0700, TRUE)) {
@@ -298,11 +610,83 @@ class MY_Controller extends CI_Controller {
         }
 
         $nama_simpan = bin2hex(random_bytes(16)) . '.' . $ext;
+        // 11.1: kuota jumlah berkas dan total ukuran per pengguna, dipesan sebelum berkas dipindah.
+        if ( ! $this->reserve_upload_quota($domain, $owner_id, $nama_simpan, (int) $file['size'], $error)) { return FALSE; }
         if ( ! move_uploaded_file($file['tmp_name'], $dir . $nama_simpan)) {
+            $this->release_upload_quota($domain, $owner_id, $nama_simpan);
             $error = 'Berkas gagal disimpan.';
             return FALSE;
         }
         return $nama_simpan;
+    }
+
+    /**
+     * Pindai isi satu berkas unggahan (form keamanan poin 11.4). Dipakai SEMUA titik unggah,
+     * termasuk yang tidak menyimpan berkasnya (impor Excel) atau menyimpannya di webroot
+     * (gambar katalog dan beranda). Berkas yang ditolak dicatat sebagai peringatan keamanan
+     * (jejak audit + banner admin) beserta SHA-256-nya, tanpa isi berkas.
+     * Gagal-tertutup: galat pada pemindai = berkas ditolak.
+     */
+    protected function scan_uploaded_file($tmp_name, $ext, &$error = NULL, $domain = 'unggahan') {
+        try {
+            $this->load->library('Upload_scanner');
+            $hasil = $this->upload_scanner->scan($tmp_name, $ext);
+        } catch (Throwable $e) {
+            log_message('error', 'scan_uploaded_file: pemindai gagal dimuat: ' . $e->getMessage());
+            $error = Upload_scanner::PESAN['pemindai_tak_tersedia'];
+            return FALSE;
+        }
+        if ( ! empty($hasil['ok'])) { return TRUE; }
+
+        $error = $hasil['message'];
+        try {
+            $this->load->library('Security_alert');
+            $this->security_alert->raise(
+                'berkas_berbahaya', in_array($hasil['code'], ['antivirus', 'kode_php', 'kode_dinamis', 'eicar'], TRUE) ? 'tinggi' : 'sedang',
+                "Unggahan ditolak pemindai berkas ({$hasil['code']}) pada domain '{$domain}'",
+                ['domain' => (string) $domain, 'kode' => $hasil['code'], 'ekstensi' => (string) $ext,
+                 'sha256' => $hasil['sha256'] ?? NULL, 'ukuran' => $hasil['size'] ?? NULL, 'rincian' => substr((string) ($hasil['detail'] ?? ''), 0, 160)],
+                'upl:' . $hasil['code']
+            );
+        } catch (Throwable $e) {
+            log_message('error', 'scan_uploaded_file: peringatan gagal dikirim: ' . $e->getMessage());
+        }
+        return FALSE;
+    }
+
+    /** Pengguna unggahan saat ini: akun bila login, IP bila tamu (aduan publik). */
+    private function upload_identity() {
+        $this->load->library('Upload_quota');
+        $login = (bool) $this->session->userdata('is_logged');
+        return $this->upload_quota->identify(
+            $login ? (int) $this->session->userdata('user_id') : 0,
+            $this->session->userdata('role'),
+            $this->input->ip_address()
+        );
+    }
+
+    /**
+     * Pesan jatah unggahan (form keamanan poin 11.1); FALSE + $error bila kuota pengguna terlampaui.
+     * Gagal-tertutup bila buku kuota tidak dapat ditulis.
+     */
+    protected function reserve_upload_quota($domain, $owner_id, $nama_simpan, $size, &$error = NULL) {
+        try {
+            $id = $this->upload_identity();
+            return $this->upload_quota->reserve($id['actor'], $id['limits'], $domain, $owner_id, $nama_simpan, $size, $error);
+        } catch (Throwable $e) {
+            log_message('error', 'reserve_upload_quota: ' . $e->getMessage());
+            $error = 'Gagal memeriksa kuota unggahan. Coba lagi.';
+            return FALSE;
+        }
+    }
+
+    protected function release_upload_quota($domain, $owner_id, $nama_simpan) {
+        try {
+            $id = $this->upload_identity();
+            $this->upload_quota->release($id['actor'], $domain, $owner_id, $nama_simpan);
+        } catch (Throwable $e) {
+            log_message('error', 'release_upload_quota: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -363,24 +747,36 @@ class MY_Controller extends CI_Controller {
      * basename() dipakai pada nama file supaya nilai dari DB yang (entah
      * bagaimana) memuat path tidak bisa membaca file di luar direktorinya.
      */
-    protected function serve_private_file($domain, $owner_id, $stored_name, $mime = 'application/octet-stream') {
-        $path = $this->private_upload_dir($domain, $owner_id) . basename((string) $stored_name);
-        if (empty($stored_name) || ! is_file($path)) {
+    protected function serve_private_file($domain, $owner_id, $nama_simpan, $mime = 'application/octet-stream') {
+        $path = $this->private_upload_dir($domain, $owner_id) . basename((string) $nama_simpan);
+        if (empty($nama_simpan) || ! is_file($path)) {
             // 404 ke klien tetap opaque (anti-IDOR), tapi penyebabnya WAJIB
             // tercatat - "mengapa 404" tidak boleh butuh bedah DB manual.
             log_message('error', sprintf(
                 'serve_private_file 404: domain=%s owner=%s stored=%s (%s)',
-                $domain, $owner_id, (string) $stored_name,
-                empty($stored_name) ? 'stored_name kosong' : 'berkas tidak ada di disk'
+                $domain, $owner_id, (string) $nama_simpan,
+                empty($nama_simpan) ? 'nama_simpan kosong' : 'berkas tidak ada di disk'
             ));
             show_404(); return;
         }
+
+        // Poin 7.3: setiap pembukaan berkas privat oleh STAF tercatat (jenis berkas, pemilik, pelaku, waktu).
+        $this->catat_akses_data_pribadi('berkas_privat', (string) $domain, (string) $owner_id);
 
         // header() langsung, BUKAN $this->output->set_content_type():
         // readfile() menulis body duluan sehingga antrean header CI terlambat -
         // PHP terlanjur mengirim text/html default, dan nosniff (dipasang di
         // constructor) melarang browser menebak, jadi gambar tampil sebagai teks.
-        header('Content-Type: ' . $mime);
+        // Poin 13.5: jenis konten ditentukan dari EKSTENSI yang kita tulis sendiri (nama acak + ekstensi daftar-izin
+        // saat unggah), bukan dari $mime kiriman pemanggil/DB; yang tidak dikenal dipaksa berupa unduhan biner.
+        $aman = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'];
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $inline = isset($aman[$ext]);
+        header('Content-Type: ' . ($inline ? $aman[$ext] : 'application/octet-stream'));
+        header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment') . '; filename="berkas' . ($inline ? '.' . $ext : '.bin') . '"');
+        header('Cache-Control: private, no-store, max-age=0');
+        header('Content-Length: ' . (int) filesize($path));
+        if ($inline && $ext !== 'pdf') { header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox"); }
         readfile($path);
     }
 
@@ -402,37 +798,49 @@ class MY_Controller extends CI_Controller {
      * @return array [queue, table, pager, filter_status, filter_tanpa_wilayah, can_filter_tanpa_wilayah]
      */
     protected function antrean_table_data($kabupaten_id = NULL) {
+        // Nama pemohon terenkripsi sejak migrasi 067: tidak bisa diurutkan maupun dicari di SQL.
         $kolom_sort = [
-            'sf_housing_queue.created_at', 'sf_housing_queue.nama_lengkap',
-            'sf_programs.nama_program', 'sf_housing_queue.status_antrean',
+            'sf_antrean_pengajuan.created_at', 'sf_program.nama_program', 'sf_antrean_pengajuan.status_antrean',
         ];
-        $table = $this->table_state($kolom_sort, 'sf_housing_queue.created_at');
+        $table = $this->table_state($kolom_sort, 'sf_antrean_pengajuan.created_at');
 
         $status = $this->input->get('status', TRUE);
         $status = in_array($status, ['pending', 'needs_revision', 'approved', 'rejected'], TRUE) ? $status : NULL;
         $tanpa_wilayah = $kabupaten_id === NULL && $this->input->get('tanpa_wilayah', TRUE) === '1';
 
-        $this->db->from('sf_housing_queue')
-            ->join('sf_programs', 'sf_housing_queue.program_id = sf_programs.id', 'left');
-        if ($kabupaten_id !== NULL) { $this->db->where('sf_housing_queue.kabupaten_id', $kabupaten_id); }
-        if ($status) { $this->db->where('sf_housing_queue.status_antrean', $status); }
-        if ($tanpa_wilayah) { $this->db->where('sf_housing_queue.kabupaten_id IS NULL', NULL, FALSE); }
+        $this->db->from('sf_antrean_pengajuan')
+            ->join('sf_program', 'sf_antrean_pengajuan.program_id = sf_program.id', 'left');
+        if ($kabupaten_id !== NULL) { $this->db->where('sf_antrean_pengajuan.kabupaten_id', $kabupaten_id); }
+        if ($status) { $this->db->where('sf_antrean_pengajuan.status_antrean', $status); }
+        if ($tanpa_wilayah) { $this->db->where('sf_antrean_pengajuan.kabupaten_id IS NULL', NULL, FALSE); }
         if ($table['q'] !== '') {
             $this->db->group_start()
-                ->like('sf_housing_queue.nama_lengkap', $table['q'])
-                ->or_like('sf_housing_queue.nik_pengaju', $table['q'])
-                ->or_like('sf_housing_queue.ticket_code', $table['q'])
-                ->or_like('sf_programs.nama_program', $table['q'])
-                ->group_end();
+                ->like('sf_antrean_pengajuan.kode_tiket', $table['q'])
+                ->or_like('sf_program.nama_program', $table['q']);
+            /* NIK dicari hanya utuh 16 digit, lewat sidiknya (migrasi 067): tiket lama menyimpannya
+               di antrean, tiket wizard di sf_profil_warga. Klausa ini di dalam group yang di-AND
+               dengan scope wilayah, jadi NIK wilayah lain tetap tidak muncul. Pencarian nama
+               DICABUT: nama terenkripsi, dan menyaringnya di PHP merusak hitungan halaman. */
+            if (preg_match('/^\d{16}$/', $table['q'])) {
+                $this->load->library('encryption_lib');
+                $sidik = $this->encryption_lib->deterministic_hash($table['q']);
+                $this->db->or_where('sf_antrean_pengajuan.nik_pengaju_lookup_hash', $sidik)
+                    ->or_where('sf_antrean_pengajuan.penilaian_id IN (SELECT a.id FROM sf_penilaian_perumahan a'
+                        . ' JOIN sf_profil_warga p ON p.id = a.profil_warga_id'
+                        . ' WHERE p.nik_lookup_hash = ' . $this->db->escape($sidik) . ')', NULL, FALSE);
+            }
+            $this->db->group_end();
         }
 
         // FALSE = pertahankan state query builder untuk query ambil di bawah.
         $table += $this->paginate_state($this->db->count_all_results('', FALSE));
 
-        $queue = $this->db->select('sf_housing_queue.*, sf_programs.nama_program')
+        $queue = $this->db->select('sf_antrean_pengajuan.*, sf_program.nama_program')
             ->order_by($table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
             ->get()->result();
+        // Dibuka hanya untuk satu halaman yang sudah ter-scope; penyamaran B2 tetap di view.
+        foreach ($queue as $row) { $this->buka_pii_antrean($row); }
 
         return [
             'queue' => $queue, 'table' => $table, 'pager' => $table,
@@ -441,68 +849,55 @@ class MY_Controller extends CI_Controller {
         ];
     }
 
-    protected function assessment_detail_data($queue_id, $kabupaten_id = NULL) {
+    /**
+     * Buka salinan terenkripsi tiket lama (migrasi 067) ke nama properti lamanya, supaya
+     * view tidak perlu tahu kolomnya terenkripsi. Ciphertext dan sidik dibuang dari baris.
+     * Gagal buka jadi NULL: view menampilkan "belum tersedia", bukan teks sandi.
+     */
+    protected function buka_pii_antrean($row) {
+        $this->load->library('encryption_lib');
+        foreach (['nik_pengaju', 'nama_lengkap', 'data_simperum_json', 'data_survey_json'] as $kolom) {
+            $c = $row->{$kolom . '_ciphertext'} ?? NULL;
+            $p = ($c !== NULL && $c !== '' && $this->encryption_lib->is_encrypted($c)) ? $this->encryption_lib->decrypt($c) : NULL;
+            $row->$kolom = $p === FALSE ? NULL : $p;
+            unset($row->{$kolom . '_ciphertext'});
+        }
+        unset($row->nik_pengaju_lookup_hash);
+        return $row;
+    }
+
+    protected function assessment_detail_data($antrean_id, $kabupaten_id = NULL) {
         $this->load->model('Housing_assessment_model');
         $this->load->library('encryption_lib');
         $this->load->library('Matriks_program_ruleset');
-        $detail = $this->Housing_assessment_model->get_scoped_queue_detail($queue_id, $kabupaten_id);
+        $detail = $this->Housing_assessment_model->get_scoped_queue_detail($antrean_id, $kabupaten_id);
         if ( ! $detail) { return NULL; }
+        // Poin 7.3: profil warga terdekripsi (identitas, alamat, koordinat) ditampilkan ke staf: dicatat.
+        $this->catat_akses_data_pribadi('penilaian_warga', 'sf_antrean_pengajuan', (string) (int) $antrean_id);
 
         $assessment = $detail['assessment'];
-        $source_row = $this->db->select('payload_ciphertext')
-            ->get_where('sf_rekaman_simperum', ['id' => (int) ($assessment['simperum_snapshot_id'] ?? 0)])
+        $source_row = $this->db->select('muatan_ciphertext')
+            ->get_where('sf_rekaman_simperum', ['id' => (int) ($assessment['rekaman_simperum_id'] ?? 0)])
             ->row_array();
         $source = $source_row
-            ? json_decode($this->encryption_lib->decrypt($source_row['payload_ciphertext']), TRUE) : [];
-        $selected_id = (int) ($detail['queue']['recommendation_id'] ?? 0);
+            ? kunci_tersimpan_ke_baru(json_decode($this->encryption_lib->decrypt($source_row['muatan_ciphertext']), TRUE)) : [];
+        $selected_id = (int) ($detail['queue']['rekomendasi_id'] ?? 0);
         $recommendations = $this->Housing_assessment_model->get_owned_recommendations(
             (int) ($assessment['id'] ?? 0),
             (int) ($detail['queue']['user_id'] ?? 0)
         );
         foreach ($recommendations as &$recommendation) {
-            $recommendation['is_selected'] = (int) $recommendation['recommendation_id'] === $selected_id;
+            $recommendation['is_selected'] = (int) $recommendation['rekomendasi_id'] === $selected_id;
         }
         unset($recommendation);
-        $provenance_value = $assessment['field_provenance_json']
-            ?? $detail['profile_snapshot']['field_provenance_json'] ?? [];
+        $provenance_value = $assessment['asal_isian_json']
+            ?? $detail['profile_snapshot']['asal_isian_json'] ?? [];
         $provenance = is_array($provenance_value)
             ? $provenance_value : (json_decode((string) $provenance_value, TRUE) ?: []);
+        $provenance = kunci_tersimpan_ke_baru($provenance);
 
-        /* Rekomendasi matriks xlsx (kolom J Sheet4) untuk ADMIN - permintaan
-           user 23 Agt 2026 ("ya kerjakan", menindaklanjuti pertanyaan
-           "apakah admin bisa mengelolanya?"). SAMA PERSIS logika yang
-           dipakai Warga::pendataan() (fungsi murni dari 7 field
-           matrix_*_code + umur, dihitung ulang di sini juga - bukan
-           disimpan ke DB, lihat catatan konsistensi di Warga.php), TAPI
-           BEDA satu hal yang disengaja: admin melihat hasil pencocokan
-           ASLI apa adanya, TIDAK ditimpa jadi 'Oemah Lestari'/'FLPP'
-           seperti di sisi warga. Penimpaan itu di sisi warga adalah
-           pengaman supaya warga tidak melihat nama program yang belum
-           terverifikasi SIMPERUM sebagai kepastian - admin adalah
-           peninjau tepercaya yang justru PERLU melihat hasil aslinya
-           untuk mengambil keputusan, dilengkapi status "data ada/tidak
-           ada di SIMPERUM" supaya tetap tahu tingkat kepercayaannya. */
-        $matriks_income_code = $assessment['matrix_income_code'] ?? NULL;
-        $matriks_birth_date = $detail['profile_snapshot']['birth_date'] ?? NULL;
-        $matriks_age_years = NULL;
-        if (trim((string) $matriks_birth_date) !== '') {
-            try {
-                $matriks_age_years = (new DateTime($matriks_birth_date))->diff(new DateTime('today'))->y;
-            } catch (Exception $e) {
-                $matriks_age_years = NULL;
-            }
-        }
-        $matriks_recommendation = $this->matriks_program_ruleset->match([
-            'income_code' => $matriks_income_code,
-            'welfare_decile' => $this->matriks_program_ruleset->decile_for_income($matriks_income_code),
-            'dtks_code' => $assessment['matrix_dtks_status'] ?? NULL,
-            'land_code' => $assessment['matrix_land_ownership_code'] ?? NULL,
-            'housing_code' => $assessment['matrix_current_housing_code'] ?? NULL,
-            'environment_code' => $assessment['matrix_environment_condition_code'] ?? NULL,
-            'occupation_code' => $assessment['matrix_occupation_finance_code'] ?? NULL,
-            'age_years' => $matriks_age_years,
-            'family_code' => $assessment['matrix_marital_family_code'] ?? NULL,
-        ]);
+        // Admin membaca snapshot yang sama dengan warga, bukan menghitung ulang.
+        $preliminary_matrix = json_decode($assessment['preliminary_matrix'] ?? 'null', TRUE);
 
         return [
             'queue' => $detail['queue'], 'assessment' => $assessment,
@@ -510,17 +905,15 @@ class MY_Controller extends CI_Controller {
             'source_snapshot' => is_array($source) ? $source : [],
             'provenance' => $provenance,
             'recommendations' => $recommendations,
-            'evidence' => $this->Housing_assessment_model->get_scoped_queue_files($queue_id, $kabupaten_id),
-            'matriks_decile_label' => $this->matriks_program_ruleset->decile_label_for_income($matriks_income_code),
-            'matriks_data_simperum' => ($assessment['source_mode'] ?? NULL) !== 'manual',
-            'matriks_recommendation' => $matriks_recommendation,
+            'evidence' => $this->Housing_assessment_model->get_scoped_queue_files($antrean_id, $kabupaten_id),
+            'preliminary_matrix' => $preliminary_matrix,
         ];
     }
 
-    protected function scoped_queue_file($queue_id, $file_kind, $kabupaten_id = NULL) {
+    protected function scoped_queue_file($antrean_id, $jenis_berkas, $kabupaten_id = NULL) {
         $this->load->model('Housing_assessment_model');
-        foreach ($this->Housing_assessment_model->get_scoped_queue_files($queue_id, $kabupaten_id) as $file) {
-            if (hash_equals((string) $file['file_kind'], (string) $file_kind)) { return $file; }
+        foreach ($this->Housing_assessment_model->get_scoped_queue_files($antrean_id, $kabupaten_id) as $file) {
+            if (hash_equals((string) $file['jenis_berkas'], (string) $jenis_berkas)) { return $file; }
         }
         return NULL;
     }
@@ -592,14 +985,14 @@ class MY_Controller extends CI_Controller {
      * @param string|null $role NULL = role sesi saat ini
      * @return string path CI, fallback 'akun'
      */
-    protected function module_privilege_allowed($module_key) {
+    protected function module_privilege_allowed($kunci_modul) {
         $role = $this->current_role();
         if ($role === 'admin' || ! in_array($role, ['admin_kabkota','admin_bidang'], TRUE)) { return TRUE; }
-        if ( ! $this->db->table_exists('usr_admin_module_privileges')) { return TRUE; }
+        if ( ! $this->db->table_exists('usr_hak_modul_admin')) { return TRUE; }
         $user_id = (int) $this->get_user_id();
-        if ($this->db->where('user_id',$user_id)->count_all_results('usr_admin_module_privileges') === 0) { return TRUE; }
-        $row = $this->db->get_where('usr_admin_module_privileges',['user_id'=>$user_id,'module_key'=>$module_key])->row();
-        return $row && (int)$row->allowed === 1;
+        if ($this->db->where('user_id',$user_id)->count_all_results('usr_hak_modul_admin') === 0) { return TRUE; }
+        $row = $this->db->get_where('usr_hak_modul_admin',['user_id'=>$user_id,'kunci_modul'=>$kunci_modul])->row();
+        return $row && (int)$row->diizinkan === 1;
     }
 
     protected function enforce_current_module_privilege() {
@@ -716,6 +1109,7 @@ class MY_Controller extends CI_Controller {
         foreach ($modules as $key => $m) {
             if ( ! $this->module_privilege_allowed($key)) { continue; }
             if (array_key_exists('enabled', $m) && $m['enabled'] === FALSE) { continue; }
+            if (array_key_exists('sidebar', $m) && $m['sidebar'] === FALSE) { continue; } // disembunyikan dari sidebar, akses tetap
             if (empty($m['roles']) || ! in_array($role, $m['roles'], TRUE)) { continue; }
             $scope_value = ! empty($m['scope']) ? $this->session->userdata($m['scope']) : NULL;
             if ( ! empty($m['scope']) && empty($scope_value)) { continue; }
@@ -730,6 +1124,7 @@ class MY_Controller extends CI_Controller {
                 'key' => $key, 'label' => $m['label'], 'icon' => $m['icon'], 'url' => $m['url'],
                 'group' => $m['group'] ?? '', 'order' => $m['order'] ?? 999, 'badge' => $badge,
                 'parent' => $m['parent'] ?? NULL,
+                'tab_baru' => ! empty($m['tab_baru']),
             ];
         }
 
@@ -753,7 +1148,9 @@ class MY_Controller extends CI_Controller {
         foreach ($items as $i => $item) {
             $url = strtolower($item['url']);
             $match = ($uri === $url) || strpos($uri, $url . '/') === 0;
-            if ($match && strlen($url) > $best) { $best = strlen($url); $best_i = $i; }
+            // Seri panjang (induk dan anak berbagi URL, mis. Tinjau SRP2 dan SRP2 dalam
+            // Pengajuan): anak yang menang, karena dialah nama layar yang sedang dibuka.
+            if ($match && (strlen($url) > $best || (strlen($url) === $best && $item['parent'] !== NULL))) { $best = strlen($url); $best_i = $i; }
         }
         foreach ($items as $i => $item) { $items[$i]['active'] = ($i === $best_i); }
 
@@ -777,6 +1174,7 @@ class MY_Controller extends CI_Controller {
         // akan membuka "Perumahan" tetapi meninggalkan "Rekam Data" terlipat,
         // dan layar yang sedang dibuka jadi tidak terlihat sama sekali.
         $terbuka = [];
+        $leluhur = []; // hanya rantai induk item aktif yang ikut menyala, bukan keturunannya
         foreach ($items as $item) {
             if ( ! $item['active']) { continue; }
             // Item aktif membuka DIRINYA SENDIRI juga, bukan hanya leluhurnya.
@@ -787,6 +1185,7 @@ class MY_Controller extends CI_Controller {
             $naik = $item['parent'];
             while ($naik !== NULL && isset($per_key[$naik])) {
                 $terbuka[$naik] = TRUE;
+                $leluhur[$naik] = TRUE;
                 $naik = $per_key[$naik]['parent'];
             }
 
@@ -816,14 +1215,16 @@ class MY_Controller extends CI_Controller {
             }
         }
 
-        $bangun = function ($key) use (&$bangun, $anak, $terbuka) {
+        $bangun = function ($key) use (&$bangun, $anak, $terbuka, $leluhur) {
             $out = [];
             foreach ($anak[$key] ?? [] as $item) {
                 $item['children'] = $bangun($item['key']);
                 $item['open']     = ! empty($terbuka[$item['key']]);
-                // Induk ikut menyala saat cabangnya terbuka - supaya orang tahu
-                // sedang berada di cabang mana, bukan cuma di layar mana.
-                $item['active']   = $item['active'] || $item['open'];
+                // Induk ikut menyala bila MEMUAT layar yang dibuka - supaya orang tahu
+                // sedang berada di cabang mana. Bukan sekadar terbuka: keturunan item
+                // aktif ikut terbentang, dan dulu ikut menyala sehingga di SRP2 dalam
+                // Pengajuan dua sub-menu tersorot bersamaan (audit UI 2 Okt 2026).
+                $item['active']   = $item['active'] || ! empty($leluhur[$item['key']]);
                 $out[] = $item;
             }
             return $out;
@@ -834,7 +1235,7 @@ class MY_Controller extends CI_Controller {
             if ($item['parent'] !== NULL) { continue; }
             $item['children'] = $bangun($item['key']);
             $item['open']     = ! empty($terbuka[$item['key']]);
-            $item['active']   = $item['active'] || $item['open'];
+            $item['active']   = $item['active'] || ! empty($leluhur[$item['key']]);
             $grouped[$item['group']][] = $item;
         }
         return $grouped;
@@ -928,6 +1329,40 @@ class MY_Controller extends CI_Controller {
         return $this->rate_limiter->consume($policy, $context);
     }
 
+    /**
+     * Prefill otomatis wizard warga dari NIK akunnya sendiri (26 Sep 2026): lookup SIMPERUM lalu
+     * bootstrap draft, sama dengan klik Cek NIK. Dipakai Auth::save_onboarding() dan jaring pengaman
+     * Warga::pendataan(). Mengonsumsi pembatas `warga_lookup` yang sama dengan Cek NIK supaya tidak
+     * jadi jalan pintas. Gagal diam: warga masih bisa klik Cek NIK sendiri.
+     *
+     * @return bool TRUE kalau draft terbentuk dari data SIMPERUM.
+     */
+    protected function prefill_simperum_akun($user_id, $nik)
+    {
+        $user_id = (int) $user_id;
+        $nik = preg_replace('/\D+/', '', (string) $nik);
+        if ($user_id < 1 || ! preg_match('/^\d{16}$/', $nik)) {
+            return FALSE;
+        }
+        /* Akun yang sudah pernah mengirim (penilaian selain draft) tidak dibuatkan draft baru di sini:
+           draft tanpa versi_sebelumnya_id akan jadi kiriman ganda di sf_antrean_pengajuan. Revisi tetap
+           lewat start_revision (status needs_revision). */
+        if ($this->db->where('user_id', $user_id)->where('status !=', 'draft')->count_all_results('sf_penilaian_perumahan') > 0) {
+            return FALSE;
+        }
+        $rate = $this->rate_limit_consume('warga_lookup', ['account_id' => $user_id, 'nik' => $nik]);
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            return FALSE;
+        }
+        $this->load->library('Simperum_gateway');
+        $hasil = $this->simperum_gateway->lookup($nik, '', $user_id, TRUE);
+        if (($hasil['status'] ?? '') !== 'found') {
+            return FALSE;
+        }
+        $this->load->model('Housing_assessment_model');
+        return ! empty($this->Housing_assessment_model->bootstrap_draft_from_lookup($user_id, $hasil)['success']);
+    }
+
     protected function rate_limit_inspect($policy, array $context = [])
     {
         $this->load->library('Rate_limiter');
@@ -944,21 +1379,49 @@ class MY_Controller extends CI_Controller {
      * Respons seragam: batas normal menghasilkan 429 + Retry-After, sedangkan
      * kegagalan konfigurasi/penyimpanan fail-closed sebagai 503.
      */
+    /** Terapkan allowlist dan format positif untuk seluruh input web. */
+    private function enforce_positive_input_validation()
+    {
+        $this->load->library('Input_guard');
+        $status = $this->input_guard->validate_request();
+        if ( ! empty($status['valid'])) { return; }
+
+        $message = 'Permintaan ditolak karena format input tidak aman.';
+        $this->output->set_status_header(400)->set_header('Cache-Control: no-store');
+        if ($this->input->is_ajax_request()) {
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status' => 'error', 'code' => 'invalid_input', 'message' => $message,
+            ]));
+            $this->output->_display(); exit;
+        }
+        show_error($message, 400, 'Input Tidak Valid');
+        exit;
+    }
     protected function rate_limit_reject(array $result, $message, $json = FALSE)
     {
         $configured = ! empty($result['success']);
+        $is_attack_warning = $configured && ! empty($result['warning_type']);
         $safe_message = $configured
-            ? $message
+            ? ($is_attack_warning ? 'Peringatan keamanan: terdeteksi pola akses otomatis. ' : '') . $message
             : 'Layanan sementara belum dapat memproses permintaan.';
 
         $this->output->set_status_header($configured ? 429 : 503);
         if ($configured) {
             $this->output->set_header('Retry-After: ' . max(1, (int) ($result['retry_after'] ?? 1)));
         }
+        if ($is_attack_warning) {
+            $this->output->set_header('X-Security-Warning: automated-access-detected');
+        }
         if ($json) {
             $this->output
                 ->set_content_type('application/json')
-                ->set_output(json_encode(['status' => 'error', 'message' => $safe_message]));
+                ->set_output(json_encode([
+                    'status' => 'error',
+                    'code' => $is_attack_warning ? 'automated_attack_warning' : 'rate_limit_error',
+                    'message' => $safe_message,
+                    'warning_type' => $result['warning_type'] ?? NULL,
+                    'retry_after' => $configured ? max(1, (int) ($result['retry_after'] ?? 1)) : NULL,
+                ]));
             return;
         }
         $this->output
@@ -1048,6 +1511,69 @@ class MY_Controller extends CI_Controller {
             $offset += $length;
         }
         return FALSE;
+    }
+
+    /** Folder foto/logo direktori SRP2 (aset publik, di-.gitignore supaya deploy tidak menyapunya). */
+    const DIR_FOTO_SRP2 = 'assets/img/pengembang/unggahan/';
+
+    /**
+     * Simpan foto/logo perusahaan direktori SRP2 dari $_FILES[$field]. Dipakai admin
+     * (Admin_Srp2::save) dan pengembang (Pengaturan::simpan_perusahaan), jadi satu aturan.
+     *
+     * Foto TAYANG PUBLIK, jadi isinya yang dijaga: jenis dari finfo (bukan nama/tipe kiriman),
+     * getimagesize, pemindai unggahan, lalu DIGAMBAR ULANG lewat GD. Gambar ulang membuang
+     * metadata (termasuk GPS) dan apa pun yang menumpang di luar piksel, dan sekalian
+     * mengecilkan ke sisi terpanjang 512 px. Nama berkas acak; nama kiriman tidak menyentuh disk.
+     *
+     * @return string|NULL path relatif; NULL + $galat terisi bila ditolak. Tanpa berkas: NULL, $galat NULL.
+     */
+    protected function simpan_foto_srp2($field, &$galat = NULL)
+    {
+        $galat = NULL;
+        $f = $_FILES[$field] ?? NULL;
+        if ( ! $f || is_array($f['name'] ?? NULL) || ($f['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) { return NULL; }
+        if ($f['error'] !== UPLOAD_ERR_OK || ! is_uploaded_file($f['tmp_name'])) { $galat = 'Foto gagal diunggah. Coba lagi.'; return NULL; }
+        if ($f['size'] > 2 * 1024 * 1024) { $galat = 'Ukuran foto maksimal 2 MB.'; return NULL; }
+
+        $mime = (new finfo(FILEINFO_MIME_TYPE))->file($f['tmp_name']);
+        $jenis = [
+            'image/jpeg' => ['jpg', 'imagecreatefromjpeg', 'imagejpeg', 85],
+            'image/png'  => ['png', 'imagecreatefrompng', 'imagepng', 6],
+            'image/webp' => ['webp', 'imagecreatefromwebp', 'imagewebp', 85],
+        ][$mime] ?? NULL;
+        if ($jenis === NULL || ! function_exists($jenis[1])) { $galat = 'Foto harus JPG, PNG, atau WEBP.'; return NULL; }
+        $dimensi = @getimagesize($f['tmp_name']);
+        if ($dimensi === FALSE || $dimensi[0] < 1 || $dimensi[1] < 1 || $dimensi[0] * $dimensi[1] > 25000000) {
+            $galat = 'Berkas itu bukan gambar yang sah.'; return NULL;
+        }
+        if ( ! $this->scan_uploaded_file($f['tmp_name'], $jenis[0], $galat, 'srp2_foto')) { return NULL; }
+
+        $img = @call_user_func($jenis[1], $f['tmp_name']);
+        if ( ! $img) { $galat = 'Berkas itu bukan gambar yang sah.'; return NULL; }
+        $skala = min(1, 512 / max(imagesx($img), imagesy($img)));
+        if ($skala < 1) {
+            $kecil = imagescale($img, max(1, (int) round(imagesx($img) * $skala)), max(1, (int) round(imagesy($img) * $skala)));
+            imagedestroy($img);
+            $img = $kecil;
+        }
+        if ($jenis[0] !== 'jpg') { imagealphablending($img, FALSE); imagesavealpha($img, TRUE); }
+
+        $dir = FCPATH . self::DIR_FOTO_SRP2;
+        if ( ! is_dir($dir) && ! @mkdir($dir, 0755, TRUE)) { imagedestroy($img); $galat = 'Folder foto tidak bisa dibuat.'; return NULL; }
+        $nama = bin2hex(random_bytes(16)) . '.' . $jenis[0];
+        $ok = call_user_func($jenis[2], $img, $dir . $nama, $jenis[3]);
+        imagedestroy($img);
+        if ( ! $ok) { @unlink($dir . $nama); $galat = 'Foto gagal disimpan.'; return NULL; }
+        return self::DIR_FOTO_SRP2 . $nama;
+    }
+
+    /** Hapus berkas foto direktori SRP2; hanya path di dalam folder fotonya yang disentuh. */
+    protected function hapus_foto_srp2($path)
+    {
+        $path = (string) $path;
+        if (strpos($path, self::DIR_FOTO_SRP2) === 0 && basename($path) === substr($path, strlen(self::DIR_FOTO_SRP2))) {
+            @unlink(FCPATH . $path);
+        }
     }
     /**
      * Kirim satu lembar kerja ke peramban sebagai berkas Excel, lalu berhenti.
@@ -1154,6 +1680,17 @@ class MY_Controller extends CI_Controller {
      * Ditaruh di induk, bukan ditambal di tiap controller: menambal 21 kali
      * berarti gerbang ke-22 lupa lagi.
      */
+    /**
+     * Render halaman masuk dengan satu pesan yang HANYA untuk render ini. Pesan lewat
+     * set_flashdata() saja ikut tampil lagi di permintaan berikutnya (flashdata baru hidup
+     * satu permintaan lagi), jadi pesannya muncul dua kali (temuan UAT universitas U8).
+     */
+    protected function render_login_berpesan($tipe, $pesan, array $data = []) {
+        $this->session->set_flashdata($tipe, $pesan);
+        $this->load->view('pages/auth/login', $data + ['recaptcha_site_key' => getenv('RECAPTCHA_SITE_KEY') ?: '']);
+        $this->session->unset_userdata($tipe);
+    }
+
     protected function gerbang_login($tujuan = NULL) {
         /* SATU GERBANG, DUA KEADAAN YANG SAMA SEKALI BERBEDA - dan sampai 10
            Agt 2026 keduanya diperlakukan sama, itu kekeliruannya.
@@ -1295,7 +1832,7 @@ class Admin_Controller extends MY_Controller {
  * Admin_Kabkota_Controller Class
  *
  * Base controller untuk admin yang di-scope ke 1 kabupaten/kota
- * (kelola antrean perumahan wilayahnya saja - lihat sf_housing_queue.kabupaten_id).
+ * (kelola antrean perumahan wilayahnya saja - lihat sf_antrean_pengajuan.kabupaten_id).
  * Scope-nya (kabupaten_id) ditaruh di session saat login, bukan dipercaya dari request.
  */
 class Admin_Kabkota_Controller extends MY_Controller {
@@ -1329,7 +1866,7 @@ class Admin_Kabkota_Controller extends MY_Controller {
  * Admin_Bidang_Controller Class
  *
  * Base controller untuk admin yang di-scope ke 1 bidang
- * (kelola aduan yang masuk ke bidangnya saja - lihat aduan.bidang).
+ * (kelola aduan yang masuk ke bidangnya saja - lihat aduan.bidang_kode).
  * Scope-nya (bidang_kode) ditaruh di session saat login, bukan dipercaya dari request.
  */
 class Admin_Bidang_Controller extends MY_Controller {

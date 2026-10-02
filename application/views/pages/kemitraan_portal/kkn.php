@@ -97,8 +97,8 @@
             <li class="flex gap-4">
                 <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color:var(--portal-brand)] text-xs font-black text-[#0a1a1f]">2</span>
                 <div>
-                    <div class="text-sm font-bold text-[color:var(--portal-text)]">Sertifikat terbit otomatis</div>
-                    <div class="mt-1 text-sm leading-relaxed text-[color:var(--portal-text-muted)]">Hanya jika pengajuan KKN Anda sudah diterima dan periode pelaksanaannya sudah selesai.</div>
+                    <div class="text-sm font-bold text-[color:var(--portal-text)]">Sertifikat terbit setelah disahkan admin</div>
+                    <div class="mt-1 text-sm leading-relaxed text-[color:var(--portal-text-muted)]">Pengajuan KKN Anda harus sudah diterima, periode pelaksanaannya selesai, dan admin Disperakim sudah menetapkan tanggal terbit sertifikat.</div>
                 </div>
             </li>
         </ol>

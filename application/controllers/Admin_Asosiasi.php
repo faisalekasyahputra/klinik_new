@@ -13,13 +13,12 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * layar, form tambah di atas, sunting inline per baris, hapus lewat POST,
  * semua perubahan masuk jejak audit.
  *
- * ⚠️ `kode` TIDAK BISA DIUBAH setelah dibuat, dan itu disengaja. Dua tabel
- * lain (`srp2_certified_developers.asosiasi`, `srp2_registrations.asosiasi`)
- * menyimpan STRING kode ini, bukan id - tidak ada FK yang bisa meng-cascade.
- * Mengizinkan kode disunting berarti setiap baris yang memakainya berubah jadi
- * yatim DIAM-DIAM: kolom di direktori publik mendadak menampilkan kode mentah,
- * dan tidak ada satu pun galat yang muncul. Yang dibaca orang adalah `nama`,
- * dan itu bebas diubah kapan saja.
+ * ⚠️ `kode` TIDAK BISA DIUBAH setelah dibuat, dan itu disengaja. Tiga tabel
+ * lain (`srp2_direktori_pengembang.asosiasi`, `srp2_pengajuan.asosiasi`,
+ * `psu_serah_terima.asosiasi`) menyimpan STRING kode ini, bukan id. Sejak
+ * migrasi 069 ketiganya ber-FK ON DELETE RESTRICT tanpa ON UPDATE CASCADE:
+ * DB menolak menghapus atau mengganti kode yang masih dipakai. Yang dibaca
+ * orang adalah `nama`, dan itu bebas diubah kapan saja.
  */
 class Admin_Asosiasi extends Admin_Controller {
 
@@ -34,12 +33,13 @@ class Admin_Asosiasi extends Admin_Controller {
 
         /* Berapa pengembang memakai tiap asosiasi - dipakai layarnya untuk
            memberi tahu SEBELUM admin menekan Hapus, bukan cuma menolak
-           sesudahnya. Dihitung sekali di sini (dua query GROUP BY), bukan
+           sesudahnya. Dihitung sekali di sini (satu GROUP BY per tabel), bukan
            satu query per baris di dalam view. */
         $pakai = [];
         foreach ([
-            'srp2_certified_developers' => 'direktori',
-            'srp2_registrations'        => 'pengajuan',
+            'srp2_direktori_pengembang' => 'direktori',
+            'srp2_pengajuan'        => 'pengajuan',
+            'psu_serah_terima'          => 'psu',
         ] as $tabel => $sebutan) {
             foreach ($this->db->select('asosiasi, COUNT(*) AS jml')->from($tabel)
                 ->where('asosiasi IS NOT NULL')->group_by('asosiasi')->get()->result() as $r) {
@@ -126,14 +126,12 @@ class Admin_Asosiasi extends Admin_Controller {
             redirect('Admin_Asosiasi'); return;
         }
 
-        /* DITOLAK kalau masih dipakai. Tidak ada FK yang menjaga ini (kolom
-           pemakainya string, bukan id - lihat kepala class), jadi penjagaannya
-           HARUS di sini: menghapus yang masih terpakai membuat baris-baris itu
-           menampilkan kode mentah di halaman publik tanpa satu pun galat.
+        /* DITOLAK kalau masih dipakai. FK migrasi 069 (RESTRICT) juga menolak
+           di DB, tapi pengecekan ini yang memberi pesan yang bisa dibaca admin.
            Sarannya menonaktifkan, karena itu memang yang dimaksud admin hampir
            setiap kali - berhenti menawarkan tanpa merusak data lama. */
         $terpakai = 0;
-        foreach (['srp2_certified_developers', 'srp2_registrations'] as $tabel) {
+        foreach (['srp2_direktori_pengembang', 'srp2_pengajuan', 'psu_serah_terima'] as $tabel) {
             $terpakai += (int) $this->db->where('asosiasi', $row->kode)->count_all_results($tabel);
         }
         if ($terpakai > 0) {
@@ -143,7 +141,10 @@ class Admin_Asosiasi extends Admin_Controller {
             redirect('Admin_Asosiasi'); return;
         }
 
-        $this->db->where('id', $id)->delete(self::TABEL);
+        if ( ! $this->db->where('id', $id)->delete(self::TABEL)) {
+            $this->session->set_flashdata('error', 'Asosiasi "' . $row->nama . '" belum terhapus. Coba lagi.');
+            redirect('Admin_Asosiasi'); return;
+        }
         $this->catat_audit('asosiasi_dihapus', 'Asosiasi "' . $row->kode . '" dihapus',
             self::TABEL, $id, ['nama' => $row->nama]);
         $this->session->set_flashdata('success', 'Asosiasi "' . $row->nama . '" dihapus.');

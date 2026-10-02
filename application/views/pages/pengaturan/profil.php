@@ -1,9 +1,9 @@
 <?php
 // Rantai fallback sampai email - username DAN name bisa dua-duanya NULL untuk
 // akun daftar cepat lama, dan email selalu ada. Sebelumnya fallback berhenti di
-// $user->name, jadi kalau itu juga NULL, JS membandingkan input (selalu string)
+// $user->nama, jadi kalau itu juga NULL, JS membandingkan input (selalu string)
 // dengan literal null dan tombol Hapus mustahil aktif (roadmap T5 R2-sebagian).
-$current_username = htmlspecialchars($user->username ?? $user->name ?? $user->email);
+$current_username = htmlspecialchars($user->nama_pengguna ?? $user->nama ?? $user->email);
 
 // Kelas dialek admin, diangkat jadi variabel seperti perumahan_wizard.php.
 // Sebelumnya string panjang yang sama ditulis ulang 15 kali di berkas ini; satu
@@ -84,7 +84,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
 
                     <div>
                         <label class="<?= $label ?>">Username <span class="text-red-500">*</span></label>
-                        <input type="text" name="username" value="<?= htmlspecialchars($user->username ?? '') ?>" required maxlength="30" pattern="^\S+$"
+                        <input type="text" name="username" value="<?= htmlspecialchars($user->nama_pengguna ?? '') ?>" required maxlength="30" pattern="^\S+$"
                                oninput="this.value = this.value.replace(/\s/g, '').toLowerCase()"
                                class="<?= $isian ?>">
                         <p class="<?= $petunjuk ?>">Tampil di forum diskusi. Tanpa spasi, maks. 30 karakter.</p>
@@ -92,12 +92,12 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
 
                     <div>
                         <label class="<?= $label ?>">Nama Lengkap <span class="text-red-500">*</span></label>
-                        <input type="text" name="name" value="<?= htmlspecialchars($user->name) ?>" required class="<?= $isian ?>">
+                        <input type="text" name="name" value="<?= htmlspecialchars($user->nama) ?>" required class="<?= $isian ?>">
                     </div>
 
                     <div>
                         <label class="<?= $label ?>">No. WhatsApp</label>
-                        <input type="tel" name="phone" value="<?= htmlspecialchars($user->phone ?? '') ?>" class="<?= $isian ?>">
+                        <input type="tel" name="phone" value="<?= htmlspecialchars($user->no_hp ?? '') ?>" class="<?= $isian ?>">
                     </div>
 
                     <?php
@@ -123,7 +123,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                        ini tidak mengubah perilaku update_profile() sama
                        sekali - lihat pemeriksaan `$nik_kirim !== ''` di sana. */
                     ?>
-                    <?php if (($user->role ?? '') === 'warga'): ?>
+                    <?php if (($user->peran ?? '') === 'warga'): ?>
                     <div>
                         <label class="<?= $label ?>">NIK</label>
                         <?php if (!empty($nik_terkunci)): ?>
@@ -145,6 +145,9 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
 
                 <div class="border-t border-gray-100 pt-3 dark:border-white/5">
                     <p class="text-sm font-bold text-gray-800 dark:text-white">Ganti Password</p>
+                    <?php if ( ! empty($pesan_ganti_sandi)): ?>
+                    <p class="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"><?= html_escape($pesan_ganti_sandi) ?></p>
+                    <?php endif; ?>
                     <p class="<?= $petunjuk ?>">Kosongkan kalau tidak ingin mengubah. Minimal 8 karakter, ada huruf besar, angka, dan simbol.</p>
                     <div class="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         <input type="password" name="password" autocomplete="new-password" placeholder="Password baru" class="<?= $isian ?>">
@@ -159,6 +162,19 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
             </form>
         </div>
 
+        <!-- Salinan data pribadi -->
+        <div class="<?= $kotak ?>">
+            <h2 class="<?= $judul ?>"><i class="ph ph-download-simple text-brand-primary"></i> Unduh Data Saya</h2>
+            <p class="<?= $petunjuk ?>">Unduh data akun dan catatan layanan yang terhubung ke akun Anda dalam format JSON. Berkas unggahan tidak termasuk. Simpan hasil unduhan di tempat yang aman.</p>
+            <form action="<?= base_url('akun/export') ?>" method="POST" class="mt-3 flex flex-wrap items-end gap-3">
+                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+                <div class="min-w-[220px] flex-1">
+                    <label for="export-password" class="<?= $label ?>">Password saat ini</label>
+                    <input id="export-password" name="current_password" type="password" autocomplete="current-password" required class="<?= $isian ?>">
+                </div>
+                <button type="submit" class="<?= $tombol ?>"><i class="ph ph-download-simple"></i> Unduh Data</button>
+            </form>
+        </div>
         <!-- Zona Berbahaya -->
         <div class="flex flex-col gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 lg:flex-row lg:items-center lg:justify-between dark:border-red-500/20 dark:bg-red-500/5">
             <div class="min-w-0">
@@ -180,7 +196,11 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
             -->
             <p class="mt-2 text-xs text-gray-600 dark:text-brand-muted">Menghapus akun akan menghapus <b>akun dan akses masuk Anda</b>, serta dokumen SRP2 yang pernah Anda unggah. Diskusi dan komentar tidak dihapus, melainkan dianonimkan menjadi "Akun Dihapus" agar alur diskusi tidak rusak. Tindakan ini tidak bisa dibatalkan.</p>
 
-            <p class="mt-1 text-xs text-gray-600 dark:text-brand-muted">Data layanan yang pernah Anda kirimkan - data pendataan perumahan, hasil penilaian, dan foto bukti - <b>tidak ikut terhapus saat ini</b> dan mengikuti kebijakan retensi data yang berlaku. Untuk meminta penghapusannya, hubungi admin.</p>
+            <p class="mt-1 text-xs text-gray-600 dark:text-brand-muted">Data layanan yang pernah Anda kirimkan - data pendataan perumahan, hasil penilaian, dan foto bukti - <b>tidak ikut terhapus saat ini</b> dan mengikuti kebijakan retensi data yang berlaku. Anda dapat mengajukan peninjauan penghapusannya kepada admin.</p>
+            <form action="<?= base_url('akun/request-data-deletion') ?>" method="POST" class="mt-3">
+                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+                <button type="submit" class="inline-flex items-center gap-2 rounded-lg border border-red-300 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100 dark:border-red-500/40 dark:text-red-300 dark:hover:bg-red-500/10"><i class="ph ph-file-text"></i> Ajukan Penghapusan Data Layanan</button>
+            </form>
 
             </div>
 
@@ -189,7 +209,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
             </button>
         </div>
 
-        <?php if (isset($pengajuan_sp2)): ?>
+        <?php if (isset($pengajuan_sp2)): $this->load->helper('srp2'); ?>
         <!-- SP2 Status & Data Pengembang. Selebar penuh: sub-grid isinya sampai
              tiga kolom, dan memaksanya masuk sepertiga lebar membuatnya
              bertumpuk jadi satu kolom sempit. -->
@@ -249,7 +269,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
 
             <div class="mt-4 flex flex-wrap items-start gap-3 border-b border-gray-100 pb-4 dark:border-white/10">
                 <?php
-                // Tautan profil publik memakai certified_developer_id (PK direktori),
+                // Tautan profil publik memakai pengembang_id (PK direktori),
                 // BUKAN id pengajuan. Dulu memakai $pengajuan_sp2->id - dua tabel,
                 // dua urutan ID: registrasi id=7 membuka profil perusahaan LAIN,
                 // lengkap dengan badge "Bersertifikat".
@@ -258,8 +278,8 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                 // untuk semua status Diterima, jadi tidak ada jalan BENAR sama
                 // sekali dari dashboard ke profil publik.
                 ?>
-                <?php if($pengajuan_sp2->status_verifikasi == 'Diterima' && !empty($pengajuan_sp2->certified_developer_id)): ?>
-                    <a href="<?= base_url('Pengembang/profil/' . (int) $pengajuan_sp2->certified_developer_id) ?>" target="_blank" class="inline-flex items-center gap-2 rounded-lg border border-brand-primary/30 bg-brand-primary/10 px-4 py-2 text-sm font-bold text-brand-hover transition-colors hover:bg-brand-primary/20 dark:text-brand-primary">
+                <?php if($pengajuan_sp2->status_verifikasi == 'Diterima' && !empty($pengajuan_sp2->pengembang_id)): ?>
+                    <a href="<?= base_url('Pengembang/profil/' . (int) $pengajuan_sp2->pengembang_id) ?>" target="_blank" class="inline-flex items-center gap-2 rounded-lg border border-brand-primary/30 bg-brand-primary/10 px-4 py-2 text-sm font-bold text-brand-hover transition-colors hover:bg-brand-primary/20 dark:text-brand-primary">
                         <i class="ph ph-eye"></i> Lihat Profil Publik
                     </a>
                     <div>
@@ -280,21 +300,25 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                 <?php endif; ?>
             </div>
 
+            <?php if ( ! empty($direktori)): ?>
+            <?php // Akun pemegang entri direktori mengubah datanya di SATU tempat: Profil Perusahaan. ?>
+            <p class="mt-4 text-sm text-gray-600 dark:text-brand-muted" data-ke-profil-perusahaan>Data perusahaan Anda dikelola lewat <a href="<?= base_url('akun/perusahaan') ?>" class="font-bold text-blue-600 underline dark:text-brand-primary">Profil Perusahaan</a>: foto, alamat, kontak, NIB, dan nomor keanggotaan.</p>
+            <?php else: ?>
             <h3 class="mt-4 text-sm font-bold text-gray-700 dark:text-gray-300">Edit Data Perusahaan</h3>
             <form action="<?= base_url('akun/update_pengembang') ?>" method="POST" class="mt-3 space-y-4">
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
                 <div class="grid gap-3 sm:grid-cols-2">
                     <div>
-                        <label class="<?= $label ?>">Nama Perusahaan</label>
+                        <label class="<?= $label ?>"><?= srp2_label_medan()['nama_perusahaan'] ?></label>
                         <input type="text" name="nama_perusahaan" value="<?= htmlspecialchars($pengajuan_sp2->nama_perusahaan) ?>" required class="<?= $isian ?> uppercase">
                     </div>
                     <div>
-                        <label class="<?= $label ?>">Alamat Kantor</label>
+                        <label class="<?= $label ?>"><?= srp2_label_medan()['alamat_kantor'] ?></label>
                         <textarea name="alamat_kantor" rows="1" required class="<?= $isian ?> resize-none"><?= htmlspecialchars($pengajuan_sp2->alamat_kantor) ?></textarea>
                     </div>
                     <div>
-                        <label class="<?= $label ?>">Asosiasi</label>
+                        <label class="<?= $label ?>"><?= srp2_label_medan()['asosiasi'] ?></label>
                         <?php
                         /* Daftarnya DIPINDAH ke srp2_daftar_asosiasi() 14 Agt 2026 -
                            dulu ditulis ulang di sini, dan formulir admin memakai
@@ -318,7 +342,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                         </select>
                     </div>
                     <div>
-                        <label class="<?= $label ?>">No. Keanggotaan</label>
+                        <label class="<?= $label ?>"><?= srp2_label_medan()['no_keanggotaan'] ?></label>
                         <input type="text" name="no_keanggotaan" value="<?= htmlspecialchars($pengajuan_sp2->no_keanggotaan) ?>" required class="<?= $isian ?>">
                     </div>
                 </div>
@@ -328,16 +352,16 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                     <p class="<?= $petunjuk ?>">Ditampilkan di halaman profil pengembang.</p>
                     <div class="mt-3 grid gap-3 sm:grid-cols-3">
                         <div>
-                            <label class="<?= $label ?>">Instagram</label>
+                            <label class="<?= $label ?>"><?= srp2_label_medan()['instagram'] ?></label>
                             <input type="text" name="instagram" value="<?= htmlspecialchars($pengajuan_sp2->instagram ?? '') ?>" placeholder="https://instagram.com/..." class="<?= $isian ?>">
                         </div>
                         <div>
-                            <label class="<?= $label ?>">Website</label>
+                            <label class="<?= $label ?>"><?= srp2_label_medan()['website'] ?></label>
                             <input type="text" name="website" value="<?= htmlspecialchars($pengajuan_sp2->website ?? '') ?>" placeholder="https://..." class="<?= $isian ?>">
                         </div>
                         <div>
-                            <label class="<?= $label ?>">Sosmed Lainnya</label>
-                            <input type="text" name="sosmed_lainnya" value="<?= htmlspecialchars($pengajuan_sp2->sosmed_lainnya ?? '') ?>" placeholder="Facebook, WhatsApp Business, dst." class="<?= $isian ?>">
+                            <label class="<?= $label ?>"><?= srp2_label_medan()['sosmed_lainnya'] ?></label>
+                            <input type="text" name="sosmed_lainnya" value="<?= htmlspecialchars($pengajuan_sp2->sosmed_lainnya ?? '') ?>" placeholder="https://..." class="<?= $isian ?>">
                         </div>
                     </div>
                 </div>
@@ -346,10 +370,11 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                     <i class="ph ph-floppy-disk"></i> Simpan Data Pengembang
                 </button>
             </form>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
 
-        <?php if (($user->role ?? '') === 'pengembang' && !isset($pengajuan_sp2)): ?>
+        <?php if (($user->peran ?? '') === 'pengembang' && !isset($pengajuan_sp2)): ?>
         <div class="<?= $kotak ?>">
             <h2 class="<?= $judul ?>">Lengkapi Pengajuan SRP2</h2>
             <p class="mt-2 text-sm text-gray-500 dark:text-brand-muted">Akun pengembang sudah aktif. Lengkapi profil pengajuan sebelum mengunggah dokumen persyaratan.</p>
@@ -403,7 +428,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
 
 <script>
 (() => {
-const targetUsername = <?= json_encode($user->username ?? $user->name ?? $user->email) ?>;
+const targetUsername = <?= json_encode($user->nama_pengguna ?? $user->nama ?? $user->email) ?>;
 
 window.openDeleteModal = function () {
     document.getElementById('deleteModal').classList.remove('hidden');

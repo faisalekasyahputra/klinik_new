@@ -1,8 +1,17 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
- * Uji perjalanan Warga ↔ Admin Kabupaten/Kota.
+ * Uji perjalanan Warga ↔ Admin Kabupaten/Kota, dan penutupan jalur diagnosa lama.
  *
- * Jalankan pada DB uji bersih:
+ * KEPUTUSAN PEMILIK PRODUK 27 Sep 2026: jalur diagnosa lama
+ * (`solusi_pembiayaan`, `Program/diagnosa`, `Program/api_*`,
+ * `Program/submit_antrean`) dialihkan ke wizard `warga/pendataan`. Jalur itu
+ * menerbitkan tiket tanpa login atau atas nama akun non-warga, dan harness ini
+ * dulu MEMAKAINYA untuk melahirkan tiket. Sekarang harness ini justru menjaga
+ * bahwa jalur itu tertutup, dan tiket uji untuk admin lahir lewat INSERT
+ * langsung (lihat alasannya di bagian POSITIF).
+ *
+ * Jalankan:
  *   php docs/engineering/uji_perjalanan_warga.php
  *
  * Env opsional:
@@ -164,31 +173,14 @@ function json_body($response) {
     return json_decode(ltrim($response['body'], "\xEF\xBB\xBF"), TRUE);
 }
 
-function prepare_submission($session, $kabupaten_id) {
-    $session->get('solusi_pembiayaan');
-    $identity = $session->post('Program/api_cek_simperum', [
-        'nik' => '0000000000000001',
-        'tgl_lahir' => '1980-01-01',
-    ]);
-    $survey = $session->post('Program/api_kalkulasi_program', [
-        /* 2.500.000 BUKAN angka sembarangan: ia harus jatuh di rentang desil 4,
-           karena `omah_sekeng` yang dikirim uji ini HANYA layak di desil 4
-           (Smart_filter::get_eligible_programs - desil 1 sampai 3 cuma dapat
-           `pb`/`rtlh`). Nilai lamanya 2.000.000 dulu jatuh di desil 4 waktu
-           ambangnya `<= 2.500.000`; sesudah ambang diperketat jadi
-           `<= 2.200.000` (Program::desil_dari_penghasilan), angka itu pindah
-           ke desil 2 dan pengajuannya ditolak `program_not_eligible`.
-           Kalau ambangnya berubah lagi, sesuaikan angka ini - dan penjaga
-           di bawah akan menyebutkan persis apa yang perlu diperbaiki. */
-        'penghasilan' => '2500000',
-        'pekerjaan' => 'Karyawan Swasta',
-        'status_kepemilikan' => 'Sewa/Kontrak',
-        'alasan_pengajuan' => 'Membutuhkan rumah layak',
-        'kabupaten_id' => $kabupaten_id,
-        'kode_program_target' => 'umum',
-        'simpan_hasil' => '0',
-    ]);
-    return [$identity, $survey];
+function lokasi($response) {
+    preg_match('/^Location:\s*(.+)$/mi', (string) ($response['header'] ?? ''), $m);
+    return trim($m[1] ?? '');
+}
+
+function dialihkan_ke_wizard($response) {
+    return in_array((int) $response['status'], [302, 303, 307], TRUE)
+        && strpos(lokasi($response), 'warga/pendataan') !== FALSE;
 }
 
 if ( ! is_file(ENV_PATH)) {
@@ -198,85 +190,177 @@ if ( ! is_file(ENV_PATH)) {
 
 $env = env_config(ENV_PATH);
 $db = new Db($env);
-$rateKeys = [];
-foreach (['127.0.0.1', '::1'] as $ip) {
-    foreach (['simperum_lookup', 'housing_submit'] as $scope) {
-        $rateKeys[] = hash('sha256', $scope . ':' . $ip);
+// Tiket lama di bawah ditulis terenkripsi seperti bentuk kolom sejak migrasi 067.
+foreach ($env as $k => $v) { if (getenv($k) === FALSE) { putenv($k . '=' . $v); } }
+define('BASEPATH', 'x'); define('APPPATH', dirname(__DIR__, 2) . '/application/');
+if ( ! function_exists('log_message')) { function log_message() {} }
+require APPPATH . 'libraries/Encryption_lib.php';
+$enc = new Encryption_lib();
+
+/* Batas laju: DIPINJAM lalu DIKEMBALIKAN utuh, bukan dikosongkan. Bentuk kunci
+   sha256("<policy>:ip:<ip>") sesuai Rate_limiter::resolve(); ::1 dikelompokkan
+   per /64 jadi '0000000000000000/64'. Versi lama harness ini menghapus kunci
+   "<policy>:<ip>" yang tidak pernah mengenai baris apa pun. */
+$GLOBALS['rate_asli'] = [];
+foreach (['login', 'simperum_lookup', 'housing_submit', 'admin_queue_decision', 'kelas_api_ip', 'tulis_anon'] as $policy) {
+    foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
+        $key = hash('sha256', $policy . ':ip:' . $ip);
+        $GLOBALS['rate_asli'][$key] = $db->row('SELECT kunci, jendela_mulai_at, jumlah_gagal FROM sys_batas_laju WHERE kunci = ?', [$key]);
+        $db->run('DELETE FROM sys_batas_laju WHERE kunci = ?', [$key]);
     }
 }
-$db->run('DELETE FROM sys_rate_limits WHERE limit_key IN (?, ?, ?, ?)', $rateKeys);
+
 $stamp = time();
+$passwordHash = password_hash(ADMIN_PASSWORD, PASSWORD_BCRYPT);
+$awalQueue = (int) $db->scalar('SELECT COALESCE(MAX(id), 0) FROM sf_antrean_pengajuan');
+$GLOBALS['akun_uji'] = [];
+
+/* Bersih-bersih dipasang sebagai shutdown handler supaya `wajib()` yang
+   berhenti di tengah tidak meninggalkan akun maupun tiket. Urutan: rekaman
+   SIMPERUM dan draft SEBELUM akun (FK SET NULL, bukan CASCADE, jadi menghapus
+   akun saja meninggalkan baris yatim), tiket yang lahir selama jalan ini
+   (termasuk tiket tamu kalau jalur lama ternyata masih terbuka), baru akun. */
+register_shutdown_function(function () use ($db, $awalQueue) {
+    foreach ($GLOBALS['akun_uji'] as $id) {
+        $db->run('DELETE FROM sf_rekaman_simperum WHERE requested_by = ?', [$id]);
+        $db->run('DELETE FROM sf_penilaian_perumahan WHERE user_id = ?', [$id]);
+        $db->run('DELETE FROM sf_antrean_pengajuan WHERE user_id = ?', [$id]);
+    }
+    $db->run('DELETE FROM sf_antrean_pengajuan WHERE id > ? AND user_id IS NULL', [$awalQueue]);
+    foreach ($GLOBALS['akun_uji'] as $id) {
+        $db->run('DELETE FROM usr_akun WHERE id = ?', [$id]);
+    }
+    foreach ($GLOBALS['rate_asli'] as $key => $row) {
+        $db->run('DELETE FROM sys_batas_laju WHERE kunci = ?', [$key]);
+        if ($row) {
+            $db->run('INSERT INTO sys_batas_laju (kunci, jendela_mulai_at, jumlah_gagal) VALUES (?, ?, ?)',
+                [$row['kunci'], $row['jendela_mulai_at'], $row['jumlah_gagal']]);
+        }
+    }
+});
+
+function akun_uji($db, $email, $name, $role, $kabupaten_id, $hash) {
+    $id = $db->run(
+        "INSERT INTO usr_akun (email, kata_sandi, nama, nama_pengguna, peran, status, profil_lengkap, kabupaten_id, created_at)
+         VALUES (?, ?, ?, ?, ?, 'active', 1, ?, NOW())",
+        [$email, $hash, $name, strtok($email, '@'), $role, $kabupaten_id]
+    );
+    $GLOBALS['akun_uji'][] = $id;
+    return $id;
+}
+
 $emailSemarang = "admin_warga_{$stamp}_semarang@example.test";
 $emailBanyumas = "admin_warga_{$stamp}_banyumas@example.test";
-$passwordHash = password_hash(ADMIN_PASSWORD, PASSWORD_BCRYPT);
+$emailWarga = "warga_pw_{$stamp}@example.test";
+$emailMhs = "mhs_pw_{$stamp}@example.test";
 
 echo "=== UJI PERJALANAN WARGA ===\n";
 echo "Target: " . BASE_URL . " | DB: {$env['DB_NAME']}\n\n";
 
-wajib((int) $db->scalar("SELECT COUNT(*) FROM sf_programs WHERE kode_program = 'omah_sekeng'") === 1,
-    'Seed Omah Sekeng tersedia');
+$programId = $db->scalar("SELECT id FROM sf_program WHERE kode_program = 'omah_sekeng'");
+wajib($programId !== NULL, 'Seed Omah Sekeng tersedia');
 
-$adminSemarang = $db->run(
-    "INSERT INTO usr_users (email, password, name, username, role, status, profile_completed, kabupaten_id, created_at)
-     VALUES (?, ?, 'Admin Semarang Uji', ?, 'admin_kabkota', 'active', 1, 3374, NOW())",
-    [$emailSemarang, $passwordHash, "admin_warga_{$stamp}_smg"]
+$adminSemarang = akun_uji($db, $emailSemarang, 'Admin Semarang Uji', 'admin_kabkota', 3374, $passwordHash);
+$adminBanyumas = akun_uji($db, $emailBanyumas, 'Admin Banyumas Uji', 'admin_kabkota', 3302, $passwordHash);
+$wargaId = akun_uji($db, $emailWarga, 'Warga Uji Perjalanan', 'warga', 3374, $passwordHash);
+$mhsId = akun_uji($db, $emailMhs, 'Mahasiswa Uji Perjalanan', 'mahasiswa', NULL, $passwordHash);
+
+echo "-- TERTUTUP: jalur diagnosa lama dialihkan ke warga/pendataan (keputusan 27 Sep 2026)\n";
+$tamu = new Session();
+foreach (['solusi_pembiayaan', 'Program/diagnosa/umum', 'solusi_pembiayaan/hasil'] as $path) {
+    $r = $tamu->get($path);
+    cek(dialihkan_ke_wizard($r), "GET {$path} dialihkan ke warga/pendataan (HTTP {$r['status']}, tujuan: "
+        . (lokasi($r) !== '' ? lokasi($r) : 'tidak ada Location') . ')');
+}
+$halamanUmum = $tamu->get('umum');
+wajib($halamanUmum['status'] === 200, 'Halaman layanan umum terbuka');
+cek(strpos($halamanUmum['body'], 'Program/diagnosa') === FALSE && strpos($halamanUmum['body'], 'warga/pendataan') !== FALSE,
+    'Kartu Klinik Diagnosa di halaman umum menunjuk warga/pendataan, bukan Program/diagnosa');
+
+/* Tamu DAN akun non-warga. Akun non-warga penting: di jalur lama
+   api_cek_simperum mengikat NIK ke akun apa pun yang sedang masuk, dan
+   submit_antrean menerbitkan tiket atas namanya. CSRF-nya sah (diambil dari
+   halaman login), jadi yang menolak adalah controller, bukan penjaga CSRF. */
+$mhs = new Session();
+$mhs->get('Auth/login');
+$mhsLogin = json_body($mhs->post('Auth/do_login', ['email' => $emailMhs, 'password' => ADMIN_PASSWORD]));
+wajib(($mhsLogin['status'] ?? '') === 'success', 'Akun mahasiswa (non-warga) login');
+$tamu->get('Auth/login');
+wajib($tamu->csrf !== NULL, 'Tamu memegang token CSRF sah');
+
+foreach (['tamu' => [$tamu, NULL], 'mahasiswa' => [$mhs, $mhsId]] as $siapa => [$sesi, $uid]) {
+    $qSebelum = (int) $db->scalar('SELECT COUNT(*) FROM sf_antrean_pengajuan');
+    $pSebelum = (int) $db->scalar('SELECT COUNT(*) FROM sf_profil_warga');
+    $sSebelum = (int) $db->scalar('SELECT COALESCE(MAX(id), 0) FROM sf_rekaman_simperum');
+
+    $sim = $sesi->post('Program/api_cek_simperum', ['nik' => '0000000000000001', 'tgl_lahir' => '1980-01-01']);
+    $simJson = json_body($sim);
+    cek($sim['status'] === 410 && ($simJson['code'] ?? '') === 'jalur_dipindah'
+        && strpos((string) ($simJson['redirect'] ?? ''), 'warga/pendataan') !== FALSE,
+        "{$siapa}: POST api_cek_simperum dijawab 410 jalur_dipindah (HTTP {$sim['status']})");
+    cek( ! isset($simJson['data']) && stripos($sim['body'], 'Warga Simulasi') === FALSE,
+        "{$siapa}: api_cek_simperum tidak mengembalikan data NIK apa pun");
+
+    $kal = $sesi->post('Program/api_kalkulasi_program', [
+        'penghasilan' => '2500000', 'pekerjaan' => 'Karyawan Swasta', 'status_kepemilikan' => 'Sewa/Kontrak',
+        'alasan_pengajuan' => 'Membutuhkan rumah layak', 'kabupaten_id' => '3374',
+        'kode_program_target' => 'umum', 'simpan_hasil' => '0',
+    ]);
+    cek($kal['status'] === 410 && (json_body($kal)['code'] ?? '') === 'jalur_dipindah',
+        "{$siapa}: POST api_kalkulasi_program dijawab 410 jalur_dipindah (HTTP {$kal['status']})");
+
+    $sub = $sesi->post('Program/submit_antrean', ['program_kode' => 'omah_sekeng'], FALSE);
+    cek(dialihkan_ke_wizard($sub), "{$siapa}: POST submit_antrean (formulir) dialihkan ke warga/pendataan (tujuan: "
+        . (lokasi($sub) !== '' ? lokasi($sub) : 'tidak ada Location') . ')');
+    $subAjax = $sesi->post('Program/submit_antrean', ['program_kode' => 'omah_sekeng']);
+    cek($subAjax['status'] === 410 && (json_body($subAjax)['code'] ?? '') === 'jalur_dipindah',
+        "{$siapa}: POST submit_antrean (AJAX) dijawab 410 jalur_dipindah (HTTP {$subAjax['status']})");
+
+    cek((int) $db->scalar('SELECT COUNT(*) FROM sf_antrean_pengajuan') === $qSebelum,
+        "{$siapa}: nol baris sf_antrean_pengajuan lahir dari jalur lama");
+    cek((int) $db->scalar('SELECT COUNT(*) FROM sf_profil_warga') === $pSebelum,
+        "{$siapa}: nol baris sf_profil_warga lahir dari jalur lama");
+    cek((int) $db->scalar('SELECT COALESCE(MAX(id), 0) FROM sf_rekaman_simperum') === $sSebelum,
+        "{$siapa}: NIK tidak diproses (nol rekaman SIMPERUM baru)");
+    if ($uid !== NULL) {
+        cek((int) $db->scalar('SELECT COUNT(*) FROM sf_profil_warga WHERE user_id = ?', [$uid]) === 0,
+            "{$siapa}: NIK tidak terikat ke akun non-warga");
+    }
+}
+
+echo "\n-- POSITIF: tiket wilayah Semarang -> admin wilayah -> approve -> cek tiket\n";
+/* Tiket lahir lewat INSERT langsung, SENGAJA. Satu-satunya jalur sah yang
+   tersisa adalah wizard warga/pendataan, dan jalur itu (lookup NIK fixture,
+   tujuh langkah, sampai tiket) sudah diuji utuh beserta keputusan admin di
+   uji_wizard_dan_cek_rumah.php. Menjalankannya dua kali cuma menggandakan
+   pemakaian kolam NIK fixture. Yang diuji DI SINI adalah sisi admin kab/kota
+   (cakupan wilayah, reviewer, transisi), dan baris berbentuk tiket lama
+   (mode_sumber 'legacy', tanpa penilaian_id) memang masih ada di DB dan
+   tetap harus bisa diputuskan admin. Pemiliknya akun warga uji, bukan tamu. */
+$alfabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+do {
+    $tiket = 'PKP-';
+    for ($i = 0; $i < 6; $i++) { $tiket .= $alfabet[random_int(0, strlen($alfabet) - 1)]; }
+} while ($db->scalar('SELECT id FROM sf_antrean_pengajuan WHERE kode_tiket = ?', [$tiket]));
+$queueId = $db->run(
+    "INSERT INTO sf_antrean_pengajuan (kode_tiket, user_id, kabupaten_id, program_id, nik_pengaju_ciphertext,
+        nik_pengaju_lookup_hash, nama_lengkap_ciphertext, data_survey_json_ciphertext, status_antrean, created_at, updated_at)
+     VALUES (?, ?, 3374, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())",
+    [$tiket, $wargaId, $programId, $enc->encrypt('0000000000000001'), $enc->deterministic_hash('0000000000000001'),
+        $enc->encrypt('Warga Uji Perjalanan'), $enc->encrypt(json_encode(['penghasilan' => 2500000, 'pekerjaan' => 'Karyawan Swasta',
+        'status_kepemilikan' => 'Sewa/Kontrak', 'alasan_pengajuan' => 'Membutuhkan rumah layak']))]
 );
-$adminBanyumas = $db->run(
-    "INSERT INTO usr_users (email, password, name, username, role, status, profile_completed, kabupaten_id, created_at)
-     VALUES (?, ?, 'Admin Banyumas Uji', ?, 'admin_kabkota', 'active', 1, 3302, NOW())",
-    [$emailBanyumas, $passwordHash, "admin_warga_{$stamp}_bms"]
-);
-
-echo "-- POSITIF: diagnosa → kirim → admin wilayah → approve → cek tiket\n";
-$guest = new Session();
-[$identity, $survey] = prepare_submission($guest, 3374);
-wajib(($identity['status'] === 200) && ((json_body($identity)['status'] ?? '') === 'success'), 'Identitas diverifikasi server');
-wajib(($survey['status'] === 200) && ((json_body($survey)['status'] ?? '') === 'success'), 'Survei dan wilayah diterima server');
-/* PRASYARAT, dan ia lahir dari kegagalan yang mahal. Ketika ambang desil
-   digeser, uji ini merah pada asersi "Baris lahir sebagai pending" - kalimat
-   yang tidak menyebut desil, program, maupun penolakan, sehingga butuh enam
-   penyelidikan untuk sampai ke sebabnya. Penjaga ini memindahkan kegagalannya
-   ke SATU LANGKAH LEBIH AWAL, di tempat sebabnya masih terbaca. */
-$diagnosa = json_body($survey);
-$layak = array_column((array) ($diagnosa['eligible_programs'] ?? []), 'kode');
-wajib(in_array('omah_sekeng', $layak, TRUE),
-    'PRASYARAT: diagnosa memang menawarkan omah_sekeng (desil '
-    . var_export($diagnosa['desil'] ?? NULL, TRUE) . ', ditawarkan: '
-    . ($layak ? implode(', ', $layak) : 'nihil')
-    . '). Kalau merah di sini, ambang Program::desil_dari_penghasilan bergeser '
-    . 'dan penghasilan uji di prepare_submission() perlu disesuaikan.');
-
-$beforeId = (int) $db->scalar('SELECT COALESCE(MAX(id), 0) FROM sf_housing_queue');
-$submit = $guest->post('Program/submit_antrean', ['program_kode' => 'omah_sekeng'], FALSE);
-preg_match('/^Location:\s*(.+)$/mi', (string) ($submit['header'] ?? ''), $m_tujuan);
-$tujuan = trim($m_tujuan[1] ?? '');
-/* Bukan cuma "kodenya 302". Penolakan Program::simpan_pengajuan_warga() JUGA
-   membalas 302, cuma tujuannya `solusi_pembiayaan` alih-alih `Program/success`.
-   Versi lama asersi ini hijau untuk pengajuan yang ditolak mentah-mentah. */
-cek(in_array($submit['status'], [302, 303], TRUE)
-    && strpos($tujuan, 'Program/success') !== FALSE,
-    'Pengajuan diterima dan dialihkan ke halaman sukses (tujuan: '
-    . ($tujuan !== '' ? $tujuan : 'tidak ada Location') . ')');
-
-$queue = $db->row(
-    "SELECT q.*, p.kode_program FROM sf_housing_queue q
-     JOIN sf_programs p ON p.id = q.program_id
-     WHERE q.id > ? ORDER BY q.id DESC LIMIT 1",
-    [$beforeId]
-);
-wajib($queue && $queue['status_antrean'] === 'pending', 'Baris lahir sebagai pending');
-cek((int) $queue['kabupaten_id'] === 3374, 'Scope tersimpan sebagai Kota Semarang');
-cek($queue['kode_program'] === 'omah_sekeng', 'Program ditentukan ulang dari kode DB, bukan ID klien');
-cek($queue['nama_lengkap'] === 'Warga Simulasi RTLH', 'Nama sintetis asli tersimpan; masking hanya untuk tampilan publik');
+$queue = $db->row('SELECT * FROM sf_antrean_pengajuan WHERE id = ?', [$queueId]);
+wajib($queue && $queue['status_antrean'] === 'pending', 'Baris tiket uji lahir sebagai pending');
 
 $admin = new Session();
 $admin->get('Auth/login');
 $login = json_body($admin->post('Auth/do_login', ['email' => $emailSemarang, 'password' => ADMIN_PASSWORD]));
 wajib(($login['status'] ?? '') === 'success' && ($login['role'] ?? '') === 'admin_kabkota', 'Admin Kota Semarang login');
 $dashboard = $admin->get('Admin_Kabkota');
-cek(strpos($dashboard['body'], $queue['ticket_code']) !== FALSE, 'Tiket terlihat di dashboard admin wilayah yang benar');
-$admin->post('Admin_Kabkota/update_status', ['queue_id' => $queue['id'], 'status' => 'approved', 'catatan_admin' => ''], FALSE);
-$approved = $db->row('SELECT status_antrean, reviewed_by FROM sf_housing_queue WHERE id = ?', [$queue['id']]);
+cek(strpos($dashboard['body'], $queue['kode_tiket']) !== FALSE, 'Tiket terlihat di dashboard admin wilayah yang benar');
+$admin->post('Admin_Kabkota/update_status', ['antrean_id' => $queue['id'], 'status' => 'approved', 'catatan_admin' => ''], FALSE);
+$approved = $db->row('SELECT status_antrean, reviewed_by FROM sf_antrean_pengajuan WHERE id = ?', [$queue['id']]);
 wajib($approved['status_antrean'] === 'approved', 'Admin wilayah berhasil menyetujui');
 cek((int) $approved['reviewed_by'] === (int) $adminSemarang, 'Reviewer tercatat dari sesi admin');
 
@@ -295,29 +379,18 @@ cek(strpos((string) ($halamanTamu['body'] ?? ''), 'Nomor tiket') === FALSE,
 /* Endpoint tiket lama sengaja tidak lagi membaca data apa pun. Tautan lama
    tetap mendapat jawaban yang jelas (410), tetapi tidak boleh mengetahui
    status, nama, atau keberadaan pengajuan meski kode tiketnya benar. */
-$lookup->get('warga/pendataan');
+$lookup->get('Auth/login');
 $lookupResponse = $lookup->post('Program/cek_tiket', [
-    'ticket_code' => $queue['ticket_code'],
+    'kode_tiket' => $queue['kode_tiket'],
     'nik_suffix' => '0001',
 ]);
 $lookupResult = json_body($lookupResponse);
-cek((int) ($lookupResponse['status'] ?? 0) === 410
+// 410 dari controller (dicabut 17 Agt 2026), atau 400 dari penjaga input (21 Sep 2026: nik_suffix
+// bukan field yang dikenal). Keduanya penolakan sebelum data dibaca; yang dijaga: tidak ada kebocoran.
+cek(in_array((int) ($lookupResponse['status'] ?? 0), [400, 410], TRUE)
     && ($lookupResult['status'] ?? '') === 'error'
     && empty($lookupResult['status_pengajuan']),
     'Endpoint tiket lama menolak akses publik tanpa membocorkan pengajuan');
-
-echo "\n-- NEGATIF: program manipulasi tidak melahirkan baris\n";
-$before = (int) $db->scalar('SELECT COUNT(*) FROM sf_housing_queue');
-$tampered = new Session();
-prepare_submission($tampered, 3374);
-$tampered->post('Program/submit_antrean', ['program_kode' => 'flpp'], FALSE);
-cek((int) $db->scalar('SELECT COUNT(*) FROM sf_housing_queue') === $before, 'Program di luar hasil diagnosa ditolak');
-
-echo "\n-- NEGATIF: wilayah tidak sah ditolak sebelum antrean\n";
-$invalidScope = new Session();
-[, $invalidSurvey] = prepare_submission($invalidScope, 9999);
-cek($invalidSurvey['status'] === 422, 'Kabupaten yang tidak ada ditolak oleh endpoint kalkulasi');
-cek((int) $db->scalar('SELECT COUNT(*) FROM sf_housing_queue') === $before, 'Wilayah salah tidak membuat baris yatim scope');
 
 echo "\n-- NEGATIF: admin wilayah lain dan transisi sama ditolak\n";
 $wrongAdmin = new Session();
@@ -325,20 +398,18 @@ $wrongAdmin->get('Auth/login');
 $wrongLogin = json_body($wrongAdmin->post('Auth/do_login', ['email' => $emailBanyumas, 'password' => ADMIN_PASSWORD]));
 wajib(($wrongLogin['status'] ?? '') === 'success', 'Admin Kabupaten Banyumas login');
 $wrongAdmin->post('Admin_Kabkota/update_status', [
-    'queue_id' => $queue['id'], 'status' => 'rejected', 'catatan_admin' => 'Salah wilayah',
+    'antrean_id' => $queue['id'], 'status' => 'rejected', 'catatan_admin' => 'Salah wilayah',
 ], FALSE);
-cek($db->scalar('SELECT status_antrean FROM sf_housing_queue WHERE id = ?', [$queue['id']]) === 'approved',
+cek($db->scalar('SELECT status_antrean FROM sf_antrean_pengajuan WHERE id = ?', [$queue['id']]) === 'approved',
     'Admin wilayah lain tidak dapat mengubah baris');
+cek(strpos($wrongAdmin->get('Admin_Kabkota')['body'], $queue['kode_tiket']) === FALSE,
+    'Tiket tidak terlihat di dashboard admin wilayah lain');
 
 $admin->post('Admin_Kabkota/update_status', [
-    'queue_id' => $queue['id'], 'status' => 'approved', 'catatan_admin' => '',
+    'antrean_id' => $queue['id'], 'status' => 'approved', 'catatan_admin' => '',
 ], FALSE);
-cek($db->scalar('SELECT status_antrean FROM sf_housing_queue WHERE id = ?', [$queue['id']]) === 'approved',
+cek($db->scalar('SELECT status_antrean FROM sf_antrean_pengajuan WHERE id = ?', [$queue['id']]) === 'approved',
     'Transisi approved → approved ditolak');
-
-$db->run('DELETE FROM sf_housing_queue WHERE id = ?', [$queue['id']]);
-$db->run('DELETE FROM usr_users WHERE id IN (?, ?)', [$adminSemarang, $adminBanyumas]);
-$db->run('DELETE FROM sys_rate_limits WHERE limit_key IN (?, ?, ?, ?)', $rateKeys);
 
 echo "\n=== RINGKASAN ===\n";
 echo "{$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal.\n";

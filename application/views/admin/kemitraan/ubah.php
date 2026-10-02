@@ -20,18 +20,15 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
         <p class="text-sm text-gray-500 dark:text-brand-muted">
             <?= html_escape($row->nama_mahasiswa ?: '(akun tanpa nama)') ?>
             &middot; <?= html_escape($row->email_mahasiswa ?: '-') ?>
-            &middot; <span class="font-bold uppercase"><?= html_escape($row->jenis) ?></span>
+            &middot; <span class="font-bold"><?= $row->jenis === 'kkn' ? 'KKN' : html_escape(ucfirst($row->jenis)) ?></span>
             &middot; status <span class="font-bold"><?= html_escape($row->status) ?></span>
         </p>
     </div>
-    <a href="<?= base_url('Admin_Kemitraan') ?>"
-       class="rounded-xl border border-gray-200 dark:border-white/10 px-4 py-2 text-xs font-bold text-gray-700 dark:text-gray-300">
-        Kembali
-    </a>
+    <a href="<?= base_url('Admin_Kemitraan') ?>" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali</span></a>
 </div>
 
 <form method="POST" action="<?= base_url('Admin_Kemitraan/simpan_ubah/' . (int) $row->id) ?>"
-      class="rounded-3xl border border-gray-200 dark:border-white/5 bg-white dark:bg-brand-card p-6 space-y-5">
+      class="kartu-admin isi-kartu space-y-4">
     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
     <?php
@@ -117,17 +114,14 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
         </p>
     <?php endif; ?>
 
-    <div class="flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 dark:border-white/5 pt-5">
+    <div class="flex flex-wrap items-center justify-end gap-3 border-t border-gray-200 dark:border-white/5 pt-4">
         <!-- Hapus sengaja diletakkan paling kiri dan berwarna netral, bukan
              tombol merah besar di sebelah Simpan: ini satu-satunya aksi di modul
              ini yang tidak bisa dibatalkan. "Ditolak" cukup untuk hampir semua
              kasus dan meninggalkan jejak yang bisa dibaca. -->
-        <button type="submit" form="hapus-pendaftaran" class="mr-auto text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline">
-            Hapus pendaftaran ini
-        </button>
-        <a href="<?= base_url('Admin_Kemitraan') ?>"
-           class="rounded-xl border border-gray-200 dark:border-white/10 px-5 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300">Batal</a>
-        <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white">Simpan Perubahan</button>
+        <button type="submit" form="hapus-pendaftaran" class="tombol-kedua tombol-aksi-bahaya mr-auto"><i class="ph ph-trash"></i><span>Hapus pendaftaran ini</span></button>
+        <a href="<?= base_url('Admin_Kemitraan') ?>" class="tombol-kedua"><span>Batal</span></a>
+        <button type="submit" class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan perubahan</span></button>
     </div>
 </form>
 
@@ -137,7 +131,7 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
          dibubuhkan siapa pun - adalah dokumen palsu, apa pun niatnya. -->
     <form method="POST" action="<?= base_url('Admin_Kemitraan/unggah_balasan/' . (int) $row->id) ?>"
           enctype="multipart/form-data"
-          class="mt-6 rounded-3xl border border-gray-200 dark:border-white/5 bg-white dark:bg-brand-card p-6">
+          class="kartu-admin isi-kartu mt-5">
         <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
         <h3 class="mb-1 text-sm font-black text-gray-900 dark:text-white">Surat Balasan</h3>
         <p class="mb-4 text-xs text-gray-500 dark:text-brand-muted">
@@ -155,15 +149,12 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
         <?php endif; ?>
 
         <div class="flex flex-wrap items-center gap-3">
-            <input type="file" name="file_surat_balasan" accept=".pdf" required
-                   class="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-4 py-2.5 text-xs text-gray-600 dark:text-brand-muted">
-            <button type="submit" class="rounded-xl bg-emerald-500 px-5 py-2.5 text-xs font-bold text-white">
-                <?= empty($row->file_surat_balasan) ? 'Unggah' : 'Ganti Surat' ?>
-            </button>
+            <div class="min-w-[260px] flex-1"><?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'file_surat_balasan', 'ib_accept' => '.pdf', 'ib_required' => TRUE, 'ib_attr' => '']); ?></div>
+            <button type="submit" class="tombol-utama"><i class="ph ph-upload-simple"></i><span><?= empty($row->file_surat_balasan) ? 'Unggah' : 'Ganti surat' ?></span></button>
         </div>
     </form>
 <?php elseif ($row->jenis === 'magang'): ?>
-    <p class="mt-6 text-xs text-gray-500 dark:text-brand-muted">
+    <p class="mt-5 text-xs text-gray-500 dark:text-brand-muted">
         Surat balasan bisa diunggah setelah pendaftaran ini berstatus <strong>Diterima</strong>.
         Status sekarang: <?= html_escape($row->status) ?>.
     </p>

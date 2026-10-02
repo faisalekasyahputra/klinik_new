@@ -17,9 +17,12 @@ $warna = [
 ];
 ?>
 
-<div class="space-y-4">
+<?php // Judul = label sidebar ("Riwayat"); domainnya disebut di baris keterangan. ?>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Riwayat pelaporan ' . ($domain === 'kawasan' ? 'Kawasan Permukiman' : 'Perumahan') . ' per triwulan beserta statusnya.']); ?>
 
-  <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
+<div class="tumpuk-bagian">
+
+  <section class="kartu-admin isi-kartu">
     <div class="flex flex-wrap items-center gap-3">
       <span class="rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-black/20">
         Kabupaten/Kota <b class="text-gray-900 dark:text-white"><?= $e($scope_label) ?></b>
@@ -31,24 +34,24 @@ $warna = [
             <option value="<?= $t ?>" <?= $t === (int) $tahun ? 'selected' : '' ?>><?= $t ?></option>
           <?php endfor; ?>
         </select>
-        <button class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">Tampilkan</button>
+        <button class="tombol-kedua"><i class="ph ph-funnel"></i><span>Tampilkan</span></button>
       </form>
       <span class="ml-auto text-xs text-gray-500 dark:text-brand-muted">Baca-saja</span>
     </div>
   </section>
 
   <?php if ( ! $periode): ?>
-    <section class="rounded-2xl border border-gray-200 bg-white p-8 text-center dark:border-white/10 dark:bg-brand-card">
+    <section class="kartu-admin isi-kartu text-center">
       <p class="font-bold text-gray-900 dark:text-white">Belum ada periode <?= $e($domain) ?> di tahun <?= (int) $tahun ?>.</p>
       <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
         Periode dibuat otomatis saat kamu membuka layar Input Capaian.
       </p>
     </section>
   <?php else: ?>
-    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
-      <div class="overflow-x-auto">
+    <section class="kartu-admin isi-kartu">
+      <div class="overflow-x-auto aksi-tetap">
         <table class="w-full min-w-[840px] text-left text-sm">
-          <thead class="text-xs uppercase text-gray-500 dark:text-brand-muted">
+          <thead class="text-xs text-gray-500 dark:text-brand-muted">
             <tr>
               <th class="py-2 pr-3">Periode</th>
               <th class="py-2 pr-3">Status</th>
@@ -66,7 +69,8 @@ $warna = [
                 // adanya, tidak dikarang jadi status baru.
                 $label_status = $status === 'terkirim' && ! empty($row['reviewed_at'])
                     ? 'Terkirim · sudah ditinjau'
-                    : ucfirst(str_replace('_', ' ', $status));
+                    // Draf memakai label yang sama dengan Pantau Rekam Data (Rekam_data_model::keadaan_laporan).
+                    : ($status === 'draft' ? 'Draft, belum dikirim' : ucfirst(str_replace('_', ' ', $status)));
             ?>
               <?php $url_detail = $e(base_url($base_url . '?tahun=' . (int) $tahun . '&triwulan=' . (int) $row['triwulan'])); ?>
               <tr>
@@ -78,14 +82,11 @@ $warna = [
                     <?= $e($label_status) ?>
                   </span>
                 </td>
-                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e($row['submitted_at'] ?: '-') ?></td>
-                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e($row['reviewed_at'] ?: '-') ?></td>
+                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e(tgl_id($row['submitted_at'], TRUE, TRUE)) ?></td>
+                <td class="py-2 pr-3 text-gray-500 dark:text-brand-muted"><?= $e(tgl_id($row['reviewed_at'], TRUE, TRUE)) ?></td>
                 <td class="py-2 pr-3 text-gray-600 dark:text-brand-muted"><?= $e($row['catatan_admin'] ?: '-') ?></td>
                 <td class="py-2 text-right whitespace-nowrap">
-                  <a href="<?= $url_detail ?>"
-                     class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold dark:border-white/10">
-                    Lihat capaian
-                  </a>
+                  <a href="<?= $url_detail ?>" class="tombol-aksi"><i class="ph ph-eye" aria-hidden="true"></i><span>Lihat capaian</span></a>
                 </td>
               </tr>
             <?php endforeach; ?>

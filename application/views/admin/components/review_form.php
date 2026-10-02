@@ -18,10 +18,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *   $catatan_value - opsional, isi awal textarea (mis. catatan yang sudah ada)
  *   $hidden        - opsional, array field=>value tambahan selain CSRF
  */
+// Set tombol bersama (layouts/head.php): terima = tombol utama, tolak = berbingkai merah, netral = berbingkai.
 $style_class = [
-    'accept'  => 'bg-green-600 hover:bg-green-700 text-white',
-    'reject'  => 'bg-red-600 hover:bg-red-700 text-white',
-    'neutral' => 'bg-gray-200 hover:bg-gray-300 text-gray-800 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white',
+    'accept'  => 'tombol-utama',
+    'reject'  => 'tombol-kedua tombol-aksi-bahaya',
+    'neutral' => 'tombol-kedua',
 ];
 ?>
 <form method="post" action="<?= base_url($action_url) ?>" class="space-y-2">
@@ -34,7 +35,7 @@ $style_class = [
     <?php endif; ?>
     <div class="flex gap-2">
         <?php foreach ($buttons as $b): ?>
-        <button type="submit" name="status" value="<?= html_escape($b['value']) ?>" class="flex-1 px-3 py-1.5 rounded-lg text-xs font-bold <?= $style_class[$b['style'] ?? 'neutral'] ?>"><?= html_escape($b['label']) ?></button>
+        <button type="submit" name="status" value="<?= html_escape($b['value']) ?>" class="flex-1 <?= $style_class[$b['style'] ?? 'neutral'] ?>"><?= html_escape($b['label']) ?></button>
         <?php endforeach; ?>
     </div>
 </form>

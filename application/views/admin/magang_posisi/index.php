@@ -2,10 +2,20 @@
 /**
  * Layar posisi/lowongan magang - butir F1.
  *
- * MODAL PENGINGAT muncul tiap halaman dibuka, dan isinya berubah menurut
- * keadaan: kosong sama sekali, atau sudah lama tidak disentuh. Itu permintaan
- * user - "agar mereka tidak malas update". Pengingat yang berbunyi sama dalam
- * keadaan apa pun cepat jadi hiasan yang diklik tanpa dibaca.
+ * PENGINGAT (permintaan user, "agar mereka tidak malas update") dulu berupa
+ * modal yang terbuka sendiri tiap halaman dibuka. Kini jadi kotak biasa di
+ * atas tabel (audit UI 2 Okt 2026: modal otomatis menghalangi kerja), dan hanya
+ * muncul saat daftar sudah lama tidak diperbarui. Keadaan kosong cukup jadi
+ * baris kosong biasa di bawah formulir.
+ *
+ * Catatan yang dipindah dari modal:
+ * - Daftar sengaja tidak diisi lebih dulu. Lima contoh dari rapat (programmer,
+ *   arsitek, pengelola data, drafter, content creator) masih contoh dalam
+ *   kalimat, bukan daftar resmi; tebakan kita akan terbaca sebagai keputusan
+ *   dinas dan mahasiswa melamar posisi yang mungkin tidak ada.
+ * - Kuota di sini keterangan, bukan pengunci. Yang membatasi jumlah pendaftar
+ *   tetap kuota per bidang, jadi mengubah daftar ini tidak mengubah
+ *   pendaftaran yang sedang berjalan.
  */
 $hari_basi = 60;
 $kosong    = empty($rows);
@@ -13,77 +23,19 @@ $umur_hari = $terakhir_diubah ? (int) floor((time() - strtotime($terakhir_diubah
 $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
 ?>
 
-<?php if ($kosong || $basi): ?>
-<dialog id="modal-posisi-magang" class="rounded-2xl border p-0"
-        style="max-width:34rem;width:calc(100% - 2rem);background:var(--portal-bg-card,#fff);border-color:var(--portal-border,#e5e7eb);color:var(--portal-text,#111827)"
-        aria-labelledby="modal-posisi-judul">
-    <div class="p-5 sm:p-6">
-        <p class="text-[10px] font-bold uppercase tracking-[.18em]" style="color:#b45309">Pengingat</p>
+<div class="tumpuk-bagian">
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Daftar jurusan, bidang studi, atau keahlian yang sedang dibutuhkan tiap bidang. Yang <strong>aktif</strong> tampil di papan
+            magang publik.<br><span class="text-xs">'
+            . (int) $jumlah_aktif . ' posisi aktif · '
+            . ($terakhir_diubah ? 'terakhir diperbarui ' . html_escape(tgl_id($terakhir_diubah, TRUE)) : 'belum pernah diisi') . '</span>']); ?>
 
-        <?php if ($kosong): ?>
-            <h2 id="modal-posisi-judul" class="mt-1 text-lg font-black sm:text-xl">Belum ada satu pun posisi magang</h2>
-            <p class="mt-3 text-sm leading-relaxed" style="color:var(--portal-text-muted,#6b7280)">
-                Selama daftar ini kosong, papan magang publik hanya menampilkan <strong>nama bidang</strong> -
-                dan itulah yang dikeluhkan dinas: mahasiswa tidak tahu sebenarnya dibutuhkan keahlian apa.
-            </p>
-            <div class="mt-4 rounded-xl border p-3 text-xs leading-relaxed"
-                 style="background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.28);color:#92400e">
-                <p><strong>Kami sengaja tidak mengisinya lebih dulu.</strong> Lima contoh yang disebut di rapat
-                (programmer, arsitek, pengelola data, drafter, content creator) masih berupa contoh dalam
-                kalimat, bukan daftar resmi. Kalau kami tuliskan sendiri, tebakan kami akan terbaca sebagai
-                keputusan dinas dan mahasiswa melamar posisi yang mungkin tidak ada.</p>
-            </div>
-        <?php else: ?>
-            <h2 id="modal-posisi-judul" class="mt-1 text-lg font-black sm:text-xl">Daftar posisi belum disentuh <?= (int) $umur_hari ?> hari</h2>
-            <p class="mt-3 text-sm leading-relaxed" style="color:var(--portal-text-muted,#6b7280)">
-                Mahasiswa melamar berdasarkan daftar ini. Posisi yang sudah terisi tetapi masih tercantum
-                membuat mereka mendaftar untuk sesuatu yang tidak ada lagi - dan penolakannya baru datang
-                jauh belakangan.
-            </p>
-            <div class="mt-4 rounded-xl border p-3 text-xs leading-relaxed"
-                 style="background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.28);color:#92400e">
-                <p><strong>Cukup satu hal:</strong> matikan tanda &ldquo;Aktif&rdquo; pada posisi yang sudah
-                tidak dibuka. Tidak perlu dihapus - mematikannya menyembunyikannya dari papan publik
-                sambil menyimpan catatannya untuk periode berikutnya.</p>
-            </div>
-        <?php endif; ?>
-
-        <div class="mt-4 rounded-xl border p-3 text-xs leading-relaxed"
-             style="background:rgba(14,165,233,.09);border-color:rgba(14,165,233,.3);color:#075985">
-            <p><strong>Kuota di sini keterangan, bukan pengunci.</strong> Yang membatasi jumlah pendaftar
-            tetap kuota per bidang. Jadi mengubah daftar ini aman - tidak ada pendaftaran berjalan
-            yang ikut berubah.</p>
-        </div>
-
-        <div class="mt-5 flex justify-end">
-            <button type="button" id="modal-posisi-tutup" class="rounded-xl px-4 py-2 text-sm font-bold"
-                    style="background:var(--portal-brand,#0e6b7a);color:#fff">Mengerti, saya perbarui</button>
-        </div>
+    <?php if ($basi): ?>
+    <div data-pengingat-posisi class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 text-sm flex items-start gap-3">
+        <i class="ph ph-clock-countdown text-lg mt-0.5" aria-hidden="true"></i>
+        <p><strong>Daftar ini belum diperbarui <?= (int) $umur_hari ?> hari.</strong>
+        Matikan tanda Aktif pada posisi yang sudah tidak dibuka agar mahasiswa tidak melamar posisi yang sudah terisi.</p>
     </div>
-</dialog>
-<script>
-(function () {
-    var d = document.getElementById('modal-posisi-magang');
-    if (!d || typeof d.showModal !== 'function') { return; }
-    var buka = function () { if (!d.open) { d.showModal(); } };
-    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', buka); } else { buka(); }
-    document.getElementById('modal-posisi-tutup').addEventListener('click', function () { d.close(); });
-})();
-</script>
-<?php endif; ?>
-
-<div class="space-y-5">
-    <header>
-        <h1 class="text-xl font-black">Jurusan/Bidang/Keahlian Magang</h1>
-        <p class="mt-1 text-sm" style="color:var(--portal-text-muted,#6b7280)">
-            Daftar jurusan, bidang studi, atau keahlian yang sedang dibutuhkan tiap bidang. Yang <strong>aktif</strong> tampil di papan
-            magang publik; kuota di sini keterangan, bukan pengunci pendaftaran.
-        </p>
-        <p class="mt-1 text-xs" style="color:var(--portal-text-muted,#6b7280)">
-            <?= (int) $jumlah_aktif ?> posisi aktif ·
-            <?= $terakhir_diubah ? 'terakhir diperbarui ' . html_escape(date('d M Y', strtotime($terakhir_diubah))) : 'belum pernah diisi' ?>
-        </p>
-    </header>
+    <?php endif; ?>
 
     <?php foreach (['success' => '#047857', 'error' => '#b91c1c'] as $jenis => $warna): ?>
         <?php if ($this->session->flashdata($jenis)): ?>
@@ -93,7 +45,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
     <?php endforeach; ?>
 
     <form action="<?= base_url('Admin_Magang_Posisi/simpan') ?>" method="post"
-          class="rounded-2xl border p-4" style="border-color:var(--portal-border,#e5e7eb)">
+          class="kartu-admin isi-kartu">
         <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
         <input type="hidden" name="id" value="0">
         <p class="mb-3 text-sm font-bold">Tambah kebutuhan</p>
@@ -101,7 +53,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
             <label class="text-xs">Bidang
                 <select name="bidang_kode" required class="mt-1 w-full rounded-lg border p-2 text-sm">
                     <?php foreach ($bidang as $b): ?>
-                        <option value="<?= html_escape($b->kode) ?>"><?= html_escape($b->nama) ?></option>
+                        <option value="<?= html_escape($b->kode) ?>"><?= html_escape(preg_replace('/^Bidang\s+/i', '', $b->nama)) ?></option>
                     <?php endforeach; ?>
                 </select>
             </label>
@@ -128,19 +80,18 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
             <label class="flex items-center gap-2 text-xs">
                 <input type="checkbox" name="aktif" value="1" checked> Tampilkan di papan magang
             </label>
-            <button type="submit" class="rounded-xl px-4 py-2 text-sm font-bold"
-                    style="background:var(--portal-brand,#0e6b7a);color:#fff">Tambah</button>
+            <button type="submit" class="tombol-utama"><i class="ph ph-plus"></i><span>Tambah</span></button>
         </div>
     </form>
 
     <?php if ($kosong): ?>
-        <p class="rounded-2xl border p-6 text-center text-sm" style="border-color:var(--portal-border,#e5e7eb);color:var(--portal-text-muted,#6b7280)">
+        <p class="kartu-admin isi-kartu text-center text-sm text-gray-500 dark:text-brand-muted">
             Belum ada posisi. Papan magang publik masih menampilkan nama bidang saja.
         </p>
     <?php else: ?>
-        <div class="overflow-x-auto rounded-2xl border" style="border-color:var(--portal-border,#e5e7eb)">
+        <div class="kartu-admin overflow-x-auto aksi-tetap">
             <table class="w-full text-sm">
-                <thead class="text-left text-xs" style="background:rgba(0,0,0,.03)">
+                <thead class="bg-gray-50 text-left text-xs dark:bg-black/20">
                     <tr>
                         <th class="px-3 py-2">Bidang</th><th class="px-3 py-2">Posisi</th>
                         <th class="px-3 py-2">Keterangan</th><th class="px-3 py-2">Dibutuhkan</th>
@@ -150,7 +101,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
                 </thead>
                 <tbody>
                 <?php foreach ($rows as $r): ?>
-                    <tr class="border-t" style="border-color:var(--portal-border,#e5e7eb)">
+                    <tr class="border-t border-gray-100 dark:border-white/5">
                         <form action="<?= base_url('Admin_Magang_Posisi/simpan') ?>" method="post" id="f<?= (int) $r->id ?>">
                             <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
                             <input type="hidden" name="id" value="<?= (int) $r->id ?>">
@@ -158,7 +109,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
                         <td class="px-3 py-2">
                             <select name="bidang_kode" form="f<?= (int) $r->id ?>" class="rounded border p-1 text-xs">
                                 <?php foreach ($bidang as $b): ?>
-                                    <option value="<?= html_escape($b->kode) ?>" <?= $b->kode === $r->bidang_kode ? 'selected' : '' ?>><?= html_escape($b->nama) ?></option>
+                                    <option value="<?= html_escape($b->kode) ?>" <?= $b->kode === $r->bidang_kode ? 'selected' : '' ?>><?= html_escape(preg_replace('/^Bidang\s+/i', '', $b->nama)) ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </td>
@@ -172,8 +123,7 @@ $basi      = ( ! $kosong) && $umur_hari !== NULL && $umur_hari >= $hari_basi;
                             value="<?= (int) $r->urutan ?>" class="w-16 rounded border p-1 text-xs"></td>
                         <td class="px-3 py-2"><input type="checkbox" name="aktif" value="1" form="f<?= (int) $r->id ?>" <?= $r->aktif ? 'checked' : '' ?>></td>
                         <td class="whitespace-nowrap px-3 py-2">
-                            <button type="submit" form="f<?= (int) $r->id ?>" class="rounded px-2 py-1 text-xs font-bold"
-                                    style="background:var(--portal-brand,#0e6b7a);color:#fff">Simpan</button>
+                            <button type="submit" form="f<?= (int) $r->id ?>" class="tombol-aksi"><i class="ph ph-floppy-disk" aria-hidden="true"></i><span>Simpan</span></button>
                         </td>
                     </tr>
                 <?php endforeach; ?>

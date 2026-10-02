@@ -26,7 +26,7 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
         $data['title'] = 'Magang Bidang Saya';
 
         $table = $this->table_state([
-            'kkn_magang_pendaftaran.created_at', 'usr_users.name',
+            'kkn_magang_pendaftaran.created_at', 'usr_akun.nama',
             'kkn_magang_pendaftaran.instansi_asal', 'kkn_magang_pendaftaran.status',
         ], 'kkn_magang_pendaftaran.created_at');
         $data['base_url'] = 'Kemitraan_Bidang';
@@ -36,21 +36,21 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
         // tidak muncul di sini - dan memang seharusnya begitu: ia bukan
         // tanggung jawab bidang mana pun.
         $this->db->from('kkn_magang_pendaftaran')
-            ->join('usr_users', 'usr_users.id = kkn_magang_pendaftaran.user_id', 'left')
+            ->join('usr_akun', 'usr_akun.id = kkn_magang_pendaftaran.user_id', 'left')
             ->where('kkn_magang_pendaftaran.jenis', 'magang')
             ->where('kkn_magang_pendaftaran.bidang_kode', $this->my_bidang_kode);
 
         if ($table['q'] !== '') {
             $this->db->group_start()
-                ->like('usr_users.name', $table['q'])->or_like('usr_users.email', $table['q'])
+                ->like('usr_akun.nama', $table['q'])->or_like('usr_akun.email', $table['q'])
                 ->or_like('kkn_magang_pendaftaran.instansi_asal', $table['q'])
                 ->or_like('kkn_magang_pendaftaran.divisi_atau_tema', $table['q'])
                 ->group_end();
         }
         $table += $this->paginate_state($this->db->count_all_results('', FALSE));
 
-        $data['rows'] = $this->db->select('kkn_magang_pendaftaran.*, usr_users.name AS nama_mahasiswa,
-                usr_users.email AS email_mahasiswa')
+        $data['rows'] = $this->db->select('kkn_magang_pendaftaran.*, usr_akun.nama AS nama_mahasiswa,
+                usr_akun.email AS email_mahasiswa')
             ->order_by($table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
             ->get()->result();
@@ -113,9 +113,67 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
             'reviewed_by_bidang' => $this->get_user_id(),
             'reviewed_at_bidang' => date('Y-m-d H:i:s'),
         ]);
+        // Aksi sama dengan Admin_Kemitraan::proses() supaya Admin_Audit melihat
+        // seluruh rantai keputusan satu pendaftaran (UAT admin bidang AB5).
+        $this->catat_audit('kemitraan_keputusan', 'Keputusan bidang ' . strtoupper($row->jenis) . ' ' . $row->instansi_asal . ': ' . $row->status . ' -> ' . $status,
+            'kkn_magang_pendaftaran', (string) $row->id, [
+                'status_lama' => $row->status, 'status_baru' => $status, 'bidang' => $this->my_bidang_kode,
+                'catatan_baru' => trim((string) $this->input->post('catatan_admin', TRUE)),
+            ]);
 
         $this->session->set_flashdata('success', 'Keputusan bidang tersimpan.');
         redirect('Kemitraan_Bidang');
+    }
+
+    /**
+     * Kuota dan bulan magang BIDANG SAYA (keputusan user 1 Okt 2026). Layar dan model sama dengan
+     * Admin_Kemitraan::slot_bidang; bedanya kode bidang selalu dari sesi, tidak pernah dari URL atau
+     * formulir, jadi bidang lain tidak bisa disentuh. Hak modulnya ikut entri kemitraan_bidang.
+     */
+    public function kuota($tahun = NULL)
+    {
+        $tahun = $tahun === NULL ? $this->slot->tahun_papan() : $this->slot->tahun_sah($tahun);
+        $bidang = $this->slot->bidang_by_kode($this->my_bidang_kode);
+        if ($tahun === NULL || ! $bidang) { show_404(); }
+
+        $this->render_scoped_admin('admin/kemitraan/slot_bidang', [
+            'title'      => 'Kuota Magang ' . $bidang->nama,
+            'bidang'     => $bidang,
+            'tahun'      => $tahun,
+            'slot'       => $this->slot->slot_bidang($bidang->kode, $tahun),
+            'pendaftar'  => $this->slot->pendaftar_bidang($bidang->kode, $tahun),
+            'terisi'     => $this->slot->peta_terisi()[$bidang->kode] ?? [],
+            'nama_bulan' => Kemitraan_slot_model::nama_bulan(),
+            'mode_bidang' => TRUE,
+        ]);
+    }
+
+    public function simpan_kuota()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $bidang = $this->slot->bidang_by_kode($this->my_bidang_kode);
+        if ( ! $bidang) { show_404(); }
+
+        $tahun = $this->slot->tahun_sah($this->input->post('tahun'));
+        if ($tahun === NULL) {
+            $this->session->set_flashdata('error', 'Tahun tidak valid.');
+            redirect('Kemitraan_Bidang/kuota');
+            return;
+        }
+
+        $kuota = $this->input->post('kuota');
+        $bulan = (array) $this->input->post('bulan');
+        $berhasil = $this->slot->simpan_pengaturan_bidang($bidang->kode, $tahun, $kuota, $bulan);
+        if ($berhasil) {
+            $this->catat_audit('magang_slot_diubah', 'Slot magang ' . $bidang->nama . ' tahun ' . $tahun . ' diperbarui oleh admin bidang',
+                'kkn_magang_bidang', (string) $bidang->kode, [
+                    'tahun' => $tahun, 'kuota' => is_numeric($kuota) ? (int) $kuota : NULL,
+                    'bulan' => array_map('intval', array_keys(array_filter($bulan, static fn($b) => ! empty($b['buka'])))),
+                ]);
+        }
+        $this->session->set_flashdata($berhasil ? 'success' : 'error',
+            $berhasil ? 'Kuota magang ' . $bidang->nama . ' tahun ' . $tahun . ' diperbarui.' : 'Kuota gagal disimpan.');
+        redirect('Kemitraan_Bidang/kuota/' . $tahun);
     }
 
     /** Ambil satu pendaftaran, hanya kalau bidang tujuannya adalah bidang saya. */
@@ -129,5 +187,200 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
             'id'          => (int) $id,
             'bidang_kode' => $this->my_bidang_kode,
         ])->row();
+    }
+
+    /**
+     * Akun Universitas untuk admin bidang - UAT 2026 sheet "universitas": "akun dibuatkan
+     * admin bidang, akun diberikan kepada universitas oleh admin bidang". Sebelumnya hanya
+     * superadmin (Admin_Kemitraan::universitas). View dipakai bersama; bedanya tautan
+     * Manajemen Pengguna disembunyikan karena itu layar superadmin.
+     *
+     * Akun universitas tidak terikat bidang, jadi daftarnya tidak disaring bidang_kode.
+     * Admin bidang hanya bisa MEMBUAT role 'universitas' - role dipatok di server, bukan
+     * dibaca dari formulir, supaya endpoint ini tidak bisa dipakai membuat akun admin.
+     */
+    public function universitas()
+    {
+        $data['title'] = 'Akun Universitas';
+        $table = $this->table_state(['created_at', 'nama', 'email'], 'created_at');
+        $data['base_url'] = 'Kemitraan_Bidang/universitas';
+        $data['aksi_buat'] = 'Kemitraan_Bidang/buat_universitas';
+
+        $this->db->from('usr_akun')->where('peran', 'universitas');
+        if ($table['q'] !== '') {
+            $this->db->group_start()
+                ->like('nama', $table['q'])->or_like('email', $table['q'])
+                ->or_like('nama_pengguna', $table['q'])->group_end();
+        }
+        $table += $this->paginate_state($this->db->count_all_results('', FALSE));
+        $data['rows'] = $this->db->select("usr_akun.*, (SELECT COUNT(*) FROM kkn_magang_pendaftaran
+                WHERE kkn_magang_pendaftaran.user_id = usr_akun.id
+                  AND kkn_magang_pendaftaran.jenis = 'kkn') AS jumlah_kkn", FALSE)
+            ->order_by($table['sort'], $table['dir'])
+            ->limit($table['per_page'], $table['offset'])
+            ->get()->result();
+        $data['table'] = $data['pager'] = $table;
+        $this->render_scoped_admin('admin/kemitraan/universitas', $data);
+    }
+
+    public function buat_universitas()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $kembali = 'Kemitraan_Bidang/universitas';
+
+        $this->load->library('form_validation');
+        $this->form_validation->set_rules('name', 'Nama', 'required|trim|max_length[150]');
+        // Pesan email ganda disamakan dengan cabang 1062 di bawah (yang kini hanya terjangkau
+        // lewat balapan dua kiriman). Nomor HP dan kekuatan sandi divalidasi di server, bukan
+        // hanya maxlength HTML (temuan UAT universitas U1/U2, 28 Sep 2026).
+        $this->form_validation->set_rules('email', 'Email', 'required|valid_email|max_length[100]|is_unique[usr_akun.email]',
+            ['is_unique' => 'Akun belum dibuat: email tersebut sudah terdaftar.']);
+        $this->form_validation->set_rules('phone', 'Nomor HP', 'trim|max_length[20]|nomor_hp');
+        $this->form_validation->set_rules('password', 'Password', 'required|sandi_kuat');
+        if ($this->form_validation->run() === FALSE) {
+            $this->session->set_flashdata('error', strip_tags(validation_errors()));
+            redirect($kembali);
+            return;
+        }
+
+        $this->load->model('auth_model');
+        $payload = [
+            'nama'              => $this->input->post('name', TRUE),
+            'email'             => $this->input->post('email', TRUE),
+            'kata_sandi'        => password_hash($this->input->post('password'), PASSWORD_BCRYPT),
+            'peran'             => 'universitas',
+            'status'            => 'active',
+            'profil_lengkap' => 1,
+            'email_verified_at' => date('Y-m-d H:i:s'),
+            'created_at'        => date('Y-m-d H:i:s'),
+        // Sandi awal diketahui admin, jadi wajib diganti di login pertama (keputusan 29 Sep 2026).
+        ] + $this->auth_model->password_awal_fields();
+        $telp = trim((string) $this->input->post('phone', TRUE));
+        if ($telp !== '') { $payload['no_hp'] = $telp; }
+
+        if ( ! $this->db->insert('usr_akun', $payload)) {
+            $galat = $this->db->error();
+            $this->session->set_flashdata('error', (int) ($galat['code'] ?? 0) === 1062
+                ? 'Akun belum dibuat: email tersebut sudah terdaftar.'
+                : 'Akun belum dibuat. Periksa isian lalu coba lagi.');
+            redirect($kembali);
+            return;
+        }
+        $id = (string) $this->db->insert_id();
+        $this->catat_audit('universitas_dibuat',
+            'Admin bidang ' . $this->my_bidang_kode . ' membuat akun universitas ' . $payload['email'],
+            'usr_akun', $id, ['role' => 'universitas', 'bidang_pembuat' => $this->my_bidang_kode]);
+
+        $this->session->set_flashdata('success', 'Akun universitas berhasil dibuat. Serahkan email dan sandinya kepada universitas; sandi itu wajib diganti saat pertama masuk.');
+        redirect($kembali);
+    }
+
+    // =====================================================================
+    // KELOLA AKUN UNIVERSITAS - keputusan pemilik produk 29 Sep 2026: admin bidang menyunting,
+    // mereset sandi, dan menonaktifkan akun universitas (sebelumnya hanya superadmin lewat
+    // Admin_Users). Batasnya ada di akun_universitas(): hanya role 'universitas'.
+    // =====================================================================
+
+    /**
+     * Akun sasaran dari POST id, HANYA kalau role-nya 'universitas'. Akun peran lain (termasuk
+     * id yang disisipkan ke formulir) dijawab 404 persis seperti akun yang tidak ada, supaya
+     * endpoint ini tidak bisa dipakai menyentuh atau menebak akun warga, pengembang, atau admin.
+     */
+    private function akun_universitas()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $user = $this->db->get_where('usr_akun', ['id' => (int) $this->input->post('id'), 'peran' => 'universitas'])->row();
+        if ( ! $user) { show_404(); }
+        return $user;
+    }
+
+    /** Sunting nama, email, dan nomor HP. Role tidak pernah dibaca dari formulir. */
+    public function ubah_universitas()
+    {
+        $user = $this->akun_universitas();
+        $kembali = 'Kemitraan_Bidang/universitas';
+
+        $this->load->library('form_validation');
+        $this->form_validation->set_rules('name', 'Nama', 'required|trim|max_length[150]');
+        $this->form_validation->set_rules('email', 'Email', 'required|trim|valid_email|max_length[100]');
+        $this->form_validation->set_rules('phone', 'Nomor HP', 'trim|max_length[20]|nomor_hp');
+        if ($this->form_validation->run() === FALSE) {
+            $this->session->set_flashdata('error', strip_tags(validation_errors()));
+            redirect($kembali);
+            return;
+        }
+
+        $data = [
+            'nama'  => $this->input->post('name', TRUE),
+            'email' => $this->input->post('email', TRUE),
+            'no_hp' => trim((string) $this->input->post('phone', TRUE)) ?: NULL,
+        ];
+        // is_unique tidak bisa dipakai: email akun ini sendiri akan dianggap ganda.
+        $ganda = $this->db->where('email', $data['email'])->where('id !=', (int) $user->id)->count_all_results('usr_akun');
+        $galat = $ganda > 0 ? 1062 : 0;
+        if ( ! $galat && ! $this->db->where('id', (int) $user->id)->update('usr_akun', $data)) {
+            $galat = (int) ($this->db->error()['code'] ?? 0) ?: -1;
+        }
+        if ($galat) {
+            $this->session->set_flashdata('error', $galat === 1062
+                ? 'Perubahan belum disimpan: email tersebut sudah terdaftar.'
+                : 'Perubahan belum disimpan. Periksa isian lalu coba lagi.');
+            redirect($kembali);
+            return;
+        }
+
+        $berubah = array_keys(array_filter($data, fn($v, $k) => (string) $v !== (string) $user->$k, ARRAY_FILTER_USE_BOTH));
+        $this->catat_audit('universitas_diubah', 'Admin bidang ' . $this->my_bidang_kode . ' menyunting akun universitas ' . $user->email,
+            'usr_akun', (string) $user->id, ['kolom' => $berubah, 'email_lama' => $user->email, 'email_baru' => $data['email']]);
+        $this->session->set_flashdata('success', 'Data akun ' . $data['email'] . ' diperbarui.');
+        redirect($kembali);
+    }
+
+    /** Reset sandi: aturan kekuatan sama dengan sandi buatan admin, dan wajib diganti saat masuk. */
+    public function sandi_universitas()
+    {
+        $user = $this->akun_universitas();
+        $kembali = 'Kemitraan_Bidang/universitas';
+
+        $this->load->library('form_validation');
+        $this->form_validation->set_rules('password', 'Password', 'required|sandi_kuat');
+        if ($this->form_validation->run() === FALSE) {
+            $this->session->set_flashdata('error', strip_tags(validation_errors()));
+            redirect($kembali);
+            return;
+        }
+
+        // Pola Admin_Users::reset_sandi: kunci gagal dibuka dan sesi yang sedang berjalan dicabut.
+        $this->load->model('auth_model');
+        $this->db->where('id', (int) $user->id)->update('usr_akun', [
+            'kata_sandi' => password_hash($this->input->post('password'), PASSWORD_BCRYPT),
+            'gagal_masuk' => 0, 'terkunci_sampai' => NULL,
+            'sesi_aktif_hash' => NULL, 'sesi_aktif_id_hash' => NULL, 'sesi_aktif_at' => NULL,
+        ] + $this->auth_model->password_awal_fields());
+        // Sandinya tidak ikut dicatat.
+        $this->catat_audit('universitas_sandi_direset', 'Admin bidang ' . $this->my_bidang_kode . ' mereset sandi akun universitas ' . $user->email,
+            'usr_akun', (string) $user->id);
+        $this->session->set_flashdata('success', 'Sandi ' . $user->email . ' diganti. Sampaikan lewat jalur pribadi; universitas wajib menggantinya saat masuk.');
+        redirect($kembali);
+    }
+
+    /** Nonaktifkan atau aktifkan kembali. Menonaktifkan sekaligus mengakhiri sesi yang berjalan. */
+    public function status_universitas()
+    {
+        $user = $this->akun_universitas();
+        $ke = $this->input->post('status', TRUE) === 'nonaktif' ? 'nonaktif' : 'active';
+
+        $data = ['status' => $ke];
+        if ($ke === 'nonaktif') {
+            $data += ['sesi_aktif_hash' => NULL, 'sesi_aktif_id_hash' => NULL, 'sesi_aktif_at' => NULL];
+        }
+        $this->db->where('id', (int) $user->id)->update('usr_akun', $data);
+        $this->catat_audit($ke === 'nonaktif' ? 'universitas_dinonaktifkan' : 'universitas_diaktifkan',
+            'Admin bidang ' . $this->my_bidang_kode . ($ke === 'nonaktif' ? ' menonaktifkan' : ' mengaktifkan') . ' akun universitas ' . $user->email,
+            'usr_akun', (string) $user->id, ['dari' => $user->status, 'ke' => $ke]);
+        $this->session->set_flashdata('success', $ke === 'nonaktif'
+            ? 'Akun ' . $user->email . ' dinonaktifkan dan sesinya diakhiri.'
+            : 'Akun ' . $user->email . ' diaktifkan kembali.');
+        redirect('Kemitraan_Bidang/universitas');
     }
 }

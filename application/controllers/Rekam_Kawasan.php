@@ -265,7 +265,7 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
         $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
 
         $this->render_scoped_admin('admin/rekam/riwayat', [
-            'title'       => 'Riwayat Pelaporan Kawasan',
+            'title'       => 'Riwayat', // = label sidebar
             'scope_label' => $this->db->where('id', $this->my_kabupaten_id)
                 ->get('kabupaten')->row('nama') ?: 'Wilayah Saya',
             'domain'      => 'kawasan',

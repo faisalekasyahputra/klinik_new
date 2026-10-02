@@ -3,11 +3,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 /* Kontrak aman: controller boleh mengirim array; view tetap dapat dirender saat data belum ada. */
 $step_slug = isset($step) && is_string($step) ? $step : 'find_data';
-/* Step 'citizen_data' DIHAPUS PERMANEN 23 Agt 2026 (permintaan user) -
-   field Data Warga sekarang jadi bagian dari step 'housing_family_detail'
-   (satu form bersama "Rumah & Keluarga"), bukan step tersendiri lagi.
-   Lihat Warga.php::STEPS - 'citizen_data' sudah tidak ada di daftar itu. */
-$step_index = ['find_data' => 0, 'housing_family' => 1, 'preliminary_recommendation' => 2, 'housing_family_detail' => 1, 'building_or_land' => 3, 'building_condition' => 3, 'candidate_land' => 3, 'sanitation_utilities' => 3, 'sanitation' => 3, 'location_evidence' => 3, 'review_recommendation' => 3, 'review' => 3];
+$step_index = ['find_data' => 0, 'housing_family' => 1, 'preliminary_recommendation' => 2, 'housing_family_detail' => 3, 'building_or_land' => 3, 'building_condition' => 3, 'candidate_land' => 3, 'sanitation_utilities' => 3, 'sanitation' => 3, 'location_evidence' => 3, 'review_recommendation' => 3, 'review' => 3];
 $step = $step_index[$step_slug] ?? 0;
 $step_slug = array_key_exists($step_slug, $step_index) ? $step_slug : 'find_data';
 $assessment = isset($assessment) && is_array($assessment) ? $assessment : [];
@@ -17,19 +13,15 @@ $errors = isset($errors) && is_array($errors) ? $errors : [];
 $lookup = isset($lookup) && is_array($lookup) ? $lookup : [];
 $evidence_files = isset($evidence_files) && is_array($evidence_files) ? $evidence_files : [];
 $recommendations = isset($recommendations) && is_array($recommendations) ? $recommendations : [];
-$matriks_recommendation = isset($matriks_recommendation) && is_array($matriks_recommendation) ? $matriks_recommendation : [];
-$matriks_decile_label = isset($matriks_decile_label) && is_string($matriks_decile_label) ? $matriks_decile_label : null;
-$matriks_data_simperum = isset($matriks_data_simperum) ? $matriks_data_simperum : null; // true/false/null (null = belum ada draft)
-$matriks_saran_lengkapi_simperum = isset($matriks_saran_lengkapi_simperum) && $matriks_saran_lengkapi_simperum === TRUE;
 $review_summary = isset($review_summary) && is_array($review_summary) ? $review_summary : [];
 $action_url = isset($action_url) && is_string($action_url) && $action_url !== '' ? $action_url : base_url('warga/pendataan');
 $back_url = isset($back_url) && is_string($back_url) && $back_url !== '' ? $back_url : base_url();
 $csrf_name = isset($csrf_name) && is_string($csrf_name) && $csrf_name !== '' ? $csrf_name : (isset($csrf_token_name) && is_string($csrf_token_name) && $csrf_token_name !== '' ? $csrf_token_name : $this->security->get_csrf_token_name());
 $csrf_hash = isset($csrf_hash) && is_string($csrf_hash) ? $csrf_hash : $this->security->get_csrf_hash();
 // Normalisasi pilihan lama menjadi dua cabang UAT tanpa mengubah arsip database.
-if (isset($values['matrix_current_housing_code'])
-    && $values['matrix_current_housing_code'] !== 'house_owned') {
-    $values['matrix_current_housing_code'] = 'house_none_or_rent';
+if (empty($values['matriks_rumah_sekarang']) && !empty($values['kepemilikan_rumah'])) {
+    $values['matriks_rumah_sekarang'] = $values['kepemilikan_rumah'] === 'owned'
+        ? 'house_owned' : 'house_none_or_rent';
 }
 $value = static function ($key, $default = '') use ($values) { return (string) ($values[$key] ?? $default); };
 $selected = static function ($key, $option) use ($value) { return $value($key) === $option ? ' selected' : ''; };
@@ -37,23 +29,23 @@ $checked = static function ($key, $option) use ($value) { return $value($key) ==
 $field_error = static function ($key) use ($errors) { return isset($errors[$key]) ? (string) $errors[$key] : ''; };
 $matrix_required = [
     'family_card_number' => TRUE, 'full_name' => TRUE, 'phone' => TRUE,
-    'birth_date' => TRUE, 'address' => TRUE, 'monthly_income' => TRUE,
-    'gender_code' => TRUE, 'marital_status_code' => TRUE, 'education_code' => TRUE,
-    'occupation_code' => TRUE, 'employment_stability_code' => TRUE,
-    'income_band_code' => TRUE, 'has_savings' => TRUE,
-    'self_help_capability_code' => TRUE,
+    'birth_date' => TRUE, 'address' => TRUE, 'penghasilan_bulanan' => TRUE,
+    'jenis_kelamin' => TRUE, 'status_perkawinan' => TRUE, 'pendidikan' => TRUE,
+    'pekerjaan' => TRUE, 'stabilitas_pekerjaan' => TRUE,
+    'kawasan_perumahan' => TRUE, 'punya_tabungan' => TRUE,
+    'mampu_swadaya' => TRUE,
 ];
 /* Field ini menentukan jalur atau evaluasi awal. Badge warga selain daftar
    ini diberi keterangan Opsional agar warga tidak mengira semua wajib. */
 $recommendation_required = $matrix_required + [
-    'housing_status_code' => TRUE,
-    'has_other_house' => TRUE,
-    'owns_candidate_land' => TRUE,
+    'kepemilikan_rumah' => TRUE,
+    'rumah_lain' => TRUE,
+    'punya_lahan_calon' => TRUE,
 ];
 $has_errors = ! empty($errors);
-$step_names = ['Masukkan NIK', 'Isi Data Sesuai Matriks', 'Hasil Rekomendasi', 'Lengkapi Data SIMPERUM'];
-$source_label = ['simulation' => 'SIMPERUM (simulasi)', 'api' => 'SIMPERUM', 'citizen' => 'Diisi warga', 'citizen_correction' => 'Koreksi warga', 'admin' => 'Dikoreksi admin'];
-$is_simulation = ($assessment['source_mode'] ?? $this->config->item('simperum_mode', 'simperum')) === 'simulation';
+$step_names = ['Masukkan NIK', 'Data untuk Rekomendasi', 'Hasil Rekomendasi', 'Lengkapi Data SIMPERUM'];
+$source_label = ['simulation' => 'SIMPERUM (simulasi)', 'api' => 'SIMPERUM', 'account' => 'Profil akun', 'citizen' => 'Diisi warga', 'citizen_correction' => 'Koreksi warga', 'admin' => 'Dikoreksi admin'];
+$is_simulation = ($assessment['mode_sumber'] ?? $this->config->item('simperum_mode', 'simperum')) === 'simulation';
 $provenance = isset($field_provenance) && is_array($field_provenance) ? $field_provenance : [];
 $badge = static function ($field) use ($provenance, $source_label, $recommendation_required) {
     $origin = $provenance[$field] ?? 'citizen';
@@ -108,8 +100,8 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
         <input type="hidden" name="<?= html_escape($csrf_name) ?>" value="<?= html_escape($csrf_hash) ?>">
         <input type="hidden" name="step" value="<?= html_escape($step_slug) ?>">
         <input type="hidden" name="action" value="<?= $step_slug === 'find_data' ? 'lookup' : 'save' ?>">
-        <input type="hidden" name="assessment_id" value="<?= (int) ($assessment['id'] ?? $assessment['assessment_id'] ?? 0) ?>">
-        <input type="hidden" name="lock_version" value="<?= (int) ($assessment['lock_version'] ?? 0) ?>">
+        <input type="hidden" name="penilaian_id" value="<?= (int) ($assessment['id'] ?? $assessment['penilaian_id'] ?? 0) ?>">
+        <input type="hidden" name="versi_kunci" value="<?= (int) ($assessment['versi_kunci'] ?? 0) ?>">
 
         <?php if ($step === 0): ?>
             <h2 class="text-lg font-black">Masukkan NIK</h2>
@@ -124,7 +116,7 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                di Warga::lookup(), lihat komentarnya. */
             ?>
             <div class="mt-5">
-                <div><label for="nik" class="text-xs font-bold">NIK</label><input id="nik" name="nik" inputmode="numeric" pattern="[0-9]{16}" maxlength="16" required autocomplete="off" value="<?= html_escape($value('nik')) ?>" aria-describedby="nik-error" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error('nik') ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><p id="nik-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error('nik')) ?></p></div>
+                <div><label for="nik" class="text-xs font-bold">NIK</label><input id="nik" name="nik" inputmode="numeric" pattern="[0-9]{16}" maxlength="16" required autocomplete="off" value="<?= html_escape($value('nik')) ?>" aria-describedby="nik-error" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error('nik') ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><?php if ( ! empty($nik_dari_akun)): ?><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Terisi dari NIK yang Anda daftarkan. Tinggal klik tombol di bawah, atau ubah kalau keliru.</p><?php endif; ?><p id="nik-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error('nik')) ?></p></div>
             </div>
             <?php
             /* Hasil pencarian ANONIM (14 Agt 2026) - pengunjung belum login
@@ -163,131 +155,29 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                 </div>
             </div>
             <?php endif; ?>
-        <?php elseif ($step_slug === 'housing_family'): ?>
-            <?php
-            /* Diganti total 23 Agt 2026 - permintaan user: field step ini
-               mengikuti persis kolom bertanda '*' di "MATRIKS VARIABEL
-               PENENTUAN PROGRAM PERUMAHAN.xlsx" Sheet4 (kolom D-I, kolom
-               A-C & J bukan input - A/B/C berasal dari profil/SIMPERUM,
-               J adalah hasil rekomendasi, bukan masukan). Field LAMA di
-               step ini (Status rumah dkk.) TIDAK dihapus - dipindah ke
-               step baru "housing_family_detail" (lihat blok setelah
-               'preliminary_recommendation' di bawah) karena masih dipakai
-               Warga_ruleset.php + auto-isi SIMPERUM dengan kosakata jawaban
-               yang beda dari teks xlsx ini (keputusan eksplisit user).
-
-               Kode pendek tiap pilihan (kolom kedua array di bawah) BUKAN
-               dari xlsx - xlsx cuma punya teks panjang di tiap sel. Kode
-               ini ciptaan sendiri supaya konsisten dengan pola *_code
-               field lain di tabel ini (disimpan pendek, teks panjang
-               cuma untuk tampilan) - teks pilihannya sendiri PERSIS
-               kutipan dari sel Sheet4, tidak diringkas/ditafsirkan ulang. */
-            $matriks = [
-                // Ke-7, menyusul terpisah 23 Agt 2026: kolom A xlsx
-                // ("Pendapatan / Gaji", tidak bertanda '*' - diminta
-                // ditambahkan tersendiri). BUKAN income_band_code yang
-                // sudah ada di step "Data Warga" - pita gajinya beda
-                // (lihat docblock migrasi 047). Dua pasang pilihan di
-                // bawah SENGAJA tumpang tindih (2,8-8,5jt vs 2,8-10jt,
-                // >8,5jt vs >10jt) - di baris asli xlsx, batasnya
-                // dibedakan oleh Status Perkawinan pada baris yang sama
-                // (batas 8,5jt untuk Belum Menikah, 10jt untuk Menikah),
-                // bukan duplikasi keliru.
-                // Ke-8: kolom C xlsx ("Status DTKS") - dibutuhkan mesin
-                // pencocokan 20 baris matriks (lihat komentar di step
-                // 'preliminary_recommendation' di bawah), bukan sekadar
-                // field tampilan. 16 dari 20 baris xlsx mensyaratkan "YA".
-                'matrix_income_code' => ['Gaji', [
-                    'income_0_1_5' => '0 - 1,5 Juta',
-                    'income_1_5_2_2' => '1,5 - 2,2 Juta',
-                    'income_2_2_2_8' => '2,2 - 2,8 Juta',
-                    'income_2_8_8_5' => '2,8 - 8,5 Juta',
-                    'income_2_8_10' => '2,8 - 10 Juta',
-                    'income_gt_8_5' => '> 8,5 Juta',
-                    'income_gt_10' => '> 10 Juta',
-                ]],
-                /* Opsi "Tidak Dibatasi" DIHAPUS dari semua select 23 Agt
-                   2026 - permintaan user: nilai itu di xlsx cuma berarti
-                   "baris aturan ini tidak mempedulikan kolom ini", BUKAN
-                   keadaan sungguhan yang bisa dialami warga. Warga wajib
-                   mendeskripsikan keadaan aslinya; logika "field ini tidak
-                   dipedulikan" adalah urusan mesin pencocokan aturan
-                   nanti (Warga_ruleset.php/sejenisnya), bukan pilihan yang
-                   ditampilkan sebagai jawaban. */
-                'matrix_land_ownership_code' => ['Kepemilikan Lahan', [
-                    'land_none' => 'Tidak Punya',
-                    'land_legal' => 'Punya Lahan Sah',
-                ]],
-                'matrix_current_housing_code' => ['Status tempat tinggal saat ini', [
-                    'house_owned' => 'Milik sendiri',
-                    'house_none_or_rent' => 'Bukan milik sendiri',
-                ]],
-                'matrix_environment_condition_code' => ['Kondisi Lingkungan / Fisik Bangunan', [
-                    'env_safe' => 'Aman / Tidak Terdampak Bencana',
-                    'env_relocation_zone' => 'Kawasan Relokasi Pemerintah (Rusunawa, Sempadan Sungai, Kumuh)',
-                    'env_disaster_severe' => 'Terdampak Bencana: Kerusakan Berat / Roboh',
-                    'env_disaster_moderate' => 'Terdampak Bencana: Kerusakan Sedang (30-70%)',
-                    'env_slum_uninhabitable' => 'Kumuh / Tidak Layak: Atap, Lantai, Dinding Jelek/Rusak',
-                ]],
-                'matrix_occupation_finance_code' => ['Pekerjaan / Kondisi Finansial', [
-                    'work_stable_or_unstable_no_subsidy' => 'Berpenghasilan Tetap/Tidak Tetap (Belum Pernah Dapat Subsidi)',
-                    'work_can_save_irregular' => 'Mampu Menabung / Penghasilan Tidak Tetap',
-                ]],
-                'matrix_marital_family_code' => ['Status Perkawinan / Keluarga', [
-                    'family_single' => 'Belum Menikah',
-                    'family_married' => 'Menikah',
-                    'family_multi_household' => 'Dihuni > 1 KK (Kepala Keluarga)',
-                    'family_head_of_household' => 'Kepala Keluarga (Menikah / Duda / Janda)',
-                ]],
-            ];
-            // "Kategori Usia*" - permintaan user: dihitung otomatis dari
-            // tanggal lahir yang sudah dikumpulkan di step "Data Warga",
-            // BUKAN input baru (supaya tidak bisa keliru isi/tidak
-            // konsisten dengan tanggal lahir). Batas 3 kategori PERSIS
-            // catatan kaki xlsx Sheet4 ("Kategori Usia dibagi menjadi...").
-            $kategori_usia = null;
-            $tgl_lahir = $value('birth_date');
-            if ($tgl_lahir !== '') {
-                try {
-                    $umur = (new DateTime($tgl_lahir))->diff(new DateTime('today'))->y;
-                    $kategori_usia = $umur < 18 ? 'Non-Produktif Muda (< 18 tahun)'
-                        : ($umur < 60 ? 'Produktif (18 – 59 tahun)' : 'Non-Produktif Tua (≥ 60 tahun / Lansia)');
-                } catch (Exception $e) { $kategori_usia = null; }
-            }
-            ?>
-            <h2 class="text-lg font-black">Isi Data Sesuai Matriks — Rumah & Keluarga</h2>
-            <p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Pilih status tempat tinggal <strong>Milik sendiri</strong> atau <strong>Bukan milik sendiri</strong>. Pilihan ini langsung menentukan formulir yang muncul pada langkah berikutnya. Status DTKS tidak perlu diisi oleh warga.</p>
-            <div class="mt-5 grid gap-4 sm:grid-cols-2">
-                <?php foreach ($matriks as $key => [$label, $options]): ?><div><label for="<?= $key ?>" class="text-xs font-bold"><?= html_escape($label) ?> <?= $badge($key) ?></label><select id="<?= $key ?>" name="<?= $key ?>" required aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><option value="">Pilih <?= strtolower(html_escape($label)) ?></option><?php foreach ($options as $code => $opt_label): ?><option value="<?= html_escape($code) ?>"<?= $selected($key, $code) ?>><?= html_escape($opt_label) ?></option><?php endforeach; ?></select><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
-                <div>
-                    <label class="text-xs font-bold">Kategori Usia <span class="ml-1 inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-bold" style="background:rgba(16,185,129,.12);color:#047857">Dihitung otomatis</span></label>
-                    <p class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"><?= $kategori_usia !== null ? html_escape($kategori_usia) : 'Isi tanggal lahir di langkah "Data Warga" terlebih dahulu' ?></p>
-                </div>
-            </div>
-        <?php elseif ($step_slug === 'housing_family_detail'): ?>
-            <?php
-            /* Step 'citizen_data' DIGABUNG ke sini secara permanen 23 Agt 2026
-               (permintaan user) - dulu "Data Warga" adalah step tersendiri
-               tepat sesudah find_data, sekarang jadi sub-bagian pertama di
-               step gabungan ini bersama "Rumah & Keluarga". Field, validasi
-               ($step_errors() 'housing_family_detail' di Warga.php sekarang
-               memuat validasi eks-citizen_data juga), dan cara simpan
-               (profile_corrections() sekarang dipicu oleh step ini, bukan
-               'citizen_data' yang sudah tidak ada) SEMUA dipindah apa adanya,
-               tidak diubah perilakunya - cuma posisinya yang berpindah. */
-            ?>
-            <?php $is_owned_branch = ($assessment['assessment_track'] ?? '') === 'existing_house'
-                || (($assessment['assessment_track'] ?? 'undetermined') === 'undetermined'
-                    && ($assessment['matrix_current_housing_code'] ?? '') === 'house_owned'); ?>
-            <input type="hidden" name="housing_status_code" value="<?= $is_owned_branch ? 'owned' : 'other' ?>">
-            <h2 class="text-lg font-black">Formulir <?= $is_owned_branch ? 'Milik Sendiri' : 'Bukan Milik Sendiri' ?></h2>
-            <p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Status tempat tinggal sudah dipilih pada langkah sebelumnya. Formulir ini hanya menampilkan data yang sesuai dengan cabang tersebut.</p>
-            <?php if (! empty($lookup['message'])): ?><p class="mt-3 rounded-xl p-3 text-xs" style="background:rgba(14,165,233,.09);color:#075985"><?= html_escape($lookup['message']) ?></p><?php endif; ?>
-
+        <?php elseif (in_array($step_slug, ['housing_family', 'housing_family_detail'], TRUE)): ?>
+            <?php $initial = $step_slug === 'housing_family';
+            $is_owned_branch = ($assessment['jalur_penilaian'] ?? '') === 'existing_house'; ?>
+            <h2 class="text-lg font-black"><?= $initial ? 'Data untuk rekomendasi' : 'Lengkapi data — ' . ($is_owned_branch ? 'Milik Sendiri' : 'Bukan Milik Sendiri') ?></h2>
+            <p class="mt-2 text-xs" style="color:var(--portal-text-muted)">Data yang tersedia sudah diisikan. Periksa dan koreksi bila perlu, lalu lengkapi isian yang masih kosong. Pendapatan dalam rentang dan tahun lahir saja belum cukup untuk mengisi nominal rupiah dan tanggal lahir lengkap.</p>
+            <?php if ($initial): ?>
+                <label for="matriks_rumah_sekarang" class="mt-4 block text-xs font-bold">Status tempat tinggal saat ini</label>
+                <select id="matriks_rumah_sekarang" name="matriks_rumah_sekarang" required class="mt-1 w-full rounded-xl border px-3 py-2.5" style="background:var(--portal-btn-bg);color:var(--portal-text)">
+                    <option value="">Pilih status tempat tinggal</option>
+                    <option value="house_owned"<?= $selected('matriks_rumah_sekarang', 'house_owned') ?>>Milik sendiri</option>
+                    <option value="house_rent_or_staying"<?= $selected('matriks_rumah_sekarang', 'house_rent_or_staying') ?>>Bukan milik sendiri — menumpang / sewa</option>
+                    <option value="house_restricted_area"<?= $selected('matriks_rumah_sekarang', 'house_restricted_area') ?>>Bukan milik sendiri — tinggal di area terlarang / numpang (relokasi)</option>
+                    <option value="house_disaster_affected"<?= $selected('matriks_rumah_sekarang', 'house_disaster_affected') ?>>Milik sendiri — terdampak bencana</option>
+                    <option value="house_none_or_rent"<?= $selected('matriks_rumah_sekarang', 'house_none_or_rent') ?>>Bukan milik sendiri</option>
+                </select>
+                <p class="text-xs text-red-700"><?= html_escape($field_error('matriks_rumah_sekarang')) ?></p>
+            <?php else: ?>
+                <input type="hidden" name="kepemilikan_rumah" value="<?= $is_owned_branch ? 'owned' : 'other' ?>">
+            <?php endif; ?>
             <h3 class="mt-6 text-sm font-black">Data Warga</h3>
             <div class="mt-3 grid gap-4 sm:grid-cols-2">
-                <?php $text_fields = [['family_card_number','Nomor KK','text','16 digit'],['full_name','Nama lengkap','text',''],['phone','Nomor HP','tel',''],['birth_date','Tanggal lahir','date',''],['tax_number','NPWP','text',''],['monthly_income','Pendapatan per bulan (Rp)','number',''],['address','Alamat','text','']]; ?>
-                <?php foreach ($text_fields as [$key, $label, $type, $hint]): ?><div class="<?= $key === 'address' ? 'sm:col-span-2' : '' ?>"><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?></label><input id="<?= $key ?>" name="<?= $key ?>" type="<?= $type ?>" <?= isset($matrix_required[$key]) ? 'required' : '' ?> <?= $hint ? 'maxlength="16" inputmode="numeric"' : '' ?> value="<?= html_escape($value($key)) ?>" aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
+                <?php $text_fields = [['family_card_number','Nomor KK','text','16 digit'],['full_name','Nama lengkap','text',''],['phone','Nomor HP','tel',''],['birth_date','Tanggal lahir','date',''],['tax_number','NPWP','text',''],['penghasilan_bulanan','Pendapatan per bulan (Rp)','number',''],['address','Alamat','text','']]; ?>
+                <?php foreach ($text_fields as [$key, $label, $type, $hint]): if ($initial !== in_array($key, ['phone', 'birth_date', 'penghasilan_bulanan'], TRUE)) continue; ?><div class="<?= $key === 'address' ? 'sm:col-span-2' : '' ?>"><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?></label><input id="<?= $key ?>" name="<?= $key ?>" type="<?= $type ?>" <?= isset($matrix_required[$key]) ? 'required' : '' ?> <?= $hint ? 'maxlength="16" inputmode="numeric"' : '' ?> value="<?= html_escape($value($key)) ?>" aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
                 <?php
                 $occupation_options = [
                     'farmer' => 'Petani',
@@ -318,159 +208,67 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                     'information_communication' => 'Pegawai Swasta',
                     'finance_insurance' => 'Pegawai Swasta',
                 ];
-                $saved_occupation = (string) $value('occupation_code');
+                $saved_occupation = (string) $value('pekerjaan');
                 if (! isset($occupation_options[$saved_occupation]) && isset($legacy_occupation_labels[$saved_occupation])) {
                     $occupation_options = [$saved_occupation => $legacy_occupation_labels[$saved_occupation]] + $occupation_options;
                 }
                 $selects = [
-                    'occupation_code' => ['Pekerjaan', $occupation_options],
-                    'employment_stability_code' => ['Status pekerjaan', ['permanent' => 'Tetap', 'non_permanent' => 'Tidak tetap']],
-                    'gender_code' => ['Jenis kelamin', ['male' => 'Laki-laki', 'female' => 'Perempuan']],
-                    'marital_status_code' => ['Status perkawinan', ['single' => 'Lajang', 'married' => 'Menikah', 'divorced' => 'Cerai']],
-                    'education_code' => ['Pendidikan', ['no_certificate' => 'Tidak punya ijazah', 'elementary' => 'SD/sederajat', 'junior_high' => 'SMP/sederajat', 'senior_high' => 'SMA/sederajat', 'diploma_1_3' => 'D1/D2/D3', 'bachelor' => 'D4/S1', 'postgraduate' => 'S2/S3']],
-                    'has_savings' => ['Memiliki tabungan', ['1' => 'Ya', '0' => 'Tidak']],
-                    'income_band_code' => ['Penghasilan', ['lt_1_8' => '< 1,8 jt', '1_9_2_1' => '1,9-2,1 jt', '2_2_2_6' => '2,2-2,6 jt', '2_7_3_1' => '2,7-3,1 jt', '3_2_3_6' => '3,2-3,6 jt', '3_7_4_2' => '3,7-4,2 jt', 'gt_4_2' => '> 4,2 jt (data SIMPERUM)', '4_2_6' => '4,2-6 jt', '6_8' => '6-8 jt', 'gt_8' => '> 8 jt']],
-                    'self_help_capability_code' => ['Kemampuan swadaya', ['capable' => 'Mampu', 'not_capable' => 'Tidak mampu']],
+                    'pekerjaan' => ['Pekerjaan', $occupation_options],
+                    'stabilitas_pekerjaan' => ['Status pekerjaan', ['permanent' => 'Tetap', 'non_permanent' => 'Tidak tetap']],
+                    'jenis_kelamin' => ['Jenis kelamin', ['male' => 'Laki-laki', 'female' => 'Perempuan']],
+                    'status_perkawinan' => ['Status perkawinan', ['single' => 'Lajang', 'married' => 'Menikah', 'divorced' => 'Cerai']],
+                    'pendidikan' => ['Pendidikan', ['no_certificate' => 'Tidak punya ijazah', 'elementary' => 'SD/sederajat', 'junior_high' => 'SMP/sederajat', 'senior_high' => 'SMA/sederajat', 'diploma_1_3' => 'D1/D2/D3', 'bachelor' => 'D4/S1', 'postgraduate' => 'S2/S3']],
+                    'punya_tabungan' => ['Memiliki tabungan', ['1' => 'Ya', '0' => 'Tidak']],
+                    'kelompok_penghasilan' => ['Penghasilan', ['lt_1_8' => '< 1,8 jt', '1_9_2_1' => '1,9-2,1 jt', '2_2_2_6' => '2,2-2,6 jt', '2_7_3_1' => '2,7-3,1 jt', '3_2_3_6' => '3,2-3,6 jt', '3_7_4_2' => '3,7-4,2 jt', 'gt_4_2' => '> 4,2 jt (data SIMPERUM)', '4_2_6' => '4,2-6 jt', '6_8' => '6-8 jt', 'gt_8' => '> 8 jt']],
+                    'mampu_swadaya' => ['Kemampuan swadaya', ['capable' => 'Mampu', 'not_capable' => 'Tidak mampu']],
                 ];
                 ?>
-                <?php foreach ($selects as $key => [$label, $options]): ?><div><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?><?= isset($matrix_required[$key]) ? ' <span class="text-red-700">*</span>' : '' ?></label><select id="<?= $key ?>" name="<?= $key ?>" <?= isset($matrix_required[$key]) ? 'required' : '' ?> aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><option value="">Pilih <?= strtolower($label) ?></option><?php foreach ($options as $code => $label): ?><option value="<?= html_escape($code) ?>"<?= $selected($key, $code) ?>><?= html_escape($label) ?></option><?php endforeach; ?></select><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
-                <?php if ($value('welfare_decile') !== ''): ?><p class="sm:col-span-2 rounded-xl p-3 text-xs" style="background:rgba(14,165,233,.09);color:#075985">Kelompok kesejahteraan (desil) <strong><?= html_escape($value('welfare_decile')) ?></strong>, diambil dari <?= $is_simulation ? '<strong>data simulasi</strong> - SIMPERUM belum terhubung, jadi angka ini contoh, bukan data Anda yang sebenarnya' : 'data resmi SIMPERUM' ?>. Angka ini tidak dihitung ulang dari penghasilan yang Anda isi.</p><?php endif; ?>
+                <?php
+                unset($selects['kelompok_penghasilan']);
+                $selects['kawasan_perumahan'] = ['Kawasan', ['drought'=>'Kekeringan', 'slum'=>'Kumuh', 'disaster_prone'=>'Rawan Bencana', 'riverbank'=>'Bantaran Sungai', 'railway'=>'Bantaran Rel KA', 'poor_other'=>'Kawasan Buruk Lain', 'good'=>'Kawasan Baik']];
+                if ($initial) $selects += ($matrix_fields ?? []);
+                foreach ($selects as $key => [$label, $options]):
+                    if ($initial === in_array($key, ['punya_tabungan', 'mampu_swadaya'], TRUE)) continue;
+                ?><div><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?><?= isset($matrix_required[$key]) ? ' <span class="text-red-700">*</span>' : '' ?></label><select id="<?= $key ?>" name="<?= $key ?>" <?= isset($matrix_required[$key]) ? 'required' : '' ?> aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><option value="">Pilih <?= strtolower($label) ?></option><?php foreach ($options as $code => $label): ?><option value="<?= html_escape($code) ?>"<?= $selected($key, $code) ?>><?= html_escape($label) ?></option><?php endforeach; ?></select><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
+                <?php if ($value('desil_kesejahteraan') !== ''): ?><p class="sm:col-span-2 rounded-xl p-3 text-xs" style="background:rgba(14,165,233,.09);color:#075985">Kelompok kesejahteraan (desil) <strong><?= html_escape($value('desil_kesejahteraan')) ?></strong>, diambil dari <?= $is_simulation ? '<strong>data simulasi</strong> - SIMPERUM belum terhubung, jadi angka ini contoh, bukan data Anda yang sebenarnya' : 'data resmi SIMPERUM' ?>. Angka ini tidak dihitung ulang dari penghasilan yang Anda isi.</p><?php endif; ?>
             </div>
 
+            <?php if (! $initial): ?>
             <h3 class="mt-6 text-sm font-black">Rumah & Keluarga</h3>
             <div class="mt-3 grid gap-4 sm:grid-cols-2">
-                <?php $housing = ['land_title_code' => ['Status lahan rumah', ['certificate_unspecified' => 'Sertifikat (jenis tidak disebut SIMPERUM)', 'hm' => 'Sertifikat HM', 'hgb' => 'Sertifikat HGB', 'letter_c' => 'Letter C', 'letter_d' => 'Letter D', 'village_letter' => 'Suket Desa', 'notarial_deed' => 'Akta Notaris', 'other' => 'Lainnya']], 'area_condition_code' => ['Kawasan', ['drought' => 'Kekeringan', 'slum' => 'Kumuh', 'disaster_prone' => 'Rawan bencana', 'riverbank' => 'Bantaran sungai', 'railway' => 'Bantaran rel KA', 'poor_other' => 'Kawasan buruk lain', 'good' => 'Kawasan baik']]]; ?>
-                <?php foreach ($housing as $key => [$label, $options]): ?><div <?= $key === 'land_title_code' && ! $is_owned_branch ? 'hidden' : '' ?>><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?></label><select id="<?= $key ?>" name="<?= $key ?>" <?= $key === 'housing_status_code' ? 'required' : '' ?> aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><option value="">Pilih <?= strtolower($label) ?></option><?php foreach ($options as $code => $label): ?><option value="<?= html_escape($code) ?>"<?= $selected($key, $code) ?>><?= html_escape($label) ?></option><?php endforeach; ?></select><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
-                <?php foreach (['occupant_count' => 'Jumlah penghuni', 'family_count' => 'Jumlah keluarga', 'house_area_m2' => 'Luas rumah (m²)'] as $key => $label): ?><div <?= $key === 'house_area_m2' && ! $is_owned_branch ? 'hidden' : '' ?>><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?></label><input id="<?= $key ?>" name="<?= $key ?>" type="number" min="<?= $key === 'house_area_m2' ? '0.01' : '1' ?>" step="<?= $key === 'house_area_m2' ? '0.01' : '1' ?>" <?= $key !== 'house_area_m2' ? 'required' : '' ?> value="<?= html_escape($value($key)) ?>" aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
-                <?php foreach (['has_other_land' => 'Memiliki tanah lain', 'has_other_house' => 'Memiliki rumah lain'] as $key => $label): ?><fieldset <?= $key === 'has_other_house' && ! $is_owned_branch ? 'hidden' : '' ?>><legend class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?></legend><div class="mt-2 flex gap-4 text-xs"><label><input type="radio" name="<?= $key ?>" value="1"<?= $checked($key, '1') ?>> Memiliki</label><label><input type="radio" name="<?= $key ?>" value="0"<?= $checked($key, '0') ?>> Tidak memiliki</label></div><p class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></fieldset><?php endforeach; ?>
-                <div <?= $is_owned_branch ? 'hidden' : '' ?>><label for="assistance_source_code" class="text-xs font-bold">Sumber bantuan sebelumnya <span class="font-normal" style="color:var(--portal-text-muted)">(bila ada)</span></label><select id="assistance_source_code" name="assistance_source_code" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"><option value="">Belum pernah/tidak diisi</option><?php foreach (['apbn_bsps' => 'APBN/BSPS (data SIMPERUM)', 'apbn' => 'APBN', 'apbd_prov' => 'APBD Provinsi', 'apbd_kab' => 'APBD Kab/Kota', 'csr' => 'CSR', 'village_fund' => 'Dana Desa', 'bsps_kl' => 'BSPS-KL', 'bankab' => 'BANKAB', 'baznas' => 'BAZNAS', 'other' => 'Sumber lainnya'] as $code => $label): ?><option value="<?= $code ?>"<?= $selected('assistance_source_code', $code) ?>><?= $label ?></option><?php endforeach; ?></select></div>
-                <div <?= $is_owned_branch ? 'hidden' : '' ?>><label for="assistance_year" class="text-xs font-bold">Tahun bantuan <span class="font-normal" style="color:var(--portal-text-muted)">(bila ada)</span></label><input id="assistance_year" name="assistance_year" type="number" min="1900" max="<?= date('Y') ?>" step="1" value="<?= html_escape($value('assistance_year')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div>
+                <?php $housing = ['kepemilikan_lahan' => ['Status lahan rumah', ['certificate_unspecified' => 'Sertifikat (jenis tidak disebut SIMPERUM)', 'hm' => 'Sertifikat HM', 'hgb' => 'Sertifikat HGB', 'letter_c' => 'Letter C', 'letter_d' => 'Letter D', 'village_letter' => 'Suket Desa', 'notarial_deed' => 'Akta Notaris', 'other' => 'Lainnya']], 'kawasan_perumahan' => ['Kawasan', ['drought' => 'Kekeringan', 'slum' => 'Kumuh', 'disaster_prone' => 'Rawan bencana', 'riverbank' => 'Bantaran sungai', 'railway' => 'Bantaran rel KA', 'poor_other' => 'Kawasan buruk lain', 'good' => 'Kawasan baik']]]; ?>
+                <?php foreach ($housing as $key => [$label, $options]): if ($key === 'kawasan_perumahan' || ! $is_owned_branch) continue; ?><div <?= $key === 'kepemilikan_lahan' && ! $is_owned_branch ? 'hidden' : '' ?>><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?></label><select id="<?= $key ?>" name="<?= $key ?>" <?= $key === 'kepemilikan_rumah' ? 'required' : '' ?> aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><option value="">Pilih <?= strtolower($label) ?></option><?php foreach ($options as $code => $label): ?><option value="<?= html_escape($code) ?>"<?= $selected($key, $code) ?>><?= html_escape($label) ?></option><?php endforeach; ?></select><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
+                <?php foreach (['jml_penghuni' => 'Jumlah penghuni', 'jml_kk' => 'Jumlah keluarga', 'luas_rumah' => 'Luas rumah (m²)'] as $key => $label): if ($key === 'luas_rumah' && ! $is_owned_branch) continue; ?><div <?= $key === 'luas_rumah' && ! $is_owned_branch ? 'hidden' : '' ?>><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?></label><input id="<?= $key ?>" name="<?= $key ?>" type="number" min="<?= $key === 'luas_rumah' ? '0.01' : '1' ?>" step="<?= $key === 'luas_rumah' ? '0.01' : '1' ?>" <?= $key !== 'luas_rumah' ? 'required' : '' ?> value="<?= html_escape($value($key)) ?>" aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
+                <?php foreach (['tanah_lain' => 'Memiliki tanah lain', 'rumah_lain' => 'Memiliki rumah lain'] as $key => $label): if ($key === 'rumah_lain' && ! $is_owned_branch) continue; ?><fieldset <?= $key === 'rumah_lain' && ! $is_owned_branch ? 'hidden' : '' ?>><legend class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?></legend><div class="mt-2 flex gap-4 text-xs"><label><input type="radio" name="<?= $key ?>" value="1"<?= $checked($key, '1') ?>> Memiliki</label><label><input type="radio" name="<?= $key ?>" value="0"<?= $checked($key, '0') ?>> Tidak memiliki</label></div><p class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></fieldset><?php endforeach; ?>
+                <div><label for="bantuan_perumahan" class="text-xs font-bold">Sumber bantuan sebelumnya <span class="font-normal" style="color:var(--portal-text-muted)">(bila ada)</span></label><select id="bantuan_perumahan" name="bantuan_perumahan" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"><option value="">Belum pernah/tidak diisi</option><?php foreach (['apbn_bsps' => 'APBN/BSPS (data SIMPERUM)', 'apbn' => 'APBN', 'apbd_prov' => 'APBD Provinsi', 'apbd_kab' => 'APBD Kab/Kota', 'csr' => 'CSR', 'village_fund' => 'Dana Desa', 'bsps_kl' => 'BSPS-KL', 'bankab' => 'BANKAB', 'baznas' => 'BAZNAS', 'already_habitable' => 'Sudah Layak Huni', 'other' => 'Sumber lainnya'] as $code => $label): ?><option value="<?= $code ?>"<?= $selected('bantuan_perumahan', $code) ?>><?= $label ?></option><?php endforeach; ?></select></div>
+                <div><label for="tahun_intervensi" class="text-xs font-bold">Tahun bantuan <span class="font-normal" style="color:var(--portal-text-muted)">(bila ada)</span></label><input id="tahun_intervensi" name="tahun_intervensi" type="number" min="1900" max="<?= date('Y') ?>" step="1" value="<?= html_escape($value('tahun_intervensi')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div>
             </div>
+            <?php endif; ?>
         <?php elseif ($step_slug === 'building_condition'): ?>
             <h2 class="text-lg font-black">Lengkapi Data SIMPERUM — Kondisi Bangunan</h2><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Isi kondisi rumah yang dinilai. Gunakan kondisi saat ini.</p>
-            <?php $condition = ['good'=>'Baik','minor_damage'=>'Rusak Ringan (Permukaan)','moderate_damage'=>'Rusak Sedang (Material)','severe_damage_or_absent'=>'Rusak Berat (Struktur/Tdk Ada)']; $building = ['foundation_condition_code'=>['Pondasi',$condition],'column_condition_code'=>['Kondisi Kolom',$condition],'beam_condition_code'=>['Kondisi Balok',$condition],'sloof_condition_code'=>['Kondisi Sloof',$condition],'ceiling_condition_code'=>['Kondisi Plafon',$condition],'roof_frame_condition_code'=>['Rangka Atap',$condition],'floor_material_code'=>['Bahan Lantai',['marble_granite'=>'Marmer/Granit','ceramic'=>'Keramik','parquet_vinyl_carpet'=>'Parket/Vinil/Permadani','tile_terrazzo'=>'Ubin/Tegel/Teraso','high_quality_wood'=>'Kayu/Papan Kualitas Tinggi','cement_plaster'=>'Semen/Plesteran','bamboo'=>'Bambu','low_quality_wood'=>'Kayu/Papan Kualitas Rendah','soil'=>'Tanah','other'=>'Lainnya']],'floor_condition_code'=>['Kondisi Lantai',$condition],'wall_material_code'=>['Bahan Dinding',['wall'=>'Tembok','plaster_grc'=>'Plesteran/GRC','wood'=>'Kayu','woven_bamboo'=>'Anyaman Bambu','log'=>'Batang Kayu','bamboo'=>'Bambu','other'=>'Lainnya']],'wall_condition_code'=>['Kondisi Dinding',$condition],'roof_material_code'=>['Bahan Atap',['concrete'=>'Beton','ceramic'=>'Keramik','metal'=>'Metal','clay_tile'=>'Genteng/Tanah Liat','asbestos'=>'Asbes','zinc'=>'Seng','shingle'=>'Sirap','bamboo'=>'Bambu','thatch'=>'Jerami/Ijuk/Daun/Rumbia','other'=>'Lainnya']],'roof_condition_code'=>['Kondisi Atap',$condition]]; ?>
-            <div class="mt-5 grid gap-4 sm:grid-cols-2"><?php foreach ($building as $key => [$label,$options]): ?><div><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?></label><select id="<?= $key ?>" name="<?= $key ?>" <?= in_array($key, ['foundation_condition_code','column_condition_code','beam_condition_code','roof_frame_condition_code','floor_condition_code','wall_condition_code','roof_condition_code'], TRUE) ? 'required' : '' ?> aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><option value="">Pilih kondisi</option><?php foreach ($options as $code=>$label): ?><option value="<?= html_escape($code) ?>"<?= $selected($key,$code) ?>><?= html_escape($label) ?></option><?php endforeach; ?></select><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?></div>
+            <?php $condition = ['good'=>'Baik','minor_damage'=>'Rusak Ringan (Permukaan)','moderate_damage'=>'Rusak Sedang (Material)','severe_damage_or_absent'=>'Rusak Berat (Struktur/Tdk Ada)']; $building = ['kondisi_pondasi'=>['Pondasi',$condition],'kondisi_kolom'=>['Kondisi Kolom',$condition],'kondisi_balok'=>['Kondisi Balok',$condition],'kondisi_sloof'=>['Kondisi Sloof',$condition],'kondisi_plafon'=>['Kondisi Plafon',$condition],'kondisi_rangka'=>['Rangka Atap',$condition],'bahan_lantai'=>['Bahan Lantai',['marble_granite'=>'Marmer/Granit','ceramic'=>'Keramik','parquet_vinyl_carpet'=>'Parket/Vinil/Permadani','tile_terrazzo'=>'Ubin/Tegel/Teraso','high_quality_wood'=>'Kayu/Papan Kualitas Tinggi','cement_plaster'=>'Semen/Plesteran','bamboo'=>'Bambu','low_quality_wood'=>'Kayu/Papan Kualitas Rendah','soil'=>'Tanah','other'=>'Lainnya']],'kondisi_lantai'=>['Kondisi Lantai',$condition],'bahan_dinding'=>['Bahan Dinding',['wall'=>'Tembok','plaster_grc'=>'Plesteran/GRC','wood'=>'Kayu','woven_bamboo'=>'Anyaman Bambu','log'=>'Batang Kayu','bamboo'=>'Bambu','other'=>'Lainnya']],'kondisi_dinding'=>['Kondisi Dinding',$condition],'bahan_atap'=>['Bahan Atap',['concrete'=>'Beton','ceramic'=>'Keramik','metal'=>'Metal','clay_tile'=>'Genteng/Tanah Liat','asbestos'=>'Asbes','zinc'=>'Seng','shingle'=>'Sirap','bamboo'=>'Bambu','thatch'=>'Jerami/Ijuk/Daun/Rumbia','other'=>'Lainnya']],'kondisi_atap'=>['Kondisi Atap',$condition]]; ?>
+            <div class="mt-5 grid gap-4 sm:grid-cols-2"><?php foreach ($building as $key => [$label,$options]): ?><div><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?></label><select id="<?= $key ?>" name="<?= $key ?>" <?= in_array($key, ['kondisi_pondasi','kondisi_kolom','kondisi_balok','kondisi_rangka','kondisi_lantai','kondisi_dinding','kondisi_atap'], TRUE) ? 'required' : '' ?> aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><option value="">Pilih kondisi</option><?php foreach ($options as $code=>$label): ?><option value="<?= html_escape($code) ?>"<?= $selected($key,$code) ?>><?= html_escape($label) ?></option><?php endforeach; ?></select><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?></div>
         <?php elseif ($step_slug === 'candidate_land'): ?>
             <h2 class="text-lg font-black">Lengkapi Data SIMPERUM — Calon Lahan</h2><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Isi hanya untuk calon lahan yang relevan dengan pengajuan Anda.</p>
-            <?php $land = ['candidate_land_address'=>['Alamat Tanah',[]],'candidate_land_title_code'=>['Sertifikat Tanah',['hm'=>'Sertifikat HM','hgb'=>'Sertifikat HGB','letter_c'=>'Letter C','letter_d'=>'Letter D','village_letter'=>'Suket Desa','notarial_deed'=>'Akta Notaris','other'=>'Lainnya']],'candidate_land_origin_code'=>['Asal Tanah',['owned'=>'Milik Sendiri','inheritance'=>'Warisan','grant'=>'Hibah','purchase'=>'Jual Beli']],'land_owner_relationship_code'=>['Hub. dg Pemilik',['parent'=>'Orang Tua','other'=>'Orang Lain']]]; ?>
-            <div class="mt-5 grid gap-4 sm:grid-cols-2"><?php foreach ($land as $key=>[$label,$options]): ?><div class="<?= $key === 'candidate_land_address' ? 'sm:col-span-2' : '' ?>"><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?></label><?php if ($options): ?><select id="<?= $key ?>" name="<?= $key ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"><option value="">Pilih <?= strtolower($label) ?></option><?php foreach($options as $code=>$option): ?><option value="<?= $code ?>"<?= $selected($key,$code) ?>><?= html_escape($option) ?></option><?php endforeach; ?></select><?php else: ?><input id="<?= $key ?>" name="<?= $key ?>" value="<?= html_escape($value($key)) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"><?php endif; ?></div><?php endforeach; ?><fieldset class="sm:col-span-2 border-0 p-0 m-0"><legend class="text-xs font-bold p-0">Ukuran tanah</legend><div class="mt-1 grid gap-4 sm:grid-cols-2"><div><label for="land_length_m" class="text-[11px] font-bold" style="color:var(--portal-text-muted)">Panjang (m)</label><input id="land_length_m" name="land_length_m" type="number" min="0.01" step="0.01" value="<?= html_escape($value('land_length_m')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div><div><label for="land_width_m" class="text-[11px] font-bold" style="color:var(--portal-text-muted)">Lebar (m)</label><input id="land_width_m" name="land_width_m" type="number" min="0.01" step="0.01" value="<?= html_escape($value('land_width_m')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div></div></fieldset></div>
+            <?php $land = ['candidate_land_address'=>['Alamat Tanah',[]],'status_lahan_calon'=>['Sertifikat Tanah',['hm'=>'Sertifikat HM','hgb'=>'Sertifikat HGB','letter_c'=>'Letter C','letter_d'=>'Letter D','village_letter'=>'Suket Desa','notarial_deed'=>'Akta Notaris','other'=>'Lainnya']],'asal_lahan_calon'=>['Asal Tanah',['owned'=>'Milik Sendiri','inheritance'=>'Warisan','grant'=>'Hibah','purchase'=>'Jual Beli']],'hubungan_pemilik_lahan'=>['Hub. dg Pemilik',['parent'=>'Orang Tua','other'=>'Orang Lain']]]; ?>
+            <div class="mt-5 grid gap-4 sm:grid-cols-2"><?php foreach ($land as $key=>[$label,$options]): ?><div class="<?= $key === 'candidate_land_address' ? 'sm:col-span-2' : '' ?>"><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?></label><?php if ($options): ?><select id="<?= $key ?>" name="<?= $key ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"><option value="">Pilih <?= strtolower($label) ?></option><?php foreach($options as $code=>$option): ?><option value="<?= $code ?>"<?= $selected($key,$code) ?>><?= html_escape($option) ?></option><?php endforeach; ?></select><?php else: ?><input id="<?= $key ?>" name="<?= $key ?>" value="<?= html_escape($value($key)) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"><?php endif; ?></div><?php endforeach; ?><fieldset class="sm:col-span-2 border-0 p-0 m-0"><legend class="text-xs font-bold p-0">Ukuran tanah</legend><div class="mt-1 grid gap-4 sm:grid-cols-2"><div><label for="panjang_lahan_m" class="text-[11px] font-bold" style="color:var(--portal-text-muted)">Panjang (m)</label><input id="panjang_lahan_m" name="panjang_lahan_m" type="number" min="0.01" step="0.01" value="<?= html_escape($value('panjang_lahan_m')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div><div><label for="lebar_lahan_m" class="text-[11px] font-bold" style="color:var(--portal-text-muted)">Lebar (m)</label><input id="lebar_lahan_m" name="lebar_lahan_m" type="number" min="0.01" step="0.01" value="<?= html_escape($value('lebar_lahan_m')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div></div></fieldset></div>
         <?php elseif ($step_slug === 'sanitation'): ?>
-            <h2 class="text-lg font-black">Lengkapi Data SIMPERUM — Sanitasi & Utilitas</h2><?php $sanitation=['has_bathroom_latrine'=>['Kamar mandi/jamban',['1'=>'Ada','0'=>'Tidak Ada']],'has_window'=>['Jendela',['1'=>'Ada Jendela','0'=>'Tidak Ada']],'has_ventilation'=>['Ventilasi',['1'=>'Ada Ventilasi','0'=>'Tidak Ada']],'water_source_code'=>['Sumber Air',['bottled'=>'Air Kemasan Bermerek','refill'=>'Air Isi Ulang','piped'=>'Ledeng (jenis tidak disebut SIMPERUM)','pdam'=>'PDAM','retail_piped'=>'Leding Eceran','well'=>'Sumur','well_protected'=>'Sumur Terlindung','well_unprotected'=>'Sumur Tak Terlindung','spring'=>'Mata Air','spring_unprotected'=>'Mata Air Tak Terlindung','surface_water'=>'Air Sungai/Danau/Waduk','rain'=>'Air Hujan','other_unfit'=>'Lainnya/Tidak Layak']],'latrine_type_code'=>['Jenis Jamban',['swan_neck'=>'Leher Angsa','plengsengan'=>'Plengsengan','pit'=>'Cemplung/Cubluk','none'=>'Tidak Punya']],'feces_disposal_code'=>['Jenis TPA',['septic_tank'=>'Tangki Septik','ipal'=>'IPAL','water_body'=>'Kolam/Sawah/Sungai','ground_hole'=>'Lubang Tanah','open_land'=>'Pantai/Tanah Lapang/Kebun']],'septic_distance_code'=>['Jarak Septik Tank',['lt_10'=>'<10 m','gte_10'=>'>=10 m']],'lighting_source_code'=>['Sumber Penerangan',['pln'=>'PLN','pln_unmetered'=>'PLN Non Meteran','non_pln'=>'Non PLN','none'=>'Bukan Listrik']],'cooking_fuel_code'=>['BB Masak',['electric_gas'=>'Listrik/Gas','kerosene'=>'Minyak Tanah','charcoal_wood'=>'Arang/Kayu','other'=>'Lainnya']]]; ?><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Lengkapi kondisi sanitasi dan utilitas rumah saat ini.</p><div class="mt-5 grid gap-4 sm:grid-cols-2"><?php foreach($sanitation as $key=>[$label,$options]): ?><div><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?></label><select id="<?= $key ?>" name="<?= $key ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"><option value="">Pilih <?= strtolower($label) ?></option><?php foreach($options as $code=>$option): ?><option value="<?= $code ?>"<?= $selected($key,$code) ?>><?= html_escape($option) ?></option><?php endforeach; ?></select></div><?php endforeach; ?></div>
+            <h2 class="text-lg font-black">Lengkapi Data SIMPERUM — Sanitasi & Utilitas</h2><?php $sanitation=['penggunaan_kamar_mandi'=>['Kamar Mandi',['own'=>'Sendiri','shared'=>'Bersama','none'=>'Tidak Punya']],'ada_jendela'=>['Jendela',['1'=>'Ada Jendela','0'=>'Tidak Ada']],'ada_ventilasi'=>['Ventilasi',['1'=>'Ada Ventilasi','0'=>'Tidak Ada']],'sumber_air'=>['Sumber Air',['bottled'=>'Air Kemasan Bermerek','refill'=>'Air Isi Ulang','piped'=>'Ledeng (jenis tidak disebut SIMPERUM)','pdam'=>'PDAM','retail_piped'=>'Leding Eceran','well'=>'Sumur','well_protected'=>'Sumur Terlindung','well_unprotected'=>'Sumur Tak Terlindung','spring'=>'Mata Air','spring_unprotected'=>'Mata Air Tak Terlindung','surface_water'=>'Air Sungai/Danau/Waduk','rain'=>'Air Hujan','other_unfit'=>'Lainnya/Tidak Layak']],'jenis_kloset'=>['Jenis Jamban',['swan_neck'=>'Leher Angsa','plengsengan'=>'Plengsengan','pit'=>'Cemplung/Cubluk','none'=>'Tidak Punya']],'pembuangan_tinja'=>['Jenis TPA',['septic_tank'=>'Tangki Septik','ipal'=>'IPAL','water_body'=>'Kolam/Sawah/Sungai','ground_hole'=>'Lubang Tanah','open_land'=>'Pantai/Tanah Lapang/Kebun']],'jarak_septic_tank'=>['Jarak Septik Tank',['lt_10'=>'<10 m','gte_10'=>'>=10 m']],'penerangan'=>['Sumber Penerangan',['pln'=>'PLN','pln_unmetered'=>'PLN Non Meteran','non_pln'=>'Non PLN','none'=>'Bukan Listrik']],'bahan_bakar_masak'=>['BB Masak',['electric_gas'=>'Listrik/Gas','kerosene'=>'Minyak Tanah','charcoal_wood'=>'Arang/Kayu','other'=>'Lainnya']]]; ?><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Lengkapi kondisi sanitasi dan utilitas rumah saat ini.</p><div class="mt-5 grid gap-4 sm:grid-cols-2"><?php foreach($sanitation as $key=>[$label,$options]): ?><div><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?></label><select id="<?= $key ?>" name="<?= $key ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"><option value="">Pilih <?= strtolower($label) ?></option><?php foreach($options as $code=>$option): ?><option value="<?= $code ?>"<?= $selected($key,$code) ?>><?= html_escape($option) ?></option><?php endforeach; ?></select></div><?php endforeach; ?></div>
         <?php elseif ($step_slug === 'preliminary_recommendation'): ?>
-            <?php
-            /* Diganti 23 Agt 2026 - permintaan user: "Hasil Rekomendasi
-               ... sesuaikan dengan xlsx kolom J". Dulu daftar kartu per
-               program dari Warga_ruleset.php (mesin lama, program TETAP
-               seperti "Peningkatan Kualitas RTLH"/"Program Rumah Apung" -
-               nama program itu TIDAK ADA di xlsx sama sekali). Sekarang
-               menampilkan $matriks_recommendation - hasil pencocokan 8
-               field matriks + desil + umur terhadap 20 baris Sheet4
-               (Matriks_program_ruleset::match(), dihitung ulang di
-               Warga::pendataan() tiap render). Teksnya PERSIS kolom J
-               ("PROGRAM YANG COCOK"), bukan disusun ulang.
-
-               "Kategori Kemiskinan (Desil)" (kolom B) ditambahkan 23 Agt
-               2026, lalu DIPERBAIKI sumbernya di hari yang sama: awalnya
-               dibaca dari welfare_decile profil (angka SIMPERUM yang
-               TIDAK terkait dengan Gaji yang baru dipilih warga di sini -
-               bisa membuat kombinasi yang menurut xlsx cocok jadi
-               dianggap tidak cocok gara-gara desil profil kebetulan beda
-               golongan). Sekarang $matriks_decile_label DITURUNKAN dari
-               Gaji (Matriks_program_ruleset::decile_label_for_income(),
-               dihitung di Warga::pendataan()) - SATU sumber yang sama
-               dipakai baik untuk tampilan ini maupun mesin pencocokan,
-               tidak bisa lagi saling berbeda. */
-            ?>
             <h2 class="text-lg font-black">Hasil Rekomendasi Awal</h2>
-            <p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Hasil ini dicocokkan dari data matriks yang sudah Anda isi terhadap tabel program perumahan. Lengkapi data SIMPERUM setelah ini agar pengajuan dapat ditinjau lebih lengkap.</p>
-            <?php
-            /* Keterangan "Data di SIMPERUM" - permintaan user 23 Agt
-               2026. $matriks_data_simperum === FALSE berarti draft ini
-               lahir dari Warga::isi_manual() (NIK tidak ditemukan di
-               SIMPERUM saat "Masukkan NIK") - untuk kasus itu hasil
-               rekomendasi di bawah SUDAH ditimpa jadi 'Oemah Lestari'
-               + 'FLPP' TETAP di Warga::pendataan(), apa pun hasil
-               pencocokan 20 baris matriks (lihat komentar di sana) -
-               kotak keterangan ini menjelaskan KENAPA, bukan sekadar
-               status netral. */
-            $simperum_style = $matriks_data_simperum === FALSE
-                ? 'background:rgba(245,158,11,.12);color:#92400e'
-                : 'background:rgba(16,185,129,.12);color:#047857';
-            $simperum_text = $matriks_data_simperum === FALSE
-                ? 'Tidak Ada - NIK Anda tidak ditemukan di SIMPERUM, data diisi manual'
-                : 'Ada - data ini berasal dari pencarian SIMPERUM';
-            ?>
-            <p class="mt-4 rounded-xl p-3 text-xs" style="<?= $simperum_style ?>">Data di SIMPERUM: <strong><?= html_escape($simperum_text) ?></strong></p>
-            <p class="mt-3 rounded-xl p-3 text-xs" style="background:rgba(14,165,233,.09);color:#075985">Kategori Kemiskinan (Desil): <strong><?= $matriks_decile_label !== null ? html_escape($matriks_decile_label) : 'Belum tersedia - isi Gaji di langkah sebelumnya' ?></strong></p>
-            <?php if ($matriks_data_simperum === FALSE): ?>
-                <p class="mt-3 rounded-xl border p-3 text-xs" style="border-color:var(--portal-border);color:var(--portal-text-muted)">Karena data Anda belum ditemukan di SIMPERUM, rekomendasi awal di bawah ini bersifat baku (Oemah Lestari &amp; FLPP) - belum dihitung dari isian matriks di atas.</p>
-                <?php
-                /* Saran melengkapi SIMPERUM - permintaan user 23 Agt
-                   2026: KHUSUS ditampilkan kalau jawaban matriks warga
-                   SEBENARNYA cocok salah satu dari 15 program yang
-                   mensyaratkan verifikasi (PB Backlog/Relokasi/Bencana,
-                   PK Bencana/RTLH - lihat
-                   Matriks_program_ruleset::SIMPERUM_REQUIRED_PROGRAMS).
-                   Nama programnya SENGAJA TIDAK disebut di sini ("hasil
-                   yang dari xlsx tidak ditampilkan tetapi memberi
-                   saran") - cuma anjuran, bukan bocoran hasil pencocokan
-                   yang belum diverifikasi. */
-                ?>
-                <?php if ($matriks_saran_lengkapi_simperum): ?>
-                    <p class="mt-3 rounded-xl border p-3 text-xs" style="border-color:#f59e0b;background:rgba(245,158,11,.08);color:#92400e">
-                        <strong>Saran:</strong> berdasarkan jawaban matriks Anda, kemungkinan ada program bantuan lain yang lebih sesuai untuk Anda. Lengkapi data SIMPERUM terlebih dahulu (daftar/verifikasi NIK Anda) agar dapat diperiksa lebih lanjut.
-                    </p>
-                <?php endif; ?>
-            <?php endif; ?>
-            <?php if (empty($matriks_recommendation)): ?>
-                <p class="mt-5 rounded-xl border p-3 text-xs" style="border-color:var(--portal-border);color:var(--portal-text-muted)">Belum ada program yang cocok dengan kombinasi data matriks Anda saat ini. Ini bukan penolakan akhir - lengkapi data SIMPERUM agar dapat ditinjau lebih lanjut, atau periksa kembali isian matriks Anda.</p>
-            <?php else: ?>
-                <div class="mt-5 space-y-3">
-                    <?php foreach ($matriks_recommendation as $program): ?>
-                        <?php
-                        /* Syarat penerima NYATA - permintaan user 23 Agt
-                           2026 ("apakah bisa dimasukkan sebagai syarat2
-                           hasil rekomendasi?"), dikutip dari PPT UN
-                           Habitat 2026 (lihat docblock
-                           Matriks_program_ruleset::PROGRAM_CRITERIA).
-                           $this->matriks_program_ruleset terjangkau di
-                           sini walau ini view, bukan controller - CI3
-                           melekatkan pustaka yang sudah di-load ke
-                           instance super-object yang sama ($this),
-                           dipakai bukan hal baru di berkas ini (lihat
-                           $this->security/$this->load di tempat lain).
-                           Array KOSONG untuk program yang belum punya
-                           kriteria terverifikasi (PB Backlog, PB Bencana,
-                           Oemah Lestari, KPR-FLPP - lihat catatan kenapa
-                           di docblock yang sama) - TIDAK mengarang,
-                           kotak syarat cukup tidak muncul. */
-                        $syarat = $this->matriks_program_ruleset->criteria_for_program($program);
-                        ?>
-                        <article class="rounded-xl border p-4" style="border-color:var(--portal-border)">
-                            <h3 class="font-black"><?= html_escape($program) ?></h3>
-                            <p class="mt-2 text-xs" style="color:var(--portal-text-muted)">Ini rekomendasi awal berdasarkan matriks program, bukan keputusan bantuan resmi. Lanjutkan pelengkapan data agar pengajuan dapat ditinjau.</p>
-                            <?php if ( ! empty($syarat)): ?>
-                                <div class="mt-3 rounded-lg p-3" style="background:var(--portal-btn-bg)">
-                                    <p class="text-[10px] font-bold uppercase tracking-wider" style="color:var(--portal-text-muted)">Syarat Penerima</p>
-                                    <ul class="mt-1.5 list-disc space-y-1 pl-4 text-xs" style="color:var(--portal-text)">
-                                        <?php foreach ($syarat as $poin): ?><li><?= html_escape($poin) ?></li><?php endforeach; ?>
-                                    </ul>
-                                </div>
-                            <?php endif; ?>
-                        </article>
-                    <?php endforeach; ?>
-                </div>
-            <?php endif; ?>
+            <p class="mt-2 text-sm">Data dan rekomendasi awal sudah tersimpan dan dapat dipantau petugas kabupaten/kota Anda. Hasil ini belum merupakan keputusan bantuan.</p>
+            <p class="mt-2 text-xs" style="color:var(--portal-text-muted)">Langkah berikutnya (melengkapi data SIMPERUM) <strong>opsional</strong>, tetapi diperlukan bila Anda ingin mengajukan program. Anda boleh berhenti di sini dan melanjutkan kapan saja; draft tersimpan di akun Anda. <a href="<?= base_url('akun') ?>" class="font-bold underline">Selesai untuk sekarang</a></p>
+            <?php $this->load->view('pages/warga/matrix_result', ['matrix_result'=>$preliminary_matrix ?? NULL]); ?>
         <?php elseif ($step_slug === 'location_evidence'): ?>
-            <h2 class="text-lg font-black">Lengkapi Data SIMPERUM — Lokasi & Bukti</h2><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Koordinat dan berkas disimpan privat. Bukti di bawah berlabel simulasi, bukan ketetapan akhir Dinas.</p><div class="mt-5 grid gap-4 sm:grid-cols-3"><div><label for="location_lat" class="text-xs font-bold">Latitude</label><input id="location_lat" name="location_lat" type="number" step="any" value="<?= html_escape($value('location_lat')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div><div><label for="location_lng" class="text-xs font-bold">Longitude</label><input id="location_lng" name="location_lng" type="number" step="any" value="<?= html_escape($value('location_lng')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div><div><label for="location_accuracy_m" class="text-xs font-bold">Akurasi (meter)</label><input id="location_accuracy_m" name="location_accuracy_m" type="number" min="0" step="0.1" value="<?= html_escape($value('location_accuracy_m')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div></div><button type="button" id="use-location" class="mt-3 rounded-xl border px-3 py-2 text-xs font-bold" style="border-color:var(--portal-border)">Gunakan lokasi perangkat</button><?php $existing = ['self_photo'=>'Foto Diri','house_front_photo'=>'Rumah Depan','house_side_photo'=>'Rumah Samping','roof_photo'=>'Atap','floor_photo'=>'Lantai','wall_photo'=>'Dinding','latrine_photo'=>'Jamban']; $candidate=['candidate_land_photo'=>'Foto Lahan','land_transfer_proof'=>'Bukti Pindah Tangan']; $files = (($assessment['assessment_track'] ?? '') === 'candidate_land') ? $candidate : ((($assessment['assessment_track'] ?? '') === 'financing') ? ['id_card_photo'=>'Foto KTP','family_card_photo'=>'Foto KK'] : $existing); ?><fieldset class="mt-5 border-t pt-4" style="border-color:var(--portal-border)"><legend class="text-sm font-black">Bukti simulasi</legend><div class="mt-3 grid gap-3 sm:grid-cols-2"><?php foreach($files as $kind=>$label): ?><div class="rounded-xl border p-3" style="border-color:var(--portal-border)"><label for="<?= $kind ?>" class="text-xs font-bold"><?= html_escape($label) ?></label><?php if (isset($evidence_files[$kind])): $bukti = $evidence_files[$kind]; ?><span class="ml-1 inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-bold" style="background:rgba(16,185,129,.12);color:#047857">Sudah tersimpan</span>
+            <h2 class="text-lg font-black">Lengkapi Data SIMPERUM — Lokasi & Bukti</h2><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Koordinat dan berkas disimpan privat. Bukti di bawah berlabel simulasi, bukan ketetapan akhir Dinas.</p><div class="mt-5 grid gap-4 sm:grid-cols-3"><div><label for="location_lat" class="text-xs font-bold">Latitude</label><input id="location_lat" name="location_lat" type="number" step="any" value="<?= html_escape($value('location_lat')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div><div><label for="location_lng" class="text-xs font-bold">Longitude</label><input id="location_lng" name="location_lng" type="number" step="any" value="<?= html_escape($value('location_lng')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div><div><label for="akurasi_lokasi_m" class="text-xs font-bold">Akurasi (meter)</label><input id="akurasi_lokasi_m" name="akurasi_lokasi_m" type="number" min="0" step="0.1" value="<?= html_escape($value('akurasi_lokasi_m')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div></div><button type="button" id="use-location" class="mt-3 rounded-xl border px-3 py-2 text-xs font-bold" style="border-color:var(--portal-border)">Gunakan lokasi perangkat</button><?php $existing = ['self_photo'=>'Foto Diri','house_front_photo'=>'Rumah Depan','house_side_photo'=>'Rumah Samping','roof_photo'=>'Atap','floor_photo'=>'Lantai','wall_photo'=>'Dinding','latrine_photo'=>'Jamban']; $candidate=['candidate_land_photo'=>'Foto Lahan','land_transfer_proof'=>'Bukti Pindah Tangan']; $files = (($assessment['jalur_penilaian'] ?? '') === 'candidate_land') ? $candidate : ((($assessment['jalur_penilaian'] ?? '') === 'financing') ? ['id_card_photo'=>'Foto KTP','family_card_photo'=>'Foto KK'] : $existing); ?><fieldset class="mt-5 border-t pt-4" style="border-color:var(--portal-border)"><legend class="text-sm font-black">Bukti simulasi</legend><div class="mt-3 grid gap-3 sm:grid-cols-2"><?php foreach($files as $kind=>$label): ?><div class="rounded-xl border p-3" style="border-color:var(--portal-border)"><label for="<?= $kind ?>" class="text-xs font-bold"><?= html_escape($label) ?></label><?php if (isset($evidence_files[$kind])): $bukti = $evidence_files[$kind]; ?><span class="ml-1 inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-bold" style="background:rgba(16,185,129,.12);color:#047857">Sudah tersimpan</span>
                         <?php // Pemohon wajib bisa MEMERIKSA apa yang dia unggah - badge saja
                               // tidak cukup saat petugas meminta perbaikan. Dibuka di modal
                               // (components/file_viewer_modal), halaman tidak ditinggalkan. ?>
                         <span class="mt-1 flex items-center gap-2 text-[10px]" style="color:var(--portal-text-muted)">
                             <a href="<?= site_url('warga/lihat_bukti/' . (int) $assessment['id'] . '/' . rawurlencode($kind)) ?>" data-file-view data-file-title="<?= html_escape($label) ?>" target="_blank" rel="noopener" class="font-bold" style="color:var(--portal-brand-ink,#047857)">Lihat berkas</a>
-                            <span>·</span><span><?= number_format(((int) ($bukti['size_bytes'] ?? 0)) / 1024, 0, ',', '.') ?> KB</span>
-                            <span>·</span><span><?= html_escape(date('d M Y', strtotime($bukti['created_at'] ?? 'now'))) ?></span>
-                        </span><?php endif; ?><input id="<?= $kind ?>" name="<?= $kind ?>" type="file" accept="image/jpeg,image/png" class="mt-2 block w-full text-xs"><button type="submit" name="action" value="upload" class="mt-2 rounded-lg px-3 py-1.5 text-xs font-bold" style="background:var(--portal-brand);color:#06333b" onclick="this.form.querySelector('[name=file_kind]').value='<?= $kind ?>'">Unggah</button></div><?php endforeach; ?></div><input type="hidden" name="file_kind" value=""></fieldset><script>document.getElementById('use-location')?.addEventListener('click',function(){if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(function(p){document.getElementById('location_lat').value=p.coords.latitude;document.getElementById('location_lng').value=p.coords.longitude;document.getElementById('location_accuracy_m').value=p.coords.accuracy;});});</script>
+                            <span>·</span><span><?= number_format(((int) ($bukti['ukuran_byte'] ?? 0)) / 1024, 0, ',', '.') ?> KB</span>
+                            <span>·</span><span><?= html_escape(tgl_id($bukti['created_at'] ?? '', TRUE)) ?></span>
+                        </span><?php endif; ?><input id="<?= $kind ?>" name="<?= $kind ?>" type="file" accept="image/jpeg,image/png" class="mt-2 block w-full text-xs"><button type="submit" name="action" value="upload" class="mt-2 rounded-lg px-3 py-1.5 text-xs font-bold" style="background:var(--portal-brand);color:#06333b" onclick="this.form.querySelector('[name=jenis_berkas]').value='<?= $kind ?>'">Unggah</button></div><?php endforeach; ?></div><input type="hidden" name="jenis_berkas" value=""></fieldset><script>document.getElementById('use-location')?.addEventListener('click',function(){if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(function(p){document.getElementById('location_lat').value=p.coords.latitude;document.getElementById('location_lng').value=p.coords.longitude;document.getElementById('akurasi_lokasi_m').value=p.coords.accuracy;});});</script>
             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
             <div id="warga-location-map" class="mt-5 h-72 overflow-hidden rounded-xl border" style="border-color:var(--portal-border)" aria-label="Peta lokasi warga"></div>
             <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -510,8 +308,8 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
             ];
             $track_labels = ['existing_house' => 'Rumah eksisting', 'candidate_land' => 'Calon lahan', 'financing' => 'Pembiayaan', 'undetermined' => 'Belum ditentukan'];
             $source_labels = ['simulation' => 'SIMPERUM (simulasi)', 'api' => 'SIMPERUM', 'manual' => 'Diisi mandiri oleh warga'];
-            $submittable_recommendations = array_values(array_filter((array) $recommendations, static fn($item) => in_array($item['eligibility_status'] ?? '', ['eligible', 'potential'], TRUE)));
-            $needs_data_recommendations = array_values(array_filter((array) $recommendations, static fn($item) => ($item['eligibility_status'] ?? '') === 'needs_data'));
+            $submittable_recommendations = array_values(array_filter((array) $recommendations, static fn($item) => in_array($item['status_kelayakan'] ?? '', ['eligible', 'potential'], TRUE)));
+            $needs_data_recommendations = array_values(array_filter((array) $recommendations, static fn($item) => ($item['status_kelayakan'] ?? '') === 'needs_data'));
             $has_missing_decile = FALSE;
             $has_unavailable_requirements = FALSE;
             $has_actionable_needs_data = FALSE;
@@ -529,20 +327,21 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
             }
             ?>
             <h2 class="text-lg font-black">Review & Rekomendasi</h2>
-            <dl class="mt-5 grid gap-3 text-xs sm:grid-cols-3"><div class="rounded-xl border p-3" style="border-color:var(--portal-border)"><dt style="color:var(--portal-text-muted)">Sumber data</dt><dd class="mt-1 font-bold"><?= html_escape($source_labels[$review_summary['source_mode'] ?? ''] ?? 'Belum tersedia') ?></dd></div><div class="rounded-xl border p-3" style="border-color:var(--portal-border)"><dt style="color:var(--portal-text-muted)">Desil sumber</dt><dd class="mt-1 font-bold"><?= isset($review_summary['welfare_decile']) && $review_summary['welfare_decile'] !== null ? html_escape((string) $review_summary['welfare_decile']) : 'Belum tersedia' ?></dd></div><div class="rounded-xl border p-3" style="border-color:var(--portal-text-muted);border:1px solid var(--portal-border)"><dt>Cabang</dt><dd class="mt-1 font-bold" style="color:var(--portal-text)"><?= html_escape($track_labels[$review_summary['assessment_track'] ?? ''] ?? 'Belum ditentukan') ?></dd></div></dl>
+            <dl class="mt-5 grid gap-3 text-xs sm:grid-cols-3"><div class="rounded-xl border p-3" style="border-color:var(--portal-border)"><dt style="color:var(--portal-text-muted)">Sumber data</dt><dd class="mt-1 font-bold"><?= html_escape($source_labels[$review_summary['mode_sumber'] ?? ''] ?? 'Belum tersedia') ?></dd></div><div class="rounded-xl border p-3" style="border-color:var(--portal-border)"><dt style="color:var(--portal-text-muted)">Desil sumber</dt><dd class="mt-1 font-bold"><?= isset($review_summary['desil_kesejahteraan']) && $review_summary['desil_kesejahteraan'] !== null ? html_escape((string) $review_summary['desil_kesejahteraan']) : 'Belum tersedia' ?></dd></div><div class="rounded-xl border p-3" style="border-color:var(--portal-text-muted);border:1px solid var(--portal-border)"><dt>Cabang</dt><dd class="mt-1 font-bold" style="color:var(--portal-text)"><?= html_escape($track_labels[$review_summary['jalur_penilaian'] ?? ''] ?? 'Belum ditentukan') ?></dd></div></dl>
             <?php if ($submittable_recommendations): ?>
-                <section id="review-action-help" role="status" class="mt-5 rounded-xl border p-4 text-sm" style="border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.10);color:#047857"><h3 class="font-black">Program dapat diajukan</h3><p class="mt-1 text-xs">Pilih satu program di bawah, lalu tekan <strong>Ajukan program yang dipilih</strong>. Pengajuan akan masuk ke Admin Kab/Kota untuk diverifikasi dan belum merupakan persetujuan bantuan. Setelah dikirim, data Anda dikunci dan hanya dapat diubah bila petugas meminta perbaikan.</p></section>
+                <section id="review-action-help" role="status" class="mt-5 rounded-xl border p-4 text-sm" style="border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.10);color:#047857"><h3 class="font-black">Program dapat diajukan</h3><p class="mt-1 text-xs">Pilih satu program di bawah, lalu tekan <strong>Simpan Data</strong>. Pengajuan akan masuk ke Admin Kab/Kota untuk diverifikasi dan belum merupakan persetujuan bantuan. Setelah dikirim, data Anda dikunci dan hanya dapat diubah bila petugas meminta perbaikan.</p></section>
             <?php elseif ($needs_data_recommendations): ?>
                 <section id="review-action-help" role="status" class="mt-5 rounded-xl border p-4 text-sm" style="border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.11);color:#92400e"><h3 class="font-black">Pengajuan belum dapat dikirim</h3><p class="mt-1 text-xs"><?= $has_actionable_needs_data ? ($has_unavailable_requirements ? 'Sebagian data atau kondisi masih dapat diperiksa; beberapa persyaratan program lain memang belum tersedia di formulir saat ini.' : 'Periksa atau lengkapi data dan kondisi pada langkah sebelumnya, sesuai alasan di setiap rekomendasi.') : ($has_missing_decile ? 'Desil sumber belum tersedia. Sistem tidak akan menebak desil; Anda dapat memeriksa kembali isian atau melihat layanan lain.' : 'Persyaratan program ini belum dapat disimulasikan dari formulir saat ini. Anda tidak perlu mengulang data yang sudah benar.') ?></p></section>
             <?php elseif ( ! empty($recommendations)): ?>
                 <section id="review-action-help" role="status" class="mt-5 rounded-xl border p-4 text-sm" style="border-color:rgba(239,68,68,.28);background:rgba(239,68,68,.08);color:#991b1b"><h3 class="font-black">Belum ada program yang dapat diajukan</h3><p class="mt-1 text-xs">Periksa kembali data yang diisi atau lihat layanan perumahan lain. Hasil simulasi ini bukan keputusan akhir Dinas.</p></section>
             <?php endif; ?>
+            <details class="mt-5 rounded-xl border p-4"><summary class="cursor-pointer font-bold">Rekomendasi awal yang tersimpan</summary><?php $this->load->view('pages/warga/matrix_result', ['matrix_result'=>$preliminary_matrix ?? NULL]); ?></details>
             <h3 class="mt-6 text-sm font-black">Hasil rekomendasi</h3>
             <?php if (empty($recommendations)): ?>
                 <p class="mt-3 rounded-xl border p-3 text-xs" style="border-color:var(--portal-border);color:var(--portal-text-muted)">Belum ada hasil untuk ditampilkan. Lengkapi data yang diperlukan lalu simpan langkah sebelumnya.</p>
             <?php else: ?><fieldset class="mt-3"><legend class="sr-only"><?= $submittable_recommendations ? 'Pilih satu program untuk diajukan' : 'Rincian hasil rekomendasi' ?></legend><div class="space-y-3"><?php foreach ($recommendations as $recommendation): ?>
-                <?php $status = (string) ($recommendation['eligibility_status'] ?? 'needs_data'); $reasons = isset($recommendation['reason_codes']) && is_array($recommendation['reason_codes']) ? $recommendation['reason_codes'] : []; ?>
-                <article class="rounded-xl border p-4" style="border-color:var(--portal-border)"><div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><h4 class="font-black"><?= html_escape((string) ($recommendation['program_name'] ?? $recommendation['program_code'] ?? 'Program')) ?></h4><p class="mt-1 text-[10px]" style="color:var(--portal-text-muted)">Ruleset <?= html_escape((string) ($recommendation['ruleset_version'] ?? 'SIM-2026-01')) ?></p></div><span class="inline-flex w-fit rounded-full px-2 py-1 text-[10px] font-bold" style="<?= $status_styles[$status] ?? $status_styles['needs_data'] ?>"><?= html_escape($status_labels[$status] ?? 'Status belum dikenal') ?></span></div><?php if ($reasons): ?><ul class="mt-3 space-y-1 text-xs" style="color:var(--portal-text-muted)"><?php foreach ($reasons as $reason): ?><li>• <?= html_escape($reason_labels[$reason] ?? 'Alasan evaluasi tersedia pada catatan server.') ?></li><?php endforeach; ?></ul><?php endif; ?><?php if (in_array($status, ['eligible', 'potential'], TRUE) && ! empty($recommendation['recommendation_id'])): ?><label class="mt-3 flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-xs font-bold focus-within:ring-2" style="border-color:var(--portal-brand);background:rgba(14,165,233,.07)"><input type="radio" name="recommendation_id" value="<?= (int) $recommendation['recommendation_id'] ?>" required aria-describedby="review-action-help"> Pilih program ini untuk diajukan</label><?php endif; ?></article>
+                <?php $status = (string) ($recommendation['status_kelayakan'] ?? 'needs_data'); $reasons = isset($recommendation['reason_codes']) && is_array($recommendation['reason_codes']) ? $recommendation['reason_codes'] : []; ?>
+                <article class="rounded-xl border p-4" style="border-color:var(--portal-border)"><div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><h4 class="font-black"><?= html_escape((string) ($recommendation['program_name'] ?? $recommendation['program_code'] ?? 'Program')) ?></h4><p class="mt-1 text-[10px]" style="color:var(--portal-text-muted)">Ruleset <?= html_escape((string) ($recommendation['versi_aturan'] ?? 'SIM-2026-01')) ?></p></div><span class="inline-flex w-fit rounded-full px-2 py-1 text-[10px] font-bold" style="<?= $status_styles[$status] ?? $status_styles['needs_data'] ?>"><?= html_escape($status_labels[$status] ?? 'Status belum dikenal') ?></span></div><?php if ($reasons): ?><ul class="mt-3 space-y-1 text-xs" style="color:var(--portal-text-muted)"><?php foreach ($reasons as $reason): ?><li>• <?= html_escape($reason_labels[$reason] ?? 'Alasan evaluasi tersedia pada catatan server.') ?></li><?php endforeach; ?></ul><?php endif; ?><?php if (in_array($status, ['eligible', 'potential'], TRUE) && ! empty($recommendation['rekomendasi_id'])): ?><label class="mt-3 flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-xs font-bold focus-within:ring-2" style="border-color:var(--portal-brand);background:rgba(14,165,233,.07)"><input type="radio" name="rekomendasi_id" value="<?= (int) $recommendation['rekomendasi_id'] ?>" required aria-describedby="review-action-help"> Pilih program ini untuk diajukan</label><?php endif; ?></article>
             <?php endforeach; ?></div></fieldset><?php endif; ?>
         <?php else: ?>
             <h2 class="text-lg font-black"><?= html_escape($step_names[$step]) ?></h2>
@@ -552,7 +351,7 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
         <div class="mt-6 flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-between" style="border-color:var(--portal-border)">
             <?php if ($step_slug === 'review' && $submittable_recommendations): ?>
                 <button type="submit" name="direction" value="back" formnovalidate class="rounded-xl border px-4 py-2.5 text-center text-sm font-bold" style="border-color:var(--portal-border);color:var(--portal-text)">Periksa data kembali</button>
-                <button type="submit" name="action" value="submit" aria-describedby="review-action-help" class="rounded-xl px-4 py-2.5 text-sm font-black" style="background:var(--portal-brand);color:#06333b">Ajukan program yang dipilih</button>
+                <button type="submit" name="action" value="submit" aria-describedby="review-action-help" class="rounded-xl px-4 py-2.5 text-sm font-black" style="background:var(--portal-brand);color:#06333b">Simpan Data</button>
             <?php elseif ($step_slug === 'review' && $has_actionable_needs_data): ?>
                 <a href="<?= site_url('golek_omah') ?>" class="rounded-xl border px-4 py-2.5 text-center text-sm font-bold" style="border-color:var(--portal-border);color:var(--portal-text)">Lihat layanan lain</a>
                 <button type="submit" name="direction" value="back" formnovalidate class="rounded-xl px-4 py-2.5 text-sm font-black" style="background:var(--portal-brand);color:#06333b">Periksa/lengkapi data</button>

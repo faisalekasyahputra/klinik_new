@@ -12,6 +12,7 @@ $isi = function ($nama) use ($old) {
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <?= csp_meta_tag() ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token-name" content="<?= $this->security->get_csrf_token_name(); ?>">
     <meta name="csrf-token-hash" content="<?= $this->security->get_csrf_hash(); ?>">
@@ -20,9 +21,9 @@ $isi = function ($nama) use ($old) {
 
     <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . filemtime('assets/css/auth-pages.css')) ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous">
     <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js" integrity="sha384-pb6hrQvo4s23cEUFtj0CZkzGE3jyK3pj26RIupXXxhSrrcUA/Cn0lZgcCrGH0t6L" crossorigin="anonymous"></script>
 
     <!-- Alpine dimuat `defer`, jadi ada jeda sebelum x-show bekerja. Tanpa ini
          ketiga tombol navigasi (Kembali, Lanjut, Simpan) berkedip bersamaan
@@ -78,10 +79,10 @@ $isi = function ($nama) use ($old) {
          */
         $langkah_awal = empty($old) ? 1 : 2;
         ?>
-        <div class="auth-form-container" style="max-width: 520px;" x-data="onboardingForm('<?= $isi('role') ?>', <?= (int) $langkah_awal ?>)">
+        <div class="auth-form-container" style="max-width: 520px;" x-data="onboardingForm(<?= htmlspecialchars(json_encode((string) ($old['role'] ?? '')), ENT_QUOTES, 'UTF-8') ?>, <?= (int) $langkah_awal ?>)">
 
             <!-- Back Link - halaman ini TIDAK ditegakkan secara global (cek
-                 profile_completed cuma terjadi sekali sesudah login), jadi user
+                 profil_lengkap cuma terjadi sekali sesudah login), jadi user
                  memang boleh pergi. Dulu tidak ada tautan apa pun ke luar, dan
                  itu membuatnya terasa seperti jebakan. -->
             <a href="<?= base_url() ?>" class="auth-back-link">
@@ -207,14 +208,15 @@ $isi = function ($nama) use ($old) {
                         <i class="fa-solid fa-user auth-input-icon"></i>
                     </div>
 
-                    <!-- Identitas: pengembang memakai NPWP, peran lain memakai NIK. -->
-                    <div x-show="role !== 'pengembang'" :inert="role === 'pengembang'">
+                    <!-- Identitas: warga memakai NIK, pengembang memakai NPWP, mahasiswa tanpa keduanya
+                         (daftar revisi dinas 23 Sep 2026; identitas mahasiswa adalah NIM di formulir magang). -->
+                    <div x-show="role === 'warga'" :inert="role !== 'warga'">
                         <label class="auth-label" for="nik_identitas">No. Identitas (NIK) <span style="color:var(--auth-red)">*</span></label>
                         <div class="auth-input-group">
                             <input type="text" id="nik_identitas" name="nik_identitas" class="auth-input"
                                    value="<?= $isi('nik_identitas') ?>"
                                    placeholder="Masukkan 16 digit NIK" maxlength="16" pattern="[0-9]{16}"
-                                   :required="langkah === 2 && role !== 'pengembang'" inputmode="numeric"
+                                   :required="langkah === 2 && role === 'warga'" inputmode="numeric"
                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                             <i class="fa-solid fa-id-card auth-input-icon"></i>
                         </div>
@@ -335,14 +337,6 @@ $isi = function ($nama) use ($old) {
                                   placeholder="Alamat kantor perusahaan" rows="2"
                                   :required="role === 'pengembang' && langkah === 3" style="padding-left:2.75rem;"><?= $isi('alamat_kantor') ?></textarea>
                         <i class="fa-solid fa-location-dot auth-input-icon" style="top:1rem;transform:none;"></i>
-                    </div>
-
-                    <label class="auth-label" for="telp_kantor">No. Telepon Kantor</label>
-                    <div class="auth-input-group">
-                        <input type="tel" id="telp_kantor" name="telp_kantor" class="auth-input"
-                               value="<?= $isi('telp_kantor') ?>"
-                               placeholder="Nomor telepon kantor">
-                        <i class="fa-solid fa-phone-office auth-input-icon"></i>
                     </div>
 
                     <label class="auth-label">Upload KTP Penanggung Jawab <span style="color:var(--auth-red)">*</span></label>

@@ -63,7 +63,8 @@
             registration = results[0];
             var config = results[1];
             if (!config.enabled || !config.publicKey) {
-                setState('disabled', 'Web Push belum dikonfigurasi');
+                // Fitur belum dinyalakan di server: tombol mati tidak berguna bagi pengguna.
+                button.style.display = 'none';
                 return;
             }
             button.dataset.publicKey = config.publicKey;
@@ -72,9 +73,17 @@
             if (subscription === undefined) return;
             currentSubscription = subscription;
             setState(subscription ? 'active' : 'inactive', subscription ? 'Notifikasi HP aktif' : 'Aktifkan notifikasi HP');
+            // Perangkat bersama: langganan peramban ini mungkin masih atas nama akun yang
+            // login sebelumnya. Daftarkan ulang ke akun yang sedang login supaya push milik
+            // orang lain tidak lagi sampai ke sini.
+            // ponytail: satu POST per muat halaman; simpan penanda per akun bila terasa berat.
+            if (subscription) {
+                post(button.dataset.subscribeUrl, { subscription: JSON.stringify(subscription.toJSON()) })
+                    .catch(function (error) { console.error(error); });
+            }
         }).catch(function (error) {
             console.error(error);
-            setState('disabled', 'Web Push belum tersedia');
+            button.style.display = 'none';
         });
     }
 
@@ -107,7 +116,7 @@
             return post(button.dataset.subscribeUrl, { subscription: JSON.stringify(subscription.toJSON()) });
         }).then(function () {
             setState('active', 'Notifikasi HP aktif');
-            notify('Perangkat ini akan menerima notifikasi pekerjaan admin baru.', 'success');
+            notify('Perangkat ini akan menerima notifikasi Klinik PKP.', 'success');
         }).catch(function (error) {
             if (currentSubscription) {
                 currentSubscription.unsubscribe();

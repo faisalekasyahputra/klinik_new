@@ -5,32 +5,34 @@
  * Kolom "Nama di hasil diagnosa" bukan hiasan - ia dari
  * `Smart_filter::master_programs()`, sumber yang BERBEDA dari tabel ini, dan
  * selisihnya berarti warga melihat dua nama untuk satu program.
+ *
+ * Dua sumber: tabel `sf_program` menentukan status aktif dan nama di antrean
+ * admin serta /akun warga; judul di kartu hasil diagnosa dan seluruh aturan
+ * kelayakan ada di kode (application/libraries/Smart_filter.php). Selisih nama
+ * bisa dibereskan dari layar ini, aturan kelayakan tidak (itu perubahan kode).
+ *
+ * Kolom `batas_penghasilan_maks` ada di tabel dan berisi nilai, tetapi tidak
+ * dibaca kode mana pun (kelayakan dihitung dari desil, bukan penghasilan).
+ * Karena itu ia tidak ditampilkan maupun bisa diubah di sini.
  */
 $csrf_nama = $this->security->get_csrf_token_name();
 $csrf_hash = $this->security->get_csrf_hash();
 ?>
 <div x-data="{ buka: false, id: 0, nama: '', desk: '', aktif: true, kode: '', dipakai: 0,
                badge: '', syarat: '', gambar: '', urutan: 99, korsel: false }">
-    <div class="mb-6">
-        <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Katalog Program</h2>
-        <p class="text-sm text-gray-500 dark:text-brand-muted">
-            Program bantuan perumahan yang bisa diajukan warga. Yang bisa diubah dari sini:
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Program bantuan perumahan yang bisa diajukan warga. Yang bisa diubah dari sini:
             <b>nama</b>, <b>deskripsi</b>, <b>status aktif</b>, serta <b>tampilannya di beranda</b> -
-            badge, syarat utama, foto, dan urutan. Warna kartu tidak diatur di sini: paletnya
-            disetel sekali supaya kontras teksnya terjaga.
-        </p>
-    </div>
+            label, syarat utama, foto, dan urutan. Warna kartu tidak diatur di sini: paletnya
+            disetel sekali supaya kontras teksnya terjaga.']); ?>
 
     <?php if ($jml_selisih > 0 || $tanpa_baris || $jml_tanpa_aturan > 0): ?>
-    <div class="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 text-sm flex items-start gap-3">
+    <div class="mb-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 text-sm flex items-start gap-3">
         <i class="ph ph-warning text-lg mt-0.5"></i>
         <div class="space-y-1">
-            <strong>Katalog ini punya dua sumber, dan keduanya tidak sepakat.</strong>
+            <strong>Nama program diambil dari dua sumber yang belum sama.</strong>
             <p class="text-xs leading-relaxed">
-                Tabel <code>sf_programs</code> menentukan <b>status aktif</b> dan nama yang tampil di
-                <b>antrean admin serta halaman /akun warga</b>. Sementara judul di <b>kartu hasil diagnosa</b>
-                dan seluruh aturan kelayakan ada di kode
-                (<code>application/libraries/Smart_filter.php</code>).
+                Nama di layar ini tampil di <b>antrean admin dan akun warga</b>. Judul di
+                <b>hasil diagnosa</b> dan aturan kelayakan diatur oleh pengembang.
             </p>
             <ul class="text-xs space-y-0.5 pt-1">
                 <?php if ($jml_selisih > 0): ?>
@@ -43,19 +45,19 @@ $csrf_hash = $this->security->get_csrf_hash();
                 <li>• <b><?= count($tanpa_baris) ?> program</b> punya aturan tapi <b>tidak punya baris tabel</b> (<?= html_escape(implode(', ', $tanpa_baris)) ?>) - kartunya muncul, pengajuannya gagal.</li>
                 <?php endif; ?>
             </ul>
-            <p class="text-xs pt-1">Selisih nama bisa dibereskan dari layar ini. Aturan kelayakan tidak - itu perubahan kode.</p>
+            <p class="text-xs pt-1">Selisih nama bisa dibereskan lewat tombol Ubah. Aturan kelayakan hanya bisa diubah pengembang.</p>
         </div>
     </div>
     <?php endif; ?>
 
-    <div data-tabel-admin class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
-        <div class="overflow-x-auto">
+    <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="kartu-admin overflow-hidden">
+        <div class="overflow-x-auto aksi-tetap">
             <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                     <tr>
-                        <th class="px-4 py-4">Nama di antrean &amp; /akun</th>
+                        <th class="px-4 py-4">Nama di antrean &amp; akun warga</th>
                         <th class="px-4 py-4">Nama di hasil diagnosa</th>
-                        <th class="px-4 py-4">Kode <span class="font-normal normal-case">(tidak bisa diubah)</span></th>
+                        <th class="px-4 py-4">Kode</th>
                         <th class="px-4 py-4">Kategori</th>
                         <th class="px-4 py-4">Status</th>
                         <th class="px-4 py-4">Dipakai</th>
@@ -64,7 +66,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                 </thead>
                 <tbody class="divide-y divide-gray-200 dark:divide-white/5 text-gray-700 dark:text-gray-300">
                     <?php if (empty($rows)): ?>
-                    <tr><td colspan="7" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">Katalog kosong - seed program belum jalan.</td></tr>
+                    <tr><td colspan="7" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">Belum ada program.</td></tr>
                     <?php else: foreach ($rows as $r): ?>
                     <tr>
                         <?php // max-w diukur, bukan ditebak: 240px menghasilkan 6px kelebihan di 1440px (§17 poin 6). ?>
@@ -82,19 +84,18 @@ $csrf_hash = $this->security->get_csrf_hash();
                             <?php endif; ?>
                         </td>
                         <td class="px-4 py-3"><code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs dark:bg-black/30"><?= html_escape($r->kode_program) ?></code></td>
-                        <td class="px-4 py-3 text-xs"><?= html_escape($r->nama_kategori ?: '-') ?></td>
+                        <td class="px-4 py-3 text-xs max-w-[14rem] whitespace-normal"><?= html_escape($r->nama_kategori ?: '-') ?></td>
                         <td class="px-4 py-3">
                             <?= $this->load->view('admin/components/status_badge', [
-                                'label' => (int) $r->is_active === 1 ? 'Aktif' : 'Nonaktif',
-                                'kelas' => (int) $r->is_active === 1 ? 'ok' : 'reject',
+                                'label' => (int) $r->aktif === 1 ? 'Aktif' : 'Nonaktif',
+                                'kelas' => (int) $r->aktif === 1 ? 'ok' : 'reject',
                             ], TRUE) ?>
                         </td>
                         <td class="px-4 py-3 text-xs"><?= (int) $r->dipakai ?> pengajuan</td>
                         <td class="px-4 py-3">
                             <button type="button" title="Ubah program"
-                                    @click="id=<?= (int) $r->id ?>; nama=<?= htmlspecialchars(json_encode($r->nama_program), ENT_QUOTES) ?>; desk=<?= htmlspecialchars(json_encode($r->deskripsi_singkat), ENT_QUOTES) ?>; aktif=<?= (int) $r->is_active === 1 ? 'true' : 'false' ?>; kode=<?= htmlspecialchars(json_encode($r->kode_program), ENT_QUOTES) ?>; dipakai=<?= (int) $r->dipakai ?>; badge=<?= htmlspecialchars(json_encode((string) $r->badge), ENT_QUOTES) ?>; syarat=<?= htmlspecialchars(json_encode((string) $r->syarat_utama), ENT_QUOTES) ?>; gambar=<?= htmlspecialchars(json_encode((string) $r->gambar), ENT_QUOTES) ?>; urutan=<?= (int) $r->urutan ?>; korsel=<?= (int) $r->tampil_korsel === 1 ? 'true' : 'false' ?>; buka=true"
-                                    class="rounded-lg border border-gray-200 px-2 py-1 text-xs font-bold text-gray-600 hover:bg-gray-100 dark:border-white/10 dark:text-brand-muted dark:hover:bg-white/5">
-                                <i class="ph ph-pencil-simple" aria-hidden="true"></i> Ubah
+                                    @click="id=<?= (int) $r->id ?>; nama=<?= htmlspecialchars(json_encode($r->nama_program), ENT_QUOTES) ?>; desk=<?= htmlspecialchars(json_encode($r->deskripsi_singkat), ENT_QUOTES) ?>; aktif=<?= (int) $r->aktif === 1 ? 'true' : 'false' ?>; kode=<?= htmlspecialchars(json_encode($r->kode_program), ENT_QUOTES) ?>; dipakai=<?= (int) $r->dipakai ?>; badge=<?= htmlspecialchars(json_encode((string) $r->lencana), ENT_QUOTES) ?>; syarat=<?= htmlspecialchars(json_encode((string) $r->syarat_utama), ENT_QUOTES) ?>; gambar=<?= htmlspecialchars(json_encode((string) $r->gambar), ENT_QUOTES) ?>; urutan=<?= (int) $r->urutan ?>; korsel=<?= (int) $r->tampil_korsel === 1 ? 'true' : 'false' ?>; buka=true" class="tombol-aksi">
+                                <i class="ph ph-pencil-simple" aria-hidden="true"></i><span>Ubah</span>
                             </button>
                         </td>
                     </tr>
@@ -104,22 +105,15 @@ $csrf_hash = $this->security->get_csrf_hash();
         </div>
     </div>
 
-    <p class="mt-3 text-xs text-gray-400 dark:text-brand-muted/70">
-        <i class="ph ph-info mr-1" aria-hidden="true"></i>
-        Kolom <code>batas_penghasilan_max</code> ada di tabel dan berisi nilai, tetapi
-        <b>tidak dibaca kode mana pun</b> - kelayakan dihitung dari desil, bukan penghasilan.
-        Karena itu ia tidak ditampilkan maupun bisa diubah di sini.
-    </p>
-
     <?php // Satu modal untuk seluruh tabel - formulir per baris akan mendorongnya melewati wadahnya. ?>
     <div x-show="buka" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
         <div @click.away="buka = false" class="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-brand-card">
             <div class="flex items-start justify-between gap-3 border-b border-gray-200 pb-3 dark:border-white/10">
                 <div>
-                    <h3 class="text-sm font-black text-gray-900 dark:text-white">Ubah Program</h3>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-brand-muted"><code x-text="kode"></code></p>
+                    <h3 class="text-sm font-black text-gray-900 dark:text-white">Ubah program</h3>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-brand-muted">Kode <code x-text="kode"></code> (tidak bisa diubah)</p>
                 </div>
-                <button type="button" @click="buka = false" aria-label="Tutup" class="text-gray-400 hover:text-gray-600 dark:hover:text-white"><i class="ph ph-x text-lg" aria-hidden="true"></i></button>
+                <button type="button" @click="buka = false" aria-label="Tutup" class="tombol-ikon"><i class="ph ph-x" aria-hidden="true"></i></button>
             </div>
 
             <?php /* `enctype` WAJIB - tanpa itu `$_FILES` kosong dan unggahan foto
@@ -134,7 +128,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                     <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Nama program</span>
                     <input type="text" name="nama_program" x-model="nama" required maxlength="255"
                            class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200">
-                    <span class="mt-1 block text-[11px] text-gray-500 dark:text-brand-muted">Tampil di antrean admin dan halaman /akun warga.</span>
+                    <span class="mt-1 block text-[11px] text-gray-500 dark:text-brand-muted">Tampil di antrean admin dan halaman akun warga.</span>
                 </label>
 
                 <label class="block">
@@ -151,7 +145,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                     <p class="mb-2 font-black text-gray-700 dark:text-gray-300">Tampilan di beranda</p>
 
                     <label class="block">
-                        <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Badge</span>
+                        <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Label</span>
                         <input type="text" name="badge" x-model="badge" maxlength="60"
                                placeholder="mis. MBR Fixed Income"
                                class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200">
@@ -164,18 +158,17 @@ $csrf_hash = $this->security->get_csrf_hash();
                                   class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200"></textarea>
                     </label>
 
-                    <label class="mt-2 block">
+                    <div class="mt-2 block">
                         <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Foto program</span>
                         <template x-if="gambar">
                             <img :src="'<?= base_url() ?>' + gambar" alt="" class="mb-2 h-24 w-full rounded-lg object-cover">
                         </template>
-                        <input type="file" name="gambar" accept="image/jpeg,image/png"
-                               class="w-full text-[11px] text-gray-600 dark:text-brand-muted">
+                        <?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'gambar', 'ib_accept' => 'image/jpeg,image/png', 'ib_required' => FALSE, 'ib_attr' => '']); ?>
                         <span class="mt-1 block text-[11px] text-gray-500 dark:text-brand-muted">
                             JPG atau PNG, maksimal 3&nbsp;MB. Kosongkan bila fotonya tidak diganti.
                             Data lokasi pada foto dibersihkan otomatis sebelum ditayangkan.
                         </span>
-                    </label>
+                    </div>
 
                     <div class="mt-2 flex items-center gap-3">
                         <label class="flex items-center gap-2">
@@ -202,8 +195,8 @@ $csrf_hash = $this->security->get_csrf_hash();
                 </label>
 
                 <div class="flex justify-end gap-2 pt-1">
-                    <button type="button" @click="buka = false" class="rounded-lg border border-gray-200 px-3 py-2 font-bold text-gray-600 dark:border-white/10 dark:text-brand-muted">Batal</button>
-                    <button type="submit" class="rounded-lg border border-brand-primary/50 bg-brand-primary/20 px-4 py-2 font-bold text-brand-primary hover:bg-brand-primary/30">Simpan</button>
+                    <button type="button" @click="buka = false" class="tombol-kedua"><span>Batal</span></button>
+                    <button type="submit" class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan</span></button>
                 </div>
             </form>
         </div>

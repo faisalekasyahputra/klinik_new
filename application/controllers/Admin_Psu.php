@@ -61,7 +61,7 @@ class Admin_Psu extends Admin_Controller {
         $data['kabupaten']  = $this->db->select('id, nama')->order_by('nama', 'ASC')->get('kabupaten')->result();
         $data['asosiasi']   = srp2_daftar_asosiasi(TRUE);
         $data['pengembang'] = $this->db->select('id, nama_perusahaan')->where('status_aktif', 1)
-            ->order_by('nama_perusahaan', 'ASC')->get('srp2_certified_developers')->result();
+            ->order_by('nama_perusahaan', 'ASC')->get('srp2_direktori_pengembang')->result();
 
         $this->render_admin('admin/psu/index', $data);
     }
@@ -120,7 +120,7 @@ class Admin_Psu extends Admin_Controller {
            BUKAN kesalahan, itu memang keadaan sahnya. */
         $pengembang_id = (int) $this->input->post('pengembang_id');
         if ($pengembang_id !== 0 && ! $this->db->where('id', $pengembang_id)
-            ->count_all_results('srp2_certified_developers')) {
+            ->count_all_results('srp2_direktori_pengembang')) {
             $this->session->set_flashdata('error', 'Pengembang di direktori SRP2 tidak dikenal.');
             redirect('Admin_Psu'); return;
         }
@@ -166,7 +166,7 @@ class Admin_Psu extends Admin_Controller {
     {
         if ($this->input->method(TRUE) !== 'GET') { show_404(); return; }
         $path=FCPATH.'application/templates/template_import_psu.xlsx';
-        if(!is_file($path)){show_error('Template Excel PSU belum tersedia.',500);return;}
+        if(!is_file($path)){show_error('Templat Excel PSU belum tersedia.',500);return;}
         $this->output->set_header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             ->set_header('Content-Disposition: attachment; filename="template_import_psu.xlsx"')
             ->set_header('Content-Length: '.filesize($path))->set_header('Cache-Control: private, no-store, max-age=0')
@@ -190,9 +190,14 @@ class Admin_Psu extends Admin_Controller {
         if(!in_array($ext,['xlsx','xls'],TRUE)){
             $this->session->set_flashdata('error','Format berkas harus XLSX atau XLS.');redirect('Admin_Psu');return;
         }
+        // 11.4: makro, objek tertanam, bom zip, dan kode tertanam ditolak sebelum berkas dibaca.
+        $galat_scan=NULL;
+        if(!$this->scan_uploaded_file($file['tmp_name'],$ext,$galat_scan,'psu_import')){
+            $this->session->set_flashdata('error',$galat_scan);redirect('Admin_Psu');return;
+        }
         $kab=$this->db->select('id,nama')->get('kabupaten')->result();
         $aso=srp2_daftar_asosiasi(TRUE);
-        $dev=$this->db->select('id,nama_perusahaan')->where('status_aktif',1)->get('srp2_certified_developers')->result();
+        $dev=$this->db->select('id,nama_perusahaan')->where('status_aktif',1)->get('srp2_direktori_pengembang')->result();
         $result=$this->psu_excel_import->baca($file['tmp_name'],$kab,$aso,$dev);
         if(!$result['success']){$this->session->set_flashdata('error',$result['message']);redirect('Admin_Psu');return;}
 
@@ -210,13 +215,13 @@ class Admin_Psu extends Admin_Controller {
         $this->db->trans_begin();
         foreach(array_chunk($insert,200) as $chunk)if($this->db->insert_batch(self::TABEL,$chunk)===FALSE)break;
         if($this->db->trans_status()===FALSE){
-            $this->db->trans_rollback();$this->session->set_flashdata('error','Import gagal saat menyimpan. Seluruh perubahan dibatalkan.');
+            $this->db->trans_rollback();$this->session->set_flashdata('error','Impor gagal saat menyimpan. Seluruh perubahan dibatalkan.');
             redirect('Admin_Psu');return;
         }
         $this->db->trans_commit();
         $this->catat_audit('psu_diimpor_excel',count($insert).' data PSU diimpor dari Excel; '.$skipped.' duplikat dilewati',
             self::TABEL,NULL,['ditambahkan'=>count($insert),'duplikat_dilewati'=>$skipped]);
-        $this->session->set_flashdata('success','Import selesai: '.count($insert).' data ditambahkan, '.$skipped.' duplikat dilewati.');
+        $this->session->set_flashdata('success','Impor selesai: '.count($insert).' data ditambahkan, '.$skipped.' duplikat dilewati.');
         redirect('Admin_Psu');
     }
 

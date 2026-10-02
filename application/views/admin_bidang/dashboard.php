@@ -4,28 +4,26 @@
 // bukan di tabel. Lihat admin/components/status_badge.php.
 $badge_kelas = ['Baru' => 'pending', 'Diproses' => 'process', 'Selesai' => 'ok'];
 ?>
-<div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
-    <div>
-        <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2 flex items-center gap-3">
-            <i class="ph ph-chat-centered-text text-brand-primary"></i>
-            Aduan - <?= html_escape($bidang_nama ?: 'Bidang Saya') ?>
-        </h1>
-        <p class="text-sm text-gray-500 dark:text-brand-muted">Kelola aduan warga yang masuk ke bidang Anda.</p>
-    </div>
-</div>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Kelola aduan warga yang masuk ke bidang <b>' . html_escape($bidang_nama ?: 'Anda') . '</b>.']); ?>
 
 <?php $this->load->helper('admin_table'); ?>
-<div data-tabel-admin class="bg-white dark:bg-brand-card border border-gray-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm">
-    <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari pelapor, judul, isi...'], TRUE) ?>
-    <div class="overflow-x-auto">
+<div data-tabel-admin class="kartu-admin overflow-hidden">
+<?php ob_start(); ?>
+<span class="text-xs font-bold text-gray-500 dark:text-brand-muted mr-1">Status:</span>
+<?php foreach (array_merge([NULL], $status_sah) as $status): ?>
+<a href="<?= admin_table_url($base_url, ['status' => $status]) ?>" class="chip-filter"<?= $status_filter === $status ? ' aria-current="true"' : '' ?>><?= html_escape($status ?? 'Semua') ?></a>
+<?php endforeach;
+$filter_html = ob_get_clean(); ?>
+    <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari pelapor, judul, isi...', 'filter_html' => $filter_html], TRUE) ?>
+    <div class="overflow-x-auto aksi-tetap">
         <table class="w-full text-left text-sm whitespace-nowrap">
-            <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
+            <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold">
                 <tr>
-                    <th class="px-6 py-4"><?= admin_sort_header('Tanggal', 'created_at', $table, $base_url) ?></th>
-                    <th class="px-6 py-4"><?= admin_sort_header('Pelapor', 'nama', $table, $base_url) ?></th>
-                    <th class="px-6 py-4"><?= admin_sort_header('Judul & Pesan', 'judul', $table, $base_url) ?></th>
-                    <th class="px-6 py-4"><?= admin_sort_header('Status', 'status', $table, $base_url) ?></th>
-                    <th class="px-6 py-4 text-right">Aksi</th>
+                    <th class="px-4 py-3"><?= admin_sort_header('Tanggal', 'created_at', $table, $base_url) ?></th>
+                    <th class="px-4 py-3"><?= admin_sort_header('Pelapor', 'nama', $table, $base_url) ?></th>
+                    <th class="px-4 py-3"><?= admin_sort_header('Judul & pesan', 'judul', $table, $base_url) ?></th>
+                    <th class="px-4 py-3"><?= admin_sort_header('Status', 'status', $table, $base_url) ?></th>
+                    <th class="px-4 py-3 text-right">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-white/5 text-gray-600 dark:text-brand-muted">
@@ -35,26 +33,32 @@ $badge_kelas = ['Baru' => 'pending', 'Diproses' => 'process', 'Selesai' => 'ok']
                 </tr>
                 <?php else: foreach ($rows as $r): ?>
                 <tr x-data="{ procOpen: false }">
-                    <td class="px-6 py-4 text-xs"><?= html_escape(date('d M Y H:i', strtotime($r->created_at))) ?></td>
-                    <td class="px-6 py-4">
+                    <td class="px-4 py-3 text-xs"><?= html_escape(tgl_id($r->created_at, TRUE, TRUE)) ?></td>
+                    <td class="px-4 py-3 max-w-[14rem] whitespace-normal break-words">
                         <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama) ?></div>
                         <div class="text-xs"><?= html_escape($r->email) ?></div>
                     </td>
-                    <td class="px-6 py-4 max-w-sm">
+                    <td class="px-4 py-3 min-w-[200px] max-w-sm whitespace-normal">
                         <div class="font-semibold text-gray-900 dark:text-white"><?= html_escape($r->judul) ?></div>
-                        <div class="text-xs mt-0.5 line-clamp-2 whitespace-normal"><?= html_escape($r->pesan) ?></div>
+                        <div class="text-xs mt-0.5 line-clamp-2"><?= html_escape($r->pesan) ?></div>
                         <?php if (!empty($r->lampiran)): ?>
                         <a href="<?= base_url('Admin_Bidang/lihat_lampiran/' . $r->id) ?>" target="_blank" rel="noopener" class="inline-block mt-1 text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> Lihat lampiran</a>
                         <?php endif; ?>
                     </td>
-                    <td class="px-6 py-4">
+                    <td class="px-4 py-3">
                         <?= $this->load->view('admin/components/status_badge', ['label' => $r->status, 'kelas' => $badge_kelas[$r->status] ?? 'pending'], TRUE) ?>
                     </td>
-                    <td class="px-6 py-4 text-right relative">
-                        <button @click="procOpen = !procOpen" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">
-                            <i class="ph ph-note-pencil"></i> Proses
+                    <td class="px-4 py-3 text-right">
+                        <button @click="procOpen = true" class="tombol-aksi">
+                            <i class="ph ph-note-pencil"></i><span>Proses</span>
                         </button>
-                        <div x-show="procOpen" x-cloak @click.outside="procOpen = false" class="absolute right-6 top-full mt-1 z-20 w-72 rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
+                        <?php /* Modal, bukan popover: panel absolut dulu terpotong wadah overflow-x-auto
+                                 (audit UI 2 Okt 2026). Teleport ke body karena sel Aksi sticky. */ ?>
+                        <template x-teleport="body">
+                        <div x-show="procOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center whitespace-normal bg-black/50 p-4" @keydown.escape.window="procOpen = false">
+                        <div @click.outside="procOpen = false" class="w-full max-w-sm rounded-2xl bg-white dark:bg-brand-card p-5 text-left shadow-xl">
+                            <h3 class="text-lg font-bold text-gray-900 dark:text-white">Proses aduan</h3>
+                            <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-brand-muted break-words"><?= html_escape($r->judul) ?></p>
                             <?= $this->load->view('admin/components/review_form', [
                                 'action_url' => 'Admin_Bidang/update_status/' . $r->id,
                                 'buttons' => [
@@ -66,6 +70,8 @@ $badge_kelas = ['Baru' => 'pending', 'Diproses' => 'process', 'Selesai' => 'ok']
                                 'catatan_value' => $r->catatan_admin ?? '',
                             ], TRUE) ?>
                         </div>
+                        </div>
+                        </template>
                     </td>
                 </tr>
                 <?php endforeach; endif; ?>

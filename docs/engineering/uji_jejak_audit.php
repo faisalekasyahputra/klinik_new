@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Penjaga statis untuk layar Jejak Audit (Admin_Audit).
  *
@@ -49,7 +50,11 @@ echo "\n== Whitelist sort menunjuk kolom nyata ==\n";
 
 // Kolom dibaca dari CREATE TABLE di migrasinya, bukan didaftar ulang di sini.
 preg_match_all('/^\s*`(\w+)`\s+[A-Z]/m', $migrasi, $km);
-$kolom = $km[1];
+// Nama kolom migrasi 033 diterjemahkan ke nama sesudah migrasi 072 (pelaku_*), dari peta migrasinya.
+if ( ! defined('BASEPATH')) { define('BASEPATH', 'uji'); }
+if ( ! class_exists('CI_Migration')) { class CI_Migration {} }
+require_once APP_ROOT . '/application/migrations/20260701000072_penamaan_indonesia.php';
+$kolom = array_map(fn($k) => Migration_Penamaan_indonesia::kolom('sys_jejak_audit', $k), $km[1]);
 $cek(in_array('created_at', $kolom, TRUE), 'Kolom migrasi terbaca (' . count($kolom) . ' kolom)');
 
 preg_match('/table_state\(\[(.*?)\]/s', $controller, $sm);
@@ -63,6 +68,21 @@ foreach ($whitelist as $w) {
 // Filter ?aksi= wajib dicocokkan ke daftar DISTINCT, bukan dipakai apa adanya.
 $cek((bool) preg_match('/in_array\(\$aksi,\s*\$data\[.aksi_tersedia.\],\s*TRUE\)/', $controller),
     'Filter ?aksi= dicocokkan ke daftar yang ada di tabel');
+
+echo "\n== Aksi tulis admin meninggalkan jejak audit ==\n";
+// Badan method dipotong sampai deklarasi method berikutnya; cukup untuk berkas controller CI3.
+$wajib_audit = [
+    'Admin_Srp2'      => ['proses', 'save', 'delete', 'buat_akun', 'reset_sandi_akun', 'lepas_akun'],
+    'Pengaturan'      => ['simpan_perusahaan'],
+    'Admin_Kemitraan' => ['simpan_slot_bidang', 'ubah_status_bidang', 'simpan_ubah', 'hapus'],
+];
+foreach ($wajib_audit as $kelas => $metode) {
+    $src = file_get_contents(APP_ROOT . '/application/controllers/' . $kelas . '.php');
+    foreach ($metode as $fn) {
+        $ada = preg_match('/function\s+' . $fn . '\s*\((.*?)(?=\n\s*(?:public|protected|private)\s+function\s|\z)/s', $src, $bm);
+        $cek($ada && strpos($bm[1], 'catat_audit(') !== FALSE, "{$kelas}::{$fn}() memanggil catat_audit()");
+    }
+}
 
 echo "\nRINGKASAN: {$total} pemeriksaan, {$gagal} gagal\n";
 exit($gagal > 0 ? 1 : 0);

@@ -142,13 +142,13 @@ if ( ! function_exists('wizard_angka_wajar')) {
      * memberi tahu apa pun tentang alurnya.
      */
     function wizard_angka_wajar($nama) {
-        if (strpos($nama, 'area') !== FALSE || strpos($nama, 'length') !== FALSE
-            || strpos($nama, 'width') !== FALSE) { return '36'; }
-        if (strpos($nama, 'count') !== FALSE) { return '4'; }
-        if (strpos($nama, 'year') !== FALSE) { return '2024'; }
-        if (strpos($nama, 'amount') !== FALSE || strpos($nama, 'income') !== FALSE
-            || strpos($nama, 'penghasilan') !== FALSE) { return '2500000'; }
-        if (strpos($nama, 'accuracy') !== FALSE) { return '10'; }
+        // Nama medan Bahasa Indonesia sejak migrasi 072 (luas_*, panjang_*, jml_*, tahun_*, ...).
+        if (strpos($nama, 'luas') !== FALSE || strpos($nama, 'panjang') !== FALSE
+            || strpos($nama, 'lebar') !== FALSE) { return '36'; }
+        if (strpos($nama, 'jml_') !== FALSE) { return '4'; }
+        if (strpos($nama, 'tahun') !== FALSE) { return '2024'; }
+        if (strpos($nama, 'nilai_swadaya') !== FALSE || strpos($nama, 'penghasilan') !== FALSE) { return '2500000'; }
+        if (strpos($nama, 'akurasi') !== FALSE) { return '10'; }
         return '1';
     }
 }
@@ -160,7 +160,7 @@ if ( ! function_exists('wizard_pilih_opsi')) {
      *
      * Kenapa bukan sekadar opsi pertama: opsi pertama untuk seluruh medan
      * menghasilkan profil yang sah tapi TIDAK LOLOS satu program pun, dan
-     * step `review` lalu tidak merender radio `recommendation_id` sama sekali
+     * step `review` lalu tidak merender radio `rekomendasi_id` sama sekali
      * (pendataan.php merendernya hanya saat status `eligible`/`potential`).
      * Akibatnya submit ditolak "rekomendasi tidak dapat diajukan" - benar
      * menurut aturan, tapi tidak menguji apa pun soal alur pengajuan.
@@ -178,13 +178,13 @@ if ( ! function_exists('wizard_pilih_opsi')) {
         if ( ! $tersedia) { return ''; }
 
         $prefer = [];
-        if (strpos($nama, 'condition_code') !== FALSE) {
+        if (strpos($nama, 'kondisi_') === 0) {
             $prefer = ['severe_damage_or_absent', 'moderate_damage'];
-        } elseif ($nama === 'water_source_code') {
+        } elseif ($nama === 'sumber_air') {
             $prefer = ['other_unfit'];
-        } elseif ($nama === 'latrine_type_code') {
+        } elseif ($nama === 'jenis_kloset') {
             $prefer = ['none'];
-        } elseif ($nama === 'self_help_capability_code') {
+        } elseif ($nama === 'mampu_swadaya') {
             $prefer = ['capable'];
         } elseif (strpos($nama, 'kabupaten') !== FALSE) {
             /* 3374 (Kota Semarang) dipilih SENGAJA: itu wilayah akun admin

@@ -11,15 +11,35 @@ class Admin_Kabkota extends Admin_Kabkota_Controller {
 
     public function index()
     {
-        $data['title'] = 'Antrean Perumahan Wilayah Saya';
+        $data['title'] = 'Antrean Wilayah Saya'; // = label sidebar
         $data['scope_label'] = $this->db->where('id', $this->my_kabupaten_id)
             ->get('kabupaten')->row('nama') ?: 'Wilayah Saya';
         $data['action_url'] = 'Admin_Kabkota/update_status';
         $data['empty_text'] = 'Belum ada antrean di wilayah Anda.';
         $data['base_url'] = 'Admin_Kabkota';
         $data += $this->antrean_table_data($this->my_kabupaten_id);
+        // Cakupan wilayah: kabupaten_id dari sesi (Admin_Kabkota_Controller), bukan dari permintaan.
+        $data['tercocokkan_simperum'] = $this->db->table_exists('sf_data_simperum')
+            ? (int) $this->db->where('status_respons', 'found')->where('kabupaten_id', $this->my_kabupaten_id)
+                ->count_all_results('sf_data_simperum') : 0;
 
         $this->render_scoped_admin('admin/antrean/dashboard', $data);
+    }
+
+    /** Pendataan awal warga di wilayah ini: sudah menyimpan rekomendasi awal, belum dikirim. */
+    public function pendataan_awal()
+    {
+        // ponytail: offset dihitung dari ?page sebelum total diketahui; halaman di luar jangkauan
+        // cukup tampil kosong, tidak perlu query hitung terpisah.
+        [$rows, $total] = $this->Housing_assessment_model->pendataan_awal_wilayah(
+            $this->my_kabupaten_id, 25, (max(1, (int) $this->input->get('page')) - 1) * 25);
+        $table = array_merge($this->table_state([], NULL), $this->paginate_state($total));
+        $data = [
+            'title' => 'Pendataan Awal Warga',
+            'scope_label' => $this->db->where('id', $this->my_kabupaten_id)->get('kabupaten')->row('nama') ?: 'Wilayah Saya',
+            'rows' => $rows, 'table' => $table, 'pager' => $table, 'base_url' => 'Admin_Kabkota/pendataan_awal',
+        ];
+        $this->render_scoped_admin('admin/antrean/pendataan_awal', $data);
     }
 
     public function update_status()
@@ -29,10 +49,10 @@ class Admin_Kabkota extends Admin_Kabkota_Controller {
             return;
         }
 
-        $queue_id = (int) $this->input->post('queue_id');
+        $antrean_id = (int) $this->input->post('antrean_id');
         $rate = $this->rate_limit_consume('admin_queue_decision', [
             'account_id' => (int) $this->get_user_id(),
-            'object_id' => $queue_id,
+            'object_id' => $antrean_id,
         ]);
         if (empty($rate['success']) || empty($rate['allowed'])) {
             $this->rate_limit_reject(
@@ -44,8 +64,8 @@ class Admin_Kabkota extends Admin_Kabkota_Controller {
         }
 
         $result = $this->Housing_assessment_model->transition_queue(
-            $queue_id,
-            $this->input->post('from_status', TRUE),
+            $antrean_id,
+            $this->input->post('status_awal', TRUE),
             $this->input->post('status', TRUE),
             $this->get_user_id(),
             $this->my_kabupaten_id,
@@ -59,19 +79,36 @@ class Admin_Kabkota extends Admin_Kabkota_Controller {
         redirect('Admin_Kabkota');
     }
 
-    public function detail($queue_id)
+    public function detail($antrean_id)
     {
-        $data = $this->assessment_detail_data($queue_id, $this->my_kabupaten_id);
+        $data = $this->assessment_detail_data($antrean_id, $this->my_kabupaten_id);
         if ( ! $data) { show_404(); return; }
+        // Sakelar B2 (config/kebijakan_data.php) berlaku juga di detail, bukan hanya di daftar antrean.
+        $this->config->load('kebijakan_data', TRUE, TRUE);
+        if ($this->config->item('identitas_warga_kabkota', 'kebijakan_data') === 'menunggu_keputusan') {
+            $contoh = [
+                'full_name' => 'Warga Contoh ' . str_pad((string) (int) $antrean_id, 3, '0', STR_PAD_LEFT),
+                'address' => 'Alamat contoh - menunggu keputusan dinas', 'birth_date' => '1980-01-01',
+                'family_card_number' => '0000000000000000', 'phone' => '080000000000',
+                'desil_kesejahteraan' => (string) (1 + ((int) $antrean_id % 10)),
+            ];
+            $data['profile'] = $contoh + $data['profile'];
+            foreach (['identity', 'socioeconomic'] as $bagian) {
+                if (isset($data['source_snapshot'][$bagian]) && is_array($data['source_snapshot'][$bagian])) {
+                    $data['source_snapshot'][$bagian] = array_intersect_key($contoh, $data['source_snapshot'][$bagian]) + $data['source_snapshot'][$bagian];
+                }
+            }
+            unset($data['assessment']['matriks_penghasilan']);
+        }
         $data += ['title' => 'Detail Penilaian Warga', 'back_url' => 'Admin_Kabkota', 'action_url' => 'Admin_Kabkota/update_status', 'evidence_url' => 'Admin_Kabkota/evidence'];
         $this->render_scoped_admin('admin/antrean/detail', $data);
     }
 
-    public function evidence($queue_id, $file_kind)
+    public function evidence($antrean_id, $jenis_berkas)
     {
-        $file = $this->scoped_queue_file($queue_id, $file_kind, $this->my_kabupaten_id);
+        $file = $this->scoped_queue_file($antrean_id, $jenis_berkas, $this->my_kabupaten_id);
         if ( ! $file) { show_404(); return; }
-        $this->serve_private_file('warga_assessment', $file['storage_assessment_id'], $file['private_path'], $file['mime_type']);
+        $this->serve_private_file('warga_assessment', $file['storage_assessment_id'], $file['path_privat'], $file['mime_type']);
     }
 
 }

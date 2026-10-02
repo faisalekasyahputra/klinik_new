@@ -166,6 +166,12 @@ class Index extends MY_Controller {
                if ($idLokasi === NULL) {
             redirect('cari_rumah');
         }
+		// idLokasi SIKUMBANG berupa huruf dan angka (17 karakter); selain itu ditolak sebelum
+		// menjadi nama berkas cache dan URL hulu, supaya id sembarang tidak menimbun berkas.
+		if ( ! preg_match('/^[A-Za-z0-9]{1,32}$/', (string) $idLokasi)) {
+			show_404();
+			return;
+		}
 		$cache_file = APPPATH . 'cache/sikumbang_detail_' . $idLokasi . '.json';
 		$full_url = "https://sikumbang.tapera.go.id/lokasi-perumahan/" . $idLokasi . "/json";
 
@@ -174,14 +180,26 @@ class Index extends MY_Controller {
 		   404 yang berbohong, karena datanya ada di cache dan lokasinya
 		   memang nyata. Sekarang 404 hanya keluar kalau benar-benar tidak
 		   ada apa pun yang bisa disajikan. */
-		$response = sikumbang_ambil($full_url, $cache_file, 86400);
+		/* Bendera penahan tembakan PER LOKASI, bukan bendera host bersama (UAT
+		   Nggoleki Omah #2, 26 Sep 2026): satu id yang menggantung di SIKUMBANG
+		   terbukti membungkam kartu lain yang hulunya sehat selama 60 dtk.
+		   ponytail: saat host SIKUMBANG mati total, tiap id baru tetap membayar
+		   satu timeout; pakai bendera host lagi kalau itu terbukti menahan worker. */
+		$response = sikumbang_ambil($full_url, $cache_file, 86400, SIKUMBANG_TIMEOUT, 'sikumbang_detail_' . $idLokasi);
 
+		/* NULL = hulu gagal dan belum ada cache, BUKAN perumahan tidak ada.
+		   404 di sini membuat warga mengira perumahannya hilang. */
 		if ($response === NULL) {
-			show_404();
+			$this->output->set_status_header(503)->set_header('Retry-After: 60');
+			$data['content'] = $this->load->view('pages/perumahan/detail_tidak_tersedia', [], true);
+			$this->load->view('layouts/main', $data);
+			return;
 		}
 
 		$decoded_data = json_decode($response, true);
-		if (empty($decoded_data)) {
+		/* Tanpa blok `detail` tidak ada yang bisa ditampilkan; sebelumnya
+		   jatuh ke PHP Error "Undefined array key" dengan HTTP 200. */
+		if (empty($decoded_data['detail']) || ! is_array($decoded_data['detail'])) {
 			show_404();
 		}
 
@@ -526,6 +544,7 @@ class Index extends MY_Controller {
 		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
 		curl_setopt($ch, CURLOPT_TIMEOUT, 12);
 		curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
+		curl_setopt_array($ch, transport_curl_options()); // TLS 1.2+, HTTPS saja (poin 8.2)
 		$gambar_mentah = curl_exec($ch);
 		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 		curl_close($ch);
@@ -813,19 +832,14 @@ class Index extends MY_Controller {
 	}
 
 	/**
-	 * Tab content: Bank Data - dulu menu cards (Statistik & Grafik, Data
-	 * Lainnya), sekarang viewer PDF flipbook LANGSUNG di tab ini -
-	 * permintaan user 23 Agt 2026 ("letakkan di halaman tab/bankdata,
-	 * timpa Card Statistik dan Data Lainnya"). $pdf_url/$contoh sama
-	 * persis dengan yang dipakai Dokumen::index() - lihat docblock di
-	 * sana soal dokumen CONTOH yang masih dipakai sambil menunggu berkas
-	 * resmi. SATU sumber path berkas, jangan menyimpang antara sini dan
-	 * Dokumen::index() - kalau nanti path-nya berubah, ubah keduanya.
+	 * UAT No. 17: pilih kategori dahulu; Buku Data membuka Dokumen::index().
+	 * PDF hanya dimuat di halaman pembaca, bukan di panel tersembunyi.
 	 */
 	public function tab_bankdata() {
-		$path = 'assets/dokumen/contoh_bank_data.pdf';
-		$data['pdf_url'] = base_url($path);
-		$data['contoh']  = TRUE;
-		$this->render('pages/home/tab_bankdata', $data);
+		// Kartu dari PDF unggahan admin (migrasi 063); kartu contoh tampil selama belum ada.
+		$dok = $this->db->table_exists('sf_bank_data_dokumen')
+			? $this->db->where('aktif', 1)->order_by('jenis', 'ASC')->order_by('urutan', 'ASC')->order_by('id', 'DESC')->get('sf_bank_data_dokumen')->result()
+			: [];
+		$this->render('pages/home/tab_bankdata', ['dokumen_bank' => $dok]);
 	}
 }

@@ -2,8 +2,10 @@
 /**
  * Pemberitahuan butir B2 - identitas warga menunggu keputusan dinas.
  *
- * Muncul di layar antrean setiap halaman dibuka, selama
- * `config/kebijakan_data.php` masih bernilai `menunggu_keputusan`.
+ * Muncul di layar antrean selama `config/kebijakan_data.php` masih bernilai
+ * `menunggu_keputusan`, sekali per sesi peramban: begitu "Saya mengerti"
+ * diklik, sessionStorage mengingatnya sampai tab ditutup. Esc tidak dihitung
+ * mengerti, jadi modal muncul lagi di kunjungan berikutnya.
  *
  * KENAPA MODAL. Tanpa ini, penguji membuka layar antrean, melihat "Warga
  * Contoh 007", dan menyimpulkan datanya rusak atau belum masuk. Yang perlu
@@ -81,8 +83,13 @@ if ($CI->config->item('identitas_warga_kabkota', 'kebijakan_data') !== 'menunggu
 (function () {
     var d = document.getElementById('modal-identitas-b2');
     if (!d || typeof d.showModal !== 'function') { return; }
+    var KUNCI = 'kpkp_identitas_b2_dimengerti';
+    try { if (sessionStorage.getItem(KUNCI) === '1') { return; } } catch (e) {}
     var buka = function () { if (!d.open) { d.showModal(); } };
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', buka); } else { buka(); }
-    document.getElementById('modal-identitas-tutup').addEventListener('click', function () { d.close(); });
+    document.getElementById('modal-identitas-tutup').addEventListener('click', function () {
+        try { sessionStorage.setItem(KUNCI, '1'); } catch (e) {}
+        d.close();
+    });
 })();
 </script>

@@ -12,7 +12,7 @@ kebalikannya** - baca §"Yang berbeda" sebelum menyentuh apa pun.
 
 Perhatikan `.hostingersite.com`-nya. `floralwhite-lion-710022` adalah nama situs
 di panel Hostinger, **bukan** nama direktori. Ada empat instalasi Klinik PKP di
-akun `u504551489` (AGENTS.md §0a); yang benar adalah yang `git log`-nya
+akun `<akun-hosting>` (AGENTS.md §0a); yang benar adalah yang `git log`-nya
 menunjukkan commit rilis.
 
 ---
@@ -112,7 +112,7 @@ cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && git log -1
 
 **GERBANG:**
 
-- Baris pertama harus `DB: 31.97.208.59 / u504551489_klinikstg`. Kalau
+- Baris pertama harus `DB: <IP-SERVER-DB> / <akun-hosting>_klinikstg`. Kalau
   `127.0.0.1 / klinikpkp`, itu mesin lokal - **BERHENTI**.
 - Versi skema harus **`20260701000032`**. Bukan itu → **BERHENTI**, peta
   lingkungan sudah bergeser dari yang diasumsikan runbook ini.
@@ -128,13 +128,13 @@ cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && git log -1
 
 ## Fase 1 - backup, dan buktikan backup-nya utuh
 
-> **DB production TIDAK di localhost.** `DB_HOST=31.97.208.59` - baca dari `.env`
+> **DB production TIDAK di localhost.** `DB_HOST=<IP-SERVER-DB>` - baca dari `.env`
 > server, jangan hafalkan dari sini. Tanpa `-h`, `mysqldump` diam-diam mencoba
 > `localhost` dan gagal dengan `Access denied ...@'localhost'` - pesan yang
 > sangat mudah dibaca sebagai "password salah".
 
 ```
-cd ~ && set -o pipefail && mysqldump -h 31.97.208.59 -u u504551489_klinikstg -p u504551489_klinikstg | gzip > ~/backup_klinik_pre_035.sql.gz && echo "--- DUMP OK ---" && ls -lh ~/backup_klinik_pre_035.sql.gz && echo "CREATE TABLE: $(zcat ~/backup_klinik_pre_035.sql.gz | grep -c '^CREATE TABLE')"
+cd ~ && set -o pipefail && mysqldump -h <IP-SERVER-DB> -u <akun-hosting>_klinikstg -p <akun-hosting>_klinikstg | gzip > ~/backup_klinik_pre_035.sql.gz && echo "--- DUMP OK ---" && ls -lh ~/backup_klinik_pre_035.sql.gz && echo "CREATE TABLE: $(zcat ~/backup_klinik_pre_035.sql.gz | grep -c '^CREATE TABLE')"
 ```
 
 **`set -o pipefail` bukan hiasan.** Status pipa diambil dari perintah TERAKHIR,
@@ -191,7 +191,7 @@ CI menandai migrasi berhasil **tanpa memeriksa nilai balik query-nya**. Dengan
 Nomor versi bukan bukti; bentuk tabelnya bukti.
 
 ```
-mysql -h 31.97.208.59 -u u504551489_klinikstg -p u504551489_klinikstg -e "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('sys_jejak_audit','forum_janji_temu'); SELECT IS_NULLABLE, COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aduan' AND COLUMN_NAME='bidang'; SELECT COUNT(*) fk_janji_temu FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='forum_janji_temu' AND CONSTRAINT_TYPE='FOREIGN KEY';"
+mysql -h <IP-SERVER-DB> -u <akun-hosting>_klinikstg -p <akun-hosting>_klinikstg -e "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME IN ('sys_jejak_audit','forum_janji_temu'); SELECT IS_NULLABLE, COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aduan' AND COLUMN_NAME='bidang'; SELECT COUNT(*) fk_janji_temu FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='forum_janji_temu' AND CONSTRAINT_TYPE='FOREIGN KEY';"
 ```
 
 **GERBANG - keempatnya, bukan salah satu:**
@@ -214,7 +214,7 @@ lakukan satu tindakan kecil yang aman (mis. buka-kunci akun yang memang tidak
 terkunci), lalu:
 
 ```
-mysql -h 31.97.208.59 -u u504551489_klinikstg -p u504551489_klinikstg -e "SELECT aksi, ringkasan, created_at FROM sys_jejak_audit ORDER BY id DESC LIMIT 5;"
+mysql -h <IP-SERVER-DB> -u <akun-hosting>_klinikstg -p <akun-hosting>_klinikstg -e "SELECT aksi, ringkasan, created_at FROM sys_jejak_audit ORDER BY id DESC LIMIT 5;"
 ```
 
 Ada barisnya → lubang senyap yang dijelaskan di atas sudah tertutup.
@@ -329,7 +329,7 @@ cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && grep -E '^
 **Satu-satunya rollback adalah restore backup:**
 
 ```
-cd ~ && zcat backup_klinik_pre_035.sql.gz | mysql -h 31.97.208.59 -u u504551489_klinikstg -p u504551489_klinikstg
+cd ~ && zcat backup_klinik_pre_035.sql.gz | mysql -h <IP-SERVER-DB> -u <akun-hosting>_klinikstg -p <akun-hosting>_klinikstg
 ```
 
 Lalu kembalikan kode ke `c348e45` supaya kode dan skema kembali sepasang. Data

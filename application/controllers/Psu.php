@@ -21,7 +21,7 @@ class Psu extends MY_Controller {
         $data['judul'] = '';
 
         /* Hanya baris status_aktif=1 yang tampil - kolom yang SAMA dipakai
-           Admin_Srp2 utk "Tampilkan di publik" (srp2_certified_developers).
+           Admin_Srp2 utk "Tampilkan di publik" (srp2_direktori_pengembang).
            Label status & asosiasi dari SATU sumber yang sama dengan admin
            (psu_label_status(), srp2_label_asosiasi()) supaya kalimat yang
            dibaca warga tidak pernah menyimpang dari yang diketik admin. */

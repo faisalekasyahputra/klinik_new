@@ -25,8 +25,7 @@ class Admin_Kemitraan extends Admin_Controller {
     /** Batas tahun yang boleh dibuka dari URL, supaya tidak lahir halaman tak berujung. */
     private function tahun_sah($tahun)
     {
-        $tahun = (int) ($tahun ?: date('Y'));
-        return ($tahun < 2020 || $tahun > (int) date('Y') + 5) ? NULL : $tahun;
+        return $this->slot->tahun_sah($tahun);   // batasnya dipakai bersama Kemitraan_Bidang
     }
 
     public function slot($tahun = NULL)
@@ -69,7 +68,7 @@ class Admin_Kemitraan extends Admin_Controller {
         }
 
         $this->render_admin('admin/kemitraan/slot', [
-            'title'          => 'Slot Magang',
+            'title'          => 'KKN & Magang', // satu nama untuk ketiga tab, = label sidebar
             'tahun'          => $tahun,
             'tahun_tersedia' => $this->slot->tahun_tersedia(),
             'bidang'         => $bidang,
@@ -121,12 +120,17 @@ class Admin_Kemitraan extends Admin_Controller {
         // Kuota ikut satu tombol dengan bulannya. Dua tombol simpan pada satu
         // layar berarti admin bisa mengubah angka lalu kehilangan rentangnya,
         // dan tidak ada cara menebak mana yang ia maksud.
-        $kuota = $this->input->post('kuota');
-        if (is_numeric($kuota)) { $this->slot->set_kuota($bidang->kode, $kuota); }
-
         // Formulir mengirim keadaan LENGKAP dua belas bulan; bulan yang kotak
         // bukanya tidak tercentang tidak terkirim, dan itu memang berarti tutup.
-        $berhasil = $this->slot->tulis_ulang_bidang($bidang->kode, $tahun, (array) $this->input->post('bulan'));
+        $kuota = $this->input->post('kuota');
+        $berhasil = $this->slot->simpan_pengaturan_bidang($bidang->kode, $tahun, $kuota, (array) $this->input->post('bulan'));
+        if ($berhasil) {
+            $this->catat_audit('magang_slot_diubah', 'Slot magang ' . $bidang->nama . ' tahun ' . $tahun . ' diperbarui',
+                'kkn_magang_bidang', (string) $bidang->kode, [
+                    'tahun' => $tahun, 'kuota' => is_numeric($kuota) ? (int) $kuota : NULL,
+                    'bulan' => array_values(array_map('intval', (array) $this->input->post('bulan'))),
+                ]);
+        }
 
         $this->session->set_flashdata(
             $berhasil ? 'success' : 'error',
@@ -144,6 +148,8 @@ class Admin_Kemitraan extends Admin_Controller {
 
         $tahun = $this->tahun_sah($this->input->post('tahun')) ?: (int) date('Y');
         $this->slot->set_aktif($bidang->kode, ! (int) $bidang->aktif);
+        $this->catat_audit('magang_bidang_status', 'Bidang ' . $bidang->nama . ((int) $bidang->aktif ? ' berhenti' : ' mulai') . ' menerima magang',
+            'kkn_magang_bidang', (string) $bidang->kode, ['aktif_lama' => (int) $bidang->aktif, 'aktif_baru' => (int) ! (int) $bidang->aktif]);
 
         $this->session->set_flashdata('success', html_escape($bidang->nama) . ' kini '
             . ((int) $bidang->aktif ? 'tidak menerima' : 'menerima') . ' pendaftaran magang.');
@@ -190,7 +196,12 @@ class Admin_Kemitraan extends Admin_Controller {
         $this->db->where('id', (int) $row->id)
             ->update('kkn_magang_pendaftaran', ['file_surat_balasan' => $nama_berkas]);
 
-        $this->session->set_flashdata('success', 'Surat balasan diunggah. Mahasiswa sudah bisa mengunduhnya.');
+        $this->catat_audit('kemitraan_balasan', 'Mengunggah surat balasan ' . strtoupper($row->jenis) . ' ' . $row->instansi_asal,
+            'kkn_magang_pendaftaran', (string) $row->id, ['berkas' => $nama_berkas, 'menggantikan' => $row->file_surat_balasan ?: NULL]);
+
+        // Pemohon KKN adalah akun universitas, Magang akun mahasiswa (temuan UAT U7).
+        $this->session->set_flashdata('success', 'Surat balasan diunggah. '
+            . ($row->jenis === 'kkn' ? 'Universitas' : 'Mahasiswa') . ' sudah bisa mengunduhnya.');
         redirect('Admin_Kemitraan/ubah/' . (int) $row->id);
     }
 
@@ -200,11 +211,11 @@ class Admin_Kemitraan extends Admin_Controller {
 
     public function index()
     {
-        $data['title'] = 'Pendaftaran KKN/Magang';
+        $data['title'] = 'KKN & Magang'; // = label sidebar
 
         // Cari + urut + paginasi semuanya server-side (B7/B8).
         $table = $this->table_state([
-            'kkn_magang_pendaftaran.created_at', 'usr_users.name',
+            'kkn_magang_pendaftaran.created_at', 'usr_akun.nama',
             'kkn_magang_pendaftaran.instansi_asal', 'kkn_magang_pendaftaran.status',
         ], 'kkn_magang_pendaftaran.created_at');
         $data['base_url'] = 'Admin_Kemitraan';
@@ -221,12 +232,12 @@ class Admin_Kemitraan extends Admin_Controller {
         $f_jenis  = in_array($f_jenis, $jenis_sah, TRUE) ? $f_jenis : NULL;
 
         $this->db->from('kkn_magang_pendaftaran')
-            ->join('usr_users', 'usr_users.id = kkn_magang_pendaftaran.user_id', 'left');
+            ->join('usr_akun', 'usr_akun.id = kkn_magang_pendaftaran.user_id', 'left');
         if ($f_status) { $this->db->where('kkn_magang_pendaftaran.status', $f_status); }
         if ($f_jenis)  { $this->db->where('kkn_magang_pendaftaran.jenis', $f_jenis); }
         if ($table['q'] !== '') {
             $this->db->group_start()
-                ->like('usr_users.name', $table['q'])->or_like('usr_users.email', $table['q'])
+                ->like('usr_akun.nama', $table['q'])->or_like('usr_akun.email', $table['q'])
                 ->or_like('kkn_magang_pendaftaran.instansi_asal', $table['q'])
                 ->or_like('kkn_magang_pendaftaran.divisi_atau_tema', $table['q'])
                 ->group_end();
@@ -237,8 +248,8 @@ class Admin_Kemitraan extends Admin_Controller {
         // seperti KemitraanPortal::kkn_dashboard() (lihat migrasi 044).
         // Subquery-nya aman untuk baris magang juga: pendaftaran_id yang
         // tidak pernah dipakai magang otomatis menghitung nol.
-        $data['rows'] = $this->db->select('kkn_magang_pendaftaran.*, usr_users.name AS nama_mahasiswa,
-                usr_users.email AS email_mahasiswa, (SELECT COUNT(*) FROM kkn_peserta
+        $data['rows'] = $this->db->select('kkn_magang_pendaftaran.*, usr_akun.nama AS nama_mahasiswa,
+                usr_akun.email AS email_mahasiswa, (SELECT COUNT(*) FROM kkn_peserta
                 WHERE kkn_peserta.pendaftaran_id = kkn_magang_pendaftaran.id) AS jumlah_peserta', FALSE)
             ->order_by($table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
@@ -275,24 +286,24 @@ class Admin_Kemitraan extends Admin_Controller {
      */
     public function universitas()
     {
-        $data['title'] = 'Akun Universitas';
+        $data['title'] = 'KKN & Magang'; // tab Akun Universitas, judul halamannya tetap satu
 
-        $table = $this->table_state(['created_at', 'name', 'email'], 'created_at');
+        $table = $this->table_state(['created_at', 'nama', 'email'], 'created_at');
         $data['base_url'] = 'Admin_Kemitraan/universitas';
 
-        $this->db->from('usr_users')->where('role', 'universitas');
+        $this->db->from('usr_akun')->where('peran', 'universitas');
         if ($table['q'] !== '') {
             $this->db->group_start()
-                ->like('name', $table['q'])->or_like('email', $table['q'])
-                ->or_like('username', $table['q'])->group_end();
+                ->like('nama', $table['q'])->or_like('email', $table['q'])
+                ->or_like('nama_pengguna', $table['q'])->group_end();
         }
         $table += $this->paginate_state($this->db->count_all_results('', FALSE));
 
         // Jumlah KKN per akun DIHITUNG lewat subquery, sama seperti index()
         // dan KemitraanPortal::kkn_dashboard() - satu pola yang sama di
         // ketiga tempat, bukan tiga cara berbeda menghitung hal yang sama.
-        $data['rows'] = $this->db->select("usr_users.*, (SELECT COUNT(*) FROM kkn_magang_pendaftaran
-                WHERE kkn_magang_pendaftaran.user_id = usr_users.id
+        $data['rows'] = $this->db->select("usr_akun.*, (SELECT COUNT(*) FROM kkn_magang_pendaftaran
+                WHERE kkn_magang_pendaftaran.user_id = usr_akun.id
                   AND kkn_magang_pendaftaran.jenis = 'kkn') AS jumlah_kkn", FALSE)
             ->order_by($table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
@@ -348,9 +359,9 @@ class Admin_Kemitraan extends Admin_Controller {
     {
         if ( ! is_numeric($id)) { show_404(); }
 
-        $row = $this->db->select('kkn_magang_pendaftaran.*, usr_users.name AS nama_mahasiswa, usr_users.email AS email_mahasiswa')
+        $row = $this->db->select('kkn_magang_pendaftaran.*, usr_akun.nama AS nama_mahasiswa, usr_akun.email AS email_mahasiswa')
             ->from('kkn_magang_pendaftaran')
-            ->join('usr_users', 'usr_users.id = kkn_magang_pendaftaran.user_id', 'left')
+            ->join('usr_akun', 'usr_akun.id = kkn_magang_pendaftaran.user_id', 'left')
             ->where('kkn_magang_pendaftaran.id', (int) $id)
             ->get()->row();
         if ( ! $row || $row->jenis !== 'kkn') { show_404(); }
@@ -370,9 +381,9 @@ class Admin_Kemitraan extends Admin_Controller {
     {
         if ( ! is_numeric($id)) { show_404(); }
 
-        $row = $this->db->select('kkn_magang_pendaftaran.*, usr_users.name AS nama_mahasiswa, usr_users.email AS email_mahasiswa')
+        $row = $this->db->select('kkn_magang_pendaftaran.*, usr_akun.nama AS nama_mahasiswa, usr_akun.email AS email_mahasiswa')
             ->from('kkn_magang_pendaftaran')
-            ->join('usr_users', 'usr_users.id = kkn_magang_pendaftaran.user_id', 'left')
+            ->join('usr_akun', 'usr_akun.id = kkn_magang_pendaftaran.user_id', 'left')
             ->where('kkn_magang_pendaftaran.id', (int) $id)
             ->get()->row();
         if ( ! $row) { show_404(); }
@@ -464,7 +475,7 @@ class Admin_Kemitraan extends Admin_Controller {
             $divisi_atau_tema = $bidang->nama;
         }
 
-        $this->db->where('id', (int) $id)->update('kkn_magang_pendaftaran', [
+        $this->db->where('id', (int) $id)->update('kkn_magang_pendaftaran', $baru = [
             'nim'              => $this->input->post('nim', TRUE) ?: NULL,
             'tempat_lahir'     => $this->input->post('tempat_lahir', TRUE) ?: NULL,
             'tanggal_lahir'    => $this->input->post('tanggal_lahir', TRUE) ?: NULL,
@@ -479,6 +490,10 @@ class Admin_Kemitraan extends Admin_Controller {
             'periode_selesai'  => $selesai ?: NULL,
         ]);
 
+        // Hanya NAMA kolom yang berubah; nilainya data pribadi mahasiswa.
+        $this->catat_audit('kemitraan_diubah', 'Data pendaftaran ' . strtoupper($row->jenis) . ' ' . $row->instansi_asal . ' diubah admin',
+            'kkn_magang_pendaftaran', (string) $row->id,
+            ['kolom' => array_keys(array_filter($baru, function ($v, $k) use ($row) { return (string) $v !== (string) $row->$k; }, ARRAY_FILTER_USE_BOTH))]);
         $this->session->set_flashdata('success', 'Data pendaftaran diperbarui.');
         redirect('Admin_Kemitraan');
     }
@@ -505,16 +520,58 @@ class Admin_Kemitraan extends Admin_Controller {
         // private_uploads_dir() sudah berakhiran pemisah - sama seperti dipakai
         // serve_private_file(), jadi jangan tambahkan garis miring lagi.
         $dir = $this->private_upload_dir('kemitraan', (int) $row->id);
-        foreach ([$row->file_surat_pengantar, $row->file_proposal] as $berkas) {
-            if (empty($berkas)) { continue; }
-            $path = $dir . basename((string) $berkas);
-            if (is_file($path)) { @unlink($path); }
+        // Folder ini khusus satu pendaftaran, jadi SELURUH isinya ikut dihapus. Daftar kolom
+        // berkas dulu meninggalkan surat SIMPERUM dan laporan akhir di disk (simulasi
+        // mahasiswa 27 Sep 2026), dan akan tertinggal lagi setiap ada kolom berkas baru.
+        if (is_dir($dir)) {
+            foreach (glob($dir . '*') ?: [] as $path) {
+                if (is_file($path)) { @unlink($path); }
+            }
+            @rmdir($dir);
         }
-        if (is_dir($dir) && ! glob($dir . '*')) { @rmdir($dir); }
 
         $this->db->delete('kkn_magang_pendaftaran', ['id' => (int) $row->id]);
+        $this->catat_audit('kemitraan_dihapus', 'Pendaftaran ' . strtoupper($row->jenis) . ' ' . $row->instansi_asal . ' dihapus beserta berkasnya',
+            'kkn_magang_pendaftaran', (string) $row->id, ['jenis' => $row->jenis, 'status' => $row->status]);
 
         $this->session->set_flashdata('success', 'Pendaftaran dihapus beserta berkasnya.');
+        redirect('Admin_Kemitraan');
+    }
+
+    /**
+     * Tetapkan tanggal terbit sertifikat KKN (daftar revisi dinas 23 Sep 2026, migrasi 062).
+     * Hanya KKN yang sudah Diterima. Kosong = tarik kembali (sertifikat terkunci lagi).
+     */
+    public function tanggal_sertifikat($id = NULL)
+    {
+        if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
+        $row = $this->db->get_where('kkn_magang_pendaftaran', ['id' => (int) $id, 'jenis' => 'kkn'])->row();
+        if ( ! $row) { show_404(); }
+        if ($row->status !== 'Diterima') {
+            $this->session->set_flashdata('error', 'Tanggal sertifikat hanya untuk KKN yang sudah diterima.');
+            redirect('Admin_Kemitraan');
+            return;
+        }
+        $tgl = trim((string) $this->input->post('tanggal_sertifikat', TRUE));
+        if ($tgl !== '') {
+            $d = DateTime::createFromFormat('!Y-m-d', $tgl);
+            if ( ! $d || $d->format('Y-m-d') !== $tgl) {
+                $this->session->set_flashdata('error', 'Tanggal sertifikat harus berformat YYYY-MM-DD.');
+                redirect('Admin_Kemitraan');
+                return;
+            }
+        }
+        $this->db->where('id', (int) $row->id)->update('kkn_magang_pendaftaran', ['tanggal_sertifikat' => $tgl === '' ? NULL : $tgl]);
+        $this->catat_audit('sertifikat_kkn_tanggal', ($tgl === '' ? 'Menarik tanggal sertifikat KKN ' : 'Menetapkan tanggal sertifikat KKN ' . $tgl . ' untuk ') . $row->instansi_asal,
+            'kkn_magang_pendaftaran', (string) $row->id, ['tanggal_sertifikat' => $tgl === '' ? NULL : $tgl]);
+        // Peserta baru bisa mencetak sesudah periode KKN selesai (KemitraanPortal::cek_sertifikat_kkn),
+        // jadi flash tidak boleh menjanjikan "sudah bisa" sebelum itu (temuan UAT U5).
+        // Juga tidak sebelum tanggal terbitnya sendiri bila ditetapkan untuk hari depan.
+        $mulai_cetak = max(date('Y-m-d', strtotime($row->periode_selesai . ' +1 day')), $tgl);
+        $this->session->set_flashdata('success', $tgl === '' ? 'Tanggal sertifikat ditarik; sertifikat terkunci kembali.'
+            : ($mulai_cetak > date('Y-m-d')
+                ? 'Tanggal sertifikat ditetapkan. Peserta bisa mencetak mulai ' . tgl_id($mulai_cetak) . '.'
+                : 'Tanggal sertifikat ditetapkan. Peserta sudah bisa mencetak sertifikat.'));
         redirect('Admin_Kemitraan');
     }
 
@@ -568,6 +625,14 @@ class Admin_Kemitraan extends Admin_Controller {
             'reviewed_by'   => $this->get_user_id(),
             'reviewed_at'   => date('Y-m-d H:i:s'),
         ]);
+
+        // Keputusan admin dicatat beserta keadaan sebelumnya: catatan_admin ditimpa setiap kali
+        // keputusan diubah, jadi tanpa ini alasan penolakan lama hilang (temuan UAT U5).
+        $this->catat_audit('kemitraan_keputusan', 'Keputusan ' . strtoupper($row->jenis) . ' ' . $row->instansi_asal . ': ' . $row->status . ' -> ' . $status,
+            'kkn_magang_pendaftaran', (string) $row->id, [
+                'status_lama' => $row->status, 'status_baru' => $status,
+                'catatan_lama' => $row->catatan_admin, 'catatan_baru' => trim((string) $this->input->post('catatan_admin', TRUE)),
+            ]);
 
         if ($status === 'Ditinjau Bidang') {
             $this->notify_admin_push([

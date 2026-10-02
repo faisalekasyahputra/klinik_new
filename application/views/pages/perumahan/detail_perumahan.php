@@ -201,11 +201,9 @@
                 <!-- CTA Buttons -->
                 <div class="mt-4 flex flex-col sm:flex-row items-center gap-3 w-full">
                     <?php
-                        // Format nomor telepon menjadi nomor WhatsApp (62xxx)
-                        $wa_number = !empty($row['kantorPemasaran'][0]['noTelp']) ? preg_replace('/[^0-9]/', '', $row['kantorPemasaran'][0]['noTelp']) : '';
-                        if (strpos($wa_number, '0') === 0) {
-                            $wa_number = '62' . substr($wa_number, 1);
-                        }
+                        // noWhatsapp dari SIKUMBANG didahulukan, noTelp sebagai cadangan.
+                        $wa_number = nomor_whatsapp($row['kantorPemasaran'][0]['noWhatsapp'] ?? '')
+                            ?: nomor_whatsapp($row['kantorPemasaran'][0]['noTelp'] ?? '');
                     ?>
                     <?php if(!empty($wa_number)): ?>
                     <a href="https://wa.me/<?= $wa_number ?>" target="_blank" class="detail-primary-btn w-full sm:flex-1 bg-[#d6fb00] hover:bg-[#c2e600] text-[#0a1a1f] font-black text-xs uppercase tracking-widest py-3.5 px-6 rounded-xl flex items-center justify-center gap-2 shadow-[0_4px_15px_rgba(214,251,0,0.3)] transition-all">
@@ -364,8 +362,8 @@
         $row['lat']  = isset($koordinat[0]) ? trim($koordinat[0]) : '-7.0051';
         $row['long'] = isset($koordinat[1]) ? trim($koordinat[1]) : '110.4381';
         ?>
-        let lat = <?= isset($row['lat']) && !empty($row['lat']) ? $row['lat'] : '-7.0051' ?>; 
-        let lng = <?= isset($row['long']) && !empty($row['long']) ? $row['long'] : '110.4381' ?>; 
+        let lat = <?= (float) (isset($row['lat']) && !empty($row['lat']) ? $row['lat'] : '-7.0051') ?>; 
+        let lng = <?= (float) (isset($row['long']) && !empty($row['long']) ? $row['long'] : '110.4381') ?>; 
         let namaPerumahan = "<?= isset($row['namaPerumahan']) ? htmlspecialchars($row['namaPerumahan']) : 'Lokasi Perumahan' ?>";
 
         // 1. Inisialisasi Kontrol Peta

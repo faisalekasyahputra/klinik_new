@@ -55,6 +55,7 @@ $this->load->helper('srp2');
                     <thead style="background:var(--portal-bg)">
                         <tr class="uppercase tracking-wider" style="color:var(--portal-text-muted);font-size:9px">
                             <th class="w-12 px-4 py-2.5 font-bold">No.</th>
+                            <th class="w-12 px-2 py-2.5 font-bold"><span class="sr-only">Logo</span></th>
                             <th class="px-2 py-2.5 font-bold">
                                 <button type="button" data-table-sort="nama" aria-sort="none" class="inline-flex items-center gap-1 font-bold uppercase tracking-wider" style="color:inherit">Nama Perusahaan <i data-table-sort-icon class="fa-solid fa-sort text-[9px] opacity-50"></i></button>
                             </th>
@@ -73,10 +74,11 @@ $this->load->helper('srp2');
                         <?php foreach ($daftar_pengembang as $i => $row): ?>
                             <tr data-table-row class="border-t transition-colors hover:bg-[#00a3b5]/[.04]" style="border-color:var(--portal-border)">
                                 <td data-table-index class="px-4 py-2.5 font-bold" style="color:var(--teal-bright)"><?= $i + 1 ?></td>
+                                <td class="px-2 py-2"><?= srp2_logo($row, 32) ?></td>
                                 <td data-table-column="nama" class="px-2 py-2.5 font-semibold" style="color:var(--portal-text)"><?= htmlspecialchars($row->nama_perusahaan, ENT_QUOTES, 'UTF-8') ?></td>
                                 <?php $asosiasi_kosong = trim((string) ($row->asosiasi ?? '')) === ''; ?>
                                 <td data-table-column="asosiasi" class="px-3 py-2.5 font-semibold" style="color:<?= $asosiasi_kosong ? 'var(--portal-text-muted)' : 'var(--portal-text)' ?>"><?= htmlspecialchars(srp2_label_asosiasi($row->asosiasi ?? ''), ENT_QUOTES, 'UTF-8') ?></td>
-                                <?php $wilayah = $nama_kabupaten[(string) ($row->kabupaten_id ?? '')] ?? 'Belum tercatat'; $akhir = trim((string) ($row->sertifikat_berakhir ?? '')); $aktif = in_array((string) $row->status_sertifikasi, ['Diterima', 'bersertifikat'], TRUE) && ($akhir === '' || strtotime($akhir . ' 23:59:59') >= time()); $periode = trim((string) ($row->sertifikat_terbit ?? '')) !== '' ? date('d M Y', strtotime($row->sertifikat_terbit)) . ' - ' . ($akhir !== '' ? date('d M Y', strtotime($akhir)) : 'Belum ditentukan') : ($akhir !== '' ? 's.d. ' . date('d M Y', strtotime($akhir)) : 'Belum ditentukan'); ?>
+                                <?php $wilayah = $nama_kabupaten[(string) ($row->kabupaten_id ?? '')] ?? 'Belum tercatat'; $akhir = trim((string) ($row->sertifikat_berakhir ?? '')); $aktif = srp2_sertifikat_berlaku($row); $periode = trim((string) ($row->sertifikat_terbit ?? '')) !== '' ? tgl_id($row->sertifikat_terbit, TRUE) . ' - ' . ($akhir !== '' ? tgl_id($akhir, TRUE) : 'Belum ditentukan') : ($akhir !== '' ? 's.d. ' . tgl_id($akhir, TRUE) : 'Belum ditentukan'); ?>
                                 <td data-table-column="wilayah" class="px-3 py-2.5 font-semibold" style="color:var(--portal-text)"><?= html_escape($wilayah) ?></td>
                                 <td data-table-column="masa-berlaku" class="px-3 py-2.5 text-[10px]" style="color:var(--portal-text-muted)"><?= html_escape($periode) ?></td>
                                 <td data-table-column="status" class="px-3 py-2.5"><span class="inline-flex items-center gap-1.5 text-[10px] font-bold" style="color:<?= $aktif ? '#059669' : '#dc2626' ?>"><span class="h-1.5 w-1.5 rounded-full" style="background:<?= $aktif ? '#10b981' : '#ef4444' ?>"></span><?= $aktif ? 'Berlaku' : 'Tidak berlaku' ?></span></td>

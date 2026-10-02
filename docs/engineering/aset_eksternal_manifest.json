@@ -1,0 +1,129 @@
+{
+    "keterangan": "Manifest aset yang dimuat dari luar dan aset pihak ketiga yang dihosting sendiri (form keamanan poin 13.4). Dibangkitkan/diperiksa oleh docs/engineering/verifikasi_aset_eksternal.php; dijaga tests/external_assets_test.php.",
+    "lokal_pihak_ketiga": {
+        "assets/fonts/merriweather-700-latin-ext.woff2": {
+            "sumber": "https://fonts.gstatic.com/s/merriweather/v33/u-4e0qyriQwlOrhSvowK_l5UcA6zuSYEqOzpPe3HOZJ5eX1WtLaQwmYiSeqkJ-mFqA.woff2",
+            "sha256": "8ca0880997847953a13964d6769b6712c57aa2dc2f881f4e6e805719791daed8"
+        },
+        "assets/fonts/merriweather-700-latin.woff2": {
+            "sumber": "https://fonts.gstatic.com/s/merriweather/v33/u-4e0qyriQwlOrhSvowK_l5UcA6zuSYEqOzpPe3HOZJ5eX1WtLaQwmYiSeqqJ-k.woff2",
+            "sha256": "4fbe8dd9c23b1fd62a988bb8a69b8e692d810f773d9ef6ebca2ba2760c7b11ee"
+        },
+        "assets/fonts/merriweather-900-latin-ext.woff2": {
+            "sumber": "https://fonts.gstatic.com/s/merriweather/v33/u-4e0qyriQwlOrhSvowK_l5UcA6zuSYEqOzpPe3HOZJ5eX1WtLaQwmYiSeqkJ-mFqA.woff2",
+            "sha256": "8ca0880997847953a13964d6769b6712c57aa2dc2f881f4e6e805719791daed8"
+        },
+        "assets/fonts/merriweather-900-latin.woff2": {
+            "sumber": "https://fonts.gstatic.com/s/merriweather/v33/u-4e0qyriQwlOrhSvowK_l5UcA6zuSYEqOzpPe3HOZJ5eX1WtLaQwmYiSeqqJ-k.woff2",
+            "sha256": "4fbe8dd9c23b1fd62a988bb8a69b8e692d810f773d9ef6ebca2ba2760c7b11ee"
+        },
+        "assets/fonts/plus-jakarta-sans-latin-ext.woff2": {
+            "sumber": "https://fonts.gstatic.com/s/plusjakartasans/v12/LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko40yyygA.woff2",
+            "sha256": "38e3b8fd8045048eb311d90170a4429ed2c8f405852dc3d91b5af8452758703f"
+        },
+        "assets/fonts/plus-jakarta-sans-latin.woff2": {
+            "sumber": "https://fonts.gstatic.com/s/plusjakartasans/v12/LDIoaomQNQcsA88c7O9yZ4KMCoOg4Ko20yw.woff2",
+            "sha256": "153fc85b70298beeb1d61a5f723331649e7f23bb77302a66e61cb3e2fbdb5e79"
+        }
+    },
+    "eksternal": {
+        "https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.1/css/all.min.css": {
+            "integrity": "sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g",
+            "dipakai_di": [
+                "application/views/layouts/head.php",
+                "application/views/pages/kemitraan_portal/cetak_sertifikat_kkn.php"
+            ]
+        },
+        "https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css": {
+            "integrity": "sha384-6p9AefaqUhEVheRlj1mpAkbngHXy9mbYMrIdcIt4Jlc9lOLIablJq3bBsLOjGwZ7",
+            "dipakai_di": [
+                "application/views/admin/layouts/head.php"
+            ]
+        },
+        "https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js": {
+            "integrity": "sha384-pb6hrQvo4s23cEUFtj0CZkzGE3jyK3pj26RIupXXxhSrrcUA/Cn0lZgcCrGH0t6L",
+            "dipakai_di": [
+                "application/views/admin/layouts/head.php",
+                "application/views/layouts/head.php",
+                "application/views/pages/auth/onboarding.php"
+            ]
+        },
+        "https://cdn.jsdelivr.net/npm/chart.js@4.5.1": {
+            "integrity": "sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ",
+            "dipakai_di": [
+                "application/views/pages/data_spasial/statistika.php"
+            ]
+        },
+        "https://cdn.jsdelivr.net/npm/swiper@11.2.10/swiper-bundle.min.css": {
+            "integrity": "sha384-gAPqlBuTCdtVcYt9ocMOYWrnBZ4XSL6q+4eXqwNycOr4iFczhNKtnYhF3NEXJM51",
+            "dipakai_di": [
+                "application/views/layouts/head.php"
+            ]
+        },
+        "https://cdn.jsdelivr.net/npm/swiper@11.2.10/swiper-bundle.min.js": {
+            "integrity": "sha384-2UI1PfnXFjVMQ7/ZDEF70CR943oH3v6uZrFQGGqJYlvhh4g6z6uVktxYbOlAczav",
+            "dipakai_di": [
+                "application/views/layouts/footer.php"
+            ]
+        },
+        "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css": {
+            "integrity": "sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g",
+            "dipakai_di": [
+                "application/views/pages/auth/forgot_password.php",
+                "application/views/pages/auth/login.php",
+                "application/views/pages/auth/onboarding.php",
+                "application/views/pages/auth/register.php",
+                "application/views/pages/auth/verify_pending.php"
+            ]
+        },
+        "https://code.jquery.com/jquery-3.6.0.min.js": {
+            "integrity": "sha384-vtXRMe3mGCbOeY7l30aIg8H9p3GdeSe4IFlP6G8JMa7o7lXvnz3GFKzPxzJdPfGK",
+            "dipakai_di": [
+                "application/views/pages/data_spasial/sikumbang.php"
+            ]
+        },
+        "https://code.jquery.com/jquery-3.7.1.min.js": {
+            "integrity": "sha384-1H217gwSVyLSIfaLxHbE7dRb3v4mYCKbpQvzx0cegeju1MVsGrX5xXxAvs/HgeFs",
+            "dipakai_di": [
+                "application/views/layouts/head.php"
+            ]
+        },
+        "https://unpkg.com/aos@2.3.1/dist/aos.css": {
+            "integrity": "sha384-/rJKQnzOkEo+daG0jMjU1IwwY9unxt1NBw3Ef2fmOJ3PW/TfAg2KXVoWwMZQZtw9",
+            "dipakai_di": [
+                "application/views/layouts/head.php"
+            ]
+        },
+        "https://unpkg.com/aos@2.3.1/dist/aos.js": {
+            "integrity": "sha384-wziAfh6b/qT+3LrqebF9WeK4+J5sehS6FA10J1t3a866kJ/fvU5UwofWnQyzLtwu",
+            "dipakai_di": [
+                "application/views/layouts/footer.php"
+            ]
+        },
+        "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css": {
+            "integrity": "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=",
+            "dipakai_di": [
+                "application/views/pages/data_spasial/sebaran.php",
+                "application/views/pages/perumahan/detail_perumahan.php",
+                "application/views/pages/warga/pendataan.php"
+            ]
+        },
+        "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js": {
+            "integrity": "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=",
+            "dipakai_di": [
+                "application/views/pages/data_spasial/sebaran.php",
+                "application/views/pages/perumahan/detail_perumahan.php",
+                "application/views/pages/warga/pendataan.php"
+            ]
+        }
+    },
+    "tanpa_sri_diakui": {
+        "https://www.google.com/recaptcha/api.js": [
+            "application/views/components/login_modal.php",
+            "application/views/pages/auth/login.php",
+            "application/views/pages/auth/register.php",
+            "application/views/pages/pengembang/masuk.php",
+            "application/views/pages/pengembang/syarat.php"
+        ]
+    }
+}

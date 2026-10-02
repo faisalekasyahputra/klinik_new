@@ -119,7 +119,8 @@ class Chat extends MY_Controller {
     $api_key = getenv('GEMINI_API_KEY');
     
     // KUNCI PERUBAHAN: Gunakan /v1/ dan nama model murni tanpa embel-embel '-latest'
-    $url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=" . $api_key;
+    // Poin 12.2: kunci API TIDAK boleh berada di URI (masuk log dan pesan galat); dikirim lewat header.
+    $url = "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent";
     $system_prompt = "[INSTRUKSI SISTEM MUTLAK]\n"
                    . "Anda adalah 'Asisten Pintar AI' resmi dari platform Klinik PKP Disperakim Provinsi Jawa Tengah.\n"
                    . "Patuhi peraturan ini saat merespons:\n"
@@ -149,22 +150,21 @@ class Chat extends MY_Controller {
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST => true,
         CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json'
+            'Content-Type: application/json',
+            'x-goog-api-key: ' . $api_key
         ],
         CURLOPT_POSTFIELDS => json_encode($payload),
         
-        // B4 - SENGAJA belum diperbaiki. `api_bot()` kini private dan seluruh
-        // endpoint Chat dikarantina 404 (B2), jadi baris ini tidak pernah
-        // dieksekusi. Nasibnya mengikuti keputusan #7: bila chat dicabut, titik
-        // ini hilang bersama berkasnya; bila dibangun, TLS wajib dinyalakan
-        // sebelum route dibuka. Komentar lama "pengaman wajib XAMPP Windows"
-        // keliru - mematikan verifikasi sertifikat bukan pengaman, dan
-        // Simperum_gateway.php membuktikan verifikasi menyala baik-baik saja
-        // di lingkungan yang sama.
-        CURLOPT_SSL_VERIFYPEER => false,
-        CURLOPT_SSL_VERIFYHOST => false,
-        CURLOPT_TIMEOUT => 15 
+        CURLOPT_TIMEOUT => 15
     ]);
+    /* B4 LUNAS 20 Sep 2026 (form keamanan poin 8.2). Dulu dua baris di sini
+       mematikan verifikasi sertifikat dan nama host (kunci API ikut terkirim
+       lewat sambungan yang bisa dicegat). Titik ini masih dikarantina 404
+       (B2) dan tidak dieksekusi, tapi begitu route dibuka ia harus sudah
+       benar; "pengaman wajib XAMPP Windows" keliru - Simperum_gateway
+       membuktikan verifikasi menyala baik-baik saja di lingkungan yang sama.
+       Kebijakan TLS dipasang TERAKHIR (transport_helper.php). */
+    curl_setopt_array($ch, transport_curl_options());
 
     $response = curl_exec($ch);
 

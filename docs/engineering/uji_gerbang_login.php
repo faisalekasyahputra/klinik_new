@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Penjaga gerbang login - "kembali ke halaman asal" DAN pengamannya.
  *
@@ -105,7 +106,7 @@ function login($n, $email) {
 
 function buat_akun($peran) {
     $email = 'uji_gerbang_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
-    $id = tulis('INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+    $id = tulis('INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
                  VALUES (?,?,?,?,?, "active",1,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji Gerbang',
          'uji_gerbang_' . mt_rand(10000, 99999), $peran]);
@@ -115,7 +116,7 @@ function buat_akun($peran) {
 
 function bersihkan() {
     if ( ! empty($GLOBALS['db'])) {
-        foreach ($GLOBALS['users'] as $id) { q('DELETE FROM usr_users WHERE id=?', [$id]); }
+        foreach ($GLOBALS['users'] as $id) { q('DELETE FROM usr_akun WHERE id=?', [$id]); }
     }
     foreach ($GLOBALS['jar'] as $j) { @unlink($j); }
 }
@@ -193,11 +194,15 @@ foreach ($jahat as $kode => $url) {
 $awal7 = http('t7', 'Auth/login');
 $tok7  = preg_match('/name="csrf_kpkp_token" value="([^"]+)"/', $awal7['body'], $m7) ? $m7[1] : '';
 wajib($tok7 !== '', 'T7 prasyarat: token CSRF terbaca');
-$post7 = http('t7', 'Cek_Rtlh/periksa', ['csrf_kpkp_token' => $tok7, 'nik' => '3374010101010001']);
+/* Dulu memakai `Cek_Rtlh/periksa`; sejak 14 Agt 2026 pencarian itu SENGAJA dibuka untuk tamu,
+   jadi POST-nya tidak lagi menyentuh gerbang. `Umum/ajukan_janji_temu` tetap ber-gerbang dan
+   tidak pernah jadi pendaratan wajar sesudah login, sehingga cek di bawah tidak bisa hijau
+   atau merah karena kebetulan. */
+$post7 = http('t7', 'Umum/ajukan_janji_temu', ['csrf_kpkp_token' => $tok7, 'id_diskusi' => 1, 'alasan' => 'uji gerbang']);
 wajib(stripos($post7['url'], 'auth/login') !== FALSE,
     'T7 prasyarat: POST anonim benar-benar SAMPAI ke gerbang (dapat: ' . $post7['url'] . ')');
 $masuk7 = login('t7', $email);
-cek(stripos($masuk7['url'], 'cek_rtlh') === FALSE,
+cek(stripos($masuk7['url'], 'ajukan_janji_temu') === FALSE,
     'T7: URL POST tidak diingat sebagai tujuan (dapat: ' . $masuk7['url'] . ')');
 
 /* TITIK AMATAN untuk T8 & T9: membuka `Auth/login` SAAT SUDAH LOGIN memanggil

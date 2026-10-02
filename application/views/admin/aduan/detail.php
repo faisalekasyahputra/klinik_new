@@ -10,75 +10,62 @@
  * yang memeriksa kewenangan sebelum menyajikan berkas privat.
  */
 $e = static fn($v) => html_escape((string) $v);
-$warna_status = [
-    'Baru'     => 'background:rgba(59,130,246,.12);color:#1d4ed8',
-    'Diproses' => 'background:rgba(245,158,11,.14);color:#92400e',
-    'Selesai'  => 'background:rgba(16,185,129,.12);color:#047857',
-];
+$kelas_status = ['Baru' => 'pending', 'Diproses' => 'process', 'Selesai' => 'ok'];
+$this->load->view('admin/components/judul_halaman', [
+    'jh_judul' => $aduan->judul,
+    'jh_deskripsi' => 'Diterima ' . $e(tgl_id($aduan->created_at, TRUE, TRUE)) . ' '
+        . $this->load->view('admin/components/status_badge', ['label' => $aduan->status, 'kelas' => $kelas_status[$aduan->status] ?? 'pending'], TRUE),
+    'jh_aksi' => '<a href="' . base_url($back_url) . '" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali ke daftar aduan</span></a>',
+]);
 ?>
-<div class="space-y-5">
-    <div class="flex flex-wrap items-start justify-between gap-3">
+<div class="tumpuk-bagian">
+    <dl class="kartu-admin isi-kartu grid gap-3 text-sm sm:grid-cols-2">
         <div>
-            <a href="<?= base_url($back_url) ?>" class="text-xs font-bold" style="color:var(--portal-text-muted,#6b7280)">&larr; Kembali ke daftar aduan</a>
-            <h1 class="mt-1 text-xl font-black"><?= $e($aduan->judul) ?></h1>
-            <p class="mt-1 text-xs" style="color:var(--portal-text-muted,#6b7280)">
-                Diterima <?= $e(date('d M Y, H:i', strtotime($aduan->created_at))) ?>
-            </p>
-        </div>
-        <span class="rounded-full px-3 py-1.5 text-xs font-bold" style="<?= $warna_status[$aduan->status] ?? '' ?>">
-            <?= $e($aduan->status) ?>
-        </span>
-    </div>
-
-    <dl class="grid gap-3 rounded-2xl border p-4 text-sm sm:grid-cols-2" style="border-color:var(--portal-border,#e5e7eb)">
-        <div>
-            <dt class="text-xs" style="color:var(--portal-text-muted,#6b7280)">Pengirim</dt>
-            <dd class="mt-0.5 font-bold"><?= $e($aduan->nama ?: 'Tidak dicantumkan') ?></dd>
+            <dt class="text-xs text-gray-500 dark:text-brand-muted">Pengirim</dt>
+            <dd class="mt-0.5 font-bold text-gray-900 dark:text-white"><?= $e($aduan->nama ?: 'Tidak dicantumkan') ?></dd>
         </div>
         <div>
-            <dt class="text-xs" style="color:var(--portal-text-muted,#6b7280)">Email</dt>
-            <dd class="mt-0.5 font-bold"><?= $e($aduan->email ?: 'Tidak dicantumkan') ?></dd>
+            <dt class="text-xs text-gray-500 dark:text-brand-muted">Email</dt>
+            <dd class="mt-0.5 font-bold text-gray-900 dark:text-white"><?= $e($aduan->email ?: 'Tidak dicantumkan') ?></dd>
         </div>
         <div>
-            <dt class="text-xs" style="color:var(--portal-text-muted,#6b7280)">Bidang tujuan</dt>
-            <dd class="mt-0.5 font-bold">
-                <?= $aduan->bidang === NULL
-                    ? '<span style="color:#92400e">Belum ditriase</span>'
-                    : $e($aduan->nama_bidang ?: $aduan->bidang) ?>
+            <dt class="text-xs text-gray-500 dark:text-brand-muted">Bidang tujuan</dt>
+            <dd class="mt-0.5 font-bold text-gray-900 dark:text-white">
+                <?= $aduan->bidang_kode === NULL
+                    ? '<span class="text-amber-700 dark:text-amber-300">Belum ditriase</span>'
+                    : $e($aduan->nama_bidang ?: $aduan->bidang_kode) ?>
             </dd>
         </div>
         <div>
-            <dt class="text-xs" style="color:var(--portal-text-muted,#6b7280)">Ditinjau oleh</dt>
-            <dd class="mt-0.5 font-bold">
+            <dt class="text-xs text-gray-500 dark:text-brand-muted">Ditinjau oleh</dt>
+            <dd class="mt-0.5 font-bold text-gray-900 dark:text-white">
                 <?= $aduan->reviewed_by
-                    ? $e($aduan->nama_peninjau ?: 'Petugas') . ' &middot; ' . $e(date('d M Y', strtotime($aduan->reviewed_at)))
+                    ? $e($aduan->nama_peninjau ?: 'Petugas') . ' &middot; ' . $e(tgl_id($aduan->reviewed_at, TRUE))
                     : 'Belum ditinjau' ?>
             </dd>
         </div>
     </dl>
 
-    <div class="rounded-2xl border p-4" style="border-color:var(--portal-border,#e5e7eb)">
-        <p class="text-xs font-bold uppercase tracking-wider" style="color:var(--portal-text-muted,#6b7280)">Isi aduan</p>
+    <section class="kartu-admin isi-kartu">
+        <h2 class="text-sm font-black text-gray-900 dark:text-white">Isi aduan</h2>
         <?php // Sengaja `nl2br` atas teks yang SUDAH di-escape: paragraf pengirim
               // tetap terbaca sebagaimana ia menulisnya, tanpa satu pun tag ikut hidup. ?>
-        <p class="mt-2 whitespace-pre-line text-sm leading-relaxed"><?= nl2br($e($aduan->pesan)) ?></p>
-    </div>
+        <p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-800 dark:text-gray-200"><?= nl2br($e($aduan->pesan)) ?></p>
+    </section>
 
     <?php if ( ! empty($aduan->lampiran)): ?>
-        <div class="rounded-2xl border p-4" style="border-color:var(--portal-border,#e5e7eb)">
-            <p class="text-xs font-bold uppercase tracking-wider" style="color:var(--portal-text-muted,#6b7280)">Lampiran</p>
-            <a href="<?= base_url('Admin_Aduan/lihat_lampiran/' . (int) $aduan->id) ?>"
-               class="mt-2 inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-bold"
-               style="border-color:var(--portal-border,#e5e7eb)">
-                <i class="ph ph-paperclip"></i> Buka lampiran
+        <section class="kartu-admin isi-kartu">
+            <h2 class="text-sm font-black text-gray-900 dark:text-white">Lampiran</h2>
+            <a href="<?= base_url('Admin_Aduan/lihat_lampiran/' . (int) $aduan->id) ?>" class="tombol-kedua mt-2">
+                <i class="ph ph-paperclip"></i><span>Buka lampiran</span>
             </a>
-        </div>
+        </section>
     <?php endif; ?>
 
     <?php if ( ! empty($aduan->catatan_admin)): ?>
-        <div class="rounded-2xl border p-4" style="background:rgba(16,185,129,.06);border-color:rgba(16,185,129,.3)">
-            <p class="text-xs font-bold uppercase tracking-wider" style="color:#047857">Jawaban / catatan petugas</p>
-            <p class="mt-2 whitespace-pre-line text-sm leading-relaxed"><?= nl2br($e($aduan->catatan_admin)) ?></p>
-        </div>
+        <section class="kartu-admin isi-kartu border-l-4 border-l-emerald-500">
+            <h2 class="text-sm font-black text-emerald-700 dark:text-emerald-300">Jawaban / catatan petugas</h2>
+            <p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-800 dark:text-gray-200"><?= nl2br($e($aduan->catatan_admin)) ?></p>
+        </section>
     <?php endif; ?>
 </div>

@@ -138,8 +138,8 @@
 <!-- ============================================================
      SWIPER JS
      ============================================================ -->
-<script src="https://cdn.jsdelivr.net/npm/swiper@11.2.10/swiper-bundle.min.js"></script>
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/swiper@11.2.10/swiper-bundle.min.js" integrity="sha384-2UI1PfnXFjVMQ7/ZDEF70CR943oH3v6uZrFQGGqJYlvhh4g6z6uVktxYbOlAczav" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js" integrity="sha384-wziAfh6b/qT+3LrqebF9WeK4+J5sehS6FA10J1t3a866kJ/fvU5UwofWnQyzLtwu" crossorigin="anonymous"></script>
 <script>
     // Initialize AOS
     AOS.init({
@@ -296,6 +296,7 @@ function globalSystem() {
         warga_pendataan: 'perumahan',
         etalase: 'perumahan',
         sebaran: 'kawasan',
+        kawasan_kumuh: 'kawasan',
         // sebaran_rusun / profil_kumuh / sebaran_sdgs dicabut 29 Jul 2026 (A1).
         info_tanah: 'pertanahan',
         sertifikasi_tanah: 'pertanahan',
@@ -548,7 +549,7 @@ function globalSystem() {
         // S2 - opt-out dihormati SEBELUM fetch, bukan sesudah. Tanpa ini,
         // tautan yang sengaja ditandai tetap difetch dulu lalu baru jatuh ke
         // navigasi penuh: dua GET untuk satu klik, dan `Umum::detail()`
-        // menaikkan `view_count` dua kali per klik.
+        // menaikkan `jumlah_dilihat` dua kali per klik.
         if (link.hasAttribute('data-no-page-transition')
             || link.closest('[data-no-page-transition]')) return;
         e.preventDefault();

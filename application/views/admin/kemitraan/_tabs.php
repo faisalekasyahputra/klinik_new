@@ -15,32 +15,22 @@
  */
 $tab = [
     'pendaftaran' => ['label' => 'Pendaftaran', 'url' => 'Admin_Kemitraan',      'ikon' => 'ph-student'],
-    'slot'        => ['label' => 'Slot & Bidang', 'url' => 'Admin_Kemitraan/slot', 'ikon' => 'ph-calendar-check'],
+    'slot'        => ['label' => 'Slot & bidang', 'url' => 'Admin_Kemitraan/slot', 'ikon' => 'ph-calendar-check'],
     // Akun (bukan pengajuan) - permintaan user 22 Agt 2026: "bisa mengelola
     // Akun KKN/Universitas". Daftar role='mahasiswa' berikut jumlah KKN
     // yang pernah diajukan; aksi sunting/nonaktifkan/reset sandi TETAP di
     // Admin_Users (satu sumber kebenaran untuk seluruh akun, apa pun
     // rolenya) - tab ini menautkan ke sana per akun, tidak menyalin
     // logikanya. Lihat Admin_Kemitraan::universitas().
-    'universitas' => ['label' => 'Akun Universitas', 'url' => 'Admin_Kemitraan/universitas', 'ikon' => 'ph-bank'],
+    'universitas' => ['label' => 'Akun universitas', 'url' => 'Admin_Kemitraan/universitas', 'ikon' => 'ph-bank'],
 ];
 $aktif = isset($tab_aktif) ? $tab_aktif : 'pendaftaran';
 ?>
-<div class="mb-5">
-    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-1">KKN &amp; Magang</h2>
-    <p class="text-sm text-gray-500 dark:text-brand-muted">
-        Tempat yang dibuka, dan orang yang mengisinya - dikelola dari satu halaman.
-    </p>
-</div>
+<?php // Satu judul untuk ketiga tab, sama dengan label sidebar; tab yang menyala menunjukkan bagiannya. ?>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_judul' => 'KKN & Magang', 'jh_deskripsi' => 'Tempat yang dibuka, dan orang yang mengisinya - dikelola dari satu halaman.']); ?>
 
-<div class="mb-6 flex flex-wrap gap-1 border-b border-gray-200 dark:border-white/5">
+<div class="mb-5 flex flex-wrap gap-1 border-b border-gray-200 dark:border-white/5">
     <?php foreach ($tab as $kunci => $t): ?>
-        <a href="<?= base_url($t['url']) ?>"
-           class="-mb-px flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-bold transition-colors <?= $kunci === $aktif
-                ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                : 'border-transparent text-gray-500 dark:text-brand-muted hover:text-gray-800 dark:hover:text-white' ?>">
-            <i class="ph <?= $t['ikon'] ?>"></i>
-            <?= html_escape($t['label']) ?>
-        </a>
+        <a href="<?= base_url($t['url']) ?>" class="tombol-tab"<?= $kunci === $aktif ? ' aria-current="page"' : '' ?>><i class="ph <?= $t['ikon'] ?>"></i><span><?= html_escape($t['label']) ?></span></a>
     <?php endforeach; ?>
 </div>

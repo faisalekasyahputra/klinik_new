@@ -2,6 +2,7 @@
 <html lang="id" x-data="{ darkMode: localStorage.getItem('theme') !== 'light' }" x-init="$watch('darkMode', val => localStorage.setItem('theme', val ? 'dark' : 'light'))" :class="{ 'dark': darkMode }">
 <head>
     <meta charset="UTF-8">
+    <?= csp_meta_tag() ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <!-- Prevent FOUC (Flash of Unstyled Content) for Dark Mode -->
@@ -32,9 +33,7 @@
     <meta name="csrf-token-hash" content="<?= html_escape($this->security->get_csrf_hash()) ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
     <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?= base_url('assets/css/fonts.css?v=' . filemtime('assets/css/fonts.css')) ?>">
     <!-- Tailwind CSS -->
     <?php // Hasil panen kelas view admin - first paint bergaya penuh tanpa
           // menunggu CDN. Regenerasi: php docs/engineering/panen_tailwind.php admin
@@ -42,7 +41,7 @@
           // ~110KB JS termuat & seluruh CSS di-generate ulang di setiap load)
           // dan kini hanya jaring pengaman untuk kelas yang belum terpanen. ?>
     <link rel="stylesheet" href="<?= base_url('assets/css/tailwind-admin.css?v=' . filemtime('assets/css/tailwind-admin.css')) ?>">
-    <script defer src="https://cdn.tailwindcss.com"></script>
+    <script defer src="<?= base_url('assets/js/vendor/tailwind-3.4.17.js') ?>"></script>
     <?php // `type="module"` WAJIB, jangan dilepas. Skrip inline biasa dieksekusi
           // saat parsing - sebelum CDN yang `defer` di atas jalan - sehingga
           // `tailwind` masih undefined dan SELURUH config di bawah hilang tanpa
@@ -85,7 +84,7 @@
     <!-- Alpine.js -->
     <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
     <script defer src="<?= base_url('assets/js/admin-web-push.js?v=' . filemtime('assets/js/admin-web-push.js')) ?>"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js" integrity="sha384-pb6hrQvo4s23cEUFtj0CZkzGE3jyK3pj26RIupXXxhSrrcUA/Cn0lZgcCrGH0t6L" crossorigin="anonymous"></script>
     <!-- Loader progresif dashboard: klik sidebar/link internal = swap #main-content, bukan full reload -->
     <script defer src="<?= base_url('assets/js/admin-progressive.js?v=' . filemtime('assets/js/admin-progressive.js')) ?>"></script>
     <style>
@@ -109,9 +108,131 @@
         .dark select option:hover { background-color: rgba(214, 251, 0, .15); color: #d6fb00; }
     </style>
     <!-- Phosphor Icons - defer: ikon menyusul sepersekian detik, halaman tidak menunggu -->
-    <script defer src="https://unpkg.com/@phosphor-icons/web@2.1.2"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css" integrity="sha384-6p9AefaqUhEVheRlj1mpAkbngHXy9mbYMrIdcIt4Jlc9lOLIablJq3bBsLOjGwZ7" crossorigin="anonymous" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css" integrity="sha384-6p9AefaqUhEVheRlj1mpAkbngHXy9mbYMrIdcIt4Jlc9lOLIablJq3bBsLOjGwZ7" crossorigin="anonymous"></noscript>
     <style>
         [x-cloak] { display: none !important; }
+        /* Kolom nomor urut tabel daftar admin (daftar revisi dinas 23 Sep 2026: "Numbering table").
+           Satu aturan untuk semua tabel ber-[data-tabel-admin]; nomor awal datang dari offset
+           paginasi yang dicetak sebagai counter-reset di pembungkus [data-tabel-admin] tiap view (reset di
+           elemen saudara seperti toolbar TIDAK diwarisi tabel), jadi halaman 2 mulai dari 26, bukan 1.
+           Baris kosong ber-colspan tidak dinomori tetapi tetap diberi sel supaya kolomnya lurus. */
+        [data-tabel-admin] table > thead > tr::before { content: "No"; display: table-cell; padding: .625rem .5rem .625rem 1rem; }
+        [data-tabel-admin] table > tbody > tr::before { counter-increment: baris-admin; content: counter(baris-admin); display: table-cell; padding: .625rem .5rem .625rem 1rem; vertical-align: top; font-size: 0.75rem; font-weight: 700; color: #6b7280; }
+        [data-tabel-admin] table > tbody > tr:has(> td[colspan])::before { counter-increment: none; content: ""; }
+        /* Kolom Aksi menempel di kanan wadah gulir (audit UI 2 Okt 2026: di 375 dan 768
+           tombol Tinjau/Proses/Simpan baru terlihat setelah menggulir tabel jauh ke samping).
+           Pasang kelas `aksi-tetap` pada pembungkus `overflow-x-auto` yang kolom TERAKHIR-nya
+           Aksi. Latar sel wajib pekat supaya isi kolom lain tidak tembus saat lewat di bawahnya.
+           AWAS: sel sticky membuat stacking context, jadi modal `fixed` di dalam sel Aksi
+           terkubur di bawah topbar. Modal di sel itu WAJIB `<template x-teleport="body">`. */
+        .aksi-tetap > table > * > tr > :last-child:not([colspan]) { position: sticky; right: 0; background-color: #fff; box-shadow: inset 1px 0 0 rgba(0, 0, 0, .06); }
+        .aksi-tetap > table > thead.bg-gray-50 > tr > :last-child { background-color: #f9fafb; }
+        .aksi-tetap > table > tbody > tr[class*="hover:bg-gray-50"]:hover > :last-child { background-color: #f9fafb; }
+        .dark .aksi-tetap > table > * > tr > :last-child:not([colspan]) { background-color: #0f2933; box-shadow: inset 1px 0 0 rgba(255, 255, 255, .06); }
+        .dark .aksi-tetap > table > thead.bg-gray-50 > tr > :last-child { background-color: #0c2129; }
+        .dark .aksi-tetap > table > tbody > tr[class*="hover:bg-gray-50"]:hover > :last-child { background-color: #1b3440; }
+        /* Tombol admin: SATU set untuk ketiga peran (audit UI 2 Okt 2026, dirapatkan lagi atas
+           permintaan pemilik produk). Setiap tombol dan tautan bergaya tombol di layar admin
+           memakai TEPAT SATU kelas di bawah; uji_regresi_tampilan.php memeriksanya.
+             .tombol-utama          aksi utama layar atau formulir (Tambah, Cari, Simpan); 32px
+             .tombol-kedua          aksi pendamping berbingkai (Batal, Kembali, Unduh Excel, Cetak); 32px
+             .tombol-aksi           tombol kecil berbingkai di kolom Aksi tabel; 28px
+             .tombol-aksi-bahaya    TAMBAHAN merah untuk hapus/nonaktifkan, di atas .tombol-aksi atau .tombol-kedua
+             .chip-filter           pil penyaring status/wilayah/bidang/tahun; yang aktif diberi aria-current="true"
+             .tombol-tab            tab; yang aktif diberi aria-selected="true" (tab Alpine) atau aria-current="page" (tab tautan)
+             .tombol-ikon           tombol ikon saja (tutup modal, dsb.); 32x32, wajib aria-label
+           Isi: <i class="ph ..."></i><span>Label</span>, label huruf kalimat ("Unduh Excel", bukan
+           "UNDUH EXCEL"). Label di <span> sesudah ikon: di ponsel aturan .aksi-tetap di bawah
+           menyisakan ikonnya. Urutan kaki modal: Batal (.tombol-kedua) kiri, aksi utama kanan.
+           Ukuran di bawah berlaku desktop; di bawah 768px semuanya minimal 40px (target sentuh). */
+        :is(.tombol-utama, .tombol-kedua, .tombol-aksi, .chip-filter, .tombol-tab, .tombol-ikon) { display: inline-flex; align-items: center; justify-content: center; gap: .375rem; font-weight: 700; white-space: nowrap; text-transform: none; letter-spacing: normal; transition: background-color .15s, color .15s, border-color .15s; }
+        :is(.tombol-utama, .tombol-kedua, .tombol-aksi, .chip-filter, .tombol-tab, .tombol-ikon) > i { font-size: 1rem; line-height: 1; }
+        :is(.tombol-utama, .tombol-kedua, .tombol-aksi, .chip-filter, .tombol-ikon):disabled { opacity: .5; cursor: not-allowed; }
+        /* Biru di terang, lime di gelap (pola yang sudah dipakai Rekam Data): lime di latar putih tidak terbaca. */
+        .tombol-utama { min-height: 2rem; border-radius: .5rem; border: 1px solid transparent; padding: .25rem .875rem; font-size: .8125rem; line-height: 1.25rem; background-color: #2563eb; color: #fff; }
+        .tombol-utama:hover { background-color: #1d4ed8; }
+        .dark .tombol-utama { background-color: #d6fb00; color: #0a1a1f; }
+        .dark .tombol-utama:hover { background-color: #b5d400; }
+        .tombol-kedua { min-height: 2rem; border-radius: .5rem; border: 1px solid #d1d5db; padding: .25rem .875rem; font-size: .8125rem; line-height: 1.25rem; background-color: #fff; color: #374151; }
+        .tombol-kedua:hover { background-color: #f3f4f6; color: #111827; }
+        .dark .tombol-kedua { border-color: rgba(255, 255, 255, .15); background-color: transparent; color: #e5e7eb; }
+        .dark .tombol-kedua:hover { background-color: rgba(255, 255, 255, .06); color: #fff; }
+        .tombol-aksi { min-height: 1.75rem; border-radius: .5rem; border: 1px solid #e5e7eb; background-color: #f9fafb; padding: .25rem .625rem; font-size: .75rem; line-height: 1rem; color: #374151; }
+        .tombol-aksi > i { font-size: .875rem; }
+        .tombol-aksi:hover { background-color: #f3f4f6; color: #111827; }
+        .dark .tombol-aksi { border-color: rgba(255, 255, 255, .1); background-color: rgba(255, 255, 255, .05); color: #cbd5e1; }
+        .dark .tombol-aksi:hover { background-color: rgba(214, 251, 0, .1); color: #d6fb00; }
+        .tombol-aksi-bahaya { border-color: #fecaca; background-color: #fef2f2; color: #dc2626; }
+        .tombol-aksi-bahaya:hover { background-color: #fee2e2; color: #b91c1c; }
+        .dark .tombol-aksi-bahaya { border-color: rgba(248, 113, 113, .3); background-color: rgba(239, 68, 68, .1); color: #f87171; }
+        .dark .tombol-aksi-bahaya:hover { background-color: rgba(239, 68, 68, .2); color: #fca5a5; }
+        .chip-filter { min-height: 1.75rem; border-radius: 9999px; border: 1px solid #e5e7eb; background-color: #fff; padding: .25rem .75rem; font-size: .75rem; line-height: 1rem; color: #4b5563; }
+        .chip-filter:hover { border-color: #93c5fd; color: #1d4ed8; }
+        .chip-filter[aria-current="true"], .chip-filter[aria-pressed="true"] { border-color: #2563eb; background-color: #eff6ff; color: #1d4ed8; }
+        .dark .chip-filter { border-color: rgba(255, 255, 255, .1); background-color: transparent; color: #94a3b8; }
+        .dark .chip-filter:hover { border-color: rgba(214, 251, 0, .4); color: #d6fb00; }
+        .dark .chip-filter[aria-current="true"], .dark .chip-filter[aria-pressed="true"] { border-color: rgba(214, 251, 0, .5); background-color: rgba(214, 251, 0, .1); color: #d6fb00; }
+        .tombol-tab { min-height: 2.25rem; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: .375rem .875rem; font-size: .8125rem; line-height: 1.25rem; color: #6b7280; }
+        .tombol-tab:hover { color: #111827; border-bottom-color: #d1d5db; }
+        .tombol-tab[aria-selected="true"], .tombol-tab[aria-current="page"] { color: #2563eb; border-bottom-color: #2563eb; }
+        .dark .tombol-tab { color: #94a3b8; }
+        .dark .tombol-tab:hover { color: #fff; border-bottom-color: rgba(255, 255, 255, .2); }
+        .dark .tombol-tab[aria-selected="true"], .dark .tombol-tab[aria-current="page"] { color: #d6fb00; border-bottom-color: #d6fb00; }
+        .tombol-ikon { width: 2rem; height: 2rem; flex-shrink: 0; border-radius: .5rem; color: #6b7280; }
+        .tombol-ikon > i { font-size: 1.125rem; }
+        .tombol-ikon:hover { background-color: #f3f4f6; color: #111827; }
+        .dark .tombol-ikon { color: #94a3b8; }
+        .dark .tombol-ikon:hover { background-color: rgba(255, 255, 255, .06); color: #fff; }
+        /* Beberapa tombol (atau form berisi tombol) berjajar dalam satu sel: beri jarak tanpa pembungkus. */
+        td > :is(.tombol-aksi, form) + :is(.tombol-aksi, form) { margin-left: .375rem; }
+        /* Kartu dan panel admin: SATU isian pekat (permintaan pemilik produk 2 Okt 2026: kartu yang
+           cuma berbingkai tampak tembus). .kartu-admin = latar + bingkai + sudut, tanpa padding
+           (kartu tabel); tambah .isi-kartu untuk kartu berisi teks atau formulir.
+           Jarak antarbagian dan antarkartu memakai token di bawah, bukan mb-8/gap-6 per layar:
+             --jarak-bagian  antarbagian halaman (1.25rem = 20px)
+             --jarak-kartu   antarkartu dalam grid (.75rem = 12px)
+             --pad-kartu     isi kartu (1rem = 16px)
+           .tumpuk-bagian pada pembungkus menjarakkan anak-anaknya dengan --jarak-bagian;
+           .grid-kartu memberi gap --jarak-kartu pada grid. */
+        :root { --jarak-bagian: 1.25rem; --jarak-kartu: .75rem; --pad-kartu: 1rem; }
+        .kartu-admin { background-color: #fff; border: 1px solid #e5e7eb; border-radius: 1rem; }
+        .dark .kartu-admin { background-color: #0f2933; border-color: rgba(255, 255, 255, .06); }
+        .isi-kartu { padding: var(--pad-kartu); }
+        .tumpuk-bagian > * + * { margin-top: var(--jarak-bagian); }
+        .grid-kartu { gap: var(--jarak-kartu); }
+        /* Kepadatan tabel admin: sel berpadding besar (py-3/py-4/py-5) dirapatkan jadi 10px di
+           semua layar sekaligus. Padding mendatar tetap milik view. */
+        .admin-main :is(th, td):is(.py-3, .py-4, .py-5) { padding-top: .625rem; padding-bottom: .625rem; }
+        /* Deret kartu ringkasan: di layar lebar semua kartu satu baris, berapa pun jumlahnya
+           (style="--jumlah-kartu: N"), supaya tidak ada kartu sendirian di baris kedua
+           (audit UI 2 Okt 2026: 5 kartu di grid 4 kolom). Di bawah 1280 tetap kelas Tailwind. */
+        @media (min-width: 1280px) { .grid.deret-kartu { grid-template-columns: repeat(var(--jumlah-kartu, 4), minmax(0, 1fr)); } }
+        /* Unggah berkas berlabel Indonesia (admin/components/input_berkas.php): input asli transparan
+           menutupi kotak, jadi klik, keyboard, dan validasi `required` tetap milik peramban. */
+        .input-berkas { position: relative; display: flex; align-items: center; gap: .75rem; width: 100%; min-height: 2.5rem; border: 1px solid #e5e7eb; border-radius: .5rem; padding: .25rem .75rem .25rem .25rem; cursor: pointer; }
+        .input-berkas > input[type="file"] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .input-berkas:focus-within { outline: 2px solid #2563eb; outline-offset: 2px; }
+        .input-berkas-tombol { display: inline-flex; align-items: center; gap: .375rem; flex-shrink: 0; border-radius: .375rem; background-color: #f3f4f6; padding: .375rem .75rem; font-size: .75rem; font-weight: 700; color: #374151; }
+        .input-berkas-nama { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .75rem; color: #6b7280; }
+        .dark .input-berkas { border-color: rgba(255, 255, 255, .1); }
+        .dark .input-berkas:focus-within { outline-color: #d6fb00; }
+        .dark .input-berkas-tombol { background-color: rgba(255, 255, 255, .1); color: #e5e7eb; }
+        .dark .input-berkas-nama { color: #94a3b8; }
+        /* Target sentuh di ponsel (audit UI 2 Okt 2026: chip filter 25px, tombol Cari dan Proses
+           28px, tutup modal 18x28, radio 13px). Kontrol utama minimal 40px. Tautan bergaya pil
+           (rounded + py-*) ikut; yang masih inline dijadikan inline-flex supaya min-height berlaku.
+           Tautan .tombol-aksi/.tombol-utama (sudah inline-flex) ikut juga: dulu sekitar 25px.
+           Tautan teks biasa dan kartu (tanpa py-*) tidak tersentuh. Tidak dibatasi ke <main>
+           karena modal di sel Aksi dipindah ke <body> lewat x-teleport. */
+        @media (max-width: 767px) {
+            :is(button, select, input:not([type="checkbox"], [type="radio"], [type="hidden"], [type="file"])) { min-height: 40px; }
+            button { min-width: 40px; }
+            a[class*="rounded"][class*="py-"], .tombol-aksi, .tombol-utama { min-height: 40px; }
+            :is(.tombol-kedua, .chip-filter, .tombol-tab) { min-height: 40px; }
+            .tombol-ikon { width: 40px; height: 40px; }
+            a[class*="rounded"][class*="py-"]:not([class*="flex"], [class*="block"], [class*="grid"], .hidden) { display: inline-flex; align-items: center; }
+            input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; }
+        }
         /*
          * Main Content Entry Animation.
          *
@@ -139,7 +260,14 @@
         #main-content {
             animation: fade-in-blur 0.4s cubic-bezier(0.4, 0, 0.2, 1) backwards;
         }
-        @media (max-width: 767px) {
+        /* Di bawah 1024 (batas `desktop` di admin/index.php) sidebar jadi panel
+           geser di atas isi, dan yang menggulir adalah kolom kanan seutuhnya,
+           bukan <main> saja. Akibatnya footer tidak lagi menempel di dasar layar
+           ponsel memakan 48px tiap saat, melainkan ikut di akhir halaman. Topbar
+           tetap di atas karena `sticky top-0` di dalam kolom yang menggulir. */
+        @media (max-width: 1023px) {
+            .admin-kolom { overflow-y: auto !important; }
+            .admin-kolom > #main-content { flex: 1 0 auto !important; }
             .admin-sidebar {
                 position: fixed !important;
                 inset: 0 auto 0 0 !important;
@@ -148,8 +276,18 @@
                 width: 16rem !important;
                 transform: translateX(0) !important;
             }
-            .admin-main { padding: 1rem; }
-            .admin-topbar { padding-left: 1rem; padding-right: 1rem; }
+        }
+        @media (max-width: 767px) {
+            /* Kelas ganda: Tailwind CDN (jaring pengaman) menyuntik <style> SESUDAH blok ini,
+               jadi .p-6/.px-6 bawaan elemennya menang bila spesifisitasnya sama. */
+            .admin-main.admin-main { padding: 1rem; }
+            .admin-topbar.admin-topbar { padding-left: 1rem; padding-right: 1rem; }
+            /* Kolom Aksi yang menempel menutupi kolom nama di ponsel: tombol berikon cukup
+               ikonnya saja. Teks label tetap ada untuk pembaca layar (pola sr-only). */
+            .aksi-tetap td:last-child :is(a, button):has(> i) > span {
+                position: absolute; width: 1px; height: 1px; overflow: hidden;
+                clip: rect(0 0 0 0); white-space: nowrap;
+            }
         }
 
         @keyframes fade-out-blur {

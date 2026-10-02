@@ -1,12 +1,14 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Check konsistensi migrasi - butir S8 roadmap pelunasan utang teknis.
  *
  *   php docs/engineering/uji_migrasi_konsisten.php
  *
- * SENGAJA tidak mem-bootstrap CodeIgniter dan tidak menyentuh database:
- * seluruh pemeriksaannya statis atas berkas dan konfigurasi, jadi ia bisa
- * dijalankan di worktree mana pun - termasuk yang belum punya `.env`.
+ * SENGAJA tidak mem-bootstrap CodeIgniter. Pemeriksaan 1-5 statis atas berkas
+ * dan konfigurasi, jadi bisa dijalankan di worktree mana pun - termasuk yang
+ * belum punya `.env`. Hanya pemeriksaan 6 membaca information_schema (SELECT
+ * saja) dan LEWAT kalau DB tidak tersedia.
  *
  * Yang dijaga:
  *  1. `migration_version` = nomor tertinggi seluruh berkas migrasi. Kalau ia
@@ -24,6 +26,10 @@
  *     yang ditulis tangan - jadi ia membusuk diam-diam. Terbukti: `status()`
  *     berhenti di migrasi 031 sementara skemanya sudah 034, dan tak ada yang
  *     tahu sampai keluarannya dibaca baris demi baris (4 Agt 2026).
+ *  5. Charset/collation eksplisit: config koneksi utf8mb4_unicode_ci dan migrasi
+ *     sesudah 068 tidak menulis collation lain (sumber drift 11.8 vs 10.4).
+ *  6. Live: information_schema DB aplikasi hanya berisi utf8mb4_unicode_ci
+ *     (kolom ascii_bin migrasi 052/053 dikecualikan dengan sengaja).
  */
 
 $root = dirname(__DIR__, 2);
@@ -150,6 +156,64 @@ $tigaDigit = substr((string) $tertinggi, -3);
 $disebut = (bool) preg_match('/migrasi[^\n]{0,24}\b0*' . preg_quote($tigaDigit, '/') . '\b/i', $migrateIsi);
 cek($disebut, "Migrate::status() menyebut migrasi terbaru ({$tigaDigit}) - "
     . 'tambahkan pemeriksaan skemanya, jangan cuma menaikkan migration_version');
+
+// ------------------------- 5. charset/collation eksplisit (migrasi 068)
+
+/**
+ * Asal 14 tabel uca1400 di production: CREATE TABLE tanpa COLLATE di 11.8 mengambil
+ * `character_set_collations` server (utf8mb4 -> utf8mb4_uca1400_ai_ci), collation yang tidak
+ * dikenal 10.4 lokal. Yang dijaga: (a) config koneksi = utf8mb4/utf8mb4_unicode_ci, karena
+ * dbforge->create_table() menulis COLLATE dari `dbcollat`; (b) migrasi SESUDAH 068 yang
+ * menulis CREATE TABLE mentah wajib menyebut utf8mb4_unicode_ci, dan tiap COLLATE/CHARSET yang
+ * ditulis hanya boleh target atau ascii(_bin). ADD/MODIFY kolom tanpa klausa mewarisi default
+ * tabel, yang sesudah 068 sudah target.
+ */
+$dbConfig = file_get_contents($root . '/application/config/database.php');
+cek(preg_match("/'char_set'\s*=>\s*'utf8mb4'/", $dbConfig) && preg_match("/'dbcollat'\s*=>\s*'utf8mb4_unicode_ci'/", $dbConfig),
+    "config/database.php: char_set 'utf8mb4' dan dbcollat 'utf8mb4_unicode_ci'");
+$menyimpang = [];
+foreach ($berkas as $f) {
+    if ( ! preg_match('/^(\d+)_/', basename($f), $mm) || strcmp($mm[1], '20260701000068') <= 0) { continue; }
+    $isi = file_get_contents($f);
+    // SHOW CREATE TABLE dan kunci hasil "Create Table" hanya membaca definisi (migrasi 072), tidak membuat tabel.
+    if (preg_match('/(?<!SHOW )CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`\w]/i', $isi) && stripos($isi, 'utf8mb4_unicode_ci') === FALSE) {
+        $menyimpang[] = basename($f) . ' (CREATE TABLE tanpa utf8mb4_unicode_ci)';
+    }
+    preg_match_all('/\b(?:COLLATE|CHARSET|CHARACTER\s+SET)\s*=?\s*[\'"]?(\w+)/i', $isi, $kk);
+    foreach (array_unique($kk[1]) as $nilai) {
+        if ( ! in_array(strtolower($nilai), ['utf8mb4', 'utf8mb4_unicode_ci', 'ascii', 'ascii_bin'], TRUE)) {
+            $menyimpang[] = basename($f) . " ({$nilai})";
+        }
+    }
+}
+cek($menyimpang === [], 'Migrasi sesudah 068 hanya menulis charset/collation target'
+    . ($menyimpang ? ' - ' . implode(' ; ', $menyimpang) : ''));
+
+// --------------------- 6. live: information_schema DB aplikasi (baca saja)
+
+// Satu-satunya bagian yang menyentuh DB, dan hanya SELECT information_schema. Tanpa .env atau
+// tanpa server, LEWAT - supaya bagian statis di atas tetap bisa dijalankan di worktree mana pun.
+$env = [];
+foreach (@file($root . '/.env', FILE_IGNORE_NEW_LINES) ?: [] as $b) {
+    $b = trim($b);
+    if ($b === '' || $b[0] === '#' || strpos($b, '=') === FALSE) { continue; }
+    [$k, $v] = explode('=', $b, 2);
+    if ( ! isset($env[trim($k)])) { $env[trim($k)] = trim($v); }
+}
+mysqli_report(MYSQLI_REPORT_OFF);
+$db = empty($env['DB_NAME']) ? NULL : @new mysqli($env['DB_HOST'] ?? 'localhost', $env['DB_USER'] ?? 'root', $env['DB_PASS'] ?? '', $env['DB_NAME']);
+if ( ! $db || $db->connect_error) {
+    echo "  LEWAT DB tidak tersedia - pemeriksaan collation live dilewati\n";
+} else {
+    $r = $db->query("SELECT
+        (SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE'
+            AND TABLE_COLLATION <> 'utf8mb4_unicode_ci') t,
+        (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND COLLATION_NAME IS NOT NULL
+            AND CHARACTER_SET_NAME <> 'ascii' AND COLLATION_NAME <> 'utf8mb4_unicode_ci') k")->fetch_assoc();
+    cek((int) $r['t'] === 0, "Live: semua tabel utf8mb4_unicode_ci ({$r['t']} menyimpang)");
+    cek((int) $r['k'] === 0, "Live: semua kolom string non-ascii utf8mb4_unicode_ci ({$r['k']} menyimpang)");
+    $db->close();
+}
 
 echo "RINGKASAN: {$total} pemeriksaan, {$gagal} gagal\n";
 exit($gagal > 0 ? 1 : 0);

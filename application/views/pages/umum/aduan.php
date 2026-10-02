@@ -20,7 +20,7 @@
                * Pelapor tidak tahu rumahnya urusan Bidang Perumahan atau Bidang
                * Kawasan Permukiman, dan tebakan yang meleset dulu mendarat di
                * meja yang salah lalu diam di sana. Superadmin yang meneruskan
-               * (Admin_Aduan::triase); sampai itu terjadi `aduan.bidang` NULL.
+               * (Admin_Aduan::triase); sampai itu terjadi `aduan.bidang_kode` NULL.
                */
               ?>
               get isValid() {

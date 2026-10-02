@@ -28,9 +28,9 @@ foreach ($intervensi as $row) {
 }
 ?>
 
-<div class="space-y-4">
+<div class="tumpuk-bagian">
 
-  <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
+  <section class="kartu-admin isi-kartu">
     <div class="flex flex-wrap items-center gap-3">
       <span class="rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-black/20">
         Kabupaten/Kota <b class="text-gray-900 dark:text-white"><?= $e($scope_label) ?></b>
@@ -47,10 +47,10 @@ foreach ($intervensi as $row) {
             <option value="<?= $t ?>" <?= $t === $tahun ? 'selected' : '' ?>><?= $t ?></option>
           <?php endfor; ?>
         </select>
-        <button class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-bold dark:border-white/10">Buka periode</button>
+        <button class="tombol-kedua"><i class="ph ph-calendar-blank"></i><span>Buka periode</span></button>
       </form>
       <span class="ml-auto rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
-        <?= $e(ucfirst(str_replace('_', ' ', $laporan['status']))) ?>
+        <?= $e($laporan['status'] === 'draft' ? 'Draft, belum dikirim' : ucfirst(str_replace('_', ' ', $laporan['status']))) ?>
       </span>
     </div>
 
@@ -77,14 +77,14 @@ foreach ($intervensi as $row) {
   </section>
 
   <?php if ($terkunci): ?>
-    <p class="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-white/10 dark:bg-black/20 dark:text-brand-muted">
+    <p class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600 dark:border-white/10 dark:bg-black/20 dark:text-brand-muted">
       Laporan periode ini sudah <b>terkirim</b> dan terkunci. Hanya Admin Bidang yang bisa
       mengembalikannya untuk diperbaiki.
     </p>
   <?php endif; ?>
 
   <!-- ================= ringkasan ================= -->
-  <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
+  <section class="kartu-admin isi-kartu">
     <h2 class="font-bold text-gray-900 dark:text-white">Ringkasan penanganan</h2>
 
     <form method="post" action="<?= base_url('Rekam_Kawasan/simpan_ringkasan') ?>" class="mt-4 space-y-4">
@@ -119,21 +119,21 @@ foreach ($intervensi as $row) {
         </div>
 
         <div>
-          <label for="total_luas_ha" class="text-sm font-bold text-gray-900 dark:text-white">Total Luas Penanganan (Ha)</label>
+          <label for="total_luas_ha" class="text-sm font-bold text-gray-900 dark:text-white">Total luas penanganan (Ha)</label>
           <input id="total_luas_ha" type="number" min="0" step="0.01" name="total_luas_ha"
             value="<?= $e($ringkasan['total_luas_ha'] ?? '0.00') ?>"
             class="mt-1 w-40 rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm dark:border-white/10">
         </div>
 
         <?php if ( ! $terkunci): ?>
-          <button class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover">Simpan ringkasan</button>
+          <button class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan ringkasan</span></button>
         <?php endif; ?>
       </fieldset>
     </form>
   </section>
 
   <!-- ================= daftar intervensi ================= -->
-  <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
+  <section class="kartu-admin isi-kartu">
     <div class="flex flex-wrap items-center gap-3">
       <h2 class="font-bold text-gray-900 dark:text-white">Daftar intervensi</h2>
       <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600 dark:bg-white/5 dark:text-brand-muted">
@@ -183,13 +183,13 @@ foreach ($intervensi as $row) {
             </div>
             <?php if ( ! $terkunci): ?>
               <a href="<?= base_url('Rekam_Kawasan?tahun=' . $tahun . '&triwulan=' . $triwulan . '&ubah=' . (int) $row['id']) ?>"
-                 class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold dark:border-white/10">Ubah</a>
+                 class="tombol-aksi"><i class="ph ph-pencil-simple"></i><span>Ubah</span></a>
               <form method="post" action="<?= base_url('Rekam_Kawasan/hapus_intervensi') ?>"
                     onsubmit="return confirm('Hapus intervensi ini?')">
                 <input type="hidden" name="<?= $e($csrf_name) ?>" value="<?= $e($csrf_hash) ?>">
                 <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
                 <input type="hidden" name="intervensi_id" value="<?= (int) $row['id'] ?>">
-                <button class="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-red-600 dark:border-white/10">Hapus</button>
+                <button class="tombol-aksi tombol-aksi-bahaya"><i class="ph ph-trash"></i><span>Hapus</span></button>
               </form>
             <?php endif; ?>
           </div>
@@ -316,20 +316,18 @@ foreach ($intervensi as $row) {
         </div>
 
         <div class="mt-3 flex flex-wrap gap-2">
-          <button class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover">
-            <?= $sedang_diubah ? 'Simpan perubahan' : 'Tambah intervensi' ?>
-          </button>
           <?php if ($sedang_diubah): ?>
             <a href="<?= base_url('Rekam_Kawasan?tahun=' . $tahun . '&triwulan=' . $triwulan) ?>"
-               class="rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold dark:border-white/10">Batal</a>
+               class="tombol-kedua"><span>Batal</span></a>
           <?php endif; ?>
+          <button class="tombol-utama"><i class="ph <?= $sedang_diubah ? 'ph-floppy-disk' : 'ph-plus' ?>"></i><span><?= $sedang_diubah ? 'Simpan perubahan' : 'Tambah intervensi' ?></span></button>
         </div>
       </form>
     <?php endif; ?>
   </section>
 
   <!-- ================= total ================= -->
-  <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
+  <section class="kartu-admin isi-kartu">
     <div class="flex flex-wrap items-center gap-3">
       <h2 class="font-bold text-gray-900 dark:text-white">Total</h2>
       <span class="rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-800 dark:bg-purple-500/10 dark:text-purple-300">
@@ -361,7 +359,7 @@ foreach ($intervensi as $row) {
   <?php if ( ! $terkunci): ?>
     <!-- Sama seperti layar Perumahan: tidak sticky, karena sebagai bar melayang
          ia menutupi konten di bawahnya dan memakan seperempat layar ponsel. -->
-    <section class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-brand-card">
+    <section class="kartu-admin isi-kartu">
       <form method="post" action="<?= base_url('Rekam_Kawasan/kirim') ?>"
             class="flex flex-wrap items-center gap-3"
             onsubmit="return confirm('Kirim laporan periode ini? Setelah terkirim, laporan terkunci.')">
@@ -376,7 +374,7 @@ foreach ($intervensi as $row) {
             Laporan siap dikirim.
           <?php endif; ?>
         </span>
-        <button class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover">Kirim laporan</button>
+        <button class="tombol-utama"><i class="ph ph-paper-plane-tilt"></i><span>Kirim laporan</span></button>
       </form>
     </section>
   <?php endif; ?>

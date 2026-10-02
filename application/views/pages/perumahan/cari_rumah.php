@@ -225,22 +225,6 @@
             </button>
         </div>
 
-        <!-- CTA: Direktori Sosmed Pengembang (perlu login) -->
-        <div class="mt-16 border p-6 sm:p-8 rounded-3xl backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-6" style="background-color: rgba(15, 42, 48, 0.7); border-color: rgba(168, 85, 247, 0.2);" data-aos="fade-up">
-            <div class="flex items-start gap-4">
-                <div class="text-purple-400 shrink-0 pt-0.5">
-                    <i class="fa-solid fa-bullhorn text-[28px]"></i>
-                </div>
-                <div class="space-y-1.5">
-                    <h4 class="text-white font-bold text-base sm:text-lg tracking-tight">Lihat Direktori Sosial Media Pengembang</h4>
-                    <p class="text-zinc-400 text-xs sm:text-sm leading-relaxed">Jelajahi kanal media sosial resmi pengembang perumahan untuk info unit dan promo terbaru. Login diperlukan untuk mengakses direktori lengkap.</p>
-                </div>
-            </div>
-            <a href="<?= base_url('Pengembang/publikasi') ?>" class="shrink-0 inline-flex items-center gap-2 px-6 py-3 bg-purple-500/10 border border-purple-400/40 text-purple-300 font-semibold text-xs rounded-full hover:bg-purple-500/20 hover:border-purple-400/60 tracking-wide transition-all whitespace-nowrap">
-                Buka Direktori
-                <i class="fa-solid fa-arrow-right text-xs"></i>
-            </a>
-        </div>
 
 </div>
 
@@ -319,13 +303,9 @@ function muatHalaman(halaman, gulirKeAtas) {
 
     $.ajax({
         url: '<?= base_url('cari_wil') ?>?kodeWilayah='+encodeURIComponent(kodeWilayah)+'&keyword='+encodeURIComponent(keyword)+'&searchBy='+encodeURIComponent(searchBy)+'&sort='+encodeURIComponent(sort)+'&status_rumah='+statusRumah+'&page='+halaman+'&limit='+HALAMAN_UKURAN,
-        // jQuery tidak menambah cache-buster ke GET kecuali diminta -
-        // tanpa ini Edge teramati butuh dua refresh (menyajikan hasil
-        // pencarian LAMA dari cache heuristik). Header no-store di server
-        // (Index::cari_wil()) sudah menutup ini juga, cache:false di sini
-        // lapis kedua yang bekerja walau ada proxy/cache di antara yang
-        // tidak menghormati header tersebut.
-        cache: false,
+        // Server mengirim Cache-Control: no-store. Jangan gunakan cache:false
+        // karena jQuery menambahkan parameter '_' yang ditolak validasi input.
+        cache: true,
         success: function(response) {
             // Gagal jaringan dibedakan dari halaman yang memang kosong -
             // lihat komentar penanda ini di Index::cari_wil().

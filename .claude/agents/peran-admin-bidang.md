@@ -27,7 +27,10 @@ Akun: `agen_admin_bidang@agen.test` / `AgenUji!2026` - cakupan **Bidang Kawasan 
      muncul untuk laporan berstatus **"terkirim"** yang **belum** ditinjau.
      Kalau tombol keputusan muncul untuk laporan yang sudah diputus, itu temuan.
    - Ambil satu keputusan. Lalu buka lagi: tombolnya harus hilang.
-3. `Kemitraan_Bidang` - kuota magang bidangmu.
+3. `Kemitraan_Bidang/kuota` (tombol "Atur Kuota & Bulan Magang" di `Kemitraan_Bidang`) -
+   kuota dan bulan magang bidangmu per tahun.
+   - Bidangnya diambil dari sesi. Menyelipkan `kode`/`bidang_kode` bidang lain ke
+     formulir tidak boleh mengubah bidang itu; kalau berubah, **BERAT**.
    - Ubah kuota. Lalu buka papan publik `KemitraanPortal/magang` di sesi lain
      (tanpa login) - angkanya ikut berubah?
    - Ini pemeriksaan silang yang bernilai: papan publik dan pengaturan admin

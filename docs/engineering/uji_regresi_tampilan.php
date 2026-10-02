@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Penjaga regresi untuk cacat yang HANYA ketahuan dengan membuka layarnya.
  *
@@ -96,7 +97,7 @@ function login($n, $email) {
 
 function buat_akun($peran, $suffix, $bidang = NULL) {
     $email = 'uji_tampil_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
-    $id = tulis('INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,bidang_kode,created_at)
+    $id = tulis('INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,bidang_kode,created_at)
                  VALUES (?,?,?,?,?, "active",1,?,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji Tampilan ' . $suffix,
          'uji_tampil_' . $suffix . '_' . mt_rand(10000, 99999), $peran, $bidang]);
@@ -126,7 +127,7 @@ function bersihkan() {
     foreach ($GLOBALS['daftar'] as $id) { q('DELETE FROM kkn_magang_pendaftaran WHERE id=?', [$id]); }
     foreach ($GLOBALS['users'] as $id) {
         q('DELETE FROM kkn_magang_pendaftaran WHERE user_id=?', [$id]);
-        q('DELETE FROM usr_users WHERE id=?', [$id]);
+        q('DELETE FROM usr_akun WHERE id=?', [$id]);
     }
     foreach ($GLOBALS['jar'] as $j) { @unlink($j); }
 }
@@ -221,8 +222,9 @@ if ( ! $tahun_berslot) {
     if ($bidang_longgar) {
         cek(strpos($papan, $bidang_longgar['nama']) !== FALSE,
             'Papan menyebut bidang yang punya slot (' . $bidang_longgar['nama'] . ')');
-        cek(preg_match('/Kebutuhan\s*<strong[^>]*>\s*\d+ mahasiswa/i', $papan) === 1
-            || preg_match('/Kebutuhan\s*\d+ mahasiswa/i', strip_tags($papan)) === 1,
+        // Sejak bb6a5a3 (18 Agt 2026) angkanya berlabel "Kuota: N mahasiswa", bukan "Kebutuhan N".
+        cek(preg_match('/(Kebutuhan|Kuota:)\s*<strong[^>]*>\s*\d+ mahasiswa/i', $papan) === 1
+            || preg_match('/(Kebutuhan|Kuota:)\s*\d+ mahasiswa/i', strip_tags($papan)) === 1,
             'Papan menyebut ANGKA kebutuhan, bukan cuma nama bidang');
         cek(preg_match('/Masih menerima|Sudah terpenuhi|Belum dibuka/i', $papan) === 1,
             'Tiap bidang membawa keadaan terbaca (menerima/terpenuhi/belum dibuka)');
@@ -267,14 +269,16 @@ cek(stripos($hal_magang, $nama_bidang) !== FALSE, 'Magang: nama bidangnya benar-
 // Dulu nilai yang sama tercetak dua kali dengan dua label berbeda.
 cek( ! in_array('Tema Kegiatan', $label_magang, TRUE), 'Magang: field "Tema Kegiatan" tidak ikut (dulu duplikat)');
 
-$hal_kkn = http('mhs', 'KemitraanPortal/pendaftaran/' . $kkn);
-$label_kkn = label_field($hal_kkn);
-cek(in_array('Tema Kegiatan', $label_kkn, TRUE), 'KKN: field "Tema Kegiatan" ada');
-cek( ! in_array('Bidang Tujuan', $label_kkn, TRUE), 'KKN: field "Bidang Tujuan" tidak ikut');
+// KKN FINAL (23 Sep 2026): KKN dikelola akun universitas lewat dashboard KKN terpadu, bukan
+// halaman pendaftaran per mahasiswa. Yang dijaga: mahasiswa tidak mendapat formulir KKN perorangan.
+$hal_kkn = http('mhs', 'KemitraanPortal/daftar/kkn');
+cek(strpos($hal_kkn, 'name="nim"') === FALSE, 'KKN: mahasiswa tidak mendapat formulir KKN perorangan');
 
 // =========================================================== 4. TANGGAL
 echo "\n== Tanggal berbahasa Indonesia ==\n";
-$bulan_inggris = ['January','February','March','April','June','July','August','September','October','November','December'];
+// 'September' dan 'November' SENGAJA tidak ikut: ejaannya sama di kedua bahasa, jadi
+// memasukkannya membuat cek ini merah palsu sepanjang dua bulan itu ('May' sudah begitu).
+$bulan_inggris = ['January','February','March','April','June','July','August','October','December'];
 $ditemukan = [];
 foreach ($bulan_inggris as $b) { if (preg_match('/\b' . $b . '\b/', $hal_magang)) { $ditemukan[] = $b; } }
 cek( ! $ditemukan, 'Halaman pendaftaran: nol nama bulan Inggris' . ($ditemukan ? ' (ada: ' . implode(',', $ditemukan) . ')' : ''));
@@ -316,7 +320,12 @@ foreach ([['mhs', '/', 'beranda portal'], ['adm', 'Admin_Dashboard', 'dasbor adm
 // =========================================================== 6. MEJA KERJA
 echo "\n== Meja kerja Super Admin ==\n";
 $overview = http('adm', 'Admin_Dashboard');
-cek(strpos($overview, 'Meja Kerja Super Admin') !== FALSE
+// Profil Saya hanya di menu profil topbar, tidak lagi di sidebar (permintaan user 2 Okt 2026).
+$nav_ov = (string) strstr($overview, 'id="sidebar-nav"');
+$nav_ov = substr($nav_ov, 0, (int) strpos($nav_ov, '</aside>'));
+cek($nav_ov !== '' && strpos($nav_ov, 'akun/profil') === FALSE && strpos($overview, 'akun/profil') !== FALSE,
+    'Profil Saya tidak tampil di sidebar admin, tetap ada di menu profil topbar');
+cek(strpos($overview, '>Ringkasan Kerja</h1>') !== FALSE // judul = label sidebar sejak audit UI 2 Okt 2026, dulu "Meja Kerja Super Admin"
     && strpos($overview, 'Admin?status=pending') !== FALSE
     && strpos($overview, 'Admin_Kemitraan?status=Diajukan') !== FALSE
     && strpos($overview, 'tanpa_wilayah=1') !== FALSE
@@ -328,7 +337,7 @@ $direktori_srp2 = http('adm', 'Admin_Srp2');
 cek(strpos($overview, 'Tinjau SRP2') !== FALSE
     && strpos($overview, 'Direktori SRP2') !== FALSE
     && strpos($overview, 'Pengembang SRP2') === FALSE
-    && strpos($direktori_srp2, 'Direktori Pengembang Bersertifikat') !== FALSE
+    && strpos($direktori_srp2, '>Direktori SRP2</h1>') !== FALSE // dulu "Direktori Pengembang Bersertifikat"; kini sama dengan label sidebar
     && strpos($direktori_srp2, 'Pengajuan yang diterima masuk otomatis') !== FALSE,
     'Menu dan halaman Direktori SRP2 membedakan publikasi dari verifikasi pengajuan');
 
@@ -374,16 +383,17 @@ foreach ($paket as $nama => $p) {
 // =========================================================== 7. TABEL ADMIN
 echo "\n== Tabel Admin Pengguna tetap server-side ==\n";
 $admin_users = http('adm', 'Admin_Users');
-$jumlah_user = (int) nilai('SELECT COUNT(*) FROM usr_users');
+$jumlah_user = (int) nilai('SELECT COUNT(*) FROM usr_akun');
 cek(strpos($admin_users, 'data-tabel-admin') !== FALSE
     && strpos($admin_users, 'Cari nama, email, atau username...') !== FALSE
     && strpos($admin_users, 'data-table-search') === FALSE,
     'Admin Pengguna memakai toolbar B8 server-side, bukan tabel klien');
-cek(strpos($admin_users, 'Daftar Pengguna (' . number_format($jumlah_user) . ')') !== FALSE,
+// Jumlahnya kini di <span> abu milik admin/components/kepala_tabel.php (audit UI kelompok B).
+cek(preg_match('#Daftar Pengguna <span[^>]*>\(' . preg_quote(number_format($jumlah_user, 0, ',', '.'), '#') . '\)</span>#', $admin_users) === 1, // ribuan bertitik (angka_id)
     'Admin Pengguna menampilkan total semua pengguna, bukan jumlah halaman');
-$admin_users_urut = http('adm', 'Admin_Users?sort=name&dir=asc');
-cek(strpos($admin_users_urut, 'sort=name') !== FALSE
-    && strpos($admin_users_urut, 'sort=role') !== FALSE
+$admin_users_urut = http('adm', 'Admin_Users?sort=nama&dir=asc'); // kunci urut = nama kolom (migrasi 072: name/role jadi nama/peran)
+cek(strpos($admin_users_urut, 'sort=nama') !== FALSE
+    && strpos($admin_users_urut, 'sort=peran') !== FALSE
     && strpos($admin_users_urut, 'sort=created_at') !== FALSE
     && strpos($admin_users_urut, 'ph-sort-ascending text-brand-primary') !== FALSE,
     'Header Admin Pengguna mengaktifkan urutan server-side');
@@ -404,6 +414,163 @@ $total_seksi = count($seksi[0]);
 $tanpa_inert = array_values(array_filter($seksi[0], fn($t) => strpos($t, ':inert') === FALSE));
 cek($total_seksi > 0, "Ditemukan {$total_seksi} seksi wizard di sumber");
 cek( ! $tanpa_inert, 'Setiap seksi wizard punya :inert' . ($tanpa_inert ? ' (tanpa: ' . count($tanpa_inert) . ')' : ''));
+
+/* KONSISTENSI LAYAR ADMIN (audit UI super admin 2 Okt 2026, kelompok A). Satu pola per
+   urusan, dipakai ketiga peran admin karena shell dan view-nya sama:
+     1. Judul halaman lewat admin/components/judul_halaman.php; teksnya $title, yang juga
+        mengisi <title>, dan sama dengan label sidebar. Tanpa ikon, satu ukuran.
+     2. Sub-menu: hanya layar yang dibuka yang menyala. Di SRP2 dalam Pengajuan dulu
+        "Direktori SRP2" ikut tersorot (induk dan anak berbagi URL).
+     3. Tombol kolom Aksi .tombol-aksi, varian merah .tombol-aksi-bahaya untuk hapus dan
+        nonaktifkan; tombol utama .tombol-utama (biru di terang, lime di gelap).
+     4. Unggah berkas lewat admin/components/input_berkas.php, berlabel Indonesia.
+     5. Angka ribuan bertitik lewat angka_id(). */
+echo "\n== Konsistensi layar admin: judul, sub-menu, tombol, unggah, angka ==\n";
+$head_admin = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/head.php');
+if ( ! defined('BASEPATH')) { define('BASEPATH', APP_ROOT . '/system/'); }
+require_once APP_ROOT . '/application/helpers/ternak_helper.php'; // angka_id()
+$judul_kmp = (string) @file_get_contents(APP_ROOT . '/application/views/admin/components/judul_halaman.php');
+// text-2xl mb-1 sejak 2 Okt 2026: judul dirapatkan atas permintaan pemilik produk (blok fondasi tampilan di akhir berkas).
+cek(strpos($judul_kmp, '<h1 class="text-2xl font-black text-gray-900 dark:text-white tracking-tight mb-1"><?= html_escape($jh_teks) ?></h1>') !== FALSE
+    && strpos($judul_kmp, "\$title ?? ''") !== FALSE,
+    'Komponen judul halaman: satu gaya h1, teks bawaan dari $title');
+foreach ([['Admin_Dashboard', 'Ringkasan Kerja'], ['Admin', 'Tinjau Antrean'], ['Admin_Srp2/pending', 'SRP2 dalam Pengajuan'],
+          ['Admin_Srp2', 'Direktori SRP2'], ['Admin_Aduan', 'Pantau Aduan'], ['Admin_Rekam_Data', 'Pantau Rekam Data'],
+          ['Admin_Struktur', 'Struktur & Cakupan'], ['Admin_Katalog_Program', 'Katalog Program'], ['Admin_Bank_Data', 'Bank Data'],
+          ['Admin_Kemitraan', 'KKN & Magang'], ['Admin_Konsultasi', 'Janji Temu Konsultasi'], ['Admin_Magang_Posisi', 'Posisi Magang'],
+          ['Admin_Asosiasi', 'Asosiasi Pengembang'], ['Admin_Psu', 'Serah Terima PSU'], ['Admin_Users', 'Akses Staf'],
+          ['Admin_Audit', 'Jejak Audit']] as [$jalur, $nama]) {
+    $hal = http('adm', $jalur);
+    $esc = htmlspecialchars($nama, ENT_QUOTES, 'UTF-8');
+    cek(strpos($hal, 'data-judul-halaman') !== FALSE && strpos($hal, '>' . $esc . '</h1>') !== FALSE
+        && strpos($hal, '<title>' . $nama . ' - ') !== FALSE && strpos($hal, '>' . $esc . '</span>') !== FALSE,
+        "{$jalur}: judul, <title>, dan label sidebar sama-sama \"{$nama}\"");
+}
+$judul_liar = [];
+$pengecualian = ['aduan/detail.php', 'antrean/detail.php', 'srp2/detail.php', 'users/privileges.php', 'kemitraan/peserta.php'];
+foreach (array_merge(glob(APP_ROOT . '/application/views/admin/*/*.php'), glob(APP_ROOT . '/application/views/admin/*.php'), glob(APP_ROOT . '/application/views/admin_bidang/*.php')) as $berkas) {
+    $nama = str_replace([APP_ROOT . '/application/views/admin/', APP_ROOT . '/application/views/'], '', $berkas);
+    if (strpos($nama, 'components/') === 0 || in_array($nama, $pengecualian, TRUE)) { continue; }
+    if (preg_match('/<h1\b|<h2 class="[^"]*text-(2xl|3xl)/', (string) file_get_contents($berkas))) { $judul_liar[] = $nama; }
+}
+cek($judul_liar === [], 'Judul halaman admin hanya lewat komponen (lain: ' . implode(', ', $judul_liar) . ')');
+
+$srp2_tunda = http('adm', 'Admin_Srp2/pending');
+cek(preg_match('#href="[^"]*/Admin_Srp2/pending"\s*aria-current="page"#', $srp2_tunda) === 1
+    && preg_match('#href="[^"]*/Admin_Srp2"\s*aria-current="page"#', $srp2_tunda) === 0,
+    'Sub-menu SRP2: hanya SRP2 dalam Pengajuan yang menyala, Direktori SRP2 tidak');
+
+cek(strpos($head_admin, '.tombol-aksi {') !== FALSE && strpos($head_admin, '.tombol-aksi-bahaya {') !== FALSE
+    && strpos($head_admin, '.tombol-utama {') !== FALSE && strpos($head_admin, '.dark .tombol-utama {') !== FALSE,
+    'head.php: kelas .tombol-aksi, .tombol-aksi-bahaya, dan .tombol-utama terang dan gelap');
+$gaya_lama = '/class="[^"]*(?:hover:underline[^"]*text-(?:red|blue)-500|text-(?:red|blue)-500[^"]*hover:underline|(?:px-2\.5|px-3) py-1\.5 rounded-lg text-xs font-bold text-)[^"]*"/';
+$tombol_salah = [];
+foreach (array_merge(glob(APP_ROOT . '/application/views/admin/*/*.php'), glob(APP_ROOT . '/application/views/admin_bidang/*.php')) as $berkas) {
+    $isi  = (string) file_get_contents($berkas);
+    $nama = str_replace(APP_ROOT . '/application/views/', '', $berkas);
+    if (preg_match('/<(?:a|button)\b[^>]*class="tombol-aksi"[^>]*>(?:(?!<\/(?:a|button)>).)*<span>(?:Hapus|Nonaktifkan)/s', $isi)) { $tombol_salah[] = "{$nama} (hapus tanpa varian bahaya)"; }
+    if (preg_match('/bg-blue-600 dark:bg-brand-primary|portal-brand,#0e6b7a\);color:#fff|bg-emerald-500 px-5/', $isi)) { $tombol_salah[] = "{$nama} (tombol utama gaya lama)"; }
+    if ( ! preg_match_all('/<div class="(overflow-x-auto[^"]*)"[^>]*>\s*<table.*?<\/table>/s', $isi, $m)) { continue; }
+    foreach ($m[0] as $tbl) {
+        if ( ! preg_match('/<thead.*?<\/thead>/s', $tbl, $kp) || strpos(strip_tags($kp[0]), 'Aksi') === FALSE) { continue; }
+        $badan = preg_replace('/<template x-teleport="body">.*?<\/template>/s', '', substr($tbl, strpos($tbl, '</thead>')));
+        if (strpos($badan, 'tombol-aksi') === FALSE || preg_match($gaya_lama, $badan)) { $tombol_salah[] = "{$nama} (kolom Aksi)"; }
+    }
+}
+cek($tombol_salah === [], 'Tombol tabel dan tombol utama admin memakai pola bersama (lain: ' . implode(', ', $tombol_salah) . ')');
+
+$berkas_kmp = (string) @file_get_contents(APP_ROOT . '/application/views/admin/components/input_berkas.php');
+$file_liar = [];
+foreach (array_merge(glob(APP_ROOT . '/application/views/admin/*/*.php'), glob(APP_ROOT . '/application/views/admin_bidang/*.php')) as $berkas) {
+    if (strpos($berkas, 'components/input_berkas.php') === FALSE && strpos($berkas, '/layouts/') === FALSE && strpos((string) file_get_contents($berkas), 'type="file"') !== FALSE) {
+        $file_liar[] = str_replace(APP_ROOT . '/application/views/', '', $berkas);
+    }
+}
+cek(strpos($berkas_kmp, 'Pilih berkas') !== FALSE && strpos($berkas_kmp, 'Belum ada berkas dipilih') !== FALSE
+    && strpos($head_admin, '.input-berkas > input[type="file"] {') !== FALSE && $file_liar === [],
+    'Unggah berkas admin hanya lewat komponen berlabel Indonesia (lain: ' . implode(', ', $file_liar) . ')');
+$bank_hal = http('adm', 'Admin_Bank_Data');
+cek(strpos($bank_hal, 'name="berkas_pdf"') !== FALSE && strpos($bank_hal, 'Pilih berkas') !== FALSE,
+    'Bank Data: input berkas_pdf tetap terkirim, tampil sebagai "Pilih berkas"');
+
+cek(angka_id(4238) === '4.238' && angka_id(1234567) === '1.234.567' && angka_id(0) === '0', 'angka_id: ribuan bertitik');
+$angka_lama = [];
+foreach (array_merge(glob(APP_ROOT . '/application/views/admin/*.php'), glob(APP_ROOT . '/application/views/admin/*/*.php'), glob(APP_ROOT . '/application/views/admin_bidang/*.php')) as $berkas) {
+    if (preg_match('/number_format\((?:[^(),]|\([^()]*\))*\)/', (string) file_get_contents($berkas))) { $angka_lama[] = str_replace(APP_ROOT . '/application/views/', '', $berkas); }
+}
+cek($angka_lama === [], 'Nol number_format() tanpa pemisah Indonesia di layar admin (lain: ' . implode(', ', $angka_lama) . ')');
+
+/* KONSISTENSI LAYAR ADMIN, kelompok B (isi per layar, audit UI 2 Okt 2026):
+     8. Tidak ada teks bernada pengembang di layar (nama tabel, path, foreign key, modal
+        otomatis Posisi Magang, kotak Mode Simulasi per baris antrean).
+     9. Kepala kartu tabel lewat admin/components/kepala_tabel.php; Pengguna: Peran, Cakupan.
+    10. Jejak Audit: satu dropdown aksi, bukan dinding pil.
+    11. Ringkasan Kerja: deret kartu satu baris (.deret-kartu), ikon banner yang ADA.
+    12. Konsultasi Warga (forum publik) dibuka di tab baru dengan ikon tautan keluar.
+    13. Pantau Aduan: pilihan bidang tanpa awalan "Bidang " dan tidak dipotong 110px.
+    14. KKN & Magang: tidak ada teks 10px di baris. */
+echo "\n== Konsistensi layar admin kelompok B: isi per layar ==\n";
+$teks_dev = [];
+foreach (['struktur/index', 'katalog/index', 'asosiasi/index', 'psu/index', 'magang_posisi/index', 'antrean/dashboard'] as $v) {
+    $isi = preg_replace(['#/\*.*?\*/#s', '#<!--.*?-->#s', '#(?<![:"\'])//[^\n]*#'], '',
+        (string) @file_get_contents(APP_ROOT . "/application/views/admin/{$v}.php"));
+    foreach (['foreign key', '<code>sf_program', 'libraries/Smart_filter', '/akun/profil', '/psu<', 'Segera Hadir', '<dialog', 'showModal',
+              'API SIMPERUM belum terhubung', 'Identitas ada di detail', 'batas_penghasilan_maks', 'seed program'] as $frasa) {
+        if (stripos($isi, $frasa) !== FALSE) { $teks_dev[] = "{$v}: {$frasa}"; }
+    }
+}
+cek($teks_dev === [], 'Tidak ada teks bernada pengembang di layar admin (lain: ' . implode(', ', $teks_dev) . ')');
+$antrean_hal = http('adm', 'Admin');
+cek(substr_count($antrean_hal, 'data-pemberitahuan-simulasi') <= 1 && strpos($antrean_hal, 'Mode Simulasi - API') === FALSE,
+    'Antrean: Mode Simulasi paling banyak satu pemberitahuan di atas tabel, bukan per baris');
+// Production memakai SIMPERUM (mode api) sementara baris uji coba lama bertanda simulasi:
+// kalimat banner dan lencana detail harus mengikuti mode aktif, bukan selalu "belum tersambung".
+foreach (['antrean/dashboard.php', 'antrean/detail.php'] as $v_sim) {
+    $src_sim = (string) @file_get_contents(APP_ROOT . '/application/views/admin/' . $v_sim);
+    cek(strpos($src_sim, "item('simperum_mode') === 'api'") !== FALSE && strpos($src_sim, 'sebelum') !== FALSE,
+        "{$v_sim}: teks simulasi mengikuti mode SIMPERUM aktif");
+}
+
+$kepala_kmp = (string) @file_get_contents(APP_ROOT . '/application/views/admin/components/kepala_tabel.php');
+$kepala_lama = [];
+foreach (glob(APP_ROOT . '/application/views/admin/*/*.php') as $berkas) {
+    // Hanya kepala KARTU (div p-6 border-b); judul modal berikon tidak termasuk pola ini.
+    if (preg_match('#<div class="p-6 border-b[^"]*">\s*<h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">\s*<i class="ph#', (string) file_get_contents($berkas))) {
+        $kepala_lama[] = str_replace(APP_ROOT . '/application/views/', '', $berkas);
+    }
+}
+cek(strpos($kepala_kmp, 'data-kepala-tabel') !== FALSE && $kepala_lama === [],
+    'Kepala kartu tabel lewat komponen bersama, tanpa judul berikon (lain: ' . implode(', ', $kepala_lama) . ')');
+foreach (['Admin_Users' => 1, 'Admin_Audit' => 1, 'Admin_Struktur' => 2, 'Admin_Kemitraan/universitas' => 1] as $jalur => $n) {
+    cek(substr_count(http('adm', $jalur), 'data-kepala-tabel') === $n, "{$jalur}: {$n} kepala kartu tabel bersama");
+}
+cek(strpos($admin_users, 'Peran (Role)') === FALSE && strpos($admin_users, '>Scope</th>') === FALSE
+    && strpos($admin_users, '>Cakupan</th>') !== FALSE, 'Akses Staf: kolom Peran dan Cakupan, tanpa istilah Inggris');
+
+$audit_hal = http('adm', 'Admin_Audit');
+cek(strpos($audit_hal, 'data-filter-aksi') !== FALSE && strpos($audit_hal, 'id="filter-aksi" name="aksi"') !== FALSE
+    && strpos($audit_hal, '>Semua aksi</option>') !== FALSE && preg_match('#href="[^"]*Admin_Audit\?aksi=#', $audit_hal) === 0,
+    'Jejak Audit: filter aksi satu dropdown, tanpa pil tautan per aksi');
+
+$ringkasan = http('adm', 'Admin_Dashboard');
+cek(strpos($head_admin, '.grid.deret-kartu { grid-template-columns: repeat(var(--jumlah-kartu') !== FALSE
+    && preg_match('#class="deret-kartu [^"]*" style="--jumlah-kartu: (\d+)"#', $ringkasan, $dk) === 1,
+    'Ringkasan Kerja: kartu domain satu baris di layar lebar (.deret-kartu)');
+$ikon_hilang = [];
+foreach (array_merge(glob(APP_ROOT . '/application/views/admin/*.php'), glob(APP_ROOT . '/application/views/admin/*/*.php')) as $berkas) {
+    // ph-map-pin-slash tidak ada di Phosphor 2.1.2: ikonnya tampil kosong (banner Ringkasan Kerja).
+    if (strpos((string) file_get_contents($berkas), 'ph-map-pin-slash') !== FALSE) { $ikon_hilang[] = basename($berkas); }
+}
+cek($ikon_hilang === [], 'Tidak ada ikon ph-map-pin-slash yang tidak ada di Phosphor (lain: ' . implode(', ', $ikon_hilang) . ')');
+cek(preg_match('#href="[^"]*Umum/forum"\s+target="_blank" rel="noopener noreferrer" data-tab-baru#', $ringkasan) === 1
+    && strpos($ringkasan, 'ph-arrow-square-out') !== FALSE,
+    'Sidebar: Konsultasi Warga (forum publik) dibuka di tab baru dengan ikon tautan keluar');
+
+$aduan_v = (string) @file_get_contents(APP_ROOT . '/application/views/admin/aduan/index.php');
+cek(strpos($aduan_v, 'max-w-[110px]') === FALSE && strpos($aduan_v, "preg_replace('/^Bidang\\s+/i', '', \$b->nama)") !== FALSE,
+    'Pantau Aduan: pilihan bidang tidak dipotong 110px dan tanpa awalan "Bidang "');
+cek(strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/kemitraan/index.php'), 'text-[10px]') === FALSE,
+    'KKN & Magang: tidak ada teks 10px di baris tabel');
 
 bersihkan();
 $GLOBALS['daftar'] = $GLOBALS['users'] = [];
@@ -554,31 +721,96 @@ $isi_fs = $m8[2] ?? '';
 cek($legend !== '', 'A8: ada <fieldset> ber-<legend> di formulir pendataan');
 cek(stripos($legend, 'ukuran tanah') !== FALSE,
     'A8: legend-nya "Ukuran tanah" (dapat: "' . $legend . '")');
-cek(strpos($isi_fs, 'name="land_length_m"') !== FALSE && strpos($isi_fs, 'name="land_width_m"') !== FALSE,
+cek(strpos($isi_fs, 'name="panjang_lahan_m"') !== FALSE && strpos($isi_fs, 'name="lebar_lahan_m"') !== FALSE,
     'A8: KEDUA isian tanah ada DI DALAM fieldset itu - bukan sekadar ada di halaman');
 cek(preg_match('/Ukuran Tanah\s*\x{2014}/u', $pdt) === 0,
     'A8: nol label "Ukuran Tanah -" yang mengulang; prefiksnya sudah pindah ke legend');
 
 /* ---------------- R4, 5 Agt 2026 ---------------- */
 
-// A9 - dua isian bukti dicabut dari formulir DAN dari whitelist unggah,
-//      tapi jenisnya TETAP sah supaya berkas lama terbaca.
+// A9 (5 Agt 2026) mencabut dua isian bukti. UAT 2026 (warga/pengembang #9) mengembalikan
+// "Bukti Pindah Tangan" untuk cabang bukan milik sendiri; `recipient_photo` tetap dicabut.
+// Kedua jenis tetap sah di model supaya berkas lama terbaca.
 $wrg = (string) @file_get_contents(APP_ROOT . '/application/controllers/Warga.php');
 $mdl = (string) @file_get_contents(APP_ROOT . '/application/models/Housing_assessment_model.php');
 wajib($wrg !== '' && $mdl !== '', 'Sumber Warga.php & Housing_assessment_model.php terbaca');
 preg_match("/candidate_land'\)\s*return\s*\[([^\]]*)\]/", $wrg, $m9);
 $whitelist = $m9[1] ?? '';
 cek($whitelist !== '', 'A9: whitelist unggah jalur candidate_land terbaca');
+cek(strpos($whitelist, 'land_transfer_proof') !== FALSE, 'UAT #9: `land_transfer_proof` (Bukti Pindah Tangan) bisa diunggah di cabang calon lahan');
+cek(strpos($whitelist, 'recipient_photo') === FALSE, 'A9: `recipient_photo` tetap tidak bisa diunggah');
 foreach (['land_transfer_proof', 'recipient_photo'] as $jenis) {
-    cek(strpos($whitelist, $jenis) === FALSE,
-        "A9: `{$jenis}` tidak bisa lagi diunggah");
-    cek(strpos($mdl, $jenis) !== FALSE,
-        "A9: `{$jenis}` TETAP jenis yang sah - berkas lama harus tetap terbaca");
+    cek(strpos($mdl, $jenis) !== FALSE, "A9: `{$jenis}` TETAP jenis yang sah - berkas lama harus tetap terbaca");
 }
-cek(strpos($pdt, 'recipient_photo') === FALSE && strpos($pdt, 'land_transfer_proof') === FALSE,
-    'A9: kedua kotak unggah lenyap dari formulir pendataan');
+cek(strpos($pdt, 'recipient_photo') === FALSE, 'A9: kotak unggah recipient_photo tidak ada di formulir pendataan');
+cek(strpos($pdt, 'Bukti Pindah Tangan') !== FALSE, 'UAT #9: kotak unggah Bukti Pindah Tangan ada di formulir pendataan');
+
+// Jelajah admin kab/kota 1 Okt 2026: push "Pengajuan warga baru" untuk admin_kabkota dulu
+// ikut bertaut Admin?status=pending, halaman superadmin yang menolaknya.
+preg_match("/'role' => 'admin_kabkota'.{0,200}?'([A-Za-z_]+[^']*)', \\\$tag/s", $wrg, $mp);
+cek(($mp[1] ?? '') === 'Admin_Kabkota', 'Push pengajuan baru untuk admin kab/kota bertaut ke antrean wilayahnya, bukan Admin/');
+
+// Keputusan user 1 Okt 2026: laporan rekam data yang dikembalikan provinsi memberi tahu
+// admin kab/kota pemiliknya, hanya bila transisinya sukses. Push tidak terkirim di lokal
+// (VAPID kosong), jadi yang dijaga sumbernya, sama seperti pemeriksaan di atas.
+$tnj = (string) @file_get_contents(APP_ROOT . '/application/controllers/Rekam_Tinjauan.php');
+preg_match('/function minta_perbaikan\(\).*?\n    \}/s', $tnj, $mt);
+$fn_mp = $mt[0] ?? '';
+cek(preg_match("/if \( ! empty\(\\\$hasil\['success'\]\)\) \{.*?notify_admin_push\(\[\['role' => 'admin_kabkota', 'kabupaten_id' => \(int\) \\\$laporan\['kabupaten_id'\]\]\]/s", $fn_mp) === 1,
+    'Push minta perbaikan rekam data: hanya bila sukses, ke admin_kabkota wilayah laporan');
+cek(strpos($fn_mp, "'Rekam_Perumahan' : 'Rekam_Kawasan'") !== FALSE && strpos($fn_mp, "'?tahun='") !== FALSE,
+    'Push minta perbaikan bertaut ke layar Rekam_Perumahan/Rekam_Kawasan periodenya');
+
+// Cek visual 2 Okt 2026: kartu Beranda di dasar sidebar dicabut di SEMUA ukuran (di 1440x900 ia
+// menutupi menu Manajemen); "Kembali ke beranda" di atas sidebar tetap jalan pulangnya.
+// Di ponsel tombol Aksi berikon cukup ikon.
+$head_admin = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/head.php');
+$sidebar_isi = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/sidebar.php');
+cek(strpos($sidebar_isi, 'class="sidebar-kartu-beranda') === FALSE && strpos($head_admin, 'sidebar-kartu-beranda') === FALSE
+    && strpos($sidebar_isi, '>Kembali ke beranda</span>') !== FALSE,
+    'Kartu Beranda sidebar tidak ada lagi; tautan Kembali ke beranda tetap ada');
+cek(strpos($head_admin, '.aksi-tetap td:last-child :is(a, button):has(> i) > span') !== FALSE, 'Tombol Aksi berikon jadi ikon saja di ponsel, label tetap untuk pembaca layar');
 
 // E1 - syarat "harus ditanggapi dulu" dilepas, TIGA syarat lain tetap berdiri.
+// Audit UI 2 Okt 2026: jam aplikasi WIB (production UTC, lokal Berlin) dan NOW() MySQL diselaraskan.
+cek(strpos((string) @file_get_contents(APP_ROOT . '/index.php'), "date_default_timezone_set('Asia/Jakarta')") !== FALSE
+    && strpos((string) @file_get_contents(APP_ROOT . '/application/core/MY_Controller.php'), "SET time_zone = '+07:00'") !== FALSE,
+    'Zona waktu aplikasi WIB di PHP dan sesi MySQL');
+
+/* Audit UI 2 Okt 2026, kelompok 1: SATU format tanggal di layar. Dulu tiga bentuk hidup
+   berdampingan: ISO mentah "2026-10-02 01:29:58" (riwayat/tinjauan rekam data, banner
+   keamanan), bulan Inggris "02 Oct 2026" (antrean, aduan, kemitraan, pengguna), dan
+   "2 Okt 2026" (tgl_id). Yang dijaga: keluaran helpernya, dan nol pola lama di views. */
+if ( ! defined('BASEPATH')) { define('BASEPATH', APP_ROOT . '/system/'); }
+require_once APP_ROOT . '/application/helpers/ternak_helper.php';
+cek(tgl_id('2026-10-02 01:22:43', TRUE) === '2 Okt 2026', 'Tanggal: tgl_id pendek = "2 Okt 2026"');
+cek(tgl_id('2026-10-02 01:22:43', TRUE, TRUE) === '2 Okt 2026, 01.22 WIB',
+    'Tanggal: tgl_id berjam = "2 Okt 2026, 01.22 WIB" (dapat: "' . tgl_id('2026-10-02 01:22:43', TRUE, TRUE) . '")');
+cek(tgl_id(NULL, TRUE, TRUE) === '-' && tgl_id('', TRUE) === '-', 'Tanggal: nilai kosong jadi "-"');
+$pola_lama = [];
+$it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(APP_ROOT . '/application/views', FilesystemIterator::SKIP_DOTS));
+foreach ($it as $f) {
+    if (substr($f->getFilename(), -4) !== '.php') { continue; }
+    $src = (string) file_get_contents($f->getPathname());
+    // Format tampilan berbulan Inggris: date('d M Y'), date('j M'), date('M', ...).
+    if (preg_match("/date\(\s*'[^']*[MF][^']*'/", $src)) { $pola_lama[] = str_replace(APP_ROOT . DIRECTORY_SEPARATOR, '', $f->getPathname()); }
+}
+cek( ! $pola_lama, 'Tanggal: nol date() berbulan Inggris di views' . ($pola_lama ? ' (ada: ' . implode(', ', $pola_lama) . ')' : ''));
+foreach (['admin/rekam/riwayat.php' => "tgl_id(\$row['submitted_at'], TRUE, TRUE)",
+          'admin/rekam/tinjauan_daftar.php' => "tgl_id(\$row['submitted_at'], TRUE, TRUE)",
+          'admin/rekam/tinjauan_detail.php' => "tgl_id(\$laporan['reviewed_at'], TRUE, TRUE)",
+          'admin/antrean/dashboard.php' => "tgl_id(\$pk['terakhir'], TRUE, TRUE)"] as $v => $pola) {
+    $src = (string) @file_get_contents(APP_ROOT . '/application/views/' . $v);
+    cek(strpos($src, $pola) !== FALSE, "Tanggal: {$v} memakai tgl_id, bukan stempel ISO mentah");
+}
+// Istilah seragam: status SRP2 "Draft" tampil "Diminta Perbaikan" di dasbor DAN daftar.
+$dash_src = (string) @file_get_contents(APP_ROOT . '/application/controllers/Admin_Dashboard.php');
+$srp_src  = (string) @file_get_contents(APP_ROOT . '/application/views/admin/srp2/pending.php');
+cek(strpos($dash_src, 'srp2_label_status()') !== FALSE && strpos($srp_src, 'srp2_label_status()') !== FALSE,
+    'Istilah: label status SRP2 dari satu sumber (dasbor dan daftar Tinjau SRP2)');
+cek(strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/rekam/perumahan_wizard.php'), 'Target dan Realisasi') === FALSE,
+    'Istilah: wizard perumahan memakai "Rencana", bukan "Target"');
+
 $umum = (string) @file_get_contents(APP_ROOT . '/application/controllers/Umum.php');
 wajib($umum !== '', 'Sumber Umum.php terbaca');
 preg_match('/function ajukan_janji_temu.*?\n\t\}/s', $umum, $mj);
@@ -655,8 +887,10 @@ wajib($vrt !== '', 'Sumber cek_rtlh.php terbaca');
 preg_match('/<h1[^>]*>([^<]*)<\/h1>/', $vrt, $m11);
 cek(trim($m11[1] ?? '') === 'Cek Data Rumah',
     'A11b: judul halaman = "Cek Data Rumah" (dapat: "' . trim($m11[1] ?? '') . '")');
-cek(preg_match('/<h4[^>]*>Cek Data Rumah<\/h4>/', $hub) === 1,
-    'A11b: kartu hub memakai nama yang sama');
+// Sejak 10 Sep 2026 (UAT) Cek Data Rumah tidak lagi berupa kartu di hub Golek Omah, melainkan tab
+// utama berlabel "Cek Backlog" di layout; judul di dalam halaman tetap "Cek Data Rumah" (sumbernya RTLH).
+$layout = (string) @file_get_contents(APP_ROOT . '/application/views/layouts/main.php');
+cek(preg_match('/Cek_Rtlh.{0,400}Cek (Data )?Backlog/s', $layout) === 1, 'A11b: tab utama Cek_Rtlh berlabel "Cek Data Backlog"');
 /* Komentar DIBUANG dulu sebelum dicocokkan. Versi pertama penjaga ini merah
    gara-gara komentar di `cek_rtlh.php` yang menjelaskan KENAPA "Cek Backlog"
    ditolak - frasanya ikut tercocok. Itu jebakan substring yang sama yang sudah
@@ -731,6 +965,158 @@ cek(strpos($cap, 'rowspan="<?= count($sisi_list) ?>"') !== FALSE,
 cek(strpos($cap, "implode(' / '") === FALSE,
     'C2: nol perangkaian "a / b" di dalam sel - itu yang dulu melebarkan tabel');
 
+/* Kolom Aksi Admin_Kemitraan (1 Okt 2026): terukur di peramban 1440x900, wadah tabel
+   scrollWidth 1273 vs clientWidth 1118 - tombol "Ubah Keputusan" di luar wadah. Sesudah
+   sel Mahasiswa dan Aksi boleh membungkus: 1118 = 1118. Ini BUKAN pengukuran; yang
+   dijaga hanya kelas pembungkusnya. Kalau merah, ukur lagi sebelum memutuskan. */
+$kmt = (string) @file_get_contents(APP_ROOT . '/application/views/admin/kemitraan/index.php');
+cek(strpos($kmt, '<td class="px-4 py-3 max-w-[14rem] whitespace-normal break-words">') !== FALSE
+    && strpos($kmt, '<td class="px-4 py-3 text-right whitespace-normal">') !== FALSE,
+    'Kemitraan: sel Mahasiswa dan Aksi boleh membungkus supaya Aksi tidak terdorong keluar wadah');
+
+/* KOLOM AKSI MENEMPEL (audit UI 2 Okt 2026, kelompok 2). Di 375 dan 768 tombol
+   Tinjau/Proses/Simpan baru terlihat setelah tabel digulir jauh ke samping. Obatnya
+   SATU pola: kelas `aksi-tetap` pada pembungkus `overflow-x-auto` (aturan CSS-nya di
+   admin/layouts/head.php). Yang dijaga tiga hal yang masing-masing penyebab sekaligus
+   obat, bukan proksi lebar:
+     1. Aturan sticky-nya masih ada di shell.
+     2. Setiap tabel admin berkolom Aksi memakai kelasnya, dan Aksi kolom TERAKHIR
+        (aturannya menempelkan :last-child; Aksi di tengah = kolom lain yang menempel).
+     3. Sel sticky membuat stacking context, jadi modal `fixed` di dalam tabel itu
+        terkubur di bawah topbar kecuali di-teleport ke body. Popover `absolute` di
+        dalamnya juga dilarang: itu yang dulu terpotong wadah gulir.
+   Lebarnya sendiri tetap TIDAK diukur di sini (lihat catatan di atas); ukur di
+   peramban. Terukur 2 Okt 2026: kolom Aksi di tepi kanan wadah (selisih 0 px) pada
+   375 dan 768 untuk antrean, pengguna, SRP2, katalog, kemitraan, struktur, riwayat,
+   aduan bidang, magang bidang; halaman tidak menggulir mendatar. */
+echo "\n== Kolom Aksi menempel di kanan tabel admin ==\n";
+$head_admin = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/head.php');
+cek(preg_match('/\.aksi-tetap > table > \* > tr > :last-child:not\(\[colspan\]\) \{ position: sticky; right: 0; background-color: #fff;/', $head_admin) === 1
+    && strpos($head_admin, '.dark .aksi-tetap > table > * > tr > :last-child:not([colspan]) { background-color: #0f2933;') !== FALSE,
+    'Shell admin: aturan sticky kolom Aksi beserta latar pekat terang dan gelap');
+$tabel_aksi = 0;
+foreach (array_merge(glob(APP_ROOT . '/application/views/admin/*/*.php'), glob(APP_ROOT . '/application/views/admin_bidang/*.php')) as $berkas) {
+    $isi  = file_get_contents($berkas);
+    $nama = str_replace(APP_ROOT . '/application/views/', '', $berkas);
+    if ( ! preg_match_all('/<div class="(overflow-x-auto[^"]*)"[^>]*>\s*<table.*?<\/table>/s', $isi, $m, PREG_SET_ORDER)) { continue; }
+    foreach ($m as $blok) {
+        if ( ! preg_match('/<thead.*?<\/thead>/s', $blok[0], $kepala)) { continue; }
+        preg_match_all('/<th\b[^>]*>(.*?)<\/th>/s', $kepala[0], $th);
+        $label = array_map(static fn($t) => trim(strip_tags($t)), $th[1]);
+        if ( ! in_array('Aksi', $label, TRUE)) { continue; }
+        $tabel_aksi++;
+        cek(strpos($blok[1], 'aksi-tetap') !== FALSE, "{$nama}: pembungkus tabel berkolom Aksi memakai aksi-tetap");
+        cek(end($label) === 'Aksi', "{$nama}: Aksi kolom terakhir (yang ditempelkan :last-child)");
+        preg_match_all('/(<template x-teleport="body">\s*)?<div\s+x-show="[^"]+"[^>]*class="([^"]*\b(?:absolute|fixed)\b[^"]*)"/', $blok[0], $pop, PREG_SET_ORDER);
+        foreach ($pop as $p) {
+            cek(strpos($p[2], 'fixed') !== FALSE && $p[1] !== '', "{$nama}: panel di dalam tabel berupa modal yang di-teleport ke body");
+        }
+    }
+}
+cek($tabel_aksi >= 18, "Tabel admin berkolom Aksi terbaca ({$tabel_aksi} ditemukan)");
+
+/* SIDEBAR DAN TATA LETAK (audit UI 2 Okt 2026, kelompok 3). Satu shell untuk ketiga
+   peran admin (admin/index.php), jadi yang dijaga string di shell itu:
+     1. Batas desktop 1024 di Alpine DAN di media query. Di 768 sidebar 256px dulu
+        terbuka permanen dan menyisakan ~441px; kalau salah satu angka kembali ke 768
+        tanpa yang lain, sidebar setengah drawer setengah permanen.
+     2. Panel geser punya tombol tutup dan menutup diri saat tautan diklik (loader
+        progresif tidak memuat ulang shell).
+     3. Di bawah 1024 kolom kanan yang menggulir, jadi footer ikut di akhir halaman,
+        bukan menempel 48px di dasar layar ponsel. Loader ikut menggulir kolom itu.
+     4. Sub-menu tanpa x-transition: transisi Alpine menunggu requestAnimationFrame,
+        dan di tab yang belum tergambar klik caret tidak menampilkan Rekap/Riwayat.
+   Terukur 2 Okt 2026 (agen_admin, agen_admin_bidang, agen_admin_kabkota): sidebar
+   tertutup saat dimuat di 375 dan 768, konten selebar layar (tabel pengguna 696px di
+   768, dulu 441px), halaman tidak menggulir mendatar; 1440 sidebar 256px dan tombol
+   menu menyempitkannya ke 80px untuk ketiga peran. */
+echo "\n== Sidebar panel geser dan footer di layar sempit ==\n";
+$shell_admin = (string) @file_get_contents(APP_ROOT . '/application/views/admin/index.php');
+$sidebar_adm = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/sidebar.php');
+$nav_adm     = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/sidebar_nav.php');
+$progresif   = (string) @file_get_contents(APP_ROOT . '/assets/js/admin-progressive.js');
+cek(substr_count($shell_admin, 'window.innerWidth >= 1024') === 2 && strpos($shell_admin, 'innerWidth < 1024') !== FALSE
+    && strpos($shell_admin, 'innerWidth >= 768') === FALSE,
+    'Shell admin: batas desktop sidebar 1024 di x-data dan @resize');
+cek(preg_match('/@media \(max-width: 1023px\) \{\s*\.admin-kolom \{ overflow-y: auto !important; \}\s*\.admin-kolom > #main-content \{ flex: 1 0 auto !important; \}\s*\.admin-sidebar \{/', $head_admin) === 1,
+    'head.php: di bawah 1024 sidebar fixed dan kolom kanan yang menggulir');
+cek(preg_match('/class="admin-kolom [^"]*".*<main id="main-content".*admin\/layouts\/footer/s', $shell_admin) === 1,
+    'Shell admin: footer di dalam .admin-kolom sesudah <main>, jadi ikut di akhir guliran');
+cek(strpos($progresif, 'main.parentElement.scrollTop = 0') !== FALSE,
+    'Loader progresif menggulir .admin-kolom ke atas saat pindah halaman');
+cek(preg_match('/<button type="button" x-show="!desktop" @click="sidebarOpen = false" aria-label="Tutup menu navigasi"/', $sidebar_adm) === 1,
+    'Sidebar: tombol tutup panel geser di layar sempit');
+cek(strpos($sidebar_adm, '<div id="sidebar-nav" @click="if (!desktop && $event.target.closest(\'a\')) sidebarOpen = false"') !== FALSE,
+    'Sidebar: klik tautan menu menutup panel geser');
+cek(strpos($nav_adm, 'x-show="buka && sidebarOpen">') !== FALSE && ! preg_match('/<div[^>]*x-show="buka && sidebarOpen"[^>]*x-transition/', $nav_adm)
+    && strpos($nav_adm, '@click="buka = !buka"') !== FALSE,
+    'Sub-menu: caret membuka cabang lain seketika, tanpa x-transition');
+
+/* AUDIT UI 2 OKT 2026, KELOMPOK 4 - butir kecil.
+     1. Modal "data contoh" B2 sekali per sesi peramban: "Saya mengerti" diingat di
+        sessionStorage, Esc tidak.
+     2. Istilah internal dan teks bernada pengembang tidak sampai ke layar: "butir B2",
+        path controller di halaman Privilege, kode aksi mentah di Jejak Audit.
+     3. Footer tanpa tautan mati href="#"; tombol Web Push disembunyikan bila belum
+        dikonfigurasi, bukan tampil mati.
+     4. Tombol ikon punya nama yang terbaca pembaca layar (mode gelap, tutup modal).
+     5. Target sentuh 40px di ponsel lewat satu aturan di head.php.
+     6. BNBA: format dan batas ukuran tertulis, istilah Indonesia, dan layar Review
+        menunjukkan angka per program serta status BNBA sebelum Kirim.
+     7. Catatan Admin wajib hanya untuk tolak/perbaikan, di modal maupun halaman detail. */
+echo "\n== Audit UI kelompok 4: butir kecil ==\n";
+$modal_b2 = (string) @file_get_contents(APP_ROOT . '/application/views/components/modal_keputusan_identitas.php');
+cek(strpos($modal_b2, "sessionStorage.getItem(KUNCI) === '1'") !== FALSE
+    && preg_match("/getElementById\('modal-identitas-tutup'\)\.addEventListener\('click', function \(\) \{\s*try \{ sessionStorage\.setItem\(KUNCI, '1'\)/", $modal_b2) === 1,
+    'Modal B2: diingat per sesi, hanya lewat tombol Saya mengerti');
+$teks_internal = [];
+foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(APP_ROOT . '/application/views', FilesystemIterator::SKIP_DOTS)) as $f) {
+    if (substr($f, -4) !== '.php') { continue; }
+    // Buang komentar PHP dan HTML: yang diperiksa hanya teks yang sampai ke layar.
+    $isi = preg_replace(['#/\*.*?\*/#s', '#<!--.*?-->#s', '#(?<![:"\'])//[^\n]*#'], '', (string) file_get_contents($f));
+    if (preg_match('/butir B2|by name by address/i', $isi)) { $teks_internal[] = substr($f, strlen(APP_ROOT) + 1); }
+}
+cek($teks_internal === [], 'Tidak ada "butir B2" atau "by name by address" di teks layar: ' . implode(', ', $teks_internal));
+$priv = (string) @file_get_contents(APP_ROOT . '/application/views/admin/users/privileges.php');
+cek(strpos($priv, "\$module['url']") === FALSE && strpos($priv, 'Bagian dari') !== FALSE,
+    'Privilege: path controller tidak ditampilkan, menu anak menyebut induknya');
+$audit_v = (string) @file_get_contents(APP_ROOT . '/application/views/admin/audit/index.php');
+// Tiga, bukan dua, sejak kelompok B: pil filter jadi dropdown dengan dua kelompok pilihan
+// (aksi biasa dan "Percobaan ditolak"), ditambah label di baris.
+cek(substr_count($audit_v, 'html_escape($label_aksi(') === 3 && strpos($audit_v, '><?= html_escape($a) ?></') === FALSE,
+    'Jejak Audit: kode aksi tampil sebagai label (dropdown filter dan baris)');
+$footer_adm = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/footer.php');
+cek(strpos($footer_adm, 'href="#"') === FALSE, 'Footer admin tanpa tautan mati href="#"');
+$push_js = (string) @file_get_contents(APP_ROOT . '/assets/js/admin-web-push.js');
+cek(strpos($push_js, 'Web Push belum') === FALSE && substr_count($push_js, "button.style.display = 'none'") === 2,
+    'Web Push belum dikonfigurasi atau gagal: tombol disembunyikan, bukan tampil mati');
+$topbar_adm = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/topbar.php');
+cek(preg_match('/<button type="button" @click="darkMode = !darkMode"[^>]*aria-label="Mode gelap"/', $topbar_adm) === 1,
+    'Topbar: tombol mode gelap punya aria-label');
+$ikon_tanpa_nama = [];
+foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator(APP_ROOT . '/application/views/admin', FilesystemIterator::SKIP_DOTS)) as $f) {
+    if (substr($f, -4) !== '.php') { continue; }
+    preg_match_all('#<button\b([^>]*)>(.*?)</button>#s', (string) file_get_contents($f), $mm, PREG_SET_ORDER);
+    foreach ($mm as $m) {
+        $teks = trim(strip_tags(preg_replace('#<\?(php|=).*?\?>#s', 'X', $m[2])));
+        if ($teks === '' && ! preg_match('/aria-label|title=|x-text/', $m[1] . $m[2])) { $ikon_tanpa_nama[] = substr($f, strlen(APP_ROOT) + 1); }
+    }
+}
+cek($ikon_tanpa_nama === [], 'Tombol ikon di layar admin punya aria-label/title: ' . implode(', ', array_unique($ikon_tanpa_nama)));
+cek(preg_match('/@media \(max-width: 767px\) \{\s*:is\(button, select, input[^)]*\)\)? \{ min-height: 40px; \}/', $head_admin) === 1
+    && strpos($head_admin, 'input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; }') !== FALSE,
+    'head.php: target sentuh 40px untuk kontrol di ponsel');
+$wizard = (string) @file_get_contents(APP_ROOT . '/application/views/admin/rekam/perumahan_wizard.php');
+cek(strpos($wizard, 'Format PDF, JPG, atau PNG, paling besar 5 MB') !== FALSE && strpos($wizard, 'Daftar penerima per nama dan alamat') !== FALSE,
+    'Langkah BNBA menyebut format dan batas 5 MB dengan istilah Indonesia');
+cek(strpos($wizard, 'Lampiran BNBA') !== FALSE && strpos($wizard, "\$jumlah('realisasi_anggaran')") !== FALSE,
+    'Review & Kirim: angka rencana/realisasi per program dan status BNBA');
+$antrean_v = (string) @file_get_contents(APP_ROOT . '/application/views/admin/antrean/dashboard.php');
+$antrean_d = (string) @file_get_contents(APP_ROOT . '/application/views/admin/antrean/detail.php');
+cek(strpos($antrean_v, ":required=\"data.status === 'rejected' || data.status === 'needs_revision'\"") !== FALSE
+    && strpos($antrean_d, "this.form.catatan_admin.required = event.target.value !== 'approved'") !== FALSE,
+    'Catatan Admin wajib hanya untuk tolak/perbaikan, di modal Tinjau dan halaman detail');
+
 /* BUTIR 4 PUTARAN 2 - desain prototipe beserta RAB di halaman Panduan Desain.
 
    Yang dijaga bukan "halamannya terbuka", melainkan tiga hal yang bisa rusak
@@ -759,6 +1145,147 @@ cek(strpos($lib, 'function get_public_liliput_designs') === FALSE,
     'Metode bernama liliput sudah tidak ada - namanya menjanjikan data yang tidak ia punya');
 cek(strpos($lib, 'function get_public_prototype_designs') !== FALSE,
     'Penggantinya bernama sesuai isinya');
+
+/* AUDIT UI 2 OKT 2026, SISA TINJAUAN VISUAL.
+     1. Jejak Audit: baris akses data pribadi dibaca sebagai kalimat ("Staf membuka NPWP
+        pengembang (daftar SRP2)"), bukan "npwp_srp2 (srp2_pengajuan #daftar)". Hanya
+        saat tampil; baris tersimpan tidak diubah. Pencarian dengan kata dari layar tetap kena.
+     2. Istilah Inggris/teknis: Hak Modul (bukan Privilege), Peran diubah (bukan Role diubah).
+     3. Layar Rekam Data admin kab/kota dan admin bidang: judul = <title> = label sidebar.
+     4. Target sentuh 40px ikut berlaku untuk tautan .tombol-aksi dan .tombol-utama. */
+echo "\n== Audit UI: sisa tinjauan visual ==\n";
+cek(audit_label_aksi('role_diubah') === 'Peran diubah' && audit_label_aksi('role_diubah_ditolak') === 'Perubahan peran ditolak'
+    && audit_label_aksi('privilege_admin_diubah') === 'Hak modul admin diubah' && audit_label_aksi('aduan_ditriase') === 'Aduan ditriase',
+    'Label aksi audit: Peran diubah, Perubahan peran ditolak, Hak modul admin diubah');
+$baris_uji = (object) ['aksi' => 'akses_npwp_srp2', 'ringkasan' => 'Staf mengakses informasi pribadi: npwp_srp2 (srp2_pengajuan #daftar)',
+                       'objek_tipe' => 'srp2_pengajuan', 'objek_id' => 'daftar'];
+cek(audit_ringkasan($baris_uji) === 'Staf membuka NPWP pengembang (daftar SRP2)'
+    && audit_label_objek('aduan', '431') === 'aduan nomor 431',
+    'Ringkasan akses data pribadi diterjemahkan saat tampil');
+$kode_cari = audit_kode_dari_cari('npwp pengembang', ['akses_npwp_srp2', 'role_diubah']);
+cek($kode_cari['aksi'] === ['akses_npwp_srp2'], 'Pencarian "npwp pengembang" mencocokkan kode akses_npwp_srp2');
+
+[$uidS, $emailS] = buat_akun('admin', 'adm_sisa'); // akun uji awal sudah dibersihkan di tengah berkas
+wajib(login('adm_sisa', $emailS), 'Login admin uji untuk blok ini');
+/* Sejak 2 Okt 2026 NPWP dibuka di halaman ubah satu entri, bukan di daftar Direktori SRP2
+   (daftar kini ringkas, tanpa NPWP), jadi akses dicatat per entri: "direktori SRP2 nomor N". */
+$id_npwp = tulis("INSERT INTO srp2_direktori_pengembang (nama_perusahaan, status_aktif, npwp_ciphertext) VALUES (?, 0, 'uji')", [CAP . ' NPWP AUDIT']);
+http('adm_sisa', 'Admin_Srp2/ubah/' . $id_npwp); // memastikan ada baris akses_npwp_srp2 (dicatat untuk staf)
+q('DELETE FROM srp2_direktori_pengembang WHERE id = ?', [$id_npwp]);
+$teks_layar = fn($html) => html_entity_decode(strip_tags(preg_replace('#<(script|style)\b.*?</\1>#s', '', $html)), ENT_QUOTES, 'UTF-8');
+$audit_akses = $teks_layar(http('adm_sisa', 'Admin_Audit?aksi=akses_npwp_srp2'));
+cek(strpos($audit_akses, 'Staf membuka NPWP pengembang (direktori SRP2 nomor ' . $id_npwp . ')') !== FALSE && strpos($audit_akses, 'srp2_direktori_pengembang') === FALSE
+    && strpos($audit_akses, 'mengakses informasi pribadi') === FALSE,
+    'Jejak Audit: baris akses NPWP tampil terbaca, tanpa nama tabel');
+cek(strpos($teks_layar(http('adm_sisa', 'Admin_Audit?q=' . urlencode('NPWP pengembang'))), 'Staf membuka NPWP pengembang') !== FALSE,
+    'Jejak Audit: mencari kata dari layar menemukan barisnya');
+$teks_staf = $teks_layar(http('adm_sisa', 'Admin_Users')) . $teks_layar(http('adm_sisa', 'Admin_Audit'));
+cek(strpos($teks_staf, 'Riwayat Tindakan') !== FALSE && strpos($teks_staf, 'Daftar Pengguna') !== FALSE && stripos($teks_staf, 'Privilege') === FALSE && strpos($teks_staf, 'Role diubah') === FALSE,
+    'Akses Staf dan Jejak Audit: tanpa "Privilege" atau "Role diubah" di teks layar');
+cek(strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/users/privileges.php'), '>Hak Modul <?=') !== FALSE,
+    'Halaman hak modul berjudul "Hak Modul"');
+
+[$uidK, $emailK] = buat_akun('admin_kabkota', 'kab');
+q('UPDATE usr_akun SET kabupaten_id = (SELECT id FROM kabupaten ORDER BY id LIMIT 1) WHERE id = ?', [$uidK]);
+[$uidB, $emailB] = buat_akun('admin_bidang', 'bid', 'kawasan');
+wajib(login('kab', $emailK) && login('bid', $emailB), 'Login admin kab/kota dan admin bidang uji');
+foreach ([['kab', 'Admin_Kabkota/pendataan_awal', 'Pendataan Awal Warga'], ['kab', 'Rekam_Data', 'Rekam Data'],
+          ['kab', 'Rekam_Perumahan', 'Perumahan'], ['kab', 'Rekam_Kawasan/riwayat', 'Riwayat'],
+          ['kab', 'Rekam_Perumahan/riwayat', 'Riwayat'], ['bid', 'Rekam_Tinjauan', 'Peninjauan Rekam Data']] as [$s, $jalur, $nama]) {
+    $hal = http($s, $jalur);
+    $esc = htmlspecialchars($nama, ENT_QUOTES, 'UTF-8');
+    cek(strpos($hal, 'data-judul-halaman') !== FALSE && strpos($hal, '>' . $esc . '</h1>') !== FALSE
+        && strpos($hal, '<title>' . $nama . ' - ') !== FALSE && strpos($hal, '>' . $esc . '</span>') !== FALSE,
+        "{$jalur}: judul, <title>, dan label sidebar sama-sama \"{$nama}\"");
+}
+cek(strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/rekam/riwayat.php'), "'Draft, belum dikirim'") !== FALSE,
+    'Riwayat Rekam Data: status draf memakai label "Draft, belum dikirim" seperti Pantau Rekam Data');
+$sumber = fn($p) => (string) @file_get_contents(APP_ROOT . '/application/views/admin/' . $p);
+cek(strpos($sumber('antrean/detail.php'), 'API SIMPERUM') === FALSE && strpos($sumber('katalog/index.php'), '>Badge<') === FALSE
+    && preg_match('/>\s*(Import|Unduh template)|isi sheet/', $sumber('psu/index.php')) === 0
+    && substr_count($sumber('magang_posisi/index.php'), "preg_replace('/^Bidang\s+/i', '', \$b->nama)") === 2,
+    'Istilah layar: tanpa "API" di lencana simulasi, Label (bukan Badge), Impor/templat/lembar di PSU, bidang magang tanpa awalan');
+cek(strpos($sumber('kemitraan/index.php'), 'name="tanggal_sertifikat" value="<?= html_escape($r->tanggal_sertifikat ?? \'\') ?>" class="mt-1 block rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm') !== FALSE,
+    'KKN & Magang: isian tanggal sertifikat berukuran normal (text-sm, py-2)');
+cek(strpos($head_admin, 'a[class*="rounded"][class*="py-"], .tombol-aksi, .tombol-utama { min-height: 40px; }') !== FALSE,
+    'head.php: target sentuh 40px juga untuk tautan .tombol-aksi dan .tombol-utama');
+
+/* FONDASI TAMPILAN ADMIN (permintaan pemilik produk 2 Okt 2026: lebih rapat, latar polos,
+   tombol seragam). Berlaku untuk ketiga peran admin karena shell dan CSS-nya sama.
+     1. Latar shell admin polos: tanpa batik, pola SVG, glow blur, atau gradasi. Portal publik
+        tidak diperiksa di sini (bukan bagian shell admin).
+     2. Set tombol tetap di layouts/head.php: .tombol-utama dan .tombol-kedua 32px,
+        .tombol-aksi dan .chip-filter 28px, .tombol-ikon 32x32, .tombol-tab; semuanya 40px di
+        bawah 768px. Label tidak diubah kapital oleh CSS.
+     3. Kartu pekat .kartu-admin (terang dan gelap) dan token jarak --jarak-bagian/--jarak-kartu/
+        --pad-kartu; judul halaman, kepala kartu tabel, dan toolbar tabel dirapatkan.
+     4. Tombol liar: setiap <button> dan tautan bergaya tombol di view admin wajib memakai salah
+        satu kelas set tombol. Layar yang belum dimigrasi tercatat di $utang_tombol dengan
+        jumlahnya; angka itu hanya boleh TURUN. Pengecualian permanen dan alasannya:
+          - admin/index.php dan admin/layouts/*: kontrol shell (menu, tema, notifikasi, latar
+            panel geser) berukuran 40px tetap di topbar 64px, plus tata letak cetak;
+          - admin/components/pagination.php: nomor halaman kotak 32px dirakit di PHP;
+          - admin/components/review_form.php: kelasnya datang dari peta $style_class yang
+            isinya kelas set tombol (diperiksa terpisah di bawah). */
+echo "\n== Fondasi tampilan admin: latar polos, set tombol, kartu, jarak ==\n";
+$shell_admin = '';
+foreach (['index.php', 'layouts/head.php', 'layouts/sidebar.php', 'layouts/sidebar_nav.php', 'layouts/topbar.php', 'layouts/footer.php'] as $p) {
+    $shell_admin .= (string) @file_get_contents(APP_ROOT . '/application/views/admin/' . $p);
+}
+cek($shell_admin !== '' && preg_match('/gradient\(|bg-gradient-|\b(?:from|via)-(?:[a-z]+-\d|brand)|<pattern\b|url\(#batik|blur-\[/', $shell_admin) === 0,
+    'Shell admin: latar polos, tanpa gradasi, pola batik, atau glow blur');
+$dasbor_fondasi = http('adm_sisa', 'Admin_Dashboard');
+cek(strpos($dasbor_fondasi, 'batik-admin') === FALSE && strpos($dasbor_fondasi, 'blur-[120px]') === FALSE,
+    'Ringkasan Kerja yang dirender tidak lagi memuat pola batik atau glow');
+$aturan_tombol = [
+    '.tombol-utama { min-height: 2rem;', '.tombol-kedua { min-height: 2rem;', '.tombol-aksi { min-height: 1.75rem;',
+    '.chip-filter { min-height: 1.75rem;', '.tombol-tab { min-height: 2.25rem;', '.tombol-ikon { width: 2rem; height: 2rem;',
+    '.tombol-aksi-bahaya {', '.dark .tombol-kedua {', '.dark .chip-filter[aria-current="true"]', '.tombol-tab[aria-selected="true"]',
+    'text-transform: none;', ':is(.tombol-kedua, .chip-filter, .tombol-tab) { min-height: 40px; }', '.tombol-ikon { width: 40px; height: 40px; }',
+];
+$aturan_hilang = array_values(array_filter($aturan_tombol, fn($a) => strpos($head_admin, $a) === FALSE));
+cek($aturan_hilang === [], 'head.php: set tombol lengkap dengan ukuran desktop dan 40px di ponsel (hilang: ' . implode(' | ', $aturan_hilang) . ')');
+cek(strpos($head_admin, '.kartu-admin { background-color: #fff;') !== FALSE && strpos($head_admin, '.dark .kartu-admin { background-color: #0f2933;') !== FALSE
+    && strpos($head_admin, ':root { --jarak-bagian: 1.25rem; --jarak-kartu: .75rem; --pad-kartu: 1rem; }') !== FALSE,
+    'head.php: kartu pekat .kartu-admin (terang dan gelap) dan token jarak');
+cek(strpos($judul_kmp, 'class="mb-5 flex') !== FALSE
+    && strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/components/kepala_tabel.php'), 'px-4 py-3 dark:border-white/5" data-kepala-tabel') !== FALSE
+    && strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/components/table_toolbar.php'), '<div class="px-4 py-3 border-b') !== FALSE
+    && strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/index.php'), 'overflow-y-auto p-6 relative') !== FALSE,
+    'Jarak rapat: judul halaman mb-5, kepala kartu dan toolbar tabel py-3, isi utama p-6');
+$peta_review = (string) @file_get_contents(APP_ROOT . '/application/views/admin/components/review_form.php');
+cek(strpos($peta_review, "'accept'  => 'tombol-utama'") !== FALSE && strpos($peta_review, "'reject'  => 'tombol-kedua tombol-aksi-bahaya'") !== FALSE
+    && strpos($peta_review, "'neutral' => 'tombol-kedua'") !== FALSE, 'review_form.php: peta tombol berisi kelas set tombol');
+
+function tombol_liar_admin($isi) {
+    // Blok PHP di dalam atribut diratakan dulu supaya ">" dan kutip di dalamnya tidak memotong tag.
+    $isi = preg_replace_callback('/<\?(?:php|=)?(.*?)\?>/s', fn($m) => '{' . str_replace(['"', "'", '<', '>'], ' ', $m[1]) . '}', $isi);
+    preg_match_all('/<(button|a)\b((?:"[^"]*"|\'[^\']*\'|[^>\'"])*)>/s', $isi, $m, PREG_SET_ORDER);
+    $liar = 0;
+    foreach ($m as $t) {
+        // Tautan dihitung tombol bila bergaya pil/kotak: rounded + py-* dengan latar atau bingkai.
+        if ($t[1] === 'a' && ! preg_match('/tombol-|rounded[^"]*\bpy-|\bpy-[^"]*rounded/', $t[2])) { continue; }
+        if ($t[1] === 'a' && ! preg_match('/\b(?:bg-|border\b|tombol-)/', $t[2])) { continue; }
+        if (preg_match('/\b(?:tombol-utama|tombol-kedua|tombol-aksi|chip-filter|tombol-tab|tombol-ikon)\b/', $t[2])) { continue; }
+        $liar++;
+    }
+    return $liar;
+}
+// Utang migrasi per 2 Okt 2026 (84 tombol di 27 berkas). Turunkan angkanya setiap kali
+// sebuah layar dimigrasi; hapus barisnya bila sudah nol.
+// Utang tombol lunas 2 Okt 2026 (migrasi paralel empat layar). Tombol baru di luar set langsung merah.
+$utang_tombol = [];
+$tombol_naik = [];
+$sisa_utang = 0;
+foreach (array_merge(glob(APP_ROOT . '/application/views/admin/*.php'), glob(APP_ROOT . '/application/views/admin/*/*.php'), glob(APP_ROOT . '/application/views/admin_bidang/*.php')) as $berkas) {
+    $nama = str_replace(APP_ROOT . '/application/views/', '', $berkas);
+    if ($nama === 'admin/index.php' || strpos($nama, 'admin/layouts/') === 0
+        || in_array($nama, ['admin/components/pagination.php', 'admin/components/review_form.php'], TRUE)) { continue; }
+    $n = tombol_liar_admin((string) file_get_contents($berkas));
+    $sisa_utang += $n;
+    if ($n > ($utang_tombol[$nama] ?? 0)) { $tombol_naik[] = "{$nama}: {$n} > " . ($utang_tombol[$nama] ?? 0); }
+}
+cek($tombol_naik === [], "Tombol admin di luar set tombol tidak bertambah (sisa utang {$sisa_utang}; naik: " . implode(', ', $tombol_naik) . ')');
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);

@@ -401,9 +401,9 @@ class Kemitraan_slot_model extends CI_Model
     {
         $baris = $this->db->select(self::TABEL_DAFTAR . '.id, ' . self::TABEL_DAFTAR . '.periode_mulai,
                 ' . self::TABEL_DAFTAR . '.periode_selesai, ' . self::TABEL_DAFTAR . '.status,
-                ' . self::TABEL_DAFTAR . '.instansi_asal, usr_users.name AS nama_mahasiswa')
+                ' . self::TABEL_DAFTAR . '.instansi_asal, usr_akun.nama AS nama_mahasiswa')
             ->from(self::TABEL_DAFTAR)
-            ->join('usr_users', 'usr_users.id = ' . self::TABEL_DAFTAR . '.user_id', 'left')
+            ->join('usr_akun', 'usr_akun.id = ' . self::TABEL_DAFTAR . '.user_id', 'left')
             ->where(self::TABEL_DAFTAR . '.jenis', 'magang')
             ->where(self::TABEL_DAFTAR . '.bidang_kode', (string) $kode)
             ->where_in(self::TABEL_DAFTAR . '.status', self::STATUS_MEMAKAI_KUOTA)
@@ -431,6 +431,24 @@ class Kemitraan_slot_model extends CI_Model
         if ( ! $awal || ! $akhir || $akhir < $awal) { return FALSE; }
 
         return ((int) $awal->diff($akhir)->days + 1) > self::BATAS_HARI;
+    }
+
+    /** Tahun yang boleh dikelola: 2020 s.d. lima tahun ke depan; kosong = tahun berjalan. NULL = tidak sah. */
+    public function tahun_sah($tahun)
+    {
+        $tahun = (int) ($tahun ?: date('Y'));
+        return ($tahun < 2020 || $tahun > (int) date('Y') + 5) ? NULL : $tahun;
+    }
+
+    /**
+     * Satu tombol simpan untuk kuota DAN dua belas bulan satu bidang - dipakai superadmin
+     * (Admin_Kemitraan) dan admin bidang untuk bidangnya sendiri (Kemitraan_Bidang).
+     * Kuota hanya disentuh bila dikirim berupa angka.
+     */
+    public function simpan_pengaturan_bidang($kode, $tahun, $kuota, array $bulan_data)
+    {
+        if (is_numeric($kuota)) { $this->set_kuota($kode, $kuota); }
+        return $this->tulis_ulang_bidang($kode, $tahun, $bulan_data);
     }
 
     public function set_kuota($kode, $kuota)

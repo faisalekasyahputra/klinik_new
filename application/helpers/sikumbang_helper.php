@@ -86,6 +86,9 @@ if ( ! function_exists('sikumbang_ambil')) {
      *                           hangat di production tanpa alasan.
      * @param int    $ttl        Umur maksimum cache yang dianggap segar.
      * @param int    $timeout    Batas waktu curl.
+     * @param string $bendera    Nama bendera penahan tembakan. Bawaan satu untuk
+     *                           seluruh host; detail per lokasi memakai benderanya
+     *                           sendiri (lihat Index::detail_perum).
      *
      * @return string|NULL Isi balasan, atau NULL kalau gagal DAN tidak ada
      *                     cadangan apa pun. NULL sengaja dibedakan dari
@@ -94,7 +97,7 @@ if ( ! function_exists('sikumbang_ambil')) {
      *                     bedanya menentukan tombol "Muat lagi" mati atau
      *                     hidup (lihat Index::load_more).
      */
-    function sikumbang_ambil($url, $cache_file, $ttl, $timeout = SIKUMBANG_TIMEOUT)
+    function sikumbang_ambil($url, $cache_file, $ttl, $timeout = SIKUMBANG_TIMEOUT, $bendera = 'sikumbang')
     {
         /* Mekanisme cache-nya DIPINDAH ke cache_hulu_ambil() 10 Sep 2026 dan
            dipakai bersama Sikaper. Yang tinggal di sini cuma cara MENEMBAK-nya,
@@ -113,6 +116,7 @@ if ( ! function_exists('sikumbang_ambil')) {
                 CURLOPT_TIMEOUT        => $timeout,
                 CURLOPT_USERAGENT      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             ]);
+            curl_setopt_array($ch, transport_curl_options()); // TLS 1.2+, HTTPS saja (poin 8.2)
             $balasan = curl_exec($ch);
             $galat   = curl_error($ch);
             $kode    = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -122,8 +126,17 @@ if ( ! function_exists('sikumbang_ambil')) {
                502 dari hulu bukan galat curl - tanpa cek ini, badan halaman
                error tertulis ke cache sebagai kalau-kalau itu data sah. */
             $ok = ! $galat && is_string($balasan) && $balasan !== '' && $kode >= 200 && $kode < 300;
+            /* SIKUMBANG juga membungkus galatnya dengan HTTP 200:
+               {"error":true,"code":"ERR_UNEXPECTED",...} (UAT warga#2.0,
+               26 Sep 2026). Tanpa cek ini amplop galat tertulis ke cache
+               24 jam dan menimpa cache bagus, sehingga cadangan basi tidak
+               pernah terpakai. */
+            if ($ok) {
+                $urai = json_decode($balasan, TRUE);
+                $ok = ! (is_array($urai) && ! empty($urai['error']));
+            }
             return [$ok, is_string($balasan) ? $balasan : NULL];
-        }, 'sikumbang');
+        }, $bendera);
     }
 }
 

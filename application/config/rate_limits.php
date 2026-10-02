@@ -2,11 +2,24 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 /*
- * Satu registry untuk seluruh pembatas laju berbasis sys_rate_limits.
+ * Satu registry untuk seluruh pembatas laju berbasis sys_batas_laju.
  * `dimensions` menentukan penghitung yang berdiri sendiri. Permintaan ditolak
  * bila salah satu dimensi mencapai batasnya.
  */
 $config['rate_limit_policies'] = [
+    'account_export' => ['limit' => 3, 'window' => 3600, 'dimensions' => ['account'], 'concurrent_dimension' => 'account'],
+    // Verifikasi sandi di akun/delete: tanpa batas khusus, sesi yang dibajak bisa menebak sandi
+    // 120 kali/menit lewat batas umum tulis_akun (temuan UAT universitas U8).
+    'account_delete' => ['limit' => 5, 'window' => 3600, 'dimensions' => ['account']],
+    // Verifikasi sandi saat ganti sandi di akun/update. Hanya yang GAGAL dihitung (inspect lalu
+    // hit, pola login), per akun dan per IP (keputusan pemilik produk 29 Sep 2026).
+    'profile_password' => ['limit' => 5, 'window' => 3600, 'dimensions' => ['account', 'ip']],
+    'privacy_deletion_request' => ['limit' => 2, 'window' => 86400, 'dimensions' => ['account']],
+    'login' => [
+        'limit' => 30,
+        'window' => 300,
+        'dimensions' => ['ip'],
+    ],
     'register' => [
         'limit' => 5,
         'window' => 600,
@@ -30,6 +43,7 @@ $config['rate_limit_policies'] = [
         'limit' => 10,
         'window' => 60,
         'dimensions' => ['ip', 'account', 'nik'],
+        'concurrent_dimension' => 'account',
     ],
     /* Butir tanggal-lahir-dicabut (14 Agt 2026, Warga::pendataan()). Pola SAMA
        PERSIS dengan rtlh_cek/rtlh_cek_harian di bawah, dan alasannya sama:
@@ -75,6 +89,7 @@ $config['rate_limit_policies'] = [
         'limit' => 30,
         'window' => 60,
         'dimensions' => ['ip', 'account', 'object'],
+        'concurrent_dimension' => 'object',
     ],
     // B3 - laporan komentar forum. ENTRI policy, bukan mekanisme baru:
     // §17 poin 15 melarang membuat pembatas laju kedua. Dedup di ledger sudah
@@ -137,12 +152,8 @@ $config['rate_limit_policies'] = [
         'window' => 3600,
         'dimensions' => ['account'],
     ],
-    /* Cek_Rtlh dibuka utk anonim 14 Agt 2026 (halamannya saja, bukan
-       hasilnya - lihat komentar panjang di Cek_Rtlh.php). Cabang anonim
-       TIDAK memanggil Simperum_gateway sama sekali (tidak ada hasil yang
-       dikembalikan), jadi batas ini murni menahan spam submit form, bukan
-       anti-enumerasi sungguhan seperti rtlh_cek/rtlh_cek_harian - pola sama
-       dengan warga_lookup_anon. */
+    /* UAT No. 18, 10 Sep 2026: tamu bisa melihat hasil Cek Data Rumah.
+       Batas IP tetap 5/jam; membuat sesi baru tidak mengulang kuotanya. */
     'rtlh_cek_anon' => [
         'limit' => 5,
         'window' => 3600,
@@ -160,4 +171,41 @@ $config['rate_limit_policies'] = [
         'window' => 3600,
         'dimensions' => ['ip'],
     ],
+
+    /* ================================================================
+       KONTROL ANTI-OTOMATISASI GLOBAL (form keamanan poin 10.4), 21 Sep 2026.
+       Dipasang di MY_Controller::__construct(), jadi berlaku untuk SELURUH
+       endpoint PHP, bukan hanya yang memanggil limiter sendiri. Penjelasan:
+       docs/engineering/ANTI_OTOMATISASI.md.
+
+       Semua memakai Rate_limiter::hit_fast() (satu kueri atomik) dan jendela
+       per MENIT: kolom penghitung TINYINT UNSIGNED, jadi batas maksimum 255 per
+       jendela, dan jendela per jam tidak bisa dipakai untuk angka sebesar ini.
+       Angkanya sengaja LONGGAR: tujuannya menghentikan skrip (ratusan per menit),
+       bukan pengguna. Halaman biasa memuat 1 permintaan PHP; jajak notifikasi
+       dan navigasi progresif admin menambah beberapa per menit. Batas per-IP
+       anonim dibuat lebih tinggi dari per-akun karena satu IP kantor/kampus bisa
+       dipakai banyak orang (NAT); yang perlu lebih longgar dapat memakai
+       ANTI_OTOMATISASI_IP_DIIZINKAN di .env (lihat helpers/anti_automation_helper.php).
+       ================================================================ */
+    'global_anon'  => ['limit' => 240, 'window' => 60, 'dimensions' => ['ip']],
+    'global_akun'  => ['limit' => 240, 'window' => 60, 'dimensions' => ['account']],
+    // Permintaan yang MENGUBAH keadaan (POST/PUT/PATCH/DELETE): logika bisnis berlebihan.
+    'tulis_anon'   => ['limit' => 40,  'window' => 60, 'dimensions' => ['ip']],
+    'tulis_akun'   => ['limit' => 120, 'window' => 60, 'dimensions' => ['account']],
+    // Kelas endpoint yang mahal/rawan eksfiltrasi data (config/anti_automation.php: route_classes).
+    'kelas_cari_ip'    => ['limit' => 60, 'window' => 60, 'dimensions' => ['ip']],
+    'kelas_cari_akun'  => ['limit' => 60, 'window' => 60, 'dimensions' => ['account']],
+    'kelas_api_ip'     => ['limit' => 40, 'window' => 60, 'dimensions' => ['ip']],
+    'kelas_api_akun'   => ['limit' => 40, 'window' => 60, 'dimensions' => ['account']],
+    'kelas_unduh_ip'   => ['limit' => 40, 'window' => 60, 'dimensions' => ['ip']],
+    'kelas_unduh_akun' => ['limit' => 40, 'window' => 60, 'dimensions' => ['account']],
+    // Unggahan berlebihan: dihitung per PERMINTAAN yang membawa berkas.
+    'unggah_ip'    => ['limit' => 20, 'window' => 600, 'dimensions' => ['ip']],
+    'unggah_akun'  => ['limit' => 40, 'window' => 600, 'dimensions' => ['account']],
+    /* Internal untuk peringatan (libraries/Security_alert.php). `senyap` = pelampauannya
+       sendiri TIDAK memicu peringatan (kalau tidak, peringatan memicu peringatan). */
+    'audit_akses_dedupe' => ['limit' => 1, 'window' => 600, 'dimensions' => ['key'], 'senyap' => TRUE],
+    'alert_dedupe'   => ['limit' => 1, 'window' => 1800, 'dimensions' => ['key'], 'senyap' => TRUE],
+    'alert_eskalasi' => ['limit' => 3, 'window' => 3600, 'dimensions' => ['ip'],  'senyap' => TRUE],
 ];

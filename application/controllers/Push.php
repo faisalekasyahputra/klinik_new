@@ -9,7 +9,7 @@ class Push extends MY_Controller {
     {
         parent::__construct();
         $this->allowed = $this->session->userdata('is_logged')
-            && in_array($this->session->userdata('role'), ['admin', 'admin_kabkota', 'admin_bidang'], TRUE);
+            && in_array($this->session->userdata('role'), ['admin', 'admin_kabkota', 'admin_bidang', 'warga'], TRUE);
         if ($this->allowed) {
             $this->load->library('web_push_service');
             $this->load->model('Push_subscription_model', 'push_subscriptions');

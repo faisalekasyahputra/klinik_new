@@ -6,7 +6,7 @@ $this->load->helper('housing_queue');
  *   1. Admin_Kabkota::index()  - ter-scope 1 kabupaten
  *   2. Admin::index()          - superadmin, lintas wilayah
  * Data disiapkan MY_Controller::antrean_table_data(); kontrak POST update
- * status sama persis di kedua konteks (queue_id + status + catatan_admin).
+ * status sama persis di kedua konteks (antrean_id + status + catatan_admin).
  *
  * Cari/filter/urut/paginasi SEMUANYA server-side (B8). Versi sebelumnya
  * mengirim s.d. 1000 baris sebagai JSON ke browser lalu memproses di klien -
@@ -20,10 +20,14 @@ $this->load->helper('housing_queue');
 /* BUTIR B2 - sakelar kebijakan identitas warga. Dibaca SEKALI di sini, bukan
    di dalam perulangan baris: config->load() per baris berarti ratusan kali. */
 $this->config->load('kebijakan_data', TRUE, TRUE);
-$identitas_menunggu = $this->config->item('identitas_warga_kabkota', 'kebijakan_data') === 'menunggu_keputusan';
+/* Sakelar ini milik layar admin kab/kota saja. Superadmin (Admin::index)
+   mengirim $identitas_utuh = TRUE dan melihat identitas asli; tanpa penanda itu
+   view memilih aman: disamarkan. */
+$identitas_menunggu = empty($identitas_utuh)
+    && $this->config->item('identitas_warga_kabkota', 'kebijakan_data') === 'menunggu_keputusan';
 
 $statuses = housing_queue_statuses();
-$this->load->view('components/modal_keputusan_identitas');
+if ($identitas_menunggu) { $this->load->view('components/modal_keputusan_identitas'); }
 $badge_kelas = $badge_label = [];
 foreach ($statuses as $kode => $status) {
     $badge_kelas[$kode] = $status['badge'];
@@ -38,14 +42,14 @@ if ( ! isset($badge_label['needs_revision'])) {
 // tidak hilang saat ganti filter, dan sebaliknya.
 ob_start(); ?>
 <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted mr-1">Status:</span>
-<a href="<?= admin_table_url($base_url, ['status' => NULL]) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= empty($filter_status) ? 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>">Semua</a>
+<a href="<?= admin_table_url($base_url, ['status' => NULL]) ?>" class="chip-filter"<?= empty($filter_status) ? ' aria-current="true"' : '' ?>>Semua</a>
 <?php foreach ($badge_label as $kode => $label): ?>
-<a href="<?= admin_table_url($base_url, ['status' => $kode]) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= $filter_status === $kode ? 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>"><?= $label ?></a>
+<a href="<?= admin_table_url($base_url, ['status' => $kode]) ?>" class="chip-filter"<?= $filter_status === $kode ? ' aria-current="true"' : '' ?>><?= $label ?></a>
 <?php endforeach;
 if (!empty($can_filter_tanpa_wilayah)): ?>
 <span class="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted mr-1">Wilayah:</span>
-<a href="<?= admin_table_url($base_url, ['tanpa_wilayah' => NULL]) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= empty($filter_tanpa_wilayah) ? 'bg-brand-primary/20 border-brand-primary/50 text-brand-primary' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>">Semua</a>
-<a href="<?= admin_table_url($base_url, ['tanpa_wilayah' => '1']) ?>" class="px-3 py-1 rounded-lg text-xs font-bold border transition-colors <?= !empty($filter_tanpa_wilayah) ? 'bg-orange-100 border-orange-300 text-orange-700 dark:bg-orange-500/20 dark:border-orange-500/50 dark:text-orange-400' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/10' ?>">Belum Terpetakan</a>
+<a href="<?= admin_table_url($base_url, ['tanpa_wilayah' => NULL]) ?>" class="chip-filter"<?= empty($filter_tanpa_wilayah) ? ' aria-current="true"' : '' ?>>Semua</a>
+<a href="<?= admin_table_url($base_url, ['tanpa_wilayah' => '1']) ?>" class="chip-filter"<?= !empty($filter_tanpa_wilayah) ? ' aria-current="true"' : '' ?>>Belum terpetakan</a>
 <?php endif;
 $filter_html = ob_get_clean();
 ?>
@@ -54,30 +58,74 @@ $filter_html = ob_get_clean();
          `relative z-10` menguburnya di bawah topbar (z-40) & sidebar (z-20).
          Alasan sama dengan `#main-content`; lihat catatan di admin/index.php. */ ?>
 <div x-data="antreanModal()" class="relative">
-    <div class="mb-8">
-        <h1 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2 flex items-center gap-3">
-            <i class="ph ph-map-pin text-brand-primary"></i>
-            Antrean Perumahan - <?= html_escape($scope_label) ?>
-        </h1>
-        <p class="text-sm text-gray-500 dark:text-brand-muted">Kelola antrean pengajuan program perumahan warga.</p>
+    <?php
+    /* Banner peringatan keamanan (poin 10.5): HANYA superadmin (Admin::index mengisi variabelnya).
+       Peringatan otomatis (batas laju, pemindai, jebakan, bot, kunci akun) dicatat di Jejak Audit dan
+       diringkas di sini supaya admin melihatnya tanpa perlu membuka log terenkripsi. */
+    if ( ! empty($peringatan_keamanan) && (int) $peringatan_keamanan['total'] > 0):
+        $pk = $peringatan_keamanan; $pk_tinggi = (int) $pk['tinggi'];
+    ?>
+    <a href="<?= base_url('Admin_Audit?aksi=peringatan_keamanan') ?>" role="alert"
+       class="mb-5 flex items-start gap-3 rounded-2xl border p-4 transition-colors <?= $pk_tinggi > 0 ? 'border-red-300 bg-red-50 hover:bg-red-100 dark:border-red-500/40 dark:bg-red-500/10' : 'border-amber-300 bg-amber-50 hover:bg-amber-100 dark:border-amber-500/40 dark:bg-amber-500/10' ?>">
+        <i class="ph ph-shield-warning text-2xl <?= $pk_tinggi > 0 ? 'text-red-600' : 'text-amber-600' ?>"></i>
+        <span class="text-sm">
+            <strong class="block text-gray-900 dark:text-white"><?= (int) $pk['total'] ?> peringatan keamanan dalam <?= (int) $pk['jam'] ?> jam terakhir<?= $pk_tinggi > 0 ? ' (' . $pk_tinggi . ' tingkat tinggi)' : '' ?></strong>
+            <span class="text-gray-600 dark:text-brand-muted">
+                <?php $bagian = []; foreach ($pk['per_tipe'] as $tipe => $n) { $bagian[] = html_escape(str_replace('_', ' ', $tipe)) . ' ×' . (int) $n; } echo implode(', ', array_slice($bagian, 0, 5)); ?>.
+                Terakhir <?= html_escape(tgl_id($pk['terakhir'], TRUE, TRUE)) ?>. Klik untuk membuka Jejak Audit.
+            </span>
+        </span>
+    </a>
+    <?php endif; ?>
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Kelola antrean pengajuan program perumahan warga, cakupan <b>' . html_escape($scope_label) . '</b>.']); ?>
+    <div>
+        <?php if (isset($tercocokkan_simperum)): /* hanya Admin_Kabkota::index, sudah terbatas wilayahnya */ ?>
+        <div class="kartu-admin mb-5 inline-flex items-center gap-3 px-4 py-3">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-500/10 dark:text-sky-400"><i class="ph ph-database text-xl"></i></div>
+            <dl>
+                <dt class="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-brand-muted">Warga tercocokkan SIMPERUM di wilayah ini</dt>
+                <dd class="mt-1 text-2xl font-black leading-none text-gray-900 dark:text-white" data-tercocokkan-simperum><?= angka_id((int) $tercocokkan_simperum) ?></dd>
+            </dl>
+        </div>
+        <?php endif; ?>
     </div>
 
-    <div data-tabel-admin class="bg-white dark:bg-brand-card border border-gray-200 dark:border-white/10 rounded-3xl overflow-hidden shadow-sm">
-        <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, NIK, tiket, program...', 'filter_html' => $filter_html], TRUE) ?>
+    <?php /* Dulu tiap baris simulasi membawa kotak "Mode Simulasi" sendiri; kini
+             satu pemberitahuan di atas tabel bila ada minimal satu baris simulasi
+             di halaman ini (mode_sumber = 'simulation'). */
+    $ada_simulasi = FALSE;
+    foreach (($queue ?? []) as $q_sim) { if (($q_sim->mode_sumber ?? '') === 'simulation') { $ada_simulasi = TRUE; break; } }
+    if ($ada_simulasi): ?>
+    <div data-pemberitahuan-simulasi class="mb-4 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 text-sm flex items-start gap-3">
+        <i class="ph ph-flask text-lg mt-0.5" aria-hidden="true"></i>
+        <?php /* Banner muncul karena ADA baris bersumber simulasi, bukan karena mode koneksinya.
+                 Di production SIMPERUM sudah tersambung (mode api) sementara baris lama dari masa
+                 uji coba tetap bertanda simulasi; kalimatnya mengikuti mode yang benar-benar aktif. */
+        $this->config->load('simperum', FALSE, TRUE);
+        if ($this->config->item('simperum_mode') === 'api'): ?>
+        <p><strong>Data uji coba.</strong> SIMPERUM sudah tersambung. Pengajuan bertanda simulasi di daftar ini dibuat saat uji coba, sebelum sambungan aktif.</p>
+        <?php else: ?>
+        <p><strong>Mode Simulasi.</strong> Data kependudukan belum tersambung ke SIMPERUM, jadi sebagian pengajuan memakai data simulasi.</p>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+
+    <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="kartu-admin overflow-hidden">
+        <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari tiket, program, atau NIK 16 digit...', 'filter_html' => $filter_html], TRUE) ?>
 
         <p class="px-4 pt-3 text-xs text-gray-500 dark:text-brand-muted sm:hidden">
             <i class="ph ph-arrows-left-right mr-1" aria-hidden="true"></i>
-            Geser tabel ke samping untuk melihat seluruh kolom, termasuk Aksi.
+            Geser tabel ke samping untuk melihat seluruh kolom. Kolom Aksi tetap di kanan.
         </p>
-        <div class="overflow-x-auto" role="region" aria-label="Tabel antrean perumahan; geser ke samping untuk melihat kolom Aksi" tabindex="0">
+        <div class="overflow-x-auto aksi-tetap" role="region" aria-label="Tabel antrean perumahan; geser ke samping untuk melihat kolom lain, kolom Aksi tetap di kanan" tabindex="0">
             <table class="w-full text-left text-sm whitespace-nowrap">
                 <thead class="text-xs uppercase bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted font-bold tracking-wider">
                     <tr>
-                        <th class="px-4 py-3"><?= admin_sort_header('Tanggal', 'sf_housing_queue.created_at', $table, $base_url) ?></th>
-                        <th class="px-4 py-3"><?= admin_sort_header('Pemohon', 'sf_housing_queue.nama_lengkap', $table, $base_url) ?></th>
-                        <th class="px-4 py-3"><?= admin_sort_header('Program', 'sf_programs.nama_program', $table, $base_url) ?></th>
+                        <th class="px-4 py-3"><?= admin_sort_header('Tanggal', 'sf_antrean_pengajuan.created_at', $table, $base_url) ?></th>
+                        <th class="px-4 py-3">Pemohon</th>
+                        <th class="px-4 py-3"><?= admin_sort_header('Program', 'sf_program.nama_program', $table, $base_url) ?></th>
                         <th class="px-4 py-3">Kondisi Sosial</th>
-                        <th class="px-4 py-3"><?= admin_sort_header('Status', 'sf_housing_queue.status_antrean', $table, $base_url) ?></th>
+                        <th class="px-4 py-3"><?= admin_sort_header('Status', 'sf_antrean_pengajuan.status_antrean', $table, $base_url) ?></th>
                         <th class="w-px whitespace-nowrap px-4 py-3 text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -97,9 +145,10 @@ $filter_html = ob_get_clean();
                         if (is_numeric($penghasilan)) { $penghasilan = 'Rp ' . number_format((float) $penghasilan, 0, ',', '.'); }
                         $desil  = $simperum['desil'] ?? '-';
                         $alasan = $survey['alasan_pengajuan'] ?? '-';
-                        $has_assessment = ! empty($row->assessment_id);
-                        $nama_display = trim((string) $row->nama_lengkap) !== ''
-                            ? $row->nama_lengkap : ($has_assessment ? 'Identitas ada di detail pengajuan' : 'Nama belum tersedia');
+                        $has_assessment = ! empty($row->penilaian_id);
+                        $nama_samar   = trim((string) $row->nama_lengkap) === '';
+                        $nama_display = ! $nama_samar
+                            ? $row->nama_lengkap : ($has_assessment ? 'Nama di detail pengajuan' : 'Nama belum tersedia');
                         $nik_display = strlen((string) $row->nik_pengaju) >= 4
                             ? str_repeat('•', 12) . substr($row->nik_pengaju, -4)
                             : ($has_assessment ? 'NIK disimpan privat' : 'NIK belum tersedia');
@@ -127,7 +176,7 @@ $filter_html = ob_get_clean();
                             'program' => $row->nama_program ?? 'Program belum terpetakan', 'desil' => $desil,
                             'status' => '', 'currentStatus' => $badge_label[$row->status_antrean] ?? $row->status_antrean, 'currentStatusCode' => $row->status_antrean,
                             'catatan' => $row->catatan_admin ?? '',
-                            'ticket' => $row->ticket_code,
+                            'ticket' => $row->kode_tiket,
                             'nik' => $nik_display,
                             'pekerjaan' => $survey['pekerjaan'] ?? '-',
                             'penghasilan' => $penghasilan,
@@ -137,24 +186,27 @@ $filter_html = ob_get_clean();
                     ?>
                     <tr class="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                         <td class="px-4 py-3">
-                            <div class="text-gray-900 dark:text-white font-medium"><?= html_escape(date('d M Y', strtotime($row->created_at))) ?></div>
-                            <div class="text-[10px]"><?= html_escape(date('H:i', strtotime($row->created_at))) ?></div>
+                            <div class="text-gray-900 dark:text-white font-medium"><?= html_escape(tgl_id($row->created_at, TRUE)) ?></div>
+                            <div class="text-[10px]"><?= html_escape(date('H.i', strtotime($row->created_at))) ?> WIB</div>
                         </td>
                         <!-- Teks panjang boleh membungkus agar kolom Aksi tidak
                              terdorong keluar seperti kasus meja KKN/Magang. -->
                         <td class="max-w-[14rem] whitespace-normal break-words px-4 py-3">
+                            <?php if ($nama_samar && ! $identitas_menunggu): ?>
+                            <div class="text-sm italic text-gray-400 dark:text-brand-muted" data-nama-samar><?= html_escape($nama_display) ?></div>
+                            <?php else: ?>
                             <div class="text-gray-900 dark:text-white font-bold"><?= html_escape($nama_display) ?></div>
-                            <div class="text-xs font-mono font-bold text-brand-primary"><?= html_escape($row->ticket_code) ?></div>
+                            <?php endif; ?>
+                            <div class="text-xs font-mono font-bold text-brand-primary"><?= html_escape($row->kode_tiket) ?></div>
                             <div class="text-xs font-mono mt-0.5"><?= html_escape($nik_display) ?></div>
                             <?php if (empty($row->kabupaten_id)): ?>
                             <div class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400 border border-orange-200 dark:border-orange-500/20" title="Tidak muncul di dashboard Admin Kabupaten/Kota manapun">
-                                <i class="ph ph-map-pin-slash text-[10px]"></i> Belum Terpetakan Wilayah
+                                <i class="ph ph-map-pin-area text-[10px]"></i> Belum terpetakan wilayah
                             </div>
                             <?php endif; ?>
                         </td>
                         <td class="max-w-[14rem] whitespace-normal break-words px-4 py-3">
                             <div class="inline-block max-w-full break-words rounded-lg bg-brand-primary/10 px-2.5 py-1 text-xs font-semibold text-brand-primary border border-brand-primary/20 mb-1"><?= html_escape($row->nama_program ?? 'Program belum terpetakan') ?></div>
-                            <?php if (($row->source_mode ?? '') === 'simulation'): ?><div class="mt-1 inline-block max-w-full break-words rounded bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">Mode Simulasi - API SIMPERUM belum terhubung</div><?php endif; ?>
                             <?php if ($desil !== '-'): ?>
                             <div class="text-[10px] text-blue-700 bg-blue-50 dark:text-white dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 px-2 py-0.5 rounded inline-block">Desil: <span class="font-bold"><?= html_escape($desil) ?></span></div>
                             <?php endif; ?>
@@ -168,10 +220,10 @@ $filter_html = ob_get_clean();
                         </td>
                         <td class="px-4 py-3"><?= $this->load->view('admin/components/status_badge', ['label' => $badge_label[$row->status_antrean] ?? $row->status_antrean, 'kelas' => $badge_kelas[$row->status_antrean] ?? 'pending'], TRUE) ?></td>
                         <td class="w-px whitespace-nowrap px-4 py-3 text-center">
-                            <?php if ( ! empty($row->assessment_id)): ?>
-                            <a href="<?= base_url($base_url . '/detail/' . (int) $row->id) ?>" class="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-brand-primary/20 dark:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-brand-primary border border-gray-200 dark:border-white/10 transition-all duration-200"><i class="ph ph-eye"></i><span class="text-xs font-bold uppercase tracking-wider">Detail</span></a>
+                            <?php if ( ! empty($row->penilaian_id)): ?>
+                            <a href="<?= base_url($base_url . '/detail/' . (int) $row->id) ?>" class="tombol-aksi"><i class="ph ph-eye"></i><span>Detail</span></a>
                             <?php else: ?>
-                            <button @click='openModal(<?= htmlspecialchars(json_encode($payload), ENT_QUOTES, "UTF-8") ?>)' class="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-brand-primary/20 dark:bg-white/5 text-gray-600 dark:text-brand-muted hover:text-brand-primary border border-gray-200 dark:border-white/10 transition-all duration-200" title="Proses"><i class="ph ph-note-pencil"></i><span class="text-xs font-bold uppercase tracking-wider">Tinjau</span></button>
+                            <button @click='openModal(<?= htmlspecialchars(json_encode($payload), ENT_QUOTES, "UTF-8") ?>)' class="tombol-aksi" title="Proses"><i class="ph ph-note-pencil"></i><span>Tinjau</span></button>
                             <?php endif; ?>
                         </td>
                     </tr>
@@ -199,13 +251,13 @@ $filter_html = ob_get_clean();
         <div x-show="open" x-transition class="relative w-full max-w-lg bg-white dark:bg-brand-card border border-gray-200 dark:border-white/10 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="px-4 py-3 border-b border-gray-200 dark:border-white/10 flex justify-between items-center bg-gray-50 dark:bg-white/5">
                 <h3 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2"><i class="ph ph-clipboard-text text-brand-primary"></i> Proses Pengajuan</h3>
-                <button @click="close()" class="text-gray-400 dark:text-brand-muted hover:text-gray-700 dark:hover:text-white transition-colors"><i class="ph ph-x text-lg"></i></button>
+                <button type="button" @click="close()" aria-label="Tutup" class="tombol-ikon"><i class="ph ph-x"></i></button>
             </div>
             <div class="p-6 overflow-y-auto custom-scrollbar">
                 <form action="<?= base_url($action_url) ?>" method="POST" id="formProsesAntrean">
                     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-                    <input type="hidden" name="queue_id" :value="data.id">
-                    <input type="hidden" name="from_status" :value="data.currentStatusCode">
+                    <input type="hidden" name="antrean_id" :value="data.id">
+                    <input type="hidden" name="status_awal" :value="data.currentStatusCode">
                     <div class="mb-5 bg-gray-50 dark:bg-white/5 rounded-2xl p-4 border border-gray-200 dark:border-white/5">
                         <div class="text-xs text-gray-500 dark:text-brand-muted mb-1">Pengaju</div>
                         <div class="text-gray-900 dark:text-white font-bold text-lg mb-3" x-text="data.nama"></div>
@@ -253,8 +305,8 @@ $filter_html = ob_get_clean();
                 </form>
             </div>
             <div class="px-4 py-3 border-t border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/20 flex justify-end gap-3">
-                <button type="button" @click="close()" class="px-5 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-white text-sm font-semibold hover:bg-gray-100 dark:hover:bg-white/5">Batal</button>
-                <button type="submit" form="formProsesAntrean" class="px-5 py-2.5 rounded-xl bg-brand-primary text-brand-dark text-sm font-bold hover:brightness-95">Simpan Keputusan</button>
+                <button type="button" @click="close()" class="tombol-kedua"><span>Batal</span></button>
+                <button type="submit" form="formProsesAntrean" class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan keputusan</span></button>
             </div>
         </div>
     </div>

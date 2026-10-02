@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji meja tinjauan TAHAP DUA KKN/Magang - `Kemitraan_Bidang`, peran
  * `admin_bidang`.
@@ -140,7 +141,7 @@ function login($nama, $email) {
 function buat_akun($peran, $suffix, $bidang = NULL) {
     $email = 'uji_bidang_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
     $id = tulis(
-        'INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,bidang_kode,created_at)
+        'INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,bidang_kode,created_at)
          VALUES (?,?,?,?,?, "active",1,?,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji ' . $suffix,
          'uji_bidang_' . $suffix . '_' . mt_rand(10000, 99999), $peran, $bidang]
@@ -187,9 +188,10 @@ function bersihkan() {
             foreach (glob($dir . DIRECTORY_SEPARATOR . '*') ?: [] as $f) { @unlink($f); }
             @rmdir($dir);
         }
+        q("DELETE FROM sys_jejak_audit WHERE objek_tipe='kkn_magang_pendaftaran' AND objek_id=?", [(string) $id]);
         q('DELETE FROM kkn_magang_pendaftaran WHERE id=?', [$id]);
     }
-    foreach ($GLOBALS['users'] as $id) { q('DELETE FROM usr_users WHERE id=?', [$id]); }
+    foreach ($GLOBALS['users'] as $id) { q('DELETE FROM usr_akun WHERE id=?', [$id]); }
     foreach ($GLOBALS['jar'] as $j) { @unlink($j); }
 }
 register_shutdown_function('bersihkan');
@@ -330,6 +332,9 @@ cek((string) nilai('SELECT reviewed_at_bidang FROM kkn_magang_pendaftaran WHERE 
 // Inti butir 3: jejak tahap satu utuh.
 cek((int) nilai('SELECT reviewed_by FROM kkn_magang_pendaftaran WHERE id=?', [$dA]) === $wargaId,
     'Jejak peninjau TAHAP SATU tidak tertimpa keputusan bidang');
+// UAT admin bidang AB5: keputusan final bidang dulu tidak masuk jejak audit terpusat.
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='kemitraan_keputusan' AND objek_tipe='kkn_magang_pendaftaran' AND objek_id=? AND pelaku_id=?", [(string) $dA, $adminA]) === 1,
+    'Keputusan bidang tercatat di jejak audit (kemitraan_keputusan)');
 
 // Keputusan ganda: sudah Diterima berarti tidak lagi 'Ditinjau Bidang'.
 $tok = csrf('a', 'Kemitraan_Bidang');
@@ -344,6 +349,67 @@ http('b', 'Kemitraan_Bidang/proses/' . $dB, ['csrf_kpkp_token' => $tok, 'status'
 cek(status_dari_db($dB) === 'Ditolak', 'Bidang B bisa memutuskan barisnya sendiri');
 cek((int) nilai('SELECT reviewed_by_bidang FROM kkn_magang_pendaftaran WHERE id=?', [$dB]) === $adminB,
     'Peninjau baris B adalah admin B, bukan admin A');
+
+// ------------------------------------------------- kuota magang bidang sendiri
+/* Keputusan user 1 Okt 2026: admin bidang mengatur kuota dan bulan magang BIDANGNYA
+   SENDIRI. Tahun uji = batas atas tahun_sah supaya konfigurasi nyata tidak tersentuh;
+   kuota kedua bidang dan slot tahun itu disimpan dulu lalu dikembalikan persis. */
+echo "\n== Kuota magang bidang sendiri ==\n";
+define('TAHUN_KUOTA', (int) date('Y') + 5);
+foreach ([BIDANG_A, BIDANG_B] as $kb) {
+    $GLOBALS['kuota_asal'][$kb] = (int) nilai('SELECT kuota FROM kkn_magang_bidang WHERE bidang_kode=?', [$kb]);
+    $GLOBALS['slot_asal'][$kb] = $GLOBALS['db']->query("SELECT bidang_kode,tahun,bulan,tgl_mulai,tgl_selesai FROM kkn_magang_slot
+        WHERE bidang_kode='" . $GLOBALS['db']->real_escape_string($kb) . "' AND tahun=" . TAHUN_KUOTA)->fetch_all(MYSQLI_ASSOC);
+}
+function pulihkan_kuota() {
+    foreach ($GLOBALS['kuota_asal'] ?? [] as $kb => $kuota) {
+        q('UPDATE kkn_magang_bidang SET kuota=? WHERE bidang_kode=?', [$kuota, $kb]);
+        q('DELETE FROM kkn_magang_slot WHERE bidang_kode=? AND tahun=?', [$kb, TAHUN_KUOTA]);
+        foreach ($GLOBALS['slot_asal'][$kb] as $s) {
+            q('INSERT INTO kkn_magang_slot (bidang_kode,tahun,bulan,tgl_mulai,tgl_selesai) VALUES (?,?,?,?,?)', array_values($s));
+        }
+    }
+    $GLOBALS['kuota_asal'] = [];
+}
+register_shutdown_function('pulihkan_kuota');
+$kuota_baru = $GLOBALS['kuota_asal'][BIDANG_A] === 7 ? 8 : 7;
+
+$layar = http('a', 'Kemitraan_Bidang/kuota/' . TAHUN_KUOTA);
+cek($layar['code'] === 200 && strpos($layar['body'], 'Kemitraan_Bidang/simpan_kuota') !== FALSE,
+    'Admin bidang membuka layar kuota bidangnya');
+cek(strpos($layar['body'], 'Admin_Kemitraan/') === FALSE, 'Layar kuota bidang tidak bertaut ke layar superadmin');
+cek(http('a', 'Kemitraan_Bidang/simpan_kuota')['code'] === 404, 'GET ke simpan_kuota ditolak');
+
+$kirim_kuota = ['tahun' => TAHUN_KUOTA, 'kuota' => $kuota_baru, 'bulan' => [3 => ['buka' => 1]],
+    // Selundupan: bidang tidak pernah dibaca dari formulir.
+    'kode' => BIDANG_B, 'bidang_kode' => BIDANG_B];
+http('a', 'Kemitraan_Bidang/simpan_kuota', $kirim_kuota);
+cek((int) nilai('SELECT kuota FROM kkn_magang_bidang WHERE bidang_kode=?', [BIDANG_A]) === $GLOBALS['kuota_asal'][BIDANG_A],
+    'POST tanpa token CSRF tidak mengubah kuota');
+
+http('a', 'Kemitraan_Bidang/simpan_kuota', ['csrf_kpkp_token' => csrf('a', 'Kemitraan_Bidang/kuota/' . TAHUN_KUOTA)] + $kirim_kuota);
+cek((int) nilai('SELECT kuota FROM kkn_magang_bidang WHERE bidang_kode=?', [BIDANG_A]) === $kuota_baru,
+    'Kuota bidang sendiri tersimpan');
+cek((int) nilai('SELECT COUNT(*) c FROM kkn_magang_slot WHERE bidang_kode=? AND tahun=? AND bulan=3', [BIDANG_A, TAHUN_KUOTA]) === 1
+    && (int) nilai('SELECT COUNT(*) c FROM kkn_magang_slot WHERE bidang_kode=? AND tahun=?', [BIDANG_A, TAHUN_KUOTA]) === 1,
+    'Hanya bulan yang dicentang dibuka');
+cek((int) nilai('SELECT kuota FROM kkn_magang_bidang WHERE bidang_kode=?', [BIDANG_B]) === $GLOBALS['kuota_asal'][BIDANG_B]
+    && (int) nilai('SELECT COUNT(*) c FROM kkn_magang_slot WHERE bidang_kode=? AND tahun=?', [BIDANG_B, TAHUN_KUOTA]) === count($GLOBALS['slot_asal'][BIDANG_B]),
+    'Bidang lain yang diselundupkan lewat formulir tidak tersentuh');
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='magang_slot_diubah' AND objek_tipe='kkn_magang_bidang' AND objek_id=? AND pelaku_id=?",
+    [BIDANG_A, $adminA]) === 1, 'Perubahan kuota tercatat di jejak audit (magang_slot_diubah)');
+
+$papan = http('tamu', 'KemitraanPortal/magang/' . TAHUN_KUOTA)['body'];
+$nama_a = (string) nilai('SELECT nama FROM bidang WHERE kode=?', [BIDANG_A]);
+preg_match('/>' . preg_quote($nama_a, '/') . '<\/h3>(.*?)(?:<h3|$)/s', $papan, $kartu_a);
+cek(isset($kartu_a[1]) && strpos($kartu_a[1], $kuota_baru . ' mahasiswa') !== FALSE && strpos($kartu_a[1], 'Maret') !== FALSE,
+    'Papan publik magang membaca kuota dan bulan yang sama');
+
+// Hak modul: admin bidang yang dicabut akses kemitraan_bidang-nya juga kehilangan layar kuota.
+q('INSERT INTO usr_hak_modul_admin (user_id,kunci_modul,diizinkan,updated_at) VALUES (?, "kemitraan_bidang", 0, NOW())', [$adminA]);
+cek(http('a', 'Kemitraan_Bidang/kuota/' . TAHUN_KUOTA)['code'] === 403, 'Tanpa hak modul kemitraan_bidang layar kuota ditolak 403');
+q('DELETE FROM usr_hak_modul_admin WHERE user_id=?', [$adminA]);
+pulihkan_kuota();
 
 bersihkan();
 $GLOBALS['daftar'] = $GLOBALS['users'] = [];

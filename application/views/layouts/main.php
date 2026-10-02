@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="id">
   <head>
+    <?= csp_meta_tag() ?>
    	<?php $this->load->view('layouts/head'); ?>
   </head>
   <body class="bg-[#0a1a1f] text-[#ecffb6] h-screen overflow-hidden flex flex-col" style="height:100vh;display:flex;flex-direction:column;overflow:hidden;" x-data="globalSystem()">
@@ -89,7 +90,7 @@
                            <i class="fa-solid fa-chart-pie"></i> Bank Data
                        </a>
                        <a href="<?= base_url('Cek_Rtlh') ?>" data-tab-link data-tab-key="cek_rtlh" class="portal-tab-btn <?= $active_tab === 'cek_rtlh' ? 'active' : '' ?>">
-                           <i class="fa-solid fa-house-circle-check"></i> Cek Data Rumah
+                            <i class="fa-solid fa-house-circle-check"></i> Cek Data Backlog
                        </a>
                        <?php /* Butir 20 putaran 2: tab "Cek Status Pengajuan" DICABUT dari
                                 bilah publik. Status pengajuan kini hanya di dashboard tiap

@@ -41,6 +41,9 @@ $tahap = [
     ['judul' => 'Surat Balasan',             'ket' => 'Surat resmi siap diunduh'],
 ];
 $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
+// KKN yang berhenti bersifat baca saja; server menolak dengan syarat yang sama
+// (KemitraanPortal::kkn_masih_terbuka()).
+$terbuka = ! $berhenti;
 ?>
 <div class="relative z-10 max-w-3xl">
 
@@ -152,6 +155,48 @@ $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
         </div>
     </div>
 
+    <?php /* pasangDropzone() di luar formulir roster: formulir itu bisa disembunyikan (roster
+             terkunci) sementara kotak Laporan Akhir tetap memakainya (29 Sep 2026). */ ?>
+    <script>
+        function pasangDropzone(dropId, inputId, namaId) {
+            var drop = document.getElementById(dropId);
+            var input = document.getElementById(inputId);
+            var nama = document.getElementById(namaId);
+            if (!drop || !input || !nama) { return; }
+
+            var teksAwal = nama.innerHTML;
+            function tampilkanNamaBerkas() {
+                var f = input.files && input.files[0];
+                nama.textContent = f ? f.name : '';
+                if (!f) { nama.innerHTML = teksAwal; }
+            }
+            input.addEventListener('change', tampilkanNamaBerkas);
+
+            // Klik di mana pun di kotak (bukan cuma input) membuka file picker.
+            drop.addEventListener('click', function () { input.click(); });
+
+            ['dragenter', 'dragover'].forEach(function (evt) {
+                drop.addEventListener(evt, function (e) {
+                    e.preventDefault(); e.stopPropagation();
+                    drop.classList.add('border-brand-primary', 'bg-brand-primary/5');
+                });
+            });
+            ['dragleave', 'drop'].forEach(function (evt) {
+                drop.addEventListener(evt, function (e) {
+                    e.preventDefault(); e.stopPropagation();
+                    drop.classList.remove('border-brand-primary', 'bg-brand-primary/5');
+                });
+            });
+            drop.addEventListener('drop', function (e) {
+                var berkas = e.dataTransfer && e.dataTransfer.files;
+                if (berkas && berkas.length) {
+                    input.files = berkas; // DataTransfer.files -> input.files, didukung semua browser modern.
+                    tampilkanNamaBerkas();
+                }
+            });
+        }
+    </script>
+
     <!-- Roster peserta - permintaan user 21 Agt 2026. Diisi dari unggahan
          Excel, bukan diketik satu-satu (lihat KemitraanPortal::kkn_upload_peserta()
          dan Kkn_peserta_import). Mengunggah ulang MENGGANTI seluruh roster,
@@ -164,6 +209,11 @@ $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
             </div>
         </div>
 
+        <?php if ( ! $terbuka): ?>
+        <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted">KKN yang sudah <?= strtolower(html_escape($row->status)) ?> tidak bisa diubah lagi: roster, link dokumentasi, dan laporan akhir hanya bisa dilihat.</p>
+        <?php elseif ( ! empty($row->tanggal_sertifikat)): ?>
+        <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted"><i class="ph ph-lock-simple" aria-hidden="true"></i> Roster terkunci karena tanggal sertifikat sudah ditetapkan. Hubungi admin bila ada perubahan peserta.</p>
+        <?php else: ?>
         <form method="POST" action="<?= base_url('KemitraanPortal/kkn_upload_peserta/' . (int) $row->id) ?>"
               enctype="multipart/form-data" class="mt-4 flex flex-wrap items-end gap-3">
             <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
@@ -199,43 +249,6 @@ $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
                    fungsinya keluar diam-diam lewat pengecekan null di awal. */
                 ?>
                 <script>
-                function pasangDropzone(dropId, inputId, namaId) {
-                    var drop = document.getElementById(dropId);
-                    var input = document.getElementById(inputId);
-                    var nama = document.getElementById(namaId);
-                    if (!drop || !input || !nama) { return; }
-
-                    var teksAwal = nama.innerHTML;
-                    function tampilkanNamaBerkas() {
-                        var f = input.files && input.files[0];
-                        nama.textContent = f ? f.name : '';
-                        if (!f) { nama.innerHTML = teksAwal; }
-                    }
-                    input.addEventListener('change', tampilkanNamaBerkas);
-
-                    // Klik di mana pun di kotak (bukan cuma input) membuka file picker.
-                    drop.addEventListener('click', function () { input.click(); });
-
-                    ['dragenter', 'dragover'].forEach(function (evt) {
-                        drop.addEventListener(evt, function (e) {
-                            e.preventDefault(); e.stopPropagation();
-                            drop.classList.add('border-brand-primary', 'bg-brand-primary/5');
-                        });
-                    });
-                    ['dragleave', 'drop'].forEach(function (evt) {
-                        drop.addEventListener(evt, function (e) {
-                            e.preventDefault(); e.stopPropagation();
-                            drop.classList.remove('border-brand-primary', 'bg-brand-primary/5');
-                        });
-                    });
-                    drop.addEventListener('drop', function (e) {
-                        var berkas = e.dataTransfer && e.dataTransfer.files;
-                        if (berkas && berkas.length) {
-                            input.files = berkas; // DataTransfer.files -> input.files, didukung semua browser modern.
-                            tampilkanNamaBerkas();
-                        }
-                    });
-                }
                 pasangDropzone('kb-peserta-drop', 'kb-peserta', 'kb-peserta-nama');
                 </script>
             </div>
@@ -243,6 +256,7 @@ $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
                 <i class="ph ph-upload-simple"></i> Unggah
             </button>
         </form>
+        <?php endif; ?>
 
         <?php if ($peserta): ?>
         <div class="mt-5 overflow-x-auto rounded-xl border border-gray-200 dark:border-white/10">
@@ -276,9 +290,43 @@ $berhenti = in_array($row->status, ['Ditolak', 'Dibatalkan'], TRUE);
     $periode_lewat = ! empty($row->periode_selesai) && strtotime($row->periode_selesai) < strtotime('today');
     ?>
     <div class="<?= $kotak ?> mb-4">
+        <div class="<?= $label ?>">Link Dokumentasi KKN</div>
+        <?php if ( ! empty($row->link_dokumentasi)): ?>
+            <p class="mt-2 text-sm break-all">
+                <i class="ph ph-link text-brand-primary" aria-hidden="true"></i>
+                <a href="<?= html_escape($row->link_dokumentasi) ?>" target="_blank" rel="noopener noreferrer" class="font-semibold text-brand-primary hover:underline"><?= html_escape($row->link_dokumentasi) ?></a>
+            </p>
+        <?php endif; ?>
+        <?php if ($terbuka): ?>
+        <form method="POST" action="<?= base_url('KemitraanPortal/kkn_simpan_dokumentasi/' . (int) $row->id) ?>" class="mt-3 flex flex-wrap items-end gap-3">
+            <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+            <div class="flex-1 min-w-[220px]">
+                <label for="kb-dokumentasi" class="<?= $label ?>">URL folder dokumentasi (Google Drive, OneDrive, dsb.)</label>
+                <input id="kb-dokumentasi" name="link_dokumentasi" type="url" maxlength="500" placeholder="https://drive.google.com/..."
+                       value="<?= html_escape($row->link_dokumentasi ?? '') ?>"
+                       class="mt-1 w-full rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/20 px-3 py-2 text-sm text-gray-900 dark:text-white">
+                <p class="<?= $petunjuk ?>">Pastikan folder dapat dibuka oleh petugas Disperakim. Kosongkan lalu simpan untuk menghapus link.</p>
+            </div>
+            <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-xs font-bold text-white shrink-0">
+                <i class="ph ph-floppy-disk"></i> Simpan Link
+            </button>
+        </form>
+        <?php endif; ?>
+    </div>
+
+    <div class="<?= $kotak ?> mb-4">
         <div class="<?= $label ?>">Laporan Akhir KKN</div>
 
-        <?php if ( ! $periode_lewat): ?>
+        <?php if ( ! $terbuka): ?>
+            <p class="mt-2 text-sm text-gray-500 dark:text-brand-muted">
+                <?= ! empty($row->file_laporan_akhir) ? 'Laporan akhir sudah terunggah.' : 'Tidak ada laporan akhir.' ?>
+            </p>
+        <?php elseif ($row->status !== 'Diterima'): ?>
+            <p class="mt-2 text-sm text-gray-500 dark:text-brand-muted">
+                <i class="ph ph-lock-simple" aria-hidden="true"></i>
+                Bisa diunggah setelah KKN diterima dan periodenya berakhir.
+            </p>
+        <?php elseif ( ! $periode_lewat): ?>
             <p class="mt-2 text-sm text-gray-500 dark:text-brand-muted">
                 <i class="ph ph-lock-simple" aria-hidden="true"></i>
                 Bisa diunggah setelah periode KKN berakhir<?= $row->periode_selesai ? ' (' . tgl_id($row->periode_selesai) . ')' : '' ?>.

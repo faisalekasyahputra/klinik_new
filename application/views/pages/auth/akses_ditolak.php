@@ -21,7 +21,10 @@ $label_peran = [
     'admin_bidang'   => 'Admin Bidang',
     'admin'          => 'Superadmin',
 ];
-$peran_saya = $label_peran[$peran] ?? 'Belum ditentukan';
+// Peran di luar peta di atas (mis. 'universitas') memakai labelnya dari config/roles.php,
+// bukan jatuh ke "Belum ditentukan" (temuan UAT universitas U8).
+$this->config->load('roles', FALSE, TRUE);
+$peran_saya = $label_peran[$peran] ?? ($this->config->item('available_roles')[$peran] ?? 'Belum ditentukan');
 ?>
 <section class="mx-auto flex min-h-[70vh] max-w-2xl items-center px-4 py-10">
   <div class="w-full rounded-2xl border p-6 sm:p-8"

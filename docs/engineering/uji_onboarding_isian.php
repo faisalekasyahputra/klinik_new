@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji pengembalian isian onboarding saat validasi gagal.
  *
@@ -73,7 +74,7 @@ $jar = tempnam(sys_get_temp_dir(), 'ujiob');
 
 function bersihkan() {
     global $db, $jar;
-    $db->query("DELETE FROM usr_users WHERE email = '" . $db->real_escape_string(EMAIL) . "'");
+    $db->query("DELETE FROM usr_akun WHERE email = '" . $db->real_escape_string(EMAIL) . "'");
     if ($jar && file_exists($jar)) { @unlink($jar); }
 }
 
@@ -112,15 +113,15 @@ echo "\n== Uji pengembalian isian onboarding ==\n\n";
 
 // ---------------------------------------------------------------- Persiapan
 
-// Akun sekali pakai dengan profile_completed=0: satu-satunya keadaan yang
+// Akun sekali pakai dengan profil_lengkap=0: satu-satunya keadaan yang
 // membuat /Auth/onboarding merender formulir, bukan memantulkan ke dasbor.
-$stmt = $db->prepare("INSERT INTO usr_users (name, email, password, role, profile_completed, status, email_verified_at, created_at)
+$stmt = $db->prepare("INSERT INTO usr_akun (nama, email, kata_sandi, peran, profil_lengkap, status, email_verified_at, created_at)
                       VALUES (?, ?, ?, NULL, 0, 'active', NOW(), NOW())");
 $hash = password_hash(SANDI, PASSWORD_BCRYPT);
 $nama_awal = 'Uji Onboarding';
 $email = EMAIL;
 $stmt->bind_param('sss', $nama_awal, $email, $hash);
-wajib($stmt->execute(), 'Akun uji (profile_completed=0) dibuat');
+wajib($stmt->execute(), 'Akun uji (profil_lengkap=0) dibuat');
 $stmt->close();
 
 // JANGAN menamai token ini `$t` di scope global: pencacah pemeriksaan hidup di
@@ -161,10 +162,29 @@ $html = $r['body'];
 
 cek(strpos($html, 'NPWP harus terdiri dari 15 atau 16 digit angka') !== FALSE, 'Pesan error NPWP tersampaikan');
 
+// NPWP KOSONG (atau huruf semua, yang dibuang jadi kosong) mendapat pesan yang
+// sama, bukan "Semua field wajib harus diisi." yang tidak menyebut NPWP.
+$r_kosong = http('Auth/save_onboarding', [
+    'csrf_kpkp_token'  => $csrf,
+    'role'             => 'pengembang',
+    'username'         => strtolower(CAP),
+    'nama_lengkap'     => 'Nama ' . CAP,
+    'npwp'             => '',
+    'alamat_domisili'  => 'Alamat ' . CAP,
+    'phone'            => HP,
+    'nama_perusahaan'  => 'PT ' . CAP,
+    'alamat_kantor'    => 'Kantor ' . CAP,
+    'telp_kantor'      => TELP_KANTOR,
+    'password'         => SANDI_UMPAN,
+    'password_confirm' => SANDI_UMPAN,
+]);
+cek(strpos($r_kosong['body'], 'NPWP harus terdiri dari 15 atau 16 digit angka') !== FALSE,
+    'NPWP kosong mendapat pesan NPWP, bukan pesan generik');
+
 // Profilnya TIDAK boleh tersimpan - kalau tersimpan, halaman ini seharusnya
 // tidak lagi bisa dirender, dan uji di atas berbohong.
-$row = $db->query("SELECT profile_completed, role FROM usr_users WHERE email = '" . $db->real_escape_string(EMAIL) . "'")->fetch_assoc();
-cek((int) $row['profile_completed'] === 0 && $row['role'] === NULL, 'Profil tidak tersimpan saat validasi gagal');
+$row = $db->query("SELECT profil_lengkap, peran FROM usr_akun WHERE email = '" . $db->real_escape_string(EMAIL) . "'")->fetch_assoc();
+cek((int) $row['profil_lengkap'] === 0 && $row['peran'] === NULL, 'Profil tidak tersimpan saat validasi gagal');
 
 // ---------------------------------------------------------------- Isian pulang
 
@@ -185,14 +205,17 @@ cek(strpos($html, 'Alamat ' . CAP . '</textarea>') !== FALSE, 'Isian `alamat_dom
 // Peran DAN langkah ikut pulang lewat inisialisasi Alpine. Tanpa peran, blok
 // isian yang benar tertutup lagi; tanpa langkah 2, user dipulangkan ke
 // pemilihan peran untuk keputusan yang sudah ia buat.
-cek(strpos($html, "onboardingForm('pengembang', 2)") !== FALSE, 'Peran dan langkah 2 dipulihkan');
+// Sejak 21477a4 (21 Sep 2026) argumen peran ditulis lewat json_encode + htmlspecialchars, jadi di
+// sumber HTML tampak sebagai &quot;pengembang&quot;; peramban mengurainya kembali sebelum Alpine membacanya.
+cek(strpos($html, "onboardingForm('pengembang', 2)") !== FALSE
+    || strpos($html, 'onboardingForm(&quot;pengembang&quot;, 2)') !== FALSE, 'Peran dan langkah 2 dipulihkan');
 
 // ---------------------------------------------------------------- Vendor
 
 // Kartunya dicabut dari formulir, tapi tidak merender sesuatu bukan penjagaan -
 // siapa pun bisa menembakkan role sendiri. Yang menentukan adalah $valid_roles
 // di save_onboarding(). Cabang vendor menulis ke kolom yang tidak ada di
-// usr_users, jadi menerimanya berarti error DB, bukan profil.
+// usr_akun, jadi menerimanya berarti error DB, bukan profil.
 cek(strpos($html, 'value="vendor"') === FALSE, 'Kartu peran vendor tidak lagi ditawarkan');
 
 $r = http('Auth/save_onboarding', [
@@ -206,8 +229,8 @@ $r = http('Auth/save_onboarding', [
 ]);
 cek(strpos($r['body'], 'Pilih peran yang valid') !== FALSE, 'Server menolak role vendor yang ditembakkan langsung');
 
-$row = $db->query("SELECT profile_completed, role FROM usr_users WHERE email = '" . $db->real_escape_string(EMAIL) . "'")->fetch_assoc();
-cek((int) $row['profile_completed'] === 0 && $row['role'] === NULL, 'Tembakan vendor tidak menyisakan profil');
+$row = $db->query("SELECT profil_lengkap, peran FROM usr_akun WHERE email = '" . $db->real_escape_string(EMAIL) . "'")->fetch_assoc();
+cek((int) $row['profil_lengkap'] === 0 && $row['peran'] === NULL, 'Tembakan vendor tidak menyisakan profil');
 
 // ------------------------------------------------------- Simpan NPWP pengembang
 
@@ -225,13 +248,13 @@ $r = http('Auth/save_onboarding', [
 ]);
 cek($r['code'] === 200, 'Onboarding pengembang dengan NPWP valid selesai');
 
-$row = $db->query("SELECT u.profile_completed, u.role, u.nik, u.nik_lookup_hash,
+$row = $db->query("SELECT u.profil_lengkap, u.peran, u.nik, u.nik_lookup_hash,
                           r.npwp_ciphertext, r.npwp_lookup_hash
-                     FROM usr_users u
-                     LEFT JOIN srp2_registrations r ON r.user_id = u.id
+                     FROM usr_akun u
+                     LEFT JOIN srp2_pengajuan r ON r.user_id = u.id
                     WHERE u.email = '" . $db->real_escape_string(EMAIL) . "'
                     ORDER BY r.id DESC LIMIT 1")->fetch_assoc();
-cek((int) $row['profile_completed'] === 1 && $row['role'] === 'pengembang', 'Profil pengembang tersimpan');
+cek((int) $row['profil_lengkap'] === 1 && $row['peran'] === 'pengembang', 'Profil pengembang tersimpan');
 cek(empty($row['nik']) && empty($row['nik_lookup_hash']), 'NPWP tidak disimpan ke kolom NIK akun');
 cek( ! empty($row['npwp_ciphertext']) && strpos($row['npwp_ciphertext'], NPWP_UJI) === FALSE,
     'NPWP tersimpan terenkripsi pada pengajuan SRP2');

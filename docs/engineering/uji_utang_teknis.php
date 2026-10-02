@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Check pelunasan utang teknis - tahap U1 (butir C1, C1b, A5).
  *
@@ -162,14 +163,14 @@ function bersihkan() {
     // sama, sehingga laporan dari run sebelumnya menghabiskan jatah run
     // berikutnya dan kegagalannya terlihat persis seperti bug kode.
     // Jebakan yang sama sudah tercatat di AGENTS.md §0e untuk harness D6.
-    $db->query("DELETE FROM sys_rate_limits WHERE window_started_at >= '"
+    $db->query("DELETE FROM sys_batas_laju WHERE jendela_mulai_at >= '"
         . $db->real_escape_string($mulai) . "'");
     $db->query("DELETE FROM forum_laporan_komentar WHERE user_id IN
-        (SELECT id FROM usr_users WHERE email LIKE 'uji_utang_%')");
+        (SELECT id FROM usr_akun WHERE email LIKE 'uji_utang_%')");
     $db->query("DELETE FROM forum_komentar WHERE isi_komentar = 'Komentar uji B3'");
     $db->query("DELETE FROM forum_diskusi WHERE judul_topik LIKE 'Uji utang teknis%'");
-    $db->query("DELETE FROM srp2_certified_developers WHERE nama_perusahaan LIKE 'Uji Utang%'");
-    $db->query("DELETE FROM usr_users WHERE email LIKE 'uji_utang_%'");
+    $db->query("DELETE FROM srp2_direktori_pengembang WHERE nama_perusahaan LIKE 'Uji Utang%'");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE 'uji_utang_%'");
     foreach ($jars as $f) {
         @unlink($f);
     }
@@ -185,7 +186,7 @@ $admin = "uji_utang_admin_{$stamp}@example.test";
 $sandi = 'UjiUtang123!';
 foreach ([[$warga, 'warga'], [$admin, 'admin']] as [$em, $role]) {
     $db->query(sprintf(
-        "INSERT INTO usr_users (email, password, role, name, username, status)
+        "INSERT INTO usr_akun (email, kata_sandi, peran, nama, nama_pengguna, status)
          VALUES ('%s','%s','%s','Uji Utang','%s','active')",
         $db->real_escape_string($em),
         $db->real_escape_string(password_hash($sandi, PASSWORD_BCRYPT)),
@@ -235,16 +236,16 @@ try {
         'C1b - nol bocoran galat DB ke layar');
 
     // ------------------------------------------- A5 (tetap db_debug MATI)
-    $jumlahUser = skalar_int("SELECT COUNT(*) c FROM usr_users");
+    $jumlahUser = skalar_int("SELECT COUNT(*) c FROM usr_akun");
     $res = http('admin', 'Admin_Users/create_staff', [
         'csrf_kpkp_token' => csrf('admin', 'Admin_Users'),
         'email' => $warga, 'name' => 'Duplikat', 'role' => 'warga', 'password' => $sandi,
     ]);
-    cek(skalar_int("SELECT COUNT(*) c FROM usr_users") === $jumlahUser,
+    cek(skalar_int("SELECT COUNT(*) c FROM usr_akun") === $jumlahUser,
         'A5 - email duplikat: nol akun bertambah');
     // KOREKSI terhadap premis roadmap: butir A5 menyebut Admin_Users::create_staff()
     // sebagai titik paling berbahaya karena "email duplikat = INSERT ditolak senyap".
-    // Ternyata tidak - form_validation sudah memasang `is_unique[usr_users.email]`,
+    // Ternyata tidak - form_validation sudah memasang `is_unique[usr_akun.email]`,
     // jadi duplikat tertahan SEBELUM mencapai INSERT dan pesannya datang dari
     // validasi. Pemeriksaan hasil INSERT yang ditambahkan tetap benar sebagai
     // pertahanan lapis kedua (constraint lain, DB tumbang), tapi skenario yang
@@ -258,7 +259,7 @@ try {
         'A5 - nol pesan sukses palsu di layar');
 
     $res = http('admin', 'Admin_Srp2/delete/999999', [
-        'csrf_kpkp_token' => csrf('admin', 'Admin_Srp2')]);
+        'csrf_kpkp_token' => csrf('admin', 'Admin_Srp2/tambah')]); // daftar kini ringkas tanpa formulir (2 Okt 2026); token dari halaman tambah
     cek(stripos($res['body'], 'tidak ditemukan') !== FALSE,
         'A5 - hapus pengembang yang tidak ada dilaporkan gagal');
     cek(stripos($res['body'], 'dihapus dari daftar') === FALSE,
@@ -400,13 +401,13 @@ try {
     }
 
     // B3 - guard login, dedup per pelapor, dan visibilitas TIDAK berubah.
-    $kid = skalar_int("SELECT id_komentar FROM forum_komentar ORDER BY id_komentar LIMIT 1");
+    $kid = skalar_int("SELECT id FROM forum_komentar ORDER BY id LIMIT 1");
     if ($kid === 0) {
         // Butuh satu komentar nyata sebagai objek laporan; dibuat lewat DB
         // karena yang diuji di sini endpoint laporannya, bukan alur balas.
-        $did = skalar_int("SELECT id_diskusi FROM forum_diskusi ORDER BY id_diskusi LIMIT 1");
-        $db->query("INSERT INTO forum_komentar (id_diskusi, nama_komentator, isi_komentar,
-            role, created_at) VALUES ({$did}, 'Uji Utang', 'Komentar uji B3', 'Warga', NOW())");
+        $did = skalar_int("SELECT id FROM forum_diskusi ORDER BY id LIMIT 1");
+        $db->query("INSERT INTO forum_komentar (diskusi_id, nama_komentator, isi_komentar,
+            peran, created_at) VALUES ({$did}, 'Uji Utang', 'Komentar uji B3', 'Warga', NOW())");
         $kid = (int) $db->insert_id;
     }
 
@@ -425,9 +426,9 @@ try {
     $anonim = http('anon', 'Umum/report_komentar', ['csrf_kpkp_token' => $tokenAnon, 'id' => $kid]);
     cek(strpos($anonim['body'], 'Login required') !== FALSE,
         'B3 - laporan anonim ditolak guard login, bukan oleh CSRF');
-    cek(skalar_int("SELECT report_count FROM forum_komentar WHERE id_komentar={$kid}") === 0
-        && skalar_int("SELECT is_deleted FROM forum_komentar WHERE id_komentar={$kid}") === 0,
-        'B3 - laporan anonim tidak mengubah report_count maupun is_deleted');
+    cek(skalar_int("SELECT jumlah_laporan FROM forum_komentar WHERE id={$kid}") === 0
+        && skalar_int("SELECT dihapus FROM forum_komentar WHERE id={$kid}") === 0,
+        'B3 - laporan anonim tidak mengubah jumlah_laporan maupun is_deleted');
 
     $r1 = http('warga', 'Umum/report_komentar',
         ['csrf_kpkp_token' => csrf('warga', 'Umum/forum'), 'id' => $kid]);
@@ -435,11 +436,11 @@ try {
     $r2 = http('warga', 'Umum/report_komentar',
         ['csrf_kpkp_token' => csrf('warga', 'Umum/forum'), 'id' => $kid]);
     cek(strpos($r2['body'], '"baru":false') !== FALSE, 'B3 - laporan kedua dikenali sebagai ulangan');
-    cek(skalar_int("SELECT report_count FROM forum_komentar WHERE id_komentar={$kid}") === 1,
+    cek(skalar_int("SELECT jumlah_laporan FROM forum_komentar WHERE id={$kid}") === 1,
         'B3 - melapor dua kali dari satu akun tetap dihitung SATU');
-    cek(skalar_int("SELECT COUNT(*) c FROM forum_laporan_komentar WHERE id_komentar={$kid}") === 1,
+    cek(skalar_int("SELECT COUNT(*) c FROM forum_laporan_komentar WHERE komentar_id={$kid}") === 1,
         'B3 - ledger memuat tepat satu baris pelapor');
-    cek(skalar_int("SELECT is_deleted FROM forum_komentar WHERE id_komentar={$kid}") === 0,
+    cek(skalar_int("SELECT dihapus FROM forum_komentar WHERE id={$kid}") === 0,
         'B3 - visibilitas komentar TIDAK berubah (U2 ledger-only)');
     cek(skalar_int("SELECT COUNT(*) c FROM information_schema.STATISTICS
         WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='forum_laporan_komentar'
@@ -497,7 +498,7 @@ try {
 
 $pulih = file_get_contents($dbConfigPath) === $dbConfigAsli;
 cek($pulih, 'database.php pulih byte-identik');
-cek(skalar_int("SELECT COUNT(*) c FROM usr_users WHERE email LIKE 'uji_utang_%'") === 0,
+cek(skalar_int("SELECT COUNT(*) c FROM usr_akun WHERE email LIKE 'uji_utang_%'") === 0,
     'Data uji dibersihkan');
 
 echo "RINGKASAN: {$total} pemeriksaan, {$gagal} gagal\n";

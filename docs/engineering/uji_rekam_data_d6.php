@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji D6 - Rekam Data: peninjauan provinsi oleh Admin Bidang.
  *
@@ -94,7 +95,7 @@ function q($sql, $params = []) {
  * uji ini. Baris ini ikut terhapus bersama laporannya lewat FK.
  */
 function lampirkan_bnba($laporan_id) {
-    q('INSERT INTO rd_perumahan_bnba (laporan_id, nama_asli, private_path, mime_type, ukuran)
+    q('INSERT INTO rd_perumahan_bnba (laporan_id, nama_asli, path_privat, mime_type, ukuran)
        VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE nama_asli = VALUES(nama_asli)',
        [(int) $laporan_id, 'bnba-uji.pdf', 'uji/bnba-uji.pdf', 'application/pdf', 1024]);
 }
@@ -164,10 +165,10 @@ function bersihkan() {
     // TERPISAH, dan burst 34 permintaan di akhir run memblokir run berikutnya
     // dari IP yang sama selama satu window penuh. Tanpa ini harness tidak bisa
     // dijalankan dua kali beruntun, dan kegagalannya terlihat seperti bug kode.
-    $db->query("DELETE FROM sys_rate_limits WHERE window_started_at >= '"
+    $db->query("DELETE FROM sys_batas_laju WHERE jendela_mulai_at >= '"
         . $db->real_escape_string($mulai) . "'");
 
-    $db->query("DELETE FROM usr_users WHERE email LIKE 'uji_rd_d6_%'");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE 'uji_rd_d6_%'");
     foreach ($jars as $f) {
         @unlink($f);
     }
@@ -177,7 +178,7 @@ function bersihkan() {
 
 echo "Uji D6 - Peninjauan provinsi\n";
 
-$admin = q('SELECT id, kabupaten_id FROM usr_users WHERE email = ? AND role = ?',
+$admin = q('SELECT id, kabupaten_id FROM usr_akun WHERE email = ? AND peran = ?',
     [ADMIN_EMAIL, 'admin_kabkota']);
 wajib($admin && ! empty($admin['kabupaten_id']), 'Akun admin_kabkota tersedia dan ter-scope');
 $KAB = (int) $admin['kabupaten_id'];
@@ -187,7 +188,7 @@ $bidang = [];
 foreach (['perumahan', 'kawasan'] as $kode) {
     $email = "uji_rd_d6_{$kode}_{$stamp}@example.test";
     $db->query(sprintf(
-        "INSERT INTO usr_users (email, password, role, bidang_kode, name, username)
+        "INSERT INTO usr_akun (email, kata_sandi, peran, bidang_kode, nama, nama_pengguna)
          VALUES ('%s', '%s', 'admin_bidang', '%s', 'Uji D6 %s', 'uji_rd_d6_%s_%d')",
         $db->real_escape_string($email),
         $db->real_escape_string(password_hash('UjiRdD6!', PASSWORD_BCRYPT)),
@@ -370,6 +371,14 @@ try {
     http('bid_p', 'Rekam_Tinjauan/terima', ['csrf_kpkp_token' => $token, 'laporan_id' => $LAP]);
     cek(skalar_str('SELECT reviewed_at FROM rd_laporan WHERE id = ?', [$LAP]) === $waktu_terima,
         'Terima dua kali ditolak, stempel tidak berubah');
+
+    // UAT admin bidang AB4: "diterima, terkunci" (ROADMAP_REKAM_DATA.md). Blok
+    // keputusan sudah disembunyikan view, jadi yang diuji POST rakitan.
+    http('bid_p', 'Rekam_Tinjauan/minta_perbaikan', ['csrf_kpkp_token' => $token,
+        'laporan_id' => $LAP, 'catatan_admin' => 'Batalkan penerimaan lewat POST rakitan']);
+    cek(skalar_str('SELECT status FROM rd_laporan WHERE id = ?', [$LAP]) === 'terkirim'
+        && skalar_str('SELECT reviewed_at FROM rd_laporan WHERE id = ?', [$LAP]) === $waktu_terima,
+        'Minta perbaikan sesudah diterima ditolak - penerimaan final');
 
     // Kabupaten tetap terkunci sesudah diterima - diperiksa di WIZARD, bukan di
     // layar Capaian. Capaian baca-saja untuk semua status, jadi ia tidak pernah

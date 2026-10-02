@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Penjaga pencarian rumah SIKUMBANG - butir A3 revisi dinas.
  *
@@ -159,8 +160,26 @@ seed('9901', 2, bongkah(BONGKAH, 20, 2000));
 seed('9901', 3, []);
 
 $h1 = minta('9901', 'subsidi', 1);
-cek(kartu($h1) === 21, 'Seluruh 21 subsidi dikirim sekaligus (dapat: ' . kartu($h1) . ')');
-cek(halaman($h1) === 2, '21 kartu dipotong jadi 2 halaman @20 (dapat: ' . halaman($h1) . ')');
+/* KONTRAK SEJAK 14 Agt 2026 (lihat komentar "Balik ke SATU HALAMAN per permintaan"
+   di Index.php): cari_wil mengembalikan SATU halaman berukuran `limit` (default
+   minta() = 9), dan marker `<!-- jumlah:N -->` menyebut isinya. Bongkahan dari
+   SIKUMBANG tetap 100 dan dikumpulkan sampai cukup untuk halaman yang diminta.
+   Asersi lama ("semua dikirim sekaligus, dipotong per 20 di server") adalah
+   kontrak 10-13 Agt yang sudah dicabut, dan berkas ini baru menyusul 22 Sep 2026. */
+function jumlah($html) {
+    return preg_match('/<!-- jumlah:(\d+) -->/', $html, $m) ? (int) $m[1] : -1;
+}
+cek(kartu($h1) === 9 && jumlah($h1) === 9,
+    'Halaman 1 berisi 9 subsidi: 1 dari bongkahan pertama + 8 dari bongkahan kedua (dapat: ' . kartu($h1) . ')');
+$h2 = minta('9901', 'subsidi', 2);
+$h3 = minta('9901', 'subsidi', 3);
+$h4 = minta('9901', 'subsidi', 4);
+cek(kartu($h2) === 9, 'Halaman 2 berisi 9 (dapat: ' . kartu($h2) . ')');
+cek(kartu($h3) === 3, 'Halaman 3 berisi sisa 3 dari total 21 (dapat: ' . kartu($h3) . ')');
+cek(kartu($h4) === 0 && jumlah($h4) === 0, 'Halaman 4 kosong dan marker jumlah:0 (dapat: ' . kartu($h4) . ')');
+preg_match_all('#detail_perum/(\d+)#', $h1 . $h2 . $h3, $m_semua_sub);
+cek(count($m_semua_sub[1]) === 21 && count(array_unique($m_semua_sub[1])) === 21,
+    'Gabungan halaman 1-3 = 21 subsidi unik, tidak ada yang hilang atau dobel');
 
 // ------------------------------------------------------------------ Skenario 2
 echo "
@@ -171,22 +190,25 @@ seed('9902', 2, bongkah(BONGKAH, 15, 4000));
 seed('9902', 3, []);
 
 $n1 = minta('9902', 'subsidi', 1);
-cek(kartu($n1) === 15, 'Ke-15 subsidi dari bongkahan KEDUA tetap terkumpul (dapat: ' . kartu($n1) . ')');
-cek(halaman($n1) === 1, '15 kartu muat dalam 1 halaman (dapat: ' . halaman($n1) . ')');
+$n2 = minta('9902', 'subsidi', 2);
+cek(kartu($n1) === 9, 'Halaman 1 tetap penuh (9) walau bongkahan pertama nol cocok (dapat: ' . kartu($n1) . ')');
+cek(kartu($n2) === 6, 'Halaman 2 berisi sisa 6 dari 15 subsidi bongkahan kedua (dapat: ' . kartu($n2) . ')');
 
 // ------------------------------------------------------------------ Skenario 3
 echo "
 == 3. Saringan memilah, dan 'semua' tidak memilah ==
 ";
-$k1 = minta('9901', 'komersil', 1);
-cek(kartu($k1) === 179, 'Non-subsidi: 179 dari 200 (dapat: ' . kartu($k1) . ')');
+$k1 = minta('9901', 'komersil', 1, 'cari_wil', 50);
+cek(kartu($k1) === 50, 'Non-subsidi: halaman 1 @50 penuh dari 179 (dapat: ' . kartu($k1) . ')');
+$k4 = minta('9901', 'komersil', 4, 'cari_wil', 50);
+cek(kartu($k4) === 29, 'Non-subsidi: halaman 4 @50 berisi sisa 29, jadi totalnya 179 (dapat: ' . kartu($k4) . ')');
 
-$s1 = minta('9901', 'semua', 1);
-cek(kartu($s1) === 200, '"semua" mengembalikan 200, nol disaring (dapat: ' . kartu($s1) . ')');
-cek(kartu($h1) + kartu($k1) === kartu($s1),
-    'subsidi + non-subsidi = semua, jadi tidak ada baris yang hilang atau dobel');
+$s1 = minta('9901', 'semua', 1, 'cari_wil', 50);
+$s4 = minta('9901', 'semua', 4, 'cari_wil', 50);
+cek(kartu($s1) === 50 && kartu($s4) === 50,
+    '"semua" tidak memilah: halaman 1 dan 4 @50 sama-sama penuh dari 200 (dapat: ' . kartu($s1) . ', ' . kartu($s4) . ')');
 
-preg_match_all('#detail_perum/(\d+)#', $h1, $m_sub);
+preg_match_all('#detail_perum/(\d+)#', $h1 . $h2 . $h3, $m_sub);
 preg_match_all('#detail_perum/(\d+)#', $k1, $m_kom);
 cek($m_sub[1] && $m_kom[1] && ! array_intersect($m_sub[1], $m_kom[1]),
     'Daftar subsidi dan non-subsidi tidak beririsan sama sekali');
@@ -211,7 +233,7 @@ seed('9903', 2, []);
 $x = minta('9903', 'subsidi', 1);
 cek(strpos($x, '<b>BOCOR</b>') === FALSE, 'Tag dari nama perumahan TIDAK hidup sebagai HTML');
 cek(strpos($x, 'BOCOR') !== FALSE, 'Teksnya tetap tampil, bukan lenyap diam-diam');
-cek(halaman($x) === 1, 'Pembungkus halaman tetap utuh, tidak tertutup lebih awal');
+cek(jumlah($x) === 3 && kartu($x) === 3, 'Ketiga kartu tetap terhitung utuh, tidak ada yang lepas karena tag liar');
 
 // Skenario 5 - gagal jaringan tidak boleh menyamar jadi "data habis".
 //
@@ -298,6 +320,84 @@ if (preg_match('/function\s+cari_wil_ketik\s*\([^)]*\)\s*\{(.*?)\n\}/s', $view, 
    mencari, bukan rentetan ketukan. Meredamnya cuma terasa lambat tanpa guna. */
 cek(substr_count($view, 'onchange="cari_wil()"') === 3,
     'Tiga dropdown (wilayah, searchBy, urutan) tetap mencari seketika');
+
+/* ============================================================================
+   8. Detail Perumahan (UAT Nggoleki Omah #2 dan #3, 26 Sep 2026)
+   ============================================================================ */
+echo "\n== 8. Detail perumahan: hulu gagal dan tombol WhatsApp ==\n";
+
+function http_kode($path) {
+    $ch = curl_init(BASE_URL . '/' . ltrim($path, '/'));
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => TRUE, CURLOPT_TIMEOUT => 40]);
+    $b = (string) curl_exec($ch);
+    $k = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    return [$k, $b];
+}
+
+/* Hulu gagal tanpa cache = 503 "coba lagi", bukan 404. Kegagalan ditiru dengan
+   bendera per lokasi yang masih menyala, jadi tidak ada tembakan ke SIKUMBANG. */
+$id_mati = 'UJI9901' . getmypid() . 'T001';
+$GLOBALS['bersih'][] = $bendera_mati = CACHE_DIR . 'sikumbang_detail_' . $id_mati . '_gagal.flag';
+touch($bendera_mati);
+[$k, $b] = http_kode('detail_perum/' . $id_mati);
+cek($k === 503 && strpos($b, 'data-detail-tidak-tersedia') !== FALSE && strpos($b, 'Coba lagi') !== FALSE,
+    "Hulu gagal tanpa cache: 503 dengan ajakan coba lagi, bukan 404 (dapat $k)");
+
+/* Cache berisi amplop galat SIKUMBANG (tanpa blok detail): 404 bersih, bukan
+   PHP Error dengan HTTP 200 (UAT warga#2.0). */
+$id_galat = 'UJI9903' . getmypid() . 'T001';
+$GLOBALS['bersih'][] = $f_galat = CACHE_DIR . 'sikumbang_detail_' . $id_galat . '.json';
+file_put_contents($f_galat, '{"error":true,"code":"ERR_UNEXPECTED","message":"Terjadi Kesalahan"}');
+[$k, $b] = http_kode('detail_perum/' . $id_galat);
+cek($k === 404 && strpos($b, 'A PHP Error') === FALSE,
+    "Detail tanpa blok detail: 404 tanpa PHP Error (dapat $k)");
+
+$src_index = file_get_contents(APP_ROOT . '/application/controllers/Index.php');
+cek(strpos($src_index, "'sikumbang_detail_' . \$idLokasi)") !== FALSE,
+    'Detail memakai bendera penahan per lokasi, satu id yang menggantung tidak membungkam kartu lain');
+
+/* Nomor WhatsApp: hanya nomor HP pertama; telepon kantor/tanpa kode area tidak jadi tautan. */
+define('BASEPATH', TRUE);
+require_once APP_ROOT . '/application/helpers/ternak_helper.php';
+foreach ([
+    '0271-593507 081393090297' => '6281393090297',
+    '+62 812-2728-8838'        => '6281227288838',
+    '0813-2829-760'            => '628132829760',
+    '0821 - 3553 - 9740'       => '6282135539740', // pemisah spasi-strip-spasi (UAT warga #3)
+    '0852123456789'            => '62852123456789',
+    '08521234567890'           => '',
+    '0248312151'               => '',
+    '0370-7509777'             => '',
+    '3563054'                  => '',
+    ''                         => '',
+] as $masuk => $harap) {
+    cek(nomor_whatsapp($masuk) === $harap, "nomor_whatsapp('$masuk') = '$harap'");
+}
+
+$contoh = glob(CACHE_DIR . 'sikumbang_detail_*.json');
+/* Berkas pertama bisa saja amplop galat lama (sebelum sikumbang_ambil menolaknya),
+   jadi cari yang benar-benar punya kantorPemasaran; dulu cek ini diam-diam LEWAT. */
+$templat = NULL;
+foreach ($contoh as $f) {
+    $templat = json_decode(file_get_contents($f), TRUE);
+    if (isset($templat['detail']['kantorPemasaran'][0])) { break; }
+}
+if ( ! isset($templat['detail']['kantorPemasaran'][0])) {
+    echo "  LEWAT Tidak ada cache detail SIKUMBANG sebagai templat; cek halaman WhatsApp dilewati.\n";
+} else {
+    foreach (['0271-593507 081393090297' => 'https://wa.me/6281393090297', '0248312151' => NULL] as $telp => $href) {
+        $id = 'UJI9902' . getmypid() . 'T00' . ($href ? 1 : 2);
+        $templat['detail']['kantorPemasaran'][0]['noTelp'] = $telp;
+        $GLOBALS['bersih'][] = $f = CACHE_DIR . 'sikumbang_detail_' . $id . '.json';
+        file_put_contents($f, json_encode($templat));
+        [$k, $b] = http_kode('detail_perum/' . $id);
+        cek($k === 200 && ($href
+                ? strpos($b, 'href="' . $href . '"') !== FALSE
+                : strpos($b, 'WhatsApp Tidak Tersedia') !== FALSE && strpos($b, 'wa.me/') === FALSE),
+            $href ? "Detail dengan dua nomor: tombol ke $href" : 'Detail dengan telepon kantor: tombol WhatsApp nonaktif');
+    }
+}
 
 echo "\n=== Ringkasan ===\n";
 printf("  %d pemeriksaan, %d merah\n", $GLOBALS['uji_total'], $GLOBALS['uji_gagal']);

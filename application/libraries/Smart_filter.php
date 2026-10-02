@@ -101,16 +101,16 @@ class Smart_filter {
     }
 
     /**
-     * Definisi master program sesuai UN HABITAT (mapping `id` ke INT di sf_programs).
+     * Definisi master program sesuai UN HABITAT (mapping `id` ke INT di sf_program).
      *
      * DIANGKAT JADI PUBLIC 4 Agt 2026, tanpa mengubah isinya sama sekali: layar
      * Katalog Program (`Admin_Katalog_Program`) perlu membandingkan judul di
-     * sini dengan `sf_programs.nama_program`, dan keduanya MEMANG SUDAH
+     * sini dengan `sf_program.nama_program`, dan keduanya MEMANG SUDAH
      * BERSELISIH untuk empat dari enam program. Selisih itu tidak bisa
      * ditunjukkan kalau daftarnya terkubur sebagai variabel lokal.
      *
-     * ⚠️ Daftar ini TETAP jadi acuan pencocokan. `sf_programs` mengatur
-     * `is_active` (yang menggerbangi pengajuan) dan `nama_program` (yang tampil
+     * ⚠️ Daftar ini TETAP jadi acuan pencocokan. `sf_program` mengatur
+     * `aktif` (yang menggerbangi pengajuan) dan `nama_program` (yang tampil
      * di antrean & /akun); yang di sini mengatur apa yang tampil di kartu hasil
      * diagnosa. Menambah program ke tabel TIDAK membuatnya bisa dicocokkan -
      * aturannya ada di `get_eligible_programs()`, dan itu kode.

@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji D2 - Rekam Data, Input Capaian Perumahan lewat HTTP sungguhan.
  *
@@ -149,7 +150,7 @@ function bersihkan() {
         $db->query(sprintf("DELETE FROM rd_laporan WHERE kabupaten_id = %d AND created_at >= '%s'",
             (int) $kab_lain, $db->real_escape_string($mulai)));
     }
-    $db->query("DELETE FROM usr_users WHERE email LIKE 'uji_rd_d2_%'");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE 'uji_rd_d2_%'");
     foreach ($jars as $file) {
         @unlink($file);
     }
@@ -159,7 +160,7 @@ function bersihkan() {
 
 echo "Uji D2 - Input Capaian Perumahan\n";
 
-$admin = q('SELECT id, kabupaten_id FROM usr_users WHERE email = ? AND role = ?',
+$admin = q('SELECT id, kabupaten_id FROM usr_akun WHERE email = ? AND peran = ?',
     [ADMIN_EMAIL, 'admin_kabkota']);
 wajib($admin && ! empty($admin['kabupaten_id']),
     'Akun admin_kabkota tersedia dan ter-scope wilayah');
@@ -173,7 +174,7 @@ wajib((int) $kab_lain > 0, 'Ada kabupaten kedua untuk uji scope');
 $stamp = time();
 $email_lain = "uji_rd_d2_{$stamp}@example.test";
 $db->query(sprintf(
-    "INSERT INTO usr_users (email, password, role, kabupaten_id, name, username)
+    "INSERT INTO usr_akun (email, kata_sandi, peran, kabupaten_id, nama, nama_pengguna)
      VALUES ('%s', '%s', 'admin_kabkota', %d, 'Uji D2 Lain', 'uji_rd_d2_%d')",
     $db->real_escape_string($email_lain),
     $db->real_escape_string(password_hash('UjiRdD2!', PASSWORD_BCRYPT)),

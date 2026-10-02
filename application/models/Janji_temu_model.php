@@ -108,7 +108,7 @@ class Janji_temu_model extends CI_Model {
     /** Janji temu yang masih berjalan untuk satu topik - nol atau satu. */
     public function hidup_untuk_topik($id_diskusi)
     {
-        return $this->db->where('id_diskusi', (int) $id_diskusi)
+        return $this->db->where('diskusi_id', (int) $id_diskusi)
             ->where_in('status', self::HIDUP)
             ->order_by('id', 'DESC')->limit(1)
             ->get('forum_janji_temu')->row();
@@ -117,7 +117,7 @@ class Janji_temu_model extends CI_Model {
     /** Seluruh riwayat satu topik, terbaru dulu. Riwayat penolakan ikut terbaca. */
     public function riwayat_topik($id_diskusi)
     {
-        return $this->db->where('id_diskusi', (int) $id_diskusi)
+        return $this->db->where('diskusi_id', (int) $id_diskusi)
             ->order_by('id', 'DESC')->get('forum_janji_temu')->result();
     }
 

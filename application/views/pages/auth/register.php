@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
+    <?= csp_meta_tag() ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token-name" content="<?= $this->security->get_csrf_token_name(); ?>">
     <meta name="csrf-token-hash" content="<?= $this->security->get_csrf_hash(); ?>">
@@ -11,9 +12,9 @@
 
     <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . filemtime('assets/css/auth-pages.css')) ?>">
     <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous">
     <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
-    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <?php if ( ! empty($recaptcha_site_key)): ?><script src="https://www.google.com/recaptcha/api.js" async defer></script><?php endif; ?>
 </head>
 <body class="auth-page">
 <?php $this->load->view('components/notification_center'); ?>
@@ -68,6 +69,7 @@
 
             <!-- Registration Form -->
             <form action="<?= base_url('Auth/do_register') ?>" method="POST" id="registerForm">
+                <?= bot_guard_fields('register') ?>
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
                 <!-- Email -->
@@ -120,9 +122,11 @@
                 </div>
 
                 <!-- reCAPTCHA -->
+                <?php if ( ! empty($recaptcha_site_key)): ?>
                 <div class="auth-recaptcha">
-                    <div class="g-recaptcha" data-sitekey="<?= isset($recaptcha_site_key) ? $recaptcha_site_key : '' ?>"></div>
+                    <div class="g-recaptcha" data-sitekey="<?= html_escape($recaptcha_site_key) ?>"></div>
                 </div>
+                <?php endif; ?>
 
                 <!-- ToS Checkbox -->
                 <label class="auth-checkbox">

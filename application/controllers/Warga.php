@@ -3,32 +3,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Warga extends MY_Controller {
 
-    /* 'housing_family_detail' DISISIPKAN 23 Agt 2026 tepat setelah
-       'preliminary_recommendation' - permintaan user: field lama step
-       'housing_family' (Status rumah dkk., lihat komentar lengkap di
-       pendataan.php) DIPINDAH ke sini, bagian dari kelompok "Lengkapi
-       data SIMPERUM" (bersama building_condition/candidate_land/
-       sanitation/location_evidence/review), karena 'housing_family'
-       sendiri sekarang berisi 6 field xlsx Sheet4 yang BEDA. Posisinya
-       universal (tidak difilter track apa pun di adjacent_step() -
-       semua track butuh field ini), makanya diletakkan SEBELUM
-       percabangan building_condition/candidate_land, bukan di antaranya.
-
-       'citizen_data' DIHAPUS PERMANEN 24 Agt 2026 (permintaan user: "2 dan
-       5 gabung jadi 1 form di 5, lalu hapus 2" - mengacu ke stepper 5-bucket
-       sebelumnya, bucket 2="Data Warga" & bucket 5="Lengkapi Data SIMPERUM").
-       Field-nya (identitas warga: KK/nama/HP/tanggal lahir/alamat/dst, plus
-       income_band_code & self_help_capability_code eks-ruleset lama) SEKARANG
-       jadi bagian form 'housing_family_detail' - lihat sub-bagian "Data
-       Warga" di pendataan.php dan validasinya di step_errors(). Semua
-       pemicu step ini (profile_corrections(), $step_errors()) dipindah dari
-       cek 'citizen_data' ke 'housing_family_detail' - LIHAT method-method
-       di bawah. Draft LAMA yang sempat current_step='citizen_data' dibawa
-       ke 'housing_family' oleh migrasi 20260824000049 - tanpa itu draft
-       tersebut akan macet karena 'citizen_data' tidak ada lagi di daftar
-       ini (lihat guard baris ~526 `!in_array($step, self::STEPS, TRUE)`). */
-    private const STEPS = ['find_data', 'housing_family', 'housing_family_detail', 'preliminary_recommendation', 'building_condition', 'candidate_land', 'sanitation', 'location_evidence', 'review'];
-    private const STEP_LABELS = ['Masukkan NIK', 'Isi data sesuai matriks', 'Hasil rekomendasi', 'Lengkapi data SIMPERUM'];
+    // UAT warga No. 9: NIK -> data awal -> rekomendasi -> data pelengkap.
+    private const STEPS = ['find_data', 'housing_family', 'preliminary_recommendation', 'housing_family_detail', 'building_condition', 'candidate_land', 'sanitation', 'location_evidence', 'review'];
+    private const STEP_LABELS = ['Masukkan NIK', 'Data untuk Rekomendasi', 'Hasil rekomendasi', 'Lengkapi data'];
 
     public function __construct()
     {
@@ -86,20 +63,45 @@ class Warga extends MY_Controller {
         if ($logged_in_warga) {
             $assessment = $this->Housing_assessment_model->get_latest_owned_draft($user_id);
             $profile = $this->Housing_assessment_model->get_owned_profile($user_id);
-            $provenance = json_decode($profile['field_provenance_json'] ?? '{}', TRUE) ?: [];
+            $provenance = kunci_tersimpan_ke_baru(json_decode($profile['asal_isian_json'] ?? '{}', TRUE) ?: []);
             foreach ($provenance as $field => $meta) {
                 $provenance[$field] = is_array($meta) ? ($meta['source'] ?? 'citizen') : $meta;
             }
-            if ($assessment && ! empty($assessment['simperum_snapshot_id'])) {
-                foreach ($this->Housing_assessment_model->source_snapshot_prefill($assessment['simperum_snapshot_id']) as $field => $source_value) {
+            if ($assessment && ! empty($assessment['rekaman_simperum_id'])) {
+                foreach ($this->Housing_assessment_model->source_snapshot_prefill($assessment['rekaman_simperum_id']) as $field => $source_value) {
                     if (array_key_exists($field, $assessment) && $assessment[$field] !== NULL) {
                         $provenance[$field] = (string) $assessment[$field] === (string) $source_value
-                            ? $assessment['source_mode'] : 'citizen_correction';
+                            ? $assessment['mode_sumber'] : 'citizen_correction';
                     }
                 }
             }
         }
+        /* Jaring pengaman prefill (26 Sep 2026): warga login tanpa draft yang akunnya ber-NIK
+           (usr_akun.nik) dilookup otomatis SEKALI per sesi, lalu dialihkan supaya form tampil
+           berisi data SIMPERUM tanpa klik Cek NIK. Menjangkau NIK yang masuk lewat Pengaturan atau
+           onboarding yang prefill-nya gagal. Ditolak pembatas laju atau tidak ditemukan: form
+           tampil seperti biasa (kolom Cek NIK terisi, blok nik_dari_akun di bawah). */
+        if ($logged_in_warga && ! $assessment && ! $this->session->userdata('warga_prefill_dicoba')) {
+            $akun = $this->db->select('nik')->get_where('usr_akun', ['id' => $user_id])->row();
+            $this->load->library('encryption_lib');
+            $nik_akun = preg_replace('/\D+/', '', (string) $this->encryption_lib->decrypt((string) ($akun->nik ?? '')));
+            if (strlen($nik_akun) === 16) {
+                $this->session->set_userdata('warga_prefill_dicoba', TRUE);
+                if ($this->prefill_simperum_akun($user_id, $nik_akun)) {
+                    redirect('warga/pendataan');
+                    return;
+                }
+            }
+        }
         $old_input = $this->session->flashdata('warga_old_input') ?: [];
+        // SIMPERUM tidak selalu menyediakan nomor HP. Gunakan profil akun sendiri
+        // sebagai isian awal, tanpa mengganti nilai/koreksi yang sudah disimpan.
+        if ($logged_in_warga && $profile && empty($profile['phone'])
+            && !in_array($provenance['phone'] ?? '', ['citizen', 'citizen_correction'], TRUE)) {
+            $account = $this->db->select('no_hp')->get_where('usr_akun', ['id' => $user_id])->row();
+            $profile['phone'] = html_entity_decode((string) ($account->no_hp ?? ''), ENT_QUOTES, 'UTF-8');
+            $provenance['phone'] = 'account';
+        }
         /* Jaring pengaman 14 Agt 2026: kalau bootstrap draft di
            Auth::_redirect_after_login() gagal (mis. wilayah sumber belum
            bisa dipakai - lihat komentarnya) sehingga masih mendarat di
@@ -116,78 +118,30 @@ class Warga extends MY_Controller {
                 $old_input['nik'] = $pending_nik;
             }
         }
-        /* Rekomendasi xlsx (kolom J Sheet4) - permintaan user 23 Agt 2026:
-           "Hasil Rekomendasi ... sesuaikan dengan xlsx kolom J". DIHITUNG
-           ULANG di sini setiap render (bukan disimpan/di-cache ke DB
-           seperti $recommendations dari Warga_ruleset.php) - fungsi murni
-           dari 8 field matrix_*_code (draft) + welfare_decile (profil) +
-           umur (dihitung dari tanggal lahir profil), jadi selalu konsisten
-           dengan data terbaru tanpa perlu invalidasi cache. */
-        $matriks_recommendation = [];
-        $matriks_decile_label = null;
-        $matriks_data_simperum = null;
-        $matriks_saran_lengkapi_simperum = false;
-        if ($assessment) {
-            /* Keterangan "data ada/tidak ada di SIMPERUM" - permintaan
-               user 23 Agt 2026. source_mode ('simulation'/'api' vs
-               'manual') SUDAH ADA di draft sejak dibuat
-               (create_draft()/bootstrap_manual_draft() di
-               Housing_assessment_model) - 'manual' HANYA terjadi lewat
-               Warga::isi_manual(), jalur yang memang dipakai persis
-               ketika NIK warga TIDAK ditemukan di SIMPERUM (lihat
-               komentar lookup()/isi_manual() di controller ini). Tidak
-               perlu field baru - source_mode yang ada sudah pas artinya. */
-            $matriks_data_simperum = ($assessment['source_mode'] ?? NULL) !== 'manual';
-
-            $matriks_income_code = $assessment['matrix_income_code'] ?? NULL;
-            // Desil DITURUNKAN dari Gaji (bukan welfare_decile profil) -
-            // lihat docblock lengkap di Matriks_program_ruleset.php.
-            $matriks_decile_label = $this->matriks_program_ruleset->decile_label_for_income($matriks_income_code);
-
-            /* Pencocokan 20 baris SELALU dijalankan (bukan cuma saat data
-               ada di SIMPERUM) - permintaan user 23 Agt 2026: kalau NIK
-               BELUM terdaftar tapi jawaban matriksnya SEBENARNYA cocok
-               salah satu dari 15 program yang mensyaratkan verifikasi
-               (Matriks_program_ruleset::SIMPERUM_REQUIRED_PROGRAMS),
-               tunjukkan SARAN melengkapi data SIMPERUM - bukan nama
-               programnya (itu tetap ditimpa di bawah). Hasil pencocokan
-               ini dipakai untuk MENENTUKAN saran itu, bukan ditampilkan
-               langsung kalau data belum ada di SIMPERUM. */
-            $matriks_actual_match = $this->matriks_program_ruleset->match([
-                'income_code' => $matriks_income_code,
-                'welfare_decile' => $this->matriks_program_ruleset->decile_for_income($matriks_income_code),
-                'dtks_code' => $assessment['matrix_dtks_status'] ?? ($matriks_data_simperum ? 'dtks_ya' : 'dtks_belum'),
-                'land_code' => $assessment['matrix_land_ownership_code'] ?? NULL,
-                'housing_code' => $assessment['matrix_current_housing_code'] ?? NULL,
-                'environment_code' => $assessment['matrix_environment_condition_code'] ?? NULL,
-                'occupation_code' => $assessment['matrix_occupation_finance_code'] ?? NULL,
-                'age_years' => $this->age_years_from_birth_date($profile['birth_date'] ?? NULL),
-                'family_code' => $assessment['matrix_marital_family_code'] ?? NULL,
-            ]);
-
-            if ( ! $matriks_data_simperum) {
-                /* Permintaan user 23 Agt 2026: "Jika data tidak ada di
-                   simperum maka hasil rekomendasinya adalah: 1. Oemah
-                   Lestari; 2. FLPP. Apapun hasil validasinya" - MENIMPA
-                   hasil pencocokan 20 baris matriks sepenuhnya untuk
-                   TAMPILAN (bukan diam-diam diabaikan sepenuhnya - dipakai
-                   di atas untuk menentukan saran). */
-                $matriks_recommendation = ['Oemah Lestari', 'FLPP'];
-                $matriks_saran_lengkapi_simperum = $this->matriks_program_ruleset
-                    ->needs_simperum_suggestion($matriks_actual_match);
-            } else {
-                $matriks_recommendation = $matriks_actual_match;
+        // NIK yang diisi warga saat daftar/onboarding (usr_akun.nik, terenkripsi) langsung
+        // mengisi kolom Cek NIK, jadi warga cukup klik tanpa mengetik ulang (26 Sep 2026).
+        $nik_dari_akun = FALSE;
+        if ($logged_in_warga && empty($old_input['nik']) && empty($profile['nik'])) {
+            $akun = $this->db->select('nik')->get_where('usr_akun', ['id' => $user_id])->row();
+            $this->load->library('encryption_lib');
+            $nik_akun = preg_replace('/\D+/', '', (string) $this->encryption_lib->decrypt((string) ($akun->nik ?? '')));
+            if (strlen($nik_akun) === 16) {
+                $old_input['nik'] = $nik_akun;
+                $nik_dari_akun = TRUE;
             }
         }
         $this->render('pages/warga/pendataan', [
             'title' => 'Pendataan Warga',
             'is_logged_in' => $logged_in_warga,
+            'nik_dari_akun' => $nik_dari_akun,
             'assessment' => $assessment,
+            'preliminary_matrix' => json_decode($assessment['preliminary_matrix'] ?? 'null', TRUE),
+            'matrix_fields' => Matriks_program_ruleset::FORM_FIELDS,
             'profile' => $profile,
             'values' => array_merge($assessment ?: [], $profile ?: [], $old_input),
             'lookup' => $this->session->flashdata('warga_lookup'),
             'errors' => $this->session->flashdata('warga_errors') ?: [],
-            'step' => $assessment['current_step'] ?? 'find_data',
+            'step' => $assessment['langkah_sekarang'] ?? 'find_data',
             'steps' => self::STEP_LABELS,
             'field_provenance' => $provenance,
             'evidence_files' => $assessment
@@ -201,32 +155,8 @@ class Warga extends MY_Controller {
                     $user_id,
                     Warga_ruleset::VERSION
                 ) : [],
-            'review_summary' => ['welfare_decile'=>$profile['welfare_decile']??NULL,'assessment_track'=>$assessment['assessment_track']??NULL,'source_mode'=>$assessment['source_mode']??NULL],
-            'matriks_recommendation' => $matriks_recommendation,
-            'matriks_decile_label' => $matriks_decile_label,
-            'matriks_data_simperum' => $matriks_data_simperum,
-            'matriks_saran_lengkapi_simperum' => $matriks_saran_lengkapi_simperum,
+            'review_summary' => ['desil_kesejahteraan'=>$profile['desil_kesejahteraan']??NULL,'jalur_penilaian'=>$assessment['jalur_penilaian']??NULL,'mode_sumber'=>$assessment['mode_sumber']??NULL],
         ]);
-    }
-
-    /**
-     * Umur PENUH dalam tahun dari tanggal lahir - dipakai
-     * Matriks_program_ruleset (aturan umur kolom H Sheet4) DAN tampilan
-     * "Kategori Usia" di step 'housing_family' (lihat pendataan.php,
-     * closure lokal di sana menghitung ulang dengan logika yang SAMA -
-     * disalin, bukan dipanggil dari sini, karena view tidak punya akses
-     * ke method controller; kalau batas kategori berubah, ubah DUA
-     * tempat itu bersamaan).
-     */
-    private function age_years_from_birth_date($birth_date)
-    {
-        $birth_date = trim((string) $birth_date);
-        if ($birth_date === '') { return NULL; }
-        try {
-            return (new DateTime($birth_date))->diff(new DateTime('today'))->y;
-        } catch (Exception $e) {
-            return NULL;
-        }
     }
 
     /**
@@ -240,18 +170,18 @@ class Warga extends MY_Controller {
      * Kepemilikan disaring get_owned_files() (WHERE user_id di model), jadi
      * assessment milik orang lain mengembalikan daftar kosong -> 404.
      */
-    public function lihat_bukti($assessment_id = NULL, $file_kind = NULL)
+    public function lihat_bukti($penilaian_id = NULL, $jenis_berkas = NULL)
     {
         if ( ! $this->guard_login_warga()) { return; }
-        if ( ! is_numeric($assessment_id) || empty($file_kind)) { show_404(); return; }
+        if ( ! is_numeric($penilaian_id) || empty($jenis_berkas)) { show_404(); return; }
         $files = $this->Housing_assessment_model->get_owned_files(
-            (int) $assessment_id, (int) $this->get_user_id()
+            (int) $penilaian_id, (int) $this->get_user_id()
         );
-        $file = $files[$file_kind] ?? NULL;
+        $file = $files[$jenis_berkas] ?? NULL;
         if ( ! $file) { show_404(); return; }
 
         $this->serve_private_file(
-            'warga_assessment', $file['storage_assessment_id'], $file['private_path'], $file['mime_type']
+            'warga_assessment', $file['storage_assessment_id'], $file['path_privat'], $file['mime_type']
         );
     }
 
@@ -444,7 +374,7 @@ class Warga extends MY_Controller {
         $this->session->set_flashdata('warga_lookup', $result);
         if (($result['status'] ?? '') !== 'found') {
             /* Respons 'not_found' dari Simperum_gateway TIDAK menyertakan
-               NIK di $result['data'] (cuma snapshot_id/cache_hit - lihat
+               NIK di $result['data'] (cuma rekaman_id/cache_hit - lihat
                Simperum_gateway::from_snapshot()). Simpan NIK-nya di
                warga_old_input (pola sama seperti gagal validasi format di
                atas) supaya kotak "isi manual" di view tahu NIK mana yang
@@ -527,94 +457,93 @@ class Warga extends MY_Controller {
     {
         if ( ! $this->guard_login_warga()) { return; }
         $user_id = (int) $this->get_user_id();
-        $assessment_id = (int) $this->input->post('assessment_id', TRUE);
-        $lock_version = filter_var($this->input->post('lock_version', TRUE), FILTER_VALIDATE_INT);
-        $draft = $this->Housing_assessment_model->get_owned_assessment($assessment_id, $user_id);
-        if ( ! $draft || $lock_version === FALSE || (int) $draft['lock_version'] !== $lock_version) {
+        $penilaian_id = (int) $this->input->post('penilaian_id', TRUE);
+        $versi_kunci = filter_var($this->input->post('versi_kunci', TRUE), FILTER_VALIDATE_INT);
+        $draft = $this->Housing_assessment_model->get_owned_assessment($penilaian_id, $user_id);
+        if ( ! $draft || $versi_kunci === FALSE || (int) $draft['versi_kunci'] !== $versi_kunci) {
             $this->session->set_flashdata('error', 'Draft sudah berubah atau tidak dapat diakses. Muat ulang data terbaru.');
             redirect('warga/pendataan');
             return;
         }
 
         $step = (string) $this->input->post('step', TRUE);
-        if ( ! in_array($step, self::STEPS, TRUE) || $step !== $draft['current_step']) {
+        if ( ! in_array($step, self::STEPS, TRUE) || $step !== $draft['langkah_sekarang']) {
             show_404();
             return;
         }
-        if (($step === 'building_condition' || $step === 'sanitation') && $draft['assessment_track'] !== 'existing_house') { show_404(); return; }
-        if ($step === 'candidate_land' && $draft['assessment_track'] !== 'candidate_land') { show_404(); return; }
+        if (($step === 'building_condition' || $step === 'sanitation') && $draft['jalur_penilaian'] !== 'existing_house') { show_404(); return; }
+        if ($step === 'candidate_land' && $draft['jalur_penilaian'] !== 'candidate_land') { show_404(); return; }
         $direction = $this->input->post('direction', TRUE) === 'back' ? 'back' : 'next';
         $errors = $direction === 'next' ? $this->step_errors($step) : [];
         if ($errors) {
             $old_input = $this->input->post(NULL, TRUE);
-            unset($old_input['action'], $old_input['direction'], $old_input['assessment_id'], $old_input['lock_version']);
+            unset($old_input['action'], $old_input['direction'], $old_input['penilaian_id'], $old_input['versi_kunci']);
             $this->session->set_flashdata('warga_old_input', $old_input);
             $this->flash_errors($errors);
             redirect('warga/pendataan');
             return;
         }
-        $data = $direction === 'back' ? [] : $this->draft_data();
-        /* Dipindah dari step 'housing_family' 23 Agt 2026 - housing_status_code
-           & owns_candidate_land (yang menentukan jalur ini) sekarang
-           dikumpulkan di step 'housing_family_detail', bukan lagi
-           'housing_family' (isi step itu sudah diganti field xlsx Sheet4).
-           Track masih 'undetermined' selama step 'housing_family' &
-           'preliminary_recommendation' - adjacent_step() tidak memfilter
-           apa pun untuk track itu (lihat method-nya), jadi urutan step
-           SEBELUM titik ini tidak terpengaruh, cuma percabangan SESUDAH
-           'housing_family_detail' (building_condition/candidate_land/dst)
-           yang baru butuh track ini. */
+        $data = $direction === 'back' ? [] : $this->draft_data($step);
+        if ($direction === 'next' && $step === 'housing_family_detail' && $draft['jalur_penilaian'] === 'candidate_land') {
+            $data['punya_lahan_calon'] = $this->input->post('tanah_lain', TRUE);
+        }
         if ($direction === 'next' && $step === 'housing_family') {
-            $milik_sendiri = (string) $this->input->post('matrix_current_housing_code', TRUE) === 'house_owned';
-            $data['assessment_track'] = $milik_sendiri ? 'existing_house' : 'candidate_land';
-            $data['housing_status_code'] = $milik_sendiri ? 'owned' : 'other';
+            $milik_sendiri = in_array((string) $this->input->post('matriks_rumah_sekarang', TRUE), ['house_owned', 'house_disaster_affected'], TRUE);
+            $data['jalur_penilaian'] = $milik_sendiri ? 'existing_house' : 'candidate_land';
+            $data['kepemilikan_rumah'] = $milik_sendiri ? 'owned' : 'other';
         }
         // Kompatibilitas draft lama yang sudah telanjur sampai langkah detail
-        // saat assessment_track masih undetermined.
+        // saat jalur_penilaian masih undetermined.
         if ($direction === 'next' && $step === 'housing_family_detail'
-            && ($draft['assessment_track'] ?? 'undetermined') === 'undetermined') {
-            $data['assessment_track'] = $this->assessment_track(
-                (string) $this->input->post('housing_status_code', TRUE)
+            && ($draft['jalur_penilaian'] ?? 'undetermined') === 'undetermined') {
+            $data['jalur_penilaian'] = $this->jalur_penilaian(
+                (string) $this->input->post('kepemilikan_rumah', TRUE)
             );
         }
         if ($direction === 'next' && $step === 'candidate_land') {
-            $data['land_area_m2'] = round((float) $data['land_length_m'] * (float) $data['land_width_m'], 2);
+            $data['luas_lahan_m2'] = round((float) $data['panjang_lahan_m'] * (float) $data['lebar_lahan_m'], 2);
         }
-        $data['current_step'] = $this->adjacent_step($step, $direction, $data['assessment_track'] ?? $draft['assessment_track']);
-        /* profile_corrections() dipicu oleh 'housing_family_detail' sejak
-           24 Agt 2026 - dulu dipicu oleh 'citizen_data' (step tersendiri,
-           sudah dihapus). Field profilnya sekarang bagian dari form
-           'housing_family_detail', lihat komentar di STEPS di atas. */
-        $profile_change = $direction === 'next' && $step === 'housing_family_detail'
-            ? $this->profile_corrections($user_id) : NULL;
-        if ($direction === 'next' && $step === 'housing_family_detail' && $profile_change === NULL) {
+        $data['langkah_sekarang'] = $this->adjacent_step($step, $direction, $data['jalur_penilaian'] ?? $draft['jalur_penilaian']);
+        $profile_change = $direction === 'next' && in_array($step, ['housing_family', 'housing_family_detail'], TRUE)
+            ? $this->profile_corrections($user_id, $step) : NULL;
+        if ($direction === 'next' && in_array($step, ['housing_family', 'housing_family_detail'], TRUE) && $profile_change === NULL) {
             $this->session->set_flashdata('error', 'Profil warga tidak ditemukan.');
             redirect('warga/pendataan');
             return;
         }
         $recommendations = NULL;
         $recommendation_hash = NULL;
-        /* Rekomendasi awal tampil setelah matriks inti (Data Warga dan
-           Rumah & Keluarga), kemudian hasil akhir diperbarui lagi sesudah
-           data rinci serta bukti dilengkapi. Ini mewujudkan alur:
-           NIK -> matriks -> hasil rekomendasi -> pelengkapan SIMPERUM. */
-        if ($direction === 'next' && in_array($step, ['housing_family_detail', 'location_evidence'], TRUE)) {
+        // Matriks awal dan evaluasi lanjutan memiliki hasil terpisah.
+        if ($direction === 'next' && in_array($step, ['housing_family', 'housing_family_detail', 'location_evidence'], TRUE)) {
             $profile = $this->Housing_assessment_model->get_owned_profile($user_id) ?: [];
             if ($profile_change !== NULL) {
                 $profile = array_merge($profile, $profile_change['data'] ?? []);
             }
             $effective = array_merge($draft, $data);
-            $recommendations = [];
-            foreach ($this->warga_ruleset->route_candidates($profile['welfare_decile'] ?? NULL) as $code) {
-                $recommendations[] = $this->warga_ruleset->evaluate($code, $effective, $profile) + [
-                    'program_code' => $code,
-                    'ruleset_version' => Warga_ruleset::VERSION,
-                ];
+            // Keputusan pemilik produk 27 Sep 2026: SIMPERUM tidak mengirim desil, jadi selama
+            // desil profil kosong dipakai desil turunan pendapatan (rentang Sheet3 yang sama
+            // dengan tampilan rekomendasi awal). Desil resmi dari sumber tetap menang.
+            if (empty($profile['desil_kesejahteraan'])) {
+                $profile['desil_kesejahteraan'] = $this->matriks_program_ruleset->decile_for_monthly_income($profile['penghasilan_bulanan'] ?? NULL);
+            }
+            if ($step === 'housing_family') {
+                $data['preliminary_matrix'] = json_encode(
+                    $this->matriks_program_ruleset->preliminary($effective, $profile),
+                    JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+                );
+            } else {
+                $recommendations = [];
+                foreach ($this->warga_ruleset->route_candidates($profile['desil_kesejahteraan'] ?? NULL) as $code) {
+                    $recommendations[] = $this->warga_ruleset->evaluate($code, $effective, $profile) + [
+                        'program_code' => $code,
+                        'versi_aturan' => Warga_ruleset::VERSION,
+                    ];
+                }
             }
             $recommendation_hash = $this->recommendation_input_hash($effective, $profile);
         }
         $updated = $this->Housing_assessment_model->save_owned_step(
-            $assessment_id, $user_id, $lock_version, $data,
+            $penilaian_id, $user_id, $versi_kunci, $data,
             $profile_change['data'] ?? NULL, $profile_change['provenance'] ?? [],
             $recommendations, $recommendation_hash
         );
@@ -632,10 +561,10 @@ class Warga extends MY_Controller {
     {
         if ( ! $this->guard_login_warga()) { return; }
         $user_id = (int) $this->get_user_id();
-        $assessment_id = (int) $this->input->post('assessment_id', TRUE);
-        $draft = $this->Housing_assessment_model->get_owned_assessment($assessment_id, $user_id);
-        $kind = (string) $this->input->post('file_kind', TRUE);
-        $allowed = $this->evidence_kinds($draft['assessment_track'] ?? '');
+        $penilaian_id = (int) $this->input->post('penilaian_id', TRUE);
+        $draft = $this->Housing_assessment_model->get_owned_assessment($penilaian_id, $user_id);
+        $kind = (string) $this->input->post('jenis_berkas', TRUE);
+        $allowed = $this->evidence_kinds($draft['jalur_penilaian'] ?? '');
         if ( ! $draft || ! in_array($kind, $allowed, TRUE)) {
             show_404(); return;
         }
@@ -653,15 +582,15 @@ class Warga extends MY_Controller {
         $sha256 = hash_file('sha256', $file['tmp_name']);
         $file['size'] = filesize($file['tmp_name']);
         $error = NULL;
-        $stored = $this->store_private_upload($kind, 'warga_assessment', $assessment_id, $error);
+        $stored = $this->store_private_upload($kind, 'warga_assessment', $penilaian_id, $error);
         if ($stored === FALSE) {
             $this->session->set_flashdata('error', $error ?: 'Berkas belum dapat diunggah.');
             redirect('warga/pendataan'); return;
         }
         $saved = $this->Housing_assessment_model->replace_owned_file(
-            $assessment_id, $user_id, $kind, $stored, $file['name'], $mime, $file['size'], $sha256
+            $penilaian_id, $user_id, $kind, $stored, $file['name'], $mime, $file['size'], $sha256
         );
-        $dir = $this->private_upload_dir('warga_assessment', $assessment_id);
+        $dir = $this->private_upload_dir('warga_assessment', $penilaian_id);
         if (empty($saved['success'])) {
             @unlink($dir . $stored);
             $this->session->set_flashdata('error', $saved['message']);
@@ -675,10 +604,10 @@ class Warga extends MY_Controller {
     private function submit()
     {
         if ( ! $this->guard_login_warga()) { return; }
-        $assessment_id = (int) $this->input->post('assessment_id', TRUE);
+        $penilaian_id = (int) $this->input->post('penilaian_id', TRUE);
         $rate = $this->rate_limit_consume('warga_submit', [
             'account_id' => (int) $this->get_user_id(),
-            'object_id' => $assessment_id,
+            'object_id' => $penilaian_id,
         ]);
         if (empty($rate['success']) || empty($rate['allowed'])) {
             $this->rate_limit_reject(
@@ -689,27 +618,29 @@ class Warga extends MY_Controller {
             return;
         }
         $result = $this->Housing_assessment_model->submit_owned_assessment(
-            $assessment_id,
+            $penilaian_id,
             (int) $this->get_user_id(),
-            (int) $this->input->post('recommendation_id', TRUE),
+            (int) $this->input->post('rekomendasi_id', TRUE),
             Warga_ruleset::VERSION
         );
         if ( ! empty($result['success']) && ! empty($result['notification_needed'])) {
-            $queue = $this->db->select('kabupaten_id')->get_where('sf_housing_queue', [
-                'id' => (int) $result['queue_id'],
+            $queue = $this->db->select('kabupaten_id')->get_where('sf_antrean_pengajuan', [
+                'id' => (int) $result['antrean_id'],
             ])->row_array();
-            $audiences = [['role' => 'admin']];
+            $judul = 'Pengajuan warga baru';
+            $isi   = 'Ada pengajuan bantuan perumahan yang menunggu peninjauan.';
+            $tag   = 'warga-' . (int) $result['antrean_id'];
+            $this->notify_admin_push([['role' => 'admin']], $judul, $isi, 'Admin?status=pending', $tag);
+            // Admin kab/kota tidak boleh masuk Admin/ (akses_ditolak), jadi tautannya ke antrean wilayahnya sendiri.
             if ( ! empty($queue['kabupaten_id'])) {
-                $audiences[] = ['role' => 'admin_kabkota', 'kabupaten_id' => (int) $queue['kabupaten_id']];
+                $this->notify_admin_push([['role' => 'admin_kabkota', 'kabupaten_id' => (int) $queue['kabupaten_id']]],
+                    $judul, $isi, 'Admin_Kabkota', $tag);
             }
-            $this->notify_admin_push($audiences, 'Pengajuan warga baru',
-                'Ada pengajuan bantuan perumahan yang menunggu peninjauan.',
-                'Admin?status=pending', 'warga-' . (int) $result['queue_id']);
         }
         $this->session->set_flashdata(
             ! empty($result['success']) ? 'success' : 'error',
             ! empty($result['success'])
-                ? 'Pengajuan berhasil dikirim dengan tiket ' . $result['ticket_code'] . '.'
+                ? 'Pengajuan berhasil dikirim dengan tiket ' . $result['kode_tiket'] . '.'
                 : ($result['message'] ?? 'Pengajuan belum dapat dikirim.')
         );
         redirect(! empty($result['success']) ? 'akun' : 'warga/pendataan');
@@ -718,10 +649,10 @@ class Warga extends MY_Controller {
     private function start_revision()
     {
         if ( ! $this->guard_login_warga()) { return; }
-        $queue_id = (int) $this->input->post('queue_id', TRUE);
+        $antrean_id = (int) $this->input->post('antrean_id', TRUE);
         $rate = $this->rate_limit_consume('warga_start_revision', [
             'account_id' => (int) $this->get_user_id(),
-            'object_id' => $queue_id,
+            'object_id' => $antrean_id,
         ]);
         if (empty($rate['success']) || empty($rate['allowed'])) {
             $this->rate_limit_reject(
@@ -732,7 +663,7 @@ class Warga extends MY_Controller {
             return;
         }
         $result = $this->Housing_assessment_model->start_revision(
-            $queue_id,
+            $antrean_id,
             (int) $this->get_user_id()
         );
         $this->session->set_flashdata(
@@ -745,29 +676,35 @@ class Warga extends MY_Controller {
     }
 
 
-    private function draft_data()
+    private function draft_data($step)
     {
+        // Setiap POST hanya mengubah medan pada langkah yang sudah divalidasi.
+        $fields = [
+            'housing_family' => array_merge(['matriks_rumah_sekarang', 'kawasan_perumahan'], array_keys(Matriks_program_ruleset::FORM_FIELDS)),
+            'housing_family_detail' => ['kepemilikan_rumah', 'kepemilikan_lahan', 'tanah_lain', 'rumah_lain', 'luas_rumah', 'jml_penghuni', 'jml_kk', 'bantuan_perumahan', 'tahun_intervensi'],
+            'building_condition' => ['kondisi_pondasi', 'kondisi_kolom', 'kondisi_balok', 'kondisi_sloof', 'kondisi_plafon', 'kondisi_rangka', 'bahan_lantai', 'kondisi_lantai', 'bahan_dinding', 'kondisi_dinding', 'bahan_atap', 'kondisi_atap'],
+            'candidate_land' => ['candidate_land_address', 'status_lahan_calon', 'asal_lahan_calon', 'hubungan_pemilik_lahan', 'panjang_lahan_m', 'lebar_lahan_m'],
+            'sanitation' => ['ada_jendela', 'ada_ventilasi', 'sumber_air', 'penggunaan_kamar_mandi', 'jenis_kloset', 'pembuangan_tinja', 'jarak_septic_tank', 'penerangan', 'bahan_bakar_masak'],
+            'location_evidence' => ['location_lat', 'location_lng', 'akurasi_lokasi_m'],
+        ];
         $data = [];
-        foreach (['assessment_track', 'housing_status_code', 'land_title_code', 'has_other_land', 'has_other_house', 'house_area_m2', 'occupant_count', 'family_count', 'assistance_source_code', 'assistance_year', 'area_condition_code', 'owns_candidate_land', 'candidate_land_title_code', 'candidate_land_origin_code', 'land_owner_relationship_code', 'land_length_m', 'land_width_m', 'land_area_m2', 'foundation_condition_code', 'column_condition_code', 'beam_condition_code', 'sloof_condition_code', 'ceiling_condition_code', 'roof_frame_condition_code', 'floor_material_code', 'floor_condition_code', 'wall_material_code', 'wall_condition_code', 'roof_material_code', 'roof_condition_code', 'has_window', 'has_ventilation', 'water_source_code', 'has_bathroom_latrine', 'latrine_type_code', 'feces_disposal_code', 'septic_distance_code', 'lighting_source_code', 'cooking_fuel_code', 'location_accuracy_m', 'matrix_land_ownership_code', 'matrix_current_housing_code', 'matrix_environment_condition_code', 'matrix_occupation_finance_code', 'matrix_marital_family_code', 'matrix_income_code', 'matrix_dtks_status'] as $field) {
-            if ($this->input->post($field, TRUE) !== NULL) {
-                $data[$field] = $this->input->post($field, TRUE);
-            }
+        foreach ($fields[$step] ?? [] as $field) {
+            if ($this->input->post($field, TRUE) !== NULL) $data[$field] = $this->input->post($field, TRUE);
         }
-        foreach (['candidate_land_address', 'location_lat', 'location_lng'] as $field) {
-            if ($this->input->post($field, TRUE) !== NULL) {
-                $data[$field] = $this->input->post($field, TRUE);
-            }
-        }
+        if ($step === 'sanitation') $data['kamar_mandi'] = ($data['penggunaan_kamar_mandi'] ?? '') === 'none' ? 0 : 1;
         return $data;
     }
 
-    private function profile_corrections($user_id)
+    private function profile_corrections($user_id, $step)
     {
         $profile = $this->Housing_assessment_model->get_owned_profile($user_id);
         if ( ! $profile) { return NULL; }
         $data = $profile;
-        $provenance = json_decode($profile['field_provenance_json'] ?? '{}', TRUE) ?: [];
-        foreach (['family_card_number', 'full_name', 'address', 'phone', 'birth_date', 'tax_number', 'gender_code', 'marital_status_code', 'education_code', 'occupation_code', 'employment_stability_code', 'monthly_income', 'income_band_code', 'has_savings', 'self_help_capability_code', 'self_help_amount'] as $field) {
+        $provenance = kunci_tersimpan_ke_baru(json_decode($profile['asal_isian_json'] ?? '{}', TRUE) ?: []);
+        $fields = $step === 'housing_family'
+            ? ['phone', 'birth_date', 'jenis_kelamin', 'status_perkawinan', 'pendidikan', 'pekerjaan', 'stabilitas_pekerjaan', 'penghasilan_bulanan']
+            : ['family_card_number', 'full_name', 'address', 'tax_number', 'punya_tabungan', 'mampu_swadaya'];
+        foreach ($fields as $field) {
             $value = $this->input->post($field, TRUE);
             if ($value !== NULL && (string) $value !== (string) ($profile[$field] ?? '')) {
                 $data[$field] = $value;
@@ -780,7 +717,7 @@ class Warga extends MY_Controller {
                 ];
             }
         }
-        $data['source_mode'] = $profile['source_mode'];
+        $data['mode_sumber'] = $profile['mode_sumber'];
         return ['data' => $data, 'provenance' => $provenance];
     }
 
@@ -804,14 +741,10 @@ class Warga extends MY_Controller {
     private function evidence_kinds($track)
     {
         if ($track === 'existing_house') return ['self_photo','house_front_photo','house_side_photo','roof_photo','floor_photo','wall_photo','latrine_photo'];
-        /* `land_transfer_proof` & `recipient_photo` DICABUT 5 Agt 2026 (revisi
-           dinas butir A9). Ini whitelist UNGGAH - mencabutnya di sini berarti
-           keduanya tidak bisa lagi dikirim, bukan sekadar tidak ditampilkan.
-
-           SENGAJA TIDAK dicabut dari `Housing_assessment_model::EVIDENCE_KINDS`:
-           itu daftar jenis yang SAH ADA, dan berkas yang sudah terlanjur
-           tersimpan harus tetap terbaca. Keputusan user: berhenti mengumpulkan,
-           jangan hapus yang lama. */
+        /* Riwayat: `land_transfer_proof` & `recipient_photo` dicabut 5 Agt 2026 (revisi dinas A9).
+           UAT 2026 (warga/pengembang #9, cabang bukan milik sendiri) meminta "Bukti Pindah Tangan"
+           lagi, jadi `land_transfer_proof` DIKEMBALIKAN (157e275, dikonfirmasi 23 Sep 2026).
+           `recipient_photo` tetap dicabut. Keduanya tetap di EVIDENCE_KINDS supaya berkas lama terbaca. */
         if ($track === 'candidate_land') return ['candidate_land_photo','land_transfer_proof'];
         return ['id_card_photo','family_card_photo'];
     }
@@ -827,7 +760,7 @@ class Warga extends MY_Controller {
         return $date && $date->format('Y-m-d') === $value;
     }
 
-    private function assessment_track($housing_status)
+    private function jalur_penilaian($housing_status)
     {
         if ($housing_status === 'owned') { return 'existing_house'; }
         return 'candidate_land';
@@ -836,177 +769,162 @@ class Warga extends MY_Controller {
     private function recommendation_input_hash(array $assessment, array $profile)
     {
         $input = [
-            'ruleset_version' => Warga_ruleset::VERSION,
+            'versi_aturan' => Warga_ruleset::VERSION,
             'profile' => [
-                'welfare_decile' => $profile['welfare_decile'] ?? NULL,
-                'income_band_code' => $profile['income_band_code'] ?? NULL,
-                'self_help_capability_code' => $profile['self_help_capability_code'] ?? NULL,
+                'desil_kesejahteraan' => $profile['desil_kesejahteraan'] ?? NULL,
+                'kelompok_penghasilan' => $profile['kelompok_penghasilan'] ?? NULL,
+                'penghasilan_bulanan' => $profile['penghasilan_bulanan'] ?? NULL,
+                'mampu_swadaya' => $profile['mampu_swadaya'] ?? NULL,
             ],
             'assessment' => [
-                'assessment_track' => $assessment['assessment_track'] ?? NULL,
-                'housing_status_code' => $assessment['housing_status_code'] ?? NULL,
-                'has_other_house' => $assessment['has_other_house'] ?? NULL,
-                'owns_candidate_land' => $assessment['owns_candidate_land'] ?? NULL,
+                'jalur_penilaian' => $assessment['jalur_penilaian'] ?? NULL,
+                'kepemilikan_rumah' => $assessment['kepemilikan_rumah'] ?? NULL,
+                'rumah_lain' => $assessment['rumah_lain'] ?? NULL,
+                'punya_lahan_calon' => $assessment['punya_lahan_calon'] ?? NULL,
                 'candidate_land_address_present' => ! empty($assessment['candidate_land_address']),
-                'candidate_land_title_code' => $assessment['candidate_land_title_code'] ?? NULL,
-                'candidate_land_origin_code' => $assessment['candidate_land_origin_code'] ?? NULL,
-                'land_length_m' => $assessment['land_length_m'] ?? NULL,
-                'land_width_m' => $assessment['land_width_m'] ?? NULL,
-                'land_area_m2' => $assessment['land_area_m2'] ?? NULL,
-                'foundation_condition_code' => $assessment['foundation_condition_code'] ?? NULL,
-                'column_condition_code' => $assessment['column_condition_code'] ?? NULL,
-                'beam_condition_code' => $assessment['beam_condition_code'] ?? NULL,
-                'roof_frame_condition_code' => $assessment['roof_frame_condition_code'] ?? NULL,
-                'floor_condition_code' => $assessment['floor_condition_code'] ?? NULL,
-                'wall_condition_code' => $assessment['wall_condition_code'] ?? NULL,
-                'roof_condition_code' => $assessment['roof_condition_code'] ?? NULL,
-                'water_source_code' => $assessment['water_source_code'] ?? NULL,
-                'latrine_type_code' => $assessment['latrine_type_code'] ?? NULL,
+                'status_lahan_calon' => $assessment['status_lahan_calon'] ?? NULL,
+                'asal_lahan_calon' => $assessment['asal_lahan_calon'] ?? NULL,
+                'panjang_lahan_m' => $assessment['panjang_lahan_m'] ?? NULL,
+                'lebar_lahan_m' => $assessment['lebar_lahan_m'] ?? NULL,
+                'luas_lahan_m2' => $assessment['luas_lahan_m2'] ?? NULL,
+                'kondisi_pondasi' => $assessment['kondisi_pondasi'] ?? NULL,
+                'kondisi_kolom' => $assessment['kondisi_kolom'] ?? NULL,
+                'kondisi_balok' => $assessment['kondisi_balok'] ?? NULL,
+                'kondisi_rangka' => $assessment['kondisi_rangka'] ?? NULL,
+                'kondisi_lantai' => $assessment['kondisi_lantai'] ?? NULL,
+                'kondisi_dinding' => $assessment['kondisi_dinding'] ?? NULL,
+                'kondisi_atap' => $assessment['kondisi_atap'] ?? NULL,
+                'sumber_air' => $assessment['sumber_air'] ?? NULL,
+                'jenis_kloset' => $assessment['jenis_kloset'] ?? NULL,
             ],
         ];
-        return hash('sha256', json_encode($input, JSON_UNESCAPED_SLASHES));
+        // Kunci lama dipakai supaya sidik masukan yang sama tetap sama sebelum dan sesudah migrasi 072.
+        return hash('sha256', json_encode(kunci_tersimpan_ke_lama($input), JSON_UNESCAPED_SLASHES));
     }
 
     private function step_errors($step)
     {
         $errors = [];
         if ($step === 'housing_family') {
-            /* Field xlsx Sheet4 (kolom D-I bertanda '*') - permintaan user
-               23 Agt 2026, lihat komentar lengkap di pendataan.php. Semua
-               WAJIB dipilih (beda dari step 'housing_family_detail' di
-               bawah yang sebagian besar opsional) - enam field ini
-               langsung menentukan rekomendasi awal, tidak ada makna
-               "belum diisi" yang aman untuk matriks program. */
-            foreach ([
-                'matrix_income_code' => 'Gaji',
-                'matrix_land_ownership_code' => 'Kepemilikan Lahan',
-                'matrix_current_housing_code' => 'Kepemilikan Rumah Saat Ini',
-                'matrix_environment_condition_code' => 'Kondisi Lingkungan / Fisik Bangunan',
-                'matrix_occupation_finance_code' => 'Pekerjaan / Kondisi Finansial',
-                'matrix_marital_family_code' => 'Status Perkawinan / Keluarga',
-            ] as $field => $label) {
-                if (trim((string) $this->input->post($field, TRUE)) === '') {
-                    $errors[$field] = $label . ' wajib dipilih.';
-                }
-            }
-            // Kode "*_unrestricted" ("Tidak Dibatasi") DICABUT dari daftar
-            // sah 23 Agt 2026, sejalan dengan opsi itu dihapus dari select
-            // di pendataan.php - lihat komentar di sana. Submit yang tetap
-            // mengirim kode itu (mis. request manual/lama) akan ditolak
-            // sebagai "Pilihan tidak valid", bukan diam-diam diterima.
             $this->validate_options([
-                'matrix_income_code' => ['income_0_1_5', 'income_1_5_2_2', 'income_2_2_2_8', 'income_2_8_8_5', 'income_2_8_10', 'income_gt_8_5', 'income_gt_10'],
-                'matrix_land_ownership_code' => ['land_none', 'land_legal'],
-                'matrix_current_housing_code' => ['house_none_or_rent', 'house_rent_or_staying', 'house_restricted_area', 'house_disaster_affected', 'house_owned'],
-                'matrix_environment_condition_code' => ['env_safe', 'env_relocation_zone', 'env_disaster_severe', 'env_disaster_moderate', 'env_slum_uninhabitable'],
-                'matrix_occupation_finance_code' => ['work_stable_or_unstable_no_subsidy', 'work_can_save_irregular'],
-                'matrix_marital_family_code' => ['family_single', 'family_married', 'family_multi_household', 'family_head_of_household'],
+                'matriks_rumah_sekarang' => ['house_owned', 'house_none_or_rent', 'house_rent_or_staying', 'house_restricted_area', 'house_disaster_affected'],
+                'kawasan_perumahan' => ['drought', 'slum', 'disaster_prone', 'riverbank', 'railway', 'poor_other', 'good'],
             ], $errors);
+            foreach (Matriks_program_ruleset::FORM_FIELDS as $field => [$label, $options]) {
+                $this->validate_options([$field => array_keys($options)], $errors);
+            }
+            foreach (['matriks_rumah_sekarang', 'kawasan_perumahan'] as $field) {
+                if (trim((string) $this->input->post($field, TRUE)) === '') $errors[$field] = 'Pilihan ini wajib diisi.';
+            }
         }
-        if ($step === 'housing_family_detail') {
+        if (in_array($step, ['housing_family', 'housing_family_detail'], TRUE)) {
             /* Validasi eks-step 'citizen_data' (Data Warga), DIPINDAH ke sini
                24 Agt 2026 - step-nya sudah dihapus & digabung ke form ini,
                lihat komentar STEPS di atas. Rekomendasi awal tidak memakai
                identitas administratif maupun demografi. Field tersebut boleh
                dilengkapi nanti; validasinya tetap dijalankan bila warga
                memang mengisi nilainya. */
-            foreach (['family_card_number'=>'Nomor KK','full_name'=>'Nama','address'=>'Alamat','phone'=>'Nomor HP','birth_date'=>'Tanggal lahir','gender_code'=>'Jenis kelamin','marital_status_code'=>'Status perkawinan','education_code'=>'Pendidikan','occupation_code'=>'Pekerjaan'] as $field=>$label) {
+            $required = $step === 'housing_family'
+                ? ['phone'=>'Nomor HP','birth_date'=>'Tanggal lahir','jenis_kelamin'=>'Jenis kelamin','status_perkawinan'=>'Status perkawinan','pendidikan'=>'Pendidikan','pekerjaan'=>'Pekerjaan']
+                : ['family_card_number'=>'Nomor KK','full_name'=>'Nama','address'=>'Alamat'];
+            foreach ($required as $field=>$label) {
                 if (trim((string) $this->input->post($field, TRUE)) === '') $errors[$field] = $label . ' wajib diisi.';
             }            $kk = preg_replace('/\D+/', '', (string) $this->input->post('family_card_number', TRUE));
             if ($kk !== '' && ! preg_match('/^\d{16}$/', $kk)) { $errors['family_card_number'] = 'Nomor KK harus 16 digit.'; }
             if (trim((string) $this->input->post('birth_date', TRUE)) !== '' && ! $this->valid_date($this->input->post('birth_date', TRUE))) { $errors['birth_date'] = 'Tanggal lahir tidak valid.'; }
-            foreach (['income_band_code', 'self_help_capability_code', 'employment_stability_code', 'has_savings'] as $field) {
+            foreach (($step === 'housing_family' ? ['stabilitas_pekerjaan'] : ['mampu_swadaya', 'punya_tabungan']) as $field) {
                 if (trim((string) $this->input->post($field, TRUE)) === '') { $errors[$field] = 'Pilihan ini wajib diisi.'; }
             }
-            $monthly_income = trim((string) $this->input->post('monthly_income', TRUE));
-            if ($monthly_income === '' || ! ctype_digit($monthly_income)) { $errors['monthly_income'] = 'Pendapatan per bulan wajib berupa angka rupiah.'; }
+            $penghasilan_bulanan = trim((string) $this->input->post('penghasilan_bulanan', TRUE));
+            if ($step === 'housing_family' && ($penghasilan_bulanan === '' || ! ctype_digit($penghasilan_bulanan) || (float) $penghasilan_bulanan > 999999999999)) { $errors['penghasilan_bulanan'] = 'Pendapatan per bulan wajib berupa angka rupiah.'; }
             $citizen_allowed = [
-                'gender_code' => ['male', 'female'],
-                'marital_status_code' => ['single', 'married', 'divorced'],
-                'education_code' => ['no_certificate', 'elementary', 'junior_high', 'senior_high', 'diploma_1_3', 'bachelor', 'postgraduate'],
-                'employment_stability_code' => ['permanent', 'non_permanent'],
-                'has_savings' => ['0', '1'],
-                'occupation_code' => ['farmer', 'horticulture', 'plantation', 'capture_fisher', 'aquaculture_fisher', 'breeder', 'forestry_agriculture_other', 'mining', 'daily_laborer', 'electricity_gas', 'construction_worker', 'trader', 'hotel_restaurant', 'driver', 'information_communication', 'finance_insurance', 'educator', 'health_worker', 'civil_servant', 'scavenger', 'military_police', 'private_employee', 'contract_worker', 'retired', 'unemployed', 'other'],
-                'income_band_code' => ['lt_1_8', '1_9_2_1', '2_2_2_6', '2_7_3_1', '3_2_3_6', '3_7_4_2', 'gt_4_2', '4_2_6', '6_8', 'gt_8'],
-                'self_help_capability_code' => ['capable', 'not_capable'],
+                'jenis_kelamin' => ['male', 'female'],
+                'status_perkawinan' => ['single', 'married', 'divorced'],
+                'pendidikan' => ['no_certificate', 'elementary', 'junior_high', 'senior_high', 'diploma_1_3', 'bachelor', 'postgraduate'],
+                'stabilitas_pekerjaan' => ['permanent', 'non_permanent'],
+                'punya_tabungan' => ['0', '1'],
+                'pekerjaan' => ['farmer', 'horticulture', 'plantation', 'capture_fisher', 'aquaculture_fisher', 'breeder', 'forestry_agriculture_other', 'mining', 'daily_laborer', 'electricity_gas', 'construction_worker', 'trader', 'hotel_restaurant', 'driver', 'information_communication', 'finance_insurance', 'educator', 'health_worker', 'civil_servant', 'scavenger', 'military_police', 'private_employee', 'contract_worker', 'retired', 'unemployed', 'other'],
+                'kelompok_penghasilan' => ['lt_1_8', '1_9_2_1', '2_2_2_6', '2_7_3_1', '3_2_3_6', '3_7_4_2', 'gt_4_2', '4_2_6', '6_8', 'gt_8'],
+                'mampu_swadaya' => ['capable', 'not_capable'],
             ];
             foreach ($citizen_allowed as $field => $options) {
                 $value = (string) $this->input->post($field, TRUE);
                 if ($value !== '' && ! in_array($value, $options, TRUE)) { $errors[$field] = 'Pilihan tidak valid.'; }
             }
-            if (trim((string) $this->input->post('housing_status_code', TRUE)) === '') {
-                $errors['housing_status_code'] = 'Status rumah wajib dipilih.';
+            if ($step === 'housing_family') { return $errors; }
+            if (trim((string) $this->input->post('kepemilikan_rumah', TRUE)) === '') {
+                $errors['kepemilikan_rumah'] = 'Status rumah wajib dipilih.';
             }
-            foreach (['occupant_count' => 'Jumlah penghuni', 'family_count' => 'Jumlah keluarga'] as $field => $label) {
+            foreach (['jml_penghuni' => 'Jumlah penghuni', 'jml_kk' => 'Jumlah keluarga'] as $field => $label) {
                 $number = trim((string) $this->input->post($field, TRUE));
                 if ($number !== '' && filter_var($number, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === FALSE) { $errors[$field] = $label . ' minimal 1.'; }
             }
-            $area = $this->input->post('house_area_m2', TRUE);
-            if ($area !== NULL && $area !== '' && (! is_numeric($area) || (float) $area <= 0)) { $errors['house_area_m2'] = 'Luas rumah harus lebih dari nol.'; }
+            $area = $this->input->post('luas_rumah', TRUE);
+            if ($area !== NULL && $area !== '' && (! is_numeric($area) || (float) $area <= 0)) { $errors['luas_rumah'] = 'Luas rumah harus lebih dari nol.'; }
             $allowed = [
-                'housing_status_code' => ['owned', 'rent', 'rent_free', 'official', 'staying', 'other'],
-                'land_title_code' => ['certificate_unspecified', 'hm', 'hgb', 'letter_c', 'letter_d', 'village_letter', 'notarial_deed', 'other'],
-                'area_condition_code' => ['drought', 'slum', 'disaster_prone', 'riverbank', 'railway', 'poor_other', 'good'],
-                'assistance_source_code' => ['apbn_bsps', 'apbn', 'apbd_prov', 'apbd_kab', 'csr', 'village_fund', 'bsps_kl', 'bankab', 'baznas', 'other'],
-                'has_other_land' => ['0', '1'],
-                'has_other_house' => ['0', '1'],
-                'owns_candidate_land' => ['0', '1'],
+                'kepemilikan_rumah' => ['owned', 'rent', 'rent_free', 'official', 'staying', 'other'],
+                'kepemilikan_lahan' => ['certificate_unspecified', 'hm', 'hgb', 'letter_c', 'letter_d', 'village_letter', 'notarial_deed', 'other'],
+                'kawasan_perumahan' => ['drought', 'slum', 'disaster_prone', 'riverbank', 'railway', 'poor_other', 'good'],
+                'bantuan_perumahan' => ['apbn_bsps', 'apbn', 'apbd_prov', 'apbd_kab', 'csr', 'village_fund', 'bsps_kl', 'bankab', 'baznas', 'already_habitable', 'other'],
+                'tanah_lain' => ['0', '1'],
+                'rumah_lain' => ['0', '1'],
+                'punya_lahan_calon' => ['0', '1'],
             ];
             foreach ($allowed as $field => $options) {
                 $value = (string) $this->input->post($field, TRUE);
                 if ($value !== '' && ! in_array($value, $options, TRUE)) { $errors[$field] = 'Pilihan tidak valid.'; }
             }
-            if ((string) $this->input->post('housing_status_code', TRUE) === 'owned') {
-                foreach (['land_title_code', 'has_other_land', 'has_other_house'] as $field) {
+            if ((string) $this->input->post('kepemilikan_rumah', TRUE) === 'owned') {
+                foreach (['kepemilikan_lahan', 'tanah_lain', 'rumah_lain'] as $field) {
                     if (trim((string) $this->input->post($field, TRUE)) === '') $errors[$field] = 'Field ini wajib diisi untuk rumah milik sendiri.';
                 }
-                if ($area === NULL || $area === '') $errors['house_area_m2'] = 'Luas rumah wajib diisi.';
-            } elseif ( ! in_array((string) $this->input->post('has_other_land', TRUE), ['0', '1'], TRUE)) {
-                $errors['has_other_land'] = 'Kepemilikan tanah lain wajib dipilih.';
+                if ($area === NULL || $area === '') $errors['luas_rumah'] = 'Luas rumah wajib diisi.';
+            } elseif ( ! in_array((string) $this->input->post('tanah_lain', TRUE), ['0', '1'], TRUE)) {
+                $errors['tanah_lain'] = 'Kepemilikan tanah lain wajib dipilih.';
             }
-            $year = (string) $this->input->post('assistance_year', TRUE);
+            $year = (string) $this->input->post('tahun_intervensi', TRUE);
             if ($year !== '' && ( ! ctype_digit($year) || (int) $year < 1900 || (int) $year > (int) date('Y'))) {
-                $errors['assistance_year'] = 'Tahun bantuan tidak valid.';
+                $errors['tahun_intervensi'] = 'Tahun bantuan tidak valid.';
             }
         }
         if ($step === 'building_condition') {
-            foreach (['foundation_condition_code','column_condition_code','beam_condition_code','roof_frame_condition_code','floor_condition_code','wall_condition_code','roof_condition_code'] as $field) {
+            foreach (['kondisi_pondasi','kondisi_kolom','kondisi_balok','kondisi_rangka','kondisi_lantai','kondisi_dinding','kondisi_atap'] as $field) {
                 if (trim((string) $this->input->post($field, TRUE)) === '') $errors[$field] = 'Field ini wajib diisi.';
             }
             $condition = ['good','minor_damage','moderate_damage','severe_damage_or_absent'];
             $allowed = [
-                'foundation_condition_code'=>$condition, 'column_condition_code'=>$condition,
-                'beam_condition_code'=>$condition, 'sloof_condition_code'=>$condition,
-                'ceiling_condition_code'=>$condition, 'roof_frame_condition_code'=>$condition,
-                'floor_condition_code'=>$condition, 'wall_condition_code'=>$condition,
-                'roof_condition_code'=>$condition,
-                'floor_material_code'=>['marble_granite','ceramic','parquet_vinyl_carpet','tile_terrazzo','high_quality_wood','cement_plaster','bamboo','low_quality_wood','soil','other'],
-                'wall_material_code'=>['wall','plaster_grc','wood','woven_bamboo','log','bamboo','other'],
-                'roof_material_code'=>['concrete','ceramic','metal','clay_tile','asbestos','zinc','shingle','bamboo','thatch','other'],
+                'kondisi_pondasi'=>$condition, 'kondisi_kolom'=>$condition,
+                'kondisi_balok'=>$condition, 'kondisi_sloof'=>$condition,
+                'kondisi_plafon'=>$condition, 'kondisi_rangka'=>$condition,
+                'kondisi_lantai'=>$condition, 'kondisi_dinding'=>$condition,
+                'kondisi_atap'=>$condition,
+                'bahan_lantai'=>['marble_granite','ceramic','parquet_vinyl_carpet','tile_terrazzo','high_quality_wood','cement_plaster','bamboo','low_quality_wood','soil','other'],
+                'bahan_dinding'=>['wall','plaster_grc','wood','woven_bamboo','log','bamboo','other'],
+                'bahan_atap'=>['concrete','ceramic','metal','clay_tile','asbestos','zinc','shingle','bamboo','thatch','other'],
             ];
             $this->validate_options($allowed, $errors);
         }
         if ($step === 'candidate_land') {
-            foreach (['candidate_land_address','candidate_land_title_code','candidate_land_origin_code','land_length_m','land_width_m'] as $field) {
+            foreach (['candidate_land_address','status_lahan_calon','asal_lahan_calon','panjang_lahan_m','lebar_lahan_m'] as $field) {
                 if (trim((string) $this->input->post($field, TRUE)) === '') $errors[$field] = 'Field ini wajib diisi.';
             }
-            foreach (['land_length_m','land_width_m'] as $field) if (!is_numeric($this->input->post($field, TRUE)) || (float)$this->input->post($field, TRUE) <= 0) $errors[$field] = 'Ukuran harus lebih dari nol.';
+            foreach (['panjang_lahan_m','lebar_lahan_m'] as $field) if (!is_numeric($this->input->post($field, TRUE)) || (float)$this->input->post($field, TRUE) <= 0) $errors[$field] = 'Ukuran harus lebih dari nol.';
             $this->validate_options([
-                'candidate_land_title_code'=>['hm','hgb','letter_c','letter_d','village_letter','notarial_deed','other'],
-                'candidate_land_origin_code'=>['owned','inheritance','grant','purchase'],
-                'land_owner_relationship_code'=>['parent','other'],
+                'status_lahan_calon'=>['hm','hgb','letter_c','letter_d','village_letter','notarial_deed','other'],
+                'asal_lahan_calon'=>['owned','inheritance','grant','purchase'],
+                'hubungan_pemilik_lahan'=>['parent','other'],
             ], $errors);
         }
         if ($step === 'sanitation') {
-            foreach (['has_bathroom_latrine','water_source_code','lighting_source_code','cooking_fuel_code'] as $field) if (trim((string)$this->input->post($field, TRUE)) === '') $errors[$field] = 'Field ini wajib diisi.';
+            foreach (['penggunaan_kamar_mandi','sumber_air','penerangan','bahan_bakar_masak'] as $field) if (trim((string)$this->input->post($field, TRUE)) === '') $errors[$field] = 'Field ini wajib diisi.';
             $this->validate_options([
-                'has_window'=>['0','1'], 'has_ventilation'=>['0','1'], 'has_bathroom_latrine'=>['0','1'],
-                'water_source_code'=>['bottled','refill','piped','pdam','retail_piped','well','well_protected','well_unprotected','spring','spring_unprotected','surface_water','rain','other_unfit'],
-                'latrine_type_code'=>['swan_neck','plengsengan','pit','none'],
-                'feces_disposal_code'=>['septic_tank','ipal','water_body','ground_hole','open_land'],
-                'septic_distance_code'=>['lt_10','gte_10'],
-                'lighting_source_code'=>['pln','pln_unmetered','non_pln','none'],
-                'cooking_fuel_code'=>['electric_gas','kerosene','charcoal_wood','other'],
+                'ada_jendela'=>['0','1'], 'ada_ventilasi'=>['0','1'], 'penggunaan_kamar_mandi'=>['own','shared','none'],
+                'sumber_air'=>['bottled','refill','piped','pdam','retail_piped','well','well_protected','well_unprotected','spring','spring_unprotected','surface_water','rain','other_unfit'],
+                'jenis_kloset'=>['swan_neck','plengsengan','pit','none'],
+                'pembuangan_tinja'=>['septic_tank','ipal','water_body','ground_hole','open_land'],
+                'jarak_septic_tank'=>['lt_10','gte_10'],
+                'penerangan'=>['pln','pln_unmetered','non_pln','none'],
+                'bahan_bakar_masak'=>['electric_gas','kerosene','charcoal_wood','other'],
             ], $errors);
         }
         if ($step === 'location_evidence') {
@@ -1015,7 +933,7 @@ class Warga extends MY_Controller {
             // sedang di lokasi berbeda dari rumahnya, atau kameranya tidak
             // aktif, tidak boleh mentok di langkah ini. Pola "validasi cuma
             // kalau diisi" sudah dipakai field opsional lain di fungsi ini
-            // (house_area_m2, assistance_year) - lat/lng mengikuti pola yang
+            // (luas_rumah, tahun_intervensi) - lat/lng mengikuti pola yang
             // sama, bukan pengecualian baru.
             $lat = $this->input->post('location_lat', TRUE);
             $lng = $this->input->post('location_lng', TRUE);

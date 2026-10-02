@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji perjalanan MAHASISWA - pendaftaran KKN / Magang, lewat HTTP Apache nyata.
  *
@@ -127,14 +128,17 @@ function csrf($nama, $path) {
  */
 function dasar(array $ubah = []) {
     return array_merge([
-        'jenis'           => 'kkn',
+        // KKN FINAL (23 Sep 2026): KKN hanya lewat akun universitas, jadi perjalanan MAHASISWA
+        // kini perjalanan MAGANG. Periode 2098 dengan slot yang dibuka skrip ini sendiri.
+        'jenis'           => 'magang',
+        'divisi_atau_tema' => 'perumahan',
         'nim'             => 'UJI' . mt_rand(100000, 999999),
         'tempat_lahir'    => 'Semarang',
         'tanggal_lahir'   => '2003-05-17',
         'semester'        => '6',
         'jurusan'         => 'Teknik Informatika',
-        'periode_mulai'   => '2026-09-01',
-        'periode_selesai' => '2026-10-01',
+        'periode_mulai'   => '2098-01-01',
+        'periode_selesai' => '2098-01-31',
     ], $ubah);
 }
 
@@ -163,32 +167,35 @@ function bersihkan() {
     global $db, $jars, $akun;
     if (isset($akun)) {
         foreach ($akun as $email) {
-            $uid = $db->query("SELECT id FROM usr_users WHERE email = '"
+            $uid = $db->query("SELECT id FROM usr_akun WHERE email = '"
                 . $db->real_escape_string($email) . "'")->fetch_assoc()['id'] ?? NULL;
             if ($uid) { $db->query('DELETE FROM kkn_magang_pendaftaran WHERE user_id = ' . (int) $uid); }
         }
     }
-    $db->query("DELETE FROM usr_users WHERE email LIKE 'uji_mhs_%'");
+    $db->query("DELETE FROM usr_akun WHERE email LIKE 'uji_mhs_%'");
+    $db->query("DELETE FROM kkn_magang_slot WHERE tahun = 2098");
     foreach ($jars as $f) { @unlink($f); }
 }
 
 // ---------------------------------------------------------------- prasyarat
 
 echo "Uji perjalanan Mahasiswa - KKN & Magang\n";
+// Slot magang bidang perumahan untuk periode uji 2098 (tahun yang tidak dipakai data asli).
+$db->query("INSERT IGNORE INTO kkn_magang_slot (bidang_kode, tahun, bulan, tgl_mulai, tgl_selesai) VALUES ('perumahan', 2098, 1, '2098-01-01', '2098-01-31')");
 
-$admin = q('SELECT id, email FROM usr_users WHERE role = ? LIMIT 1', ['admin']);
+$admin = q('SELECT id, email FROM usr_akun WHERE peran = ? LIMIT 1', ['admin']);
 wajib($admin && ! empty($admin['email']), 'Akun superadmin tersedia untuk sisi peninjau');
 
 foreach (['mhs' => 'mahasiswa', 'mhs2' => 'mahasiswa', 'warga' => 'warga'] as $k => $role) {
     $db->query(sprintf(
-        "INSERT INTO usr_users (email, password, role, name, username)
+        "INSERT INTO usr_akun (email, kata_sandi, peran, nama, nama_pengguna)
          VALUES ('%s', '%s', '%s', 'Uji %s', 'uji_mhs_%s_%d')",
         $db->real_escape_string($akun[$k]),
         $db->real_escape_string(password_hash('UjiMhs!2026', PASSWORD_BCRYPT)),
         $db->real_escape_string($role), $k, $k, $stamp));
 }
-$UID  = skalar_int('SELECT id FROM usr_users WHERE email = ?', [$akun['mhs']]);
-$UID2 = skalar_int('SELECT id FROM usr_users WHERE email = ?', [$akun['mhs2']]);
+$UID  = skalar_int('SELECT id FROM usr_akun WHERE email = ?', [$akun['mhs']]);
+$UID2 = skalar_int('SELECT id FROM usr_akun WHERE email = ?', [$akun['mhs2']]);
 
 $pdf = tempnam(sys_get_temp_dir(), 'surat_') . '.pdf';
 file_put_contents($pdf, "%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF");
@@ -205,12 +212,12 @@ try {
     cek(http('anon', 'KemitraanPortal/daftar/ngawur')['code'] === 404,
         'Jenis pendaftaran tak dikenal ditolak 404');
 
-    $anon = http('anon', 'KemitraanPortal/daftar/kkn');
+    $anon = http('anon', 'KemitraanPortal/daftar/magang');
     cek(strpos($anon['url'], 'Auth/login') !== FALSE,
         'Pengunjung tanpa sesi diarahkan ke login, bukan diberi formulir');
 
     wajib(login('warga', $akun['warga'], 'UjiMhs!2026'), 'Login akun warga berhasil');
-    $w = http('warga', 'KemitraanPortal/daftar/kkn');
+    $w = http('warga', 'KemitraanPortal/daftar/magang');
     cek(strpos($w['url'], 'akun') !== FALSE && strpos($w['body'], 'name="instansi_asal"') === FALSE,
         'Peran BUKAN mahasiswa tidak mendapat formulir pendaftaran');
 
@@ -218,14 +225,14 @@ try {
     $t = csrf('warga', 'akun');
     http('warga', 'KemitraanPortal/simpan', dasar([
         'csrf_kpkp_token' => $t, 'instansi_asal' => 'Univ Tembus',
-        'no_hp' => '081200000000', 'divisi_atau_tema' => 'Tembus gerbang']));
+        'no_hp' => '081200000000', 'divisi_atau_tema' => 'perumahan']));
     cek(skalar_int('SELECT COUNT(*) c FROM kkn_magang_pendaftaran WHERE instansi_asal = ?',
         ['Univ Tembus']) === 0,
         'POST langsung dari peran warga TIDAK menulis baris');
 
     // ------------------------------------------------------------ mahasiswa
     wajib(login('mhs', $akun['mhs'], 'UjiMhs!2026'), 'Login akun mahasiswa berhasil');
-    $form = http('mhs', 'KemitraanPortal/daftar/kkn');
+    $form = http('mhs', 'KemitraanPortal/daftar/magang');
     wajib($form['code'] === 200 && strpos($form['body'], 'name="instansi_asal"') !== FALSE,
         'Mahasiswa mendapat formulir pendaftaran');
     cek(stripos($form['body'], 'name="user_id"') === FALSE,
@@ -234,37 +241,45 @@ try {
     // ------------------------------------------------------------------ CSRF
     http('mhs', 'KemitraanPortal/simpan', dasar([
         'instansi_asal' => 'Univ Tanpa Token', 'no_hp' => '081200000001',
-        'divisi_atau_tema' => 'x']));
+        'divisi_atau_tema' => 'perumahan']));
     cek(skalar_int('SELECT COUNT(*) c FROM kkn_magang_pendaftaran WHERE instansi_asal = ?',
         ['Univ Tanpa Token']) === 0,
         'POST tanpa token CSRF tidak menulis apa pun');
 
     // -------------------------------------------------------- validasi server
     $tolak = [
-        'no_hp bukan angka' => ['no_hp' => 'nol-delapan', 'periode_mulai' => '2026-09-01'],
-        'no_hp terlalu pendek' => ['no_hp' => '0812', 'periode_mulai' => '2026-09-01'],
+        'no_hp bukan angka' => ['no_hp' => 'nol-delapan', 'periode_mulai' => '2098-01-01'],
+        'no_hp terlalu pendek' => ['no_hp' => '0812', 'periode_mulai' => '2098-01-01'],
         'tanggal bukan format tanggal' => ['no_hp' => '081200000002', 'periode_mulai' => '01/09/2026'],
     ];
     foreach ($tolak as $label => $ubah) {
-        $t = csrf('mhs', 'KemitraanPortal/daftar/kkn');
+        $t = csrf('mhs', 'KemitraanPortal/daftar/magang');
         http('mhs', 'KemitraanPortal/simpan', array_merge(dasar([
             'csrf_kpkp_token' => $t, 'instansi_asal' => 'Univ Tolak ' . $label,
-            'divisi_atau_tema' => 'x']), $ubah));
+            'divisi_atau_tema' => 'perumahan']), $ubah));
         cek(skalar_int('SELECT COUNT(*) c FROM kkn_magang_pendaftaran WHERE instansi_asal = ?',
             ['Univ Tolak ' . $label]) === 0, "Ditolak server: {$label}");
     }
 
     // --------------------------------------------------- kirim yang sah + IDOR
-    // `user_id` DISUNTIKKAN ke payload. Kalau controller memakainya alih-alih
-    // sesi, pendaftaran ini akan tercatat atas nama mahasiswa KEDUA.
-    $t = csrf('mhs', 'KemitraanPortal/daftar/kkn');
+    // `user_id` DISUNTIKKAN ke payload. Sejak allowlist input (21 Sep 2026) field itu
+    // bukan nama yang dikenal, jadi penjaga input menolak SELURUH kiriman dengan 400
+    // sebelum controller - lapis yang lebih ketat daripada "controller mengabaikannya".
+    $t = csrf('mhs', 'KemitraanPortal/daftar/magang');
+    $suntik = http('mhs', 'KemitraanPortal/simpan', dasar([
+        'csrf_kpkp_token' => $t, 'user_id' => $UID2,
+        'instansi_asal' => 'Universitas Uji Suntik', 'no_hp' => '081234567890',
+    ]), TRUE, ['file_surat_pengantar' => $pdf]);
+    cek($suntik['code'] === 400 && skalar_int('SELECT COUNT(*) c FROM kkn_magang_pendaftaran WHERE instansi_asal = ?',
+        ['Universitas Uji Suntik']) === 0, 'Kiriman dengan user_id suntikan ditolak utuh (400), nol baris');
+
+    $t = csrf('mhs', 'KemitraanPortal/daftar/magang');
     $kirim = http('mhs', 'KemitraanPortal/simpan', dasar([
         'csrf_kpkp_token' => $t,
-        'user_id'          => $UID2,
         'instansi_asal'    => 'Universitas Uji Mahasiswa',
         'no_hp'            => '081234567890',
-        'divisi_atau_tema' => 'Infrastruktur dan Teknologi Digital',
-        'periode_selesai'  => '2026-10-31',
+        'divisi_atau_tema' => 'perumahan',
+        'periode_selesai'  => '2098-01-31',
     ]), TRUE, ['file_surat_pengantar' => $pdf]);
     wajib($kirim['code'] === 200, 'Kirim pendaftaran berhasil');
 
@@ -273,7 +288,7 @@ try {
     wajib($PEND > 0, 'Baris pendaftaran tercatat di DB');
     cek(skalar_int('SELECT user_id FROM kkn_magang_pendaftaran WHERE id = ?', [$PEND]) === $UID,
         'user_id dari SESI, bukan dari POST - suntikan IDOR diabaikan');
-    cek(skalar_str('SELECT jenis FROM kkn_magang_pendaftaran WHERE id = ?', [$PEND]) === 'kkn',
+    cek(skalar_str('SELECT jenis FROM kkn_magang_pendaftaran WHERE id = ?', [$PEND]) === 'magang',
         'Jenis tersimpan apa adanya');
 
     // ------------------------------------------------------- surat pengantar
@@ -335,7 +350,7 @@ try {
     bersihkan();
 }
 
-cek(skalar_int("SELECT COUNT(*) c FROM usr_users WHERE email LIKE 'uji_mhs_%'") === 0,
+cek(skalar_int("SELECT COUNT(*) c FROM usr_akun WHERE email LIKE 'uji_mhs_%'") === 0,
     'Data uji dibersihkan');
 
 echo "RINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";

@@ -13,7 +13,7 @@
  *
  * Identitas universitas (nama akun) dan kontaknya (No. HP) SENGAJA tidak
  * diminta ulang di formulir Tambah KKN - keduanya diambil dari akun sendiri
- * (session name + usr_users.phone), makanya tautan "Profil Saya" di sidebar
+ * (session name + usr_akun.no_hp), makanya tautan "Profil Saya" di sidebar
  * benar-benar dipakai untuk melengkapinya, bukan hiasan.
  */
 $label = 'mb-1 block text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-brand-muted';
@@ -94,6 +94,7 @@ $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
     </div>
 </div>
 
+<?php $isian_lama = (array) $this->session->flashdata('kkn_tambah_isian'); ?>
 <dialog id="kkn-tambah-dialog" style="padding:0;border:0;border-radius:1.5rem;width:min(92vw,640px);max-height:90vh;background:transparent">
     <div class="bg-white dark:bg-brand-card rounded-3xl overflow-hidden flex flex-col" style="max-height:90vh">
         <div class="flex items-center justify-between gap-3 px-6 py-5 border-b border-gray-200 dark:border-white/10">
@@ -102,23 +103,24 @@ $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
                     class="w-7 h-7 rounded-lg bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-brand-muted">✕</button>
         </div>
         <form method="POST" action="<?= base_url('KemitraanPortal/kkn_tambah') ?>" enctype="multipart/form-data"
+              onsubmit="this.querySelector('[type=submit]').disabled = true"
               class="px-6 py-5 overflow-y-auto space-y-4">
             <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                     <label for="kt-mulai" class="<?= $label ?>">Periode Mulai</label>
-                    <input id="kt-mulai" name="periode_mulai" type="date" required class="<?= $isian ?>">
+                    <input id="kt-mulai" name="periode_mulai" type="date" required value="<?= html_escape($isian_lama['periode_mulai'] ?? '') ?>" class="<?= $isian ?>">
                 </div>
                 <div>
                     <label for="kt-selesai" class="<?= $label ?>">Periode Selesai</label>
-                    <input id="kt-selesai" name="periode_selesai" type="date" required class="<?= $isian ?>">
+                    <input id="kt-selesai" name="periode_selesai" type="date" required value="<?= html_escape($isian_lama['periode_selesai'] ?? '') ?>" class="<?= $isian ?>">
                 </div>
             </div>
 
             <div>
                 <label for="kt-keterangan" class="<?= $label ?>">Keterangan</label>
-                <input id="kt-keterangan" name="keterangan" required maxlength="150" placeholder="Contoh: KKN Tematik Desa Sukamaju" class="<?= $isian ?>">
+                <input id="kt-keterangan" name="keterangan" required maxlength="150" value="<?= html_escape($isian_lama['keterangan'] ?? '') ?>" placeholder="Contoh: KKN Kemitraan Desa Sukamaju" class="<?= $isian ?>">
             </div>
 
             <div>

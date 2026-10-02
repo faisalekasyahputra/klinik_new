@@ -56,8 +56,8 @@
 
         <!-- Card 3: Temukan Solusi Pembiayaan.
              Sejak 1 Agu 2026 tujuannya wizard pendataan warga, bukan diagnosa
-             singkat `solusi_pembiayaan` - halaman lamanya masih hidup lewat rute
-             langsung, belum diputuskan nasibnya. -->
+             singkat `solusi_pembiayaan` - sejak 27 Sep 2026 rute lamanya pun
+             dialihkan ke sini (keputusan pemilik produk). -->
         <a href="<?= base_url('warga/pendataan') ?>" data-tab-link data-tab-key="warga_pendataan" data-tab-group="perumahan"
            class="group rounded-2xl p-3.5 sm:p-4 flex flex-col transition-all duration-500 relative overflow-hidden"
            style="background-color: var(--portal-bg-card); border: 1px solid var(--portal-border); box-shadow: var(--portal-shadow); min-height: 140px;">

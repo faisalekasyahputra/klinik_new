@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji POSISI MAGANG - butir F1 revisi dinas.
  *
@@ -64,7 +65,7 @@ function q($sql, $p = []) {
 function bersihkan() {
     if (empty($GLOBALS['db'])) { return; }
     $GLOBALS['db']->query("DELETE FROM kkn_magang_posisi WHERE nama_posisi LIKE 'UJIPOS %'");
-    foreach ($GLOBALS['users'] as $id) { $GLOBALS['db']->query('DELETE FROM usr_users WHERE id=' . (int) $id); }
+    foreach ($GLOBALS['users'] as $id) { $GLOBALS['db']->query('DELETE FROM usr_akun WHERE id=' . (int) $id); }
     @unlink(jar());
 }
 function jar() { static $j; if ( ! $j) { $j = tempnam(sys_get_temp_dir(), 'posisi_'); } return $j; }
@@ -133,7 +134,7 @@ $kode_bidang = $bidang[0]['kode'];
 
 $emailAdm = 'uji_posisi_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
 $uid = NULL;
-$st = $GLOBALS['db']->prepare('INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+$st = $GLOBALS['db']->prepare('INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
     VALUES (?,?,?,?,"admin","active",1,NOW())');
 $nm = 'Uji Posisi'; $un = 'uji_posisi_' . mt_rand(10000, 99999);
 $pw = password_hash(SANDI, PASSWORD_BCRYPT);
@@ -146,9 +147,14 @@ http('Auth/do_login', ['csrf_kpkp_token' => $t, 'email' => $emailAdm, 'password'
 $layar = http('Admin_Magang_Posisi');
 wajib(strpos($layar, 'Posisi Magang') !== FALSE, 'Superadmin benar-benar sampai ke layar Posisi Magang');
 
-/* Modal pengingat versi KOSONG harus muncul sekarang. */
-cek(strpos($layar, 'Belum ada satu pun posisi magang') !== FALSE,
-    'Modal pengingat berbunyi "belum ada posisi" saat daftar kosong');
+/* Daftar kosong: keadaan kosong biasa di bawah formulir, BUKAN modal yang terbuka sendiri
+   (audit UI 2 Okt 2026, kelompok B: modal otomatis menghalangi kerja). */
+// Sejak DB lokal disinkronkan dengan production (2 Okt 2026) daftarnya bisa berisi posisi
+// sungguhan; yang dijaga tetap sama: tidak ada modal yang terbuka sendiri.
+$ada_posisi = (int) (q('SELECT COUNT(*) n FROM kkn_magang_posisi')[0]['n'] ?? 0) > 0;
+cek(strpos($layar, 'modal-posisi-magang') === FALSE
+    && ($ada_posisi || strpos($layar, 'Belum ada posisi.') !== FALSE),
+    'Daftar posisi tampil biasa (kosong: keadaan kosong), tanpa modal otomatis');
 
 $t2 = token('Admin_Magang_Posisi');
 http('Admin_Magang_Posisi/simpan', [
@@ -188,6 +194,20 @@ http('Admin_Magang_Posisi/simpan', [
 ]);
 cek((int) q("SELECT COUNT(*) c FROM kkn_magang_posisi")[0]['c'] === $sebelum,
     'Bidang karangan ditolak - tidak ada baris baru');
+
+// ------------------------------------------------- 7. Ubah id yang tidak ada
+echo "\n== 7. Ubah posisi yang tidak ada ditolak, bukan sukses palsu ==\n";
+$hantu = (int) q("SELECT COALESCE(MAX(id), 0) + 100000 m FROM kkn_magang_posisi")[0]['m'];
+$sebelum = (int) q("SELECT COUNT(*) c FROM kkn_magang_posisi")[0]['c'];
+$layar = http('Admin_Magang_Posisi/simpan', [
+    'csrf_kpkp_token' => token('Admin_Magang_Posisi'), 'id' => $hantu, 'bidang_kode' => $kode_bidang,
+    'nama_posisi' => 'UJIPOS Hantu', 'kuota' => 1, 'urutan' => 0, 'aktif' => 1,
+]);
+cek(strpos($layar, 'Posisi tidak ditemukan') !== FALSE && strpos($layar, 'Posisi diperbarui') === FALSE,
+    'Admin mendapat pesan "Posisi tidak ditemukan", bukan "Posisi diperbarui"');
+cek((int) q("SELECT COUNT(*) c FROM kkn_magang_posisi")[0]['c'] === $sebelum, 'Tidak ada baris baru tercipta');
+cek( ! q("SELECT id FROM sys_jejak_audit WHERE objek_tipe='kkn_magang_posisi' AND objek_id=?", [(string) $hantu]),
+    'Tidak ada jejak audit yatim untuk id yang tidak ada');
 
 echo "\n=== Ringkasan ===\n";
 printf("  %d pemeriksaan, %d merah\n", $GLOBALS['uji_total'], $GLOBALS['uji_gagal']);

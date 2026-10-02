@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji PANTAU REKAM DATA - pandangan superadmin lintas kabupaten.
  *
@@ -129,7 +130,7 @@ function login($nama, $email) {
 function buat_akun($peran, $suffix, $kab = NULL, $bidang = NULL) {
     $email = 'uji_pantau_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
     $id = tulis(
-        'INSERT INTO usr_users (email,password,name,username,role,kabupaten_id,bidang_kode,status,profile_completed,created_at)
+        'INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,kabupaten_id,bidang_kode,status,profil_lengkap,created_at)
          VALUES (?,?,?,?,?,?,?, "active",1,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji Pantau ' . $suffix,
          'uji_pantau_' . $suffix . '_' . mt_rand(10000, 99999), $peran, $kab, $bidang]
@@ -140,7 +141,7 @@ function buat_akun($peran, $suffix, $kab = NULL, $bidang = NULL) {
 
 function buat_laporan($domain, $kab, $status, $ditinjau = FALSE) {
     $id = tulis(
-        'INSERT INTO rd_laporan (domain,kabupaten_id,tahun,triwulan,status,current_step,submitted_at,reviewed_at,created_at,updated_at)
+        'INSERT INTO rd_laporan (domain,kabupaten_id,tahun,triwulan,status,langkah_sekarang,submitted_at,reviewed_at,created_at,updated_at)
          VALUES (?,?,?,?,?,"selesai", ?, ?, NOW(), NOW())',
         [$domain, $kab, TAHUN, TW, $status,
          $status === 'draft' ? NULL : date('Y-m-d H:i:s'),
@@ -154,8 +155,8 @@ function bersihkan() {
     if (empty($GLOBALS['db'])) { return; }
     foreach ($GLOBALS['laporan'] as $id) { q('DELETE FROM rd_laporan WHERE id=?', [$id]); }
     foreach ($GLOBALS['users'] as $id) {
-        q('DELETE FROM sys_jejak_audit WHERE actor_id=?', [$id]);
-        q('DELETE FROM usr_users WHERE id=?', [$id]);
+        q('DELETE FROM sys_jejak_audit WHERE pelaku_id=?', [$id]);
+        q('DELETE FROM usr_akun WHERE id=?', [$id]);
     }
     foreach ($GLOBALS['jar'] as $j) { @unlink($j); }
     $GLOBALS['laporan'] = $GLOBALS['users'] = [];
@@ -246,8 +247,17 @@ $kelas = file_get_contents(APP_ROOT . '/application/controllers/Admin_Rekam_Data
 preg_match_all('/^\s*public\s+function\s+(\w+)/m', $kelas, $m);
 $publik = array_values(array_diff($m[1], ['__construct']));
 sort($publik);
-cek($publik === ['detail', 'index'],
-    'Hanya index() dan detail() yang publik (ditemukan: ' . implode(', ', $publik) . ')');
+// export() masuk daftar sejak f28ab1c (17 Agt 2026): unduhan rekap lewat GET, hanya membaca.
+// Yang dijaga bagian ini tetap sama - nol endpoint TULIS - jadi method baru apa pun
+// harus ditambahkan ke sini dengan sadar, dan cek db-> di bawah tetap berlaku untuknya.
+cek($publik === ['detail', 'export', 'index'],
+    'Hanya index(), detail(), dan export() yang publik (ditemukan: ' . implode(', ', $publik) . ')');
+foreach (['tamu' => 'Tamu', 'k' => 'Admin kab/kota'] as $sesi_lain => $siapa) {
+    $r = http($sesi_lain, 'Admin_Rekam_Data/export');
+    cek(strpos($r['url'], 'Admin_Rekam_Data/export') === FALSE
+        && stripos($r['body'], 'PK' . "\x03\x04") !== 0,
+        "{$siapa} TIDAK bisa mengunduh rekap superadmin (mendarat di: " . basename(parse_url($r['url'], PHP_URL_PATH)) . ')');
+}
 foreach (['insert', 'update', 'delete', 'replace', 'truncate'] as $tulis) {
     cek( ! preg_match('/->' . $tulis . '\s*\(/', $kelas), "Tidak memanggil db->{$tulis}()");
 }
@@ -307,7 +317,8 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV'][$tw_kini];
 cek(preg_match('/tahun=' . date('Y') . '&amp;triwulan=' . $tw_kini . '/', $polos['body']) === 1
     || strpos($polos['body'], 'tahun=' . date('Y')) !== FALSE,
     'Tanpa parameter, papan memakai tahun berjalan (' . date('Y') . ')');
-cek(preg_match('/bg-brand-primary\/20[^>]*>' . preg_quote($nama_tw, '/') . '</', $polos['body']) === 1,
+// Filter aktif kini chip bersama (fondasi 09653d8): penanda aktifnya aria-current.
+cek(preg_match('/class="chip-filter" aria-current="true"[^>]*>\s*' . preg_quote($nama_tw, '/') . '\s*</', $polos['body']) === 1,
     "Triwulan bawaan = triwulan BERJALAN ({$nama_tw}), bukan TW I");
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";

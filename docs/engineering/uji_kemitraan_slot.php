@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji slot magang - data, pengelolaan, dan penegakannya (migrasi 20260701000026).
  *
@@ -150,7 +151,7 @@ function bersihkan() {
     $db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
     if ( ! empty($GLOBALS['mhs_uji_id'])) {
         $db->query("DELETE FROM kkn_magang_pendaftaran WHERE user_id = " . (int) $GLOBALS['mhs_uji_id']);
-        $db->query("DELETE FROM usr_users WHERE id = " . (int) $GLOBALS['mhs_uji_id']);
+        $db->query("DELETE FROM usr_akun WHERE id = " . (int) $GLOBALS['mhs_uji_id']);
     }
     // Bidang tidak dihapus - ia struktur organisasi. Yang dipulihkan keadaan
     // magangnya: slot tahun uji dibuang, kuota dan status kembali ke bawaan.
@@ -272,7 +273,7 @@ wajib(login(ADM_EMAIL, ADM_PASSWORD), 'Login superadmin');
  * meminjam data bersama akan merah karena ulah orang lain.
  */
 $MHS_UJI = 'uji_slot_mhs_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
-$db->query("INSERT INTO usr_users (email,password,name,username,role,status,profile_completed,created_at)
+$db->query("INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
     VALUES ('" . $db->real_escape_string($MHS_UJI) . "', '" . password_hash(MHS_PASSWORD, PASSWORD_BCRYPT)
     . "', 'Mahasiswa Uji Slot', 'uji_slot_" . mt_rand(100000, 999999) . "', 'mahasiswa', 'active', 1, NOW())");
 $GLOBALS['mhs_uji_id'] = (int) $db->insert_id;
@@ -310,6 +311,7 @@ $nama_bidang = baris("SELECT nama FROM bidang WHERE kode = ?", [BIDANG_UJI])['na
 $papan = http('KemitraanPortal/magang')['body'];
 cek(strpos($papan, $nama_bidang) !== FALSE, 'Bidang muncul di papan slot publik');
 
+$audit_awal = (int) baris("SELECT COALESCE(MAX(id), 0) n FROM sys_jejak_audit")['n'];
 // Bidang yang berhenti menerima hilang dari papan - daftarnya struktur
 // organisasi, jadi yang bisa dimatikan cuma penerimaan magangnya.
 http('Admin_Kemitraan/ubah_status_bidang/' . rawurlencode(BIDANG_UJI), [
@@ -325,6 +327,8 @@ http('Admin_Kemitraan/ubah_status_bidang/' . rawurlencode(BIDANG_UJI), [
 ]);
 $bidang = baris("SELECT * FROM kkn_magang_bidang WHERE bidang_kode = ?", [BIDANG_UJI]);
 wajib((int) $bidang['aktif'] === 1, 'Bidang menerima lagi');
+cek(baris("SELECT COUNT(*) n FROM sys_jejak_audit WHERE aksi = 'magang_bidang_status' AND objek_id = ? AND id > ?", [BIDANG_UJI, $audit_awal])['n'] >= 2,
+    'Buka-tutup penerimaan bidang tercatat di jejak audit');
 
 echo "\n== Penegakan saat mendaftar ==\n";
 
@@ -539,12 +543,14 @@ http('Admin_Kemitraan/hapus/' . (int) $hapus_id['id'], [
 ]);
 cek(baris("SELECT id FROM kkn_magang_pendaftaran WHERE id = ?", [(int) $hapus_id['id']]) === NULL,
     'Superadmin bisa menghapus pendaftaran');
+cek(baris("SELECT id FROM sys_jejak_audit WHERE aksi = 'kemitraan_dihapus' AND objek_id = ?", [(string) (int) $hapus_id['id']]) !== NULL,
+    'Penghapusan pendaftaran tercatat di jejak audit');
 
 echo "\n== Alur surat dua tahap ==\n";
 
 // Divisi uji ditetapkan ke bidang yang SAMA dengan akun admin bidang yang ada,
 // supaya tahap dua punya meja yang benar-benar bisa dibuka.
-$bidang_adm = baris("SELECT bidang_kode FROM usr_users WHERE role = 'admin_bidang' AND bidang_kode IS NOT NULL LIMIT 1");
+$bidang_adm = baris("SELECT bidang_kode FROM usr_akun WHERE peran = 'admin_bidang' AND bidang_kode IS NOT NULL LIMIT 1");
 if ( ! $bidang_adm) {
     echo "  LEWAT  Tidak ada akun admin_bidang - alur tahap dua tidak bisa diuji\n";
 } else {
@@ -623,7 +629,7 @@ cek(strpos($r['body'], $nama_bidang) !== FALSE, 'Bidang uji tampil di daftar adm
 // kehilangan jalan menyeberang.
 foreach (['Admin_Kemitraan', 'Admin_Kemitraan/slot'] as $jalur) {
     $b = http($jalur)['body'];
-    cek(strpos($b, 'Slot &amp; Bidang') !== FALSE && strpos($b, 'KKN &amp; Magang') !== FALSE,
+    cek(strpos($b, 'Slot &amp; bidang') !== FALSE && strpos($b, 'KKN &amp; Magang') !== FALSE,
         "Tab pengelolaan tampil di /$jalur");
 }
 

@@ -35,9 +35,9 @@ $bisa_diputus   = $boleh_putuskan && $laporan['status'] === 'terkirim' && ! $sud
 $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
 ?>
 
-<div class="space-y-4">
+<div class="tumpuk-bagian">
 
-  <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
+  <section class="kartu-admin isi-kartu">
     <div class="flex flex-wrap items-center gap-3">
       <a href="<?= base_url($url_kembali) ?>" class="text-sm text-blue-600 hover:underline dark:text-blue-400">&larr; Daftar</a>
       <span class="rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-black/20">
@@ -96,20 +96,20 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
     // dipilih memang tidak dilaporkan, dan itu berbeda dari dilaporkan nol.
     $dipilih = $isi['program'] ?? [];
     ?>
-    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
+    <section class="kartu-admin isi-kartu">
       <h2 class="font-bold text-gray-900 dark:text-white">Capaian per sumber dana</h2>
       <div class="mt-4 overflow-x-auto">
         <table class="w-full min-w-[1000px] text-left text-sm">
-          <thead class="text-xs uppercase text-gray-500 dark:text-brand-muted">
+          <thead class="text-xs text-gray-500 dark:text-brand-muted">
             <tr>
-              <th class="py-2 pr-3">Sumber Dana</th>
+              <th class="py-2 pr-3">Sumber dana</th>
               <?php foreach ($label['program'] as $pkode => $plabel): ?>
                 <th class="py-2 px-2 text-right">
                   <?= $e($plabel) ?>
                   <?php if ( ! array_key_exists($pkode, $dipilih)): ?>
-                    <span class="block text-[10px] font-normal normal-case text-gray-400">tidak dilaporkan</span>
+                    <span class="block text-[10px] font-normal text-gray-400">tidak dilaporkan</span>
                   <?php else: ?>
-                    <span class="block text-[10px] font-normal normal-case">rencana &rarr; realisasi</span>
+                    <span class="block text-[10px] font-normal">rencana &rarr; realisasi</span>
                   <?php endif; ?>
                 </th>
               <?php endforeach; ?>
@@ -158,17 +158,17 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
     </section>
 
   <?php else: ?>
-    <section class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <section class="grid-kartu grid sm:grid-cols-2 lg:grid-cols-4">
       <?php
       $r = $isi['ringkasan'];
       $kartu = [
-          ['Penanganan kumuh', $r && (int) $r['ada_penanganan'] === 1 ? 'Ada' : 'Tidak Ada'],
+          ['Penanganan kumuh', $r && (int) $r['ada_penanganan'] === 1 ? 'Ada' : 'Tidak ada'],
           ['Progres realisasi', $r && (int) $r['ada_progres'] === 1 ? 'Ada' : 'Tidak ada'],
           ['Total luas', $r ? number_format((float) $r['total_luas_ha'], 2, ',', '.') . ' Ha' : '-'],
           ['Total anggaran', 'Rp ' . number_format((int) $isi['total']['total_anggaran'], 0, ',', '.')],
       ];
       foreach ($kartu as [$l, $v]): ?>
-        <div class="rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-brand-card">
+        <div class="kartu-admin isi-kartu">
           <p class="text-xs text-gray-500 dark:text-brand-muted"><?= $e($l) ?></p>
           <p class="mt-1 font-black text-gray-900 dark:text-white"><?= $e($v) ?></p>
         </div>
@@ -176,20 +176,20 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
     </section>
 
     <?php if ($r && ! empty($r['catatan_progres'])): ?>
-      <p class="rounded-2xl border border-gray-200 bg-white p-4 text-sm dark:border-white/10 dark:bg-brand-card">
+      <p class="kartu-admin isi-kartu text-sm">
         <b class="text-gray-900 dark:text-white">Catatan progres kabupaten:</b>
         <?= $e($r['catatan_progres']) ?>
       </p>
     <?php endif; ?>
 
-    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
+    <section class="kartu-admin isi-kartu">
       <h2 class="font-bold text-gray-900 dark:text-white">Rincian intervensi (<?= (int) $isi['total']['jumlah_intervensi'] ?>)</h2>
       <?php if ( ! $isi['intervensi']): ?>
         <p class="mt-3 text-sm text-gray-500 dark:text-brand-muted">Tidak ada intervensi dicatat.</p>
       <?php else: ?>
         <div class="mt-4 overflow-x-auto">
           <table class="w-full min-w-[820px] text-left text-sm">
-            <thead class="text-xs uppercase text-gray-500 dark:text-brand-muted">
+            <thead class="text-xs text-gray-500 dark:text-brand-muted">
               <tr>
                 <th class="py-2 pr-3">#</th><th class="py-2 pr-3">Indikator</th>
                 <th class="py-2 pr-3">Kegiatan &amp; lokasi</th><th class="py-2 pr-3">Sumber</th>
@@ -220,10 +220,10 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
 
   <!-- ================= keputusan ================= -->
   <?php if ($bisa_diputus): ?>
-    <section class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-white/10 dark:bg-brand-card">
+    <section class="kartu-admin isi-kartu">
       <h2 class="font-bold text-gray-900 dark:text-white">Keputusan</h2>
 
-      <div class="mt-4 grid gap-4 md:grid-cols-2">
+      <div class="mt-3 grid-kartu grid md:grid-cols-2">
         <form method="post" action="<?= base_url('Rekam_Tinjauan/terima') ?>"
               onsubmit="return confirm('Terima laporan ini?')">
           <input type="hidden" name="<?= $e($csrf_name) ?>" value="<?= $e($csrf_hash) ?>">
@@ -231,9 +231,7 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
           <p class="text-sm text-gray-500 dark:text-brand-muted">
             Laporan tetap terkunci untuk kabupaten dan ditandai sudah ditinjau.
           </p>
-          <button class="mt-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-blue-700 dark:bg-brand-primary dark:text-brand-dark dark:hover:bg-brand-hover">
-            Terima laporan
-          </button>
+          <button class="tombol-utama mt-2"><i class="ph ph-check"></i><span>Terima laporan</span></button>
         </form>
 
         <form method="post" action="<?= base_url('Rekam_Tinjauan/minta_perbaikan') ?>">
@@ -245,24 +243,22 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
           <textarea id="catatan_admin" name="catatan_admin" rows="3" required
             class="mt-1 w-full rounded-xl border border-gray-200 bg-transparent p-3 text-sm dark:border-white/10"
             placeholder="Sebutkan apa yang perlu diperbaiki - catatan ini dibaca petugas kabupaten"></textarea>
-          <button class="mt-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-bold dark:border-white/10">
-            Minta perbaikan
-          </button>
+          <button class="tombol-kedua mt-2"><i class="ph ph-arrow-u-up-left"></i><span>Minta perbaikan</span></button>
         </form>
       </div>
     </section>
   <?php elseif ( ! $boleh_putuskan): ?>
-    <p class="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-white/10 dark:bg-black/20 dark:text-brand-muted">
+    <p class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600 dark:border-white/10 dark:bg-black/20 dark:text-brand-muted">
       <i class="ph ph-eye mr-1"></i> Halaman ini <b>hanya baca</b>. Keputusan terima atau minta
       perbaikan tetap kewenangan Admin Bidang <?= $e(ucfirst($domain)) ?>.
     </p>
   <?php elseif ($sudah_ditinjau): ?>
-    <p class="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-white/10 dark:bg-black/20 dark:text-brand-muted">
-      Laporan ini sudah <b>diterima</b> pada <?= $e($laporan['reviewed_at']) ?>. Tidak ada
+    <p class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600 dark:border-white/10 dark:bg-black/20 dark:text-brand-muted">
+      Laporan ini sudah <b>diterima</b> pada <?= $e(tgl_id($laporan['reviewed_at'], TRUE, TRUE)) ?>. Tidak ada
       keputusan lain yang bisa diambil tanpa kabupaten mengirim ulang.
     </p>
   <?php else: ?>
-    <p class="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-white/10 dark:bg-black/20 dark:text-brand-muted">
+    <p class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600 dark:border-white/10 dark:bg-black/20 dark:text-brand-muted">
       Laporan sedang dikembalikan ke kabupaten untuk diperbaiki. Keputusan berikutnya
       baru bisa diambil setelah mereka mengirim ulang.
     </p>

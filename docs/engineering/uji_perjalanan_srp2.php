@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji perjalanan penuh SRP2 - roadmap T6, item TERPENTING.
  *
@@ -18,8 +19,8 @@
  *   2. mysql -u root uji_srp2 < docs/engineering/schema_klinikpkp.sql
  *   3. Arahkan .env DB_NAME sementara ke DB itu, lalu: php index.php migrate
  *   4. Seed SATU akun admin (baseline schema TIDAK menyertakan akun apa pun):
- *      INSERT INTO usr_users (email, password, name, username, role, status,
- *        profile_completed, created_at) VALUES ('admin_uji@example.test',
+ *      INSERT INTO usr_akun (email, password, name, username, role, status,
+ *        profil_lengkap, created_at) VALUES ('admin_uji@example.test',
  *        '<hash bcrypt>', 'Admin Uji', 'admin_uji', 'admin', 'active', 1, NOW());
  *   5. Set UJI_ADMIN_EMAIL / UJI_ADMIN_PASSWORD di bawah (atau env var),
  *      jalankan skrip, lalu kembalikan .env DB_NAME ke semula.
@@ -229,7 +230,7 @@ function daftar_cepat_srp2(Sesi $s, string $email, string $nama): array {
     $s->get('Auth/login');
     $r = $s->postForm('Auth/do_register', [
         'email' => $email, 'password' => AKUN_PASSWORD, 'password_confirm' => AKUN_PASSWORD,
-        'srp2_pengembang' => '1', 'nama_perusahaan' => $nama,
+        'srp2_pengembang' => '1', 'nama_perusahaan' => $nama, 'tos_agree' => '1',
     ]);
     return [$r, json_body($r)];
 }
@@ -269,31 +270,31 @@ $sesiUjiAktif[] = $sesiA; $daftarHapusAkhir[] = $sesiA;
 
 [$rA, $dataA] = daftar_cepat_srp2($sesiA, $emailA, $namaA);
 wajib(($dataA['status'] ?? '') === 'success', 'Daftar cepat SRP2 (akun A) berhasil');
-$regIdA = (int) $dataA['registration_id'];
-wajib($regIdA > 0, 'registration_id valid diterima dari respons daftar');
+$regIdA = (int) $dataA['pengajuan_id'];
+wajib($regIdA > 0, 'pengajuan_id valid diterima dari respons daftar');
 
-$rowUser = $db->baris('SELECT name, username FROM usr_users WHERE email = ?', [$emailA]);
-cek(!empty($rowUser['name']) && !empty($rowUser['username']),
+$rowUser = $db->baris('SELECT nama, nama_pengguna FROM usr_akun WHERE email = ?', [$emailA]);
+cek(!empty($rowUser['nama']) && !empty($rowUser['nama_pengguna']),
     'name & username otomatis terisi setelah daftar cepat (T5 S12-a) - bukan NULL');
 cek(($dataA['name'] ?? '') !== '', 'Respons do_register menyertakan name (T6 R2-sisa)');
 
 wajib(unggah_semua_dokumen($sesiA, $regIdA, $pdfPath, $dokumenKeys), 'Ke-14 dokumen berhasil diunggah (akun A)');
-$jumlahDok = (int) $db->skalar('SELECT COUNT(*) FROM srp2_documents WHERE registration_id = ?', [$regIdA]);
-cek($jumlahDok === 14, "Tepat 14 baris srp2_documents tercatat (dapat: $jumlahDok)");
+$jumlahDok = (int) $db->skalar('SELECT COUNT(*) FROM srp2_dokumen WHERE pengajuan_id = ?', [$regIdA]);
+cek($jumlahDok === 14, "Tepat 14 baris srp2_dokumen tercatat (dapat: $jumlahDok)");
 
 $rKirimA = $sesiA->postForm("Pengembang/kirim_pengajuan/$regIdA", []);
 $dataKirimA = json_body($rKirimA);
 cek(($dataKirimA['status'] ?? '') === 'success', 'Kirim pengajuan (akun A) diterima server');
-$statusA1 = $db->skalar('SELECT status_verifikasi FROM srp2_registrations WHERE id = ?', [$regIdA]);
+$statusA1 = $db->skalar('SELECT status_verifikasi FROM srp2_pengajuan WHERE id = ?', [$regIdA]);
 wajib($statusA1 === 'Pending', "Status berubah jadi Pending di DB sebelum admin memutuskan (dapat: $statusA1)");
 
 $sesiAdmin->get("Admin_Srp2/detail/$regIdA");
 $sesiAdmin->postForm("Admin_Srp2/proses/$regIdA", ['status' => 'Diterima'], false);
-$rowA = $db->baris('SELECT status_verifikasi, certified_developer_id, reviewed_by FROM srp2_registrations WHERE id = ?', [$regIdA]);
+$rowA = $db->baris('SELECT status_verifikasi, pengembang_id, reviewed_by FROM srp2_pengajuan WHERE id = ?', [$regIdA]);
 wajib(($rowA['status_verifikasi'] ?? '') === 'Diterima', 'Status berubah jadi Diterima di DB setelah admin approve');
-wajib(!empty($rowA['certified_developer_id']), 'certified_developer_id terisi setelah approve (T4)');
+wajib(!empty($rowA['pengembang_id']), 'pengembang_id terisi setelah approve (T4)');
 cek(!empty($rowA['reviewed_by']), 'reviewed_by terisi (bukan NULL) setelah keputusan');
-$cidA = (int) $rowA['certified_developer_id'];
+$cidA = (int) $rowA['pengembang_id'];
 
 $rDirektori = $sesiA->get('Pengembang/sertifikasi');
 cek(strpos($rDirektori['body'], $namaA) !== false, 'Nama perusahaan A muncul di direktori publik');
@@ -301,7 +302,7 @@ cek(strpos($rDirektori['body'], $namaA) !== false, 'Nama perusahaan A muncul di 
 $rProfilAkun = $sesiA->get('akun/profil');
 preg_match('#Pengembang/profil/(\d+)#', $rProfilAkun['body'], $mCid);
 cek(isset($mCid[1]) && (int) $mCid[1] === $cidA,
-    'Tombol "Lihat Profil Publik" menunjuk certified_developer_id yang BENAR (T4 butir 2)');
+    'Tombol "Lihat Profil Publik" menunjuk pengembang_id yang BENAR (T4 butir 2)');
 
 $rProfilPublik = $sesiA->get("Pengembang/profil/$cidA");
 cek($rProfilPublik['status'] === 200 && strpos($rProfilPublik['body'], $namaA) !== false,
@@ -329,10 +330,10 @@ $sesiB  = new Sesi();
 $daftarHapusAkhir[] = $sesiB;
 [$rB, $dataB] = daftar_cepat_srp2($sesiB, $emailB, 'PT UJI TRANSISI ILEGAL ' . $stamp);
 wajib(($dataB['status'] ?? '') === 'success', 'Daftar akun B berhasil (tetap Draft, sengaja tidak dikirim)');
-$regIdB = (int) $dataB['registration_id'];
+$regIdB = (int) $dataB['pengajuan_id'];
 
 $sesiAdmin->postForm("Admin_Srp2/proses/$regIdB", ['status' => 'Diterima'], false);
-$rowB = $db->baris('SELECT status_verifikasi, reviewed_by FROM srp2_registrations WHERE id = ?', [$regIdB]);
+$rowB = $db->baris('SELECT status_verifikasi, reviewed_by FROM srp2_pengajuan WHERE id = ?', [$regIdB]);
 cek(($rowB['status_verifikasi'] ?? '') === 'Draft', "Transisi Draft->Diterima ditolak, status tetap Draft (dapat: {$rowB['status_verifikasi']})");
 cek(empty($rowB['reviewed_by']), 'reviewed_by tetap NULL - tidak ada keputusan yang tercatat untuk transisi ilegal');
 
@@ -344,14 +345,14 @@ $emailC = $akunUji('c');
 $sesiC  = new Sesi();
 $daftarHapusAkhir[] = $sesiC;
 [$rC, $dataC] = daftar_cepat_srp2($sesiC, $emailC, $namaA); // sengaja sama persis dengan A yang sudah Diterima
-$regIdC = (int) $dataC['registration_id'];
+$regIdC = (int) $dataC['pengajuan_id'];
 wajib(unggah_semua_dokumen($sesiC, $regIdC, $pdfPath, $dokumenKeys), '14 dokumen (akun C) berhasil diunggah');
 
 $rKirimC = $sesiC->postForm("Pengembang/kirim_pengajuan/$regIdC", []);
 $dataKirimC = json_body($rKirimC);
 cek(($dataKirimC['status'] ?? '') === 'error' && ($dataKirimC['code'] ?? '') === 'nama_perusahaan_bentrok',
     'Kirim pengajuan DITOLAK server karena nama bentrok direktori (bukan cuma tombol disembunyikan)');
-$statusC = $db->skalar('SELECT status_verifikasi FROM srp2_registrations WHERE id = ?', [$regIdC]);
+$statusC = $db->skalar('SELECT status_verifikasi FROM srp2_pengajuan WHERE id = ?', [$regIdC]);
 cek($statusC === 'Draft', "Baris TIDAK PERNAH lahir jadi Pending, tetap Draft (dapat: $statusC)");
 
 // ==========================================================================
@@ -364,24 +365,24 @@ $daftarHapusAkhir[] = $sesiD;
 // Nama UNIK dulu supaya lolos gerbang hulu (N2) -- blok ini menguji transaksi
 // proses() itu SENDIRI, bukan mengulang N2.
 [$rD, $dataD] = daftar_cepat_srp2($sesiD, $emailD, 'PT UJI SEMENTARA ' . $stamp);
-$regIdD = (int) $dataD['registration_id'];
+$regIdD = (int) $dataD['pengajuan_id'];
 wajib(unggah_semua_dokumen($sesiD, $regIdD, $pdfPath, $dokumenKeys), '14 dokumen (akun D) berhasil diunggah');
 $sesiD->postForm("Pengembang/kirim_pengajuan/$regIdD", []);
-$statusD0 = $db->skalar('SELECT status_verifikasi FROM srp2_registrations WHERE id = ?', [$regIdD]);
+$statusD0 = $db->skalar('SELECT status_verifikasi FROM srp2_pengajuan WHERE id = ?', [$regIdD]);
 wajib($statusD0 === 'Pending', 'Registrasi D mencapai Pending dengan nama unik (lolos gerbang hulu secara sah)');
 
 // SATU-SATUNYA tempat skrip ini menulis langsung ke DB: menyuntik nama supaya
-// bentrok UNIQUE srp2_certified_developers, mensimulasikan skenario yang
+// bentrok UNIQUE srp2_direktori_pengembang, mensimulasikan skenario yang
 // SEHARUSNYA sudah dicegah N2 -- di sini sengaja dilewati untuk mengisolasi
 // transaksi Admin_Srp2::proses() itu sendiri (roadmap T1a butir 5, ⏳ di
 // roadmap, dibuktikan ulang di sini).
-$db->jalankan('UPDATE srp2_registrations SET nama_perusahaan = ? WHERE id = ?', [$namaA, (string) $regIdD]);
+$db->jalankan('UPDATE srp2_pengajuan SET nama_perusahaan = ? WHERE id = ?', [$namaA, (string) $regIdD]);
 
 $sesiAdmin->postForm("Admin_Srp2/proses/$regIdD", ['status' => 'Diterima'], false);
-$rowD = $db->baris('SELECT status_verifikasi, reviewed_by, certified_developer_id FROM srp2_registrations WHERE id = ?', [$regIdD]);
+$rowD = $db->baris('SELECT status_verifikasi, reviewed_by, pengembang_id FROM srp2_pengajuan WHERE id = ?', [$regIdD]);
 cek(($rowD['status_verifikasi'] ?? '') === 'Pending', "Status TETAP Pending, tidak berubah sebagian (dapat: {$rowD['status_verifikasi']})");
 cek(empty($rowD['reviewed_by']), 'reviewed_by tetap NULL - transaksi dibatalkan seluruhnya, bukan sukses karangan');
-cek(empty($rowD['certified_developer_id']), 'certified_developer_id tetap NULL - tidak ada baris parsial di direktori');
+cek(empty($rowD['pengembang_id']), 'pengembang_id tetap NULL - tidak ada baris parsial di direktori');
 
 // ==========================================================================
 // BERSIH-BERSIH - akun uji dihapus lewat jalur nyata (delete_account, bukan

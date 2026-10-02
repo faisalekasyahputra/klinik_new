@@ -16,7 +16,7 @@ situs di panel Hostinger, **bukan** nama direktori - `cd` dengan nama panel
 saja menghasilkan `No such file or directory`. Runbook-runbook sebelumnya cuma
 menulis `<SITUS>` dan tidak pernah menyimpan nilai aslinya, jadi setiap rilis
 menemukan ulang hal yang sama. Ada **empat** instalasi Klinik PKP di akun
-`u504551489` (§0a); yang benar adalah yang `git log`-nya menunjukkan commit
+`<akun-hosting>` (§0a); yang benar adalah yang `git log`-nya menunjukkan commit
 rilis, bukan yang namanya paling mirip.
 
 ---
@@ -69,18 +69,18 @@ cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && git log -1
 
 ## Fase 1 - backup, dan buktikan backup-nya utuh
 
-> **DB production TIDAK di localhost.** `DB_HOST=31.97.208.59` (baca dari `.env`
+> **DB production TIDAK di localhost.** `DB_HOST=<IP-SERVER-DB>` (baca dari `.env`
 > server, jangan hafalkan dari sini - kalau berbeda, `.env` yang benar). Tanpa
 > `-h`, `mysqldump` diam-diam mencoba `localhost` dan gagal dengan
 > `Access denied for user '...'@'localhost'` - pesan yang sangat mudah dibaca
 > sebagai "password salah" padahal password-nya tidak pernah jadi masalah.
 > Fakta ini tidak pernah tercatat di dokumen mana pun sebelum 30 Jul 2026.
 >
-> `DB_USER` dan `DB_NAME` kebetulan sama-sama `u504551489_klinikstg`; jangan
+> `DB_USER` dan `DB_NAME` kebetulan sama-sama `<akun-hosting>_klinikstg`; jangan
 > anggap itu aturan, baca dua-duanya dari `.env`.
 
 ```
-cd ~ && set -o pipefail && mysqldump -h 31.97.208.59 -u u504551489_klinikstg -p u504551489_klinikstg | gzip > ~/backup_klinik_pre_wizard_024.sql.gz && echo "--- DUMP OK ---" && ls -lh ~/backup_klinik_pre_wizard_024.sql.gz && echo "CREATE TABLE: $(zcat ~/backup_klinik_pre_wizard_024.sql.gz | grep -c '^CREATE TABLE')"
+cd ~ && set -o pipefail && mysqldump -h <IP-SERVER-DB> -u <akun-hosting>_klinikstg -p <akun-hosting>_klinikstg | gzip > ~/backup_klinik_pre_wizard_024.sql.gz && echo "--- DUMP OK ---" && ls -lh ~/backup_klinik_pre_wizard_024.sql.gz && echo "CREATE TABLE: $(zcat ~/backup_klinik_pre_wizard_024.sql.gz | grep -c '^CREATE TABLE')"
 ```
 
 **`set -o pipefail` bukan hiasan.** Status sebuah pipa diambil dari perintah
@@ -142,7 +142,7 @@ Buka sebagai admin kab/kota, lewat klik, bukan curl:
 `migrate down` **bukan** opsi (lihat §Yang berbeda). Satu-satunya jalan:
 
 ```
-cd ~ && zcat backup_klinik_pre_wizard_024.sql.gz | mysql -u u504551489_klinikstg -p u504551489_klinikstg && cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && php index.php migrate status
+cd ~ && zcat backup_klinik_pre_wizard_024.sql.gz | mysql -u <akun-hosting>_klinikstg -p <akun-hosting>_klinikstg && cd ~/domains/floralwhite-lion-710022.hostingersite.com/public_html && php index.php migrate status
 ```
 
 Lalu kembalikan kode ke `8da6c4b` supaya kode dan skema kembali sepasang.

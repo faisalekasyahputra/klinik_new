@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Runner seluruh harness: satu perintah, semua peran, semua skenario.
  *
@@ -34,6 +35,7 @@ const FRESH  = ['uji_rekam_data_fresh.php', 'uji_warga_fresh_r7.php'];
 // dan merah palsu yang berdiri lama persis yang membuat orang berhenti membaca
 // keluaran runner.
 const KHUSUS = [
+    'uji_tls_situs.php'         => 'alat CLI ber-argumen (php uji_tls_situs.php https://<situs>), bukan suite; jalankan manual',
     'uji_utang_teknis.php'    => 'menolak sendiri: butuh DB berakhiran _utang',
     'uji_perjalanan_srp2.php' => 'butuh DB uji bersih + akun admin seed (lihat header berkasnya)',
 ];
@@ -104,12 +106,17 @@ function sensus_akun_uji() {
     $db = @new mysqli($env['DB_HOST'], $env['DB_USER'], $env['DB_PASS'] ?? '', $env['DB_NAME']);
     if ($db->connect_error) { return NULL; }
     $out = [];
-    $r = $db->query('SELECT id, email, role FROM usr_users WHERE email LIKE "%@example.test"');
-    foreach ($r ?: [] as $row) { $out[(int) $row['id']] = $row['email'] . ' [' . ($row['role'] ?: 'tanpa role') . ']'; }
+    $r = $db->query('SELECT id, email, peran FROM usr_akun WHERE email LIKE "%@example.test"');
+    foreach ($r ?: [] as $row) { $out[(int) $row['id']] = $row['email'] . ' [' . ($row['peran'] ?: 'tanpa role') . ']'; }
+    // Draft asesmen yatim: FK user_id ON DELETE SET NULL, jadi suite yang menghapus akun tanpa
+    // menghapus draftnya meninggalkan baris user_id NULL yang tidak tertangkap sensus akun (26 Sep 2026).
+    $y = $db->query('SELECT COUNT(*) c FROM sf_penilaian_perumahan WHERE user_id IS NULL');
+    $GLOBALS['draft_yatim'] = $y ? (int) $y->fetch_assoc()['c'] : 0;
     $db->close();
     return $out;
 }
 $akun_sebelum = sensus_akun_uji();
+$yatim_sebelum = $GLOBALS['draft_yatim'] ?? 0;
 
 $hasil = [];
 foreach ($suites as $nama => $s) {
@@ -159,6 +166,7 @@ $bisu   = array_keys(array_filter($hasil, fn($h) => $h['bisu']));
 $lewat  = array_keys(array_filter($hasil, fn($h) => $h['lewat']));
 
 $akun_sesudah = sensus_akun_uji();
+$yatim_baru = ($GLOBALS['draft_yatim'] ?? 0) - $yatim_sebelum;
 $bocor = ($akun_sebelum === NULL || $akun_sesudah === NULL)
     ? [] : array_diff_key($akun_sesudah, $akun_sebelum);
 
@@ -179,4 +187,10 @@ if ($akun_sebelum === NULL) {
     echo "  Akun uji: nol tertinggal (" . count($akun_sesudah) . " sudah ada sebelum dijalankan)\n";
 }
 
-exit(($merah || $bisu || $bocor) ? 1 : 0);
+if ($yatim_baru > 0) {
+    echo "  BOCOR  {$yatim_baru} draft asesmen yatim (user_id NULL) baru - suite menghapus akun tanpa menghapus draftnya\n";
+} elseif ($akun_sebelum !== NULL) {
+    echo "  Draft yatim: nol baru ({$yatim_sebelum} sudah ada sebelum dijalankan)\n";
+}
+
+exit(($merah || $bisu || $bocor || $yatim_baru > 0) ? 1 : 0);

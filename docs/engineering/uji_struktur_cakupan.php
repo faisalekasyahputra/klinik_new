@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji STRUKTUR & CAKUPAN - master bidang/wilayah dan penjaga kuncinya.
  *
@@ -9,7 +10,7 @@
  *
  *   1. KUNCI TIDAK BISA DIUBAH DARI UI. `bidang.kode` dan `kabupaten.id`
  *      dirujuk sembilan tempat, dan EMPAT di antaranya TANPA foreign key
- *      (`usr_users.bidang_kode`, `usr_users.kabupaten_id`, `aduan.bidang`,
+ *      (`usr_akun.bidang_kode`, `usr_akun.kabupaten_id`, `aduan.bidang`,
  *      `kkn_magang_slot.bidang_kode`). Mengganti kunci lewat formulir membuat
  *      keempatnya yatim TANPA SATU PUN GALAT - admin bidang kehilangan mejanya,
  *      aduan hilang dari semua dashboard, dan semuanya tetap membalas 200.
@@ -116,7 +117,7 @@ function login($nama, $email) {
 function buat_akun($peran, $suffix, $kab = NULL, $bidang = NULL) {
     $email = 'uji_struktur_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
     $id = tulis(
-        'INSERT INTO usr_users (email,password,name,username,role,kabupaten_id,bidang_kode,status,profile_completed,created_at)
+        'INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,kabupaten_id,bidang_kode,status,profil_lengkap,created_at)
          VALUES (?,?,?,?,?,?,?, "active",1,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji Struktur ' . $suffix,
          'uji_struktur_' . $suffix . '_' . mt_rand(10000, 99999), $peran, $kab, $bidang]
@@ -162,8 +163,8 @@ function bersihkan() {
     foreach ($GLOBALS['aduan_uji'] as $id) { q('DELETE FROM aduan WHERE id=?', [$id]); }
     $GLOBALS['aduan_uji'] = [];
     foreach ($GLOBALS['users'] as $id) {
-        q('DELETE FROM sys_jejak_audit WHERE actor_id=?', [$id]);
-        q('DELETE FROM usr_users WHERE id=?', [$id]);
+        q('DELETE FROM sys_jejak_audit WHERE pelaku_id=?', [$id]);
+        q('DELETE FROM usr_akun WHERE id=?', [$id]);
     }
     foreach ($GLOBALS['jar'] as $j) { @unlink($j); }
     $GLOBALS['users'] = [];
@@ -222,13 +223,13 @@ echo "\n== 2. Kunci TIDAK bisa diubah lewat endpoint ==\n";
  * PALSU: ternyata kelima bidang punya baris `kkn_magang_bidang`, jadi yang
  * menolak penggantian kunci adalah FOREIGN KEY-nya, bukan controller ini -
  * mutasi yang menerima `kode` dari POST tetap lolos dua cek itu. Kabupaten
- * tanpa `rd_laporan`/`sf_housing_queue`/`sf_penilaian_perumahan` tidak punya
+ * tanpa `rd_laporan`/`sf_antrean_pengajuan`/`sf_penilaian_perumahan` tidak punya
  * penyelamat itu; kalau controllernya lengah, kuncinya BENAR-BENAR berubah.
  */
 $id_bebas = (string) nilai(
     'SELECT k.id FROM kabupaten k
      WHERE NOT EXISTS (SELECT 1 FROM rd_laporan a WHERE a.kabupaten_id = k.id)
-       AND NOT EXISTS (SELECT 1 FROM sf_housing_queue b WHERE b.kabupaten_id = k.id)
+       AND NOT EXISTS (SELECT 1 FROM sf_antrean_pengajuan b WHERE b.kabupaten_id = k.id)
        AND NOT EXISTS (SELECT 1 FROM sf_penilaian_perumahan c WHERE c.kabupaten_id = k.id)
      ORDER BY k.id ASC LIMIT 1');
 wajib($id_bebas !== '', 'Ada kabupaten tanpa baris turunan (tidak ada FK yang menahan)');
@@ -251,9 +252,9 @@ cek(nilai('SELECT nama FROM kabupaten WHERE id=?', [$id_bebas]) === 'Nama Baru '
 
 // ------------------------------------------------ 3. JEJAK
 echo "\n== 3. Perubahan tercatat ==\n";
-cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='master_nama_diubah' AND actor_id=? AND created_at >= ?",
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='master_nama_diubah' AND pelaku_id=? AND created_at >= ?",
     [$idA, MULAI]) === 1, 'Satu baris jejak audit master_nama_diubah');
-cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='master_nama_diubah' AND actor_id=? AND ringkasan LIKE ?",
+cek((int) nilai("SELECT COUNT(*) c FROM sys_jejak_audit WHERE aksi='master_nama_diubah' AND pelaku_id=? AND ringkasan LIKE ?",
     [$idA, '%' . $nama_asli . '%']) === 1, 'Jejaknya memuat nama LAMA - tanpa itu perubahannya tak bisa ditelusuri');
 
 // ------------------------------------------------ 4. YANG DITOLAK
@@ -266,16 +267,16 @@ cek(nilai('SELECT nama FROM bidang WHERE kode=?', [$kode_uji]) !== 'Tanpa Token'
     'POST tanpa token CSRF tidak mengubah apa pun');
 
 /**
- * SASARANNYA `aduan`, bukan `usr_users`.
+ * SASARANNYA `aduan`, bukan `usr_akun`.
  *
- * Versi pertama memakai `usr_users` dan HIJAU PALSU: mutasi yang mencabut
- * whitelist tetap lolos, karena `usr_users` menyimpan namanya di kolom `name`,
+ * Versi pertama memakai `usr_akun` dan HIJAU PALSU: mutasi yang mencabut
+ * whitelist tetap lolos, karena `usr_akun` menyimpan namanya di kolom `name`,
  * bukan `nama` - query-nya gagal karena kebetulan penamaan, bukan karena
  * gerbangnya. `aduan` punya `id` DAN `nama` (nama pelapor), jadi ia sasaran
  * yang benar-benar bisa tertulis kalau whitelistnya lengah.
  */
 $id_aduan = tulis(
-    'INSERT INTO aduan (user_id,nama,email,judul,pesan,bidang,status,created_at,updated_at)
+    'INSERT INTO aduan (user_id,nama,email,judul,pesan,bidang_kode,status,created_at,updated_at)
      VALUES (NULL,?,?,?,"isi uji",NULL,"Baru",NOW(),NOW())',
     ['Pelapor Uji ' . CAP, 'pelapor_' . CAP . '@example.test', 'Aduan uji struktur ' . CAP]);
 $GLOBALS['aduan_uji'][] = $id_aduan;
@@ -306,10 +307,11 @@ cek(strpos(http('k', 'Admin_Struktur')['body'], 'Kode Kemendagri') === FALSE,
 echo "\n== 5. Hitungan yatim benar-benar menghitung ==\n";
 /**
  * Pemeriksaan yang paling mudah jadi hijau hampa: angka yang SELALU nol
- * terlihat persis seperti sistem yang sehat. Karena itu di sini dibuat satu
- * baris yatim SUNGGUHAN - akun dengan `bidang_kode` yang tidak ada di tabel
- * `bidang` (dan memang tidak ada FK yang menahannya) - lalu angkanya diperiksa
- * naik, dan turun lagi setelah dipulihkan.
+ * terlihat persis seperti sistem yang sehat. Sejak migrasi 069 FK
+ * `fk_usr_users_bidang` menolak baris yatim, dan itu diperiksa lebih dulu.
+ * Lalu satu baris yatim SUNGGUHAN dibuat dengan FOREIGN_KEY_CHECKS=0 (meniru
+ * skema yang kehilangan FK-nya) supaya angkanya terbukti naik, dan turun lagi
+ * setelah dipulihkan.
  */
 $blok = static function ($body) {
     preg_match('/<ul class="mt-2 space-y-0\.5 text-xs">(.*?)<\/ul>/s', $body, $m);
@@ -320,14 +322,23 @@ wajib($awal !== '', 'Blok hitungan yatim terbaca dari halaman');
 cek(preg_match('/>0<\/span> - Petugas bidang/', $awal) === 1,
     'Sebelum dirusak: nol petugas bidang yatim');
 
+try {
+    buat_akun('admin_bidang', 'yatim_ditolak', NULL, 'bidang_hantu_' . CAP);
+    $ditolak = FALSE;
+} catch (mysqli_sql_exception $e) {
+    $ditolak = $e->getCode() === 1452;
+}
+cek($ditolak, 'DB menolak akun dengan bidang yang tidak ada (FK migrasi 069)');
+q('SET FOREIGN_KEY_CHECKS = 0');
 [$idY, $emailY] = buat_akun('admin_bidang', 'yatim', NULL, 'bidang_hantu_' . CAP);
+q('SET FOREIGN_KEY_CHECKS = 1');
 $rusak = $blok(http('a', 'Admin_Struktur')['body']);
 cek(preg_match('/>1<\/span> - Petugas bidang/', $rusak) === 1,
     'Sesudah satu baris yatim dibuat: angkanya NAIK jadi 1');
-cek(stripos(http('a', 'Admin_Struktur')['body'], 'menunjuk data yang tidak ada lagi') !== FALSE,
+cek(stripos(http('a', 'Admin_Struktur')['body'], 'yang tidak ada lagi.</strong>') !== FALSE, // kalimat disederhanakan di audit UI kelompok B
     'Callout-nya berubah jadi peringatan, bukan tetap hijau');
 
-q('UPDATE usr_users SET bidang_kode=NULL WHERE id=?', [$idY]);
+q('UPDATE usr_akun SET bidang_kode=NULL WHERE id=?', [$idY]);
 $pulih = $blok(http('a', 'Admin_Struktur')['body']);
 cek(preg_match('/>0<\/span> - Petugas bidang/', $pulih) === 1,
     'Sesudah dipulihkan: kembali nol - angkanya mengikuti keadaan, bukan tetap');
@@ -337,7 +348,7 @@ echo "\n== 6. Cakupan petugas ==\n";
 $hal2 = http('a', 'Admin_Struktur')['body'];
 $tanpa_petugas = (int) nilai(
     'SELECT COUNT(*) c FROM kabupaten k WHERE NOT EXISTS
-     (SELECT 1 FROM usr_users u WHERE u.role="admin_kabkota" AND u.kabupaten_id=k.id)');
+     (SELECT 1 FROM usr_akun u WHERE u.peran="admin_kabkota" AND u.kabupaten_id=k.id)');
 cek(strpos($hal2, $tanpa_petugas . ' wilayah belum punya petugas') !== FALSE,
     "Jumlah wilayah tanpa petugas disebut ({$tanpa_petugas})");
 cek(substr_count($hal2, 'Belum ada</span>') === $tanpa_petugas,

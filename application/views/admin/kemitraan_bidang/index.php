@@ -14,28 +14,30 @@ $badge_kelas = [
     'Diterima' => 'ok', 'Ditolak' => 'reject', 'Dibatalkan' => 'reject',
 ];
 ?>
-<div class="mb-6">
-    <h2 class="text-3xl font-black text-gray-900 dark:text-white tracking-tight mb-2">Magang Bidang Saya</h2>
-    <p class="text-sm text-gray-500 dark:text-brand-muted">
-        Surat pengantar yang sudah diteruskan sekretariat dan menunggu keputusan bidang Anda.
-        Surat balasan resmi disiapkan sekretariat setelah Anda menerima.
-    </p>
+<div>
+    <?php ob_start(); ?>
+    <a href="<?= base_url('Kemitraan_Bidang/kuota') ?>"
+       class="tombol-kedua">
+        <i class="ph ph-calendar-check"></i><span>Atur kuota &amp; bulan magang</span>
+    </a>
+    <?php $this->load->view('admin/components/judul_halaman', ['jh_aksi' => ob_get_clean(), 'jh_deskripsi' => 'Surat pengantar yang sudah diteruskan sekretariat dan menunggu keputusan bidang Anda.
+        Surat balasan resmi disiapkan sekretariat setelah Anda menerima.']); ?>
 </div>
 
-<div data-tabel-admin class="bg-white dark:bg-brand-card rounded-3xl shadow-sm border border-gray-200 dark:border-white/5 overflow-hidden">
+<div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="kartu-admin overflow-hidden">
     <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari mahasiswa, instansi, bidang...'], TRUE) ?>
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto aksi-tetap">
         <table class="w-full text-left text-sm whitespace-nowrap">
-            <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
+            <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold">
                 <tr>
-                    <th class="px-4 py-4"><?= admin_sort_header('Mahasiswa', 'usr_users.name', $table, $base_url) ?></th>
-                    <th class="px-4 py-4"><?= admin_sort_header('Instansi Asal', 'kkn_magang_pendaftaran.instansi_asal', $table, $base_url) ?></th>
+                    <th class="px-4 py-3"><?= admin_sort_header('Mahasiswa', 'usr_akun.nama', $table, $base_url) ?></th>
+                    <th class="px-4 py-3"><?= admin_sort_header('Instansi asal', 'kkn_magang_pendaftaran.instansi_asal', $table, $base_url) ?></th>
                     <!-- Bukan "Bidang": seluruh baris di meja ini SUDAH bidang
                          Anda, dan yang ditampilkan sel itu tema kegiatan. Judul
                          lama menjanjikan nama bidang lalu memberi hal lain. -->
-                    <th class="px-4 py-4">Tema &amp; Periode</th>
-                    <th class="px-4 py-4"><?= admin_sort_header('Status', 'kkn_magang_pendaftaran.status', $table, $base_url) ?></th>
-                    <th class="px-4 py-4 text-right">Aksi</th>
+                    <th class="px-4 py-3">Tema &amp; periode</th>
+                    <th class="px-4 py-3"><?= admin_sort_header('Status', 'kkn_magang_pendaftaran.status', $table, $base_url) ?></th>
+                    <th class="px-4 py-3 text-right">Aksi</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-white/5 text-gray-700 dark:text-gray-300">
@@ -43,7 +45,7 @@ $badge_kelas = [
                     <tr><td colspan="5" class="px-6 py-12 text-center text-gray-500 dark:text-brand-muted">Belum ada pendaftaran magang untuk bidang Anda.</td></tr>
                 <?php else: foreach ($rows as $r): ?>
                     <tr x-data="{ procOpen: false }">
-                        <td class="px-4 py-4">
+                        <td class="px-4 py-3">
                             <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama_mahasiswa ?: '-') ?></div>
                             <div class="text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($r->email_mahasiswa ?: '-') ?></div>
                             <?php $identitas = array_filter([$r->nim, $r->jurusan, $r->semester ? 'Smt ' . (int) $r->semester : NULL]); ?>
@@ -56,8 +58,8 @@ $badge_kelas = [
                              melewati viewport dan kolom Aksi - satu-satunya
                              tombol di layar ini - hilang di balik gulir
                              horizontal tanpa petunjuk apa pun. -->
-                        <td class="px-4 py-4 max-w-[16rem] whitespace-normal"><?= html_escape($r->instansi_asal) ?></td>
-                        <td class="px-4 py-4">
+                        <td class="px-4 py-3 max-w-[16rem] whitespace-normal"><?= html_escape($r->instansi_asal) ?></td>
+                        <td class="px-4 py-3">
                             <div class="font-semibold"><?= html_escape($r->divisi_atau_tema) ?></div>
                             <div class="text-xs text-gray-500 dark:text-brand-muted">
                                 <?= tgl_id($r->periode_mulai, TRUE) ?> - <?= tgl_id($r->periode_selesai, TRUE) ?>
@@ -72,7 +74,7 @@ $badge_kelas = [
                                 </div>
                             <?php endforeach; ?>
                         </td>
-                        <td class="px-4 py-4">
+                        <td class="px-4 py-3">
                             <?= $this->load->view('admin/components/status_badge', ['label' => $r->status, 'kelas' => $badge_kelas[$r->status] ?? 'pending'], TRUE) ?>
                             <?php if ( ! empty($r->catatan_admin)): ?>
                                 <div class="mt-1 max-w-xs whitespace-normal text-xs text-gray-500 dark:text-brand-muted">
@@ -80,10 +82,16 @@ $badge_kelas = [
                                 </div>
                             <?php endif; ?>
                         </td>
-                        <td class="px-4 py-4 text-right relative">
+                        <td class="px-4 py-3 text-right">
                             <?php if ($r->status === 'Ditinjau Bidang'): ?>
-                                <button @click="procOpen = !procOpen" class="px-3 py-1.5 rounded-lg text-xs font-bold text-blue-600 dark:text-brand-primary hover:bg-blue-50 dark:hover:bg-brand-primary/10">Putuskan</button>
-                                <div x-show="procOpen" x-cloak @click.outside="procOpen = false" class="absolute right-6 top-full mt-1 z-20 w-72 whitespace-normal rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-brand-card p-4 text-left shadow-xl">
+                                <button @click="procOpen = true" class="tombol-aksi"><i class="ph ph-gavel" aria-hidden="true"></i><span>Putuskan</span></button>
+                                <?php /* Modal, bukan popover: panel absolut dulu terpotong wadah overflow-x-auto
+                                         (audit UI 2 Okt 2026). Teleport ke body karena sel Aksi sticky. */ ?>
+                                <template x-teleport="body">
+                                <div x-show="procOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center whitespace-normal bg-black/50 p-4" @keydown.escape.window="procOpen = false">
+                                <div @click.outside="procOpen = false" class="w-full max-w-sm rounded-2xl bg-white dark:bg-brand-card p-5 text-left shadow-xl">
+                                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Putuskan pendaftaran magang</h3>
+                                    <p class="mt-1 mb-4 text-xs text-gray-500 dark:text-brand-muted break-words"><?= html_escape($r->nama_mahasiswa ?: '-') ?> &middot; <?= html_escape($r->instansi_asal) ?></p>
                                     <?= $this->load->view('admin/components/review_form', [
                                         'action_url' => 'Kemitraan_Bidang/proses/' . $r->id,
                                         'buttons' => [
@@ -93,6 +101,8 @@ $badge_kelas = [
                                         'catatan_name' => 'catatan_admin',
                                     ], TRUE) ?>
                                 </div>
+                                </div>
+                                </template>
                             <?php else: ?>
                                 <span class="text-xs text-gray-400 dark:text-brand-muted/60">Sudah lewat meja Anda</span>
                             <?php endif; ?>

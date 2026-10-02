@@ -77,6 +77,13 @@
 	define('ENVIRONMENT', is_string($ci_env) && $ci_env !== '' ? $ci_env : 'production');
 
 /*
+ * Zona waktu aplikasi: WIB. Tanpa ini PHP memakai bawaan server (production UTC,
+ * XAMPP lokal Europe/Berlin), sehingga setiap date() meleset dari jam dinas.
+ * Sesi MySQL diselaraskan ke +07:00 di MY_Controller supaya NOW() sama dengan date().
+ */
+	date_default_timezone_set('Asia/Jakarta');
+
+/*
  *---------------------------------------------------------------
  * ERROR REPORTING
  *---------------------------------------------------------------

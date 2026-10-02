@@ -2,7 +2,7 @@
        class="admin-sidebar bg-white dark:bg-brand-card border-r border-gray-200 dark:border-white/5 flex flex-col transition-all duration-300 relative z-20 shadow-xl shadow-gray-200/50 dark:shadow-none"
        :class="desktop ? (sidebarOpen ? 'w-64' : 'w-20') : ''"
        :style="!desktop ? (sidebarOpen ? 'display:flex !important;position:fixed !important;inset:0 auto 0 0 !important;z-index:60 !important;width:16rem !important;transform:none !important;' : 'display:none !important;') : ''">
-    <div class="h-20 flex items-center px-5 border-b border-gray-200 dark:border-white/5" :class="sidebarOpen ? 'justify-start' : 'justify-center'">
+    <div class="h-16 flex items-center px-5 border-b border-gray-200 dark:border-white/5" :class="sidebarOpen ? 'justify-start' : 'justify-center'">
         <a href="<?= base_url($dashboard_home ?? 'akun') ?>" class="flex items-center gap-3 group">
             <div class="w-10 h-10 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                 <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jateng" class="h-8 w-auto object-contain drop-shadow-sm">
@@ -24,6 +24,11 @@
                 </span>
             </div>
         </a>
+        <?php // Panel geser (< 1024) butuh jalan keluar selain klik latar dan Esc. ?>
+        <button type="button" x-show="!desktop" @click="sidebarOpen = false" aria-label="Tutup menu navigasi"
+                class="ml-auto w-10 h-10 shrink-0 rounded-xl flex items-center justify-center text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all">
+            <i class="ph ph-x text-xl"></i>
+        </button>
     </div>
     
     <?php
@@ -47,30 +52,13 @@
           // untuk satu aturan, dan hasilnya dua item menyala bersamaan sambil
           // sub-menu cabang lama tetap terbuka. Sekarang aturannya tetap satu:
           // dashboard_menu() memutuskan, server mengirim, JS hanya menukar. ?>
-    <div id="sidebar-nav" class="px-3 py-4 overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar">
+    <?php // Pindah halaman lewat loader progresif tidak memuat ulang shell, jadi
+          // panel geser harus ditutup sendiri begitu sebuah tautan diklik. ?>
+    <div id="sidebar-nav" @click="if (!desktop && $event.target.closest('a')) sidebarOpen = false" class="px-3 py-4 overflow-y-auto overflow-x-hidden flex-1 custom-scrollbar">
         <?php $this->load->view('admin/layouts/sidebar_nav', ['dashboard_menu' => $dashboard_menu ?? []]); ?>
     </div>
 
-    <!-- Link to Main Website (OG Preview Style) -->
-    <div class="mt-auto px-4 mb-4" x-show="sidebarOpen" x-transition.opacity.duration.300ms>
-        <a href="<?= base_url() ?>" target="_blank" class="group block overflow-hidden rounded-xl bg-white dark:bg-[#0a1a1f] border border-gray-200 dark:border-white/10 shadow-sm hover:shadow-md dark:shadow-none transition-all duration-300 relative">
-            <!-- Penanda Beranda, bukan gambar promosi. -->
-            <div class="relative flex h-20 w-full items-center justify-center gap-2 border-b border-gray-100 bg-[color:var(--portal-bg-card)] text-[color:var(--portal-text)] dark:border-white/5 dark:bg-[#102c35]">
-                <i class="ph ph-house-line text-2xl text-[color:var(--portal-brand)]" aria-hidden="true"></i>
-                <span class="text-sm font-black">Beranda</span>
-                <div class="absolute right-2 top-2 rounded-md border border-white/20 bg-black/20 p-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                    <i class="ph ph-arrow-square-out text-xs"></i>
-                </div>
-            </div>
-            <!-- Text Area -->
-            <div class="p-3">
-                <h4 class="text-xs font-bold text-gray-900 dark:text-white line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-brand-primary transition-colors">Beranda</h4>
-                <p class="text-[10px] text-gray-500 dark:text-brand-muted line-clamp-2 mt-1 leading-snug">Kembali ke halaman utama Portal Klinik PKP.</p>
-                <div class="flex items-center gap-1 mt-2.5 text-[9px] font-semibold text-gray-400 dark:text-brand-muted/70">
-                    <i class="ph ph-link text-[10px]"></i>
-                    <span class="truncate"><?= str_replace(['http://', 'https://'], '', base_url()) ?></span>
-                </div>
-            </div>
-        </a>
-    </div>
+    <?php /* Kartu "Beranda" di dasar sidebar dicabut di semua ukuran (audit UI 2 Okt 2026): di
+             1440x900 ia menutupi menu Manajemen (Akses Staf, Jejak Audit), dan tautan
+             "Kembali ke beranda" di atas sudah menuju tempat yang sama. */ ?>
 </aside>

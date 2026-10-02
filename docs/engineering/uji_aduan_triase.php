@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji TRIASE ADUAN - aduan lahir tanpa bidang, superadmin yang merutekan.
  *
@@ -99,7 +100,7 @@ function nilai($sql, $params = []) { $r = q($sql, $params); return $r && ! isset
  * nilai() mengembalikan NULL juga untuk baris yang tidak ada, jadi keberadaan
  * barisnya dipastikan lewat pemanggilnya (id-nya baru saja dibuat).
  */
-function bidang_aduan($id) { return nilai('SELECT bidang FROM aduan WHERE id=?', [$id]); }
+function bidang_aduan($id) { return nilai('SELECT bidang_kode FROM aduan WHERE id=?', [$id]); }
 function status_aduan($id) { return nilai('SELECT status FROM aduan WHERE id=?', [$id]); }
 
 function sesi($nama) {
@@ -157,7 +158,7 @@ function login($nama, $email, $sandi = SANDI) {
 function buat_akun($peran, $suffix, $bidang_kode = NULL) {
     $email = 'uji_triase_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
     $id = tulis(
-        'INSERT INTO usr_users (email,password,name,username,role,bidang_kode,status,profile_completed,created_at)
+        'INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,bidang_kode,status,profil_lengkap,created_at)
          VALUES (?,?,?,?,?,?, "active",1,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji Triase ' . $suffix,
          'uji_triase_' . $suffix . '_' . mt_rand(10000, 99999), $peran, $bidang_kode]
@@ -199,8 +200,8 @@ function bersihkan() {
     }
     // Sisa jejak milik akun uji (aksi yang objeknya bukan aduan, mis. login).
     foreach ($GLOBALS['users'] as $id) {
-        q('DELETE FROM sys_jejak_audit WHERE actor_id=?', [$id]);
-        q('DELETE FROM usr_users WHERE id=?', [$id]);
+        q('DELETE FROM sys_jejak_audit WHERE pelaku_id=?', [$id]);
+        q('DELETE FROM usr_akun WHERE id=?', [$id]);
     }
     foreach ($GLOBALS['jar'] as $j) { @unlink($j); }
     $GLOBALS['aduan'] = $GLOBALS['users'] = [];
@@ -222,8 +223,8 @@ echo 'Target: ' . BASE_URL . " | DB: {$env['DB_NAME']}\n\n";
 // ------------------------------------------------ PRASYARAT SKEMA
 echo "== 0. Prasyarat skema (migrasi 20260701000034) ==\n";
 $kolom = q("SELECT IS_NULLABLE n, COLUMN_DEFAULT d FROM information_schema.COLUMNS
-    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aduan' AND COLUMN_NAME='bidang'");
-wajib(($kolom['n'] ?? '') === 'YES', 'Kolom aduan.bidang sudah NULL-able');
+    WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='aduan' AND COLUMN_NAME='bidang_kode'");
+wajib(($kolom['n'] ?? '') === 'YES', 'Kolom aduan.bidang_kode sudah NULL-able');
 // MariaDB 10.2+ mengembalikan STRING 'NULL' untuk DEFAULT NULL, bukan SQL NULL.
 // Membandingkan ke NULL akan merah untuk skema yang benar - yang diperiksa di
 // sini adalah absennya sentinel 'umum', bukan bentuk balasan information_schema.
@@ -285,6 +286,13 @@ cek(bidang_aduan($id1) === NULL, 'Bidangnya NULL - masuk antrean triase');
 cek(status_aduan($id1) === 'Baru', 'Statusnya Baru');
 cek(stripos($r1['body'], 'diarahkan ke') === FALSE,
     'Pesan sukses tidak lagi menjanjikan bidang tujuan');
+// Pesan validasi berbahasa Indonesia (UAT pengembang 27 Sep 2026: dulu "The Nama field is required.").
+$r_kosong = http('warga', 'umum/simpan_aduan', ['csrf_kpkp_token' => csrf('warga', 'umum/aduan'), 'nama' => '',
+    'email' => 'pelapor_' . CAP . '@example.test', 'judul' => 'Uji nama kosong ' . CAP, 'pesan' => 'Isi uji nama kosong']);
+$id_kosong = (int) nilai('SELECT id FROM aduan WHERE judul=? LIMIT 1', ['Uji nama kosong ' . CAP]);
+if ($id_kosong) { $GLOBALS['aduan'][] = $id_kosong; }
+cek($id_kosong === 0 && strpos($r_kosong['body'], 'Nama wajib diisi.') !== FALSE && stripos($r_kosong['body'], 'field is required') === FALSE,
+    'Nama kosong ditolak dengan pesan berbahasa Indonesia');
 
 // ------------------------------------------------ 3. GERBANG DI SERVER
 echo "\n== 3. `bidang` dari POST DIABAIKAN, bukan cuma dihapus dari formulir ==\n";
@@ -354,9 +362,26 @@ cek(bidang_aduan($id1) === $bidang_a, "Bidang menjadi {$bidang_a}");
 cek(status_aduan($id1) === 'Baru', 'Status TIDAK ikut berubah - triase merutekan, bukan memutuskan');
 cek(jejak('aduan_ditriase', $id1) === 1, 'Satu baris jejak audit aduan_ditriase tercatat');
 
+// Poin 7.3: detail aduan (nama, email, isi) dibuka superadmin = akses data pribadi.
+// Dibuka dua kali untuk membuktikan dedupe; daftar tidak ikut mencatat.
+cek(http('super', 'Admin_Aduan/detail/' . $id1)['code'] === 200, 'Superadmin membuka detail aduan');
+http('super', 'Admin_Aduan/detail/' . $id1);
+cek(jejak('akses_aduan_warga', $id1) === 1, 'Detail aduan tercatat SATU baris akses_aduan_warga (dedupe menahan muat ulang)');
+
 $meja2 = http('bidA', 'Admin_Bidang');
 cek(strpos($meja2['body'], 'Uji triase A ' . CAP) !== FALSE,
     'Sesudah ditriase, aduannya MUNCUL di meja admin bidang yang dituju');
+
+/* Badge sidebar "Aduan Bidang Saya" (UAT admin bidang AB2): dulu entri registry
+   tidak punya 'badge', jadi angka ini tidak pernah tampil. Angka harapan dari DB
+   dengan scope bidang - aduan NULL ($id2, juga Baru) tidak boleh ikut terhitung. */
+function badge_sidebar($body, $label) {
+    if ( ! preg_match('/title="' . preg_quote($label, '/') . '">.*?<\/a>/s', $body, $m)) { return -1; }
+    return preg_match('/bg-red-100[^>]*>(\d+)</', $m[0], $b) ? (int) $b[1] : 0;
+}
+$harap_badge = (int) nilai("SELECT COUNT(*) c FROM aduan WHERE bidang_kode=? AND status='Baru'", [$bidang_a]);
+cek($harap_badge >= 1 && badge_sidebar($meja2['body'], 'Aduan Bidang Saya') === $harap_badge,
+    "Badge sidebar 'Aduan Bidang Saya' = {$harap_badge} (aduan Baru bidang {$bidang_a} saja)");
 
 // ------------------------------------------------ 7. SALAH RUTE MASIH BISA DIPERBAIKI
 echo "\n== 7. Selagi masih Baru, salah rute masih bisa diperbaiki ==\n";
@@ -378,6 +403,17 @@ http('bidA', 'Admin_Bidang/update_status/' . $id1, [
     'status' => 'Diproses', 'catatan_admin' => $JAWABAN,
 ]);
 wajib(status_aduan($id1) === 'Diproses', 'Admin bidang mengubah status jadi Diproses');
+// UAT AB3: perubahan status oleh admin bidang dulu tidak meninggalkan jejak.
+cek(jejak('aduan_status_bidang', $id1) === 1, 'Perubahan status oleh admin bidang tercatat di jejak audit');
+
+// UAT AB3: tautan push triase menunjuk Admin_Bidang?status=Baru - filternya harus sungguhan.
+$judul1 = 'Uji triase A ' . CAP;
+cek(strpos(http('bidA', 'Admin_Bidang?status=Baru')['body'], $judul1) === FALSE,
+    '?status=Baru menyaring - aduan Diproses tidak tampil');
+cek(strpos(http('bidA', 'Admin_Bidang?status=Diproses')['body'], $judul1) !== FALSE,
+    '?status=Diproses menampilkan aduan Diproses');
+cek(strpos(http('bidA', 'Admin_Bidang?status=ngawur')['body'], $judul1) !== FALSE,
+    '?status di luar allowlist diabaikan (daftar penuh)');
 
 http('super', 'Admin_Aduan/triase/' . $id1, [
     'csrf_kpkp_token' => csrf('super', 'Admin_Aduan'), 'bidang' => $bidang_b]);
@@ -438,6 +474,28 @@ cek(strpos($papan['body'], 'Uji triase selundupan ' . CAP) !== FALSE,
     'Aduan yang belum ditriase tetap tampil di papan');
 cek(stripos($papan['body'], 'Sedang ditinjau') !== FALSE,
     'Bidang NULL dibaca "sedang ditinjau", bukan dikarang jadi nama bidang');
+
+// ------------------------------------------------ 10. PUSH KE PELAPOR
+echo "\n== 10. Push ke pelapor saat status aduannya berubah ==\n";
+/* Keputusan user 1 Okt 2026. Warga yang login kini bisa berlangganan dari dashboard
+   akunnya (tombol topbar, izin peramban hanya lewat klik). Pengiriman push sendiri
+   tidak terjadi di lokal (VAPID kosong), jadi sisi kirim dijaga lewat sumber. */
+[$idWargaP, $emailWargaP] = buat_akun('warga', 'wargaPush');
+wajib(login('wargaP', $emailWargaP), 'Login akun ber-role warga');
+$akun = http('wargaP', 'akun');
+cek(strpos($akun['body'], 'data-web-push-toggle') !== FALSE, 'Tombol notifikasi HP tampil di dashboard akun warga');
+$langganan = json_encode(['endpoint' => 'https://push.example.test/' . CAP,
+    'keys' => ['p256dh' => 'BUji' . CAP, 'auth' => 'auth' . CAP]]);
+$rs = http('wargaP', 'push/subscribe', ['csrf_kpkp_token' => csrf('wargaP', 'akun'), 'subscription' => $langganan], TRUE);
+cek($rs['code'] === 200 && (int) nilai('SELECT COUNT(*) c FROM sys_langganan_notifikasi WHERE user_id=? AND aktif=1', [$idWargaP]) === 1,
+    'Warga bisa mendaftarkan perangkatnya lewat push/subscribe (dulu 403)');
+
+$psm = (string) file_get_contents(APP_ROOT . '/application/models/Push_subscription_model.php');
+cek(strpos($psm, "where('usr_akun.id', (int) \$audience['user_id'])") !== FALSE,
+    'untuk_audiens menerima audiens per user_id');
+preg_match('/function update_status\(.*?\n    \}/s', (string) file_get_contents(APP_ROOT . '/application/controllers/Admin_Bidang.php'), $mu);
+cek(preg_match("/if \(\\\$ok && \\\$status !== \\\$status_lama && ! empty\(\\\$lama->user_id\)\) \{\s*\\\$this->notify_admin_push\(\[\['user_id' => \(int\) \\\$lama->user_id\]\].*?'akun'/s", $mu[0] ?? '') === 1,
+    'Admin_Bidang::update_status mengirim push ke pelapor hanya bila sukses, status berubah, dan ada user_id; tautan ke akun');
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);

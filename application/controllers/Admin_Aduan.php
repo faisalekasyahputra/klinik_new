@@ -12,11 +12,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * bidang, bukan MEMUTUSKAN nasibnya. Bedanya penting dan sengaja dijaga:
  * `status` dan `catatan_admin` tetap hanya bisa disentuh Admin_Bidang, jadi
  * tidak ada jalur kedua yang bisa menimpa keputusan admin bidang tanpa jejak
- * (bandingkan masalah dua-jalur-tulis di sf_housing_queue, temuan #3).
+ * (bandingkan masalah dua-jalur-tulis di sf_antrean_pengajuan, temuan #3).
  *
  * Triase lahir 3 Agt 2026 karena pelapor tidak lagi memilih bidang sendiri -
  * warga tidak tahu urusannya masuk Bidang Perumahan atau Bidang Kawasan
- * Permukiman. Aduan baru lahir dengan `bidang` NULL dan, karena NULL tidak
+ * Permukiman. Aduan baru lahir dengan `bidang_kode` NULL dan, karena NULL tidak
  * cocok dengan WHERE mana pun, tidak muncul di meja bidang mana pun sampai
  * dirutekan dari sini. Itu berarti layar ini sekarang jadi HAMBATAN: aduan yang
  * tidak ditriase tidak ditangani siapa pun - karena itu ada callout jumlahnya
@@ -26,7 +26,7 @@ class Admin_Aduan extends Admin_Controller {
 
     public function index()
     {
-        $data['title'] = 'Semua Aduan';
+        $data['title'] = 'Pantau Aduan'; // = label sidebar
 
         $bidang_filter = $this->input->get('bidang', TRUE);
         $status_sah = ['Baru', 'Diproses', 'Selesai'];
@@ -44,14 +44,14 @@ class Admin_Aduan extends Admin_Controller {
 
         // Cari + urut + paginasi semuanya server-side (B7/B8).
         $table = $this->table_state(
-            ['aduan.created_at', 'aduan.nama', 'aduan.judul', 'aduan.bidang', 'aduan.status'],
+            ['aduan.created_at', 'aduan.nama', 'aduan.judul', 'aduan.bidang_kode', 'aduan.status'],
             'aduan.created_at'
         );
         $data['base_url'] = 'Admin_Aduan';
 
-        $this->db->from('aduan')->join('usr_users', 'usr_users.id = aduan.reviewed_by', 'left');
-        if ($triase_saja) { $this->db->where('aduan.bidang IS NULL', NULL, FALSE); }
-        elseif ($bidang_filter) { $this->db->where('aduan.bidang', $bidang_filter); }
+        $this->db->from('aduan')->join('usr_akun', 'usr_akun.id = aduan.reviewed_by', 'left');
+        if ($triase_saja) { $this->db->where('aduan.bidang_kode IS NULL', NULL, FALSE); }
+        elseif ($bidang_filter) { $this->db->where('aduan.bidang_kode', $bidang_filter); }
         if ($status_filter) { $this->db->where('aduan.status', $status_filter); }
         if ($table['q'] !== '') {
             $this->db->group_start()
@@ -61,7 +61,7 @@ class Admin_Aduan extends Admin_Controller {
         }
         $table += $this->paginate_state($this->db->count_all_results('', FALSE));
 
-        $data['rows'] = $this->db->select('aduan.*, usr_users.name AS nama_petugas')
+        $data['rows'] = $this->db->select('aduan.*, usr_akun.nama AS nama_petugas')
             ->order_by($table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
             ->get()->result();
@@ -70,8 +70,8 @@ class Admin_Aduan extends Admin_Controller {
         // Bidang tanpa admin ter-assign: aduannya tidak akan tertangani siapa pun.
         $data['bidang_tanpa_admin'] = [];
         foreach ($daftar_bidang as $b) {
-            $ada_admin = $this->db->where(['role' => 'admin_bidang', 'bidang_kode' => $b->kode])
-                ->count_all_results('usr_users');
+            $ada_admin = $this->db->where(['peran' => 'admin_bidang', 'bidang_kode' => $b->kode])
+                ->count_all_results('usr_akun');
             if ($ada_admin === 0) { $data['bidang_tanpa_admin'][] = $b->nama; }
         }
 
@@ -79,7 +79,7 @@ class Admin_Aduan extends Admin_Controller {
         // mana pun. Angkanya ditunjukkan walau filternya sedang tidak aktif -
         // hambatan yang cuma terlihat kalau sedang dicari bukan hambatan yang
         // terlihat.
-        $data['jml_triase'] = (int) $this->db->where('bidang IS NULL', NULL, FALSE)
+        $data['jml_triase'] = (int) $this->db->where('bidang_kode IS NULL', NULL, FALSE)
             ->count_all_results('aduan');
 
         $data['daftar_bidang'] = $daftar_bidang;
@@ -126,14 +126,15 @@ class Admin_Aduan extends Admin_Controller {
     public function detail($id = NULL)
     {
         $id = (int) $id;
-        $row = $this->db->select('a.*, b.nama AS nama_bidang, u.name AS nama_peninjau')
+        $row = $this->db->select('a.*, b.nama AS nama_bidang, u.nama AS nama_peninjau')
             ->from('aduan a')
-            ->join('bidang b', 'b.kode = a.bidang', 'left')
-            ->join('usr_users u', 'u.id = a.reviewed_by', 'left')
+            ->join('bidang b', 'b.kode = a.bidang_kode', 'left')
+            ->join('usr_akun u', 'u.id = a.reviewed_by', 'left')
             ->where('a.id', $id)
             ->get()->row();
 
         if ( ! $row) { show_404(); return; }
+        $this->catat_akses_data_pribadi('aduan_warga', 'aduan', (string) $id);   // poin 7.3: nama, email, isi aduan
 
         $this->render_admin('admin/aduan/detail', [
             'title'    => 'Detail Aduan',
@@ -155,7 +156,7 @@ class Admin_Aduan extends Admin_Controller {
             return;
         }
 
-        $row = $this->db->select('judul, bidang, status')->get_where('aduan', ['id' => $id])->row();
+        $row = $this->db->select('judul, bidang_kode, status')->get_where('aduan', ['id' => $id])->row();
         if ( ! $row) {
             $this->session->set_flashdata('error', 'Aduan tidak ditemukan.');
             redirect('Admin_Aduan');
@@ -172,12 +173,12 @@ class Admin_Aduan extends Admin_Controller {
         }
 
         $this->db->where('id', $id)->where('status', 'Baru')
-            ->update('aduan', ['bidang' => $bidang]);
+            ->update('aduan', ['bidang_kode' => $bidang]);
 
-        $asal = $row->bidang ? ($sah[$row->bidang] ?? $row->bidang) : 'antrean triase';
+        $asal = $row->bidang_kode ? ($sah[$row->bidang_kode] ?? $row->bidang_kode) : 'antrean triase';
         $this->catat_audit('aduan_ditriase',
             'Aduan #' . $id . ' diteruskan dari ' . $asal . ' ke ' . $sah[$bidang],
-            'aduan', $id, ['dari' => $row->bidang, 'ke' => $bidang, 'judul' => $row->judul]);
+            'aduan', $id, ['dari' => $row->bidang_kode, 'ke' => $bidang, 'judul' => $row->judul]);
 
         $this->notify_admin_push([
             ['role' => 'admin_bidang', 'bidang_kode' => $bidang],
