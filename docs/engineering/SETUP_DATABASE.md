@@ -108,14 +108,11 @@ Sistem database Klinik PKP kini menggunakan standar *prefix* berdasarkan fungsi 
 ### 4. Modul Sistem Utama (`sys_`)
 | Tabel | Fungsi |
 |-------|--------|
-| `sys_menu` | Master konfigurasi navigasi dan *role* akses |
-| `sys_multi` | Pemetaan *role* menu pengguna |
 | `sys_settings` | Pengaturan *global* website |
 
 ### 5. Modul Data Pendukung (`data_` & lainnya)
 | Tabel | Fungsi |
 |-------|--------|
-| `data_sosmed_perumahan` | Link media sosial SP2 |
 | `kondisi`, `irigasi`, `saluran_pembuang` | Data spasial dan pemetaan kawasan GIS |
 
 ## Catatan Keamanan

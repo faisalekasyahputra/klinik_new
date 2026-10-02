@@ -490,6 +490,18 @@ class Migrate extends CI_Controller {
         echo 'sumber tunggal perusahaan (migrasi 070): '.($sisa070 ? 'BELUM (usr_users masih punya '.implode(', ', $sisa070).')'
             : 'TERPASANG (usr_users tanpa kolom perusahaan; '.$this->db->where('user_id IS NOT NULL', NULL, FALSE)
                 ->count_all_results('srp2_certified_developers').' baris direktori tertaut akun)')."\n";
+        // Migrasi 071 - tabel mati dibuang + CHECK kosakata status. Daftarnya dari konstanta migrasi.
+        require_once APPPATH.'migrations/20260701000071_status_tertutup_tabel_mati.php';
+        $kurang071 = array_map(function ($t) { return $t.' masih ada'; },
+            array_values(array_filter(array_keys(Migration_Status_tertutup_tabel_mati::TABEL_MATI), [$this->db, 'table_exists'])));
+        $cek071 = array_column($this->db->query("SELECT CONSTRAINT_NAME n FROM information_schema.TABLE_CONSTRAINTS
+            WHERE CONSTRAINT_SCHEMA = DATABASE() AND CONSTRAINT_TYPE = 'CHECK'")->result_array(), 'n');
+        foreach (array_keys(Migration_Status_tertutup_tabel_mati::CEK) as $nama) {
+            if ( ! in_array($nama, $cek071, TRUE)) { $kurang071[] = 'CHECK '.$nama.' hilang'; }
+        }
+        echo 'status tertutup + tabel mati (migrasi 071): '.($kurang071 ? 'BELUM ('.implode('; ', $kurang071).')'
+            : 'TERPASANG ('.count(Migration_Status_tertutup_tabel_mati::CEK).' CHECK, '
+                .count(Migration_Status_tertutup_tabel_mati::TABEL_MATI).' tabel mati tidak ada)')."\n";
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
                 ($this->db->field_exists($kolom, 'kkn_magang_pendaftaran') ? 'ADA' : 'HILANG')."\n";

@@ -61,8 +61,8 @@ try {
     echo "\n-- Skema --\n";
     $cek((int) $satu("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='usr_users'
         AND COLUMN_NAME IN ('nama_perusahaan','alamat_kantor','telp_kantor')") === 0, 'usr_users tanpa kolom nama_perusahaan, alamat_kantor, telp_kantor');
-    $cek((bool) preg_match("/migration_version'\] = 20260701000070;/", file_get_contents($AKAR . '/application/config/migration.php'))
-        && (string) $satu('SELECT version FROM migrations') === '20260701000070', 'Config dan DB di versi 20260701000070');
+    $cek(preg_match("/migration_version'\] = (\d+);/", file_get_contents($AKAR . '/application/config/migration.php'), $vm) && $vm[1] >= '20260701000070'
+        && (string) $satu('SELECT version FROM migrations') === $vm[1], 'Config dan DB di versi yang sama, paling rendah 20260701000070');
     $status = (string) shell_exec('php ' . escapeshellarg($AKAR . '/index.php') . ' migrate status 2>&1');
     $cek(strpos($status, 'sumber tunggal perusahaan (migrasi 070): TERPASANG') !== FALSE, 'Migrate::status melaporkan 070 TERPASANG');
     $kode = '';

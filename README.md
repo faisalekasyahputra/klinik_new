@@ -174,12 +174,9 @@ Prefix menandai domainnya - tabel baru wajib mengikuti pola ini.
 | `kkn_magang_pendaftaran` | Pendaftaran KKN & Magang |
 | `kabupaten` | 35 kabupaten/kota Jateng (kode Kemendagri) |
 | `bidang` | 5 bidang penanganan aduan |
-| `sys_menu` | Menu navigasi |
-| `sys_multi` | Data perumahan |
 | `sys_settings` | Konfigurasi sistem |
 | `sys_ticket_lookup_limits` | Rate limit lookup tiket publik |
 | `chat_rooms`, `chat_messages` | ⚠️ **ADA tapi menganggur** - lihat catatan di bawah |
-| `data_sosmed_perumahan` | Sosmed pengembang |
 | `migrations` | Versi migrasi yang sudah dijalankan |
 
 > ⚠️ **Jebakan:** `chat_rooms`/`chat_messages` ada di DB tapi tidak dipakai kode manapun. Fitur chat yang berjalan menulis ke `tb_chat` - tabel yang **tidak ada di skema maupun migrasi**, sehingga chat gagal di instalasi bersih. Lihat `AGENTS.md` §18.

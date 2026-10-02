@@ -13,9 +13,13 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *   - snapshot SIMPERUM yang sudah lewat expires_at + masa tenggang, KECUALI yang dirujuk penilaian
  *     yang sudah dikirim (bukan draf): itu bukti asal data sebuah arsip;
  *   - penghitung batas laju lama, token surel yang sudah kedaluwarsa, langganan push yang dinonaktifkan;
- *   - log aplikasi lebih tua dari batas, dan jejak audit lebih tua dari batas (5 tahun; sengaja lama).
- * Tidak disapu (sengaja): cache respons layanan luar (data publik, dipakai sebagai cadangan saat layanan
- * itu mati), sesi (dikelola PHP/hosting), dan berkas unggahan (dimiliki akun; dihapus lewat hapus akun).
+ *   - log aplikasi lebih tua dari batas, dan jejak audit lebih tua dari batas (5 tahun; sengaja lama);
+ *   - cache respons layanan luar di application/cache (*.json yang tak tersegarkan sekian hari, dan bendera
+ *     *_gagal.flag yang lewat sehari): namanya ber-md5 URL atau id lokasi, jadi menumpuk tanpa batas.
+ *     Cache yang masih dipakai tersegarkan tiap TTL (paling lama 1 hari), jadi yang disapu hanya cadangan
+ *     basi yang sudah lama tidak diminta. index.html, .htaccess, dan penanda retensi tidak pernah disentuh.
+ * Tidak disapu (sengaja): sesi (dikelola PHP/hosting) dan berkas unggahan (dimiliki akun; dihapus lewat
+ * hapus akun).
  *
  * Dijalankan sekali per interval: dipicu permintaan web SESUDAH respons terkirim (MY_Controller), atau
  * `php index.php retensi jalankan [kering]` dari CLI/cron. Mode kering hanya menghitung.
@@ -76,6 +80,7 @@ class Penyapu_retensi {
             'UPDATE usr_users SET email_token = NULL, email_token_expiry = NULL WHERE email_token IS NOT NULL AND email_token_expiry < (NOW() - INTERVAL ' . $tk . ' DAY)',
             $kering);
         $hasil['log_aplikasi'] = $this->sapu_log((int) $p['log_aplikasi_hari'], $kering);
+        $hasil['cache_hulu'] = $this->sapu_cache((int) $p['cache_hulu_hari'], $kering);
 
         $total = 0;
         foreach ($hasil as $h) { $total += (int) $h['jumlah']; }
@@ -140,6 +145,23 @@ class Penyapu_retensi {
         foreach ((array) glob($dir . 'log-*.php') as $f) {
             if ( ! preg_match('/log-\d{4}-\d{2}-\d{2}\.php$/', $f) || (int) @filemtime($f) >= $batas) { continue; }
             if ($kering || @unlink($f)) { $n++; }
+        }
+        return ['jumlah' => $n, 'galat' => NULL];
+    }
+
+    /** Cache hulu (cache_hulu_helper, Sikumbang, Sikaper, Ternak): hanya *.json dan *_gagal.flag di akar application/cache. */
+    private function sapu_cache($hari, $kering)
+    {
+        $dir = $this->app . 'cache' . DIRECTORY_SEPARATOR;
+        if ( ! is_dir($dir)) { return ['jumlah' => 0, 'galat' => NULL]; }
+        // ponytail: bendera gagal hanya bermakna CACHE_HULU_JEDA_GAGAL detik, jadi batasnya tetap sehari.
+        $batas = ['json' => time() - $hari * 86400, 'flag' => time() - 86400];
+        $n = 0;
+        foreach ($batas as $jenis => $sebelum) {
+            foreach ((array) glob($dir . ($jenis === 'json' ? '*.json' : '*_gagal.flag')) as $f) {
+                if ( ! is_file($f) || (int) @filemtime($f) >= $sebelum) { continue; }
+                if ($kering || @unlink($f)) { $n++; }
+            }
         }
         return ['jumlah' => $n, 'galat' => NULL];
     }
