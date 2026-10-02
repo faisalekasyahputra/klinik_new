@@ -857,10 +857,11 @@ class MY_Controller extends CI_Controller {
     protected function buka_pii_antrean($row) {
         $this->load->library('encryption_lib');
         foreach (['nik_pengaju', 'nama_lengkap', 'data_simperum_json', 'data_survey_json'] as $kolom) {
-            $c = $row->{$kolom . '_ciphertext'} ?? NULL;
+            $kolom_c = $kolom . '_ciphertext';
+            $c = $row->$kolom_c ?? NULL;
             $p = ($c !== NULL && $c !== '' && $this->encryption_lib->is_encrypted($c)) ? $this->encryption_lib->decrypt($c) : NULL;
             $row->$kolom = $p === FALSE ? NULL : $p;
-            unset($row->{$kolom . '_ciphertext'});
+            unset($row->$kolom_c);
         }
         unset($row->nik_pengaju_lookup_hash);
         return $row;
@@ -1536,10 +1537,12 @@ class MY_Controller extends CI_Controller {
         if ($f['size'] > 2 * 1024 * 1024) { $galat = 'Ukuran foto maksimal 2 MB.'; return NULL; }
 
         $mime = (new finfo(FILEINFO_MIME_TYPE))->file($f['tmp_name']);
+        // Nama fungsi di sini hanya untuk cek function_exists; pemanggilannya literal (match) di bawah,
+        // supaya tidak ada pemanggilan lewat nama dinamis (tests/dynamic_code_test.php).
         $jenis = [
-            'image/jpeg' => ['jpg', 'imagecreatefromjpeg', 'imagejpeg', 85],
-            'image/png'  => ['png', 'imagecreatefrompng', 'imagepng', 6],
-            'image/webp' => ['webp', 'imagecreatefromwebp', 'imagewebp', 85],
+            'image/jpeg' => ['jpg', 'imagecreatefromjpeg'],
+            'image/png'  => ['png', 'imagecreatefrompng'],
+            'image/webp' => ['webp', 'imagecreatefromwebp'],
         ][$mime] ?? NULL;
         if ($jenis === NULL || ! function_exists($jenis[1])) { $galat = 'Foto harus JPG, PNG, atau WEBP.'; return NULL; }
         $dimensi = @getimagesize($f['tmp_name']);
@@ -1548,7 +1551,11 @@ class MY_Controller extends CI_Controller {
         }
         if ( ! $this->scan_uploaded_file($f['tmp_name'], $jenis[0], $galat, 'srp2_foto')) { return NULL; }
 
-        $img = @call_user_func($jenis[1], $f['tmp_name']);
+        $img = match ($jenis[0]) {
+            'jpg'  => @imagecreatefromjpeg($f['tmp_name']),
+            'png'  => @imagecreatefrompng($f['tmp_name']),
+            'webp' => @imagecreatefromwebp($f['tmp_name']),
+        };
         if ( ! $img) { $galat = 'Berkas itu bukan gambar yang sah.'; return NULL; }
         $skala = min(1, 512 / max(imagesx($img), imagesy($img)));
         if ($skala < 1) {
@@ -1561,7 +1568,11 @@ class MY_Controller extends CI_Controller {
         $dir = FCPATH . self::DIR_FOTO_SRP2;
         if ( ! is_dir($dir) && ! @mkdir($dir, 0755, TRUE)) { imagedestroy($img); $galat = 'Folder foto tidak bisa dibuat.'; return NULL; }
         $nama = bin2hex(random_bytes(16)) . '.' . $jenis[0];
-        $ok = call_user_func($jenis[2], $img, $dir . $nama, $jenis[3]);
+        $ok = match ($jenis[0]) {
+            'jpg'  => imagejpeg($img, $dir . $nama, 85),
+            'png'  => imagepng($img, $dir . $nama, 6),
+            'webp' => imagewebp($img, $dir . $nama, 85),
+        };
         imagedestroy($img);
         if ( ! $ok) { @unlink($dir . $nama); $galat = 'Foto gagal disimpan.'; return NULL; }
         return self::DIR_FOTO_SRP2 . $nama;
