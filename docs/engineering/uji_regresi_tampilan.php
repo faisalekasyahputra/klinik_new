@@ -320,6 +320,11 @@ foreach ([['mhs', '/', 'beranda portal'], ['adm', 'Admin_Dashboard', 'dasbor adm
 // =========================================================== 6. MEJA KERJA
 echo "\n== Meja kerja Super Admin ==\n";
 $overview = http('adm', 'Admin_Dashboard');
+// Profil Saya hanya di menu profil topbar, tidak lagi di sidebar (permintaan user 2 Okt 2026).
+$nav_ov = (string) strstr($overview, 'id="sidebar-nav"');
+$nav_ov = substr($nav_ov, 0, (int) strpos($nav_ov, '</aside>'));
+cek($nav_ov !== '' && strpos($nav_ov, 'akun/profil') === FALSE && strpos($overview, 'akun/profil') !== FALSE,
+    'Profil Saya tidak tampil di sidebar admin, tetap ada di menu profil topbar');
 cek(strpos($overview, '>Ringkasan Kerja</h1>') !== FALSE // judul = label sidebar sejak audit UI 2 Okt 2026, dulu "Meja Kerja Super Admin"
     && strpos($overview, 'Admin?status=pending') !== FALSE
     && strpos($overview, 'Admin_Kemitraan?status=Diajukan') !== FALSE
@@ -518,6 +523,13 @@ cek($teks_dev === [], 'Tidak ada teks bernada pengembang di layar admin (lain: '
 $antrean_hal = http('adm', 'Admin');
 cek(substr_count($antrean_hal, 'data-pemberitahuan-simulasi') <= 1 && strpos($antrean_hal, 'Mode Simulasi - API') === FALSE,
     'Antrean: Mode Simulasi paling banyak satu pemberitahuan di atas tabel, bukan per baris');
+// Production memakai SIMPERUM (mode api) sementara baris uji coba lama bertanda simulasi:
+// kalimat banner dan lencana detail harus mengikuti mode aktif, bukan selalu "belum tersambung".
+foreach (['antrean/dashboard.php', 'antrean/detail.php'] as $v_sim) {
+    $src_sim = (string) @file_get_contents(APP_ROOT . '/application/views/admin/' . $v_sim);
+    cek(strpos($src_sim, "item('simperum_mode') === 'api'") !== FALSE && strpos($src_sim, 'sebelum') !== FALSE,
+        "{$v_sim}: teks simulasi mengikuti mode SIMPERUM aktif");
+}
 
 $kepala_kmp = (string) @file_get_contents(APP_ROOT . '/application/views/admin/components/kepala_tabel.php');
 $kepala_lama = [];

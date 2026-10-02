@@ -134,6 +134,12 @@ $config['dashboard_modules'] = [
     'profil' => [
         'label' => 'Profil Saya', 'icon' => 'ph-user-circle',
         'url'   => 'akun/profil', 'group' => 'Akun', 'order' => 20,
+        // Tidak tampil di sidebar (permintaan user 2 Okt 2026): Profil Saya dan Keluar sudah
+        // ada di menu profil topbar. Modul tetap terdaftar untuk hak akses dan judul halaman.
+        'sidebar' => FALSE,
+        // Tidak tampil di sidebar (permintaan user 2 Okt 2026): Profil Saya dan Keluar sudah
+        // ada di menu profil topbar. Modul tetap terdaftar untuk hak akses dan judul halaman.
+        'sidebar' => FALSE,
         // 'universitas' ditambahkan 22 Agt 2026 - akun ini juga butuh Profil
         // Saya (No. HP di sana WAJIB diisi sebelum bisa mengajukan KKN
         // pertama, lihat KemitraanPortal::kkn_tambah()).

@@ -1077,6 +1077,7 @@ class MY_Controller extends CI_Controller {
         foreach ($modules as $key => $m) {
             if ( ! $this->module_privilege_allowed($key)) { continue; }
             if (array_key_exists('enabled', $m) && $m['enabled'] === FALSE) { continue; }
+            if (array_key_exists('sidebar', $m) && $m['sidebar'] === FALSE) { continue; } // disembunyikan dari sidebar, akses tetap
             if (empty($m['roles']) || ! in_array($role, $m['roles'], TRUE)) { continue; }
             $scope_value = ! empty($m['scope']) ? $this->session->userdata($m['scope']) : NULL;
             if ( ! empty($m['scope']) && empty($scope_value)) { continue; }
