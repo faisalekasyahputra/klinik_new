@@ -166,6 +166,12 @@ class Index extends MY_Controller {
                if ($idLokasi === NULL) {
             redirect('cari_rumah');
         }
+		// idLokasi SIKUMBANG berupa huruf dan angka (17 karakter); selain itu ditolak sebelum
+		// menjadi nama berkas cache dan URL hulu, supaya id sembarang tidak menimbun berkas.
+		if ( ! preg_match('/^[A-Za-z0-9]{1,32}$/', (string) $idLokasi)) {
+			show_404();
+			return;
+		}
 		$cache_file = APPPATH . 'cache/sikumbang_detail_' . $idLokasi . '.json';
 		$full_url = "https://sikumbang.tapera.go.id/lokasi-perumahan/" . $idLokasi . "/json";
 

@@ -125,6 +125,8 @@ try {
     $retensi = $sumber('controllers/Retensi.php');
     $cek(strpos($sumber('libraries/Penyapu_retensi.php'), "\$hasil['cache_hulu'] = \$this->sapu_cache(") !== FALSE && strpos($retensi, "foreach (\$hasil['tugas']") !== FALSE,
         'Penyapu cache ikut jalankan(), jadi ikut pemicu harian web dan `php index.php retensi jalankan [kering]`');
+    $cek(preg_match('/preg_match\(\'\/\^\[A-Za-z0-9\]\{1,32\}\$\/\', \(string\) \$idLokasi\)\)\s*\{\s*show_404\(\);\s*return;\s*\}\s*\$cache_file/', $sumber('controllers/Index.php')) === 1,
+        'detail_perum menolak idLokasi selain huruf/angka sebelum menjadi nama berkas cache');
 } catch (Throwable $e) {
     $cek(FALSE, 'Pengecualian: ' . $e->getMessage());
 } finally {
