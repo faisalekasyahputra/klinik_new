@@ -122,7 +122,10 @@ check($kode(xlsx(['xl/externalLinks/externalLink1.xml' => '<x/>']), 'xlsx') === 
 check($kode(xlsx(['xl/sharedStrings.xml' => '<?xml version="1.0"?><!DOCTYPE x [<!ENTITY a "b">]><sst/>']), 'xlsx') === 'excel_berbahaya', 'XLSX dengan DOCTYPE/ENTITY (XXE, billion laughs) harus ditolak');
 check($kode(xlsx(['xl/worksheets/_rels/sheet1.xml.rels' => '<Relationships><Relationship Id="r1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject" Target="file:///x" TargetMode="External"/></Relationships>']), 'xlsx') === 'excel_berbahaya', 'Relasi eksternal berbahaya harus ditolak');
 check($kode(xlsx(['xl/worksheets/_rels/sheet1.xml.rels' => '<Relationships><Relationship Id="r1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="https://contoh.id" TargetMode="External"/></Relationships>']), 'xlsx') === 'OK', 'Hyperlink eksternal biasa di XLSX sah dan tidak boleh ditolak');
-check($kode(xlsx(['../luar.txt' => 'x']), 'xlsx') === 'excel_berbahaya', 'Entri zip dengan ../ harus ditolak');
+check($kode(xlsx(['../luar.txt' => 'x']), 'xlsx') === 'excel_tidak_wajar', 'Entri zip dengan ../ harus ditolak (zip-slip; kode struktur sejak 3524fea)');
+check($kode(xlsx(['xl/../../luar.txt' => 'x']), 'xlsx') === 'excel_tidak_wajar', 'Entri zip dengan ../ di tengah jalur harus ditolak');
+check($kode(xlsx(['/abs.txt' => 'x']), 'xlsx') === 'excel_tidak_wajar', 'Entri zip berjalur absolut harus ditolak');
+check($kode(xlsx(['xl\..\luar.txt' => 'x']), 'xlsx') === 'excel_tidak_wajar', 'Entri zip dengan garis miring terbalik harus ditolak');
 check($kode(xlsx(['xl/loader.php' => 'x']), 'xlsx') === 'excel_berbahaya', 'Entri .php di dalam XLSX harus ditolak');
 check($kode(xlsx(['xl/media/c.xml' => '<a><?php echo 1;?></a>']), 'xlsx') === 'kode_php', 'Kode PHP di dalam entri XLSX harus ditolak');
 check($kode(berkas('n.xlsx', 'PK bukan zip'), 'xlsx') === 'tipe_tak_sesuai', 'Berkas berekstensi xlsx yang bukan Excel harus ditolak');
@@ -132,10 +135,10 @@ check($kode(berkas('o2.xls', hex2bin('d0cf11e0a1b11ae1') . str_repeat("\0", 64))
 // Batas dari kebijakan (bom zip dan bom dimensi gambar), diuji dengan kebijakan kecil.
 $kecil = $POLICY; $kecil['scan']['zip_max_uncompressed'] = 200000; $kecil['scan']['zip_max_ratio'] = 50; $kecil['scan']['image_max_pixels'] = 100;
 $Sk = new Upload_scanner(['policy' => $kecil, 'clamd' => '']);
-check($Sk->scan(xlsx(['xl/besar.bin' => str_repeat('A', 300000)]), 'xlsx')['code'] === 'excel_berbahaya', 'Zip yang mengembang melewati batas total harus ditolak');
+check($Sk->scan(xlsx(['xl/besar.bin' => str_repeat('A', 300000)]), 'xlsx')['code'] === 'excel_tidak_wajar', 'Zip yang mengembang melewati batas total harus ditolak');
 $rasio = $kecil; $rasio['scan']['zip_max_uncompressed'] = 50 * 1048576;
 $Sr = new Upload_scanner(['policy' => $rasio, 'clamd' => '']);
-check($Sr->scan(xlsx(['xl/besar.bin' => str_repeat('A', 3 * 1048576)]), 'xlsx')['code'] === 'excel_berbahaya', 'Zip dengan rasio kompresi ekstrem harus ditolak (bom zip)');
+check($Sr->scan(xlsx(['xl/besar.bin' => str_repeat('A', 3 * 1048576)]), 'xlsx')['code'] === 'excel_tidak_wajar', 'Zip dengan rasio kompresi ekstrem harus ditolak (bom zip)');
 check($Sk->scan(berkas('g.png', $PNG), 'png')['code'] === 'gambar_terlalu_besar', 'Gambar dengan jumlah piksel di atas batas (bom dekompresi) harus ditolak');
 
 // ------------------------------------------------------------------ 3. ClamAV (clamd) dengan server palsu
