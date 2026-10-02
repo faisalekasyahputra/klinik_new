@@ -239,7 +239,7 @@ $r=$owner->post('warga/pendataan',['action'=>'submit','assessment_id'=>$d['id'],
 $queue=$db->row('SELECT * FROM sf_housing_queue WHERE user_id=?',[$ownerId]);$submitted=raw_assessment($db,$d['id']);
 cek($queue&&$submitted['status']==='submitted'&&!empty($submitted['submitted_at']),'Submit atomik membuat assessment submitted dan queue');
 cek(!empty($submitted['profile_snapshot_ciphertext'])&&strpos($submitted['profile_snapshot_ciphertext'],'Pemilik R6')===FALSE&&strpos($submitted['profile_snapshot_ciphertext'],'{')!==0,'Snapshot profil tersimpan terenkripsi');
-cek($queue['nik_pengaju']===NULL&&$queue['nama_lengkap']===NULL&&$queue['source_mode']==='simulation','Queue baru tidak menyimpan PII plaintext dan berlabel simulasi');
+cek(!array_key_exists('nik_pengaju',$queue)&&!array_key_exists('nama_lengkap',$queue)&&$queue['nik_pengaju_ciphertext']===NULL&&$queue['nama_lengkap_ciphertext']===NULL&&$queue['source_mode']==='simulation','Queue baru tidak menyimpan PII plaintext dan berlabel simulasi');
 cek((int)$queue['kabupaten_id']===3374&&(int)$queue['assessment_id']===(int)$d['id']&&(int)$queue['recommendation_id']===(int)$rtlh['id']&&(int)$queue['program_id']===(int)$rtlh['program_id'],'Queue menyimpan scope dan rekomendasi server');
 $queueId=(int)$queue['id'];$ticket=$queue['ticket_code'];
 preserve_rate_key($db,'warga_start_revision','object',$queueId);

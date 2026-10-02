@@ -153,8 +153,9 @@ class Admin_Dashboard extends Admin_Controller {
     private function aktivitas_terkini() {
         $items = [];
 
-        foreach ($this->db->select('nama_lengkap, status_antrean, created_at')
+        foreach ($this->db->select('nama_lengkap_ciphertext, status_antrean, created_at')
             ->order_by('created_at', 'DESC')->limit(6)->get('sf_housing_queue')->result() as $r) {
+            $this->buka_pii_antrean($r); // nama tiket lama terenkripsi (migrasi 067)
             $items[] = [
                 'icon' => 'ph-ticket', 'jenis' => 'Antrean Perumahan',
                 'judul' => trim((string) $r->nama_lengkap) !== '' ? $r->nama_lengkap : 'Pengajuan warga',

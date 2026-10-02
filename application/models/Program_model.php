@@ -87,85 +87,10 @@ class Program_model extends CI_Model {
         return NULL;
     }
 
-    /**
-     * Satu-satunya pintu masuk baris sf_housing_queue. Pemanggil WAJIB
-     * menyertakan key 'kabupaten_id' (boleh bernilai NULL) yang sudah lewat
-     * resolve_kabupaten_id() - kalau lupa, dicatat ke log dan dipaksa NULL,
-     * supaya kelalaian terlihat di log alih-alih diam-diam menghasilkan baris
-     * yang tidak pernah muncul di dashboard admin manapun (kasus lama
-     * Program::ajukan_solusi(), lihat AUDIT_ROLE_WARGA.md temuan #4).
-     */
-    public function insert_housing_queue($data) {
-        if (empty($data['ticket_code'])) {
-            $data['ticket_code'] = $this->generate_ticket_code();
-        }
-        if ( ! array_key_exists('kabupaten_id', $data)) {
-            log_message('error', 'insert_housing_queue dipanggil tanpa kabupaten_id - baris tidak akan terlihat admin kabupaten manapun. Pakai resolve_kabupaten_id() di pemanggil.');
-            return FALSE;
-        }
-        return $this->db->insert('sf_housing_queue', $data);
-    }
-
-    /**
-     * Satu gerbang untuk kedua jalur pengajuan warga.
-     * Identitas, hasil kelayakan, dan daftar program berasal dari sesi server.
-     */
-    public function create_housing_submission($identitas, $hasil, $kode_program, $user_id = NULL) {
-        $now = time();
-        if (empty($identitas['created_at']) || empty($hasil['created_at'])
-            || $now - (int) $identitas['created_at'] > 1800
-            || $now - (int) $hasil['created_at'] > 1800) {
-            return ['success' => FALSE, 'code' => 'state_expired', 'message' => 'Sesi diagnosa kedaluwarsa. Silakan ulangi diagnosa.'];
-        }
-
-        $nik = trim((string) ($identitas['nik'] ?? ''));
-        $nama = trim((string) ($identitas['nama_lengkap'] ?? ''));
-        $survey = $hasil['data_survey'] ?? [];
-        if ( ! preg_match('/^\d{16}$/', $nik) || $nama === '' || ! $this->valid_survey($survey)) {
-            return ['success' => FALSE, 'code' => 'invalid_data', 'message' => 'Data identitas atau survei tidak valid. Silakan ulangi diagnosa.'];
-        }
-
-        $eligible = FALSE;
-        foreach ((array) ($hasil['eligible_programs'] ?? []) as $program) {
-            if (($program['kode'] ?? '') === $kode_program) {
-                $eligible = TRUE;
-                break;
-            }
-        }
-        if ( ! $eligible) {
-            return ['success' => FALSE, 'code' => 'program_not_eligible', 'message' => 'Program yang dipilih tidak berasal dari hasil diagnosa Anda.'];
-        }
-
-        $program = $this->get_program_by_code($kode_program);
-        if ( ! $program) {
-            return ['success' => FALSE, 'code' => 'program_unavailable', 'message' => 'Program pilihan belum tersedia untuk pengajuan.'];
-        }
-
-        $kabupaten_id = $this->resolve_kabupaten_id($user_id, $hasil['kabupaten_id'] ?? NULL);
-        if ( ! $kabupaten_id) {
-            return ['success' => FALSE, 'code' => 'wilayah_required', 'message' => 'Kabupaten/kota domisili wajib dipilih agar pengajuan sampai ke admin wilayah.'];
-        }
-
-        $ticket_code = $this->generate_ticket_code();
-        $timestamp = date('Y-m-d H:i:s');
-        $inserted = $this->insert_housing_queue([
-            'ticket_code'        => $ticket_code,
-            'user_id'            => $user_id ?: NULL,
-            'kabupaten_id'       => $kabupaten_id,
-            'program_id'         => (int) $program['id'],
-            'nik_pengaju'        => $nik,
-            'nama_lengkap'       => $nama,
-            'data_simperum_json' => $identitas['data_simperum_json'] ?? NULL,
-            'data_survey_json'   => json_encode($survey),
-            'status_antrean'     => 'pending',
-            'created_at'         => $timestamp,
-            'updated_at'         => $timestamp,
-        ]);
-
-        return $inserted
-            ? ['success' => TRUE, 'ticket_code' => $ticket_code]
-            : ['success' => FALSE, 'code' => 'write_failed', 'message' => 'Pengajuan belum dapat disimpan. Silakan coba lagi.'];
-    }
+    /* insert_housing_queue() dan create_housing_submission() DIHAPUS 2 Okt 2026 (migrasi 067):
+       keduanya penulis NIK/nama/JSON polos ke sf_housing_queue untuk jalur diagnosa lama yang
+       tidak lagi dipanggil siapa pun sejak 27 Sep 2026 (lihat Program.php). Satu-satunya
+       penulis antrean sekarang Housing_assessment_model::submit_owned_assessment(). */
 
     public function transition_housing_queue($queue_id, $status, $reviewer_id, $kabupaten_id = NULL, $catatan = '') {
         $queue_id = (int) $queue_id;
@@ -204,19 +129,6 @@ class Program_model extends CI_Model {
         }
 
         return ['success' => TRUE, 'from' => $row->status_antrean, 'to' => $status];
-    }
-
-    private function valid_survey($survey) {
-        $pekerjaan = ['PNS/TNI/POLRI', 'Karyawan Swasta', 'Wiraswasta', 'Pekerja Informal', 'Lainnya'];
-        $kepemilikan = ['Sewa/Kontrak', 'Numpang/Keluarga', 'Punya Lahan Belum Bangun', 'Punya Rumah Tidak Layak', 'Punya Rumah Layak'];
-        $penghasilan = $survey['penghasilan'] ?? NULL;
-
-        return is_numeric($penghasilan)
-            && (float) $penghasilan >= 0
-            && (float) $penghasilan <= 100000000
-            && in_array($survey['pekerjaan'] ?? '', $pekerjaan, TRUE)
-            && in_array($survey['status_kepemilikan'] ?? '', $kepemilikan, TRUE)
-            && trim((string) ($survey['alasan_pengajuan'] ?? '')) !== '';
     }
 
     public function generate_ticket_code() {

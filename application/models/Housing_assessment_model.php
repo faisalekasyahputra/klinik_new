@@ -875,7 +875,7 @@ class Housing_assessment_model extends CI_Model {
                 'ticket_code' => $ticket, 'user_id' => $user_id, 'kabupaten_id' => $assessment['kabupaten_id'],
                 'assessment_id' => $assessment_id, 'recommendation_id' => $recommendation_id,
                 'submission_key' => $submission_key, 'program_id' => $recommendation['program_id'],
-                'nik_pengaju' => NULL, 'nama_lengkap' => NULL,
+                // Identitas TIDAK disalin ke antrean: dibaca lewat assessment_id (sf_profil_warga terenkripsi).
                 'status_antrean' => 'pending', 'source_mode' => $assessment['source_mode'],
             ]);
             if ( ! $inserted) { $this->db->trans_rollback(); return $this->fail('write_failed', 'Pengajuan belum dapat disimpan.'); }

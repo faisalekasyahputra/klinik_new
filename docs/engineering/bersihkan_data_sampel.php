@@ -78,8 +78,20 @@ if ($ya && $n_demo > 0) { $m->query("DELETE FROM kkn_magang_pendaftaran WHERE di
 
 // ---- 3. Data simulasi SIMPERUM
 echo "\n== 3. Data simulasi SIMPERUM ==\n";
-$kondisi_antrean = "source_mode = 'simulation' AND (nama_lengkap LIKE '%Simulasi%' OR nik_pengaju LIKE '000000000000%')";
-$n_antrean = jumlah($m, "SELECT COUNT(*) FROM sf_housing_queue WHERE $kondisi_antrean");
+/* Sejak migrasi 067 nama dan NIK antrean terenkripsi, jadi penyaringnya dibuka di PHP (butuh
+   KPKP_DATA_KEY di env, sama dengan aplikasi). Yang dihapus hanya id yang cocok. */
+define('BASEPATH', 'x'); define('APPPATH', dirname(__DIR__, 2) . '/application/');
+if ( ! function_exists('log_message')) { function log_message() {} }
+require APPPATH . 'libraries/Encryption_lib.php';
+$enc = new Encryption_lib();
+$id_simulasi = [];
+foreach ($m->query("SELECT id, nama_lengkap_ciphertext, nik_pengaju_ciphertext FROM sf_housing_queue WHERE source_mode = 'simulation'")->fetch_all(MYSQLI_ASSOC) as $r) {
+    $nama = (string) $enc->decrypt($r['nama_lengkap_ciphertext']);
+    $nik = (string) $enc->decrypt($r['nik_pengaju_ciphertext']);
+    if (stripos($nama, 'Simulasi') !== FALSE || strpos($nik, '000000000000') === 0) { $id_simulasi[] = (int) $r['id']; }
+}
+$kondisi_antrean = $id_simulasi ? 'id IN (' . implode(',', $id_simulasi) . ')' : '0';
+$n_antrean = count($id_simulasi);
 $n_snap = jumlah($m, "SELECT COUNT(*) FROM sf_rekaman_simperum WHERE source_mode = 'simulation'");
 echo "  antrean simulasi: $n_antrean, snapshot simulasi: $n_snap\n";
 if ($ya) {

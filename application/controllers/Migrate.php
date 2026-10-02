@@ -430,6 +430,24 @@ class Migrate extends CI_Controller {
             WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'srp2_certified_developers'
               AND CONSTRAINT_NAME IN ('fk_srp2_direktori_user', 'uq_srp2_direktori_user')")->row('n');
         echo 'srp2 tautan akun UNIQUE + FK (migrasi 066): '.($fk066 === 2 ? 'TERPASANG' : 'TIDAK LENGKAP ('.$fk066.'/2)')."\n";
+        // Migrasi 067 - PII antrean & NIK SRP2 terenkripsi: kolom polos HARUS hilang, pasangan
+        // terenkripsi + indeks sidik HARUS ada. Hanya hitungan yang dicetak, tidak pernah nilai.
+        $bentuk067 = [
+            'sf_housing_queue' => [['nik_pengaju', 'nama_lengkap', 'data_simperum_json', 'data_survey_json'],
+                ['nik_pengaju_ciphertext', 'nik_pengaju_lookup_hash', 'nama_lengkap_ciphertext', 'data_simperum_json_ciphertext', 'data_survey_json_ciphertext'],
+                'idx_sf_queue_nik_lookup'],
+            'srp2_registrations' => [['nik_ktp'], ['nik_ktp_ciphertext', 'nik_ktp_lookup_hash'], 'uq_srp2_registration_nik'],
+        ];
+        foreach ($bentuk067 as $tabel => [$polos, $sandi, $indeks]) {
+            $sisa = array_filter($polos, function ($k) use ($tabel) { return $this->db->field_exists($k, $tabel); });
+            $kurang = array_filter($sandi, function ($k) use ($tabel) { return ! $this->db->field_exists($k, $tabel); });
+            $ada_indeks = (int) $this->db->query("SELECT COUNT(*) n FROM information_schema.STATISTICS
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND INDEX_NAME = ?", [$tabel, $indeks])->row('n') > 0;
+            echo $tabel.' PII terenkripsi (migrasi 067): '.( ! $sisa && ! $kurang && $ada_indeks
+                ? 'TERPASANG, '.(int) $this->db->where($sandi[0].' IS NOT NULL', NULL, FALSE)->count_all_results($tabel).' baris berciphertext'
+                : 'BELUM ('.($sisa ? 'kolom polos masih ada: '.implode(',', $sisa).'; ' : '')
+                    .($kurang ? 'kolom hilang: '.implode(',', $kurang).'; ' : '').($ada_indeks ? '' : 'indeks '.$indeks.' hilang').')')."\n";
+        }
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
                 ($this->db->field_exists($kolom, 'kkn_magang_pendaftaran') ? 'ADA' : 'HILANG')."\n";

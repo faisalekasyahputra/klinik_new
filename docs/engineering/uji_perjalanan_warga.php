@@ -190,6 +190,12 @@ if ( ! is_file(ENV_PATH)) {
 
 $env = env_config(ENV_PATH);
 $db = new Db($env);
+// Tiket lama di bawah ditulis terenkripsi seperti bentuk kolom sejak migrasi 067.
+foreach ($env as $k => $v) { if (getenv($k) === FALSE) { putenv($k . '=' . $v); } }
+define('BASEPATH', 'x'); define('APPPATH', dirname(__DIR__, 2) . '/application/');
+if ( ! function_exists('log_message')) { function log_message() {} }
+require APPPATH . 'libraries/Encryption_lib.php';
+$enc = new Encryption_lib();
 
 /* Batas laju: DIPINJAM lalu DIKEMBALIKAN utuh, bukan dikosongkan. Bentuk kunci
    sha256("<policy>:ip:<ip>") sesuai Rate_limiter::resolve(); ::1 dikelompokkan
@@ -337,11 +343,12 @@ do {
     for ($i = 0; $i < 6; $i++) { $tiket .= $alfabet[random_int(0, strlen($alfabet) - 1)]; }
 } while ($db->scalar('SELECT id FROM sf_housing_queue WHERE ticket_code = ?', [$tiket]));
 $queueId = $db->run(
-    "INSERT INTO sf_housing_queue (ticket_code, user_id, kabupaten_id, program_id, nik_pengaju, nama_lengkap,
-        data_survey_json, status_antrean, created_at, updated_at)
-     VALUES (?, ?, 3374, ?, '0000000000000001', 'Warga Uji Perjalanan', ?, 'pending', NOW(), NOW())",
-    [$tiket, $wargaId, $programId, json_encode(['penghasilan' => 2500000, 'pekerjaan' => 'Karyawan Swasta',
-        'status_kepemilikan' => 'Sewa/Kontrak', 'alasan_pengajuan' => 'Membutuhkan rumah layak'])]
+    "INSERT INTO sf_housing_queue (ticket_code, user_id, kabupaten_id, program_id, nik_pengaju_ciphertext,
+        nik_pengaju_lookup_hash, nama_lengkap_ciphertext, data_survey_json_ciphertext, status_antrean, created_at, updated_at)
+     VALUES (?, ?, 3374, ?, ?, ?, ?, ?, 'pending', NOW(), NOW())",
+    [$tiket, $wargaId, $programId, $enc->encrypt('0000000000000001'), $enc->deterministic_hash('0000000000000001'),
+        $enc->encrypt('Warga Uji Perjalanan'), $enc->encrypt(json_encode(['penghasilan' => 2500000, 'pekerjaan' => 'Karyawan Swasta',
+        'status_kepemilikan' => 'Sewa/Kontrak', 'alasan_pengajuan' => 'Membutuhkan rumah layak']))]
 );
 $queue = $db->row('SELECT * FROM sf_housing_queue WHERE id = ?', [$queueId]);
 wajib($queue && $queue['status_antrean'] === 'pending', 'Baris tiket uji lahir sebagai pending');

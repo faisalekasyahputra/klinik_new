@@ -111,7 +111,7 @@ $filter_html = ob_get_clean();
     <?php endif; ?>
 
     <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="kartu-admin overflow-hidden">
-        <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, NIK, tiket, program...', 'filter_html' => $filter_html], TRUE) ?>
+        <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari tiket, program, atau NIK 16 digit...', 'filter_html' => $filter_html], TRUE) ?>
 
         <p class="px-4 pt-3 text-xs text-gray-500 dark:text-brand-muted sm:hidden">
             <i class="ph ph-arrows-left-right mr-1" aria-hidden="true"></i>
@@ -122,7 +122,7 @@ $filter_html = ob_get_clean();
                 <thead class="text-xs uppercase bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted font-bold tracking-wider">
                     <tr>
                         <th class="px-4 py-3"><?= admin_sort_header('Tanggal', 'sf_housing_queue.created_at', $table, $base_url) ?></th>
-                        <th class="px-4 py-3"><?= admin_sort_header('Pemohon', 'sf_housing_queue.nama_lengkap', $table, $base_url) ?></th>
+                        <th class="px-4 py-3">Pemohon</th>
                         <th class="px-4 py-3"><?= admin_sort_header('Program', 'sf_programs.nama_program', $table, $base_url) ?></th>
                         <th class="px-4 py-3">Kondisi Sosial</th>
                         <th class="px-4 py-3"><?= admin_sort_header('Status', 'sf_housing_queue.status_antrean', $table, $base_url) ?></th>

@@ -171,6 +171,11 @@ class Admin_Srp2 extends Admin_Controller {
         $data['pendaftar'] = $this->db->get_where('srp2_registrations', ['id' => (int) $id])->row();
         if ( ! $data['pendaftar']) { show_404(); }
         $this->catat_akses_data_pribadi('pengajuan_srp2', 'srp2_registrations', (string) (int) $id);   // poin 7.3
+        // NIK pemohon terenkripsi sejak migrasi 067; dibuka hanya di detail yang aksesnya dicatat di atas.
+        if ( ! empty($data['pendaftar']->nik_ktp_ciphertext)) {
+            $this->load->library('encryption_lib');
+            $data['pendaftar']->nik_ktp = $this->encryption_lib->decrypt($data['pendaftar']->nik_ktp_ciphertext) ?: NULL;
+        }
 
         $this->load->helper('srp2');
         $data['dokumen_list'] = srp2_dokumen_persyaratan();

@@ -796,9 +796,9 @@ class MY_Controller extends CI_Controller {
      * @return array [queue, table, pager, filter_status, filter_tanpa_wilayah, can_filter_tanpa_wilayah]
      */
     protected function antrean_table_data($kabupaten_id = NULL) {
+        // Nama pemohon terenkripsi sejak migrasi 067: tidak bisa diurutkan maupun dicari di SQL.
         $kolom_sort = [
-            'sf_housing_queue.created_at', 'sf_housing_queue.nama_lengkap',
-            'sf_programs.nama_program', 'sf_housing_queue.status_antrean',
+            'sf_housing_queue.created_at', 'sf_programs.nama_program', 'sf_housing_queue.status_antrean',
         ];
         $table = $this->table_state($kolom_sort, 'sf_housing_queue.created_at');
 
@@ -813,11 +813,21 @@ class MY_Controller extends CI_Controller {
         if ($tanpa_wilayah) { $this->db->where('sf_housing_queue.kabupaten_id IS NULL', NULL, FALSE); }
         if ($table['q'] !== '') {
             $this->db->group_start()
-                ->like('sf_housing_queue.nama_lengkap', $table['q'])
-                ->or_like('sf_housing_queue.nik_pengaju', $table['q'])
-                ->or_like('sf_housing_queue.ticket_code', $table['q'])
-                ->or_like('sf_programs.nama_program', $table['q'])
-                ->group_end();
+                ->like('sf_housing_queue.ticket_code', $table['q'])
+                ->or_like('sf_programs.nama_program', $table['q']);
+            /* NIK dicari hanya utuh 16 digit, lewat sidiknya (migrasi 067): tiket lama menyimpannya
+               di antrean, tiket wizard di sf_profil_warga. Klausa ini di dalam group yang di-AND
+               dengan scope wilayah, jadi NIK wilayah lain tetap tidak muncul. Pencarian nama
+               DICABUT: nama terenkripsi, dan menyaringnya di PHP merusak hitungan halaman. */
+            if (preg_match('/^\d{16}$/', $table['q'])) {
+                $this->load->library('encryption_lib');
+                $sidik = $this->encryption_lib->deterministic_hash($table['q']);
+                $this->db->or_where('sf_housing_queue.nik_pengaju_lookup_hash', $sidik)
+                    ->or_where('sf_housing_queue.assessment_id IN (SELECT a.id FROM sf_penilaian_perumahan a'
+                        . ' JOIN sf_profil_warga p ON p.id = a.citizen_profile_id'
+                        . ' WHERE p.nik_lookup_hash = ' . $this->db->escape($sidik) . ')', NULL, FALSE);
+            }
+            $this->db->group_end();
         }
 
         // FALSE = pertahankan state query builder untuk query ambil di bawah.
@@ -827,12 +837,31 @@ class MY_Controller extends CI_Controller {
             ->order_by($table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
             ->get()->result();
+        // Dibuka hanya untuk satu halaman yang sudah ter-scope; penyamaran B2 tetap di view.
+        foreach ($queue as $row) { $this->buka_pii_antrean($row); }
 
         return [
             'queue' => $queue, 'table' => $table, 'pager' => $table,
             'filter_status' => $status, 'filter_tanpa_wilayah' => $tanpa_wilayah,
             'can_filter_tanpa_wilayah' => $kabupaten_id === NULL,
         ];
+    }
+
+    /**
+     * Buka salinan terenkripsi tiket lama (migrasi 067) ke nama properti lamanya, supaya
+     * view tidak perlu tahu kolomnya terenkripsi. Ciphertext dan sidik dibuang dari baris.
+     * Gagal buka jadi NULL: view menampilkan "belum tersedia", bukan teks sandi.
+     */
+    protected function buka_pii_antrean($row) {
+        $this->load->library('encryption_lib');
+        foreach (['nik_pengaju', 'nama_lengkap', 'data_simperum_json', 'data_survey_json'] as $kolom) {
+            $c = $row->{$kolom . '_ciphertext'} ?? NULL;
+            $p = ($c !== NULL && $c !== '' && $this->encryption_lib->is_encrypted($c)) ? $this->encryption_lib->decrypt($c) : NULL;
+            $row->$kolom = $p === FALSE ? NULL : $p;
+            unset($row->{$kolom . '_ciphertext'});
+        }
+        unset($row->nik_pengaju_lookup_hash);
+        return $row;
     }
 
     protected function assessment_detail_data($queue_id, $kabupaten_id = NULL) {

@@ -126,11 +126,13 @@ function buat_akun($peran, $suffix, $kab = NULL) {
     return [$id, $email];
 }
 
+/* Sejak migrasi 067 nama dan NIK tiket lama hanya tersimpan terenkripsi + sidik NIK. */
 function buat_antrean($kab, $user_id, $program_id, $nama, $nik, $tiket) {
+    $enc = $GLOBALS['enc'];
     $id = tulis(
-        'INSERT INTO sf_housing_queue (user_id,program_id,kabupaten_id,nama_lengkap,nik_pengaju,ticket_code,status_antrean,created_at)
-         VALUES (?,?,?,?,?,?, "pending", NOW())',
-        [$user_id, $program_id, $kab, $nama, $nik, $tiket]
+        'INSERT INTO sf_housing_queue (user_id,program_id,kabupaten_id,nama_lengkap_ciphertext,nik_pengaju_ciphertext,nik_pengaju_lookup_hash,ticket_code,status_antrean,created_at)
+         VALUES (?,?,?,?,?,?,?, "pending", NOW())',
+        [$user_id, $program_id, $kab, $enc->encrypt($nama), $enc->encrypt($nik), $enc->deterministic_hash($nik), $tiket]
     );
     $GLOBALS['antrean'][] = $id;
     return $id;
@@ -139,6 +141,11 @@ function buat_antrean($kab, $user_id, $program_id, $nama, $nik, $tiket) {
 echo "=== UJI BATAS WILAYAH ANTREAN KAB/KOTA (butir B2) ===\n\n";
 if ( ! is_file(ENV_PATH)) { die(".env tidak ditemukan.\n"); }
 $env = env_config(ENV_PATH);
+foreach ($env as $k => $v) { if (getenv($k) === FALSE) { putenv($k . '=' . $v); } }
+define('BASEPATH', 'x'); define('APPPATH', APP_ROOT . '/application/');
+if ( ! function_exists('log_message')) { function log_message() {} }
+require APPPATH . 'libraries/Encryption_lib.php';
+$GLOBALS['enc'] = new Encryption_lib();
 $GLOBALS['db'] = new mysqli($env['DB_HOST'], $env['DB_USER'], $env['DB_PASS'] ?? '', $env['DB_NAME']);
 if ($GLOBALS['db']->connect_error) { die("Koneksi DB gagal.\n"); }
 
