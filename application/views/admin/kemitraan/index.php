@@ -97,14 +97,24 @@ $filter_html = ob_get_clean();
                             $dokumen['laporan']  = ['Laporan akhir', $r->file_laporan_akhir ?? NULL];
                         }
                         ?>
+                        <?php /* Dokumen yang belum ada dirangkum satu baris supaya baris KKN tidak menjulang
+                                 (cek visual 2 Okt 2026: tiga baris "Tanpa ..." per pendaftaran). */
+                        $belum_ada = []; ?>
                         <?php foreach ($dokumen as $kunci => $d): ?>
                             <?php if ( ! empty($d[1])): ?>
                             <div class="mt-1"><a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . $r->id . '/' . $kunci) ?>" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> <?= html_escape($d[0]) ?></a></div>
-                            <?php else: ?>
-                            <div class="mt-1 text-xs italic text-gray-400 dark:text-brand-muted">Tanpa <?= html_escape(strtolower($d[0])) ?></div>
-                            <?php endif; ?>
+                            <?php else: $belum_ada[] = strtolower($d[0]); endif; ?>
                         <?php endforeach; ?>
+                        <?php if ($belum_ada): ?>
+                            <div class="mt-1 text-xs italic text-gray-400 dark:text-brand-muted">Belum ada: <?= html_escape(implode(', ', $belum_ada)) ?></div>
+                        <?php endif; ?>
                         <?php if ($r->jenis === 'kkn' && $r->status === 'Diterima'): ?>
+                            <?php /* Form tanggal dilipat: terbuka hanya saat diatur, ringkasannya tetap terlihat. */ ?>
+                            <details class="mt-1 text-xs">
+                            <summary class="cursor-pointer font-bold <?= empty($r->tanggal_sertifikat) ? 'text-amber-600 dark:text-amber-400' : 'text-gray-600 dark:text-brand-muted' ?>">
+                                <i class="ph ph-certificate" aria-hidden="true"></i>
+                                <?= empty($r->tanggal_sertifikat) ? 'Sertifikat terkunci, atur tanggal' : 'Sertifikat terbit ' . html_escape(tgl_id($r->tanggal_sertifikat, TRUE)) ?>
+                            </summary>
                             <form method="POST" action="<?= base_url('Admin_Kemitraan/tanggal_sertifikat/' . (int) $r->id) ?>" class="mt-2 flex flex-wrap items-end gap-1.5">
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                 <label class="text-xs font-bold text-gray-600 dark:text-brand-muted">Tanggal sertifikat
@@ -112,7 +122,7 @@ $filter_html = ob_get_clean();
                                 </label>
                                 <button type="submit" class="tombol-aksi"><i class="ph ph-floppy-disk" aria-hidden="true"></i><span>Simpan</span></button>
                             </form>
-                            <?php if (empty($r->tanggal_sertifikat)): ?><div class="mt-1 text-xs text-amber-600 dark:text-amber-400">Sertifikat terkunci sampai tanggal diisi</div><?php endif; ?>
+                            </details>
                         <?php endif; ?>
                         <?php if ($r->jenis === 'kkn' && ! empty($r->link_dokumentasi)): ?>
                             <div class="mt-1"><a href="<?= html_escape($r->link_dokumentasi) ?>" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-link"></i> Dokumentasi (cloud)</a></div>
