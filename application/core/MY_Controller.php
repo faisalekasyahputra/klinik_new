@@ -1430,25 +1430,42 @@ class MY_Controller extends CI_Controller {
             ->set_output($safe_message);
     }
 
+    /**
+     * Saring tujuan redirect internal. Yang lolos HANYA path relatif aplikasi, mis.
+     * "Umum/Sebaran" atau "Statistika?tahun=2025" (satu "/" di depan dibuang). Selain itu ''.
+     *
+     * Ditolak: kosong/bukan string; URL absolut atau berskema (":" di bagian path, termasuk
+     * "javascript:"); "//host" dan "//" di mana pun di path; garis miring terbalik; spasi dan
+     * karakter kontrol; segmen ".."; dan bentuk tersandinya (%2f%2f, %5c, %0d%0a, %252f...),
+     * karena setiap lapis dekode diperiksa ulang. URL absolut ke situs sendiri pun ditolak:
+     * tidak ada pemanggil yang membutuhkannya, dan satu aturan lebih mudah dibuktikan.
+     * Pemanggil tetap menyaring ulang tepat sebelum redirect() (lapis kedua).
+     * Uji: docs/engineering/uji_redirect_aman.php.
+     */
     protected function sanitize_redirect($path) {
-        if (empty($path)) {
+        if ( ! is_string($path) || $path === '' || strlen($path) > 2048) {
             return '';
         }
-
-        // If it's already a relative path (e.g., "Umum/Sebaran"), it's safe
-        if (strpos($path, '://') === false && strpos($path, '//') !== 0) {
-            // Strip any leading slashes to normalize
-            return ltrim($path, '/');
+        // Bentuk mentah: hanya karakter path yang wajar, tanpa spasi; query bebas kecuali kontrol/spasi/backslash.
+        if ( ! preg_match('#^/?[A-Za-z0-9_][A-Za-z0-9_\-.~%/+,=@]*(?:[?\#][^\x00-\x20\x7F\\\\]*)?$#', $path)) {
+            return '';
         }
-
-        // If it starts with our base_url, extract the relative path
-        $base = base_url();
-        if (strpos($path, $base) === 0) {
-            return substr($path, strlen($base));
+        $lapis = $path;
+        for ($i = 0; $i < 5; $i++) {
+            $jalur = preg_split('/[?#]/', $lapis, 2)[0];
+            if (preg_match('/[\x00-\x1F\x7F\\\\]/', $lapis)                // kontrol (CR/LF dst) dan backslash di lapis mana pun
+                || strpos($jalur, ':') !== FALSE                           // skema/port: "javascript:", "http:"
+                || strpos($jalur, '//') !== FALSE                          // "//host" (protocol-relative) dan "/" ganda
+                || preg_match('#(^|/)\.\.(/|$)#', $jalur)) {
+                return '';
+            }
+            $dekode = rawurldecode($lapis);
+            if ($dekode === $lapis) {
+                return ltrim($path, '/') === $path ? $path : substr($path, 1);
+            }
+            $lapis = $dekode;
         }
-
-        // Anything else (external URL) → reject, return empty
-        return '';
+        return ''; // masih berubah sesudah 5 lapis dekode: sengaja dikaburkan
     }
 
     /**
