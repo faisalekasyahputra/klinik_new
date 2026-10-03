@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji Ringkasan Kerja super admin (Admin_Dashboard).
@@ -37,7 +38,7 @@ function http($path, ?array $post = NULL, $ajax = FALSE) {
 function n($sql) { return (int) $GLOBALS['db']->query($sql)->fetch_row()[0]; }
 
 $env = [];
-foreach (@file(APP_ROOT . '/.env', FILE_IGNORE_NEW_LINES) ?: [] as $b) {
+foreach (@file(env_berkas_path(APP_ROOT), FILE_IGNORE_NEW_LINES) ?: [] as $b) {
     $b = trim($b);
     if ($b === '' || $b[0] === '#' || strpos($b, '=') === FALSE) { continue; }
     [$k, $v] = explode('=', $b, 2);

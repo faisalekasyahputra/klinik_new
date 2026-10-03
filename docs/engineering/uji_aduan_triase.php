@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji TRIASE ADUAN - aduan lahir tanpa bidang, superadmin yang merutekan.
@@ -37,7 +38,7 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
 
 define('BASE_URL', rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/'));
 define('APP_ROOT', dirname(__DIR__, 2));
-define('ENV_PATH', APP_ROOT . '/.env');
+define('ENV_PATH', env_berkas_path(APP_ROOT));
 define('SANDI', 'UjiTriase!2026');
 
 // Penanda unik: dipakai untuk menemukan baris uji DAN untuk membuktikan bahwa

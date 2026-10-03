@@ -342,11 +342,13 @@ switch (ENVIRONMENT)
  * LOAD ENVIRONMENT VARIABLES FROM .env FILE
  * --------------------------------------------------------------------
  *
- * Memuat variabel lingkungan dari file .env di root proyek.
- * Digunakan untuk kunci enkripsi PII dan credential Google OAuth.
+ * Memuat variabel lingkungan dari file .env. Lokasinya dari env_berkas_path(): satu tingkat di
+ * atas akar aplikasi (di production: di luar public_html) bila ada, selain itu di akar aplikasi.
+ * Kalau keduanya ada, yang di luar menang dan yang di akar tidak dibaca.
  * Menggunakan pure PHP (tanpa dependency tambahan).
  */
-$dotenv_path = FCPATH . '.env';
+require_once APPPATH . 'helpers/env_berkas_helper.php';
+$dotenv_path = env_berkas_path(FCPATH);
 if (is_file($dotenv_path) && is_readable($dotenv_path)) {
     $lines = file($dotenv_path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($lines as $line) {

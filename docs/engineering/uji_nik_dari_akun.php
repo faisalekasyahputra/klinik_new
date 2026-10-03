@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji: NIK dari pendaftaran mengisi kolom Cek NIK di wizard warga (26 Sep 2026).
@@ -9,7 +10,7 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  * Memakai fixture API-01 (NIK 3399..., bukan NIK warga). Akun uji dibuat dan dihapus sendiri.
  */
 define('BASEPATH','x'); define('APPPATH', dirname(__DIR__, 2) . '/application/'); function log_message(){}
-$B=rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/') . '/'; $env=[]; foreach(file(dirname(__DIR__, 2) . '/.env',FILE_IGNORE_NEW_LINES) as $l){$l=trim($l); if($l===''||$l[0]==='#'||!strpos($l,'='))continue; [$k,$v]=explode('=',$l,2); $env[trim($k)]??=trim($v); putenv(trim($k).'='.trim($v));}
+$B=rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/') . '/'; $env=[]; foreach(file(env_berkas_path(dirname(__DIR__, 2)),FILE_IGNORE_NEW_LINES) as $l){$l=trim($l); if($l===''||$l[0]==='#'||!strpos($l,'='))continue; [$k,$v]=explode('=',$l,2); $env[trim($k)]??=trim($v); putenv(trim($k).'='.trim($v));}
 require APPPATH.'libraries/Encryption_lib.php'; $enc=new Encryption_lib();
 $db=new mysqli($env['DB_HOST'],$env['DB_USER'],$env['DB_PASS']??'',$env['DB_NAME']);
 $tag='e2enik'.bin2hex(random_bytes(2)); $pw='E2e#'.bin2hex(random_bytes(5)); $ids=[];

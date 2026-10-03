@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 /**
  * Seed akun uji untuk agen-per-peran (.claude/agents/peran-*.md).
  *
@@ -20,7 +21,7 @@
  */
 
 define('APP_ROOT', dirname(__DIR__, 2));
-define('ENV_PATH', APP_ROOT . '/.env');
+define('ENV_PATH', env_berkas_path(APP_ROOT));
 define('SANDI', 'AgenUji!2026');
 define('TANDA', '@agen.test');
 

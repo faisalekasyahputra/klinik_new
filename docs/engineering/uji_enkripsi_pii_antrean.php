@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji: PII antrean perumahan dan NIK pemohon SRP2 tersimpan terenkripsi (migrasi 067).
@@ -23,7 +24,7 @@ define('BASEPATH', 'x'); define('APPPATH', dirname(__DIR__, 2) . '/application/'
 $root = dirname(__DIR__, 2);
 $B = rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/') . '/';
 $env = [];
-foreach (file($root . '/.env', FILE_IGNORE_NEW_LINES) as $l) { $l = trim($l); if ($l === '' || $l[0] === '#' || ! strpos($l, '=')) continue; [$k, $v] = explode('=', $l, 2); $env[trim($k)] ??= trim($v); if (getenv(trim($k)) === FALSE) putenv(trim($k) . '=' . trim($v)); }
+foreach (file(env_berkas_path($root), FILE_IGNORE_NEW_LINES) as $l) { $l = trim($l); if ($l === '' || $l[0] === '#' || ! strpos($l, '=')) continue; [$k, $v] = explode('=', $l, 2); $env[trim($k)] ??= trim($v); if (getenv(trim($k)) === FALSE) putenv(trim($k) . '=' . trim($v)); }
 require APPPATH . 'libraries/Encryption_lib.php'; $enc = new Encryption_lib();
 mysqli_report(MYSQLI_REPORT_OFF);
 $db = new mysqli($env['DB_HOST'], $env['DB_USER'], $env['DB_PASS'] ?? '', $env['DB_NAME']);

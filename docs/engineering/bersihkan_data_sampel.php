@@ -7,6 +7,7 @@
  *
  * Membaca koneksi dari env (DB_HOST, DB_USER, DB_PASS, DB_NAME), sama dengan aplikasi; di server:
  *   set -a && . ./.env && set +a && php docs/engineering/bersihkan_data_sampel.php
+ * (`. ../.env` bila .env sudah berada satu tingkat di atas public_html; lihat env_berkas_helper.php)
  *
  * Yang dilakukan (semuanya idempoten):
  *  1. AKUN DENGAN KATA SANDI BAWAAN. Setiap akun yang hash-nya cocok dengan daftar kata sandi bawaan

@@ -1,8 +1,9 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /* HTTP check R3. Jalankan: php docs/engineering/uji_pendataan_warga_r3.php */
 define('BASE', rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/'));
-define('ENV', dirname(__DIR__, 2) . '/.env');
+define('ENV', env_berkas_path(dirname(__DIR__, 2)));
 $ok = 0; $fail = 0;
 function check($yes, $label) { global $ok, $fail; echo ($yes ? '  OK    ' : '  GAGAL ') . $label . "\n"; $yes ? $ok++ : $fail++; return $yes; }
 function envv() { $out=[]; foreach (file(ENV, FILE_IGNORE_NEW_LINES) as $line) { $line=trim($line); if ($line!=='' && $line[0]!=='#' && strpos($line,'=')!==FALSE) { [$k,$v]=explode('=',$line,2); if(!isset($out[$k])) $out[$k]=trim($v); } } return $out; }

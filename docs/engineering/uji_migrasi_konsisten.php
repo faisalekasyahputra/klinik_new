@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Check konsistensi migrasi - butir S8 roadmap pelunasan utang teknis.
@@ -194,7 +195,7 @@ cek($menyimpang === [], 'Migrasi sesudah 068 hanya menulis charset/collation tar
 // Satu-satunya bagian yang menyentuh DB, dan hanya SELECT information_schema. Tanpa .env atau
 // tanpa server, LEWAT - supaya bagian statis di atas tetap bisa dijalankan di worktree mana pun.
 $env = [];
-foreach (@file($root . '/.env', FILE_IGNORE_NEW_LINES) ?: [] as $b) {
+foreach (@file(env_berkas_path($root), FILE_IGNORE_NEW_LINES) ?: [] as $b) {
     $b = trim($b);
     if ($b === '' || $b[0] === '#' || strpos($b, '=') === FALSE) { continue; }
     [$k, $v] = explode('=', $b, 2);

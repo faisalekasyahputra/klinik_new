@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji OTP email pendaftaran (libraries/Otp_pendaftaran.php, keputusan pemilik produk 3 Okt 2026).
@@ -11,7 +12,7 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
 require_once __DIR__ . '/_otp_uji.php';
 $BASE = rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/') . '/';
 $env = [];
-foreach (file(dirname(__DIR__, 2) . '/.env', FILE_IGNORE_NEW_LINES) as $l) { $l = trim($l); if ($l === '' || $l[0] === '#' || strpos($l, '=') === FALSE) continue; [$k, $v] = explode('=', $l, 2); $env[trim($k)] ??= trim($v); }
+foreach (file(env_berkas_path(dirname(__DIR__, 2)), FILE_IGNORE_NEW_LINES) as $l) { $l = trim($l); if ($l === '' || $l[0] === '#' || strpos($l, '=') === FALSE) continue; [$k, $v] = explode('=', $l, 2); $env[trim($k)] ??= trim($v); }
 $db = new mysqli($env['DB_HOST'], $env['DB_USER'], $env['DB_PASS'] ?? '', $env['DB_NAME']);
 $tag = 'ujiotp' . bin2hex(random_bytes(3)); $sandi = 'Ot1#' . bin2hex(random_bytes(5));
 $total = 0; $gagal = 0; $jars = [];
