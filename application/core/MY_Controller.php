@@ -823,8 +823,13 @@ class MY_Controller extends CI_Controller {
         ];
         $table = $this->table_state($kolom_sort, 'sf_antrean_pengajuan.created_at');
         $table['cari_post'] = TRUE;
-        // NIK tidak dilayani lewat URL (?q=<16 digit>): hanya lewat token sesi dari cari_antrean_prg().
-        if (preg_match('/^\d{16}$/', $table['q'])) { $table['q'] = ''; }
+        // NIK tidak dilayani lewat URL (?q=<16 digit>, tautan lama): dialihkan ke alamat tanpa q supaya tidak
+        // tersalin ke tautan filter/urutan/halaman. Pencarian NIK hanya lewat token sesi dari cari_antrean_prg().
+        if (preg_match('/^\d{16}$/', preg_replace('/\s+/', '', $table['q']))) {
+            $sisa = $this->input->get();
+            unset($sisa['q']);
+            redirect(uri_string() . ($sisa ? '?' . http_build_query($sisa) : ''), 'location', 303);
+        }
         $cari_nik = NULL;
         $token = (string) $this->input->get('cari', TRUE);
         $tersimpan = (array) $this->session->userdata('cari_antrean');
