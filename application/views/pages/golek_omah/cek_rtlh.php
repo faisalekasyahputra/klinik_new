@@ -62,12 +62,8 @@ $this->load->view('components/modal_simperum_simulasi');
                     <p class="mt-1 text-xs leading-relaxed text-[color:var(--portal-text-muted)]"><?= html_escape($hasil['pesan']) ?></p>
 
                     <?php if ($terdaftar && ! empty($hasil['profil'])): ?>
-                    <?php // Tersamar - cukup untuk memastikan orangnya benar, tidak lebih. ?>
+                    <?php // Hanya status intervensi, untuk tamu maupun akun: identitas pemilik NIK tidak ditampilkan di sini. ?>
                     <dl class="mt-3 space-y-1 border-t pt-3 text-xs" style="border-color: var(--portal-border)">
-                        <?php if ($sudah_login): ?>
-                        <div class="flex gap-2"><dt class="w-24 shrink-0 text-[color:var(--portal-text-muted)]">Nama</dt><dd class="font-bold text-[color:var(--portal-text)]"><?= html_escape($hasil['profil']['nama_lengkap'] ?? '-') ?></dd></div>
-                        <div class="flex gap-2"><dt class="w-24 shrink-0 text-[color:var(--portal-text-muted)]">Alamat</dt><dd class="text-[color:var(--portal-text)]"><?= html_escape($hasil['profil']['alamat'] ?? '-') ?></dd></div>
-                        <?php endif; ?>
                         <div class="flex gap-2"><dt class="w-24 shrink-0 text-[color:var(--portal-text-muted)]">Intervensi</dt><dd class="font-bold text-[color:var(--portal-text)]"><?= html_escape($hasil['profil']['status_intervensi'] ?? 'Belum tersedia') ?></dd></div>
                     </dl>
                     <?php endif; ?>

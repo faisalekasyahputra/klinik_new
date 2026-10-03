@@ -161,7 +161,7 @@ foreach ($SKEMA as $rute => $skema) {
             check(isset($BOLEH[$f]) || in_array($f, $COMMON, TRUE) || $f === '_', "Field '$f' di skema $rute belum ada di allowlist Input_guard (akan ditolak 400 sebelum skema)");
         }
         if (($spec['unknown'] ?? 'reject') === 'reject' && (empty($spec['fields']) && ! isset($spec['files'])) && $metode !== 'GET') {
-            // tanpa field dan reject: memang endpoint tanpa masukan (do_verify_email); tidak apa-apa
+            // tanpa field dan reject: memang endpoint tanpa masukan (dulu do_verify_email, kini tidak ada); tidak apa-apa
         }
     }
     $dilihat++;
@@ -183,9 +183,10 @@ foreach (glob($app . '/controllers/*.php') as $f) {
 }
 /* Ambang 14, bukan 15: Program::api_cek_simperum dan api_kalkulasi_program berhenti
    menghasilkan JSON sendiri sejak jalur diagnosa lama dialihkan (keputusan 27 Sep 2026);
-   jawaban 410-nya lewat helper privat jalur_dipindah(). Ambang ini hanya penjaga bahwa
-   detektornya masih menemukan sesuatu, bukan hitungan endpoint. */
-check(count($json_ditemukan) >= 14, 'Detektor endpoint JSON menemukan terlalu sedikit (' . count($json_ditemukan) . ')');
+   jawaban 410-nya lewat helper privat jalur_dipindah(). Ambang 13 sejak 3 Okt 2026:
+   Auth::do_verify_email (verifikasi email simulasi tanpa bukti) dihapus. Ambang ini hanya
+   penjaga bahwa detektornya masih menemukan sesuatu, bukan hitungan endpoint. */
+check(count($json_ditemukan) >= 13, 'Detektor endpoint JSON menemukan terlalu sedikit (' . count($json_ditemukan) . ')');
 $belum = array_values(array_filter(array_keys($json_ditemukan), function ($k) use ($SKEMA, $EXEMPT) { return ! isset($SKEMA[$k]) && ! isset($EXEMPT[$k]); }));
 check($belum === [], 'Endpoint yang menghasilkan JSON tapi tanpa skema dan tanpa pengecualian beralasan: ' . implode(', ', $belum));
 foreach ($EXEMPT as $k => $alasan) {

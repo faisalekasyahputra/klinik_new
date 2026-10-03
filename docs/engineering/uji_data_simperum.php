@@ -6,7 +6,9 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  *   php docs/engineering/uji_data_simperum.php
  *
  * Keputusan pemilik produk 26 Sep 2026: data SIMPERUM warga terdaftar disimpan di DB kita (hanya GET),
- * form diagnosa sudah berisi tanpa klik Cek NIK, disegarkan mingguan, dan ada angka warga terdaftar.
+ * disegarkan mingguan, dan ada angka warga terdaftar. Sejak 3 Okt 2026 cermin dan prefill baru ada
+ * sesudah kepemilikan NIK terbukti (nama akun + tanggal lahir cocok di Cek NIK); onboarding saja tidak
+ * lagi membuka atau menyimpan data SIMPERUM.
  * Memakai fixture API-01/API-02 (NIK 3399..., bukan NIK warga) di mode simulation. Akun @example.test
  * dibuat dan dihapus sendiri; ember pembatas laju dipinjam lalu dikembalikan utuh.
  */
@@ -49,16 +51,22 @@ try {
     // ::1 dihitung per blok /64 (anti_automation_ip_bucket), jadi kunci nyatanya '0000000000000000/64'.
     foreach (['warga_lookup', 'rtlh_cek_anon', 'login'] as $p) foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) $pinjam(hash('sha256', "$p:ip:$ip"));
     foreach ([$NIK, $NIK_ANON] as $n) $pinjam(hash('sha256', 'warga_lookup:nik:' . $enc->deterministic_hash($n)));
+    // verifikasi_nik (3 Okt 2026) ikut dipinjam: percobaan gagal dari jalan lain mengunci NIK fixture 24 jam.
+    $pinjam(hash('sha256', 'verifikasi_nik:nik:' . $enc->deterministic_hash($NIK)));
 
-    echo "A. Onboarding warga ber-NIK\n";
+    echo "A. Onboarding warga ber-NIK, lalu Cek NIK + tanggal lahir\n";
     [$uid, $email] = $akun('warga', NULL, 0);
     foreach (['warga_lookup', 'warga_lookup_jam', 'warga_lookup_harian'] as $p) $pinjam(hash('sha256', "$p:account:$uid"));
     $jw = $login($email);
-    $http($jw, 'Auth/save_onboarding', ['role' => 'warga', 'username' => $tag, 'nama_lengkap' => 'Warga Uji DS', 'nik_identitas' => $NIK,
+    $http($jw, 'Auth/save_onboarding', ['role' => 'warga', 'username' => $tag, 'nama_lengkap' => 'Sugeng Sintetis', 'nik_identitas' => $NIK,
         'alamat_domisili' => 'Jl. Uji No. 1, Kota Semarang', 'phone' => '081200000000', 'csrf_kpkp_token' => $csrf($jw)]);
     $cek((int) $satu("SELECT COUNT(*) n FROM usr_akun WHERE id=$uid AND nik_lookup_hash='$hash'")['n'] === 1, 'NIK onboarding terikat ke akun (kunci hitung)');
+    // NIK yang diketik di onboarding belum membuktikan kepemilikan: belum ada cermin maupun draft.
+    $cek($satu("SELECT id FROM sf_data_simperum WHERE user_id=$uid") === NULL && $satu("SELECT id FROM sf_penilaian_perumahan WHERE user_id=$uid") === NULL,
+        'Onboarding saja tidak membuat cermin maupun draft dari SIMPERUM');
+    $http($jw, 'warga/pendataan', ['step' => 'find_data', 'action' => 'lookup', 'nik' => $NIK, 'birth_date' => '1985-08-15', 'csrf_kpkp_token' => $csrf($jw)]);
     $row = $satu("SELECT * FROM sf_data_simperum WHERE user_id=$uid");
-    $cek($row && $row['status_respons'] === 'found' && $row['nik_lookup_hash'] === $hash, 'Onboarding langsung membuat baris cermin found');
+    $cek($row && $row['status_respons'] === 'found' && $row['nik_lookup_hash'] === $hash, 'Cek NIK terverifikasi (nama akun + tanggal lahir) membuat baris cermin found');
     $cek($row && $row['sumber_air'] === '12' && $row['kepemilikan_rumah'] === '1' && $row['atap_id'] === '5' && $row['ada_pondasi'] === '0'
         && $row['bantuan_perumahan'] === '0' && $row['letak_sanitasi'] === NULL && $row['kode_dagri'] === '3374120003' && $row['idbdt'] === 'SYN-API-01',
         'Kode mentah SIMPERUM tersimpan apa adanya (sumber_air 12, kepemilikan_rumah 1, nilai "0" tidak hilang)');
@@ -71,7 +79,7 @@ try {
 
     echo "B. Halaman diagnosa sudah berisi\n";
     $draft = $satu("SELECT id, langkah_sekarang, sumber_air FROM sf_penilaian_perumahan WHERE user_id=$uid ORDER BY id DESC LIMIT 1");
-    $cek($draft && $draft['langkah_sekarang'] === 'housing_family' && $draft['sumber_air'] === 'other_unfit', 'Draft dibuat dari SIMPERUM saat onboarding (tanpa klik Cek NIK)');
+    $cek($draft && $draft['langkah_sekarang'] === 'housing_family' && $draft['sumber_air'] === 'other_unfit', 'Draft dibuat dari SIMPERUM sesudah verifikasi');
     [$k, $b] = $http($jw, 'warga/pendataan');
     $cek($k === 200 && strpos($b, 'name="step" value="housing_family"') !== FALSE && strpos($b, 'name="step" value="find_data"') === FALSE,
         'warga/pendataan langsung di langkah sesudah find_data');

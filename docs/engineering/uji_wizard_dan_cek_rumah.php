@@ -208,14 +208,19 @@ foreach (glob(dirname(__DIR__, 2) . '/application/fixtures/simperum/SIM-*.json')
        Karena itu yang sewilayah didahulukan, bukan diambil urut nama berkas. */
     if (strpos((string) file_get_contents($f), (string) KAB_ADMIN) !== FALSE) {
         $UTAMA[$j['identity']['nik']] = $j['identity']['birth_date'];
+        $NAMA[$j['identity']['nik']] = $j['identity']['full_name'];
     } else {
         $CADANGAN[$j['identity']['nik']] = $j['identity']['birth_date'];
+        $NAMA[$j['identity']['nik']] = $j['identity']['full_name'];
     }
 }
 /* API-01 (Kota Semarang) didahulukan: bentuknya respons GetDataRTLH asli yang TIDAK
    membawa desil, persis seperti production. Cek "program ditawarkan" di bawah jadi
    membuktikan desil turunan pendapatan (keputusan 27 Sep 2026), bukan desil fixture. */
 $KANDIDAT = ['3399991508850001' => '1985-08-15'] + $UTAMA + $CADANGAN;
+/* Nama onboarding = nama fixture: sejak 3 Okt 2026 Cek NIK hanya mengikat NIK kalau nama lengkap akun
+   dan tanggal lahir cocok dengan data SIMPERUM (Simperum_gateway::lookup). */
+$NAMA['3399991508850001'] = 'SUGENG SINTETIS';
 
 echo "=== WIZARD BARU + CEK DATA RUMAH ===\n";
 echo "Target : " . BASE . "\n";
@@ -247,7 +252,7 @@ $NIK = NULL; $LAHIR = NULL; $tolak = [];
 foreach ($KANDIDAT as $nik => $lahir) {
     $warga->minta('Auth/save_onboarding', [
         'role' => 'warga', 'username' => 'wargauji' . STEMPEL,
-        'nama_lengkap' => 'Warga Uji ' . STEMPEL, 'nik_identitas' => $nik,
+        'nama_lengkap' => $NAMA[$nik], 'nik_identitas' => $nik,
         'alamat_domisili' => 'Jl. Uji No. 1, Kota Semarang', 'phone' => '081200000000',
     ]);
     $a = $db->baris('SELECT peran FROM usr_akun WHERE email = ?', [EMAIL]);
@@ -324,14 +329,14 @@ echo "\nD. WIZARD BARU SAMPAI TIKET\n";
 $h = $warga->minta('warga/pendataan')['body'];
 $form = wizard_form($h);
 wajib($form !== NULL, 'Formulir wizard dirender');
-/* Sejak 26 Sep 2026 onboarding warga ber-NIK langsung melakukan lookup SIMPERUM dan membuat
-   draft (Auth::save_onboarding -> prefill_simperum_akun), jadi wizard tidak lagi mulai dari
-   find_data. Kalau prefill itu gagal, Cek NIK manual tetap jalur cadangannya. */
+/* Prefill otomatis sesudah onboarding (26 Sep 2026) DICABUT 3 Okt 2026: data SIMPERUM baru terbuka
+   sesudah nama akun dan tanggal lahir cocok, jadi wizard kembali mulai dari find_data dan Cek NIK
+   dengan tanggal lahir adalah satu-satunya jalan maju. Harapan lama di bawah dibalik. */
 if (wizard_step($form) === 'find_data') {
     $h = $warga->minta('warga/pendataan',
-        wizard_medan($form, ['action' => 'lookup', 'nik' => $NIK, 'tgl_lahir' => $LAHIR]))['body'];
+        wizard_medan($form, ['action' => 'lookup', 'nik' => $NIK, 'birth_date' => $LAHIR]))['body'];
 }
-cek(wizard_step($form) !== 'find_data', 'Onboarding ber-NIK langsung membawa maju dari find_data (prefill otomatis)');
+cek(wizard_step($form) === 'find_data', 'Onboarding ber-NIK tidak membuka data SIMPERUM tanpa verifikasi (mulai di Cek NIK)');
 wajib(wizard_step($h) !== 'find_data', 'Lookup SIMPERUM membawa maju dari find_data');
 foreach (['penghasilan_bulanan', 'pekerjaan', 'pendidikan', 'stabilitas_pekerjaan', 'kawasan_perumahan', 'birth_date', 'status_perkawinan', 'jenis_kelamin', 'phone'] as $field) {
     cek(strpos($h, 'name="' . $field . '"') !== FALSE, 'UAT warga 9: data awal memuat ' . $field);

@@ -8,28 +8,54 @@ class User_model extends CI_Model {
         $this->load->database();
     }
 
-    public function check_google_user($data) {
-        // Cek apakah user dengan email tersebut sudah ada
-        $this->db->where('email', $data['email']);
-        $query = $this->db->get('usr_akun');
-
-        if ($query->num_rows() > 0) {
-            // Jika user ada, update google_id dan avatar (jika sebelumnya login manual)
-            $this->db->where('email', $data['email']);
-            $this->db->update('usr_akun', array(
-                'google_id' => $data['google_id'],
-                'foto_profil' => $data['foto_profil']
-            ));
-            return [$query->row_array(),'1'];
-        } else {
-            // Jika user belum terdaftar, buat akun baru otomatis
-            $this->db->insert('usr_akun', $data);
-            $insert_id = $this->db->insert_id();
-            
-            $this->db->where('id', $insert_id);
-            $new_user = $this->db->get('usr_akun');
-            return [$new_user->row_array(),'0'];
+    /**
+     * Cocokkan login Google ke akun. Kembalian [baris, '1' akun lama | '0' akun baru], atau NULL
+     * bila ditolak.
+     *
+     * - Ditolak bila Google tidak menyatakan email itu terverifikasi.
+     * - Dicocokkan lewat google_id lebih dulu, baru email. Email yang sudah tertaut ke akun
+     *   Google LAIN tidak ditautkan ulang.
+     * - Akun berkata sandi yang belum pernah tertaut Google: email pendaftarannya tidak pernah
+     *   dibuktikan (verifikasi email di pendaftaran hanya simulasi), jadi sandinya bisa milik
+     *   orang lain. Google membuktikan pemilik email, maka saat penautan pertama sandi lama
+     *   DIHAPUS, sesi aktif dicabut, dan pemilik wajib membuat sandi baru (onboarding bila
+     *   profil belum lengkap, selain itu gerbang ganti sandi di Profil Saya).
+     */
+    public function check_google_user($data, $email_terverifikasi = FALSE) {
+        if ($email_terverifikasi !== TRUE || empty($data['google_id']) || empty($data['email'])) {
+            return NULL;
         }
+        $sekarang = date('Y-m-d H:i:s');
+
+        $user = $this->db->get_where('usr_akun', ['google_id' => $data['google_id']])->row_array();
+        if ( ! $user) {
+            $user = $this->db->get_where('usr_akun', ['email' => $data['email']])->row_array();
+            if ($user && ! empty($user['google_id'])) {
+                return NULL;
+            }
+        }
+
+        if ( ! $user) {
+            $this->db->insert('usr_akun', $data + ['email_verified_at' => $sekarang]);
+            $new_user = $this->db->get_where('usr_akun', ['id' => $this->db->insert_id()]);
+            return [$new_user->row_array(), '0'];
+        }
+
+        $ubah = [
+            'google_id' => $data['google_id'],
+            'foto_profil' => $data['foto_profil'],
+            'email_verified_at' => $sekarang,
+        ];
+        if (empty($user['google_id']) && ! empty($user['kata_sandi'])) {
+            $ubah += [
+                'kata_sandi' => NULL,
+                'sesi_aktif_hash' => NULL, 'sesi_aktif_id_hash' => NULL, 'sesi_aktif_at' => NULL,
+                // Kedaluwarsa sekarang: gerbang sandi MY_Controller memaksa membuat sandi baru.
+                'sandi_diganti_at' => NULL, 'sandi_kedaluwarsa_at' => $sekarang,
+            ];
+        }
+        $this->db->where('id', (int) $user['id'])->update('usr_akun', $ubah);
+        return [array_merge($user, $ubah), '1'];
     }
 
     public function update_user($user_id, $data) {

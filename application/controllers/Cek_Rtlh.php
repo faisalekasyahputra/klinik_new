@@ -53,16 +53,14 @@ class Cek_Rtlh extends MY_Controller {
         // pendataan pemanggil dengan NIK yang sedang diperiksa.
         // TRUE hanya melepas tanggal lahir pada layar ini; penjaga NIK
         // yang cocok dengan respons API tetap ditegakkan oleh gateway.
+        // Tanpa akun peminta, gateway hanya mengembalikan status intervensi (bukan identitas,
+        // sosial-ekonomi, atau data rumah), untuk tamu maupun akun yang login.
         $hasil = $this->simperum_gateway->lookup($nik, '', NULL, TRUE);
-        $profil = $hasil['data']['profile'] ?? NULL;
-        if ( ! $sudah_login && $profil) {
-            $profil = ['status_intervensi' => $profil['status_intervensi'] ?? 'Belum tersedia'];
-        }
         $this->session->set_flashdata('rtlh_hasil', [
             'status'   => $hasil['status'],
             'pesan'    => $hasil['message'],
             'simulasi' => ! empty($hasil['simulation']),
-            'profil'   => $profil,
+            'profil'   => $hasil['data']['profile'] ?? NULL,
             'nik_ekor' => substr($nik, -4),
         ]);
         $this->catat_audit('rtlh_dicek',

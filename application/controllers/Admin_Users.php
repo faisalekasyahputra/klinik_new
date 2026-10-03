@@ -36,9 +36,10 @@ class Admin_Users extends Admin_Controller {
         $data['warga_nik_bound'] = [];
         $user_ids = array_map(static function ($user) { return (int) $user->id; }, $data['users']);
         if ($user_ids && $this->db->table_exists('sf_profil_warga')) {
-            $profiles = $this->db->select('user_id')->where_in('user_id', $user_ids)
+            $profiles = $this->db->select('user_id, confirmed_at')->where_in('user_id', $user_ids)
                 ->get('sf_profil_warga')->result_array();
-            foreach ($profiles as $profile) $data['warga_nik_bound'][(int) $profile['user_id']] = TRUE;
+            // Nilai = NIK terverifikasi (nama akun + tanggal lahir cocok dengan SIMPERUM, confirmed_at).
+            foreach ($profiles as $profile) $data['warga_nik_bound'][(int) $profile['user_id']] = ! empty($profile['confirmed_at']) ? 'terverifikasi' : 'belum';
         }
         $data['table'] = $data['pager'] = $table;
         $data['available_roles'] = $this->config->item('available_roles');

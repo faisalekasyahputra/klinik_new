@@ -53,7 +53,9 @@ class Session {
     }
 }
 function login($email) { $s = new Session(); $s->get('Auth/login'); $r = $s->post('Auth/do_login', ['email'=>$email,'password'=>PASSWORD]); wajib($r['status'] === 200 && (json_decode($r['body'], TRUE)['status'] ?? '') === 'success', "Login $email"); $s->get('warga/pendataan'); return $s; }
-function make_user($db, $suffix) { $email = 'uji_r5_'.$suffix.'_'.time().'_'.mt_rand(1000,9999).'@example.test'; $id = $db->run("INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at) VALUES (?,?,'Uji R5',?,'warga','active',1,NOW())", [$email,password_hash(PASSWORD,PASSWORD_BCRYPT),'uji_r5_'.$suffix]); $GLOBALS['users'][]=$id; return [$id,$email]; }
+/* Nama akun sama dengan nama fixture: sejak 3 Okt 2026 lookup ber-akun mengikat NIK hanya kalau
+   nama lengkap akun dan tanggal lahir cocok dengan data SIMPERUM (Simperum_gateway::lookup). */
+function make_user($db, $suffix, $nama = 'Uji R5') { $email = 'uji_r5_'.$suffix.'_'.time().'_'.mt_rand(1000,9999).'@example.test'; $id = $db->run("INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at) VALUES (?,?,?,?,'warga','active',1,NOW())", [$email,password_hash(PASSWORD,PASSWORD_BCRYPT),$nama,'uji_r5_'.$suffix]); $GLOBALS['users'][]=$id; return [$id,$email]; }
 /**
  * NIK fixture SIMPERUM adalah sumber daya BERSAMA yang langka: cuma tujuh, dan
  * satu profil warga mengikatnya EKSKLUSIF lewat `nik_lookup_hash`. Begitu ada
@@ -136,8 +138,10 @@ foreach(range(1,10) as $desil) cek($rules->evaluate('rumah_apung',[],['desil_kes
 // dan r6.
 foreach(['warga_lookup','warga_submit','warga_start_revision','admin_queue_decision'] as $policy)preserve_rate_ips($db,$policy);
 preserve_rate_key($db,'warga_lookup','nik',hash_hmac('sha256','0000000000000001',$env['KPKP_DATA_PEPPER']));
+// verifikasi_nik (3 Okt 2026) ikut dipinjam: percobaan gagal dari jalan lain mengunci NIK fixture 24 jam.
+preserve_rate_key($db,'verifikasi_nik','nik',hash_hmac('sha256','0000000000000001',$env['KPKP_DATA_PEPPER']));
 nik_bebas($db,$env,'0000000000000001');
-[$user,$email]=make_user($db,'owner'); $owner=login($email);
+[$user,$email]=make_user($db,'owner','Warga Simulasi RTLH'); $owner=login($email);
 $r=$owner->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000001','birth_date'=>'1980-01-01']); wajib(redirect_ok($r),'Lookup SIM-01');
 $d=draft($db,$user); wajib(redirect_ok(post_step($owner,$d,'housing_family',matriks())),'Simpan isian matriks');
 $d=draft($db,$user); if ($d['langkah_sekarang']==='preliminary_recommendation') { wajib(redirect_ok(post_step($owner,$d,'preliminary_recommendation',[])),'Lewati rekomendasi awal'); $d=draft($db,$user); }
