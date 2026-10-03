@@ -15,11 +15,12 @@ class User_model extends CI_Model {
      * - Ditolak bila Google tidak menyatakan email itu terverifikasi.
      * - Dicocokkan lewat google_id lebih dulu, baru email. Email yang sudah tertaut ke akun
      *   Google LAIN tidak ditautkan ulang.
-     * - Akun berkata sandi yang belum pernah tertaut Google: email pendaftarannya tidak pernah
-     *   dibuktikan (verifikasi email di pendaftaran hanya simulasi), jadi sandinya bisa milik
-     *   orang lain. Google membuktikan pemilik email, maka saat penautan pertama sandi lama
-     *   DIHAPUS, sesi aktif dicabut, dan pemilik wajib membuat sandi baru (onboarding bila
-     *   profil belum lengkap, selain itu gerbang ganti sandi di Profil Saya).
+     * - Akun berkata sandi yang belum pernah tertaut Google: saat penautan pertama sandi lama
+     *   DIHAPUS, sesi aktif dicabut, email ditandai terverifikasi, dan pemilik wajib membuat
+     *   sandi baru (onboarding bila profil belum lengkap, selain itu gerbang ganti sandi di
+     *   Profil Saya). Berlaku SELALU, juga bila email_verified_at sudah terisi (OTP pendaftaran,
+     *   akun lama, akun buatan admin): keputusan pemilik produk 3 Okt 2026, perilaku PR #13.
+     *   Bukti email di masa lalu tidak menjamin sandinya masih hanya diketahui pemilik email.
      */
     public function check_google_user($data, $email_terverifikasi = FALSE) {
         if ($email_terverifikasi !== TRUE || empty($data['google_id']) || empty($data['email'])) {
@@ -46,8 +47,7 @@ class User_model extends CI_Model {
             'foto_profil' => $data['foto_profil'],
             'email_verified_at' => $sekarang,
         ];
-        // Email yang sudah terbukti (OTP pendaftaran, atau akun buatan admin) tidak perlu dicabut sandinya.
-        if (empty($user['google_id']) && ! empty($user['kata_sandi']) && empty($user['email_verified_at'])) {
+        if (empty($user['google_id']) && ! empty($user['kata_sandi'])) {
             $ubah += [
                 'kata_sandi' => NULL,
                 'sesi_aktif_hash' => NULL, 'sesi_aktif_id_hash' => NULL, 'sesi_aktif_at' => NULL,

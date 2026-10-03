@@ -31,13 +31,19 @@ $akun = function ($email) use ($db) { $st = $db->prepare('SELECT id, email_verif
 $isian = fn($email) => ['email' => $email, 'password' => $sandi, 'password_confirm' => $sandi, 'tos_agree' => '1'];
 $salah = fn($kode) => str_pad((string) (((int) $kode + 1) % 1000000), 6, '0', STR_PAD_LEFT);
 
-// Ember batas laju pendaftaran per IP dipinjam lalu dikembalikan utuh (::1 tercatat per /64).
-$ember = [];
-foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
-    $k = hash('sha256', 'register:ip:' . $ip);
-    $ember[$k] = $db->query("SELECT kunci, jendela_mulai_at, jumlah_gagal FROM sys_batas_laju WHERE kunci='$k'")->fetch_assoc();
-    $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
+// Ember batas laju per IP (pendaftaran, kode salah) dipinjam lalu dikembalikan utuh (::1 tercatat per /64).
+$ember = []; $kunci_ip = [];
+foreach (['register', 'otp_salah_ip'] as $pol) {
+    foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
+        $k = hash('sha256', $pol . ':ip:' . $ip); $kunci_ip[$pol][] = $k;
+        $ember[$k] = $db->query("SELECT kunci, jendela_mulai_at, jumlah_gagal FROM sys_batas_laju WHERE kunci='$k'")->fetch_assoc();
+        $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
+    }
 }
+$kosongkan_register = function () use ($db, $kunci_ip) { foreach ($kunci_ip['register'] as $k) { $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'"); } };
+// Ember per email (Otp_pendaftaran): kunci = sha256(lowercase email), email uji dibuat sendiri dan dihapus di akhir.
+$kunci_email = fn($pol, $e) => hash('sha256', $pol . ':key:' . hash('sha256', strtolower($e)));
+$berkas_kode = fn($e) => dirname(__DIR__, 2) . '/application/cache/otp_uji/' . sha1(strtolower($e)) . '.txt';
 try {
     echo "=== UJI OTP EMAIL PENDAFTARAN ===\n";
 
@@ -82,12 +88,13 @@ try {
     $kirim($jar(), 'Auth/do_verifikasi_email', ['kode_otp' => kode_otp_uji($e3)]);
     $cek($akun($e3) === NULL, 'Kode dikirim dari sesi lain: akun tidak dibuat');
 
-    // 3b. Email yang sudah terdaftar: dialog galat membawa tombol pengarah ke halaman masuk.
+    // 3b. Email yang sudah terdaftar: judul dan tombol sama umumnya dengan galat pendaftaran lain,
+    // supaya dialognya tidak menyatakan keanggotaan; hanya petunjuk netral di pesannya.
     [$b] = $kirim($jar(), 'Auth/do_register', $isian($e1));
     $cek(preg_match('/data-kpkp-flash-notifications>(.*?)<\/script>/s', $b, $m) === 1
-        && strpos($m[1], '"aksi"') !== FALSE && strpos($m[1], 'Auth/login') !== FALSE && strpos($m[1], 'Auth/google') !== FALSE
-        && strpos($m[1], '"title":"Email sudah terdaftar"') !== FALSE,
-        'Email sudah terdaftar: dialog berjudul singkat dengan tombol Masuk dan Masuk dengan Google');
+        && strpos($m[1], '"aksi"') === FALSE && strpos($m[1], 'Email sudah terdaftar') === FALSE
+        && strpos($m[1], '"title":"Pendaftaran gagal"') !== FALSE && strpos($m[1], 'sudah punya akun, silakan masuk') !== FALSE,
+        'Email sudah terdaftar: judul umum "Pendaftaran gagal", tanpa tombol khusus, hanya petunjuk netral');
 
     // 4. Tanpa pendaftaran tertunda.
     [, $url] = $http($jar(), 'Auth/verifikasi_email');
@@ -103,6 +110,46 @@ try {
     $d = json_decode($b, TRUE); $a = $akun($e5);
     $cek(($d['status'] ?? '') === 'success' && (int) ($d['pengajuan_id'] ?? 0) > 0 && $a && $a['peran'] === 'pengembang' && $a['email_verified_at'] !== NULL,
         'SRP2: kode benar membuat akun pengembang terverifikasi dan draft pengajuan');
+
+    // 7. Kiriman kode dibatasi per email (5 per jam), bukan per sesi: cookie baru dan berganti email tidak mengulangnya.
+    $e7 = "{$tag}_kirim@example.test"; $selingan = "{$tag}_selingan@example.test"; $terkirim = 0;
+    for ($i = 0; $i < 5; $i++) {
+        $kosongkan_register(); @unlink($berkas_kode($e7));
+        $kirim($jar(), 'Auth/do_register', $isian($e7));
+        $terkirim += kode_otp_uji($e7) !== '' ? 1 : 0;
+    }
+    $cek($terkirim === 5, 'Lima sesi baru untuk satu email: lima kode terkirim');
+    $kosongkan_register(); @unlink($berkas_kode($e7)); $j = $jar();
+    [$b] = $kirim($j, 'Auth/do_register', $isian($e7));
+    $cek(kode_otp_uji($e7) === '' && stripos($b, 'Terlalu banyak permintaan kode') !== FALSE,
+        'Sesi baru keenam untuk email yang sama: tidak ada kode baru, pesan umum');
+    $kirim($j, 'Auth/do_register', $isian($selingan));
+    $kirim($j, 'Auth/do_register', $isian($e7));
+    $cek(kode_otp_uji($selingan) !== '' && kode_otp_uji($e7) === '', 'Berganti ke email lain lalu kembali: batas email pertama tetap berlaku');
+
+    // 8. Kode salah dibatasi per email (10 per jam): sesi baru dan berganti email tidak memberi jatah tebakan baru.
+    $e8 = "{$tag}_tebak@example.test";
+    foreach (['A', 'B'] as $s) {
+        $kosongkan_register(); $j = $jar();
+        $kirim($j, 'Auth/do_register', $isian($e8)); $kode = kode_otp_uji($e8);
+        for ($i = 0; $i < 5; $i++) { $kirim($j, 'Auth/do_verifikasi_email', ['kode_otp' => $salah($kode)]); }
+    }
+    $kosongkan_register(); $j = $jar();
+    $kirim($j, 'Auth/do_register', $isian($e8));
+    $kirim($j, 'Auth/do_register', $isian($selingan));
+    $kirim($j, 'Auth/do_register', $isian($e8));
+    [$b] = $kirim($j, 'Auth/do_verifikasi_email', ['kode_otp' => kode_otp_uji($e8)]);
+    $cek($akun($e8) === NULL && stripos($b, 'Terlalu banyak percobaan kode') !== FALSE,
+        'Sesudah 10 kode salah di dua sesi, sesi ketiga yang berganti email lalu kembali: kode benar pun ditolak');
+
+    // 9. Kode salah per IP (30 per jam): penebak yang berganti-ganti email tetap tertahan. Ember diisi sampai satu sebelum batas.
+    foreach ($kunci_ip['otp_salah_ip'] as $k) { $db->query("REPLACE INTO sys_batas_laju (kunci, jendela_mulai_at, jumlah_gagal) VALUES ('$k', NOW(), 29)"); }
+    $e9 = "{$tag}_ip@example.test"; $kosongkan_register(); $j = $jar();
+    $kirim($j, 'Auth/do_register', $isian($e9)); $kode = kode_otp_uji($e9);
+    [$b] = $kirim($j, 'Auth/do_verifikasi_email', ['kode_otp' => $salah($kode)]);
+    $cek(stripos($b, 'Kode verifikasi salah') !== FALSE, 'IP pada 29 kode salah: tebakan ke-30 masih dijawab "salah"');
+    [$b] = $kirim($j, 'Auth/do_verifikasi_email', ['kode_otp' => $kode]);
+    $cek($akun($e9) === NULL && stripos($b, 'Terlalu banyak percobaan kode') !== FALSE, 'IP yang mencapai batas: kode benar untuk email baru pun ditolak');
 
     // 6. Jeda kirim ulang berlipat dua (unit, sesi tiruan): tidak perlu menunggu bermenit-menit.
     if ( ! defined('BASEPATH')) { define('BASEPATH', dirname(__DIR__, 2) . '/system/'); }
@@ -129,6 +176,10 @@ try {
     $db->query("DELETE FROM sys_jejak_audit WHERE aksi='persetujuan_sk' AND objek_id IN (SELECT id FROM usr_akun WHERE email LIKE '{$tag}\_%@example.test')");
     $db->query("DELETE FROM usr_akun WHERE email LIKE '{$tag}\_%@example.test'");
     foreach ($jars as $f) { @unlink($f); }
+    foreach (['a', 'b', 'c', 'dev', 'kirim', 'selingan', 'tebak', 'ip'] as $s) {
+        $e = "{$tag}_{$s}@example.test"; @unlink($berkas_kode($e));
+        foreach (['otp_kirim', 'otp_salah'] as $pol) { $db->query("DELETE FROM sys_batas_laju WHERE kunci='" . $kunci_email($pol, $e) . "'"); }
+    }
     foreach (glob(dirname(__DIR__, 2) . '/application/cache/otp_uji/*.txt') ?: [] as $f) { if (time() - filemtime($f) > 900) @unlink($f); }
     foreach ($ember as $k => $row) {
         $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");

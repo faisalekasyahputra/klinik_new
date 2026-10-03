@@ -9,6 +9,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * terkirim) dan lingkungan tanpa SMTP_HOST TIDAK dikirimi email; kodenya ditulis ke
  * application/cache/otp_uji/<sha1 email>.txt. Membacanya butuh akses berkas server, jadi bukan
  * pintu belakang dari jaringan. Di production tanpa SMTP_HOST pengiriman gagal (fail-closed).
+ * Batas yang mengikat ada di config/rate_limits.php (otp_kirim, otp_salah per email tujuan; otp_salah_ip
+ * per IP): hitungan di sesi hilang begitu cookie dibuang atau email diganti, jadi hanya jadi lapis pertama.
  * Uji: docs/engineering/uji_otp_pendaftaran.php.
  */
 class Otp_pendaftaran {
@@ -64,6 +66,10 @@ class Otp_pendaftaran {
             return ! empty($t['hash_kode']) && $t['kedaluwarsa'] > time() ? TRUE : 'jeda';
         }
         if ((int) $t['kirim_jumlah'] >= self::MAKS_KIRIM) { return 'batas'; }
+        // Dihitung sebelum mengirim (atomik); penyimpanan gagal juga ditolak (fail-closed).
+        $konteks = $this->konteks_laju($t['email']);
+        $laju = $this->CI->rate_limiter->hit('otp_kirim', $konteks);
+        if (empty($laju['success']) || empty($laju['allowed'])) { return 'batas'; }
 
         $kode = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         if ( ! $this->antar($t['email'], $kode)) { return 'gagal'; }
@@ -75,13 +81,20 @@ class Otp_pendaftaran {
         return TRUE;
     }
 
-    /** Kembalian 'benar' | 'salah' | 'kedaluwarsa' | 'habis' | 'tidak_ada'. Kode benar hanya berlaku sekali. */
+    /** Kembalian 'benar' | 'salah' | 'kedaluwarsa' | 'habis' | 'terkunci' | 'tidak_ada'. Kode benar hanya berlaku sekali. */
     public function periksa($kode) {
         $t = $this->tertunda();
         if ( ! $t || empty($t['hash_kode'])) { return 'tidak_ada'; }
         if ((int) $t['salah'] >= self::MAKS_SALAH) { return 'habis'; }
         if ($t['kedaluwarsa'] <= time()) { return 'kedaluwarsa'; }
+        // Batas lintas sesi diperiksa SEBELUM kode dicocokkan: sesudah batas, kode benar pun ditolak.
+        $konteks = $this->konteks_laju($t['email']);
+        foreach (['otp_salah', 'otp_salah_ip'] as $policy) {
+            $laju = $this->CI->rate_limiter->inspect($policy, $konteks);
+            if (empty($laju['success']) || empty($laju['allowed'])) { return 'terkunci'; }
+        }
         if ( ! password_verify((string) $kode, $t['hash_kode'])) {
+            foreach (['otp_salah', 'otp_salah_ip'] as $policy) { $this->CI->rate_limiter->hit($policy, $konteks); }
             $t['salah'] = (int) $t['salah'] + 1;
             $this->CI->session->set_userdata(self::KUNCI, $t);
             return $t['salah'] >= self::MAKS_SALAH ? 'habis' : 'salah';
@@ -89,6 +102,12 @@ class Otp_pendaftaran {
         $t['hash_kode'] = NULL;
         $this->CI->session->set_userdata(self::KUNCI, $t);
         return 'benar';
+    }
+
+    /** Memuat Rate_limiter (panggil sebelum memakainya); konteksnya kunci sha256(email huruf kecil). Policy berdimensi ip mengabaikan kuncinya. */
+    private function konteks_laju($email) {
+        $this->CI->load->library('Rate_limiter');
+        return ['key' => hash('sha256', strtolower((string) $email))];
     }
 
     private function antar($email, $kode) {
