@@ -34,13 +34,16 @@ $salah = fn($kode) => str_pad((string) (((int) $kode + 1) % 1000000), 6, '0', ST
 
 // Ember batas laju per IP (pendaftaran, kode salah) dipinjam lalu dikembalikan utuh (::1 tercatat per /64).
 $ember = []; $kunci_ip = [];
-foreach (['register', 'otp_salah_ip'] as $pol) {
+foreach (['register', 'otp_salah_ip', 'otp_kirim_ip'] as $pol) {
     foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
         $k = hash('sha256', $pol . ':ip:' . $ip); $kunci_ip[$pol][] = $k;
         $ember[$k] = $db->query("SELECT kunci, jendela_mulai_at, jumlah_gagal FROM sys_batas_laju WHERE kunci='$k'")->fetch_assoc();
         $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
     }
 }
+$k = hash('sha256', 'otp_kirim_global:key:otp_global'); // plafon global harian ikut dipinjam
+$ember[$k] = $db->query("SELECT kunci, jendela_mulai_at, jumlah_gagal FROM sys_batas_laju WHERE kunci='$k'")->fetch_assoc();
+$db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
 $kosongkan_register = function () use ($db, $kunci_ip) { foreach ($kunci_ip['register'] as $k) { $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'"); } };
 // Ember per email (Otp_pendaftaran): kunci = sha256(lowercase email), email uji dibuat sendiri dan dihapus di akhir.
 $kunci_email = fn($pol, $e) => hash('sha256', $pol . ':key:' . hash('sha256', strtolower($e)));

@@ -67,9 +67,12 @@ class Otp_pendaftaran {
         }
         if ((int) $t['kirim_jumlah'] >= self::MAKS_KIRIM) { return 'batas'; }
         // Dihitung sebelum mengirim (atomik); penyimpanan gagal juga ditolak (fail-closed).
+        // Per IP, plafon global harian, lalu per email tujuan (api-csrf-07).
         $konteks = $this->konteks_laju($t['email']);
-        $laju = $this->CI->rate_limiter->hit('otp_kirim', $konteks);
-        if (empty($laju['success']) || empty($laju['allowed'])) { return 'batas'; }
+        foreach ([['otp_kirim_ip', $konteks], ['otp_kirim_global', ['key' => 'otp_global']], ['otp_kirim', $konteks]] as [$policy, $k]) {
+            $laju = $this->CI->rate_limiter->hit($policy, $k);
+            if (empty($laju['success']) || empty($laju['allowed'])) { return 'batas'; }
+        }
 
         $kode = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         if ( ! $this->antar($t['email'], $kode)) { return 'gagal'; }

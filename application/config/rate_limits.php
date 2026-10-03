@@ -46,6 +46,12 @@ $config['rate_limit_policies'] = [
        Akibatnya pendaftaran sah untuk email yang sedang dibanjiri orang lain ikut tertahan sampai
        jendelanya habis; pesannya umum dan tidak menyatakan apa pun tentang akun. */
     'otp_kirim'    => ['limit' => 5,  'window' => 3600, 'dimensions' => ['key']],
+    /* Pengiriman per IP dan plafon GLOBAL harian (temuan api-csrf-07): otp_kirim per email tujuan tidak
+       menahan penyerang yang berganti alamat, dan kuota SMTP (Gmail ratusan sampai dua ribu per hari) yang
+       habis mematikan pendaftaran untuk semua orang. Plafon global ditembus = peringatan ke Super Admin
+       (bawaan Rate_limiter), pendaftaran baru menunggu jendelanya habis. */
+    'otp_kirim_ip'     => ['limit' => 20,  'window' => 3600,  'dimensions' => ['ip']],
+    'otp_kirim_global' => ['limit' => 250, 'window' => 86400, 'dimensions' => ['key']],
     'otp_salah'    => ['limit' => 10, 'window' => 3600, 'dimensions' => ['key']],
     'otp_salah_ip' => ['limit' => 30, 'window' => 3600, 'dimensions' => ['ip']],
     'simperum_lookup' => [
