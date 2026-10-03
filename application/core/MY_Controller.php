@@ -908,6 +908,9 @@ class MY_Controller extends CI_Controller {
             'recommendations' => $recommendations,
             'evidence' => $this->Housing_assessment_model->get_scoped_queue_files($antrean_id, $kabupaten_id),
             'preliminary_matrix' => $preliminary_matrix,
+            // NIK pemohon terbukti miliknya (nama akun + tanggal lahir cocok dengan SIMPERUM, 3 Okt 2026).
+            'nik_terverifikasi' => $this->db->where('user_id', (int) ($detail['queue']['user_id'] ?? 0))
+                ->where('confirmed_at IS NOT NULL', NULL, FALSE)->count_all_results('sf_profil_warga') > 0,
         ];
     }
 
@@ -1328,40 +1331,6 @@ class MY_Controller extends CI_Controller {
     {
         $this->load->library('Rate_limiter');
         return $this->rate_limiter->consume($policy, $context);
-    }
-
-    /**
-     * Prefill otomatis wizard warga dari NIK akunnya sendiri (26 Sep 2026): lookup SIMPERUM lalu
-     * bootstrap draft, sama dengan klik Cek NIK. Dipakai Auth::save_onboarding() dan jaring pengaman
-     * Warga::pendataan(). Mengonsumsi pembatas `warga_lookup` yang sama dengan Cek NIK supaya tidak
-     * jadi jalan pintas. Gagal diam: warga masih bisa klik Cek NIK sendiri.
-     *
-     * @return bool TRUE kalau draft terbentuk dari data SIMPERUM.
-     */
-    protected function prefill_simperum_akun($user_id, $nik)
-    {
-        $user_id = (int) $user_id;
-        $nik = preg_replace('/\D+/', '', (string) $nik);
-        if ($user_id < 1 || ! preg_match('/^\d{16}$/', $nik)) {
-            return FALSE;
-        }
-        /* Akun yang sudah pernah mengirim (penilaian selain draft) tidak dibuatkan draft baru di sini:
-           draft tanpa versi_sebelumnya_id akan jadi kiriman ganda di sf_antrean_pengajuan. Revisi tetap
-           lewat start_revision (status needs_revision). */
-        if ($this->db->where('user_id', $user_id)->where('status !=', 'draft')->count_all_results('sf_penilaian_perumahan') > 0) {
-            return FALSE;
-        }
-        $rate = $this->rate_limit_consume('warga_lookup', ['account_id' => $user_id, 'nik' => $nik]);
-        if (empty($rate['success']) || empty($rate['allowed'])) {
-            return FALSE;
-        }
-        $this->load->library('Simperum_gateway');
-        $hasil = $this->simperum_gateway->lookup($nik, '', $user_id, TRUE);
-        if (($hasil['status'] ?? '') !== 'found') {
-            return FALSE;
-        }
-        $this->load->model('Housing_assessment_model');
-        return ! empty($this->Housing_assessment_model->bootstrap_draft_from_lookup($user_id, $hasil)['success']);
     }
 
     protected function rate_limit_inspect($policy, array $context = [])

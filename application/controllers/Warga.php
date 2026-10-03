@@ -76,23 +76,9 @@ class Warga extends MY_Controller {
                 }
             }
         }
-        /* Jaring pengaman prefill (26 Sep 2026): warga login tanpa draft yang akunnya ber-NIK
-           (usr_akun.nik) dilookup otomatis SEKALI per sesi, lalu dialihkan supaya form tampil
-           berisi data SIMPERUM tanpa klik Cek NIK. Menjangkau NIK yang masuk lewat Pengaturan atau
-           onboarding yang prefill-nya gagal. Ditolak pembatas laju atau tidak ditemukan: form
-           tampil seperti biasa (kolom Cek NIK terisi, blok nik_dari_akun di bawah). */
-        if ($logged_in_warga && ! $assessment && ! $this->session->userdata('warga_prefill_dicoba')) {
-            $akun = $this->db->select('nik')->get_where('usr_akun', ['id' => $user_id])->row();
-            $this->load->library('encryption_lib');
-            $nik_akun = preg_replace('/\D+/', '', (string) $this->encryption_lib->decrypt((string) ($akun->nik ?? '')));
-            if (strlen($nik_akun) === 16) {
-                $this->session->set_userdata('warga_prefill_dicoba', TRUE);
-                if ($this->prefill_simperum_akun($user_id, $nik_akun)) {
-                    redirect('warga/pendataan');
-                    return;
-                }
-            }
-        }
+        /* Lookup otomatis dari NIK akun (26 Sep 2026) DICABUT: data SIMPERUM baru terbuka sesudah
+           nama akun dan tanggal lahir cocok, dan tanggal lahir hanya diketik warga di Cek NIK.
+           NIK akun tetap mengisi kolom Cek NIK (blok nik_dari_akun di bawah). */
         $old_input = $this->session->flashdata('warga_old_input') ?: [];
         // SIMPERUM tidak selalu menyediakan nomor HP. Gunakan profil akun sendiri
         // sebagai isian awal, tanpa mengganti nilai/koreksi yang sudah disimpan.
@@ -234,9 +220,9 @@ class Warga extends MY_Controller {
      * ke session `warga_pending_nik`, dan `intended_url` diisi supaya kalau
      * orang ini login/daftar sebentar lagi, dia otomatis kembali ke sini
      * (mekanisme yang SAMA dipakai Auth::login() untuk alur lain, lihat
-     * Auth::_redirect_after_login()). Auth::_redirect_after_login() yang
-     * membaca `warga_pending_nik` itu nanti dan benar-benar mengikatnya ke
-     * akun yang baru diketahui.
+     * Auth::_redirect_after_login()). NIK di sesi itu hanya mengisi kolom
+     * NIK onboarding dan Cek NIK; NIK baru terikat ke akun sesudah
+     * diverifikasi dengan nama akun + tanggal lahir di lookup().
      */
     private function lookup_anonim()
     {
@@ -310,7 +296,7 @@ class Warga extends MY_Controller {
         $this->session->set_userdata('intended_url', 'warga/pendataan');
         $this->session->set_flashdata('warga_lookup', [
             'status' => 'found_anonymous',
-            'message' => 'Data ditemukan. Masuk untuk melanjutkan pendataan - NIK ini akan otomatis terhubung ke akun Anda.',
+            'message' => 'Data ditemukan. Masuk atau daftar untuk melanjutkan, lalu verifikasi NIK dengan tanggal lahir di langkah ini.',
             'simulation' => ! empty($result['simulation']),
         ]);
         /* Form NIK anonim ditangkap JavaScript di pendataan.php. Redirect
@@ -330,16 +316,11 @@ class Warga extends MY_Controller {
         $nik = preg_replace('/\D+/', '', (string) $this->input->post('nik', TRUE));
         $account_id = (int) $this->get_user_id();
 
-        /* Tanggal lahir DICABUT dari layar ini 14 Agt 2026 - keputusan sadar
-           user, dikonfirmasi paham risikonya (Simperum_gateway::lookup()
-           menyebutnya "pengaman anti-penelusuran", bukan formalitas). Dua
-           batas AKUN di bawah (warga_lookup_jam/harian, TANPA dimensi nik)
-           yang menggantikan perannya - pola SAMA PERSIS dengan
-           rtlh_cek/rtlh_cek_harian di Cek_Rtlh::proses() saat dinas mencabut
-           tanggal lahir di sana lebih dulu. `warga_lookup` (per-NIK) TETAP
-           dipanggil juga - dua-duanya, bukan saling gantikan: yang lama
-           menahan brute-force SATU NIK, yang baru menahan penelusuran BANYAK
-           NIK berbeda. */
+        /* Tanggal lahir dicabut dari layar ini 14 Agt 2026 dan DIKEMBALIKAN 3 Okt 2026 sebagai
+           bagian bukti kepemilikan NIK (nama akun + tanggal lahir, lihat di bawah). Dua batas AKUN
+           (warga_lookup_jam/harian, tanpa dimensi nik) menahan penelusuran banyak NIK,
+           `warga_lookup` menahan permintaan beruntun untuk satu NIK, dan `verifikasi_nik` di
+           gateway menahan tebakan nama/tanggal lahir yang gagal per akun dan per NIK. */
         foreach ([
             ['warga_lookup_jam', 'Terlalu banyak percobaan pencarian data. Silakan coba lagi sebentar.'],
             ['warga_lookup_harian', 'Batas pencarian harian tercapai. Silakan lanjutkan besok.'],
@@ -362,15 +343,26 @@ class Warga extends MY_Controller {
             );
             return;
         }
+        $birth_date = trim((string) $this->input->post('birth_date', TRUE));
+        $errors = [];
         if ( ! preg_match('/^\d{16}$/', $nik)) {
+            $errors['nik'] = 'NIK harus 16 digit.';
+        }
+        if ( ! $this->valid_date($birth_date)) {
+            $errors['birth_date'] = 'Tanggal lahir wajib diisi sesuai KTP.';
+        }
+        if ($errors) {
             $this->session->set_flashdata('warga_old_input', ['nik' => $nik]);
-            $this->flash_errors(['nik' => 'NIK harus 16 digit.']);
+            $this->flash_errors($errors);
             redirect('warga/pendataan');
             return;
         }
 
-        // $tanpa_tgl_lahir=TRUE - lihat komentar di atas & Simperum_gateway::lookup().
-        $result = $this->simperum_gateway->lookup($nik, '', $account_id, TRUE);
+        /* Bukti kepemilikan NIK (keputusan pemilik produk, 3 Okt 2026): nama lengkap akun dan
+           tanggal lahir dicocokkan dengan data SIMPERUM untuk NIK itu SEBELUM data apa pun diikat
+           atau ditampilkan. Pencocokan, batas percobaan gagal, dan penolakan NIK milik akun lain
+           ada di Simperum_gateway::lookup(), satu pintu untuk semua pemanggil yang mengikat. */
+        $result = $this->simperum_gateway->lookup($nik, $birth_date, $account_id);
         $this->session->set_flashdata('warga_lookup', $result);
         if (($result['status'] ?? '') !== 'found') {
             /* Respons 'not_found' dari Simperum_gateway TIDAK menyertakan
@@ -391,13 +383,14 @@ class Warga extends MY_Controller {
         // yang SAMA PERSIS (bukan disalin) untuk warga yang cek NIK anonim
         // lalu login/daftar.
         $user_id = (int) $this->get_user_id();
+        $this->session->unset_userdata('warga_pending_nik');
         $bootstrapped = $this->Housing_assessment_model->bootstrap_draft_from_lookup($user_id, $result);
         if (empty($bootstrapped['success'])) {
             $this->session->set_flashdata('error', $bootstrapped['message']);
             redirect('warga/pendataan');
             return;
         }
-        $this->session->set_flashdata('success', 'Data awal tersimpan. Silakan periksa dan lengkapi pendataan.');
+        $this->session->set_flashdata('success', 'NIK terverifikasi. Data awal tersimpan. Silakan periksa dan lengkapi pendataan.');
         redirect('warga/pendataan');
     }
 

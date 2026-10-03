@@ -107,23 +107,24 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
             <h2 class="text-lg font-black">Masukkan NIK</h2>
             <p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Masukkan NIK. Pencarian dilakukan dari data tersimpan; halaman ini tidak menampilkan data mentah sumber. Satu akun hanya dapat terhubung dengan satu NIK - gunakan NIK Anda sendiri.</p>
             <?php
-            /* Tanggal lahir DICABUT dari sini 14 Agt 2026 (keputusan sadar
-               user, bukan dinas - beda dengan Cek_Rtlh yang memang keputusan
-               dinas). Field-nya SENGAJA tidak pernah menjadi "opsional" -
-               dihapus total, konsisten dengan Warga::lookup() yang sekarang
-               memanggil gateway dengan $tanpa_tgl_lahir=TRUE. Penggantinya
-               BUKAN di layar ini - dua batas laju per-akun (bukan per-NIK)
-               di Warga::lookup(), lihat komentarnya. */
+            /* Tanggal lahir (3 Okt 2026, bukti kepemilikan NIK): hanya untuk akun yang login, karena
+               hanya akun yang mengikat NIK dan melihat datanya. Nama lengkap akun dan tanggal lahir
+               ini dicocokkan dengan data SIMPERUM di Simperum_gateway::lookup(). Cek anonim tidak
+               mengikat dan tidak menampilkan data, jadi tidak memintanya. */
             ?>
-            <div class="mt-5">
-                <div><label for="nik" class="text-xs font-bold">NIK</label><input id="nik" name="nik" inputmode="numeric" pattern="[0-9]{16}" maxlength="16" required autocomplete="off" value="<?= html_escape($value('nik')) ?>" aria-describedby="nik-error" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error('nik') ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><?php if ( ! empty($nik_dari_akun)): ?><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Terisi dari NIK yang Anda daftarkan. Tinggal klik tombol di bawah, atau ubah kalau keliru.</p><?php endif; ?><p id="nik-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error('nik')) ?></p></div>
+            <div class="mt-5 grid gap-4 <?= ! empty($is_logged_in) ? 'sm:grid-cols-2' : '' ?>">
+                <div><label for="nik" class="text-xs font-bold">NIK</label><input id="nik" name="nik" inputmode="numeric" pattern="[0-9]{16}" maxlength="16" required autocomplete="off" value="<?= html_escape($value('nik')) ?>" aria-describedby="nik-error" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error('nik') ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><?php if ( ! empty($nik_dari_akun)): ?><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Terisi dari NIK yang Anda daftarkan. Lengkapi tanggal lahir lalu klik tombol di bawah, atau ubah kalau keliru.</p><?php endif; ?><p id="nik-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error('nik')) ?></p></div>
+                <?php if ( ! empty($is_logged_in)): ?>
+                <div><label for="birth_date" class="text-xs font-bold">Tanggal lahir</label><input id="birth_date" name="birth_date" type="date" <?= ($lookup['status'] ?? '') === 'not_found' ? '' : 'required' ?> autocomplete="bday" aria-describedby="birth_date-error birth_date-hint" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error('birth_date') ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><p id="birth_date-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error('birth_date')) ?></p></div>
+                <p id="birth_date-hint" class="text-xs sm:col-span-2" style="color:var(--portal-text-muted)">Untuk memastikan NIK ini milik Anda, nama lengkap di akun (Profil Saya) dan tanggal lahir dicocokkan dengan data SIMPERUM sebelum data apa pun ditampilkan. Pastikan nama akun sama dengan nama di KTP.</p>
+                <?php endif; ?>
             </div>
             <?php
             /* Hasil pencarian ANONIM (14 Agt 2026) - pengunjung belum login
                yang NIK-nya ditemukan. NIK-nya sendiri sudah tersimpan di
                session (Warga::lookup_anonim()), belum tertulis ke DB apa
-               pun - baru benar-benar terikat begitu masuk/daftar (lihat
-               Auth::_redirect_after_login()). Tombol di sini murni navigasi,
+               pun. Sesudah masuk/daftar NIK ini mengisi kolom Cek NIK dan baru
+               terikat setelah diverifikasi dengan tanggal lahir. Tombol di sini murni navigasi,
                bukan submit apa pun. */
             ?>
             <?php if (($lookup['status'] ?? '') === 'found_anonymous'): ?>

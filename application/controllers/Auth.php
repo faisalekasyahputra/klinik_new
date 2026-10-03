@@ -559,6 +559,12 @@ class Auth extends MY_Controller {
         }
 
         $user_id = $this->get_user_id();
+        // Onboarding hanya untuk profil yang belum lengkap. Mengirim ulang formulir ini dari akun
+        // yang sudah aktif dulu bisa menimpa NIK yang di Profil Saya dikunci sekali isi.
+        if ($this->auth_model->is_profile_complete($user_id)) {
+            $this->_redirect_after_login();
+            return;
+        }
         $role    = html_escape($this->input->post('role'));
 
         /* Pendaftaran yang dimulai dari cek NIK tidak boleh berakhir pada
@@ -660,9 +666,14 @@ class Auth extends MY_Controller {
                onboarding lolos, lalu prefill SIMPERUM gagal diam-diam karena
                nik_already_bound dan warga terus mendarat di layar Cek NIK. */
             $nik_hash = $this->encryption_lib->deterministic_hash($nik_raw);
+            if ( ! empty($user_record->nik_lookup_hash) && ! hash_equals((string) $user_record->nik_lookup_hash, $nik_hash)) {
+                $this->_onboarding_fail('NIK sudah terkunci pada akun ini dan tidak dapat diubah sendiri. Hubungi admin bila ada kekeliruan.');
+                return;
+            }
             if ($this->db->where('nik_lookup_hash', $nik_hash)->where('id !=', $user_id)->count_all_results('usr_akun') > 0
                 || $this->db->where('nik_lookup_hash', $nik_hash)->where('user_id !=', $user_id)->count_all_results('sf_profil_warga') > 0) {
-                $this->_onboarding_fail('NIK ini sudah terdaftar pada akun lain. Jika Anda merasa ini keliru, hubungi Dinas Perakim.');
+                $this->load->model('Housing_assessment_model');
+                $this->_onboarding_fail(Housing_assessment_model::PESAN_NIK_TERIKAT);
                 return;
             }
         }
@@ -734,13 +745,10 @@ class Auth extends MY_Controller {
         $this->session->set_userdata('username', $username);
         $this->session->set_userdata('role', $role);
 
-        /* Warga yang mengisi NIK saat onboarding langsung mendapat draft berisi data SIMPERUM
-           (26 Sep 2026), jadi halaman diagnosa terbuka sudah terisi. Kalau warga_pending_nik ada,
-           _redirect_after_login() di bawah sudah melakukan lookup+bootstrap yang sama; dilewati di
-           sini supaya tidak dua kali. */
-        if ($role === 'warga' && empty($this->session->userdata('warga_pending_nik'))) {
-            $this->prefill_simperum_akun($user_id, $nik_raw);
-        }
+        /* Prefill SIMPERUM otomatis sesudah onboarding (26 Sep 2026) DICABUT: data sumber baru
+           boleh dibuka sesudah nama akun dan tanggal lahir cocok dengan data NIK itu, dan
+           tanggal lahir diminta di langkah Cek NIK pendataan (Simperum_gateway::lookup()).
+           NIK akun tetap mengisi kolom Cek NIK otomatis. */
 
         $this->session->set_flashdata('success', 'Profil berhasil disimpan! Selamat datang di Klinik PKP.');
         $this->_redirect_after_login();
@@ -1046,56 +1054,21 @@ class Auth extends MY_Controller {
             return;
         }
 
-        /* Ikat NIK yang sempat dicari ANONIM (Warga::lookup_anonim(), sebelum
-           akun ada) ke akun yang baru saja diketahui - "gunakan NIK sebagai
-           kunci" begitu warga login/daftar, permintaan user 14 Agt 2026.
-           SEBELUM cek is_profile_complete DENGAN SENGAJA: satu-satunya
-           titik temu login (do_login()) DAN registrasi (save_onboarding(),
-           dipanggil di UJUNG onboarding - lihat baris terakhirnya) adalah
-           method ini, jadi ini juga satu-satunya tempat yang menjangkau
-           keduanya sekaligus tanpa menyalin logika ke dua tempat.
+        /* NIK yang sempat dicek ANONIM (Warga::lookup_anonim()) TIDAK lagi diikat otomatis ke akun
+           saat login/daftar: data SIMPERUM baru boleh terbuka sesudah nama akun dan tanggal lahir
+           cocok (Simperum_gateway::lookup()), dan tanggal lahir diminta di langkah Cek NIK.
+           `warga_pending_nik` tetap tinggal di sesi untuk mengisi kolom NIK onboarding dan Cek NIK;
+           Warga::lookup() melepasnya sesudah verifikasi berhasil.
 
-           Simperum_gateway::lookup() dipanggil ULANG (bukan fungsi baru) -
-           kali ini $requested_by=$user_id BENAR terisi (beda dari panggilan
-           anonim yang $requested_by=0), jadi from_snapshot() di dalamnya
-           benar-benar menjalankan save_profile() yang mengikat NIK ke akun
-           ini. Snapshot SIMPERUM-nya sendiri sudah ke-cache dari pencarian
-           anonim tadi (get_active_source_snapshot()) - panggilan ulang ini
-           TIDAK memukul API/fixture kedua kalinya.
-
-           Kegagalan bind (mis. NIK keburu diklaim akun lain di antara
-           pencarian anonim dan login) SENGAJA TIDAK menghentikan login -
-           warga tetap masuk, cukup mencari ulang manual dari wizard kalau
-           mau. Hanya berlaku untuk role warga - akun lain tidak relevan
-           dengan wizard ini.
-
-           SUSULAN 14 Agt 2026: begitu profil terikat DAN hasilnya
-           'found' (NIK ada di SIMPERUM - kalau 'not_found' pemanggilan
-           ulang di atas cuma menegaskan lagi, tidak menyimpan apa pun,
-           lihat Simperum_gateway::from_snapshot()), draft-nya SEKALIAN
-           dibuat/dilanjutkan lewat method yang SAMA PERSIS dipakai
-           Warga::lookup() (Housing_assessment_model::
-           bootstrap_draft_from_lookup(), dipindah ke situ justru supaya
-           bisa dipanggil dari sini juga). Tanpa ini warga yang baru saja
-           login/daftar mendarat balik di step "Temukan Data" - datanya
-           SUDAH ketemu tapi harus mengetik NIK yang sama sekali lagi
-           untuk melihat step "Data Warga". Kegagalan bootstrap (mis.
-           wilayah sumber belum bisa dipakai) juga SENGAJA tidak
-           menghentikan login - sama seperti kegagalan bind di atas. */
+           Yang tetap otomatis: NIK yang TIDAK ADA di SIMPERUM. Sesudah onboarding selesai, draft
+           manual dibuat dari NIK dan nama akun (tanpa data sumber apa pun; NIK tercatat belum
+           terverifikasi) supaya warga tidak dipaksa mencari NIK yang sama sekali lagi. Pencarian
+           di sini tanpa akun peminta (NULL), jadi tidak mengikat dan tidak membuka data. */
         $pending_nik = $this->session->userdata('warga_pending_nik');
-        if ( ! empty($pending_nik) && $this->has_role('warga')) {
+        if ( ! empty($pending_nik) && $this->has_role('warga') && $this->auth_model->is_profile_complete($user_id)) {
             $this->load->library('Simperum_gateway');
-            $hasil = $this->simperum_gateway->lookup($pending_nik, '', $user_id, TRUE);
-            if (($hasil['status'] ?? '') === 'found') {
-                $this->load->model('Housing_assessment_model');
-                $this->Housing_assessment_model->bootstrap_draft_from_lookup($user_id, $hasil);
-                $this->session->unset_userdata('warga_pending_nik');
-            } elseif (($hasil['status'] ?? '') === 'not_found'
-                && $this->auth_model->is_profile_complete($user_id)) {
-                /* NIK tidak ditemukan sudah membawa calon warga melalui
-                   pendaftaran. Setelah onboarding selesai, buat draft manual
-                   langsung dari NIK dan nama akun agar ia tidak kembali ke
-                   langkah awal dan dipaksa mencari NIK yang sama sekali lagi. */
+            $hasil = $this->simperum_gateway->lookup($pending_nik, '', NULL, TRUE);
+            if (($hasil['status'] ?? '') === 'not_found') {
                 $this->load->model('Housing_assessment_model');
                 $user = $this->auth_model->find_by_id($user_id);
                 $manual = $this->Housing_assessment_model->bootstrap_manual_draft(

@@ -70,6 +70,16 @@ $config['rate_limit_policies'] = [
        harian (bukan lebih longgar): pengunjung anonim tidak punya jejak
        akun, jadi risiko penelusuran per-permintaannya lebih tinggi,
        bukan lebih rendah. */
+    /* Bukti kepemilikan NIK (nama akun + tanggal lahir, Simperum_gateway::verifikasi_pemilik,
+       3 Okt 2026). Hanya percobaan yang TIDAK COCOK dihitung (inspect lalu hit, pola login).
+       Dua dimensi berdiri sendiri: per akun (satu akun menebak banyak kombinasi) dan per NIK
+       (banyak akun menebak untuk satu NIK). Akibatnya pemilik asli bisa ikut tertahan sehari
+       bila NIK-nya sedang ditebak orang lain; pesan penolakannya mengarahkan ke menu Aduan. */
+    'verifikasi_nik' => [
+        'limit' => 5,
+        'window' => 86400,
+        'dimensions' => ['account', 'nik'],
+    ],
     'warga_lookup_anon' => [
         'limit' => 5,
         'window' => 3600,

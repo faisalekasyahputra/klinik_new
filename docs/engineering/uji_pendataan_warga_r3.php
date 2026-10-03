@@ -71,7 +71,9 @@ function maju_ke_detail($sesi,$db,$uid) {
 }
 
 try {
-  $a=user($db,"r3_{$stamp}_a@example.test",'Warga Uji R3 A',$pass);$b=user($db,"r3_{$stamp}_b@example.test",'Warga Uji R3 B',$pass);$ids=[$a,$b];
+  /* Nama akun = nama fixture: sejak 3 Okt 2026 lookup ber-akun hanya mengikat NIK kalau nama lengkap akun
+     dan tanggal lahir cocok dengan data SIMPERUM (Simperum_gateway::lookup). */
+  $a=user($db,"r3_{$stamp}_a@example.test",'Warga Simulasi Parsial',$pass);$b=user($db,"r3_{$stamp}_b@example.test",'Warga Uji R3 B',$pass);$ids=[$a,$b];
   $sa=new HTTP(); check($sa->login("r3_{$stamp}_a@example.test",$pass),'akun SIM-02 login');
   [$s]=$sa->call('warga/pendataan',['step'=>'find_data','nik'=>'0000000000000002','birth_date'=>'1990-12-31']); check(in_array($s,[302,303],true),'lookup SIM-02 memakai PRG');
   $draft=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE user_id=?',[$a]); check($draft && $draft['langkah_sekarang']==='housing_family','lookup membuat draft milik warga');
@@ -127,10 +129,11 @@ try {
   $after=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE id=?',[$draft['id']]); check($after['langkah_sekarang']==='building_condition','save melanjutkan draft');
   $sa->call('Auth/logout'); $sa2=new HTTP(); check($sa2->login("r3_{$stamp}_a@example.test",$pass),'login ulang'); [$s,$body]=$sa2->call('warga/pendataan'); check($s===200 && strpos($body,'Rumah')!==false,'draft tetap setelah logout/login');
   $sa2->call('warga/pendataan'); check((int)$db->val("SELECT COUNT(*) FROM sf_rekaman_simperum WHERE kunci_rekaman_sumber='SIM-02'")===$before,'next/reload tidak membuat snapshot baru');
-  $fixture=['key'=>'SIM-05','nik'=>'0000000000000005','birth'=>'1985-05-05'];
+  $fixture=['key'=>'SIM-05','nik'=>'0000000000000005','birth'=>'1985-05-05','nama'=>'Warga Simulasi Koreksi'];
   if ($db->val("SELECT p.id FROM sf_profil_warga p JOIN sf_rekaman_simperum s ON s.nik_lookup_hash=p.nik_lookup_hash WHERE s.kunci_rekaman_sumber='SIM-05' LIMIT 1")) {
-      $fixture=['key'=>'SIM-03','nik'=>'0000000000000003','birth'=>'1988-03-03'];
+      $fixture=['key'=>'SIM-03','nik'=>'0000000000000003','birth'=>'1988-03-03','nama'=>'Warga Simulasi Calon Lahan'];
   }
+  $db->q('UPDATE usr_akun SET nama=? WHERE id=?',[$fixture['nama'],$b]);
   $sb=new HTTP(); check($sb->login("r3_{$stamp}_b@example.test",$pass),'akun koreksi login'); $sb->call('warga/pendataan',['step'=>'find_data','nik'=>$fixture['nik'],'birth_date'=>$fixture['birth']]); $d2=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE user_id=?',[$b]); check((bool)$d2,'fixture koreksi membuat draft'); $snap=$d2?$db->one('SELECT muatan_sha256 FROM sf_rekaman_simperum WHERE id=?',[$d2['rekaman_simperum_id']]):null;
   if ($d2) {$d2=maju_ke_detail($sb,$db,$b);}
   if ($d2) {$sb->call('warga/pendataan',['step'=>'housing_family_detail','penilaian_id'=>$d2['id'],'versi_kunci'=>$d2['versi_kunci'],'direction'=>'next','family_card_number'=>'0000000000005005','full_name'=>'Warga Simulasi Koreksi','phone'=>'080000000005','birth_date'=>$fixture['birth'],'address'=>'Alamat Koreksi Warga','jenis_kelamin'=>'female','status_perkawinan'=>'married','pendidikan'=>'senior_high','pekerjaan'=>'trader','kelompok_penghasilan'=>'2_2_2_6','mampu_swadaya'=>'capable','punya_tabungan'=>'1','kepemilikan_rumah'=>'owned','kepemilikan_lahan'=>'hm','tanah_lain'=>'0','rumah_lain'=>'0','luas_rumah'=>'36','jml_penghuni'=>'3','jml_kk'=>'1']);} check($d2 && $snap['muatan_sha256']===$db->val('SELECT muatan_sha256 FROM sf_rekaman_simperum WHERE id=?',[$d2['rekaman_simperum_id']]),'koreksi profil tidak mengubah snapshot');
@@ -148,15 +151,19 @@ try {
           langsung yang melewati formulir. Ini intinya: NIK yang bisa diganti
           sendiri berarti satu orang bisa berpindah memakai NIK orang lain,
           termasuk sesudah pengajuannya dinilai.
-       3. Satu NIK hanya untuk satu akun. */
+       3. Satu NIK hanya untuk satu akun.
+     Dua akun BARU tanpa profil pendataan (3 Okt 2026): Profil Saya kini memakai penjaga ikatan yang sama
+     dengan pendataan, jadi akun yang profil pendataannya sudah terikat NIK lain (akun a dan b di atas)
+     ditolak mengisi NIK berbeda karena alasan itu, bukan karena kunci sekali-isi yang diuji di sini. */
+  $c=user($db,"r3_{$stamp}_c@example.test",'Warga Uji R3 C',$pass);$e=user($db,"r3_{$stamp}_d@example.test",'Warga Uji R3 D',$pass);$ids[]=$c;$ids[]=$e;
   $nikBaru = '32' . str_pad((string)mt_rand(1,99999999999999), 14, '0', STR_PAD_LEFT);
-  $sc = new HTTP(); check($sc->login("r3_{$stamp}_a@example.test",$pass),'login untuk uji NIK profil');
+  $sc = new HTTP(); check($sc->login("r3_{$stamp}_c@example.test",$pass),'login untuk uji NIK profil');
   [, $bodyProfil] = $sc->call('akun/profil');
   check(strpos($bodyProfil,'name="nik"')!==false,'Isian NIK muncul saat akun belum punya NIK');
 
   $sc->call('akun/profil');
   $sc->call('Pengaturan/update_profile',['name'=>'Warga Uji NIK','phone'=>'08123456789','nik'=>$nikBaru]);
-  $tersimpan = $db->one('SELECT nik, nik_lookup_hash FROM usr_akun WHERE id=?',[$a]);
+  $tersimpan = $db->one('SELECT nik, nik_lookup_hash FROM usr_akun WHERE id=?',[$c]);
   check(!empty($tersimpan['nik_lookup_hash']),'NIK tersimpan dan punya sidik pencarian');
   check(!empty($tersimpan['nik']) && strpos((string)$tersimpan['nik'],$nikBaru)===false,
         'NIK disimpan terenkripsi, angka aslinya tidak ada di kolom');
@@ -170,15 +177,15 @@ try {
   $nikPalsu = '33' . str_pad((string)mt_rand(1,99999999999999), 14, '0', STR_PAD_LEFT);
   $sc->call('akun/profil');
   $sc->call('Pengaturan/update_profile',['name'=>'Warga Uji NIK','phone'=>'08123456789','nik'=>$nikPalsu]);
-  $sesudah = $db->one('SELECT nik_lookup_hash FROM usr_akun WHERE id=?',[$a]);
+  $sesudah = $db->one('SELECT nik_lookup_hash FROM usr_akun WHERE id=?',[$c]);
   check($sesudah['nik_lookup_hash']===$tersimpan['nik_lookup_hash'],
         'NIK terkunci TIDAK berubah walau POST langsung mengirim NIK lain');
 
   /* Akun kedua tidak boleh memakai NIK yang sama. */
-  $sd = new HTTP(); check($sd->login("r3_{$stamp}_b@example.test",$pass),'login akun kedua');
+  $sd = new HTTP(); check($sd->login("r3_{$stamp}_d@example.test",$pass),'login akun kedua');
   $sd->call('akun/profil');
   $sd->call('Pengaturan/update_profile',['name'=>'Warga Kedua','phone'=>'08987654321','nik'=>$nikBaru]);
-  check(empty($db->val('SELECT nik_lookup_hash FROM usr_akun WHERE id=?',[$b])),
+  check(empty($db->val('SELECT nik_lookup_hash FROM usr_akun WHERE id=?',[$e])),
         'NIK yang sudah dipakai akun lain DITOLAK - satu NIK satu akun');
 
 } finally { cleanup($db,$ids); }

@@ -167,6 +167,12 @@
                         <span class="inline-flex px-2.5 py-1 rounded-lg text-xs font-bold bg-blue-50 text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary">
                             <?= html_escape($available_roles[$u->peran] ?? ($u->peran ?: '-')) ?>
                         </span>
+                        <?php if ($u->peran === 'warga' && ( ! empty($u->nik_lookup_hash) || ! empty($warga_nik_bound[(int) $u->id]))): ?>
+                        <?php $nik_ok = ($warga_nik_bound[(int) $u->id] ?? '') === 'terverifikasi'; ?>
+                        <div class="mt-1 text-[11px] font-semibold <?= $nik_ok ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300' ?>" title="Terverifikasi = nama akun dan tanggal lahir cocok dengan data SIMPERUM untuk NIK ini">
+                            <?= $nik_ok ? 'NIK terverifikasi' : 'NIK belum terverifikasi' ?>
+                        </div>
+                        <?php endif; ?>
                     </td>
                     <td class="px-4 py-3 text-xs">
                         <?php if ($u->peran === 'admin_kabkota'): ?>

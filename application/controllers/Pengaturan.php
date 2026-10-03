@@ -526,11 +526,11 @@ class Pengaturan extends MY_Controller {
                 return;
             } else {
                 $sidik = $this->encryption_lib->deterministic_hash($nik_kirim);
-                $dipakai = $this->db->where('nik_lookup_hash', $sidik)
-                    ->where('id !=', $user_id)->count_all_results('usr_akun');
-                if ($dipakai > 0) {
-                    $this->session->set_flashdata('error',
-                        'NIK ini sudah terdaftar pada akun lain. Satu NIK hanya untuk satu akun.');
+                // Penjaga yang sama dengan onboarding dan pendataan: usr_akun DAN sf_profil_warga.
+                $this->load->model('Housing_assessment_model');
+                $ikatan = $this->Housing_assessment_model->cek_ikatan_nik($user_id, $sidik);
+                if ($ikatan !== NULL) {
+                    $this->session->set_flashdata('error', $ikatan['message']);
                     redirect('akun/profil');
                     return;
                 }

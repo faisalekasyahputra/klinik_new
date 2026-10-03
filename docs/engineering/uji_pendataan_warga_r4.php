@@ -56,9 +56,11 @@ function login($email) {
     $s = new Session(); $s->get('Auth/login'); $r = $s->post('Auth/do_login', ['email' => $email, 'password' => PASSWORD]);
     wajib($r['status'] === 200 && (json_decode($r['body'], TRUE)['status'] ?? '') === 'success', "Login $email"); $s->get('warga/pendataan'); return $s;
 }
-function make_user($db, $suffix) {
+/* Nama akun sama dengan nama fixture: sejak 3 Okt 2026 lookup ber-akun mengikat NIK hanya kalau
+   nama lengkap akun dan tanggal lahir cocok dengan data SIMPERUM (Simperum_gateway::lookup). */
+function make_user($db, $suffix, $nama = 'Uji R4') {
     $email = "uji_r4_{$suffix}_" . time() . '_' . mt_rand(1000, 9999) . '@example.test';
-    $id = $db->run("INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at) VALUES (?,?,'Uji R4',?,'warga','active',1,NOW())", [$email, password_hash(PASSWORD, PASSWORD_BCRYPT), "uji_r4_{$suffix}"]);
+    $id = $db->run("INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at) VALUES (?,?,?,?,'warga','active',1,NOW())", [$email, password_hash(PASSWORD, PASSWORD_BCRYPT), $nama, "uji_r4_{$suffix}"]);
     $GLOBALS['users'][] = $id; return [$id, $email];
 }
 /**
@@ -168,7 +170,7 @@ preserve_rate_key($db, 'warga_lookup', 'nik', hash_hmac('sha256', '0000000000000
 nik_bebas($db, $env, '0000000000000001');
 
 // Existing house: lookup → langkah 1/2 → bangunan → sanitasi → lokasi.
-[$existingUser, $existingEmail] = make_user($db, 'existing'); $existing = login($existingEmail);
+[$existingUser, $existingEmail] = make_user($db, 'existing', 'Warga Simulasi RTLH'); $existing = login($existingEmail);
 $r = $existing->post('warga/pendataan', ['action'=>'lookup','nik'=>'0000000000000001','birth_date'=>'1980-01-01']); wajib(in_array($r['status'], [302,303], TRUE), 'Lookup existing redirect');
 $d = draft($db, $existingUser); wajib($d['langkah_sekarang'] === 'housing_family', 'Existing masuk isian matriks');
 $d = maju_ke_detail($existing, $db, $existingUser, 'house_owned'); wajib($d['langkah_sekarang'] === 'housing_family_detail', 'Existing sampai langkah detail');
@@ -181,7 +183,7 @@ $san=['ada_jendela'=>'1','ada_ventilasi'=>'1','sumber_air'=>'well','penggunaan_k
 $r=post_step($existing,$d,'sanitation',$san); wajib(in_array($r['status'],[302,303],TRUE),'Existing simpan sanitasi'); $d=draft($db,$existingUser); wajib($d['langkah_sekarang']==='location_evidence','Existing menuju lokasi');
 
 // Candidate land: branch skips building/sanitation and encrypts address/coordinates.
-[$landUser,$landEmail]=make_user($db,'land'); $land=login($landEmail); $land->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000003','birth_date'=>'1988-03-03']); $d=maju_ke_detail($land,$db,$landUser); post_step($land,$d,'housing_family_detail',citizen_fields()+housing_fields('rent','1')); $d=draft($db,$landUser); wajib($d['jalur_penilaian']==='candidate_land' && $d['langkah_sekarang']==='candidate_land','Calon lahan melewati bangunan/sanitasi');
+[$landUser,$landEmail]=make_user($db,'land','Warga Simulasi Calon Lahan'); $land=login($landEmail); $land->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000003','birth_date'=>'1988-03-03']); $d=maju_ke_detail($land,$db,$landUser); post_step($land,$d,'housing_family_detail',citizen_fields()+housing_fields('rent','1')); $d=draft($db,$landUser); wajib($d['jalur_penilaian']==='candidate_land' && $d['langkah_sekarang']==='candidate_land','Calon lahan melewati bangunan/sanitasi');
 $landData=['candidate_land_address'=>'Alamat Tanah Uji Rahasia','status_lahan_calon'=>'hm','asal_lahan_calon'=>'inheritance','hubungan_pemilik_lahan'=>'parent','panjang_lahan_m'=>'8','lebar_lahan_m'=>'12'];
 $r=post_step($land,$d,'candidate_land',$landData); wajib(in_array($r['status'],[302,303],TRUE),'Calon lahan tersimpan'); $d=draft($db,$landUser); wajib($d['langkah_sekarang']==='location_evidence' && (float)$d['luas_lahan_m2']===96.0,'Area tanah dihitung server');
 $raw=$db->row('SELECT alamat_lahan_calon_ciphertext FROM sf_penilaian_perumahan WHERE id=?',[$d['id']]); cek(strpos((string)$raw['alamat_lahan_calon_ciphertext'],'Alamat Tanah Uji Rahasia')===FALSE,'Alamat tanah tidak plaintext di DB');
@@ -189,7 +191,7 @@ $raw=$db->row('SELECT alamat_lahan_calon_ciphertext FROM sf_penilaian_perumahan 
 // Dulu: jalur `financing` melompati kedua modul cabang. Sejak 157e275 (8 Sep 2026) wizard hanya
 // punya DUA cabang, jadi penyewa tanpa lahan lain pun masuk calon lahan; `financing` tinggal jenis
 // yang sah di model untuk draft lama. Yang dijaga: jalur itu tidak bisa dicapai lagi dari wizard.
-[$financeUser,$financeEmail]=make_user($db,'finance'); $finance=login($financeEmail); $finance->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000004','birth_date'=>'1987-04-04']); $d=maju_ke_detail($finance,$db,$financeUser); post_step($finance,$d,'housing_family_detail',citizen_fields()+housing_fields('rent','0')); $d=draft($db,$financeUser); wajib($d['jalur_penilaian']==='candidate_land' && $d['langkah_sekarang']==='candidate_land','Penyewa tanpa lahan lain masuk cabang calon lahan - jalur financing tidak bisa dicapai dari wizard');
+[$financeUser,$financeEmail]=make_user($db,'finance','Warga Simulasi Pembiayaan'); $finance=login($financeEmail); $finance->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000004','birth_date'=>'1987-04-04']); $d=maju_ke_detail($finance,$db,$financeUser); post_step($finance,$d,'housing_family_detail',citizen_fields()+housing_fields('rent','0')); $d=draft($db,$financeUser); wajib($d['jalur_penilaian']==='candidate_land' && $d['langkah_sekarang']==='candidate_land','Penyewa tanpa lahan lain masuk cabang calon lahan - jalur financing tidak bisa dicapai dari wizard');
 
 // Coordinates and evidence upload/replace/IDOR on existing draft.
 $d=draft($db,$existingUser); $r=post_step($existing,$d,'location_evidence',['location_lat'=>'-7.123456','location_lng'=>'110.123456','akurasi_lokasi_m'=>'8']); wajib(in_array($r['status'],[302,303],TRUE),'Koordinat tersimpan'); $d=draft($db,$existingUser); $raw=$db->row('SELECT geo_lat_ciphertext,geo_lng_ciphertext FROM sf_penilaian_perumahan WHERE id=?',[$d['id']]); cek(strpos($raw['geo_lat_ciphertext'],'-7.123456')===FALSE && strpos($raw['geo_lng_ciphertext'],'110.123456')===FALSE,'Koordinat tidak plaintext di DB');

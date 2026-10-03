@@ -31,25 +31,28 @@ class Simperum_gateway {
     }
 
     /**
-     * @param bool $tanpa_tgl_lahir Lewati pengaman tanggal lahir.
+     * @param int|null $requested_by Akun yang ingin MENGIKAT NIK ini dan melihat datanya.
+     * @param bool $tanpa_tgl_lahir Lewati pengaman tanggal lahir; hanya berlaku TANPA $requested_by.
      *
-     * BUTIR 5 PUTARAN 2, dan bendera ini sengaja dibuat SEMPIT. Dinas meminta
-     * tanggal lahir dihilangkan dari layar Cek Data Rumah; keputusan itu
-     * dikonfirmasi user 11 Agt 2026 ("pakai yang terbaru, manut dinas"),
-     * membalik keputusan 5 Agt yang mempertahankannya.
+     * Dua bentuk pemakaian, dan batasnya ditegakkan di sini, bukan di pemanggil:
      *
-     * Yang TIDAK dilakukan: melonggarkan gateway untuk semua pemanggil.
-     * `Warga::pendataan()` memakai `lookup()` yang sama, dan di sana tanggal
-     * lahir bukan formalitas melainkan pengaman anti-penelusuran. Melepasnya
-     * di satu layar adalah keputusan dinas; melepasnya di seluruh sistem
-     * adalah kelalaian kami. Karena itu bendera ini harus DIMINTA secara
-     * eksplisit, dan hanya `Cek_Rtlh` yang memintanya.
+     * - Dengan $requested_by (Warga::lookup): BUKTI KEPEMILIKAN wajib (keputusan pemilik produk
+     *   3 Okt 2026). Nama lengkap akun dan tanggal lahir dicocokkan dengan data sumber sebelum
+     *   profil diikat atau data apa pun dikembalikan; percobaan gagal dibatasi per akun dan per
+     *   NIK (`verifikasi_nik`); NIK milik akun lain ditolak sebelum pencocokan. $tanpa_tgl_lahir
+     *   diabaikan.
+     * - Tanpa $requested_by (Cek_Rtlh, cek anonim, alat CLI): tidak mengikat apa pun dan hanya
+     *   mengembalikan status pencarian serta status intervensi. Bendera tanggal lahir di sini
+     *   sisa butir 5 putaran 2 (dinas mencabut tanggal lahir dari layar Cek Data Rumah).
      */
     public function lookup($nik, $birth_date, $requested_by = NULL, $tanpa_tgl_lahir = FALSE)
     {
         $this->internal_profile = [];
         $nik = preg_replace('/\D+/', '', (string) $nik);
         $birth_date = trim((string) $birth_date);
+        if ((int) $requested_by > 0) {
+            $tanpa_tgl_lahir = FALSE;
+        }
         if ( ! preg_match('/^\d{16}$/', $nik)) {
             return $this->response('invalid', 'NIK tidak valid.');
         }
@@ -63,7 +66,6 @@ class Simperum_gateway {
 
         $cached = $this->CI->Housing_assessment_model->get_active_source_snapshot($nik, $this->mode);
         if ($cached) {
-            $this->cermin($nik, $requested_by, $cached);
             return $this->from_snapshot($cached, $birth_date, TRUE, $requested_by);
         }
 
@@ -78,7 +80,6 @@ class Simperum_gateway {
         try {
             $cached = $this->CI->Housing_assessment_model->get_active_source_snapshot($nik, $this->mode);
             if ($cached) {
-                $this->cermin($nik, $requested_by, $cached);
                 return $this->from_snapshot($cached, $birth_date, TRUE, $requested_by);
             }
 
@@ -110,7 +111,6 @@ class Simperum_gateway {
                 'kunci_rekaman_sumber' => $payload['kunci_rekaman_sumber'] ?? $payload['fixture_id'] ?? NULL,
                 'payload' => $payload,
             ];
-            $this->cermin($nik, $requested_by, $snapshot);
             return $this->from_snapshot($snapshot, $birth_date, FALSE, $requested_by);
         } finally {
             $this->CI->db->query('SELECT RELEASE_LOCK(?)', [$lock_name]);
@@ -178,8 +178,8 @@ class Simperum_gateway {
     }
 
     /**
-     * Cermin sf_data_simperum dari hasil lookup(). Pencarian anonim ($requested_by kosong/0: Cek_Rtlh,
-     * lookup tanpa login) tidak pernah menulis; model menolak NIK yang bukan milik akun sendiri.
+     * Cermin sf_data_simperum, dipanggil from_snapshot() HANYA sesudah kepemilikan NIK terverifikasi.
+     * Model juga menolak NIK yang belum terverifikasi untuk akun itu (nik_terikat_akun).
      * Kegagalan cermin tidak boleh menggagalkan pencarian warga.
      */
     private function cermin($nik, $requested_by, array $snapshot)
@@ -724,7 +724,12 @@ class Simperum_gateway {
         }
 
         $canonical = $this->normalize($payload);
-        if ( ! $this->lewati_tgl_lahir && ! $this->birth_date_matches($canonical['nik'] ?? '', $birth_date, $payload)) {
+        if ($requested_by) {
+            $ditolak = $this->verifikasi_pemilik((int) $requested_by, (string) ($canonical['nik'] ?? ''), $birth_date, $payload);
+            if ($ditolak !== NULL) {
+                return $ditolak;
+            }
+        } elseif ( ! $this->lewati_tgl_lahir && ! $this->birth_date_matches($canonical['nik'] ?? '', $birth_date, $payload)) {
             return $this->response('not_found', 'NIK dan tanggal lahir tidak cocok.');
         }
         // Sumber tanpa tanggal lahir (API, dan fixture berbentuk API di mode simulasi):
@@ -761,6 +766,8 @@ class Simperum_gateway {
                 // buntu total: penyebabnya hanya bisa ditelusuri lewat query DB.
                 return $this->response('error', $saved['message'] ?? 'Profil belum dapat disimpan dengan aman.', [], $saved['code'] ?? 'profile_failed');
             }
+            $this->CI->Housing_assessment_model->tandai_nik_terverifikasi($requested_by);
+            $this->cermin($canonical['nik'] ?? '', $requested_by, $snapshot);
         }
 
         return $this->response('found', $this->mode === 'api'
@@ -771,8 +778,78 @@ class Simperum_gateway {
             'kunci_rekaman_sumber' => $snapshot['kunci_rekaman_sumber'] ?? NULL,
             'cache_hit' => $cache_hit,
             'missing_fields' => array_values($payload['missing_fields'] ?? []),
-            'profile' => $this->mask_profile($canonical),
+            // Tanpa akun terverifikasi hanya status intervensi yang keluar (Cek RTLH, cek anonim).
+            'profile' => $requested_by
+                ? $this->mask_profile($canonical)
+                : ['status_intervensi' => $this->mask_profile($canonical)['status_intervensi']],
         ]);
+    }
+
+    /**
+     * Bukti kepemilikan NIK sebelum diikat ke $user_id. NULL bila lolos, selain itu respons
+     * penolakan yang tidak memuat data sumber apa pun dan tidak menyebut nilai yang diharapkan.
+     *
+     * Urutan: NIK milik akun lain atau berbeda dari NIK akun ditolak lebih dulu (bukan percobaan
+     * gagal), lalu batas percobaan gagal per akun dan per NIK, baru pencocokan nama + tanggal lahir.
+     */
+    private function verifikasi_pemilik($user_id, $nik, $birth_date, array $payload)
+    {
+        $model = $this->CI->Housing_assessment_model;
+        $nik_hash = $this->CI->encryption_lib->deterministic_hash($nik);
+        $ikatan = $model->cek_ikatan_nik($user_id, $nik_hash);
+        if ($ikatan !== NULL) {
+            return $this->response('error', $ikatan['message'], [], $ikatan['code']);
+        }
+        $akun = $this->CI->db->select('nama, nik_lookup_hash')->get_where('usr_akun', ['id' => $user_id])->row_array();
+        if ( ! $akun) {
+            return $this->response('error', 'Akun tidak ditemukan.', [], 'akun_tidak_ada');
+        }
+        if ( ! empty($akun['nik_lookup_hash']) && ! hash_equals((string) $akun['nik_lookup_hash'], (string) $nik_hash)) {
+            return $this->response('error', 'NIK ini berbeda dengan NIK yang terdaftar di akun Anda. Gunakan NIK akun Anda sendiri.', [], 'nik_bukan_milik_akun');
+        }
+
+        $this->CI->load->library('Rate_limiter');
+        $konteks = ['account_id' => $user_id, 'nik' => $nik];
+        $laju = $this->CI->rate_limiter->inspect('verifikasi_nik', $konteks);
+        if (empty($laju['success']) || empty($laju['allowed'])) {
+            return $this->response('error', 'Terlalu banyak percobaan verifikasi NIK yang tidak cocok. Silakan coba lagi besok, atau sampaikan melalui menu Aduan bila data Anda memang benar.', [
+                'retry_after' => (int) ($laju['retry_after'] ?? 0),
+            ], 'verifikasi_terkunci');
+        }
+
+        // Keduanya selalu dihitung (tanpa hubung-singkat), supaya waktu respons tidak membedakannya.
+        $nama_cocok = self::nama_sama((string) ($akun['nama'] ?? ''), (string) ($payload['identity']['full_name'] ?? ''));
+        $tanggal_cocok = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $birth_date) === 1
+            && $this->birth_date_matches($nik, (string) $birth_date, $payload);
+        if ($nama_cocok && $tanggal_cocok) {
+            return NULL;
+        }
+        $this->CI->rate_limiter->hit('verifikasi_nik', $konteks);
+        return $this->response('mismatch', 'Nama lengkap di akun Anda atau tanggal lahir tidak cocok dengan data NIK ini. Periksa tanggal lahir dan pastikan nama di Profil Saya sama dengan nama di KTP.', [], 'verifikasi_tidak_cocok');
+    }
+
+    /**
+     * Nama sama setelah dinormalkan: huruf besar, entitas HTML dibuka (nama akun disimpan lewat
+     * html_escape), gelar sesudah koma dibuang, tanda baca jadi spasi (apostrof dihapus),
+     * spasi dirapatkan, dan sapaan/gelar umum di depan dibuang. Tidak ada pencocokan longgar:
+     * hasilnya harus sama persis. Dibandingkan lewat sidik supaya waktu tidak bergantung isi.
+     */
+    public static function nama_sama($a, $b)
+    {
+        $normal = static function ($nama) {
+            $nama = mb_strtoupper(html_entity_decode((string) $nama, ENT_QUOTES | ENT_HTML5, 'UTF-8'), 'UTF-8');
+            $nama = explode(',', $nama)[0];
+            $nama = preg_replace(["/['`\x{2019}]/u", '/[^\p{L}\p{N}]+/u'], ['', ' '], $nama);
+            $kata = preg_split('/\s+/', trim($nama), -1, PREG_SPLIT_NO_EMPTY);
+            $sapaan = ['H', 'HJ', 'HAJI', 'HAJAH', 'KH', 'DR', 'DRS', 'DRA', 'IR', 'PROF', 'BPK', 'BAPAK', 'IBU', 'SDR', 'SDRI', 'NY', 'TN', 'ALM', 'ALMH'];
+            while (count($kata) > 1 && in_array($kata[0], $sapaan, TRUE)) {
+                array_shift($kata);
+            }
+            return implode(' ', $kata);
+        };
+        $a = $normal($a);
+        $b = $normal($b);
+        return $a !== '' && $b !== '' && hash_equals(hash('sha256', $a), hash('sha256', $b));
     }
 
     private function birth_date_matches($nik, $birth_date, array $payload)
