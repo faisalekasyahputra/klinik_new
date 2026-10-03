@@ -47,15 +47,33 @@ class Auth_model extends CI_Model {
     }
 
     /**
-     * Find user by email or username.
-     * Returns user row as object or NULL.
+     * Username: huruf kecil, angka, titik, garis bawah, tanda hubung; 3-40 karakter (isian formulir
+     * maks. 30, username buatan sistem bisa lebih panjang). Tanpa "@", jadi username tidak pernah
+     * bisa sama dengan email akun mana pun.
+     */
+    const POLA_USERNAME = '/^[a-z0-9_.-]{3,40}$/';
+
+    /**
+     * Alasan username ditolak untuk akun $user_id, atau NULL bila boleh dipakai. Dipakai onboarding
+     * dan Profil Saya.
+     */
+    public function username_ditolak($username, $user_id) {
+        if ( ! preg_match(self::POLA_USERNAME, (string) $username)) {
+            return 'Username hanya boleh huruf kecil, angka, titik, garis bawah, atau tanda hubung (3-40 karakter), tanpa @.';
+        }
+        $dipakai = $this->db->group_start()->where('nama_pengguna', $username)->or_where('email', $username)->group_end()
+            ->where('id !=', (int) $user_id)->count_all_results('usr_akun');
+        return $dipakai > 0 ? 'Username sudah digunakan, silakan pilih yang lain.' : NULL;
+    }
+
+    /**
+     * Cari akun dari isian login. Isian ber-"@" hanya dicocokkan ke kolom email, selain itu hanya ke
+     * username: satu isian tidak pernah bisa cocok dengan dua akun (dulu `email = X OR username = X`
+     * mengambil baris pertama, sehingga username yang sama dengan email akun lain membelokkan login).
      */
     public function find_by_login($login_id) {
-        $this->db->group_start();
-        $this->db->where('email', $login_id);
-        $this->db->or_where('nama_pengguna', $login_id);
-        $this->db->group_end();
-        return $this->db->get('usr_akun')->row();
+        $kolom = strpos((string) $login_id, '@') !== FALSE ? 'email' : 'nama_pengguna';
+        return $this->db->where($kolom, $login_id)->get('usr_akun')->row();
     }
 
     /**

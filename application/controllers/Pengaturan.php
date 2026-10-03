@@ -470,12 +470,13 @@ class Pengaturan extends MY_Controller {
         }
         $phone = (string) $this->input->post('phone');
 
-        // Check unique username if provided
+        // Username baru: format tanpa "@" dan unik terhadap username DAN email akun lain. Username lama
+        // yang tidak diubah tetap boleh disimpan walau dibuat sebelum aturan format ini.
         if (!empty($username)) {
-            $this->db->where('nama_pengguna', $username);
-            $this->db->where('id !=', $user_id);
-            if ($this->db->count_all_results('usr_akun') > 0) {
-                $this->session->set_flashdata('error', 'Username sudah digunakan, silakan pilih yang lain.');
+            $lama = (string) ($this->Auth_model->find_by_id($user_id)->nama_pengguna ?? '');
+            $galat = $username === $lama ? NULL : $this->Auth_model->username_ditolak($username, $user_id);
+            if ($galat !== NULL) {
+                $this->session->set_flashdata('error', $galat);
                 redirect('akun/profil');
                 return;
             }

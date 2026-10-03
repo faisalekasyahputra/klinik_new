@@ -730,11 +730,12 @@ class Auth extends MY_Controller {
             $password_hash = password_hash($password, PASSWORD_BCRYPT);
         }
 
-        // Check if username is unique
-        $this->db->where('nama_pengguna', $username);
-        $this->db->where('id !=', $user_id);
-        if ($this->db->count_all_results('usr_akun') > 0) {
-            $this->_onboarding_fail('Username sudah digunakan, silakan pilih yang lain.', 'Username sudah dipakai');
+        // Username: format tanpa "@" dan unik terhadap username DAN email akun lain (Auth_model).
+        // Username yang sudah tersimpan (buatan sistem) tetap boleh dipakai apa adanya.
+        $galat_username = $username === (string) ($user_record->nama_pengguna ?? '')
+            ? NULL : $this->auth_model->username_ditolak($username, $user_id);
+        if ($galat_username !== NULL) {
+            $this->_onboarding_fail($galat_username, 'Username tidak dapat dipakai');
             return;
         }
 
