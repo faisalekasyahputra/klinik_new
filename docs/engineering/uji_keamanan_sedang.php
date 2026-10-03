@@ -127,7 +127,9 @@ function ember_pasangan($ip, $login) { pinjam_ember(hash('sha256', 'login_akun:k
 
 $TAG = 'ujisedang' . bin2hex(random_bytes(3));
 $SANDI = 'Uji#' . bin2hex(random_bytes(5)) . 'A1';
-$HASH = password_hash($SANDI, PASSWORD_BCRYPT);
+// Biaya 10 = bawaan PHP Apache lokal (8.2). Runner memakai `php` di PATH (bisa 8.4, bawaan 12): tanpa biaya
+// eksplisit akun uji jadi lebih lambat dari akun sungguhan dan uji waktu G2 merah semu.
+$HASH = password_hash($SANDI, PASSWORD_BCRYPT, ['cost' => 10]);
 $MULAI = date('Y-m-d H:i:s');
 $akun_uji = [];
 function akun_baru($nama, array $kolom = []) {
@@ -225,7 +227,8 @@ try {
         $dir = private_uploads_dir('warga_assessment', $pid);
         @mkdir($dir, 0755, TRUE);
         $bersih[] = function () use ($dir) { foreach (glob($dir . '*') as $f) { @unlink($f); } @rmdir($dir); };
-        $gambar = imagecreatetruecolor(8, 8); ob_start(); imagejpeg($gambar); $jpeg = ob_get_clean();
+        // JPEG 4x4 abu-abu (dibuat sekali dengan GD); tertanam supaya tidak bergantung pada GD ber-JPEG di PHP CLI.
+        $jpeg = base64_decode('/9j/4AAQSkZJRgABAQEAYABgAAD//gA7Q1JFQVRPUjogZ2QtanBlZyB2MS4wICh1c2luZyBJSkcgSlBFRyB2ODApLCBxdWFsaXR5ID0gNTAK/9sAQwAQCwwODAoQDg0OEhEQExgoGhgWFhgxIyUdKDozPTw5Mzg3QEhcTkBEV0U3OFBtUVdfYmdoZz5NcXlwZHhcZWdj/9sAQwEREhIYFRgvGhovY0I4QmNjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Nj/8AAEQgABAAEAwEiAAIRAQMRAf/EAB8AAAEFAQEBAQEBAAAAAAAAAAABAgMEBQYHCAkKC//EALUQAAIBAwMCBAMFBQQEAAABfQECAwAEEQUSITFBBhNRYQcicRQygZGhCCNCscEVUtHwJDNicoIJChYXGBkaJSYnKCkqNDU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6g4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2drh4uPk5ebn6Onq8fLz9PX29/j5+v/EAB8BAAMBAQEBAQEBAQEAAAAAAAABAgMEBQYHCAkKC//EALURAAIBAgQEAwQHBQQEAAECdwABAgMRBAUhMQYSQVEHYXETIjKBCBRCkaGxwQkjM1LwFWJy0QoWJDThJfEXGBkaJicoKSo1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoKDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uLj5OXm5+jp6vLz9PX29/j5+v/aAAwDAQACEQMRAD8A8/ooooA//9k=');
         foreach (['id_card_photo', 'family_card_photo', 'self_photo', 'house_front_photo'] as $jenis) {
             $nama = $jenis . '_' . bin2hex(random_bytes(4)) . '.jpg';
             file_put_contents($dir . $nama, $jpeg);
