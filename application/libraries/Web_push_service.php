@@ -39,7 +39,9 @@ class Web_push_service {
         ]];
         try {
             // + verifikasi sertifikat dan TLS 1.2 ke atas (form keamanan poin 8.2), lihat transport_helper.php.
-            $webPush = new WebPush($auth, ['TTL' => 3600, 'urgency' => 'normal'], 20, ['timeout' => 8, 'connect_timeout' => 4] + transport_guzzle_options());
+            // allow_redirects mati: layanan push tidak pernah mengalihkan, dan mengikuti pengalihan membuka
+            // jalan dari endpoint luar ke alamat internal (bawaan Guzzle mengikuti sampai 5 kali).
+            $webPush = new WebPush($auth, ['TTL' => 3600, 'urgency' => 'normal'], 20, ['timeout' => 8, 'connect_timeout' => 4, 'allow_redirects' => FALSE] + transport_guzzle_options());
             $webPush->setReuseVAPIDHeaders(TRUE);
             $ids = [];
             $payload = json_encode([

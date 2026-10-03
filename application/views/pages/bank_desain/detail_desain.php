@@ -17,7 +17,7 @@
                 <a href="https://apiternak.krsjawa3.com/<?= htmlspecialchars($design['path_file'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 rounded-xl bg-[color:var(--portal-brand)] px-4 py-3 text-sm font-bold text-[color:var(--portal-bg)] transition-colors hover:opacity-85">
                     <i class="fa-solid fa-download"></i> Unduh Desain
                 </a>
-                <?php if (!empty($design['video']['link_video'])): ?>
+                <?php if (!empty($design['video']['link_video']) && transport_is_https_url($design['video']['link_video'])): ?>
                 <a href="<?= htmlspecialchars($design['video']['link_video'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center gap-2 rounded-xl border border-[#ff0000]/30 px-4 py-3 text-sm font-bold text-[#ff0000] transition-colors hover:bg-[#ff0000] hover:text-white">
                     <i class="fa-brands fa-youtube"></i> Lihat Video
                 </a>

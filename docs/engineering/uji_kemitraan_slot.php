@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji slot magang - data, pengelolaan, dan penegakannya (migrasi 20260701000026).
@@ -77,7 +78,7 @@ function env_config($path) {
     return $out;
 }
 
-$env = env_config(APP_ROOT . '/.env');
+$env = env_config(env_berkas_path(APP_ROOT));
 $db = new mysqli($env['DB_HOST'] ?? 'localhost', $env['DB_USER'] ?? 'root',
     $env['DB_PASS'] ?? '', $env['DB_NAME'] ?? 'klinikpkp');
 if ($db->connect_error) { fwrite(STDERR, "Koneksi DB gagal: {$db->connect_error}\n"); exit(1); }

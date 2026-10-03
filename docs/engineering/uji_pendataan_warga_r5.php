@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji R5 ruleset rekomendasi warga melalui HTTP Apache + pemeriksaan DB.
@@ -8,7 +9,7 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  * Skrip hanya membuat akun/draft berawalan uji_r5_ dan menghapusnya saat selesai.
  */
 define('BASE_URL', rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/'));
-define('ENV_PATH', dirname(__DIR__, 2) . '/.env');
+define('ENV_PATH', env_berkas_path(dirname(__DIR__, 2)));
 define('PASSWORD', getenv('UJI_WARGA_PASSWORD') ?: 'UjiWargaR5!');
 define('BASEPATH', dirname(__DIR__, 2) . '/system/');
 require dirname(__DIR__, 2) . '/application/libraries/Warga_ruleset.php';

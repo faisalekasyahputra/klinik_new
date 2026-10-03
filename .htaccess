@@ -11,6 +11,10 @@
     # staging DAN production - password DB tiga lingkungan, KPKP_DATA_KEY,
     # KPKP_DATA_PEPPER, GOOGLE_CLIENT_SECRET, dan GEMINI_API_KEY bisa diunduh
     # siapa saja. Lihat docs/engineering/PEMBACAAN_CODEBASE_26JUL2026.md.
+    # Tempat .env yang dianjurkan di server adalah satu tingkat di atas
+    # public_html (application/helpers/env_berkas_helper.php): bila ada, berkas
+    # itu yang dipakai dan tidak tersaji walau aturan ini hilang. Aturan tetap
+    # dipasang untuk .env di akar aplikasi dan berkas bertitik lain.
     #
     # `.well-known` SENGAJA dikecualikan lewat negative lookahead: direktori itu
     # dipakai proses perpanjangan sertifikat SSL (ACME). Memblokirnya membuat

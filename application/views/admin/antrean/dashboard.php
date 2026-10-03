@@ -135,7 +135,7 @@ $filter_html = ob_get_clean();
                         <td colspan="6" class="px-6 py-16 text-center">
                             <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-black/40 border border-gray-200 dark:border-white/5 flex items-center justify-center text-2xl text-gray-300 dark:text-white/20"><i class="ph ph-tray"></i></div>
                             <p class="text-base font-medium text-gray-500 dark:text-white/60">Data tidak ditemukan</p>
-                            <p class="text-sm mt-1 text-gray-400 dark:text-brand-muted"><?= ($table['q'] !== '' || $filter_status || !empty($filter_tanpa_wilayah)) ? 'Tidak ada yang cocok dengan pencarian/filter ini.' : html_escape($empty_text) ?></p>
+                            <p class="text-sm mt-1 text-gray-400 dark:text-brand-muted"><?= ($table['q'] !== '' || ! empty($table['cari_label']) || $filter_status || !empty($filter_tanpa_wilayah)) ? 'Tidak ada yang cocok dengan pencarian/filter ini.' : html_escape($empty_text) ?></p>
                         </td>
                     </tr>
                     <?php else: foreach ($queue as $row):

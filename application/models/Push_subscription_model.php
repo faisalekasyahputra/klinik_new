@@ -11,13 +11,34 @@ class Push_subscription_model extends CI_Model {
         $this->load->library('encryption_lib');
     }
 
+    /**
+     * Endpoint hanya boleh milik layanan Web Push peramban: FCM (Chrome, Edge berbasis Chromium, Android),
+     * Mozilla autopush (Firefox), Apple (Safari), dan WNS (Windows). Https, tanpa kredensial di URL, port
+     * bawaan, host berupa nama (bukan IP). Tanpa ini endpoint bebas membuat server menembak alamat
+     * pilihan pengguna setiap kali notifikasi dikirim.
+     */
+    public static function endpoint_sah($url)
+    {
+        $p = parse_url((string) $url);
+        if ( ! is_array($p) || strtolower($p['scheme'] ?? '') !== 'https' || empty($p['host'])
+            || isset($p['user']) || isset($p['pass']) || (isset($p['port']) && (int) $p['port'] !== 443)) {
+            return FALSE;
+        }
+        $host = rtrim(strtolower($p['host']), '.');
+        if (filter_var(trim($host, '[]'), FILTER_VALIDATE_IP)) { return FALSE; }
+        if (in_array($host, ['fcm.googleapis.com', 'updates.push.services.mozilla.com', 'web.push.apple.com'], TRUE)) {
+            return TRUE;
+        }
+        return (bool) preg_match('/^[a-z0-9-]+(\.[a-z0-9-]+)*\.(push\.apple\.com|notify\.windows\.com)$/', $host);
+    }
+
     public function simpan($user_id, array $subscription, $user_agent = NULL)
     {
         $endpoint = trim((string) ($subscription['endpoint'] ?? ''));
         $keys = isset($subscription['keys']) && is_array($subscription['keys']) ? $subscription['keys'] : [];
         $p256dh = trim((string) ($keys['p256dh'] ?? ''));
         $auth = trim((string) ($keys['auth'] ?? ''));
-        if ($endpoint === '' || strlen($endpoint) > 4096 || ! preg_match('#^https://#i', $endpoint)
+        if ($endpoint === '' || strlen($endpoint) > 4096 || ! self::endpoint_sah($endpoint)
             || $p256dh === '' || strlen($p256dh) > 255 || $auth === '' || strlen($auth) > 255) {
             return ['success' => FALSE, 'message' => 'Data langganan perangkat tidak valid.'];
         }
@@ -94,6 +115,8 @@ class Push_subscription_model extends CI_Model {
                     $row['endpoint'] = $this->encryption_lib->decrypt($row['endpoint']);
                     $row['public_key'] = $this->encryption_lib->decrypt($row['public_key']);
                     $row['auth_token'] = $this->encryption_lib->decrypt($row['auth_token']);
+                    // Langganan lama dari sebelum daftar izin host tidak pernah ditembak.
+                    if ( ! self::endpoint_sah($row['endpoint'])) { continue; }
                     $rows[(int) $row['id']] = $row;
                 } catch (Throwable $e) {
                     log_message('error', 'Langganan Web Push #' . (int) $row['id']

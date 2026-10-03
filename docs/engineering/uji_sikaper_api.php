@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Penjaga integrasi API Sikaper (Disperakim Jateng).
@@ -30,7 +31,7 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  */
 
 define('BASEPATH', dirname(__DIR__, 2) . DIRECTORY_SEPARATOR);
-define('ENV_PATH', dirname(__DIR__, 2) . '/.env');
+define('ENV_PATH', env_berkas_path(dirname(__DIR__, 2)));
 define('CONFIG_PATH', dirname(__DIR__, 2) . '/application/config/sikaper.php');
 define('LIB_PATH', dirname(__DIR__, 2) . '/application/libraries/Sikaper_api.php');
 

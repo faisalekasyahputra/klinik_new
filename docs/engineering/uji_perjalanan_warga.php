@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji perjalanan Warga ↔ Admin Kabupaten/Kota, dan penutupan jalur diagnosa lama.
@@ -19,7 +20,7 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  */
 
 define('BASE_URL', rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/'));
-define('ENV_PATH', dirname(__DIR__, 2) . '/.env');
+define('ENV_PATH', env_berkas_path(dirname(__DIR__, 2)));
 define('ADMIN_PASSWORD', getenv('UJI_ADMIN_PASSWORD') ?: 'UjiAdmin123!');
 
 $GLOBALS['uji_total'] = 0;

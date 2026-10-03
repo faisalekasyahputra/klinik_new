@@ -15,6 +15,11 @@ $config['rate_limit_policies'] = [
     // hit, pola login), per akun dan per IP (keputusan pemilik produk 29 Sep 2026).
     'profile_password' => ['limit' => 5, 'window' => 3600, 'dimensions' => ['account', 'ip']],
     'privacy_deletion_request' => ['limit' => 2, 'window' => 86400, 'dimensions' => ['account']],
+    // Formulir aduan (Umum::simpan_aduan): tiap kiriman masuk antrean triase bersama dan memicu push ke
+    // semua super admin. Per akun 5/jam; per IP lebih longgar (20/jam) karena satu kantor kelurahan atau
+    // CGNAT seluler berbagi alamat. Dua kebijakan, bukan satu berdimensi ganda, supaya batasnya berbeda.
+    'aduan_kirim'    => ['limit' => 5,  'window' => 3600, 'dimensions' => ['account']],
+    'aduan_kirim_ip' => ['limit' => 20, 'window' => 3600, 'dimensions' => ['ip']],
     'login' => [
         'limit' => 30,
         'window' => 300,

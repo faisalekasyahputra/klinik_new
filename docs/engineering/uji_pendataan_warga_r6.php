@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji R6: submit immutable, antrean wilayah, revisi, dan keputusan admin.
@@ -8,7 +9,7 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  * Env opsional: UJI_BASE_URL, UJI_WARGA_PASSWORD
  */
 define('BASE_URL', rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/'));
-define('ENV_PATH', dirname(__DIR__, 2) . '/.env');
+define('ENV_PATH', env_berkas_path(dirname(__DIR__, 2)));
 define('PASSWORD', getenv('UJI_WARGA_PASSWORD') ?: 'UjiWargaR6!');
 $GLOBALS['total'] = $GLOBALS['gagal'] = 0;
 $GLOBALS['users'] = $GLOBALS['assessments'] = $GLOBALS['snapshots'] = [];

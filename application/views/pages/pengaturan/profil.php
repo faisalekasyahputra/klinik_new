@@ -84,10 +84,10 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
 
                     <div>
                         <label class="<?= $label ?>">Username <span class="text-red-500">*</span></label>
-                        <input type="text" name="username" value="<?= htmlspecialchars($user->nama_pengguna ?? '') ?>" required maxlength="30" pattern="^\S+$"
+                        <input type="text" name="username" value="<?= htmlspecialchars($user->nama_pengguna ?? '') ?>" required maxlength="30" pattern="[^@\s]+" title="Huruf kecil, angka, titik, garis bawah, atau tanda hubung; tanpa spasi dan tanpa @"
                                oninput="this.value = this.value.replace(/\s/g, '').toLowerCase()"
                                class="<?= $isian ?>">
-                        <p class="<?= $petunjuk ?>">Tampil di forum diskusi. Tanpa spasi, maks. 30 karakter.</p>
+                        <p class="<?= $petunjuk ?>">Tampil di forum diskusi. Huruf kecil, angka, titik, garis bawah, atau tanda hubung; tanpa spasi dan tanpa @, maks. 30 karakter.</p>
                     </div>
 
                     <div>

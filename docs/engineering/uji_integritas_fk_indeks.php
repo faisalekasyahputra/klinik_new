@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji migrasi 069: kunci asing yang tadinya diandaikan kode, dan perapian indeks usr_akun.
@@ -45,7 +46,7 @@ $INDEKS = array_map(function ($d) use ($T) {
 }, Migration_Fk_indeks_integritas::INDEKS);
 
 $env = [];
-foreach (@file($root . '/.env', FILE_IGNORE_NEW_LINES) ?: [] as $b) {
+foreach (@file(env_berkas_path($root), FILE_IGNORE_NEW_LINES) ?: [] as $b) {
     $b = trim($b);
     if ($b === '' || $b[0] === '#' || strpos($b, '=') === FALSE) { continue; }
     [$k, $v] = explode('=', $b, 2);

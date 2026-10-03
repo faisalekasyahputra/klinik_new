@@ -134,9 +134,32 @@ if ( ! function_exists('sikumbang_ambil')) {
             if ($ok) {
                 $urai = json_decode($balasan, TRUE);
                 $ok = ! (is_array($urai) && ! empty($urai['error']));
+                // NIK pembeli per unit (nikPemilik/nikBooking di blok bangunan) tidak dipakai aplikasi:
+                // dibuang sebelum menyentuh cache.
+                if ($ok && is_array($urai)) {
+                    [$urai, $n] = sikumbang_buang_nik($urai);
+                    if ($n > 0) { $balasan = json_encode($urai, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); }
+                }
             }
             return [$ok, is_string($balasan) ? $balasan : NULL];
         }, $bendera);
+    }
+}
+
+if ( ! function_exists('sikumbang_buang_nik')) {
+    /**
+     * Buang setiap kunci yang diawali "nik" (huruf besar/kecil bebas) di seluruh kedalaman.
+     * Juga dipakai Penyapu_retensi untuk membersihkan cache yang ditulis sebelum aturan ini.
+     * @return array [data, jumlah kunci yang dibuang]
+     */
+    function sikumbang_buang_nik(array $data)
+    {
+        $n = 0;
+        foreach ($data as $k => $v) {
+            if (is_string($k) && stripos($k, 'nik') === 0) { unset($data[$k]); $n++; continue; }
+            if (is_array($v)) { [$data[$k], $m] = sikumbang_buang_nik($v); $n += $m; }
+        }
+        return [$data, $n];
     }
 }
 

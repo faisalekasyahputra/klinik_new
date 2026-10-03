@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Runner seluruh harness: satu perintah, semua peran, semua skenario.
@@ -96,7 +97,7 @@ echo "Menjalankan " . count($suites) . " suite terhadap " . (getenv('UJI_BASE_UR
  */
 function sensus_akun_uji() {
     $env = [];
-    foreach (@file(dirname(AKAR, 2) . '/.env', FILE_IGNORE_NEW_LINES) ?: [] as $b) {
+    foreach (@file(env_berkas_path(dirname(AKAR, 2)), FILE_IGNORE_NEW_LINES) ?: [] as $b) {
         $b = trim($b);
         if ($b === '' || $b[0] === '#' || strpos($b, '=') === FALSE) { continue; }
         [$k, $v] = explode('=', $b, 2);

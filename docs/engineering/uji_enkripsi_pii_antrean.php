@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji: PII antrean perumahan dan NIK pemohon SRP2 tersimpan terenkripsi (migrasi 067).
@@ -23,7 +24,7 @@ define('BASEPATH', 'x'); define('APPPATH', dirname(__DIR__, 2) . '/application/'
 $root = dirname(__DIR__, 2);
 $B = rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/') . '/';
 $env = [];
-foreach (file($root . '/.env', FILE_IGNORE_NEW_LINES) as $l) { $l = trim($l); if ($l === '' || $l[0] === '#' || ! strpos($l, '=')) continue; [$k, $v] = explode('=', $l, 2); $env[trim($k)] ??= trim($v); if (getenv(trim($k)) === FALSE) putenv(trim($k) . '=' . trim($v)); }
+foreach (file(env_berkas_path($root), FILE_IGNORE_NEW_LINES) as $l) { $l = trim($l); if ($l === '' || $l[0] === '#' || ! strpos($l, '=')) continue; [$k, $v] = explode('=', $l, 2); $env[trim($k)] ??= trim($v); if (getenv(trim($k)) === FALSE) putenv(trim($k) . '=' . trim($v)); }
 require APPPATH . 'libraries/Encryption_lib.php'; $enc = new Encryption_lib();
 mysqli_report(MYSQLI_REPORT_OFF);
 $db = new mysqli($env['DB_HOST'], $env['DB_USER'], $env['DB_PASS'] ?? '', $env['DB_NAME']);
@@ -132,16 +133,18 @@ try {
     }
     $cek(strpos($daftarK, $nikA) === FALSE, 'NIK utuh tidak sampai ke layar admin kab/kota');
 
+    // Kotak cari antrean dikirim POST lalu redirect (keamanan rendah 3 Okt 2026): NIK tidak boleh ke URL.
+    $cari_post = function ($j, $hal, $q) use ($http, $csrf) { return $http($j, $hal, ['q' => $q, 'csrf_kpkp_token' => $csrf($j)]); };
     echo "D. Cari NIK lewat sidik\n";
-    [, $cari] = $http($jS, 'Admin?q=' . $nikA);
+    [, $cari] = $cari_post($jS, 'Admin', $nikA);
     $cek(strpos($cari, $tA) !== FALSE && strpos($cari, $tB) === FALSE, 'Superadmin: NIK utuh 16 digit menemukan tiketnya saja');
-    [, $cari] = $http($jS, 'Admin?q=' . substr($nikA, 0, 12));
+    [, $cari] = $cari_post($jS, 'Admin', substr($nikA, 0, 12));
     $cek(strpos($cari, $tA) === FALSE, 'Potongan NIK tidak cocok (hanya pencocokan utuh lewat sidik)');
-    [, $cari] = $http($jS, 'Admin?q=' . rawurlencode("Warga {$tag}"));
+    [, $cari] = $cari_post($jS, 'Admin', "Warga {$tag}");
     $cek(strpos($cari, $tA) === FALSE, 'Pencarian nama dicabut (nama terenkripsi), tidak diam-diam menyaring di SQL');
-    [, $cari] = $http($jK, 'Admin_Kabkota?q=' . $nikA);
+    [, $cari] = $cari_post($jK, 'Admin_Kabkota', $nikA);
     $cek(strpos($cari, $tA) !== FALSE, 'Admin kab/kota A menemukan NIK wilayahnya sendiri');
-    [, $cari] = $http($jK, 'Admin_Kabkota?q=' . $nikB);
+    [, $cari] = $cari_post($jK, 'Admin_Kabkota', $nikB);
     $cek(strpos($cari, $tB) === FALSE, 'Admin kab/kota A mencari NIK wilayah B: tidak muncul');
 
     echo "E. NIK pemohon SRP2\n";

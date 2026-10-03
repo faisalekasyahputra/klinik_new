@@ -164,6 +164,16 @@ class Umum extends MY_Controller {
 			return;
 		}
 
+		/* Batas laju sendiri (bukan hanya tulis_akun 120/menit): tiap kiriman masuk antrean triase dan
+		   memicu push ke semua super admin. Dihitung sesudah validasi supaya isian salah tidak memakan jatah. */
+		foreach (['aduan_kirim' => ['account_id' => (int) $this->get_user_id()], 'aduan_kirim_ip' => []] as $kebijakan => $konteks) {
+			$rate = $this->rate_limit_consume($kebijakan, $konteks);
+			if (empty($rate['success']) || empty($rate['allowed'])) {
+				$this->rate_limit_reject($rate, 'Terlalu banyak aduan dikirim dalam satu jam. Silakan coba lagi nanti.');
+				return;
+			}
+		}
+
 		$nama  = $this->input->post('nama', TRUE);
 		$email = $this->input->post('email', TRUE);
 		$judul = $this->input->post('judul', TRUE);
@@ -262,8 +272,25 @@ class Umum extends MY_Controller {
 
 		$per_hal = 20;
 		$hal = max(1, (int) $this->input->get('hal'));
-		$total = (int) $this->db->count_all('aduan');
 
+		// Permintaan penghapusan data (hak subjek data) bukan aduan publik: selain staf, hanya
+		// pemohonnya yang melihat barisnya sendiri. Saringan yang sama untuk hitungan dan daftar,
+		// supaya jumlah halaman tidak membocorkan berapa permintaan yang ada. (Komentar baris, bukan
+		// blok: uji_aduan_triase membaca batas method ini sampai pembuka komentar blok berikutnya.)
+		$this->config->load('data_lifecycle', TRUE);
+		$staf = in_array((string) $this->current_role(),
+			$this->config->item('data_lifecycle', 'data_lifecycle')['audit']['peran_staf'], TRUE);
+		$saring = function () use ($staf) {
+			if ($staf) { return; }
+			$this->db->group_start()
+				->where('judul !=', Aduan_model::JUDUL_PENGHAPUSAN_DATA)
+				->or_where('user_id', (int) $this->get_user_id())
+				->group_end();
+		};
+		$saring();
+		$total = (int) $this->db->count_all_results('aduan');
+
+		$saring();
 		$rows = $this->db->select('id, nama, judul, bidang_kode, status, catatan_admin, created_at')
 			->order_by('created_at', 'DESC')
 			->limit($per_hal, ($hal - 1) * $per_hal)

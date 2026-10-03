@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Perbaikan keamanan tingkat sedang (3 Okt 2026).
@@ -44,7 +45,7 @@ function cek($kondisi, $label) {
 }
 
 $env = [];
-foreach (file(APP_ROOT . '/.env', FILE_IGNORE_NEW_LINES) as $l) {
+foreach (file(env_berkas_path(APP_ROOT), FILE_IGNORE_NEW_LINES) as $l) {
     $l = trim($l);
     if ($l === '' || $l[0] === '#' || strpos($l, '=') === FALSE) { continue; }
     [$k, $v] = explode('=', $l, 2);
