@@ -62,8 +62,8 @@ aplikasi sempat melihatnya.
 
 ```
 /home/klinik/
+├── .env                  ← izin 600, DI LUAR DocumentRoot (satu tingkat di atas app/)
 ├── app/                  ← DocumentRoot = isi repo (berisi index.php)
-│   ├── .env              ← izin 600
 │   ├── index.php
 │   ├── application/
 │   ├── assets/
@@ -73,10 +73,17 @@ aplikasi sempat melihatnya.
 ```
 
 - **DocumentRoot menunjuk folder repo itu sendiri** (tata letak CodeIgniter 3).
-  `application/`, `system/`, `docs/`, `vendor/`, `.env` memang ada di dalamnya; yang
+  `application/`, `system/`, `docs/`, `vendor/` memang ada di dalamnya; yang
   menahan semuanya dari publik adalah aturan `.htaccess` (§5) atau padanannya di
-  Nginx (§6). Tanpa aturan itu, `.env` beserta kunci enkripsinya bisa diunduh siapa
-  saja (pernah terjadi 26 Jul 2026, lihat komentar di `.htaccess`).
+  Nginx (§6).
+- **`.env` di luar DocumentRoot.** `index.php` mencari `.env` satu tingkat di atas
+  folder aplikasi lebih dulu (`application/helpers/env_berkas_helper.php`); bila
+  ada, `.env` di dalam folder aplikasi **tidak dibaca sama sekali**. Dengan begitu
+  kunci enkripsi tidak bisa terunduh walau aturan web server hilang (pernah terjadi
+  26 Jul 2026: `GET /.env` membalas 200). Syaratnya, folder induk itu sendiri
+  **tidak tersaji** lewat web. Kalau aplikasi dipasang di subfolder DocumentRoot
+  (mis. `/var/www/html/klinik/`), induknya justru tersaji: biarkan `.env` di akar
+  aplikasi dan andalkan aturan §5/§6, seperti di XAMPP lokal.
 - **`private_uploads` WAJIB di luar DocumentRoot.** Isinya foto rumah, KTP, dokumen
   SRP2, lampiran aduan. Berkas di sana hanya dibuka lewat controller yang memeriksa
   pemiliknya. Foto disimpan tanpa metadata (EXIF/GPS dibuang) dengan nama acak, tetapi
@@ -97,11 +104,13 @@ aplikasi sempat melihatnya.
 | `PRIVATE_UPLOADS_PATH` | Semua berkas privat, plus buku kuota di `_pemilik/` |
 | `session.save_path` PHP | Berkas sesi (`sess_driver = files`) |
 
-Contoh izin (sesuaikan nama pengguna PHP-FPM/Apache, misalnya `www-data`):
+Contoh izin (sesuaikan nama pengguna PHP-FPM/Apache, misalnya `www-data`). Folder
+unggahan dan `assets/cache_foto/` di-gitignore, jadi belum ada sesudah `git clone`:
 
 ```bash
 cd /home/klinik/app
-chmod 600 .env
+mkdir -p assets/img/program/unggahan assets/img/pengembang/unggahan assets/dokumen/unggahan assets/cache_foto
+chmod 600 /home/klinik/.env
 chown -R klinik:www-data application/cache application/logs assets/img/hero \
   assets/img/program/unggahan assets/img/pengembang/unggahan assets/dokumen/unggahan assets/cache_foto
 chmod -R ug+rwX application/cache application/logs assets/img/hero \
@@ -116,7 +125,10 @@ dimiliki pengguna PHP itu (izin `700` berarti hanya pemiliknya yang bisa masuk).
 
 ## 3. Variabel lingkungan (`.env`)
 
-Salin `.env.example` menjadi `.env`; setiap kunci di sana sudah diberi keterangan.
+Salin `.env.example` menjadi `/home/klinik/.env` (satu tingkat di atas folder
+aplikasi, lihat §2); setiap kunci di sana sudah diberi keterangan. Pastikan hanya
+ada **satu** `.env`: bila ada juga salinan di folder aplikasi, salinan itu diam-diam
+diabaikan dan mudah disangka berlaku.
 
 - **Format:** `KEY=nilai`, satu per baris, **tanpa tanda kutip**. Pemuat di
   `index.php` tidak membuang kutip, jadi `DB_PASS="rahasia"` membuat sandinya
@@ -153,9 +165,9 @@ cd app && git checkout main
 composer install --no-dev --optimize-autoloader
 composer check-platform-reqs --no-dev
 
-# 3. Konfigurasi
-cp .env.example .env && chmod 600 .env
-nano .env          # isi sesuai §3
+# 3. Konfigurasi (.env di luar folder aplikasi, lihat §2)
+cp .env.example ../.env && chmod 600 ../.env
+nano ../.env       # isi sesuai §3
 
 # 4. Database: buat DB utf8mb4 dan penggunanya, lalu skema awal + migrasi
 mysql -u root -p -e "CREATE DATABASE klinikpkp CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -342,8 +354,11 @@ baru alihkan DNS.
 1. **Turunkan TTL DNS** ke 300 detik sehari sebelumnya, supaya pengalihan cepat.
 2. **Bekukan penulisan** di server lama (mode perawatan atau di luar jam layanan),
    supaya tidak ada data yang tertinggal di server lama sesudah disalin.
-3. **Salin `.env` dari server lama**, lalu ubah hanya `SITE_URL`, `DB_*`,
-   `PRIVATE_UPLOADS_PATH`, dan `GOOGLE_REDIRECT_URI`.
+3. **Salin `.env` dari server lama** ke `/home/klinik/.env` (di luar folder
+   aplikasi), lalu ubah hanya `SITE_URL`, `DB_*`, `PRIVATE_UPLOADS_PATH`, dan
+   `GOOGLE_REDIRECT_URI`. Di Hostinger berkasnya bisa berada di luar
+   `public_html` atau masih di akarnya; ambil yang benar-benar dipakai (yang di
+   luar menang bila keduanya ada).
    - `KPKP_DATA_KEY`, `KPKP_DATA_PEPPER` (dan `KPKP_DATA_KEYS` /
      `KPKP_ACTIVE_KEY_ID` bila dipakai) **harus sama persis**. Kunci berbeda = NIK,
      koordinat, dan nama berkas terenkripsi tidak bisa dibaca lagi, tanpa jalan
@@ -475,6 +490,8 @@ Lalu uji dengan tangan di peramban:
 - [ ] Daftar akun baru: kode OTP sampai ke email.
 - [ ] Warga: unggah satu foto bukti, buka lagi lewat "Lihat berkas".
 - [ ] Berkas itu ada di `PRIVATE_UPLOADS_PATH`, bukan di bawah DocumentRoot.
+- [ ] Hanya ada satu `.env`, di luar DocumentRoot (`ls -la /home/klinik/.env
+      /home/klinik/app/.env`: yang kedua tidak ada).
 - [ ] Admin: buka satu pengajuan berlampiran; berkas tampil.
 - [ ] `php index.php migrate status` di server menunjukkan versi terbaru, dan bila
       `DB_SSL` diisi, koneksi terenkripsi.
