@@ -49,7 +49,9 @@ try{
   @unlink($j);
  }
  // UAT warga #8: NIK yang terkunci di usr_akun akun lain (pemilik belum mengisi pendataan,
- // jadi belum punya sf_profil_warga) tetap ditolak "sudah terhubung dengan akun lain".
+ // jadi belum punya sf_profil_warga) tidak jatuh ke akun kedua. Sejak klaim NIK terverifikasi
+ // (3 Okt 2026) akun kedua yang namanya tidak cocok mendapat pesan "tidak cocok" yang sama dengan
+ // NIK bebas (ikatan tidak dibocorkan sebelum verifikasi lolos); kasus lolos ada di uji_klaim_nik.php.
  $nik2='3399990101700003'; $pinjam(hash('sha256','warga_lookup:nik:'.$enc->deterministic_hash($nik2)));
  $akun=[];
  foreach(['pemilik'=>$nik2,'perebut'=>null] as $peran=>$n){
@@ -62,26 +64,29 @@ try{
  $http($j,'warga/pendataan');
  [$k,$b]=$http($j,'warga/pendataan',['step'=>'find_data','nik'=>$nik2,'birth_date'=>'1970-01-01','csrf_kpkp_token'=>$csrf($j)]);
  $profil=$db->query("SELECT COUNT(*) FROM sf_profil_warga WHERE user_id=$id")->fetch_row()[0];
- $cek(strpos($b,'sudah terhubung dengan akun lain')!==false && (int)$profil===0, "NIK terkunci di akun lain (tanpa profil pendataan): akun kedua ditolak, tidak ada profil tercipta");
+ $pemilik=$db->query("SELECT nik_lookup_hash FROM usr_akun WHERE id={$akun['pemilik']}")->fetch_row()[0];
+ $cek(strpos($b,'tidak cocok')!==false && strpos($b,'sudah terhubung dengan akun lain')===false && (int)$profil===0 && $pemilik===$enc->deterministic_hash($nik2), "NIK terkunci di akun lain (tanpa profil pendataan): akun kedua yang tidak cocok ditolak tanpa menyebut ikatan, pemilik tetap");
  @unlink($j);
- // Onboarding warga dengan NIK milik akun lain (di sf_profil_warga atau usr_akun) ditolak SAAT onboarding.
- // Dulu lolos, lalu prefill SIMPERUM gagal diam-diam (nik_already_bound) dan warga terus kembali ke Cek NIK.
+ // Onboarding warga dengan NIK milik akun lain (di sf_profil_warga atau usr_akun). Dulu lolos diam-diam
+ // (prefill SIMPERUM gagal, warga terus kembali ke Cek NIK), lalu ditolak (pemilik asli terkunci selamanya).
+ // Sejak 3 Okt 2026: onboarding selesai TANPA mengikat NIK itu, dengan pesan yang mengarahkan ke Cek NIK,
+ // tempat pemilik membuktikan kepemilikan (uji_klaim_nik.php).
  $nik3='3399990101700005'; $pinjam(hash('sha256','warga_lookup:nik:'.$enc->deterministic_hash($nik3)));
  $st=$db->prepare("INSERT INTO usr_akun (nama,email,kata_sandi,peran,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at) VALUES ('Uji NIK',?,?,'warga','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
  $e="{$tag}_profil@example.test"; $h=password_hash($pw,PASSWORD_BCRYPT); $st->bind_param('ss',$e,$h);$st->execute(); $ids[]=$pid=$db->insert_id;
  $st=$db->prepare("INSERT INTO sf_profil_warga (user_id,nik_ciphertext,nik_lookup_hash,nama_ciphertext) VALUES (?,?,?,?)");
  $nc=$enc->encrypt($nik3); $nh=$enc->deterministic_hash($nik3); $fn=$enc->encrypt('Uji NIK'); $st->bind_param('isss',$pid,$nc,$nh,$fn); $st->execute();
  $st=$db->prepare("INSERT INTO usr_akun (nama,email,kata_sandi,peran,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at) VALUES ('Uji NIK',?,?,NULL,'active',0,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
- $e="{$tag}_baru@example.test"; $st->bind_param('ss',$e,$h);$st->execute(); $ids[]=$id=$db->insert_id;
- foreach(['warga_lookup','warga_lookup_jam','warga_lookup_harian'] as $p) $pinjam(hash('sha256',"$p:account:$id"));
- $j=tempnam(sys_get_temp_dir(),'e2e'); $http($j,'Auth/login'); $http($j,'Auth/do_login',['email'=>$e,'password'=>$pw,'csrf_kpkp_token'=>$csrf($j)]);
- foreach([[$nik3,'profil pendataan'],[$nik2,'usr_akun']] as [$n,$ket]){
+ foreach([[$nik3,'profil pendataan'],[$nik2,'usr_akun']] as $i=>[$n,$ket]){
+  $e="{$tag}_baru{$i}@example.test"; $st->bind_param('ss',$e,$h);$st->execute(); $ids[]=$id=$db->insert_id;
+  foreach(['warga_lookup','warga_lookup_jam','warga_lookup_harian'] as $p) $pinjam(hash('sha256',"$p:account:$id"));
+  $j=tempnam(sys_get_temp_dir(),'e2e'); $http($j,'Auth/login'); $http($j,'Auth/do_login',['email'=>$e,'password'=>$pw,'csrf_kpkp_token'=>$csrf($j)]);
   $http($j,'Auth/onboarding');
-  [$k,$b]=$http($j,'Auth/save_onboarding',['csrf_kpkp_token'=>$csrf($j),'role'=>'warga','username'=>$tag.'baru','nama_lengkap'=>'Uji NIK','nik_identitas'=>$n,'alamat_domisili'=>'Alamat uji','phone'=>'081234567890']);
+  [$k,$b]=$http($j,'Auth/save_onboarding',['csrf_kpkp_token'=>$csrf($j),'role'=>'warga','username'=>$tag.'baru'.$i,'nama_lengkap'=>'Uji NIK','nik_identitas'=>$n,'alamat_domisili'=>'Alamat uji','phone'=>'081234567890']);
   $u=$db->query("SELECT profil_lengkap,nik_lookup_hash FROM usr_akun WHERE id=$id")->fetch_assoc();
-  $cek(strpos($b,'sudah terhubung dengan akun lain')!==false && (int)$u['profil_lengkap']===0 && $u['nik_lookup_hash']===null, "Onboarding warga dengan NIK terikat di $ket akun lain ditolak berpesan, akun tidak terikat");
+  $cek(strpos($b,'sudah terhubung dengan akun lain')!==false && strpos($b,'Cek NIK')!==false && (int)$u['profil_lengkap']===1 && $u['nik_lookup_hash']===null, "Onboarding warga dengan NIK terikat di $ket akun lain selesai tanpa mengikat NIK itu, berpesan ke Cek NIK");
+  @unlink($j);
  }
- @unlink($j);
 } finally {
  foreach($ids as $id){$db->query("DELETE FROM sf_profil_warga WHERE user_id=$id");$db->query("DELETE FROM sf_penilaian_perumahan WHERE user_id=$id");$db->query("DELETE FROM usr_akun WHERE id=$id");}
  $db->query("DELETE FROM sf_rekaman_simperum WHERE kunci_rekaman_sumber LIKE 'SYN-API-%'");
