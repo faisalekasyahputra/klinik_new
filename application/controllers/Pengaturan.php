@@ -526,13 +526,22 @@ class Pengaturan extends MY_Controller {
                 redirect('akun/profil');
                 return;
             } else {
+                /* Isian ini dulu orakel "apakah NIK ini punya akun" tanpa batas (temuan ekspor-pii-07):
+                   setiap kiriman NIK pertama dihitung (per akun dan per IP), dan NIK yang terikat ke
+                   akun lain dijawab dengan pesan umum yang tidak menyebut akun lain. */
+                $laju = $this->rate_limit_consume('profil_nik', ['account_id' => (int) $user_id]);
+                if (empty($laju['success']) || empty($laju['allowed'])) {
+                    $this->session->set_flashdata('error', 'Terlalu banyak percobaan mengisi NIK. Silakan coba lagi besok.');
+                    redirect('akun/profil');
+                    return;
+                }
                 $sidik = $this->encryption_lib->deterministic_hash($nik_kirim);
                 // Penjaga yang sama dengan onboarding dan pendataan: usr_akun DAN sf_profil_warga.
                 $this->load->model('Housing_assessment_model');
                 $ikatan = $this->Housing_assessment_model->cek_ikatan_nik($user_id, $sidik);
                 if ($ikatan !== NULL) {
                     $this->session->set_flashdata('error', $ikatan['code'] === 'nik_already_bound'
-                        ? Housing_assessment_model::PESAN_NIK_TERIKAT_BUKTIKAN : $ikatan['message']);
+                        ? Housing_assessment_model::PESAN_NIK_BELUM_DISIMPAN : $ikatan['message']);
                     redirect('akun/profil');
                     return;
                 }

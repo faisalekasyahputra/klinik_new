@@ -96,7 +96,10 @@ class Housing_assessment_model extends CI_Model {
     /** Draft yang dilepas saat NIK dipindahkan (pindahkan_ikatan_nik): satu-satunya superseded yang tidak pernah dikirim. */
     public const DRAFT_DILEPAS = "status = 'superseded' AND submitted_at IS NULL";
 
-    /** Untuk isian NIK tanpa tanggal lahir (onboarding, Profil Saya): sama untuk ikatan terverifikasi atau belum. */
+    /** Profil Saya: NIK yang terikat ke akun lain dijawab umum, tanpa menyebut akun lain (temuan ekspor-pii-07). */
+    public const PESAN_NIK_BELUM_DISIMPAN = 'NIK belum dapat disimpan dari halaman ini. Bila NIK ini milik Anda, lakukan Cek NIK di menu Pendataan (nama akun dan tanggal lahir sesuai KTP), atau sampaikan melalui menu Aduan.';
+
+    /** Untuk isian NIK tanpa tanggal lahir (onboarding): sama untuk ikatan terverifikasi atau belum. */
     public const PESAN_NIK_TERIKAT_BUKTIKAN = 'NIK ini sudah terhubung dengan akun lain. Jika ini NIK Anda, buktikan kepemilikannya di langkah Cek NIK menu Pendataan (nama akun dan tanggal lahir sesuai KTP), atau sampaikan melalui menu Aduan.';
 
     /**
