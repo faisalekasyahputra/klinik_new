@@ -5,6 +5,11 @@ class Auth extends MY_Controller {
 
     protected $google_client;
 
+    /** Satu pesan untuk setiap login gagal: akun tidak ada, sandi salah, akun tanpa sandi. */
+    const PESAN_GAGAL = 'Email/username atau password salah.';
+    /** Hash bcrypt dari nilai acak yang dibuang; dipakai bila akun tidak ada supaya waktu respons setara. */
+    const HASH_TIRUAN = '$2y$10$ZIKXoFd.94t.ekhlY3Bid.4NLPoFjQNRUzYnxj3I94qEw/JSt6i6O';
+
     // reCAPTCHA keys (set your own in .env or config)
     private $recaptcha_site_key   = '';
     private $recaptcha_secret_key = '';
@@ -82,8 +87,8 @@ class Auth extends MY_Controller {
 
         // Keputusan pemilik produk 22 Sep 2026: yang dihitung hanya percobaan GAGAL (dicatat di
         // _login_fail). Menghitung setiap percobaan membuat 30 login sah per 5 menit dari satu IP
-        // kantor (NAT) saling mengunci. Brute force per akun tetap ditahan lockout 5x/15 menit
-        // di Auth_model::is_locked().
+        // kantor (NAT) saling mengunci. Tebakan per akun ditahan per pasangan IP + nama masuk
+        // (login_akun, di bawah), bukan lagi kunci per akun.
         $rate = $this->rate_limit_inspect('login');
         if (empty($rate['success']) || empty($rate['allowed'])) {
             $this->rate_limit_reject(
@@ -120,70 +125,57 @@ class Auth extends MY_Controller {
             }
         }
 
-        // Find user
+        /* Anti enumerasi dan anti penguncian oleh orang lain (3 Okt 2026). Semua kegagalan memakai
+           PESAN_GAGAL yang sama; akun tak dikenal tetap menjalankan bcrypt (hash tiruan) supaya
+           waktunya setara; tidak ada lagi kunci per akun yang bisa dipicu siapa saja. Penebak
+           ditahan per pasangan IP + nama masuk (login_akun) dan per IP (login). */
+        $pasangan = ['key' => hash('sha256', anti_automation_ip_bucket($this->input->ip_address()) . '|' . strtolower($login_id))];
+        $rate = $this->rate_limit_inspect('login_akun', $pasangan);
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject($rate,
+                'Terlalu banyak percobaan masuk dalam waktu singkat. Silakan tunggu sebelum mencoba lagi.', $is_ajax);
+            return;
+        }
+
         $user = $this->auth_model->find_by_login($login_id);
+        $hash = ($user && ! empty($user->kata_sandi)) ? (string) $user->kata_sandi : self::HASH_TIRUAN;
 
-        if (!$user || empty($user->kata_sandi)) {
-            // User not found or no password (Google-only user)
-            $this->_login_fail($is_ajax, 'Akun tidak ditemukan atau password salah.', $error_target);
-            return;
-        }
-
-        // Check lockout
-        if ($this->auth_model->is_locked($user)) {
-            $remaining = ceil($this->auth_model->lockout_remaining($user) / 60);
-            $this->_login_fail($is_ajax, "Akun terkunci sementara. Coba lagi dalam {$remaining} menit.", $error_target);
-            return;
-        }
-
-        /**
-         * GERBANG STATUS - ditambahkan 3 Agt 2026 bersama layar Akses Staf.
-         *
-         * Sebelum ini kolom `status` TIDAK PERNAH dibaca saat login; ia hanya
-         * ditulis. Membangun tombol "nonaktifkan akun" di atasnya akan
-         * menghasilkan saklar yang berbohong: badge berubah, orangnya tetap
-         * masuk. Jadi tombolnya dan gerbangnya lahir bersamaan.
-         *
-         * Yang diblokir HANYA `nonaktif`, bukan "apa pun yang bukan active".
-         * Alasannya bukan kehati-hatian umum: di DB ini ada 6 akun berstatus
-         * `restricted` yang hari ini bekerja normal - termasuk satu-satunya akun
-         * superadmin. Memblokir "bukan active" akan mengunci pemilik sistem dari
-         * sistemnya sendiri pada deploy berikutnya, tanpa ada yang meminta itu.
-         * `restricted` peninggalan lama yang maknanya tidak pernah ditetapkan;
-         * menetapkannya sekarang lewat gerbang login adalah keputusan produk,
-         * bukan perbaikan teknis.
-         */
-        if (strtolower(trim((string) ($user->status ?? ''))) === 'nonaktif') {
-            $this->_login_fail($is_ajax,
-                'Akun ini dinonaktifkan. Hubungi Super Admin bila menurut Anda ini keliru.',
-                $error_target);
-            return;
-        }
-
-        // Verify password
-        $password_valid = password_verify($password, $user->kata_sandi);
+        // Verify password (terhadap hash tiruan bila akun tidak ada atau tanpa sandi)
+        $password_valid = password_verify($password, $hash) && $hash !== self::HASH_TIRUAN;
         $this->load->library('sensitive_buffer');
         $this->sensitive_buffer->wipe($password);
         if (isset($_POST['password'])) {
             $this->sensitive_buffer->wipe($_POST['password']);
         }
         if (!$password_valid) {
-            $baru_terkunci = $this->auth_model->increment_login_attempts($user->id);
-            if ($baru_terkunci === TRUE) {
-                // Akun terkunci karena gagal login beruntun: bisa salah ketik, bisa tebak-sandi/credential stuffing.
-                // Peringatan ke admin (poin 10.5); hanya id akun, tanpa email/NIK.
+            $this->rate_limit_hit('login_akun', $pasangan);
+            if ($user && $this->auth_model->increment_login_attempts($user->id) === TRUE) {
+                // Gagal beruntun: bisa salah ketik, bisa tebak-sandi/credential stuffing. Akun TIDAK
+                // dikunci (orang lain tidak boleh bisa mengunci pemiliknya); peringatan ke admin
+                // (poin 10.5), hanya id akun, tanpa email/NIK.
                 try {
                     $this->load->library('Security_alert');
-                    $this->security_alert->raise('akun_terkunci', 'sedang',
-                        'Akun (id ' . (int) $user->id . ') terkunci karena ' . Auth_model::MAX_LOGIN_ATTEMPTS . ' percobaan login gagal beruntun',
+                    $this->security_alert->raise('login_beruntun', 'sedang',
+                        'Akun (id ' . (int) $user->id . ') menerima ' . Auth_model::MAX_LOGIN_ATTEMPTS . ' percobaan login gagal beruntun',
                         ['akun_id' => (int) $user->id], 'lock:' . (int) $user->id);
-                } catch (Throwable $e) { log_message('error', 'Auth: peringatan kunci akun gagal: ' . $e->getMessage()); }
+                } catch (Throwable $e) { log_message('error', 'Auth: peringatan gagal login beruntun gagal: ' . $e->getMessage()); }
             }
-            $attempts_left = Auth_model::MAX_LOGIN_ATTEMPTS - ($user->gagal_masuk + 1);
-            $message = $attempts_left > 0
-                ? "Email atau password salah. Sisa {$attempts_left} percobaan."
-                : 'Akun terkunci selama 15 menit karena terlalu banyak percobaan gagal.';
-            $this->_login_fail($is_ajax, $message, $error_target);
+            $this->_login_fail($is_ajax, self::PESAN_GAGAL, $error_target);
+            return;
+        }
+
+        /**
+         * GERBANG STATUS - ditambahkan 3 Agt 2026 bersama layar Akses Staf.
+         *
+         * Yang diblokir HANYA `nonaktif`, bukan "apa pun yang bukan active": `restricted`
+         * peninggalan lama (termasuk akun superadmin) bekerja normal, dan menetapkan maknanya
+         * lewat gerbang login adalah keputusan produk. Diperiksa SESUDAH sandi terbukti (3 Okt
+         * 2026), jadi status akun hanya terbaca oleh yang memegang sandinya.
+         */
+        if (strtolower(trim((string) ($user->status ?? ''))) === 'nonaktif') {
+            $this->_login_fail($is_ajax,
+                'Akun ini dinonaktifkan. Hubungi Super Admin bila menurut Anda ini keliru.',
+                $error_target);
             return;
         }
 

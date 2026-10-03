@@ -20,6 +20,10 @@ $config['rate_limit_policies'] = [
         'window' => 300,
         'dimensions' => ['ip'],
     ],
+    // Gagal masuk per pasangan IP + nama masuk (email/username apa adanya, huruf kecil). Pengganti
+    // kunci per akun (3 Okt 2026): yang tertahan hanya IP penebak, pemilik akun dari IP lain tetap
+    // bisa masuk. Kunci memakai nama masuk, bukan id akun, supaya akun ada dan tidak ada berperilaku sama.
+    'login_akun' => ['limit' => 5, 'window' => 900, 'dimensions' => ['key']],
     'register' => [
         'limit' => 5,
         'window' => 600,

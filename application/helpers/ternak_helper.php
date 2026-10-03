@@ -188,6 +188,7 @@ if ( ! function_exists('audit_kamus')) {
             'objek' => [
                 'aduan'                     => 'aduan',
                 'akun_terkunci'             => 'akun terkunci',
+                'login_beruntun'            => 'login gagal beruntun',
                 'batas_laju'                => 'batas percobaan',
                 'berkas_berbahaya'          => 'berkas berbahaya',
                 'bidang'                    => 'bidang',

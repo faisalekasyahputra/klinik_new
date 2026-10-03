@@ -8,7 +8,6 @@ defined('BASEPATH') || exit('No direct script access allowed');
 class Auth_model extends CI_Model {
 
     const MAX_LOGIN_ATTEMPTS = 5;
-    const LOCKOUT_MINUTES    = 15;
     const PASSWORD_TTL_DAYS  = 90;
 
     public function __construct() {
@@ -116,53 +115,18 @@ class Auth_model extends CI_Model {
     // =========================================================
 
     /**
-     * Check if a user account is currently locked.
-     */
-    public function is_locked($user) {
-        if ($user->gagal_masuk >= self::MAX_LOGIN_ATTEMPTS && $user->terkunci_sampai) {
-            return strtotime($user->terkunci_sampai) > time();
-        }
-        return FALSE;
-    }
-
-    /**
-     * Get remaining lockout seconds.
-     */
-    public function lockout_remaining($user) {
-        if ($user->terkunci_sampai) {
-            $remaining = strtotime($user->terkunci_sampai) - time();
-            return max(0, $remaining);
-        }
-        return 0;
-    }
-
-    /**
-     * Increment failed login attempts. Lock account if threshold reached.
+     * Hitung login gagal beruntun (direset saat login berhasil). Sejak 3 Okt 2026 hanya bahan
+     * peringatan admin: akun TIDAK dikunci, karena kunci per akun bisa dipicu siapa saja yang tahu
+     * email/username korban. Penebak ditahan per pasangan IP + nama masuk (rate limit login_akun).
+     * TRUE tiap kelipatan MAX_LOGIN_ATTEMPTS (pemicu peringatan; duplikat ditekan Security_alert).
+     * terkunci_sampai tidak ditulis lagi; kolomnya tetap untuk baris lama dan tombol buka kunci.
      */
     public function increment_login_attempts($user_id) {
-        // Jendela lockout sebelumnya sudah lewat, tapi gagal_masuk tidak
-        // pernah direset kecuali login BERHASIL -- tanpa ini, satu salah ketik
-        // sesudah menunggu penuh 15 menit langsung mengunci 15 menit lagi,
-        // selamanya, sampai kebetulan sandinya benar (roadmap T6 R2-sisa).
-        $user = $this->find_by_id($user_id);
-        if ($user && $user->terkunci_sampai && strtotime($user->terkunci_sampai) <= time()) {
-            $this->db->where('id', $user_id)->update('usr_akun', ['gagal_masuk' => 0, 'terkunci_sampai' => NULL]);
-        }
-
-        $this->db->set('gagal_masuk', 'gagal_masuk + 1', FALSE);
+        $this->db->set('gagal_masuk', 'LEAST(gagal_masuk + 1, 127)', FALSE);
         $this->db->where('id', $user_id);
         $this->db->update('usr_akun');
-
-        // Check if we need to lock
         $user = $this->find_by_id($user_id);
-        if ($user && $user->gagal_masuk >= self::MAX_LOGIN_ATTEMPTS) {
-            $lock_until = date('Y-m-d H:i:s', strtotime('+' . self::LOCKOUT_MINUTES . ' minutes'));
-            $this->db->where('id', $user_id);
-            $this->db->update('usr_akun', ['terkunci_sampai' => $lock_until]);
-            // TRUE hanya pada percobaan yang MENGUNCI akun (untuk peringatan keamanan ke admin, poin 10.5).
-            return (int) $user->gagal_masuk === self::MAX_LOGIN_ATTEMPTS;
-        }
-        return FALSE;
+        return $user && (int) $user->gagal_masuk % self::MAX_LOGIN_ATTEMPTS === 0;
     }
 
     /**
