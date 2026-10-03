@@ -561,24 +561,38 @@ class Warga extends MY_Controller {
         if ( ! $draft || ! in_array($kind, $allowed, TRUE)) {
             show_404(); return;
         }
+        // Kartu bukti mengunggah satu foto per permintaan lewat fetch dan meminta
+        // JSON secara eksplisit (Accept), supaya halaman tidak di-reload. Sekadar
+        // X-Requested-With tidak cukup: pemanggil lama mengirimnya dan tetap
+        // mengharapkan flashdata + redirect.
+        $jawab = function ($ok, $pesan) use ($penilaian_id, $user_id, $kind) {
+            if (strpos((string) $this->input->get_request_header('Accept', TRUE), 'application/json') === FALSE) {
+                $this->session->set_flashdata($ok ? 'success' : 'error', $pesan);
+                redirect('warga/pendataan'); return;
+            }
+            $data = ['status' => $ok ? 'ok' : 'error', 'message' => $pesan];
+            if ($ok) {
+                $f = $this->Housing_assessment_model->get_owned_files($penilaian_id, $user_id)[$kind] ?? [];
+                $data['ukuran'] = number_format(((int) ($f['ukuran_byte'] ?? 0)) / 1024, 0, ',', '.') . ' KB';
+                $data['waktu'] = tgl_id($f['created_at'] ?? '', TRUE);
+            }
+            $this->output->set_content_type('application/json')->set_output(json_encode($data));
+        };
         if (empty($_FILES[$kind]['tmp_name'])) {
-            $this->session->set_flashdata('error', 'Pilih berkas JPG/PNG terlebih dahulu.');
-            redirect('warga/pendataan'); return;
+            $jawab(FALSE, 'Pilih berkas JPG/PNG terlebih dahulu.'); return;
         }
         $file = $_FILES[$kind];
         $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
         if ( ! in_array($mime, ['image/jpeg', 'image/png'], TRUE)
             || ! $this->strip_image_metadata($file['tmp_name'], $mime)) {
-            $this->session->set_flashdata('error', 'Bukti harus berupa JPG/PNG yang valid.');
-            redirect('warga/pendataan'); return;
+            $jawab(FALSE, 'Bukti harus berupa JPG/PNG yang valid.'); return;
         }
         $sha256 = hash_file('sha256', $file['tmp_name']);
         $file['size'] = filesize($file['tmp_name']);
         $error = NULL;
         $stored = $this->store_private_upload($kind, 'warga_assessment', $penilaian_id, $error);
         if ($stored === FALSE) {
-            $this->session->set_flashdata('error', $error ?: 'Berkas belum dapat diunggah.');
-            redirect('warga/pendataan'); return;
+            $jawab(FALSE, $error ?: 'Berkas belum dapat diunggah.'); return;
         }
         $saved = $this->Housing_assessment_model->replace_owned_file(
             $penilaian_id, $user_id, $kind, $stored, $file['name'], $mime, $file['size'], $sha256
@@ -586,12 +600,10 @@ class Warga extends MY_Controller {
         $dir = $this->private_upload_dir('warga_assessment', $penilaian_id);
         if (empty($saved['success'])) {
             @unlink($dir . $stored);
-            $this->session->set_flashdata('error', $saved['message']);
-        } else {
-            if (!empty($saved['old_path']) && $saved['old_path'] !== $stored) { @unlink($dir . basename($saved['old_path'])); }
-            $this->session->set_flashdata('success', 'Berkas tersimpan.');
+            $jawab(FALSE, $saved['message']); return;
         }
-        redirect('warga/pendataan');
+        if (!empty($saved['old_path']) && $saved['old_path'] !== $stored) { @unlink($dir . basename($saved['old_path'])); }
+        $jawab(TRUE, 'Berkas tersimpan.');
     }
 
     private function submit()

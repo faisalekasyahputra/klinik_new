@@ -38,10 +38,10 @@ class Session {
     function __destruct() { @unlink($this->cookie); }
     function get($path) { return $this->call($path, [CURLOPT_HTTPGET => TRUE]); }
     function post($path, $fields) { if ($this->csrf) $fields['csrf_kpkp_token'] = $this->csrf; return $this->call($path, [CURLOPT_POST => TRUE, CURLOPT_POSTFIELDS => http_build_query($fields), CURLOPT_HTTPHEADER => ['X-Requested-With: XMLHttpRequest']]); }
-    function upload($path, $fields, $fileField, $filePath, $filename) {
+    function upload($path, $fields, $fileField, $filePath, $filename, $headers = []) {
         if ($this->csrf) $fields['csrf_kpkp_token'] = $this->csrf;
         $fields[$fileField] = new CURLFile($filePath, 'image/png', $filename);
-        return $this->call($path, [CURLOPT_POST => TRUE, CURLOPT_POSTFIELDS => $fields]);
+        return $this->call($path, [CURLOPT_POST => TRUE, CURLOPT_POSTFIELDS => $fields, CURLOPT_HTTPHEADER => $headers]);
     }
     private function call($path, $options) {
         $ch = curl_init(BASE_URL . '/' . ltrim($path, '/'));
@@ -203,6 +203,10 @@ $file=$db->row('SELECT path_privat, sha256 FROM sf_berkas_penilaian WHERE penila
 $old=$path; $png2=png_with_text('RAHASIA_R4_GANTI'); $up=$existing->upload('warga/pendataan',['action'=>'upload','penilaian_id'=>$d['id'],'jenis_berkas'=>'self_photo'],'self_photo',$png2,'replace.png'); wajib(in_array($up['status'],[302,303],TRUE),'PNG pengganti diunggah'); $file2=$db->row('SELECT path_privat FROM sf_berkas_penilaian WHERE penilaian_id=? AND jenis_berkas=\'self_photo\'',[$d['id']]); $new=rtrim($GLOBALS['private_root'],'/\\').DIRECTORY_SEPARATOR.'warga_assessment'.DIRECTORY_SEPARATOR.$d['id'].DIRECTORY_SEPARATOR.basename($file2['path_privat']); cek(is_file($new) && !is_file($old) && (int)$db->scalar('SELECT COUNT(*) FROM sf_berkas_penilaian WHERE penilaian_id=? AND jenis_berkas=\'self_photo\'',[$d['id']])===1,'Ganti bukti menghapus file lama dan mempertahankan satu ledger');
 [$attackerUser,$attackerEmail]=make_user($db,'attacker'); $attacker=login($attackerEmail); $forged=$attacker->upload('warga/pendataan',['action'=>'upload','penilaian_id'=>$d['id'],'jenis_berkas'=>'self_photo'],'self_photo',$png2,'forged.png'); cek($forged['status']===404,'Unggah forge milik warga lain ditolak');
 $direct=(new Session())->get('private_uploads/warga_assessment/'.$d['id'].'/'.basename($file2['path_privat'])); cek($direct['status']!==200,'URL langsung private tidak dapat diakses');
+// Kartu bukti (fetch + Accept JSON): satu foto per permintaan, jawaban JSON tanpa redirect.
+$json=['Accept: application/json','X-Requested-With: XMLHttpRequest']; $png3=png_with_text('R4_JSON'); $js=$existing->upload('warga/pendataan',['action'=>'upload','penilaian_id'=>$d['id'],'jenis_berkas'=>'self_photo'],'self_photo',$png3,'json.png',$json); $jj=json_decode($js['body'],TRUE); $file3=$db->row('SELECT path_privat FROM sf_berkas_penilaian WHERE penilaian_id=? AND jenis_berkas=\'self_photo\'',[$d['id']]); cek($js['status']===200 && ($jj['status']??'')==='ok' && substr((string)($jj['ukuran']??''),-3)===' KB' && ($jj['waktu']??'')!=='' && $file3['path_privat']!==$file2['path_privat'] && !is_file($new),'Unggah JSON satu foto tersimpan tanpa redirect, berkas lama terhapus');
+$txt=tempnam(sys_get_temp_dir(),'r4t'); file_put_contents($txt,'bukan gambar'); $jbad=$existing->upload('warga/pendataan',['action'=>'upload','penilaian_id'=>$d['id'],'jenis_berkas'=>'self_photo'],'self_photo',$txt,'palsu.png',$json); $jb=json_decode($jbad['body'],TRUE); cek($jbad['status']===200 && ($jb['status']??'')==='error' && ($jb['message']??'')==='Bukti harus berupa JPG/PNG yang valid.' && $db->scalar('SELECT path_privat FROM sf_berkas_penilaian WHERE penilaian_id=? AND jenis_berkas=\'self_photo\'',[$d['id']])===$file3['path_privat'],'Unggah JSON berkas palsu ditolak dengan pesan, ledger tidak berubah');
+@unlink($png3); @unlink($txt);
 @unlink($png); @unlink($png2);
 
 echo "\n=== RINGKASAN ===\n{$GLOBALS['total']} pemeriksaan, {$GLOBALS['gagal']} gagal.\n";
