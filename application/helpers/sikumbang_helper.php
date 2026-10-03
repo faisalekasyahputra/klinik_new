@@ -240,6 +240,28 @@ if ( ! function_exists('sikumbang_ambil_foto')) {
     }
 }
 
+if ( ! function_exists('cache_foto_muat')) {
+    /**
+     * Masih muat menyimpan $tambah byte di folder cache foto tanpa melewati $maks_byte? Batas
+     * cache_foto_maks_mb dulu hanya ditegakkan penyapu harian (temuan berkas-03), jadi folder bisa
+     * menggelembung berkali lipat dalam sehari. Murah: total folder dihitung ulang paling sering tiap
+     * 10 menit dan disimpan di $penanda ("byte waktu"); di antaranya hanya ditambah ukuran yang ditulis.
+     * ponytail: tulisan paralel bisa saling menimpa tambahan; meleset sedikit, terkoreksi saat hitung ulang.
+     */
+    function cache_foto_muat($dir, $tambah, $maks_byte, $penanda)
+    {
+        [$total, $waktu] = array_map('intval', explode(' ', (string) @file_get_contents($penanda)) + [0, 0]);
+        if (time() - $waktu > 600) {
+            $total = 0;
+            foreach ((array) glob(rtrim($dir, '/\\') . '/*.jpg') as $f) { $total += (int) @filesize($f); }
+            $waktu = time();
+        }
+        $muat = $total + (int) $tambah <= $maks_byte;
+        @file_put_contents($penanda, ($muat ? $total + (int) $tambah : $total) . ' ' . $waktu, LOCK_EX);
+        return $muat;
+    }
+}
+
 if ( ! function_exists('sikumbang_param')) {
     /**
      * Normalkan satu parameter pencarian SIKUMBANG dari GET sebelum masuk URL hulu, yang md5-nya

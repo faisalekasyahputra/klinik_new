@@ -530,7 +530,11 @@ class Index extends MY_Controller {
 		/* Kalau penyimpanan berhasil, alihkan ke berkas statisnya. Kalau GAGAL disimpan (folder
 		   tidak bisa ditulis), keluarkan langsung: mengalihkan ke berkas yang tidak jadi ada cuma
 		   menghasilkan 404. */
-		if (@file_put_contents($path_file_lokal, $gambar_mentah) !== FALSE) {
+		/* Folder sudah di batas cache_foto_maks_mb: foto disajikan langsung tanpa disimpan. */
+		$this->load->config('data_lifecycle');
+		$maks_byte = (int) ($this->config->item('data_lifecycle')['retensi']['cache_foto_maks_mb'] ?? 512) * 1048576;
+		if (cache_foto_muat($dir_cache, strlen($gambar_mentah), $maks_byte, APPPATH . 'cache/cache_foto_total.txt')
+			&& @file_put_contents($path_file_lokal, $gambar_mentah) !== FALSE) {
 			$this->output
 				->set_status_header(302)
 				->set_header('Location: ' . base_url('assets/cache_foto/' . $nama_file_lokal))
