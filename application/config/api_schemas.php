@@ -118,6 +118,18 @@ $config['api_schemas'] = [
             'nama_perusahaan'  => ['type' => 'string', 'max_len' => 200],
         ]]],
     ],
+    // Kode OTP email pendaftaran (libraries/Otp_pendaftaran.php). Wizard SRP2 memanggilnya lewat XHR.
+    'auth/do_verifikasi_email' => [
+        'class' => 'api',
+        'invalid' => ['redirect' => 'Auth/verifikasi_email', 'flash' => 'Masukkan kode verifikasi 6 angka.'],
+        'methods' => ['POST' => ['fields' => [
+            'kode_otp' => ['type' => 'string', 'required' => TRUE, 'min_len' => 6, 'max_len' => 6],
+        ]]],
+    ],
+    'auth/kirim_ulang_otp' => [
+        'class' => 'api',
+        'methods' => ['POST' => ['fields' => []]],
+    ],
 
     // ------------------------------------------------------------- Dokumen pengembang (multipart, XHR)
     'pengembang/simpan_dokumen' => [
@@ -183,7 +195,6 @@ $config['api_schemas'] = [
 
 /* Metode publik yang menyebut JSON tetapi BUKAN endpoint API bergaya layanan web. Alasan wajib. */
 $config['api_schema_exempt'] = [
-    'auth/google'                     => 'pengalihan OAuth; json_encode hanya untuk string JS di halaman penutup popup',
     'index/panduan_desain'            => 'halaman HTML; hanya membaca is_ajax_request untuk memilih tata letak',
     'pengaturan/export_account_data'  => 'unduhan berkas JSON hasil ekspor data akun; masukannya satu kata sandi, dilindungi batas laju khusus dan audit',
     'migrate/index'                   => 'hanya CLI atau loopback (menolak selain itu dengan 404)',

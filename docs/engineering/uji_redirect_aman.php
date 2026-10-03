@@ -117,7 +117,7 @@ $auth = (string) file_get_contents(APP_ROOT . '/application/controllers/Auth.php
 $peng = (string) file_get_contents(APP_ROOT . '/application/controllers/Pengembang.php');
 cek(strpos($auth, "redirect(\$this->sanitize_redirect(\$error_target) ?: 'Auth/login');") !== FALSE, 'Auth::_login_fail menyaring redirect_to ulang sebelum redirect()');
 cek(strpos($auth, "redirect(\$this->sanitize_redirect(\$redirect_target) ?: 'Auth/register');") !== FALSE, 'Auth::_register_fail menyaring ulang sebelum redirect()');
-cek(strpos($auth, "\$redirect_to = \$this->sanitize_redirect((string) \$this->session->userdata('oauth_redirect'));") !== FALSE, 'Auth::google_callback menyaring oauth_redirect ulang sebelum dipakai');
+cek(preg_match('/\$safe_redirect = \$this->sanitize_redirect\(\$from\);.*?set_userdata\(\'intended_url\', \$safe_redirect\);/s', $auth) === 1 && strpos($auth, 'oauth_redirect') === FALSE, 'Auth::google menyaring ?from= lalu menitipkannya ke intended_url (disaring ulang di _redirect_after_login)');
 cek(preg_match('/\$aman = \$this->sanitize_redirect\(\$intended\);\s*if \(\$aman !== \'\'\) \{\s*redirect\(\$aman\);/', $auth) === 1, 'Auth::_redirect_after_login menyaring intended_url ulang');
 cek(preg_match('/\$safe_redirect = \$this->sanitize_redirect\(\$curr\);.*?redirect\(!empty\(\$safe_redirect\) \? \$safe_redirect : \'login\'\);/s', $auth) === 1, 'Auth::logout menyaring ?curr= sebelum redirect()');
 cek(strpos($peng, "\$intended = \$this->sanitize_redirect((string) \$this->session->userdata('intended_url')) ?: 'Pengembang/syarat';") !== FALSE, 'Pengembang::masuk menyaring intended_url ulang sebelum redirect()');

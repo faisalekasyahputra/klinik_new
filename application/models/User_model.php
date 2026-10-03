@@ -9,8 +9,8 @@ class User_model extends CI_Model {
     }
 
     /**
-     * Cocokkan login Google ke akun. Kembalian [baris, '1' akun lama | '0' akun baru], atau NULL
-     * bila ditolak.
+     * Cocokkan login Google ke akun yang SUDAH ada. Kembalian [baris, '1'], 'belum_terdaftar'
+     * bila tidak ada akun dengan google_id atau email itu, atau NULL bila ditolak.
      *
      * - Ditolak bila Google tidak menyatakan email itu terverifikasi.
      * - Dicocokkan lewat google_id lebih dulu, baru email. Email yang sudah tertaut ke akun
@@ -36,9 +36,9 @@ class User_model extends CI_Model {
         }
 
         if ( ! $user) {
-            $this->db->insert('usr_akun', $data + ['email_verified_at' => $sekarang]);
-            $new_user = $this->db->get_where('usr_akun', ['id' => $this->db->insert_id()]);
-            return [$new_user->row_array(), '0'];
+            // Keputusan pemilik produk 3 Okt 2026: Google tidak membuat akun. Yang belum terdaftar
+            // harus mendaftar dulu supaya peran dipilih sebelum ada sesi.
+            return 'belum_terdaftar';
         }
 
         $ubah = [
@@ -46,7 +46,8 @@ class User_model extends CI_Model {
             'foto_profil' => $data['foto_profil'],
             'email_verified_at' => $sekarang,
         ];
-        if (empty($user['google_id']) && ! empty($user['kata_sandi'])) {
+        // Email yang sudah terbukti (OTP pendaftaran, atau akun buatan admin) tidak perlu dicabut sandinya.
+        if (empty($user['google_id']) && ! empty($user['kata_sandi']) && empty($user['email_verified_at'])) {
             $ubah += [
                 'kata_sandi' => NULL,
                 'sesi_aktif_hash' => NULL, 'sesi_aktif_id_hash' => NULL, 'sesi_aktif_at' => NULL,

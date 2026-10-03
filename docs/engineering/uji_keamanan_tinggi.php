@@ -206,13 +206,19 @@ try {
         cek(is_array($hasil) && satu('SELECT kata_sandi FROM usr_akun WHERE id=?', [$id])['kata_sandi'] !== NULL,
             'Login Google berikutnya (google_id sama): sandi tetap');
 
-        // G5: email baru membuat akun baru yang emailnya terverifikasi.
+        // G6: email yang sudah terbukti lewat OTP pendaftaran: penautan pertama TIDAK mencabut sandi.
+        [$id, $email] = akun_baru('Uji Google 6', ['email_verified_at' => date('Y-m-d H:i:s')]);
+        $g = $gid();
+        $hasil = $model->check_google_user($data($email, $g), TRUE);
+        $baris = satu('SELECT google_id, kata_sandi FROM usr_akun WHERE id=?', [$id]);
+        cek(is_array($hasil) && $baris['google_id'] === $g && $baris['kata_sandi'] !== NULL, 'Email terverifikasi OTP: tertaut ke Google, sandi tetap');
+
+        // G5: email yang belum terdaftar TIDAK membuat akun (harus mendaftar dan memilih peran dulu).
         $email = $TAG . '_baru@uji-tinggi.test';
         $hasil = $model->check_google_user($data($email, $gid()), TRUE);
-        $baris = satu('SELECT id, kata_sandi, email_verified_at FROM usr_akun WHERE email=?', [$email]);
+        $baris = satu('SELECT id FROM usr_akun WHERE email=?', [$email]);
         if ($baris) { $akun_uji[] = (int) $baris['id']; }
-        cek(is_array($hasil) && ($hasil[1] ?? '') === '0' && $baris && $baris['kata_sandi'] === NULL && $baris['email_verified_at'] !== NULL,
-            'Email baru: akun baru tanpa sandi, email terverifikasi');
+        cek($hasil === 'belum_terdaftar' && ! $baris, 'Email belum terdaftar: ditolak, tidak ada akun yang dibuat');
     }
 } catch (Throwable $e) {
     cek(FALSE, 'Lapis unit Google melempar ' . get_class($e) . ': ' . $e->getMessage());
@@ -346,8 +352,23 @@ try {
         'POST Auth/do_verify_email tidak ada lagi (404) dan tidak menandai email terverifikasi');
     cek(minta($j, 'Auth/verify_pending', NULL, FALSE)['kode'] === 404, 'Halaman verifikasi email simulasi tidak ada lagi (404)');
     $r = minta(jar(), 'Auth/google_callback?state=palsu&code=palsu');
-    cek($r['kode'] === 200 && strpos($r['badan'], 'window.opener.location.href') !== FALSE && strpos($r['badan'], 'login') !== FALSE,
-        'google_callback dengan state palsu: popup ditutup ke halaman masuk, tanpa menukar kode');
+    cek($r['kode'] === 200 && substr($r['url'], -10) === 'Auth/login',
+        'google_callback dengan state palsu: dialihkan ke halaman masuk, tanpa menukar kode');
+    // Bentuk query yang sungguh dikirim Google; allowlist Input_guard pernah menjawabnya 400.
+    $r = minta(jar(), 'Auth/google_callback?state=palsu&code=palsu&iss=https://accounts.google.com&scope=email+profile+openid&authuser=0&prompt=consent&hd=contoh.go.id');
+    cek($r['kode'] === 200, 'google_callback menerima parameter tambahan Google (iss, scope, authuser, prompt, hd)');
+    cek(minta(jar(), 'Auth/google_callback?error=access_denied&state=palsu')['kode'] === 200, 'google_callback saat warga menekan Batal tidak dijawab 400');
+
+    // Gerbang onboarding: sesi tanpa peran tidak boleh keluar dari controller Auth.
+    ember_ip('login');
+    [, $email_o] = akun_baru('Uji Tanpa Peran', ['peran' => NULL, 'profil_lengkap' => 0]);
+    $j = masuk($email_o, $SANDI);
+    foreach (['akun', 'akun/profil', ''] as $jalur) {
+        $r = minta($j, $jalur);
+        cek(substr($r['url'], -15) === 'Auth/onboarding', 'Sesi tanpa peran membuka "' . ($jalur ?: 'beranda') . '": dikembalikan ke onboarding');
+    }
+    $r = minta($j, 'Auth/logout');
+    cek(strpos($r['url'], 'onboarding') === FALSE, 'Sesi tanpa peran tetap bisa keluar (logout tidak tertahan gerbang)');
 
     // Akun yang sandinya dicabut check_google_user(): disimulasikan pada sesi yang sudah ada.
     ember_ip('profile_password'); // hanya percobaan gagal yang dihitung, per IP: jalan lain bisa memenuhinya

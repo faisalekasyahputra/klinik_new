@@ -45,7 +45,9 @@ try {
     // 1. Onboarding pengembang dengan alamat kantor.
     $jd = $jar(); $email = "{$tag}_dev@example.test";
     $http($jd, 'Auth/login');
-    [$b] = $http($jd, 'Auth/do_register', ['email' => $email, 'password' => $sandi, 'password_confirm' => $sandi, 'tos_agree' => '1', 'csrf_kpkp_token' => $csrf($jd)], TRUE);
+    $http($jd, 'Auth/do_register', ['email' => $email, 'password' => $sandi, 'password_confirm' => $sandi, 'tos_agree' => '1', 'csrf_kpkp_token' => $csrf($jd)], TRUE);
+    require_once __DIR__ . '/_otp_uji.php'; // akun baru lahir sesudah kode OTP benar
+    [$b] = $http($jd, 'Auth/do_verifikasi_email', ['kode_otp' => kode_otp_uji($email), 'csrf_kpkp_token' => $csrf($jd)], TRUE);
     $cek((json_decode($b, TRUE)['status'] ?? '') === 'success', 'Daftar akun pengembang uji');
     $http($jd, 'Auth/onboarding');
     $npwp = '9' . str_pad((string) random_int(0, 99999999999999), 14, '0', STR_PAD_LEFT);

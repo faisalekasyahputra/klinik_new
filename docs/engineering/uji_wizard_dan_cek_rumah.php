@@ -246,7 +246,10 @@ $r = $warga->minta('Auth/do_register', [
 wajib($r['kode'] === 200,
     'Server menjawab (HTTP ' . $r['kode'] . '). Kode 0 berarti Apache mati, bukan fitur rusak.');
 wajib($r['kode'] !== 429, 'Tidak tertahan batas laju pendaftaran');
-wajib(stripos($r['body'], 'Pendaftaran tidak dapat diproses') === FALSE, 'Akun baru lahir');
+wajib(stripos($r['body'], 'Pendaftaran tidak dapat diproses') === FALSE, 'Pendaftaran diterima, menunggu kode OTP');
+require_once __DIR__ . '/_otp_uji.php';
+$r = $warga->minta('Auth/do_verifikasi_email', ['kode_otp' => kode_otp_uji(EMAIL)]);
+wajib($r['kode'] === 200 && stripos($r['body'], 'Kode verifikasi') === FALSE, 'Kode OTP diterima, akun baru lahir');
 
 $NIK = NULL; $LAHIR = NULL; $tolak = [];
 foreach ($KANDIDAT as $nik => $lahir) {

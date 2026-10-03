@@ -3,6 +3,9 @@ defined('BASEPATH') || exit('No direct script access allowed');
 
 class Auth extends MY_Controller {
 
+    // Tombol pengarah dialog galat (flashdata galat_aksi): [label, rute internal | NULL = tutup, utama?].
+    const AKSI_EMAIL_TERPAKAI = [['Masuk', 'Auth/login', TRUE], ['Masuk dengan Google', 'Auth/google'], ['Coba email lain', NULL]];
+
     protected $google_client;
 
     /** Satu pesan untuk setiap login gagal: akun tidak ada, sandi salah, akun tanpa sandi. */
@@ -180,7 +183,7 @@ class Auth extends MY_Controller {
         if (strtolower(trim((string) ($user->status ?? ''))) === 'nonaktif') {
             $this->_login_fail($is_ajax,
                 'Akun ini dinonaktifkan. Hubungi Super Admin bila menurut Anda ini keliru.',
-                $error_target);
+                $error_target, 'Akun dinonaktifkan');
             return;
         }
 
@@ -282,7 +285,14 @@ class Auth extends MY_Controller {
         return FALSE;
     }
 
-    private function _login_fail($is_ajax, $message, $error_target) {
+    /** Galat untuk dialog di tengah: pesan, judul singkat yang menyebut masalahnya, dan tombol pengarah opsional. */
+    private function _galat($pesan, $judul, array $aksi = []) {
+        $this->session->set_flashdata('error', $pesan);
+        $this->session->set_flashdata('galat_judul', $judul);
+        if ($aksi) { $this->session->set_flashdata('galat_aksi', $aksi); }
+    }
+
+    private function _login_fail($is_ajax, $message, $error_target, $judul = 'Gagal masuk') {
         $this->rate_limit_hit('login');
         if ($is_ajax) {
             $this->output->set_content_type('application/json')->set_output(json_encode([
@@ -291,7 +301,7 @@ class Auth extends MY_Controller {
             ]));
             return;
         }
-        $this->session->set_flashdata('error', $message);
+        $this->_galat($message, $judul);
         // Lapis kedua: disaring ulang tepat sebelum redirect(), bukan hanya saat dibaca dari POST.
         redirect($this->sanitize_redirect($error_target) ?: 'Auth/login');
     }
@@ -397,7 +407,7 @@ class Auth extends MY_Controller {
             // keanggotaan - siapa pun bisa menguji daftar email untuk tahu
             // siapa saja punya akun di sini. Pemilik akun yang sah tetap
             // terbantu lewat tautan Masuk / Lupa Sandi.
-            $this->_register_fail($is_ajax, 'Pendaftaran tidak dapat diproses dengan email tersebut. Kalau Anda sudah punya akun, silakan masuk.', $redirect_target);
+            $this->_register_fail($is_ajax, 'Pendaftaran tidak dapat diproses dengan email tersebut. Kalau Anda sudah punya akun, silakan masuk.', $redirect_target, self::AKSI_EMAIL_TERPAKAI, 'Email sudah terdaftar');
             return;
         }
 
@@ -406,8 +416,103 @@ class Auth extends MY_Controller {
             $this->_register_fail($is_ajax, 'Nama perusahaan wajib diisi untuk akun pengembang.', 'Pengembang/syarat');
             return;
         }
-        $password_hash = password_hash($password, PASSWORD_BCRYPT);
-        $user_id = $this->auth_model->create_user($email, $password_hash);
+
+        // Akun belum dibuat di sini: kepemilikan email dibuktikan dulu lewat kode OTP.
+        $this->load->library('otp_pendaftaran');
+        $this->otp_pendaftaran->mulai([
+            'email' => $email, 'hash_sandi' => password_hash($password, PASSWORD_BCRYPT),
+            'is_srp2' => $is_srp2, 'nama_perusahaan' => $nama_perusahaan,
+        ]);
+        $kirim = $this->otp_pendaftaran->kirim();
+        if ($kirim !== TRUE) {
+            $this->_register_fail($is_ajax, $this->_pesan_otp($kirim), $redirect_target, [], $this->_judul_otp($kirim));
+            return;
+        }
+        if ($is_ajax) {
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status' => 'otp_required', 'email' => $email,
+                'tunggu' => $this->otp_pendaftaran->sisa_jeda(), 'batas' => $this->otp_pendaftaran->batas_tercapai(),
+            ]));
+            return;
+        }
+        redirect('Auth/verifikasi_email');
+    }
+
+    private function _judul_otp($hasil) {
+        return [
+            'jeda' => 'Tunggu sebentar', 'batas' => 'Batas permintaan kode', 'gagal' => 'Email gagal dikirim',
+            'salah' => 'Kode salah', 'kedaluwarsa' => 'Kode kedaluwarsa', 'habis' => 'Terlalu banyak percobaan',
+        ][$hasil] ?? 'Sesi pendaftaran berakhir';
+    }
+
+    private function _pesan_otp($hasil) {
+        $tunggu = isset($this->otp_pendaftaran) ? $this->otp_pendaftaran->sisa_jeda() : 0;
+        return [
+            'jeda'        => 'Kode baru saja dikirim. Tunggu ' . ($tunggu >= 60 ? ceil($tunggu / 60) . ' menit' : $tunggu . ' detik') . ' sebelum meminta kode lagi.',
+            'batas'       => 'Terlalu banyak permintaan kode. Silakan ulangi pendaftaran beberapa saat lagi.',
+            'gagal'       => 'Kode verifikasi tidak dapat dikirim ke email tersebut. Silakan coba lagi nanti.',
+            'salah'       => 'Kode verifikasi salah. Periksa kembali email Anda.',
+            'kedaluwarsa' => 'Kode verifikasi sudah kedaluwarsa. Minta kode baru.',
+            'habis'       => 'Terlalu banyak kode salah. Minta kode baru.',
+        ][$hasil] ?? 'Pendaftaran belum dimulai atau sesinya berakhir. Silakan isi formulir pendaftaran lagi.';
+    }
+
+    /** Halaman isi kode OTP (jalur formulir biasa; wizard SRP2 memakai langkahnya sendiri). */
+    public function verifikasi_email() {
+        $this->load->library('otp_pendaftaran');
+        $t = $this->otp_pendaftaran->tertunda();
+        if ($this->is_logged_in() || ! $t) {
+            redirect($this->is_logged_in() ? 'Auth/lanjutkan' : 'Auth/register');
+            return;
+        }
+        $this->load->view('pages/auth/verifikasi_email', [
+            'email' => $t['email'], 'tunggu' => $this->otp_pendaftaran->sisa_jeda(), 'batas' => $this->otp_pendaftaran->batas_tercapai(),
+        ]);
+    }
+
+    public function kirim_ulang_otp() {
+        $is_ajax = $this->input->is_ajax_request();
+        $this->load->library('otp_pendaftaran');
+        // Jeda ditegakkan di server; tombol yang dinonaktifkan di peramban hanya cerminannya.
+        $kirim = $this->otp_pendaftaran->sisa_jeda() > 0 ? 'jeda'
+            : ($this->otp_pendaftaran->batas_tercapai() ? 'batas' : $this->otp_pendaftaran->kirim());
+        $pesan = $kirim === TRUE ? 'Kode baru sudah dikirim. Periksa kotak masuk dan folder spam.' : $this->_pesan_otp($kirim);
+        if ($is_ajax) {
+            $this->output->set_content_type('application/json')->set_output(json_encode([
+                'status' => $kirim === TRUE ? 'success' : 'error', 'message' => $pesan,
+                'tunggu' => $this->otp_pendaftaran->sisa_jeda(), 'batas' => $this->otp_pendaftaran->batas_tercapai(),
+            ]));
+            return;
+        }
+        if ($kirim === TRUE) { $this->session->set_flashdata('success', $pesan); } else { $this->_galat($pesan, $this->_judul_otp($kirim)); }
+        redirect($kirim === 'tidak_ada' ? 'Auth/register' : 'Auth/verifikasi_email');
+    }
+
+    /** Periksa kode OTP; kalau benar, akun dibuat dan langsung masuk (kelanjutan do_register). */
+    public function do_verifikasi_email() {
+        $is_ajax = $this->input->is_ajax_request();
+        $this->load->library('otp_pendaftaran');
+        $t = $this->otp_pendaftaran->tertunda();
+        $redirect_target = ($t && ! empty($t['is_srp2'])) ? 'Pengembang/syarat' : 'Auth/verifikasi_email';
+        $hasil = $this->otp_pendaftaran->periksa(trim((string) $this->input->post('kode_otp')));
+        if ($hasil !== 'benar') {
+            $this->_register_fail($is_ajax, $this->_pesan_otp($hasil), $hasil === 'tidak_ada' ? 'Auth/register' : $redirect_target,
+                in_array($hasil, ['habis', 'kedaluwarsa'], TRUE) ? [['Pakai kode baru', NULL, TRUE], ['Ganti email', 'Auth/register']] : [],
+                $this->_judul_otp($hasil));
+            return;
+        }
+        $this->otp_pendaftaran->selesai();
+
+        $email = $t['email'];
+        $is_srp2 = ! empty($t['is_srp2']);
+        $nama_perusahaan = (string) $t['nama_perusahaan'];
+        $redirect_target = $is_srp2 ? 'Pengembang/syarat' : 'Auth/register';
+        // Diperiksa ulang: akun dengan email ini bisa saja lahir selama kode menunggu.
+        if ($this->auth_model->find_by_email($email)) {
+            $this->_register_fail($is_ajax, 'Pendaftaran tidak dapat diproses dengan email tersebut. Kalau Anda sudah punya akun, silakan masuk.', $redirect_target, self::AKSI_EMAIL_TERPAKAI, 'Email sudah terdaftar');
+            return;
+        }
+        $user_id = $this->auth_model->create_user($email, $t['hash_sandi'], TRUE);
 
         if (!$user_id) {
             $this->_register_fail($is_ajax, 'Terjadi kesalahan sistem. Silakan coba lagi.', $redirect_target);
@@ -482,7 +587,7 @@ class Auth extends MY_Controller {
      * Balas gagal registrasi - JSON kalau request AJAX (dipakai wizard SRP2), flashdata+redirect
      * kalau request halaman biasa (perilaku asli, tidak berubah).
      */
-    private function _register_fail($is_ajax, $message, $redirect_target) {
+    private function _register_fail($is_ajax, $message, $redirect_target, array $aksi = [], $judul = 'Pendaftaran gagal') {
         if ($is_ajax) {
             $this->output->set_content_type('application/json')->set_output(json_encode([
                 'status'  => 'error',
@@ -490,7 +595,7 @@ class Auth extends MY_Controller {
             ]));
             return;
         }
-        $this->session->set_flashdata('error', $message);
+        $this->_galat($message, $judul, $aksi);
         redirect($this->sanitize_redirect($redirect_target) ?: 'Auth/register');
     }
 
@@ -613,7 +718,7 @@ class Auth extends MY_Controller {
             }
 
             if ($password !== $password_confirm) {
-                $this->_onboarding_fail('Password dan konfirmasi tidak cocok.');
+                $this->_onboarding_fail('Password dan konfirmasi tidak cocok.', 'Password tidak cocok');
                 return;
             }
 
@@ -631,7 +736,7 @@ class Auth extends MY_Controller {
         $this->db->where('nama_pengguna', $username);
         $this->db->where('id !=', $user_id);
         if ($this->db->count_all_results('usr_akun') > 0) {
-            $this->_onboarding_fail('Username sudah digunakan, silakan pilih yang lain.');
+            $this->_onboarding_fail('Username sudah digunakan, silakan pilih yang lain.', 'Username sudah dipakai');
             return;
         }
 
@@ -648,7 +753,7 @@ class Auth extends MY_Controller {
             $dipakai_direktori = $this->db->where('npwp_lookup_hash', $npwp_hash)
                 ->count_all_results('srp2_direktori_pengembang');
             if ($dipakai_pengajuan || $dipakai_direktori) {
-                $this->_onboarding_fail('NPWP sudah digunakan oleh pengembang lain.');
+                $this->_onboarding_fail('NPWP sudah digunakan oleh pengembang lain.', 'NPWP sudah dipakai');
                 return;
             }
             $npwp_encrypted = $this->encryption_lib->encrypt($npwp_raw);
@@ -770,13 +875,13 @@ class Auth extends MY_Controller {
      * Berkas juga tidak bisa dikembalikan - HTML melarang mengisi input file
      * dari server, jadi formulir menyebutkannya terus terang ke user.
      */
-    private function _onboarding_fail($pesan) {
+    private function _onboarding_fail($pesan, $judul = 'Data belum benar') {
         $old = $this->input->post();
         unset($old['password'], $old['password_confirm'],
               $old[$this->security->get_csrf_token_name()]);
 
         $this->session->set_flashdata('ob_old', $old);
-        $this->session->set_flashdata('error', $pesan);
+        $this->_galat($pesan, $judul);
         redirect('Auth/onboarding');
     }
 
@@ -825,7 +930,7 @@ class Auth extends MY_Controller {
         if ($user) {
             $this->session->set_flashdata('success', 'Email berhasil diverifikasi! Silakan login.');
         } else {
-            $this->session->set_flashdata('error', 'Tautan verifikasi tidak valid atau sudah kedaluwarsa.');
+            $this->_galat('Tautan verifikasi tidak valid atau sudah kedaluwarsa.', 'Tautan tidak berlaku');
         }
         $this->gerbang_login();
     }
@@ -884,9 +989,13 @@ class Auth extends MY_Controller {
                     ];
 
                     $logged_in_user = $this->user_model->check_google_user($user_data, $google_data->verifiedEmail === TRUE);
+                    if ($logged_in_user === 'belum_terdaftar') {
+                        $this->_galat('Email Google ini belum terdaftar. Silakan daftar dulu dan pilih peran Anda, lalu masuk dengan Google.', 'Email belum terdaftar', [['Daftar sekarang', NULL, TRUE], ['Kembali ke halaman masuk', 'Auth/login']]);
+                        redirect('Auth/register');
+                    }
                     if ( ! $logged_in_user) {
                         // Email belum diverifikasi Google, atau sudah tertaut ke akun Google lain.
-                        $this->session->set_flashdata('error', 'Masuk dengan Google tidak dapat diproses untuk email ini. Silakan masuk dengan email dan kata sandi, atau hubungi admin.');
+                        $this->_galat('Masuk dengan Google tidak dapat diproses untuk email ini. Silakan masuk dengan email dan kata sandi, atau hubungi admin.', 'Tidak bisa masuk dengan Google', [['Masuk dengan email dan sandi', NULL, TRUE], ['Daftar akun baru', 'Auth/register']]);
                         redirect('Auth/login');
                     }
 
@@ -954,7 +1063,7 @@ class Auth extends MY_Controller {
         }
 
         // Warga menekan Batal, kode ditolak Google, atau pustaka melempar galat.
-        $this->session->set_flashdata('error', 'Masuk dengan Google tidak berhasil. Silakan coba lagi.');
+        $this->_galat('Masuk dengan Google tidak berhasil. Silakan coba lagi.', 'Gagal masuk dengan Google');
         redirect('Auth/login');
     }
 

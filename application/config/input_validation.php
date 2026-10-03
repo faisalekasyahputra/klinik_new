@@ -314,4 +314,14 @@ $config['input_allowed_fields'] = [
     'roof_photo',
     'self_photo',
     'wall_photo',
+    // Parameter yang Google tempelkan ke Auth/google_callback di samping 'code' dan 'state'.
+    // Tanpa ini callback dijawab 400 sebelum controller jalan. 'hd' muncul untuk akun Workspace,
+    // 'error' saat warga menekan Batal di halaman persetujuan.
+    'iss',
+    'scope',
+    'authuser',
+    'prompt',
+    'hd',
+    'error',
+    'kode_otp', // Auth/do_verifikasi_email
 ];

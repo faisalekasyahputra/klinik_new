@@ -23,11 +23,12 @@ class Auth_model extends CI_Model {
      * Create a new user with email and hashed password.
      * Returns the new user's ID or FALSE on failure.
      */
-    public function create_user($email, $password_hash) {
+    public function create_user($email, $password_hash, $email_terverifikasi = FALSE) {
         $now = date('Y-m-d H:i:s');
         $data = [
             'email'      => $email,
             'kata_sandi' => $password_hash,
+            'email_verified_at' => $email_terverifikasi ? $now : NULL, // TRUE hanya sesudah kode OTP benar
             'status'     => 'restricted',
             'sandi_diganti_at' => $now,
             'sandi_kedaluwarsa_at' => date('Y-m-d H:i:s', strtotime('+' . self::PASSWORD_TTL_DAYS . ' days')),

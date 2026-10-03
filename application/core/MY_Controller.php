@@ -42,6 +42,22 @@ class MY_Controller extends CI_Controller {
 
         $this->usir_kalau_nonaktif();
         $this->enforce_single_session_and_password_expiry();
+        $this->enforce_onboarding();
+    }
+
+    /**
+     * Sesi tanpa peran (akun baru yang belum menyelesaikan onboarding) hanya boleh berada di
+     * controller Auth: onboarding, save_onboarding, logout. Tanpa ini akun baru bisa meninggalkan
+     * onboarding dan membuka /akun dengan peran kosong (ditemukan 3 Okt 2026).
+     */
+    private function enforce_onboarding() {
+        if ( ! $this->session->userdata('is_logged') || ! empty($this->session->userdata('role'))) { return; }
+        if (strtolower((string) $this->router->fetch_class()) === 'auth') { return; }
+        if ($this->input->is_ajax_request()) {
+            $this->output->set_status_header(403); header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'code' => 'onboarding_belum_selesai', 'message' => 'Lengkapi pendaftaran dan pilih peran Anda terlebih dahulu.']); exit;
+        }
+        redirect('Auth/onboarding'); exit;
     }
 
     /**

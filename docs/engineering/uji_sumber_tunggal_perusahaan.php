@@ -42,6 +42,10 @@ $kirim = function ($j, $path, array $isi, $ajax = FALSE) use ($http, $csrf) { re
 $daftar = function ($email, array $tambahan = []) use ($jar, $http, $kirim, $sandi) {
     $j = $jar(); $http($j, 'Auth/login');
     [$b] = $kirim($j, 'Auth/do_register', ['email' => $email, 'password' => $sandi, 'password_confirm' => $sandi, 'tos_agree' => '1'] + $tambahan, TRUE);
+    if ((json_decode($b, TRUE)['status'] ?? '') === 'otp_required') { // akun baru lahir sesudah kode OTP benar
+        require_once __DIR__ . '/_otp_uji.php';
+        [$b] = $kirim($j, 'Auth/do_verifikasi_email', ['kode_otp' => kode_otp_uji($email)], TRUE);
+    }
     return [$j, json_decode($b, TRUE)['status'] ?? ''];
 };
 $reg = fn($uid) => $db->query("SELECT * FROM srp2_pengajuan WHERE user_id=" . (int) $uid . " ORDER BY id DESC LIMIT 1")->fetch_assoc();

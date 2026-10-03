@@ -272,16 +272,9 @@ function togglePassword(inputId, btn) {
     }
 }
 
-// Google Login popup
+// Pengalihan halaman penuh, bukan popup: COOP memutus window.opener sekembalinya dari Google.
 function googleLogin() {
-    const w = 500, h = 600;
-    const left = (screen.width - w) / 2;
-    const top = (screen.height - h) / 2;
-    window.open(
-        '<?= base_url("Auth/google") ?>',
-        'GoogleLogin',
-        `width=${w},height=${h},top=${top},left=${left},scrollbars=yes`
-    );
+    window.location.href = '<?= base_url("Auth/google") ?>';
 }
 
 // Form loading state
