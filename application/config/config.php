@@ -386,7 +386,12 @@ $config['encryption_key'] = '';
 |
 */
 $config['sess_driver'] = 'files';
-$config['sess_cookie_name'] = 'ci_session';
+/* Awalan __Host- di production (HTTPS): peramban hanya menerima cookie bernama demikian bila
+   Secure, Path=/ dan TANPA Domain, sehingga situs lain di domain induk yang sama tidak bisa
+   memasang atau menimpanya. Syaratnya dipenuhi cookie_secure/cookie_path/cookie_domain di bawah.
+   Lokal (http://localhost) tetap tanpa awalan, mengikuti logika cookie_secure. Mengganti nama
+   cookie membuat sesi lama tidak terbaca: semua pengguna masuk ulang sekali sesudah rilis. */
+$config['sess_cookie_name'] = (ENVIRONMENT === 'production' ? '__Host-' : '') . 'ci_session';
 $config['sess_samesite'] = 'Lax';
 $config['sess_expiration'] = 7200;
 $config['sess_save_path'] = NULL;
@@ -467,7 +472,9 @@ $config['global_xss_filtering'] = TRUE;
 */
 $config['csrf_protection'] = TRUE;
 $config['csrf_token_name'] = 'csrf_kpkp_token';
-$config['csrf_cookie_name'] = 'csrf_kpkp_cookie';
+// Awalan __Host- di production, alasan sama dengan sess_cookie_name di atas. cookie_prefix wajib
+// tetap kosong: CI_Security menempelkannya DI DEPAN nama ini dan merusak awalan __Host-.
+$config['csrf_cookie_name'] = (ENVIRONMENT === 'production' ? '__Host-' : '') . 'csrf_kpkp_cookie';
 $config['csrf_expire'] = 7200;
 $config['csrf_regenerate'] = FALSE;
 $config['csrf_exclude_uris'] = array(
