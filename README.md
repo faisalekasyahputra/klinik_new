@@ -136,6 +136,7 @@ Baca file-file di folder `docs/` untuk pemahaman mendalam:
 | [`PRODUCT_REQUIREMENTS_DOCUMENT.md`](docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md) | Spesifikasi fitur & PRD |
 | [`IMPLEMENTATION_ROADMAP.md`](docs/product/IMPLEMENTATION_ROADMAP.md) | Roadmap pengembangan |
 | [`AKUN_LOGIN.md`](docs/engineering/AKUN_LOGIN.md) | Cara kerja autentikasi |
+| [`PANDUAN_HOSTING.md`](docs/engineering/PANDUAN_HOSTING.md) | Memasang/memindahkan situs ke server selain Hostinger (Apache, Nginx, pindah data) |
 | [`changelog_090626_12.39WIB_.md`](docs/archive/changelog_090626_12.39WIB_.md) | Riwayat perubahan |
 
 ---
