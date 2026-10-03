@@ -173,6 +173,11 @@
                             <?= $nik_ok ? 'NIK terverifikasi' : 'NIK belum terverifikasi' ?>
                         </div>
                         <?php endif; ?>
+                        <?php if ( ! empty($draft_dilepas[(int) $u->id])): $dl = $draft_dilepas[(int) $u->id]; ?>
+                        <div class="mt-1 text-[11px] font-semibold text-gray-600 dark:text-brand-muted" title="NIK akun ini dipindahkan ke pemilik terverifikasi; draf pendataannya disimpan untuk penelusuran lalu dihapus otomatis">
+                            <?= (int) $dl['n'] ?> draf pendataan dilepas (NIK dipindahkan), dihapus otomatis <?= html_escape(tgl_id($dl['hapus'])) ?>
+                        </div>
+                        <?php endif; ?>
                     </td>
                     <td class="px-4 py-3 text-xs">
                         <?php if ($u->peran === 'admin_kabkota'): ?>

@@ -724,8 +724,9 @@ class Simperum_gateway {
         }
 
         $canonical = $this->normalize($payload);
+        $klaim = FALSE;
         if ($requested_by) {
-            $ditolak = $this->verifikasi_pemilik((int) $requested_by, (string) ($canonical['nik'] ?? ''), $birth_date, $payload);
+            $ditolak = $this->verifikasi_pemilik((int) $requested_by, (string) ($canonical['nik'] ?? ''), $birth_date, $payload, $klaim);
             if ($ditolak !== NULL) {
                 return $ditolak;
             }
@@ -755,18 +756,42 @@ class Simperum_gateway {
                     $provenance[$field] = is_array($meta) ? $meta : ['source' => $source];
                 }
             }
+            /* NIK yang terikat ke akun lain TANPA verifikasi berpindah ke akun yang baru lolos
+               verifikasi (keputusan pemilik produk, 3 Okt 2026): pelepasan, profil baru, tanda
+               terverifikasi, dan jejak audit dalam SATU transaksi. */
+            $db = $this->CI->db;
+            if ($klaim) {
+                $db->trans_begin();
+                $pindah = $this->CI->Housing_assessment_model->pindahkan_ikatan_nik($requested_by, (string) ($canonical['nik'] ?? ''));
+                if (empty($pindah['success'])) {
+                    $db->trans_rollback();
+                    return $this->response('error', $pindah['message'], [], $pindah['code']);
+                }
+            }
             $saved = $this->CI->Housing_assessment_model->save_profile(
                 $requested_by,
                 $canonical,
                 $provenance
             );
             if (empty($saved['success'])) {
+                if ($klaim) { $db->trans_rollback(); }
                 // Teruskan pesan spesifik model ("Akun Anda sudah terhubung dengan
                 // NIK lain...", dst) - pesan generik terbukti membuat pengguna
                 // buntu total: penyebabnya hanya bisa ditelusuri lewat query DB.
                 return $this->response('error', $saved['message'] ?? 'Profil belum dapat disimpan dengan aman.', [], $saved['code'] ?? 'profile_failed');
             }
             $this->CI->Housing_assessment_model->tandai_nik_terverifikasi($requested_by);
+            if ($klaim) {
+                foreach ($pindah['dari'] as $akun_lama) {
+                    $this->catat_nik_dipindahkan((int) $requested_by, (int) $akun_lama, $pindah);
+                }
+                if ( ! $db->trans_status()) {
+                    $db->trans_rollback();
+                    return $this->response('error', 'Profil belum dapat disimpan dengan aman.', [], 'profile_failed');
+                }
+                $db->trans_commit();
+                $this->kabari_akun_lama($pindah['dari']);
+            }
             $this->cermin($canonical['nik'] ?? '', $requested_by, $snapshot);
         }
 
@@ -789,15 +814,21 @@ class Simperum_gateway {
      * Bukti kepemilikan NIK sebelum diikat ke $user_id. NULL bila lolos, selain itu respons
      * penolakan yang tidak memuat data sumber apa pun dan tidak menyebut nilai yang diharapkan.
      *
-     * Urutan: NIK milik akun lain atau berbeda dari NIK akun ditolak lebih dulu (bukan percobaan
-     * gagal), lalu batas percobaan gagal per akun dan per NIK, baru pencocokan nama + tanggal lahir.
+     * Urutan: profil akun sendiri yang terikat NIK lain atau NIK akun yang berbeda ditolak lebih
+     * dulu (bukan percobaan gagal), lalu batas percobaan gagal per akun dan per NIK, baru pencocokan
+     * nama + tanggal lahir. NIK yang terikat ke akun LAIN baru dijawab sesudah pencocokan lolos:
+     * sebelum itu jawabannya sama persis dengan NIK yang tidak terikat siapa pun, jadi layar ini
+     * tidak bisa dipakai menebak apakah sebuah NIK sudah terikat atau ikatannya terverifikasi.
+     * $klaim TRUE: lolos, dan ikatan di akun lain harus dilepas dulu (from_snapshot), yang
+     * menolak dengan PESAN_NIK_TERIKAT bila ikatan itu ternyata terverifikasi.
      */
-    private function verifikasi_pemilik($user_id, $nik, $birth_date, array $payload)
+    private function verifikasi_pemilik($user_id, $nik, $birth_date, array $payload, &$klaim)
     {
+        $klaim = FALSE;
         $model = $this->CI->Housing_assessment_model;
         $nik_hash = $this->CI->encryption_lib->deterministic_hash($nik);
         $ikatan = $model->cek_ikatan_nik($user_id, $nik_hash);
-        if ($ikatan !== NULL) {
+        if ($ikatan !== NULL && $ikatan['code'] !== 'nik_already_bound') {
             return $this->response('error', $ikatan['message'], [], $ikatan['code']);
         }
         $akun = $this->CI->db->select('nama, nik_lookup_hash')->get_where('usr_akun', ['id' => $user_id])->row_array();
@@ -822,10 +853,43 @@ class Simperum_gateway {
         $tanggal_cocok = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $birth_date) === 1
             && $this->birth_date_matches($nik, (string) $birth_date, $payload);
         if ($nama_cocok && $tanggal_cocok) {
+            $klaim = $ikatan !== NULL;
             return NULL;
         }
         $this->CI->rate_limiter->hit('verifikasi_nik', $konteks);
         return $this->response('mismatch', 'Nama lengkap di akun Anda atau tanggal lahir tidak cocok dengan data NIK ini. Periksa tanggal lahir dan pastikan nama di Profil Saya sama dengan nama di KTP.', [], 'verifikasi_tidak_cocok');
+    }
+
+    /** Jejak audit klaim NIK: pelaku = akun yang lolos verifikasi, objek = akun yang melepas. Tanpa NIK. */
+    private function catat_nik_dipindahkan($penerima, $akun_lama, array $pindah)
+    {
+        $this->CI->db->insert('sys_jejak_audit', [
+            'pelaku_id' => $penerima,
+            'pelaku_email' => $this->CI->session->userdata('email') ?: NULL,
+            'pelaku_peran' => $this->CI->session->userdata('role') ?: NULL,
+            'aksi' => 'nik_dipindahkan',
+            'objek_tipe' => 'usr_akun',
+            'objek_id' => (string) $akun_lama,
+            'ringkasan' => 'NIK yang belum terverifikasi dilepas dari akun ini karena akun lain lolos verifikasi pemilik (nama dan tanggal lahir)',
+            'detail_json' => json_encode(['akun_penerima' => $penerima, 'draft_dilepas' => $pindah['draft_dilepas'],
+                'pengajuan_berjalan' => $pindah['pengajuan_berjalan']]),
+            'ip' => $this->CI->input->ip_address(),
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+    }
+
+    /** Web Push ke akun yang melepas NIK (kanal notifikasi per akun yang ada); gagal kirim tidak membatalkan apa pun. */
+    private function kabari_akun_lama(array $akun)
+    {
+        try {
+            $this->CI->load->library('Web_push_service');
+            $this->CI->web_push_service->notify(array_map(fn($id) => ['user_id' => (int) $id], $akun),
+                'Perubahan data akun Klinik PKP',
+                'NIK di akun Anda dilepas karena pemiliknya sudah membuktikan kepemilikan. Bila menurut Anda ini keliru, hubungi Dinas Perakim melalui menu Aduan.',
+                'Umum/aduan', 'nik-dilepas');
+        } catch (\Throwable $e) {
+            log_message('error', 'Simperum_gateway: notifikasi akun lama gagal: ' . $e->getMessage());
+        }
     }
 
     /**

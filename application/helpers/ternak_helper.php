@@ -172,6 +172,7 @@ if ( ! function_exists('audit_kamus')) {
                 'role_diubah'            => 'Peran diubah',
                 'role_diubah_ditolak'    => 'Perubahan peran ditolak',
                 'privilege_admin_diubah' => 'Hak modul admin diubah',
+                'nik_dipindahkan'        => 'NIK dipindahkan ke pemilik terverifikasi',
             ],
             // Jenis data pribadi dari MY_Controller::catat_akses_data_pribadi().
             'jenis' => [

@@ -171,7 +171,12 @@ class User_model extends CI_Model {
             if (!$this->db->table_exists($table) || !$this->db->field_exists('user_id', $table)) {
                 continue;
             }
-            $rows = $this->db->where('user_id', $user_id)->get($table)->result_array();
+            $this->db->where('user_id', $user_id);
+            if ($table === 'sf_penilaian_perumahan') {
+                // Draf yang dilepas saat NIK dipindahkan bukan lagi milik akun ini (isinya identitas pemilik NIK).
+                $this->db->where("NOT (status = 'superseded' AND submitted_at IS NULL)", NULL, FALSE);
+            }
+            $rows = $this->db->get($table)->result_array();
             foreach ($rows as &$row) { $this->_prepare_export_record($row); }
             unset($row);
             $result[$table] = $rows;
