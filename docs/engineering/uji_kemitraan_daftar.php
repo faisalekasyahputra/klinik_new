@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
+require_once __DIR__ . '/_akun_demo.php'; // akun demo nonaktif sejak migrasi 073: dipinjam selama suite berjalan
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji pendaftaran KKN/Magang - identitas mahasiswa + berkas proposal
@@ -28,7 +29,7 @@ define('APP_ROOT', dirname(__DIR__, 2));
 define('MHS_EMAIL', getenv('UJI_MHS_EMAIL') ?: 'mahasiswa@example.com');
 define('MHS_PASSWORD', getenv('UJI_MHS_PASSWORD') ?: 'password');
 define('ADM_EMAIL', getenv('UJI_ADM_EMAIL') ?: 'admin@klinikpkp.jatengprov.go.id');
-define('ADM_PASSWORD', getenv('UJI_ADM_PASSWORD') ?: 'password');
+define('ADM_PASSWORD', getenv('UJI_ADM_PASSWORD') ?: pinjam_akun_demo(ADM_EMAIL));
 define('SENTINEL', 'UJI-KEMITRAAN-' . date('His'));
 // Formulir magang mengirim KODE bidang sejak migrasi 031, bukan nama divisi.
 define('BIDANG_A', getenv('UJI_BIDANG_A') ?: 'perumahan');

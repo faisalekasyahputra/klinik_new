@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
+require_once __DIR__ . '/_akun_demo.php'; // akun demo nonaktif sejak migrasi 073: dipinjam selama suite berjalan
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji perjalanan MAHASISWA - pendaftaran KKN / Magang, lewat HTTP Apache nyata.
@@ -319,7 +320,7 @@ try {
 
     $adm = $admin['email'];
     echo "  --    (peninjau: {$adm})\n";
-    if (login('adm', $adm, getenv('UJI_ADMIN_PASSWORD') ?: 'password')) {
+    if (login('adm', $adm, getenv('UJI_ADMIN_PASSWORD') ?: pinjam_akun_demo($adm))) {
         cek(strpos(http('adm', 'Admin_Kemitraan')['body'], 'Universitas Uji Mahasiswa') !== FALSE,
             'Pendaftaran muncul di layar peninjauan admin');
 

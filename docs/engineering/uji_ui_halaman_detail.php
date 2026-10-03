@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
+require_once __DIR__ . '/_akun_demo.php'; // akun demo nonaktif sejak migrasi 073: dipinjam selama suite berjalan
 date_default_timezone_set('Asia/Jakarta');
 /*
  * Uji tampilan halaman detail admin (2 Okt 2026): Detail Penilaian Warga
@@ -90,7 +91,7 @@ foreach (['admin/antrean/detail.php', 'admin/aduan/detail.php', 'admin/srp2/deta
 }
 
 echo "\n== Detail Penilaian Warga (superadmin) ==\n";
-if ( ! login('su', 'admin@klinikpkp.jatengprov.go.id', 'password')) { cek(FALSE, 'Login superadmin'); exit(1); }
+if ( ! login('su', 'admin@klinikpkp.jatengprov.go.id', pinjam_akun_demo('admin@klinikpkp.jatengprov.go.id'))) { cek(FALSE, 'Login superadmin'); exit(1); }
 // Antrean contoh 49 (cabang calon lahan, isian lahan lengkap); bila tidak ada, antrean terbaru.
 $qid = (int) ($satu('SELECT id FROM sf_antrean_pengajuan WHERE id = 49') ?: $satu('SELECT MAX(id) FROM sf_antrean_pengajuan'));
 $html = http('su', 'Admin/detail/' . $qid);
@@ -120,7 +121,7 @@ if (strpos($isi, 'name="status" value="approved"') !== FALSE) {
 
 echo "\n== Detail Penilaian Warga (admin kab/kota, B2) ==\n";
 $kab_q = (int) $satu('SELECT kabupaten_id FROM sf_antrean_pengajuan WHERE id = ' . $qid);
-if ($kab_q === (int) $satu("SELECT kabupaten_id FROM usr_akun WHERE email = 'adminkabkota@example.com'") && login('kab', 'adminkabkota@example.com', 'password')) {
+if ($kab_q === (int) $satu("SELECT kabupaten_id FROM usr_akun WHERE email = 'adminkabkota@example.com'") && login('kab', 'adminkabkota@example.com', pinjam_akun_demo('adminkabkota@example.com'))) {
     $isi_k = isi(http('kab', 'Admin_Kabkota/detail/' . $qid));
     $t_k = teks($isi_k);
     cek($isi_k !== '' && section_tanpa_kartu($isi_k) === 0, "Admin_Kabkota/detail/{$qid}: view sama, setiap section berkelas kartu-admin");
