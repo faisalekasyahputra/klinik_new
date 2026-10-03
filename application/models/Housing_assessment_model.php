@@ -75,6 +75,13 @@ class Housing_assessment_model extends CI_Model {
     public function cek_ikatan_nik($user_id, $nik_hash)
     {
         $user_id = (int) $user_id;
+        // Keadaan akun sendiri lebih dulu: jawabannya tidak bergantung pada akun lain mana pun.
+        $existing = $this->db->select('nik_lookup_hash')
+            ->get_where('sf_profil_warga', ['user_id' => $user_id])
+            ->row_array();
+        if ($existing && ! hash_equals((string) $existing['nik_lookup_hash'], (string) $nik_hash)) {
+            return $this->fail('account_already_bound', 'Akun Anda sudah terhubung dengan NIK lain. Gunakan NIK yang sama dengan pendataan sebelumnya.');
+        }
         $bound = $this->db->select('user_id')
             ->get_where('sf_profil_warga', ['nik_lookup_hash' => $nik_hash])
             ->row_array();
@@ -83,13 +90,63 @@ class Housing_assessment_model extends CI_Model {
         if ($bound_account || ($bound && (int) $bound['user_id'] !== $user_id)) {
             return $this->fail('nik_already_bound', self::PESAN_NIK_TERIKAT);
         }
-        $existing = $this->db->select('nik_lookup_hash')
-            ->get_where('sf_profil_warga', ['user_id' => $user_id])
-            ->row_array();
-        if ($existing && ! hash_equals((string) $existing['nik_lookup_hash'], (string) $nik_hash)) {
-            return $this->fail('account_already_bound', 'Akun Anda sudah terhubung dengan NIK lain. Gunakan NIK yang sama dengan pendataan sebelumnya.');
-        }
         return NULL;
+    }
+
+    /** Untuk isian NIK tanpa tanggal lahir (onboarding, Profil Saya): sama untuk ikatan terverifikasi atau belum. */
+    public const PESAN_NIK_TERIKAT_BUKTIKAN = 'NIK ini sudah terhubung dengan akun lain. Jika ini NIK Anda, buktikan kepemilikannya di langkah Cek NIK menu Pendataan (nama akun dan tanggal lahir sesuai KTP), atau sampaikan melalui menu Aduan.';
+
+    /**
+     * Klaim NIK oleh pemilik yang sudah lolos verifikasi nama + tanggal lahir (keputusan pemilik
+     * produk, 3 Okt 2026): ikatan yang BELUM terverifikasi di akun lain dilepas lalu NIK diikat ke
+     * akun $user_id. Ikatan terverifikasi (sf_profil_warga.confirmed_at) tidak pernah dilepas.
+     *
+     * WAJIB di dalam transaksi pemanggil (Simperum_gateway::from_snapshot), yang sesudahnya
+     * menyimpan profil $user_id dan jejak audit pada transaksi yang sama. Urutan menjaga UNIQUE
+     * nik_lookup_hash: pemegang lama dikosongkan dulu, baru akun baru diisi.
+     *
+     * Akun lama tidak dihapus dan tetap bisa masuk. Yang berubah hanya yang melekat ke NIK itu:
+     * usr_akun.nik dikosongkan; profil pendataannya dihapus (kolom NIK-nya NOT NULL, isinya
+     * identitas pemilik NIK); cermin SIMPERUM NIK itu dilepas; draft pendataan yang belum dikirim
+     * dihapus seperti saat akun dihapus (Data_erasure: draft bukan arsip, isinya data rumah dan
+     * identitas pemilik NIK), berkas buktinya disapu pemanggil SESUDAH commit lewat 'draft_ids'.
+     * Pengajuan yang sudah masuk antrean TIDAK disentuh: itu catatan dinas (salinan profilnya
+     * tersimpan di penilaian), petugas yang memutuskan lewat jejak audit.
+     */
+    public function pindahkan_ikatan_nik($user_id, $nik)
+    {
+        $user_id = (int) $user_id;
+        $nik_hash = $this->encryption_lib->deterministic_hash($nik);
+        $nik_ciphertext = $this->encrypt_value($nik);
+        if ($user_id < 1 || $nik_hash === '' || ! $this->encryption_lib->is_encrypted($nik_ciphertext)) {
+            return $this->fail('encryption_unavailable', 'Data sensitif belum dapat disimpan.');
+        }
+        $profil = $this->db->query('SELECT id, user_id, confirmed_at FROM sf_profil_warga WHERE nik_lookup_hash = ? AND user_id != ? FOR UPDATE',
+            [$nik_hash, $user_id])->row_array();
+        $akun = array_map('intval', array_column($this->db->query('SELECT id FROM usr_akun WHERE nik_lookup_hash = ? AND id != ? FOR UPDATE',
+            [$nik_hash, $user_id])->result_array(), 'id'));
+        if ($profil && $profil['confirmed_at'] !== NULL) {
+            return $this->fail('nik_already_bound', self::PESAN_NIK_TERIKAT);
+        }
+        $dari = array_values(array_unique(array_merge($akun, $profil ? [(int) $profil['user_id']] : [])));
+        $draft_ids = [];
+        if ($profil) {
+            $draft_ids = array_map('intval', array_column($this->db->select('id')->get_where('sf_penilaian_perumahan',
+                ['profil_warga_id' => (int) $profil['id'], 'status' => 'draft'])->result_array(), 'id'));
+            if ($draft_ids) {
+                $this->db->where_in('id', $draft_ids)->delete('sf_penilaian_perumahan');
+            }
+            $this->db->delete('sf_profil_warga', ['id' => (int) $profil['id']]);
+        }
+        if ($akun) {
+            $this->db->where_in('id', $akun)->update('usr_akun', ['nik' => NULL, 'nik_lookup_hash' => NULL]);
+        }
+        $this->db->where('nik_lookup_hash', $nik_hash)->where('user_id !=', $user_id)->delete('sf_data_simperum');
+        $this->db->where('id', $user_id)->where('nik_lookup_hash IS NULL', NULL, FALSE)
+            ->update('usr_akun', ['nik' => $nik_ciphertext, 'nik_lookup_hash' => $nik_hash]);
+        $pengajuan = $dari ? $this->db->where_in('user_id', $dari)
+            ->where_in('status_antrean', ['pending', 'needs_revision'])->count_all_results('sf_antrean_pengajuan') : 0;
+        return ['success' => TRUE, 'dari' => $dari, 'draft_ids' => $draft_ids, 'pengajuan_berjalan' => $pengajuan];
     }
 
     /**

@@ -59,12 +59,20 @@ class Data_erasure {
 
         // Draf penilaian warga: berkas buktinya dan barisnya (baris berkas dan rekomendasi ikut lewat CASCADE).
         $draf_ids = $this->ids("SELECT id FROM sf_penilaian_perumahan WHERE user_id = ? AND status = 'draft'", [$user_id]);
-        foreach ($draf_ids as $id) { $berkas += $this->sapu_direktori('warga_assessment', $id); }
+        $berkas += $this->sapu_berkas_draf($draf_ids);
         if ($draf_ids) {
             $this->db->query('DELETE FROM sf_penilaian_perumahan WHERE id IN (' . implode(',', array_map('intval', $draf_ids)) . ')');
             $draf = count($draf_ids);
         }
         return ['berkas' => $berkas, 'draf' => $draf];
+    }
+
+    /** Hapus berkas bukti draf penilaian warga dari disk (barisnya urusan pemanggil). @return int jumlah berkas */
+    public function sapu_berkas_draf(array $draf_ids)
+    {
+        $n = 0;
+        foreach ($draf_ids as $id) { $n += $this->sapu_direktori('warga_assessment', (int) $id); }
+        return $n;
     }
 
     /**

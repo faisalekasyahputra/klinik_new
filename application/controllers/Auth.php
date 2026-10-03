@@ -670,12 +670,13 @@ class Auth extends MY_Controller {
                 $this->_onboarding_fail('NIK sudah terkunci pada akun ini dan tidak dapat diubah sendiri. Hubungi admin bila ada kekeliruan.');
                 return;
             }
-            if ($this->db->where('nik_lookup_hash', $nik_hash)->where('id !=', $user_id)->count_all_results('usr_akun') > 0
-                || $this->db->where('nik_lookup_hash', $nik_hash)->where('user_id !=', $user_id)->count_all_results('sf_profil_warga') > 0) {
-                $this->load->model('Housing_assessment_model');
-                $this->_onboarding_fail(Housing_assessment_model::PESAN_NIK_TERIKAT);
-                return;
-            }
+            /* NIK yang sudah terikat ke akun lain tidak lagi menahan onboarding (3 Okt 2026): akun
+               disimpan TANPA NIK, NIK-nya mengisi Cek NIK pendataan, dan di sana pemilik yang lolos
+               verifikasi nama + tanggal lahir mengambil alih ikatan yang belum terverifikasi
+               (Simperum_gateway::verifikasi_pemilik). Pesannya sama untuk ikatan terverifikasi
+               atau belum. */
+            $nik_terikat_lain = $this->db->where('nik_lookup_hash', $nik_hash)->where('id !=', $user_id)->count_all_results('usr_akun') > 0
+                || $this->db->where('nik_lookup_hash', $nik_hash)->where('user_id !=', $user_id)->count_all_results('sf_profil_warga') > 0;
         }
 
         $alamat_encrypted = $this->encryption_lib->encrypt($alamat_raw);
@@ -687,7 +688,7 @@ class Auth extends MY_Controller {
             'no_hp' => $phone,
             'kategori' => $role,
         ];
-        if ($role === 'warga') {
+        if ($role === 'warga' && empty($nik_terikat_lain)) {
             $profile_data['nik'] = $this->encryption_lib->encrypt($nik_raw);
             $profile_data['nik_lookup_hash'] = $nik_hash;
         }
@@ -751,6 +752,11 @@ class Auth extends MY_Controller {
            NIK akun tetap mengisi kolom Cek NIK otomatis. */
 
         $this->session->set_flashdata('success', 'Profil berhasil disimpan! Selamat datang di Klinik PKP.');
+        if ( ! empty($nik_terikat_lain)) {
+            $this->load->model('Housing_assessment_model');
+            $this->session->set_userdata('warga_pending_nik', $nik_raw);
+            $this->session->set_flashdata('warning', Housing_assessment_model::PESAN_NIK_TERIKAT_BUKTIKAN);
+        }
         $this->_redirect_after_login();
     }
 

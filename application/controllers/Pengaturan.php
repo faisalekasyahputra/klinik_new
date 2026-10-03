@@ -530,7 +530,8 @@ class Pengaturan extends MY_Controller {
                 $this->load->model('Housing_assessment_model');
                 $ikatan = $this->Housing_assessment_model->cek_ikatan_nik($user_id, $sidik);
                 if ($ikatan !== NULL) {
-                    $this->session->set_flashdata('error', $ikatan['message']);
+                    $this->session->set_flashdata('error', $ikatan['code'] === 'nik_already_bound'
+                        ? Housing_assessment_model::PESAN_NIK_TERIKAT_BUKTIKAN : $ikatan['message']);
                     redirect('akun/profil');
                     return;
                 }
