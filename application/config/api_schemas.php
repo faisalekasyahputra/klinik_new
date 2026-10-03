@@ -118,10 +118,6 @@ $config['api_schemas'] = [
             'nama_perusahaan'  => ['type' => 'string', 'max_len' => 200],
         ]]],
     ],
-    'auth/do_verify_email' => [
-        'class' => 'api', 'json' => TRUE,
-        'methods' => ['POST' => ['fields' => []]],
-    ],
 
     // ------------------------------------------------------------- Dokumen pengembang (multipart, XHR)
     'pengembang/simpan_dokumen' => [

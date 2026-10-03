@@ -152,7 +152,9 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                     <div class="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         <input type="password" name="password" autocomplete="new-password" placeholder="Password baru" class="<?= $isian ?>">
                         <input type="password" name="password_confirm" autocomplete="new-password" placeholder="Ulangi password baru" class="<?= $isian ?>">
+                        <?php if ( ! empty($user->kata_sandi)): ?>
                         <input type="password" name="current_password" autocomplete="current-password" placeholder="Password Anda saat ini" class="<?= $isian ?>">
+                        <?php endif; ?>
                     </div>
                 </div>
 

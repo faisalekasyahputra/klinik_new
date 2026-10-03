@@ -477,8 +477,8 @@ class Auth extends MY_Controller {
             return;
         }
 
-        // Redirect to dummy email verification page
-        redirect('Auth/verify_pending');
+        // Halaman verifikasi email simulasi dihapus (ia menandai email terverifikasi tanpa bukti).
+        redirect('Auth/onboarding');
     }
 
     /**
@@ -704,6 +704,8 @@ class Auth extends MY_Controller {
         if (isset($password_hash)) {
             $profile_data['kata_sandi'] = $password_hash;
             $profile_data = array_merge($profile_data, $this->auth_model->password_lifetime_fields());
+            // Sandi baru menggantikan sandi yang dicabut saat penautan Google (check_google_user).
+            $this->session->unset_userdata('password_change_required');
         }
         $this->auth_model->save_profile($user_id, $profile_data);
 
@@ -775,42 +777,10 @@ class Auth extends MY_Controller {
         $this->load->view('pages/auth/forgot_password');
     }
 
-    // =========================================================
-    // DUMMY EMAIL VERIFICATION
-    // =========================================================
-
-    /**
-     * Show pending verification page (dummy - auto-verifies after countdown)
-     */
-    public function verify_pending() {
-        if (!$this->is_logged_in()) {
-            $this->gerbang_login();
-            return;
-        }
-
-        $data = [
-            'user_email' => $this->session->userdata('email'),
-        ];
-        $this->load->view('pages/auth/verify_pending', $data);
-    }
-
-    /**
-     * AJAX endpoint - simulate email verification
-     */
-    public function do_verify_email() {
-        if (!$this->is_logged_in()) {
-            header('Content-Type: application/json; charset=utf-8'); echo json_encode(['status' => 'error']);
-            return;
-        }
-
-        $user_id = $this->get_user_id();
-        $this->db->where('id', $user_id);
-        $this->db->update('usr_akun', [
-            'email_verified_at' => date('Y-m-d H:i:s'),
-        ]);
-
-        header('Content-Type: application/json; charset=utf-8'); echo json_encode(['status' => 'ok']);
-    }
+    // Verifikasi email simulasi (verify_pending + do_verify_email) DIHAPUS: ia menandai
+    // email_verified_at tanpa bukti kepemilikan. Satu-satunya penanda yang tersisa adalah
+    // bukti sungguhan: login Google (email terverifikasi Google), token verify_email(), atau
+    // akun yang dibuat admin.
 
     public function lanjutkan() {
         if (!$this->is_logged_in()) { $this->gerbang_login(); return; }
@@ -923,7 +893,12 @@ class Auth extends MY_Controller {
                         'foto_profil' => $google_data['picture'],
                     ];
 
-                    $logged_in_user = $this->user_model->check_google_user($user_data);
+                    $logged_in_user = $this->user_model->check_google_user($user_data, $google_data->verifiedEmail === TRUE);
+                    if ( ! $logged_in_user) {
+                        // Email belum diverifikasi Google, atau sudah tertaut ke akun Google lain.
+                        $this->session->set_flashdata('error', 'Masuk dengan Google tidak dapat diproses untuk email ini. Silakan masuk dengan email dan kata sandi, atau hubungi admin.');
+                        $this->_oauth_close_popup(base_url('Auth/login'));
+                    }
 
                     if ($logged_in_user) {
                         /**
@@ -952,12 +927,7 @@ class Auth extends MY_Controller {
                             return;
                         }
 
-                        // Mark Google users as email-verified
-                        $this->db->where('id', $logged_in_user[0]['id']);
-                        $this->db->update('usr_akun', [
-                            'email_verified_at' => date('Y-m-d H:i:s'),
-                        ]);
-
+                        // email_verified_at dan pencabutan sandi lama sudah ditangani check_google_user().
                         $session_data = [
                             'user_id'      => $logged_in_user[0]['id'],
                             'name'         => $logged_in_user[0]['nama'],

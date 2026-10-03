@@ -559,8 +559,11 @@ class Pengaturan extends MY_Controller {
             }
             $current_password = (string) $this->input->post('current_password');
             $user = $this->Auth_model->find_by_id($user_id);
-            $valid_password = $user && !empty($user->kata_sandi)
-                && password_verify($current_password, (string) $user->kata_sandi);
+            // Akun tanpa sandi sama sekali (sandi lama dicabut saat email dibuktikan lewat Google,
+            // lihat User_model::check_google_user) membuat sandi pertamanya di sini; sesinya hanya
+            // bisa berasal dari login Google, setara dengan isian sandi di onboarding.
+            $valid_password = $user && (empty($user->kata_sandi)
+                || password_verify($current_password, (string) $user->kata_sandi));
             $this->load->library('sensitive_buffer');
             $this->sensitive_buffer->wipe($current_password);
             if (isset($_POST['current_password'])) {

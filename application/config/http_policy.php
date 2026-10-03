@@ -43,7 +43,6 @@ $config['http_policy'] = [
         'admin_users/reset_sandi'              => 'reset kata sandi',
         'auth/do_login'                        => 'autentikasi',
         'auth/do_register'                     => 'buat akun',
-        'auth/do_verify_email'                 => 'menandai surel terverifikasi (dulu bisa dipicu lewat GET)',
         'auth/save_onboarding'                 => 'simpan profil onboarding',
         'pengaturan/update_profile'            => 'ubah profil',
         'pengaturan/update_pengembang_profile' => 'ubah profil pengembang',
