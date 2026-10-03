@@ -93,6 +93,8 @@ $route['umum']                     = 'Index/umum';
 $route['detail_perum/(:any)']      = 'Index/detail_perum/$1';
 $route['profil']                   = 'Index/profil';
 $route['tugas_pokok']              = 'Index/tugas_pokok';
+$route['kebijakan-privasi']        = 'Index/kebijakan_privasi';
+$route['syarat-ketentuan']         = 'Index/syarat_ketentuan';
 // $route['struktur'] dicabut 29 Jul 2026 (A4) - halaman memajang nama pejabat
 // tanpa sumber data. Alasan lengkap di Index.php.
 $route['pengembang']               = 'Index/pengembang';

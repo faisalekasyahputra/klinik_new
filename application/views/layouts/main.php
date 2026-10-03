@@ -247,7 +247,9 @@
                    $ftSettings = $CI->Setting_model->get_all();
                ?>
                <div class="shrink-0 flex items-center justify-center px-1 pt-1 pb-1 mb-1">
-                   <span class="text-[10px] text-[#8aacb0]">&copy; <?= date('Y') ?> <?= htmlspecialchars($ftSettings['footer_copyright'] ?? 'KLINIK PKP JATENG') ?></span>
+                   <span class="text-[10px] text-[#8aacb0]">&copy; <?= date('Y') ?> <?= htmlspecialchars($ftSettings['footer_copyright'] ?? 'KLINIK PKP JATENG') ?>
+                       <span aria-hidden="true">&middot;</span> <a href="<?= base_url('kebijakan-privasi') ?>" class="hover:underline">Kebijakan Privasi</a>
+                       <span aria-hidden="true">&middot;</span> <a href="<?= base_url('syarat-ketentuan') ?>" class="hover:underline">Syarat dan Ketentuan</a></span>
                </div>
            </div>
        </section>

@@ -131,7 +131,7 @@
                 <!-- ToS Checkbox -->
                 <label class="auth-checkbox">
                     <input type="checkbox" id="tos_agree" name="tos_agree" required>
-                    Saya menyetujui <a href="#" class="auth-link" style="margin-left:4px;">Ketentuan Layanan</a>&nbsp;dan&nbsp;<a href="#" class="auth-link">Kebijakan Privasi</a>
+                    Saya menyetujui <a href="<?= base_url('syarat-ketentuan') ?>" target="_blank" rel="noopener" class="auth-link" style="margin-left:4px;">Ketentuan Layanan</a>&nbsp;dan&nbsp;<a href="<?= base_url('kebijakan-privasi') ?>" target="_blank" rel="noopener" class="auth-link">Kebijakan Privasi</a>
                 </label>
 
                 <!-- Submit -->
