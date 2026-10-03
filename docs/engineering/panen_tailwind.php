@@ -14,7 +14,10 @@
  *   1) php docs/engineering/panen_tailwind.php
  *      -> menulis uji_harvest_tailwind.html + uji_harvest_receiver.php di
  *         root proyek, mencetak token & URL.
- *   2) Buka URL itu di browser (localhost). Halaman mengumpulkan CSS hasil
+ *   2) Jalankan `php -S 127.0.0.1:8765 -t .` dari root proyek, lalu buka
+ *      URL yang dicetak. BUKAN lewat Apache: .htaccess menjawab 403 untuk
+ *      setiap berkas root selain index.php, termasuk kedua berkas uji_harvest_*
+ *      (jangan dilonggarkan demi panen). Halaman mengumpulkan CSS hasil
  *      generate CDN, membuang preflight (reset elemen) supaya tidak
  *      menimpa design-system.css, lalu POST ke receiver yang menulis
  *      assets/css/tailwind-generated.css. Setelah selesai HAPUS kedua
@@ -44,10 +47,15 @@ if ($mode === 'admin') {
     //
     // Daftar ini diturunkan dari pemanggil sungguhan:
     //   grep -rho "render_user_dashboard('[^']*'\|render_scoped_admin('[^']*'" application/controllers/
+    // kemitraan_portal campuran: kkn_dashboard dan kkn_batch memakai shell
+    // admin, sisanya shell portal. Seluruh folder dipanen; kelas lebihnya
+    // hanya menambah beberapa rule, sedangkan yang terlewat membuat halaman
+    // KKN cat-pertama telanjang (tombol lemon dll. menunggu CDN).
     $dirs = [
         $root . '/application/views/admin',
         $root . '/application/views/admin_bidang',
         $root . '/application/views/pages/pengaturan',
+        $root . '/application/views/pages/kemitraan_portal',
     ];
     $out_css = 'tailwind-admin.css';
     $config_js = "tailwind.config = { darkMode: 'class', theme: { extend: { fontFamily: { sans: ['\"Plus Jakarta Sans\"', 'sans-serif'] }, colors: { brand: { primary: '#d6fb00', hover: '#b5d400', light: '#ecffb6', muted: '#8aacb0', dark: '#0a1a1f', card: '#0f2933' } } } } };";
@@ -85,6 +93,9 @@ foreach ($files as $path) {
     $blobs = [];
     if (preg_match_all('/class\s*=\s*"([^"]*)"/i', $src, $m)) { $blobs = array_merge($blobs, $m[1]); }
     if (preg_match_all("/class\s*=\s*'([^']*)'/i", $src, $m)) { $blobs = array_merge($blobs, $m[1]); }
+    // Kelas animasi Alpine (x-transition:enter-start="opacity-0 ...") bukan
+    // atribut class; tanpa ini opacity-0 dkk. hilang dari CSS statis.
+    if (preg_match_all('/x-transition:[a-z.-]+\s*=\s*"([^"]*)"/i', $src, $m)) { $blobs = array_merge($blobs, $m[1]); }
     // String berkutip tunggal di JS/Alpine (:class, innerHTML skeleton, dst.)
     if (preg_match_all("/'([a-z0-9!\\-\\[\\]\\/\\.:%#_,() ]{2,})'/i", $src, $m)) { $blobs = array_merge($blobs, $m[1]); }
     foreach ($blobs as $blob) {
@@ -173,5 +184,6 @@ HTML
 );
 
 echo "Tertulis: uji_harvest_tailwind.html + uji_harvest_receiver.php di root proyek.\n";
-echo "Buka: http://localhost/klinik_new/uji_harvest_tailwind.html lalu tunggu status SELESAI.\n";
+echo "Jalankan dari root proyek: php -S 127.0.0.1:8765 -t .   (Apache menolak berkas root, lihat .htaccess)\n";
+echo "Buka: http://127.0.0.1:8765/uji_harvest_tailwind.html lalu tunggu status SELESAI.\n";
 echo "Sesudahnya hapus kedua berkas uji_harvest_* itu.\n";

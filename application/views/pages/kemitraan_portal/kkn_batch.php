@@ -73,7 +73,7 @@ $terbuka = ! $berhenti;
                 <li class="flex gap-3">
                     <div class="flex flex-col items-center">
                         <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black
-                            <?= $selesai ? 'bg-green-500 text-white' : ($sedang ? 'bg-brand-primary text-white' : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-brand-muted') ?>">
+                            <?= $selesai ? 'bg-green-500 text-white' : ($sedang ? 'bg-brand-primary text-brand-dark' : 'bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-brand-muted') ?>">
                             <?= $selesai ? '✓' : $nomor ?>
                         </span>
                         <?php if ($nomor < 4): ?>
