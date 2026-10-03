@@ -273,9 +273,10 @@ class Umum extends MY_Controller {
 		$per_hal = 20;
 		$hal = max(1, (int) $this->input->get('hal'));
 
-		/* Permintaan penghapusan data (hak subjek data) bukan aduan publik: selain staf, hanya
-		   pemohonnya yang melihat barisnya sendiri. Saringan yang sama untuk hitungan dan daftar,
-		   supaya jumlah halaman tidak membocorkan berapa permintaan yang ada. */
+		// Permintaan penghapusan data (hak subjek data) bukan aduan publik: selain staf, hanya
+		// pemohonnya yang melihat barisnya sendiri. Saringan yang sama untuk hitungan dan daftar,
+		// supaya jumlah halaman tidak membocorkan berapa permintaan yang ada. (Komentar baris, bukan
+		// blok: uji_aduan_triase membaca batas method ini sampai pembuka komentar blok berikutnya.)
 		$this->config->load('data_lifecycle', TRUE);
 		$staf = in_array((string) $this->current_role(),
 			$this->config->item('data_lifecycle', 'data_lifecycle')['audit']['peran_staf'], TRUE);
