@@ -198,7 +198,8 @@ cek(strpos($daftarA, $tiketB) === FALSE, 'A TIDAK melihat antrean wilayah B');
 /* Pencarian adalah kanal kebocoran tersendiri: daftar boleh ter-scope sementara
    kotak carinya menembus wilayah. Dicari dengan NIK milik B, yang paling
    spesifik dan paling mustahil muncul kebetulan. */
-[, $cariA] = $sesiA->call('Admin_Kabkota?q=3300000000000002');
+// Kotak cari antrean dikirim POST lalu redirect (keamanan rendah 3 Okt 2026): NIK tidak boleh ke URL.
+[, $cariA] = $sesiA->call('Admin_Kabkota', ['csrf_kpkp_token' => $sesiA->token('Admin_Kabkota'), 'q' => '3300000000000002']);
 cek(strpos($cariA, $tiketB) === FALSE, 'Mencari NIK wilayah B tidak memunculkannya');
 
 // ---------------------------------------------------------- 2. NIK tersamar

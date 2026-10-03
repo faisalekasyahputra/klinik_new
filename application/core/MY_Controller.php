@@ -814,11 +814,25 @@ class MY_Controller extends CI_Controller {
      * @return array [queue, table, pager, filter_status, filter_tanpa_wilayah, can_filter_tanpa_wilayah]
      */
     protected function antrean_table_data($kabupaten_id = NULL) {
+        // Kotak cari antrean dikirim POST (bisa berisi NIK); dijawab redirect, fungsi ini tidak kembali.
+        if ($this->input->method() === 'post') { $this->cari_antrean_prg(); }
+
         // Nama pemohon terenkripsi sejak migrasi 067: tidak bisa diurutkan maupun dicari di SQL.
         $kolom_sort = [
             'sf_antrean_pengajuan.created_at', 'sf_program.nama_program', 'sf_antrean_pengajuan.status_antrean',
         ];
         $table = $this->table_state($kolom_sort, 'sf_antrean_pengajuan.created_at');
+        $table['cari_post'] = TRUE;
+        // NIK tidak dilayani lewat URL (?q=<16 digit>): hanya lewat token sesi dari cari_antrean_prg().
+        if (preg_match('/^\d{16}$/', $table['q'])) { $table['q'] = ''; }
+        $cari_nik = NULL;
+        $token = (string) $this->input->get('cari', TRUE);
+        $tersimpan = (array) $this->session->userdata('cari_antrean');
+        if ($token !== '' && isset($tersimpan[$token]['sidik'])) {
+            $cari_nik = $tersimpan[$token];
+            $table['q'] = '';
+            $table['cari_label'] = $cari_nik['label'];
+        }
 
         $status = $this->input->get('status', TRUE);
         $status = in_array($status, ['pending', 'needs_revision', 'approved', 'rejected'], TRUE) ? $status : NULL;
@@ -829,23 +843,23 @@ class MY_Controller extends CI_Controller {
         if ($kabupaten_id !== NULL) { $this->db->where('sf_antrean_pengajuan.kabupaten_id', $kabupaten_id); }
         if ($status) { $this->db->where('sf_antrean_pengajuan.status_antrean', $status); }
         if ($tanpa_wilayah) { $this->db->where('sf_antrean_pengajuan.kabupaten_id IS NULL', NULL, FALSE); }
-        if ($table['q'] !== '') {
-            $this->db->group_start()
-                ->like('sf_antrean_pengajuan.kode_tiket', $table['q'])
-                ->or_like('sf_program.nama_program', $table['q']);
+        if ($cari_nik !== NULL) {
             /* NIK dicari hanya utuh 16 digit, lewat sidiknya (migrasi 067): tiket lama menyimpannya
                di antrean, tiket wizard di sf_profil_warga. Klausa ini di dalam group yang di-AND
                dengan scope wilayah, jadi NIK wilayah lain tetap tidak muncul. Pencarian nama
                DICABUT: nama terenkripsi, dan menyaringnya di PHP merusak hitungan halaman. */
-            if (preg_match('/^\d{16}$/', $table['q'])) {
-                $this->load->library('encryption_lib');
-                $sidik = $this->encryption_lib->deterministic_hash($table['q']);
-                $this->db->or_where('sf_antrean_pengajuan.nik_pengaju_lookup_hash', $sidik)
-                    ->or_where('sf_antrean_pengajuan.penilaian_id IN (SELECT a.id FROM sf_penilaian_perumahan a'
-                        . ' JOIN sf_profil_warga p ON p.id = a.profil_warga_id'
-                        . ' WHERE p.nik_lookup_hash = ' . $this->db->escape($sidik) . ')', NULL, FALSE);
-            }
-            $this->db->group_end();
+            $sidik = (string) $cari_nik['sidik'];
+            $this->db->group_start()
+                ->where('sf_antrean_pengajuan.nik_pengaju_lookup_hash', $sidik)
+                ->or_where('sf_antrean_pengajuan.penilaian_id IN (SELECT a.id FROM sf_penilaian_perumahan a'
+                    . ' JOIN sf_profil_warga p ON p.id = a.profil_warga_id'
+                    . ' WHERE p.nik_lookup_hash = ' . $this->db->escape($sidik) . ')', NULL, FALSE)
+                ->group_end();
+        } elseif ($table['q'] !== '') {
+            $this->db->group_start()
+                ->like('sf_antrean_pengajuan.kode_tiket', $table['q'])
+                ->or_like('sf_program.nama_program', $table['q'])
+                ->group_end();
         }
 
         // FALSE = pertahankan state query builder untuk query ambil di bawah.
@@ -863,6 +877,32 @@ class MY_Controller extends CI_Controller {
             'filter_status' => $status, 'filter_tanpa_wilayah' => $tanpa_wilayah,
             'can_filter_tanpa_wilayah' => $kabupaten_id === NULL,
         ];
+    }
+
+    /**
+     * POST kotak cari antrean lalu redirect (PRG). NIK 16 digit tidak pernah masuk URL, tautan halaman,
+     * log akses, atau riwayat peramban: yang disimpan di sesi hanya sidiknya plus label bertopeng, dan URL
+     * membawa token acak `cari`. Teks lain (tiket, program) bukan data pribadi dan tetap lewat ?q=.
+     * ponytail: lima token terakhir per sesi; cukup untuk tab yang terbuka bersamaan.
+     */
+    private function cari_antrean_prg() {
+        $q = preg_replace('/\s+/', '', (string) $this->input->post('q', TRUE));
+        $params = [];
+        foreach (['status', 'tanpa_wilayah', 'sort', 'dir'] as $k) {
+            $v = $this->input->post($k, TRUE);
+            if (is_string($v) && $v !== '') { $params[$k] = $v; }
+        }
+        if (preg_match('/^\d{16}$/', $q)) {
+            $this->load->library('encryption_lib');
+            $tersimpan = array_slice((array) $this->session->userdata('cari_antrean'), -4, NULL, TRUE);
+            $token = bin2hex(random_bytes(12));
+            $tersimpan[$token] = ['sidik' => $this->encryption_lib->deterministic_hash($q), 'label' => 'NIK berakhiran ' . substr($q, -4)];
+            $this->session->set_userdata('cari_antrean', $tersimpan);
+            $params['cari'] = $token;
+        } elseif (trim((string) $this->input->post('q', TRUE)) !== '') {
+            $params['q'] = trim((string) $this->input->post('q', TRUE));
+        }
+        redirect(uri_string() . ($params ? '?' . http_build_query($params) : ''), 'location', 303);
     }
 
     /**
