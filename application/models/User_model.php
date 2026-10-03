@@ -47,7 +47,9 @@ class User_model extends CI_Model {
             'foto_profil' => $data['foto_profil'],
             'email_verified_at' => $sekarang,
         ];
-        if (empty($user['google_id']) && ! empty($user['kata_sandi'])) {
+        // Penautan PERTAMA selalu mencabut sandi dan sesi lalu mewajibkan sandi baru, juga untuk akun tanpa
+        // sandi (Super Admin buatan CLI `akun buat_superadmin`): sandi pertamanya dibuat di Profil Saya.
+        if (empty($user['google_id'])) {
             $ubah += [
                 'kata_sandi' => NULL,
                 'sesi_aktif_hash' => NULL, 'sesi_aktif_id_hash' => NULL, 'sesi_aktif_at' => NULL,
