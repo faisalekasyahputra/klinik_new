@@ -18,6 +18,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *     *_gagal.flag yang lewat sehari): namanya ber-md5 URL atau id lokasi, jadi menumpuk tanpa batas.
  *     Cache yang masih dipakai tersegarkan tiap TTL (paling lama 1 hari), jadi yang disapu hanya cadangan
  *     basi yang sudah lama tidak diminta. index.html, .htaccess, dan penanda retensi tidak pernah disentuh.
+ *   - NIK pembeli (kunci nik*) di cache SIKUMBANG yang ditulis sebelum sikumbang_ambil() membuangnya:
+ *     kuncinya dibuang dari berkas, umur berkas dipertahankan; hanya jumlah berkas yang dilaporkan.
  *   - salinan foto SIKUMBANG di assets/cache_foto (Index::buka_foto): yang lebih tua dari cache_foto_hari,
  *     lalu yang tertua sampai total folder di bawah cache_foto_maks_mb;
  *   - draf penilaian yang dilepas saat NIK dipindahkan ke pemilik terverifikasi (superseded tanpa
@@ -92,6 +94,7 @@ class Penyapu_retensi {
             $kering);
         $hasil['log_aplikasi'] = $this->sapu_log((int) $p['log_aplikasi_hari'], $kering);
         $hasil['cache_hulu'] = $this->sapu_cache((int) $p['cache_hulu_hari'], $kering);
+        $hasil['cache_nik_sikumbang'] = $this->sapu_nik_sikumbang($kering);
         $hasil['cache_foto'] = $this->sapu_foto((int) ($p['cache_foto_hari'] ?? 30), (int) ($p['cache_foto_maks_mb'] ?? 512), $kering);
         $hasil['draf_nik_dipindah'] = $this->sapu_draf_nik_dipindah((int) ($p['draf_nik_dipindah_hari'] ?? 30), $kering);
 
@@ -218,6 +221,38 @@ class Penyapu_retensi {
             foreach ((array) glob($dir . ($jenis === 'json' ? '*.json' : '*_gagal.flag')) as $f) {
                 if ( ! is_file($f) || (int) @filemtime($f) >= $sebelum) { continue; }
                 if ($kering || @unlink($f)) { $n++; }
+            }
+        }
+        return ['jumlah' => $n, 'galat' => NULL];
+    }
+
+    /**
+     * Cache SIKUMBANG lama masih memuat NIK pembeli per unit (nikPemilik/nikBooking). Kuncinya dibuang di
+     * tempat (berkasnya tidak dihapus, supaya cadangan basi tetap ada) dan mtime dikembalikan supaya umur
+     * cache tidak berubah. Yang dihitung berkas yang dibersihkan, bukan isinya.
+     */
+    private function sapu_nik_sikumbang($kering)
+    {
+        $dir = $this->app . 'cache' . DIRECTORY_SEPARATOR;
+        if ( ! is_dir($dir)) { return ['jumlah' => 0, 'galat' => NULL]; }
+        if ( ! function_exists('sikumbang_buang_nik')) {
+            // Helper dijaga BASEPATH; di luar CodeIgniter tanpa BASEPATH tugas ini dilewati, bukan mematikan proses.
+            if ( ! defined('BASEPATH')) { return ['jumlah' => 0, 'galat' => 'sikumbang_helper tidak termuat']; }
+            require_once dirname(__DIR__) . '/helpers/sikumbang_helper.php';
+        }
+        $n = 0;
+        foreach ((array) glob($dir . 'sikumbang_*.json') as $f) {
+            $isi = is_file($f) ? (string) @file_get_contents($f) : '';
+            if (stripos($isi, '"nik') === FALSE) { continue; }
+            $data = json_decode($isi, TRUE);
+            if ( ! is_array($data)) { continue; }
+            [$data, $dibuang] = sikumbang_buang_nik($data);
+            if ($dibuang === 0) { continue; }
+            if ($kering) { $n++; continue; }
+            $mtime = (int) @filemtime($f);
+            if (@file_put_contents($f, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) !== FALSE) {
+                @touch($f, $mtime);
+                $n++;
             }
         }
         return ['jumlah' => $n, 'galat' => NULL];
