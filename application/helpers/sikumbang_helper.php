@@ -258,7 +258,8 @@ if ( ! function_exists('sikumbang_param')) {
             $nilai = mb_strtolower((string) preg_replace("/[^\\p{L}\\p{N}.&'-]+/u", ' ', $nilai), 'UTF-8');
             return trim(mb_substr(trim((string) preg_replace('/\s+/u', ' ', $nilai)), 0, 60));
         }
-        if ($nama === 'kodeWilayah') { return preg_match('/^\d{2}(\d{2})?$/', $nilai) ? $nilai : $bawaan; } // kode provinsi atau kab/kota
+        // Kode provinsi Jawa Tengah (33) atau kab/kota-nya (33xx); provinsi lain tidak dilayani portal ini.
+        if ($nama === 'kodeWilayah') { return preg_match('/^33(\d{2})?$/', $nilai) ? $nilai : $bawaan; }
         $izin = [
             'sort'         => ['terbaru', 'subsidi-termurah', 'subsidi-tertinggi'],
             'searchBy'     => ['nama-perumahan', 'nama-pengembang', 'asosiasi'],

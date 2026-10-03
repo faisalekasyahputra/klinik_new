@@ -720,7 +720,8 @@ class Index extends MY_Controller {
         $is_searching = ($keyword != '' || $sort != 'terbaru');
         $cache_file = $is_searching
             ? APPPATH . 'cache/sikumbang_sebaran_' . md5($full_url) . '.json'
-            : APPPATH . 'cache/sikumbang_sebaran_jateng.json';
+            // kodeWilayah ikut nama berkas dasar: kode lain tidak lagi menimpa sebaran Jawa Tengah (temuan api-csrf-08).
+            : APPPATH . 'cache/sikumbang_sebaran_' . ($kodeWilayah === '33' ? 'jateng' : $kodeWilayah) . '.json';
 
         list($datacontent['results'], ) = sikumbang_data($full_url, $cache_file, 86400);
 

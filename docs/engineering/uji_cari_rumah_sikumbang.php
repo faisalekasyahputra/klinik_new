@@ -89,6 +89,8 @@ function baris($id, $subsidi) {
  * Kunci cache HARUS dihitung dengan urutan parameter yang sama persis seperti
  * `Index::bongkah_sikumbang()`. Kalau urutannya berbeda, md5-nya berbeda, dan
  * penjaga ini akan diam-diam menembak jaringan sungguhan - hijau yang salah.
+ * Kode wilayah fiktif berbentuk Jawa Tengah (3391-3393, tidak ada kab/kota itu): sejak 3 Okt 2026
+ * sikumbang_param() hanya menerima 33/33xx; kode 99xx yang dulu dipakai kini jatuh ke bawaan 3374.
  */
 function seed($wilayah, $halaman_api, array $baris) {
     $url = 'https://sikumbang.tapera.go.id/ajax/lokasi/search?' . http_build_query([
@@ -155,11 +157,11 @@ echo "== 1. Yang cocok sedikit di antara yang banyak ==
    BACA sekarang: halaman 2+ disembunyikan lewat CSS, jadi markup-nya tetap ada
    dan `kartu()` menghitung TOTAL. Angkanya yang membongkar: asersi "harus 9"
    mendapat 21, yaitu 1+20 dari kedua bongkahan. */
-seed('9901', 1, bongkah(BONGKAH, 1, 1000));
-seed('9901', 2, bongkah(BONGKAH, 20, 2000));
-seed('9901', 3, []);
+seed('3391', 1, bongkah(BONGKAH, 1, 1000));
+seed('3391', 2, bongkah(BONGKAH, 20, 2000));
+seed('3391', 3, []);
 
-$h1 = minta('9901', 'subsidi', 1);
+$h1 = minta('3391', 'subsidi', 1);
 /* KONTRAK SEJAK 14 Agt 2026 (lihat komentar "Balik ke SATU HALAMAN per permintaan"
    di Index.php): cari_wil mengembalikan SATU halaman berukuran `limit` (default
    minta() = 9), dan marker `<!-- jumlah:N -->` menyebut isinya. Bongkahan dari
@@ -171,9 +173,9 @@ function jumlah($html) {
 }
 cek(kartu($h1) === 9 && jumlah($h1) === 9,
     'Halaman 1 berisi 9 subsidi: 1 dari bongkahan pertama + 8 dari bongkahan kedua (dapat: ' . kartu($h1) . ')');
-$h2 = minta('9901', 'subsidi', 2);
-$h3 = minta('9901', 'subsidi', 3);
-$h4 = minta('9901', 'subsidi', 4);
+$h2 = minta('3391', 'subsidi', 2);
+$h3 = minta('3391', 'subsidi', 3);
+$h4 = minta('3391', 'subsidi', 4);
 cek(kartu($h2) === 9, 'Halaman 2 berisi 9 (dapat: ' . kartu($h2) . ')');
 cek(kartu($h3) === 3, 'Halaman 3 berisi sisa 3 dari total 21 (dapat: ' . kartu($h3) . ')');
 cek(kartu($h4) === 0 && jumlah($h4) === 0, 'Halaman 4 kosong dan marker jumlah:0 (dapat: ' . kartu($h4) . ')');
@@ -185,12 +187,12 @@ cek(count($m_semua_sub[1]) === 21 && count(array_unique($m_semua_sub[1])) === 21
 echo "
 == 2. Bongkahan pertama nol cocok tidak menghentikan pengumpulan ==
 ";
-seed('9902', 1, bongkah(BONGKAH, 0, 3000));
-seed('9902', 2, bongkah(BONGKAH, 15, 4000));
-seed('9902', 3, []);
+seed('3392', 1, bongkah(BONGKAH, 0, 3000));
+seed('3392', 2, bongkah(BONGKAH, 15, 4000));
+seed('3392', 3, []);
 
-$n1 = minta('9902', 'subsidi', 1);
-$n2 = minta('9902', 'subsidi', 2);
+$n1 = minta('3392', 'subsidi', 1);
+$n2 = minta('3392', 'subsidi', 2);
 cek(kartu($n1) === 9, 'Halaman 1 tetap penuh (9) walau bongkahan pertama nol cocok (dapat: ' . kartu($n1) . ')');
 cek(kartu($n2) === 6, 'Halaman 2 berisi sisa 6 dari 15 subsidi bongkahan kedua (dapat: ' . kartu($n2) . ')');
 
@@ -198,13 +200,13 @@ cek(kartu($n2) === 6, 'Halaman 2 berisi sisa 6 dari 15 subsidi bongkahan kedua (
 echo "
 == 3. Saringan memilah, dan 'semua' tidak memilah ==
 ";
-$k1 = minta('9901', 'komersil', 1, 'cari_wil', 50);
+$k1 = minta('3391', 'komersil', 1, 'cari_wil', 50);
 cek(kartu($k1) === 50, 'Non-subsidi: halaman 1 @50 penuh dari 179 (dapat: ' . kartu($k1) . ')');
-$k4 = minta('9901', 'komersil', 4, 'cari_wil', 50);
+$k4 = minta('3391', 'komersil', 4, 'cari_wil', 50);
 cek(kartu($k4) === 29, 'Non-subsidi: halaman 4 @50 berisi sisa 29, jadi totalnya 179 (dapat: ' . kartu($k4) . ')');
 
-$s1 = minta('9901', 'semua', 1, 'cari_wil', 50);
-$s4 = minta('9901', 'semua', 4, 'cari_wil', 50);
+$s1 = minta('3391', 'semua', 1, 'cari_wil', 50);
+$s4 = minta('3391', 'semua', 4, 'cari_wil', 50);
 cek(kartu($s1) === 50 && kartu($s4) === 50,
     '"semua" tidak memilah: halaman 1 dan 4 @50 sama-sama penuh dari 200 (dapat: ' . kartu($s1) . ', ' . kartu($s4) . ')');
 
@@ -227,10 +229,10 @@ echo "
 ";
 $jahat = bongkah(3, 3, 5000);
 $jahat[0]['namaPerumahan'] = 'Perum </div><b>BOCOR</b><div>';
-seed('9903', 1, $jahat);
-seed('9903', 2, []);
+seed('3393', 1, $jahat);
+seed('3393', 2, []);
 
-$x = minta('9903', 'subsidi', 1);
+$x = minta('3393', 'subsidi', 1);
 cek(strpos($x, '<b>BOCOR</b>') === FALSE, 'Tag dari nama perumahan TIDAK hidup sebagai HTML');
 cek(strpos($x, 'BOCOR') !== FALSE, 'Teksnya tetap tampil, bukan lenyap diam-diam');
 cek(jumlah($x) === 3 && kartu($x) === 3, 'Ketiga kartu tetap terhitung utuh, tidak ada yang lepas karena tag liar');
