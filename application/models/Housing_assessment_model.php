@@ -93,6 +93,9 @@ class Housing_assessment_model extends CI_Model {
         return NULL;
     }
 
+    /** Draft yang dilepas saat NIK dipindahkan (pindahkan_ikatan_nik): satu-satunya superseded yang tidak pernah dikirim. */
+    public const DRAFT_DILEPAS = "status = 'superseded' AND submitted_at IS NULL";
+
     /** Untuk isian NIK tanpa tanggal lahir (onboarding, Profil Saya): sama untuk ikatan terverifikasi atau belum. */
     public const PESAN_NIK_TERIKAT_BUKTIKAN = 'NIK ini sudah terhubung dengan akun lain. Jika ini NIK Anda, buktikan kepemilikannya di langkah Cek NIK menu Pendataan (nama akun dan tanggal lahir sesuai KTP), atau sampaikan melalui menu Aduan.';
 
@@ -106,12 +109,19 @@ class Housing_assessment_model extends CI_Model {
      * nik_lookup_hash: pemegang lama dikosongkan dulu, baru akun baru diisi.
      *
      * Akun lama tidak dihapus dan tetap bisa masuk. Yang berubah hanya yang melekat ke NIK itu:
-     * usr_akun.nik dikosongkan; profil pendataannya dihapus (kolom NIK-nya NOT NULL, isinya
-     * identitas pemilik NIK); cermin SIMPERUM NIK itu dilepas; draft pendataan yang belum dikirim
-     * dihapus seperti saat akun dihapus (Data_erasure: draft bukan arsip, isinya data rumah dan
-     * identitas pemilik NIK), berkas buktinya disapu pemanggil SESUDAH commit lewat 'draft_ids'.
-     * Pengajuan yang sudah masuk antrean TIDAK disentuh: itu catatan dinas (salinan profilnya
-     * tersimpan di penilaian), petugas yang memutuskan lewat jejak audit.
+     * usr_akun.nik dikosongkan; cermin SIMPERUM NIK itu dilepas; profil pendataannya dihapus (kolom
+     * NIK-nya NOT NULL + UNIQUE dan user_id UNIQUE: baris yang ditahan di akun lama akan menghalangi
+     * pemilik baru, atau mengunci akun lama dari NIK-nya sendiri), tetapi isinya disalin terenkripsi
+     * ke setiap draft yang dilepas. Draft yang belum dikirim DILEPAS, tidak dihapus (keputusan user):
+     * status superseded dengan submitted_at NULL (DRAFT_DILEPAS), user_id tetap akun lama supaya
+     * super admin bisa menelusurinya dan hapus akun ikut menyapunya; tidak terlihat oleh akun lama
+     * (get_owned_assessment, ekspor) maupun pemilik baru; disapu Penyapu_retensi bersama berkasnya
+     * sesudah retensi draf_nik_dipindah_hari. Pengajuan yang sudah masuk antrean TIDAK disentuh.
+     *
+     * Pemulihan manual (tanpa UI): pastikan NIK sudah bebas, akun lama melakukan Cek NIK lagi
+     * (profil baru), lalu UPDATE sf_penilaian_perumahan SET status='draft', profil_warga_id=<profil
+     * baru>, salinan_profil_ciphertext=NULL WHERE id=<draft> AND user_id=<akun lama> AND
+     * status='superseded' AND submitted_at IS NULL.
      */
     public function pindahkan_ikatan_nik($user_id, $nik)
     {
@@ -129,12 +139,18 @@ class Housing_assessment_model extends CI_Model {
             return $this->fail('nik_already_bound', self::PESAN_NIK_TERIKAT);
         }
         $dari = array_values(array_unique(array_merge($akun, $profil ? [(int) $profil['user_id']] : [])));
-        $draft_ids = [];
+        $draft_dilepas = 0;
         if ($profil) {
             $draft_ids = array_map('intval', array_column($this->db->select('id')->get_where('sf_penilaian_perumahan',
                 ['profil_warga_id' => (int) $profil['id'], 'status' => 'draft'])->result_array(), 'id'));
             if ($draft_ids) {
-                $this->db->where_in('id', $draft_ids)->delete('sf_penilaian_perumahan');
+                $salinan = $this->encrypt_value($this->encode_json(kunci_tersimpan_ke_lama((array) $this->get_owned_profile((int) $profil['user_id']))));
+                if ( ! $this->encryption_lib->is_encrypted($salinan)) {
+                    return $this->fail('encryption_unavailable', 'Data sensitif belum dapat disimpan.');
+                }
+                $this->db->where_in('id', $draft_ids)->update('sf_penilaian_perumahan', ['status' => 'superseded',
+                    'submitted_at' => NULL, 'salinan_profil_ciphertext' => $salinan, 'updated_at' => date('Y-m-d H:i:s')]);
+                $draft_dilepas = count($draft_ids);
             }
             $this->db->delete('sf_profil_warga', ['id' => (int) $profil['id']]);
         }
@@ -146,7 +162,7 @@ class Housing_assessment_model extends CI_Model {
             ->update('usr_akun', ['nik' => $nik_ciphertext, 'nik_lookup_hash' => $nik_hash]);
         $pengajuan = $dari ? $this->db->where_in('user_id', $dari)
             ->where_in('status_antrean', ['pending', 'needs_revision'])->count_all_results('sf_antrean_pengajuan') : 0;
-        return ['success' => TRUE, 'dari' => $dari, 'draft_ids' => $draft_ids, 'pengajuan_berjalan' => $pengajuan];
+        return ['success' => TRUE, 'dari' => $dari, 'draft_dilepas' => $draft_dilepas, 'pengajuan_berjalan' => $pengajuan];
     }
 
     /**
@@ -609,6 +625,7 @@ class Housing_assessment_model extends CI_Model {
         $row = $this->db
             ->where('id', (int) $penilaian_id)
             ->where('user_id', (int) $user_id)
+            ->where('NOT (' . self::DRAFT_DILEPAS . ')', NULL, FALSE)
             ->get('sf_penilaian_perumahan')
             ->row_array();
         return $this->decrypt_assessment($row);
@@ -882,7 +899,8 @@ class Housing_assessment_model extends CI_Model {
             ->join('sf_program p', 'p.id=r.program_id')
             ->join('sf_penilaian_perumahan a', 'a.id=r.penilaian_id')
             ->where('a.id', (int) $penilaian_id)
-            ->where('a.user_id', (int) $user_id);
+            ->where('a.user_id', (int) $user_id)
+            ->where("NOT (a.status = 'superseded' AND a.submitted_at IS NULL)", NULL, FALSE);
         if ($versi_aturan !== NULL) {
             $query->where('r.versi_aturan', (string) $versi_aturan);
         }

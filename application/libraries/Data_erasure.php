@@ -58,7 +58,9 @@ class Data_erasure {
         }
 
         // Draf penilaian warga: berkas buktinya dan barisnya (baris berkas dan rekomendasi ikut lewat CASCADE).
-        $draf_ids = $this->ids("SELECT id FROM sf_penilaian_perumahan WHERE user_id = ? AND status = 'draft'", [$user_id]);
+        // Termasuk draf yang dilepas saat NIK dipindahkan (superseded tanpa submitted_at): hapus akun lebih
+        // ketat daripada retensi 30 harinya.
+        $draf_ids = $this->ids("SELECT id FROM sf_penilaian_perumahan WHERE user_id = ? AND (status = 'draft' OR (status = 'superseded' AND submitted_at IS NULL))", [$user_id]);
         $berkas += $this->sapu_berkas_draf($draf_ids);
         if ($draf_ids) {
             $this->db->query('DELETE FROM sf_penilaian_perumahan WHERE id IN (' . implode(',', array_map('intval', $draf_ids)) . ')');

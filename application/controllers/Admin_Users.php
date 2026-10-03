@@ -41,6 +41,19 @@ class Admin_Users extends Admin_Controller {
             // Nilai = NIK terverifikasi (nama akun + tanggal lahir cocok dengan SIMPERUM, confirmed_at).
             foreach ($profiles as $profile) $data['warga_nik_bound'][(int) $profile['user_id']] = ! empty($profile['confirmed_at']) ? 'terverifikasi' : 'belum';
         }
+        // Draf yang dilepas saat NIK akun dipindahkan ke pemilik terverifikasi (baca-saja; pemulihan manual,
+        // lihat Housing_assessment_model::pindahkan_ikatan_nik). Disapu Penyapu_retensi sesudah masa simpannya.
+        $data['draft_dilepas'] = [];
+        if ($user_ids) {
+            $this->load->config('data_lifecycle');
+            $hari = (int) ($this->config->item('data_lifecycle')['retensi']['draf_nik_dipindah_hari'] ?? 30);
+            $rows = $this->db->select('user_id, COUNT(*) n, MIN(updated_at) sejak', FALSE)->where_in('user_id', $user_ids)
+                ->where("status = 'superseded' AND submitted_at IS NULL", NULL, FALSE)->group_by('user_id')
+                ->get('sf_penilaian_perumahan')->result_array();
+            foreach ($rows as $row) {
+                $data['draft_dilepas'][(int) $row['user_id']] = ['n' => (int) $row['n'], 'hapus' => date('Y-m-d', strtotime($row['sejak'] . " +$hari days"))];
+            }
+        }
         $data['table'] = $data['pager'] = $table;
         $data['available_roles'] = $this->config->item('available_roles');
         $data['kabupaten_list'] = $this->db->order_by('nama', 'ASC')->get('kabupaten')->result();
@@ -429,7 +442,7 @@ class Admin_Users extends Admin_Controller {
         }
 
         $submitted = $this->db->where('user_id', (int) $user->id)
-            ->where('status !=', 'draft')->count_all_results('sf_penilaian_perumahan');
+            ->where('submitted_at IS NOT NULL', NULL, FALSE)->count_all_results('sf_penilaian_perumahan');
         if ($submitted > 0) {
             $this->catat_audit('reset_nik_ditolak',
                 'DITOLAK: reset NIK akun ' . $user->email . ' karena memiliki penilaian terkirim',

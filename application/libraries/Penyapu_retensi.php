@@ -18,6 +18,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *     *_gagal.flag yang lewat sehari): namanya ber-md5 URL atau id lokasi, jadi menumpuk tanpa batas.
  *     Cache yang masih dipakai tersegarkan tiap TTL (paling lama 1 hari), jadi yang disapu hanya cadangan
  *     basi yang sudah lama tidak diminta. index.html, .htaccess, dan penanda retensi tidak pernah disentuh.
+ *   - draf penilaian yang dilepas saat NIK dipindahkan ke pemilik terverifikasi (superseded tanpa
+ *     submitted_at, Housing_assessment_model::pindahkan_ikatan_nik) lebih tua dari draf_nik_dipindah_hari,
+ *     beserta berkas buktinya (Data_erasure::sapu_berkas_draf).
  * Tidak disapu (sengaja): sesi (dikelola PHP/hosting) dan berkas unggahan (dimiliki akun; dihapus lewat
  * hapus akun).
  *
@@ -29,6 +32,7 @@ class Penyapu_retensi {
     private $db;
     private $policy;
     private $app;
+    private $root;
 
     /** @param array $params db (adaptor: query(), affected_rows()), policy (isi 'retensi'), app (akar application/ berakhiran pemisah) */
     public function __construct(array $params = [])
@@ -42,6 +46,7 @@ class Penyapu_retensi {
         }
         $this->db = $params['db'] ?? (function_exists('get_instance') ? get_instance()->db : NULL);
         $this->app = rtrim($params['app'] ?? (defined('APPPATH') ? APPPATH : dirname(__DIR__) . '/'), '/\\') . DIRECTORY_SEPARATOR;
+        $this->root = $params['root'] ?? NULL; // akar berkas privat untuk Data_erasure; bawaan private_uploads_root()
     }
 
     public function interval() { return (int) $this->policy['interval_detik']; }
@@ -81,6 +86,7 @@ class Penyapu_retensi {
             $kering);
         $hasil['log_aplikasi'] = $this->sapu_log((int) $p['log_aplikasi_hari'], $kering);
         $hasil['cache_hulu'] = $this->sapu_cache((int) $p['cache_hulu_hari'], $kering);
+        $hasil['draf_nik_dipindah'] = $this->sapu_draf_nik_dipindah((int) ($p['draf_nik_dipindah_hari'] ?? 30), $kering);
 
         $total = 0;
         foreach ($hasil as $h) { $total += (int) $h['jumlah']; }
@@ -130,6 +136,25 @@ class Penyapu_retensi {
                 return ['jumlah' => (int) ($baris['n'] ?? 0), 'galat' => NULL];
             }
             $ok = $this->db->query($ubah);
+            return ['jumlah' => $ok ? (int) $this->db->affected_rows() : 0, 'galat' => $ok ? NULL : 'kueri gagal'];
+        } catch (Throwable $e) {
+            return ['jumlah' => 0, 'galat' => get_class($e)];
+        }
+    }
+
+    /** Draf yang dilepas saat NIK dipindahkan: berkas dulu (tidak bisa di-rollback), lalu barisnya. */
+    private function sapu_draf_nik_dipindah($hari, $kering)
+    {
+        $syarat = "status = 'superseded' AND submitted_at IS NULL AND updated_at < (NOW() - INTERVAL {$hari} DAY)";
+        if ($kering) { return $this->sql('FROM sf_penilaian_perumahan WHERE ' . $syarat, TRUE); }
+        try {
+            $r = $this->db->query('SELECT id FROM sf_penilaian_perumahan WHERE ' . $syarat);
+            if ( ! $r) { return ['jumlah' => 0, 'galat' => 'kueri gagal']; }
+            $ids = array_map('intval', array_column($r->result_array(), 'id'));
+            if ( ! $ids) { return ['jumlah' => 0, 'galat' => NULL]; }
+            require_once __DIR__ . '/Data_erasure.php';
+            (new Data_erasure(['db' => $this->db] + ($this->root !== NULL ? ['root' => $this->root] : [])))->sapu_berkas_draf($ids);
+            $ok = $this->db->query('DELETE FROM sf_penilaian_perumahan WHERE id IN (' . implode(',', $ids) . ") AND status = 'superseded' AND submitted_at IS NULL");
             return ['jumlah' => $ok ? (int) $this->db->affected_rows() : 0, 'galat' => $ok ? NULL : 'kueri gagal'];
         } catch (Throwable $e) {
             return ['jumlah' => 0, 'galat' => get_class($e)];

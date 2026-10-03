@@ -790,12 +790,6 @@ class Simperum_gateway {
                     return $this->response('error', 'Profil belum dapat disimpan dengan aman.', [], 'profile_failed');
                 }
                 $db->trans_commit();
-                try {
-                    $this->CI->load->library('Data_erasure');
-                    $this->CI->data_erasure->sapu_berkas_draf($pindah['draft_ids']);
-                } catch (\Throwable $e) {
-                    log_message('error', 'Simperum_gateway: berkas draft akun lama gagal disapu: ' . $e->getMessage());
-                }
                 $this->kabari_akun_lama($pindah['dari']);
             }
             $this->cermin($canonical['nik'] ?? '', $requested_by, $snapshot);
@@ -877,7 +871,7 @@ class Simperum_gateway {
             'objek_tipe' => 'usr_akun',
             'objek_id' => (string) $akun_lama,
             'ringkasan' => 'NIK yang belum terverifikasi dilepas dari akun ini karena akun lain lolos verifikasi pemilik (nama dan tanggal lahir)',
-            'detail_json' => json_encode(['akun_penerima' => $penerima, 'draft_dihapus' => count($pindah['draft_ids']),
+            'detail_json' => json_encode(['akun_penerima' => $penerima, 'draft_dilepas' => $pindah['draft_dilepas'],
                 'pengajuan_berjalan' => $pindah['pengajuan_berjalan']]),
             'ip' => $this->CI->input->ip_address(),
             'created_at' => date('Y-m-d H:i:s'),

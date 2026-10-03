@@ -20,6 +20,7 @@ $config['data_lifecycle'] = [
         'log_aplikasi_hari'             => 180,   // log aplikasi terenkripsi di application/logs
         'jejak_audit_hari'              => 1825,  // 5 tahun; jejak audit sengaja disimpan lama
         'cache_hulu_hari'               => 30,    // cache layanan luar yang tak tersegarkan sekian hari (TTL terpanjang 1 hari)
+        'draf_nik_dipindah_hari'        => 30,    // draf akun lama yang dilepas saat NIK dipindahkan ke pemilik terverifikasi
     ],
 
     /* PENGHAPUSAN 2: hapus akun. Nasib SETIAP kolom yang menunjuk ke usr_akun. cascade = barisnya ikut
