@@ -93,7 +93,7 @@ class Penyapu_retensi {
             'UPDATE usr_akun SET token_email = NULL, token_email_kedaluwarsa = NULL WHERE token_email IS NOT NULL AND token_email_kedaluwarsa < (NOW() - INTERVAL ' . $tk . ' DAY)',
             $kering);
         $hasil['log_aplikasi'] = $this->sapu_log((int) $p['log_aplikasi_hari'], $kering);
-        $hasil['cache_hulu'] = $this->sapu_cache((int) $p['cache_hulu_hari'], $kering);
+        $hasil['cache_hulu'] = $this->sapu_cache((int) $p['cache_hulu_hari'], $kering, (int) ($p['cache_cari_maks_mb'] ?? 256));
         $hasil['cache_nik_sikumbang'] = $this->sapu_nik_sikumbang($kering);
         $hasil['cache_foto'] = $this->sapu_foto((int) ($p['cache_foto_hari'] ?? 30), (int) ($p['cache_foto_maks_mb'] ?? 512), $kering);
         $hasil['draf_nik_dipindah'] = $this->sapu_draf_nik_dipindah((int) ($p['draf_nik_dipindah_hari'] ?? 30), $kering);
@@ -209,8 +209,12 @@ class Penyapu_retensi {
         return ['jumlah' => $n, 'galat' => NULL];
     }
 
-    /** Cache hulu (cache_hulu_helper, Sikumbang, Sikaper, Ternak): hanya *.json dan *_gagal.flag di akar application/cache. */
-    private function sapu_cache($hari, $kering)
+    /**
+     * Cache hulu (cache_hulu_helper, Sikumbang, Sikaper, Ternak): hanya *.json dan *_gagal.flag di akar application/cache.
+     * Lalu cache PENCARIAN SIKUMBANG (namanya md5 URL berkata kunci bebas, jumlahnya ditentukan pengunjung):
+     * yang tertua disapu sampai totalnya <= $maks_mb, seperti cache_foto.
+     */
+    private function sapu_cache($hari, $kering, $maks_mb = 256)
     {
         $dir = $this->app . 'cache' . DIRECTORY_SEPARATOR;
         if ( ! is_dir($dir)) { return ['jumlah' => 0, 'galat' => NULL]; }
@@ -222,6 +226,19 @@ class Penyapu_retensi {
                 if ( ! is_file($f) || (int) @filemtime($f) >= $sebelum) { continue; }
                 if ($kering || @unlink($f)) { $n++; }
             }
+        }
+        $cari = [];
+        foreach (['ajax_perumahan_', 'sikumbang_cari_', 'sikumbang_sebaran_'] as $awal) {
+            foreach ((array) glob($dir . $awal . '*.json') as $f) {
+                $waktu = is_file($f) ? (int) @filemtime($f) : 0;
+                if ($waktu >= $batas['json']) { $cari[$f] = [$waktu, (int) @filesize($f)]; } // yang basi sudah disapu di atas
+            }
+        }
+        uasort($cari, fn($a, $b) => $a[0] <=> $b[0]); // tertua dulu
+        $total = array_sum(array_column($cari, 1));
+        foreach ($cari as $f => [, $ukuran]) {
+            if ($total <= $maks_mb * 1048576) { break; }
+            if ($kering || @unlink($f)) { $n++; $total -= $ukuran; }
         }
         return ['jumlah' => $n, 'galat' => NULL];
     }

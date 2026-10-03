@@ -245,13 +245,19 @@ if ( ! function_exists('sikumbang_param')) {
      * Normalkan satu parameter pencarian SIKUMBANG dari GET sebelum masuk URL hulu, yang md5-nya
      * menjadi nama berkas cache. Nilai di luar daftar izin jatuh ke $bawaan, jadi nilai sembarang
      * tidak melahirkan berkas cache dan tembakan hulu baru. Daftar izin = pilihan di formulir
-     * cari_rumah/sikumbang (dan saring_status_rumah). Kata kunci memang teks bebas: dirapikan dan
-     * dipotong 60 karakter; jumlahnya ditahan kelas laju 'cari' dan penyapu cache.
+     * cari_rumah/sikumbang (dan saring_status_rumah). Kata kunci memang teks bebas: dijadikan huruf
+     * kecil, hanya huruf/angka/spasi dan . - & ' yang tersisa (lainnya jadi spasi), spasi dirapatkan,
+     * dipotong 60 karakter. Varian huruf besar-kecil dari kata yang sama (pencarian SIKUMBANG tidak
+     * peka huruf) jadi berbagi SATU berkas cache, bukan 2^n berkas. Jumlah kata kunci berbeda ditahan
+     * kelas laju 'cari', ukuran totalnya oleh Penyapu_retensi (cache_cari_maks_mb).
      */
     function sikumbang_param($nama, $nilai, $bawaan = NULL)
     {
         $nilai = is_scalar($nilai) ? trim((string) $nilai) : '';
-        if ($nama === 'keyword') { return mb_substr((string) preg_replace('/\s+/u', ' ', $nilai), 0, 60); }
+        if ($nama === 'keyword') {
+            $nilai = mb_strtolower((string) preg_replace("/[^\\p{L}\\p{N}.&'-]+/u", ' ', $nilai), 'UTF-8');
+            return trim(mb_substr(trim((string) preg_replace('/\s+/u', ' ', $nilai)), 0, 60));
+        }
         if ($nama === 'kodeWilayah') { return preg_match('/^\d{2}(\d{2})?$/', $nilai) ? $nilai : $bawaan; } // kode provinsi atau kab/kota
         $izin = [
             'sort'         => ['terbaru', 'subsidi-termurah', 'subsidi-tertinggi'],
