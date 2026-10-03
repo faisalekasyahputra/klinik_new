@@ -7,8 +7,12 @@ class Auth extends MY_Controller {
 
     /** Satu pesan untuk setiap login gagal: akun tidak ada, sandi salah, akun tanpa sandi. */
     const PESAN_GAGAL = 'Email/username atau password salah.';
-    /** Hash bcrypt dari nilai acak yang dibuang; dipakai bila akun tidak ada supaya waktu respons setara. */
-    const HASH_TIRUAN = '$2y$10$ZIKXoFd.94t.ekhlY3Bid.4NLPoFjQNRUzYnxj3I94qEw/JSt6i6O';
+    /** Hash bcrypt dari nilai acak yang dibuang; dipakai bila akun tidak ada supaya waktu respons setara.
+        Satu per biaya bawaan password_hash() (10; 12 sejak PHP 8.4), mengikuti biaya hash akun baru. */
+    const HASH_TIRUAN = [
+        10 => '$2y$10$ZIKXoFd.94t.ekhlY3Bid.4NLPoFjQNRUzYnxj3I94qEw/JSt6i6O',
+        12 => '$2y$12$oR/a/6hS68D47mLR8mwyAOOTXBSW7FVMjGa/VuqTM/ZXQZjMBvqgm',
+    ];
 
     // reCAPTCHA keys (set your own in .env or config)
     private $recaptcha_site_key   = '';
@@ -138,10 +142,11 @@ class Auth extends MY_Controller {
         }
 
         $user = $this->auth_model->find_by_login($login_id);
-        $hash = ($user && ! empty($user->kata_sandi)) ? (string) $user->kata_sandi : self::HASH_TIRUAN;
+        $tiruan = self::HASH_TIRUAN[PHP_VERSION_ID >= 80400 ? 12 : 10];
+        $hash = ($user && ! empty($user->kata_sandi)) ? (string) $user->kata_sandi : $tiruan;
 
         // Verify password (terhadap hash tiruan bila akun tidak ada atau tanpa sandi)
-        $password_valid = password_verify($password, $hash) && $hash !== self::HASH_TIRUAN;
+        $password_valid = password_verify($password, $hash) && $hash !== $tiruan;
         $this->load->library('sensitive_buffer');
         $this->sensitive_buffer->wipe($password);
         if (isset($_POST['password'])) {
@@ -838,30 +843,13 @@ class Auth extends MY_Controller {
 
         $state = bin2hex(random_bytes(16));
         $this->session->set_userdata('oauth_state', $state);
-        $this->session->set_userdata('oauth_redirect', $safe_redirect);
+        if ($safe_redirect !== '') {
+            $this->session->set_userdata('intended_url', $safe_redirect);
+        }
 
         $this->google_client->setState($state);
         $login_url = $this->google_client->createAuthUrl();
         redirect($login_url);
-    }
-
-    /**
-     * Tutup popup OAuth dan (opsional) arahkan window pembuka ke $redirect_url.
-     * $redirect_url di-json_encode, bukan di-echo mentah ke string JS berkutip
-     * tunggal - sebelumnya base_url($redirect_to) diselipkan langsung, dan
-     * sanitize_redirect() cuma menolak URL eksternal, tidak membuang kutip
-     * satu dari path relatif (roadmap T5, Auth.php ~:680). CSP + nonce dipasang
-     * sekalian sebagai lapis kedua: halaman ini cuma perlu satu <script> inline,
-     * jadi tidak ada alasan mengizinkan skrip lain dari sumber mana pun.
-     */
-    private function _oauth_close_popup($redirect_url = null) {
-        $nonce = base64_encode(random_bytes(16));
-        header("Content-Security-Policy: default-src 'none'; script-src 'nonce-{$nonce}'");
-        $script = $redirect_url === null
-            ? 'window.close();'
-            : 'window.opener.location.href = ' . json_encode($redirect_url) . '; window.close();';
-        echo '<script nonce="' . $nonce . '">' . $script . '</script>';
-        exit;
     }
 
     /**
@@ -875,12 +863,8 @@ class Auth extends MY_Controller {
 
         if (empty($state_from_google) || empty($state_from_session) ||
             !hash_equals($state_from_session, $state_from_google)) {
-            $this->_oauth_close_popup(base_url('login'));
+            redirect('Auth/login');
         }
-
-        // Disaring saat disimpan di google(), dan disaring ULANG di sini sebelum dipakai (lapis kedua).
-        $redirect_to = $this->sanitize_redirect((string) $this->session->userdata('oauth_redirect'));
-        $this->session->unset_userdata('oauth_redirect');
 
         if ($this->input->get('code')) {
             try {
@@ -903,7 +887,7 @@ class Auth extends MY_Controller {
                     if ( ! $logged_in_user) {
                         // Email belum diverifikasi Google, atau sudah tertaut ke akun Google lain.
                         $this->session->set_flashdata('error', 'Masuk dengan Google tidak dapat diproses untuk email ini. Silakan masuk dengan email dan kata sandi, atau hubungi admin.');
-                        $this->_oauth_close_popup(base_url('Auth/login'));
+                        redirect('Auth/login');
                     }
 
                     if ($logged_in_user) {
@@ -949,11 +933,7 @@ class Auth extends MY_Controller {
                         $session_data['session_auth_token'] = $this->auth_model->issue_session_token($logged_in_user[0]['id'], $this->session->session_id);
                         $this->session->set_userdata($session_data);
 
-                        // Check if profile is complete - redirect to new onboarding if not
                         $user_record = $this->auth_model->find_by_id($logged_in_user[0]['id']);
-                        if ($user_record && $user_record->profil_lengkap == 0) {
-                            $redirect_to = 'onboarding';
-                        }
 
                         // Jalur login ketiga (Google OAuth) juga membuat sesi
                         // pengembang, jadi drafnya harus dipastikan ada di sini
@@ -963,15 +943,19 @@ class Auth extends MY_Controller {
                             $this->auth_model->ensure_srp2_draft($user_record->id);
                         }
 
-                        $this->_oauth_close_popup(base_url($redirect_to));
+                        // Onboarding, wajib ganti sandi, dan halaman asal (intended_url) ditangani di satu tempat.
+                        $this->_redirect_after_login();
+                        return;
                     }
                 }
             } catch (Exception $e) {
-                $this->_oauth_close_popup(base_url('Auth/login?status=error'));
+                log_message('error', 'google_callback gagal: ' . get_class($e));
             }
         }
 
-        $this->_oauth_close_popup();
+        // Warga menekan Batal, kode ditolak Google, atau pustaka melempar galat.
+        $this->session->set_flashdata('error', 'Masuk dengan Google tidak berhasil. Silakan coba lagi.');
+        redirect('Auth/login');
     }
 
     // =========================================================
