@@ -159,16 +159,16 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
         <?php elseif (in_array($step_slug, ['housing_family', 'housing_family_detail'], TRUE)): ?>
             <?php $initial = $step_slug === 'housing_family';
             $is_owned_branch = ($assessment['jalur_penilaian'] ?? '') === 'existing_house'; ?>
-            <h2 class="text-lg font-black"><?= $initial ? 'Data untuk rekomendasi' : 'Lengkapi data — ' . ($is_owned_branch ? 'Milik Sendiri' : 'Bukan Milik Sendiri') ?></h2>
+            <h2 class="text-lg font-black"><?= $initial ? 'Data untuk rekomendasi' : 'Lengkapi data: ' . ($is_owned_branch ? 'Milik Sendiri' : 'Bukan Milik Sendiri') ?></h2>
             <p class="mt-2 text-xs" style="color:var(--portal-text-muted)">Data yang tersedia sudah diisikan. Periksa dan koreksi bila perlu, lalu lengkapi isian yang masih kosong. Pendapatan dalam rentang dan tahun lahir saja belum cukup untuk mengisi nominal rupiah dan tanggal lahir lengkap.</p>
             <?php if ($initial): ?>
                 <label for="matriks_rumah_sekarang" class="mt-4 block text-xs font-bold">Status tempat tinggal saat ini</label>
                 <select id="matriks_rumah_sekarang" name="matriks_rumah_sekarang" required class="mt-1 w-full rounded-xl border px-3 py-2.5" style="background:var(--portal-btn-bg);color:var(--portal-text)">
                     <option value="">Pilih status tempat tinggal</option>
                     <option value="house_owned"<?= $selected('matriks_rumah_sekarang', 'house_owned') ?>>Milik sendiri</option>
-                    <option value="house_rent_or_staying"<?= $selected('matriks_rumah_sekarang', 'house_rent_or_staying') ?>>Bukan milik sendiri — menumpang / sewa</option>
-                    <option value="house_restricted_area"<?= $selected('matriks_rumah_sekarang', 'house_restricted_area') ?>>Bukan milik sendiri — tinggal di area terlarang / numpang (relokasi)</option>
-                    <option value="house_disaster_affected"<?= $selected('matriks_rumah_sekarang', 'house_disaster_affected') ?>>Milik sendiri — terdampak bencana</option>
+                    <option value="house_rent_or_staying"<?= $selected('matriks_rumah_sekarang', 'house_rent_or_staying') ?>>Bukan milik sendiri: menumpang / sewa</option>
+                    <option value="house_restricted_area"<?= $selected('matriks_rumah_sekarang', 'house_restricted_area') ?>>Bukan milik sendiri: tinggal di area terlarang / numpang (relokasi)</option>
+                    <option value="house_disaster_affected"<?= $selected('matriks_rumah_sekarang', 'house_disaster_affected') ?>>Milik sendiri: terdampak bencana</option>
                     <option value="house_none_or_rent"<?= $selected('matriks_rumah_sekarang', 'house_none_or_rent') ?>>Bukan milik sendiri</option>
                 </select>
                 <p class="text-xs text-red-700"><?= html_escape($field_error('matriks_rumah_sekarang')) ?></p>
@@ -246,45 +246,144 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
             </div>
             <?php endif; ?>
         <?php elseif ($step_slug === 'building_condition'): ?>
-            <h2 class="text-lg font-black">Lengkapi Data SIMPERUM — Kondisi Bangunan</h2><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Isi kondisi rumah yang dinilai. Gunakan kondisi saat ini.</p>
+            <h2 class="text-lg font-black">Lengkapi Data SIMPERUM: Kondisi Bangunan</h2><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Isi kondisi rumah yang dinilai. Gunakan kondisi saat ini.</p>
             <?php $condition = ['good'=>'Baik','minor_damage'=>'Rusak Ringan (Permukaan)','moderate_damage'=>'Rusak Sedang (Material)','severe_damage_or_absent'=>'Rusak Berat (Struktur/Tdk Ada)']; $building = ['kondisi_pondasi'=>['Pondasi',$condition],'kondisi_kolom'=>['Kondisi Kolom',$condition],'kondisi_balok'=>['Kondisi Balok',$condition],'kondisi_sloof'=>['Kondisi Sloof',$condition],'kondisi_plafon'=>['Kondisi Plafon',$condition],'kondisi_rangka'=>['Rangka Atap',$condition],'bahan_lantai'=>['Bahan Lantai',['marble_granite'=>'Marmer/Granit','ceramic'=>'Keramik','parquet_vinyl_carpet'=>'Parket/Vinil/Permadani','tile_terrazzo'=>'Ubin/Tegel/Teraso','high_quality_wood'=>'Kayu/Papan Kualitas Tinggi','cement_plaster'=>'Semen/Plesteran','bamboo'=>'Bambu','low_quality_wood'=>'Kayu/Papan Kualitas Rendah','soil'=>'Tanah','other'=>'Lainnya']],'kondisi_lantai'=>['Kondisi Lantai',$condition],'bahan_dinding'=>['Bahan Dinding',['wall'=>'Tembok','plaster_grc'=>'Plesteran/GRC','wood'=>'Kayu','woven_bamboo'=>'Anyaman Bambu','log'=>'Batang Kayu','bamboo'=>'Bambu','other'=>'Lainnya']],'kondisi_dinding'=>['Kondisi Dinding',$condition],'bahan_atap'=>['Bahan Atap',['concrete'=>'Beton','ceramic'=>'Keramik','metal'=>'Metal','clay_tile'=>'Genteng/Tanah Liat','asbestos'=>'Asbes','zinc'=>'Seng','shingle'=>'Sirap','bamboo'=>'Bambu','thatch'=>'Jerami/Ijuk/Daun/Rumbia','other'=>'Lainnya']],'kondisi_atap'=>['Kondisi Atap',$condition]]; ?>
             <div class="mt-5 grid gap-4 sm:grid-cols-2"><?php foreach ($building as $key => [$label,$options]): ?><div><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?></label><select id="<?= $key ?>" name="<?= $key ?>" <?= in_array($key, ['kondisi_pondasi','kondisi_kolom','kondisi_balok','kondisi_rangka','kondisi_lantai','kondisi_dinding','kondisi_atap'], TRUE) ? 'required' : '' ?> aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><option value="">Pilih kondisi</option><?php foreach ($options as $code=>$label): ?><option value="<?= html_escape($code) ?>"<?= $selected($key,$code) ?>><?= html_escape($label) ?></option><?php endforeach; ?></select><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?></div>
         <?php elseif ($step_slug === 'candidate_land'): ?>
-            <h2 class="text-lg font-black">Lengkapi Data SIMPERUM — Calon Lahan</h2><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Isi hanya untuk calon lahan yang relevan dengan pengajuan Anda.</p>
+            <h2 class="text-lg font-black">Lengkapi Data SIMPERUM: Calon Lahan</h2><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Isi hanya untuk calon lahan yang relevan dengan pengajuan Anda.</p>
             <?php $land = ['candidate_land_address'=>['Alamat Tanah',[]],'status_lahan_calon'=>['Sertifikat Tanah',['hm'=>'Sertifikat HM','hgb'=>'Sertifikat HGB','letter_c'=>'Letter C','letter_d'=>'Letter D','village_letter'=>'Suket Desa','notarial_deed'=>'Akta Notaris','other'=>'Lainnya']],'asal_lahan_calon'=>['Asal Tanah',['owned'=>'Milik Sendiri','inheritance'=>'Warisan','grant'=>'Hibah','purchase'=>'Jual Beli']],'hubungan_pemilik_lahan'=>['Hub. dg Pemilik',['parent'=>'Orang Tua','other'=>'Orang Lain']]]; ?>
             <div class="mt-5 grid gap-4 sm:grid-cols-2"><?php foreach ($land as $key=>[$label,$options]): ?><div class="<?= $key === 'candidate_land_address' ? 'sm:col-span-2' : '' ?>"><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?></label><?php if ($options): ?><select id="<?= $key ?>" name="<?= $key ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"><option value="">Pilih <?= strtolower($label) ?></option><?php foreach($options as $code=>$option): ?><option value="<?= $code ?>"<?= $selected($key,$code) ?>><?= html_escape($option) ?></option><?php endforeach; ?></select><?php else: ?><input id="<?= $key ?>" name="<?= $key ?>" value="<?= html_escape($value($key)) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"><?php endif; ?></div><?php endforeach; ?><fieldset class="sm:col-span-2 border-0 p-0 m-0"><legend class="text-xs font-bold p-0">Ukuran tanah</legend><div class="mt-1 grid gap-4 sm:grid-cols-2"><div><label for="panjang_lahan_m" class="text-[11px] font-bold" style="color:var(--portal-text-muted)">Panjang (m)</label><input id="panjang_lahan_m" name="panjang_lahan_m" type="number" min="0.01" step="0.01" value="<?= html_escape($value('panjang_lahan_m')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div><div><label for="lebar_lahan_m" class="text-[11px] font-bold" style="color:var(--portal-text-muted)">Lebar (m)</label><input id="lebar_lahan_m" name="lebar_lahan_m" type="number" min="0.01" step="0.01" value="<?= html_escape($value('lebar_lahan_m')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div></div></fieldset></div>
         <?php elseif ($step_slug === 'sanitation'): ?>
-            <h2 class="text-lg font-black">Lengkapi Data SIMPERUM — Sanitasi & Utilitas</h2><?php $sanitation=['penggunaan_kamar_mandi'=>['Kamar Mandi',['own'=>'Sendiri','shared'=>'Bersama','none'=>'Tidak Punya']],'ada_jendela'=>['Jendela',['1'=>'Ada Jendela','0'=>'Tidak Ada']],'ada_ventilasi'=>['Ventilasi',['1'=>'Ada Ventilasi','0'=>'Tidak Ada']],'sumber_air'=>['Sumber Air',['bottled'=>'Air Kemasan Bermerek','refill'=>'Air Isi Ulang','piped'=>'Ledeng (jenis tidak disebut SIMPERUM)','pdam'=>'PDAM','retail_piped'=>'Leding Eceran','well'=>'Sumur','well_protected'=>'Sumur Terlindung','well_unprotected'=>'Sumur Tak Terlindung','spring'=>'Mata Air','spring_unprotected'=>'Mata Air Tak Terlindung','surface_water'=>'Air Sungai/Danau/Waduk','rain'=>'Air Hujan','other_unfit'=>'Lainnya/Tidak Layak']],'jenis_kloset'=>['Jenis Jamban',['swan_neck'=>'Leher Angsa','plengsengan'=>'Plengsengan','pit'=>'Cemplung/Cubluk','none'=>'Tidak Punya']],'pembuangan_tinja'=>['Jenis TPA',['septic_tank'=>'Tangki Septik','ipal'=>'IPAL','water_body'=>'Kolam/Sawah/Sungai','ground_hole'=>'Lubang Tanah','open_land'=>'Pantai/Tanah Lapang/Kebun']],'jarak_septic_tank'=>['Jarak Septik Tank',['lt_10'=>'<10 m','gte_10'=>'>=10 m']],'penerangan'=>['Sumber Penerangan',['pln'=>'PLN','pln_unmetered'=>'PLN Non Meteran','non_pln'=>'Non PLN','none'=>'Bukan Listrik']],'bahan_bakar_masak'=>['BB Masak',['electric_gas'=>'Listrik/Gas','kerosene'=>'Minyak Tanah','charcoal_wood'=>'Arang/Kayu','other'=>'Lainnya']]]; ?><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Lengkapi kondisi sanitasi dan utilitas rumah saat ini.</p><div class="mt-5 grid gap-4 sm:grid-cols-2"><?php foreach($sanitation as $key=>[$label,$options]): ?><div><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?></label><select id="<?= $key ?>" name="<?= $key ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"><option value="">Pilih <?= strtolower($label) ?></option><?php foreach($options as $code=>$option): ?><option value="<?= $code ?>"<?= $selected($key,$code) ?>><?= html_escape($option) ?></option><?php endforeach; ?></select></div><?php endforeach; ?></div>
+            <h2 class="text-lg font-black">Lengkapi Data SIMPERUM: Sanitasi & Utilitas</h2><?php $sanitation=['penggunaan_kamar_mandi'=>['Kamar Mandi',['own'=>'Sendiri','shared'=>'Bersama','none'=>'Tidak Punya']],'ada_jendela'=>['Jendela',['1'=>'Ada Jendela','0'=>'Tidak Ada']],'ada_ventilasi'=>['Ventilasi',['1'=>'Ada Ventilasi','0'=>'Tidak Ada']],'sumber_air'=>['Sumber Air',['bottled'=>'Air Kemasan Bermerek','refill'=>'Air Isi Ulang','piped'=>'Ledeng (jenis tidak disebut SIMPERUM)','pdam'=>'PDAM','retail_piped'=>'Leding Eceran','well'=>'Sumur','well_protected'=>'Sumur Terlindung','well_unprotected'=>'Sumur Tak Terlindung','spring'=>'Mata Air','spring_unprotected'=>'Mata Air Tak Terlindung','surface_water'=>'Air Sungai/Danau/Waduk','rain'=>'Air Hujan','other_unfit'=>'Lainnya/Tidak Layak']],'jenis_kloset'=>['Jenis Jamban',['swan_neck'=>'Leher Angsa','plengsengan'=>'Plengsengan','pit'=>'Cemplung/Cubluk','none'=>'Tidak Punya']],'pembuangan_tinja'=>['Jenis TPA',['septic_tank'=>'Tangki Septik','ipal'=>'IPAL','water_body'=>'Kolam/Sawah/Sungai','ground_hole'=>'Lubang Tanah','open_land'=>'Pantai/Tanah Lapang/Kebun']],'jarak_septic_tank'=>['Jarak Septik Tank',['lt_10'=>'<10 m','gte_10'=>'>=10 m']],'penerangan'=>['Sumber Penerangan',['pln'=>'PLN','pln_unmetered'=>'PLN Non Meteran','non_pln'=>'Non PLN','none'=>'Bukan Listrik']],'bahan_bakar_masak'=>['BB Masak',['electric_gas'=>'Listrik/Gas','kerosene'=>'Minyak Tanah','charcoal_wood'=>'Arang/Kayu','other'=>'Lainnya']]]; ?><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Lengkapi kondisi sanitasi dan utilitas rumah saat ini.</p><div class="mt-5 grid gap-4 sm:grid-cols-2"><?php foreach($sanitation as $key=>[$label,$options]): ?><div><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?></label><select id="<?= $key ?>" name="<?= $key ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"><option value="">Pilih <?= strtolower($label) ?></option><?php foreach($options as $code=>$option): ?><option value="<?= $code ?>"<?= $selected($key,$code) ?>><?= html_escape($option) ?></option><?php endforeach; ?></select></div><?php endforeach; ?></div>
         <?php elseif ($step_slug === 'preliminary_recommendation'): ?>
             <h2 class="text-lg font-black">Hasil Rekomendasi Awal</h2>
             <p class="mt-2 text-sm">Data dan rekomendasi awal sudah tersimpan dan dapat dipantau petugas kabupaten/kota Anda. Hasil ini belum merupakan keputusan bantuan.</p>
             <p class="mt-2 text-xs" style="color:var(--portal-text-muted)">Langkah berikutnya (melengkapi data SIMPERUM) <strong>opsional</strong>, tetapi diperlukan bila Anda ingin mengajukan program. Anda boleh berhenti di sini dan melanjutkan kapan saja; draft tersimpan di akun Anda. <a href="<?= base_url('akun') ?>" class="font-bold underline">Selesai untuk sekarang</a></p>
             <?php $this->load->view('pages/warga/matrix_result', ['matrix_result'=>$preliminary_matrix ?? NULL]); ?>
         <?php elseif ($step_slug === 'location_evidence'): ?>
-            <h2 class="text-lg font-black">Lengkapi Data SIMPERUM — Lokasi & Bukti</h2><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Koordinat dan berkas disimpan privat. Bukti di bawah berlabel simulasi, bukan ketetapan akhir Dinas.</p><div class="mt-5 grid gap-4 sm:grid-cols-3"><div><label for="location_lat" class="text-xs font-bold">Latitude</label><input id="location_lat" name="location_lat" type="number" step="any" value="<?= html_escape($value('location_lat')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div><div><label for="location_lng" class="text-xs font-bold">Longitude</label><input id="location_lng" name="location_lng" type="number" step="any" value="<?= html_escape($value('location_lng')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div><div><label for="akurasi_lokasi_m" class="text-xs font-bold">Akurasi (meter)</label><input id="akurasi_lokasi_m" name="akurasi_lokasi_m" type="number" min="0" step="0.1" value="<?= html_escape($value('akurasi_lokasi_m')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div></div><button type="button" id="use-location" class="mt-3 rounded-xl border px-3 py-2 text-xs font-bold" style="border-color:var(--portal-border)">Gunakan lokasi perangkat</button><?php $existing = ['self_photo'=>'Foto Diri','house_front_photo'=>'Rumah Depan','house_side_photo'=>'Rumah Samping','roof_photo'=>'Atap','floor_photo'=>'Lantai','wall_photo'=>'Dinding','latrine_photo'=>'Jamban']; $candidate=['candidate_land_photo'=>'Foto Lahan','land_transfer_proof'=>'Bukti Pindah Tangan']; $files = (($assessment['jalur_penilaian'] ?? '') === 'candidate_land') ? $candidate : ((($assessment['jalur_penilaian'] ?? '') === 'financing') ? ['id_card_photo'=>'Foto KTP','family_card_photo'=>'Foto KK'] : $existing); ?><fieldset class="mt-5 border-t pt-4" style="border-color:var(--portal-border)"><legend class="text-sm font-black">Bukti simulasi</legend><div class="mt-3 grid gap-3 sm:grid-cols-2"><?php foreach($files as $kind=>$label): ?><div class="rounded-xl border p-3" style="border-color:var(--portal-border)"><label for="<?= $kind ?>" class="text-xs font-bold"><?= html_escape($label) ?></label><?php if (isset($evidence_files[$kind])): $bukti = $evidence_files[$kind]; ?><span class="ml-1 inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-bold" style="background:rgba(16,185,129,.12);color:#047857">Sudah tersimpan</span>
-                        <?php // Pemohon wajib bisa MEMERIKSA apa yang dia unggah - badge saja
-                              // tidak cukup saat petugas meminta perbaikan. Dibuka di modal
-                              // (components/file_viewer_modal), halaman tidak ditinggalkan. ?>
-                        <span class="mt-1 flex items-center gap-2 text-[10px]" style="color:var(--portal-text-muted)">
-                            <a href="<?= site_url('warga/lihat_bukti/' . (int) $assessment['id'] . '/' . rawurlencode($kind)) ?>" data-file-view data-file-title="<?= html_escape($label) ?>" target="_blank" rel="noopener" class="font-bold" style="color:var(--portal-brand-ink,#047857)">Lihat berkas</a>
-                            <span>·</span><span><?= number_format(((int) ($bukti['ukuran_byte'] ?? 0)) / 1024, 0, ',', '.') ?> KB</span>
-                            <span>·</span><span><?= html_escape(tgl_id($bukti['created_at'] ?? '', TRUE)) ?></span>
-                        </span><?php endif; ?><input id="<?= $kind ?>" name="<?= $kind ?>" type="file" accept="image/jpeg,image/png" class="mt-2 block w-full text-xs"><button type="submit" name="action" value="upload" class="mt-2 rounded-lg px-3 py-1.5 text-xs font-bold" style="background:var(--portal-brand);color:#06333b" onclick="this.form.querySelector('[name=jenis_berkas]').value='<?= $kind ?>'">Unggah</button></div><?php endforeach; ?></div><input type="hidden" name="jenis_berkas" value=""></fieldset><script>document.getElementById('use-location')?.addEventListener('click',function(){if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(function(p){document.getElementById('location_lat').value=p.coords.latitude;document.getElementById('location_lng').value=p.coords.longitude;document.getElementById('akurasi_lokasi_m').value=p.coords.accuracy;});});</script>
+            <h2 class="text-lg font-black">Lengkapi Data SIMPERUM: Lokasi & Bukti</h2><p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Koordinat dan berkas disimpan privat. Bukti di bawah berlabel simulasi, bukan ketetapan akhir Dinas.</p>
             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-            <div id="warga-location-map" class="mt-5 h-72 overflow-hidden rounded-xl border" style="border-color:var(--portal-border)" aria-label="Peta lokasi warga"></div>
+            <div id="warga-location-map" class="mt-5 h-72 overflow-hidden rounded-xl border" style="border-color:var(--portal-border);isolation:isolate" aria-label="Peta lokasi warga"></div>
+            <div class="mt-4 grid gap-4 sm:grid-cols-3"><div><label for="location_lat" class="text-xs font-bold">Latitude</label><input id="location_lat" name="location_lat" type="number" step="any" value="<?= html_escape($value('location_lat')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div><div><label for="location_lng" class="text-xs font-bold">Longitude</label><input id="location_lng" name="location_lng" type="number" step="any" value="<?= html_escape($value('location_lng')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div><div><label for="akurasi_lokasi_m" class="text-xs font-bold">Akurasi (meter)</label><input id="akurasi_lokasi_m" name="akurasi_lokasi_m" type="number" min="0" step="0.1" value="<?= html_escape($value('akurasi_lokasi_m')) ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)"></div></div><button type="button" id="use-location" class="mt-3 rounded-xl border px-3 py-2 text-xs font-bold" style="border-color:var(--portal-border)">Gunakan lokasi perangkat</button><?php $existing = ['self_photo'=>'Foto Diri','house_front_photo'=>'Rumah Depan','house_side_photo'=>'Rumah Samping','roof_photo'=>'Atap','floor_photo'=>'Lantai','wall_photo'=>'Dinding','latrine_photo'=>'Jamban']; $candidate=['candidate_land_photo'=>'Foto Lahan','land_transfer_proof'=>'Bukti Pindah Tangan']; $files = (($assessment['jalur_penilaian'] ?? '') === 'candidate_land') ? $candidate : ((($assessment['jalur_penilaian'] ?? '') === 'financing') ? ['id_card_photo'=>'Foto KTP','family_card_photo'=>'Foto KK'] : $existing); ?><fieldset class="mt-5 border-t pt-4" style="border-color:var(--portal-border)"><legend class="text-sm font-black">Bukti simulasi</legend>
+            <p class="mt-1 text-[11px]" style="color:var(--portal-text-muted)">Foto JPG/PNG, maksimal 5 MB, diunggah satu per satu.</p>
+            <div class="mt-3 grid gap-3 sm:grid-cols-2">
+            <?php foreach ($files as $kind => $label): $bukti = $evidence_files[$kind] ?? NULL; ?>
+                <div class="rounded-xl border p-3" style="border-color:var(--portal-border)" data-bukti="<?= $kind ?>">
+                    <p class="text-xs font-bold"><?= html_escape($label) ?></p>
+                    <?php // Pemohon wajib bisa MEMERIKSA apa yang dia unggah - badge saja
+                          // tidak cukup saat petugas meminta perbaikan. Dibuka di modal
+                          // (components/file_viewer_modal), halaman tidak ditinggalkan.
+                          // Selalu dirender (hidden bila belum ada) supaya unggahan lewat
+                          // fetch cukup membukanya, tanpa menyalin markup ke JavaScript. ?>
+                    <div data-bukti-tersimpan<?= $bukti ? '' : ' hidden' ?>>
+                        <span class="mt-1 flex flex-wrap items-center gap-2 text-[10px]" style="color:var(--portal-text-muted)">
+                            <span class="rounded-full px-1.5 py-0.5 text-[9px] font-bold" style="background:rgba(16,185,129,.12);color:#047857">Sudah tersimpan</span>
+                            <a href="<?= site_url('warga/lihat_bukti/' . (int) $assessment['id'] . '/' . rawurlencode($kind)) ?>" data-file-view data-file-title="<?= html_escape($label) ?>" target="_blank" rel="noopener" class="font-bold" style="color:var(--portal-brand-ink,#047857)">Lihat berkas</a>
+                            <span>·</span><span data-bukti-ukuran><?= number_format(((int) ($bukti['ukuran_byte'] ?? 0)) / 1024, 0, ',', '.') ?> KB</span>
+                            <span>·</span><span data-bukti-waktu><?= html_escape(tgl_id($bukti['created_at'] ?? '', TRUE)) ?></span>
+                        </span>
+                    </div>
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                        <label class="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold focus-within:ring-2" style="border-color:var(--portal-border);background:var(--portal-btn-bg);color:var(--portal-text)">
+                            <input id="<?= $kind ?>" name="<?= $kind ?>" type="file" accept="image/jpeg,image/png" class="sr-only" aria-label="<?= html_escape($label) ?>">
+                            <i class="fa-solid fa-camera" aria-hidden="true"></i><span data-bukti-aksi><?= $bukti ? 'Ganti foto' : 'Pilih foto' ?></span>
+                        </label>
+                        <span data-bukti-nama class="min-w-0 flex-1 truncate text-[11px]" style="color:var(--portal-text-muted)"><?= $bukti ? '' : 'Belum ada foto' ?></span>
+                        <button type="submit" name="action" value="upload" data-unggah class="rounded-lg px-3 py-1.5 text-xs font-bold" style="background:var(--portal-brand);color:#06333b" onclick="this.form.querySelector('[name=jenis_berkas]').value='<?= $kind ?>'">Unggah</button>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+            </div><input type="hidden" name="jenis_berkas" value=""></fieldset>
+            <script>
+            // Tiap foto terunggah sendiri begitu dipilih (fetch): koordinat yang belum
+            // disimpan dan kartu lain tidak hilang oleh reload. Jawaban yang bukan JSON
+            // (sesi habis, jaringan putus) jatuh ke kirim formulir biasa lewat tombol Unggah.
+            (function () {
+                var form = document.getElementById('form-pendataan-warga');
+                if (!form || !window.fetch || !window.FormData) return;
+                form.querySelectorAll('[data-bukti]').forEach(function (kartu) {
+                    var input = kartu.querySelector('input[type=file]');
+                    var tombol = kartu.querySelector('[data-unggah]');
+                    var nama = kartu.querySelector('[data-bukti-nama]');
+                    tombol.hidden = true;
+                    input.addEventListener('change', function () {
+                        var berkas = input.files[0];
+                        if (!berkas) return;
+                        var semula = nama.textContent;
+                        if (berkas.size > 5 * 1024 * 1024) { // batas store_private_upload()
+                            input.value = '';
+                            KPKP.notify.error('Ukuran foto melebihi 5 MB.');
+                            return;
+                        }
+                        var data = new FormData();
+                        form.querySelectorAll('input[type=hidden]').forEach(function (h) { data.append(h.name, h.value); });
+                        data.set('action', 'upload');
+                        data.set('jenis_berkas', kartu.dataset.bukti);
+                        data.append(input.name, berkas);
+                        nama.textContent = 'Mengunggah ' + berkas.name + '…';
+                        input.disabled = true;
+                        fetch(form.getAttribute('action'), {
+                            method: 'POST', body: data, credentials: 'same-origin',
+                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                        }).then(function (r) { return r.json(); }).then(function (j) {
+                            input.disabled = false;
+                            input.value = ''; // jangan ikut terkirim lagi oleh "Simpan dan lanjut"
+                            if (j.status !== 'ok') { nama.textContent = semula; KPKP.notify.error(j.message); return; }
+                            nama.textContent = berkas.name;
+                            kartu.querySelector('[data-bukti-ukuran]').textContent = j.ukuran;
+                            kartu.querySelector('[data-bukti-waktu]').textContent = j.waktu;
+                            kartu.querySelector('[data-bukti-tersimpan]').hidden = false;
+                            kartu.querySelector('[data-bukti-aksi]').textContent = 'Ganti foto';
+                            KPKP.notify.success(j.message);
+                        }).catch(function () {
+                            input.disabled = false;
+                            tombol.hidden = false;
+                            tombol.click();
+                        });
+                    });
+                });
+            })();
+            </script>
             <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
             <script>
             (function () {
-                if (!window.L) return;
                 var lat = document.getElementById('location_lat');
                 var lng = document.getElementById('location_lng');
-                var start = [parseFloat(lat.value) || -7.15, parseFloat(lng.value) || 110.14];
-                var map = L.map('warga-location-map').setView(start, lat.value && lng.value ? 16 : 8);
-                var marker = L.marker(start, {draggable:true}).addTo(map);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(map);
-                function set(point) { marker.setLatLng(point); lat.value = point.lat.toFixed(7); lng.value = point.lng.toFixed(7); }
-                map.on('click', function (event) { set(event.latlng); });
-                marker.on('dragend', function () { set(marker.getLatLng()); });
+                var akurasi = document.getElementById('akurasi_lokasi_m');
+                var map = null, marker = null;
+                function isi(p) { lat.value = p.lat.toFixed(7); lng.value = p.lng.toFixed(7); }
+                // Koordinat yang dipilih lewat jalur mana pun (klik peta, lokasi
+                // perangkat, ketik manual) langsung diperbesar ke titiknya.
+                function fokus(p) {
+                    if (!map) return;
+                    marker.setLatLng(p);
+                    map.setView(p, Math.max(map.getZoom(), 17));
+                }
+                if (window.L) {
+                    var ada = lat.value !== '' && lng.value !== '';
+                    var start = ada ? [parseFloat(lat.value), parseFloat(lng.value)] : [-7.15, 110.14];
+                    map = L.map('warga-location-map').setView(start, ada ? 17 : 8);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom:19, attribution:'&copy; OpenStreetMap'}).addTo(map);
+                    marker = L.marker(start, {draggable:true}).addTo(map);
+                    map.on('click', function (event) { isi(event.latlng); fokus(event.latlng); });
+                    marker.on('dragend', function () { isi(marker.getLatLng()); });
+                    [lat, lng].forEach(function (el) {
+                        el.addEventListener('change', function () {
+                            var p = {lat: parseFloat(lat.value), lng: parseFloat(lng.value)};
+                            if (Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180) fokus(p); // NaN gugur di sini
+                        });
+                    });
+                }
+                // Tetap jalan walau Leaflet gagal dimuat: kolom terisi, peta saja yang absen.
+                document.getElementById('use-location')?.addEventListener('click', function () {
+                    if (!navigator.geolocation) return;
+                    navigator.geolocation.getCurrentPosition(function (pos) {
+                        var p = {lat: pos.coords.latitude, lng: pos.coords.longitude};
+                        isi(p);
+                        akurasi.value = Math.round(pos.coords.accuracy * 10) / 10; // step="0.1", nilai mentah ditolak validasi peramban
+                        fokus(p);
+                    });
+                });
             })();
             </script>
         <?php elseif ($step_slug === 'review'): ?>
