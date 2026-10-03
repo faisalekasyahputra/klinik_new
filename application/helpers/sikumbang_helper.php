@@ -88,7 +88,7 @@ if ( ! function_exists('sikumbang_ambil')) {
      * @param int    $timeout    Batas waktu curl.
      * @param string $bendera    Nama bendera penahan tembakan. Bawaan satu untuk
      *                           seluruh host; detail per lokasi memakai benderanya
-     *                           sendiri (lihat Index::detail_perum).
+     *                           sendiri (lihat Index::detail_perum); NULL = tanpa bendera.
      *
      * @return string|NULL Isi balasan, atau NULL kalau gagal DAN tidak ada
      *                     cadangan apa pun. NULL sengaja dibedakan dari

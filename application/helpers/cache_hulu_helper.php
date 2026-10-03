@@ -51,7 +51,8 @@ if ( ! function_exists('cache_hulu_ambil')) {
      *                             kosong dari hulu yang sehat dan kegagalan
      *                             transport itu dua hal berbeda, dan
      *                             menyamakannya persis cara cache teracuni.
-     * @param string   $prefiks    Pembeda bendera antar hulu dalam satu folder.
+     * @param string|NULL $prefiks Pembeda bendera antar hulu dalam satu folder. NULL: tanpa bendera
+     *                             sama sekali (tidak dibaca, tidak ditulis).
      *
      * @return string|NULL Isi balasan, atau NULL kalau gagal DAN tidak ada
      *                     cadangan apa pun. NULL sengaja dibedakan dari string
@@ -67,22 +68,22 @@ if ( ! function_exists('cache_hulu_ambil')) {
             return file_get_contents($cache_file);
         }
 
-        $bendera = dirname($cache_file) . '/' . $prefiks . '_gagal.flag';
+        $bendera = $prefiks === NULL ? NULL : dirname($cache_file) . '/' . $prefiks . '_gagal.flag';
 
         // 2. Baru saja gagal: jangan menambah antrean ke hulu yang bermasalah.
-        if (is_file($bendera) && (time() - filemtime($bendera)) < CACHE_HULU_JEDA_GAGAL) {
+        if ($bendera !== NULL && is_file($bendera) && (time() - filemtime($bendera)) < CACHE_HULU_JEDA_GAGAL) {
             return $ada_cache ? file_get_contents($cache_file) : NULL;
         }
 
         list($berhasil, $isi) = $ambil();
 
         if ( ! $berhasil || ! is_string($isi) || $isi === '') {
-            @touch($bendera);
+            if ($bendera !== NULL) { @touch($bendera); }
             return $ada_cache ? file_get_contents($cache_file) : NULL;
         }
 
         @file_put_contents($cache_file, $isi);
-        @unlink($bendera);
+        if ($bendera !== NULL) { @unlink($bendera); }
         return $isi;
     }
 }
