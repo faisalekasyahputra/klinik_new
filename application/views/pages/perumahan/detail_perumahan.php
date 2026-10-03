@@ -131,7 +131,7 @@
 
                 <?php if (!empty($row['id'])): ?>
                     <div class="absolute bottom-4 right-4 z-20">
-                    <a href="https://sikumbang.tapera.go.id/lokasi/<?= $row['id'] ?>/siteplan.svg" target="_blank" class="detail-secondary-btn inline-flex items-center gap-2 bg-black/70 hover:bg-[#d6fb00] hover:text-black text-white font-bold text-[11px] uppercase tracking-wider px-5 py-2.5 rounded-xl border border-[#d6fb00]/20 hover:border-[#d6fb00] backdrop-blur-md shadow-lg transition-all duration-300">
+                    <a href="https://sikumbang.tapera.go.id/lokasi/<?= html_escape(rawurlencode((string) $row['id'])) ?>/siteplan.svg" target="_blank" class="detail-secondary-btn inline-flex items-center gap-2 bg-black/70 hover:bg-[#d6fb00] hover:text-black text-white font-bold text-[11px] uppercase tracking-wider px-5 py-2.5 rounded-xl border border-[#d6fb00]/20 hover:border-[#d6fb00] backdrop-blur-md shadow-lg transition-all duration-300">
                             <i class="fa-solid fa-map-location text-xs"></i>
                             <span>Lihat Siteplan</span>
                         </a>
@@ -364,7 +364,7 @@
         ?>
         let lat = <?= (float) (isset($row['lat']) && !empty($row['lat']) ? $row['lat'] : '-7.0051') ?>; 
         let lng = <?= (float) (isset($row['long']) && !empty($row['long']) ? $row['long'] : '110.4381') ?>; 
-        let namaPerumahan = "<?= isset($row['namaPerumahan']) ? htmlspecialchars($row['namaPerumahan']) : 'Lokasi Perumahan' ?>";
+        let namaPerumahan = <?= json_encode(isset($row['namaPerumahan']) ? htmlspecialchars($row['namaPerumahan']) : 'Lokasi Perumahan', JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>; // sudah ter-escape HTML, aman untuk popup
 
         // 1. Inisialisasi Kontrol Peta
         const map = L.map('map').setView([lat, lng], 15);
