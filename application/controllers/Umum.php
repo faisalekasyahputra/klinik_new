@@ -164,6 +164,16 @@ class Umum extends MY_Controller {
 			return;
 		}
 
+		/* Batas laju sendiri (bukan hanya tulis_akun 120/menit): tiap kiriman masuk antrean triase dan
+		   memicu push ke semua super admin. Dihitung sesudah validasi supaya isian salah tidak memakan jatah. */
+		foreach (['aduan_kirim' => ['account_id' => (int) $this->get_user_id()], 'aduan_kirim_ip' => []] as $kebijakan => $konteks) {
+			$rate = $this->rate_limit_consume($kebijakan, $konteks);
+			if (empty($rate['success']) || empty($rate['allowed'])) {
+				$this->rate_limit_reject($rate, 'Terlalu banyak aduan dikirim dalam satu jam. Silakan coba lagi nanti.');
+				return;
+			}
+		}
+
 		$nama  = $this->input->post('nama', TRUE);
 		$email = $this->input->post('email', TRUE);
 		$judul = $this->input->post('judul', TRUE);
