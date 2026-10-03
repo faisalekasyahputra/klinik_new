@@ -15,6 +15,11 @@ $config['rate_limit_policies'] = [
     // hit, pola login), per akun dan per IP (keputusan pemilik produk 29 Sep 2026).
     'profile_password' => ['limit' => 5, 'window' => 3600, 'dimensions' => ['account', 'ip']],
     'privacy_deletion_request' => ['limit' => 2, 'window' => 86400, 'dimensions' => ['account']],
+    // Formulir aduan (Umum::simpan_aduan): tiap kiriman masuk antrean triase bersama dan memicu push ke
+    // semua super admin. Per akun 5/jam; per IP lebih longgar (20/jam) karena satu kantor kelurahan atau
+    // CGNAT seluler berbagi alamat. Dua kebijakan, bukan satu berdimensi ganda, supaya batasnya berbeda.
+    'aduan_kirim'    => ['limit' => 5,  'window' => 3600, 'dimensions' => ['account']],
+    'aduan_kirim_ip' => ['limit' => 20, 'window' => 3600, 'dimensions' => ['ip']],
     'login' => [
         'limit' => 30,
         'window' => 300,
@@ -32,6 +37,17 @@ $config['rate_limit_policies'] = [
         'window' => 600,
         'dimensions' => ['ip'],
     ],
+    /* Kode OTP pendaftaran (libraries/Otp_pendaftaran.php). Hitungan di sesi (jeda berlipat, 5 kiriman,
+       5 kode salah) hilang begitu cookie dibuang atau email diganti, jadi batas yang mengikat dipegang
+       di sini, per email TUJUAN (kunci = sha256 email huruf kecil, bukan email polos):
+       - otp_kirim: setiap kode yang hendak dikirim, 5 per jam per email (meredam banjir email ke satu alamat).
+       - otp_salah: hanya kode SALAH, 10 per jam per email; sesudah itu kode benar pun ditolak.
+       - otp_salah_ip: hanya kode SALAH, 30 per jam per IP, untuk penebak yang berganti-ganti email.
+       Akibatnya pendaftaran sah untuk email yang sedang dibanjiri orang lain ikut tertahan sampai
+       jendelanya habis; pesannya umum dan tidak menyatakan apa pun tentang akun. */
+    'otp_kirim'    => ['limit' => 5,  'window' => 3600, 'dimensions' => ['key']],
+    'otp_salah'    => ['limit' => 10, 'window' => 3600, 'dimensions' => ['key']],
+    'otp_salah_ip' => ['limit' => 30, 'window' => 3600, 'dimensions' => ['ip']],
     'simperum_lookup' => [
         'limit' => 10,
         'window' => 60,

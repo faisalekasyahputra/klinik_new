@@ -17,7 +17,7 @@
                 <a href="<?= base_url('panduan_desain/' . (int) $item['id']) ?>" class="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-xl bg-[#f1f5f5] px-3 py-3 text-sm font-extrabold text-[color:var(--portal-brand)] transition-all hover:bg-[color:var(--portal-brand)] hover:text-white">
                     <i class="fa-solid fa-eye text-sm"></i> Detail
                 </a>
-                <?php if (!empty($item['video']['link_video'])): ?>
+                <?php if (!empty($item['video']['link_video']) && transport_is_https_url($item['video']['link_video'])): ?>
                 <a href="<?= htmlspecialchars($item['video']['link_video'], ENT_QUOTES, 'UTF-8') ?>" target="_blank" rel="noopener noreferrer" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#ff0000] text-white shadow-[0_5px_12px_rgba(255,0,0,0.2)] transition-all hover:bg-[#cc0000] hover:shadow-none" aria-label="Lihat video <?= htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8') ?>">
                     <i class="fa-brands fa-youtube text-xl"></i>
                 </a>

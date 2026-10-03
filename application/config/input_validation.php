@@ -31,6 +31,7 @@ $config['input_allowed_fields'] = [
     'bot_token',
     'btn_submit_registrasi',
     'bulan',
+    'cari', // token pencarian NIK antrean (MY_Controller::cari_antrean_prg), bukan nilai NIK
     'catatan_admin',
     'catatan_progres',
     'catatan_user',

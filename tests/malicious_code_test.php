@@ -183,9 +183,13 @@ $awalan_meta = '<meta http-equiv="Content-Security-Policy" content="';
 check(strpos($meta, $awalan_meta) === 0 && substr($meta, -2) === '">', 'csp_meta_tag() harus menghasilkan tag meta CSP yang utuh');
 check(html_entity_decode(substr($meta, strlen($awalan_meta), -2), ENT_QUOTES, 'UTF-8') === csp_header_value(false), 'Isi meta CSP harus sama dengan kebijakan (tanpa upgrade-insecure-requests pada HTTP)');
 $tanpa_meta = [];
-$dibebaskan_meta = ['errors/', 'welcome_message.php']; // template galat CI tidak boleh bergantung pada helper saat aplikasi sedang galat
+// errors/, welcome_message.php: template galat CI tidak boleh bergantung pada helper saat aplikasi sedang galat.
+// email/: badan email HTML dibaca klien email, bukan peramban di origin aplikasi, jadi meta CSP tidak berlaku
+// di sana; sebagai gantinya view email tidak boleh memuat <script> sama sekali (diperiksa di bawah).
+$dibebaskan_meta = ['errors/', 'welcome_message.php', 'email/'];
 foreach (pindai_daftar($akar . '/application/views', ['php', 'html']) as $p) {
     $rel_v = preg_replace('#^.*/application/views/#', '', $p); $isi = file_get_contents($p);
+    if (strpos($rel_v, 'email/') === 0 && stripos($isi, '<script') !== false) { $tanpa_meta[] = "$rel_v (view email memuat <script>)"; continue; }
     if (!preg_match('#<head[ >]#i', $isi)) { continue; }
     foreach ($dibebaskan_meta as $b) { if (strpos($rel_v, $b) === 0) { continue 2; } }
     if (strpos($isi, 'csp_meta_tag()') === false) { $tanpa_meta[] = $rel_v; continue; }

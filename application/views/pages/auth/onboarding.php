@@ -198,7 +198,7 @@ $isi = function ($nama) use ($old) {
                         <input type="text" id="username" name="username" class="auth-input"
                                value="<?= $isi('username') ?>"
                                placeholder="cth: budi_santoso" :required="langkah === 2"
-                               maxlength="30" pattern="^\S+$" oninput="this.value = this.value.replace(/\s/g, '').toLowerCase()">
+                               maxlength="30" pattern="[^@\s]+" title="Huruf kecil, angka, titik, garis bawah, atau tanda hubung; tanpa spasi dan tanpa @" oninput="this.value = this.value.replace(/\s/g, '').toLowerCase()">
                         <i class="fa-solid fa-at auth-input-icon"></i>
                     </div>
                     </div>

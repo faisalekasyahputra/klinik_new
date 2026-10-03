@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji tabel mati, kosakata status tertutup, dan penyapu cache (Fase 3 normalisasi langkah 5, migrasi 071):
@@ -18,7 +19,7 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
 define('BASEPATH', 'uji');
 $AKAR = dirname(__DIR__, 2);
 $env = [];
-foreach (file($AKAR . '/.env', FILE_IGNORE_NEW_LINES) as $l) { $l = trim($l); if ($l === '' || $l[0] === '#' || strpos($l, '=') === FALSE) continue; [$k, $v] = explode('=', $l, 2); $env[trim($k)] ??= trim($v); }
+foreach (file(env_berkas_path($AKAR), FILE_IGNORE_NEW_LINES) as $l) { $l = trim($l); if ($l === '' || $l[0] === '#' || strpos($l, '=') === FALSE) continue; [$k, $v] = explode('=', $l, 2); $env[trim($k)] ??= trim($v); }
 mysqli_report(MYSQLI_REPORT_OFF);
 $db = new mysqli($env['DB_HOST'], $env['DB_USER'], $env['DB_PASS'] ?? '', $env['DB_NAME']);
 $db->set_charset('utf8mb4');

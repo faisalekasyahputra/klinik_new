@@ -73,20 +73,20 @@
         <!-- Image Gradient Overlay -->
         <div class="absolute inset-0 pkp-image-gradient z-10"></div>
         
-        <img src="https://apiternak.krsjawa3.com/<?= $item['path_image'] ?>" class="w-full h-full object-cover pkp-article-img" alt="Artikel" loading="lazy">
+        <img src="https://apiternak.krsjawa3.com/<?= html_escape($item['path_image']) ?>" class="w-full h-full object-cover pkp-article-img" alt="Artikel" loading="lazy">
     </div>
 
     <!-- Content Section -->
     <div class="p-6 relative z-20 pkp-content-gradient">
-        <a href="<?= base_url('Index/detail_artikel/').$item['id'] ?>" class="block">
+        <a href="<?= base_url('Index/detail_artikel/' . (int) $item['id']) ?>" class="block">
             <h4 class="text-white font-extrabold text-base leading-snug pkp-article-title mb-3" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
                 <?= htmlspecialchars($item['title']) ?>
             </h4>
         </a>
-        <p class="text-xs leading-relaxed mb-5 pkp-line-clamp-3" style="color: #a1a1aa;"><?=strip_tags($item['body'])?></p>
+        <p class="text-xs leading-relaxed mb-5 pkp-line-clamp-3" style="color: #a1a1aa;"><?= html_escape(html_entity_decode(strip_tags((string) $item['body']), ENT_QUOTES | ENT_HTML5, 'UTF-8')) ?></p>
         
         <div class="pt-4 flex items-center justify-between" style="border-top: 1px solid rgba(255,255,255,0.05);">
-            <a href="<?= base_url('Index/detail_artikel/').$item['id'] ?>" class="inline-flex items-center gap-2 text-xs font-bold transition-colors pkp-read-more" style="color: #d6fb00;">
+            <a href="<?= base_url('Index/detail_artikel/' . (int) $item['id']) ?>" class="inline-flex items-center gap-2 text-xs font-bold transition-colors pkp-read-more" style="color: #d6fb00;">
                 Baca selengkapnya 
                 <i class="fa-solid fa-arrow-right-long text-[10px]"></i>
             </a>

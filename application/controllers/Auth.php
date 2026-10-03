@@ -3,9 +3,6 @@ defined('BASEPATH') || exit('No direct script access allowed');
 
 class Auth extends MY_Controller {
 
-    // Tombol pengarah dialog galat (flashdata galat_aksi): [label, rute internal | NULL = tutup, utama?].
-    const AKSI_EMAIL_TERPAKAI = [['Masuk', 'Auth/login', TRUE], ['Masuk dengan Google', 'Auth/google'], ['Coba email lain', NULL]];
-
     protected $google_client;
 
     /** Satu pesan untuk setiap login gagal: akun tidak ada, sandi salah, akun tanpa sandi. */
@@ -407,7 +404,7 @@ class Auth extends MY_Controller {
             // keanggotaan - siapa pun bisa menguji daftar email untuk tahu
             // siapa saja punya akun di sini. Pemilik akun yang sah tetap
             // terbantu lewat tautan Masuk / Lupa Sandi.
-            $this->_register_fail($is_ajax, 'Pendaftaran tidak dapat diproses dengan email tersebut. Kalau Anda sudah punya akun, silakan masuk.', $redirect_target, self::AKSI_EMAIL_TERPAKAI, 'Email sudah terdaftar');
+            $this->_register_fail($is_ajax, 'Pendaftaran tidak dapat diproses dengan email tersebut. Kalau Anda sudah punya akun, silakan masuk.', $redirect_target);
             return;
         }
 
@@ -441,7 +438,7 @@ class Auth extends MY_Controller {
     private function _judul_otp($hasil) {
         return [
             'jeda' => 'Tunggu sebentar', 'batas' => 'Batas permintaan kode', 'gagal' => 'Email gagal dikirim',
-            'salah' => 'Kode salah', 'kedaluwarsa' => 'Kode kedaluwarsa', 'habis' => 'Terlalu banyak percobaan',
+            'salah' => 'Kode salah', 'kedaluwarsa' => 'Kode kedaluwarsa', 'habis' => 'Terlalu banyak percobaan', 'terkunci' => 'Terlalu banyak percobaan',
         ][$hasil] ?? 'Sesi pendaftaran berakhir';
     }
 
@@ -454,6 +451,7 @@ class Auth extends MY_Controller {
             'salah'       => 'Kode verifikasi salah. Periksa kembali email Anda.',
             'kedaluwarsa' => 'Kode verifikasi sudah kedaluwarsa. Minta kode baru.',
             'habis'       => 'Terlalu banyak kode salah. Minta kode baru.',
+            'terkunci'    => 'Terlalu banyak percobaan kode. Silakan coba lagi nanti.',
         ][$hasil] ?? 'Pendaftaran belum dimulai atau sesinya berakhir. Silakan isi formulir pendaftaran lagi.';
     }
 
@@ -509,7 +507,7 @@ class Auth extends MY_Controller {
         $redirect_target = $is_srp2 ? 'Pengembang/syarat' : 'Auth/register';
         // Diperiksa ulang: akun dengan email ini bisa saja lahir selama kode menunggu.
         if ($this->auth_model->find_by_email($email)) {
-            $this->_register_fail($is_ajax, 'Pendaftaran tidak dapat diproses dengan email tersebut. Kalau Anda sudah punya akun, silakan masuk.', $redirect_target, self::AKSI_EMAIL_TERPAKAI, 'Email sudah terdaftar');
+            $this->_register_fail($is_ajax, 'Pendaftaran tidak dapat diproses dengan email tersebut. Kalau Anda sudah punya akun, silakan masuk.', $redirect_target);
             return;
         }
         $user_id = $this->auth_model->create_user($email, $t['hash_sandi'], TRUE);
@@ -732,11 +730,12 @@ class Auth extends MY_Controller {
             $password_hash = password_hash($password, PASSWORD_BCRYPT);
         }
 
-        // Check if username is unique
-        $this->db->where('nama_pengguna', $username);
-        $this->db->where('id !=', $user_id);
-        if ($this->db->count_all_results('usr_akun') > 0) {
-            $this->_onboarding_fail('Username sudah digunakan, silakan pilih yang lain.', 'Username sudah dipakai');
+        // Username: format tanpa "@" dan unik terhadap username DAN email akun lain (Auth_model).
+        // Username yang sudah tersimpan (buatan sistem) tetap boleh dipakai apa adanya.
+        $galat_username = $username === (string) ($user_record->nama_pengguna ?? '')
+            ? NULL : $this->auth_model->username_ditolak($username, $user_id);
+        if ($galat_username !== NULL) {
+            $this->_onboarding_fail($galat_username, 'Username tidak dapat dipakai');
             return;
         }
 

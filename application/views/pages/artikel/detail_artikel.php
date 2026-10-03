@@ -152,8 +152,8 @@
                 <div class="space-y-1">
                     <?php foreach($kategori_list as $kat => $count): ?>
                     <a href="<?= base_url('Berita?kat=' . urlencode($kat)) ?>" class="flex items-center justify-between group hover-glow-card p-2.5 rounded-xl transition-all duration-300 border border-transparent hover:border-[#d6fb00]/30">
-                        <span class="text-[13px] text-zinc-dim group-hover:text-white transition-colors duration-300 truncate mr-2" title="<?= $kat ?>"><?= $kat ?></span>
-                        <span class="badge-neon-cyan text-[9px] font-extrabold px-2 py-0.5 rounded-full flex-shrink-0"><?= $count ?></span>
+                        <span class="text-[13px] text-zinc-dim group-hover:text-white transition-colors duration-300 truncate mr-2" title="<?= html_escape($kat) ?>"><?= html_escape($kat) ?></span>
+                        <span class="badge-neon-cyan text-[9px] font-extrabold px-2 py-0.5 rounded-full flex-shrink-0"><?= (int) $count ?></span>
                     </a>
                     <?php endforeach; ?>
                 </div>
@@ -166,7 +166,7 @@
             <div class="dark-bento-container shadow-2xl overflow-hidden">
                 
                 <div class="w-full aspect-[16/9] md:aspect-[21/10] bg-[#0a1a1f] overflow-hidden relative group">
-                    <img src="https://apiternak.krsjawa3.com/<?= $item['path_image'] ?>" 
+                    <img src="https://apiternak.krsjawa3.com/<?= html_escape($item['path_image']) ?>" 
                          class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
                          alt="Banner Artikel">
                     <!-- Gradient overlay on image -->
@@ -191,11 +191,12 @@
                         </div>
                         <span class="opacity-50 hidden sm:inline">•</span>
                         <span class="badge-neon-cyan text-[10px] font-extrabold px-3 py-1 rounded-full uppercase tracking-widest"> 
-                            <?= isset($item['category']['name']) ? $item['category']['name'] : 'Tanpa Kategori' ?>
+                            <?= html_escape($item['category']['name'] ?? 'Tanpa Kategori') ?>
                         </span>
                     </div>
                     
                     <div class="article-body font-outfit">
+                        <?php /* Body sudah disaring daftar izin di Ternak_api::bersihkan_html() sebelum masuk cache. */ ?>
                         <?= $item['body']; ?>
                     </div>
                     
@@ -235,15 +236,15 @@
                         ?>
                     <div class="flex items-start gap-4 group cursor-pointer hover-glow-card p-2 -mx-2 rounded-xl transition-all duration-300 border border-transparent">
                         <div class="w-20 h-16 md:w-24 md:h-20 bg-[#0a1a1f] rounded-xl overflow-hidden flex-shrink-0 relative">
-                            <img src="https://apiternak.krsjawa3.com/<?= $item['path_image'] ?>" class="w-full h-full object-cover transition-transform duration-500 hover-glow-img" alt="Thumbnail">
+                            <img src="https://apiternak.krsjawa3.com/<?= html_escape($item['path_image']) ?>" class="w-full h-full object-cover transition-transform duration-500 hover-glow-img" alt="Thumbnail">
                             <div class="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-xl pointer-events-none"></div>
                         </div>
                         <div class="space-y-1.5 flex-1 min-w-0 py-0.5">
                             <span class="inline-block badge-neon-cyan text-[8px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wider">
-                                 <?= isset($item['category']['name']) ? $item['category']['name'] : 'Tanpa Kategori' ?>
+                                 <?= html_escape($item['category']['name'] ?? 'Tanpa Kategori') ?>
                             </span>
                             <h4 class="text-white font-bold text-xs md:text-sm leading-snug hover-glow-text transition-colors duration-300 line-clamp-2">
-                                <a href="<?= base_url('Index/detail_artikel/').$item['id'] ?>" class="no-underline"> <?= htmlspecialchars($item['title']) ?></a>
+                                <a href="<?= base_url('Index/detail_artikel/' . (int) $item['id']) ?>" class="no-underline"> <?= htmlspecialchars($item['title']) ?></a>
                             </h4>
                             <div class="flex items-center gap-1.5 text-[10px] text-zinc-dim pt-0.5">
                                 <i class="fa-regular fa-clock text-[9px] opacity-70"></i>

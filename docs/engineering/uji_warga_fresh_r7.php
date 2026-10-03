@@ -1,4 +1,5 @@
 <?php
+require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * R7: bangun DB fresh, migrasikan baseline sampai versi terbaru, jalankan
@@ -9,7 +10,7 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  */
 
 $root = dirname(__DIR__, 2);
-$envPath = $root . DIRECTORY_SEPARATOR . '.env';
+$envPath = env_berkas_path($root);
 $schemaPath = __DIR__ . DIRECTORY_SEPARATOR . 'schema_klinikpkp.sql';
 $lock = fopen(sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'klinikpkp_r7_fresh.lock', 'c');
 if ( ! $lock || ! flock($lock, LOCK_EX | LOCK_NB)) {

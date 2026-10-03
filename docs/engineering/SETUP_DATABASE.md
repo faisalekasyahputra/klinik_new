@@ -62,7 +62,7 @@ mysql -u root -p klinikpkp < docs/engineering/schema_klinikpkp.sql
 *Atau import secara manual via phpMyAdmin ke database `klinikpkp`.*
 
 ### 3. Konfigurasi Environment (`.env`)
-Salin atau buat file `.env` di root proyek (`C:\xampp\htdocs\klinik_new\.env`):
+Salin atau buat file `.env` di root proyek (`C:\xampp\htdocs\klinik_new\.env`). Aplikasi lebih dulu mencari `.env` satu tingkat di atas root proyek (di production: di luar `public_html`) dan memakai berkas itu bila ada; di XAMPP lokal folder itu adalah `htdocs`, jadi jangan menaruh `.env` di sana. Lihat `application/helpers/env_berkas_helper.php`.
 
 ```env
 # Koneksi Database Lokal
