@@ -156,7 +156,7 @@ Kunci yang paling menentukan:
 ## 4. Pemasangan baru (database kosong)
 
 ```bash
-# 1. Kode (repo privat: server butuh deploy key atau akun yang diberi akses)
+# 1. Kode (repo publik; rahasia hanya di .env, yang tidak pernah ikut git)
 cd /home/klinik
 git clone https://github.com/faisalekasyahputra/klinik_new.git app
 cd app && git checkout main
