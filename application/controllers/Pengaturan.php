@@ -685,7 +685,8 @@ class Pengaturan extends MY_Controller {
             $this->rate_limit_reject($rate, 'Permintaan terlalu sering. Silakan coba lagi nanti.');
             return;
         }
-        $title = 'Permintaan Penghapusan Data Layanan';
+        $this->load->model('Aduan_model');
+        $title = Aduan_model::JUDUL_PENGHAPUSAN_DATA;
         $pending = $this->db->where('user_id', $user_id)->where('judul', $title)
             ->where('status !=', 'Selesai')->count_all_results('aduan');
         if ($pending) {
@@ -695,7 +696,6 @@ class Pengaturan extends MY_Controller {
         }
         $user = $this->Auth_model->find_by_id($user_id);
         if (!$user) { show_error('Akun tidak ditemukan.', 404); return; }
-        $this->load->model('Aduan_model');
         $this->db->trans_begin();
         $id = $this->Aduan_model->create([
             'user_id' => $user_id,

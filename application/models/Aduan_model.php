@@ -4,6 +4,14 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 class Aduan_model extends CI_Model {
 
     /**
+     * Judul tetap permintaan peninjauan penghapusan data (Pengaturan::request_service_data_deletion).
+     * Baris ini permintaan hak subjek data, bukan aduan publik: di Papan Aduan hanya terlihat oleh
+     * pemohonnya dan staf (Umum::papan_aduan). Aduan biasa yang kebetulan berjudul sama ikut
+     * tersembunyi; arah salahnya ke privasi, jadi diterima.
+     */
+    const JUDUL_PENGHAPUSAN_DATA = 'Permintaan Penghapusan Data Layanan';
+
+    /**
      * Daftar bidang dari TABEL - satu-satunya sumber kebenaran.
      *
      * Sebelumnya daftar ini hidup sebagai literal di tiga tempat berbeda

@@ -262,8 +262,24 @@ class Umum extends MY_Controller {
 
 		$per_hal = 20;
 		$hal = max(1, (int) $this->input->get('hal'));
-		$total = (int) $this->db->count_all('aduan');
 
+		/* Permintaan penghapusan data (hak subjek data) bukan aduan publik: selain staf, hanya
+		   pemohonnya yang melihat barisnya sendiri. Saringan yang sama untuk hitungan dan daftar,
+		   supaya jumlah halaman tidak membocorkan berapa permintaan yang ada. */
+		$this->config->load('data_lifecycle', TRUE);
+		$staf = in_array((string) $this->current_role(),
+			$this->config->item('data_lifecycle', 'data_lifecycle')['audit']['peran_staf'], TRUE);
+		$saring = function () use ($staf) {
+			if ($staf) { return; }
+			$this->db->group_start()
+				->where('judul !=', Aduan_model::JUDUL_PENGHAPUSAN_DATA)
+				->or_where('user_id', (int) $this->get_user_id())
+				->group_end();
+		};
+		$saring();
+		$total = (int) $this->db->count_all_results('aduan');
+
+		$saring();
 		$rows = $this->db->select('id, nama, judul, bidang_kode, status, catatan_admin, created_at')
 			->order_by('created_at', 'DESC')
 			->limit($per_hal, ($hal - 1) * $per_hal)
