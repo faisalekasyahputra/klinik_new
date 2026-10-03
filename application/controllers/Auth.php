@@ -400,29 +400,21 @@ class Auth extends MY_Controller {
             }
         }
 
-        // Check if email already exists
-        $existing = $this->auth_model->find_by_email($email);
-        if ($existing) {
-            // Sengaja TIDAK menyatakan bahwa emailnya sudah terdaftar: pesan
-            // seperti itu menjadikan formulir pendaftaran alat pengecek
-            // keanggotaan - siapa pun bisa menguji daftar email untuk tahu
-            // siapa saja punya akun di sini. Pemilik akun yang sah tetap
-            // terbantu lewat tautan Masuk / Lupa Sandi.
-            $this->_register_fail($is_ajax, 'Pendaftaran tidak dapat diproses dengan email tersebut. Kalau Anda sudah punya akun, silakan masuk.', $redirect_target);
-            return;
-        }
-
-        // Create user
         if ($is_srp2 && $nama_perusahaan === '') {
             $this->_register_fail($is_ajax, 'Nama perusahaan wajib diisi untuk akun pengembang.', 'Pengembang/syarat');
             return;
         }
 
-        // Akun belum dibuat di sini: kepemilikan email dibuktikan dulu lewat kode OTP.
+        /* Email yang sudah punya akun dijawab PERSIS sama dengan email baru (temuan auth-sesi-06,
+           ekspor-pii-08, api-csrf-09): halaman kode, batas kirim yang sama, hash sandi tetap dihitung.
+           Bedanya hanya isi email: alamat itu menerima pemberitahuan "ada yang mencoba mendaftar
+           dengan email Anda, silakan masuk" tanpa kode, dan kode yang tersimpan acak (tidak pernah
+           cocok). Akun belum dibuat di sini: kepemilikan email dibuktikan dulu lewat kode OTP. */
+        $sudah_terdaftar = (bool) $this->auth_model->find_by_email($email);
         $this->load->library('otp_pendaftaran');
         $this->otp_pendaftaran->mulai([
             'email' => $email, 'hash_sandi' => password_hash($password, PASSWORD_BCRYPT),
-            'is_srp2' => $is_srp2, 'nama_perusahaan' => $nama_perusahaan,
+            'is_srp2' => $is_srp2, 'nama_perusahaan' => $nama_perusahaan, 'sudah_terdaftar' => $sudah_terdaftar,
         ]);
         $kirim = $this->otp_pendaftaran->kirim();
         if ($kirim !== TRUE) {

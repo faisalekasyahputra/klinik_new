@@ -26,7 +26,12 @@ class Otp_pendaftaran {
         $this->CI =& get_instance();
     }
 
-    /** Simpan pendaftaran tertunda: email, hash_sandi, is_srp2, nama_perusahaan. */
+    /**
+     * Simpan pendaftaran tertunda: email, hash_sandi, is_srp2, nama_perusahaan, sudah_terdaftar.
+     * sudah_terdaftar TRUE: emailnya sudah punya akun. Alurnya SAMA dengan email baru (halaman kode,
+     * batas kirim yang sama), tetapi yang dikirim pemberitahuan tanpa kode dan kode yang disimpan acak
+     * yang tidak pernah diketahui siapa pun, jadi jawabannya tidak membedakan keduanya (auth-sesi-06).
+     */
     public function mulai(array $data) {
         $lama = $this->tertunda();
         $awal = ['hash_kode' => NULL, 'kedaluwarsa' => 0, 'salah' => 0, 'kirim_terakhir' => 0, 'kirim_jumlah' => 0];
@@ -75,7 +80,7 @@ class Otp_pendaftaran {
         }
 
         $kode = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        if ( ! $this->antar($t['email'], $kode)) { return 'gagal'; }
+        if ( ! $this->antar($t['email'], $kode, ! empty($t['sudah_terdaftar']))) { return 'gagal'; }
 
         $this->CI->session->set_userdata(self::KUNCI, [
             'hash_kode' => password_hash($kode, PASSWORD_BCRYPT), 'kedaluwarsa' => time() + self::MASA, 'salah' => 0,
@@ -113,12 +118,12 @@ class Otp_pendaftaran {
         return ['key' => hash('sha256', strtolower((string) $email))];
     }
 
-    private function antar($email, $kode) {
+    private function antar($email, $kode, $sudah_terdaftar = FALSE) {
         $smtp = (string) (getenv('SMTP_HOST') ?: '');
         if (ENVIRONMENT !== 'production' && ($smtp === '' || preg_match('/\.test$/i', $email))) {
             $dir = APPPATH . 'cache/otp_uji/';
             if ( ! is_dir($dir)) { @mkdir($dir, 0700, TRUE); }
-            return @file_put_contents($dir . sha1(strtolower($email)) . '.txt', $kode) !== FALSE;
+            return @file_put_contents($dir . sha1(strtolower($email)) . '.txt', $sudah_terdaftar ? 'SUDAH_TERDAFTAR' : $kode) !== FALSE;
         }
         if ($smtp === '') {
             log_message('error', 'OTP pendaftaran: SMTP_HOST kosong, email tidak dapat dikirim.');
@@ -138,11 +143,15 @@ class Otp_pendaftaran {
         }
         $this->CI->email->from($dari, 'Klinik PKP Jawa Tengah');
         $this->CI->email->to($email);
-        $this->CI->email->subject('Kode verifikasi pendaftaran Klinik PKP');
+        $this->CI->email->subject($sudah_terdaftar ? 'Percobaan pendaftaran dengan email Anda di Klinik PKP' : 'Kode verifikasi pendaftaran Klinik PKP');
         $this->CI->email->set_mailtype('html');
-        $this->CI->email->message($this->CI->load->view('email/otp_pendaftaran', ['kode' => $kode, 'menit' => self::MASA / 60, 'gambar' => $gambar], TRUE));
+        $this->CI->email->message($this->CI->load->view('email/otp_pendaftaran',
+            ['kode' => $kode, 'menit' => self::MASA / 60, 'gambar' => $gambar, 'sudah_terdaftar' => $sudah_terdaftar], TRUE));
         // Versi teks untuk klien email yang tidak menampilkan HTML.
-        $this->CI->email->set_alt_message(
+        $this->CI->email->set_alt_message($sudah_terdaftar
+            ? "Seseorang mencoba mendaftar akun baru di Klinik PKP Jawa Tengah dengan alamat email ini, padahal alamat ini sudah punya akun.\r\n\r\n"
+              . "Bila itu Anda, silakan masuk dengan email dan kata sandi Anda, atau dengan \"Masuk dengan Google\".\r\n"
+              . "Bila bukan Anda, abaikan email ini. Akun Anda tidak berubah dan tidak ada kode yang dikirim.\r\n" :
             "Kode verifikasi pendaftaran Anda di Klinik PKP Jawa Tengah:\r\n\r\n    " . $kode . "\r\n\r\n"
             . 'Kode berlaku ' . (self::MASA / 60) . " menit dan hanya untuk satu kali pendaftaran.\r\n"
             . "Jangan berikan kode ini kepada siapa pun, termasuk petugas.\r\n\r\n"
