@@ -272,6 +272,23 @@ class Rate_limiter {
         return $this->hit($policy_name, $context);
     }
 
+    /**
+     * Batalkan satu hitungan consume() yang ternyata percobaan SAH, untuk kebijakan yang hanya menghitung
+     * kegagalan tetapi harus memesan jatahnya secara atomik SEBELUM pekerjaan mahal (login: consume lalu
+     * password_verify). Tanpa pesanan, permintaan paralel semuanya lolos inspect() sebelum ada yang
+     * menghitung (temuan auth-sesi-07). Hanya di jendela yang masih berjalan; tidak pernah di bawah nol.
+     */
+    public function kembalikan($policy_name, array $context = [])
+    {
+        $resolved = $this->resolve($policy_name, $context);
+        if (empty($resolved['success'])) { return $resolved; }
+        foreach ($resolved['keys'] as $key) {
+            $this->CI->db->query('UPDATE sys_batas_laju SET jumlah_gagal = GREATEST(0, jumlah_gagal - 1)
+                WHERE kunci = ? AND jendela_mulai_at > DATE_SUB(NOW(), INTERVAL ' . (int) $resolved['window'] . ' SECOND)', [$key]);
+        }
+        return ['success' => TRUE];
+    }
+
     private function resolve($policy_name, array $context)
     {
         if (empty($this->policies[$policy_name])) {

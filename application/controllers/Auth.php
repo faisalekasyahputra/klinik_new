@@ -93,7 +93,10 @@ class Auth extends MY_Controller {
         // _login_fail). Menghitung setiap percobaan membuat 30 login sah per 5 menit dari satu IP
         // kantor (NAT) saling mengunci. Tebakan per akun ditahan per pasangan IP + nama masuk
         // (login_akun, di bawah), bukan lagi kunci per akun.
-        $rate = $this->rate_limit_inspect('login');
+        // Jatah dipesan ATOMIK di depan (consume), dan dikembalikan bila login berhasil, jadi tetap hanya
+        // kegagalan yang terhitung tetapi permintaan paralel tidak bisa lolos bersama sebelum ada yang
+        // menghitung (temuan auth-sesi-07; dulu inspect di depan, hit sesudah password_verify).
+        $rate = $this->rate_limit_consume('login');
         if (empty($rate['success']) || empty($rate['allowed'])) {
             $this->rate_limit_reject(
                 $rate,
@@ -134,7 +137,7 @@ class Auth extends MY_Controller {
            waktunya setara; tidak ada lagi kunci per akun yang bisa dipicu siapa saja. Penebak
            ditahan per pasangan IP + nama masuk (login_akun) dan per IP (login). */
         $pasangan = ['key' => hash('sha256', anti_automation_ip_bucket($this->input->ip_address()) . '|' . strtolower($login_id))];
-        $rate = $this->rate_limit_inspect('login_akun', $pasangan);
+        $rate = $this->rate_limit_consume('login_akun', $pasangan);
         if (empty($rate['success']) || empty($rate['allowed'])) {
             $this->rate_limit_reject($rate,
                 'Terlalu banyak percobaan masuk dalam waktu singkat. Silakan tunggu sebelum mencoba lagi.', $is_ajax);
@@ -153,7 +156,6 @@ class Auth extends MY_Controller {
             $this->sensitive_buffer->wipe($_POST['password']);
         }
         if (!$password_valid) {
-            $this->rate_limit_hit('login_akun', $pasangan);
             if ($user && $this->auth_model->increment_login_attempts($user->id) === TRUE) {
                 // Gagal beruntun: bisa salah ketik, bisa tebak-sandi/credential stuffing. Akun TIDAK
                 // dikunci (orang lain tidak boleh bisa mengunci pemiliknya); peringatan ke admin
@@ -177,6 +179,7 @@ class Auth extends MY_Controller {
          * lewat gerbang login adalah keputusan produk. Diperiksa SESUDAH sandi terbukti (3 Okt
          * 2026), jadi status akun hanya terbaca oleh yang memegang sandinya.
          */
+        $this->rate_limiter->kembalikan('login_akun', $pasangan); // sandi benar: bukan tebakan
         if (strtolower(trim((string) ($user->status ?? ''))) === 'nonaktif') {
             $this->_login_fail($is_ajax,
                 'Akun ini dinonaktifkan. Hubungi Super Admin bila menurut Anda ini keliru.',
@@ -185,6 +188,7 @@ class Auth extends MY_Controller {
         }
 
         // Success - reset attempts and create session
+        $this->rate_limiter->kembalikan('login');
         $this->auth_model->reset_login_attempts($user->id);
 
         $session_data = [
@@ -290,7 +294,7 @@ class Auth extends MY_Controller {
     }
 
     private function _login_fail($is_ajax, $message, $error_target, $judul = 'Gagal masuk') {
-        $this->rate_limit_hit('login');
+        // Jatah 'login' sudah dipesan di awal do_login() dan tidak dikembalikan: kegagalan ini terhitung.
         if ($is_ajax) {
             $this->output->set_content_type('application/json')->set_output(json_encode([
                 'status'  => 'error',
