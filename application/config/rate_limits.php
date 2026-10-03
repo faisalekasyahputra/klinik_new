@@ -24,6 +24,9 @@ $config['rate_limit_policies'] = [
     // kunci per akun (3 Okt 2026): yang tertahan hanya IP penebak, pemilik akun dari IP lain tetap
     // bisa masuk. Kunci memakai nama masuk, bukan id akun, supaya akun ada dan tidak ada berperilaku sama.
     'login_akun' => ['limit' => 5, 'window' => 900, 'dimensions' => ['key']],
+    // Index::buka_foto: unduhan foto yang BELUM ada di cache (hit cache tidak dihitung). Satu tampilan
+    // /cari_rumah memuat 10-20 foto; 120 per 10 menit cukup untuk menjelajah, bukan untuk menyedot hulu.
+    'foto_hulu' => ['limit' => 120, 'window' => 600, 'dimensions' => ['ip']],
     'register' => [
         'limit' => 5,
         'window' => 600,

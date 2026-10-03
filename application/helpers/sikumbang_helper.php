@@ -159,3 +159,82 @@ if ( ! function_exists('sikumbang_data')) {
         return [isset($urai['data']) && is_array($urai['data']) ? $urai['data'] : [], FALSE];
     }
 }
+
+/** Batas ukuran satu foto dari SIKUMBANG. Foto terbesar yang pernah tercatat di production 3,5 MB. */
+define('SIKUMBANG_FOTO_MAKS_BYTE', 6 * 1024 * 1024);
+
+if ( ! function_exists('sikumbang_foto_path')) {
+    /**
+     * Path foto SIKUMBANG yang boleh diambil proxy Index::buka_foto, atau NULL.
+     *
+     * Hanya bentuk path foto yang memang ada di data SIKUMBANG (dicek terhadap seluruh cache lokal
+     * 3 Okt 2026: 59.815 path, semuanya cocok): diawali `public/`, segmen huruf/angka/garis bawah/
+     * tanda hubung, berakhiran ekstensi gambar. Tanpa `?`, `#`, `%`, `..`, `//`, jadi satu foto
+     * hanya punya SATU bentuk path dan satu berkas cache; varian tak terbatas tidak bisa dibuat.
+     */
+    function sikumbang_foto_path($path)
+    {
+        $path = (string) $path;
+        return strlen($path) <= 200
+            && preg_match('#^public(?:/[A-Za-z0-9][A-Za-z0-9_-]*){1,8}\.(?:jpe?g|png|webp|gif)$#i', $path)
+            ? $path : NULL;
+    }
+}
+
+if ( ! function_exists('sikumbang_ambil_foto')) {
+    /**
+     * Unduh satu foto dari SIKUMBANG. Mengembalikan byte gambar, atau NULL bila gagal, bukan gambar
+     * (Content-Type dan isi diperiksa), atau lebih besar dari SIKUMBANG_FOTO_MAKS_BYTE (unduhan
+     * diputus begitu melewati batas, tidak ditampung dulu).
+     */
+    function sikumbang_ambil_foto($path)
+    {
+        if (sikumbang_foto_path($path) === NULL) { return NULL; }
+        $ch = curl_init('https://sikumbang.tapera.go.id/' . $path);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER   => TRUE,
+            CURLOPT_SSL_VERIFYPEER   => TRUE,
+            CURLOPT_SSL_VERIFYHOST   => 2,
+            CURLOPT_CONNECTTIMEOUT   => SIKUMBANG_CONNECT_TIMEOUT,
+            CURLOPT_TIMEOUT          => SIKUMBANG_TIMEOUT,
+            CURLOPT_USERAGENT        => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+            CURLOPT_MAXFILESIZE      => SIKUMBANG_FOTO_MAKS_BYTE,
+            CURLOPT_NOPROGRESS       => FALSE,
+            // Memutus balasan tanpa Content-Length yang terus mengalir melewati batas.
+            CURLOPT_XFERINFOFUNCTION => function ($ch, $total, $terunduh) { return $terunduh > SIKUMBANG_FOTO_MAKS_BYTE ? 1 : 0; },
+        ]);
+        curl_setopt_array($ch, transport_curl_options()); // TLS 1.2+, HTTPS saja (poin 8.2)
+        $isi  = curl_exec($ch);
+        $kode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $tipe = strtolower((string) curl_getinfo($ch, CURLINFO_CONTENT_TYPE));
+        curl_close($ch);
+        if ($kode !== 200 || ! is_string($isi) || $isi === '' || strlen($isi) > SIKUMBANG_FOTO_MAKS_BYTE
+            || strpos($tipe, 'image/') !== 0) {
+            return NULL;
+        }
+        $info = @getimagesizefromstring($isi);
+        return $info && in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP, IMAGETYPE_GIF], TRUE) ? $isi : NULL;
+    }
+}
+
+if ( ! function_exists('sikumbang_param')) {
+    /**
+     * Normalkan satu parameter pencarian SIKUMBANG dari GET sebelum masuk URL hulu, yang md5-nya
+     * menjadi nama berkas cache. Nilai di luar daftar izin jatuh ke $bawaan, jadi nilai sembarang
+     * tidak melahirkan berkas cache dan tembakan hulu baru. Daftar izin = pilihan di formulir
+     * cari_rumah/sikumbang (dan saring_status_rumah). Kata kunci memang teks bebas: dirapikan dan
+     * dipotong 60 karakter; jumlahnya ditahan kelas laju 'cari' dan penyapu cache.
+     */
+    function sikumbang_param($nama, $nilai, $bawaan = NULL)
+    {
+        $nilai = is_scalar($nilai) ? trim((string) $nilai) : '';
+        if ($nama === 'keyword') { return mb_substr((string) preg_replace('/\s+/u', ' ', $nilai), 0, 60); }
+        if ($nama === 'kodeWilayah') { return preg_match('/^\d{2}(\d{2})?$/', $nilai) ? $nilai : $bawaan; } // kode provinsi atau kab/kota
+        $izin = [
+            'sort'         => ['terbaru', 'subsidi-termurah', 'subsidi-tertinggi'],
+            'searchBy'     => ['nama-perumahan', 'nama-pengembang', 'asosiasi'],
+            'status_rumah' => ['subsidi', 'komersil', 'semua'],
+        ];
+        return in_array($nilai, $izin[$nama] ?? [], TRUE) ? $nilai : $bawaan;
+    }
+}

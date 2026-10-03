@@ -49,9 +49,10 @@ class Sikumbang extends MY_Controller {
 			"3376" => "Kota Tegal"
 		];
 		
-		$keyword = $this->input->get('keyword');
-        $sort    = $this->input->get('sort') ?: 'terbaru';
-        $limit   = $this->input->get('limit') ?: 12;
+		// Nilai masuk URL hulu dan nama berkas cache: disaring daftar izin (sikumbang_param).
+		$keyword = sikumbang_param('keyword', $this->input->get('keyword'));
+        $sort    = sikumbang_param('sort', $this->input->get('sort'), 'terbaru');
+        $limit   = min(50, max(1, (int) ($this->input->get('limit') ?: 12)));
 
 		$data['results'] = [];
         $data['keyword'] = $keyword;

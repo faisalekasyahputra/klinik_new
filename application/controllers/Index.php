@@ -120,10 +120,10 @@ class Index extends MY_Controller {
 	 */
 	public function ajax_perumahan()
 	{
-		$keyword = $this->input->get('keyword') ? $this->input->get('keyword') : '';
-		$sort    = $this->input->get('sort') ? $this->input->get('sort') : 'terbaru';
-		$limit   = $this->input->get('limit') ? $this->input->get('limit') : 9;
-		$page    = $this->input->get('page') ? $this->input->get('page') : 1;
+		$keyword = sikumbang_param('keyword', $this->input->get('keyword'));
+		$sort    = sikumbang_param('sort', $this->input->get('sort'), 'terbaru');
+		$limit   = min(50, max(1, (int) ($this->input->get('limit') ?: 9)));
+		$page    = min(1000, max(1, (int) ($this->input->get('page') ?: 1)));
 
 		$api_url = "https://sikumbang.tapera.go.id/ajax/lokasi/search";
 		$params = [
@@ -260,13 +260,14 @@ class Index extends MY_Controller {
 		$limit = (int) ($this->input->get('limit') ?: 12);
 		$page  = (int) ($this->input->get('page') ?: 1);
 
+		// Nilai masuk URL hulu dan nama berkas cache: disaring daftar izin (sikumbang_param).
 		return [
-			'kodeWilayah'  => $this->input->get('kodeWilayah') ?: '3374',
-			'keyword'      => $this->input->get('keyword') ?: '',
-			'searchBy'     => $this->input->get('searchBy') ?: 'nama-perumahan',
-			'sort'         => $this->input->get('sort') ?: 'terbaru',
-			'status_rumah' => $this->input->get('status_rumah') ?: 'subsidi',
-			'page'         => max(1, $page),
+			'kodeWilayah'  => sikumbang_param('kodeWilayah', $this->input->get('kodeWilayah'), '3374'),
+			'keyword'      => sikumbang_param('keyword', $this->input->get('keyword')),
+			'searchBy'     => sikumbang_param('searchBy', $this->input->get('searchBy'), 'nama-perumahan'),
+			'sort'         => sikumbang_param('sort', $this->input->get('sort'), 'terbaru'),
+			'status_rumah' => sikumbang_param('status_rumah', $this->input->get('status_rumah'), 'subsidi'),
+			'page'         => min(1000, max(1, $page)),
 			'limit'        => min(50, max(1, $limit)),
 		];
 	}
@@ -474,40 +475,35 @@ class Index extends MY_Controller {
 		   berjalan paralel. */
 		session_write_close();
 
-		$path_gambar = $this->input->get('path');
-		if (empty($path_gambar)) { show_404(); }
+		/* Hanya path foto SIKUMBANG yang sah (sikumbang_foto_path): bentuk lain, termasuk varian
+		   ber-query/fragmen/segmen titik dari foto yang sama, tidak pernah menyentuh jaringan
+		   maupun disk. Dulu md5 dari path mentah = satu berkas baru per varian, tanpa batas. */
+		$path_gambar = sikumbang_foto_path($this->input->get('path'));
+		$placeholder = function ($maks_umur) {
+			$this->output
+				->set_status_header(302)
+				->set_header('Location: ' . base_url('assets/img/default-placeholder.svg'))
+				->set_header('Cache-Control: public, max-age=' . (int) $maks_umur);
+		};
+		if ($path_gambar === NULL) { show_404(); return; }
 
-		// 1. Tentukan folder untuk menyimpan cache gambar di XAMPP Anda
+		// 1. Folder cache gambar (di-gitignore; isinya hanya <md5>.jpg yang lolos cek gambar, disapu Penyapu_retensi)
 		$dir_cache = FCPATH . 'assets/cache_foto/';
 		if (!is_dir($dir_cache)) {
-			mkdir($dir_cache, 0777, true); // Buat folder otomatis jika belum ada
+			mkdir($dir_cache, 0755, true);
 		}
 
-		// Buat nama file unik berdasarkan path aslinya agar tidak tertukar
+		// Nama berkas dari path yang sudah tervalidasi: satu foto, satu nama.
 		$nama_file_lokal = md5($path_gambar) . '.jpg';
 		$path_file_lokal = $dir_cache . $nama_file_lokal;
 
 		/* 2. SUDAH ADA DI LOKAL: SERAHKAN KE WEB SERVER, JANGAN LEWAT PHP.
 
-		   Sebelumnya baris ini membaca seluruh JPEG ke memori lalu
-		   mengeluarkannya lewat CodeIgniter. Diukur di production 26 Agt
-		   2026: 760 foto, 145 MB, yang terbesar 3,5 MB - dan satu batch
-		   /cari_rumah memuat 10 foto sekaligus, jadi 10 worker PHP terpakai
-		   hanya untuk menyalurkan berkas yang SUDAH ada di disk. Di hosting
-		   bersama yang jatah entry process-nya kecil, itu penyumbang
-		   terbesar "situs mati".
-
-		   Berkasnya ada di dalam DocumentRoot dan sudah dibuktikan bisa
-		   diambil statis: GET /assets/cache_foto/<berkas> membalas 200,
-		   188 KB, nol PHP. Jadi PHP cukup menunjuk ke sana lalu selesai -
-		   worker lepas dalam hitungan milidetik, dan CDN di depan (hcdn)
-		   bisa ikut menyimpan berkas statisnya.
-
-		   302, bukan 301: kalau berkas cache kelak dihapus, 301 yang sudah
-		   terlanjur disimpan browser akan menunjuk ke berkas yang tidak ada
-		   selamanya. Cache-Control tetap dipasang supaya pengalihannya
-		   sendiri ikut disimpan browser, jadi kunjungan berikutnya tidak
-		   menyentuh PHP sama sekali. */
+		   Diukur di production 26 Agt 2026: 760 foto, 145 MB, yang terbesar 3,5 MB, dan satu batch
+		   /cari_rumah memuat 10 foto sekaligus. Menyalurkan berkas yang SUDAH ada di disk lewat PHP
+		   memakai 10 worker; mengalihkan ke berkas statisnya melepas worker dalam milidetik, dan CDN
+		   di depan bisa ikut menyimpannya. 302, bukan 301: kalau berkas cache kelak disapu, 301 yang
+		   tersimpan di browser akan menunjuk ke berkas yang tidak ada selamanya. */
 		if (is_file($path_file_lokal)) {
 			$this->output
 				->set_status_header(302)
@@ -516,73 +512,29 @@ class Index extends MY_Controller {
 			return;
 		}
 
-		// 3. JIKA BELUM ADA, BARU DOWNLOAD VIA CURL (HANYA SEKALI SAJA)
-		$url_asli = 'https://sikumbang.tapera.go.id/' . $path_gambar;
+		/* 3. BELUM ADA: unduh sekali. Unduhan ke hulu dibatasi per IP (foto_hulu) di atas kelas
+		   'unduh' umum, karena hanya jalur ini yang menahan worker sampai SIKUMBANG_TIMEOUT dan
+		   menembak layanan pihak ketiga. Timeout pendek (12 dtk, bukan 45) dan placeholder lokal
+		   (bukan unduhan placehold.co) dipertahankan dari perbaikan 26 Agt 2026. */
+		$rate = $this->rate_limit_hit('foto_hulu');
+		if (empty($rate['success']) || empty($rate['allowed'])) { $placeholder(60); return; }
 
-		$ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL, $url_asli);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
-		/* 🔻 DITURUNKAN 45 KE 12 DETIK, 26 Agt 2026 - membalik kenaikan
-		   15 ke 45 yang dipasang 20 Agt.
+		$gambar_mentah = sikumbang_ambil_foto($path_gambar);
+		if ($gambar_mentah === NULL) { $placeholder(3600); return; }
 
-		   Alasan lama: "12 dari 20 permintaan foto macet pending dengan
-		   batas 15 detik". Gejalanya nyata, tapi memperpanjang batas cuma
-		   menukar foto yang gagal cepat dengan worker yang tertahan lama.
-		   Diukur 26 Agt: 45 detik x 10 foto per batch = 450 detik worker
-		   per satu tampilan halaman, di hosting yang jatah prosesnya kecil
-		   dan dibagi dengan 10+ domain lain. Itu bukan foto yang lebih
-		   sering muncul, itu situs yang lebih sering mati.
-
-		   Dua hal lain di method ini yang membuat batas pendek jadi aman
-		   sekarang: cache hit tidak lagi lewat PHP sama sekali (dialihkan
-		   ke berkas statis), dan jalur gagal tidak lagi mengunduh
-		   placeholder dari internet. CONNECTTIMEOUT dipasang terpisah supaya
-		   sambungan yang menggantung tidak memakan seluruh jatah waktu dan
-		   menyisakan nol detik untuk membaca gambarnya. */
-		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-		curl_setopt($ch, CURLOPT_TIMEOUT, 12);
-		curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
-		curl_setopt_array($ch, transport_curl_options()); // TLS 1.2+, HTTPS saja (poin 8.2)
-		$gambar_mentah = curl_exec($ch);
-		$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-		curl_close($ch);
-
-		if ($http_code == 200 && !empty($gambar_mentah)) {
-			// Simpan file mentah ke folder cache lokal untuk pemanggilan berikutnya
-			$tersimpan = @file_put_contents($path_file_lokal, $gambar_mentah);
-
-			/* Kalau penyimpanan berhasil, alihkan ke berkas statisnya - alasan
-			   yang sama seperti jalur cache di atas. Kalau GAGAL disimpan
-			   (folder tidak bisa ditulis), keluarkan langsung seperti dulu:
-			   mengalihkan ke berkas yang tidak jadi ada cuma menghasilkan 404. */
-			if ($tersimpan !== FALSE) {
-				$this->output
-					->set_status_header(302)
-					->set_header('Location: ' . base_url('assets/cache_foto/' . $nama_file_lokal))
-					->set_header('Cache-Control: public, max-age=2592000');
-			} else {
-				$this->output
-					->set_content_type('image/jpeg')
-					->set_output($gambar_mentah);
-			}
-		} else {
-			/* 🔻 `file_get_contents('https://placehold.co/...')` DICABUT
-			   26 Agt 2026. Itu permintaan HTTP KELUAR lagi, tanpa timeout
-			   sama sekali - `default_socket_timeout` di server ini 60 detik,
-			   jadi jalur GAGAL berongkos lebih mahal daripada jalur sukses,
-			   dan tepat pada saat jaringan sedang bermasalah. Satu halaman
-			   dengan 10 foto gagal bisa menahan 10 worker sampai 10 menit
-			   total sambil menunggu layanan pihak ketiga menggambar kotak
-			   abu-abu.
-			   Placeholder-nya sudah ada di repo sejak lama
-			   (assets/img/default-placeholder.svg), jadi tidak ada yang
-			   perlu diunduh dari mana pun. */
+		/* Kalau penyimpanan berhasil, alihkan ke berkas statisnya. Kalau GAGAL disimpan (folder
+		   tidak bisa ditulis), keluarkan langsung: mengalihkan ke berkas yang tidak jadi ada cuma
+		   menghasilkan 404. */
+		if (@file_put_contents($path_file_lokal, $gambar_mentah) !== FALSE) {
 			$this->output
 				->set_status_header(302)
-				->set_header('Location: ' . base_url('assets/img/default-placeholder.svg'))
-				->set_header('Cache-Control: public, max-age=3600');
+				->set_header('Location: ' . base_url('assets/cache_foto/' . $nama_file_lokal))
+				->set_header('Cache-Control: public, max-age=2592000');
+		} else {
+			$info = getimagesizefromstring($gambar_mentah);
+			$this->output
+				->set_content_type($info['mime'] ?? 'image/jpeg')
+				->set_output($gambar_mentah);
 		}
 	}
 	public function umum()
@@ -736,9 +688,11 @@ class Index extends MY_Controller {
 	public function sebaran($kodeWilayah = '33') {
 		$datacontent['judul']='';
 		
-		$keyword = $this->input->get('keyword') ? $this->input->get('keyword') : '';
-        $sort    = $this->input->get('sort') ? $this->input->get('sort') : 'terbaru';
-        $limit   = $this->input->get('limit') ? $this->input->get('limit') :10000;
+		// Parameter disaring daftar izin (sikumbang_param); limit tidak lagi dari GET.
+		$kodeWilayah = sikumbang_param('kodeWilayah', $kodeWilayah, '33');
+		$keyword = sikumbang_param('keyword', $this->input->get('keyword'));
+        $sort    = sikumbang_param('sort', $this->input->get('sort'), 'terbaru');
+        $limit   = 10000;
 
         $api_url = "https://sikumbang.tapera.go.id/ajax/lokasi/search";
         

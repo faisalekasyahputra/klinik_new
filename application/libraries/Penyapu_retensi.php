@@ -18,6 +18,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *     *_gagal.flag yang lewat sehari): namanya ber-md5 URL atau id lokasi, jadi menumpuk tanpa batas.
  *     Cache yang masih dipakai tersegarkan tiap TTL (paling lama 1 hari), jadi yang disapu hanya cadangan
  *     basi yang sudah lama tidak diminta. index.html, .htaccess, dan penanda retensi tidak pernah disentuh.
+ *   - salinan foto SIKUMBANG di assets/cache_foto (Index::buka_foto): yang lebih tua dari cache_foto_hari,
+ *     lalu yang tertua sampai total folder di bawah cache_foto_maks_mb;
  *   - draf penilaian yang dilepas saat NIK dipindahkan ke pemilik terverifikasi (superseded tanpa
  *     submitted_at, Housing_assessment_model::pindahkan_ikatan_nik) lebih tua dari draf_nik_dipindah_hari,
  *     beserta berkas buktinya (Data_erasure::sapu_berkas_draf).
@@ -33,6 +35,7 @@ class Penyapu_retensi {
     private $policy;
     private $app;
     private $root;
+    private $web;
 
     /** @param array $params db (adaptor: query(), affected_rows()), policy (isi 'retensi'), app (akar application/ berakhiran pemisah) */
     public function __construct(array $params = [])
@@ -47,6 +50,9 @@ class Penyapu_retensi {
         $this->db = $params['db'] ?? (function_exists('get_instance') ? get_instance()->db : NULL);
         $this->app = rtrim($params['app'] ?? (defined('APPPATH') ? APPPATH : dirname(__DIR__) . '/'), '/\\') . DIRECTORY_SEPARATOR;
         $this->root = $params['root'] ?? NULL; // akar berkas privat untuk Data_erasure; bawaan private_uploads_root()
+        // Akar web (FCPATH) untuk assets/cache_foto. Bawaan: induk application/, jadi uji yang memberi app
+        // sementara tidak pernah menyentuh folder cache nyata.
+        $this->web = rtrim($params['web'] ?? dirname($this->app), '/\\') . DIRECTORY_SEPARATOR;
     }
 
     public function interval() { return (int) $this->policy['interval_detik']; }
@@ -86,6 +92,7 @@ class Penyapu_retensi {
             $kering);
         $hasil['log_aplikasi'] = $this->sapu_log((int) $p['log_aplikasi_hari'], $kering);
         $hasil['cache_hulu'] = $this->sapu_cache((int) $p['cache_hulu_hari'], $kering);
+        $hasil['cache_foto'] = $this->sapu_foto((int) ($p['cache_foto_hari'] ?? 30), (int) ($p['cache_foto_maks_mb'] ?? 512), $kering);
         $hasil['draf_nik_dipindah'] = $this->sapu_draf_nik_dipindah((int) ($p['draf_nik_dipindah_hari'] ?? 30), $kering);
 
         $total = 0;
@@ -170,6 +177,31 @@ class Penyapu_retensi {
         foreach ((array) glob($dir . 'log-*.php') as $f) {
             if ( ! preg_match('/log-\d{4}-\d{2}-\d{2}\.php$/', $f) || (int) @filemtime($f) >= $batas) { continue; }
             if ($kering || @unlink($f)) { $n++; }
+        }
+        return ['jumlah' => $n, 'galat' => NULL];
+    }
+
+    /**
+     * Salinan foto SIKUMBANG (Index::buka_foto) di assets/cache_foto: hanya <md5>.jpg. Yang lebih tua
+     * dari $hari disapu, lalu yang tertua sampai total folder <= $maks_mb. Foto yang masih dipakai
+     * diunduh ulang sekali saat diminta lagi. index.html dan berkas lain tidak disentuh.
+     */
+    private function sapu_foto($hari, $maks_mb, $kering)
+    {
+        $dir = $this->web . 'assets' . DIRECTORY_SEPARATOR . 'cache_foto' . DIRECTORY_SEPARATOR;
+        if ( ! is_dir($dir)) { return ['jumlah' => 0, 'galat' => NULL]; }
+        $berkas = [];
+        foreach ((array) glob($dir . '*.jpg') as $f) {
+            if (preg_match('/^[0-9a-f]{32}\.jpg$/', basename($f)) && is_file($f)) { $berkas[$f] = [(int) @filemtime($f), (int) @filesize($f)]; }
+        }
+        uasort($berkas, fn($a, $b) => $a[0] <=> $b[0]); // tertua dulu
+        $total = array_sum(array_column($berkas, 1));
+        $batas_umur = time() - $hari * 86400;
+        $batas_byte = $maks_mb * 1048576;
+        $n = 0;
+        foreach ($berkas as $f => [$waktu, $ukuran]) {
+            if ($waktu >= $batas_umur && $total <= $batas_byte) { break; }
+            if ($kering || @unlink($f)) { $n++; $total -= $ukuran; }
         }
         return ['jumlah' => $n, 'galat' => NULL];
     }

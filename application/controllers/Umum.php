@@ -80,9 +80,11 @@ class Umum extends MY_Controller {
 
 	public function sebaran($kodeWilayah = '33')
 	{
-		$keyword = $this->input->get('keyword') ? $this->input->get('keyword') : '';
-        $sort    = $this->input->get('sort') ? $this->input->get('sort') : 'terbaru';
-        $limit   = $this->input->get('limit') ? $this->input->get('limit') :10000;
+		// Sama dengan Index::sebaran(): parameter disaring daftar izin, limit tidak dari GET.
+		$kodeWilayah = sikumbang_param('kodeWilayah', $kodeWilayah, '33');
+		$keyword = sikumbang_param('keyword', $this->input->get('keyword'));
+        $sort    = sikumbang_param('sort', $this->input->get('sort'), 'terbaru');
+        $limit   = 10000;
 
         $api_url = "https://sikumbang.tapera.go.id/ajax/lokasi/search";
         
