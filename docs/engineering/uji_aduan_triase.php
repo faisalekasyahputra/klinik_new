@@ -485,7 +485,8 @@ echo "\n== 10. Push ke pelapor saat status aduannya berubah ==\n";
 wajib(login('wargaP', $emailWargaP), 'Login akun ber-role warga');
 $akun = http('wargaP', 'akun');
 cek(strpos($akun['body'], 'data-web-push-toggle') !== FALSE, 'Tombol notifikasi HP tampil di dashboard akun warga');
-$langganan = json_encode(['endpoint' => 'https://push.example.test/' . CAP,
+// Host layanan push resmi: endpoint di luar daftar izin ditolak 422 sejak keamanan rendah 3 Okt 2026.
+$langganan = json_encode(['endpoint' => 'https://fcm.googleapis.com/fcm/send/uji' . CAP,
     'keys' => ['p256dh' => 'BUji' . CAP, 'auth' => 'auth' . CAP]]);
 $rs = http('wargaP', 'push/subscribe', ['csrf_kpkp_token' => csrf('wargaP', 'akun'), 'subscription' => $langganan], TRUE);
 cek($rs['code'] === 200 && (int) nilai('SELECT COUNT(*) c FROM sys_langganan_notifikasi WHERE user_id=? AND aktif=1', [$idWargaP]) === 1,
