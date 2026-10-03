@@ -56,7 +56,7 @@ $kolom = 'mt-1 block w-full rounded-lg border border-gray-200 dark:border-white/
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                 <button type="submit" class="tombol-aksi"><i class="ph ph-eye-slash" aria-hidden="true"></i><span><?= $r->aktif ? 'Sembunyikan' : 'Tampilkan' ?></span></button>
                             </form>
-                            <form action="<?= base_url('Admin_Bank_Data/hapus/' . (int) $r->id) ?>" method="post" class="inline" onsubmit="return confirm('Hapus dokumen ini beserta berkasnya?')">
+                            <form action="<?= base_url('Admin_Bank_Data/hapus/' . (int) $r->id) ?>" method="post" class="inline" data-konfirmasi="Dokumen ini beserta berkasnya akan dihapus." data-konfirmasi-judul="Hapus dokumen?" data-konfirmasi-label="Hapus" data-konfirmasi-bahaya>
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                 <button type="submit" class="tombol-aksi tombol-aksi-bahaya"><i class="ph ph-trash" aria-hidden="true"></i><span>Hapus</span></button>
                             </form>

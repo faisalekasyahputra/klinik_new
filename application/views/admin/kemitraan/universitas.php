@@ -167,7 +167,7 @@ if (empty($aksi_buat)) {
                                     <button type="submit" class="tombol-utama"><i class="ph ph-key"></i><span>Reset sandi</span></button>
                                 </form>
                                 <form method="POST" action="<?= base_url('Kemitraan_Bidang/status_universitas') ?>" class="flex items-center justify-between gap-3 border-t border-gray-100 dark:border-white/5 pt-4"
-                                      onsubmit="return confirm('<?= $nonaktif ? 'Aktifkan kembali akun ini?' : 'Nonaktifkan akun ini? Sesinya langsung berakhir dan tidak bisa masuk.' ?>')">
+                                      <?= $nonaktif ? 'data-konfirmasi="Akun universitas ini bisa masuk kembali." data-konfirmasi-judul="Aktifkan akun?" data-konfirmasi-label="Aktifkan"' : 'data-konfirmasi="Sesinya langsung berakhir dan akun ini tidak bisa masuk." data-konfirmasi-judul="Nonaktifkan akun?" data-konfirmasi-label="Nonaktifkan" data-konfirmasi-bahaya' ?>>
                                     <?= $csrf_isian ?>
                                     <input type="hidden" name="status" value="<?= $nonaktif ? 'active' : 'nonaktif' ?>">
                                     <button type="submit" class="tombol-kedua<?= $nonaktif ? '' : ' tombol-aksi-bahaya' ?>"><i class="ph <?= $nonaktif ? 'ph-check-circle' : 'ph-prohibit' ?>"></i><span><?= $nonaktif ? 'Aktifkan kembali' : 'Nonaktifkan akun' ?></span></button>

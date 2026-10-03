@@ -37,6 +37,14 @@ $check(count(array_filter($authViews, static fn(string $view): bool =>
 )) === count($authViews), 'renderer dan aset terpasang pada halaman autentikasi');
 $check(str_contains($component, "['success', 'error', 'warning', 'info']"), 'flashdata memakai whitelist empat tipe');
 $check(str_contains($javascript, 'global.KPKP.notify = api') && str_contains($javascript, "type === 'success' || type === 'info' ? 5000 : 0"), 'API dan durasi semantik terkunci');
+$check(str_contains($javascript, 'dialog: dialog') && str_contains($javascript, 'showModal') && str_contains($javascript, "tujuan.origin !== global.location.origin"),
+    'dialog galat bersama tersedia dan hanya menerima tautan se-origin');
+$check(str_contains($javascript, "document.body.classList.contains('auth-page')") && str_contains($javascript, "item.type === 'error' && (halamanAuth || Array.isArray(item.aksi))"),
+    'galat di halaman autentikasi (dan galat bertombol di mana pun) tampil sebagai dialog');
+$check(str_contains($component, "flashdata('galat_aksi')") && str_contains($component, "preg_match('#^[A-Za-z0-9_/\\-]{1,100}\$#D'"),
+    'tombol pengarah dari flashdata galat_aksi dibatasi ke rute internal');
+$check(str_contains($javascript, 'konfirmasi: konfirmasi') && str_contains($javascript, "form.hasAttribute('data-konfirmasi')") && str_contains($javascript, '}, true);'),
+    'konfirmasi bergaya tersedia dan formulir data-konfirmasi ditahan di fase capture');
 $check(!str_contains($legacyJavascript, 'setupFormHandling') && !str_contains($legacyJavascript, 'Data berhasil dikirim'), 'intersepsi form dan sukses palsu lama terhapus');
 
 $violations = [];
@@ -57,6 +65,10 @@ foreach ($views as $file) {
     }
     if (preg_match('/\b(?:window\.)?alert\s*\(/', $contents)) {
         $violations[] = str_replace(str_replace('\\', '/', $root) . '/', '', $path) . ' (alert modal)';
+    }
+    // confirm() bawaan diganti data-konfirmasi / KPKP.notify.konfirmasi() (3 Okt 2026).
+    if (preg_match('/(?<![\w.])(?:window\.)?confirm\s*\(/', $contents)) {
+        $violations[] = str_replace(str_replace('\\', '/', $root) . '/', '', $path) . ' (confirm bawaan)';
     }
 }
 $check($violations === [], 'tidak ada renderer flash lokal atau alert modal aktif' . ($violations ? ': ' . implode(', ', $violations) : ''));

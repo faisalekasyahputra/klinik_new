@@ -150,7 +150,7 @@ $sandi_awal = $this->session->flashdata('sandi_awal');
                 </label>
                 <button type="submit" class="tombol-kedua"><i class="ph ph-key"></i><span>Reset sandi</span></button>
             </form>
-            <form action="<?= base_url('Admin_Srp2/lepas_akun/' . (int) $r->id) ?>" method="post" class="mt-3" onsubmit="return confirm('Lepas tautan akun ini? Akunnya tidak dihapus, tetapi tidak bisa lagi mengubah entri ini.')">
+            <form action="<?= base_url('Admin_Srp2/lepas_akun/' . (int) $r->id) ?>" method="post" class="mt-3" data-konfirmasi="Akunnya tidak dihapus, tetapi tidak bisa lagi mengubah entri ini." data-konfirmasi-judul="Lepas tautan akun?" data-konfirmasi-label="Lepas tautan" data-konfirmasi-bahaya>
                 <?= $csrf ?>
                 <button type="submit" class="tombol-aksi tombol-aksi-bahaya"><i class="ph ph-link-break"></i><span>Lepas tautan</span></button>
             </form>
@@ -178,7 +178,7 @@ $sandi_awal = $this->session->flashdata('sandi_awal');
     <section class="kartu-admin isi-kartu" data-kartu="hapus">
         <h2 class="<?= $judul ?>">Hapus entri</h2>
         <p class="text-sm text-gray-600 dark:text-gray-300">Menghapus entri dari direktori publik. Akun yang tertaut tidak ikut terhapus.</p>
-        <form action="<?= base_url('Admin_Srp2/delete/' . (int) $r->id) ?>" method="post" class="mt-3" onsubmit="return confirm('Hapus pengembang ini dari direktori?')">
+        <form action="<?= base_url('Admin_Srp2/delete/' . (int) $r->id) ?>" method="post" class="mt-3" data-konfirmasi="Pengembang ini akan dihapus dari direktori." data-konfirmasi-judul="Hapus pengembang?" data-konfirmasi-label="Hapus" data-konfirmasi-bahaya>
             <?= $csrf ?>
             <button type="submit" class="tombol-aksi tombol-aksi-bahaya"><i class="ph ph-trash" aria-hidden="true"></i><span>Hapus</span></button>
         </form>

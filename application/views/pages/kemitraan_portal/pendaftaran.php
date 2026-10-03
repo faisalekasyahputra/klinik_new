@@ -259,7 +259,7 @@ if ($row->jenis === 'magang') {
             <a href="<?= base_url('KemitraanPortal/ubah/' . (int) $row->id) ?>"
                class="rounded-xl bg-[color:var(--portal-brand)] px-4 py-2.5 text-xs font-bold text-[#0a1a1f]">Ubah Data</a>
             <form method="POST" action="<?= base_url('KemitraanPortal/batal/' . (int) $row->id) ?>"
-                  onsubmit="return confirm('Batalkan pendaftaran ini? Slotnya akan dilepas untuk mahasiswa lain, dan Anda perlu mendaftar ulang bila berubah pikiran.')">
+                  data-konfirmasi="Slotnya akan dilepas untuk mahasiswa lain, dan Anda perlu mendaftar ulang bila berubah pikiran." data-konfirmasi-judul="Batalkan pendaftaran?" data-konfirmasi-label="Batalkan pendaftaran" data-konfirmasi-bahaya>
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                 <button type="submit" class="text-xs font-bold text-rose-600 hover:underline">Batalkan pendaftaran</button>
             </form>

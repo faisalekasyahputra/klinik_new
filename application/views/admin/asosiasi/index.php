@@ -108,7 +108,7 @@ $total_pakai = static function ($kode) use ($pemakaian) {
                             <button type="submit" form="<?= $fid ?>" class="tombol-aksi"><i class="ph ph-floppy-disk" aria-hidden="true"></i><span>Simpan</span></button>
                             <?php if ($dipakai === 0): ?>
                             <form class="inline" action="<?= base_url('Admin_Asosiasi/hapus') ?>" method="post"
-                                  onsubmit="return confirm('Hapus asosiasi <?= html_escape($r->nama) ?>?')">
+                                  data-konfirmasi="Asosiasi <?= html_escape($r->nama) ?> akan dihapus dari daftar." data-konfirmasi-judul="Hapus asosiasi?" data-konfirmasi-label="Hapus" data-konfirmasi-bahaya>
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
                                 <input type="hidden" name="id" value="<?= (int) $r->id ?>">
                                 <button class="tombol-aksi tombol-aksi-bahaya"><i class="ph ph-trash" aria-hidden="true"></i><span>Hapus</span></button>

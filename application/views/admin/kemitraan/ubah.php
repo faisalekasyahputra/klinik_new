@@ -161,6 +161,6 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
 <?php endif; ?>
 
 <form id="hapus-pendaftaran" method="POST" action="<?= base_url('Admin_Kemitraan/hapus/' . (int) $row->id) ?>" class="hidden"
-      onsubmit="return confirm('Hapus pendaftaran ini beserta berkasnya? Tindakan ini tidak bisa dibatalkan.')">
+      data-konfirmasi="Pendaftaran ini beserta berkasnya akan dihapus. Tindakan ini tidak bisa dibatalkan." data-konfirmasi-judul="Hapus pendaftaran?" data-konfirmasi-label="Hapus" data-konfirmasi-bahaya>
     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 </form>

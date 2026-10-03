@@ -228,7 +228,7 @@
                                      selalu terpampang tapi hampir selalu tanpa efek melatih orang
                                      mengabaikan seluruh kolom ini. */ ?>
                             <form method="POST" action="<?= base_url('Admin_Users/buka_kunci') ?>" class="inline"
-                                  onsubmit="return confirm(<?= html_escape(json_encode($konfirmasi_kunci)) ?>)">
+                                  data-konfirmasi="<?= html_escape($konfirmasi_kunci) ?>" data-konfirmasi-judul="Buka kunci akun?" data-konfirmasi-label="Buka kunci">
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                 <input type="hidden" name="id" value="<?= (int) $u->id ?>">
                                 <button type="submit" class="tombol-aksi">
@@ -251,7 +251,7 @@
 
                             <?php if ( ! $milik_sendiri): ?>
                             <form method="POST" action="<?= base_url('Admin_Users/ubah_status') ?>" class="inline"
-                                  onsubmit="return confirm(<?= html_escape(json_encode($konfirmasi_status)) ?>)">
+                                  data-konfirmasi="<?= html_escape($konfirmasi_status) ?>" <?= $nonaktif ? 'data-konfirmasi-judul="Aktifkan akun?" data-konfirmasi-label="Aktifkan"' : 'data-konfirmasi-judul="Nonaktifkan akun?" data-konfirmasi-label="Nonaktifkan" data-konfirmasi-bahaya' ?>>
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                 <input type="hidden" name="id" value="<?= (int) $u->id ?>">
                                 <input type="hidden" name="status" value="<?= $nonaktif ? 'active' : 'nonaktif' ?>">
@@ -282,7 +282,7 @@
                                     Sampaikan sandi barunya lewat jalur pribadi - sistem tidak mengirimkannya ke siapa pun.
                                 </p>
                                 <form method="POST" action="<?= base_url('Admin_Users/reset_sandi') ?>" class="space-y-3"
-                                      onsubmit="return confirm(<?= html_escape(json_encode($konfirmasi_sandi)) ?>)">
+                                      data-konfirmasi="<?= html_escape($konfirmasi_sandi) ?>" data-konfirmasi-judul="Ganti sandi akun?" data-konfirmasi-label="Ganti sandi" data-konfirmasi-bahaya>
                                     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                     <input type="hidden" name="id" value="<?= (int) $u->id ?>">
                                     <div>
@@ -330,7 +330,7 @@
                             <div @click.outside="nikResetOpen = false" class="w-full max-w-md rounded-3xl bg-white dark:bg-brand-card p-6 text-left shadow-xl">
                                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">Reset NIK Warga</h3>
                                 <p class="mt-1 text-xs leading-relaxed text-gray-500 dark:text-brand-muted">Lepaskan NIK dari <strong><?= html_escape($u->email) ?></strong>. Draft yang belum dikirim ikut dihapus. Pengajuan terkirim tidak dapat direset.</p>
-                                <form method="POST" action="<?= base_url('Admin_Users/reset_nik') ?>" class="mt-4 space-y-3" onsubmit="return confirm('Reset hubungan NIK akun ini? Tindakan akan dicatat di jejak audit.')">
+                                <form method="POST" action="<?= base_url('Admin_Users/reset_nik') ?>" class="mt-4 space-y-3" data-konfirmasi="Hubungan NIK akun ini akan direset. Tindakan dicatat di jejak audit." data-konfirmasi-judul="Reset NIK?" data-konfirmasi-label="Reset NIK" data-konfirmasi-bahaya>
                                     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                     <input type="hidden" name="id" value="<?= (int) $u->id ?>">
                                     <div><label class="mb-1 block text-xs font-bold text-gray-600 dark:text-brand-muted">Alasan reset <span class="text-red-500">*</span></label><textarea name="alasan" required minlength="10" maxlength="500" rows="3" placeholder="Contoh: NIK salah saat pengisian awal" class="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-sm text-gray-800 dark:text-gray-200"></textarea></div>
