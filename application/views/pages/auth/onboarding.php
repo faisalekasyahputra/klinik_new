@@ -79,7 +79,7 @@ $isi = function ($nama) use ($old) {
          */
         $langkah_awal = empty($old) ? 1 : 2;
         ?>
-        <div class="auth-form-container" style="max-width: 520px;" x-data="onboardingForm(<?= htmlspecialchars(json_encode((string) ($old['role'] ?? '')), ENT_QUOTES, 'UTF-8') ?>, <?= (int) $langkah_awal ?>)">
+        <div class="auth-form-container auth-form-container--ringkas" style="max-width: 560px;" x-data="onboardingForm(<?= htmlspecialchars(json_encode((string) ($old['role'] ?? '')), ENT_QUOTES, 'UTF-8') ?>, <?= (int) $langkah_awal ?>)">
 
             <!-- Back Link - halaman ini TIDAK ditegakkan secara global (cek
                  profil_lengkap cuma terjadi sekali sesudah login), jadi user
@@ -92,7 +92,7 @@ $isi = function ($nama) use ($old) {
             <!-- Mobile Logo -->
             <div class="auth-mobile-logo" style="display:flex; align-items:center; gap:10px; margin-bottom:24px;">
                 <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" style="height: 36px; width: auto; object-fit: contain;">
-                <span style="font-weight:900; font-size:1.25rem; color:#0f2a30;">Klinik<span style="color: #6d8000;">PKP</span></span>
+                <span style="font-weight:900; font-size:1.25rem; color:var(--auth-gray-900);">Klinik<span style="color:var(--auth-amber);">PKP</span></span>
             </div>
 
             <!-- Welcome -->
@@ -189,23 +189,40 @@ $isi = function ($nama) use ($old) {
                         <i class="fa-solid fa-user"></i> Data Pribadi
                     </div>
 
+                    <!-- Isian pendek berdampingan dua kolom; di bawah 560px kembali satu kolom (auth-grid-2). -->
+                    <div class="auth-grid-2">
+                    <div>
                     <!-- Username (Tampil di Forum) -->
                     <label class="auth-label" for="username">Username (Tampil di Forum) <span style="color:var(--auth-red)">*</span></label>
                     <div class="auth-input-group">
                         <input type="text" id="username" name="username" class="auth-input"
                                value="<?= $isi('username') ?>"
-                               placeholder="Nama singkat tanpa spasi, cth: budi_santoso" :required="langkah === 2"
+                               placeholder="cth: budi_santoso" :required="langkah === 2"
                                maxlength="30" pattern="^\S+$" oninput="this.value = this.value.replace(/\s/g, '').toLowerCase()">
                         <i class="fa-solid fa-at auth-input-icon"></i>
                     </div>
+                    </div>
 
+                    <div>
+                    <!-- Phone -->
+                    <label class="auth-label" for="phone">No. Telepon / WhatsApp <span style="color:var(--auth-red)">*</span></label>
+                    <div class="auth-input-group">
+                        <input type="tel" id="phone" name="phone" class="auth-input"
+                               value="<?= $isi('phone') ?>"
+                               placeholder="08xxxxxxxxxx" :required="langkah === 2">
+                        <i class="fa-solid fa-phone auth-input-icon"></i>
+                    </div>
+                    </div>
+
+                    <div>
                     <!-- Nama Lengkap -->
-                    <label class="auth-label" for="nama_lengkap">Nama Lengkap Sesuai Identitas <span style="color:var(--auth-red)">*</span></label>
+                    <label class="auth-label" for="nama_lengkap">Nama Sesuai Identitas <span style="color:var(--auth-red)">*</span></label>
                     <div class="auth-input-group">
                         <input type="text" id="nama_lengkap" name="nama_lengkap" class="auth-input"
                                value="<?= $isi('nama_lengkap') ?>"
-                               placeholder="Masukkan nama sesuai KTP" :required="langkah === 2">
+                               placeholder="Nama sesuai KTP" :required="langkah === 2">
                         <i class="fa-solid fa-user auth-input-icon"></i>
+                    </div>
                     </div>
 
                     <!-- Identitas: warga memakai NIK, pengembang memakai NPWP, mahasiswa tanpa keduanya
@@ -215,7 +232,7 @@ $isi = function ($nama) use ($old) {
                         <div class="auth-input-group">
                             <input type="text" id="nik_identitas" name="nik_identitas" class="auth-input"
                                    value="<?= $isi('nik_identitas') ?>"
-                                   placeholder="Masukkan 16 digit NIK" maxlength="16" pattern="[0-9]{16}"
+                                   placeholder="16 digit NIK" maxlength="16" pattern="[0-9]{16}"
                                    :required="langkah === 2 && role === 'warga'" inputmode="numeric"
                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                             <i class="fa-solid fa-id-card auth-input-icon"></i>
@@ -226,29 +243,21 @@ $isi = function ($nama) use ($old) {
                         <div class="auth-input-group">
                             <input type="text" id="npwp" name="npwp" class="auth-input"
                                    value="<?= $isi('npwp') ?>"
-                                   placeholder="Masukkan 15 atau 16 digit NPWP" minlength="15" maxlength="16" pattern="[0-9]{15,16}"
+                                   placeholder="15 atau 16 digit NPWP" minlength="15" maxlength="16" pattern="[0-9]{15,16}"
                                    :required="langkah === 2 && role === 'pengembang'" inputmode="numeric"
                                    oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                             <i class="fa-solid fa-building-shield auth-input-icon"></i>
                         </div>
                     </div>
+                    </div><!-- /auth-grid-2 -->
 
                     <!-- Alamat -->
                     <label class="auth-label" for="alamat_domisili">Alamat Domisili <span style="color:var(--auth-red)">*</span></label>
                     <div class="auth-input-group">
                         <textarea id="alamat_domisili" name="alamat_domisili" class="auth-input"
-                                  placeholder="Alamat lengkap beserta RT/RW, Desa/Kelurahan" rows="3"
+                                  placeholder="Alamat lengkap beserta RT/RW, Desa/Kelurahan" rows="2"
                                   :required="langkah === 2" style="padding-left:2.75rem;"><?= $isi('alamat_domisili') ?></textarea>
                         <i class="fa-solid fa-map-location-dot auth-input-icon" style="top:1rem;transform:none;"></i>
-                    </div>
-
-                    <!-- Phone -->
-                    <label class="auth-label" for="phone">No. Telepon / WhatsApp <span style="color:var(--auth-red)">*</span></label>
-                    <div class="auth-input-group">
-                        <input type="tel" id="phone" name="phone" class="auth-input"
-                               value="<?= $isi('phone') ?>"
-                               placeholder="08xxxxxxxxxx" :required="langkah === 2">
-                        <i class="fa-solid fa-phone auth-input-icon"></i>
                     </div>
 
                 <!-- ===== PASSWORD (akun Google) - masih bagian dari langkah 2,
@@ -384,7 +393,7 @@ $isi = function ($nama) use ($old) {
                 <!-- ===== NAVIGASI ===== -->
                 <div style="display:flex; gap:12px; margin-top:1.5rem;" x-cloak>
                     <button type="button" class="auth-btn" x-show="langkah > 1" @click="mundur()"
-                            style="flex:0 0 auto; padding-left:1.25rem; padding-right:1.25rem; background:transparent; border:1.5px solid var(--auth-gray-200); color:var(--auth-gray-900);">
+                            style="flex:0 0 auto; width:auto; padding-left:1.25rem; padding-right:1.25rem; background:transparent; border:1.5px solid var(--auth-gray-200); color:var(--auth-gray-900);">
                         <i class="fa-solid fa-arrow-left"></i>
                         <span>Kembali</span>
                     </button>

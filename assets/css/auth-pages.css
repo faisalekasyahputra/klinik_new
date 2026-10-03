@@ -216,7 +216,9 @@ body.auth-page {
     flex: 1;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    /* Bukan justify-content:center: isi yang lebih tinggi dari layar akan terdorong ke atas di luar
+       jangkauan gulir. margin-block:auto pada .auth-form-container tetap menengahkan bila muat. */
+    justify-content: flex-start;
     align-items: center;
     padding: 2rem 3rem;
     overflow-y: auto;
@@ -226,6 +228,27 @@ body.auth-page {
 .auth-form-container {
     width: 100%;
     max-width: 420px;
+    margin-block: auto;
+}
+
+/* Formulir panjang (onboarding): jarak dirapatkan, isian pendek berdampingan. */
+.auth-form-container--ringkas .auth-back-link { margin-bottom: 1.25rem; }
+.auth-form-container--ringkas .auth-subheading { margin-bottom: 1.25rem; }
+.auth-form-container--ringkas .auth-label { margin-bottom: 0.35rem; }
+.auth-form-container--ringkas .auth-input-group { margin-bottom: 0.9rem; }
+.auth-form-container--ringkas .auth-input { padding-top: 0.6rem; padding-bottom: 0.6rem; }
+.auth-form-container--ringkas textarea.auth-input { min-height: 64px; }
+.auth-form-container--ringkas .auth-section-title { margin-bottom: 0.75rem; }
+.auth-form-container--ringkas .auth-role-card { padding: 0.9rem; }
+.auth-form-container--ringkas .auth-btn { padding-top: 0.7rem; padding-bottom: 0.7rem; }
+.auth-form-container--ringkas .auth-govt-badge { margin-top: 1.25rem; padding-top: 1rem; }
+.auth-grid-2 {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 12px;
+}
+@media (max-width: 560px) {
+    .auth-grid-2 { grid-template-columns: 1fr; }
 }
 
 /* =============================================================
