@@ -8,7 +8,9 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  * Ikatan NIK yang BELUM terverifikasi (usr_akun.nik dari onboarding/Profil Saya, atau profil
  * pendataan tanpa confirmed_at) kalah oleh akun yang lolos verifikasi nama + tanggal lahir di Cek
  * NIK: ikatannya berpindah dalam satu transaksi, akun lama tetap hidup tanpa NIK itu, jejak audit
- * tertulis. Ikatan terverifikasi tetap menang. Sebelum verifikasi lolos, jawaban untuk NIK yang
+ * tertulis. Draft akun lama yang belum dikirim DILEPAS (tidak terlihat akun lama maupun pemilik
+ * baru, terlihat baca-saja oleh super admin) dan disapu retensi sesudah 30 hari (jam disimulasikan),
+ * atau saat akun lama dihapus. Ikatan terverifikasi tetap menang. Sebelum verifikasi lolos, jawaban untuk NIK yang
  * terikat (terverifikasi atau belum) sama persis dengan NIK yang tidak terikat siapa pun.
  *
  * Bukti bahwa suite ini menggigit: merah terhadap kode `main` 9b61a3d (lihat catatan commit).
@@ -66,6 +68,7 @@ function jalan($sql, array $p = []) {
 }
 
 define('FCPATH', APP_ROOT . DIRECTORY_SEPARATOR);
+define('ENVIRONMENT', 'development');
 require_once APPPATH . 'helpers/private_upload_helper.php';
 require_once APPPATH . 'libraries/Encryption_lib.php';
 $enc = new Encryption_lib();
@@ -164,9 +167,14 @@ try {
         [$A, $profil_a, $KAB]);
     $dir_a = private_uploads_root() . 'warga_assessment' . DIRECTORY_SEPARATOR . $draft_a;
     @mkdir($dir_a, 0700, TRUE);
-    $bukti_a = $dir_a . DIRECTORY_SEPARATOR . 'uji_bukti.txt';
-    file_put_contents($bukti_a, 'berkas uji');
+    $bukti_a = $dir_a . DIRECTORY_SEPARATOR . 'uji_bukti.png';
+    file_put_contents($bukti_a, 'berkas uji klaim');
+    jalan("INSERT INTO sf_berkas_penilaian (penilaian_id, jenis_berkas, path_privat, mime_type, ukuran_byte, sha256) VALUES (?, 'house_front_photo', 'uji_bukti.png', 'image/png', ?, ?)",
+        [$draft_a, filesize($bukti_a), hash_file('sha256', $bukti_a)]);
     cek(is_file($bukti_a), 'Prasyarat: berkas bukti draft A ada di penyimpanan privat');
+    $j_a = masuk($e_a, $SANDI);
+    $bukti_url = "Warga/lihat_bukti/$draft_a/house_front_photo";
+    cek(minta($j_a, $bukti_url)['badan'] === 'berkas uji klaim', 'Prasyarat: A bisa membuka bukti draft-nya sendiri');
     jalan("INSERT INTO sf_data_simperum (user_id, nik_lookup_hash, nik_ciphertext, status_respons, mode_sumber, fetched_at, next_refresh_at, created_at, updated_at) VALUES (?,?,?,'not_found','simulation',NOW(),NOW(),NOW(),NOW())",
         [$A, $h($NIK1), $enc->encrypt($NIK1)]);
     // V: pemegang TERVERIFIKASI lewat alur sungguhan.
@@ -213,9 +221,12 @@ try {
     $a = $akun($A);
     cek($a['nik'] === NULL && $a['nik_lookup_hash'] === NULL, 'usr_akun.nik A dikosongkan');
     cek($profil($A) === NULL, 'Profil pendataan A untuk NIK itu dilepas');
-    cek(satu('SELECT id FROM sf_penilaian_perumahan WHERE id=?', [$draft_a]) === NULL, 'Draft A yang belum dikirim dihapus (seperti saat akun dihapus)');
+    $d = satu('SELECT user_id, status, submitted_at, salinan_profil_ciphertext s FROM sf_penilaian_perumahan WHERE id=?', [$draft_a]);
+    cek($d && (int) $d['user_id'] === $A && $d['status'] === 'superseded' && $d['submitted_at'] === NULL,
+        'Draft A yang belum dikirim dilepas (superseded tanpa submitted_at), tidak dihapus');
+    cek($d && strpos((string) $enc->decrypt((string) $d['s']), 'Uji Pemegang Lama') !== FALSE, 'Isi profil A tersalin terenkripsi ke draft yang dilepas');
     clearstatcache();
-    cek( ! is_file($bukti_a), 'Berkas bukti draft A ikut disapu dari penyimpanan privat');
+    cek(is_file($bukti_a), 'Berkas bukti draft yang dilepas masih tersimpan');
     cek((satu('SELECT status FROM sf_penilaian_perumahan WHERE id=?', [$kirim_a])['status'] ?? '') === 'submitted',
         'Penilaian A yang sudah dikirim tetap ada (arsip dinas)');
     cek((int) satu('SELECT COUNT(*) n FROM sf_data_simperum WHERE user_id=?', [$A])['n'] === 0, 'Cermin SIMPERUM NIK itu tidak lagi melekat ke A');
@@ -228,15 +239,20 @@ try {
     cek($jejak && strpos($jejak['ringkasan'] . $jejak['detail_json'], $NIK1) === FALSE && strpos($jejak['ringkasan'] . $jejak['detail_json'], substr($NIK1, -6)) === FALSE,
         'Jejak audit tidak memuat NIK');
     $detail = json_decode($jejak['detail_json'] ?? '', TRUE) ?: [];
-    cek(($detail['akun_penerima'] ?? 0) === $B && ($detail['draft_dihapus'] ?? -1) === 1, 'Rincian jejak: akun penerima dan jumlah draft yang dihapus');
+    cek(($detail['akun_penerima'] ?? 0) === $B && ($detail['draft_dilepas'] ?? -1) === 1, 'Rincian jejak: akun penerima dan jumlah draft yang dilepas (hitungan saja)');
 
     echo "\n== 3. Akun A tetap bisa masuk dan memakai aplikasi\n";
-    $j_a = masuk($e_a, $SANDI);
     $r = minta($j_a, 'akun/profil');
     cek($r['kode'] === 200 && strpos($r['badan'], 'Auth/do_login') === FALSE, 'A masuk dan membuka Profil Saya');
     $r = minta($j_a, 'warga/pendataan');
     cek($r['kode'] === 200 && $step($r['badan']) === 'find_data' && strpos($r['badan'], $NIK1) === FALSE && stripos($r['badan'], 'SUGENG') === FALSE,
         'A membuka Pendataan: mulai dari Cek NIK, tanpa NIK atau data pemilik');
+    cek(minta($j_a, $bukti_url)['kode'] === 404, 'A tidak lagi bisa membuka bukti draft yang dilepas (404)');
+    $ekspor = json_decode(minta($j_a, 'akun/export', ['current_password' => $SANDI])['badan'], TRUE);
+    $id_ekspor = array_map('intval', array_column($ekspor['data']['sf_penilaian_perumahan'] ?? [], 'id'));
+    cek(in_array($kirim_a, $id_ekspor, TRUE) && ! in_array($draft_a, $id_ekspor, TRUE), 'Ekspor data akun A memuat penilaian terkirim, tanpa draft yang dilepas');
+    cek(minta($j_b, $bukti_url)['kode'] === 404 && strpos(minta($j_b, 'warga/pendataan')['badan'], 'Uji Pemegang Lama') === FALSE,
+        'B (pemilik baru) tidak bisa membuka draft maupun bukti milik A');
 
     echo "\n== 4. Ikatan terverifikasi tetap menang\n";
     $j_c = masuk($e_c, $SANDI);
@@ -283,6 +299,45 @@ try {
     $r = minta($j_adm, 'Admin_Users?q=' . urlencode($e_a));
     cek(strpos($r['badan'], $e_a) !== FALSE && strpos($r['badan'], 'NIK terverifikasi') === FALSE && strpos($r['badan'], 'NIK belum terverifikasi') === FALSE,
         'Manajemen Pengguna: A tampil tanpa status NIK');
+    cek(strpos($r['badan'], '1 draf pendataan dilepas') !== FALSE, 'Manajemen Pengguna (super admin): draft A yang dilepas terlihat, baca-saja, dengan tanggal hapus otomatis');
+
+    echo "\n== 7. Retensi draft yang dilepas (jam disimulasikan) dan hapus akun\n";
+    require_once BASEPATH . 'core/Common.php';
+    require_once BASEPATH . 'database/DB.php';
+    $CI_DB = DB(['dsn' => '', 'hostname' => $env['DB_HOST'], 'username' => $env['DB_USER'], 'password' => $env['DB_PASS'] ?? '',
+        'database' => $env['DB_NAME'], 'dbdriver' => 'mysqli', 'char_set' => 'utf8mb4', 'dbcollat' => 'utf8mb4_unicode_ci',
+        'db_debug' => FALSE, 'pconnect' => FALSE], TRUE);
+    $CI_DB->query("SET time_zone = '+07:00'");
+    require_once APPPATH . 'libraries/Penyapu_retensi.php';
+    $config = []; require APPPATH . 'config/data_lifecycle.php';
+    $pol = $config['data_lifecycle']['retensi'];
+    cek(($pol['draf_nik_dipindah_hari'] ?? 0) === 30, 'Kebijakan retensi draf_nik_dipindah_hari = 30');
+    // Hanya tugas draft ini yang dijalankan (lewat refleksi), supaya data lokal lain tidak ikut disapu.
+    $sapu = new ReflectionMethod('Penyapu_retensi', 'sapu_draf_nik_dipindah');
+    $sapu->setAccessible(TRUE);
+    $penyapu = new Penyapu_retensi(['db' => $CI_DB, 'policy' => $pol, 'app' => sys_get_temp_dir() . DIRECTORY_SEPARATOR, 'root' => private_uploads_root()]);
+    jalan('UPDATE sf_penilaian_perumahan SET updated_at = NOW() - INTERVAL 29 DAY WHERE id=?', [$draft_a]);
+    $sapu->invoke($penyapu, 30, FALSE);
+    clearstatcache();
+    cek(satu('SELECT id FROM sf_penilaian_perumahan WHERE id=?', [$draft_a]) !== NULL && is_file($bukti_a), 'Hari ke-29: draft yang dilepas dan berkasnya belum disapu');
+    jalan('UPDATE sf_penilaian_perumahan SET updated_at = NOW() - INTERVAL 31 DAY WHERE id=?', [$draft_a]);
+    cek(($sapu->invoke($penyapu, 30, TRUE)['jumlah'] ?? 0) >= 1 && satu('SELECT id FROM sf_penilaian_perumahan WHERE id=?', [$draft_a]) !== NULL, 'Mode kering menghitung tanpa menghapus');
+    $h31 = $sapu->invoke($penyapu, 30, FALSE);
+    clearstatcache();
+    cek(is_array($h31) && $h31['galat'] === NULL && satu('SELECT id FROM sf_penilaian_perumahan WHERE id=?', [$draft_a]) === NULL && ! is_file($bukti_a),
+        'Hari ke-31: draft yang dilepas disapu beserta berkas buktinya');
+    cek((satu('SELECT status FROM sf_penilaian_perumahan WHERE id=?', [$kirim_a])['status'] ?? '') === 'submitted', 'Penilaian terkirim A tidak ikut disapu');
+    // Hapus akun lebih ketat: draft yang dilepas ikut hilang saat itu juga, tidak menunggu 30 hari.
+    $lepas2 = jalan("INSERT INTO sf_penilaian_perumahan (user_id, kabupaten_id, status, langkah_sekarang, mode_sumber) VALUES (?,?,'superseded','housing_family','manual')", [$A, $KAB]);
+    $dir_a2 = private_uploads_root() . 'warga_assessment' . DIRECTORY_SEPARATOR . $lepas2;
+    @mkdir($dir_a2, 0700, TRUE);
+    file_put_contents($dir_a2 . DIRECTORY_SEPARATOR . 'uji_bukti.png', 'x');
+    require_once APPPATH . 'libraries/Data_erasure.php';
+    (new Data_erasure(['db' => $CI_DB, 'root' => private_uploads_root()]))->sapu_berkas($A);
+    clearstatcache();
+    cek(satu('SELECT id FROM sf_penilaian_perumahan WHERE id=?', [$lepas2]) === NULL && ! is_dir($dir_a2)
+        && (satu('SELECT status FROM sf_penilaian_perumahan WHERE id=?', [$kirim_a])['status'] ?? '') === 'submitted',
+        'Hapus akun A menyapu draft yang dilepas beserta berkasnya; arsip terkirim tetap');
 } catch (Throwable $e) {
     cek(FALSE, 'Suite berhenti: ' . $e->getMessage());
 } finally {
@@ -297,7 +352,7 @@ try {
         if ($baris) { jalan('INSERT INTO sys_batas_laju (kunci, jendela_mulai_at, jumlah_gagal) VALUES (?,?,?)', array_values($baris)); }
     }
     foreach ($jar_dibuat as $f) { @unlink($f); }
-    if (isset($dir_a)) { @unlink($bukti_a); @rmdir($dir_a); }
+    foreach (array_filter([$dir_a ?? NULL, $dir_a2 ?? NULL]) as $dir) { foreach ((array) glob($dir . DIRECTORY_SEPARATOR . '*') as $f) { @unlink($f); } @rmdir($dir); }
     echo "Akun uji tersisa: " . (int) satu('SELECT COUNT(*) n FROM usr_akun WHERE email LIKE ?', [$TAG . '%'])['n'] . "\n";
 }
 echo "RINGKASAN: {$GLOBALS['total']} pemeriksaan, {$GLOBALS['gagal']} gagal\n";
