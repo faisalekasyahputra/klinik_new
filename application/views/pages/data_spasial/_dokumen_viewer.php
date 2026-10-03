@@ -287,7 +287,9 @@
         return;
     }
 
-    pdfjsLib.getDocument(pdfUrl).promise.then(function (doc) {
+    // isEvalSupported: false = mitigasi resmi PDF.js untuk CVE-2024-4367 pada rilis 3.x yang dibundel
+    // (glyph huruf tidak dikompilasi menjadi fungsi). Tetap wajib walau pustakanya kelak dinaikkan.
+    pdfjsLib.getDocument({ url: pdfUrl, isEvalSupported: false }).promise.then(function (doc) {
         pdfDoc = doc;
         pageTotalEl.textContent = doc.numPages;
         renderPage(1);
