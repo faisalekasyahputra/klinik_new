@@ -1006,9 +1006,12 @@ class MY_Controller extends CI_Controller {
         $best = NULL; $length = -1;
         foreach (($this->config->item('dashboard_modules') ?: []) as $key => $module) {
             if (empty($module['roles']) || !in_array($role,$module['roles'],TRUE)) { continue; }
-            $url = trim($module['url'] ?? '', '/');
-            if ($url !== '' && (strcasecmp($uri,$url)===0 || stripos($uri,$url.'/')===0) && strlen($url)>$length) {
-                $best=$key; $length=strlen($url);
+            // Awalan terpanjang menang; 'aksi' = path tambahan milik modul di luar url-nya.
+            foreach (array_merge([$module['url'] ?? ''], (array) ($module['aksi'] ?? [])) as $url) {
+                $url = trim($url, '/');
+                if ($url !== '' && (strcasecmp($uri,$url)===0 || stripos($uri,$url.'/')===0) && strlen($url)>$length) {
+                    $best=$key; $length=strlen($url);
+                }
             }
         }
         if ($best !== NULL && ! $this->module_privilege_allowed($best)) {
