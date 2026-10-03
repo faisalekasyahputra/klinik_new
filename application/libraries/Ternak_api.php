@@ -31,6 +31,8 @@ class Ternak_api {
         if (file_exists($cache_file) && (time() - filemtime($cache_file) < $cache_time)) {
             $data = json_decode(file_get_contents($cache_file), true);
             if ($data) {
+                // Cache dari sebelum penyaringan (tanpa penanda) disaring sekali lalu ditulis ulang.
+                if (empty($data["_disaring"])) { $data = $this->simpan_bersih($cache_file, $data, filemtime($cache_file)); }
                 $this->_site_data_cache = $data;
                 return $data;
             }
@@ -56,11 +58,58 @@ class Ternak_api {
         $data = json_decode($response, true);
         
         if ($data) {
-            @file_put_contents($cache_file, $response);
+            $data = $this->simpan_bersih($cache_file, $data);
             $this->_site_data_cache = $data;
         }
-        
+
         return $data;
+    }
+
+    /** Saring lalu tulis cache bertanda `_disaring`; $mtime menjaga umur cache lama yang ditulis ulang. */
+    private function simpan_bersih($cache_file, array $data, $mtime = NULL) {
+        $data = self::bersihkan_data($data);
+        $data['_disaring'] = 1;
+        @file_put_contents($cache_file, json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        if ($mtime) { @touch($cache_file, (int) $mtime); }
+        return $data;
+    }
+
+    /**
+     * Konten CMS ini ditulis di luar kendali aplikasi (termasuk blok `inherited` dari situs induk),
+     * jadi body artikel diperlakukan sebagai HTML tak tepercaya. Medan lain dicetak ter-escape di view.
+     */
+    public static function bersihkan_data(array $data) {
+        foreach (['local', 'inherited'] as $blok) {
+            foreach ((array) ($data[$blok]['articles'] ?? []) as $i => $artikel) {
+                if (is_array($artikel) && isset($artikel['body'])) {
+                    $data[$blok]['articles'][$i]['body'] = self::bersihkan_html($artikel['body']);
+                }
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * HTML artikel lewat daftar izin HTMLPurifier (ikut terpasang bersama phpspreadsheet): tag teks,
+     * daftar, tabel, dan tautan http/https/mailto. Atribut on*, style, script, iframe, dan skema
+     * javascript: dibuang. Tanpa HTMLPurifier body jadi teks biasa (gagal ke arah aman).
+     */
+    public static function bersihkan_html($html) {
+        $html = (string) $html;
+        if ( ! class_exists('HTMLPurifier')) {
+            return nl2br(htmlspecialchars(html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8'), ENT_QUOTES, 'UTF-8'));
+        }
+        static $purifier = NULL;
+        if ($purifier === NULL) {
+            $c = HTMLPurifier_Config::createDefault();
+            $c->set('Cache.DefinitionImpl', NULL); // tanpa menulis cache definisi ke folder vendor
+            $c->set('HTML.Allowed', 'p,br,strong,b,em,i,u,s,sub,sup,span,div,h2,h3,h4,h5,h6,blockquote,'
+                . 'ul,ol,li,table,thead,tbody,tr,th,td,a[href|title]');
+            $c->set('URI.AllowedSchemes', ['http' => TRUE, 'https' => TRUE, 'mailto' => TRUE]);
+            $c->set('HTML.TargetBlank', TRUE);
+            $purifier = new HTMLPurifier($c);
+        }
+        return $purifier->purify($html);
     }
 
     /**

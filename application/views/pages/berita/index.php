@@ -236,8 +236,8 @@
 document.addEventListener('alpine:init', () => {
     Alpine.data('articleFilter', () => ({
         // Source data
-        articles: <?= json_encode($articles ?? []) ?>,
-        initialCategory: <?= json_encode($this->input->get('kat') ?: '') ?>,
+        articles: <?= json_encode($articles ?? [], JSON_HEX_TAG | JSON_HEX_AMP) ?>,
+        initialCategory: <?= json_encode((string) ($this->input->get('kat') ?: ''), JSON_HEX_TAG | JSON_HEX_AMP) ?>,
         
         // Filter state
         searchQuery: '',
@@ -324,9 +324,9 @@ document.addEventListener('alpine:init', () => {
         },
         
         stripTags(html) {
-            let tmp = document.createElement("DIV");
-            tmp.innerHTML = html;
-            return tmp.textContent || tmp.innerText || "";
+            // DOMParser, bukan innerHTML pada elemen lepas: dokumen hasil parse tidak memuat gambar dan
+            // tidak menjalankan penangan event, jadi <img onerror> dari hulu tidak terpicu.
+            return new DOMParser().parseFromString(String(html || ''), 'text/html').body.textContent || '';
         }
     }))
 })
