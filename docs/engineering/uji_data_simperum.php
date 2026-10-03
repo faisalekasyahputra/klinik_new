@@ -51,6 +51,8 @@ try {
     // ::1 dihitung per blok /64 (anti_automation_ip_bucket), jadi kunci nyatanya '0000000000000000/64'.
     foreach (['warga_lookup', 'rtlh_cek_anon', 'login'] as $p) foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) $pinjam(hash('sha256', "$p:ip:$ip"));
     foreach ([$NIK, $NIK_ANON] as $n) $pinjam(hash('sha256', 'warga_lookup:nik:' . $enc->deterministic_hash($n)));
+    // verifikasi_nik (3 Okt 2026) ikut dipinjam: percobaan gagal dari jalan lain mengunci NIK fixture 24 jam.
+    $pinjam(hash('sha256', 'verifikasi_nik:nik:' . $enc->deterministic_hash($NIK)));
 
     echo "A. Onboarding warga ber-NIK, lalu Cek NIK + tanggal lahir\n";
     [$uid, $email] = $akun('warga', NULL, 0);

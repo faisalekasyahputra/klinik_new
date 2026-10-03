@@ -204,6 +204,8 @@ preserve_rate_key(
     'nik',
     hash_hmac('sha256','0000000000000001',$env['KPKP_DATA_PEPPER'])
 );
+// verifikasi_nik (3 Okt 2026) ikut dipinjam: percobaan gagal dari jalan lain mengunci NIK fixture 24 jam.
+preserve_rate_key($db,'verifikasi_nik','nik',hash_hmac('sha256','0000000000000001',$env['KPKP_DATA_PEPPER']));
 echo "=== UJI PENDATAAN WARGA R6 ===\nTarget: ".BASE_URL." | DB: {$env['DB_NAME']}\n\n";
 
 // Dua assessment diperlukan agar manipulasi rekomendasi_id lintas pemilik benar-benar diuji.

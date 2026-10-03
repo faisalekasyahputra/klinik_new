@@ -25,6 +25,8 @@ try{
  $nik='3399991508850001';
  foreach(['warga_lookup','login'] as $p) foreach(['127.0.0.1','::1','0000000000000000/64'] as $ip) $pinjam(hash('sha256',"$p:ip:$ip"));
  $pinjam(hash('sha256','warga_lookup:nik:'.$enc->deterministic_hash($nik)));
+ // verifikasi_nik (3 Okt 2026) ikut dipinjam: percobaan gagal dari jalan lain mengunci NIK fixture 24 jam.
+ foreach([$nik,'3399990101700003'] as $n) $pinjam(hash('sha256','verifikasi_nik:nik:'.$enc->deterministic_hash($n)));
  foreach([[$nik,'dengan NIK'],[null,'tanpa NIK']] as $i=>[$n,$ket]){
   $e="{$tag}_{$i}@example.test"; $h=password_hash($pw,PASSWORD_BCRYPT); $nc=$n?$enc->encrypt($n):null; $nh=$n?$enc->deterministic_hash($n):null;
   $st=$db->prepare("INSERT INTO usr_akun (nama,email,kata_sandi,peran,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at,nik,nik_lookup_hash) VALUES ('SUGENG SINTETIS',?,?,'warga','active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW(),?,?)");

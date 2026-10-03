@@ -116,6 +116,10 @@ $testedRateKeys=array_merge($scopeKeys,[
     hash('sha256','warga_lookup:ip:0000000000000000/64'),
     hash('sha256','warga_lookup:account:'.$userId),
     hash('sha256','warga_lookup:nik:'.$nikHash),
+    // Akun uji ini sengaja tidak bernama fixture: lookup-nya gagal verifikasi (3 Okt 2026), jadi
+    // ember verifikasi_nik ikut dipinjam dan dikembalikan supaya NIK fixture tidak terkunci 24 jam.
+    hash('sha256','verifikasi_nik:account:'.$userId),
+    hash('sha256','verifikasi_nik:nik:'.$nikHash),
 ]);
 foreach($testedRateKeys as $key){
     $rows=$db->rows('SELECT kunci,jendela_mulai_at,jumlah_gagal FROM sys_batas_laju WHERE kunci=?',[$key]);

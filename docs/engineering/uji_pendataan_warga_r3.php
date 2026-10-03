@@ -34,6 +34,8 @@ foreach(['warga_lookup','warga_submit','warga_start_revision','admin_queue_decis
    harus dipinjam atau tabrakannya cuma berpindah ke fixture berikutnya. */
 foreach(['0000000000000002','0000000000000003','0000000000000005'] as $n)
   pinjam_rate($db,hash('sha256','warga_lookup:nik:'.hash_hmac('sha256',$n,$pepper)));
+  // verifikasi_nik (3 Okt 2026) ikut dipinjam: percobaan gagal dari jalan lain mengunci NIK fixture 24 jam.
+  pinjam_rate($db,hash('sha256','verifikasi_nik:nik:'.hash_hmac('sha256',$n,$pepper)));
 /* WIZARD BERUBAH 23-24 Agt 2026 dan harness ini menyusulnya, 31 Agt 2026.
    Step `citizen_data` DIHAPUS permanen (cfbd760 + migrasi 049); isiannya pindah
    jadi sub-bagian di `housing_family_detail`. Sementara `housing_family` kini

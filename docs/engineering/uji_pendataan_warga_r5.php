@@ -138,6 +138,8 @@ foreach(range(1,10) as $desil) cek($rules->evaluate('rumah_apung',[],['desil_kes
 // dan r6.
 foreach(['warga_lookup','warga_submit','warga_start_revision','admin_queue_decision'] as $policy)preserve_rate_ips($db,$policy);
 preserve_rate_key($db,'warga_lookup','nik',hash_hmac('sha256','0000000000000001',$env['KPKP_DATA_PEPPER']));
+// verifikasi_nik (3 Okt 2026) ikut dipinjam: percobaan gagal dari jalan lain mengunci NIK fixture 24 jam.
+preserve_rate_key($db,'verifikasi_nik','nik',hash_hmac('sha256','0000000000000001',$env['KPKP_DATA_PEPPER']));
 nik_bebas($db,$env,'0000000000000001');
 [$user,$email]=make_user($db,'owner','Warga Simulasi RTLH'); $owner=login($email);
 $r=$owner->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000001','birth_date'=>'1980-01-01']); wajib(redirect_ok($r),'Lookup SIM-01');

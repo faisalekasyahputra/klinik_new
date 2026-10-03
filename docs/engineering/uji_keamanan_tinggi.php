@@ -267,7 +267,8 @@ if (cek($siap, 'Server PHP mode production siap')) {
     $sesi_set = current(array_filter($m[1], fn($s) => stripos($s, '__Host-ci_session=') === 0)) ?: '';
     $syarat = fn($s) => $s !== '' && stripos($s, 'secure') !== FALSE && preg_match('/;\s*path=\/(;|$)/i', $s) && stripos($s, 'domain=') === FALSE;
     cek($kode === 200 && $syarat($csrf_set), 'Set-Cookie __Host-csrf_kpkp_cookie: Secure, Path=/, tanpa Domain');
-    cek($syarat($sesi_set), 'Set-Cookie __Host-ci_session: Secure, Path=/, tanpa Domain');
+    cek($syarat($sesi_set), 'Set-Cookie __Host-ci_session: Secure, Path=/, tanpa Domain')
+        || print('        (HTTP ' . $kode . ', cookie terkirim: ' . implode(', ', array_map(fn($s) => preg_replace('/=.*?;/', '=...;', $s), $m[1])) . ")\n");
     cek( ! preg_grep('/^(csrf_kpkp_cookie|ci_session)=/i', $m[1]), 'Tidak ada cookie bernama polos yang masih dikirim');
     $token = preg_match('/^__Host-csrf_kpkp_cookie=([0-9a-f]{32})/i', $csrf_set, $t) ? $t[1] : '';
     [$kode] = $minta_prod('Index/uji_tidak_ada', ['csrf_kpkp_token' => $token], "__Host-csrf_kpkp_cookie=$token");
@@ -348,6 +349,7 @@ try {
         'google_callback dengan state palsu: popup ditutup ke halaman masuk, tanpa menukar kode');
 
     // Akun yang sandinya dicabut check_google_user(): disimulasikan pada sesi yang sudah ada.
+    ember_ip('profile_password'); // hanya percobaan gagal yang dihitung, per IP: jalan lain bisa memenuhinya
     [$id_p, $email_p] = akun_baru('Uji Tanpa Sandi', ['peran' => 'pengembang']);
     $j = masuk($email_p, $SANDI);
     jalan('UPDATE usr_akun SET kata_sandi=NULL, sandi_diganti_at=NULL, sandi_kedaluwarsa_at=NOW() WHERE id=?', [$id_p]);

@@ -167,6 +167,8 @@ foreach (['warga_lookup', 'warga_submit', 'warga_start_revision', 'admin_queue_d
     preserve_rate_ips($db, $policy);
 }
 preserve_rate_key($db, 'warga_lookup', 'nik', hash_hmac('sha256', '0000000000000001', $env['KPKP_DATA_PEPPER']));
+// verifikasi_nik (3 Okt 2026) ikut dipinjam: percobaan gagal dari jalan lain mengunci NIK fixture 24 jam.
+foreach (['0000000000000001', '0000000000000003', '0000000000000004'] as $n) { preserve_rate_key($db, 'verifikasi_nik', 'nik', hash_hmac('sha256', $n, $env['KPKP_DATA_PEPPER'])); }
 nik_bebas($db, $env, '0000000000000001');
 
 // Existing house: lookup → langkah 1/2 → bangunan → sanitasi → lokasi.
