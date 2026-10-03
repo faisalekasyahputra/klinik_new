@@ -245,7 +245,8 @@ cek(($dev['sess_cookie_name'] ?? '') === 'ci_session' && ($dev['csrf_cookie_name
    X-Forwarded-Proto (is_https() CodeIgniter). Hanya halaman masuk dan satu POST ke rute yang
    tidak ada: CSRF diperiksa sebelum routing, jadi 404 = token diterima, 403 = ditolak. */
 $port = 18000 + random_int(0, 999);
-$proses = proc_open([$php, '-S', "127.0.0.1:$port", APP_ROOT . '/index.php'], [0 => ['pipe', 'r'], 1 => ['file', 'NUL', 'w'], 2 => ['file', 'NUL', 'w']],
+// session.save_path eksplisit: PHP CLI tanpa nilai bawaan (mis. Herd) gagal diam-diam di mode production.
+$proses = proc_open([$php, '-d', 'session.save_path=' . sys_get_temp_dir(), '-S', "127.0.0.1:$port", APP_ROOT . '/index.php'], [0 => ['pipe', 'r'], 1 => ['file', 'NUL', 'w'], 2 => ['file', 'NUL', 'w']],
     $pipa, APP_ROOT, array_merge(getenv(), ['CI_ENV' => 'production']));
 $minta_prod = function ($path, $post = NULL, $cookie = '') use ($port) {
     $c = curl_init("http://127.0.0.1:$port/$path");
