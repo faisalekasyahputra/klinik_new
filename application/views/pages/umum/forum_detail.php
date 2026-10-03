@@ -130,7 +130,7 @@
                     </button>
                 </form>
                 <?php endif; ?>
-                <form method="POST" action="<?= base_url('Umum/delete_diskusi') ?>" class="inline" onsubmit="return confirm('Yakin ingin menghapus diskusi ini?')">
+                <form method="POST" action="<?= base_url('Umum/delete_diskusi') ?>" class="inline" data-konfirmasi="Diskusi ini akan dihapus dari forum." data-konfirmasi-judul="Hapus diskusi?" data-konfirmasi-label="Hapus" data-konfirmasi-bahaya>
                     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                     <input type="hidden" name="id_diskusi" value="<?= $topik['id'] ?>">
                     <button type="submit" class="text-[10px] font-bold bg-zinc-500/10 text-zinc-400 border border-zinc-500/20 px-3 py-1.5 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-all">
@@ -405,7 +405,7 @@
 
                                     <!-- Delete/Report -->
                                     <?php if ($is_admin): ?>
-                                    <form method="POST" action="<?= base_url('Umum/delete_komentar') ?>" class="inline" onsubmit="return confirm('Hapus komentar ini?')">
+                                    <form method="POST" action="<?= base_url('Umum/delete_komentar') ?>" class="inline" data-konfirmasi="Komentar ini akan dihapus dari diskusi." data-konfirmasi-judul="Hapus komentar?" data-konfirmasi-label="Hapus" data-konfirmasi-bahaya>
                                         <input type="hidden" name="<?= $ci->security->get_csrf_token_name(); ?>" value="<?= $ci->security->get_csrf_hash(); ?>">
                                         <input type="hidden" name="id_komentar" value="<?= $kom['id'] ?>">
                                         <input type="hidden" name="id_diskusi" value="<?= $topik['id'] ?>">
@@ -527,8 +527,8 @@
 
 <!-- Report Script -->
 <script>
-function reportKomentar(id) {
-    if (!confirm('Laporkan komentar ini karena mengandung konten tidak pantas?')) return;
+async function reportKomentar(id) {
+    if (!(await KPKP.notify.konfirmasi('Komentar ini akan ditinjau admin karena mengandung konten tidak pantas.', { judul: 'Laporkan komentar?', label: 'Laporkan' }))) return;
     fetch('<?= base_url("Umum/report_komentar") ?>', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},

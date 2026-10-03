@@ -27,8 +27,7 @@
 const PINDAI_JARINGAN_DIIZINKAN = [
     'controllers/Auth.php'                => 'reCAPTCHA (Google) dan login Google OAuth',
     'controllers/Chat.php'                => 'Gemini API (jalur dikarantina 404)',
-    'controllers/Index.php'               => 'proxy foto Sikumbang (Tapera)',
-    'helpers/sikumbang_helper.php'        => 'Sikumbang (Tapera)',
+    'helpers/sikumbang_helper.php'        => 'Sikumbang (Tapera), termasuk proxy foto Index::buka_foto',
     'libraries/Sikaper_api.php'           => 'Sikaper (egov Jateng)',
     'libraries/Simperum_gateway.php'      => 'SIMPERUM (Disperakim Jateng)',
     'libraries/Ternak_api.php'            => 'API Ternak',

@@ -9,19 +9,22 @@
     pointer-events: none;
 }
 
+/* Notifikasi pojok: bahasa visual yang sama dengan .kpkp-dialog (kartu gelap, ikon berpendar, tanpa garis tepi tebal). */
 .kpkp-notification {
     --notification-accent: #00a3b5;
     display: grid;
-    grid-template-columns: 2rem minmax(0, 1fr) 2rem;
+    grid-template-columns: 2.25rem minmax(0, 1fr) 2rem;
     align-items: start;
     gap: .75rem;
-    padding: .875rem;
-    color: #0a1a1f;
-    background: rgba(255, 255, 255, .98);
-    border: 1px solid rgba(0, 80, 95, .14);
-    border-left: 4px solid var(--notification-accent);
-    border-radius: 1rem;
-    box-shadow: 0 18px 45px rgba(10, 26, 31, .2);
+    padding: .9rem .85rem .9rem .9rem;
+    color: #f2f8f8;
+    background:
+        radial-gradient(90% 120% at 0% 0%, color-mix(in srgb, var(--notification-accent) 14%, transparent) 0%, transparent 60%),
+        linear-gradient(180deg, #12303a 0%, #0b1f25 100%);
+    border: 1px solid rgba(138, 172, 176, .18);
+    border-radius: 1.15rem;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .06) inset, 0 20px 50px rgba(0, 0, 0, .45);
+    backdrop-filter: blur(8px);
     font-family: "Plus Jakarta Sans", sans-serif;
     pointer-events: auto;
     opacity: 0;
@@ -39,38 +42,41 @@
     transform: translateY(-.5rem);
 }
 
-.kpkp-notification--success { --notification-accent: #10b981; }
-.kpkp-notification--error { --notification-accent: #ff6b6b; }
+.kpkp-notification--success { --notification-accent: #34d399; }
+.kpkp-notification--error { --notification-accent: #ff7b7b; }
 .kpkp-notification--warning { --notification-accent: #ffd93d; }
-.kpkp-notification--info { --notification-accent: #00a3b5; }
+.kpkp-notification--info { --notification-accent: #38c6d6; }
 
 .kpkp-notification__icon {
     display: inline-flex;
-    width: 2rem;
-    height: 2rem;
+    width: 2.25rem;
+    height: 2.25rem;
     align-items: center;
     justify-content: center;
-    color: #0a1a1f;
-    background: color-mix(in srgb, var(--notification-accent) 22%, white);
-    border-radius: .65rem;
-    font-size: .875rem;
+    color: var(--notification-accent);
+    background: color-mix(in srgb, var(--notification-accent) 14%, transparent);
+    border-radius: .8rem;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--notification-accent) 32%, transparent),
+        0 6px 18px color-mix(in srgb, var(--notification-accent) 20%, transparent);
+    font-size: .9rem;
     font-weight: 900;
 }
 
 .kpkp-notification__title {
     display: block;
-    margin: .05rem 0 .2rem;
-    color: inherit;
-    font-size: .78rem;
+    margin: .1rem 0 .2rem;
+    color: #ffffff;
+    font-size: .82rem;
     font-weight: 800;
-    line-height: 1.2;
+    letter-spacing: -.005em;
+    line-height: 1.25;
 }
 
 .kpkp-notification__message {
     margin: 0;
-    color: #5a7a80;
-    font-size: .75rem;
-    line-height: 1.5;
+    color: #9fb8bc;
+    font-size: .76rem;
+    line-height: 1.55;
     overflow-wrap: anywhere;
 }
 
@@ -80,45 +86,23 @@
     height: 2rem;
     align-items: center;
     justify-content: center;
-    color: #5a7a80;
+    color: #8aacb0;
     background: transparent;
     border: 0;
     border-radius: .65rem;
     cursor: pointer;
     font: inherit;
+    font-size: 1.05rem;
+    transition: background .15s ease, color .15s ease;
 }
 
 .kpkp-notification__close:hover,
 .kpkp-notification__close:focus-visible {
-    color: #0a1a1f;
-    background: rgba(10, 26, 31, .07);
-    outline: 2px solid currentColor;
-    outline-offset: 1px;
+    color: #ffffff;
+    background: rgba(255, 255, 255, .08);
+    outline: none;
 }
-
-.dark .kpkp-notification {
-    color: #ecffb6;
-    background: rgba(15, 42, 48, .98);
-    border-color: rgba(138, 172, 176, .22);
-    border-left-color: var(--notification-accent);
-    box-shadow: 0 18px 45px rgba(0, 0, 0, .42);
-}
-
-.dark .kpkp-notification__icon {
-    color: #ecffb6;
-    background: color-mix(in srgb, var(--notification-accent) 24%, #0f2a30);
-}
-
-.dark .kpkp-notification__message,
-.dark .kpkp-notification__close {
-    color: #8aacb0;
-}
-
-.dark .kpkp-notification__close:hover,
-.dark .kpkp-notification__close:focus-visible {
-    color: #ecffb6;
-    background: rgba(236, 255, 182, .08);
-}
+.kpkp-notification__close:focus-visible { box-shadow: 0 0 0 2px #d6fb00; }
 
 @media (max-width: 640px) {
     .kpkp-notification-region {
@@ -129,8 +113,133 @@
     }
 }
 
+/* Dialog galat di tengah layar (KPKP.notify.dialog). <dialog> bawaan: Esc, latar, dan fokus dari peramban. */
+.kpkp-dialog {
+    position: relative;
+    width: min(25rem, calc(100vw - 2rem));
+    margin: auto;
+    padding: 2rem 1.75rem 1.5rem;
+    overflow: hidden;
+    color: #f2f8f8;
+    background:
+        radial-gradient(120% 70% at 50% 0%, rgba(255, 107, 107, .14) 0%, rgba(255, 107, 107, 0) 60%),
+        linear-gradient(180deg, #12303a 0%, #0b1f25 100%);
+    border: 1px solid rgba(138, 172, 176, .18);
+    border-radius: 1.75rem;
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, .06) inset,
+        0 32px 80px rgba(0, 0, 0, .55);
+    font-family: "Plus Jakarta Sans", sans-serif;
+    text-align: center;
+    animation: kpkp-dialog-masuk .22s cubic-bezier(.2, .9, .3, 1.2);
+}
+.kpkp-dialog::backdrop {
+    background: rgba(4, 12, 15, .7);
+    backdrop-filter: blur(6px);
+    animation: kpkp-dialog-latar .2s ease;
+}
+.kpkp-dialog__icon {
+    display: inline-flex;
+    width: 3.5rem;
+    height: 3.5rem;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    color: #ff8f8f;
+    background: rgba(255, 107, 107, .12);
+    border-radius: 1.1rem;
+    box-shadow: 0 0 0 1px rgba(255, 107, 107, .28), 0 10px 30px rgba(255, 107, 107, .18);
+}
+.kpkp-dialog__title {
+    margin: 0 0 .45rem;
+    color: #ffffff;
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    line-height: 1.3;
+}
+.kpkp-dialog__message {
+    margin: 0 auto 1.5rem;
+    max-width: 21rem;
+    color: #9fb8bc;
+    font-size: .875rem;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+}
+.kpkp-dialog__actions {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+}
+.kpkp-dialog__btn {
+    display: block;
+    width: 100%;
+    padding: .8rem 1rem;
+    color: #e6f2f2;
+    background: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(138, 172, 176, .22);
+    border-radius: 1rem;
+    cursor: pointer;
+    font: inherit;
+    font-size: .875rem;
+    font-weight: 700;
+    text-align: center;
+    text-decoration: none;
+    transition: background .15s ease, border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+.kpkp-dialog__btn:hover {
+    background: rgba(255, 255, 255, .08);
+    border-color: rgba(138, 172, 176, .4);
+}
+.kpkp-dialog__btn--utama {
+    color: #0a1a1f;
+    background: #d6fb00;
+    border-color: #d6fb00;
+    box-shadow: 0 10px 26px rgba(214, 251, 0, .22);
+}
+.kpkp-dialog__btn--utama:hover {
+    background: #e2ff3d;
+    border-color: #e2ff3d;
+    transform: translateY(-1px);
+}
+.kpkp-dialog__btn:focus-visible {
+    outline: 2px solid #d6fb00;
+    outline-offset: 3px;
+}
+/* Varian: tanya (konfirmasi biasa, aksen lemon) dan bahaya (tindakan merusak, tombol utama merah). */
+.kpkp-dialog--tanya {
+    background:
+        radial-gradient(120% 70% at 50% 0%, rgba(214, 251, 0, .1) 0%, rgba(214, 251, 0, 0) 60%),
+        linear-gradient(180deg, #12303a 0%, #0b1f25 100%);
+}
+.kpkp-dialog--tanya .kpkp-dialog__icon {
+    color: #d6fb00;
+    background: rgba(214, 251, 0, .1);
+    box-shadow: 0 0 0 1px rgba(214, 251, 0, .28), 0 10px 30px rgba(214, 251, 0, .14);
+}
+.kpkp-dialog--bahaya .kpkp-dialog__btn--utama {
+    color: #ffffff;
+    background: #e5484d;
+    border-color: #e5484d;
+    box-shadow: 0 10px 26px rgba(229, 72, 77, .3);
+}
+.kpkp-dialog--bahaya .kpkp-dialog__btn--utama:hover {
+    background: #f05a5f;
+    border-color: #f05a5f;
+}
+@keyframes kpkp-dialog-masuk {
+    from { opacity: 0; transform: translateY(.75rem) scale(.96); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes kpkp-dialog-latar {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .kpkp-notification {
+    .kpkp-notification,
+    .kpkp-dialog {
         transition: none;
+        animation: none;
     }
 }

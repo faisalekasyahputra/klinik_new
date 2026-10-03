@@ -185,7 +185,7 @@ foreach ($intervensi as $row) {
               <a href="<?= base_url('Rekam_Kawasan?tahun=' . $tahun . '&triwulan=' . $triwulan . '&ubah=' . (int) $row['id']) ?>"
                  class="tombol-aksi"><i class="ph ph-pencil-simple"></i><span>Ubah</span></a>
               <form method="post" action="<?= base_url('Rekam_Kawasan/hapus_intervensi') ?>"
-                    onsubmit="return confirm('Hapus intervensi ini?')">
+                    data-konfirmasi="Intervensi ini akan dihapus dari laporan." data-konfirmasi-judul="Hapus intervensi?" data-konfirmasi-label="Hapus" data-konfirmasi-bahaya>
                 <input type="hidden" name="<?= $e($csrf_name) ?>" value="<?= $e($csrf_hash) ?>">
                 <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
                 <input type="hidden" name="intervensi_id" value="<?= (int) $row['id'] ?>">
@@ -362,7 +362,7 @@ foreach ($intervensi as $row) {
     <section class="kartu-admin isi-kartu">
       <form method="post" action="<?= base_url('Rekam_Kawasan/kirim') ?>"
             class="flex flex-wrap items-center gap-3"
-            onsubmit="return confirm('Kirim laporan periode ini? Setelah terkirim, laporan terkunci.')">
+            data-konfirmasi="Setelah terkirim, laporan periode ini terkunci." data-konfirmasi-judul="Kirim laporan?" data-konfirmasi-label="Kirim laporan">
         <input type="hidden" name="<?= $e($csrf_name) ?>" value="<?= $e($csrf_hash) ?>">
         <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
         <span class="flex-1 text-sm text-gray-500 dark:text-brand-muted">

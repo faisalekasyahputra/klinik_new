@@ -21,6 +21,8 @@ $config['data_lifecycle'] = [
         'jejak_audit_hari'              => 1825,  // 5 tahun; jejak audit sengaja disimpan lama
         'cache_hulu_hari'               => 30,    // cache layanan luar yang tak tersegarkan sekian hari (TTL terpanjang 1 hari)
         'draf_nik_dipindah_hari'        => 30,    // draf akun lama yang dilepas saat NIK dipindahkan ke pemilik terverifikasi
+        'cache_foto_hari'               => 30,    // salinan foto SIKUMBANG di assets/cache_foto (diunduh ulang sekali bila diminta lagi)
+        'cache_foto_maks_mb'            => 512,   // batas total folder itu; yang tertua disapu lebih dulu
     ],
 
     /* PENGHAPUSAN 2: hapus akun. Nasib SETIAP kolom yang menunjuk ke usr_akun. cascade = barisnya ikut
@@ -93,10 +95,8 @@ $config['data_lifecycle'] = [
             'perlindungan' => 'HTTPS terverifikasi', 'pribadi' => FALSE],
         'libraries/Ternak_api.php'       => ['pihak' => 'API Ternak/KRS Jawa 3', 'arah' => 'keluar+masuk', 'data' => 'artikel dan desain publik; tidak ada data pribadi',
             'perlindungan' => 'HTTPS terverifikasi', 'pribadi' => FALSE],
-        'controllers/Index.php'          => ['pihak' => 'Sikumbang Tapera', 'arah' => 'keluar+masuk', 'data' => 'pencarian perumahan publik; tidak ada data pribadi',
+        'helpers/sikumbang_helper.php'   => ['pihak' => 'Sikumbang Tapera', 'arah' => 'keluar+masuk', 'data' => 'data dan foto perumahan publik (termasuk proxy foto Index::buka_foto); tidak ada data pribadi',
             'perlindungan' => 'HTTPS terverifikasi; cache lokal hanya berisi data publik', 'pribadi' => FALSE],
-        'helpers/sikumbang_helper.php'   => ['pihak' => 'Sikumbang Tapera', 'arah' => 'keluar+masuk', 'data' => 'data perumahan publik; tidak ada data pribadi',
-            'perlindungan' => 'HTTPS terverifikasi', 'pribadi' => FALSE],
         'controllers/Chat.php'           => ['pihak' => 'Google Gemini', 'arah' => 'keluar', 'data' => 'teks pertanyaan warga (jalur dikarantina 404, tidak aktif)',
             'perlindungan' => 'HTTPS; kunci API di header (bukan URI); jalur dimatikan', 'pribadi' => TRUE],
         'libraries/Upload_scanner.php'   => ['pihak' => 'ClamAV lokal (clamd)', 'arah' => 'keluar', 'data' => 'isi berkas unggahan ke pemindai antivirus di mesin yang sama/jaringan internal',

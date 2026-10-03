@@ -20,11 +20,29 @@ $config['rate_limit_policies'] = [
         'window' => 300,
         'dimensions' => ['ip'],
     ],
+    // Gagal masuk per pasangan IP + nama masuk (email/username apa adanya, huruf kecil). Pengganti
+    // kunci per akun (3 Okt 2026): yang tertahan hanya IP penebak, pemilik akun dari IP lain tetap
+    // bisa masuk. Kunci memakai nama masuk, bukan id akun, supaya akun ada dan tidak ada berperilaku sama.
+    'login_akun' => ['limit' => 5, 'window' => 900, 'dimensions' => ['key']],
+    // Index::buka_foto: unduhan foto yang BELUM ada di cache (hit cache tidak dihitung). Satu tampilan
+    // /cari_rumah memuat 10-20 foto; 120 per 10 menit cukup untuk menjelajah, bukan untuk menyedot hulu.
+    'foto_hulu' => ['limit' => 120, 'window' => 600, 'dimensions' => ['ip']],
     'register' => [
         'limit' => 5,
         'window' => 600,
         'dimensions' => ['ip'],
     ],
+    /* Kode OTP pendaftaran (libraries/Otp_pendaftaran.php). Hitungan di sesi (jeda berlipat, 5 kiriman,
+       5 kode salah) hilang begitu cookie dibuang atau email diganti, jadi batas yang mengikat dipegang
+       di sini, per email TUJUAN (kunci = sha256 email huruf kecil, bukan email polos):
+       - otp_kirim: setiap kode yang hendak dikirim, 5 per jam per email (meredam banjir email ke satu alamat).
+       - otp_salah: hanya kode SALAH, 10 per jam per email; sesudah itu kode benar pun ditolak.
+       - otp_salah_ip: hanya kode SALAH, 30 per jam per IP, untuk penebak yang berganti-ganti email.
+       Akibatnya pendaftaran sah untuk email yang sedang dibanjiri orang lain ikut tertahan sampai
+       jendelanya habis; pesannya umum dan tidak menyatakan apa pun tentang akun. */
+    'otp_kirim'    => ['limit' => 5,  'window' => 3600, 'dimensions' => ['key']],
+    'otp_salah'    => ['limit' => 10, 'window' => 3600, 'dimensions' => ['key']],
+    'otp_salah_ip' => ['limit' => 30, 'window' => 3600, 'dimensions' => ['ip']],
     'simperum_lookup' => [
         'limit' => 10,
         'window' => 60,

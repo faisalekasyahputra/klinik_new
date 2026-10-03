@@ -245,7 +245,7 @@ foreach ($tapera_data as $p) {
         </p>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
             <?php foreach (array_slice($all_photos, 0, 8) as $i => $foto): ?>
-            <div class="photo-thumb" onclick="openLightbox('<?= htmlspecialchars($foto) ?>')">
+            <div class="photo-thumb" onclick="openLightbox(<?= htmlspecialchars(json_encode((string) $foto), ENT_QUOTES) ?>)">
                 <img src="<?= htmlspecialchars($foto) ?>" alt="Foto proyek" loading="lazy"
                      onerror="this.closest('.photo-thumb').style.display='none'">
                 <div class="overlay"><i class="fa-solid fa-magnifying-glass-plus"></i></div>
@@ -413,7 +413,7 @@ foreach ($tapera_data as $p) {
                     <div style="display:flex;gap:6px;margin-bottom:16px;">
                         <?php foreach ($foto_extra as $fe): ?>
                         <div style="flex:1;aspect-ratio:4/3;border-radius:10px;overflow:hidden;border:1px solid rgba(255,255,255,.06);cursor:pointer;"
-                             onclick="openLightbox('<?= htmlspecialchars($fe) ?>')">
+                             onclick="openLightbox(<?= htmlspecialchars(json_encode((string) $fe), ENT_QUOTES) ?>)">
                             <img src="<?= htmlspecialchars($fe) ?>" alt="" loading="lazy"
                                  style="width:100%;height:100%;object-fit:cover;transition:transform .3s;"
                                  onmouseover="this.style.transform='scale(1.1)'"
@@ -432,7 +432,7 @@ foreach ($tapera_data as $p) {
                             <?php foreach ($tipe_foto as $tipe): ?>
                             <div style="flex-shrink:0;width:120px;">
                                 <div style="border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.08);aspect-ratio:4/3;cursor:pointer;"
-                                     onclick="openLightbox('<?= $TAPERA_BASE . htmlspecialchars($tipe['fotoTampak']) ?>')">
+                                     onclick="openLightbox(<?= htmlspecialchars(json_encode($TAPERA_BASE . $tipe['fotoTampak']), ENT_QUOTES) ?>)">
                                     <img src="<?= $TAPERA_BASE . htmlspecialchars($tipe['fotoTampak']) ?>" alt="Tipe <?= htmlspecialchars($tipe['nama'] ?? '') ?>"
                                          loading="lazy"
                                          style="width:100%;height:100%;object-fit:cover;transition:transform .3s;"

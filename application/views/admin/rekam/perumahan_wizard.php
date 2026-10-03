@@ -332,7 +332,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
                   </div>
                   <?php if ( ! $terkunci): ?>
                     <form method="post" action="<?= base_url('Rekam_Perumahan/hapus_sumber') ?>"
-                          onsubmit="return confirm('Hapus <?= $e($sumber_label[$kode] ?? $kode) ?> dari program ini?')">
+                          data-konfirmasi="<?= $e($sumber_label[$kode] ?? $kode) ?> akan dihapus dari program ini." data-konfirmasi-judul="Hapus sumber data?" data-konfirmasi-label="Hapus" data-konfirmasi-bahaya>
                       <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
                       <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
                       <input type="hidden" name="program" value="<?= $e($program_aktif) ?>">
@@ -495,7 +495,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
         </form>
         <?php if ( ! $terkunci): ?>
           <form method="post" action="<?= base_url('Rekam_Perumahan/kirim') ?>"
-                onsubmit="return confirm('Kirim laporan ini? Setelah terkirim, laporan terkunci sampai peninjau mengembalikannya.')">
+                data-konfirmasi="Setelah terkirim, laporan terkunci sampai peninjau mengembalikannya." data-konfirmasi-judul="Kirim laporan?" data-konfirmasi-label="Kirim laporan">
             <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
             <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
             <button class="tombol-utama"><i class="ph ph-paper-plane-tilt"></i><span>Kirim laporan</span></button>

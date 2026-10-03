@@ -23,7 +23,13 @@ $daftar = function ($email, $tos) use ($BASE, &$jars) {
     $post = ['email' => $email, 'password' => $GLOBALS['sandi'], 'password_confirm' => $GLOBALS['sandi'], 'csrf_kpkp_token' => $csrf] + ($tos ? ['tos_agree' => 'on'] : []);
     $c = curl_init($BASE . 'Auth/do_register'); curl_setopt_array($c, [CURLOPT_RETURNTRANSFER => 1, CURLOPT_COOKIEJAR => $j, CURLOPT_COOKIEFILE => $j, CURLOPT_POSTFIELDS => http_build_query($post), CURLOPT_HTTPHEADER => ['X-Requested-With: XMLHttpRequest']]);
     $b = (string) curl_exec($c); curl_close($c); if (getenv("UJI_DEBUG")) echo $b, "
-"; return json_decode($b, TRUE) ?: ['raw' => substr($b, 0, 200)];
+";
+    if ((json_decode($b, TRUE)['status'] ?? '') === 'otp_required') { // akun baru lahir sesudah kode OTP benar
+        require_once __DIR__ . '/_otp_uji.php';
+        $c = curl_init($BASE . 'Auth/do_verifikasi_email'); curl_setopt_array($c, [CURLOPT_RETURNTRANSFER => 1, CURLOPT_COOKIEJAR => $j, CURLOPT_COOKIEFILE => $j, CURLOPT_POSTFIELDS => http_build_query(['kode_otp' => kode_otp_uji($email), 'csrf_kpkp_token' => $csrf]), CURLOPT_HTTPHEADER => ['X-Requested-With: XMLHttpRequest']]);
+        $b = (string) curl_exec($c); curl_close($c);
+    }
+    return json_decode($b, TRUE) ?: ['raw' => substr($b, 0, 200)];
 };
 $ada = function ($email) use ($db) { $st = $db->prepare('SELECT id FROM usr_akun WHERE email=?'); $st->bind_param('s', $email); $st->execute(); return $st->get_result()->fetch_row()[0] ?? NULL; };
 // Ember batas laju pendaftaran per IP dipinjam lalu dikembalikan utuh (::1 tercatat per /64),

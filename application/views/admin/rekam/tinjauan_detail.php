@@ -225,7 +225,7 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
 
       <div class="mt-3 grid-kartu grid md:grid-cols-2">
         <form method="post" action="<?= base_url('Rekam_Tinjauan/terima') ?>"
-              onsubmit="return confirm('Terima laporan ini?')">
+              data-konfirmasi="Laporan ini akan ditandai diterima." data-konfirmasi-judul="Terima laporan?" data-konfirmasi-label="Terima">
           <input type="hidden" name="<?= $e($csrf_name) ?>" value="<?= $e($csrf_hash) ?>">
           <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
           <p class="text-sm text-gray-500 dark:text-brand-muted">

@@ -311,10 +311,14 @@ echo "\n== 3. Akun terkunci ==\n";
  * penguncian cuma menyalin cakupan uji lain dan menambah sebab merah yang bukan
  * miliknya.
  */
+/* Sejak 3 Okt 2026 (perbaikan keamanan sedang, penguncian oleh orang lain) login TIDAK lagi
+   menolak akun berpenanda kunci: kunci per akun bisa dipasang siapa saja yang tahu email korban,
+   jadi penebak ditahan per pasangan IP + nama masuk. Penanda lama (baris yang terkunci sebelum
+   rilis) tetap terlihat admin dan tetap bisa dibuka tombolnya; yang diuji di bawah tombol itu. */
 q('UPDATE usr_akun SET gagal_masuk=5, terkunci_sampai=DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE id=?', [$idS]);
-[$masuk, $pesan] = coba_login($emailS, SANDI);
-cek( ! $masuk, 'Akun terkunci tidak bisa login walau sandinya benar');
-cek(stripos($pesan, 'terkunci') !== FALSE, 'Penolakannya menyebut kunci, bukan sandi salah');
+[$masuk, ] = coba_login($emailS, SANDI);
+cek($masuk, 'Penanda kunci lama tidak menahan pemilik yang sandinya benar');
+q('UPDATE usr_akun SET gagal_masuk=5, terkunci_sampai=DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE id=?', [$idS]);
 
 // ===================================================== 8. PERAN LAIN NIHIL EFEK
 echo "\n== 8. Peran bukan admin: dibuktikan lewat DB, bukan kode HTTP ==\n";

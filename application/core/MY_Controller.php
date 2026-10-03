@@ -42,6 +42,22 @@ class MY_Controller extends CI_Controller {
 
         $this->usir_kalau_nonaktif();
         $this->enforce_single_session_and_password_expiry();
+        $this->enforce_onboarding();
+    }
+
+    /**
+     * Sesi tanpa peran (akun baru yang belum menyelesaikan onboarding) hanya boleh berada di
+     * controller Auth: onboarding, save_onboarding, logout. Tanpa ini akun baru bisa meninggalkan
+     * onboarding dan membuka /akun dengan peran kosong (ditemukan 3 Okt 2026).
+     */
+    private function enforce_onboarding() {
+        if ( ! $this->session->userdata('is_logged') || ! empty($this->session->userdata('role'))) { return; }
+        if (strtolower((string) $this->router->fetch_class()) === 'auth') { return; }
+        if ($this->input->is_ajax_request()) {
+            $this->output->set_status_header(403); header('Content-Type: application/json');
+            echo json_encode(['status' => 'error', 'code' => 'onboarding_belum_selesai', 'message' => 'Lengkapi pendaftaran dan pilih peran Anda terlebih dahulu.']); exit;
+        }
+        redirect('Auth/onboarding'); exit;
     }
 
     /**
@@ -1006,9 +1022,12 @@ class MY_Controller extends CI_Controller {
         $best = NULL; $length = -1;
         foreach (($this->config->item('dashboard_modules') ?: []) as $key => $module) {
             if (empty($module['roles']) || !in_array($role,$module['roles'],TRUE)) { continue; }
-            $url = trim($module['url'] ?? '', '/');
-            if ($url !== '' && (strcasecmp($uri,$url)===0 || stripos($uri,$url.'/')===0) && strlen($url)>$length) {
-                $best=$key; $length=strlen($url);
+            // Awalan terpanjang menang; 'aksi' = path tambahan milik modul di luar url-nya.
+            foreach (array_merge([$module['url'] ?? ''], (array) ($module['aksi'] ?? [])) as $url) {
+                $url = trim($url, '/');
+                if ($url !== '' && (strcasecmp($uri,$url)===0 || stripos($uri,$url.'/')===0) && strlen($url)>$length) {
+                    $best=$key; $length=strlen($url);
+                }
             }
         }
         if ($best !== NULL && ! $this->module_privilege_allowed($best)) {

@@ -268,7 +268,10 @@ foreach([$admin1Id,$admin2Id,$foreignId] as $adminId)preserve_rate_key($db,'admi
 $admin1=login_session($admin1Email,'Admin_Kabkota');$admin2=login_session($admin2Email,'Admin_Kabkota');$foreign=login_session($foreignEmail,'Admin_Kabkota');
 $detail=$admin1->get('Admin_Kabkota/detail/'.$queueId);$evidence=$admin1->get('Admin_Kabkota/evidence/'.$queueId.'/self_photo');
 cek($detail['status']===200&&strpos($detail['body'],$ticket)!==FALSE&&strpos($detail['body'],'Mode Simulasi')!==FALSE&&strpos($detail['body'],'Dipilih warga')!==FALSE,'Admin Semarang melihat detail, ruleset, dan mode simulasi');
-cek($evidence['status']===200&&$evidence['body']!=='','Admin Semarang membaca bukti privat');
+/* Sejak 3 Okt 2026 (perbaikan keamanan sedang, sakelar B2): selama identitas_warga_kabkota menunggu keputusan,
+   berkas identitas (termasuk foto diri) tidak tersaji ke admin kab/kota; foto rumah tetap (uji_keamanan_sedang G3). */
+$b2_menunggu=strpos((string)@file_get_contents(dirname(__DIR__,2).'/application/config/kebijakan_data.php'),"\$config['identitas_warga_kabkota'] = 'menunggu_keputusan';")!==FALSE;
+cek($b2_menunggu?$evidence['status']===404:($evidence['status']===200&&$evidence['body']!==''),$b2_menunggu?'Admin Semarang tidak menerima foto diri selama B2 menunggu keputusan':'Admin Semarang membaca bukti privat');
 // B2 (config/kebijakan_data.php): selama menunggu keputusan dinas, detail ikut menyamarkan identitas seperti daftar antrean.
 $b2Menunggu=strpos((string)file_get_contents(dirname(__DIR__,2).'/application/config/kebijakan_data.php'),"= 'menunggu_keputusan';")!==FALSE;
 if($b2Menunggu)cek(strpos($detail['body'],'Warga Contoh')!==FALSE&&strpos($detail['body'],'Alamat Koreksi Uji R6')===FALSE&&strpos($detail['body'],'Warga Uji R6')===FALSE,'B2: detail admin kab/kota tidak menampilkan nama dan alamat asli warga');

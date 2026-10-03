@@ -48,7 +48,7 @@
                            akses_universitas()), jadi ucwords() generik di
                            bawah sudah cukup - tidak perlu kasus khusus lagi. */
                         $peran = $this->session->userdata('role');
-                        echo $peran ? ucwords(str_replace('_', ' ', $peran)) : 'Super Admin';
+                        echo $peran ? ucwords(str_replace('_', ' ', $peran)) : 'Belum Memilih Peran';
                         ?>
                     </div>
                 </div>

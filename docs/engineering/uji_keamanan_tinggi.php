@@ -206,13 +206,24 @@ try {
         cek(is_array($hasil) && satu('SELECT kata_sandi FROM usr_akun WHERE id=?', [$id])['kata_sandi'] !== NULL,
             'Login Google berikutnya (google_id sama): sandi tetap');
 
-        // G5: email baru membuat akun baru yang emailnya terverifikasi.
+        // G6: email yang sudah terbukti lewat OTP pendaftaran TIDAK dikecualikan (keputusan pemilik produk,
+        // perilaku PR #13): penautan Google pertama tetap mencabut sandi dan sesi, lalu mewajibkan sandi baru.
+        [$id, $email] = akun_baru('Uji Google 6', ['email_verified_at' => date('Y-m-d H:i:s', strtotime('-1 day')),
+            'sesi_aktif_hash' => str_repeat('c', 64), 'sesi_aktif_id_hash' => str_repeat('d', 64), 'sesi_aktif_at' => date('Y-m-d H:i:s')]);
+        $g = $gid();
+        $hasil = $model->check_google_user($data($email, $g), TRUE);
+        $baris = satu('SELECT google_id, kata_sandi, sesi_aktif_hash, sesi_aktif_id_hash, sandi_diganti_at, sandi_kedaluwarsa_at FROM usr_akun WHERE id=?', [$id]);
+        cek(is_array($hasil) && $baris['google_id'] === $g && $baris['kata_sandi'] === NULL
+            && $baris['sesi_aktif_hash'] === NULL && $baris['sesi_aktif_id_hash'] === NULL
+            && $baris['sandi_diganti_at'] === NULL && strtotime((string) $baris['sandi_kedaluwarsa_at']) <= time() + 5,
+            'Email sudah terverifikasi (OTP): penautan Google pertama tetap mencabut sandi dan sesi, sandi baru diwajibkan');
+
+        // G5: email yang belum terdaftar TIDAK membuat akun (harus mendaftar dan memilih peran dulu).
         $email = $TAG . '_baru@uji-tinggi.test';
         $hasil = $model->check_google_user($data($email, $gid()), TRUE);
-        $baris = satu('SELECT id, kata_sandi, email_verified_at FROM usr_akun WHERE email=?', [$email]);
+        $baris = satu('SELECT id FROM usr_akun WHERE email=?', [$email]);
         if ($baris) { $akun_uji[] = (int) $baris['id']; }
-        cek(is_array($hasil) && ($hasil[1] ?? '') === '0' && $baris && $baris['kata_sandi'] === NULL && $baris['email_verified_at'] !== NULL,
-            'Email baru: akun baru tanpa sandi, email terverifikasi');
+        cek($hasil === 'belum_terdaftar' && ! $baris, 'Email belum terdaftar: ditolak, tidak ada akun yang dibuat');
     }
 } catch (Throwable $e) {
     cek(FALSE, 'Lapis unit Google melempar ' . get_class($e) . ': ' . $e->getMessage());
@@ -346,8 +357,31 @@ try {
         'POST Auth/do_verify_email tidak ada lagi (404) dan tidak menandai email terverifikasi');
     cek(minta($j, 'Auth/verify_pending', NULL, FALSE)['kode'] === 404, 'Halaman verifikasi email simulasi tidak ada lagi (404)');
     $r = minta(jar(), 'Auth/google_callback?state=palsu&code=palsu');
-    cek($r['kode'] === 200 && strpos($r['badan'], 'window.opener.location.href') !== FALSE && strpos($r['badan'], 'login') !== FALSE,
-        'google_callback dengan state palsu: popup ditutup ke halaman masuk, tanpa menukar kode');
+    cek($r['kode'] === 200 && substr($r['url'], -10) === 'Auth/login',
+        'google_callback dengan state palsu: dialihkan ke halaman masuk, tanpa menukar kode');
+    // Bentuk query yang sungguh dikirim Google; allowlist Input_guard pernah menjawabnya 400.
+    $r = minta(jar(), 'Auth/google_callback?state=palsu&code=palsu&iss=https://accounts.google.com&scope=email+profile+openid&authuser=0&prompt=consent&hd=contoh.go.id');
+    cek($r['kode'] === 200, 'google_callback menerima parameter tambahan Google (iss, scope, authuser, prompt, hd)');
+    cek(minta(jar(), 'Auth/google_callback?error=access_denied&state=palsu')['kode'] === 200, 'google_callback saat warga menekan Batal tidak dijawab 400');
+
+    // Gerbang onboarding: sesi tanpa peran tidak boleh keluar dari controller Auth.
+    ember_ip('login');
+    [, $email_o] = akun_baru('Uji Tanpa Peran', ['peran' => NULL, 'profil_lengkap' => 0]);
+    $j = masuk($email_o, $SANDI);
+    foreach (['akun', 'akun/profil', ''] as $jalur) {
+        $r = minta($j, $jalur);
+        cek(substr($r['url'], -15) === 'Auth/onboarding', 'Sesi tanpa peran membuka "' . ($jalur ?: 'beranda') . '": dikembalikan ke onboarding');
+    }
+    $r = minta($j, 'Auth/logout');
+    cek(strpos($r['url'], 'onboarding') === FALSE, 'Sesi tanpa peran tetap bisa keluar (logout tidak tertahan gerbang)');
+
+    // Akun OTP yang sandinya dicabut penautan Google sebelum onboarding selesai: onboarding meminta sandi baru.
+    [$id_o, $email_o] = akun_baru('Uji Onboarding Tanpa Sandi', ['peran' => NULL, 'profil_lengkap' => 0, 'email_verified_at' => date('Y-m-d H:i:s')]);
+    $j = masuk($email_o, $SANDI);
+    jalan('UPDATE usr_akun SET kata_sandi=NULL, sandi_diganti_at=NULL, sandi_kedaluwarsa_at=NOW() WHERE id=?', [$id_o]);
+    $r = minta($j, 'akun');
+    cek(substr($r['url'], -15) === 'Auth/onboarding' && strpos($r['badan'], 'id="ob_password"') !== FALSE,
+        'Akun tanpa sandi yang belum onboarding: dibawa ke onboarding yang meminta sandi baru');
 
     // Akun yang sandinya dicabut check_google_user(): disimulasikan pada sesi yang sudah ada.
     ember_ip('profile_password'); // hanya percobaan gagal yang dihitung, per IP: jalan lain bisa memenuhinya

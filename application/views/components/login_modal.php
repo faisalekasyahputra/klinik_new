@@ -362,10 +362,9 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
     });
 
     document.getElementById('kpkp-login-modal-google').addEventListener('click', function () {
-        var w = 500, h = 600;
-        var left = (screen.width - w) / 2, top = (screen.height - h) / 2;
-        window.open('<?= base_url('Auth/google') ?>', 'GoogleLogin',
-            'width=' + w + ',height=' + h + ',top=' + top + ',left=' + left + ',scrollbars=yes');
+        // Halaman penuh, bukan popup (COOP memutus window.opener). ?from= membawa warga kembali ke halaman ini.
+        window.location.href = '<?= base_url('Auth/google') ?>?from='
+            + encodeURIComponent(location.pathname.slice(<?= strlen((string) parse_url(base_url(), PHP_URL_PATH)) ?>) + location.search);
     });
 
     document.querySelectorAll('.kpkp-login-modal__demo-card').forEach(function (card) {

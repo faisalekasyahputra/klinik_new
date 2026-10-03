@@ -225,7 +225,25 @@
                         </form>
 
                         <!-- Panel Daftar Cepat -->
-                        <form x-show="authTab === 'daftar'" x-cloak @submit.prevent="doRegister()" class="space-y-3">
+                        <!-- Langkah kode OTP: akun baru dibuat sesudah email terbukti milik pendaftar -->
+                        <form x-show="authTab === 'daftar' && otpEmail" x-cloak @submit.prevent="doVerifikasiOtp()" class="space-y-3">
+                            <div x-show="regError" x-cloak class="rounded-lg px-3 py-2 text-[11px] font-semibold" style="background:rgba(220,38,38,.08);color:#dc2626" x-text="regError"></div>
+                            <p class="text-[11px]" style="color:var(--portal-text-muted)">Kode 6 angka sudah dikirim ke <strong x-text="otpEmail"></strong>. Berlaku 10 menit; periksa juga folder spam.</p>
+                            <label class="block text-[11px] font-bold">Kode Verifikasi <span style="color:#dc2626">*</span>
+                                <input x-ref="regOtp" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" :required="!!otpEmail" placeholder="6 angka" class="mt-1 block w-full rounded-lg px-3 py-2.5 text-center text-sm font-bold tracking-[.4em] outline-none" style="background:var(--portal-bg);border:1px solid var(--portal-border);text-indent:.4em">
+                            </label>
+                            <button type="submit" :disabled="authLoading" class="w-full rounded-lg py-2.5 text-[11px] font-extrabold uppercase disabled:opacity-60" style="background:#d6fb00;color:#0a1a1f">
+                                <span x-show="!authLoading">Verifikasi & Lanjutkan</span>
+                                <span x-show="authLoading" x-cloak><i class="fa-solid fa-circle-notch fa-spin mr-1"></i> Memproses...</span>
+                            </button>
+                            <p class="text-center text-[11px]" style="color:var(--portal-text-muted)">
+                                <button type="button" class="font-bold underline disabled:cursor-not-allowed disabled:no-underline disabled:opacity-50" :disabled="otpTunggu > 0 || otpBatas" @click="kirimUlangOtp()" x-text="labelKirimUlang">Kirim ulang kode</button>
+                                <span class="mx-1">|</span>
+                                <button type="button" class="font-bold underline" @click="otpEmail = ''; regError = ''">Ganti email</button>
+                            </p>
+                        </form>
+
+                        <form x-show="authTab === 'daftar' && !otpEmail" x-cloak @submit.prevent="doRegister()" class="space-y-3">
                             <div x-show="regError" x-cloak class="rounded-lg px-3 py-2 text-[11px] font-semibold" style="background:rgba(220,38,38,.08);color:#dc2626" x-text="regError"></div>
                             <p class="text-[11px]" style="color:var(--portal-text-muted)">Cukup isi data dasar, dokumen dilengkapi di langkah berikutnya.</p>
                             <label class="block text-[11px] font-bold">Nama Perusahaan <span style="color:#dc2626">*</span>
@@ -420,6 +438,8 @@ function srp2Wizard(config) {
         authLoading: false,
         authError: '',
         regError: '',
+        otpEmail: '', // terisi sesudah do_register menjawab otp_required
+        otpTunggu: 0, otpBatas: false, otpTimer: null,
 
         files: {},
         fileStatus: {},
@@ -577,10 +597,10 @@ function srp2Wizard(config) {
                 fd.append(this.csrfName, this.csrfHash);
                 const res = await fetch(this.baseUrl + 'Auth/do_register', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await res.json();
-                if (data.status === 'success') {
-                    this.isLogged = true; this.isPengembang = true;
-                    this.registrationId = data.pengajuan_id;
-                    this.showToast('Akun berhasil dibuat!', false, 'success');
+                if (data.status === 'otp_required') {
+                    this.otpEmail = data.email;
+                    this.mulaiJedaOtp(data.tunggu, data.batas);
+                    this.$nextTick(() => this.$refs.regOtp && this.$refs.regOtp.focus());
                 } else {
                     this.regError = data.message || 'Gagal mendaftar.';
                 }
@@ -588,6 +608,63 @@ function srp2Wizard(config) {
                 this.regError = 'Terjadi kesalahan koneksi. Silakan coba lagi.';
             } finally {
                 this.authLoading = false;
+            }
+        },
+
+        async kirimOtp(jalur, isian) {
+            const fd = new FormData();
+            Object.keys(isian).forEach(k => fd.append(k, isian[k]));
+            fd.append(this.csrfName, this.csrfHash);
+            const res = await fetch(this.baseUrl + jalur, { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            return res.json();
+        },
+
+        async doVerifikasiOtp() {
+            this.authLoading = true; this.regError = '';
+            try {
+                const data = await this.kirimOtp('Auth/do_verifikasi_email', { kode_otp: this.$refs.regOtp.value });
+                if (data.status === 'success') {
+                    this.isLogged = true; this.isPengembang = true;
+                    this.registrationId = data.pengajuan_id;
+                    this.otpEmail = '';
+                    this.showToast('Akun berhasil dibuat!', false, 'success');
+                } else {
+                    this.regError = data.message || 'Kode verifikasi salah.';
+                }
+            } catch (e) {
+                this.regError = 'Terjadi kesalahan koneksi. Silakan coba lagi.';
+            } finally {
+                this.authLoading = false;
+            }
+        },
+
+        // Hitung mundur tombol kirim ulang. Jeda (berlipat dua tiap pengiriman) ditegakkan server; ini cerminannya.
+        mulaiJedaOtp(detik, batas) {
+            clearInterval(this.otpTimer);
+            this.otpBatas = !!batas;
+            this.otpTunggu = Math.max(0, parseInt(detik, 10) || 0);
+            if (this.otpTunggu > 0) {
+                this.otpTimer = setInterval(() => { if (--this.otpTunggu <= 0) clearInterval(this.otpTimer); }, 1000);
+            }
+        },
+
+        get labelKirimUlang() {
+            if (this.otpBatas) return 'Batas permintaan kode tercapai';
+            if (this.otpTunggu <= 0) return 'Kirim ulang kode';
+            const m = Math.floor(this.otpTunggu / 60), d = this.otpTunggu % 60;
+            return 'Kirim ulang kode dalam ' + m + ':' + String(d).padStart(2, '0');
+        },
+
+        async kirimUlangOtp() {
+            if (this.otpTunggu > 0 || this.otpBatas) return;
+            this.regError = '';
+            try {
+                const data = await this.kirimOtp('Auth/kirim_ulang_otp', {});
+                this.mulaiJedaOtp(data.tunggu, data.batas);
+                if (data.status === 'success') { this.showToast(data.message, false, 'success'); }
+                else { this.regError = data.message || 'Kode tidak dapat dikirim.'; }
+            } catch (e) {
+                this.regError = 'Terjadi kesalahan koneksi. Silakan coba lagi.';
             }
         },
 

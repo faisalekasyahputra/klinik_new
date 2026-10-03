@@ -94,7 +94,7 @@ $terbuka = ! $berhenti;
             </p>
         <?php elseif ( ! empty($row->file_surat_balasan)): ?>
             <a href="<?= base_url('KemitraanPortal/unduh_balasan/' . (int) $row->id) ?>" target="_blank" rel="noopener"
-               class="mt-1 inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2.5 text-xs font-bold text-white">
+               class="mt-1 inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2.5 text-xs font-bold text-brand-dark">
                 <i class="ph ph-file-arrow-down" aria-hidden="true"></i> Unduh Surat Balasan
             </a>
         <?php elseif ($row->status === 'Diterima'): ?>
@@ -252,7 +252,7 @@ $terbuka = ! $berhenti;
                 pasangDropzone('kb-peserta-drop', 'kb-peserta', 'kb-peserta-nama');
                 </script>
             </div>
-            <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-xs font-bold text-white shrink-0">
+            <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-xs font-bold text-brand-dark shrink-0">
                 <i class="ph ph-upload-simple"></i> Unggah
             </button>
         </form>
@@ -307,7 +307,7 @@ $terbuka = ! $berhenti;
                        class="mt-1 w-full rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/20 px-3 py-2 text-sm text-gray-900 dark:text-white">
                 <p class="<?= $petunjuk ?>">Pastikan folder dapat dibuka oleh petugas Disperakim. Kosongkan lalu simpan untuk menghapus link.</p>
             </div>
-            <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-xs font-bold text-white shrink-0">
+            <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-xs font-bold text-brand-dark shrink-0">
                 <i class="ph ph-floppy-disk"></i> Simpan Link
             </button>
         </form>
@@ -356,7 +356,7 @@ $terbuka = ! $berhenti;
                     <p class="<?= $petunjuk ?>">Format PDF, JPG, atau PNG, maksimal 5 MB.</p>
                     <script>pasangDropzone('kb-laporan-drop', 'kb-laporan', 'kb-laporan-nama');</script>
                 </div>
-                <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-xs font-bold text-white shrink-0">
+                <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-xs font-bold text-brand-dark shrink-0">
                     <i class="ph ph-upload-simple"></i> Unggah
                 </button>
             </form>
@@ -366,7 +366,7 @@ $terbuka = ! $berhenti;
     <?php if ($bisa_batal): ?>
         <div class="mt-4 flex flex-wrap items-center gap-3">
             <form method="POST" action="<?= base_url('KemitraanPortal/batal/' . (int) $row->id) ?>"
-                  onsubmit="return confirm('Batalkan KKN ini? Anda perlu mengajukan ulang bila berubah pikiran.')">
+                  data-konfirmasi="Anda perlu mengajukan ulang bila berubah pikiran." data-konfirmasi-judul="Batalkan KKN?" data-konfirmasi-label="Batalkan KKN" data-konfirmasi-bahaya>
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                 <button type="submit" class="text-xs font-bold text-red-600 dark:text-red-400 hover:underline">Batalkan KKN ini</button>
             </form>

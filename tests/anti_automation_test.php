@@ -122,7 +122,8 @@ check(strpos(sumber('config/autoload.php'), "'anti_automation'") !== FALSE, 'Hel
 
 $auth = sumber('controllers/Auth.php');
 foreach (["_bot_gate('login'", "_bot_gate('register'"] as $panggil) { check(strpos($auth, $panggil) !== FALSE, "Auth harus memanggil $panggil"); }
-check(strpos($auth, "'akun_terkunci'") !== FALSE, 'Penguncian akun harus menghasilkan peringatan keamanan');
+// Sejak 3 Okt 2026 akun tidak dikunci lagi (kunci per akun bisa dipasang orang lain); gagal beruntun tetap jadi peringatan.
+check(strpos($auth, "'login_beruntun'") !== FALSE, 'Login gagal beruntun harus menghasilkan peringatan keamanan');
 $formulir = ['components/login_modal.php' => 'login', 'pages/auth/login.php' => 'login', 'pages/auth/register.php' => 'register',
              'pages/pengembang/masuk.php' => 'login'];
 foreach ($formulir as $view => $form) { check(strpos(sumber("views/$view"), "bot_guard_fields('$form')") !== FALSE, "views/$view harus menyisipkan bot_guard_fields('$form')"); }

@@ -9,17 +9,18 @@ class User_model extends CI_Model {
     }
 
     /**
-     * Cocokkan login Google ke akun. Kembalian [baris, '1' akun lama | '0' akun baru], atau NULL
-     * bila ditolak.
+     * Cocokkan login Google ke akun yang SUDAH ada. Kembalian [baris, '1'], 'belum_terdaftar'
+     * bila tidak ada akun dengan google_id atau email itu, atau NULL bila ditolak.
      *
      * - Ditolak bila Google tidak menyatakan email itu terverifikasi.
      * - Dicocokkan lewat google_id lebih dulu, baru email. Email yang sudah tertaut ke akun
      *   Google LAIN tidak ditautkan ulang.
-     * - Akun berkata sandi yang belum pernah tertaut Google: email pendaftarannya tidak pernah
-     *   dibuktikan (verifikasi email di pendaftaran hanya simulasi), jadi sandinya bisa milik
-     *   orang lain. Google membuktikan pemilik email, maka saat penautan pertama sandi lama
-     *   DIHAPUS, sesi aktif dicabut, dan pemilik wajib membuat sandi baru (onboarding bila
-     *   profil belum lengkap, selain itu gerbang ganti sandi di Profil Saya).
+     * - Akun berkata sandi yang belum pernah tertaut Google: saat penautan pertama sandi lama
+     *   DIHAPUS, sesi aktif dicabut, email ditandai terverifikasi, dan pemilik wajib membuat
+     *   sandi baru (onboarding bila profil belum lengkap, selain itu gerbang ganti sandi di
+     *   Profil Saya). Berlaku SELALU, juga bila email_verified_at sudah terisi (OTP pendaftaran,
+     *   akun lama, akun buatan admin): keputusan pemilik produk 3 Okt 2026, perilaku PR #13.
+     *   Bukti email di masa lalu tidak menjamin sandinya masih hanya diketahui pemilik email.
      */
     public function check_google_user($data, $email_terverifikasi = FALSE) {
         if ($email_terverifikasi !== TRUE || empty($data['google_id']) || empty($data['email'])) {
@@ -36,9 +37,9 @@ class User_model extends CI_Model {
         }
 
         if ( ! $user) {
-            $this->db->insert('usr_akun', $data + ['email_verified_at' => $sekarang]);
-            $new_user = $this->db->get_where('usr_akun', ['id' => $this->db->insert_id()]);
-            return [$new_user->row_array(), '0'];
+            // Keputusan pemilik produk 3 Okt 2026: Google tidak membuat akun. Yang belum terdaftar
+            // harus mendaftar dulu supaya peran dipilih sebelum ada sesi.
+            return 'belum_terdaftar';
         }
 
         $ubah = [

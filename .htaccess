@@ -69,6 +69,14 @@
     # runbook rilis memakai mysqldump | gzip.
     RewriteRule (^|/)[^/]+\.(sql|dump|bak)(\.gz)?$ - [F,L]
 
+    # Daftar isi direktori (autoindex) di bawah assets/ ditolak 403, apa pun bawaan hostingnya. Tanpa
+    # ini folder unggahan dan cache foto bisa didaftar isinya, termasuk PDF Bank Data yang disembunyikan
+    # admin (nama acaknya satu-satunya pelindung). Lewat mod_rewrite, bukan `Options -Indexes`: hosting
+    # yang tidak mengizinkan Options di .htaccess menjawab 500 untuk SELURUH situs. Tidak ada halaman sah
+    # yang berupa direktori di bawah assets/.
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^assets(/|$) - [F,L]
+
     # Poin 13.3: DocumentRoot menyajikan HANYA yang memang untuk publik. Berkas atau direktori yang benar-benar
     # ada di luar daftar ini (license.txt, README, composer.*, cadangan, salinan konfigurasi, berkas sampel,
     # direktori dev) dijawab 403, apa pun namanya dan kapan pun ia muncul. Daftar tolak per pola di atas

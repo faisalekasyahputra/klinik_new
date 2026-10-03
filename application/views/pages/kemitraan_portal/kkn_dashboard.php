@@ -43,7 +43,7 @@ $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
             </div>
         </div>
         <button type="button" onclick="document.getElementById('kkn-tambah-dialog').showModal()"
-                class="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-bold text-white transition-opacity hover:opacity-90">
+                class="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2.5 text-sm font-bold text-brand-dark transition-opacity hover:opacity-90">
             <i class="ph ph-plus"></i> Tambah KKN
         </button>
     </div>
@@ -140,7 +140,7 @@ $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
             <div class="flex items-center justify-end gap-3 border-t border-gray-200 dark:border-white/10 pt-4">
                 <button type="button" onclick="document.getElementById('kkn-tambah-dialog').close()"
                         class="rounded-xl border border-gray-200 dark:border-white/10 px-5 py-2.5 text-xs font-bold text-gray-700 dark:text-gray-300">Batal</button>
-                <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-xs font-bold text-white">Ajukan KKN</button>
+                <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-xs font-bold text-brand-dark">Ajukan KKN</button>
             </div>
         </form>
     </div>

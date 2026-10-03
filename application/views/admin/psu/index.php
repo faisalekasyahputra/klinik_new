@@ -179,7 +179,7 @@ $warna_status = [
                         <td class="whitespace-nowrap px-4 py-3 text-right">
                             <button type="submit" form="<?= $fid ?>" class="tombol-aksi"><i class="ph ph-floppy-disk" aria-hidden="true"></i><span>Simpan</span></button>
                             <form class="inline" action="<?= base_url('Admin_Psu/hapus') ?>" method="post"
-                                  onsubmit="return confirm('Hapus data PSU <?= html_escape($row->nama_perumahan) ?>?')">
+                                  data-konfirmasi="Data PSU <?= html_escape($row->nama_perumahan) ?> akan dihapus." data-konfirmasi-judul="Hapus data PSU?" data-konfirmasi-label="Hapus" data-konfirmasi-bahaya>
                                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                 <input type="hidden" name="id" value="<?= (int) $row->id ?>">
                                 <button class="tombol-aksi tombol-aksi-bahaya"><i class="ph ph-trash" aria-hidden="true"></i><span>Hapus</span></button>

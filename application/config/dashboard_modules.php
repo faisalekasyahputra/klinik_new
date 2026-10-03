@@ -52,6 +52,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |                      tidak ada cara membacanya tanpa tahu domainnya duluan.
 |                      Roadmap T6, cetakan untuk warga/mahasiswa/admin_kabkota/
 |                      admin_bidang.
+|   aksi    - opsional, path CI tambahan (awalan) milik modul ini untuk gerbang hak modul
+|             (enforce_current_module_privilege), bila aksinya tidak berada di bawah url
 |   badge   - opsional TRUE: tampilkan counter merah di sidebar sejumlah baris
 |             yang cocok pending_where. Butuh 'table' + 'pending_where'.
 |   scope_column - opsional, kolom tabel yang menerima nilai 'scope' saat
@@ -458,6 +460,9 @@ $config['dashboard_modules'] = [
         // ditetapkan ke bidang, jadi tanpa scope akun seperti itu mendarat di menu yang
         // langsung menolaknya (temuan UAT universitas U1, 28 Sep 2026).
         'roles' => ['admin_bidang'], 'scope' => 'bidang_kode',
+        // Aksi tulisnya tidak berada di bawah url di atas; tanpa daftar ini gerbang hak modul
+        // mencocokkannya ke kemitraan_bidang (awalan Kemitraan_Bidang) dan hak modul ini terlewati.
+        'aksi'  => ['Kemitraan_Bidang/buat_universitas', 'Kemitraan_Bidang/ubah_universitas', 'Kemitraan_Bidang/sandi_universitas', 'Kemitraan_Bidang/status_universitas'],
     ],
     // CATATAN: slot magang TIDAK punya entri sendiri di sini. Ia satu domain
     // dengan pendaftaran di atas - yang satu menetapkan tempatnya, yang lain

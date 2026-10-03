@@ -20,7 +20,7 @@
     // 2026, gantikan penyamaran label "mahasiswa" -> "Universitas"),
     // ucwords() generik di bawah sudah cukup - tidak perlu kasus khusus lagi.
     $peranSesi = $this->session->userdata('role');
-    $roleUser = $peranSesi ? ucwords(str_replace('_', ' ', $peranSesi)) : 'Super Admin';
+    $roleUser = $peranSesi ? ucwords(str_replace('_', ' ', $peranSesi)) : 'Belum Memilih Peran';
     ?>
     <title><?= isset($title) ? $title . ' - ' : '' ?><?= $roleUser ?> | Klinik PKP</title>
     

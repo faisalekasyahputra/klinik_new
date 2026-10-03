@@ -221,7 +221,11 @@
             iconAnchor: [12, 12]
         });
 
-        const rawData = <?php echo json_encode($results); ?>;
+        // Data SIKUMBANG diisi pengembang di sistem nasional: teks bebas, bukan HTML. Setiap nilai yang
+        // masuk ke string HTML (popup Leaflet, item autocomplete) lewat esc(); idLokasi juga disaring bentuknya.
+        const rawData = <?php echo json_encode($results, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
+        const idAman = s => /^[A-Za-z0-9_-]{1,64}$/.test(String(s ?? '')) ? String(s) : '';
         
         // Buat layer group untuk marker agar mudah dihapus dan ditambah
         const markersLayer = L.layerGroup().addTo(map);
@@ -244,11 +248,11 @@
             
             const marker = L.marker([lat, long], {icon: icon})
                 .bindPopup(`<div class="text-[#0a1a1f] font-sans p-1 min-w-[180px]">
-                            <b class="text-xs font-black block text-[#0f2a30] leading-tight mb-0.5">${item.namaPerumahan || 'Tanpa Nama'}</b>
+                            <b class="text-xs font-black block text-[#0f2a30] leading-tight mb-0.5">${esc(item.namaPerumahan || 'Tanpa Nama')}</b>
                             <span class="text-[10px] text-emerald-600 font-bold block mb-3">
-                                <i class="fa-solid fa-circle-check text-[9px]"></i> ${tipeRaw || 'Umum'}
+                                <i class="fa-solid fa-circle-check text-[9px]"></i> ${esc(tipeRaw || 'Umum')}
                             </span>
-                            <a href="<?php echo base_url('detail_perum/'); ?>${item.idLokasi}" target="_blank" class="block text-center bg-[#d6fb00] hover:bg-[#c2e600] text-[#0a1a1f] font-black text-[10px] uppercase tracking-wider py-2 px-3 rounded-md shadow transition-colors no-underline decoration-none">
+                            <a href="<?php echo base_url('detail_perum/'); ?>${idAman(item.idLokasi)}" target="_blank" class="block text-center bg-[#d6fb00] hover:bg-[#c2e600] text-[#0a1a1f] font-black text-[10px] uppercase tracking-wider py-2 px-3 rounded-md shadow transition-colors no-underline decoration-none">
                                 <i class="fa-solid fa-diamond-turn-right mr-1"></i> Detail
                             </a>
                         </div>`);
@@ -412,13 +416,13 @@
                             <i class="fa-solid fa-location-dot"></i>
                         </div>
                         <div class="flex-1 ml-3">
-                            <div class="text-sm font-semibold text-white uppercase">${item.nama}</div>
+                            <div class="text-sm font-semibold text-white uppercase">${esc(item.nama)}</div>
                             <div class="text-[11px] text-zinc-400">
-                                ${item.kabupaten || 'Kabupaten tidak tersedia'}
+                                ${esc(item.kabupaten || 'Kabupaten tidak tersedia')}
                             </div>
                         </div>
                         <div class="text-[10px] uppercase font-bold self-center ${item.status === 'komersil' ? 'text-blue-500' : (item.status === 'subsidi' ? 'text-[#d6fb00]' : 'text-zinc-500')}">
-                            ${item.status}
+                            ${esc(item.status)}
                         </div>
                     `;
                     
