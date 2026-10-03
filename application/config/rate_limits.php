@@ -95,14 +95,16 @@ $config['rate_limit_policies'] = [
        bukan lebih rendah. */
     /* Bukti kepemilikan NIK (nama akun + tanggal lahir, Simperum_gateway::verifikasi_pemilik,
        3 Okt 2026). Hanya percobaan yang TIDAK COCOK dihitung (inspect lalu hit, pola login).
-       Dua dimensi berdiri sendiri: per akun (satu akun menebak banyak kombinasi) dan per NIK
-       (banyak akun menebak untuk satu NIK). Akibatnya pemilik asli bisa ikut tertahan sehari
-       bila NIK-nya sedang ditebak orang lain; pesan penolakannya mengarahkan ke menu Aduan. */
+       Per AKUN saja. Ember per NIK DICABUT (temuan integrasi-luar-08): lima tebakan salah dari
+       akun mana pun mengunci NIK itu untuk SEMUA akun, termasuk pemiliknya, dan bisa diulang
+       tiap hari. Tebakan lintas akun untuk satu NIK kini hanya DIHITUNG (verifikasi_nik_lintas,
+       senyap) dan memicu peringatan ke Super Admin begitu melewati batasnya; tidak menahan siapa pun. */
     'verifikasi_nik' => [
         'limit' => 5,
         'window' => 86400,
-        'dimensions' => ['account', 'nik'],
+        'dimensions' => ['account'],
     ],
+    'verifikasi_nik_lintas' => ['limit' => 5, 'window' => 86400, 'dimensions' => ['nik'], 'senyap' => TRUE],
     'warga_lookup_anon' => [
         'limit' => 5,
         'window' => 3600,

@@ -173,6 +173,11 @@ if ( ! function_exists('audit_kamus')) {
                 'role_diubah_ditolak'    => 'Perubahan peran ditolak',
                 'privilege_admin_diubah' => 'Hak modul admin diubah',
                 'nik_dipindahkan'        => 'NIK dipindahkan ke pemilik terverifikasi',
+                'klaim_nik_diajukan'     => 'Klaim NIK diajukan, menunggu tinjauan',
+                'klaim_nik_disetujui'    => 'Klaim NIK disetujui',
+                'klaim_nik_ditolak'      => 'Klaim NIK ditolak',
+                'superadmin_dibuat_cli'  => 'Super Admin dibuat lewat CLI',
+                'akun_demo_dinonaktifkan' => 'Akun demo dinonaktifkan (migrasi)',
             ],
             // Jenis data pribadi dari MY_Controller::catat_akses_data_pribadi().
             'jenis' => [

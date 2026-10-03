@@ -104,8 +104,9 @@ class Housing_assessment_model extends CI_Model {
      * produk, 3 Okt 2026): ikatan yang BELUM terverifikasi di akun lain dilepas lalu NIK diikat ke
      * akun $user_id. Ikatan terverifikasi (sf_profil_warga.confirmed_at) tidak pernah dilepas.
      *
-     * WAJIB di dalam transaksi pemanggil (Simperum_gateway::from_snapshot), yang sesudahnya
-     * menyimpan profil $user_id dan jejak audit pada transaksi yang sama. Urutan menjaga UNIQUE
+     * Sejak 3 Okt 2026 (temuan idor-otorisasi-04) TIDAK lagi dijalankan otomatis oleh Cek NIK: hanya
+     * lewat persetujuan Super Admin atas permintaan klaim (ajukan_klaim_nik, Admin_Users::putuskan_klaim_nik).
+     * WAJIB di dalam transaksi pemanggil, yang menulis jejak audit pada transaksi yang sama. Urutan menjaga UNIQUE
      * nik_lookup_hash: pemegang lama dikosongkan dulu, baru akun baru diisi.
      *
      * Akun lama tidak dihapus dan tetap bisa masuk. Yang berubah hanya yang melekat ke NIK itu:
@@ -163,6 +164,82 @@ class Housing_assessment_model extends CI_Model {
         $pengajuan = $dari ? $this->db->where_in('user_id', $dari)
             ->where_in('status_antrean', ['pending', 'needs_revision'])->count_all_results('sf_antrean_pengajuan') : 0;
         return ['success' => TRUE, 'dari' => $dari, 'draft_dilepas' => $draft_dilepas, 'pengajuan_berjalan' => $pengajuan];
+    }
+
+    /** Jawaban Cek NIK yang lolos verifikasi tetapi NIK-nya terikat BELUM terverifikasi ke akun lain. */
+    public const PESAN_KLAIM_DITINJAU = 'Permintaan Anda untuk memakai NIK ini sudah kami terima dan sedang ditinjau Dinas Perakim. Hasilnya akan terlihat di menu Pendataan; permintaan tidak perlu diulang.';
+
+    /**
+     * Catat permintaan klaim NIK untuk ditinjau Super Admin (tanpa tabel baru: baris jejak audit
+     * `klaim_nik_diajukan`, pelaku = pemohon; keputusan = baris `klaim_nik_disetujui`/`klaim_nik_ditolak`
+     * berobjek `klaim_nik`#id). Rincian hanya sidik NIK (HMAC), id pemegang, dan hitungan, tanpa NIK.
+     * Ikatan terverifikasi tidak bisa diklaim (PESAN_NIK_TERIKAT). Permintaan yang masih menunggu untuk
+     * pasangan pemohon + NIK yang sama tidak digandakan.
+     */
+    public function ajukan_klaim_nik($user_id, $nik)
+    {
+        $user_id = (int) $user_id;
+        $hash = $this->encryption_lib->deterministic_hash($nik);
+        if ($user_id < 1 || $hash === '') { return $this->fail('encryption_unavailable', 'Data sensitif belum dapat disimpan.'); }
+        $terverifikasi = $this->db->where('nik_lookup_hash', $hash)->where('user_id !=', $user_id)
+            ->where('confirmed_at IS NOT NULL', NULL, FALSE)->count_all_results('sf_profil_warga');
+        if ($terverifikasi > 0) { return $this->fail('nik_already_bound', self::PESAN_NIK_TERIKAT); }
+        foreach ($this->klaim_nik_tertunda() as $k) {
+            if ((int) $k['pemohon_id'] === $user_id && hash_equals($k['nik_lookup_hash'], $hash)) {
+                return ['success' => TRUE, 'id' => (int) $k['id'], 'baru' => FALSE];
+            }
+        }
+        $pemegang = array_values(array_unique(array_merge(
+            array_map('intval', array_column($this->db->select('id')->where('nik_lookup_hash', $hash)
+                ->where('id !=', $user_id)->get('usr_akun')->result_array(), 'id')),
+            array_map('intval', array_column($this->db->select('user_id')->where('nik_lookup_hash', $hash)
+                ->where('user_id !=', $user_id)->get('sf_profil_warga')->result_array(), 'user_id')))));
+        $berjalan = $pemegang ? $this->db->where_in('user_id', $pemegang)
+            ->where_in('status_antrean', ['pending', 'needs_revision'])->count_all_results('sf_antrean_pengajuan') : 0;
+        $this->db->insert('sys_jejak_audit', [
+            'pelaku_id' => $user_id,
+            'pelaku_email' => $this->session->userdata('email') ?: NULL,
+            'pelaku_peran' => $this->session->userdata('role') ?: NULL,
+            'aksi' => 'klaim_nik_diajukan',
+            'objek_tipe' => 'usr_akun',
+            'objek_id' => (string) $user_id,
+            'ringkasan' => 'Lolos verifikasi nama dan tanggal lahir untuk NIK yang terikat belum terverifikasi ke akun lain; menunggu tinjauan Super Admin',
+            'detail_json' => json_encode(['nik_lookup_hash' => $hash, 'pemegang' => $pemegang, 'pengajuan_berjalan' => $berjalan]),
+            'ip' => $this->input->ip_address(),
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+        return ['success' => TRUE, 'id' => (int) $this->db->insert_id(), 'baru' => TRUE];
+    }
+
+    /** Permintaan klaim NIK yang belum diputuskan (terbaru dulu), atau satu permintaan bila $id diberikan. */
+    public function klaim_nik_tertunda($id = NULL)
+    {
+        $this->db->select('k.id, k.pelaku_id pemohon_id, k.detail_json, k.created_at, u.email pemohon_email', FALSE)
+            ->from('sys_jejak_audit k')->join('usr_akun u', 'u.id = k.pelaku_id', 'left')
+            ->where('k.aksi', 'klaim_nik_diajukan')
+            ->where("NOT EXISTS (SELECT 1 FROM sys_jejak_audit d WHERE d.objek_tipe = 'klaim_nik' AND d.objek_id = CAST(k.id AS CHAR)
+                AND d.aksi IN ('klaim_nik_disetujui', 'klaim_nik_ditolak'))", NULL, FALSE);
+        if ($id !== NULL) { $this->db->where('k.id', (int) $id); }
+        $hasil = [];
+        foreach ($this->db->order_by('k.id', 'DESC')->limit(100)->get()->result_array() as $r) {
+            $d = json_decode((string) $r['detail_json'], TRUE) ?: [];
+            unset($r['detail_json']);
+            $hasil[] = $r + ['nik_lookup_hash' => (string) ($d['nik_lookup_hash'] ?? ''),
+                'pemegang' => array_map('intval', (array) ($d['pemegang'] ?? [])),
+                'pengajuan_berjalan' => (int) ($d['pengajuan_berjalan'] ?? 0)];
+        }
+        return $id !== NULL ? ($hasil[0] ?? NULL) : $hasil;
+    }
+
+    /** NIK polos dari ciphertext pemegang lain (usr_akun.nik atau profil pendataannya), atau NULL bila NIK itu sudah bebas. */
+    public function nik_pemegang_lain($nik_hash, $kecuali_user_id)
+    {
+        $row = $this->db->select('nik c')->where('nik_lookup_hash', $nik_hash)->where('id !=', (int) $kecuali_user_id)
+            ->where('nik IS NOT NULL', NULL, FALSE)->get('usr_akun', 1)->row_array()
+            ?: $this->db->select('nik_ciphertext c')->where('nik_lookup_hash', $nik_hash)
+                ->where('user_id !=', (int) $kecuali_user_id)->get('sf_profil_warga', 1)->row_array();
+        $nik = $row ? (string) $this->encryption_lib->decrypt((string) $row['c']) : '';
+        return preg_match('/^\d{16}$/', $nik) && hash_equals((string) $nik_hash, $this->encryption_lib->deterministic_hash($nik)) ? $nik : NULL;
     }
 
     /**

@@ -41,6 +41,7 @@ $config['http_policy'] = [
         'admin_users/buka_kunci'               => 'buka kunci akun',
         'admin_users/reset_nik'                => 'reset NIK warga',
         'admin_users/reset_sandi'              => 'reset kata sandi',
+        'admin_users/putuskan_klaim_nik'       => 'setujui/tolak permintaan klaim NIK',
         'auth/do_login'                        => 'autentikasi',
         'auth/do_register'                     => 'mulai pendaftaran dan kirim kode OTP',
         'auth/do_verifikasi_email'             => 'periksa kode OTP dan buat akun',
