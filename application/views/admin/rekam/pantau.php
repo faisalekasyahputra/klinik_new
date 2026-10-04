@@ -122,7 +122,8 @@ $this->load->view('admin/layouts/cetak_rekap');
                         <span class="inline-block rounded-full px-2.5 py-1 text-[11px] font-bold <?= $gaya[$keadaan] ?? $gaya['belum'] ?>">
                             <?= html_escape($sel['keadaan_label'] ?? 'Belum ada laporan') ?>
                         </span>
-                        <?php if ( ! empty($sel['laporan_id'])): ?>
+                        <?php // Draft belum dikirim = isian setengah jadi milik kab/kota; superadmin melihat yang sudah dikirim saja. ?>
+                        <?php if ( ! empty($sel['laporan_id']) && $keadaan !== 'draft'): ?>
                         <a href="<?= base_url('Admin_Rekam_Data/detail/' . (int) $sel['laporan_id']) ?>" class="ml-1.5 text-[11px] font-bold text-blue-600 hover:underline dark:text-brand-primary">Lihat</a>
                         <?php endif; ?>
                         <?php if ($keadaan === 'perbaikan' && ! empty($sel['catatan_admin'])): ?>

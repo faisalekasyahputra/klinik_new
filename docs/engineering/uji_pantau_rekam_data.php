@@ -187,7 +187,7 @@ $id_kab = array_keys($kab);
 wajib(count($id_kab) === 4, 'Empat kabupaten pertama terbaca');
 
 // Empat keadaan berbeda + sisanya (31 wilayah) sengaja TANPA laporan.
-buat_laporan('perumahan', $id_kab[0], 'draft');
+$lap_draft = buat_laporan('perumahan', $id_kab[0], 'draft');
 buat_laporan('perumahan', $id_kab[1], 'terkirim');                 // menunggu
 buat_laporan('perumahan', $id_kab[2], 'terkirim', TRUE);           // diterima
 buat_laporan('perumahan', $id_kab[3], 'perlu_perbaikan');
@@ -220,6 +220,11 @@ $tanpa = (int) nilai('SELECT COUNT(*) c FROM kabupaten WHERE id NOT IN (?,?,?,?)
     [$id_kab[0], $id_kab[1], $id_kab[2], $id_kab[3]]);
 cek(substr_count($papan['body'], 'Belum ada laporan') >= $tanpa,
     "Kabupaten tanpa laporan ikut terlihat (minimal {$tanpa} sel 'Belum ada laporan')");
+
+// Keputusan user 4 Okt 2026: tautan Lihat hanya untuk laporan yang sudah dikirim.
+cek(strpos($papan['body'], 'Admin_Rekam_Data/detail/' . $lap_draft . '"') === FALSE
+    && strpos($papan['body'], 'Admin_Rekam_Data/detail/' . $lap_kawasan . '"') !== FALSE,
+    'Draft tanpa tautan Lihat; laporan terkirim tetap bisa dilihat');
 
 // ------------------------------------------------ 2. KEADAAN
 echo "\n== 2. Empat keadaan dibedakan, dan 'Diterima' DITURUNKAN ==\n";
