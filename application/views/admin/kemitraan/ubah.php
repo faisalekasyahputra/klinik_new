@@ -143,7 +143,7 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
             <p class="mb-3 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                 <i class="ph ph-check-circle"></i>
                 Sudah ada -
-                <a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . (int) $row->id . '/balasan') ?>" target="_blank" rel="noopener" class="underline">lihat berkasnya</a>.
+                <a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . (int) $row->id . '/balasan') ?>" data-file-view data-file-title="Surat balasan" target="_blank" rel="noopener" class="underline">lihat berkasnya</a>.
                 Mengunggah lagi akan menggantikannya.
             </p>
         <?php endif; ?>
