@@ -8,7 +8,6 @@ $kelas_status = [
     'Diajukan' => 'pending', 'Ditinjau Bidang' => 'process', 'Dibatalkan' => 'reject',
 ];
 $jumlah_kartu = count($kartu_domain) + ($rekam ? 1 : 0);
-$tautan = 'font-semibold text-blue-700 hover:underline dark:text-brand-primary';
 $redup = fn($n) => $n > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-brand-muted/70';
 $pk = $peringatan_keamanan;
 ?>
@@ -81,7 +80,8 @@ $nada_angka = ['utama' => 'text-amber-600 dark:text-brand-primary', 'waspada' =>
                 <li><a href="<?= html_escape(base_url($r['url'])) ?>" class="flex justify-between gap-2 text-gray-500 hover:underline dark:text-brand-muted"><span><?= html_escape($r['label']) ?></span><span class="font-bold <?= $redup($r['n']) ?>"><?= angka_id($r['n']) ?></span></a></li>
                 <?php endforeach; ?>
             </ul>
-            <a href="<?= html_escape(base_url($k['url'])) ?>" class="mt-3 text-xs <?= $tautan ?>"><?= html_escape($k['lihat']) ?></a>
+            <?php // Tombol di dasar kartu (mt-auto): sejajar antarkartu berapa pun panjang rinciannya. ?>
+            <div class="mt-auto pt-4"><a href="<?= html_escape(base_url($k['url'])) ?>" class="tombol-kedua w-full font-semibold"><span><?= html_escape($k['lihat']) ?></span><span class="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 shadow-[0_0_12px_rgba(217,119,6,0.30)] dark:bg-brand-primary/10 dark:text-brand-primary dark:shadow-[0_0_14px_rgba(214,251,0,0.35)]" aria-hidden="true"><i class="ph ph-caret-right text-sm"></i></span></a></div>
         </article>
         <?php endforeach; ?>
 
@@ -101,7 +101,8 @@ $nada_angka = ['utama' => 'text-amber-600 dark:text-brand-primary', 'waspada' =>
                 <li class="flex justify-between gap-2"><span>Diterima</span><span class="font-bold <?= $redup($rekam['diterima']) ?>"><?= angka_id($rekam['diterima']) ?></span></li>
                 <li class="flex justify-between gap-2"><span>Perlu perbaikan</span><span class="font-bold <?= $redup($rekam['perbaikan']) ?>"><?= angka_id($rekam['perbaikan']) ?></span></li>
             </ul>
-            <a href="<?= base_url('Admin_Rekam_Data?tahun=' . (int) $rekam['tahun'] . '&triwulan=' . (int) $rekam['triwulan']) ?>" class="mt-3 text-xs <?= $tautan ?>">Lihat laporan</a>
+            <?php // Tombol di dasar kartu (mt-auto): sejajar antarkartu berapa pun panjang rinciannya. ?>
+            <div class="mt-auto pt-4"><a href="<?= base_url('Admin_Rekam_Data?tahun=' . (int) $rekam['tahun'] . '&triwulan=' . (int) $rekam['triwulan']) ?>" class="tombol-kedua w-full font-semibold"><span>Lihat laporan</span><span class="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 shadow-[0_0_12px_rgba(217,119,6,0.30)] dark:bg-brand-primary/10 dark:text-brand-primary dark:shadow-[0_0_14px_rgba(214,251,0,0.35)]" aria-hidden="true"><i class="ph ph-caret-right text-sm"></i></span></a></div>
         </article>
         <?php endif; ?>
     </div>

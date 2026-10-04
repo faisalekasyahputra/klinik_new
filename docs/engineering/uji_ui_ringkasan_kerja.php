@@ -138,7 +138,8 @@ cek(strpos($rekam_html, "Admin_Rekam_Data?tahun=$tahun&amp;triwulan=$tw") !== FA
 
 // Satu kartu = satu kontrol utama berlabel sesuai isi.
 $jml_kartu = preg_match_all('#<article\b#', $kartu);
-$lihat = preg_match_all('#<a [^>]*>Lihat (antrean|pengajuan|aduan|pendaftaran|janji temu|laporan)</a>#', $kartu, $lm);
+// Sejak 4 Okt 2026 kontrolnya tombol di dasar kartu: label dibungkus <span>, diikuti chevron.
+$lihat = preg_match_all('#<a [^>]*>(?:<span>)?Lihat (antrean|pengajuan|aduan|pendaftaran|janji temu|laporan)(?:</span>|</a>)#', $kartu, $lm);
 cek($jml_kartu === 6 && $lihat === $jml_kartu, "Enam kartu, masing-masing satu tautan Lihat ... ($jml_kartu kartu, $lihat tautan)");
 cek(count(array_unique($lm[1])) === $lihat, 'Label tautan Lihat berbeda per kartu: ' . implode(', ', $lm[1]));
 cek(strpos($html, 'Buka antrean') === FALSE, 'Tidak ada teks "Buka antrean" di halaman');
