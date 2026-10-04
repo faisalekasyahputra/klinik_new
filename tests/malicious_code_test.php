@@ -125,7 +125,7 @@ check(count($lokal) >= 200, 'Manifest harus mencakup seluruh system/ CodeIgniter
 $beda = array_keys(array_filter($lokal, fn($h, $p) => ($man['berkas'][$p] ?? null) !== $h, ARRAY_FILTER_USE_BOTH));
 check($beda === [], 'Berkas pihak ketiga berubah dari manifest (system/ tidak boleh diedit): ' . implode(', ', array_slice($beda, 0, 5)));
 check(array_diff_key($man['berkas'], $lokal) === [], 'Berkas dalam manifest hilang dari disk');
-check(isset($lokal['system/core/CodeIgniter.php'], $lokal['assets/js/vendor/tailwind-3.4.17.js'], $lokal['assets/js/vendor/pdfjs/pdf.min.js']), 'Manifest tidak memuat berkas kunci');
+check(isset($lokal['system/core/CodeIgniter.php'], $lokal['assets/js/vendor/tailwind-3.4.17.js'], $lokal['assets/js/vendor/pdfjs/pdf.min.mjs']), 'Manifest tidak memuat berkas kunci');
 
 // --- 4. Aset eksternal: host disetujui dan SRI --------------------------------------
 $host_skrip = content_security_policy('csp_script_hosts');

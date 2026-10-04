@@ -2,13 +2,13 @@
     "keterangan": "Hash SHA-256 (akhir baris dinormalisasi ke LF) kode pihak ketiga yang di-vendor. Bangkitkan ulang HANYA sesudah `php docs/engineering/pindai_kode_berbahaya.php upstream` menyatakan seluruhnya identik dengan rilis resmi.",
     "sumber": {
         "system/": "CodeIgniter 3.1.13 (github.com/bcit-ci/CodeIgniter, tag 3.1.13)",
-        "assets/js/vendor/pdfjs/": "pdfjs-dist 3.11.174 (npm, build/)",
+        "assets/js/vendor/pdfjs/": "pdfjs-dist 4.10.38 (npm, legacy/build/)",
         "assets/js/vendor/tailwind-3.4.17.js": "cdn.tailwindcss.com/3.4.17"
     },
-    "diverifikasi_upstream": "2026-09-20",
+    "diverifikasi_upstream": "2026-10-04",
     "berkas": {
-        "assets/js/vendor/pdfjs/pdf.min.js": "5b5799e6f8c680663207ac5b42ee14eed2a406fa7af48f50c154f0c0b1566946",
-        "assets/js/vendor/pdfjs/pdf.worker.min.js": "feabdf309770ed24bba31a5467836cdc8cf639c705af27d52b585b041bb8527b",
+        "assets/js/vendor/pdfjs/pdf.min.mjs": "44ec6f011027ee77791386b66c14876a5fc29e20bf0433c07c6726fff7212b72",
+        "assets/js/vendor/pdfjs/pdf.worker.min.mjs": "bd88805178a26c729db8c0107a5b630cb900ec070f4d8c7529a3e45530afd41d",
         "assets/js/vendor/tailwind-3.4.17.js": "176e894661aa9cdc9a5cba6c720044cbbf7b8bd80d1c9a142a7c24b1b6c50d15",
         "system/.htaccess": "31082021e1423c07c9f0735d03b63cb2493985e19e4f3f82d3bef7fbcd745ea7",
         "system/core/Benchmark.php": "b96ff91a44bb99a124dc6952e0cdf7b9e84a8d1a91c0ed63e31158e5106cff2b",

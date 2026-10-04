@@ -91,7 +91,7 @@ dengan alasan tertulis.
 | Uji situs live SESUDAH rilis | 21 lulus, 0 gagal, 0 peringatan, 1 dilewati (SSLv3, lihat KEAMANAN_KOMUNIKASI.md) |
 | Analisis statis kode sendiri | 13 sinyal di 12 berkas, seluruhnya ditinjau dan dicatat (8 berkas koneksi keluar, 3 unggahan, 1 fungsi waktu); 0 tersisa |
 | Unggahan yang ditinjau | Gambar katalog (ekstensi dari MIME hasil sniffing, `getimagesize`, nama acak, metadata dibersihkan, hanya jpg/png) dan dokumen pengembang (ekstensi dan MIME harus cocok daftar putih, nama acak 128 bit) |
-| Kode pihak ketiga vs rilis resmi | 209 dari 209 berkas identik: CodeIgniter 3.1.13 (206), pdf.js 3.11.174 (2), Tailwind 3.4.17 (1) |
+| Kode pihak ketiga vs rilis resmi | 209 dari 209 berkas identik: CodeIgniter 3.1.13 (206), pdf.js 4.10.38 legacy (2), Tailwind 3.4.17 (1) |
 | Pustaka Composer production vs instalasi bersih dari paket terkunci | 0 perbedaan versi (31 paket); 38.931 dari 38.931 berkas identik (SHA-256). Berkas ekstra hanya paket dev, proksi `bin/`, dan berkas metadata non-kode (`.github/*`, `.gitignore`, `.gitattributes`, `.repo-metadata.json`) |
 | Simulasi perintah deploy (`composer install --prefer-dist`) dengan lock baru di server | Keluar 0; 31 paket = lock; hasil identik dengan instalasi awal |
 | `composer audit` | Tidak ada advisori keamanan (lokal dan di server) |

@@ -276,7 +276,7 @@ function pindai_hash_lokal() {
     $akar = pindai_akar(); $h = [];
     $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($akar . '/system', FilesystemIterator::SKIP_DOTS));
     foreach ($it as $f) { if ($f->isFile()) { $h['system/' . substr(str_replace(chr(92), '/', $f->getPathname()), strlen($akar . '/system') + 1)] = hash('sha256', pindai_normal(file_get_contents($f->getPathname()))); } }
-    foreach (['assets/js/vendor/pdfjs/pdf.min.js', 'assets/js/vendor/pdfjs/pdf.worker.min.js', 'assets/js/vendor/tailwind-3.4.17.js'] as $rel) {
+    foreach (['assets/js/vendor/pdfjs/pdf.min.mjs', 'assets/js/vendor/pdfjs/pdf.worker.min.mjs', 'assets/js/vendor/tailwind-3.4.17.js'] as $rel) {
         if (is_file($akar . '/' . $rel)) { $h[$rel] = hash('sha256', pindai_normal(file_get_contents($akar . '/' . $rel))); }
     }
     ksort($h);
@@ -352,14 +352,14 @@ if ($mode === 'upstream') {
     $zip = $tmp . '/ci.zip'; file_put_contents($zip, @file_get_contents('https://github.com/bcit-ci/CodeIgniter/archive/refs/tags/3.1.13.zip', false, transport_ctx()));
     $z = new ZipArchive;
     if ($z->open($zip) === true) { for ($i = 0; $i < $z->numFiles; $i++) { $nm = $z->getNameIndex($i); if (preg_match('#^CodeIgniter-3\.1\.13/system/(.+[^/])$#', $nm, $mm)) { $resmi['system/' . $mm[1]] = hash('sha256', pindai_normal($z->getFromIndex($i))); } } $z->close(); } else { echo "[GAGAL] tidak dapat mengunduh CodeIgniter 3.1.13\n"; $gagal++; }
-    foreach (['assets/js/vendor/pdfjs/pdf.min.js' => 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js', 'assets/js/vendor/pdfjs/pdf.worker.min.js' => 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js', 'assets/js/vendor/tailwind-3.4.17.js' => 'https://cdn.tailwindcss.com/3.4.17'] as $rel => $url) {
+    foreach (['assets/js/vendor/pdfjs/pdf.min.mjs' => 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/legacy/build/pdf.min.mjs', 'assets/js/vendor/pdfjs/pdf.worker.min.mjs' => 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/legacy/build/pdf.worker.min.mjs', 'assets/js/vendor/tailwind-3.4.17.js' => 'https://cdn.tailwindcss.com/3.4.17'] as $rel => $url) {
         $isi = @file_get_contents($url, false, transport_ctx()); if ($isi !== false) { $resmi[$rel] = hash('sha256', pindai_normal($isi)); } else { echo "[GAGAL] tidak dapat mengunduh $url\n"; $gagal++; }
     }
     $lokal = pindai_hash_lokal(); $beda = []; foreach ($lokal as $rel => $h) { if (!isset($resmi[$rel]) || $resmi[$rel] !== $h) { $beda[] = $rel; } }
     $hilang = array_diff_key($resmi, $lokal);
     echo '  berkas resmi: ' . count($resmi) . ', lokal: ' . count($lokal) . "\n";
     if ($beda || $hilang) { foreach ($beda as $b) echo "  [GAGAL] beda dari rilis resmi: $b\n"; foreach (array_keys($hilang) as $b) echo "  [GAGAL] ada di rilis resmi, hilang lokal: $b\n"; $gagal += count($beda) + count($hilang); }
-    else { echo "[LULUS] seluruh " . count($lokal) . " berkas lokal identik dengan rilis resmi (CodeIgniter 3.1.13, pdf.js 3.11.174, Tailwind 3.4.17; akhir baris dinormalisasi ke LF)\n"; }
+    else { echo "[LULUS] seluruh " . count($lokal) . " berkas lokal identik dengan rilis resmi (CodeIgniter 3.1.13, pdf.js 4.10.38 legacy, Tailwind 3.4.17; akhir baris dinormalisasi ke LF)\n"; }
     echo ($man && $man['berkas'] === $lokal ? "[LULUS] manifest sama dengan berkas lokal\n" : "[GAGAL] manifest tidak sama dengan berkas lokal - jalankan tulis-manifest sesudah verifikasi\n");
     if (!($man && $man['berkas'] === $lokal)) { $gagal++; }
     echo "\n";
@@ -368,7 +368,7 @@ function transport_ctx() { return stream_context_create(['http' => ['timeout' =>
 if ($mode === 'tulis-manifest') {
     $lokal = pindai_hash_lokal();
     $man = ['keterangan' => 'Hash SHA-256 (akhir baris dinormalisasi ke LF) kode pihak ketiga yang di-vendor. Bangkitkan ulang HANYA sesudah `php docs/engineering/pindai_kode_berbahaya.php upstream` menyatakan seluruhnya identik dengan rilis resmi.',
-        'sumber' => ['system/' => 'CodeIgniter 3.1.13 (github.com/bcit-ci/CodeIgniter, tag 3.1.13)', 'assets/js/vendor/pdfjs/' => 'pdfjs-dist 3.11.174 (npm, build/)', 'assets/js/vendor/tailwind-3.4.17.js' => 'cdn.tailwindcss.com/3.4.17'],
+        'sumber' => ['system/' => 'CodeIgniter 3.1.13 (github.com/bcit-ci/CodeIgniter, tag 3.1.13)', 'assets/js/vendor/pdfjs/' => 'pdfjs-dist 4.10.38 (npm, legacy/build/)', 'assets/js/vendor/tailwind-3.4.17.js' => 'cdn.tailwindcss.com/3.4.17'],
         'diverifikasi_upstream' => date('Y-m-d'), 'berkas' => $lokal];
     file_put_contents(pindai_manifest_path(), json_encode($man, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
     echo "manifest ditulis: " . count($lokal) . " berkas\n"; exit(0);
