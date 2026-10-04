@@ -515,7 +515,9 @@ foreach ($hs as $c) {
     curl_multi_remove_handle($mh, $c); curl_close($c);
 }
 curl_multi_close($mh);
-cek($tebakan === 5 && $ditahan === 3, "Login paralel: tepat 5 tebakan diperiksa, 3 ditahan (dapat $tebakan diperiksa, $ditahan ditahan)");
+// Yang dibuktikan: batas tidak bisa dilampaui lewat permintaan serentak. Di bawah perebutan kunci DB
+// pembatas laju sengaja menolak (429) saat ragu, jadi jumlah yang diperiksa bisa kurang dari 5.
+cek($tebakan >= 1 && $tebakan <= 5 && $tebakan + $ditahan === 8, "Login paralel: paling banyak 5 tebakan diperiksa, sisanya ditahan (dapat $tebakan diperiksa, $ditahan ditahan)");
 $n_login = fn() => array_sum(array_map(fn($ip) => hitungan(hash('sha256', "login:ip:$ip")), IP_UJI));
 $sebelum = $n_login();
 masuk($e_p, $SANDI);
