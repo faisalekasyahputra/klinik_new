@@ -15,7 +15,14 @@
     
     /* Brand Accent */
     --portal-brand: #00a3b5; /* Teal for light theme visibility */
-    
+    /* Teks di atas tombol berlatar --portal-brand (4 Okt 2026: dulu dipakai tanpa definisi dan
+       warnanya kebetulan mewarisi induk). Kuning muda di atas teal, pilihan user. */
+    --portal-btn-text: #ecffb6;
+    /* Warna status (kategori kumuh dll.), disetel per tema agar tetap terbaca di latar gelap. */
+    --portal-status-bahaya: #b91c1c;
+    --portal-status-waspada: #b45309;
+    --portal-status-aman: #047857;
+
     /* Card Buttons */
     --portal-btn-bg: rgba(var(--bg-card-rgb), 0.05);
     --portal-btn-border: rgba(var(--bg-card-rgb), 0.1);
@@ -41,7 +48,11 @@
     
     /* Brand Accent */
     --portal-brand: #d6fb00; /* Original bright green */
-    
+    --portal-btn-text: #0a1a1f; /* gelap di atas lime; kuning muda di atas lime tidak terbaca */
+    --portal-status-bahaya: #f87171;
+    --portal-status-waspada: #fbbf24;
+    --portal-status-aman: #34d399;
+
     /* Card Buttons */
     --portal-btn-bg: rgba(var(--brand-rgb), 0.1);
     --portal-btn-border: rgba(var(--brand-rgb), 0.2);
