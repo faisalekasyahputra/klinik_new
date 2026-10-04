@@ -29,7 +29,9 @@ function pinjam_rate($db,$key){if(array_key_exists($key,$GLOBALS['rate_asli']))r
   $GLOBALS['rate_asli'][$key]=$db->one('SELECT kunci,jendela_mulai_at,jumlah_gagal FROM sys_batas_laju WHERE kunci=?',[$key]);
   $db->q('DELETE FROM sys_batas_laju WHERE kunci=?',[$key]);}
 $pepper=envv()['KPKP_DATA_PEPPER'] ?? '';
-foreach(['warga_lookup','warga_submit','warga_start_revision','admin_queue_decision'] as $policy)
+/* profil_nik (5/hari per IP) ikut dipinjam sejak 4 Okt 2026: tanpanya uji NIK Profil Saya merah
+   deterministik mulai jalan keenam dalam sehari dari 127.0.0.1. Ember per akun tidak perlu, akunnya baru. */
+foreach(['warga_lookup','warga_submit','warga_start_revision','admin_queue_decision','profil_nik'] as $policy)
   foreach(['127.0.0.1','::1','0000000000000000/64'] as $ip) /* ::1 dikelompokkan per /64 */ pinjam_rate($db,hash('sha256',$policy.':ip:'.$ip));
 /* R3 menyentuh tiga NIK fixture, bukan satu - embernya per-NIK, jadi ketiganya
    harus dipinjam atau tabrakannya cuma berpindah ke fixture berikutnya. */
@@ -102,7 +104,10 @@ try {
      (keputusan user 10 Agt 2026) - jadi tidak boleh ada penyimpanan "sudah
      pernah dilihat" yang membuatnya diam di layar berikutnya. */
   check(strpos($bodyDesil,'id="modal-simperum"')!==false,'Modal SIMPERUM belum aktif dirender saat mode simulasi');
-  check(strpos($bodyDesil,'SIMPERUM belum diaktifkan')!==false,'Modal menyebut sebabnya: belum disetujui, bukan rusak');
+  /* Teks 4 Okt 2026: production sudah memakai SIMPERUM sungguhan sejak 31 Agt, jadi modal menyebut
+     LINGKUNGAN UJI, bukan "belum disetujui" (klaim lama itu kini salah). */
+  check(strpos($bodyDesil,'Lingkungan uji: SIMPERUM memakai data contoh')!==false
+        && strpos($bodyDesil,'belum disetujui')===false,'Modal menyebut sebabnya: mode uji, bukan menunggu izin');
   /* Modal WAJIB hilang sendiri begitu SIMPERUM aktif - kalau tidak, kelak ia
      berbohong ke arah sebaliknya dan memberitahu penguji bahwa data sungguhan
      itu contoh. Diperiksa STRUKTURAL, dan itu disebut apa adanya: jalur `api`

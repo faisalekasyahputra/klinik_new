@@ -179,7 +179,11 @@ if ( ! $slides_data) { return; }
                     <h2 class="text-3xl font-black sm:text-4xl" x-text="slide.title"></h2>
                     <p class="program-slide-desc mt-3 text-sm leading-relaxed" x-text="slide.description"></p>
                     <div class="program-slide-terms mt-4 border-t pt-4 text-xs leading-relaxed"><span class="font-bold">Syarat utama: </span><span x-text="slide.terms"></span></div>
-                    <?php if (in_array($carousel_context, ['diagnosa', 'warga'], TRUE)): ?>
+                    <?php if ( ! empty($carousel_tombol_tutup)): ?>
+                    <!-- Di dalam modal (pendataan warga langkah 2 ke atas): menggulir ke formulir di balik
+                         modal tidak berguna, jadi tombolnya menutup modal lewat event jendela. -->
+                    <button type="button" @click="$dispatch('tutup-etalase-program')" class="program-showcase-action mt-5 inline-flex w-max items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition hover:-translate-y-0.5 hover:brightness-125">Lanjutkan pendataan <i class="fa-solid fa-arrow-right"></i></button>
+                    <?php elseif (in_array($carousel_context, ['diagnosa', 'warga'], TRUE)): ?>
                     <button type="button" @click="document.getElementById('<?= $carousel_context === 'warga' ? 'form-pendataan-warga' : 'form-diagnosa' ?>').scrollIntoView({ behavior: 'smooth', block: 'start' })" class="program-showcase-action mt-5 inline-flex w-max items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition hover:-translate-y-0.5 hover:brightness-125">Cek Kelayakan <i class="fa-solid fa-arrow-right"></i></button>
                     <?php else: ?>
                     <!-- Diarahkan ke wizard pendataan warga (1 Agu 2026), bukan lagi

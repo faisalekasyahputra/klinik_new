@@ -108,6 +108,14 @@ cek(strpos($komponen, 'Program_model') !== FALSE, 'Komponen mengambil dari Progr
 cek(preg_match("/\{\s*id:\s*'[a-z_-]+'\s*,\s*title:/", $komponen) === 0,
     'Nol slide hardcode tersisa di JS - sumber ketiga tidak hidup lagi');
 
+/* Permintaan user 4 Okt 2026: di pendataan warga, korsel penuh hanya di langkah 1; sesudahnya lewat
+   modal yang di-teleport ke body (panel portal ber-transform memotong position:fixed di HP). */
+$pendataan = (string) @file_get_contents(APP_ROOT . '/application/views/pages/warga/pendataan.php');
+cek(strpos($pendataan, '<?php if ($step === 0): ?>') !== FALSE && strpos($pendataan, 'data-buka-etalase-program') !== FALSE
+    && strpos($pendataan, 'x-teleport="body"') !== FALSE && strpos($pendataan, "'carousel_tombol_tutup' => TRUE") !== FALSE
+    && strpos($komponen, "\$dispatch('tutup-etalase-program')") !== FALSE,
+    'Pendataan warga: korsel penuh di langkah 1, sesudahnya tombol Lihat program membuka modal');
+
 $beranda = http('/');
 foreach ($etalase as $p) {
     cek(strpos($beranda, '"id":"' . $p['kode_program'] . '"') !== FALSE,

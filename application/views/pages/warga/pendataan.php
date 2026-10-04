@@ -62,6 +62,7 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
 <?php $this->load->view('components/modal_simperum_simulasi'); ?>
 
 <section class="mx-auto max-w-4xl px-1 py-3 sm:px-3 sm:py-5 font-outfit" style="color:var(--portal-text)">
+    <?php if ($step === 0): ?>
     <section class="mb-10">
         <div class="mb-5 text-center">
             <p class="text-[10px] font-bold uppercase tracking-[.18em]" style="color:var(--teal-bright)">Program Perumahan</p>
@@ -70,6 +71,32 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
         </div>
         <?php $this->load->view('components/program_showcase_carousel', ['carousel_context' => 'warga']); ?>
     </section>
+    <?php else: ?>
+    <?php /* Permintaan user 4 Okt 2026: lewat langkah 1 etalase program disembunyikan supaya formulir
+             langsung terlihat; carousel yang sama tetap bisa dibuka lewat modal. */ ?>
+    <section class="mb-6" x-data="{ buka: false }" @tutup-etalase-program.window="buka = false" @keydown.escape.window="buka = false">
+        <div class="flex flex-wrap items-center gap-3 rounded-2xl border p-4" style="border-color:var(--portal-border);background:var(--portal-bg-card)">
+            <div style="flex:1 1 14rem">
+                <p class="text-[10px] font-bold uppercase tracking-[.18em]" style="color:var(--teal-bright)">Program Perumahan</p>
+                <p class="mt-0.5 text-sm" style="color:var(--portal-text-muted)">Ingin melihat lagi pilihan program yang tersedia?</p>
+            </div>
+            <button type="button" @click="buka = true" data-buka-etalase-program class="rounded-xl px-4 py-2.5 text-sm font-black" style="background:var(--portal-brand);color:#06333b">Lihat program</button>
+        </div>
+        <?php /* x-teleport ke body: panel konten portal ber-transform, jadi position:fixed di dalamnya
+                 mengacu ke panel, bukan layar (di HP judul dan tombol tutup terpotong). */ ?>
+        <template x-teleport="body">
+        <div x-show="buka" x-cloak class="fixed inset-0 z-50 flex p-4" style="background:rgba(4,20,24,.78);overflow-y:auto" role="dialog" aria-modal="true" aria-label="Program Perumahan" data-modal-etalase-program>
+            <div @click.outside="buka = false" class="w-full max-w-4xl" style="margin:auto">
+                <div class="mb-3 flex items-center gap-3">
+                    <h2 class="text-lg font-black" style="flex:1;color:#fff">Program Perumahan</h2>
+                    <button type="button" @click="buka = false" aria-label="Tutup" class="h-10 w-10 rounded-xl text-lg font-bold" style="background:var(--portal-bg-card);color:var(--portal-text)">&times;</button>
+                </div>
+                <?php $this->load->view('components/program_showcase_carousel', ['carousel_context' => 'warga', 'carousel_tombol_tutup' => TRUE]); ?>
+            </div>
+        </div>
+        </template>
+    </section>
+    <?php endif; ?>
 
     <header class="mb-5">
         <p class="text-[10px] font-bold uppercase tracking-[.18em]" style="color:var(--teal-bright)">Pendataan Warga</p>
