@@ -103,6 +103,10 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
             <a href="<?= base_url('Auth/forgot_password') ?>" class="kpkp-login-modal__link">Lupa Password?</a>
             <span>Belum punya akun? <a href="<?= base_url('Auth/register') ?>" class="kpkp-login-modal__link">Daftar →</a></span>
         </div>
+        <div class="kpkp-login-modal__footer-links">
+            <a href="<?= base_url('kebijakan-privasi') ?>" class="kpkp-login-modal__link">Kebijakan Privasi</a>
+            <a href="<?= base_url('syarat-ketentuan') ?>" class="kpkp-login-modal__link">Syarat dan Ketentuan</a>
+        </div>
 
         <div class="kpkp-login-modal__govt-badge">
             <i class="fa-solid fa-shield-halved"></i>

@@ -672,6 +672,33 @@ class Index extends MY_Controller {
 		$this->load->view('layouts/main',$data);
 	}
 
+	/* Dokumen hukum publik (4 Okt 2026). Isinya ditulis dari pembacaan kode dan
+	   menunggu peninjauan dinas; sakelar spanduk draf dan tanggalnya di
+	   config/kebijakan_data.php. */
+	public function kebijakan_privasi() {
+		$this->render('pages/umum/kebijakan_privasi', $this->_data_dokumen_hukum());
+	}
+
+	public function syarat_ketentuan() {
+		$this->render('pages/umum/syarat_ketentuan', $this->_data_dokumen_hukum());
+	}
+
+	private function _data_dokumen_hukum() {
+		$this->config->load('kebijakan_data', TRUE, TRUE);
+		$this->load->model('Setting_model');
+		$s = $this->Setting_model->get_all();
+		return [
+			'draf'       => (bool) $this->config->item('dokumen_hukum_draf', 'kebijakan_data'),
+			'diperbarui' => (string) $this->config->item('dokumen_hukum_diperbarui', 'kebijakan_data'),
+			// Kontak resmi diisi superadmin di Konten Beranda; yang kosong tidak ditampilkan.
+			'kontak'     => array_filter([
+				'Alamat'  => trim((string) ($s['footer_address'] ?? '')),
+				'Telepon' => trim((string) ($s['footer_phone'] ?? '')),
+				'Surel'   => trim((string) ($s['footer_email'] ?? '')),
+			], 'strlen'),
+		];
+	}
+
 	// A4 - struktur() DICABUT 29 Jul 2026 atas keputusan user, bersama
 	// view-nya. Halaman itu memajang NAMA INDIVIDU NYATA sebagai Kepala Dinas
 	// tanpa satu pun sumber data, ditambah empat placeholder "Nama Pejabat"

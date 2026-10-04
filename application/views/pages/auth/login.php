@@ -166,6 +166,10 @@
                 <a href="<?= base_url('Auth/forgot_password') ?>" class="auth-link">Lupa Password?</a>
                 <span>Belum punya akun? <a href="<?= base_url('Auth/register') ?>" class="auth-link">Daftar →</a></span>
             </div>
+            <p class="auth-footer-links">
+                <a href="<?= base_url('kebijakan-privasi') ?>" class="auth-link">Kebijakan Privasi</a>
+                <a href="<?= base_url('syarat-ketentuan') ?>" class="auth-link">Syarat dan Ketentuan</a>
+            </p>
 
             <!-- Government Badge -->
             <div class="auth-govt-badge">

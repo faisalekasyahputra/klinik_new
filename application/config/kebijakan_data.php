@@ -32,3 +32,14 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * kedua nilai itu.
  */
 $config['identitas_warga_kabkota'] = 'menunggu_keputusan';
+
+/**
+ * Halaman Kebijakan Privasi (/kebijakan-privasi) dan Syarat dan Ketentuan
+ * (/syarat-ketentuan), ditulis 4 Okt 2026 dari pembacaan kode, BELUM ditinjau
+ * dinas. Selama TRUE kedua halaman memasang spanduk "Versi draf, menunggu
+ * peninjauan dinas". Ubah ke FALSE begitu dinas menyetujui isinya, dan
+ * perbarui tanggalnya setiap kali isi kedua halaman diubah.
+ * Penjaga: docs/engineering/uji_halaman_hukum.php.
+ */
+$config['dokumen_hukum_draf'] = TRUE;
+$config['dokumen_hukum_diperbarui'] = '4 Oktober 2026';
