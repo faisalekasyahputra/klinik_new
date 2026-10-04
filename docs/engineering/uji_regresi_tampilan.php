@@ -443,9 +443,14 @@ foreach ([['Admin_Dashboard', 'Ringkasan Kerja'], ['Admin', 'Tinjau Antrean'], [
           ['Admin_Audit', 'Jejak Audit']] as [$jalur, $nama]) {
     $hal = http('adm', $jalur);
     $esc = htmlspecialchars($nama, ENT_QUOTES, 'UTF-8');
-    cek(strpos($hal, 'data-judul-halaman') !== FALSE && strpos($hal, '>' . $esc . '</h1>') !== FALSE
-        && strpos($hal, '<title>' . $nama . ' - ') !== FALSE && strpos($hal, '>' . $esc . '</span>') !== FALSE,
-        "{$jalur}: judul, <title>, dan label sidebar sama-sama \"{$nama}\"");
+    // Cek ini sesekali merah tanpa bisa diulang (4 Okt 2026); baris GAGAL-nya kini menyebut syarat
+    // mana yang meleset dan <title> yang diterima, karena runner hanya mencetak baris GAGAL.
+    $syarat = ['penanda' => strpos($hal, 'data-judul-halaman') !== FALSE, 'h1' => strpos($hal, '>' . $esc . '</h1>') !== FALSE,
+               'title' => strpos($hal, '<title>' . $nama . ' - ') !== FALSE, 'sidebar' => strpos($hal, '>' . $esc . '</span>') !== FALSE];
+    $meleset = array_keys(array_filter($syarat, fn($v) => ! $v));
+    cek($meleset === [],
+        "{$jalur}: judul, <title>, dan label sidebar sama-sama \"{$nama}\""
+        . ($meleset ? ' [meleset: ' . implode(',', $meleset) . '; ' . strlen($hal) . ' byte; title: ' . (preg_match('#<title>([^<]*)#', $hal, $tm) ? $tm[1] : '-') . ']' : ''));
 }
 $judul_liar = [];
 $pengecualian = ['aduan/detail.php', 'antrean/detail.php', 'srp2/detail.php', 'users/privileges.php', 'kemitraan/peserta.php'];
