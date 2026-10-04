@@ -33,9 +33,10 @@ $style_class = [
     <?php if (!empty($catatan_name)): ?>
     <textarea name="<?= html_escape($catatan_name) ?>" rows="2" placeholder="<?= html_escape($catatan_placeholder ?? 'Catatan (opsional)') ?>" class="w-full rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-2 text-xs text-gray-800 dark:text-gray-200"><?= html_escape($catatan_value ?? '') ?></textarea>
     <?php endif; ?>
-    <div class="flex gap-2">
+    <?php // flex-wrap: tiga tombol magang (Teruskan, Tolak, Terima langsung) dulu meluber keluar modal max-w-sm. ?>
+    <div class="flex flex-wrap gap-2">
         <?php foreach ($buttons as $b): ?>
-        <button type="submit" name="status" value="<?= html_escape($b['value']) ?>" class="flex-1 <?= $style_class[$b['style'] ?? 'neutral'] ?>"><?= html_escape($b['label']) ?></button>
+        <button type="submit" name="status" value="<?= html_escape($b['value']) ?>" class="flex-1 justify-center <?= $style_class[$b['style'] ?? 'neutral'] ?>"><?= html_escape($b['label']) ?></button>
         <?php endforeach; ?>
     </div>
 </form>
