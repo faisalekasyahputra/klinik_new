@@ -44,7 +44,7 @@ $langkah = [
                 $nama = $identitas_menunggu ? 'Warga Contoh ' . str_pad((string) $r['id'], 3, '0', STR_PAD_LEFT) : ($r['full_name'] ?: '-');
                 $hp = $identitas_menunggu ? str_repeat('•', 8) . str_pad(substr((string) $r['id'], -4), 4, '0', STR_PAD_LEFT) : ($r['phone'] ?: '-');
                 ?>
-                <tr>
+                <tr class="align-top">
                     <td class="px-4 py-3 align-top">
                         <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($nama) ?></div>
                         <div class="text-xs font-mono"><?= html_escape($hp) ?></div>
