@@ -1,7 +1,13 @@
 <?php
 /**
- * Pemberitahuan SIMPERUM belum aktif - muncul untuk penguji setiap halaman
- * yang bergantung pada SIMPERUM dibuka.
+ * Pemberitahuan mode uji SIMPERUM - muncul untuk penguji setiap halaman yang
+ * bergantung pada SIMPERUM dibuka, HANYA di lingkungan bermode simulasi.
+ *
+ * Teks diperbarui 4 Okt 2026: dulu berbunyi "belum diaktifkan / belum
+ * disetujui", padahal production sudah memakai SIMPERUM sungguhan (mode api)
+ * sejak 31 Agt 2026. Lokal TETAP simulasi dengan sengaja (PII warga tidak
+ * masuk mesin dev, suite gateway butuh fixture), jadi modal kini menyebut
+ * lingkungannya, bukan menunggu izin.
  *
  * KENAPA MODAL, BUKAN SPANDUK SAJA. Spanduk `is_simulation` sudah ada di
  * halaman pendataan sejak lama, dan penguji tetap melaporkan hasil simulasi
@@ -32,11 +38,11 @@ if ($CI->config->item('simperum_mode', 'simperum') !== 'simulation') { return; }
         aria-labelledby="modal-simperum-judul">
     <div class="p-5 sm:p-6">
         <p class="text-[10px] font-bold uppercase tracking-[.18em]" style="color:#b45309">Pemberitahuan untuk penguji</p>
-        <h2 id="modal-simperum-judul" class="mt-1 text-lg font-black sm:text-xl">SIMPERUM belum diaktifkan</h2>
+        <h2 id="modal-simperum-judul" class="mt-1 text-lg font-black sm:text-xl">Lingkungan uji: SIMPERUM memakai data contoh</h2>
 
         <p class="mt-3 text-sm leading-relaxed" style="color:var(--portal-text-muted)">
-            Sambungan ke data SIMPERUM <strong>belum disetujui</strong>, sehingga belum dapat dinyalakan.
-            Selama itu, halaman ini berjalan memakai <strong>data contoh</strong>.
+            Situs ini berjalan dalam mode uji, jadi pencarian NIK memakai <strong>data contoh</strong>, bukan SIMPERUM.
+            Di situs resmi, SIMPERUM sudah tersambung dan pemberitahuan ini tidak muncul.
         </p>
 
         <div class="mt-4 rounded-xl border p-3 text-xs leading-relaxed"
@@ -57,11 +63,6 @@ if ($CI->config->item('simperum_mode', 'simperum') !== 'simulation') { return; }
                 <li>Hasil di alur ini <strong>bukan keputusan bantuan</strong> dan tidak boleh dipakai sebagai dasar apa pun.</li>
             </ul>
         </div>
-
-        <p class="mt-3 text-xs" style="color:var(--portal-text-muted)">
-            Begitu sambungan disetujui dan dinyalakan, pemberitahuan ini hilang dengan sendirinya
-            dan seluruh halaman langsung memakai data sungguhan.
-        </p>
 
         <div class="mt-5 flex justify-end">
             <button type="button" id="modal-simperum-tutup"
