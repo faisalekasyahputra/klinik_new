@@ -24,7 +24,7 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
             &middot; status <span class="font-bold"><?= html_escape($row->status) ?></span>
         </p>
     </div>
-    <a href="<?= base_url('Admin_Kemitraan') ?>" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali</span></a>
+    <a href="<?= base_url('Admin_Kemitraan') ?>" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>Kembali</span></a>
 </div>
 
 <form method="POST" action="<?= base_url('Admin_Kemitraan/simpan_ubah/' . (int) $row->id) ?>"
@@ -143,7 +143,7 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
             <p class="mb-3 text-xs font-bold text-emerald-600 dark:text-emerald-400">
                 <i class="ph ph-check-circle"></i>
                 Sudah ada -
-                <a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . (int) $row->id . '/balasan') ?>" target="_blank" rel="noopener" class="underline">lihat berkasnya</a>.
+                <a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . (int) $row->id . '/balasan') ?>" data-file-view data-file-title="Surat balasan" target="_blank" rel="noopener" class="underline">lihat berkasnya</a>.
                 Mengunggah lagi akan menggantikannya.
             </p>
         <?php endif; ?>

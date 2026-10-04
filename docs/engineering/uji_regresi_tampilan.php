@@ -1209,7 +1209,8 @@ cek(strpos((string) @file_get_contents(APP_ROOT . '/application/views/admin/reka
 $sumber = fn($p) => (string) @file_get_contents(APP_ROOT . '/application/views/admin/' . $p);
 cek(strpos($sumber('antrean/detail.php'), 'API SIMPERUM') === FALSE && strpos($sumber('katalog/index.php'), '>Badge<') === FALSE
     && preg_match('/>\s*(Import|Unduh template)|isi sheet/', $sumber('psu/index.php')) === 0
-    && substr_count($sumber('magang_posisi/index.php'), "preg_replace('/^Bidang\s+/i', '', \$b->nama)") === 2,
+    && strpos($sumber('magang_posisi/index.php'), "\$tanpa_awalan = fn(\$n) => preg_replace('/^Bidang\s+/i'") !== FALSE
+    && substr_count($sumber('magang_posisi/index.php'), '$tanpa_awalan(') >= 2,
     'Istilah layar: tanpa "API" di lencana simulasi, Label (bukan Badge), Impor/templat/lembar di PSU, bidang magang tanpa awalan');
 cek(strpos($sumber('kemitraan/index.php'), 'name="tanggal_sertifikat" value="<?= html_escape($r->tanggal_sertifikat ?? \'\') ?>" class="mt-1 block rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm') !== FALSE,
     'KKN & Magang: isian tanggal sertifikat berukuran normal (text-sm, py-2)');

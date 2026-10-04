@@ -23,8 +23,10 @@ $nama_bidang = array_column($daftar_bidang, 'nama', 'kode');
 <div class="mb-5 p-4 rounded-2xl bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 text-orange-800 dark:text-orange-400 text-sm flex items-start gap-3">
     <i class="ph ph-warning-circle text-lg mt-0.5"></i>
     <div>
-        <strong>Bidang tanpa admin ter-assign:</strong> <?= html_escape(implode(', ', $bidang_tanpa_admin)) ?>.
-        Aduan yang masuk ke bidang ini tidak akan muncul di dashboard siapa pun - tetapkan admin lewat <a href="<?= base_url('Admin_Users') ?>" class="underline font-semibold">Manajemen Pengguna</a>.
+        <?php // Bahasa awam (permintaan user 4 Okt 2026); menu bernama "Akses Staf", bukan "Manajemen Pengguna". ?>
+        <strong>Belum ada admin untuk:</strong> <?= html_escape(implode(', ', $bidang_tanpa_admin)) ?>.
+        Aduan yang diteruskan ke bidang ini belum ada petugas yang bisa memprosesnya.
+        Tunjuk admin untuk bidang tersebut di menu <a href="<?= base_url('Admin_Users') ?>" class="underline font-semibold">Akses Staf</a>.
     </div>
 </div>
 <?php endif; ?>
@@ -94,7 +96,7 @@ $filter_html = ob_get_clean();
                         <div class="text-xs text-gray-500 dark:text-brand-muted mt-0.5 truncate">Catatan: <?= html_escape($r->catatan_admin) ?></div>
                         <?php endif; ?>
                         <?php if (!empty($r->lampiran)): ?>
-                        <a href="<?= base_url('Admin_Aduan/lihat_lampiran/' . $r->id) ?>" target="_blank" rel="noopener" class="inline-block mt-0.5 text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> Lampiran</a>
+                        <a href="<?= base_url('Admin_Aduan/lihat_lampiran/' . $r->id) ?>" data-file-view data-file-title="Lampiran aduan: <?= html_escape($r->judul) ?>" class="inline-block mt-0.5 text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> Lampiran</a>
                         <?php endif; ?>
                     </td>
                     <?php

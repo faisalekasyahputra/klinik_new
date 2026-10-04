@@ -42,6 +42,21 @@ class Admin_Magang_Posisi extends Admin_Controller {
             ->get('kkn_magang_posisi')->row('terakhir');
         $data['jumlah_aktif'] = (int) $this->db->where('aktif', 1)->count_all_results('kkn_magang_posisi');
 
+        /* Keadaan bidang di papan publik, dengan aturan yang sama seperti KemitraanPortal::magang():
+           bidang nonaktif di Atur Slot tidak tampil sama sekali, bidang tanpa bulan dibuka tampil
+           "Belum dibuka". Tanpa tanda ini petugas mengira posisinya sudah bisa dilamar. */
+        $this->load->model('kemitraan_slot_model', 'slot');
+        $peta = $this->slot->peta_slot($this->slot->tahun_papan());
+        $di_papan = array_map(static function ($b) { return $b->kode; }, $this->slot->bidang());
+        $data['keadaan_bidang'] = [];
+        foreach ($data['rows'] as $r) {
+            if ( ! in_array($r->bidang_kode, $di_papan, TRUE)) {
+                $data['keadaan_bidang'][$r->bidang_kode] = 'Bidang tidak tampil di papan';
+            } elseif (empty($peta[$r->bidang_kode])) {
+                $data['keadaan_bidang'][$r->bidang_kode] = 'Bidang belum membuka bulan magang';
+            }
+        }
+
         $this->render_admin('admin/magang_posisi/index', $data);
     }
 

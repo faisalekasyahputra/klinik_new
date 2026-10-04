@@ -17,7 +17,7 @@ $sandi_awal = $this->session->flashdata('sandi_awal');
 <?php $this->load->view('admin/components/judul_halaman', [
     'jh_judul'     => $baru ? 'Tambah Pengembang' : $r->nama_perusahaan,
     'jh_deskripsi' => $baru ? 'Entri manual untuk data historis; pengajuan SRP2 yang diterima masuk otomatis.' : 'Ubah profil, kontak, sertifikasi, dan akun pengembang entri direktori ini.',
-    'jh_aksi'      => '<a href="' . base_url('Admin_Srp2') . '" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali</span></a>',
+    'jh_aksi'      => '<a href="' . base_url('Admin_Srp2') . '" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>Kembali</span></a>',
 ]); ?>
 <div class="tumpuk-bagian">
 <?php if ($sandi_awal): ?>
@@ -129,7 +129,7 @@ $sandi_awal = $this->session->flashdata('sandi_awal');
 
     <div class="flex flex-wrap items-center gap-2">
         <button type="submit" class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan</span></button>
-        <a href="<?= base_url('Admin_Srp2') ?>" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali</span></a>
+        <a href="<?= base_url('Admin_Srp2') ?>" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>Kembali</span></a>
     </div>
 </form>
 

@@ -15,7 +15,7 @@ $this->load->view('admin/components/judul_halaman', [
     'jh_judul' => $aduan->judul,
     'jh_deskripsi' => 'Diterima ' . $e(tgl_id($aduan->created_at, TRUE, TRUE)) . ' '
         . $this->load->view('admin/components/status_badge', ['label' => $aduan->status, 'kelas' => $kelas_status[$aduan->status] ?? 'pending'], TRUE),
-    'jh_aksi' => '<a href="' . base_url($back_url) . '" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali ke daftar aduan</span></a>',
+    'jh_aksi' => '<a href="' . base_url($back_url) . '" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>Kembali ke daftar aduan</span></a>',
 ]);
 ?>
 <div class="tumpuk-bagian">
@@ -56,7 +56,7 @@ $this->load->view('admin/components/judul_halaman', [
     <?php if ( ! empty($aduan->lampiran)): ?>
         <section class="kartu-admin isi-kartu">
             <h2 class="text-sm font-black text-gray-900 dark:text-white">Lampiran</h2>
-            <a href="<?= base_url('Admin_Aduan/lihat_lampiran/' . (int) $aduan->id) ?>" class="tombol-kedua mt-2">
+            <a href="<?= base_url('Admin_Aduan/lihat_lampiran/' . (int) $aduan->id) ?>" data-file-view data-file-title="Lampiran aduan" class="tombol-kedua mt-2">
                 <i class="ph ph-paperclip"></i><span>Buka lampiran</span>
             </a>
         </section>

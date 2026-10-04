@@ -74,6 +74,7 @@ class Admin_Katalog_Program extends Admin_Controller {
             }));
             $r->selisih = $r->judul_beda !== [];
             $r->tanpa_aturan = $r->judul_diagnosa === [];
+            $r->gambar_tampil = $this->Program_model->gambar_tampil((array) $r); // thumbnail = foto yang dilihat warga
         }
 
         $data['rows'] = $rows;

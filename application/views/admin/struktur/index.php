@@ -15,6 +15,19 @@
 $csrf_nama = $this->security->get_csrf_token_name();
 $csrf_hash = $this->security->get_csrf_hash();
 $ada_yatim = array_sum($yatim) > 0;
+// Nama petugas, bukan sekadar "1 orang" (4 Okt 2026). Tiap nama menaut ke Akses Staf yang tersaring ke akunnya.
+// Akun nonaktif tetap didaftar (bertanda) di bawah tombol "Belum ada, tetapkan" agar bisa diaktifkan lagi.
+$daftar_petugas = function (array $daftar) {
+    if ( ! $daftar) { return ''; }
+    $out = '<ul class="mt-1 space-y-1">';
+    foreach ($daftar as $u) {
+        $out .= '<li class="text-xs leading-tight"><a href="' . base_url('Admin_Users?q=' . rawurlencode($u->email)) . '" class="font-bold text-gray-900 hover:underline dark:text-white">'
+            . html_escape($u->nama ?: $u->email) . '</a>'
+            . (strtolower(trim((string) $u->status)) === 'nonaktif' ? ' <span class="text-[10px] font-bold text-red-600 dark:text-red-400">nonaktif</span>' : '')
+            . '<span class="block text-gray-500 dark:text-brand-muted">' . html_escape($u->email) . '</span></li>';
+    }
+    return $out . '</ul>';
+};
 ?>
 <div class="tumpuk-bagian" x-data="{ buka: false, jenis: '', kunci: '', nama: '', label: '' }">
     <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Bidang dan wilayah yang jadi acuan seluruh sistem, beserta siapa yang menanganinya.
@@ -63,9 +76,8 @@ $ada_yatim = array_sum($yatim) > 0;
                         <td class="px-4 py-3">
                             <?php if ((int) $b->petugas === 0): ?>
                             <a href="<?= base_url('Admin_Users') ?>" class="tombol-aksi tombol-aksi-bahaya"><i class="ph ph-user-plus" aria-hidden="true"></i><span>Belum ada, tetapkan</span></a>
-                            <?php else: ?>
-                            <span class="text-xs"><?= (int) $b->petugas ?> orang</span>
                             <?php endif; ?>
+                            <?= $daftar_petugas($petugas_bidang[$b->kode] ?? []) ?>
                         </td>
                         <td class="px-4 py-3 text-xs"><?= (int) $b->aduan_aktif ?></td>
                         <td class="px-4 py-3">
@@ -104,10 +116,9 @@ $ada_yatim = array_sum($yatim) > 0;
                         <td class="px-4 py-3"><code class="rounded bg-gray-100 px-1.5 py-0.5 text-xs dark:bg-black/30"><?= (int) $w->id ?></code></td>
                         <td class="px-4 py-3">
                             <?php if ((int) $w->petugas === 0): ?>
-                            <span class="inline-block rounded-full bg-gray-100 px-2.5 py-1 text-[11px] font-bold text-gray-500 dark:bg-white/5 dark:text-brand-muted">Belum ada</span>
-                            <?php else: ?>
-                            <span class="text-xs"><?= (int) $w->petugas ?> orang</span>
+                            <a href="<?= base_url('Admin_Users') ?>" class="tombol-aksi"><i class="ph ph-user-plus" aria-hidden="true"></i><span>Belum ada, tetapkan</span></a>
                             <?php endif; ?>
+                            <?= $daftar_petugas($petugas_wilayah[(int) $w->id] ?? []) ?>
                         </td>
                         <td class="px-4 py-3 text-xs"><?= (int) $w->laporan ?></td>
                         <td class="px-4 py-3">

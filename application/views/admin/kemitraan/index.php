@@ -102,7 +102,7 @@ $filter_html = ob_get_clean();
                         $belum_ada = []; ?>
                         <?php foreach ($dokumen as $kunci => $d): ?>
                             <?php if ( ! empty($d[1])): ?>
-                            <div class="mt-1"><a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . $r->id . '/' . $kunci) ?>" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> <?= html_escape($d[0]) ?></a></div>
+                            <div class="mt-1"><a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . $r->id . '/' . $kunci) ?>" data-file-view data-file-title="<?= html_escape($d[0]) ?>" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> <?= html_escape($d[0]) ?></a></div>
                             <?php else: $belum_ada[] = strtolower($d[0]); endif; ?>
                         <?php endforeach; ?>
                         <?php if ($belum_ada): ?>

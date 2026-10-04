@@ -349,10 +349,13 @@ echo "\n== 6. Cakupan petugas ==\n";
 $hal2 = http('a', 'Admin_Struktur')['body'];
 $tanpa_petugas = (int) nilai(
     'SELECT COUNT(*) c FROM kabupaten k WHERE NOT EXISTS
-     (SELECT 1 FROM usr_akun u WHERE u.peran="admin_kabkota" AND u.kabupaten_id=k.id)');
+     (SELECT 1 FROM usr_akun u WHERE u.peran="admin_kabkota" AND u.kabupaten_id=k.id AND u.status<>"nonaktif")');
 cek(strpos($hal2, $tanpa_petugas . ' wilayah belum punya petugas') !== FALSE,
     "Jumlah wilayah tanpa petugas disebut ({$tanpa_petugas})");
-cek(substr_count($hal2, 'Belum ada</span>') === $tanpa_petugas,
+// Sejak 4 Okt 2026 baris wilayah tanpa petugas juga bertombol "Belum ada, tetapkan" seperti bidang.
+$bidang_tanpa = (int) nilai('SELECT COUNT(*) c FROM bidang b WHERE NOT EXISTS
+     (SELECT 1 FROM usr_akun u WHERE u.peran="admin_bidang" AND u.bidang_kode=b.kode AND u.status<>"nonaktif")');
+cek(substr_count($hal2, 'Belum ada, tetapkan</span>') === $tanpa_petugas + $bidang_tanpa,
     'Dan tiap barisnya sendiri ditandai, bukan cuma angkanya di judul');
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";

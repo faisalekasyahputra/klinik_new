@@ -13,7 +13,7 @@ $petunjuk = 'mt-1 block text-[11px] text-gray-500 dark:text-brand-muted';
     'jh_judul'     => $p['nama_program'],
     'jh_deskripsi' => 'Kode <code>' . html_escape($p['kode_program']) . '</code> (tidak bisa diubah)'
         . ($p['nama_kategori'] ? ' · ' . html_escape($p['nama_kategori']) : '') . '.',
-    'jh_aksi'      => '<a href="' . base_url('Admin_Katalog_Program') . '" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali</span></a>',
+    'jh_aksi'      => '<a href="' . base_url('Admin_Katalog_Program') . '" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>Kembali</span></a>',
 ]); ?>
 <?php /* `enctype` WAJIB: tanpa itu `$_FILES` kosong dan foto gagal tersimpan diam-diam. */ ?>
 <form action="<?= base_url('Admin_Katalog_Program/ubah') ?>" method="post" enctype="multipart/form-data" class="grid grid-kartu items-start lg:grid-cols-3">

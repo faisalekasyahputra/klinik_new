@@ -8,7 +8,7 @@
 <?php $this->load->view('admin/components/judul_halaman', [
     'jh_judul' => 'Peserta KKN',
     'jh_deskripsi' => html_escape($row->instansi_asal) . ' &middot; ' . html_escape($row->divisi_atau_tema ?: '(tanpa keterangan)'),
-    'jh_aksi' => '<a href="' . base_url('Admin_Kemitraan') . '" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali</span></a>',
+    'jh_aksi' => '<a href="' . base_url('Admin_Kemitraan') . '" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>Kembali</span></a>',
 ]); ?>
 
 <div class="kartu-admin overflow-hidden">

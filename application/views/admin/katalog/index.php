@@ -67,9 +67,15 @@
                     <?php else: foreach ($rows as $r): ?>
                     <tr>
                         <?php // max-w diukur, bukan ditebak: 240px menghasilkan 6px kelebihan di 1440px (§17 poin 6). ?>
-                        <td class="px-4 py-3 max-w-[200px]">
-                            <div class="font-bold text-gray-900 dark:text-white truncate"><?= html_escape($r->nama_program) ?></div>
-                            <div class="text-xs text-gray-500 dark:text-brand-muted truncate"><?= html_escape($r->deskripsi_singkat) ?></div>
+                        <td class="px-4 py-3 max-w-[280px]">
+                            <div class="flex items-center gap-3">
+                                <?php // Thumbnail = foto yang tampil di korsel beranda (Program_model::gambar_tampil), 4 Okt 2026. ?>
+                                <img src="<?= base_url($r->gambar_tampil) ?>" alt="" class="h-10 w-14 shrink-0 rounded-lg border border-gray-200 object-cover dark:border-white/10">
+                                <div class="min-w-0">
+                                    <div class="whitespace-normal font-bold leading-tight text-gray-900 dark:text-white"><?= html_escape($r->nama_program) ?></div>
+                                    <div class="text-xs text-gray-500 dark:text-brand-muted truncate"><?= html_escape($r->deskripsi_singkat) ?></div>
+                                </div>
+                            </div>
                         </td>
                         <td class="px-4 py-3 max-w-[220px] text-xs">
                             <?php if ($r->tanpa_aturan): ?>

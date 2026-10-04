@@ -69,7 +69,7 @@ $badge_kelas = [
                             foreach ($dokumen as $kunci => $d):
                                 if (empty($d[1])) { continue; } ?>
                                 <div class="mt-1">
-                                    <a href="<?= base_url('Kemitraan_Bidang/lihat_dokumen/' . $r->id . '/' . $kunci) ?>" target="_blank" rel="noopener"
+                                    <a href="<?= base_url('Kemitraan_Bidang/lihat_dokumen/' . $r->id . '/' . $kunci) ?>" data-file-view data-file-title="<?= html_escape($d[0]) ?>" target="_blank" rel="noopener"
                                        class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> <?= html_escape($d[0]) ?></a>
                                 </div>
                             <?php endforeach; ?>

@@ -209,7 +209,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
           Angka kumulatif dihitung sendiri oleh sistem dan ditampilkan di layar Capaian.
         </p>
 
-        <button class="tombol-utama"><span>Lanjut</span><i class="ph ph-arrow-right"></i></button>
+        <button class="tombol-utama"><span>Lanjut</span><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-right"></i></span></button>
       </form>
     </section>
 
@@ -242,7 +242,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
           <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
           <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
           <input type="hidden" name="langkah" value="isian">
-          <button class="tombol-utama"><span>Lihat isian</span><i class="ph ph-arrow-right"></i></button>
+          <button class="tombol-utama"><span>Lihat isian</span><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-right"></i></span></button>
         </form>
       <?php else: ?>
       <form method="post" action="<?= base_url('Rekam_Perumahan/simpan_program') ?>" class="mt-4 space-y-4">
@@ -265,7 +265,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
         </p>
 
         <div class="flex flex-wrap gap-2">
-          <button class="tombol-utama"><span>Lanjut</span><i class="ph ph-arrow-right"></i></button>
+          <button class="tombol-utama"><span>Lanjut</span><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-right"></i></span></button>
         </div>
       </form>
       <?php endif; ?>
@@ -371,8 +371,8 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
         <form method="post" action="<?= base_url('Rekam_Perumahan/langkah') ?>" class="flex flex-wrap gap-2">
           <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
           <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
-          <button name="langkah" value="program" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Program</span></button>
-          <button name="langkah" value="bnba" class="tombol-utama"><span>Lanjut</span><i class="ph ph-arrow-right"></i></button>
+          <button name="langkah" value="program" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>Program</span></button>
+          <button name="langkah" value="bnba" class="tombol-utama"><span>Lanjut</span><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-right"></i></span></button>
         </form>
       </section>
     <?php endif; ?>
@@ -416,8 +416,8 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
       <form method="post" action="<?= base_url('Rekam_Perumahan/langkah') ?>" class="flex flex-wrap gap-2">
         <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
         <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
-        <button name="langkah" value="isian" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Isian</span></button>
-        <button name="langkah" value="review" class="tombol-utama"><span>Lanjut</span><i class="ph ph-arrow-right"></i></button>
+        <button name="langkah" value="isian" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>Isian</span></button>
+        <button name="langkah" value="review" class="tombol-utama"><span>Lanjut</span><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-right"></i></span></button>
       </form>
     </section>
 
@@ -491,7 +491,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
           <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
           <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
           <input type="hidden" name="langkah" value="bnba">
-          <button class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>BNBA</span></button>
+          <button class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>BNBA</span></button>
         </form>
         <?php if ( ! $terkunci): ?>
           <form method="post" action="<?= base_url('Rekam_Perumahan/kirim') ?>"

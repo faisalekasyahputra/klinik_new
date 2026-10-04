@@ -28,11 +28,11 @@ if ( ! $mode_bidang) { $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' =
     <?php if ($mode_bidang): ?>
     <div class="flex gap-2">
         <?php foreach ([$tahun - 1, $tahun + 1] as $t): if ($t < 2020 || $t > (int) date('Y') + 5) { continue; } ?>
-        <a href="<?= base_url('Kemitraan_Bidang/kuota/' . (int) $t) ?>" class="tombol-kedua"><i class="ph <?= $t < $tahun ? 'ph-caret-left' : 'ph-caret-right' ?>"></i><span>Tahun <?= (int) $t ?></span></a>
+        <a href="<?= base_url('Kemitraan_Bidang/kuota/' . (int) $t) ?>" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph <?= $t < $tahun ? 'ph-caret-left' : 'ph-caret-right' ?>"></i></span><span>Tahun <?= (int) $t ?></span></a>
         <?php endforeach; ?>
     </div>
     <?php else: ?>
-    <a href="<?= base_url('Admin_Kemitraan/slot/' . (int) $tahun) ?>" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali ke daftar bidang</span></a>
+    <a href="<?= base_url('Admin_Kemitraan/slot/' . (int) $tahun) ?>" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>Kembali ke daftar bidang</span></a>
     <?php endif; ?>
 </div>
 

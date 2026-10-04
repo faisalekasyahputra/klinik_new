@@ -380,7 +380,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
         <div class="<?= $kotak ?>">
             <h2 class="<?= $judul ?>">Lengkapi Pengajuan SRP2</h2>
             <p class="mt-2 text-sm text-gray-500 dark:text-brand-muted">Akun pengembang sudah aktif. Lengkapi profil pengajuan sebelum mengunggah dokumen persyaratan.</p>
-            <a href="<?= base_url('Pengembang/formulir') ?>" class="<?= $tombol ?> mt-4"><i class="ph ph-arrow-right"></i> Lengkapi Profil SRP2</a>
+            <a href="<?= base_url('Pengembang/formulir') ?>" class="<?= $tombol ?> mt-4"><span class="panah-sorot panah-sorot-ikut" aria-hidden="true"><i class="ph ph-caret-right"></i></span> Lengkapi Profil SRP2</a>
         </div>
         <?php endif; ?>
 

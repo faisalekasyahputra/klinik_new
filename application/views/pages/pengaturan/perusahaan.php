@@ -27,7 +27,7 @@ $label_status = ['belum_mendaftar' => 'Belum mendaftar', 'mendaftar' => 'Mendaft
     <div class="<?= $kotak ?>" data-perusahaan-belum-tertaut>
         <h2 class="<?= $judul ?>">Belum tertaut ke direktori</h2>
         <p class="mt-2 text-sm text-gray-600 dark:text-brand-muted">Akun Anda belum memegang entri di Direktori SRP2. Entri tertaut otomatis saat pengajuan SRP2 Anda diterima, atau saat Dinas Perakim menautkan akun ini ke entri perusahaan Anda. Sampai saat itu, data perusahaan diisi lewat Profil Saya.</p>
-        <a href="<?= base_url('akun/profil') ?>" class="tombol-kedua mt-4"><i class="ph ph-arrow-right"></i><span>Ke Profil Saya</span></a>
+        <a href="<?= base_url('akun/profil') ?>" class="tombol-kedua mt-4"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-right"></i></span><span>Ke Profil Saya</span></a>
     </div>
 <?php else: ?>
     <?php $berlaku = srp2_sertifikat_berlaku($row); $akhir = (string) ($row->sertifikat_berakhir ?? ''); ?>

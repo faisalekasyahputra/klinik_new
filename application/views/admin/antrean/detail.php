@@ -124,7 +124,7 @@ $lencana = ['simulation' => $this->config->item('simperum_mode') === 'api'
     'jh_judul' => 'Detail Penilaian Warga',
     'jh_deskripsi' => $e($queue['kode_tiket'] ?? '') . ' &middot; Versi ' . (int) ($assessment['no_versi'] ?? 1)
         . ($lencana !== '' ? ' <span class="ml-1 inline-flex rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">' . $e($lencana) . '</span>' : ''),
-    'jh_aksi' => '<a href="' . base_url($back_url ?? 'Admin') . '" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali ke antrean</span></a>',
+    'jh_aksi' => '<a href="' . base_url($back_url ?? 'Admin') . '" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>Kembali ke antrean</span></a>',
 ]); ?>
 <div class="tumpuk-bagian">
     <div class="grid-kartu grid sm:grid-cols-4">

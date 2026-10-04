@@ -16,7 +16,7 @@ $safe_url = function ($url) {
 <?php $this->load->view("admin/components/judul_halaman", [
     "jh_judul" => $pendaftar->nama_perusahaan ?: "-",
     "jh_deskripsi" => html_escape($pendaftar->email ?: "-") . " " . $this->load->view("admin/components/status_badge", ["label" => $pendaftar->status_verifikasi, "kelas" => $status_kelas], TRUE),
-    "jh_aksi" => "<a href=\"" . base_url("Admin_Srp2/pending") . "\" class=\"tombol-kedua\"><i class=\"ph ph-arrow-left\"></i><span>Kembali ke daftar menunggu</span></a>",
+    "jh_aksi" => "<a href=\"" . base_url("Admin_Srp2/pending") . "\" class=\"tombol-kedua\"><span class=\"panah-sorot\" aria-hidden=\"true\"><i class=\"ph ph-caret-left\"></i></span><span>Kembali ke daftar menunggu</span></a>",
 ]); ?>
 <div class="tumpuk-bagian">
 <?php if (!empty($pendaftar->catatan_admin)): ?>

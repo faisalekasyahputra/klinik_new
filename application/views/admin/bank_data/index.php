@@ -45,7 +45,7 @@ $kolom = 'mt-1 block w-full rounded-lg border border-gray-200 dark:border-white/
                     <?php else: foreach ($rows as $r): ?>
                     <tr>
                         <td class="px-4 py-3">
-                            <a href="<?= base_url($r->berkas) ?>" target="_blank" rel="noopener" class="font-bold text-gray-900 dark:text-white hover:underline"><?= html_escape($r->judul) ?></a>
+                            <a href="<?= base_url($r->berkas) ?>" data-file-view data-file-title="<?= html_escape($r->judul) ?>" class="font-bold text-gray-900 dark:text-white hover:underline"><?= html_escape($r->judul) ?></a>
                             <?php if ($r->deskripsi): ?><div class="text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($r->deskripsi) ?></div><?php endif; ?>
                             <div class="text-[10px] text-gray-400"><?= number_format($r->ukuran / 1048576, 1, ',', '.') ?> MB, urutan <?= (int) $r->urutan ?></div>
                         </td>

@@ -150,11 +150,14 @@ class Admin_Dashboard extends Admin_Controller {
      * Pengajuan baru lintas seluruh domain kerja superadmin. Setiap baris
      * membawa tujuan daftar yang sudah terfilter, bukan sekadar informasi mati.
      */
+    /** Jumlah pengajuan terbaru di dasbor; daftarnya menggulir di dalam kartu (4 Okt 2026, dulu 6). */
+    const AKTIVITAS_MAKS = 20;
+
     private function aktivitas_terkini() {
         $items = [];
 
         foreach ($this->db->select('nama_lengkap_ciphertext, status_antrean, created_at')
-            ->order_by('created_at', 'DESC')->limit(6)->get('sf_antrean_pengajuan')->result() as $r) {
+            ->order_by('created_at', 'DESC')->limit(self::AKTIVITAS_MAKS)->get('sf_antrean_pengajuan')->result() as $r) {
             $this->buka_pii_antrean($r); // nama tiket lama terenkripsi (migrasi 067)
             $items[] = [
                 'icon' => 'ph-ticket', 'jenis' => 'Antrean Perumahan',
@@ -164,7 +167,7 @@ class Admin_Dashboard extends Admin_Controller {
             ];
         }
         foreach ($this->db->select('judul, status, created_at')
-            ->order_by('created_at', 'DESC')->limit(6)->get('aduan')->result() as $r) {
+            ->order_by('created_at', 'DESC')->limit(self::AKTIVITAS_MAKS)->get('aduan')->result() as $r) {
             $items[] = [
                 'icon' => 'ph-chat-centered-text', 'jenis' => 'Aduan',
                 'judul' => $r->judul ?: 'Aduan warga', 'status' => $r->status, 'waktu' => $r->created_at,
@@ -176,7 +179,7 @@ class Admin_Dashboard extends Admin_Controller {
         $this->load->helper('srp2');
         $label_srp2 = srp2_label_status();
         foreach ($this->db->select('nama_perusahaan, status_verifikasi, updated_at')
-            ->order_by('updated_at', 'DESC')->limit(6)->get('srp2_pengajuan')->result() as $r) {
+            ->order_by('updated_at', 'DESC')->limit(self::AKTIVITAS_MAKS)->get('srp2_pengajuan')->result() as $r) {
             $items[] = [
                 'icon' => 'ph-seal-check', 'jenis' => 'Sertifikasi SRP2',
                 'judul' => $r->nama_perusahaan ?: 'Pengajuan SRP2',
@@ -186,7 +189,7 @@ class Admin_Dashboard extends Admin_Controller {
             ];
         }
         foreach ($this->db->select('instansi_asal, status, created_at')
-            ->order_by('created_at', 'DESC')->limit(6)->get('kkn_magang_pendaftaran')->result() as $r) {
+            ->order_by('created_at', 'DESC')->limit(self::AKTIVITAS_MAKS)->get('kkn_magang_pendaftaran')->result() as $r) {
             $items[] = [
                 'icon' => 'ph-graduation-cap', 'jenis' => 'KKN/Magang',
                 'judul' => $r->instansi_asal ?: 'Pengajuan KKN/Magang',
@@ -197,7 +200,7 @@ class Admin_Dashboard extends Admin_Controller {
 
         foreach ($this->db->select('jt.status, jt.created_at, d.judul_topik')
             ->from('forum_janji_temu jt')->join('forum_diskusi d', 'd.id = jt.diskusi_id', 'left')
-            ->order_by('jt.created_at', 'DESC')->limit(6)->get()->result() as $r) {
+            ->order_by('jt.created_at', 'DESC')->limit(self::AKTIVITAS_MAKS)->get()->result() as $r) {
             $items[] = [
                 'icon' => 'ph-calendar-check', 'jenis' => 'Janji Temu',
                 'judul' => $r->judul_topik ?: 'Janji temu konsultasi',
@@ -207,6 +210,6 @@ class Admin_Dashboard extends Admin_Controller {
         }
 
         usort($items, fn($a, $b) => strtotime($b['waktu']) <=> strtotime($a['waktu']));
-        return array_slice($items, 0, 6);
+        return array_slice($items, 0, self::AKTIVITAS_MAKS);
     }
 }

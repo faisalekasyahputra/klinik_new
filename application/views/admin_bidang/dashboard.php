@@ -42,7 +42,7 @@ $filter_html = ob_get_clean(); ?>
                         <div class="font-semibold text-gray-900 dark:text-white"><?= html_escape($r->judul) ?></div>
                         <div class="text-xs mt-0.5 line-clamp-2"><?= html_escape($r->pesan) ?></div>
                         <?php if (!empty($r->lampiran)): ?>
-                        <a href="<?= base_url('Admin_Bidang/lihat_lampiran/' . $r->id) ?>" target="_blank" rel="noopener" class="inline-block mt-1 text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> Lihat lampiran</a>
+                        <a href="<?= base_url('Admin_Bidang/lihat_lampiran/' . $r->id) ?>" data-file-view data-file-title="Lampiran aduan: <?= html_escape($r->judul) ?>" class="inline-block mt-1 text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> Lihat lampiran</a>
                         <?php endif; ?>
                     </td>
                     <td class="px-4 py-3">
