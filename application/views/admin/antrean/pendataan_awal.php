@@ -50,8 +50,8 @@ $langkah = [
                         <div class="text-xs font-mono"><?= html_escape($hp) ?></div>
                     </td>
                     <td class="px-4 py-3 align-top whitespace-normal">
-                        <?php if ($r['programs']): foreach ($r['programs'] as $prog): ?>
-                            <div class="mb-1 inline-block rounded-lg bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary"><?= html_escape($prog) ?></div>
+                        <?php if ($r['programs']): get_instance()->load->library('Matriks_program_ruleset'); foreach ($r['programs'] as $prog): $tampil = get_instance()->matriks_program_ruleset->nama_tampil($prog); ?>
+                            <div class="mb-1 inline-block rounded-lg bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary"><?= html_escape($tampil['nama']) ?><?php if ($tampil['skema']): ?><span class="font-normal opacity-75"> · <?= html_escape($tampil['skema']) ?></span><?php endif; ?></div>
                         <?php endforeach; else: ?>
                             <span class="text-xs text-gray-500 dark:text-brand-muted">Belum ada program yang cocok</span>
                         <?php endif; ?>

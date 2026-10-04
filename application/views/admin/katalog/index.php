@@ -15,11 +15,8 @@
  * dibaca kode mana pun (kelayakan dihitung dari desil, bukan penghasilan).
  * Karena itu ia tidak ditampilkan maupun bisa diubah di sini.
  */
-$csrf_nama = $this->security->get_csrf_token_name();
-$csrf_hash = $this->security->get_csrf_hash();
 ?>
-<div x-data="{ buka: false, id: 0, nama: '', desk: '', aktif: true, kode: '', dipakai: 0,
-               badge: '', syarat: '', gambar: '', urutan: 99, korsel: false }">
+<div>
     <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Program bantuan perumahan yang bisa diajukan warga. Yang bisa diubah dari sini:
             <b>nama</b>, <b>deskripsi</b>, <b>status aktif</b>, serta <b>tampilannya di beranda</b> -
             label, syarat utama, foto, dan urutan. Warna kartu tidak diatur di sini: paletnya
@@ -79,7 +76,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                             <span class="italic text-amber-600 dark:text-amber-400">tidak punya aturan kelayakan</span>
                             <?php else: ?>
                                 <?php foreach ($r->judul_diagnosa as $j): ?>
-                                <div class="truncate <?= $j !== $r->nama_program ? 'font-bold text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-brand-muted' ?>"><?= html_escape($j) ?></div>
+                                <div class="truncate <?= in_array($j, $r->judul_beda, TRUE) ? 'font-bold text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-brand-muted' ?>"><?= html_escape($j) ?></div>
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </td>
@@ -93,112 +90,12 @@ $csrf_hash = $this->security->get_csrf_hash();
                         </td>
                         <td class="px-4 py-3 text-xs"><?= (int) $r->dipakai ?> pengajuan</td>
                         <td class="px-4 py-3">
-                            <button type="button" title="Ubah program"
-                                    @click="id=<?= (int) $r->id ?>; nama=<?= htmlspecialchars(json_encode($r->nama_program), ENT_QUOTES) ?>; desk=<?= htmlspecialchars(json_encode($r->deskripsi_singkat), ENT_QUOTES) ?>; aktif=<?= (int) $r->aktif === 1 ? 'true' : 'false' ?>; kode=<?= htmlspecialchars(json_encode($r->kode_program), ENT_QUOTES) ?>; dipakai=<?= (int) $r->dipakai ?>; badge=<?= htmlspecialchars(json_encode((string) $r->lencana), ENT_QUOTES) ?>; syarat=<?= htmlspecialchars(json_encode((string) $r->syarat_utama), ENT_QUOTES) ?>; gambar=<?= htmlspecialchars(json_encode((string) $r->gambar), ENT_QUOTES) ?>; urutan=<?= (int) $r->urutan ?>; korsel=<?= (int) $r->tampil_korsel === 1 ? 'true' : 'false' ?>; buka=true" class="tombol-aksi">
-                                <i class="ph ph-pencil-simple" aria-hidden="true"></i><span>Ubah</span>
-                            </button>
+                            <a href="<?= base_url('Admin_Katalog_Program/edit/' . (int) $r->id) ?>" title="Ubah program" class="tombol-aksi"><i class="ph ph-pencil-simple" aria-hidden="true"></i><span>Ubah</span></a>
                         </td>
                     </tr>
                     <?php endforeach; endif; ?>
                 </tbody>
             </table>
-        </div>
-    </div>
-
-    <?php // Satu modal untuk seluruh tabel - formulir per baris akan mendorongnya melewati wadahnya. ?>
-    <div x-show="buka" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div @click.away="buka = false" class="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-5 shadow-2xl dark:border-white/10 dark:bg-brand-card">
-            <div class="flex items-start justify-between gap-3 border-b border-gray-200 pb-3 dark:border-white/10">
-                <div>
-                    <h3 class="text-sm font-black text-gray-900 dark:text-white">Ubah program</h3>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-brand-muted">Kode <code x-text="kode"></code> (tidak bisa diubah)</p>
-                </div>
-                <button type="button" @click="buka = false" aria-label="Tutup" class="tombol-ikon"><i class="ph ph-x" aria-hidden="true"></i></button>
-            </div>
-
-            <?php /* `enctype` WAJIB - tanpa itu `$_FILES` kosong dan unggahan foto
-                     gagal diam-diam: formnya terkirim, teksnya tersimpan, fotonya
-                     tidak, dan tidak ada satu pun pesan galat. */ ?>
-            <form method="POST" action="<?= base_url('Admin_Katalog_Program/ubah') ?>"
-                  enctype="multipart/form-data" class="mt-4 max-h-[70vh] space-y-3 overflow-y-auto text-xs">
-                <input type="hidden" name="<?= $csrf_nama ?>" value="<?= $csrf_hash ?>">
-                <input type="hidden" name="id" :value="id">
-
-                <label class="block">
-                    <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Nama program</span>
-                    <input type="text" name="nama_program" x-model="nama" required maxlength="255"
-                           class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200">
-                    <span class="mt-1 block text-[11px] text-gray-500 dark:text-brand-muted">Tampil di antrean admin dan halaman akun warga.</span>
-                </label>
-
-                <label class="block">
-                    <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Deskripsi singkat</span>
-                    <textarea name="deskripsi_singkat" x-model="desk" rows="2"
-                              class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200"></textarea>
-                </label>
-
-                <?php /* Blok etalase - yang tampil di korsel beranda (migrasi 036).
-                         Warnanya TIDAK ada di sini dengan sengaja: palet pastelnya
-                         disetel dan kontrasnya diukur, dan satu pilihan warna bebas
-                         bisa membatalkan itu. Admin mengatur kata dan foto. */ ?>
-                <div class="rounded-lg border border-gray-200 p-2.5 dark:border-white/10">
-                    <p class="mb-2 font-black text-gray-700 dark:text-gray-300">Tampilan di beranda</p>
-
-                    <label class="block">
-                        <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Label</span>
-                        <input type="text" name="badge" x-model="badge" maxlength="60"
-                               placeholder="mis. MBR Fixed Income"
-                               class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200">
-                    </label>
-
-                    <label class="mt-2 block">
-                        <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Syarat utama</span>
-                        <textarea name="syarat_utama" x-model="syarat" rows="2" maxlength="300"
-                                  placeholder="Satu kalimat syarat yang tampil di slide"
-                                  class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200"></textarea>
-                    </label>
-
-                    <div class="mt-2 block">
-                        <span class="mb-1 block font-bold text-gray-700 dark:text-gray-300">Foto program</span>
-                        <template x-if="gambar">
-                            <img :src="'<?= base_url() ?>' + gambar" alt="" class="mb-2 h-24 w-full rounded-lg object-cover">
-                        </template>
-                        <?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'gambar', 'ib_accept' => 'image/jpeg,image/png', 'ib_required' => FALSE, 'ib_attr' => '']); ?>
-                        <span class="mt-1 block text-[11px] text-gray-500 dark:text-brand-muted">
-                            JPG atau PNG, maksimal 3&nbsp;MB. Kosongkan bila fotonya tidak diganti.
-                            Data lokasi pada foto dibersihkan otomatis sebelum ditayangkan.
-                        </span>
-                    </div>
-
-                    <div class="mt-2 flex items-center gap-3">
-                        <label class="flex items-center gap-2">
-                            <span class="font-bold text-gray-700 dark:text-gray-300">Urutan</span>
-                            <input type="number" name="urutan" x-model="urutan" min="1" max="99"
-                                   class="w-16 rounded-lg border border-gray-200 bg-white px-2 py-1 text-gray-800 dark:border-white/10 dark:bg-black/20 dark:text-gray-200">
-                        </label>
-                        <label class="flex items-center gap-2">
-                            <input type="checkbox" name="tampil_korsel" value="1" x-model="korsel">
-                            <span class="font-bold text-gray-700 dark:text-gray-300">Tampilkan di beranda</span>
-                        </label>
-                    </div>
-                </div>
-
-                <label class="flex items-start gap-2 rounded-lg bg-gray-50 p-2.5 dark:bg-black/20">
-                    <input type="checkbox" name="is_active" value="1" x-model="aktif" class="mt-0.5">
-                    <span>
-                        <span class="font-bold text-gray-700 dark:text-gray-300">Aktif - bisa diajukan warga</span>
-                        <span class="mt-0.5 block text-[11px] leading-relaxed text-gray-500 dark:text-brand-muted">
-                            Dimatikan berarti pengajuan BARU ditolak. Pengajuan yang sudah masuk antrean
-                            <b>tidak dibatalkan</b> - saat ini <span x-text="dipakai"></span> pengajuan memakai program ini.
-                        </span>
-                    </span>
-                </label>
-
-                <div class="flex justify-end gap-2 pt-1">
-                    <button type="button" @click="buka = false" class="tombol-kedua"><span>Batal</span></button>
-                    <button type="submit" class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan</span></button>
-                </div>
-            </form>
         </div>
     </div>
 </div>

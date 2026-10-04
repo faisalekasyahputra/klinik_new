@@ -75,8 +75,7 @@ if (empty($aksi_buat)) {
 </div>
 
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="kartu-admin overflow-hidden">
-    <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Akun Universitas', 'kt_jumlah' => (int) $table['total_rows'], 'kt_keterangan' => '']); ?>
-    <?= $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, email, atau username...'], TRUE) ?>
+    <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Akun Universitas', 'kt_jumlah' => (int) $table['total_rows'], 'kt_keterangan' => $this->load->view('admin/components/table_toolbar', ['table' => $table, 'base_url' => $base_url, 'placeholder' => 'Cari nama, email, atau username...', 'tb_sebaris' => TRUE], TRUE)]); ?>
     <div class="overflow-x-auto aksi-tetap">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
