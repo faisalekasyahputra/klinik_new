@@ -35,10 +35,13 @@ $bidang_awal = $bidang ? $bidang[0]->kode : '';
         ubah(d) { this.id = d.id; this.bidang = d.bidang; this.posisi = d.posisi; this.ket = d.ket; this.kuota = d.kuota; this.urutan = d.urutan; this.aktif = d.aktif === '1'; this.buka = true; this.$nextTick(() => this.$refs.posisi.focus()); } }">
     <?php $this->load->view('admin/components/judul_halaman', [
         'jh_deskripsi' => 'Daftar jurusan, bidang studi, atau keahlian yang sedang dibutuhkan tiap bidang. Yang <strong>ditampilkan</strong> muncul di papan
-            magang publik.<br><span class="text-xs">'
+            magang publik.<br><span class="text-xs">Posisi hanya keterangan: mahasiswa mendaftar per bidang, dan batas pendaftar diatur di
+            <strong>Atur slot</strong>.</span><br><span class="text-xs">'
             . (int) $jumlah_aktif . ' posisi ditampilkan · '
             . ($terakhir_diubah ? 'terakhir diperbarui ' . html_escape(tgl_id($terakhir_diubah, TRUE)) : 'belum pernah diisi') . '</span>',
-        'jh_aksi' => '<button type="button" class="tombol-utama" @click="tambah()" data-posisi-tambah><i class="ph ph-plus" aria-hidden="true"></i><span>Tambah posisi</span></button>',
+        'jh_aksi' => '<a href="' . base_url('KemitraanPortal/magang') . '" target="_blank" rel="noopener" class="tombol-kedua" data-posisi-papan><i class="ph ph-arrow-square-out" aria-hidden="true"></i><span>Lihat papan magang</span></a>'
+            . '<a href="' . base_url('Admin_Kemitraan/slot') . '" class="tombol-kedua" data-posisi-slot><i class="ph ph-calendar-check" aria-hidden="true"></i><span>Atur slot</span></a>'
+            . '<button type="button" class="tombol-utama" @click="tambah()" data-posisi-tambah><i class="ph ph-plus" aria-hidden="true"></i><span>Tambah posisi</span></button>',
     ]); ?>
 
     <?php if ($basi): ?>
@@ -68,7 +71,14 @@ $bidang_awal = $bidang ? $bidang[0]->kode : '';
                 <tbody class="divide-y divide-gray-100 dark:divide-white/5">
                 <?php foreach ($rows as $r): ?>
                     <tr>
-                        <td class="px-4 py-3 text-xs text-gray-600 dark:text-brand-muted"><?= html_escape($tanpa_awalan($r->nama_bidang ?: $r->bidang_kode)) ?></td>
+                        <td class="px-4 py-3 text-xs text-gray-600 dark:text-brand-muted">
+                            <?= html_escape($tanpa_awalan($r->nama_bidang ?: $r->bidang_kode)) ?>
+                            <?php if (isset($keadaan_bidang[$r->bidang_kode])): ?>
+                                <a href="<?= base_url('Admin_Kemitraan/slot') ?>" class="mt-1 flex items-center gap-1 font-semibold text-amber-700 hover:underline dark:text-amber-300" data-posisi-bidang-tutup>
+                                    <i class="ph ph-warning-circle" aria-hidden="true"></i><?= html_escape($keadaan_bidang[$r->bidang_kode]) ?>
+                                </a>
+                            <?php endif; ?>
+                        </td>
                         <td class="px-4 py-3">
                             <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama_posisi) ?></div>
                             <?php if ((string) $r->keterangan !== ''): ?><div class="text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($r->keterangan) ?></div><?php endif; ?>
