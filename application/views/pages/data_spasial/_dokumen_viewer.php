@@ -131,12 +131,12 @@
 
 <?php
 /* PDF.js DI-HOST SENDIRI (bukan CDN) - permintaan teknis, bukan
-   permintaan user: worker-nya (pdf.worker.min.js) sempat DIAM-DIAM
+   permintaan user: worker-nya (pdf.worker) sempat DIAM-DIAM
    MACET selamanya (render() tidak pernah resolve, tidak pernah reject,
    tanpa error di konsol) saat dimuat cross-origin dari cdn.jsdelivr.net
    di lingkungan pratinjau sandbox sesi ini - kemungkinan besar Worker
    lintas-origin dibatasi/di-polyfill secara berbeda di sana. Meng-host
-   pdf.min.js + pdf.worker.min.js dari origin YANG SAMA dengan halaman
+   pdf.min.mjs + pdf.worker.min.mjs dari origin YANG SAMA dengan halaman
    ini menghilangkan sama sekali kemungkinan pembatasan lintas-origin
    itu, dan sekalian menghapus ketergantungan ke CDN luar untuk fitur
    yang sifatnya inti (bukan sekadar font/ikon dekoratif seperti
@@ -149,10 +149,12 @@
    masalah nyata (dievaluasi ulang, hasilnya identik) - tidak perlu
    penjagaan ekstra untuk kasus itu sekarang. */
 ?>
-<?php if ( ! defined('DOK_VIEWER_ASSETS_LOADED')): define('DOK_VIEWER_ASSETS_LOADED', TRUE); ?>
-<script src="<?= base_url('assets/js/vendor/pdfjs/pdf.min.js') ?>"></script>
-<?php endif; ?>
-<script>
+<?php /* PDF.js 4.x (build legacy, 4.10.38, LICENSE di folder yang sama) hanya tersedia sebagai modul ES:
+   dimuat lewat import di <script type="module">. Modul ditunda sampai HTML selesai diurai dan di-cache
+   per URL, jadi penjaga include ganda tidak diperlukan lagi. */ ?>
+<script type="module">
+import * as pdfjsLib from '<?= base_url('assets/js/vendor/pdfjs/pdf.min.mjs') ?>';
+window.pdfjsLib = pdfjsLib;
 (function () {
     // getElementById, bukan penelusuran DOM relatif - id "dokumen-viewer-root"
     // memang dianggap satu-satunya per halaman (partial ini dipakai persis
@@ -175,7 +177,7 @@
     var pendingPage = null;
 
     if (window['pdfjsLib']) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc = '<?= base_url('assets/js/vendor/pdfjs/pdf.worker.min.js') ?>';
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '<?= base_url('assets/js/vendor/pdfjs/pdf.worker.min.mjs') ?>';
     }
 
     function setNavState() {
@@ -288,7 +290,7 @@
     }
 
     // isEvalSupported: false = mitigasi resmi PDF.js untuk CVE-2024-4367 pada rilis 3.x yang dibundel
-    // (glyph huruf tidak dikompilasi menjadi fungsi). Tetap wajib walau pustakanya kelak dinaikkan.
+    // (glyph huruf tidak dikompilasi menjadi fungsi). Sudah ditambal sejak 4.2.67; tetap dipertahankan sebagai lapis kedua.
     pdfjsLib.getDocument({ url: pdfUrl, isEvalSupported: false }).promise.then(function (doc) {
         pdfDoc = doc;
         pageTotalEl.textContent = doc.numPages;
