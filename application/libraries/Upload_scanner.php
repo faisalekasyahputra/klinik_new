@@ -142,7 +142,8 @@ class Upload_scanner {
 
         [$luar, $objstm, $tak_terbaca] = $this->pisah_pdf($d);
         if ($tak_terbaca) { return $this->gagal('pdf_tak_dapat_dipindai', 'ObjStm tidak dapat didekompresi'); }
-        $teks = $luar . "\n" . implode("\n", $objstm);
+        // Isi string dibuang dulu: nama aktif selalu di luar string (lihat buang_string_pdf).
+        $teks = $this->buang_string_pdf($luar) . "\n" . implode("\n", array_map([$this, 'buang_string_pdf'], $objstm));
         // Nama PDF boleh disamarkan dengan #XX (mis. /J#61vaScript); normalkan sebelum dicocokkan.
         $teks = (string) preg_replace_callback('/#([0-9A-Fa-f]{2})/', function ($m) { return chr(hexdec($m[1])); }, $teks);
 
@@ -153,6 +154,45 @@ class Upload_scanner {
             if (($nama = $this->cocok_pola($isi)) !== NULL) { return $this->gagal($nama, 'pola ' . $nama . ' di ObjStm'); }
         }
         return ['ok' => TRUE];
+    }
+
+    /**
+     * Buang isi string PDF, (literal) dan <hex>, sebelum nama dicocokkan. Nama aktif (/JS,
+     * /JavaScript, /Launch, /AA ...) selalu kunci atau nilai bertipe NAMA di luar string; isi
+     * string boleh berisi apa saja. Positif palsu 4 Okt 2026: PowerPoint menaruh gambar base64
+     * di string /Alt, dan base64 kebetulan memuat "/JS/", sehingga buku rilis data ditolak.
+     *
+     * Aturan pembaca PDF diikuti supaya pembuangan ini tidak jadi jalan pintas: komentar %
+     * sampai akhir baris (kurung di komentar bukan awal string), kurung bersarang, escape
+     * backslash, dan <...> hanya hex string bila isinya hex. String yang tidak tertutup TIDAK
+     * dibuang (gagal-aman): sisa teksnya tetap dipindai.
+     */
+    private function buang_string_pdf($t)
+    {
+        $out = ''; $i = 0; $n = strlen($t);
+        while ($i < $n) {
+            $j = $i + strcspn($t, '(<%', $i);
+            $out .= substr($t, $i, $j - $i);
+            if ($j >= $n) { break; }
+            $c = $t[$j];
+            if ($c === '%') { $i = $j + strcspn($t, "\r\n", $j); continue; }
+            if ($c === '<') {
+                if (($t[$j + 1] ?? '') === '<') { $out .= '<<'; $i = $j + 2; continue; }
+                if (preg_match('/\G<[0-9A-Fa-f\s]*>/', $t, $m, 0, $j)) { $out .= '<>'; $i = $j + strlen($m[0]); continue; }
+                $out .= '<'; $i = $j + 1; continue;
+            }
+            $kedalaman = 1; $k = $j + 1;
+            while ($k < $n && $kedalaman > 0) {
+                $k += strcspn($t, '\\()', $k);
+                if ($k >= $n) { break; }
+                if ($t[$k] === '\\') { $k += 2; continue; }
+                $kedalaman += $t[$k] === '(' ? 1 : -1;
+                $k++;
+            }
+            if ($kedalaman > 0) { $out .= substr($t, $j); break; }
+            $out .= '()'; $i = $k;
+        }
+        return $out;
     }
 
     /**
