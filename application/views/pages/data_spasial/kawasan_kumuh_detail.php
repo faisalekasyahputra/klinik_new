@@ -6,10 +6,10 @@
 $e = function ($v) { return html_escape((string) $v); };
 // Gaya sama dengan halaman daftar: tombol teal brand, kartu berlatar kartu tema (4 Okt 2026).
 $gaya_tombol = 'background:var(--portal-brand);color:var(--portal-btn-text)';
-$gaya_kartu  = 'border-color:var(--portal-border);background:var(--portal-bg-card);box-shadow:var(--portal-shadow)';
+$gaya_kartu  = 'border-color:var(--portal-border);background:var(--portal-bg-card);box-shadow:0 8px 24px rgba(0,80,95,.06)';
 $angka = function ($v) { return is_numeric($v) ? number_format((float) $v, (floor((float) $v) == (float) $v ? 0 : 2), ',', '.') : '-'; };
 ?>
-<section class="w-full pt-24 pb-16 px-4 sm:px-6 lg:px-8 min-h-screen font-outfit">
+<section class="w-full px-4 py-8 font-outfit sm:px-6 lg:px-8">
   <div class="mx-auto max-w-5xl">
 
     <a href="<?= base_url('kawasan_kumuh') ?>" class="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold" style="<?= $gaya_tombol ?>">
@@ -46,30 +46,30 @@ $angka = function ($v) { return is_numeric($v) ? number_format((float) $v, (floo
       </div>
     <?php else: ?>
       <div class="overflow-x-auto rounded-2xl border" style="<?= $gaya_kartu ?>">
-        <table class="w-full min-w-[760px] text-left text-sm">
-          <thead style="background:var(--portal-btn-bg)">
-            <tr class="text-[11px] uppercase tracking-wider" style="color:var(--portal-text-muted)">
-              <th class="px-4 py-3 font-bold">Wilayah</th>
-              <th class="px-4 py-3 font-bold">Kelurahan</th>
-              <th class="px-4 py-3 font-bold">Kecamatan</th>
-              <th class="px-4 py-3 font-bold text-right">Luas (Ha)</th>
-              <th class="px-4 py-3 font-bold text-right">Bangunan</th>
-              <th class="px-4 py-3 font-bold text-right">Penduduk</th>
-              <th class="px-4 py-3 font-bold text-right">KK</th>
-              <th class="px-4 py-3 font-bold text-right">Skor akhir</th>
+        <table class="w-full min-w-[760px] text-left text-xs">
+          <thead style="background:var(--portal-bg)">
+            <tr class="uppercase tracking-wider" style="color:var(--portal-text-muted);font-size:9px">
+              <th class="px-3 py-2.5 font-bold">Wilayah</th>
+              <th class="px-3 py-2.5 font-bold">Kelurahan</th>
+              <th class="px-3 py-2.5 font-bold">Kecamatan</th>
+              <th class="px-3 py-2.5 font-bold text-right">Luas (Ha)</th>
+              <th class="px-3 py-2.5 font-bold text-right">Bangunan</th>
+              <th class="px-3 py-2.5 font-bold text-right">Penduduk</th>
+              <th class="px-3 py-2.5 font-bold text-right">KK</th>
+              <th class="px-3 py-2.5 font-bold text-right">Skor akhir</th>
             </tr>
           </thead>
           <tbody>
             <?php foreach ($rtrw as $r): ?>
-              <tr class="border-t" style="border-color:var(--portal-border)">
-                <td class="px-4 py-3 font-bold" style="color:var(--portal-text)"><?= $e($r['nama_wilayah'] ?? '-') ?></td>
+              <tr class="border-t transition-colors hover:bg-[#00a3b5]/[.04]" style="border-color:var(--portal-border)">
+                <td class="px-3 py-2.5 font-bold" style="color:var(--portal-text)"><?= $e($r['nama_wilayah'] ?? '-') ?></td>
                 <td class="px-4 py-3" style="color:var(--portal-text-muted)"><?= $e($r['nama_kel'] ?? '-') ?></td>
                 <td class="px-4 py-3" style="color:var(--portal-text-muted)"><?= $e($r['nama_kec'] ?? '-') ?></td>
-                <td class="px-4 py-3 text-right" style="color:var(--portal-text-muted)"><?= $angka($r['luas_verif'] ?? NULL) ?></td>
-                <td class="px-4 py-3 text-right" style="color:var(--portal-text-muted)"><?= $angka($r['jml_bangunan'] ?? NULL) ?></td>
-                <td class="px-4 py-3 text-right" style="color:var(--portal-text-muted)"><?= $angka($r['jml_penduduk'] ?? NULL) ?></td>
-                <td class="px-4 py-3 text-right" style="color:var(--portal-text-muted)"><?= $angka($r['jml_kk'] ?? NULL) ?></td>
-                <td class="px-4 py-3 text-right font-bold" style="color:var(--portal-text)"><?= (int) ($r['skor_kumuh_akhir'] ?? 0) ?></td>
+                <td class="px-3 py-2.5 text-right" style="color:var(--portal-text-muted)"><?= $angka($r['luas_verif'] ?? NULL) ?></td>
+                <td class="px-3 py-2.5 text-right" style="color:var(--portal-text-muted)"><?= $angka($r['jml_bangunan'] ?? NULL) ?></td>
+                <td class="px-3 py-2.5 text-right" style="color:var(--portal-text-muted)"><?= $angka($r['jml_penduduk'] ?? NULL) ?></td>
+                <td class="px-3 py-2.5 text-right" style="color:var(--portal-text-muted)"><?= $angka($r['jml_kk'] ?? NULL) ?></td>
+                <td class="px-3 py-2.5 text-right font-bold" style="color:var(--portal-text)"><?= (int) ($r['skor_kumuh_akhir'] ?? 0) ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>

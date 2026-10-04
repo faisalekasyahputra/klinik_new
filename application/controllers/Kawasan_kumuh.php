@@ -48,7 +48,7 @@ class Kawasan_kumuh extends MY_Controller {
         'kondisi'    => 'skor_kumuh_akhir',
     ];
     const KOLOM_ANGKA = ['skor_kumuh_awal', 'skor_kumuh_akhir'];
-    const PER_HALAMAN = [25, 50, 100];
+    const PER_HALAMAN = [10, 25, 50]; // 10 bawaan: ringkas seperti tabel Sertifikasi (4 Okt 2026)
 
     public function __construct()
     {

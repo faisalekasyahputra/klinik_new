@@ -175,7 +175,7 @@ if ($kode === 0) {
        500 alih-alih hanya "teks tidak ketemu". */
     cek($kode === 200, "Halaman /kawasan_kumuh membalas 200 (dapat {$kode})");
     cek(strpos($html, 'Data Kawasan Kumuh Jawa Tengah') !== FALSE, 'Judul halaman dirender');
-    $n = preg_match('/(\d+) kawasan ditampilkan/', $html, $m) === 1 ? (int) $m[1] : 0;
+    $n = preg_match('/dari (\d+) kawasan/', $html, $m) === 1 ? (int) $m[1] : 0;
     cek($n > 0, 'Ada baris kawasan yang tampil (' . $n . ')');
     cek(strpos($html, 'belum bisa ditampilkan') === FALSE, 'Bukan halaman keadaan gagal');
 
@@ -196,7 +196,7 @@ if ($kode === 0) {
        skor akhir; keduanya harus benar-benar terurut. Mengecek keberadaan
        tombol saja akan lulus walau urutannya kacau. */
     $sel_teks = function ($html) {
-        preg_match_all('/<td class="px-4 py-3 font-bold" style="color:var\(--portal-text\)">([^<]*)/', $html, $m);
+        preg_match_all('/<td data-sel-kawasan[^>]*>([^<]*)/', $html, $m);
         return $m[1];
     };
     $sel_angka = function ($html) {
@@ -220,9 +220,9 @@ if ($kode === 0) {
     cek($terurut($sel_angka($h_num), FALSE, FALSE), 'Urut skor akhir menurun: dibandingkan sebagai ANGKA (50 sebelum 9)');
 
     list(, $h_hal) = $ambil('kawasan_kumuh?per=25&hal=2');
-    cek(preg_match('/Menampilkan 26&ndash;50, halaman 2 dari (\d+)/', $h_hal) === 1,
+    cek(preg_match('/Menampilkan 26&ndash;50 dari \d+ kawasan, halaman 2 dari (\d+)/', $h_hal) === 1,
         'Halaman 2 @25 menampilkan baris 26-50');
-    cek(substr_count($h_hal, '<tr class="border-t"') === 25, 'Halaman 2 memuat tepat 25 baris');
+    cek(substr_count($h_hal, '<tr data-baris-kawasan') === 25, 'Halaman 2 memuat tepat 25 baris');
 
     list(, $h_akhir) = $ambil('kawasan_kumuh?per=25&hal=99999');
     preg_match('/halaman (\d+) dari (\d+)/', $h_akhir, $mh);
@@ -230,7 +230,8 @@ if ($kode === 0) {
         'Nomor halaman di luar batas dijepit ke halaman terakhir (' . ($mh[1] ?? '?') . ' dari ' . ($mh[2] ?? '?') . ')');
 
     list(, $h_per) = $ambil('kawasan_kumuh?per=7');
-    cek(preg_match('/Menampilkan 1&ndash;25,/', $h_per) === 1, 'Nilai per-halaman di luar whitelist jatuh ke 25');
+    // Bawaan 10 sejak 4 Okt 2026 (ringkas seperti tabel Sertifikasi Pengembang).
+    cek(preg_match('/Menampilkan 1&ndash;10 dari/', $h_per) === 1, 'Nilai per-halaman di luar whitelist jatuh ke 10');
 
     /* Penyaring TIDAK boleh hilang saat kepala kolom diklik - itu cara paling
        sunyi sebuah tabel membuang pilihan pengguna. */
