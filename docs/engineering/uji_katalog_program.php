@@ -189,7 +189,12 @@ $hal = http('a', 'Admin_Katalog_Program');
 wajib($hal['code'] === 200 && strpos($hal['url'], 'Auth/login') === FALSE, 'Layar terbuka untuk superadmin');
 preg_match('/<tbody[^>]*>(.*?)<\/tbody>/s', $hal['body'], $tb);
 cek(preg_match_all('/<tr[^>]*>/', $tb[1] ?? '', $x) === $jml, "Tabel memuat {$jml} program");
-cek(stripos($hal['body'], 'tidak bisa diubah') !== FALSE, 'Layar menyatakan kodenya tidak bisa diubah');
+// Sejak 4 Okt 2026 ubah program di halaman sendiri (edit/<id>), bukan modal di daftar.
+$idPertama = (int) nilai('SELECT id FROM sf_program ORDER BY id LIMIT 1');
+$halUbah = http('a', 'Admin_Katalog_Program/edit/' . $idPertama);
+cek(strpos($hal['body'], 'Admin_Katalog_Program/edit/' . $idPertama) !== FALSE, 'Tombol Ubah membuka halaman ubah program');
+cek($halUbah['code'] === 200 && stripos($halUbah['body'], 'tidak bisa diubah') !== FALSE && stripos($halUbah['body'], 'data-foto-program') !== FALSE,
+    'Halaman ubah menyatakan kodenya tidak bisa diubah dan menampilkan thumbnail foto');
 // Audit UI 2 Okt 2026 (kelompok B): catatannya pindah dari layar ke komentar view, karena
 // nama kolom tabel bukan bacaan petugas dinas. Yang dijaga: kolomnya tetap tidak tampil
 // seolah berfungsi, dan alasannya tetap tercatat di view.

@@ -131,6 +131,17 @@ q("UPDATE sf_program SET gambar = ?, tampil_korsel = ?, aktif = ? WHERE id = ?",
   [$semula, $rtlh['tampil_korsel'], $rtlh['aktif'], $rtlh['id']]);
 cek(strpos(http('/'), 'UJI_ETALASE.png') === FALSE, 'Nilai semula dipulihkan');
 
+// Unggahan admin MENANG atas foto hero (Program_model::gambar_tampil, 4 Okt 2026). Dulu peta hero
+// di view menang, sehingga foto yang diunggah untuk kelima program utama tidak pernah tampil.
+$hero = q("SELECT id, gambar FROM sf_program WHERE kode_program = 'pb'")[0] ?? NULL;
+if ($hero) {
+    q("UPDATE sf_program SET gambar = ? WHERE id = ?", ['assets/img/program/unggahan/UJI_HERO.png', $hero['id']]);
+    cek(strpos(http('/'), 'unggahan\/UJI_HERO.png') !== FALSE, // JSON slide: garis miring di-escape
+        'Foto unggahan program ber-foto-hero (pb) tampil di korsel');
+    q("UPDATE sf_program SET gambar = ? WHERE id = ?", [$hero['gambar'], $hero['id']]);
+    cek(strpos(http('/'), 'UJI_HERO.png') === FALSE, 'Gambar pb dipulihkan');
+}
+
 // ------------------------------------------------------------------ 3. Unggah
 echo "\n== 3. Unggah foto - berkas sungguhan ==\n";
 $tmp = sys_get_temp_dir();
@@ -157,7 +168,7 @@ wajib(stripos(http('Admin_Katalog_Program'), 'Katalog Program') !== FALSE,
 $asli = q("SELECT * FROM sf_program WHERE id = ?", [$rtlh['id']])[0];
 $kirim = function ($berkas) use ($rtlh, $asli) {
     return http('Admin_Katalog_Program/ubah', [
-        'csrf_kpkp_token'   => token('Admin_Katalog_Program'),
+        'csrf_kpkp_token'   => token('Admin_Katalog_Program/edit/' . $rtlh['id']), // formulir ubah di halaman sendiri sejak 4 Okt 2026
         'id'                => $rtlh['id'],
         'nama_program'      => (string) $asli['nama_program'],
         'deskripsi_singkat' => (string) $asli['deskripsi_singkat'],
