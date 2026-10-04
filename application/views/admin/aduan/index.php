@@ -23,8 +23,10 @@ $nama_bidang = array_column($daftar_bidang, 'nama', 'kode');
 <div class="mb-5 p-4 rounded-2xl bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 text-orange-800 dark:text-orange-400 text-sm flex items-start gap-3">
     <i class="ph ph-warning-circle text-lg mt-0.5"></i>
     <div>
-        <strong>Bidang tanpa admin ter-assign:</strong> <?= html_escape(implode(', ', $bidang_tanpa_admin)) ?>.
-        Aduan yang masuk ke bidang ini tidak akan muncul di dashboard siapa pun - tetapkan admin lewat <a href="<?= base_url('Admin_Users') ?>" class="underline font-semibold">Manajemen Pengguna</a>.
+        <?php // Bahasa awam (permintaan user 4 Okt 2026); menu bernama "Akses Staf", bukan "Manajemen Pengguna". ?>
+        <strong>Belum ada admin untuk:</strong> <?= html_escape(implode(', ', $bidang_tanpa_admin)) ?>.
+        Aduan yang diteruskan ke bidang ini belum ada petugas yang bisa memprosesnya.
+        Tunjuk admin untuk bidang tersebut di menu <a href="<?= base_url('Admin_Users') ?>" class="underline font-semibold">Akses Staf</a>.
     </div>
 </div>
 <?php endif; ?>
