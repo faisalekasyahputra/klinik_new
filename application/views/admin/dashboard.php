@@ -14,7 +14,8 @@ $pk = $peringatan_keamanan;
 ?>
 <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Jumlah pekerjaan per layanan. Klik angka untuk membuka daftar yang sudah tersaring.']); ?>
 
-<div class="tumpuk-bagian">
+<?php // Di dasbor setiap baris adalah deret kartu: jarak tegak antarbaris disamakan dengan jarak antarkartu. ?>
+<div class="tumpuk-bagian" style="--jarak-bagian: var(--jarak-kartu)">
 <?php if ($antrean_tanpa_wilayah > 0): ?>
 <div class="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm text-orange-800 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-300">
     <i class="ph ph-map-pin-area text-lg" aria-hidden="true"></i>
