@@ -54,7 +54,9 @@ $dir_milik = fn($uid) => $db->query("SELECT * FROM srp2_direktori_pengembang WHE
 $publik = function ($nama) use ($http, $jar) { [$b] = $http($jar(), 'Pengembang/sertifikasi'); return strpos($b, $nama) !== FALSE; };
 
 $ember = [];
-foreach (['register', 'login'] as $pol) foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
+/* otp_kirim_ip (20 per jam per IP) ikut dipinjam sejak 4 Okt 2026: suite penuh yang dijalankan beberapa kali
+   dalam satu jam dari 127.0.0.1 menghabiskannya, lalu daftar cepat di sini gagal berantai (11 merah). */
+foreach (['register', 'login', 'otp_kirim_ip'] as $pol) foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
     $k = hash('sha256', $pol . ':ip:' . $ip);
     $ember[$k] = $db->query("SELECT kunci, jendela_mulai_at, jumlah_gagal FROM sys_batas_laju WHERE kunci='$k'")->fetch_assoc();
     $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
