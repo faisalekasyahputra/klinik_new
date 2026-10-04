@@ -20,6 +20,9 @@ $gaya = [
     'perbaikan' => 'bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300',
     'diterima'  => 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300',
 ];
+// Urutan rincian ringkasan: yang sudah masuk dulu, yang belum di akhir. Label sama dengan sel tabel.
+$keadaan_label = ['diterima' => 'diterima', 'menunggu' => 'menunggu ditinjau', 'perbaikan' => 'perlu perbaikan',
+                  'draft' => 'draft, belum dikirim', 'belum' => 'belum ada laporan'];
 $tautan = static function ($t, $tw) {
     return base_url('Admin_Rekam_Data?tahun=' . (int) $t . '&triwulan=' . (int) $tw);
 };
@@ -34,17 +37,22 @@ $this->load->view('admin/layouts/cetak_rekap');
 <div class="tumpuk-bagian">
 <div class="grid-kartu grid sm:grid-cols-2">
     <?php foreach ($domain as $kode => $nama):
-        $r = $ringkas[$kode] ?? ['total' => 0, 'masuk' => 0, 'diterima' => 0, 'belum' => 0];
+        $r = $ringkas[$kode] ?? [];
     ?>
     <div class="kartu-admin isi-kartu">
-        <div class="flex items-baseline justify-between">
-            <span class="text-sm font-black text-gray-900 dark:text-white"><?= html_escape($nama) ?></span>
-            <span class="text-2xl font-black text-gray-900 dark:text-white"><?= (int) $r['masuk'] ?><span class="text-sm font-bold text-gray-400 dark:text-brand-muted">/<?= (int) $r['total'] ?></span></span>
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <span class="text-sm font-black text-gray-900 dark:text-white"><?= html_escape($nama) ?></span>
+                <p class="mt-0.5 text-xs text-gray-500 dark:text-brand-muted">kab/kota sudah mengirim laporan <?= html_escape($nama_tw[$triwulan] ?? '') ?> <?= (int) $tahun ?></p>
+            </div>
+            <span class="text-2xl font-black text-gray-900 dark:text-white"><?= (int) ($r['masuk'] ?? 0) ?><span class="text-sm font-bold text-gray-400 dark:text-brand-muted">/<?= (int) ($r['total'] ?? 0) ?></span></span>
         </div>
-        <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">
-            sudah mengirim · <b class="text-emerald-600 dark:text-emerald-400"><?= (int) $r['diterima'] ?></b> diterima ·
-            <b class="text-gray-700 dark:text-gray-300"><?= (int) $r['belum'] ?></b> belum melapor sama sekali
-        </p>
+        <?php // Rincian berwarna sama dengan label di tabel, sekaligus jadi keterangan warnanya; jumlahnya selalu = total. ?>
+        <ul class="mt-3 flex flex-wrap gap-1.5" data-rincian-pantau>
+            <?php foreach ($keadaan_label as $k => $label): ?>
+            <li class="rounded-full px-2.5 py-1 text-[11px] font-bold <?= $gaya[$k] ?>"><?= (int) ($r[$k] ?? 0) ?> <?= html_escape($label) ?></li>
+            <?php endforeach; ?>
+        </ul>
     </div>
     <?php endforeach; ?>
 </div>

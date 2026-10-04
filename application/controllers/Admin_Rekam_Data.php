@@ -50,16 +50,17 @@ class Admin_Rekam_Data extends Admin_Controller {
         $baris = [];
         $ringkas = [];
         foreach (array_keys(self::DOMAIN) as $domain) {
-            $ringkas[$domain] = ['total' => 0, 'masuk' => 0, 'diterima' => 0, 'belum' => 0];
+            // Satu hitungan per keadaan, supaya rinciannya selalu berjumlah sama dengan total
+            // (dulu draft tidak terhitung di mana pun: "0 diterima, 34 belum" dari 35).
+            $ringkas[$domain] = ['total' => 0, 'masuk' => 0, 'diterima' => 0, 'menunggu' => 0, 'perbaikan' => 0, 'draft' => 0, 'belum' => 0];
             foreach ($this->rd->pantau($domain, $tahun, $triwulan) as $r) {
                 [$kunci, $label] = $this->rd->keadaan_laporan($r);
                 $baris[$r['kabupaten_id']]['kabupaten'] = $r['kabupaten'];
                 $baris[$r['kabupaten_id']][$domain] = $r + ['keadaan' => $kunci, 'keadaan_label' => $label];
 
                 $ringkas[$domain]['total']++;
-                if ($kunci === 'belum')                        { $ringkas[$domain]['belum']++; }
+                $ringkas[$domain][$kunci]++;
                 if (in_array($kunci, ['menunggu', 'diterima', 'perbaikan'], TRUE)) { $ringkas[$domain]['masuk']++; }
-                if ($kunci === 'diterima')                     { $ringkas[$domain]['diterima']++; }
             }
         }
 

@@ -117,9 +117,11 @@
            Satu aturan untuk semua tabel ber-[data-tabel-admin]; nomor awal datang dari offset
            paginasi yang dicetak sebagai counter-reset di pembungkus [data-tabel-admin] tiap view (reset di
            elemen saudara seperti toolbar TIDAK diwarisi tabel), jadi halaman 2 mulai dari 26, bukan 1.
-           Baris kosong ber-colspan tidak dinomori tetapi tetap diberi sel supaya kolomnya lurus. */
+           Baris kosong ber-colspan tidak dinomori tetapi tetap diberi sel supaya kolomnya lurus.
+           Nomor mengikuti perataan baris (inherit, bawaan tengah; 4 Okt 2026, dulu selalu atas sehingga
+           melenceng dari isi baris di Pantau Rekam Data). Tabel rata atas pasang align-top di <tr>. */
         [data-tabel-admin] table > thead > tr::before { content: "No"; display: table-cell; padding: .625rem .5rem .625rem 1rem; }
-        [data-tabel-admin] table > tbody > tr::before { counter-increment: baris-admin; content: counter(baris-admin); display: table-cell; padding: .625rem .5rem .625rem 1rem; vertical-align: top; font-size: 0.75rem; font-weight: 700; color: #6b7280; }
+        [data-tabel-admin] table > tbody > tr::before { counter-increment: baris-admin; content: counter(baris-admin); display: table-cell; padding: .625rem .5rem .625rem 1rem; vertical-align: inherit; font-size: 0.75rem; font-weight: 700; color: #6b7280; }
         [data-tabel-admin] table > tbody > tr:has(> td[colspan])::before { counter-increment: none; content: ""; }
         /* Kolom Aksi menempel di kanan wadah gulir (audit UI 2 Okt 2026: di 375 dan 768
            tombol Tinjau/Proses/Simpan baru terlihat setelah menggulir tabel jauh ke samping).
