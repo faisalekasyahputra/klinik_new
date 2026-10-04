@@ -106,6 +106,8 @@
         select option { background-color: #fff; color: #111827; }
         .dark select option:checked,
         .dark select option:hover { background-color: rgba(214, 251, 0, .15); color: #d6fb00; }
+        /* Ikon kalender dan popup pemilih tanggal bawaan peramban ikut gelap; tanpa ini ikonnya hitam di latar gelap. */
+        .dark input:is([type="date"], [type="time"], [type="datetime-local"], [type="month"], [type="week"]) { color-scheme: dark; }
     </style>
     <!-- Phosphor Icons - defer: ikon menyusul sepersekian detik, halaman tidak menunggu -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css" integrity="sha384-6p9AefaqUhEVheRlj1mpAkbngHXy9mbYMrIdcIt4Jlc9lOLIablJq3bBsLOjGwZ7" crossorigin="anonymous" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css" integrity="sha384-6p9AefaqUhEVheRlj1mpAkbngHXy9mbYMrIdcIt4Jlc9lOLIablJq3bBsLOjGwZ7" crossorigin="anonymous"></noscript>
@@ -198,7 +200,10 @@
         .kartu-admin { background-color: #fff; border: 1px solid #e5e7eb; border-radius: 1rem; }
         .dark .kartu-admin { background-color: #0f2933; border-color: rgba(255, 255, 255, .06); }
         .isi-kartu { padding: var(--pad-kartu); }
-        .tumpuk-bagian > * + * { margin-top: var(--jarak-bagian); }
+        /* Kakak yang tak tampil (input hidden CSRF/id di awal <form class="tumpuk-bagian">) tidak
+           dihitung; dulu kartu pertama form turun 20px dari kolom sebelahnya. :where() menjaga
+           spesifisitas sama dengan aturan lama (0,1,0). */
+        .tumpuk-bagian > :where(:not([type="hidden"], [hidden], script, style, template)) ~ * { margin-top: var(--jarak-bagian); }
         .grid-kartu { gap: var(--jarak-kartu); }
         /* Kepadatan tabel admin: sel berpadding besar (py-3/py-4/py-5) dirapatkan jadi 10px di
            semua layar sekaligus. Padding mendatar tetap milik view. */
