@@ -469,8 +469,13 @@ try {
     foreach (['statistika?kabupaten=Kabupaten+Kudus', 'statistika?kabupaten=Kabupaten+Brebes'] as $u) {
         $st = http(NULL, $u);
         cek($st['code'] === 200, "A2 - /{$u} tetap hidup");
-        $klaim = preg_match('/Sumber:\s*(Simperum|Sikumbang|Sikunang|Bank Tanah)/', $st['body']);
-        cek($klaim === 0, 'A2 - nol klaim "Sumber: <sistem>" pada angka simulasi');
+        // Sejak 4 Okt 2026 unit rumah (SIKUMBANG) dan jumlah pengembang (Direktori SRP2) NYATA dan
+        // boleh menyebut sumbernya; sistem yang belum terhubung tetap tidak boleh diklaim.
+        $klaim = preg_match('/Sumber:\s*(?i:Simperum|Sikunang|Bank Tanah|Sikaper)/', $st['body']); // "rencana sumber:" (huruf kecil) sah
+        cek($klaim === 0, 'A2 - nol klaim "Sumber: <sistem>" untuk sistem yang belum terhubung');
+        preg_match_all('/Sumber:\s*([A-Za-z0-9 ]+)/', $st['body'], $sm);
+        cek(array_diff(array_map('trim', $sm[1]), ['SiKumbang', 'Direktori SRP2']) === [],
+            'A2 - klaim sumber hanya untuk angka nyata (SiKumbang, Direktori SRP2)');
         cek(strpos($st['body'], 'masih simulasi') !== FALSE,
             'A2 - layar menyatakan angkanya masih simulasi');
         cek(substr_count($st['body'], 'rencana sumber') >= 10,

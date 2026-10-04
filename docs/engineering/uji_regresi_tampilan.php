@@ -1293,5 +1293,17 @@ foreach (array_merge(glob(APP_ROOT . '/application/views/admin/*.php'), glob(APP
 }
 cek($tombol_naik === [], "Tombol admin di luar set tombol tidak bertambah (sisa utang {$sisa_utang}; naik: " . implode(', ', $tombol_naik) . ')');
 
+echo "\n== Statistika: angka nyata menyebut sumbernya, sisanya tetap simulasi ==\n";
+// 4 Okt 2026: unit rumah dari SIKUMBANG dan jumlah pengembang dari Direktori SRP2 nyata.
+$stat = http('tamu_statistika', 'Statistika');
+$dir_tayang = (int) nilai('SELECT COUNT(*) c FROM srp2_direktori_pengembang WHERE status_aktif = 1');
+cek(preg_match('#Total Pengembang Terdaftar</div>\s*<div[^>]*>([0-9.]+)#', $stat, $mt) === 1 && (int) str_replace('.', '', $mt[1]) === $dir_tayang
+    && strpos($stat, 'Sumber: Direktori SRP2') !== FALSE,
+    "Statistika: pengembang terdaftar = Direktori SRP2 yang tayang ({$dir_tayang})");
+cek(strpos($stat, 'Sumber: SiKumbang') !== FALSE || strpos($stat, 'Data SiKumbang sedang tidak dapat diambil') !== FALSE,
+    'Statistika: unit rumah dari SIKUMBANG, atau pesan jujur saat hulunya mati');
+cek(strpos($stat, 'masih simulasi') !== FALSE && substr_count($stat, 'rencana sumber') >= 10,
+    'Statistika: kartu yang belum terhubung tetap berlabel simulasi');
+
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);
