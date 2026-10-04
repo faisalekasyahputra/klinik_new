@@ -93,12 +93,21 @@ class Admin_Asosiasi extends Admin_Controller {
            konsisten dengan lima kode yang sudah ada - `REI Jateng` yang
            diketik admin jadi `rei_jateng`, bukan dua bentuk berbeda untuk
            hal yang sama. */
-        $kode = strtolower(trim((string) $this->input->post('kode', TRUE)));
+        // Kode kosong = dibentuk otomatis dari nama (4 Okt 2026): petugas dinas tidak perlu memikirkan
+        // kode teknis. Bentrok diberi akhiran _2, _3, ... Kode yang dikirim manual tetap diterima.
+        $kode_manual = trim((string) $this->input->post('kode', TRUE)) !== '';
+        $kode = strtolower(trim((string) ($kode_manual ? $this->input->post('kode', TRUE) : $nama)));
         $kode = preg_replace('/[^a-z0-9]+/', '_', $kode);
-        $kode = trim((string) $kode, '_');
+        $kode = substr(trim((string) $kode, '_'), 0, 26);
+        if ( ! $kode_manual && $kode !== '') {
+            $dasar = $kode;
+            for ($n = 2; $this->db->where('kode', $kode)->count_all_results(self::TABEL) > 0 && $n < 100; $n++) {
+                $kode = $dasar . '_' . $n;
+            }
+        }
 
         if ($kode === '' || mb_strlen($kode) > 30) {
-            $this->session->set_flashdata('error', 'Kode wajib diisi (huruf/angka, maksimal 30 karakter).');
+            $this->session->set_flashdata('error', 'Nama asosiasi harus memuat huruf atau angka.');
             redirect('Admin_Asosiasi'); return;
         }
         if ($this->db->where('kode', $kode)->count_all_results(self::TABEL) > 0) {
@@ -106,6 +115,11 @@ class Admin_Asosiasi extends Admin_Controller {
             redirect('Admin_Asosiasi'); return;
         }
 
+        // Urutan kosong saat menambah = taruh di akhir daftar.
+        if (trim((string) $this->input->post('urutan')) === '') {
+            $maks = (int) ($this->db->select_max('urutan', 'm')->get(self::TABEL)->row()->m ?? 0);
+            $payload['urutan'] = min(999, $maks + 10);
+        }
         $payload['kode']       = $kode;
         $payload['created_at'] = $payload['updated_at'];
         $this->db->insert(self::TABEL, $payload);
