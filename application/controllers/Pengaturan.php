@@ -380,7 +380,7 @@ class Pengaturan extends MY_Controller {
      */
     private function wajib_ganti_sandi_dulu() {
         if ( ! $this->session->userdata('password_change_required')) { return FALSE; }
-        $this->session->set_flashdata('error', $this->Auth_model->pesan_ganti_sandi($this->Auth_model->find_by_id($this->get_user_id())));
+        $this->session->set_flashdata('warning', $this->Auth_model->pesan_ganti_sandi($this->Auth_model->find_by_id($this->get_user_id())));
         redirect('akun/profil?password_expired=1');
         return TRUE;
     }
