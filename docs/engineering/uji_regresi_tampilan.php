@@ -1305,6 +1305,12 @@ cek(strpos($stat, 'Sumber: SiKumbang') !== FALSE || strpos($stat, 'Data SiKumban
     'Statistika: unit rumah dari SIKUMBANG, atau pesan jujur saat hulunya mati');
 cek(strpos($stat, 'masih simulasi') !== FALSE && substr_count($stat, 'rencana sumber') >= 10,
     'Statistika: kartu yang belum terhubung tetap berlabel simulasi');
+/* 4 Okt 2026: lompatan jangkar bawaan di wadah gulir portal tidak andal (diam atau layar kosong), jadi menu
+   kategori menggulir wadahnya lewat skrip; dan pembaca Dokumen punya jalan pulang ke tab Bank Data. */
+$dok = http('tamu_statistika', 'Dokumen');
+cek(preg_match_all('#<nav[^>]*data-lompat-bagian#', $stat) === 2 &&strpos($stat, "querySelectorAll('[data-lompat-bagian] a[href^=\"#\"]')") !== FALSE
+    && preg_match('#data-kembali-bankdata#', $dok) === 1 && preg_match('#data-tab-key="bankdata" class="portal-tab-btn active"#', $dok) === 1,
+    'Statistika: menu kategori menggulir wadah portal; Dokumen: tombol Kembali ke Bank Data dan tab Bank Data menyala');
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);
