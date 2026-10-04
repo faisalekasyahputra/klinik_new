@@ -16,24 +16,64 @@ $pk = $peringatan_keamanan;
 
 <?php // Di dasbor setiap baris adalah deret kartu: jarak tegak antarbaris disamakan dengan jarak antarkartu. ?>
 <div class="tumpuk-bagian" style="--jarak-bagian: var(--jarak-kartu)">
-<?php if ($antrean_tanpa_wilayah > 0): ?>
-<div class="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm text-orange-800 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-300">
-    <i class="ph ph-map-pin-area text-lg" aria-hidden="true"></i>
-    <strong><?= angka_id($antrean_tanpa_wilayah) ?> antrean menunggu belum memiliki wilayah</strong>
-    <span class="text-orange-700 dark:text-orange-400/80">dan tidak terlihat oleh admin kabupaten/kota mana pun.</span>
-    <a href="<?= base_url('Admin?status=pending&tanpa_wilayah=1') ?>" class="ml-auto font-semibold underline">Lihat antrean</a>
-</div>
-<?php endif; ?>
+<?php
+/* Pita "Perlu tindakan" (4 Okt 2026): yang harus dilihat lebih dulu, diambil dari angka utama
+   kartu layanan di bawah (jadi pasti sama), plus antrean tanpa wilayah dan peringatan keamanan.
+   Dulu angka ini tersebar di enam kartu setara dan satu banner, mata harus menyisir semuanya. */
+$tindakan = [];
+foreach ($kartu_domain as $k) {
+    if ($k['utama']['n'] > 0) {
+        $tindakan[] = ['n' => $k['utama']['n'], 'label' => $k['label'], 'ket' => strtolower($k['utama']['label']), 'url' => $k['utama']['url'], 'ikon' => $k['icon'], 'nada' => 'utama'];
+    }
+}
+if ($antrean_tanpa_wilayah > 0) {
+    $tindakan[] = ['n' => $antrean_tanpa_wilayah, 'label' => 'Antrean tanpa wilayah', 'ket' => 'antrean menunggu belum memiliki wilayah, tidak terlihat admin kab/kota', 'url' => 'Admin?status=pending&tanpa_wilayah=1', 'ikon' => 'ph-map-pin-area', 'nada' => 'waspada'];
+}
+if ((int) $pk['tinggi'] > 0) {
+    $tindakan[] = ['n' => (int) $pk['total'], 'label' => 'Peringatan keamanan', 'ket' => (int) $pk['jam'] . ' jam terakhir', 'url' => 'Admin_Audit?aksi=peringatan_keamanan', 'ikon' => 'ph-shield-warning', 'nada' => 'bahaya'];
+}
+$total_tindakan = array_sum(array_column(array_filter($tindakan, fn($t) => $t['nada'] === 'utama'), 'n'));
+$nada_angka = ['utama' => 'text-amber-600 dark:text-brand-primary', 'waspada' => 'text-orange-600 dark:text-orange-400', 'bahaya' => 'text-red-600 dark:text-red-400'];
+?>
+<section class="kartu-admin isi-kartu" aria-label="Perlu tindakan" data-pita-tindakan>
+    <?php if ($tindakan): ?>
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div class="flex shrink-0 items-center gap-3 lg:pr-4">
+            <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-brand-primary/15 dark:text-brand-primary"><i class="ph ph-bell-ringing text-2xl" aria-hidden="true"></i></span>
+            <div>
+                <p class="text-3xl font-black leading-none text-gray-900 dark:text-white"><?= angka_id($total_tindakan) ?></p>
+                <p class="mt-1 text-xs font-semibold text-gray-500 dark:text-brand-muted">perlu tindakan</p>
+            </div>
+        </div>
+        <ul class="grid flex-1 grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+            <?php foreach ($tindakan as $t): ?>
+            <?php // Gaya ubin di <li>, <a> tetap tautan polos: ini daftar tautan, bukan tombol (uji_regresi_tampilan). ?>
+            <li class="rounded-xl bg-gray-50 transition-colors hover:bg-gray-100 dark:bg-white/5 dark:hover:bg-white/10"><a href="<?= html_escape(base_url($t['url'])) ?>" class="group flex h-full items-center gap-3 px-3 py-2">
+                <span class="text-2xl font-black leading-none <?= $nada_angka[$t['nada']] ?>"><?= angka_id($t['n']) ?></span>
+                <span class="min-w-0 flex-1">
+                    <span class="flex items-center gap-1.5 text-sm font-bold text-gray-900 dark:text-white"><i class="ph <?= html_escape($t['ikon']) ?>" aria-hidden="true"></i><?= html_escape($t['label']) ?></span>
+                    <span class="block text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($t['ket']) ?></span>
+                </span>
+                <?php // Panah tanpa badan (chevron) dengan pendar ambien, permintaan user 4 Okt 2026. ?>
+                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 shadow-[0_0_12px_rgba(217,119,6,0.30)] transition-transform group-hover:translate-x-0.5 dark:bg-brand-primary/10 dark:text-brand-primary dark:shadow-[0_0_14px_rgba(214,251,0,0.35)]" aria-hidden="true"><i class="ph ph-caret-right text-base"></i></span>
+            </a></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+    <?php else: ?>
+    <p class="flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-400"><i class="ph ph-check-circle text-xl" aria-hidden="true"></i>Semua beres: tidak ada pekerjaan yang menunggu tindakan.</p>
+    <?php endif; ?>
+</section>
 
 <section aria-label="Pekerjaan per layanan">
     <div class="deret-kartu grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 grid-kartu" style="--jumlah-kartu: <?= max(1, $jumlah_kartu) ?>">
-        <?php foreach ($kartu_domain as $k): $u = $k['utama']; ?>
-        <article class="kartu-admin isi-kartu flex flex-col">
+        <?php foreach ($kartu_domain as $k): $u = $k['utama']; $ada = $u['n'] > 0; ?>
+        <article class="kartu-admin isi-kartu flex flex-col<?= $ada ? ' ring-1 ring-amber-300 dark:ring-brand-primary/40' : '' ?>">
             <h2 class="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-brand-muted">
                 <i class="ph <?= html_escape($k['icon']) ?> text-lg text-blue-600 dark:text-brand-primary" aria-hidden="true"></i><?= html_escape($k['label']) ?>
             </h2>
             <a href="<?= html_escape(base_url($u['url'])) ?>" class="mt-1 flex items-baseline gap-2 hover:underline">
-                <span class="text-2xl font-black leading-tight <?= $redup($u['n']) ?>"><?= angka_id($u['n']) ?></span>
+                <span class="text-3xl font-black leading-tight <?= $ada ? 'text-amber-600 dark:text-brand-primary' : 'text-gray-400 dark:text-brand-muted/70' ?>"><?= angka_id($u['n']) ?></span>
                 <span class="text-xs font-semibold <?= $u['n'] > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-gray-400 dark:text-brand-muted/70' ?>"><?= html_escape(strtolower($u['label'])) ?></span>
             </a>
             <ul class="mt-2 space-y-0.5 text-xs">
@@ -51,8 +91,8 @@ $pk = $peringatan_keamanan;
                 <i class="ph ph-chart-line-up text-lg text-blue-600 dark:text-brand-primary" aria-hidden="true"></i>Rekam Data
             </h2>
             <p class="mt-1 flex items-baseline gap-2">
-                <span class="text-2xl font-black leading-tight <?= $redup($masuk) ?>"><?= angka_id($masuk) ?></span>
-                <span class="text-xs font-semibold text-gray-500 dark:text-brand-muted">terkirim, triwulan <?= (int) $rekam['triwulan'] ?> tahun <?= (int) $rekam['tahun'] ?></span>
+                <span class="text-3xl font-black leading-tight <?= $redup($masuk) ?>"><?= angka_id($masuk) ?></span>
+                <span class="text-xs font-semibold text-gray-500 dark:text-brand-muted">terkirim &middot; TW <?= (int) $rekam['triwulan'] ?>/<?= (int) $rekam['tahun'] ?></span>
             </p>
             <ul class="mt-2 space-y-0.5 text-xs text-gray-500 dark:text-brand-muted">
                 <?php foreach ($rekam['domain'] as $d): ?>
