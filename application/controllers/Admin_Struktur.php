@@ -46,6 +46,15 @@ class Admin_Struktur extends Admin_Controller {
                 . ' (SELECT COUNT(*) FROM rd_laporan l WHERE l.kabupaten_id = k.id) AS laporan', FALSE)
             ->from('kabupaten k')->order_by('k.nama', 'ASC')->get()->result();
 
+        // Nama petugas per bidang/wilayah (4 Okt 2026): dulu hanya "1 orang", tanpa cara melihat siapa.
+        // Satu query; kolom yang diambil hanya yang tampil (nama, email, status), bukan data pribadi lain.
+        $data['petugas_bidang'] = $data['petugas_wilayah'] = [];
+        foreach ($this->db->select('nama, email, status, peran, bidang_kode, kabupaten_id')
+            ->where_in('peran', ['admin_bidang', 'admin_kabkota'])->order_by('nama', 'ASC')->get('usr_akun')->result() as $u) {
+            if ($u->peran === 'admin_bidang' && $u->bidang_kode !== NULL)    { $data['petugas_bidang'][$u->bidang_kode][] = $u; }
+            if ($u->peran === 'admin_kabkota' && $u->kabupaten_id !== NULL) { $data['petugas_wilayah'][(int) $u->kabupaten_id][] = $u; }
+        }
+
         // Integritas rujukan yang TIDAK dijaga foreign key. Nol adalah keadaan
         // yang benar; angka apa pun di atas nol berarti ada kunci yang berubah
         // atau baris master yang hilang, dan tidak ada galat yang menyertainya.
