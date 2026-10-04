@@ -185,7 +185,12 @@ class Index extends MY_Controller {
 		   terbukti membungkam kartu lain yang hulunya sehat selama 60 dtk.
 		   ponytail: saat host SIKUMBANG mati total, tiap id baru tetap membayar
 		   satu timeout; pakai bendera host lagi kalau itu terbukti menahan worker. */
-		$response = sikumbang_ambil($full_url, $cache_file, 86400, SIKUMBANG_TIMEOUT, 'sikumbang_detail_' . $idLokasi);
+		/* Bendera hanya untuk id berbentuk id SIKUMBANG sungguhan (atau yang benderanya sudah ada):
+		   id sembarang yang lolos pola di atas tidak lagi meninggalkan satu berkas bendera per id
+		   (temuan integrasi-luar-07); tembakannya ditahan kelas laju 'cari'. */
+		$bendera = preg_match('/^(?:[A-Z]{3}\d{10}T\d{3}|\d{1,10})$/', $idLokasi)
+			|| is_file(APPPATH . 'cache/sikumbang_detail_' . $idLokasi . '_gagal.flag');
+		$response = sikumbang_ambil($full_url, $cache_file, 86400, SIKUMBANG_TIMEOUT, $bendera ? ('sikumbang_detail_' . $idLokasi) : NULL);
 
 		/* NULL = hulu gagal dan belum ada cache, BUKAN perumahan tidak ada.
 		   404 di sini membuat warga mengira perumahannya hilang. */
@@ -525,7 +530,11 @@ class Index extends MY_Controller {
 		/* Kalau penyimpanan berhasil, alihkan ke berkas statisnya. Kalau GAGAL disimpan (folder
 		   tidak bisa ditulis), keluarkan langsung: mengalihkan ke berkas yang tidak jadi ada cuma
 		   menghasilkan 404. */
-		if (@file_put_contents($path_file_lokal, $gambar_mentah) !== FALSE) {
+		/* Folder sudah di batas cache_foto_maks_mb: foto disajikan langsung tanpa disimpan. */
+		$this->load->config('data_lifecycle');
+		$maks_byte = (int) ($this->config->item('data_lifecycle')['retensi']['cache_foto_maks_mb'] ?? 512) * 1048576;
+		if (cache_foto_muat($dir_cache, strlen($gambar_mentah), $maks_byte, APPPATH . 'cache/cache_foto_total.txt')
+			&& @file_put_contents($path_file_lokal, $gambar_mentah) !== FALSE) {
 			$this->output
 				->set_status_header(302)
 				->set_header('Location: ' . base_url('assets/cache_foto/' . $nama_file_lokal))
@@ -720,7 +729,8 @@ class Index extends MY_Controller {
         $is_searching = ($keyword != '' || $sort != 'terbaru');
         $cache_file = $is_searching
             ? APPPATH . 'cache/sikumbang_sebaran_' . md5($full_url) . '.json'
-            : APPPATH . 'cache/sikumbang_sebaran_jateng.json';
+            // kodeWilayah ikut nama berkas dasar: kode lain tidak lagi menimpa sebaran Jawa Tengah (temuan api-csrf-08).
+            : APPPATH . 'cache/sikumbang_sebaran_' . ($kodeWilayah === '33' ? 'jateng' : $kodeWilayah) . '.json';
 
         list($datacontent['results'], ) = sikumbang_data($full_url, $cache_file, 86400);
 

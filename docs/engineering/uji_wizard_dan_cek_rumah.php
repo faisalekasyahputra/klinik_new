@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
+require_once __DIR__ . '/_akun_demo.php'; // akun demo nonaktif sejak migrasi 073: dipinjam selama suite berjalan
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Dua fitur yang dipakai warga sungguhan hari ini:
@@ -32,7 +33,7 @@ require __DIR__ . '/lib_wizard_warga.php';
 define('BASE', rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/'));
 define('ENV_PATH', env_berkas_path(dirname(__DIR__, 2)));
 define('ADMIN_EMAIL', getenv('UJI_ADMIN_EMAIL') ?: 'adminkabkota@example.com');
-define('ADMIN_SANDI', getenv('UJI_ADMIN_PASSWORD') ?: 'password');
+define('ADMIN_SANDI', getenv('UJI_ADMIN_PASSWORD') ?: pinjam_akun_demo(ADMIN_EMAIL));
 /* Wilayah akun admin demo #26. Fixture dipilih agar tiketnya mendarat di
    sini, kalau tidak keputusan admin ditolak karena di luar cakupan. */
 define('KAB_ADMIN', 3374);

@@ -471,12 +471,13 @@ try {
     cek(gagal_tercatat('account', $AGEN) === 5, 'Lima percobaan gagal tercatat untuk akun');
     $r = $lookup($j_agen, $NIK2, $LAHIR2);
     cek(stripos($r['badan'], 'Terlalu banyak percobaan verifikasi') !== FALSE && $profil($AGEN) === NULL, 'Percobaan keenam per akun ditahan dengan pesan jelas');
-    // Batas per NIK: NIK2 sudah 4 gagal dari agen_warga; satu gagal dari akun lain mengunci NIK itu.
+    // DIBALIK 3 Okt 2026 (temuan integrasi-luar-08): ember per NIK dicabut. Dulu lima tebakan salah dari akun
+    // mana pun mengunci NIK itu untuk semua akun, termasuk pemiliknya, dan bisa diulang tiap hari.
     $j_sri = masuk($e_sri, $SANDI);
     $lookup($j_sri, $NIK2, '1990-06-16');
     $r = $lookup($j_sri, $NIK2, $LAHIR2);
-    cek(stripos($r['badan'], 'Terlalu banyak percobaan verifikasi') !== FALSE && $profil($W_SRI) === NULL && gagal_tercatat('account', $W_SRI) === 1,
-        'Batas per NIK: akun lain ikut ditahan untuk NIK yang sedang ditebak, walau datanya benar');
+    cek(stripos($r['badan'], 'Terlalu banyak percobaan verifikasi') === FALSE && $profil($W_SRI) !== NULL && gagal_tercatat('account', $W_SRI) === 1,
+        'Tanpa ember per NIK: tebakan akun lain tidak menahan pemilik yang datanya benar');
 
     $ekspor = minta($j_agen, 'akun/export', ['current_password' => $AGEN_SANDI]);
     $json = json_decode($ekspor['badan'], TRUE);

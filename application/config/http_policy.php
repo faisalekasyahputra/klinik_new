@@ -41,6 +41,7 @@ $config['http_policy'] = [
         'admin_users/buka_kunci'               => 'buka kunci akun',
         'admin_users/reset_nik'                => 'reset NIK warga',
         'admin_users/reset_sandi'              => 'reset kata sandi',
+        'admin_users/putuskan_klaim_nik'       => 'setujui/tolak permintaan klaim NIK',
         'auth/do_login'                        => 'autentikasi',
         'auth/do_register'                     => 'mulai pendaftaran dan kirim kode OTP',
         'auth/do_verifikasi_email'             => 'periksa kode OTP dan buat akun',
@@ -84,6 +85,7 @@ $config['http_policy'] = [
         'migrate/uji_rekam_data_d1'  => 'hanya CLI atau loopback',
         'migrate/uji_wizard_w2'      => 'hanya CLI atau loopback',
         'migrate/ke'                 => 'hanya CLI (naik/turun ke versi skema tertentu untuk rollback); web dijawab 404',
+        'akun/buat_superadmin'       => 'hanya CLI (membuat Super Admin tanpa sandi untuk ditautkan lewat Google); web dijawab 404',
     ],
 
     /* URI KELUAR (aplikasi memanggil layanan lain) yang membawa data pribadi di query string karena

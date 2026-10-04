@@ -15,6 +15,8 @@ $config['rate_limit_policies'] = [
     // hit, pola login), per akun dan per IP (keputusan pemilik produk 29 Sep 2026).
     'profile_password' => ['limit' => 5, 'window' => 3600, 'dimensions' => ['account', 'ip']],
     'privacy_deletion_request' => ['limit' => 2, 'window' => 86400, 'dimensions' => ['account']],
+    // Kiriman NIK pertama di Profil Saya (Pengaturan::update_profile), per akun dan per IP (temuan ekspor-pii-07).
+    'profil_nik' => ['limit' => 5, 'window' => 86400, 'dimensions' => ['account', 'ip']],
     // Formulir aduan (Umum::simpan_aduan): tiap kiriman masuk antrean triase bersama dan memicu push ke
     // semua super admin. Per akun 5/jam; per IP lebih longgar (20/jam) karena satu kantor kelurahan atau
     // CGNAT seluler berbagi alamat. Dua kebijakan, bukan satu berdimensi ganda, supaya batasnya berbeda.
@@ -46,6 +48,12 @@ $config['rate_limit_policies'] = [
        Akibatnya pendaftaran sah untuk email yang sedang dibanjiri orang lain ikut tertahan sampai
        jendelanya habis; pesannya umum dan tidak menyatakan apa pun tentang akun. */
     'otp_kirim'    => ['limit' => 5,  'window' => 3600, 'dimensions' => ['key']],
+    /* Pengiriman per IP dan plafon GLOBAL harian (temuan api-csrf-07): otp_kirim per email tujuan tidak
+       menahan penyerang yang berganti alamat, dan kuota SMTP (Gmail ratusan sampai dua ribu per hari) yang
+       habis mematikan pendaftaran untuk semua orang. Plafon global ditembus = peringatan ke Super Admin
+       (bawaan Rate_limiter), pendaftaran baru menunggu jendelanya habis. */
+    'otp_kirim_ip'     => ['limit' => 20,  'window' => 3600,  'dimensions' => ['ip']],
+    'otp_kirim_global' => ['limit' => 250, 'window' => 86400, 'dimensions' => ['key']],
     'otp_salah'    => ['limit' => 10, 'window' => 3600, 'dimensions' => ['key']],
     'otp_salah_ip' => ['limit' => 30, 'window' => 3600, 'dimensions' => ['ip']],
     'simperum_lookup' => [
@@ -95,14 +103,16 @@ $config['rate_limit_policies'] = [
        bukan lebih rendah. */
     /* Bukti kepemilikan NIK (nama akun + tanggal lahir, Simperum_gateway::verifikasi_pemilik,
        3 Okt 2026). Hanya percobaan yang TIDAK COCOK dihitung (inspect lalu hit, pola login).
-       Dua dimensi berdiri sendiri: per akun (satu akun menebak banyak kombinasi) dan per NIK
-       (banyak akun menebak untuk satu NIK). Akibatnya pemilik asli bisa ikut tertahan sehari
-       bila NIK-nya sedang ditebak orang lain; pesan penolakannya mengarahkan ke menu Aduan. */
+       Per AKUN saja. Ember per NIK DICABUT (temuan integrasi-luar-08): lima tebakan salah dari
+       akun mana pun mengunci NIK itu untuk SEMUA akun, termasuk pemiliknya, dan bisa diulang
+       tiap hari. Tebakan lintas akun untuk satu NIK kini hanya DIHITUNG (verifikasi_nik_lintas,
+       senyap) dan memicu peringatan ke Super Admin begitu melewati batasnya; tidak menahan siapa pun. */
     'verifikasi_nik' => [
         'limit' => 5,
         'window' => 86400,
-        'dimensions' => ['account', 'nik'],
+        'dimensions' => ['account'],
     ],
+    'verifikasi_nik_lintas' => ['limit' => 5, 'window' => 86400, 'dimensions' => ['nik'], 'senyap' => TRUE],
     'warga_lookup_anon' => [
         'limit' => 5,
         'window' => 3600,

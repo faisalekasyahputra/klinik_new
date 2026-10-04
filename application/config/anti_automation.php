@@ -24,7 +24,8 @@ $config['scanner_user_agents'] = [
    di config/rate_limits.php (kelas_<kunci>_ip dan kelas_<kunci>_akun). */
 $config['route_classes'] = [
     // Pencarian yang menembak SIKUMBANG dan menulis cache per kata kunci (sikumbang_param).
-    'cari'  => ['index/cari_wil', 'index/cari_rumah', 'index/load_more', 'index/ajax_perumahan', 'index/sebaran', 'umum/sebaran', 'sikumbang/index'],
+    // index/detail_perum: tiap id baru = satu tembakan SIKUMBANG (temuan integrasi-luar-07).
+    'cari'  => ['index/cari_wil', 'index/cari_rumah', 'index/load_more', 'index/ajax_perumahan', 'index/sebaran', 'umum/sebaran', 'sikumbang/index', 'index/detail_perum'],
     'api'   => ['program/api_*', 'program/cek_tiket'],
     'unduh' => ['*/export*', '*/unduh*', '*/lihat_*', '*/cetak_*', 'index/buka_foto'],
 ];

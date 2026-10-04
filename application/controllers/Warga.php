@@ -372,7 +372,9 @@ class Warga extends MY_Controller {
                atas) supaya kotak "isi manual" di view tahu NIK mana yang
                barusan dicoba, tanpa mekanisme session baru. */
             $this->session->set_flashdata('warga_old_input', ['nik' => $nik]);
-            $this->session->set_flashdata('error', $result['message'] ?? 'Data belum dapat ditemukan.');
+            // Permintaan klaim yang menunggu tinjauan Super Admin bukan galat.
+            $this->session->set_flashdata(($result['code'] ?? '') === 'klaim_ditinjau' ? 'info' : 'error',
+                $result['message'] ?? 'Data belum dapat ditemukan.');
             redirect('warga/pendataan');
             return;
         }

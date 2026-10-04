@@ -63,6 +63,39 @@
     </div>
 </div>
 
+<?php if ( ! empty($klaim_nik)): /* Permintaan klaim NIK (Admin_Users::putuskan_klaim_nik). Tanpa NIK: hanya akun dan hitungan. */ ?>
+<div class="kartu-admin overflow-hidden mb-6" data-klaim-nik>
+    <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Permintaan Klaim NIK', 'kt_jumlah' => count($klaim_nik),
+        'kt_keterangan' => 'Akun yang lolos verifikasi nama dan tanggal lahir untuk NIK yang terikat belum terverifikasi ke akun lain. Setujui memindahkan NIK (draft pemegang lama dilepas, tidak dihapus); tolak membiarkan ikatan lama.']); ?>
+    <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+            <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
+                <tr><th class="px-4 py-3">Diajukan</th><th class="px-4 py-3">Pemohon</th><th class="px-4 py-3">Pemegang saat ini</th><th class="px-4 py-3">Pengajuan berjalan</th><th class="px-4 py-3">Keputusan</th></tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                <?php foreach ($klaim_nik as $k): ?>
+                <tr>
+                    <td class="px-4 py-3 whitespace-nowrap"><?= html_escape($k['created_at']) ?></td>
+                    <td class="px-4 py-3"><?= html_escape($k['pemohon_email'] ?? ('akun #' . (int) $k['pemohon_id'])) ?></td>
+                    <td class="px-4 py-3"><?= html_escape(implode(', ', array_map(fn($id) => $email_pemegang[$id] ?? ('akun #' . $id), $k['pemegang'])) ?: '-') ?></td>
+                    <td class="px-4 py-3"><?= (int) $k['pengajuan_berjalan'] ?></td>
+                    <td class="px-4 py-3">
+                        <form method="POST" action="<?= base_url('Admin_Users/putuskan_klaim_nik') ?>" class="flex flex-wrap items-center gap-2">
+                            <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+                            <input type="hidden" name="id" value="<?= (int) $k['id'] ?>">
+                            <input type="text" name="alasan" maxlength="500" placeholder="Catatan (opsional)" class="rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-1.5 text-xs text-gray-800 dark:text-gray-200">
+                            <button type="submit" name="keputusan" value="setuju" class="tombol-aksi"><span>Setujui</span></button>
+                            <button type="submit" name="keputusan" value="tolak" class="tombol-aksi-bahaya"><span>Tolak</span></button>
+                        </form>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
+
 <?php $this->load->helper('admin_table'); ?>
 <?php /* TANPA `z-10`: modal "Reset Sandi" (`fixed inset-0 z-50`) ditulis di dalam
          <td> di kartu ini, jadi stacking context z-10 di sini menguburnya juga.

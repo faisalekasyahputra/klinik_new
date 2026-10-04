@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/_akun_demo.php'; // akun demo nonaktif sejak migrasi 073: dipinjam selama suite berjalan
 date_default_timezone_set('Asia/Jakarta');
 /**
  * Uji tampilan layar daftar super admin (permintaan pemilik produk 2 Okt 2026:
@@ -74,7 +75,7 @@ function isi_utama($html) {
 echo "== Login superadmin ==\n";
 $hal_login = http('Auth/login');
 $token = preg_match('/name="csrf_kpkp_token" value="([^"]+)"/', $hal_login['body'], $m) ? $m[1] : '';
-$r = http('Auth/do_login', ['csrf_kpkp_token' => $token, 'email' => 'admin@klinikpkp.jatengprov.go.id', 'password' => 'password'], TRUE);
+$r = http('Auth/do_login', ['csrf_kpkp_token' => $token, 'email' => 'admin@klinikpkp.jatengprov.go.id', 'password' => pinjam_akun_demo('admin@klinikpkp.jatengprov.go.id')], TRUE);
 $masuk = (json_decode($r['body'], TRUE)['status'] ?? '') === 'success';
 cek($masuk, 'Login superadmin berhasil');
 if ( ! $masuk) { @unlink($jar); exit(1); }

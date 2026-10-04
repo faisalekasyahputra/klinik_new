@@ -1,6 +1,9 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed');
 /* Email kode OTP pendaftaran (libraries/Otp_pendaftaran.php). Tata letak tabel dan gaya inline karena
-   klien email membuang <style> dan flex/grid; tanpa gambar supaya tidak bergantung URL publik. */ ?>
+   klien email membuang <style> dan flex/grid; tanpa gambar supaya tidak bergantung URL publik.
+   $sudah_terdaftar: email itu sudah punya akun, jadi yang dikirim pemberitahuan TANPA kode (pendaftaran
+   menjawab sama untuk email baru dan lama, temuan auth-sesi-06). */
+$sudah = ! empty($sudah_terdaftar); ?>
 <!doctype html>
 <html lang="id">
 <head>
@@ -9,7 +12,7 @@
     <title>Kode verifikasi pendaftaran Klinik PKP</title>
 </head>
 <body style="margin:0; padding:0; background:#eef2f3; font-family:Arial, Helvetica, sans-serif; color:#0a1a1f;">
-<div style="display:none; max-height:0; overflow:hidden; opacity:0;">Kode verifikasi Anda <?= html_escape($kode) ?>, berlaku <?= (int) $menit ?> menit.</div>
+<div style="display:none; max-height:0; overflow:hidden; opacity:0;"><?= $sudah ? 'Ada percobaan pendaftaran dengan alamat email Anda.' : 'Kode verifikasi Anda ' . html_escape($kode) . ', berlaku ' . (int) $menit . ' menit.' ?></div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef2f3;">
     <tr>
         <td align="center" style="padding:32px 16px;">
@@ -34,12 +37,15 @@
                 <tr>
                     <td style="padding:32px 32px 8px;">
                         <?php /* Ikon: PNG dari assets/img/email/*.svg yang ditanam (CID); klien email membuang SVG. */ ?>
-                        <h1 style="margin:0 0 12px; font-size:20px; line-height:1.3; color:#0a1a1f;"><?php if ( ! empty($gambar['gembok'])): ?><img src="<?= html_escape($gambar['gembok']) ?>" alt="" width="22" height="22" style="vertical-align:middle; border:0; margin-right:8px;"><?php endif; ?>Verifikasi email Anda</h1>
+                        <h1 style="margin:0 0 12px; font-size:20px; line-height:1.3; color:#0a1a1f;"><?php if ( ! empty($gambar['gembok'])): ?><img src="<?= html_escape($gambar['gembok']) ?>" alt="" width="22" height="22" style="vertical-align:middle; border:0; margin-right:8px;"><?php endif; ?><?= $sudah ? 'Email Anda sudah terdaftar' : 'Verifikasi email Anda' ?></h1>
                         <p style="margin:0; font-size:15px; line-height:1.6; color:#3c4f54;">
-                            Masukkan kode berikut di halaman pendaftaran Klinik PKP untuk menyelesaikan pembuatan akun.
+                            <?= $sudah
+                                ? 'Seseorang mencoba mendaftar akun baru di Klinik PKP dengan alamat email ini, padahal alamat ini sudah punya akun. Bila itu Anda, silakan masuk dengan email dan kata sandi Anda, atau dengan tombol "Masuk dengan Google".'
+                                : 'Masukkan kode berikut di halaman pendaftaran Klinik PKP untuk menyelesaikan pembuatan akun.' ?>
                         </p>
                     </td>
                 </tr>
+                <?php if ( ! $sudah): ?>
                 <tr>
                     <td align="center" style="padding:20px 32px;">
                         <table role="presentation" cellpadding="0" cellspacing="0">
@@ -52,6 +58,7 @@
                         <p style="margin:14px 0 0; font-size:13px; color:#5b6f74;"><?php if ( ! empty($gambar['jam'])): ?><img src="<?= html_escape($gambar['jam']) ?>" alt="" width="16" height="16" style="vertical-align:middle; border:0; margin-right:8px;"><?php endif; ?>Berlaku <strong><?= (int) $menit ?> menit</strong> dan hanya untuk satu kali pendaftaran.</p>
                     </td>
                 </tr>
+                <?php endif; ?>
                 <tr>
                     <td style="padding:8px 32px 28px;">
                         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -62,7 +69,8 @@
                             </tr>
                         </table>
                         <p style="margin:18px 0 0; font-size:13px; line-height:1.6; color:#5b6f74;">
-                            Kalau Anda tidak merasa mendaftar di Klinik PKP, abaikan email ini. Tidak ada akun yang dibuat tanpa kode di atas.
+                            <?= $sudah ? 'Kalau bukan Anda yang mencoba mendaftar, abaikan email ini. Akun Anda tidak berubah dan tidak ada kode yang dikirim.'
+                                : 'Kalau Anda tidak merasa mendaftar di Klinik PKP, abaikan email ini. Tidak ada akun yang dibuat tanpa kode di atas.' ?>
                         </p>
                     </td>
                 </tr>

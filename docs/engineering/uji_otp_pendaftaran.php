@@ -34,13 +34,16 @@ $salah = fn($kode) => str_pad((string) (((int) $kode + 1) % 1000000), 6, '0', ST
 
 // Ember batas laju per IP (pendaftaran, kode salah) dipinjam lalu dikembalikan utuh (::1 tercatat per /64).
 $ember = []; $kunci_ip = [];
-foreach (['register', 'otp_salah_ip'] as $pol) {
+foreach (['register', 'otp_salah_ip', 'otp_kirim_ip'] as $pol) {
     foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) {
         $k = hash('sha256', $pol . ':ip:' . $ip); $kunci_ip[$pol][] = $k;
         $ember[$k] = $db->query("SELECT kunci, jendela_mulai_at, jumlah_gagal FROM sys_batas_laju WHERE kunci='$k'")->fetch_assoc();
         $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
     }
 }
+$k = hash('sha256', 'otp_kirim_global:key:otp_global'); // plafon global harian ikut dipinjam
+$ember[$k] = $db->query("SELECT kunci, jendela_mulai_at, jumlah_gagal FROM sys_batas_laju WHERE kunci='$k'")->fetch_assoc();
+$db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'");
 $kosongkan_register = function () use ($db, $kunci_ip) { foreach ($kunci_ip['register'] as $k) { $db->query("DELETE FROM sys_batas_laju WHERE kunci='$k'"); } };
 // Ember per email (Otp_pendaftaran): kunci = sha256(lowercase email), email uji dibuat sendiri dan dihapus di akhir.
 $kunci_email = fn($pol, $e) => hash('sha256', $pol . ':key:' . hash('sha256', strtolower($e)));
@@ -89,13 +92,13 @@ try {
     $kirim($jar(), 'Auth/do_verifikasi_email', ['kode_otp' => kode_otp_uji($e3)]);
     $cek($akun($e3) === NULL, 'Kode dikirim dari sesi lain: akun tidak dibuat');
 
-    // 3b. Email yang sudah terdaftar: judul dan tombol sama umumnya dengan galat pendaftaran lain,
-    // supaya dialognya tidak menyatakan keanggotaan; hanya petunjuk netral di pesannya.
-    [$b] = $kirim($jar(), 'Auth/do_register', $isian($e1));
-    $cek(preg_match('/data-kpkp-flash-notifications>(.*?)<\/script>/s', $b, $m) === 1
-        && strpos($m[1], '"aksi"') === FALSE && strpos($m[1], 'Email sudah terdaftar') === FALSE
-        && strpos($m[1], '"title":"Pendaftaran gagal"') !== FALSE && strpos($m[1], 'sudah punya akun, silakan masuk') !== FALSE,
-        'Email sudah terdaftar: judul umum "Pendaftaran gagal", tanpa tombol khusus, hanya petunjuk netral');
+    // 3b. DIBALIK 3 Okt 2026 (temuan auth-sesi-06): email yang sudah terdaftar dijawab SAMA dengan email
+    // baru (halaman kode, tanpa galat). Alamat itu menerima pemberitahuan tanpa kode; kode apa pun ditolak.
+    @unlink($berkas_kode($e1));
+    [$b, $url] = $kirim($jar(), 'Auth/do_register', $isian($e1));
+    $cek(substr($url, -21) === 'Auth/verifikasi_email' && stripos($b, 'Pendaftaran gagal') === FALSE && stripos($b, 'sudah punya akun') === FALSE,
+        'Email sudah terdaftar: dibawa ke halaman kode yang sama, tanpa galat yang membedakannya');
+    $cek(kode_otp_uji($e1) === 'SUDAH_TERDAFTAR', 'Email sudah terdaftar: yang dikirim pemberitahuan, bukan kode');
 
     // 4. Tanpa pendaftaran tertunda.
     [, $url] = $http($jar(), 'Auth/verifikasi_email');

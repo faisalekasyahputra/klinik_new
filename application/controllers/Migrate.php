@@ -545,6 +545,15 @@ class Migrate extends CI_Controller {
             : 'TERPASANG ('.count(Migration_Penamaan_indonesia::TABEL).' tabel dan '.$n_kolom072.' kolom berganti nama, '
                 .count(Migration_Penamaan_indonesia::KOMENTAR).' tabel ber-COMMENT)')."
 ";
+        // Migrasi 073 - akun demo nonaktif tanpa sandi. Daftar dan hitungan admin siap dari konstanta migrasinya.
+        require_once APPPATH.'migrations/20260701000073_nonaktifkan_akun_demo.php';
+        $demo073 = "LOWER(email) IN ('".implode("','", Migration_Nonaktifkan_akun_demo::DEMO)."')";
+        $sisa073 = $this->db->where($demo073, NULL, FALSE)->group_start()->where('status !=', 'nonaktif')
+            ->or_where("COALESCE(kata_sandi, '') <>", '')->group_end()->count_all_results('usr_akun');
+        $ada073 = $this->db->where($demo073, NULL, FALSE)->count_all_results('usr_akun');
+        $admin073 = (int) $this->db->query(Migration_Nonaktifkan_akun_demo::sql_admin_siap())->row('n');
+        echo 'akun demo nonaktif (migrasi 073): '.($sisa073 ? 'BELUM ('.$sisa073.' dari '.$ada073.' akun demo masih aktif atau bersandi)'
+            : 'TERPASANG ('.$ada073.' akun demo nonaktif tanpa sandi)').'; Super Admin siap di luar akun demo: '.$admin073."\n";
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
                 ($this->db->field_exists($kolom, 'kkn_magang_pendaftaran') ? 'ADA' : 'HILANG')."\n";
