@@ -108,16 +108,21 @@ $nada_angka = ['utama' => 'text-amber-600 dark:text-brand-primary', 'waspada' =>
     </div>
 </section>
 
-<div class="grid grid-cols-1 grid-kartu items-start xl:grid-cols-3">
-    <section class="kartu-admin xl:col-span-2">
+<?php // Kedua kartu bawah sama tinggi (stretch); daftar pengajuan menggulir di dalam kartunya. ?>
+<div class="grid grid-cols-1 grid-kartu xl:grid-cols-3">
+    <section class="kartu-admin flex flex-col xl:col-span-2">
         <div class="border-b border-gray-100 px-4 pb-3 pt-4 dark:border-white/5">
             <h2 class="text-base font-bold text-gray-900 dark:text-white">Pengajuan terbaru</h2>
-            <p class="text-xs text-gray-500 dark:text-brand-muted">Enam pengajuan paling baru dari seluruh layanan.</p>
+            <p class="text-xs text-gray-500 dark:text-brand-muted">Dua puluh pengajuan paling baru dari seluruh layanan; gulir untuk melihat lainnya.</p>
         </div>
         <?php if (empty($aktivitas)): ?>
             <p class="isi-kartu text-sm text-gray-500 dark:text-brand-muted">Belum ada pengajuan yang masuk.</p>
         <?php else: ?>
-        <ul class="divide-y divide-gray-100 dark:divide-white/5">
+        <?php /* Daftar absolut di dalam pembungkus flex-1: tingginya tidak ikut menentukan tinggi baris,
+                 jadi kartu mengikuti Ringkasan Sistem dan isinya menggulir. Di layar sempit (bertumpuk)
+                 pembungkus diberi tinggi minimum. */ ?>
+        <div class="relative min-h-[20rem] flex-1 xl:min-h-0">
+        <ul class="gulir-halus absolute inset-0 divide-y divide-gray-100 overflow-y-auto dark:divide-white/5">
             <?php foreach ($aktivitas as $a):
                 $housing_status = $housing_statuses[$a['status']] ?? NULL;
                 $status_label = $housing_status['label'] ?? ($a['label'] ?? NULL) ?? $a['status'];
@@ -132,6 +137,7 @@ $nada_angka = ['utama' => 'text-amber-600 dark:text-brand-primary', 'waspada' =>
             </a></li>
             <?php endforeach; ?>
         </ul>
+        </div>
         <?php endif; ?>
     </section>
 

@@ -205,6 +205,10 @@
            spesifisitas sama dengan aturan lama (0,1,0). */
         .tumpuk-bagian > :where(:not([type="hidden"], [hidden], script, style, template)) ~ * { margin-top: var(--jarak-bagian); }
         .grid-kartu { gap: var(--jarak-kartu); }
+        /* Area gulir di dalam kartu (daftar pengajuan dasbor): scrollbar tipis bertema. ::-webkit-scrollbar
+           di bawah sudah melayani Chrome/Edge; dua baris ini untuk Firefox. */
+        .gulir-halus { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+        .dark .gulir-halus { scrollbar-color: #2b4f5c transparent; }
         /* Kepadatan tabel admin: sel berpadding besar (py-3/py-4/py-5) dirapatkan jadi 10px di
            semua layar sekaligus. Padding mendatar tetap milik view. */
         .admin-main :is(th, td):is(.py-3, .py-4, .py-5) { padding-top: .625rem; padding-bottom: .625rem; }
