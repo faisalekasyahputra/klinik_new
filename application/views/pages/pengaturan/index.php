@@ -88,20 +88,22 @@
                         </details>
                         <?php endif; ?>
                     </div>
-                    <div class="flex w-full shrink-0 flex-row flex-wrap items-center justify-between gap-2 sm:w-auto sm:flex-col sm:flex-nowrap sm:items-end">
+                    <?php /* Status dan aksi berdampingan (4 Okt 2026: dulu label di atas dan tautan teks "Lengkapi →"
+                             di bawahnya, tampak terlepas). Aksi memakai tombol-utama dengan panah bercahaya. */ ?>
+                    <div class="flex w-full shrink-0 flex-wrap items-center justify-between gap-3 sm:w-auto sm:justify-end">
                         <span class="inline-flex px-3 py-1 rounded-full text-xs font-bold border <?= $kelas_badge[$item['status_kelas']] ?? $kelas_badge['pending'] ?>"><?= htmlspecialchars($item['status_label']) ?></span>
                         <?php if (!empty($item['aksi_url'])): ?>
                         <?php // Label menyebut apa yang benar-benar terjadi saat diklik.
                               // "Kelola" untuk semua keadaan menjanjikan kemampuan mengubah
                               // padahal pengajuan yang sudah dikirim/diterima read-only. ?>
-                        <a href="<?= base_url($item['aksi_url']) ?>" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><?= htmlspecialchars($item['aksi_label'] ?? 'Kelola') ?> →</a>
+                        <a href="<?= base_url($item['aksi_url']) ?>" class="tombol-utama" data-aksi-status><span><?= htmlspecialchars($item['aksi_label'] ?? 'Kelola') ?></span><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-right"></i></span></a>
                         <?php elseif (!empty($item['aksi_post_url'])): ?>
                         <form action="<?= base_url($item['aksi_post_url']) ?>" method="post">
                             <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
                             <?php foreach (($item['aksi_post_fields'] ?? []) as $name => $value): ?>
                             <input type="hidden" name="<?= html_escape($name) ?>" value="<?= html_escape((string) $value) ?>">
                             <?php endforeach; ?>
-                            <button type="submit" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><?= htmlspecialchars($item['aksi_label'] ?? 'Kelola') ?> →</button>
+                            <button type="submit" class="tombol-utama" data-aksi-status><span><?= htmlspecialchars($item['aksi_label'] ?? 'Kelola') ?></span><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-right"></i></span></button>
                         </form>
                         <?php endif; ?>
                     </div>

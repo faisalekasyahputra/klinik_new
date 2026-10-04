@@ -238,7 +238,7 @@ $dashboard = http('a', 'akun');
 cek(strpos($dashboard['body'], 'akun/dokumen') !== FALSE, 'Dashboard memiliki akses kelola dokumen');
 cek((bool) preg_match('~href="https://sikumbang\.tapera\.go\.id/user/login"\s+target="_blank" rel="noopener noreferrer"~', $dashboard['body']),
     'Menu Sikumbang membuka URL eksternal yang tepat di tab baru');
-cek((bool) preg_match('~href="[^"]*/akun/dokumen"[^>]*>Lengkapi\s*→</a>~u', $dashboard['body']),
+cek((bool) preg_match('~href="[^"]*/akun/dokumen"[^>]*data-aksi-status><span>Lengkapi</span>~u', $dashboard['body']),
     'Tombol Lengkapi langsung menuju panel dokumen dashboard');
 if (getenv('UJI_PANEL_SRP2')) {
     $fixture = tempnam(sys_get_temp_dir(), 'srp2_png');
