@@ -14,7 +14,8 @@ $pk = $peringatan_keamanan;
 ?>
 <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Jumlah pekerjaan per layanan. Klik angka untuk membuka daftar yang sudah tersaring.']); ?>
 
-<div class="tumpuk-bagian">
+<?php // Di dasbor setiap baris adalah deret kartu: jarak tegak antarbaris disamakan dengan jarak antarkartu. ?>
+<div class="tumpuk-bagian" style="--jarak-bagian: var(--jarak-kartu)">
 <?php if ($antrean_tanpa_wilayah > 0): ?>
 <div class="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm text-orange-800 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-300">
     <i class="ph ph-map-pin-area text-lg" aria-hidden="true"></i>
@@ -40,7 +41,7 @@ $pk = $peringatan_keamanan;
                 <li><a href="<?= html_escape(base_url($r['url'])) ?>" class="flex justify-between gap-2 text-gray-500 hover:underline dark:text-brand-muted"><span><?= html_escape($r['label']) ?></span><span class="font-bold <?= $redup($r['n']) ?>"><?= angka_id($r['n']) ?></span></a></li>
                 <?php endforeach; ?>
             </ul>
-            <a href="<?= html_escape(base_url($k['url'])) ?>" class="mt-auto pt-2 text-xs <?= $tautan ?>"><?= html_escape($k['lihat']) ?></a>
+            <a href="<?= html_escape(base_url($k['url'])) ?>" class="mt-3 text-xs <?= $tautan ?>"><?= html_escape($k['lihat']) ?></a>
         </article>
         <?php endforeach; ?>
 
@@ -60,15 +61,15 @@ $pk = $peringatan_keamanan;
                 <li class="flex justify-between gap-2"><span>Diterima</span><span class="font-bold <?= $redup($rekam['diterima']) ?>"><?= angka_id($rekam['diterima']) ?></span></li>
                 <li class="flex justify-between gap-2"><span>Perlu perbaikan</span><span class="font-bold <?= $redup($rekam['perbaikan']) ?>"><?= angka_id($rekam['perbaikan']) ?></span></li>
             </ul>
-            <a href="<?= base_url('Admin_Rekam_Data?tahun=' . (int) $rekam['tahun'] . '&triwulan=' . (int) $rekam['triwulan']) ?>" class="mt-auto pt-2 text-xs <?= $tautan ?>">Lihat laporan</a>
+            <a href="<?= base_url('Admin_Rekam_Data?tahun=' . (int) $rekam['tahun'] . '&triwulan=' . (int) $rekam['triwulan']) ?>" class="mt-3 text-xs <?= $tautan ?>">Lihat laporan</a>
         </article>
         <?php endif; ?>
     </div>
 </section>
 
-<div class="grid grid-cols-1 grid-kartu xl:grid-cols-3">
+<div class="grid grid-cols-1 grid-kartu items-start xl:grid-cols-3">
     <section class="kartu-admin xl:col-span-2">
-        <div class="border-b border-gray-100 px-4 py-3 dark:border-white/5">
+        <div class="border-b border-gray-100 px-4 pb-3 pt-4 dark:border-white/5">
             <h2 class="text-base font-bold text-gray-900 dark:text-white">Pengajuan terbaru</h2>
             <p class="text-xs text-gray-500 dark:text-brand-muted">Enam pengajuan paling baru dari seluruh layanan.</p>
         </div>

@@ -21,7 +21,9 @@ foreach ($matrix_result['items'] ?? [] as $item) {
     <?php endif; ?>
     <?php foreach ($matrix_result['items'] ?? [] as $item): ?>
         <article class="mt-4 rounded-xl border p-4" style="border-color:var(--portal-border)">
-            <h3 class="font-bold"><?= html_escape($item['program_name']) ?></h3>
+            <?php $tampil = $CI->matriks_program_ruleset->nama_tampil($item['program_name'] ?? ''); ?>
+            <h3 class="font-bold"><?= html_escape($tampil['nama']) ?></h3>
+            <?php if ($tampil['skema']): ?><p class="text-xs opacity-75">Skema dinas: <?= html_escape($tampil['skema']) ?></p><?php endif; ?>
             <?php $deskripsi = $deskripsi_program[$CI->matriks_program_ruleset->kode_katalog($item['program_name'] ?? '')] ?? NULL; ?>
             <?php if ($deskripsi): ?><p class="mt-1 text-sm"><?= html_escape($deskripsi) ?></p><?php endif; ?>
             <p class="mt-2 text-xs">Syarat matriks: <?= html_escape(implode('; ', $item['criteria'] ?? [])) ?>.</p>

@@ -129,16 +129,13 @@ class Admin_Srp2 extends Admin_Controller {
         // ulang, dan satu-satunya jalan membukanya lagi adalah menebak URL
         // detail/<id>. Roadmap T1b butir 1.
         //
-        // Nilai defaultnya dibaca dari registry (pending_where) supaya "apa arti
-        // belum diproses" tetap satu deklarasi - dipakai badge sidebar sekaligus
-        // query ini, tidak lagi ditulis ulang literalnya di dua tempat.
-        $modul = $this->config->item('dashboard_modules')['srp2_verifikasi'] ?? [];
-        $status_default = $modul['pending_where']['status_verifikasi'] ?? 'Pending';
-
+        // Default "Semua" (keputusan pemilik produk 4 Okt 2026): layar dibuka
+        // dengan seluruh pengajuan, bukan kosong saat tidak ada yang Menunggu.
+        // Tautan yang memang ingin satu status (kartu dasbor) mengirim ?status=.
         $status_pilihan = ['Pending', 'Draft', 'Diterima', 'Ditolak'];
         $status_filter  = (string) $this->input->get('status');
-        if ( ! in_array($status_filter, $status_pilihan, TRUE) && $status_filter !== 'semua') {
-            $status_filter = $status_default;
+        if ( ! in_array($status_filter, $status_pilihan, TRUE)) {
+            $status_filter = 'semua';
         }
         $data['status_filter']  = $status_filter;
         $data['status_pilihan'] = $status_pilihan;

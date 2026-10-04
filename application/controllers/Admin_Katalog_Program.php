@@ -38,6 +38,13 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Admin_Katalog_Program extends Admin_Controller {
 
+    public function __construct()
+    {
+        parent::__construct();
+        // Dimuat di sini, bukan per method: semua method memakai Program_model::DIR_UNGGAHAN.
+        $this->load->model('Program_model');
+    }
+
     public function index()
     {
         $data['title'] = 'Katalog Program';
@@ -61,7 +68,11 @@ class Admin_Katalog_Program extends Admin_Controller {
         foreach ($rows as $r) {
             $r->judul_diagnosa = $judul_diagnosa[$r->kode_program] ?? [];
             // Selisih dihitung di sini, bukan dibandingkan mata di layar.
-            $r->selisih = $r->judul_diagnosa !== [] && ! in_array($r->nama_program, $r->judul_diagnosa, TRUE);
+            // Varian "<nama katalog> <sufiks>" (Oemah Lestari Subsidi/Non-Subsidi) dihitung selaras.
+            $r->judul_beda = array_values(array_filter($r->judul_diagnosa, function ($j) use ($r) {
+                return $j !== $r->nama_program && strpos($j, $r->nama_program . ' ') !== 0;
+            }));
+            $r->selisih = $r->judul_beda !== [];
             $r->tanpa_aturan = $r->judul_diagnosa === [];
         }
 
@@ -76,6 +87,24 @@ class Admin_Katalog_Program extends Admin_Controller {
         $data['tanpa_baris'] = array_values(array_diff(array_keys($judul_diagnosa), $kode_tabel));
 
         $this->render_admin('admin/katalog/index', $data);
+    }
+
+    /** Halaman ubah satu program (dulu modal di daftar); simpan tetap lewat ubah(). */
+    public function edit($id = NULL)
+    {
+        $row = $this->db
+            ->select('p.*, k.nama_kategori,'
+                . ' (SELECT COUNT(*) FROM sf_antrean_pengajuan q WHERE q.program_id = p.id) AS dipakai', FALSE)
+            ->from('sf_program p')
+            ->join('sf_program_kategori k', 'k.id = p.kategori_id', 'left')
+            ->where('p.id', (int) $id)->get()->row_array();
+        if ( ! $row) { show_404(); return; }
+        $this->render_admin('admin/katalog/edit', [
+            'title'         => 'Ubah Program',
+            'p'             => $row,
+            'gambar_tampil' => $this->Program_model->gambar_tampil($row),
+            'gambar_unggah' => strpos((string) $row['gambar'], Program_model::DIR_UNGGAHAN) === 0,
+        ]);
     }
 
     /**
@@ -105,12 +134,12 @@ class Admin_Katalog_Program extends Admin_Controller {
         $urutan = (int) $this->input->post('urutan');
         if ($nama === '' || mb_strlen($nama) > 255) {
             $this->session->set_flashdata('error', 'Nama program wajib diisi, maksimal 255 karakter.');
-            redirect('Admin_Katalog_Program');
+            redirect('Admin_Katalog_Program/edit/' . $id);
             return;
         }
         if (mb_strlen($badge) > 60 || mb_strlen($syarat) > 300) {
             $this->session->set_flashdata('error', 'Label maksimal 60 karakter, syarat utama maksimal 300.');
-            redirect('Admin_Katalog_Program');
+            redirect('Admin_Katalog_Program/edit/' . $id);
             return;
         }
         // Dijepit, bukan ditolak: urutan salah ketik bukan alasan membuang
@@ -141,7 +170,7 @@ class Admin_Katalog_Program extends Admin_Controller {
             $gambar_baru = $this->simpan_gambar_program($lama->kode_program, $galat);
             if ($gambar_baru === NULL) {
                 $this->session->set_flashdata('error', $galat ?: 'Gambar gagal disimpan.');
-                redirect('Admin_Katalog_Program');
+                redirect('Admin_Katalog_Program/edit/' . $id);
                 return;
             }
             $set['gambar'] = $gambar_baru;
@@ -153,7 +182,7 @@ class Admin_Katalog_Program extends Admin_Controller {
            `assets/img/program/` ikut repo dan dipakai sebagai nilai awal migrasi
            036 - menghapusnya berarti deploy berikutnya menghidupkannya lagi
            sementara DB sudah menunjuk ke tempat lain. */
-        if ($gambar_baru !== NULL && strpos((string) $lama->gambar, self::DIR_UNGGAHAN) === 0) {
+        if ($gambar_baru !== NULL && strpos((string) $lama->gambar, Program_model::DIR_UNGGAHAN) === 0) {
             @unlink(FCPATH . $lama->gambar);
         }
 
@@ -179,8 +208,7 @@ class Admin_Katalog_Program extends Admin_Controller {
         redirect('Admin_Katalog_Program');
     }
 
-    /** Foto unggahan dipisah dari berkas bawaan yang ikut repo. */
-    const DIR_UNGGAHAN = 'assets/img/program/unggahan/';
+    /* Folder foto unggahan: Program_model::DIR_UNGGAHAN (satu sumber, dipakai juga korsel). */
 
     /**
      * Simpan foto program. Balikkan path relatif, atau NULL + $galat terisi.
@@ -231,7 +259,7 @@ class Admin_Katalog_Program extends Admin_Controller {
             return NULL;
         }
 
-        $dir = FCPATH . self::DIR_UNGGAHAN;
+        $dir = FCPATH . Program_model::DIR_UNGGAHAN;
         if ( ! is_dir($dir) && ! @mkdir($dir, 0755, TRUE)) {
             $galat = 'Direktori unggahan tidak bisa dibuat.';
             return NULL;
@@ -248,6 +276,6 @@ class Admin_Katalog_Program extends Admin_Controller {
             $galat = 'Metadata gambar gagal dibersihkan; unggahan dibatalkan.';
             return NULL;
         }
-        return self::DIR_UNGGAHAN . $nama;
+        return Program_model::DIR_UNGGAHAN . $nama;
     }
 }

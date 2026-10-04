@@ -15,10 +15,16 @@ $this->load->helper('admin_table');
  *   $base_url - path CI halaman ini
  *   $placeholder - opsional, teks placeholder kotak cari
  *   $filter_html - opsional, HTML kontrol filter tambahan (mis. tombol bidang)
+ *   $tb_sebaris  - opsional: TRUE = hanya form cari, tanpa baris toolbar, untuk ditaruh di
+ *                  kt_keterangan kepala_tabel. Tabel tanpa filter dulu memakan satu baris
+ *                  penuh yang isinya hanya kotak cari (Akses Staf, Akun Universitas).
  */
+$tb_sebaris = ! empty($tb_sebaris);
 ?>
+<?php if ( ! $tb_sebaris): ?>
 <div class="px-4 py-3 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
     <div class="flex flex-wrap items-center gap-2"><?= $filter_html ?? '' ?></div>
+<?php endif; ?>
 
     <?php $cari_post = ! empty($table['cari_post']); ?>
     <form method="<?= $cari_post ? 'post' : 'get' ?>" action="<?= base_url($base_url) ?>" class="flex items-center gap-2 w-full lg:w-auto">
@@ -45,4 +51,6 @@ $this->load->helper('admin_table');
         <a href="<?= admin_table_url($base_url, ['q' => NULL, 'cari' => NULL]) ?>" class="tombol-kedua" title="Hapus pencarian">Reset</a>
         <?php endif; ?>
     </form>
+<?php if ( ! $tb_sebaris): ?>
 </div>
+<?php endif; ?>

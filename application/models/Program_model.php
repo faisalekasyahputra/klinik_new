@@ -3,6 +3,31 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Program_model extends CI_Model {
 
+    /** Foto unggahan admin (Katalog Program); dipisah dari berkas bawaan yang ikut repo. */
+    const DIR_UNGGAHAN = 'assets/img/program/unggahan/';
+
+    /* Foto hero pilihan user (Foto Program.rar, 18 Agt 2026), dulu dipetakan langsung di
+       program_showcase_carousel.php dan MENANG atas kolom `gambar`: foto yang diunggah admin
+       untuk kelima program ini tersimpan tapi tidak pernah tampil di beranda. */
+    const FOTO_HERO = [
+        'flpp'          => 'assets/img/program/hero-2026/flpp.png',
+        'oemah_lestari' => 'assets/img/program/hero-2026/oemah-lestari.webp',
+        'rtlh'          => 'assets/img/program/hero-2026/rtlh.png',
+        'pb'            => 'assets/img/program/hero-2026/pb.jpeg',
+        'rumah_apung'   => 'assets/img/program/hero-2026/rumah-apung.png',
+    ];
+
+    /**
+     * Gambar yang BENAR-BENAR tampil untuk satu program, dipakai korsel beranda dan layar
+     * ubah katalog (thumbnail) supaya keduanya tidak pernah berbeda. Urutan: unggahan admin,
+     * foto hero, kolom `gambar` bawaan, gambar cadangan.
+     */
+    public function gambar_tampil(array $p) {
+        $g = (string) ($p['gambar'] ?? '');
+        if (strpos($g, self::DIR_UNGGAHAN) === 0) { return $g; }
+        return self::FOTO_HERO[$p['kode_program'] ?? ''] ?? ($g !== '' ? $g : 'assets/img/program/01_subsidif_lpp.avif');
+    }
+
     public function __construct() {
         parent::__construct();
         $this->load->helper('housing_queue');

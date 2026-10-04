@@ -110,6 +110,18 @@ check($kode(berkas('m7.pdf', pdf_objstm('4 0 << /S /JavaScript /JS (app.alert(1)
 check($kode(berkas('m8.pdf', "%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R/Encrypt 9 0 R>>\n%%EOF"), 'pdf') === 'pdf_terenkripsi', 'PDF terenkripsi tidak dapat dipindai dan harus ditolak');
 check($kode(berkas('m9.pdf', "%PDF-1.4\n1 0 obj<</Type/Filespec/EF<</F 2 0 R>>/Type/EmbeddedFile>>endobj\n%%EOF"), 'pdf') === 'pdf_aktif', 'Lampiran tertanam di PDF harus ditolak');
 check($kode(berkas('m10.pdf', "%PDF-1.5\n5 0 obj\n<< /Type /ObjStm /N 1 /First 4 /Length 10 >>\nstream\nabcdefghij\nendstream\nendobj\n%%EOF"), 'pdf') === 'pdf_tak_dapat_dipindai', 'ObjStm yang tidak bisa didekompresi = tidak bisa dipastikan aman, ditolak');
+// Positif palsu 4 Okt 2026: PowerPoint menaruh base64 gambar di string /Alt, dan base64 kebetulan memuat
+// "/JS/". Nama di DALAM string bukan nama PDF; yang dicocokkan hanya nama di luar string.
+$alt = '/S/Figure/Alt(data:image/jpeg;base64,R/JS/oOl6+/JavaScript/Launch/EmbeddedFile/AA<<x)';
+check($kode(berkas('fp1.pdf', "%PDF-1.4\n1 0 obj<<" . $alt . ">>endobj\n%%EOF"), 'pdf') === 'OK', 'Base64 di string /Alt tidak boleh dianggap JavaScript');
+check($kode(berkas('fp2.pdf', pdf_objstm('4 0 <<' . $alt . '>>')), 'pdf') === 'OK', 'Base64 di string /Alt di dalam ObjStm tidak boleh dianggap JavaScript');
+check($kode(berkas('fp3.pdf', "%PDF-1.4\n1 0 obj<</T(a\)b(c)d)/U<4a53>>>endobj\n%%EOF"), 'pdf') === 'OK', 'Kurung escape, bersarang, dan hex string dibaca sebagai string');
+// Membuang string tidak boleh membuka jalan pintas: lima bentuk yang tetap harus tertangkap.
+check($kode(berkas('b1.pdf', "%PDF-1.4\n% ( kurung di komentar bukan awal string\n1 0 obj<</OpenAction<</JS 2 0 R>>>>endobj\n%%EOF"), 'pdf') === 'pdf_aktif', 'Kurung di komentar tidak boleh menyembunyikan /JS');
+check($kode(berkas('b2.pdf', "%PDF-1.4\n1 0 obj<</T(tak tertutup>>endobj\n2 0 obj<</JS 3 0 R>>endobj\n%%EOF"), 'pdf') === 'pdf_aktif', 'String tak tertutup tidak boleh menyembunyikan /JS (gagal-aman)');
+check($kode(berkas('b3.pdf', "%PDF-1.4\n1 0 obj<</T(a\\)/JS 2 0 R>>endobj\n%%EOF"), 'pdf') === 'pdf_aktif', 'Backslash ter-escape menutup string; /JS sesudahnya tertangkap');
+check($kode(berkas('b4.pdf', "%PDF-1.4\n1 0 obj<</T(a(b)c)/JS 2 0 R>>endobj\n%%EOF"), 'pdf') === 'pdf_aktif', 'Kurung bersarang ditutup benar; /JS sesudahnya tertangkap');
+check($kode(berkas('b5.pdf', "%PDF-1.4\n1 0 obj< /JS 2 0 R>endobj\n%%EOF"), 'pdf') === 'pdf_aktif', 'Kurung sudut berisi non-hex bukan hex string; /JS di dalamnya tertangkap');
 check($kode(berkas('m11.pdf', 'bukan pdf sama sekali'), 'pdf') === 'tipe_tak_sesuai', 'Berkas berekstensi pdf tanpa isi PDF harus ditolak');
 check($kode(berkas('m12.jpg', $PNG), 'jpg') === 'tipe_tak_sesuai', 'PNG yang diberi ekstensi jpg harus ditolak');
 check($kode(berkas('m13.png', 'GIF89a bukan gambar'), 'png') === 'tipe_tak_sesuai', 'Berkas bukan gambar berekstensi png harus ditolak');

@@ -45,7 +45,8 @@ try {
     [, $eAdm] = $akun('admin_kabkota', $kabA);
     [$uW1] = $akun('warga'); [$uW2] = $akun('warga'); [$uW3] = $akun('warga'); [$uW4] = $akun('warga');
     $prog = "Program {$tag}";
-    $mat = json_encode(['items' => [['program_name' => $prog]]]);
+    // Item kedua nama baris Sheet3: tampil sebagai nama katalog + keterangan skema (Matriks_program_ruleset::nama_tampil).
+    $mat = json_encode(['items' => [['program_name' => $prog], ['program_name' => 'PB Backlog (Prioritas 1)']]]);
     $idTampil = $draft($uW1, $kabA, 'draft', 'preliminary_recommendation', $mat);
     $idLain   = $draft($uW2, $kabB, 'draft', 'preliminary_recommendation', json_encode(['items' => [['program_name' => "Lain {$tag}"]]]));
     $idKosong = $draft($uW3, $kabA, 'draft', 'housing_family', NULL);
@@ -56,6 +57,9 @@ try {
     $cek(strpos($u, 'pendataan_awal') !== FALSE && strpos($b, 'Pendataan Awal') !== FALSE, 'Admin kab/kota membuka layar Pendataan Awal Warga');
     $cek(strpos($b, $prog) !== FALSE, 'Draft ber-rekomendasi-awal di wilayahnya tampil beserta programnya');
     $cek(strpos($b, 'Berhenti di hasil rekomendasi awal') !== FALSE, 'Posisi terakhir warga dijelaskan');
+    $namaPb = (string) ($db->query("SELECT nama_program FROM sf_program WHERE kode_program = 'pb'")->fetch_row()[0] ?? '');
+    $cek($namaPb !== '' && strpos($b, htmlspecialchars($namaPb, ENT_QUOTES, 'UTF-8') . '<span class="font-normal opacity-75"> · PB Backlog (Prioritas 1)</span>') !== FALSE,
+        'Nama skema Sheet3 tampil sebagai nama katalog, skemanya sebagai keterangan');
     $cek(strpos($b, "Lain {$tag}") === FALSE, 'Draft wilayah lain TIDAK tampil');
     $cek(strpos($b, "Kirim {$tag}") === FALSE, 'Pengajuan yang sudah dikirim TIDAK tampil di sini');
     $cek(strpos($b, 'Warga Contoh ' . str_pad((string) $idKosong, 3, '0', STR_PAD_LEFT)) === FALSE, 'Draft tanpa rekomendasi awal TIDAK tampil');
