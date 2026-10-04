@@ -16,8 +16,10 @@ $csrf_nama = $this->security->get_csrf_token_name();
 $csrf_hash = $this->security->get_csrf_hash();
 $ada_yatim = array_sum($yatim) > 0;
 // Nama petugas, bukan sekadar "1 orang" (4 Okt 2026). Tiap nama menaut ke Akses Staf yang tersaring ke akunnya.
+// Akun nonaktif tetap didaftar (bertanda) di bawah tombol "Belum ada, tetapkan" agar bisa diaktifkan lagi.
 $daftar_petugas = function (array $daftar) {
-    $out = '<ul class="space-y-1">';
+    if ( ! $daftar) { return ''; }
+    $out = '<ul class="mt-1 space-y-1">';
     foreach ($daftar as $u) {
         $out .= '<li class="text-xs leading-tight"><a href="' . base_url('Admin_Users?q=' . rawurlencode($u->email)) . '" class="font-bold text-gray-900 hover:underline dark:text-white">'
             . html_escape($u->nama ?: $u->email) . '</a>'
@@ -74,9 +76,8 @@ $daftar_petugas = function (array $daftar) {
                         <td class="px-4 py-3">
                             <?php if ((int) $b->petugas === 0): ?>
                             <a href="<?= base_url('Admin_Users') ?>" class="tombol-aksi tombol-aksi-bahaya"><i class="ph ph-user-plus" aria-hidden="true"></i><span>Belum ada, tetapkan</span></a>
-                            <?php else: ?>
-                            <?= $daftar_petugas($petugas_bidang[$b->kode] ?? []) ?>
                             <?php endif; ?>
+                            <?= $daftar_petugas($petugas_bidang[$b->kode] ?? []) ?>
                         </td>
                         <td class="px-4 py-3 text-xs"><?= (int) $b->aduan_aktif ?></td>
                         <td class="px-4 py-3">
@@ -116,9 +117,8 @@ $daftar_petugas = function (array $daftar) {
                         <td class="px-4 py-3">
                             <?php if ((int) $w->petugas === 0): ?>
                             <a href="<?= base_url('Admin_Users') ?>" class="tombol-aksi"><i class="ph ph-user-plus" aria-hidden="true"></i><span>Belum ada, tetapkan</span></a>
-                            <?php else: ?>
-                            <?= $daftar_petugas($petugas_wilayah[(int) $w->id] ?? []) ?>
                             <?php endif; ?>
+                            <?= $daftar_petugas($petugas_wilayah[(int) $w->id] ?? []) ?>
                         </td>
                         <td class="px-4 py-3 text-xs"><?= (int) $w->laporan ?></td>
                         <td class="px-4 py-3">

@@ -34,15 +34,17 @@ class Admin_Struktur extends Admin_Controller {
     {
         $data['title'] = 'Struktur & Cakupan';
 
+        // `petugas` hanya menghitung akun yang bisa login: akun nonaktif sama dengan belum ada petugas
+        // (keputusan user 4 Okt 2026). Namanya tetap tampil di bawah tombol agar bisa diaktifkan lagi.
         $data['bidang'] = $this->db
             ->select('b.kode, b.nama,'
-                . ' (SELECT COUNT(*) FROM usr_akun u WHERE u.peran = "admin_bidang" AND u.bidang_kode = b.kode) AS petugas,'
+                . ' (SELECT COUNT(*) FROM usr_akun u WHERE u.peran = "admin_bidang" AND u.bidang_kode = b.kode AND u.status <> "nonaktif") AS petugas,'
                 . ' (SELECT COUNT(*) FROM aduan a WHERE a.bidang_kode = b.kode AND a.status != "Selesai") AS aduan_aktif', FALSE)
             ->from('bidang b')->order_by('b.nama', 'ASC')->get()->result();
 
         $data['wilayah'] = $this->db
             ->select('k.id, k.nama,'
-                . ' (SELECT COUNT(*) FROM usr_akun u WHERE u.peran = "admin_kabkota" AND u.kabupaten_id = k.id) AS petugas,'
+                . ' (SELECT COUNT(*) FROM usr_akun u WHERE u.peran = "admin_kabkota" AND u.kabupaten_id = k.id AND u.status <> "nonaktif") AS petugas,'
                 . ' (SELECT COUNT(*) FROM rd_laporan l WHERE l.kabupaten_id = k.id) AS laporan', FALSE)
             ->from('kabupaten k')->order_by('k.nama', 'ASC')->get()->result();
 

@@ -67,10 +67,11 @@ class Admin_Aduan extends Admin_Controller {
             ->get()->result();
         $data['table'] = $data['pager'] = $table;
 
-        // Bidang tanpa admin ter-assign: aduannya tidak akan tertangani siapa pun.
+        // Bidang tanpa admin ter-assign: aduannya tidak akan tertangani siapa pun. Akun nonaktif
+        // tidak bisa login, jadi dihitung belum ada (keputusan user 4 Okt 2026).
         $data['bidang_tanpa_admin'] = [];
         foreach ($daftar_bidang as $b) {
-            $ada_admin = $this->db->where(['peran' => 'admin_bidang', 'bidang_kode' => $b->kode])
+            $ada_admin = $this->db->where(['peran' => 'admin_bidang', 'bidang_kode' => $b->kode, 'status !=' => 'nonaktif'])
                 ->count_all_results('usr_akun');
             if ($ada_admin === 0) { $data['bidang_tanpa_admin'][] = $b->nama; }
         }
