@@ -56,7 +56,7 @@ $this->load->view('admin/components/judul_halaman', [
     <?php if ( ! empty($aduan->lampiran)): ?>
         <section class="kartu-admin isi-kartu">
             <h2 class="text-sm font-black text-gray-900 dark:text-white">Lampiran</h2>
-            <a href="<?= base_url('Admin_Aduan/lihat_lampiran/' . (int) $aduan->id) ?>" class="tombol-kedua mt-2">
+            <a href="<?= base_url('Admin_Aduan/lihat_lampiran/' . (int) $aduan->id) ?>" data-file-view data-file-title="Lampiran aduan" class="tombol-kedua mt-2">
                 <i class="ph ph-paperclip"></i><span>Buka lampiran</span>
             </a>
         </section>

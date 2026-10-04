@@ -96,7 +96,7 @@ $filter_html = ob_get_clean();
                         <div class="text-xs text-gray-500 dark:text-brand-muted mt-0.5 truncate">Catatan: <?= html_escape($r->catatan_admin) ?></div>
                         <?php endif; ?>
                         <?php if (!empty($r->lampiran)): ?>
-                        <a href="<?= base_url('Admin_Aduan/lihat_lampiran/' . $r->id) ?>" target="_blank" rel="noopener" class="inline-block mt-0.5 text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> Lampiran</a>
+                        <a href="<?= base_url('Admin_Aduan/lihat_lampiran/' . $r->id) ?>" data-file-view data-file-title="Lampiran aduan: <?= html_escape($r->judul) ?>" class="inline-block mt-0.5 text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> Lampiran</a>
                         <?php endif; ?>
                     </td>
                     <?php
