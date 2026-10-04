@@ -20,6 +20,7 @@ $config['data_lifecycle'] = [
         'log_aplikasi_hari'             => 180,   // log aplikasi terenkripsi di application/logs
         'jejak_audit_hari'              => 1825,  // 5 tahun; jejak audit sengaja disimpan lama
         'cache_hulu_hari'               => 30,    // cache layanan luar yang tak tersegarkan sekian hari (TTL terpanjang 1 hari)
+        'cache_cari_maks_mb'            => 256,   // batas total cache pencarian SIKUMBANG (md5 URL berkata kunci); yang tertua disapu dulu
         'draf_nik_dipindah_hari'        => 30,    // draf akun lama yang dilepas saat NIK dipindahkan ke pemilik terverifikasi
         'cache_foto_hari'               => 30,    // salinan foto SIKUMBANG di assets/cache_foto (diunduh ulang sekali bila diminta lagi)
         'cache_foto_maks_mb'            => 512,   // batas total folder itu; yang tertua disapu lebih dulu

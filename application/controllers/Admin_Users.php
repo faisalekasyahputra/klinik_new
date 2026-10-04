@@ -54,6 +54,12 @@ class Admin_Users extends Admin_Controller {
                 $data['draft_dilepas'][(int) $row['user_id']] = ['n' => (int) $row['n'], 'hapus' => date('Y-m-d', strtotime($row['sejak'] . " +$hari days"))];
             }
         }
+        // Permintaan klaim NIK yang menunggu keputusan (Housing_assessment_model::ajukan_klaim_nik).
+        $this->load->model('Housing_assessment_model');
+        $data['klaim_nik'] = $this->Housing_assessment_model->klaim_nik_tertunda();
+        $ids_klaim = array_unique(array_merge(...array_map(fn($k) => $k['pemegang'], $data['klaim_nik'] ?: [['pemegang' => []]])));
+        $data['email_pemegang'] = $ids_klaim ? array_column($this->db->select('id, email')->where_in('id', $ids_klaim)
+            ->get('usr_akun')->result_array(), 'email', 'id') : [];
         $data['table'] = $data['pager'] = $table;
         $data['available_roles'] = $this->config->item('available_roles');
         $data['kabupaten_list'] = $this->db->order_by('nama', 'ASC')->get('kabupaten')->result();
@@ -484,6 +490,84 @@ class Admin_Users extends Admin_Controller {
             'NIK akun ' . $user->email . ' berhasil direset. Warga dapat memasukkan NIK kembali.');
         redirect('Admin_Users');
     }
+    /**
+     * Putuskan permintaan klaim NIK (temuan idor-otorisasi-04): NIK yang terikat BELUM terverifikasi
+     * ke akun lain tidak lagi berpindah otomatis saat akun lain lolos Cek NIK; Super Admin memutuskan.
+     * Setuju: pindahkan_ikatan_nik() (draft pemegang lama dilepas, bukan dihapus) dalam satu transaksi
+     * dengan jejak nik_dipindahkan dan keputusan. Tolak: hanya keputusan. Keduanya teraudit, pemohon
+     * dan pemegang lama diberi tahu lewat Web Push bila berlangganan.
+     */
+    public function putuskan_klaim_nik()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $this->load->model('Housing_assessment_model');
+        $klaim = $this->Housing_assessment_model->klaim_nik_tertunda((int) $this->input->post('id'));
+        if ( ! $klaim) {
+            $this->session->set_flashdata('error', 'Permintaan klaim NIK tidak ditemukan atau sudah diputuskan.');
+            redirect('Admin_Users'); return;
+        }
+        $setuju = $this->input->post('keputusan', TRUE) === 'setuju';
+        $pemohon = (int) $klaim['pemohon_id'];
+        $alasan = mb_substr(trim((string) $this->input->post('alasan', TRUE)), 0, 500);
+        $rincian = ['pemohon' => $pemohon, 'pemegang' => $klaim['pemegang'], 'alasan' => $alasan];
+        $dari = [];
+
+        $this->db->trans_begin();
+        if ($setuju) {
+            $akun = $this->db->select('nik_lookup_hash')->get_where('usr_akun', ['id' => $pemohon])->row_array();
+            $profil = $this->db->select('nik_lookup_hash')->get_where('sf_profil_warga', ['user_id' => $pemohon])->row_array();
+            $lain = function ($h) use ($klaim) { return ! empty($h) && ! hash_equals($klaim['nik_lookup_hash'], (string) $h); };
+            if ( ! $akun || $lain($akun['nik_lookup_hash'] ?? NULL) || $lain($profil['nik_lookup_hash'] ?? NULL)) {
+                $this->db->trans_rollback();
+                $this->session->set_flashdata('error', 'Belum disetujui: akun pemohon sudah tidak ada atau sudah terikat ke NIK lain. Tolak permintaan ini.');
+                redirect('Admin_Users'); return;
+            }
+            $nik = $this->Housing_assessment_model->nik_pemegang_lain($klaim['nik_lookup_hash'], $pemohon);
+            if ($nik === NULL) {
+                $rincian['nik_sudah_bebas'] = TRUE; // pemohon cukup mengulang Cek NIK
+            } else {
+                $pindah = $this->Housing_assessment_model->pindahkan_ikatan_nik($pemohon, $nik);
+                if (empty($pindah['success'])) {
+                    $this->db->trans_rollback();
+                    $this->session->set_flashdata('error', 'Belum disetujui: ' . $pindah['message']);
+                    redirect('Admin_Users'); return;
+                }
+                $dari = $pindah['dari'];
+                foreach ($dari as $akun_lama) {
+                    $this->catat_audit('nik_dipindahkan', 'NIK yang belum terverifikasi dilepas dari akun ini atas persetujuan klaim NIK oleh Super Admin',
+                        'usr_akun', (string) $akun_lama, ['akun_penerima' => $pemohon, 'klaim' => (int) $klaim['id'],
+                        'draft_dilepas' => $pindah['draft_dilepas'], 'pengajuan_berjalan' => $pindah['pengajuan_berjalan']]);
+                }
+            }
+        }
+        $this->catat_audit($setuju ? 'klaim_nik_disetujui' : 'klaim_nik_ditolak',
+            ($setuju ? 'Menyetujui' : 'Menolak') . ' permintaan klaim NIK akun id ' . $pemohon, 'klaim_nik', (string) (int) $klaim['id'], $rincian);
+        if ( ! $this->db->trans_status()) {
+            $this->db->trans_rollback();
+            $this->session->set_flashdata('error', 'Keputusan belum tersimpan. Coba lagi.');
+            redirect('Admin_Users'); return;
+        }
+        $this->db->trans_commit();
+
+        try {
+            $this->load->library('Web_push_service');
+            $this->web_push_service->notify([['user_id' => $pemohon]], 'Permintaan NIK Anda', $setuju
+                ? 'Permintaan Anda disetujui. Buka menu Pendataan dan lakukan Cek NIK sekali lagi.'
+                : 'Permintaan Anda belum dapat disetujui. Bila NIK itu memang milik Anda, sampaikan melalui menu Aduan.',
+                'warga/pendataan', 'klaim-nik');
+            if ($dari) {
+                $this->web_push_service->notify(array_map(fn($id) => ['user_id' => (int) $id], $dari), 'Perubahan data akun Klinik PKP',
+                    'NIK di akun Anda dilepas karena pemiliknya sudah membuktikan kepemilikan. Bila menurut Anda ini keliru, hubungi Dinas Perakim melalui menu Aduan.',
+                    'Umum/aduan', 'nik-dilepas');
+            }
+        } catch (Throwable $e) { log_message('error', 'Admin_Users: notifikasi klaim NIK gagal: ' . $e->getMessage()); }
+
+        $this->session->set_flashdata('success', ! $setuju ? 'Permintaan klaim NIK ditolak.'
+            : (isset($rincian['nik_sudah_bebas']) ? 'Disetujui. NIK itu sudah tidak terikat ke akun lain; pemohon cukup mengulang Cek NIK.'
+                : 'Disetujui. NIK dipindahkan ke akun pemohon; pemohon diminta mengulang Cek NIK.'));
+        redirect('Admin_Users');
+    }
+
     public function reset_sandi()
     {
         $user = $this->sasaran_sah(TRUE);

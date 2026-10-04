@@ -215,7 +215,7 @@ class Auth_model extends CI_Model {
     public function pesan_ganti_sandi($user) {
         // Kedaluwarsa tanpa sandi_diganti_at hanya ditulis check_google_user() saat mencabut sandi lama.
         if ($user && ! empty($user->sandi_kedaluwarsa_at) && empty($user->sandi_diganti_at)) {
-            return 'Kata sandi lama akun ini dihapus karena kepemilikan email dibuktikan lewat Google. Buat kata sandi baru untuk melanjutkan.';
+            return 'Kepemilikan email akun ini sudah dibuktikan lewat Google. Buat kata sandi baru untuk melanjutkan; kata sandi lama, bila ada, sudah tidak berlaku.';
         }
         $dari_admin = ! empty($user->sandi_diganti_at) && ! empty($user->sandi_kedaluwarsa_at)
             && strtotime($user->sandi_kedaluwarsa_at) <= strtotime($user->sandi_diganti_at);

@@ -1,5 +1,6 @@
 <?php
 require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
+require_once __DIR__ . '/_akun_demo.php'; // akun demo nonaktif sejak migrasi 073: dipinjam selama suite berjalan
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji W6 - wizard Rekam Data Perumahan (bentuk baru: triwulan, gerbang per
@@ -24,7 +25,7 @@ define('BASE_URL', rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new'
 define('APP_ROOT', dirname(__DIR__, 2));
 define('ENV_PATH', env_berkas_path(APP_ROOT));
 define('ADMIN_EMAIL', getenv('UJI_ADMIN_EMAIL') ?: 'adminkabkota@example.com');
-define('ADMIN_PASSWORD', getenv('UJI_ADMIN_PASSWORD') ?: 'password');
+define('ADMIN_PASSWORD', getenv('UJI_ADMIN_PASSWORD') ?: pinjam_akun_demo(ADMIN_EMAIL));
 define('TAHUN', 2099);
 
 $GLOBALS['uji_total'] = 0;

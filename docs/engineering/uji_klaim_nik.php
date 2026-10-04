@@ -8,8 +8,9 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  *
  * Ikatan NIK yang BELUM terverifikasi (usr_akun.nik dari onboarding/Profil Saya, atau profil
  * pendataan tanpa confirmed_at) kalah oleh akun yang lolos verifikasi nama + tanggal lahir di Cek
- * NIK: ikatannya berpindah dalam satu transaksi, akun lama tetap hidup tanpa NIK itu, jejak audit
- * tertulis. Draft akun lama yang belum dikirim DILEPAS (tidak terlihat akun lama maupun pemilik
+ * NIK, TETAPI sejak temuan idor-otorisasi-04 (3 Okt 2026) tidak lagi otomatis: Cek NIK mencatat
+ * permintaan klaim, Super Admin menyetujuinya di Admin_Users (putuskan_klaim_nik), baru ikatannya
+ * berpindah dalam satu transaksi, akun lama tetap hidup tanpa NIK itu, jejak audit tertulis. Draft akun lama yang belum dikirim DILEPAS (tidak terlihat akun lama maupun pemilik
  * baru, terlihat baca-saja oleh super admin) dan disapu retensi sesudah 30 hari (jam disimulasikan),
  * atau saat akun lama dihapus. Ikatan terverifikasi tetap menang. Sebelum verifikasi lolos, jawaban untuk NIK yang
  * terikat (terverifikasi atau belum) sama persis dengan NIK yang tidak terikat siapa pun.
@@ -128,6 +129,16 @@ function kosongkan_ember($kunci) {
     jalan('DELETE FROM sys_batas_laju WHERE kunci=?', [$kunci]);
 }
 function ember_ip($policy) { foreach (['127.0.0.1', '::1', '0000000000000000/64'] as $ip) { kosongkan_ember(hash('sha256', "$policy:ip:$ip")); } }
+function lintas_tercatat($nik) {
+    global $enc;
+    return (int) (satu('SELECT jumlah_gagal FROM sys_batas_laju WHERE kunci=?', [hash('sha256', 'verifikasi_nik_lintas:nik:' . $enc->deterministic_hash($nik))])['jumlah_gagal'] ?? 0);
+}
+/** Super Admin memutuskan permintaan klaim terbaru milik $pemohon lewat layar Pengguna. */
+function putuskan_klaim($j_adm, $pemohon, $keputusan) {
+    $id = (int) (satu("SELECT id FROM sys_jejak_audit WHERE aksi='klaim_nik_diajukan' AND pelaku_id=? ORDER BY id DESC LIMIT 1", [$pemohon])['id'] ?? 0);
+    minta($j_adm, 'Admin_Users');
+    return [$id, minta($j_adm, 'Admin_Users/putuskan_klaim_nik', ['id' => $id, 'keputusan' => $keputusan])];
+}
 function gagal_tercatat($dimensi, $nilai) {
     global $enc;
     $nilai = $dimensi === 'nik' ? $enc->deterministic_hash($nilai) : $nilai;
@@ -154,7 +165,7 @@ try {
     foreach ([$NIK1, $NIK2, $NIK3] as $n) {
         $terikat = $jumlah('usr_akun', $n) + $jumlah('sf_profil_warga', $n) + $jumlah('sf_data_simperum', $n);
         if ( ! cek($terikat === 0, 'Fixture ' . substr($n, 0, 4) . '..' . substr($n, -4) . ' belum terikat ke akun mana pun')) { throw new RuntimeException('fixture terikat'); }
-        foreach (['warga_lookup', 'verifikasi_nik'] as $p) { kosongkan_ember(hash('sha256', "$p:nik:" . $h($n))); }
+        foreach (['warga_lookup', 'verifikasi_nik', 'verifikasi_nik_lintas'] as $p) { kosongkan_ember(hash('sha256', "$p:nik:" . $h($n))); }
     }
     ember_ip('login');
 
@@ -206,14 +217,24 @@ try {
     cek($salah['terikat belum terverifikasi'] === $acuan, 'NIK terikat belum terverifikasi: pesan dan langkah identik dengan NIK tidak terikat');
     cek($salah['terikat terverifikasi'] === $acuan, 'NIK terikat terverifikasi: pesan dan langkah identik dengan NIK tidak terikat');
     cek(stripos(json_encode($salah), 'terhubung dengan akun lain') === FALSE, 'Sebelum verifikasi lolos, tidak ada jawaban yang menyebut ikatan ke akun lain');
-    cek(gagal_tercatat('account', $B) === 3 && gagal_tercatat('nik', $NIK1) === 1, 'Ketiga percobaan gagal dihitung batas laju verifikasi_nik (per akun dan per NIK)');
+    // DIBALIK 3 Okt 2026 (temuan integrasi-luar-08): ember per NIK dicabut, tebakan lintas akun hanya dihitung untuk peringatan.
+    cek(gagal_tercatat('account', $B) === 3 && gagal_tercatat('nik', $NIK1) === 0 && lintas_tercatat($NIK1) === 1,
+        'Ketiga percobaan gagal dihitung per akun; per NIK hanya penghitung peringatan, bukan ember penahan');
     $a = $akun($A);
     cek($a['nik_lookup_hash'] === $h($NIK1) && $profil($A) && satu('SELECT status FROM sf_penilaian_perumahan WHERE id=?', [$draft_a])['status'] === 'draft'
         && $profil($B) === NULL && $akun($B)['nik_lookup_hash'] === NULL, 'Percobaan gagal tidak mengubah apa pun pada akun A maupun B');
     // A2: pemegang lama hanya lewat usr_akun.nik (NIK diketik, belum pernah mengisi pendataan).
     jalan('UPDATE usr_akun SET nik=?, nik_lookup_hash=? WHERE id=?', [$enc->encrypt($NIK3), $h($NIK3), $A2]);
 
-    echo "\n== 2. Pemilik lolos verifikasi: ikatan belum terverifikasi berpindah\n";
+    echo "\n== 2. Pemilik lolos verifikasi: permintaan ditinjau, disetujui Super Admin, ikatan berpindah\n";
+    $r = $lookup($j_b, $NIK1, $LAHIR1);
+    cek($step($r['badan']) === 'find_data' && strpos($r['badan'], 'sedang ditinjau') !== FALSE && $profil($B) === NULL
+        && $akun($A)['nik_lookup_hash'] === $h($NIK1) && $profil($A) !== NULL, 'B lolos verifikasi: NIK TIDAK berpindah otomatis, B diberi tahu permintaannya ditinjau');
+    ember_ip('login');
+    $j_adm = masuk('agen_admin@agen.test', $AGEN_SANDI);
+    cek(strpos(minta($j_adm, 'Admin_Users')['badan'], $e_b) !== FALSE, 'Layar Pengguna menampilkan permintaan klaim B');
+    [$klaim_b, $r] = putuskan_klaim($j_adm, $B, 'setuju');
+    cek($klaim_b > 0 && strpos($r['badan'], 'Disetujui') !== FALSE, 'Super Admin menyetujui permintaan klaim B');
     $r = $lookup($j_b, $NIK1, $LAHIR1);
     cek($step($r['badan']) === 'housing_family' && strpos($r['badan'], 'NIK terverifikasi') !== FALSE, 'B lolos verifikasi dan maju ke langkah berikutnya');
     $pb = $profil($B);
@@ -236,7 +257,8 @@ try {
         && (int) (satu('SELECT user_id FROM sf_data_simperum WHERE nik_lookup_hash=?', [$h($NIK1)])['user_id'] ?? $B) === $B,
         'Keunikan sidik NIK tetap: satu akun, satu profil, cermin (bila ada) milik B');
     $jejak = satu("SELECT pelaku_id, objek_tipe, objek_id, ringkasan, detail_json FROM sys_jejak_audit WHERE id > ? AND aksi='nik_dipindahkan' AND objek_id=?", [$audit_awal, $A]);
-    cek($jejak && (int) $jejak['pelaku_id'] === $B && $jejak['objek_tipe'] === 'usr_akun', 'Jejak audit nik_dipindahkan: pelaku B, objek akun A');
+    cek($jejak && (int) $jejak['pelaku_id'] !== $B && $jejak['objek_tipe'] === 'usr_akun', 'Jejak audit nik_dipindahkan: pelaku Super Admin, objek akun A');
+    cek((bool) satu("SELECT id FROM sys_jejak_audit WHERE aksi='klaim_nik_disetujui' AND objek_tipe='klaim_nik' AND objek_id=?", [$klaim_b]), 'Keputusan setuju tercatat di jejak audit');
     cek($jejak && strpos($jejak['ringkasan'] . $jejak['detail_json'], $NIK1) === FALSE && strpos($jejak['ringkasan'] . $jejak['detail_json'], substr($NIK1, -6)) === FALSE,
         'Jejak audit tidak memuat NIK');
     $detail = json_decode($jejak['detail_json'] ?? '', TRUE) ?: [];
@@ -284,14 +306,15 @@ try {
     $r = minta($j_d, 'warga/pendataan');
     cek($step($r['badan']) === 'find_data' && strpos($r['badan'], 'value="' . $NIK3 . '"') !== FALSE, 'Cek NIK terisi NIK dari onboarding');
     $r = $lookup($j_d, $NIK3, $LAHIR3);
+    cek(strpos($r['badan'], 'sedang ditinjau') !== FALSE && $akun($A2)['nik_lookup_hash'] === $h($NIK3), 'D lolos verifikasi: menunggu tinjauan, A2 masih memegang NIK');
+    putuskan_klaim($j_adm, $D, 'setuju');
+    $r = $lookup($j_d, $NIK3, $LAHIR3);
     cek($step($r['badan']) === 'housing_family' && $akun($D)['nik_lookup_hash'] === $h($NIK3) && ($profil($D)['confirmed_at'] ?? NULL) !== NULL,
-        'D lolos verifikasi dan mengambil NIK dari A2 (pemegang lewat usr_akun saja)');
+        'Sesudah disetujui, D mengambil NIK dari A2 (pemegang lewat usr_akun saja)');
     cek($akun($A2)['nik_lookup_hash'] === NULL && $profil($A2) === NULL && $jumlah('usr_akun', $NIK3) === 1,
         'A2 melepas NIK, keunikan sidik di usr_akun tetap');
 
     echo "\n== 6. Admin: status dan jejak terbaca\n";
-    ember_ip('login');
-    $j_adm = masuk('agen_admin@agen.test', $AGEN_SANDI);
     $r = minta($j_adm, 'Admin_Audit?aksi=nik_dipindahkan');
     cek($r['kode'] === 200 && strpos($r['badan'], 'NIK dipindahkan ke pemilik terverifikasi') !== FALSE && strpos($r['badan'], $NIK1) === FALSE,
         'Jejak Audit menampilkan label yang terbaca, tanpa NIK');
@@ -345,6 +368,8 @@ try {
     if ($akun_uji) {
         $daftar = implode(',', array_map('intval', $akun_uji));
         $db->query("DELETE FROM sys_jejak_audit WHERE id > $audit_awal AND aksi='nik_dipindahkan' AND objek_id IN ('" . implode("','", $akun_uji) . "')");
+        $klaim_uji = implode(',', array_map('intval', array_column($db->query("SELECT id FROM sys_jejak_audit WHERE id > $audit_awal AND aksi='klaim_nik_diajukan' AND pelaku_id IN ($daftar)")->fetch_all(MYSQLI_ASSOC), 'id'))) ?: '0';
+        $db->query("DELETE FROM sys_jejak_audit WHERE id > $audit_awal AND ((aksi IN ('klaim_nik_disetujui','klaim_nik_ditolak') AND objek_tipe='klaim_nik' AND objek_id IN ($klaim_uji)) OR id IN ($klaim_uji))");
         foreach (['sf_data_simperum', 'sf_penilaian_perumahan', 'sf_profil_warga'] as $t) { $db->query("DELETE FROM $t WHERE user_id IN ($daftar)"); }
         $db->query("DELETE FROM usr_akun WHERE id IN ($daftar)");
     }

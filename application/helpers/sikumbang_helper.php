@@ -88,7 +88,7 @@ if ( ! function_exists('sikumbang_ambil')) {
      * @param int    $timeout    Batas waktu curl.
      * @param string $bendera    Nama bendera penahan tembakan. Bawaan satu untuk
      *                           seluruh host; detail per lokasi memakai benderanya
-     *                           sendiri (lihat Index::detail_perum).
+     *                           sendiri (lihat Index::detail_perum); NULL = tanpa bendera.
      *
      * @return string|NULL Isi balasan, atau NULL kalau gagal DAN tidak ada
      *                     cadangan apa pun. NULL sengaja dibedakan dari
@@ -240,19 +240,48 @@ if ( ! function_exists('sikumbang_ambil_foto')) {
     }
 }
 
+if ( ! function_exists('cache_foto_muat')) {
+    /**
+     * Masih muat menyimpan $tambah byte di folder cache foto tanpa melewati $maks_byte? Batas
+     * cache_foto_maks_mb dulu hanya ditegakkan penyapu harian (temuan berkas-03), jadi folder bisa
+     * menggelembung berkali lipat dalam sehari. Murah: total folder dihitung ulang paling sering tiap
+     * 10 menit dan disimpan di $penanda ("byte waktu"); di antaranya hanya ditambah ukuran yang ditulis.
+     * ponytail: tulisan paralel bisa saling menimpa tambahan; meleset sedikit, terkoreksi saat hitung ulang.
+     */
+    function cache_foto_muat($dir, $tambah, $maks_byte, $penanda)
+    {
+        [$total, $waktu] = array_map('intval', explode(' ', (string) @file_get_contents($penanda)) + [0, 0]);
+        if (time() - $waktu > 600) {
+            $total = 0;
+            foreach ((array) glob(rtrim($dir, '/\\') . '/*.jpg') as $f) { $total += (int) @filesize($f); }
+            $waktu = time();
+        }
+        $muat = $total + (int) $tambah <= $maks_byte;
+        @file_put_contents($penanda, ($muat ? $total + (int) $tambah : $total) . ' ' . $waktu, LOCK_EX);
+        return $muat;
+    }
+}
+
 if ( ! function_exists('sikumbang_param')) {
     /**
      * Normalkan satu parameter pencarian SIKUMBANG dari GET sebelum masuk URL hulu, yang md5-nya
      * menjadi nama berkas cache. Nilai di luar daftar izin jatuh ke $bawaan, jadi nilai sembarang
      * tidak melahirkan berkas cache dan tembakan hulu baru. Daftar izin = pilihan di formulir
-     * cari_rumah/sikumbang (dan saring_status_rumah). Kata kunci memang teks bebas: dirapikan dan
-     * dipotong 60 karakter; jumlahnya ditahan kelas laju 'cari' dan penyapu cache.
+     * cari_rumah/sikumbang (dan saring_status_rumah). Kata kunci memang teks bebas: dijadikan huruf
+     * kecil, hanya huruf/angka/spasi dan . - & ' yang tersisa (lainnya jadi spasi), spasi dirapatkan,
+     * dipotong 60 karakter. Varian huruf besar-kecil dari kata yang sama (pencarian SIKUMBANG tidak
+     * peka huruf) jadi berbagi SATU berkas cache, bukan 2^n berkas. Jumlah kata kunci berbeda ditahan
+     * kelas laju 'cari', ukuran totalnya oleh Penyapu_retensi (cache_cari_maks_mb).
      */
     function sikumbang_param($nama, $nilai, $bawaan = NULL)
     {
         $nilai = is_scalar($nilai) ? trim((string) $nilai) : '';
-        if ($nama === 'keyword') { return mb_substr((string) preg_replace('/\s+/u', ' ', $nilai), 0, 60); }
-        if ($nama === 'kodeWilayah') { return preg_match('/^\d{2}(\d{2})?$/', $nilai) ? $nilai : $bawaan; } // kode provinsi atau kab/kota
+        if ($nama === 'keyword') {
+            $nilai = mb_strtolower((string) preg_replace("/[^\\p{L}\\p{N}.&'-]+/u", ' ', $nilai), 'UTF-8');
+            return trim(mb_substr(trim((string) preg_replace('/\s+/u', ' ', $nilai)), 0, 60));
+        }
+        // Kode provinsi Jawa Tengah (33) atau kab/kota-nya (33xx); provinsi lain tidak dilayani portal ini.
+        if ($nama === 'kodeWilayah') { return preg_match('/^33(\d{2})?$/', $nilai) ? $nilai : $bawaan; }
         $izin = [
             'sort'         => ['terbaru', 'subsidi-termurah', 'subsidi-tertinggi'],
             'searchBy'     => ['nama-perumahan', 'nama-pengembang', 'asosiasi'],
