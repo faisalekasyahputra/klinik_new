@@ -54,7 +54,7 @@ $nada_angka = ['utama' => 'text-amber-600 dark:text-brand-primary', 'waspada' =>
                     <span class="block text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($t['ket']) ?></span>
                 </span>
                 <?php // Panah tanpa badan (chevron) dengan pendar ambien, permintaan user 4 Okt 2026. ?>
-                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 shadow-[0_0_12px_rgba(217,119,6,0.30)] transition-transform group-hover:translate-x-0.5 dark:bg-brand-primary/10 dark:text-brand-primary dark:shadow-[0_0_14px_rgba(214,251,0,0.35)]" aria-hidden="true"><i class="ph ph-caret-right text-base"></i></span>
+                <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 shadow-[0_0_8px_rgba(217,119,6,0.15)] transition-transform group-hover:translate-x-0.5 dark:bg-brand-primary/10 dark:text-brand-primary dark:shadow-[0_0_8px_rgba(214,251,0,0.18)]" aria-hidden="true"><i class="ph ph-caret-right text-base"></i></span>
             </a></li>
             <?php endforeach; ?>
         </ul>
@@ -81,7 +81,7 @@ $nada_angka = ['utama' => 'text-amber-600 dark:text-brand-primary', 'waspada' =>
                 <?php endforeach; ?>
             </ul>
             <?php // Tombol di dasar kartu (mt-auto): sejajar antarkartu berapa pun panjang rinciannya. ?>
-            <div class="mt-auto pt-4"><a href="<?= html_escape(base_url($k['url'])) ?>" class="tombol-kedua w-full font-semibold"><span><?= html_escape($k['lihat']) ?></span><span class="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 shadow-[0_0_12px_rgba(217,119,6,0.30)] dark:bg-brand-primary/10 dark:text-brand-primary dark:shadow-[0_0_14px_rgba(214,251,0,0.35)]" aria-hidden="true"><i class="ph ph-caret-right text-sm"></i></span></a></div>
+            <div class="mt-auto pt-4"><a href="<?= html_escape(base_url($k['url'])) ?>" class="tombol-kedua w-full font-semibold"><span><?= html_escape($k['lihat']) ?></span><span class="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 shadow-[0_0_8px_rgba(217,119,6,0.15)] dark:bg-brand-primary/10 dark:text-brand-primary dark:shadow-[0_0_8px_rgba(214,251,0,0.18)]" aria-hidden="true"><i class="ph ph-caret-right text-sm"></i></span></a></div>
         </article>
         <?php endforeach; ?>
 
@@ -102,7 +102,7 @@ $nada_angka = ['utama' => 'text-amber-600 dark:text-brand-primary', 'waspada' =>
                 <li class="flex justify-between gap-2"><span>Perlu perbaikan</span><span class="font-bold <?= $redup($rekam['perbaikan']) ?>"><?= angka_id($rekam['perbaikan']) ?></span></li>
             </ul>
             <?php // Tombol di dasar kartu (mt-auto): sejajar antarkartu berapa pun panjang rinciannya. ?>
-            <div class="mt-auto pt-4"><a href="<?= base_url('Admin_Rekam_Data?tahun=' . (int) $rekam['tahun'] . '&triwulan=' . (int) $rekam['triwulan']) ?>" class="tombol-kedua w-full font-semibold"><span>Lihat laporan</span><span class="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 shadow-[0_0_12px_rgba(217,119,6,0.30)] dark:bg-brand-primary/10 dark:text-brand-primary dark:shadow-[0_0_14px_rgba(214,251,0,0.35)]" aria-hidden="true"><i class="ph ph-caret-right text-sm"></i></span></a></div>
+            <div class="mt-auto pt-4"><a href="<?= base_url('Admin_Rekam_Data?tahun=' . (int) $rekam['tahun'] . '&triwulan=' . (int) $rekam['triwulan']) ?>" class="tombol-kedua w-full font-semibold"><span>Lihat laporan</span><span class="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 shadow-[0_0_8px_rgba(217,119,6,0.15)] dark:bg-brand-primary/10 dark:text-brand-primary dark:shadow-[0_0_8px_rgba(214,251,0,0.18)]" aria-hidden="true"><i class="ph ph-caret-right text-sm"></i></span></a></div>
         </article>
         <?php endif; ?>
     </div>
