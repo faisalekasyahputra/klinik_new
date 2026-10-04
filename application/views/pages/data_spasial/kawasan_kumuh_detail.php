@@ -4,13 +4,16 @@
  * Nol data pribadi: yang tampil wilayah, luas, dan cacah bangunan/penduduk.
  */
 $e = function ($v) { return html_escape((string) $v); };
+// Gaya sama dengan halaman daftar: tombol teal brand, kartu berlatar kartu tema (4 Okt 2026).
+$gaya_tombol = 'background:var(--portal-brand);color:var(--portal-btn-text)';
+$gaya_kartu  = 'border-color:var(--portal-border);background:var(--portal-bg-card);box-shadow:var(--portal-shadow)';
 $angka = function ($v) { return is_numeric($v) ? number_format((float) $v, (floor((float) $v) == (float) $v ? 0 : 2), ',', '.') : '-'; };
 ?>
 <section class="w-full pt-24 pb-16 px-4 sm:px-6 lg:px-8 min-h-screen font-outfit">
   <div class="mx-auto max-w-5xl">
 
-    <a href="<?= base_url('kawasan_kumuh') ?>" class="text-xs font-bold underline" style="color:var(--portal-brand)">
-      &larr; Kembali ke daftar kawasan
+    <a href="<?= base_url('kawasan_kumuh') ?>" class="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold" style="<?= $gaya_tombol ?>">
+      <span aria-hidden="true">&lsaquo;</span> Kembali ke daftar kawasan
     </a>
 
     <header class="mt-3 mb-6">
@@ -23,11 +26,11 @@ $angka = function ($v) { return is_numeric($v) ? number_format((float) $v, (floo
     </header>
 
     <div class="grid gap-4 sm:grid-cols-2">
-      <div class="rounded-2xl border p-4" style="border-color:var(--portal-border)">
+      <div class="rounded-2xl border p-4" style="<?= $gaya_kartu ?>">
         <p class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--portal-text-muted)">Skor kumuh awal</p>
         <p class="mt-1 text-3xl font-black" style="color:var(--portal-text)"><?= (int) ($kawasan['skor_kumuh_awal'] ?? 0) ?></p>
       </div>
-      <div class="rounded-2xl border p-4" style="border-color:var(--portal-border)">
+      <div class="rounded-2xl border p-4" style="<?= $gaya_kartu ?>">
         <p class="text-[11px] font-bold uppercase tracking-wider" style="color:var(--portal-text-muted)">Skor kumuh akhir</p>
         <p class="mt-1 text-3xl font-black" style="color:var(--portal-text)"><?= (int) ($kawasan['skor_kumuh_akhir'] ?? 0) ?></p>
       </div>
@@ -38,13 +41,13 @@ $angka = function ($v) { return is_numeric($v) ? number_format((float) $v, (floo
     </h2>
 
     <?php if ( ! $rtrw): ?>
-      <div class="rounded-2xl border p-6" style="border-color:var(--portal-border)">
+      <div class="rounded-2xl border p-6" style="<?= $gaya_kartu ?>">
         <p class="text-sm" style="color:var(--portal-text-muted)">Belum ada rincian RT/RW untuk kawasan ini.</p>
       </div>
     <?php else: ?>
-      <div class="overflow-x-auto rounded-2xl border" style="border-color:var(--portal-border)">
+      <div class="overflow-x-auto rounded-2xl border" style="<?= $gaya_kartu ?>">
         <table class="w-full min-w-[760px] text-left text-sm">
-          <thead>
+          <thead style="background:var(--portal-btn-bg)">
             <tr class="text-[11px] uppercase tracking-wider" style="color:var(--portal-text-muted)">
               <th class="px-4 py-3 font-bold">Wilayah</th>
               <th class="px-4 py-3 font-bold">Kelurahan</th>

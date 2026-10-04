@@ -19,9 +19,9 @@ $e = function ($v) { return html_escape((string) $v); };
 $kategori = function ($skor) {
     $s = (int) $skor;
     if ($s <= 0)  { return ['Belum dinilai', 'color:var(--portal-text-muted)']; }
-    if ($s <= 15) { return ['Kumuh ringan',  'color:#047857']; }
-    if ($s <= 44) { return ['Kumuh sedang',  'color:#b45309']; }
-    return ['Kumuh berat', 'color:#b91c1c'];
+    if ($s <= 15) { return ['Kumuh ringan',  'color:var(--portal-status-aman)']; }
+    if ($s <= 44) { return ['Kumuh sedang',  'color:var(--portal-status-waspada)']; }
+    return ['Kumuh berat', 'color:var(--portal-status-bahaya)'];
 };
 
 /* Satu pembangun URL untuk semua tautan urut & halaman. Ia MEMPERTAHANKAN
@@ -49,11 +49,16 @@ $kepala = function ($kunci, $label, $kelas = '') use ($url, $urut, $arah, $e) {
          . $e($label) . '<span aria-hidden="true" class="text-[10px]">' . $panah . '</span></a></th>';
 };
 
-/* Tombol halaman memakai warna yang SAMA dengan tombol Tampilkan di atas:
-   aktif = latar brand, sisanya = latar tombol biasa dengan garis tepi tema. */
-$gaya_aktif  = 'background:var(--portal-brand);color:var(--portal-btn-text);border:1px solid var(--portal-brand)';
-$gaya_biasa  = 'background:var(--portal-btn-bg);color:var(--portal-text);border:1px solid var(--portal-border)';
-$gaya_mati   = 'background:var(--portal-btn-bg);color:var(--portal-text-muted);border:1px solid var(--portal-border);opacity:.5;pointer-events:none';
+/* SATU gaya tombol untuk seluruh halaman (permintaan user 4 Okt 2026): latar teal brand dengan teks
+   --portal-btn-text, sama dengan tombol Tampilkan. Halaman aktif dibedakan cincin, bukan warna lain;
+   tombol mati memudar. */
+$gaya_tombol = 'background:var(--portal-brand);color:var(--portal-btn-text);border:1px solid var(--portal-brand)';
+$gaya_aktif  = $gaya_tombol . ';box-shadow:0 0 0 2px var(--portal-bg),0 0 0 4px var(--portal-brand)';
+$gaya_biasa  = $gaya_tombol;
+$gaya_mati   = $gaya_tombol . ';opacity:.4;pointer-events:none';
+// Kartu: latar kartu tema + bayangan, supaya tabel dan kotak pesan tidak menyatu dengan latar halaman.
+$gaya_kartu  = 'border-color:var(--portal-border);background:var(--portal-bg-card);box-shadow:var(--portal-shadow)';
+$gaya_isian  = 'background:var(--portal-bg-card);border-color:var(--portal-border);color:var(--portal-text)';
 ?>
 <section class="w-full pt-24 pb-16 px-4 sm:px-6 lg:px-8 min-h-screen font-outfit">
   <div class="mx-auto max-w-6xl">
@@ -73,7 +78,7 @@ $gaya_mati   = 'background:var(--portal-btn-bg);color:var(--portal-text-muted);b
       <div>
         <label for="tahun" class="text-xs font-bold" style="color:var(--portal-text)">Tahun</label>
         <select id="tahun" name="tahun" class="mt-1 block rounded-xl border px-3 py-2.5 text-sm"
-                style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)">
+                style="<?= $gaya_isian ?>">
           <?php foreach ($tahun_tersedia as $t): ?>
             <option value="<?= (int) $t ?>" <?= (int) $t === (int) $tahun ? 'selected' : '' ?>><?= (int) $t ?></option>
           <?php endforeach; ?>
@@ -83,7 +88,7 @@ $gaya_mati   = 'background:var(--portal-btn-bg);color:var(--portal-text-muted);b
       <div>
         <label for="kab" class="text-xs font-bold" style="color:var(--portal-text)">Kabupaten/Kota</label>
         <select id="kab" name="kab" class="mt-1 block rounded-xl border px-3 py-2.5 text-sm"
-                style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)">
+                style="<?= $gaya_isian ?>">
           <option value="">Semua (<?= count($daftar_kab) ?> wilayah)</option>
           <?php foreach ($daftar_kab as $kode => $info): ?>
             <option value="<?= $e($kode) ?>" <?= (string) $kode === (string) $kab_terpilih ? 'selected' : '' ?>>
@@ -96,19 +101,18 @@ $gaya_mati   = 'background:var(--portal-btn-bg);color:var(--portal-text-muted);b
       <div>
         <label for="per" class="text-xs font-bold" style="color:var(--portal-text)">Per halaman</label>
         <select id="per" name="per" class="mt-1 block rounded-xl border px-3 py-2.5 text-sm"
-                style="background:var(--portal-btn-bg);border-color:var(--portal-border);color:var(--portal-text)">
+                style="<?= $gaya_isian ?>">
           <?php foreach ($per_pilihan as $p): ?>
             <option value="<?= (int) $p ?>" <?= (int) $p === (int) $per ? 'selected' : '' ?>><?= (int) $p ?></option>
           <?php endforeach; ?>
         </select>
       </div>
 
-      <button class="rounded-xl px-4 py-2.5 text-sm font-bold"
-              style="background:var(--portal-brand);color:var(--portal-btn-text)">Tampilkan</button>
+      <button class="rounded-xl px-4 py-2.5 text-sm font-bold" style="<?= $gaya_tombol ?>">Tampilkan</button>
     </form>
 
     <?php if ($gagal): ?>
-      <div class="rounded-2xl border p-6" style="border-color:var(--portal-border)">
+      <div class="rounded-2xl border p-6" style="<?= $gaya_kartu ?>">
         <p class="font-black" style="color:var(--portal-text)">Data belum bisa ditampilkan</p>
         <p class="mt-2 text-sm" style="color:var(--portal-text-muted)">
           Sumber data SIKAPER sedang tidak dapat dihubungi dan belum ada salinan tersimpan untuk tahun ini.
@@ -116,7 +120,7 @@ $gaya_mati   = 'background:var(--portal-btn-bg);color:var(--portal-text-muted);b
         </p>
       </div>
     <?php elseif ($total === 0): ?>
-      <div class="rounded-2xl border p-6" style="border-color:var(--portal-border)">
+      <div class="rounded-2xl border p-6" style="<?= $gaya_kartu ?>">
         <p class="font-black" style="color:var(--portal-text)">Tidak ada kawasan pada pilihan ini</p>
         <p class="mt-2 text-sm" style="color:var(--portal-text-muted)">Coba tahun atau wilayah lain.</p>
       </div>
@@ -127,16 +131,16 @@ $gaya_mati   = 'background:var(--portal-btn-bg);color:var(--portal-text-muted);b
         Menampilkan <?= (int) $mulai ?>&ndash;<?= (int) $sampai ?>, halaman <?= (int) $hal ?> dari <?= (int) $jumlah_hal ?>.
       </p>
 
-      <div class="overflow-x-auto rounded-2xl border" style="border-color:var(--portal-border)">
+      <div class="overflow-x-auto rounded-2xl border" style="<?= $gaya_kartu ?>">
         <table class="w-full min-w-[720px] text-left text-sm">
-          <thead>
+          <thead style="background:var(--portal-btn-bg)">
             <tr class="text-[11px] uppercase tracking-wider">
               <?= $kepala('kawasan', 'Kawasan') ?>
               <?= $kepala('kabupaten', 'Kabupaten/Kota') ?>
               <?= $kepala('skor_awal', 'Skor awal', 'text-right') ?>
               <?= $kepala('skor_akhir', 'Skor akhir', 'text-right') ?>
               <?= $kepala('kondisi', 'Kondisi') ?>
-              <th class="px-4 py-3 font-bold"></th>
+              <th class="px-4 py-3 font-bold"><span class="sr-only">Aksi</span></th>
             </tr>
           </thead>
           <tbody>
@@ -148,9 +152,9 @@ $gaya_mati   = 'background:var(--portal-btn-bg);color:var(--portal-text-muted);b
                 <td class="px-4 py-3 text-right" style="color:var(--portal-text-muted)"><?= (int) ($b['skor_kumuh_awal'] ?? 0) ?></td>
                 <td class="px-4 py-3 text-right font-bold" style="color:var(--portal-text)"><?= (int) ($b['skor_kumuh_akhir'] ?? 0) ?></td>
                 <td class="px-4 py-3 font-bold" style="<?= $gaya_kondisi ?>"><?= $e($label_kondisi) ?></td>
-                <td class="px-4 py-3">
+                <td class="px-4 py-3 text-right">
                   <?php if ( ! empty($b['id'])): ?>
-                    <a class="text-xs font-bold underline" style="color:var(--portal-brand)"
+                    <a class="inline-flex rounded-xl px-3 py-1.5 text-xs font-bold" style="<?= $gaya_tombol ?>"
                        href="<?= base_url('kawasan_kumuh/detail/' . rawurlencode($b['id'])) ?>">Detail</a>
                   <?php endif; ?>
                 </td>
