@@ -54,7 +54,7 @@ $label_sumber = function ($stat) {
             <div class="w-full lg:w-48 flex-shrink-0 hidden lg:block sticky top-3 self-start h-max z-40 transition-all duration-300" style="position: -webkit-sticky; position: sticky;">
                 <aside class="bg-[color:var(--portal-btn-bg)] border border-[color:var(--portal-border)] rounded-2xl p-2.5">
                 <h3 class="text-[color:var(--portal-text)] font-bold text-sm uppercase tracking-wider mb-3 px-2 border-b border-[color:var(--portal-border)] pb-2">Kategori Data</h3>
-                <nav class="space-y-1" id="stat-nav">
+                <nav class="space-y-1" id="stat-nav" data-lompat-bagian>
                     <a href="#perumahan" class="flex items-center gap-2.5 px-2.5 py-1.5 text-xs text-[color:var(--portal-text-muted)] hover:text-[color:var(--portal-brand)] hover:bg-[color:var(--portal-bg-card)] rounded-xl transition-colors">
                         <i class="fa-solid fa-house w-4 text-center"></i> Perumahan
                     </a>
@@ -77,7 +77,7 @@ $label_sumber = function ($stat) {
                 </aside>
             </div>
 
-            <nav aria-label="Kategori statistika" class="lg:hidden w-full flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+            <nav aria-label="Kategori statistika" data-lompat-bagian class="lg:hidden w-full flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                 <a href="#perumahan" class="shrink-0 rounded-full border border-[color:var(--portal-border)] bg-[color:var(--portal-btn-bg)] px-3 py-1.5 text-xs font-semibold text-[color:var(--portal-text)]"><i class="fa-solid fa-house mr-1.5 text-[color:var(--portal-brand)]"></i>Perumahan</a>
                 <a href="#kawasan" class="shrink-0 rounded-full border border-[color:var(--portal-border)] bg-[color:var(--portal-btn-bg)] px-3 py-1.5 text-xs font-semibold text-[color:var(--portal-text)]"><i class="fa-solid fa-map-location-dot mr-1.5 text-[#00a3b5]"></i>Kawasan</a>
                 <a href="#pertanahan" class="shrink-0 rounded-full border border-[color:var(--portal-border)] bg-[color:var(--portal-btn-bg)] px-3 py-1.5 text-xs font-semibold text-[color:var(--portal-text)]"><i class="fa-solid fa-map mr-1.5 text-[#ffd93d]"></i>Pertanahan</a>
@@ -586,4 +586,41 @@ $label_sumber = function ($stat) {
         });
     });
     </script>
+    <script>
+    /* Lompat ke kategori (4 Okt 2026). Konten portal ada di wadah gulir bersarang di dalam cangkang
+       overflow:hidden; lompatan jangkar bawaan browser di susunan itu tidak andal (kadang diam,
+       kadang menggeser cangkang sehingga layar kosong). Jadi yang digulir wadahnya sendiri, dan
+       URL tidak diberi #hash. Tanpa JS tautannya tetap jangkar biasa. Tidak menunggu
+       DOMContentLoaded: halaman ini juga dimuat ulang lewat sistem tab portal. */
+    (function () {
+        function wadahGulir(el) {
+            for (var p = el.parentElement; p; p = p.parentElement) {
+                if (/(auto|scroll)/.test(getComputedStyle(p).overflowY) && p.scrollHeight > p.clientHeight) { return p; }
+            }
+            return document.scrollingElement;
+        }
+        document.querySelectorAll('[data-lompat-bagian] a[href^="#"]').forEach(function (a) {
+            a.addEventListener('click', function (e) {
+                var tujuan = document.getElementById(a.getAttribute('href').slice(1));
+                if (!tujuan) { return; }
+                e.preventDefault();
+                var w = wadahGulir(tujuan);
+                var jarak = tujuan.getBoundingClientRect().top - (w === document.scrollingElement ? 0 : w.getBoundingClientRect().top);
+                var sasaran = w.scrollTop + jarak - 16;
+                w.scrollTo({ top: sasaran, behavior: 'smooth' });
+                // Gulir halus bisa terputus (tab latar, peramban hemat daya); kalau belum sampai, pindah langsung.
+                setTimeout(function () {
+                    var batas = w.scrollHeight - w.clientHeight;
+                    if (Math.abs(w.scrollTop - Math.min(sasaran, batas)) > 4) { w.scrollTop = sasaran; }
+                }, 700);
+                document.querySelectorAll('[data-lompat-bagian] a[aria-current]').forEach(function (x) { x.removeAttribute('aria-current'); });
+                document.querySelectorAll('[data-lompat-bagian] a[href="' + a.getAttribute('href') + '"]').forEach(function (x) { x.setAttribute('aria-current', 'true'); });
+            });
+        });
+    })();
+    </script>
+    <style>
+        /* Kategori yang terakhir dipilih ditandai warna brand. */
+        [data-lompat-bagian] a[aria-current] { color: var(--portal-brand); background: var(--portal-bg-card); font-weight: 700; }
+    </style>
 </div>

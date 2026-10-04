@@ -9,6 +9,14 @@
 <div class="py-4 sm:py-6 px-1 sm:px-2 font-outfit">
     <div class="mx-auto max-w-4xl">
 
+        <?php /* Jalan pulang ke tab Bank Data (permintaan user 4 Okt 2026); gaya tombol teal yang sama
+                 dengan halaman Data Kawasan Kumuh. data-tab-link supaya dibuka lewat sistem tab portal. */ ?>
+        <a href="<?= base_url('tab/bankdata') ?>" data-tab-link data-tab-key="bankdata" data-kembali-bankdata
+           class="mb-3 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold"
+           style="background:var(--portal-brand);color:var(--portal-btn-text)">
+            <span aria-hidden="true">&lsaquo;</span> Kembali ke Bank Data
+        </a>
+
         <div class="text-center mb-4">
             <div class="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-[color:var(--portal-btn-bg)] text-[color:var(--portal-brand)] shadow-sm rotate-3">
                 <i class="fa-solid fa-book-open"></i>

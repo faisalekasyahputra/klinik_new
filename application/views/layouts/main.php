@@ -24,7 +24,8 @@
              $active_tab = 'kawasan';
          } elseif ($rt_method === 'tab_pertanahan' || in_array($rt_method, ['info_tanah', 'sertifikasi', 'sengketa', 'bank_tanah'])) {
              $active_tab = 'pertanahan';
-         } elseif ($rt_method === 'tab_bankdata' || $rt_class === 'statistika') {
+         // dokumen: pembaca Buku Data dibuka dari tab Bank Data (4 Okt 2026: dulu menyalakan Beranda saat dimuat langsung).
+         } elseif ($rt_method === 'tab_bankdata' || in_array($rt_class, ['statistika', 'dokumen'], TRUE)) {
              $active_tab = 'bankdata';
          }
        ?>
