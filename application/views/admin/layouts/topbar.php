@@ -7,6 +7,58 @@
     </div>
     
     <div class="flex items-center space-x-2">
+        <?php
+        /* "Perlu tindakan" (4 Okt 2026): ringkasan badge sidebar per modul, menaut ke bagiannya di
+           Pusat Pemberitahuan. Angkanya DIAMBIL dari $dashboard_menu yang sudah dihitung
+           dashboard_menu() untuk sidebar, jadi nol query tambahan dan pasti sama dengan menu.
+           Terpisah dari tombol lonceng Web Push di sebelahnya (admin-web-push.js memegang klik
+           tombol itu untuk berlangganan), supaya izin notifikasi HP tidak terpicu dari sini.
+           Topbar tidak ikut ditukar navigasi progresif, jadi angkanya diperbarui pada muat
+           halaman penuh berikutnya; sidebar diperbarui tiap pindah halaman. */
+        $perlu_tindakan = [];
+        $staf_tindakan = in_array($this->session->userdata('role'), ['admin', 'admin_kabkota', 'admin_bidang'], TRUE);
+        if ($staf_tindakan) {
+            $kumpul_tindakan = function (array $items) use (&$kumpul_tindakan, &$perlu_tindakan) {
+                foreach ($items as $it) {
+                    if ( ! empty($it['badge'])) { $perlu_tindakan[] = $it; }
+                    $kumpul_tindakan($it['children'] ?? []);
+                }
+            };
+            foreach (($dashboard_menu ?? []) as $grup_tindakan) { $kumpul_tindakan($grup_tindakan); }
+        }
+        $total_tindakan = array_sum(array_column($perlu_tindakan, 'badge'));
+        ?>
+        <?php if ($staf_tindakan): ?>
+        <div class="relative" x-data="{ tindakanOpen: false }" @click.outside="tindakanOpen = false" @keydown.escape="tindakanOpen = false">
+            <button type="button" @click="tindakanOpen = !tindakanOpen" :aria-expanded="tindakanOpen.toString()" aria-haspopup="true"
+                    aria-label="Perlu tindakan: <?= (int) $total_tindakan ?>" title="Perlu tindakan"
+                    class="relative w-10 h-10 rounded-xl flex items-center justify-center text-gray-500 dark:text-brand-muted hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 transition-all">
+                <i class="ph ph-tray text-xl" aria-hidden="true"></i>
+                <?php if ($total_tindakan > 0): ?>
+                <span class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white"><?= $total_tindakan > 99 ? '99+' : (int) $total_tindakan ?></span>
+                <?php endif; ?>
+            </button>
+            <div x-show="tindakanOpen" x-cloak x-transition.opacity.duration.200ms class="absolute right-0 top-full mt-3 w-64 bg-white dark:bg-brand-card border border-gray-100 dark:border-white/10 rounded-xl shadow-lg overflow-hidden z-50">
+                <div class="px-4 py-3 border-b border-gray-100 dark:border-white/10 text-sm font-bold text-gray-900 dark:text-white">Perlu tindakan</div>
+                <?php if ($perlu_tindakan): ?>
+                <div class="p-2 space-y-1">
+                    <?php foreach ($perlu_tindakan as $it): ?>
+                    <a href="<?= base_url('pemberitahuan#modul-' . $it['key']) ?>" data-perlu-tindakan="<?= html_escape($it['key']) ?>" data-no-page-transition
+                       title="<?= html_escape((string) ($it['badge_judul'] ?? '')) ?>"
+                       class="flex items-center justify-between gap-3 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/5">
+                        <span class="truncate"><?= html_escape($it['label']) ?></span>
+                        <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-xs font-bold text-red-600 dark:bg-red-500/20 dark:text-red-400"><?= (int) $it['badge'] ?></span>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+                <?php else: ?>
+                <p class="px-4 py-3 text-sm text-gray-500 dark:text-brand-muted">Tidak ada yang menunggu tindakan.</p>
+                <?php endif; ?>
+                <a href="<?= base_url('pemberitahuan') ?>" data-perlu-tindakan-semua class="block border-t border-gray-100 dark:border-white/10 px-4 py-3 text-sm font-bold text-blue-600 dark:text-brand-primary hover:bg-gray-100 dark:hover:bg-white/5">Lihat semua</a>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <?php if (in_array($this->session->userdata('role'), ['admin', 'admin_kabkota', 'admin_bidang', 'warga'], TRUE)): ?>
         <!-- Izin Web Push hanya diminta setelah klik pengguna, sesuai aturan browser/iOS. -->
         <button type="button" data-web-push-toggle data-state="loading"

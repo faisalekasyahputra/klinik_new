@@ -37,7 +37,9 @@ $gambar = function (array $items, $tingkat) use (&$gambar, $aktif_kelas, $diam_k
         ?>
         <div <?= $punya_anak ? 'x-data="{ buka: ' . (! empty($item['open']) ? 'true' : 'false') . ' }"' : '' ?>>
           <div class="relative flex items-center gap-1">
-            <a href="<?= htmlspecialchars($external ? $item['url'] : base_url($item['url']), ENT_QUOTES, 'UTF-8') ?>"
+            <?php /* href = overview_url modul (filter yang cocok dengan badge) selama badge > 0, lihat
+                      dashboard_menu(); `url` tetap untuk sorotan aktif. */ ?>
+            <a href="<?= htmlspecialchars($external ? $item['url'] : base_url($item['href'] ?? $item['url']), ENT_QUOTES, 'UTF-8') ?>"
                <?= $tab_baru ? 'target="_blank" rel="noopener noreferrer" data-tab-baru' : '' ?>
                <?= ! empty($item['active']) ? 'aria-current="page"' : '' ?>
                class="relative flex flex-1 items-center rounded-lg px-3 transition-all duration-200
@@ -52,8 +54,8 @@ $gambar = function (array $items, $tingkat) use (&$gambar, $aktif_kelas, $diam_k
                 <i x-show="sidebarOpen" class="ph ph-arrow-square-out ml-2 shrink-0 text-sm" aria-hidden="true"></i><span class="sr-only">(buka di tab baru)</span>
               <?php endif; ?>
               <?php if ( ! empty($item['badge'])): ?>
-                <span x-show="sidebarOpen" class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-[10px] font-bold text-red-600 dark:bg-red-500/20 dark:text-red-400"><?= (int) $item['badge'] ?></span>
-                <span x-show="!sidebarOpen" class="absolute -right-1 -top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full border-[1.5px] border-white bg-red-500 text-[9px] font-bold text-white dark:border-brand-card"><?= (int) $item['badge'] ?></span>
+                <span x-show="sidebarOpen" data-badge-modul="<?= htmlspecialchars($item['key']) ?>" title="<?= htmlspecialchars((string) ($item['badge_judul'] ?? '')) ?>" class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-100 text-[10px] font-bold text-red-600 dark:bg-red-500/20 dark:text-red-400"><?= (int) $item['badge'] ?></span>
+                <span x-show="!sidebarOpen" title="<?= htmlspecialchars((string) ($item['badge_judul'] ?? '')) ?>" class="absolute -right-1 -top-1 z-10 flex h-4 w-4 items-center justify-center rounded-full border-[1.5px] border-white bg-red-500 text-[9px] font-bold text-white dark:border-brand-card"><?= (int) $item['badge'] ?></span>
               <?php endif; ?>
             </a>
 

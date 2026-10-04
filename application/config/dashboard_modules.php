@@ -59,10 +59,22 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |   scope_column - opsional, kolom tabel yang menerima nilai 'scope' saat
 |                  menghitung badge. Dideklarasikan eksplisit; jangan menebak
 |                  nama kolom dari nama scope sesi.
+|   tindakan - opsional, untuk modul ber-badge: dipakai tooltip badge, ringkasan
+|             "Perlu tindakan" di topbar, dan Pusat Pemberitahuan (/pemberitahuan).
+|               satuan     - frasa sesudah angka di tooltip badge ("7 antrean menunggu keputusan")
+|               penanda    - kolom NON-PRIBADI penanda baris (mis. kode_tiket); kosong = nomor id
+|               keterangan - opsional kolom NON-PRIBADI tambahan (jenis, bidang_kode)
+|               detail     - awalan path halaman tindakan per baris (+ id); kosong = overview_url
+|               cara       - satu kalimat cara menyelesaikan, dari aksi nyata modulnya
+|             JANGAN isi penanda/keterangan dengan nama, NIK, telepon, alamat, surel, atau
+|             teks bebas warga (judul/pesan aduan): halaman itu dibaca staf lintas modul.
 |   ringkas - opsional label pendek untuk kartu overview superadmin; kalau tidak
 |             diisi, modul tidak muncul sebagai kartu di Admin_Dashboard
-|   overview_url - opsional URL khusus kartu overview; `url` tetap dipakai
-|                  sidebar, sehingga kartu bisa langsung membuka antrean kerja
+|   overview_url - opsional URL modul yang SUDAH tersaring ke keadaan badge (mis.
+|                  Admin?status=pending). Dipakai menu sidebar selama badge-nya > 0 dan
+|                  tautan "lihat semua di modul" Pusat Pemberitahuan; `url` tetap dipakai
+|                  sorotan aktif dan menu saat badge nol. Isi hanya bila layar tujuannya
+|                  memang punya filter itu (dengan chip untuk melepasnya).
 |   enabled - opsional, default true; set false untuk mematikan modul tanpa hapus entri
 */
 
@@ -160,12 +172,22 @@ $config['dashboard_modules'] = [
     'antrean_kabkota' => [
         'label' => 'Antrean Wilayah Saya', 'icon' => 'ph-ticket',
         'url'   => 'Admin_Kabkota', 'group' => 'Layanan', 'order' => 10,
+        'overview_url' => 'Admin_Kabkota?status=pending',
         'roles' => ['admin_kabkota'],
         'scope' => 'kabupaten_id',
         'table' => 'sf_antrean_pengajuan', 'review_by' => 'admin_kabkota',
         'pending_where' => ['status_antrean' => 'pending'],
+        // Badge sejak 4 Okt 2026 (Pusat Pemberitahuan). Dulu sengaja tanpa badge karena
+        // count_pending_modul() menghitung GLOBAL; scope_column menutup itu: hanya kabupaten sesi.
+        'scope_column' => 'kabupaten_id',
         'status_column' => 'status_antrean', 'owner_column' => 'user_id',
         'public_where' => NULL, 'editable_where' => NULL,
+        'badge' => TRUE,
+        'tindakan' => [
+            'satuan' => 'antrean wilayah menunggu keputusan', 'penanda' => 'kode_tiket',
+            'detail' => 'Admin_Kabkota/detail/',
+            'cara' => 'Buka detail, periksa data dan berkas, lalu simpan keputusan: Setujui, Minta perbaikan, atau Tolak (catatan wajib untuk perbaikan dan tolak).',
+        ],
     ],
     // Rekam Data disusun BERSARANG, bukan tujuh entri datar. Tujuh baris untuk
     // dua modul × tiga layar membuat sidebar didominasi satu fitur, dan tidak
@@ -256,6 +278,11 @@ $config['dashboard_modules'] = [
         'scope_column' => 'bidang_kode',
         'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE,
+        'overview_url' => 'Admin_Bidang?status=Baru',
+        'tindakan' => [
+            'satuan' => 'aduan baru di bidang Anda',
+            'cara' => 'Tekan Proses pada aduan, ubah statusnya ke Diproses saat mulai ditangani, lalu Selesai beserta catatan tindak lanjut.',
+        ],
     ],
 
     // ===== Superadmin =====
@@ -274,6 +301,11 @@ $config['dashboard_modules'] = [
         'status_column' => 'status_antrean', 'owner_column' => 'user_id',
         'public_where' => NULL, 'editable_where' => NULL,
         'badge' => TRUE, 'ringkas' => 'Antrean Perumahan',
+        'tindakan' => [
+            'satuan' => 'antrean menunggu keputusan', 'penanda' => 'kode_tiket',
+            'detail' => 'Admin/detail/',
+            'cara' => 'Buka detail, periksa data dan berkas, lalu simpan keputusan: Setujui, Minta perbaikan, atau Tolak (catatan wajib untuk perbaikan dan tolak).',
+        ],
     ],
     'srp2_verifikasi' => [
         'label' => 'Tinjau SRP2', 'icon' => 'ph-seal-check',
@@ -284,6 +316,10 @@ $config['dashboard_modules'] = [
         'pending_where' => ['status_verifikasi' => 'Pending'],
         'status_column' => 'status_verifikasi', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'Sertifikasi SRP2',
+        'tindakan' => [
+            'satuan' => 'pengajuan SRP2 menunggu verifikasi', 'detail' => 'Admin_Srp2/detail/',
+            'cara' => 'Buka detail, periksa 14 dokumen persyaratan, lalu Terima, Minta perbaikan, atau Tolak (catatan wajib untuk perbaikan dan tolak).',
+        ],
     ],
     /* Dua anak di bawah - permintaan user 14 Agt 2026: "Tinjau SRP2" dua
        tabel berbeda (lihat percakapan yang menemukan ini - srp2_pengajuan
@@ -325,6 +361,11 @@ $config['dashboard_modules'] = [
         'pending_where' => ['status' => 'Baru'],
         'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'Aduan Warga',
+        // Judul aduan TIDAK dipakai penanda: teks bebas warga, bisa memuat nama atau alamat.
+        'tindakan' => [
+            'satuan' => 'aduan baru', 'keterangan' => 'bidang_kode', 'detail' => 'Admin_Aduan/detail/',
+            'cara' => 'Teruskan aduan yang belum punya bidang ke bidang penanganan lewat kolom Bidang di daftar Pantau Aduan; statusnya lalu diproses admin bidang tersebut.',
+        ],
     ],
     // Pandangan superadmin atas Rekam Data - read-only lintas kabupaten DAN
     // lintas domain. Tanpa entri ini, superadmin (kursi yang dipakai reviewer
@@ -381,6 +422,10 @@ $config['dashboard_modules'] = [
         'pending_where' => ['status' => 'Diajukan'],
         'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'KKN/Magang',
+        'tindakan' => [
+            'satuan' => 'pendaftaran KKN/magang menunggu tinjauan', 'keterangan' => 'jenis',
+            'cara' => 'Tekan Proses pada pendaftaran: magang diteruskan ke bidang tujuannya (Teruskan ke bidang), KKN diputuskan langsung (Terima atau Tolak).',
+        ],
     ],
     // Janji temu konsultasi (migrasi 035). Superadmin saja: `forum_diskusi`
     // tidak punya kolom bidang maupun kabupaten, jadi tidak ada dasar apa pun
@@ -394,6 +439,10 @@ $config['dashboard_modules'] = [
         'pending_where' => ['status' => 'diajukan'],
         'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE, 'ringkas' => 'Janji Temu',
+        'tindakan' => [
+            'satuan' => 'janji temu menunggu jadwal',
+            'cara' => 'Tekan Tawarkan untuk mengirim waktu dan lokasi konsultasi (harus di masa depan), atau tolak dengan alasan.',
+        ],
     ],
     // Daftar SEMUA topik konsultasi - bukan cuma yang sudah minta janji temu.
     // Tambahan 15 Agt 2026: sejak konsultasi jadi privat (hanya pemilik +
@@ -452,6 +501,12 @@ $config['dashboard_modules'] = [
         'scope_column' => 'bidang_kode',
         'status_column' => 'status', 'owner_column' => 'user_id',
         'badge' => TRUE,
+        // Tanpa overview_url: layar Kemitraan_Bidang belum punya filter status, jadi menu tetap ke
+        // daftar lengkap; baris yang menunggu adalah yang bertombol Putuskan.
+        'tindakan' => [
+            'satuan' => 'pendaftaran magang menunggu keputusan bidang',
+            'cara' => 'Periksa surat pengantar di daftar, lalu tekan Putuskan dan pilih Terima atau Tolak.',
+        ],
     ],
     'universitas_bidang' => [
         'label' => 'Akun Universitas', 'icon' => 'ph-buildings',
