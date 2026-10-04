@@ -113,11 +113,18 @@ function sensus_akun_uji() {
     // menghapus draftnya meninggalkan baris user_id NULL yang tidak tertangkap sensus akun (26 Sep 2026).
     $y = $db->query('SELECT COUNT(*) c FROM sf_penilaian_perumahan WHERE user_id IS NULL');
     $GLOBALS['draft_yatim'] = $y ? (int) $y->fetch_assoc()['c'] : 0;
+    // Peringatan keamanan yang sengaja dipicu suite (batas laju, login gagal, unggahan berbahaya)
+    // memenuhi banner superadmin di lokal. Catat id terakhir; sesudah runner, sapu yang lebih baru.
+    $m = $db->query('SELECT COALESCE(MAX(id), 0) m FROM sys_jejak_audit');
+    $GLOBALS['audit_id_terakhir'] = $m ? (int) $m->fetch_assoc()['m'] : NULL;
+    $GLOBALS['db_lokal'] = in_array(strtolower($env['DB_HOST'] ?? ''), ['localhost', '127.0.0.1', '::1'], TRUE);
+    $GLOBALS['db_env'] = $env;
     $db->close();
     return $out;
 }
 $akun_sebelum = sensus_akun_uji();
 $yatim_sebelum = $GLOBALS['draft_yatim'] ?? 0;
+$audit_awal = $GLOBALS['audit_id_terakhir'] ?? NULL;
 
 $hasil = [];
 foreach ($suites as $nama => $s) {
@@ -186,6 +193,23 @@ if ($akun_sebelum === NULL) {
     foreach ($bocor as $id => $ket) { echo "           #{$id} {$ket}\n"; }
 } else {
     echo "  Akun uji: nol tertinggal (" . count($akun_sesudah) . " sudah ada sebelum dijalankan)\n";
+}
+
+// Hanya DB lokal (DB_HOST localhost) dan hanya baris dari localhost yang lahir selama runner berjalan.
+$disapu = NULL;
+if ($audit_awal !== NULL && ! empty($GLOBALS['db_lokal'])) {
+    $e = $GLOBALS['db_env'];
+    $db = @new mysqli($e['DB_HOST'], $e['DB_USER'], $e['DB_PASS'] ?? '', $e['DB_NAME']);
+    if ( ! $db->connect_error) {
+        $db->query("DELETE FROM sys_jejak_audit WHERE id > " . (int) $audit_awal
+            . " AND aksi = 'peringatan_keamanan' AND ip IN ('127.0.0.1', '::1')");
+        $disapu = $db->affected_rows;
+        $db->close();
+    }
+}
+if ($disapu !== NULL) {
+    echo "  Peringatan keamanan buatan uji: {$disapu} disapu (localhost, lahir selama runner)
+";
 }
 
 if ($yatim_baru > 0) {
