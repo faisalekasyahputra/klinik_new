@@ -209,6 +209,13 @@
            di bawah sudah melayani Chrome/Edge; dua baris ini untuk Firefox. */
         .gulir-halus { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
         .dark .gulir-halus { scrollbar-color: #2b4f5c transparent; }
+        /* Panah navigasi bercahaya (keputusan user 4 Okt 2026: semua halaman, bukan hanya dasbor): caret
+           tanpa batang di lingkaran kecil berpendar tipis. Di tombol-utama warnanya ikut teks tombol
+           (currentColor) supaya tidak bertabrakan dengan latar tombol. */
+        .panah-sorot { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 9999px; font-size: .875rem; line-height: 1; background: #fef3c7; color: #b45309; box-shadow: 0 0 8px rgba(217, 119, 6, .15); }
+        .dark .panah-sorot { background: rgba(214, 251, 0, .1); color: #d6fb00; box-shadow: 0 0 8px rgba(214, 251, 0, .18); }
+        .tombol-utama .panah-sorot, .dark .tombol-utama .panah-sorot, .panah-sorot-ikut, .dark .panah-sorot-ikut { background: color-mix(in srgb, currentColor 14%, transparent); color: inherit; box-shadow: 0 0 8px color-mix(in srgb, currentColor 22%, transparent); }
+        .panah-sorot-besar { width: 1.75rem; height: 1.75rem; font-size: 1rem; }
         /* Kepadatan tabel admin: sel berpadding besar (py-3/py-4/py-5) dirapatkan jadi 10px di
            semua layar sekaligus. Padding mendatar tetap milik view. */
         .admin-main :is(th, td):is(.py-3, .py-4, .py-5) { padding-top: .625rem; padding-bottom: .625rem; }

@@ -72,7 +72,7 @@ $hari_ini = strtotime(date('Y-m-d'));
                     <td class="px-4 py-3 text-xs"><?= html_escape(tgl_id($b['created_at'], TRUE, TRUE)) ?></td>
                     <td class="px-4 py-3 text-xs<?= $hari > 7 ? ' font-bold text-amber-700' : '' ?>"><?= $hari <= 0 ? 'Masuk hari ini' : 'Menunggu ' . $hari . ' hari' ?></td>
                     <td class="px-4 py-3 text-right">
-                        <a href="<?= html_escape($tujuan) ?>" data-baris-pemberitahuan="<?= html_escape($key) ?>:<?= $id ?>" class="tombol-aksi"><i class="ph ph-arrow-right" aria-hidden="true"></i><span>Tindak lanjuti</span></a>
+                        <a href="<?= html_escape($tujuan) ?>" data-baris-pemberitahuan="<?= html_escape($key) ?>:<?= $id ?>" class="tombol-aksi"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-right"></i></span><span>Tindak lanjuti</span></a>
                     </td>
                 </tr>
                 <?php endforeach; ?>

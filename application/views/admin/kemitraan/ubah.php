@@ -24,7 +24,7 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
             &middot; status <span class="font-bold"><?= html_escape($row->status) ?></span>
         </p>
     </div>
-    <a href="<?= base_url('Admin_Kemitraan') ?>" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali</span></a>
+    <a href="<?= base_url('Admin_Kemitraan') ?>" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>Kembali</span></a>
 </div>
 
 <form method="POST" action="<?= base_url('Admin_Kemitraan/simpan_ubah/' . (int) $row->id) ?>"

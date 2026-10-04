@@ -12,7 +12,7 @@ foreach ($module_groups as $modules) { foreach ($modules as $key => $module) { $
             <h1 class="mt-1 text-2xl font-black text-gray-900 dark:text-white">Hak Modul <?= $e($user->nama ?: $user->email) ?></h1>
             <p class="mt-2 max-w-2xl text-sm text-gray-500 dark:text-brand-muted">Pilih modul yang boleh dibuka akun ini. Pembatasan berlaku pada menu dan akses URL langsung.</p>
         </div>
-        <a href="<?= base_url('Admin_Users') ?>" class="tombol-kedua"><i class="ph ph-arrow-left"></i><span>Kembali</span></a>
+        <a href="<?= base_url('Admin_Users') ?>" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>Kembali</span></a>
     </div>
     <section class="kartu-admin isi-kartu">
         <div class="mb-5 grid gap-3 sm:grid-cols-3">
