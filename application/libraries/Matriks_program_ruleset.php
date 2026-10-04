@@ -130,6 +130,29 @@ class Matriks_program_ruleset {
      * rekomendasi bisa menampilkan deskripsi program (UAT dinas warga #10, butir 4).
      * PK (Peningkatan Kualitas) -> rtlh, PB (Pembangunan Baru) -> pb.
      */
+    /**
+     * Nama program untuk TAMPILAN. Nama utama = nama katalog (sf_program.nama_program), yang
+     * juga tampil di carousel beranda, akun warga, dan antrean admin; nama baris Sheet3
+     * (skema + prioritas) jadi keterangan. Nama sheet tetap kunci aturan dan patokan UAT,
+     * jadi preliminary() tidak diubah. Nama yang tak terpetakan ke katalog tampil apa adanya.
+     *
+     * @return array{nama: string, skema: ?string}
+     */
+    public function nama_tampil($program_name)
+    {
+        static $katalog = [];
+        $skema = trim((string) $program_name);
+        $kode = $this->kode_katalog($skema);
+        if ($kode !== NULL && ! array_key_exists($kode, $katalog)) {
+            $CI =& get_instance();
+            $CI->load->model('Program_model');
+            $katalog[$kode] = trim((string) ($CI->Program_model->get_program_by_code($kode)['nama_program'] ?? ''));
+        }
+        $nama = $kode !== NULL ? $katalog[$kode] : '';
+        if ($nama === '') { return ['nama' => $skema, 'skema' => NULL]; }
+        return ['nama' => $nama, 'skema' => strcasecmp($nama, $skema) === 0 ? NULL : $skema];
+    }
+
     public function kode_katalog($program_name)
     {
         $nama = (string) $program_name;

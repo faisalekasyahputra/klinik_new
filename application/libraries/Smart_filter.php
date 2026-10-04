@@ -132,7 +132,7 @@ class Smart_filter {
             'pb' => [
                 'id' => 4,
                 'kode' => 'pb',
-                'title' => 'Bansos PB (Pembangunan Baru)',
+                'title' => 'Stimulan Pembangunan Baru',
                 'badge' => 'MBR Non-Fixed Income',
                 'desc' => 'Bantuan material Rp 40 Juta untuk lahan sendiri/relokasi.',
                 'icon' => 'fa-trowel-bricks',
@@ -150,7 +150,7 @@ class Smart_filter {
             'flpp' => [
                 'id' => 1,
                 'kode' => 'flpp',
-                'title' => 'KPR-FLPP Subsidi',
+                'title' => 'KPR-FLPP Rumah Subsidi',
                 'badge' => 'MBR Fixed Income',
                 'desc' => 'Bunga flat 5% & cicilan ringan hingga 20 tahun.',
                 'icon' => 'fa-building-columns',
@@ -177,7 +177,7 @@ class Smart_filter {
             'rumah_apung' => [
                 'id' => 5,
                 'kode' => 'rumah_apung',
-                'title' => 'Rumah Apung',
+                'title' => 'Program Rumah Apung',
                 'badge' => 'Kawasan Pesisir',
                 'desc' => 'Inovasi desain rumah adaptif genangan air & rob.',
                 'icon' => 'fa-water',

@@ -79,7 +79,7 @@ $csrf_hash = $this->security->get_csrf_hash();
                             <span class="italic text-amber-600 dark:text-amber-400">tidak punya aturan kelayakan</span>
                             <?php else: ?>
                                 <?php foreach ($r->judul_diagnosa as $j): ?>
-                                <div class="truncate <?= $j !== $r->nama_program ? 'font-bold text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-brand-muted' ?>"><?= html_escape($j) ?></div>
+                                <div class="truncate <?= in_array($j, $r->judul_beda, TRUE) ? 'font-bold text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-brand-muted' ?>"><?= html_escape($j) ?></div>
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </td>

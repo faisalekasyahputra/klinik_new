@@ -61,7 +61,11 @@ class Admin_Katalog_Program extends Admin_Controller {
         foreach ($rows as $r) {
             $r->judul_diagnosa = $judul_diagnosa[$r->kode_program] ?? [];
             // Selisih dihitung di sini, bukan dibandingkan mata di layar.
-            $r->selisih = $r->judul_diagnosa !== [] && ! in_array($r->nama_program, $r->judul_diagnosa, TRUE);
+            // Varian "<nama katalog> <sufiks>" (Oemah Lestari Subsidi/Non-Subsidi) dihitung selaras.
+            $r->judul_beda = array_values(array_filter($r->judul_diagnosa, function ($j) use ($r) {
+                return $j !== $r->nama_program && strpos($j, $r->nama_program . ' ') !== 0;
+            }));
+            $r->selisih = $r->judul_beda !== [];
             $r->tanpa_aturan = $r->judul_diagnosa === [];
         }
 

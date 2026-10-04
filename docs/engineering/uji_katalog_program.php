@@ -207,7 +207,12 @@ $judul = [];
 foreach (muat_master() as $p) { $judul[$p['kode']][] = $p['title']; }
 $selisih = 0;
 foreach ($GLOBALS['db']->query('SELECT kode_program, nama_program FROM sf_program')->fetch_all(MYSQLI_ASSOC) as $r) {
-    if (isset($judul[$r['kode_program']]) && ! in_array($r['nama_program'], $judul[$r['kode_program']], TRUE)) { $selisih++; }
+    // Aturan sama dengan Admin_Katalog_Program (4 Okt 2026): judul "<nama katalog> <sufiks>"
+    // adalah varian, bukan selisih (oemah_lestari punya judul Subsidi dan Non-Subsidi).
+    $beda = array_filter($judul[$r['kode_program']] ?? [], function ($j) use ($r) {
+        return $j !== $r['nama_program'] && strpos($j, $r['nama_program'] . ' ') !== 0;
+    });
+    if ($beda !== []) { $selisih++; }
 }
 if ($selisih > 0) {
     cek(strpos($hal['body'], $selisih . ' program</b> memakai nama berbeda') !== FALSE,
