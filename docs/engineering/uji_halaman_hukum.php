@@ -92,6 +92,10 @@ $footer = substr($beranda, (int) strrpos($beranda, '&copy;'));
 $cek($kb === 200 && strpos($footer, $BASE . 'kebijakan-privasi') !== FALSE && strpos($footer, $BASE . 'syarat-ketentuan') !== FALSE, "Footer beranda publik memuat kedua tautan: HTTP $kb");
 $adm = (string) file_get_contents($AKAR . '/application/views/admin/layouts/footer.php');
 $cek(strpos($adm, "base_url('kebijakan-privasi')") !== FALSE && strpos($adm, "base_url('syarat-ketentuan')") !== FALSE && strpos($adm, 'href="#"') === FALSE, 'Footer dashboard memuat kedua tautan, tanpa href="#"');
+foreach (['application/views/pages/auth/login.php', 'application/views/components/login_modal.php'] as $berkas_masuk) {
+    $isi_masuk = (string) file_get_contents($AKAR . '/' . $berkas_masuk);
+    $cek(strpos($isi_masuk, "base_url('kebijakan-privasi')") !== FALSE && strpos($isi_masuk, "base_url('syarat-ketentuan')") !== FALSE, "$berkas_masuk menautkan Kebijakan Privasi dan Syarat dan Ketentuan");
+}
 
 /* Aturan repo: tanpa em dash dan en dash di berkas baru. */
 foreach (['application/views/pages/umum/kebijakan_privasi.php', 'application/views/pages/umum/syarat_ketentuan.php', 'application/views/pages/umum/dokumen_hukum_kepala.php', 'docs/engineering/uji_halaman_hukum.php'] as $r) {
