@@ -1085,17 +1085,10 @@ class MY_Controller extends CI_Controller {
         if (empty($role)) { return 'akun'; }
 
         $this->config->load('dashboard_modules', FALSE, TRUE);
-        $modules     = $this->config->item('dashboard_modules') ?: [];
         $group_order = $this->config->item('dashboard_module_groups') ?: [];
 
         $kandidat = [];
-        foreach ($modules as $key => $m) {
-            if ( ! $this->module_privilege_allowed($key)) { continue; }
-            if (array_key_exists('enabled', $m) && $m['enabled'] === FALSE) { continue; }
-            if (empty($m['roles']) || ! in_array($role, $m['roles'], TRUE)) { continue; }
-            $scope_value = ! empty($m['scope']) ? $this->session->userdata($m['scope']) : NULL;
-            if ( ! empty($m['scope']) && empty($scope_value)) { continue; }
-            if ( ! empty($m['scope_values']) && ! in_array($scope_value, $m['scope_values'], TRUE)) { continue; }
+        foreach ($this->modul_untuk_peran($role) as $m) {
             $g = array_search($m['group'] ?? '', $group_order);
             $kandidat[] = ['g' => $g === FALSE ? 999 : $g, 'o' => $m['order'] ?? 999, 'url' => $m['url']];
         }
@@ -1134,28 +1127,78 @@ class MY_Controller extends CI_Controller {
     }
 
     /**
-     * Hitung baris "belum diproses" untuk satu entri registry, berdasarkan
-     * 'table' + 'pending_where' yang dideklarasikan di sana. Satu mekanisme
-     * untuk badge sidebar DAN kartu ringkas overview superadmin - sebelumnya
-     * tiap counter dulu butuh method model sendiri.
+     * Modul registry yang berlaku untuk peran ini: hak modul, enabled, roles, scope sesi, scope_values.
+     * Satu saringan untuk sidebar (dashboard_menu), beranda dashboard (dashboard_home), dan Pusat
+     * Pemberitahuan, supaya ketiganya tidak pernah berbeda pendapat soal modul mana yang terlihat.
+     *
+     * @return array [kunci => entri registry], urutan sesuai berkas registry
+     */
+    protected function modul_untuk_peran($role = NULL) {
+        $role = $role ?: $this->current_role();
+        $this->config->load('dashboard_modules', FALSE, TRUE);
+        $hasil = [];
+        foreach (($this->config->item('dashboard_modules') ?: []) as $key => $m) {
+            if ( ! $this->module_privilege_allowed($key)) { continue; }
+            if (array_key_exists('enabled', $m) && $m['enabled'] === FALSE) { continue; }
+            if (empty($m['roles']) || ! in_array($role, $m['roles'], TRUE)) { continue; }
+            $scope_value = ! empty($m['scope']) ? $this->session->userdata($m['scope']) : NULL;
+            if ( ! empty($m['scope']) && empty($scope_value)) { continue; }
+            if ( ! empty($m['scope_values']) && ! in_array($scope_value, $m['scope_values'], TRUE)) { continue; }
+            $hasil[$key] = $m;
+        }
+        return $hasil;
+    }
+
+    /**
+     * Query builder berisi FROM + WHERE "belum diproses" satu entri registry ('table' + 'pending_where',
+     * plus 'scope_column' = nilai scope sesi). SATU-SATUNYA definisi antrean sebuah badge: angka badge
+     * (count_pending_modul) dan baris Pusat Pemberitahuan (pending_modul_baris) sama-sama mulai dari sini,
+     * jadi keduanya tidak bisa melenceng.
+     *
+     * @return CI_DB_query_builder|NULL NULL kalau entri tidak berantrean atau scope sesinya kosong
+     */
+    private function query_pending_modul($modul) {
+        if (empty($modul['table']) || empty($modul['pending_where'])) { return NULL; }
+        $scope_value = NULL;
+        if ( ! empty($modul['scope_column'])) {
+            $scope = $modul['scope'] ?? NULL;
+            $scope_value = $scope ? $this->session->userdata($scope) : NULL;
+            if ($scope === NULL || $scope_value === NULL || $scope_value === '') { return NULL; }
+        }
+        $this->db->from($modul['table'])->where($modul['pending_where']);
+        if ($scope_value !== NULL) { $this->db->where($modul['scope_column'], $scope_value); }
+        return $this->db;
+    }
+
+    /**
+     * Hitung baris "belum diproses" untuk satu entri registry. Satu mekanisme untuk badge sidebar,
+     * ringkasan "Perlu tindakan" di topbar, dan Pusat Pemberitahuan.
      *
      * @param array $modul entri dari config dashboard_modules
      * @return int 0 kalau entri tidak mendeklarasikan tabel/pending_where
      */
     protected function count_pending_modul($modul) {
-        if (empty($modul['table']) || empty($modul['pending_where'])) {
-            return 0;
-        }
-        $query = $this->db->where($modul['pending_where']);
-        if ( ! empty($modul['scope_column'])) {
-            $scope = $modul['scope'] ?? NULL;
-            $scope_value = $scope ? $this->session->userdata($scope) : NULL;
-            if ($scope === NULL || $scope_value === NULL || $scope_value === '') {
-                return 0;
-            }
-            $query->where($modul['scope_column'], $scope_value);
-        }
-        return (int) $query->count_all_results($modul['table']);
+        $query = $this->query_pending_modul($modul);
+        return $query ? (int) $query->count_all_results() : 0;
+    }
+
+    /**
+     * Baris yang membentuk angka badge: paling banyak $batas terbaru, plus totalnya, dalam SATU query
+     * (COUNT(*) OVER () dihitung sebelum LIMIT). Kolom yang diambil hanya id, created_at, dan kolom
+     * non-pribadi yang dideklarasikan di 'tindakan' => 'penanda'/'keterangan' registry.
+     *
+     * @return array ['total' => int, 'baris' => array of assoc]
+     */
+    protected function pending_modul_baris($modul, $batas = 50) {
+        $query = $this->query_pending_modul($modul);
+        if ( ! $query) { return ['total' => 0, 'baris' => []]; }
+        $kolom = array_unique(array_filter(['id', 'created_at',
+            $modul['tindakan']['penanda'] ?? NULL, $modul['tindakan']['keterangan'] ?? NULL]));
+        // Nama kolom dari registry (konfigurasi), bukan dari masukan; FALSE supaya OVER () tidak di-escape.
+        $baris = $query->select(implode(', ', $kolom) . ', COUNT(*) OVER () AS total_pending', FALSE)
+            ->order_by('created_at', 'DESC')->order_by('id', 'DESC')
+            ->limit((int) $batas)->get()->result_array();
+        return ['total' => $baris ? (int) $baris[0]['total_pending'] : 0, 'baris' => $baris];
     }
 
     /**
@@ -1169,19 +1212,11 @@ class MY_Controller extends CI_Controller {
      */
     protected function dashboard_menu() {
         $this->config->load('dashboard_modules', FALSE, TRUE);
-        $modules     = $this->config->item('dashboard_modules') ?: [];
         $group_order = $this->config->item('dashboard_module_groups') ?: [];
 
-        $role  = $this->current_role();
         $items = [];
-        foreach ($modules as $key => $m) {
-            if ( ! $this->module_privilege_allowed($key)) { continue; }
-            if (array_key_exists('enabled', $m) && $m['enabled'] === FALSE) { continue; }
+        foreach ($this->modul_untuk_peran() as $key => $m) {
             if (array_key_exists('sidebar', $m) && $m['sidebar'] === FALSE) { continue; } // disembunyikan dari sidebar, akses tetap
-            if (empty($m['roles']) || ! in_array($role, $m['roles'], TRUE)) { continue; }
-            $scope_value = ! empty($m['scope']) ? $this->session->userdata($m['scope']) : NULL;
-            if ( ! empty($m['scope']) && empty($scope_value)) { continue; }
-            if ( ! empty($m['scope_values']) && ! in_array($scope_value, $m['scope_values'], TRUE)) { continue; }
 
             $badge = NULL;
             if ( ! empty($m['badge'])) {
@@ -1190,6 +1225,10 @@ class MY_Controller extends CI_Controller {
 
             $items[] = [
                 'key' => $key, 'label' => $m['label'], 'icon' => $m['icon'], 'url' => $m['url'],
+                // Menu ber-badge membuka modulnya dengan filter yang sama dengan badge (overview_url),
+                // supaya baris yang tampil = angka yang diklik. `url` tetap dipakai sorotan aktif.
+                'href' => $badge && ! empty($m['overview_url']) ? $m['overview_url'] : $m['url'],
+                'badge_judul' => $badge ? $badge . ' ' . ($m['tindakan']['satuan'] ?? 'menunggu tindakan') : NULL,
                 'group' => $m['group'] ?? '', 'order' => $m['order'] ?? 999, 'badge' => $badge,
                 'parent' => $m['parent'] ?? NULL,
                 'tab_baru' => ! empty($m['tab_baru']),

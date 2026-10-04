@@ -80,6 +80,9 @@ $route['akun/update_pengembang']   = 'Pengaturan/update_pengembang_profile';
 $route['akun/perusahaan']          = 'Pengaturan/perusahaan';
 $route['akun/perusahaan/simpan']   = 'Pengaturan/simpan_perusahaan';
 
+// --- Pusat Pemberitahuan staf (huruf kecil: production Linux peka huruf, lihat AGENTS.md 0e) ---
+$route['pemberitahuan']            = 'Pemberitahuan/index';
+
 // --- Clean URLs for Index controller ---
 $route['golek_omah']               = 'Index/golek_omah';
 $route['psu']                      = 'Psu/index';
