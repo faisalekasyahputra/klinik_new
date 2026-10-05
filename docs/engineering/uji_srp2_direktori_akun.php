@@ -105,8 +105,8 @@ try {
     $cek(strpos($daftar, 'name="nama_perusahaan"') === FALSE && strpos($daftar, 'Admin_Srp2/save') === FALSE,
         'Daftar tidak lagi berisi formulir sunting per baris');
     $cek(strpos($daftar, 'Admin_Srp2/ubah/' . $idA) !== FALSE && strpos($daftar, 'Belum ada akun') !== FALSE
-        && strpos($daftar, 'Jl. Awal ' . $TAG) !== FALSE && strpos($daftar, 'Tidak berlaku') !== FALSE && strpos($daftar, '>Berlaku<') !== FALSE,
-        'Baris memuat alamat singkat, status Berlaku/Tidak berlaku, akun, dan tombol Ubah ke halaman detail');
+        && strpos($daftar, 'Jl. Awal ' . $TAG) !== FALSE && strpos($daftar, 'Masa berlaku belum dicatat') !== FALSE && strpos($daftar, '>Berlaku<') !== FALSE,
+        'Baris memuat alamat singkat, status Berlaku / Masa berlaku belum dicatat (tanpa tanggal akhir, keputusan 5 Okt 2026), akun, dan tombol Ubah');
     $cek(strpos($daftar, 'data-logo-mock="YP"') !== FALSE && strpos($daftar, 'data-logo-mock="UB"') !== FALSE,
         'Tanpa foto: logo tiruan berinisial benar ("PT. YURIS PRATAMA ..." -> YP, "CV. ... BETA" -> UB)');
 

@@ -52,7 +52,7 @@ $label_status = [
             <td class="px-3 py-3 text-xs">
                 <span class="block font-bold text-gray-700 dark:text-gray-300"><?= html_escape($label_status[$row->status_sertifikasi] ?? $row->status_sertifikasi) ?></span>
                 <span class="mt-1 flex flex-wrap items-center gap-1">
-                    <?php $this->load->view('admin/components/status_badge', ['label' => $berlaku ? 'Berlaku' : 'Tidak berlaku', 'kelas' => $berlaku ? 'ok' : 'reject']); ?>
+                    <?php $this->load->view('admin/components/status_badge', ['label' => srp2_keadaan_sertifikat($row)[1], 'kelas' => ['berlaku' => 'ok', 'belum_dicatat' => 'pending'][srp2_keadaan_sertifikat($row)[0]] ?? 'reject']); ?>
                     <span class="text-gray-500 dark:text-brand-muted"><?= $akhir !== '' ? 's.d. ' . html_escape(tgl_id($akhir, TRUE)) : 'tanggal belum tercatat' ?></span>
                 </span>
             </td>

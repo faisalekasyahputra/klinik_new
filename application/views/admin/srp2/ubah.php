@@ -113,7 +113,7 @@ $sandi_awal = $this->session->flashdata('sandi_awal');
                 </select>
             </label>
             <div class="<?= $label ?>">Masa berlaku saat ini
-                <span class="mt-2 block"><?php $berlaku = srp2_sertifikat_berlaku($r); $this->load->view('admin/components/status_badge', ['label' => $berlaku ? 'Berlaku' : 'Tidak berlaku', 'kelas' => $berlaku ? 'ok' : 'reject']); ?></span>
+                <span class="mt-2 block"><?php $berlaku = srp2_sertifikat_berlaku($r); $this->load->view('admin/components/status_badge', ['label' => srp2_keadaan_sertifikat($r)[1], 'kelas' => ['berlaku' => 'ok', 'belum_dicatat' => 'pending'][srp2_keadaan_sertifikat($r)[0]] ?? 'reject']); ?></span>
             </div>
             <label class="<?= $label ?>">Terbit sertifikat
                 <input name="sertifikat_terbit" type="date" value="<?= $v('sertifikat_terbit') ?>" class="<?= $isian ?>">
