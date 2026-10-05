@@ -1307,6 +1307,13 @@ cek(strpos($stat, 'masih simulasi') !== FALSE && substr_count($stat, 'rencana su
     'Statistika: kartu yang belum terhubung tetap berlabel simulasi');
 /* 4 Okt 2026: lompatan jangkar bawaan di wadah gulir portal tidak andal (diam atau layar kosong), jadi menu
    kategori menggulir wadahnya lewat skrip; dan pembaca Dokumen punya jalan pulang ke tab Bank Data. */
+/* 5 Okt 2026: wajib membuat/ganti sandi adalah PEMBERITAHUAN di tengah layar, bukan galat "Terjadi kesalahan". */
+$mc = (string) @file_get_contents(APP_ROOT . '/application/core/MY_Controller.php');
+$nj = (string) @file_get_contents(APP_ROOT . '/assets/js/notifications.js');
+cek(strpos($mc, "set_flashdata('error', \$pesan);\n        redirect('akun/profil?password_expired=1')") === FALSE
+    && strpos($mc, 'flash_ganti_sandi($row)') !== FALSE
+    && strpos($nj, "if (item.dialog) { dialog(item.message, { title: item.title || titles[item.type], jenis: 'info'") !== FALSE,
+    'Wajib ganti sandi: pemberitahuan dialog info di tengah, bukan galat');
 $dok = http('tamu_statistika', 'Dokumen');
 cek(preg_match_all('#<nav[^>]*data-lompat-bagian#', $stat) === 2 &&strpos($stat, "querySelectorAll('[data-lompat-bagian] a[href^=\"#\"]')") !== FALSE
     && preg_match('#data-kembali-bankdata#', $dok) === 1 && preg_match('#data-tab-key="bankdata" class="portal-tab-btn active"#', $dok) === 1,

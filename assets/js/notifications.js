@@ -113,7 +113,9 @@
     var ikonDialog = {
         galat: svg('<circle cx="12" cy="12" r="9.5"/><line x1="12" y1="7.5" x2="12" y2="12.5"/><line x1="12" y1="16.2" x2="12.01" y2="16.2"/>'),
         tanya: svg('<circle cx="12" cy="12" r="9.5"/><path d="M9.3 9.2a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.5-2.7 2.5"/><line x1="12" y1="16.6" x2="12.01" y2="16.6"/>'),
-        bahaya: svg('<path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7"/>')
+        bahaya: svg('<path d="M4 7h16"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7"/>'),
+        // Pemberitahuan yang meminta tindakan, bukan galat (5 Okt 2026): ikon "i", aksen teal.
+        info: svg('<circle cx="12" cy="12" r="9.5"/><line x1="12" y1="11" x2="12" y2="16.5"/><line x1="12" y1="7.6" x2="12.01" y2="7.6"/>')
     };
 
     /**
@@ -257,7 +259,8 @@
                     // produk 3 Okt 2026). Di halaman lain hanya galat yang membawa tombol aksi.
                     var halamanAuth = document.body.classList.contains('auth-page');
                     items.forEach(function (item) {
-                        if (item.type === 'error' && (halamanAuth || Array.isArray(item.aksi))) { dialog(item.message, item); }
+                        if (item.dialog) { dialog(item.message, { title: item.title || titles[item.type], jenis: 'info', aksi: item.aksi }); }
+                        else if (item.type === 'error' && (halamanAuth || Array.isArray(item.aksi))) { dialog(item.message, item); }
                         else { show(item.message, item.type, item); }
                     });
                 }

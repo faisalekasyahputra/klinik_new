@@ -223,6 +223,22 @@ class Auth_model extends CI_Model {
             ? 'Sandi awal dari admin harus diganti sebelum melanjutkan. Buat sandi baru yang hanya Anda ketahui.'
             : 'Kata sandi telah berusia 90 hari. Ganti kata sandi untuk melanjutkan.';
     }
+
+    /**
+     * Kirim pesan wajib ganti sandi sebagai PEMBERITAHUAN di tengah layar (permintaan user 5 Okt 2026):
+     * dulu salah satu jalurnya mengirim 'error' sehingga berjudul "Terjadi kesalahan" dengan ikon merah,
+     * padahal tidak ada yang salah. Satu pintu untuk ketiga jalur (gerbang MY_Controller, sesudah login,
+     * dan Pengaturan) supaya jenis, judul, dan bentuknya tidak menyimpang lagi.
+     */
+    public function flash_ganti_sandi($user) {
+        $pesan = $this->pesan_ganti_sandi($user);
+        $judul = strpos($pesan, 'Google') !== FALSE ? 'Buat kata sandi baru'
+            : (strpos($pesan, 'Sandi awal') !== FALSE ? 'Ganti sandi awal' : 'Saatnya ganti kata sandi');
+        $this->session->set_flashdata('warning', $pesan);
+        $this->session->set_flashdata('pemberitahuan_judul', $judul);
+        $this->session->set_flashdata('pemberitahuan_dialog', TRUE);
+        return $pesan;
+    }
     // =========================================================
     // Onboarding / Profile Completion
     // =========================================================

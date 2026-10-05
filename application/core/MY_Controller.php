@@ -357,7 +357,8 @@ class MY_Controller extends CI_Controller {
             $this->output->set_status_header(403); header('Content-Type: application/json');
             echo json_encode(['status' => 'error', 'code' => 'password_kedaluwarsa', 'message' => $pesan]); exit;
         }
-        $this->session->set_flashdata('error', $pesan);
+        // Pemberitahuan, bukan galat (5 Okt 2026): tidak ada yang salah, pengguna hanya perlu membuat sandi.
+        $this->Auth_model->flash_ganti_sandi($row);
         redirect('akun/profil?password_expired=1'); exit;
     }
     /**
