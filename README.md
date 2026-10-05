@@ -1,211 +1,156 @@
-# 🏠 Klinik PKP - Panduan Setup Cepat
+# Klinik PKP
 
-> **Klinik Perumahan & Kawasan Permukiman** - Disperakim Provinsi Jawa Tengah  
-> Portal informasi perumahan subsidi, data spasial, dan konsultasi terpadu.
+**Klinik Perumahan dan Kawasan Permukiman** - Dinas Perumahan Rakyat dan Kawasan Permukiman (Disperakim) Provinsi Jawa Tengah.
+
+Portal layanan dan informasi perumahan: pendataan warga dan rekomendasi program, direktori serta sertifikasi pengembang (SRP2), aduan, konsultasi, KKN dan magang, rekam data capaian kabupaten/kota, dan bank data (statistik, buku data, kawasan kumuh).
+
+> Repo ini **publik** atas permintaan dinas. Jangan pernah meng-commit kredensial, IP, host atau nama database, path server, nama berkas backup, atau rincian celah yang belum ditambal. Lihat [`AGENTS.md`](AGENTS.md) untuk aturan lengkapnya.
 
 ---
 
-## ⚡ Quick Start (5 Menit)
+## Teknologi
 
-### 1. Clone Repo
-Repo ini **privat** - kamu harus sudah diundang sebagai collaborator di GitHub dulu.
-Clone langsung ke dalam folder `htdocs` (XAMPP/Laragon):
+| Lapisan | Teknologi |
+|---|---|
+| Backend | CodeIgniter 3, PHP 8.1 atau lebih baru |
+| Frontend | Tailwind CSS (CSS statis hasil panen), Alpine.js, JavaScript biasa |
+| Database | MySQL / MariaDB, `utf8mb4` |
+| Autentikasi | Email dan sandi dengan OTP email, Google OAuth 2.0, sesi tunggal per akun |
+| Keamanan data | Enkripsi AES-256-GCM untuk data pribadi, CSRF, pembatas laju, header keamanan |
+| Integrasi | SIMPERUM (data warga), SIKUMBANG (unit rumah), SIKAPER (kawasan kumuh) |
+| Dependensi Composer | Google API Client, PhpSpreadsheet, FPDF, Web Push |
 
-```bash
-cd C:/xampp/htdocs && git clone -b feature/homepage-portal-v2 https://github.com/faisalekasyahputra/klinik_new.git
-```
+---
 
-> ⚠️ **`-b feature/homepage-portal-v2` itu wajib, bukan opsional.** Tanpa itu kamu
-> dapat `main`, dan `main` **beku sejak 19 Juli 2026** - kodenya ketinggalan jauh dan
-> DB-nya belum pernah dimigrasi sama sekali. `main` disimpan untuk rilis akhir saja.
-> Branch kerja yang hidup selalu tercatat di [`AGENTS.md`](AGENTS.md) §0a - kalau
-> suatu saat pindah, percayai tabel di sana, bukan baris ini.
->
-> 🔴 **Branch ini auto-deploy ke PRODUCTION.** Setiap `git push` ke
-> `feature/homepage-portal-v2` langsung tayang di situs asli. Tidak ada lagi staging
-> terpisah. Kerjakan dan uji di lokal; jangan push kecuali memang mau merilis.
+## Menjalankan di lokal
 
-Git for Windows akan membuka jendela login GitHub di browser saat pertama kali clone;
-setelah itu kredensialnya tersimpan dan tidak ditanya lagi. Kalau jendela itu tidak
-muncul dan kamu malah dimintai password di terminal, pakai GitHub CLI:
+Contoh berikut memakai XAMPP di Windows. Laragon atau Apache + PHP lain juga bisa.
+
+### 1. Clone
 
 ```bash
-gh auth login && gh repo clone faisalekasyahputra/klinik_new -- -b feature/homepage-portal-v2
+cd C:/xampp/htdocs && git clone https://github.com/faisalekasyahputra/klinik_new.git
 ```
 
-> ❌ **404 / "repository not found"** saat clone hampir selalu berarti akun GitHub-mu
-> belum punya akses, bukan URL-nya salah. Repo privat memang tampil sebagai 404 ke
-> orang luar. Minta undangan collaborator ke lead developer.
+Branch kerja utama adalah `main`. Lihat [Alur kontribusi](#alur-kontribusi) sebelum mengubah apa pun.
 
-### 2. Buat File `.env`
-Copy `.env.example` → `.env`, lalu isi:
+### 2. Dependensi
+
+```bash
+cd klinik_new && composer install
+```
+
+### 3. Berkas `.env`
+
+Salin `.env.example` menjadi `.env`, lalu isi. Semua variabel yang dibaca kode tercantum di `.env.example` beserta keterangannya. Minimal untuk lokal:
+
 ```env
 SITE_URL=http://localhost/klinik_new/
-
 DB_HOST=localhost
 DB_NAME=klinikpkp
 DB_USER=root
 DB_PASS=
-
 KPKP_DATA_KEY=<minta ke lead developer>
 KPKP_DATA_PEPPER=<minta ke lead developer>
-
-GOOGLE_CLIENT_ID=<opsional, untuk Google Login>
-GOOGLE_CLIENT_SECRET=<opsional>
-GOOGLE_REDIRECT_URI=http://localhost/klinik_new/Auth/google_callback
-
-GEMINI_API_KEY=<opsional, untuk fitur AI>
+SIMPERUM_MODE=simulation
 ```
 
-> ⚠️ **PENTING:** Kunci enkripsi `KPKP_DATA_KEY` dan `KPKP_DATA_PEPPER` wajib diminta ke lead developer. Tanpa ini, fitur yang melibatkan data NIK/Alamat tidak akan berfungsi.
+`KPKP_DATA_KEY` dan `KPKP_DATA_PEPPER` wajib; tanpanya data terenkripsi (NIK, alamat) tidak bisa dibaca. Di lokal, SIMPERUM **harus** tetap `simulation` supaya data pribadi warga sungguhan tidak masuk ke mesin pengembang.
 
-### 3. Install Composer Dependencies
-```bash
-cd klinik_new
-composer install
-```
+### 4. Database
 
-### 4. Buat Database
-Buka **phpMyAdmin** (`http://localhost/phpmyadmin`):
-1. Buat database baru: `klinikpkp` (collation: `utf8_general_ci`)
-2. Import file: `docs/engineering/schema_klinikpkp.sql`
+1. Buat database `klinikpkp` dengan collation `utf8mb4_unicode_ci`.
+2. Ikuti [`docs/engineering/SETUP_DATABASE.md`](docs/engineering/SETUP_DATABASE.md).
+3. Jalankan migrasi. **Wajib**, karena sumber kebenaran skema adalah `application/migrations/`, bukan berkas `.sql`:
 
-### 5. Jalankan Migrasi - WAJIB, jangan dilewati
 ```bash
 php index.php migrate
 ```
 
-> ⚠️ **Berkas `schema_klinikpkp.sql` itu snapshot lama, bukan skema terbaru.** Tanpa langkah ini kamu akan kehilangan tabel `aduan`, `kabupaten`, `bidang`, `kkn_magang_pendaftaran`, seluruh tabel `srp2_*`, kolom `reviewed_by`/`reviewed_at`, dan semua foreign key - aplikasi akan error di banyak halaman.
->
-> Sumber kebenaran skema adalah `application/migrations/`, bukan berkas `.sql`. Perintah ini juga yang dipakai untuk menyamakan skema DB manapun yang sedang ditunjuk `.env`.
+### 5. Buka
 
-### 6. Jalankan
-Buka browser: **http://localhost/klinik_new/**
+`http://localhost/klinik_new/`
+
+Akun uji lokal per peran dapat dibuat dengan `docs/engineering/seed_agen_peran.php`; daftarnya ada di [`docs/engineering/AGEN_PERAN.md`](docs/engineering/AGEN_PERAN.md). Akun itu hanya untuk localhost.
 
 ---
 
-## 📁 Struktur Proyek
+## Pengujian
+
+Uji berupa skrip PHP di `docs/engineering/uji_*.php` (fungsional, per peran, regresi tampilan) dan `tests/` (form keamanan). Satu perintah menjalankan semuanya terhadap situs lokal:
+
+```bash
+php docs/engineering/jalankan_semua.php
+```
+
+Hasil yang diterima sebelum rilis: **0 merah dan 0 bisu**. Uji berjalan terhadap `localhost` dan database lokal, jadi jangan memakai localhost untuk hal lain selama suite berjalan (akun bersesi tunggal saling menendang).
+
+---
+
+## Alur kontribusi
+
+1. Buat branch dari `main` (`fix/...`, `feat/...`, `docs/...`).
+2. Kerjakan dan uji di lokal.
+3. Buka pull request ke `main`, lalu merge.
+4. **Rilis** dilakukan pemilik proyek: suite penuh 0 merah, lalu `main` dicerminkan (fast-forward) ke branch deploy `feature/homepage-portal-v2`, yang tayang otomatis ke production. Jangan push langsung ke branch deploy.
+
+Perubahan skema wajib berupa berkas migrasi baru di `application/migrations/` dan menaikkan `$config['migration_version']`. Urutan rilis bermigrasi ada di [`AGENTS.md`](AGENTS.md) §0a.
+
+Pesan commit memakai bahasa Indonesia dengan prefix conventional commit (`fix:`, `feat:`, `docs:`, `test:`, `chore:`).
+
+---
+
+## Struktur
 
 ```
 klinik_new/
-├── application/           ← Source code utama (MVC)
-│   ├── config/            ← Konfigurasi (database, routes, dll)
-│   ├── controllers/       ← Logic bisnis (29 controller)
-│   ├── core/              ← MY_Controller (hierarki base controller + guard role)
-│   ├── helpers/            ← Helper functions
-│   ├── libraries/         ← Library kustom (Encryption, API)
-│   ├── migrations/        ← ⭐ SUMBER KEBENARAN skema DB (01-14)
-│   ├── models/            ← Database models
-│   └── views/             ← Tampilan (modular per fitur)
-│       ├── layouts/       ← Template (nav, head, footer)
-│       └── pages/         ← Halaman per modul
-├── assets/                ← CSS, JS, gambar
-│   ├── css/
-│   ├── js/
-│   └── img/
-├── docs/                  ← 📖 Dokumentasi lengkap (BACA INI!)
-│   ├── architecture/      ← Desain teknis, ERD, security threat model
-│   ├── engineering/       ← Schema SQL, setup guide, alur auth
-│   ├── product/           ← PRD, roadmap, audit keamanan
-│   ├── design/            ← Design tokens & color scheme
-│   ├── meetings/          ← Notulensi rapat
-│   └── archive/           ← Dokumen historis
-├── system/                ← CodeIgniter 3 core (JANGAN EDIT)
-├── vendor/                ← Composer dependencies
-├── .env                   ← Environment (TIDAK DI-SHARE)
-├── .env.example           ← Template environment
-├── composer.json          ← PHP dependencies
-└── index.php              ← Entry point
+├── application/
+│   ├── config/        konfigurasi (routes, modul dasbor, pembatas laju, keamanan)
+│   ├── controllers/   controller
+│   ├── core/          MY_Controller: hierarki controller dasar dan penjaga peran
+│   ├── helpers/       fungsi bantu
+│   ├── libraries/     gateway API, enkripsi, pemindai unggahan, OTP
+│   ├── migrations/    SUMBER KEBENARAN skema database
+│   ├── models/
+│   └── views/         admin/ (cangkang dasbor), pages/ (portal publik), components/
+├── assets/            CSS, JS, gambar, font
+├── docs/              dokumentasi dan skrip uji (lihat docs/README.md)
+├── system/            inti CodeIgniter 3 (jangan diedit)
+├── tests/             uji form keamanan
+├── .env.example       templat variabel lingkungan
+└── index.php
 ```
 
----
-
-## 📖 Dokumentasi Lengkap
-
-Baca file-file di folder `docs/` untuk pemahaman mendalam:
-
-| File | Isi |
-|------|-----|
-| [`AGENTS.md`](AGENTS.md) | ⭐ **Baca duluan** - status terkini, aturan mengikat, daftar jebakan |
-| [`README.md`](docs/README.md) | Index dokumentasi |
-| [`PEMBACAAN_CODEBASE_26JUL2026.md`](docs/engineering/PEMBACAAN_CODEBASE_26JUL2026.md) | Peta 8 subsistem + 141 temuan |
-| [`AUDIT_SISTEM_ROLE_RINGKASAN.md`](docs/engineering/AUDIT_SISTEM_ROLE_RINGKASAN.md) | Ringkasan audit 5 peran |
-| [`TECHNICAL_DESIGN_DOCUMENT.md`](docs/architecture/TECHNICAL_DESIGN_DOCUMENT.md) | Arsitektur & struktur kode |
-| [`DATABASE_DESIGN_DOCUMENT.md`](docs/architecture/DATABASE_DESIGN_DOCUMENT.md) | Kamus data & relasi tabel |
-| [`SECURITY_DESIGN_DOCUMENT.md`](docs/architecture/SECURITY_DESIGN_DOCUMENT.md) | Keamanan (enkripsi, CSRF, OAuth) |
-| [`PRODUCT_REQUIREMENTS_DOCUMENT.md`](docs/product/PRODUCT_REQUIREMENTS_DOCUMENT.md) | Spesifikasi fitur & PRD |
-| [`IMPLEMENTATION_ROADMAP.md`](docs/product/IMPLEMENTATION_ROADMAP.md) | Roadmap pengembangan |
-| [`AKUN_LOGIN.md`](docs/engineering/AKUN_LOGIN.md) | Cara kerja autentikasi |
-| [`PANDUAN_HOSTING.md`](docs/engineering/PANDUAN_HOSTING.md) | Memasang/memindahkan situs ke server selain Hostinger (Apache, Nginx, pindah data) |
-| [`changelog_090626_12.39WIB_.md`](docs/archive/changelog_090626_12.39WIB_.md) | Riwayat perubahan |
+Folder lokal yang sengaja tidak masuk repo (sudah di `.gitignore`): `vendor/`, `uploads/`, `dev-scripts/`, `local-assets/`, `_arsip/`, keluaran sementara (`tmp/`, `output/`, `outputs/`), dan berkas unggahan pengguna di bawah `assets/`.
 
 ---
 
-## 🔧 Tech Stack
+## Dokumentasi
 
-| Layer | Teknologi |
-|-------|-----------|
-| **Backend** | CodeIgniter 3 (PHP 8.x) |
-| **Frontend** | Tailwind CSS + Alpine.js + Vanilla JS |
-| **Database** | MySQL / MariaDB |
-| **Auth** | Email/Password + Google OAuth 2.0 |
-| **Enkripsi** | AES-256-GCM (data PII) |
-| **API** | Sikaper, Sikunang, Siperum, API Ternak |
-
----
-
-## 🗄️ Tabel Database (23 tabel + legacy)
-
-Prefix menandai domainnya - tabel baru wajib mengikuti pola ini.
-
-| Tabel | Fungsi |
-|-------|--------|
-| `usr_akun` | Data pengguna (auth, profil, scope wilayah/bidang) |
-| `usr_dokumen` | Dokumen user |
-| `sf_program` | Program perumahan |
-| `sf_program_kategori` | Kategori program |
-| `sf_antrean_pengajuan` | Antrean kelayakan + tiket `PKP-XXXXXX` |
-| `forum_diskusi` | Thread forum |
-| `forum_komentar` | Komentar forum (nested lewat `balasan_untuk_id`) |
-| `forum_suka` | Like pada thread & komentar |
-| `srp2_pengajuan` | Pendaftaran sertifikasi pengembang |
-| `srp2_dokumen` | 14 dokumen persyaratan SRP2 |
-| `srp2_direktori_pengembang` | Direktori publik pengembang bersertifikat |
-| `aduan` | Pengaduan masyarakat (per bidang) |
-| `kkn_magang_pendaftaran` | Pendaftaran KKN & Magang |
-| `kabupaten` | 35 kabupaten/kota Jateng (kode Kemendagri) |
-| `bidang` | 5 bidang penanganan aduan |
-| `sys_pengaturan` | Konfigurasi sistem |
-| `sys_ticket_lookup_limits` | Rate limit lookup tiket publik |
-| `chat_ruang`, `chat_pesan` | ⚠️ **ADA tapi menganggur** - lihat catatan di bawah |
-| `migrations` | Versi migrasi yang sudah dijalankan |
-
-> ⚠️ **Jebakan:** `chat_ruang`/`chat_pesan` ada di DB tapi tidak dipakai kode manapun. Fitur chat yang berjalan menulis ke `tb_chat` - tabel yang **tidak ada di skema maupun migrasi**, sehingga chat gagal di instalasi bersih. Lihat `AGENTS.md` §18.
-
-> Ada juga tabel legacy tanpa prefix (`kondisi`, `bendung`, `irigasi`, `saluran_pembuang`) yang dipakai dinamis oleh `Buka_peta.php` - model itu sendiri sudah tidak dipanggil dari manapun.
+| Dokumen | Isi |
+|---|---|
+| [`AGENTS.md`](AGENTS.md) | **Baca duluan.** Status terkini, catatan rilis, aturan mengikat, dan jebakan yang pernah terjadi |
+| [`docs/README.md`](docs/README.md) | Indeks dokumentasi |
+| [`docs/architecture/TECHNICAL_DESIGN_DOCUMENT.md`](docs/architecture/TECHNICAL_DESIGN_DOCUMENT.md) | Arsitektur dan struktur kode |
+| [`docs/architecture/DATABASE_DESIGN_DOCUMENT.md`](docs/architecture/DATABASE_DESIGN_DOCUMENT.md) | Kamus data dan relasi tabel |
+| [`docs/architecture/SECURITY_DESIGN_DOCUMENT.md`](docs/architecture/SECURITY_DESIGN_DOCUMENT.md) | Model ancaman, enkripsi, CSRF, OAuth |
+| [`docs/engineering/PANDUAN_HOSTING.md`](docs/engineering/PANDUAN_HOSTING.md) | Memasang atau memindahkan situs ke server lain |
+| [`docs/design/DESIGN_SYSTEM.md`](docs/design/DESIGN_SYSTEM.md) | Token desain dan komponen tampilan |
 
 ---
 
-## ❓ Troubleshooting
+## Masalah umum
 
-| Masalah | Solusi |
-|---------|--------|
-| **Blank page / Error 500** | Cek `.env` sudah dibuat dan terisi benar |
-| **Database error** | Pastikan database `klinikpkp` ada, schema diimport, **dan `php index.php migrate` sudah dijalankan** |
-| **`Table '...' doesn't exist`** | Hampir selalu karena migrasi belum dijalankan - ulangi langkah 5 |
-| **CSS tidak muncul** | Pastikan `base_url` di `.env` sesuai path folder kamu |
-| **"Class not found"** | Jalankan `composer install` |
-| **Google Login gagal** | Normal jika belum setup Google OAuth credentials |
-| **MySQL XAMPP tidak mau start** | Cek `mysql/data/multi-master.info` - kalau isinya potongan teks log, singkirkan berkas itu beserta `master-*.info` dan `mysql-relay-bin-*`. Jangan sentuh `.frm`/`.ibd`/`ibdata1` |
-
----
-
-## ⚠️ Sebelum ikut mengembangkan
-
-1. **Baca [`AGENTS.md`](AGENTS.md) lebih dulu** - di sana ada status terkini, aturan yang mengikat, dan daftar jebakan yang sudah pernah memakan korban.
-2. **Jangan sentuh branch `main`** tanpa perintah eksplisit - push ke sana langsung merilis ke production tanpa konfirmasi.
-3. **Jangan commit script atau aset satu-kali-pakai ke akar repo** - semuanya ikut ter-deploy dan bisa diakses publik. Taruh di `dev-scripts/` atau `local-assets/` yang sudah di-`.gitignore`.
+| Gejala | Penyebab dan solusi |
+|---|---|
+| Halaman kosong / galat 500 | `.env` belum dibuat atau isinya salah |
+| `Table '...' doesn't exist` | Migrasi belum dijalankan: `php index.php migrate` |
+| CSS tidak termuat | `SITE_URL` di `.env` tidak cocok dengan path folder |
+| `Class not found` | `composer install` belum dijalankan |
+| Login Google gagal di lokal | Normal bila kredensial OAuth lokal belum diisi |
+| Uji pendaftaran merah berantai | Batas kiriman OTP per IP di database lokal habis karena suite diulang dalam satu jam; lihat catatan rilis 4-5 Okt 2026 di `AGENTS.md` |
+| MySQL XAMPP tidak mau start | Lihat catatan MariaDB di `AGENTS.md`; jangan menghapus `.frm`, `.ibd`, atau `ibdata1` |
 
 ---
 
-*Klinik PKP - diperbarui 27 Juli 2026*
+*Diperbarui 5 Oktober 2026.*
