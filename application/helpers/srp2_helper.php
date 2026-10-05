@@ -116,13 +116,32 @@ function srp2_label_asosiasi($kode, $kosong = '-') {
  * Sertifikat pengembang di direktori publik BERLAKU? Satu rumus untuk
  * Pengembang/sertifikasi dan Pengembang/profil: sebelum 27 Sep 2026 profil
  * mencetak "Bersertifikat" tetap, sehingga baris yang di direktori "Tidak
- * berlaku" tampil sah di profilnya. Tanpa tanggal akhir = Tidak berlaku
- * (keputusan 23 Sep 2026, UAT #12/#13).
+ * berlaku" tampil sah di profilnya. Tanpa tanggal akhir = tidak berlaku
+ * (keputusan 23 Sep 2026, UAT #12/#13); LABEL tampilannya diatur srp2_keadaan_sertifikat().
  */
 function srp2_sertifikat_berlaku($row) {
     $akhir = trim((string) ($row->sertifikat_berakhir ?? ''));
     return in_array((string) ($row->status_sertifikasi ?? ''), ['Diterima', 'bersertifikat'], TRUE)
         && $akhir !== '' && strtotime($akhir . ' 23:59:59') >= time();
+}
+
+/**
+ * Keadaan sertifikat untuk TAMPILAN: [kunci, label]. Kunci: berlaku | kedaluwarsa | belum_dicatat | belum.
+ *
+ * Keputusan user 5 Okt 2026 (UAT dinas) MENGGANTIKAN keputusan 23 Sep untuk tampilan: bersertifikat
+ * tanpa tanggal akhir kini "Masa berlaku belum dicatat" (abu-abu), bukan "Tidak berlaku" merah. 67 dari
+ * 68 entri historis belum punya tanggal akhir, sehingga seluruh direktori publik tampak kedaluwarsa.
+ * srp2_sertifikat_berlaku() tetap FALSE untuk keadaan ini: tanpa tanggal, sertifikat tidak diklaim berlaku.
+ */
+function srp2_keadaan_sertifikat($row) {
+    $row = (object) $row;
+    if ( ! in_array((string) ($row->status_sertifikasi ?? ''), ['Diterima', 'bersertifikat'], TRUE)) {
+        return ['belum', 'Belum berlaku'];
+    }
+    if (trim((string) ($row->sertifikat_berakhir ?? '')) === '') {
+        return ['belum_dicatat', 'Masa berlaku belum dicatat'];
+    }
+    return srp2_sertifikat_berlaku($row) ? ['berlaku', 'Berlaku'] : ['kedaluwarsa', 'Tidak berlaku'];
 }
 
 function srp2_dokumen_persyaratan() {

@@ -996,9 +996,10 @@ class Umum extends MY_Controller {
 				$keadaan = 'belum';
 				$keadaan_label = 'Belum berlaku';
 			} elseif (empty($berakhir)) {
-				// Keputusan 23 Sep 2026 (UAT #12/#13): tanpa tanggal akhir = Tidak berlaku.
+				// Tanpa tanggal akhir: keputusan 5 Okt 2026 (UAT dinas) menggantikan 23 Sep, label netral
+				// "Masa berlaku belum dicatat" (sama dengan srp2_keadaan_sertifikat()), bukan "Tidak berlaku".
 				$keadaan = 'tak_tercatat';
-				$keadaan_label = 'Tidak berlaku';
+				$keadaan_label = 'Masa berlaku belum dicatat';
 			} elseif ($berakhir >= date('Y-m-d')) {
 				$keadaan = 'aktif';
 				$keadaan_label = 'Berlaku';
