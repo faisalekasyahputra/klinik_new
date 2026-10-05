@@ -1,5 +1,5 @@
 # 📚 Dokumentasi Klinik PKP
-**Terakhir Diperbarui:** 1 Juli 2026 (v3.0 Refactor)
+**Terakhir Diperbarui:** 5 Oktober 2026 (repo dirapikan; materi rapat dan dokumen tanpa rujukan diarsipkan di luar repo)
 
 Folder ini berisi seluruh dokumentasi teknis proyek Klinik PKP yang telah distruktur ulang.
 
@@ -76,10 +76,8 @@ Folder ini berisi seluruh dokumentasi teknis proyek Klinik PKP yang telah distru
 ---
 
 ## 🤝 Meetings (`meetings/`)
-Folder ini memuat log *meeting* dan catatan *progress update*, seperti:
-- `22_juni_2026/` (Transkrip rapat dan transisi ke Fase Pivot)
+| Dokumen | Deskripsi |
+|---------|-----------|
+| [ANALISA_PROGRAM_PPT_UN_HABITAT.md](./meetings/22_juni_2026/ANALISA_PROGRAM_PPT_UN_HABITAT.md) | Ekstraksi program dari rapat 22 Juni 2026; **sumber aturan Smart Filter** (dirujuk `Smart_filter.php` dan `uji_kelayakan_program.php`) |
 
----
-
-## 📦 Arsip (`archive/`)
-File lama dari fase riset awal (seperti *changelogs* dan dokumen `superpowers`) diarsipkan di sini untuk referensi historis.
+Transkrip, PDF, dan presentasi rapat tidak lagi disimpan di repo (repo publik); salinannya ada di folder arsip lokal pemilik proyek.

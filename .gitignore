@@ -102,3 +102,7 @@ assets/img/pengembang/unggahan/
 # PDF Bank Data yang diunggah admin (migrasi 063). Data, bukan kode: lahir di server tempat
 # diunggah, dan deploy hanya mempertahankan path yang cocok .gitignore.
 assets/dokumen/unggahan/
+
+# Arsip lokal (dikeluarkan dari repo 5 Okt 2026): materi rapat, presentasi, dan dokumen tanpa rujukan.
+/_arsip/
+/.agents/
