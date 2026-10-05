@@ -265,7 +265,9 @@ if (getenv('UJI_PANEL_SRP2')) {
             'Ganti berkas memperbarui dokumen yang sama tanpa duplikasi');
         tulis("UPDATE srp2_pengajuan SET status_verifikasi='Pending' WHERE id=?", [$regA]);
         $locked = http('a', 'akun/dokumen');
-        cek(strpos($locked['body'], 'type="file"') === FALSE && strpos($locked['body'], 'Lihat Berkas') !== FALSE,
+        // Elemen <input type="file">, bukan teks: CSS cangkang admin memuat selektor input[type="file"] sehingga
+        // pencarian teks polos selalu merah walau halamannya benar (ditemukan 5 Okt 2026).
+        cek(preg_match('#<input[^>]*type="file"#', $locked['body']) === 0 && strpos($locked['body'], 'Lihat Berkas') !== FALSE,
             'Pending tetap dapat dilihat tetapi tidak menawarkan perubahan');
         $upload('tidak-boleh.png');
         cek(nilai('SELECT nama_asli FROM srp2_dokumen WHERE pengajuan_id=?', [$regA]) === 'panel-ganti.png',
