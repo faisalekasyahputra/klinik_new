@@ -217,6 +217,16 @@
     background: rgba(214, 251, 0, .1);
     box-shadow: 0 0 0 1px rgba(214, 251, 0, .28), 0 10px 30px rgba(214, 251, 0, .14);
 }
+.kpkp-dialog--info {
+    background:
+        radial-gradient(120% 70% at 50% 0%, rgba(60, 196, 212, .14) 0%, rgba(60, 196, 212, 0) 60%),
+        linear-gradient(180deg, #12303a 0%, #0b1f25 100%);
+}
+.kpkp-dialog--info .kpkp-dialog__icon {
+    color: #5fd7e4;
+    background: rgba(60, 196, 212, .12);
+    box-shadow: 0 0 0 1px rgba(60, 196, 212, .32), 0 10px 30px rgba(60, 196, 212, .16);
+}
 .kpkp-dialog--bahaya .kpkp-dialog__btn--utama {
     color: #ffffff;
     background: #e5484d;

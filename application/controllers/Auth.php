@@ -1135,7 +1135,7 @@ class Auth extends MY_Controller {
     private function _redirect_after_login() {
         $user_id = $this->get_user_id();
         if ($this->session->userdata('password_change_required')) {
-            $this->session->set_flashdata('warning', $this->auth_model->pesan_ganti_sandi($this->auth_model->find_by_id($user_id)));
+            $this->auth_model->flash_ganti_sandi($this->auth_model->find_by_id($user_id));
             redirect('akun/profil?password_expired=1');
             return;
         }

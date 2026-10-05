@@ -19,6 +19,12 @@ foreach (['success', 'error', 'warning', 'info'] as $type) {
         if ($type === 'error' && $kpkp_aksi) { $item['aksi'] = $kpkp_aksi; }
         // Judul singkat yang menyebut masalahnya (Auth::_galat), menggantikan "Terjadi kesalahan".
         $kpkp_judul = $type === 'error' ? $this->session->flashdata('galat_judul') : NULL;
+        // Pemberitahuan yang meminta tindakan (mis. wajib membuat sandi): judul sendiri dan tampil sebagai
+        // dialog di tengah (Auth_model::flash_ganti_sandi, 5 Okt 2026).
+        if ($type === 'warning') {
+            $kpkp_judul = $this->session->flashdata('pemberitahuan_judul');
+            if ($this->session->flashdata('pemberitahuan_dialog')) { $item['dialog'] = TRUE; }
+        }
         if (is_string($kpkp_judul) && trim($kpkp_judul) !== '') { $item['title'] = strip_tags($kpkp_judul); }
         $kpkp_notifications[] = $item;
     }
