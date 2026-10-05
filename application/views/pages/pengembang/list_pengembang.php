@@ -114,7 +114,7 @@
                                     </span>
                                     <div class="mt-1.5 text-[10px] text-zinc-500 whitespace-nowrap">
                                         <?= $tanggal_terbit || $tanggal_akhir
-                                            ? html_escape(($tanggal_terbit ?: 'Belum tercatat') . ' – ' . ($tanggal_akhir ?: 'Belum tercatat'))
+                                            ? html_escape(($tanggal_terbit ?: 'Belum tercatat') . ' - ' . ($tanggal_akhir ?: 'Belum tercatat'))
                                             : 'Tanggal belum tercatat' ?>
                                     </div>
                                 </td>
