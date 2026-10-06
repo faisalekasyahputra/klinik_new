@@ -25,6 +25,9 @@ foreach ($kartu_domain as $k) {
         $tindakan[] = ['n' => $k['utama']['n'], 'label' => $k['label'], 'ket' => strtolower($k['utama']['label']), 'url' => $k['utama']['url'], 'ikon' => $k['icon'], 'nada' => 'utama'];
     }
 }
+if (($permintaan_nik ?? 0) > 0) {
+    $tindakan[] = ['n' => (int) $permintaan_nik, 'label' => 'Permintaan NIK', 'ket' => 'reset atau klaim NIK dari warga menunggu keputusan', 'url' => 'Admin_Users', 'ikon' => 'ph-identification-card', 'nada' => 'utama'];
+}
 if ($antrean_tanpa_wilayah > 0) {
     $tindakan[] = ['n' => $antrean_tanpa_wilayah, 'label' => 'Antrean tanpa wilayah', 'ket' => 'antrean menunggu belum memiliki wilayah, tidak terlihat admin kab/kota', 'url' => 'Admin?status=pending&tanpa_wilayah=1', 'ikon' => 'ph-map-pin-area', 'nada' => 'waspada'];
 }

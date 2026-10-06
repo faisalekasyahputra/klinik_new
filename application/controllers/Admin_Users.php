@@ -542,11 +542,36 @@ class Admin_Users extends Admin_Controller {
                 : 'Permintaan Anda belum dapat disetujui. Lihat catatan petugas di Profil Saya.',
                 'akun/profil', 'reset-nik');
         } catch (\Throwable $e) { /* pemberitahuan opsional; keputusan sudah tersimpan */ }
+        $this->surel_keputusan_nik((int) $minta['pemohon_id'], 'reset', $setuju, $catatan);
 
         $this->session->set_flashdata('success', $setuju
             ? 'Permintaan disetujui. NIK akun ' . ($pemohon->email ?? '') . ' dibuka; warga dapat memasukkan NIK kembali.'
             : 'Permintaan reset NIK ditolak.');
         redirect('Admin_Users');
+    }
+
+    /**
+     * Email hasil keputusan permintaan NIK ke pemohon (6 Okt 2026): Web Push hanya sampai bila warga
+     * mengizinkan notifikasi, sedangkan semua akun punya email. Tanpa NIK di isi email. Gagal kirim
+     * hanya dicatat di log (Surel_pemberitahuan); keputusan sudah tersimpan.
+     */
+    private function surel_keputusan_nik($user_id, $jenis, $setuju, $catatan) {
+        $email = (string) ($this->db->select('email')->get_where('usr_akun', ['id' => (int) $user_id])->row('email') ?? '');
+        if ($email === '') { return; }
+        $reset = $jenis === 'reset';
+        $this->load->library('Surel_pemberitahuan');
+        $this->surel_pemberitahuan->kirim($email,
+            $setuju ? ($reset ? 'Permintaan reset NIK Anda disetujui' : 'Permintaan NIK Anda disetujui')
+                    : ($reset ? 'Permintaan reset NIK Anda belum dapat disetujui' : 'Permintaan NIK Anda belum dapat disetujui'),
+            $setuju ? 'Permintaan Anda disetujui' : 'Permintaan Anda belum dapat disetujui',
+            $setuju
+                ? ($reset ? ['Petugas Dinas Perakim sudah membuka NIK di akun Klinik PKP Anda.', 'Masuk ke Klinik PKP, buka Profil Saya, lalu masukkan NIK yang benar sesuai KTP.']
+                          : ['Petugas Dinas Perakim menyetujui permintaan Anda untuk memakai NIK tersebut.', 'Masuk ke Klinik PKP, buka menu Pendataan, lalu lakukan Cek NIK sekali lagi.'])
+                : ($reset ? ['Petugas Dinas Perakim belum dapat membuka NIK di akun Klinik PKP Anda.', 'Anda dapat membaca catatan petugas di Profil Saya dan mengajukan permintaan baru bila perlu.']
+                          : ['Petugas Dinas Perakim belum dapat menyetujui permintaan Anda untuk memakai NIK tersebut.', 'Bila NIK itu memang milik Anda, sampaikan melalui menu Aduan di Klinik PKP.']),
+            (string) $catatan,
+            ['label' => $reset ? 'Buka Profil Saya' : ($setuju ? 'Buka Pendataan' : 'Buka Aduan'),
+             'rute' => $reset ? 'akun/profil' : ($setuju ? 'warga/pendataan' : 'Umum/aduan')]);
     }
 
     /**
@@ -620,6 +645,7 @@ class Admin_Users extends Admin_Controller {
                     'Umum/aduan', 'nik-dilepas');
             }
         } catch (Throwable $e) { log_message('error', 'Admin_Users: notifikasi klaim NIK gagal: ' . $e->getMessage()); }
+        $this->surel_keputusan_nik($pemohon, 'klaim', $setuju, $alasan);
 
         $this->session->set_flashdata('success', ! $setuju ? 'Permintaan klaim NIK ditolak.'
             : (isset($rincian['nik_sudah_bebas']) ? 'Disetujui. NIK itu sudah tidak terikat ke akun lain; pemohon cukup mengulang Cek NIK.'

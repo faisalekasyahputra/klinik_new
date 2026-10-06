@@ -370,6 +370,10 @@ try {
         $db->query("DELETE FROM sys_jejak_audit WHERE id > $audit_awal AND aksi='nik_dipindahkan' AND objek_id IN ('" . implode("','", $akun_uji) . "')");
         $klaim_uji = implode(',', array_map('intval', array_column($db->query("SELECT id FROM sys_jejak_audit WHERE id > $audit_awal AND aksi='klaim_nik_diajukan' AND pelaku_id IN ($daftar)")->fetch_all(MYSQLI_ASSOC), 'id'))) ?: '0';
         $db->query("DELETE FROM sys_jejak_audit WHERE id > $audit_awal AND ((aksi IN ('klaim_nik_disetujui','klaim_nik_ditolak') AND objek_tipe='klaim_nik' AND objek_id IN ($klaim_uji)) OR id IN ($klaim_uji))");
+        // Email keputusan klaim yang ditulis Surel_pemberitahuan dalam mode uji (6 Okt 2026).
+        foreach ($db->query("SELECT email FROM usr_akun WHERE id IN ($daftar)")->fetch_all(MYSQLI_ASSOC) as $r) {
+            @unlink(APP_ROOT . '/application/cache/surel_uji/' . sha1(strtolower($r['email'])) . '.json');
+        }
         foreach (['sf_data_simperum', 'sf_penilaian_perumahan', 'sf_profil_warga'] as $t) { $db->query("DELETE FROM $t WHERE user_id IN ($daftar)"); }
         $db->query("DELETE FROM usr_akun WHERE id IN ($daftar)");
     }
