@@ -95,7 +95,8 @@ $KUNCI = 'simulasi_kpr';
 $AGEN_SANDI = 'AgenUji!2026'; // sandi mainan seed_agen_peran.php, hanya ada di DB lokal
 $baris_asli = satu('SELECT * FROM seo_halaman WHERE kunci=?', [$KUNCI]);
 $gambar_uji = sys_get_temp_dir() . '/uji_seo_' . bin2hex(random_bytes(3)) . '.jpg';
-$im = imagecreatetruecolor(800, 600); imagefill($im, 0, 0, imagecolorallocate($im, 20, 120, 140)); imagejpeg($im, $gambar_uji, 80); imagedestroy($im);
+// Salinan aset JPG 1920x1072, bukan dibuat dengan GD: PHP CLI runner suite bisa tanpa ekstensi GD.
+copy(APP_ROOT . '/assets/img/hero/hero-perumahan-subsidi-opt.jpeg', $gambar_uji);
 $berkas_baru = NULL;
 
 try {
