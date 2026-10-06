@@ -461,6 +461,25 @@ $config['dashboard_modules'] = [
         // baru dan diberi ikon tautan keluar, supaya tidak terasa "keluar" dari admin.
         'tab_baru' => TRUE,
     ],
+    // Halaman sendiri (bukan bagian Akses Staf, yang khusus akun staf). Badge = permintaan reset NIK dan
+    // klaim NIK dari warga yang belum diputuskan (6 Okt 2026). Keduanya disimpan di jejak audit (baris
+    // *_diajukan); "menunggu" berarti belum ada baris keputusan berobjek permintaan itu, jadi pending_where berupa klausa SQL (lihat MY_Controller::query_pending_modul).
+    'permintaan_nik' => [
+        'label' => 'Permintaan NIK Warga', 'icon' => 'ph-identification-card',
+        'url'   => 'Admin_Users/permintaan_nik', 'group' => 'Tindak Lanjut', 'order' => 50,
+        'roles' => ['admin'], 'scope' => null,
+        'aksi'  => ['Admin_Users/putuskan_reset_nik', 'Admin_Users/putuskan_klaim_nik'],
+        'table' => 'sys_jejak_audit',
+        'pending_where' => "aksi IN ('reset_nik_diajukan', 'klaim_nik_diajukan') AND NOT EXISTS (SELECT 1 FROM sys_jejak_audit d
+            WHERE d.objek_id = CAST(sys_jejak_audit.id AS CHAR) AND ((d.objek_tipe = 'reset_nik' AND d.aksi IN
+            ('reset_nik_permintaan_disetujui', 'reset_nik_permintaan_ditolak')) OR (d.objek_tipe = 'klaim_nik' AND d.aksi IN
+            ('klaim_nik_disetujui', 'klaim_nik_ditolak'))))",
+        'badge' => TRUE, 'ringkas' => 'NIK',
+        'tindakan' => [
+            'satuan' => 'permintaan NIK warga menunggu keputusan', 'keterangan' => 'aksi',
+            'cara' => 'Buka Permintaan NIK Warga, lalu tekan Setujui atau Tolak pada permintaannya. Warga diberi tahu lewat email.',
+        ],
+    ],
     // Meja KEDUA alur surat magang. Terpisah dari 'kemitraan' di atas karena
     // pemiliknya berbeda: yang itu sekretariat (superadmin), yang ini bidang.
     // 'pending_where' memakai status 'Ditinjau Bidang' - vocabulary status
@@ -526,23 +545,10 @@ $config['dashboard_modules'] = [
     // baru akan berhenti bisa dibaca. Deteksi active-state di registry ini
     // memakai prefix "url/", jadi Admin_Kemitraan/slot tetap menyalakan menu
     // KKN/Magang tanpa entri tambahan.
-    // Badge = permintaan reset NIK dan klaim NIK dari warga yang belum diputuskan (6 Okt 2026). Keduanya
-    // disimpan di jejak audit (baris *_diajukan); "menunggu" berarti belum ada baris keputusan berobjek
-    // permintaan itu, jadi pending_where berupa klausa SQL (lihat MY_Controller::query_pending_modul).
     'users' => [
         'label' => 'Akses Staf', 'icon' => 'ph-users',
         'url'   => 'Admin_Users', 'group' => 'Manajemen', 'order' => 10,
         'roles' => ['admin'], 'scope' => null,
-        'table' => 'sys_jejak_audit',
-        'pending_where' => "aksi IN ('reset_nik_diajukan', 'klaim_nik_diajukan') AND NOT EXISTS (SELECT 1 FROM sys_jejak_audit d
-            WHERE d.objek_id = CAST(sys_jejak_audit.id AS CHAR) AND ((d.objek_tipe = 'reset_nik' AND d.aksi IN
-            ('reset_nik_permintaan_disetujui', 'reset_nik_permintaan_ditolak')) OR (d.objek_tipe = 'klaim_nik' AND d.aksi IN
-            ('klaim_nik_disetujui', 'klaim_nik_ditolak'))))",
-        'badge' => TRUE, 'ringkas' => 'NIK',
-        'tindakan' => [
-            'satuan' => 'permintaan NIK warga menunggu keputusan', 'keterangan' => 'aksi',
-            'cara' => 'Buka Akses Staf, bagian Permintaan Reset NIK atau Permintaan Klaim NIK, lalu tekan Setujui atau Tolak. Warga diberi tahu lewat email.',
-        ],
     ],
     // Read-only murni: tanpa 'table'/'pending_where' karena jejak audit tidak
     // punya keadaan "belum diproses" - badge di sini akan mengajari orang bahwa

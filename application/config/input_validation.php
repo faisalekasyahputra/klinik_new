@@ -171,6 +171,7 @@ $config['input_allowed_fields'] = [
     'nama_sub_kegiatan',
     'name',
     'next',
+    'isi', // GET akun/profil?isi=nik dari tautan email reset NIK: hanya dibandingkan persis dengan 'nik'
     'nib',
     'nik',
     'nik_identitas',

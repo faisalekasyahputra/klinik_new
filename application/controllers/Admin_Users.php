@@ -54,6 +54,20 @@ class Admin_Users extends Admin_Controller {
                 $data['draft_dilepas'][(int) $row['user_id']] = ['n' => (int) $row['n'], 'hapus' => date('Y-m-d', strtotime($row['sejak'] . " +$hari days"))];
             }
         }
+        $data['table'] = $data['pager'] = $table;
+        $data['available_roles'] = $this->config->item('available_roles');
+        $data['kabupaten_list'] = $this->db->order_by('nama', 'ASC')->get('kabupaten')->result();
+        $data['bidang_list'] = $this->db->order_by('nama', 'ASC')->get('bidang')->result();
+        $this->render_admin('admin/users/index', $data);
+    }
+
+    /**
+     * Permintaan NIK dari warga: klaim NIK dan reset NIK (6 Okt 2026). Dipisah dari Akses Staf supaya
+     * admin tidak mencarinya di layar pengelolaan akun staf; keputusan tetap lewat putuskan_*.
+     */
+    public function permintaan_nik()
+    {
+        $data['title'] = 'Permintaan NIK Warga'; // = label sidebar
         // Permintaan klaim NIK yang menunggu keputusan (Housing_assessment_model::ajukan_klaim_nik).
         $this->load->model('Housing_assessment_model');
         $data['klaim_nik'] = $this->Housing_assessment_model->klaim_nik_tertunda();
@@ -67,11 +81,8 @@ class Admin_Users extends Admin_Controller {
         $data['reset_nik_terkirim'] = $ids_minta ? array_column($this->db->select('user_id, COUNT(*) n', FALSE)
             ->where_in('user_id', $ids_minta)->where('submitted_at IS NOT NULL', NULL, FALSE)->group_by('user_id')
             ->get('sf_penilaian_perumahan')->result_array(), 'n', 'user_id') : [];
-        $data['table'] = $data['pager'] = $table;
         $data['available_roles'] = $this->config->item('available_roles');
-        $data['kabupaten_list'] = $this->db->order_by('nama', 'ASC')->get('kabupaten')->result();
-        $data['bidang_list'] = $this->db->order_by('nama', 'ASC')->get('bidang')->result();
-        $this->render_admin('admin/users/index', $data);
+        $this->render_admin('admin/users/permintaan_nik', $data);
     }
 
     /**
@@ -514,7 +525,7 @@ class Admin_Users extends Admin_Controller {
         $minta = $this->Housing_assessment_model->reset_nik_tertunda((int) $this->input->post('id'));
         if ( ! $minta) {
             $this->session->set_flashdata('error', 'Permintaan reset NIK tidak ditemukan atau sudah diputuskan.');
-            redirect('Admin_Users'); return;
+            redirect('Admin_Users/permintaan_nik'); return;
         }
         $setuju = $this->input->post('keputusan', TRUE) === 'setuju';
         $catatan = mb_substr(trim((string) $this->input->post('alasan', TRUE)), 0, 500);
@@ -523,12 +534,12 @@ class Admin_Users extends Admin_Controller {
         if ($setuju) {
             if ( ! $pemohon) {
                 $this->session->set_flashdata('error', 'Akun pemohon sudah tidak ada. Tolak permintaan ini.');
-                redirect('Admin_Users'); return;
+                redirect('Admin_Users/permintaan_nik'); return;
             }
             $galat = $this->lepas_nik($pemohon, $minta['alasan'], 'permintaan #' . (int) $minta['id']);
             if ($galat !== NULL) {
                 $this->session->set_flashdata('error', 'Belum disetujui: ' . $galat . ' Tolak permintaan ini dengan catatan untuk warga.');
-                redirect('Admin_Users'); return;
+                redirect('Admin_Users/permintaan_nik'); return;
             }
         }
         $this->catat_audit($setuju ? 'reset_nik_permintaan_disetujui' : 'reset_nik_permintaan_ditolak',
@@ -547,7 +558,7 @@ class Admin_Users extends Admin_Controller {
         $this->session->set_flashdata('success', $setuju
             ? 'Permintaan disetujui. NIK akun ' . ($pemohon->email ?? '') . ' dibuka; warga dapat memasukkan NIK kembali.'
             : 'Permintaan reset NIK ditolak.');
-        redirect('Admin_Users');
+        redirect('Admin_Users/permintaan_nik');
     }
 
     /**
@@ -571,7 +582,9 @@ class Admin_Users extends Admin_Controller {
                           : ['Petugas Dinas Perakim belum dapat menyetujui permintaan Anda untuk memakai NIK tersebut.', 'Bila NIK itu memang milik Anda, sampaikan melalui menu Aduan di Klinik PKP.']),
             (string) $catatan,
             ['label' => $reset ? 'Buka Profil Saya' : ($setuju ? 'Buka Pendataan' : 'Buka Aduan'),
-             'rute' => $reset ? 'akun/profil' : ($setuju ? 'warga/pendataan' : 'Umum/aduan')]);
+             // Lewat login dengan ?next=: sesi yang masih terbuka langsung diantar ke tujuan, yang sudah keluar
+             // diminta masuk dulu lalu diantar ke sana (Auth::login, intended_url).
+             'rute' => 'Auth/login?next=' . rawurlencode($reset ? ($setuju ? 'akun/profil?isi=nik' : 'akun/profil') : ($setuju ? 'warga/pendataan' : 'Umum/aduan'))]);
     }
 
     /**
@@ -588,7 +601,7 @@ class Admin_Users extends Admin_Controller {
         $klaim = $this->Housing_assessment_model->klaim_nik_tertunda((int) $this->input->post('id'));
         if ( ! $klaim) {
             $this->session->set_flashdata('error', 'Permintaan klaim NIK tidak ditemukan atau sudah diputuskan.');
-            redirect('Admin_Users'); return;
+            redirect('Admin_Users/permintaan_nik'); return;
         }
         $setuju = $this->input->post('keputusan', TRUE) === 'setuju';
         $pemohon = (int) $klaim['pemohon_id'];
@@ -604,7 +617,7 @@ class Admin_Users extends Admin_Controller {
             if ( ! $akun || $lain($akun['nik_lookup_hash'] ?? NULL) || $lain($profil['nik_lookup_hash'] ?? NULL)) {
                 $this->db->trans_rollback();
                 $this->session->set_flashdata('error', 'Belum disetujui: akun pemohon sudah tidak ada atau sudah terikat ke NIK lain. Tolak permintaan ini.');
-                redirect('Admin_Users'); return;
+                redirect('Admin_Users/permintaan_nik'); return;
             }
             $nik = $this->Housing_assessment_model->nik_pemegang_lain($klaim['nik_lookup_hash'], $pemohon);
             if ($nik === NULL) {
@@ -614,7 +627,7 @@ class Admin_Users extends Admin_Controller {
                 if (empty($pindah['success'])) {
                     $this->db->trans_rollback();
                     $this->session->set_flashdata('error', 'Belum disetujui: ' . $pindah['message']);
-                    redirect('Admin_Users'); return;
+                    redirect('Admin_Users/permintaan_nik'); return;
                 }
                 $dari = $pindah['dari'];
                 foreach ($dari as $akun_lama) {
@@ -629,7 +642,7 @@ class Admin_Users extends Admin_Controller {
         if ( ! $this->db->trans_status()) {
             $this->db->trans_rollback();
             $this->session->set_flashdata('error', 'Keputusan belum tersimpan. Coba lagi.');
-            redirect('Admin_Users'); return;
+            redirect('Admin_Users/permintaan_nik'); return;
         }
         $this->db->trans_commit();
 
@@ -650,7 +663,7 @@ class Admin_Users extends Admin_Controller {
         $this->session->set_flashdata('success', ! $setuju ? 'Permintaan klaim NIK ditolak.'
             : (isset($rincian['nik_sudah_bebas']) ? 'Disetujui. NIK itu sudah tidak terikat ke akun lain; pemohon cukup mengulang Cek NIK.'
                 : 'Disetujui. NIK dipindahkan ke akun pemohon; pemohon diminta mengulang Cek NIK.'));
-        redirect('Admin_Users');
+        redirect('Admin_Users/permintaan_nik');
     }
 
     public function reset_sandi()

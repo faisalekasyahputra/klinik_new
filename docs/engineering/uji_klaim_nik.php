@@ -136,7 +136,7 @@ function lintas_tercatat($nik) {
 /** Super Admin memutuskan permintaan klaim terbaru milik $pemohon lewat layar Pengguna. */
 function putuskan_klaim($j_adm, $pemohon, $keputusan) {
     $id = (int) (satu("SELECT id FROM sys_jejak_audit WHERE aksi='klaim_nik_diajukan' AND pelaku_id=? ORDER BY id DESC LIMIT 1", [$pemohon])['id'] ?? 0);
-    minta($j_adm, 'Admin_Users');
+    minta($j_adm, 'Admin_Users/permintaan_nik');
     return [$id, minta($j_adm, 'Admin_Users/putuskan_klaim_nik', ['id' => $id, 'keputusan' => $keputusan])];
 }
 function gagal_tercatat($dimensi, $nilai) {
@@ -232,7 +232,7 @@ try {
         && $akun($A)['nik_lookup_hash'] === $h($NIK1) && $profil($A) !== NULL, 'B lolos verifikasi: NIK TIDAK berpindah otomatis, B diberi tahu permintaannya ditinjau');
     ember_ip('login');
     $j_adm = masuk('agen_admin@agen.test', $AGEN_SANDI);
-    cek(strpos(minta($j_adm, 'Admin_Users')['badan'], $e_b) !== FALSE, 'Layar Pengguna menampilkan permintaan klaim B');
+    cek(strpos(minta($j_adm, 'Admin_Users/permintaan_nik')['badan'], $e_b) !== FALSE, 'Layar Pengguna menampilkan permintaan klaim B');
     [$klaim_b, $r] = putuskan_klaim($j_adm, $B, 'setuju');
     cek($klaim_b > 0 && strpos($r['badan'], 'Disetujui') !== FALSE, 'Super Admin menyetujui permintaan klaim B');
     $r = $lookup($j_b, $NIK1, $LAHIR1);

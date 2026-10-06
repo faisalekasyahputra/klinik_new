@@ -109,8 +109,8 @@ class Admin_Dashboard extends Admin_Controller {
             ->where('status_antrean', 'pending')
             ->count_all_results('sf_antrean_pengajuan');
         // Permintaan reset/klaim NIK dari warga yang menunggu (6 Okt 2026): hitungan yang SAMA dengan badge
-        // Akses Staf dan Pusat Pemberitahuan (count_pending_modul atas entri 'users').
-        $data['permintaan_nik'] = $tampil('users') ? $this->count_pending_modul($modul_ada['users']) : 0;
+        // Permintaan NIK Warga dan Pusat Pemberitahuan (count_pending_modul atas entri 'permintaan_nik').
+        $data['permintaan_nik'] = $tampil('permintaan_nik') ? $this->count_pending_modul($modul_ada['permintaan_nik']) : 0;
 
         $data['aktivitas'] = $this->aktivitas_terkini();
 
