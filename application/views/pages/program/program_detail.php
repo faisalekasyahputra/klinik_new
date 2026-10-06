@@ -4,7 +4,6 @@
 $e = function ($v) { return html_escape((string) $v); };
 $gaya_kartu = 'background:var(--portal-bg-card);border:1px solid var(--portal-border);box-shadow:0 8px 24px rgba(0,80,95,.06)';
 $gaya_tombol = 'background:var(--portal-brand);color:var(--portal-btn-text);border:1px solid var(--portal-brand)';
-$maks = (float) $p['batas_penghasilan_maks'];
 ?>
 <section class="w-full px-4 py-8 font-outfit sm:px-6 lg:px-8" style="color:var(--portal-text)" data-program-detail="<?= $e($p['kode_program']) ?>">
   <div class="mx-auto max-w-5xl">
@@ -24,16 +23,10 @@ $maks = (float) $p['batas_penghasilan_maks'];
         <?php endif; ?>
         <p class="mt-4 max-w-3xl text-sm leading-relaxed"><?= $e($p['deskripsi_singkat']) ?></p>
 
-        <dl class="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div class="rounded-xl p-4" style="background:var(--portal-bg);border:1px solid var(--portal-border)">
-            <dt class="text-[10px] font-black uppercase tracking-wider" style="color:var(--portal-text-muted)">Syarat utama</dt>
-            <dd class="mt-1 text-sm font-semibold"><?= $e($p['syarat_utama'] ?: 'Dinilai dari data pendataan rumah dan penghasilan Anda.') ?></dd>
-          </div>
-          <div class="rounded-xl p-4" style="background:var(--portal-bg);border:1px solid var(--portal-border)">
-            <dt class="text-[10px] font-black uppercase tracking-wider" style="color:var(--portal-text-muted)">Batas penghasilan</dt>
-            <dd class="mt-1 text-sm font-semibold"><?= $maks > 0 ? 'Paling banyak Rp ' . number_format($maks, 0, ',', '.') . ' per bulan' : 'Tidak dibatasi' ?></dd>
-          </div>
-        </dl>
+        <div class="mt-5 rounded-xl p-4" style="background:var(--portal-bg);border:1px solid var(--portal-border)">
+          <p class="text-[10px] font-black uppercase tracking-wider" style="color:var(--portal-text-muted)">Syarat utama</p>
+          <p class="mt-1 text-sm font-semibold"><?= $e($p['syarat_utama'] ?: 'Dinilai dari data pendataan rumah dan penghasilan Anda.') ?></p>
+        </div>
 
         <div class="mt-6 flex flex-wrap items-center gap-3">
           <a href="<?= base_url('warga/pendataan') ?>" class="rounded-xl px-5 py-2.5 text-xs font-bold" style="<?= $gaya_tombol ?>">Cek kelayakan saya</a>

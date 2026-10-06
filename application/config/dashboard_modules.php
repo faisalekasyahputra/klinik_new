@@ -487,6 +487,13 @@ $config['dashboard_modules'] = [
     // Butir F1: daftar posisi/lowongan magang, diisi dinas sendiri. Superadmin
     // saja - posisi berlaku lintas bidang, jadi memberi tiap admin bidang hak
     // menyunting daftar bersama membuat bidang saling menimpa.
+    // SEO Halaman (6 Okt 2026): judul, deskripsi, gambar pratinjau, dan status indeks halaman portal.
+    // Superadmin saja; berlaku untuk seluruh situs publik, sama alasannya dengan Posisi Magang.
+    'seo_halaman' => [
+        'label' => 'SEO Halaman', 'icon' => 'ph-magnifying-glass',
+        'url'   => 'Admin_Seo', 'group' => 'Master', 'order' => 70,
+        'roles' => ['admin'], 'scope' => null,
+    ],
     'magang_posisi' => [
         'label' => 'Posisi Magang', 'icon' => 'ph-briefcase',
         'url'   => 'Admin_Magang_Posisi', 'group' => 'Master', 'order' => 40,

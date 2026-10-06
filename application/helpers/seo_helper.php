@@ -70,9 +70,41 @@ if ( ! function_exists('seo_potong')) {
     }
 }
 
+if ( ! function_exists('seo_timpaan')) {
+    /**
+     * Timpaan Super Admin (tabel seo_halaman, menu SEO Halaman) untuk halaman ini, atau NULL. Seluruh tabel
+     * dibaca sekali per permintaan (puluhan baris). Tabel belum ada (migrasi 075 belum jalan) = tanpa timpaan.
+     */
+    function seo_timpaan() {
+        static $semua = NULL;
+        if ($semua === NULL) {
+            $semua = [];
+            $CI =& get_instance();
+            if ($CI->db->table_exists('seo_halaman')) {
+                foreach ($CI->db->get('seo_halaman')->result_array() as $r) { $semua[strtolower((string) $r['kunci'])] = $r; }
+            }
+        }
+        $kunci = seo_halaman()[0];
+        return $semua[$kunci !== NULL ? strtolower($kunci) : seo_uri()] ?? NULL;
+    }
+}
+
+if ( ! function_exists('seo_terapkan_timpaan')) {
+    /** $seo dari controller ditimpa isian admin yang tidak kosong; timpaan menang atas data dan config. */
+    function seo_terapkan_timpaan(array $seo) {
+        $t = seo_timpaan();
+        if ( ! $t) { return $seo; }
+        foreach (['judul', 'deskripsi'] as $k) { if ((string) $t[$k] !== '') { $seo[$k] = $t[$k]; } }
+        if ((string) $t['gambar'] !== '') { $seo['gambar_timpaan'] = $t['gambar']; }
+        if ($t['noindex'] !== NULL) { $seo['noindex'] = (bool) $t['noindex']; $seo['noindex_paksa'] = TRUE; }
+        return $seo;
+    }
+}
+
 if ( ! function_exists('seo_judul_penuh')) {
     /** Judul untuk <title>; dipakai juga header X-Judul-Halaman pada respons partial (MY_Controller::render). */
     function seo_judul_penuh(array $seo = []) {
+        $seo = seo_terapkan_timpaan($seo);
         $cfg = seo_cfg();
         $uri = seo_uri();
         $judul = trim((string) ($seo['judul'] ?? seo_halaman()[1]['judul'] ?? ''));
@@ -82,6 +114,7 @@ if ( ! function_exists('seo_judul_penuh')) {
 
 if ( ! function_exists('seo_meta')) {
     function seo_meta(array $seo = []) {
+        $seo = seo_terapkan_timpaan($seo);
         $cfg = seo_cfg();
         $uri = seo_uri();
         [$kunci_hal, $hal] = seo_halaman();
@@ -89,10 +122,11 @@ if ( ! function_exists('seo_meta')) {
 
         $judul = trim((string) ($seo['judul'] ?? $hal['judul'] ?? ''));
         $deskripsi = seo_potong($seo['deskripsi'] ?? $hal['deskripsi'] ?? $cfg['deskripsi']);
-        // Kartu 1200x630 buatan docs/engineering/buat_kartu_og.php menang bila ada; lalu gambar dari data
-        // (foto perumahan, desain); lalu og-cover bawaan.
+        // Urutan gambar: unggahan admin (sudah 1200x630), kartu buatan docs/engineering/buat_kartu_og.php,
+        // gambar dari data (foto perumahan, desain), lalu og-cover bawaan.
         $slug = $kunci_hal !== NULL ? strtolower(str_replace('/', '-', $kunci_hal)) : str_replace('/', '-', $uri);
         $kartu = 'assets/img/og/' . ($slug === '' ? 'beranda' : $slug) . '.jpg';
+        if ( ! empty($seo['gambar_timpaan'])) { $kartu = $seo['gambar_timpaan']; }
         $ada_kartu = is_file(FCPATH . $kartu);
         $kustom = ! $ada_kartu && ! empty($seo['gambar']);
         $gambar = seo_url_mutlak($ada_kartu ? $kartu : ($kustom ? $seo['gambar'] : $cfg['gambar']));
@@ -100,7 +134,7 @@ if ( ! function_exists('seo_meta')) {
         // Halaman berkueri (?page=, ?q=) menunjuk ke versi tanpa kueri supaya tidak dihitung halaman kembar.
         // Huruf rute dari config bila terdaftar (URL di Linux peka huruf: /cek_rtlh 404, /Cek_Rtlh benar).
         $kanonik = base_url($kunci_hal ?? trim((string) get_instance()->uri->uri_string(), '/'));
-        $noindex = ! empty($seo['noindex']) || seo_noindex($uri);
+        $noindex = ! empty($seo['noindex_paksa']) ? ! empty($seo['noindex']) : ( ! empty($seo['noindex']) || seo_noindex($uri));
         $e = function ($v) { return html_escape((string) $v); };
 
         $tag = [

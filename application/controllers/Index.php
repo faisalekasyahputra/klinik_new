@@ -636,27 +636,11 @@ class Index extends MY_Controller {
 		if ( ! preg_match('/^[a-z0-9-]{1,40}$/', (string) $slug)) { show_404(); return; }
 		$p = $this->Program_model->daftar_publik(str_replace('-', '_', $slug))[0] ?? NULL;
 		if ( ! $p) { show_404(); return; }
-		$nama = $p['nama_program'];
-		$maks = (float) $p['batas_penghasilan_maks'];
-		$gambar = $this->Program_model->gambar_tampil($p);
-		$deskripsi = $nama . ': ' . rtrim((string) $p['deskripsi_singkat'], '. ') . '.'
-			. ($p['syarat_utama'] ? ' ' . rtrim((string) $p['syarat_utama'], '. ') . '.' : '')
-			. ($maks > 0 ? ' Penghasilan maksimal Rp ' . number_format($maks, 0, ',', '.') . ' per bulan.' : '')
-			. ' Cek kelayakan di Klinik PKP.';
 		$this->render('pages/program/program_detail', [
-			'judul' => $nama, 'p' => $p, 'gambar' => $gambar,
+			'judul' => $p['nama_program'], 'p' => $p, 'gambar' => $this->Program_model->gambar_tampil($p),
 			'lain' => array_filter($this->Program_model->daftar_publik(), fn($x) => $x['kode_program'] !== $p['kode_program']),
 			'pm' => $this->Program_model,
-			'seo' => ['judul' => 'Syarat ' . $nama,
-				'deskripsi' => $deskripsi,
-				// AVIF belum dibaca WhatsApp/Facebook: kartu JPG di assets/img/og/ dipakai seo_meta() bila ada.
-				'gambar' => preg_match('/\.avif$/i', $gambar) ? '' : $gambar,
-				'gambar_alt' => 'Program ' . $nama,
-				'jsonld' => ['@type' => 'GovernmentService', 'name' => $nama, 'description' => (string) $p['deskripsi_singkat'],
-					'serviceType' => (string) ($p['nama_kategori'] ?? 'Program perumahan'),
-					'url' => base_url('program-pemerintah/' . $slug), 'areaServed' => ['@type' => 'State', 'name' => 'Jawa Tengah'],
-					'audience' => ['@type' => 'Audience', 'audienceType' => (string) ($p['lencana'] ?: 'Masyarakat berpenghasilan rendah')],
-					'provider' => ['@type' => 'GovernmentOrganization', 'name' => 'Dinas Perumahan Rakyat dan Kawasan Permukiman Provinsi Jawa Tengah']]],
+			'seo' => $this->Program_model->seo_bawaan($p),
 		]);
 	}
 

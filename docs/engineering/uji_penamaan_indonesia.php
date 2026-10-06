@@ -108,8 +108,13 @@ try {
     }
     $cek(! $salah, '181 kolom bernama baru, nol nama kolom lama' . ($salah ? ' - ' . implode(', ', array_slice($salah, 0, 8)) : ''));
     $tanpa = array_column($db->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_TYPE='BASE TABLE' AND TABLE_COMMENT=''")->fetch_all(), 0);
-    $cek(count($tabel) === 45 && ! $tanpa, count($tabel) . ' tabel, semuanya ber-COMMENT' . ($tanpa ? ' - tanpa: ' . implode(', ', $tanpa) : ''));
-    $cek(array_diff($tabel, array_keys($M::KOMENTAR)) === [] && array_diff(array_keys($M::KOMENTAR), $tabel) === [], 'Daftar KOMENTAR migrasi = daftar tabel di DB');
+    // Tabel yang lahir SESUDAH 072 (nama Indonesia sejak awal, COMMENT ditulis di migrasinya sendiri).
+    // Tambah di sini setiap kali migrasi baru membuat tabel; 45 tabel 072 tetap dijaga persis.
+    $sesudah_072 = ['seo_halaman' => '075'];
+    $cek(count($tabel) === 45 + count($sesudah_072) && ! $tanpa, count($tabel) . ' tabel, semuanya ber-COMMENT' . ($tanpa ? ' - tanpa: ' . implode(', ', $tanpa) : ''));
+    $tabel_072 = array_values(array_diff($tabel, array_keys($sesudah_072)));
+    $cek(array_diff($tabel_072, array_keys($M::KOMENTAR)) === [] && array_diff(array_keys($M::KOMENTAR), $tabel_072) === []
+        && ! array_diff(array_keys($sesudah_072), $tabel), 'Daftar KOMENTAR migrasi 072 = tabel di DB, ditambah tabel sesudah 072 yang terdaftar');
     $prefiks = TRUE;
     foreach ($M::KOMENTAR as $t => $k) {
         if (preg_match('/^(sf|rd|srp2|usr|sys|kkn|forum|chat|psu)_/', $t, $p)) { $prefiks = $prefiks && strpos($k, $p[1] . '_ = ') === 0; }
