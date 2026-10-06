@@ -1166,7 +1166,10 @@ class MY_Controller extends CI_Controller {
             $scope_value = $scope ? $this->session->userdata($scope) : NULL;
             if ($scope === NULL || $scope_value === NULL || $scope_value === '') { return NULL; }
         }
-        $this->db->from($modul['table'])->where($modul['pending_where']);
+        // String = klausa SQL mentah dari config (bukan masukan pengguna), untuk keadaan "menunggu" yang tidak
+        // muat [kolom => nilai], mis. permintaan NIK di jejak audit yang belum punya baris keputusan (6 Okt 2026).
+        $this->db->from($modul['table']);
+        is_string($modul['pending_where']) ? $this->db->where($modul['pending_where'], NULL, FALSE) : $this->db->where($modul['pending_where']);
         if ($scope_value !== NULL) { $this->db->where($modul['scope_column'], $scope_value); }
         return $this->db;
     }

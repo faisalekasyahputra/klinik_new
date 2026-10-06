@@ -9,10 +9,11 @@
  */
 $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Pekerjaan yang membentuk angka merah di menu samping, per modul. Angka setiap bagian sama dengan angka di menu; identitas pemohon hanya dibuka di halaman modulnya.']);
 
-$label_keterangan = ['bidang_kode' => 'Bidang', 'jenis' => 'Jenis'];
+$label_keterangan = ['bidang_kode' => 'Bidang', 'jenis' => 'Jenis', 'aksi' => 'Permintaan'];
 $isi_keterangan = static function ($kolom, $nilai) {
     if ($kolom === 'bidang_kode') { return $nilai === NULL || $nilai === '' ? 'Belum diteruskan' : ucwords(str_replace('_', ' ', $nilai)); }
     if ($kolom === 'jenis') { return $nilai === 'kkn' ? 'KKN' : ucfirst((string) $nilai); }
+    if ($kolom === 'aksi') { return ['reset_nik_diajukan' => 'Reset NIK', 'klaim_nik_diajukan' => 'Klaim NIK'][$nilai] ?? (string) $nilai; }
     return (string) $nilai;
 };
 $hari_ini = strtotime(date('Y-m-d'));

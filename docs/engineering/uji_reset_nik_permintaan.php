@@ -14,6 +14,8 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  *   3. Akun yang punya pengajuan terkirim tidak bisa direset lewat permintaan (arsip tetap utuh).
  *   4. Bug lama: Reset NIK langsung dulu hanya menghapus profil pendataan; akun yang NIK-nya hanya di
  *      usr_akun ditolak "belum terhubung dengan NIK" dan NIK di akun tetap terkunci.
+ *   5. Super Admin tahu ada permintaan (angka menu Akses Staf, Pusat Pemberitahuan, pita dasbor), dan
+ *      warga menerima email hasil keputusan (mode uji: application/cache/surel_uji/, alamat *.test).
  *
  * Akun uji (@reset-nik.test) dan baris jejak audit buatan suite dibuat lalu dihapus sendiri. NIK uji
  * berawalan 3399 (kabupaten fiktif), bukan NIK warga.
@@ -134,6 +136,9 @@ $hash_akun = fn($id) => satu('SELECT nik_lookup_hash h FROM usr_akun WHERE id=?'
 $jumlah_minta = fn($id) => (int) satu("SELECT COUNT(*) n FROM sys_jejak_audit WHERE aksi='reset_nik_diajukan' AND pelaku_id=?", [$id])['n'];
 
 $audit_awal = (int) satu('SELECT COALESCE(MAX(id), 0) n FROM sys_jejak_audit')['n'];
+/** Email pemberitahuan yang "terkirim" ke alamat uji (Surel_pemberitahuan menulisnya ke berkas di luar production). */
+$surel = function ($email) { $f = APP_ROOT . '/application/cache/surel_uji/' . sha1(strtolower($email)) . '.json'; return json_decode((string) @file_get_contents($f), TRUE) ?: []; };
+$berkas_surel = [];
 try {
     echo "== 1. Warga mengajukan reset NIK\n";
     [$A, $eA] = warga_ber_nik('a');
@@ -159,8 +164,19 @@ try {
     $r = minta($jAdm, 'Admin_Users');
     cek(strpos($r['badan'], 'data-reset-nik-minta') !== FALSE && strpos($r['badan'], $eA) !== FALSE
         && strpos($r['badan'], 'Salah ketik dua angka terakhir') !== FALSE, 'Akses Staf menampilkan permintaan beserta pemohon dan alasan');
+    cek(strpos($r['badan'], 'data-badge-modul="users"') !== FALSE, 'Menu Akses Staf memasang angka permintaan yang menunggu');
+    $r = minta($jAdm, 'pemberitahuan');
+    cek(strpos($r['badan'], 'data-modul-pemberitahuan="users"') !== FALSE && strpos($r['badan'], 'Reset NIK') !== FALSE,
+        'Pusat Pemberitahuan memuat permintaan reset NIK');
+    $r = minta($jAdm, 'Admin_Dashboard');
+    cek(strpos($r['badan'], 'Permintaan NIK') !== FALSE, 'Pita "Perlu tindakan" di dasbor menyebut Permintaan NIK');
     $r = minta($jAdm, 'Admin_Users/putuskan_reset_nik', ['id' => $id_minta, 'keputusan' => 'tolak', 'alasan' => 'Lampirkan foto KTP lewat menu Aduan dulu']);
     cek(ada_pesan($r['badan'], 'success', 'ditolak') && $hash_akun($A) !== NULL, 'Tolak: keputusan tersimpan, NIK tetap terkunci');
+    $berkas_surel[] = $eA;
+    $m = end($surel($eA)) ?: [];
+    cek(strpos($m['subjek'] ?? '', 'belum dapat disetujui') !== FALSE && ($m['catatan'] ?? '') === 'Lampirkan foto KTP lewat menu Aduan dulu'
+        && strpos($m['tautan'] ?? '', 'akun/profil') !== FALSE && ! preg_match('/\d{16}/', json_encode($m)),
+        'Email penolakan ke warga: subjek, catatan petugas, tautan Profil Saya, tanpa NIK');
     $r = minta($jA, 'akun/profil');
     cek(strpos($r['badan'], 'data-reset-nik-ditolak') !== FALSE && strpos($r['badan'], 'Lampirkan foto KTP') !== FALSE
         && strpos($r['badan'], 'data-ajukan-reset-nik') !== FALSE, 'Warga melihat catatan penolakan dan bisa mengajukan lagi');
@@ -171,6 +187,11 @@ try {
     $akunA = satu('SELECT nik, nik_lookup_hash FROM usr_akun WHERE id=?', [$A]);
     cek(ada_pesan($r['badan'], 'success', 'disetujui') && $akunA['nik'] === NULL && $akunA['nik_lookup_hash'] === NULL,
         'Setujui: NIK di akun (usr_akun.nik dan sidiknya) dikosongkan');
+    $daftar_surel = $surel($eA);
+    cek(count($daftar_surel) === 2 && strpos(end($daftar_surel)['subjek'] ?? '', 'disetujui') !== FALSE
+        && strpos(end($daftar_surel)['subjek'] ?? '', 'belum') === FALSE, 'Email persetujuan terkirim ke warga');
+    $r = minta($jAdm, 'Admin_Users');
+    cek(strpos($r['badan'], 'data-reset-nik-minta') === FALSE, 'Sesudah diputuskan, permintaan hilang dari Akses Staf');
     cek((int) satu("SELECT COUNT(*) n FROM sys_jejak_audit WHERE aksi='nik_warga_direset' AND objek_id=? AND id > ?", [$A, $audit_awal])['n'] === 1,
         'Jejak audit nik_warga_direset tercatat');
     $r = minta($jA, 'akun/profil');
@@ -214,6 +235,7 @@ try {
         if ($baris) { jalan('INSERT INTO sys_batas_laju (kunci, jendela_mulai_at, jumlah_gagal) VALUES (?,?,?)', array_values($baris)); }
     }
     foreach ($jar_dibuat as $f) { @unlink($f); }
+    foreach ($berkas_surel as $e) { @unlink(APP_ROOT . '/application/cache/surel_uji/' . sha1(strtolower($e)) . '.json'); }
     echo "Akun uji tersisa: " . (int) satu('SELECT COUNT(*) n FROM usr_akun WHERE email LIKE ?', [$TAG . '%'])['n'] . "\n";
 }
 echo "RINGKASAN: {$GLOBALS['total']} pemeriksaan, {$GLOBALS['gagal']} gagal\n";
