@@ -179,6 +179,8 @@ if ( ! function_exists('audit_kamus')) {
                 'reset_nik_diajukan'     => 'Reset NIK diminta warga, menunggu tinjauan',
                 'reset_nik_permintaan_disetujui' => 'Permintaan reset NIK disetujui',
                 'reset_nik_permintaan_ditolak'   => 'Permintaan reset NIK ditolak',
+                'sandi_lupa_diminta'     => 'Tautan reset kata sandi dikirim ke email',
+                'sandi_direset_mandiri'  => 'Kata sandi diganti lewat tautan email',
                 'superadmin_dibuat_cli'  => 'Super Admin dibuat lewat CLI',
                 'akun_demo_dinonaktifkan' => 'Akun demo dinonaktifkan (migrasi)',
             ],

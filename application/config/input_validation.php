@@ -171,6 +171,7 @@ $config['input_allowed_fields'] = [
     'nama_sub_kegiatan',
     'name',
     'next',
+    'token', // Auth::simpan_sandi: token reset kata sandi dari tautan email (dibandingkan lewat sidiknya)
     'isi', // GET akun/profil?isi=nik dari tautan email reset NIK: hanya dibandingkan persis dengan 'nik'
     'nib',
     'nik',

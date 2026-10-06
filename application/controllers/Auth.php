@@ -78,6 +78,10 @@ class Auth extends MY_Controller {
             $this->render_login_berpesan('success', 'Password Anda sudah diganti. Masuk dengan sandi baru; sandi itu wajib diganti saat masuk.', $data);
             return;
         }
+        if ($this->input->get('msg', TRUE) === 'sandi_baru') {
+            $this->render_login_berpesan('success', 'Kata sandi baru sudah tersimpan. Silakan masuk dengan kata sandi baru Anda.', $data);
+            return;
+        }
         $this->load->view('pages/auth/login', $data);
     }
 
@@ -881,11 +885,122 @@ class Auth extends MY_Controller {
     }
 
     // =========================================================
-    // FORGOT PASSWORD (Placeholder)
+    // LUPA KATA SANDI (reset mandiri lewat email, 6 Okt 2026)
     // =========================================================
+    // Alur: email diisi -> tautan sekali pakai berlaku 30 menit dikirim (hanya sidiknya disimpan,
+    // migrasi 074) -> tautan membuka form sandi baru -> sandi disimpan, token dihapus, semua sesi
+    // diakhiri, email pemberitahuan dikirim. Jawaban formulir pertama SELALU sama, terdaftar atau
+    // tidak, supaya formulir ini tidak bisa dipakai menebak email yang punya akun.
+
+    const MASA_TOKEN_SANDI = 1800;
+    const PESAN_TAUTAN_MATI = 'Tautan ini tidak berlaku: sudah dipakai, sudah lewat 30 menit, atau tidak lengkap tersalin. Minta tautan baru.';
 
     public function forgot_password() {
         $this->load->view('pages/auth/forgot_password');
+    }
+
+    public function kirim_tautan_sandi() {
+        if ( ! $this->_bot_gate('lupa_sandi', FALSE, 'Auth/forgot_password')) { return; }
+        $email = strtolower(trim((string) $this->input->post('email', TRUE)));
+        if ( ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->_galat('Masukkan alamat email yang valid.', 'Email belum benar');
+            redirect('Auth/forgot_password');
+            return;
+        }
+        // Dihitung untuk setiap permintaan (atomik, fail-closed), terdaftar atau tidak.
+        $this->load->library('Rate_limiter');
+        foreach ([['sandi_lupa_ip', []], ['sandi_lupa', ['key' => hash('sha256', $email)]]] as [$policy, $k]) {
+            $laju = $this->rate_limiter->hit($policy, $k);
+            if (empty($laju['success']) || empty($laju['allowed'])) {
+                $this->rate_limit_reject($laju, 'Terlalu banyak permintaan reset kata sandi. Silakan tunggu sebelum mencoba lagi.');
+                return;
+            }
+        }
+
+        $user = $this->db->where('LOWER(email)', $email)->get('usr_akun')->row();
+        if ($user && strtolower(trim((string) $user->status)) !== 'nonaktif') {
+            $global = $this->rate_limiter->hit('otp_kirim_global', ['key' => 'otp_global']); // kuota SMTP bersama OTP
+            if ( ! empty($global['success']) && ! empty($global['allowed'])) {
+                $token = bin2hex(random_bytes(32));
+                $this->db->where('id', (int) $user->id)->update('usr_akun', [
+                    'token_sandi_hash' => hash('sha256', $token),
+                    'token_sandi_kedaluwarsa' => date('Y-m-d H:i:s', time() + self::MASA_TOKEN_SANDI),
+                ]);
+                $this->load->library('Surel_pemberitahuan');
+                $this->surel_pemberitahuan->kirim($user->email, 'Atur ulang kata sandi Klinik PKP', 'Atur ulang kata sandi',
+                    ['Kami menerima permintaan untuk mengatur ulang kata sandi akun Klinik PKP Anda.',
+                     'Tekan tombol di bawah untuk membuat kata sandi baru. Tautan ini berlaku 30 menit dan hanya bisa dipakai sekali.',
+                     'Bila Anda tidak meminta ini, abaikan email ini; kata sandi Anda tidak berubah.'],
+                    '', ['label' => 'Buat kata sandi baru', 'rute' => 'atur-sandi/' . $token]);
+                $this->catat_audit('sandi_lupa_diminta', 'Tautan reset kata sandi dikirim ke email akun', 'usr_akun', (string) $user->id);
+            }
+        }
+
+        $this->session->set_flashdata('success', 'Bila email itu terdaftar, tautan untuk membuat kata sandi baru sudah dikirim. Periksa kotak masuk dan folder Spam. Tautan berlaku 30 menit.');
+        $this->session->set_flashdata('pemberitahuan_judul', 'Periksa email Anda');
+        $this->session->set_flashdata('pemberitahuan_dialog', TRUE);
+        redirect('Auth/login');
+    }
+
+    /** Akun pemilik token reset yang masih berlaku, atau NULL. */
+    private function _akun_token_sandi($token) {
+        $token = (string) $token;
+        if ( ! preg_match('/^[a-f0-9]{64}$/D', $token)) { return NULL; }
+        $user = $this->db->get_where('usr_akun', ['token_sandi_hash' => hash('sha256', $token)])->row();
+        if ( ! $user || strtotime((string) $user->token_sandi_kedaluwarsa) < time()
+            || strtolower(trim((string) $user->status)) === 'nonaktif') { return NULL; }
+        return $user;
+    }
+
+    public function atur_sandi($token = '') {
+        if ( ! $this->_akun_token_sandi($token)) {
+            $this->_galat(self::PESAN_TAUTAN_MATI, 'Tautan tidak berlaku');
+            redirect('Auth/forgot_password');
+            return;
+        }
+        $this->load->view('pages/auth/atur_sandi', ['token' => $token]);
+    }
+
+    public function simpan_sandi() {
+        $token = (string) $this->input->post('token', TRUE);
+        $user = $this->_akun_token_sandi($token);
+        if ( ! $user) {
+            $this->_galat(self::PESAN_TAUTAN_MATI, 'Tautan tidak berlaku');
+            redirect('Auth/forgot_password');
+            return;
+        }
+        $sandi = (string) $this->input->post('password');
+        $this->load->library('form_validation');
+        $kuat = $this->form_validation->sandi_kuat($sandi);
+        if ( ! $kuat || ! hash_equals($sandi, (string) $this->input->post('password_confirm'))) {
+            $this->_galat($kuat ? 'Konfirmasi kata sandi tidak sama.'
+                : 'Kata sandi baru minimal 8 karakter, mengandung huruf besar, angka, dan simbol.', 'Kata sandi belum sesuai');
+            redirect('atur-sandi/' . $token);
+            return;
+        }
+        // Token dihapus pada UPDATE yang sama dan bersyarat sidiknya: dua kiriman serentak, hanya satu yang menang.
+        $this->db->where('id', (int) $user->id)->where('token_sandi_hash', hash('sha256', $token))->update('usr_akun', [
+            'kata_sandi' => password_hash($sandi, PASSWORD_BCRYPT),
+            'token_sandi_hash' => NULL, 'token_sandi_kedaluwarsa' => NULL,
+            'gagal_masuk' => 0, 'terkunci_sampai' => NULL,
+            'sesi_aktif_hash' => NULL, 'sesi_aktif_id_hash' => NULL, 'sesi_aktif_at' => NULL,
+            // Tautan di email membuktikan kepemilikan alamatnya.
+            'email_verified_at' => $user->email_verified_at ?: date('Y-m-d H:i:s'),
+        ] + $this->auth_model->password_lifetime_fields());
+        if ($this->db->affected_rows() !== 1) {
+            $this->_galat(self::PESAN_TAUTAN_MATI, 'Tautan tidak berlaku');
+            redirect('Auth/forgot_password');
+            return;
+        }
+        $this->catat_audit('sandi_direset_mandiri', 'Kata sandi diganti lewat tautan reset dari email', 'usr_akun', (string) $user->id);
+        $this->load->library('Surel_pemberitahuan');
+        $this->surel_pemberitahuan->kirim($user->email, 'Kata sandi Klinik PKP Anda telah diganti', 'Kata sandi Anda telah diganti',
+            ['Kata sandi akun Klinik PKP Anda baru saja diganti lewat tautan reset kata sandi.',
+             'Bila bukan Anda yang melakukannya, segera minta tautan reset baru dari halaman masuk dan hubungi Dinas Perakim melalui menu Aduan.'],
+            '', ['label' => 'Masuk ke Klinik PKP', 'rute' => 'Auth/login']);
+
+        $this->session->sess_destroy();
+        redirect('Auth/login?msg=sandi_baru');
     }
 
     // Verifikasi email simulasi (verify_pending + do_verify_email) DIHAPUS: ia menandai
