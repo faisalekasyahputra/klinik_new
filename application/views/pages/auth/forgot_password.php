@@ -8,9 +8,12 @@
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
     <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . filemtime('assets/css/auth-pages.css')) ?>">
+    <link rel="stylesheet" href="<?= base_url('assets/css/notifications.css?v=' . filemtime('assets/css/notifications.css')) ?>">
+    <script defer src="<?= base_url('assets/js/notifications.js?v=' . filemtime('assets/js/notifications.js')) ?>"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha384-t1nt8BQoYMLFN5p42tRAtuAAFQaCQODekUVeKKZrEnEyp4H2R0RHFz0KWpmj7i8g" crossorigin="anonymous">
 </head>
 <body class="auth-page">
+<?php $this->load->view('components/notification_center'); ?>
 
 <div class="auth-split">
 
@@ -60,16 +63,28 @@
 
             <h2 class="auth-heading">Lupa Password? 🔑</h2>
             <p class="auth-subheading">
-                Reset password mandiri belum tersedia di sistem ini.
+                Masukkan email akun Anda. Kami kirim tautan untuk membuat kata sandi baru, berlaku 30 menit.
             </p>
 
-            <!-- Keterangan jujur: reset mandiri belum ada (butuh infrastruktur
-                 email yang belum dipasang), bukan form yang berpura-pura jalan.
-                 Roadmap T5 S12-b. -->
-            <div class="auth-alert auth-alert--warning">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                Reset password mandiri belum tersedia. Silakan hubungi Admin Disperakim Jateng untuk reset password manual.
-            </div>
+            <!-- Reset mandiri lewat email (Auth::kirim_tautan_sandi, 6 Okt 2026). -->
+            <form action="<?= base_url('Auth/kirim_tautan_sandi') ?>" method="POST" id="lupaSandiForm" data-lupa-sandi>
+                <?= bot_guard_fields('lupa_sandi') ?>
+                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+                <label class="auth-label" for="lupa_email">Email</label>
+                <div class="auth-input-group">
+                    <input type="email" id="lupa_email" name="email" class="auth-input" maxlength="255"
+                           placeholder="nama@contoh.com" required autocomplete="email" autofocus>
+                    <i class="fa-solid fa-envelope auth-input-icon"></i>
+                </div>
+                <button type="submit" class="auth-btn" id="btnLupaSandi">
+                    <span>Kirim tautan</span>
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <div class="spinner"></div>
+                </button>
+            </form>
+            <p class="auth-subheading" style="margin-top:1rem;font-size:.8125rem;">
+                Tidak bisa membuka email itu lagi? Hubungi Admin Disperakim Jateng untuk reset kata sandi manual.
+            </p>
 
             <!-- Back link -->
             <div class="auth-footer-links" style="justify-content:center;">
@@ -88,6 +103,14 @@
     </div>
 
 </div>
+
+<script>
+document.getElementById('lupaSandiForm').addEventListener('submit', function () {
+    const btn = document.getElementById('btnLupaSandi');
+    btn.classList.add('loading');
+    btn.disabled = true;
+});
+</script>
 
 </body>
 </html>

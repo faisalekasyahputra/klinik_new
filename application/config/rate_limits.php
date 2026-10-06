@@ -55,6 +55,12 @@ $config['rate_limit_policies'] = [
     'otp_kirim_ip'     => ['limit' => 20,  'window' => 3600,  'dimensions' => ['ip']],
     'otp_kirim_global' => ['limit' => 250, 'window' => 86400, 'dimensions' => ['key']],
     'otp_salah'    => ['limit' => 10, 'window' => 3600, 'dimensions' => ['key']],
+    /* Lupa kata sandi (6 Okt 2026, Auth::kirim_tautan_sandi): per email TUJUAN (kunci = sha256 email
+       huruf kecil) dan per IP, ditambah plafon global otp_kirim_global yang sama dengan OTP karena
+       kuota SMTP-nya satu. Dihitung untuk setiap permintaan, terdaftar atau tidak, jadi batasnya tidak
+       membocorkan keberadaan akun. */
+    'sandi_lupa'    => ['limit' => 3,  'window' => 3600, 'dimensions' => ['key']],
+    'sandi_lupa_ip' => ['limit' => 10, 'window' => 3600, 'dimensions' => ['ip']],
     'otp_salah_ip' => ['limit' => 30, 'window' => 3600, 'dimensions' => ['ip']],
     'simperum_lookup' => [
         'limit' => 10,

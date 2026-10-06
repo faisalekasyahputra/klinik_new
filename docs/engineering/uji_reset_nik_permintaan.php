@@ -9,12 +9,12 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  * Dijaga:
  *   1. Warga yang NIK-nya terkunci di Profil Saya bisa mengajukan reset dengan alasan (10-500 karakter),
  *      satu permintaan menunggu per akun, endpoint hanya POST.
- *   2. Super Admin melihat permintaan di Akses Staf; Tolak mengirim catatan yang tampil ke warga; Setujui
+ *   2. Super Admin melihat permintaan di Permintaan NIK Warga; Tolak mengirim catatan yang tampil ke warga; Setujui
  *      membuka NIK (usr_akun.nik dan nik_lookup_hash dikosongkan) sehingga isian NIK terbuka lagi.
  *   3. Akun yang punya pengajuan terkirim tidak bisa direset lewat permintaan (arsip tetap utuh).
  *   4. Bug lama: Reset NIK langsung dulu hanya menghapus profil pendataan; akun yang NIK-nya hanya di
  *      usr_akun ditolak "belum terhubung dengan NIK" dan NIK di akun tetap terkunci.
- *   5. Super Admin tahu ada permintaan (angka menu Akses Staf, Pusat Pemberitahuan, pita dasbor), dan
+ *   5. Super Admin tahu ada permintaan (angka menu Permintaan NIK Warga, Pusat Pemberitahuan, pita dasbor), dan
  *      warga menerima email hasil keputusan (mode uji: application/cache/surel_uji/, alamat *.test).
  *
  * Akun uji (@reset-nik.test) dan baris jejak audit buatan suite dibuat lalu dihapus sendiri. NIK uji
