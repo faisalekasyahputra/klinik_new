@@ -32,6 +32,8 @@ $config['seo'] = [
             'deskripsi' => 'Cari perumahan subsidi dan komersial di seluruh kabupaten/kota Jawa Tengah dari data SIKUMBANG, lengkap dengan tipe rumah, harga, dan lokasi.'],
         'cari_rumah' => ['judul' => 'Cari Rumah per Kabupaten/Kota',
             'deskripsi' => 'Telusuri daftar perumahan di Jawa Tengah per kabupaten/kota, saring rumah subsidi atau komersial, lalu lihat detail tipe, harga, dan pengembangnya.'],
+        'program-pemerintah' => ['judul' => 'Program Perumahan Pemerintah',
+            'deskripsi' => 'Daftar program perumahan Pemprov Jawa Tengah: KPR subsidi FLPP, Oemah Lestari, bantuan RTLH, pembangunan baru, dan rumah apung, lengkap dengan syaratnya.'],
         'simulasi_kpr' => ['judul' => 'Simulasi KPR Rumah Subsidi dan Komersial',
             'deskripsi' => 'Hitung perkiraan angsuran KPR rumah subsidi FLPP maupun komersial: masukkan harga rumah, uang muka, tenor, dan bunga untuk melihat cicilan per bulan.'],
         'panduan_desain' => ['judul' => 'Panduan Desain Rumah Layak Huni',

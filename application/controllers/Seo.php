@@ -33,6 +33,8 @@ class Seo extends MY_Controller {
         foreach ((array) (seo_cfg()['halaman'] ?? []) as $kunci => $isi) {
             if (($isi['peta'] ?? TRUE) !== FALSE && ! seo_noindex(strtolower((string) $kunci))) { $url[] = base_url((string) $kunci); }
         }
+        $this->load->model('Program_model');
+        foreach ($this->Program_model->daftar_publik() as $p) { $url[] = base_url('program-pemerintah/' . str_replace('_', '-', $p['kode_program'])); }
         // Halaman detail dari data hulu yang sudah di-cache; hulu yang gagal cukup dilewati.
         try {
             require_once APPPATH . 'controllers/Kawasan_kumuh.php'; // tahun bawaan halaman daftarnya

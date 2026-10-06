@@ -8,7 +8,8 @@
  *   1. Setiap halaman terdaftar punya <title> dan description SENDIRI (tidak kembar), canonical berhuruf
  *      rute asli, og:image URL penuh; header situs bukan <h1> lagi; beranda memuat JSON-LD yang sah.
  *   2. Halaman pribadi dan pratinjau (dummy) diberi noindex tanpa canonical; alias /login menunjuk Auth/login.
- *   3. Halaman detail perumahan dan kawasan mengisi judul, deskripsi, dan gambar dari datanya.
+ *   3. Halaman detail perumahan dan kawasan mengisi judul, deskripsi, dan gambar dari datanya; setiap program
+ *      pemerintah punya halaman sendiri dengan kartu OG JPG dan JSON-LD GovernmentService.
  *   4. robots.txt dan sitemap.xml: sah, beralamat penuh, tanpa halaman noindex.
  *   5. Respons partial loader portal membawa X-Judul-Halaman.
  *
@@ -103,6 +104,21 @@ if ($kawasan) {
         'Detail kawasan kumuh: judul memuat nama kawasan');
 }
 
+echo "\n== 3b. Program Pemerintah\n";
+$daftar = ambil('program-pemerintah');
+preg_match_all('#program-pemerintah/([a-z0-9-]+)"#', $daftar['badan'], $x);
+$slug = array_values(array_unique($x[1]));
+cek($daftar['kode'] === 200 && count($slug) >= 1 && strpos($daftar['badan'], 'data-program-daftar') !== FALSE, 'Halaman daftar program menaut ke ' . count($slug) . ' program');
+$salah = [];
+foreach ($slug as $sl) {
+    $m = meta(ambil('program-pemerintah/' . $sl)['badan']);
+    $jasa = array_filter($m['ld'], fn($b) => ($b['@type'] ?? '') === 'GovernmentService');
+    if (strpos((string) $m['title'], 'Syarat ') !== 0 || $m['og:image'] !== BASE . 'assets/img/og/program-pemerintah-' . $sl . '.jpg' || ! $jasa
+        || mb_strlen((string) $m['title']) > 70) { $salah[] = $sl; }
+}
+cek($slug && ! $salah, 'Setiap program: judul "Syarat ...", kartu OG JPG sendiri, JSON-LD GovernmentService' . ($salah ? ': ' . implode(', ', $salah) : ''));
+cek(ambil('program-pemerintah/tidak-ada')['kode'] === 404 && ambil('program-pemerintah/Oemah_Lestari')['kode'] === 404, 'Slug program tak dikenal atau berbentuk lain dijawab 404');
+
 echo "\n== 4. robots.txt dan sitemap.xml\n";
 $robots = ambil('robots.txt');
 cek($robots['kode'] === 200 && strpos($robots['kepala']['content-type'] ?? '', 'text/plain') === 0, 'robots.txt 200 text/plain');
@@ -113,6 +129,7 @@ cek(preg_match('#^Sitemap: ' . preg_quote(BASE, '#') . 'sitemap\.xml$#m', $robot
 cek($peta['kode'] === 200 && $xml !== FALSE && strpos($peta['kepala']['content-type'] ?? '', 'xml') !== FALSE, 'sitemap.xml 200 dan XML sah');
 cek($loc && ! array_filter($loc, fn($u) => strpos($u, BASE) !== 0), 'Semua URL sitemap beralamat penuh di situs ini (' . count($loc) . ' URL)');
 cek(in_array(BASE . 'golek_omah', $loc, TRUE) && in_array(BASE . 'Cek_Rtlh', $loc, TRUE), 'Sitemap memuat halaman terdaftar dengan huruf rute asli');
+cek( ! array_diff(array_map(fn($sl) => BASE . 'program-pemerintah/' . $sl, $slug), $loc), 'Sitemap memuat setiap halaman program');
 cek( ! array_intersect($loc, [BASE . 'info_tanah', BASE . 'materia', BASE . 'akun', BASE . 'Auth/login', BASE . 'sebaran']),
     'Sitemap tanpa halaman noindex dan tanpa yang ditandai peta => FALSE');
 

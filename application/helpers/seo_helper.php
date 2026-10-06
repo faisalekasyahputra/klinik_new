@@ -89,8 +89,13 @@ if ( ! function_exists('seo_meta')) {
 
         $judul = trim((string) ($seo['judul'] ?? $hal['judul'] ?? ''));
         $deskripsi = seo_potong($seo['deskripsi'] ?? $hal['deskripsi'] ?? $cfg['deskripsi']);
-        $kustom = ! empty($seo['gambar']);
-        $gambar = seo_url_mutlak($kustom ? $seo['gambar'] : $cfg['gambar']);
+        // Kartu 1200x630 buatan docs/engineering/buat_kartu_og.php menang bila ada; lalu gambar dari data
+        // (foto perumahan, desain); lalu og-cover bawaan.
+        $slug = $kunci_hal !== NULL ? strtolower(str_replace('/', '-', $kunci_hal)) : str_replace('/', '-', $uri);
+        $kartu = 'assets/img/og/' . ($slug === '' ? 'beranda' : $slug) . '.jpg';
+        $ada_kartu = is_file(FCPATH . $kartu);
+        $kustom = ! $ada_kartu && ! empty($seo['gambar']);
+        $gambar = seo_url_mutlak($ada_kartu ? $kartu : ($kustom ? $seo['gambar'] : $cfg['gambar']));
         $alt = (string) ($seo['gambar_alt'] ?? ($judul !== '' ? $judul : $situs));
         // Halaman berkueri (?page=, ?q=) menunjuk ke versi tanpa kueri supaya tidak dihitung halaman kembar.
         // Huruf rute dari config bila terdaftar (URL di Linux peka huruf: /cek_rtlh 404, /Cek_Rtlh benar).

@@ -111,6 +111,10 @@
         <!-- Slideshow program strategis: komponen reusable yang sama dengan halaman diagnosa -->
         <section class="w-full pt-2" aria-label="Program strategis">
             <?php $carousel_context = 'home'; $this->load->view('components/program_showcase_carousel'); ?>
+            <?php /* Tautan HTML biasa (slide korsel dirender JS): jalan bagi perayap dan pembaca ke halaman per program. */ ?>
+            <p class="mt-3 text-center text-xs font-bold">
+                <a href="<?= base_url('program-pemerintah') ?>" class="hover:underline" style="color:var(--portal-brand)">Lihat semua program pemerintah dan syaratnya <i class="fa-solid fa-arrow-right text-[10px]"></i></a>
+            </p>
         </section>
     </div>
 </div>

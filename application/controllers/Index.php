@@ -615,6 +615,51 @@ class Index extends MY_Controller {
 
 		$this->render('pages/bank_desain/panduan_desain', $datacontent);
 	}
+	/**
+	 * Program Pemerintah: daftar dan satu halaman per program aktif (SEO 6 Okt 2026). Sebelumnya program
+	 * hanya tampil di korsel, jadi pencarian seperti "syarat Oemah Lestari" tidak punya halaman tujuan.
+	 * Slug = kode_program dengan '-' (oemah_lestari -> oemah-lestari).
+	 */
+	public function program_pemerintah($slug = NULL)
+	{
+		$this->load->model('Program_model');
+		if ($slug === NULL) {
+			$program = $this->Program_model->daftar_publik();
+			$this->render('pages/program/program_pemerintah', [
+				'judul' => 'Program Pemerintah', 'program' => $program, 'pm' => $this->Program_model,
+				'seo' => ['jsonld' => ['@type' => 'ItemList', 'name' => 'Program Perumahan Pemprov Jawa Tengah',
+					'itemListElement' => array_map(fn($p, $i) => ['@type' => 'ListItem', 'position' => $i + 1, 'name' => $p['nama_program'],
+						'url' => base_url('program-pemerintah/' . str_replace('_', '-', $p['kode_program']))], $program, array_keys($program))]],
+			]);
+			return;
+		}
+		if ( ! preg_match('/^[a-z0-9-]{1,40}$/', (string) $slug)) { show_404(); return; }
+		$p = $this->Program_model->daftar_publik(str_replace('-', '_', $slug))[0] ?? NULL;
+		if ( ! $p) { show_404(); return; }
+		$nama = $p['nama_program'];
+		$maks = (float) $p['batas_penghasilan_maks'];
+		$gambar = $this->Program_model->gambar_tampil($p);
+		$deskripsi = $nama . ': ' . rtrim((string) $p['deskripsi_singkat'], '. ') . '.'
+			. ($p['syarat_utama'] ? ' ' . rtrim((string) $p['syarat_utama'], '. ') . '.' : '')
+			. ($maks > 0 ? ' Penghasilan maksimal Rp ' . number_format($maks, 0, ',', '.') . ' per bulan.' : '')
+			. ' Cek kelayakan di Klinik PKP.';
+		$this->render('pages/program/program_detail', [
+			'judul' => $nama, 'p' => $p, 'gambar' => $gambar,
+			'lain' => array_filter($this->Program_model->daftar_publik(), fn($x) => $x['kode_program'] !== $p['kode_program']),
+			'pm' => $this->Program_model,
+			'seo' => ['judul' => 'Syarat ' . $nama,
+				'deskripsi' => $deskripsi,
+				// AVIF belum dibaca WhatsApp/Facebook: kartu JPG di assets/img/og/ dipakai seo_meta() bila ada.
+				'gambar' => preg_match('/\.avif$/i', $gambar) ? '' : $gambar,
+				'gambar_alt' => 'Program ' . $nama,
+				'jsonld' => ['@type' => 'GovernmentService', 'name' => $nama, 'description' => (string) $p['deskripsi_singkat'],
+					'serviceType' => (string) ($p['nama_kategori'] ?? 'Program perumahan'),
+					'url' => base_url('program-pemerintah/' . $slug), 'areaServed' => ['@type' => 'State', 'name' => 'Jawa Tengah'],
+					'audience' => ['@type' => 'Audience', 'audienceType' => (string) ($p['lencana'] ?: 'Masyarakat berpenghasilan rendah')],
+					'provider' => ['@type' => 'GovernmentOrganization', 'name' => 'Dinas Perumahan Rakyat dan Kawasan Permukiman Provinsi Jawa Tengah']]],
+		]);
+	}
+
 	public function detail_desain($id = NULL)
 	{
 		if ($id === NULL || !ctype_digit((string) $id)) {

@@ -68,6 +68,16 @@ class Program_model extends CI_Model {
         return $rows;
     }
 
+    /** Program aktif beserta nama kategorinya, untuk halaman publik Program Pemerintah (SEO 6 Okt 2026). */
+    public function daftar_publik($kode = NULL) {
+        $this->db->select('p.id, p.kode_program, p.nama_program, p.deskripsi_singkat, p.lencana, p.syarat_utama,
+                           p.batas_penghasilan_maks, p.gambar, k.nama_kategori', FALSE)
+            ->from('sf_program p')->join('sf_program_kategori k', 'k.id = p.kategori_id', 'left')
+            ->where('p.aktif', 1)->order_by('p.urutan', 'ASC')->order_by('p.id', 'ASC');
+        if ($kode !== NULL) { $this->db->where('p.kode_program', (string) $kode); }
+        return $this->db->get()->result_array();
+    }
+
     public function get_program_by_code($kode_program) {
         $this->db->where('kode_program', $kode_program);
         $this->db->where('aktif', 1);
