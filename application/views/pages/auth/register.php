@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token-name" content="<?= $this->security->get_csrf_token_name(); ?>">
     <meta name="csrf-token-hash" content="<?= $this->security->get_csrf_hash(); ?>">
-    <title>Daftar Akun - Klinik PKP</title>
-    <meta name="description" content="Buat akun baru untuk mengakses portal layanan perumahan dan kawasan permukiman terpadu.">
+    <?= seo_meta() ?>
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
     <link rel="stylesheet" href="<?= base_url('assets/css/auth-pages.css?v=' . filemtime('assets/css/auth-pages.css')) ?>">

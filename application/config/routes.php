@@ -59,6 +59,10 @@ $route['register']                 = 'Auth/register';
 $route['forgot-password']          = 'Auth/forgot_password';
 $route['verify/(:any)']            = 'Auth/verify_email/$1';
 $route['atur-sandi/(:any)']        = 'Auth/atur_sandi/$1';
+$route['robots.txt']               = 'Seo/robots';
+$route['program-pemerintah']        = 'Index/program_pemerintah';
+$route['program-pemerintah/(:any)'] = 'Index/program_pemerintah/$1';
+$route['sitemap.xml']              = 'Seo/sitemap';
 $route['onboarding']               = 'Auth/onboarding';
 
 // --- Web Push admin (CSRF tetap berlaku pada subscribe/unsubscribe) ---

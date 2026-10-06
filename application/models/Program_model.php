@@ -68,6 +68,38 @@ class Program_model extends CI_Model {
         return $rows;
     }
 
+    /** Program aktif beserta nama kategorinya, untuk halaman publik Program Pemerintah (SEO 6 Okt 2026). */
+    public function daftar_publik($kode = NULL) {
+        $this->db->select('p.id, p.kode_program, p.nama_program, p.deskripsi_singkat, p.lencana, p.syarat_utama,
+                           p.batas_penghasilan_maks, p.gambar, k.nama_kategori', FALSE)
+            ->from('sf_program p')->join('sf_program_kategori k', 'k.id = p.kategori_id', 'left')
+            ->where('p.aktif', 1)->order_by('p.urutan', 'ASC')->order_by('p.id', 'ASC');
+        if ($kode !== NULL) { $this->db->where('p.kode_program', (string) $kode); }
+        return $this->db->get()->result_array();
+    }
+
+    /**
+     * SEO bawaan halaman program-pemerintah/<slug>, dipakai halaman publik dan layar SEO Halaman admin.
+     * Batas penghasilan SENGAJA tidak disebut: kolomnya tidak dibaca aturan kelayakan (lihat Katalog Program).
+     */
+    public function seo_bawaan(array $p) {
+        $nama = (string) $p['nama_program'];
+        $slug = str_replace('_', '-', (string) $p['kode_program']);
+        $gambar = $this->gambar_tampil($p);
+        return ['judul' => 'Syarat ' . $nama,
+            'deskripsi' => $nama . ': ' . rtrim((string) $p['deskripsi_singkat'], '. ') . '.'
+                . ($p['syarat_utama'] ? ' ' . rtrim((string) $p['syarat_utama'], '. ') . '.' : '')
+                . ($p['lencana'] ? ' Sasaran: ' . $p['lencana'] . '.' : '') . ' Cek kelayakan di Klinik PKP.',
+            // AVIF belum dibaca WhatsApp/Facebook; kartu JPG di assets/img/og/ dipakai seo_meta() bila ada.
+            'gambar' => preg_match('/\.avif$/i', $gambar) ? '' : $gambar,
+            'gambar_alt' => 'Program ' . $nama,
+            'jsonld' => ['@type' => 'GovernmentService', 'name' => $nama, 'description' => (string) $p['deskripsi_singkat'],
+                'serviceType' => (string) ($p['nama_kategori'] ?? 'Program perumahan'),
+                'url' => base_url('program-pemerintah/' . $slug), 'areaServed' => ['@type' => 'State', 'name' => 'Jawa Tengah'],
+                'audience' => ['@type' => 'Audience', 'audienceType' => (string) ($p['lencana'] ?: 'Masyarakat berpenghasilan rendah')],
+                'provider' => ['@type' => 'GovernmentOrganization', 'name' => 'Dinas Perumahan Rakyat dan Kawasan Permukiman Provinsi Jawa Tengah']]];
+    }
+
     public function get_program_by_code($kode_program) {
         $this->db->where('kode_program', $kode_program);
         $this->db->where('aktif', 1);

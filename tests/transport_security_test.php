@@ -113,7 +113,9 @@ foreach ($files as $file) {
     if (preg_match('/[\'"]verify[\'"]\s*=>\s*(false|0)\b/i', $bare)) { $violations[] = "$rel: opsi verify=false (Guzzle)"; }
     if (preg_match('/[\'"]allow_self_signed[\'"]\s*=>\s*(true|1)\b/i', $bare)) { $violations[] = "$rel: allow_self_signed=true"; }
     // Hanya URL yang punya host; potongan seperti 'http://' pada str_replace() bukan panggilan keluar.
-    if (preg_match('/[\'"]http:\/\/(?=[a-z0-9])(?!localhost|127\.0\.0\.1|www\.w3\.org)/i', $bare)) { $violations[] = "$rel: URL http:// (bukan https) pada kode"; }
+    // www.w3.org dan www.sitemaps.org/schemas/: pengenal namespace XML yang WAJIB berbunyi http:// menurut
+    // spesifikasinya (sitemap.xml di Seo::sitemap), bukan alamat yang dihubungi.
+    if (preg_match('/[\'"]http:\/\/(?=[a-z0-9])(?!localhost|127\.0\.0\.1|www\.w3\.org|www\.sitemaps\.org\/schemas\/)/i', $bare)) { $violations[] = "$rel: URL http:// (bukan https) pada kode"; }
     if ($rel !== 'helpers/transport_helper.php') {
         if (preg_match('/\bcurl_init\s*\(/', $bare) && strpos($bare, 'transport_curl_options(') === false) {
             $violations[] = "$rel: curl_init tanpa transport_curl_options()";

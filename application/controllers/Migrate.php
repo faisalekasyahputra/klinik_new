@@ -560,6 +560,10 @@ class Migrate extends CI_Controller {
             AND TABLE_NAME = 'usr_akun' AND INDEX_NAME = 'uq_usr_akun_token_sandi' AND NON_UNIQUE = 0")->row();
         echo 'token reset kata sandi (migrasi 074): '.($ada074 && $indeks074 ? 'TERPASANG' : 'BELUM ('.($ada074 ? 'indeks unik hilang' : 'kolom usr_akun.token_sandi_* hilang').')')."
 ";
+        // Migrasi 075 - timpaan SEO per halaman (menu SEO Halaman).
+        echo 'seo_halaman (migrasi 075): '.($this->db->table_exists('seo_halaman') && $this->db->field_exists('noindex', 'seo_halaman')
+            ? 'ADA ('.$this->db->count_all('seo_halaman').' halaman ditimpa)' : 'HILANG')."
+";
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
                 ($this->db->field_exists($kolom, 'kkn_magang_pendaftaran') ? 'ADA' : 'HILANG')."\n";

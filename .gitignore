@@ -103,6 +103,10 @@ assets/img/pengembang/unggahan/
 # diunggah, dan deploy hanya mempertahankan path yang cocok .gitignore.
 assets/dokumen/unggahan/
 
+# Gambar pratinjau (og:image) yang diunggah Super Admin di menu SEO Halaman (migrasi 075). Data, bukan
+# kode; kartu bawaan di assets/img/og/ tetap dilacak.
+assets/img/og/unggahan/
+
 # Arsip lokal (dikeluarkan dari repo 5 Okt 2026): materi rapat, presentasi, dan dokumen tanpa rujukan.
 /_arsip/
 /.agents/
