@@ -129,7 +129,9 @@ if ( ! function_exists('seo_meta')) {
         if ( ! empty($seo['gambar_timpaan'])) { $kartu = $seo['gambar_timpaan']; }
         $ada_kartu = is_file(FCPATH . $kartu);
         $kustom = ! $ada_kartu && ! empty($seo['gambar']);
-        $gambar = seo_url_mutlak($ada_kartu ? $kartu : ($kustom ? $seo['gambar'] : $cfg['gambar']));
+        // ?v=waktu berkas: aset di-cache setahun (.htaccess) dan CDN ikut menyimpan, jadi kartu yang dibuat
+        // ulang harus beralamat baru supaya WhatsApp/Telegram/Facebook mengambil gambar terbarunya.
+        $gambar = seo_url_mutlak($ada_kartu ? $kartu . '?v=' . filemtime(FCPATH . $kartu) : ($kustom ? $seo['gambar'] : $cfg['gambar']));
         $alt = (string) ($seo['gambar_alt'] ?? ($judul !== '' ? $judul : $situs));
         // Halaman berkueri (?page=, ?q=) menunjuk ke versi tanpa kueri supaya tidak dihitung halaman kembar.
         // Huruf rute dari config bila terdaftar (URL di Linux peka huruf: /cek_rtlh 404, /Cek_Rtlh benar).
