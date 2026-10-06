@@ -133,6 +133,15 @@ cek( ! array_diff(array_map(fn($sl) => BASE . 'program-pemerintah/' . $sl, $slug
 cek( ! array_intersect($loc, [BASE . 'info_tanah', BASE . 'materia', BASE . 'akun', BASE . 'Auth/login', BASE . 'sebaran']),
     'Sitemap tanpa halaman noindex dan tanpa yang ditandai peta => FALSE');
 
+echo "\n== 4b. Tautan yang dibagikan\n";
+$salah = [];
+foreach (['fbclid=IwAR0uji', 'utm_source=whatsapp&utm_medium=social&utm_campaign=uji', 'gclid=uji', 'igshid=uji', 'v=3'] as $q) {
+    $r = ambil('program-pemerintah?' . $q);
+    if ($r['kode'] !== 200 || meta($r['badan'])['canonical'] !== BASE . 'program-pemerintah') { $salah[] = $q; }
+}
+cek( ! $salah, 'Parameter pelacak platform (fbclid, utm_*, gclid, igshid, v) diterima, canonical tanpa query' . ($salah ? ': ' . implode(', ', $salah) : ''));
+cek(ambil('program-pemerintah?parameter_asing=1')['kode'] === 400, 'Parameter asing tetap ditolak penyaring input (400)');
+
 echo "\n== 5. Loader portal\n";
 $r = ambil('golek_omah', ['X-Requested-With: XMLHttpRequest']);
 cek(rawurldecode($r['kepala']['x-judul-halaman'] ?? '') === meta(ambil('golek_omah')['badan'])['title'], 'Respons partial membawa X-Judul-Halaman = <title> halaman penuh');
