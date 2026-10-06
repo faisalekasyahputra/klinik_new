@@ -129,9 +129,45 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                         <?php if (!empty($nik_terkunci)): ?>
                             <input type="text" value="<?= htmlspecialchars($nik_tersamar ?? 'tersimpan') ?>"
                                    class="<?= $isian ?>" readonly aria-readonly="true">
-                            <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">
-                                Sudah terkunci pada akun ini. Bila keliru, hubungi admin untuk membetulkannya.
-                            </p>
+                            <?php /* Permintaan reset NIK ke Super Admin (6 Okt 2026). Jendelanya di-teleport ke body:
+                                     NIK ada di dalam formulir profil, dan formulir tidak boleh bersarang. */ ?>
+                            <?php if ( ! empty($reset_nik_menunggu)): ?>
+                                <p class="mt-1 rounded-lg border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs text-cyan-700 dark:border-cyan-500/20 dark:bg-cyan-500/10 dark:text-cyan-400" data-reset-nik-menunggu>
+                                    <b>Permintaan reset NIK sedang ditinjau petugas</b> (diajukan <?= html_escape(tgl_id($reset_nik_menunggu['created_at'], TRUE, TRUE)) ?>). Setelah disetujui, isian NIK di sini terbuka kembali.
+                                </p>
+                            <?php else: ?>
+                                <?php if ( ! empty($reset_nik_ditolak)): ?>
+                                <p class="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300" data-reset-nik-ditolak>
+                                    <b>Permintaan reset NIK sebelumnya belum dapat disetujui.</b>
+                                    <?php if ($reset_nik_ditolak['catatan'] !== ''): ?>Catatan petugas: <?= html_escape($reset_nik_ditolak['catatan']) ?><?php endif; ?>
+                                </p>
+                                <?php endif; ?>
+                                <div class="mt-1 flex flex-wrap items-center justify-between gap-2" x-data="{ buka: false }" @keydown.escape.window="buka = false">
+                                    <p class="text-xs text-gray-500 dark:text-brand-muted">Sudah terkunci pada akun ini. Bila keliru, minta petugas membukanya.</p>
+                                    <button type="button" class="tombol-kedua" @click="buka = true" data-ajukan-reset-nik>
+                                        <i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><span>Ajukan reset NIK</span>
+                                    </button>
+                                    <template x-teleport="body">
+                                        <div x-show="buka" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" data-modal-reset-nik>
+                                            <div @click.outside="buka = false" class="kartu-admin w-full max-w-md shadow-2xl">
+                                                <form action="<?= base_url('akun/ajukan-reset-nik') ?>" method="post" class="isi-kartu space-y-4">
+                                                    <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
+                                                    <h2 class="text-base font-black text-gray-900 dark:text-white">Ajukan reset NIK</h2>
+                                                    <p class="text-xs text-gray-500 dark:text-brand-muted">Petugas Dinas Perakim akan meninjau permintaan ini. Bila disetujui, isian NIK di Profil Saya terbuka dan Anda bisa memasukkan NIK yang benar. Akun yang sudah mengirim pengajuan tidak dapat direset.</p>
+                                                    <label class="block text-xs text-gray-500 dark:text-brand-muted">Alasan
+                                                        <textarea name="alasan" rows="3" minlength="10" maxlength="500" required placeholder="mis. Salah ketik satu angka saat mengisi NIK"
+                                                                  class="mt-1 w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-800 dark:border-white/10 dark:text-white"></textarea>
+                                                    </label>
+                                                    <div class="flex justify-end gap-2">
+                                                        <button type="button" class="tombol-kedua" @click="buka = false">Batal</button>
+                                                        <button type="submit" class="tombol-utama"><i class="ph ph-paper-plane-tilt" aria-hidden="true"></i><span>Kirim permintaan</span></button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            <?php endif; ?>
                         <?php else: ?>
                             <input type="text" name="nik" inputmode="numeric" maxlength="16"
                                    pattern="[0-9]{16}" placeholder="16 digit sesuai KTP" class="<?= $isian ?>">
