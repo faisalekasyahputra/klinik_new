@@ -556,7 +556,8 @@ class Migrate extends CI_Controller {
             : 'TERPASANG ('.$ada073.' akun demo nonaktif tanpa sandi)').'; Super Admin siap di luar akun demo: '.$admin073."\n";
         // Migrasi 074 - token reset kata sandi mandiri (hanya sidiknya) beserta indeks unik.
         $ada074 = $this->db->field_exists('token_sandi_hash', 'usr_akun') && $this->db->field_exists('token_sandi_kedaluwarsa', 'usr_akun');
-        $indeks074 = (bool) $this->db->query("SHOW INDEX FROM usr_akun WHERE Key_name = 'uq_usr_akun_token_sandi'")->row();
+        $indeks074 = (bool) $this->db->query("SELECT 1 FROM information_schema.STATISTICS WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME = 'usr_akun' AND INDEX_NAME = 'uq_usr_akun_token_sandi' AND NON_UNIQUE = 0")->row();
         echo 'token reset kata sandi (migrasi 074): '.($ada074 && $indeks074 ? 'TERPASANG' : 'BELUM ('.($ada074 ? 'indeks unik hilang' : 'kolom usr_akun.token_sandi_* hilang').')')."
 ";
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062'] as $kolom => $no) {
