@@ -217,7 +217,7 @@ class Housing_assessment_model extends CI_Model {
     /** Permintaan klaim NIK yang belum diputuskan (terbaru dulu), atau satu permintaan bila $id diberikan. */
     public function klaim_nik_tertunda($id = NULL)
     {
-        $this->db->select('k.id, k.pelaku_id pemohon_id, k.detail_json, k.created_at, u.email pemohon_email', FALSE)
+        $this->db->select('k.id, k.pelaku_id pemohon_id, k.detail_json, k.created_at, u.email pemohon_email, u.nama pemohon_nama, u.nama_pengguna pemohon_username, u.peran pemohon_peran', FALSE)
             ->from('sys_jejak_audit k')->join('usr_akun u', 'u.id = k.pelaku_id', 'left')
             ->where('k.aksi', 'klaim_nik_diajukan')
             ->where("NOT EXISTS (SELECT 1 FROM sys_jejak_audit d WHERE d.objek_tipe = 'klaim_nik' AND d.objek_id = CAST(k.id AS CHAR)
@@ -266,7 +266,7 @@ class Housing_assessment_model extends CI_Model {
     /** Permintaan reset NIK yang belum diputuskan (terbaru dulu), satu permintaan bila $id diberikan, atau milik satu akun. */
     public function reset_nik_tertunda($id = NULL, $user_id = NULL)
     {
-        $this->db->select('k.id, k.pelaku_id pemohon_id, k.detail_json, k.created_at, u.email pemohon_email', FALSE)
+        $this->db->select('k.id, k.pelaku_id pemohon_id, k.detail_json, k.created_at, u.email pemohon_email, u.nama pemohon_nama, u.nama_pengguna pemohon_username, u.peran pemohon_peran', FALSE)
             ->from('sys_jejak_audit k')->join('usr_akun u', 'u.id = k.pelaku_id', 'left')
             ->where('k.aksi', 'reset_nik_diajukan')
             ->where("NOT EXISTS (SELECT 1 FROM sys_jejak_audit d WHERE d.objek_tipe = 'reset_nik' AND d.objek_id = CAST(k.id AS CHAR)

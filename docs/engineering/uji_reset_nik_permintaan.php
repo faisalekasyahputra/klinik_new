@@ -161,21 +161,25 @@ try {
     echo "\n== 2. Super Admin menolak lalu menyetujui\n";
     ember_ip('login');
     $jAdm = masuk('agen_admin@agen.test', $AGEN_SANDI);
+    $r = minta($jAdm, 'Admin_Users/permintaan_nik');
+    cek(strpos($r['badan'], 'data-reset-nik-minta') !== FALSE && strpos($r['badan'], $eA) !== FALSE && strpos($r['badan'], 'Warga Reset a') !== FALSE
+        && strpos($r['badan'], 'Salah ketik dua angka terakhir') !== FALSE, 'Permintaan NIK Warga menampilkan permintaan, nama dan email pemohon, serta alasan');
+    cek(strpos($r['badan'], 'data-badge-modul="permintaan_nik"') !== FALSE, 'Menu Permintaan NIK Warga memasang angka permintaan yang menunggu');
     $r = minta($jAdm, 'Admin_Users');
-    cek(strpos($r['badan'], 'data-reset-nik-minta') !== FALSE && strpos($r['badan'], $eA) !== FALSE
-        && strpos($r['badan'], 'Salah ketik dua angka terakhir') !== FALSE, 'Akses Staf menampilkan permintaan beserta pemohon dan alasan');
-    cek(strpos($r['badan'], 'data-badge-modul="users"') !== FALSE, 'Menu Akses Staf memasang angka permintaan yang menunggu');
+    cek(strpos($r['badan'], 'data-reset-nik-minta') === FALSE && strpos($r['badan'], 'data-badge-modul="users"') === FALSE,
+        'Akses Staf tidak lagi memuat permintaan NIK maupun angkanya');
     $r = minta($jAdm, 'pemberitahuan');
-    cek(strpos($r['badan'], 'data-modul-pemberitahuan="users"') !== FALSE && strpos($r['badan'], 'Reset NIK') !== FALSE,
+    cek(strpos($r['badan'], 'data-modul-pemberitahuan="permintaan_nik"') !== FALSE && strpos($r['badan'], 'Reset NIK') !== FALSE,
         'Pusat Pemberitahuan memuat permintaan reset NIK');
     $r = minta($jAdm, 'Admin_Dashboard');
     cek(strpos($r['badan'], 'Permintaan NIK') !== FALSE, 'Pita "Perlu tindakan" di dasbor menyebut Permintaan NIK');
     $r = minta($jAdm, 'Admin_Users/putuskan_reset_nik', ['id' => $id_minta, 'keputusan' => 'tolak', 'alasan' => 'Lampirkan foto KTP lewat menu Aduan dulu']);
     cek(ada_pesan($r['badan'], 'success', 'ditolak') && $hash_akun($A) !== NULL, 'Tolak: keputusan tersimpan, NIK tetap terkunci');
     $berkas_surel[] = $eA;
-    $m = end($surel($eA)) ?: [];
+    $daftar_tolak = $surel($eA);
+    $m = end($daftar_tolak) ?: [];
     cek(strpos($m['subjek'] ?? '', 'belum dapat disetujui') !== FALSE && ($m['catatan'] ?? '') === 'Lampirkan foto KTP lewat menu Aduan dulu'
-        && strpos($m['tautan'] ?? '', 'akun/profil') !== FALSE && ! preg_match('/\d{16}/', json_encode($m)),
+        && strpos($m['tautan'] ?? '', 'Auth/login?next=' . rawurlencode('akun/profil')) !== FALSE && ! preg_match('/\d{16}/', json_encode($m)),
         'Email penolakan ke warga: subjek, catatan petugas, tautan Profil Saya, tanpa NIK');
     $r = minta($jA, 'akun/profil');
     cek(strpos($r['badan'], 'data-reset-nik-ditolak') !== FALSE && strpos($r['badan'], 'Lampirkan foto KTP') !== FALSE
@@ -190,13 +194,16 @@ try {
     $daftar_surel = $surel($eA);
     cek(count($daftar_surel) === 2 && strpos(end($daftar_surel)['subjek'] ?? '', 'disetujui') !== FALSE
         && strpos(end($daftar_surel)['subjek'] ?? '', 'belum') === FALSE, 'Email persetujuan terkirim ke warga');
-    $r = minta($jAdm, 'Admin_Users');
-    cek(strpos($r['badan'], 'data-reset-nik-minta') === FALSE, 'Sesudah diputuskan, permintaan hilang dari Akses Staf');
+    $r = minta($jAdm, 'Admin_Users/permintaan_nik');
+    cek(strpos($r['badan'], 'data-reset-nik-minta') === FALSE && strpos($r['badan'], 'data-permintaan-nik-kosong') !== FALSE,
+        'Sesudah diputuskan, permintaan hilang dan halaman menampilkan keadaan kosong');
     cek((int) satu("SELECT COUNT(*) n FROM sys_jejak_audit WHERE aksi='nik_warga_direset' AND objek_id=? AND id > ?", [$A, $audit_awal])['n'] === 1,
         'Jejak audit nik_warga_direset tercatat');
-    $r = minta($jA, 'akun/profil');
-    cek(strpos($r['badan'], 'name="nik"') !== FALSE && strpos($r['badan'], 'data-reset-nik-menunggu') === FALSE,
-        'Profil Saya: isian NIK terbuka kembali');
+    $tautan = (string) (end($daftar_surel)['tautan'] ?? '');
+    $r = minta($jA, substr($tautan, strpos($tautan, 'Auth/login')));
+    cek(strpos($tautan, 'next=' . rawurlencode('akun/profil?isi=nik')) !== FALSE && strpos($r['badan'], 'data-sorot-nik') !== FALSE
+        && strpos($r['badan'], 'data-reset-nik-menunggu') === FALSE,
+        'Tautan email dengan sesi warga terbuka langsung mengantar ke Profil Saya, isian NIK terbuka dan disorot');
     $r = minta($jAdm, 'Admin_Users/putuskan_reset_nik', ['id' => $id_minta2, 'keputusan' => 'setuju']);
     cek(ada_pesan($r['badan'], 'error', 'sudah diputuskan'), 'Permintaan yang sudah diputuskan tidak bisa diputuskan ulang');
 
@@ -207,8 +214,8 @@ try {
     $jB = masuk($eB, $SANDI);
     minta($jB, 'akun/ajukan-reset-nik', ['alasan' => 'NIK saya keliru satu digit di tengah']);
     $id_b = (int) satu("SELECT id FROM sys_jejak_audit WHERE aksi='reset_nik_diajukan' AND pelaku_id=?", [$B])['id'];
-    $r = minta($jAdm, 'Admin_Users');
-    cek(strpos($r['badan'], 'pengajuan terkirim, tidak dapat direset') !== FALSE, 'Akses Staf menandai pemohon yang punya pengajuan terkirim');
+    $r = minta($jAdm, 'Admin_Users/permintaan_nik');
+    cek(strpos($r['badan'], 'pengajuan terkirim, tidak dapat direset') !== FALSE, 'Permintaan NIK Warga menandai pemohon yang punya pengajuan terkirim');
     $r = minta($jAdm, 'Admin_Users/putuskan_reset_nik', ['id' => $id_b, 'keputusan' => 'setuju']);
     cek(ada_pesan($r['badan'], 'error', 'Belum disetujui') && $hash_akun($B) !== NULL
         && satu("SELECT id FROM sys_jejak_audit WHERE objek_tipe='reset_nik' AND objek_id=?", [$id_b]) === NULL,

@@ -353,7 +353,7 @@ cek($nik_a() === $h($NIK1) && ! satu("SELECT id FROM sys_jejak_audit WHERE objek
     'Pemohon (bukan Super Admin) tidak bisa memutuskan permintaannya sendiri');
 ember_ip('login');
 $j_adm = masuk($e_adm, $SANDI);
-$r = minta($j_adm, 'Admin_Users');
+$r = minta($j_adm, 'Admin_Users/permintaan_nik');
 cek(strpos($r['badan'], 'data-klaim-nik') !== FALSE && strpos($r['badan'], $e_b) !== FALSE, 'Layar Pengguna Super Admin menampilkan permintaan klaim');
 $r = minta($j_adm, 'Admin_Users/putuskan_klaim_nik', ['id' => $id_klaim, 'keputusan' => 'tolak', 'alasan' => 'uji tolak']);
 cek($nik_a() === $h($NIK1) && (bool) satu("SELECT id FROM sys_jejak_audit WHERE aksi = 'klaim_nik_ditolak' AND objek_tipe = 'klaim_nik' AND objek_id = ?", [$id_klaim]),

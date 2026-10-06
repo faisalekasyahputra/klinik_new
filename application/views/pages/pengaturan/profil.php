@@ -170,7 +170,9 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                             <?php endif; ?>
                         <?php else: ?>
                             <input type="text" name="nik" inputmode="numeric" maxlength="16"
-                                   pattern="[0-9]{16}" placeholder="16 digit sesuai KTP" class="<?= $isian ?>">
+                                   pattern="[0-9]{16}" placeholder="16 digit sesuai KTP" class="<?= $isian ?>"
+                                   <?php /* Dari tautan email reset NIK (?isi=nik): langsung disorot dan siap diketik. */
+                                   if ($this->input->get('isi') === 'nik'): ?>autofocus data-sorot-nik<?php endif; ?>>
                             <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">
                                 Diisi sekali dan tidak dapat diubah sendiri setelah tersimpan. Pastikan benar.
                             </p>
