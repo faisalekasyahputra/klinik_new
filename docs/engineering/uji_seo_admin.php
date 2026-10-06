@@ -132,7 +132,7 @@ try {
     $p = minta(jar(), $KUNCI)['badan'];
     cek(meta($p, '#<title>(.*?)</title>#') === 'Hitung Cicilan KPR Subsidi | Klinik PKP Jawa Tengah'
         && meta($p, '#<meta name="description" content="([^"]*)"#') === 'Deskripsi uji SEO admin untuk simulasi KPR.'
-        && meta($p, '#<meta property="og:image" content="([^"]*)"#') === BASE . $berkas_baru, 'Halaman publik memakai judul, deskripsi, dan gambar timpaan');
+        && strpos((string) meta($p, '#<meta property="og:image" content="([^"]*)"#'), BASE . $berkas_baru . '?v=') === 0, 'Halaman publik memakai judul, deskripsi, dan gambar timpaan');
 
     echo "\n== 3. Indeks dan kembalikan\n";
     minta($jA, 'Admin_Seo/ubah?halaman=' . $KUNCI);

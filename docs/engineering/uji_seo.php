@@ -113,7 +113,7 @@ $salah = [];
 foreach ($slug as $sl) {
     $m = meta(ambil('program-pemerintah/' . $sl)['badan']);
     $jasa = array_filter($m['ld'], fn($b) => ($b['@type'] ?? '') === 'GovernmentService');
-    if (strpos((string) $m['title'], 'Syarat ') !== 0 || $m['og:image'] !== BASE . 'assets/img/og/program-pemerintah-' . $sl . '.jpg' || ! $jasa
+    if (strpos((string) $m['title'], 'Syarat ') !== 0 || strpos((string) $m['og:image'], BASE . 'assets/img/og/program-pemerintah-' . $sl . '.jpg?v=') !== 0 || ! $jasa
         || mb_strlen((string) $m['title']) > 70) { $salah[] = $sl; }
 }
 cek($slug && ! $salah, 'Setiap program: judul "Syarat ...", kartu OG JPG sendiri, JSON-LD GovernmentService' . ($salah ? ': ' . implode(', ', $salah) : ''));
