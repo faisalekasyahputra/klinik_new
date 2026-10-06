@@ -214,6 +214,18 @@ class Pengaturan extends MY_Controller {
                 ? str_repeat('*', 12) . substr($buka, -4)
                 : 'tersimpan';
         }
+        // Permintaan reset NIK (6 Okt 2026): status permintaan yang menunggu, dan keputusan terakhir bila
+        // permintaan sebelumnya ditolak (catatan petugas ditampilkan ke warga).
+        $datacontent['reset_nik_menunggu'] = NULL;
+        $datacontent['reset_nik_ditolak'] = NULL;
+        if (($user->peran ?? '') === 'warga') {
+            $this->load->model('Housing_assessment_model');
+            $datacontent['reset_nik_menunggu'] = $this->Housing_assessment_model->reset_nik_tertunda_milik($user_id);
+            $putus = $datacontent['reset_nik_menunggu'] ? NULL : $this->Housing_assessment_model->keputusan_reset_nik_terakhir($user_id);
+            if ($putus && $putus['aksi'] === 'reset_nik_permintaan_ditolak' && $datacontent['nik_terkunci']) {
+                $datacontent['reset_nik_ditolak'] = $putus;
+            }
+        }
 
         if ($this->session->userdata('role') === 'pengembang') {
             // Lewat satu sumber bersama, sama dengan index() dan wizard (§17 poin 13).
@@ -445,6 +457,30 @@ class Pengaturan extends MY_Controller {
             ? 'Profil perusahaan disimpan dan langsung tampil di direktori publik.'
             : 'Profil perusahaan disimpan. Entri Anda sedang tidak ditayangkan di direktori publik oleh dinas.');
         redirect('akun/perusahaan');
+    }
+
+    /**
+     * Warga meminta Super Admin membuka NIK yang terkunci di akunnya (6 Okt 2026). Hanya untuk warga yang
+     * NIK-nya terkunci; keputusan ada di Akses Staf (Admin_Users::putuskan_reset_nik).
+     */
+    public function ajukan_reset_nik() {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); return; }
+        $user_id = (int) $this->get_user_id();
+        $user = $this->db->select('peran, nik_lookup_hash')->get_where('usr_akun', ['id' => $user_id])->row();
+        if ( ! $user || $user->peran !== 'warga' || empty($user->nik_lookup_hash)) {
+            $this->session->set_flashdata('error', 'Permintaan reset NIK hanya untuk akun warga yang NIK-nya sudah terkunci.');
+            redirect('akun/profil'); return;
+        }
+        $this->load->model('Housing_assessment_model');
+        $hasil = $this->Housing_assessment_model->ajukan_reset_nik($user_id, $this->input->post('alasan', TRUE));
+        if (empty($hasil['success'])) {
+            $this->session->set_flashdata('error', $hasil['message']);
+            redirect('akun/profil'); return;
+        }
+        $this->session->set_flashdata('success', ! empty($hasil['baru'])
+            ? 'Permintaan reset NIK terkirim. Petugas Dinas Perakim akan meninjaunya; hasilnya tampil di halaman ini.'
+            : 'Permintaan reset NIK Anda masih ditinjau petugas. Tidak perlu mengirim ulang.');
+        redirect('akun/profil');
     }
 
     public function update_profile() {

@@ -73,6 +73,7 @@ $route['akun']                     = 'Pengaturan/index';
 $route['akun/profil']              = 'Pengaturan/profil';
 $route['akun/dokumen']             = 'Pengaturan/dokumen';
 $route['akun/update']              = 'Pengaturan/update_profile';
+$route['akun/ajukan-reset-nik']    = 'Pengaturan/ajukan_reset_nik';
 $route['akun/export']              = 'Pengaturan/export_account_data';
 $route['akun/request-data-deletion'] = 'Pengaturan/request_service_data_deletion';
 $route['akun/delete']              = 'Pengaturan/delete_account';

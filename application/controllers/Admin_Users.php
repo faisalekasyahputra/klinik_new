@@ -60,6 +60,13 @@ class Admin_Users extends Admin_Controller {
         $ids_klaim = array_unique(array_merge(...array_map(fn($k) => $k['pemegang'], $data['klaim_nik'] ?: [['pemegang' => []]])));
         $data['email_pemegang'] = $ids_klaim ? array_column($this->db->select('id, email')->where_in('id', $ids_klaim)
             ->get('usr_akun')->result_array(), 'email', 'id') : [];
+        // Permintaan reset NIK dari warga (Housing_assessment_model::ajukan_reset_nik), dengan tanda akun yang
+        // punya pengajuan terkirim: reset untuk akun itu ditolak lepas_nik() supaya arsip tetap utuh.
+        $data['reset_nik_minta'] = $this->Housing_assessment_model->reset_nik_tertunda();
+        $ids_minta = array_map(fn($k) => (int) $k['pemohon_id'], $data['reset_nik_minta']);
+        $data['reset_nik_terkirim'] = $ids_minta ? array_column($this->db->select('user_id, COUNT(*) n', FALSE)
+            ->where_in('user_id', $ids_minta)->where('submitted_at IS NOT NULL', NULL, FALSE)->group_by('user_id')
+            ->get('sf_penilaian_perumahan')->result_array(), 'n', 'user_id') : [];
         $data['table'] = $data['pager'] = $table;
         $data['available_roles'] = $this->config->item('available_roles');
         $data['kabupaten_list'] = $this->db->order_by('nama', 'ASC')->get('kabupaten')->result();
@@ -422,44 +429,31 @@ class Admin_Users extends Admin_Controller {
     }
 
     /**
-     * Lepaskan NIK dari akun warga yang belum pernah mengirim penilaian.
-     * Pengajuan terkirim tetap menjadi arsip resmi dan memblokir reset agar
-     * satu akun tidak dipakai bergantian oleh beberapa orang.
+     * Inti reset NIK, dipakai tombol Reset NIK langsung dan persetujuan permintaan warga.
+     * Mengembalikan NULL bila berhasil, atau pesan galat untuk admin.
+     *
+     * Perbaikan 6 Okt 2026: dulu hanya profil pendataan (sf_profil_warga) yang dihapus, sedangkan NIK di
+     * akun (usr_akun.nik, terkunci di Profil Saya) tetap ada. Warga tetap melihat "NIK sudah terkunci" dan
+     * tidak bisa memasukkan NIK baru, dan akun yang NIK-nya hanya di akun tidak bisa direset sama sekali.
+     * Kini keduanya dilepas. Pengajuan terkirim tetap memblokir reset agar arsip tidak berpindah pemilik.
      */
-    public function reset_nik()
+    private function lepas_nik($user, $alasan, $sumber)
     {
-        $user = $this->sasaran_sah(TRUE);
-        if ( ! $user) { return; }
-
-        $alasan = trim((string) $this->input->post('alasan', TRUE));
-        if ($user->peran !== 'warga') {
-            $this->session->set_flashdata('error', 'Reset NIK hanya tersedia untuk akun Warga.');
-            redirect('Admin_Users'); return;
-        }
-        if (mb_strlen($alasan) < 10 || mb_strlen($alasan) > 500) {
-            $this->session->set_flashdata('error', 'Alasan reset NIK wajib diisi 10 sampai 500 karakter.');
-            redirect('Admin_Users'); return;
-        }
-
-        $profile = $this->db->select('id')->get_where('sf_profil_warga', ['user_id'=>(int)$user->id])->row();
-        if ( ! $profile) {
-            $this->session->set_flashdata('error', 'Akun ini belum terhubung dengan NIK.');
-            redirect('Admin_Users'); return;
-        }
+        if ($user->peran !== 'warga') { return 'Reset NIK hanya tersedia untuk akun Warga.'; }
+        $profile = $this->db->select('id')->get_where('sf_profil_warga', ['user_id' => (int) $user->id])->row();
+        if ( ! $profile && empty($user->nik_lookup_hash)) { return 'Akun ini belum terhubung dengan NIK.'; }
 
         $submitted = $this->db->where('user_id', (int) $user->id)
             ->where('submitted_at IS NOT NULL', NULL, FALSE)->count_all_results('sf_penilaian_perumahan');
         if ($submitted > 0) {
             $this->catat_audit('reset_nik_ditolak',
                 'DITOLAK: reset NIK akun ' . $user->email . ' karena memiliki penilaian terkirim',
-                'usr_akun', (string) $user->id, ['alasan'=>$alasan]);
-            $this->session->set_flashdata('error',
-                'NIK tidak dapat direset karena akun memiliki pengajuan yang sudah dikirim. Data harus tetap menjadi arsip.');
-            redirect('Admin_Users'); return;
+                'usr_akun', (string) $user->id, ['alasan' => $alasan, 'sumber' => $sumber]);
+            return 'NIK tidak dapat direset karena akun memiliki pengajuan yang sudah dikirim. Data harus tetap menjadi arsip.';
         }
 
         $drafts = $this->db->select('id')->get_where('sf_penilaian_perumahan',
-            ['user_id'=>(int)$user->id, 'status'=>'draft'])->result_array();
+            ['user_id' => (int) $user->id, 'status' => 'draft'])->result_array();
         $draft_ids = array_map('intval', array_column($drafts, 'id'));
         $files = [];
         if ($draft_ids) {
@@ -469,12 +463,10 @@ class Admin_Users extends Admin_Controller {
 
         $this->db->trans_start();
         if ($draft_ids) $this->db->where_in('id', $draft_ids)->delete('sf_penilaian_perumahan');
-        $this->db->where('id', (int) $profile->id)->delete('sf_profil_warga');
+        if ($profile) $this->db->where('id', (int) $profile->id)->delete('sf_profil_warga');
+        $this->db->where('id', (int) $user->id)->update('usr_akun', ['nik' => NULL, 'nik_lookup_hash' => NULL]);
         $this->db->trans_complete();
-        if ($this->db->trans_status() === FALSE) {
-            $this->session->set_flashdata('error', 'Reset NIK gagal disimpan. Coba lagi.');
-            redirect('Admin_Users'); return;
-        }
+        if ($this->db->trans_status() === FALSE) { return 'Reset NIK gagal disimpan. Coba lagi.'; }
 
         foreach ($files as $file) {
             @unlink($this->private_upload_dir('warga_assessment', (int)$file['penilaian_id'])
@@ -485,11 +477,78 @@ class Admin_Users extends Admin_Controller {
         $this->catat_audit('nik_warga_direset',
             'Mereset hubungan NIK akun warga ' . $user->email,
             'usr_akun', (string) $user->id,
-            ['alasan'=>$alasan, 'draft_dihapus'=>count($draft_ids)]);
+            ['alasan' => $alasan, 'draft_dihapus' => count($draft_ids), 'sumber' => $sumber]);
+        return NULL;
+    }
+
+    /** Reset NIK langsung dari Akses Staf (Super Admin menulis alasan sendiri). */
+    public function reset_nik()
+    {
+        $user = $this->sasaran_sah(TRUE);
+        if ( ! $user) { return; }
+
+        $alasan = trim((string) $this->input->post('alasan', TRUE));
+        if (mb_strlen($alasan) < 10 || mb_strlen($alasan) > 500) {
+            $this->session->set_flashdata('error', 'Alasan reset NIK wajib diisi 10 sampai 500 karakter.');
+            redirect('Admin_Users'); return;
+        }
+        $galat = $this->lepas_nik($user, $alasan, 'langsung');
+        if ($galat !== NULL) {
+            $this->session->set_flashdata('error', $galat);
+            redirect('Admin_Users'); return;
+        }
         $this->session->set_flashdata('success',
             'NIK akun ' . $user->email . ' berhasil direset. Warga dapat memasukkan NIK kembali.');
         redirect('Admin_Users');
     }
+
+    /**
+     * Putuskan permintaan reset NIK dari warga (6 Okt 2026). Setuju: lepas_nik() dengan alasan pemohon,
+     * lalu keputusan dicatat. Tolak: hanya keputusan dengan catatan, yang ditampilkan ke warga di Profil
+     * Saya. Pemohon diberi tahu lewat Web Push bila berlangganan.
+     */
+    public function putuskan_reset_nik()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $this->load->model('Housing_assessment_model');
+        $minta = $this->Housing_assessment_model->reset_nik_tertunda((int) $this->input->post('id'));
+        if ( ! $minta) {
+            $this->session->set_flashdata('error', 'Permintaan reset NIK tidak ditemukan atau sudah diputuskan.');
+            redirect('Admin_Users'); return;
+        }
+        $setuju = $this->input->post('keputusan', TRUE) === 'setuju';
+        $catatan = mb_substr(trim((string) $this->input->post('alasan', TRUE)), 0, 500);
+        $pemohon = $this->db->get_where('usr_akun', ['id' => (int) $minta['pemohon_id']])->row();
+
+        if ($setuju) {
+            if ( ! $pemohon) {
+                $this->session->set_flashdata('error', 'Akun pemohon sudah tidak ada. Tolak permintaan ini.');
+                redirect('Admin_Users'); return;
+            }
+            $galat = $this->lepas_nik($pemohon, $minta['alasan'], 'permintaan #' . (int) $minta['id']);
+            if ($galat !== NULL) {
+                $this->session->set_flashdata('error', 'Belum disetujui: ' . $galat . ' Tolak permintaan ini dengan catatan untuk warga.');
+                redirect('Admin_Users'); return;
+            }
+        }
+        $this->catat_audit($setuju ? 'reset_nik_permintaan_disetujui' : 'reset_nik_permintaan_ditolak',
+            ($setuju ? 'Menyetujui' : 'Menolak') . ' permintaan reset NIK akun ' . ($pemohon->email ?? ('id ' . (int) $minta['pemohon_id'])),
+            'reset_nik', (string) (int) $minta['id'], ['pemohon' => (int) $minta['pemohon_id'], 'catatan' => $catatan]);
+
+        try {
+            $this->load->library('Web_push_service');
+            $this->web_push_service->notify([['user_id' => (int) $minta['pemohon_id']]], 'Permintaan reset NIK', $setuju
+                ? 'Permintaan Anda disetujui. Buka Profil Saya untuk memasukkan NIK yang benar.'
+                : 'Permintaan Anda belum dapat disetujui. Lihat catatan petugas di Profil Saya.',
+                'akun/profil', 'reset-nik');
+        } catch (\Throwable $e) { /* pemberitahuan opsional; keputusan sudah tersimpan */ }
+
+        $this->session->set_flashdata('success', $setuju
+            ? 'Permintaan disetujui. NIK akun ' . ($pemohon->email ?? '') . ' dibuka; warga dapat memasukkan NIK kembali.'
+            : 'Permintaan reset NIK ditolak.');
+        redirect('Admin_Users');
+    }
+
     /**
      * Putuskan permintaan klaim NIK (temuan idor-otorisasi-04): NIK yang terikat BELUM terverifikasi
      * ke akun lain tidak lagi berpindah otomatis saat akun lain lolos Cek NIK; Super Admin memutuskan.

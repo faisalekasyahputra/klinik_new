@@ -234,6 +234,73 @@ class Housing_assessment_model extends CI_Model {
         return $id !== NULL ? ($hasil[0] ?? NULL) : $hasil;
     }
 
+    /**
+     * Permintaan reset NIK dari warga (6 Okt 2026): NIK di Profil Saya terkunci, jadi warga yang salah
+     * memasukkan NIK meminta Super Admin membukanya. Pola sama dengan klaim NIK, tanpa tabel baru: baris
+     * jejak audit `reset_nik_diajukan` (pelaku = pemohon, rincian = alasan, tanpa NIK); keputusan = baris
+     * `reset_nik_permintaan_disetujui`/`..._ditolak` berobjek `reset_nik`#id. Satu permintaan menunggu per akun.
+     */
+    public function ajukan_reset_nik($user_id, $alasan)
+    {
+        $user_id = (int) $user_id;
+        $alasan = trim((string) $alasan);
+        if (mb_strlen($alasan) < 10 || mb_strlen($alasan) > 500) {
+            return $this->fail('alasan_tidak_valid', 'Tuliskan alasannya, 10 sampai 500 karakter.');
+        }
+        if ($this->reset_nik_tertunda_milik($user_id)) { return ['success' => TRUE, 'baru' => FALSE]; }
+        $this->db->insert('sys_jejak_audit', [
+            'pelaku_id' => $user_id,
+            'pelaku_email' => $this->session->userdata('email') ?: NULL,
+            'pelaku_peran' => $this->session->userdata('role') ?: NULL,
+            'aksi' => 'reset_nik_diajukan',
+            'objek_tipe' => 'usr_akun',
+            'objek_id' => (string) $user_id,
+            'ringkasan' => 'Warga meminta NIK akunnya dibuka agar dapat dimasukkan ulang; menunggu tinjauan Super Admin',
+            'detail_json' => json_encode(['alasan' => $alasan], JSON_UNESCAPED_UNICODE),
+            'ip' => $this->input->ip_address(),
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+        return ['success' => TRUE, 'baru' => TRUE, 'id' => (int) $this->db->insert_id()];
+    }
+
+    /** Permintaan reset NIK yang belum diputuskan (terbaru dulu), satu permintaan bila $id diberikan, atau milik satu akun. */
+    public function reset_nik_tertunda($id = NULL, $user_id = NULL)
+    {
+        $this->db->select('k.id, k.pelaku_id pemohon_id, k.detail_json, k.created_at, u.email pemohon_email', FALSE)
+            ->from('sys_jejak_audit k')->join('usr_akun u', 'u.id = k.pelaku_id', 'left')
+            ->where('k.aksi', 'reset_nik_diajukan')
+            ->where("NOT EXISTS (SELECT 1 FROM sys_jejak_audit d WHERE d.objek_tipe = 'reset_nik' AND d.objek_id = CAST(k.id AS CHAR)
+                AND d.aksi IN ('reset_nik_permintaan_disetujui', 'reset_nik_permintaan_ditolak'))", NULL, FALSE);
+        if ($id !== NULL) { $this->db->where('k.id', (int) $id); }
+        if ($user_id !== NULL) { $this->db->where('k.pelaku_id', (int) $user_id); }
+        $hasil = [];
+        foreach ($this->db->order_by('k.id', 'DESC')->limit(100)->get()->result_array() as $r) {
+            $d = json_decode((string) $r['detail_json'], TRUE) ?: [];
+            unset($r['detail_json']);
+            $hasil[] = $r + ['alasan' => (string) ($d['alasan'] ?? '')];
+        }
+        return ($id !== NULL || $user_id !== NULL) ? ($hasil[0] ?? NULL) : $hasil;
+    }
+
+    public function reset_nik_tertunda_milik($user_id)
+    {
+        return $this->reset_nik_tertunda(NULL, (int) $user_id);
+    }
+
+    /** Keputusan atas permintaan reset NIK TERAKHIR akun ini: ['aksi', 'catatan', 'created_at'], atau NULL bila belum diputuskan. */
+    public function keputusan_reset_nik_terakhir($user_id)
+    {
+        $minta = $this->db->select('id')->where('aksi', 'reset_nik_diajukan')->where('pelaku_id', (int) $user_id)
+            ->order_by('id', 'DESC')->get('sys_jejak_audit', 1)->row_array();
+        if ( ! $minta) { return NULL; }
+        $putus = $this->db->select('aksi, detail_json, created_at')->where('objek_tipe', 'reset_nik')
+            ->where('objek_id', (string) (int) $minta['id'])->where_in('aksi', ['reset_nik_permintaan_disetujui', 'reset_nik_permintaan_ditolak'])
+            ->order_by('id', 'DESC')->get('sys_jejak_audit', 1)->row_array();
+        if ( ! $putus) { return NULL; }
+        $d = json_decode((string) $putus['detail_json'], TRUE) ?: [];
+        return ['aksi' => $putus['aksi'], 'catatan' => (string) ($d['catatan'] ?? ''), 'created_at' => $putus['created_at']];
+    }
+
     /** NIK polos dari ciphertext pemegang lain (usr_akun.nik atau profil pendataannya), atau NULL bila NIK itu sudah bebas. */
     public function nik_pemegang_lain($nik_hash, $kecuali_user_id)
     {
