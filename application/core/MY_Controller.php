@@ -566,6 +566,8 @@ class MY_Controller extends CI_Controller {
         $this->ingat_halaman_asal();
 
         if ($this->input->is_ajax_request()) {
+            // Fragment tidak membawa <title>; loader portal (footer.php) memasang judul tab dari header ini.
+            $this->output->set_header('X-Judul-Halaman: ' . rawurlencode(seo_judul_penuh(is_array($data['seo'] ?? NULL) ? $data['seo'] : [])));
             $this->load->view($view, $data);
         } else {
             $data['content'] = $this->load->view($view, $data, true);

@@ -183,9 +183,17 @@ class Kawasan_kumuh extends MY_Controller {
             return;
         }
 
+        $kawasan = $detail['data']['data'] ?? [];
+        $nama = ucwords(strtolower(trim((string) ($kawasan['nama_kawasan'] ?? ''))));
+        $kab  = ucwords(strtolower(trim((string) ($kawasan['nama_kab'] ?? ''))));
         $this->render('pages/data_spasial/kawasan_kumuh_detail', [
             'judul'   => 'Detail Kawasan Kumuh',
-            'kawasan' => $detail['data']['data'] ?? [],
+            'seo'     => ['judul' => 'Kawasan Kumuh ' . ($nama !== '' ? $nama : 'Jawa Tengah') . ($kab !== '' ? ', ' . $kab : ''),
+                'deskripsi' => 'Data kawasan permukiman kumuh ' . $nama . ($kab !== '' ? ' di ' . $kab : '')
+                    . (! empty($kawasan['tahun']) ? ' tahun ' . $kawasan['tahun'] : '')
+                    . (isset($kawasan['skor_kumuh_awal'], $kawasan['skor_kumuh_akhir']) ? ', skor kekumuhan ' . $kawasan['skor_kumuh_awal'] . ' menjadi ' . $kawasan['skor_kumuh_akhir'] : '')
+                    . ': luas, RT/RW, cacah bangunan dan penduduk.'],
+            'kawasan' => $kawasan,
             /* TIGA tingkat, dan tiap tingkat punya alasan berbeda:
                library membungkus balasan di `data`, respons API sendiri
                membungkus isinya di `data`, lalu `data_rtrw` membungkus lagi

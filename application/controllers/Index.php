@@ -212,9 +212,43 @@ class Index extends MY_Controller {
    		$datacontent['row'] = $decoded_data['detail'];
 		$datacontent['bangunan'] = isset($decoded_data['bangunan']) ? $decoded_data['bangunan'] : [];
 		$datacontent['judul'] ='';
+		$data['seo'] = $this->_seo_perumahan($datacontent['row'], $idLokasi);
 		$data['content'] = $this->load->view('pages/perumahan/detail_perumahan', $datacontent, true);
 		$this->load->view('layouts/main',$data);
 
+	}
+
+	/** Judul, deskripsi, foto, dan JSON-LD halaman detail perumahan dari data SIKUMBANG (SEO 6 Okt 2026). */
+	private function _seo_perumahan(array $row, $idLokasi) {
+		$rapi = function ($t) { return preg_replace_callback('/\b(Pt|Cv|Tbk|Rt|Rw)\b/', fn($m) => strtoupper($m[1]), ucwords(strtolower(trim((string) $t)))); };
+		$nama = $rapi($row['namaPerumahan'] ?? 'Perumahan');
+		$w = is_array($row['wilayah'] ?? NULL) ? $row['wilayah'] : [];
+		$kab = str_replace(['Kab ', 'Kota '], ['Kab. ', 'Kota '], $rapi($w['kabupaten'] ?? ''));
+		$kec = $rapi($w['kecamatan'] ?? '');
+		$harga = []; $subsidi = FALSE;
+		foreach ((array) ($row['tipeRumah'] ?? []) as $t) {
+			if ((float) ($t['harga'] ?? 0) > 0) { $harga[] = (float) $t['harga']; }
+			$subsidi = $subsidi || strtolower((string) ($t['status'] ?? '')) === 'subsidi';
+		}
+		$jenis = $subsidi ? 'rumah subsidi' : 'rumah';
+		$deskripsi = $nama . ($kec !== '' ? ' di ' . $kec . ', ' : ' di ') . ($kab !== '' ? $kab : 'Jawa Tengah')
+			. (! empty($row['namaPengembang']) ? ' oleh ' . $rapi($row['namaPengembang']) : '') . '. '
+			. ($harga ? count($harga) . ' tipe ' . $jenis . ' mulai Rp ' . number_format(min($harga), 0, ',', '.') . '. ' : '')
+			. 'Lihat foto dan lokasinya.';
+		$foto = (string) ($row['foto'][0] ?? '');
+		if ($foto !== '' && stripos($foto, 'http') !== 0) {
+			$i = strpos($foto, 'public');
+			$foto = $i === FALSE ? '' : 'Index/buka_foto?path=' . urlencode(stripslashes(substr($foto, $i)));
+		}
+		$ld = ['@type' => 'Place', 'name' => $nama, 'url' => base_url('detail_perum/' . $idLokasi),
+			'address' => ['@type' => 'PostalAddress', 'streetAddress' => (string) ($row['alamat'] ?? ''),
+				'addressLocality' => $kab, 'addressRegion' => 'Jawa Tengah', 'addressCountry' => 'ID']];
+		if ($foto !== '') { $ld['image'] = seo_url_mutlak($foto); }
+		if (preg_match('/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/', (string) ($row['koordinatPerumahan'] ?? ''), $k)) {
+			$ld['geo'] = ['@type' => 'GeoCoordinates', 'latitude' => (float) $k[1], 'longitude' => (float) $k[2]];
+		}
+		return ['judul' => $nama . ($kab !== '' ? ', ' . $kab : ''), 'deskripsi' => $deskripsi,
+			'gambar' => $foto, 'gambar_alt' => 'Foto ' . $nama, 'tipe' => 'article', 'jsonld' => $ld];
 	}
 	/**
 	 * Saring hasil Sikumbang menurut status rumah.
@@ -600,9 +634,16 @@ class Index extends MY_Controller {
 			show_404();
 		}
 
+		$judul = trim((string) $design['title']);
 		$this->render('pages/bank_desain/detail_desain', [
 			'judul' => $design['title'],
 			'design' => $design,
+			'seo' => ['judul' => 'Desain Rumah ' . $judul,
+				'deskripsi' => 'Contoh desain rumah layak huni "' . $judul . '" dari Disperakim Jawa Tengah: gambar tampak, denah, dan berkas yang bisa diunduh.',
+				'gambar' => ! empty($design['path_image']) ? 'https://apiternak.krsjawa3.com/' . ltrim((string) $design['path_image'], '/') : '',
+				'gambar_alt' => 'Desain rumah ' . $judul,
+				'jsonld' => ['@type' => 'CreativeWork', 'name' => 'Desain Rumah ' . $judul, 'inLanguage' => 'id-ID',
+					'publisher' => ['@type' => 'GovernmentOrganization', 'name' => 'Disperakim Provinsi Jawa Tengah']]],
 		]);
 	}
 	public function cari_rumah()

@@ -70,7 +70,7 @@
                <div class="flex items-center gap-3 mb-2 px-1 shrink-0">
                    <img src="<?= base_url('assets/img/logo-jateng.png') ?>" alt="Logo Jawa Tengah" class="w-9 h-9 object-contain shrink-0">
                    <div>
-                       <h1 class="text-base sm:text-lg font-extrabold text-white tracking-tight leading-tight">Klinik Perumahan & Kawasan Permukiman</h1>
+                       <?php /* Bukan <h1>: header ini ada di setiap halaman, jadi <h1> milik judul konten (SEO 6 Okt 2026). */ ?><p class="text-base sm:text-lg font-extrabold text-white tracking-tight leading-tight">Klinik Perumahan & Kawasan Permukiman</p>
                        <p class="text-[10px] sm:text-[11px] text-[#8aacb0]">Disperakim Provinsi Jawa Tengah</p>
                    </div>
                </div>

@@ -461,6 +461,8 @@ function globalSystem() {
                 // (mis. Auth/akses_ditolak - sudah login tapi salah peran)
                 // TETAP jatuh ke navigasi penuh seperti sediakala.
                 if (!res.ok) { window.location.href = url; return null; }
+                var judulBaru = res.headers.get('X-Judul-Halaman');
+                if (judulBaru) { try { document.title = decodeURIComponent(judulBaru); } catch (e) {} }
                 if (res.redirected) {
                     if (window.kpkpShowLoginModal && /\/Auth\/login(\?|$)/i.test(res.url)) {
                         batalkanDemiModalLogin();
