@@ -6,8 +6,8 @@
  *
  *   php docs/engineering/buat_kartu_og.php
  *
- * Isi kartu: foto tema di kanan, logo dan nama layanan di kiri atas, label kecil, judul, dan deskripsi
- * dari config/seo.php; kartu program dari Katalog Program (DB lokal) dengan foto heronya. Font Segoe UI
+ * Isi kartu: foto tema sebagai latar gelap, lalu logo, label, dan judul rata tengah di zona aman persegi
+ * (judul dari config/seo.php); kartu program dari Katalog Program (DB lokal) dengan foto heronya. Font Segoe UI
  * dari C:\Windows\Fonts hanya dipakai untuk merender; berkas font tidak ikut repo. Jalankan ulang
  * sesudah judul di config/seo.php atau program di Katalog Program berubah, lalu commit hasilnya.
  */
@@ -105,42 +105,63 @@ function baris($teks, $font, $ukuran, $lebar, $maks) {
 
 $logo = muat('assets/img/logo-jateng.png');
 $dibuat = 0;
+/** Tulis teks rata tengah pada garis dasar $y. */
+function tengah($im, $ukuran, $font, $teks, $y, $warna) {
+    $b = imagettfbbox($ukuran, 0, $font, $teks);
+    imagettftext($im, $ukuran, 0, (int) ((LEBAR - ($b[2] - $b[0])) / 2), $y, $warna, $font, $teks);
+}
+
+// Tata letak AMAN DIPOTONG PERSEGI (7 Okt 2026): WhatsApp, di ponsel maupun desktop, memotong og:image jadi
+// kotak di tengah. Semua yang harus terbaca (logo, label, judul) berada di zona tengah 630x630
+// (x 285..915); foto tema jadi latar penuh yang digelapkan. Deskripsi tidak ditulis di gambar karena
+// platform menampilkannya sebagai teks di bawah kartu.
+const ZONA = 540; // lebar teks maksimal, di dalam kotak tengah 630 dengan napas di kiri-kanan
 foreach ($kartu as $slug => [$label, $judul, $deskripsi, $foto]) {
     $im = imagecreatetruecolor(LEBAR, TINGGI);
     imagealphablending($im, TRUE);
     imagefill($im, 0, 0, warna($im, '#0a1a1f'));
 
-    // Foto di kanan (crop menutup 520x630), dilebur ke latar dengan gradasi.
     $src = $foto ? muat($foto) : NULL;
     if ($src) {
-        $fw = 520; $sw = imagesx($src); $sh = imagesy($src);
-        $skala = max($fw / $sw, TINGGI / $sh);
-        $cw = (int) ($fw / $skala); $ch = (int) (TINGGI / $skala);
-        imagecopyresampled($im, $src, LEBAR - $fw, 0, (int) (($sw - $cw) / 2), (int) (($sh - $ch) / 2), $fw, TINGGI, $cw, $ch);
-        for ($x = 0; $x < 260; $x++) {
-            imagefilledrectangle($im, LEBAR - $fw + $x, 0, LEBAR - $fw + $x, TINGGI, warna($im, '#0a1a1f', (int) (127 * $x / 260)));
-        }
+        $sw = imagesx($src); $sh = imagesy($src);
+        $skala = max(LEBAR / $sw, TINGGI / $sh);
+        $cw = (int) (LEBAR / $skala); $ch = (int) (TINGGI / $skala);
+        imagecopyresampled($im, $src, 0, 0, (int) (($sw - $cw) / 2), (int) (($sh - $ch) / 2), LEBAR, TINGGI, $cw, $ch);
         imagedestroy($src);
+        // Lapisan gelap merata, ditambah pita tengah yang lebih pekat di belakang teks.
+        imagefilledrectangle($im, 0, 0, LEBAR, TINGGI, warna($im, '#0a1a1f', 48));
+        for ($x = 0; $x < LEBAR; $x++) {
+            $jarak = abs($x - LEBAR / 2) / (LEBAR / 2);           // 0 di tengah, 1 di tepi
+            $alpha = (int) min(127, 60 + 67 * $jarak * $jarak);  // tengah lebih gelap
+            imagefilledrectangle($im, $x, 0, $x, TINGGI, warna($im, '#0a1a1f', $alpha));
+        }
     }
-    // Pita aksen bawah dan garis teal.
     imagefilledrectangle($im, 0, TINGGI - 10, LEBAR, TINGGI, warna($im, '#d6fb00'));
-    imagefilledrectangle($im, 64, 168, 140, 173, warna($im, '#00a3b5'));
 
-    // Logo dan nama layanan.
-    if ($logo) { imagecopyresampled($im, $logo, 64, 52, 0, 0, 52, (int) (52 * imagesy($logo) / imagesx($logo)), imagesx($logo), imagesy($logo)); }
-    imagettftext($im, 26, 0, 132, 82, warna($im, '#ffffff'), $GLOBALS['FONT_TEBAL'], 'Klinik PKP');
-    imagettftext($im, 15, 0, 132, 110, warna($im, '#9fb3b8'), $GLOBALS['FONT_BIASA'], 'Disperakim Provinsi Jawa Tengah');
+    // Logo + nama layanan, rata tengah.
+    $teks_merek = 'Klinik PKP';
+    $bm = imagettfbbox(24, 0, $GLOBALS['FONT_TEBAL'], $teks_merek);
+    $lebar_merek = 44 + 12 + ($bm[2] - $bm[0]);
+    $x0 = (int) ((LEBAR - $lebar_merek) / 2);
+    if ($logo) { imagecopyresampled($im, $logo, $x0, 58, 0, 0, 44, (int) (44 * imagesy($logo) / imagesx($logo)), imagesx($logo), imagesy($logo)); }
+    imagettftext($im, 24, 0, $x0 + 56, 92, warna($im, '#ffffff'), $GLOBALS['FONT_TEBAL'], $teks_merek);
+    tengah($im, 14, $GLOBALS['FONT_BIASA'], 'Disperakim Provinsi Jawa Tengah', 126, warna($im, '#b8c9cd'));
 
-    // Label, judul, deskripsi.
-    imagettftext($im, 17, 0, 64, 222, warna($im, '#d6fb00'), $GLOBALS['FONT_TEBAL'], mb_strtoupper($label));
-    $y = 290;
-    foreach (baris($judul, $GLOBALS['FONT_TEBAL'], 44, 610, 3) as $b) { imagettftext($im, 44, 0, 64, $y, warna($im, '#ffffff'), $GLOBALS['FONT_TEBAL'], $b); $y += 60; }
-    $y += 14;
-    foreach (baris($deskripsi, $GLOBALS['FONT_BIASA'], 21, 600, 3) as $b) { imagettftext($im, 21, 0, 64, $y, warna($im, '#c4d3d6'), $GLOBALS['FONT_BIASA'], $b); $y += 32; }
+    // Judul: 46pt, turun ke 40pt bila lebih dari tiga baris; blok label + judul dipusatkan di bawah merek.
+    $ukuran = 46; $baris_judul = baris($judul, $GLOBALS['FONT_TEBAL'], $ukuran, ZONA, 4);
+    if (count($baris_judul) > 3) { $ukuran = 40; $baris_judul = baris($judul, $GLOBALS['FONT_TEBAL'], $ukuran, ZONA, 4); }
+    $tinggi_baris = (int) ($ukuran * 1.32);
+    $tinggi_blok = 40 + count($baris_judul) * $tinggi_baris;
+    $y = (int) (150 + (TINGGI - 10 - 150 - $tinggi_blok) / 2) + 22;
+    imagefilledrectangle($im, (int) (LEBAR / 2 - 36), $y - 40, (int) (LEBAR / 2 + 36), $y - 36, warna($im, '#00a3b5'));
+    tengah($im, 16, $GLOBALS['FONT_TEBAL'], mb_strtoupper($label), $y, warna($im, '#d6fb00'));
+    $y += 22 + $tinggi_baris;
+    foreach ($baris_judul as $b) { tengah($im, $ukuran, $GLOBALS['FONT_TEBAL'], $b, $y, warna($im, '#ffffff')); $y += $tinggi_baris; }
 
     imagejpeg($im, $KELUAR . $slug . '.jpg', 80);
     imagedestroy($im);
     $dibuat++;
-    echo "  $slug.jpg\n";
+    echo "  $slug.jpg
+";
 }
 echo "Kartu dibuat: $dibuat di assets/img/og/\n";
