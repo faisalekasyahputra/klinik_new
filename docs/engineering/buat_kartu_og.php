@@ -151,11 +151,13 @@ foreach ($kartu as $slug => [$label, $judul, $deskripsi, $foto]) {
     $ukuran = 46; $baris_judul = baris($judul, $GLOBALS['FONT_TEBAL'], $ukuran, ZONA, 4);
     if (count($baris_judul) > 3) { $ukuran = 40; $baris_judul = baris($judul, $GLOBALS['FONT_TEBAL'], $ukuran, ZONA, 4); }
     $tinggi_baris = (int) ($ukuran * 1.32);
-    $tinggi_blok = 40 + count($baris_judul) * $tinggi_baris;
-    $y = (int) (150 + (TINGGI - 10 - 150 - $tinggi_blok) / 2) + 22;
-    imagefilledrectangle($im, (int) (LEBAR / 2 - 36), $y - 40, (int) (LEBAR / 2 + 36), $y - 36, warna($im, '#00a3b5'));
-    tengah($im, 16, $GLOBALS['FONT_TEBAL'], mb_strtoupper($label), $y, warna($im, '#d6fb00'));
-    $y += 22 + $tinggi_baris;
+    // Blok judul dipusatkan pada tengah kartu (sedikit di bawahnya karena logo di atas), BUKAN pada ruang
+    // di bawah logo: cara lama menurunkan judul ke sepertiga bawah (umpan balik user 7 Okt 2026).
+    $pusat = 345;
+    $y = (int) ($pusat - count($baris_judul) * $tinggi_baris / 2 + $ukuran * 0.75); // garis dasar baris pertama
+    $y_label = $y - (int) ($ukuran * 0.75) - 26;
+    imagefilledrectangle($im, (int) (LEBAR / 2 - 36), $y_label - 40, (int) (LEBAR / 2 + 36), $y_label - 36, warna($im, '#00a3b5'));
+    tengah($im, 16, $GLOBALS['FONT_TEBAL'], mb_strtoupper($label), $y_label, warna($im, '#d6fb00'));
     foreach ($baris_judul as $b) { tengah($im, $ukuran, $GLOBALS['FONT_TEBAL'], $b, $y, warna($im, '#ffffff')); $y += $tinggi_baris; }
 
     imagejpeg($im, $KELUAR . $slug . '.jpg', 80);
