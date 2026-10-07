@@ -76,7 +76,12 @@ class KemitraanPortal extends Public_Controller
            rapuh dan akan meleset begitu ada pesan galat baru yang lupa
            memakai kata itu. */
         $tolak = function ($pesan) {
-            $this->session->set_flashdata('error', $pesan);
+            /* Pemberitahuan isian, bukan galat sistem: dialog di tengah berjudul sendiri (pola
+               Auth_model::flash_ganti_sandi). Dialog itu dibuka SESUDAH modal Tambah KKN sehingga
+               tampil di atasnya; toast biasa dulu tertutup modal (umpan balik user 7 Okt 2026). */
+            $this->session->set_flashdata('warning', $pesan);
+            $this->session->set_flashdata('pemberitahuan_judul', 'Periksa isian KKN');
+            $this->session->set_flashdata('pemberitahuan_dialog', TRUE);
             $this->session->set_flashdata('kkn_tambah_gagal', TRUE);
             // Isian teks dibawa kembali ke modal supaya pengguna cukup memperbaiki bagian
             // yang salah (temuan UAT U3). Berkas tidak bisa diisikan ulang oleh peramban.

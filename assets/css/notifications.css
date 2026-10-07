@@ -9,6 +9,21 @@
     pointer-events: none;
 }
 
+/* Wadah sebagai popover (notifications.js keAtas): buang gaya bawaan peramban untuk [popover]
+   (inset 0, margin auto, garis, latar) supaya posisi pojok kanan atas di atas tetap berlaku. */
+.kpkp-notification-region[popover] {
+    inset: auto;
+    top: max(1rem, env(safe-area-inset-top));
+    right: max(1rem, env(safe-area-inset-right));
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    overflow: visible;
+}
+.kpkp-notification-region[popover]:popover-open { display: grid; }
+
 /* Notifikasi pojok: bahasa visual yang sama dengan .kpkp-dialog (kartu gelap, ikon berpendar, tanpa garis tepi tebal). */
 .kpkp-notification {
     --notification-accent: #00a3b5;
