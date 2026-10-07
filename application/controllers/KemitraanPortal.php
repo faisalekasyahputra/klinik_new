@@ -255,7 +255,7 @@ class KemitraanPortal extends Public_Controller
         $this->session->set_flashdata('success',
             $susulan !== NULL
                 ? 'KKN berhasil diajukan sebagai input susulan. Tim kami akan meninjau alasan susulannya'
-                    . ($simpan ? ' beserta surat yang dilampirkan.' : '.') . ' Sesudah diterima, unggah roster peserta di Detail KKN agar sertifikat dapat diterbitkan.'
+                    . ($simpan ? ' beserta surat yang dilampirkan.' : '.') . ' Sesudah diterima, unggah daftar peserta di Detail KKN agar sertifikat dapat diterbitkan.'
                 : 'KKN baru berhasil diajukan. Tim kami akan meninjau kedua surat yang dilampirkan.');
         redirect('KemitraanPortal/kkn_dashboard');
     }
@@ -281,7 +281,7 @@ class KemitraanPortal extends Public_Controller
         // dan dikunci; bila tanggalnya ditarik, roster terbuka lagi (keputusan 29 Sep 2026).
         // View kkn_batch.php menyembunyikan formulirnya dengan syarat yang sama.
         if ( ! empty($row->tanggal_sertifikat)) {
-            $this->session->set_flashdata('error', 'Roster peserta terkunci karena tanggal sertifikat sudah ditetapkan. Hubungi admin bila ada perubahan peserta.');
+            $this->session->set_flashdata('error', 'Daftar peserta terkunci karena tanggal sertifikat sudah ditetapkan. Hubungi admin bila ada perubahan peserta.');
             redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
             return;
         }

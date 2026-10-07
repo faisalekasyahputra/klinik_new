@@ -16,10 +16,10 @@ $lewat = ! empty($row->periode_selesai) && $row->periode_selesai < date('Y-m-d')
 <div class="grid grid-kartu items-start lg:grid-cols-2 mb-6" data-kendali-sertifikat>
     <form method="post" action="<?= base_url('Admin_Kemitraan/unggah_peserta/' . (int) $row->id) ?>" enctype="multipart/form-data" class="kartu-admin isi-kartu space-y-2">
         <?= $csrf ?>
-        <h2 class="text-sm font-black text-gray-900 dark:text-white">Unggah roster peserta</h2>
-        <p class="text-[11px] text-gray-500 dark:text-brand-muted">Excel (XLS/XLSX) dengan judul kolom "NIM" dan "Nama" di baris pertama, format sama dengan universitas. Mengunggah ulang MENGGANTI seluruh roster.<?= ! empty($row->tanggal_sertifikat) ? ' Tanggal sertifikat sudah ditetapkan: peserta yang dihapus dari roster tidak bisa lagi mencetak.' : '' ?></p>
+        <h2 class="text-sm font-black text-gray-900 dark:text-white">Unggah daftar peserta</h2>
+        <p class="text-[11px] text-gray-500 dark:text-brand-muted">Excel (XLS/XLSX) dengan judul kolom "NIM" dan "Nama" di baris pertama, format sama dengan universitas. Mengunggah ulang MENGGANTI seluruh daftar peserta.<?= ! empty($row->tanggal_sertifikat) ? ' Tanggal sertifikat sudah ditetapkan: peserta yang dihapus dari daftar tidak bisa lagi mencetak.' : '' ?></p>
         <?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'file_peserta', 'ib_accept' => '.xls,.xlsx', 'ib_required' => TRUE]); ?>
-        <button type="submit" class="tombol-utama"><i class="ph ph-upload-simple"></i><span>Simpan roster</span></button>
+        <button type="submit" class="tombol-utama"><i class="ph ph-upload-simple"></i><span>Simpan daftar peserta</span></button>
     </form>
     <div class="kartu-admin isi-kartu space-y-2">
         <h2 class="text-sm font-black text-gray-900 dark:text-white">Sertifikat</h2>
@@ -57,7 +57,7 @@ $lewat = ! empty($row->periode_selesai) && $row->periode_selesai < date('Y-m-d')
                             <div class="w-16 h-16 mb-4 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center text-3xl text-gray-300 dark:text-white/20">
                                 <i class="ph ph-users-three"></i>
                             </div>
-                            <p>Roster belum diunggah. Unggah lewat formulir di atas, atau tunggu universitas mengunggahnya.</p>
+                            <p>Daftar peserta belum diunggah. Unggah lewat formulir di atas, atau tunggu universitas mengunggahnya.</p>
                         </div>
                     </td>
                 </tr>

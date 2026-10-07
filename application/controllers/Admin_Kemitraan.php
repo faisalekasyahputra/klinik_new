@@ -607,7 +607,7 @@ class Admin_Kemitraan extends Admin_Controller {
         $id = (int) $this->db->insert_id();
         $this->catat_audit('kkn_dicatat_admin', 'Mencatat KKN ' . $isian['keterangan'] . ' atas nama ' . $univ->nama,
             'kkn_magang_pendaftaran', (string) $id, ['universitas' => (int) $univ->id, 'periode' => $isian['periode_mulai'] . '/' . $isian['periode_selesai']]);
-        $this->session->set_flashdata('success', 'KKN dicatat dan langsung diterima. Unggah roster peserta, lalu tetapkan tanggal sertifikat.');
+        $this->session->set_flashdata('success', 'KKN dicatat dan langsung diterima. Unggah daftar peserta, lalu tetapkan tanggal sertifikat.');
         redirect('Admin_Kemitraan/peserta/' . $id);
     }
 
@@ -624,13 +624,13 @@ class Admin_Kemitraan extends Admin_Controller {
         $kembali = 'Admin_Kemitraan/peserta/' . (int) $row->id;
         $file = $_FILES['file_peserta'] ?? NULL;
         if ( ! $file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || ! is_uploaded_file($file['tmp_name'])) {
-            $this->session->set_flashdata('warning', 'Pilih berkas roster (XLS atau XLSX) terlebih dahulu.');
+            $this->session->set_flashdata('warning', 'Pilih berkas daftar peserta (XLS atau XLSX) terlebih dahulu.');
             redirect($kembali);
             return;
         }
         $ext = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
         if ($file['size'] > 5242880 || ! in_array($ext, ['xls', 'xlsx'], TRUE)) {
-            $this->session->set_flashdata('warning', 'Roster harus berkas XLS atau XLSX, maksimal 5 MB.');
+            $this->session->set_flashdata('warning', 'Daftar peserta harus berkas XLS atau XLSX, maksimal 5 MB.');
             redirect($kembali);
             return;
         }
@@ -653,7 +653,7 @@ class Admin_Kemitraan extends Admin_Controller {
             redirect($kembali);
             return;
         }
-        $this->catat_audit('kkn_roster_admin', 'Admin mengganti roster KKN ' . $row->instansi_asal . ' (' . $jumlah . ' peserta)',
+        $this->catat_audit('kkn_roster_admin', 'Admin mengganti daftar peserta KKN ' . $row->instansi_asal . ' (' . $jumlah . ' peserta)',
             'kkn_magang_pendaftaran', (string) $row->id, ['jumlah' => $jumlah]);
         $this->session->set_flashdata('success', $jumlah . ' peserta tersimpan.'
             . (empty($row->tanggal_sertifikat) ? ' Tetapkan tanggal sertifikat agar peserta bisa mencetak.' : ''));

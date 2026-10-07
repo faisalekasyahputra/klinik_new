@@ -180,7 +180,7 @@ if ( ! function_exists('audit_kamus')) {
                 'reset_nik_permintaan_disetujui' => 'Permintaan reset NIK disetujui',
                 'reset_nik_permintaan_ditolak'   => 'Permintaan reset NIK ditolak',
                 'kkn_dicatat_admin'      => 'KKN dicatat admin atas nama universitas',
-                'kkn_roster_admin'       => 'Roster KKN diganti admin',
+                'kkn_roster_admin'       => 'Daftar peserta KKN diganti admin',
                 'sertifikat_kkn_diminta' => 'Sertifikat KKN diminta peserta',
                 'sertifikat_kkn_diabaikan' => 'Permintaan sertifikat KKN diabaikan',
                 'seo_diubah'             => 'SEO halaman diubah',

@@ -7,7 +7,7 @@ $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => 'sertifikat']);
 ?>
 <div class="kartu-admin overflow-hidden" data-sertifikat-kkn>
     <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Sertifikat KKN belum terbit', 'kt_jumlah' => count($rows),
-        'kt_keterangan' => $diminta . ' diminta mahasiswa. Sertifikat bisa dicetak peserta sesudah periode selesai, roster terisi, dan tanggal sertifikat ditetapkan.']); ?>
+        'kt_keterangan' => $diminta . ' diminta mahasiswa. Sertifikat bisa dicetak peserta sesudah periode selesai, daftar peserta terisi, dan tanggal sertifikat ditetapkan.']); ?>
     <div class="overflow-x-auto aksi-tetap">
         <table class="w-full text-left text-sm">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
@@ -28,7 +28,7 @@ $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => 'sertifikat']);
                     <td class="px-4 py-3 whitespace-nowrap text-xs"><?= html_escape(tgl_id($r->periode_mulai, TRUE) . ' - ' . tgl_id($r->periode_selesai, TRUE)) ?><?php if ( ! $lewat): ?><div class="text-[11px] text-gray-500 dark:text-brand-muted">belum selesai</div><?php endif; ?></td>
                     <td class="px-4 py-3 whitespace-nowrap">
                         <span class="font-bold <?= (int) $r->jumlah_peserta === 0 ? 'text-amber-700 dark:text-amber-300' : 'text-gray-900 dark:text-white' ?>"><?= (int) $r->jumlah_peserta ?></span>
-                        <?php if ((int) $r->jumlah_peserta === 0): ?><div class="text-[11px] text-amber-700 dark:text-amber-300">roster kosong</div><?php endif; ?>
+                        <?php if ((int) $r->jumlah_peserta === 0): ?><div class="text-[11px] text-amber-700 dark:text-amber-300">daftar peserta kosong</div><?php endif; ?>
                     </td>
                     <td class="px-4 py-3 whitespace-nowrap text-xs">
                         <?php if ( ! empty($r->sertifikat_diminta_at)): ?>

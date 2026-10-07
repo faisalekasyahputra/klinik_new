@@ -438,7 +438,7 @@ $config['dashboard_modules'] = [
         'badge' => TRUE, 'ringkas' => 'Sertifikat',
         'tindakan' => [
             'satuan' => 'permintaan sertifikat KKN dari peserta', 'keterangan' => 'instansi_asal',
-            'cara' => 'Buka Sertifikat KKN, periksa roster pesertanya, lalu tekan Terbitkan dengan tanggal sertifikat. Abaikan bila belum bisa diterbitkan.',
+            'cara' => 'Buka Sertifikat KKN, periksa daftar pesertanya, lalu tekan Terbitkan dengan tanggal sertifikat. Abaikan bila belum bisa diterbitkan.',
         ],
     ],
     // Janji temu konsultasi (migrasi 035). Superadmin saja: `forum_diskusi`

@@ -206,15 +206,15 @@ $terbuka = ! $berhenti;
     <div class="<?= $kotak ?> mb-4">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
-                <div class="<?= $label ?>">Roster Peserta</div>
+                <div class="<?= $label ?>">Daftar Peserta</div>
                 <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted"><?= count($peserta) ?> peserta tercatat.</p>
             </div>
         </div>
 
         <?php if ( ! $terbuka): ?>
-        <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted">KKN yang sudah <?= strtolower(html_escape($row->status)) ?> tidak bisa diubah lagi: roster, link dokumentasi, dan laporan akhir hanya bisa dilihat.</p>
+        <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted">KKN yang sudah <?= strtolower(html_escape($row->status)) ?> tidak bisa diubah lagi: daftar peserta, link dokumentasi, dan laporan akhir hanya bisa dilihat.</p>
         <?php elseif ( ! empty($row->tanggal_sertifikat)): ?>
-        <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted"><i class="ph ph-lock-simple" aria-hidden="true"></i> Roster terkunci karena tanggal sertifikat sudah ditetapkan. Hubungi admin bila ada perubahan peserta.</p>
+        <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted"><i class="ph ph-lock-simple" aria-hidden="true"></i> Daftar peserta terkunci karena tanggal sertifikat sudah ditetapkan. Hubungi admin bila ada perubahan peserta.</p>
         <?php else: ?>
         <form method="POST" action="<?= base_url('KemitraanPortal/kkn_upload_peserta/' . (int) $row->id) ?>"
               enctype="multipart/form-data" class="mt-4 flex flex-wrap items-end gap-3">
@@ -239,7 +239,7 @@ $terbuka = ! $berhenti;
                     </p>
                     <input id="kb-peserta" name="file_peserta" type="file" accept=".xls,.xlsx" required class="sr-only">
                 </div>
-                <p class="<?= $petunjuk ?>">Baris pertama berisi judul kolom "NIM" dan "Nama". Mengunggah ulang MENGGANTI seluruh roster yang tersimpan. Maksimal 5 MB.</p>
+                <p class="<?= $petunjuk ?>">Baris pertama berisi judul kolom "NIM" dan "Nama". Mengunggah ulang MENGGANTI seluruh daftar peserta yang tersimpan. Maksimal 5 MB.</p>
                 <?php
                 /* pasangDropzone() didefinisikan SEKALI di sini lalu dipakai
                    ulang untuk kotak Laporan Akhir KKN di bawah (permintaan
