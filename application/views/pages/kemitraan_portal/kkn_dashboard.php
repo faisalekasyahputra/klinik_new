@@ -121,7 +121,7 @@ $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
             <?php /* Input susulan (keputusan user 7 Okt 2026): tampil dan wajib bila periode selesai sudah lewat.
                      Aturan yang mengikat ada di KemitraanPortal::kkn_tambah(); skrip di bawah hanya penuntun. */ ?>
             <div data-kkn-susulan hidden class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
-                <p class="text-xs font-semibold">Periode ini sudah lewat, jadi KKN dicatat sebagai <b>input susulan</b>. Tuliskan alasannya untuk peninjau.</p>
+                <p class="text-xs font-semibold">Periode ini sudah lewat, jadi KKN dicatat sebagai <b>input susulan</b>. Tuliskan alasannya untuk peninjau. Untuk susulan, kedua surat boleh dikosongkan; sesudah diterima, unggah roster peserta agar sertifikat bisa diterbitkan.</p>
                 <label for="kt-susulan" class="<?= $label ?> mt-2">Alasan input susulan <span class="font-normal normal-case text-red-500">(wajib)</span></label>
                 <textarea id="kt-susulan" name="alasan_susulan" rows="2" minlength="20" maxlength="500" placeholder="Contoh: KKN sudah berjalan, surat dari kampus baru terbit 5 Oktober." class="<?= $isian ?>"><?= html_escape($isian_lama['alasan_susulan'] ?? '') ?></textarea>
             </div>
@@ -132,13 +132,13 @@ $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
             </div>
 
             <div>
-                <label for="kt-mitra" class="<?= $label ?>">Surat Permohonan Menjadi Mitra <span class="font-normal normal-case text-red-500">(wajib, PDF)</span></label>
+                <label for="kt-mitra" class="<?= $label ?>">Surat Permohonan Menjadi Mitra <span class="font-normal normal-case text-red-500" data-surat-sifat>(wajib, PDF)</span></label>
                 <input id="kt-mitra" name="file_surat_pengantar" type="file" accept=".pdf" required class="<?= $berkas ?>">
                 <p class="<?= $petunjuk ?>">Memuat lokasi pelaksanaan, jumlah mahasiswa, dan periode pelaksanaan KKN. Format PDF, maksimal 5 MB.</p>
             </div>
 
             <div>
-                <label for="kt-simperum" class="<?= $label ?>">Surat Permohonan Akun SIMPERUM <span class="font-normal normal-case text-red-500">(wajib, PDF)</span></label>
+                <label for="kt-simperum" class="<?= $label ?>">Surat Permohonan Akun SIMPERUM <span class="font-normal normal-case text-red-500" data-surat-sifat>(wajib, PDF)</span></label>
                 <input id="kt-simperum" name="file_surat_simperum" type="file" accept=".pdf" required class="<?= $berkas ?>">
                 <p class="<?= $petunjuk ?>">Memuat daftar nama mahasiswa peserta yang telah ditetapkan. Format PDF, maksimal 5 MB.</p>
             </div>
@@ -168,6 +168,12 @@ $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
         var lewat = !!selesai.value && selesai.value < hariIni;
         kotak.hidden = !lewat;
         alasan.required = lewat;
+        // KKN susulan: kedua surat opsional (KemitraanPortal::kkn_tambah, keputusan user 7 Okt 2026).
+        ['kt-mitra', 'kt-simperum'].forEach(function (id) { document.getElementById(id).required = !lewat; });
+        dlg.querySelectorAll('[data-surat-sifat]').forEach(function (el) {
+            el.textContent = lewat ? '(opsional untuk susulan, PDF)' : '(wajib, PDF)';
+            el.classList.toggle('text-red-500', !lewat);
+        });
     }
     selesai.addEventListener('change', cekSusulan);
     selesai.addEventListener('input', cekSusulan);

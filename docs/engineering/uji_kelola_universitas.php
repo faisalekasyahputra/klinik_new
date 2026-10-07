@@ -209,6 +209,15 @@ try {
     $tambah(date('Y-m-d', strtotime('-40 days')), date('Y-m-d', strtotime('-1 day')), "KKN susulan {$tag}", 'KKN sudah berjalan, surat dari kampus baru terbit minggu ini.');
     $cek($jml() === $awal + 1 && $nilai("SELECT alasan_susulan FROM kkn_magang_pendaftaran WHERE user_id={$idU} AND divisi_atau_tema='KKN susulan {$tag}'") === 'KKN sudah berjalan, surat dari kampus baru terbit minggu ini.',
         'KKN berperiode lewat dengan alasan diterima sebagai susulan, alasannya tersimpan');
+    // KKN lama yang belum tercatat (aplikasi selesai sesudah periodenya): surat opsional, alasan tetap wajib.
+    $kirim($jU, 'KemitraanPortal/kkn_tambah', ['periode_mulai' => date('Y-m-d', strtotime('-90 days')), 'periode_selesai' => date('Y-m-d', strtotime('-60 days')),
+        'keterangan' => "KKN susulan tanpa surat {$tag}", 'alasan_susulan' => 'Pencatatan susulan: KKN berlangsung sebelum aplikasi tersedia.']);
+    $cek($jml() === $awal + 2 && $nilai("SELECT CONCAT(COALESCE(file_surat_pengantar,'-'), COALESCE(file_surat_simperum,'-'), status) FROM kkn_magang_pendaftaran WHERE user_id={$idU} AND divisi_atau_tema='KKN susulan tanpa surat {$tag}'") === '--Diajukan',
+        'KKN susulan tanpa kedua surat diterima sebagai Diajukan dengan kolom surat kosong');
+    $kirim($jU, 'KemitraanPortal/kkn_tambah', ['periode_mulai' => date('Y-m-d', strtotime('+10 days')), 'periode_selesai' => date('Y-m-d', strtotime('+40 days')),
+        'keterangan' => "KKN biasa tanpa surat {$tag}"]);
+    $cek($jml() === $awal + 2, 'KKN biasa (belum lewat) tanpa surat tetap ditolak');
+    $awal += 1;
     $tambah(date('Y-m-d', strtotime('-10 days')), date('Y-m-d'), "KKN berakhir hari ini {$tag}");
     $cek($jml() === $awal + 2 && $nilai("SELECT alasan_susulan FROM kkn_magang_pendaftaran WHERE user_id={$idU} AND divisi_atau_tema='KKN berakhir hari ini {$tag}'") === NULL,
         'KKN yang berakhir hari ini diterima tanpa alasan, bukan susulan');
