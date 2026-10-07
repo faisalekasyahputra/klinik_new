@@ -42,7 +42,7 @@ $filter_html = ob_get_clean();
                     <td colspan="7" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">Belum ada pendaftaran KKN/Magang.</td>
                 </tr>
                 <?php else: foreach ($rows as $r): ?>
-                <tr x-data="{ procOpen: false }">
+                <tr x-data="{ procOpen: false }" class="align-top">
                     <td class="px-4 py-3 max-w-[14rem] whitespace-normal break-words">
                         <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama_mahasiswa ?: '-') ?></div>
                         <div class="text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($r->email_mahasiswa ?: '-') ?></div>
@@ -73,76 +73,71 @@ $filter_html = ob_get_clean();
                          membungkus, judul Tanggal Pengajuan boleh dua baris, dan
                          tombol Aksi boleh bertumpuk; terukur ulang 1118 = 1118. -->
                     <td class="px-4 py-3 max-w-[14rem] whitespace-normal"><?= html_escape($r->instansi_asal) ?></td>
-                    <td class="px-4 py-3 max-w-[14rem] whitespace-normal">
-                        <?= html_escape($r->divisi_atau_tema ?: '-') ?>
-                        <?php if ( ! empty($r->dicatat_oleh)): ?><span class="ml-1 inline-flex rounded-md bg-gray-100 px-1.5 py-0.5 text-[11px] font-bold uppercase text-gray-600 dark:bg-white/10 dark:text-gray-300" data-kkn-dicatat-admin>Dicatat admin</span><?php endif; ?>
-                        <?php if ( ! empty($r->alasan_susulan)): ?><span data-kkn-susulan class="ml-1 inline-flex rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold uppercase text-amber-800 dark:bg-amber-500/10 dark:text-amber-300" title="Periode sudah lewat saat diajukan (input susulan)">Susulan</span>
-                        <span class="mt-1 block text-[11px] text-amber-700 dark:text-amber-300">Alasan susulan: <?= html_escape($r->alasan_susulan) ?></span><?php endif; ?>
+                    <td class="px-4 py-3 min-w-[13rem] max-w-[14rem] whitespace-normal">
+                        <?php /* Dirapikan 7 Okt 2026: baris KKN dulu menjulang sebelas baris (satu baris per berkas,
+                                 alasan susulan penuh). Kini empat lapis: judul, label, berkas sebagai chip, lalu
+                                 peserta dan sertifikat dalam satu baris. */ ?>
+                        <div class="font-semibold text-gray-900 dark:text-white"><?= html_escape($r->divisi_atau_tema ?: '-') ?></div>
+                        <?php if ( ! empty($r->dicatat_oleh) || ! empty($r->alasan_susulan)): ?>
+                        <div class="mt-1 flex flex-wrap gap-1">
+                            <?php if ( ! empty($r->dicatat_oleh)): ?><span class="inline-flex rounded-md bg-gray-100 px-1.5 py-0.5 text-[11px] font-bold uppercase text-gray-600 dark:bg-white/10 dark:text-gray-300" data-kkn-dicatat-admin>Dicatat admin</span><?php endif; ?>
+                            <?php if ( ! empty($r->alasan_susulan)): ?><span data-kkn-susulan class="inline-flex rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold uppercase text-amber-800 dark:bg-amber-500/10 dark:text-amber-300" title="Periode sudah lewat saat diajukan (input susulan)">Susulan</span><?php endif; ?>
+                        </div>
+                        <?php endif; ?>
+                        <?php if ( ! empty($r->alasan_susulan)): ?>
+                        <p class="mt-1 line-clamp-2 text-[11px] text-amber-700 dark:text-amber-300" title="<?= html_escape($r->alasan_susulan) ?>">Alasan susulan: <?= html_escape($r->alasan_susulan) ?></p>
+                        <?php endif; ?>
                         <?php
-                        // Dokumen didaftar dari satu tempat supaya menambah jenis
-                        // berkas berikutnya tidak berarti menyalin blok <a> lagi.
-                        // Surat pengantar dan proposal HANYA ADA pada magang
-                        // sejak 21 Agt 2026 - KKN tidak lagi memintanya sama
-                        // sekali (dulu opsional), jadi "Tanpa surat pengantar"
-                        // untuk baris KKN akan salah: bukan berkas yang belum
-                        // diunggah, tapi berkas yang memang tidak pernah
-                        // diminta. KKN dari dashboard universitas (migrasi 044)
-                        // punya DUA surat sendiri, beda nama dan beda makna.
+                        // Dokumen didaftar dari satu tempat: [label chip, nama lengkap, berkas]. Surat pengantar
+                        // dan proposal HANYA ADA pada magang sejak 21 Agt 2026; KKN dari dashboard universitas
+                        // (migrasi 044) punya DUA surat sendiri, plus laporan akhir (migrasi 050) yang dinilai
+                        // admin sebelum mengisi tanggal sertifikat.
                         $dokumen = [];
                         if ($r->jenis === 'magang') {
-                            $dokumen['surat']    = ['Surat pengantar', $r->file_surat_pengantar ?? NULL];
-                            $dokumen['proposal'] = ['Proposal', $r->file_proposal ?? NULL];
+                            $dokumen['surat']    = ['Surat pengantar', 'Surat pengantar', $r->file_surat_pengantar ?? NULL];
+                            $dokumen['proposal'] = ['Proposal', 'Proposal', $r->file_proposal ?? NULL];
                         } elseif ($r->jenis === 'kkn') {
-                            $dokumen['surat']    = ['Surat permohonan mitra', $r->file_surat_pengantar ?? NULL];
-                            $dokumen['simperum'] = ['Surat permohonan SIMPERUM', $r->file_surat_simperum ?? NULL];
-                            // Laporan akhir (migrasi 050) dinilai admin sebelum mengisi tanggal
-                            // sertifikat; tanpa tautan ini hanya bisa dibuka lewat URL ketikan.
-                            $dokumen['laporan']  = ['Laporan akhir', $r->file_laporan_akhir ?? NULL];
+                            $dokumen['surat']    = ['Surat mitra', 'Surat permohonan mitra', $r->file_surat_pengantar ?? NULL];
+                            $dokumen['simperum'] = ['Surat SIMPERUM', 'Surat permohonan SIMPERUM', $r->file_surat_simperum ?? NULL];
+                            $dokumen['laporan']  = ['Laporan akhir', 'Laporan akhir', $r->file_laporan_akhir ?? NULL];
                         }
+                        $chip = 'inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-gray-200 px-1.5 py-0.5 text-[11px] font-bold text-blue-600 hover:border-blue-300 dark:border-white/10 dark:text-brand-primary dark:hover:bg-white/5';
+                        $ada = array_filter($dokumen, fn($d) => ! empty($d[2]));
+                        $belum_ada = array_map(fn($d) => strtolower($d[1]), array_diff_key($dokumen, $ada));
                         ?>
-                        <?php /* Dokumen yang belum ada dirangkum satu baris supaya baris KKN tidak menjulang
-                                 (cek visual 2 Okt 2026: tiga baris "Tanpa ..." per pendaftaran). */
-                        $belum_ada = []; ?>
-                        <?php foreach ($dokumen as $kunci => $d): ?>
-                            <?php if ( ! empty($d[1])): ?>
-                            <div class="mt-1"><a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . $r->id . '/' . $kunci) ?>" data-file-view data-file-title="<?= html_escape($d[0]) ?>" target="_blank" rel="noopener" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-paperclip"></i> <?= html_escape($d[0]) ?></a></div>
-                            <?php else: $belum_ada[] = strtolower($d[0]); endif; ?>
-                        <?php endforeach; ?>
+                        <?php if ($ada || ($r->jenis === 'kkn' && ! empty($r->link_dokumentasi))): ?>
+                        <div class="mt-2 flex flex-wrap gap-1" data-berkas-kemitraan>
+                            <?php foreach ($ada as $kunci => $d): ?>
+                                <a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . $r->id . '/' . $kunci) ?>" data-file-view data-file-title="<?= html_escape($d[1]) ?>" title="<?= html_escape($d[1]) ?>" target="_blank" rel="noopener" class="<?= $chip ?>"><i class="ph ph-paperclip" aria-hidden="true"></i><?= html_escape($d[0]) ?></a>
+                            <?php endforeach; ?>
+                            <?php if ($r->jenis === 'kkn' && ! empty($r->link_dokumentasi)): ?>
+                                <a href="<?= html_escape($r->link_dokumentasi) ?>" target="_blank" rel="noopener noreferrer" title="Dokumentasi (cloud)" class="<?= $chip ?>"><i class="ph ph-link" aria-hidden="true"></i>Dokumentasi</a>
+                            <?php endif; ?>
+                        </div>
+                        <?php endif; ?>
                         <?php if ($belum_ada): ?>
-                            <div class="mt-1 text-xs italic text-gray-400 dark:text-brand-muted">Belum ada: <?= html_escape(implode(', ', $belum_ada)) ?></div>
-                        <?php endif; ?>
-                        <?php if ($r->jenis === 'kkn' && $r->status === 'Diterima'): ?>
-                            <?php /* Form tanggal dilipat: terbuka hanya saat diatur, ringkasannya tetap terlihat. */ ?>
-                            <details class="mt-1 text-xs">
-                            <summary class="cursor-pointer font-bold <?= empty($r->tanggal_sertifikat) ? 'text-amber-600 dark:text-amber-400' : 'text-gray-600 dark:text-brand-muted' ?>">
-                                <i class="ph ph-certificate" aria-hidden="true"></i>
-                                <?= empty($r->tanggal_sertifikat) ? 'Sertifikat terkunci, atur tanggal' : 'Sertifikat terbit ' . html_escape(tgl_id($r->tanggal_sertifikat, TRUE)) ?>
-                            </summary>
-                            <form method="POST" action="<?= base_url('Admin_Kemitraan/tanggal_sertifikat/' . (int) $r->id) ?>" class="mt-2 flex flex-wrap items-end gap-1.5">
-                                <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
-                                <label class="text-xs font-bold text-gray-600 dark:text-brand-muted">Tanggal sertifikat
-                                    <input type="date" name="tanggal_sertifikat" value="<?= html_escape($r->tanggal_sertifikat ?? '') ?>" class="mt-1 block rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm font-normal text-gray-800 dark:text-gray-200">
-                                </label>
-                                <button type="submit" class="tombol-aksi"><i class="ph ph-floppy-disk" aria-hidden="true"></i><span>Simpan</span></button>
-                            </form>
-                            </details>
-                        <?php endif; ?>
-                        <?php if ($r->jenis === 'kkn' && ! empty($r->link_dokumentasi)): ?>
-                            <div class="mt-1"><a href="<?= html_escape($r->link_dokumentasi) ?>" target="_blank" rel="noopener noreferrer" class="text-xs font-bold text-blue-600 dark:text-brand-primary hover:underline"><i class="ph ph-link"></i> Dokumentasi (cloud)</a></div>
+                        <div class="mt-1 text-[11px] italic text-gray-400 dark:text-brand-muted">Belum ada: <?= html_escape(implode(', ', $belum_ada)) ?></div>
                         <?php endif; ?>
                         <?php if ($r->jenis === 'kkn'): ?>
-                            <!-- Jumlah peserta - roster diunggah universitas sendiri
-                                 lewat dashboardnya (migrasi 044). Dihitung di query
-                                 index() ($r->jumlah_peserta), bukan di view. Link ke
-                                 daftar sebenarnya (NIM/nama) - permintaan user 22 Agt
-                                 2026, sebelumnya cuma angka tanpa cara membaca isinya
-                                 selain buka DB langsung. Baca saja - lihat
-                                 Admin_Kemitraan::peserta(). -->
-                            <div class="mt-1">
-                                <a href="<?= base_url('Admin_Kemitraan/peserta/' . $r->id) ?>" class="text-xs font-bold text-gray-500 dark:text-brand-muted hover:text-blue-600 dark:hover:text-brand-primary hover:underline">
-                                    <i class="ph ph-users"></i> <?= (int) ($r->jumlah_peserta ?? 0) ?> peserta
-                                </a>
-                            </div>
+                        <div class="mt-2 flex flex-wrap items-start gap-x-3 gap-y-1 text-xs">
+                            <a href="<?= base_url('Admin_Kemitraan/peserta/' . $r->id) ?>" class="font-bold text-gray-500 dark:text-brand-muted hover:text-blue-600 dark:hover:text-brand-primary hover:underline"><i class="ph ph-users" aria-hidden="true"></i> <?= (int) ($r->jumlah_peserta ?? 0) ?> peserta</a>
+                            <?php if ($r->status === 'Diterima'): ?>
+                            <?php /* Form tanggal dilipat: terbuka hanya saat diatur, ringkasannya tetap terlihat. */ ?>
+                            <details>
+                                <summary class="cursor-pointer font-bold <?= empty($r->tanggal_sertifikat) ? 'text-amber-600 dark:text-amber-400' : 'text-gray-600 dark:text-brand-muted' ?>">
+                                    <i class="ph ph-certificate" aria-hidden="true"></i>
+                                    <?= empty($r->tanggal_sertifikat) ? 'Sertifikat terkunci, atur tanggal' : 'Sertifikat terbit ' . html_escape(tgl_id($r->tanggal_sertifikat, TRUE)) ?>
+                                </summary>
+                                <form method="POST" action="<?= base_url('Admin_Kemitraan/tanggal_sertifikat/' . (int) $r->id) ?>" class="mt-2 flex flex-wrap items-end gap-1.5">
+                                    <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+                                    <label class="text-xs font-bold text-gray-600 dark:text-brand-muted">Tanggal sertifikat
+                                        <input type="date" name="tanggal_sertifikat" value="<?= html_escape($r->tanggal_sertifikat ?? '') ?>" class="mt-1 block rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm font-normal text-gray-800 dark:text-gray-200">
+                                    </label>
+                                    <button type="submit" class="tombol-aksi"><i class="ph ph-floppy-disk" aria-hidden="true"></i><span>Simpan</span></button>
+                                </form>
+                            </details>
+                            <?php endif; ?>
+                        </div>
                         <?php endif; ?>
                     </td>
                     <td class="px-4 py-3 text-xs"><?= html_escape(tgl_id($r->created_at, TRUE, TRUE)) ?></td>
@@ -158,6 +153,9 @@ $filter_html = ob_get_clean();
                         <?= $this->load->view('admin/components/status_badge', ['label' => $r->status, 'kelas' => $badge_kelas[$r->status] ?? 'pending'], TRUE) ?>
                     </td>
                     <td class="px-4 py-3 text-right whitespace-normal">
+                        <?php /* Tombol ditumpuk sama lebar dan berjarak (cek visual 7 Okt 2026: dulu terlipat
+                                 berlainan lebar dan saling menempel). */ ?>
+                        <div class="inline-grid min-w-[9rem] gap-1.5">
                         <!-- Tersedia pada status APA PUN: koreksi data paling sering
                              dibutuhkan justru setelah diproses, saat mahasiswa
                              mengabari NIM keliru atau periodenya bergeser. -->
@@ -207,6 +205,7 @@ $filter_html = ob_get_clean();
                             </div>
                             </div>
                             </template>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; endif; ?>
