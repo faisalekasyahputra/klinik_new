@@ -159,14 +159,21 @@ class KemitraanPortal extends Public_Controller
            sama). Persyaratan dashboard ini justru mengembalikannya, KALI
            INI konsisten dengan teks persyaratan yang sudah tertulis di
            kkn.php sejak 3 Agt 2026 - dua surat dari kampus, bukan satu. */
+        /* KKN SUSULAN: kedua surat OPSIONAL (keputusan user 7 Okt 2026). KKN tahun ini banyak yang berjalan
+           sebelum aplikasi selesai; universitas mencatatnya agar sertifikat mahasiswa bisa terbit, dan surat
+           untuk KKN yang sudah lama selesai belum tentu ada. Alasan susulan tetap wajib dan dinas tetap
+           memutuskan. Surat yang DIKIRIM tetap harus PDF yang sah. */
+        $dikirim = [];
         foreach ([
             'file_surat_pengantar' => 'Surat permohonan menjadi mitra',
             'file_surat_simperum'  => 'Surat permohonan akun SIMPERUM',
         ] as $field => $label) {
             if ( ! isset($_FILES[$field]) || (int) $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) {
+                if ($susulan !== NULL) { continue; }
                 $tolak($label . ' wajib dilampirkan.');
                 return;
             }
+            $dikirim[] = $field;
             // Dua surat ini WAJIB PDF (permintaan user) - lebih sempit
             // dari store_private_upload() yang juga menerima JPG/PNG untuk
             // domain lain (Aduan, SRP2). Diperiksa DI SINI supaya pesannya
@@ -208,7 +215,7 @@ class KemitraanPortal extends Public_Controller
 
         $simpan = [];
         $galat_berkas = NULL;
-        foreach (['file_surat_pengantar', 'file_surat_simperum'] as $field) {
+        foreach ($dikirim as $field) {
             $galat = NULL;
             $nama_berkas = $this->store_private_upload($field, 'kemitraan', $id, $galat);
             if ($nama_berkas) {
@@ -219,7 +226,7 @@ class KemitraanPortal extends Public_Controller
             }
         }
 
-        /* Kedua surat WAJIB MENDARAT, bukan cuma terkirim - kalau salah
+        /* Surat yang DIKIRIM wajib MENDARAT (KKN biasa: keduanya), bukan cuma terkirim - kalau salah
            satu gagal (kebesaran/rusak saat MIME diperiksa ulang di
            store_private_upload()), baris ini dibuang SELURUHNYA.
            Membiarkannya berdiri dengan satu/nol surat berarti KKN
@@ -227,7 +234,7 @@ class KemitraanPortal extends Public_Controller
            persyaratannya - meja admin meninjau sesuatu yang belum
            benar-benar lengkap. Pola sama dengan surat pengantar magang
            di simpan() lama. */
-        if (count($simpan) < 2) {
+        if (count($simpan) < count($dikirim)) {
             foreach ($simpan as $nama_berkas) {
                 $jalur = $this->private_upload_dir('kemitraan', $id) . basename($nama_berkas);
                 if (is_file($jalur)) { @unlink($jalur); }
@@ -240,14 +247,15 @@ class KemitraanPortal extends Public_Controller
             return;
         }
 
-        $this->db->where('id', $id)->update('kkn_magang_pendaftaran', $simpan);
+        if ($simpan) { $this->db->where('id', $id)->update('kkn_magang_pendaftaran', $simpan); }
 
         $this->notify_admin_push([['role' => 'admin']], $susulan !== NULL ? 'Pendaftaran KKN susulan' : 'Pendaftaran KKN baru',
             $susulan !== NULL ? 'Ada pendaftaran KKN susulan (periode sudah lewat) yang menunggu peninjauan.' : 'Ada pendaftaran KKN yang menunggu peninjauan.',
             'Admin_Kemitraan?status=Diajukan', 'kemitraan-' . (int) $id);
         $this->session->set_flashdata('success',
             $susulan !== NULL
-                ? 'KKN berhasil diajukan sebagai input susulan. Tim kami akan meninjau kedua surat beserta alasan susulannya.'
+                ? 'KKN berhasil diajukan sebagai input susulan. Tim kami akan meninjau alasan susulannya'
+                    . ($simpan ? ' beserta surat yang dilampirkan.' : '.') . ' Sesudah diterima, unggah roster peserta di Detail KKN agar sertifikat dapat diterbitkan.'
                 : 'KKN baru berhasil diajukan. Tim kami akan meninjau kedua surat yang dilampirkan.');
         redirect('KemitraanPortal/kkn_dashboard');
     }
