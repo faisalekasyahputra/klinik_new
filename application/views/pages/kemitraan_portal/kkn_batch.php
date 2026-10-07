@@ -28,6 +28,8 @@ $baris = [
         ? tgl_id($row->periode_mulai, TRUE) . ' - ' . tgl_id($row->periode_selesai, TRUE) : NULL,
     'Nomor HP'          => $row->no_hp,
 ];
+// Hanya untuk KKN yang diajukan sesudah periodenya lewat (migrasi 076); KKN biasa tidak menampilkan baris kosong.
+if ( ! empty($row->alasan_susulan)) { $baris['Alasan input susulan'] = $row->alasan_susulan; }
 
 $ditolak_di_bidang = $row->status === 'Ditolak' && (
     ! empty($row->reviewed_at_bidang) || ! empty($row->reviewed_by_bidang) || ! empty($row->catatan_bidang)

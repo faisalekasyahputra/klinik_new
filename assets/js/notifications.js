@@ -33,6 +33,20 @@
         return node;
     }
 
+    /* Modal <dialog> yang dibuka dengan showModal() berada di lapisan teratas (top layer) peramban, di
+       atas z-index berapa pun, sehingga toast dulu tertutup modal (umpan balik user 7 Okt 2026). Wadah
+       toast ikut naik ke lapisan teratas sebagai popover manual; ditutup lalu dibuka lagi setiap ada
+       toast baru supaya berada di atas modal yang dibuka sesudahnya. Peramban tanpa Popover API tetap
+       memakai z-index lama. */
+    function keAtas(node) {
+        if (typeof node.showPopover !== 'function') return;
+        try {
+            if (!node.hasAttribute('popover')) node.setAttribute('popover', 'manual');
+            if (node.matches(':popover-open')) node.hidePopover();
+            node.showPopover();
+        } catch (e) { /* tetap tampil dengan z-index biasa */ }
+    }
+
     function removeNow(toast) {
         if (!toast) return;
         clearTimeout(toast._kpkpTimer);
@@ -87,7 +101,9 @@
         toast.appendChild(icon);
         toast.appendChild(body);
         toast.appendChild(dismiss);
-        region().appendChild(toast);
+        var wadah = region();
+        wadah.appendChild(toast);
+        keAtas(wadah);
         if (id) active[id] = toast;
 
         global.requestAnimationFrame(function () {

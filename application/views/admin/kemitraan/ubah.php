@@ -104,6 +104,11 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
             <label for="u-selesai" class="<?= $label ?>">Periode Selesai</label>
             <input id="u-selesai" name="periode_selesai" type="date" value="<?= html_escape($row->periode_selesai) ?>" required class="<?= $isian ?>">
         </div>
+        <?php if ( ! empty($row->alasan_susulan)): ?>
+        <div class="sm:col-span-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300" data-kkn-susulan>
+            <b>Input susulan.</b> Periode sudah lewat saat diajukan. Alasan dari universitas: <?= html_escape($row->alasan_susulan) ?>
+        </div>
+        <?php endif; ?>
         <?php endif; ?>
     </div>
 
