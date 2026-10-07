@@ -54,6 +54,7 @@ $config['http_policy'] = [
         'admin_kemitraan/unggah_peserta'       => 'admin mengganti roster KKN',
         'admin_kemitraan/abaikan_permintaan'   => 'tutup permintaan sertifikat KKN',
         'admin_kemitraan/nomor_sertifikat'     => 'ubah nomor sertifikat KKN satu peserta',
+        'admin_kemitraan/awalan_nomor'         => 'ubah awalan nomor sertifikat satu KKN',
         'kemitraanportal/minta_sertifikat_kkn' => 'mahasiswa meminta sertifikat KKN',
         'admin_seo/kembalikan'                 => 'kembalikan SEO halaman ke bawaan',
         'auth/simpan_sandi'                    => 'simpan kata sandi baru dari tautan reset',
