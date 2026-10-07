@@ -95,7 +95,7 @@ $awalan = (string) ($row->awalan_nomor_sertifikat ?? '');
                     <td class="px-4 py-3 text-gray-900 dark:text-white"><?= html_escape($p->nim) ?></td>
                     <td class="px-4 py-3 text-gray-900 dark:text-white"><?= html_escape($p->nama) ?></td>
                     <td class="px-4 py-3 tabular-nums text-gray-900 dark:text-white" data-nomor-sertifikat="<?= (int) $p->id ?>"><?= html_escape($nomor[(int) $p->id]->nomor) ?></td>
-                    <td class="px-4 py-2 text-right"><a href="<?= base_url('Admin_Kemitraan/pratinjau_sertifikat/' . (int) $p->id) ?>" target="_blank" rel="noopener" class="tombol-aksi"><i class="ph ph-certificate" aria-hidden="true"></i><span>Lihat sertifikat</span></a></td>
+                    <td class="px-4 py-2 text-right"><a href="<?= base_url('Admin_Kemitraan/pratinjau_sertifikat/' . (int) $p->id) ?>" data-file-view data-file-title="Sertifikat <?= html_escape($p->nama) ?> (<?= html_escape($nomor[(int) $p->id]->nomor) ?>)" target="_blank" rel="noopener" class="tombol-aksi"><i class="ph ph-certificate" aria-hidden="true"></i><span>Lihat sertifikat</span></a></td>
                 </tr>
                 <?php endforeach; endif; ?>
             </tbody>
