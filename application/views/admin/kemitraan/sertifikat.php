@@ -46,7 +46,7 @@ $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => 'sertifikat']);
                         <?php else: ?><span class="text-xs text-gray-400 dark:text-brand-muted">-</span><?php endif; ?>
                     </td>
                     <td class="px-4 py-3 text-right whitespace-nowrap">
-                        <a href="<?= base_url('Admin_Kemitraan/peserta/' . (int) $r->id) ?>" class="tombol-aksi"><i class="ph ph-users-three"></i><span>Peserta</span></a>
+                        <a href="<?= base_url('Admin_Kemitraan/peserta/' . (int) $r->id) ?>" class="tombol-aksi"><i class="ph ph-users-three"></i><span>Peserta &amp; nomor</span></a>
                         <?php if ( ! empty($r->sertifikat_diminta_at)): ?>
                         <form method="post" action="<?= base_url('Admin_Kemitraan/abaikan_permintaan/' . (int) $r->id) ?>" class="inline" data-konfirmasi="Tutup permintaan sertifikat ini tanpa menetapkan tanggal?" data-konfirmasi-judul="Abaikan permintaan" data-konfirmasi-label="Ya, abaikan">
                             <?= $csrf ?><button type="submit" class="tombol-aksi tombol-aksi-bahaya"><i class="ph ph-x"></i><span>Abaikan</span></button>

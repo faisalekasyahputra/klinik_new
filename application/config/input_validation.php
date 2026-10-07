@@ -178,6 +178,7 @@ $config['input_allowed_fields'] = [
     'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id',
     'universitas', 'catatan', // Admin_Kemitraan::simpan_catat (catat KKN atas nama universitas)
     'alasan_susulan', // KemitraanPortal::kkn_tambah: KKN berperiode lewat (migrasi 076)
+    'nomor_sertifikat', // Admin_Kemitraan::nomor_sertifikat: nomor sertifikat KKN per peserta (migrasi 078)
     'halaman', // Admin_Seo: alamat halaman yang SEO-nya diubah ('/' = beranda)
     'indeks', 'hapus_gambar', // Admin_Seo::simpan
     'token', // Auth::simpan_sandi: token reset kata sandi dari tautan email (dibandingkan lewat sidiknya)

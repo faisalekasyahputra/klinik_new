@@ -12,6 +12,9 @@ date_default_timezone_set('Asia/Jakarta');
  *   Tahap 2: NIM yang ditemukan pada KKN berperiode lewat tanpa tanggal sertifikat ditawari tombol minta;
  *            permintaan tercatat sekali per peramban, tampil di Sertifikat KKN dan badge menu; menetapkan
  *            tanggal menutup permintaan; Abaikan menutupnya; NIM yang tidak ditemukan tidak ditawari apa pun.
+ *   Nomor sertifikat per peserta (migrasi 078): kosong = otomatis 600.2/69. + id, admin bisa mengubahnya, nomor kembar
+ *            (termasuk nomor otomatis peserta lain) ditolak, PDF mencetak nomor admin, unggah ulang daftar peserta
+ *            mempertahankan baris dan nomor peserta yang tetap ada.
  *
  * Akun, KKN, peserta, dan jejak audit uji dibuat lalu dihapus sendiri; ember laju per IP dipinjam lalu dipulihkan.
  */
@@ -26,6 +29,8 @@ $db->set_charset('utf8mb4');
 $tag = 'ujikendali' . bin2hex(random_bytes(3));
 $sandi = 'Kk1#' . bin2hex(random_bytes(5));
 $nim = 'KN' . strtoupper(bin2hex(random_bytes(4)));
+$nim2 = 'KN2' . strtoupper(bin2hex(random_bytes(3)));
+$nomor = '600.2/69/UJI/' . strtoupper(bin2hex(random_bytes(3)));
 $total = 0; $gagal = 0; $jars = []; $tmp = []; $akun = []; $ember = [];
 $audit_awal = (int) $db->query('SELECT COALESCE(MAX(id),0) FROM sys_jejak_audit')->fetch_row()[0];
 $cek = function ($ok, $l) use (&$total, &$gagal) { $total++; if ( ! $ok) $gagal++; echo ($ok ? '  OK    ' : '  GAGAL ') . $l . "\n"; };
@@ -92,9 +97,35 @@ try {
         && $http($jA, 'Admin_Kemitraan/simpan_catat')['kode'] >= 400, 'Simpan catat hanya menerima POST');
     $jU = $login("{$tag}_univ@kendali.test");
     $cek(strpos($http($jU, 'KemitraanPortal/kkn_dashboard')['badan'], "KKN lama {$tag}") !== FALSE, 'KKN yang dicatat admin tampil di dashboard universitasnya');
-    $r = $kirim($jA, 'Admin_Kemitraan/unggah_peserta/' . $kkn, ['file_peserta' => new CURLFile($xlsx([[$nim, "Peserta {$tag}"], ['KN2' . strtoupper(bin2hex(random_bytes(3))), "Peserta dua {$tag}"]]), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'roster.xlsx')]);
+    $r = $kirim($jA, 'Admin_Kemitraan/unggah_peserta/' . $kkn, ['file_peserta' => new CURLFile($xlsx([[$nim, "Peserta {$tag}"], [$nim2, "Peserta dua {$tag}"]]), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'roster.xlsx')]);
     $cek((int) $nilai("SELECT COUNT(*) FROM kkn_peserta WHERE pendaftaran_id={$kkn}") === 2 && strpos($r['badan'], "Peserta {$tag}") !== FALSE, 'Admin mengunggah roster (2 peserta) dari halaman Peserta');
     $cek(strpos($r['badan'], 'data-kendali-sertifikat') !== FALSE, 'Halaman Peserta admin memuat unggah roster dan panel sertifikat');
+
+    echo "
+== Nomor sertifikat per peserta (migrasi 078)
+";
+    $p1 = (int) $nilai("SELECT id FROM kkn_peserta WHERE pendaftaran_id={$kkn} AND nim='{$nim}'");
+    $p2 = (int) $nilai("SELECT id FROM kkn_peserta WHERE pendaftaran_id={$kkn} AND nim='{$nim2}'");
+    $nomor_db = fn($id) => $nilai("SELECT nomor_sertifikat FROM kkn_peserta WHERE id={$id}");
+    $cek(strpos($r['badan'], 'data-nomor-sertifikat="' . $p1 . '"') !== FALSE && strpos($r['badan'], 'placeholder="600.2/69.' . $p1 . '"') !== FALSE,
+        'Tiap peserta punya isian nomor dengan nomor otomatis 600.2/69. + id sebagai bawaan');
+    $r = $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p1, ['nomor_sertifikat' => $nomor]);
+    $cek($nomor_db($p1) === $nomor && strpos($r['badan'], 'diubah admin') !== FALSE && strpos($r['url'], 'Admin_Kemitraan/peserta/' . $kkn) !== FALSE,
+        'Admin mengubah nomor satu peserta; halaman Peserta menandainya "diubah admin"');
+    $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p2, ['nomor_sertifikat' => $nomor]);
+    $cek($nomor_db($p2) === NULL, 'Nomor yang sudah dipakai peserta lain ditolak');
+    $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p1, ['nomor_sertifikat' => '600.2/69.' . $p2]);
+    $cek($nomor_db($p1) === $nomor, 'Nomor otomatis milik peserta lain juga ditolak');
+    $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p2, ['nomor_sertifikat' => 'NO;DROP']);
+    $cek($nomor_db($p2) === NULL, 'Nomor dengan karakter di luar huruf, angka, dan . , / - _ ( ) ditolak');
+    $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p2, ['nomor_sertifikat' => '600.2/69.' . $p2]);
+    $cek($nomor_db($p2) === NULL, 'Mengisi nomor otomatisnya sendiri tetap disimpan sebagai otomatis');
+    $http($jW, 'Admin_Kemitraan');
+    $kirim($jW, 'Admin_Kemitraan/nomor_sertifikat/' . $p2, ['nomor_sertifikat' => 'BUKAN-ADMIN']);
+    $cek($nomor_db($p2) === NULL, 'Akun selain admin tidak bisa mengubah nomor');
+    $cek($http($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p1)['kode'] >= 400, 'Ubah nomor hanya menerima POST');
+    $cek((int) $nilai("SELECT COUNT(*) FROM sys_jejak_audit WHERE id > {$audit_awal} AND aksi='sertifikat_kkn_nomor' AND objek_id='{$kkn}'") === 1,
+        'Perubahan nomor tercatat di jejak audit (satu kali, penolakan tidak dicatat)');
 
     echo "\n== Tahap 2: permintaan sertifikat dari peserta\n";
     [$jM, $r] = $cari($nim);
@@ -119,6 +150,24 @@ try {
         && strpos($r['url'], 'Admin_Kemitraan/sertifikat') !== FALSE, 'Terbitkan dari halaman Sertifikat KKN: tanggal tersimpan, permintaan tertutup, kembali ke halaman itu');
     [$jC, $r] = $cari($nim);
     $cek(strpos($r['badan'], "Peserta {$tag}") !== FALSE && substr($http($jC, 'KemitraanPortal/sertifikat_kkn_pdf')['badan'], 0, 4) === '%PDF', 'Sesudah terbit: peserta menemukan sertifikatnya dan PDF terbentuk');
+    // PDF diambil mentah (tanpa html_entity_decode milik $http), lalu stream FPDF yang terkompresi dibuka.
+    $ch = curl_init($BASE . 'KemitraanPortal/sertifikat_kkn_pdf');
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => 1, CURLOPT_COOKIEFILE => $jC, CURLOPT_TIMEOUT => 60]);
+    $pdf = (string) curl_exec($ch); curl_close($ch);
+    $teks_pdf = $pdf;
+    if (preg_match_all('/stream\r?\n(.*?)\r?\nendstream/s', $pdf, $m)) { foreach ($m[1] as $b) { $teks_pdf .= (string) @gzuncompress($b); } }
+    $cek(strpos($teks_pdf, '(Nomor : ' . $nomor . ')') !== FALSE, 'PDF mencetak nomor yang ditetapkan admin');
+
+    // Unggah ulang: peserta 1 tetap (nama dibetulkan), peserta 2 keluar, peserta 3 masuk.
+    $nim3 = 'KN3' . strtoupper(bin2hex(random_bytes(3)));
+    $kirim($jA, 'Admin_Kemitraan/unggah_peserta/' . $kkn, ['file_peserta' => new CURLFile($xlsx([[$nim, "Peserta Betul {$tag}"], [$nim3, "Peserta tiga {$tag}"]]), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'roster.xlsx')]);
+    $baris = $db->query("SELECT id, nama, nomor_sertifikat FROM kkn_peserta WHERE pendaftaran_id={$kkn} AND nim='{$nim}'")->fetch_assoc();
+    $cek($baris && (int) $baris['id'] === $p1 && $baris['nomor_sertifikat'] === $nomor && $baris['nama'] === "Peserta Betul {$tag}",
+        'Unggah ulang mempertahankan baris dan nomor peserta yang tetap ada, namanya ikut diperbarui');
+    $cek((int) $nilai("SELECT COUNT(*) FROM kkn_peserta WHERE pendaftaran_id={$kkn}") === 2 && $nilai("SELECT id FROM kkn_peserta WHERE id={$p2}") === NULL
+        && $nilai("SELECT id FROM kkn_peserta WHERE pendaftaran_id={$kkn} AND nim='{$nim3}'") !== NULL, 'Peserta yang keluar dihapus, peserta baru ditambahkan');
+    $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p1, ['nomor_sertifikat' => '']);
+    $cek($nomor_db($p1) === NULL, 'Mengosongkan nomor mengembalikannya ke nomor otomatis');
 
     // Abaikan: KKN kedua yang diminta lalu ditutup tanpa tanggal.
     $db->query("INSERT INTO kkn_magang_pendaftaran (user_id,jenis,instansi_asal,no_hp,divisi_atau_tema,periode_mulai,periode_selesai,status,sertifikat_diminta_at,sertifikat_diminta_jumlah,created_at)

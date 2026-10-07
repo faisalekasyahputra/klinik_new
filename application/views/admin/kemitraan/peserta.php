@@ -3,6 +3,7 @@
  * Roster peserta satu KKN - permintaan user 22 Agt 2026. Sejak 7 Okt 2026 (kendali sertifikat di tangan
  * dinas) admin juga bisa mengunggah atau mengganti roster di sini (Admin_Kemitraan::unggah_peserta) dan
  * menetapkan tanggal sertifikat; universitas tetap bisa mengunggah dari dashboard-nya sendiri.
+ * Nomor sertifikat per peserta bisa diubah admin (permintaan dinas 7 Okt 2026, migrasi 078); kosong = otomatis.
  */
 $csrf = '<input type="hidden" name="' . $this->security->get_csrf_token_name() . '" value="' . $this->security->get_csrf_hash() . '">';
 $lewat = ! empty($row->periode_selesai) && $row->periode_selesai < date('Y-m-d');
@@ -40,19 +41,20 @@ $lewat = ! empty($row->periode_selesai) && $row->periode_selesai < date('Y-m-d')
 </div>
 
 <div class="kartu-admin overflow-hidden">
-    <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Daftar Peserta', 'kt_jumlah' => count($peserta), 'kt_keterangan' => '']); ?>
+    <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Daftar Peserta', 'kt_jumlah' => count($peserta), 'kt_keterangan' => 'Nomor sertifikat kosong memakai nomor otomatis 600.2/69. + nomor urut peserta.']); ?>
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
                 <tr>
                     <th class="px-4 py-3">NIM</th>
                     <th class="px-4 py-3">Nama</th>
+                    <th class="px-4 py-3">Nomor sertifikat</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-white/5 text-gray-700 dark:text-gray-300">
                 <?php if (empty($peserta)): ?>
                 <tr>
-                    <td colspan="2" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">
+                    <td colspan="3" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">
                         <div class="flex flex-col items-center justify-center">
                             <div class="w-16 h-16 mb-4 rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center text-3xl text-gray-300 dark:text-white/20">
                                 <i class="ph ph-users-three"></i>
@@ -62,9 +64,17 @@ $lewat = ! empty($row->periode_selesai) && $row->periode_selesai < date('Y-m-d')
                     </td>
                 </tr>
                 <?php else: foreach ($peserta as $p): ?>
-                <tr>
+                <tr id="peserta-<?= (int) $p->id ?>">
                     <td class="px-4 py-3 text-gray-900 dark:text-white"><?= html_escape($p->nim) ?></td>
                     <td class="px-4 py-3 text-gray-900 dark:text-white"><?= html_escape($p->nama) ?></td>
+                    <td class="px-4 py-2">
+                        <form method="post" action="<?= base_url('Admin_Kemitraan/nomor_sertifikat/' . (int) $p->id) ?>" class="flex items-center gap-2" data-nomor-sertifikat="<?= (int) $p->id ?>">
+                            <?= $csrf ?>
+                            <input name="nomor_sertifikat" maxlength="100" value="<?= html_escape($p->nomor_sertifikat ?? '') ?>" placeholder="600.2/69.<?= (int) $p->id ?>" aria-label="Nomor sertifikat <?= html_escape($p->nama) ?>" class="w-56 rounded-lg border border-gray-200 bg-transparent px-3 py-1.5 text-sm text-gray-800 dark:border-white/10 dark:text-white">
+                            <button type="submit" class="tombol-aksi"><i class="ph ph-floppy-disk"></i><span>Simpan</span></button>
+                            <span class="text-[11px] <?= empty($p->nomor_sertifikat) ? 'text-gray-500 dark:text-brand-muted' : 'font-bold text-blue-600 dark:text-brand-primary' ?>"><?= empty($p->nomor_sertifikat) ? 'otomatis' : 'diubah admin' ?></span>
+                        </form>
+                    </td>
                 </tr>
                 <?php endforeach; endif; ?>
             </tbody>
