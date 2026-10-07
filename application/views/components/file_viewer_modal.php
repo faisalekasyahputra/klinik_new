@@ -158,7 +158,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
                     gambar.src = blobUrl;
                     gambar.style.display = 'block';
                 } else {
-                    frame.src = blobUrl;
+                    frame.src = blobUrl + '#navpanes=0'; // viewer PDF Chrome/Edge: tanpa sidebar thumbnail (permintaan user 7 Okt 2026)
                     frame.style.display = 'block'; // bukan '': CSS #kpkp-file-frame bawaannya display:none
                 }
             })

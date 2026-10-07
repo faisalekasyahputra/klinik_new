@@ -184,6 +184,7 @@ if ( ! function_exists('audit_kamus')) {
                 'sertifikat_kkn_diminta' => 'Sertifikat KKN diminta peserta',
                 'sertifikat_kkn_diabaikan' => 'Permintaan sertifikat KKN diabaikan',
                 'sertifikat_kkn_nomor'   => 'Nomor sertifikat KKN diubah admin',
+                'sertifikat_kkn_awalan'  => 'Awalan nomor sertifikat KKN diubah admin',
                 'seo_diubah'             => 'SEO halaman diubah',
                 'seo_dikembalikan'       => 'SEO halaman dikembalikan ke bawaan',
                 'sandi_lupa_diminta'     => 'Tautan reset kata sandi dikirim ke email',

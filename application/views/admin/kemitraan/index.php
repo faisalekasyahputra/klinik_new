@@ -131,6 +131,11 @@ $filter_html = ob_get_clean();
                                 </summary>
                                 <form method="POST" action="<?= base_url('Admin_Kemitraan/tanggal_sertifikat/' . (int) $r->id) ?>" class="mt-2 flex flex-wrap items-end gap-1.5">
                                     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+                                    <?php /* Awalan nomor di atas tanggal (permintaan dinas 7 Okt 2026), disimpan bersama lewat tanggal_sertifikat. */ ?>
+                                    <label class="basis-full text-xs font-bold text-gray-600 dark:text-brand-muted">Awalan nomor sertifikat
+                                        <input name="awalan_nomor" maxlength="80" value="<?= html_escape($r->awalan_nomor_sertifikat ?? '') ?>" placeholder="600.2/69" class="mt-1 block w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm font-normal text-gray-800 dark:text-gray-200">
+                                        <span class="mt-0.5 block text-[11px] font-normal text-gray-500 dark:text-brand-muted">Diikuti urut peserta: .01, .02, ...</span>
+                                    </label>
                                     <label class="text-xs font-bold text-gray-600 dark:text-brand-muted">Tanggal sertifikat
                                         <input type="date" name="tanggal_sertifikat" value="<?= html_escape($r->tanggal_sertifikat ?? '') ?>" class="mt-1 block rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm font-normal text-gray-800 dark:text-gray-200">
                                     </label>

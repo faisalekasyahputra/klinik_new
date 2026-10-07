@@ -640,32 +640,54 @@ class MY_Controller extends CI_Controller {
     }
 
     /**
-     * Pindai isi satu berkas unggahan (form keamanan poin 11.4). Dipakai SEMUA titik unggah,
-     * termasuk yang tidak menyimpan berkasnya (impor Excel) atau menyimpannya di webroot
-     * (gambar katalog dan beranda). Berkas yang ditolak dicatat sebagai peringatan keamanan
-     * (jejak audit + banner admin) beserta SHA-256-nya, tanpa isi berkas.
-     * Gagal-tertutup: galat pada pemindai = berkas ditolak.
+     * Nomor sertifikat KKN per peserta, satu-satunya tempat aturannya (halaman Peserta, PDF, cek nomor kembar):
+     * <awalan KKN>.<urut dua digit> bila awalan diatur admin per periode (migrasi 079), atau 600.2/69. + id peserta
+     * bila belum. Urut menempel di peserta (kkn_peserta.urut); baris tanpa urut (dibuat di luar ganti_roster_kkn)
+     * melanjutkan urut terbesar KKN-nya. Nomor manual per peserta (kkn_peserta.nomor_sertifikat, migrasi 078)
+     * TIDAK dipakai lagi: keputusan user 7 Okt 2026, nomor diatur per periode saja.
+     * $awalan_baru [pendaftaran_id => awalan|NULL] menimpa awalan tersimpan, untuk memeriksa nomor kembar sebelum menyimpan.
+     * @return array [id peserta => (object) {pendaftaran_id, urut, nomor}]
      */
+    protected function nomor_sertifikat_kkn($pendaftaran_id = NULL, array $awalan_baru = []) {
+        $q = $this->db->select('kkn_peserta.id, kkn_peserta.pendaftaran_id, kkn_peserta.urut, kkn_magang_pendaftaran.awalan_nomor_sertifikat')
+            ->from('kkn_peserta')->join('kkn_magang_pendaftaran', 'kkn_magang_pendaftaran.id = kkn_peserta.pendaftaran_id')
+            ->order_by('kkn_peserta.pendaftaran_id', 'ASC')->order_by('kkn_peserta.id', 'ASC');
+        if ($pendaftaran_id !== NULL) { $q->where('kkn_peserta.pendaftaran_id', (int) $pendaftaran_id); }
+        $hasil = []; $maks = [];
+        foreach ($q->get()->result() as $r) {
+            $kkn = (int) $r->pendaftaran_id;
+            $urut = $r->urut !== NULL ? (int) $r->urut : ($maks[$kkn] ?? 0) + 1;
+            $maks[$kkn] = max($maks[$kkn] ?? 0, $urut);
+            $awalan = array_key_exists($kkn, $awalan_baru) ? $awalan_baru[$kkn] : $r->awalan_nomor_sertifikat;
+            $hasil[(int) $r->id] = (object) ['pendaftaran_id' => $kkn, 'urut' => $urut,
+                'nomor' => $awalan !== NULL && $awalan !== '' ? $awalan . '.' . sprintf('%02d', $urut) : '600.2/69.' . $r->id];
+        }
+        return $hasil;
+    }
+
     /**
      * Ganti SELURUH roster satu KKN (hasil Kkn_peserta_import::baca). Dipakai universitas
      * (KemitraanPortal::kkn_upload_peserta) dan admin dinas (Admin_Kemitraan::unggah_peserta).
      * Diselaraskan per NIM, bukan hapus-semua lalu isi ulang: peserta yang tetap ada mempertahankan
-     * barisnya, jadi nomor sertifikat otomatis (600.2/69. + id) dan nomor yang diubah admin
-     * (migrasi 078) tidak bergeser saat daftar diunggah ulang. Transaksional supaya roster tidak
-     * pernah setengah jadi. @return int|FALSE jumlah peserta tersimpan
+     * barisnya beserta urutnya (migrasi 079), yang keluar dihapus, yang baru diberi
+     * urut sesudah urut terbesar KKN itu (tidak memakai ulang urut peserta yang dihapus). Transaksional
+     * supaya roster tidak pernah setengah jadi. @return int|FALSE jumlah peserta tersimpan
      */
     protected function ganti_roster_kkn($pendaftaran_id, array $peserta) {
         $lama = [];
-        foreach ($this->db->select('id, nim, nama')->where('pendaftaran_id', (int) $pendaftaran_id)->get('kkn_peserta')->result() as $p) {
+        $urut = 0;
+        foreach ($this->db->select('id, nim, nama, urut')->where('pendaftaran_id', (int) $pendaftaran_id)->get('kkn_peserta')->result() as $p) {
             $lama[strtoupper($p->nim)] = $p;
+            $urut = max($urut, (int) $p->urut);
         }
+        $urut = max($urut, count($lama));
         $baru = [];
         $this->db->trans_start();
         foreach ($peserta as $p) {
             $ada = $lama[strtoupper($p['nim'])] ?? NULL;
             unset($lama[strtoupper($p['nim'])]);
             if ( ! $ada) {
-                $baru[] = ['pendaftaran_id' => (int) $pendaftaran_id, 'nim' => $p['nim'], 'nama' => $p['nama'], 'created_at' => date('Y-m-d H:i:s')];
+                $baru[] = ['pendaftaran_id' => (int) $pendaftaran_id, 'nim' => $p['nim'], 'nama' => $p['nama'], 'urut' => ++$urut, 'created_at' => date('Y-m-d H:i:s')];
             } elseif ($ada->nim !== $p['nim'] || $ada->nama !== $p['nama']) {
                 $this->db->where('id', (int) $ada->id)->update('kkn_peserta', ['nim' => $p['nim'], 'nama' => $p['nama']]);
             }
@@ -676,6 +698,13 @@ class MY_Controller extends CI_Controller {
         return $this->db->trans_status() === FALSE ? FALSE : count($peserta);
     }
 
+    /**
+     * Pindai isi satu berkas unggahan (form keamanan poin 11.4). Dipakai SEMUA titik unggah,
+     * termasuk yang tidak menyimpan berkasnya (impor Excel) atau menyimpannya di webroot
+     * (gambar katalog dan beranda). Berkas yang ditolak dicatat sebagai peringatan keamanan
+     * (jejak audit + banner admin) beserta SHA-256-nya, tanpa isi berkas.
+     * Gagal-tertutup: galat pada pemindai = berkas ditolak.
+     */
     protected function scan_uploaded_file($tmp_name, $ext, &$error = NULL, $domain = 'unggahan') {
         try {
             $this->load->library('Upload_scanner');
