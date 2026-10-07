@@ -50,7 +50,9 @@ try {
     $kkn2 = $db->insert_id;
 
     [, $b] = $cari();
-    $cek(stripos($b, 'sedang disiapkan') !== FALSE && strpos($b, "Peserta {$tag}") === FALSE, 'Sebelum tanggal diisi: sertifikat terkunci, nama peserta tidak tampil');
+    // Sejak 7 Okt 2026 (migrasi 077) kasus ini menawarkan tombol permintaan sertifikat ke Disperakim.
+    $cek(stripos($b, 'belum diterbitkan') !== FALSE && strpos($b, 'data-minta-sertifikat') !== FALSE && strpos($b, "Peserta {$tag}") === FALSE,
+        'Sebelum tanggal diisi: sertifikat terkunci, nama peserta tidak tampil, tombol minta sertifikat ditawarkan');
 
     $ja = $sesi(); $http($ja, 'Auth/login'); $http($ja, 'Auth/do_login', ['email' => $e, 'password' => $sandi, 'csrf_kpkp_token' => $csrf($ja)]);
     $http($ja, 'Admin_Kemitraan');

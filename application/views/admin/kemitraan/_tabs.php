@@ -11,10 +11,12 @@
  * Sub-halaman (detail divisi, sunting pendaftaran) memakai kepala yang sama
  * dengan tab induknya menyala, supaya admin tidak pernah kehilangan tempatnya.
  *
- * @param string $tab_aktif 'pendaftaran' | 'slot' | 'universitas'
+ * @param string $tab_aktif 'pendaftaran' | 'sertifikat' | 'slot' | 'universitas'
  */
 $tab = [
     'pendaftaran' => ['label' => 'Pendaftaran', 'url' => 'Admin_Kemitraan',      'ikon' => 'ph-student'],
+    // Kendali sertifikat KKN di tangan dinas (7 Okt 2026): permintaan mahasiswa, catat KKN, tanggal terbit.
+    'sertifikat'  => ['label' => 'Sertifikat KKN', 'url' => 'Admin_Kemitraan/sertifikat', 'ikon' => 'ph-seal-check'],
     'slot'        => ['label' => 'Slot & bidang', 'url' => 'Admin_Kemitraan/slot', 'ikon' => 'ph-calendar-check'],
     // Akun (bukan pengajuan) - permintaan user 22 Agt 2026: "bisa mengelola
     // Akun KKN/Universitas". Daftar role='mahasiswa' berikut jumlah KKN
@@ -27,7 +29,8 @@ $tab = [
 $aktif = isset($tab_aktif) ? $tab_aktif : 'pendaftaran';
 ?>
 <?php // Satu judul untuk ketiga tab, sama dengan label sidebar; tab yang menyala menunjukkan bagiannya. ?>
-<?php $this->load->view('admin/components/judul_halaman', ['jh_judul' => 'KKN & Magang', 'jh_deskripsi' => 'Tempat yang dibuka, dan orang yang mengisinya - dikelola dari satu halaman.']); ?>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_judul' => 'KKN & Magang', 'jh_deskripsi' => 'Tempat yang dibuka, dan orang yang mengisinya - dikelola dari satu halaman.',
+    'jh_aksi' => '<a href="' . base_url('Admin_Kemitraan/catat') . '" class="tombol-utama" data-catat-kkn-tombol><i class="ph ph-plus"></i><span>Catat KKN</span></a>']); ?>
 
 <div class="mb-5 flex flex-wrap gap-1 border-b border-gray-200 dark:border-white/5">
     <?php foreach ($tab as $kunci => $t): ?>

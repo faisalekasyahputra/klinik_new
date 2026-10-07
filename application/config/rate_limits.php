@@ -220,6 +220,9 @@ $config['rate_limit_policies'] = [
         'window' => 3600,
         'dimensions' => ['ip'],
     ],
+    /* Tombol "Minta sertifikat" sesudah NIM ditemukan (KemitraanPortal::minta_sertifikat_kkn, 7 Okt 2026).
+       Satu peramban sudah dibatasi satu permintaan per KKN; batas IP ini menahan pengulangan sesi baru. */
+    'sertifikat_kkn_minta' => ['limit' => 5, 'window' => 3600, 'dimensions' => ['ip']],
 
     /* ================================================================
        KONTROL ANTI-OTOMATISASI GLOBAL (form keamanan poin 10.4), 21 Sep 2026.
