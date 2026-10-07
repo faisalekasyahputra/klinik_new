@@ -12,11 +12,10 @@ date_default_timezone_set('Asia/Jakarta');
  *   Tahap 2: NIM yang ditemukan pada KKN berperiode lewat tanpa tanggal sertifikat ditawari tombol minta;
  *            permintaan tercatat sekali per peramban, tampil di Sertifikat KKN dan badge menu; menetapkan
  *            tanggal menutup permintaan; Abaikan menutupnya; NIM yang tidak ditemukan tidak ditawari apa pun.
- *   Nomor sertifikat per peserta (migrasi 078): kosong = otomatis 600.2/69. + id, admin bisa mengubahnya, nomor kembar
- *            (termasuk nomor otomatis peserta lain) ditolak, PDF mencetak nomor admin, unggah ulang daftar peserta
- *            mempertahankan baris dan nomor peserta yang tetap ada.
- *   Awalan nomor per KKN (migrasi 079): nomor otomatis = awalan + urut dua digit yang menempel di peserta (tidak
- *            dipakai ulang), awalan yang membuat nomor kembar ditolak, PDF mengikutinya, kosong = bawaan.
+ *   Nomor sertifikat per KKN (migrasi 078/079): halaman Peserta hanya pratinjau (nomor + Lihat sertifikat; edit per
+ *            peserta dihapus atas keputusan user 7 Okt 2026); nomor = awalan admin + urut dua digit yang menempel di
+ *            peserta (tidak dipakai ulang), bawaan 600.2/69. + id; awalan yang membuat nomor kembar ditolak; awalan
+ *            dan tanggal tersimpan dari satu formulir; PDF peserta dan pratinjau admin memakai nomor yang sama.
  *
  * Akun, KKN, peserta, dan jejak audit uji dibuat lalu dihapus sendiri; ember laju per IP dipinjam lalu dipulihkan.
  */
@@ -32,7 +31,6 @@ $tag = 'ujikendali' . bin2hex(random_bytes(3));
 $sandi = 'Kk1#' . bin2hex(random_bytes(5));
 $nim = 'KN' . strtoupper(bin2hex(random_bytes(4)));
 $nim2 = 'KN2' . strtoupper(bin2hex(random_bytes(3)));
-$nomor = '600.2/69/UJI/' . strtoupper(bin2hex(random_bytes(3)));
 $total = 0; $gagal = 0; $jars = []; $tmp = []; $akun = []; $ember = [];
 $audit_awal = (int) $db->query('SELECT COALESCE(MAX(id),0) FROM sys_jejak_audit')->fetch_row()[0];
 $cek = function ($ok, $l) use (&$total, &$gagal) { $total++; if ( ! $ok) $gagal++; echo ($ok ? '  OK    ' : '  GAGAL ') . $l . "\n"; };
@@ -103,31 +101,25 @@ try {
     $cek((int) $nilai("SELECT COUNT(*) FROM kkn_peserta WHERE pendaftaran_id={$kkn}") === 2 && strpos($r['badan'], "Peserta {$tag}") !== FALSE, 'Admin mengunggah roster (2 peserta) dari halaman Peserta');
     $cek(strpos($r['badan'], 'data-kendali-sertifikat') !== FALSE, 'Halaman Peserta admin memuat unggah roster dan panel sertifikat');
 
-    echo "
-== Nomor sertifikat per peserta (migrasi 078)
-";
+    echo "\n== Pratinjau nomor dan sertifikat di halaman Peserta (migrasi 078/079)\n";
     $p1 = (int) $nilai("SELECT id FROM kkn_peserta WHERE pendaftaran_id={$kkn} AND nim='{$nim}'");
     $p2 = (int) $nilai("SELECT id FROM kkn_peserta WHERE pendaftaran_id={$kkn} AND nim='{$nim2}'");
-    $nomor_db = fn($id) => $nilai("SELECT nomor_sertifikat FROM kkn_peserta WHERE id={$id}");
-    $cek(strpos($r['badan'], 'data-nomor-sertifikat="' . $p1 . '"') !== FALSE && strpos($r['badan'], 'placeholder="600.2/69.' . $p1 . '"') !== FALSE
-        && substr_count($r['badan'], 'data-nomor-tampil="otomatis"') === 2, 'Tiap peserta tampil Otomatis dengan nomor 600.2/69. + id sebagai bawaan');
-    $r = $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p1, ['nomor_sertifikat' => $nomor]);
-    $cek($nomor_db($p1) === $nomor && substr_count($r['badan'], 'data-nomor-tampil="manual"') === 1 && strpos($r['url'], 'Admin_Kemitraan/peserta/' . $kkn) !== FALSE,
-        'Admin mengubah nomor satu peserta; halaman Peserta menandainya Manual');
-    $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p2, ['nomor_sertifikat' => $nomor]);
-    $cek($nomor_db($p2) === NULL, 'Nomor yang sudah dipakai peserta lain ditolak');
-    $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p1, ['nomor_sertifikat' => '600.2/69.' . $p2]);
-    $cek($nomor_db($p1) === $nomor, 'Nomor otomatis milik peserta lain juga ditolak');
-    $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p2, ['nomor_sertifikat' => 'NO;DROP']);
-    $cek($nomor_db($p2) === NULL, 'Nomor dengan karakter di luar huruf, angka, dan . , / - _ ( ) ditolak');
-    $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p2, ['nomor_sertifikat' => '600.2/69.' . $p2]);
-    $cek($nomor_db($p2) === NULL, 'Mengisi nomor otomatisnya sendiri tetap disimpan sebagai otomatis');
-    $http($jW, 'Admin_Kemitraan');
-    $kirim($jW, 'Admin_Kemitraan/nomor_sertifikat/' . $p2, ['nomor_sertifikat' => 'BUKAN-ADMIN']);
-    $cek($nomor_db($p2) === NULL, 'Akun selain admin tidak bisa mengubah nomor');
-    $cek($http($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p1)['kode'] >= 400, 'Ubah nomor hanya menerima POST');
-    $cek((int) $nilai("SELECT COUNT(*) FROM sys_jejak_audit WHERE id > {$audit_awal} AND aksi='sertifikat_kkn_nomor' AND objek_id='{$kkn}'") === 1,
-        'Perubahan nomor tercatat di jejak audit (satu kali, penolakan tidak dicatat)');
+    // PDF diambil mentah (tanpa html_entity_decode milik $http), lalu stream FPDF yang terkompresi dibuka.
+    $teks_pdf = function ($jar, $jalur = 'KemitraanPortal/sertifikat_kkn_pdf') use ($BASE) {
+        $ch = curl_init($BASE . $jalur);
+        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => 1, CURLOPT_COOKIEFILE => $jar, CURLOPT_TIMEOUT => 60]);
+        $pdf = (string) curl_exec($ch); curl_close($ch);
+        $teks = $pdf;
+        if (preg_match_all('/stream\r?\n(.*?)\r?\nendstream/s', $pdf, $m)) { foreach ($m[1] as $b) { $teks .= (string) @gzuncompress($b); } }
+        return $teks;
+    };
+    $cek(strpos($r['badan'], 'data-nomor-sertifikat="' . $p1 . '">600.2/69.' . $p1 . '<') !== FALSE
+        && strpos($r['badan'], 'Admin_Kemitraan/pratinjau_sertifikat/' . $p2) !== FALSE && strpos($r['badan'], 'name="nomor_sertifikat"') === FALSE,
+        'Tiap peserta tampil dengan nomor bawaan dan tombol Lihat sertifikat, tanpa isian nomor per peserta');
+    $cek(strpos($teks_pdf($jA, 'Admin_Kemitraan/pratinjau_sertifikat/' . $p1), '(Nomor : 600.2/69.' . $p1 . ')') !== FALSE,
+        'Admin melihat sertifikat peserta sebelum terbit, dengan nomor yang sama');
+    $cek(strpos($teks_pdf($jW, 'Admin_Kemitraan/pratinjau_sertifikat/' . $p1), '%PDF') !== 0, 'Akun selain admin tidak bisa melihat sertifikat lewat pratinjau admin');
+    $cek($http($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p1)['kode'] === 404, 'Rute edit nomor per peserta sudah tidak ada');
 
     echo "\n== Tahap 2: permintaan sertifikat dari peserta\n";
     [$jM, $r] = $cari($nim);
@@ -152,27 +144,16 @@ try {
         && strpos($r['url'], 'Admin_Kemitraan/sertifikat') !== FALSE, 'Terbitkan dari halaman Sertifikat KKN: tanggal tersimpan, permintaan tertutup, kembali ke halaman itu');
     [$jC, $r] = $cari($nim);
     $cek(strpos($r['badan'], "Peserta {$tag}") !== FALSE && substr($http($jC, 'KemitraanPortal/sertifikat_kkn_pdf')['badan'], 0, 4) === '%PDF', 'Sesudah terbit: peserta menemukan sertifikatnya dan PDF terbentuk');
-    // PDF diambil mentah (tanpa html_entity_decode milik $http), lalu stream FPDF yang terkompresi dibuka.
-    $teks_pdf = function ($jar) use ($BASE) {
-        $ch = curl_init($BASE . 'KemitraanPortal/sertifikat_kkn_pdf');
-        curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => 1, CURLOPT_COOKIEFILE => $jar, CURLOPT_TIMEOUT => 60]);
-        $pdf = (string) curl_exec($ch); curl_close($ch);
-        $teks = $pdf;
-        if (preg_match_all('/stream\r?\n(.*?)\r?\nendstream/s', $pdf, $m)) { foreach ($m[1] as $b) { $teks .= (string) @gzuncompress($b); } }
-        return $teks;
-    };
-    $cek(strpos($teks_pdf($jC), '(Nomor : ' . $nomor . ')') !== FALSE, 'PDF mencetak nomor yang ditetapkan admin');
+    $cek(strpos($teks_pdf($jC), '(Nomor : 600.2/69.' . $p1 . ')') !== FALSE, 'PDF peserta mencetak nomor yang sama dengan pratinjau admin');
 
     // Unggah ulang: peserta 1 tetap (nama dibetulkan), peserta 2 keluar, peserta 3 masuk.
     $nim3 = 'KN3' . strtoupper(bin2hex(random_bytes(3)));
     $kirim($jA, 'Admin_Kemitraan/unggah_peserta/' . $kkn, ['file_peserta' => new CURLFile($xlsx([[$nim, "Peserta Betul {$tag}"], [$nim3, "Peserta tiga {$tag}"]]), 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'roster.xlsx')]);
-    $baris = $db->query("SELECT id, nama, nomor_sertifikat FROM kkn_peserta WHERE pendaftaran_id={$kkn} AND nim='{$nim}'")->fetch_assoc();
-    $cek($baris && (int) $baris['id'] === $p1 && $baris['nomor_sertifikat'] === $nomor && $baris['nama'] === "Peserta Betul {$tag}",
-        'Unggah ulang mempertahankan baris dan nomor peserta yang tetap ada, namanya ikut diperbarui');
+    $baris = $db->query("SELECT id, nama FROM kkn_peserta WHERE pendaftaran_id={$kkn} AND nim='{$nim}'")->fetch_assoc();
+    $cek($baris && (int) $baris['id'] === $p1 && $baris['nama'] === "Peserta Betul {$tag}",
+        'Unggah ulang mempertahankan baris peserta yang tetap ada (nomornya tidak bergeser), namanya ikut diperbarui');
     $cek((int) $nilai("SELECT COUNT(*) FROM kkn_peserta WHERE pendaftaran_id={$kkn}") === 2 && $nilai("SELECT id FROM kkn_peserta WHERE id={$p2}") === NULL
         && $nilai("SELECT id FROM kkn_peserta WHERE pendaftaran_id={$kkn} AND nim='{$nim3}'") !== NULL, 'Peserta yang keluar dihapus, peserta baru ditambahkan');
-    $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p1, ['nomor_sertifikat' => '']);
-    $cek($nomor_db($p1) === NULL, 'Mengosongkan nomor mengembalikannya ke nomor otomatis');
 
     echo "\n== Awalan nomor per KKN dan urut yang menempel di peserta (migrasi 079)\n";
     $p3 = (int) $nilai("SELECT id FROM kkn_peserta WHERE pendaftaran_id={$kkn} AND nim='{$nim3}'");
@@ -184,13 +165,14 @@ try {
     $cek($awalan_db() === $awalan && strpos($r['badan'], '>' . $awalan . '.01<') !== FALSE && strpos($r['badan'], '>' . $awalan . '.03<') !== FALSE,
         'Admin mengatur awalan per KKN (titik di ujung dibuang); nomor otomatis menjadi awalan + urut dua digit');
     $cek(strpos($teks_pdf($jC), '(Nomor : ' . $awalan . '.01)') !== FALSE, 'PDF mencetak awalan KKN + urut peserta');
-    $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p1, ['nomor_sertifikat' => $awalan . '.03']);
-    $cek($nomor_db($p1) === NULL, 'Nomor manual yang sama dengan nomor berawalan milik peserta lain ditolak');
+    $cek(strpos($teks_pdf($jA, 'Admin_Kemitraan/pratinjau_sertifikat/' . $p3), '(Nomor : ' . $awalan . '.03)') !== FALSE, 'Pratinjau admin mengikuti awalan');
+    // KKN lain yang sudah memakai awalan ZZ: awalan yang sama membuat nomor .01 kembar.
     $zz = 'ZZ' . strtoupper(bin2hex(random_bytes(2)));
-    $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p1, ['nomor_sertifikat' => $zz . '.03']);
+    $db->query("INSERT INTO kkn_magang_pendaftaran (user_id,jenis,instansi_asal,no_hp,divisi_atau_tema,periode_mulai,periode_selesai,status,awalan_nomor_sertifikat,created_at)
+        VALUES ({$univ},'kkn','{$namaUniv}','081200000000','KKN awalan {$tag}','2026-01-01','2026-02-01','Diterima','{$zz}',NOW())");
+    $db->query('INSERT INTO kkn_peserta (pendaftaran_id,nim,nama,urut,created_at) VALUES (' . (int) $db->insert_id . ",'ZZ{$nim}','Peserta lain {$tag}',1,NOW())");
     $kirim($jA, 'Admin_Kemitraan/awalan_nomor/' . $kkn, ['awalan_nomor' => $zz]);
-    $cek($awalan_db() === $awalan && $nomor_db($p1) === $zz . '.03', 'Awalan yang membuat nomor otomatis sama dengan nomor peserta lain ditolak');
-    $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p1, ['nomor_sertifikat' => '']);
+    $cek($awalan_db() === $awalan, 'Awalan yang sudah dipakai KKN lain ditolak (nomor .01 akan kembar)');
     $kirim($jA, 'Admin_Kemitraan/awalan_nomor/' . $kkn, ['awalan_nomor' => 'A;B']);
     $cek($awalan_db() === $awalan, 'Awalan dengan karakter di luar huruf, angka, dan . , / - _ ( ) ditolak');
     $kirim($jW, 'Admin_Kemitraan/awalan_nomor/' . $kkn, ['awalan_nomor' => 'BUKAN-ADMIN']);

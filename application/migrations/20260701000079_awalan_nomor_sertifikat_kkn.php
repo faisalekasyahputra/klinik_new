@@ -11,7 +11,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * - kkn_peserta.urut: nomor urut peserta di dalam KKN-nya, diberikan saat masuk daftar (MY_Controller::
  *   ganti_roster_kkn) dan tidak pernah dipakai ulang, jadi tidak bergeser bila peserta lain dihapus.
  *   Diisi untuk baris lama menurut urutan id.
- * Nomor manual per peserta (kkn_peserta.nomor_sertifikat) tetap menang; aturannya di MY_Controller::nomor_sertifikat_kkn.
+ * Aturannya di MY_Controller::nomor_sertifikat_kkn. Nomor manual per peserta (kkn_peserta.nomor_sertifikat, migrasi 078)
+ * tidak dipakai lagi sejak nomor diatur per periode (keputusan user 7 Okt 2026); kolomnya dibiarkan.
  */
 class Migration_Awalan_nomor_sertifikat_kkn extends CI_Migration {
 

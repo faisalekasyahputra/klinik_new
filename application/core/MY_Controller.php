@@ -640,16 +640,16 @@ class MY_Controller extends CI_Controller {
     }
 
     /**
-     * Nomor sertifikat KKN per peserta, satu-satunya tempat aturannya (halaman Peserta, PDF, cek nomor kembar).
-     * Manual (kkn_peserta.nomor_sertifikat, migrasi 078) menang; selain itu otomatis: <awalan KKN>.<urut dua digit>
-     * bila awalan diatur admin per periode (migrasi 079), atau 600.2/69. + id peserta bila belum.
-     * Urut menempel di peserta (kkn_peserta.urut); baris tanpa urut (dibuat di luar ganti_roster_kkn) melanjutkan
-     * urut terbesar KKN-nya. $awalan_baru [pendaftaran_id => awalan|NULL] menimpa awalan tersimpan, untuk
-     * memeriksa nomor kembar sebelum menyimpan.
-     * @return array [id peserta => (object) {pendaftaran_id, urut, otomatis, manual, efektif}]
+     * Nomor sertifikat KKN per peserta, satu-satunya tempat aturannya (halaman Peserta, PDF, cek nomor kembar):
+     * <awalan KKN>.<urut dua digit> bila awalan diatur admin per periode (migrasi 079), atau 600.2/69. + id peserta
+     * bila belum. Urut menempel di peserta (kkn_peserta.urut); baris tanpa urut (dibuat di luar ganti_roster_kkn)
+     * melanjutkan urut terbesar KKN-nya. Nomor manual per peserta (kkn_peserta.nomor_sertifikat, migrasi 078)
+     * TIDAK dipakai lagi: keputusan user 7 Okt 2026, nomor diatur per periode saja.
+     * $awalan_baru [pendaftaran_id => awalan|NULL] menimpa awalan tersimpan, untuk memeriksa nomor kembar sebelum menyimpan.
+     * @return array [id peserta => (object) {pendaftaran_id, urut, nomor}]
      */
     protected function nomor_sertifikat_kkn($pendaftaran_id = NULL, array $awalan_baru = []) {
-        $q = $this->db->select('kkn_peserta.id, kkn_peserta.pendaftaran_id, kkn_peserta.urut, kkn_peserta.nomor_sertifikat, kkn_magang_pendaftaran.awalan_nomor_sertifikat')
+        $q = $this->db->select('kkn_peserta.id, kkn_peserta.pendaftaran_id, kkn_peserta.urut, kkn_magang_pendaftaran.awalan_nomor_sertifikat')
             ->from('kkn_peserta')->join('kkn_magang_pendaftaran', 'kkn_magang_pendaftaran.id = kkn_peserta.pendaftaran_id')
             ->order_by('kkn_peserta.pendaftaran_id', 'ASC')->order_by('kkn_peserta.id', 'ASC');
         if ($pendaftaran_id !== NULL) { $q->where('kkn_peserta.pendaftaran_id', (int) $pendaftaran_id); }
@@ -659,9 +659,8 @@ class MY_Controller extends CI_Controller {
             $urut = $r->urut !== NULL ? (int) $r->urut : ($maks[$kkn] ?? 0) + 1;
             $maks[$kkn] = max($maks[$kkn] ?? 0, $urut);
             $awalan = array_key_exists($kkn, $awalan_baru) ? $awalan_baru[$kkn] : $r->awalan_nomor_sertifikat;
-            $otomatis = $awalan !== NULL && $awalan !== '' ? $awalan . '.' . sprintf('%02d', $urut) : '600.2/69.' . $r->id;
-            $hasil[(int) $r->id] = (object) ['pendaftaran_id' => $kkn, 'urut' => $urut, 'otomatis' => $otomatis,
-                'manual' => $r->nomor_sertifikat, 'efektif' => $r->nomor_sertifikat ?: $otomatis];
+            $hasil[(int) $r->id] = (object) ['pendaftaran_id' => $kkn, 'urut' => $urut,
+                'nomor' => $awalan !== NULL && $awalan !== '' ? $awalan . '.' . sprintf('%02d', $urut) : '600.2/69.' . $r->id];
         }
         return $hasil;
     }
@@ -670,7 +669,7 @@ class MY_Controller extends CI_Controller {
      * Ganti SELURUH roster satu KKN (hasil Kkn_peserta_import::baca). Dipakai universitas
      * (KemitraanPortal::kkn_upload_peserta) dan admin dinas (Admin_Kemitraan::unggah_peserta).
      * Diselaraskan per NIM, bukan hapus-semua lalu isi ulang: peserta yang tetap ada mempertahankan
-     * barisnya beserta urut dan nomor manualnya (migrasi 078/079), yang keluar dihapus, yang baru diberi
+     * barisnya beserta urutnya (migrasi 079), yang keluar dihapus, yang baru diberi
      * urut sesudah urut terbesar KKN itu (tidak memakai ulang urut peserta yang dihapus). Transaksional
      * supaya roster tidak pernah setengah jadi. @return int|FALSE jumlah peserta tersimpan
      */
