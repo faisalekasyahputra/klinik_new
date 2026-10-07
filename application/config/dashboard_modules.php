@@ -427,6 +427,20 @@ $config['dashboard_modules'] = [
             'cara' => 'Tekan Proses pada pendaftaran: magang diteruskan ke bidang tujuannya (Teruskan ke bidang), KKN diputuskan langsung (Terima atau Tolak).',
         ],
     ],
+    // Sertifikat KKN (7 Okt 2026, migrasi 077): anak menu KKN & Magang, bukan baris sidebar baru. Badge =
+    // permintaan sertifikat dari peserta yang belum dijawab (tanggal sertifikat belum ditetapkan).
+    'sertifikat_kkn' => [
+        'label' => 'Sertifikat KKN', 'icon' => 'ph-seal-check',
+        'url'   => 'Admin_Kemitraan/sertifikat', 'group' => 'Tindak Lanjut', 'order' => 31, 'parent' => 'kemitraan',
+        'roles' => ['admin'], 'scope' => null,
+        'table' => 'kkn_magang_pendaftaran',
+        'pending_where' => "jenis = 'kkn' AND sertifikat_diminta_at IS NOT NULL AND tanggal_sertifikat IS NULL",
+        'badge' => TRUE, 'ringkas' => 'Sertifikat',
+        'tindakan' => [
+            'satuan' => 'permintaan sertifikat KKN dari peserta', 'keterangan' => 'instansi_asal',
+            'cara' => 'Buka Sertifikat KKN, periksa daftar pesertanya, lalu tekan Terbitkan dengan tanggal sertifikat. Abaikan bila belum bisa diterbitkan.',
+        ],
+    ],
     // Janji temu konsultasi (migrasi 035). Superadmin saja: `forum_diskusi`
     // tidak punya kolom bidang maupun kabupaten, jadi tidak ada dasar apa pun
     // untuk membagi mejanya per scope.

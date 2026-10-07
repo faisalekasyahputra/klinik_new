@@ -564,6 +564,10 @@ class Migrate extends CI_Controller {
         echo 'seo_halaman (migrasi 075): '.($this->db->table_exists('seo_halaman') && $this->db->field_exists('noindex', 'seo_halaman')
             ? 'ADA ('.$this->db->count_all('seo_halaman').' halaman ditimpa)' : 'HILANG')."
 ";
+        // Migrasi 077 - kendali sertifikat KKN: dicatat_oleh dan penanda permintaan sertifikat.
+        echo 'kendali sertifikat KKN (migrasi 077): '.($this->db->field_exists('dicatat_oleh', 'kkn_magang_pendaftaran')
+            && $this->db->field_exists('sertifikat_diminta_jumlah', 'kkn_magang_pendaftaran') ? 'ADA' : 'HILANG')."
+";
         // Migrasi 076 - kolom alasan_susulan untuk KKN input susulan (bersama kolom 061 dan 062 di bawah).
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062', 'alasan_susulan' => '076'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.

@@ -49,6 +49,21 @@ $label = 'mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]';
         </div>
     </section>
 
+    <?php /* Tombol permintaan muncul sekali sesudah pencarian yang NIM-nya ditemukan tetapi sertifikatnya belum
+             terbit (KemitraanPortal::cek_sertifikat_kkn, 7 Okt 2026); id KKN-nya di sesi, bukan di halaman. */
+    if ($this->session->flashdata('sertifikat_bisa_diminta')): ?>
+    <section class="mx-auto mt-6 max-w-md rounded-2xl border border-[color:var(--portal-brand)] bg-[color:var(--portal-bg-card)] p-4 text-left shadow-sm" data-minta-sertifikat>
+        <h2 class="text-sm font-black text-[color:var(--portal-text)]">Sertifikat belum diterbitkan</h2>
+        <p class="mt-1 text-xs leading-relaxed text-[color:var(--portal-text-muted)]">NIM Anda terdaftar dan periode KKN sudah selesai, tetapi Disperakim belum menetapkan tanggal terbit sertifikatnya. Kirim permintaan agar sertifikat segera diterbitkan.</p>
+        <form class="mt-3" action="<?= base_url('KemitraanPortal/minta_sertifikat_kkn') ?>" method="POST">
+            <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+            <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[color:var(--portal-brand)] px-5 py-3 text-sm font-bold text-[#0a1a1f] transition hover:opacity-90">
+                Minta sertifikat ke Disperakim <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </form>
+    </section>
+    <?php endif; ?>
+
     <form class="mx-auto mt-6 max-w-md space-y-4" action="<?= base_url('KemitraanPortal/cek_sertifikat_kkn') ?>" method="POST">
         <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
@@ -65,7 +80,7 @@ $label = 'mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]';
 
         <p class="text-center text-[11px] text-[color:var(--portal-text-muted)]">
             Sertifikat diterbitkan oleh perguruan tinggi mitra yang mengajukan KKN Anda, bukan oleh mahasiswa perorangan.
-            Kalau NIM Anda tidak ditemukan, hubungi pihak kampus.
+            Kalau NIM Anda tidak ditemukan, KKN Anda mungkin belum tercatat: hubungi pihak kampus, atau Disperakim melalui menu Aduan.
         </p>
     </form>
 

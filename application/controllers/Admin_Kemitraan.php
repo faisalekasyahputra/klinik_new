@@ -542,14 +542,162 @@ class Admin_Kemitraan extends Admin_Controller {
      * Tetapkan tanggal terbit sertifikat KKN (daftar revisi dinas 23 Sep 2026, migrasi 062).
      * Hanya KKN yang sudah Diterima. Kosong = tarik kembali (sertifikat terkunci lagi).
      */
+    // =========================================================
+    // KENDALI SERTIFIKAT KKN (keputusan user 7 Okt 2026, migrasi 077)
+    //
+    // Dinas memegang kendali penuh atas sertifikat: admin bisa mencatat KKN atas nama
+    // universitas (KKN yang berjalan sebelum aplikasi selesai), mengunggah roster sendiri,
+    // dan menetapkan tanggal sertifikat tanpa menunggu permintaan. Mahasiswa yang NIM-nya
+    // sudah ada di roster bisa meminta sertifikat (KemitraanPortal::minta_sertifikat_kkn);
+    // permintaannya tampil di halaman sertifikat() dan badge menu.
+    // =========================================================
+
+    /** Formulir catat KKN atas nama universitas. */
+    public function catat()
+    {
+        $data['title'] = 'KKN & Magang';
+        $data['universitas'] = $this->db->select('id, nama, email')->where(['peran' => 'universitas', 'status' => 'active'])
+            ->order_by('nama', 'ASC')->get('usr_akun')->result();
+        $data['isian'] = (array) $this->session->flashdata('catat_kkn_isian');
+        $this->render_admin('admin/kemitraan/catat', $data);
+    }
+
+    public function simpan_catat()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $isian = [
+            'universitas' => (int) $this->input->post('universitas'),
+            'periode_mulai' => trim((string) $this->input->post('periode_mulai', TRUE)),
+            'periode_selesai' => trim((string) $this->input->post('periode_selesai', TRUE)),
+            'keterangan' => trim((string) $this->input->post('keterangan', TRUE)),
+            'catatan' => trim((string) $this->input->post('catatan', TRUE)),
+        ];
+        $tolak = function ($pesan) use ($isian) {
+            $this->session->set_flashdata('warning', $pesan);
+            $this->session->set_flashdata('pemberitahuan_judul', 'Periksa isian KKN');
+            $this->session->set_flashdata('pemberitahuan_dialog', TRUE);
+            $this->session->set_flashdata('catat_kkn_isian', $isian);
+            redirect('Admin_Kemitraan/catat');
+        };
+        $univ = $this->db->get_where('usr_akun', ['id' => $isian['universitas'], 'peran' => 'universitas'])->row();
+        if ( ! $univ) { $tolak('Pilih akun universitas.'); return; }
+        $sah = function ($t) { $d = DateTime::createFromFormat('!Y-m-d', $t); return $d && $d->format('Y-m-d') === $t; };
+        if ( ! $sah($isian['periode_mulai']) || ! $sah($isian['periode_selesai'])) { $tolak('Periode mulai dan selesai wajib diisi dengan tanggal yang sah.'); return; }
+        if ($isian['periode_selesai'] < $isian['periode_mulai']) { $tolak('Periode selesai tidak boleh mendahului periode mulai.'); return; }
+        if ($this->slot->periode_terlalu_panjang($isian['periode_mulai'], $isian['periode_selesai'])) {
+            $tolak('Periode terlalu panjang. Maksimal ' . Kemitraan_slot_model::BATAS_HARI . ' hari.');
+            return;
+        }
+        if ($isian['keterangan'] === '' || mb_strlen($isian['keterangan']) > 150) { $tolak('Keterangan wajib diisi, maksimal 150 karakter.'); return; }
+        if (mb_strlen($isian['catatan']) > 500) { $tolak('Catatan admin maksimal 500 karakter.'); return; }
+        $ganda = $this->db->where(['user_id' => $univ->id, 'jenis' => 'kkn', 'periode_mulai' => $isian['periode_mulai'],
+                'periode_selesai' => $isian['periode_selesai'], 'divisi_atau_tema' => $isian['keterangan']])
+            ->where_not_in('status', ['Ditolak', 'Dibatalkan'])->count_all_results('kkn_magang_pendaftaran');
+        if ($ganda > 0) { $tolak('KKN dengan universitas, periode, dan keterangan yang sama sudah ada.'); return; }
+
+        $admin = (int) $this->get_user_id();
+        $this->db->insert('kkn_magang_pendaftaran', [
+            'user_id' => (int) $univ->id, 'jenis' => 'kkn', 'instansi_asal' => (string) $univ->nama,
+            'no_hp' => (string) ($univ->no_hp ?? ''), 'divisi_atau_tema' => $isian['keterangan'],
+            'periode_mulai' => $isian['periode_mulai'], 'periode_selesai' => $isian['periode_selesai'],
+            // Dicatat dinas = sudah diputuskan; tidak melewati antrean Diajukan.
+            'status' => 'Diterima', 'catatan_admin' => $isian['catatan'] !== '' ? $isian['catatan'] : NULL,
+            'dicatat_oleh' => $admin, 'reviewed_by' => $admin, 'reviewed_at' => date('Y-m-d H:i:s'),
+        ]);
+        $id = (int) $this->db->insert_id();
+        $this->catat_audit('kkn_dicatat_admin', 'Mencatat KKN ' . $isian['keterangan'] . ' atas nama ' . $univ->nama,
+            'kkn_magang_pendaftaran', (string) $id, ['universitas' => (int) $univ->id, 'periode' => $isian['periode_mulai'] . '/' . $isian['periode_selesai']]);
+        $this->session->set_flashdata('success', 'KKN dicatat dan langsung diterima. Unggah daftar peserta, lalu tetapkan tanggal sertifikat.');
+        redirect('Admin_Kemitraan/peserta/' . $id);
+    }
+
+    /**
+     * Admin mengunggah atau mengganti roster (format sama dengan universitas). Berbeda dari universitas,
+     * admin TETAP boleh mengganti roster sesudah tanggal sertifikat ditetapkan: dinas pemegang kendali,
+     * dan perubahannya tercatat di jejak audit.
+     */
+    public function unggah_peserta($id = NULL)
+    {
+        if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
+        $row = $this->db->get_where('kkn_magang_pendaftaran', ['id' => (int) $id, 'jenis' => 'kkn'])->row();
+        if ( ! $row) { show_404(); }
+        $kembali = 'Admin_Kemitraan/peserta/' . (int) $row->id;
+        $file = $_FILES['file_peserta'] ?? NULL;
+        if ( ! $file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK || ! is_uploaded_file($file['tmp_name'])) {
+            $this->session->set_flashdata('warning', 'Pilih berkas daftar peserta (XLS atau XLSX) terlebih dahulu.');
+            redirect($kembali);
+            return;
+        }
+        $ext = strtolower(pathinfo((string) $file['name'], PATHINFO_EXTENSION));
+        if ($file['size'] > 5242880 || ! in_array($ext, ['xls', 'xlsx'], TRUE)) {
+            $this->session->set_flashdata('warning', 'Daftar peserta harus berkas XLS atau XLSX, maksimal 5 MB.');
+            redirect($kembali);
+            return;
+        }
+        $galat = NULL;
+        if ( ! $this->scan_uploaded_file($file['tmp_name'], $ext, $galat, 'kkn_peserta')) {
+            $this->session->set_flashdata('error', $galat);
+            redirect($kembali);
+            return;
+        }
+        $this->load->library('kkn_peserta_import');
+        $hasil = $this->kkn_peserta_import->baca($file['tmp_name']);
+        if (empty($hasil['success'])) {
+            $this->session->set_flashdata('warning', $hasil['message']);
+            redirect($kembali);
+            return;
+        }
+        $jumlah = $this->ganti_roster_kkn($row->id, $hasil['peserta']);
+        if ($jumlah === FALSE) {
+            $this->session->set_flashdata('error', 'Gagal menyimpan daftar peserta. Coba lagi.');
+            redirect($kembali);
+            return;
+        }
+        $this->catat_audit('kkn_roster_admin', 'Admin mengganti daftar peserta KKN ' . $row->instansi_asal . ' (' . $jumlah . ' peserta)',
+            'kkn_magang_pendaftaran', (string) $row->id, ['jumlah' => $jumlah]);
+        $this->session->set_flashdata('success', $jumlah . ' peserta tersimpan.'
+            . (empty($row->tanggal_sertifikat) ? ' Tetapkan tanggal sertifikat agar peserta bisa mencetak.' : ''));
+        redirect($kembali);
+    }
+
+    /** KKN yang sertifikatnya diminta mahasiswa, lalu KKN diterima yang belum bertanggal sertifikat. */
+    public function sertifikat()
+    {
+        $data['title'] = 'Sertifikat KKN';
+        $peserta = '(SELECT COUNT(*) FROM kkn_peserta WHERE kkn_peserta.pendaftaran_id = kkn_magang_pendaftaran.id)';
+        $data['rows'] = $this->db->select("kkn_magang_pendaftaran.*, $peserta AS jumlah_peserta", FALSE)
+            ->from('kkn_magang_pendaftaran')
+            ->where('jenis', 'kkn')->where('tanggal_sertifikat IS NULL', NULL, FALSE)
+            ->group_start()->where('sertifikat_diminta_at IS NOT NULL', NULL, FALSE)->or_where('status', 'Diterima')->group_end()
+            ->where_not_in('status', ['Ditolak', 'Dibatalkan'])
+            ->order_by('sertifikat_diminta_at IS NULL', 'ASC', FALSE)->order_by('sertifikat_diminta_at', 'ASC')
+            ->order_by('periode_selesai', 'ASC')->get()->result();
+        $this->render_admin('admin/kemitraan/sertifikat', $data);
+    }
+
+    /** Tutup permintaan sertifikat tanpa menetapkan tanggal (mis. roster belum lengkap, dibahas di luar sistem). */
+    public function abaikan_permintaan($id = NULL)
+    {
+        if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
+        $row = $this->db->get_where('kkn_magang_pendaftaran', ['id' => (int) $id, 'jenis' => 'kkn'])->row();
+        if ( ! $row) { show_404(); }
+        $this->db->where('id', (int) $row->id)->update('kkn_magang_pendaftaran', ['sertifikat_diminta_at' => NULL, 'sertifikat_diminta_jumlah' => 0]);
+        $this->catat_audit('sertifikat_kkn_diabaikan', 'Mengabaikan permintaan sertifikat KKN ' . $row->instansi_asal,
+            'kkn_magang_pendaftaran', (string) $row->id, ['jumlah' => (int) $row->sertifikat_diminta_jumlah]);
+        $this->session->set_flashdata('success', 'Permintaan sertifikat ditutup.');
+        redirect('Admin_Kemitraan/sertifikat');
+    }
+
     public function tanggal_sertifikat($id = NULL)
     {
         if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
         $row = $this->db->get_where('kkn_magang_pendaftaran', ['id' => (int) $id, 'jenis' => 'kkn'])->row();
         if ( ! $row) { show_404(); }
+        // Dipanggil dari daftar pendaftaran, halaman Sertifikat KKN, dan halaman Peserta; kembali ke asalnya.
+        $kembali = ['sertifikat' => 'Admin_Kemitraan/sertifikat', 'peserta' => 'Admin_Kemitraan/peserta/' . (int) $row->id][(string) $this->input->post('kembali', TRUE)] ?? 'Admin_Kemitraan';
         if ($row->status !== 'Diterima') {
             $this->session->set_flashdata('error', 'Tanggal sertifikat hanya untuk KKN yang sudah diterima.');
-            redirect('Admin_Kemitraan');
+            redirect($kembali);
             return;
         }
         $tgl = trim((string) $this->input->post('tanggal_sertifikat', TRUE));
@@ -557,11 +705,13 @@ class Admin_Kemitraan extends Admin_Controller {
             $d = DateTime::createFromFormat('!Y-m-d', $tgl);
             if ( ! $d || $d->format('Y-m-d') !== $tgl) {
                 $this->session->set_flashdata('error', 'Tanggal sertifikat harus berformat YYYY-MM-DD.');
-                redirect('Admin_Kemitraan');
+                redirect($kembali);
                 return;
             }
         }
-        $this->db->where('id', (int) $row->id)->update('kkn_magang_pendaftaran', ['tanggal_sertifikat' => $tgl === '' ? NULL : $tgl]);
+        // Menetapkan tanggal sekaligus menjawab permintaan sertifikat mahasiswa (migrasi 077).
+        $this->db->where('id', (int) $row->id)->update('kkn_magang_pendaftaran', ['tanggal_sertifikat' => $tgl === '' ? NULL : $tgl]
+            + ($tgl === '' ? [] : ['sertifikat_diminta_at' => NULL, 'sertifikat_diminta_jumlah' => 0]));
         $this->catat_audit('sertifikat_kkn_tanggal', ($tgl === '' ? 'Menarik tanggal sertifikat KKN ' : 'Menetapkan tanggal sertifikat KKN ' . $tgl . ' untuk ') . $row->instansi_asal,
             'kkn_magang_pendaftaran', (string) $row->id, ['tanggal_sertifikat' => $tgl === '' ? NULL : $tgl]);
         // Peserta baru bisa mencetak sesudah periode KKN selesai (KemitraanPortal::cek_sertifikat_kkn),
@@ -572,7 +722,7 @@ class Admin_Kemitraan extends Admin_Controller {
             : ($mulai_cetak > date('Y-m-d')
                 ? 'Tanggal sertifikat ditetapkan. Peserta bisa mencetak mulai ' . tgl_id($mulai_cetak) . '.'
                 : 'Tanggal sertifikat ditetapkan. Peserta sudah bisa mencetak sertifikat.'));
-        redirect('Admin_Kemitraan');
+        redirect($kembali);
     }
 
     public function proses($id = NULL)

@@ -646,6 +646,24 @@ class MY_Controller extends CI_Controller {
      * (jejak audit + banner admin) beserta SHA-256-nya, tanpa isi berkas.
      * Gagal-tertutup: galat pada pemindai = berkas ditolak.
      */
+    /**
+     * Ganti SELURUH roster satu KKN (hasil Kkn_peserta_import::baca). Dipakai universitas
+     * (KemitraanPortal::kkn_upload_peserta) dan admin dinas (Admin_Kemitraan::unggah_peserta).
+     * Transaksional: hapus lalu isi ulang sukses BERSAMA, supaya roster tidak pernah kosong
+     * sesaat bila insert_batch() gagal di tengah jalan. @return int|FALSE jumlah peserta tersimpan
+     */
+    protected function ganti_roster_kkn($pendaftaran_id, array $peserta) {
+        $baris = [];
+        foreach ($peserta as $p) {
+            $baris[] = ['pendaftaran_id' => (int) $pendaftaran_id, 'nim' => $p['nim'], 'nama' => $p['nama'], 'created_at' => date('Y-m-d H:i:s')];
+        }
+        $this->db->trans_start();
+        $this->db->delete('kkn_peserta', ['pendaftaran_id' => (int) $pendaftaran_id]);
+        if ($baris) { $this->db->insert_batch('kkn_peserta', $baris); }
+        $this->db->trans_complete();
+        return $this->db->trans_status() === FALSE ? FALSE : count($baris);
+    }
+
     protected function scan_uploaded_file($tmp_name, $ext, &$error = NULL, $domain = 'unggahan') {
         try {
             $this->load->library('Upload_scanner');

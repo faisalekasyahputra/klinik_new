@@ -255,7 +255,7 @@ class KemitraanPortal extends Public_Controller
         $this->session->set_flashdata('success',
             $susulan !== NULL
                 ? 'KKN berhasil diajukan sebagai input susulan. Tim kami akan meninjau alasan susulannya'
-                    . ($simpan ? ' beserta surat yang dilampirkan.' : '.') . ' Sesudah diterima, unggah roster peserta di Detail KKN agar sertifikat dapat diterbitkan.'
+                    . ($simpan ? ' beserta surat yang dilampirkan.' : '.') . ' Sesudah diterima, unggah daftar peserta di Detail KKN agar sertifikat dapat diterbitkan.'
                 : 'KKN baru berhasil diajukan. Tim kami akan meninjau kedua surat yang dilampirkan.');
         redirect('KemitraanPortal/kkn_dashboard');
     }
@@ -281,7 +281,7 @@ class KemitraanPortal extends Public_Controller
         // dan dikunci; bila tanggalnya ditarik, roster terbuka lagi (keputusan 29 Sep 2026).
         // View kkn_batch.php menyembunyikan formulirnya dengan syarat yang sama.
         if ( ! empty($row->tanggal_sertifikat)) {
-            $this->session->set_flashdata('error', 'Roster peserta terkunci karena tanggal sertifikat sudah ditetapkan. Hubungi admin bila ada perubahan peserta.');
+            $this->session->set_flashdata('error', 'Daftar peserta terkunci karena tanggal sertifikat sudah ditetapkan. Hubungi admin bila ada perubahan peserta.');
             redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
             return;
         }
@@ -327,29 +327,9 @@ class KemitraanPortal extends Public_Controller
             return;
         }
 
-        // Transaksional: hapus lalu isi ulang harus sukses BERSAMA, supaya
-        // roster tidak pernah berhenti kosong-sesaat kalau insert_batch()
-        // gagal di tengah jalan (mis. koneksi terputus).
-        $this->db->trans_start();
-        $this->db->delete('kkn_peserta', ['pendaftaran_id' => $row->id]);
-        $baris = [];
-        foreach ($hasil['peserta'] as $p) {
-            $baris[] = [
-                'pendaftaran_id' => $row->id,
-                'nim'            => $p['nim'],
-                'nama'           => $p['nama'],
-                'created_at'     => date('Y-m-d H:i:s'),
-            ];
-        }
-        $this->db->insert_batch('kkn_peserta', $baris);
-        $this->db->trans_complete();
-
-        $this->session->set_flashdata(
-            $this->db->trans_status() === FALSE ? 'error' : 'success',
-            $this->db->trans_status() === FALSE
-                ? 'Gagal menyimpan daftar peserta. Coba lagi.'
-                : count($baris) . ' peserta berhasil disimpan.'
-        );
+        $jumlah = $this->ganti_roster_kkn($row->id, $hasil['peserta']);
+        $this->session->set_flashdata($jumlah === FALSE ? 'error' : 'success',
+            $jumlah === FALSE ? 'Gagal menyimpan daftar peserta. Coba lagi.' : $jumlah . ' peserta berhasil disimpan.');
         redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
     }
 
@@ -524,7 +504,19 @@ class KemitraanPortal extends Public_Controller
 
         $alasan = $this->alasan_sertifikat_terkunci($baris);
         if ($alasan !== NULL) {
-            $this->session->set_flashdata('error', $alasan);
+            /* Permintaan sertifikat (kendali di tangan dinas, 7 Okt 2026): NIM ADA di roster, periode sudah
+               lewat, KKN tidak ditolak/dibatalkan, dan tanggal sertifikat belum ditetapkan. Yang diingat sesi
+               hanya id pendaftaran (berlaku 30 menit), bukan NIM; NIM yang TIDAK ditemukan tidak membuka
+               permintaan apa pun (formulir publik, data tidak bisa diverifikasi). */
+            $bisa_minta = $baris && in_array($baris->status, ['Diterima', 'Diajukan'], TRUE) && empty($baris->tanggal_sertifikat)
+                && ! empty($baris->periode_selesai) && strtotime($baris->periode_selesai) < strtotime('today');
+            if ($bisa_minta) {
+                $this->session->set_userdata('sertifikat_kkn_minta', ['id' => (int) $baris->pendaftaran_id, 'sampai' => time() + 1800]);
+                $this->session->set_flashdata('info', 'Sertifikat KKN Anda belum diterbitkan. Anda dapat meminta Disperakim menerbitkannya.');
+                $this->session->set_flashdata('sertifikat_bisa_diminta', TRUE);
+            } else {
+                $this->session->set_flashdata('error', $alasan);
+            }
             redirect('KemitraanPortal/sertifikat_kkn');
             return;
         }
@@ -546,11 +538,57 @@ class KemitraanPortal extends Public_Controller
         ]);
     }
 
+    /**
+     * Mahasiswa meminta sertifikat diterbitkan (tombol di halaman cek sertifikat, sesudah NIM-nya ditemukan).
+     * Permintaan dihitung per KKN (bukan per mahasiswa) di kkn_magang_pendaftaran.sertifikat_diminta_*
+     * (migrasi 077); admin menjawabnya di Admin_Kemitraan::sertifikat dengan menetapkan tanggal sertifikat.
+     * Satu peramban satu permintaan per KKN; laju dibatasi per IP (sertifikat_kkn_minta).
+     */
+    public function minta_sertifikat_kkn()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { redirect('KemitraanPortal/sertifikat_kkn'); return; }
+        $rate = $this->rate_limit_consume('sertifikat_kkn_minta');
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject($rate, 'Terlalu banyak permintaan. Silakan coba lagi nanti.');
+            return;
+        }
+        $s = $this->session->userdata('sertifikat_kkn_minta');
+        $this->session->unset_userdata('sertifikat_kkn_minta');
+        $id = is_array($s) && (int) ($s['sampai'] ?? 0) >= time() ? (int) ($s['id'] ?? 0) : 0;
+        $row = $id ? $this->db->get_where('kkn_magang_pendaftaran', ['id' => $id, 'jenis' => 'kkn'])->row() : NULL;
+        if ( ! $row || ! in_array($row->status, ['Diterima', 'Diajukan'], TRUE) || ! empty($row->tanggal_sertifikat)
+            || empty($row->periode_selesai) || strtotime($row->periode_selesai) >= strtotime('today')) {
+            $this->session->set_flashdata('warning', 'Permintaan tidak dapat diproses. Cari NIM Anda sekali lagi.');
+            redirect('KemitraanPortal/sertifikat_kkn');
+            return;
+        }
+        $sudah = array_map('intval', (array) $this->session->userdata('sertifikat_kkn_diminta'));
+        if (in_array($id, $sudah, TRUE)) {
+            $this->session->set_flashdata('info', 'Permintaan untuk KKN ini sudah terkirim. Cek kembali NIM Anda secara berkala.');
+            redirect('KemitraanPortal/sertifikat_kkn');
+            return;
+        }
+        $pertama = empty($row->sertifikat_diminta_at);
+        $this->db->set('sertifikat_diminta_at', 'COALESCE(sertifikat_diminta_at, ' . $this->db->escape(date('Y-m-d H:i:s')) . ')', FALSE)
+            ->set('sertifikat_diminta_jumlah', 'sertifikat_diminta_jumlah + 1', FALSE)
+            ->where('id', $id)->update('kkn_magang_pendaftaran');
+        $sudah[] = $id;
+        $this->session->set_userdata('sertifikat_kkn_diminta', $sudah);
+        if ($pertama) {
+            // Hanya permintaan pertama yang dikabarkan dan dicatat; berikutnya cukup menambah hitungan.
+            $this->catat_audit('sertifikat_kkn_diminta', 'Peserta meminta sertifikat KKN ' . $row->instansi_asal, 'kkn_magang_pendaftaran', (string) $id);
+            $this->notify_admin_push([['role' => 'admin']], 'Permintaan sertifikat KKN',
+                'Peserta KKN ' . $row->instansi_asal . ' meminta sertifikat diterbitkan.', 'Admin_Kemitraan/sertifikat', 'sertifikat-kkn-' . $id);
+        }
+        $this->session->set_flashdata('success', 'Permintaan terkirim. Disperakim akan meninjau dan menerbitkan sertifikat; cek kembali NIM Anda secara berkala.');
+        redirect('KemitraanPortal/sertifikat_kkn');
+    }
+
     /** Kolom sertifikat KKN; dipakai pencarian NIM dan pemeriksaan ulang saat cetak. */
     private function kueri_sertifikat_kkn()
     {
         return $this->db
-            ->select('kkn_peserta.id AS id_peserta, kkn_peserta.nama AS nama_peserta, kkn_peserta.nim,
+            ->select('kkn_peserta.id AS id_peserta, kkn_peserta.nama AS nama_peserta, kkn_peserta.nim, kkn_magang_pendaftaran.id AS pendaftaran_id,
                 kkn_magang_pendaftaran.instansi_asal, kkn_magang_pendaftaran.divisi_atau_tema,
                 kkn_magang_pendaftaran.periode_mulai, kkn_magang_pendaftaran.periode_selesai,
                 kkn_magang_pendaftaran.status, kkn_magang_pendaftaran.tanggal_sertifikat')
