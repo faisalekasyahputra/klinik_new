@@ -29,27 +29,43 @@ $awalan = (string) ($row->awalan_nomor_sertifikat ?? '');
         <h2 class="text-sm font-black text-gray-900 dark:text-white">Sertifikat</h2>
         <?php if ($row->status !== 'Diterima'): ?>
             <p class="text-xs text-amber-700 dark:text-amber-300">KKN berstatus <?= html_escape($row->status) ?>. Terima dulu di tab Pendaftaran sebelum menetapkan tanggal sertifikat.</p>
+            <form method="post" action="<?= base_url('Admin_Kemitraan/awalan_nomor/' . (int) $row->id) ?>" data-awalan-nomor>
+                <?= $csrf ?>
+                <div class="space-y-1">
+                    <label for="awalan-nomor" class="block text-xs font-bold text-gray-600 dark:text-brand-muted">Awalan nomor sertifikat</label>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input id="awalan-nomor" name="awalan_nomor" maxlength="80" value="<?= html_escape($awalan) ?>" placeholder="600.2/69" class="w-48 rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-800 dark:border-white/10 dark:text-white">
+                        <span class="text-sm tabular-nums text-gray-500 dark:text-brand-muted">.01, .02, ...</span>
+                        <button type="submit" class="tombol-aksi"><i class="ph ph-floppy-disk" aria-hidden="true"></i><span>Simpan awalan</span></button>
+                    </div>
+                    <p class="text-[11px] text-gray-500 dark:text-brand-muted">Berlaku untuk semua peserta KKN ini yang bernomor otomatis; dua digit terakhir adalah nomor urut peserta dan tidak berubah walau daftar diunggah ulang. Kosongkan untuk kembali ke bawaan 600.2/69. + nomor urut database.</p>
+                </div>
+            </form>
         <?php else: ?>
             <p class="text-[11px] text-gray-500 dark:text-brand-muted">
                 <?= ! empty($row->tanggal_sertifikat) ? 'Tanggal terbit: <b>' . html_escape(tgl_id($row->tanggal_sertifikat)) . '</b>. Kosongkan lalu simpan untuk menarik sertifikat.' : 'Belum terbit. Peserta bisa mencetak sesudah tanggal ini ditetapkan' . ($lewat ? '.' : ' dan periode KKN selesai.') ?>
                 <?= ! empty($row->sertifikat_diminta_at) ? '<br><b>' . (int) $row->sertifikat_diminta_jumlah . 'x diminta mahasiswa</b> sejak ' . html_escape(tgl_id($row->sertifikat_diminta_at, TRUE)) . '.' : '' ?>
             </p>
-            <form method="post" action="<?= base_url('Admin_Kemitraan/tanggal_sertifikat/' . (int) $row->id) ?>" class="flex flex-wrap items-center gap-2">
+            <?php /* Awalan nomor di atas tanggal, satu tombol (permintaan dinas 7 Okt 2026). */ ?>
+            <form method="post" action="<?= base_url('Admin_Kemitraan/tanggal_sertifikat/' . (int) $row->id) ?>" class="space-y-3" data-awalan-nomor>
                 <?= $csrf ?><input type="hidden" name="kembali" value="peserta">
-                <input type="date" name="tanggal_sertifikat" value="<?= html_escape($row->tanggal_sertifikat ?: date('Y-m-d')) ?>" aria-label="Tanggal sertifikat" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-800 dark:border-white/10 dark:text-white">
-                <button type="submit" class="tombol-aksi"><i class="ph ph-seal-check"></i><span><?= ! empty($row->tanggal_sertifikat) ? 'Simpan tanggal' : 'Terbitkan' ?></span></button>
+                <div class="space-y-1">
+                    <label for="awalan-nomor" class="block text-xs font-bold text-gray-600 dark:text-brand-muted">Awalan nomor sertifikat</label>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input id="awalan-nomor" name="awalan_nomor" maxlength="80" value="<?= html_escape($awalan) ?>" placeholder="600.2/69" class="w-48 rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-800 dark:border-white/10 dark:text-white">
+                        <span class="text-sm tabular-nums text-gray-500 dark:text-brand-muted">.01, .02, ...</span>
+                    </div>
+                    <p class="text-[11px] text-gray-500 dark:text-brand-muted">Berlaku untuk semua peserta KKN ini yang bernomor otomatis; dua digit terakhir adalah nomor urut peserta dan tidak berubah walau daftar diunggah ulang. Kosongkan untuk kembali ke bawaan 600.2/69. + nomor urut database.</p>
+                </div>
+                <div class="space-y-1">
+                    <label for="tanggal-sertifikat" class="block text-xs font-bold text-gray-600 dark:text-brand-muted">Tanggal sertifikat</label>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input id="tanggal-sertifikat" type="date" name="tanggal_sertifikat" value="<?= html_escape($row->tanggal_sertifikat ?: date('Y-m-d')) ?>" class="rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-800 dark:border-white/10 dark:text-white">
+                        <button type="submit" class="tombol-aksi"><i class="ph ph-seal-check"></i><span><?= ! empty($row->tanggal_sertifikat) ? 'Simpan' : 'Terbitkan' ?></span></button>
+                    </div>
+                </div>
             </form>
         <?php endif; ?>
-        <form method="post" action="<?= base_url('Admin_Kemitraan/awalan_nomor/' . (int) $row->id) ?>" class="space-y-1 border-t border-gray-200 pt-3 dark:border-white/10" data-awalan-nomor>
-            <?= $csrf ?>
-            <label for="awalan-nomor" class="block text-xs font-bold text-gray-600 dark:text-brand-muted">Awalan nomor sertifikat</label>
-            <div class="flex flex-wrap items-center gap-2">
-                <input id="awalan-nomor" name="awalan_nomor" maxlength="80" value="<?= html_escape($awalan) ?>" placeholder="600.2/69" class="w-48 rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-800 dark:border-white/10 dark:text-white">
-                <span class="text-sm tabular-nums text-gray-500 dark:text-brand-muted">.01, .02, ...</span>
-                <button type="submit" class="tombol-aksi"><i class="ph ph-floppy-disk" aria-hidden="true"></i><span>Simpan awalan</span></button>
-            </div>
-            <p class="text-[11px] text-gray-500 dark:text-brand-muted">Berlaku untuk semua peserta KKN ini yang bernomor otomatis; dua digit terakhir adalah nomor urut peserta dan tidak berubah walau daftar diunggah ulang. Kosongkan untuk kembali ke bawaan 600.2/69. + nomor urut database.</p>
-        </form>
     </div>
 </div>
 

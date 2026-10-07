@@ -704,38 +704,51 @@ class Admin_Kemitraan extends Admin_Controller {
     /**
      * Awalan nomor sertifikat satu KKN (permintaan dinas 7 Okt 2026, migrasi 079): "600.2/69 ditentukan admin
      * per periode, dua digit terakhir otomatis menempel di peserta". Kosong = kembali ke 600.2/69. + id peserta.
-     * Awalan yang membuat nomor otomatis peserta sama dengan nomor peserta lain (misalnya awalan KKN lain) ditolak.
+     * Untuk KKN yang belum Diterima; yang sudah Diterima menyimpannya bersama tanggal sertifikat (tanggal_sertifikat).
      */
     public function awalan_nomor($id = NULL)
     {
         if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
         $row = $this->db->get_where('kkn_magang_pendaftaran', ['id' => (int) $id, 'jenis' => 'kkn'])->row();
         if ( ! $row) { show_404(); }
-        $kembali = 'Admin_Kemitraan/peserta/' . (int) $row->id;
-        $awalan = rtrim(preg_replace('/\s+/', ' ', trim((string) $this->input->post('awalan_nomor', TRUE))), '. ');
-        if ($awalan !== '' && ! preg_match('#^[A-Za-z0-9 .,/()_-]{1,80}$#', $awalan)) {
-            $this->session->set_flashdata('warning', 'Awalan nomor maksimal 80 karakter: huruf, angka, spasi, dan tanda . , / - _ ( ).');
-            redirect($kembali);
-            return;
+        if ($galat = $this->simpan_awalan($row, $this->input->post('awalan_nomor', TRUE))) {
+            $this->session->set_flashdata('warning', $galat);
+        } else {
+            $this->session->set_flashdata('success', $this->pesan_awalan($row));
         }
+        redirect('Admin_Kemitraan/peserta/' . (int) $row->id);
+    }
+
+    /**
+     * Simpan awalan nomor satu KKN bila berubah. Awalan yang membuat nomor otomatis peserta sama dengan nomor
+     * peserta lain (misalnya awalan KKN lain) ditolak. @return string|NULL pesan penolakan, NULL bila tersimpan/tetap.
+     */
+    private function simpan_awalan($row, $masukan)
+    {
+        $awalan = rtrim(preg_replace('/\s+/', ' ', trim((string) $masukan)), '. ');
+        if ($awalan === (string) $row->awalan_nomor_sertifikat) { return NULL; }
+        if ($awalan !== '' && ! preg_match('#^[A-Za-z0-9 .,/()_-]{1,80}$#', $awalan)) {
+            return 'Awalan nomor maksimal 80 karakter: huruf, angka, spasi, dan tanda . , / - _ ( ).';
+        }
+        // ponytail: memindai nomor seluruh peserta KKN per simpan; batasi per awalan bila pesertanya puluhan ribu.
         $semua = $this->nomor_sertifikat_kkn(NULL, [(int) $row->id => $awalan === '' ? NULL : $awalan]);
         $milik = array_filter($semua, fn($n) => $n->pendaftaran_id === (int) $row->id);
         if ($kembar = $this->nomor_kembar($semua, array_keys($milik))) {
-            $this->session->set_flashdata('warning', 'Awalan ' . $awalan . ' membuat nomor ' . $kembar[0] . ' sama dengan sertifikat peserta lain (NIM '
-                . $kembar[1] . '). Pakai awalan lain.');
-            redirect($kembali);
-            return;
+            return 'Awalan ' . $awalan . ' membuat nomor ' . $kembar[0] . ' sama dengan sertifikat peserta lain (NIM ' . $kembar[1] . '). Pakai awalan lain.';
         }
         $this->db->where('id', (int) $row->id)->update('kkn_magang_pendaftaran', ['awalan_nomor_sertifikat' => $awalan === '' ? NULL : $awalan]);
-        if ((string) $row->awalan_nomor_sertifikat !== $awalan) {
-            $this->catat_audit('sertifikat_kkn_awalan', 'Awalan nomor sertifikat KKN ' . $row->instansi_asal . ': '
-                . ($row->awalan_nomor_sertifikat ?: '(bawaan)') . ' -> ' . ($awalan ?: '(bawaan)'),
-                'kkn_magang_pendaftaran', (string) $row->id, ['lama' => $row->awalan_nomor_sertifikat, 'baru' => $awalan ?: NULL]);
-        }
-        $this->session->set_flashdata('success', $awalan === ''
-            ? 'Awalan nomor kembali ke bawaan (600.2/69. + nomor urut database).'
-            : 'Awalan nomor disimpan. Nomor otomatis peserta: ' . $awalan . '.01, ' . $awalan . '.02, dan seterusnya; nomor manual tidak berubah.');
-        redirect($kembali);
+        $this->catat_audit('sertifikat_kkn_awalan', 'Awalan nomor sertifikat KKN ' . $row->instansi_asal . ': '
+            . ($row->awalan_nomor_sertifikat ?: '(bawaan)') . ' -> ' . ($awalan ?: '(bawaan)'),
+            'kkn_magang_pendaftaran', (string) $row->id, ['lama' => $row->awalan_nomor_sertifikat, 'baru' => $awalan ?: NULL]);
+        $row->awalan_nomor_sertifikat = $awalan === '' ? NULL : $awalan;
+        return NULL;
+    }
+
+    private function pesan_awalan($row)
+    {
+        $a = (string) $row->awalan_nomor_sertifikat;
+        return $a === '' ? 'Nomor sertifikat memakai bawaan 600.2/69. + nomor urut database.'
+            : 'Nomor sertifikat otomatis: ' . $a . '.01, ' . $a . '.02, dan seterusnya; nomor manual tidak berubah.';
     }
 
     /** [nomor, NIM peserta lain] bila nomor efektif salah satu peserta $ids sudah dipakai peserta lain (tanpa beda huruf besar/kecil). */
@@ -802,6 +815,15 @@ class Admin_Kemitraan extends Admin_Controller {
                 return;
             }
         }
+        // Awalan nomor di atas tanggal pada formulir yang sama (permintaan dinas 7 Okt 2026); tanpa isian ini
+        // (tab Sertifikat KKN) awalan tidak disentuh. Ditolak = tanggal juga tidak disimpan.
+        $awalan_lama = (string) $row->awalan_nomor_sertifikat;
+        if ($this->input->post('awalan_nomor') !== NULL && ($galat = $this->simpan_awalan($row, $this->input->post('awalan_nomor', TRUE)))) {
+            $this->session->set_flashdata('warning', $galat);
+            redirect($kembali);
+            return;
+        }
+        $awalan_info = (string) $row->awalan_nomor_sertifikat !== $awalan_lama ? ' ' . $this->pesan_awalan($row) : '';
         // Menetapkan tanggal sekaligus menjawab permintaan sertifikat mahasiswa (migrasi 077).
         $this->db->where('id', (int) $row->id)->update('kkn_magang_pendaftaran', ['tanggal_sertifikat' => $tgl === '' ? NULL : $tgl]
             + ($tgl === '' ? [] : ['sertifikat_diminta_at' => NULL, 'sertifikat_diminta_jumlah' => 0]));
@@ -811,10 +833,10 @@ class Admin_Kemitraan extends Admin_Controller {
         // jadi flash tidak boleh menjanjikan "sudah bisa" sebelum itu (temuan UAT U5).
         // Juga tidak sebelum tanggal terbitnya sendiri bila ditetapkan untuk hari depan.
         $mulai_cetak = max(date('Y-m-d', strtotime($row->periode_selesai . ' +1 day')), $tgl);
-        $this->session->set_flashdata('success', $tgl === '' ? 'Tanggal sertifikat ditarik; sertifikat terkunci kembali.'
+        $this->session->set_flashdata('success', ($tgl === '' ? 'Tanggal sertifikat ditarik; sertifikat terkunci kembali.'
             : ($mulai_cetak > date('Y-m-d')
                 ? 'Tanggal sertifikat ditetapkan. Peserta bisa mencetak mulai ' . tgl_id($mulai_cetak) . '.'
-                : 'Tanggal sertifikat ditetapkan. Peserta sudah bisa mencetak sertifikat.'));
+                : 'Tanggal sertifikat ditetapkan. Peserta sudah bisa mencetak sertifikat.')) . $awalan_info);
         redirect($kembali);
     }
 

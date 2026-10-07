@@ -199,6 +199,15 @@ try {
     $cek($awalan_db() === NULL && strpos($r['badan'], '>600.2/69.' . $p1 . '<') !== FALSE, 'Mengosongkan awalan mengembalikan nomor bawaan 600.2/69. + id');
     $cek((int) $nilai("SELECT COUNT(*) FROM sys_jejak_audit WHERE id > {$audit_awal} AND aksi='sertifikat_kkn_awalan' AND objek_id='{$kkn}'") === 2,
         'Perubahan awalan tercatat di jejak audit (atur dan kosongkan; penolakan tidak dicatat)');
+    // Awalan di atas tanggal sertifikat, satu formulir (tab Pendaftaran dan halaman Peserta).
+    $tgl_db = fn() => $nilai("SELECT tanggal_sertifikat FROM kkn_magang_pendaftaran WHERE id={$kkn}");
+    $kemarin = date('Y-m-d', strtotime('-1 day'));
+    $kirim($jA, 'Admin_Kemitraan/tanggal_sertifikat/' . $kkn, ['awalan_nomor' => $awalan, 'tanggal_sertifikat' => $kemarin, 'kembali' => 'peserta']);
+    $cek($awalan_db() === $awalan && $tgl_db() === $kemarin, 'Awalan dan tanggal sertifikat tersimpan bersama dari satu formulir');
+    $kirim($jA, 'Admin_Kemitraan/tanggal_sertifikat/' . $kkn, ['awalan_nomor' => 'A;B', 'tanggal_sertifikat' => date('Y-m-d'), 'kembali' => 'peserta']);
+    $cek($awalan_db() === $awalan && $tgl_db() === $kemarin, 'Awalan ditolak: tanggal sertifikat juga tidak disimpan');
+    $cek(strpos($http($jA, 'Admin_Kemitraan?q=' . urlencode($tag))['badan'], 'name="awalan_nomor" maxlength="80" value="' . $awalan . '"') !== FALSE,
+        'Tab Pendaftaran memuat isian awalan di panel tanggal sertifikat');
 
     // Abaikan: KKN kedua yang diminta lalu ditutup tanpa tanggal.
     $db->query("INSERT INTO kkn_magang_pendaftaran (user_id,jenis,instansi_asal,no_hp,divisi_atau_tema,periode_mulai,periode_selesai,status,sertifikat_diminta_at,sertifikat_diminta_jumlah,created_at)
