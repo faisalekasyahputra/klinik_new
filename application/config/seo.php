@@ -64,6 +64,8 @@ $config['seo'] = [
             'deskripsi' => 'Informasi dan pendaftaran magang mahasiswa di bidang-bidang Disperakim Provinsi Jawa Tengah, termasuk posisi yang sedang dibuka.'],
         'KemitraanPortal/kkn' => ['judul' => 'Program KKN Tematik Perumahan',
             'deskripsi' => 'Kemitraan KKN tematik perumahan dan kawasan permukiman bersama perguruan tinggi, dari pendaftaran sampai sertifikat.'],
+        'KemitraanPortal/sertifikat_kkn' => ['judul' => 'Cetak Sertifikat KKN',
+            'deskripsi' => 'Cari dan cetak sertifikat KKN dengan NIM. Sertifikat diterbitkan Disperakim Provinsi Jawa Tengah sesudah periode KKN selesai.'],
         'kemitraan' => ['judul' => 'Kemitraan KKN dan Magang',
             'deskripsi' => 'Kerja sama Disperakim Jawa Tengah dengan perguruan tinggi lewat program KKN tematik dan magang mahasiswa.'],
         'umum' => ['judul' => 'Layanan Umum Klinik PKP',
