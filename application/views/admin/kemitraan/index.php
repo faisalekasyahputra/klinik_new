@@ -75,8 +75,9 @@ $filter_html = ob_get_clean();
                     <td class="px-4 py-3 max-w-[14rem] whitespace-normal"><?= html_escape($r->instansi_asal) ?></td>
                     <td class="px-4 py-3 min-w-[13rem] max-w-[14rem] whitespace-normal">
                         <?php /* Dirapikan 7 Okt 2026: baris KKN dulu menjulang sebelas baris (satu baris per berkas,
-                                 alasan susulan penuh). Kini empat lapis: judul, label, berkas sebagai chip, lalu
-                                 peserta dan sertifikat dalam satu baris. */ ?>
+                                 alasan susulan penuh). Kini empat lapis: judul, label, tautan berkas berjajar, lalu
+                                 peserta dan sertifikat dalam satu baris. Berkas berupa tautan teks berjajar, bukan pil:
+                                 bentuk tombol wajib dari set tombol bersama (uji_ui_daftar_superadmin). */ ?>
                         <div class="font-semibold text-gray-900 dark:text-white"><?= html_escape($r->divisi_atau_tema ?: '-') ?></div>
                         <?php if ( ! empty($r->dicatat_oleh) || ! empty($r->alasan_susulan)): ?>
                         <div class="mt-1 flex flex-wrap gap-1">
@@ -101,12 +102,12 @@ $filter_html = ob_get_clean();
                             $dokumen['simperum'] = ['Surat SIMPERUM', 'Surat permohonan SIMPERUM', $r->file_surat_simperum ?? NULL];
                             $dokumen['laporan']  = ['Laporan akhir', 'Laporan akhir', $r->file_laporan_akhir ?? NULL];
                         }
-                        $chip = 'inline-flex items-center gap-1 whitespace-nowrap rounded-md border border-gray-200 px-1.5 py-0.5 text-[11px] font-bold text-blue-600 hover:border-blue-300 dark:border-white/10 dark:text-brand-primary dark:hover:bg-white/5';
+                        $chip = 'inline-flex items-center gap-1 whitespace-nowrap text-xs font-bold text-blue-600 hover:underline dark:text-brand-primary';
                         $ada = array_filter($dokumen, fn($d) => ! empty($d[2]));
                         $belum_ada = array_map(fn($d) => strtolower($d[1]), array_diff_key($dokumen, $ada));
                         ?>
                         <?php if ($ada || ($r->jenis === 'kkn' && ! empty($r->link_dokumentasi))): ?>
-                        <div class="mt-2 flex flex-wrap gap-1" data-berkas-kemitraan>
+                        <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1" data-berkas-kemitraan>
                             <?php foreach ($ada as $kunci => $d): ?>
                                 <a href="<?= base_url('Admin_Kemitraan/lihat_dokumen/' . $r->id . '/' . $kunci) ?>" data-file-view data-file-title="<?= html_escape($d[1]) ?>" title="<?= html_escape($d[1]) ?>" target="_blank" rel="noopener" class="<?= $chip ?>"><i class="ph ph-paperclip" aria-hidden="true"></i><?= html_escape($d[0]) ?></a>
                             <?php endforeach; ?>
