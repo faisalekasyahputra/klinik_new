@@ -89,6 +89,7 @@ class KemitraanPortal extends Public_Controller
                 'periode_mulai'   => (string) $this->input->post('periode_mulai', TRUE),
                 'periode_selesai' => (string) $this->input->post('periode_selesai', TRUE),
                 'keterangan'      => (string) $this->input->post('keterangan', TRUE),
+                'alasan_susulan'  => (string) $this->input->post('alasan_susulan', TRUE),
             ]);
             redirect('KemitraanPortal/kkn_dashboard');
         };
@@ -104,11 +105,20 @@ class KemitraanPortal extends Public_Controller
             $tolak('Periode selesai tidak boleh mendahului periode mulai.');
             return;
         }
-        // KKN yang seluruh periodenya sudah lewat tidak bisa lagi ditinjau dan dijalankan;
-        // yang masih berjalan (selesai hari ini atau nanti) tetap boleh (keputusan 29 Sep 2026).
+        /* KKN yang seluruh periodenya sudah lewat = INPUT SUSULAN (keputusan user 7 Okt 2026, menggantikan
+           penolakan 29 Sep): boleh, paling lama setahun ke belakang, dengan alasan wajib yang dibaca admin
+           (kolom alasan_susulan, migrasi 076). Yang masih berjalan atau akan datang tidak butuh alasan. */
+        $susulan = NULL;
         if ($selesai < date('Y-m-d')) {
-            $tolak('Periode KKN sudah lewat seluruhnya. Ajukan KKN yang periodenya masih berjalan atau akan datang.');
-            return;
+            if ($selesai < date('Y-m-d', strtotime('-1 year'))) {
+                $tolak('Periode KKN ini berakhir lebih dari setahun lalu. Input susulan hanya untuk KKN yang berakhir dalam satu tahun terakhir.');
+                return;
+            }
+            $susulan = trim(preg_replace('/\s+/u', ' ', (string) $this->input->post('alasan_susulan', TRUE)));
+            if (mb_strlen($susulan) < 20 || mb_strlen($susulan) > 500) {
+                $tolak('Periode KKN ini sudah lewat, jadi dicatat sebagai input susulan. Isi Alasan input susulan (20 sampai 500 karakter), misalnya kenapa baru diajukan sekarang.');
+                return;
+            }
         }
         if ($this->slot->periode_terlalu_panjang($mulai, $selesai)) {
             $tolak('Periode terlalu panjang. Maksimal ' . Kemitraan_slot_model::BATAS_HARI . ' hari.');
@@ -188,6 +198,7 @@ class KemitraanPortal extends Public_Controller
             'bidang_kode'      => NULL,
             'periode_mulai'    => $mulai,
             'periode_selesai'  => $selesai,
+            'alasan_susulan'   => $susulan,
             'status'           => 'Diajukan',
             'file_surat_pengantar' => NULL,
             'file_surat_simperum'  => NULL,
@@ -231,11 +242,13 @@ class KemitraanPortal extends Public_Controller
 
         $this->db->where('id', $id)->update('kkn_magang_pendaftaran', $simpan);
 
-        $this->notify_admin_push([['role' => 'admin']], 'Pendaftaran KKN baru',
-            'Ada pendaftaran KKN yang menunggu peninjauan.',
+        $this->notify_admin_push([['role' => 'admin']], $susulan !== NULL ? 'Pendaftaran KKN susulan' : 'Pendaftaran KKN baru',
+            $susulan !== NULL ? 'Ada pendaftaran KKN susulan (periode sudah lewat) yang menunggu peninjauan.' : 'Ada pendaftaran KKN yang menunggu peninjauan.',
             'Admin_Kemitraan?status=Diajukan', 'kemitraan-' . (int) $id);
         $this->session->set_flashdata('success',
-            'KKN baru berhasil diajukan. Tim kami akan meninjau kedua surat yang dilampirkan.');
+            $susulan !== NULL
+                ? 'KKN berhasil diajukan sebagai input susulan. Tim kami akan meninjau kedua surat beserta alasan susulannya.'
+                : 'KKN baru berhasil diajukan. Tim kami akan meninjau kedua surat yang dilampirkan.');
         redirect('KemitraanPortal/kkn_dashboard');
     }
 

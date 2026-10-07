@@ -196,12 +196,22 @@ try {
     [$jU] = $login($eU3);
     $idU = $idU3;
     $jml = fn() => (int) $nilai("SELECT COUNT(*) FROM kkn_magang_pendaftaran WHERE user_id={$idU}");
-    $tambah = fn($mulai, $selesai, $ket) => $kirim($jU, 'KemitraanPortal/kkn_tambah', ['periode_mulai' => $mulai, 'periode_selesai' => $selesai, 'keterangan' => $ket, 'file_surat_pengantar' => $pdf(), 'file_surat_simperum' => $pdf()]);
+    $tambah = fn($mulai, $selesai, $ket, $alasan = NULL) => $kirim($jU, 'KemitraanPortal/kkn_tambah', ['periode_mulai' => $mulai, 'periode_selesai' => $selesai, 'keterangan' => $ket, 'file_surat_pengantar' => $pdf(), 'file_surat_simperum' => $pdf()] + ($alasan !== NULL ? ['alasan_susulan' => $alasan] : []));
+    // Input susulan (keputusan user 7 Okt 2026, menggantikan penolakan 29 Sep): periode lewat boleh dengan alasan.
     $awal = $jml();
     [, $hal] = $tambah(date('Y-m-d', strtotime('-40 days')), date('Y-m-d', strtotime('-1 day')), "KKN lampau {$tag}");
-    $lampau = $jml() === $awal && stripos($hal, 'sudah lewat') !== FALSE;
+    $cek($jml() === $awal && stripos($hal, 'input susulan') !== FALSE && stripos($hal, 'Periksa isian KKN') !== FALSE,
+        'KKN berperiode lewat tanpa alasan ditolak dengan pemberitahuan "Periksa isian KKN" yang meminta alasan susulan');
+    $tambah(date('Y-m-d', strtotime('-40 days')), date('Y-m-d', strtotime('-1 day')), "KKN lampau pendek {$tag}", 'terlalu pendek');
+    $cek($jml() === $awal, 'Alasan susulan kurang dari 20 karakter ditolak');
+    $tambah(date('Y-m-d', strtotime('-430 days')), date('Y-m-d', strtotime('-400 days')), "KKN terlalu lama {$tag}", 'KKN lama sekali, surat baru ditemukan di arsip kampus.');
+    $cek($jml() === $awal, 'Input susulan lebih dari setahun ke belakang ditolak');
+    $tambah(date('Y-m-d', strtotime('-40 days')), date('Y-m-d', strtotime('-1 day')), "KKN susulan {$tag}", 'KKN sudah berjalan, surat dari kampus baru terbit minggu ini.');
+    $cek($jml() === $awal + 1 && $nilai("SELECT alasan_susulan FROM kkn_magang_pendaftaran WHERE user_id={$idU} AND divisi_atau_tema='KKN susulan {$tag}'") === 'KKN sudah berjalan, surat dari kampus baru terbit minggu ini.',
+        'KKN berperiode lewat dengan alasan diterima sebagai susulan, alasannya tersimpan');
     $tambah(date('Y-m-d', strtotime('-10 days')), date('Y-m-d'), "KKN berakhir hari ini {$tag}");
-    $cek($lampau && $jml() === $awal + 1, 'KKN yang seluruh periodenya lewat ditolak; yang berakhir hari ini masih diterima');
+    $cek($jml() === $awal + 2 && $nilai("SELECT alasan_susulan FROM kkn_magang_pendaftaran WHERE user_id={$idU} AND divisi_atau_tema='KKN berakhir hari ini {$tag}'") === NULL,
+        'KKN yang berakhir hari ini diterima tanpa alasan, bukan susulan');
 
     $diajukan = $kkn($idU, '2026-01-01', '2026-02-01', 'Diajukan');
     [, $hal] = $kirim($jU, 'KemitraanPortal/kkn_upload_laporan/' . $diajukan, ['file_laporan' => $pdf()]);

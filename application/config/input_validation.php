@@ -176,6 +176,7 @@ $config['input_allowed_fields'] = [
     // berkampanye (utm_*) dijawab 400. Nilainya tidak pernah dibaca aplikasi; canonical membuang query string.
     'fbclid', 'gclid', 'gbraid', 'wbraid', 'msclkid', 'igshid', 'ttclid', 'twclid', 'si', 'ref', 'v',
     'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'utm_id',
+    'alasan_susulan', // KemitraanPortal::kkn_tambah: KKN berperiode lewat (migrasi 076)
     'halaman', // Admin_Seo: alamat halaman yang SEO-nya diubah ('/' = beranda)
     'indeks', 'hapus_gambar', // Admin_Seo::simpan
     'token', // Auth::simpan_sandi: token reset kata sandi dari tautan email (dibandingkan lewat sidiknya)

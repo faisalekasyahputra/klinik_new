@@ -77,7 +77,7 @@ $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
                                     ? html_escape(tgl_id($k->periode_mulai, TRUE) . ' - ' . tgl_id($k->periode_selesai, TRUE))
                                     : '<span class="text-gray-400 dark:text-brand-muted/60">-</span>' ?>
                             </td>
-                            <td class="px-4 py-4 max-w-[16rem] whitespace-normal text-gray-900 dark:text-white font-semibold"><?= html_escape($k->divisi_atau_tema ?: '-') ?></td>
+                            <td class="px-4 py-4 max-w-[16rem] whitespace-normal text-gray-900 dark:text-white font-semibold"><?= html_escape($k->divisi_atau_tema ?: '-') ?><?php if ( ! empty($k->alasan_susulan)): ?><span class="ml-1 inline-flex rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold uppercase text-amber-800 dark:bg-amber-500/10 dark:text-amber-300" title="Periode sudah lewat saat diajukan (input susulan)">Susulan</span><?php endif; ?></td>
                             <td class="px-4 py-4 text-center font-bold text-gray-900 dark:text-white"><?= (int) $k->jumlah_peserta ?></td>
                             <td class="px-4 py-4">
                                 <?= $this->load->view('admin/components/status_badge', ['label' => $k->status, 'kelas' => $badge_kelas[$k->status] ?? 'pending'], TRUE) ?>
@@ -118,6 +118,14 @@ $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
                 </div>
             </div>
 
+            <?php /* Input susulan (keputusan user 7 Okt 2026): tampil dan wajib bila periode selesai sudah lewat.
+                     Aturan yang mengikat ada di KemitraanPortal::kkn_tambah(); skrip di bawah hanya penuntun. */ ?>
+            <div data-kkn-susulan hidden class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+                <p class="text-xs font-semibold">Periode ini sudah lewat, jadi KKN dicatat sebagai <b>input susulan</b>. Tuliskan alasannya untuk peninjau.</p>
+                <label for="kt-susulan" class="<?= $label ?> mt-2">Alasan input susulan <span class="font-normal normal-case text-red-500">(wajib)</span></label>
+                <textarea id="kt-susulan" name="alasan_susulan" rows="2" minlength="20" maxlength="500" placeholder="Contoh: KKN sudah berjalan, surat dari kampus baru terbit 5 Oktober." class="<?= $isian ?>"><?= html_escape($isian_lama['alasan_susulan'] ?? '') ?></textarea>
+            </div>
+
             <div>
                 <label for="kt-keterangan" class="<?= $label ?>">Keterangan</label>
                 <input id="kt-keterangan" name="keterangan" required maxlength="150" value="<?= html_escape($isian_lama['keterangan'] ?? '') ?>" placeholder="Contoh: KKN Kemitraan Desa Sukamaju" class="<?= $isian ?>">
@@ -153,6 +161,17 @@ $badge_kelas = ['Diajukan' => 'pending', 'Ditinjau Bidang' => 'process',
     // Klik backdrop menutup - pola sama dengan modal lain di aplikasi ini
     // (file_viewer_modal.php, login_modal.php).
     dlg.addEventListener('click', function (e) { if (e.target === dlg) { dlg.close(); } });
+    // Kotak alasan susulan muncul (dan wajib) saat periode selesai sebelum hari ini.
+    var selesai = document.getElementById('kt-selesai'), kotak = dlg.querySelector('[data-kkn-susulan]'), alasan = document.getElementById('kt-susulan');
+    var hariIni = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    function cekSusulan() {
+        var lewat = !!selesai.value && selesai.value < hariIni;
+        kotak.hidden = !lewat;
+        alasan.required = lewat;
+    }
+    selesai.addEventListener('change', cekSusulan);
+    selesai.addEventListener('input', cekSusulan);
+    cekSusulan();
     <?php if ($this->session->flashdata('kkn_tambah_gagal')): ?>
     // Formulir dibuka otomatis kalau baru saja gagal - lihat penanda
     // kkn_tambah_gagal yang di-set eksplisit oleh KemitraanPortal::kkn_tambah().

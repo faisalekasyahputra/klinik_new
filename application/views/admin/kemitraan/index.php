@@ -75,6 +75,8 @@ $filter_html = ob_get_clean();
                     <td class="px-4 py-3 max-w-[14rem] whitespace-normal"><?= html_escape($r->instansi_asal) ?></td>
                     <td class="px-4 py-3 max-w-[14rem] whitespace-normal">
                         <?= html_escape($r->divisi_atau_tema ?: '-') ?>
+                        <?php if ( ! empty($r->alasan_susulan)): ?><span data-kkn-susulan class="ml-1 inline-flex rounded-md bg-amber-50 px-1.5 py-0.5 text-[11px] font-bold uppercase text-amber-800 dark:bg-amber-500/10 dark:text-amber-300" title="Periode sudah lewat saat diajukan (input susulan)">Susulan</span>
+                        <span class="mt-1 block text-[11px] text-amber-700 dark:text-amber-300">Alasan susulan: <?= html_escape($r->alasan_susulan) ?></span><?php endif; ?>
                         <?php
                         // Dokumen didaftar dari satu tempat supaya menambah jenis
                         // berkas berikutnya tidak berarti menyalin blok <a> lagi.
