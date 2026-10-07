@@ -351,9 +351,8 @@ class Admin_Kemitraan extends Admin_Controller {
      * ANGKA jumlah peserta; admin tidak punya cara membaca NIM/nama
      * sebenarnya tanpa membuka DB langsung.
      *
-     * BACA SAJA - roster hanya bisa diubah universitas sendiri lewat
-     * dashboardnya (KemitraanPortal::kkn_upload_peserta()), sama seperti
-     * dua surat KKN yang juga tidak bisa diganti dari sini.
+     * Sejak 7 Okt 2026 admin juga mengunggah daftar peserta (unggah_peserta), menetapkan tanggal
+     * sertifikat, dan mengubah nomor sertifikat per peserta (nomor_sertifikat, migrasi 078) di sini.
      */
     public function peserta($id = NULL)
     {
@@ -657,6 +656,49 @@ class Admin_Kemitraan extends Admin_Controller {
             'kkn_magang_pendaftaran', (string) $row->id, ['jumlah' => $jumlah]);
         $this->session->set_flashdata('success', $jumlah . ' peserta tersimpan.'
             . (empty($row->tanggal_sertifikat) ? ' Tetapkan tanggal sertifikat agar peserta bisa mencetak.' : ''));
+        redirect($kembali);
+    }
+
+    /**
+     * Nomor sertifikat satu peserta (permintaan dinas 7 Okt 2026, migrasi 078). Kosong = kembali ke nomor
+     * otomatis 600.2/69. + id peserta. Nomor yang sudah dipakai peserta lain, termasuk nomor otomatis
+     * milik peserta lain, ditolak supaya tidak ada dua sertifikat bernomor kembar.
+     */
+    public function nomor_sertifikat($id = NULL)
+    {
+        if ($this->input->method(TRUE) !== 'POST' || ! is_numeric($id)) { show_404(); }
+        $p = $this->db->select('kkn_peserta.*, kkn_magang_pendaftaran.instansi_asal')->from('kkn_peserta')
+            ->join('kkn_magang_pendaftaran', 'kkn_magang_pendaftaran.id = kkn_peserta.pendaftaran_id')
+            ->where(['kkn_peserta.id' => (int) $id, 'kkn_magang_pendaftaran.jenis' => 'kkn'])->get()->row();
+        if ( ! $p) { show_404(); }
+        $kembali = 'Admin_Kemitraan/peserta/' . (int) $p->pendaftaran_id . '#peserta-' . (int) $p->id;
+        $nomor = preg_replace('/\s+/', ' ', trim((string) $this->input->post('nomor_sertifikat', TRUE)));
+        if ($nomor === '600.2/69.' . $p->id) { $nomor = ''; }   // sama dengan nomor otomatisnya sendiri
+        if ($nomor !== '' && ! preg_match('#^[A-Za-z0-9 .,/()_-]{1,100}$#', $nomor)) {
+            $this->session->set_flashdata('warning', 'Nomor sertifikat maksimal 100 karakter: huruf, angka, spasi, dan tanda . , / - _ ( ).');
+            redirect($kembali);
+            return;
+        }
+        if ($nomor !== '') {
+            $otomatis = preg_match('#^600\.2/69\.(\d+)$#', $nomor, $m) ? (int) $m[1] : 0;
+            $dipakai = $this->db->select('nim')->from('kkn_peserta')->where('id !=', (int) $p->id)
+                ->group_start()->where('nomor_sertifikat', $nomor)
+                    ->or_group_start()->where('id', $otomatis)->where('nomor_sertifikat IS NULL', NULL, FALSE)->group_end()
+                ->group_end()->get()->row();
+            if ($dipakai) {
+                $this->session->set_flashdata('warning', 'Nomor ' . $nomor . ' sudah dipakai sertifikat peserta lain (NIM ' . $dipakai->nim . ').');
+                redirect($kembali);
+                return;
+            }
+        }
+        $lama = $p->nomor_sertifikat ?: '600.2/69.' . $p->id;
+        $this->db->where('id', (int) $p->id)->update('kkn_peserta', ['nomor_sertifikat' => $nomor === '' ? NULL : $nomor]);
+        $baru = $nomor === '' ? '600.2/69.' . $p->id : $nomor;
+        if ($lama !== $baru) {
+            $this->catat_audit('sertifikat_kkn_nomor', 'Nomor sertifikat KKN ' . $p->nim . ' (' . $p->instansi_asal . '): ' . $lama . ' -> ' . $baru,
+                'kkn_magang_pendaftaran', (string) $p->pendaftaran_id, ['nim' => $p->nim, 'lama' => $lama, 'baru' => $baru]);
+        }
+        $this->session->set_flashdata('success', 'Nomor sertifikat ' . $p->nama . ': ' . $baru . ($nomor === '' ? ' (otomatis).' : '.'));
         redirect($kembali);
     }
 

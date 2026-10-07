@@ -588,7 +588,7 @@ class KemitraanPortal extends Public_Controller
     private function kueri_sertifikat_kkn()
     {
         return $this->db
-            ->select('kkn_peserta.id AS id_peserta, kkn_peserta.nama AS nama_peserta, kkn_peserta.nim, kkn_magang_pendaftaran.id AS pendaftaran_id,
+            ->select('kkn_peserta.id AS id_peserta, kkn_peserta.nama AS nama_peserta, kkn_peserta.nim, kkn_peserta.nomor_sertifikat, kkn_magang_pendaftaran.id AS pendaftaran_id,
                 kkn_magang_pendaftaran.instansi_asal, kkn_magang_pendaftaran.divisi_atau_tema,
                 kkn_magang_pendaftaran.periode_mulai, kkn_magang_pendaftaran.periode_selesai,
                 kkn_magang_pendaftaran.status, kkn_magang_pendaftaran.tanggal_sertifikat')
@@ -805,7 +805,8 @@ class KemitraanPortal extends Public_Controller
         // dicetak SEBELUM byte PDF dikirim - merusak seluruh keluaran
         // ("FPDF error: Some data has already been output").
         $idUntukNomor = isset($data->id_peserta) && $data->id_peserta !== '' ? $data->id_peserta : $data->nim;
-        $pdf->Text(121.34, 62.95, $t('Nomor : 600.2/69.' . $idUntukNomor));
+        // Nomor yang ditetapkan admin di halaman Peserta KKN (migrasi 078) menggantikan nomor otomatis.
+        $pdf->Text(121.34, 62.95, $t('Nomor : ' . ( ! empty($data->nomor_sertifikat) ? $data->nomor_sertifikat : '600.2/69.' . $idUntukNomor)));
 
         // <<Nama Lengkap>> - font BrittanySignature (diunggah user 22 Agt
         // 2026), mendekati skrip/kursif biru navy templatenya. Dipusatkan

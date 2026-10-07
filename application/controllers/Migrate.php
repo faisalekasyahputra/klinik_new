@@ -568,6 +568,10 @@ class Migrate extends CI_Controller {
         echo 'kendali sertifikat KKN (migrasi 077): '.($this->db->field_exists('dicatat_oleh', 'kkn_magang_pendaftaran')
             && $this->db->field_exists('sertifikat_diminta_jumlah', 'kkn_magang_pendaftaran') ? 'ADA' : 'HILANG')."
 ";
+        // Migrasi 078 - nomor sertifikat KKN per peserta yang bisa diubah admin.
+        echo 'nomor sertifikat KKN (migrasi 078): '.($this->db->field_exists('nomor_sertifikat', 'kkn_peserta')
+            ? 'ADA ('.$this->db->where('nomor_sertifikat IS NOT NULL', NULL, FALSE)->count_all_results('kkn_peserta').' nomor diubah admin)' : 'HILANG')."
+";
         // Migrasi 076 - kolom alasan_susulan untuk KKN input susulan (bersama kolom 061 dan 062 di bawah).
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062', 'alasan_susulan' => '076'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
