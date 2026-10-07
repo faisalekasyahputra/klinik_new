@@ -367,8 +367,9 @@ class Admin_Kemitraan extends Admin_Controller {
 
         $data['title'] = 'Peserta KKN';
         $data['row'] = $row;
+        // Urut unggahan (id), bukan nama: nomor otomatis 600.2/69. + id jadi tampil berurutan.
         $data['peserta'] = $this->db->where('pendaftaran_id', (int) $id)
-            ->order_by('nama', 'ASC')->get('kkn_peserta')->result();
+            ->order_by('id', 'ASC')->get('kkn_peserta')->result();
         $this->render_admin('admin/kemitraan/peserta', $data);
     }
 

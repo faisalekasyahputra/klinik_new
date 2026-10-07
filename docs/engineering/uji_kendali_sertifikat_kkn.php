@@ -107,11 +107,11 @@ try {
     $p1 = (int) $nilai("SELECT id FROM kkn_peserta WHERE pendaftaran_id={$kkn} AND nim='{$nim}'");
     $p2 = (int) $nilai("SELECT id FROM kkn_peserta WHERE pendaftaran_id={$kkn} AND nim='{$nim2}'");
     $nomor_db = fn($id) => $nilai("SELECT nomor_sertifikat FROM kkn_peserta WHERE id={$id}");
-    $cek(strpos($r['badan'], 'data-nomor-sertifikat="' . $p1 . '"') !== FALSE && strpos($r['badan'], 'placeholder="600.2/69.' . $p1 . '"') !== FALSE,
-        'Tiap peserta punya isian nomor dengan nomor otomatis 600.2/69. + id sebagai bawaan');
+    $cek(strpos($r['badan'], 'data-nomor-sertifikat="' . $p1 . '"') !== FALSE && strpos($r['badan'], 'placeholder="600.2/69.' . $p1 . '"') !== FALSE
+        && substr_count($r['badan'], 'data-nomor-tampil="otomatis"') === 2, 'Tiap peserta tampil Otomatis dengan nomor 600.2/69. + id sebagai bawaan');
     $r = $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p1, ['nomor_sertifikat' => $nomor]);
-    $cek($nomor_db($p1) === $nomor && strpos($r['badan'], 'diubah admin') !== FALSE && strpos($r['url'], 'Admin_Kemitraan/peserta/' . $kkn) !== FALSE,
-        'Admin mengubah nomor satu peserta; halaman Peserta menandainya "diubah admin"');
+    $cek($nomor_db($p1) === $nomor && substr_count($r['badan'], 'data-nomor-tampil="manual"') === 1 && strpos($r['url'], 'Admin_Kemitraan/peserta/' . $kkn) !== FALSE,
+        'Admin mengubah nomor satu peserta; halaman Peserta menandainya Manual');
     $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p2, ['nomor_sertifikat' => $nomor]);
     $cek($nomor_db($p2) === NULL, 'Nomor yang sudah dipakai peserta lain ditolak');
     $kirim($jA, 'Admin_Kemitraan/nomor_sertifikat/' . $p1, ['nomor_sertifikat' => '600.2/69.' . $p2]);

@@ -41,7 +41,7 @@ $lewat = ! empty($row->periode_selesai) && $row->periode_selesai < date('Y-m-d')
 </div>
 
 <div class="kartu-admin overflow-hidden">
-    <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Daftar Peserta', 'kt_jumlah' => count($peserta), 'kt_keterangan' => 'Nomor sertifikat kosong memakai nomor otomatis 600.2/69. + nomor urut peserta.']); ?>
+    <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Daftar Peserta', 'kt_jumlah' => count($peserta), 'kt_keterangan' => 'Otomatis: 600.2/69. + nomor urut peserta. Manual: ditetapkan admin lewat tombol Ubah.']); ?>
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
@@ -64,15 +64,30 @@ $lewat = ! empty($row->periode_selesai) && $row->periode_selesai < date('Y-m-d')
                     </td>
                 </tr>
                 <?php else: foreach ($peserta as $p): ?>
+                <?php $manual = ! empty($p->nomor_sertifikat); $otomatis = '600.2/69.' . (int) $p->id; ?>
                 <tr id="peserta-<?= (int) $p->id ?>">
                     <td class="px-4 py-3 text-gray-900 dark:text-white"><?= html_escape($p->nim) ?></td>
                     <td class="px-4 py-3 text-gray-900 dark:text-white"><?= html_escape($p->nama) ?></td>
-                    <td class="px-4 py-2">
-                        <form method="post" action="<?= base_url('Admin_Kemitraan/nomor_sertifikat/' . (int) $p->id) ?>" class="flex items-center gap-2" data-nomor-sertifikat="<?= (int) $p->id ?>">
+                    <td class="px-4 py-2" x-data="{ ubah: false }" @keydown.escape="ubah = false">
+                        <?php /* Tampilan baca dulu; isian baru muncul setelah Ubah (cek visual 7 Okt 2026: sepuluh isian
+                                 dan tombol Simpan sekaligus membuat nomor manual dan otomatis sulit dibedakan). */ ?>
+                        <div x-show="! ubah" class="flex items-center gap-3" data-nomor-tampil="<?= $manual ? 'manual' : 'otomatis' ?>">
+                            <?php if ($manual): ?>
+                            <span class="inline-flex min-w-[5rem] justify-center rounded-md bg-blue-50 px-1.5 py-0.5 text-[11px] font-bold uppercase text-blue-700 dark:bg-brand-primary/10 dark:text-brand-primary" title="Ditetapkan admin; nomor otomatisnya <?= $otomatis ?>">Manual</span>
+                            <?php else: ?>
+                            <span class="inline-flex min-w-[5rem] justify-center rounded-md bg-gray-100 px-1.5 py-0.5 text-[11px] font-bold uppercase text-gray-500 dark:bg-white/5 dark:text-brand-muted">Otomatis</span>
+                            <?php endif; ?>
+                            <span class="tabular-nums <?= $manual ? 'font-bold text-gray-900 dark:text-white' : 'text-gray-500 dark:text-brand-muted' ?>"><?= html_escape($manual ? $p->nomor_sertifikat : $otomatis) ?></span>
+                            <button type="button" @click="ubah = true; $nextTick(() => $refs.isian.focus())" class="tombol-aksi ml-auto"><i class="ph ph-pencil-simple" aria-hidden="true"></i><span>Ubah</span></button>
+                        </div>
+                        <form x-show="ubah" x-cloak method="post" action="<?= base_url('Admin_Kemitraan/nomor_sertifikat/' . (int) $p->id) ?>" class="flex flex-wrap items-center gap-2" data-nomor-sertifikat="<?= (int) $p->id ?>">
                             <?= $csrf ?>
-                            <input name="nomor_sertifikat" maxlength="100" value="<?= html_escape($p->nomor_sertifikat ?? '') ?>" placeholder="600.2/69.<?= (int) $p->id ?>" aria-label="Nomor sertifikat <?= html_escape($p->nama) ?>" class="w-56 rounded-lg border border-gray-200 bg-transparent px-3 py-1.5 text-sm text-gray-800 dark:border-white/10 dark:text-white">
-                            <button type="submit" class="tombol-aksi"><i class="ph ph-floppy-disk"></i><span>Simpan</span></button>
-                            <span class="text-[11px] <?= empty($p->nomor_sertifikat) ? 'text-gray-500 dark:text-brand-muted' : 'font-bold text-blue-600 dark:text-brand-primary' ?>"><?= empty($p->nomor_sertifikat) ? 'otomatis' : 'diubah admin' ?></span>
+                            <input x-ref="isian" name="nomor_sertifikat" maxlength="100" value="<?= html_escape($p->nomor_sertifikat ?? '') ?>" placeholder="<?= $otomatis ?>" aria-label="Nomor sertifikat <?= html_escape($p->nama) ?>" class="w-56 rounded-lg border border-gray-200 bg-transparent px-3 py-1.5 text-sm text-gray-800 dark:border-white/10 dark:text-white">
+                            <button type="submit" class="tombol-aksi"><i class="ph ph-floppy-disk" aria-hidden="true"></i><span>Simpan</span></button>
+                            <?php if ($manual): ?>
+                            <button type="submit" @click="$refs.isian.value = ''" class="tombol-aksi" title="Kembali ke <?= $otomatis ?>"><i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i><span>Pakai otomatis</span></button>
+                            <?php endif; ?>
+                            <button type="button" @click="ubah = false" class="tombol-aksi"><span>Batal</span></button>
                         </form>
                     </td>
                 </tr>
