@@ -42,11 +42,14 @@ class Simperum_gateway {
      *   NIK (`verifikasi_nik`); NIK milik akun lain ditolak sebelum pencocokan. $tanpa_tgl_lahir
      *   diabaikan.
      * - Tanpa $requested_by (Cek_Rtlh, cek anonim, alat CLI): tidak mengikat apa pun dan hanya
-     *   mengembalikan status pencarian serta status intervensi. Bendera tanggal lahir di sini
+     *   mengembalikan status pencarian, kategori data, serta status intervensi. Nama TERSAMAR ikut
+     *   hanya bila $dengan_nama_tersamar TRUE (keputusan user 12 Okt 2026, khusus layar Cek Data
+     *   Rumah); pemanggil lain tidak pernah menerimanya. Bendera tanggal lahir di sini
      *   sisa butir 5 putaran 2 (dinas mencabut tanggal lahir dari layar Cek Data Rumah).
      */
-    public function lookup($nik, $birth_date, $requested_by = NULL, $tanpa_tgl_lahir = FALSE)
+    public function lookup($nik, $birth_date, $requested_by = NULL, $tanpa_tgl_lahir = FALSE, $dengan_nama_tersamar = FALSE)
     {
+        $this->nama_tersamar_tamu = (bool) $dengan_nama_tersamar;
         $this->internal_profile = [];
         $nik = preg_replace('/\D+/', '', (string) $nik);
         $birth_date = trim((string) $birth_date);
@@ -703,12 +706,19 @@ class Simperum_gateway {
         ];
     }
 
+    /** Diisi lookup(): nama tersamar untuk hasil tanpa akun hanya bila pemanggil memintanya. */
+    private $nama_tersamar_tamu = FALSE;
+
     private function from_snapshot(array $snapshot, $birth_date, $cache_hit, $requested_by)
     {
         $payload = $snapshot['payload'] ?? [];
+        // Kategori data mengikuti sumbernya. Adapter saat ini hanya membaca GetDataRTLH; sumber
+        // Backlog cukup mengisi kategori_data di payload-nya dan layar ikut berubah.
+        $kategori = (string) ($payload['kategori_data'] ?? 'RTLH');
         $status = $snapshot['status_respons'] ?? 'error';
         if ($status === 'not_found') {
             return $this->response('not_found', 'Data tidak ditemukan. Silakan isi data secara manual.', [
+                'kategori' => $kategori,
                 'rekaman_id' => (int) $snapshot['id'],
                 'cache_hit' => $cache_hit,
             ]);
@@ -794,7 +804,9 @@ class Simperum_gateway {
             // Tanpa akun terverifikasi hanya status intervensi yang keluar (Cek RTLH, cek anonim).
             'profile' => $requested_by
                 ? $this->mask_profile($canonical)
-                : ['status_intervensi' => $this->mask_profile($canonical)['status_intervensi']],
+                : ['status_intervensi' => $this->mask_profile($canonical)['status_intervensi']]
+                    + ($this->nama_tersamar_tamu ? ['nama_tersamar' => $this->mask_profile($canonical)['nama_lengkap']] : []),
+            'kategori' => $kategori,
         ]);
     }
 

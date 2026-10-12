@@ -3,9 +3,10 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
  * UAT No. 18 (10 Sep 2026): hasil Cek Data Rumah tersedia tanpa login.
- * Tamu hanya melihat status pencarian dan intervensi; identitas tidak ikut.
+ * Tamu melihat status pencarian, kategori data, intervensi, dan nama TERSAMAR (12 Okt 2026);
+ * alamat dan data lain tidak ikut.
  * Pembatas laju, CSRF, penyamaran NIK, dan pencatatan audit tetap berlaku.
- * Sumber saat ini GetDataRTLH; kategori Backlog belum tersedia dari adapter.
+ * Kategori (RTLH atau Backlog) dibaca dari hasil gateway; adapter saat ini hanya GetDataRTLH.
  */
 class Cek_Rtlh extends MY_Controller {
 
@@ -55,9 +56,11 @@ class Cek_Rtlh extends MY_Controller {
         // yang cocok dengan respons API tetap ditegakkan oleh gateway.
         // Tanpa akun peminta, gateway hanya mengembalikan status intervensi (bukan identitas,
         // sosial-ekonomi, atau data rumah), untuk tamu maupun akun yang login.
-        $hasil = $this->simperum_gateway->lookup($nik, '', NULL, TRUE);
+        // TRUE kelima: nama TERSAMAR ikut tampil (keputusan user 12 Okt 2026); alamat dan data lain tetap tidak.
+        $hasil = $this->simperum_gateway->lookup($nik, '', NULL, TRUE, TRUE);
         $this->session->set_flashdata('rtlh_hasil', [
             'status'   => $hasil['status'],
+            'kategori' => $hasil['data']['kategori'] ?? 'RTLH',
             'pesan'    => $hasil['message'],
             'simulasi' => ! empty($hasil['simulation']),
             'profil'   => $hasil['data']['profile'] ?? NULL,

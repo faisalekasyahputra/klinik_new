@@ -3,7 +3,7 @@ require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php';
 date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php)
 /**
  * Uji Cek Data Rumah, kontrak UAT No. 18 (10 Sep 2026).
- * Tamu mendapat status terdaftar/intervensi tanpa identitas, maksimal 5/jam/IP.
+ * Tamu mendapat status terdaftar, kategori, intervensi, dan nama tersamar (12 Okt 2026), maksimal 5/jam/IP.
  * Pengguna login tetap dibatasi 10/jam dan 25/hari, dengan profil tersamar.
  * Menjaga CSRF, metode POST, pencatatan audit, dan profil pendataan tetap utuh.
  * php docs/engineering/uji_cek_rtlh.php
@@ -167,12 +167,16 @@ wajib($r['code'] === 200, 'POST tamu mendapat halaman hasil 200');
 cek(strpos($r['body'], '****0001') !== FALSE && strpos($r['body'], 'TERDAFTAR') !== FALSE,
     'Tamu mendapatkan hasil terdaftar dengan NIK tersamar');
 cek(strpos($r['body'], '>Intervensi</dt>') !== FALSE, 'Status intervensi ditampilkan kepada tamu');
-cek(strpos($r['body'], '>Nama</dt>') === FALSE && strpos($r['body'], '>Alamat</dt>') === FALSE,
-    'Hasil tamu tidak menyertakan nama atau alamat');
+// Keputusan user 12 Okt 2026: nama TERSAMAR ikut tampil; alamat dan data lain tetap tidak.
+cek(preg_match('#>Nama</dt><dd[^>]*>([^<]+)</dd>#', $r['body'], $mn) === 1 && strpos($mn[1], '*') !== FALSE
+    && strpos($r['body'], '>Alamat</dt>') === FALSE,
+    'Hasil tamu memuat nama tersamar (berbintang), tanpa alamat');
+cek(strpos($r['body'], 'dalam data RTLH') !== FALSE, 'Kategori data dicetak dari hasil gateway (RTLH untuk GetDataRTLH)');
 cek(strpos($r['body'], 'Masuk untuk melihat hasilnya') === FALSE, 'Hasil tamu tidak diganti ajakan login');
 $tidak = periksa('tamu', NIK_KOSONG, '');
 cek($tidak['code'] === 200 && strpos($tidak['body'], '****0098') !== FALSE && strpos($tidak['body'], 'tidak terdaftar') !== FALSE,
     'Tamu mendapatkan hasil tidak ditemukan');
+cek(strpos($tidak['body'], '>Nama</dt>') === FALSE, 'Hasil tidak ditemukan tidak memuat nama');
 $galat = periksa('tamu', '0000000000000099', '');
 cek($galat['code'] === 200 && strpos($galat['body'], 'Pencarian belum berhasil') !== FALSE,
     'Galat sumber tidak disamarkan sebagai tidak terdaftar');
