@@ -32,7 +32,7 @@ $this->load->view('components/modal_simperum_simulasi');
                  isinya. Keputusan user 5 Agt 2026. */ ?>
         <h1 class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)]">Cek Data Rumah</h1>
         <p class="mx-auto mt-2 max-w-md text-xs leading-relaxed text-[color:var(--portal-text-muted)]">
-            Periksa apakah sebuah NIK terdaftar dalam data Rumah Tidak Layak Huni Provinsi Jawa Tengah.
+            Periksa apakah sebuah NIK terdaftar dalam data SIMPERUM Provinsi Jawa Tengah.
         </p>
     </div>
 
