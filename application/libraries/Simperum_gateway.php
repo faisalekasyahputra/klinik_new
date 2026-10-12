@@ -229,6 +229,7 @@ class Simperum_gateway {
             '3399991508850001' => 'API-01', // lengkap, milik sendiri, belum diintervensi, air tidak layak
             '3399995506900002' => 'API-02', // tiga baris: pilih 2023 BSPS, buang baris NIK terpotong
             '3399990101700003' => 'API-03', // kode 6 dinas + disposisi, tahun lahir kosong, Cilacap
+            '3399990202900004' => 'API-04', // Backlog: SkorBacklog ",PB", KepemilikanRumah 6 (13 Okt 2026)
         ];
         if (isset($api[$nik])) {
             $body = @file_get_contents($this->fixture_path . DIRECTORY_SEPARATOR . $api[$nik] . '.json');
@@ -712,9 +713,13 @@ class Simperum_gateway {
     private function from_snapshot(array $snapshot, $birth_date, $cache_hit, $requested_by)
     {
         $payload = $snapshot['payload'] ?? [];
-        // Kategori data mengikuti sumbernya. Adapter saat ini hanya membaca GetDataRTLH; sumber
-        // Backlog cukup mengisi kategori_data di payload-nya dan layar ikut berubah.
-        $kategori = (string) ($payload['kategori_data'] ?? 'RTLH');
+        // Kategori data dibaca dari balikan SIMPERUM (keputusan user 13 Okt 2026): SkorBacklog terisi
+        // (mis. ",PB") = Backlog, selain itu RTLH. Diukur 12 Okt pada 3.694 baris dua desa: SkorBacklog
+        // terisi di 9 baris, semuanya KepemilikanRumah 6, tidak pernah bersamaan dengan Skor. Dibaca
+        // dari raw_record yang ikut tersimpan, jadi rekaman cache lama ikut benar tanpa diambil ulang.
+        // GetDataBacklog TIDAK ada di API (PROCEDURE perum.PUB_GetDataBacklog does not exist).
+        $kategori = (string) ($payload['kategori_data']
+            ?? (trim((string) ($payload['source']['raw_record']['SkorBacklog'] ?? '')) !== '' ? 'Backlog' : 'RTLH'));
         $status = $snapshot['status_respons'] ?? 'error';
         if ($status === 'not_found') {
             return $this->response('not_found', 'Data tidak ditemukan. Silakan isi data secara manual.', [
