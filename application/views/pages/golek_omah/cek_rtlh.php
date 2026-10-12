@@ -8,6 +8,8 @@
  * atas pertanyaan "apakah saya terdaftar".
  */
 $terdaftar = ($hasil['status'] ?? '') === 'found';
+// Kategori datang dari gateway SIMPERUM (RTLH atau Backlog), bukan teks tetap.
+$kategori = (string) ($hasil['kategori'] ?? 'RTLH');
 $tidak_ada = ($hasil['status'] ?? '') === 'not_found';
 ?>
 <?php
@@ -32,7 +34,7 @@ $this->load->view('components/modal_simperum_simulasi');
                  isinya. Keputusan user 5 Agt 2026. */ ?>
         <h1 class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)]">Cek Data Rumah</h1>
         <p class="mx-auto mt-2 max-w-md text-xs leading-relaxed text-[color:var(--portal-text-muted)]">
-            Periksa apakah sebuah NIK terdaftar dalam data Rumah Tidak Layak Huni Provinsi Jawa Tengah.
+            Periksa apakah sebuah NIK terdaftar dalam data SIMPERUM Provinsi Jawa Tengah.
         </p>
     </div>
 
@@ -52,9 +54,9 @@ $this->load->view('components/modal_simperum_simulasi');
                 <div class="min-w-0">
                     <p class="text-sm font-black text-[color:var(--portal-text)]">
                         <?php if ($terdaftar): ?>
-                            NIK ****<?= html_escape($hasil['nik_ekor']) ?> <span style="color: var(--portal-brand)">TERDAFTAR</span> dalam data RTLH
+                            NIK ****<?= html_escape($hasil['nik_ekor']) ?> <span style="color: var(--portal-brand)">TERDAFTAR</span> dalam data <?= html_escape($kategori) ?>
                         <?php elseif ($tidak_ada): ?>
-                            NIK ****<?= html_escape($hasil['nik_ekor']) ?> tidak terdaftar dalam data RTLH
+                            NIK ****<?= html_escape($hasil['nik_ekor']) ?> tidak terdaftar dalam data <?= html_escape($kategori) ?>
                         <?php else: ?>
                             Pencarian belum berhasil
                         <?php endif; ?>
@@ -62,8 +64,11 @@ $this->load->view('components/modal_simperum_simulasi');
                     <p class="mt-1 text-xs leading-relaxed text-[color:var(--portal-text-muted)]"><?= html_escape($hasil['pesan']) ?></p>
 
                     <?php if ($terdaftar && ! empty($hasil['profil'])): ?>
-                    <?php // Hanya status intervensi, untuk tamu maupun akun: identitas pemilik NIK tidak ditampilkan di sini. ?>
+                    <?php // Nama TERSAMAR dan status intervensi saja, untuk tamu maupun akun; alamat dan data lain tidak ditampilkan. ?>
                     <dl class="mt-3 space-y-1 border-t pt-3 text-xs" style="border-color: var(--portal-border)">
+                        <?php if ( ! empty($hasil['profil']['nama_tersamar'])): ?>
+                        <div class="flex gap-2"><dt class="w-24 shrink-0 text-[color:var(--portal-text-muted)]">Nama</dt><dd class="font-bold text-[color:var(--portal-text)]"><?= html_escape($hasil['profil']['nama_tersamar']) ?></dd></div>
+                        <?php endif; ?>
                         <div class="flex gap-2"><dt class="w-24 shrink-0 text-[color:var(--portal-text-muted)]">Intervensi</dt><dd class="font-bold text-[color:var(--portal-text)]"><?= html_escape($hasil['profil']['status_intervensi'] ?? 'Belum tersedia') ?></dd></div>
                     </dl>
                     <?php endif; ?>
@@ -116,7 +121,7 @@ $this->load->view('components/modal_simperum_simulasi');
         keadaan tempat tinggal seseorang - gunakan hanya untuk keperluan layanan.
         <?php else: ?>
         Pencarian untuk tamu dibatasi <b>5 kali per jam</b> per alamat jaringan. Hasil menampilkan status
-        terdaftar dan intervensi. Gunakan hanya untuk keperluan layanan.
+        terdaftar, nama tersamar, dan intervensi. Gunakan hanya untuk keperluan layanan.
         <?php endif; ?>
     </div>
 </div>

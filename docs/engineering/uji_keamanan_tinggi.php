@@ -463,8 +463,10 @@ try {
     cek(gagal_tercatat('account', $W_KEDUA) === 0, 'NIK sudah terikat: tidak dihitung sebagai tebakan gagal');
 
     $r = minta($j_agen, 'Cek_Rtlh/periksa', ['nik' => $NIK1]);
-    cek(strpos($r['badan'], 'TERDAFTAR') !== FALSE && strpos($r['badan'], '>Nama</dt>') === FALSE && strpos($r['badan'], 'S****G') === FALSE,
-        'Cek RTLH akun login: status terdaftar saja, tanpa nama/alamat tersamar');
+    // Keputusan user 12 Okt 2026: Cek Data Rumah menampilkan nama TERSAMAR; nama utuh dan alamat tetap tidak.
+    cek(strpos($r['badan'], 'TERDAFTAR') !== FALSE && preg_match('#>Nama</dt><dd[^>]*>([^<]+)</dd>#', $r['badan'], $mn) === 1
+        && strpos($mn[1], '*') !== FALSE && strpos($r['badan'], '>Alamat</dt>') === FALSE,
+        'Cek RTLH akun login: status terdaftar dan nama tersamar saja, tanpa alamat');
 
     // Batas percobaan gagal per akun: agen_warga sudah gagal 1 kali (NIK1), 4 lagi di NIK2.
     for ($i = 0; $i < 4; $i++) { $lookup($j_agen, $NIK2, $LAHIR2); }

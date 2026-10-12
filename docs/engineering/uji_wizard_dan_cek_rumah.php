@@ -281,7 +281,10 @@ cek($r['kode'] === 200, 'Halaman terbuka untuk tamu (tidak diusir ke login)');
 $r = $tamu->minta('Cek_Rtlh/periksa', ['nik' => $NIK]);
 $penanda_hasil = 'NIK ****' . substr($NIK, -4);
 cek($r['kode'] === 200 && strpos($r['body'], $penanda_hasil) !== FALSE, 'Tamu melihat hasil dengan NIK tersamar');
-cek(strpos($r['body'], '>Nama</dt>') === FALSE && strpos($r['body'], '>Alamat</dt>') === FALSE, 'Hasil tamu tidak memuat nama atau alamat');
+// Keputusan user 12 Okt 2026: nama TERSAMAR ikut tampil; nama utuh dan alamat tetap tidak.
+cek(preg_match('#>Nama</dt><dd[^>]*>([^<]+)</dd>#', $r['body'], $mn) === 1 && strpos($mn[1], '*') !== FALSE
+    && ( ! isset($NAMA[$NIK]) || stripos($r['body'], $NAMA[$NIK]) === FALSE) && strpos($r['body'], '>Alamat</dt>') === FALSE,
+    'Hasil tamu memuat nama tersamar, tanpa nama utuh maupun alamat');
 cek(stripos($r['body'], 'Masuk untuk melihat hasilnya') === FALSE, 'Hasil tamu tidak diganti permintaan login');
 
 // ---------------------------------------------------------------------------
