@@ -202,6 +202,17 @@ cek(strpos($ada['body'], '****' . substr(NIK_ADA, -4)) !== FALSE,
 cek(stripos($ada['body'], 'MODE SIMULASI') !== FALSE,
     'Spanduk simulasi tampil - data contoh tidak boleh disangka nyata');
 
+// Kategori mengikuti balikan SIMPERUM (13 Okt 2026): SkorBacklog terisi = Backlog, selain itu RTLH.
+// Dua NIK fixture sintetis berbentuk balasan API (berawalan 3399, kabupaten yang tidak ada).
+$rtlh = periksa('u', '3399991508850001', '');
+cek(strpos($rtlh['body'], 'dalam data RTLH') !== FALSE && strpos($rtlh['body'], 'dalam data Backlog') === FALSE,
+    'Balasan API tanpa SkorBacklog ditulis RTLH');
+$backlog = periksa('u', '3399990202900004', '');
+cek(stripos($backlog['body'], 'TERDAFTAR') !== FALSE && strpos($backlog['body'], 'dalam data Backlog') !== FALSE
+    && strpos($backlog['body'], 'dalam data RTLH') === FALSE, 'Balasan API dengan SkorBacklog terisi ditulis Backlog');
+cek(stripos($backlog['body'], 'SITI SINTETIS') === FALSE && strpos($backlog['body'], '>Nama</dt>') !== FALSE,
+    'Hasil Backlog memuat nama tersamar, bukan nama utuh');
+
 $kosong = periksa('u', NIK_KOSONG, TGL_ADA);
 cek(stripos($kosong['body'], 'tidak terdaftar') !== FALSE, 'NIK tanpa data RTLH dibaca tidak terdaftar');
 cek(stripos($kosong['body'], 'pendataan') !== FALSE,
