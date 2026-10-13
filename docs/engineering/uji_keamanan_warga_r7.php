@@ -100,7 +100,7 @@ register_shutdown_function('cleanup_r7');
 
 if(!is_file(ENV_PATH))die(".env tidak ditemukan.\n");
 $env=env_r7(ENV_PATH);$db=new DbR7($env);
-$email='uji_r7_'.time().'_'.mt_rand(1000,9999).'@example.test';
+$email='uji_r7_'.time().'_0@example.test';
 $userId=$db->run("INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at) VALUES (?,?,'Uji R7','uji_r7','warga','active',1,NOW())",[$email,password_hash(PASSWORD,PASSWORD_BCRYPT)]);
 
 $nikUji='0000000000000001';

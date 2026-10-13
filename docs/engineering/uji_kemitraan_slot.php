@@ -274,7 +274,7 @@ wajib(login(ADM_EMAIL, ADM_PASSWORD), 'Login superadmin');
  * kuota. Kejadian 2 Agt 2026. Pelajarannya sama dengan r4/r5/r6: harness yang
  * meminjam data bersama akan merah karena ulah orang lain.
  */
-$MHS_UJI = 'uji_slot_mhs_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
+$MHS_UJI = 'uji_slot_mhs_' . time() . '_0@example.test';
 $db->query("INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
     VALUES ('" . $db->real_escape_string($MHS_UJI) . "', '" . password_hash(MHS_PASSWORD, PASSWORD_BCRYPT)
     . "', 'Mahasiswa Uji Slot', 'uji_slot_" . mt_rand(100000, 999999) . "', 'mahasiswa', 'active', 1, NOW())");

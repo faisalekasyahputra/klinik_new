@@ -98,7 +98,7 @@ function login_session($email,$landing) {
 /* Nama akun sama dengan nama fixture: sejak 3 Okt 2026 lookup ber-akun mengikat NIK hanya kalau
    nama lengkap akun dan tanggal lahir cocok dengan data SIMPERUM (Simperum_gateway::lookup). */
 function make_user($db,$suffix,$role='warga',$kabupaten=NULL,$nama='Uji R6') {
-    $email='uji_r6_'.$suffix.'_'.time().'_'.mt_rand(1000,9999).'@example.test';
+    $email='uji_r6_'.$suffix.'_'.time().'_'.count($GLOBALS['users']).'@example.test';
     $username='uji_r6_'.$suffix.'_'.mt_rand(1000,9999);
     $id=$db->run("INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,kabupaten_id,created_at) VALUES (?,?,?,?,?,'active',1,?,NOW())",[$email,password_hash(PASSWORD,PASSWORD_BCRYPT),$nama,$username,$role,$kabupaten]);
     $GLOBALS['users'][]=$id; return [$id,$email];
