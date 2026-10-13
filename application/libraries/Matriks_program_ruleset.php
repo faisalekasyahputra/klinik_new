@@ -111,7 +111,8 @@ class Matriks_program_ruleset {
 
     /**
      * Desil turunan dari pendapatan angka (rupiah/bulan), memakai rentang Sheet3 yang sama
-     * dengan preliminary(). Dipakai selama SIMPERUM tidak mengirim desil (27 Sep 2026).
+     * dengan preliminary(). Dipakai bila SIMPERUM tidak mengirim desil yang sah (27 Sep 2026; sejak
+     * 13 Okt 2026 desil bulat 1 sampai 10 dari SIMPERUM dibaca, lihat Simperum_gateway::desil_sah).
      * @return int|null Null kalau pendapatan kosong/tidak valid.
      */
     public function decile_for_monthly_income($rupiah)

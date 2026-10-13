@@ -60,10 +60,12 @@ class Warga extends MY_Controller {
         $assessment = NULL;
         $profile = NULL;
         $provenance = [];
+        $asal_desil = '';
         if ($logged_in_warga) {
             $assessment = $this->Housing_assessment_model->get_latest_owned_draft($user_id);
             $profile = $this->Housing_assessment_model->get_owned_profile($user_id);
             $provenance = kunci_tersimpan_ke_baru(json_decode($profile['asal_isian_json'] ?? '{}', TRUE) ?: []);
+            $asal_desil = (string) ($provenance['desil_kesejahteraan']['asal'] ?? '');
             foreach ($provenance as $field => $meta) {
                 $provenance[$field] = is_array($meta) ? ($meta['source'] ?? 'citizen') : $meta;
             }
@@ -124,6 +126,7 @@ class Warga extends MY_Controller {
             'preliminary_matrix' => json_decode($assessment['preliminary_matrix'] ?? 'null', TRUE),
             'matrix_fields' => Matriks_program_ruleset::FORM_FIELDS,
             'profile' => $profile,
+            'asal_desil' => $asal_desil,
             'values' => array_merge($assessment ?: [], $profile ?: [], $old_input),
             'lookup' => $this->session->flashdata('warga_lookup'),
             'errors' => $this->session->flashdata('warga_errors') ?: [],
@@ -515,7 +518,8 @@ class Warga extends MY_Controller {
                 $profile = array_merge($profile, $profile_change['data'] ?? []);
             }
             $effective = array_merge($draft, $data);
-            // Keputusan pemilik produk 27 Sep 2026: SIMPERUM tidak mengirim desil, jadi selama
+            // Keputusan pemilik produk 27 Sep 2026, disesuaikan 13 Okt 2026: SIMPERUM mengirim desil, tetapi
+            // yang bernilai 0, pecahan, atau kosong dianggap tidak tersedia (Simperum_gateway::desil_sah). Selama
             // desil profil kosong dipakai desil turunan pendapatan (rentang Sheet3 yang sama
             // dengan tampilan rekomendasi awal). Desil resmi dari sumber tetap menang.
             if (empty($profile['desil_kesejahteraan'])) {

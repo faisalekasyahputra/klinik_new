@@ -217,7 +217,7 @@ foreach (glob(dirname(__DIR__, 2) . '/application/fixtures/simperum/SIM-*.json')
     }
 }
 /* API-01 (Kota Semarang) didahulukan: bentuknya respons GetDataRTLH asli yang TIDAK
-   membawa desil, persis seperti production. Cek "program ditawarkan" di bawah jadi
+   membawa desil sah (di production sekitar 1 dari 5 baris: 0, pecahan, atau kosong). Cek "program ditawarkan" di bawah jadi
    membuktikan desil turunan pendapatan (keputusan 27 Sep 2026), bukan desil fixture. */
 $KANDIDAT = ['3399991508850001' => '1985-08-15'] + $UTAMA + $CADANGAN;
 /* Nama onboarding = nama fixture: sejak 3 Okt 2026 Cek NIK hanya mengikat NIK kalau nama lengkap akun

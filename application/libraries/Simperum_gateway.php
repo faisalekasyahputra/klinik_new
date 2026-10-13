@@ -567,7 +567,8 @@ class Simperum_gateway {
                 'mampu_swadaya' => $code('MampuSwadaya', [
                     '0' => 'not_capable', '1' => 'capable',
                 ]),
-                'desil_kesejahteraan' => NULL,
+                // Desil resmi dari balikan SIMPERUM (13 Okt 2026); lihat desil_sah().
+                'desil_kesejahteraan' => self::desil_sah($record['Desil'] ?? NULL),
             ],
             'housing' => [
                 'kepemilikan_rumah' => $code('KepemilikanRumah', [
@@ -770,6 +771,11 @@ class Simperum_gateway {
         if ($requested_by) {
             $canonical['mode_sumber'] = $this->mode;
             $provenance = array_fill_keys(array_keys($canonical), ['source' => $this->mode]);
+            // Asal dan tahun data desil (mis. "DTKS 2015") ikut dicatat supaya layar bisa menyebut umurnya.
+            $asal_desil = trim((string) ($payload['source']['raw_record']['TipeData'] ?? ''));
+            if ($asal_desil !== '' && isset($canonical['desil_kesejahteraan'])) {
+                $provenance['desil_kesejahteraan']['asal'] = mb_substr($asal_desil, 0, 40);
+            }
             if ($tanpa_tgl_sumber) {
                 $provenance['birth_date'] = ['source' => 'citizen'];
             }
@@ -935,6 +941,17 @@ class Simperum_gateway {
         return $this->internal_profile;
     }
 
+    /**
+     * Desil dari SIMPERUM hanya dipakai bila bilangan bulat 1 sampai 10 (keputusan user 13 Okt 2026).
+     * Diukur pada 3.694 baris dua desa: 80,5% sah, 17,3% bernilai 0, 2,1% pecahan (mis. 1.8). Nilai 0,
+     * pecahan, dan kosong artinya belum dikonfirmasi dinas, jadi dianggap tidak tersedia dan wizard
+     * kembali ke desil turunan penghasilan (Warga::handle_post).
+     */
+    private static function desil_sah($nilai)
+    {
+        return preg_match('/^(10|[1-9])$/', trim((string) $nilai)) ? (int) $nilai : NULL;
+    }
+
     private function normalize(array $payload)
     {
         $identity = $payload['identity'] ?? [];
@@ -943,6 +960,9 @@ class Simperum_gateway {
         $structure = $payload['structure'] ?? [];
         $sanitation = $payload['sanitation'] ?? [];
         $location = $payload['location'] ?? [];
+        // Snapshot yang diambil sebelum 13 Okt 2026 menyimpan desil kosong; baca dari raw_record-nya.
+        $socioeconomic['desil_kesejahteraan'] = $socioeconomic['desil_kesejahteraan']
+            ?? self::desil_sah($payload['source']['raw_record']['Desil'] ?? NULL);
         // Snapshot lama belum memiliki intervention_status. Turunkan dari
         // sumber dana/tahun/disposisi yang sudah tersimpan agar hasil cache
         // langsung konsisten tanpa meminta ulang data API.

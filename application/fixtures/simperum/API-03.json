@@ -40,7 +40,8 @@
       "LetakSanitasi": null,
       "KamarMandi": null,
       "JarakSepticTank": null,
-      "MampuSwadaya": "0"
+      "MampuSwadaya": "0",
+      "Desil": "1.8"
     }
   ],
   "Message": "",
