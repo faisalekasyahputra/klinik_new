@@ -142,6 +142,24 @@ $check(array_key_exists('kepemilikan_rumah', $f3['housing'] ?? []) && $f3['housi
 $check(array_key_exists('location_lat', $f3['location']) && $f3['location']['location_lat'] === NULL && $f3['location']['location_lng'] === NULL
     && ! isset($f3['source']['unmapped_codes']['GeoLat']), 'Koordinat 0,0 dari SIMPERUM dianggap belum dipetakan (NULL)');
 
+// Desil dari balikan SIMPERUM (13 Okt 2026): hanya bilangan bulat 1 sampai 10; 0, pecahan, dan kosong = tidak tersedia.
+$sah = [];
+foreach (['1' => 1, '10' => 10, 7 => 7, ' 3 ' => 3, '0' => NULL, '1.8' => NULL, '11' => NULL, '' => NULL, '-2' => NULL, 'abc' => NULL] as $masuk => $harap) {
+    $sah[] = $call('desil_sah', $masuk) === $harap;
+}
+$check( ! in_array(FALSE, $sah, TRUE) && $call('desil_sah', NULL) === NULL, 'desil_sah: 1 sampai 10 diterima; 0, pecahan, 11, kosong, dan teks ditolak');
+$f4 = $call('load_fixture', '3399990202900004');
+$check(($f4['socioeconomic']['desil_kesejahteraan'] ?? NULL) === 3 && ! in_array('desil_kesejahteraan', $f4['missing_fields'], TRUE),
+    'Fixture API-04: Desil "3" terbaca sebagai desil 3 dan tidak lagi tercatat kosong');
+$check($f3['socioeconomic']['desil_kesejahteraan'] === NULL && $f1['socioeconomic']['desil_kesejahteraan'] === NULL
+    && in_array('desil_kesejahteraan', $f3['missing_fields'], TRUE) && in_array('desil_kesejahteraan', $f1['missing_fields'], TRUE),
+    'Desil pecahan (API-03) dan balikan tanpa Desil (API-01) tetap dianggap tidak tersedia');
+$lama = $f1; $lama['source']['raw_record']['Desil'] = '4';
+$nol = $f1; $nol['source']['raw_record']['Desil'] = '0';
+$check($call('normalize', $lama)['desil_kesejahteraan'] === 4 && $call('normalize', $nol)['desil_kesejahteraan'] === NULL
+    && $call('normalize', $f4)['desil_kesejahteraan'] === 3,
+    'Snapshot lama (desil kosong di payload) membaca Desil dari raw_record; nilai 0 tetap kosong');
+
 // Regresi 26 Sep 2026: "0" dulu lolos tanpa enkripsi (empty()) lalu ditolak model.
 if ( ! function_exists('log_message')) { function log_message() {} }
 defined('APPPATH') OR define('APPPATH', dirname(__DIR__, 2) . '/application/');

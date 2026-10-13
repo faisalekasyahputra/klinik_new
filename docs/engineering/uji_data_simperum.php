@@ -156,6 +156,24 @@ try {
     $db->query("DELETE FROM sf_penilaian_perumahan WHERE user_id=$uid");
     $db->query("DELETE FROM usr_akun WHERE id=$uid");
     $cek((int) $satu("SELECT COUNT(*) n FROM sf_data_simperum WHERE user_id=$uid OR nik_lookup_hash='$hash'")['n'] === 0, 'Baris cermin ikut terhapus (FK CASCADE)');
+
+    echo "H. Desil resmi dari balikan SIMPERUM (13 Okt 2026)\n";
+    // API-04 membawa Desil "3" dan TipeData "DTKS 2025"; API-01 (bagian D) tidak membawa Desil sama sekali.
+    $cek(array_key_exists('desil_kesejahteraan', (array) $profil) && $profil['desil_kesejahteraan'] === NULL, 'Balikan tanpa Desil: desil profil tetap kosong, tidak dikarang');
+    $NIK_D = '3399990202900004';
+    $pinjam(hash('sha256', 'warga_lookup:nik:' . $enc->deterministic_hash($NIK_D))); $pinjam(hash('sha256', 'verifikasi_nik:nik:' . $enc->deterministic_hash($NIK_D)));
+    [$uid_d, $email_d] = $akun('warga', NULL, 0);
+    foreach (['warga_lookup', 'warga_lookup_jam', 'warga_lookup_harian'] as $p) $pinjam(hash('sha256', "$p:account:$uid_d"));
+    $jd = $login($email_d);
+    $http($jd, 'Auth/save_onboarding', ['role' => 'warga', 'username' => $tag . 'd', 'nama_lengkap' => 'Siti Sintetis', 'nik_identitas' => $NIK_D,
+        'alamat_domisili' => 'Jl. Uji No. 2, Kota Semarang', 'phone' => '081200000001', 'csrf_kpkp_token' => $csrf($jd)]);
+    $http($jd, 'warga/pendataan', ['step' => 'find_data', 'action' => 'lookup', 'nik' => $NIK_D, 'birth_date' => '1990-02-02', 'csrf_kpkp_token' => $csrf($jd)]);
+    $profil_d = $satu("SELECT desil_kesejahteraan, asal_isian_json FROM sf_profil_warga WHERE user_id=$uid_d");
+    $asal_d = json_decode((string) ($profil_d['asal_isian_json'] ?? ''), TRUE) ?: [];
+    $kunci_desil = array_values(array_filter(array_keys($asal_d), fn($k) => in_array($k, ['desil_kesejahteraan', 'welfare_decile'], TRUE)));
+    $cek($profil_d && (int) $profil_d['desil_kesejahteraan'] === 3, 'Balikan dengan Desil "3": desil profil terisi 3');
+    $cek($kunci_desil && ($asal_d[$kunci_desil[0]]['asal'] ?? '') === 'DTKS 2025' && in_array($asal_d[$kunci_desil[0]]['source'] ?? '', ['simulation', 'api'], TRUE),
+        'Asal data desil (TipeData) ikut tercatat di asal isian');
 } catch (Throwable $e) {
     $cek(FALSE, 'Pengecualian: ' . $e->getMessage());
 } finally {
