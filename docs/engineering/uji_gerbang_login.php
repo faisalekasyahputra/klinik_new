@@ -106,7 +106,7 @@ function login($n, $email) {
 }
 
 function buat_akun($peran) {
-    $email = 'uji_gerbang_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
+    $email = 'uji_gerbang_' . time() . '_' . count($GLOBALS['users']) . '@example.test';
     $id = tulis('INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
                  VALUES (?,?,?,?,?, "active",1,NOW())',
         [$email, password_hash(SANDI, PASSWORD_BCRYPT), 'Uji Gerbang',

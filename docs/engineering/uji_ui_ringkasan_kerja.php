@@ -53,7 +53,7 @@ register_shutdown_function(function () use (&$akun, $jar) {
 });
 
 echo "== Ringkasan Kerja super admin ==\n";
-$email = 'uji_ringkas_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
+$email = 'uji_ringkas_' . time() . '_' . count($akun) . '@example.test';
 $st = $GLOBALS['db']->prepare('INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
     VALUES (?,?,"Uji Ringkasan Kerja",?,"admin","active",1,NOW())');
 $hash = password_hash(SANDI, PASSWORD_BCRYPT);

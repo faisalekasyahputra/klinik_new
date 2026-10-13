@@ -116,7 +116,7 @@ function login($nama, $email) {
 }
 
 function buat_akun($peran, $suffix, $kab = NULL, $bidang = NULL) {
-    $email = 'uji_struktur_' . $suffix . '_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
+    $email = 'uji_struktur_' . $suffix . '_' . time() . '_' . count($GLOBALS['users']) . '@example.test';
     $id = tulis(
         'INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,kabupaten_id,bidang_kode,status,profil_lengkap,created_at)
          VALUES (?,?,?,?,?,?,?, "active",1,NOW())',

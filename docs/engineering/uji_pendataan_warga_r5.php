@@ -56,7 +56,7 @@ class Session {
 function login($email) { $s = new Session(); $s->get('Auth/login'); $r = $s->post('Auth/do_login', ['email'=>$email,'password'=>PASSWORD]); wajib($r['status'] === 200 && (json_decode($r['body'], TRUE)['status'] ?? '') === 'success', "Login $email"); $s->get('warga/pendataan'); return $s; }
 /* Nama akun sama dengan nama fixture: sejak 3 Okt 2026 lookup ber-akun mengikat NIK hanya kalau
    nama lengkap akun dan tanggal lahir cocok dengan data SIMPERUM (Simperum_gateway::lookup). */
-function make_user($db, $suffix, $nama = 'Uji R5') { $email = 'uji_r5_'.$suffix.'_'.time().'_'.mt_rand(1000,9999).'@example.test'; $id = $db->run("INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at) VALUES (?,?,?,?,'warga','active',1,NOW())", [$email,password_hash(PASSWORD,PASSWORD_BCRYPT),$nama,'uji_r5_'.$suffix]); $GLOBALS['users'][]=$id; return [$id,$email]; }
+function make_user($db, $suffix, $nama = 'Uji R5') { $email = 'uji_r5_'.$suffix.'_'.time().'_'.count($GLOBALS['users']).'@example.test'; $id = $db->run("INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at) VALUES (?,?,?,?,'warga','active',1,NOW())", [$email,password_hash(PASSWORD,PASSWORD_BCRYPT),$nama,'uji_r5_'.$suffix]); $GLOBALS['users'][]=$id; return [$id,$email]; }
 /**
  * NIK fixture SIMPERUM adalah sumber daya BERSAMA yang langka: cuma tujuh, dan
  * satu profil warga mengikatnya EKSKLUSIF lewat `nik_lookup_hash`. Begitu ada
