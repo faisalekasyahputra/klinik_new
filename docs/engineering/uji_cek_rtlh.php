@@ -222,6 +222,11 @@ cek(strpos($rtlh['body'], '>Intervensi</dt>') !== FALSE && strpos($rtlh['body'],
 // API-03: bukan milik sendiri (kode 6) TANPA SkorBacklog. Aturan lama menulisnya RTLH; menurut dinas ini Backlog.
 cek(strpos($disposisi['body'], 'dalam data Backlog') !== FALSE && strpos($disposisi['body'], 'dalam data RTLH') === FALSE,
     'Bukan milik sendiri tanpa SkorBacklog tetap ditulis Backlog');
+// API-05: status rumah kosong. Saran dinas 13 Okt: jangan ditebak, tulis "status kepemilikan rumah belum lengkap".
+$kosong_status = periksa('u', '3399990303800005', '');
+cek(stripos($kosong_status['body'], 'TERDAFTAR') !== FALSE && strpos($kosong_status['body'], 'status kepemilikan rumah belum lengkap') !== FALSE
+    && strpos($kosong_status['body'], 'dalam data RTLH') === FALSE && strpos($kosong_status['body'], 'dalam data Backlog') === FALSE,
+    'Status rumah kosong tidak ditebak RTLH atau Backlog');
 
 $kosong = periksa('u', NIK_KOSONG, TGL_ADA);
 cek(stripos($kosong['body'], 'tidak terdaftar') !== FALSE, 'NIK tanpa data RTLH dibaca tidak terdaftar');
