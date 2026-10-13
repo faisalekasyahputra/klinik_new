@@ -193,7 +193,7 @@ echo "== Prasyarat ==\n";
  * merahnya muncul di tempat yang tidak ada hubungannya dengan apa yang diuji.
  * Kejadian 2 Agt 2026 waktu pendaftaran magang sungguhan pertama dibuat.
  */
-$MHS_UJI = 'uji_daftar_mhs_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
+$MHS_UJI = 'uji_daftar_mhs_' . time() . '_0@example.test';
 $db->query("INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
     VALUES ('" . $db->real_escape_string($MHS_UJI) . "', '" . password_hash(MHS_PASSWORD, PASSWORD_BCRYPT)
     . "', 'Mahasiswa Uji Daftar', 'uji_daftar_" . mt_rand(100000, 999999) . "', 'mahasiswa', 'active', 1, NOW())");

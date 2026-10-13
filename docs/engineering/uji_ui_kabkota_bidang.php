@@ -36,7 +36,7 @@ function cek($ok, $label) {
 
 function akun($role, $kab = NULL, $bidang = NULL) {
     global $db, $tag, $sandi, $users;
-    $e = "{$tag}_{$role}_" . mt_rand(1000, 9999) . '@example.test';
+    $e = "{$tag}_{$role}_" . count($users) . '@example.test';
     $h = password_hash($sandi, PASSWORD_BCRYPT);
     $st = $db->prepare("INSERT INTO usr_akun (nama,email,nama_pengguna,kata_sandi,peran,kabupaten_id,bidang_kode,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at)
         VALUES ('Uji UI KB',?,?,?,?,?,?,'active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");

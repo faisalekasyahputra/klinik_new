@@ -133,7 +133,7 @@ $bidang = q('SELECT kode FROM bidang ORDER BY kode LIMIT 1');
 wajib($bidang, 'Ada minimal satu bidang');
 $kode_bidang = $bidang[0]['kode'];
 
-$emailAdm = 'uji_posisi_' . time() . '_' . mt_rand(1000, 9999) . '@example.test';
+$emailAdm = 'uji_posisi_' . time() . '_' . count($GLOBALS['users']) . '@example.test';
 $uid = NULL;
 $st = $GLOBALS['db']->prepare('INSERT INTO usr_akun (email,kata_sandi,nama,nama_pengguna,peran,status,profil_lengkap,created_at)
     VALUES (?,?,?,?,"admin","active",1,NOW())');
