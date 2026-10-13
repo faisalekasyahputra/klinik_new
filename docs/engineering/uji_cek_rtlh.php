@@ -212,6 +212,12 @@ cek(stripos($backlog['body'], 'TERDAFTAR') !== FALSE && strpos($backlog['body'],
     && strpos($backlog['body'], 'dalam data RTLH') === FALSE, 'Balasan API dengan SkorBacklog terisi ditulis Backlog');
 cek(stripos($backlog['body'], 'SITI SINTETIS') === FALSE && strpos($backlog['body'], '>Nama</dt>') !== FALSE,
     'Hasil Backlog memuat nama tersamar, bukan nama utuh');
+// Disposisi dinas (kode 6 Sudah Layak Huni, 15 Pindah, dst.) bukan intervensi: labelnya "Status".
+$disposisi = periksa('u', '3399990101700003', '');
+cek(strpos($rtlh['body'], '>Intervensi</dt>') !== FALSE && strpos($rtlh['body'], '>Status</dt>') === FALSE
+    && strpos($disposisi['body'], '>Status</dt>') !== FALSE && strpos($disposisi['body'], 'Sudah Layak Huni') !== FALSE
+    && strpos($disposisi['body'], '>Intervensi</dt>') === FALSE,
+    'Disposisi dinas berlabel Status, intervensi tetap berlabel Intervensi');
 
 $kosong = periksa('u', NIK_KOSONG, TGL_ADA);
 cek(stripos($kosong['body'], 'tidak terdaftar') !== FALSE, 'NIK tanpa data RTLH dibaca tidak terdaftar');

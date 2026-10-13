@@ -69,7 +69,10 @@ $this->load->view('components/modal_simperum_simulasi');
                         <?php if ( ! empty($hasil['profil']['nama_tersamar'])): ?>
                         <div class="flex gap-2"><dt class="w-24 shrink-0 text-[color:var(--portal-text-muted)]">Nama</dt><dd class="font-bold text-[color:var(--portal-text)]"><?= html_escape($hasil['profil']['nama_tersamar']) ?></dd></div>
                         <?php endif; ?>
-                        <div class="flex gap-2"><dt class="w-24 shrink-0 text-[color:var(--portal-text-muted)]">Intervensi</dt><dd class="font-bold text-[color:var(--portal-text)]"><?= html_escape($hasil['profil']['status_intervensi'] ?? 'Belum tersedia') ?></dd></div>
+                        <?php // Disposisi SIMPERUM (Pindah, Meninggal, Sudah Layak Huni, dst.) bukan intervensi, jadi labelnya "Status".
+                        $status_intervensi = (string) ($hasil['profil']['status_intervensi'] ?? 'Belum tersedia');
+                        $label_status = ($status_intervensi === 'Belum tersedia' || stripos($status_intervensi, 'diintervensi') !== FALSE) ? 'Intervensi' : 'Status'; ?>
+                        <div class="flex gap-2"><dt class="w-24 shrink-0 text-[color:var(--portal-text-muted)]"><?= $label_status ?></dt><dd class="font-bold text-[color:var(--portal-text)]"><?= html_escape($status_intervensi) ?></dd></div>
                     </dl>
                     <?php endif; ?>
 
