@@ -23,7 +23,8 @@ $sandi = 'Pa1#' . bin2hex(random_bytes(5));
 $total = 0; $gagal = 0; $jars = []; $users = []; $asesmen = [];
 $cek = function ($ok, $l) use (&$total, &$gagal) { $total++; if (!$ok) $gagal++; echo ($ok ? '  OK    ' : '  GAGAL ') . $l . "\n"; };
 $akun = function ($role, $kab = NULL) use ($db, $tag, $sandi, &$users) {
-    $e = "{$tag}_{$role}_" . mt_rand(1000, 9999) . '@example.test'; $h = password_hash($sandi, PASSWORD_BCRYPT);
+    // Nomor urut, bukan angka acak: dua akun seperan dalam satu putaran pernah mendapat angka yang sama (13 Okt 2026).
+    $e = "{$tag}_{$role}_" . count($users) . '@example.test'; $h = password_hash($sandi, PASSWORD_BCRYPT);
     $st = $db->prepare("INSERT INTO usr_akun (nama,email,kata_sandi,peran,kabupaten_id,status,profil_lengkap,email_verified_at,sandi_diganti_at,sandi_kedaluwarsa_at,created_at) VALUES ('Uji PAw',?,?,?,?,'active',1,NOW(),NOW(),DATE_ADD(NOW(),INTERVAL 90 DAY),NOW())");
     $st->bind_param('sssi', $e, $h, $role, $kab); $st->execute(); $users[] = $db->insert_id; return [$db->insert_id, $e];
 };
