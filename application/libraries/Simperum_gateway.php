@@ -714,13 +714,15 @@ class Simperum_gateway {
     private function from_snapshot(array $snapshot, $birth_date, $cache_hit, $requested_by)
     {
         $payload = $snapshot['payload'] ?? [];
-        // Kategori data dibaca dari balikan SIMPERUM (keputusan user 13 Okt 2026): SkorBacklog terisi
-        // (mis. ",PB") = Backlog, selain itu RTLH. Diukur 12 Okt pada 3.694 baris dua desa: SkorBacklog
-        // terisi di 9 baris, semuanya KepemilikanRumah 6, tidak pernah bersamaan dengan Skor. Dibaca
-        // dari raw_record yang ikut tersimpan, jadi rekaman cache lama ikut benar tanpa diambil ulang.
+        // Kategori data dibaca dari balikan SIMPERUM. Jawaban dinas 13 Okt 2026: status rumah milik sendiri
+        // (KepemilikanRumah 1) = RTLH, selain milik sendiri = Backlog. Ini mengganti aturan sementara
+        // "SkorBacklog terisi", yang hanya menangkap 9 dari 50 baris bukan milik sendiri pada 3.694 baris dua
+        // desa. Status rumah kosong (1 baris) tetap RTLH karena kepemilikannya tidak diketahui. Dibaca dari
+        // raw_record yang ikut tersimpan, jadi rekaman cache lama ikut benar tanpa diambil ulang.
         // GetDataBacklog TIDAK ada di API (PROCEDURE perum.PUB_GetDataBacklog does not exist).
+        $status_rumah = trim((string) ($payload['source']['raw_record']['KepemilikanRumah'] ?? ''));
         $kategori = (string) ($payload['kategori_data']
-            ?? (trim((string) ($payload['source']['raw_record']['SkorBacklog'] ?? '')) !== '' ? 'Backlog' : 'RTLH'));
+            ?? ($status_rumah !== '' && $status_rumah !== '1' ? 'Backlog' : 'RTLH'));
         $status = $snapshot['status_respons'] ?? 'error';
         if ($status === 'not_found') {
             return $this->response('not_found', 'Data tidak ditemukan. Silakan isi data secara manual.', [
