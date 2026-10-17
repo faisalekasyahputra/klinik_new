@@ -9,8 +9,9 @@ menutup pertanyaan soal banyaknya medan kosong. Sisanya masih menunggu.
 **Pembaruan 17 Oktober 2026:** butir 7 (desil) tertutup oleh data, dan sisa
 butir kode dicocokkan dengan foto form asli SIMPERUM. Hasilnya di bagian E:
 satu kode terjawab dengan bukti kuat, dua tetap terbuka, dan tiga pertanyaan
-baru muncul. Semua masih dugaan sampai dinas mengonfirmasi; belum ada yang
-diterapkan ke kode.
+baru muncul. Semua masih dugaan sampai dinas mengonfirmasi. Satu-satunya yang
+sudah diterapkan ke kode adalah pembacaan `AdaPondasi` (17 Okt 2026, keputusan
+user), karena pembacaan lamanya bisa mengarang hasil layak RTLH.
 **Status endpoint:** `GetDataRTLH?NIK=` sudah DIPERBAIKI. Sebelumnya 114 detik dan
 kosong, sekarang di bawah 1 detik dan mengembalikan 1 baris yang NIK-nya cocok.
 Diuji dengan 3 NIK, semuanya berhasil.
@@ -121,7 +122,8 @@ cadangan.
 
 ## E. Bukti dari form asli SIMPERUM (dicocokkan 17 Oktober 2026)
 
-Sumbernya 44 foto layar form "Validasi Detail" SIMPERUM (23 Juli 2026), jalur
+Sumbernya 45 foto layar form "Validasi Detail" SIMPERUM (23 Juli 2026, folder
+`FORM_DETAIL`) ditambah 5 tangkapan layar bersih per tab (`FORM_DESAIN`), jalur
 `/Main/RTLH/PBDT_edit/` dan `/Main/Backlog/ValidasiData`, yang label dan
 pilihannya sudah disalin di `AUDIT_AKURASI_FORM_WARGA_R3.md`. Yang baru di sini
 adalah pencocokannya dengan tabel kode resmi di `Simperum_gateway.php`, yang
@@ -159,14 +161,23 @@ dipakai menebak mana 0 dan mana 1.
 | 13 | `Penghasilan` | Form punya sembilan rentang, tiga teratas 4,2-6 jt, 6-8 jt, dan > 8 jt. Gateway berhenti di 7 = "> 4,2 jt", tanpa 8 dan 9. Wizard warga sudah mengenal ketiga rentang itu | Apakah 7 = 4,2-6 jt, 8 = 6-8 jt, 9 = > 8 jt |
 | 14 | `MampuSwadaya`, `AdaJendela`, `AdaVentilasi`, `TanahLain`, `RumahLain` | Pilihan dua nilai; urutan tampilan tidak membuktikan apa pun | Konfirmasi tertulis bahwa 1 = Mampu/Ada/Memiliki dan 0 = sebaliknya, seperti yang dipakai gateway sekarang |
 
-### Risiko yang sudah berjalan, menunggu keputusan
+### Pembacaan `AdaPondasi`: DITERAPKAN 17 Oktober 2026
 
-Gateway saat ini memetakan `AdaPondasi` 0 ke `absent`, lalu menjadikannya
+Sampai 17 Okt 2026 gateway memetakan `AdaPondasi` 0 ke `absent`, lalu menjadikannya
 `kondisi_pondasi = severe_damage_or_absent`, dan nilai itu ikut terbawa sebagai
 isian awal penilaian warga. Di `Warga_ruleset.php`, untuk warga desil 1-3 di
 jalur rumah eksisting, satu isian kondisi bernilai itu sudah cukup untuk hasil
 **layak RTLH** (`SIM_RTLH_DAMAGE`). Kalau dugaan butir 3 benar, rekaman yang
 isian pondasinya sekadar belum diisi ikut dinilai rusak berat. Sebaliknya,
-nilai 2-4 kini jatuh ke `unmapped_codes`, sehingga pondasi yang benar-benar
-rusak sedang atau berat justru tidak terbaca. Kode BELUM diubah: perubahan ini menggeser hasil kelayakan,
-sehingga menunggu konfirmasi dinas atau keputusan pemilik produk.
+nilai 2-4 jatuh ke `unmapped_codes`, sehingga pondasi yang benar-benar
+rusak sedang atau berat justru tidak terbaca.
+
+**Keputusan user 17 Okt 2026: diubah tanpa menunggu dinas.** Gateway kini
+membaca `AdaPondasi` 1-4 dengan skala yang sama seperti `KondisiKolom`, dan 0
+sebagai belum diisi (NULL, tidak dicatat sebagai kode asing). Dijaga
+`uji_simperum_api_contract.php`. Kalau dinas kelak menjawab lain, ubah di
+`Simperum_gateway::normalize_api_record()` dan uji itu sekaligus.
+
+Yang TIDAK ikut berubah: snapshot SIMPERUM berstatus found yang tersimpan
+sebelum rilis dipakai ulang sampai 30 hari dan masih membawa pembacaan lama,
+begitu pula isian awal draft penilaian yang sudah terbentuk.

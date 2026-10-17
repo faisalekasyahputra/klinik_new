@@ -75,7 +75,23 @@ $check(($mapped['housing']['kepemilikan_lahan'] ?? '') === 'certificate_unspecif
 $check(($mapped['housing']['bantuan_perumahan'] ?? '') === 'apbd_prov', 'Sumber bantuan dipetakan');
 $check(($mapped['housing']['kawasan_perumahan'] ?? '') === 'good', 'Kawasan dipetakan');
 $check(($mapped['structure']['bahan_atap'] ?? '') === 'clay_tile', 'Bahan atap dipetakan');
-$check(($mapped['structure']['kondisi_pondasi'] ?? '') === 'severe_damage_or_absent', 'Pondasi tidak ada dipetakan konservatif');
+/* Dulu: "Pondasi tidak ada dipetakan konservatif", yaitu AdaPondasi 0 menjadi
+   rusak berat. Form asli SIMPERUM membantahnya (17 Okt 2026): isian Pondasi
+   memakai skala kondisi 1-4 dan 0 adalah "-" (belum diisi). Rusak berat yang
+   dikarang dari isian kosong cukup sendirian untuk hasil layak RTLH. */
+$check(array_key_exists('kondisi_pondasi', $mapped['structure']) && $mapped['structure']['kondisi_pondasi'] === NULL
+    && ! isset($mapped['source']['unmapped_codes']['AdaPondasi']),
+    'AdaPondasi 0 = belum diisi: NULL, bukan rusak berat, dan bukan kode asing');
+foreach (['1' => 'good', '2' => 'minor_damage', '3' => 'moderate_damage', '4' => 'severe_damage_or_absent'] as $kode => $harap) {
+    $pondasi = json_decode($fixture_json, TRUE);
+    $pondasi['Data'][0]['AdaPondasi'] = $kode;
+    $hasil = $call('map_api_response', '3374010101900001', ['http_status' => 200, 'body' => json_encode($pondasi), 'curl_errno' => 0]);
+    $check(($hasil['structure']['kondisi_pondasi'] ?? '') === $harap, "AdaPondasi {$kode} mengikuti skala kondisi: {$harap}");
+}
+$pondasi['Data'][0]['AdaPondasi'] = '5';
+$hasil = $call('map_api_response', '3374010101900001', ['http_status' => 200, 'body' => json_encode($pondasi), 'curl_errno' => 0]);
+$check($hasil['structure']['kondisi_pondasi'] === NULL && ($hasil['source']['unmapped_codes']['AdaPondasi'] ?? '') === '5',
+    'AdaPondasi di luar 0-4 tidak ditebak: NULL dan dicatat sebagai kode asing');
 /* Dulu asersinya berbunyi "Ledeng tidak ditebak menjadi PDAM" dan memaksa kode
    3 menjadi `piped` generik. Itu BENAR selama artinya belum diketahui. Dinas
    mengirim daftar resminya 31 Agt 2026 dan kode 3 memang PDAM, jadi menahannya
