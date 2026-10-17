@@ -230,6 +230,7 @@ class Simperum_gateway {
             '3399995506900002' => 'API-02', // tiga baris: pilih 2023 BSPS, buang baris NIK terpotong
             '3399990101700003' => 'API-03', // kode 6 dinas + disposisi, tahun lahir kosong, Cilacap
             '3399990202900004' => 'API-04', // Backlog: SkorBacklog ",PB", KepemilikanRumah 6 (13 Okt 2026)
+            '3399990303800005' => 'API-05', // status rumah kosong: kategori "belum lengkap" (13 Okt 2026)
         ];
         if (isset($api[$nik])) {
             $body = @file_get_contents($this->fixture_path . DIRECTORY_SEPARATOR . $api[$nik] . '.json');
@@ -722,13 +723,17 @@ class Simperum_gateway {
     private function from_snapshot(array $snapshot, $birth_date, $cache_hit, $requested_by)
     {
         $payload = $snapshot['payload'] ?? [];
-        // Kategori data dibaca dari balikan SIMPERUM (keputusan user 13 Okt 2026): SkorBacklog terisi
-        // (mis. ",PB") = Backlog, selain itu RTLH. Diukur 12 Okt pada 3.694 baris dua desa: SkorBacklog
-        // terisi di 9 baris, semuanya KepemilikanRumah 6, tidak pernah bersamaan dengan Skor. Dibaca
-        // dari raw_record yang ikut tersimpan, jadi rekaman cache lama ikut benar tanpa diambil ulang.
+        // Kategori data dibaca dari balikan SIMPERUM. Jawaban dinas 13 Okt 2026: status rumah milik sendiri
+        // (KepemilikanRumah 1) = RTLH, selain milik sendiri = Backlog. Ini mengganti aturan sementara
+        // "SkorBacklog terisi", yang hanya menangkap 9 dari 50 baris bukan milik sendiri pada 3.694 baris dua
+        // desa. Status rumah kosong (1 baris) ditulis "status kepemilikan rumah belum lengkap", juga atas
+        // saran dinas 13 Okt. Dibaca dari raw_record yang ikut tersimpan, jadi rekaman cache lama ikut benar
+        // tanpa diambil ulang; rekaman tanpa raw_record (fixture SIM, tidak ditemukan) tetap RTLH.
         // GetDataBacklog TIDAK ada di API (PROCEDURE perum.PUB_GetDataBacklog does not exist).
-        $kategori = (string) ($payload['kategori_data']
-            ?? (trim((string) ($payload['source']['raw_record']['SkorBacklog'] ?? '')) !== '' ? 'Backlog' : 'RTLH'));
+        $mentah = $payload['source']['raw_record'] ?? NULL;
+        $status_rumah = trim((string) ($mentah['KepemilikanRumah'] ?? ''));
+        $kategori = (string) ($payload['kategori_data'] ?? ( ! is_array($mentah) || $status_rumah === '1' ? 'RTLH'
+            : ($status_rumah === '' ? 'SIMPERUM (status kepemilikan rumah belum lengkap)' : 'Backlog')));
         $status = $snapshot['status_respons'] ?? 'error';
         if ($status === 'not_found') {
             return $this->response('not_found', 'Data tidak ditemukan. Silakan isi data secara manual.', [

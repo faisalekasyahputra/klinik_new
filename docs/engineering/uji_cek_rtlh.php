@@ -202,14 +202,15 @@ cek(strpos($ada['body'], '****' . substr(NIK_ADA, -4)) !== FALSE,
 cek(stripos($ada['body'], 'MODE SIMULASI') !== FALSE,
     'Spanduk simulasi tampil - data contoh tidak boleh disangka nyata');
 
-// Kategori mengikuti balikan SIMPERUM (13 Okt 2026): SkorBacklog terisi = Backlog, selain itu RTLH.
+// Kategori mengikuti status rumah di balikan SIMPERUM (jawaban dinas 13 Okt 2026): milik sendiri
+// (KepemilikanRumah 1) = RTLH, selain milik sendiri = Backlog. SkorBacklog bukan penandanya.
 // Dua NIK fixture sintetis berbentuk balasan API (berawalan 3399, kabupaten yang tidak ada).
 $rtlh = periksa('u', '3399991508850001', '');
 cek(strpos($rtlh['body'], 'dalam data RTLH') !== FALSE && strpos($rtlh['body'], 'dalam data Backlog') === FALSE,
-    'Balasan API tanpa SkorBacklog ditulis RTLH');
+    'Balasan API berstatus rumah milik sendiri ditulis RTLH');
 $backlog = periksa('u', '3399990202900004', '');
 cek(stripos($backlog['body'], 'TERDAFTAR') !== FALSE && strpos($backlog['body'], 'dalam data Backlog') !== FALSE
-    && strpos($backlog['body'], 'dalam data RTLH') === FALSE, 'Balasan API dengan SkorBacklog terisi ditulis Backlog');
+    && strpos($backlog['body'], 'dalam data RTLH') === FALSE, 'Balasan API bukan milik sendiri (kode 6, SkorBacklog terisi) ditulis Backlog');
 cek(stripos($backlog['body'], 'SITI SINTETIS') === FALSE && strpos($backlog['body'], '>Nama</dt>') !== FALSE,
     'Hasil Backlog memuat nama tersamar, bukan nama utuh');
 // Disposisi dinas (kode 6 Sudah Layak Huni, 15 Pindah, dst.) bukan intervensi: labelnya "Status".
@@ -218,6 +219,14 @@ cek(strpos($rtlh['body'], '>Intervensi</dt>') !== FALSE && strpos($rtlh['body'],
     && strpos($disposisi['body'], '>Status</dt>') !== FALSE && strpos($disposisi['body'], 'Sudah Layak Huni') !== FALSE
     && strpos($disposisi['body'], '>Intervensi</dt>') === FALSE,
     'Disposisi dinas berlabel Status, intervensi tetap berlabel Intervensi');
+// API-03: bukan milik sendiri (kode 6) TANPA SkorBacklog. Aturan lama menulisnya RTLH; menurut dinas ini Backlog.
+cek(strpos($disposisi['body'], 'dalam data Backlog') !== FALSE && strpos($disposisi['body'], 'dalam data RTLH') === FALSE,
+    'Bukan milik sendiri tanpa SkorBacklog tetap ditulis Backlog');
+// API-05: status rumah kosong. Saran dinas 13 Okt: jangan ditebak, tulis "status kepemilikan rumah belum lengkap".
+$kosong_status = periksa('u', '3399990303800005', '');
+cek(stripos($kosong_status['body'], 'TERDAFTAR') !== FALSE && strpos($kosong_status['body'], 'status kepemilikan rumah belum lengkap') !== FALSE
+    && strpos($kosong_status['body'], 'dalam data RTLH') === FALSE && strpos($kosong_status['body'], 'dalam data Backlog') === FALSE,
+    'Status rumah kosong tidak ditebak RTLH atau Backlog');
 
 $kosong = periksa('u', NIK_KOSONG, TGL_ADA);
 cek(stripos($kosong['body'], 'tidak terdaftar') !== FALSE, 'NIK tanpa data RTLH dibaca tidak terdaftar');
