@@ -494,13 +494,22 @@ class Simperum_gateway {
         if ($latitude === 0.0 && $longitude === 0.0) {
             $latitude = $longitude = NULL;
         }
-        $foundation_presence = $code('AdaPondasi', ['0' => 'absent', '1' => 'present']);
         $condition = [
             '1' => 'good',
             '2' => 'minor_damage',
             '3' => 'moderate_damage',
             '4' => 'severe_damage_or_absent',
         ];
+        /* AdaPondasi BUKAN ada/tidak ada, meski namanya begitu dan dokumen API
+           menulis 0/1. Form asli SIMPERUM (isian "Pondasi*") memakai empat
+           pilihan yang sama dengan Kondisi Kolom, dan "tidak ada pondasi"
+           sudah terlipat di pilihan 4 "Rusak Berat (Struktur/Tdk Ada)". Data
+           nyata berisi 0-4. Jadi 1-4 = skala kondisi, dan 0 = "-" (belum
+           diisi), sama seperti SumberDanaID 0 menurut dinas 31 Agt 2026.
+           Dulu 0 dibaca "tidak ada" lalu menjadi rusak berat, dan itu sendirian
+           cukup untuk hasil layak RTLH. Diputuskan user 17 Okt 2026; rincian
+           di PERMINTAAN_KODE_SIMPERUM.md bagian E. */
+        $kondisi_pondasi = $code('AdaPondasi', ['0' => NULL] + $condition);
 
         $tahun_intervensi = $integer($record['TahunIntervensi'] ?? NULL);
         $bantuan_perumahan = $code('SumberDanaID', [
@@ -606,8 +615,7 @@ class Simperum_gateway {
                 ]),
             ],
             'structure' => [
-                'kondisi_pondasi' => $foundation_presence === 'absent'
-                    ? 'severe_damage_or_absent' : NULL,
+                'kondisi_pondasi' => $kondisi_pondasi,
                 'kondisi_kolom' => $code('KondisiKolom', $condition),
                 'kondisi_balok' => $code('KondisiBalok', $condition),
                 'kondisi_rangka' => $code('KondisiRangka', $condition),
