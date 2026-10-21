@@ -1097,6 +1097,10 @@ $push_js = (string) @file_get_contents(APP_ROOT . '/assets/js/admin-web-push.js'
 cek(strpos($push_js, 'Web Push belum') === FALSE && substr_count($push_js, "button.style.display = 'none'") === 2,
     'Web Push belum dikonfigurasi atau gagal: tombol disembunyikan, bukan tampil mati');
 $topbar_adm = (string) @file_get_contents(APP_ROOT . '/application/views/admin/layouts/topbar.php');
+// 21 Okt 2026: satu permintaan PHP = satu koneksi DB dari jatah hosting 500 per jam; kunci ditanam, tidak diambil per halaman.
+cek(strpos($push_js, 'configUrl') === FALSE && strpos($push_js, 'dataset.publicKey') !== FALSE
+    && strpos($topbar_adm, 'data-public-key=') !== FALSE && strpos($topbar_adm, "base_url('push/config')") === FALSE,
+    'Web Push: kunci publik ditanam topbar, tidak ada GET push/config di setiap muat halaman');
 cek(preg_match('/<button type="button" @click="darkMode = !darkMode"[^>]*aria-label="Mode gelap"/', $topbar_adm) === 1,
     'Topbar: tombol mode gelap punya aria-label');
 $ikon_tanpa_nama = [];

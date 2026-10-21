@@ -61,8 +61,12 @@
 
         <?php if (in_array($this->session->userdata('role'), ['admin', 'admin_kabkota', 'admin_bidang', 'warga'], TRUE)): ?>
         <!-- Izin Web Push hanya diminta setelah klik pengguna, sesuai aturan browser/iOS. -->
+        <?php /* Kunci publik VAPID ditanam di sini, bukan diambil lewat push/config di setiap muat
+                 halaman: satu permintaan PHP = satu koneksi DB dari jatah hosting 500 per jam. */
+              $ci_push =& get_instance(); $ci_push->load->library('web_push_service');
+              $kunci_push = $ci_push->web_push_service->configured() ? $ci_push->web_push_service->public_key() : ''; ?>
         <button type="button" data-web-push-toggle data-state="loading"
-                data-config-url="<?= base_url('push/config') ?>"
+                data-public-key="<?= html_escape($kunci_push) ?>"
                 data-subscribe-url="<?= base_url('push/subscribe') ?>"
                 data-unsubscribe-url="<?= base_url('push/unsubscribe') ?>"
                 data-sw-url="<?= base_url('push-sw.js') ?>"
