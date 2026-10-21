@@ -576,6 +576,13 @@ class Migrate extends CI_Controller {
         echo 'awalan nomor sertifikat KKN (migrasi 079): '.($this->db->field_exists('awalan_nomor_sertifikat', 'kkn_magang_pendaftaran')
             && $this->db->field_exists('urut', 'kkn_peserta')
             ? 'ADA ('.$this->db->where('urut IS NULL', NULL, FALSE)->count_all_results('kkn_peserta').' peserta tanpa urut)' : 'HILANG')."\n";
+        // Migrasi 080 - identitas mahasiswa di usr_akun untuk Profil Saya dan isian formulir magang.
+        $ada_080 = TRUE;
+        foreach (['nim', 'tempat_lahir', 'tanggal_lahir', 'jurusan', 'instansi_asal'] as $kolom) {
+            $ada_080 = $ada_080 && $this->db->field_exists($kolom, 'usr_akun');
+        }
+        echo 'identitas mahasiswa di profil (migrasi 080): '.($ada_080
+            ? 'ADA ('.$this->db->where(['peran' => 'mahasiswa'])->where('nim IS NOT NULL', NULL, FALSE)->count_all_results('usr_akun').' mahasiswa ber-NIM)' : 'HILANG')."\n";
         // Migrasi 076 - kolom alasan_susulan untuk KKN input susulan (bersama kolom 061 dan 062 di bawah).
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062', 'alasan_susulan' => '076'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
