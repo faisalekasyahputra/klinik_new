@@ -74,13 +74,11 @@ class Admin_Users extends Admin_Controller {
         $ids_klaim = array_unique(array_merge(...array_map(fn($k) => $k['pemegang'], $data['klaim_nik'] ?: [['pemegang' => []]])));
         $data['email_pemegang'] = $ids_klaim ? array_column($this->db->select('id, email')->where_in('id', $ids_klaim)
             ->get('usr_akun')->result_array(), 'email', 'id') : [];
-        // Permintaan reset NIK dari warga (Housing_assessment_model::ajukan_reset_nik), dengan tanda akun yang
-        // punya pengajuan terkirim: reset untuk akun itu ditolak lepas_nik() supaya arsip tetap utuh.
+        // Permintaan reset NIK dari warga (Housing_assessment_model::ajukan_reset_nik), dengan keadaan pendataan
+        // tiap pemohon (aturan 21 Okt 2026, lihat status_pendataan_nik()): yang disetujui memblokir, yang masih
+        // diproses ikut dibatalkan bila permintaan disetujui.
         $data['reset_nik_minta'] = $this->Housing_assessment_model->reset_nik_tertunda();
-        $ids_minta = array_map(fn($k) => (int) $k['pemohon_id'], $data['reset_nik_minta']);
-        $data['reset_nik_terkirim'] = $ids_minta ? array_column($this->db->select('user_id, COUNT(*) n', FALSE)
-            ->where_in('user_id', $ids_minta)->where('submitted_at IS NOT NULL', NULL, FALSE)->group_by('user_id')
-            ->get('sf_penilaian_perumahan')->result_array(), 'n', 'user_id') : [];
+        $data['reset_nik_pendataan'] = $this->status_pendataan_nik(array_map(fn($k) => (int) $k['pemohon_id'], $data['reset_nik_minta']));
         $data['available_roles'] = $this->config->item('available_roles');
         $this->render_admin('admin/users/permintaan_nik', $data);
     }
@@ -446,22 +444,60 @@ class Admin_Users extends Admin_Controller {
      * Perbaikan 6 Okt 2026: dulu hanya profil pendataan (sf_profil_warga) yang dihapus, sedangkan NIK di
      * akun (usr_akun.nik, terkunci di Profil Saya) tetap ada. Warga tetap melihat "NIK sudah terkunci" dan
      * tidak bisa memasukkan NIK baru, dan akun yang NIK-nya hanya di akun tidak bisa direset sama sekali.
-     * Kini keduanya dilepas. Pengajuan terkirim tetap memblokir reset agar arsip tidak berpindah pemilik.
+     * Kini keduanya dilepas.
+     *
+     * Aturan pendataan terkirim (keputusan user 21 Okt 2026; dulu SEMUA pendataan terkirim memblokir, termasuk
+     * yang sudah ditolak, sehingga warga yang salah NIK tidak punya jalan keluar):
+     * - disetujui (approved): tetap memblokir, karena sudah menjadi dasar keputusan program atas NIK itu;
+     * - masih diproses (pending, needs_revision): dibatalkan dalam transaksi yang sama (status rejected dengan
+     *   catatan, riwayat keputusan, pelaku = Super Admin); warga mengirim pendataan baru dengan NIK yang benar;
+     * - ditolak (rejected): tidak memblokir.
+     * Pendataan terkirim tetap tersimpan sebagai arsip milik akun yang sama, termasuk salinan NIK pengajunya.
+     * Jumlah yang dibatalkan disimpan di $this->pendataan_dibatalkan untuk pesan ke admin.
      */
+    private $pendataan_dibatalkan = 0;
+
+    /**
+     * Keadaan pendataan terkirim per akun: [user_id => ['disetujui' => n, 'diproses' => n, 'tanpa_antrean' => n]].
+     * tanpa_antrean = penilaian terkirim tanpa baris antrean (tidak seharusnya ada); diperlakukan memblokir
+     * karena statusnya tidak diketahui.
+     */
+    private function status_pendataan_nik(array $user_ids)
+    {
+        $user_ids = array_values(array_unique(array_filter(array_map('intval', $user_ids))));
+        if ( ! $user_ids) { return []; }
+        $hasil = array_fill_keys($user_ids, ['disetujui' => 0, 'diproses' => 0, 'tanpa_antrean' => 0]);
+        foreach ($this->db->select('user_id, status_antrean, COUNT(*) n', FALSE)->where_in('user_id', $user_ids)
+            ->where_in('status_antrean', ['approved', 'pending', 'needs_revision'])->group_by('user_id, status_antrean')
+            ->get('sf_antrean_pengajuan')->result_array() as $r) {
+            $hasil[(int) $r['user_id']][$r['status_antrean'] === 'approved' ? 'disetujui' : 'diproses'] += (int) $r['n'];
+        }
+        foreach ($this->db->select('p.user_id, COUNT(*) n', FALSE)->from('sf_penilaian_perumahan p')
+            ->where_in('p.user_id', $user_ids)->where('p.submitted_at IS NOT NULL', NULL, FALSE)
+            ->where('NOT EXISTS (SELECT 1 FROM sf_antrean_pengajuan q WHERE q.penilaian_id = p.id)', NULL, FALSE)
+            ->group_by('p.user_id')->get()->result_array() as $r) {
+            $hasil[(int) $r['user_id']]['tanpa_antrean'] = (int) $r['n'];
+        }
+        return $hasil;
+    }
+
     private function lepas_nik($user, $alasan, $sumber)
     {
+        $this->pendataan_dibatalkan = 0;
         if ($user->peran !== 'warga') { return 'Reset NIK hanya tersedia untuk akun Warga.'; }
         $profile = $this->db->select('id')->get_where('sf_profil_warga', ['user_id' => (int) $user->id])->row();
         if ( ! $profile && empty($user->nik_lookup_hash)) { return 'Akun ini belum terhubung dengan NIK.'; }
 
-        $submitted = $this->db->where('user_id', (int) $user->id)
-            ->where('submitted_at IS NOT NULL', NULL, FALSE)->count_all_results('sf_penilaian_perumahan');
-        if ($submitted > 0) {
+        $pendataan = $this->status_pendataan_nik([(int) $user->id])[(int) $user->id];
+        if ($pendataan['disetujui'] > 0 || $pendataan['tanpa_antrean'] > 0) {
             $this->catat_audit('reset_nik_ditolak',
-                'DITOLAK: reset NIK akun ' . $user->email . ' karena memiliki penilaian terkirim',
-                'usr_akun', (string) $user->id, ['alasan' => $alasan, 'sumber' => $sumber]);
-            return 'NIK tidak dapat direset karena akun memiliki pengajuan yang sudah dikirim. Data harus tetap menjadi arsip.';
+                'DITOLAK: reset NIK akun ' . $user->email . ' karena memiliki pendataan yang sudah disetujui',
+                'usr_akun', (string) $user->id, ['alasan' => $alasan, 'sumber' => $sumber] + $pendataan);
+            return 'NIK tidak dapat direset karena warga punya pendataan yang sudah disetujui atas NIK ini. Perubahan NIK untuk pendataan yang disetujui harus lewat Dinas.';
         }
+        $diproses = $this->db->select('id, status_antrean')->where('user_id', (int) $user->id)
+            ->where_in('status_antrean', ['pending', 'needs_revision'])->get('sf_antrean_pengajuan')->result_array();
+        $catatan_batal = 'Dibatalkan otomatis karena NIK akun direset oleh Super Admin. Warga perlu mengirim pendataan baru dengan NIK yang benar.';
 
         $drafts = $this->db->select('id')->get_where('sf_penilaian_perumahan',
             ['user_id' => (int) $user->id, 'status' => 'draft'])->result_array();
@@ -472,12 +508,25 @@ class Admin_Users extends Admin_Controller {
                 ->get('sf_berkas_penilaian')->result_array();
         }
 
-        $this->db->trans_start();
+        $this->db->trans_begin();
+        foreach ($diproses as $q) {
+            // Status lama ikut di WHERE: bila admin wilayah baru saja menyetujuinya, pembatalan gagal dan reset batal.
+            $this->db->where(['id' => (int) $q['id'], 'status_antrean' => $q['status_antrean']])->update('sf_antrean_pengajuan', [
+                'status_antrean' => 'rejected', 'catatan_admin' => $catatan_batal,
+                'reviewed_by' => (int) $this->get_user_id(), 'reviewed_at' => date('Y-m-d H:i:s')]);
+            if ($this->db->affected_rows() !== 1 || ! $this->db->insert('sf_riwayat_keputusan_antrean', [
+                'antrean_id' => (int) $q['id'], 'status_awal' => $q['status_antrean'], 'status_akhir' => 'rejected',
+                'catatan' => $catatan_batal, 'pelaku_id' => (int) $this->get_user_id()])) {
+                $this->db->trans_rollback();
+                return 'Status pendataan warga ini baru saja berubah. Muat ulang halaman lalu coba lagi.';
+            }
+        }
         if ($draft_ids) $this->db->where_in('id', $draft_ids)->delete('sf_penilaian_perumahan');
         if ($profile) $this->db->where('id', (int) $profile->id)->delete('sf_profil_warga');
         $this->db->where('id', (int) $user->id)->update('usr_akun', ['nik' => NULL, 'nik_lookup_hash' => NULL]);
-        $this->db->trans_complete();
-        if ($this->db->trans_status() === FALSE) { return 'Reset NIK gagal disimpan. Coba lagi.'; }
+        if ($this->db->trans_status() === FALSE) { $this->db->trans_rollback(); return 'Reset NIK gagal disimpan. Coba lagi.'; }
+        $this->db->trans_commit();
+        $this->pendataan_dibatalkan = count($diproses);
 
         foreach ($files as $file) {
             @unlink($this->private_upload_dir('warga_assessment', (int)$file['penilaian_id'])
@@ -488,8 +537,15 @@ class Admin_Users extends Admin_Controller {
         $this->catat_audit('nik_warga_direset',
             'Mereset hubungan NIK akun warga ' . $user->email,
             'usr_akun', (string) $user->id,
-            ['alasan' => $alasan, 'draft_dihapus' => count($draft_ids), 'sumber' => $sumber]);
+            ['alasan' => $alasan, 'draft_dihapus' => count($draft_ids), 'sumber' => $sumber,
+             'pendataan_dibatalkan' => array_map('intval', array_column($diproses, 'id'))]);
         return NULL;
+    }
+
+    private function kalimat_dibatalkan()
+    {
+        return $this->pendataan_dibatalkan > 0
+            ? ' ' . $this->pendataan_dibatalkan . ' pendataan yang masih diproses ikut dibatalkan (status Ditolak dengan catatan).' : '';
     }
 
     /** Reset NIK langsung dari Akses Staf (Super Admin menulis alasan sendiri). */
@@ -509,7 +565,7 @@ class Admin_Users extends Admin_Controller {
             redirect('Admin_Users'); return;
         }
         $this->session->set_flashdata('success',
-            'NIK akun ' . $user->email . ' berhasil direset. Warga dapat memasukkan NIK kembali.');
+            'NIK akun ' . $user->email . ' berhasil direset. Warga dapat memasukkan NIK kembali.' . $this->kalimat_dibatalkan());
         redirect('Admin_Users');
     }
 
@@ -556,7 +612,7 @@ class Admin_Users extends Admin_Controller {
         $this->surel_keputusan_nik((int) $minta['pemohon_id'], 'reset', $setuju, $catatan);
 
         $this->session->set_flashdata('success', $setuju
-            ? 'Permintaan disetujui. NIK akun ' . ($pemohon->email ?? '') . ' dibuka; warga dapat memasukkan NIK kembali.'
+            ? 'Permintaan disetujui. NIK akun ' . ($pemohon->email ?? '') . ' dibuka; warga dapat memasukkan NIK kembali.' . $this->kalimat_dibatalkan()
             : 'Permintaan reset NIK ditolak.');
         redirect('Admin_Users/permintaan_nik');
     }

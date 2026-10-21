@@ -60,11 +60,15 @@ $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Perminta
                 <tr><th class="px-4 py-3">Diajukan</th><th class="px-4 py-3">Pemohon</th><th class="px-4 py-3">Alasan</th><th class="px-4 py-3">Keputusan</th></tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-white/5">
-                <?php foreach ($reset_nik_minta as $k): $terkirim = (int) ($reset_nik_terkirim[(int) $k['pemohon_id']] ?? 0); ?>
+                <?php foreach ($reset_nik_minta as $k):
+                    // Aturan 21 Okt 2026 (Admin_Users::lepas_nik): disetujui memblokir, masih diproses ikut dibatalkan.
+                    $pd = $reset_nik_pendataan[(int) $k['pemohon_id']] ?? ['disetujui' => 0, 'diproses' => 0, 'tanpa_antrean' => 0];
+                    $terblokir = $pd['disetujui'] > 0 || $pd['tanpa_antrean'] > 0; ?>
                 <tr>
                     <td class="px-4 py-3 whitespace-nowrap"><?= html_escape(tgl_id($k['created_at'], TRUE, TRUE)) ?></td>
                     <td class="px-4 py-3"><?php $pemohon($k); ?>
-                        <?php if ($terkirim > 0): ?><span class="mt-1 block text-xs font-semibold text-amber-700 dark:text-amber-300">Punya <?= $terkirim ?> pengajuan terkirim, tidak dapat direset</span><?php endif; ?>
+                        <?php if ($terblokir): ?><span class="mt-1 block text-xs font-semibold text-amber-700 dark:text-amber-300" data-reset-nik-terblokir>Warga ini sudah punya pendataan yang disetujui atas NIK ini, jadi NIK tidak bisa dibuka lewat sistem. Tolak permintaan ini dan arahkan warga ke Dinas.</span>
+                        <?php elseif ($pd['diproses'] > 0): ?><span class="mt-1 block text-xs font-semibold text-amber-700 dark:text-amber-300" data-reset-nik-batalkan>Menyetujui akan membatalkan <?= (int) $pd['diproses'] ?> pendataan yang masih diproses admin kabupaten/kota. Warga lalu mengirim pendataan baru dengan NIK yang benar.</span><?php endif; ?>
                     </td>
                     <td class="px-4 py-3 whitespace-normal text-xs text-gray-600 dark:text-brand-muted"><?= html_escape($k['alasan']) ?></td>
                     <td class="px-4 py-3">
@@ -72,7 +76,7 @@ $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Perminta
                             <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                             <input type="hidden" name="id" value="<?= (int) $k['id'] ?>">
                             <input type="text" name="alasan" maxlength="500" placeholder="Catatan untuk warga (opsional)" class="rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-3 py-1.5 text-xs text-gray-800 dark:text-gray-200">
-                            <?php if ($terkirim === 0): ?><button type="submit" name="keputusan" value="setuju" class="tombol-aksi" data-reset-nik-setuju><span>Setujui</span></button><?php endif; ?>
+                            <?php if ( ! $terblokir): ?><button type="submit" name="keputusan" value="setuju" class="tombol-aksi" data-reset-nik-setuju><span>Setujui</span></button><?php endif; ?>
                             <button type="submit" name="keputusan" value="tolak" class="tombol-aksi tombol-aksi-bahaya"><span>Tolak</span></button>
                         </form>
                     </td>

@@ -11,7 +11,8 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  *      satu permintaan menunggu per akun, endpoint hanya POST.
  *   2. Super Admin melihat permintaan di Permintaan NIK Warga; Tolak mengirim catatan yang tampil ke warga; Setujui
  *      membuka NIK (usr_akun.nik dan nik_lookup_hash dikosongkan) sehingga isian NIK terbuka lagi.
- *   3. Akun yang punya pengajuan terkirim tidak bisa direset lewat permintaan (arsip tetap utuh).
+ *   3. Aturan pendataan terkirim (21 Okt 2026): disetujui memblokir reset, masih diproses ikut dibatalkan
+ *      (status rejected + riwayat keputusan), ditolak tidak memblokir.
  *   4. Bug lama: Reset NIK langsung dulu hanya menghapus profil pendataan; akun yang NIK-nya hanya di
  *      usr_akun ditolak "belum terhubung dengan NIK" dan NIK di akun tetap terkunci.
  *   5. Super Admin tahu ada permintaan (angka menu Permintaan NIK Warga, Pusat Pemberitahuan, pita dasbor), dan
@@ -207,19 +208,45 @@ try {
     $r = minta($jAdm, 'Admin_Users/putuskan_reset_nik', ['id' => $id_minta2, 'keputusan' => 'setuju']);
     cek(ada_pesan($r['badan'], 'error', 'sudah diputuskan'), 'Permintaan yang sudah diputuskan tidak bisa diputuskan ulang');
 
-    echo "\n== 3. Akun dengan pengajuan terkirim tidak bisa direset\n";
-    [$B, $eB] = warga_ber_nik('b');
-    jalan("INSERT INTO sf_penilaian_perumahan (user_id, status, submitted_at, created_at, updated_at) VALUES (?, 'submitted', NOW(), NOW(), NOW())", [$B]);
-    ember_ip('login');
-    $jB = masuk($eB, $SANDI);
-    minta($jB, 'akun/ajukan-reset-nik', ['alasan' => 'NIK saya keliru satu digit di tengah']);
-    $id_b = (int) satu("SELECT id FROM sys_jejak_audit WHERE aksi='reset_nik_diajukan' AND pelaku_id=?", [$B])['id'];
+    echo "\n== 3. Pendataan terkirim: disetujui memblokir, diproses dibatalkan, ditolak tidak memblokir\n";
+    $program = (int) satu('SELECT id FROM sf_program ORDER BY id LIMIT 1')['id'];
+    // Warga dengan satu pendataan terkirim berstatus antrean tertentu, lalu mengajukan reset NIK.
+    $dengan_pendataan = function ($urut, $status) use ($program, $SANDI) {
+        [$id, $email] = warga_ber_nik($urut);
+        $pn = jalan("INSERT INTO sf_penilaian_perumahan (user_id, status, submitted_at, created_at, updated_at) VALUES (?, 'submitted', NOW(), NOW(), NOW())", [$id]);
+        $q = jalan("INSERT INTO sf_antrean_pengajuan (penilaian_id, user_id, program_id, status_antrean, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())", [$pn, $id, $program, $status]);
+        ember_ip('login');
+        $j = masuk($email, $SANDI);
+        minta($j, 'akun/ajukan-reset-nik', ['alasan' => 'NIK saya keliru satu digit di tengah']);
+        $minta = (int) satu("SELECT id FROM sys_jejak_audit WHERE aksi='reset_nik_diajukan' AND pelaku_id=?", [$id])['id'];
+        return [$id, (int) $q, $minta];
+    };
+
+    [$B, $qB, $id_b] = $dengan_pendataan('b', 'approved');
+    [$D, $qD, $id_d] = $dengan_pendataan('d', 'pending');
+    [$E, $qE, $id_e] = $dengan_pendataan('e', 'rejected');
     $r = minta($jAdm, 'Admin_Users/permintaan_nik');
-    cek(strpos($r['badan'], 'pengajuan terkirim, tidak dapat direset') !== FALSE, 'Permintaan NIK Warga menandai pemohon yang punya pengajuan terkirim');
+    cek(substr_count($r['badan'], 'data-reset-nik-terblokir') === 1 && substr_count($r['badan'], 'data-reset-nik-batalkan') === 1
+        && strpos($r['badan'], 'pengajuan terkirim, tidak dapat direset') === FALSE,
+        'Permintaan NIK Warga menjelaskan yang terblokir (disetujui) dan yang akan dibatalkan (diproses)');
+
     $r = minta($jAdm, 'Admin_Users/putuskan_reset_nik', ['id' => $id_b, 'keputusan' => 'setuju']);
-    cek(ada_pesan($r['badan'], 'error', 'Belum disetujui') && $hash_akun($B) !== NULL
+    cek(ada_pesan($r['badan'], 'error', 'disetujui atas NIK ini') && $hash_akun($B) !== NULL
+        && satu('SELECT status_antrean FROM sf_antrean_pengajuan WHERE id=?', [$qB])['status_antrean'] === 'approved'
         && satu("SELECT id FROM sys_jejak_audit WHERE objek_tipe='reset_nik' AND objek_id=?", [$id_b]) === NULL,
-        'Setujui ditolak server: NIK tetap, permintaan tetap menunggu');
+        'Pendataan disetujui: Setujui ditolak server, NIK dan pendataan tetap, permintaan tetap menunggu');
+
+    $r = minta($jAdm, 'Admin_Users/putuskan_reset_nik', ['id' => $id_d, 'keputusan' => 'setuju']);
+    $qd = satu('SELECT status_antrean, catatan_admin, reviewed_by FROM sf_antrean_pengajuan WHERE id=?', [$qD]);
+    cek(ada_pesan($r['badan'], 'success', 'ikut dibatalkan') && $hash_akun($D) === NULL
+        && $qd['status_antrean'] === 'rejected' && strpos((string) $qd['catatan_admin'], 'Dibatalkan otomatis') === 0 && $qd['reviewed_by'] !== NULL
+        && satu("SELECT id FROM sf_riwayat_keputusan_antrean WHERE antrean_id=? AND status_awal='pending' AND status_akhir='rejected'", [$qD]) !== NULL,
+        'Pendataan masih diproses: NIK dibuka, pendataan menjadi Ditolak dengan catatan dan riwayat keputusan');
+
+    $r = minta($jAdm, 'Admin_Users/putuskan_reset_nik', ['id' => $id_e, 'keputusan' => 'setuju']);
+    cek(ada_pesan($r['badan'], 'success', 'dibuka') && ! ada_pesan($r['badan'], 'success', 'ikut dibatalkan') && $hash_akun($E) === NULL
+        && satu('SELECT catatan_admin FROM sf_antrean_pengajuan WHERE id=?', [$qE])['catatan_admin'] === NULL,
+        'Pendataan yang sudah ditolak tidak memblokir dan tidak diubah');
 
     echo "\n== 4. Reset NIK langsung untuk NIK yang hanya di akun (bug lama)\n";
     [$C, $eC] = warga_ber_nik('c');
@@ -234,7 +261,8 @@ try {
         $minta_uji = implode(',', array_map('intval', array_column($db->query("SELECT id FROM sys_jejak_audit WHERE id > $audit_awal AND aksi='reset_nik_diajukan' AND pelaku_id IN ($daftar)")->fetch_all(MYSQLI_ASSOC), 'id'))) ?: '0';
         $db->query("DELETE FROM sys_jejak_audit WHERE id > $audit_awal AND ((objek_tipe='reset_nik' AND objek_id IN ($minta_uji)) OR id IN ($minta_uji)
             OR (objek_tipe='usr_akun' AND objek_id IN ('" . implode("','", $akun_uji) . "') AND aksi IN ('nik_warga_direset','reset_nik_ditolak')))");
-        foreach (['sf_penilaian_perumahan', 'sf_profil_warga'] as $t) { $db->query("DELETE FROM $t WHERE user_id IN ($daftar)"); }
+        $db->query("DELETE FROM sf_riwayat_keputusan_antrean WHERE antrean_id IN (SELECT id FROM sf_antrean_pengajuan WHERE user_id IN ($daftar))");
+        foreach (['sf_antrean_pengajuan', 'sf_penilaian_perumahan', 'sf_profil_warga'] as $t) { $db->query("DELETE FROM $t WHERE user_id IN ($daftar)"); }
         $db->query("DELETE FROM usr_akun WHERE id IN ($daftar)");
     }
     foreach ($ember_asli as $kunci => $baris) {
