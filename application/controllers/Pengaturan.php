@@ -499,6 +499,16 @@ class Pengaturan extends MY_Controller {
         // lebih dari 20 karakter dipotong diam-diam oleh kolomnya (29 Sep 2026).
         $this->load->library('form_validation');
         $this->form_validation->set_rules('phone', 'Nomor HP', 'trim|max_length[20]|nomor_hp');
+        // Identitas mahasiswa (migrasi 080): aturan sama dengan formulir daftar magang
+        // (config kemitraan_pendaftaran), semuanya opsional di profil. Peran dibaca dari DB.
+        $mahasiswa = ($this->Auth_model->find_by_id($user_id)->peran ?? '') === 'mahasiswa';
+        if ($mahasiswa) {
+            $this->form_validation->set_rules('nim', 'NIM', 'trim|alpha_numeric_spaces|max_length[30]');
+            $this->form_validation->set_rules('tempat_lahir', 'Tempat Lahir', 'trim|max_length[100]');
+            $this->form_validation->set_rules('tanggal_lahir', 'Tanggal Lahir', 'regex_match[/^\d{4}-\d{2}-\d{2}$/]|tanggal_sah');
+            $this->form_validation->set_rules('jurusan', 'Jurusan', 'trim|max_length[150]');
+            $this->form_validation->set_rules('instansi_asal', 'Universitas', 'trim|max_length[150]');
+        }
         if ($this->form_validation->run() === FALSE) {
             $this->session->set_flashdata('error', strip_tags(validation_errors()));
             redirect('akun/profil');
@@ -525,6 +535,13 @@ class Pengaturan extends MY_Controller {
 
         if (!empty($username)) {
             $data['nama_pengguna'] = $username;
+        }
+
+        if ($mahasiswa) {
+            foreach (['nim', 'tempat_lahir', 'tanggal_lahir', 'jurusan', 'instansi_asal'] as $kolom) {
+                $nilai = trim((string) $this->input->post($kolom, TRUE));
+                $data[$kolom] = $nilai === '' ? NULL : $nilai;
+            }
         }
 
         /* BUTIR 21 PUTARAN 2: isian NIK di Profil Saya.

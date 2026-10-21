@@ -845,20 +845,21 @@ class KemitraanPortal extends Public_Controller
         // papan slot, terpisah halaman). Tahunnya sama dengan bawaan papan.
         $tahun_papan = $this->slot->tahun_papan();
 
-        // Isian awal: No HP dari profil akun, data diri lain dari pendaftaran
-        // magang terakhir milik akun ini (profil tidak menyimpan NIM, TTL,
-        // semester, jurusan, kampus). Hanya nilai awal; tetap bisa diubah dan
-        // tetap divalidasi simpan().
-        $kolom_diri = ['nim', 'tempat_lahir', 'tanggal_lahir', 'semester', 'jurusan', 'instansi_asal', 'no_hp'];
-        $terakhir = $this->db->select(implode(',', $kolom_diri))
+        // Isian awal dari Profil Saya (migrasi 080). Semester tidak ada di
+        // profil, jadi diambil dari pendaftaran magang terakhir; kolom profil
+        // yang masih kosong juga ditambal dari sana. Hanya nilai awal; tetap
+        // bisa diubah dan tetap divalidasi simpan().
+        $kolom_diri = ['nim', 'tempat_lahir', 'tanggal_lahir', 'jurusan', 'instansi_asal', 'no_hp'];
+        $profil = $this->db->select(implode(',', $kolom_diri))
+            ->get_where('usr_akun', ['id' => $this->get_user_id()])->row_array() ?: [];
+        $terakhir = $this->db->select(implode(',', $kolom_diri) . ',semester')
             ->where(['user_id' => $this->get_user_id(), 'jenis' => 'magang'])
             ->order_by('id', 'DESC')->limit(1)
             ->get('kkn_magang_pendaftaran')->row_array() ?: [];
-        $isian_awal = [];
-        foreach ($kolom_diri as $k) { $isian_awal[$k] = (string) ($terakhir[$k] ?? ''); }
-        $telp = trim((string) $this->db->select('no_hp')
-            ->get_where('usr_akun', ['id' => $this->get_user_id()])->row('no_hp'));
-        if ($telp !== '') { $isian_awal['no_hp'] = $telp; }
+        $isian_awal = ['semester' => (string) ($terakhir['semester'] ?? '')];
+        foreach ($kolom_diri as $k) {
+            $isian_awal[$k] = (string) (($profil[$k] ?? '') !== '' ? $profil[$k] : ($terakhir[$k] ?? ''));
+        }
 
         $this->render('pages/kemitraan_portal/daftar', [
             'judul'        => $jenis === 'kkn' ? 'Daftar KKN Kemitraan' : 'Daftar Magang dan Kerja Praktik',

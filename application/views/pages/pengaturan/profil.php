@@ -103,6 +103,38 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                     </div>
 
                     <?php
+                    /* Identitas mahasiswa (migrasi 080). Disimpan di profil supaya
+                       formulir daftar magang terisi otomatis; tiap pendaftaran tetap
+                       menyimpan salinannya sendiri. Semester tidak di sini karena
+                       berubah tiap enam bulan. Hanya untuk role mahasiswa. */
+                    ?>
+                    <?php if (($user->peran ?? '') === 'mahasiswa'): ?>
+                    <div>
+                        <label class="<?= $label ?>">NIM</label>
+                        <input type="text" name="nim" maxlength="30" value="<?= htmlspecialchars($user->nim ?? '') ?>" class="<?= $isian ?>">
+                    </div>
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                            <label class="<?= $label ?>">Tempat Lahir</label>
+                            <input type="text" name="tempat_lahir" maxlength="100" value="<?= htmlspecialchars($user->tempat_lahir ?? '') ?>" class="<?= $isian ?>">
+                        </div>
+                        <div>
+                            <label class="<?= $label ?>">Tanggal Lahir</label>
+                            <input type="date" name="tanggal_lahir" value="<?= htmlspecialchars($user->tanggal_lahir ?? '') ?>" class="<?= $isian ?>">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="<?= $label ?>">Jurusan / Program Studi</label>
+                        <input type="text" name="jurusan" maxlength="150" value="<?= htmlspecialchars($user->jurusan ?? '') ?>" class="<?= $isian ?>">
+                    </div>
+                    <div>
+                        <label class="<?= $label ?>">Universitas / Instansi Asal</label>
+                        <input type="text" name="instansi_asal" maxlength="150" value="<?= htmlspecialchars($user->instansi_asal ?? '') ?>" class="<?= $isian ?>">
+                        <p class="<?= $petunjuk ?>">Dipakai untuk mengisi otomatis formulir daftar magang.</p>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php
                     /* Butir 21 putaran 2. Dua keadaan, dan bedanya disengaja:
 
                        BELUM ADA  : isian terbuka, boleh diisi sekali.

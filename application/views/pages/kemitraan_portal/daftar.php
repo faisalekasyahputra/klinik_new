@@ -66,7 +66,7 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
             <p class="text-[11px] font-black uppercase tracking-wider text-[color:var(--portal-text-muted)]">Terkirim atas nama akun</p>
             <p class="mt-1 text-sm font-bold text-[color:var(--portal-text)]"><?= html_escape($nama_akun ?: '-') ?></p>
             <p class="text-xs text-[color:var(--portal-text-muted)]"><?= html_escape($email_akun ?: '-') ?></p>
-            <p class="mt-2 text-[11px] text-[color:var(--portal-text-muted)]">Ingin mengubah nama? Perbarui lewat <a href="<?= base_url('akun/profil') ?>" class="font-bold underline">Profil Saya</a>.</p>
+            <p class="mt-2 text-[11px] text-[color:var(--portal-text-muted)]">Data diri di bawah terisi dari <a href="<?= base_url('akun/profil') ?>" class="font-bold underline">Profil Saya</a>. Lengkapi di sana supaya tidak perlu mengetik ulang.</p>
         </div>
 
         <div class="grid grid-cols-1 gap-4 <?= $wajib_data_pribadi ? 'sm:grid-cols-2' : '' ?>">
