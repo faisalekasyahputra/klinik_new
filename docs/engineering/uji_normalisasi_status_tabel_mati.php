@@ -45,7 +45,7 @@ try {
         AND TABLE_NAME IN ('" . implode("','", $mati) . "')") === 0, 'Tidak ada lagi: ' . implode(', ', $mati));
     preg_match("/migration_version'\] = (\d+);/", file_get_contents($AKAR . '/application/config/migration.php'), $vm);
     $cek(($vm[1] ?? '') >= '20260701000071' && (string) $satu('SELECT version FROM migrations') === $vm[1], 'Config dan DB di versi yang sama, paling rendah 20260701000071');
-    $status = (string) shell_exec('php ' . escapeshellarg($AKAR . '/index.php') . ' migrate status 2>&1');
+    $status = (string) shell_exec(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($AKAR . '/index.php') . ' migrate status 2>&1');
     $cek(strpos($status, 'status tertutup + tabel mati (migrasi 071): TERPASANG') !== FALSE, 'Migrate::status melaporkan 071 TERPASANG');
     $rujukan = [];
     $pindai = [$AKAR . '/application', $AKAR . '/assets/js'];

@@ -614,6 +614,7 @@ php index.php migrate   # WAJIB - schema .sql itu snapshot lama, migrasi 01..14 
 - Entry point: [`index.php`](index.php) (root, bukan `application/`)
 - `.env` dibaca via `getenv()` di `application/config/*.php` (lihat `config.php` untuk `base_url`)
 - **Jangan edit** folder `system/` (core CodeIgniter) atau `vendor/`
+- **PHP CLI lokal: pakai PHP XAMPP (`C:\xampp\php\php.exe`), biner yang sama dengan Apache.** `php` di PATH laptop pengembang adalah Herd 8.4 (tanpa `session.save_path`, GD tanpa `imagejpeg()`). `jalankan_semua.php` menjalankan setiap suite dengan biner yang menjalankan runner itu sendiri (`PHP_BINARY`), jadi biner yang dipakai untuk runner menentukan seluruh suite (21 Okt 2026).
 
 ## 3. Struktur Direktori
 

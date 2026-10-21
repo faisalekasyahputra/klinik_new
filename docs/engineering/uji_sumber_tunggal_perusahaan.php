@@ -70,7 +70,7 @@ try {
         AND COLUMN_NAME IN ('nama_perusahaan','alamat_kantor','telp_kantor')") === 0, 'usr_akun tanpa kolom nama_perusahaan, alamat_kantor, telp_kantor');
     $cek(preg_match("/migration_version'\] = (\d+);/", file_get_contents($AKAR . '/application/config/migration.php'), $vm) && $vm[1] >= '20260701000070'
         && (string) $satu('SELECT version FROM migrations') === $vm[1], 'Config dan DB di versi yang sama, paling rendah 20260701000070');
-    $status = (string) shell_exec('php ' . escapeshellarg($AKAR . '/index.php') . ' migrate status 2>&1');
+    $status = (string) shell_exec(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($AKAR . '/index.php') . ' migrate status 2>&1');
     $cek(strpos($status, 'sumber tunggal perusahaan (migrasi 070): TERPASANG') !== FALSE, 'Migrate::status melaporkan 070 TERPASANG');
     $kode = '';
     foreach (['controllers', 'models', 'views', 'helpers', 'libraries', 'core'] as $d) {
