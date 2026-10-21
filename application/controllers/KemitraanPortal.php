@@ -786,6 +786,7 @@ class KemitraanPortal extends Public_Controller
             $kuota   = (int) $bidang->kuota;
             $bulan_dibuka = [];
             $bulan = [];            // nomor bulan => sisa kursi, NULL = tidak dibuka
+            $rentang = [];          // nomor bulan => [mulai, selesai] tanggal slot yang dibuka
             $sisa_terbaik = NULL;   // NULL = belum ada satu bulan pun yang dibuka
 
             foreach (Kemitraan_slot_model::nama_bulan() as $nomor => $label) {
@@ -796,6 +797,7 @@ class KemitraanPortal extends Public_Controller
                 $isi  = (int) ($terisi[$bidang->kode][$tahun . '-' . $nomor] ?? 0);
                 $sisa = max(0, $kuota - $isi);
                 $bulan[$nomor] = $sisa;
+                $rentang[$nomor] = [$peta[$bidang->kode][$nomor]->tgl_mulai, $peta[$bidang->kode][$nomor]->tgl_selesai];
                 if ($sisa_terbaik === NULL || $sisa > $sisa_terbaik) { $sisa_terbaik = $sisa; }
             }
 
@@ -814,6 +816,7 @@ class KemitraanPortal extends Public_Controller
                 'sisa'         => (int) $sisa_terbaik,
                 'bulan_dibuka' => $bulan_dibuka,
                 'bulan'        => $bulan,
+                'rentang'      => $rentang,
                 'posisi'       => $posisi_per_bidang[$bidang->kode] ?? [],
             ];
         }
