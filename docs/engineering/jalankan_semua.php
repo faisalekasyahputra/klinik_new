@@ -6,11 +6,13 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
  *
  *   php docs/engineering/jalankan_semua.php
  *   php docs/engineering/jalankan_semua.php --hanya=kemitraan
+ *   php docs/engineering/jalankan_semua.php --hanya=tests/  (hanya berkas tests/)
  *   php docs/engineering/jalankan_semua.php --peran=admin_bidang
  *   php docs/engineering/jalankan_semua.php --fresh      (ikutkan runner DB bersih)
  *
- * Ini BUKAN framework. Ia cuma menjalankan 24 skrip yang sudah ada apa adanya,
- * satu proses per skrip, dan membaca exit code-nya. Tidak ada satu pun harness
+ * Ini BUKAN framework. Ia cuma menjalankan skrip yang sudah ada apa adanya
+ * (docs/engineering/uji_*.php, tests/*.php, empat method Migrate), satu
+ * proses per skrip, dan membaca exit code-nya. Tidak ada satu pun harness
  * lama yang perlu diubah untuk ikut - kontraknya sudah seragam sejak awal:
  * exit 0 hijau, non-nol merah.
  *
@@ -45,6 +47,17 @@ const KHUSUS = [
 // pernah tertangkap glob, dan itulah sebabnya mereka sering terlupa dijalankan.
 const MIGRATE = ['uji_warga_r1', 'uji_warga_r2', 'uji_rekam_data_d1', 'uji_wizard_w2'];
 
+// tests/ (form keamanan) tidak mencetak satu baris per cek: asersi pertama yang
+// gagal melempar (exit 255), dan baris penutup "<nama>: OK (N pemeriksaan ...)"
+// baru tercetak sesudah semuanya lulus. Baris penutup itulah yang dihitung (N,
+// atau 1 bila jumlahnya tidak disebut); exit 0 tanpanya berarti bisu. Dua berkas
+// menutup dengan kalimat bebas. Sebelum tests/ ikut runner, http_uri_test merah
+// 7-21 Okt 2026 melewati sebelas PR tanpa ketahuan.
+const PENUTUP = [
+    'no_dynamic_code_test.php' => 'No dynamic code execution',
+    'tls_certificate_test.php' => 'Trusted TLS certificate valid until',
+];
+
 // Tanpa ini keempat method Migrate di atas menjawab 404, bukan menjalankan uji:
 // masing-masing dibuka dengan `if (ENVIRONMENT === 'production') show_404()`,
 // dan CLI tidak pernah melihat `SetEnv CI_ENV` milik Apache (lihat index.php:67).
@@ -68,6 +81,18 @@ foreach (MIGRATE as $m) {
     $suites[$m . ' (migrate)'] = [
         'cmd' => 'php ' . escapeshellarg(dirname(AKAR, 2) . '/index.php') . ' migrate ' . $m,
         'isi' => '',
+    ];
+}
+foreach (glob(dirname(AKAR, 2) . '/tests/*.php') as $path) {
+    $nama = basename($path);
+    $suites['tests/' . $nama] = [
+        // PHP_BINARY, bukan `php` di PATH: Herd 8.4 di PATH mesin pengembang tidak
+        // punya imagejpeg(), dan upload_security_test merah palsu karenanya (21 Okt 2026).
+        'cmd'     => escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($path),
+        // Kosong: tests/ memindai kode, tidak masuk sebagai peran mana pun, jadi tidak
+        // ikut --peran maupun peta peran.
+        'isi'     => '',
+        'penutup' => '/^' . preg_quote(PENUTUP[$nama] ?? basename($nama, '.php') . ': OK', '/') . '(?: \((\d+) pemeriksaan)?/m',
     ];
 }
 ksort($suites);
@@ -139,7 +164,16 @@ foreach ($suites as $nama => $s) {
     // cuma mengenal satu di antaranya melaporkan suite yang lain sebagai bisu.
     $ok    = preg_match_all('/^(\s*OK\s{2,}|\[OK\]\s)/m', $teks);
     $gagal = preg_match_all('/^(\s*GAGAL\s|\[FAIL\]\s)/m', $teks);
-    $lewat = isset(KHUSUS[$nama]);
+    $alasan = KHUSUS[$nama] ?? NULL;
+    if (isset($s['penutup'])) {
+        $ok = preg_match($s['penutup'], $teks, $m) ? (int) ($m[1] ?? 1) : 0;
+        // "<nama>: DILEWATI (alasan)" dengan exit 0 adalah lewat yang dipilih berkasnya
+        // sendiri (data_lifecycle_db_test tanpa UJI_DB_BOLEH_TULIS=1). Runner sengaja
+        // tidak menyetel UJI_DB_BOLEH_*: tanpa MySQL, anti_automation_db_test tetap
+        // MERAH dengan alasannya tercetak, karena merah lingkungan dibereskan, bukan dilewati.
+        if ($kode === 0 && ! $ok && preg_match('/^\w+: DILEWATI \((.+)\)$/m', $teks, $m)) { $alasan = $m[1]; }
+    }
+    $lewat = $alasan !== NULL;
 
     $hasil[$nama] = [
         'kode' => $kode, 'ok' => $ok, 'gagal' => $gagal, 'teks' => $teks,
@@ -150,12 +184,17 @@ foreach ($suites as $nama => $s) {
 
     $tanda = $lewat ? 'lewat' : ($kode !== 0 ? 'MERAH' : (($ok + $gagal) === 0 ? 'BISU ' : 'hijau'));
     printf("  %-5s %-42s %3d cek  %5.1fs%s\n", $tanda, $nama, $ok + $gagal, $hasil[$nama]['detik'],
-        $lewat ? '  (' . KHUSUS[$nama] . ')' : '');
+        $lewat ? '  (' . $alasan . ')' : '');
 
     // Kegagalan dicetak utuh saat itu juga - yang dicari orang setelah runner
-    // merah adalah barisnya, bukan nama berkasnya.
+    // merah adalah barisnya, bukan nama berkasnya. Alasan merah tests/ tidak
+    // berpola GAGAL/Berhenti (MySQL tidak terhubung, pelanggaran no_dynamic_code
+    // di STDERR), jadi semua barisnya dicetak kecuali jejak tumpukan.
     if ($kode !== 0 && ! $lewat && ! $diam) {
-        foreach (preg_grep('/^\s*GAGAL\s|Berhenti:|Fatal error|Uncaught/', $keluaran) as $b) {
+        $baris = isset($s['penutup'])
+            ? preg_grep('/^(Stack trace:|#\d+ |\s*thrown in |\s*$)/', $keluaran, PREG_GREP_INVERT)
+            : preg_grep('/^\s*GAGAL\s|Berhenti:|Fatal error|Uncaught/', $keluaran);
+        foreach ($baris as $b) {
             echo "           | " . trim($b) . "\n";
         }
     }
