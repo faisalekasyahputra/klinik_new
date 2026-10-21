@@ -76,7 +76,9 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
             <form action="<?= base_url('akun/update') ?>" method="POST" class="mt-3 space-y-3">
                 <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
 
-                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <?php /* Tata letak 21 Okt 2026: dua kolom sejajar (Email | Username, Nama | WhatsApp, lalu NIK),
+                         bukan empat kolom yang membuat NIK menyendiri di baris berikutnya. */ ?>
+                <div class="grid items-start gap-x-4 gap-y-3 sm:grid-cols-2">
                     <div>
                         <label class="<?= $label ?>">Email <span class="font-normal normal-case">(tidak dapat diubah)</span></label>
                         <input type="email" value="<?= htmlspecialchars($user->email) ?>" disabled class="<?= $isian_mati ?>">
@@ -153,7 +155,7 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                                                 <form action="<?= base_url('akun/ajukan-reset-nik') ?>" method="post" class="isi-kartu space-y-4">
                                                     <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
                                                     <h2 class="text-base font-black text-gray-900 dark:text-white">Ajukan reset NIK</h2>
-                                                    <p class="text-xs text-gray-500 dark:text-brand-muted">Petugas Dinas Perakim akan meninjau permintaan ini. Bila disetujui, isian NIK di Profil Saya terbuka dan Anda bisa memasukkan NIK yang benar. Akun yang sudah mengirim pengajuan tidak dapat direset.</p>
+                                                    <p class="text-xs text-gray-500 dark:text-brand-muted">Petugas Dinas Perakim akan meninjau permintaan ini. Bila disetujui, isian NIK di Profil Saya terbuka dan Anda bisa memasukkan NIK yang benar. Pendataan yang masih diproses akan dibatalkan; bila pendataan Anda sudah disetujui, perubahan NIK dilakukan lewat Dinas.</p>
                                                     <label class="block text-xs text-gray-500 dark:text-brand-muted">Alasan
                                                         <textarea name="alasan" rows="3" minlength="10" maxlength="500" required placeholder="mis. Salah ketik satu angka saat mengisi NIK"
                                                                   class="mt-1 w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-800 dark:border-white/10 dark:text-white"></textarea>
@@ -187,12 +189,21 @@ $petunjuk = 'mt-1 text-xs text-gray-500 dark:text-brand-muted';
                     <p class="mt-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300"><?= html_escape($pesan_ganti_sandi) ?></p>
                     <?php endif; ?>
                     <p class="<?= $petunjuk ?>">Kosongkan kalau tidak ingin mengubah. Minimal 8 karakter, ada huruf besar, angka, dan simbol.</p>
-                    <div class="mt-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                        <input type="password" name="password" autocomplete="new-password" placeholder="Password baru" class="<?= $isian ?>">
-                        <input type="password" name="password_confirm" autocomplete="new-password" placeholder="Ulangi password baru" class="<?= $isian ?>">
+                    <div class="mt-2 grid items-start gap-x-4 gap-y-3 sm:grid-cols-3">
                         <?php if ( ! empty($user->kata_sandi)): ?>
-                        <input type="password" name="current_password" autocomplete="current-password" placeholder="Password Anda saat ini" class="<?= $isian ?>">
+                        <div>
+                            <label for="sandi-sekarang" class="<?= $label ?>">Password saat ini</label>
+                            <input type="password" id="sandi-sekarang" name="current_password" autocomplete="current-password" class="<?= $isian ?>">
+                        </div>
                         <?php endif; ?>
+                        <div>
+                            <label for="sandi-baru" class="<?= $label ?>">Password baru</label>
+                            <input type="password" id="sandi-baru" name="password" autocomplete="new-password" class="<?= $isian ?>">
+                        </div>
+                        <div>
+                            <label for="sandi-ulang" class="<?= $label ?>">Ulangi password baru</label>
+                            <input type="password" id="sandi-ulang" name="password_confirm" autocomplete="new-password" class="<?= $isian ?>">
+                        </div>
                     </div>
                 </div>
 
