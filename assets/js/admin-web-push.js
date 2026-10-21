@@ -56,21 +56,19 @@
             return;
         }
 
-        Promise.all([
-            navigator.serviceWorker.register(button.dataset.swUrl),
-            fetch(button.dataset.configUrl, { credentials: 'same-origin' }).then(function (response) { return response.json(); })
-        ]).then(function (results) {
-            registration = results[0];
-            var config = results[1];
-            if (!config.enabled || !config.publicKey) {
-                // Fitur belum dinyalakan di server: tombol mati tidak berguna bagi pengguna.
-                button.style.display = 'none';
-                return;
-            }
-            button.dataset.publicKey = config.publicKey;
+        // Kunci publik VAPID ditanam topbar saat dirender; kosong = fitur belum dinyalakan di server.
+        // Dulu diambil lewat GET push/config di setiap muat halaman, padahal satu permintaan PHP
+        // memakai satu koneksi DB dari jatah hosting 500 per jam (21 Okt 2026).
+        if (!button.dataset.publicKey) {
+            // Fitur belum dinyalakan di server: tombol mati tidak berguna bagi pengguna.
+            button.style.display = 'none';
+            return;
+        }
+
+        navigator.serviceWorker.register(button.dataset.swUrl).then(function (reg) {
+            registration = reg;
             return registration.pushManager.getSubscription();
         }).then(function (subscription) {
-            if (subscription === undefined) return;
             currentSubscription = subscription;
             setState(subscription ? 'active' : 'inactive', subscription ? 'Notifikasi HP aktif' : 'Aktifkan notifikasi HP');
             // Perangkat bersama: langganan peramban ini mungkin masih atas nama akun yang
