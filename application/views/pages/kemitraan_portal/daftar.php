@@ -158,66 +158,52 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
                 <span class="inline-block h-2 w-2 rounded-sm bg-[color:var(--portal-border)] align-middle"></span> tidak dibuka.
             </p>
 
-            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <?php foreach ($ketersediaan as $kode => $k):
-                    $nilai  = html_escape(json_encode((string) $kode));
-                    $gaya   = $gaya_keadaan[$k['keadaan']];
-                    $terisi = $k['keadaan'] === 'tutup' ? 0 : $k['kuota'] - $k['sisa'];
-                    $persen = $k['kuota'] > 0 ? (int) round($terisi / $k['kuota'] * 100) : 0;
+                    $nilai = html_escape(json_encode((string) $kode));
+                    $gaya  = $gaya_keadaan[$k['keadaan']];
                 ?>
-                <label class="group relative flex cursor-pointer flex-col rounded-2xl border-2 bg-[color:var(--portal-bg-card)] p-4 shadow-sm transition
-                              hover:-translate-y-0.5 hover:shadow-md has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[color:var(--portal-brand)]/40
+                <label class="flex cursor-pointer flex-col gap-2 rounded-xl border bg-[color:var(--portal-bg-card)] p-3 shadow-sm transition
+                              hover:shadow-md has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[color:var(--portal-brand)]/40
                               <?= $k['keadaan'] === 'menerima' ? '' : 'opacity-75' ?>"
                        :class="divisi_atau_tema === <?= $nilai ?>
-                           ? 'border-[color:var(--portal-brand)] ring-4 ring-[color:var(--portal-brand)]/10 opacity-100'
+                           ? 'border-[color:var(--portal-brand)] ring-2 ring-[color:var(--portal-brand)]/20 opacity-100'
                            : 'border-[color:var(--portal-border)]'">
                     <input type="radio" name="divisi_atau_tema" value="<?= html_escape($kode) ?>" x-model="divisi_atau_tema" required class="sr-only">
 
-                    <div class="flex items-start justify-between gap-2">
-                        <span class="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide <?= $gaya[0] ?>"><?= $gaya[1] ?></span>
-                        <span class="flex h-6 w-6 items-center justify-center rounded-full border-2 text-[10px] transition"
+                    <div class="flex items-center gap-2">
+                        <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border text-[8px] transition"
                               :class="divisi_atau_tema === <?= $nilai ?>
                                   ? 'border-[color:var(--portal-brand)] bg-[color:var(--portal-brand)] text-[color:var(--portal-bg)]'
                                   : 'border-[color:var(--portal-border)] text-transparent'">
                             <i class="fa-solid fa-check" aria-hidden="true"></i>
                         </span>
+                        <h3 class="min-w-0 flex-1 truncate text-xs font-black text-[color:var(--portal-text)]" title="<?= html_escape($k['bidang']) ?>"><?= html_escape($k['bidang']) ?></h3>
+                        <span class="shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black uppercase <?= $gaya[0] ?>"><?= $gaya[1] ?></span>
                     </div>
 
-                    <h3 class="mt-3 text-sm font-black leading-snug text-[color:var(--portal-text)]"><?= html_escape($k['bidang']) ?></h3>
-
-                    <div class="mt-3 flex items-end justify-between gap-2">
+                    <p class="text-[11px] text-[color:var(--portal-text-muted)]">
                         <?php if ($k['keadaan'] === 'tutup'): ?>
-                            <p class="text-xs text-[color:var(--portal-text-muted)]">Kuota <?= (int) $k['kuota'] ?> mahasiswa, belum ada bulan dibuka</p>
+                            Kuota <?= (int) $k['kuota'] ?> mahasiswa
                         <?php else: ?>
-                            <p class="text-[color:var(--portal-text)]">
-                                <span class="text-3xl font-black leading-none"><?= (int) $k['sisa'] ?></span>
-                                <span class="text-xs font-bold text-[color:var(--portal-text-muted)]">/ <?= (int) $k['kuota'] ?> kursi tersisa</span>
-                            </p>
+                            Sisa <strong class="text-[color:var(--portal-text)]"><?= (int) $k['sisa'] ?></strong> dari <?= (int) $k['kuota'] ?> kursi
                         <?php endif; ?>
-                    </div>
-                    <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-[color:var(--portal-btn-bg)]" role="presentation">
-                        <div class="h-full rounded-full <?= $k['sisa'] > 0 ? 'bg-emerald-500' : 'bg-amber-400' ?>" style="width: <?= $persen ?>%"></div>
-                    </div>
+                        <?php foreach ($k['posisi'] as $p): ?>
+                            <span class="ml-1 rounded-full border border-[color:var(--portal-border)] px-1.5 text-[10px] text-[color:var(--portal-text)]"><?= html_escape($p->nama_posisi) ?></span>
+                        <?php endforeach; ?>
+                    </p>
 
-                    <div class="mt-3 grid grid-cols-12 gap-0.5" aria-label="Slot per bulan">
+                    <div class="grid grid-cols-12 gap-0.5" aria-label="Slot per bulan">
                         <?php foreach ($k['bulan'] as $nomor => $sisa):
                             $warna = $sisa === NULL ? 'bg-[color:var(--portal-btn-bg)] text-[color:var(--portal-text-muted)]'
                                    : ($sisa > 0 ? 'bg-emerald-500 text-white' : 'bg-amber-400 text-amber-950');
                             $judul = $nama_bulan[$nomor] . ': ' . ($sisa === NULL ? 'tidak dibuka' : ($sisa > 0 ? 'sisa ' . $sisa . ' kursi' : 'penuh'));
                         ?>
-                            <span class="flex h-6 items-center justify-center rounded text-[9px] font-bold <?= $warna ?>" title="<?= html_escape($judul) ?>">
-                                <?= html_escape(mb_substr($nama_bulan[$nomor], 0, 1)) ?><span class="sr-only"> <?= html_escape($judul) ?></span>
+                            <span class="flex h-4 items-center justify-center rounded-sm text-[8px] font-bold <?= $warna ?>" title="<?= html_escape($judul) ?>">
+                                <?= (int) $nomor ?><span class="sr-only"> <?= html_escape($judul) ?></span>
                             </span>
                         <?php endforeach; ?>
                     </div>
-
-                    <?php if ($k['posisi']): ?>
-                        <div class="mt-3 flex flex-wrap gap-1">
-                            <?php foreach ($k['posisi'] as $p): ?>
-                                <span class="rounded-full border border-[color:var(--portal-border)] px-2 py-0.5 text-[10px] text-[color:var(--portal-text)]"><?= html_escape($p->nama_posisi) ?></span>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
                 </label>
                 <?php endforeach; ?>
             </div>
