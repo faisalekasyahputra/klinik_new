@@ -57,16 +57,19 @@ $peran  = $opsi['peran']  ?? '';
 $fresh  = isset($opsi['fresh']);
 $diam   = isset($opsi['diam']);
 
+// Setiap suite dijalankan dengan PHP yang menjalankan runner ini (PHP_BINARY), bukan
+// `php` di PATH: di laptop pengembang PATH berisi Herd 8.4 sementara Apache lokal
+// memakai PHP XAMPP, jadi suite diam-diam berjalan di PHP yang lain dari aplikasinya.
 $suites = [];
 foreach (glob(AKAR . '/uji_*.php') as $path) {
     $nama = basename($path);
     if ( ! $fresh && in_array($nama, FRESH, TRUE)) { continue; }
-    $suites[$nama] = ['cmd' => 'php ' . escapeshellarg($path), 'isi' => (string) file_get_contents($path)];
+    $suites[$nama] = ['cmd' => escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($path), 'isi' => (string) file_get_contents($path)];
 }
 foreach (MIGRATE as $m) {
     // Dijalankan dari akar aplikasi supaya index.php menemukan system/.
     $suites[$m . ' (migrate)'] = [
-        'cmd' => 'php ' . escapeshellarg(dirname(AKAR, 2) . '/index.php') . ' migrate ' . $m,
+        'cmd' => escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg(dirname(AKAR, 2) . '/index.php') . ' migrate ' . $m,
         'isi' => '',
     ];
 }

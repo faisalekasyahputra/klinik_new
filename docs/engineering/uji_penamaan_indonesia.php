@@ -127,7 +127,7 @@ try {
     $cek(strpos($klausa['ck_riwayat_antrean_dari'] ?? '', '`status_awal`') !== FALSE && strpos($klausa['ck_riwayat_antrean_ke'] ?? '', '`status_akhir`') !== FALSE,
         'CHECK 071 di tabel riwayat menyebut status_awal/status_akhir');
     $cek((int) $satu("SELECT COUNT(*) FROM information_schema.CHECK_CONSTRAINTS WHERE CONSTRAINT_SCHEMA=DATABASE()") === 8, 'Delapan CHECK 071 tetap terpasang');
-    $status = (string) shell_exec('php ' . escapeshellarg($AKAR . '/index.php') . ' migrate status 2>&1');
+    $status = (string) shell_exec(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($AKAR . '/index.php') . ' migrate status 2>&1');
     $cek(strpos($status, 'nama Bahasa Indonesia (migrasi 072): TERPASANG (14 tabel dan 181 kolom berganti nama, 45 tabel ber-COMMENT)') !== FALSE,
         'Migrate::status melaporkan 072 TERPASANG');
     $merah_status = array_values(array_filter(explode("\n", $status), fn($b) => preg_match('/(migrasi 0[3-7]\d).*(HILANG|BELUM|TIDAK ADA -|BEDA)/', $b)));
