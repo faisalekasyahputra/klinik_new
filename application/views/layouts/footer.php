@@ -407,14 +407,20 @@ function globalSystem() {
            meninggalkan halaman ini macet di skeleton selamanya. */
         var tabSebelumnya = document.querySelector('.portal-tab-btn.active');
         var wrapperSebelumnya = wrapper.innerHTML;
+        // Permintaan dinas 21 Okt 2026: modal TIDAK muncul di atas beranda.
+        // Halaman tujuan (tab aktif + kerangkanya) tetap tampil di belakang
+        // latar blur; halaman sebelumnya baru dikembalikan kalau modal
+        // ditutup tanpa login. Login sukses menavigasi penuh ke tujuan.
         function batalkanDemiModalLogin() {
             if (myToken !== loadToken) return; // dikalahkan navigasi lain, jangan ganggu
-            wrapper.style.transition = '';
-            wrapper.style.opacity = '1';
-            wrapper.innerHTML = wrapperSebelumnya;
-            document.querySelectorAll('.portal-tab-btn').forEach(function (el) { el.classList.remove('active'); });
-            if (tabSebelumnya) tabSebelumnya.classList.add('active');
-            window.kpkpShowLoginModal();
+            window.kpkpShowLoginModal(function () {
+                if (myToken !== loadToken) return;
+                wrapper.style.transition = '';
+                wrapper.style.opacity = '1';
+                wrapper.innerHTML = wrapperSebelumnya;
+                document.querySelectorAll('.portal-tab-btn').forEach(function (el) { el.classList.remove('active'); });
+                if (tabSebelumnya) tabSebelumnya.classList.add('active');
+            });
         }
 
         // 1) Langsung aktifkan tab (progresif - tidak menunggu fetch)

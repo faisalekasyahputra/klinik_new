@@ -147,7 +147,7 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
     width: 100%; max-height: 90vh; box-shadow: 0 25px 60px rgba(0,0,0,.5);
     background: transparent;
 }
-.kpkp-login-modal::backdrop { background: rgba(5, 14, 17, .72); backdrop-filter: blur(2px); }
+.kpkp-login-modal::backdrop { background: rgba(5, 14, 17, .35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .kpkp-login-modal__card {
     position: relative; background: #0a1a1f; color: #fff;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -246,8 +246,11 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
        fetch-nya dialihkan server ke Auth/login. Nama global sengaja
        dipertahankan sesempit mungkin (satu fungsi), diperiksa dulu
        ada/tidaknya di footer.php sebelum dipakai. */
-    window.kpkpShowLoginModal = function () {
+    window.kpkpShowLoginModal = function (saatTutup) {
         if (dlg.open) return;
+        // saatTutup: dipanggil sekali saat modal ditutup tanpa login (footer.php
+        // memakainya untuk mengembalikan halaman sebelumnya).
+        if (typeof saatTutup === 'function') dlg.addEventListener('close', saatTutup, { once: true });
         dlg.showModal();
         var email = document.getElementById('kpkp_login_modal_email');
         if (email) email.focus();
