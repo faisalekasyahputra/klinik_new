@@ -120,7 +120,7 @@ $this->load->view('components/modal_simperum_simulasi');
     <div class="mx-auto mt-6 max-w-xl rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] p-4 text-xs leading-relaxed text-[color:var(--portal-text-muted)] shadow-sm">
         <i class="fa-solid fa-shield-halved mr-2 text-[color:var(--portal-icon)]"></i>
         <?php if ($sudah_login): ?>
-        Pencarian dibatasi <b>10 kali per jam</b> per akun dan tercatat di jejak audit. Data RTLH menyangkut
+        Pencarian dibatasi <b>10 kali per jam</b> per akun dan tercatat di jejak audit. Data SIMPERUM menyangkut
         keadaan tempat tinggal seseorang - gunakan hanya untuk keperluan layanan.
         <?php else: ?>
         Pencarian untuk tamu dibatasi <b>5 kali per jam</b> per alamat jaringan. Hasil menampilkan status
