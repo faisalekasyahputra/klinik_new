@@ -204,6 +204,32 @@ if ( ! function_exists('sikumbang_foto_path')) {
     }
 }
 
+if ( ! function_exists('sikumbang_foto_cache_nama')) {
+    /** Nama berkas salinan foto di assets/cache_foto, satu-satunya sumber nama itu, atau NULL bila path tidak sah. */
+    function sikumbang_foto_cache_nama($path)
+    {
+        $path = sikumbang_foto_path($path);
+        return $path === NULL ? NULL : md5($path) . '.jpg';
+    }
+}
+
+if ( ! function_exists('sikumbang_foto_src')) {
+    /**
+     * Alamat <img> untuk foto SIKUMBANG. Foto yang sudah tersalin ditautkan LANGSUNG ke berkas
+     * statisnya. Lewat Index::buka_foto pun ujungnya 302 ke berkas yang sama, tetapi setiap
+     * permintaan PHP membuka satu koneksi database (MY_Controller), dan jatah hosting 500
+     * koneksi per jam habis oleh satu pengguna yang membuka beberapa halaman daftar rumah
+     * (21 Okt 2026, seluruh situs 500). Yang belum tersalin tetap lewat buka_foto, sekali per foto.
+     */
+    function sikumbang_foto_src($path)
+    {
+        $nama = sikumbang_foto_cache_nama($path);
+        return $nama !== NULL && is_file(FCPATH . 'assets/cache_foto/' . $nama)
+            ? base_url('assets/cache_foto/' . $nama)
+            : base_url('Index/buka_foto?path=' . urlencode((string) $path));
+    }
+}
+
 if ( ! function_exists('sikumbang_ambil_foto')) {
     /**
      * Unduh satu foto dari SIKUMBANG. Mengembalikan byte gambar, atau NULL bila gagal, bukan gambar

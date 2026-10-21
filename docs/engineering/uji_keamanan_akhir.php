@@ -441,6 +441,20 @@ if (function_exists('cache_foto_muat')) {
 }
 $pos_muat = strpos($src_index, 'cache_foto_muat(');
 cek($pos_muat !== FALSE && $pos_muat < strpos($src_index, '@file_put_contents($path_file_lokal'), 'Index::buka_foto memeriksa batas sebelum menyimpan foto');
+/* Foto yang sudah tersalin ditautkan langsung ke berkas statis (21 Okt 2026): setiap permintaan PHP
+   membuka satu koneksi DB, dan jatah hosting 500 koneksi/jam habis oleh satu pengguna yang membuka
+   halaman daftar rumah. Yang dijaga: view dan buka_foto memakai SATU sumber nama berkas cache. */
+cek(sikumbang_foto_cache_nama('public/uploads/rumah/a1.jpg') === md5('public/uploads/rumah/a1.jpg') . '.jpg'
+    && sikumbang_foto_cache_nama('public/../x.jpg') === NULL && sikumbang_foto_cache_nama('') === NULL,
+    'sikumbang_foto_cache_nama: nama md5 untuk path sah, NULL untuk path tak sah');
+cek(strpos($src_index, '$nama_file_lokal = sikumbang_foto_cache_nama($path_gambar)') !== FALSE,
+    'Index::buka_foto menamai salinan lewat sikumbang_foto_cache_nama (sumber nama yang sama dengan view)');
+$view_foto_mentah = [];
+foreach (['components/cards/rumah.php', 'pages/perumahan/detail_perumahan.php'] as $v) {
+    if (strpos((string) file_get_contents(APPPATH . 'views/' . $v), 'Index/buka_foto') !== FALSE) { $view_foto_mentah[] = $v; }
+}
+cek($view_foto_mentah === [], 'View foto rumah memakai sikumbang_foto_src, bukan tautan Index/buka_foto mentah'
+    . ($view_foto_mentah ? ' (masih: ' . implode(', ', $view_foto_mentah) . ')' : ''));
 foreach (array_merge(glob("$tmp/cache/*") ?: [], glob("$tmp/*.txt") ?: []) as $f) { @unlink($f); }
 @rmdir("$tmp/cache"); @rmdir($tmp);
 

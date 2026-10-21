@@ -53,7 +53,7 @@
                             $posisi_public = strpos($url_mentah, "public");
                             if ($posisi_public !== false) {
                                 $path_bounds = stripslashes(substr($url_mentah, $posisi_public));
-                                return base_url('Index/buka_foto?path=' . urlencode($path_bounds));
+                                return sikumbang_foto_src($path_bounds);
                             }
                             return $url_mentah;
                         }
@@ -71,7 +71,7 @@
                         // 3. Bersihkan tanda backslash (\) agar menjadi public/upload/...
                         $path_bersih = stripslashes($path_potong);?>
                         
-                        <img src="<?php echo base_url('Index/buka_foto'); ?>?path=<?= urlencode($path_bersih) ?>" class="absolute inset-0 w-full h-full object-cover transition-all duration-700 hover:scale-105 opacity-0" alt="Foto Utama Perumahan" loading="lazy" onload="this.parentElement.classList.remove('animate-pulse'); this.classList.remove('opacity-0');">
+                        <img src="<?= sikumbang_foto_src($path_bersih) ?>" class="absolute inset-0 w-full h-full object-cover transition-all duration-700 hover:scale-105 opacity-0" alt="Foto Utama Perumahan" loading="lazy" onload="this.parentElement.classList.remove('animate-pulse'); this.classList.remove('opacity-0');">
                     <?php else: ?>
                         <div class="absolute inset-0 w-full h-full flex flex-col items-center justify-center text-zinc-600 bg-[#0f2a30]">
                             <i class="fa-regular fa-image text-4xl mb-2"></i>
@@ -98,7 +98,7 @@
                             
                             // 3. Bersihkan tanda backslash (\) agar menjadi public/upload/...
                             $path_bersih = stripslashes($path_potong);?>
-                            <img src="<?php echo base_url('Index/buka_foto'); ?>?path=<?= urlencode($path_bersih) ?>" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 opacity-0" alt="Foto Unit Dalam" loading="lazy" onload="this.parentElement.classList.remove('animate-pulse'); this.classList.remove('opacity-0');">
+                            <img src="<?= sikumbang_foto_src($path_bersih) ?>" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 opacity-0" alt="Foto Unit Dalam" loading="lazy" onload="this.parentElement.classList.remove('animate-pulse'); this.classList.remove('opacity-0');">
                         <?php else: ?>
                             <div class="absolute inset-0 w-full h-full flex flex-col items-center justify-center text-zinc-600 bg-[#0f2a30]">
                                 <i class="fa-regular fa-image text-2xl mb-1"></i>
@@ -118,7 +118,7 @@
                             // 3. Bersihkan tanda backslash (\) agar menjadi public/upload/...
                             $path_bersih = stripslashes($path_potong);
                             ?>
-                            <img src="<?php echo base_url('Index/buka_foto'); ?>?path=<?= urlencode($path_bersih) ?>" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 opacity-0" alt="Foto Fasilitas" loading="lazy" onload="this.parentElement.classList.remove('animate-pulse'); this.classList.remove('opacity-0');">
+                            <img src="<?= sikumbang_foto_src($path_bersih) ?>" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 opacity-0" alt="Foto Fasilitas" loading="lazy" onload="this.parentElement.classList.remove('animate-pulse'); this.classList.remove('opacity-0');">
                         <?php else: ?>
                             <div class="absolute inset-0 w-full h-full flex flex-col items-center justify-center text-zinc-600 bg-[#0f2a30]">
                                 <i class="fa-regular fa-image text-2xl mb-1"></i>
@@ -336,7 +336,7 @@
                             
                             // 3. Bersihkan tanda backslash (\) agar menjadi public/upload/...
                             $path_bersih = stripslashes($path_potong);?>
-                    <img src="<?php echo base_url('Index/buka_foto'); ?>?path=<?= urlencode($path_bersih) ?>" 
+                    <img src="<?= sikumbang_foto_src($path_bersih) ?>" 
                         class="w-full h-full object-contain transition-all duration-500 group-hover:scale-[1.01] opacity-0" 
                         alt="Foto Unit Perumahan" loading="lazy" onload="this.parentElement.classList.remove('animate-pulse'); this.classList.remove('opacity-0');">
                         

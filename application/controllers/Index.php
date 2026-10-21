@@ -533,7 +533,7 @@ class Index extends MY_Controller {
 		}
 
 		// Nama berkas dari path yang sudah tervalidasi: satu foto, satu nama.
-		$nama_file_lokal = md5($path_gambar) . '.jpg';
+		$nama_file_lokal = sikumbang_foto_cache_nama($path_gambar); // nama yang sama dicari sikumbang_foto_src() di view
 		$path_file_lokal = $dir_cache . $nama_file_lokal;
 
 		/* 2. SUDAH ADA DI LOKAL: SERAHKAN KE WEB SERVER, JANGAN LEWAT PHP.

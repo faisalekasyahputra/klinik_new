@@ -72,12 +72,12 @@
                     }
                 ?>
                 <!-- Cropped Default View -->
-                <img src="<?= base_url('Index/buka_foto?path=' . urlencode($path_bersih)) ?>" class="w-full h-full object-cover transition-transform duration-500" alt="<?= htmlspecialchars($row['namaPerumahan']) ?>" loading="lazy">
+                <img src="<?= sikumbang_foto_src($path_bersih) ?>" class="w-full h-full object-cover transition-transform duration-500" alt="<?= htmlspecialchars($row['namaPerumahan']) ?>" loading="lazy">
                 <div class="absolute inset-0 bg-gradient-to-t from-[color:var(--portal-bg)]/70 via-transparent to-transparent opacity-60 pointer-events-none"></div>
 
                 <!-- Uncropped Full View (Appears on Hover) -->
                 <div class="hover-scale-overlay absolute inset-0 z-30 p-1 flex items-center justify-center pointer-events-none">
-                    <img src="<?= base_url('Index/buka_foto?path=' . urlencode($path_bersih)) ?>" class="w-full h-full object-contain" alt="<?= htmlspecialchars($row['namaPerumahan']) ?>">
+                    <img src="<?= sikumbang_foto_src($path_bersih) ?>" class="w-full h-full object-contain" alt="<?= htmlspecialchars($row['namaPerumahan']) ?>">
                 </div>
             </div>
         </div>
