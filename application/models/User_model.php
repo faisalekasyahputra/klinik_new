@@ -159,7 +159,8 @@ class User_model extends CI_Model {
         $user = $this->db->get_where('usr_akun', ['id' => $user_id])->row_array();
         if (!$user) { throw new RuntimeException('Akun tidak ditemukan.'); }
         $account_fields = ['id', 'email', 'nama_pengguna', 'nama', 'no_hp', 'peran',
-            'status', 'nik', 'alamat', 'npwp', 'created_at', 'updated_at'];
+            'status', 'nik', 'alamat', 'npwp', 'nim', 'tempat_lahir', 'tanggal_lahir',
+            'jurusan', 'instansi_asal', 'created_at', 'updated_at'];
         $account = array_intersect_key($user, array_flip($account_fields));
         $this->_prepare_export_record($account);
         $result = ['akun' => $account];

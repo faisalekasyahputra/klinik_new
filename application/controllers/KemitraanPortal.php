@@ -723,8 +723,6 @@ class KemitraanPortal extends Public_Controller
         $tahun = in_array((int) $tahun, $this->slot->tahun_tersedia(), TRUE)
             ? (int) $tahun
             : $this->slot->tahun_papan();
-        $peta   = $this->slot->peta_slot($tahun);
-        $terisi = $this->slot->peta_terisi();
 
         /**
          * SATU KEADAAN PER BIDANG, bukan matriks 12 bulan.
@@ -746,6 +744,25 @@ class KemitraanPortal extends Public_Controller
          * seharusnya diterima, dan papan yang berbohong ke arah itu jauh lebih
          * mahal daripada yang berbohong sebaliknya.
          */
+        $this->render('pages/kemitraan_portal/magang', [
+            'judul'          => 'Magang dan Kerja Praktik',
+            'tahun'          => $tahun,
+            'tahun_tersedia' => $this->slot->tahun_tersedia(),
+            'slot_magang'    => array_values($this->ketersediaan_bidang($tahun)),
+        ]);
+    }
+
+    /**
+     * Keadaan tiap bidang untuk satu tahun, berkunci kode bidang. Dipakai
+     * papan slot DAN formulir daftar, supaya angka yang dibaca pendaftar di
+     * kedua tempat tidak bisa berbeda. Aturan "terpenuhi" dijelaskan di
+     * magang().
+     */
+    private function ketersediaan_bidang($tahun)
+    {
+        $peta   = $this->slot->peta_slot($tahun);
+        $terisi = $this->slot->peta_terisi();
+
         /* Butir F1: posisi/lowongan yang dicari tiap bidang, diisi dinas lewat
            layar Posisi Magang. Diambil SEKALI lalu dikelompokkan - query di
            dalam perulangan bidang berarti lima query untuk lima bidang.
@@ -760,18 +777,21 @@ class KemitraanPortal extends Public_Controller
             }
         }
 
-        $slot_magang = [];
+        $hasil = [];
         foreach ($this->slot->bidang() as $bidang) {
             $kuota   = (int) $bidang->kuota;
             $bulan_dibuka = [];
+            $bulan = [];            // nomor bulan => sisa kursi, NULL = tidak dibuka
             $sisa_terbaik = NULL;   // NULL = belum ada satu bulan pun yang dibuka
 
             foreach (Kemitraan_slot_model::nama_bulan() as $nomor => $label) {
+                $bulan[$nomor] = NULL;
                 if (empty($peta[$bidang->kode][$nomor])) { continue; }
 
                 $bulan_dibuka[] = $label;
                 $isi  = (int) ($terisi[$bidang->kode][$tahun . '-' . $nomor] ?? 0);
                 $sisa = max(0, $kuota - $isi);
+                $bulan[$nomor] = $sisa;
                 if ($sisa_terbaik === NULL || $sisa > $sisa_terbaik) { $sisa_terbaik = $sisa; }
             }
 
@@ -783,22 +803,17 @@ class KemitraanPortal extends Public_Controller
                 $keadaan = 'terpenuhi';
             }
 
-            $slot_magang[] = [
+            $hasil[$bidang->kode] = [
                 'bidang'       => $bidang->nama,
                 'kuota'        => $kuota,
                 'keadaan'      => $keadaan,
                 'sisa'         => (int) $sisa_terbaik,
                 'bulan_dibuka' => $bulan_dibuka,
+                'bulan'        => $bulan,
                 'posisi'       => $posisi_per_bidang[$bidang->kode] ?? [],
             ];
         }
-
-        $this->render('pages/kemitraan_portal/magang', [
-            'judul'          => 'Magang dan Kerja Praktik',
-            'tahun'          => $tahun,
-            'tahun_tersedia' => $this->slot->tahun_tersedia(),
-            'slot_magang'    => $slot_magang,
-        ]);
+        return $hasil;
     }
 
     public function daftar($jenis = NULL)
@@ -826,12 +841,35 @@ class KemitraanPortal extends Public_Controller
         // Divisi hanya untuk magang. Di formulir KKN field yang sama berlabel
         // "Tema Kegiatan" - itu memang teks bebas, bukan unit kerja, jadi tidak
         // ada slot yang bisa mengaturnya.
+        // Ketersediaan per bidang ikut ditampilkan di formulir (dulu hanya di
+        // papan slot, terpisah halaman). Tahunnya sama dengan bawaan papan.
+        $tahun_papan = $this->slot->tahun_papan();
+
+        // Isian awal dari Profil Saya (migrasi 080). Semester tidak ada di
+        // profil, jadi diambil dari pendaftaran magang terakhir; kolom profil
+        // yang masih kosong juga ditambal dari sana. Hanya nilai awal; tetap
+        // bisa diubah dan tetap divalidasi simpan().
+        $kolom_diri = ['nim', 'tempat_lahir', 'tanggal_lahir', 'jurusan', 'instansi_asal', 'no_hp'];
+        $profil = $this->db->select(implode(',', $kolom_diri))
+            ->get_where('usr_akun', ['id' => $this->get_user_id()])->row_array() ?: [];
+        $terakhir = $this->db->select(implode(',', $kolom_diri) . ',semester')
+            ->where(['user_id' => $this->get_user_id(), 'jenis' => 'magang'])
+            ->order_by('id', 'DESC')->limit(1)
+            ->get('kkn_magang_pendaftaran')->row_array() ?: [];
+        $isian_awal = ['semester' => (string) ($terakhir['semester'] ?? '')];
+        foreach ($kolom_diri as $k) {
+            $isian_awal[$k] = (string) (($profil[$k] ?? '') !== '' ? $profil[$k] : ($terakhir[$k] ?? ''));
+        }
+
         $this->render('pages/kemitraan_portal/daftar', [
-            'judul'      => $jenis === 'kkn' ? 'Daftar KKN Kemitraan' : 'Daftar Magang dan Kerja Praktik',
-            'jenis'      => $jenis,
-            'nama_akun'  => (string) $this->session->userdata('name'),
-            'email_akun' => (string) $this->session->userdata('email'),
-            'divisi'     => $jenis === 'magang' ? $this->slot->bidang() : [],
+            'judul'        => $jenis === 'kkn' ? 'Daftar KKN Kemitraan' : 'Daftar Magang dan Kerja Praktik',
+            'jenis'        => $jenis,
+            'nama_akun'    => (string) $this->session->userdata('name'),
+            'email_akun'   => (string) $this->session->userdata('email'),
+            'divisi'       => $jenis === 'magang' ? $this->slot->bidang() : [],
+            'tahun_papan'  => $tahun_papan,
+            'ketersediaan' => $jenis === 'magang' ? $this->ketersediaan_bidang($tahun_papan) : [],
+            'isian_awal'   => $isian_awal,
         ]);
     }
 
