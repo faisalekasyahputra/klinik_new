@@ -150,7 +150,7 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
 /* Blur tipis supaya halaman tujuan sedikit terlihat (dinas 21 Okt 2026). Aman: untuk halaman ber-gerbang
    server tidak mengirim isinya ke tamu (307 ke Auth/login), jadi di belakang modal hanya kerangka buatan
    peramban. Menghapus modal lewat devtools tidak membuka data apa pun. */
-.kpkp-login-modal::backdrop { background: rgba(5, 14, 17, .25); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.kpkp-login-modal::backdrop { background: rgba(5, 14, 17, .2); backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px); }
 .kpkp-login-modal__card {
     position: relative; background: #0a1a1f; color: #fff;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -249,10 +249,14 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
        fetch-nya dialihkan server ke Auth/login. Nama global sengaja
        dipertahankan sesempit mungkin (satu fungsi), diperiksa dulu
        ada/tidaknya di footer.php sebelum dipakai. */
-    window.kpkpShowLoginModal = function (saatTutup) {
+    var subjudul = dlg.querySelector('.kpkp-login-modal__subheading');
+    var subjudulAsli = subjudul ? subjudul.textContent : '';
+    window.kpkpShowLoginModal = function (saatTutup, pesan) {
         if (dlg.open) return;
         // saatTutup: dipanggil sekali saat modal ditutup tanpa login (footer.php
-        // memakainya untuk mengembalikan halaman sebelumnya).
+        // memakainya untuk mengembalikan halaman sebelumnya). pesan: pengganti
+        // subjudul selama modal terbuka (dari penanda data-perlu-masuk).
+        if (subjudul) subjudul.textContent = pesan || subjudulAsli;
         if (typeof saatTutup === 'function') dlg.addEventListener('close', saatTutup, { once: true });
         dlg.showModal();
         var email = document.getElementById('kpkp_login_modal_email');
@@ -283,6 +287,14 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
     });
     document.getElementById('kpkp-register-to-login').addEventListener('click', function (e) { e.preventDefault(); tutupDaftar(); window.kpkpShowLoginModal(); });
     dlg.addEventListener('click', function (e) { if (e.target === dlg) tutup(); }); // klik backdrop
+
+    // Halaman yang dibuka penuh untuk tamu dengan penanda data-perlu-masuk
+    // (mis. KemitraanPortal) langsung menampilkan modal di atas isinya. Muat
+    // progresif ditangani footer.php sesudah isi baru disuntik.
+    document.addEventListener('DOMContentLoaded', function () {
+        var penanda = document.querySelector('[data-perlu-masuk]');
+        if (penanda) window.kpkpShowLoginModal(null, penanda.getAttribute('data-perlu-masuk'));
+    });
 
     document.getElementById('kpkp-login-modal-toggle-pw').addEventListener('click', function () {
         var input = document.getElementById('kpkp_login_modal_password');

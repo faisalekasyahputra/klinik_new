@@ -22,13 +22,27 @@ foreach ([FALSE, TRUE] as $ajax) {
         $info = curl_getinfo($ch);
         $error = curl_error($ch);
         curl_close($ch);
-        $ok = $body !== FALSE && $info['http_code'] === 200
-            && strtolower($info['url']) === strtolower($base . 'Auth/login')
-            && $info['redirect_count'] > 0
-            && strpos($body, 'type="password"') !== FALSE
-            && strpos($body, 'Silakan masuk terlebih dahulu untuk membuka ' . $layanan . '.') !== FALSE;
+        $pesan = 'Silakan masuk terlebih dahulu untuk membuka ' . $layanan . '.';
+        if ($rute === 'KemitraanPortal') {
+            // Sejak 21 Okt 2026 (permintaan dinas) tamu melihat kartu menu dengan modal login di
+            // atasnya: halaman 200 di alamatnya sendiri, penanda data-perlu-masuk membawa pesan
+            // yang sama, dan tidak ada data selain dua kartu. Muat penuh juga memuat modalnya.
+            $ok = $body !== FALSE && $info['http_code'] === 200
+                && strtolower($info['url']) === strtolower($base . $rute)
+                && strpos($body, 'data-perlu-masuk="' . $pesan . '"') !== FALSE
+                && strpos($body, 'KemitraanPortal/daftar/magang') !== FALSE
+                && ($ajax || strpos($body, 'id="kpkp-login-modal-form"') !== FALSE);
+            $hasil = 'kartu menu + modal login';
+        } else {
+            $ok = $body !== FALSE && $info['http_code'] === 200
+                && strtolower($info['url']) === strtolower($base . 'Auth/login')
+                && $info['redirect_count'] > 0
+                && strpos($body, 'type="password"') !== FALSE
+                && strpos($body, $pesan) !== FALSE;
+            $hasil = 'form login';
+        }
         echo ($ok ? '[OK] ' : '[FAIL] ') . $layanan . ' tamu '
-            . ($ajax ? 'AJAX' : 'navigasi langsung') . ' -> form login'
+            . ($ajax ? 'AJAX' : 'navigasi langsung') . ' -> ' . $hasil
             . ($error ? ' (' . $error . ')' : '') . PHP_EOL;
         if (!$ok) { $gagal++; }
     } finally {

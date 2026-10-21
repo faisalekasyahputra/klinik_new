@@ -502,6 +502,10 @@ function globalSystem() {
                         // 5) Fade in konten baru - halus
                         wrapper.style.transition = 'opacity 0.25s ease-in';
                         wrapper.style.opacity = '1';
+                        // Halaman yang tampil untuk tamu tapi minta masuk (penanda
+                        // data-perlu-masuk, mis. kartu KKN dan Magang): modal di atasnya.
+                        var penanda = wrapper.querySelector('[data-perlu-masuk]');
+                        if (penanda && window.kpkpShowLoginModal) window.kpkpShowLoginModal(null, penanda.getAttribute('data-perlu-masuk'));
                     }).catch(function () {
                         // Jangan biarkan error script mengunci panel dalam keadaan opacity 0.
                         wrapper.style.opacity = '1';
