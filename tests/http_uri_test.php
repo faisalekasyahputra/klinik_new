@@ -99,7 +99,17 @@ foreach ($POL['post_only'] as $rute => $_) {
     foreach ($SKEMA[$rute]['methods'] ?? [] as $metode => $__) { check($metode === 'POST', "Skema $rute mengizinkan $metode padahal rute ini post_only"); }
 }
 
-// Tidak ada tautan/navigasi GET ke endpoint post_only (akan rusak): href, location, window.open.
+// Tidak ada tautan/navigasi GET ke endpoint post_only (akan rusak): href/src (termasuk lewat base_url/site_url), location, window.open.
+// Yang dicari: rute post_only itu sendiri plus alias routes.php yang menunjuknya (akun/export -> pengaturan/export_account_data).
+define('APPPATH', $app . '/');
+$route = []; require $app . '/config/routes.php';
+$dicari = array_combine(array_keys($POL['post_only']), array_keys($POL['post_only']));
+foreach ($route as $alias => $tujuan) {
+    $sasaran = is_string($tujuan) ? strtolower(implode('/', array_slice(explode('/', $tujuan), 0, 2))) : '';
+    if ( ! isset($POL['post_only'][$sasaran])) { continue; }
+    check(preg_match('#^[\w/.-]+$#', $alias) === 1, "Alias $alias -> $sasaran berpola; pemeriksa tautan baru mengenali alias harfiah");
+    $dicari[strtolower($alias)] = $sasaran;
+}
 $rusak = [];
 $aset = [];
 foreach (['views', '../assets/js'] as $dir) {
@@ -110,9 +120,9 @@ foreach (['views', '../assets/js'] as $dir) {
 check(count($aset) > 100, 'Pemindaian view/JS menjangkau terlalu sedikit berkas (' . count($aset) . ')');
 foreach ($aset as $f) {
     $s = file_get_contents($f);
-    foreach (array_keys($POL['post_only']) as $rute) {
-        $pola = preg_quote($rute, '#');
-        if (preg_match('#(href\s*=\s*["\'][^"\']*|location(\.href)?\s*=\s*[^;]*|window\.open\([^)]*)' . $pola . '#i', $s)) { $rusak[] = basename($f) . " -> $rute"; }
+    foreach ($dicari as $teks => $rute) {
+        $pola = preg_quote($teks, '#');
+        if (preg_match('#((?:href|src)\s*=\s*["\'][^"\']*(?:(?:base|site)_url\(\s*["\'])?|location(\.href)?\s*=\s*[^;]*|window\.open\([^)]*)' . $pola . '(?![\w-])#i', $s)) { $rusak[] = basename($f) . " -> $teks" . ($teks === $rute ? '' : " (alias $rute)"); }
     }
 }
 check($rusak === [], 'Tautan GET ke endpoint POST-only: ' . implode('; ', $rusak));
@@ -196,4 +206,4 @@ check(preg_match('/function enforce_http_policy\(\).*?catch \(Throwable.*?set_st
 check(strpos($my, "'kebijakan_http'") !== FALSE && strpos($my, "set_header('Allow: '") !== FALSE && strpos($my, "'options'") !== FALSE, 'Pelanggaran struktural jadi peringatan; 405 dan OPTIONS membawa Allow');
 check(strpos(sumber('libraries/Api_schema.php'), '_query') !== FALSE, 'Api_schema harus menolak query string pada endpoint POST');
 
-echo "http_uri_test: OK ($total pemeriksaan, " . count($POL['post_only']) . " endpoint POST-only, $dicek metode penulis diperiksa, $form_get formulir GET diperiksa, " . count($aset) . " berkas view/JS dipindai)\n";
+echo "http_uri_test: OK ($total pemeriksaan, " . count($POL['post_only']) . " endpoint POST-only (+" . (count($dicari) - count($POL['post_only'])) . " alias), $dicek metode penulis diperiksa, $form_get formulir GET diperiksa, " . count($aset) . " berkas view/JS dipindai)\n";
