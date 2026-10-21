@@ -147,7 +147,10 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
     width: 100%; max-height: 90vh; box-shadow: 0 25px 60px rgba(0,0,0,.5);
     background: transparent;
 }
-.kpkp-login-modal::backdrop { background: rgba(5, 14, 17, .35); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+/* Blur tipis supaya halaman tujuan sedikit terlihat (dinas 21 Okt 2026). Aman: untuk halaman ber-gerbang
+   server tidak mengirim isinya ke tamu (307 ke Auth/login), jadi di belakang modal hanya kerangka buatan
+   peramban. Menghapus modal lewat devtools tidak membuka data apa pun. */
+.kpkp-login-modal::backdrop { background: rgba(5, 14, 17, .25); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
 .kpkp-login-modal__card {
     position: relative; background: #0a1a1f; color: #fff;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
