@@ -99,7 +99,7 @@ foreach ($POL['post_only'] as $rute => $_) {
     foreach ($SKEMA[$rute]['methods'] ?? [] as $metode => $__) { check($metode === 'POST', "Skema $rute mengizinkan $metode padahal rute ini post_only"); }
 }
 
-// Tidak ada tautan/navigasi GET ke endpoint post_only (akan rusak): href, location, window.open.
+// Tidak ada tautan/navigasi GET ke endpoint post_only (akan rusak): href/src (termasuk lewat base_url/site_url), location, window.open.
 $rusak = [];
 $aset = [];
 foreach (['views', '../assets/js'] as $dir) {
@@ -112,7 +112,7 @@ foreach ($aset as $f) {
     $s = file_get_contents($f);
     foreach (array_keys($POL['post_only']) as $rute) {
         $pola = preg_quote($rute, '#');
-        if (preg_match('#(href\s*=\s*["\'][^"\']*|location(\.href)?\s*=\s*[^;]*|window\.open\([^)]*)' . $pola . '#i', $s)) { $rusak[] = basename($f) . " -> $rute"; }
+        if (preg_match('#((?:href|src)\s*=\s*["\'][^"\']*(?:(?:base|site)_url\(\s*["\'])?|location(\.href)?\s*=\s*[^;]*|window\.open\([^)]*)' . $pola . '#i', $s)) { $rusak[] = basename($f) . " -> $rute"; }
     }
 }
 check($rusak === [], 'Tautan GET ke endpoint POST-only: ' . implode('; ', $rusak));
