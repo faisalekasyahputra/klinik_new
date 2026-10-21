@@ -141,12 +141,28 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
                      select ini hanya supaya orang tidak menebak-nebak. -->
                 <select id="kd-divisi" name="divisi_atau_tema" x-model="divisi_atau_tema" required class="<?= $isian ?>">
                     <option value="">- Pilih bidang -</option>
-                    <?php foreach ($divisi as $d): ?>
-                        <option value="<?= html_escape($d->kode) ?>"><?= html_escape($d->nama) ?></option>
+                    <?php
+                    // Keadaan ditulis di label pilihan, dengan istilah yang
+                    // sama seperti papan slot. Bidang yang terpenuhi/belum
+                    // dibuka TIDAK dimatikan: keadaan dihitung untuk tahun
+                    // papan saja, sedangkan periode pendaftar bisa jatuh di
+                    // tahun lain. Penolakan tetap urusan periksa_slot().
+                    $label_keadaan = ['menerima' => 'masih menerima', 'terpenuhi' => 'sudah terpenuhi', 'tutup' => 'belum dibuka'];
+                    ?>
+                    <?php foreach ($divisi as $d): $k = $ketersediaan[$d->kode] ?? NULL; ?>
+                        <option value="<?= html_escape($d->kode) ?>"><?= html_escape($d->nama) ?><?php if ($k): ?> (<?= $label_keadaan[$k['keadaan']] ?><?= $k['keadaan'] === 'menerima' ? ', sisa ' . (int) $k['sisa'] : '' ?>)<?php endif; ?></option>
                     <?php endforeach; ?>
                 </select>
+                <?php foreach ($ketersediaan as $kode => $k): ?>
+                    <p class="<?= $petunjuk ?>" x-show="divisi_atau_tema === <?= html_escape(json_encode((string) $kode)) ?>" x-cloak>
+                        Kuota <?= (int) $k['kuota'] ?> mahasiswa hadir bersamaan.
+                        <?= $k['bulan_dibuka']
+                            ? 'Bulan dibuka ' . (int) $tahun_papan . ': ' . html_escape(implode(', ', $k['bulan_dibuka'])) . '.'
+                            : 'Belum ada bulan yang dibuka tahun ' . (int) $tahun_papan . '.' ?>
+                    </p>
+                <?php endforeach; ?>
                 <p class="<?= $petunjuk ?>">
-                    Pastikan seluruh bulan dalam periode Anda terbuka di
+                    Pastikan seluruh bulan dalam periode Anda terbuka. Rincian lengkap di
                     <a href="<?= base_url('KemitraanPortal/magang') ?>" class="font-bold underline">papan slot</a>.
                     Pendaftaran ditolak kalau ada bulan yang tertutup.
                 </p>
