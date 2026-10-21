@@ -744,30 +744,11 @@ class KemitraanPortal extends Public_Controller
          * seharusnya diterima, dan papan yang berbohong ke arah itu jauh lebih
          * mahal daripada yang berbohong sebaliknya.
          */
-        /* Butir F1: posisi/lowongan yang dicari tiap bidang, diisi dinas lewat
-           layar Posisi Magang. Diambil SEKALI lalu dikelompokkan - query di
-           dalam perulangan bidang berarti lima query untuk lima bidang.
-
-           Hanya yang `aktif`. Posisi yang sudah terisi dimatikan, bukan
-           dihapus, supaya catatannya tetap ada untuk periode berikutnya. */
-        $posisi_per_bidang = [];
-        if ($this->db->table_exists('kkn_magang_posisi')) {
-            foreach ($this->db->where('aktif', 1)->order_by('urutan', 'ASC')
-                         ->order_by('nama_posisi', 'ASC')->get('kkn_magang_posisi')->result() as $p) {
-                $posisi_per_bidang[$p->bidang_kode][] = $p;
-            }
-        }
-
-        $slot_magang = [];
-        foreach ($this->ketersediaan_bidang($tahun) as $kode => $k) {
-            $slot_magang[] = $k + ['posisi' => $posisi_per_bidang[$kode] ?? []];
-        }
-
         $this->render('pages/kemitraan_portal/magang', [
             'judul'          => 'Magang dan Kerja Praktik',
             'tahun'          => $tahun,
             'tahun_tersedia' => $this->slot->tahun_tersedia(),
-            'slot_magang'    => $slot_magang,
+            'slot_magang'    => array_values($this->ketersediaan_bidang($tahun)),
         ]);
     }
 
@@ -782,18 +763,35 @@ class KemitraanPortal extends Public_Controller
         $peta   = $this->slot->peta_slot($tahun);
         $terisi = $this->slot->peta_terisi();
 
+        /* Butir F1: posisi/lowongan yang dicari tiap bidang, diisi dinas lewat
+           layar Posisi Magang. Diambil SEKALI lalu dikelompokkan - query di
+           dalam perulangan bidang berarti lima query untuk lima bidang.
+
+           Hanya yang `aktif`. Posisi yang sudah terisi dimatikan, bukan
+           dihapus, supaya catatannya tetap ada untuk periode berikutnya. */
+        $posisi_per_bidang = [];
+        if ($this->db->table_exists('kkn_magang_posisi')) {
+            foreach ($this->db->where('aktif', 1)->order_by('urutan', 'ASC')
+                         ->order_by('nama_posisi', 'ASC')->get('kkn_magang_posisi')->result() as $p) {
+                $posisi_per_bidang[$p->bidang_kode][] = $p;
+            }
+        }
+
         $hasil = [];
         foreach ($this->slot->bidang() as $bidang) {
             $kuota   = (int) $bidang->kuota;
             $bulan_dibuka = [];
+            $bulan = [];            // nomor bulan => sisa kursi, NULL = tidak dibuka
             $sisa_terbaik = NULL;   // NULL = belum ada satu bulan pun yang dibuka
 
             foreach (Kemitraan_slot_model::nama_bulan() as $nomor => $label) {
+                $bulan[$nomor] = NULL;
                 if (empty($peta[$bidang->kode][$nomor])) { continue; }
 
                 $bulan_dibuka[] = $label;
                 $isi  = (int) ($terisi[$bidang->kode][$tahun . '-' . $nomor] ?? 0);
                 $sisa = max(0, $kuota - $isi);
+                $bulan[$nomor] = $sisa;
                 if ($sisa_terbaik === NULL || $sisa > $sisa_terbaik) { $sisa_terbaik = $sisa; }
             }
 
@@ -811,6 +809,8 @@ class KemitraanPortal extends Public_Controller
                 'keadaan'      => $keadaan,
                 'sisa'         => (int) $sisa_terbaik,
                 'bulan_dibuka' => $bulan_dibuka,
+                'bulan'        => $bulan,
+                'posisi'       => $posisi_per_bidang[$bidang->kode] ?? [],
             ];
         }
         return $hasil;

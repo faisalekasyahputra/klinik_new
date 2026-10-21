@@ -132,41 +132,105 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
         // slot bulanan lewat periksa_slot().
         ?>
         <?php if ($jenis === 'magang'): ?>
-        <div>
-            <label for="kd-divisi" class="<?= $label ?>">Bidang yang Dituju</label>
-                <!-- Divisi dipilih dari daftar, bukan diketik. Sebelumnya ini
-                     teks bebas, jadi pendaftar bisa menulis divisi yang di
-                     papan slot berwarna merah - dan tidak ada yang menahannya.
-                     Penjagaan yang sebenarnya tetap di KemitraanPortal::simpan();
-                     select ini hanya supaya orang tidak menebak-nebak. -->
-                <select id="kd-divisi" name="divisi_atau_tema" x-model="divisi_atau_tema" required class="<?= $isian ?>">
-                    <option value="">- Pilih bidang -</option>
-                    <?php
-                    // Keadaan ditulis di label pilihan, dengan istilah yang
-                    // sama seperti papan slot. Bidang yang terpenuhi/belum
-                    // dibuka TIDAK dimatikan: keadaan dihitung untuk tahun
-                    // papan saja, sedangkan periode pendaftar bisa jatuh di
-                    // tahun lain. Penolakan tetap urusan periksa_slot().
-                    $label_keadaan = ['menerima' => 'masih menerima', 'terpenuhi' => 'sudah terpenuhi', 'tutup' => 'belum dibuka'];
-                    ?>
-                    <?php foreach ($divisi as $d): $k = $ketersediaan[$d->kode] ?? NULL; ?>
-                        <option value="<?= html_escape($d->kode) ?>"><?= html_escape($d->nama) ?><?php if ($k): ?> (<?= $label_keadaan[$k['keadaan']] ?><?= $k['keadaan'] === 'menerima' ? ', sisa ' . (int) $k['sisa'] : '' ?>)<?php endif; ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <?php foreach ($ketersediaan as $kode => $k): ?>
-                    <p class="<?= $petunjuk ?>" x-show="divisi_atau_tema === <?= html_escape(json_encode((string) $kode)) ?>" x-cloak>
-                        Kuota <?= (int) $k['kuota'] ?> mahasiswa hadir bersamaan.
-                        <?= $k['bulan_dibuka']
-                            ? 'Bulan dibuka ' . (int) $tahun_papan . ': ' . html_escape(implode(', ', $k['bulan_dibuka'])) . '.'
-                            : 'Belum ada bulan yang dibuka tahun ' . (int) $tahun_papan . '.' ?>
-                    </p>
+        <?php
+        // Bidang dipilih lewat KARTU, bukan dropdown: tiap kartu membawa
+        // keadaan, sisa kursi, dan strip 12 bulan, jadi pendaftar tidak perlu
+        // membuka papan slot di halaman lain (keluhan dinas 21 Okt 2026).
+        // Istilah keadaan sama dengan papan slot.
+        //
+        // Kartu yang terpenuhi/belum dibuka TIDAK dimatikan, hanya diredupkan:
+        // keadaan dihitung untuk tahun papan saja, sedangkan periode pendaftar
+        // bisa jatuh di tahun lain. Penjagaan sebenarnya tetap di
+        // KemitraanPortal::simpan() lewat periksa_slot().
+        $gaya_keadaan = [
+            'menerima'  => ['bg-emerald-500/10 text-emerald-700', 'Masih menerima'],
+            'terpenuhi' => ['bg-amber-500/10 text-amber-700',     'Sudah terpenuhi'],
+            'tutup'     => ['bg-rose-500/10 text-rose-700',       'Belum dibuka'],
+        ];
+        $nama_bulan = Kemitraan_slot_model::nama_bulan();
+        ?>
+        <fieldset>
+            <legend class="<?= $label ?>">Bidang yang Dituju</legend>
+            <p class="mb-3 text-[11px] text-[color:var(--portal-text-muted)]">
+                Slot tahun <?= (int) $tahun_papan ?>. Kotak bulan:
+                <span class="inline-block h-2 w-2 rounded-sm bg-emerald-500 align-middle"></span> ada kursi,
+                <span class="inline-block h-2 w-2 rounded-sm bg-amber-400 align-middle"></span> penuh,
+                <span class="inline-block h-2 w-2 rounded-sm bg-[color:var(--portal-border)] align-middle"></span> tidak dibuka.
+            </p>
+
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <?php foreach ($ketersediaan as $kode => $k):
+                    $nilai  = html_escape(json_encode((string) $kode));
+                    $gaya   = $gaya_keadaan[$k['keadaan']];
+                    $terisi = $k['keadaan'] === 'tutup' ? 0 : $k['kuota'] - $k['sisa'];
+                    $persen = $k['kuota'] > 0 ? (int) round($terisi / $k['kuota'] * 100) : 0;
+                ?>
+                <label class="group relative flex cursor-pointer flex-col rounded-2xl border-2 bg-[color:var(--portal-bg-card)] p-4 shadow-sm transition
+                              hover:-translate-y-0.5 hover:shadow-md has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[color:var(--portal-brand)]/40
+                              <?= $k['keadaan'] === 'menerima' ? '' : 'opacity-75' ?>"
+                       :class="divisi_atau_tema === <?= $nilai ?>
+                           ? 'border-[color:var(--portal-brand)] ring-4 ring-[color:var(--portal-brand)]/10 opacity-100'
+                           : 'border-[color:var(--portal-border)]'">
+                    <input type="radio" name="divisi_atau_tema" value="<?= html_escape($kode) ?>" x-model="divisi_atau_tema" required class="sr-only">
+
+                    <div class="flex items-start justify-between gap-2">
+                        <span class="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wide <?= $gaya[0] ?>"><?= $gaya[1] ?></span>
+                        <span class="flex h-6 w-6 items-center justify-center rounded-full border-2 text-[10px] transition"
+                              :class="divisi_atau_tema === <?= $nilai ?>
+                                  ? 'border-[color:var(--portal-brand)] bg-[color:var(--portal-brand)] text-[color:var(--portal-bg)]'
+                                  : 'border-[color:var(--portal-border)] text-transparent'">
+                            <i class="fa-solid fa-check" aria-hidden="true"></i>
+                        </span>
+                    </div>
+
+                    <h3 class="mt-3 text-sm font-black leading-snug text-[color:var(--portal-text)]"><?= html_escape($k['bidang']) ?></h3>
+
+                    <div class="mt-3 flex items-end justify-between gap-2">
+                        <?php if ($k['keadaan'] === 'tutup'): ?>
+                            <p class="text-xs text-[color:var(--portal-text-muted)]">Kuota <?= (int) $k['kuota'] ?> mahasiswa, belum ada bulan dibuka</p>
+                        <?php else: ?>
+                            <p class="text-[color:var(--portal-text)]">
+                                <span class="text-3xl font-black leading-none"><?= (int) $k['sisa'] ?></span>
+                                <span class="text-xs font-bold text-[color:var(--portal-text-muted)]">/ <?= (int) $k['kuota'] ?> kursi tersisa</span>
+                            </p>
+                        <?php endif; ?>
+                    </div>
+                    <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-[color:var(--portal-btn-bg)]" role="presentation">
+                        <div class="h-full rounded-full <?= $k['sisa'] > 0 ? 'bg-emerald-500' : 'bg-amber-400' ?>" style="width: <?= $persen ?>%"></div>
+                    </div>
+
+                    <div class="mt-3 grid grid-cols-12 gap-0.5" aria-label="Slot per bulan">
+                        <?php foreach ($k['bulan'] as $nomor => $sisa):
+                            $warna = $sisa === NULL ? 'bg-[color:var(--portal-btn-bg)] text-[color:var(--portal-text-muted)]'
+                                   : ($sisa > 0 ? 'bg-emerald-500 text-white' : 'bg-amber-400 text-amber-950');
+                            $judul = $nama_bulan[$nomor] . ': ' . ($sisa === NULL ? 'tidak dibuka' : ($sisa > 0 ? 'sisa ' . $sisa . ' kursi' : 'penuh'));
+                        ?>
+                            <span class="flex h-6 items-center justify-center rounded text-[9px] font-bold <?= $warna ?>" title="<?= html_escape($judul) ?>">
+                                <?= html_escape(mb_substr($nama_bulan[$nomor], 0, 1)) ?><span class="sr-only"> <?= html_escape($judul) ?></span>
+                            </span>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <?php if ($k['posisi']): ?>
+                        <div class="mt-3 flex flex-wrap gap-1">
+                            <?php foreach ($k['posisi'] as $p): ?>
+                                <span class="rounded-full border border-[color:var(--portal-border)] px-2 py-0.5 text-[10px] text-[color:var(--portal-text)]"><?= html_escape($p->nama_posisi) ?></span>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                </label>
                 <?php endforeach; ?>
-                <p class="<?= $petunjuk ?>">
-                    Pastikan seluruh bulan dalam periode Anda terbuka. Rincian lengkap di
-                    <a href="<?= base_url('KemitraanPortal/magang') ?>" class="font-bold underline">papan slot</a>.
-                    Pendaftaran ditolak kalau ada bulan yang tertutup.
-                </p>
-        </div>
+            </div>
+
+            <?php if (empty($ketersediaan)): ?>
+                <p class="rounded-xl border border-[color:var(--portal-border)] p-4 text-center text-xs text-[color:var(--portal-text-muted)]">Belum ada bidang yang membuka magang.</p>
+            <?php endif; ?>
+
+            <p class="<?= $petunjuk ?>">
+                Pastikan seluruh bulan dalam periode Anda terbuka. Pendaftaran ditolak kalau ada bulan yang tertutup.
+                Rincian lengkap di <a href="<?= base_url('KemitraanPortal/magang') ?>" class="font-bold underline">papan slot</a>.
+            </p>
+        </fieldset>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
