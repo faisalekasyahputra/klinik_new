@@ -328,7 +328,7 @@
                         <div x-show="nikResetOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center whitespace-normal bg-black/50 p-4" @keydown.escape.window="nikResetOpen = false">
                             <div @click.outside="nikResetOpen = false" class="w-full max-w-md rounded-3xl bg-white dark:bg-brand-card p-6 text-left shadow-xl">
                                 <h3 class="text-lg font-bold text-gray-900 dark:text-white">Reset NIK Warga</h3>
-                                <p class="mt-1 text-xs leading-relaxed text-gray-500 dark:text-brand-muted">Lepaskan NIK dari <strong><?= html_escape($u->email) ?></strong>. Draft yang belum dikirim ikut dihapus. Pengajuan terkirim tidak dapat direset.</p>
+                                <p class="mt-1 text-xs leading-relaxed text-gray-500 dark:text-brand-muted">Lepaskan NIK dari <strong><?= html_escape($u->email) ?></strong>. Draft yang belum dikirim ikut dihapus, dan pendataan yang masih diproses admin kabupaten/kota ikut dibatalkan. Bila warga sudah punya pendataan yang disetujui, NIK tidak dapat direset.</p>
                                 <form method="POST" action="<?= base_url('Admin_Users/reset_nik') ?>" class="mt-4 space-y-3" data-konfirmasi="Hubungan NIK akun ini akan direset. Tindakan dicatat di jejak audit." data-konfirmasi-judul="Reset NIK?" data-konfirmasi-label="Reset NIK" data-konfirmasi-bahaya>
                                     <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
                                     <input type="hidden" name="id" value="<?= (int) $u->id ?>">
