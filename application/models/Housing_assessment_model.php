@@ -723,7 +723,9 @@ class Housing_assessment_model extends CI_Model {
         $safe = [];
         foreach (self::DRAFT_FIELDS as $field) {
             if (array_key_exists($field, $data)) {
-                $safe[$field] = $data[$field];
+                // Isian opsional yang dikosongkan disimpan NULL. String kosong ke kolom angka
+                // (tahun_intervensi, luas_rumah) dicatat MySQL sebagai 0 (temuan 22 Okt 2026).
+                $safe[$field] = $data[$field] === '' ? NULL : $data[$field];
             }
         }
         foreach (self::ISIAN_TERENKRIPSI as $field => $column) {

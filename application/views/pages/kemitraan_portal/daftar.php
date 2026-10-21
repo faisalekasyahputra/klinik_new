@@ -46,7 +46,7 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
           x-data="{
               ...<?= html_escape(json_encode($isian_awal)) ?>,
               divisi_atau_tema: '', periode_mulai: '', periode_selesai: '',
-              langkah: <?= $jenis === 'magang' ? 1 : 2 ?>,
+              langkah: <?= (int) ($jenis === 'magang' ? 1 : 2) ?>,
               slot: <?= html_escape(json_encode(array_map(function ($k) { return ['nama' => $k['bidang'], 'bulan' => $k['bulan'], 'rentang' => $k['rentang']]; }, $ketersediaan))) ?>,
               tahunPapan: <?= (int) $tahun_papan ?>,
               hariIni: '<?= date('Y-m-d') ?>',

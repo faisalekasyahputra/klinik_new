@@ -583,6 +583,9 @@ class Migrate extends CI_Controller {
         }
         echo 'identitas mahasiswa di profil (migrasi 080): '.($ada_080
             ? 'ADA ('.$this->db->where(['peran' => 'mahasiswa'])->where('nim IS NOT NULL', NULL, FALSE)->count_all_results('usr_akun').' mahasiswa ber-NIM)' : 'HILANG')."\n";
+        // Migrasi 081 - tahun bantuan dan luas rumah bernilai 0 dijadikan NULL (harus 0 sesudah migrasi).
+        echo 'tahun bantuan / luas rumah bernilai 0 (migrasi 081): '
+            .$this->db->where('tahun_intervensi', 0)->or_where('luas_rumah', 0)->count_all_results('sf_penilaian_perumahan')." baris\n";
         // Migrasi 076 - kolom alasan_susulan untuk KKN input susulan (bersama kolom 061 dan 062 di bawah).
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062', 'alasan_susulan' => '076'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
@@ -776,6 +779,37 @@ class Migrate extends CI_Controller {
                 empty($stale_update['success']) && ($stale_update['code'] ?? '') === 'stale_or_not_owned',
                 'Update kedua dengan lock lama ditolak'
             );
+
+            // Temuan 22 Okt 2026: Tahun bantuan yang dibiarkan kosong tersimpan 0 (string kosong ke
+            // kolom smallint), lalu form menolaknya (min 1900) saat warga Kembali atau Mulai Perbaikan.
+            $kosong = $this->Housing_assessment_model->update_owned_draft(
+                $penilaian_id,
+                $user_id,
+                1,
+                ['tahun_intervensi' => '', 'luas_rumah' => '', 'bantuan_perumahan' => '']
+            );
+            $baris = $this->db->select('tahun_intervensi, luas_rumah, bantuan_perumahan')
+                ->get_where('sf_penilaian_perumahan', ['id' => $penilaian_id])->row_array();
+            $check(! empty($kosong['success']) && $baris['tahun_intervensi'] === NULL
+                && $baris['luas_rumah'] === NULL && $baris['bantuan_perumahan'] === NULL,
+                'Isian opsional yang dikosongkan tersimpan NULL, bukan 0');
+
+            // Temuan 22 Okt 2026: pilihan berkunci angka ('1' Ya, '0' Tidak) tidak pernah terpilih
+            // ulang, karena PHP mengubah kunci array itu menjadi int dan pembandingnya ketat.
+            $html_detail = $this->load->view('pages/warga/pendataan', [
+                'step' => 'housing_family_detail', 'is_logged_in' => TRUE,
+                'assessment' => ['jalur_penilaian' => 'existing_house', 'kepemilikan_rumah' => 'owned', 'mode_sumber' => 'simulation'],
+                'values' => ['punya_tabungan' => '0', 'kepemilikan_rumah' => 'owned'],
+            ], TRUE);
+            $html_sanitasi = $this->load->view('pages/warga/pendataan', [
+                'step' => 'sanitation', 'is_logged_in' => TRUE,
+                'assessment' => ['jalur_penilaian' => 'existing_house', 'mode_sumber' => 'simulation'],
+                'values' => ['ada_jendela' => '1'],
+            ], TRUE);
+            $check((bool) preg_match('#<option value="0" selected>Tidak</option>#', $html_detail),
+                'Memiliki tabungan "Tidak" tetap terpilih saat langkah dibuka lagi');
+            $check((bool) preg_match('#<option value="1" selected>Ada Jendela</option>#', $html_sanitasi),
+                'Jendela "Ada" tetap terpilih saat langkah dibuka lagi');
 
             $wrong_owner = $this->Housing_assessment_model->get_owned_assessment(
                 $penilaian_id,
