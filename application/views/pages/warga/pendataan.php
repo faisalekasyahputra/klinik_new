@@ -24,8 +24,10 @@ if (empty($values['matriks_rumah_sekarang']) && !empty($values['kepemilikan_ruma
         ? 'house_owned' : 'house_none_or_rent';
 }
 $value = static function ($key, $default = '') use ($values) { return (string) ($values[$key] ?? $default); };
-$selected = static function ($key, $option) use ($value) { return $value($key) === $option ? ' selected' : ''; };
-$checked = static function ($key, $option) use ($value) { return $value($key) === $option ? ' checked' : ''; };
+// (string) $option: kunci pilihan '1'/'0' (Ya/Tidak, Ada Jendela) diubah PHP menjadi int, dan
+// pembanding ketat tanpa cast tidak pernah memilihnya ulang (temuan 22 Okt 2026).
+$selected = static function ($key, $option) use ($value) { return $value($key) === (string) $option ? ' selected' : ''; };
+$checked = static function ($key, $option) use ($value) { return $value($key) === (string) $option ? ' checked' : ''; };
 $field_error = static function ($key) use ($errors) { return isset($errors[$key]) ? (string) $errors[$key] : ''; };
 $matrix_required = [
     'family_card_number' => TRUE, 'full_name' => TRUE, 'phone' => TRUE,
