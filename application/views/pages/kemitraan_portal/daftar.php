@@ -44,8 +44,8 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
     ?>
     <form id="kemitraan-daftar-form" class="mx-auto mt-8 max-w-2xl space-y-4" action="<?= base_url('KemitraanPortal/simpan') ?>" method="POST" enctype="multipart/form-data"
           x-data="{
-              nim: '', tempat_lahir: '', tanggal_lahir: '', semester: '', jurusan: '',
-              instansi_asal: '', no_hp: '', divisi_atau_tema: '', periode_mulai: '', periode_selesai: '',
+              ...<?= html_escape(json_encode($isian_awal)) ?>,
+              divisi_atau_tema: '', periode_mulai: '', periode_selesai: '',
               get isValid() {
                   return <?= $wajib_data_pribadi ? "this.nim.trim() && this.tempat_lahir.trim() && this.tanggal_lahir && this.semester &&" : '' ?>
                       this.jurusan.trim()

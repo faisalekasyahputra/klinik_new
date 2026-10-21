@@ -844,6 +844,22 @@ class KemitraanPortal extends Public_Controller
         // Ketersediaan per bidang ikut ditampilkan di formulir (dulu hanya di
         // papan slot, terpisah halaman). Tahunnya sama dengan bawaan papan.
         $tahun_papan = $this->slot->tahun_papan();
+
+        // Isian awal: No HP dari profil akun, data diri lain dari pendaftaran
+        // magang terakhir milik akun ini (profil tidak menyimpan NIM, TTL,
+        // semester, jurusan, kampus). Hanya nilai awal; tetap bisa diubah dan
+        // tetap divalidasi simpan().
+        $kolom_diri = ['nim', 'tempat_lahir', 'tanggal_lahir', 'semester', 'jurusan', 'instansi_asal', 'no_hp'];
+        $terakhir = $this->db->select(implode(',', $kolom_diri))
+            ->where(['user_id' => $this->get_user_id(), 'jenis' => 'magang'])
+            ->order_by('id', 'DESC')->limit(1)
+            ->get('kkn_magang_pendaftaran')->row_array() ?: [];
+        $isian_awal = [];
+        foreach ($kolom_diri as $k) { $isian_awal[$k] = (string) ($terakhir[$k] ?? ''); }
+        $telp = trim((string) $this->db->select('no_hp')
+            ->get_where('usr_akun', ['id' => $this->get_user_id()])->row('no_hp'));
+        if ($telp !== '') { $isian_awal['no_hp'] = $telp; }
+
         $this->render('pages/kemitraan_portal/daftar', [
             'judul'        => $jenis === 'kkn' ? 'Daftar KKN Kemitraan' : 'Daftar Magang dan Kerja Praktik',
             'jenis'        => $jenis,
@@ -852,6 +868,7 @@ class KemitraanPortal extends Public_Controller
             'divisi'       => $jenis === 'magang' ? $this->slot->bidang() : [],
             'tahun_papan'  => $tahun_papan,
             'ketersediaan' => $jenis === 'magang' ? $this->ketersediaan_bidang($tahun_papan) : [],
+            'isian_awal'   => $isian_awal,
         ]);
     }
 
