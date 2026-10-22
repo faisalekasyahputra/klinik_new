@@ -16,16 +16,10 @@ class KemitraanPortal extends Public_Controller
             $this->render_login_berpesan('error', 'KKN dan Magang memerlukan akun universitas atau mahasiswa. Silakan masuk dengan akun yang sesuai.');
             return;
         }
-        // Tamu melihat kartu menunya (permintaan dinas 21 Okt 2026), lalu modal
-        // login dibuka di atasnya oleh peramban lewat penanda `perlu_masuk`.
-        // Aman dibuka untuk tamu: isinya dua kartu statis tanpa data. Halaman di
-        // balik kartu tetap memakai gerbang_login() masing-masing.
-        $perlu_masuk = NULL;
-        if ( ! $this->is_logged_in()) {
-            $this->ingat_halaman_asal('KemitraanPortal');
-            $perlu_masuk = 'Silakan masuk terlebih dahulu untuk membuka KKN dan Magang.';
-        }
-        $this->render('pages/kemitraan_portal/index', ['judul' => 'KKN dan Magang', 'perlu_masuk' => $perlu_masuk]);
+        // Tamu boleh melihat kartu menunya tanpa modal (permintaan user 22 Okt 2026):
+        // isinya dua kartu statis tanpa data. Modal login baru muncul saat kartu
+        // diklik, karena halaman di balik kartu memakai gerbang_login() masing-masing.
+        $this->render('pages/kemitraan_portal/index', ['judul' => 'KKN dan Magang']);
     }
 
     public function kkn()

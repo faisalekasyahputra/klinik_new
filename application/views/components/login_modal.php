@@ -249,14 +249,10 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
        fetch-nya dialihkan server ke Auth/login. Nama global sengaja
        dipertahankan sesempit mungkin (satu fungsi), diperiksa dulu
        ada/tidaknya di footer.php sebelum dipakai. */
-    var subjudul = dlg.querySelector('.kpkp-login-modal__subheading');
-    var subjudulAsli = subjudul ? subjudul.textContent : '';
-    window.kpkpShowLoginModal = function (saatTutup, pesan) {
+    window.kpkpShowLoginModal = function (saatTutup) {
         if (dlg.open) return;
         // saatTutup: dipanggil sekali saat modal ditutup tanpa login (footer.php
-        // memakainya untuk mengembalikan halaman sebelumnya). pesan: pengganti
-        // subjudul selama modal terbuka (dari penanda data-perlu-masuk).
-        if (subjudul) subjudul.textContent = pesan || subjudulAsli;
+        // memakainya untuk mengembalikan halaman sebelumnya).
         if (typeof saatTutup === 'function') dlg.addEventListener('close', saatTutup, { once: true });
         dlg.showModal();
         var email = document.getElementById('kpkp_login_modal_email');
@@ -287,14 +283,6 @@ $modal_recaptcha_site_key = getenv('RECAPTCHA_SITE_KEY') ?: '';
     });
     document.getElementById('kpkp-register-to-login').addEventListener('click', function (e) { e.preventDefault(); tutupDaftar(); window.kpkpShowLoginModal(); });
     dlg.addEventListener('click', function (e) { if (e.target === dlg) tutup(); }); // klik backdrop
-
-    // Halaman yang dibuka penuh untuk tamu dengan penanda data-perlu-masuk
-    // (mis. KemitraanPortal) langsung menampilkan modal di atas isinya. Muat
-    // progresif ditangani footer.php sesudah isi baru disuntik.
-    document.addEventListener('DOMContentLoaded', function () {
-        var penanda = document.querySelector('[data-perlu-masuk]');
-        if (penanda) window.kpkpShowLoginModal(null, penanda.getAttribute('data-perlu-masuk'));
-    });
 
     document.getElementById('kpkp-login-modal-toggle-pw').addEventListener('click', function () {
         var input = document.getElementById('kpkp_login_modal_password');

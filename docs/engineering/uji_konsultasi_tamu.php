@@ -24,15 +24,15 @@ foreach ([FALSE, TRUE] as $ajax) {
         curl_close($ch);
         $pesan = 'Silakan masuk terlebih dahulu untuk membuka ' . $layanan . '.';
         if ($rute === 'KemitraanPortal') {
-            // Sejak 21 Okt 2026 (permintaan dinas) tamu melihat kartu menu dengan modal login di
-            // atasnya: halaman 200 di alamatnya sendiri, penanda data-perlu-masuk membawa pesan
-            // yang sama, dan tidak ada data selain dua kartu. Muat penuh juga memuat modalnya.
+            // Sejak 22 Okt 2026 (permintaan user) tamu melihat kartu menu tanpa modal: halaman 200
+            // di alamatnya sendiri, tanpa data selain dua kartu. Modal login baru muncul saat kartu
+            // diklik, karena halaman di balik kartu tetap digerbang server.
             $ok = $body !== FALSE && $info['http_code'] === 200
                 && strtolower($info['url']) === strtolower($base . $rute)
-                && strpos($body, 'data-perlu-masuk="' . $pesan . '"') !== FALSE
                 && strpos($body, 'KemitraanPortal/daftar/magang') !== FALSE
-                && ($ajax || strpos($body, 'id="kpkp-login-modal-form"') !== FALSE);
-            $hasil = 'kartu menu + modal login';
+                && strpos($body, 'KemitraanPortal/kkn"') !== FALSE
+                && strpos($body, 'data-perlu-masuk') === FALSE;
+            $hasil = 'kartu menu tanpa modal';
         } else {
             $ok = $body !== FALSE && $info['http_code'] === 200
                 && strtolower($info['url']) === strtolower($base . 'Auth/login')
