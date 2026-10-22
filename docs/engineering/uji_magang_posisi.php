@@ -160,16 +160,17 @@ cek(strpos($layar, 'modal-posisi-magang') === FALSE
 $t2 = token('Admin_Magang_Posisi');
 http('Admin_Magang_Posisi/simpan', [
     'csrf_kpkp_token' => $t2, 'id' => 0, 'bidang_kode' => $kode_bidang,
-    'nama_posisi' => 'UJIPOS Drafter', 'keterangan' => 'Menguasai AutoCAD',
+    'nama_posisi' => 'UJIPOS Drafter', 'kualifikasi' => ['Menguasai AutoCAD', '', 'Teliti'],
     'kuota' => 3, 'urutan' => 1, 'aktif' => 1,
 ]);
 $tersimpan = q("SELECT * FROM kkn_magang_posisi WHERE nama_posisi='UJIPOS Drafter'");
 cek(count($tersimpan) === 1, 'Posisi tersimpan');
 cek($tersimpan && (int) $tersimpan[0]['kuota'] === 3, 'Kuota tersimpan apa adanya');
+cek($tersimpan && $tersimpan[0]['keterangan'] === "Menguasai AutoCAD\nTeliti",'Kualifikasi tersimpan satu per baris, kotak kosong dibuang');
 
 $papan_isi = http('KemitraanPortal/magang');
 cek(strpos($papan_isi, 'UJIPOS Drafter') !== FALSE, 'Posisi muncul di papan magang publik');
-cek(strpos($papan_isi, 'Menguasai AutoCAD') !== FALSE, 'Keterangan ikut terbawa sebagai judul bantuan');
+cek(strpos($papan_isi, 'Menguasai AutoCAD') !== FALSE, 'Kualifikasi ikut tampil di papan');
 
 // ------------------------------------------------- 5. Dimatikan, bukan dihapus
 echo "\n== 5. Dimatikan menghilang dari papan, catatannya tetap ada ==\n";
@@ -177,7 +178,7 @@ $id = (int) $tersimpan[0]['id'];
 $t3 = token('Admin_Magang_Posisi');
 http('Admin_Magang_Posisi/simpan', [
     'csrf_kpkp_token' => $t3, 'id' => $id, 'bidang_kode' => $kode_bidang,
-    'nama_posisi' => 'UJIPOS Drafter', 'keterangan' => 'Menguasai AutoCAD',
+    'nama_posisi' => 'UJIPOS Drafter', 'kualifikasi' => ['Menguasai AutoCAD', '', 'Teliti'],
     'kuota' => 3, 'urutan' => 1,   // 'aktif' sengaja TIDAK dikirim = dimatikan
 ]);
 $mati = q("SELECT aktif FROM kkn_magang_posisi WHERE id=?", [$id]);

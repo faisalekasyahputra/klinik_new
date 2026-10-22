@@ -4,8 +4,8 @@
  * "kualifikasi mahasiswanya belum muncul"). Dipakai papan slot (magang.php) dan kartu bidang
  * di formulir daftar (daftar.php), supaya keduanya selalu sama.
  *
- * Kualifikasi diambil dari kkn_magang_posisi.keterangan yang diisi admin di Posisi Magang:
- * satu butir per baris; titik koma juga diterima sebagai pemisah untuk isian lama. Tampil
+ * Kualifikasi diambil dari kkn_magang_posisi.keterangan yang diisi admin di Posisi Magang,
+ * dipecah oleh daftar_kualifikasi() (helper kualifikasi; koma untuk isian lama). Tampil
  * paling banyak 3 butir; sisanya lewat tombol Selengkapnya yang membuka <dialog>.
  *
  * Di formulir daftar potongan ini berada di dalam <label> kartu bidang, jadi klik pada tombol
@@ -18,7 +18,7 @@ $batas = 3;
 ?>
 <div class="grid gap-2">
     <?php foreach ($posisi as $p):
-        $kualifikasi = array_values(array_filter(array_map('trim', preg_split('/\r\n|\r|\n|;/', (string) $p->keterangan))));
+        $kualifikasi = daftar_kualifikasi($p->keterangan);
         $id_dialog = 'kualifikasi-' . (int) $p->id;
     ?>
         <div class="rounded-xl border border-[color:var(--portal-border)] bg-[color:var(--portal-bg-card)] px-3 py-2 text-left">

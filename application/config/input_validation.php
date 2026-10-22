@@ -123,6 +123,7 @@ $config['input_allowed_fields'] = [
     // Tujuan kembali Admin_Users::create_staff; nilainya dicocokkan ke daftar tetap di sana.
     'kembali',
     'keterangan',
+    'kualifikasi',
     'keterangan_sumber',
     'keys',
     'keyword',

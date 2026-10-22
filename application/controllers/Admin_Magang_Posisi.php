@@ -28,6 +28,7 @@ class Admin_Magang_Posisi extends Admin_Controller {
 
     public function index()
     {
+        $this->load->helper('kualifikasi');
         $data['title']  = 'Posisi Magang';
         $data['bidang'] = $this->Aduan_model->daftar_bidang();
         $data['rows']   = $this->db->select('p.*, b.nama AS nama_bidang')
@@ -67,16 +68,28 @@ class Admin_Magang_Posisi extends Admin_Controller {
         $id     = (int) $this->input->post('id');
         $bidang = trim((string) $this->input->post('bidang_kode', TRUE));
         $nama   = trim((string) $this->input->post('nama_posisi', TRUE));
-        $ket    = trim((string) $this->input->post('keterangan', TRUE));
+        // Kualifikasi datang sebagai daftar kualifikasi[] (satu kotak per butir) dan disimpan
+        // satu per baris. Kotak kosong dibuang; batasnya ditegakkan di sini, bukan hanya di form.
+        $this->load->helper('kualifikasi');
+        $butir  = array_values(array_filter(array_map(function ($v) {
+            return trim(preg_replace('/[\r\n]+/', ' ', (string) $v));
+        }, (array) $this->input->post('kualifikasi', TRUE)), 'strlen'));
+        if (count($butir) > KUALIFIKASI_MAKS_BUTIR) {
+            $this->session->set_flashdata('error', 'Kualifikasi maksimal ' . KUALIFIKASI_MAKS_BUTIR . ' butir.');
+            redirect('Admin_Magang_Posisi'); return;
+        }
+        foreach ($butir as $b) {
+            if (mb_strlen($b) > KUALIFIKASI_MAKS_KARAKTER) {
+                $this->session->set_flashdata('error', 'Tiap kualifikasi maksimal ' . KUALIFIKASI_MAKS_KARAKTER . ' karakter.');
+                redirect('Admin_Magang_Posisi'); return;
+            }
+        }
+        $ket    = implode("\n", $butir);
         $kuota  = (int) $this->input->post('kuota');
         $urutan = (int) $this->input->post('urutan');
 
         if ($nama === '' || mb_strlen($nama) > 100) {
             $this->session->set_flashdata('error', 'Nama posisi wajib diisi, maksimal 100 karakter.');
-            redirect('Admin_Magang_Posisi'); return;
-        }
-        if (mb_strlen($ket) > 255) {
-            $this->session->set_flashdata('error', 'Keterangan maksimal 255 karakter.');
             redirect('Admin_Magang_Posisi'); return;
         }
         /* Bidang DIVALIDASI ke tabelnya, bukan ke daftar literal. Sejak migrasi
