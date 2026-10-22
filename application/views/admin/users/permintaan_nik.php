@@ -20,16 +20,17 @@ $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Perminta
 <?php if ( ! empty($klaim_nik)): /* Permintaan klaim NIK (Admin_Users::putuskan_klaim_nik). Tanpa NIK: hanya akun dan hitungan. */ ?>
 <div class="kartu-admin overflow-hidden mb-6" data-klaim-nik>
     <?php $this->load->view('admin/components/kepala_tabel', ['kt_judul' => 'Permintaan Klaim NIK', 'kt_jumlah' => count($klaim_nik),
-        'kt_keterangan' => 'Akun yang lolos verifikasi nama dan tanggal lahir untuk NIK yang terikat belum terverifikasi ke akun lain. Setujui memindahkan NIK (draft pemegang lama dilepas, tidak dihapus); tolak membiarkan ikatan lama.']); ?>
+        'kt_keterangan' => 'NIK terikat: akun lolos verifikasi nama dan tanggal lahir untuk NIK yang terikat belum terverifikasi ke akun lain; setujui memindahkan NIK (draft pemegang lama dilepas, tidak dihapus). Nama SIMPERUM terpotong: tanggal lahir cocok, nama di SIMPERUM hanya awal nama akun; setujui bila nama akun memang nama pemilik NIK, lalu pemohon mengulang Cek NIK.']); ?>
     <div class="overflow-x-auto">
         <table class="w-full text-left text-sm">
             <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold uppercase tracking-wider">
-                <tr><th class="px-4 py-3">Diajukan</th><th class="px-4 py-3">Pemohon</th><th class="px-4 py-3">Pemegang saat ini</th><th class="px-4 py-3">Pengajuan berjalan</th><th class="px-4 py-3">Keputusan</th></tr>
+                <tr><th class="px-4 py-3">Diajukan</th><th class="px-4 py-3">Jenis</th><th class="px-4 py-3">Pemohon</th><th class="px-4 py-3">Pemegang saat ini</th><th class="px-4 py-3">Pengajuan berjalan</th><th class="px-4 py-3">Keputusan</th></tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-white/5">
                 <?php foreach ($klaim_nik as $k): ?>
                 <tr>
                     <td class="px-4 py-3 whitespace-nowrap"><?= html_escape($k['created_at']) ?></td>
+                    <td class="px-4 py-3"><?= $k['jenis'] === 'nama_awalan' ? 'Nama SIMPERUM terpotong' : 'NIK terikat' ?></td>
                     <td class="px-4 py-3"><?php $pemohon($k); ?></td>
                     <td class="px-4 py-3"><?= html_escape(implode(', ', array_map(fn($id) => $email_pemegang[$id] ?? ('akun #' . $id), $k['pemegang'])) ?: '-') ?></td>
                     <td class="px-4 py-3"><?= (int) $k['pengajuan_berjalan'] ?></td>

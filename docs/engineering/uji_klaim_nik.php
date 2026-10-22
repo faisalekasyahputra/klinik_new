@@ -362,6 +362,28 @@ try {
     cek(satu('SELECT id FROM sf_penilaian_perumahan WHERE id=?', [$lepas2]) === NULL && ! is_dir($dir_a2)
         && (satu('SELECT status FROM sf_penilaian_perumahan WHERE id=?', [$kirim_a])['status'] ?? '') === 'submitted',
         'Hapus akun A menyapu draft yang dilepas beserta berkasnya; arsip terkirim tetap');
+
+    echo "\n== 8. Nama SIMPERUM terpotong: tanggal benar + nama sumber awalan nama akun masuk tinjauan, tidak diikat\n";
+    // NIK3 dibebaskan dari akun uji bagian sebelumnya; sumbernya PAIMAN SINTETIS, nama akun E lebih panjang.
+    jalan('UPDATE usr_akun SET nik=NULL, nik_lookup_hash=NULL WHERE nik_lookup_hash=? AND id IN (' . implode(',', $akun_uji) . ')', [$h($NIK3)]);
+    foreach (['sf_data_simperum', 'sf_profil_warga'] as $t) { jalan("DELETE FROM $t WHERE nik_lookup_hash=? AND user_id IN (" . implode(',', $akun_uji) . ')', [$h($NIK3)]); }
+    [$E, $e_e] = akun_baru('Paiman Sintetis Wibowo');
+    ember_ip('login');
+    $j_e = masuk($e_e, $SANDI);
+    $klaim_e = fn() => (int) satu("SELECT COUNT(*) n FROM sys_jejak_audit WHERE aksi='klaim_nik_diajukan' AND pelaku_id=? AND detail_json LIKE '%nama_awalan%'", [$E])['n'];
+    $r = $lookup($j_e, $NIK3, $LAHIR3);
+    cek($step($r['badan']) === 'find_data' && strpos($r['badan'], 'tidak lengkap') !== FALSE && $profil($E) === NULL && $akun($E)['nik_lookup_hash'] === NULL,
+        'Nama sumber awalan + tanggal benar: pesan tinjauan, NIK tidak diikat');
+    cek($klaim_e() === 1 && gagal_tercatat('account', $E) === 0, 'Satu permintaan nama_awalan tercatat; tidak dihitung percobaan gagal');
+    $lookup($j_e, $NIK3, $LAHIR3);
+    cek($klaim_e() === 1, 'Cek NIK diulang saat menunggu: permintaan tidak digandakan');
+    $r = $lookup($j_e, $NIK3, '1970-01-02');
+    cek(strpos($r['badan'], 'Tanggal lahir tidak cocok') !== FALSE && $klaim_e() === 1 && gagal_tercatat('account', $E) === 1,
+        'Tanggal salah: pesan tanggal, dihitung gagal, tidak membuka tinjauan');
+    cek(strpos(minta($j_adm, 'Admin_Users/permintaan_nik')['badan'], 'Nama SIMPERUM terpotong') !== FALSE, 'Layar Super Admin menandai jenis permintaan');
+    putuskan_klaim($j_adm, $E, 'setuju');
+    $r = $lookup($j_e, $NIK3, $LAHIR3);
+    cek($step($r['badan']) === 'housing_family' && ($profil($E)['confirmed_at'] ?? NULL) !== NULL, 'Sesudah disetujui, Cek NIK ulang lolos dan NIK terverifikasi ke akun E');
 } catch (Throwable $e) {
     cek(FALSE, 'Suite berhenti: ' . $e->getMessage());
 } finally {

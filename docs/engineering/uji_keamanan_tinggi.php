@@ -111,6 +111,17 @@ if (cek($badan !== NULL, 'Pencocokan nama pemilik NIK ada di gateway')) {
         $hasil = Uji_Nama::nama_sama($a, $b);
         cek($ket === 'hanya sapaan, tetap dianggap nama' ? $hasil === TRUE : $hasil === FALSE, "Ditolak/kasus batas: $ket");
     }
+    // Mode awalan (23 Okt 2026): nama SIMPERUM terpotong; hasilnya hanya membuka tinjauan Super Admin, tidak meloloskan.
+    $awalan = [
+        ['SUGENG SINTETIS WIBOWO', 'Sugeng', TRUE, 'nama sumber hanya nama depan'],
+        ['H. SUGENG SINTETIS', 'SUGENG', TRUE, 'sapaan di depan nama akun dibuang dulu'],
+        ['SUGENG SINTETIS', 'SUGENG SINTETIS', FALSE, 'sama persis bukan awalan sejati'],
+        ['SUGENGX SINTETIS', 'SUGENG', FALSE, 'awalan harus kata utuh'],
+        ['SUGENG', 'SUGENG SINTETIS', FALSE, 'nama sumber lebih panjang'],
+        ['SINTETIS SUGENG', 'SUGENG', FALSE, 'kata sumber bukan di depan'],
+        ['SUGENG SINTETIS', '', FALSE, 'nama sumber kosong'],
+    ];
+    foreach ($awalan as [$a, $b, $harap, $ket]) { cek(Uji_Nama::nama_sama($a, $b, TRUE) === $harap, "Awalan: $ket"); }
 }
 
 /* ===================================================================== 2. Unit: penautan Google */
@@ -437,13 +448,13 @@ try {
         'Langkah Cek NIK akun meminta tanggal lahir dan menjelaskan pencocokan nama akun');
 
     $r = $lookup($j_agen, $NIK1, $LAHIR1);
-    cek(stripos($r['badan'], 'tidak cocok') !== FALSE && $step($r['badan']) === 'find_data', 'Nama akun beda: ditolak, tetap di Cek NIK');
+    cek(stripos($r['badan'], 'Nama lengkap di akun Anda tidak cocok') !== FALSE && $step($r['badan']) === 'find_data', 'Nama akun beda: ditolak dengan pesan nama, tetap di Cek NIK');
     cek(stripos($r['badan'], 'SUGENG') === FALSE && strpos($r['badan'], 'S****G') === FALSE && stripos($r['badan'], 'Alamat API') === FALSE,
         'Nama akun beda: halaman tidak memuat nama (utuh/tersamar) maupun alamat sumber');
     cek($profil($AGEN) === NULL && $cermin($AGEN) === 0, 'Nama akun beda: NIK tidak terikat, profil dan cermin SIMPERUM tidak tertulis');
     $j_cocok = masuk($e_cocok, $SANDI);
     $r = $lookup($j_cocok, $NIK1, '1985-08-16');
-    cek(stripos($r['badan'], 'tidak cocok') !== FALSE && $profil($W_COCOK) === NULL, 'Nama cocok, tanggal lahir beda sehari: ditolak');
+    cek(stripos($r['badan'], 'Tanggal lahir tidak cocok') !== FALSE && $profil($W_COCOK) === NULL, 'Nama cocok, tanggal lahir beda sehari: ditolak dengan pesan tanggal');
     $r = $lookup($j_cocok, $NIK1, NULL);
     cek(stripos($r['badan'], 'Tanggal lahir wajib') !== FALSE && gagal_tercatat('account', $W_COCOK) === 1,
         'Tanggal lahir kosong: diminta, tidak dihitung sebagai percobaan gagal');

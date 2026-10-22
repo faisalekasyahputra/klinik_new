@@ -753,7 +753,7 @@ class Simperum_gateway {
         }
 
         $canonical = $this->normalize($payload);
-        $klaim = FALSE;
+        $klaim = '';
         if ($requested_by) {
             $ditolak = $this->verifikasi_pemilik((int) $requested_by, (string) ($canonical['nik'] ?? ''), $birth_date, $payload, $klaim);
             if ($ditolak !== NULL) {
@@ -764,12 +764,13 @@ class Simperum_gateway {
                di NIK, jadi lolos verifikasi belum cukup untuk mengusir pemegang lain. Permintaannya
                dicatat untuk ditinjau Super Admin (Admin_Users::putuskan_klaim_nik), yang menjalankan
                pindahkan_ikatan_nik() bila disetujui. Tidak ada data sumber yang terbuka di sini. */
-            if ($klaim) {
-                $ajuan = $this->CI->Housing_assessment_model->ajukan_klaim_nik((int) $requested_by, (string) ($canonical['nik'] ?? ''));
+            if ($klaim !== '') {
+                $ajuan = $this->CI->Housing_assessment_model->ajukan_klaim_nik((int) $requested_by, (string) ($canonical['nik'] ?? ''), $klaim);
                 if (empty($ajuan['success'])) {
                     return $this->response('error', $ajuan['message'], [], $ajuan['code']);
                 }
-                return $this->response('error', Housing_assessment_model::PESAN_KLAIM_DITINJAU, [], 'klaim_ditinjau');
+                return $this->response('error', $klaim === 'nama_awalan' ? Housing_assessment_model::PESAN_NAMA_DITINJAU
+                    : Housing_assessment_model::PESAN_KLAIM_DITINJAU, [], 'klaim_ditinjau');
             }
         } elseif ( ! $this->lewati_tgl_lahir && ! $this->birth_date_matches($canonical['nik'] ?? '', $birth_date, $payload)) {
             return $this->response('not_found', 'NIK dan tanggal lahir tidak cocok.');
@@ -843,13 +844,14 @@ class Simperum_gateway {
      * nama + tanggal lahir. NIK yang terikat ke akun LAIN baru dijawab sesudah pencocokan lolos:
      * sebelum itu jawabannya sama persis dengan NIK yang tidak terikat siapa pun, jadi layar ini
      * tidak bisa dipakai menebak apakah sebuah NIK sudah terikat atau ikatannya terverifikasi.
-     * $klaim TRUE: lolos, tetapi NIK terikat ke akun lain; from_snapshot mencatat permintaan tinjauan
-     * (ajukan_klaim_nik), yang menolak dengan PESAN_NIK_TERIKAT bila ikatan itu terverifikasi.
+     * $klaim 'ikatan': lolos, tetapi NIK terikat ke akun lain; 'nama_awalan': tanggal benar dan nama
+     * SIMPERUM terpotong. Untuk keduanya from_snapshot mencatat permintaan tinjauan (ajukan_klaim_nik),
+     * yang menolak dengan PESAN_NIK_TERIKAT bila NIK terikat terverifikasi ke akun lain.
      * Gagal dihitung per akun; per NIK hanya dihitung untuk peringatan, tidak pernah menahan pemilik.
      */
     private function verifikasi_pemilik($user_id, $nik, $birth_date, array $payload, &$klaim)
     {
-        $klaim = FALSE;
+        $klaim = '';
         $model = $this->CI->Housing_assessment_model;
         $nik_hash = $this->CI->encryption_lib->deterministic_hash($nik);
         $ikatan = $model->cek_ikatan_nik($user_id, $nik_hash);
@@ -875,10 +877,22 @@ class Simperum_gateway {
 
         // Keduanya selalu dihitung (tanpa hubung-singkat), supaya waktu respons tidak membedakannya.
         $nama_cocok = self::nama_sama((string) ($akun['nama'] ?? ''), (string) ($payload['identity']['full_name'] ?? ''));
+        $nama_awalan = self::nama_sama((string) ($akun['nama'] ?? ''), (string) ($payload['identity']['full_name'] ?? ''), TRUE);
         $tanggal_cocok = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $birth_date) === 1
             && $this->birth_date_matches($nik, (string) $birth_date, $payload);
+        /* Nama SIMPERUM terpotong (keputusan user 23 Okt 2026, mis. hanya nama depan): bila nama sumber
+           awalan nama akun dan tanggal benar, NIK TIDAK diikat; permintaan dicatat untuk tinjauan Super
+           Admin (from_snapshot, jenis nama_awalan) dan tidak dihitung percobaan gagal. Sesudah disetujui,
+           Cek NIK berikutnya untuk akun + NIK yang sama lolos seperti nama cocok. */
+        if ($tanggal_cocok && ! $nama_cocok && $nama_awalan) {
+            if ( ! $model->klaim_nama_disetujui($user_id, $nik_hash)) {
+                $klaim = 'nama_awalan';
+                return NULL;
+            }
+            $nama_cocok = TRUE;
+        }
         if ($nama_cocok && $tanggal_cocok) {
-            $klaim = $ikatan !== NULL;
+            $klaim = $ikatan !== NULL ? 'ikatan' : '';
             return NULL;
         }
         $this->CI->rate_limiter->hit('verifikasi_nik', $konteks);
@@ -890,7 +904,14 @@ class Simperum_gateway {
                 'Satu NIK menerima lebih dari 5 percobaan verifikasi gagal dalam 24 jam (akun terakhir id ' . (int) $user_id . ')',
                 ['akun_terakhir' => (int) $user_id], 'nik:' . substr((string) $nik_hash, 0, 16));
         }
-        return $this->response('mismatch', 'Nama lengkap di akun Anda atau tanggal lahir tidak cocok dengan data NIK ini. Periksa tanggal lahir dan pastikan nama di Profil Saya sama dengan nama di KTP.', [], 'verifikasi_tidak_cocok');
+        /* Pesan dipisah (keputusan user 23 Okt 2026): penguji buntu karena tidak tahu bagian mana yang salah.
+           Tanggal dinilai lebih dulu dan menang bila keduanya salah, jadi pesan nama hanya keluar sesudah
+           tanggal benar. Yang terbuka hanya "tanggal ini benar", padahal tanggal sudah tertulis di digit NIK;
+           kecocokan nama tidak pernah terbuka selama tanggalnya salah. */
+        if ( ! $tanggal_cocok) {
+            return $this->response('mismatch', 'Tanggal lahir tidak cocok dengan data NIK ini. Isi tanggal lahir persis seperti di KTP.', [], 'verifikasi_tanggal_tidak_cocok');
+        }
+        return $this->response('mismatch', 'Nama lengkap di akun Anda tidak cocok dengan data NIK ini. Samakan nama di Profil Saya persis seperti di KTP, tanpa singkatan dan tanpa gelar.', [], 'verifikasi_nama_tidak_cocok');
     }
 
     /**
@@ -898,8 +919,11 @@ class Simperum_gateway {
      * html_escape), gelar sesudah koma dibuang, tanda baca jadi spasi (apostrof dihapus),
      * spasi dirapatkan, dan sapaan/gelar umum di depan dibuang. Tidak ada pencocokan longgar:
      * hasilnya harus sama persis. Dibandingkan lewat sidik supaya waktu tidak bergantung isi.
+     * $awalan TRUE: cocok bila kata-kata $b adalah awalan SEJATI kata-kata $a (lebih pendek, kata utuh),
+     * untuk nama SIMPERUM yang terpotong (mis. hanya nama depan). Hasil ini tidak pernah meloloskan
+     * sendiri; pemakainya meneruskan ke tinjauan Super Admin (verifikasi_pemilik).
      */
-    public static function nama_sama($a, $b)
+    public static function nama_sama($a, $b, $awalan = FALSE)
     {
         $normal = static function ($nama) {
             $nama = mb_strtoupper(html_entity_decode((string) $nama, ENT_QUOTES | ENT_HTML5, 'UTF-8'), 'UTF-8');
@@ -914,6 +938,9 @@ class Simperum_gateway {
         };
         $a = $normal($a);
         $b = $normal($b);
+        if ($awalan) {
+            $a = strlen($a) > strlen($b) && $a[strlen($b)] === ' ' ? substr($a, 0, strlen($b)) : '';
+        }
         return $a !== '' && $b !== '' && hash_equals(hash('sha256', $a), hash('sha256', $b));
     }
 
