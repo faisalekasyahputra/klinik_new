@@ -44,7 +44,8 @@ $config['seo'] = [
             'deskripsi' => 'Peta sebaran lokasi perumahan di Jawa Tengah per wilayah, untuk melihat persebaran hunian subsidi dan komersial.'],
         'psu' => ['judul' => 'Serah Terima PSU Perumahan',
             'deskripsi' => 'Daftar perumahan dan status serah terima prasarana, sarana, dan utilitas (PSU) dari pengembang kepada pemerintah kabupaten/kota di Jawa Tengah.'],
-        'Statistika' => ['judul' => 'Statistika Perumahan dan Kawasan Permukiman',
+        // 'peta' => FALSE sejak 23 Okt 2026: kartunya disembunyikan dari Bank Data (data sulit didapat).
+        'Statistika' => ['judul' => 'Statistika Perumahan dan Kawasan Permukiman', 'peta' => FALSE,
             'deskripsi' => 'Ringkasan angka perumahan dan kawasan permukiman Jawa Tengah: unit rumah, pengembang tersertifikasi, dan data pendukung dari Bank Data Disperakim.'],
         'Dokumen' => ['judul' => 'Buku Data dan Dokumen Perumahan',
             'deskripsi' => 'Unduh dan baca Buku Data serta dokumen resmi Disperakim Provinsi Jawa Tengah tentang perumahan dan kawasan permukiman.'],

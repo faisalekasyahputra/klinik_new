@@ -35,12 +35,17 @@
             <span class="mt-4 inline-flex items-center gap-2 text-xs font-black" style="color:var(--teal)">Buka buku <i class="fa-solid fa-arrow-right"></i></span>
         </a>
         <?php endif; ?>
+        <?php /* Kartu Statistik & Infografis DISEMBUNYIKAN 23 Okt 2026 (permintaan user: datanya sulit
+                  didapat). Halaman /Statistika tetap hidup dan keluar dari sitemap (config/seo.php 'peta').
+                  Untuk menampilkan lagi: hapus if (FALSE) ini dan 'peta' => FALSE di seo.php. */ ?>
+        <?php if (FALSE): ?>
         <a href="<?= base_url('Statistika') ?>" class="rounded-2xl p-5 text-left transition hover:-translate-y-0.5" style="background:var(--portal-bg-card);border:1px solid var(--portal-border)">
             <i class="fa-solid fa-chart-column text-xl" style="color:var(--teal)"></i>
             <h3 class="mt-3 text-base font-black" style="color:var(--portal-text)">Statistik & Infografis</h3>
             <p class="mt-1 text-xs" style="color:var(--portal-text-muted)">Lihat ringkasan angka, grafik, dan informasi visual pembangunan perumahan.</p>
             <span class="mt-4 inline-flex items-center gap-2 text-xs font-black" style="color:var(--teal)">Lihat data <i class="fa-solid fa-arrow-right"></i></span>
         </a>
+        <?php endif; ?>
     </div>
 
 </div>
