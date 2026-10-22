@@ -73,14 +73,21 @@ if ( ! $mode_bidang) { $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' =
                         $isi     = (int) ($terisi[(int) $tahun . '-' . (int) $nomor] ?? 0);
                         $penuh   = $isi >= (int) $bidang->kuota;
                         $orang   = $pendaftar[$nomor] ?? [];
+                        // Bulan yang sudah lewat dikunci: membukanya tidak berarti apa-apa bagi
+                        // mahasiswa, dan server pun mengabaikan isiannya (tulis_ulang_bidang()).
+                        $lewat   = $this->slot->bulan_lewat($tahun, $nomor);
+                        $kunci   = $lewat ? ' disabled' : '';
                         ?>
-                        <tr>
-                            <td class="px-5 py-3 font-bold text-gray-900 dark:text-white"><?= html_escape($label) ?></td>
+                        <tr<?= $lewat ? ' class="opacity-50" data-bulan-lewat' : '' ?>>
+                            <td class="px-5 py-3 font-bold text-gray-900 dark:text-white">
+                                <?= html_escape($label) ?>
+                                <?php if ($lewat): ?><span class="ml-1 block text-[11px] font-semibold text-gray-500 dark:text-brand-muted">Sudah lewat</span><?php endif; ?>
+                            </td>
                             <td class="px-5 py-3 text-center">
                                 <input type="checkbox" name="bulan[<?= (int) $nomor ?>][buka]" value="1"
                                        aria-label="Buka <?= html_escape($label) ?>"
                                        class="h-6 w-6 cursor-pointer rounded border border-gray-300 dark:border-white/10 accent-emerald-500"
-                                       <?= $s ? 'checked' : '' ?>>
+                                       <?= $s ? 'checked' : '' ?><?= $kunci ?>>
                             </td>
                             <!-- min/max mengunci pemilih tanggal ke bulan barisnya. Kalau
                                  admin tetap mengirim tanggal di luar itu, model MENJEPITNYA
@@ -89,12 +96,12 @@ if ( ! $mode_bidang) { $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' =
                             <td class="px-5 py-3">
                                 <input type="date" name="bulan[<?= (int) $nomor ?>][mulai]" class="<?= $isian ?>"
                                        min="<?= $awal ?>" max="<?= $akhir ?>"
-                                       value="<?= $s ? html_escape($s->tgl_mulai) : $awal ?>">
+                                       value="<?= $s ? html_escape($s->tgl_mulai) : $awal ?>"<?= $kunci ?>>
                             </td>
                             <td class="px-5 py-3">
                                 <input type="date" name="bulan[<?= (int) $nomor ?>][selesai]" class="<?= $isian ?>"
                                        min="<?= $awal ?>" max="<?= $akhir ?>"
-                                       value="<?= $s ? html_escape($s->tgl_selesai) : $akhir ?>">
+                                       value="<?= $s ? html_escape($s->tgl_selesai) : $akhir ?>"<?= $kunci ?>>
                             </td>
                             <td class="px-5 py-3">
                                 <?php if (empty($orang)): ?>
@@ -125,6 +132,7 @@ if ( ! $mode_bidang) { $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' =
         <div class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 dark:border-white/5 px-5 py-4">
             <p class="text-xs text-gray-500 dark:text-brand-muted">
                 Bulan yang kotak bukanya tidak dicentang akan ditutup, apa pun tanggal yang tertulis di sebelahnya.
+                Bulan yang sudah lewat terkunci dan tidak berubah saat disimpan.
             </p>
             <button type="submit" class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan <?= html_escape($bidang->nama) ?> <?= (int) $tahun ?></span></button>
         </div>

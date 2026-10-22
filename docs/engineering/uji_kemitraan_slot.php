@@ -652,6 +652,48 @@ $sesudah = (int) $db->query("SELECT COUNT(*) n FROM kkn_magang_slot WHERE tahun 
 // merah setiap kali salah satunya disesuaikan - merah yang tidak menuduh apa pun.
 cek($sebelum === $sesudah && $sesudah > 0, 'Mahasiswa tidak bisa menulis slot lewat POST langsung');
 
+echo "\n== Bulan yang sudah lewat ==\n";
+
+// Tahun LALU, bukan tahun berjalan: menulis ulang tahun berjalan akan menimpa
+// konfigurasi sungguhan. Seluruh bulan tahun lalu sudah lewat, jadi satu baris
+// sisipan cukup untuk menguji papan, layar detail, dan penolakan server.
+// Baris yang sudah ada sebelumnya tidak disentuh; yang disisipkan dihapus lagi.
+$tahun_lewat = (int) date('Y') - 1;
+$db->query("INSERT INTO kkn_magang_slot (bidang_kode, tahun, bulan, tgl_mulai, tgl_selesai) VALUES ('"
+    . $db->real_escape_string(BIDANG_UJI) . "', $tahun_lewat, 6, '$tahun_lewat-06-01', '$tahun_lewat-06-30')");
+$id_lewat = (int) $db->insert_id;
+$hitung_lewat = function () use ($db, $tahun_lewat) {
+    $baris = [];
+    foreach ($db->query("SELECT bulan, tgl_mulai, tgl_selesai FROM kkn_magang_slot WHERE bidang_kode = '"
+        . $db->real_escape_string(BIDANG_UJI) . "' AND tahun = $tahun_lewat ORDER BY id") as $b) { $baris[] = $b; }
+    return $baris;
+};
+
+$papan = http('KemitraanPortal/magang/' . $tahun_lewat)['body'];
+$awal_kartu = strpos($papan, '>' . htmlspecialchars($nama_bidang, ENT_QUOTES, 'UTF-8') . '</h3>');
+$kartu = $awal_kartu === FALSE ? '' : substr($papan, $awal_kartu, 4000);
+$ujung = strpos($kartu, '<h3 class="text-sm font-black', 10);
+if ($ujung !== FALSE) { $kartu = substr($kartu, 0, $ujung); }
+cek($kartu !== '' && strpos($kartu, 'Belum ada bulan yang dibuka') !== FALSE && strpos($kartu, 'Bulan dibuka:') === FALSE,
+    'Papan publik tidak menyebut slot yang tanggal selesainya sudah lewat sebagai dibuka');
+
+pakai_sesi('adm');
+$detail = http('Admin_Kemitraan/slot_bidang/' . rawurlencode(BIDANG_UJI) . '/' . $tahun_lewat)['body'];
+cek(substr_count($detail, 'data-bulan-lewat') === 12 && substr_count($detail, 'Sudah lewat') >= 12,
+    'Layar detail mengunci dua belas baris bulan tahun lalu');
+$detail_depan = http('Admin_Kemitraan/slot_bidang/' . rawurlencode(BIDANG_UJI) . '/' . TAHUN_UJI)['body'];
+cek(strpos($detail_depan, 'data-bulan-lewat') === FALSE, 'Tahun depan tidak punya baris terkunci');
+
+$sebelum_lewat = $hitung_lewat();
+http('Admin_Kemitraan/simpan_slot_bidang/' . rawurlencode(BIDANG_UJI), http_build_query([
+    'csrf_kpkp_token' => token('Admin_Kemitraan/slot_bidang/' . rawurlencode(BIDANG_UJI) . '/' . $tahun_lewat),
+    'tahun'           => $tahun_lewat,
+    'bulan'           => [7 => ['buka' => 1]],   // Juni tidak dicentang, Juli dicentang
+]));
+cek($hitung_lewat() === $sebelum_lewat, 'Simpan tidak menghapus atau membuka bulan yang sudah lewat');
+
+$db->query("DELETE FROM kkn_magang_slot WHERE id = $id_lewat");
+
 bersihkan();
 echo "\nRINGKASAN: {$GLOBALS['t']} pemeriksaan, {$GLOBALS['g']} gagal\n";
 exit($GLOBALS['g'] > 0 ? 1 : 0);
