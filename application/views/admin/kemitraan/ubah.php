@@ -12,7 +12,7 @@ $isian = 'w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white
     . ' px-4 py-2.5 text-sm text-gray-900 dark:text-white outline-none';
 $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
 ?>
-<?php $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => 'pendaftaran']); ?>
+<?php $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => 'pendaftaran_' . $row->jenis]); ?>
 
 <div class="mb-5 flex flex-wrap items-start justify-between gap-4">
     <div>
@@ -24,7 +24,7 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
             &middot; status <span class="font-bold"><?= html_escape($row->status) ?></span>
         </p>
     </div>
-    <a href="<?= base_url('Admin_Kemitraan') ?>" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>Kembali</span></a>
+    <a href="<?= base_url('Admin_Kemitraan/' . $row->jenis) ?>" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>Kembali</span></a>
 </div>
 
 <form method="POST" action="<?= base_url('Admin_Kemitraan/simpan_ubah/' . (int) $row->id) ?>"
@@ -125,7 +125,7 @@ $label = 'mb-1.5 block text-xs font-bold text-gray-900 dark:text-white';
              ini yang tidak bisa dibatalkan. "Ditolak" cukup untuk hampir semua
              kasus dan meninggalkan jejak yang bisa dibaca. -->
         <button type="submit" form="hapus-pendaftaran" class="tombol-kedua tombol-aksi-bahaya mr-auto"><i class="ph ph-trash"></i><span>Hapus pendaftaran ini</span></button>
-        <a href="<?= base_url('Admin_Kemitraan') ?>" class="tombol-kedua"><span>Batal</span></a>
+        <a href="<?= base_url('Admin_Kemitraan/' . $row->jenis) ?>" class="tombol-kedua"><span>Batal</span></a>
         <button type="submit" class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan perubahan</span></button>
     </div>
 </form>

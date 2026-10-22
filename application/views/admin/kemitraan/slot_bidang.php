@@ -138,3 +138,82 @@ if ( ! $mode_bidang) { $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' =
         </div>
     </div>
 </form>
+
+
+<?php if ( ! $mode_bidang): ?>
+<?php
+/* Posisi yang dicari bidang ini, dikelola di sini juga (satu halaman per bidang, 22 Okt 2026).
+   Hanya superadmin: admin bidang membuka layar ini lewat Kemitraan_Bidang dan belum boleh
+   mengubah posisi. Formulirnya sama dengan layar Posisi Magang; bidangnya dikunci dan
+   simpan kembali ke sini. */
+$isian_posisi = 'mt-1 w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm text-gray-800 dark:border-white/10 dark:text-white';
+$tanpa_awalan = fn($n) => preg_replace('/^Bidang\s+/i', '', (string) $n);
+?>
+<div class="mt-6" id="posisi" data-posisi-bidang x-data="<?= html_escape($this->load->view('admin/magang_posisi/_alpine', ['bidang_awal' => $bidang->kode], TRUE)) ?>">
+    <div class="mb-3 flex flex-wrap items-end justify-between gap-3">
+        <div>
+            <h3 class="text-base font-black text-gray-900 dark:text-white">Posisi yang dicari</h3>
+            <p class="text-xs text-gray-500 dark:text-brand-muted">Tampil di papan magang dan formulir daftar untuk bidang ini. Hanya keterangan; batas pendaftar tetap kuota di atas.</p>
+        </div>
+        <button type="button" class="tombol-utama" @click="tambah()" data-posisi-tambah><i class="ph ph-plus" aria-hidden="true"></i><span>Tambah posisi</span></button>
+    </div>
+    <?php if (empty($posisi)): ?>
+        <p class="kartu-admin isi-kartu text-center text-sm text-gray-500 dark:text-brand-muted">Belum ada posisi. Papan magang hanya menampilkan nama bidang.</p>
+    <?php else: ?>
+        <div class="kartu-admin overflow-x-auto aksi-tetap">
+            <table class="w-full min-w-[640px] text-left text-sm">
+                <thead class="bg-gray-50 text-xs uppercase text-gray-500 dark:bg-black/20">
+                    <tr>
+                        <th class="px-4 py-3">Posisi dan kualifikasi</th>
+                        <th class="px-4 py-3">Jumlah</th>
+                        <th class="px-4 py-3">Status</th>
+                        <th class="px-4 py-3 text-right">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                <?php foreach ($posisi as $r): $kual = daftar_kualifikasi($r->keterangan); ?>
+                    <tr>
+                        <td class="px-4 py-3">
+                            <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama_posisi) ?></div>
+                            <?php if ($kual): ?>
+                                <ul class="mt-0.5 list-disc pl-4 text-xs text-gray-500 dark:text-brand-muted"><?php foreach (array_slice($kual, 0, 3) as $k): ?><li><?= html_escape($k) ?></li><?php endforeach; ?></ul>
+                                <?php if (count($kual) > 3): ?>
+                                    <details class="text-xs text-gray-500 dark:text-brand-muted">
+                                        <summary class="cursor-pointer font-semibold text-brand-600 hover:underline dark:text-brand-300">Selengkapnya (<?= count($kual) ?> kualifikasi)</summary>
+                                        <ul class="list-disc pl-4"><?php foreach (array_slice($kual, 3) as $k): ?><li><?= html_escape($k) ?></li><?php endforeach; ?></ul>
+                                    </details>
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-4 py-3 text-xs"><?= (int) $r->kuota ?> orang</td>
+                        <td class="px-4 py-3">
+                            <?= $this->load->view('admin/components/status_badge', [
+                                'label' => $r->aktif ? 'Ditampilkan' : 'Disembunyikan',
+                                'kelas' => $r->aktif ? 'ok' : 'reject',
+                            ], TRUE) ?>
+                        </td>
+                        <td class="whitespace-nowrap px-4 py-3 text-right">
+                            <button type="button" class="tombol-aksi" @click="ubah($el.dataset)" data-posisi-ubah
+                                    data-id="<?= (int) $r->id ?>" data-bidang="<?= html_escape($r->bidang_kode) ?>" data-posisi="<?= html_escape($r->nama_posisi) ?>"
+                                    data-kual="<?= html_escape(json_encode($kual)) ?>" data-kuota="<?= (int) $r->kuota ?>" data-urutan="<?= (int) $r->urutan ?>" data-aktif="<?= $r->aktif ? '1' : '0' ?>">
+                                <i class="ph ph-pencil-simple" aria-hidden="true"></i><span>Ubah</span>
+                            </button>
+                            <form class="inline" action="<?= base_url('Admin_Magang_Posisi/hapus') ?>" method="post"
+                                  data-konfirmasi="Posisi <?= html_escape($r->nama_posisi) ?> akan dihapus dari daftar. Pendaftaran yang sudah masuk tidak berubah." data-konfirmasi-judul="Hapus posisi?" data-konfirmasi-label="Hapus" data-konfirmasi-bahaya>
+                                <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
+                                <input type="hidden" name="id" value="<?= (int) $r->id ?>">
+                                <input type="hidden" name="asal" value="slot">
+                                <input type="hidden" name="tahun" value="<?= (int) $tahun ?>">
+                                <button class="tombol-aksi tombol-aksi-bahaya"><i class="ph ph-trash" aria-hidden="true"></i><span>Hapus</span></button>
+                            </form>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+    <?php $this->load->view('admin/magang_posisi/_form', ['bidang' => [], 'isian' => $isian_posisi, 'tanpa_awalan' => $tanpa_awalan,
+        'asal' => ['kode' => $bidang->kode, 'tahun' => $tahun]]); ?>
+</div>
+<?php endif; ?>

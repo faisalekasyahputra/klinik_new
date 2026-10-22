@@ -629,10 +629,13 @@ cek(strpos($r['body'], $nama_bidang) !== FALSE, 'Bidang uji tampil di daftar adm
 // Satu wadah: pendaftaran dan slot adalah dua tab pada halaman yang sama,
 // bukan dua entri sidebar. Kalau kepalanya hilang dari salah satunya, admin
 // kehilangan jalan menyeberang.
-foreach (['Admin_Kemitraan', 'Admin_Kemitraan/slot'] as $jalur) {
+// Sejak 22 Okt 2026 menu Magang (pendaftaran, slot, posisi) terpisah dari KKN.
+foreach (['Admin_Kemitraan/magang', 'Admin_Kemitraan/slot', 'Admin_Magang_Posisi'] as $jalur) {
     $b = http($jalur)['body'];
-    cek(strpos($b, 'Slot &amp; bidang') !== FALSE && strpos($b, 'KKN &amp; Magang') !== FALSE,
-        "Tab pengelolaan tampil di /$jalur");
+    // Tiga tab Magang, dan tab KKN tidak ikut (label "Akun universitas" huruf kecil hanya ada di tab).
+    cek(strpos($b, '>Pendaftaran magang</span>') !== FALSE && strpos($b, '>Slot magang</span>') !== FALSE
+        && strpos($b, '>Posisi magang</span>') !== FALSE && strpos($b, '>Akun universitas</span>') === FALSE,
+        "Tab menu Magang tampil di /$jalur");
 }
 
 pakai_sesi('mhs');
@@ -693,6 +696,45 @@ http('Admin_Kemitraan/simpan_slot_bidang/' . rawurlencode(BIDANG_UJI), http_buil
 cek($hitung_lewat() === $sebelum_lewat, 'Simpan tidak menghapus atau membuka bulan yang sudah lewat');
 
 $db->query("DELETE FROM kkn_magang_slot WHERE id = $id_lewat");
+
+echo "\n== Satu halaman per bidang, menu Magang dan KKN ==\n";
+
+// Posisi dikelola dari detail slot bidang (22 Okt 2026): simpan dan hapus kembali ke halaman
+// bidang itu, bukan ke daftar semua posisi.
+pakai_sesi('adm');
+$detail_url = 'Admin_Kemitraan/slot_bidang/' . rawurlencode(BIDANG_UJI) . '/' . TAHUN_UJI;
+$b = http('Admin_Magang_Posisi/simpan', [
+    'csrf_kpkp_token' => token($detail_url), 'id' => 0, 'bidang_kode' => BIDANG_UJI,
+    'nama_posisi' => 'UJISLOT Posisi', 'kualifikasi' => ['Teliti'], 'kuota' => 1, 'aktif' => 1,
+    'asal' => 'slot', 'tahun' => TAHUN_UJI,
+])['body'];
+$id_posisi = (int) (baris("SELECT id FROM kkn_magang_posisi WHERE nama_posisi = 'UJISLOT Posisi'")['id'] ?? 0);
+cek($id_posisi > 0 && strpos($b, 'data-posisi-bidang') !== FALSE && strpos($b, 'UJISLOT Posisi') !== FALSE,
+    'Tambah posisi dari detail bidang tersimpan dan kembali ke halaman bidang itu');
+$ringkas = http('Admin_Kemitraan/slot/' . TAHUN_UJI)['body'];
+cek(strpos($ringkas, 'data-kolom-posisi') !== FALSE && strpos($ringkas, '1 posisi') !== FALSE,
+    'Ringkasan Slot magang menampilkan kolom Posisi');
+
+pakai_sesi('bid');
+$r = http('Kemitraan_Bidang/kuota/' . TAHUN_UJI);
+cek($r['code'] === 200 && strpos($r['body'], 'data-posisi-bidang') === FALSE,
+    'Admin bidang tidak mendapat bagian posisi di layar slot bidangnya');
+http('Admin_Magang_Posisi/hapus', ['csrf_kpkp_token' => token('Kemitraan_Bidang/kuota/' . TAHUN_UJI), 'id' => $id_posisi]);
+cek((int) baris("SELECT COUNT(*) n FROM kkn_magang_posisi WHERE id = ?", [$id_posisi])['n'] === 1,
+    'Admin bidang tidak bisa menghapus posisi lewat POST langsung');
+
+pakai_sesi('adm');
+$b = http('Admin_Magang_Posisi/hapus', ['csrf_kpkp_token' => token($detail_url), 'id' => $id_posisi, 'asal' => 'slot', 'tahun' => TAHUN_UJI])['body'];
+cek((int) baris("SELECT COUNT(*) n FROM kkn_magang_posisi WHERE id = ?", [$id_posisi])['n'] === 0 && strpos($b, 'data-posisi-bidang') !== FALSE,
+    'Hapus posisi dari detail bidang kembali ke halaman bidang itu');
+$db->query("DELETE FROM kkn_magang_posisi WHERE nama_posisi LIKE 'UJISLOT %'");
+
+// Menu dipisah: tautan lama ?jenis= diarahkan ke menunya, dan daftar KKN tidak memuat magang.
+cek(strpos(http('Admin_Kemitraan?jenis=kkn')['body'], '>Pendaftaran KKN</span>') !== FALSE,
+    'Tautan lama Admin_Kemitraan?jenis=kkn sampai di menu KKN');
+$kkn = http('Admin_Kemitraan/kkn')['body'];
+cek(strpos($kkn, '>Pendaftaran magang</span>') === FALSE && strpos($kkn, '>Ditinjau Bidang</a>') === FALSE,
+    'Menu KKN tanpa tab magang dan tanpa status Ditinjau Bidang');
 
 bersihkan();
 echo "\nRINGKASAN: {$GLOBALS['t']} pemeriksaan, {$GLOBALS['g']} gagal\n";

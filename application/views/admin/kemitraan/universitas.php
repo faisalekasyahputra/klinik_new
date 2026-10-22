@@ -1,7 +1,7 @@
 <?php
 $this->load->helper('admin_table');
 /* Dipakai bersama superadmin (Admin_Kemitraan::universitas) dan admin bidang
-   (Kemitraan_Bidang::universitas, ditandai $aksi_buat). Tab KKN & Magang hanya untuk
+   (Kemitraan_Bidang::universitas, ditandai $aksi_buat). Tab menu KKN hanya untuk
    superadmin: bagi admin bidang ketiganya menolak akses (temuan UAT universitas U1). */
 if (empty($aksi_buat)) {
     $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => 'universitas']);

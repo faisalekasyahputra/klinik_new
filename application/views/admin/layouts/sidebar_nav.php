@@ -78,7 +78,8 @@ $gambar = function (array $items, $tingkat) use (&$gambar, $aktif_kelas, $diam_k
                       mengubah `buka` tetapi anaknya tetap tersembunyi - Rekap/Riwayat
                       cabang lain terukur 0 px. Buka-tutup seketika tidak bergantung
                       pada itu. */ ?>
-            <div class="ml-3 mt-1 space-y-1 border-l border-gray-200 pl-2 dark:border-white/10"
+            <?php /* Garis cabang melengkung: .cabang-sidebar di layouts/head.php. */ ?>
+            <div class="cabang-sidebar mt-1 space-y-1"
                  x-show="buka && sidebarOpen">
               <?php $gambar($item['children'], $tingkat + 1); ?>
             </div>

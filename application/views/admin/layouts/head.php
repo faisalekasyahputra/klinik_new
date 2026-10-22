@@ -113,6 +113,17 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css" integrity="sha384-6p9AefaqUhEVheRlj1mpAkbngHXy9mbYMrIdcIt4Jlc9lOLIablJq3bBsLOjGwZ7" crossorigin="anonymous" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css" integrity="sha384-6p9AefaqUhEVheRlj1mpAkbngHXy9mbYMrIdcIt4Jlc9lOLIablJq3bBsLOjGwZ7" crossorigin="anonymous"></noscript>
     <style>
         [x-cloak] { display: none !important; }
+        /* Garis cabang sidebar (permintaan user 22 Okt 2026): tiap sub-menu disambung garis yang
+           MELENGKUNG dari batang induknya, bukan satu garis lurus di kiri. ::before = siku melengkung ke
+           tengah baris; ::after = batang lanjutan ke saudara berikutnya (tidak ada di anak terakhir).
+           Berlaku di semua kedalaman (Kemitraan -> Magang -> Slot Magang). */
+        .cabang-sidebar { margin-left: 1.1rem; padding-left: .85rem; }
+        .cabang-sidebar > div { position: relative; }
+        .cabang-sidebar > div::before { content: ""; position: absolute; left: -.85rem; top: -.25rem; width: .6rem; height: 1.25rem;
+            border-left: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db; border-bottom-left-radius: .55rem; pointer-events: none; }
+        .cabang-sidebar > div:not(:last-child)::after { content: ""; position: absolute; left: -.85rem; top: 0; bottom: -.25rem;
+            border-left: 1px solid #d1d5db; pointer-events: none; }
+        .dark .cabang-sidebar > div::before, .dark .cabang-sidebar > div:not(:last-child)::after { border-color: rgba(255, 255, 255, .24); }
         /* Kolom nomor urut tabel daftar admin (daftar revisi dinas 23 Sep 2026: "Numbering table").
            Satu aturan untuk semua tabel ber-[data-tabel-admin]; nomor awal datang dari offset
            paginasi yang dicetak sebagai counter-reset di pembungkus [data-tabel-admin] tiap view (reset di

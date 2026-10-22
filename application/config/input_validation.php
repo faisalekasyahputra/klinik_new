@@ -16,6 +16,7 @@ $config['input_allowed_fields'] = [
     'alasan',
     'alasan_pengajuan',
     'arah',
+    'asal', // Admin_Magang_Posisi: 'slot' = kembali ke detail slot bidang
     'asosiasi',
     'penilaian_id',
     'bantuan_perumahan',
