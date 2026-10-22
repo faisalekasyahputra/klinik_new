@@ -1,8 +1,4 @@
 <div class="mx-auto max-w-4xl p-2 sm:p-6">
-    <?php if ( ! empty($perlu_masuk)): ?>
-        <?php // Dibaca components/login_modal.php (muat penuh) dan footer.php (muat progresif). ?>
-        <div data-perlu-masuk="<?= html_escape($perlu_masuk) ?>" hidden></div>
-    <?php endif; ?>
     <div class="mb-6 text-center">
         <span class="text-xs font-bold uppercase tracking-[.18em] text-[color:var(--portal-text-muted)]">Kemitraan</span>
         <h1 class="mt-2 text-2xl font-black text-[color:var(--portal-text)] sm:text-4xl">KKN dan Magang</h1>
