@@ -120,7 +120,7 @@ $config['input_allowed_fields'] = [
     'kat',
     'kategori',
     'kategori_user',
-    'keputusan', // Admin_Users::putuskan_klaim_nik: setuju | tolak
+    'keputusan', // Admin_Users::putuskan_klaim_nik: setuju | tolak; putuskan_lolos_nama_awalan: cek | cabut
     // Tujuan kembali Admin_Users::create_staff; nilainya dicocokkan ke daftar tetap di sana.
     'kembali',
     'keterangan',

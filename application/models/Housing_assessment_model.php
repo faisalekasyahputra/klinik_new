@@ -243,19 +243,77 @@ class Housing_assessment_model extends CI_Model {
         return $id !== NULL ? ($hasil[0] ?? NULL) : $hasil;
     }
 
-    /** TRUE bila Super Admin pernah menyetujui klaim jenis nama_awalan untuk akun + NIK ini. */
+    /** Id baris persetujuan terbaru klaim jenis nama_awalan untuk akun + NIK ini, 0 bila belum pernah disetujui. */
     public function klaim_nama_disetujui($user_id, $nik_hash)
     {
-        $baris = $this->db->query("SELECT k.detail_json FROM sys_jejak_audit k JOIN sys_jejak_audit d
+        $baris = $this->db->query("SELECT k.detail_json, d.id keputusan_id FROM sys_jejak_audit k JOIN sys_jejak_audit d
             ON d.objek_tipe = 'klaim_nik' AND d.objek_id = CAST(k.id AS CHAR) AND d.aksi = 'klaim_nik_disetujui'
             WHERE k.aksi = 'klaim_nik_diajukan' AND k.pelaku_id = ?", [(int) $user_id])->result_array();
+        $terbaru = 0;
         foreach ($baris as $r) {
             $d = json_decode((string) $r['detail_json'], TRUE) ?: [];
             if (($d['jenis'] ?? '') === 'nama_awalan' && hash_equals((string) $nik_hash, (string) ($d['nik_lookup_hash'] ?? ''))) {
-                return TRUE;
+                $terbaru = max($terbaru, (int) $r['keputusan_id']);
             }
         }
-        return FALSE;
+        return $terbaru;
+    }
+
+    /**
+     * Lolos otomatis lewat nama SIMPERUM terpotong (keputusan user 23 Okt 2026) dicatat untuk pemeriksaan
+     * susulan Super Admin: baris jejak audit `nik_lolos_nama_awalan` (pelaku = warga, rincian = sidik NIK);
+     * keputusan = `lolos_nama_awalan_dicek` atau `lolos_nama_awalan_dicabut` berobjek `lolos_nama_awalan`#id.
+     * Cek NIK ulang oleh akun yang sama tidak menggandakan baris yang masih menunggu.
+     */
+    public function catat_lolos_nama_awalan($user_id, $nik_hash)
+    {
+        foreach ($this->lolos_nama_awalan_tertunda() as $r) {
+            if ((int) $r['warga_id'] === (int) $user_id && hash_equals($r['nik_lookup_hash'], (string) $nik_hash)) { return; }
+        }
+        $this->db->insert('sys_jejak_audit', [
+            'pelaku_id' => (int) $user_id,
+            'pelaku_email' => $this->session->userdata('email') ?: NULL,
+            'pelaku_peran' => $this->session->userdata('role') ?: NULL,
+            'aksi' => 'nik_lolos_nama_awalan',
+            'objek_tipe' => 'usr_akun',
+            'objek_id' => (string) (int) $user_id,
+            'ringkasan' => 'NIK terverifikasi otomatis: tanggal lahir cocok, nama SIMPERUM hanya awal nama akun; menunggu pemeriksaan susulan Super Admin',
+            'detail_json' => json_encode(['nik_lookup_hash' => (string) $nik_hash]),
+            'ip' => $this->input->ip_address(),
+            'created_at' => date('Y-m-d H:i:s'),
+        ]);
+    }
+
+    /** Lolos otomatis nama awalan yang belum diperiksa Super Admin (terbaru dulu), atau satu baris bila $id diberikan. */
+    public function lolos_nama_awalan_tertunda($id = NULL)
+    {
+        $this->db->select('k.id, k.pelaku_id warga_id, k.detail_json, k.created_at, u.email warga_email, u.nama warga_nama', FALSE)
+            ->from('sys_jejak_audit k')->join('usr_akun u', 'u.id = k.pelaku_id', 'left')
+            ->where('k.aksi', 'nik_lolos_nama_awalan')
+            ->where("NOT EXISTS (SELECT 1 FROM sys_jejak_audit d WHERE d.objek_tipe = 'lolos_nama_awalan' AND d.objek_id = CAST(k.id AS CHAR)
+                AND d.aksi IN ('lolos_nama_awalan_dicek', 'lolos_nama_awalan_dicabut'))", NULL, FALSE);
+        if ($id !== NULL) { $this->db->where('k.id', (int) $id); }
+        $hasil = [];
+        foreach ($this->db->order_by('k.id', 'DESC')->limit(100)->get()->result_array() as $r) {
+            $d = json_decode((string) $r['detail_json'], TRUE) ?: [];
+            unset($r['detail_json']);
+            $hasil[] = $r + ['nik_lookup_hash' => (string) ($d['nik_lookup_hash'] ?? '')];
+        }
+        return $id !== NULL ? ($hasil[0] ?? NULL) : $hasil;
+    }
+
+    /**
+     * Id pencabutan terbaru untuk NIK ini (akun mana pun), 0 bila belum pernah. NIK yang pernah dicabut tidak
+     * lagi lolos otomatis lewat nama awalan; hanya persetujuan klaim yang lebih baru yang meloloskannya.
+     */
+    public function nama_awalan_dicabut($nik_hash)
+    {
+        $terbaru = 0;
+        foreach ($this->db->select('id, detail_json')->get_where('sys_jejak_audit', ['aksi' => 'lolos_nama_awalan_dicabut'])->result_array() as $r) {
+            $d = json_decode((string) $r['detail_json'], TRUE) ?: [];
+            if (hash_equals((string) $nik_hash, (string) ($d['nik_lookup_hash'] ?? ''))) { $terbaru = max($terbaru, (int) $r['id']); }
+        }
+        return $terbaru;
     }
 
     /**

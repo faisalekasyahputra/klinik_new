@@ -15,6 +15,8 @@ class Simperum_gateway {
     private $connect_timeout;
     private $timeout;
     private $internal_profile = [];
+    /** Diset verifikasi_pemilik() bila lolos lewat nama SIMPERUM terpotong; dicatat sesudah profil tersimpan. */
+    private $lolos_nama_awalan = FALSE;
 
     public function __construct()
     {
@@ -815,6 +817,10 @@ class Simperum_gateway {
                 return $this->response('error', $saved['message'] ?? 'Profil belum dapat disimpan dengan aman.', [], $saved['code'] ?? 'profile_failed');
             }
             $this->CI->Housing_assessment_model->tandai_nik_terverifikasi($requested_by);
+            if ($this->lolos_nama_awalan) {
+                $this->CI->Housing_assessment_model->catat_lolos_nama_awalan($requested_by,
+                    $this->CI->encryption_lib->deterministic_hash((string) ($canonical['nik'] ?? '')));
+            }
             $this->cermin($canonical['nik'] ?? '', $requested_by, $snapshot);
         }
 
@@ -852,6 +858,7 @@ class Simperum_gateway {
     private function verifikasi_pemilik($user_id, $nik, $birth_date, array $payload, &$klaim)
     {
         $klaim = '';
+        $this->lolos_nama_awalan = FALSE;
         $model = $this->CI->Housing_assessment_model;
         $nik_hash = $this->CI->encryption_lib->deterministic_hash($nik);
         $ikatan = $model->cek_ikatan_nik($user_id, $nik_hash);
@@ -880,16 +887,22 @@ class Simperum_gateway {
         $nama_awalan = self::nama_sama((string) ($akun['nama'] ?? ''), (string) ($payload['identity']['full_name'] ?? ''), TRUE);
         $tanggal_cocok = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $birth_date) === 1
             && $this->birth_date_matches($nik, (string) $birth_date, $payload);
-        /* Nama SIMPERUM terpotong (keputusan user 23 Okt 2026, mis. hanya nama depan): bila nama sumber
-           awalan nama akun dan tanggal benar, NIK TIDAK diikat; permintaan dicatat untuk tinjauan Super
-           Admin (from_snapshot, jenis nama_awalan) dan tidak dihitung percobaan gagal. Sesudah disetujui,
-           Cek NIK berikutnya untuk akun + NIK yang sama lolos seperti nama cocok. */
+        /* Nama SIMPERUM terpotong (keputusan user 23 Okt 2026, mis. hanya nama depan), tanggal benar:
+           - NIK tidak terikat akun lain dan belum pernah dicabut: LOLOS langsung, lalu masuk daftar
+             pemeriksaan susulan Super Admin yang bisa mencabutnya (catat_lolos_nama_awalan);
+           - selain itu NIK tidak diikat; permintaan tinjauan dicatat (klaim jenis nama_awalan), tidak
+             dihitung percobaan gagal. Persetujuan yang lebih baru dari pencabutan terakhir meloloskan. */
         if ($tanggal_cocok && ! $nama_cocok && $nama_awalan) {
-            if ( ! $model->klaim_nama_disetujui($user_id, $nik_hash)) {
+            $dicabut = $model->nama_awalan_dicabut($nik_hash);
+            if ($model->klaim_nama_disetujui($user_id, $nik_hash) > $dicabut) {
+                $nama_cocok = TRUE;
+            } elseif ($ikatan === NULL && $dicabut === 0) {
+                $nama_cocok = TRUE;
+                $this->lolos_nama_awalan = TRUE;
+            } else {
                 $klaim = 'nama_awalan';
                 return NULL;
             }
-            $nama_cocok = TRUE;
         }
         if ($nama_cocok && $tanggal_cocok) {
             $klaim = $ikatan !== NULL ? 'ikatan' : '';

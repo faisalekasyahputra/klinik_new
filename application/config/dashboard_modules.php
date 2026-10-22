@@ -516,12 +516,14 @@ $config['dashboard_modules'] = [
         'label' => 'Permintaan NIK Warga', 'icon' => 'ph-identification-card',
         'url'   => 'Admin_Users/permintaan_nik', 'group' => 'Tindak Lanjut', 'order' => 50,
         'roles' => ['admin'], 'scope' => null,
-        'aksi'  => ['Admin_Users/putuskan_reset_nik', 'Admin_Users/putuskan_klaim_nik'],
+        'aksi'  => ['Admin_Users/putuskan_reset_nik', 'Admin_Users/putuskan_klaim_nik', 'Admin_Users/putuskan_lolos_nama_awalan'],
         'table' => 'sys_jejak_audit',
-        'pending_where' => "aksi IN ('reset_nik_diajukan', 'klaim_nik_diajukan') AND NOT EXISTS (SELECT 1 FROM sys_jejak_audit d
+        // Termasuk NIK yang lolos otomatis lewat nama SIMPERUM terpotong dan belum diperiksa susulan (23 Okt 2026).
+        'pending_where' => "aksi IN ('reset_nik_diajukan', 'klaim_nik_diajukan', 'nik_lolos_nama_awalan') AND NOT EXISTS (SELECT 1 FROM sys_jejak_audit d
             WHERE d.objek_id = CAST(sys_jejak_audit.id AS CHAR) AND ((d.objek_tipe = 'reset_nik' AND d.aksi IN
             ('reset_nik_permintaan_disetujui', 'reset_nik_permintaan_ditolak')) OR (d.objek_tipe = 'klaim_nik' AND d.aksi IN
-            ('klaim_nik_disetujui', 'klaim_nik_ditolak'))))",
+            ('klaim_nik_disetujui', 'klaim_nik_ditolak')) OR (d.objek_tipe = 'lolos_nama_awalan' AND d.aksi IN
+            ('lolos_nama_awalan_dicek', 'lolos_nama_awalan_dicabut'))))",
         'badge' => TRUE, 'ringkas' => 'NIK',
         'tindakan' => [
             'satuan' => 'permintaan NIK warga menunggu keputusan', 'keterangan' => 'aksi',
