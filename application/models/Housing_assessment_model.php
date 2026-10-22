@@ -172,15 +172,21 @@ class Housing_assessment_model extends CI_Model {
     /** Jawaban Cek NIK yang lolos verifikasi tetapi NIK-nya terikat BELUM terverifikasi ke akun lain. */
     public const PESAN_KLAIM_DITINJAU = 'Permintaan Anda untuk memakai NIK ini sudah kami terima dan sedang ditinjau Dinas Perakim. Hasilnya akan terlihat di menu Pendataan; permintaan tidak perlu diulang.';
 
+    /** Jawaban Cek NIK bila tanggal benar tetapi nama di SIMPERUM hanya sebagian awal nama akun (klaim jenis nama_awalan). */
+    public const PESAN_NAMA_DITINJAU = 'Tanggal lahir cocok, tetapi nama di data SIMPERUM untuk NIK ini tidak lengkap sehingga belum bisa dicocokkan otomatis. Permintaan Anda sudah kami terima dan sedang ditinjau Dinas Perakim. Hasilnya akan terlihat di menu Pendataan; permintaan tidak perlu diulang.';
+
     /**
      * Catat permintaan klaim NIK untuk ditinjau Super Admin (tanpa tabel baru: baris jejak audit
      * `klaim_nik_diajukan`, pelaku = pemohon; keputusan = baris `klaim_nik_disetujui`/`klaim_nik_ditolak`
      * berobjek `klaim_nik`#id). Rincian hanya sidik NIK (HMAC), id pemegang, dan hitungan, tanpa NIK.
      * Ikatan terverifikasi tidak bisa diklaim (PESAN_NIK_TERIKAT). Permintaan yang masih menunggu untuk
-     * pasangan pemohon + NIK yang sama tidak digandakan.
+     * pasangan pemohon + NIK + jenis yang sama tidak digandakan. $jenis 'ikatan' = NIK terikat ke akun lain,
+     * 'nama_awalan' = nama SIMPERUM terpotong (Simperum_gateway::verifikasi_pemilik); persetujuan jenis ini
+     * dibaca klaim_nama_disetujui() supaya Cek NIK berikutnya lolos.
      */
-    public function ajukan_klaim_nik($user_id, $nik)
+    public function ajukan_klaim_nik($user_id, $nik, $jenis = 'ikatan')
     {
+        $jenis = $jenis === 'nama_awalan' ? 'nama_awalan' : 'ikatan';
         $user_id = (int) $user_id;
         $hash = $this->encryption_lib->deterministic_hash($nik);
         if ($user_id < 1 || $hash === '') { return $this->fail('encryption_unavailable', 'Data sensitif belum dapat disimpan.'); }
@@ -188,7 +194,7 @@ class Housing_assessment_model extends CI_Model {
             ->where('confirmed_at IS NOT NULL', NULL, FALSE)->count_all_results('sf_profil_warga');
         if ($terverifikasi > 0) { return $this->fail('nik_already_bound', self::PESAN_NIK_TERIKAT); }
         foreach ($this->klaim_nik_tertunda() as $k) {
-            if ((int) $k['pemohon_id'] === $user_id && hash_equals($k['nik_lookup_hash'], $hash)) {
+            if ((int) $k['pemohon_id'] === $user_id && hash_equals($k['nik_lookup_hash'], $hash) && $k['jenis'] === $jenis) {
                 return ['success' => TRUE, 'id' => (int) $k['id'], 'baru' => FALSE];
             }
         }
@@ -206,8 +212,10 @@ class Housing_assessment_model extends CI_Model {
             'aksi' => 'klaim_nik_diajukan',
             'objek_tipe' => 'usr_akun',
             'objek_id' => (string) $user_id,
-            'ringkasan' => 'Lolos verifikasi nama dan tanggal lahir untuk NIK yang terikat belum terverifikasi ke akun lain; menunggu tinjauan Super Admin',
-            'detail_json' => json_encode(['nik_lookup_hash' => $hash, 'pemegang' => $pemegang, 'pengajuan_berjalan' => $berjalan]),
+            'ringkasan' => $jenis === 'nama_awalan'
+                ? 'Tanggal lahir cocok, nama SIMPERUM hanya awal nama akun (data sumber terpotong); menunggu tinjauan Super Admin'
+                : 'Lolos verifikasi nama dan tanggal lahir untuk NIK yang terikat belum terverifikasi ke akun lain; menunggu tinjauan Super Admin',
+            'detail_json' => json_encode(['nik_lookup_hash' => $hash, 'pemegang' => $pemegang, 'pengajuan_berjalan' => $berjalan, 'jenis' => $jenis]),
             'ip' => $this->input->ip_address(),
             'created_at' => date('Y-m-d H:i:s'),
         ]);
@@ -229,9 +237,25 @@ class Housing_assessment_model extends CI_Model {
             unset($r['detail_json']);
             $hasil[] = $r + ['nik_lookup_hash' => (string) ($d['nik_lookup_hash'] ?? ''),
                 'pemegang' => array_map('intval', (array) ($d['pemegang'] ?? [])),
-                'pengajuan_berjalan' => (int) ($d['pengajuan_berjalan'] ?? 0)];
+                'pengajuan_berjalan' => (int) ($d['pengajuan_berjalan'] ?? 0),
+                'jenis' => ($d['jenis'] ?? '') === 'nama_awalan' ? 'nama_awalan' : 'ikatan'];
         }
         return $id !== NULL ? ($hasil[0] ?? NULL) : $hasil;
+    }
+
+    /** TRUE bila Super Admin pernah menyetujui klaim jenis nama_awalan untuk akun + NIK ini. */
+    public function klaim_nama_disetujui($user_id, $nik_hash)
+    {
+        $baris = $this->db->query("SELECT k.detail_json FROM sys_jejak_audit k JOIN sys_jejak_audit d
+            ON d.objek_tipe = 'klaim_nik' AND d.objek_id = CAST(k.id AS CHAR) AND d.aksi = 'klaim_nik_disetujui'
+            WHERE k.aksi = 'klaim_nik_diajukan' AND k.pelaku_id = ?", [(int) $user_id])->result_array();
+        foreach ($baris as $r) {
+            $d = json_decode((string) $r['detail_json'], TRUE) ?: [];
+            if (($d['jenis'] ?? '') === 'nama_awalan' && hash_equals((string) $nik_hash, (string) ($d['nik_lookup_hash'] ?? ''))) {
+                return TRUE;
+            }
+        }
+        return FALSE;
     }
 
     /**
