@@ -43,6 +43,7 @@ $config['http_policy'] = [
         'admin_users/reset_sandi'              => 'reset kata sandi',
         'admin_users/putuskan_klaim_nik'       => 'setujui/tolak permintaan klaim NIK',
         'admin_users/putuskan_reset_nik'       => 'setujui/tolak permintaan reset NIK warga',
+        'admin_users/putuskan_lolos_nama_awalan' => 'periksa/cabut verifikasi NIK nama SIMPERUM terpotong',
         'auth/do_login'                        => 'autentikasi',
         'auth/do_register'                     => 'mulai pendaftaran dan kirim kode OTP',
         'auth/do_verifikasi_email'             => 'periksa kode OTP dan buat akun',

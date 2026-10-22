@@ -363,27 +363,55 @@ try {
         && (satu('SELECT status FROM sf_penilaian_perumahan WHERE id=?', [$kirim_a])['status'] ?? '') === 'submitted',
         'Hapus akun A menyapu draft yang dilepas beserta berkasnya; arsip terkirim tetap');
 
-    echo "\n== 8. Nama SIMPERUM terpotong: tanggal benar + nama sumber awalan nama akun masuk tinjauan, tidak diikat\n";
+    echo "\n== 8. Nama SIMPERUM terpotong: lolos otomatis bila NIK bebas, cek susulan Super Admin, cabut, lalu hanya lewat tinjauan\n";
     // NIK3 dibebaskan dari akun uji bagian sebelumnya; sumbernya PAIMAN SINTETIS, nama akun E lebih panjang.
-    jalan('UPDATE usr_akun SET nik=NULL, nik_lookup_hash=NULL WHERE nik_lookup_hash=? AND id IN (' . implode(',', $akun_uji) . ')', [$h($NIK3)]);
-    foreach (['sf_data_simperum', 'sf_profil_warga'] as $t) { jalan("DELETE FROM $t WHERE nik_lookup_hash=? AND user_id IN (" . implode(',', $akun_uji) . ')', [$h($NIK3)]); }
+    $bebaskan = function () use ($h, $NIK3) {
+        global $akun_uji;
+        jalan('UPDATE usr_akun SET nik=NULL, nik_lookup_hash=NULL WHERE nik_lookup_hash=? AND id IN (' . implode(',', $akun_uji) . ')', [$h($NIK3)]);
+        foreach (['sf_data_simperum', 'sf_profil_warga'] as $t) { jalan("DELETE FROM $t WHERE nik_lookup_hash=? AND user_id IN (" . implode(',', $akun_uji) . ')', [$h($NIK3)]); }
+    };
+    $bebaskan();
     [$E, $e_e] = akun_baru('Paiman Sintetis Wibowo');
     ember_ip('login');
     $j_e = masuk($e_e, $SANDI);
+    $susulan = function () use ($E) {
+        global $db;
+        $st = $db->prepare("SELECT k.id FROM sys_jejak_audit k WHERE k.aksi='nik_lolos_nama_awalan' AND k.pelaku_id=?
+            AND NOT EXISTS (SELECT 1 FROM sys_jejak_audit d WHERE d.objek_tipe='lolos_nama_awalan' AND CAST(d.objek_id AS UNSIGNED)=k.id)");
+        if ( ! $st) { throw new RuntimeException('kueri cek susulan: ' . $db->error); }
+        $st->bind_param('i', $E);
+        $st->execute();
+        return array_map('intval', array_column($st->get_result()->fetch_all(MYSQLI_ASSOC), 'id'));
+    };
     $klaim_e = fn() => (int) satu("SELECT COUNT(*) n FROM sys_jejak_audit WHERE aksi='klaim_nik_diajukan' AND pelaku_id=? AND detail_json LIKE '%nama_awalan%'", [$E])['n'];
-    $r = $lookup($j_e, $NIK3, $LAHIR3);
-    cek($step($r['badan']) === 'find_data' && strpos($r['badan'], 'tidak lengkap') !== FALSE && $profil($E) === NULL && $akun($E)['nik_lookup_hash'] === NULL,
-        'Nama sumber awalan + tanggal benar: pesan tinjauan, NIK tidak diikat');
-    cek($klaim_e() === 1 && gagal_tercatat('account', $E) === 0, 'Satu permintaan nama_awalan tercatat; tidak dihitung percobaan gagal');
-    $lookup($j_e, $NIK3, $LAHIR3);
-    cek($klaim_e() === 1, 'Cek NIK diulang saat menunggu: permintaan tidak digandakan');
     $r = $lookup($j_e, $NIK3, '1970-01-02');
-    cek(strpos($r['badan'], 'Tanggal lahir tidak cocok') !== FALSE && $klaim_e() === 1 && gagal_tercatat('account', $E) === 1,
-        'Tanggal salah: pesan tanggal, dihitung gagal, tidak membuka tinjauan');
-    cek(strpos(minta($j_adm, 'Admin_Users/permintaan_nik')['badan'], 'Nama SIMPERUM terpotong') !== FALSE, 'Layar Super Admin menandai jenis permintaan');
+    cek(strpos($r['badan'], 'Tanggal lahir tidak cocok') !== FALSE && $profil($E) === NULL && gagal_tercatat('account', $E) === 1,
+        'Nama awalan + tanggal salah: pesan tanggal, dihitung gagal, tidak diikat');
+    $r = $lookup($j_e, $NIK3, $LAHIR3);
+    cek($step($r['badan']) === 'housing_family' && ($profil($E)['confirmed_at'] ?? NULL) !== NULL && gagal_tercatat('account', $E) === 1,
+        'Nama awalan + tanggal benar + NIK bebas: lolos otomatis dan terverifikasi');
+    cek(count($susulan()) === 1 && $klaim_e() === 0, 'Lolos otomatis tercatat satu baris cek susulan, tanpa permintaan klaim');
+    $halaman = minta($j_adm, 'Admin_Users/permintaan_nik')['badan'];
+    cek(strpos($halaman, 'Pemeriksaan Susulan NIK') !== FALSE && strpos($halaman, $e_e) !== FALSE && strpos($halaman, $NIK3) === FALSE,
+        'Layar Super Admin memuat cek susulan dengan email warga, tanpa NIK');
+    minta($j_adm, 'Admin_Users/putuskan_lolos_nama_awalan', ['id' => $susulan()[0], 'keputusan' => 'cek']);
+    cek($susulan() === [] && ($profil($E)['confirmed_at'] ?? NULL) !== NULL, 'Sudah dicek: hilang dari daftar, ikatan tetap');
+
+    // Ikatan dilepas (seperti reset), lolos otomatis lagi, lalu dicabut lewat cek susulan.
+    $bebaskan();
+    $lookup($j_e, $NIK3, $LAHIR3);
+    cek(count($susulan()) === 1, 'Lolos otomatis kedua tercatat sebagai cek susulan baru');
+    $r = minta($j_adm, 'Admin_Users/putuskan_lolos_nama_awalan', ['id' => $susulan()[0], 'keputusan' => 'cabut', 'alasan' => 'uji cabut susulan']);
+    cek(strpos($r['badan'], 'Verifikasi NIK dicabut') !== FALSE && $profil($E) === NULL && $akun($E)['nik_lookup_hash'] === NULL && $susulan() === [],
+        'Cabut: NIK dilepas dari akun E (profil dihapus) dan hilang dari daftar');
+    $r = $lookup($j_e, $NIK3, $LAHIR3);
+    cek($step($r['badan']) === 'find_data' && strpos($r['badan'], 'tidak lengkap') !== FALSE && $profil($E) === NULL && $klaim_e() === 1,
+        'Sesudah dicabut: tidak lolos otomatis lagi, masuk permintaan tinjauan');
+    cek(strpos(minta($j_adm, 'Admin_Users/permintaan_nik')['badan'], 'Nama SIMPERUM terpotong') !== FALSE, 'Permintaan tinjauan tampil berjenis Nama SIMPERUM terpotong');
     putuskan_klaim($j_adm, $E, 'setuju');
     $r = $lookup($j_e, $NIK3, $LAHIR3);
-    cek($step($r['badan']) === 'housing_family' && ($profil($E)['confirmed_at'] ?? NULL) !== NULL, 'Sesudah disetujui, Cek NIK ulang lolos dan NIK terverifikasi ke akun E');
+    cek($step($r['badan']) === 'housing_family' && ($profil($E)['confirmed_at'] ?? NULL) !== NULL && $susulan() === [],
+        'Persetujuan yang lebih baru dari pencabutan meloloskan, tanpa cek susulan baru');
 } catch (Throwable $e) {
     cek(FALSE, 'Suite berhenti: ' . $e->getMessage());
 } finally {
@@ -392,6 +420,8 @@ try {
         $db->query("DELETE FROM sys_jejak_audit WHERE id > $audit_awal AND aksi='nik_dipindahkan' AND objek_id IN ('" . implode("','", $akun_uji) . "')");
         $klaim_uji = implode(',', array_map('intval', array_column($db->query("SELECT id FROM sys_jejak_audit WHERE id > $audit_awal AND aksi='klaim_nik_diajukan' AND pelaku_id IN ($daftar)")->fetch_all(MYSQLI_ASSOC), 'id'))) ?: '0';
         $db->query("DELETE FROM sys_jejak_audit WHERE id > $audit_awal AND ((aksi IN ('klaim_nik_disetujui','klaim_nik_ditolak') AND objek_tipe='klaim_nik' AND objek_id IN ($klaim_uji)) OR id IN ($klaim_uji))");
+        $db->query("DELETE FROM sys_jejak_audit WHERE id > $audit_awal AND ((aksi IN ('nik_lolos_nama_awalan','nik_warga_direset') AND objek_id IN ('" . implode("','", $akun_uji) . "'))
+            OR aksi IN ('lolos_nama_awalan_dicek','lolos_nama_awalan_dicabut'))");
         // Email keputusan klaim yang ditulis Surel_pemberitahuan dalam mode uji (6 Okt 2026).
         foreach ($db->query("SELECT email FROM usr_akun WHERE id IN ($daftar)")->fetch_all(MYSQLI_ASSOC) as $r) {
             @unlink(APP_ROOT . '/application/cache/surel_uji/' . sha1(strtolower($r['email'])) . '.json');

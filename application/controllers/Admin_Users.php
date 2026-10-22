@@ -79,6 +79,9 @@ class Admin_Users extends Admin_Controller {
         // diproses ikut dibatalkan bila permintaan disetujui.
         $data['reset_nik_minta'] = $this->Housing_assessment_model->reset_nik_tertunda();
         $data['reset_nik_pendataan'] = $this->status_pendataan_nik(array_map(fn($k) => (int) $k['pemohon_id'], $data['reset_nik_minta']));
+        // NIK yang lolos otomatis lewat nama SIMPERUM terpotong, menunggu pemeriksaan susulan (23 Okt 2026).
+        $data['lolos_nama_awalan'] = $this->Housing_assessment_model->lolos_nama_awalan_tertunda();
+        $data['lolos_nama_awalan_pendataan'] = $this->status_pendataan_nik(array_map(fn($k) => (int) $k['warga_id'], $data['lolos_nama_awalan']));
         $data['available_roles'] = $this->config->item('available_roles');
         $this->render_admin('admin/users/permintaan_nik', $data);
     }
@@ -614,6 +617,49 @@ class Admin_Users extends Admin_Controller {
         $this->session->set_flashdata('success', $setuju
             ? 'Permintaan disetujui. NIK akun ' . ($pemohon->email ?? '') . ' dibuka; warga dapat memasukkan NIK kembali.' . $this->kalimat_dibatalkan()
             : 'Permintaan reset NIK ditolak.');
+        redirect('Admin_Users/permintaan_nik');
+    }
+
+    /**
+     * Pemeriksaan susulan NIK yang lolos otomatis lewat nama SIMPERUM terpotong (23 Okt 2026).
+     * "cek": ditandai sudah diperiksa, ikatan tetap. "cabut": NIK dilepas lewat lepas_nik() (aturan reset
+     * yang sama: pendataan disetujui memblokir, yang diproses dibatalkan), lalu NIK itu tidak lagi bisa lolos
+     * otomatis lewat nama awalan untuk akun mana pun (Housing_assessment_model::nama_awalan_dicabut).
+     */
+    public function putuskan_lolos_nama_awalan()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $this->load->model('Housing_assessment_model');
+        $baris = $this->Housing_assessment_model->lolos_nama_awalan_tertunda((int) $this->input->post('id'));
+        if ( ! $baris) {
+            $this->session->set_flashdata('error', 'Data pemeriksaan tidak ditemukan atau sudah diputuskan.');
+            redirect('Admin_Users/permintaan_nik'); return;
+        }
+        $cabut = $this->input->post('keputusan', TRUE) === 'cabut';
+        $catatan = mb_substr(trim((string) $this->input->post('alasan', TRUE)), 0, 500);
+        $warga = $this->db->get_where('usr_akun', ['id' => (int) $baris['warga_id']])->row();
+        if ($cabut && $warga) {
+            $galat = $this->lepas_nik($warga, $catatan !== '' ? $catatan : 'Dicabut pada pemeriksaan susulan nama SIMPERUM terpotong',
+                'cabut susulan #' . (int) $baris['id']);
+            if ($galat !== NULL) {
+                $this->session->set_flashdata('error', 'Belum dicabut: ' . $galat);
+                redirect('Admin_Users/permintaan_nik'); return;
+            }
+        }
+        $this->catat_audit($cabut ? 'lolos_nama_awalan_dicabut' : 'lolos_nama_awalan_dicek',
+            ($cabut ? 'Mencabut' : 'Memeriksa') . ' verifikasi NIK otomatis (nama SIMPERUM terpotong) akun id ' . (int) $baris['warga_id'],
+            'lolos_nama_awalan', (string) (int) $baris['id'],
+            ['warga' => (int) $baris['warga_id'], 'nik_lookup_hash' => $baris['nik_lookup_hash'], 'catatan' => $catatan]);
+        if ($cabut && $warga) {
+            $this->load->library('Surel_pemberitahuan');
+            $this->surel_pemberitahuan->kirim((string) $warga->email, 'Verifikasi NIK Anda dicabut', 'Verifikasi NIK Anda dicabut',
+                ['Petugas Dinas Perakim mencabut verifikasi NIK di akun Klinik PKP Anda karena kecocokan nama belum dapat dipastikan.',
+                 'Bila NIK itu memang milik Anda, sampaikan melalui menu Aduan dan sertakan keterangan yang diperlukan petugas.'],
+                $catatan, ['label' => 'Buka Aduan', 'rute' => 'Auth/login?next=' . rawurlencode('Umum/aduan')]);
+        }
+        $this->session->set_flashdata('success', $cabut
+            ? 'Verifikasi NIK dicabut. NIK dilepas dari akun ' . ($warga->email ?? '') . ' dan tidak bisa lolos otomatis lagi.' . $this->kalimat_dibatalkan()
+            : 'Ditandai sudah diperiksa.');
         redirect('Admin_Users/permintaan_nik');
     }
 
