@@ -47,7 +47,7 @@ class Admin_Magang_Posisi extends Admin_Controller {
            bidang nonaktif di Atur Slot tidak tampil sama sekali, bidang tanpa bulan dibuka tampil
            "Belum dibuka". Tanpa tanda ini petugas mengira posisinya sudah bisa dilamar. */
         $this->load->model('kemitraan_slot_model', 'slot');
-        $peta = $this->slot->peta_slot($this->slot->tahun_papan());
+        $peta = $this->slot->peta_slot($this->slot->tahun_papan(), TRUE);
         $di_papan = array_map(static function ($b) { return $b->kode; }, $this->slot->bidang());
         $data['keadaan_bidang'] = [];
         foreach ($data['rows'] as $r) {

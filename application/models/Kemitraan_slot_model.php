@@ -86,10 +86,15 @@ class Kemitraan_slot_model extends CI_Model
      *
      * Nilainya barisnya sendiri, bukan sekadar TRUE, karena tiap slot membawa
      * rentang tanggalnya. `isset()` tetap berarti "bulan ini dibuka".
+     *
+     * @param bool $buang_lewat TRUE untuk yang dibaca mahasiswa (papan, formulir) dan
+     *                          peringatan admin: slot yang tanggal selesainya sudah lewat
+     *                          bukan lagi "dibuka". Ringkasan admin tetap melihat semuanya.
      */
-    public function peta_slot($tahun)
+    public function peta_slot($tahun, $buang_lewat = FALSE)
     {
         $peta = [];
+        if ($buang_lewat) { $this->db->where('tgl_selesai >=', date('Y-m-d')); }
         foreach ($this->db->get_where(self::TABEL_SLOT, ['tahun' => (int) $tahun])->result() as $baris) {
             $peta[$baris->bidang_kode][(int) $baris->bulan] = $baris;
         }
@@ -180,6 +185,10 @@ class Kemitraan_slot_model extends CI_Model
      * memulangkannya dengan galat untuk maksud yang sudah terbaca hanya
      * menambah satu putaran. Bulan Juli punya barisnya sendiri.
      *
+     * Bulan yang SELURUHNYA sudah lewat tidak disentuh: layar mengunci barisnya,
+     * dan di sini isiannya diabaikan supaya catatan slot lama tidak terhapus atau
+     * terbuka kembali lewat kiriman langsung.
+     *
      * @param array $bulan_data [bulan => ['buka' => '1', 'mulai' => 'Y-m-d', 'selesai' => 'Y-m-d']]
      */
     public function tulis_ulang_bidang($kode, $tahun, array $bulan_data)
@@ -188,13 +197,18 @@ class Kemitraan_slot_model extends CI_Model
         $tahun = (int) $tahun;
         if ( ! $this->bidang_by_kode($kode)) { return FALSE; }
 
+        $terbuka = array_values(array_filter(range(1, 12), function ($b) use ($tahun) {
+            return ! $this->bulan_lewat($tahun, $b);
+        }));
+        if ( ! $terbuka) { return TRUE; }   // tahun yang sudah lewat seluruhnya: tidak ada yang boleh diubah
+
         $this->db->trans_start();
-        $this->db->delete(self::TABEL_SLOT, ['bidang_kode' => $kode, 'tahun' => $tahun]);
+        $this->db->where(['bidang_kode' => $kode, 'tahun' => $tahun])->where_in('bulan', $terbuka)->delete(self::TABEL_SLOT);
 
         $baris = [];
         foreach ($bulan_data as $bulan => $isian) {
             $bulan = (int) $bulan;
-            if ($bulan < 1 || $bulan > 12) { continue; }
+            if ( ! in_array($bulan, $terbuka, TRUE)) { continue; }
             if (empty($isian['buka'])) { continue; }
 
             $awal  = sprintf('%04d-%02d-01', $tahun, $bulan);
@@ -216,6 +230,12 @@ class Kemitraan_slot_model extends CI_Model
 
         $this->db->trans_complete();
         return $this->db->trans_status();
+    }
+
+    /** TRUE bila hari terakhir bulan itu sudah lewat. Dipakai layar detail dan tulis_ulang_bidang(). */
+    public function bulan_lewat($tahun, $bulan)
+    {
+        return date('Y-m-t', strtotime(sprintf('%04d-%02d-01', (int) $tahun, (int) $bulan))) < date('Y-m-d');
     }
 
     /** Tanggal dijepit ke [$min, $max]; kosong atau tidak sah jatuh ke $bawaan. */

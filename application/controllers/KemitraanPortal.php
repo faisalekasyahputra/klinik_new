@@ -759,7 +759,7 @@ class KemitraanPortal extends Public_Controller
      */
     private function ketersediaan_bidang($tahun)
     {
-        $peta   = $this->slot->peta_slot($tahun);
+        $peta   = $this->slot->peta_slot($tahun, TRUE);   // slot yang sudah lewat bukan lagi "dibuka"
         $terisi = $this->slot->peta_terisi();
 
         /* Butir F1: posisi/lowongan yang dicari tiap bidang, diisi dinas lewat
