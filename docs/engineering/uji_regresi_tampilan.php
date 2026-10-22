@@ -1324,6 +1324,11 @@ $dok = http('tamu_statistika', 'Dokumen');
 cek(preg_match_all('#<nav[^>]*data-lompat-bagian#', $stat) === 2 &&strpos($stat, "querySelectorAll('[data-lompat-bagian] a[href^=\"#\"]')") !== FALSE
     && preg_match('#data-kembali-bankdata#', $dok) === 1 && preg_match('#data-tab-key="bankdata" class="portal-tab-btn active"#', $dok) === 1,
     'Statistika: menu kategori menggulir wadah portal; Dokumen: tombol Kembali ke Bank Data dan tab Bank Data menyala');
+// 23 Okt 2026: kartu Statistik & Infografis disembunyikan dari Bank Data (datanya sulit didapat); halamannya tetap hidup.
+$bank = http('tamu_statistika', 'tab/bankdata');
+cek(strpos($bank, 'Buku Data') !== FALSE && strpos($bank, 'Statistik &amp; Infografis') === FALSE && strpos($bank, 'Statistik & Infografis') === FALSE
+    && strpos($stat, 'Total Pengembang Terdaftar') !== FALSE,
+    'Bank Data: kartu Statistik & Infografis tersembunyi, halaman Statistika tetap hidup');
 
 echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);
