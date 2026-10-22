@@ -50,6 +50,14 @@ class Admin_Kemitraan extends Admin_Controller {
         $peta   = $this->slot->peta_slot($tahun);
         $terisi = $this->slot->peta_terisi();
 
+        // Kolom Posisi: bidang yang sudah membuka bulan tetapi belum menulis posisi (atau sebaliknya)
+        // langsung terlihat dari daftar ini.
+        $jumlah_posisi = [];
+        foreach ($this->db->select('bidang_kode, SUM(aktif = 1) tampil, COUNT(*) semua', FALSE)
+                     ->group_by('bidang_kode')->get('kkn_magang_posisi')->result() as $p) {
+            $jumlah_posisi[$p->bidang_kode] = ['tampil' => (int) $p->tampil, 'semua' => (int) $p->semua];
+        }
+
         $ringkas = [];
         foreach ($bidang as $b) {
             $bulan = $peta[$b->kode] ?? [];
@@ -68,11 +76,12 @@ class Admin_Kemitraan extends Admin_Controller {
         }
 
         $this->render_admin('admin/kemitraan/slot', [
-            'title'          => 'KKN & Magang', // satu nama untuk ketiga tab, = label sidebar
+            'title'          => 'Magang', // tab menu Magang, = label sidebar
             'tahun'          => $tahun,
             'tahun_tersedia' => $this->slot->tahun_tersedia(),
             'bidang'         => $bidang,
             'ringkas'        => $ringkas,
+            'jumlah_posisi'  => $jumlah_posisi,
         ]);
     }
 
@@ -92,7 +101,15 @@ class Admin_Kemitraan extends Admin_Controller {
         $bidang = $this->slot->bidang_by_kode($kode);
         if ( ! $bidang) { show_404(); }
 
+        // Posisi bidang ini dikelola di halaman yang sama (permintaan user 22 Okt 2026: satu halaman
+        // per bidang). Semua posisi, termasuk yang disembunyikan, supaya bisa dinyalakan lagi.
+        $this->load->helper('kualifikasi');
+        $posisi = $this->db->where('bidang_kode', $bidang->kode)
+            ->order_by('urutan', 'ASC')->order_by('nama_posisi', 'ASC')
+            ->get('kkn_magang_posisi')->result();
+
         $this->render_admin('admin/kemitraan/slot_bidang', [
+            'posisi'     => $posisi,
             'title'      => 'Slot ' . $bidang->nama,
             'bidang'     => $bidang,
             'tahun'      => $tahun,
@@ -209,27 +226,52 @@ class Admin_Kemitraan extends Admin_Controller {
     // DAFTAR PENDAFTARAN
     // =========================================================
 
+    /**
+     * Daftar gabungan lama. Sejak 22 Okt 2026 menu Magang dan KKN dipisah (magang(), kkn());
+     * rute ini tetap hidup untuk tautan dan notifikasi yang sudah terkirim, dan ?jenis=
+     * diarahkan ke menunya sendiri.
+     */
     public function index()
     {
-        $data['title'] = 'KKN & Magang'; // = label sidebar
+        $jenis = $this->input->get('jenis', TRUE);
+        if (in_array($jenis, ['kkn', 'magang'], TRUE)) {
+            $sisa = $this->input->get(NULL, TRUE) ?: [];
+            unset($sisa['jenis']);
+            redirect('Admin_Kemitraan/' . $jenis . ($sisa ? '?' . http_build_query($sisa) : ''));
+        }
+        $this->daftar(NULL);
+    }
+
+    /** Menu Magang: pendaftaran magang saja. */
+    public function magang() { $this->daftar('magang'); }
+
+    /** Menu KKN: pendaftaran KKN saja. */
+    public function kkn() { $this->daftar('kkn'); }
+
+    private function daftar($jenis_menu)
+    {
+        $data['title'] = ['magang' => 'Magang', 'kkn' => 'KKN'][$jenis_menu] ?? 'Kemitraan'; // = label sidebar
+        $data['jenis_menu'] = $jenis_menu;
 
         // Cari + urut + paginasi semuanya server-side (B7/B8).
         $table = $this->table_state([
             'kkn_magang_pendaftaran.created_at', 'usr_akun.nama',
             'kkn_magang_pendaftaran.instansi_asal', 'kkn_magang_pendaftaran.status',
         ], 'kkn_magang_pendaftaran.created_at');
-        $data['base_url'] = 'Admin_Kemitraan';
+        $data['base_url'] = 'Admin_Kemitraan' . ($jenis_menu ? '/' . $jenis_menu : '');
 
         // Filter dari query string DIVALIDASI ke daftar yang sah - bukan
         // langsung dimasukkan ke WHERE. Tanpa filter ini, satu-satunya cara
         // memisahkan "yang perlu ditinjau" dari yang sudah selesai adalah
         // membaca seluruh halaman satu per satu.
         $status_sah = ['Diajukan', 'Ditinjau Bidang', 'Diterima', 'Ditolak', 'Dibatalkan'];
+        // KKN tidak melewati meja bidang (lihat proses()), jadi chip itu tidak berarti di menu KKN.
+        if ($jenis_menu === 'kkn') { $status_sah = array_values(array_diff($status_sah, ['Ditinjau Bidang'])); }
         $jenis_sah  = ['kkn', 'magang'];
         $f_status = $this->input->get('status', TRUE);
         $f_jenis  = $this->input->get('jenis', TRUE);
         $f_status = in_array($f_status, $status_sah, TRUE) ? $f_status : NULL;
-        $f_jenis  = in_array($f_jenis, $jenis_sah, TRUE) ? $f_jenis : NULL;
+        $f_jenis  = $jenis_menu ?: (in_array($f_jenis, $jenis_sah, TRUE) ? $f_jenis : NULL);
 
         $this->db->from('kkn_magang_pendaftaran')
             ->join('usr_akun', 'usr_akun.id = kkn_magang_pendaftaran.user_id', 'left');
@@ -286,7 +328,7 @@ class Admin_Kemitraan extends Admin_Controller {
      */
     public function universitas()
     {
-        $data['title'] = 'KKN & Magang'; // tab Akun Universitas, judul halamannya tetap satu
+        $data['title'] = 'KKN'; // tab menu KKN, = label sidebar
 
         $table = $this->table_state(['created_at', 'nama', 'email'], 'created_at');
         $data['base_url'] = 'Admin_Kemitraan/universitas';
@@ -496,7 +538,7 @@ class Admin_Kemitraan extends Admin_Controller {
             'kkn_magang_pendaftaran', (string) $row->id,
             ['kolom' => array_keys(array_filter($baru, function ($v, $k) use ($row) { return (string) $v !== (string) $row->$k; }, ARRAY_FILTER_USE_BOTH))]);
         $this->session->set_flashdata('success', 'Data pendaftaran diperbarui.');
-        redirect('Admin_Kemitraan');
+        redirect('Admin_Kemitraan/' . $row->jenis);
     }
 
     /**
@@ -536,7 +578,7 @@ class Admin_Kemitraan extends Admin_Controller {
             'kkn_magang_pendaftaran', (string) $row->id, ['jenis' => $row->jenis, 'status' => $row->status]);
 
         $this->session->set_flashdata('success', 'Pendaftaran dihapus beserta berkasnya.');
-        redirect('Admin_Kemitraan');
+        redirect('Admin_Kemitraan/' . $row->jenis);
     }
 
     /**
@@ -556,7 +598,7 @@ class Admin_Kemitraan extends Admin_Controller {
     /** Formulir catat KKN atas nama universitas. */
     public function catat()
     {
-        $data['title'] = 'KKN & Magang';
+        $data['title'] = 'KKN';
         $data['universitas'] = $this->db->select('id, nama, email')->where(['peran' => 'universitas', 'status' => 'active'])
             ->order_by('nama', 'ASC')->get('usr_akun')->result();
         $data['isian'] = (array) $this->session->flashdata('catat_kkn_isian');
@@ -836,7 +878,7 @@ class Admin_Kemitraan extends Admin_Controller {
         $status = $this->input->post('status', TRUE);
         if ( ! in_array($status, ['Ditinjau Bidang', 'Diterima', 'Ditolak'], TRUE)) {
             $this->session->set_flashdata('error', 'Status tidak valid.');
-            redirect('Admin_Kemitraan');
+            redirect('Admin_Kemitraan/' . $row->jenis);
             return;
         }
 
@@ -851,7 +893,7 @@ class Admin_Kemitraan extends Admin_Controller {
                 $this->session->set_flashdata('error', $row->jenis !== 'magang'
                     ? 'Pendaftaran KKN tidak melewati tinjauan bidang - putuskan langsung di sini.'
                     : 'Pendaftaran ini tidak menyebut bidang tujuan, jadi tidak ada yang bisa meninjaunya.');
-                redirect('Admin_Kemitraan');
+                redirect('Admin_Kemitraan/' . $row->jenis);
                 return;
             }
         }
@@ -885,6 +927,6 @@ class Admin_Kemitraan extends Admin_Controller {
                 'Kemitraan_Bidang', 'magang-bidang-' . (int) $row->id);
         }
         $this->session->set_flashdata('success', 'Status pendaftaran diperbarui.');
-        redirect('Admin_Kemitraan');
+        redirect('Admin_Kemitraan/' . $row->jenis);
     }
 }

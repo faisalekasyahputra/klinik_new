@@ -438,7 +438,8 @@ cek(strpos($judul_kmp, '<h1 class="text-2xl font-black text-gray-900 dark:text-w
 foreach ([['Admin_Dashboard', 'Ringkasan Kerja'], ['Admin', 'Tinjau Antrean'], ['Admin_Srp2/pending', 'SRP2 dalam Pengajuan'],
           ['Admin_Srp2', 'Direktori SRP2'], ['Admin_Aduan', 'Pantau Aduan'], ['Admin_Rekam_Data', 'Pantau Rekam Data'],
           ['Admin_Struktur', 'Struktur & Cakupan'], ['Admin_Katalog_Program', 'Katalog Program'], ['Admin_Bank_Data', 'Bank Data'],
-          ['Admin_Kemitraan', 'KKN & Magang'], ['Admin_Konsultasi', 'Janji Temu Konsultasi'], ['Admin_Magang_Posisi', 'Posisi Magang'],
+          ['Admin_Kemitraan', 'Kemitraan'], ['Admin_Kemitraan/magang', 'Magang'], ['Admin_Kemitraan/kkn', 'KKN'],
+          ['Admin_Konsultasi', 'Janji Temu Konsultasi'],
           ['Admin_Asosiasi', 'Asosiasi Pengembang'], ['Admin_Psu', 'Serah Terima PSU'], ['Admin_Users', 'Akses Staf'],
           ['Admin_Audit', 'Jejak Audit']] as [$jalur, $nama]) {
     $hal = http('adm', $jalur);
@@ -1214,7 +1215,8 @@ $sumber = fn($p) => (string) @file_get_contents(APP_ROOT . '/application/views/a
 cek(strpos($sumber('antrean/detail.php'), 'API SIMPERUM') === FALSE && strpos($sumber('katalog/index.php'), '>Badge<') === FALSE
     && preg_match('/>\s*(Import|Unduh template)|isi sheet/', $sumber('psu/index.php')) === 0
     && strpos($sumber('magang_posisi/index.php'), "\$tanpa_awalan = fn(\$n) => preg_replace('/^Bidang\s+/i'") !== FALSE
-    && substr_count($sumber('magang_posisi/index.php'), '$tanpa_awalan(') >= 2,
+    // Modal tambah/ubah pindah ke magang_posisi/_form.php (dipakai juga detail slot bidang).
+    && substr_count($sumber('magang_posisi/index.php') . $sumber('magang_posisi/_form.php'), '$tanpa_awalan(') >= 2,
     'Istilah layar: tanpa "API" di lencana simulasi, Label (bukan Badge), Impor/templat/lembar di PSU, bidang magang tanpa awalan');
 cek(strpos($sumber('kemitraan/index.php'), 'name="tanggal_sertifikat" value="<?= html_escape($r->tanggal_sertifikat ?? \'\') ?>" class="mt-1 block rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-black/20 px-3 py-2 text-sm') !== FALSE,
     'KKN & Magang: isian tanggal sertifikat berukuran normal (text-sm, py-2)');

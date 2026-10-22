@@ -413,8 +413,13 @@ $config['dashboard_modules'] = [
         'url'   => 'Admin_Bank_Data', 'group' => 'Manajemen', 'order' => 41,
         'roles' => ['admin'], 'scope' => null,
     ],
+    // Kemitraan (induk) -> Magang dan KKN, sejak 22 Okt 2026 (permintaan user): alurnya memang berbeda.
+    // Magang = mahasiswa perorangan, slot dan posisi per bidang; KKN = akun universitas sampai sertifikat.
+    // Induknya membuka daftar gabungan (Admin_Kemitraan) dan memegang badge + tindakan Ringkasan Kerja
+    // untuk SEMUA pendaftaran Diajukan; anak Magang/KKN hanya badge per jenis, tanpa 'tindakan', supaya
+    // satu pendaftaran tidak terhitung dua kali di Ringkasan Kerja. Kunci 'kemitraan' tetap milik induk.
     'kemitraan' => [
-        'label' => 'KKN & Magang', 'icon' => 'ph-graduation-cap',
+        'label' => 'Kemitraan', 'icon' => 'ph-handshake',
         'url'   => 'Admin_Kemitraan', 'group' => 'Tindak Lanjut', 'order' => 30,
         'overview_url' => 'Admin_Kemitraan?status=Diajukan',
         'roles' => ['admin'], 'scope' => null,
@@ -427,11 +432,40 @@ $config['dashboard_modules'] = [
             'cara' => 'Tekan Proses pada pendaftaran: magang diteruskan ke bidang tujuannya (Teruskan ke bidang), KKN diputuskan langsung (Terima atau Tolak).',
         ],
     ],
-    // Sertifikat KKN (7 Okt 2026, migrasi 077): anak menu KKN & Magang, bukan baris sidebar baru. Badge =
+    'kemitraan_magang' => [
+        'label' => 'Magang', 'icon' => 'ph-student',
+        'url'   => 'Admin_Kemitraan/magang', 'group' => 'Tindak Lanjut', 'order' => 30, 'parent' => 'kemitraan',
+        'overview_url' => 'Admin_Kemitraan/magang?status=Diajukan',
+        'roles' => ['admin'], 'scope' => null,
+        'table' => 'kkn_magang_pendaftaran',
+        'pending_where' => "jenis = 'magang' AND status = 'Diajukan'",
+        'badge' => TRUE,
+    ],
+    'slot_magang' => [
+        'label' => 'Slot Magang', 'icon' => 'ph-calendar-check',
+        'url'   => 'Admin_Kemitraan/slot', 'group' => 'Tindak Lanjut', 'order' => 30, 'parent' => 'kemitraan_magang',
+        'roles' => ['admin'], 'scope' => null,
+        'aksi'  => ['Admin_Kemitraan/slot_bidang', 'Admin_Kemitraan/simpan_slot_bidang', 'Admin_Kemitraan/ubah_status_bidang'],
+    ],
+    'kemitraan_kkn' => [
+        'label' => 'KKN', 'icon' => 'ph-graduation-cap',
+        'url'   => 'Admin_Kemitraan/kkn', 'group' => 'Tindak Lanjut', 'order' => 31, 'parent' => 'kemitraan',
+        'overview_url' => 'Admin_Kemitraan/kkn?status=Diajukan',
+        'roles' => ['admin'], 'scope' => null,
+        'table' => 'kkn_magang_pendaftaran',
+        'pending_where' => "jenis = 'kkn' AND status = 'Diajukan'",
+        'badge' => TRUE,
+    ],
+    'universitas_kkn' => [
+        'label' => 'Akun Universitas', 'icon' => 'ph-bank',
+        'url'   => 'Admin_Kemitraan/universitas', 'group' => 'Tindak Lanjut', 'order' => 32, 'parent' => 'kemitraan_kkn',
+        'roles' => ['admin'], 'scope' => null,
+    ],
+    // Sertifikat KKN (7 Okt 2026, migrasi 077): anak menu KKN, bukan baris sidebar baru. Badge =
     // permintaan sertifikat dari peserta yang belum dijawab (tanggal sertifikat belum ditetapkan).
     'sertifikat_kkn' => [
         'label' => 'Sertifikat KKN', 'icon' => 'ph-seal-check',
-        'url'   => 'Admin_Kemitraan/sertifikat', 'group' => 'Tindak Lanjut', 'order' => 31, 'parent' => 'kemitraan',
+        'url'   => 'Admin_Kemitraan/sertifikat', 'group' => 'Tindak Lanjut', 'order' => 31, 'parent' => 'kemitraan_kkn',
         'roles' => ['admin'], 'scope' => null,
         'table' => 'kkn_magang_pendaftaran',
         'pending_where' => "jenis = 'kkn' AND sertifikat_diminta_at IS NOT NULL AND tanggal_sertifikat IS NULL",
@@ -508,9 +542,10 @@ $config['dashboard_modules'] = [
         'url'   => 'Admin_Seo', 'group' => 'Master', 'order' => 70,
         'roles' => ['admin'], 'scope' => null,
     ],
+    // Sejak 22 Okt 2026 anak menu Magang (dan tabnya), bukan baris Master: slot dan posisi satu urusan.
     'magang_posisi' => [
         'label' => 'Posisi Magang', 'icon' => 'ph-briefcase',
-        'url'   => 'Admin_Magang_Posisi', 'group' => 'Master', 'order' => 40,
+        'url'   => 'Admin_Magang_Posisi', 'group' => 'Tindak Lanjut', 'order' => 31, 'parent' => 'kemitraan_magang',
         'roles' => ['admin'], 'scope' => null,
     ],
     // Master daftar asosiasi pengembang (migrasi 042). Superadmin saja -

@@ -1,4 +1,4 @@
-<?php $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => 'pendaftaran']); ?>
+<?php $this->load->view('admin/kemitraan/_tabs', ['tab_aktif' => $jenis_menu ? 'pendaftaran_' . $jenis_menu : 'semua']); ?>
 
 <?php
 $this->load->helper('admin_table');
@@ -12,11 +12,13 @@ ob_start(); ?>
 <?php foreach ($status_sah as $s): ?>
     <a href="<?= admin_table_url($base_url, ['status' => $s]) ?>" class="chip-filter"<?= $f_status === $s ? $nyala : '' ?>><?= html_escape($s) ?></a>
 <?php endforeach; ?>
+<?php // Menu Magang dan KKN sudah memisahkan jenisnya; penyaring jenis hanya di daftar gabungan lama. ?>
+<?php if ( ! $jenis_menu): ?>
 <span class="ml-3 mr-1 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted">Jenis:</span>
-<a href="<?= admin_table_url($base_url, ['jenis' => NULL]) ?>" class="chip-filter"<?= empty($f_jenis) ? $nyala : '' ?>>Semua</a>
 <?php foreach ($jenis_sah as $j): ?>
-    <a href="<?= admin_table_url($base_url, ['jenis' => $j]) ?>" class="chip-filter"<?= $f_jenis === $j ? $nyala : '' ?>><?= $j === 'kkn' ? 'KKN' : html_escape(ucfirst($j)) ?></a>
-<?php endforeach;
+    <a href="<?= base_url('Admin_Kemitraan/' . $j) ?>" class="chip-filter"><?= $j === 'kkn' ? 'KKN' : html_escape(ucfirst($j)) ?></a>
+<?php endforeach; ?>
+<?php endif;
 $filter_html = ob_get_clean();
 ?>
 <div data-tabel-admin style="counter-reset: baris-admin <?= (int) (($table ?? [])['offset'] ?? 0) ?>" class="kartu-admin overflow-hidden">

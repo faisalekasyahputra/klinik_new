@@ -24,12 +24,13 @@ class Admin_Magang_Posisi extends Admin_Controller {
     {
         parent::__construct();
         $this->load->model('Aduan_model');   // sumber tunggal daftar bidang
+        $this->load->model('kemitraan_slot_model', 'slot');
     }
 
     public function index()
     {
         $this->load->helper('kualifikasi');
-        $data['title']  = 'Posisi Magang';
+        $data['title']  = 'Magang';   // tab di menu Magang, judulnya ikut induk
         $data['bidang'] = $this->Aduan_model->daftar_bidang();
         $data['rows']   = $this->db->select('p.*, b.nama AS nama_bidang')
             ->from('kkn_magang_posisi p')
@@ -46,8 +47,8 @@ class Admin_Magang_Posisi extends Admin_Controller {
         /* Keadaan bidang di papan publik, dengan aturan yang sama seperti KemitraanPortal::magang():
            bidang nonaktif di Atur Slot tidak tampil sama sekali, bidang tanpa bulan dibuka tampil
            "Belum dibuka". Tanpa tanda ini petugas mengira posisinya sudah bisa dilamar. */
-        $this->load->model('kemitraan_slot_model', 'slot');
-        $peta = $this->slot->peta_slot($this->slot->tahun_papan(), TRUE);
+        $data['tahun_papan'] = $this->slot->tahun_papan();
+        $peta = $this->slot->peta_slot($data['tahun_papan'], TRUE);
         $di_papan = array_map(static function ($b) { return $b->kode; }, $this->slot->bidang());
         $data['keadaan_bidang'] = [];
         foreach ($data['rows'] as $r) {
@@ -76,12 +77,12 @@ class Admin_Magang_Posisi extends Admin_Controller {
         }, (array) $this->input->post('kualifikasi', TRUE)), 'strlen'));
         if (count($butir) > KUALIFIKASI_MAKS_BUTIR) {
             $this->session->set_flashdata('error', 'Kualifikasi maksimal ' . KUALIFIKASI_MAKS_BUTIR . ' butir.');
-            redirect('Admin_Magang_Posisi'); return;
+            $this->kembali($bidang); return;
         }
         foreach ($butir as $b) {
             if (mb_strlen($b) > KUALIFIKASI_MAKS_KARAKTER) {
                 $this->session->set_flashdata('error', 'Tiap kualifikasi maksimal ' . KUALIFIKASI_MAKS_KARAKTER . ' karakter.');
-                redirect('Admin_Magang_Posisi'); return;
+                $this->kembali($bidang); return;
             }
         }
         $ket    = implode("\n", $butir);
@@ -90,7 +91,7 @@ class Admin_Magang_Posisi extends Admin_Controller {
 
         if ($nama === '' || mb_strlen($nama) > 100) {
             $this->session->set_flashdata('error', 'Nama posisi wajib diisi, maksimal 100 karakter.');
-            redirect('Admin_Magang_Posisi'); return;
+            $this->kembali($bidang); return;
         }
         /* Bidang DIVALIDASI ke tabelnya, bukan ke daftar literal. Sejak migrasi
            030 tabel `bidang` adalah satu-satunya sumber; menyalin daftarnya ke
@@ -98,7 +99,7 @@ class Admin_Magang_Posisi extends Admin_Controller {
         $sah = array_column($this->Aduan_model->daftar_bidang(), 'kode');
         if ( ! in_array($bidang, $sah, TRUE)) {
             $this->session->set_flashdata('error', 'Bidang tidak dikenal.');
-            redirect('Admin_Magang_Posisi'); return;
+            $this->kembali(''); return;
         }
         $kuota  = max(0, min(99, $kuota));
         $urutan = max(0, min(999, $urutan));
@@ -117,7 +118,7 @@ class Admin_Magang_Posisi extends Admin_Controller {
             // Sama seperti hapus(): UPDATE ke id yang tidak ada menyentuh nol baris tanpa galat.
             if ( ! $this->db->where('id', $id)->count_all_results('kkn_magang_posisi')) {
                 $this->session->set_flashdata('error', 'Posisi tidak ditemukan.');
-                redirect('Admin_Magang_Posisi'); return;
+                $this->kembali($bidang); return;
             }
             $this->db->where('id', $id)->update('kkn_magang_posisi', $payload);
             $this->catat_audit('magang_posisi_diubah', 'Posisi magang "' . $nama . '" diperbarui',
@@ -132,7 +133,7 @@ class Admin_Magang_Posisi extends Admin_Controller {
         }
 
         $this->session->set_flashdata('success', $pesan);
-        redirect('Admin_Magang_Posisi');
+        $this->kembali($bidang);
     }
 
     public function hapus()
@@ -142,12 +143,26 @@ class Admin_Magang_Posisi extends Admin_Controller {
         $row = $this->db->get_where('kkn_magang_posisi', ['id' => $id])->row();
         if ( ! $row) {
             $this->session->set_flashdata('error', 'Posisi tidak ditemukan.');
-            redirect('Admin_Magang_Posisi'); return;
+            $this->kembali(''); return;
         }
         $this->db->where('id', $id)->delete('kkn_magang_posisi');
         $this->catat_audit('magang_posisi_dihapus', 'Posisi magang "' . $row->nama_posisi . '" dihapus',
             'kkn_magang_posisi', $id, ['bidang' => $row->bidang_kode]);
         $this->session->set_flashdata('success', 'Posisi dihapus.');
+        $this->kembali($row->bidang_kode);
+    }
+
+    /**
+     * Kembali ke layar asal. Modal posisi juga hidup di detail slot tiap bidang
+     * (Admin_Kemitraan::slot_bidang); admin yang menyimpan dari sana kembali ke bidang itu,
+     * bukan dilempar ke daftar semua posisi. Tujuannya selalu rute sendiri, bukan URL kiriman.
+     */
+    private function kembali($bidang)
+    {
+        $tahun = $this->slot->tahun_sah($this->input->post('tahun'));
+        if ($this->input->post('asal') === 'slot' && $bidang !== '' && $tahun !== NULL) {
+            redirect('Admin_Kemitraan/slot_bidang/' . rawurlencode($bidang) . '/' . $tahun);
+        }
         redirect('Admin_Magang_Posisi');
     }
 }

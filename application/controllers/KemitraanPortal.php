@@ -250,7 +250,7 @@ class KemitraanPortal extends Public_Controller
 
         $this->notify_admin_push([['role' => 'admin']], $susulan !== NULL ? 'Pendaftaran KKN susulan' : 'Pendaftaran KKN baru',
             $susulan !== NULL ? 'Ada pendaftaran KKN susulan (periode sudah lewat) yang menunggu peninjauan.' : 'Ada pendaftaran KKN yang menunggu peninjauan.',
-            'Admin_Kemitraan?status=Diajukan', 'kemitraan-' . (int) $id);
+            'Admin_Kemitraan/kkn?status=Diajukan', 'kemitraan-' . (int) $id);
         $this->session->set_flashdata('success',
             $susulan !== NULL
                 ? 'KKN berhasil diajukan sebagai input susulan. Tim kami akan meninjau alasan susulannya'
@@ -1338,7 +1338,7 @@ class KemitraanPortal extends Public_Controller
         $this->notify_admin_push([['role' => 'admin']],
             'Pendaftaran ' . strtoupper($jenis) . ' baru',
             'Ada pendaftaran ' . strtoupper($jenis) . ' yang menunggu peninjauan.',
-            'Admin_Kemitraan?status=Diajukan', 'kemitraan-' . (int) $id);
+            'Admin_Kemitraan/' . $jenis . '?status=Diajukan', 'kemitraan-' . (int) $id);
         $this->session->set_flashdata('success', $pesan);
         redirect('akun');
     }

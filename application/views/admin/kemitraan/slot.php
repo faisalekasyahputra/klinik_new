@@ -12,7 +12,7 @@
 
 <p class="mb-4 text-sm text-gray-500 dark:text-brand-muted">
     Kuota berarti berapa mahasiswa boleh hadir <strong>bersamaan</strong> pada satu bidang.
-    Buka detail untuk mengatur bulan dan tanggalnya.
+    Buka detail untuk mengatur bulan, tanggal, dan posisi yang dicari tiap bidang.
 </p>
 
 <div class="mb-4 flex flex-wrap items-center gap-2">
@@ -32,6 +32,7 @@
                     <th class="px-4 py-3">Status</th>
                     <th class="px-4 py-3 text-center">Kuota</th>
                     <th class="px-4 py-3">Bulan Terbuka <?= (int) $tahun ?></th>
+                    <th class="px-4 py-3">Posisi</th>
                     <th class="px-4 py-3 text-right">Aksi</th>
                 </tr>
             </thead>
@@ -63,6 +64,15 @@
                                         <span class="rounded-lg bg-emerald-500/10 px-2 py-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400"><?= html_escape($label) ?></span>
                                     <?php endforeach; ?>
                                 </div>
+                            <?php endif; ?>
+                        </td>
+                        <td class="px-4 py-3 text-xs" data-kolom-posisi>
+                            <?php $jp = $jumlah_posisi[$b->kode] ?? ['tampil' => 0, 'semua' => 0]; ?>
+                            <?php if ($jp['tampil'] > 0): ?>
+                                <a href="<?= base_url('Admin_Kemitraan/slot_bidang/' . rawurlencode($b->kode) . '/' . (int) $tahun) ?>#posisi" class="font-bold text-gray-900 hover:underline dark:text-white"><?= (int) $jp['tampil'] ?> posisi</a>
+                                <?php if ($jp['semua'] > $jp['tampil']): ?><span class="block text-gray-500 dark:text-brand-muted">+<?= $jp['semua'] - $jp['tampil'] ?> disembunyikan</span><?php endif; ?>
+                            <?php else: ?>
+                                <a href="<?= base_url('Admin_Kemitraan/slot_bidang/' . rawurlencode($b->kode) . '/' . (int) $tahun) ?>#posisi" class="text-gray-400 hover:underline dark:text-brand-muted/60">Belum ada posisi</a>
                             <?php endif; ?>
                         </td>
                         <td class="px-4 py-3 text-right whitespace-nowrap">
