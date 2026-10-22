@@ -586,6 +586,9 @@ class Migrate extends CI_Controller {
         // Migrasi 081 - tahun bantuan dan luas rumah bernilai 0 dijadikan NULL (harus 0 sesudah migrasi).
         echo 'tahun bantuan / luas rumah bernilai 0 (migrasi 081): '
             .$this->db->where('tahun_intervensi', 0)->or_where('luas_rumah', 0)->count_all_results('sf_penilaian_perumahan')." baris\n";
+        // Migrasi 082 - kualifikasi posisi magang (kkn_magang_posisi.keterangan) berupa TEXT.
+        $tipe_082 = (string) $this->db->query("SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'kkn_magang_posisi' AND COLUMN_NAME = 'keterangan'")->row('DATA_TYPE');
+        echo 'kualifikasi posisi magang (migrasi 082): '.($tipe_082 === 'text' ? 'ADA (TEXT)' : 'HILANG ('.$tipe_082.')')."\n";
         // Migrasi 076 - kolom alasan_susulan untuk KKN input susulan (bersama kolom 061 dan 062 di bawah).
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062', 'alasan_susulan' => '076'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.

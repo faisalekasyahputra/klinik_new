@@ -30,9 +30,11 @@ $isian = 'mt-1 w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2
 $bidang_awal = $bidang ? $bidang[0]->kode : '';
 ?>
 
-<div class="tumpuk-bagian" x-data="{ buka: false, id: '', bidang: '<?= html_escape($bidang_awal) ?>', posisi: '', ket: '', kuota: 1, urutan: '', aktif: true,
-        tambah() { this.id = ''; this.posisi = ''; this.ket = ''; this.kuota = 1; this.urutan = ''; this.aktif = true; this.buka = true; this.$nextTick(() => this.$refs.posisi.focus()); },
-        ubah(d) { this.id = d.id; this.bidang = d.bidang; this.posisi = d.posisi; this.ket = d.ket; this.kuota = d.kuota; this.urutan = d.urutan; this.aktif = d.aktif === '1'; this.buka = true; this.$nextTick(() => this.$refs.posisi.focus()); } }">
+<div class="tumpuk-bagian" x-data="{ buka: false, id: '', bidang: '<?= html_escape($bidang_awal) ?>', posisi: '', kual: [''], kuota: 1, urutan: '', aktif: true, maksButir: <?= (int) KUALIFIKASI_MAKS_BUTIR ?>,
+        tambahButir() { if (this.kual.length < this.maksButir) { this.kual.push(''); this.$nextTick(() => { const k = this.$refs.daftarKual.querySelectorAll('input'); k[k.length - 1].focus(); }); } },
+        hapusButir(i) { this.kual.splice(i, 1); if (!this.kual.length) this.kual.push(''); },
+        tambah() { this.id = ''; this.posisi = ''; this.kual = ['']; this.kuota = 1; this.urutan = ''; this.aktif = true; this.buka = true; this.$nextTick(() => this.$refs.posisi.focus()); },
+        ubah(d) { this.id = d.id; this.bidang = d.bidang; this.posisi = d.posisi; this.kual = JSON.parse(d.kual || '[]'); if (!this.kual.length) this.kual = ['']; this.kuota = d.kuota; this.urutan = d.urutan; this.aktif = d.aktif === '1'; this.buka = true; this.$nextTick(() => this.$refs.posisi.focus()); } }">
     <?php $this->load->view('admin/components/judul_halaman', [
         'jh_deskripsi' => 'Daftar jurusan, bidang studi, atau keahlian yang sedang dibutuhkan tiap bidang. Yang <strong>ditampilkan</strong> muncul di papan
             magang publik.<br><span class="text-xs">Posisi hanya keterangan: mahasiswa mendaftar per bidang, dan batas pendaftar diatur di
@@ -81,7 +83,15 @@ $bidang_awal = $bidang ? $bidang[0]->kode : '';
                         </td>
                         <td class="px-4 py-3">
                             <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama_posisi) ?></div>
-                            <?php if ((string) $r->keterangan !== ''): ?><div class="text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($r->keterangan) ?></div><?php endif; ?>
+                            <?php $kual = daftar_kualifikasi($r->keterangan); if ($kual): ?>
+                                <ul class="mt-0.5 list-disc pl-4 text-xs text-gray-500 dark:text-brand-muted"><?php foreach (array_slice($kual, 0, 3) as $k): ?><li><?= html_escape($k) ?></li><?php endforeach; ?></ul>
+                                <?php if (count($kual) > 3): ?>
+                                    <details class="text-xs text-gray-500 dark:text-brand-muted">
+                                        <summary class="cursor-pointer font-semibold text-brand-600 hover:underline dark:text-brand-300">Selengkapnya (<?= count($kual) ?> kualifikasi)</summary>
+                                        <ul class="list-disc pl-4"><?php foreach (array_slice($kual, 3) as $k): ?><li><?= html_escape($k) ?></li><?php endforeach; ?></ul>
+                                    </details>
+                                <?php endif; ?>
+                            <?php endif; ?>
                         </td>
                         <td class="px-4 py-3 text-xs"><?= (int) $r->kuota ?> orang</td>
                         <td class="px-4 py-3">
@@ -93,7 +103,7 @@ $bidang_awal = $bidang ? $bidang[0]->kode : '';
                         <td class="whitespace-nowrap px-4 py-3 text-right">
                             <button type="button" class="tombol-aksi" @click="ubah($el.dataset)" data-posisi-ubah
                                     data-id="<?= (int) $r->id ?>" data-bidang="<?= html_escape($r->bidang_kode) ?>" data-posisi="<?= html_escape($r->nama_posisi) ?>"
-                                    data-ket="<?= html_escape((string) $r->keterangan) ?>" data-kuota="<?= (int) $r->kuota ?>" data-urutan="<?= (int) $r->urutan ?>" data-aktif="<?= $r->aktif ? '1' : '0' ?>">
+                                    data-kual="<?= html_escape(json_encode(daftar_kualifikasi($r->keterangan))) ?>" data-kuota="<?= (int) $r->kuota ?>" data-urutan="<?= (int) $r->urutan ?>" data-aktif="<?= $r->aktif ? '1' : '0' ?>">
                                 <i class="ph ph-pencil-simple" aria-hidden="true"></i><span>Ubah</span>
                             </button>
                             <form class="inline" action="<?= base_url('Admin_Magang_Posisi/hapus') ?>" method="post"
@@ -128,9 +138,23 @@ $bidang_awal = $bidang ? $bidang[0]->kode : '';
                 <label class="block text-xs text-gray-500 dark:text-brand-muted">Jurusan, bidang studi, atau keahlian
                     <input type="text" name="nama_posisi" x-ref="posisi" x-model="posisi" maxlength="100" required placeholder="mis. Drafter" class="<?= $isian ?>">
                 </label>
-                <label class="block text-xs text-gray-500 dark:text-brand-muted">Keterangan singkat (opsional)
-                    <input type="text" name="keterangan" x-model="ket" maxlength="255" placeholder="mis. Menguasai AutoCAD" class="<?= $isian ?>">
-                </label>
+                <?php // Daftar kualifikasi: satu kotak per butir, bisa ditambah dan dihapus (permintaan user 22 Okt 2026). ?>
+                <fieldset class="block text-xs text-gray-500 dark:text-brand-muted">
+                    <legend>Kualifikasi (opsional)</legend>
+                    <div class="mt-1 space-y-2" x-ref="daftarKual">
+                        <template x-for="(butir, i) in kual" :key="i">
+                            <div class="flex items-center gap-2">
+                                <span class="w-5 shrink-0 text-right font-bold" x-text="(i + 1) + '.'"></span>
+                                <input type="text" name="kualifikasi[]" x-model="kual[i]" maxlength="<?= (int) KUALIFIKASI_MAKS_KARAKTER ?>"
+                                       :placeholder="i === 0 ? 'mis. Menguasai AutoCAD' : 'Kualifikasi berikutnya'" :aria-label="'Kualifikasi ' + (i + 1)" class="<?= $isian ?>"
+                                       @keydown.enter.prevent="tambahButir()">
+                                <button type="button" class="tombol-aksi shrink-0" @click="hapusButir(i)" :aria-label="'Hapus kualifikasi ' + (i + 1)"><i class="ph ph-x" aria-hidden="true"></i></button>
+                            </div>
+                        </template>
+                    </div>
+                    <button type="button" class="tombol-aksi mt-2" @click="tambahButir()" :disabled="kual.length >= maksButir"><i class="ph ph-plus" aria-hidden="true"></i><span>Tambah kualifikasi</span></button>
+                    <span class="mt-1 block text-[11px]">Maksimal <?= (int) KUALIFIKASI_MAKS_BUTIR ?> butir, masing-masing <?= (int) KUALIFIKASI_MAKS_KARAKTER ?> karakter. Tampil sebagai daftar di papan slot dan formulir daftar magang; lebih dari 3 butir dibuka lewat Selengkapnya.</span>
+                </fieldset>
                 <div class="grid grid-cols-2 gap-3">
                     <label class="block text-xs text-gray-500 dark:text-brand-muted">Jumlah dibutuhkan
                         <input type="number" name="kuota" x-model="kuota" min="0" max="99" class="<?= $isian ?>">

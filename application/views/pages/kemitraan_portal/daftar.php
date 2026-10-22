@@ -158,7 +158,7 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
                 <span class="inline-block h-2 w-2 rounded-sm bg-[color:var(--portal-border)] align-middle"></span> tidak dibuka.
             </p>
 
-            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div class="grid grid-cols-1 items-start gap-2 sm:grid-cols-2">
                 <?php foreach ($ketersediaan as $kode => $k):
                     $nilai = html_escape(json_encode((string) $kode));
                     $gaya  = $gaya_keadaan[$k['keadaan']];
@@ -188,10 +188,9 @@ $petunjuk = 'mt-1.5 text-[11px] text-[color:var(--portal-text-muted)]';
                         <?php else: ?>
                             Sisa <strong class="text-[color:var(--portal-text)]"><?= (int) $k['sisa'] ?></strong> dari <?= (int) $k['kuota'] ?> kursi
                         <?php endif; ?>
-                        <?php foreach ($k['posisi'] as $p): ?>
-                            <span class="ml-1 rounded-full border border-[color:var(--portal-border)] px-1.5 text-[10px] text-[color:var(--portal-text)]"><?= html_escape($p->nama_posisi) ?></span>
-                        <?php endforeach; ?>
                     </p>
+                    <?php // Posisi dan kualifikasinya (dinas 22 Okt 2026), sama dengan papan slot. ?>
+                    <?php $this->load->view('pages/kemitraan_portal/_posisi', ['posisi' => $k['posisi']]); ?>
 
                     <div class="grid grid-cols-12 gap-0.5" aria-label="Slot per bulan">
                         <?php foreach ($k['bulan'] as $nomor => $sisa):

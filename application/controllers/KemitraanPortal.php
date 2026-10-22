@@ -8,6 +8,7 @@ class KemitraanPortal extends Public_Controller
         parent::__construct();
         $this->load->library('form_validation');
         $this->load->model('kemitraan_slot_model', 'slot');
+        $this->load->helper('kualifikasi');
     }
 
     public function index()
