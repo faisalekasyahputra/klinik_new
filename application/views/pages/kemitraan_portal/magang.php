@@ -82,18 +82,8 @@ $kartu = 'rounded-2xl border border-[color:var(--portal-border)] bg-[color:var(-
                        daftar karangan sebagai pengisi sementara. */
                     ?>
                     <?php if ( ! empty($b['posisi'])): ?>
-                        <p class="mt-2 text-xs font-semibold text-[color:var(--portal-text-muted)]">Jurusan/Bidang/Keahlian yang dibutuhkan:</p>
-                        <div class="mt-1.5 flex flex-wrap gap-1.5">
-                            <?php foreach ($b['posisi'] as $p): ?>
-                                <span class="inline-flex items-center gap-1 rounded-full border border-[color:var(--portal-border)] px-2.5 py-1 text-[11px] text-[color:var(--portal-text)]"
-                                      <?= $p->keterangan ? 'title="' . html_escape($p->keterangan) . '"' : '' ?>>
-                                    <?= html_escape($p->nama_posisi) ?><?php if ($p->keterangan): ?> &middot; <?= html_escape($p->keterangan) ?><?php endif; ?>
-                                    <?php if ((int) $p->kuota > 0): ?>
-                                        <strong class="text-[color:var(--portal-text-muted)]"><?= (int) $p->kuota ?></strong>
-                                    <?php endif; ?>
-                                </span>
-                            <?php endforeach; ?>
-                        </div>
+                        <p class="mt-2 mb-1.5 text-xs font-semibold text-[color:var(--portal-text-muted)]">Posisi yang dibutuhkan dan kualifikasinya:</p>
+                        <?php $this->load->view('pages/kemitraan_portal/_posisi', ['posisi' => $b['posisi']]); ?>
                     <?php endif; ?>
 
                     <?php if ($b['bulan_dibuka']): ?>

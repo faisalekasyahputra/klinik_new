@@ -81,7 +81,7 @@ $bidang_awal = $bidang ? $bidang[0]->kode : '';
                         </td>
                         <td class="px-4 py-3">
                             <div class="font-bold text-gray-900 dark:text-white"><?= html_escape($r->nama_posisi) ?></div>
-                            <?php if ((string) $r->keterangan !== ''): ?><div class="text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($r->keterangan) ?></div><?php endif; ?>
+                            <?php if ((string) $r->keterangan !== ''): ?><div class="whitespace-pre-line text-xs text-gray-500 dark:text-brand-muted"><?= html_escape($r->keterangan) ?></div><?php endif; ?>
                         </td>
                         <td class="px-4 py-3 text-xs"><?= (int) $r->kuota ?> orang</td>
                         <td class="px-4 py-3">
@@ -128,8 +128,9 @@ $bidang_awal = $bidang ? $bidang[0]->kode : '';
                 <label class="block text-xs text-gray-500 dark:text-brand-muted">Jurusan, bidang studi, atau keahlian
                     <input type="text" name="nama_posisi" x-ref="posisi" x-model="posisi" maxlength="100" required placeholder="mis. Drafter" class="<?= $isian ?>">
                 </label>
-                <label class="block text-xs text-gray-500 dark:text-brand-muted">Keterangan singkat (opsional)
-                    <input type="text" name="keterangan" x-model="ket" maxlength="255" placeholder="mis. Menguasai AutoCAD" class="<?= $isian ?>">
+                <label class="block text-xs text-gray-500 dark:text-brand-muted">Kualifikasi (opsional, satu per baris)
+                    <textarea name="keterangan" x-model="ket" maxlength="255" rows="4" placeholder="Menguasai AutoCAD&#10;Memahami konsep bangun ruang" class="<?= $isian ?>"></textarea>
+                    <span class="mt-1 block text-[11px]">Tampil sebagai daftar kualifikasi di papan slot dan formulir daftar magang. Maksimal 255 karakter.</span>
                 </label>
                 <div class="grid grid-cols-2 gap-3">
                     <label class="block text-xs text-gray-500 dark:text-brand-muted">Jumlah dibutuhkan
