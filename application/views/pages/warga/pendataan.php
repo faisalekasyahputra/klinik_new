@@ -256,7 +256,8 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                 <?php
                 unset($selects['kelompok_penghasilan']);
                 $selects['kawasan_perumahan'] = ['Kawasan', ['drought'=>'Kekeringan', 'slum'=>'Kumuh', 'disaster_prone'=>'Rawan Bencana', 'riverbank'=>'Bantaran Sungai', 'railway'=>'Bantaran Rel KA', 'poor_other'=>'Kawasan Buruk Lain', 'good'=>'Kawasan Baik']];
-                if ($initial) $selects += ($matrix_fields ?? []);
+                // Isian matriks (kepemilikan lahan, lingkungan, finansial, keluarga) dicabut 23 Okt 2026 atas permintaan
+                // dinas; nilainya diturunkan di Matriks_program_ruleset::turunan().
                 foreach ($selects as $key => [$label, $options]):
                     if ($initial === in_array($key, ['punya_tabungan', 'mampu_swadaya'], TRUE)) continue;
                 ?><div><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?><?= isset($matrix_required[$key]) ? ' <span class="text-red-700">*</span>' : '' ?></label><select id="<?= $key ?>" name="<?= $key ?>" <?= isset($matrix_required[$key]) ? 'required' : '' ?> aria-describedby="<?= $key ?>-error" aria-invalid="<?= $field_error($key) ? 'true' : 'false' ?>" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)"><option value="">Pilih <?= strtolower($label) ?></option><?php foreach ($options as $code => $label): ?><option value="<?= html_escape($code) ?>"<?= $selected($key, $code) ?>><?= html_escape($label) ?></option><?php endforeach; ?></select><p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div><?php endforeach; ?>
