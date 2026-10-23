@@ -486,9 +486,9 @@ class Warga extends MY_Controller {
             $data['punya_lahan_calon'] = $this->input->post('tanah_lain', TRUE);
         }
         if ($direction === 'next' && $step === 'housing_family') {
-            $milik_sendiri = in_array((string) $this->input->post('matriks_rumah_sekarang', TRUE), ['house_owned', 'house_disaster_affected'], TRUE);
-            $data['jalur_penilaian'] = $milik_sendiri ? 'existing_house' : 'candidate_land';
-            $data['kepemilikan_rumah'] = $milik_sendiri ? 'owned' : 'other';
+            // Warga memilih Status Rumah SIMPERUM (6 pilihan); kategori matriks diturunkan, tidak ditanyakan.
+            $data['matriks_rumah_sekarang'] = Matriks_program_ruleset::rumah_sekarang($data['kepemilikan_rumah'] ?? '', $data['matriks_kondisi_lingkungan'] ?? '');
+            $data['jalur_penilaian'] = ($data['kepemilikan_rumah'] ?? '') === 'owned' ? 'existing_house' : 'candidate_land';
         }
         // Kompatibilitas draft lama yang sudah telanjur sampai langkah detail
         // saat jalur_penilaian masih undetermined.
@@ -691,7 +691,7 @@ class Warga extends MY_Controller {
     {
         // Setiap POST hanya mengubah medan pada langkah yang sudah divalidasi.
         $fields = [
-            'housing_family' => array_merge(['matriks_rumah_sekarang', 'kawasan_perumahan'], array_keys(Matriks_program_ruleset::FORM_FIELDS)),
+            'housing_family' => array_merge(['kepemilikan_rumah', 'kawasan_perumahan'], array_keys(Matriks_program_ruleset::FORM_FIELDS)),
             'housing_family_detail' => ['kepemilikan_rumah', 'kepemilikan_lahan', 'tanah_lain', 'rumah_lain', 'luas_rumah', 'jml_penghuni', 'jml_kk', 'bantuan_perumahan', 'tahun_intervensi'],
             'building_condition' => ['kondisi_pondasi', 'kondisi_kolom', 'kondisi_balok', 'kondisi_sloof', 'kondisi_plafon', 'kondisi_rangka', 'bahan_lantai', 'kondisi_lantai', 'bahan_dinding', 'kondisi_dinding', 'bahan_atap', 'kondisi_atap'],
             'candidate_land' => ['candidate_land_address', 'status_lahan_calon', 'asal_lahan_calon', 'hubungan_pemilik_lahan', 'panjang_lahan_m', 'lebar_lahan_m'],
@@ -818,13 +818,13 @@ class Warga extends MY_Controller {
         $errors = [];
         if ($step === 'housing_family') {
             $this->validate_options([
-                'matriks_rumah_sekarang' => ['house_owned', 'house_none_or_rent', 'house_rent_or_staying', 'house_restricted_area', 'house_disaster_affected'],
+                'kepemilikan_rumah' => ['owned', 'rent', 'rent_free', 'official', 'staying', 'other'],
                 'kawasan_perumahan' => ['drought', 'slum', 'disaster_prone', 'riverbank', 'railway', 'poor_other', 'good'],
             ], $errors);
             foreach (Matriks_program_ruleset::FORM_FIELDS as $field => [$label, $options]) {
                 $this->validate_options([$field => array_keys($options)], $errors);
             }
-            foreach (['matriks_rumah_sekarang', 'kawasan_perumahan'] as $field) {
+            foreach (['kepemilikan_rumah', 'kawasan_perumahan'] as $field) {
                 if (trim((string) $this->input->post($field, TRUE)) === '') $errors[$field] = 'Pilihan ini wajib diisi.';
             }
         }

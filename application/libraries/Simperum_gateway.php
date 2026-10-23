@@ -6,6 +6,13 @@ class Simperum_gateway {
     private $CI;
     private $mode;
 
+    /**
+     * Versi pemetaan kode GetDataRTLH. Naikkan setiap kali peta kode di bawah berubah: rekaman cache api
+     * berversi lain tidak dipakai lagi dan diambil ulang. v2 (23 Okt 2026): kode resmi dari tabel referensi
+     * SIMPERUM (Penerangan tertukar, Menumpang, Penghasilan 7-9, Status lahan, Pekerjaan 23-24, sanitasi).
+     */
+    const VERSI_API = 'simperum-rtlh-v2';
+
     /** Butir 5: benar HANYA selama satu pemanggilan lookup() yang memintanya. */
     private $lewati_tgl_lahir = FALSE;
     private $fixture_path;
@@ -69,7 +76,7 @@ class Simperum_gateway {
             return $this->response('error', 'Koneksi SIMPERUM belum dikonfigurasi.', [], 'api_not_configured');
         }
 
-        $cached = $this->CI->Housing_assessment_model->get_active_source_snapshot($nik, $this->mode);
+        $cached = $this->CI->Housing_assessment_model->get_active_source_snapshot($nik, $this->mode, $this->mode === 'api' ? self::VERSI_API : NULL);
         if ($cached) {
             return $this->from_snapshot($cached, $birth_date, TRUE, $requested_by);
         }
@@ -83,7 +90,7 @@ class Simperum_gateway {
         }
 
         try {
-            $cached = $this->CI->Housing_assessment_model->get_active_source_snapshot($nik, $this->mode);
+            $cached = $this->CI->Housing_assessment_model->get_active_source_snapshot($nik, $this->mode, $this->mode === 'api' ? self::VERSI_API : NULL);
             if ($cached) {
                 return $this->from_snapshot($cached, $birth_date, TRUE, $requested_by);
             }
@@ -99,7 +106,7 @@ class Simperum_gateway {
                 $status,
                 $payload,
                 [
-                    'versi_api' => $payload['versi_api'] ?? ($this->mode === 'api' ? 'simperum-rtlh-v1' : 'simulation-v1'),
+                    'versi_api' => $payload['versi_api'] ?? ($this->mode === 'api' ? self::VERSI_API : 'simulation-v1'),
                     'http_status' => $payload['http_status'] ?? ($status === 'error' ? 503 : 200),
                     'error_code' => $payload['error_code'] ?? NULL,
                     'requested_by' => $requested_by,
@@ -167,7 +174,7 @@ class Simperum_gateway {
                 $status,
                 $payload,
                 [
-                    'versi_api' => $payload['versi_api'] ?? ($this->mode === 'api' ? 'simperum-rtlh-v1' : 'simulation-v1'),
+                    'versi_api' => $payload['versi_api'] ?? ($this->mode === 'api' ? self::VERSI_API : 'simulation-v1'),
                     'http_status' => $payload['http_status'] ?? ($status === 'error' ? 503 : 200),
                     'error_code' => $payload['error_code'] ?? NULL,
                 ]
@@ -432,7 +439,7 @@ class Simperum_gateway {
         if (empty($records)) {
             return [
                 'status_respons' => 'not_found',
-                'versi_api' => 'simperum-rtlh-v1',
+                'versi_api' => self::VERSI_API,
                 'http_status' => $http_status,
                 'source' => ['message' => $response['Message'] ?? NULL],
             ];
@@ -543,7 +550,7 @@ class Simperum_gateway {
         }
         $payload = [
             'status_respons' => 'found',
-            'versi_api' => 'simperum-rtlh-v1',
+            'versi_api' => self::VERSI_API,
             'http_status' => (int) $http_status,
             'kunci_rekaman_sumber' => $text($record['IDBDT'] ?? NULL),
             'identity' => [
@@ -559,6 +566,10 @@ class Simperum_gateway {
                 ]),
             ],
             'socioeconomic' => [
+                /* KODE RESMI dari tabel referensi SIMPERUM sendiri (23 Okt 2026): PRM.Sel* dibaca dari
+                   penyimpanan offline aplikasi web SIMPERUM, dan daftar yang ditulis langsung di formulirnya
+                   (Sts. Rumah, BB Masak) dari berkas JS publiknya. Pekerjaan resmi: 1,6,8,9,11-14,17-24,98,99;
+                   kode 2-5,7,10,15,16 dari dokumen API lama dibiarkan untuk rekaman lama. */
                 'pekerjaan' => $code('Pekerjaan', [
                     '1' => 'farmer', '2' => 'horticulture', '3' => 'plantation',
                     '4' => 'capture_fisher', '5' => 'aquaculture_fisher', '6' => 'breeder',
@@ -569,12 +580,14 @@ class Simperum_gateway {
                     '15' => 'information_communication', '16' => 'finance_insurance',
                     '17' => 'educator', '18' => 'health_worker',
                     '19' => 'civil_servant', '20' => 'scavenger', '21' => 'other',
-                    '22' => 'military_police', '98' => 'retired', '99' => 'unemployed',
+                    '22' => 'military_police', '23' => 'private_employee', '24' => 'contract_worker',
+                    '98' => 'retired', '99' => 'unemployed',
                 ]),
+                // 7 = "4.2 - 6 jt" (bukan "> 4,2 jt"), 8 = "6 - 8 jt", 9 = "> 8 jt" menurut PRM.SelPenghasilan.
                 'kelompok_penghasilan' => $code('Penghasilan', [
                     '1' => 'lt_1_8', '2' => '1_9_2_1', '3' => '2_2_2_6',
                     '4' => '2_7_3_1', '5' => '3_2_3_6', '6' => '3_7_4_2',
-                    '7' => 'gt_4_2',
+                    '7' => '4_2_6', '8' => '6_8', '9' => 'gt_8',
                 ]),
                 'mampu_swadaya' => $code('MampuSwadaya', [
                     '0' => 'not_capable', '1' => 'capable',
@@ -583,13 +596,15 @@ class Simperum_gateway {
                 'desil_kesejahteraan' => self::desil_sah($record['Desil'] ?? NULL),
             ],
             'housing' => [
+                // Formulir SIMPERUM: 1 Milik Sendiri, 2 Kontrak/Sewa, 3 Bebas Sewa, 4 Dinas, 6 Menumpang, 5 Lainnya.
                 'kepemilikan_rumah' => $code('KepemilikanRumah', [
                     '1' => 'owned', '2' => 'rent', '3' => 'rent_free',
-                    '4' => 'official', '5' => 'other',
+                    '4' => 'official', '5' => 'other', '6' => 'staying',
                 ]),
+                // PRM.SelStatusTanah: 1 HM, 5 HGB, 2 Letter C, 3 Letter D, 4 Suket Desa, 6 Akta Notaris, 9 Lainnya.
                 'kepemilikan_lahan' => $code('KepemilikanLahan', [
-                    '1' => 'certificate_unspecified', '2' => 'letter_c',
-                    '3' => 'letter_d', '4' => 'village_letter',
+                    '1' => 'hm', '2' => 'letter_c', '3' => 'letter_d', '4' => 'village_letter',
+                    '5' => 'hgb', '6' => 'notarial_deed', '9' => 'other',
                 ]),
                 'tanah_lain' => $code('TanahLain', ['0' => 0, '1' => 1]),
                 'rumah_lain' => $code('RumahLain', ['0' => 0, '1' => 1]),
@@ -674,9 +689,20 @@ class Simperum_gateway {
                 'jarak_septic_tank' => $code('JarakSepticTank', [
                     '0' => 'lt_10', '1' => 'gte_10',
                 ]),
+                // PRM.SelPenerangan: 1 PLN, 2 Non PLN, 3 Bukan listrik, 4 PLN Non Meteran (dulu 2-4 tertukar).
                 'penerangan' => $code('Penerangan', [
-                    '1' => 'pln', '2' => 'pln_unmetered',
-                    '3' => 'non_pln', '4' => 'none',
+                    '1' => 'pln', '2' => 'non_pln',
+                    '3' => 'none', '4' => 'pln_unmetered',
+                ]),
+                // Tiga medan berikut dulu tidak dibaca; kodenya dari PRM.SelKamarMandi, PRM.SelSepticTank, formulir BB Masak.
+                'penggunaan_kamar_mandi' => $kamar_mandi = $code('KamarMandi', ['1' => 'own', '2' => 'shared', '3' => 'none']),
+                'kamar_mandi' => $kamar_mandi === NULL ? NULL : (int) ($kamar_mandi !== 'none'),
+                'pembuangan_tinja' => $code('JenisSeptikTank', [
+                    '1' => 'septic_tank', '2' => 'ipal', '3' => 'water_body',
+                    '4' => 'ground_hole', '5' => 'open_land',
+                ]),
+                'bahan_bakar_masak' => $code('BBMasak', [
+                    '1' => 'electric_gas', '2' => 'kerosene', '3' => 'charcoal_wood', '4' => 'other',
                 ]),
             ],
             'location' => [
@@ -713,7 +739,7 @@ class Simperum_gateway {
     {
         return [
             'status_respons' => 'error',
-            'versi_api' => 'simperum-rtlh-v1',
+            'versi_api' => self::VERSI_API,
             'http_status' => (int) $http_status,
             'error_code' => $code,
         ];
@@ -1058,7 +1084,7 @@ class Simperum_gateway {
                 'bahan_lantai', 'kondisi_lantai', 'bahan_dinding',
                 'kondisi_dinding', 'bahan_atap', 'kondisi_atap',
                 'ada_jendela', 'ada_ventilasi', 'sumber_air',
-                'kamar_mandi', 'jenis_kloset', 'pembuangan_tinja',
+                'kamar_mandi', 'penggunaan_kamar_mandi', 'jenis_kloset', 'pembuangan_tinja',
                 'jarak_septic_tank', 'penerangan', 'bahan_bakar_masak',
                 'location_lat', 'location_lng', 'akurasi_lokasi_m', 'kabupaten_id',
             ])
@@ -1078,7 +1104,7 @@ class Simperum_gateway {
            salah satu kosakata; keduanya dipakai mode yang berbeda. */
         $occupations = [
             // kosakata simulasi
-            'private_employee' => 'Karyawan Swasta',
+            'private_employee' => 'Pegawai Swasta',
             'informal_worker' => 'Pekerja Informal',
             'self_employed' => 'Wiraswasta',
             // kosakata SIMPERUM (Pekerjaan 1-22, 98, 99)
@@ -1089,20 +1115,22 @@ class Simperum_gateway {
             'aquaculture_fisher' => 'Nelayan Budidaya',
             'breeder' => 'Peternak',
             'forestry_agriculture_other' => 'Kehutanan/Pertanian Lainnya',
-            'mining' => 'Pertambangan',
-            'daily_laborer' => 'Buruh Harian Lepas',
+            // Label mengikuti PRM.SelPekerjaan SIMPERUM (23 Okt 2026).
+            'mining' => 'Pertambangan/Penggalian',
+            'daily_laborer' => 'Buruh Harian',
             'electricity_gas' => 'Listrik dan Gas',
-            'construction_worker' => 'Buruh Bangunan',
+            'construction_worker' => 'Tukang Bangunan',
             'trader' => 'Pedagang',
             'hotel_restaurant' => 'Hotel dan Rumah Makan',
-            'driver' => 'Sopir/Transportasi',
+            'driver' => 'Sopir',
             'information_communication' => 'Informasi dan Komunikasi',
             'finance_insurance' => 'Keuangan dan Asuransi',
-            'educator' => 'Tenaga Pendidik',
-            'health_worker' => 'Tenaga Kesehatan',
-            'civil_servant' => 'Pegawai Negeri',
+            'educator' => 'Guru/Dosen',
+            'health_worker' => 'Dokter/Bidan/Apoteker',
+            'civil_servant' => 'PNS/BUMN/BUMD',
             'scavenger' => 'Pemulung',
             'military_police' => 'TNI/Polri',
+            'contract_worker' => 'PHL/PTT',
             'retired' => 'Pensiunan',
             'unemployed' => 'Tidak Bekerja',
             'other' => 'Lainnya',
@@ -1113,11 +1141,12 @@ class Simperum_gateway {
             'candidate_land' => 'Punya Lahan Belum Bangun',
             'owned_uninhabitable' => 'Punya Rumah Tidak Layak',
             'owned_habitable' => 'Punya Rumah Layak',
-            // kosakata SIMPERUM (KepemilikanRumah 1-5)
+            // kosakata SIMPERUM (KepemilikanRumah 1-6)
             'owned' => 'Milik Sendiri',
-            'rent' => 'Sewa/Kontrak',
+            'rent' => 'Kontrak/Sewa',
             'rent_free' => 'Bebas Sewa',
-            'official' => 'Rumah Dinas',
+            'official' => 'Dinas',
+            'staying' => 'Menumpang',
             'other' => 'Lainnya',
         ];
         /* Label rentang diturunkan dari nama kodenya sendiri (juta rupiah),
@@ -1130,6 +1159,9 @@ class Simperum_gateway {
             '3_2_3_6' => 'Rp3,2 juta sampai Rp3,6 juta',
             '3_7_4_2' => 'Rp3,7 juta sampai Rp4,2 juta',
             'gt_4_2' => 'Lebih dari Rp4,2 juta',
+            '4_2_6' => 'Rp4,2 juta sampai Rp6 juta',
+            '6_8' => 'Rp6 juta sampai Rp8 juta',
+            'gt_8' => 'Lebih dari Rp8 juta',
         ];
 
         return [

@@ -524,7 +524,8 @@ class Housing_assessment_model extends CI_Model {
             : $this->fail('write_failed', 'Snapshot sumber belum dapat disimpan.');
     }
 
-    public function get_active_source_snapshot($nik, $mode_sumber)
+    /** $versi_api: bila diisi, rekaman berversi pemetaan lain dianggap kedaluwarsa (Simperum_gateway::VERSI_API). */
+    public function get_active_source_snapshot($nik, $mode_sumber, $versi_api = NULL)
     {
         $nik = preg_replace('/\D+/', '', (string) $nik);
         if ( ! preg_match('/^\d{16}$/', $nik)
@@ -536,7 +537,10 @@ class Housing_assessment_model extends CI_Model {
         $row = $this->db
             ->where('nik_lookup_hash', $this->encryption_lib->deterministic_hash($nik))
             ->where('mode_sumber', $mode_sumber)
-            ->where('expires_at >', date('Y-m-d H:i:s'))
+            ->where('expires_at >', date('Y-m-d H:i:s'));
+        // Payload disimpan sudah terpetakan, jadi rekaman dengan versi peta kode lama diambil ulang.
+        if ($versi_api !== NULL) { $row->where('versi_api', $versi_api); }
+        $row = $row
             ->order_by('id', 'DESC')
             ->limit(1)
             ->get('sf_rekaman_simperum')

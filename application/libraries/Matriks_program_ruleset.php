@@ -18,6 +18,22 @@ class Matriks_program_ruleset {
         'matriks_status_keluarga' => ['Kondisi keluarga', ['family_single'=>'Belum menikah', 'family_married'=>'Menikah', 'family_head_of_household'=>'Kepala keluarga (menikah / duda / janda)', 'family_multi_household'=>'Dihuni lebih dari 1 KK (kepala keluarga)']],
     ];
 
+    /**
+     * Kategori kolom E matriks (matriks_rumah_sekarang) diturunkan dari Status Rumah SIMPERUM dan kondisi
+     * lingkungan (23 Okt 2026, permintaan dinas: formulir memakai enum SIMPERUM, bukan kategori matriks).
+     * Lossless terhadap ROWS: baris terdampak bencana/relokasi sudah mensyaratkan lingkungan yang sama.
+     */
+    public static function rumah_sekarang($kepemilikan_rumah, $lingkungan)
+    {
+        if ((string) $kepemilikan_rumah === '') { return NULL; }
+        if ($kepemilikan_rumah === 'owned') {
+            return in_array($lingkungan, ['env_disaster_severe', 'env_disaster_moderate'], TRUE) ? 'house_disaster_affected' : 'house_owned';
+        }
+        if ($lingkungan === 'env_relocation_zone') { return 'house_restricted_area'; }
+        // ponytail: Dinas dan Lainnya tetap "belum punya" saja (tanpa PB Backlog), menunggu keputusan dinas.
+        return in_array($kepemilikan_rumah, ['rent', 'rent_free', 'staying'], TRUE) ? 'house_rent_or_staying' : 'house_none_or_rent';
+    }
+
     /** Hasil awal tersimpan terpisah; data yang kosong bukan persetujuan syarat. */
     public function preliminary(array $draft, array $profile, $today = NULL)
     {
@@ -58,8 +74,9 @@ class Matriks_program_ruleset {
                     $actual = ['single'=>'family_single','married'=>'family_married','divorced'=>'family_divorced'][$input['status_perkawinan'] ?? ''] ?? NULL;
                 }
                 if ($actual === NULL || $actual === '') { $missing[] = $label; continue; }
-                // Menumpang/sewa juga memenuhi kategori gabungan belum punya.
-                if ($key === 'housing_code' && $row[$column] === 'house_none_or_rent' && $actual === 'house_rent_or_staying') continue;
+                // Menumpang/sewa dan bukan-milik di kawasan relokasi juga memenuhi kategori gabungan belum punya.
+                if ($key === 'housing_code' && $row[$column] === 'house_none_or_rent'
+                    && in_array($actual, ['house_rent_or_staying', 'house_restricted_area'], TRUE)) continue;
                 if ($actual !== $row[$column]) continue 2;
             }
             if ($row[7] !== NULL) {

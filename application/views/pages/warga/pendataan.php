@@ -191,18 +191,18 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
             <h2 class="text-lg font-black"><?= $initial ? 'Data untuk rekomendasi' : 'Lengkapi data: ' . ($is_owned_branch ? 'Milik Sendiri' : 'Bukan Milik Sendiri') ?></h2>
             <p class="mt-2 text-xs" style="color:var(--portal-text-muted)">Data yang tersedia sudah diisikan. Periksa dan koreksi bila perlu, lalu lengkapi isian yang masih kosong. Pendapatan dalam rentang dan tahun lahir saja belum cukup untuk mengisi nominal rupiah dan tanggal lahir lengkap.</p>
             <?php if ($initial): ?>
-                <label for="matriks_rumah_sekarang" class="mt-4 block text-xs font-bold">Status tempat tinggal saat ini</label>
-                <select id="matriks_rumah_sekarang" name="matriks_rumah_sekarang" required class="mt-1 w-full rounded-xl border px-3 py-2.5" style="background:var(--portal-btn-bg);color:var(--portal-text)">
-                    <option value="">Pilih status tempat tinggal</option>
-                    <option value="house_owned"<?= $selected('matriks_rumah_sekarang', 'house_owned') ?>>Milik sendiri</option>
-                    <option value="house_rent_or_staying"<?= $selected('matriks_rumah_sekarang', 'house_rent_or_staying') ?>>Bukan milik sendiri: menumpang / sewa</option>
-                    <option value="house_restricted_area"<?= $selected('matriks_rumah_sekarang', 'house_restricted_area') ?>>Bukan milik sendiri: tinggal di area terlarang / numpang (relokasi)</option>
-                    <option value="house_disaster_affected"<?= $selected('matriks_rumah_sekarang', 'house_disaster_affected') ?>>Milik sendiri: terdampak bencana</option>
-                    <option value="house_none_or_rent"<?= $selected('matriks_rumah_sekarang', 'house_none_or_rent') ?>>Bukan milik sendiri</option>
+                <?php /* Pilihan dan urutan sama dengan "Sts. Rumah" SIMPERUM (permintaan dinas 23 Okt 2026); kategori
+                   matriks (terdampak bencana, relokasi) diturunkan dari isian Kondisi lingkungan di bawah. */ ?>
+                <label for="kepemilikan_rumah" class="mt-4 block text-xs font-bold">Status rumah <?= $badge('kepemilikan_rumah') ?> <span class="text-red-700">*</span></label>
+                <select id="kepemilikan_rumah" name="kepemilikan_rumah" required aria-describedby="kepemilikan_rumah-error" class="mt-1 w-full rounded-xl border px-3 py-2.5" style="background:var(--portal-btn-bg);color:var(--portal-text)">
+                    <option value="">Pilih status rumah</option>
+                    <?php foreach (['owned' => 'Milik Sendiri', 'rent' => 'Kontrak/Sewa', 'rent_free' => 'Bebas Sewa', 'official' => 'Dinas', 'staying' => 'Menumpang', 'other' => 'Lainnya'] as $code => $label): ?>
+                    <option value="<?= $code ?>"<?= $selected('kepemilikan_rumah', $code) ?>><?= $label ?></option>
+                    <?php endforeach; ?>
                 </select>
-                <p class="text-xs text-red-700"><?= html_escape($field_error('matriks_rumah_sekarang')) ?></p>
+                <p id="kepemilikan_rumah-error" class="text-xs text-red-700"><?= html_escape($field_error('kepemilikan_rumah')) ?></p>
             <?php else: ?>
-                <input type="hidden" name="kepemilikan_rumah" value="<?= $is_owned_branch ? 'owned' : 'other' ?>">
+                <input type="hidden" name="kepemilikan_rumah" value="<?= html_escape($value('kepemilikan_rumah') !== '' ? $value('kepemilikan_rumah') : ($is_owned_branch ? 'owned' : 'other')) ?>">
             <?php endif; ?>
             <h3 class="mt-6 text-sm font-black">Data Warga</h3>
             <div class="mt-3 grid gap-4 sm:grid-cols-2">
