@@ -54,7 +54,7 @@ foreach(['0000000000000002','0000000000000003','0000000000000005'] as $n)
 /* Harness disusulkan 18 Sep 2026 ke wizard dua cabang (157e275 + 22c790f): pendapatan angka, DTKS tidak
    ditanyakan, dan data profil dasar wajib di langkah matriks. */
 function matriks() {
-  return ['matriks_rumah_sekarang'=>'house_owned','kawasan_perumahan'=>'slum',
+  return ['kepemilikan_rumah'=>'owned','kawasan_perumahan'=>'slum',
           'matriks_kepemilikan_lahan'=>'land_none','matriks_kondisi_lingkungan'=>'env_slum_uninhabitable',
           'matriks_pekerjaan_keuangan'=>'work_stable_or_unstable_no_subsidy',
           'matriks_status_keluarga'=>'family_married',

@@ -69,9 +69,24 @@ $check(($mapped['identity']['full_name'] ?? '') === 'WARGA KONTRAK SINTETIS', 'I
 $check(($mapped['identity']['jenis_kelamin'] ?? '') === 'male', 'Jenis kelamin dipetakan');
 $check(($mapped['identity']['pendidikan'] ?? '') === 'bachelor', 'Pendidikan dipetakan');
 $check(($mapped['socioeconomic']['pekerjaan'] ?? '') === 'educator', 'Pekerjaan dipetakan');
-$check(($mapped['socioeconomic']['kelompok_penghasilan'] ?? '') === 'gt_4_2', 'Penghasilan dipetakan tanpa mempersempit rentang');
+// Kode resmi PRM.SelPenghasilan (23 Okt 2026): 7 = "4.2 - 6 jt", bukan "> 4,2 jt".
+$check(($mapped['socioeconomic']['kelompok_penghasilan'] ?? '') === '4_2_6', 'Penghasilan 7 dipetakan ke 4,2-6 jt');
 $check(($mapped['socioeconomic']['desil_kesejahteraan'] ?? NULL) === NULL, 'Desil tidak dikarang');
-$check(($mapped['housing']['kepemilikan_lahan'] ?? '') === 'certificate_unspecified', 'Jenis sertifikat yang tidak rinci dipertahankan');
+$check(($mapped['housing']['kepemilikan_lahan'] ?? '') === 'hm', 'Status lahan 1 = Sertifikat HM (PRM.SelStatusTanah)');
+// Kode resmi tabel referensi SIMPERUM (23 Okt 2026): kode yang dulu salah atau tidak dibaca.
+$kode_resmi = json_decode($fixture_json, TRUE);
+$kode_resmi['Data'][0] = ['Penerangan' => '3', 'KamarMandi' => '3', 'JenisSeptikTank' => '2', 'BBMasak' => '3', 'Pekerjaan' => '23',
+    'Penghasilan' => '9', 'KepemilikanLahan' => '5', 'KepemilikanRumah' => '6'] + $kode_resmi['Data'][0];
+$kode_resmi = $call('map_api_response', '3374010101900001', ['http_status' => 200, 'body' => json_encode($kode_resmi), 'curl_errno' => 0]);
+$check(($kode_resmi['sanitation']['penerangan'] ?? '') === 'none', 'Penerangan 3 = Bukan listrik (dulu tertukar dengan Non PLN)');
+$check(($kode_resmi['sanitation']['penggunaan_kamar_mandi'] ?? '') === 'none' && ($kode_resmi['sanitation']['kamar_mandi'] ?? NULL) === 0,
+    'Kamar mandi 3 = Tidak Punya, kamar_mandi turunan 0');
+$check(($kode_resmi['sanitation']['pembuangan_tinja'] ?? '') === 'ipal' && ($kode_resmi['sanitation']['bahan_bakar_masak'] ?? '') === 'charcoal_wood',
+    'Jenis TPA 2 = IPAL, BB Masak 3 = Arang/Kayu');
+$check(($kode_resmi['socioeconomic']['pekerjaan'] ?? '') === 'private_employee' && ($kode_resmi['socioeconomic']['kelompok_penghasilan'] ?? '') === 'gt_8',
+    'Pekerjaan 23 = Pegawai Swasta, Penghasilan 9 = > 8 jt');
+$check(($kode_resmi['housing']['kepemilikan_lahan'] ?? '') === 'hgb' && ($kode_resmi['housing']['kepemilikan_rumah'] ?? '') === 'staying'
+    && empty($kode_resmi['source']['unmapped_codes']), 'Status lahan 5 = HGB, Status rumah 6 = Menumpang, tanpa kode tak dikenal');
 $check(($mapped['housing']['bantuan_perumahan'] ?? '') === 'apbd_prov', 'Sumber bantuan dipetakan');
 $check(($mapped['housing']['kawasan_perumahan'] ?? '') === 'good', 'Kawasan dipetakan');
 $check(($mapped['structure']['bahan_atap'] ?? '') === 'clay_tile', 'Bahan atap dipetakan');
@@ -151,10 +166,10 @@ $check(($f2['kunci_rekaman_sumber'] ?? '') === 'SYN-API-02' && (int) ($f2['housi
     && ($f2['identity']['jenis_kelamin'] ?? '') === 'female' && $call('birth_date_matches', '3399995506900002', '1990-06-15', $f2),
     'Fixture API-02: baris 2023 dipilih, baris NIK terpotong dibuang, NIK perempuan (hari+40) cocok');
 $f3 = $call('load_fixture', '3399990101700003');
-$check(array_key_exists('kepemilikan_rumah', $f3['housing'] ?? []) && $f3['housing']['kepemilikan_rumah'] === NULL && ($f3['source']['unmapped_codes']['KepemilikanRumah'] ?? '') === '6'
+$check(($f3['housing']['kepemilikan_rumah'] ?? '') === 'staying' && ! isset($f3['source']['unmapped_codes']['KepemilikanRumah'])
     && ($f3['housing']['intervention_status'] ?? '') === 'Sudah Layak Huni' && $f3['identity']['birth_year'] === NULL
     && (int) ($f3['location']['kabupaten_id'] ?? 0) === 3301,
-    'Fixture API-03: kode 6 dinas tidak ditebak, disposisi terbaca, tahun lahir kosong');
+    'Fixture API-03: Status rumah 6 = Menumpang (formulir SIMPERUM), disposisi terbaca, tahun lahir kosong');
 $check(array_key_exists('location_lat', $f3['location']) && $f3['location']['location_lat'] === NULL && $f3['location']['location_lng'] === NULL
     && ! isset($f3['source']['unmapped_codes']['GeoLat']), 'Koordinat 0,0 dari SIMPERUM dianggap belum dipetakan (NULL)');
 

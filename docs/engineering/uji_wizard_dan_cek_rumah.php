@@ -353,8 +353,11 @@ cek(strpos($h, 'name="matriks_status_dtks"') === FALSE, 'UAT warga 9: tidak memi
 cek(strpos($h, 'name="matriks_penghasilan"') === FALSE, 'UAT warga 9: pendapatan angka, bukan pilihan rentang gaji');
 $dom_prefill = wizard_dom($h);
 $xpath_prefill = new DOMXPath($dom_prefill);
-cek($xpath_prefill->query('//select[@name="matriks_rumah_sekarang"]/option[@selected and @value!=""]')->length === 1,
-    'Status tempat tinggal otomatis terpilih dari SIMPERUM');
+// Sejak 23 Okt 2026 isiannya Status Rumah SIMPERUM (6 pilihan), bukan kategori matriks.
+cek($xpath_prefill->query('//select[@name="kepemilikan_rumah"]/option[@selected and @value="owned"]')->length === 1
+    && $xpath_prefill->query('//select[@name="kepemilikan_rumah"]/option[@value!=""]')->length === 6
+    && $xpath_prefill->query('//select[@name="matriks_rumah_sekarang"]')->length === 0,
+    'Status rumah otomatis terpilih dari SIMPERUM dengan 6 pilihan SIMPERUM');
 foreach (['pekerjaan', 'pendidikan', 'jenis_kelamin'] as $field) {
     cek($xpath_prefill->query('//select[@name="' . $field . '"]/option[@selected and @value!=""]')->length === 1,
         'SIMPERUM mengisi otomatis ' . $field);
@@ -374,15 +377,16 @@ $corrected = json_decode($profile_before['asal_isian_json'], TRUE);
 $corrected['phone'] = ['source' => 'citizen_correction'];
 $db->jalan('UPDATE sf_profil_warga SET no_hp_ciphertext=?, asal_isian_json=? WHERE user_id=?',
     [$profile_before['no_hp_ciphertext'], json_encode($corrected), (string) $akun['id']]);
-$db->jalan("UPDATE sf_penilaian_perumahan SET matriks_rumah_sekarang='house_none_or_rent' WHERE user_id=?", [(string) $akun['id']]);
+$rumah_awal = $db->baris('SELECT kepemilikan_rumah FROM sf_penilaian_perumahan WHERE user_id=? ORDER BY id DESC LIMIT 1', [(string) $akun['id']])['kepemilikan_rumah'] ?? NULL;
+$db->jalan("UPDATE sf_penilaian_perumahan SET kepemilikan_rumah='staying' WHERE user_id=?", [(string) $akun['id']]);
 $xpath_corrected = new DOMXPath(wizard_dom($warga->minta('warga/pendataan')['body']));
 // Data berbentuk API (API-01) tidak membawa HP, jadi "koreksi" yang dipulihkan kosong: koreksi
 // itu tetap harus menang atas HP akun, bukan diisi ulang.
 cek($xpath_corrected->query('//input[@name="phone"]')->item(0)->getAttribute('value') === ($profile_before['no_hp_ciphertext'] === NULL ? '' : $source_phone),
     'HP koreksi tersimpan tidak ditimpa HP akun');
-cek($xpath_corrected->query('//select[@name="matriks_rumah_sekarang"]/option[@selected and @value="house_none_or_rent"]')->length === 1,
+cek($xpath_corrected->query('//select[@name="kepemilikan_rumah"]/option[@selected and @value="staying"]')->length === 1,
     'Pilihan status tersimpan tetap menang atas status rumah sumber');
-$db->jalan('UPDATE sf_penilaian_perumahan SET matriks_rumah_sekarang=NULL WHERE user_id=?', [(string) $akun['id']]);
+$db->jalan('UPDATE sf_penilaian_perumahan SET kepemilikan_rumah=? WHERE user_id=?', [$rumah_awal, (string) $akun['id']]);
 $db->jalan('UPDATE sf_profil_warga SET no_hp_ciphertext=NULL, asal_isian_json=? WHERE user_id=?',
     [$profile_before['asal_isian_json'], (string) $akun['id']]);
 $matrix_snapshot = NULL;
@@ -414,7 +418,7 @@ for ($i = 0; $i < 14; $i++) {
     if ($step === 'review') { break; }
     $paksa = ['action' => 'save'];
     if ($step === 'housing_family') $paksa += [
-        'matriks_rumah_sekarang'=>getenv('UJI_CABANG') === 'tanah' ? 'house_rent_or_staying' : 'house_owned',
+        'kepemilikan_rumah'=>getenv('UJI_CABANG') === 'tanah' ? 'staying' : 'owned',
         'penghasilan_bulanan'=>'1200000',
         'matriks_kondisi_lingkungan'=>getenv('UJI_CABANG') === 'tanah' ? 'env_safe' : 'env_slum_uninhabitable',
         'matriks_kepemilikan_lahan'=>'land_legal',

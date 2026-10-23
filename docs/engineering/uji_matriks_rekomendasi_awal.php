@@ -51,4 +51,16 @@ foreach (['single'=>9000000,'married'=>11000000] as $marital=>$amount) {
 $profile = ['penghasilan_bulanan'=>9000000,'birth_date'=>'1990-01-01','status_perkawinan'=>'married'];
 $draft = ['matriks_rumah_sekarang'=>'house_none_or_rent','matriks_pekerjaan_keuangan'=>'work_stable_or_unstable_no_subsidy','matriks_status_keluarga'=>'family_single'];
 cek(array_column($rules->preliminary($draft,$profile,'2026-09-10')['items'],'program_name') === ['KPR-FLPP / Oemah Lestari Subsidi'], 'Status perkawinan profil menjadi satu sumber batas penghasilan');
+// Status Rumah SIMPERUM (23 Okt 2026) menurunkan kategori kolom E; dulu warga memilih kategori matriks langsung.
+foreach ([
+    ['owned', 'env_slum_uninhabitable', 'house_owned'], ['owned', 'env_disaster_severe', 'house_disaster_affected'],
+    ['owned', 'env_disaster_moderate', 'house_disaster_affected'], ['staying', 'env_safe', 'house_rent_or_staying'],
+    ['rent', 'env_relocation_zone', 'house_restricted_area'], ['rent_free', NULL, 'house_rent_or_staying'],
+    ['official', 'env_safe', 'house_none_or_rent'], ['other', 'env_relocation_zone', 'house_restricted_area'], ['', 'env_safe', NULL],
+] as [$rumah, $lingkungan, $harap]) {
+    cek(Matriks_program_ruleset::rumah_sekarang($rumah, $lingkungan) === $harap, "Status rumah '$rumah' + $lingkungan menjadi " . var_export($harap, TRUE));
+}
+// Bukan milik di kawasan relokasi tetap tergolong belum punya rumah untuk baris KPR-FLPP (sama seperti menumpang/sewa).
+$draft = ['matriks_rumah_sekarang'=>'house_restricted_area','matriks_pekerjaan_keuangan'=>'work_stable_or_unstable_no_subsidy','matriks_status_keluarga'=>'family_single'];
+cek(array_column($rules->preliminary($draft,$profile,'2026-09-10')['items'],'program_name') === ['KPR-FLPP / Oemah Lestari Subsidi'], 'Relokasi bukan milik tetap memenuhi kategori belum punya rumah');
 echo "$total pemeriksaan lulus\n";
