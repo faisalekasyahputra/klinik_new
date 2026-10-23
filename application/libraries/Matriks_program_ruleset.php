@@ -19,19 +19,49 @@ class Matriks_program_ruleset {
     ];
 
     /**
-     * Kategori kolom E matriks (matriks_rumah_sekarang) diturunkan dari Status Rumah SIMPERUM dan kondisi
-     * lingkungan (23 Okt 2026, permintaan dinas: formulir memakai enum SIMPERUM, bukan kategori matriks).
-     * Lossless terhadap ROWS: baris terdampak bencana/relokasi sudah mensyaratkan lingkungan yang sama.
+     * Kolom D, E, F, G, I matriks tidak lagi ditanyakan (permintaan dinas 23 Okt 2026: isiannya tidak ada di
+     * SIMPERUM) dan diturunkan dari data formulir/SIMPERUM. Tiap kolom berupa HIMPUNAN, karena satu warga bisa
+     * memenuhi lebih dari satu kategori (mis. menikah juga kepala keluarga). Himpunan kosong = data belum ada.
+     * Aturan dari dinas: lahan dari Status rumah, keluarga dari Status perkawinan, lingkungan dari Kawasan,
+     * finansial dari Status pekerjaan; celahnya ditambal atas keputusan user (lihat komentar per kolom).
      */
-    public static function rumah_sekarang($kepemilikan_rumah, $lingkungan)
+    public static function turunan(array $draft, array $profile)
     {
-        if ((string) $kepemilikan_rumah === '') { return NULL; }
-        if ($kepemilikan_rumah === 'owned') {
-            return in_array($lingkungan, ['env_disaster_severe', 'env_disaster_moderate'], TRUE) ? 'house_disaster_affected' : 'house_owned';
+        $rumah = (string) ($draft['kepemilikan_rumah'] ?? '');
+        $milik = $rumah === 'owned';
+        // D: milik sendiri = lahan sah; selain itu dari "Memiliki tanah lain" (SIMPERUM TanahLain atau isian warga).
+        $tanah = (string) ($draft['tanah_lain'] ?? '');
+        $lahan = $milik || $tanah === '1' ? ['land_legal'] : ($tanah === '0' ? ['land_none'] : []);
+        // F: dari Kawasan. Rumah milik sendiri yang datanya dari SIMPERUM (basis data RTLH; jawaban dinas
+        // 13 Okt: milik sendiri = RTLH) juga dihitung tidak layak, supaya PK RTLH tidak hilang di Kawasan Baik.
+        $kawasan = (string) ($draft['kawasan_perumahan'] ?? '');
+        $rusak_berat = in_array('severe_damage_or_absent', array_map('strval', array_intersect_key($draft,
+            array_flip(['kondisi_pondasi', 'kondisi_kolom', 'kondisi_balok', 'kondisi_rangka']))), TRUE);
+        $lingkungan = [];
+        if (in_array($kawasan, ['riverbank', 'railway'], TRUE)) { $lingkungan[] = 'env_relocation_zone'; }
+        if ($kawasan === 'disaster_prone') { $lingkungan[] = $rusak_berat ? 'env_disaster_severe' : 'env_disaster_moderate'; }
+        if (in_array($kawasan, ['slum', 'poor_other'], TRUE)
+            || ($milik && in_array($profile['mode_sumber'] ?? '', ['api', 'simulation'], TRUE))) {
+            $lingkungan[] = 'env_slum_uninhabitable';
         }
-        if ($lingkungan === 'env_relocation_zone') { return 'house_restricted_area'; }
-        // ponytail: Dinas dan Lainnya tetap "belum punya" saja (tanpa PB Backlog), menunggu keputusan dinas.
-        return in_array($kepemilikan_rumah, ['rent', 'rent_free', 'staying'], TRUE) ? 'house_rent_or_staying' : 'house_none_or_rent';
+        if ( ! $lingkungan && in_array($kawasan, ['good', 'drought'], TRUE)) { $lingkungan[] = 'env_safe'; }
+        // E: dari Status rumah. Dinas dan Lainnya hanya "belum punya" (tanpa PB Backlog) sampai dinas menjawab.
+        $rumah_kini = [];
+        if ($milik) {
+            $rumah_kini[] = 'house_owned';
+            if (array_intersect($lingkungan, ['env_disaster_severe', 'env_disaster_moderate'])) { $rumah_kini[] = 'house_disaster_affected'; }
+        } elseif ($rumah !== '') {
+            $rumah_kini[] = in_array($rumah, ['rent', 'rent_free', 'staying'], TRUE) ? 'house_rent_or_staying' : 'house_none_or_rent';
+            if (in_array('env_relocation_zone', $lingkungan, TRUE)) { $rumah_kini[] = 'house_restricted_area'; }
+        }
+        // G: dari Status pekerjaan. Tidak tetap juga memenuhi "berpenghasilan tetap / tidak tetap".
+        $finansial = ['permanent' => ['work_stable_or_unstable_no_subsidy'],
+            'non_permanent' => ['work_stable_or_unstable_no_subsidy', 'work_can_save_irregular']][$profile['stabilitas_pekerjaan'] ?? ''] ?? [];
+        // I: dari Status perkawinan; menikah dan cerai juga kepala keluarga. Lebih dari 1 KK dari Jumlah keluarga.
+        $keluarga = ['single' => ['family_single'], 'married' => ['family_married', 'family_head_of_household'],
+            'divorced' => ['family_head_of_household']][$profile['status_perkawinan'] ?? ''] ?? [];
+        if ((int) ($draft['jml_kk'] ?? 0) > 1) { $keluarga[] = 'family_multi_household'; }
+        return ['lahan' => $lahan, 'rumah' => $rumah_kini, 'lingkungan' => $lingkungan, 'finansial' => $finansial, 'keluarga' => $keluarga];
     }
 
     /** Hasil awal tersimpan terpisah; data yang kosong bukan persetujuan syarat. */
@@ -43,17 +73,13 @@ class Matriks_program_ruleset {
             ? $birth->diff(new DateTimeImmutable($today))->y : NULL;
         $income = $profile['penghasilan_bulanan'] ?? NULL;
         $income = is_numeric($income) && $income >= 0 ? (float) $income : NULL;
-        $family = $draft['matriks_status_keluarga'] ?? NULL;
-        if (!$family) $family = ['single'=>'family_single', 'married'=>'family_married'][$profile['status_perkawinan'] ?? ''] ?? NULL;
+        $turunan = self::turunan($draft, $profile);
         $input = [
             'penghasilan_bulanan'=>$income, 'age_years'=>$age,
             'dtks_code'=>$draft['matriks_status_dtks'] ?? NULL,
-            'land_code'=>$draft['matriks_kepemilikan_lahan'] ?? NULL,
-            'housing_code'=>$draft['matriks_rumah_sekarang'] ?? NULL,
-            'environment_code'=>$draft['matriks_kondisi_lingkungan'] ?? NULL,
-            'pekerjaan'=>$draft['matriks_pekerjaan_keuangan'] ?? NULL,
-            'family_code'=>$family,
-            'status_perkawinan'=>$profile['status_perkawinan'] ?? NULL,
+            'land_code'=>$turunan['lahan'], 'housing_code'=>$turunan['rumah'],
+            'environment_code'=>$turunan['lingkungan'], 'pekerjaan'=>$turunan['finansial'],
+            'family_code'=>$turunan['keluarga'],
         ];
         $ranges = ['income_0_1_5'=>[0,1500000], 'income_1_5_2_2'=>[1500000,2200000], 'income_2_2_2_8'=>[2200000,2800000], 'income_2_8_8_5'=>[2800000,8500000], 'income_2_8_10'=>[2800000,10000000], 'income_gt_8_5'=>[8500000,INF], 'income_gt_10'=>[10000000,INF]];
         // Kolom DTKS (indeks 2) sengaja tidak dicocokkan lagi: UAT dinas warga #10 meminta Status DTKS
@@ -70,14 +96,11 @@ class Matriks_program_ruleset {
             foreach ($fields as $column => [$key,$label]) {
                 if ($row[$column] === NULL) continue;
                 $actual = $input[$key];
-                if ($key === 'family_code' && in_array($row[$column], ['family_single','family_married'], TRUE)) {
-                    $actual = ['single'=>'family_single','married'=>'family_married','divorced'=>'family_divorced'][$input['status_perkawinan'] ?? ''] ?? NULL;
-                }
-                if ($actual === NULL || $actual === '') { $missing[] = $label; continue; }
+                if ( ! $actual) { $missing[] = $label; continue; }
                 // Menumpang/sewa dan bukan-milik di kawasan relokasi juga memenuhi kategori gabungan belum punya.
                 if ($key === 'housing_code' && $row[$column] === 'house_none_or_rent'
-                    && in_array($actual, ['house_rent_or_staying', 'house_restricted_area'], TRUE)) continue;
-                if ($actual !== $row[$column]) continue 2;
+                    && array_intersect($actual, ['house_rent_or_staying', 'house_restricted_area'])) continue;
+                if ( ! in_array($row[$column], $actual, TRUE)) continue 2;
             }
             if ($row[7] !== NULL) {
                 if ($age === NULL) $missing[] = 'Tanggal lahir';

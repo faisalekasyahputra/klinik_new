@@ -124,7 +124,6 @@ class Warga extends MY_Controller {
             'nik_dari_akun' => $nik_dari_akun,
             'assessment' => $assessment,
             'preliminary_matrix' => json_decode($assessment['preliminary_matrix'] ?? 'null', TRUE),
-            'matrix_fields' => Matriks_program_ruleset::FORM_FIELDS,
             'profile' => $profile,
             'asal_desil' => $asal_desil,
             'values' => array_merge($assessment ?: [], $profile ?: [], $old_input),
@@ -486,8 +485,7 @@ class Warga extends MY_Controller {
             $data['punya_lahan_calon'] = $this->input->post('tanah_lain', TRUE);
         }
         if ($direction === 'next' && $step === 'housing_family') {
-            // Warga memilih Status Rumah SIMPERUM (6 pilihan); kategori matriks diturunkan, tidak ditanyakan.
-            $data['matriks_rumah_sekarang'] = Matriks_program_ruleset::rumah_sekarang($data['kepemilikan_rumah'] ?? '', $data['matriks_kondisi_lingkungan'] ?? '');
+            // Warga memilih Status Rumah SIMPERUM (6 pilihan); kategori matriks diturunkan di bawah, tidak ditanyakan.
             $data['jalur_penilaian'] = ($data['kepemilikan_rumah'] ?? '') === 'owned' ? 'existing_house' : 'candidate_land';
         }
         // Kompatibilitas draft lama yang sudah telanjur sampai langkah detail
@@ -527,6 +525,13 @@ class Warga extends MY_Controller {
                 $profile['desil_kesejahteraan'] = $this->matriks_program_ruleset->decile_for_monthly_income($profile['penghasilan_bulanan'] ?? NULL);
             }
             if ($step === 'housing_family') {
+                // Kolom matriks turunan disimpan (nilai utama) supaya petugas melihat dasar rekomendasinya.
+                $turunan = Matriks_program_ruleset::turunan($effective, $profile);
+                foreach (['matriks_kepemilikan_lahan' => 'lahan', 'matriks_rumah_sekarang' => 'rumah', 'matriks_kondisi_lingkungan' => 'lingkungan',
+                    'matriks_pekerjaan_keuangan' => 'finansial', 'matriks_status_keluarga' => 'keluarga'] as $kolom => $kunci) {
+                    $data[$kolom] = $turunan[$kunci][0] ?? NULL;
+                }
+                $effective = array_merge($effective, $data);
                 $data['preliminary_matrix'] = json_encode(
                     $this->matriks_program_ruleset->preliminary($effective, $profile),
                     JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
@@ -692,7 +697,7 @@ class Warga extends MY_Controller {
     {
         // Setiap POST hanya mengubah medan pada langkah yang sudah divalidasi.
         $fields = [
-            'housing_family' => array_merge(['kepemilikan_rumah', 'kawasan_perumahan'], array_keys(Matriks_program_ruleset::FORM_FIELDS)),
+            'housing_family' => ['kepemilikan_rumah', 'kawasan_perumahan'],
             'housing_family_detail' => ['kepemilikan_rumah', 'kepemilikan_lahan', 'tanah_lain', 'rumah_lain', 'luas_rumah', 'jml_penghuni', 'jml_kk', 'bantuan_perumahan', 'tahun_intervensi'],
             'building_condition' => ['kondisi_pondasi', 'kondisi_kolom', 'kondisi_balok', 'kondisi_sloof', 'kondisi_plafon', 'kondisi_rangka', 'bahan_lantai', 'kondisi_lantai', 'bahan_dinding', 'kondisi_dinding', 'bahan_atap', 'kondisi_atap'],
             'candidate_land' => ['candidate_land_address', 'status_lahan_calon', 'asal_lahan_calon', 'hubungan_pemilik_lahan', 'panjang_lahan_m', 'lebar_lahan_m'],
@@ -823,9 +828,6 @@ class Warga extends MY_Controller {
                 'kepemilikan_rumah' => ['owned', 'rent', 'rent_free', 'official', 'staying', 'other'],
                 'kawasan_perumahan' => ['drought', 'slum', 'disaster_prone', 'riverbank', 'railway', 'poor_other', 'good'],
             ], $errors);
-            foreach (Matriks_program_ruleset::FORM_FIELDS as $field => [$label, $options]) {
-                $this->validate_options([$field => array_keys($options)], $errors);
-            }
             foreach (['kepemilikan_rumah', 'kawasan_perumahan'] as $field) {
                 if (trim((string) $this->input->post($field, TRUE)) === '') $errors[$field] = 'Pilihan ini wajib diisi.';
             }

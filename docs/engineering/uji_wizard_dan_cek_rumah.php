@@ -350,6 +350,9 @@ foreach (['penghasilan_bulanan', 'pekerjaan', 'pendidikan', 'stabilitas_pekerjaa
     cek(strpos($h, 'name="' . $field . '"') !== FALSE, 'UAT warga 9: data awal memuat ' . $field);
 }
 cek(strpos($h, 'name="matriks_status_dtks"') === FALSE, 'UAT warga 9: tidak meminta status DTKS');
+// Dinas 23 Okt 2026: empat isian matriks tidak ada di SIMPERUM, dicabut dan diturunkan dari data lain.
+cek(preg_match('/name="matriks_(kepemilikan_lahan|kondisi_lingkungan|pekerjaan_keuangan|status_keluarga)"/', $h) === 0,
+    'Isian Kepemilikan lahan, Kondisi lingkungan, Kondisi finansial, Kondisi keluarga tidak ditanyakan lagi');
 cek(strpos($h, 'name="matriks_penghasilan"') === FALSE, 'UAT warga 9: pendapatan angka, bukan pilihan rentang gaji');
 $dom_prefill = wizard_dom($h);
 $xpath_prefill = new DOMXPath($dom_prefill);
