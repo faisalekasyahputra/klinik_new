@@ -501,7 +501,8 @@ class Warga extends MY_Controller {
         if ($direction === 'next' && $step === 'candidate_land') {
             $data['luas_lahan_m2'] = round((float) $data['panjang_lahan_m'] * (float) $data['lebar_lahan_m'], 2);
         }
-        $data['langkah_sekarang'] = $this->adjacent_step($step, $direction, $data['jalur_penilaian'] ?? $draft['jalur_penilaian']);
+        $data['langkah_sekarang'] = $this->adjacent_step($step, $direction, $data['jalur_penilaian'] ?? $draft['jalur_penilaian'],
+            (string) ($data['punya_lahan_calon'] ?? $draft['punya_lahan_calon'] ?? '') === '0');
         $profile_change = $direction === 'next' && in_array($step, ['housing_family', 'housing_family_detail'], TRUE)
             ? $this->profile_corrections($user_id, $step) : NULL;
         if ($direction === 'next' && in_array($step, ['housing_family', 'housing_family_detail'], TRUE) && $profile_change === NULL) {
@@ -732,7 +733,7 @@ class Warga extends MY_Controller {
         return ['data' => $data, 'provenance' => $provenance];
     }
 
-    private function adjacent_step($step, $direction, $track)
+    private function adjacent_step($step, $direction, $track, $tanpa_lahan = FALSE)
     {
         if ($step === 'preliminary_recommendation' && $track === 'undetermined' && $direction !== 'back') {
             return 'housing_family_detail';
@@ -741,7 +742,8 @@ class Warga extends MY_Controller {
         if ($track === 'existing_house') {
             $steps = array_values(array_diff($steps, ['candidate_land']));
         } elseif ($track === 'candidate_land') {
-            $steps = array_values(array_diff($steps, ['building_condition', 'sanitation']));
+            // Permintaan dinas 23 Okt 2026: tidak memiliki tanah lain = langkah Calon Lahan dilewati.
+            $steps = array_values(array_diff($steps, $tanpa_lahan ? ['building_condition', 'candidate_land', 'sanitation'] : ['building_condition', 'sanitation']));
         } elseif ($track === 'financing') {
             $steps = array_values(array_diff($steps, ['building_condition', 'candidate_land', 'sanitation']));
         }

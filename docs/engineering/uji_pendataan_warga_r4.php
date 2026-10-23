@@ -105,7 +105,7 @@ function maju_ke_detail($s, $db, $uid, $rumah = 'house_none_or_rent') {
   if ($d['langkah_sekarang'] === 'preliminary_recommendation') { post_step($s, $d, 'preliminary_recommendation', []); $d = draft($db, $uid); }
   return $d;
 }
-function housing_fields($status, $candidate) { return ['kepemilikan_rumah'=>$status,'kepemilikan_lahan'=>'hm','kawasan_perumahan'=>'slum','jml_penghuni'=>'3','jml_kk'=>'1','luas_rumah'=>'36','tanah_lain'=>'0','rumah_lain'=>'0','punya_lahan_calon'=>$candidate,'bantuan_perumahan'=>'','tahun_intervensi'=>'']; }
+function housing_fields($status, $candidate) { return ['kepemilikan_rumah'=>$status,'kepemilikan_lahan'=>'hm','kawasan_perumahan'=>'slum','jml_penghuni'=>'3','jml_kk'=>'1','luas_rumah'=>'36','tanah_lain'=>$candidate,'rumah_lain'=>'0','punya_lahan_calon'=>$candidate,'bantuan_perumahan'=>'','tahun_intervensi'=>'']; }
 function png_with_text($text) {
     $raw = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLKUwAAAABJRU5ErkJggg==');
     $iend = strrpos($raw, 'IEND') - 4; $data = 'Comment' . "\0" . $text; $chunk = pack('N', strlen($data)) . 'tEXt' . $data . pack('N', crc32('tEXt' . $data));
@@ -194,7 +194,8 @@ $raw=$db->row('SELECT alamat_lahan_calon_ciphertext FROM sf_penilaian_perumahan 
 // Dulu: jalur `financing` melompati kedua modul cabang. Sejak 157e275 (8 Sep 2026) wizard hanya
 // punya DUA cabang, jadi penyewa tanpa lahan lain pun masuk calon lahan; `financing` tinggal jenis
 // yang sah di model untuk draft lama. Yang dijaga: jalur itu tidak bisa dicapai lagi dari wizard.
-[$financeUser,$financeEmail]=make_user($db,'finance','Warga Simulasi Pembiayaan'); $finance=login($financeEmail); $finance->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000004','birth_date'=>'1987-04-04']); $d=maju_ke_detail($finance,$db,$financeUser); post_step($finance,$d,'housing_family_detail',citizen_fields()+housing_fields('rent','0')); $d=draft($db,$financeUser); wajib($d['jalur_penilaian']==='candidate_land' && $d['langkah_sekarang']==='candidate_land','Penyewa tanpa lahan lain masuk cabang calon lahan - jalur financing tidak bisa dicapai dari wizard');
+[$financeUser,$financeEmail]=make_user($db,'finance','Warga Simulasi Pembiayaan'); $finance=login($financeEmail); $finance->post('warga/pendataan',['action'=>'lookup','nik'=>'0000000000000004','birth_date'=>'1987-04-04']); $d=maju_ke_detail($finance,$db,$financeUser); post_step($finance,$d,'housing_family_detail',citizen_fields()+housing_fields('rent','0')); $d=draft($db,$financeUser); // Diubah 23 Okt 2026 atas permintaan dinas: tidak memiliki tanah lain = langkah Calon Lahan dilewati.
+wajib($d['jalur_penilaian']==='candidate_land' && $d['langkah_sekarang']==='location_evidence','Penyewa tanpa lahan lain tetap cabang calon lahan, langkah Calon Lahan dilewati - jalur financing tidak bisa dicapai dari wizard');
 
 // Coordinates and evidence upload/replace/IDOR on existing draft.
 $d=draft($db,$existingUser); $r=post_step($existing,$d,'location_evidence',['location_lat'=>'-7.123456','location_lng'=>'110.123456','akurasi_lokasi_m'=>'8']); wajib(in_array($r['status'],[302,303],TRUE),'Koordinat tersimpan'); $d=draft($db,$existingUser); $raw=$db->row('SELECT geo_lat_ciphertext,geo_lng_ciphertext FROM sf_penilaian_perumahan WHERE id=?',[$d['id']]); cek(strpos($raw['geo_lat_ciphertext'],'-7.123456')===FALSE && strpos($raw['geo_lng_ciphertext'],'110.123456')===FALSE,'Koordinat tidak plaintext di DB');
