@@ -1198,7 +1198,14 @@ class Housing_assessment_model extends CI_Model {
             return $existing ? $this->queue_result($existing) : $this->fail('stale_draft', 'Draft sudah berubah.');
         }
 
-        if ( ! empty($assessment['versi_sebelumnya_id'])) {
+        /* versi_sebelumnya_id punya dua asal: revisi atas permintaan petugas (start_revision, versi lama punya
+           antrean Perlu Perbaikan) dan draft baru saat Cek NIK ulang memakai rekaman SIMPERUM lain
+           (bootstrap_draft_from_lookup, versi lama bisa belum pernah diajukan). Hanya yang pertama jalur revisi;
+           yang kedua pengajuan baru. Dulu keduanya jalur revisi, sehingga draft kedua selalu ditolak (24 Okt 2026). */
+        $antrean_lama = empty($assessment['versi_sebelumnya_id']) ? FALSE
+            : $this->db->where(['user_id' => $user_id, 'penilaian_id' => (int) $assessment['versi_sebelumnya_id']])
+                ->count_all_results('sf_antrean_pengajuan') > 0;
+        if ($antrean_lama) {
             $queue = $this->db->get_where('sf_antrean_pengajuan', [
                 'user_id' => $user_id, 'penilaian_id' => (int) $assessment['versi_sebelumnya_id'],
                 'status_antrean' => 'needs_revision',
