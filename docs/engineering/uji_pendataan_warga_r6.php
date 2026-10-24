@@ -240,7 +240,15 @@ cek(redirect_ok($r)&&(int)$db->scalar('SELECT COUNT(*) FROM sf_antrean_pengajuan
 
 $snapshotBefore=$db->row('SELECT id,muatan_ciphertext,muatan_sha256 FROM sf_rekaman_simperum WHERE id=?',[$d['rekaman_simperum_id']]);
 $assessmentBefore=raw_assessment($db,$d['id']);$fileBefore=$db->row('SELECT jenis_berkas,path_privat,sha256,ukuran_byte FROM sf_berkas_penilaian WHERE id=?',[$file['id']]);
+// 24 Okt 2026: Cek NIK ulang dengan rekaman SIMPERUM lain membuat draft baru yang menunjuk draft lama
+// (bootstrap_draft_from_lookup) walau draft lama belum pernah diajukan. Draft seperti itu harus terkirim
+// sebagai pengajuan baru, bukan ditolak "Revisi tidak dapat dikirim ulang" (dulu selalu ditolak).
+$draftLama=$db->run("INSERT INTO sf_penilaian_perumahan (user_id,kabupaten_id,status,langkah_sekarang,mode_sumber,no_versi) VALUES (?,3374,'draft','find_data','simulation',1)",[$ownerId]);
+$db->run('UPDATE sf_penilaian_perumahan SET versi_sebelumnya_id=? WHERE id=?',[$draftLama,$d['id']]);
 $r=$owner->post('warga/pendataan',['action'=>'submit','penilaian_id'=>$d['id'],'rekomendasi_id'=>$rtlh['id']]);wajib(redirect_ok($r),'Submit assessment valid');
+cek(raw_assessment($db,$d['id'])['status']==='submitted'&&(int)$db->scalar('SELECT COUNT(*) FROM sf_antrean_pengajuan WHERE user_id=?',[$ownerId])===1,
+    'Draft yang menunjuk draft lama belum diajukan terkirim sebagai pengajuan baru');
+$db->run('UPDATE sf_penilaian_perumahan SET versi_sebelumnya_id=NULL WHERE id=?',[$d['id']]);$db->run('DELETE FROM sf_penilaian_perumahan WHERE id=?',[$draftLama]);
 $queue=$db->row('SELECT * FROM sf_antrean_pengajuan WHERE user_id=?',[$ownerId]);$submitted=raw_assessment($db,$d['id']);
 cek($queue&&$submitted['status']==='submitted'&&!empty($submitted['submitted_at']),'Submit atomik membuat assessment submitted dan queue');
 cek(!empty($submitted['salinan_profil_ciphertext'])&&strpos($submitted['salinan_profil_ciphertext'],'Pemilik R6')===FALSE&&strpos($submitted['salinan_profil_ciphertext'],'{')!==0,'Snapshot profil tersimpan terenkripsi');
