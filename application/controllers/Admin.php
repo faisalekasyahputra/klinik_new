@@ -71,6 +71,7 @@ class Admin extends Admin_Controller {
         $rows = $this->db->order_by('q.created_at', 'DESC')->get()->result();
 
         $label = housing_queue_statuses();
+        $this->load->library('Matriks_program_ruleset');
         $isi = [];
         foreach ($rows as $r) {
             $this->buka_pii_antrean($r);
@@ -83,6 +84,11 @@ class Admin extends Admin_Controller {
             $pekerjaan = $profil['pekerjaan'] ?? NULL;
             $penghasilan = $profil['penghasilan_bulanan'] ?? ($survey['penghasilan'] ?? NULL);
             $desil = $profil['desil_kesejahteraan'] ?? ($simperum['desil'] ?? NULL);
+            // Desil kosong: mesin rekomendasi memakai desil turunan penghasilan (Warga::step), ditulis apa adanya dan diberi tanda.
+            if (($desil === NULL || $desil === '') && is_numeric($penghasilan)) {
+                $turunan = $this->matriks_program_ruleset->decile_for_monthly_income($penghasilan);
+                $desil = $turunan ? $turunan . ' (dari penghasilan)' : NULL;
+            }
             $isi[] = [
                 $r->kode_tiket, date('d-m-Y H:i', strtotime($r->created_at)),
                 $profil['full_name'] ?? $r->nama_lengkap, $profil['nik'] ?? $r->nik_pengaju,
