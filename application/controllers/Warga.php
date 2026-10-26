@@ -144,6 +144,7 @@ class Warga extends MY_Controller {
                     Warga_ruleset::VERSION
                 ) : [],
             'review_summary' => ['desil_kesejahteraan'=>$profile['desil_kesejahteraan']??NULL,'jalur_penilaian'=>$assessment['jalur_penilaian']??NULL,'mode_sumber'=>$assessment['mode_sumber']??NULL],
+            'hunian_layak' => Warga_ruleset::hunian_layak($assessment ?: []),
         ]);
     }
 
