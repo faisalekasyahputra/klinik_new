@@ -72,75 +72,89 @@ class Aturan_model extends CI_Model {
     }
 
     /**
-     * Ganti seluruh aturan program di draf dari isian layar. $isian[program_id] = [ikut, desil[], tanpa_desil, cek, urutan].
-     * Mengembalikan daftar galat (kosong = tersimpan). Program yang tidak dicentang "ikut" tidak ditawarkan ke warga.
+     * Baris matriks milik satu program: nama di matriks dipetakan ke kode katalog (kode_katalog, mis. "PK RTLH" -> rtlh),
+     * atau diawali nama katalog program itu (program baru dari layar ini memakai namanya sendiri).
      */
-    public function simpan_program_draf(array $isian)
+    public function milik_program(array $baris, array $program)
+    {
+        $kode = get_instance()->matriks_program_ruleset->kode_katalog($baris['nama_skema']);
+        return $kode !== NULL ? $kode === $program['kode_program'] : stripos($baris['nama_skema'], $program['nama_program']) === 0;
+    }
+
+    /**
+     * Simpan aturan SATU program di draf: $v = [ikut, desil[], tanpa_desil, cek, urutan] dan $isian_baris = baris matriks
+     * milik program itu [kolom => nilai, hapus]. Baris program lain tidak disentuh; baris program ini menempati posisi
+     * prioritas baris lamanya (baris baru di akhir). Mengembalikan daftar galat (kosong = tersimpan).
+     */
+    public function simpan_program($program_id, array $v, array $isian_baris)
     {
         $d = $this->draf();
         if ( ! $d) { return ['Belum ada draf.']; }
+        $p = $this->db->select('id, kode_program, nama_program')->get_where('sf_program', ['id' => (int) $program_id])->row_array();
+        if ( ! $p) { return ['Program tidak ditemukan.']; }
         $lama = array_column($this->program($d['kode']), NULL, 'program_id');
-        $katalog = array_column($this->db->select('id, kode_program, nama_program')->get('sf_program')->result_array(), NULL, 'id');
-        $baris = []; $galat = [];
-        foreach ($isian as $pid => $v) {
-            $pid = (int) $pid;
-            if ( ! isset($katalog[$pid]) || ! is_array($v) || empty($v['ikut'])) { continue; }
-            $nama = $katalog[$pid]['nama_program'];
+        $galat = [];
+        $aturan = NULL;
+        if ( ! empty($v['ikut'])) {
             $desil = array_values(array_unique(array_map('intval', (array) ($v['desil'] ?? []))));
             sort($desil);
             $cek = (string) ($v['cek'] ?? '');
-            if ( ! isset(Warga_ruleset::JENIS_CEK[$cek])) { $galat[] = "$nama: jenis cek tidak dikenal."; continue; }
-            if ( ! $desil || array_diff($desil, range(1, 10))) { $galat[] = "$nama: pilih minimal satu desil antara 1 dan 10."; continue; }
+            if ( ! isset(Warga_ruleset::JENIS_CEK[$cek])) { $galat[] = 'Jenis cek data tidak dikenal.'; }
+            if ( ! $desil || array_diff($desil, range(1, 10))) { $galat[] = 'Pilih minimal satu desil antara 1 dan 10.'; }
             // Kode alasan lama dipertahankan bila jenis ceknya sama (label warga tetap), selain itu kode umum jenis itu.
-            $alasan = ($lama[$pid]['jenis_cek'] ?? NULL) === $cek ? $lama[$pid]['kode_alasan'] : Warga_ruleset::JENIS_CEK[$cek]['alasan'];
-            $baris[] = ['versi' => $d['kode'], 'program_id' => $pid, 'urutan' => max(1, min(99, (int) ($v['urutan'] ?? 99))),
+            $alasan = ($lama[$p['id']]['jenis_cek'] ?? NULL) === $cek ? $lama[$p['id']]['kode_alasan'] : (Warga_ruleset::JENIS_CEK[$cek]['alasan'] ?? NULL);
+            $aturan = ['versi' => $d['kode'], 'program_id' => (int) $p['id'], 'urutan' => max(1, min(99, (int) ($v['urutan'] ?? 99))),
                 'desil_sasaran' => implode(',', $desil), 'kandidat_tanpa_desil' => empty($v['tanpa_desil']) ? 0 : 1,
                 'jenis_cek' => $cek, 'kode_alasan' => $alasan];
+        } elseif (count($lama) === 1 && isset($lama[$p['id']])) {
+            $galat[] = 'Minimal satu program harus ditawarkan.';
         }
-        if ( ! $galat && ! $baris) { $galat[] = 'Minimal satu program harus ditawarkan.'; }
-        if ($galat) { return $galat; }
-        $this->db->trans_start();
-        $this->db->delete('aturan_program', ['versi' => $d['kode']]);
-        $this->db->insert_batch('aturan_program', $baris);
-        $this->db->trans_complete();
-        return $this->db->trans_status() ? [] : ['Aturan program gagal disimpan.'];
-    }
-
-    /** Ganti seluruh baris matriks draf. $isian = daftar baris [kolom => nilai, hapus]; urutan = urutan kiriman. */
-    public function simpan_matriks_draf(array $isian)
-    {
-        $d = $this->draf();
-        if ( ! $d) { return ['Belum ada draf.']; }
         $P = Matriks_program_ruleset::PILIHAN;
-        $baris = []; $galat = [];
-        foreach (array_values($isian) as $i => $v) {
-            if ( ! is_array($v) || ! empty($v['hapus'])) { continue; }
+        $baru = [];
+        foreach (array_values($isian_baris) as $i => $b) {
+            if ( ! is_array($b) || ! empty($b['hapus'])) { continue; }
             $no = $i + 1;
-            $r = ['versi' => $d['kode'], 'urutan' => count($baris) + 1];
-            if ( ! isset($P['rentang_penghasilan'][$v['rentang_penghasilan'] ?? ''])) { $galat[] = "Baris $no: rentang penghasilan wajib dipilih."; continue; }
-            $r['rentang_penghasilan'] = $v['rentang_penghasilan'];
+            if ( ! isset($P['rentang_penghasilan'][$b['rentang_penghasilan'] ?? ''])) { $galat[] = "Baris $no: rentang penghasilan wajib dipilih."; continue; }
+            $r = ['versi' => $d['kode'], 'rentang_penghasilan' => $b['rentang_penghasilan'], 'status_dtks' => NULL];
             foreach (['lahan', 'rumah', 'lingkungan', 'finansial', 'usia', 'keluarga'] as $k) {
-                $nilai = (string) ($v[$k] ?? '');
+                $nilai = (string) ($b[$k] ?? '');
                 if ($nilai !== '' && ! isset($P[$k][$nilai])) { $galat[] = "Baris $no: nilai $k tidak dikenal."; continue 2; }
                 $r[$k] = $nilai === '' ? NULL : $nilai;
             }
-            $desil = array_values(array_unique(array_map('intval', (array) ($v['desil'] ?? []))));
+            $desil = array_values(array_unique(array_map('intval', (array) ($b['desil'] ?? []))));
             sort($desil);
             if (array_diff($desil, range(1, 10))) { $galat[] = "Baris $no: desil di luar 1 sampai 10."; continue; }
-            $r['desil'] = $desil ? implode(',', $desil) : NULL;
-            $r['status_dtks'] = NULL; // kolom C tidak dicocokkan lagi (UAT dinas warga #10), tidak disunting
-            $nama = trim((string) ($v['nama_skema'] ?? ''));
-            if ($nama === '' || mb_strlen($nama) > 100) { $galat[] = "Baris $no: nama program di matriks wajib diisi, maksimal 100 karakter."; continue; }
+            $r['desil'] = $desil ? implode(',', $desil) : NULL; // kolom B tidak dicocokkan preliminary(), dibawa apa adanya
+            $nama = trim((string) ($b['nama_skema'] ?? ''));
+            if ($nama === '' || mb_strlen($nama) > 100) { $galat[] = "Baris $no: nama di matriks wajib diisi, maksimal 100 karakter."; continue; }
+            if ( ! $this->milik_program(['nama_skema' => $nama], $p)) { $galat[] = "Baris $no: nama di matriks harus diawali \"{$p['nama_program']}\"."; continue; }
             $r['nama_skema'] = $nama;
-            $baris[] = $r;
+            $baru[] = $r;
         }
-        if ( ! $galat && ! $baris) { $galat[] = 'Matriks minimal satu baris.'; }
         if ($galat) { return $galat; }
+
+        // Susun ulang seluruh matriks draf: baris program ini menggantikan baris lamanya di posisi pertamanya.
+        $semua = []; $sisip = FALSE;
+        foreach ($this->matriks($d['kode']) as $r) {
+            if ($this->milik_program($r, $p)) {
+                if ( ! $sisip) { array_push($semua, ...$baru); $sisip = TRUE; }
+                continue;
+            }
+            unset($r['id']);
+            $semua[] = $r;
+        }
+        if ( ! $sisip) { array_push($semua, ...$baru); }
+        if ( ! $semua) { return ['Matriks minimal satu baris.']; }
+        foreach ($semua as $i => &$r) { $r['urutan'] = $i + 1; }
+        unset($r);
+
         $this->db->trans_start();
+        $this->db->delete('aturan_program', ['versi' => $d['kode'], 'program_id' => (int) $p['id']]);
+        if ($aturan) { $this->db->insert('aturan_program', $aturan); }
         $this->db->delete('aturan_matriks_baris', ['versi' => $d['kode']]);
-        $this->db->insert_batch('aturan_matriks_baris', $baris);
+        $this->db->insert_batch('aturan_matriks_baris', $semua);
         $this->db->trans_complete();
-        return $this->db->trans_status() ? [] : ['Matriks gagal disimpan.'];
+        return $this->db->trans_status() ? [] : ['Aturan gagal disimpan.'];
     }
 
     /** Terbitkan draf: draf jadi terbit, terbit sebelumnya jadi arsip. Mengembalikan [kode baru, kode lama] atau NULL. */

@@ -38,7 +38,8 @@ class Admin_Aturan extends Admin_Controller {
             'draf' => $draf,
             'katalog' => $katalog,
             'aturan' => $aturan,
-            'matriks' => $this->Aturan_model->matriks($kode),
+            'jml_baris' => array_map(fn($p) => count(array_filter($this->Aturan_model->matriks($kode), fn($r) => $this->Aturan_model->milik_program($r, $p))),
+                array_column($katalog, NULL, 'id')),
             'uji' => $draf ? $this->Aturan_model->uji_coba() : NULL,
             'riwayat' => $this->Aturan_model->riwayat(),
         ]);
@@ -51,27 +52,41 @@ class Admin_Aturan extends Admin_Controller {
         if ($d) {
             $this->catat_audit('aturan_draf_dibuat', 'Draf aturan rekomendasi ' . $d['kode'], 'aturan_versi', $d['id']);
         }
-        $this->kembali($d ? 'success' : 'error', $d ? 'Draf dibuat dari versi terbit. Perubahan belum berlaku sebelum diterbitkan.' : 'Draf gagal dibuat.');
+        $this->session->set_flashdata($d ? 'success' : 'error', $d ? 'Draf dibuat dari versi terbit. Perubahan belum berlaku sebelum diterbitkan.' : 'Draf gagal dibuat.');
+        // Dari halaman program kembali ke program itu.
+        $pid = (int) $this->input->post('program_id');
+        redirect($pid ? 'Admin_Aturan/program/' . $pid : 'Admin_Aturan');
     }
 
-    public function simpan_program()
+    /** Halaman aturan satu program: desil, cek data, baris matriks miliknya, dan uji coba yang menyebut program ini. */
+    public function program($id = 0)
     {
-        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
-        $galat = $this->Aturan_model->simpan_program_draf((array) $this->input->post('program'));
-        if ( ! $galat) {
-            $this->catat_audit('aturan_draf_diubah', 'Program yang ditawarkan di draf diubah', 'aturan_versi', $this->Aturan_model->draf()['id'] ?? NULL);
+        $p = $this->db->get_where('sf_program', ['id' => (int) $id])->row_array();
+        if ( ! $p) { show_404(); return; }
+        $draf = $this->Aturan_model->draf();
+        $kode = $draf['kode'] ?? $this->Aturan_model->kode_aktif();
+        $aturan = array_column($this->Aturan_model->program($kode), NULL, 'program_id')[$p['id']] ?? NULL;
+        $baris = array_values(array_filter($this->Aturan_model->matriks($kode), fn($r) => $this->Aturan_model->milik_program($r, $p)));
+        $uji = $draf ? $this->Aturan_model->uji_coba() : NULL;
+        if ($uji) {
+            // Hanya contoh yang menyebut program ini (ditawarkan di salah satu versi), supaya ringkas.
+            $uji['contoh'] = array_values(array_filter($uji['contoh'], fn($c) => in_array($p['nama_program'], array_merge($c['aktif'][0], $c['draf'][0]), TRUE)));
         }
-        $this->kembali($galat ? 'error' : 'success', $galat ? implode(' ', $galat) : 'Program di draf tersimpan. Lihat uji coba sebelum menerbitkan.');
+        $this->render_admin('admin/aturan/program', [
+            'title' => 'Aturan ' . $p['nama_program'], 'p' => $p, 'draf' => $draf, 'aturan' => $aturan, 'baris' => $baris, 'uji' => $uji,
+        ]);
     }
 
-    public function simpan_matriks()
+    public function simpan($id = 0)
     {
         if ($this->input->method(TRUE) !== 'POST') { show_404(); }
-        $galat = $this->Aturan_model->simpan_matriks_draf((array) $this->input->post('baris'));
+        $galat = $this->Aturan_model->simpan_program((int) $id, (array) $this->input->post('program'), (array) $this->input->post('baris'));
         if ( ! $galat) {
-            $this->catat_audit('aturan_draf_diubah', 'Baris matriks di draf diubah', 'aturan_versi', $this->Aturan_model->draf()['id'] ?? NULL);
+            $this->catat_audit('aturan_draf_diubah', 'Aturan program #' . (int) $id . ' di draf diubah', 'aturan_versi', $this->Aturan_model->draf()['id'] ?? NULL,
+                ['program_id' => (int) $id]);
         }
-        $this->kembali($galat ? 'error' : 'success', $galat ? implode(' ', $galat) : 'Matriks di draf tersimpan. Lihat uji coba sebelum menerbitkan.');
+        $this->session->set_flashdata($galat ? 'error' : 'success', $galat ? implode(' ', $galat) : 'Tersimpan di draf. Terbitkan dari halaman Aturan rekomendasi bila sudah sesuai.');
+        redirect('Admin_Aturan/program/' . (int) $id);
     }
 
     public function terbitkan()
