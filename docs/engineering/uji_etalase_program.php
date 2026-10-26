@@ -216,7 +216,9 @@ echo "\n== 4. Yang TIDAK diserahkan ke formulir ==\n";
 $ctrl = (string) @file_get_contents(APP_ROOT . '/application/controllers/Admin_Katalog_Program.php');
 cek(preg_match("/post\('(warna|muda|tengah|pekat)/", $ctrl) === 0,
     'Warna tidak bisa diubah lewat formulir - paletnya disetel & kontrasnya diukur');
-cek(preg_match("/post\('kode_program/", $ctrl) === 0,
+// Sejak 26 Okt 2026 kode dibaca saat MEMBUAT program (simpan_baru); yang dijaga: ubah() tidak pernah membacanya.
+$ubah = preg_match('/function ubah\(\)(.*?)\n    (?:public|private|protected) function/s', $ctrl, $mu) ? $mu[1] : '';
+cek($ubah !== '' && preg_match("/post\('kode_program/", $ubah) === 0,
     'Kode program tidak bisa diubah - ia kunci yang dipakai aturan kelayakan');
 cek(strpos($komponen, '$palet') !== FALSE, 'Warna dipetakan di kode, dari kode program');
 

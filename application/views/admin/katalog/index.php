@@ -20,7 +20,9 @@
     <?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Program bantuan perumahan yang bisa diajukan warga. Yang bisa diubah dari sini:
             <b>nama</b>, <b>deskripsi</b>, <b>status aktif</b>, serta <b>tampilannya di beranda</b> -
             label, syarat utama, foto, dan urutan. Warna kartu tidak diatur di sini: paletnya
-            disetel sekali supaya kontras teksnya terjaga.']); ?>
+            disetel sekali supaya kontras teksnya terjaga.',
+        'jh_aksi' => '<a href="' . base_url('Admin_Aturan') . '" class="tombol-kedua"><i class="ph ph-sliders-horizontal"></i><span>Aturan rekomendasi</span></a>'
+            . ' <a href="' . base_url('Admin_Katalog_Program/tambah') . '" class="tombol-utama"><i class="ph ph-plus"></i><span>Tambah program</span></a>']); ?>
 
     <?php if ($jml_selisih > 0 || $tanpa_baris || $jml_tanpa_aturan > 0): ?>
     <div class="mb-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-amber-800 dark:text-amber-300 text-sm flex items-start gap-3">
@@ -36,13 +38,13 @@
                 <li>• <b><?= (int) $jml_selisih ?> program</b> memakai nama berbeda di dua tempat - warga melihat satu nama saat memilih, nama lain di pengajuannya.</li>
                 <?php endif; ?>
                 <?php if ($jml_tanpa_aturan > 0): ?>
-                <li>• <b><?= (int) $jml_tanpa_aturan ?> program</b> ada di tabel tapi tidak punya aturan kelayakan - tidak akan pernah muncul untuk warga mana pun.</li>
+                <li>• <b><?= (int) $jml_tanpa_aturan ?> program</b> belum punya aturan rekomendasi terbit - belum ditawarkan ke warga. Atur di <a class="underline" href="<?= base_url('Admin_Aturan') ?>">Aturan rekomendasi</a>.</li>
                 <?php endif; ?>
                 <?php if ($tanpa_baris): ?>
                 <li>• <b><?= count($tanpa_baris) ?> program</b> punya aturan tapi <b>tidak punya baris tabel</b> (<?= html_escape(implode(', ', $tanpa_baris)) ?>) - kartunya muncul, pengajuannya gagal.</li>
                 <?php endif; ?>
             </ul>
-            <p class="text-xs pt-1">Selisih nama bisa dibereskan lewat tombol Ubah. Aturan kelayakan hanya bisa diubah pengembang.</p>
+            <p class="text-xs pt-1">Selisih nama bisa dibereskan lewat tombol Ubah. Aturan kelayakan diatur di Aturan rekomendasi.</p>
         </div>
     </div>
     <?php endif; ?>
@@ -79,7 +81,9 @@
                         </td>
                         <td class="px-4 py-3 max-w-[220px] text-xs">
                             <?php if ($r->tanpa_aturan): ?>
-                            <span class="italic text-amber-600 dark:text-amber-400">tidak punya aturan kelayakan</span>
+                            <span class="italic text-amber-600 dark:text-amber-400">belum ditawarkan (belum ada aturan terbit)</span>
+                            <?php elseif ( ! $r->judul_diagnosa): ?>
+                            <span class="text-gray-500 dark:text-brand-muted" data-ditawarkan><?= html_escape($r->nama_program) ?></span>
                             <?php else: ?>
                                 <?php foreach ($r->judul_diagnosa as $j): ?>
                                 <div class="truncate <?= in_array($j, $r->judul_beda, TRUE) ? 'font-bold text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-brand-muted' ?>"><?= html_escape($j) ?></div>

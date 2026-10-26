@@ -3,9 +3,8 @@
  * Uji kesetaraan tahap 1 aturan program (migrasi 084, 26 Okt 2026): aturan rekomendasi pindah dari
  * konstanta kode ke database TANPA mengubah hasil. Mesin baru (data dari DB lokal) dibandingkan dengan
  * mesin LAMA yang diambil utuh dari commit 15a97a0 (terakhir sebelum pemindahan) lewat `git show`, pada
- * kombinasi data warga acak berbenih tetap. Selama versi aturan masih SIM-2026-02 / MATRIKS-2026-09-10,
- * hasil keduanya wajib identik; begitu dinas menerbitkan versi lain (tahap 2), uji ini hanya berlaku untuk
- * versi lama itu. Jalankan: php docs/engineering/uji_aturan_database.php
+ * kombinasi data warga acak berbenih tetap. Versi yang dibandingkan selalu SIM-2026-02 (aturan awal
+ * yang disalin dari kode), bukan versi terbit: versi baru yang diterbitkan dinas memang boleh berbeda. Jalankan: php docs/engineering/uji_aturan_database.php
  */
 date_default_timezone_set('Asia/Jakarta');
 define('BASEPATH', __DIR__);
@@ -25,14 +24,14 @@ foreach (['Warga_ruleset' => 'Warga_ruleset_lama', 'Matriks_program_ruleset' => 
     eval(preg_replace(['/^<\?php/', '/defined\(\'BASEPATH\'\).*\n/', "/class $kelas\b/"], ['', '', "class $lama"], $src));
 }
 
-$w_lama = new Warga_ruleset_lama(); $w_baru = new Warga_ruleset(aturan_program_uji());
-$m_lama = new Matriks_program_ruleset_lama(); $m_baru = new Matriks_program_ruleset(aturan_matriks_uji());
+$w_lama = new Warga_ruleset_lama(); $w_baru = mesin_warga_uji('SIM-2026-02');
+$m_lama = new Matriks_program_ruleset_lama(); $m_baru = mesin_matriks_uji('SIM-2026-02');
 
 echo "1. ISI DATABASE = KONSTANTA LAMA\n";
 cek($m_baru instanceof Matriks_program_ruleset && (new ReflectionProperty($m_baru, 'baris'))->getValue($m_baru) === Matriks_program_ruleset_lama::ROWS,
     '20 baris matriks di database sama persis dengan ROWS lama (urutan, desil, kolom, nama skema)');
-cek(Warga_ruleset::VERSION === Warga_ruleset_lama::VERSION && Matriks_program_ruleset::VERSION === Matriks_program_ruleset_lama::VERSION,
-    'Kode versi aturan tidak berubah (' . Warga_ruleset::VERSION . ', ' . Matriks_program_ruleset::VERSION . ')');
+cek($w_baru->versi === Warga_ruleset_lama::VERSION && $m_baru->versi === Warga_ruleset_lama::VERSION,
+    'Versi SIM-2026-02 memuat kedua mesin (matriks pindah dari MATRIKS-2026-09-10 di migrasi 085)');
 
 echo "\n2. ROUTING DESIL\n";
 $beda = [];
@@ -76,7 +75,8 @@ for ($i = 0; $i < $n; $i++) {
     $status[$a['status_kelayakan']] = TRUE;
     if ($a !== $b) { $beda_e[] = $c; }
     $pa = $m_lama->preliminary($draft, $profil, '2026-10-26'); $pb = $m_baru->preliminary($draft, $profil, '2026-10-26');
-    unset($pa['evaluated_at'], $pb['evaluated_at']);
+    // Kode versi di snapshot matriks kini satu dengan aturan program (migrasi 085); selain itu harus identik.
+    unset($pa['evaluated_at'], $pb['evaluated_at'], $pa['versi_aturan'], $pb['versi_aturan']);
     if ($pa !== $pb) { $beda_m[] = $i; }
 }
 cek( ! $beda_e, "evaluate() identik pada $n kombinasi acak (" . count($status) . ' jenis hasil muncul: ' . implode(', ', array_keys($status)) . ')'

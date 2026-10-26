@@ -160,10 +160,16 @@ class Warga extends MY_Controller {
                 ? $this->Housing_assessment_model->get_owned_recommendations(
                     $assessment['id'],
                     $user_id,
-                    Warga_ruleset::VERSION
+                    $this->warga_ruleset->versi
                 ) : [],
             'review_summary' => ['desil_kesejahteraan'=>$profile['desil_kesejahteraan']??NULL,'jalur_penilaian'=>$assessment['jalur_penilaian']??NULL,'mode_sumber'=>$assessment['mode_sumber']??NULL],
             'hunian_layak' => Warga_ruleset::hunian_layak($assessment ?: []),
+            // Draf dinilai dengan versi aturan yang sudah tidak terbit: rekomendasinya tidak ditampilkan, warga diminta menghitung ulang.
+            'aturan_berubah' => $assessment && ($assessment['langkah_sekarang'] ?? '') === 'review'
+                && (int) $this->db->where('penilaian_id', (int) $assessment['id'])->where('versi_aturan !=', $this->warga_ruleset->versi)
+                    ->count_all_results('sf_rekomendasi_penilaian') > 0
+                && ! $this->db->where(['penilaian_id' => (int) $assessment['id'], 'versi_aturan' => $this->warga_ruleset->versi])
+                    ->count_all_results('sf_rekomendasi_penilaian'),
         ]);
     }
 
@@ -561,7 +567,7 @@ class Warga extends MY_Controller {
                 foreach ($this->warga_ruleset->route_candidates($profile['desil_kesejahteraan'] ?? NULL) as $code) {
                     $recommendations[] = $this->warga_ruleset->evaluate($code, $effective, $profile) + [
                         'program_code' => $code,
-                        'versi_aturan' => Warga_ruleset::VERSION,
+                        'versi_aturan' => $this->warga_ruleset->versi,
                     ];
                 }
             }
@@ -658,7 +664,7 @@ class Warga extends MY_Controller {
             $penilaian_id,
             (int) $this->get_user_id(),
             (int) $this->input->post('rekomendasi_id', TRUE),
-            Warga_ruleset::VERSION
+            $this->warga_ruleset->versi
         );
         if ( ! empty($result['success']) && ! empty($result['notification_needed'])) {
             $queue = $this->db->select('kabupaten_id')->get_where('sf_antrean_pengajuan', [
@@ -807,7 +813,7 @@ class Warga extends MY_Controller {
     private function recommendation_input_hash(array $assessment, array $profile)
     {
         $input = [
-            'versi_aturan' => Warga_ruleset::VERSION,
+            'versi_aturan' => $this->warga_ruleset->versi,
             'profile' => [
                 'desil_kesejahteraan' => $profile['desil_kesejahteraan'] ?? NULL,
                 'kelompok_penghasilan' => $profile['kelompok_penghasilan'] ?? NULL,

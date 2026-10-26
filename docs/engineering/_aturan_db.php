@@ -1,7 +1,8 @@
 <?php
 /**
- * Pembantu suite: aturan rekomendasi dari DB lokal (migrasi 084) untuk uji yang memakai Warga_ruleset dan
- * Matriks_program_ruleset tanpa CodeIgniter. Hanya DB lokal; memanggil require library lebih dulu.
+ * Pembantu suite: mesin rekomendasi dengan aturan dari DB lokal (migrasi 084 dan 085) untuk uji yang memakai
+ * Warga_ruleset dan Matriks_program_ruleset tanpa CodeIgniter. Tanpa kode versi = versi terbit, sama seperti
+ * aplikasi. Hanya DB lokal; panggil require library lebih dulu.
  */
 require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php';
 
@@ -24,19 +25,25 @@ function aturan_db_uji() {
     return $db;
 }
 
-function aturan_matriks_uji() {
-    $st = aturan_db_uji()->prepare('SELECT * FROM aturan_matriks_baris WHERE versi = ? ORDER BY urutan');
-    $v = Matriks_program_ruleset::VERSION;
-    $st->bind_param('s', $v);
-    $st->execute();
-    return Matriks_program_ruleset::dari_baris_db($st->get_result()->fetch_all(MYSQLI_ASSOC));
+function aturan_kode_aktif_uji() {
+    return aturan_db_uji()->query("SELECT kode FROM aturan_versi WHERE status = 'terbit' ORDER BY diterbitkan_pada DESC, id DESC LIMIT 1")->fetch_row()[0];
 }
 
-function aturan_program_uji() {
-    $st = aturan_db_uji()->prepare('SELECT p.kode_program, a.desil_sasaran, a.kandidat_tanpa_desil, a.jenis_cek, a.kode_alasan
-        FROM aturan_program a JOIN sf_program p ON p.id = a.program_id WHERE a.versi = ? ORDER BY a.urutan');
-    $v = Warga_ruleset::VERSION;
-    $st->bind_param('s', $v);
+function aturan_baris_uji($sql, $kode) {
+    $st = aturan_db_uji()->prepare($sql);
+    $st->bind_param('s', $kode);
     $st->execute();
-    return Warga_ruleset::dari_baris_db($st->get_result()->fetch_all(MYSQLI_ASSOC));
+    return $st->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
+function mesin_matriks_uji($kode = NULL) {
+    $kode = $kode ?? aturan_kode_aktif_uji();
+    return new Matriks_program_ruleset(Matriks_program_ruleset::dari_baris_db(
+        aturan_baris_uji('SELECT * FROM aturan_matriks_baris WHERE versi = ? ORDER BY urutan', $kode)), $kode);
+}
+
+function mesin_warga_uji($kode = NULL) {
+    $kode = $kode ?? aturan_kode_aktif_uji();
+    return new Warga_ruleset(Warga_ruleset::dari_baris_db(aturan_baris_uji('SELECT p.kode_program, a.desil_sasaran, a.kandidat_tanpa_desil,
+        a.jenis_cek, a.kode_alasan FROM aturan_program a JOIN sf_program p ON p.id = a.program_id WHERE a.versi = ? ORDER BY a.urutan', $kode)), $kode);
 }

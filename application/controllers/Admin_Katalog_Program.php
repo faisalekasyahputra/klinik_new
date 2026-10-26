@@ -30,13 +30,16 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  *   ❌ `kode_program` - identitas. `Housing_assessment_model:748` mencarinya
  *      lewat kolom ini, dan `Smart_filter` memetakannya sebagai literal di kode.
  *      Menggantinya lewat formulir memutus keduanya sekaligus.
- *   ❌ TAMBAH / HAPUS program - dan ini bukan kemalasan. Program baru di tabel
- *      TIDAK akan pernah dicocokkan ke siapa pun: aturan kelayakannya ditulis
- *      di `Smart_filter::get_eligible_programs()`, yaitu KODE. Tombol "tambah"
- *      di sini hanya akan melahirkan program hantu yang tampak terdaftar dan
- *      tidak pernah muncul untuk satu warga pun.
+ *   ✅ TAMBAH program (26 Okt 2026) - sejak aturan rekomendasi pindah ke database
+ *      (migrasi 084, 085) program baru bisa ditawarkan lewat layar Aturan rekomendasi
+ *      (Admin_Aturan). Sampai aturannya diterbitkan, program baru tampil di katalog
+ *      dan beranda tetapi tidak ditawarkan ke warga; daftar ini menandainya.
+ *   ❌ HAPUS program - pengajuan lama menunjuk ke barisnya (sf_antrean_pengajuan.program_id).
  */
 class Admin_Katalog_Program extends Admin_Controller {
+
+    /** Syarat utama boleh beberapa baris sejak migrasi 085 (kolom TEXT). */
+    const SYARAT_MAKS = 2000;
 
     public function __construct()
     {
@@ -65,6 +68,8 @@ class Admin_Katalog_Program extends Admin_Controller {
             ->order_by('k.nama_kategori', 'ASC')->order_by('p.nama_program', 'ASC')
             ->get()->result();
 
+        $this->load->model('Aturan_model');
+        $ditawarkan = array_flip(array_map('intval', array_column($this->Aturan_model->program((string) $this->Aturan_model->kode_aktif()), 'program_id')));
         foreach ($rows as $r) {
             $r->judul_diagnosa = $judul_diagnosa[$r->kode_program] ?? [];
             // Selisih dihitung di sini, bukan dibandingkan mata di layar.
@@ -73,7 +78,8 @@ class Admin_Katalog_Program extends Admin_Controller {
                 return $j !== $r->nama_program && strpos($j, $r->nama_program . ' ') !== 0;
             }));
             $r->selisih = $r->judul_beda !== [];
-            $r->tanpa_aturan = $r->judul_diagnosa === [];
+            // Ditawarkan atau tidak ditentukan aturan rekomendasi versi terbit, bukan lagi Smart_filter.
+            $r->tanpa_aturan = ! isset($ditawarkan[(int) $r->id]);
             $r->gambar_tampil = $this->Program_model->gambar_tampil((array) $r); // thumbnail = foto yang dilihat warga
         }
 
@@ -138,8 +144,8 @@ class Admin_Katalog_Program extends Admin_Controller {
             redirect('Admin_Katalog_Program/edit/' . $id);
             return;
         }
-        if (mb_strlen($badge) > 60 || mb_strlen($syarat) > 300) {
-            $this->session->set_flashdata('error', 'Label maksimal 60 karakter, syarat utama maksimal 300.');
+        if (mb_strlen($badge) > 60 || mb_strlen($syarat) > self::SYARAT_MAKS) {
+            $this->session->set_flashdata('error', 'Label maksimal 60 karakter, syarat utama maksimal ' . self::SYARAT_MAKS . '.');
             redirect('Admin_Katalog_Program/edit/' . $id);
             return;
         }
@@ -207,6 +213,69 @@ class Admin_Katalog_Program extends Admin_Controller {
 
         $this->session->set_flashdata('success', $berubah ? 'Program diperbarui.' : 'Tidak ada perubahan.');
         redirect('Admin_Katalog_Program');
+    }
+
+    /** Formulir program baru: tampilan sama dengan halaman ubah, ditambah kode dan kategori. */
+    public function tambah()
+    {
+        $this->render_admin('admin/katalog/edit', [
+            'title' => 'Tambah Program', 'baru' => TRUE,
+            'p' => ['id' => 0, 'kode_program' => '', 'nama_program' => '', 'deskripsi_singkat' => '', 'aktif' => 1, 'lencana' => '',
+                'syarat_utama' => '', 'urutan' => 99, 'tampil_korsel' => 0, 'kategori_id' => 0, 'nama_kategori' => '', 'dipakai' => 0, 'gambar' => NULL],
+            'kategori' => $this->db->order_by('id')->get('sf_program_kategori')->result_array(),
+            'gambar_tampil' => $this->Program_model->gambar_tampil([]),
+            'gambar_unggah' => FALSE,
+        ]);
+    }
+
+    /**
+     * Simpan program baru. Kode jadi identitas tetap (tidak bisa diubah sesudahnya), jadi formatnya dibatasi
+     * huruf kecil, angka, dan garis bawah, dan tidak boleh sama dengan kode yang ada. Program baru belum
+     * ditawarkan ke warga sampai aturan rekomendasinya diterbitkan.
+     */
+    public function simpan_baru()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $kode   = strtolower(trim((string) $this->input->post('kode_program', TRUE)));
+        $nama   = trim((string) $this->input->post('nama_program', TRUE));
+        $desk   = trim((string) $this->input->post('deskripsi_singkat', TRUE));
+        $badge  = trim((string) $this->input->post('badge', TRUE));
+        $syarat = trim((string) $this->input->post('syarat_utama', TRUE));
+        $kat    = (int) $this->input->post('kategori_id');
+        $galat = NULL;
+        if ( ! preg_match('/^[a-z][a-z0-9_]{2,49}$/D', $kode)) {
+            $galat = 'Kode program 3 sampai 50 karakter: huruf kecil, angka, atau garis bawah, diawali huruf.';
+        } elseif ($this->db->where('kode_program', $kode)->count_all_results('sf_program')) {
+            $galat = 'Kode program sudah dipakai program lain.';
+        } elseif ($nama === '' || mb_strlen($nama) > 255) {
+            $galat = 'Nama program wajib diisi, maksimal 255 karakter.';
+        } elseif ($desk === '') {
+            $galat = 'Deskripsi singkat wajib diisi.';
+        } elseif ( ! $this->db->where('id', $kat)->count_all_results('sf_program_kategori')) {
+            $galat = 'Pilih kategori program.';
+        } elseif (mb_strlen($badge) > 60 || mb_strlen($syarat) > self::SYARAT_MAKS) {
+            $galat = 'Label maksimal 60 karakter, syarat utama maksimal ' . self::SYARAT_MAKS . '.';
+        }
+        $gambar = NULL;
+        if ( ! $galat && ! empty($_FILES['gambar']['name'])) {
+            $gambar = $this->simpan_gambar_program($kode, $galat);
+        }
+        if ($galat) {
+            $this->session->set_flashdata('error', $galat);
+            redirect('Admin_Katalog_Program/tambah');
+            return;
+        }
+        $this->db->insert('sf_program', [
+            'kategori_id' => $kat, 'kode_program' => $kode, 'nama_program' => $nama, 'deskripsi_singkat' => $desk,
+            'aktif' => $this->input->post('is_active') ? 1 : 0, 'lencana' => $badge !== '' ? $badge : NULL,
+            'syarat_utama' => $syarat !== '' ? $syarat : NULL, 'urutan' => max(1, min(99, (int) $this->input->post('urutan') ?: 99)),
+            'tampil_korsel' => $this->input->post('tampil_korsel') ? 1 : 0, 'gambar' => $gambar,
+        ]);
+        $id = (int) $this->db->insert_id();
+        $this->catat_audit('program_dibuat', 'Program baru ' . $kode . ': ' . $nama, 'sf_program', $id, ['kode' => $kode]);
+        $this->session->set_flashdata('success', 'Program ' . $nama . ' dibuat. Program ini belum ditawarkan ke warga sampai '
+            . 'aturan rekomendasinya diatur dan diterbitkan di Aturan rekomendasi.');
+        redirect('Admin_Aturan');
     }
 
     /* Folder foto unggahan: Program_model::DIR_UNGGAHAN (satu sumber, dipakai juga korsel). */

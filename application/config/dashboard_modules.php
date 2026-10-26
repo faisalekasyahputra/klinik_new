@@ -415,6 +415,12 @@ $config['dashboard_modules'] = [
         'url'   => 'Admin_Katalog_Program', 'group' => 'Manajemen', 'order' => 40,
         'roles' => ['admin'], 'scope' => null,
     ],
+    // Aturan rekomendasi (migrasi 084, 085): draf, uji coba, dan terbit aturan program serta matriks.
+    'aturan_rekomendasi' => [
+        'label' => 'Aturan Rekomendasi', 'icon' => 'ph-sliders-horizontal',
+        'url'   => 'Admin_Aturan', 'group' => 'Manajemen', 'order' => 40,
+        'roles' => ['admin'], 'scope' => null,
+    ],
     'bank_data_admin' => [
         'label' => 'Bank Data', 'icon' => 'ph-books',
         'url'   => 'Admin_Bank_Data', 'group' => 'Manajemen', 'order' => 41,

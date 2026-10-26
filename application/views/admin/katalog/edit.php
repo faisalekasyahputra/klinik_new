@@ -9,32 +9,48 @@ $isian = 'mt-1 w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2
 $judul = 'mb-3 text-sm font-black text-gray-900 dark:text-white';
 $petunjuk = 'mt-1 block text-[11px] text-gray-500 dark:text-brand-muted';
 ?>
+<?php $baru = ! empty($baru); ?>
 <?php $this->load->view('admin/components/judul_halaman', [
-    'jh_judul'     => $p['nama_program'],
-    'jh_deskripsi' => 'Kode <code>' . html_escape($p['kode_program']) . '</code> (tidak bisa diubah)'
+    'jh_judul'     => $baru ? 'Tambah program' : $p['nama_program'],
+    'jh_deskripsi' => $baru ? 'Program baru tampil di katalog dan beranda. Ditawarkan ke warga setelah aturan rekomendasinya diterbitkan.'
+        : 'Kode <code>' . html_escape($p['kode_program']) . '</code> (tidak bisa diubah)'
         . ($p['nama_kategori'] ? ' · ' . html_escape($p['nama_kategori']) : '') . '.',
     'jh_aksi'      => '<a href="' . base_url('Admin_Katalog_Program') . '" class="tombol-kedua"><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-left"></i></span><span>Kembali</span></a>',
 ]); ?>
 <?php /* `enctype` WAJIB: tanpa itu `$_FILES` kosong dan foto gagal tersimpan diam-diam. */ ?>
-<form action="<?= base_url('Admin_Katalog_Program/ubah') ?>" method="post" enctype="multipart/form-data" class="grid grid-kartu items-start lg:grid-cols-3">
+<form action="<?= base_url($baru ? 'Admin_Katalog_Program/simpan_baru' : 'Admin_Katalog_Program/ubah') ?>" method="post" enctype="multipart/form-data" class="grid grid-kartu items-start lg:grid-cols-3">
     <input type="hidden" name="<?= $this->security->get_csrf_token_name() ?>" value="<?= $this->security->get_csrf_hash() ?>">
     <input type="hidden" name="id" value="<?= (int) $p['id'] ?>">
 
     <div class="tumpuk-bagian lg:col-span-2">
         <section class="kartu-admin isi-kartu space-y-3">
             <h2 class="<?= $judul ?>">Data program</h2>
+            <?php if ($baru): ?>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <label class="<?= $label ?>">Kode program
+                    <input name="kode_program" required pattern="[a-z][a-z0-9_]{2,49}" maxlength="50" placeholder="mis. rusun_sewa" class="<?= $isian ?>">
+                    <span class="<?= $petunjuk ?>">Huruf kecil, angka, garis bawah. Tidak bisa diubah sesudah disimpan.</span>
+                </label>
+                <label class="<?= $label ?>">Kategori
+                    <select name="kategori_id" required class="<?= $isian ?>">
+                        <option value="">Pilih kategori</option>
+                        <?php foreach ($kategori as $k): ?><option value="<?= (int) $k['id'] ?>"><?= html_escape($k['nama_kategori']) ?></option><?php endforeach; ?>
+                    </select>
+                </label>
+            </div>
+            <?php endif; ?>
             <label class="<?= $label ?>">Nama program
                 <input name="nama_program" required maxlength="255" value="<?= $v('nama_program') ?>" class="<?= $isian ?>">
                 <span class="<?= $petunjuk ?>">Satu nama untuk semua layar: korsel beranda, kartu rekomendasi, akun warga, dan antrean admin.</span>
             </label>
             <label class="<?= $label ?>">Deskripsi singkat
-                <textarea name="deskripsi_singkat" rows="3" class="<?= $isian ?>"><?= $v('deskripsi_singkat') ?></textarea>
+                <textarea name="deskripsi_singkat" rows="3"<?= $baru ? ' required' : '' ?> class="<?= $isian ?>"><?= $v('deskripsi_singkat') ?></textarea>
             </label>
             <label class="flex items-start gap-2 rounded-lg bg-gray-50 p-3 text-sm dark:bg-black/20">
                 <input type="checkbox" name="is_active" value="1" class="mt-0.5"<?= (int) $p['aktif'] === 1 ? ' checked' : '' ?>>
                 <span>
                     <span class="font-bold text-gray-800 dark:text-white">Aktif, bisa diajukan warga</span>
-                    <span class="<?= $petunjuk ?>">Dimatikan berarti pengajuan BARU ditolak. Pengajuan yang sudah masuk antrean <b>tidak dibatalkan</b>; saat ini <?= (int) $p['dipakai'] ?> pengajuan memakai program ini.</span>
+                    <span class="<?= $petunjuk ?>">Dimatikan berarti pengajuan BARU ditolak.<?php if ( ! $baru): ?> Pengajuan yang sudah masuk antrean <b>tidak dibatalkan</b>; saat ini <?= (int) $p['dipakai'] ?> pengajuan memakai program ini.<?php endif; ?></span>
                 </span>
             </label>
         </section>
@@ -51,7 +67,7 @@ $petunjuk = 'mt-1 block text-[11px] text-gray-500 dark:text-brand-muted';
                 </label>
             </div>
             <label class="<?= $label ?>">Syarat utama
-                <textarea name="syarat_utama" rows="2" maxlength="300" placeholder="Satu kalimat syarat yang tampil di slide" class="<?= $isian ?>"><?= $v('syarat_utama') ?></textarea>
+                <textarea name="syarat_utama" rows="4" maxlength="2000" placeholder="Syarat utama, boleh beberapa baris" class="<?= $isian ?>"><?= $v('syarat_utama') ?></textarea>
             </label>
             <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                 <input type="checkbox" name="tampil_korsel" value="1"<?= (int) $p['tampil_korsel'] === 1 ? ' checked' : '' ?>> Tampilkan di korsel beranda
@@ -68,7 +84,7 @@ $petunjuk = 'mt-1 block text-[11px] text-gray-500 dark:text-brand-muted';
         <h2 class="<?= $judul ?>">Foto program</h2>
         <img src="<?= base_url($gambar_tampil) ?>" alt="Foto <?= $v('nama_program') ?>" data-foto-program
              class="aspect-video w-full rounded-lg border border-gray-200 object-cover dark:border-white/10">
-        <p class="<?= $petunjuk ?>" data-foto-keterangan><?= $gambar_unggah ? 'Foto unggahan admin, tampil di beranda.' : 'Foto bawaan, tampil di beranda sampai diganti.' ?></p>
+        <p class="<?= $petunjuk ?>" data-foto-keterangan><?= $baru ? 'Foto bawaan dipakai bila tidak diunggah.' : ($gambar_unggah ? 'Foto unggahan admin, tampil di beranda.' : 'Foto bawaan, tampil di beranda sampai diganti.') ?></p>
         <div class="mt-3">
             <?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'gambar', 'ib_accept' => 'image/jpeg,image/png', 'ib_required' => FALSE, 'ib_attr' => 'data-foto-input']); ?>
         </div>
