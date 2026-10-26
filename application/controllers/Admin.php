@@ -27,6 +27,88 @@ class Admin extends Admin_Controller {
         $this->render_admin('admin/antrean/dashboard', $data);
     }
 
+    /** Label pekerjaan wizard, disalin dari pages/warga/pendataan.php (termasuk kode lama). */
+    private const LABEL_PEKERJAAN = [
+        'farmer' => 'Petani', 'breeder' => 'Peternak', 'mining' => 'Pertambangan/Penggalian',
+        'daily_laborer' => 'Buruh Harian', 'construction_worker' => 'Tukang Bangunan', 'trader' => 'Pedagang',
+        'hotel_restaurant' => 'Hotel dan Rumah Makan', 'driver' => 'Sopir', 'educator' => 'Guru/Dosen',
+        'health_worker' => 'Dokter/Bidan/Apoteker', 'civil_servant' => 'PNS/BUMN/BUMD', 'scavenger' => 'Pemulung',
+        'military_police' => 'TNI/Polri', 'private_employee' => 'Pegawai Swasta', 'contract_worker' => 'PHL/PTT',
+        'retired' => 'Pensiunan', 'unemployed' => 'Tidak Bekerja', 'other' => 'Lainnya',
+        'horticulture' => 'Petani', 'plantation' => 'Petani', 'capture_fisher' => 'Lainnya',
+        'aquaculture_fisher' => 'Lainnya', 'forestry_agriculture_other' => 'Lainnya', 'electricity_gas' => 'Lainnya',
+        'information_communication' => 'Pegawai Swasta', 'finance_insurance' => 'Pegawai Swasta',
+    ];
+
+    /**
+     * Unduh antrean sebagai Excel (permintaan dinas 26 Okt 2026), dengan kabupaten, kecamatan, dan desa
+     * rumah yang didata. Hanya superadmin (Admin_Controller), identitas utuh seperti layar Tinjau Antrean,
+     * jadi aksesnya dicatat sebagai akses data pribadi DAN jejak audit, dan dibatasi laju per akun.
+     * Mengikuti penyaring status dan "Belum terpetakan" di layar; tanpa halaman (semua baris).
+     */
+    public function unduh()
+    {
+        $rate = $this->rate_limit_consume('antrean_unduh', ['account_id' => (int) $this->get_user_id()]);
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->session->set_flashdata('error', 'Terlalu sering mengunduh. Silakan coba lagi nanti.');
+            redirect('Admin');
+            return;
+        }
+        $status = $this->input->get('status', TRUE);
+        $status = in_array($status, ['pending', 'needs_revision', 'approved', 'rejected'], TRUE) ? $status : NULL;
+        $tanpa_wilayah = $this->input->get('tanpa_wilayah', TRUE) === '1';
+
+        $this->db->select('q.*, p.nama_program, a.salinan_profil_ciphertext, kb.nama kabupaten, kc.nama kecamatan, ds.nama desa')
+            ->from('sf_antrean_pengajuan q')
+            ->join('sf_program p', 'p.id = q.program_id', 'left')
+            ->join('sf_penilaian_perumahan a', 'a.id = q.penilaian_id', 'left')
+            ->join('kabupaten kb', 'kb.id = COALESCE(a.kabupaten_id, q.kabupaten_id)', 'left')
+            ->join('kecamatan kc', 'kc.id = a.kecamatan_id', 'left')
+            ->join('desa ds', 'ds.id = a.desa_id', 'left');
+        if ($status) { $this->db->where('q.status_antrean', $status); }
+        if ($tanpa_wilayah) { $this->db->where('q.kabupaten_id IS NULL', NULL, FALSE); }
+        // ponytail: semua baris sekaligus; pecah per halaman bila antrean melewati puluhan ribu.
+        $rows = $this->db->order_by('q.created_at', 'DESC')->get()->result();
+
+        $label = housing_queue_statuses();
+        $this->load->library('Matriks_program_ruleset');
+        $isi = [];
+        foreach ($rows as $r) {
+            $this->buka_pii_antrean($r);
+            $survey   = json_decode((string) $r->data_survey_json, TRUE) ?: [];
+            $simperum = json_decode((string) $r->data_simperum_json, TRUE) ?: [];
+            $profil = [];
+            if ( ! empty($r->salinan_profil_ciphertext)) {
+                $profil = kunci_tersimpan_ke_baru(json_decode((string) $this->encryption_lib->decrypt($r->salinan_profil_ciphertext), TRUE) ?: []);
+            }
+            $pekerjaan = $profil['pekerjaan'] ?? NULL;
+            $penghasilan = $profil['penghasilan_bulanan'] ?? ($survey['penghasilan'] ?? NULL);
+            $desil = $profil['desil_kesejahteraan'] ?? ($simperum['desil'] ?? NULL);
+            // Desil kosong: mesin rekomendasi memakai desil turunan penghasilan (Warga::step), ditulis apa adanya dan diberi tanda.
+            if (($desil === NULL || $desil === '') && is_numeric($penghasilan)) {
+                $turunan = $this->matriks_program_ruleset->decile_for_monthly_income($penghasilan);
+                $desil = $turunan ? $turunan . ' (dari penghasilan)' : NULL;
+            }
+            $isi[] = [
+                $r->kode_tiket, date('d-m-Y H:i', strtotime($r->created_at)),
+                $profil['full_name'] ?? $r->nama_lengkap, $profil['nik'] ?? $r->nik_pengaju,
+                $r->nama_program, $label[$r->status_antrean]['label'] ?? $r->status_antrean,
+                is_numeric($desil) ? (int) $desil : $desil,
+                $pekerjaan !== NULL ? (self::LABEL_PEKERJAAN[$pekerjaan] ?? $pekerjaan) : ($survey['pekerjaan'] ?? NULL),
+                is_numeric($penghasilan) ? (int) $penghasilan : $penghasilan,
+                $r->kabupaten, $r->kecamatan, $r->desa, $r->catatan_admin,
+            ];
+        }
+
+        $this->catat_akses_data_pribadi('identitas_warga', 'sf_antrean_pengajuan', 'unduh', ['baris' => count($isi)]);
+        $this->catat_audit('rekap_diunduh', 'Antrean pengajuan diunduh (' . count($isi) . ' baris)',
+            'sf_antrean_pengajuan', NULL, ['status' => $status, 'tanpa_wilayah' => $tanpa_wilayah, 'baris' => count($isi)]);
+        $this->kirim_spreadsheet('Antrean Pengajuan ' . date('Y-m-d'), 'Antrean', [
+            'Kode tiket', 'Tanggal', 'Nama', 'NIK', 'Program', 'Status', 'Desil', 'Pekerjaan',
+            'Penghasilan per bulan (Rp)', 'Kabupaten/Kota', 'Kecamatan', 'Desa/Kelurahan', 'Catatan admin',
+        ], $isi);
+    }
+
     public function update_status()
     {
         if ($this->input->method(TRUE) !== 'POST') {

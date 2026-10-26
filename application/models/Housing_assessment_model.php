@@ -1163,7 +1163,7 @@ class Housing_assessment_model extends CI_Model {
     public function get_owned_recommendations($penilaian_id, $user_id, $versi_aturan = NULL)
     {
         $query = $this->db
-            ->select('r.id rekomendasi_id,p.kode_program program_code,p.nama_program program_name,p.deskripsi_singkat program_description,r.status_kelayakan,r.kode_alasan_json,r.versi_aturan')
+            ->select('r.id rekomendasi_id,p.kode_program program_code,p.nama_program program_name,p.deskripsi_singkat program_description,p.syarat_utama program_terms,r.status_kelayakan,r.kode_alasan_json,r.versi_aturan')
             ->from('sf_rekomendasi_penilaian r')
             ->join('sf_program p', 'p.id=r.program_id')
             ->join('sf_penilaian_perumahan a', 'a.id=r.penilaian_id')

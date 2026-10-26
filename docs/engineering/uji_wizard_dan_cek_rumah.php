@@ -448,6 +448,8 @@ cek(getenv('UJI_CABANG') === 'tanah'
 cek(array_search('preliminary_recommendation', $dilewati, TRUE) < array_search('housing_family_detail', $dilewati, TRUE), 'UAT warga 9: rekomendasi tampil sebelum data pelengkap');
 cek($matrix_snapshot !== NULL && $matrix_snapshot === $db->baris('SELECT matriks_awal_ciphertext FROM sf_penilaian_perumahan WHERE user_id=? ORDER BY id DESC LIMIT 1', [(string) $akun['id']])['matriks_awal_ciphertext'], 'Snapshot awal tidak ditimpa evaluasi data pelengkap');
 cek(strpos($h, 'Rekomendasi awal yang tersimpan') !== FALSE, 'Hasil awal tetap dapat dibuka pada review');
+cek(strpos($h, 'Keterangan lengkap program') !== FALSE && strpos($h, 'white-space:pre-line') !== FALSE,
+    'Kartu rekomendasi memuat keterangan lengkap program (deskripsi dan syarat, baris baru dipertahankan)');
 
 $form = wizard_form($h);
 $payload = wizard_medan($form, ['action' => 'submit']);
@@ -490,6 +492,10 @@ cek( ! empty($tiket['kode_program']), 'Terikat ke program SUNGGUHAN dari sf_prog
     . $tiket['kode_program'] . ' (' . $tiket['nama_program'] . ')');
 $catatan[] = "Program yang diajukan: {$tiket['kode_program']} - {$tiket['nama_program']}";
 $catatan[] = "Kabupaten tiket: {$tiket['kabupaten_id']}";
+$st = $warga->minta('akun');
+cek($st['kode'] === 200 && strpos($st['body'], 'Status Pencatatan Data') !== FALSE && strpos($st['body'], 'Data Sudah Tercatat') !== FALSE
+    && strpos($st['body'], 'Menunggu Verifikasi') === FALSE,
+    'Dinas 26 Okt: warga melihat "Status Pencatatan Data" dan "Data Sudah Tercatat", bukan "Menunggu Verifikasi"');
 
 // ---------------------------------------------------------------------------
 echo "\nE. KEPUTUSAN ADMIN DI SESI TERPISAH\n";
@@ -527,5 +533,29 @@ $admin->minta('Admin_Kabkota/update_status', [
 ], FALSE);
 cek($db->baris('SELECT status_antrean FROM sf_antrean_pengajuan WHERE id = ?', [(string) $tiket['id']])['status_antrean'] === 'needs_revision',
     'Transisi dari status yang sudah berubah DITOLAK (tetap needs_revision)');
+
+// ---------------------------------------------------------------------------
+echo "
+F. UNDUH EXCEL ANTREAN (SUPERADMIN)
+";
+// ---------------------------------------------------------------------------
+$tolak = $warga->minta('Admin/unduh', NULL, FALSE);
+cek($tolak['kode'] !== 200 || strpos($tolak['body'], '<Workbook') === FALSE, 'Warga tidak bisa mengunduh Excel antrean');
+$tolak = $admin->minta('Admin/unduh', NULL, FALSE);
+cek($tolak['kode'] !== 200 || strpos($tolak['body'], '<Workbook') === FALSE, 'Admin kab/kota tidak bisa mengunduh Excel antrean superadmin');
+$su = new Sesi('superadmin');
+$r = $su->minta('Auth/do_login', ['email' => 'admin@klinikpkp.jatengprov.go.id', 'password' => pinjam_akun_demo('admin@klinikpkp.jatengprov.go.id')]);
+wajib($r['kode'] === 200, 'Superadmin masuk');
+cek(strpos($su->minta('Admin')['body'], 'Admin/unduh') !== FALSE, 'Tinjau Antrean superadmin punya tombol Unduh Excel');
+$x = $su->minta('Admin/unduh?status=needs_revision');
+$w = wilayah_uji((int) $tiket['kabupaten_id']);
+$nama = $db->baris('SELECT k.nama kec, d.nama desa FROM kecamatan k JOIN desa d ON d.kecamatan_id = k.id WHERE d.id = ?', [$w['desa_id']]);
+cek($x['kode'] === 200 && strpos($x['body'], '<Workbook') !== FALSE && strpos($x['body'], 'Desa/Kelurahan') !== FALSE,
+    'Superadmin mengunduh Excel antrean dengan kolom wilayah');
+cek($nama && strpos($x['body'], htmlspecialchars($nama['kec'], ENT_XML1)) !== FALSE && strpos($x['body'], htmlspecialchars($nama['desa'], ENT_XML1)) !== FALSE
+    && strpos($x['body'], (string) $NIK) !== FALSE,
+    'Baris tiket uji memuat kecamatan, desa, dan NIK pemohon');
+cek($db->angka("SELECT COUNT(*) FROM sys_jejak_audit WHERE aksi = 'rekap_diunduh' AND objek_tipe = 'sf_antrean_pengajuan' AND created_at >= NOW() - INTERVAL 5 MINUTE") > 0,
+    'Unduhan tercatat di jejak audit');
 
 selesai();

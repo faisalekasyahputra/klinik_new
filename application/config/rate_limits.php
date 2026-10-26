@@ -134,6 +134,8 @@ $config['rate_limit_policies'] = [
         'window' => 3600,
         'dimensions' => ['ip', 'account', 'object'],
     ],
+    // Unduh Excel antrean berisi identitas utuh (superadmin): longgar untuk kerja biasa, menahan penyedotan berulang.
+    'antrean_unduh' => ['limit' => 10, 'window' => 3600, 'dimensions' => ['account']],
     'admin_queue_decision' => [
         'limit' => 30,
         'window' => 60,

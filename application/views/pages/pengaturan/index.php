@@ -7,7 +7,7 @@
                 <i class="ph ph-list-checks"></i>
             </div>
             <div>
-                <h1 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight">Status Pengajuan</h1>
+                <h1 class="text-2xl md:text-3xl font-black text-gray-900 dark:text-white tracking-tight"><?= html_escape($title ?? 'Status Pengajuan') ?></h1>
                 <p class="text-gray-500 dark:text-brand-muted text-sm">Semua pengajuan yang pernah Anda kirim, dalam satu daftar.</p>
             </div>
         </div>

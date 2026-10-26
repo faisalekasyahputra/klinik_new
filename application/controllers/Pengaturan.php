@@ -32,6 +32,8 @@ class Pengaturan extends MY_Controller {
             ->where('sf_antrean_pengajuan.user_id', (int) $user_id)
             ->order_by('sf_antrean_pengajuan.created_at', 'DESC')->get()->result() as $r) {
             $status = housing_queue_statuses()[$r->status_antrean] ?? ['label' => 'Sedang Diverifikasi', 'badge' => 'pending'];
+            // Permintaan dinas 26 Okt 2026: warga tidak dibuat menunggu verifikasi; label admin tetap.
+            if ($r->status_antrean === 'pending') { $status['label'] = 'Data Sudah Tercatat'; }
             $items[] = [
                 'jenis' => 'Antrean Perumahan - ' . ($r->nama_program ?: 'Program'), 'icon' => 'ph-ticket',
                 'judul' => !empty($r->kode_tiket) ? $r->kode_tiket : 'Tiket belum tersedia',
@@ -164,7 +166,7 @@ class Pengaturan extends MY_Controller {
         ][$role] ?? NULL;
 
         $datacontent = [
-            'title' => 'Status Pengajuan',
+            'title' => $role === 'warga' ? 'Status Pencatatan Data' : 'Status Pengajuan',
             'items' => $items,
             'empty_action' => $empty_action,
         ];
