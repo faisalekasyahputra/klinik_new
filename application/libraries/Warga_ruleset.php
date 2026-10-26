@@ -117,6 +117,20 @@ class Warga_ruleset {
         ]);
     }
 
+    /**
+     * Rumah milik sendiri yang sudah layak huni menurut isian warga (permintaan dinas 26 Okt 2026): ketujuh
+     * kondisi bangunan yang dinilai RTLH terisi dan tidak ada yang rusak sedang/berat, serta sanitasi tidak
+     * kritis. Kebalikan persis dari pemicu eligible RTLH di evaluate(), jadi keduanya tidak bisa sama-sama benar.
+     */
+    public static function hunian_layak(array $assessment)
+    {
+        if (($assessment['jalur_penilaian'] ?? '') !== 'existing_house') { return FALSE; }
+        foreach (['kondisi_pondasi', 'kondisi_kolom', 'kondisi_balok', 'kondisi_rangka', 'kondisi_lantai', 'kondisi_dinding', 'kondisi_atap'] as $field) {
+            if ( ! in_array($assessment[$field] ?? NULL, ['good', 'minor_damage'], TRUE)) { return FALSE; }
+        }
+        return ($assessment['sumber_air'] ?? '') !== 'other_unfit' && ($assessment['jenis_kloset'] ?? '') !== 'none';
+    }
+
     private function has_value(array $data, array $fields, array $values)
     {
         foreach ($fields as $field) {

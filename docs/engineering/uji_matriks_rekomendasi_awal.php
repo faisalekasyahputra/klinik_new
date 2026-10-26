@@ -75,4 +75,17 @@ cek($t([], ['status_perkawinan'=>'married'])['keluarga'] === ['family_married', 
 $hasil = $rules->preliminary(['kepemilikan_rumah'=>'staying','kawasan_perumahan'=>'good','jml_kk'=>'2'], ['penghasilan_bulanan'=>1200000,'birth_date'=>'1990-01-01','status_perkawinan'=>'married','stabilitas_pekerjaan'=>'permanent'], '2026-09-10');
 cek(array_column($hasil['items'], 'program_name') === ['PB Backlog (Prioritas 1)'] && $hasil['items'][0]['missing'] === ['Kepemilikan lahan'],
     'Tanpa data tanah lain, PB Backlog tetap tampil dengan catatan Kepemilikan lahan perlu dilengkapi');
+// Dinas 26 Okt 2026: rumah milik yang kondisinya baik ditampilkan "Hunian Anda sudah layak huni".
+require dirname(__DIR__, 2) . '/application/libraries/Warga_ruleset.php';
+$baik = ['jalur_penilaian'=>'existing_house', 'sumber_air'=>'pdam', 'jenis_kloset'=>'swan_neck'];
+foreach (['kondisi_pondasi','kondisi_kolom','kondisi_balok','kondisi_rangka','kondisi_lantai','kondisi_dinding','kondisi_atap'] as $k) { $baik[$k] = 'good'; }
+cek(Warga_ruleset::hunian_layak($baik) && Warga_ruleset::hunian_layak(['kondisi_atap'=>'minor_damage'] + $baik), 'Semua kondisi baik atau rusak ringan dan sanitasi wajar: layak huni');
+cek( ! Warga_ruleset::hunian_layak(['kondisi_atap'=>'moderate_damage'] + $baik) && ! Warga_ruleset::hunian_layak(['kondisi_kolom'=>'severe_damage_or_absent'] + $baik),
+    'Satu kondisi rusak sedang atau berat: tidak layak (RTLH tetap dinilai)');
+cek( ! Warga_ruleset::hunian_layak(['sumber_air'=>'other_unfit'] + $baik) && ! Warga_ruleset::hunian_layak(['jenis_kloset'=>'none'] + $baik),
+    'Sanitasi kritis (air tidak layak, tanpa jamban): tidak layak');
+cek( ! Warga_ruleset::hunian_layak(['kondisi_lantai'=>NULL] + $baik) && ! Warga_ruleset::hunian_layak(['jalur_penilaian'=>'candidate_land'] + $baik),
+    'Kondisi belum diisi atau bukan rumah milik: tidak disebut layak');
+$rules_w = new Warga_ruleset();
+cek(($rules_w->evaluate('rtlh', $baik, ['desil_kesejahteraan'=>2])['status_kelayakan'] ?? '') !== 'eligible', 'Rumah layak tidak sekaligus eligible RTLH');
 echo "$total pemeriksaan lulus\n";
