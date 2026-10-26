@@ -71,7 +71,12 @@ function nik_bebas($db,$env,$nik) {
     wajib(!$p, $p ? "NIK fixture {$nik} SEDANG DIPEGANG profil #{$p['id']} milik ".($p['email'] ?? '[akun sudah terhapus]').' - lepaskan ikatannya atau pakai DB uji bersih' : "NIK fixture {$nik} bebas dipakai");
 }
 function draft($db, $user) { $r=$db->row("SELECT a.* FROM sf_penilaian_perumahan a WHERE a.user_id=? AND a.status='draft' ORDER BY a.id DESC LIMIT 1",[$user]); wajib((bool)$r,'Draft warga tersedia'); if (!in_array((int)$r['id'],$GLOBALS['assessments'],TRUE)) $GLOBALS['assessments'][]=(int)$r['id']; return $r; }
-function post_step($s,$d,$step,$data) { return $s->post('warga/pendataan',$data+['action'=>'save','step'=>$step,'direction'=>'next','penilaian_id'=>$d['id'],'versi_kunci'=>$d['versi_kunci']]); }
+/* Isian wilayah berjenjang wajib sejak migrasi 083: kode Kepmendagri sah untuk kabupaten fixture SIMPERUM lokal
+   (KodeDagri fixture tiruan, jadi tidak terisi otomatis). Kabupaten draft dipertahankan supaya cakupan uji tetap. */
+function wilayah_uji($kab) { $peta = [3301 => ['330101', '3301012001'], 3374 => ['337401', '3374011001']];
+  $kab = isset($peta[(int) $kab]) ? (int) $kab : 3374;
+  return ['kabupaten_id' => (string) $kab, 'kecamatan_id' => $peta[$kab][0], 'desa_id' => $peta[$kab][1]]; }
+function post_step($s,$d,$step,$data) { if ($step === 'housing_family') { $data += wilayah_uji($d['kabupaten_id']); } return $s->post('warga/pendataan',$data+['action'=>'save','step'=>$step,'direction'=>'next','penilaian_id'=>$d['id'],'versi_kunci'=>$d['versi_kunci']]); }
 function redirect_ok($r) { return in_array($r['status'],[302,303],TRUE); }
 function citizen() { return ['family_card_number'=>'0000000000005555','full_name'=>'Warga Uji R5','address'=>'Alamat Uji R5','phone'=>'081234567890','birth_date'=>'1980-01-01','jenis_kelamin'=>'male','status_perkawinan'=>'married','pendidikan'=>'senior_high','pekerjaan'=>'private_employee','kelompok_penghasilan'=>'2_2_2_6','mampu_swadaya'=>'capable','punya_tabungan'=>'1']; }
 /* Wizard berubah 23-24 Agt 2026: `citizen_data` DIHAPUS (cfbd760 + migrasi 049)

@@ -589,6 +589,9 @@ class Migrate extends CI_Controller {
         // Migrasi 082 - kualifikasi posisi magang (kkn_magang_posisi.keterangan) berupa TEXT.
         $tipe_082 = (string) $this->db->query("SELECT DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'kkn_magang_posisi' AND COLUMN_NAME = 'keterangan'")->row('DATA_TYPE');
         echo 'kualifikasi posisi magang (migrasi 082): '.($tipe_082 === 'text' ? 'ADA (TEXT)' : 'HILANG ('.$tipe_082.')')."\n";
+        // Migrasi 083 - kecamatan dan desa Jawa Tengah (harus 576 dan 8563) serta kolom wilayah di draft pendataan.
+        echo 'kecamatan dan desa (migrasi 083): '.($this->db->table_exists('desa') && $this->db->field_exists('desa_id', 'sf_penilaian_perumahan')
+            ? 'ADA ('.$this->db->count_all('kecamatan').' kecamatan, '.$this->db->count_all('desa').' desa)' : 'HILANG')."\n";
         // Migrasi 076 - kolom alasan_susulan untuk KKN input susulan (bersama kolom 061 dan 062 di bawah).
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062', 'alasan_susulan' => '076'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.

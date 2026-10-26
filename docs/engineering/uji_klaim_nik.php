@@ -390,6 +390,18 @@ try {
     $r = $lookup($j_e, $NIK3, $LAHIR3);
     cek($step($r['badan']) === 'housing_family' && ($profil($E)['confirmed_at'] ?? NULL) !== NULL && gagal_tercatat('account', $E) === 1,
         'Nama awalan + tanggal benar + NIK bebas: lolos otomatis dan terverifikasi');
+    // Migrasi 083: KodeDagri fixture API-03 (3301082004) sah, jadi wilayah terisi otomatis berjenjang.
+    $wil_e = satu("SELECT kabupaten_id, kecamatan_id, desa_id FROM sf_penilaian_perumahan WHERE user_id=? AND status='draft' ORDER BY id DESC LIMIT 1", [$E]);
+    cek((int) $wil_e['kabupaten_id'] === 3301 && $wil_e['kecamatan_id'] === '330108' && $wil_e['desa_id'] === '3301082004',
+        'Wilayah terisi otomatis dari KodeDagri SIMPERUM: Cilacap, Jeruklegi, Brebeg');
+    $h_e = minta($j_e, 'warga/pendataan')['badan'];
+    cek(strpos($h_e, '<option value="330108" selected>Jeruklegi') !== FALSE && strpos($h_e, '<option value="3301082004" selected>Brebeg') !== FALSE,
+        'Isian kecamatan dan desa tampil terpilih');
+    $kec_e = json_decode(minta($j_e, 'warga/wilayah?kabupaten_id=3301')['badan'], TRUE)['data'] ?? [];
+    $desa_e = json_decode(minta($j_e, 'warga/wilayah?kecamatan_id=330108')['badan'], TRUE)['data'] ?? [];
+    cek(count($kec_e) > 20 && in_array('330108', array_column($kec_e, 'id'), TRUE) && in_array('3301082004', array_column($desa_e, 'id'), TRUE)
+        && ! array_filter(array_column($desa_e, 'id'), fn($id) => strpos($id, '330108') !== 0),
+        'Daftar wilayah: kecamatan per kabupaten, desa hanya dari kecamatan yang diminta');
     cek(count($susulan()) === 1 && $klaim_e() === 0, 'Lolos otomatis tercatat satu baris cek susulan, tanpa permintaan klaim');
     $halaman = minta($j_adm, 'Admin_Users/permintaan_nik')['badan'];
     cek(strpos($halaman, 'Pemeriksaan Susulan NIK') !== FALSE && strpos($halaman, $e_e) !== FALSE && strpos($halaman, $NIK3) === FALSE,

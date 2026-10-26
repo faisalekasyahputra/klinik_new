@@ -64,9 +64,14 @@ function matriks() {
 /* Membawa draft dari `housing_family` sampai berhenti di `housing_family_detail`,
    lalu mengembalikan barisnya. Dipakai sebelum memeriksa paragraf desil, sebab
    paragraf itu hanya dirender di langkah detail. */
+/* Isian wilayah berjenjang wajib sejak migrasi 083: kode Kepmendagri sah untuk kabupaten fixture SIMPERUM lokal
+   (KodeDagri fixture tiruan, jadi tidak terisi otomatis). Kabupaten draft dipertahankan supaya cakupan uji tetap. */
+function wilayah_uji($kab) { $peta = [3301 => ['330101', '3301012001'], 3374 => ['337401', '3374011001']];
+  $kab = isset($peta[(int) $kab]) ? (int) $kab : 3374;
+  return ['kabupaten_id' => (string) $kab, 'kecamatan_id' => $peta[$kab][0], 'desa_id' => $peta[$kab][1]]; }
 function maju_ke_detail($sesi,$db,$uid) {
   $d=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE user_id=?',[$uid]);
-  $sesi->call('warga/pendataan',array_merge(['step'=>'housing_family','penilaian_id'=>$d['id'],'versi_kunci'=>$d['versi_kunci'],'direction'=>'next'],matriks()));
+  $sesi->call('warga/pendataan',array_merge(['step'=>'housing_family','penilaian_id'=>$d['id'],'versi_kunci'=>$d['versi_kunci'],'direction'=>'next'],matriks(),wilayah_uji($d['kabupaten_id'])));
   $d=$db->one('SELECT * FROM sf_penilaian_perumahan WHERE id=?',[$d['id']]);
   if ($d['langkah_sekarang']==='preliminary_recommendation') {
     $sesi->call('warga/pendataan',['step'=>'preliminary_recommendation','penilaian_id'=>$d['id'],'versi_kunci'=>$d['versi_kunci'],'direction'=>'next']);

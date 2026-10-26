@@ -35,6 +35,7 @@ $matrix_required = [
     'jenis_kelamin' => TRUE, 'status_perkawinan' => TRUE, 'pendidikan' => TRUE,
     'pekerjaan' => TRUE, 'stabilitas_pekerjaan' => TRUE,
     'kawasan_perumahan' => TRUE, 'punya_tabungan' => TRUE,
+    'kabupaten_id' => TRUE, 'kecamatan_id' => TRUE, 'desa_id' => TRUE,
     'mampu_swadaya' => TRUE,
 ];
 /* Field ini menentukan jalur atau evaluasi awal. Badge warga selain daftar
@@ -201,6 +202,48 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                     <?php endforeach; ?>
                 </select>
                 <p id="kepemilikan_rumah-error" class="text-xs text-red-700"><?= html_escape($field_error('kepemilikan_rumah')) ?></p>
+                <?php /* Wilayah rumah berjenjang, kode Kepmendagri (migrasi 083, permintaan dinas 26 Okt 2026). Terisi otomatis dari
+                   KodeDagri SIMPERUM; daftar awal dirender server, perubahan lewat warga/wilayah. */
+                $pilih_wilayah = [
+                    'kabupaten_id' => ['Kabupaten/Kota', $daftar_kabupaten ?? [], 'Pilih kabupaten/kota'],
+                    'kecamatan_id' => ['Kecamatan', $daftar_kecamatan ?? [], 'Pilih kecamatan'],
+                    'desa_id' => ['Desa/Kelurahan', $daftar_desa ?? [], 'Pilih desa/kelurahan'],
+                ]; ?>
+                <div class="mt-4 grid gap-4 sm:grid-cols-3" data-wilayah data-url="<?= site_url('warga/wilayah') ?>">
+                    <?php foreach ($pilih_wilayah as $key => [$label, $opsi, $kosong]): ?>
+                    <div><label for="<?= $key ?>" class="text-xs font-bold"><?= $label ?> <?= $badge($key) ?> <span class="text-red-700">*</span></label>
+                        <select id="<?= $key ?>" name="<?= $key ?>" required aria-describedby="<?= $key ?>-error" class="mt-1 block w-full rounded-xl border px-3 py-2.5 text-sm" style="background:var(--portal-btn-bg);border-color:<?= $field_error($key) ? '#dc2626' : 'var(--portal-border)' ?>;color:var(--portal-text)">
+                            <option value=""><?= $kosong ?></option>
+                            <?php foreach ($opsi as $o): ?><option value="<?= html_escape((string) $o['id']) ?>"<?= $selected($key, (string) $o['id']) ?>><?= html_escape($o['nama']) ?></option><?php endforeach; ?>
+                        </select>
+                        <p id="<?= $key ?>-error" class="mt-1 text-xs text-red-700"><?= html_escape($field_error($key)) ?></p></div>
+                    <?php endforeach; ?>
+                </div>
+                <script>
+                (function () {
+                    var akar = document.querySelector('[data-wilayah]'); if (!akar) return;
+                    var kab = document.getElementById('kabupaten_id'), kec = document.getElementById('kecamatan_id'), desa = document.getElementById('desa_id');
+                    function isi(sel, kosong, data) {
+                        sel.length = 1; sel.options[0].textContent = kosong;
+                        data.forEach(function (o) { sel.add(new Option(o.nama, o.id)); });
+                    }
+                    function ambil(param, nilai, sel, kosong) {
+                        sel.disabled = true; sel.options[0].textContent = 'Memuat...';
+                        fetch(akar.dataset.url + '?' + param + '=' + encodeURIComponent(nilai), {credentials: 'same-origin', headers: {'Accept': 'application/json'}})
+                            .then(function (r) { return r.ok ? r.json() : {data: []}; })
+                            .then(function (j) { isi(sel, kosong, j.data || []); })
+                            .catch(function () { isi(sel, 'Daftar gagal dimuat, coba pilih ulang', []); })
+                            .then(function () { sel.disabled = false; });
+                    }
+                    kab.addEventListener('change', function () {
+                        isi(desa, 'Pilih desa/kelurahan', []);
+                        if (kab.value) ambil('kabupaten_id', kab.value, kec, 'Pilih kecamatan'); else isi(kec, 'Pilih kecamatan', []);
+                    });
+                    kec.addEventListener('change', function () {
+                        if (kec.value) ambil('kecamatan_id', kec.value, desa, 'Pilih desa/kelurahan'); else isi(desa, 'Pilih desa/kelurahan', []);
+                    });
+                })();
+                </script>
             <?php else: ?>
                 <input type="hidden" name="kepemilikan_rumah" value="<?= html_escape($value('kepemilikan_rumah') !== '' ? $value('kepemilikan_rumah') : ($is_owned_branch ? 'owned' : 'other')) ?>">
             <?php endif; ?>

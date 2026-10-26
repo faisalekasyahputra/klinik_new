@@ -26,6 +26,20 @@ class Warga extends MY_Controller {
      * lihat_bukti() (membuka berkas privat) TETAP wajib login+role warga -
      * mereka yang memanggil guard ini secara eksplisit di awal method.
      */
+    /**
+     * Daftar wilayah untuk isian berjenjang (GET, JSON): ?kabupaten_id=3302 -> kecamatan, ?kecamatan_id=330218 -> desa.
+     * Data referensi Kepmendagri (migrasi 083), hanya baca; tetap di balik login warga seperti langkah pendataan.
+     */
+    public function wilayah()
+    {
+        if ( ! $this->guard_login_warga()) { return; }
+        $kabupaten = (string) $this->input->get('kabupaten_id', TRUE);
+        $kecamatan = (string) $this->input->get('kecamatan_id', TRUE);
+        $daftar = preg_match('/^\d{6}$/', $kecamatan) ? $this->Housing_assessment_model->daftar_desa($kecamatan)
+            : (preg_match('/^\d{4}$/', $kabupaten) ? $this->Housing_assessment_model->daftar_kecamatan($kabupaten) : []);
+        $this->output->set_content_type('application/json')->set_output(json_encode(['data' => $daftar], JSON_UNESCAPED_UNICODE));
+    }
+
     private function guard_login_warga()
     {
         if ( ! $this->is_logged_in() || ! $this->has_role('warga')) {
@@ -118,8 +132,13 @@ class Warga extends MY_Controller {
                 $nik_dari_akun = TRUE;
             }
         }
+        // Isian berjenjang wilayah (migrasi 083): daftar awal dirender server dari nilai tersimpan, perubahan lewat wilayah().
+        $wilayah = array_merge($assessment ?: [], $old_input);
         $this->render('pages/warga/pendataan', [
             'title' => 'Pendataan Warga',
+            'daftar_kabupaten' => $this->db->select('id, nama')->order_by('nama')->get('kabupaten')->result_array(),
+            'daftar_kecamatan' => ! empty($wilayah['kabupaten_id']) ? $this->Housing_assessment_model->daftar_kecamatan($wilayah['kabupaten_id']) : [],
+            'daftar_desa' => ! empty($wilayah['kecamatan_id']) ? $this->Housing_assessment_model->daftar_desa($wilayah['kecamatan_id']) : [],
             'is_logged_in' => $logged_in_warga,
             'nik_dari_akun' => $nik_dari_akun,
             'assessment' => $assessment,
@@ -698,7 +717,7 @@ class Warga extends MY_Controller {
     {
         // Setiap POST hanya mengubah medan pada langkah yang sudah divalidasi.
         $fields = [
-            'housing_family' => ['kepemilikan_rumah', 'kawasan_perumahan'],
+            'housing_family' => ['kepemilikan_rumah', 'kawasan_perumahan', 'kabupaten_id', 'kecamatan_id', 'desa_id'],
             'housing_family_detail' => ['kepemilikan_rumah', 'kepemilikan_lahan', 'tanah_lain', 'rumah_lain', 'luas_rumah', 'jml_penghuni', 'jml_kk', 'bantuan_perumahan', 'tahun_intervensi'],
             'building_condition' => ['kondisi_pondasi', 'kondisi_kolom', 'kondisi_balok', 'kondisi_sloof', 'kondisi_plafon', 'kondisi_rangka', 'bahan_lantai', 'kondisi_lantai', 'bahan_dinding', 'kondisi_dinding', 'bahan_atap', 'kondisi_atap'],
             'candidate_land' => ['candidate_land_address', 'status_lahan_calon', 'asal_lahan_calon', 'hubungan_pemilik_lahan', 'panjang_lahan_m', 'lebar_lahan_m'],
@@ -829,8 +848,13 @@ class Warga extends MY_Controller {
                 'kepemilikan_rumah' => ['owned', 'rent', 'rent_free', 'official', 'staying', 'other'],
                 'kawasan_perumahan' => ['drought', 'slum', 'disaster_prone', 'riverbank', 'railway', 'poor_other', 'good'],
             ], $errors);
-            foreach (['kepemilikan_rumah', 'kawasan_perumahan'] as $field) {
+            foreach (['kepemilikan_rumah', 'kawasan_perumahan', 'kabupaten_id', 'kecamatan_id', 'desa_id'] as $field) {
                 if (trim((string) $this->input->post($field, TRUE)) === '') $errors[$field] = 'Pilihan ini wajib diisi.';
+            }
+            // Jenjang wilayah diperiksa server: desa harus di kecamatan itu, kecamatan di kabupaten itu (migrasi 083).
+            if ( ! isset($errors['desa_id']) && ! $this->Housing_assessment_model->wilayah_sah($this->input->post('kabupaten_id', TRUE),
+                    $this->input->post('kecamatan_id', TRUE), $this->input->post('desa_id', TRUE))) {
+                $errors['desa_id'] = 'Kabupaten, kecamatan, dan desa tidak sesuai. Pilih ulang dari daftar.';
             }
         }
         if (in_array($step, ['housing_family', 'housing_family_detail'], TRUE)) {
