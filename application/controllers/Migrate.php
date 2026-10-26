@@ -592,6 +592,9 @@ class Migrate extends CI_Controller {
         // Migrasi 083 - kecamatan dan desa Jawa Tengah (harus 576 dan 8563) serta kolom wilayah di draft pendataan.
         echo 'kecamatan dan desa (migrasi 083): '.($this->db->table_exists('desa') && $this->db->field_exists('desa_id', 'sf_penilaian_perumahan')
             ? 'ADA ('.$this->db->count_all('kecamatan').' kecamatan, '.$this->db->count_all('desa').' desa)' : 'HILANG')."\n";
+        // Migrasi 084 - aturan rekomendasi di database (harus 6 program dan 20 baris matriks).
+        echo 'aturan program (migrasi 084): '.($this->db->table_exists('aturan_program') && $this->db->table_exists('aturan_matriks_baris')
+            ? 'ADA ('.$this->db->count_all('aturan_program').' program, '.$this->db->count_all('aturan_matriks_baris').' baris matriks)' : 'HILANG')."\n";
         // Migrasi 076 - kolom alasan_susulan untuk KKN input susulan (bersama kolom 061 dan 062 di bawah).
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062', 'alasan_susulan' => '076'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.
