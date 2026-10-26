@@ -7,6 +7,7 @@ $config['input_allowed_fields'] = [
     'kategori_id', // Admin_Katalog_Program: kategori program baru
     'catatan',
     'baris', // Admin_Aturan: baris matriks draf
+    'program_id', // Admin_Aturan/buat_draf: kembali ke halaman program
     'about_desc_1',
     'about_desc_2',
     'about_title',

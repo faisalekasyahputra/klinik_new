@@ -275,7 +275,7 @@ class Admin_Katalog_Program extends Admin_Controller {
         $this->catat_audit('program_dibuat', 'Program baru ' . $kode . ': ' . $nama, 'sf_program', $id, ['kode' => $kode]);
         $this->session->set_flashdata('success', 'Program ' . $nama . ' dibuat. Program ini belum ditawarkan ke warga sampai '
             . 'aturan rekomendasinya diatur dan diterbitkan di Aturan rekomendasi.');
-        redirect('Admin_Aturan');
+        redirect('Admin_Aturan/program/' . $id);
     }
 
     /* Folder foto unggahan: Program_model::DIR_UNGGAHAN (satu sumber, dipakai juga korsel). */
