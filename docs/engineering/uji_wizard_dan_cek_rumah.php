@@ -594,6 +594,7 @@ $label_kondisi = ['good' => 'Baik', 'minor_damage' => 'Rusak Ringan (Permukaan)'
 cek(strpos($x['body'], '>Kondisi atap<') !== FALSE && strpos($x['body'], '>Sumber air<') !== FALSE && strpos($x['body'], '>Sloof<') !== FALSE
     && strpos($x['body'], '>Lintang<') !== FALSE && $label_kondisi !== '' && strpos($x['body'], htmlspecialchars($label_kondisi, ENT_XML1)) !== FALSE,
     'Excel memuat isian pendataan lengkap berlabel (kondisi atap tiket uji: ' . $label_kondisi . ')');
+cek(strpos($x['body'], "<Data ss:Type=\"String\">'-") === FALSE, 'Koordinat negatif tertulis sebagai angka, bukan teks berpetik');
 cek($nama && strpos($x['body'], htmlspecialchars($nama['kec'], ENT_XML1)) !== FALSE && strpos($x['body'], htmlspecialchars($nama['desa'], ENT_XML1)) !== FALSE
     && strpos($x['body'], (string) $NIK) !== FALSE,
     'Baris tiket uji memuat kecamatan, desa, dan NIK pemohon');

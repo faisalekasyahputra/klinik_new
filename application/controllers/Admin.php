@@ -111,8 +111,10 @@ class Admin extends Admin_Controller {
                 $baris[] = ($v === NULL || $v === '') ? NULL
                     : (in_array($k, $angka, TRUE) && is_numeric($v) ? (float) $v + 0 : ($nilai[$k][(string) $v] ?? (string) $v));
             }
-            $baris[] = $penilaian['location_lat'] ?? NULL;
-            $baris[] = $penilaian['location_lng'] ?? NULL;
+            // Koordinat sebagai sel angka: sebagai teks, lintang negatif diberi petik oleh penjinak formula.
+            foreach (['location_lat', 'location_lng'] as $k) {
+                $baris[] = is_numeric($penilaian[$k] ?? NULL) ? (float) $penilaian[$k] : NULL;
+            }
             $baris[] = $r->catatan_admin;
             unset($baris);
         }
