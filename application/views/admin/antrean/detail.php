@@ -29,16 +29,9 @@ $reason_labels = [
     'SIM_PEMBIAYAAN_INCOME' => 'Penghasilan menjadi pertimbangan simulasi pembiayaan.',
     'SIM_DATA_BELUM_TERSEDIA' => 'Data untuk program ini belum tersedia di formulir.',
 ];
-$field_labels = [
-    'kepemilikan_rumah' => 'Status rumah', 'kepemilikan_lahan' => 'Status lahan', 'jml_penghuni' => 'Jumlah penghuni', 'jml_kk' => 'Jumlah keluarga',
-    'luas_rumah' => 'Luas rumah (m²)', 'kawasan_perumahan' => 'Kawasan', 'punya_lahan_calon' => 'Memiliki calon lahan',
-    'candidate_land_address' => 'Alamat calon lahan', 'status_lahan_calon' => 'Sertifikat calon lahan', 'asal_lahan_calon' => 'Asal tanah',
-    'hubungan_pemilik_lahan' => 'Hubungan dengan pemilik', 'panjang_lahan_m' => 'Panjang tanah (m)', 'lebar_lahan_m' => 'Lebar tanah (m)',
-    'kondisi_pondasi' => 'Pondasi', 'kondisi_kolom' => 'Kolom', 'kondisi_balok' => 'Balok', 'kondisi_rangka' => 'Rangka atap',
-    'bahan_lantai' => 'Bahan lantai', 'kondisi_lantai' => 'Kondisi lantai', 'bahan_dinding' => 'Bahan dinding', 'kondisi_dinding' => 'Kondisi dinding',
-    'bahan_atap' => 'Bahan atap', 'kondisi_atap' => 'Kondisi atap', 'sumber_air' => 'Sumber air', 'jenis_kloset' => 'Jenis jamban',
-    'pembuangan_tinja' => 'Jenis TPA', 'jarak_septic_tank' => 'Jarak septik', 'penerangan' => 'Penerangan', 'bahan_bakar_masak' => 'Bahan bakar memasak',
-];
+// Label isian satu sumber dengan unduhan Excel antrean: config/label_pendataan.php (26 Okt 2026).
+get_instance()->config->load('label_pendataan', TRUE);
+$field_labels = get_instance()->config->item('label_pendataan_kolom', 'label_pendataan');
 /* 7 field "Isi Data Sesuai Matriks" - permintaan user 23 Agt 2026,
    halaman ini dulu tidak menampilkannya sama sekali (field-nya belum
    ada saat halaman ini dibuat). Peta kode->label PERSIS teks yang
@@ -68,32 +61,8 @@ $provenance_source = static function ($field) use ($provenance) {
     $value = $provenance[$field] ?? 'citizen';
     return is_array($value) ? ($value['source'] ?? 'citizen') : $value;
 };
-/* Kode isian ditampilkan dengan label yang sama dengan formulir warga
-   (pages/warga/pendataan.php), disalin seperti $field_labels di atas, supaya
-   petugas tidak membaca kode mentah seperti "hm" atau "inheritance". Kode yang
-   tidak dikenal tetap tampil apa adanya, bukan disembunyikan. */
-$kondisi = ['good' => 'Baik', 'minor_damage' => 'Rusak Ringan (Permukaan)', 'moderate_damage' => 'Rusak Sedang (Material)', 'severe_damage_or_absent' => 'Rusak Berat (Struktur/Tdk Ada)'];
-$sertifikat = ['certificate_unspecified' => 'Sertifikat (jenis tidak disebut SIMPERUM)', 'hm' => 'Sertifikat HM', 'hgb' => 'Sertifikat HGB', 'letter_c' => 'Letter C', 'letter_d' => 'Letter D', 'village_letter' => 'Suket Desa', 'notarial_deed' => 'Akta Notaris', 'other' => 'Lainnya'];
-$value_labels = [
-    'kepemilikan_rumah' => ['owned' => 'Milik Sendiri', 'rent' => 'Sewa/Kontrak', 'rent_free' => 'Bebas Sewa', 'official' => 'Rumah Dinas', 'staying' => 'Menumpang', 'other' => 'Bukan milik sendiri'],
-    'kepemilikan_lahan' => $sertifikat, 'status_lahan_calon' => $sertifikat,
-    'kawasan_perumahan' => ['drought' => 'Kekeringan', 'slum' => 'Kumuh', 'disaster_prone' => 'Rawan bencana', 'riverbank' => 'Bantaran sungai', 'railway' => 'Bantaran rel KA', 'poor_other' => 'Kawasan buruk lain', 'good' => 'Kawasan baik'],
-    'punya_lahan_calon' => ['1' => 'Ya', '0' => 'Tidak'],
-    'asal_lahan_calon' => ['owned' => 'Milik Sendiri', 'inheritance' => 'Warisan', 'grant' => 'Hibah', 'purchase' => 'Jual Beli'],
-    'hubungan_pemilik_lahan' => ['parent' => 'Orang Tua', 'other' => 'Orang Lain'],
-    'kondisi_pondasi' => $kondisi, 'kondisi_kolom' => $kondisi, 'kondisi_balok' => $kondisi, 'kondisi_rangka' => $kondisi,
-    'kondisi_lantai' => $kondisi, 'kondisi_dinding' => $kondisi, 'kondisi_atap' => $kondisi,
-    'bahan_lantai' => ['marble_granite' => 'Marmer/Granit', 'ceramic' => 'Keramik', 'parquet_vinyl_carpet' => 'Parket/Vinil/Permadani', 'tile_terrazzo' => 'Ubin/Tegel/Teraso', 'high_quality_wood' => 'Kayu/Papan Kualitas Tinggi', 'cement_plaster' => 'Semen/Plesteran', 'bamboo' => 'Bambu', 'low_quality_wood' => 'Kayu/Papan Kualitas Rendah', 'soil' => 'Tanah', 'other' => 'Lainnya'],
-    'bahan_dinding' => ['wall' => 'Tembok', 'plaster_grc' => 'Plesteran/GRC', 'wood' => 'Kayu', 'woven_bamboo' => 'Anyaman Bambu', 'log' => 'Batang Kayu', 'bamboo' => 'Bambu', 'other' => 'Lainnya'],
-    'bahan_atap' => ['concrete' => 'Beton', 'ceramic' => 'Keramik', 'metal' => 'Metal', 'clay_tile' => 'Genteng/Tanah Liat', 'asbestos' => 'Asbes', 'zinc' => 'Seng', 'shingle' => 'Sirap', 'bamboo' => 'Bambu', 'thatch' => 'Jerami/Ijuk/Daun/Rumbia', 'other' => 'Lainnya'],
-    'sumber_air' => ['bottled' => 'Air Kemasan Bermerek', 'refill' => 'Air Isi Ulang', 'piped' => 'Ledeng (jenis tidak disebut SIMPERUM)', 'pdam' => 'PDAM', 'retail_piped' => 'Leding Eceran', 'well' => 'Sumur', 'well_protected' => 'Sumur Terlindung', 'well_unprotected' => 'Sumur Tak Terlindung', 'spring' => 'Mata Air', 'spring_unprotected' => 'Mata Air Tak Terlindung', 'surface_water' => 'Air Sungai/Danau/Waduk', 'rain' => 'Air Hujan', 'other_unfit' => 'Lainnya/Tidak Layak'],
-    'jenis_kloset' => ['swan_neck' => 'Leher Angsa', 'plengsengan' => 'Plengsengan', 'pit' => 'Cemplung/Cubluk', 'none' => 'Tidak Punya'],
-    'pembuangan_tinja' => ['septic_tank' => 'Tangki Septik', 'ipal' => 'IPAL', 'water_body' => 'Kolam/Sawah/Sungai', 'ground_hole' => 'Lubang Tanah', 'open_land' => 'Pantai/Tanah Lapang/Kebun'],
-    'jarak_septic_tank' => ['lt_10' => '<10 m', 'gte_10' => '>=10 m'],
-    'penerangan' => ['pln' => 'PLN', 'pln_unmetered' => 'PLN Non Meteran', 'non_pln' => 'Non PLN', 'none' => 'Bukan Listrik'],
-    'bahan_bakar_masak' => ['electric_gas' => 'Listrik/Gas', 'kerosene' => 'Minyak Tanah', 'charcoal_wood' => 'Arang/Kayu', 'other' => 'Lainnya'],
-];
-$numeric_fields = ['jml_penghuni', 'jml_kk', 'luas_rumah', 'panjang_lahan_m', 'lebar_lahan_m'];
+$value_labels = get_instance()->config->item('label_pendataan_nilai', 'label_pendataan');
+$numeric_fields = get_instance()->config->item('label_pendataan_angka', 'label_pendataan');
 // "12.00" -> "12", "7.50" -> "7,5": desimal koma, nol ekor dibuang.
 $angka = static function ($v) { return rtrim(rtrim(number_format((float) $v, 2, ',', '.'), '0'), ','); };
 $field_value = static function ($key, $v) use ($value_labels, $numeric_fields, $angka) {
@@ -131,7 +100,7 @@ $lencana = ['simulation' => $this->config->item('simperum_mode') === 'api'
 <div class="tumpuk-bagian">
     <div class="grid-kartu grid sm:grid-cols-4">
         <div class="kartu-admin isi-kartu"><p class="text-xs text-gray-500 dark:text-brand-muted">Status</p><p class="mt-1 font-bold text-gray-900 dark:text-white"><?= $e($status_labels[$queue['status_antrean'] ?? ''] ?? ($queue['status_antrean'] ?? '-')) ?></p></div>
-        <div class="kartu-admin isi-kartu"><p class="text-xs text-gray-500 dark:text-brand-muted">Program</p><p class="mt-1 font-bold text-gray-900 dark:text-white"><?= $display($queue['program_name'] ?? $queue['nama_program'] ?? NULL) ?></p></div>
+        <div class="kartu-admin isi-kartu"><p class="text-xs text-gray-500 dark:text-brand-muted">Program</p><p class="mt-1 font-bold text-gray-900 dark:text-white"><?= $display($queue['program_name'] ?? $queue['nama_program'] ?? (empty($queue['program_id']) ? 'Hunian sudah layak huni (tanpa program)' : NULL)) ?></p></div>
         <div class="kartu-admin isi-kartu"><p class="text-xs text-gray-500 dark:text-brand-muted">Cabang</p><p class="mt-1 font-bold text-gray-900 dark:text-white"><?= $e($track_labels[$assessment['jalur_penilaian'] ?? ''] ?? 'Belum ditentukan') ?></p></div>
         <div class="kartu-admin isi-kartu"><p class="text-xs text-gray-500 dark:text-brand-muted">Sumber</p><p class="mt-1 font-bold text-gray-900 dark:text-white"><?= $mode_sumber === 'simulation' ? 'SIMPERUM (simulasi)' : ($mode_sumber === 'api' ? 'SIMPERUM' : ($mode_sumber === 'manual' ? 'Diisi mandiri oleh warga' : $display($mode_sumber ?: NULL))) ?></p><p class="mt-1 text-xs font-semibold <?= ! empty($nik_terverifikasi) ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300' ?>" title="Terverifikasi = nama akun dan tanggal lahir pemohon cocok dengan data SIMPERUM untuk NIK ini"><?= ! empty($nik_terverifikasi) ? 'NIK terverifikasi' : 'NIK belum terverifikasi' ?></p></div>
     </div>

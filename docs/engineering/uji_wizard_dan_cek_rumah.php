@@ -434,6 +434,11 @@ for ($i = 0; $i < 14; $i++) {
         'matriks_status_keluarga'=>'family_multi_household',
     ];
     if ($step === 'housing_family_detail') $paksa['tanah_lain'] = '1';
+    // Cabang layak (uji_hunian_layak_tersimpan.php): semua kondisi baik, sanitasi tidak kritis.
+    if (getenv('UJI_CABANG') === 'layak' && $step === 'building_condition') {
+        foreach (['kondisi_pondasi', 'kondisi_kolom', 'kondisi_balok', 'kondisi_sloof', 'kondisi_rangka', 'kondisi_lantai', 'kondisi_dinding', 'kondisi_atap'] as $k) { $paksa[$k] = 'good'; }
+    }
+    if (getenv('UJI_CABANG') === 'layak' && $step === 'sanitation') { $paksa += ['sumber_air' => 'pdam', 'jenis_kloset' => 'swan_neck']; }
     $baru = $warga->minta('warga/pendataan', wizard_medan($form, $paksa))['body'];
     if (wizard_step($baru) === $step) {
         wajib(FALSE, "Wizard mandek di step '{$step}' (tidak maju setelah simpan)");
@@ -447,10 +452,41 @@ cek(getenv('UJI_CABANG') === 'tanah'
     'UAT warga 9: hanya cabang sesuai pilihan yang dilewati');
 cek(array_search('preliminary_recommendation', $dilewati, TRUE) < array_search('housing_family_detail', $dilewati, TRUE), 'UAT warga 9: rekomendasi tampil sebelum data pelengkap');
 cek($matrix_snapshot !== NULL && $matrix_snapshot === $db->baris('SELECT matriks_awal_ciphertext FROM sf_penilaian_perumahan WHERE user_id=? ORDER BY id DESC LIMIT 1', [(string) $akun['id']])['matriks_awal_ciphertext'], 'Snapshot awal tidak ditimpa evaluasi data pelengkap');
+if (getenv('UJI_CABANG') !== 'layak') { // rumah layak: kartu program dan hasil awal sengaja disembunyikan (PR #108)
 cek(strpos($h, 'Rekomendasi awal yang tersimpan') !== FALSE, 'Hasil awal tetap dapat dibuka pada review');
 cek(strpos($h, 'Keterangan lengkap program') !== FALSE && strpos($h, 'white-space:pre-line') !== FALSE,
     'Kartu rekomendasi memuat keterangan lengkap program (deskripsi dan syarat, baris baru dipertahankan)');
+}
 
+$form = wizard_form($h);
+if (getenv('UJI_CABANG') === 'layak') {
+    // Dinas 26 Okt 2026: hunian layak tetap tersimpan, sumber bantuan Sudah Layak Huni dan tahun berjalan.
+    echo "\nD2. HUNIAN LAYAK TETAP TERSIMPAN\n";
+    cek(strpos($h, 'Hunian Anda sudah layak huni') !== FALSE && strpos($h, 'data-simpan-layak') !== FALSE
+        && strpos($h, 'name="rekomendasi_id"') === FALSE, 'Review rumah layak: kotak layak huni dan tombol Simpan Data, tanpa pilihan program');
+    $sebelum = $db->angka('SELECT COALESCE(MAX(id),0) FROM sf_antrean_pengajuan');
+    $r = $warga->minta('warga/pendataan', wizard_medan($form, ['action' => 'submit']));
+    $q = $db->baris('SELECT q.id, q.program_id, q.rekomendasi_id, q.status_antrean, a.bantuan_perumahan, a.tahun_intervensi, a.status
+        FROM sf_antrean_pengajuan q JOIN sf_penilaian_perumahan a ON a.id = q.penilaian_id WHERE q.id > ? AND q.user_id = ?', [(string) $sebelum, (string) $akun['id']]);
+    wajib($q !== NULL, 'Data hunian layak masuk antrean');
+    cek($q['program_id'] === NULL && $q['rekomendasi_id'] === NULL && $q['status_antrean'] === 'pending' && $q['status'] === 'submitted',
+        'Tercatat tanpa program, status pending, draf terkunci (submitted)');
+    cek($q['bantuan_perumahan'] === 'already_habitable' && (int) $q['tahun_intervensi'] === (int) date('Y'),
+        'Sumber bantuan otomatis Sudah Layak Huni, tahun bantuan ' . date('Y'));
+    cek(strpos($r['body'], 'Data hunian layak huni berhasil dicatat') !== FALSE || strpos($warga->minta('akun')['body'], 'Hunian sudah layak huni') !== FALSE,
+        'Warga melihat datanya tercatat sebagai Hunian sudah layak huni');
+    $st = $warga->minta('akun')['body'];
+    cek(strpos($st, 'Hunian sudah layak huni') !== FALSE && strpos($st, 'Data Sudah Tercatat') !== FALSE, 'Status Pencatatan Data: Hunian sudah layak huni, Data Sudah Tercatat');
+    selesai();
+    exit($gagal ? 1 : 0);
+}
+// Keamanan: rumah rusak (ada program RTLH) tidak boleh dikirim sebagai "hunian layak" tanpa program.
+$sebelum_palsu = $db->angka('SELECT COALESCE(MAX(id),0) FROM sf_antrean_pengajuan');
+$warga->minta('warga/pendataan', array_diff_key(wizard_medan($form, ['action' => 'submit']), ['rekomendasi_id' => 1]));
+cek($db->angka('SELECT COUNT(*) FROM sf_antrean_pengajuan WHERE id > ? AND user_id = ?', [(string) $sebelum_palsu, (string) $akun['id']]) === 0,
+    'Rumah yang tidak layak huni ditolak bila dikirim tanpa program (server menilai ulang)');
+$warga->lupakan_token();
+$h = $warga->minta('warga/pendataan')['body'];
 $form = wizard_form($h);
 $payload = wizard_medan($form, ['action' => 'submit']);
 /* Radio ini HANYA dirender kalau ada rekomendasi berstatus eligible/potential
@@ -552,6 +588,12 @@ $w = wilayah_uji((int) $tiket['kabupaten_id']);
 $nama = $db->baris('SELECT k.nama kec, d.nama desa FROM kecamatan k JOIN desa d ON d.kecamatan_id = k.id WHERE d.id = ?', [$w['desa_id']]);
 cek($x['kode'] === 200 && strpos($x['body'], '<Workbook') !== FALSE && strpos($x['body'], 'Desa/Kelurahan') !== FALSE,
     'Superadmin mengunduh Excel antrean dengan kolom wilayah');
+// Dinas 26 Okt 2026: isian pendataan lengkap, berlabel seperti Detail Penilaian Warga (bukan kode mentah).
+$kondisi_atap = $db->baris('SELECT kondisi_atap FROM sf_penilaian_perumahan WHERE user_id = ? ORDER BY id DESC LIMIT 1', [(string) $akun['id']])['kondisi_atap'] ?? '';
+$label_kondisi = ['good' => 'Baik', 'minor_damage' => 'Rusak Ringan (Permukaan)', 'moderate_damage' => 'Rusak Sedang (Material)', 'severe_damage_or_absent' => 'Rusak Berat (Struktur/Tdk Ada)'][$kondisi_atap] ?? '';
+cek(strpos($x['body'], '>Kondisi atap<') !== FALSE && strpos($x['body'], '>Sumber air<') !== FALSE && strpos($x['body'], '>Sloof<') !== FALSE
+    && strpos($x['body'], '>Lintang<') !== FALSE && $label_kondisi !== '' && strpos($x['body'], htmlspecialchars($label_kondisi, ENT_XML1)) !== FALSE,
+    'Excel memuat isian pendataan lengkap berlabel (kondisi atap tiket uji: ' . $label_kondisi . ')');
 cek($nama && strpos($x['body'], htmlspecialchars($nama['kec'], ENT_XML1)) !== FALSE && strpos($x['body'], htmlspecialchars($nama['desa'], ENT_XML1)) !== FALSE
     && strpos($x['body'], (string) $NIK) !== FALSE,
     'Baris tiket uji memuat kecamatan, desa, dan NIK pemohon');

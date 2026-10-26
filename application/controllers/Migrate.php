@@ -598,6 +598,9 @@ class Migrate extends CI_Controller {
         // Migrasi 085 - versi aturan (draf/terbit/arsip); harus ada satu versi terbit.
         echo 'versi aturan (migrasi 085): '.($this->db->table_exists('aturan_versi')
             ? 'ADA (terbit: '.($this->db->select('kode')->where('status', 'terbit')->order_by('diterbitkan_pada', 'DESC')->get('aturan_versi', 1)->row('kode') ?: 'TIDAK ADA').')' : 'HILANG')."\n";
+        // Migrasi 086 - antrean hunian layak tanpa program (program_id boleh NULL).
+        $nul_086 = (string) $this->db->query("SELECT IS_NULLABLE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'sf_antrean_pengajuan' AND COLUMN_NAME = 'program_id'")->row('IS_NULLABLE');
+        echo 'antrean tanpa program (migrasi 086): '.($nul_086 === 'YES' ? 'ADA' : 'HILANG')."\n";
         // Migrasi 076 - kolom alasan_susulan untuk KKN input susulan (bersama kolom 061 dan 062 di bawah).
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062', 'alasan_susulan' => '076'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.

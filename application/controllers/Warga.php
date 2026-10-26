@@ -683,7 +683,9 @@ class Warga extends MY_Controller {
         $this->session->set_flashdata(
             ! empty($result['success']) ? 'success' : 'error',
             ! empty($result['success'])
-                ? 'Pengajuan berhasil dikirim dengan tiket ' . $result['kode_tiket'] . '.'
+                ? ((int) $this->input->post('rekomendasi_id', TRUE) === 0
+                    ? 'Data hunian layak huni berhasil dicatat dengan tiket ' . $result['kode_tiket'] . '.'
+                    : 'Pengajuan berhasil dikirim dengan tiket ' . $result['kode_tiket'] . '.')
                 : ($result['message'] ?? 'Pengajuan belum dapat dikirim.')
         );
         redirect(! empty($result['success']) ? 'akun' : 'warga/pendataan');
