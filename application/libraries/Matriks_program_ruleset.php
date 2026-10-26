@@ -9,6 +9,41 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Matriks_program_ruleset {
 
+    /**
+     * Baris matriks Sheet3 dalam bentuk lama ROWS (A sampai J), dimuat dari aturan_matriks_baris (migrasi 084,
+     * tahap 1 aturan yang bisa diatur dinas). Tanpa argumen (dimuat CodeIgniter) dibaca dari database versi
+     * VERSION; uji tanpa CodeIgniter memberikan barisnya sendiri lewat dari_baris_db().
+     */
+    private $baris;
+
+    public function __construct($baris = NULL)
+    {
+        if ($baris === NULL) {
+            $CI =& get_instance();
+            $baris = self::dari_baris_db($CI->db->order_by('urutan')
+                ->get_where('aturan_matriks_baris', ['versi' => self::VERSION])->result_array());
+        }
+        if ($baris === []) {
+            throw new RuntimeException('Baris matriks ' . self::VERSION . ' belum ada di database (jalankan migrasi 084).');
+        }
+        $this->baris = $baris;
+    }
+
+    /** Baris tabel aturan_matriks_baris (urut) ke bentuk ROWS: desil jadi daftar angka, kolom kosong jadi NULL. */
+    public static function dari_baris_db(array $rows)
+    {
+        $hasil = [];
+        foreach ($rows as $r) {
+            $hasil[] = [
+                $r['rentang_penghasilan'],
+                $r['desil'] === NULL ? NULL : array_map('intval', explode(',', $r['desil'])),
+                $r['status_dtks'], $r['lahan'], $r['rumah'], $r['lingkungan'], $r['finansial'], $r['usia'], $r['keluarga'],
+                $r['nama_skema'],
+            ];
+        }
+        return $hasil;
+    }
+
     const VERSION = 'MATRIKS-2026-09-10';
     // Workbook yang dibaca 10 Sep 2026: Sheet3 A3:J22 (dulu disebut Sheet3).
     const FORM_FIELDS = [
@@ -87,7 +122,7 @@ class Matriks_program_ruleset {
         // rekomendasi berbunyi "perlu dilengkapi: Status DTKS" yang tidak bisa dilengkapi warga.
         $fields = [3=>['land_code','Kepemilikan lahan'],4=>['housing_code','Kepemilikan rumah'],5=>['environment_code','Kondisi lingkungan / bangunan'],6=>['pekerjaan','Kondisi finansial'],8=>['family_code','Kondisi keluarga']];
         $items = [];
-        foreach (self::ROWS as $index => $row) {
+        foreach ($this->baris as $index => $row) {
             [$min,$max] = $ranges[$row[0]];
             // Rentang yang bersinggungan di Excel tetap dapat menghasilkan dua
             // prioritas pada batas persisnya; jangan menciptakan batas baru.
@@ -291,29 +326,6 @@ class Matriks_program_ruleset {
         return count(array_intersect($programs, self::SIMPERUM_REQUIRED_PROGRAMS)) > 0;
     }
 
-    const ROWS = [
-        // A                    B          C           D                  E                          F                                                                G                                       H                I                              J
-        ['income_gt_8_5',       [9, 10],   null,       null,              null,                      null,                                                            null,                                   null,            'family_single',               'Oemah Lestari Non-Subsidi'],
-        ['income_gt_10',        [9, 10],   null,       null,              null,                      null,                                                            null,                                   null,            'family_married',              'Oemah Lestari Non-Subsidi'],
-        ['income_2_8_8_5',      [5, 6, 7, 8], null,    null,              'house_none_or_rent',      null,                                                            'work_stable_or_unstable_no_subsidy',  'produktif_21',  'family_single',               'KPR-FLPP / Oemah Lestari Subsidi'],
-        ['income_2_8_10',       [5, 6, 7, 8], null,    null,              'house_none_or_rent',      null,                                                            'work_stable_or_unstable_no_subsidy',  'produktif_21',  'family_married',              'KPR-FLPP / Oemah Lestari Subsidi'],
-        ['income_2_2_2_8',      [4],       'dtks_ya',  'land_none',       'house_none_or_rent',      'env_safe',                                                      'work_can_save_irregular',             'produktif_21',  null,                          'KPR-FLPP'],
-        ['income_0_1_5',        [1],       'dtks_ya',  'land_legal',      'house_rent_or_staying',   'env_safe',                                                      null,                                   'produktif_18',  'family_multi_household',      'PB Backlog (Prioritas 1)'],
-        ['income_1_5_2_2',      [2, 3],    'dtks_ya',  'land_legal',      'house_rent_or_staying',   'env_safe',                                                      null,                                   'produktif_18',  'family_multi_household',      'PB Backlog (Prioritas 2)'],
-        ['income_2_2_2_8',      [4],       'dtks_ya',  'land_legal',      'house_rent_or_staying',   'env_safe',                                                      null,                                   'produktif_18',  'family_multi_household',      'PB Backlog (Prioritas 3)'],
-        ['income_0_1_5',        [1],       'dtks_ya',  'land_legal',      'house_restricted_area',   'env_relocation_zone',                                           null,                                   null,            'family_head_of_household',    'PB Relokasi (Prioritas 1)'],
-        ['income_1_5_2_2',      [2, 3],    'dtks_ya',  'land_legal',      'house_restricted_area',   'env_relocation_zone',                                           null,                                   null,            'family_head_of_household',    'PB Relokasi (Prioritas 2)'],
-        ['income_2_2_2_8',      [4],       'dtks_ya',  'land_legal',      'house_restricted_area',   'env_relocation_zone',                                           null,                                   null,            'family_head_of_household',    'PB Relokasi (Prioritas 3)'],
-        ['income_0_1_5',        [1],       'dtks_ya',  null,              'house_disaster_affected', 'env_disaster_severe',                                           null,                                   null,            null,                          'PB Bencana (Prioritas 1)'],
-        ['income_1_5_2_2',      [2, 3],    'dtks_ya',  null,              'house_disaster_affected', 'env_disaster_severe',                                           null,                                   null,            null,                          'PB Bencana (Prioritas 2)'],
-        ['income_2_2_2_8',      [4],       'dtks_ya',  null,              'house_disaster_affected', 'env_disaster_severe',                                           null,                                   null,            null,                          'PB Bencana (Prioritas 3)'],
-        ['income_0_1_5',        [1],       'dtks_ya',  null,              'house_disaster_affected', 'env_disaster_moderate',                                         null,                                   null,            null,                          'PK Bencana (Prioritas 1)'],
-        ['income_1_5_2_2',      [2, 3],    'dtks_ya',  null,              'house_disaster_affected', 'env_disaster_moderate',                                         null,                                   null,            null,                          'PK Bencana (Prioritas 2)'],
-        ['income_2_2_2_8',      [4],       'dtks_ya',  null,              'house_disaster_affected', 'env_disaster_moderate',                                         null,                                   null,            null,                          'PK Bencana (Prioritas 3)'],
-        ['income_0_1_5',        [1],       'dtks_ya',  null,              'house_owned',             'env_slum_uninhabitable',                                        null,                                   'produktif_18_or_tua', null,                   'PK RTLH (Prioritas 1)'],
-        ['income_1_5_2_2',      [2, 3],    'dtks_ya',  null,              'house_owned',             'env_slum_uninhabitable',                                        null,                                   'produktif_18_or_tua', null,                   'PK RTLH (Prioritas 2)'],
-        ['income_2_2_2_8',      [4],       'dtks_ya',  null,              'house_owned',             'env_slum_uninhabitable',                                        null,                                   'produktif_18_or_tua', null,                   'PK RTLH (Prioritas 3)'],
-    ];
 
     /**
      * @param array $input Kunci yang dipakai: income_code, desil_kesejahteraan,
@@ -330,7 +342,7 @@ class Matriks_program_ruleset {
     public function match(array $input)
     {
         $matches = [];
-        foreach (self::ROWS as $row) {
+        foreach ($this->baris as $row) {
             [$income, $deciles, $dtks, $land, $housing, $environment, $occupation, $age_rule, $family, $program] = $row;
 
             if ($income !== null && $income !== ($input['income_code'] ?? NULL)) { continue; }

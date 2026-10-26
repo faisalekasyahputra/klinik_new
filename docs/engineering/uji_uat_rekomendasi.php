@@ -3,8 +3,9 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
 define('BASEPATH', __DIR__);
 require dirname(__DIR__, 2) . '/application/libraries/Warga_ruleset.php';
 require dirname(__DIR__, 2) . '/application/libraries/Matriks_program_ruleset.php';
-$matriks = new Matriks_program_ruleset();
-$rules = new Warga_ruleset();
+require __DIR__ . '/_aturan_db.php';
+$matriks = new Matriks_program_ruleset(aturan_matriks_uji());
+$rules = new Warga_ruleset(aturan_program_uji());
 $checks = [
     'Data manual tetap punya kandidat untuk dilengkapi' => $rules->route_candidates(NULL) === ['flpp', 'oemah_lestari'],
     'Desil kosong tidak menjadi kelayakan bantuan' => $rules->evaluate('flpp', [], [])['status_kelayakan'] === 'needs_data',

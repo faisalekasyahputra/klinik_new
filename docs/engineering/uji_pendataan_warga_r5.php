@@ -13,6 +13,7 @@ define('ENV_PATH', env_berkas_path(dirname(__DIR__, 2)));
 define('PASSWORD', getenv('UJI_WARGA_PASSWORD') ?: 'UjiWargaR5!');
 define('BASEPATH', dirname(__DIR__, 2) . '/system/');
 require dirname(__DIR__, 2) . '/application/libraries/Warga_ruleset.php';
+require __DIR__ . '/_aturan_db.php';
 
 $GLOBALS['total'] = $GLOBALS['gagal'] = 0;
 $GLOBALS['users'] = $GLOBALS['assessments'] = $GLOBALS['rate_limit_original'] = [];
@@ -125,7 +126,7 @@ $env=env_config(ENV_PATH); $GLOBALS['db']=$db=new Db($env);
 echo "=== UJI PENDATAAN WARGA R5 ===\nTarget: ".BASE_URL." | DB: {$env['DB_NAME']}\n\n";
 
 // Kontrak ruleset murni: semua desil, tanpa ketergantungan fixture/DB.
-$rules=new Warga_ruleset();
+$rules=new Warga_ruleset(aturan_program_uji());
 $expected=[1=>['rtlh','pb','rumah_apung'],2=>['rtlh','pb','rumah_apung'],3=>['rtlh','pb','rumah_apung'],4=>['pb','omah_sekeng','rumah_apung'],5=>['flpp','oemah_lestari','rumah_apung'],6=>['flpp','oemah_lestari','rumah_apung'],7=>['flpp','oemah_lestari','rumah_apung'],8=>['flpp','oemah_lestari','rumah_apung'],9=>['oemah_lestari','rumah_apung'],10=>['oemah_lestari','rumah_apung']];
 foreach($expected as $desil=>$codes) cek($rules->route_candidates($desil)===$codes,"Routing desil $desil tepat");
 cek(in_array('pb',$rules->route_candidates(3),TRUE) && !in_array('omah_sekeng',$rules->route_candidates(3),TRUE),'SIM-03 desil 3 merutekan PB, bukan Omah Sekeng');

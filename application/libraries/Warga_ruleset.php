@@ -7,24 +7,52 @@ class Warga_ruleset {
     public const STATUS = 'active';
     public const EFFECTIVE_FROM = '2026-07-28 00:00:00';
 
+    /**
+     * Aturan per program dari aturan_program (migrasi 084, tahap 1 aturan yang bisa diatur dinas), urut
+     * `urutan`, berkunci kode program: desil[], tanpa_desil, cek (jenis_cek), alasan (kode_alasan). Tanpa argumen (dimuat
+     * CodeIgniter) dibaca dari database versi VERSION; uji tanpa CodeIgniter memberikannya lewat dari_baris_db().
+     */
+    private $aturan;
+
+    public function __construct($aturan = NULL)
+    {
+        if ($aturan === NULL) {
+            $CI =& get_instance();
+            $aturan = self::dari_baris_db($CI->db->select('p.kode_program, a.desil_sasaran, a.kandidat_tanpa_desil, a.jenis_cek, a.kode_alasan')
+                ->from('aturan_program a')->join('sf_program p', 'p.id = a.program_id')
+                ->where('a.versi', self::VERSION)->order_by('a.urutan')->get()->result_array());
+        }
+        if ($aturan === []) {
+            throw new RuntimeException('Aturan program ' . self::VERSION . ' belum ada di database (jalankan migrasi 084).');
+        }
+        $this->aturan = $aturan;
+    }
+
+    /** Baris aturan_program + kode_program (urut) ke bentuk yang dipakai mesin, berkunci kode program. */
+    public static function dari_baris_db(array $rows)
+    {
+        $hasil = [];
+        foreach ($rows as $r) {
+            $hasil[$r['kode_program']] = [
+                'desil' => array_map('intval', explode(',', $r['desil_sasaran'])),
+                'tanpa_desil' => (int) $r['kandidat_tanpa_desil'] === 1,
+                'cek' => $r['jenis_cek'], 'alasan' => $r['kode_alasan'],
+            ];
+        }
+        return $hasil;
+    }
+
     public function route_candidates($decile)
     {
         $decile = (int) $decile;
-        if ($decile < 1 || $decile > 10) {
-            // Kandidat awal untuk data manual; evaluate tetap meminta desil
+        $candidates = [];
+        foreach ($this->aturan as $code => $a) {
+            // Desil kosong: kandidat awal untuk data manual; evaluate tetap meminta desil
             // terverifikasi dan tidak mengubahnya menjadi penerima yang layak.
-            return ['flpp', 'oemah_lestari'];
+            if ($decile < 1 || $decile > 10 ? $a['tanpa_desil'] : in_array($decile, $a['desil'], TRUE)) {
+                $candidates[] = $code;
+            }
         }
-        if ($decile <= 3) {
-            $candidates = ['rtlh', 'pb'];
-        } elseif ($decile === 4) {
-            $candidates = ['pb', 'omah_sekeng'];
-        } elseif ($decile <= 8) {
-            $candidates = ['flpp', 'oemah_lestari'];
-        } else {
-            $candidates = ['oemah_lestari'];
-        }
-        $candidates[] = 'rumah_apung';
         return $candidates;
     }
 
@@ -34,22 +62,17 @@ class Warga_ruleset {
         if ($decile < 1 || $decile > 10) {
             return $this->result('needs_data', ['SIM_DECILE_MISSING']);
         }
-        if ($code === 'rumah_apung') {
-            return $this->result('needs_data', ['SIM_RUMAH_APUNG_NEEDS_DATA']);
-        }
-        $target_deciles = [
-            'rtlh' => [1, 2, 3],
-            'pb' => [1, 2, 3, 4],
-            'omah_sekeng' => [4],
-            'flpp' => [5, 6, 7, 8],
-            'oemah_lestari' => [5, 6, 7, 8, 9, 10],
-        ];
-        if ( ! isset($target_deciles[$code]) || ! in_array($decile, $target_deciles[$code], TRUE)) {
+        $aturan = $this->aturan[$code] ?? NULL;
+        if ($aturan === NULL || ! in_array($decile, $aturan['desil'], TRUE)) {
             return $this->result('not_eligible', ['SIM_DESIL_TIDAK_SESUAI']);
+        }
+        $cek = $aturan['cek'];
+        if ($cek === 'belum_tersedia') {
+            return $this->result('needs_data', [$aturan['alasan']]);
         }
 
         $track = $assessment['jalur_penilaian'] ?? 'undetermined';
-        if ($code === 'rtlh') {
+        if ($cek === 'rtlh_kerusakan') {
             if ($track !== 'existing_house') {
                 return $this->result('not_eligible', ['SIM_TRACK_TIDAK_SESUAI']);
             }
@@ -68,7 +91,7 @@ class Warga_ruleset {
                 : $this->result('needs_data', ['SIM_RTLH_DAMAGE']);
         }
 
-        if ($code === 'pb') {
+        if ($cek === 'pb_lahan') {
             $ready = $track === 'candidate_land'
                 && ! empty($assessment['punya_lahan_calon'])
                 && ! empty($assessment['candidate_land_address'])
@@ -82,7 +105,7 @@ class Warga_ruleset {
                 : $this->result('needs_data', ['SIM_PB_LAND_READY']);
         }
 
-        if ($code === 'omah_sekeng') {
+        if ($cek === 'swadaya') {
             if (empty($profile['mampu_swadaya'])) {
                 return $this->result('needs_data', ['SIM_OMAH_DESIL4_SELF_HELP']);
             }
@@ -95,6 +118,9 @@ class Warga_ruleset {
             return $this->result('needs_data', ['SIM_OMAH_KEBUTUHAN_BELUM_TERVERIFIKASI']);
         }
 
+        if ($cek !== 'pembiayaan') {
+            throw new RuntimeException("Jenis cek aturan program tidak dikenal: $cek ($code)");
+        }
         // Cabang formulir bukan status kepemilikan: nonpemilik mengisi
         // candidate_land pada UAT terbaru, termasuk calon pembiayaan.
         if (! in_array($track, ['financing', 'candidate_land'], TRUE)) {
@@ -112,9 +138,7 @@ class Warga_ruleset {
         if (empty($profile['kelompok_penghasilan']) && ! isset($profile['penghasilan_bulanan'])) {
             return $this->result('needs_data', ['SIM_INCOME_MISSING']);
         }
-        return $this->result('potential', [
-            $code === 'flpp' ? 'SIM_FLPP_INCOME' : 'SIM_OEMAH_INCOME',
-        ]);
+        return $this->result('potential', [$aturan['alasan']]);
     }
 
     /**
