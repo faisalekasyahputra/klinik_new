@@ -21,11 +21,11 @@ $gaya_tombol = 'background:var(--portal-brand);color:var(--portal-btn-text);bord
         <?php if ($p['lencana']): ?>
           <p class="mt-2 inline-block rounded-full px-3 py-1 text-[11px] font-bold" style="background:var(--portal-bg);border:1px solid var(--portal-border)">Sasaran: <?= $e($p['lencana']) ?></p>
         <?php endif; ?>
-        <p class="mt-4 max-w-3xl text-sm leading-relaxed"><?= $e($p['deskripsi_singkat']) ?></p>
+        <p class="mt-4 max-w-3xl text-sm leading-relaxed" style="white-space:pre-line"><?= $e($p['deskripsi_singkat']) ?></p>
 
         <div class="mt-5 rounded-xl p-4" style="background:var(--portal-bg);border:1px solid var(--portal-border)">
           <p class="text-[10px] font-black uppercase tracking-wider" style="color:var(--portal-text-muted)">Syarat utama</p>
-          <p class="mt-1 text-sm font-semibold"><?= $e($p['syarat_utama'] ?: 'Dinilai dari data pendataan rumah dan penghasilan Anda.') ?></p>
+          <p class="mt-1 text-sm font-semibold" style="white-space:pre-line"><?= $e($p['syarat_utama'] ?: 'Dinilai dari data pendataan rumah dan penghasilan Anda.') ?></p>
         </div>
 
         <div class="mt-6 flex flex-wrap items-center gap-3">

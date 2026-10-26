@@ -51,6 +51,9 @@ if (!empty($can_filter_tanpa_wilayah)): ?>
 <a href="<?= admin_table_url($base_url, ['tanpa_wilayah' => NULL]) ?>" class="chip-filter"<?= empty($filter_tanpa_wilayah) ? ' aria-current="true"' : '' ?>>Semua</a>
 <a href="<?= admin_table_url($base_url, ['tanpa_wilayah' => '1']) ?>" class="chip-filter"<?= !empty($filter_tanpa_wilayah) ? ' aria-current="true"' : '' ?>>Belum terpetakan</a>
 <?php endif;
+if ($base_url === 'Admin'): // Unduh Excel hanya superadmin; mengikuti penyaring status dan wilayah yang aktif. ?>
+<a href="<?= site_url('Admin/unduh') . '?' . http_build_query(array_filter(['status' => $filter_status ?? NULL, 'tanpa_wilayah' => !empty($filter_tanpa_wilayah) ? '1' : NULL])) ?>" class="chip-filter" download><i class="ph ph-microsoft-excel-logo"></i> Unduh Excel</a>
+<?php endif;
 $filter_html = ob_get_clean();
 ?>
 

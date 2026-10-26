@@ -107,7 +107,14 @@ $config['dashboard_modules'] = [
     'status_pengajuan' => [
         'label' => 'Status Pengajuan', 'icon' => 'ph-list-checks',
         'url'   => 'akun', 'group' => 'Akun', 'order' => 10,
-        'roles' => ['warga', 'pengembang', 'mahasiswa'],
+        'roles' => ['pengembang', 'mahasiswa'],
+        'scope' => null,
+    ],
+    // Permintaan dinas 26 Okt 2026: bagi warga, kirim pendataan = data tercatat, bukan pengajuan yang ditunggu.
+    'status_pencatatan_data' => [
+        'label' => 'Status Pencatatan Data', 'icon' => 'ph-list-checks',
+        'url'   => 'akun', 'group' => 'Akun', 'order' => 10,
+        'roles' => ['warga'],
         'scope' => null,
     ],
     'dokumen_srp2' => [
