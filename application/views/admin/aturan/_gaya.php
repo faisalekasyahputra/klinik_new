@@ -6,6 +6,7 @@
 .dark .lencana-draf { color: #fbbf24; } .dark .lencana-ya { color: #6ee7b7; } .dark .lencana-tidak { color: #94a3b8; }
 .kartu-program { display: flex; flex-direction: column; padding: 18px 20px 14px; }
 .kartu-program-kepala { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.thumb-program { width: 64px; height: 44px; flex-shrink: 0; border-radius: 8px; object-fit: cover; border: 1px solid rgba(148,163,184,.25); }
 .kartu-program-isi { margin: 16px 0; display: grid; gap: 12px; font-size: 13px; }
 .kartu-program-isi dt { font-size: 11px; font-weight: 600; color: #6b7280; margin-bottom: 4px; }
 .dark .kartu-program-isi dt { color: #8aa0a8; }

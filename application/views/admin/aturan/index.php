@@ -37,9 +37,10 @@ $petunjuk = 'text-xs text-gray-500 dark:text-brand-muted';
                 <div class="min-w-0">
                     <h2 class="text-[15px] font-bold leading-snug text-gray-900 dark:text-white"><?= html_escape($p['nama_program']) ?></h2>
                     <p class="mt-0.5 font-mono text-[11px] text-gray-400"><?= html_escape($p['kode_program']) ?></p>
+                    <?php if ( ! $a): ?><span class="lencana-tidak mt-2 inline-block">Belum ditawarkan</span>
+                    <?php elseif ((int) $p['aktif'] !== 1): ?><span class="lencana-tidak mt-2 inline-block">Nonaktif di katalog</span><?php endif; ?>
                 </div>
-                <?php if ( ! $a): ?><span class="lencana-tidak">Belum ditawarkan</span>
-                <?php elseif ((int) $p['aktif'] !== 1): ?><span class="lencana-tidak">Nonaktif di katalog</span><?php endif; ?>
+                <img src="<?= base_url($p['gambar_tampil']) ?>" alt="" class="thumb-program" loading="lazy">
             </header>
             <dl class="kartu-program-isi">
                 <div>
