@@ -16,7 +16,8 @@ $petunjuk = 'text-xs text-gray-500 dark:text-brand-muted';
 <div class="tumpuk-bagian">
     <section class="kartu-admin isi-kartu flex flex-wrap items-center justify-between gap-3" data-status-aturan>
         <div>
-            <p class="<?= $judul ?>">Versi terbit: <code><?= html_escape($aktif['kode'] ?? '-') ?></code></p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-brand-muted">Versi terbit</p>
+            <p class="mt-0.5 font-mono text-base font-bold text-gray-900 dark:text-white"><?= html_escape($aktif['kode'] ?? '-') ?></p>
             <p class="<?= $petunjuk ?> mt-1">Dipakai sejak <?= ! empty($aktif['diterbitkan_pada']) ? html_escape(date('d-m-Y H:i', strtotime($aktif['diterbitkan_pada']))) : '-' ?>.
                 <?= $ada_draf ? 'Draf <code>' . html_escape($draf['kode']) . '</code> sedang disunting, belum berlaku.' : 'Buat draf untuk mengubah aturan.' ?></p>
         </div>
@@ -29,23 +30,36 @@ $petunjuk = 'text-xs text-gray-500 dark:text-brand-muted';
         <?php endif; ?>
     </section>
 
-    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" data-daftar-program>
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3" data-daftar-program>
         <?php foreach ($katalog as $p): $a = $aturan[$p['id']] ?? NULL; $desil = $a ? array_map('intval', explode(',', $a['desil_sasaran'])) : []; ?>
-        <a href="<?= base_url('Admin_Aturan/program/' . (int) $p['id']) ?>" class="kartu-admin isi-kartu kartu-program block" data-program="<?= html_escape($p['kode_program']) ?>">
-            <div class="flex items-start justify-between gap-2">
-                <div>
-                    <p class="<?= $judul ?>"><?= html_escape($p['nama_program']) ?></p>
-                    <p class="<?= $petunjuk ?>"><code><?= html_escape($p['kode_program']) ?></code><?= (int) $p['aktif'] === 1 ? '' : ' · nonaktif di katalog' ?></p>
+        <article class="kartu-admin kartu-program" data-program="<?= html_escape($p['kode_program']) ?>">
+            <header class="kartu-program-kepala">
+                <div class="min-w-0">
+                    <h2 class="text-[15px] font-bold leading-snug text-gray-900 dark:text-white"><?= html_escape($p['nama_program']) ?></h2>
+                    <p class="mt-0.5 font-mono text-[11px] text-gray-400"><?= html_escape($p['kode_program']) ?></p>
                 </div>
-                <span class="<?= $a ? 'lencana-ya' : 'lencana-tidak' ?>"><?= $a ? 'Ditawarkan' : 'Belum ditawarkan' ?></span>
-            </div>
-            <div class="mt-3 flex flex-wrap gap-1" aria-label="Desil sasaran">
-                <?php for ($d = 1; $d <= 10; $d++): ?><span class="desil-mini<?= in_array($d, $desil, TRUE) ? ' nyala' : '' ?>"><?= $d ?></span><?php endfor; ?>
-            </div>
-            <p class="<?= $petunjuk ?> mt-3"><?= $a ? html_escape(Warga_ruleset::JENIS_CEK[$a['jenis_cek']]['label'] ?? $a['jenis_cek']) : 'Belum ada aturan' ?>
-                · <?= (int) ($jml_baris[$p['id']] ?? 0) ?> baris matriks</p>
-            <p class="mt-3 text-xs font-bold text-brand-primary">Atur aturan <i class="ph ph-arrow-right"></i></p>
-        </a>
+                <?php if ( ! $a): ?><span class="lencana-tidak">Belum ditawarkan</span>
+                <?php elseif ((int) $p['aktif'] !== 1): ?><span class="lencana-tidak">Nonaktif di katalog</span><?php endif; ?>
+            </header>
+            <dl class="kartu-program-isi">
+                <div>
+                    <dt>Desil sasaran</dt>
+                    <dd class="flex flex-wrap gap-1"><?php for ($d = 1; $d <= 10; $d++): ?><span class="desil-mini<?= in_array($d, $desil, TRUE) ? ' nyala' : '' ?>"><?= $d ?></span><?php endfor; ?></dd>
+                </div>
+                <div>
+                    <dt>Data wajib</dt>
+                    <dd><?= $a ? html_escape(Warga_ruleset::JENIS_CEK[$a['jenis_cek']]['label'] ?? $a['jenis_cek']) : '<span class="text-gray-400">Belum diatur</span>' ?></dd>
+                </div>
+                <div>
+                    <dt>Matriks awal</dt>
+                    <dd><?= (int) ($jml_baris[$p['id']] ?? 0) ? (int) $jml_baris[$p['id']] . ' baris' : '<span class="text-gray-400">Tidak ada baris</span>' ?></dd>
+                </div>
+            </dl>
+            <footer class="kartu-program-kaki">
+                <span class="text-[11px] text-gray-400"><?= $a ? 'Urutan tampil ' . (int) $a['urutan'] : '' ?></span>
+                <a href="<?= base_url('Admin_Aturan/program/' . (int) $p['id']) ?>" class="tombol-aksi"><i class="ph ph-sliders-horizontal" aria-hidden="true"></i><span>Atur</span></a>
+            </footer>
+        </article>
         <?php endforeach; ?>
     </div>
 
@@ -81,12 +95,17 @@ $petunjuk = 'text-xs text-gray-500 dark:text-brand-muted';
 
     <section class="kartu-admin isi-kartu">
         <h2 class="<?= $judul ?>">Riwayat versi</h2>
-        <ul class="mt-2 text-xs text-gray-600 dark:text-gray-300">
+        <table class="mt-3 w-full text-left text-xs">
+            <thead class="text-gray-500 dark:text-brand-muted"><tr><th class="py-1.5 pr-4 font-semibold">Versi</th><th class="py-1.5 pr-4 font-semibold">Status</th>
+                <th class="py-1.5 pr-4 font-semibold">Diterbitkan</th><th class="py-1.5 font-semibold">Catatan</th></tr></thead>
+            <tbody class="divide-y divide-gray-200 text-gray-700 dark:divide-white/5 dark:text-gray-300">
             <?php foreach ($riwayat as $v): ?>
-            <li><code><?= html_escape($v['kode']) ?></code> · <?= $v['status'] === 'terbit' ? '<b>terbit</b>' : 'arsip' ?>
-                · <?= ! empty($v['diterbitkan_pada']) ? html_escape(date('d-m-Y H:i', strtotime($v['diterbitkan_pada']))) : '-' ?>
-                <?= $v['catatan'] ? '· ' . html_escape($v['catatan']) : '' ?></li>
+                <tr><td class="py-2 pr-4 font-mono"><?= html_escape($v['kode']) ?></td>
+                    <td class="py-2 pr-4"><?= $v['status'] === 'terbit' ? '<span class="lencana-ya">Terbit</span>' : 'Arsip' ?></td>
+                    <td class="py-2 pr-4 whitespace-nowrap"><?= ! empty($v['diterbitkan_pada']) ? html_escape(date('d-m-Y H:i', strtotime($v['diterbitkan_pada']))) : '-' ?></td>
+                    <td class="py-2"><?= html_escape((string) $v['catatan']) ?></td></tr>
             <?php endforeach; ?>
-        </ul>
+            </tbody>
+        </table>
     </section>
 </div>
