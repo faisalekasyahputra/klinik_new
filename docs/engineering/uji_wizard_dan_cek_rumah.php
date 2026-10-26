@@ -366,6 +366,11 @@ foreach (['pekerjaan', 'pendidikan', 'jenis_kelamin'] as $field) {
         'SIMPERUM mengisi otomatis ' . $field);
 }
 
+/* Isian wilayah berjenjang wajib sejak migrasi 083: kode Kepmendagri sah untuk kabupaten fixture SIMPERUM lokal
+   (KodeDagri fixture tiruan, jadi tidak terisi otomatis). Kabupaten draft dipertahankan supaya cakupan uji tetap. */
+function wilayah_uji($kab) { $peta = [3301 => ['330101', '3301012001'], 3374 => ['337401', '3374011001']];
+  $kab = isset($peta[(int) $kab]) ? (int) $kab : 3374;
+  return ['kabupaten_id' => (string) $kab, 'kecamatan_id' => $peta[$kab][0], 'desa_id' => $peta[$kab][1]]; }
 $dilewati = [];
 $profile_before = $db->baris('SELECT no_hp_ciphertext, asal_isian_json FROM sf_profil_warga WHERE user_id=?', [(string) $akun['id']]);
 $source_phone = $xpath_prefill->query('//input[@name="phone"]')->item(0)->getAttribute('value');
@@ -420,6 +425,7 @@ for ($i = 0; $i < 14; $i++) {
     $dilewati[] = $step;
     if ($step === 'review') { break; }
     $paksa = ['action' => 'save'];
+    if ($step === 'housing_family') $paksa = wilayah_uji($db->baris('SELECT kabupaten_id FROM sf_penilaian_perumahan WHERE user_id=? AND status=\'draft\' ORDER BY id DESC LIMIT 1', [(string) $akun['id']])['kabupaten_id'] ?? 3374) + $paksa;
     if ($step === 'housing_family') $paksa += [
         'kepemilikan_rumah'=>getenv('UJI_CABANG') === 'tanah' ? 'staying' : 'owned',
         'penghasilan_bulanan'=>'1200000',

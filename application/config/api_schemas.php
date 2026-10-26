@@ -171,6 +171,13 @@ $config['api_schemas'] = [
             '_'            => ['type' => 'int', 'min' => 0],
         ]]],
     ],
+    'warga/wilayah' => [
+        'class' => 'cari', 'json' => TRUE,
+        'methods' => ['GET' => ['unknown' => 'reject', 'fields' => [
+            'kabupaten_id' => ['type' => 'int', 'min' => 1, 'max' => 9999],
+            'kecamatan_id' => ['type' => 'string', 'max_len' => 6, 'pattern' => '/^\d{6}$/D'],
+        ]]],
+    ],
 
     // ------------------------------------------------------------- Keputusan antrean admin (formulir, XHR opsional)
     'admin/update_status' => [

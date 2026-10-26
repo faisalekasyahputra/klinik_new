@@ -88,7 +88,12 @@ function draft($db, $user) {
     $r = $db->row('SELECT a.* FROM sf_penilaian_perumahan a WHERE a.user_id=? AND a.status=\'draft\' ORDER BY a.id DESC LIMIT 1', [$user]);
     wajib((bool)$r, 'Draft warga tersedia'); if (!in_array((int)$r['id'], $GLOBALS['assessments'], TRUE)) $GLOBALS['assessments'][] = (int)$r['id']; return $r;
 }
-function post_step($s, $d, $step, $data) { $r = $s->post('warga/pendataan', $data + ['action'=>'save','step'=>$step,'direction'=>'next','penilaian_id'=>$d['id'],'versi_kunci'=>$d['versi_kunci']]); return $r; }
+/* Isian wilayah berjenjang wajib sejak migrasi 083: kode Kepmendagri sah untuk kabupaten fixture SIMPERUM lokal
+   (KodeDagri fixture tiruan, jadi tidak terisi otomatis). Kabupaten draft dipertahankan supaya cakupan uji tetap. */
+function wilayah_uji($kab) { $peta = [3301 => ['330101', '3301012001'], 3374 => ['337401', '3374011001']];
+  $kab = isset($peta[(int) $kab]) ? (int) $kab : 3374;
+  return ['kabupaten_id' => (string) $kab, 'kecamatan_id' => $peta[$kab][0], 'desa_id' => $peta[$kab][1]]; }
+function post_step($s, $d, $step, $data) { if ($step === 'housing_family') { $data += wilayah_uji($d['kabupaten_id']); } $r = $s->post('warga/pendataan', $data + ['action'=>'save','step'=>$step,'direction'=>'next','penilaian_id'=>$d['id'],'versi_kunci'=>$d['versi_kunci']]); return $r; }
 function citizen_fields() { return ['family_card_number'=>'0000000000001111','full_name'=>'Warga Uji R4','address'=>'Alamat Uji R4','phone'=>'081234567890','birth_date'=>'1980-01-01','jenis_kelamin'=>'male','status_perkawinan'=>'married','pendidikan'=>'senior_high','pekerjaan'=>'private_employee','kelompok_penghasilan'=>'2_2_2_6','mampu_swadaya'=>'capable','punya_tabungan'=>'1']; }
 /* Wizard berubah 23-24 Agt 2026: `citizen_data` DIHAPUS (cfbd760 + migrasi 049),
    isiannya pindah ke `housing_family_detail`, dan `housing_family` kini berisi
@@ -176,7 +181,12 @@ nik_bebas($db, $env, '0000000000000001');
 [$existingUser, $existingEmail] = make_user($db, 'existing', 'Warga Simulasi RTLH'); $existing = login($existingEmail);
 $r = $existing->post('warga/pendataan', ['action'=>'lookup','nik'=>'0000000000000001','birth_date'=>'1980-01-01']); wajib(in_array($r['status'], [302,303], TRUE), 'Lookup existing redirect');
 $d = draft($db, $existingUser); wajib($d['langkah_sekarang'] === 'housing_family', 'Existing masuk isian matriks');
+// Migrasi 083: jenjang wilayah diperiksa server; desa dari kecamatan/kabupaten lain ditolak, langkah tidak maju.
+$d0 = draft($db, $existingUser); $wil = wilayah_uji($d0['kabupaten_id']);
+$r = post_step($existing, $d0, 'housing_family', ['desa_id' => wilayah_uji((int) $wil['kabupaten_id'] === 3301 ? 3374 : 3301)['desa_id']] + $wil + matriks('house_owned'));
+$d0 = draft($db, $existingUser); cek(in_array($r['status'], [302,303], TRUE) && $d0['langkah_sekarang'] === 'housing_family' && $d0['desa_id'] === NULL, 'Desa yang tidak berada di kecamatan terpilih ditolak');
 $d = maju_ke_detail($existing, $db, $existingUser, 'house_owned'); wajib($d['langkah_sekarang'] === 'housing_family_detail', 'Existing sampai langkah detail');
+cek($d['kecamatan_id'] === $wil['kecamatan_id'] && $d['desa_id'] === $wil['desa_id'] && (string) $d['kabupaten_id'] === $wil['kabupaten_id'], 'Kabupaten, kecamatan, dan desa tersimpan di draft');
 $r = post_step($existing, $d, 'housing_family_detail', citizen_fields() + housing_fields('owned','0')); wajib(in_array($r['status'], [302,303], TRUE), 'Existing simpan Data Warga'); $d = draft($db, $existingUser);
 wajib($d['jalur_penilaian']==='existing_house' && $d['langkah_sekarang']==='building_condition', 'Satu submit detail menetapkan cabang rumah eksisting dan lanjut ke Kondisi Bangunan');
 $invalid = post_step($existing, $d, 'building_condition', ['kondisi_pondasi'=>'PALSUE_ENUM']); cek(in_array($invalid['status'], [302,303], TRUE) && draft($db,$existingUser)['langkah_sekarang']==='building_condition', 'Enum kondisi bangunan ilegal ditolak');

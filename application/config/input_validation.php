@@ -280,6 +280,8 @@ $config['input_allowed_fields'] = [
        tanpa daftar ini langkah Data untuk Rekomendasi dijawab 400 di production. */
     'address',
     'kawasan_perumahan',
+    'kecamatan_id', // Warga::wilayah dan isian berjenjang pendataan (migrasi 083)
+    'desa_id',
     'kondisi_balok',
     'candidate_land_address',
     'asal_lahan_calon',

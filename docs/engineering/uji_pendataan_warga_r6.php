@@ -123,7 +123,12 @@ function draft($db,$user) {
     if(!empty($r['rekaman_simperum_id'])&&!in_array((int)$r['rekaman_simperum_id'],$GLOBALS['snapshots'],TRUE))$GLOBALS['snapshots'][]=(int)$r['rekaman_simperum_id'];
     return $r;
 }
-function post_step($s,$d,$step,$data){return $s->post('warga/pendataan',$data+['action'=>'save','step'=>$step,'direction'=>'next','penilaian_id'=>$d['id'],'versi_kunci'=>$d['versi_kunci']]);}
+/* Isian wilayah berjenjang wajib sejak migrasi 083: kode Kepmendagri sah untuk kabupaten fixture SIMPERUM lokal
+   (KodeDagri fixture tiruan, jadi tidak terisi otomatis). Kabupaten draft dipertahankan supaya cakupan uji tetap. */
+function wilayah_uji($kab) { $peta = [3301 => ['330101', '3301012001'], 3374 => ['337401', '3374011001']];
+  $kab = isset($peta[(int) $kab]) ? (int) $kab : 3374;
+  return ['kabupaten_id' => (string) $kab, 'kecamatan_id' => $peta[$kab][0], 'desa_id' => $peta[$kab][1]]; }
+function post_step($s,$d,$step,$data){if($step==='housing_family'){$data+=wilayah_uji($d['kabupaten_id']);}return $s->post('warga/pendataan',$data+['action'=>'save','step'=>$step,'direction'=>'next','penilaian_id'=>$d['id'],'versi_kunci'=>$d['versi_kunci']]);}
 function citizen($name='Warga Uji R6'){return ['family_card_number'=>'0000000000006666','full_name'=>$name,'address'=>'Alamat Koreksi Uji R6','phone'=>'081234567890','birth_date'=>'1980-01-01','jenis_kelamin'=>'male','status_perkawinan'=>'married','pendidikan'=>'senior_high','pekerjaan'=>'private_employee','kelompok_penghasilan'=>'2_2_2_6','mampu_swadaya'=>'capable','punya_tabungan'=>'1'];}
 /* Wizard berubah 23-24 Agt 2026: `citizen_data` DIHAPUS (cfbd760 + migrasi 049),
    isiannya pindah ke `housing_family_detail`, dan `housing_family` kini berisi

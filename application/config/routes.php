@@ -72,6 +72,7 @@ $route['push/unsubscribe']         = 'Push/unsubscribe';
 
 // --- Pendataan warga ---
 $route['warga/pendataan']          = 'Warga/pendataan';
+$route['warga/wilayah']            = 'Warga/wilayah';
 
 // --- Pengaturan User ---
 $route['akun']                     = 'Pengaturan/index';

@@ -16,6 +16,8 @@ class Housing_assessment_model extends CI_Model {
     ];
 
     private const DRAFT_FIELDS = [
+        // Wilayah rumah yang didata (migrasi 083); kabupaten_id juga menentukan admin kab/kota yang menerima.
+        'kabupaten_id', 'kecamatan_id', 'desa_id',
         'langkah_sekarang', 'jalur_penilaian', 'kepemilikan_rumah', 'kepemilikan_lahan',
         'tanah_lain', 'rumah_lain', 'luas_rumah',
         'jml_penghuni', 'jml_kk', 'bantuan_perumahan',
@@ -1063,7 +1065,39 @@ class Housing_assessment_model extends CI_Model {
                 }
             }
         }
+        // KodeDagri SIMPERUM 10 digit = kode desa Kepmendagri; 6 digit pertama = kecamatan (migrasi 083).
+        $kode = preg_replace('/\D+/', '', (string) ($payload['source']['raw_record']['KodeDagri'] ?? ''));
+        $wilayah = strlen($kode) === 10 ? $this->wilayah_sah(substr($kode, 0, 4), substr($kode, 0, 6), $kode) : NULL;
+        if ($wilayah) { $prefill += $wilayah; }
         return $prefill;
+    }
+
+    /** Kecamatan satu kabupaten, urut nama, untuk isian berjenjang Pendataan Warga. */
+    public function daftar_kecamatan($kabupaten_id)
+    {
+        return $this->db->select('id, nama')->where('kabupaten_id', (int) $kabupaten_id)->order_by('nama')->get('kecamatan')->result_array();
+    }
+
+    /** Desa/kelurahan satu kecamatan, urut nama. */
+    public function daftar_desa($kecamatan_id)
+    {
+        return $this->db->select('id, nama')->where('kecamatan_id', (string) $kecamatan_id)->order_by('nama')->get('desa')->result_array();
+    }
+
+    /**
+     * ['kabupaten_id'=>, 'kecamatan_id'=>, 'desa_id'=>] bila ketiganya ada dan saling berjenjang (desa di kecamatan itu,
+     * kecamatan di kabupaten itu), selain itu NULL. Satu-satunya pemeriksa jenjang wilayah, dipakai isi otomatis dan validasi.
+     */
+    public function wilayah_sah($kabupaten_id, $kecamatan_id, $desa_id)
+    {
+        $kabupaten_id = (string) $kabupaten_id; $kecamatan_id = (string) $kecamatan_id; $desa_id = (string) $desa_id;
+        if ( ! preg_match('/^\d{4}$/', $kabupaten_id) || ! preg_match('/^\d{6}$/', $kecamatan_id) || ! preg_match('/^\d{10}$/', $desa_id)
+            || strpos($kecamatan_id, $kabupaten_id) !== 0 || strpos($desa_id, $kecamatan_id) !== 0) {
+            return NULL;
+        }
+        $ada = $this->db->from('desa d')->join('kecamatan k', 'k.id = d.kecamatan_id')
+            ->where(['d.id' => $desa_id, 'k.id' => $kecamatan_id, 'k.kabupaten_id' => (int) $kabupaten_id])->count_all_results() === 1;
+        return $ada ? ['kabupaten_id' => (int) $kabupaten_id, 'kecamatan_id' => $kecamatan_id, 'desa_id' => $desa_id] : NULL;
     }
 
     public function save_owned_step(
