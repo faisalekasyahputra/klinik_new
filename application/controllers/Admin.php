@@ -72,9 +72,16 @@ class Admin extends Admin_Controller {
 
         $label = housing_queue_statuses();
         $this->load->library('Matriks_program_ruleset');
+        // Isian pendataan lengkap (permintaan dinas 26 Okt 2026), label sama dengan Detail Penilaian Warga.
+        $this->config->load('label_pendataan', TRUE);
+        $kolom = $this->config->item('label_pendataan_kolom', 'label_pendataan');
+        $nilai = $this->config->item('label_pendataan_nilai', 'label_pendataan');
+        $angka = $this->config->item('label_pendataan_angka', 'label_pendataan');
         $isi = [];
         foreach ($rows as $r) {
             $this->buka_pii_antrean($r);
+            // ponytail: satu kueri detail per baris (dekripsi penilaian); cukup untuk ratusan baris antrean.
+            $penilaian = $r->penilaian_id ? ($this->Housing_assessment_model->get_scoped_queue_detail((int) $r->id)['assessment'] ?? []) : [];
             $survey   = json_decode((string) $r->data_survey_json, TRUE) ?: [];
             $simperum = json_decode((string) $r->data_simperum_json, TRUE) ?: [];
             $profil = [];
@@ -92,21 +99,33 @@ class Admin extends Admin_Controller {
             $isi[] = [
                 $r->kode_tiket, date('d-m-Y H:i', strtotime($r->created_at)),
                 $profil['full_name'] ?? $r->nama_lengkap, $profil['nik'] ?? $r->nik_pengaju,
-                $r->nama_program, $label[$r->status_antrean]['label'] ?? $r->status_antrean,
+                $r->nama_program ?? 'Hunian sudah layak huni', $label[$r->status_antrean]['label'] ?? $r->status_antrean,
                 is_numeric($desil) ? (int) $desil : $desil,
                 $pekerjaan !== NULL ? (self::LABEL_PEKERJAAN[$pekerjaan] ?? $pekerjaan) : ($survey['pekerjaan'] ?? NULL),
                 is_numeric($penghasilan) ? (int) $penghasilan : $penghasilan,
-                $r->kabupaten, $r->kecamatan, $r->desa, $r->catatan_admin,
+                $r->kabupaten, $r->kecamatan, $r->desa, $profil['address'] ?? NULL,
             ];
+            $baris = &$isi[count($isi) - 1];
+            foreach (array_keys($kolom) as $k) {
+                $v = $penilaian[$k] ?? NULL;
+                $baris[] = ($v === NULL || $v === '') ? NULL
+                    : (in_array($k, $angka, TRUE) && is_numeric($v) ? (float) $v + 0 : ($nilai[$k][(string) $v] ?? (string) $v));
+            }
+            // Koordinat sebagai sel angka: sebagai teks, lintang negatif diberi petik oleh penjinak formula.
+            foreach (['location_lat', 'location_lng'] as $k) {
+                $baris[] = is_numeric($penilaian[$k] ?? NULL) ? (float) $penilaian[$k] : NULL;
+            }
+            $baris[] = $r->catatan_admin;
+            unset($baris);
         }
 
         $this->catat_akses_data_pribadi('identitas_warga', 'sf_antrean_pengajuan', 'unduh', ['baris' => count($isi)]);
         $this->catat_audit('rekap_diunduh', 'Antrean pengajuan diunduh (' . count($isi) . ' baris)',
             'sf_antrean_pengajuan', NULL, ['status' => $status, 'tanpa_wilayah' => $tanpa_wilayah, 'baris' => count($isi)]);
-        $this->kirim_spreadsheet('Antrean Pengajuan ' . date('Y-m-d'), 'Antrean', [
+        $this->kirim_spreadsheet('Antrean Pengajuan ' . date('Y-m-d'), 'Antrean', array_merge([
             'Kode tiket', 'Tanggal', 'Nama', 'NIK', 'Program', 'Status', 'Desil', 'Pekerjaan',
-            'Penghasilan per bulan (Rp)', 'Kabupaten/Kota', 'Kecamatan', 'Desa/Kelurahan', 'Catatan admin',
-        ], $isi);
+            'Penghasilan per bulan (Rp)', 'Kabupaten/Kota', 'Kecamatan', 'Desa/Kelurahan', 'Alamat',
+        ], array_values($kolom), ['Lintang', 'Bujur', 'Catatan admin']), $isi);
     }
 
     public function update_status()

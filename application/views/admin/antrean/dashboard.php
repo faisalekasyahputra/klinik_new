@@ -176,7 +176,7 @@ $filter_html = ob_get_clean();
                         }
                         $payload = [
                             'id' => $row->id, 'nama' => $nama_display,
-                            'program' => $row->nama_program ?? 'Program belum terpetakan', 'desil' => $desil,
+                            'program' => $row->nama_program ?? 'Hunian sudah layak huni', 'desil' => $desil,
                             'status' => '', 'currentStatus' => $badge_label[$row->status_antrean] ?? $row->status_antrean, 'currentStatusCode' => $row->status_antrean,
                             'catatan' => $row->catatan_admin ?? '',
                             'ticket' => $row->kode_tiket,
@@ -209,7 +209,7 @@ $filter_html = ob_get_clean();
                             <?php endif; ?>
                         </td>
                         <td class="max-w-[14rem] whitespace-normal break-words px-4 py-3">
-                            <div class="inline-block max-w-full break-words rounded-lg bg-brand-primary/10 px-2.5 py-1 text-xs font-semibold text-brand-primary border border-brand-primary/20 mb-1"><?= html_escape($row->nama_program ?? 'Program belum terpetakan') ?></div>
+                            <div class="inline-block max-w-full break-words rounded-lg bg-brand-primary/10 px-2.5 py-1 text-xs font-semibold text-brand-primary border border-brand-primary/20 mb-1"><?= html_escape($row->nama_program ?? 'Hunian sudah layak huni') ?></div>
                             <?php if ($desil !== '-'): ?>
                             <div class="text-[10px] text-blue-700 bg-blue-50 dark:text-white dark:bg-blue-500/20 border border-blue-200 dark:border-blue-500/30 px-2 py-0.5 rounded inline-block">Desil: <span class="font-bold"><?= html_escape($desil) ?></span></div>
                             <?php endif; ?>

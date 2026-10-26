@@ -1197,12 +1197,21 @@ class Housing_assessment_model extends CI_Model {
         $assessment = $this->db->get_where('sf_penilaian_perumahan', [
             'id' => $penilaian_id, 'user_id' => $user_id, 'status' => 'draft',
         ])->row_array();
-        $recommendation = $this->db
+        /* rekomendasi_id 0 = hunian sudah layak huni (dinas 26 Okt 2026): dicatat tanpa program, hanya bila server
+           sendiri menilai rumahnya layak dan memang tidak ada program yang bisa dipilih pada versi aturan ini. */
+        $layak = $rekomendasi_id === 0;
+        $recommendation = $layak ? NULL : $this->db
             ->select('r.id, r.program_id, r.status_kelayakan, p.aktif')
             ->from('sf_rekomendasi_penilaian r')
             ->join('sf_program p', 'p.id=r.program_id')
             ->where(['r.id' => $rekomendasi_id, 'r.penilaian_id' => $penilaian_id, 'r.versi_aturan' => $versi_aturan])
             ->get()->row_array();
+        if ($layak && $assessment) {
+            $layak = Warga_ruleset::hunian_layak($this->decrypt_assessment($assessment) ?: [])
+                && ! $this->db->where(['penilaian_id' => $penilaian_id, 'versi_aturan' => $versi_aturan])
+                    ->where_in('status_kelayakan', ['eligible', 'potential'])->count_all_results('sf_rekomendasi_penilaian');
+            $recommendation = $layak ? ['program_id' => NULL, 'status_kelayakan' => 'eligible', 'aktif' => 1] : NULL;
+        }
         if ( ! $assessment || ! $recommendation
             || ! in_array($recommendation['status_kelayakan'], ['eligible', 'potential'], TRUE)
             || (int) $recommendation['aktif'] !== 1 || empty($assessment['kabupaten_id'])
@@ -1223,7 +1232,7 @@ class Housing_assessment_model extends CI_Model {
         ])->update('sf_penilaian_perumahan', [
             'status' => 'submitted', 'submitted_at' => date('Y-m-d H:i:s'),
             'salinan_profil_ciphertext' => $profile_snapshot,
-        ]);
+        ] + ($layak ? ['bantuan_perumahan' => 'already_habitable', 'tahun_intervensi' => (int) date('Y')] : []));
         if ( ! $updated || $this->db->affected_rows() !== 1) {
             $this->db->trans_rollback();
             $existing = $this->db->get_where('sf_antrean_pengajuan', ['kunci_pengajuan' => $kunci_pengajuan])->row_array();
@@ -1244,7 +1253,7 @@ class Housing_assessment_model extends CI_Model {
             ])->row_array();
             if ( ! $queue || ! $this->db->where(['id' => $queue['id'], 'status_antrean' => 'needs_revision'])
                 ->update('sf_antrean_pengajuan', [
-                    'penilaian_id' => $penilaian_id, 'rekomendasi_id' => $rekomendasi_id,
+                    'penilaian_id' => $penilaian_id, 'rekomendasi_id' => $rekomendasi_id ?: NULL,
                     'program_id' => $recommendation['program_id'], 'kunci_pengajuan' => $kunci_pengajuan,
                     'status_antrean' => 'pending', 'catatan_admin' => NULL,
                     'reviewed_by' => NULL, 'reviewed_at' => NULL, 'updated_at' => date('Y-m-d H:i:s'),
@@ -1272,7 +1281,7 @@ class Housing_assessment_model extends CI_Model {
             $ticket = $this->generate_ticket_code();
             $inserted = $this->db->insert('sf_antrean_pengajuan', [
                 'kode_tiket' => $ticket, 'user_id' => $user_id, 'kabupaten_id' => $assessment['kabupaten_id'],
-                'penilaian_id' => $penilaian_id, 'rekomendasi_id' => $rekomendasi_id,
+                'penilaian_id' => $penilaian_id, 'rekomendasi_id' => $rekomendasi_id ?: NULL,
                 'kunci_pengajuan' => $kunci_pengajuan, 'program_id' => $recommendation['program_id'],
                 // Identitas TIDAK disalin ke antrean: dibaca lewat penilaian_id (sf_profil_warga terenkripsi).
                 'status_antrean' => 'pending', 'mode_sumber' => $assessment['mode_sumber'],
