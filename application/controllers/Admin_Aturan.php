@@ -27,8 +27,12 @@ class Admin_Aturan extends Admin_Controller {
         $draf = $this->Aturan_model->draf();
         $kode = $draf['kode'] ?? $aktif;
         $aturan = array_column($this->Aturan_model->program($kode), NULL, 'program_id');
-        $katalog = $this->db->select('p.id, p.kode_program, p.nama_program, p.aktif')->from('sf_program p')
+        $katalog = $this->db->select('p.id, p.kode_program, p.nama_program, p.aktif, p.gambar')->from('sf_program p')
             ->order_by('p.urutan')->order_by('p.nama_program')->get()->result_array();
+        // Thumbnail = foto yang tampil di beranda (Program_model::gambar_tampil), sama dengan Katalog Program.
+        $this->load->model('Program_model');
+        foreach ($katalog as &$k) { $k['gambar_tampil'] = $this->Program_model->gambar_tampil($k); }
+        unset($k);
         // Urutan tampil = urutan aturan; program yang belum ditawarkan di bawah.
         usort($katalog, fn($a, $b) => [isset($aturan[$a['id']]) ? 0 : 1, $aturan[$a['id']]['urutan'] ?? 99]
             <=> [isset($aturan[$b['id']]) ? 0 : 1, $aturan[$b['id']]['urutan'] ?? 99]);
