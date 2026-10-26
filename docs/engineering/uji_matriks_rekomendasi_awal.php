@@ -3,7 +3,7 @@ date_default_timezone_set('Asia/Jakarta'); // samakan dengan aplikasi (index.php
 define('BASEPATH', __DIR__);
 require dirname(__DIR__, 2) . '/application/libraries/Matriks_program_ruleset.php';
 require __DIR__ . '/_aturan_db.php';
-$rules = new Matriks_program_ruleset(aturan_matriks_uji());
+$rules = mesin_matriks_uji();
 $total = 0;
 function cek($ok, $label) { global $total; $total++; if (!$ok) { fwrite(STDERR, "GAGAL: $label\n"); exit(1); } echo "  OK    $label\n"; }
 /* Sejak 23 Okt 2026 kolom D/E/F/G/I tidak ditanyakan lagi (permintaan dinas) dan diturunkan dari data warga
@@ -87,6 +87,6 @@ cek( ! Warga_ruleset::hunian_layak(['sumber_air'=>'other_unfit'] + $baik) && ! W
     'Sanitasi kritis (air tidak layak, tanpa jamban): tidak layak');
 cek( ! Warga_ruleset::hunian_layak(['kondisi_lantai'=>NULL] + $baik) && ! Warga_ruleset::hunian_layak(['jalur_penilaian'=>'candidate_land'] + $baik),
     'Kondisi belum diisi atau bukan rumah milik: tidak disebut layak');
-$rules_w = new Warga_ruleset(aturan_program_uji());
+$rules_w = mesin_warga_uji();
 cek(($rules_w->evaluate('rtlh', $baik, ['desil_kesejahteraan'=>2])['status_kelayakan'] ?? '') !== 'eligible', 'Rumah layak tidak sekaligus eligible RTLH');
 echo "$total pemeriksaan lulus\n";

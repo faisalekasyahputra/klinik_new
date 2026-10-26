@@ -478,6 +478,9 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
                 'SIM_FLPP_INCOME' => 'Kelompok penghasilan menjadi pertimbangan simulasi.',
                 'SIM_OEMAH_INCOME' => 'Kelompok penghasilan menjadi pertimbangan simulasi.',
                 'SIM_RUMAH_APUNG_NEEDS_DATA' => 'Data pesisir atau rob belum tersedia pada formulir saat ini.',
+                // Kode umum untuk program baru dari layar Aturan rekomendasi (Warga_ruleset::JENIS_CEK).
+                'SIM_PEMBIAYAAN_INCOME' => 'Kelompok penghasilan menjadi pertimbangan simulasi.',
+                'SIM_DATA_BELUM_TERSEDIA' => 'Data untuk program ini belum tersedia pada formulir saat ini.',
             ];
             $track_labels = ['existing_house' => 'Rumah eksisting', 'candidate_land' => 'Calon lahan', 'financing' => 'Pembiayaan', 'undetermined' => 'Belum ditentukan'];
             $source_labels = ['simulation' => 'SIMPERUM (simulasi)', 'api' => 'SIMPERUM', 'manual' => 'Diisi mandiri oleh warga'];
@@ -489,6 +492,7 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
             $unavailable_reason_codes = [
                 'SIM_DECILE_MISSING',
                 'SIM_RUMAH_APUNG_NEEDS_DATA',
+                'SIM_DATA_BELUM_TERSEDIA',
                 'SIM_OMAH_KEBUTUHAN_BELUM_TERVERIFIKASI',
             ];
             foreach ($needs_data_recommendations as $item) {
@@ -504,7 +508,9 @@ $badge = static function ($field) use ($provenance, $source_label, $recommendati
             <?php /* Dinas 26 Okt 2026: rumah milik yang kondisinya baik diberi tahu sudah layak huni, bukan
                      disodori kartu program "Belum memenuhi" dan rekomendasi awal RTLH yang sudah tidak berlaku. */
             $tampil_layak = ! empty($hunian_layak) && ! $submittable_recommendations; ?>
-            <?php if ($tampil_layak): ?>
+            <?php if ( ! empty($aturan_berubah)): ?>
+                <section id="review-action-help" role="status" data-aturan-berubah class="mt-5 rounded-xl border p-4 text-sm" style="border-color:rgba(14,165,233,.35);background:rgba(14,165,233,.08);color:#075985"><h3 class="font-black">Aturan program telah diperbarui Dinas</h3><p class="mt-1 text-xs">Rekomendasi Anda dihitung dengan aturan sebelumnya. Tekan <strong>Periksa data kembali</strong>, lalu <strong>Simpan dan lanjut</strong> pada langkah terakhir untuk menghitung ulang. Data yang sudah Anda isi tidak hilang.</p></section>
+            <?php elseif ($tampil_layak): ?>
                 <section id="review-action-help" role="status" class="mt-5 rounded-xl border p-4 text-sm" style="border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.10);color:#047857"><h3 class="font-black">Hunian Anda sudah layak huni</h3><p class="mt-1 text-xs">Kondisi bangunan dan sanitasi yang Anda isi tidak menunjukkan kerusakan sedang atau berat, jadi tidak ada program perbaikan rumah yang direkomendasikan. Bila ada kondisi yang belum sesuai, kembali ke langkah sebelumnya dengan tombol di bawah untuk memperbaikinya. Hasil ini bukan keputusan akhir Dinas.</p></section>
             <?php elseif ($submittable_recommendations): ?>
                 <section id="review-action-help" role="status" class="mt-5 rounded-xl border p-4 text-sm" style="border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.10);color:#047857"><h3 class="font-black">Program dapat diajukan</h3><p class="mt-1 text-xs">Pilih satu program di bawah, lalu tekan <strong>Simpan Data</strong>. Pengajuan akan masuk ke Admin Kab/Kota untuk diverifikasi dan belum merupakan persetujuan bantuan. Setelah dikirim, data Anda dikunci dan hanya dapat diubah bila petugas meminta perbaikan.</p></section>

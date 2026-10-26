@@ -3,29 +3,44 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Warga_ruleset {
 
-    public const VERSION = 'SIM-2026-02';
-    public const STATUS = 'active';
-    public const EFFECTIVE_FROM = '2026-07-28 00:00:00';
+    /**
+     * Jenis cek yang bisa dipilih untuk program di layar Aturan rekomendasi. Logikanya di evaluate(); kode alasan
+     * dipakai untuk program baru (program lama mempertahankan kode alasannya sendiri, mis. SIM_FLPP_INCOME).
+     */
+    public const JENIS_CEK = [
+        'rtlh_kerusakan' => ['label' => 'Rumah sendiri rusak sedang/berat atau sanitasi buruk', 'alasan' => 'SIM_RTLH_DAMAGE'],
+        'pb_lahan'       => ['label' => 'Punya calon lahan dengan data lengkap', 'alasan' => 'SIM_PB_LAND_READY'],
+        'swadaya'        => ['label' => 'Mampu swadaya (tetap perlu verifikasi petugas)', 'alasan' => 'SIM_OMAH_DESIL4_SELF_HELP'],
+        'pembiayaan'     => ['label' => 'Belum punya rumah dan penghasilan diisi (pembiayaan)', 'alasan' => 'SIM_PEMBIAYAAN_INCOME'],
+        'belum_tersedia' => ['label' => 'Data belum tersedia di formulir (selalu "data masih diperlukan")', 'alasan' => 'SIM_DATA_BELUM_TERSEDIA'],
+    ];
+
+    /** Kode versi aturan yang sedang dipakai (aturan_versi.kode); disimpan di sf_rekomendasi_penilaian.versi_aturan. */
+    public $versi;
 
     /**
      * Aturan per program dari aturan_program (migrasi 084, tahap 1 aturan yang bisa diatur dinas), urut
      * `urutan`, berkunci kode program: desil[], tanpa_desil, cek (jenis_cek), alasan (kode_alasan). Tanpa argumen (dimuat
-     * CodeIgniter) dibaca dari database versi VERSION; uji tanpa CodeIgniter memberikannya lewat dari_baris_db().
+     * CodeIgniter) dibaca dari database versi terbit (atau $versi); uji tanpa CodeIgniter memberikannya lewat dari_baris_db().
      */
     private $aturan;
 
-    public function __construct($aturan = NULL)
+    public function __construct($aturan = NULL, $versi = NULL)
     {
         if ($aturan === NULL) {
             $CI =& get_instance();
+            $CI->load->model('Aturan_model');
+            $versi = $versi ?? $CI->Aturan_model->kode_aktif();
+            if ($versi === NULL) { throw new RuntimeException('Belum ada versi aturan terbit (jalankan migrasi 084 dan 085).'); }
             $aturan = self::dari_baris_db($CI->db->select('p.kode_program, a.desil_sasaran, a.kandidat_tanpa_desil, a.jenis_cek, a.kode_alasan')
                 ->from('aturan_program a')->join('sf_program p', 'p.id = a.program_id')
-                ->where('a.versi', self::VERSION)->order_by('a.urutan')->get()->result_array());
+                ->where('a.versi', $versi)->order_by('a.urutan')->get()->result_array());
         }
         if ($aturan === []) {
-            throw new RuntimeException('Aturan program ' . self::VERSION . ' belum ada di database (jalankan migrasi 084).');
+            throw new RuntimeException('Aturan program ' . $versi . ' belum ada di database (jalankan migrasi 084).');
         }
         $this->aturan = $aturan;
+        $this->versi = $versi;
     }
 
     /** Baris aturan_program + kode_program (urut) ke bentuk yang dipakai mesin, berkunci kode program. */

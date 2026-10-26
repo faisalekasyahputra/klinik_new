@@ -12,22 +12,44 @@ class Matriks_program_ruleset {
     /**
      * Baris matriks Sheet3 dalam bentuk lama ROWS (A sampai J), dimuat dari aturan_matriks_baris (migrasi 084,
      * tahap 1 aturan yang bisa diatur dinas). Tanpa argumen (dimuat CodeIgniter) dibaca dari database versi
-     * VERSION; uji tanpa CodeIgniter memberikan barisnya sendiri lewat dari_baris_db().
+     * terbit (atau $versi); uji tanpa CodeIgniter memberikan barisnya sendiri lewat dari_baris_db().
      */
     private $baris;
 
-    public function __construct($baris = NULL)
+    /** Kode versi aturan yang sedang dipakai (aturan_versi.kode), ikut tersimpan di snapshot rekomendasi awal. */
+    public $versi;
+
+    public function __construct($baris = NULL, $versi = NULL)
     {
         if ($baris === NULL) {
             $CI =& get_instance();
+            $CI->load->model('Aturan_model');
+            $versi = $versi ?? $CI->Aturan_model->kode_aktif();
+            if ($versi === NULL) { throw new RuntimeException('Belum ada versi aturan terbit (jalankan migrasi 084 dan 085).'); }
             $baris = self::dari_baris_db($CI->db->order_by('urutan')
-                ->get_where('aturan_matriks_baris', ['versi' => self::VERSION])->result_array());
+                ->get_where('aturan_matriks_baris', ['versi' => $versi])->result_array());
         }
         if ($baris === []) {
-            throw new RuntimeException('Baris matriks ' . self::VERSION . ' belum ada di database (jalankan migrasi 084).');
+            throw new RuntimeException('Baris matriks ' . $versi . ' belum ada di database (jalankan migrasi 084).');
         }
         $this->baris = $baris;
+        $this->versi = $versi;
     }
+
+    /** Nilai yang boleh dipilih per kolom matriks di layar Aturan rekomendasi (sama dengan yang dihasilkan turunan()). */
+    const PILIHAN = [
+        'rentang_penghasilan' => ['income_0_1_5' => 'Rp0 sampai 1,5 jt', 'income_1_5_2_2' => 'Rp1,5 sampai 2,2 jt', 'income_2_2_2_8' => 'Rp2,2 sampai 2,8 jt',
+            'income_2_8_8_5' => 'Rp2,8 sampai 8,5 jt', 'income_2_8_10' => 'Rp2,8 sampai 10 jt', 'income_gt_8_5' => 'Di atas Rp8,5 jt', 'income_gt_10' => 'Di atas Rp10 jt'],
+        'lahan' => ['land_none' => 'Tidak punya', 'land_legal' => 'Punya lahan sah'],
+        'rumah' => ['house_none_or_rent' => 'Belum punya / numpang / sewa', 'house_rent_or_staying' => 'Menumpang / sewa',
+            'house_restricted_area' => 'Di area terlarang', 'house_disaster_affected' => 'Terdampak bencana', 'house_owned' => 'Rumah sendiri'],
+        'lingkungan' => ['env_safe' => 'Aman', 'env_relocation_zone' => 'Kawasan relokasi', 'env_disaster_severe' => 'Bencana, rusak berat',
+            'env_disaster_moderate' => 'Bencana, rusak sedang', 'env_slum_uninhabitable' => 'Kumuh / tidak layak'],
+        'finansial' => ['work_stable_or_unstable_no_subsidy' => 'Tetap / tidak tetap, belum pernah subsidi', 'work_can_save_irregular' => 'Mampu menabung, tidak tetap'],
+        'usia' => ['produktif_21' => '21 sampai 59', 'produktif_18' => '18 sampai 59', 'produktif_18_or_tua' => 'Minimal 18'],
+        'keluarga' => ['family_single' => 'Belum menikah', 'family_married' => 'Menikah', 'family_head_of_household' => 'Kepala keluarga',
+            'family_multi_household' => 'Lebih dari 1 KK'],
+    ];
 
     /** Baris tabel aturan_matriks_baris (urut) ke bentuk ROWS: desil jadi daftar angka, kolom kosong jadi NULL. */
     public static function dari_baris_db(array $rows)
@@ -44,7 +66,6 @@ class Matriks_program_ruleset {
         return $hasil;
     }
 
-    const VERSION = 'MATRIKS-2026-09-10';
     // Workbook yang dibaca 10 Sep 2026: Sheet3 A3:J22 (dulu disebut Sheet3).
     const FORM_FIELDS = [
         'matriks_kepemilikan_lahan' => ['Kepemilikan lahan', ['land_none'=>'Tidak punya', 'land_legal'=>'Punya lahan sah']],
@@ -148,7 +169,7 @@ class Matriks_program_ruleset {
             if ($row[7] !== NULL) $criteria[] = ['produktif_21'=>'Usia 21–59 tahun', 'produktif_18'=>'Usia 18–59 tahun', 'produktif_18_or_tua'=>'Usia minimal 18 tahun'][$row[7]];
             $items[] = ['program_name'=>$row[9], 'source_row'=>$index+3, 'missing'=>$missing, 'criteria'=>$criteria];
         }
-        return ['versi_aturan'=>self::VERSION, 'source_sheet'=>'Sheet3', 'evaluated_at'=>date('c'), 'input'=>$input, 'items'=>$items];
+        return ['versi_aturan'=>$this->versi, 'source_sheet'=>'Sheet3', 'evaluated_at'=>date('c'), 'input'=>$input, 'items'=>$items];
     }
 
     /* Gaji -> satu angka desil REPRESENTATIF dari rentang yang dipakai

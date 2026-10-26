@@ -1206,9 +1206,7 @@ class Housing_assessment_model extends CI_Model {
         if ( ! $assessment || ! $recommendation
             || ! in_array($recommendation['status_kelayakan'], ['eligible', 'potential'], TRUE)
             || (int) $recommendation['aktif'] !== 1 || empty($assessment['kabupaten_id'])
-            || $versi_aturan !== Warga_ruleset::VERSION
-            || Warga_ruleset::STATUS !== 'active'
-            || strtotime(Warga_ruleset::EFFECTIVE_FROM) > time()
+            || $versi_aturan !== $this->warga_ruleset->versi
             || $assessment['langkah_sekarang'] !== 'review') {
             return $this->fail('submission_invalid', 'Draft atau rekomendasi tidak dapat diajukan.');
         }

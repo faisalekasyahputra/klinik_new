@@ -3,6 +3,10 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 /* Allowlist positif; field baru wajib ditambahkan secara sadar. */
 $config['input_allowed_fields'] = [
+    'konfirmasi',
+    'kategori_id', // Admin_Katalog_Program: kategori program baru
+    'catatan',
+    'baris', // Admin_Aturan: baris matriks draf
     'about_desc_1',
     'about_desc_2',
     'about_title',

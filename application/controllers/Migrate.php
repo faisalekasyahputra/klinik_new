@@ -595,6 +595,9 @@ class Migrate extends CI_Controller {
         // Migrasi 084 - aturan rekomendasi di database (harus 6 program dan 20 baris matriks).
         echo 'aturan program (migrasi 084): '.($this->db->table_exists('aturan_program') && $this->db->table_exists('aturan_matriks_baris')
             ? 'ADA ('.$this->db->count_all('aturan_program').' program, '.$this->db->count_all('aturan_matriks_baris').' baris matriks)' : 'HILANG')."\n";
+        // Migrasi 085 - versi aturan (draf/terbit/arsip); harus ada satu versi terbit.
+        echo 'versi aturan (migrasi 085): '.($this->db->table_exists('aturan_versi')
+            ? 'ADA (terbit: '.($this->db->select('kode')->where('status', 'terbit')->order_by('diterbitkan_pada', 'DESC')->get('aturan_versi', 1)->row('kode') ?: 'TIDAK ADA').')' : 'HILANG')."\n";
         // Migrasi 076 - kolom alasan_susulan untuk KKN input susulan (bersama kolom 061 dan 062 di bawah).
         foreach (['link_dokumentasi' => '061', 'tanggal_sertifikat' => '062', 'alasan_susulan' => '076'] as $kolom => $no) {
             echo 'kkn_magang_pendaftaran.'.$kolom.' (migrasi '.$no.'): '.

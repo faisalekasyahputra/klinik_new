@@ -4,8 +4,8 @@ define('BASEPATH', __DIR__);
 require dirname(__DIR__, 2) . '/application/libraries/Warga_ruleset.php';
 require dirname(__DIR__, 2) . '/application/libraries/Matriks_program_ruleset.php';
 require __DIR__ . '/_aturan_db.php';
-$matriks = new Matriks_program_ruleset(aturan_matriks_uji());
-$rules = new Warga_ruleset(aturan_program_uji());
+$matriks = mesin_matriks_uji();
+$rules = mesin_warga_uji();
 $checks = [
     'Data manual tetap punya kandidat untuk dilengkapi' => $rules->route_candidates(NULL) === ['flpp', 'oemah_lestari'],
     'Desil kosong tidak menjadi kelayakan bantuan' => $rules->evaluate('flpp', [], [])['status_kelayakan'] === 'needs_data',

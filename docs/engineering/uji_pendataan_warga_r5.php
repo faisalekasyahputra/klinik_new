@@ -126,7 +126,7 @@ $env=env_config(ENV_PATH); $GLOBALS['db']=$db=new Db($env);
 echo "=== UJI PENDATAAN WARGA R5 ===\nTarget: ".BASE_URL." | DB: {$env['DB_NAME']}\n\n";
 
 // Kontrak ruleset murni: semua desil, tanpa ketergantungan fixture/DB.
-$rules=new Warga_ruleset(aturan_program_uji());
+$rules=mesin_warga_uji();
 $expected=[1=>['rtlh','pb','rumah_apung'],2=>['rtlh','pb','rumah_apung'],3=>['rtlh','pb','rumah_apung'],4=>['pb','omah_sekeng','rumah_apung'],5=>['flpp','oemah_lestari','rumah_apung'],6=>['flpp','oemah_lestari','rumah_apung'],7=>['flpp','oemah_lestari','rumah_apung'],8=>['flpp','oemah_lestari','rumah_apung'],9=>['oemah_lestari','rumah_apung'],10=>['oemah_lestari','rumah_apung']];
 foreach($expected as $desil=>$codes) cek($rules->route_candidates($desil)===$codes,"Routing desil $desil tepat");
 cek(in_array('pb',$rules->route_candidates(3),TRUE) && !in_array('omah_sekeng',$rules->route_candidates(3),TRUE),'SIM-03 desil 3 merutekan PB, bukan Omah Sekeng');
@@ -158,7 +158,7 @@ $d=draft($db,$user); $san=['ada_jendela'=>'1','ada_ventilasi'=>'1','sumber_air'=
 $d=draft($db,$user); wajib(redirect_ok(post_step($owner,$d,'location_evidence',['location_lat'=>'-7.123456','location_lng'=>'110.123456','akurasi_lokasi_m'=>'8'])),'Simpan lokasi dan hitung rekomendasi server');
 $d=draft($db,$user); $rows=recommendations($db,$d['id']); $rtlh=by_code($rows,'rtlh'); $pb=by_code($rows,'pb'); $apung=by_code($rows,'rumah_apung');
 $eligiblePage=$owner->get('warga/pendataan'); $eligibleAction=strpos($eligiblePage['body'],'Program dapat diajukan')!==FALSE && strpos($eligiblePage['body'],'Simpan Data')!==FALSE && strpos($eligiblePage['body'],'name="rekomendasi_id"')!==FALSE;
-$db->run("UPDATE sf_rekomendasi_penilaian SET status_kelayakan='needs_data' WHERE penilaian_id=? AND versi_aturan='".Warga_ruleset::VERSION."'",[$d['id']]); $blockedPage=$owner->get('warga/pendataan'); $blockedAction=strpos($blockedPage['body'],'Pengajuan belum dapat dikirim')!==FALSE && strpos($blockedPage['body'],'Lihat layanan lain')!==FALSE && strpos($blockedPage['body'],'Simpan Data')===FALSE;
+$db->run("UPDATE sf_rekomendasi_penilaian SET status_kelayakan='needs_data' WHERE penilaian_id=? AND versi_aturan='".$rules->versi."'",[$d['id']]); $blockedPage=$owner->get('warga/pendataan'); $blockedAction=strpos($blockedPage['body'],'Pengajuan belum dapat dikirim')!==FALSE && strpos($blockedPage['body'],'Lihat layanan lain')!==FALSE && strpos($blockedPage['body'],'Simpan Data')===FALSE;
 foreach($rows as $row) $db->run("UPDATE sf_rekomendasi_penilaian r JOIN sf_program p ON p.id=r.program_id SET r.status_kelayakan=? WHERE r.penilaian_id=? AND r.versi_aturan=? AND p.kode_program=?",[$row['status_kelayakan'],$d['id'],$row['versi_aturan'],$row['kode_program']]);
 cek(count($rows)===3 && $rtlh['status_kelayakan']==='eligible' && $pb && $apung['status_kelayakan']==='needs_data' && $eligibleAction && $blockedAction,'Hasil server dan tindakan Review sesuai status rekomendasi');
 cek(json_decode($rtlh['kode_alasan_json'],TRUE)===['SIM_RTLH_DAMAGE'],'Reason code tersimpan sebagai JSON dapat didekode');
@@ -169,7 +169,7 @@ $db->run("INSERT INTO sf_rekomendasi_penilaian (penilaian_id,program_id,versi_at
 $db->run("UPDATE sf_penilaian_perumahan SET langkah_sekarang='location_evidence', versi_kunci=versi_kunci+1 WHERE id=?",[$d['id']]); $d=draft($db,$user);
 wajib(redirect_ok(post_step($owner,$d,'location_evidence',['location_lat'=>'-7.123456','location_lng'=>'110.123456','akurasi_lokasi_m'=>'8'])),'Hitung ulang ruleset versi sama');
 $rows=recommendations($db,$d['id']); cek((int)$db->scalar("SELECT COUNT(*) FROM sf_rekomendasi_penilaian WHERE penilaian_id=? AND versi_aturan='SIM-OLDER'",[$d['id']])===1,'Ruleset versi lain tidak dihapus');
-cek((int)$db->scalar("SELECT COUNT(*) FROM sf_rekomendasi_penilaian WHERE penilaian_id=? AND versi_aturan='".Warga_ruleset::VERSION."'",[$d['id']])===3,'Ganti ruleset aktif idempoten tanpa duplikat');
+cek((int)$db->scalar("SELECT COUNT(*) FROM sf_rekomendasi_penilaian WHERE penilaian_id=? AND versi_aturan='".$rules->versi."'",[$d['id']])===3,'Ganti ruleset aktif idempoten tanpa duplikat');
 cek(by_code($rows,'rtlh')['masukan_sha256']===$hash1,'Hash deterministik untuk input sama');
 
 // Mengubah input relevan lewat jalur warga harus menghasilkan hash berbeda.
@@ -178,11 +178,11 @@ $d=draft($db,$user); wajib(redirect_ok(post_step($owner,$d,'sanitation',$san)),'
 $hash2=by_code(recommendations($db,$d['id']),'rtlh')['masukan_sha256']; cek($hash2!==$hash1,'Hash berubah ketika input scoring relevan berubah');
 
 // Program hilang harus membatalkan seluruh write (termasuk delete versi aktif).
-$before=(int)$db->scalar("SELECT COUNT(*) FROM sf_rekomendasi_penilaian WHERE penilaian_id=? AND versi_aturan='".Warga_ruleset::VERSION."'",[$d['id']]);
+$before=(int)$db->scalar("SELECT COUNT(*) FROM sf_rekomendasi_penilaian WHERE penilaian_id=? AND versi_aturan='".$rules->versi."'",[$d['id']]);
 $db->run("UPDATE sf_program SET kode_program='pb_uji_hilang' WHERE kode_program='pb'");
 $db->run("UPDATE sf_penilaian_perumahan SET langkah_sekarang='location_evidence', versi_kunci=versi_kunci+1 WHERE id=?",[$d['id']]); $d=draft($db,$user); $r=post_step($owner,$d,'location_evidence',['location_lat'=>'-7.123456','location_lng'=>'110.123456','akurasi_lokasi_m'=>'8']);
 $db->run("UPDATE sf_program SET kode_program='pb' WHERE kode_program='pb_uji_hilang'"); $GLOBALS['restored_pb']=TRUE;
-cek(redirect_ok($r) && (int)$db->scalar("SELECT COUNT(*) FROM sf_rekomendasi_penilaian WHERE penilaian_id=? AND versi_aturan='".Warga_ruleset::VERSION."'",[$d['id']])===$before,'Program hilang menggagalkan write secara atomik');
+cek(redirect_ok($r) && (int)$db->scalar("SELECT COUNT(*) FROM sf_rekomendasi_penilaian WHERE penilaian_id=? AND versi_aturan='".$rules->versi."'",[$d['id']])===$before,'Program hilang menggagalkan write secara atomik');
 
 // Pemilik lain tidak dapat membaca/menulis draft beserta rekomendasinya.
 [$attacker,$attackerEmail]=make_user($db,'attacker'); $other=login($attackerEmail); $count_before=(int)$db->scalar('SELECT COUNT(*) FROM sf_rekomendasi_penilaian WHERE penilaian_id=?',[$d['id']]); $forge=$other->post('warga/pendataan',['action'=>'save','step'=>'location_evidence','direction'=>'next','penilaian_id'=>$d['id'],'versi_kunci'=>$d['versi_kunci'],'location_lat'=>'-7','location_lng'=>'110','akurasi_lokasi_m'=>'8']); $page=$other->get('warga/pendataan'); cek(redirect_ok($forge) && (int)$db->scalar('SELECT COUNT(*) FROM sf_rekomendasi_penilaian WHERE penilaian_id=?',[$d['id']])===$count_before && strpos($page['body'],'Kondisi kerusakan rumah menjadi pertimbangan simulasi.')===FALSE,'Reader/writer rekomendasi dibatasi ownership');

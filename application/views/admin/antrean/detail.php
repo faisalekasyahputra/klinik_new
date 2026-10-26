@@ -26,6 +26,8 @@ $reason_labels = [
     'SIM_FLPP_INCOME' => 'Penghasilan menjadi pertimbangan simulasi FLPP.',
     'SIM_OEMAH_INCOME' => 'Penghasilan menjadi pertimbangan simulasi Oemah Lestari.', 'SIM_INCOME_MISSING' => 'Data penghasilan belum tersedia.',
     'SIM_RUMAH_APUNG_NEEDS_DATA' => 'Definisi dan data Rumah Apung belum tersedia.',
+    'SIM_PEMBIAYAAN_INCOME' => 'Penghasilan menjadi pertimbangan simulasi pembiayaan.',
+    'SIM_DATA_BELUM_TERSEDIA' => 'Data untuk program ini belum tersedia di formulir.',
 ];
 $field_labels = [
     'kepemilikan_rumah' => 'Status rumah', 'kepemilikan_lahan' => 'Status lahan', 'jml_penghuni' => 'Jumlah penghuni', 'jml_kk' => 'Jumlah keluarga',
