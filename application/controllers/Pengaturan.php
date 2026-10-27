@@ -26,7 +26,8 @@ class Pengaturan extends MY_Controller {
         $items = [];
 
         foreach ($this->db
-            ->select('sf_antrean_pengajuan.id, kode_tiket, status_antrean, catatan_admin, mode_sumber, sf_antrean_pengajuan.created_at, sf_program.nama_program')
+            ->select('sf_antrean_pengajuan.id, kode_tiket, status_antrean, catatan_admin, mode_sumber, sf_antrean_pengajuan.created_at, sf_program.nama_program,'
+                . ' (SELECT a.bantuan_perumahan FROM sf_penilaian_perumahan a WHERE a.id = sf_antrean_pengajuan.penilaian_id) AS bantuan_penilaian', FALSE)
             ->from('sf_antrean_pengajuan')
             ->join('sf_program', 'sf_program.id=sf_antrean_pengajuan.program_id', 'left')
             ->where('sf_antrean_pengajuan.user_id', (int) $user_id)
@@ -35,7 +36,7 @@ class Pengaturan extends MY_Controller {
             // Permintaan dinas 26 Okt 2026: warga tidak dibuat menunggu verifikasi; label admin tetap.
             if ($r->status_antrean === 'pending') { $status['label'] = 'Data Sudah Tercatat'; }
             $items[] = [
-                'jenis' => 'Antrean Perumahan - ' . ($r->nama_program ?: 'Hunian sudah layak huni'), 'icon' => 'ph-ticket',
+                'jenis' => 'Antrean Perumahan - ' . ($r->nama_program ?: label_tanpa_program($r->bantuan_penilaian)), 'icon' => 'ph-ticket',
                 'judul' => !empty($r->kode_tiket) ? $r->kode_tiket : 'Tiket belum tersedia',
                 'status_label' => $status['label'], 'status_kelas' => $status['badge'],
                 'created_at' => $r->created_at,

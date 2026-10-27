@@ -99,7 +99,7 @@ class Admin extends Admin_Controller {
             $isi[] = [
                 $r->kode_tiket, date('d-m-Y H:i', strtotime($r->created_at)),
                 $profil['full_name'] ?? $r->nama_lengkap, $profil['nik'] ?? $r->nik_pengaju,
-                $r->nama_program ?? 'Hunian sudah layak huni', $label[$r->status_antrean]['label'] ?? $r->status_antrean,
+                $r->nama_program ?? label_tanpa_program($penilaian['bantuan_perumahan'] ?? NULL), $label[$r->status_antrean]['label'] ?? $r->status_antrean,
                 is_numeric($desil) ? (int) $desil : $desil,
                 $pekerjaan !== NULL ? (self::LABEL_PEKERJAAN[$pekerjaan] ?? $pekerjaan) : ($survey['pekerjaan'] ?? NULL),
                 is_numeric($penghasilan) ? (int) $penghasilan : $penghasilan,

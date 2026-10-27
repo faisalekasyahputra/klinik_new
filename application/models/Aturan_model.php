@@ -54,7 +54,7 @@ class Aturan_model extends CI_Model {
         $kode = 'ATURAN-' . date('Ymd-His');
         $this->db->trans_start();
         $this->db->insert('aturan_versi', ['kode' => $kode, 'status' => 'draf', 'dibuat_oleh' => (int) $user_id ?: NULL,
-            'catatan' => 'Salinan dari ' . $aktif]);
+            'catatan' => 'Salinan dari ' . $aktif, 'matriks_menentukan' => (int) ($this->versi($aktif)['matriks_menentukan'] ?? 0)]);
         $this->db->query('INSERT INTO aturan_program (versi, program_id, urutan, desil_sasaran, kandidat_tanpa_desil, jenis_cek, kode_alasan)
             SELECT ?, program_id, urutan, desil_sasaran, kandidat_tanpa_desil, jenis_cek, kode_alasan FROM aturan_program WHERE versi = ?', [$kode, $aktif]);
         $this->db->query('INSERT INTO aturan_matriks_baris (versi, urutan, rentang_penghasilan, desil, status_dtks, lahan, rumah, lingkungan, finansial, usia, keluarga, nama_skema)
@@ -157,6 +157,14 @@ class Aturan_model extends CI_Model {
         return $this->db->trans_status() ? [] : ['Aturan gagal disimpan.'];
     }
 
+    /** Sakelar pilihan B di draf: matriks ikut menentukan program yang bisa dipilih. */
+    public function atur_matriks_menentukan($nyala)
+    {
+        $d = $this->draf();
+        if ( ! $d) { return FALSE; }
+        return (bool) $this->db->where('id', $d['id'])->update('aturan_versi', ['matriks_menentukan' => $nyala ? 1 : 0]);
+    }
+
     /** Terbitkan draf: draf jadi terbit, terbit sebelumnya jadi arsip. Mengembalikan [kode baru, kode lama] atau NULL. */
     public function terbitkan($user_id)
     {
@@ -183,21 +191,23 @@ class Aturan_model extends CI_Model {
         $mesin = function ($kode) {
             return [new Warga_ruleset(NULL, $kode), new Matriks_program_ruleset(NULL, $kode)];
         };
+        $katalog = array_column($this->db->select('kode_program, nama_program')->get('sf_program')->result_array(), 'nama_program', 'kode_program');
         [$wa, $ma] = $mesin($aktif);
         [$wd, $md] = $mesin($d['kode']);
         $nama = array_column($this->db->select('kode_program, nama_program')->get('sf_program')->result_array(), 'nama_program', 'kode_program');
         $hasil = []; $berubah = 0;
         foreach (self::contoh_warga() as [$label, $draft, $profil]) {
-            $tawar = function ($w) use ($draft, $profil, $nama) {
+            // Sama dengan Warga::step: hasil desil, lalu disaring matriks bila versi itu memakai pilihan B.
+            $tawar = function ($w, $m) use ($draft, $profil, $nama, $katalog) {
+                $hasil = [];
+                foreach ($w->route_candidates($profil['desil_kesejahteraan']) as $c) { $hasil[] = $w->evaluate($c, $draft, $profil) + ['program_code' => $c]; }
+                if ($w->matriks_menentukan) { $hasil = $m->saring($hasil, $m->preliminary($draft, $profil, date('Y-m-d'))['items'], $katalog); }
                 $out = [];
-                foreach ($w->route_candidates($profil['desil_kesejahteraan']) as $c) {
-                    $e = $w->evaluate($c, $draft, $profil);
-                    if (in_array($e['status_kelayakan'], ['eligible', 'potential'], TRUE)) { $out[] = $nama[$c] ?? $c; }
-                }
+                foreach ($hasil as $e) { if (in_array($e['status_kelayakan'], ['eligible', 'potential'], TRUE)) { $out[] = $nama[$e['program_code']] ?? $e['program_code']; } }
                 return $out;
             };
             $awal = fn($m) => array_values(array_unique(array_column($m->preliminary($draft, $profil, date('Y-m-d'))['items'], 'program_name')));
-            $a = [$tawar($wa), $awal($ma)]; $b = [$tawar($wd), $awal($md)];
+            $a = [$tawar($wa, $ma), $awal($ma)]; $b = [$tawar($wd, $md), $awal($md)];
             $beda = $a !== $b;
             $berubah += $beda ? 1 : 0;
             $hasil[] = ['label' => $label, 'aktif' => $a, 'draf' => $b, 'berubah' => $beda];
@@ -216,6 +226,11 @@ class Aturan_model extends CI_Model {
             $contoh[] = ["Desil $desil, Rp" . number_format($rp, 0, ',', '.') . ', sewa, menikah', [
                 'jalur_penilaian' => 'candidate_land', 'kepemilikan_rumah' => 'rent', 'rumah_lain' => '0', 'tanah_lain' => '0',
                 'kawasan_perumahan' => 'good', 'jml_kk' => 1], $profil];
+            if (in_array($desil, [5, 6], TRUE)) {
+                $contoh[] = ["Desil $desil, Rp" . number_format($rp, 0, ',', '.') . ', sewa, menikah, usia 65', [
+                    'jalur_penilaian' => 'candidate_land', 'kepemilikan_rumah' => 'rent', 'rumah_lain' => '0', 'tanah_lain' => '0',
+                    'kawasan_perumahan' => 'good', 'jml_kk' => 1], ['birth_date' => '1961-03-10'] + $profil];
+            }
             $contoh[] = ["Desil $desil, Rp" . number_format($rp, 0, ',', '.') . ', rumah sendiri rusak berat', [
                 'jalur_penilaian' => 'existing_house', 'kepemilikan_rumah' => 'owned', 'rumah_lain' => '0', 'tanah_lain' => '0',
                 'kawasan_perumahan' => 'slum', 'jml_kk' => 1, 'kondisi_atap' => 'severe_damage_or_absent',

@@ -36,6 +36,49 @@ class Matriks_program_ruleset {
         $this->versi = $versi;
     }
 
+    /**
+     * Kode program katalog yang diwakili satu baris matriks. Baris gabungan dinas ("KPR-FLPP / Oemah Lestari Subsidi")
+     * mewakili keduanya. Program baru dikenali dari nama katalognya di awal nama baris. $katalog = [kode => nama].
+     */
+    public static function program_baris($nama_skema, array $katalog)
+    {
+        $nama = (string) $nama_skema;
+        $kode = [];
+        if (stripos($nama, 'FLPP') !== FALSE) { $kode[] = 'flpp'; }
+        if (stripos($nama, 'Oemah Lestari') !== FALSE) { $kode[] = 'oemah_lestari'; }
+        if (strpos($nama, 'PK ') === 0) { $kode[] = 'rtlh'; }
+        if (strpos($nama, 'PB ') === 0) { $kode[] = 'pb'; }
+        foreach ($katalog as $k => $n) {
+            if ((string) $n !== '' && stripos($nama, (string) $n) === 0) { $kode[] = $k; }
+        }
+        return array_values(array_unique($kode));
+    }
+
+    /**
+     * Pilihan B dinas (27 Okt 2026): rekomendasi eligible/potential dari program yang PUNYA baris matriks hanya tetap
+     * bisa dipilih bila salah satu barisnya cocok dengan data warga ($items = preliminary()['items']). Baris cocok tapi
+     * datanya belum lengkap menjadi needs_data. Program tanpa baris matriks (mis. Omah Sekeng, Rumah Apung) tidak
+     * disaring: patokan sementara sampai dinas memutuskan.
+     */
+    public function saring(array $rekomendasi, array $items, array $katalog)
+    {
+        $punya = []; $cocok = []; $kurang = [];
+        foreach ($this->baris as $b) { foreach (self::program_baris($b[9], $katalog) as $k) { $punya[$k] = TRUE; } }
+        foreach ($items as $it) {
+            foreach (self::program_baris($it['program_name'], $katalog) as $k) {
+                if ($it['missing']) { $kurang[$k] = TRUE; } else { $cocok[$k] = TRUE; }
+            }
+        }
+        foreach ($rekomendasi as &$r) {
+            $k = (string) ($r['program_code'] ?? '');
+            if ( ! isset($punya[$k]) || isset($cocok[$k]) || ! in_array($r['status_kelayakan'] ?? '', ['eligible', 'potential'], TRUE)) { continue; }
+            $r['status_kelayakan'] = isset($kurang[$k]) ? 'needs_data' : 'not_eligible';
+            $r['reason_codes'] = [isset($kurang[$k]) ? 'SIM_MATRIKS_DATA_KURANG' : 'SIM_MATRIKS_TIDAK_COCOK'];
+        }
+        unset($r);
+        return $rekomendasi;
+    }
+
     /** Nilai yang boleh dipilih per kolom matriks di layar Aturan rekomendasi (sama dengan yang dihasilkan turunan()). */
     const PILIHAN = [
         'rentang_penghasilan' => ['income_0_1_5' => 'Rp0 sampai 1,5 jt', 'income_1_5_2_2' => 'Rp1,5 sampai 2,2 jt', 'income_2_2_2_8' => 'Rp2,2 sampai 2,8 jt',

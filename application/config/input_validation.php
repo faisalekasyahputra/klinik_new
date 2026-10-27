@@ -8,6 +8,7 @@ $config['input_allowed_fields'] = [
     'catatan',
     'baris', // Admin_Aturan: baris matriks draf
     'program_id', // Admin_Aturan/buat_draf: kembali ke halaman program
+    'matriks_menentukan', // Admin_Aturan/sakelar_matriks: pilihan B dinas
     'about_desc_1',
     'about_desc_2',
     'about_title',

@@ -89,4 +89,19 @@ cek( ! Warga_ruleset::hunian_layak(['kondisi_lantai'=>NULL] + $baik) && ! Warga_
     'Kondisi belum diisi atau bukan rumah milik: tidak disebut layak');
 $rules_w = mesin_warga_uji();
 cek(($rules_w->evaluate('rtlh', $baik, ['desil_kesejahteraan'=>2])['status_kelayakan'] ?? '') !== 'eligible', 'Rumah layak tidak sekaligus eligible RTLH');
+// Pilihan B dinas (27 Okt 2026): program yang punya baris matriks hanya bisa dipilih bila juga cocok dengan barisnya.
+$katalog = ['flpp'=>'KPR-FLPP Rumah Subsidi', 'oemah_lestari'=>'Oemah Lestari', 'omah_sekeng'=>'Omah Sekeng'];
+cek(Matriks_program_ruleset::program_baris('KPR-FLPP / Oemah Lestari Subsidi', $katalog) === ['flpp', 'oemah_lestari']
+    && Matriks_program_ruleset::program_baris('PK RTLH (Prioritas 1)', $katalog) === ['rtlh']
+    && Matriks_program_ruleset::program_baris('Omah Sekeng (Prioritas 1)', $katalog) === ['omah_sekeng'],
+    'Baris gabungan FLPP/Oemah mewakili keduanya; baris program baru dikenali dari nama katalognya');
+$rek = [['program_code'=>'flpp','status_kelayakan'=>'eligible'], ['program_code'=>'oemah_lestari','status_kelayakan'=>'potential'], ['program_code'=>'omah_sekeng','status_kelayakan'=>'eligible']];
+$sewa = ['kepemilikan_rumah'=>'rent', 'kawasan_perumahan'=>'good', 'rumah_lain'=>'0', 'tanah_lain'=>'0', 'jml_kk'=>1];
+$p65 = ['penghasilan_bulanan'=>4000000, 'birth_date'=>'1961-03-10', 'status_perkawinan'=>'married', 'stabilitas_pekerjaan'=>'permanent'];
+$s = $rules->saring($rek, $rules->preliminary($sewa, $p65, '2026-10-27')['items'], $katalog);
+cek($s[0]['status_kelayakan'] === 'not_eligible' && $s[1]['status_kelayakan'] === 'not_eligible' && $s[0]['reason_codes'] === ['SIM_MATRIKS_TIDAK_COCOK'],
+    'Usia 65, sewa, Rp4 juta: FLPP dan Oemah tidak cocok matriks (usia produktif 21 sampai 59) sehingga tidak bisa dipilih');
+cek($s[2]['status_kelayakan'] === 'eligible', 'Program tanpa baris matriks (Omah Sekeng) tidak disaring');
+$s = $rules->saring($rek, $rules->preliminary($sewa, ['birth_date'=>'1990-01-01'] + $p65, '2026-10-27')['items'], $katalog);
+cek($s[0]['status_kelayakan'] === 'eligible' && $s[1]['status_kelayakan'] === 'potential', 'Usia 36 dengan data sama cocok baris FLPP/Oemah: tetap bisa dipilih');
 echo "$total pemeriksaan lulus\n";

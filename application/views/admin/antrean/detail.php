@@ -28,6 +28,8 @@ $reason_labels = [
     'SIM_RUMAH_APUNG_NEEDS_DATA' => 'Definisi dan data Rumah Apung belum tersedia.',
     'SIM_PEMBIAYAAN_INCOME' => 'Penghasilan menjadi pertimbangan simulasi pembiayaan.',
     'SIM_DATA_BELUM_TERSEDIA' => 'Data untuk program ini belum tersedia di formulir.',
+    'SIM_MATRIKS_TIDAK_COCOK' => 'Tidak cocok dengan baris matriks program ini.',
+    'SIM_MATRIKS_DATA_KURANG' => 'Data belum lengkap untuk dicocokkan dengan matriks program ini.',
 ];
 // Label isian satu sumber dengan unduhan Excel antrean: config/label_pendataan.php (26 Okt 2026).
 get_instance()->config->load('label_pendataan', TRUE);
@@ -100,7 +102,7 @@ $lencana = ['simulation' => $this->config->item('simperum_mode') === 'api'
 <div class="tumpuk-bagian">
     <div class="grid-kartu grid sm:grid-cols-4">
         <div class="kartu-admin isi-kartu"><p class="text-xs text-gray-500 dark:text-brand-muted">Status</p><p class="mt-1 font-bold text-gray-900 dark:text-white"><?= $e($status_labels[$queue['status_antrean'] ?? ''] ?? ($queue['status_antrean'] ?? '-')) ?></p></div>
-        <div class="kartu-admin isi-kartu"><p class="text-xs text-gray-500 dark:text-brand-muted">Program</p><p class="mt-1 font-bold text-gray-900 dark:text-white"><?= $display($queue['program_name'] ?? $queue['nama_program'] ?? (empty($queue['program_id']) ? 'Hunian sudah layak huni (tanpa program)' : NULL)) ?></p></div>
+        <div class="kartu-admin isi-kartu"><p class="text-xs text-gray-500 dark:text-brand-muted">Program</p><p class="mt-1 font-bold text-gray-900 dark:text-white"><?= $display($queue['program_name'] ?? $queue['nama_program'] ?? (empty($queue['program_id']) ? label_tanpa_program($assessment['bantuan_perumahan'] ?? NULL) . ' (tanpa program)' : NULL)) ?></p></div>
         <div class="kartu-admin isi-kartu"><p class="text-xs text-gray-500 dark:text-brand-muted">Cabang</p><p class="mt-1 font-bold text-gray-900 dark:text-white"><?= $e($track_labels[$assessment['jalur_penilaian'] ?? ''] ?? 'Belum ditentukan') ?></p></div>
         <div class="kartu-admin isi-kartu"><p class="text-xs text-gray-500 dark:text-brand-muted">Sumber</p><p class="mt-1 font-bold text-gray-900 dark:text-white"><?= $mode_sumber === 'simulation' ? 'SIMPERUM (simulasi)' : ($mode_sumber === 'api' ? 'SIMPERUM' : ($mode_sumber === 'manual' ? 'Diisi mandiri oleh warga' : $display($mode_sumber ?: NULL))) ?></p><p class="mt-1 text-xs font-semibold <?= ! empty($nik_terverifikasi) ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300' ?>" title="Terverifikasi = nama akun dan tanggal lahir pemohon cocok dengan data SIMPERUM untuk NIK ini"><?= ! empty($nik_terverifikasi) ? 'NIK terverifikasi' : 'NIK belum terverifikasi' ?></p></div>
     </div>
