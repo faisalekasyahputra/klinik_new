@@ -18,6 +18,9 @@ class Warga_ruleset {
     /** Kode versi aturan yang sedang dipakai (aturan_versi.kode); disimpan di sf_rekomendasi_penilaian.versi_aturan. */
     public $versi;
 
+    /** Pilihan B (aturan_versi.matriks_menentukan, migrasi 087): rekomendasi disaring Matriks_program_ruleset::saring(). */
+    public $matriks_menentukan = FALSE;
+
     /**
      * Aturan per program dari aturan_program (migrasi 084, tahap 1 aturan yang bisa diatur dinas), urut
      * `urutan`, berkunci kode program: desil[], tanpa_desil, cek (jenis_cek), alasan (kode_alasan). Tanpa argumen (dimuat
@@ -32,6 +35,7 @@ class Warga_ruleset {
             $CI->load->model('Aturan_model');
             $versi = $versi ?? $CI->Aturan_model->kode_aktif();
             if ($versi === NULL) { throw new RuntimeException('Belum ada versi aturan terbit (jalankan migrasi 084 dan 085).'); }
+            $this->matriks_menentukan = (int) ($CI->Aturan_model->versi($versi)['matriks_menentukan'] ?? 0) === 1;
             $aturan = self::dari_baris_db($CI->db->select('p.kode_program, a.desil_sasaran, a.kandidat_tanpa_desil, a.jenis_cek, a.kode_alasan')
                 ->from('aturan_program a')->join('sf_program p', 'p.id = a.program_id')
                 ->where('a.versi', $versi)->order_by('a.urutan')->get()->result_array());

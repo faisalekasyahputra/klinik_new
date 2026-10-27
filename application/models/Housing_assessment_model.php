@@ -1197,20 +1197,23 @@ class Housing_assessment_model extends CI_Model {
         $assessment = $this->db->get_where('sf_penilaian_perumahan', [
             'id' => $penilaian_id, 'user_id' => $user_id, 'status' => 'draft',
         ])->row_array();
-        /* rekomendasi_id 0 = hunian sudah layak huni (dinas 26 Okt 2026): dicatat tanpa program, hanya bila server
-           sendiri menilai rumahnya layak dan memang tidak ada program yang bisa dipilih pada versi aturan ini. */
-        $layak = $rekomendasi_id === 0;
-        $recommendation = $layak ? NULL : $this->db
+        /* rekomendasi_id 0 = dicatat TANPA program, hanya bila server sendiri memastikan tidak ada program yang bisa
+           dipilih pada versi aturan ini: hunian sudah layak huni (dinas 26 Okt 2026) atau tidak ada program yang
+           cocok, mis. disaring matriks (pilihan B, dinas 27 Okt 2026: "data nya tetep kecatat"). Sumber bantuan
+           "Sudah Layak Huni" hanya diisi untuk yang benar-benar layak huni. */
+        $tanpa_program = $rekomendasi_id === 0;
+        $layak = FALSE;
+        $recommendation = $tanpa_program ? NULL : $this->db
             ->select('r.id, r.program_id, r.status_kelayakan, p.aktif')
             ->from('sf_rekomendasi_penilaian r')
             ->join('sf_program p', 'p.id=r.program_id')
             ->where(['r.id' => $rekomendasi_id, 'r.penilaian_id' => $penilaian_id, 'r.versi_aturan' => $versi_aturan])
             ->get()->row_array();
-        if ($layak && $assessment) {
-            $layak = Warga_ruleset::hunian_layak($this->decrypt_assessment($assessment) ?: [])
-                && ! $this->db->where(['penilaian_id' => $penilaian_id, 'versi_aturan' => $versi_aturan])
-                    ->where_in('status_kelayakan', ['eligible', 'potential'])->count_all_results('sf_rekomendasi_penilaian');
-            $recommendation = $layak ? ['program_id' => NULL, 'status_kelayakan' => 'eligible', 'aktif' => 1] : NULL;
+        if ($tanpa_program && $assessment) {
+            $tidak_ada_pilihan = ! $this->db->where(['penilaian_id' => $penilaian_id, 'versi_aturan' => $versi_aturan])
+                ->where_in('status_kelayakan', ['eligible', 'potential'])->count_all_results('sf_rekomendasi_penilaian');
+            $layak = $tidak_ada_pilihan && Warga_ruleset::hunian_layak($this->decrypt_assessment($assessment) ?: []);
+            $recommendation = $tidak_ada_pilihan ? ['program_id' => NULL, 'status_kelayakan' => 'eligible', 'aktif' => 1] : NULL;
         }
         if ( ! $assessment || ! $recommendation
             || ! in_array($recommendation['status_kelayakan'], ['eligible', 'potential'], TRUE)

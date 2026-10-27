@@ -93,6 +93,19 @@ class Admin_Aturan extends Admin_Controller {
         redirect('Admin_Aturan/program/' . (int) $id);
     }
 
+    /** Sakelar pilihan B di draf (dinas 27 Okt 2026): matriks ikut menentukan program yang bisa dipilih. */
+    public function sakelar_matriks()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $nyala = (bool) $this->input->post('matriks_menentukan');
+        $ok = $this->Aturan_model->atur_matriks_menentukan($nyala);
+        if ($ok) {
+            $this->catat_audit('aturan_draf_diubah', 'Matriks ikut menentukan program: ' . ($nyala ? 'NYALA' : 'MATI'), 'aturan_versi',
+                $this->Aturan_model->draf()['id'] ?? NULL, ['matriks_menentukan' => $nyala ? 1 : 0]);
+        }
+        $this->kembali($ok ? 'success' : 'error', $ok ? 'Tersimpan di draf. Periksa uji coba sebelum menerbitkan.' : 'Belum ada draf.');
+    }
+
     public function terbitkan()
     {
         if ($this->input->method(TRUE) !== 'POST') { show_404(); }

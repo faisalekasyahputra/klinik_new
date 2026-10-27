@@ -145,6 +145,18 @@ cek(preg_match('/data-jumlah-berubah[^>]*>(\d+) contoh berubah/', $hal, $m) && (
     'Uji coba menghitung contoh warga yang berubah hasil (' . ($m[1] ?? '?') . ') dan menyebut program baru');
 cek(strpos(http('su', 'Admin_Aturan/program/' . $PID)['body'], 'Ditawarkan (baru)') !== FALSE, 'Uji coba di halaman program menandai warga yang baru ditawari');
 
+// Pilihan B dinas (27 Okt 2026): sakelar "matriks ikut menentukan" per versi, disunting di draf.
+$b = fn() => (int) nilai('SELECT matriks_menentukan FROM aturan_versi WHERE kode = ?', [$DRAF]);
+cek(strpos($hal, 'data-sakelar-matriks') !== FALSE && strpos($hal, 'Admin_Aturan/sakelar_matriks') !== FALSE, 'Layar Aturan menampilkan sakelar matriks ikut menentukan di draf');
+cek(http('su', 'Admin_Aturan/sakelar_matriks')['kode'] === 404 && $b() === 0, 'Sakelar lewat GET ditolak 404');
+kirim('su', 'Admin_Aturan', 'Admin_Aturan/sakelar_matriks', ['matriks_menentukan' => 1]);
+cek($b() === 1 && (int) nilai("SELECT COUNT(*) FROM sys_jejak_audit WHERE aksi = 'aturan_draf_diubah' AND ringkasan LIKE '%NYALA%'") > 0, 'Sakelar dinyalakan di draf dan tercatat di audit');
+$hal = http('su', 'Admin_Aturan')['body'];
+cek(preg_match('/usia 65.{0,600}KPR-FLPP Rumah Subsidi.{0,300}ph-arrow-right/s', $hal) === 1,
+    'Uji coba memperlihatkan warga usia 65 kehilangan KPR-FLPP karena tidak cocok matriks');
+kirim('su', 'Admin_Aturan', 'Admin_Aturan/sakelar_matriks', []);
+cek($b() === 0, 'Sakelar bisa dimatikan lagi (kotak tidak dicentang)');
+
 echo "\n4. TERBITKAN\n";
 kirim('su', 'Admin_Aturan', 'Admin_Aturan/terbitkan', []);
 cek(nilai('SELECT status FROM aturan_versi WHERE kode = ?', [$DRAF]) === 'draf', 'Terbitkan tanpa konfirmasi ditolak');

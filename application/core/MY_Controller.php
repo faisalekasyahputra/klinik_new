@@ -932,7 +932,8 @@ class MY_Controller extends CI_Controller {
         // FALSE = pertahankan state query builder untuk query ambil di bawah.
         $table += $this->paginate_state($this->db->count_all_results('', FALSE));
 
-        $queue = $this->db->select('sf_antrean_pengajuan.*, sf_program.nama_program')
+        $queue = $this->db->select('sf_antrean_pengajuan.*, sf_program.nama_program,'
+                . ' (SELECT a.bantuan_perumahan FROM sf_penilaian_perumahan a WHERE a.id = sf_antrean_pengajuan.penilaian_id) AS bantuan_penilaian', FALSE)
             ->order_by($table['sort'], $table['dir'])
             ->limit($table['per_page'], $table['offset'])
             ->get()->result();

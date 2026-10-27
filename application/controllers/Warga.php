@@ -570,6 +570,12 @@ class Warga extends MY_Controller {
                         'versi_aturan' => $this->warga_ruleset->versi,
                     ];
                 }
+                // Pilihan B dinas: program yang punya baris matriks harus juga cocok dengan matriksnya.
+                if ($this->warga_ruleset->matriks_menentukan) {
+                    $katalog = array_column($this->db->select('kode_program, nama_program')->get('sf_program')->result_array(), 'nama_program', 'kode_program');
+                    $recommendations = $this->matriks_program_ruleset->saring($recommendations,
+                        $this->matriks_program_ruleset->preliminary($effective, $profile)['items'], $katalog);
+                }
             }
             $recommendation_hash = $this->recommendation_input_hash($effective, $profile);
         }
@@ -684,7 +690,7 @@ class Warga extends MY_Controller {
             ! empty($result['success']) ? 'success' : 'error',
             ! empty($result['success'])
                 ? ((int) $this->input->post('rekomendasi_id', TRUE) === 0
-                    ? 'Data hunian layak huni berhasil dicatat dengan tiket ' . $result['kode_tiket'] . '.'
+                    ? 'Data Anda berhasil dicatat dengan tiket ' . $result['kode_tiket'] . '.'
                     : 'Pengajuan berhasil dikirim dengan tiket ' . $result['kode_tiket'] . '.')
                 : ($result['message'] ?? 'Pengajuan belum dapat dikirim.')
         );

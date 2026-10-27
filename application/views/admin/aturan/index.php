@@ -30,6 +30,23 @@ $petunjuk = 'text-xs text-gray-500 dark:text-brand-muted';
         <?php endif; ?>
     </section>
 
+    <?php $b_nyala = (int) (($ada_draf ? $draf : $aktif)['matriks_menentukan'] ?? 0) === 1; ?>
+    <section class="kartu-admin isi-kartu flex flex-wrap items-center justify-between gap-4" data-sakelar-matriks>
+        <div class="max-w-3xl">
+            <h2 class="<?= $judul ?>">Matriks ikut menentukan program yang bisa dipilih</h2>
+            <p class="<?= $petunjuk ?> mt-1">Nyala: program yang punya baris matriks hanya bisa dipilih warga bila data warga juga cocok dengan salah satu barisnya.
+                Program tanpa baris matriks tetap memakai desil dan data wajib. Warga yang tidak cocok dengan program mana pun tetap bisa menyimpan data.</p>
+        </div>
+        <?php if ($ada_draf): ?>
+        <form method="post" action="<?= base_url('Admin_Aturan/sakelar_matriks') ?>" class="flex items-center gap-3"><?= $csrf ?>
+            <label class="flex items-center gap-2 text-sm font-semibold text-gray-800 dark:text-gray-200"><input type="checkbox" name="matriks_menentukan" value="1"<?= $b_nyala ? ' checked' : '' ?> data-sakelar-b> Nyala</label>
+            <button class="tombol-kedua" data-simpan-sakelar><span>Simpan</span></button>
+        </form>
+        <?php else: ?>
+        <span class="<?= $b_nyala ? 'lencana-ya' : 'lencana-tidak' ?>" data-status-b><?= $b_nyala ? 'Nyala' : 'Mati' ?></span>
+        <?php endif; ?>
+    </section>
+
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3" data-daftar-program>
         <?php foreach ($katalog as $p): $a = $aturan[$p['id']] ?? NULL; $desil = $a ? array_map('intval', explode(',', $a['desil_sasaran'])) : []; ?>
         <article class="kartu-admin kartu-program" data-program="<?= html_escape($p['kode_program']) ?>">
