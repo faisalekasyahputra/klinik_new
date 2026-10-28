@@ -489,13 +489,53 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
     }
 
     /** Templat kosong BNBA: hanya baris judul, supaya kolomnya persis format dinas. */
+    /**
+     * Templat BNBA sebagai XLSX ASLI (bukan SpreadsheetML ber-ekstensi .xls seperti pengirim rekap:
+     * berkas itu ditolak saat diunggah balik, temuan dinas 28 Okt 2026). Isinya:
+     * - lembar BNBA: NIK dan NO KK berformat Teks (tidak jadi 3,37E+15), KDDESA berumus VLOOKUP
+     *   gabungan KABUPATEN_KECAMATAN_DESA ke lembar KODE WILAYAH (pola rumus dari dinas);
+     * - lembar KODE WILAYAH: desa kabupaten pengunduh saja, dari tabel `desa` (kode Kemendagri).
+     * Rumusnya TIDAK dihitung di sini; Excel menghitungnya saat berkas dibuka.
+     */
     public function templat_bnba()
     {
         $this->catat_audit('rekap_diunduh', 'Templat BNBA diunduh (' . $this->nama_wilayah() . ')', 'rd_laporan');
-        $this->kirim_spreadsheet('Templat BNBA', 'BNBA', [
-            'NIK', 'NO KK', 'NAMA', 'ALAMAT', 'KABUPATEN', 'KECAMATAN', 'DESA/KELURAHAN',
-            'KDDESA (KOLOM TERISI OTOMATIS)', 'JUMLAH MATERIAL', 'JUMLAH PADAT KARYA',
-        ], []);
+
+        $baris_isi = 1000;
+        $ss = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $bnba = $ss->getActiveSheet()->setTitle('BNBA');
+        $bnba->fromArray(['NIK', 'NO KK', 'NAMA', 'ALAMAT', 'KABUPATEN', 'KECAMATAN', 'DESA/KELURAHAN',
+            'KDDESA (KOLOM TERISI OTOMATIS)', 'JUMLAH MATERIAL', 'JUMLAH PADAT KARYA']);
+        $bnba->getStyle('A1:J1')->getFont()->setBold(TRUE);
+        $bnba->getStyle('A2:B' . ($baris_isi + 1))->getNumberFormat()->setFormatCode('@');
+        $bnba->getStyle('I2:J' . ($baris_isi + 1))->getNumberFormat()->setFormatCode('#,##0');
+        for ($i = 2; $i <= $baris_isi + 1; $i++) {
+            $bnba->setCellValue("H$i", "=IF(G$i=\"\",\"\",IFERROR(VLOOKUP(UPPER(TRIM(E$i))&\"_\"&UPPER(TRIM(F$i))&\"_\"&UPPER(TRIM(G$i)),'KODE WILAYAH'!\$D:\$E,2,FALSE),\"\"))");
+        }
+        foreach (['A' => 20, 'B' => 20, 'C' => 28, 'D' => 34, 'E' => 16, 'F' => 18, 'G' => 20, 'H' => 18, 'I' => 18, 'J' => 20] as $k => $w) {
+            $bnba->getColumnDimension($k)->setWidth($w);
+        }
+        $bnba->freezePane('A2');
+
+        $kw = $ss->createSheet()->setTitle('KODE WILAYAH');
+        $kw->fromArray(['kabupaten', 'kecamatan', 'deskel', 'concatenate', 'kode_dagri']);
+        $r = 2;
+        foreach ($this->desa_wilayah() as $d) {
+            $kw->fromArray([$d['kab'], $d['kec'], $d['desa'], $d['kab'] . '_' . $d['kec'] . '_' . $d['desa']], NULL, "A$r");
+            $kw->setCellValueExplicit("E$r", $d['kode'], \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $r++;
+        }
+        foreach (['A' => 18, 'B' => 22, 'C' => 24, 'D' => 50, 'E' => 14] as $k => $w) { $kw->getColumnDimension($k)->setWidth($w); }
+        $ss->setActiveSheetIndex(0);
+
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($ss);
+        $writer->setPreCalculateFormulas(FALSE);
+        $aman = preg_replace('/[^A-Za-z0-9 _.-]/', '', 'Templat BNBA - ' . $this->nama_wilayah());
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $aman . '.xlsx"');
+        header('Cache-Control: private, no-store');
+        $writer->save('php://output');
+        exit;
     }
 
     public function hapus_sumber()
@@ -652,7 +692,8 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         $path = $this->private_upload_dir('rekam_bnba', $laporan_id) . $tersimpan;
 
         $this->load->library('rekam_bnba_import');
-        $baca = $this->rekam_bnba_import->baca($path, $this->nama_wilayah());
+        $kode_desa = array_fill_keys(array_column($this->desa_wilayah(), 'kode'), TRUE);
+        $baca = $this->rekam_bnba_import->baca($path, $this->nama_wilayah(), $kode_desa);
         if (empty($baca['success'])) {
             @unlink($path);
             return $baca['message'];
@@ -705,6 +746,24 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
     {
         $tw = (int) $this->input->get('triwulan');
         return ($tw >= 1 && $tw <= 4) ? $tw : (int) ceil((int) date('n') / 3);
+    }
+
+    /**
+     * Desa kabupaten pelapor dalam bentuk lembar KODE WILAYAH dinas: kabupaten HURUF BESAR tanpa
+     * awalan "Kabupaten" (kota tetap "KOTA X"), kecamatan dan desa huruf besar, kode Kemendagri.
+     * @return array [['kab','kec','desa','kode'], ...]
+     */
+    private function desa_wilayah()
+    {
+        $kab = strtoupper(preg_replace('/^Kabupaten\s+/i', '', $this->nama_wilayah()));
+        $out = [];
+        foreach ($this->db->select('d.id AS kode, d.nama AS desa, k.nama AS kec')
+            ->from('desa d')->join('kecamatan k', 'k.id = d.kecamatan_id')
+            ->where('k.kabupaten_id', (int) $this->my_kabupaten_id)
+            ->order_by('k.nama')->order_by('d.nama')->get()->result_array() as $d) {
+            $out[] = ['kab' => $kab, 'kec' => strtoupper($d['kec']), 'desa' => strtoupper($d['desa']), 'kode' => (string) $d['kode']];
+        }
+        return $out;
     }
 
     private function nama_wilayah()

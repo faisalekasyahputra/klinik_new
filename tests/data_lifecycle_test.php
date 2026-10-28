@@ -67,7 +67,8 @@ foreach ($it as $f) {
     if (preg_match('/\breadfile\(|\bfpassthru\(|Content-Disposition/', $s)) { $jalur[] = $rel; }
 }
 sort($jalur);
-check($jalur === ['controllers/Admin_Psu.php', 'controllers/Pengaturan.php', 'core/MY_Controller.php'], 'Jalur unduhan berkas berubah; tinjau audit untuk yang baru: ' . implode(', ', $jalur));
+// Rekam_Perumahan.php: templat BNBA XLSX (judul kolom + kode desa, tanpa data pribadi), unduhannya diaudit 'rekap_diunduh'.
+check($jalur === ['controllers/Admin_Psu.php', 'controllers/Pengaturan.php', 'controllers/Rekam_Perumahan.php', 'core/MY_Controller.php'], 'Jalur unduhan berkas berubah; tinjau audit untuk yang baru: ' . implode(', ', $jalur));
 $my = sumber('core/MY_Controller.php');
 check(preg_match('/function serve_private_file.*?catat_akses_data_pribadi\(\'berkas_privat\'.*?readfile/s', $my) === 1, 'serve_private_file harus mencatat akses staf sebelum menyajikan berkas');
 check(preg_match('/function catat_akses_data_pribadi.*?peran_staf.*?audit_akses_dedupe.*?catat_audit\(\'akses_\'/s', $my) === 1, 'Audit akses hanya untuk staf, ditekan duplikatnya, dan tercatat lewat catat_audit');

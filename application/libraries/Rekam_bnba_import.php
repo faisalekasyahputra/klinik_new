@@ -7,7 +7,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
  * Baca BNBA (daftar penerima) dari Excel yang diunggah admin kabupaten/kota,
  * format dari dinas 27 Okt 2026:
  *   NIK | NO KK | NAMA | ALAMAT | KABUPATEN | KECAMATAN | DESA/KELURAHAN |
- *   KDDESA (terisi otomatis, diabaikan) | JUMLAH MATERIAL | JUMLAH PADAT KARYA
+ *   KDDESA (rumus VLOOKUP di templat, wajib terisi) | JUMLAH MATERIAL | JUMLAH PADAT KARYA
  *
  * Pola yang sama dengan Kkn_peserta_import: header dicocokkan lewat NAMA kolom,
  * satu baris cacat MENOLAK SELURUH berkas dengan nomor barisnya, dan library
@@ -18,25 +18,41 @@ class Rekam_bnba_import
 {
     const BATAS_BARIS = 5000;
 
-    /** Judul kolom (huruf kecil) → kunci. KDDESA sengaja tidak ada: terisi otomatis, tak dibaca. */
+    /**
+     * Judul kolom (huruf kecil, spasi dirapatkan) → kunci. KDDESA (permintaan dinas 28 Okt 2026) kini
+     * DIBACA: di templat terisi rumus VLOOKUP dari lembar KODE WILAYAH, dan baris yang KDDESA-nya
+     * kosong/asing ditolak. Judulnya diawali "kddesa" dan boleh diikuti keterangan apa pun.
+     */
     const KOLOM = [
         'nik' => 'nik', 'no kk' => 'kk', 'nama' => 'nama', 'alamat' => 'alamat',
         'kabupaten' => 'kab', 'kecamatan' => 'kec', 'desa/kelurahan' => 'desa',
         'jumlah material' => 'material', 'jumlah padat karya' => 'padat',
     ];
-    const WAJIB = ['nik', 'nama', 'alamat', 'kab', 'kec', 'desa', 'material', 'padat'];
+    const WAJIB = ['nik', 'nama', 'alamat', 'kab', 'kec', 'desa', 'kddesa', 'material', 'padat'];
 
     /**
-     * @param string $path          berkas sementara
+     * @param string $path           berkas sementara
      * @param string $nama_kabupaten kabupaten pelapor; baris kabupaten lain ditolak
+     * @param array  $kode_desa      kode desa SAH milik kabupaten pelapor (tabel `desa`), [kode => TRUE]
      * @return array ['success','message','jumlah_penerima','total_material','total_padat_karya']
      */
-    public function baca($path, $nama_kabupaten)
+    public function baca($path, $nama_kabupaten, array $kode_desa)
     {
         try {
             // Nilai MENTAH (formatData FALSE): sel uang berformat "#,##0.00" kalau dibaca sebagai teks
             // terformat jadi "17.500.000,00" dan membuang pemisahnya mengalikan angka 100 kali.
-            $baris = IOFactory::load($path)->getActiveSheet()->toArray(NULL, TRUE, FALSE, FALSE);
+            // Rumus TIDAK dihitung di server (calculateFormulas FALSE): sel berumus (KDDESA) memakai
+            // nilai hasil yang disimpan Excel. Lebih cepat (VLOOKUP ke ribuan desa per baris) dan
+            // tidak menjalankan rumus kiriman pengunggah.
+            $sheet = IOFactory::load($path)->getActiveSheet();
+            $baris = $sheet->toArray(NULL, FALSE, FALSE, FALSE);
+            foreach ($baris as $i => $r) {
+                foreach ($r as $c => $v) {
+                    if (is_string($v) && strpos($v, '=') === 0) {
+                        $baris[$i][$c] = $sheet->getCell([$c + 1, $i + 1])->getOldCalculatedValue();
+                    }
+                }
+            }
         } catch (\Throwable $e) {
             log_message('error', 'Rekam_bnba_import: gagal membaca berkas - ' . $e->getMessage());
             return $this->gagal('Berkas tidak dapat dibaca. Pastikan benar-benar Excel (XLSX/XLS), bukan berkas yang sekadar diganti namanya.');
@@ -50,6 +66,7 @@ class Rekam_bnba_import
         foreach ((array) array_shift($baris) as $idx => $judul) {
             $judul = strtolower(trim(preg_replace('/\s+/', ' ', (string) $judul)));
             if (isset(self::KOLOM[$judul])) { $kol[self::KOLOM[$judul]] = $idx; }
+            elseif (strpos($judul, 'kddesa') === 0) { $kol['kddesa'] = $idx; }
         }
         $hilang = array_diff(self::WAJIB, array_keys($kol));
         if ($hilang) {
@@ -72,6 +89,15 @@ class Rekam_bnba_import
             }
             if ( ! self::kab_cocok($v('kab'), $nama_kabupaten)) {
                 $cacat[] = "$no: KABUPATEN bukan wilayah Anda ({$nama_kabupaten})"; continue;
+            }
+            // KDDESA kosong = rumus tidak menemukan gabungan kabupaten/kecamatan/desa: hampir selalu
+            // salah ketik nama desa atau kecamatan. Ditolak, bukan ditebak.
+            $kd = $v('kddesa');
+            if ($kd === '' || $kd === '#N/A') {
+                $cacat[] = "$no: KDDESA kosong. Periksa ejaan KECAMATAN dan DESA/KELURAHAN agar sama dengan lembar KODE WILAYAH"; continue;
+            }
+            if ( ! preg_match('/^\d{10}$/', $kd) || ! isset($kode_desa[$kd])) {
+                $cacat[] = "$no: KDDESA $kd bukan kode desa di {$nama_kabupaten}"; continue;
             }
             $uang = [];
             foreach (['material' => 'JUMLAH MATERIAL', 'padat' => 'JUMLAH PADAT KARYA'] as $k => $label) {
