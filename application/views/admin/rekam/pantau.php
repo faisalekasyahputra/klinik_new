@@ -76,6 +76,17 @@ $this->load->view('admin/layouts/cetak_rekap');
         <a href="<?= $tautan($tahun, $n) ?>" class="chip-filter"<?= (int) $n === (int) $triwulan ? ' aria-current="true"' : '' ?>><?= html_escape($label) ?></a>
         <?php endforeach; ?>
 
+        <?php /* Cari kabupaten/kota: disaring di peramban karena barisnya selalu 35 (tidak berhalaman),
+                 jadi tidak perlu bolak-balik ke server. Nomor baris ikut menyesuaikan karena counter CSS
+                 tidak menghitung baris yang disembunyikan. */ ?>
+        <label class="relative ml-3">
+            <span class="sr-only">Cari kabupaten/kota</span>
+            <i class="ph ph-magnifying-glass pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" aria-hidden="true"></i>
+            <input type="search" placeholder="Cari kabupaten/kota" data-cari-pantau autocomplete="off"
+                   class="h-8 w-56 rounded-lg border border-gray-300 bg-white pl-8 pr-2 text-sm text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/30 dark:border-white/25 dark:bg-black/40 dark:text-white dark:focus:border-brand-primary dark:focus:ring-brand-primary/30"
+                   oninput="var q=this.value.trim().toLowerCase(),n=0;this.closest('[data-tabel-admin]').querySelectorAll('tbody tr[data-nama]').forEach(function(r){var ok=r.dataset.nama.indexOf(q)!==-1;r.hidden=!ok;if(ok)n++;});var k=this.closest('[data-tabel-admin]').querySelector('[data-cari-kosong]');if(k)k.hidden=n>0;">
+        </label>
+
         <?php /* Tombol unduh HANYA muncul kalau memang ada baris kabupaten -
                  pola yang sama dengan Rekam_Perumahan/Rekam_Kawasan. Permintaan
                  user 17 Agt 2026: "bisa diexport ke excel atau pdf di
@@ -100,13 +111,17 @@ $this->load->view('admin/layouts/cetak_rekap');
         <?php endif; ?>
     </div>
 
-    <div class="overflow-x-auto">
+    <?php /* 35 baris tetap: tabel digulir DI DALAM kartu, bukan seluruh halaman. Tinggi = layar dikurangi
+             topbar, toolbar kartu, dan footer, supaya toolbar tetap terlihat, judul kolom menempel, dan
+             baris terakhir tidak pernah tertutup footer. thead berlatar padat (bukan transparan) agar
+             baris yang lewat di bawahnya tidak tembus pandang. */ ?>
+    <div class="max-h-[calc(100vh-15rem)] overflow-auto">
         <table class="w-full text-left text-sm whitespace-nowrap">
-            <thead class="bg-gray-50 dark:bg-black/20 text-gray-500 dark:text-brand-muted text-xs font-bold">
+            <thead class="sticky top-0 z-10 bg-gray-100 text-gray-600 shadow-[0_1px_0_rgba(0,0,0,.08)] dark:bg-[#0b222b] dark:text-brand-muted dark:shadow-[0_1px_0_rgba(255,255,255,.08)] text-xs font-bold">
                 <tr>
-                    <th class="px-4 py-3">Kabupaten / Kota</th>
+                    <th class="px-3 py-2">Kabupaten / Kota</th>
                     <?php foreach ($domain as $nama): ?>
-                    <th class="px-4 py-3"><?= html_escape($nama) ?></th>
+                    <th class="px-3 py-2"><?= html_escape($nama) ?></th>
                     <?php endforeach; ?>
                 </tr>
             </thead>
@@ -114,19 +129,20 @@ $this->load->view('admin/layouts/cetak_rekap');
                 <?php if (empty($baris)): ?>
                 <tr><td colspan="3" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">Tabel kabupaten kosong - seed wilayah belum jalan.</td></tr>
                 <?php else: foreach ($baris as $kab_id => $b): ?>
-                <tr>
-                    <td class="px-4 py-3 font-bold text-gray-900 dark:text-white"><?= html_escape($b['kabupaten']) ?></td>
+                <tr data-nama="<?= html_escape(strtolower($b['kabupaten'])) ?>">
+                    <td class="px-3 py-1.5 font-bold text-gray-900 dark:text-white"><?= html_escape($b['kabupaten']) ?></td>
                     <?php foreach (array_keys($domain) as $kode):
                         $sel = $b[$kode] ?? NULL;
                         $keadaan = $sel['keadaan'] ?? 'belum';
                     ?>
-                    <td class="px-4 py-3">
-                        <span class="inline-block rounded-full px-2.5 py-1 text-[11px] font-bold <?= $gaya[$keadaan] ?? $gaya['belum'] ?>">
+                    <td class="px-3 py-1.5">
+                      <div class="flex items-center gap-1.5">
+                        <span class="inline-block min-w-[8.5rem] rounded-md px-2 py-0.5 text-center text-[11px] font-bold <?= $gaya[$keadaan] ?? $gaya['belum'] ?>">
                             <?= html_escape($sel['keadaan_label'] ?? 'Belum ada laporan') ?>
                         </span>
                         <?php // Draft belum dikirim = isian setengah jadi milik kab/kota; superadmin melihat yang sudah dikirim saja. ?>
                         <?php if ( ! empty($sel['laporan_id']) && $keadaan !== 'draft'): ?>
-                        <a href="<?= base_url('Admin_Rekam_Data/detail/' . (int) $sel['laporan_id']) ?>" class="ml-1.5 text-[11px] font-bold text-blue-600 hover:underline dark:text-brand-primary">Lihat</a>
+                        <a href="<?= base_url('Admin_Rekam_Data/detail/' . (int) $sel['laporan_id']) ?>" class="tombol-aksi"><i class="ph ph-eye" aria-hidden="true"></i><span>Lihat</span></a>
                         <?php endif; ?>
                         <?php // Mengisi atas nama kabupaten: POST (mengubah sesi), kabupaten divalidasi di server. ?>
                         <form method="post" action="<?= base_url('Admin_Rekam_Data/bertindak') ?>" class="inline">
@@ -135,8 +151,9 @@ $this->load->view('admin/layouts/cetak_rekap');
                             <input type="hidden" name="domain" value="<?= html_escape($kode) ?>">
                             <input type="hidden" name="tahun" value="<?= (int) $tahun ?>">
                             <input type="hidden" name="triwulan" value="<?= (int) $triwulan ?>">
-                            <button class="tombol-aksi ml-1.5">Isi</button>
+                            <button class="tombol-aksi"><i class="ph ph-pencil-simple" aria-hidden="true"></i><span>Isi</span></button>
                         </form>
+                      </div>
                         <?php if ($keadaan === 'perbaikan' && ! empty($sel['catatan_admin'])): ?>
                         <div class="mt-0.5 max-w-[220px] truncate text-[10px] text-gray-500 dark:text-brand-muted" title="<?= html_escape($sel['catatan_admin']) ?>">
                             <?= html_escape($sel['catatan_admin']) ?>
@@ -148,6 +165,8 @@ $this->load->view('admin/layouts/cetak_rekap');
                 <?php endforeach; endif; ?>
             </tbody>
         </table>
+        <?php // Di luar <table>: tabel ini dijaga tepat 35 baris kabupaten. ?>
+        <p data-cari-kosong hidden class="px-3 py-8 text-center text-sm text-gray-500 dark:text-brand-muted">Tidak ada kabupaten/kota yang cocok dengan pencarian.</p>
     </div>
 </div>
 </div>
