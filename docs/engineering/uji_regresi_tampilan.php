@@ -1118,7 +1118,7 @@ cek(preg_match('/@media \(max-width: 767px\) \{\s*:is\(button, select, input[^)]
     && strpos($head_admin, 'input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; }') !== FALSE,
     'head.php: target sentuh 40px untuk kontrol di ponsel');
 $wizard = (string) @file_get_contents(APP_ROOT . '/application/views/admin/rekam/perumahan_wizard.php');
-cek(strpos($wizard, 'Unduh templat BNBA') !== FALSE && strpos($wizard, 'Pakai templat: NIK dan NO KK') !== FALSE,
+cek(strpos($wizard, 'Unduh templat BNBA') !== FALSE && strpos($wizard, 'KDDESA terisi otomatis') !== FALSE,
     'Form sumber dana menyebut kolom BNBA dan menautkan templat (istilah Indonesia)');
 cek(strpos($wizard, 'Lampiran BNBA') !== FALSE && strpos($wizard, "\$jumlah('realisasi_anggaran')") !== FALSE,
     'Review & Kirim: angka rencana/realisasi per program dan status BNBA');
