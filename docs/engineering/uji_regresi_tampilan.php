@@ -878,7 +878,7 @@ cek(strpos($diag, 'solusi_pembiayaan_identitas') === FALSE
 $wiz = (string) @file_get_contents(APP_ROOT . '/application/views/admin/rekam/perumahan_wizard.php');
 $mdl_rd = (string) @file_get_contents(APP_ROOT . '/application/models/Rekam_data_model.php');
 wajib($wiz !== '' && $mdl_rd !== '', 'Sumber wizard & Rekam_data_model terbaca');
-preg_match('/Unggah BNBA.*?<\/p>/s', $wiz, $mb);
+preg_match('/BNBA per sumber dana.*?<\/p>/s', $wiz, $mb);
 $blok_bnba = $mb[0] ?? '';
 cek($blok_bnba !== '', 'C1: blok langkah BNBA di wizard terbaca');
 cek(stripos($blok_bnba, 'wajib') !== FALSE, 'C1: layar BNBA menyebut WAJIB');
@@ -1118,8 +1118,8 @@ cek(preg_match('/@media \(max-width: 767px\) \{\s*:is\(button, select, input[^)]
     && strpos($head_admin, 'input[type="checkbox"], input[type="radio"] { width: 20px; height: 20px; }') !== FALSE,
     'head.php: target sentuh 40px untuk kontrol di ponsel');
 $wizard = (string) @file_get_contents(APP_ROOT . '/application/views/admin/rekam/perumahan_wizard.php');
-cek(strpos($wizard, 'Format PDF, JPG, atau PNG, paling besar 5 MB') !== FALSE && strpos($wizard, 'Daftar penerima per nama dan alamat') !== FALSE,
-    'Langkah BNBA menyebut format dan batas 5 MB dengan istilah Indonesia');
+cek(strpos($wizard, 'Unduh templat BNBA') !== FALSE && strpos($wizard, 'Kolom: NIK, NO KK, NAMA') !== FALSE,
+    'Form sumber dana menyebut kolom BNBA dan menautkan templat (istilah Indonesia)');
 cek(strpos($wizard, 'Lampiran BNBA') !== FALSE && strpos($wizard, "\$jumlah('realisasi_anggaran')") !== FALSE,
     'Review & Kirim: angka rencana/realisasi per program dan status BNBA');
 $antrean_v = (string) @file_get_contents(APP_ROOT . '/application/views/admin/antrean/dashboard.php');

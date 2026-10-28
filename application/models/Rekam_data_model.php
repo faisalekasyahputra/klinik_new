@@ -234,6 +234,9 @@ class Rekam_data_model extends CI_Model {
             $this->db->select('program')->get_where('rd_perumahan_program', ['laporan_id' => $laporan_id])->result_array(),
             'program');
         $dicabut = array_values(array_diff($sebelum, $dipilih));
+        // Baris BNBA ikut tersapu CASCADE; berkasnya di disk dikembalikan ke pemanggil untuk di-unlink.
+        $berkas_lama = [];
+        foreach ($dicabut as $p) { $berkas_lama = array_merge($berkas_lama, $this->berkas_bnba_sumber($laporan_id, $p)); }
 
         $this->db->trans_begin();
         if ($dicabut) {
@@ -253,7 +256,7 @@ class Rekam_data_model extends CI_Model {
         $this->db->trans_commit();
 
         return ['success' => TRUE, 'laporan_id' => $laporan_id,
-            'dipilih' => count($dipilih), 'dicabut' => count($dicabut)];
+            'dipilih' => count($dipilih), 'dicabut' => count($dicabut), 'berkas_lama' => $berkas_lama];
     }
 
     /**
@@ -344,13 +347,100 @@ class Rekam_data_model extends CI_Model {
         }
         $laporan_id = (int) $gerbang['laporan']['id'];
 
+        $berkas_lama = $this->berkas_bnba_sumber($laporan_id, $program, $sumber_dana);
         $this->db->delete('rd_perumahan_baris', [
             'laporan_id' => $laporan_id, 'program' => $program, 'sumber_dana' => $sumber_dana,
         ]);
         if ($this->db->affected_rows() < 1) {
             return $this->gagal('tidak_ditemukan', 'Baris sumber dana tidak ditemukan pada program ini.');
         }
-        return ['success' => TRUE, 'laporan_id' => $laporan_id];
+        return ['success' => TRUE, 'laporan_id' => $laporan_id, 'berkas_lama' => $berkas_lama];
+    }
+
+    // ------------------------------------------------- BNBA per sumber dana
+
+    /** Nama berkas BNBA-sumber yang menempel pada baris yang akan dihapus (program/sumber NULL = semua). */
+    public function berkas_bnba_sumber($laporan_id, $program = NULL, $sumber_dana = NULL)
+    {
+        $this->db->select('s.path_privat')->from('rd_perumahan_bnba_sumber s')
+            ->join('rd_perumahan_baris b', 'b.id = s.baris_id')->where('b.laporan_id', (int) $laporan_id);
+        if ($program !== NULL) { $this->db->where('b.program', $program); }
+        if ($sumber_dana !== NULL) { $this->db->where('b.sumber_dana', $sumber_dana); }
+        return array_column($this->db->get()->result_array(), 'path_privat');
+    }
+
+    /**
+     * Simpan (ganti) BNBA satu sumber dana. Barisnya harus sudah ada: urutan di
+     * form adalah angka dulu, baru berkas. `$meta` = nama_asli, path_privat,
+     * mime_type, ukuran, uploaded_by, jumlah_penerima, total_material, total_padat_karya.
+     */
+    public function simpan_bnba_sumber($laporan_id, $program, $sumber_dana, array $meta, $scope_kabupaten_id = NULL)
+    {
+        $gerbang = $this->laporan_untuk_tulis($laporan_id, 'perumahan', $scope_kabupaten_id);
+        if (empty($gerbang['success'])) {
+            return $gerbang;
+        }
+        $baris = $this->db->get_where('rd_perumahan_baris', [
+            'laporan_id' => (int) $gerbang['laporan']['id'], 'program' => $program, 'sumber_dana' => $sumber_dana])->row_array();
+        if ( ! $baris) {
+            return $this->gagal('tidak_ditemukan', 'Sumber dana belum tersimpan, jadi BNBA-nya belum bisa dilampirkan.');
+        }
+        $lama = $this->db->get_where('rd_perumahan_bnba_sumber', ['baris_id' => (int) $baris['id']])->row_array();
+
+        $this->db->trans_begin();
+        $this->db->delete('rd_perumahan_bnba_sumber', ['baris_id' => (int) $baris['id']]);
+        $this->db->insert('rd_perumahan_bnba_sumber', [
+            'baris_id'          => (int) $baris['id'],
+            'nama_asli'         => mb_substr((string) $meta['nama_asli'], 0, 255),
+            'path_privat'       => (string) $meta['path_privat'],
+            'mime_type'         => mb_substr((string) $meta['mime_type'], 0, 100),
+            'ukuran'            => (int) $meta['ukuran'],
+            'jumlah_penerima'   => (int) $meta['jumlah_penerima'],
+            'total_material'    => (int) $meta['total_material'],
+            'total_padat_karya' => (int) $meta['total_padat_karya'],
+            'uploaded_by'       => (int) $meta['uploaded_by'] ?: NULL,
+        ]);
+        if ( ! $this->db->trans_status()) {
+            $this->db->trans_rollback();
+            return $this->gagal('write_failed', 'Berkas BNBA belum tercatat.');
+        }
+        $this->db->trans_commit();
+        return ['success' => TRUE, 'path_lama' => $lama['path_privat'] ?? NULL];
+    }
+
+    /** BNBA-sumber satu laporan, dikunci "program|sumber_dana". */
+    public function bnba_sumber_laporan($laporan_id)
+    {
+        $out = [];
+        foreach ($this->db->select('b.program, b.sumber_dana, s.*')->from('rd_perumahan_bnba_sumber s')
+            ->join('rd_perumahan_baris b', 'b.id = s.baris_id')->where('b.laporan_id', (int) $laporan_id)
+            ->get()->result_array() as $r) {
+            $out[$r['program'] . '|' . $r['sumber_dana']] = $r;
+        }
+        return $out;
+    }
+
+    /** Satu BNBA-sumber untuk diunduh; NULL bila di luar wilayah pemanggil. */
+    public function bnba_sumber($baris_id, $scope_kabupaten_id = NULL)
+    {
+        $this->db->select('s.*, b.laporan_id')->from('rd_perumahan_bnba_sumber s')
+            ->join('rd_perumahan_baris b', 'b.id = s.baris_id')
+            ->join('rd_laporan l', 'l.id = b.laporan_id')->where('s.baris_id', (int) $baris_id);
+        if ($scope_kabupaten_id !== NULL) { $this->db->where('l.kabupaten_id', (int) $scope_kabupaten_id); }
+        return $this->db->get()->row_array() ?: NULL;
+    }
+
+    /**
+     * Sumber dana yang sudah punya realisasi unit tetapi belum ber-BNBA - penentu
+     * boleh-tidaknya Kirim. Rencana tanpa realisasi belum punya penerima.
+     * @return array [['program'=>..,'sumber_dana'=>..], ...]
+     */
+    public function sumber_tanpa_bnba($laporan_id)
+    {
+        return $this->db->select('b.program, b.sumber_dana')->from('rd_perumahan_baris b')
+            ->join('rd_perumahan_bnba_sumber s', 's.baris_id = b.id', 'left')
+            ->where('b.laporan_id', (int) $laporan_id)->where('b.realisasi_unit >', 0)->where('s.id IS NULL', NULL, FALSE)
+            ->get()->result_array();
     }
 
     /**
@@ -464,10 +554,18 @@ class Rekam_data_model extends CI_Model {
              * saat dikirim ulang. Tidak dikecualikan, karena pengecualian itu
              * justru membuka jalan permanen untuk mengirim tanpa BNBA: kirim,
              * minta dikembalikan, kirim lagi. */
+            /* Sejak 27 Okt 2026 BNBA melekat PER SUMBER DANA (Excel, di form sumber
+               dana): tiap sumber dengan realisasi unit > 0 wajib punya BNBA-nya.
+               Berkas tunggal lama (`rd_perumahan_bnba`) tetap diterima sebagai
+               pemenuhan, supaya laporan perlu_perbaikan yang sudah melampirkannya
+               tidak mendadak diminta mengulang. */
             if ( ! $this->db->where('laporan_id', $id)->count_all_results('rd_perumahan_bnba')) {
-                return $this->gagal('belum_lengkap',
-                    'Berkas BNBA (by name by address) belum dilampirkan. '
-                    . 'Sejak 5 Agustus 2026 lampiran ini wajib untuk laporan perumahan.');
+                $tanpa = $this->sumber_tanpa_bnba($id);
+                if ($tanpa) {
+                    return $this->gagal('belum_lengkap',
+                        count($tanpa) . ' sumber dana yang sudah ada realisasinya belum dilampiri BNBA '
+                        . '(unggah Excel-nya di form sumber dana, langkah Isian Capaian).');
+                }
             }
         } else {
             $ringkasan = $this->db->get_where('rd_kawasan_ringkasan', ['laporan_id' => $id])->row_array();
@@ -905,6 +1003,8 @@ class Rekam_data_model extends CI_Model {
                 'baris'   => $this->db->order_by($urut, '', FALSE)->order_by('sumber_dana', 'ASC')
                     ->get_where('rd_perumahan_baris', ['laporan_id' => $id])->result_array(),
                 'bnba'    => $this->db->get_where('rd_perumahan_bnba', ['laporan_id' => $id])->row_array() ?: NULL,
+                'bnba_sumber'    => $this->bnba_sumber_laporan($id),
+                'sumber_tanpa_bnba' => $this->sumber_tanpa_bnba($id),
                 'program_kosong' => $this->program_tanpa_angka($id),
             ];
         }

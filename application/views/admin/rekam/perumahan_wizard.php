@@ -19,8 +19,12 @@ $laporan_id = (int) ($laporan['id'] ?? 0);
 $aktif      = array_search($langkah, $urutan, TRUE);
 
 $kotak  = 'kartu-admin isi-kartu';
-$isian  = 'mt-1 block w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 text-sm'
-    . ' dark:border-white/10';
+// Kolom isian harus beda dari kartu di belakangnya: latar sendiri, garis tepi tegas, cincin fokus.
+// Dulu latarnya transparan dengan garis 10% putih, sehingga di tema gelap kolom menyatu dengan kartu.
+$isian  = 'mt-1 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900'
+    . ' focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/30'
+    . ' dark:border-white/25 dark:bg-black/40 dark:text-white'
+    . ' dark:focus:border-brand-primary dark:focus:ring-brand-primary/30';
 
 $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV'];
 $warna_status = [
@@ -34,7 +38,7 @@ $label_status = ['draft' => 'Draft, belum dikirim', 'terkirim' => 'Terkirim', 'p
 $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $sumber_label, $sumber_berketerangan) {
     $terkunci_sumber = $row !== NULL;
     ?>
-    <form method="post" action="<?= base_url('Rekam_Perumahan/simpan_sumber') ?>" class="space-y-3">
+    <form method="post" action="<?= base_url('Rekam_Perumahan/simpan_sumber') ?>" enctype="multipart/form-data" class="space-y-3">
       <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
       <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
       <input type="hidden" name="program" value="<?= $e($program) ?>">
@@ -56,15 +60,15 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
 
       <?php foreach (['rencana' => 'Rencana', 'realisasi' => 'Realisasi'] as $sisi => $judul): ?>
         <fieldset class="rounded-xl border border-gray-200 p-3 dark:border-white/10">
-          <legend class="px-1 text-xs font-bold text-gray-500 dark:text-brand-muted"><?= $judul ?></legend>
+          <legend class="px-1 text-xs font-bold text-gray-700 dark:text-gray-200"><?= $judul ?></legend>
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="text-xs text-gray-500 dark:text-brand-muted">Unit</label>
+              <label class="text-xs font-semibold text-gray-700 dark:text-gray-300">Unit</label>
               <input type="number" min="0" step="1" name="<?= $sisi ?>_unit"
                      value="<?= (int) ($row[$sisi . '_unit'] ?? 0) ?>" class="<?= $isian ?>">
             </div>
             <div>
-              <label class="text-xs text-gray-500 dark:text-brand-muted">Anggaran (Rp)</label>
+              <label class="text-xs font-semibold text-gray-700 dark:text-gray-300">Anggaran (Rp)</label>
               <input type="number" min="0" step="1" name="<?= $sisi ?>_anggaran"
                      value="<?= (int) ($row[$sisi . '_anggaran'] ?? 0) ?>" class="<?= $isian ?>">
             </div>
@@ -84,6 +88,20 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
         </p>
       </div>
 
+      <?php // BNBA = daftar penerima per sumber dana (Excel). Wajib untuk sumber yang sudah ada realisasinya (gerbang di Rekam_data_model::kirim). ?>
+      <div>
+        <label class="text-xs font-bold text-gray-700 dark:text-brand-muted">
+          BNBA (Excel) <span class="font-normal">- wajib bila ada realisasi</span>
+        </label>
+        <div class="mt-1"><?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'bnba', 'ib_accept' => '.xlsx,.xls', 'ib_required' => FALSE, 'ib_attr' => '']); ?></div>
+        <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">
+          Kolom: NIK, NO KK, NAMA, ALAMAT, KABUPATEN, KECAMATAN, DESA/KELURAHAN, KDDESA (terisi otomatis),
+          JUMLAH MATERIAL, JUMLAH PADAT KARYA. Kolom NIK dan NO KK diformat <b>Teks</b>. Satu baris salah
+          menolak seluruh berkas. Mengunggah lagi menggantikan berkas lama.
+          <a class="font-bold underline" href="<?= base_url('Rekam_Perumahan/templat_bnba') ?>">Unduh templat BNBA</a>
+        </p>
+      </div>
+
       <button class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan</span></button>
     </form>
     <?php
@@ -94,20 +112,25 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
 
   <!-- ================= kepala + penunjuk langkah ================= -->
   <section class="<?= $kotak ?>">
-    <div class="flex flex-wrap items-center gap-3">
-      <span class="rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-black/20">
-        Kabupaten/Kota <b class="text-gray-900 dark:text-white"><?= $e($scope_label) ?></b>
-      </span>
-      <?php if ($laporan): ?>
-        <span class="rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-black/20">
-          <b class="text-gray-900 dark:text-white"><?= $e($nama_tw[(int) $triwulan] ?? $triwulan) ?> <?= (int) $tahun ?></b>
-        </span>
-        <span class="rounded-full px-3 py-1 text-xs font-bold <?= $warna_status[$laporan['status']] ?? '' ?>">
-          <?= $e($label_status[$laporan['status']] ?? $laporan['status']) ?>
-        </span>
-      <?php endif; ?>
-      <a href="<?= base_url('Rekam_Perumahan') ?>" class="ml-auto text-sm font-bold text-blue-600 dark:text-brand-primary">
-        &larr; Capaian
+    <?php // Satu judul (wilayah + periode) dan SATU lencana status. Dulu empat kotak berbentuk beda
+          // berjajar - kotak, kotak, pil, tautan - sehingga tidak jelas mana judul, mana status. ?>
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div class="min-w-0">
+        <p class="text-xs font-bold text-gray-500 dark:text-brand-muted">Kabupaten/Kota</p>
+        <h2 class="text-lg font-black text-gray-900 dark:text-white">
+          <?= $e($scope_label) ?>
+          <?php if ($laporan): ?>
+            <span class="font-bold text-gray-500 dark:text-brand-muted">&middot; <?= $e($nama_tw[(int) $triwulan] ?? $triwulan) ?> <?= (int) $tahun ?></span>
+          <?php endif; ?>
+        </h2>
+        <?php if ($laporan): ?>
+          <span class="mt-1 inline-block rounded-md px-2 py-0.5 text-xs font-bold <?= $warna_status[$laporan['status']] ?? '' ?>">
+            <?= $e($label_status[$laporan['status']] ?? $laporan['status']) ?>
+          </span>
+        <?php endif; ?>
+      </div>
+      <a href="<?= base_url('Rekam_Perumahan') ?>" class="tombol-kedua">
+        <i class="ph ph-arrow-left" aria-hidden="true"></i><span>Capaian</span>
       </a>
     </div>
 
@@ -141,15 +164,22 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
       </p>
     <?php endif; ?>
 
-    <ol class="mt-4 flex flex-wrap gap-2">
+    <?php // Penunjuk langkah, BUKAN tombol: langkahnya tidak bisa diklik, jadi tidak boleh berbentuk
+          // tombol berlatar warna. Langkah aktif = teks tebal + garis bawah; yang lewat = centang. ?>
+    <ol class="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-t border-gray-200 pt-3 text-sm dark:border-white/10" aria-label="Langkah pengisian">
       <?php foreach ($urutan as $i => $kode): ?>
-        <?php $lewat = $aktif !== FALSE && $i < $aktif; ?>
-        <li class="flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold
-                   <?= $kode === $langkah
-                        ? 'bg-blue-600 text-white dark:bg-brand-primary dark:text-brand-dark'
-                        : ($lewat ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300'
-                                  : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-brand-muted') ?>">
-          <span><?= $i + 1 ?>.</span><span><?= $e($label_langkah[$kode]) ?></span>
+        <?php $lewat = $aktif !== FALSE && $i < $aktif; $kini = $kode === $langkah; ?>
+        <li class="flex items-center gap-1.5 border-b-2 pb-1
+                   <?= $kini ? 'border-blue-600 font-bold text-gray-900 dark:border-brand-primary dark:text-white'
+                             : ($lewat ? 'border-transparent text-gray-600 dark:text-gray-300'
+                                       : 'border-transparent text-gray-400 dark:text-brand-muted') ?>"
+            <?= $kini ? 'aria-current="step"' : '' ?>>
+          <?php if ($lewat): ?>
+            <i class="ph ph-check-circle text-emerald-600 dark:text-emerald-400" aria-label="selesai"></i>
+          <?php else: ?>
+            <span class="text-xs tabular-nums"><?= $i + 1 ?>.</span>
+          <?php endif; ?>
+          <span><?= $e($label_langkah[$kode]) ?></span>
         </li>
       <?php endforeach; ?>
     </ol>
@@ -329,6 +359,16 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
                       <dd class="text-gray-900 dark:text-white"><?= $rp($row['realisasi_unit']) ?> unit<br>
                         <span class="text-xs text-gray-500 dark:text-brand-muted">Rp <?= $rp($row['realisasi_anggaran']) ?></span></dd>
                     </dl>
+                    <?php $bs = $bnba_sumber[$program_aktif . '|' . $kode] ?? NULL; ?>
+                    <?php if ($bs): ?>
+                      <p class="mt-2 text-xs text-emerald-700 dark:text-emerald-300">
+                        BNBA: <a class="font-bold underline" href="<?= base_url('Rekam_Perumahan/unduh_bnba_sumber/' . (int) $row['id']) ?>"><?= $e($bs['nama_asli']) ?></a>
+                        - <?= $rp($bs['jumlah_penerima']) ?> penerima, material Rp <?= $rp($bs['total_material']) ?>,
+                        padat karya Rp <?= $rp($bs['total_padat_karya']) ?>
+                      </p>
+                    <?php elseif ((int) $row['realisasi_unit'] > 0): ?>
+                      <p class="mt-2 text-xs font-bold text-red-600 dark:text-red-400">BNBA belum dilampirkan (wajib karena ada realisasi).</p>
+                    <?php endif; ?>
                   </div>
                   <?php if ( ! $terkunci): ?>
                     <form method="post" action="<?= base_url('Rekam_Perumahan/hapus_sumber') ?>"
@@ -385,31 +425,37 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
                berbunyi "opsional - boleh dilewati", dan membiarkannya berbunyi
                begitu sesudah servernya menolak berarti layar menjanjikan
                sesuatu yang lalu ditolak tanpa sebab yang terbaca. */ ?>
-      <h2 class="text-lg font-black text-gray-900 dark:text-white">Unggah BNBA <span class="text-sm font-normal text-red-600 dark:text-red-400">(wajib)</span></h2>
+      <h2 class="text-lg font-black text-gray-900 dark:text-white">BNBA per sumber dana</h2>
       <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
-        Daftar penerima per nama dan alamat. <b class="text-gray-900 dark:text-white">Wajib dilampirkan
-        sejak 5 Agustus 2026</b> - laporan tidak bisa dikirim tanpa berkas ini.
-        Laporan yang sudah terkirim sebelum tanggal itu tetap sah.
+        Daftar penerima (Excel) diunggah <b class="text-gray-900 dark:text-white">di form tiap sumber dana</b>
+        pada langkah Isian Capaian. Wajib untuk sumber dana yang sudah ada realisasinya.
       </p>
 
       <?php if ($bnba): ?>
         <p class="mt-4 rounded-xl border-l-4 border-emerald-500 bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200">
-          Tersimpan:
+          Laporan ini memakai berkas BNBA tunggal dari pelaporan sebelumnya:
           <a class="font-bold underline" href="<?= base_url('Rekam_Perumahan/unduh_bnba/' . $laporan_id) ?>"><?= $e($bnba['nama_asli']) ?></a>
-          <span class="text-xs">(<?= $rp((int) ($bnba['ukuran'] / 1024)) ?> KB)</span>
+          <span class="text-xs">(<?= $rp((int) ($bnba['ukuran'] / 1024)) ?> KB)</span>. Ini sudah memenuhi syarat kirim.
         </p>
       <?php endif; ?>
 
-      <?php if ( ! $terkunci): ?>
-        <form method="post" action="<?= base_url('Rekam_Perumahan/unggah_bnba') ?>" enctype="multipart/form-data" class="mt-4 space-y-3">
-          <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
-          <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
-          <?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'bnba', 'ib_accept' => '.pdf,.jpg,.jpeg,.png', 'ib_required' => FALSE, 'ib_attr' => 'aria-describedby="bnba-format"']); ?>
-          <?php // Sama dengan yang ditegakkan MY_Controller::store_private_upload() (jenis dan batas bawaan 5 MB). ?>
-          <p id="bnba-format" class="text-xs text-gray-500 dark:text-brand-muted">Format PDF, JPG, atau PNG, paling besar 5 MB. Daftar dari Excel disimpan sebagai PDF lebih dulu.</p>
-          <button class="tombol-kedua"><i class="ph ph-upload-simple"></i><span><?= $bnba ? 'Ganti berkas' : 'Unggah' ?></span></button>
-        </form>
-      <?php endif; ?>
+      <ul class="mt-4 divide-y divide-gray-100 dark:divide-white/5">
+        <?php $ada_realisasi = FALSE; foreach ($program_dipilih as $kode_p): foreach ($baris[$kode_p] ?? [] as $kode_s => $row_s): ?>
+          <?php if ((int) $row_s['realisasi_unit'] < 1) { continue; } $ada_realisasi = TRUE; $bs = $bnba_sumber[$kode_p . '|' . $kode_s] ?? NULL; ?>
+          <li class="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+            <span class="font-bold text-gray-900 dark:text-white"><?= $e($sumber_label[$kode_s] ?? $kode_s) ?>
+              <span class="font-normal text-gray-500 dark:text-brand-muted">- <?= $e($program_label[$kode_p] ?? $kode_p) ?></span></span>
+            <?php if ($bs): ?>
+              <span class="text-emerald-700 dark:text-emerald-300"><?= $rp($bs['jumlah_penerima']) ?> penerima</span>
+            <?php else: ?>
+              <a class="font-bold text-red-600 underline dark:text-red-400" href="<?= base_url('Rekam_Perumahan/input?laporan=' . $laporan_id . '&langkah=isian&program=' . rawurlencode($kode_p)) ?>">Belum dilampirkan</a>
+            <?php endif; ?>
+          </li>
+        <?php endforeach; endforeach; ?>
+        <?php if ( ! $ada_realisasi): ?>
+          <li class="py-3 text-sm text-gray-500 dark:text-brand-muted">Belum ada sumber dana dengan realisasi, jadi belum ada BNBA yang diwajibkan.</li>
+        <?php endif; ?>
+      </ul>
     </section>
 
     <section class="<?= $kotak ?>">
@@ -461,15 +507,17 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
           <span class="font-bold text-gray-900 dark:text-white">Lampiran BNBA</span>
           <?php if ($bnba): ?>
             <span class="text-emerald-700 dark:text-emerald-300">Terlampir: <?= $e($bnba['nama_asli']) ?></span>
+          <?php elseif ( ! $sumber_tanpa_bnba): ?>
+            <span class="text-emerald-700 dark:text-emerald-300">Lengkap (<?= count($bnba_sumber) ?> sumber dana)</span>
           <?php else: ?>
-            <span class="font-bold text-red-600 dark:text-red-400">Belum dilampirkan</span>
+            <span class="font-bold text-red-600 dark:text-red-400"><?= count($sumber_tanpa_bnba) ?> sumber dana belum dilampiri</span>
           <?php endif; ?>
         </li>
       </ul>
 
-      <?php if ( ! $bnba && ! $terkunci): ?>
+      <?php if ( ! $bnba && $sumber_tanpa_bnba && ! $terkunci): ?>
         <p class="mt-4 rounded-xl border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-500/10 dark:text-red-200">
-          Laporan tidak bisa dikirim tanpa BNBA. Kembali ke langkah BNBA untuk mengunggah berkasnya.
+          Laporan tidak bisa dikirim sebelum setiap sumber dana yang ada realisasinya dilampiri BNBA. Buka langkah BNBA untuk melihat yang belum.
         </p>
       <?php endif; ?>
 

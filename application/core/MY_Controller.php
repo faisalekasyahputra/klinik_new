@@ -597,7 +597,7 @@ class MY_Controller extends CI_Controller {
      * @param int    $max_bytes batas ukuran, default 5 MB
      * @return string|false nama file tersimpan, atau FALSE kalau gagal/tidak ada
      */
-    protected function store_private_upload($field, $domain, $owner_id, &$error = NULL, $max_bytes = 5242880) {
+    protected function store_private_upload($field, $domain, $owner_id, &$error = NULL, $max_bytes = 5242880, ?array $izin = NULL) {
         if (empty($_FILES[$field]['name'])) { return FALSE; }
 
         $file = $_FILES[$field];
@@ -610,11 +610,13 @@ class MY_Controller extends CI_Controller {
             return FALSE;
         }
 
-        $allowed = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'];
+        // $izin: ekstensi => mime (string, atau daftar mime bila finfo bisa melaporkan lebih dari satu).
+        $allowed = $izin ?? ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'];
         $ext  = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
-        if ( ! isset($allowed[$ext]) || $mime !== $allowed[$ext]) {
-            $error = 'Jenis berkas tidak didukung. Gunakan PDF, JPG, atau PNG.';
+        if ( ! isset($allowed[$ext]) || ! in_array($mime, (array) $allowed[$ext], TRUE)) {
+            $error = $izin === NULL ? 'Jenis berkas tidak didukung. Gunakan PDF, JPG, atau PNG.'
+                : 'Jenis berkas tidak didukung. Gunakan ' . strtoupper(implode(', ', array_keys($allowed))) . '.';
             return FALSE;
         }
 
@@ -850,8 +852,10 @@ class MY_Controller extends CI_Controller {
         $aman = ['pdf' => 'application/pdf', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'png' => 'image/png'];
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
         $inline = isset($aman[$ext]);
-        header('Content-Type: ' . ($inline ? $aman[$ext] : 'application/octet-stream'));
-        header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment') . '; filename="berkas' . ($inline ? '.' . $ext : '.bin') . '"');
+        // Excel (BNBA per sumber dana): selalu unduhan, tetapi dengan ekstensi aslinya supaya bisa dibuka.
+        $excel = ['xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'xls' => 'application/vnd.ms-excel'];
+        header('Content-Type: ' . ($inline ? $aman[$ext] : ($excel[$ext] ?? 'application/octet-stream')));
+        header('Content-Disposition: ' . ($inline ? 'inline' : 'attachment') . '; filename="berkas' . ($inline || isset($excel[$ext]) ? '.' . $ext : '.bin') . '"');
         header('Cache-Control: private, no-store, max-age=0');
         header('Content-Length: ' . (int) filesize($path));
         if ($inline && $ext !== 'pdf') { header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; sandbox"); }
@@ -1456,7 +1460,12 @@ class MY_Controller extends CI_Controller {
                 $this->output->set_header('X-Page-Title: ' . rawurlencode($data['title']));
             }
             $data['dashboard_menu'] = $this->dashboard_menu();
+            $this->load->view('admin/components/banner_bertindak', $data);
             $this->load->view($view, $data);
+            // Pesan flash ikut dikirim: wizard Rekam Data memakai POST lewat loader ini
+            // (PRG), dan tanpa baris ini setiap "tersimpan"/"ditolak" terbaca lalu
+            // terbuang tanpa pernah tampil. Loader yang menampilkannya (tampilkanFlash).
+            $this->load->view('components/notification_center');
 
             // Menu ikut dikirim tiap pindah halaman, dibungkus <template> supaya
             // tidak ikut tampil di dalam konten. Loader menukarnya ke #sidebar-nav.
@@ -2005,15 +2014,34 @@ class Admin_Kabkota_Controller extends MY_Controller {
 
     protected $my_kabupaten_id;
 
+    /**
+     * Superadmin boleh bertindak atas nama satu kabupaten (permintaan dinas
+     * 27 Okt 2026) - HANYA di controller yang menyalakan ini (Rekam_Perumahan,
+     * Rekam_Kawasan). Antrean wilayah (`Admin_Kabkota`) tetap tertutup.
+     * Kabupatennya dari sesi yang ditulis `Admin_Rekam_Data::bertindak()`
+     * setelah divalidasi, bukan dari request.
+     */
+    protected $izinkan_bertindak = FALSE;
+
+    /** Nama kabupaten yang sedang diwakili superadmin, NULL bila bukan itu. */
+    protected $bertindak_atas_nama = NULL;
+
     public function __construct() {
         parent::__construct();
 
-        if ( ! $this->session->userdata('is_logged') || $this->session->userdata('role') !== 'admin_kabkota') {
+        $role      = $this->session->userdata('role');
+        $bertindak = ($this->izinkan_bertindak && $role === 'admin')
+            ? (int) $this->session->userdata('bertindak_kabupaten_id') : 0;
+
+        if ( ! $this->session->userdata('is_logged') || ($role !== 'admin_kabkota' && ! $bertindak)) {
             $this->session->set_flashdata('error', 'Akses ditolak. Anda bukan Admin Kabupaten/Kota.');
             $this->gerbang_login();
         }
 
-        $this->my_kabupaten_id = $this->session->userdata('kabupaten_id');
+        $this->my_kabupaten_id = $bertindak ?: $this->session->userdata('kabupaten_id');
+        if ($bertindak) {
+            $this->bertindak_atas_nama = $this->db->where('id', $bertindak)->get('kabupaten')->row('nama') ?: '-';
+        }
         if (empty($this->my_kabupaten_id)) {
             $this->session->set_flashdata('error', 'Akun ini belum ditetapkan ke kabupaten/kota manapun. Hubungi superadmin.');
             $this->gerbang_login();
@@ -2024,6 +2052,7 @@ class Admin_Kabkota_Controller extends MY_Controller {
     // Delegasi ke render_user_dashboard() - menu ter-scope sekarang datang
     // dari registry (dashboard_modules.php, filter role+scope), bukan hardcode.
     protected function render_scoped_admin($view, $data = []) {
+        $data['bertindak_nama'] = $this->bertindak_atas_nama;
         return $this->render_user_dashboard($view, $data);
     }
 }

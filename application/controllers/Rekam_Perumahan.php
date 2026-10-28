@@ -31,6 +31,8 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         'review'  => 'Review & Kirim',
     ];
 
+    protected $izinkan_bertindak = TRUE;
+
     public function __construct()
     {
         parent::__construct();
@@ -327,6 +329,8 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
                 'baris' => [],
                 'program_kosong' => [],
                 'bnba' => NULL,
+                'bnba_sumber' => [],
+                'sumber_tanpa_bnba' => [],
             ]);
             return;
         }
@@ -365,6 +369,8 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
             'baris'         => $this->baris_per_program($isi['baris']),
             'program_kosong' => $isi['program_kosong'],
             'bnba'          => $isi['bnba'],
+            'bnba_sumber'   => $isi['bnba_sumber'],
+            'sumber_tanpa_bnba' => $isi['sumber_tanpa_bnba'],
             'terkunci'      => $isi['laporan']['status'] === 'terkirim',
             'sumber_label'  => $this->label_sumber(),
             'program_label' => $this->label_program(),
@@ -414,6 +420,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         $dipilih    = (array) ($this->input->post('program') ?: []);
 
         $hasil = $this->rd->simpan_gerbang_program($laporan_id, $dipilih, $this->my_kabupaten_id);
+        $this->buang_berkas_bnba($laporan_id, $hasil['berkas_lama'] ?? []);
         if (empty($hasil['success'])) {
             $this->session->set_flashdata('error', $hasil['message']);
             redirect('Rekam_Perumahan/input?laporan=' . $laporan_id . '&langkah=program');
@@ -447,8 +454,8 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         // Nilai mentah SENGAJA tidak dibersihkan di sini - model yang menolak
         // negatif, bukan-angka, dan anggaran tanpa unit, supaya aturannya satu
         // tempat dan jalur lain ikut terlindungi.
-        $hasil = $this->rd->simpan_sumber($laporan_id, $program,
-            (string) $this->input->post('sumber_dana', TRUE), [
+        $sumber = (string) $this->input->post('sumber_dana', TRUE);
+        $hasil = $this->rd->simpan_sumber($laporan_id, $program, $sumber, [
                 'rencana_unit'       => $this->input->post('rencana_unit'),
                 'rencana_anggaran'   => $this->input->post('rencana_anggaran'),
                 'realisasi_unit'     => $this->input->post('realisasi_unit'),
@@ -456,7 +463,39 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
                 'keterangan'         => $this->input->post('keterangan', TRUE),
             ], $this->my_kabupaten_id);
 
-        $this->pulang_isian($hasil, $laporan_id, $program, 'Sumber dana tersimpan.');
+        // BNBA (Excel) ikut di form yang sama. Angka disimpan lebih dulu; berkas yang ditolak
+        // tidak membatalkan angkanya, dan pesannya bilang begitu apa adanya.
+        $pesan = 'Sumber dana tersimpan.';
+        if ( ! empty($hasil['success']) && ! empty($_FILES['bnba']['name'])) {
+            $galat = $this->simpan_berkas_bnba_sumber($laporan_id, $program, $sumber);
+            if ($galat === NULL) {
+                $pesan = 'Sumber dana dan BNBA tersimpan.';
+            } else {
+                $hasil = ['success' => FALSE, 'message' => 'Angka sumber dana tersimpan, tetapi BNBA ditolak: ' . $galat];
+            }
+        }
+        $this->pulang_isian($hasil, $laporan_id, $program, $pesan);
+    }
+
+    /** Unduh BNBA satu sumber dana milik wilayah sendiri. Scope diperiksa SEBELUM menyentuh disk. */
+    public function unduh_bnba_sumber($baris_id = 0)
+    {
+        $berkas = $this->rd->bnba_sumber((int) $baris_id, $this->my_kabupaten_id);
+        if ( ! $berkas) {
+            show_404();
+            return;
+        }
+        $this->serve_private_file('rekam_bnba', (int) $berkas['laporan_id'], $berkas['path_privat'], $berkas['mime_type']);
+    }
+
+    /** Templat kosong BNBA: hanya baris judul, supaya kolomnya persis format dinas. */
+    public function templat_bnba()
+    {
+        $this->catat_audit('rekap_diunduh', 'Templat BNBA diunduh (' . $this->nama_wilayah() . ')', 'rd_laporan');
+        $this->kirim_spreadsheet('Templat BNBA', 'BNBA', [
+            'NIK', 'NO KK', 'NAMA', 'ALAMAT', 'KABUPATEN', 'KECAMATAN', 'DESA/KELURAHAN',
+            'KDDESA (KOLOM TERISI OTOMATIS)', 'JUMLAH MATERIAL', 'JUMLAH PADAT KARYA',
+        ], []);
     }
 
     public function hapus_sumber()
@@ -470,6 +509,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
 
         $hasil = $this->rd->hapus_sumber($laporan_id, $program,
             (string) $this->input->post('sumber_dana', TRUE), $this->my_kabupaten_id);
+        $this->buang_berkas_bnba($laporan_id, $hasil['berkas_lama'] ?? []);
 
         $this->pulang_isian($hasil, $laporan_id, $program, 'Sumber dana dihapus.');
     }
@@ -592,6 +632,57 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
     }
 
     // ---------------------------------------------------------------- internal
+
+    /**
+     * Terima Excel BNBA satu sumber dana: simpan privat (jenis, pindai virus, kuota), baca dan
+     * validasi isinya, lalu catat. Berkas yang tidak lolos di tahap mana pun dibuang dari disk.
+     * @return string|null pesan galat, NULL bila berhasil
+     */
+    private function simpan_berkas_bnba_sumber($laporan_id, $program, $sumber)
+    {
+        $galat = NULL;
+        $xls_mime = ['application/vnd.ms-excel', 'application/CDFV2', 'application/x-ole-storage'];
+        $tersimpan = $this->store_private_upload('bnba', 'rekam_bnba', $laporan_id, $galat, 5242880, [
+            'xlsx' => ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/zip'],
+            'xls'  => $xls_mime,
+        ]);
+        if ($tersimpan === FALSE) {
+            return $galat ?: 'Berkas gagal diunggah.';
+        }
+        $path = $this->private_upload_dir('rekam_bnba', $laporan_id) . $tersimpan;
+
+        $this->load->library('rekam_bnba_import');
+        $baca = $this->rekam_bnba_import->baca($path, $this->nama_wilayah());
+        if (empty($baca['success'])) {
+            @unlink($path);
+            return $baca['message'];
+        }
+
+        $hasil = $this->rd->simpan_bnba_sumber($laporan_id, $program, $sumber, [
+            'nama_asli'         => $_FILES['bnba']['name'],
+            'path_privat'       => $tersimpan,
+            'mime_type'         => (new finfo(FILEINFO_MIME_TYPE))->file($path) ?: 'application/octet-stream',
+            'ukuran'            => filesize($path),
+            'uploaded_by'       => $this->get_user_id(),
+            'jumlah_penerima'   => $baca['jumlah_penerima'],
+            'total_material'    => $baca['total_material'],
+            'total_padat_karya' => $baca['total_padat_karya'],
+        ], $this->my_kabupaten_id);
+        if (empty($hasil['success'])) {
+            @unlink($path);
+            return $hasil['message'];
+        }
+        $this->buang_berkas_bnba($laporan_id, [$hasil['path_lama'] ?? NULL]);
+        return NULL;
+    }
+
+    /** Buang berkas BNBA-sumber yang barisnya sudah hilang/diganti. Nama kosong dilewati. */
+    private function buang_berkas_bnba($laporan_id, array $nama)
+    {
+        foreach (array_filter($nama) as $n) {
+            @unlink($this->private_upload_dir('rekam_bnba', $laporan_id) . basename((string) $n));
+        }
+    }
 
     private function kembali_ke_bnba($laporan_id)
     {

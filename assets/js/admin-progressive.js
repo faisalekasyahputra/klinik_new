@@ -112,6 +112,24 @@
     }
 
     /**
+     * Pesan flash yang ikut di balasan parsial (MY_Controller::render_user_dashboard).
+     * Wilayah notifikasinya sudah ada di shell, jadi salinan di dalam konten dibuang;
+     * isinya diserahkan ke KPKP.notify yang sama dengan muat halaman penuh.
+     */
+    function tampilkanFlash(akar) {
+        akar.querySelectorAll('[data-kpkp-notification-region]').forEach(function (n) { n.remove(); });
+        akar.querySelectorAll('script[data-kpkp-flash-notifications]').forEach(function (n) {
+            try {
+                (JSON.parse(n.textContent || '[]') || []).forEach(function (item) {
+                    var api = window.KPKP && window.KPKP.notify;
+                    if (api && typeof api[item.type] === 'function') { api[item.type](item.message, item); }
+                });
+            } catch (e) { /* pesan rusak tidak boleh menghentikan halaman */ }
+            n.remove();
+        });
+    }
+
+    /**
      * @param body FormData opsional. Kalau ada, permintaan dikirim sebagai POST
      *             dan redirect JUSTRU yang ditunggu (pola PRG) - bukan tanda
      *             sesi habis seperti pada GET.
@@ -212,6 +230,7 @@
                 }
 
                 main.innerHTML = '<div class="animate-[fadeIn_0.3s_ease-out]">' + html + '</div>';
+                tampilkanFlash(main);
                 reExecuteScripts(main).then(function () {
                     if (window.Alpine) { Alpine.initTree(main); }
                     urlSekarang = urlAkhir;

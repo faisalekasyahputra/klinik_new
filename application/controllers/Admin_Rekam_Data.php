@@ -12,11 +12,13 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * reviewer dinas. Dari kursi itu, fitur yang lengkap memang tidak terlihat
  * sama sekali.
  *
- * READ-ONLY, dan itu bukan sekadar "tidak ada tombol": nol endpoint tulis di
- * kelas ini. Keputusan terima/minta-perbaikan tetap kewenangan Admin Bidang
- * (`Rekam_Tinjauan`). Jalur tulis kedua ke keputusan yang sama adalah cara
- * paling rapi untuk menimpa keputusan orang tanpa jejak - bandingkan alasan
- * yang sama di `Admin_Aduan`.
+ * DULU read-only (nol endpoint tulis, supaya tidak ada jalur kedua ke keputusan
+ * Admin Bidang tanpa jejak). DIBALIK 27 Okt 2026 atas permintaan dinas: super
+ * admin "bisa semua yang bisa dilakukan user lainnya". Yang kini ada, semuanya
+ * POST + CSRF + tercatat di jejak audit: terima, minta_perbaikan (memakai
+ * model & pembatas laju yang SAMA dengan `Rekam_Tinjauan`, jadi tidak ada
+ * logika keputusan ganda), dan bertindak/selesai (mengisi laporan atas nama satu
+ * kabupaten lewat sesi, lihat `Admin_Kabkota_Controller::$izinkan_bertindak`).
  *
  * YANG MEMBEDAKANNYA DARI LAYAR YANG SUDAH ADA: papan ini bertolak dari
  * DAFTAR KABUPATEN, bukan dari daftar laporan. Semua layar rekam data lain
@@ -36,6 +38,10 @@ class Admin_Rekam_Data extends Admin_Controller {
 
     public function index()
     {
+        // Kembali ke papan = berhenti mewakili kabupaten, supaya tidak ada
+        // keadaan "bertindak" yang tertinggal diam-diam di sesi.
+        $this->session->unset_userdata('bertindak_kabupaten_id');
+
         $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
         // Triwulan berjalan, bukan 1. Default yang salah membuat papan tampak
         // kosong seluruhnya di awal tahun dan orang menyimpulkan fiturnya rusak.
@@ -226,8 +232,112 @@ class Admin_Rekam_Data extends Admin_Controller {
             'isi'            => $isi,
             'laporan'        => $laporan,
             'label'          => $this->rd->label_domain($laporan['domain']),
-            'boleh_putuskan' => FALSE,
+            // Sejak 27 Okt 2026 superadmin ikut memutuskan (permintaan dinas:
+            // "bisa semua yang bisa dilakukan user lainnya"). Keadaan laporan
+            // tetap digerbang view dan model, jadi laporan yang sudah diterima
+            // atau sedang diperbaiki tidak bisa diputus ulang dari sini.
+            'boleh_putuskan' => TRUE,
+            'url_aksi'       => 'Admin_Rekam_Data',
             'url_kembali'    => 'Admin_Rekam_Data',
         ]);
+    }
+
+    public function terima()
+    {
+        $laporan_id = (int) $this->input->post('laporan_id');
+        if ( ! $this->gerbang_tulis($laporan_id)) { return; }
+
+        $hasil = $this->rd->terima($laporan_id, $this->get_user_id());
+        if ( ! empty($hasil['success'])) {
+            $this->catat_audit('rekam_diterima', 'Laporan rekam data diterima (superadmin)',
+                'rd_laporan', $laporan_id);
+        }
+        $this->pulang($hasil, 'Laporan diterima.', $laporan_id);
+    }
+
+    public function minta_perbaikan()
+    {
+        $laporan_id = (int) $this->input->post('laporan_id');
+        if ( ! $this->gerbang_tulis($laporan_id)) { return; }
+
+        $hasil = $this->rd->minta_perbaikan($laporan_id, $this->get_user_id(),
+            $this->input->post('catatan_admin', TRUE));
+        if ( ! empty($hasil['success'])) {
+            $laporan = $this->db->select('domain, kabupaten_id, tahun, triwulan')
+                ->get_where('rd_laporan', ['id' => $laporan_id])->row_array();
+            $layar = $laporan['domain'] === 'perumahan' ? 'Rekam_Perumahan' : 'Rekam_Kawasan';
+            $this->notify_admin_push([['role' => 'admin_kabkota', 'kabupaten_id' => (int) $laporan['kabupaten_id']]],
+                'Rekam Data perlu diperbaiki',
+                'Laporan rekam data dikembalikan provinsi untuk diperbaiki.',
+                $layar . '?tahun=' . (int) $laporan['tahun'] . '&triwulan=' . (int) $laporan['triwulan'],
+                'rekam-perbaikan-' . $laporan_id);
+            $this->catat_audit('rekam_diminta_perbaikan', 'Laporan rekam data dikembalikan (superadmin)',
+                'rd_laporan', $laporan_id);
+        }
+        $this->pulang($hasil, 'Laporan dikembalikan untuk diperbaiki.', $laporan_id);
+    }
+
+    /**
+     * Mulai mengisi laporan atas nama satu kabupaten. Kabupatennya divalidasi
+     * ke tabel `kabupaten` lalu disimpan di SESI; `Admin_Kabkota_Controller`
+     * hanya mempercayai nilai sesi itu, tidak pernah parameter request.
+     */
+    public function bertindak()
+    {
+        $kab_id = (int) $this->input->post('kabupaten_id');
+        $domain = $this->input->post('domain');
+        $tahun  = (int) $this->input->post('tahun');
+        $tw     = (int) $this->input->post('triwulan');
+        if ($this->input->method(TRUE) !== 'POST' || ! isset(self::DOMAIN[$domain])
+            || $tw < 1 || $tw > 4
+            || ! $this->db->where('id', $kab_id)->count_all_results('kabupaten')) {
+            show_404();
+            return;
+        }
+
+        $this->session->set_userdata('bertindak_kabupaten_id', $kab_id);
+        $this->catat_audit('rekam_bertindak', 'Superadmin mengisi rekam data atas nama kabupaten',
+            'kabupaten', $kab_id, ['domain' => $domain, 'tahun' => $tahun, 'triwulan' => $tw]);
+        redirect(($domain === 'perumahan' ? 'Rekam_Perumahan' : 'Rekam_Kawasan')
+            . '?tahun=' . $tahun . '&triwulan=' . $tw);
+    }
+
+    public function selesai()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); return; }
+        $this->session->unset_userdata('bertindak_kabupaten_id');
+        redirect('Admin_Rekam_Data');
+    }
+
+    // ---------------------------------------------------------------- internal
+
+    /** POST saja + pembatas laju yang SAMA dengan Rekam_Tinjauan (§17 poin 15). */
+    private function gerbang_tulis($laporan_id)
+    {
+        if ($this->input->method(TRUE) !== 'POST') {
+            show_404();
+            return FALSE;
+        }
+        $rate = $this->rate_limit_consume('admin_queue_decision', [
+            'account_id' => (int) $this->get_user_id(),
+            'object_id'  => $laporan_id,
+        ]);
+        if (empty($rate['success']) || empty($rate['allowed'])) {
+            $this->rate_limit_reject($rate,
+                'Terlalu banyak keputusan dalam waktu singkat. Coba lagi sebentar.',
+                $this->input->is_ajax_request());
+            return FALSE;
+        }
+        return TRUE;
+    }
+
+    private function pulang($hasil, $pesan_sukses, $laporan_id)
+    {
+        if (empty($hasil['success'])) {
+            $this->session->set_flashdata('error', $hasil['message'] ?? 'Keputusan tidak tersimpan.');
+        } else {
+            $this->session->set_flashdata('success', $pesan_sukses);
+        }
+        redirect('Admin_Rekam_Data/detail/' . $laporan_id);
     }
 }

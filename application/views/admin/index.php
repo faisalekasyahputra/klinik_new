@@ -50,6 +50,7 @@
         <main id="main-content" class="admin-main flex-1 min-h-0 overflow-x-hidden overflow-y-auto p-6 relative custom-scrollbar">
             <!-- Injected Content -->
             <div class="animate-[fadeIn_0.3s_ease-out]">
+                <?php $this->load->view('admin/components/banner_bertindak'); ?>
                 <?= isset($content) ? $content : '' ?>
             </div>
         </main>

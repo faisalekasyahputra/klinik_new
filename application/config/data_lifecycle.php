@@ -45,6 +45,7 @@ $config['data_lifecycle'] = [
         'rd_laporan.reviewed_by'                 => ['set_null', 'atribusi petugas'],
         'rd_laporan.submitted_by'                => ['set_null', 'laporan rekam data adalah arsip dinas'],
         'rd_perumahan_bnba.uploaded_by'          => ['set_null', 'atribusi petugas'],
+        'rd_perumahan_bnba_sumber.uploaded_by'   => ['set_null', 'atribusi petugas'],
         'sf_berkas_penilaian.uploaded_by'        => ['set_null', 'berkas penilaian terkirim adalah arsip; draf disapu'],
         'sf_berkas_penilaian.verified_by'        => ['set_null', 'atribusi petugas'],
         'sf_antrean_pengajuan.reviewed_by'           => ['set_null', 'atribusi petugas'],
