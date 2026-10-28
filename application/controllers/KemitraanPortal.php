@@ -1027,6 +1027,12 @@ class KemitraanPortal extends Public_Controller
         // pendaftaran di bulan yang kuotanya pas akan selalu ditolak - oleh
         // dirinya sendiri.
         $bidang_kode = NULL;
+        if ( ! $this->kunci_pendaftaran()) {
+            $this->session->set_flashdata('error', 'Sistem sedang memproses pendaftaran lain. Silakan coba lagi sebentar.');
+            redirect('KemitraanPortal/ubah/' . (int) $row->id);
+            return;
+        }
+        try {
         $galat = $this->periksa_slot($row->jenis, $divisi_atau_tema, $bidang_kode, $mulai, $selesai, (int) $row->id);
         if ($galat !== NULL) {
             $this->session->set_flashdata('error', $galat);
@@ -1048,6 +1054,9 @@ class KemitraanPortal extends Public_Controller
             'periode_mulai'    => $mulai ?: NULL,
             'periode_selesai'  => $selesai ?: NULL,
         ]);
+        } finally {
+            $this->lepas_pendaftaran();
+        }
 
         // Sama seperti simpan() - lihat komentar lengkap di sana. Mahasiswa
         // yang membetulkan nama kampusnya lewat sunting ini juga ikut
@@ -1188,6 +1197,11 @@ class KemitraanPortal extends Public_Controller
         $periode_mulai    = $this->input->post('periode_mulai', TRUE);
         $periode_selesai  = $this->input->post('periode_selesai', TRUE);
 
+        if ( ! $this->kunci_pendaftaran()) {
+            $this->tolak_pendaftaran($jenis, 'Sistem sedang memproses pendaftaran lain. Silakan coba lagi sebentar.');
+            return;
+        }
+        try {
         // Satu mahasiswa, satu pendaftaran menggantung per jenis. Tanpa ini
         // formulir bisa dikirim berulang kali, dan karena tiap baris berstatus
         // Diajukan memakan kuota, satu orang bisa menghabiskan seluruh kuota
@@ -1252,6 +1266,9 @@ class KemitraanPortal extends Public_Controller
             'file_proposal'        => NULL,
         ]);
         $id = $this->db->insert_id();
+        } finally {
+            $this->lepas_pendaftaran();
+        }
 
         /* KKN mendaftarkan kampus - nama akun disamakan dengan Nama
            Universitas yang baru diisi (keputusan user 21 Agt 2026), supaya
@@ -1405,6 +1422,21 @@ class KemitraanPortal extends Public_Controller
      * seperti Auth::_onboarding_fail(). ponytail: satu tempat memulangkan,
      * jadi kalau nanti isian ikut dipulihkan, cukup satu method yang diubah.
      */
+    /**
+     * Cek kuota/pendaftaran menggantung lalu tulis harus berurutan, kalau tidak dua kiriman
+     * serentak sama-sama lolos cek dan kuota bidang terlampaui (audit run-2, 29 Okt 2026).
+     * ponytail: satu kunci untuk semua bidang; pendaftaran jarang, pecah per bidang kalau antre terasa.
+     */
+    private function kunci_pendaftaran()
+    {
+        return (int) $this->db->query("SELECT GET_LOCK('kemitraan_pendaftaran', 5) AS ok")->row()->ok === 1;
+    }
+
+    private function lepas_pendaftaran()
+    {
+        $this->db->query("SELECT RELEASE_LOCK('kemitraan_pendaftaran')");
+    }
+
     private function tolak_pendaftaran($jenis, $pesan)
     {
         $this->session->set_flashdata('error', $pesan);

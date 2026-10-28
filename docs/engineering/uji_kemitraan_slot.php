@@ -697,6 +697,22 @@ cek($hitung_lewat() === $sebelum_lewat, 'Simpan tidak menghapus atau membuka bul
 
 $db->query("DELETE FROM kkn_magang_slot WHERE id = $id_lewat");
 
+echo "\n== Cek kuota lalu tulis berurutan (audit run-2, 29 Okt 2026) ==\n";
+// Dua kiriman serentak dulu sama-sama lolos cek kuota sebelum salah satunya tertulis. Kunci
+// 'kemitraan_pendaftaran' menserialkan keduanya; di sini kunci dipegang suite (= kiriman lain
+// yang sedang berjalan), jadi kiriman mahasiswa harus menunggu lalu ditolak tanpa baris baru.
+pakai_sesi('adm');
+atur_slot(BIDANG_UJI, TAHUN_UJI, [10], 2);
+$db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
+cek((int) $db->query("SELECT GET_LOCK('kemitraan_pendaftaran', 0) ok")->fetch_assoc()['ok'] === 1, 'Suite memegang kunci pendaftaran');
+$body = daftar_magang(BIDANG_UJI, TAHUN_UJI . '-10-01', TAHUN_UJI . '-10-10');
+cek(strpos($body, 'Sistem sedang memproses pendaftaran lain') !== FALSE && jumlah_pendaftaran() === 0,
+    'Kiriman selama kunci dipegang ditolak dan tidak menulis baris');
+$db->query("SELECT RELEASE_LOCK('kemitraan_pendaftaran')");
+daftar_magang(BIDANG_UJI, TAHUN_UJI . '-10-01', TAHUN_UJI . '-10-10');
+cek(jumlah_pendaftaran() === 1, 'Sesudah kunci dilepas, kiriman yang sama diterima (penjaga positif)');
+$db->query("DELETE FROM kkn_magang_pendaftaran WHERE instansi_asal LIKE '" . SENTINEL . "%'");
+
 echo "\n== Satu halaman per bidang, menu Magang dan KKN ==\n";
 
 // Posisi dikelola dari detail slot bidang (22 Okt 2026): simpan dan hapus kembali ke halaman

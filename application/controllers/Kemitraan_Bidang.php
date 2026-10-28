@@ -315,10 +315,17 @@ class Kemitraan_Bidang extends Admin_Bidang_Controller {
             'email' => $this->input->post('email', TRUE),
             'no_hp' => trim((string) $this->input->post('phone', TRUE)) ?: NULL,
         ];
+        /* Email yang berganti mencabut tautan Google dan sesi berjalan (audit run-2, 29 Okt 2026):
+           tanpa ini admin bidang bisa menautkan Google miliknya lewat email sementara lalu
+           mengembalikan email asli, dan tautannya tetap bisa masuk. */
+        $tulis = $data;
+        if (strcasecmp((string) $data['email'], (string) $user->email) !== 0) {
+            $tulis += ['google_id' => NULL, 'sesi_aktif_hash' => NULL, 'sesi_aktif_id_hash' => NULL, 'sesi_aktif_at' => NULL];
+        }
         // is_unique tidak bisa dipakai: email akun ini sendiri akan dianggap ganda.
         $ganda = $this->db->where('email', $data['email'])->where('id !=', (int) $user->id)->count_all_results('usr_akun');
         $galat = $ganda > 0 ? 1062 : 0;
-        if ( ! $galat && ! $this->db->where('id', (int) $user->id)->update('usr_akun', $data)) {
+        if ( ! $galat && ! $this->db->where('id', (int) $user->id)->update('usr_akun', $tulis)) {
             $galat = (int) ($this->db->error()['code'] ?? 0) ?: -1;
         }
         if ($galat) {

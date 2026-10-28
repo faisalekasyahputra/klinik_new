@@ -395,6 +395,33 @@ try {
         }
     }
 
+    // Audit run-2 (29 Okt 2026): Unduh Excel Rekam Data menyajikan data Rekap, jadi ikut hak modul Rekap.
+    $kkr = satu("SELECT id FROM usr_akun WHERE email='agen_admin_kabkota@agen.test' AND peran='admin_kabkota'");
+    if (cek($kkr !== NULL, 'PRASYARAT: akun seed admin kab/kota ada')) {
+        $KK = (int) $kkr['id'];
+        $hak_kk = [];
+        $res = $db->query('SELECT * FROM usr_hak_modul_admin WHERE user_id=' . $KK);
+        while ($row = $res->fetch_assoc()) { $hak_kk[] = $row; }
+        $bersih[] = function () use ($KK, $hak_kk) {
+            jalan('DELETE FROM usr_hak_modul_admin WHERE user_id=?', [$KK]);
+            foreach ($hak_kk as $row) { jalan('INSERT INTO usr_hak_modul_admin (' . implode(',', array_keys($row)) . ') VALUES (' . implode(',', array_fill(0, count($row), '?')) . ')', array_values($row)); }
+        };
+        jalan('DELETE FROM usr_hak_modul_admin WHERE user_id=?', [$KK]);
+        foreach (['rekam_data' => 1, 'rekam_perumahan' => 1, 'rekam_perumahan_rekap' => 0, 'rekam_perumahan_riwayat' => 1,
+                  'rekam_kawasan' => 1, 'rekam_kawasan_rekap' => 0, 'rekam_kawasan_riwayat' => 1] as $k => $v) {
+            jalan('INSERT INTO usr_hak_modul_admin (user_id, kunci_modul, diizinkan, updated_at) VALUES (?,?,?,NOW())', [$KK, $k, $v]);
+        }
+        $jk = masuk_halaman('agen_admin_kabkota@agen.test', SANDI_AGEN);
+        if (cek($jk !== NULL, 'PRASYARAT: admin kab/kota (seed) masuk')) {
+            cek(minta($jk, 'Rekam_Perumahan/riwayat')['kode'] === 200, 'Riwayat (diizinkan) tetap terbuka');
+            $kode = [];
+            foreach (['Rekam_Perumahan/rekap', 'Rekam_Perumahan/export', 'Rekam_Kawasan/rekap', 'Rekam_Kawasan/export'] as $p) {
+                $kode[$p] = minta($jk, $p, NULL, ['ikuti' => FALSE])['kode'];
+            }
+            cek(array_values(array_unique($kode)) === [403], 'Rekap dan Unduh Excel ditolak 403 saat hak Rekap dicabut (' . json_encode($kode) . ')');
+        }
+    }
+
     /* ============================================================== G6 */
     echo "\n== G6. Penampil PDF\n";
     $viewer = (string) @file_get_contents(APPPATH . 'views/pages/data_spasial/_dokumen_viewer.php');

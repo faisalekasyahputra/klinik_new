@@ -232,6 +232,9 @@ $config['dashboard_modules'] = [
         'url'   => 'Rekam_Perumahan/rekap', 'group' => 'Layanan', 'order' => 22,
         'parent' => 'rekam_perumahan',
         'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
+        // Unduh Excel menyajikan data rekap yang sama; tanpa ini gerbang hak modul mencocokkannya
+        // ke rekam_perumahan dan hak Rekap yang dicabut terlewati (audit run-2, 29 Okt 2026).
+        'aksi'  => ['Rekam_Perumahan/export'],
     ],
     'rekam_perumahan_riwayat' => [
         'label' => 'Riwayat', 'icon' => 'ph-clock-counter-clockwise',
@@ -254,6 +257,7 @@ $config['dashboard_modules'] = [
         'url'   => 'Rekam_Kawasan/rekap', 'group' => 'Layanan', 'order' => 25,
         'parent' => 'rekam_kawasan',
         'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
+        'aksi'  => ['Rekam_Kawasan/export'], // sama dengan rekam_perumahan_rekap di atas
     ],
     'rekam_kawasan_riwayat' => [
         'label' => 'Riwayat', 'icon' => 'ph-clock-counter-clockwise',
