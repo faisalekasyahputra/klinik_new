@@ -644,22 +644,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
 
     private function label_sumber()
     {
-        // Urutannya SENGAJA mengikuti Rekam_data_model::SUMBER_PERUMAHAN supaya
-        // urutan di layar isian dan di rekap tidak pernah berbeda.
-        return [
-            'apbd_provinsi'   => 'APBD Provinsi',
-            'apbd_kabkota'    => 'APBD Kabupaten/Kota',
-            'apbn_bsps'       => 'APBN BSPS (dari Kementerian PKP)',
-            'apbn_dak'        => 'APBN DAK',
-            'apbn_kemensos'   => 'APBN Kemensos',
-            'apbn_dana_desa'  => 'APBN Dana Desa',
-            'apbn_kl_lain'    => 'APBN dari Kementerian/Lembaga Lain',
-            'baznas_ri'       => 'BAZNAS RI',
-            'baznas_provinsi' => 'BAZNAS Provinsi',
-            'baznas_kabkota'  => 'BAZNAS Kab/Kota',
-            'csr'             => 'CSR',
-            'dana_lainnya'    => 'Dana Lainnya',
-        ];
+        return Rekam_data_model::LABEL_SUMBER_PERUMAHAN;
     }
 
     private function label_program()

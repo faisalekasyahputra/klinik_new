@@ -60,6 +60,29 @@ class Rekam_data_model extends CI_Model {
         'baznas_kabkota', 'csr', 'dana_lainnya',
     ];
 
+    /**
+     * Label tampil per sumber, SATU-SATUNYA daftar. Dipakai wizard
+     * (`Rekam_Perumahan`) dan view detail peninjau lewat label_domain().
+     * Dulu ada dua salinan; salinan di label_domain() tertinggal di sepuluh
+     * sumber, sehingga baris apbd_provinsi/baznas_provinsi tidak tampil ke
+     * peninjau. Kuncinya wajib sama dan berurutan dengan SUMBER_PERUMAHAN
+     * (dijaga uji_pantau_rekam_data.php).
+     */
+    public const LABEL_SUMBER_PERUMAHAN = [
+        'apbd_provinsi'   => 'APBD Provinsi',
+        'apbd_kabkota'    => 'APBD Kabupaten/Kota',
+        'apbn_bsps'       => 'APBN BSPS (dari Kementerian PKP)',
+        'apbn_dak'        => 'APBN DAK',
+        'apbn_kemensos'   => 'APBN Kemensos',
+        'apbn_dana_desa'  => 'APBN Dana Desa',
+        'apbn_kl_lain'    => 'APBN dari Kementerian/Lembaga Lain',
+        'baznas_ri'       => 'BAZNAS RI',
+        'baznas_provinsi' => 'BAZNAS Provinsi',
+        'baznas_kabkota'  => 'BAZNAS Kab/Kota',
+        'csr'             => 'CSR',
+        'dana_lainnya'    => 'Dana Lainnya',
+    ];
+
     /** Hanya tiga sumber ini yang punya field keterangan di form aslinya. */
     private const SUMBER_BERKETERANGAN = ['apbn_kl_lain', 'csr', 'dana_lainnya'];
 
@@ -830,13 +853,7 @@ class Rekam_data_model extends CI_Model {
     {
         if ($domain === 'perumahan') {
             return [
-                'sumber' => [
-                    'apbd_kabkota' => 'APBD Kabupaten/Kota', 'apbn_bsps' => 'APBN BSPS (dari Kementerian PKP)',
-                    'apbn_dak' => 'APBN DAK', 'apbn_kemensos' => 'APBN Kemensos',
-                    'apbn_dana_desa' => 'APBN Dana Desa', 'apbn_kl_lain' => 'APBN dari Kementerian/Lembaga Lain',
-                    'baznas_ri' => 'BAZNAS RI', 'baznas_kabkota' => 'BAZNAS Kab/Kota',
-                    'csr' => 'CSR', 'dana_lainnya' => 'Dana Lainnya',
-                ],
+                'sumber'  => self::LABEL_SUMBER_PERUMAHAN,
                 'program' => [
                     'pk_rtlh' => 'PK RTLH', 'pb_rtlh' => 'PB RTLH', 'pb_backlog' => 'PB BACKLOG',
                     'pk_bencana' => 'PK BENCANA', 'pb_bencana' => 'PB BENCANA', 'pb_relokasi' => 'PB RELOKASI',
