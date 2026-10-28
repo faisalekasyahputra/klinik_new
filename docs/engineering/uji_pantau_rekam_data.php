@@ -327,5 +327,32 @@ cek(preg_match('/tahun=' . date('Y') . '&amp;triwulan=' . $tw_kini . '/', $polos
 cek(preg_match('/class="chip-filter" aria-current="true"[^>]*>\s*' . preg_quote($nama_tw, '/') . '\s*</', $polos['body']) === 1,
     "Triwulan bawaan = triwulan BERJALAN ({$nama_tw}), bukan TW I");
 
-echo "\nRINGKASAN: {$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
+// ------------------------------------------------ 9. DUA BELAS SUMBER DI DETAIL
+echo "\n== 9. Detail menampilkan ke-12 sumber, termasuk APBD Provinsi ==\n";
+/**
+ * Regresi 28 Okt 2026: label_domain() memuat salinan 10 sumber, view detail
+ * mengiterasi label itu, jadi angka apbd_provinsi/baznas_provinsi yang SAH di
+ * DB tidak punya baris di layar peninjau. Angkanya dibuat ganjil supaya yang
+ * dicari memang sel ini, bukan angka lain di halaman.
+ */
+define('BASEPATH', APP_ROOT . '/system/');
+if ( ! class_exists('CI_Model')) { eval('class CI_Model {}'); }
+require_once APP_ROOT . '/application/models/Rekam_data_model.php';
+cek(array_keys(Rekam_data_model::LABEL_SUMBER_PERUMAHAN) === Rekam_data_model::SUMBER_PERUMAHAN,
+    'Kunci LABEL_SUMBER_PERUMAHAN sama dan berurutan dengan SUMBER_PERUMAHAN');
+
+tulis('INSERT INTO rd_perumahan_program (laporan_id, program, dilaporkan) VALUES (?, "pk_rtlh", 1)', [$lap_bidang]);
+tulis('INSERT INTO rd_perumahan_baris (laporan_id, program, sumber_dana, rencana_unit, rencana_anggaran)
+       VALUES (?, "pk_rtlh", "apbd_provinsi", 4321, 0), (?, "pk_rtlh", "baznas_provinsi", 8765, 0)',
+    [$lap_bidang, $lap_bidang]);
+foreach ([['a', 'Admin_Rekam_Data/detail/', 'superadmin'], ['b', 'Rekam_Tinjauan/detail/', 'admin bidang']] as [$s, $jalur, $siapa]) {
+    $hal = http($s, $jalur . $lap_bidang)['body'];
+    foreach (Rekam_data_model::LABEL_SUMBER_PERUMAHAN as $slabel) {
+        cek(strpos($hal, '>' . htmlspecialchars($slabel) . '<') !== FALSE, "Baris '{$slabel}' tampil untuk {$siapa}");
+    }
+    cek(strpos($hal, '4.321 unit') !== FALSE && strpos($hal, '8.765 unit') !== FALSE,
+        "Angka APBD Provinsi dan BAZNAS Provinsi terlihat oleh {$siapa}");
+}
+
+echo "\nRINGKASAN:{$GLOBALS['uji_total']} pemeriksaan, {$GLOBALS['uji_gagal']} gagal\n";
 exit($GLOBALS['uji_gagal'] > 0 ? 1 : 0);
