@@ -44,7 +44,9 @@ class Security_alert {
         $hasil = ['dicatat' => FALSE, 'ditekan' => FALSE, 'eskalasi' => FALSE, 'push' => FALSE];
         try {
             $this->CI->load->library('Rate_limiter');
-            $ip = (string) $this->CI->input->ip_address();
+            // Blok /64 untuk IPv6, sama dengan dimensi ip Rate_limiter: alamat mentah membuat setiap
+            // alamat dalam satu /64 menjadi "peringatan baru" dan lolos penekan (audit run-2, 29 Okt 2026).
+            $ip = anti_automation_ip_bucket((string) $this->CI->input->ip_address());
             $dedupe = $this->CI->rate_limiter->hit_fast('alert_dedupe', ['key' => hash('sha256', ($kunci !== '' ? $kunci : $tipe) . '|' . $ip)]);
             if ( ! empty($dedupe['success']) && (int) ($dedupe['count'] ?? 1) > 1) {
                 $hasil['ditekan'] = TRUE;

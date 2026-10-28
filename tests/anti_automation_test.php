@@ -139,6 +139,34 @@ check(strpos($sa, 'sys_jejak_audit') !== FALSE && strpos($sa, 'web_push_service'
 check(strpos($sa, 'alert_dedupe') !== FALSE && strpos($sa, 'alert_eskalasi') !== FALSE, 'Penekan duplikat dan eskalasi harus dipakai');
 check(strpos($sa, 'catch (Throwable') !== FALSE, 'Security_alert harus gagal diam-diam');
 
+// Penekan duplikat mengelompokkan IPv6 per /64 seperti dimensi ip Rate_limiter (audit run-2, 29 Okt 2026):
+// dulu alamat mentah yang dipakai, jadi 20 alamat dalam satu /64 menulis 20 baris jejak audit.
+$ci = new class {
+    public $ip = '';
+    public $hit = [];
+    public $load, $input, $rate_limiter, $db, $web_push_service;
+    public function __construct() {
+        $this->web_push_service = new class { public function configured() { return FALSE; } };
+        $this->load = new class { public function helper($h) {} public function library($l) {} };
+        $self = $this;
+        $this->input = new class($self) { private $c; public function __construct($c) { $this->c = $c; } public function ip_address() { return $this->c->ip; } };
+        $this->rate_limiter = new class($self) {
+            private $c; public function __construct($c) { $this->c = $c; }
+            public function hit_fast($policy, array $dim = []) { $k = $policy . '|' . json_encode($dim); $this->c->hit[$k] = ($this->c->hit[$k] ?? 0) + 1; return ['success' => TRUE, 'count' => $this->c->hit[$k]]; }
+        };
+        $this->db = new class { public function table_exists($t) { return FALSE; } };
+    }
+};
+function &get_instance() { global $ci; return $ci; }
+if ( ! function_exists('log_message')) { function log_message() {} }
+require_once $app . '/libraries/Security_alert.php';
+$alert = new Security_alert();
+$raise = function ($ip) use ($ci, $alert) { $ci->ip = $ip; return $alert->raise('pemindai_ua', 'sedang', 'uji', [], 'ua'); };
+check( ! $raise('2001:db8:4:1::1')['ditekan'], 'Peringatan pertama dari satu /64 tidak ditekan');
+check($raise('2001:db8:4:1::2')['ditekan'], 'Alamat lain dalam /64 yang sama harus ditekan sebagai peringatan yang sama');
+check( ! $raise('2001:db8:4:2::1')['ditekan'], 'Alamat di /64 lain adalah peringatan baru');
+check( ! $raise('192.0.2.10')['ditekan'] && $raise('192.0.2.10')['ditekan'], 'IPv4 tetap ditekan per alamat');
+
 // Kontrol global tak boleh terlewat: setiap controller harus berada di rantai pewarisan MY_Controller.
 // Satu-satunya pengecualian, Migrate, menolak semua permintaan non-CLI/non-loopback dengan 404 sendiri.
 $induk = [];
