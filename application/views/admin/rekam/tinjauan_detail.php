@@ -33,26 +33,35 @@ $bisa_diputus   = $boleh_putuskan && $laporan['status'] === 'terkirim' && ! $sud
 
 // Tautan kembali mengikuti layar yang memanggil, bukan dipatok ke Rekam_Tinjauan.
 $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
+// Form keputusan menembak ke layar pemanggil: Rekam_Tinjauan (bidang) atau Admin_Rekam_Data (superadmin).
+$url_aksi     = $url_aksi ?? 'Rekam_Tinjauan';
 ?>
 
 <div class="tumpuk-bagian">
 
   <section class="kartu-admin isi-kartu">
-    <div class="flex flex-wrap items-center gap-3">
-      <a href="<?= base_url($url_kembali) ?>" class="text-sm text-blue-600 hover:underline dark:text-blue-400">&larr; Daftar</a>
-      <span class="rounded-lg bg-gray-100 px-3 py-2 text-sm dark:bg-black/20">
-        <b class="text-gray-900 dark:text-white"><?= $e($kabupaten) ?></b>
-        · <?= $e($nama_tw[(int) $laporan['triwulan']] ?? $laporan['triwulan']) ?> <?= (int) $laporan['tahun'] ?>
-      </span>
-      <span class="ml-auto rounded-full px-3 py-1 text-xs font-bold
-        <?= $laporan['status'] === 'perlu_perbaikan'
-              ? 'bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300'
-              : ($sudah_ditinjau
-                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300'
-                  : 'bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300') ?>">
-        <?= $laporan['status'] === 'perlu_perbaikan' ? 'Perlu perbaikan'
-              : ($sudah_ditinjau ? 'Diterima' : 'Menunggu ditinjau') ?>
-      </span>
+    <?php // Pola kepala yang sama dengan wizard kabupaten: satu judul, satu lencana status,
+          // tombol kembali di kanan - bukan tautan, kotak, dan pil yang berjajar tanpa urutan. ?>
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div class="min-w-0">
+        <p class="text-xs font-bold text-gray-500 dark:text-brand-muted">Laporan <?= $e(ucfirst($domain)) ?></p>
+        <h2 class="text-lg font-black text-gray-900 dark:text-white">
+          <?= $e($kabupaten) ?>
+          <span class="font-bold text-gray-500 dark:text-brand-muted">&middot; <?= $e($nama_tw[(int) $laporan['triwulan']] ?? $laporan['triwulan']) ?> <?= (int) $laporan['tahun'] ?></span>
+        </h2>
+        <span class="mt-1 inline-block rounded-md px-2 py-0.5 text-xs font-bold
+          <?= $laporan['status'] === 'perlu_perbaikan'
+                ? 'bg-red-100 text-red-800 dark:bg-red-500/10 dark:text-red-300'
+                : ($sudah_ditinjau
+                    ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300'
+                    : 'bg-amber-100 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300') ?>">
+          <?= $laporan['status'] === 'perlu_perbaikan' ? 'Perlu perbaikan'
+                : ($sudah_ditinjau ? 'Diterima' : 'Menunggu ditinjau') ?>
+        </span>
+      </div>
+      <a href="<?= base_url($url_kembali) ?>" class="tombol-kedua">
+        <i class="ph ph-arrow-left" aria-hidden="true"></i><span>Daftar</span>
+      </a>
     </div>
     <?php /* Kalimat ini dulu berbunyi "kumulatif sampai dengan TW X, bukan
              capaian triwulan itu saja" - persis KEBALIKAN kenyataan sejak W1,
@@ -122,7 +131,7 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
                 <?php foreach ($label['program'] as $pkode => $plabel):
                     $sel = $per_sumber[$skode][$pkode] ?? NULL;
                 ?>
-                  <td class="py-2 px-2 text-right <?= $sel ? '' : 'text-gray-300 dark:text-white/20' ?>">
+                  <td class="py-2 px-2 text-right tabular-nums <?= $sel ? 'text-gray-900 dark:text-white' : 'text-gray-300 dark:text-white/20' ?>">
                     <?php if ($sel): ?>
                       <span class="block text-xs text-gray-500 dark:text-brand-muted">
                         <?= number_format((int) $sel['rencana_unit'], 0, ',', '.') ?> unit /
@@ -144,17 +153,46 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
         </table>
       </div>
 
-      <p class="mt-4 text-sm">
-        <b class="text-gray-900 dark:text-white">Lampiran BNBA:</b>
-        <?php if ( ! empty($isi['bnba'])): ?>
-          <?= $e($isi['bnba']['nama_asli']) ?>
-          <span class="text-xs text-gray-500 dark:text-brand-muted">
-            (<?= number_format((int) $isi['bnba']['ukuran'] / 1024, 0, ',', '.') ?> KB)
-          </span>
-        <?php else: ?>
-          <span class="text-gray-500 dark:text-brand-muted">tidak diunggah (opsional)</span>
-        <?php endif; ?>
-      </p>
+    </section>
+
+    <?php // BNBA berdiri sebagai kartu sendiri dengan tabel, bukan satu baris tebal + butir di ekor
+          // tabel capaian: peninjau membandingkan jumlah penerima dengan realisasi unit, jadi angkanya
+          // perlu kolom yang rata. Berkas Excel-nya tidak dibuka lintas wilayah, hanya ringkasannya. ?>
+    <section class="kartu-admin isi-kartu">
+      <h2 class="font-bold text-gray-900 dark:text-white">Lampiran BNBA</h2>
+      <?php if ( ! empty($isi['bnba'])): ?>
+        <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+          Berkas tunggal (pelaporan lama): <?= $e($isi['bnba']['nama_asli']) ?>
+          <span class="text-xs text-gray-500 dark:text-brand-muted">(<?= number_format((int) $isi['bnba']['ukuran'] / 1024, 0, ',', '.') ?> KB)</span>
+        </p>
+      <?php elseif ( ! empty($isi['bnba_sumber'])): ?>
+        <div class="mt-3 overflow-x-auto">
+          <table class="w-full min-w-[640px] text-left text-sm">
+            <thead class="text-xs text-gray-500 dark:text-brand-muted">
+              <tr>
+                <th class="py-2 pr-3">Sumber dana</th>
+                <th class="py-2 pr-3">Program</th>
+                <th class="py-2 px-2 text-right">Penerima</th>
+                <th class="py-2 px-2 text-right">Material (Rp)</th>
+                <th class="py-2 pl-2 text-right">Padat karya (Rp)</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+              <?php foreach ($isi['bnba_sumber'] as $kunci => $bs): [$prog, $sumb] = explode('|', $kunci, 2); ?>
+                <tr>
+                  <td class="py-2 pr-3 font-medium text-gray-900 dark:text-white"><?= $e($label['sumber'][$sumb] ?? $sumb) ?></td>
+                  <td class="py-2 pr-3 text-gray-600 dark:text-gray-300"><?= $e($label['program'][$prog] ?? $prog) ?></td>
+                  <td class="py-2 px-2 text-right tabular-nums text-gray-900 dark:text-white"><?= number_format((int) $bs['jumlah_penerima'], 0, ',', '.') ?></td>
+                  <td class="py-2 px-2 text-right tabular-nums"><?= number_format((int) $bs['total_material'], 0, ',', '.') ?></td>
+                  <td class="py-2 pl-2 text-right tabular-nums"><?= number_format((int) $bs['total_padat_karya'], 0, ',', '.') ?></td>
+                </tr>
+              <?php endforeach; ?>
+            </tbody>
+          </table>
+        </div>
+      <?php else: ?>
+        <p class="mt-2 text-sm text-gray-500 dark:text-brand-muted">Tidak ada BNBA terlampir.</p>
+      <?php endif; ?>
     </section>
 
   <?php else: ?>
@@ -224,7 +262,7 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
       <h2 class="font-bold text-gray-900 dark:text-white">Keputusan</h2>
 
       <div class="mt-3 grid-kartu grid md:grid-cols-2">
-        <form method="post" action="<?= base_url('Rekam_Tinjauan/terima') ?>"
+        <form method="post" action="<?= base_url($url_aksi . '/terima') ?>"
               data-konfirmasi="Laporan ini akan ditandai diterima." data-konfirmasi-judul="Terima laporan?" data-konfirmasi-label="Terima">
           <input type="hidden" name="<?= $e($csrf_name) ?>" value="<?= $e($csrf_hash) ?>">
           <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
@@ -234,7 +272,7 @@ $url_kembali  = $url_kembali ?? 'Rekam_Tinjauan';
           <button class="tombol-utama mt-2"><i class="ph ph-check"></i><span>Terima laporan</span></button>
         </form>
 
-        <form method="post" action="<?= base_url('Rekam_Tinjauan/minta_perbaikan') ?>">
+        <form method="post" action="<?= base_url($url_aksi . '/minta_perbaikan') ?>">
           <input type="hidden" name="<?= $e($csrf_name) ?>" value="<?= $e($csrf_hash) ?>">
           <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
           <label for="catatan_admin" class="text-sm font-bold text-gray-900 dark:text-white">

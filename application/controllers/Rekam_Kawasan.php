@@ -17,6 +17,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  */
 class Rekam_Kawasan extends Admin_Kabkota_Controller {
 
+    protected $izinkan_bertindak = TRUE;
+
     public function __construct()
     {
         parent::__construct();

@@ -8,6 +8,8 @@
  * baris laporan untuk ditampilkan.
  */
 $this->load->helper('admin_table');
+$csrf_name = $this->security->get_csrf_token_name();
+$csrf_hash = $this->security->get_csrf_hash();
 $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV'];
 
 // Warna ditulis UTUH per keadaan, bukan dirakit dari potongan nama kelas -
@@ -30,8 +32,8 @@ $tautan = static function ($t, $tw) {
 // Butir cetak (17 Agt 2026) - lihat penjelasan lengkap di partial-nya.
 $this->load->view('admin/layouts/cetak_rekap');
 ?>
-<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Cakupan pelaporan seluruh kabupaten/kota untuk satu triwulan. Halaman ini <b>hanya baca</b> -
-        keputusan terima atau minta perbaikan tetap kewenangan Admin Bidang Perumahan dan Kawasan.']); ?>
+<?php $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' => 'Cakupan pelaporan seluruh kabupaten/kota untuk satu triwulan. Super admin dapat meninjau laporan
+        (terima atau minta perbaikan) dan mengisi laporan atas nama kabupaten mana pun.']); ?>
 
 <?php // Ringkasan didahulukan: "berapa yang belum" adalah pertanyaannya, bukan detail per baris. ?>
 <div class="tumpuk-bagian">
@@ -111,7 +113,7 @@ $this->load->view('admin/layouts/cetak_rekap');
             <tbody class="divide-y divide-gray-200 dark:divide-white/5 text-gray-700 dark:text-gray-300">
                 <?php if (empty($baris)): ?>
                 <tr><td colspan="3" class="px-4 py-12 text-center text-gray-500 dark:text-brand-muted">Tabel kabupaten kosong - seed wilayah belum jalan.</td></tr>
-                <?php else: foreach ($baris as $b): ?>
+                <?php else: foreach ($baris as $kab_id => $b): ?>
                 <tr>
                     <td class="px-4 py-3 font-bold text-gray-900 dark:text-white"><?= html_escape($b['kabupaten']) ?></td>
                     <?php foreach (array_keys($domain) as $kode):
@@ -126,6 +128,15 @@ $this->load->view('admin/layouts/cetak_rekap');
                         <?php if ( ! empty($sel['laporan_id']) && $keadaan !== 'draft'): ?>
                         <a href="<?= base_url('Admin_Rekam_Data/detail/' . (int) $sel['laporan_id']) ?>" class="ml-1.5 text-[11px] font-bold text-blue-600 hover:underline dark:text-brand-primary">Lihat</a>
                         <?php endif; ?>
+                        <?php // Mengisi atas nama kabupaten: POST (mengubah sesi), kabupaten divalidasi di server. ?>
+                        <form method="post" action="<?= base_url('Admin_Rekam_Data/bertindak') ?>" class="inline">
+                            <input type="hidden" name="<?= html_escape($csrf_name) ?>" value="<?= html_escape($csrf_hash) ?>">
+                            <input type="hidden" name="kabupaten_id" value="<?= (int) $kab_id ?>">
+                            <input type="hidden" name="domain" value="<?= html_escape($kode) ?>">
+                            <input type="hidden" name="tahun" value="<?= (int) $tahun ?>">
+                            <input type="hidden" name="triwulan" value="<?= (int) $triwulan ?>">
+                            <button class="tombol-aksi ml-1.5">Isi</button>
+                        </form>
                         <?php if ($keadaan === 'perbaikan' && ! empty($sel['catatan_admin'])): ?>
                         <div class="mt-0.5 max-w-[220px] truncate text-[10px] text-gray-500 dark:text-brand-muted" title="<?= html_escape($sel['catatan_admin']) ?>">
                             <?= html_escape($sel['catatan_admin']) ?>

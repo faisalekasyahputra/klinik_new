@@ -88,6 +88,7 @@ $config['http_policy'] = [
         'admin_rekam_data/export'    => 'unduhan berkas hasil ekspor (hanya baca)',
         'rekam_kawasan/export'       => 'unduhan berkas hasil ekspor (hanya baca)',
         'rekam_perumahan/export'     => 'unduhan berkas hasil ekspor (hanya baca)',
+        'rekam_perumahan/templat_bnba' => 'unduhan templat BNBA kosong (hanya judul kolom, tanpa data)',
         'admin/unduh'                => 'unduhan Excel antrean superadmin (hanya baca); yang tertangkap pemindai cuma batas laju dan jejak audit unduhan',
         'index/buka_foto'            => 'penyaji foto (hanya baca)',
         'index/detail_perum'         => 'halaman detail perumahan publik (hanya baca); yang tertangkap pemindai cuma set_status_header 503 dan cache SIKUMBANG di application/cache',

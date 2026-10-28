@@ -256,8 +256,14 @@ sort($publik);
 // export() masuk daftar sejak f28ab1c (17 Agt 2026): unduhan rekap lewat GET, hanya membaca.
 // Yang dijaga bagian ini tetap sama - nol endpoint TULIS - jadi method baru apa pun
 // harus ditambahkan ke sini dengan sadar, dan cek db-> di bawah tetap berlaku untuknya.
-cek($publik === ['detail', 'export', 'index'],
-    'Hanya index(), detail(), dan export() yang publik (ditemukan: ' . implode(', ', $publik) . ')');
+// 27 Okt 2026: superadmin ikut memutuskan dan mengisi atas nama kabupaten (permintaan dinas).
+// Daftar ini tetap dijaga eksplisit - endpoint tulis baru harus ditambahkan di sini dengan sadar.
+cek($publik === ['bertindak', 'detail', 'export', 'index', 'minta_perbaikan', 'selesai', 'terima'],
+    'Daftar method publik sesuai yang disengaja (ditemukan: ' . implode(', ', $publik) . ')');
+foreach (['terima', 'minta_perbaikan', 'bertindak', 'selesai'] as $aksi) {
+    $r = http('a', 'Admin_Rekam_Data/' . $aksi); // GET, bukan POST
+    cek($r['code'] === 404, "Endpoint tulis {$aksi}() menolak GET (kode {$r['code']})");
+}
 foreach (['tamu' => 'Tamu', 'k' => 'Admin kab/kota'] as $sesi_lain => $siapa) {
     $r = http($sesi_lain, 'Admin_Rekam_Data/export');
     cek(strpos($r['url'], 'Admin_Rekam_Data/export') === FALSE
@@ -270,12 +276,54 @@ foreach (['insert', 'update', 'delete', 'replace', 'truncate'] as $tulis) {
 
 $detail = http('a', 'Admin_Rekam_Data/detail/' . $lap_kawasan);
 cek($detail['code'] === 200, 'Detail laporan terbuka untuk superadmin');
+cek(strpos($detail['body'], 'Admin_Rekam_Data/terima') !== FALSE,
+    'Formulir "Terima laporan" dirender di layar superadmin, menembak ke Admin_Rekam_Data');
+cek(strpos($detail['body'], 'Admin_Rekam_Data/minta_perbaikan') !== FALSE,
+    'Formulir "Minta perbaikan" dirender');
 cek(strpos($detail['body'], 'Rekam_Tinjauan/terima') === FALSE,
-    'Formulir "Terima laporan" TIDAK dirender di layar superadmin');
-cek(strpos($detail['body'], 'Rekam_Tinjauan/minta_perbaikan') === FALSE,
-    'Formulir "Minta perbaikan" TIDAK dirender');
-cek(stripos($detail['body'], 'hanya baca') !== FALSE,
-    'Sebabnya disebut ke pembacanya, bukan blok yang hilang tanpa keterangan');
+    'Formulir superadmin TIDAK menembak ke endpoint Admin Bidang');
+cek(strpos($papan['body'], 'Admin_Rekam_Data/bertindak') !== FALSE,
+    'Papan punya tombol "Isi" atas nama kabupaten');
+
+// ------------------------------------------------ 4b. BERTINDAK ATAS NAMA KABUPATEN
+echo "\n== 4b. Superadmin mengisi atas nama kabupaten - sempit dan bisa dicabut ==\n";
+$tw_uji = (int) ceil((int) date('n') / 3);
+$kirim_bertindak = function ($sesi) use ($id_kab, $tw_uji) {
+    return http($sesi, 'Admin_Rekam_Data/bertindak', [
+        'csrf_kpkp_token' => csrf($sesi, 'Admin_Rekam_Data'),
+        'kabupaten_id' => $id_kab[0], 'domain' => 'perumahan', 'tahun' => TAHUN, 'triwulan' => $tw_uji,
+    ]);
+};
+$r = $kirim_bertindak('a');
+cek(strpos($r['url'], 'Rekam_Perumahan') !== FALSE && strpos($r['body'], 'Anda mengisi atas nama') !== FALSE,
+    'Superadmin mendarat di wizard perumahan dengan banner "atas nama"');
+// Muat parsial (loader dashboard) mengganti seluruh isi <main>: banner harus ikut di balasannya,
+// kalau tidak ia hilang begitu wizard pindah langkah.
+$ch = curl_init(BASE_URL . '/Rekam_Perumahan');
+curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => TRUE, CURLOPT_COOKIEFILE => sesi('a'), CURLOPT_COOKIEJAR => sesi('a'),
+    CURLOPT_HTTPHEADER => ['X-Requested-With: XMLHttpRequest', 'X-Shell: admin'], CURLOPT_TIMEOUT => 30]);
+$parsial = (string) curl_exec($ch);
+curl_close($ch);
+cek(stripos($parsial, '<html') === FALSE && strpos($parsial, 'Anda mengisi atas nama') !== FALSE,
+    'Banner "atas nama" ikut di balasan parsial (tidak hilang saat pindah langkah)');
+$r = http('a', 'Admin_Kabkota');
+cek(strpos($r['body'], 'Anda mengisi atas nama') === FALSE,
+    'Antrean wilayah (Admin_Kabkota) TETAP tertutup walau sedang bertindak');
+http('a', 'Admin_Rekam_Data'); // kembali ke papan = berhenti bertindak
+$r = http('a', 'Rekam_Perumahan');
+cek(strpos($r['body'], 'Anda mengisi atas nama') === FALSE,
+    'Kembali ke papan mencabut keadaan bertindak');
+$kirim_bertindak('a');
+http('a', 'Admin_Rekam_Data/selesai', ['csrf_kpkp_token' => csrf('a', 'Rekam_Perumahan')]);
+$r = http('a', 'Rekam_Perumahan');
+cek(strpos($r['body'], 'Anda mengisi atas nama') === FALSE, 'Tombol Selesai mencabut keadaan bertindak');
+foreach (['b' => 'Admin bidang', 'k' => 'Admin kab/kota'] as $s => $siapa) {
+    http($s, 'Admin_Rekam_Data/bertindak', ['csrf_kpkp_token' => csrf($s, 'Rekam_Data'),
+        'kabupaten_id' => $id_kab[1], 'domain' => 'perumahan', 'tahun' => TAHUN, 'triwulan' => $tw_uji]);
+}
+$r = http('b', 'Rekam_Perumahan');
+cek(strpos($r['body'], 'Anda mengisi atas nama') === FALSE,
+    'Admin bidang TIDAK bisa memakai jalur bertindak untuk masuk ke wizard kabupaten');
 
 // ------------------------------------------------ 5. TIDAK MENCABUT KEWENANGAN
 echo "\n== 5. Admin Bidang TETAP bisa memutuskan (regresi view bersama) ==\n";
