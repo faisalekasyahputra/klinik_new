@@ -121,6 +121,19 @@ try {
     $cek($jejak('universitas_diubah', $idU) === 1, 'Sunting tercatat di jejak audit dengan objek usr_akun id');
     $eU = $eUbah;
 
+    // Audit run-2 (29 Okt 2026): tautan Google yang tertanam dicabut saat email berganti.
+    $db->query("UPDATE usr_akun SET google_id='gid-{$tag}' WHERE id={$idU}");
+    $kirim($jBid, 'Kemitraan_Bidang/ubah_universitas', ['id' => $idU, 'name' => "Univ Baru {$tag}", 'email' => $eU, 'phone' => '0812 3456 7890']);
+    $cek($baris($idU)['google_id'] === "gid-{$tag}", 'Sunting tanpa ganti email mempertahankan tautan Google');
+    [$jU] = $login($eU);
+    $hidup = $masuk($jU);
+    $eUbah = "{$tag}_ubah2@example.test";
+    $kirim($jBid, 'Kemitraan_Bidang/ubah_universitas', ['id' => $idU, 'name' => "Univ Baru {$tag}", 'email' => $eUbah, 'phone' => '0812 3456 7890']);
+    $u = $baris($idU);
+    $cek($u['email'] === $eUbah && $u['google_id'] === NULL && $u['sesi_aktif_hash'] === NULL, 'Ganti email mencabut tautan Google dan sesi berjalan');
+    $cek($hidup && ! $masuk($jU), 'Sesi universitas berakhir sesudah emailnya diganti admin');
+    $eU = $eUbah;
+
     [, $hal] = $kirim($jBid, 'Kemitraan_Bidang/ubah_universitas', ['id' => $idU, 'name' => 'X', 'email' => strtoupper($eU2), 'phone' => '']);
     $cek($baris($idU)['email'] === $eU && strpos($hal, 'email tersebut sudah terdaftar') !== FALSE, 'Sunting ke email milik akun lain ditolak dengan pesan jelas');
     [, $hal] = $kirim($jBid, 'Kemitraan_Bidang/ubah_universitas', ['id' => $idU, 'name' => 'X', 'email' => $eU, 'phone' => 'bukan-nomor-xx']);
@@ -132,10 +145,12 @@ try {
 
     [$jU] = $login($eU);
     $hidup = $masuk($jU);
+    $db->query("UPDATE usr_akun SET google_id='gid2-{$tag}' WHERE id={$idU}");
     $kirim($jBid, 'Kemitraan_Bidang/sandi_universitas', ['id' => $idU, 'password' => $sandi2]);
     $u = $baris($idU);
     $cek(password_verify($sandi2, $u['kata_sandi']) && $u['sesi_aktif_hash'] === NULL && $u['sesi_aktif_id_hash'] === NULL && $kedaluwarsa($idU),
         'Reset sandi sah: sandi baru berlaku, sesi lama dicabut, sandi wajib diganti');
+    $cek($u['google_id'] === NULL, 'Reset sandi ikut mencabut tautan Google (audit run-2)');
     $cek($jejak('universitas_sandi_direset', $idU) === 1 && (int) $nilai("SELECT COUNT(*) FROM sys_jejak_audit WHERE objek_id='{$idU}' AND detail_json LIKE '%{$sandi2}%'") === 0,
         'Reset sandi tercatat di audit tanpa isi sandinya');
     $cek($hidup && ! $masuk($jU), 'Sesi universitas yang lama berakhir sesudah reset sandi');

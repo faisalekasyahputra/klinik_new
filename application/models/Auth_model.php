@@ -205,10 +205,15 @@ class Auth_model extends CI_Model {
      * Sandi yang ditetapkan admin (akun baru, reset) langsung kedaluwarsa, jadi login pertama
      * diarahkan ke ganti sandi lewat mekanisme 90 hari yang sama. Sandi itu sempat diketahui
      * admin dan dikirim lewat jalur lain (keputusan pemilik produk 29 Sep 2026).
+     *
+     * Tautan Google ikut dicabut: reset oleh admin mencabut SEMUA kredensial lama, dan google_id
+     * yang tertanam (mis. lewat email yang sempat diganti admin) tetap bisa masuk tanpa sandi
+     * (audit run-2, 29 Okt 2026). Pemilik sah cukup masuk Google lagi; check_google_user()
+     * menautkan ulang lewat email akunnya.
      */
     public function password_awal_fields() {
         $now = date('Y-m-d H:i:s');
-        return ['sandi_diganti_at' => $now, 'sandi_kedaluwarsa_at' => $now];
+        return ['sandi_diganti_at' => $now, 'sandi_kedaluwarsa_at' => $now, 'google_id' => NULL];
     }
 
     /** Pesan wajib ganti sandi: sandi awal dari admin dikenali dari kedaluwarsa == saat ditetapkan. */
