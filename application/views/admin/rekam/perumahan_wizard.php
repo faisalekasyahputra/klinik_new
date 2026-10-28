@@ -95,9 +95,10 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
         </label>
         <div class="mt-1"><?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'bnba', 'ib_accept' => '.xlsx,.xls', 'ib_required' => FALSE, 'ib_attr' => '']); ?></div>
         <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">
-          Kolom: NIK, NO KK, NAMA, ALAMAT, KABUPATEN, KECAMATAN, DESA/KELURAHAN, KDDESA (terisi otomatis),
-          JUMLAH MATERIAL, JUMLAH PADAT KARYA. Kolom NIK dan NO KK diformat <b>Teks</b>. Satu baris salah
-          menolak seluruh berkas. Mengunggah lagi menggantikan berkas lama.
+          Pakai templat: NIK dan NO KK sudah berformat <b>Teks</b>, dan KDDESA terisi otomatis dari
+          KECAMATAN dan DESA/KELURAHAN. KDDESA yang kosong berarti ejaan kecamatan/desa belum sama
+          dengan lembar KODE WILAYAH, dan barisnya ditolak. Satu baris salah menolak seluruh berkas.
+          Mengunggah lagi menggantikan berkas lama.
           <a class="font-bold underline" href="<?= base_url('Rekam_Perumahan/templat_bnba') ?>">Unduh templat BNBA</a>
         </p>
       </div>

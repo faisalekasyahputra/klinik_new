@@ -222,8 +222,10 @@ function buat_xlsx(array $baris, ?array $judul = NULL) {
     return $tmp_berkas[] = $path;
 }
 
+/** Baris sah: desa SUNGGUHAN milik kabupaten penguji ($GLOBALS['DESA']), KDDESA = kode Kemendagri-nya. */
 function baris_ok($nik, $kab, $material = 17500000, $padat = 250000) {
-    return [$nik, '', 'Penerima ' . substr($nik, -4), 'RT01 RW02', $kab, 'Kebadongan', 'Klirong', '', $material, $padat];
+    $d = $GLOBALS['DESA'];
+    return [$nik, '', 'Penerima ' . substr($nik, -4), 'RT01 RW02', $kab, $d['kec'], $d['desa'], $d['kode'], $material, $padat];
 }
 
 /** POST multipart ke simpan_sumber (angka + berkas), token dari halaman yang merender form. */
@@ -259,6 +261,9 @@ $admin = q('SELECT id, kabupaten_id FROM usr_akun WHERE email = ? AND peran = ?'
 wajib($admin && ! empty($admin['kabupaten_id']), 'Akun admin_kabkota tersedia dan ter-scope');
 $KAB = (int) $admin['kabupaten_id'];
 $NAMA_KAB = skalar_str('SELECT nama AS s FROM kabupaten WHERE id = ?', [$KAB]);
+$DESA = q('SELECT d.id AS kode, d.nama AS desa, k.nama AS kec FROM desa d JOIN kecamatan k ON k.id = d.kecamatan_id
+           WHERE k.kabupaten_id = ? ORDER BY d.id LIMIT 1', [$KAB]);
+$DESA_LAIN = q('SELECT d.id AS kode FROM desa d JOIN kecamatan k ON k.id = d.kecamatan_id WHERE k.kabupaten_id <> ? LIMIT 1', [$KAB]);
 $LAIN = skalar_str('SELECT nama AS s FROM kabupaten WHERE id <> ? ORDER BY id LIMIT 1', [$KAB]);
 bersihkan();
 
@@ -283,9 +288,40 @@ try {
     $r = http('kab', $isian);
     cek(strpos($r['body'], 'enctype="multipart/form-data"') !== FALSE && strpos($r['body'], 'name="bnba"') !== FALSE,
         'Form sumber dana membawa kolom unggah BNBA (multipart)');
+    // Temuan dinas 28 Okt 2026: templat lama SpreadsheetML ber-ekstensi .xls ditolak saat diunggah balik,
+    // NIK jadi 3,37E+15, dan KDDESA tidak terisi. Templat kini XLSX asli.
     $t = http('kab', 'Rekam_Perumahan/templat_bnba');
-    cek($t['code'] === 200 && strpos($t['body'], 'JUMLAH PADAT KARYA') !== FALSE && strpos($t['body'], 'DESA/KELURAHAN') !== FALSE,
-        'Templat BNBA memuat kolom format dinas');
+    $templat = tempnam(sys_get_temp_dir(), 'ujibn_') . '.xlsx';
+    file_put_contents($templat, $t['body']);
+    $tmp_berkas[] = $templat;
+    cek($t['code'] === 200 && substr($t['body'], 0, 2) === 'PK', 'Templat BNBA adalah XLSX asli (bukan XML ber-ekstensi .xls)');
+    $ss = \PhpOffice\PhpSpreadsheet\IOFactory::load($templat);
+    $sh = $ss->getSheetByName('BNBA');
+    $kw = $ss->getSheetByName('KODE WILAYAH');
+    cek($sh && $kw && $sh->getCell('J1')->getValue() === 'JUMLAH PADAT KARYA', 'Templat punya lembar BNBA (kolom dinas) dan KODE WILAYAH');
+    cek($sh->getStyle('A2')->getNumberFormat()->getFormatCode() === '@' && $sh->getStyle('B2')->getNumberFormat()->getFormatCode() === '@',
+        'Kolom NIK dan NO KK berformat Teks');
+    cek(strpos((string) $sh->getCell('H2')->getValue(), "VLOOKUP") !== FALSE, 'KDDESA berumus VLOOKUP ke KODE WILAYAH');
+    $kode_kw = [];
+    for ($i = 2; $i <= $kw->getHighestRow(); $i++) { $kode_kw[] = (string) $kw->getCell("E$i")->getValue(); }
+    cek($kode_kw && count(array_filter($kode_kw, fn($k) => strpos($k, (string) $KAB) !== 0)) === 0 && in_array($DESA['kode'], $kode_kw, TRUE),
+        'KODE WILAYAH hanya berisi desa kabupaten pengunduh (' . count($kode_kw) . ' desa)');
+
+    // Tiru petugas: isi templat (NIK diketik sebagai teks, nama desa huruf kecil) lalu simpan seperti
+    // Excel, yaitu dengan nilai rumus ikut tersimpan.
+    $isi_templat = function (array $baris) use ($templat, &$tmp_berkas) {
+        $ss = \PhpOffice\PhpSpreadsheet\IOFactory::load($templat);
+        $sh = $ss->getSheetByName('BNBA');
+        foreach ($baris as $i => $r) {
+            foreach ([0 => 'A', 1 => 'B', 2 => 'C', 3 => 'D', 4 => 'E', 5 => 'F', 6 => 'G', 8 => 'I', 9 => 'J'] as $c => $k) {
+                $sh->setCellValueExplicit($k . ($i + 2), (string) $r[$c], $c < 2 ? \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING
+                    : (is_int($r[$c]) ? \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC : \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING));
+            }
+        }
+        $p = tempnam(sys_get_temp_dir(), 'ujibn_') . '.xlsx';
+        (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($ss))->save($p); // preCalculate bawaan TRUE = nilai rumus tersimpan
+        return $tmp_berkas[] = $p;
+    };
 
     echo "\n[2] Gerbang kirim\n";
     simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10));
@@ -315,7 +351,7 @@ try {
     $ss = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
     $sh = $ss->getActiveSheet();
     $sh->fromArray([['NIK', 'NO KK', 'NAMA', 'ALAMAT', 'KABUPATEN', 'KECAMATAN', 'DESA/KELURAHAN', 'KDDESA', 'JUMLAH MATERIAL', 'JUMLAH PADAT KARYA']]);
-    $sh->fromArray([[3305050903730004, '', 'Uji Angka', 'RT01', $NAMA_KAB, 'Kec', 'Desa', 3305152018, 17500000, 250000]], NULL, 'A2');
+    $sh->fromArray([[3305050903730004, '', 'Uji Angka', 'RT01', $NAMA_KAB, $DESA['kec'], $DESA['desa'], $DESA['kode'], 17500000, 250000]], NULL, 'A2');
     $sh->getStyle('I2:J2')->getNumberFormat()->setFormatCode('#,##0.00');
     $angka = tempnam(sys_get_temp_dir(), 'ujibn_') . '.xlsx';
     (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($ss))->save($angka);
@@ -336,6 +372,21 @@ try {
         && Rekam_bnba_import::rupiah(17500000.5) === NULL && Rekam_bnba_import::rupiah('-5') === NULL,
         'Rupiah: pemisah ribuan diterima, desimal dan negatif ditolak');
 
+    echo "\n[3c] Alur templat: unduh, isi, unggah balik\n";
+    $d = $DESA;
+    $body = simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10), $isi_templat([
+        ['3305150101700001', '3305150101090001', 'Lewat Templat', 'RT01', strtoupper(preg_replace('/^Kabupaten\s+/i', '', $NAMA_KAB)), strtolower($d['kec']), strtolower($d['desa']), '', 17500000, 2500000],
+    ]));
+    $kini = bnba_baris($ID);
+    cek((int) $kini['jumlah_penerima'] === 1 && strpos($body, 'BNBA ditolak') === FALSE,
+        'Templat yang diisi lalu diunggah balik diterima (KDDESA terisi rumus, NIK tetap 16 angka)');
+    $body = simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10), $isi_templat([
+        ['3305150101700001', '', 'Desa Salah Ketik', 'RT01', $NAMA_KAB, $d['kec'], $d['desa'] . 'X', '', 17500000, 2500000],
+    ]));
+    cek(strpos($body, 'KDDESA kosong') !== FALSE, 'Desa salah ketik: KDDESA kosong dari rumus, ditolak dengan peringatan');
+    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10), $bagus);
+    $lama = bnba_baris($ID)['path_privat'];
+
     echo "\n[4] Penolakan: satu baris salah menolak seluruh berkas, yang lama tetap\n";
     $kasus = [
         'NIK bukan 16 angka'      => [baris_ok('330505090373000', $NAMA_KAB)],
@@ -343,6 +394,8 @@ try {
         'kabupaten bukan wilayah' => [baris_ok('3305050903730004', $LAIN)],
         'material bukan angka'    => [baris_ok('3305050903730004', $NAMA_KAB, 'banyak')],
         'berkas tanpa penerima'   => [],
+        'KDDESA kosong'           => [array_replace(baris_ok('3305050903730004', $NAMA_KAB), [7 => ''])],
+        'KDDESA desa kab. lain'   => [array_replace(baris_ok('3305050903730004', $NAMA_KAB), [7 => $DESA_LAIN['kode']])],
     ];
     foreach ($kasus as $nama => $isi) {
         $body = simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10), buat_xlsx($isi));
