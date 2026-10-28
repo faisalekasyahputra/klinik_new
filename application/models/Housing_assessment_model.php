@@ -986,6 +986,25 @@ class Housing_assessment_model extends CI_Model {
             return $this->fail('invalid_manual_entry', 'NIK atau nama lengkap tidak valid.');
         }
 
+        /* Jalur manual mengikat NIK TANPA bukti kepemilikan, jadi hanya sah untuk NIK yang
+           SIMPERUM nyatakan tidak ada (audit run-2, 29 Okt 2026). Tanpa syarat ini akun mana pun
+           bisa mengikat NIK orang lain yang ADA di SIMPERUM dengan satu POST manual_entry=1,
+           melompati pencocokan nama + tanggal lahir di Simperum_gateway::lookup(), lalu pemilik
+           aslinya terdorong ke tinjauan klaim Super Admin. Kedua pemanggil (Warga::isi_manual dan
+           Auth::_redirect_after_login) sudah menjalankan lookup() yang menyimpan snapshot
+           not_found ini lebih dulu. */
+        $this->config->load('simperum', TRUE);
+        $snapshot = $this->get_active_source_snapshot($nik, (string) $this->config->item('simperum_mode', 'simperum'));
+        if ( ! $snapshot || ($snapshot['status_respons'] ?? '') !== 'not_found') {
+            return $this->fail('manual_perlu_not_found', 'Isi manual hanya untuk NIK yang tidak ditemukan di SIMPERUM. Lakukan Cek NIK dengan tanggal lahir terlebih dahulu.');
+        }
+        // NIK yang sudah tercatat di akun (onboarding) mengikat jalur ini, sama seperti nik_bukan_milik_akun di gateway.
+        $akun = $this->db->select('nik_lookup_hash')->get_where('usr_akun', ['id' => $user_id])->row_array();
+        if ( ! empty($akun['nik_lookup_hash'])
+            && ! hash_equals((string) $akun['nik_lookup_hash'], $this->encryption_lib->deterministic_hash($nik))) {
+            return $this->fail('nik_bukan_milik_akun', 'NIK ini berbeda dengan NIK yang terdaftar di akun Anda.');
+        }
+
         /* Cakupan wilayah DICEK LEBIH DULU, SEBELUM save_profile() - kalau
            belum ada draft sama sekali. Urutan sebaliknya (profil dulu,
            baru cek cakupan) pernah dicoba dan TERBUKTI BERMASALAH: profil

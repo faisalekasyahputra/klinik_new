@@ -466,9 +466,25 @@ class Warga extends MY_Controller {
         }
 
         $user_id = (int) $this->get_user_id();
+        // Jatah pencarian akun yang sama dengan lookup(): jalur ini juga menjawab soal ikatan NIK.
+        foreach ([
+            ['warga_lookup_jam', 'Terlalu banyak percobaan. Silakan coba lagi sebentar.'],
+            ['warga_lookup_harian', 'Batas percobaan harian tercapai. Silakan lanjutkan besok.'],
+        ] as [$policy, $pesan]) {
+            $rate = $this->rate_limit_consume($policy, ['account_id' => $user_id]);
+            if (empty($rate['success']) || empty($rate['allowed'])) {
+                $this->rate_limit_reject($rate, $pesan, FALSE);
+                return;
+            }
+        }
         $result = $this->Housing_assessment_model->bootstrap_manual_draft($user_id, $nik, $full_name);
         if (empty($result['success'])) {
-            $this->session->set_flashdata('error', $result['message'] ?? 'Data tidak dapat disimpan.');
+            /* Pesan khusus "terhubung dengan akun lain" diganti pesan umum, seperti Profil Saya:
+               tanpa itu jalur ini jadi penanya status ikatan NIK siapa pun. */
+            $pesan = ($result['code'] ?? '') === 'nik_already_bound'
+                ? Housing_assessment_model::PESAN_NIK_BELUM_DISIMPAN
+                : ($result['message'] ?? 'Data tidak dapat disimpan.');
+            $this->session->set_flashdata('error', $pesan);
             redirect('warga/pendataan');
             return;
         }
