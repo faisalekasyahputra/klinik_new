@@ -89,19 +89,38 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
       </div>
 
       <?php // BNBA = daftar penerima per sumber dana (Excel). Wajib untuk sumber yang sudah ada realisasinya (gerbang di Rekam_data_model::kirim). ?>
-      <div>
-        <label class="text-xs font-bold text-gray-700 dark:text-brand-muted">
-          BNBA (Excel) <span class="font-normal">- wajib bila ada realisasi</span>
-        </label>
-        <div class="mt-1"><?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'bnba', 'ib_accept' => '.xlsx,.xls', 'ib_required' => FALSE, 'ib_attr' => '']); ?></div>
-        <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">
-          Pakai templat: NIK dan NO KK sudah berformat <b>Teks</b>, dan KDDESA terisi otomatis dari
-          KECAMATAN dan DESA/KELURAHAN. KDDESA yang kosong berarti ejaan kecamatan/desa belum sama
-          dengan lembar KODE WILAYAH, dan barisnya ditolak. Satu baris salah menolak seluruh berkas.
+      <?php // Tiga langkah bernomor, bukan satu paragraf dengan tautan di ekornya: petugas dinas
+            // (uji 29 Okt 2026) tidak menemukan tautan templat di dalam paragraf panjang. ?>
+      <fieldset class="rounded-xl border border-gray-200 p-3 dark:border-white/10">
+        <legend class="px-1 text-xs font-bold text-gray-700 dark:text-gray-200">
+          BNBA (Excel) <span class="font-normal text-gray-500 dark:text-brand-muted">- wajib bila ada realisasi</span>
+        </legend>
+        <ol class="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+          <li class="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span class="font-bold">1.</span>
+            <a class="tombol-kedua !min-h-[2.5rem] !px-4 !text-sm !border-blue-600 dark:!border-brand-primary/60" href="<?= base_url('Rekam_Perumahan/templat_bnba') ?>">
+              <i class="ph ph-microsoft-excel-logo !text-lg" aria-hidden="true"></i><span>Unduh templat BNBA</span>
+            </a>
+            <span class="text-xs text-gray-500 dark:text-brand-muted">NIK dan NO KK sudah berformat Teks.</span>
+          </li>
+          <li class="flex gap-3">
+            <span class="font-bold">2.</span>
+            <span>Isi data penerima. <b>KDDESA terisi otomatis</b> bila KECAMATAN dan DESA/KELURAHAN
+              ditulis sama dengan lembar KODE WILAYAH.</span>
+          </li>
+          <li class="flex gap-3">
+            <span class="font-bold">3.</span>
+            <div class="min-w-0 flex-1">
+              <span>Unggah berkasnya di sini:</span>
+              <div class="mt-1"><?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'bnba', 'ib_accept' => '.xlsx,.xls', 'ib_required' => FALSE, 'ib_attr' => '']); ?></div>
+            </div>
+          </li>
+        </ol>
+        <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted">
+          Satu baris salah (misalnya KDDESA kosong) menolak seluruh berkas, dengan nomor barisnya.
           Mengunggah lagi menggantikan berkas lama.
-          <a class="font-bold underline" href="<?= base_url('Rekam_Perumahan/templat_bnba') ?>">Unduh templat BNBA</a>
         </p>
-      </div>
+      </fieldset>
 
       <button class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan</span></button>
     </form>
