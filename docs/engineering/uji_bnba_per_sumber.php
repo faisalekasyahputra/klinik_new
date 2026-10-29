@@ -240,11 +240,15 @@ function simpan_dengan_bnba($nama, $halaman, array $data, $berkas = NULL) {
     return $body;
 }
 
-function sumber_data($lap, $program, $sumber, $realisasi) {
+/** Revisi dinas 29 Okt 2026: realisasi harus SAMA dengan isi BNBA (penerima = unit, material + padat = rupiah). */
+function sumber_data($lap, $program, $sumber, $unit, $rupiah) {
     return ['laporan_id' => $lap, 'program' => $program, 'sumber_dana' => $sumber,
-        'rencana_unit' => $realisasi, 'rencana_anggaran' => $realisasi * 1000000,
-        'realisasi_unit' => $realisasi, 'realisasi_anggaran' => $realisasi * 1000000];
+        'rencana_unit' => $unit, 'rencana_anggaran' => $rupiah,
+        'realisasi_unit' => $unit, 'realisasi_anggaran' => $rupiah];
 }
+// Pasangan angka untuk berkas uji: $bagus = 2 penerima (17.500.000+250.000, 20.000.000+300.000),
+// baris_ok tunggal = 1 penerima 17.750.000, templat 3c = 1 penerima 20.000.000.
+const S2 = [2, 38050000]; const S1 = [1, 17750000]; const T1 = [1, 20000000];
 
 function ada_di_disk($lap, $nama) { clearstatcache(); return is_file(private_uploads_dir('rekam_bnba', $lap) . $nama); }
 
@@ -324,7 +328,7 @@ try {
     };
 
     echo "\n[2] Gerbang kirim\n";
-    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10));
+    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', ...S1));
     cek(skalar_int('SELECT COUNT(*) AS n FROM rd_perumahan_baris WHERE laporan_id = ?', [$ID]) === 1, 'Angka sumber dana tersimpan tanpa berkas');
     kirim_form('kab', 'Rekam_Perumahan/input?laporan=' . $ID . '&langkah=review', 'Rekam_Perumahan/kirim', ['laporan_id' => $ID]);
     cek(skalar_str('SELECT status AS s FROM rd_laporan WHERE id = ?', [$ID]) === 'draft',
@@ -333,7 +337,7 @@ try {
     echo "\n[3] Unggah sah\n";
     $bagus = buat_xlsx([baris_ok('3305050903730004', $NAMA_KAB),
         baris_ok('3305110607760004', strtoupper($NAMA_KAB), 20000000, 300000)]);
-    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10), $bagus);
+    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', ...S2), $bagus);
     $bs = bnba_baris($ID);
     wajib($bs !== NULL, 'BNBA tercatat di rd_perumahan_bnba_sumber');
     cek((int) $bs['jumlah_penerima'] === 2, 'Jumlah penerima = 2');
@@ -356,12 +360,12 @@ try {
     $angka = tempnam(sys_get_temp_dir(), 'ujibn_') . '.xlsx';
     (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($ss))->save($angka);
     $tmp_berkas[] = $angka;
-    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10), $angka);
+    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', ...S1), $angka);
     $bs = bnba_baris($ID);
     cek((int) $bs['jumlah_penerima'] === 1 && (int) $bs['total_material'] === 17500000 && (int) $bs['total_padat_karya'] === 250000,
         'Uang bertipe angka berformat #,##0.00 terbaca 17.500.000 (bukan 100 kali lipat), NIK angka diterima');
     // Kembalikan ke berkas dua-penerima supaya bagian berikut tetap berpatokan sama.
-    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10), $bagus);
+    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', ...S2), $bagus);
     $lama = bnba_baris($ID)['path_privat'];
 
     require_once APP_ROOT . '/application/libraries/Rekam_bnba_import.php';
@@ -374,17 +378,17 @@ try {
 
     echo "\n[3c] Alur templat: unduh, isi, unggah balik\n";
     $d = $DESA;
-    $body = simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10), $isi_templat([
+    $body = simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', ...T1), $isi_templat([
         ['3305150101700001', '3305150101090001', 'Lewat Templat', 'RT01', strtoupper(preg_replace('/^Kabupaten\s+/i', '', $NAMA_KAB)), strtolower($d['kec']), strtolower($d['desa']), '', 17500000, 2500000],
     ]));
     $kini = bnba_baris($ID);
     cek((int) $kini['jumlah_penerima'] === 1 && strpos($body, 'BNBA ditolak') === FALSE,
         'Templat yang diisi lalu diunggah balik diterima (KDDESA terisi rumus, NIK tetap 16 angka)');
-    $body = simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10), $isi_templat([
+    $body = simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', ...T1), $isi_templat([
         ['3305150101700001', '', 'Desa Salah Ketik', 'RT01', $NAMA_KAB, $d['kec'], $d['desa'] . 'X', '', 17500000, 2500000],
     ]));
     cek(strpos($body, 'KDDESA kosong') !== FALSE, 'Desa salah ketik: KDDESA kosong dari rumus, ditolak dengan peringatan');
-    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10), $bagus);
+    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', ...S2), $bagus);
     $lama = bnba_baris($ID)['path_privat'];
 
     echo "\n[4] Penolakan: satu baris salah menolak seluruh berkas, yang lama tetap\n";
@@ -398,18 +402,18 @@ try {
         'KDDESA desa kab. lain'   => [array_replace(baris_ok('3305050903730004', $NAMA_KAB), [7 => $DESA_LAIN['kode']])],
     ];
     foreach ($kasus as $nama => $isi) {
-        $body = simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10), buat_xlsx($isi));
+        $body = simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', ...S1), buat_xlsx($isi));
         $kini = bnba_baris($ID);
         cek($kini && $kini['path_privat'] === $lama && (int) $kini['jumlah_penerima'] === 2 && strpos($body, 'BNBA ditolak') !== FALSE,
             "Ditolak dengan pesan, BNBA lama utuh: {$nama}");
     }
-    $body = simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10),
+    $body = simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', ...S1),
         buat_xlsx([baris_ok('3305050903730004', $NAMA_KAB)], ['NIK', 'NAMA']));
     cek(strpos($body, 'Kolom tidak ditemukan') !== FALSE, 'Judul kolom tak lengkap ditolak dengan daftar kolom yang hilang');
     $tak_excel = tempnam(sys_get_temp_dir(), 'ujibn_') . '.xlsx';
     file_put_contents($tak_excel, 'bukan excel');
     $tmp_berkas[] = $tak_excel;
-    $body = simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10), $tak_excel);
+    $body = simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', ...S1), $tak_excel);
     cek(strpos($body, 'BNBA ditolak') !== FALSE, 'Berkas palsu berekstensi xlsx ditolak');
     cek(skalar_int('SELECT COUNT(*) AS n FROM rd_perumahan_bnba_sumber s JOIN rd_perumahan_baris b ON b.id = s.baris_id WHERE b.laporan_id = ?', [$ID]) === 1,
         'Tetap satu BNBA untuk sumber dana ini');
@@ -417,7 +421,7 @@ try {
     echo "\n[4b] Pesan sampai ke layar lewat muat parsial (jalur yang dipakai wizard di peramban)\n";
     // Wizard mengirim form lewat admin-progressive.js (X-Shell: admin). Balasan parsialnya dulu tidak
     // membawa pesan flash, jadi "BNBA ditolak" terbaca lalu terbuang tanpa pernah tampil.
-    $data = sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10);
+    $data = sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', ...S1);
     $data['csrf_kpkp_token'] = csrf('kab', $isian);
     $data['bnba'] = new CURLFile(buat_xlsx([baris_ok('330505090373000', $NAMA_KAB)]), 'application/octet-stream', 'bnba.xlsx');
     $ch = curl_init(BASE_URL . '/Rekam_Perumahan/simpan_sumber');
@@ -430,11 +434,23 @@ try {
         'Balasan parsial membawa pesan "BNBA ditolak" untuk ditampilkan loader');
 
     echo "\n[5] Ganti berkas membuang yang lama dari disk\n";
-    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 10), buat_xlsx([baris_ok('3305050903730004', $NAMA_KAB)]));
+    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', ...S1), buat_xlsx([baris_ok('3305050903730004', $NAMA_KAB)]));
     $kini = bnba_baris($ID);
     cek((int) $kini['jumlah_penerima'] === 1 && $kini['path_privat'] !== $lama, 'Unggah ulang mengganti isi');
     cek( ! ada_di_disk($ID, $lama), 'Berkas lama terhapus dari disk');
     $BARIS = (int) $kini['baris'];
+
+    echo "\n[5b] Revisi dinas 29 Okt: isi BNBA harus sama dengan realisasi\n";
+    $body = simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', ...S1), $bagus);
+    cek(strpos($body, 'jumlah penerima 2, padahal realisasi 1 unit') !== FALSE && (int) bnba_baris($ID)['jumlah_penerima'] === 1,
+        'Jumlah penerima beda dengan realisasi unit: ditolak, BNBA lama utuh');
+    $body = simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', 1, 20000000), buat_xlsx([baris_ok('3305050903730004', $NAMA_KAB)]));
+    cek(strpos($body, 'padahal realisasi anggaran Rp 20.000.000') !== FALSE, 'Rupiah BNBA beda dengan realisasi anggaran: ditolak');
+    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', ...S2)); // angka diubah TANPA unggah ulang
+    cek(strpos(http('kab', $isian)['body'], 'BNBA tidak cocok dengan realisasi') !== FALSE, 'Angka diubah sesudah unggah: layar menandai BNBA tidak cocok');
+    $r = kirim_form('kab', 'Rekam_Perumahan/input?laporan=' . $ID . '&langkah=review', 'Rekam_Perumahan/kirim', ['laporan_id' => $ID]);
+    cek(skalar_str('SELECT status AS s FROM rd_laporan WHERE id = ?', [$ID]) === 'draft', 'Kirim DITOLAK selama BNBA tidak cocok dengan realisasi');
+    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'apbd_kabkota', ...S1)); // kembali cocok
 
     echo "\n[6] Unduh ter-scope\n";
     $u = http('kab', 'Rekam_Perumahan/unduh_bnba_sumber/' . $BARIS);
@@ -443,7 +459,7 @@ try {
     cek(substr($u['body'], 0, 2) !== 'PK', 'Admin bidang TIDAK bisa mengunduh lewat jalur kabupaten');
 
     echo "\n[7] Kirim sesudah BNBA lengkap, dan berkas yatim\n";
-    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'csr', 5), buat_xlsx([baris_ok('3305110607760004', $NAMA_KAB)]));
+    simpan_dengan_bnba('kab', $isian, sumber_data($ID, 'pk_rtlh', 'csr', ...S1), buat_xlsx([baris_ok('3305110607760004', $NAMA_KAB)]));
     $csr = q('SELECT s.path_privat FROM rd_perumahan_bnba_sumber s JOIN rd_perumahan_baris b ON b.id = s.baris_id
               WHERE b.laporan_id = ? AND b.sumber_dana = ?', [$ID, 'csr']);
     wajib($csr !== NULL && ada_di_disk($ID, $csr['path_privat']), 'BNBA sumber kedua tersimpan');
@@ -469,7 +485,7 @@ try {
     $hal2 = 'Rekam_Perumahan/input?laporan=' . $ID2 . '&langkah=isian&program=pb_backlog';
     kirim_form('kab', 'Rekam_Perumahan/input?laporan=' . $ID2 . '&langkah=program', 'Rekam_Perumahan/simpan_program',
         ['laporan_id' => $ID2, 'program' => ['pb_backlog']]);
-    simpan_dengan_bnba('kab', $hal2, sumber_data($ID2, 'pb_backlog', 'apbd_kabkota', 3), buat_xlsx([baris_ok('3305110607760004', $NAMA_KAB)]));
+    simpan_dengan_bnba('kab', $hal2, sumber_data($ID2, 'pb_backlog', 'apbd_kabkota', ...S1), buat_xlsx([baris_ok('3305110607760004', $NAMA_KAB)]));
     $p = bnba_baris($ID2);
     wajib($p !== NULL, 'BNBA di laporan kedua tersimpan');
     kirim_form('kab', 'Rekam_Perumahan/input?laporan=' . $ID2 . '&langkah=program', 'Rekam_Perumahan/simpan_program',

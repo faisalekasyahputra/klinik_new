@@ -386,6 +386,10 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
                         - <?= $rp($bs['jumlah_penerima']) ?> penerima, material Rp <?= $rp($bs['total_material']) ?>,
                         padat karya Rp <?= $rp($bs['total_padat_karya']) ?>
                       </p>
+                      <?php $tak_cocok = (int) $row['realisasi_unit'] > 0 ? Rekam_data_model::bnba_tak_cocok($row, $bs['jumlah_penerima'], $bs['total_material'], $bs['total_padat_karya']) : NULL; ?>
+                      <?php if ($tak_cocok): ?>
+                        <p class="mt-1 text-xs font-bold text-red-600 dark:text-red-400"><?= $e($tak_cocok) ?> Unggah ulang BNBA atau samakan angkanya lewat Ubah.</p>
+                      <?php endif; ?>
                     <?php elseif ((int) $row['realisasi_unit'] > 0): ?>
                       <p class="mt-2 text-xs font-bold text-red-600 dark:text-red-400">BNBA belum dilampirkan (wajib karena ada realisasi).</p>
                     <?php endif; ?>
@@ -465,8 +469,10 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
           <li class="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
             <span class="font-bold text-gray-900 dark:text-white"><?= $e($sumber_label[$kode_s] ?? $kode_s) ?>
               <span class="font-normal text-gray-500 dark:text-brand-muted">- <?= $e($program_label[$kode_p] ?? $kode_p) ?></span></span>
-            <?php if ($bs): ?>
-              <span class="text-emerald-700 dark:text-emerald-300"><?= $rp($bs['jumlah_penerima']) ?> penerima</span>
+            <?php if ($bs && Rekam_data_model::bnba_tak_cocok($row_s, $bs['jumlah_penerima'], $bs['total_material'], $bs['total_padat_karya'])): ?>
+              <a class="font-bold text-red-600 underline dark:text-red-400" href="<?= base_url('Rekam_Perumahan/input?laporan=' . $laporan_id . '&langkah=isian&program=' . rawurlencode($kode_p)) ?>">Tidak cocok dengan realisasi</a>
+            <?php elseif ($bs): ?>
+              <span class="text-emerald-700 dark:text-emerald-300"><?= $rp($bs['jumlah_penerima']) ?> penerima, cocok dengan realisasi</span>
             <?php else: ?>
               <a class="font-bold text-red-600 underline dark:text-red-400" href="<?= base_url('Rekam_Perumahan/input?laporan=' . $laporan_id . '&langkah=isian&program=' . rawurlencode($kode_p)) ?>">Belum dilampirkan</a>
             <?php endif; ?>
@@ -530,14 +536,14 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
           <?php elseif ( ! $sumber_tanpa_bnba): ?>
             <span class="text-emerald-700 dark:text-emerald-300">Lengkap (<?= count($bnba_sumber) ?> sumber dana)</span>
           <?php else: ?>
-            <span class="font-bold text-red-600 dark:text-red-400"><?= count($sumber_tanpa_bnba) ?> sumber dana belum dilampiri</span>
+            <span class="font-bold text-red-600 dark:text-red-400"><?= count($sumber_tanpa_bnba) ?> sumber dana belum dilampiri atau tidak cocok</span>
           <?php endif; ?>
         </li>
       </ul>
 
       <?php if ( ! $bnba && $sumber_tanpa_bnba && ! $terkunci): ?>
         <p class="mt-4 rounded-xl border-l-4 border-red-500 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-500/10 dark:text-red-200">
-          Laporan tidak bisa dikirim sebelum setiap sumber dana yang ada realisasinya dilampiri BNBA. Buka langkah BNBA untuk melihat yang belum.
+          Laporan tidak bisa dikirim sebelum setiap sumber dana yang ada realisasinya dilampiri BNBA yang cocok dengan angka realisasinya (jumlah penerima dan rupiah). Buka langkah BNBA untuk melihat yang belum.
         </p>
       <?php endif; ?>
 
