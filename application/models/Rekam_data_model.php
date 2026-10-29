@@ -460,10 +460,31 @@ class Rekam_data_model extends CI_Model {
      */
     public function sumber_tanpa_bnba($laporan_id)
     {
-        return $this->db->select('b.program, b.sumber_dana')->from('rd_perumahan_baris b')
+        // Revisi dinas 29 Okt 2026: BNBA yang ada tetapi TIDAK COCOK dengan realisasi (jumlah penerima
+        // = realisasi unit, material + padat karya = realisasi anggaran) juga menahan kirim. Terjadi
+        // bila angka realisasi diubah sesudah BNBA diunggah. `masalah` = 'belum' atau 'tidak_cocok'.
+        return $this->db->select("b.program, b.sumber_dana, IF(s.id IS NULL, 'belum', 'tidak_cocok') AS masalah", FALSE)
+            ->from('rd_perumahan_baris b')
             ->join('rd_perumahan_bnba_sumber s', 's.baris_id = b.id', 'left')
-            ->where('b.laporan_id', (int) $laporan_id)->where('b.realisasi_unit >', 0)->where('s.id IS NULL', NULL, FALSE)
+            ->where('b.laporan_id', (int) $laporan_id)->where('b.realisasi_unit >', 0)
+            ->where('(s.id IS NULL OR s.jumlah_penerima <> b.realisasi_unit'
+                . ' OR s.total_material + s.total_padat_karya <> b.realisasi_anggaran)', NULL, FALSE)
             ->get()->result_array();
+    }
+
+    /** NULL bila BNBA cocok dengan realisasi baris; kalau tidak, kalimat yang menyebut kedua angkanya. */
+    public static function bnba_tak_cocok(array $baris, $penerima, $material, $padat)
+    {
+        $rp = static fn($n) => 'Rp ' . number_format((int) $n, 0, ',', '.');
+        $beda = [];
+        if ((int) $penerima !== (int) $baris['realisasi_unit']) {
+            $beda[] = "jumlah penerima $penerima, padahal realisasi {$baris['realisasi_unit']} unit";
+        }
+        if ((int) $material + (int) $padat !== (int) $baris['realisasi_anggaran']) {
+            $beda[] = 'material + padat karya ' . $rp((int) $material + (int) $padat)
+                . ', padahal realisasi anggaran ' . $rp($baris['realisasi_anggaran']);
+        }
+        return $beda ? 'BNBA tidak cocok dengan realisasi: ' . implode('; ', $beda) . '.' : NULL;
     }
 
     /**
@@ -585,9 +606,13 @@ class Rekam_data_model extends CI_Model {
             if ( ! $this->db->where('laporan_id', $id)->count_all_results('rd_perumahan_bnba')) {
                 $tanpa = $this->sumber_tanpa_bnba($id);
                 if ($tanpa) {
-                    return $this->gagal('belum_lengkap',
-                        count($tanpa) . ' sumber dana yang sudah ada realisasinya belum dilampiri BNBA '
-                        . '(unggah Excel-nya di form sumber dana, langkah Isian Capaian).');
+                    $belum = count(array_filter($tanpa, fn($t) => $t['masalah'] === 'belum'));
+                    $beda  = count($tanpa) - $belum;
+                    $bagian = [];
+                    if ($belum) { $bagian[] = "$belum sumber dana yang sudah ada realisasinya belum dilampiri BNBA"; }
+                    if ($beda)  { $bagian[] = "$beda sumber dana BNBA-nya tidak cocok dengan angka realisasi (jumlah penerima atau rupiahnya)"; }
+                    return $this->gagal('belum_lengkap', ucfirst(implode('; ', $bagian))
+                        . '. Perbaiki di form sumber dana, langkah Isian Capaian.');
                 }
             }
         } else {

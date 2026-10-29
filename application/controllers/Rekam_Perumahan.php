@@ -698,6 +698,16 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
             @unlink($path);
             return $baca['message'];
         }
+        // Revisi dinas 29 Okt 2026: isi BNBA harus sama dengan realisasi sumber dananya. Angka di form
+        // sudah tersimpan lebih dulu (simpan_sumber), jadi yang dibandingkan adalah angka terbaru.
+        $baris = $this->db->get_where('rd_perumahan_baris', ['laporan_id' => (int) $laporan_id,
+            'program' => $program, 'sumber_dana' => $sumber])->row_array();
+        $beda = $baris ? Rekam_data_model::bnba_tak_cocok($baris, $baca['jumlah_penerima'],
+            $baca['total_material'], $baca['total_padat_karya']) : NULL;
+        if ($beda !== NULL) {
+            @unlink($path);
+            return $beda . ' Samakan angka realisasi di form ini dengan isi BNBA, atau perbaiki berkasnya.';
+        }
 
         $hasil = $this->rd->simpan_bnba_sumber($laporan_id, $program, $sumber, [
             'nama_asli'         => $_FILES['bnba']['name'],
