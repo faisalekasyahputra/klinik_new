@@ -34,6 +34,11 @@ class Rekam_Pbg extends Admin_Kabkota_Controller {
             'unggahan'    => array_column($this->db->where(['jenis' => $this->jenis,
                 'kabupaten_id' => (int) $this->my_kabupaten_id, 'tahun' => $tahun])
                 ->get('rd_pbg_bphtb')->result_array(), NULL, 'bulan'),
+            'angka'       => array_column($this->db->where(['jenis' => $this->jenis,
+                'kabupaten_id' => (int) $this->my_kabupaten_id, 'tahun' => $tahun])
+                ->get('rd_pbg_bphtb_angka')->result_array(), NULL, 'bulan'),
+            'label_jumlah' => $this->jenis === 'pbg' ? 'Jumlah unit dibebaskan retribusi PBG' : 'Jumlah penerima dibebaskan BPHTB',
+            'label_nilai'  => $this->jenis === 'pbg' ? 'Nilai retribusi PBG dibebaskan (Rp)' : 'Nilai BPHTB dibebaskan (Rp)',
         ];
         $this->render_scoped_admin('admin/rekam/pbg_bphtb', $data);
     }
@@ -99,6 +104,37 @@ class Rekam_Pbg extends Admin_Kabkota_Controller {
         $this->catat_audit('rekam_' . $this->jenis . '_diunggah', $this->label . ' ' . $periode . ' diunggah ('
             . $this->nama_wilayah() . ', ' . $baca['ringkasan'] . ')', 'rd_pbg_bphtb');
         $this->session->set_flashdata('success', $this->label . ' ' . $periode . ' tersimpan: ' . $baca['ringkasan'] . '.');
+        redirect($kembali);
+    }
+
+    /** Ringkasan angka satu bulan, boleh tanpa berkas Excel. Simpan lagi menggantikan. */
+    public function simpan_angka()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); return; }
+        $tahun = $this->tahun_dari($this->input->post('tahun'));
+        $bulan = $this->bulan_dari($this->input->post('bulan'));
+        $kembali = get_class($this) . '?tahun=' . $tahun . '&bulan=' . $bulan;
+        $jumlah = trim((string) $this->input->post('jumlah'));
+        $nilai = str_replace('.', '', trim((string) $this->input->post('nilai_rp')));
+        if ( ! ctype_digit($jumlah) || ! ctype_digit($nilai) || strlen($jumlah) > 9 || strlen($nilai) > 15) {
+            $this->session->set_flashdata('error', 'Jumlah dan nilai harus angka bulat, tanpa minus.');
+            redirect($kembali);
+        }
+        $kunci = ['jenis' => $this->jenis, 'kabupaten_id' => (int) $this->my_kabupaten_id, 'tahun' => $tahun, 'bulan' => $bulan];
+        $isi = ['jumlah' => (int) $jumlah, 'nilai_rp' => $nilai,
+            'catatan' => mb_substr(trim((string) $this->input->post('catatan')), 0, 500) ?: NULL,
+            'updated_at' => date('Y-m-d H:i:s'), 'updated_by' => $this->get_user_id() ?: NULL];
+        $lama = $this->db->where($kunci)->get('rd_pbg_bphtb_angka')->row_array();
+        $ok = $lama ? $this->db->where('id', (int) $lama['id'])->update('rd_pbg_bphtb_angka', $isi)
+                    : $this->db->insert('rd_pbg_bphtb_angka', $kunci + $isi);
+        $periode = $this->nama_bulan($bulan) . ' ' . $tahun;
+        if ( ! $ok) {
+            $this->session->set_flashdata('error', 'Ringkasan gagal disimpan. Coba lagi.');
+            redirect($kembali);
+        }
+        $this->catat_audit('rekam_' . $this->jenis . '_angka', 'Ringkasan ' . $this->label . ' ' . $periode . ' disimpan ('
+            . $this->nama_wilayah() . ', ' . $jumlah . ', Rp ' . number_format((float) $nilai, 0, ',', '.') . ')', 'rd_pbg_bphtb_angka');
+        $this->session->set_flashdata('success', 'Ringkasan ' . $this->label . ' ' . $periode . ' tersimpan.');
         redirect($kembali);
     }
 

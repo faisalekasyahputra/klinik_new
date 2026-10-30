@@ -198,6 +198,7 @@ $config['input_allowed_fields'] = [
     'nik_ktp',
     'nilai_anggaran',
     'nilai_padat_karya',
+    'nilai_rp', 'jumlah', // Rekam_Pbg::simpan_angka (ringkasan angka PBG/BPHTB per bulan)
     'nim',
     'no_hp',
     'no_keanggotaan',

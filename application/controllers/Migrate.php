@@ -607,6 +607,8 @@ class Migrate extends CI_Controller {
         // Migrasi 089 - Rekam Data PBG dan BPHTB.
         echo 'PBG dan BPHTB (migrasi 089): '.($this->db->table_exists('rd_pbg_bphtb') ? 'ADA' : 'HILANG')."
 ";
+        // Migrasi 090 - ringkasan angka PBG/BPHTB per bulan.
+        echo 'ringkasan angka PBG/BPHTB (migrasi 090): '.($this->db->table_exists('rd_pbg_bphtb_angka') ? 'ADA' : 'HILANG')."\n";
         // Migrasi 087 - sakelar "matriks ikut menentukan" per versi aturan.
         echo 'sakelar matriks menentukan (migrasi 087): '.($this->db->field_exists('matriks_menentukan', 'aturan_versi') ? 'ADA' : 'HILANG')."\n";
         // Migrasi 076 - kolom alasan_susulan untuk KKN input susulan (bersama kolom 061 dan 062 di bawah).

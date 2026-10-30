@@ -72,6 +72,35 @@ $nama_bulan = array_map('ucfirst', Rekam_pbg_bphtb_import::BULAN);
     </form>
   </section>
 
+  <section id="ringkasan" class="kartu-admin isi-kartu">
+    <?php $a = $angka[$bulan_pilih] ?? NULL; ?>
+    <h2 class="text-lg font-black text-gray-900 dark:text-white">Ringkasan angka <?= $e($label) ?> <?= $e($nama_bulan[$bulan_pilih]) ?> <?= (int) $tahun ?></h2>
+    <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">Boleh diisi tanpa berkas Excel. Untuk bulan lain, klik <b>Isi ringkasan</b> pada kartu bulannya di bawah.</p>
+    <form method="post" action="<?= base_url($kelas . '/simpan_angka') ?>" class="mt-3 grid gap-3 sm:grid-cols-2">
+      <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
+      <input type="hidden" name="tahun" value="<?= (int) $tahun ?>">
+      <input type="hidden" name="bulan" value="<?= (int) $bulan_pilih ?>">
+      <label class="block text-sm">
+        <span class="font-bold text-gray-700 dark:text-gray-300"><?= $e($label_jumlah) ?></span>
+        <input type="number" name="jumlah" min="0" step="1" required value="<?= (int) ($a['jumlah'] ?? 0) ?>"
+               class="mt-1 w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 dark:border-white/10">
+      </label>
+      <label class="block text-sm">
+        <span class="font-bold text-gray-700 dark:text-gray-300"><?= $e($label_nilai) ?></span>
+        <input type="number" name="nilai_rp" min="0" step="1" required value="<?= $e($a['nilai_rp'] ?? 0) ?>"
+               class="mt-1 w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 dark:border-white/10">
+      </label>
+      <label class="block text-sm sm:col-span-2">
+        <span class="font-bold text-gray-700 dark:text-gray-300">Catatan <span class="font-normal text-gray-500 dark:text-brand-muted">(opsional)</span></span>
+        <textarea name="catatan" rows="2" maxlength="500"
+                  class="mt-1 w-full rounded-lg border border-gray-200 bg-transparent px-3 py-2 dark:border-white/10"><?= $e($a['catatan'] ?? '') ?></textarea>
+      </label>
+      <div class="sm:col-span-2">
+        <button class="tombol-utama"><i class="ph ph-floppy-disk"></i><span>Simpan ringkasan</span></button>
+      </div>
+    </form>
+  </section>
+
   <section class="kartu-admin isi-kartu">
     <div class="flex flex-wrap items-baseline justify-between gap-2">
       <h2 class="text-lg font-black text-gray-900 dark:text-white"><?= $e($label) ?> tahun <?= (int) $tahun ?></h2>
@@ -86,6 +115,10 @@ $nama_bulan = array_map('ucfirst', Rekam_pbg_bphtb_import::BULAN);
               <span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-300"><i class="ph ph-check-circle" aria-hidden="true"></i>Terunggah</span>
             </div>
             <span class="text-xs text-gray-600 dark:text-gray-300"><?= $e($u['ringkasan']) ?></span>
+            <?php $a = $angka[$n] ?? NULL; ?>
+            <a class="text-xs font-bold underline <?= $a ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-brand-muted' ?>" href="<?= base_url($kelas . '?tahun=' . (int) $tahun . '&bulan=' . $n) ?>#ringkasan">
+              <?= $a ? $e(number_format((int) $a['jumlah'], 0, ',', '.') . ($jenis === 'pbg' ? ' unit' : ' penerima') . ' | Rp ' . number_format((float) $a['nilai_rp'], 0, ',', '.')) : 'Isi ringkasan' ?>
+            </a>
             <span class="text-xs text-gray-500 dark:text-brand-muted"><?= $e(date('d/m/Y H:i', strtotime($u['uploaded_at']))) ?></span>
             <a class="tombol-kedua !min-h-[2.25rem] !px-3 !text-xs" href="<?= base_url($kelas . '/unduh/' . (int) $u['id']) ?>" download title="<?= $e($u['nama_asli']) ?>">
               <i class="ph ph-download-simple" aria-hidden="true"></i><span class="truncate"><?= $e($u['nama_asli']) ?></span>
@@ -98,6 +131,10 @@ $nama_bulan = array_map('ucfirst', Rekam_pbg_bphtb_import::BULAN);
               <span class="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-brand-muted"><i class="ph ph-circle-dashed" aria-hidden="true"></i>Belum diunggah</span>
             </div>
             <span class="text-xs text-gray-400 dark:text-brand-muted">Belum ada data</span>
+            <?php $a = $angka[$n] ?? NULL; ?>
+            <a class="text-xs font-bold underline <?= $a ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-brand-muted' ?>" href="<?= base_url($kelas . '?tahun=' . (int) $tahun . '&bulan=' . $n) ?>#ringkasan">
+              <?= $a ? $e(number_format((int) $a['jumlah'], 0, ',', '.') . ($jenis === 'pbg' ? ' unit' : ' penerima') . ' | Rp ' . number_format((float) $a['nilai_rp'], 0, ',', '.')) : 'Isi ringkasan' ?>
+            </a>
             <span class="text-xs text-gray-400 dark:text-brand-muted">-</span>
             <span class="flex min-h-[2.25rem] items-center justify-center rounded-lg border border-dashed border-gray-200 text-xs text-gray-400 dark:border-white/10 dark:text-brand-muted">Belum ada berkas</span>
           </li>
