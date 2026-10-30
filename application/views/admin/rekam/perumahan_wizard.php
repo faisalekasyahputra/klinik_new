@@ -98,7 +98,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
         <ol class="space-y-3 text-sm text-gray-700 dark:text-gray-300">
           <li class="flex flex-wrap items-center gap-x-3 gap-y-2">
             <span class="font-bold">1.</span>
-            <a class="tombol-kedua !min-h-[2.5rem] !px-4 !text-sm !border-blue-600 dark:!border-brand-primary/60" href="<?= base_url('Rekam_Perumahan/templat_bnba') ?>">
+            <a class="tombol-kedua !min-h-[2.5rem] !px-4 !text-sm !border-blue-600 dark:!border-brand-primary/60" href="<?= base_url('Rekam_Perumahan/templat_bnba') ?>" download>
               <i class="ph ph-microsoft-excel-logo !text-lg" aria-hidden="true"></i><span>Unduh templat BNBA</span>
             </a>
             <span class="text-xs text-gray-500 dark:text-brand-muted">NIK dan NO KK sudah berformat Teks.</span>
@@ -382,7 +382,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
                     <?php $bs = $bnba_sumber[$program_aktif . '|' . $kode] ?? NULL; ?>
                     <?php if ($bs): ?>
                       <p class="mt-2 text-xs text-emerald-700 dark:text-emerald-300">
-                        BNBA: <a class="font-bold underline" href="<?= base_url('Rekam_Perumahan/unduh_bnba_sumber/' . (int) $row['id']) ?>"><?= $e($bs['nama_asli']) ?></a>
+                        BNBA: <a class="font-bold underline" href="<?= base_url('Rekam_Perumahan/unduh_bnba_sumber/' . (int) $row['id']) ?>" download><?= $e($bs['nama_asli']) ?></a>
                         - <?= $rp($bs['jumlah_penerima']) ?> penerima, material Rp <?= $rp($bs['total_material']) ?>,
                         padat karya Rp <?= $rp($bs['total_padat_karya']) ?>
                       </p>
@@ -458,7 +458,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
       <?php if ($bnba): ?>
         <p class="mt-4 rounded-xl border-l-4 border-emerald-500 bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200">
           Laporan ini memakai berkas BNBA tunggal dari pelaporan sebelumnya:
-          <a class="font-bold underline" href="<?= base_url('Rekam_Perumahan/unduh_bnba/' . $laporan_id) ?>"><?= $e($bnba['nama_asli']) ?></a>
+          <a class="font-bold underline" href="<?= base_url('Rekam_Perumahan/unduh_bnba/' . $laporan_id) ?>" download><?= $e($bnba['nama_asli']) ?></a>
           <span class="text-xs">(<?= $rp((int) ($bnba['ukuran'] / 1024)) ?> KB)</span>. Ini sudah memenuhi syarat kirim.
         </p>
       <?php endif; ?>

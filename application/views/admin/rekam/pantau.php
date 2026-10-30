@@ -96,11 +96,11 @@ $this->load->view('admin/layouts/cetak_rekap');
                  lintas-kabupaten INI, yang sebelumnya tidak punya unduhan
                  sama sekali. */ ?>
         <?php if ( ! empty($baris)): ?>
-        <a href="<?= base_url('Admin_Rekam_Data/export?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>"
+        <a href="<?= base_url('Admin_Rekam_Data/export?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>" download
            class="tombol-kedua ml-auto">
             <i class="ph ph-download-simple" aria-hidden="true"></i><span>Unduh Excel</span>
         </a>
-        <a href="<?= base_url('Admin_Rekam_Data/export?periode=tahun&tahun=' . (int) $tahun) ?>"
+        <a href="<?= base_url('Admin_Rekam_Data/export?periode=tahun&tahun=' . (int) $tahun) ?>" download
            class="tombol-kedua">
             <i class="ph ph-calendar-blank" aria-hidden="true"></i><span>Unduh setahun</span>
         </a>

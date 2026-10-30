@@ -43,11 +43,11 @@ $this->load->view('admin/layouts/cetak_rekap');
                  yang perlu menebak cara mendapatkannya. Bentuk berkasnya: satu baris
                  per triwulan, sehingga keempatnya bisa dibandingkan sekaligus
                  dijumlah. */ ?>
-      <a href="<?= base_url('Rekam_Kawasan/export?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>"
+      <a href="<?= base_url('Rekam_Kawasan/export?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>" download
          class="tombol-kedua">
         <i class="ph ph-download-simple" aria-hidden="true"></i><span>Unduh Excel</span>
       </a>
-      <a href="<?= base_url('Rekam_Kawasan/export?periode=tahun&tahun=' . (int) $tahun) ?>"
+      <a href="<?= base_url('Rekam_Kawasan/export?periode=tahun&tahun=' . (int) $tahun) ?>" download
          class="tombol-kedua">
         <i class="ph ph-calendar-blank" aria-hidden="true"></i><span>Unduh setahun</span>
       </a>
