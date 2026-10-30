@@ -248,13 +248,11 @@ $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' =>
               salah dibaca - "per triwulan, bukan kumulatif" - berdiri sendiri
               supaya tidak tenggelam di tengah paragraf. */ ?>
     <p class="mt-3 border-t border-gray-100 pt-3 text-xs leading-relaxed text-gray-500 dark:border-white/5 dark:text-brand-muted">
-      Angkanya <b>per triwulan</b>, bukan kumulatif sejak Januari - kumulatif s.d.
-      triwulan ini ada di tabel paling bawah.
+      Angka per triwulan; total sejak Januari ada di tabel paling bawah.
       <?php if ($mode_rekap): ?>
         Hanya laporan berstatus <b>terkirim</b> yang dihitung.
       <?php else: ?>
-        Yang ditampilkan angka wilayahmu <b>apa adanya</b>, termasuk draft; status di
-        atas yang menentukan apakah sudah dilaporkan ke provinsi.
+        Termasuk draft yang belum dikirim.
       <?php endif; ?>
     </p>
   </section>

@@ -37,16 +37,13 @@ $nama_bulan = array_map('ucfirst', Rekam_pbg_bphtb_import::BULAN);
           <a class="tombol-kedua !min-h-[2.5rem] !px-4 !text-sm !border-blue-600 dark:!border-brand-primary/60" href="<?= base_url($kelas . '/templat') ?>" download>
             <i class="ph ph-microsoft-excel-logo !text-lg" aria-hidden="true"></i><span>Unduh templat <?= $e($label) ?></span>
           </a>
-          <span class="text-xs text-gray-500 dark:text-brand-muted">Kolom NIK sudah berformat Teks.</span>
         </li>
         <li class="flex gap-3">
           <span class="font-bold">2.</span>
           <?php if ($jenis === 'pbg'): ?>
-            <span>Isi lembar <b>PENGEMBANG</b> dan/atau <b>PERORANGAN</b>. KODE KELURAHAN/DESA terisi otomatis bila
-              KECAMATAN dan KELURAHAN/DESA ditulis sama dengan lembar KODE WILAYAH.</span>
+            <span>Isi lembar <b>PENGEMBANG</b> dan/atau <b>PERORANGAN</b>.</span>
           <?php else: ?>
-            <span>Isi lembar <b>BPHTB</b>. Nama Kecamatan dan Nama Kelurahan ditulis sama dengan lembar KODE WILAYAH;
-              NIK Penerima 16 angka.</span>
+            <span>Isi lembar <b>BPHTB</b>.</span>
           <?php endif; ?>
         </li>
         <li class="flex gap-3">
@@ -65,8 +62,7 @@ $nama_bulan = array_map('ucfirst', Rekam_pbg_bphtb_import::BULAN);
         </li>
       </ol>
       <p class="text-xs text-gray-500 dark:text-brand-muted">
-        Kolom bulan di setiap baris harus sama dengan bulan yang dipilih. Satu baris salah menolak seluruh berkas,
-        dengan nomor barisnya. Mengunggah lagi untuk bulan yang sama menggantikan berkas lama.
+        Bulan di berkas harus sama dengan bulan yang dipilih.
       </p>
       <button class="tombol-utama"><i class="ph ph-upload-simple"></i><span>Unggah</span></button>
     </form>
@@ -75,7 +71,7 @@ $nama_bulan = array_map('ucfirst', Rekam_pbg_bphtb_import::BULAN);
   <section id="ringkasan" class="kartu-admin isi-kartu">
     <?php $a = $angka[$bulan_pilih] ?? NULL; ?>
     <h2 class="text-lg font-black text-gray-900 dark:text-white">Ringkasan angka <?= $e($label) ?> <?= $e($nama_bulan[$bulan_pilih]) ?> <?= (int) $tahun ?></h2>
-    <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">Boleh diisi tanpa berkas Excel. Untuk bulan lain, klik <b>Isi ringkasan</b> pada kartu bulannya di bawah.</p>
+    <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">Boleh diisi tanpa Excel. Bulan lain: klik <b>Isi ringkasan</b> di kartunya.</p>
     <form method="post" action="<?= base_url($kelas . '/simpan_angka') ?>" class="mt-3 grid gap-3 sm:grid-cols-2">
       <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
       <input type="hidden" name="tahun" value="<?= (int) $tahun ?>">

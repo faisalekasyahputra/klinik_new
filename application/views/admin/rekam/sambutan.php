@@ -24,13 +24,17 @@ $menu = [
         ['Rekam_Kawasan/rekap',   'ph-chart-line-up',           'Rekap Pelaporan',   'Angka yang sudah dikirim, per periode.'],
         ['Rekam_Kawasan/riwayat', 'ph-clock-counter-clockwise', 'Riwayat Pelaporan', 'Daftar periode beserta statusnya.'],
     ],
+    'PBG dan BPHTB' => [
+        ['Rekam_Pbg',   'ph-file-text', 'PBG',   'Unggah data PBG per bulan.'],
+        ['Rekam_Bphtb', 'ph-receipt',   'BPHTB', 'Unggah data BPHTB per bulan.'],
+    ],
 ];
 ?>
 
 <?php // Judul = label sidebar ("Rekam Data"); wilayah dan tahun tetap disebut di muka, di baris keterangan.
 $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' =>
     '<b class="text-gray-900 dark:text-white">' . $e($nama_wilayah) . '</b>, pelaporan tahun ' . (int) $tahun
-    . '. Wilayah diambil dari akunmu, bukan dari pilihan di layar - kamu hanya bisa merekam capaian wilayah sendiri.']); ?>
+    . '.']); ?>
 
 <div class="tumpuk-bagian">
 
