@@ -354,6 +354,18 @@ class Rekam_Kawasan extends Admin_Kabkota_Controller {
         $this->pulang($hasil, $laporan_id, 'Laporan terkirim dan terkunci.');
     }
 
+    /** Tarik laporan terkirim yang belum diterima provinsi kembali ke draft. */
+    public function tarik_kembali()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); return; }
+        $laporan_id = (int) $this->input->post('laporan_id');
+        $hasil = $this->rd->tarik_kembali($laporan_id, $this->my_kabupaten_id);
+        if ( ! empty($hasil['success'])) {
+            $this->catat_audit('rekam_ditarik', 'Laporan rekam data kawasan ditarik kembali ke draft', 'rd_laporan', $laporan_id);
+        }
+        $this->pulang($hasil, $laporan_id, 'Laporan dibuka lagi. Ubah yang perlu, lalu kirim ulang.');
+    }
+
     // ---------------------------------------------------------------- internal
 
     /** Pesan sukses hanya dipasang kalau model benar-benar melaporkan sukses. */

@@ -156,12 +156,21 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
                 untuk laporan terkunci, dan tiap kiriman dijawab "Laporan sudah
                 terkirim dan terkunci" - menawarkan tindakan yang sudah pasti
                 ditolak, lalu menyalahkan penggunanya. */ ?>
-      <p class="mt-4 rounded-xl border-l-4 border-emerald-500 bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200">
-        <b>Periode ini sudah dikirim dan terkunci.</b> Isinya bisa dibaca, tidak bisa diubah.
-        Perubahan baru mungkin setelah Admin Bidang mengembalikannya lewat
-        <i>Minta Perbaikan</i>. Untuk mengisi periode lain,
-        <a class="font-bold underline" href="<?= base_url('Rekam_Perumahan/input') ?>">pilih triwulan lain</a>.
-      </p>
+      <div class="mt-4 rounded-xl border-l-4 border-emerald-500 bg-emerald-50 p-3 text-sm text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200">
+        <?php if (empty($laporan['reviewed_at'])): ?>
+          <b>Laporan sudah dikirim dan terkunci.</b> Belum diperiksa provinsi, jadi masih bisa dibuka lagi.
+        <?php else: ?>
+          <b>Laporan sudah diterima provinsi dan terkunci.</b> Untuk mengubahnya, minta provinsi membuka kuncinya.
+        <?php endif; ?>
+      <?php if (empty($laporan['reviewed_at'])): ?>
+        <form method="post" action="<?= base_url('Rekam_Perumahan/tarik_kembali') ?>" class="mt-2"
+              data-konfirmasi="Laporan kembali menjadi draft. Setelah diubah, kirim ulang." data-konfirmasi-judul="Buka lagi laporan ini?" data-konfirmasi-label="Buka lagi">
+          <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
+          <input type="hidden" name="laporan_id" value="<?= (int) $laporan['id'] ?>">
+          <button class="tombol-kedua"><i class="ph ph-lock-open"></i><span>Buka lagi untuk diubah</span></button>
+        </form>
+      <?php endif; ?>
+      </div>
     <?php endif; ?>
 
     <?php if ($laporan && $laporan['status'] === 'perlu_perbaikan' && ! empty($laporan['catatan_admin'])): ?>
@@ -566,10 +575,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
             <button class="tombol-utama"><i class="ph ph-paper-plane-tilt"></i><span>Kirim laporan</span></button>
           </form>
         <?php else: ?>
-          <p class="text-sm text-gray-500 dark:text-brand-muted">
-            Laporan sudah terkirim dan terkunci. Perubahan hanya bisa dilakukan setelah
-            Admin Bidang mengembalikannya untuk diperbaiki.
-          </p>
+          <p class="text-sm text-gray-500 dark:text-brand-muted">Laporan sudah terkirim dan terkunci.</p>
         <?php endif; ?>
       </div>
     </section>

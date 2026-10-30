@@ -286,6 +286,21 @@ class Admin_Rekam_Data extends Admin_Controller {
         $this->pulang($hasil, 'Laporan dikembalikan untuk diperbaiki.', $laporan_id);
     }
 
+    /** Buka kunci laporan yang sudah DITERIMA: kembali ke kabupaten dengan alasan wajib. */
+    public function buka_kunci()
+    {
+        $laporan_id = (int) $this->input->post('laporan_id');
+        if ( ! $this->gerbang_tulis($laporan_id)) { return; }
+
+        $hasil = $this->rd->buka_kunci($laporan_id, $this->get_user_id(), $this->input->post('catatan_admin', TRUE));
+        if ( ! empty($hasil['success'])) {
+            $this->kabari_kabupaten_dibuka($laporan_id);
+            $this->catat_audit('rekam_dibuka_kunci', 'Laporan rekam data yang diterima dibuka kembali (superadmin)',
+                'rd_laporan', $laporan_id);
+        }
+        $this->pulang($hasil, 'Kunci laporan dibuka. Kabupaten bisa memperbaiki dan mengirim ulang.', $laporan_id);
+    }
+
     /**
      * Mulai mengisi laporan atas nama satu kabupaten. Kabupatennya divalidasi
      * ke tabel `kabupaten` lalu disimpan di SESI; `Admin_Kabkota_Controller`

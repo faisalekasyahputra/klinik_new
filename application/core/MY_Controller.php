@@ -1764,6 +1764,18 @@ class MY_Controller extends CI_Controller {
      * @param int|null $kabupaten_id NULL = semua kabupaten
      * @param string   $kembali      rute bila tidak ada BNBA untuk diunduh
      */
+    /** Beri tahu admin kab/kota pemilik laporan bahwa laporannya yang diterima dibuka kembali. */
+    protected function kabari_kabupaten_dibuka($laporan_id)
+    {
+        $l = $this->db->select('domain, kabupaten_id, tahun, triwulan')->get_where('rd_laporan', ['id' => (int) $laporan_id])->row_array();
+        if ( ! $l) { return; }
+        $this->notify_admin_push([['role' => 'admin_kabkota', 'kabupaten_id' => (int) $l['kabupaten_id']]],
+            'Laporan Rekam Data dibuka kembali',
+            'Provinsi membuka kunci laporan yang sudah diterima. Lihat catatannya, perbaiki, lalu kirim ulang.',
+            ($l['domain'] === 'perumahan' ? 'Rekam_Perumahan' : 'Rekam_Kawasan') . '?tahun=' . (int) $l['tahun'] . '&triwulan=' . (int) $l['triwulan'],
+            'rekam-dibuka-' . (int) $laporan_id);
+    }
+
     protected function kirim_bnba_gabungan($tahun, $triwulan, $kabupaten_id, $kembali)
     {
         $tahun = (int) $tahun; $triwulan = (int) $triwulan;

@@ -121,6 +121,23 @@ class Rekam_Tinjauan extends Admin_Bidang_Controller {
         $this->pulang($hasil, 'Laporan dikembalikan untuk diperbaiki.');
     }
 
+    /** Buka kunci laporan yang sudah DITERIMA di bidang ini, dengan alasan wajib. */
+    public function buka_kunci()
+    {
+        $laporan_id = (int) $this->input->post('laporan_id');
+        if ( ! $this->gerbang_keputusan($laporan_id)) {
+            return;
+        }
+        $hasil = $this->rd->buka_kunci($laporan_id, $this->get_user_id(),
+            $this->input->post('catatan_admin', TRUE), $this->domain);
+        if ( ! empty($hasil['success'])) {
+            $this->kabari_kabupaten_dibuka($laporan_id);
+            $this->catat_audit('rekam_dibuka_kunci', 'Laporan rekam data yang diterima dibuka kembali (admin bidang)',
+                'rd_laporan', $laporan_id);
+        }
+        $this->pulang($hasil, 'Kunci laporan dibuka. Kabupaten bisa memperbaiki dan mengirim ulang.');
+    }
+
     // ---------------------------------------------------------------- internal
 
     /**
