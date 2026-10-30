@@ -1751,6 +1751,85 @@ class MY_Controller extends CI_Controller {
         }
     }
     /**
+     * BNBA GABUNGAN (permintaan dinas 30 Okt 2026): seluruh penerima dari setiap BNBA per sumber dana
+     * laporan perumahan yang sudah terkirim pada satu triwulan, dalam SATU XLSX dengan kolom dinas:
+     * NIK, NOKK, Nama, Alamat, Kabupaten, Kecamatan, Desa, kddesa, jumlah material, jumlah padat karya,
+     * sumber dana, program, nama perusahaan/penyalur.
+     *
+     * Berkas ini memuat NIK seluruh penerima dalam cakupannya, jadi: hanya dipanggil dari pintu yang
+     * sudah menggerbangi peran dan cakupan (super admin semua, Admin Bidang Perumahan semua, admin
+     * kab/kota wilayahnya), dan setiap unduhan dicatat di jejak audit beserta jumlah barisnya.
+     * Tinggal di SINI karena MY_Controller satu-satunya pengirim unduhan langsung yang terdaftar
+     * (tests/data_lifecycle_test.php).
+     *
+     * @param int|null $kabupaten_id NULL = semua kabupaten
+     * @param string   $kembali      rute bila tidak ada BNBA untuk diunduh
+     */
+    protected function kirim_bnba_gabungan($tahun, $triwulan, $kabupaten_id, $kembali)
+    {
+        $tahun = (int) $tahun; $triwulan = (int) $triwulan;
+        if ($triwulan < 1 || $triwulan > 4) { show_404(); return; }
+        $this->load->model('Rekam_data_model', 'rd_gabung');
+        $this->load->library('rekam_bnba_import');
+        $label = $this->rd_gabung->label_domain('perumahan');
+        $berketerangan = ['apbn_kl_lain', 'csr', 'dana_lainnya'];
+
+        $isi = [];
+        $tak_terbaca = 0;
+        foreach ($this->rd_gabung->daftar_bnba_gabungan($tahun, $triwulan, $kabupaten_id) as $b) {
+            $path = $this->private_upload_dir('rekam_bnba', (int) $b['laporan_id']) . basename((string) $b['path_privat']);
+            $penerima = is_file($path) ? $this->rekam_bnba_import->penerima($path) : NULL;
+            if ($penerima === NULL) { $tak_terbaca++; continue; }
+            foreach ($penerima as $p) {
+                $isi[] = [$p['nik'], $p['kk'], $p['nama'], $p['alamat'], $p['kab'], $p['kec'], $p['desa'], $p['kddesa'],
+                    $p['material'], $p['padat'],
+                    $label['sumber'][$b['sumber_dana']] ?? $b['sumber_dana'],
+                    $label['program'][$b['program']] ?? $b['program'],
+                    in_array($b['sumber_dana'], $berketerangan, TRUE) ? (string) $b['keterangan'] : ''];
+            }
+        }
+        if ($tak_terbaca) {
+            log_message('error', "kirim_bnba_gabungan: $tak_terbaca berkas BNBA tidak terbaca (TW $triwulan $tahun)");
+        }
+        $periode = 'TW ' . ['', 'I', 'II', 'III', 'IV'][$triwulan] . ' ' . $tahun;
+        if ( ! $isi) {
+            $this->session->set_flashdata('error', "Belum ada BNBA dari laporan terkirim untuk $periode.");
+            redirect($kembali);
+            return;
+        }
+
+        $ss = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sh = $ss->getActiveSheet()->setTitle('BNBA ' . str_replace('TW ', 'TW', $periode));
+        $sh->fromArray(['NIK', 'NOKK', 'Nama', 'Alamat', 'Kabupaten', 'Kecamatan', 'Desa', 'kddesa',
+            'jumlah material', 'jumlah padat karya', 'sumber dana', 'program', 'nama perusahaan/penyalur']);
+        $sh->getStyle('A1:M1')->getFont()->setBold(TRUE);
+        $teks = \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING;
+        foreach ($isi as $i => $r) {
+            $n = $i + 2;
+            foreach ($r as $c => $v) {
+                // NIK, NOKK, kddesa sebagai TEKS (angka 16 digit tidak boleh jadi 3,3E+15); uang sebagai angka.
+                if (in_array($c, [8, 9], TRUE)) { $sh->setCellValue([$c + 1, $n], (int) $v); }
+                else { $sh->setCellValueExplicit([$c + 1, $n], (string) $v, $teks); }
+            }
+        }
+        $sh->getStyle('I2:J' . (count($isi) + 1))->getNumberFormat()->setFormatCode('#,##0');
+        foreach (range('A', 'M') as $k) { $sh->getColumnDimension($k)->setAutoSize(TRUE); }
+        $sh->freezePane('A2');
+
+        $cakupan = $kabupaten_id === NULL ? 'semua kabupaten'
+            : ($this->db->where('id', (int) $kabupaten_id)->get('kabupaten')->row('nama') ?: 'kabupaten');
+        $this->catat_audit('bnba_gabungan_diunduh', "BNBA gabungan $periode diunduh ($cakupan)", 'rd_laporan', NULL,
+            ['tahun' => $tahun, 'triwulan' => $triwulan, 'kabupaten_id' => $kabupaten_id, 'baris' => count($isi)]);
+
+        $aman = preg_replace('/[^A-Za-z0-9 _.-]/', '', "BNBA Gabungan $periode - $cakupan");
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="' . $aman . '.xlsx"');
+        header('Cache-Control: private, no-store');
+        (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($ss))->save('php://output');
+        exit;
+    }
+
+    /**
      * Kirim satu lembar kerja ke peramban sebagai berkas Excel, lalu berhenti.
      *
      * SpreadsheetML (XML), BUKAN CSV dan BUKAN pustaka. Alasannya berurutan:

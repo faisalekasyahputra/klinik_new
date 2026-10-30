@@ -36,7 +36,11 @@ class Rekam_bnba_import
      * @param array  $kode_desa      kode desa SAH milik kabupaten pelapor (tabel `desa`), [kode => TRUE]
      * @return array ['success','message','jumlah_penerima','total_material','total_padat_karya']
      */
-    public function baca($path, $nama_kabupaten, array $kode_desa)
+    /**
+     * Buka berkas, ganti sel berumus dengan nilai tersimpannya, lalu petakan judul kolom.
+     * @return array|string [$kol, $baris_isi] atau pesan galat
+     */
+    private function muat($path)
     {
         try {
             // Nilai MENTAH (formatData FALSE): sel uang berformat "#,##0.00" kalau dibaca sebagai teks
@@ -55,10 +59,10 @@ class Rekam_bnba_import
             }
         } catch (\Throwable $e) {
             log_message('error', 'Rekam_bnba_import: gagal membaca berkas - ' . $e->getMessage());
-            return $this->gagal('Berkas tidak dapat dibaca. Pastikan benar-benar Excel (XLSX/XLS), bukan berkas yang sekadar diganti namanya.');
+            return 'Berkas tidak dapat dibaca. Pastikan benar-benar Excel (XLSX/XLS), bukan berkas yang sekadar diganti namanya.';
         }
         if (count($baris) > self::BATAS_BARIS + 1) {
-            return $this->gagal('Berkas terlalu panjang. Maksimal ' . self::BATAS_BARIS . ' baris penerima.');
+            return 'Berkas terlalu panjang. Maksimal ' . self::BATAS_BARIS . ' baris penerima.';
         }
 
         // Judul bisa berisi "(KOLOM TERISI OTOMATIS)" sesudah baris baru: dibuang ke satu spasi.
@@ -70,9 +74,39 @@ class Rekam_bnba_import
         }
         $hilang = array_diff(self::WAJIB, array_keys($kol));
         if ($hilang) {
-            return $this->gagal('Kolom tidak ditemukan pada baris pertama: ' . implode(', ', array_map('strtoupper', $hilang))
-                . '. Gunakan templat dari tombol "Unduh templat BNBA".');
+            return 'Kolom tidak ditemukan pada baris pertama: ' . implode(', ', array_map('strtoupper', $hilang))
+                . '. Gunakan templat dari tombol "Unduh templat BNBA".';
         }
+        return [$kol, $baris];
+    }
+
+    /**
+     * Baris penerima dari berkas yang SUDAH lolos baca() saat diunggah (untuk BNBA gabungan).
+     * Tidak memvalidasi ulang; baris kosong dilewati. NULL bila berkas tak terbaca.
+     * @return array|null [['nik','kk','nama','alamat','kab','kec','desa','kddesa','material','padat'], ...]
+     */
+    public function penerima($path)
+    {
+        $muat = $this->muat($path);
+        if (is_string($muat)) { return NULL; }
+        [$kol, $baris] = $muat;
+        $out = [];
+        foreach ($baris as $r) {
+            if (implode('', array_map([self::class, 'teks'], $r)) === '') { continue; }
+            $v = static fn($k) => self::teks($r[$kol[$k] ?? -1] ?? '');
+            $out[] = ['nik' => $v('nik'), 'kk' => isset($kol['kk']) ? $v('kk') : '', 'nama' => $v('nama'),
+                'alamat' => $v('alamat'), 'kab' => $v('kab'), 'kec' => $v('kec'), 'desa' => $v('desa'),
+                'kddesa' => $v('kddesa'), 'material' => self::rupiah($r[$kol['material']] ?? '') ?? 0,
+                'padat' => self::rupiah($r[$kol['padat']] ?? '') ?? 0];
+        }
+        return $out;
+    }
+
+    public function baca($path, $nama_kabupaten, array $kode_desa)
+    {
+        $muat = $this->muat($path);
+        if (is_string($muat)) { return $this->gagal($muat); }
+        [$kol, $baris] = $muat;
 
         $cacat = []; $nik_ada = []; $n = 0; $material = 0; $padat = 0;
         foreach ($baris as $i => $r) {

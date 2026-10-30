@@ -34,6 +34,19 @@ $nama_tw = [1 => 'TW I', 2 => 'TW II', 3 => 'TW III', 4 => 'TW IV']; //
         </select>
         <button class="tombol-kedua"><i class="ph ph-funnel"></i><span>Tampilkan</span></button>
       </form>
+      <?php // BNBA hanya ada di domain perumahan, dan gabungannya per triwulan: tombol muncul setelah triwulan dipilih. ?>
+      <?php if ($domain === 'perumahan' && $triwulan): ?>
+        <?php // BNBA gabungan (permintaan dinas 30 Okt 2026): satu Excel berisi seluruh penerima laporan terkirim triwulan ini. ?>
+        <?php if ( ! empty($ada_bnba_gabungan)): ?>
+        <a href="<?= base_url('Rekam_Tinjauan/bnba_gabungan?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>" download class="tombol-kedua">
+            <i class="ph ph-users-three" aria-hidden="true"></i><span>Unduh BNBA gabungan</span>
+        </a>
+        <?php else: // Tautan download menyimpan balasan apa pun, jadi tanpa data tombolnya dinonaktifkan, bukan diarahkan ke pesan. ?>
+        <button type="button" class="tombol-kedua" disabled title="Belum ada BNBA dari laporan terkirim untuk triwulan ini">
+            <i class="ph ph-users-three" aria-hidden="true"></i><span>Unduh BNBA gabungan</span>
+        </button>
+        <?php endif; ?>
+      <?php endif; ?>
     </div>
     <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted">
       Laporan domain <b><?= $e($domain) ?></b> saja. Domain sebelah dikelola Bidang lain

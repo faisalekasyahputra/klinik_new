@@ -42,6 +42,8 @@ class Rekam_Tinjauan extends Admin_Bidang_Controller {
 
         $this->render_scoped_admin('admin/rekam/tinjauan_daftar', [
             'title'   => 'Peninjauan Rekam Data', // = label sidebar; bidangnya di baris keterangan
+            'ada_bnba_gabungan' => $this->domain === 'perumahan' && $triwulan
+                && (bool) $this->rd->daftar_bnba_gabungan($tahun, $triwulan),
             'domain'  => $this->domain,
             'tahun'   => $tahun,
             'triwulan'   => $triwulan,
@@ -73,6 +75,18 @@ class Rekam_Tinjauan extends Admin_Bidang_Controller {
             // Rekam Data (superadmin) yang read-only, dan di sana nilainya FALSE.
             'boleh_putuskan' => TRUE,
         ]);
+    }
+
+    /**
+     * BNBA gabungan satu triwulan, semua kabupaten. BNBA hanya ada di domain perumahan, jadi Bidang
+     * Kawasan mendapat 404 (tidak ada, bukan ditolak), sama seperti detail laporan domain lain.
+     */
+    public function bnba_gabungan()
+    {
+        if ($this->domain !== 'perumahan') { show_404(); return; }
+        $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
+        $tw    = (int) $this->input->get('triwulan');
+        $this->kirim_bnba_gabungan($tahun, $tw, NULL, 'Rekam_Tinjauan?tahun=' . $tahun . '&triwulan=' . $tw);
     }
 
     public function terima()

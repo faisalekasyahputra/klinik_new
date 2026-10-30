@@ -104,6 +104,16 @@ $this->load->view('admin/layouts/cetak_rekap');
            class="tombol-kedua">
             <i class="ph ph-calendar-blank" aria-hidden="true"></i><span>Unduh setahun</span>
         </a>
+        <?php // BNBA gabungan (permintaan dinas 30 Okt 2026): satu Excel berisi seluruh penerima laporan terkirim triwulan ini. ?>
+        <?php if ( ! empty($ada_bnba_gabungan)): ?>
+        <a href="<?= base_url('Admin_Rekam_Data/bnba_gabungan?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>" download class="tombol-kedua">
+            <i class="ph ph-users-three" aria-hidden="true"></i><span>Unduh BNBA gabungan</span>
+        </a>
+        <?php else: // Tautan download menyimpan balasan apa pun, jadi tanpa data tombolnya dinonaktifkan, bukan diarahkan ke pesan. ?>
+        <button type="button" class="tombol-kedua" disabled title="Belum ada BNBA dari laporan terkirim untuk triwulan ini">
+            <i class="ph ph-users-three" aria-hidden="true"></i><span>Unduh BNBA gabungan</span>
+        </button>
+        <?php endif; ?>
         <button type="button" onclick="window.print()"
            class="tombol-kedua">
             <i class="ph ph-printer" aria-hidden="true"></i><span>Cetak</span>
