@@ -30,6 +30,7 @@ $config['input_allowed_fields'] = [
     'auth',
     'badge',
     'penggunaan_kamar_mandi',
+    'berkas', // unggah Excel PBG/BPHTB (Rekam_Pbg::unggah)
     'berkas_pdf',
     'bidang',
     'bidang_kode',
