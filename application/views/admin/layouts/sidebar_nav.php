@@ -69,6 +69,9 @@ $gambar = function (array $items, $tingkat) use (&$gambar, $aktif_kelas, $diam_k
                       aria-label="Buka atau tutup sub-menu <?= htmlspecialchars($item['label'], ENT_QUOTES) ?>">
                 <i class="ph ph-caret-down text-sm transition-transform duration-200" :class="buka ? 'rotate-180' : ''"></i>
               </button>
+            <?php elseif ( ! $akar): ?>
+              <?php /* Pengganti tombol lipat, ukuran sama: sorotan anak tidak lebih lebar dari induknya. */ ?>
+              <span class="invisible shrink-0 p-1.5" x-show="sidebarOpen" aria-hidden="true"><i class="ph ph-caret-down text-sm"></i></span>
             <?php endif; ?>
           </div>
 

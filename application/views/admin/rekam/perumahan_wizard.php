@@ -83,8 +83,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
         <input type="text" name="keterangan" maxlength="150"
                value="<?= $e($row['keterangan'] ?? '') ?>" class="<?= $isian ?>">
         <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">
-          Hanya dipakai untuk <b><?= $e(implode(', ', array_map(fn($k) => $sumber_label[$k] ?? $k, array_keys($sumber_berketerangan)))) ?></b>;
-          di sumber lain isian ini diabaikan, bukan ditolak.
+          Diisi untuk <?= $e(implode(', ', array_map(fn($k) => $sumber_label[$k] ?? $k, array_keys($sumber_berketerangan)))) ?>.
         </p>
       </div>
 
@@ -101,24 +100,21 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
             <a class="tombol-kedua !min-h-[2.5rem] !px-4 !text-sm !border-blue-600 dark:!border-brand-primary/60" href="<?= base_url('Rekam_Perumahan/templat_bnba') ?>" download>
               <i class="ph ph-microsoft-excel-logo !text-lg" aria-hidden="true"></i><span>Unduh templat BNBA</span>
             </a>
-            <span class="text-xs text-gray-500 dark:text-brand-muted">NIK dan NO KK sudah berformat Teks.</span>
           </li>
           <li class="flex gap-3">
             <span class="font-bold">2.</span>
-            <span>Isi data penerima. <b>KDDESA terisi otomatis</b> bila KECAMATAN dan DESA/KELURAHAN
-              ditulis sama dengan lembar KODE WILAYAH.</span>
+            <span>Isi data penerima di templat.</span>
           </li>
           <li class="flex gap-3">
             <span class="font-bold">3.</span>
             <div class="min-w-0 flex-1">
-              <span>Unggah berkasnya di sini:</span>
+              <span>Unggah berkasnya:</span>
               <div class="mt-1"><?php $this->load->view('admin/components/input_berkas', ['ib_name' => 'bnba', 'ib_accept' => '.xlsx,.xls', 'ib_required' => FALSE, 'ib_attr' => '']); ?></div>
             </div>
           </li>
         </ol>
         <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted">
-          Satu baris salah (misalnya KDDESA kosong) menolak seluruh berkas, dengan nomor barisnya.
-          Mengunggah lagi menggantikan berkas lama.
+          Jumlah penerima dan rupiah harus sama dengan realisasi.
         </p>
       </fieldset>
 
@@ -210,8 +206,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
     <section class="<?= $kotak ?>">
       <h2 class="text-lg font-black text-gray-900 dark:text-white">Periode Pelaporan</h2>
       <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
-        Pilih tahun dan triwulan yang akan diisi. Draft baru lahir setelah tombol
-        Lanjut ditekan - membuka layar ini saja tidak membuat apa pun.
+        Pilih triwulan yang akan diisi.
       </p>
 
       <form method="post" action="<?= base_url('Rekam_Perumahan/mulai') ?>" class="mt-4 space-y-4">
@@ -255,8 +250,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
         </fieldset>
 
         <p class="rounded-xl border-l-4 border-blue-500 bg-blue-50 p-3 text-sm text-blue-900 dark:bg-blue-500/10 dark:text-blue-200">
-          Isi <b>capaian triwulan ini saja</b>, bukan kumulatif sejak Januari.
-          Angka kumulatif dihitung sendiri oleh sistem dan ditampilkan di layar Capaian.
+          Isi angka <b>triwulan ini saja</b>, bukan total sejak Januari.
         </p>
 
         <button class="tombol-utama"><span>Lanjut</span><span class="panah-sorot" aria-hidden="true"><i class="ph ph-caret-right"></i></span></button>
@@ -268,8 +262,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
     <section class="<?= $kotak ?>">
       <h2 class="text-lg font-black text-gray-900 dark:text-white">Program yang akan dilaporkan</h2>
       <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
-        Centang hanya program yang memang punya capaian pada triwulan ini.
-        Program yang tidak dicentang tidak dianggap kekurangan.
+        Centang program yang ada kegiatannya triwulan ini.
       </p>
 
       <?php if ($terkunci): ?>
@@ -311,7 +304,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
         </div>
 
         <p class="rounded-xl border-l-4 border-amber-500 bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
-          Mencabut centang <b>menghapus seluruh angka</b> program itu pada triwulan ini.
+          Menghapus centang juga menghapus angka program itu.
         </p>
 
         <div class="flex flex-wrap gap-2">
@@ -345,8 +338,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
           <?php endforeach; ?>
         </div>
         <p class="mt-2 text-xs text-gray-500 dark:text-brand-muted">
-          Tanda <b>•</b> berarti program itu belum punya satu pun sumber dana. Laporan
-          tidak bisa dikirim selama masih ada tanda itu.
+          Tanda <b>•</b> = program belum punya sumber dana.
         </p>
       </section>
 
@@ -451,8 +443,7 @@ $form_sumber = function ($program, $row = NULL) use ($e, $laporan_id, $isian, $s
                sesuatu yang lalu ditolak tanpa sebab yang terbaca. */ ?>
       <h2 class="text-lg font-black text-gray-900 dark:text-white">BNBA per sumber dana</h2>
       <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">
-        Daftar penerima (Excel) diunggah <b class="text-gray-900 dark:text-white">di form tiap sumber dana</b>
-        pada langkah Isian Capaian. Wajib untuk sumber dana yang sudah ada realisasinya.
+        BNBA wajib untuk sumber dana yang ada realisasinya. Unggah di form sumber dana.
       </p>
 
       <?php if ($bnba): ?>

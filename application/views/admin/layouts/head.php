@@ -119,11 +119,14 @@
            Berlaku di semua kedalaman (Kemitraan -> Magang -> Slot Magang). */
         .cabang-sidebar { margin-left: 1.1rem; padding-left: .85rem; }
         .cabang-sidebar > div { position: relative; }
-        .cabang-sidebar > div::before { content: ""; position: absolute; left: -.85rem; top: -.25rem; width: .6rem; height: 1.25rem;
+        /* Siku berakhir tepat di tengah baris pertama (1.25rem = separuh tinggi tautan 2.5rem), batang
+           lanjutan mulai dari ujung bawah siku. Warna PADAT, bukan rgba: dua garis tembus pandang yang
+           saling tindih tampak lebih tebal di sambungannya (laporan user 30 Okt 2026). */
+        .cabang-sidebar > div::before { content: ""; position: absolute; left: -.85rem; top: -.25rem; width: .6rem; height: 1.5rem;
             border-left: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db; border-bottom-left-radius: .55rem; pointer-events: none; }
-        .cabang-sidebar > div:not(:last-child)::after { content: ""; position: absolute; left: -.85rem; top: 0; bottom: -.25rem;
+        .cabang-sidebar > div:not(:last-child)::after { content: ""; position: absolute; left: -.85rem; top: .7rem; bottom: -.25rem;
             border-left: 1px solid #d1d5db; pointer-events: none; }
-        .dark .cabang-sidebar > div::before, .dark .cabang-sidebar > div:not(:last-child)::after { border-color: rgba(255, 255, 255, .24); }
+        .dark .cabang-sidebar > div::before, .dark .cabang-sidebar > div:not(:last-child)::after { border-color: #485c64; }
         /* Kolom nomor urut tabel daftar admin (daftar revisi dinas 23 Sep 2026: "Numbering table").
            Satu aturan untuk semua tabel ber-[data-tabel-admin]; nomor awal datang dari offset
            paginasi yang dicetak sebagai counter-reset di pembungkus [data-tabel-admin] tiap view (reset di

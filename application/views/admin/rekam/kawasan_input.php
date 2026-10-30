@@ -107,7 +107,7 @@ foreach ($intervensi as $row) {
             <label class="flex items-center gap-2"><input type="radio" name="ada_progres" value="0" <?= $ada_progres === 0 ? 'checked' : '' ?>> Tidak</label>
           </div>
           <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">
-            Kalau <b>Tidak</b>, cukup isi catatan progres di bawah - Total Luas tidak dipaksa terisi.
+            Kalau <b>Tidak</b>, isi catatan progres.
           </p>
         </div>
 
@@ -139,7 +139,6 @@ foreach ($intervensi as $row) {
       <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-bold text-gray-600 dark:bg-white/5 dark:text-brand-muted">
         <?= (int) $total['jumlah_intervensi'] ?> kegiatan
       </span>
-      <span class="ml-auto text-xs text-gray-500 dark:text-brand-muted">Tanpa batas jumlah</span>
     </div>
 
     <?php if ( ! $intervensi): ?>
@@ -224,7 +223,6 @@ foreach ($intervensi as $row) {
                 </option>
               <?php endforeach; ?>
             </select>
-            <span class="mt-1 block text-xs text-gray-500 dark:text-brand-muted">Satuan ikut indikator, tidak disimpan terpisah.</span>
           </label>
 
           <label class="text-sm">
@@ -253,9 +251,6 @@ foreach ($intervensi as $row) {
           ?>
           <fieldset class="md:col-span-2 rounded-lg border border-gray-200 p-3 dark:border-white/10">
             <legend class="px-1 text-sm font-bold text-gray-900 dark:text-white">Nomenklatur kegiatan</legend>
-            <p class="mb-2 text-xs text-gray-500 dark:text-brand-muted">
-              Dirinci terpisah agar bisa direkap. Hanya <b>Kegiatan</b> yang wajib diisi.
-            </p>
             <div class="grid gap-3 md:grid-cols-2">
               <label class="text-sm">
                 <span class="text-gray-600 dark:text-brand-muted">Program</span>
@@ -330,14 +325,7 @@ foreach ($intervensi as $row) {
   <section class="kartu-admin isi-kartu">
     <div class="flex flex-wrap items-center gap-3">
       <h2 class="font-bold text-gray-900 dark:text-white">Total</h2>
-      <span class="rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-800 dark:bg-purple-500/10 dark:text-purple-300">
-        dihitung, tidak diketik
-      </span>
     </div>
-    <p class="mt-3 rounded-r-xl border-l-4 border-purple-500 bg-purple-50 p-3 text-sm text-purple-900 dark:bg-purple-500/10 dark:text-purple-200">
-      Di form dinas Total Anggaran diketik manual dan bisa berbeda dari jumlah rinciannya.
-      Di sini ia dijumlahkan dari daftar intervensi, jadi mustahil berselisih.
-    </p>
     <div class="mt-3 overflow-x-auto">
       <table class="w-full text-sm">
         <tr class="border-b border-gray-100 dark:border-white/5">
