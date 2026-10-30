@@ -72,6 +72,7 @@ class Admin_Rekam_Data extends Admin_Controller {
 
         $this->render_admin('admin/rekam/pantau', [
             'title'     => 'Pantau Rekam Data',
+            'ada_bnba_gabungan' => (bool) $this->rd->daftar_bnba_gabungan($tahun, $triwulan),
             'base_url'  => 'Admin_Rekam_Data',
             'tahun'     => $tahun,
             'triwulan'  => $triwulan,
@@ -240,6 +241,14 @@ class Admin_Rekam_Data extends Admin_Controller {
             'url_aksi'       => 'Admin_Rekam_Data',
             'url_kembali'    => 'Admin_Rekam_Data',
         ]);
+    }
+
+    /** BNBA gabungan satu triwulan, SEMUA kabupaten (permintaan dinas 30 Okt 2026). Diaudit di pembangunnya. */
+    public function bnba_gabungan()
+    {
+        $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
+        $tw    = (int) $this->input->get('triwulan');
+        $this->kirim_bnba_gabungan($tahun, $tw, NULL, 'Admin_Rekam_Data?tahun=' . $tahun . '&triwulan=' . $tw);
     }
 
     public function terima()

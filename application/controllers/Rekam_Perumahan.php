@@ -63,6 +63,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         $this->render_scoped_admin('admin/rekam/perumahan_capaian', [
             'title'         => 'Perumahan', // = label sidebar
             'scope_label'   => $this->nama_wilayah(),
+            'ada_bnba_gabungan' => (bool) $this->rd->daftar_bnba_gabungan($tahun, $triwulan, (int) $this->my_kabupaten_id),
             'tahun'         => $tahun,
             'triwulan'      => $triwulan,
             'laporan'       => $laporan,
@@ -89,6 +90,7 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         $this->render_scoped_admin('admin/rekam/perumahan_capaian', [
             'title'         => 'Rekap Pelaporan Perumahan',
             'scope_label'   => $this->nama_wilayah(),
+            'ada_bnba_gabungan' => (bool) $this->rd->daftar_bnba_gabungan($tahun, $triwulan, (int) $this->my_kabupaten_id),
             'tahun'         => $tahun,
             'triwulan'      => $triwulan,
             'laporan'       => NULL,
@@ -475,6 +477,14 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
             }
         }
         $this->pulang_isian($hasil, $laporan_id, $program, $pesan);
+    }
+
+    /** BNBA gabungan satu triwulan, WILAYAH SENDIRI saja (cakupan dari sesi, bukan dari request). */
+    public function bnba_gabungan()
+    {
+        $tahun = (int) ($this->input->get('tahun') ?: date('Y'));
+        $tw    = (int) $this->input->get('triwulan');
+        $this->kirim_bnba_gabungan($tahun, $tw, (int) $this->my_kabupaten_id, 'Rekam_Perumahan?tahun=' . $tahun . '&triwulan=' . $tw);
     }
 
     /** Unduh BNBA satu sumber dana milik wilayah sendiri. Scope diperiksa SEBELUM menyentuh disk. */

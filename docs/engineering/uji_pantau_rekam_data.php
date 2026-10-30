@@ -258,7 +258,7 @@ sort($publik);
 // harus ditambahkan ke sini dengan sadar, dan cek db-> di bawah tetap berlaku untuknya.
 // 27 Okt 2026: superadmin ikut memutuskan dan mengisi atas nama kabupaten (permintaan dinas).
 // Daftar ini tetap dijaga eksplisit - endpoint tulis baru harus ditambahkan di sini dengan sadar.
-cek($publik === ['bertindak', 'detail', 'export', 'index', 'minta_perbaikan', 'selesai', 'terima'],
+cek($publik === ['bertindak', 'bnba_gabungan', 'detail', 'export', 'index', 'minta_perbaikan', 'selesai', 'terima'],
     'Daftar method publik sesuai yang disengaja (ditemukan: ' . implode(', ', $publik) . ')');
 foreach (['terima', 'minta_perbaikan', 'bertindak', 'selesai'] as $aksi) {
     $r = http('a', 'Admin_Rekam_Data/' . $aksi); // GET, bukan POST

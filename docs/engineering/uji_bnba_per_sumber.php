@@ -479,6 +479,36 @@ try {
     cek(strpos($t['body'], 'Lampiran BNBA') !== FALSE && preg_match('/tabular-nums[^"]*">1<\/td>/', $t['body']) === 1,
         'Peninjau melihat ringkasan BNBA per sumber dana');
 
+    echo "\n[7b] BNBA gabungan (permintaan dinas 30 Okt 2026)\n";
+    $baca_gabungan = function ($sesi, $rute) use (&$tmp_berkas) {
+        $r = http($sesi, $rute . '?tahun=' . TAHUN . '&triwulan=1');
+        if (substr($r['body'], 0, 2) !== 'PK') { return NULL; }
+        $p = tempnam(sys_get_temp_dir(), 'ujibn_') . '.xlsx'; file_put_contents($p, $r['body']); $tmp_berkas[] = $p;
+        return \PhpOffice\PhpSpreadsheet\IOFactory::load($p)->getActiveSheet();
+    };
+    $audit_awal = skalar_int("SELECT COUNT(*) AS n FROM sys_jejak_audit WHERE aksi = 'bnba_gabungan_diunduh'");
+    $g = $baca_gabungan('kab', 'Rekam_Perumahan/bnba_gabungan');
+    wajib($g !== NULL, 'Admin kab/kota mengunduh BNBA gabungan wilayahnya (XLSX)');
+    $judul = $g->rangeToArray('A1:M1')[0];
+    cek($judul === ['NIK', 'NOKK', 'Nama', 'Alamat', 'Kabupaten', 'Kecamatan', 'Desa', 'kddesa', 'jumlah material',
+        'jumlah padat karya', 'sumber dana', 'program', 'nama perusahaan/penyalur'], 'Kolom persis format dinas (13 kolom)');
+    cek($g->getHighestRow() === 2, 'Berisi 1 penerima dari laporan terkirim TW I (' . ($g->getHighestRow() - 1) . ' baris)');
+    cek($g->getCell('A2')->getDataType() === 's' && $g->getCell('A2')->getValue() === '3305050903730004',
+        'NIK tersimpan sebagai teks utuh 16 digit');
+    cek($g->getCell('K2')->getValue() === 'APBD Kabupaten/Kota' && $g->getCell('L2')->getValue() === 'PK RTLH'
+        && (int) $g->getCell('I2')->getValue() === 17500000, 'Sumber dana, program, dan jumlah material terisi');
+    $g = $baca_gabungan('bid', 'Rekam_Tinjauan/bnba_gabungan');
+    cek($g !== NULL && $g->getHighestRow() >= 2, 'Admin Bidang Perumahan mengunduh BNBA gabungan semua kabupaten');
+    cek(skalar_int("SELECT COUNT(*) AS n FROM sys_jejak_audit WHERE aksi = 'bnba_gabungan_diunduh'") === $audit_awal + 2,
+        'Setiap unduhan BNBA gabungan tercatat di jejak audit');
+    // Tautan beratribut download menyimpan balasan APA PUN, termasuk halaman "belum ada"; tanpa data
+    // tombolnya harus nonaktif, bukan tautan (temuan uji browser 30 Okt 2026: tersimpan "Admin_Rekam_Data.htm").
+    cek(strpos(http('kab', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&triwulan=1')['body'], 'Rekam_Perumahan/bnba_gabungan?tahun=') !== FALSE,
+        'Layar Rekap: tombol BNBA gabungan aktif bila ada BNBA terkirim');
+    $kosong = http('kab', 'Rekam_Perumahan/rekap?tahun=' . TAHUN . '&triwulan=3')['body'];
+    cek(strpos($kosong, 'Rekam_Perumahan/bnba_gabungan?tahun=') === FALSE && strpos($kosong, 'Belum ada BNBA dari laporan terkirim untuk triwulan ini') !== FALSE,
+        'Layar Rekap: tanpa BNBA terkirim, tombolnya nonaktif (bukan tautan unduh)');
+
     echo "\n[8] Mencabut centang program membuang berkasnya\n";
     kirim_form('kab', 'Rekam_Perumahan/input', 'Rekam_Perumahan/mulai', ['tahun' => TAHUN, 'triwulan' => 2]);
     $ID2 = skalar_int('SELECT id AS n FROM rd_laporan WHERE tahun = ? AND triwulan = 2 AND domain = ?', [TAHUN, 'perumahan']);
@@ -488,6 +518,9 @@ try {
     simpan_dengan_bnba('kab', $hal2, sumber_data($ID2, 'pb_backlog', 'apbd_kabkota', ...S1), buat_xlsx([baris_ok('3305110607760004', $NAMA_KAB)]));
     $p = bnba_baris($ID2);
     wajib($p !== NULL, 'BNBA di laporan kedua tersimpan');
+    $r = http('kab', 'Rekam_Perumahan/bnba_gabungan?tahun=' . TAHUN . '&triwulan=2');
+    cek(substr($r['body'], 0, 2) !== 'PK' && strpos($r['body'], 'Belum ada BNBA dari laporan terkirim') !== FALSE,
+        'Laporan DRAFT tidak ikut BNBA gabungan (TW II hanya punya draft)');
     kirim_form('kab', 'Rekam_Perumahan/input?laporan=' . $ID2 . '&langkah=program', 'Rekam_Perumahan/simpan_program',
         ['laporan_id' => $ID2, 'program' => ['pk_rtlh']]);
     cek( ! ada_di_disk($ID2, $p['path_privat']), 'Berkas ikut hilang dari disk saat programnya dicabut');

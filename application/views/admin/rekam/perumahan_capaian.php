@@ -220,6 +220,16 @@ $this->load->view('admin/components/judul_halaman', ['jh_deskripsi' =>
              class="tombol-kedua">
             <i class="ph ph-calendar-blank" aria-hidden="true"></i><span>Unduh setahun</span>
           </a>
+        <?php // BNBA gabungan (permintaan dinas 30 Okt 2026): satu Excel berisi seluruh penerima laporan terkirim triwulan ini. ?>
+        <?php if ( ! empty($ada_bnba_gabungan)): ?>
+        <a href="<?= base_url('Rekam_Perumahan/bnba_gabungan?tahun=' . (int) $tahun . '&triwulan=' . (int) $triwulan) ?>" download class="tombol-kedua">
+            <i class="ph ph-users-three" aria-hidden="true"></i><span>Unduh BNBA gabungan</span>
+        </a>
+        <?php else: // Tautan download menyimpan balasan apa pun, jadi tanpa data tombolnya dinonaktifkan, bukan diarahkan ke pesan. ?>
+        <button type="button" class="tombol-kedua" disabled title="Belum ada BNBA dari laporan terkirim untuk triwulan ini">
+            <i class="ph ph-users-three" aria-hidden="true"></i><span>Unduh BNBA gabungan</span>
+        </button>
+        <?php endif; ?>
           <?php /* "Cetak", bukan "Unduh PDF" - tidak ada berkas PDF yang dibuat
                    di server (belum ada pustaka PDF di proyek ini). Warga/admin
                    memakai "Simpan sebagai PDF" bawaan peramban lewat dialog

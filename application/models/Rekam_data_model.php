@@ -472,6 +472,23 @@ class Rekam_data_model extends CI_Model {
             ->get()->result_array();
     }
 
+    /**
+     * Sumber BNBA gabungan (permintaan dinas 30 Okt 2026): setiap BNBA per sumber dana dari laporan
+     * perumahan yang sudah TERKIRIM (menunggu ditinjau maupun diterima) pada satu triwulan. Draft dan
+     * perlu_perbaikan tidak ikut. $kabupaten_id NULL = semua kabupaten (provinsi).
+     */
+    public function daftar_bnba_gabungan($tahun, $triwulan, $kabupaten_id = NULL)
+    {
+        $this->db->select('s.path_privat, b.laporan_id, b.program, b.sumber_dana, b.keterangan, k.nama AS kabupaten')
+            ->from('rd_perumahan_bnba_sumber s')
+            ->join('rd_perumahan_baris b', 'b.id = s.baris_id')
+            ->join('rd_laporan l', 'l.id = b.laporan_id')
+            ->join('kabupaten k', 'k.id = l.kabupaten_id', 'left')
+            ->where(['l.domain' => 'perumahan', 'l.status' => 'terkirim', 'l.tahun' => (int) $tahun, 'l.triwulan' => (int) $triwulan]);
+        if ($kabupaten_id !== NULL) { $this->db->where('l.kabupaten_id', (int) $kabupaten_id); }
+        return $this->db->order_by('k.nama')->order_by('b.program')->order_by('b.sumber_dana')->get()->result_array();
+    }
+
     /** NULL bila BNBA cocok dengan realisasi baris; kalau tidak, kalimat yang menyebut kedua angkanya. */
     public static function bnba_tak_cocok(array $baris, $penerima, $material, $padat)
     {

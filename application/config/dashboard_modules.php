@@ -234,7 +234,7 @@ $config['dashboard_modules'] = [
         'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
         // Unduh Excel menyajikan data rekap yang sama; tanpa ini gerbang hak modul mencocokkannya
         // ke rekam_perumahan dan hak Rekap yang dicabut terlewati (audit run-2, 29 Okt 2026).
-        'aksi'  => ['Rekam_Perumahan/export'],
+        'aksi'  => ['Rekam_Perumahan/export', 'Rekam_Perumahan/bnba_gabungan'],
     ],
     'rekam_perumahan_riwayat' => [
         'label' => 'Riwayat', 'icon' => 'ph-clock-counter-clockwise',
