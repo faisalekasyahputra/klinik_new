@@ -77,7 +77,7 @@ $nama_bulan = array_map('ucfirst', Rekam_pbg_bphtb_import::BULAN);
       <h2 class="text-lg font-black text-gray-900 dark:text-white"><?= $e($label) ?> tahun <?= (int) $tahun ?></h2>
       <span class="text-sm text-gray-500 dark:text-brand-muted"><b class="text-gray-900 dark:text-white"><?= count($unggahan) ?></b> dari 12 bulan terunggah</span>
     </div>
-    <ul class="mt-3 grid items-start gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <ul class="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       <?php foreach ($nama_bulan as $n => $nm): $u = $unggahan[$n] ?? NULL; ?>
         <?php if ($u): ?>
           <li class="flex flex-col gap-2 rounded-xl border border-emerald-500/40 bg-emerald-50 p-3 text-sm dark:bg-emerald-500/10">
@@ -92,9 +92,14 @@ $nama_bulan = array_map('ucfirst', Rekam_pbg_bphtb_import::BULAN);
             </a>
           </li>
         <?php else: ?>
-          <li class="flex items-center justify-between gap-2 rounded-xl border border-dashed border-gray-200 p-3 text-sm dark:border-white/10">
-            <span class="font-bold text-gray-700 dark:text-gray-300"><?= $e($nm) ?></span>
-            <span class="text-xs text-gray-400 dark:text-brand-muted">Belum diunggah</span>
+          <li class="flex flex-col gap-2 rounded-xl border border-dashed border-gray-200 p-3 text-sm dark:border-white/10">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-bold text-gray-700 dark:text-gray-300"><?= $e($nm) ?></span>
+              <span class="inline-flex items-center gap-1 text-xs text-gray-400 dark:text-brand-muted"><i class="ph ph-circle-dashed" aria-hidden="true"></i>Belum diunggah</span>
+            </div>
+            <span class="text-xs text-gray-400 dark:text-brand-muted">Belum ada data</span>
+            <span class="text-xs text-gray-400 dark:text-brand-muted">-</span>
+            <span class="flex min-h-[2.25rem] items-center justify-center rounded-lg border border-dashed border-gray-200 text-xs text-gray-400 dark:border-white/10 dark:text-brand-muted">Belum ada berkas</span>
           </li>
         <?php endif; ?>
       <?php endforeach; ?>
