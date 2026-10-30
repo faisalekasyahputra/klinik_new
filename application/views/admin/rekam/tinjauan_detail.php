@@ -291,10 +291,22 @@ $url_aksi     = $url_aksi ?? 'Rekam_Tinjauan';
       perbaikan tetap kewenangan Admin Bidang <?= $e(ucfirst($domain)) ?>.
     </p>
   <?php elseif ($sudah_ditinjau): ?>
-    <p class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600 dark:border-white/10 dark:bg-black/20 dark:text-brand-muted">
-      Laporan ini sudah <b>diterima</b> pada <?= $e(tgl_id($laporan['reviewed_at'], TRUE, TRUE)) ?>. Tidak ada
-      keputusan lain yang bisa diambil tanpa kabupaten mengirim ulang.
-    </p>
+    <section class="kartu-admin isi-kartu">
+      <h2 class="font-bold text-gray-900 dark:text-white">Laporan sudah diterima</h2>
+      <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted">Diterima <?= $e(tgl_id($laporan['reviewed_at'], TRUE, TRUE)) ?>.</p>
+      <form method="post" action="<?= base_url($url_aksi . '/buka_kunci') ?>" class="mt-3 max-w-xl"
+            data-konfirmasi="Laporan dikembalikan ke kabupaten untuk diperbaiki dan dikirim ulang." data-konfirmasi-judul="Buka kunci laporan?" data-konfirmasi-label="Buka kunci">
+        <input type="hidden" name="<?= $e($csrf_name) ?>" value="<?= $e($csrf_hash) ?>">
+        <input type="hidden" name="laporan_id" value="<?= $laporan_id ?>">
+        <label for="catatan_buka" class="text-sm font-bold text-gray-900 dark:text-white">
+          Alasan membuka kunci <span class="text-red-600">(wajib)</span>
+        </label>
+        <textarea id="catatan_buka" name="catatan_admin" rows="2" required
+          class="mt-1 w-full rounded-xl border border-gray-200 bg-transparent p-3 text-sm dark:border-white/10"
+          placeholder="Apa yang perlu diubah kabupaten"></textarea>
+        <button class="tombol-kedua mt-2"><i class="ph ph-lock-open"></i><span>Buka kunci</span></button>
+      </form>
+    </section>
   <?php else: ?>
     <p class="rounded-xl border border-gray-200 bg-gray-50 p-3 text-sm text-gray-600 dark:border-white/10 dark:bg-black/20 dark:text-brand-muted">
       Laporan sedang dikembalikan ke kabupaten untuk diperbaiki. Keputusan berikutnya

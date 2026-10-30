@@ -884,6 +884,46 @@ class Rekam_data_model extends CI_Model {
     }
 
     /**
+     * Kabupaten menarik kembali laporan yang sudah dikirim tetapi BELUM diterima
+     * provinsi: kembali ke draft supaya bisa diubah lalu dikirim lagi (permintaan
+     * dinas 30 Okt 2026, "keduanya bisa buka kunci"). Yang sudah diterima tidak
+     * tersentuh di sini; itu hanya lewat buka_kunci() oleh provinsi.
+     */
+    public function tarik_kembali($laporan_id, $scope_kabupaten_id)
+    {
+        $this->db->where(['id' => (int) $laporan_id, 'status' => 'terkirim', 'reviewed_at' => NULL,
+            'kabupaten_id' => (int) $scope_kabupaten_id]);
+        $ok = $this->db->update('rd_laporan', ['status' => 'draft', 'submitted_at' => NULL, 'submitted_by' => NULL]);
+        return ($ok && $this->db->affected_rows() === 1)
+            ? ['success' => TRUE, 'laporan_id' => (int) $laporan_id]
+            : $this->gagal('basi_atau_sudah_ditinjau', 'Laporan sudah ditinjau provinsi atau statusnya berubah.');
+    }
+
+    /**
+     * Provinsi membuka kembali laporan yang sudah DITERIMA. Statusnya menjadi
+     * `perlu_perbaikan` dengan catatan WAJIB, jadi kabupaten tahu apa yang harus
+     * diubah dan bisa mengirim ulang. $domain = gerbang Admin Bidang.
+     */
+    public function buka_kunci($laporan_id, $reviewer_id, $catatan, $domain = NULL)
+    {
+        $catatan = trim((string) $catatan);
+        if ($catatan === '') {
+            return $this->gagal('catatan_wajib', 'Alasan membuka kunci wajib diisi.');
+        }
+        $this->db->where(['id' => (int) $laporan_id, 'status' => 'terkirim'])->where('reviewed_at IS NOT NULL', NULL, FALSE);
+        if ($domain !== NULL) {
+            $this->db->where('domain', $domain);
+        }
+        $ok = $this->db->update('rd_laporan', [
+            'status' => 'perlu_perbaikan', 'reviewed_at' => date('Y-m-d H:i:s'),
+            'reviewed_by' => (int) $reviewer_id, 'catatan_admin' => mb_substr($catatan, 0, 1000),
+        ]);
+        return ($ok && $this->db->affected_rows() === 1)
+            ? ['success' => TRUE, 'laporan_id' => (int) $laporan_id]
+            : $this->gagal('belum_diterima', 'Hanya laporan yang sudah diterima yang bisa dibuka kuncinya.');
+    }
+
+    /**
      * Kembalikan laporan ke kabupaten dengan catatan WAJIB. Catatan itu yang
      * dibaca petugas kabupaten di layar riwayat dan input, jadi ia bagian dari
      * kontrak, bukan hiasan.

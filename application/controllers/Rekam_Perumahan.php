@@ -681,6 +681,21 @@ class Rekam_Perumahan extends Admin_Kabkota_Controller {
         redirect('Rekam_Perumahan?tahun=' . (int) $laporan['tahun'] . '&triwulan=' . (int) $laporan['triwulan']);
     }
 
+    /** Tarik laporan terkirim yang belum diterima provinsi kembali ke draft. */
+    public function tarik_kembali()
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); return; }
+        $laporan_id = (int) $this->input->post('laporan_id');
+        $hasil = $this->rd->tarik_kembali($laporan_id, $this->my_kabupaten_id);
+        if (empty($hasil['success'])) {
+            $this->session->set_flashdata('error', $hasil['message']);
+        } else {
+            $this->catat_audit('rekam_ditarik', 'Laporan rekam data perumahan ditarik kembali ke draft', 'rd_laporan', $laporan_id);
+            $this->session->set_flashdata('success', 'Laporan dibuka lagi. Ubah yang perlu, lalu kirim ulang.');
+        }
+        redirect('Rekam_Perumahan/input?laporan=' . $laporan_id . '&langkah=review');
+    }
+
     // ---------------------------------------------------------------- internal
 
     /**
