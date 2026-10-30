@@ -45,7 +45,7 @@ $gambar = function (array $items, $tingkat) use (&$gambar, $aktif_kelas, $diam_k
                class="relative flex flex-1 items-center rounded-lg px-3 transition-all duration-200
                       <?= $akar ? 'py-2 text-sm font-medium' : 'py-1.5 text-[13px] font-medium' ?>
                       <?= ! empty($item['active']) ? $aktif_kelas : $diam_kelas ?>"
-               :class="!sidebarOpen ? 'justify-center' : ''"
+               :class="!sidebarOpen ? 'justify-center<?= ! empty($item['leluhur']) && empty($item['active']) ? ' ' . $aktif_kelas : '' ?>' : ''"
                title="<?= htmlspecialchars($item['label']) ?>">
               <i class="ph <?= htmlspecialchars($item['icon']) ?> shrink-0 <?= $akar ? 'text-lg' : 'text-base' ?>"
                  :class="sidebarOpen ? 'mr-3' : 'mr-0'"></i>

@@ -94,17 +94,17 @@ foreach ($intervensi as $row) {
       <fieldset <?= $terkunci ? 'disabled' : '' ?> class="space-y-4">
         <div>
           <p class="text-sm font-bold text-gray-900 dark:text-white">Ada penanganan kawasan permukiman kumuh?</p>
-          <div class="mt-2 flex flex-wrap gap-4 text-sm">
-            <label class="flex items-center gap-2"><input type="radio" name="ada_penanganan" value="1" <?= $ada_penanganan === 1 ? 'checked' : '' ?> required> Ada</label>
-            <label class="flex items-center gap-2"><input type="radio" name="ada_penanganan" value="0" <?= $ada_penanganan === 0 ? 'checked' : '' ?>> Tidak Ada</label>
+          <div class="mt-2 flex flex-wrap gap-2 text-sm">
+            <label class="pilihan-radio"><input type="radio" name="ada_penanganan" value="1" <?= $ada_penanganan === 1 ? 'checked' : '' ?> required><span class="titik" aria-hidden="true"></span>Ada</label>
+            <label class="pilihan-radio"><input type="radio" name="ada_penanganan" value="0" <?= $ada_penanganan === 0 ? 'checked' : '' ?>><span class="titik" aria-hidden="true"></span>Tidak Ada</label>
           </div>
         </div>
 
         <div>
           <p class="text-sm font-bold text-gray-900 dark:text-white">Ada progres realisasi?</p>
-          <div class="mt-2 flex flex-wrap gap-4 text-sm">
-            <label class="flex items-center gap-2"><input type="radio" name="ada_progres" value="1" <?= $ada_progres === 1 ? 'checked' : '' ?>> Ya</label>
-            <label class="flex items-center gap-2"><input type="radio" name="ada_progres" value="0" <?= $ada_progres === 0 ? 'checked' : '' ?>> Tidak</label>
+          <div class="mt-2 flex flex-wrap gap-2 text-sm">
+            <label class="pilihan-radio"><input type="radio" name="ada_progres" value="1" <?= $ada_progres === 1 ? 'checked' : '' ?>><span class="titik" aria-hidden="true"></span>Ya</label>
+            <label class="pilihan-radio"><input type="radio" name="ada_progres" value="0" <?= $ada_progres === 0 ? 'checked' : '' ?>><span class="titik" aria-hidden="true"></span>Tidak</label>
           </div>
           <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">
             Kalau <b>Tidak</b>, isi catatan progres.

@@ -1397,11 +1397,10 @@ class MY_Controller extends CI_Controller {
             foreach ($anak[$key] ?? [] as $item) {
                 $item['children'] = $bangun($item['key']);
                 $item['open']     = ! empty($terbuka[$item['key']]);
-                // Induk ikut menyala bila MEMUAT layar yang dibuka - supaya orang tahu
-                // sedang berada di cabang mana. Bukan sekadar terbuka: keturunan item
-                // aktif ikut terbentang, dan dulu ikut menyala sehingga di SRP2 dalam
-                // Pengajuan dua sub-menu tersorot bersamaan (audit UI 2 Okt 2026).
-                $item['active']   = $item['active'] || ! empty($leluhur[$item['key']]);
+                // Hanya layar yang dibuka yang disorot (permintaan user 30 Okt 2026: induk
+                // yang ikut menyala membingungkan). Induk cukup ditandai `leluhur`; cabangnya
+                // tetap terbentang lewat `open`, dan sidebar ciut menyorot ikon akarnya.
+                $item['leluhur']  = ! empty($leluhur[$item['key']]);
                 $out[] = $item;
             }
             return $out;
@@ -1412,7 +1411,7 @@ class MY_Controller extends CI_Controller {
             if ($item['parent'] !== NULL) { continue; }
             $item['children'] = $bangun($item['key']);
             $item['open']     = ! empty($terbuka[$item['key']]);
-            $item['active']   = $item['active'] || ! empty($leluhur[$item['key']]);
+            $item['leluhur']  = ! empty($leluhur[$item['key']]);
             $grouped[$item['group']][] = $item;
         }
         return $grouped;

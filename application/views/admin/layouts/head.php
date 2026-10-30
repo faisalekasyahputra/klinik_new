@@ -127,6 +127,24 @@
         .cabang-sidebar > div:not(:last-child)::after { content: ""; position: absolute; left: -.85rem; top: .7rem; bottom: -.25rem;
             border-left: 1px solid #d1d5db; pointer-events: none; }
         .dark .cabang-sidebar > div::before, .dark .cabang-sidebar > div:not(:last-child)::after { border-color: #485c64; }
+        /* Pilihan radio berbentuk tombol (permintaan user 30 Okt 2026: radio bawaan terlalu polos).
+           Input asli tetap ada (transparan) supaya keyboard, required, dan validasi tetap jalan. */
+        .pilihan-radio { position: relative; display: inline-flex; align-items: center; gap: .6rem; min-height: 2.75rem; min-width: 7rem;
+            padding: .55rem 1.1rem; border: 1px solid #e5e7eb; border-radius: .75rem; cursor: pointer; font-weight: 600; color: #374151;
+            transition: border-color .15s, background-color .15s; }
+        .pilihan-radio:hover { border-color: #93c5fd; }
+        .pilihan-radio input { position: absolute; inset: 0; opacity: 0; cursor: pointer; margin: 0; }
+        .pilihan-radio .titik { width: 1.1rem; height: 1.1rem; flex-shrink: 0; border-radius: 9999px; border: 2px solid #9ca3af; transition: all .15s; }
+        .pilihan-radio:has(input:checked) { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+        .pilihan-radio:has(input:checked) .titik { border-color: #2563eb; border-width: 5px; }
+        .pilihan-radio:has(input:focus-visible) { outline: 2px solid #2563eb; outline-offset: 2px; }
+        .pilihan-radio:has(input:disabled) { opacity: .6; cursor: not-allowed; }
+        .dark .pilihan-radio { border-color: rgba(255, 255, 255, .12); color: #cbd5e1; }
+        .dark .pilihan-radio:hover { border-color: rgba(214, 251, 0, .4); }
+        .dark .pilihan-radio .titik { border-color: #64748b; }
+        .dark .pilihan-radio:has(input:checked) { border-color: #d6fb00; background: rgba(214, 251, 0, .08); color: #d6fb00; }
+        .dark .pilihan-radio:has(input:checked) .titik { border-color: #d6fb00; }
+        .dark .pilihan-radio:has(input:focus-visible) { outline-color: #d6fb00; }
         /* Kolom nomor urut tabel daftar admin (daftar revisi dinas 23 Sep 2026: "Numbering table").
            Satu aturan untuk semua tabel ber-[data-tabel-admin]; nomor awal datang dari offset
            paginasi yang dicetak sebagai counter-reset di pembungkus [data-tabel-admin] tiap view (reset di
