@@ -149,10 +149,17 @@
         // toolbar, dan posisi baca pengguna harus tetap di tempatnya. Kartunya
         // cuma diredupkan supaya terlihat sedang bekerja.
         var wadah = tabelSaja ? document.querySelector(SEL_TABEL) : null;
+        var lama = null, gulirLama = 0;
         if (wadah) {
             wadah.setAttribute('aria-busy', 'true');
             wadah.style.opacity = '0.55';
         } else {
+            // Isi lama DISIMPAN sebagai simpul DOM (bukan innerHTML), supaya kalau balasannya ternyata
+            // berkas unduhan, halaman bisa dikembalikan UTUH, termasuk isian yang sudah diketik.
+            // Uji dinas 30 Okt 2026: "Unduh templat BNBA" meninggalkan layar kosong dan isian hilang.
+            lama = document.createDocumentFragment();
+            while (main.firstChild) { lama.appendChild(main.firstChild); }
+            gulirLama = main.scrollTop;
             main.innerHTML = SKELETON;
             main.scrollTop = 0;
             // Di bawah 1024 yang menggulir kolom pembungkusnya (.admin-kolom).
@@ -177,6 +184,10 @@
                 // PRG, jadi menolak redirect di sini berarti menolak semuanya.
                 if (!res.ok || (res.redirected && ! body)) { window.location.href = url; return null; }
                 if (((res.headers.get('content-type')) || '').indexOf('text/html') === -1) {
+                    // Berkas, bukan halaman: kembalikan isi lama lalu biarkan peramban mengunduhnya.
+                    if (lama && ! body) {
+                        main.innerHTML = ''; main.appendChild(lama); main.scrollTop = gulirLama;
+                    }
                     window.location.href = res.url || url; return null;
                 }
                 urlAkhir = res.url || url;
