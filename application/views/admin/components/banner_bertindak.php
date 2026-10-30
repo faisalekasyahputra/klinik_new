@@ -9,5 +9,11 @@ if (empty($bertindak_nama)) { return; }
     <input type="hidden" name="<?= html_escape($this->security->get_csrf_token_name()) ?>" value="<?= html_escape($this->security->get_csrf_hash()) ?>">
     <i class="ph ph-user-switch" aria-hidden="true"></i>
     <span>Anda mengisi atas nama <b><?= html_escape($bertindak_nama) ?></b> sebagai super admin.</span>
+    <?php // PBG dan BPHTB tidak punya kolom di papan Pantau; dari sini superadmin berpindah menu tanpa kembali ke papan. ?>
+    <nav class="flex flex-wrap gap-x-3 text-xs font-bold" aria-label="Menu rekam data kabupaten ini">
+        <?php foreach (['Rekam_Perumahan' => 'Perumahan', 'Rekam_Kawasan' => 'Kawasan', 'Rekam_Pbg' => 'PBG', 'Rekam_Bphtb' => 'BPHTB'] as $u => $l): ?>
+            <a class="underline" href="<?= base_url($u) ?>"><?= $l ?></a>
+        <?php endforeach; ?>
+    </nav>
     <button class="tombol-kedua ml-auto">Selesai</button>
 </form>

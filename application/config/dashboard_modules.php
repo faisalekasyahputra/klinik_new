@@ -265,6 +265,21 @@ $config['dashboard_modules'] = [
         'parent' => 'rekam_kawasan',
         'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
     ],
+    // PBG dan BPHTB (permintaan dinas 30 Okt 2026): unggah Excel per bulan, pola BNBA.
+    // Tanpa table/review_by: tidak ada alur kirim/tinjau. Templat, unggah, dan unduh ada
+    // di bawah url-nya sendiri, jadi ikut hak modul ini lewat pencocokan awalan.
+    'rekam_pbg' => [
+        'label' => 'PBG', 'icon' => 'ph-file-text',
+        'url'   => 'Rekam_Pbg', 'group' => 'Layanan', 'order' => 27,
+        'parent' => 'rekam_data',
+        'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
+    ],
+    'rekam_bphtb' => [
+        'label' => 'BPHTB', 'icon' => 'ph-receipt',
+        'url'   => 'Rekam_Bphtb', 'group' => 'Layanan', 'order' => 28,
+        'parent' => 'rekam_data',
+        'roles' => ['admin_kabkota'], 'scope' => 'kabupaten_id',
+    ],
     // Hanya bidang perumahan & kawasan yang punya Rekam Data; bidang lain
     // diarahkan keluar oleh controller dengan pesan jelas, bukan layar kosong.
     'rekam_tinjauan' => [

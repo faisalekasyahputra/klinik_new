@@ -110,7 +110,7 @@ try {
     $tanpa = array_column($db->query("SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_TYPE='BASE TABLE' AND TABLE_COMMENT=''")->fetch_all(), 0);
     // Tabel yang lahir SESUDAH 072 (nama Indonesia sejak awal, COMMENT ditulis di migrasinya sendiri).
     // Tambah di sini setiap kali migrasi baru membuat tabel; 45 tabel 072 tetap dijaga persis.
-    $sesudah_072 = ['seo_halaman' => '075', 'kecamatan' => '083', 'desa' => '083', 'aturan_program' => '084', 'aturan_matriks_baris' => '084', 'aturan_versi' => '085', 'rd_perumahan_bnba_sumber' => '088'];
+    $sesudah_072 = ['seo_halaman' => '075', 'kecamatan' => '083', 'desa' => '083', 'aturan_program' => '084', 'aturan_matriks_baris' => '084', 'aturan_versi' => '085', 'rd_perumahan_bnba_sumber' => '088', 'rd_pbg_bphtb' => '089'];
     $cek(count($tabel) === 45 + count($sesudah_072) && ! $tanpa, count($tabel) . ' tabel, semuanya ber-COMMENT' . ($tanpa ? ' - tanpa: ' . implode(', ', $tanpa) : ''));
     $tabel_072 = array_values(array_diff($tabel, array_keys($sesudah_072)));
     $cek(array_diff($tabel_072, array_keys($M::KOMENTAR)) === [] && array_diff(array_keys($M::KOMENTAR), $tabel_072) === []
