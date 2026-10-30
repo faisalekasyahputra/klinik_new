@@ -102,6 +102,7 @@ function bersihkan() {
         while ($res && ($r = $res->fetch_assoc())) { @unlink(private_uploads_dir('rekam_pbg_bphtb', $KAB) . basename($r['path_privat'])); }
     }
     $db->query('DELETE FROM rd_pbg_bphtb WHERE tahun = ' . TAHUN);
+    $db->query('DELETE FROM rd_pbg_bphtb_angka WHERE tahun = ' . TAHUN);
     $db->query("DELETE FROM sys_batas_laju WHERE jendela_mulai_at >= '" . $db->real_escape_string($mulai) . "'");
     $db->query("DELETE FROM usr_akun WHERE email LIKE 'uji_pb_%'");
     foreach (array_merge($jars, $tmp) as $f) { @unlink($f); }
@@ -200,6 +201,25 @@ try {
     cek(substr(http('bid', 'Rekam_Pbg/unduh/' . $id_pbg)['body'], 0, 2) !== 'PK', 'Admin bidang tidak bisa mengunduh');
     cek(substr(http('sup', 'Rekam_Pbg/unduh/' . $id_pbg)['body'], 0, 2) !== 'PK', 'Superadmin tanpa bertindak tidak bisa mengunduh');
 
+    echo "\n[4b] Ringkasan angka tanpa berkas\n";
+    $angka = fn($n, $kelas, $bulan, $j, $rp, $cat = '') => http($n, $kelas . '/simpan_angka', ['csrf_kpkp_token' => csrf($n, $kelas . '?tahun=' . TAHUN),
+        'tahun' => TAHUN, 'bulan' => $bulan, 'jumlah' => $j, 'nilai_rp' => $rp, 'catatan' => $cat])['body'];
+    $ra = fn($jenis, $bulan) => q('SELECT * FROM rd_pbg_bphtb_angka WHERE jenis = ? AND tahun = ? AND bulan = ?', [$jenis, TAHUN, $bulan]);
+    $b = $angka('kab', 'Rekam_Pbg', 7, '-3', '1000');
+    cek(strpos($b, 'harus angka bulat') !== FALSE && $ra('pbg', 7) === NULL, 'Angka minus ditolak, tidak tersimpan');
+    $b = $angka('kab', 'Rekam_Pbg', 7, '12', '45000000', 'Uji catatan');
+    $a1 = $ra('pbg', 7);
+    cek(strpos($b, 'Ringkasan PBG Juli ' . TAHUN . ' tersimpan') !== FALSE && $a1 && (int) $a1['jumlah'] === 12
+        && (int) $a1['nilai_rp'] === 45000000 && (int) $a1['kabupaten_id'] === $KAB, 'Ringkasan PBG Juli tersimpan tanpa berkas Excel');
+    $angka('kab', 'Rekam_Pbg', 7, '15', '50000000');
+    $a2 = $ra('pbg', 7);
+    cek($a2 && (int) $a2['id'] === (int) $a1['id'] && (int) $a2['jumlah'] === 15 && $a2['catatan'] === NULL, 'Simpan lagi bulan sama menggantikan');
+    $angka('kab', 'Rekam_Bphtb', 7, '4', '8000000');
+    cek(($ra('bphtb', 7)['jumlah'] ?? NULL) == 4 && (int) $ra('pbg', 7)['jumlah'] === 15, 'BPHTB tersimpan terpisah dari PBG');
+    $hal = http('kab', 'Rekam_Pbg?tahun=' . TAHUN . '&bulan=7')['body'];
+    cek(strpos($hal, 'name="jumlah"') !== FALSE && strpos($hal, '15 unit | Rp 50.000.000') !== FALSE, 'Form terisi dan kartu Juli menampilkan ringkasan');
+    cek(http('kab', 'Rekam_Pbg/simpan_angka')['code'] === 404, 'simpan_angka lewat GET ditolak');
+
     echo "\n[5] Superadmin bertindak atas nama kabupaten\n";
     http('sup', 'Admin_Rekam_Data/bertindak', ['csrf_kpkp_token' => csrf('sup', 'Admin_Rekam_Data'), 'kabupaten_id' => $KAB,
         'domain' => 'perumahan', 'tahun' => TAHUN, 'triwulan' => 1]);
@@ -213,7 +233,7 @@ try {
     bersihkan();
 }
 
-cek(q('SELECT COUNT(*) AS n FROM rd_pbg_bphtb WHERE tahun = ?', [TAHUN])['n'] == 0, 'Data uji dibersihkan');
+cek(q('SELECT (SELECT COUNT(*) FROM rd_pbg_bphtb WHERE tahun = ?) + (SELECT COUNT(*) FROM rd_pbg_bphtb_angka WHERE tahun = ?) AS n', [TAHUN, TAHUN])['n'] == 0, 'Data uji dibersihkan');
 echo "\nRINGKASAN: $total pemeriksaan, $gagal gagal\n";
 exit($gagal > 0 ? 1 : 0);
 
