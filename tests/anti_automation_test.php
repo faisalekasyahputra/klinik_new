@@ -170,7 +170,8 @@ check( ! $raise('192.0.2.10')['ditekan'] && $raise('192.0.2.10')['ditekan'], 'IP
 // Kontrol global tak boleh terlewat: setiap controller harus berada di rantai pewarisan MY_Controller.
 // Satu-satunya pengecualian, Migrate, menolak semua permintaan non-CLI/non-loopback dengan 404 sendiri.
 $induk = [];
-foreach (glob($app . '/core/*.php') as $berkas) {
+// Controller ikut dipetakan: Rekam_Bphtb extends Rekam_Pbg, rantainya tetap berujung di MY_Controller.
+foreach (array_merge(glob($app . '/core/*.php'), glob($app . '/controllers/*.php')) as $berkas) {
     if (preg_match_all('/^(?:abstract\s+)?class\s+(\w+)\s+extends\s+(\w+)/m', file_get_contents($berkas), $mm, PREG_SET_ORDER)) {
         foreach ($mm as $x) { $induk[$x[1]] = $x[2]; }
     }
