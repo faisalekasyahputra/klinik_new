@@ -1,6 +1,5 @@
 <?php
 require_once dirname(__DIR__, 2) . '/application/helpers/env_berkas_helper.php'; // lokasi .env (luar akar dulu)
-require_once __DIR__ . '/_akun_demo.php'; // akun demo nonaktif sejak migrasi 073: dipinjam selama suite berjalan
 date_default_timezone_set('Asia/Jakarta');
 /**
  * Uji Rekam Data PBG dan BPHTB (permintaan dinas 30 Okt 2026) lewat HTTP sungguhan:
@@ -9,15 +8,14 @@ date_default_timezone_set('Asia/Jakarta');
  *
  *   php docs/engineering/uji_pbg_bphtb.php
  *
- * Env opsional: UJI_BASE_URL, UJI_ADMIN_EMAIL. Tahun sentinel 2099; jejaknya dihapus di akhir.
+ * Env opsional: UJI_BASE_URL. Tahun sentinel 2098 dan akun uji_pb_* sendiri (bukan akun demo yang dipinjam
+ * suite lain), supaya bisa berjalan berdampingan dengan uji_bnba_per_sumber (2099). Jejaknya dihapus di akhir.
  * Data orang di berkas uji karangan (NIK 3399..., nama "Uji ..."), bukan dari berkas dinas.
  */
 
 define('BASE_URL', rtrim(getenv('UJI_BASE_URL') ?: 'http://localhost/klinik_new', '/'));
 define('APP_ROOT', dirname(__DIR__, 2));
-define('ADMIN_EMAIL', getenv('UJI_ADMIN_EMAIL') ?: 'adminkabkota@example.com');
-define('ADMIN_PASSWORD', pinjam_akun_demo(ADMIN_EMAIL));
-define('TAHUN', 2099);
+define('TAHUN', 2098);
 
 $total = 0; $gagal = 0;
 function cek($ok, $label) { global $total, $gagal; $total++; echo ($ok ? '  OK    ' : '  GAGAL ') . $label . "\n"; if ( ! $ok) { $gagal++; } return (bool) $ok; }
@@ -110,9 +108,8 @@ function bersihkan() {
 }
 
 echo "Uji Rekam Data PBG dan BPHTB\n";
-$admin = q('SELECT kabupaten_id FROM usr_akun WHERE email = ? AND peran = ?', [ADMIN_EMAIL, 'admin_kabkota']);
-wajib($admin && ! empty($admin['kabupaten_id']), 'Akun admin_kabkota tersedia dan ter-scope');
-$KAB = (int) $admin['kabupaten_id'];
+$KAB = (int) (q('SELECT k.kabupaten_id FROM kecamatan k JOIN desa d ON d.kecamatan_id = k.id ORDER BY k.kabupaten_id LIMIT 1')['kabupaten_id'] ?? 0);
+wajib($KAB > 0, 'Ada kabupaten bertabel desa untuk akun uji');
 $NAMA_KAB = (string) q('SELECT nama FROM kabupaten WHERE id = ?', [$KAB])['nama'];
 $DESA = q('SELECT d.id AS kode, d.nama AS desa, k.nama AS kec FROM desa d JOIN kecamatan k ON k.id = d.kecamatan_id
            WHERE k.kabupaten_id = ? ORDER BY d.id LIMIT 1', [$KAB]);
@@ -120,11 +117,11 @@ wajib($DESA !== NULL, 'Kabupaten penguji punya desa di tabel desa');
 bersihkan();
 
 $stamp = time(); $sandi = 'Uji#' . bin2hex(random_bytes(6)) . 'A1';
-foreach (['bidang' => "'admin_bidang', 'perumahan'", 'super' => "'admin', NULL"] as $k => $peran) {
-    $db->query(sprintf("INSERT INTO usr_akun (email, kata_sandi, peran, bidang_kode, nama, nama_pengguna) VALUES ('uji_pb_%s_%d@example.test', '%s', %s, 'Uji PB', 'uji_pb_%s_%d')",
+foreach (['kab' => "'admin_kabkota', NULL, $KAB", 'bidang' => "'admin_bidang', 'perumahan', NULL", 'super' => "'admin', NULL, NULL"] as $k => $peran) {
+    $db->query(sprintf("INSERT INTO usr_akun (email, kata_sandi, peran, bidang_kode, kabupaten_id, nama, nama_pengguna) VALUES ('uji_pb_%s_%d@example.test', '%s', %s, 'Uji PB', 'uji_pb_%s_%d')",
         $k, $stamp, $db->real_escape_string(password_hash($sandi, PASSWORD_DEFAULT)), $peran, $k, $stamp));
 }
-wajib(login('kab', ADMIN_EMAIL, ADMIN_PASSWORD), 'Login admin_kabkota');
+wajib(login('kab', "uji_pb_kab_{$stamp}@example.test", $sandi), 'Login admin_kabkota uji');
 wajib(login('bid', "uji_pb_bidang_{$stamp}@example.test", $sandi), 'Login admin_bidang');
 wajib(login('sup', "uji_pb_super_{$stamp}@example.test", $sandi), 'Login superadmin');
 
@@ -173,7 +170,7 @@ try {
 
     $b = unggah('kab', 'Rekam_Pbg', 3, isi($TPBG, ['PENGEMBANG' => [$peng()], 'PERORANGAN' => [$oran('3399010101010001'), $oran('3399010101010002')]]));
     $row = baris_db('pbg', 3);
-    cek(strpos($b, 'PBG Maret 2099 tersimpan: Pengembang 1, perorangan 2') !== FALSE, 'Berkas sah tersimpan dengan pesan ringkasan');
+    cek(strpos($b, 'PBG Maret ' . TAHUN . ' tersimpan: Pengembang 1, perorangan 2') !== FALSE, 'Berkas sah tersimpan dengan pesan ringkasan');
     cek($row && (int) $row['jumlah_baris'] === 3 && (int) $row['kabupaten_id'] === $KAB && in_array(private_uploads_dir('rekam_pbg_bphtb', $KAB) . $row['path_privat'], berkas_dir(), TRUE),
         'Tercatat 3 baris untuk kabupaten pelapor, berkas privat di disk');
     cek(strpos(json_encode(q('SELECT * FROM rd_pbg_bphtb WHERE id = ?', [$row['id']])), '3399010101010001') === FALSE, 'NIK tidak disalin ke DB');
@@ -193,7 +190,7 @@ try {
     $b = unggah('kab', 'Rekam_Bphtb', 5, isi($TBP, ['BPHTB' => [$bph($DESA['kec'], NULL, '3399')]]));
     cek(strpos($b, 'Baris 2: NIK Penerima harus 16 angka') !== FALSE, 'NIK Penerima pendek ditolak');
     $b = unggah('kab', 'Rekam_Bphtb', 5, isi($TBP, ['BPHTB' => [$bph(strtolower($DESA['kec'])), $bph($DESA['kec'])]]));
-    cek(strpos($b, 'BPHTB Mei 2099 tersimpan: 2 transaksi') !== FALSE && (int) (baris_db('bphtb', 5)['jumlah_baris'] ?? 0) === 2, 'BPHTB sah tersimpan (2 transaksi)');
+    cek(strpos($b, 'BPHTB Mei ' . TAHUN . ' tersimpan: 2 transaksi') !== FALSE && (int) (baris_db('bphtb', 5)['jumlah_baris'] ?? 0) === 2, 'BPHTB sah tersimpan (2 transaksi)');
 
     echo "\n[4] Unduh ter-scope\n";
     $id_pbg = (int) baris_db('pbg', 3)['id'];
