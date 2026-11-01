@@ -14,6 +14,8 @@ melaporkan **apa yang rusak** - bukan memperbaikinya.
 **LOKAL SAJA - `http://localhost/klinik_new`.**
 Jangan pernah menyentuh `floralwhite-lion-710022.hostingersite.com`. Itu
 production yang dipakai dinas; menekan tombol di sana mengubah data sungguhan.
+Server pentest Pemprov juga bukan tempatmu: akun agen sengaja tidak ada di sana,
+dan lalu lintasmu akan bercampur dengan lalu lintas pentester.
 Kalau `UJI_BASE_URL` mengarah ke selain localhost, **berhenti dan lapor**.
 
 **Melapor, bukan memperbaiki.** Agen ini tidak menyunting kode. Menemukan cacat
@@ -21,9 +23,10 @@ lalu menambalnya sambil lalu membuat laporannya tidak bisa dipercaya - pembaca
 tidak tahu lagi mana yang rusak dan mana yang sudah berubah. Kalau menemukan
 sesuatu, catat lokasinya dan lanjutkan.
 
-**Jangan hapus data yang bukan milikmu.** Data demo sengaja dipertahankan
-(AGENTS.md §20) - empat akun `@example.test`, sebelas akun demo, dua pendaftaran
-kemitraan, 25 slot 2027. Akun agen berakhiran `@agen.test`; **hanya itu** milikmu.
+**Jangan hapus data yang bukan milikmu.** Data demo dan data contoh sengaja
+dipertahankan (AGENTS.md §20): akun `@example.test`/`@example.com`, pendaftaran
+kemitraan, slot magang, laporan rekam data. Akun agen berakhiran `@agen.test`;
+**hanya itu** milikmu, beserta data yang kamu buat sendiri selama berjalan.
 
 **Jangan mengarang.** Kalau sebuah langkah tidak bisa dijalani (butuh berkas
 yang tidak ada, butuh persetujuan peran lain), tulis **"tidak teruji"** beserta
@@ -41,7 +44,8 @@ bukan localhost). Sandi semua akun: **`AgenUji!2026`**
 |---|---|---|
 | warga | `agen_warga@agen.test` | - |
 | pengembang | `agen_pengembang@agen.test` | - |
-| mahasiswa | `agen_mahasiswa@agen.test` | - |
+| mahasiswa | `agen_mahasiswa@agen.test` | - (Magang saja) |
+| universitas | `agen_universitas@agen.test` | - (KKN saja; nama akun = nama perguruan tinggi) |
 | admin_kabkota | `agen_admin_kabkota@agen.test` | Kab. Cilacap (3301) |
 | admin_bidang | `agen_admin_bidang@agen.test` | Bidang Kawasan Permukiman |
 | admin | `agen_admin@agen.test` | seluruh sistem |
