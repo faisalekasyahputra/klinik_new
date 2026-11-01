@@ -17,7 +17,7 @@ Nginx sungguhan**: jalankan daftar periksa §11 sebelum situs dibuka untuk publi
 | Komponen | Syarat |
 |---|---|
 | Web server | **Apache 2.4 (disarankan)** dengan `mod_rewrite`, `mod_headers`, `mod_expires`, `mod_mime`, `mod_deflate`, dan `AllowOverride All`. Nginx bisa, tetapi lihat §6 |
-| PHP | **8.1 atau lebih baru**; production memakai 8.3. Lebih baik lewat PHP-FPM |
+| PHP | **8.3 atau 8.4** (dikunci `composer.lock`: `zipstream-php` menuntut 8.3, `phpspreadsheet` belum mendukung 8.5); production memakai 8.3. Lebih baik lewat PHP-FPM |
 | Database | MySQL 5.7+ atau MariaDB 10.3+ (production: MariaDB 11.8), charset `utf8mb4` |
 | Composer | 2.x. Folder `vendor/` tidak ikut git, jadi wajib dijalankan di server |
 | HTTPS | **Wajib.** Di production cookie sesi bernama `__Host-ci_session` dan ber-`Secure`, jadi login tidak akan jalan lewat `http://` |

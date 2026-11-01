@@ -6,13 +6,22 @@ Portal layanan dan informasi perumahan: pendataan warga dan rekomendasi program,
 
 > Repo ini **publik** atas permintaan dinas. Jangan pernah meng-commit kredensial, IP, host atau nama database, path server, nama berkas backup, atau rincian celah yang belum ditambal. Lihat [`AGENTS.md`](AGENTS.md) untuk aturan lengkapnya.
 
+### Letak repo
+
+| Repo | Peran |
+|---|---|
+| GitHub `faisalekasyahputra/klinik_new` | **Sumber utama.** Semua branch kerja, pull request, dan rilis production berawal di sini |
+| GitLab Disperakim `disperakimjtg/klinikpkp` | **Cermin untuk dinas.** Hanya `main` dan `feature/homepage-portal-v2` yang disinkronkan; jangan bekerja atau membuka merge request di sini |
+
+Kalau isi kedua repo berbeda, yang benar adalah GitHub.
+
 ---
 
 ## Teknologi
 
 | Lapisan | Teknologi |
 |---|---|
-| Backend | CodeIgniter 3, PHP 8.1 atau lebih baru |
+| Backend | CodeIgniter 3, **PHP 8.3 atau 8.4** (dikunci `composer.lock`: `zipstream-php` menuntut 8.3, `phpspreadsheet` belum mendukung 8.5) |
 | Frontend | Tailwind CSS (CSS statis hasil panen), Alpine.js, JavaScript biasa |
 | Database | MySQL / MariaDB, `utf8mb4` |
 | Autentikasi | Email dan sandi dengan OTP email, Google OAuth 2.0, sesi tunggal per akun |
@@ -39,6 +48,8 @@ Branch kerja utama adalah `main`. Lihat [Alur kontribusi](#alur-kontribusi) sebe
 ```bash
 cd klinik_new && composer install
 ```
+
+Jalankan dengan PHP 8.3 atau 8.4. XAMPP bawaan memakai PHP 8.2, dan `composer install` di sana gagal dengan pesan `your php version (8.2.x) does not satisfy that requirement`. Jangan menyelesaikannya dengan `composer update` atau `--ignore-platform-reqs`; pakai PHP yang sesuai untuk menjalankan Composer.
 
 ### 3. Berkas `.env`
 
@@ -71,7 +82,7 @@ php index.php migrate
 
 `http://localhost/klinik_new/`
 
-Akun uji lokal per peran dapat dibuat dengan `docs/engineering/seed_agen_peran.php`; daftarnya ada di [`docs/engineering/AGEN_PERAN.md`](docs/engineering/AGEN_PERAN.md). Akun itu hanya untuk localhost.
+Akun uji lokal per peran dapat dibuat dengan `docs/engineering/seed_agen_peran.php`; daftarnya ada di [`docs/engineering/AGEN_PERAN.md`](docs/engineering/AGEN_PERAN.md). Akun itu hanya untuk localhost: **sandinya tertulis di repo publik ini**, jadi siapa pun bisa memakainya di server mana pun yang memuatnya.
 
 ---
 
@@ -93,10 +104,32 @@ Hasil yang diterima sebelum rilis: **0 merah dan 0 bisu**. Uji berjalan terhadap
 2. Kerjakan dan uji di lokal.
 3. Buka pull request ke `main`, lalu merge.
 4. **Rilis** dilakukan pemilik proyek: suite penuh 0 merah, lalu `main` dicerminkan (fast-forward) ke branch deploy `feature/homepage-portal-v2`, yang tayang otomatis ke production. Jangan push langsung ke branch deploy.
+5. Sesudah rilis, sinkronkan cermin GitLab dari **branch remote GitHub**, bukan dari branch lokal (branch lokal `feature/homepage-portal-v2` biasanya tertinggal karena tidak pernah dipakai bekerja):
+
+```bash
+git fetch origin
+git push gitlab origin/main:refs/heads/main origin/feature/homepage-portal-v2:refs/heads/feature/homepage-portal-v2
+```
+
+Remote `gitlab` dibuat sekali dengan `git remote add gitlab https://gitlab.jatengprov.go.id/disperakimjtg/klinikpkp.git`. Login memakai Personal Access Token GitLab (`write_repository`), bukan sandi akun. Push ini harus fast-forward; kalau ditolak, cari tahu sebabnya, jangan `--force`.
 
 Perubahan skema wajib berupa berkas migrasi baru di `application/migrations/` dan menaikkan `$config['migration_version']`. Urutan rilis bermigrasi ada di [`AGENTS.md`](AGENTS.md) §0a.
 
 Pesan commit memakai bahasa Indonesia dengan prefix conventional commit (`fix:`, `feat:`, `docs:`, `test:`, `chore:`).
+
+---
+
+## Memasang di server lain
+
+Panduan lengkapnya [`docs/engineering/PANDUAN_HOSTING.md`](docs/engineering/PANDUAN_HOSTING.md). Kesalahan yang paling sering terjadi:
+
+| Jangan | Lakukan |
+|---|---|
+| Menyalin folder kerja lokal apa adanya | Ambil berkas dari git (`git archive`), buang `docs/`, `tests/`, `AGENTS.md`, `.claude/`, lalu `composer install --no-dev` dengan PHP 8.3 atau 8.4. `vendor/` di laptop bisa usang dan memuat alat uji |
+| Menyalin `.env` laptop ke server | Buat `.env` baru **satu tingkat di atas web root**: `SITE_URL`, `DB_*`, `GOOGLE_REDIRECT_URI`, dan `PRIVATE_UPLOADS_PATH` wajib disesuaikan server itu. `KPKP_DATA_KEY`/`PEPPER` wajib sama dengan database asal datanya |
+| Mengimpor database lokal tanpa dibersihkan | Hapus dulu akun uji (`@agen.test`, `@example.test`, `@example.com`) beserta data milik mereka; sandi akun agen ada di repo publik ini |
+| Lupa daftarkan alamat baru di Google | Tambahkan `https://<domain>/auth/google_callback` ke *Authorized redirect URIs* klien OAuth, sama persis dengan `GOOGLE_REDIRECT_URI` |
+| Menganggap situs jalan karena beranda 200 | Uji juga login, unggah berkas (menulis ke `private_uploads`), email OTP, dan pastikan `/.env`, `/vendor/`, `/application/` menjawab 403 |
 
 ---
 
@@ -147,10 +180,11 @@ Folder lokal yang sengaja tidak masuk repo (sudah di `.gitignore`): `vendor/`, `
 | `Table '...' doesn't exist` | Migrasi belum dijalankan: `php index.php migrate` |
 | CSS tidak termuat | `SITE_URL` di `.env` tidak cocok dengan path folder |
 | `Class not found` | `composer install` belum dijalankan |
+| `composer install` gagal, `does not satisfy that requirement` | PHP yang menjalankan Composer di bawah 8.3; lihat langkah Dependensi |
 | Login Google gagal di lokal | Normal bila kredensial OAuth lokal belum diisi |
 | Uji pendaftaran merah berantai | Batas kiriman OTP per IP di database lokal habis karena suite diulang dalam satu jam; lihat catatan rilis 4-5 Okt 2026 di `AGENTS.md` |
 | MySQL XAMPP tidak mau start | Lihat catatan MariaDB di `AGENTS.md`; jangan menghapus `.frm`, `.ibd`, atau `ibdata1` |
 
 ---
 
-*Diperbarui 5 Oktober 2026.*
+*Diperbarui 2 November 2026.*
