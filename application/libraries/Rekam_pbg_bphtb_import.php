@@ -27,7 +27,7 @@ class Rekam_pbg_bphtb_import
     /** Judul kolom lembar PENGEMBANG (sesudah dinormalkan, keterangan dalam kurung dibuang). */
     const KOLOM_PENGEMBANG = ['nama perumahan' => 'perumahan', 'nama pengembang' => 'pengembang',
         'alamat perumahan' => 'alamat', 'bentuk rumah' => 'bentuk', 'tipe' => 'tipe',
-        'status data' => 'bulan', 'bulan' => 'bulan'];
+        'jumlah unit rumah' => 'unit', 'status data' => 'bulan', 'bulan' => 'bulan'];
 
     const KOLOM_PERORANGAN = ['nik' => 'nik', 'nama' => 'nama', 'alamat' => 'alamat',
         'kecamatan' => 'kec', 'kelurahan/desa' => 'desa', 'kode kelurahan/desa' => 'kode', 'bulan' => 'bulan'];
@@ -41,8 +41,9 @@ class Rekam_pbg_bphtb_import
         'nik pihak pengalih pemberi' => 'nik_pengalih', 'penghasilan' => 'penghasilan',
         'luas tanah' => 'luas_tanah', 'luas bangunan' => 'luas_bangunan',
         'harga perolehan pengalihan hak' => 'harga', 'nilai njop' => 'njop', 'nilai sspd' => 'sspd',
-        'nilai sspd bphtb' => 'sspd_bphtb', 'bulan bphtb' => 'bulan', 'apakah mbr atau bukan' => 'mbr'];
-    const WAJIB_BPHTB = ['kab', 'tahun', 'kec', 'desa', 'penerima', 'nik', 'bulan', 'mbr'];
+        'nilai sspd bphtb' => 'sspd_bphtb', 'bulan bphtb' => 'bulan'];
+    // Kolom MBR dibuang (dinas 1 Nov 2026: semua penerima dianggap MBR); bila masih ada di berkas lama, diabaikan.
+    const WAJIB_BPHTB = ['kab', 'tahun', 'kec', 'desa', 'penerima', 'nik', 'bulan'];
     const ANGKA_BPHTB = ['penghasilan' => 'Penghasilan', 'luas_tanah' => 'luas_tanah', 'luas_bangunan' => 'luas_bangunan',
         'harga' => 'harga_perolehan_pengalihan_hak', 'njop' => 'nilai_njop', 'sspd' => 'nilai_sspd', 'sspd_bphtb' => 'nilai_sspd_bphtb'];
 
@@ -68,8 +69,9 @@ class Rekam_pbg_bphtb_import
         if (is_string($n_oran)) { return $this->gagal($n_oran); }
         if ($cacat) { return $this->gagal_baris($cacat); }
         if ($n_peng + $n_oran === 0) { return $this->gagal('Tidak ada baris yang bisa dibaca dari kedua lembar.'); }
+        // jumlah_baris = JUMLAH UNIT (dinas 1 Nov 2026): unit di lembar pengembang + satu per baris perorangan.
         return ['success' => TRUE, 'message' => '', 'jumlah_baris' => $n_peng + $n_oran,
-            'ringkasan' => "Pengembang $n_peng, perorangan $n_oran"];
+            'ringkasan' => "$n_peng unit pengembang, $n_oran perorangan"];
     }
 
     /**
@@ -113,17 +115,14 @@ class Rekam_pbg_bphtb_import
                 }
             }
             if (self::bulan_angka($v('bulan')) !== (int) $bulan) { $cacat[] = "$no: bulan_bphtb harus " . ucfirst(self::BULAN[$bulan]); continue; }
-            if ( ! in_array(strtolower($v('mbr')), ['mbr', 'bukan mbr', 'non mbr', 'bukan'], TRUE)) {
-                $cacat[] = "$no: Apakah MBR atau bukan diisi MBR atau Bukan MBR"; continue;
-            }
             $n++;
         }
         if ($cacat) { return $this->gagal_baris($cacat); }
         if ($n === 0) { return $this->gagal('Tidak ada baris BPHTB yang bisa dibaca dari berkas ini.'); }
-        return ['success' => TRUE, 'message' => '', 'jumlah_baris' => $n, 'ringkasan' => "$n transaksi"];
+        return ['success' => TRUE, 'message' => '', 'jumlah_baris' => $n, 'ringkasan' => "$n penerima"];
     }
 
-    /** @return int|string jumlah baris sah, atau pesan bila judul kolom tidak lengkap */
+    /** @return int|string JUMLAH UNIT dari baris sah, atau pesan bila judul kolom tidak lengkap */
     private function periksa_pengembang(array $baris, $bulan, array &$cacat)
     {
         $kol = $this->judul(array_shift($baris), self::KOLOM_PENGEMBANG);
@@ -139,7 +138,8 @@ class Rekam_pbg_bphtb_import
             }
             if ( ! in_array(strtolower($v('bentuk')), ['tapak', 'susun'], TRUE)) { $cacat[] = "$no: Bentuk Rumah diisi tapak atau susun"; continue; }
             if (self::bulan_angka($v('bulan')) !== (int) $bulan) { $cacat[] = "$no: Status Data (Bulan) harus " . ucfirst(self::BULAN[$bulan]); continue; }
-            $n++;
+            if ( ! preg_match('/^[1-9]\d{0,5}$/', $v('unit'))) { $cacat[] = "$no: Jumlah Unit Rumah diisi angka bulat, minimal 1"; continue; }
+            $n += (int) $v('unit');
         }
         return $n;
     }

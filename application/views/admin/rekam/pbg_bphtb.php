@@ -41,7 +41,7 @@ $nama_bulan = array_map('ucfirst', Rekam_pbg_bphtb_import::BULAN);
         <li class="flex gap-3">
           <span class="font-bold">2.</span>
           <?php if ($jenis === 'pbg'): ?>
-            <span>Isi lembar <b>PENGEMBANG</b> dan/atau <b>PERORANGAN</b>.</span>
+            <span>Isi lembar <b>PENGEMBANG</b> (dengan jumlah unit) dan/atau <b>PERORANGAN</b>.</span>
           <?php else: ?>
             <span>Isi lembar <b>BPHTB</b>.</span>
           <?php endif; ?>
@@ -71,7 +71,7 @@ $nama_bulan = array_map('ucfirst', Rekam_pbg_bphtb_import::BULAN);
   <section id="ringkasan" class="kartu-admin isi-kartu">
     <?php $a = $angka[$bulan_pilih] ?? NULL; ?>
     <h2 class="text-lg font-black text-gray-900 dark:text-white">Ringkasan angka <?= $e($label) ?> <?= $e($nama_bulan[$bulan_pilih]) ?> <?= (int) $tahun ?></h2>
-    <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">Boleh diisi tanpa Excel. Bulan lain: klik <b>Isi ringkasan</b> di kartunya.</p>
+    <p class="mt-1 text-xs text-gray-500 dark:text-brand-muted">Jumlahnya harus sama dengan isi berkas Excel bulan itu. Bulan lain: klik <b>Isi ringkasan</b> di kartunya.</p>
     <form method="post" action="<?= base_url($kelas . '/simpan_angka') ?>" class="mt-3 grid gap-3 sm:grid-cols-2">
       <input type="hidden" name="<?= $e($this->security->get_csrf_token_name()) ?>" value="<?= $e($this->security->get_csrf_hash()) ?>">
       <input type="hidden" name="tahun" value="<?= (int) $tahun ?>">
@@ -112,6 +112,9 @@ $nama_bulan = array_map('ucfirst', Rekam_pbg_bphtb_import::BULAN);
             </div>
             <span class="text-xs text-gray-600 dark:text-gray-300"><?= $e($u['ringkasan']) ?></span>
             <?php $a = $angka[$n] ?? NULL; ?>
+            <?php if ($a && $u && (int) $a['jumlah'] !== (int) $u['jumlah_baris']): ?>
+              <span class="text-xs font-bold text-red-600 dark:text-red-400"><i class="ph ph-warning" aria-hidden="true"></i> Ringkasan tidak sama dengan berkas</span>
+            <?php endif; ?>
             <a class="text-xs font-bold underline <?= $a ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-brand-muted' ?>" href="<?= base_url($kelas . '?tahun=' . (int) $tahun . '&bulan=' . $n) ?>#ringkasan">
               <?= $a ? $e(number_format((int) $a['jumlah'], 0, ',', '.') . ($jenis === 'pbg' ? ' unit' : ' penerima') . ' | Rp ' . number_format((float) $a['nilai_rp'], 0, ',', '.')) : 'Isi ringkasan' ?>
             </a>
@@ -128,6 +131,9 @@ $nama_bulan = array_map('ucfirst', Rekam_pbg_bphtb_import::BULAN);
             </div>
             <span class="text-xs text-gray-400 dark:text-brand-muted">Belum ada data</span>
             <?php $a = $angka[$n] ?? NULL; ?>
+            <?php if ($a && $u && (int) $a['jumlah'] !== (int) $u['jumlah_baris']): ?>
+              <span class="text-xs font-bold text-red-600 dark:text-red-400"><i class="ph ph-warning" aria-hidden="true"></i> Ringkasan tidak sama dengan berkas</span>
+            <?php endif; ?>
             <a class="text-xs font-bold underline <?= $a ? 'text-gray-700 dark:text-gray-200' : 'text-gray-400 dark:text-brand-muted' ?>" href="<?= base_url($kelas . '?tahun=' . (int) $tahun . '&bulan=' . $n) ?>#ringkasan">
               <?= $a ? $e(number_format((int) $a['jumlah'], 0, ',', '.') . ($jenis === 'pbg' ? ' unit' : ' penerima') . ' | Rp ' . number_format((float) $a['nilai_rp'], 0, ',', '.')) : 'Isi ringkasan' ?>
             </a>

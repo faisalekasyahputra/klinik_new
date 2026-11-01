@@ -127,7 +127,7 @@ wajib(login('bid', "uji_pb_bidang_{$stamp}@example.test", $sandi), 'Login admin_
 wajib(login('sup', "uji_pb_super_{$stamp}@example.test", $sandi), 'Login superadmin');
 
 // Baris PBG: [kolom => nilai]. Nama desa ditulis huruf kecil, seperti petugas mengetik.
-$peng = fn($bulan = 'Maret') => ['A' => '1', 'B' => 'Perumahan Uji', 'C' => 'PT Uji Bangun', 'D' => 'Jl. Uji 1', 'E' => 'tapak', 'F' => '36/72', 'G' => $bulan];
+$peng = fn($bulan = 'Maret', $unit = '4') => ['A' => '1', 'B' => 'Perumahan Uji', 'C' => 'PT Uji Bangun', 'D' => 'Jl. Uji 1', 'E' => 'tapak', 'F' => '36/72', 'G' => $unit, 'H' => $bulan];
 $oran = fn($nik, $bulan = 'Maret', $desa = NULL) => ['A' => '1', 'B' => $nik, 'C' => 'Uji Perorangan', 'D' => 'RT 01 RW 02',
     'E' => strtolower($DESA['kec']), 'F' => $desa ?? strtolower($DESA['desa']), 'H' => $bulan];
 
@@ -153,11 +153,16 @@ try {
 
     [$t, $TBP] = templat('kab', 'Rekam_Bphtb');
     $bp = \PhpOffice\PhpSpreadsheet\IOFactory::load($TBP)->getSheetByName('BPHTB');
-    cek($t['code'] === 200 && $bp && $bp->getCell('AH1')->getValue() === 'Apakah MBR atau bukan' && $bp->getCell('B1')->getValue() === 'Nama Kab/Kota',
-        'Templat BPHTB memuat 34 kolom dinas (A sampai AH)');
+    cek($t['code'] === 200 && $bp && $bp->getCell('AG1')->getValue() === 'keterangan' && (string) $bp->getCell('AH1')->getValue() === ''
+        && $bp->getCell('B1')->getValue() === 'Nama Kab/Kota', 'Templat BPHTB 33 kolom, tanpa kolom MBR');
+    $pg = \PhpOffice\PhpSpreadsheet\IOFactory::load($TPBG)->getSheetByName('PENGEMBANG');
+    cek($pg->getCell('F1')->getValue() === 'Tipe (LT/LB)' && $pg->getCell('G1')->getValue() === 'Jumlah Unit Rumah'
+        && $pg->getStyle('F2')->getNumberFormat()->getFormatCode() === '@', 'Lembar PENGEMBANG: Tipe (LT/LB) berformat Teks, ada Jumlah Unit Rumah');
     cek($bp->getStyle('O2')->getNumberFormat()->getFormatCode() === '@', 'NIK Penerima berformat Teks');
 
     echo "\n[2] Unggah PBG\n";
+    $b = unggah('kab', 'Rekam_Pbg', 3, isi($TPBG, ['PENGEMBANG' => [$peng('Maret', '0')]]));
+    cek(strpos($b, 'Baris PENGEMBANG 2: Jumlah Unit Rumah diisi angka bulat') !== FALSE, 'Jumlah unit 0 ditolak');
     $awal = count(berkas_dir());
     $b = unggah('kab', 'Rekam_Pbg', 3, isi($TPBG, ['PENGEMBANG' => [$peng()], 'PERORANGAN' => [$oran('3399010101010001'), $oran('339901010101002')]]));
     cek(strpos($b, 'Baris PERORANGAN 3: NIK harus 16 angka') !== FALSE, 'NIK 15 angka ditolak dengan nomor baris dan lembarnya');
@@ -171,19 +176,19 @@ try {
 
     $b = unggah('kab', 'Rekam_Pbg', 3, isi($TPBG, ['PENGEMBANG' => [$peng()], 'PERORANGAN' => [$oran('3399010101010001'), $oran('3399010101010002')]]));
     $row = baris_db('pbg', 3);
-    cek(strpos($b, 'PBG Maret ' . TAHUN . ' tersimpan: Pengembang 1, perorangan 2') !== FALSE, 'Berkas sah tersimpan dengan pesan ringkasan');
-    cek($row && (int) $row['jumlah_baris'] === 3 && (int) $row['kabupaten_id'] === $KAB && in_array(private_uploads_dir('rekam_pbg_bphtb', $KAB) . $row['path_privat'], berkas_dir(), TRUE),
-        'Tercatat 3 baris untuk kabupaten pelapor, berkas privat di disk');
+    cek(strpos($b, 'PBG Maret ' . TAHUN . ' tersimpan: 4 unit pengembang, 2 perorangan') !== FALSE, 'Berkas sah tersimpan dengan pesan ringkasan');
+    cek($row && (int) $row['jumlah_baris'] === 6 && (int) $row['kabupaten_id'] === $KAB && in_array(private_uploads_dir('rekam_pbg_bphtb', $KAB) . $row['path_privat'], berkas_dir(), TRUE),
+        'Tercatat 6 unit (4 pengembang + 2 perorangan) untuk kabupaten pelapor, berkas privat di disk');
     cek(strpos(json_encode(q('SELECT * FROM rd_pbg_bphtb WHERE id = ?', [$row['id']])), '3399010101010001') === FALSE, 'NIK tidak disalin ke DB');
 
     $b = unggah('kab', 'Rekam_Pbg', 3, isi($TPBG, ['PENGEMBANG' => [$peng()]]));
     $baru = baris_db('pbg', 3);
-    cek($baru && (int) $baru['id'] === (int) $row['id'] && (int) $baru['jumlah_baris'] === 1, 'Unggah ulang bulan sama menggantikan, bukan menambah');
+    cek($baru && (int) $baru['id'] === (int) $row['id'] && (int) $baru['jumlah_baris'] === 4, 'Unggah ulang bulan sama menggantikan, bukan menambah');
     cek( ! in_array(private_uploads_dir('rekam_pbg_bphtb', $KAB) . $row['path_privat'], berkas_dir(), TRUE), 'Berkas lama dibuang dari disk');
 
     echo "\n[3] Unggah BPHTB\n";
     $bph = fn($kec, $kab = NULL, $nik = '3399010101010003') => ['A' => '1', 'B' => $kab ?? $NAMA_KAB, 'C' => (string) TAHUN, 'D' => $kec, 'E' => $DESA['desa'],
-        'N' => 'Uji Penerima', 'O' => $nik, 'R' => '3500000', 'V' => '60', 'AA' => '150.000.000', 'AF' => 'Mei', 'AH' => 'MBR'];
+        'N' => 'Uji Penerima', 'O' => $nik, 'R' => '3500000', 'V' => '60', 'AA' => '150.000.000', 'AF' => 'Mei'];
     $b = unggah('kab', 'Rekam_Bphtb', 5, isi($TBP, ['BPHTB' => [$bph($DESA['kec']), $bph('Kecamatan Tak Ada')]]));
     cek(strpos($b, 'Baris 3: Nama Kecamatan') !== FALSE && baris_db('bphtb', 5) === NULL, 'Kecamatan tak dikenal ditolak dengan nomor baris');
     $b = unggah('kab', 'Rekam_Bphtb', 5, isi($TBP, ['BPHTB' => [$bph($DESA['kec'], 'Kabupaten Tak Ada')]]));
@@ -191,7 +196,7 @@ try {
     $b = unggah('kab', 'Rekam_Bphtb', 5, isi($TBP, ['BPHTB' => [$bph($DESA['kec'], NULL, '3399')]]));
     cek(strpos($b, 'Baris 2: NIK Penerima harus 16 angka') !== FALSE, 'NIK Penerima pendek ditolak');
     $b = unggah('kab', 'Rekam_Bphtb', 5, isi($TBP, ['BPHTB' => [$bph(strtolower($DESA['kec'])), $bph($DESA['kec'])]]));
-    cek(strpos($b, 'BPHTB Mei ' . TAHUN . ' tersimpan: 2 transaksi') !== FALSE && (int) (baris_db('bphtb', 5)['jumlah_baris'] ?? 0) === 2, 'BPHTB sah tersimpan (2 transaksi)');
+    cek(strpos($b, 'BPHTB Mei ' . TAHUN . ' tersimpan: 2 penerima') !== FALSE && (int) (baris_db('bphtb', 5)['jumlah_baris'] ?? 0) === 2, 'BPHTB sah tersimpan (2 penerima), tanpa kolom MBR');
 
     echo "\n[4] Unduh ter-scope\n";
     $id_pbg = (int) baris_db('pbg', 3)['id'];
@@ -219,6 +224,17 @@ try {
     $hal = http('kab', 'Rekam_Pbg?tahun=' . TAHUN . '&bulan=7')['body'];
     cek(strpos($hal, 'name="jumlah"') !== FALSE && strpos($hal, '15 unit | Rp 50.000.000') !== FALSE, 'Form terisi dan kartu Juli menampilkan ringkasan');
     cek(http('kab', 'Rekam_Pbg/simpan_angka')['code'] === 404, 'simpan_angka lewat GET ditolak');
+
+    echo "\n[4c] Ringkasan dan berkas wajib sama jumlahnya\n";
+    $b = $angka('kab', 'Rekam_Pbg', 3, '5', '1000000');
+    cek(strpos($b, 'harus sama dengan berkas Excel bulan ini: 4 unit') !== FALSE && $ra('pbg', 3) === NULL, 'Ringkasan beda dari berkas (5 vs 4 unit) ditolak');
+    $angka('kab', 'Rekam_Pbg', 3, '4', '1000000');
+    cek((int) ($ra('pbg', 3)['jumlah'] ?? 0) === 4, 'Ringkasan sama dengan berkas tersimpan');
+    $b = unggah('kab', 'Rekam_Pbg', 3, isi($TPBG, ['PENGEMBANG' => [$peng()], 'PERORANGAN' => [$oran('3399010101010001')]]));
+    cek(strpos($b, 'Jumlah di berkas 5 unit, padahal ringkasan angka 4 unit') !== FALSE && (int) baris_db('pbg', 3)['jumlah_baris'] === 4,
+        'Berkas beda dari ringkasan (5 vs 4) ditolak, berkas lama tetap');
+    $b = $angka('kab', 'Rekam_Bphtb', 5, '3', '1000');
+    cek(strpos($b, '2 penerima') !== FALSE && $ra('bphtb', 5) === NULL, 'BPHTB: ringkasan beda dari jumlah penerima di berkas ditolak');
 
     echo "\n[5] Superadmin bertindak atas nama kabupaten\n";
     http('sup', 'Admin_Rekam_Data/bertindak', ['csrf_kpkp_token' => csrf('sup', 'Admin_Rekam_Data'), 'kabupaten_id' => $KAB,

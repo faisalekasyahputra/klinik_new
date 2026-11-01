@@ -80,6 +80,14 @@ class Rekam_Pbg extends Admin_Kabkota_Controller {
         }
 
         $kunci = ['jenis' => $this->jenis, 'kabupaten_id' => $kab, 'tahun' => $tahun, 'bulan' => $bulan];
+        // Jumlah berkas wajib sama dengan ringkasan angka bila ringkasan sudah diisi (dinas 1 Nov 2026, pola BNBA).
+        $angka = $this->db->where($kunci)->get('rd_pbg_bphtb_angka')->row_array();
+        if ($angka && (int) $angka['jumlah'] !== (int) $baca['jumlah_baris']) {
+            @unlink($path);
+            $this->session->set_flashdata('error', 'Jumlah di berkas ' . (int) $baca['jumlah_baris'] . ' ' . $this->satuan()
+                . ', padahal ringkasan angka ' . (int) $angka['jumlah'] . ' ' . $this->satuan() . '. Samakan dulu, lalu unggah lagi.');
+            redirect($kembali);
+        }
         $lama = $this->db->where($kunci)->get('rd_pbg_bphtb')->row_array();
         $isi = [
             'nama_asli'    => mb_substr((string) $_FILES['berkas']['name'], 0, 255),
@@ -121,6 +129,11 @@ class Rekam_Pbg extends Admin_Kabkota_Controller {
             redirect($kembali);
         }
         $kunci = ['jenis' => $this->jenis, 'kabupaten_id' => (int) $this->my_kabupaten_id, 'tahun' => $tahun, 'bulan' => $bulan];
+        $berkas = $this->db->where($kunci)->get('rd_pbg_bphtb')->row_array();
+        if ($berkas && (int) $berkas['jumlah_baris'] !== (int) $jumlah) {
+            $this->session->set_flashdata('error', 'Jumlah harus sama dengan berkas Excel bulan ini: ' . (int) $berkas['jumlah_baris'] . ' ' . $this->satuan() . '.');
+            redirect($kembali);
+        }
         $isi = ['jumlah' => (int) $jumlah, 'nilai_rp' => $nilai,
             'catatan' => mb_substr(trim((string) $this->input->post('catatan')), 0, 500) ?: NULL,
             'updated_at' => date('Y-m-d H:i:s'), 'updated_by' => $this->get_user_id() ?: NULL];
@@ -171,7 +184,8 @@ class Rekam_Pbg extends Admin_Kabkota_Controller {
 
         if ($this->jenis === 'pbg') {
             $a = $ss->getActiveSheet()->setTitle('PENGEMBANG');
-            $judul($a, ['No', 'Nama Perumahan', 'Nama Pengembang', 'Alamat Perumahan', 'Bentuk Rumah (tapak/susun)', 'Tipe (Lb/Lt)', 'Status Data (Bulan)']);
+            $judul($a, ['No', 'Nama Perumahan', 'Nama Pengembang', 'Alamat Perumahan', 'Bentuk Rumah (tapak/susun)', 'Tipe (LT/LB)', 'Jumlah Unit Rumah', 'Status Data (Bulan)']);
+            $teks($a, ['F']); // "36/72" jangan dibaca Excel sebagai tanggal atau pecahan
             $b = $ss->createSheet()->setTitle('PERORANGAN');
             $judul($b, ['No', 'NIK', 'NAMA', 'ALAMAT', 'KECAMATAN', 'KELURAHAN/DESA', 'KODE KELURAHAN/DESA (TERISI OTOMATIS)', 'Bulan']);
             $teks($b, ['B']);
@@ -185,7 +199,7 @@ class Rekam_Pbg extends Admin_Kabkota_Controller {
                 'NIK Pihak Pengalih Pemberi', 'Alamat Pihak Pengalih Pemberi', 'Pihak Penerima', 'NIK Penerima', 'Alamat Penerima',
                 'Status (Kawin/ Belum Kawin)', 'Penghasilan', 'Jenis Hak', 'Nomor Hak', 'Alamat Tanah Bangunan', 'luas_tanah_',
                 'luas_bangunan_', 'harga_perolehan_pengalihan_hak', 'nop_sppt_pbb', 'tahun_sppt', 'nilai_njop', 'nomor sspd',
-                'nilai_sspd', 'tanggal_sspd_bphtb', 'nilai_sspd_bphtb', 'bulan_bphtb', 'keterangan', 'Apakah MBR atau bukan']);
+                'nilai_sspd', 'tanggal_sspd_bphtb', 'nilai_sspd_bphtb', 'bulan_bphtb', 'keterangan']);
             $teks($a, ['L', 'O', 'Y']);
         }
 
@@ -208,6 +222,11 @@ class Rekam_Pbg extends Admin_Kabkota_Controller {
         header('Cache-Control: private, no-store');
         $writer->save('php://output');
         exit;
+    }
+
+    private function satuan()
+    {
+        return $this->jenis === 'pbg' ? 'unit' : 'penerima';
     }
 
     private function tahun_dari($t)
