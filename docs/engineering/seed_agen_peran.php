@@ -88,6 +88,8 @@ $peran = [
     'warga'         => ['nama' => 'Agen Warga',        'kab' => NULL,        'bid' => NULL],
     'pengembang'    => ['nama' => 'Agen Pengembang',   'kab' => NULL,        'bid' => NULL],
     'mahasiswa'     => ['nama' => 'Agen Mahasiswa',    'kab' => NULL,        'bid' => NULL],
+    // Nama akun universitas dipakai sebagai nama perguruan tinggi di KKN dan piagam.
+    'universitas'   => ['nama' => 'Universitas Agen Uji', 'kab' => NULL,     'bid' => NULL],
     'admin_kabkota' => ['nama' => 'Agen Admin Kabkota','kab' => $kab['id'],  'bid' => NULL],
     'admin_bidang'  => ['nama' => 'Agen Admin Bidang', 'kab' => NULL,        'bid' => $bid['kode']],
     'admin'         => ['nama' => 'Agen Super Admin',  'kab' => NULL,        'bid' => NULL],
