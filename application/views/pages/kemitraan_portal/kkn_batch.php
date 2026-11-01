@@ -135,7 +135,7 @@ $terbuka = ! $berhenti;
             <ul class="mt-2 space-y-1.5">
                 <?php
                 $berkas_status = [
-                    'Surat permohonan menjadi mitra' => $row->file_surat_pengantar,
+                    'Surat permohonan pelaksanaan KKN' => $row->file_surat_pengantar,
                     'Surat permohonan akun SIMPERUM' => $row->file_surat_simperum,
                 ];
                 ?>
@@ -209,12 +209,19 @@ $terbuka = ! $berhenti;
                 <div class="<?= $label ?>">Daftar Peserta</div>
                 <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted"><?= count($peserta) ?> peserta tercatat.</p>
             </div>
+            <?php // Unduh massal piagam peserta + DPL (KemitraanPortal::kkn_unduh_piagam, 1 Nov 2026), hanya bila piagam sudah terbit. ?>
+            <?php if ( ! empty($piagam_terbit) && ($peserta || ! empty($dpl))): ?>
+            <a href="<?= base_url('KemitraanPortal/kkn_unduh_piagam/' . (int) $row->id) ?>" download data-unduh-piagam
+               class="inline-flex items-center gap-2 rounded-xl bg-brand-primary px-4 py-2 text-xs font-bold text-brand-dark">
+                <i class="ph ph-file-zip" aria-hidden="true"></i> Unduh semua piagam (ZIP)
+            </a>
+            <?php endif; ?>
         </div>
 
         <?php if ( ! $terbuka): ?>
         <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted">KKN yang sudah <?= strtolower(html_escape($row->status)) ?> tidak bisa diubah lagi: daftar peserta, link dokumentasi, dan laporan akhir hanya bisa dilihat.</p>
         <?php elseif ( ! empty($row->tanggal_sertifikat)): ?>
-        <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted"><i class="ph ph-lock-simple" aria-hidden="true"></i> Daftar peserta terkunci karena tanggal sertifikat sudah ditetapkan. Hubungi admin bila ada perubahan peserta.</p>
+        <p class="mt-3 text-xs text-gray-500 dark:text-brand-muted"><i class="ph ph-lock-simple" aria-hidden="true"></i> Daftar peserta terkunci karena tanggal piagam sudah ditetapkan. Hubungi admin bila ada perubahan peserta.</p>
         <?php else: ?>
         <form method="POST" action="<?= base_url('KemitraanPortal/kkn_upload_peserta/' . (int) $row->id) ?>"
               enctype="multipart/form-data" class="mt-4 flex flex-wrap items-end gap-3">
@@ -274,6 +281,66 @@ $terbuka = ! $berhenti;
                         <tr>
                             <td class="px-4 py-2.5 text-gray-900 dark:text-white"><?= html_escape($p->nim) ?></td>
                             <td class="px-4 py-2.5 text-gray-900 dark:text-white"><?= html_escape($p->nama) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php endif; ?>
+    </div>
+
+    <?php // Dosen pembimbing lapangan untuk piagam penghargaan (KemitraanPortal::kkn_upload_dpl, migrasi 091). ?>
+    <div class="<?= $kotak ?> mb-4" data-kkn-dpl>
+        <div class="<?= $label ?>">Dosen Pembimbing Lapangan</div>
+        <p class="mt-1 text-sm text-gray-500 dark:text-brand-muted"><?= count($dpl ?? []) ?> dosen tercatat. Setiap dosen menerima piagam penghargaan.</p>
+
+        <?php if ($terbuka && empty($row->tanggal_sertifikat)): ?>
+        <form method="POST" action="<?= base_url('KemitraanPortal/kkn_upload_dpl/' . (int) $row->id) ?>"
+              enctype="multipart/form-data" class="mt-4 flex flex-wrap items-end gap-3">
+            <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
+            <div class="flex-1 min-w-[220px]">
+                <label for="kb-dpl" class="<?= $label ?>">Unggah Daftar DPL (XLS/XLSX)</label>
+                <div id="kb-dpl-drop"
+                     class="group relative mt-1 flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 px-3 py-5 text-center transition-colors hover:border-brand-primary hover:bg-brand-primary/5 dark:border-white/15 dark:bg-black/20 dark:hover:border-brand-primary">
+                    <i class="ph ph-upload-simple text-xl text-gray-400 group-hover:text-brand-primary dark:text-brand-muted"></i>
+                    <p id="kb-dpl-nama" class="text-xs font-semibold text-gray-600 dark:text-brand-muted">
+                        Seret berkas ke sini, atau <span class="font-bold text-brand-primary">klik untuk pilih</span>
+                    </p>
+                    <input id="kb-dpl" name="file_dpl" type="file" accept=".xls,.xlsx" required class="sr-only">
+                </div>
+                <p class="<?= $petunjuk ?>">Baris pertama berisi judul kolom "Nama" (wajib) dan "NIDN" (opsional). Mengunggah ulang MENGGANTI seluruh daftar DPL. Maksimal 5 MB.</p>
+                <script>
+                pasangDropzone('kb-dpl-drop', 'kb-dpl', 'kb-dpl-nama');
+                </script>
+            </div>
+            <button type="submit" class="rounded-xl bg-brand-primary px-5 py-2.5 text-xs font-bold text-brand-dark shrink-0">
+                <i class="ph ph-upload-simple"></i> Unggah
+            </button>
+        </form>
+        <?php endif; ?>
+
+        <?php if ( ! empty($dpl)): ?>
+        <div class="mt-5 overflow-x-auto rounded-xl border border-gray-200 dark:border-white/10">
+            <table class="w-full min-w-[360px] text-left text-sm">
+                <thead>
+                    <tr class="border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-black/20 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-brand-muted">
+                        <th class="px-4 py-2.5">NIDN</th>
+                        <th class="px-4 py-2.5">Nama</th>
+                        <th class="px-4 py-2.5">Piagam</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+                    <?php foreach ($dpl as $d): ?>
+                        <tr>
+                            <td class="px-4 py-2.5 text-gray-900 dark:text-white"><?= html_escape($d->nidn ?? '-') ?></td>
+                            <td class="px-4 py-2.5 text-gray-900 dark:text-white"><?= html_escape($d->nama) ?></td>
+                            <td class="px-4 py-2.5">
+                                <?php if ( ! empty($piagam_terbit)): ?>
+                                <a href="<?= base_url('KemitraanPortal/kkn_piagam_dpl/' . (int) $row->id . '/' . (int) $d->id) ?>" target="_blank" rel="noopener" class="text-xs font-bold text-brand-primary hover:underline"><i class="ph ph-printer" aria-hidden="true"></i> Cetak</a>
+                                <?php else: ?>
+                                <span class="text-xs text-gray-500 dark:text-brand-muted">Belum terbit</span>
+                                <?php endif; ?>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

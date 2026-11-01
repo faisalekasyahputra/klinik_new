@@ -1,13 +1,13 @@
 <?php
 /**
- * Hasil Cetak Sertifikat KKN - permintaan user 22 Agt 2026.
+ * Hasil Cetak Piagam KKN - permintaan user 22 Agt 2026.
  *
  * $data sudah TERVERIFIKASI oleh KemitraanPortal::cek_sertifikat_kkn()
  * sebelum sampai di sini (NIM cocok, status Diterima, periode sudah lewat)
  * - halaman ini murni MENAMPILKAN, tidak memeriksa apa pun lagi.
  *
  * Halaman ini HANYA mockup ringkasan (dipakai kalau pengunjung tidak lewat
- * tab cetak) - sertifikat PDF sungguhan (template resmi Disperakim, sudah
+ * tab cetak) - piagam PDF sungguhan (template resmi Disperakim, sudah
  * final sejak 23 Agt 2026) dirender terpisah oleh
  * KemitraanPortal::sertifikat_kkn_pdf(), lihat cetak_sertifikat_kkn.php.
  * Banner "tata letak sementara" yang dulu di sini SUDAH DIHAPUS - template
@@ -17,7 +17,7 @@
 <div class="theme-light py-4 sm:py-6 px-1 sm:px-2 print:p-0">
     <div class="mx-auto mt-6 max-w-2xl rounded-3xl border-2 border-[color:var(--portal-brand)] bg-[color:var(--portal-bg-card)] p-8 text-center shadow-sm print:mt-0 print:max-w-none print:rounded-none print:border-4 print:shadow-none sm:p-12">
         <p class="text-xs font-black uppercase tracking-[0.25em] text-[color:var(--portal-text-muted)]">Dinas Perumahan Rakyat &amp; Kawasan Permukiman Provinsi Jawa Tengah</p>
-        <h1 class="mt-4 text-2xl font-black uppercase tracking-wide text-[color:var(--portal-text)] sm:text-3xl">Sertifikat KKN Kemitraan</h1>
+        <h1 class="mt-4 text-2xl font-black uppercase tracking-wide text-[color:var(--portal-text)] sm:text-3xl">Piagam KKN Kemitraan</h1>
         <p class="mt-1 text-xs text-[color:var(--portal-text-muted)]">Diberikan kepada:</p>
 
         <p class="mt-4 text-2xl font-black text-[color:var(--portal-brand)] sm:text-3xl"><?= html_escape($data->nama_peserta) ?></p>

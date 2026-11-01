@@ -164,7 +164,7 @@ class KemitraanPortal extends Public_Controller
            memutuskan. Surat yang DIKIRIM tetap harus PDF yang sah. */
         $dikirim = [];
         foreach ([
-            'file_surat_pengantar' => 'Surat permohonan menjadi mitra',
+            'file_surat_pengantar' => 'Surat permohonan pelaksanaan KKN',
             'file_surat_simperum'  => 'Surat permohonan akun SIMPERUM',
         ] as $field => $label) {
             if ( ! isset($_FILES[$field]) || (int) $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) {
@@ -254,7 +254,7 @@ class KemitraanPortal extends Public_Controller
         $this->session->set_flashdata('success',
             $susulan !== NULL
                 ? 'KKN berhasil diajukan sebagai input susulan. Tim kami akan meninjau alasan susulannya'
-                    . ($simpan ? ' beserta surat yang dilampirkan.' : '.') . ' Sesudah diterima, unggah daftar peserta di Detail KKN agar sertifikat dapat diterbitkan.'
+                    . ($simpan ? ' beserta surat yang dilampirkan.' : '.') . ' Sesudah diterima, unggah daftar peserta di Detail KKN agar piagam dapat diterbitkan.'
                 : 'KKN baru berhasil diajukan. Tim kami akan meninjau kedua surat yang dilampirkan.');
         redirect('KemitraanPortal/kkn_dashboard');
     }
@@ -280,7 +280,7 @@ class KemitraanPortal extends Public_Controller
         // dan dikunci; bila tanggalnya ditarik, roster terbuka lagi (keputusan 29 Sep 2026).
         // View kkn_batch.php menyembunyikan formulirnya dengan syarat yang sama.
         if ( ! empty($row->tanggal_sertifikat)) {
-            $this->session->set_flashdata('error', 'Daftar peserta terkunci karena tanggal sertifikat sudah ditetapkan. Hubungi admin bila ada perubahan peserta.');
+            $this->session->set_flashdata('error', 'Daftar peserta terkunci karena tanggal piagam sudah ditetapkan. Hubungi admin bila ada perubahan peserta.');
             redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
             return;
         }
@@ -330,6 +330,132 @@ class KemitraanPortal extends Public_Controller
         $this->session->set_flashdata($jumlah === FALSE ? 'error' : 'success',
             $jumlah === FALSE ? 'Gagal menyimpan daftar peserta. Coba lagi.' : $jumlah . ' peserta berhasil disimpan.');
         redirect('KemitraanPortal/pendaftaran/' . (int) $row->id);
+    }
+
+    /**
+     * Unggah daftar dosen pembimbing lapangan (piagam DPL, permintaan dinas 1 Nov 2026, migrasi 091).
+     * Gerbang dan pemeriksaan berkas sama dengan kkn_upload_peserta(); mengunggah ulang mengganti seluruh daftar.
+     */
+    public function kkn_upload_dpl($id = NULL)
+    {
+        if ($this->input->method(TRUE) !== 'POST') { show_404(); }
+        $row = $this->pendaftaran_milik($id);
+        if ( ! $row) { return; }
+        if ($row->jenis !== 'kkn') { show_404(); }
+        if ( ! $this->kkn_masih_terbuka($row)) { return; }
+        $kembali = 'KemitraanPortal/pendaftaran/' . (int) $row->id;
+        $tolak = function ($pesan) use ($kembali) {
+            $this->session->set_flashdata('error', $pesan);
+            redirect($kembali);
+        };
+        if ( ! empty($row->tanggal_sertifikat)) {
+            return $tolak('Daftar dosen pembimbing terkunci karena tanggal piagam sudah ditetapkan. Hubungi admin bila ada perubahan.');
+        }
+        $file = $_FILES['file_dpl'] ?? NULL;
+        if (empty($file['name'])) { return $tolak('Pilih berkas daftar dosen pembimbing terlebih dahulu.'); }
+        if ($file['error'] !== UPLOAD_ERR_OK) { return $tolak('Berkas gagal diunggah.'); }
+        if ($file['size'] > 5242880) { return $tolak('Ukuran berkas melebihi 5 MB.'); }
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if ( ! in_array($ext, ['xls', 'xlsx'], TRUE)) { return $tolak('Jenis berkas tidak didukung. Gunakan XLS atau XLSX.'); }
+        $galat_scan = NULL;
+        if ( ! $this->scan_uploaded_file($file['tmp_name'], $ext, $galat_scan, 'kkn_dpl')) { return $tolak($galat_scan); }
+
+        $this->load->library('kkn_peserta_import');
+        $hasil = $this->kkn_peserta_import->baca_dpl($file['tmp_name']);
+        if (empty($hasil['success'])) { return $tolak($hasil['message']); }
+
+        $baris = [];
+        foreach ($hasil['dpl'] as $i => $d) {
+            $baris[] = ['pendaftaran_id' => (int) $row->id, 'nidn' => $d['nidn'], 'nama' => $d['nama'], 'urut' => $i + 1, 'created_at' => date('Y-m-d H:i:s')];
+        }
+        $this->db->trans_start();
+        $this->db->where('pendaftaran_id', (int) $row->id)->delete('kkn_dpl');
+        $this->db->insert_batch('kkn_dpl', $baris);
+        $this->db->trans_complete();
+        $ok = $this->db->trans_status() !== FALSE;
+        $this->session->set_flashdata($ok ? 'success' : 'error', $ok ? count($baris) . ' dosen pembimbing berhasil disimpan.' : 'Gagal menyimpan daftar dosen pembimbing. Coba lagi.');
+        redirect($kembali);
+    }
+
+    /** Nomor piagam DPL: awalan KKN + ".DPL." + urut, sejajar dengan nomor_sertifikat_kkn() peserta. */
+    private function nomor_piagam_dpl($row, $dpl)
+    {
+        return ! empty($row->awalan_nomor_sertifikat)
+            ? $row->awalan_nomor_sertifikat . '.DPL.' . sprintf('%02d', (int) $dpl->urut)
+            : '600.2/69.D' . (int) $dpl->id;
+    }
+
+    /** Data cetak piagam DPL dalam bentuk yang dipahami Cetak_sertifikat_kkn. */
+    private function data_piagam_dpl($row, $dpl)
+    {
+        return (object) ['nama_peserta' => $dpl->nama, 'nim' => 'dpl-' . (int) $dpl->urut, 'instansi_asal' => $row->instansi_asal,
+            'tanggal_sertifikat' => $row->tanggal_sertifikat, 'dpl' => TRUE];
+    }
+
+    /** Piagam satu DPL (PDF), hanya untuk universitas pemilik KKN dan bila piagam sudah terbit. */
+    public function kkn_piagam_dpl($id = NULL, $dpl_id = NULL)
+    {
+        $row = $this->pendaftaran_milik($id);
+        if ( ! $row) { return; }
+        if ($row->jenis !== 'kkn' || ! is_numeric($dpl_id) || $this->alasan_sertifikat_terkunci($row) !== NULL) { show_404(); }
+        $dpl = $this->db->get_where('kkn_dpl', ['id' => (int) $dpl_id, 'pendaftaran_id' => (int) $row->id])->row();
+        if ( ! $dpl) { show_404(); }
+        $this->load->library('cetak_sertifikat_kkn');
+        if ( ! $this->cetak_sertifikat_kkn->kirim($this->data_piagam_dpl($row, $dpl), $this->nomor_piagam_dpl($row, $dpl))) { show_404(); }
+    }
+
+    /**
+     * Unduh semua piagam satu KKN (peserta dan DPL) sebagai satu ZIP, permintaan dinas 1 Nov 2026.
+     * Ter-scope ke universitas pemilik lewat pendaftaran_milik(); syarat terbit sama dengan cetak per NIM
+     * (alasan_sertifikat_terkunci). Setiap unduhan dicatat di jejak audit.
+     */
+    public function kkn_unduh_piagam($id = NULL)
+    {
+        $row = $this->pendaftaran_milik($id);
+        if ( ! $row) { return; }
+        if ($row->jenis !== 'kkn') { show_404(); }
+        $kembali = 'KemitraanPortal/pendaftaran/' . (int) $row->id;
+        $alasan = $this->alasan_sertifikat_terkunci($row);
+        if ($alasan !== NULL) {
+            $this->session->set_flashdata('error', $alasan);
+            redirect($kembali);
+            return;
+        }
+        $peserta = $this->db->where('pendaftaran_id', (int) $row->id)->order_by('id', 'ASC')->get('kkn_peserta')->result();
+        $dpl = $this->db->where('pendaftaran_id', (int) $row->id)->order_by('urut', 'ASC')->get('kkn_dpl')->result();
+        if ( ! $peserta && ! $dpl) {
+            $this->session->set_flashdata('error', 'Belum ada peserta atau dosen pembimbing untuk diunduh piagamnya.');
+            redirect($kembali);
+            return;
+        }
+
+        // ponytail: semua PDF dibangun dalam satu permintaan; roster dibatasi 2000 baris (Kkn_peserta_import).
+        @set_time_limit(300);
+        $this->load->library('cetak_sertifikat_kkn');
+        $nomor = $this->nomor_sertifikat_kkn((int) $row->id);
+        $bersih = function ($s) { return trim(preg_replace('/[^A-Za-z0-9_-]+/', '-', (string) $s), '-') ?: 'tanpa-nama'; };
+        $berkas = [];
+        foreach ($peserta as $p) {
+            $data = (object) ['nama_peserta' => $p->nama, 'nim' => $p->nim, 'instansi_asal' => $row->instansi_asal, 'tanggal_sertifikat' => $row->tanggal_sertifikat];
+            $berkas['mahasiswa/' . $bersih($p->nim) . '-' . $bersih($p->nama) . '.pdf'] = $this->cetak_sertifikat_kkn->isi($data, $nomor[(int) $p->id]->nomor);
+        }
+        foreach ($dpl as $d) {
+            $berkas['dpl/' . sprintf('%02d', (int) $d->urut) . '-' . $bersih($d->nama) . '.pdf'] = $this->cetak_sertifikat_kkn->isi($this->data_piagam_dpl($row, $d), $this->nomor_piagam_dpl($row, $d));
+        }
+        if (in_array(FALSE, $berkas, TRUE)) { show_404(); }
+
+        $sementara = tempnam(sys_get_temp_dir(), 'piagam');
+        $zip = new ZipArchive();
+        if ($zip->open($sementara, ZipArchive::OVERWRITE) !== TRUE) { show_error('Gagal menyiapkan berkas ZIP.', 500); }
+        foreach ($berkas as $nama => $isi) { $zip->addFromString($nama, $isi); }
+        $zip->close();
+        $isi = file_get_contents($sementara);
+        @unlink($sementara);
+
+        $this->catat_audit('piagam_kkn_diunduh', 'Unduh semua piagam KKN ' . $row->instansi_asal, 'kkn_magang_pendaftaran', (string) $row->id,
+            ['peserta' => count($peserta), 'dpl' => count($dpl)]);
+        $this->load->helper('download');
+        force_download('piagam-kkn-' . (int) $row->id . '.zip', $isi, TRUE);
     }
 
     /**
@@ -449,7 +575,7 @@ class KemitraanPortal extends Public_Controller
 
     public function sertifikat_kkn()
     {
-        $this->render('pages/kemitraan_portal/sertifikat_kkn', ['judul' => 'Cetak Sertifikat KKN']);
+        $this->render('pages/kemitraan_portal/sertifikat_kkn', ['judul' => 'Cetak Piagam KKN']);
     }
 
     public function cek_sertifikat_kkn()
@@ -511,7 +637,7 @@ class KemitraanPortal extends Public_Controller
                 && ! empty($baris->periode_selesai) && strtotime($baris->periode_selesai) < strtotime('today');
             if ($bisa_minta) {
                 $this->session->set_userdata('sertifikat_kkn_minta', ['id' => (int) $baris->pendaftaran_id, 'sampai' => time() + 1800]);
-                $this->session->set_flashdata('info', 'Sertifikat KKN Anda belum diterbitkan. Anda dapat meminta Disperakim menerbitkannya.');
+                $this->session->set_flashdata('info', 'Piagam KKN Anda belum diterbitkan. Anda dapat meminta Disperakim menerbitkannya.');
                 $this->session->set_flashdata('sertifikat_bisa_diminta', TRUE);
             } else {
                 $this->session->set_flashdata('error', $alasan);
@@ -532,7 +658,7 @@ class KemitraanPortal extends Public_Controller
         $this->session->set_userdata('sertifikat_kkn_cetak', (array) $baris);
 
         $this->render('pages/kemitraan_portal/sertifikat_kkn_hasil', [
-            'judul' => 'Sertifikat KKN',
+            'judul' => 'Piagam KKN',
             'data'  => $baris,
         ]);
     }
@@ -575,11 +701,11 @@ class KemitraanPortal extends Public_Controller
         $this->session->set_userdata('sertifikat_kkn_diminta', $sudah);
         if ($pertama) {
             // Hanya permintaan pertama yang dikabarkan dan dicatat; berikutnya cukup menambah hitungan.
-            $this->catat_audit('sertifikat_kkn_diminta', 'Peserta meminta sertifikat KKN ' . $row->instansi_asal, 'kkn_magang_pendaftaran', (string) $id);
-            $this->notify_admin_push([['role' => 'admin']], 'Permintaan sertifikat KKN',
-                'Peserta KKN ' . $row->instansi_asal . ' meminta sertifikat diterbitkan.', 'Admin_Kemitraan/sertifikat', 'sertifikat-kkn-' . $id);
+            $this->catat_audit('sertifikat_kkn_diminta', 'Peserta meminta piagam KKN ' . $row->instansi_asal, 'kkn_magang_pendaftaran', (string) $id);
+            $this->notify_admin_push([['role' => 'admin']], 'Permintaan piagam KKN',
+                'Peserta KKN ' . $row->instansi_asal . ' meminta piagam diterbitkan.', 'Admin_Kemitraan/sertifikat', 'sertifikat-kkn-' . $id);
         }
-        $this->session->set_flashdata('success', 'Permintaan terkirim. Disperakim akan meninjau dan menerbitkan sertifikat; cek kembali NIM Anda secara berkala.');
+        $this->session->set_flashdata('success', 'Permintaan terkirim. Disperakim akan meninjau dan menerbitkan piagam; cek kembali NIM Anda secara berkala.');
         redirect('KemitraanPortal/sertifikat_kkn');
     }
 
@@ -607,24 +733,24 @@ class KemitraanPortal extends Public_Controller
             return 'NIM tidak ditemukan dalam data peserta KKN.';
         }
         if ($baris->status !== 'Diterima') {
-            return 'Sertifikat belum dapat diterbitkan untuk NIM ini.';
+            return 'Piagam belum dapat diterbitkan untuk NIM ini.';
         }
         if (empty($baris->periode_selesai) || strtotime($baris->periode_selesai) >= strtotime('today')) {
             // Tanggal BOLEH disebutkan di sini - cabang ini sudah memastikan NIM tsb memang
             // pemilik pendaftaran yang diterima. Yang disebut hari PERTAMA cetak benar-benar
             // bisa (sehari sesudah periode selesai), bukan periode_selesai itu sendiri yang
             // pada harinya masih ditolak (temuan UAT U5).
-            return 'KKN Anda belum melewati periode pelaksanaan. Sertifikat dapat dicetak mulai '
+            return 'KKN Anda belum melewati periode pelaksanaan. Piagam dapat dicetak mulai '
                 . tgl_id(date('Y-m-d', strtotime($baris->periode_selesai . ' +1 day'))) . '.';
         }
         // Daftar revisi dinas 23 Sep 2026: sertifikat baru bisa dicetak setelah admin menetapkan
         // tanggal terbitnya (migrasi 062). Pesan boleh spesifik: NIM ini sudah terbukti diterima.
         if (empty($baris->tanggal_sertifikat)) {
-            return 'Sertifikat KKN Anda sedang disiapkan. Tanggal terbit belum ditetapkan admin Disperakim; silakan cek kembali nanti.';
+            return 'Piagam KKN Anda sedang disiapkan. Tanggal terbit belum ditetapkan admin Disperakim; silakan cek kembali nanti.';
         }
         // Tanggal TERBIT: yang ditetapkan untuk hari depan baru bisa dicetak pada harinya.
         if ($baris->tanggal_sertifikat > date('Y-m-d')) {
-            return 'Sertifikat KKN Anda dapat dicetak mulai ' . tgl_id($baris->tanggal_sertifikat) . '.';
+            return 'Piagam KKN Anda dapat dicetak mulai ' . tgl_id($baris->tanggal_sertifikat) . '.';
         }
         return NULL;
     }
@@ -667,13 +793,13 @@ class KemitraanPortal extends Public_Controller
     {
         $data = $this->sertifikat_dari_sesi();
         if ( ! $data) {
-            $this->session->set_flashdata('error', 'Tidak ada data sertifikat untuk dicetak. Cari NIM Anda terlebih dahulu.');
+            $this->session->set_flashdata('error', 'Tidak ada data piagam untuk dicetak. Cari NIM Anda terlebih dahulu.');
             redirect('KemitraanPortal/sertifikat_kkn');
             return;
         }
 
         $this->load->view('pages/kemitraan_portal/cetak_sertifikat_kkn', [
-            'judul' => 'Cetak Sertifikat KKN',
+            'judul' => 'Cetak Piagam KKN',
             'data'  => $data,
         ]);
     }
@@ -895,6 +1021,7 @@ class KemitraanPortal extends Public_Controller
         if ($row->jenis === 'kkn') {
             $peserta = $this->db->where('pendaftaran_id', $row->id)
                 ->order_by('nama', 'ASC')->get('kkn_peserta')->result();
+            $dpl = $this->db->where('pendaftaran_id', $row->id)->order_by('urut', 'ASC')->get('kkn_dpl')->result();
 
             // Shell dashboard TERPADU, sama dengan kkn_dashboard() - dijangkau
             // dari sana, jadi harus terlihat sebagai bagian dari layar yang
@@ -903,6 +1030,8 @@ class KemitraanPortal extends Public_Controller
                 'title'     => 'Detail KKN',
                 'row'       => $row,
                 'peserta'   => $peserta,
+                'dpl'       => $dpl,
+                'piagam_terbit' => $this->alasan_sertifikat_terkunci($row) === NULL,
                 'bisa_batal' => $row->status === 'Diajukan',
             ]);
             return;

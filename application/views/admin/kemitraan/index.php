@@ -100,7 +100,7 @@ $filter_html = ob_get_clean();
                             $dokumen['surat']    = ['Surat pengantar', 'Surat pengantar', $r->file_surat_pengantar ?? NULL];
                             $dokumen['proposal'] = ['Proposal', 'Proposal', $r->file_proposal ?? NULL];
                         } elseif ($r->jenis === 'kkn') {
-                            $dokumen['surat']    = ['Surat mitra', 'Surat permohonan mitra', $r->file_surat_pengantar ?? NULL];
+                            $dokumen['surat']    = ['Surat pelaksanaan', 'Surat permohonan pelaksanaan KKN', $r->file_surat_pengantar ?? NULL];
                             $dokumen['simperum'] = ['Surat SIMPERUM', 'Surat permohonan SIMPERUM', $r->file_surat_simperum ?? NULL];
                             $dokumen['laporan']  = ['Laporan akhir', 'Laporan akhir', $r->file_laporan_akhir ?? NULL];
                         }

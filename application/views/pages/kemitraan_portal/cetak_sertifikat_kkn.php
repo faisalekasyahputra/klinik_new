@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <?= csp_meta_tag() ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cetak Sertifikat KKN</title>
+    <title>Cetak Piagam KKN</title>
     <link rel="icon" href="<?= base_url('assets/img/logo-jateng.png') ?>" type="image/png">
 
     <!--
         Halaman POLOS (tanpa navbar/sidebar portal) - permintaan user 22 Agt
-        2026: tombol Cetak membuka TAB BARU yang isinya cuma sertifikat ini,
+        2026: tombol Cetak membuka TAB BARU yang isinya cuma piagam ini,
         bukan seluruh shell portal. CSS di bawah SENGAJA hanya yang dipakai
         sertifikatnya sendiri (design-system.css untuk --portal-*, tailwind
         untuk kelas util, FontAwesome untuk ikon) - tidak memuat Alpine/jQuery/
@@ -41,14 +41,14 @@
 </head>
 <body class="theme-light min-h-screen py-6 px-2 sm:py-10">
     <div class="mx-auto max-w-2xl no-print">
-        <p class="text-center text-xs font-black uppercase tracking-[0.2em] text-[color:var(--portal-text-muted)]">Cetak Sertifikat</p>
+        <p class="text-center text-xs font-black uppercase tracking-[0.2em] text-[color:var(--portal-text-muted)]">Cetak Piagam</p>
     </div>
 
     <?php
     /* Kartu 90% lebar + PDF sungguhan di dalamnya - permintaan user 22 Agt
        2026 ("perlebar 90% cardnya dan isi dengan embed pdf"). PDF-nya
        dibangun FPDF di KemitraanPortal::sertifikat_kkn_pdf() dari SESI yang
-       sama (satu sumber data, bukan dua salinan konten sertifikat yang bisa
+       sama (satu sumber data, bukan dua salinan konten piagam yang bisa
        menyimpang - dulu markup di sini adalah satu-satunya salinan;
        sekarang PDF itulah salinan tunggalnya, halaman ini cuma
        membingkainya). <embed>, bukan <iframe> - PDF ditampilkan langsung

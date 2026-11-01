@@ -74,6 +74,7 @@ $config['input_allowed_fields'] = [
     'file_laporan',
     'file_nib',
     'file_peserta',
+    'file_dpl', // KemitraanPortal::kkn_upload_dpl: daftar dosen pembimbing lapangan (migrasi 091)
     'file_proposal',
     'file_siup',
     // Kolom berkas dokumen persyaratan SRP2 (Pengembang::simpan_dokumen); sama dengan
