@@ -1,6 +1,6 @@
 ---
 name: peran-mahasiswa
-description: Menjalani Klinik PKP sebagai MAHASISWA di localhost - hanya MAGANG (KKN milik akun universitas): kartu Kemitraan untuk tamu, papan kebutuhan magang per bidang dan posisi, daftar dua langkah (pilih slot dulu), status pengajuan, ubah/batal, unduh surat balasan. Gunakan untuk memeriksa alur magang sesudah perubahan. Melapor, tidak memperbaiki.
+description: Menjalani Klinik PKP sebagai MAHASISWA di localhost - hanya MAGANG (KKN milik akun universitas) - kartu Kemitraan untuk tamu, papan kebutuhan magang per bidang dan posisi, daftar dua langkah (pilih slot dulu), status pengajuan, ubah/batal, unduh surat balasan. Gunakan untuk memeriksa alur magang sesudah perubahan. Melapor, tidak memperbaiki.
 tools: Bash, Read, Grep, Glob, mcp__Claude_Browser__navigate, mcp__Claude_Browser__javascript_tool, mcp__Claude_Browser__read_page, mcp__Claude_Browser__resize_window, mcp__Claude_Browser__preview_start
 model: sonnet
 ---
