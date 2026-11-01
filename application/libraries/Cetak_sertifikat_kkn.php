@@ -6,12 +6,28 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * melihat sertifikat peserta mana pun dari halaman Peserta KKN (Admin_Kemitraan::pratinjau_sertifikat)
  * dengan isi yang PERSIS sama dengan yang dicetak peserta. Pemanggil yang memeriksa hak cetak.
  *
- * $data: nama_peserta, nim, instansi_asal, tanggal_sertifikat (NULL = hari ini, untuk pratinjau sebelum terbit).
+ * $data: nama_peserta, nim, instansi_asal, tanggal_sertifikat (NULL = hari ini, untuk pratinjau sebelum terbit),
+ * dpl (opsional, TRUE = piagam dosen pembimbing lapangan, migrasi 091).
  * $nomor: dari MY_Controller::nomor_sertifikat_kkn. @return bool FALSE bila template hilang.
  */
 class Cetak_sertifikat_kkn {
 
     public function kirim($data, $nomor)
+    {
+        $pdf = $this->bangun($data, $nomor);
+        if ( ! $pdf) { return FALSE; }
+        $pdf->Output('I', 'piagam-kkn-' . preg_replace('/[^A-Za-z0-9_-]/', '', (string) $data->nim) . '.pdf');
+        return TRUE;
+    }
+
+    /** Isi PDF sebagai string (unduh massal ZIP, KemitraanPortal::kkn_unduh_piagam). @return string|FALSE */
+    public function isi($data, $nomor)
+    {
+        $pdf = $this->bangun($data, $nomor);
+        return $pdf ? $pdf->Output('S') : FALSE;
+    }
+
+    private function bangun($data, $nomor)
     {
         /* require_once LANGSUNG, bukan mengandalkan classmap composer -
            setasign/fpdf 1.9.0 MENYATAKAN classmap "fpdf.php" di
@@ -30,7 +46,7 @@ class Cetak_sertifikat_kkn {
             // jatuh ke rancangan lama, karena rancangan lama itu sudah
             // dilepas sepenuhnya (bukan cuma tidak dipakai).
             log_message('error', 'Cetak_sertifikat_kkn: template hilang di ' . $template);
-            return FALSE;
+            return NULL;
         }
 
         // FPDF (font bawaan Arial/Times) TIDAK mengenal UTF-8 - dikonversi
@@ -44,7 +60,7 @@ class Cetak_sertifikat_kkn {
         };
 
         $pdf = new FPDF('L', 'mm', 'A4'); // 297 x 210mm - rasio PERSIS template
-        $pdf->SetTitle('Sertifikat KKN Kemitraan - ' . $data->nama_peserta);
+        $pdf->SetTitle('Piagam KKN Kemitraan - ' . $data->nama_peserta);
         $pdf->SetAutoPageBreak(FALSE);
 
         /* Font skrip untuk <<Nama Lengkap>> - permintaan user 22 Agt 2026,
@@ -151,8 +167,11 @@ class Cetak_sertifikat_kkn {
            sesi). Makanya ukuran font MENGECIL OTOMATIS (bukan wrap bebas
            seperti MultiCell biasa) sampai hasil lipatannya <=2 baris,
            persis pola yang sama dipakai untuk Nama Lengkap di atas. */
-        $kalimat = 'Atas partisipasinya sebagai peserta Kuliah Kerja Nyata (KKN) Kemitraan Disperakim Provinsi Jawa Tengah dan '
-            . $t($data->instansi_asal) . ' dalam kegiatan :';
+        $kalimat = ! empty($data->dpl)
+            ? 'Atas peran sertanya sebagai Dosen Pembimbing Lapangan Kuliah Kerja Nyata (KKN) Kemitraan Disperakim Provinsi Jawa Tengah dan '
+                . $t($data->instansi_asal) . ' dalam kegiatan :'
+            : 'Atas partisipasinya sebagai peserta Kuliah Kerja Nyata (KKN) Kemitraan Disperakim Provinsi Jawa Tengah dan '
+                . $t($data->instansi_asal) . ' dalam kegiatan :';
 
         $hitung_baris = function ($teks, $lebar) use ($pdf) {
             $kata = explode(' ', $teks);
@@ -228,7 +247,6 @@ class Cetak_sertifikat_kkn {
         $tglX = 139 + (43 - $pdf->GetStringWidth($tanggalCetak)) / 2;
         $pdf->Text($tglX, 150.3, $tanggalCetak);
 
-        $pdf->Output('I', 'sertifikat-kkn-' . preg_replace('/[^A-Za-z0-9_-]/', '', $data->nim) . '.pdf');
-        return TRUE;
+        return $pdf;
     }
 }

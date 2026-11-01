@@ -496,15 +496,15 @@ $config['dashboard_modules'] = [
     // Sertifikat KKN (7 Okt 2026, migrasi 077): anak menu KKN, bukan baris sidebar baru. Badge =
     // permintaan sertifikat dari peserta yang belum dijawab (tanggal sertifikat belum ditetapkan).
     'sertifikat_kkn' => [
-        'label' => 'Sertifikat KKN', 'icon' => 'ph-seal-check',
+        'label' => 'Piagam KKN', 'icon' => 'ph-seal-check',
         'url'   => 'Admin_Kemitraan/sertifikat', 'group' => 'Tindak Lanjut', 'order' => 31, 'parent' => 'kemitraan_kkn',
         'roles' => ['admin'], 'scope' => null,
         'table' => 'kkn_magang_pendaftaran',
         'pending_where' => "jenis = 'kkn' AND sertifikat_diminta_at IS NOT NULL AND tanggal_sertifikat IS NULL",
         'badge' => TRUE, 'ringkas' => 'Sertifikat',
         'tindakan' => [
-            'satuan' => 'permintaan sertifikat KKN dari peserta', 'keterangan' => 'instansi_asal',
-            'cara' => 'Buka Sertifikat KKN, periksa daftar pesertanya, lalu tekan Terbitkan dengan tanggal sertifikat. Abaikan bila belum bisa diterbitkan.',
+            'satuan' => 'permintaan piagam KKN dari peserta', 'keterangan' => 'instansi_asal',
+            'cara' => 'Buka Piagam KKN, periksa daftar pesertanya, lalu tekan Terbitkan dengan tanggal piagam. Abaikan bila belum bisa diterbitkan.',
         ],
     ],
     // Janji temu konsultasi (migrasi 035). Superadmin saja: `forum_diskusi`

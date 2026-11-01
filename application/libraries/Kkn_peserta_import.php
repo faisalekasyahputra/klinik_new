@@ -30,22 +30,8 @@ class Kkn_peserta_import
      */
     public function baca($path)
     {
-        try {
-            $spreadsheet = IOFactory::load($path);
-        } catch (\Throwable $e) {
-            // Pesan asli PhpSpreadsheet (jalur berkas, dsb.) tidak untuk
-            // pemakai akhir - dicatat, bukan ditampilkan.
-            log_message('error', 'Kkn_peserta_import: gagal membaca berkas - ' . $e->getMessage());
-            return $this->gagal('Berkas tidak dapat dibaca. Pastikan formatnya benar-benar Excel (XLS/XLSX), bukan berkas yang sekadar diganti namanya.');
-        }
-
-        $baris = $spreadsheet->getActiveSheet()->toArray(NULL, TRUE, TRUE, FALSE);
-        if (empty($baris)) {
-            return $this->gagal('Berkas kosong.');
-        }
-        if (count($baris) > self::BATAS_BARIS + 1) {
-            return $this->gagal('Berkas terlalu panjang. Maksimal ' . self::BATAS_BARIS . ' baris peserta.');
-        }
+        $baris = $this->baris_berkas($path);
+        if (is_string($baris)) { return $this->gagal($baris); }
 
         // Header dicari di BARIS PERTAMA, dicocokkan lewat NAMA kolom
         // (case-insensitive), bukan posisi tetap (kolom A/B) - universitas
@@ -138,6 +124,69 @@ class Kkn_peserta_import
     public static function nim_sah($nim)
     {
         return (bool) preg_match('/^[A-Za-z0-9]{1,30}$/', (string) $nim);
+    }
+
+    /**
+     * Daftar dosen pembimbing lapangan (piagam DPL, migrasi 091): kolom "Nama" wajib, "NIDN" opsional.
+     * Aturan sama dengan roster peserta: satu baris cacat menolak seluruh berkas.
+     * @return array ['success'=>bool, 'message'=>string, 'dpl'=>[['nidn'=>?string,'nama'=>...], ...]]
+     */
+    public function baca_dpl($path)
+    {
+        $baris = $this->baris_berkas($path);
+        if (is_string($baris)) { return ['success' => FALSE, 'message' => $baris, 'dpl' => []]; }
+
+        $kol_nama = NULL;
+        $kol_nidn = NULL;
+        foreach (array_shift($baris) as $idx => $judul) {
+            $judul = strtolower(trim((string) $judul));
+            if ($judul === 'nama') { $kol_nama = $idx; }
+            if (in_array($judul, ['nidn', 'nip', 'nidn/nip'], TRUE)) { $kol_nidn = $idx; }
+        }
+        if ($kol_nama === NULL) {
+            return ['success' => FALSE, 'message' => 'Kolom "Nama" tidak ditemukan pada baris pertama.', 'dpl' => []];
+        }
+
+        $dpl = [];
+        $cacat = [];
+        foreach ($baris as $i => $r) {
+            $nama = trim((string) ($r[$kol_nama] ?? ''));
+            $nidn = $kol_nidn === NULL ? '' : self::normalkan_nim($r[$kol_nidn] ?? '');
+            if ($nama === '' && $nidn === '') { continue; }
+            if ($nama === '') { $cacat[] = ($i + 2) . ': Nama harus terisi'; continue; }
+            if (mb_strlen($nama) > 150) { $cacat[] = ($i + 2) . ': Nama lebih dari 150 karakter'; continue; }
+            if ($nidn !== '' && ! self::nim_sah($nidn)) { $cacat[] = ($i + 2) . ': NIDN hanya boleh berisi huruf dan angka (maks. 30)'; continue; }
+            $dpl[] = ['nidn' => $nidn !== '' ? $nidn : NULL, 'nama' => $nama];
+        }
+        if ($cacat) {
+            return ['success' => FALSE, 'message' => 'Baris ' . implode('; Baris ', array_slice($cacat, 0, 10)) . '. Perbaiki lalu unggah ulang seluruh berkas.', 'dpl' => []];
+        }
+        if ( ! $dpl) {
+            return ['success' => FALSE, 'message' => 'Tidak ada baris dosen yang bisa dibaca dari berkas ini.', 'dpl' => []];
+        }
+        return ['success' => TRUE, 'message' => '', 'dpl' => $dpl];
+    }
+
+    /** Baris sheet aktif (termasuk judul), atau string pesan galat. */
+    private function baris_berkas($path)
+    {
+        try {
+            $spreadsheet = IOFactory::load($path);
+        } catch (\Throwable $e) {
+            // Pesan asli PhpSpreadsheet (jalur berkas, dsb.) tidak untuk
+            // pemakai akhir - dicatat, bukan ditampilkan.
+            log_message('error', 'Kkn_peserta_import: gagal membaca berkas - ' . $e->getMessage());
+            return 'Berkas tidak dapat dibaca. Pastikan formatnya benar-benar Excel (XLS/XLSX), bukan berkas yang sekadar diganti namanya.';
+        }
+
+        $baris = $spreadsheet->getActiveSheet()->toArray(NULL, TRUE, TRUE, FALSE);
+        if (empty($baris)) {
+            return 'Berkas kosong.';
+        }
+        if (count($baris) > self::BATAS_BARIS + 1) {
+            return 'Berkas terlalu panjang. Maksimal ' . self::BATAS_BARIS . ' baris.';
+        }
+        return $baris;
     }
 
     private function gagal($pesan)

@@ -1,6 +1,6 @@
 <?php
 /**
- * Cetak Sertifikat KKN - permintaan user 22 Agt 2026.
+ * Cetak Piagam KKN - permintaan user 22 Agt 2026.
  *
  * Formulir TANPA login (keputusan user) - mahasiswa peserta KKN belum
  * tentu punya akun sendiri, akun yang ada adalah akun universitas.
@@ -18,9 +18,9 @@ $label = 'mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]';
             <i class="fa-solid fa-certificate" aria-hidden="true"></i>
         </div>
         <p class="mt-5 text-xs font-black uppercase tracking-[0.18em] text-[color:var(--portal-brand)]">Kemitraan</p>
-        <h1 class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)]">Cetak Sertifikat KKN</h1>
+        <h1 class="mt-2 text-3xl font-black tracking-tight text-[color:var(--portal-text)]">Cetak Piagam KKN</h1>
         <p class="mx-auto mt-2 max-w-md text-xs leading-relaxed text-[color:var(--portal-text-muted)]">
-            Masukkan NIM Anda. Sertifikat hanya dapat dicetak setelah periode pelaksanaan KKN Anda selesai
+            Masukkan NIM Anda. Piagam hanya dapat dicetak setelah periode pelaksanaan KKN Anda selesai
             dan pengajuannya diterima.
         </p>
     </div>
@@ -30,12 +30,12 @@ $label = 'mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]';
              terbit (KemitraanPortal::cek_sertifikat_kkn, 7 Okt 2026); id KKN-nya di sesi, bukan di halaman. */
     if ($this->session->flashdata('sertifikat_bisa_diminta')): ?>
     <section class="mx-auto mt-6 max-w-md rounded-2xl border border-[color:var(--portal-brand)] bg-[color:var(--portal-bg-card)] p-4 text-left shadow-sm" data-minta-sertifikat>
-        <h2 class="text-sm font-black text-[color:var(--portal-text)]">Sertifikat belum diterbitkan</h2>
-        <p class="mt-1 text-xs leading-relaxed text-[color:var(--portal-text-muted)]">NIM Anda terdaftar dan periode KKN sudah selesai, tetapi Disperakim belum menetapkan tanggal terbit sertifikatnya. Kirim permintaan agar sertifikat segera diterbitkan.</p>
+        <h2 class="text-sm font-black text-[color:var(--portal-text)]">Piagam belum diterbitkan</h2>
+        <p class="mt-1 text-xs leading-relaxed text-[color:var(--portal-text-muted)]">NIM Anda terdaftar dan periode KKN sudah selesai, tetapi Disperakim belum menetapkan tanggal terbit piagamnya. Kirim permintaan agar piagam segera diterbitkan.</p>
         <form class="mt-3" action="<?= base_url('KemitraanPortal/minta_sertifikat_kkn') ?>" method="POST">
             <input type="hidden" name="<?= $this->security->get_csrf_token_name(); ?>" value="<?= $this->security->get_csrf_hash(); ?>">
             <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[color:var(--portal-brand)] px-5 py-3 text-sm font-bold text-[#0a1a1f] transition hover:opacity-90">
-                Minta sertifikat ke Disperakim <i class="fa-solid fa-paper-plane"></i>
+                Minta piagam ke Disperakim <i class="fa-solid fa-paper-plane"></i>
             </button>
         </form>
     </section>
@@ -52,11 +52,11 @@ $label = 'mb-1.5 block text-xs font-bold text-[color:var(--portal-text)]';
 
         <button type="submit"
                 class="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[color:var(--portal-brand)] px-5 py-3 text-sm font-bold text-[#0a1a1f] transition hover:opacity-90">
-            Cek Sertifikat <i class="fa-solid fa-magnifying-glass"></i>
+            Cek Piagam <i class="fa-solid fa-magnifying-glass"></i>
         </button>
 
         <p class="text-center text-[11px] text-[color:var(--portal-text-muted)]">
-            KKN didaftarkan oleh perguruan tinggi mitra, bukan oleh mahasiswa perorangan; sertifikatnya diterbitkan Disperakim.
+            KKN didaftarkan oleh perguruan tinggi mitra, bukan oleh mahasiswa perorangan; piagamnya diterbitkan Disperakim.
             Kalau NIM Anda tidak ditemukan, KKN Anda mungkin belum tercatat: hubungi pihak kampus, atau Disperakim melalui menu Aduan.
         </p>
     </form>

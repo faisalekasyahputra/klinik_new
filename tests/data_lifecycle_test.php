@@ -75,6 +75,8 @@ check(preg_match('/function serve_private_file.*?catat_akses_data_pribadi\(\'ber
 check(preg_match('/function catat_akses_data_pribadi.*?peran_staf.*?audit_akses_dedupe.*?catat_audit\(\'akses_\'/s', $my) === 1, 'Audit akses hanya untuk staf, ditekan duplikatnya, dan tercatat lewat catat_audit');
 check(sumber('controllers/Pengaturan.php') !== '' && strpos(sumber('controllers/Pengaturan.php'), "catat_audit('data_akun_diekspor'") !== FALSE && strpos(sumber('controllers/Pengaturan.php'), "catat_audit('ekspor_data_ditolak'") !== FALSE, 'Ekspor data akun (dan penolakannya) harus diaudit');
 check(strpos(sumber('controllers/Pengaturan.php'), "rate_limit_consume('account_export'") !== FALSE, 'Ekspor data akun harus dibatasi lajunya');
+// Unduh massal piagam KKN (ZIP lewat force_download) wajib diaudit.
+check(preg_match('/function kkn_unduh_piagam.*?catat_audit\(\'piagam_kkn_diunduh\'.*?force_download/s', sumber('controllers/KemitraanPortal.php')) === 1, 'Unduh massal piagam KKN harus mencatat audit sebelum mengirim ZIP');
 // Setiap pemanggil kirim_spreadsheet mengaudit unduhannya.
 $pemanggil = 0;
 foreach (glob($app . '/controllers/*.php') as $f) {

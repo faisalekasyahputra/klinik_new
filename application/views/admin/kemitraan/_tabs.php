@@ -34,7 +34,7 @@ $menu = [
         'tab'       => [
             'pendaftaran_kkn' => ['label' => 'Pendaftaran KKN', 'url' => 'Admin_Kemitraan/kkn', 'ikon' => 'ph-student'],
             // Kendali sertifikat KKN di tangan dinas (7 Okt 2026): permintaan mahasiswa, catat KKN, tanggal terbit.
-            'sertifikat'      => ['label' => 'Sertifikat KKN', 'url' => 'Admin_Kemitraan/sertifikat', 'ikon' => 'ph-seal-check'],
+            'sertifikat'      => ['label' => 'Piagam KKN', 'url' => 'Admin_Kemitraan/sertifikat', 'ikon' => 'ph-seal-check'],
             // Akun (bukan pengajuan), permintaan user 22 Agt 2026. Sunting/nonaktifkan/reset sandi
             // tetap di Admin_Users; tab ini menautkan ke sana per akun. Lihat Admin_Kemitraan::universitas().
             'universitas'     => ['label' => 'Akun universitas', 'url' => 'Admin_Kemitraan/universitas', 'ikon' => 'ph-bank'],

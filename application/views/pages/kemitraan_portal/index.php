@@ -32,7 +32,7 @@
                 <i class="fa-solid fa-people-group mb-2.5 transition-transform duration-500 group-hover:scale-110"
                    style="font-size: 24px; color: var(--portal-icon);"></i>
                 <h4 class="text-[color:var(--portal-text)] font-bold text-sm mb-1">KKN Kemitraan</h4>
-                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Lihat informasi KKN, kelola pengajuan, atau cetak sertifikat.</p>
+                <p class="text-[color:var(--portal-text-muted)] text-xs leading-relaxed">Lihat informasi KKN, kelola pengajuan, atau cetak piagam.</p>
             </div>
             <div class="relative z-10 mt-auto pt-2.5">
                 <div class="tl-btn-base" style="background-color: var(--portal-btn-bg); color: var(--portal-icon); border: 1px solid var(--portal-btn-border);">
