@@ -83,6 +83,14 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 // sendiri tidak lagi punya modul apa pun untuk role mana pun.
 $config['dashboard_module_groups'] = ['Utama', 'Layanan', 'Tindak Lanjut', 'Pemantauan', 'Manajemen', 'Akun'];
 
+// Modul super admin lain BOLEH dilimpahkan ke admin kabkota/bidang lewat Hak Modul (2 Nov 2026).
+// Yang di sini tidak pernah: penerimanya bisa menaikkan haknya sendiri (users = Akses Staf dan
+// Hak Modul, struktur_cakupan), mengubah hasil untuk semua warga (aturan_rekomendasi,
+// katalog_program), menyerahkan identitas warga (permintaan_nik), mengawasi dirinya sendiri
+// (audit), atau mengubah wajah publik situs (seo_halaman).
+$config['modul_khusus_superadmin'] = ['users', 'struktur_cakupan', 'aturan_rekomendasi', 'katalog_program',
+    'permintaan_nik', 'audit', 'seo_halaman'];
+
 $config['dashboard_modules'] = [
 
     // ===== Milik semua role login (Pengaturan.php) =====

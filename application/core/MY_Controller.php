@@ -1127,10 +1127,10 @@ class MY_Controller extends CI_Controller {
         return $row && (int)$row->diizinkan === 1;
     }
 
-    protected function enforce_current_module_privilege() {
-        $role = $this->current_role();
+    /** Kunci modul milik $role yang url/aksi-nya awalan terpanjang dari $uri, atau NULL. */
+    protected function modul_untuk_uri($role, $uri) {
         $this->config->load('dashboard_modules', FALSE, TRUE);
-        $uri = trim($this->uri->uri_string(), '/');
+        $uri = trim($uri, '/');
         $best = NULL; $length = -1;
         foreach (($this->config->item('dashboard_modules') ?: []) as $key => $module) {
             if (empty($module['roles']) || !in_array($role,$module['roles'],TRUE)) { continue; }
@@ -1142,6 +1142,47 @@ class MY_Controller extends CI_Controller {
                 }
             }
         }
+        return $best;
+    }
+
+    /**
+     * Modul super admin yang BOLEH dilimpahkan lewat Hak Modul: milik peran admin saja,
+     * tautan internal, aktif, dan tidak ada di modul_khusus_superadmin (dashboard_modules.php).
+     */
+    protected function modul_bisa_dilimpahkan($key, $m) {
+        $this->config->load('dashboard_modules', FALSE, TRUE);
+        $roles = $m['roles'] ?? [];
+        return in_array('admin', $roles, TRUE) && ! array_intersect($roles, self::PERAN_PENERIMA_LIMPAHAN)
+            && ! in_array($key, $this->config->item('modul_khusus_superadmin') ?: [], TRUE)
+            && ! empty($m['url']) && ! preg_match('#^https?://#i', $m['url'])
+            && ! (array_key_exists('enabled', $m) && $m['enabled'] === FALSE);
+    }
+
+    /** Peran staf ter-scope yang dapat menerima modul super admin. */
+    const PERAN_PENERIMA_LIMPAHAN = ['admin_kabkota', 'admin_bidang'];
+
+    private $kunci_terlimpah = NULL;
+
+    /**
+     * TRUE kalau Super Admin melimpahkan modul super admin $key ke akun yang sedang login.
+     * Fail-closed: butuh baris diizinkan = 1 yang eksplisit; akun tanpa baris tidak mendapat apa pun.
+     */
+    protected function modul_terlimpah($key) {
+        if ( ! in_array($this->current_role(), self::PERAN_PENERIMA_LIMPAHAN, TRUE)) { return FALSE; }
+        $this->config->load('dashboard_modules', FALSE, TRUE);
+        $m = ($this->config->item('dashboard_modules') ?: [])[$key] ?? NULL;
+        if ( ! $m || ! $this->modul_bisa_dilimpahkan($key, $m)) { return FALSE; }
+        if ($this->kunci_terlimpah === NULL) {
+            $this->kunci_terlimpah = $this->db->table_exists('usr_hak_modul_admin')
+                ? array_column($this->db->select('kunci_modul')->get_where('usr_hak_modul_admin',
+                    ['user_id' => (int) $this->get_user_id(), 'diizinkan' => 1])->result_array(), 'kunci_modul')
+                : [];
+        }
+        return in_array($key, $this->kunci_terlimpah, TRUE);
+    }
+
+    protected function enforce_current_module_privilege() {
+        $best = $this->modul_untuk_uri($this->current_role(), $this->uri->uri_string());
         if ($best !== NULL && ! $this->module_privilege_allowed($best)) {
             show_error('Akses modul ini tidak diberikan oleh Super Admin.', 403, 'Akses Ditolak');
             exit;
@@ -1205,9 +1246,9 @@ class MY_Controller extends CI_Controller {
         $this->config->load('dashboard_modules', FALSE, TRUE);
         $hasil = [];
         foreach (($this->config->item('dashboard_modules') ?: []) as $key => $m) {
-            if ( ! $this->module_privilege_allowed($key)) { continue; }
             if (array_key_exists('enabled', $m) && $m['enabled'] === FALSE) { continue; }
-            if (empty($m['roles']) || ! in_array($role, $m['roles'], TRUE)) { continue; }
+            $milik = ! empty($m['roles']) && in_array($role, $m['roles'], TRUE);
+            if ($milik ? ! $this->module_privilege_allowed($key) : ! $this->modul_terlimpah($key)) { continue; }
             $scope_value = ! empty($m['scope']) ? $this->session->userdata($m['scope']) : NULL;
             if ( ! empty($m['scope']) && empty($scope_value)) { continue; }
             if ( ! empty($m['scope_values']) && ! in_array($scope_value, $m['scope_values'], TRUE)) { continue; }
@@ -2079,8 +2120,13 @@ class Public_Controller extends MY_Controller {
 class Admin_Controller extends MY_Controller {
     public function __construct() {
         parent::__construct();
-        // Redirect jika belum login atau bukan admin
-        if (!$this->session->userdata('is_logged') || $this->session->userdata('role') !== 'admin') {
+        // Redirect jika belum login atau bukan admin. Pengecualian satu-satunya: admin ter-scope yang
+        // dilimpahi modul halaman ini lewat Hak Modul (permintaan dinas 2 Nov 2026). Dicocokkan dengan
+        // URI hasil routing, jadi alias di routes.php tidak bisa membuka controller lain.
+        $role = $this->session->userdata('role');
+        $terlimpah = $role !== 'admin' && ($k = $this->modul_untuk_uri('admin', $this->uri->ruri_string())) !== NULL
+            && $this->modul_terlimpah($k);
+        if (!$this->session->userdata('is_logged') || ($role !== 'admin' && ! $terlimpah)) {
             $this->session->set_flashdata('error', 'Akses ditolak. Anda bukan Administrator.');
             $this->gerbang_login();
         }

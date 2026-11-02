@@ -33,7 +33,7 @@ class Umum extends MY_Controller {
 	private function _peran_admin()
 	{
 		return $this->session->userdata('is_logged') === TRUE
-			&& $this->session->userdata('role') === 'admin';
+			&& ($this->session->userdata('role') === 'admin' || $this->modul_terlimpah('konsultasi_forum'));
 	}
 
 	/**
