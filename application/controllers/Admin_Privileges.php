@@ -17,6 +17,10 @@ class Admin_Privileges extends Admin_Controller {
         $result = [];
         foreach (($this->config->item('dashboard_modules') ?: []) as $key => $module) {
             if ($key === 'profil' || (isset($module['enabled']) && $module['enabled'] === FALSE)) { continue; }
+            if ($this->modul_bisa_dilimpahkan($key, $module)) {
+                $module['limpahan'] = TRUE; $module['group'] = 'Tambahan dari Super Admin: '.($module['group'] ?? 'Lainnya');
+                $result[$key] = $module; continue;
+            }
             if (empty($module['roles']) || ! in_array($user->peran, $module['roles'], TRUE)) { continue; }
             if ( ! empty($module['scope'])) {
                 $value = $user->{$module['scope']} ?? NULL;
@@ -35,7 +39,7 @@ class Admin_Privileges extends Admin_Controller {
         $rows = $this->db->get_where('usr_hak_modul_admin',['user_id'=>(int)$user->id])->result();
         $selected = [];
         if ($rows) { foreach ($rows as $row) { $selected[$row->kunci_modul] = (bool)$row->diizinkan; } }
-        else { foreach ($modules as $key => $_) { $selected[$key] = TRUE; } }
+        else { foreach ($modules as $key => $module) { $selected[$key] = empty($module['limpahan']); } } // limpahan tidak pernah tercentang sendiri
         $scope = $user->peran === 'admin_kabkota'
             ? $this->db->get_where('kabupaten',['id'=>$user->kabupaten_id])->row()
             : $this->db->get_where('bidang',['kode'=>$user->bidang_kode])->row();
@@ -53,6 +57,11 @@ class Admin_Privileges extends Admin_Controller {
         $modules = $this->modules($user);
         $posted = $this->input->post('modules');
         $posted = is_array($posted) ? array_intersect(array_keys($modules),$posted) : [];
+        // Anak menu ikut membawa induknya: tombol tindakan (mis. Admin_Kemitraan/proses) berada di url induk.
+        foreach ($posted as $key) {
+            for ($p = $modules[$key]['parent'] ?? NULL; $p !== NULL && isset($modules[$p]); $p = $modules[$p]['parent'] ?? NULL) { $posted[] = $p; }
+        }
+        $posted = array_values(array_unique($posted));
         $this->db->trans_start();
         $this->db->where('user_id',(int)$user->id)->delete('usr_hak_modul_admin');
         foreach ($modules as $key => $_) {

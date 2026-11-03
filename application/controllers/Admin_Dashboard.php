@@ -53,15 +53,9 @@ class Admin_Dashboard extends Admin_Controller {
 
         // Kartu hanya untuk modul registry yang tampil bagi role aktif (enabled,
         // roles, scope), sama dengan sidebar, agar modul mati tidak muncul di sini.
-        $this->config->load('dashboard_modules', FALSE, TRUE);
-        $modul_ada = $this->config->item('dashboard_modules') ?: [];
-        $role = $this->current_role();
-        $tampil = function ($key) use ($modul_ada, $role) {
-            $m = $modul_ada[$key] ?? NULL;
-            if ( ! $m || (array_key_exists('enabled', $m) && $m['enabled'] === FALSE)) { return FALSE; }
-            if (empty($m['roles']) || ! in_array($role, $m['roles'], TRUE)) { return FALSE; }
-            return empty($m['scope']) || ! empty($this->session->userdata($m['scope']));
-        };
+        // Termasuk modul yang dilimpahkan lewat Hak Modul.
+        $modul_ada = $this->modul_untuk_peran();
+        $tampil = fn($key) => isset($modul_ada[$key]);
 
         $data['kartu_domain'] = [];
         foreach (self::KARTU as $key => $k) {
