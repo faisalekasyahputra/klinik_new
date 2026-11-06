@@ -171,13 +171,13 @@ class Admin_Seo extends Admin_Controller {
         $im = imagecreatetruecolor($w, $h);
         imagefill($im, 0, 0, imagecolorallocate($im, 255, 255, 255)); // latar PNG transparan
         imagecopyresampled($im, $src, 0, 0, (int) (($sw - $cw) / 2), (int) (($sh - $ch) / 2), $w, $h, $cw, $ch);
-        imagedestroy($src);
+        unset($src);
 
         $dir = FCPATH . self::DIR_UNGGAHAN;
-        if ( ! is_dir($dir) && ! @mkdir($dir, 0755, TRUE)) { $galat = 'Direktori unggahan tidak bisa dibuat.'; imagedestroy($im); return NULL; }
+        if ( ! is_dir($dir) && ! @mkdir($dir, 0755, TRUE)) { $galat = 'Direktori unggahan tidak bisa dibuat.'; unset($im); return NULL; }
         $nama = trim(preg_replace('/[^a-z0-9]+/', '-', strtolower($kunci === '' ? 'beranda' : $kunci)), '-') . '-' . bin2hex(random_bytes(6)) . '.jpg';
         $ok = imagejpeg($im, $dir . $nama, 85);
-        imagedestroy($im);
+        unset($im);
         if ( ! $ok) { $galat = 'Gambar gagal disimpan ke disk.'; return NULL; }
         return self::DIR_UNGGAHAN . $nama;
     }

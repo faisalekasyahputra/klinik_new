@@ -170,12 +170,10 @@ class Chat extends MY_Controller {
 
     if (curl_errno($ch)) {
         $error_msg = curl_error($ch);
-        curl_close($ch);
         echo "Aduh, cURL Error pada XAMPP: " . $error_msg;
         return;
     }
 
-    curl_close($ch);
 
     $result = json_decode($response, true);
     //echo json_encode($result);

@@ -92,7 +92,6 @@ class Sikaper_api {
         $body  = curl_exec($ch);
         $kode  = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $galat = curl_error($ch);
-        curl_close($ch);
 
         /* Kode HTTP ikut menentukan, bukan cuma galat transport - kalau tidak,
            badan halaman error 502 akan tertulis ke cache sebagai data sah. */

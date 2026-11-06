@@ -41,7 +41,7 @@ if ( ! function_exists('seo_halaman')) {
 
 if ( ! function_exists('seo_noindex')) {
     /** Cocok persis atau diikuti '/'; entri berakhiran '/' atau '_' = awalan mentah. */
-    function seo_noindex($uri, array $daftar = NULL) {
+    function seo_noindex($uri, ?array $daftar = NULL) {
         foreach ($daftar ?? (seo_cfg()['noindex'] ?? []) as $p) {
             $p = strtolower((string) $p);
             $awalan = in_array(substr($p, -1), ['/', '_'], TRUE);

@@ -11,10 +11,11 @@
 		"source": "https://github.com/bcit-ci/CodeIgniter"
 	},
 	"require": {
-		"php": ">=8.1",
+		"php": ">=8.2",
 		"google/apiclient": "^2.19",
-		"phpoffice/phpspreadsheet": "^1.29",
+		"phpoffice/phpspreadsheet": "^2.4",
 		"setasign/fpdf": "^1.8",
-		"minishlink/web-push": "^9.0.4"
+		"minishlink/web-push": "^9.0.4",
+		"ezyang/htmlpurifier": "^4.19"
 	}
 }

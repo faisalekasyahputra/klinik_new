@@ -1764,20 +1764,20 @@ class MY_Controller extends CI_Controller {
         $skala = min(1, 512 / max(imagesx($img), imagesy($img)));
         if ($skala < 1) {
             $kecil = imagescale($img, max(1, (int) round(imagesx($img) * $skala)), max(1, (int) round(imagesy($img) * $skala)));
-            imagedestroy($img);
+            unset($img);
             $img = $kecil;
         }
         if ($jenis[0] !== 'jpg') { imagealphablending($img, FALSE); imagesavealpha($img, TRUE); }
 
         $dir = FCPATH . self::DIR_FOTO_SRP2;
-        if ( ! is_dir($dir) && ! @mkdir($dir, 0755, TRUE)) { imagedestroy($img); $galat = 'Folder foto tidak bisa dibuat.'; return NULL; }
+        if ( ! is_dir($dir) && ! @mkdir($dir, 0755, TRUE)) { unset($img); $galat = 'Folder foto tidak bisa dibuat.'; return NULL; }
         $nama = bin2hex(random_bytes(16)) . '.' . $jenis[0];
         $ok = match ($jenis[0]) {
             'jpg'  => imagejpeg($img, $dir . $nama, 85),
             'png'  => imagepng($img, $dir . $nama, 6),
             'webp' => imagewebp($img, $dir . $nama, 85),
         };
-        imagedestroy($img);
+        unset($img);
         if ( ! $ok) { @unlink($dir . $nama); $galat = 'Foto gagal disimpan.'; return NULL; }
         return self::DIR_FOTO_SRP2 . $nama;
     }

@@ -34,10 +34,10 @@ $jumlah = function () use ($db, $tag) { return (int) $db->query("SELECT COUNT(*)
 $xlsx = function (array $rows) use (&$tmp) {
     $book = IOFactory::load(dirname(__DIR__, 2) . '/application/templates/template_import_psu.xlsx');
     $sheet = $book->getSheetByName('Data PSU');
-    $hr = NULL; for ($r = 1; $r <= 10 && !$hr; $r++) for ($c = 1; $c <= 20; $c++) if (strtolower(trim((string) $sheet->getCellByColumnAndRow($c, $r)->getValue())) === 'nama_perumahan') { $hr = $r; break; }
-    $cols = []; for ($c = 1; $c <= 20; $c++) { $n = strtolower(trim((string) $sheet->getCellByColumnAndRow($c, $hr)->getValue())); if ($n !== '') $cols[$n] = $c; }
-    for ($r = $hr + 1; $r <= $sheet->getHighestDataRow(); $r++) foreach ($cols as $c) $sheet->setCellValueByColumnAndRow($c, $r, NULL);
-    foreach (array_values($rows) as $i => $row) foreach ($row as $k => $v) $sheet->setCellValueByColumnAndRow($cols[$k], $hr + 1 + $i, $v);
+    $hr = NULL; for ($r = 1; $r <= 10 && !$hr; $r++) for ($c = 1; $c <= 20; $c++) if (strtolower(trim((string) $sheet->getCell([$c, $r])->getValue())) === 'nama_perumahan') { $hr = $r; break; }
+    $cols = []; for ($c = 1; $c <= 20; $c++) { $n = strtolower(trim((string) $sheet->getCell([$c, $hr])->getValue())); if ($n !== '') $cols[$n] = $c; }
+    for ($r = $hr + 1; $r <= $sheet->getHighestDataRow(); $r++) foreach ($cols as $c) $sheet->setCellValue([$c, $r], NULL);
+    foreach (array_values($rows) as $i => $row) foreach ($row as $k => $v) $sheet->setCellValue([$cols[$k], $hr + 1 + $i], $v);
     $f = tempnam(sys_get_temp_dir(), 'psux') . '.xlsx'; IOFactory::createWriter($book, 'Xlsx')->save($f); $tmp[] = $f; return $f;
 };
 $impor = function ($file) use ($http, $csrf) {

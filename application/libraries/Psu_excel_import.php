@@ -40,7 +40,7 @@ class Psu_excel_import
             for($r=$header+1;$r<=$last;$r++){
                 $raw=[];$formula=FALSE;
                 foreach(self::HEADER as $name){
-                    $cell=$sheet->getCellByColumnAndRow($col[$name],$r);
+                    $cell=$sheet->getCell([$col[$name],$r]);
                     $formula=$formula||$cell->getDataType()===DataType::TYPE_FORMULA;
                     $raw[$name]=$cell->getValue();
                 }
@@ -87,7 +87,7 @@ class Psu_excel_import
     public function kunci_duplikat($nama,$kabupaten_id){return $this->norm($nama).'|'.(int)$kabupaten_id;}
     private function header($sheet,$last){
         $max=min(50,Coordinate::columnIndexFromString($sheet->getHighestDataColumn()));
-        for($r=1;$r<=min(10,$last);$r++){$found=[];for($c=1;$c<=$max;$c++){$n=$this->norm($sheet->getCellByColumnAndRow($c,$r)->getValue());if(in_array($n,self::HEADER,TRUE))$found[$n]=$c;}if(count($found)===count(self::HEADER))return [$r,$found];}
+        for($r=1;$r<=min(10,$last);$r++){$found=[];for($c=1;$c<=$max;$c++){$n=$this->norm($sheet->getCell([$c,$r])->getValue());if(in_array($n,self::HEADER,TRUE))$found[$n]=$c;}if(count($found)===count(self::HEADER))return [$r,$found];}
         return [NULL,[]];
     }
     private function emptyRow($row){foreach($row as $v)if(trim((string)$v)!=='')return FALSE;return TRUE;}
