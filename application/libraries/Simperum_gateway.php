@@ -395,7 +395,6 @@ class Simperum_gateway {
                 'body' => is_string($body) ? $body : NULL,
                 'curl_errno' => curl_errno($curl),
             ];
-            curl_close($curl);
 
             $retryable = $result['curl_errno'] !== 0 || $result['http_status'] >= 500;
             if ( ! $retryable || $attempt === 1) {

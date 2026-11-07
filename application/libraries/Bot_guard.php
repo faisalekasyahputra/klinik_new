@@ -60,7 +60,7 @@ class Bot_guard {
      * @return array {ok: bool, reason: string|null}
      *         reason: honeypot | token_hilang | token_rusak | form_salah | terlalu_cepat | kedaluwarsa
      */
-    public function check($form, array $post = NULL, $sekarang = NULL, $production = NULL)
+    public function check($form, ?array $post = NULL, $sekarang = NULL, $production = NULL)
     {
         $post = $post ?? $_POST;
         $sekarang = (int) ($sekarang ?? time());

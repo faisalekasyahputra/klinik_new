@@ -120,7 +120,6 @@ if ( ! function_exists('sikumbang_ambil')) {
             $balasan = curl_exec($ch);
             $galat   = curl_error($ch);
             $kode    = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
 
             /* Kode HTTP ikut diperiksa, bukan cuma $galat. Balasan 500 atau
                502 dari hulu bukan galat curl - tanpa cek ini, badan halaman
@@ -256,7 +255,6 @@ if ( ! function_exists('sikumbang_ambil_foto')) {
         $isi  = curl_exec($ch);
         $kode = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $tipe = strtolower((string) curl_getinfo($ch, CURLINFO_CONTENT_TYPE));
-        curl_close($ch);
         if ($kode !== 200 || ! is_string($isi) || $isi === '' || strlen($isi) > SIKUMBANG_FOTO_MAKS_BYTE
             || strpos($tipe, 'image/') !== 0) {
             return NULL;

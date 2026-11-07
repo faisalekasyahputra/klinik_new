@@ -53,7 +53,6 @@ class Ternak_api {
         curl_setopt_array($ch, transport_curl_options()); // TLS 1.2+, HTTPS saja (poin 8.2)
 
         $response = curl_exec($ch);
-        curl_close($ch);
 
         $data = json_decode($response, true);
         
@@ -90,7 +89,7 @@ class Ternak_api {
     }
 
     /**
-     * HTML artikel lewat daftar izin HTMLPurifier (ikut terpasang bersama phpspreadsheet): tag teks,
+     * HTML artikel lewat daftar izin HTMLPurifier (dependensi langsung di composer.json sejak PhpSpreadsheet 2.x berhenti membawanya): tag teks,
      * daftar, tabel, dan tautan http/https/mailto. Atribut on*, style, script, iframe, dan skema
      * javascript: dibuang. Tanpa HTMLPurifier body jadi teks biasa (gagal ke arah aman).
      */
